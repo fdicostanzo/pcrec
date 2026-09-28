@@ -8,7 +8,16 @@ never from the C (learnings §3: two readings of one function share a source).
   findings_ref.py digest PPM_TSV   the byte-rate digest of a 256-row ppm table
                                    (`byte<TAB>ppm`, decimal, as default_ppm.tsv)
   findings_ref.py vectors          the §2.5 test vectors' counts, one per line
+  findings_ref.py bundle-digest RXT [NAME]
+                                   [B2] the byte-rate digest a compile reading
+                                   bundle NAME's `freq` block would stamp: its
+                                   `row HH N` lines read by a regex (never by
+                                   pcrec's parser), normalized and digested
+                                   above. NAME defaults to the file's only
+                                   bundle. The independent side of design
+                                   §11.5 #17 (R18).
 """
+import re
 import sys
 
 FLOOR = 2
@@ -63,6 +72,21 @@ if __name__ == "__main__":
         for b, v in rows:
             ppm[int(b)] = int(v)
         print(digest(ppm))
+    elif mode == "bundle-digest":
+        want = sys.argv[3] if len(sys.argv) > 3 else None
+        cur, counts = None, {}
+        for ln in open(sys.argv[2], encoding="utf-8"):
+            m = re.match(r"analysis (\S+)$", ln.rstrip("\n"))
+            if m:
+                cur = m.group(1)
+                continue
+            m = re.match(r"\s+row ([0-9a-f]{2}) (\d+)$", ln)
+            if m and cur and (want is None or cur == want):
+                counts.setdefault(cur, [0] * 256)[int(m.group(1), 16)] = int(m.group(2))
+        if len(counts) != 1:
+            sys.exit("bundle-digest: want exactly one bundle, found %d" % len(counts))
+        p = normalize(list(counts.values())[0])
+        print("none" if p is None else digest(p))
     elif mode == "vectors":
         for name, c in VECTORS.items():
             print(" ".join(map(str, c)))

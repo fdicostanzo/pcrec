@@ -145,6 +145,33 @@ int main(int argc, char **argv)
         free(text);
     }
     fprintf(out, "};\n");
+    /* [FINDINGS] B2: the bundle index — each file's ONE bundle, its
+     * `include <x>` name with the brackets stripped (or NULL) and its line:
+     * what the chain walk needs of a bundle beyond its blocks (§4.3). */
+    fprintf(out, "static const PcrecFindTblBundle pcrec_find_tbl_bundles[] = {\n");
+    for (int a = 2; a < argc; a++) {
+        size_t len;
+        char *text = slurp(argv[a], &len);
+        pcrec_error err;
+        RxtSource *src = pcrec_rxt_source_parse_buf(argv[a], text, len, &err);
+        for (size_t r = 0; r < src->nrows; r++) {
+            const RxtRow *row = &src->rows[r];
+            if (row->kind != RXT_DECL_ANALYSIS) continue;
+            check_plain(row->name, "bundle name");
+            if (row->value && row->value[0]) {
+                size_t n = strlen(row->value);
+                check_plain(row->value, "include");
+                fprintf(out, "    { \"%s\", \"%.*s\", %zu },\n", row->name,
+                        (int)(n - 2), row->value + 1, row->line);
+            } else {
+                fprintf(out, "    { \"%s\", NULL, %zu },\n", row->name,
+                        row->line);
+            }
+        }
+        pcrec_rxt_source_free(src);
+        free(text);
+    }
+    fprintf(out, "};\n");
     if (fclose(out) != 0) { fprintf(stderr, "findgen: write failed\n"); return 1; }
     return 0;
 }

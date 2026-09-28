@@ -1283,6 +1283,35 @@ typedef struct {
      * (`--probe-ask`/`--count-groups`/`--list-source`) still read; this
      * field affects only the one `pcrec_compile()` call it is passed to. */
     const char *features;
+
+    /* [FINDINGS] B2 (docs/spec/findings.md, design §5.3): THE ANALYSIS a
+     * compile reads its subject-aware rates from — a BUNDLE NAME, resolved
+     * through three stops in order: the bundles in `analysis_source` (S1),
+     * then the file `DIR/<name>.rxt` for each DIR of `analysis_dirs` in
+     * order (S2), then the analyses built into this library (S3). The chain
+     * then follows each bundle's `include`, and always ends in the built-in
+     * `default`. NULL MEANS NONE: the chain is `default` alone, which is
+     * byte-identical to a compile that predates these fields.
+     *
+     * An analysis changes SPEED, never an answer or a give-up: every rate a
+     * compile reads chooses among choices already proven sound. A name that
+     * resolves nowhere, a malformed bundle, or an include cycle REFUSES the
+     * compile through `pcrec_error`, naming the stops searched.
+     *
+     * Names are lowercase (`[a-z][a-z0-9_-]*`). `analysis_dirs` is a
+     * NULL-terminated list, NULL for none. `analysis_source` is `.rxt` TEXT
+     * (`analysis_source_len` bytes) parsed in the no-filesystem mode: a
+     * `lib "..."` or `include "..."` line in it is refused, so the buffer
+     * opens no file. Each field is independent of the others; a caller with
+     * no filesystem passes `analysis_source` and/or relies on the built-in
+     * analyses.
+     *
+     * The chosen bundle is disclosed: its NAME is stamped into every
+     * artifact built under it (`<PREFIX>_FINDINGS`, `rx_info.findings`). */
+    const char        *analysis;
+    const char *const *analysis_dirs;
+    const char        *analysis_source;
+    size_t             analysis_source_len;
 } pcrec_options;
 
 /* [M4.4] (subst note §9 Q8, D42.4): which input string pcrec_error.pos

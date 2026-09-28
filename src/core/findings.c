@@ -6,14 +6,17 @@
  * THE DATA TIER. A byte-rate is DATA about a subject corpus under an
  * encoding, declared by the data (D123-4): a bundle's `freq` block says
  * `serves byte-rate when <encodings> via unigram`, and the accessor's whole
- * selection rule is "use what the data declares" (§2.4). At B1 the chain is
- * the built-in `default` alone (S3, the embedded store: every
- * `src/findings/<name>.rxt`, compiled in as its TEXT by scripts/embed_text.sh
- * and as that text PRE-PARSED (`make gen-findings`) by the ONE `.rxt` reader in its
- * no-filesystem mode, scripts/findgen.c — §8, §13 B1 (3)). The default
- * declares `byte` only,
- * so under `-e utf8` the answer is NONE. Resolution beyond it (S1/S2,
- * `--analysis`) is B2's.
+ * selection rule is "use what the data declares" (§2.4): the first block
+ * along this compile's CHAIN serving the query under its encoding
+ * (`pcrec_find_chain_answer`). The chain is resolved per attempt by
+ * src/parse/rxt_find.c ([FINDINGS] B2: the compiling file, `-I DIR/<name>.rxt`,
+ * the store) and always ends in the built-in `default`, found here by
+ * identity: S3, the embedded store, is every `src/findings/<name>.rxt`
+ * compiled in as its TEXT by scripts/embed_text.sh and as that text
+ * PRE-PARSED (`make gen-findings`) by the ONE `.rxt` reader in its
+ * no-filesystem mode, scripts/findgen.c — §8, §13 B1 (3). The default
+ * declares `byte` only, so with no analysis named the answer under
+ * `-e utf8` is NONE.
  *
  * WHAT A RATE READER IS. Every member of a necessary set and every window of
  * a necessary run is SOUND for the emitted pre-check (`src/facts/req.c`
@@ -59,10 +62,15 @@ typedef struct {
  * never compiles, so it never reads one. */
 #ifdef PCREC_FIND_STAGE0
 static const PcrecFindTblBlock pcrec_find_tbl[1];
-enum { PCREC_FIND_NTBL = 0 };
+static const PcrecFindTblBundle pcrec_find_tbl_bundles[1];
+enum { PCREC_FIND_NTBL = 0, PCREC_FIND_NBUNDLES = 0 };
 #else
 #include "findings_table.inc"
-enum { PCREC_FIND_NTBL = sizeof pcrec_find_tbl / sizeof *pcrec_find_tbl };
+enum {
+    PCREC_FIND_NTBL = sizeof pcrec_find_tbl / sizeof *pcrec_find_tbl,
+    PCREC_FIND_NBUNDLES = sizeof pcrec_find_tbl_bundles /
+                          sizeof *pcrec_find_tbl_bundles
+};
 #endif
 
 /* ---- THE STORE (design §8) ------------------------------------------------ */
@@ -87,6 +95,49 @@ const PcrecFindTblBlock *pcrec_find_store_blocks(size_t *n)
 {
     *n = PCREC_FIND_NTBL;
     return pcrec_find_tbl;
+}
+
+const PcrecFindTblBundle *pcrec_find_store_bundles(size_t *n)
+{
+    *n = PCREC_FIND_NBUNDLES;
+    return pcrec_find_tbl_bundles;
+}
+
+/* The store's bundles are contiguous in the table in store order (findgen
+ * writes each file's blocks together), so a link is a slice of it. */
+bool pcrec_find_store_link(const char *name, PcrecFindStop stop,
+                           PcrecFindLink *out)
+{
+    size_t nt, nbn, lo, hi = 0;
+    const PcrecFindTblBlock *tbl = pcrec_find_store_blocks(&nt);
+    const PcrecFindTblBundle *bun = pcrec_find_store_bundles(&nbn);
+    lo = nt;
+    for (size_t i = 0; i < nbn; i++) {
+        if (strcmp(bun[i].name, name) != 0) continue;
+        for (size_t j = 0; j < nt; j++)
+            if (!strcmp(tbl[j].bundle, name)) {
+                if (j < lo) lo = j;
+                hi = j + 1;
+            }
+        memset(out, 0, sizeof *out);
+        out->bundle = bun[i].name;
+        out->stop = stop;
+        out->include = bun[i].include;
+        out->blocks = hi > lo ? &tbl[lo] : NULL;
+        out->nblocks = hi > lo ? hi - lo : 0;
+        return true;
+    }
+    return false;
+}
+
+bool pcrec_find_name_ok(const char *s, size_t n)
+{
+    if (n == 0 || s[0] < 'a' || s[0] > 'z') return false;
+    for (size_t i = 1; i < n; i++)
+        if (!((s[i] >= 'a' && s[i] <= 'z') || (s[i] >= '0' && s[i] <= '9') ||
+              s[i] == '_' || s[i] == '-'))
+            return false;
+    return true;
 }
 
 /* ---- NORMALIZATION: counts -> byte-rate ppm (design §2.5, ONE function) ---- */
@@ -136,40 +187,62 @@ static bool encs_list(const char *encs, const char *enc)
     return false;
 }
 
-/* The byte-rate the built-in `default` declares for this compile's
- * encoding, into `fr`: the ONE block of that bundle whose `serves byte-rate
- * when …` line lists the encoding (§2.4, §4.4), derived `via unigram`. No
- * such block -> NONE (`byte_rate_have` stays false). At B1 the chain is the
- * default alone (S3); B2 walks a resolved chain here. */
+const PcrecFindTblBlock *pcrec_find_chain_answer(const PcrecFindChain *chain,
+                                                 const char *query,
+                                                 const char *enc,
+                                                 size_t *link,
+                                                 const PcrecFindServe **serve)
+{
+    for (size_t l = 0; l < chain->n; l++) {
+        const PcrecFindLink *k = &chain->links[l];
+        for (size_t i = 0; i < k->nblocks; i++) {
+            const PcrecFindTblBlock *fb = &k->blocks[i];
+            for (size_t j = 0; j < fb->nserves; j++)
+                if (!strcmp(fb->serves[j].query, query) &&
+                    encs_list(fb->serves[j].encs, enc)) {
+                    if (link) *link = l;
+                    if (serve) *serve = &fb->serves[j];
+                    return fb;
+                }
+        }
+    }
+    return NULL;
+}
+
+/* The byte-rate this compile's CHAIN declares for its encoding, into `fr`:
+ * the ONE block the selection rule picks (§2.4, §4.4), derived `via
+ * unigram`. No such block -> NONE (`byte_rate_have` stays false). A chain
+ * the attempt never resolved (a `Ctx` built outside `compile_driver`) reads
+ * as the built-in `default` alone — the terminal every chain ends in. */
 static void find_derive_byte_rate(Ctx *cx, PcrecFindRec *fr)
 {
     const char *enc = pcrec_enc_by_id(cx->opt->encoding)->name;
-    size_t n;
-    const PcrecFindTblBlock *tbl = pcrec_find_store_blocks(&n);
-    for (size_t i = 0; i < n; i++) {
-        const PcrecFindTblBlock *fb = &tbl[i];
-        if (strcmp(fb->bundle, "default") != 0) continue;
-        for (size_t j = 0; j < fb->nserves; j++) {
-            int nr;
-            if (strcmp(fb->serves[j].query, "byte-rate") != 0 ||
-                !encs_list(fb->serves[j].encs, enc))
-                continue;
-            nr = pcrec_find_normalize(fb->counts, fr->byte_rate);
-            if (nr == -1)
-                pcrec_ctx_fail(cx, 0, "analysis '%s': its '%s' block at line "
-                               "%zu counts nothing, so it has no byte-rate",
-                               fb->bundle, fb->kind, fb->line);
-            if (nr != 0)
-                pcrec_ctx_fail(cx, 0, "internal error: analysis '%s': its "
-                               "'%s' block at line %zu normalizes to a "
-                               "byte-rate that breaks its own postcondition",
-                               fb->bundle, fb->kind, fb->line);
-            fr->byte_rate_have = true;
-            fr->byte_rate_bundle = fb->bundle;
-            fr->byte_rate_digest = pcrec_find_byte_rate_digest(fr->byte_rate);
-            return;
-        }
+    PcrecFindLink dflt;
+    PcrecFindChain one = { &dflt, 0 };
+    const PcrecFindChain *chain = &fr->chain;
+    const PcrecFindTblBlock *fb;
+    size_t link = 0;
+    int nr;
+    if (chain->n == 0) {
+        if (pcrec_find_store_link("default", PCREC_FIND_STOP_DEFAULT, &dflt))
+            one.n = 1;
+        chain = &one;
     }
+    fb = pcrec_find_chain_answer(chain, "byte-rate", enc, &link, NULL);
+    if (!fb) return;
+    nr = pcrec_find_normalize(fb->counts, fr->byte_rate);
+    if (nr == -1)
+        pcrec_ctx_fail(cx, 0, "analysis '%s': its '%s' block at line "
+                       "%zu counts nothing, so it has no byte-rate",
+                       fb->bundle, fb->kind, fb->line);
+    if (nr != 0)
+        pcrec_ctx_fail(cx, 0, "internal error: analysis '%s': its "
+                       "'%s' block at line %zu normalizes to a "
+                       "byte-rate that breaks its own postcondition",
+                       fb->bundle, fb->kind, fb->line);
+    fr->byte_rate_have = true;
+    fr->byte_rate_bundle = chain->links[link].bundle;
+    fr->byte_rate_digest = pcrec_find_byte_rate_digest(fr->byte_rate);
 }
 
 /* ---- THE STAMP AND THE DIGEST (design §7) -------------------------------- */
@@ -196,6 +269,25 @@ uint64_t pcrec_find_byte_rate_digest(const uint32_t ppm[256])
                                 (unsigned char)(ppm[b] >> 16),
                                 (unsigned char)(ppm[b] >> 24) };
         h = fnv1a(h, le, 4);
+    }
+    return h;
+}
+
+uint64_t pcrec_find_rows_digest(const PcrecFindTblBlock *blocks, size_t n)
+{
+    const unsigned char tag[] = "pcrec-find-rows-1";
+    uint64_t h = fnv1a(0xcbf29ce484222325ull, tag, sizeof tag);
+    for (size_t i = 0; i < n; i++) {
+        h = fnv1a(h, (const unsigned char *)blocks[i].kind,
+                  strlen(blocks[i].kind) + 1);
+        for (int b = 0; b < 256; b++) {
+            unsigned long long c = blocks[i].counts[b];
+            unsigned char row[9];
+            if (!c) continue;
+            row[0] = (unsigned char)b;
+            for (int k = 0; k < 8; k++) row[1 + k] = (unsigned char)(c >> (8 * k));
+            h = fnv1a(h, row, sizeof row);
+        }
     }
     return h;
 }

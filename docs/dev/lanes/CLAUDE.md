@@ -3351,3 +3351,14 @@ never edited afterwards.
   to ASan, and a necessary run is shielded from its own edge. It also adds
   §7.1 (factoring × lit-run 2×2) and §7.2 (the L-sweep).
 - `o64read_report.md` — lane o64read (2026-09-28): the [B108]/O-64 reading of `[OPT-LITSCAN]` S2a at `a32bc86e` (deliverables in `docs/dev/optloop/b108_reading.md`, the exec summary, and memcmp study §12).
+- **findb2_report.md** — lane `findb2` (opus, 2026-09-27): [FINDINGS] B2,
+  resolution + CLI + library, NO abi event (0 of 12,876 corpus
+  artifact-configs move against the branch point). `src/parse/rxt_find.c`
+  (S1/S2/S3, include_next, the default terminal by identity),
+  `--analysis` (fill-only), the `-I` lift, `--list-analyses`/
+  `--list-analysis NAME|FILE`, the `pcrec_options` fields,
+  `tests/findings` §6-§11 (fixtures #1-#22, REACH, witnesses, K65
+  give-up identity under bundles, the sampled slice with GIVEUP1=0, table
+  contract), the FINDINGS axis, S308-S317 (all detected locally). Read §3
+  for F-9: its per-attempt witness population is empty, so S314 is
+  detected through the per-compile half.

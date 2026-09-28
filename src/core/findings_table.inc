@@ -41,3 +41,6 @@ static const unsigned long long pcrec_find_tbl_counts_0[256] = {
 static const PcrecFindTblBlock pcrec_find_tbl[] = {
     { "default", "freq", 54, pcrec_find_tbl_serves_0, 1, pcrec_find_tbl_counts_0 },
 };
+static const PcrecFindTblBundle pcrec_find_tbl_bundles[] = {
+    { "default", NULL, 52 },
+};

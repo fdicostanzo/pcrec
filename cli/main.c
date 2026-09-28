@@ -424,6 +424,11 @@ typedef struct {
     const char *probe_construct;
     const char *features;
     const char *list_source;
+    /* [FINDINGS] B2 the two analysis listings (docs/spec/findings.md §6):
+     * `--list-analyses` (the store's names) and `--list-analysis X`, X a
+     * bundle NAME or a `.rxt` FILE (the per-target view). */
+    int         list_analyses;
+    const char *list_analysis;
     const char *target;
     const char **libdirs;
     size_t      nlibdirs, libcap;
@@ -496,6 +501,8 @@ typedef struct {
     X(EMIT_FACTS,       emit_facts,       PTR, "--emit-facts")           \
     X(PROBE_ASK,        probe_want,       PTR, "--probe-ask")            \
     X(LIST_SOURCE,      list_source,      PTR, "--list-source")          \
+    X(LIST_ANALYSES,    list_analyses,    INT, "--list-analyses")        \
+    X(LIST_ANALYSIS,    list_analysis,    PTR, "--list-analysis")        \
     X(FILES,            nfiles,           INT, "a file operand")
 
 typedef enum {
@@ -554,7 +561,8 @@ static int cli_modes_count(unsigned modes)
 #define CLI_MODES_REGISTRY_QUERY                                          \
     (CMB(LIST_SYNTAX) | CMB(LIST_DEFINITIONS) | CMB(LIST_VERBS) |         \
      CMB(LIST_FAMILIES) | CMB(LIST_AXES) | CMB(LIST_LIMITS) |             \
-     CMB(LIST_SCHEMA) | CMB(EXPLAIN))
+     CMB(LIST_SCHEMA) | CMB(EXPLAIN) | CMB(LIST_ANALYSES) |               \
+     CMB(LIST_ANALYSIS))
 
 /* `--count-groups` refuses the registry queries and nothing else: it TAKES
  * a pattern, so it composes with the pattern-bearing modes below it. */
@@ -616,10 +624,12 @@ static int cli_extras_clean(const CliState *st)
 }
 
 /* Appends `dir` to st->libdirs, growing the realloc'd array (doubling from 4)
- * as needed; diagnoses and returns 1 on a failed realloc. */
+ * as needed; diagnoses and returns 1 on a failed realloc. [FINDINGS] B2: the
+ * array is kept NULL-TERMINATED (one slot beyond `nlibdirs`), because it is
+ * also `pcrec_options.analysis_dirs`, the library's S2 search list. */
 static int libdir_push(CliState *st, const char *dir)
 {
-    if (st->nlibdirs == st->libcap) {
+    if (st->nlibdirs + 1 >= st->libcap) {
         size_t cap = st->libcap ? st->libcap * 2 : 4;
         const char **v = realloc(st->libdirs, cap * sizeof *v);
         if (!v) { perror("realloc"); return 1; }
@@ -627,6 +637,7 @@ static int libdir_push(CliState *st, const char *dir)
         st->libcap = cap;
     }
     st->libdirs[st->nlibdirs++] = dir;
+    st->libdirs[st->nlibdirs] = NULL;
     return 0;
 }
 
@@ -1006,6 +1017,34 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
         else if (!strcmp(a, "--list-limits")) st->list_limits = 1;
         else if (!strcmp(a, "--list-schema")) st->list_schema = 1;
         else if (!strcmp(a, "--count-groups")) st->count_groups = 1;
+        /* [FINDINGS] B2 `--analysis NAME` (or `=NAME`): the bundle a compile
+         * reads its rates from, FILL-ONLY against a target's config (D123-8
+         * item 2; `apply_target`). It sets a `pcrec_options` field, so a
+         * config's `pcrec` line could reach it — which the `.rxt` reader
+         * refuses by name before this parser ever sees that line. The name
+         * grammar is `src/core/findings.c`'s one rule. */
+        else if (!strcmp(a, "--analysis") || !strncmp(a, "--analysis=", 11)) {
+            const char *v;
+            if (a[10] == '=') v = a + 11;
+            else if (i + 1 >= argc) {
+                cli_err("missing value for %s", a);
+                return 1;
+            } else v = argv[++i];
+            if (!pcrec_find_name_ok(v, strlen(v))) {
+                cli_err("--analysis '%s': analysis names are LOWERCASE — a "
+                        "letter a-z, then a-z, 0-9, '_' or '-'", v);
+                return 1;
+            }
+            opt.analysis = v;
+        }
+        else if (!strcmp(a, "--list-analyses")) st->list_analyses = 1;
+        else if (!strcmp(a, "--list-analysis")) {
+            if (i + 1 >= argc) {
+                cli_err("missing value for %s", a);
+                return 1;
+            }
+            st->list_analysis = argv[++i];
+        }
         /* [DD-13b.W1.1] `--list-source FILE` — the `.rxt` SOURCE dump.
          * Takes its file as the option's VALUE, like --explain and
          * --probe-ask take theirs, rather than as the bare positional
@@ -1318,6 +1357,25 @@ static int apply_target(const CliState *cli, const RxtTarget *t,
                     pcrec_tune_token(ts.opt.tune), t->tune);
         ts.opt.tune = want;
     }
+    /* [FINDINGS] B2 `analysis` IS FILL-ONLY, NOT A THIRD EXCEPTION (D123-8
+     * item 2, D93): a target whose configs name an analysis gets THAT one,
+     * and the CLI's `--analysis` only fills a target whose configs name
+     * none. `tune`'s conflict shape above, with the same winner and a note
+     * naming both. An experiment is a config VARIANT in the file (design
+     * §3.2), which the file can show and `--list-source` can list; an
+     * invisible command-line override of what the file says is exactly
+     * what this rule refuses to be. `ts.opt.analysis` already carries the
+     * CLI's value (it is `cli->opt`'s copy), so the fill is the else arm. */
+    if (t->analysis) {
+        if (ts.opt.analysis && strcmp(ts.opt.analysis, t->analysis) != 0)
+            cli_err("%s:%zu: target '%s': CLI --analysis %s and this file's "
+                    "analysis %s disagree; using the file's value "
+                    "(--analysis is fill-only)",
+                    src_path, t->analysis_line, t->prefix,
+                    ts.opt.analysis, t->analysis);
+        ts.opt.analysis = t->analysis;
+    }
+
     /* `budget frames=` sizes the ARTIFACT's resume stack, which is
      * `--backtrack-frames`, not the caller-supplied buffer of §10 —
      * tests/harness/run.sh maps the same directive the same way. */
@@ -1632,11 +1690,36 @@ int main(int argc, char **argv)
      * both of which free it. `st.nfiles` being nonzero here is what a file
      * operand means, so this same test covers it: `!st.nfiles` already
      * implies `st.files` is untouched (NULL), nothing to free. */
-    if (!st.nfiles && (st.target || st.libdirs)) {
-        cli_err("%s applies to a file operand only",
-                st.target ? "--target" : "--lib-path");
+    if (!st.nfiles && st.target) {
+        cli_err("--target applies to a file operand only");
         free(st.libdirs);
         return 1;
+    }
+    /* [FINDINGS] B2 THE `-I` LIFT [r2 M-S7]: `-I` is also the ANALYSIS
+     * search path (design §4.1's S2), so it is legal wherever a bundle is
+     * RESOLVED — a file operand, a plain `--pattern` compile, and
+     * `--list-analysis` — and still refused everywhere else. `--analysis`
+     * has the same reach, except that `--list-analysis NAME` names its
+     * bundle itself (only the FILE view has targets to fill). The array is
+     * NULL-terminated (`libdir_push`), so it IS `analysis_dirs`. */
+    {
+        const unsigned m0 = cli_modes_active(&st);
+        const int la_file = st.list_analysis &&
+            !pcrec_find_name_ok(st.list_analysis, strlen(st.list_analysis));
+        const int resolves = st.nfiles || st.list_analysis ||
+                             (st.pattern && m0 == 0);
+        if ((st.libdirs && !resolves) ||
+            (st.opt.analysis && !(st.nfiles || la_file ||
+                                  (st.pattern && m0 == 0)))) {
+            cli_err("%s applies to a compile (a file operand or --pattern) "
+                    "or to --list-analysis%s only",
+                    st.libdirs && !resolves ? "--lib-path/-I" : "--analysis",
+                    st.libdirs && !resolves ? "" : " FILE");
+            free(st.libdirs);
+            free(st.files);
+            return 1;
+        }
+        st.opt.analysis_dirs = st.libdirs;
     }
 
     /* [REL-1.10] D118 item 2: `--pattern` and a FILE OPERAND never combine
@@ -1971,6 +2054,45 @@ int main(int argc, char **argv)
         return 0;
     }
 
+    /* [FINDINGS] B2 THE ANALYSIS LISTINGS (docs/spec/findings.md §6): two
+     * members of the registry-query relation — no pattern, no -o, one query
+     * at a time — dispatched here, ahead of that block, because they are the
+     * two whose `-I` list this function must free. `--list-analysis`'s
+     * value is a bundle NAME when it matches the name grammar (no `/`, no
+     * `.`), and a `.rxt` FILE otherwise: the per-target view [r2 M-S8]. */
+    if (st.list_analyses || st.list_analysis) {
+        char *v = NULL;
+        pcrec_error lerr = { 0 };
+        if (cli_modes_count(modes & CLI_MODES_REGISTRY_QUERY) > 1 ||
+            (modes & ~CLI_MODES_REGISTRY_QUERY)) {
+            cli_err("%s is a separate query; use one",
+                    st.list_analyses ? "--list-analyses" : "--list-analysis");
+            free(st.libdirs);
+            return 1;
+        }
+        if (pattern || outpath || flavour) {
+            cli_err("%s takes no pattern, no -o and no --flavour",
+                    st.list_analyses ? "--list-analyses" : "--list-analysis");
+            free(st.libdirs);
+            return 1;
+        }
+        if (st.list_analyses)
+            v = pcrec_find_list_names();
+        else if (pcrec_find_name_ok(st.list_analysis, strlen(st.list_analysis)))
+            v = pcrec_find_list_name(st.list_analysis, st.libdirs, &lerr);
+        else
+            v = pcrec_find_list_file(st.list_analysis, st.libdirs,
+                                     st.opt.analysis, &lerr);
+        free(st.libdirs);
+        if (!v) {
+            cli_err("%s", lerr.msg);
+            return 1;
+        }
+        fputs(v, stdout);
+        free(v);
+        return 0;
+    }
+
     /* Syntax queries answer from the registry and compile nothing, so they take
      * neither a pattern nor -o. They are checked before the pattern/-o
      * requirement and reject a mixed invocation rather than silently ignoring
@@ -1981,7 +2103,8 @@ int main(int argc, char **argv)
          * OTHER mode active" and keeps its own shape by ruling. */
         if (cli_modes_count(modes & CLI_MODES_REGISTRY_QUERY) > 1) {
             cli_err("--list-syntax, --list-definitions, --list-verbs, "
-                            "--list-families, --list-axes, --list-limits, --list-schema "
+                            "--list-families, --list-axes, --list-limits, --list-schema, "
+                            "--list-analyses, --list-analysis "
                             "and --explain are separate queries; use one");
             return 1;
         }
@@ -2164,6 +2287,7 @@ int main(int argc, char **argv)
                         "operand is a FILE now, never a pattern — see "
                         "--pattern)");
         usage(stderr);
+        free(st.libdirs);
         return 1;
     }
 
@@ -2191,6 +2315,7 @@ int main(int argc, char **argv)
                                      sizeof emsg) != 0) {
             cli_err("--pattern-esc: %s", emsg);
             pcrec_arena_free(&esc);
+            free(st.libdirs);
             return 1;
         }
         pattern = dec;
@@ -2201,7 +2326,7 @@ int main(int argc, char **argv)
     if (!to_stdout) {
         size_t len = strlen(outpath);
         hpath = malloc(len + 3);
-        if (!hpath) { perror("malloc"); pcrec_arena_free(&esc); return 1; }
+        if (!hpath) { perror("malloc"); pcrec_arena_free(&esc); free(st.libdirs); return 1; }
         strcpy(hpath, outpath);
         if (len > 2 && !strcmp(hpath + len - 2, ".c")) strcpy(hpath + len - 2, ".h");
         else strcat(hpath, ".h");
@@ -2214,6 +2339,7 @@ int main(int argc, char **argv)
         cli_err("%s (pattern offset %zu)", err.msg, err.pos);
         free(hpath);
         pcrec_arena_free(&esc);
+        free(st.libdirs);
         return 1;
     }
 
@@ -2232,5 +2358,6 @@ int main(int argc, char **argv)
     pcrec_output_free(&out);
     free(hpath);
     pcrec_arena_free(&esc);
+    free(st.libdirs);
     return rc;
 }

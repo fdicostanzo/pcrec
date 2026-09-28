@@ -27,6 +27,8 @@ Every pcrec command whose output is a DATA TABLE:
 | `--list-schema` | the `.rxt` FORMAT's own schema ([DD-13b.W23.1], `docs/spec/rxt_format.md`) | conforming producer today, and the FIRST to use the Sections mechanism below |
 | `--emit-ir` | the VM program listing ([DD-8], `docs/spec/ir_listing.md`) | conforming producer since 2026-09-19; the mechanism's THIRD producer and the first whose every table is a named section |
 | `--emit-facts` | the pattern-facts record listing ([PATFACTS] step 3.0, `docs/spec/facts_listing.md`) | conforming producer AT BIRTH (2026-09-26): two named sections, `facts` and `decisions`, no anonymous table |
+| `--list-analyses` | the analyses built into the library ([FINDINGS] B2, `docs/spec/findings.md` §8) | conforming producer AT BIRTH (2026-09-27): one anonymous table (a single-table dump, rule 2) |
+| `--list-analysis` | what one analysis NAME, or each target of one `.rxt` FILE, resolves to ([FINDINGS] B2, `docs/spec/findings.md` §8) | conforming producer AT BIRTH (2026-09-27): every table a named section (`chain`, `resolution`, one per data kind, `declarations`, `provenance`; or `targets`, `chain`, `resolution`). Its free-text columns — `question`, `reader`, `analyzer`, a provenance `value`, a `location` path — pass through the producer rule 5 escaping (`pcrec_sb_text`: a TAB or control byte becomes `\xNN`), since a user bundle's prose may carry a TAB; the hex `key` and decimal `count` columns need none by grammar. `tests/findings/run_findings_tests.sh` §11 checks HEADER TRUTHFULNESS on every section and the escaping on a TAB-bearing fixture |
 
 Future tabular surfaces adopt this contract AT BIRTH — a new table
 command that does not conform is a defect, not a style choice.

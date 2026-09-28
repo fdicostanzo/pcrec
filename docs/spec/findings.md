@@ -1,13 +1,14 @@
 # Findings — the contract (`[FINDINGS]`)
 
-**Status: B1 (2026-09-27).** This page is the contract for what pcrec reads
+**Status: B2 (2026-09-27).** This page is the contract for what pcrec reads
 from *findings* — measured facts about the subjects a build will see — and
 what it promises about them. It grows by step
 (`docs/design/findings/design.md` §13–§14): B1 wrote §1–§6 below (the data
 the compiler reads, the normalization, the per-kind NONE answers, the stamp);
-resolution, `--analysis`, `-I` and the listings are B2's, the analyzer's
-command line B3/B6's, `run-rarity` B4's, `cpfreq` B5's. Where a section is
-not yet built it says so. Design record: `docs/design/findings/design.md`;
+B2 wrote §7–§9 (resolution, naming an analysis, the listings, the library
+fields) and widened §2 and §6; the analyzer's command line is B3/B6's,
+`run-rarity` B4's, `cpfreq` B5's. Where a section is not yet built it says
+so. Design record: `docs/design/findings/design.md`;
 decisions D122, D123, D126.
 
 **The one promise that frames the rest: findings may change SPEED, never an
@@ -46,10 +47,12 @@ selection. Within one bundle at most one block may serve a given
 (query, encoding). A count above **`PCREC_MAX_FIND_COUNT`** (2^40,
 `limits.md` §3.7) is refused at parse, by that name.
 
-**The chain at B1 is the built-in `default` alone**, the shipped analysis
-compiled into `libpcrec` (§6). It declares `serves byte-rate when byte via
-unigram`, so under `-e byte` every reader reads its rates and under `-e utf8`
-the `byte-rate` answer is NONE.
+**The chain** is the named analysis, then its `include`, then that one's
+`include`, …, and always ends in the built-in `default` (§7). With no analysis
+named it is `default` alone, the shipped analysis compiled into `libpcrec`
+(§6). `default` declares `serves byte-rate when byte via unigram`, so with no
+analysis named, under `-e byte` every reader reads its rates and under
+`-e utf8` the `byte-rate` answer is NONE.
 
 ## 3. `unigram`: counts → byte-rate (the normalization)
 
@@ -138,6 +141,113 @@ compile does not parse it: `make gen-findings` pre-parses the same text into
 a committed table, and `tests/findings/` checks the table, the embedded text
 and the source file all agree.
 
-Not built at B1 (B2): naming an analysis (`analysis <name>` in a config,
-`--analysis`), the `-I` search path, a user's bundle, `--list-analyses` /
-`--list-analysis`.
+`--list-analyses` lists the store (§8).
+
+## 7. Resolution: from a name to the chain
+
+An analysis is named in exactly two places: a `config`'s `analysis <name>`
+line (`rxt_format.md`; one name, composed later-wins across `from`/`with`
+like `engine`), and `--analysis NAME` on the command line (or
+`pcrec_options.analysis`, §9). Names are lowercase: `[a-z][a-z0-9_-]*`.
+
+**`--analysis` only FILLS.** It names the analysis of a `--pattern` compile,
+and of each target of a file operand whose configs name none. It never
+overrides a config's own `analysis`; a target whose config names a different
+one gets the file's, with a non-fatal note on stderr (`cli.md` §1.1's
+file-wins rule — `--engine` stays its single exception). An experiment is a
+config VARIANT in the file (`config exp from base` + `analysis x`, and a
+target built `with exp`).
+
+**Three stops, searched in order, and nothing else** — no environment
+variable, no default directory, no working-directory lookup:
+
+| stop | searched | a name maps to |
+|---|---|---|
+| S1 | the bundles defined in the compiling `.rxt` file itself (never its `include "…"` fragments or its `lib` files), or a library caller's `analysis_source` | the bundle whose `analysis` line carries the name (a name defined twice in one file is a parse error) |
+| S2 | for each `-I DIR` in order (a library caller's `analysis_dirs`), the file `DIR/<name>.rxt` whose directory entry is EXACTLY `<name>.rxt` | that file's ONE bundle, when it is named `<name>`. A file that defines no bundle, or one of another name, FALLS THROUGH to the next stop with a note on stderr; a file defining two or more bundles is refused |
+| S3 | the store built into the library (§6) | by name |
+
+**The chain** starts at the first stop defining the selected name, then
+follows each bundle's `include <other>`: an `include` of the bundle's OWN name
+resolves starting at the stop AFTER the one it was found at (gcc's
+`#include_next` — the way to extend a shipped analysis under its own name),
+any other include from S1. Any other repeated (bundle, stop) is an include
+cycle and refused, naming the cycle. The chain holds at most
+**`PCREC_MAX_FIND_CHAIN`** (8, `limits.md` §3.7) links before its terminal.
+
+**The terminal is the built-in `default`, by identity, never by name**: a
+`default.rxt` in an `-I` directory does not move a compile that did not name
+it. An explicit `include <default>` IS a name lookup (and the way to extend
+the default); when it reaches the store's `default`, the terminal is not
+added a second time.
+
+**Answering a query** (§1's *answer*): the first block along the chain whose
+`serves` line names the query and lists the compile's encoding. Each query is
+answered from exactly one block, and every block is self-contained for the
+queries it serves.
+
+Resolution is EAGER: it runs before the pattern is parsed, so a bad name
+refuses even a pattern no reader would look at.
+
+| failure | behaviour |
+|---|---|
+| a name no stop defines | refused, naming the stops searched |
+| a name with an uppercase letter or another illegal byte | refused, naming the rule |
+| an include cycle, or a chain over `PCREC_MAX_FIND_CHAIN` | refused, naming the chain / the limit |
+| an `-I` file defining two or more bundles | refused, naming the file |
+| an `-I` file that fails to parse, or is over **`PCREC_MAX_FIND_BUNDLE_BYTES`** (1 MiB) | refused, with the parse's own diagnostic / by the limit's name |
+| an `-I` file that defines no bundle, or one of another name | a note, and the search continues |
+| the selected chain declares no query at all under this compile's `-e` | a note (every reader takes its NONE answer) |
+| the same name at two stops | not an error: the earlier stop shadows the later |
+
+## 8. The listings: `--list-analyses` and `--list-analysis`
+
+Both are `table_contract.md` producers, every table a named `#section`,
+every free-text cell escaped by the contract's own rule.
+
+**`--list-analyses`** — one row per analysis built into the library (the
+store). `-I` directories are never enumerated. Columns: `name`, `kinds`
+(canonical order `freq,cpfreq,bigram`), `serves` (`query@enc` pairs its own
+blocks answer), `include`, `source`/`license`/`retrieved` (its first block's
+provenance), `rows_digest`, `bytes` (the embedded text's size).
+`rows_digest` is a DIFFERENT hash from the stamp's: FNV-1a-64 over
+`pcrec-find-rows-1\0`, then per block its kind and a NUL followed by each
+nonzero `(key u8, count u64le)` in key order — it identifies a bundle's rows,
+where the stamp identifies what a compile consumed.
+
+**`--list-analysis NAME [-I DIR…]`** — the chain THIS invocation would resolve
+for `NAME`, then the named bundle's own data:
+
+| section | rows | columns |
+|---|---|---|
+| `chain` | one per link, in order | `link`, `bundle`, `stop` (`source` / `-I` / `store` / `store-default`), `location` (the file, for `-I`), `include` |
+| `resolution` | one per query × compile encoding | `query`, `encoding`, `link`, `bundle`, `kind`, `via`, `digest` — the exact digest a `<PREFIX>_FINDINGS` stamp would carry, or `none` |
+| `freq` (and later `cpfreq`/`bigram`) | the named bundle's own rows | `key`, `count`, and for `freq` the normalized `ppm` |
+| `declarations` | one per block | `kind`, `encoding`, `serves` (as written), `question`, `reader`, `analyzer` |
+| `provenance` | one per block × field written | `kind`, `field`, `value` |
+
+**`--list-analysis FILE [-I DIR…] [--analysis X]`** — the per-TARGET view,
+chosen when the value is not an analysis name (a path has a `.` or a `/`):
+what each target of the `.rxt` FILE resolves to after config joins and the
+fill-only `--analysis`.
+
+| section | rows | columns |
+|---|---|---|
+| `targets` | one per target | `target`, `configs` (its `with` list as written), `analysis`, `named_by` (`config` / `cli-fill` / `none`), `config_line` (the config that named it) |
+| `chain` | one per target × link | `target` + the name view's `chain` columns |
+| `resolution` | one per target × query × compile encoding | `target` + the name view's `resolution` columns |
+
+## 9. The library: `pcrec_options`
+
+`pcrec_options` carries the same surface (`lib/pcrec.h`):
+
+| field | meaning |
+|---|---|
+| `analysis` | the bundle name; NULL for none (the chain is `default` alone, byte-identical to a compile that predates these fields) |
+| `analysis_dirs` | a NULL-terminated list of S2 directories; NULL for none |
+| `analysis_source`, `analysis_source_len` | `.rxt` TEXT defining bundles, stop S1, parsed in the no-filesystem mode (a `lib` or `include "…"` line is refused — a buffer opens no file); NULL for none |
+
+The library PARSES: a caller hands text or directories, never pre-parsed
+values. A caller with no filesystem passes `analysis_source` and/or relies on
+the built-in analyses. Resolution failures refuse the compile through
+`pcrec_error` (§7's table); the two notes are written to stderr.

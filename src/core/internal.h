@@ -5262,6 +5262,9 @@ typedef struct {
     const char *tags;
     const char *oracle;
     const char *esc;
+    /* [FINDINGS] B2: a CONFIG row's own `analysis <name>` (AT_MOST_ONE),
+     * or NULL; composed by `cfg_merge`'s later-wins like `engine`. */
+    const char *analysis;
 } RxtRow;
 
 /* [DD-13b.W23.4] THE FOUR `#section` RECORD TYPES (format_design §2.24).
@@ -5284,6 +5287,11 @@ typedef struct {
     const char *block_name;    /* that block's own `name`, or NULL           */
     const char *source, *url, *ref, *retrieved, *license, *license_note,
                *fidelity, *adaptation, *attribution, *bytes, *sha256;
+    /* [FINDINGS] B2: for an analysis DATA block's provenance, that block's
+     * kind and line (the `block_*` fields above name its bundle); NULL/0
+     * for a pattern block's. */
+    const char *data_kind;
+    size_t      data_line;
 } RxtProv;
 
 typedef struct {
@@ -5363,6 +5371,9 @@ typedef struct {
     RxtServe           *serves;
     size_t              nserves, servecap;
     unsigned long long *counts;
+    /* [FINDINGS] B2: the block's declarations as written (NULL where
+     * absent), for `--list-analysis`; read by no compile. */
+    const char         *encoding, *question, *reader, *analyzer;
 } RxtFindBlock;
 
 typedef struct RxtSource RxtSource;
@@ -5473,6 +5484,11 @@ typedef struct {
 typedef struct RxtDefs {
     const RxtDef *v;
     size_t        n;
+    /* [FINDINGS] B2: the FILE this closure is rooted at — stop S1 of every
+     * analysis chain its targets resolve (design §4.1: the compiling file
+     * itself, never its `lib` closure). A property of the file for the same
+     * reason the closure is. */
+    const RxtSource *file;
 } RxtDefs;
 
 /* The `flags`-letter -> flags-word mapping, with ONE home so a letter
@@ -5534,6 +5550,12 @@ typedef struct {
                                 * by the CLI's OWN option parser, so a flag
                                 * cannot mean one thing on the command line
                                 * and another in a `config` block (§1.5)     */
+    /* [FINDINGS] B2: the composed config's `analysis` NAME (later-wins, one
+     * scalar — design §3.2), or NULL when no config names one; and the line
+     * of the config that supplied it (0 with none). The CLI's `--analysis`
+     * only FILLS a NULL here, never replaces it (D123-8 item 2). */
+    const char *analysis;
+    size_t      analysis_line;
     /* [DD-13b.W1.3] the file's whole definition closure, shared by every
      * target of one source (it is a property of the FILE, not of a target).
      * Never NULL — a file with no named block gets an empty set, so the
@@ -5740,6 +5762,26 @@ uint64_t            pcrec_tune_deny_flags(int tune);
  * Returns the (possibly new) root. Refuses through `pcrec_ctx_fail` exactly as
  * every other parse-tier pass does. */
 Ast *pcrec_rxt_compose(Ctx *cx, Ast *root);
+
+/* ---- [FINDINGS] B2 ANALYSIS RESOLUTION (src/parse/rxt_find.c) ----------
+ *
+ * `pcrec_find_chain_build` turns a bundle NAME into the chain a compile reads
+ * its rates from (docs/design/findings/design.md §4.3): S1 `s1` (may be
+ * NULL), S2 each `-I` directory of the NULL-terminated `dirs` (may be NULL),
+ * S3 the store, `include_next` on a self-include, the built-in `default` as
+ * the terminal by identity. `name` NULL gives `[default]`. Every link is
+ * COPIED into `a`. Returns 0, or -1 with `err` filled; `notes` prints §9's
+ * non-fatal notes (an `-I` file that falls through) to stderr.
+ *
+ * `pcrec_find_resolve` is the compile's caller: it takes S1 from
+ * `analysis_source` (parsed in the no-filesystem mode) or the `--source`
+ * file (`cx->defs->file`), builds the chain into this attempt's
+ * `Job.find.chain`, and refuses through `pcrec_ctx_fail`. `notes` is true on
+ * the first attempt only, so a retry prints nothing twice. */
+int  pcrec_find_chain_build(Arena *a, const char *name, const RxtSource *s1,
+                            const char *const *dirs, bool notes,
+                            PcrecFindChain *out, pcrec_error *err);
+void pcrec_find_resolve(Ctx *cx, bool notes);
 
 int pcrec_hexval(int c);   /* src/parse/parse.c — the one hex-digit decode site */
 
@@ -6377,6 +6419,20 @@ char *pcrec_syntax_verbs(void);
  * depend on that (the reject table probes every row's own `syntax`), so the
  * grouping gets its own view rather than collapsing theirs. Caller frees. */
 char *pcrec_syntax_families(void);
+
+/* [FINDINGS] B2 `src/dump/findings_dump.c` — the analysis listings
+ * (docs/spec/findings.md §6, table_contract.md at birth). `--list-analyses`:
+ * one row per bundle built into the library. `--list-analysis NAME`: the
+ * chain this invocation resolves (S2 = `dirs`, NULL-terminated or NULL),
+ * each (query, encoding)'s answer and the named bundle's own data.
+ * `--list-analysis FILE`: the per-target view, `fill` being the CLI's
+ * fill-only `--analysis` (or NULL). NULL with `err` filled on a refusal;
+ * caller frees. */
+char *pcrec_find_list_names(void);
+char *pcrec_find_list_name(const char *name, const char *const *dirs,
+                           pcrec_error *err);
+char *pcrec_find_list_file(const char *path, const char *const *dirs,
+                           const char *fill, pcrec_error *err);
 
 /* `src/dump/axes_dump.c` — renders the seven DFA layer-1 axes above plus the
  * VM/engine-selection axes (bits 4-14, and the coarse `--engine=` axis) as
