@@ -4,12 +4,25 @@
 # Usage: bash tests/harness/run.sh [file-or-dir ...]
 #   With no arguments, runs every *.rxt under <repo-root>/tests/, EXCEPT
 #   tests/known_fail/ (deferred-bug regressions that are expected to fail —
-#   see docs/dev/known_issues.md) and tests/findings/adversarial/ and
-#   tests/findings/witness/ ([FINDINGS] B2's fire/witness analysis bundles
+#   see docs/dev/known_issues.md) and tests/findings/adversarial/,
+#   tests/findings/witness/ and tests/findings/golden/ ([FINDINGS] B2's
+#   fire/witness analysis bundles and B6's golden analyzer-output fixtures
 #   — head-only .rxt-format DATA with no `pattern` block at all, read by
-#   `pcrec --analysis`/`-I` rather than run as test cases; the P-C2 floor
-#   below would otherwise score every one of them a hard failure). Pass
-#   such a file explicitly to run it.
+#   `pcrec --analysis`/`-I`, by `run_analyzer_pinned.py`'s byte diff, or not
+#   read by pcrec's own parser at all rather than run as test cases). Under
+#   `--dump` ONLY (never an ordinary run — see head_only.rxtin's own
+#   charter: "a file that runs nothing must not read as a clean pass"), a
+#   head-only file whose head DOES parse and carries no `pattern` row is
+#   recognised BY DECLARATION, not by this path list (the P-C2 floor below
+#   exempts it structurally — [tri86 triage, 2026-09-28], the follow-up
+#   findb2tri (8803ab8e) filed, scoped to `--dump` because that is the one
+#   mode whose own reason for running does not care whether a file ran
+#   zero cases); this path list additionally excludes tests/findings/golden/
+#   because five of its eight files use an analyzer-output dialect ("bigram"
+#   bundles, a relaxed provenance rule) `pcrec --list-source` does not parse
+#   AT ALL today, so declaration alone cannot recognise them even under
+#   `--dump` — the P-C2 floor never gets a chance to fire; something else
+#   does. Pass such a file explicitly to run it.
 #   Arguments may be individual .rxt files or directories (searched
 #   recursively for *.rxt).
 #
@@ -308,7 +321,8 @@ if [ $# -eq 0 ]; then
         < <(find "$ROOT_DIR/tests" -name '*.rxt' \
                  -not -path "*/known_fail/*" \
                  -not -path "*/findings/adversarial/*" \
-                 -not -path "*/findings/witness/*" | LC_ALL=C sort)
+                 -not -path "*/findings/witness/*" \
+                 -not -path "*/findings/golden/*" | LC_ALL=C sort)
 else
     for arg in "$@"; do
         if [ -d "$arg" ]; then
@@ -356,11 +370,25 @@ rxt_head_probe() {
     printf ''
 }
 assoc_new rxt_lsrc_cache
+assoc_new rxt_lsrc_fail
 # rxt_list_source_cached FILE -> sets RXT_LS_OUT (global) to pcrec
 # --list-source's output, cached by resolved path so no file's head is
 # parsed twice in one run.sh process (entry-set discovery below and
 # closure expansion further down both want it). Nonzero return, RXT_LS_OUT
-# unset/stale on failure.
+# carries pcrec's own diagnostic text on failure too — [tri86 triage,
+# 2026-09-28]: a FAILURE is cached the same as a success (`rxt_lsrc_fail`
+# is the failure half of the same key space), which used to be false ("...
+# unset/stale on failure" was this comment's own prior claim) and cost a
+# genuinely-unparseable head-bearing file FOUR real `pcrec --list-source`
+# invocations per run.sh process instead of one — the three callers below
+# each missing the cache in turn, plus the main per-file loop's own
+# now-removed second call for the diagnostic text this cache carries
+# just as well. MEASURED: tests/rxtsource's own C0a ("the two sources
+# disagree") went 39-calls-for-24-head-bearing-files to 24-for-24 the
+# moment a real failing-head population existed to expose it
+# ([FINDINGS] B6's five `tests/findings/golden/*.rxt` fixtures, written
+# ahead of the "bigram" bundle directive and a relaxed provenance rule
+# neither of which has landed in `pcrec --list-source` yet).
 #
 # A GLOBAL OUT-VARIABLE, DELIBERATELY NOT A `$(...)` RETURN: command
 # substitution forks a subshell, and `assoc_set`'s write into that
@@ -393,9 +421,12 @@ rxt_list_source_cached() {
     key="$(rxt_realpath "$f")"
     if assoc_has rxt_lsrc_cache "$key"; then
         RXT_LS_OUT="$(assoc_get rxt_lsrc_cache "$key")"
+        assoc_has rxt_lsrc_fail "$key" && return 1
         return 0
     fi
     if ! RXT_LS_OUT="$(pcrec_run "$PCREC" --list-source "$f" 2>&1)"; then
+        assoc_set rxt_lsrc_cache "$key" "$RXT_LS_OUT"
+        assoc_set rxt_lsrc_fail "$key" 1
         return 1
     fi
     assoc_set rxt_lsrc_cache "$key" "$RXT_LS_OUT"
@@ -2352,11 +2383,19 @@ for file in "${files[@]}"; do
         # each had to remember to keep.
         ls_out=""
         if ! rxt_list_source_cached "$file"; then
-            ls_out="$(pcrec_run "$PCREC" --list-source "$file" 2>&1)"
             # THE CALL FAILED. A distinct observable from "the file has no
             # pattern rows" (below): different exit status, and pcrec's own
             # diagnostic — which names the file, the line and the construct
-            # — is carried through verbatim rather than replaced.
+            # — is carried through verbatim rather than replaced. [tri86
+            # triage, 2026-09-28]: no second bare call here any more —
+            # `rxt_list_source_cached` now caches a FAILURE (and its
+            # diagnostic text) the same as a success, so $RXT_LS_OUT
+            # already carries it; a second real invocation just to fetch
+            # the same text pcrec already printed once was this file's own
+            # documented "one call per file" property failing to hold for
+            # exactly the population (a genuinely unparseable head) it
+            # existed to serve.
+            ls_out="$RXT_LS_OUT"
             record_fail "$file" 1 \
                 "HARNESS FAILURE: pcrec --list-source failed on this head-bearing file: $ls_out"
             continue
@@ -2390,10 +2429,22 @@ for file in "${files[@]}"; do
         done < <(printf '%s\n' "$ls_out" | LC_ALL=C grep -v '^#')
         if [ -z "$head_body_line" ]; then
             # A HEAD AND NO PATTERN BLOCKS. The grammar permits it (a pure
-            # library file is exactly that shape), so it is not an error
-            # HERE — the whole file is head, nothing is parsed below, and
-            # blocks_in_file stays 0, which the P-C2 floor at the end of
-            # this loop reports on its own. Two observables, never confused.
+            # library file, or an `analysis` bundle, is exactly that
+            # shape), so it is not an error HERE — the whole file is head,
+            # nothing is parsed below, and blocks_in_file stays 0. [tri86
+            # triage, 2026-09-28]: the P-C2 floor at the end of this loop
+            # reads this exact sentinel (RXT_SKIP_WHOLE_FILE) to tell
+            # "declared head-only" apart from "a corpus file that forgot
+            # its cases", the DECLARATION-based recognition findb2tri
+            # (8803ab8e) filed as a follow-up rather than built — but ONLY
+            # UNDER `--dump` (RXT_DUMP=1), whose own reason for running at
+            # all ("does the corpus PARSE") does not care whether a file
+            # ran zero cases; an ordinary run still fails a head-only file
+            # on this floor, by design (tests/rxtsource/fixtures/
+            # head_only.rxtin: "a file that runs nothing must not read as
+            # a clean pass"). Two observables, never confused, and never
+            # confused with a third question ("was this file asked to
+            # RUN anything at all").
             head_skip=$RXT_SKIP_WHOLE_FILE
         else
             head_skip=$((head_body_line - 1))
@@ -3303,7 +3354,30 @@ for file in "${files[@]}"; do
     # docs/design/tt4m_harness_batching.md item 1) is flushed HERE, before
     # the outer loop moves to the next file.
     [ "$batch_n" -gt 0 ] && flush_batch
-    if [ "$blocks_in_file" -eq 0 ]; then
+    # [tri86 triage, 2026-09-28] The P-C2 floor's REASON ("a file that
+    # runs nothing must not read as a clean pass", tests/rxtsource/
+    # fixtures/head_only.rxtin's own charter) is about RUNNING cases, and
+    # `--dump` never runs one, for any file (findb2tri's own comment two
+    # screens up: "`--dump` never RUNS a case at all ... so the floor's
+    # own reason does not apply to it"). So in `--dump` mode ONLY, a
+    # head-bearing file whose OWN head declared it — pcrec's
+    # `--list-source` told us, above, that it carries no `pattern` row at
+    # all (`head_skip == $RXT_SKIP_WHOLE_FILE`) — is not scored as a
+    # corpus file that forgot its cases; it is a pure
+    # `analysis`/`lib`/`config` DATA file, exactly the "pure library
+    # file" shape the head-boundary comment above already anticipated
+    # ("the grammar permits it ... not an error"). This is the
+    # DECLARATION-based recognition [FINDINGS] B2's triage (8803ab8e)
+    # filed as a follow-up in place of a path exclusion — scoped to
+    # `--dump`, where head_only.rxtin's own ordinary-run assertion ("the
+    # P-C2 floor must fire — otherwise a file that runs nothing reads as
+    # a clean pass") is unaffected and still holds: RUNNING run.sh on a
+    # head-only file (no `--dump`) still fails P-C2, by design, on
+    # EVERY head-only file including tests/findings/golden/'s — declared
+    # or not, `--dump` or its absence is what the reason turns on, not
+    # the file's own content.
+    if [ "$blocks_in_file" -eq 0 ] && \
+       { [ "$RXT_DUMP" -ne 1 ] || [ "$head_skip" -ne "$RXT_SKIP_WHOLE_FILE" ]; }; then
         record_fail "$file" 0 "no pattern blocks parsed from file (P-C2 floor)"
     fi
     # [DD-13b.W1.2] THE TARGET FLOOR, and it is the P-C2 floor's own shape

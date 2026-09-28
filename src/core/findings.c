@@ -39,6 +39,7 @@
  * compare would be a second mechanism with its own cost question and no
  * measured need (D77). */
 
+#include <stdlib.h>
 #include <string.h>
 
 #include "core/internal.h"
@@ -502,7 +503,13 @@ int pcrec_find_run_scan_index(const uint32_t *rate, const unsigned char *bytes,
     /* `bytes[0..n)`, n <= PCREC_MAX_REQ_RUN_SCAN by its one caller's own
      * bound (RbRun/ReqRun's `whole` array, src/facts/facts_derive.h,
      * src/facts/facts.h) — the only fact about `n` this file, below the
-     * facts layer, is entitled to lean on for a fixed buffer's size. */
+     * facts layer, is entitled to lean on for a fixed buffer's size.
+     * GUARDED, not merely trusted: a caller that violates the bound gets a
+     * loud stop here, never a silent `cand` overrun (this primitive has no
+     * Ctx to route a diagnostic through, so it fails the way sb.c's own
+     * no-error-channel sites do — coding_guide.md's fail-loudly rule, never
+     * silent truncation). */
+    if (n > PCREC_MAX_REQ_RUN_SCAN) abort();
     unsigned char cand[PCREC_MAX_REQ_RUN_SCAN];
     int i;
     for (i = 0; i < n; i++) cand[i] = bytes[n - 1 - i];

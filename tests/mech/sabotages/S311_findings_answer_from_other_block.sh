@@ -19,8 +19,8 @@ SAB_REACH='"$PCREC" -p rx -I "$TREE/tests/findings/adversarial" --analysis oneho
 SAB_REACH_EXPECT="REACH-FINDINGS-USER-BLOCK-ANSWERS"
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    nr = pcrec_find_normalize(fb->counts, fr->byte_rate);'
+SAB_BEFORE='    nr = pcrec_find_block_byte_rate(fb, sv->via, fr->byte_rate, NULL);'
 SAB_AFTER='    /* SABOTAGE S311: the answer read from the terminal block */
-    nr = pcrec_find_normalize(chain->links[chain->n - 1].nblocks
-                              ? chain->links[chain->n - 1].blocks[0].counts
-                              : fb->counts, fr->byte_rate);'
+    nr = pcrec_find_block_byte_rate(chain->links[chain->n - 1].nblocks
+                                    ? &chain->links[chain->n - 1].blocks[0]
+                                    : fb, sv->via, fr->byte_rate, NULL);'
