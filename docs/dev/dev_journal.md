@@ -26016,3 +26016,51 @@ the real ordering.
   (CENSUS 238/4051/29381, RUNSH 222/4051/29381; rxtsource 256/0); build and strict clean; pushed. The
   combined make test on 4a546fba is OWED: detached, log /private/tmp/…/mergetest.log. Frank asked for a
   reset before the next two lanes (PATFACTS 3.6 ∥ FINDINGS B5 build); wake.md carries the order.
+
+## 2026-09-28 — eighty-fourth session (09:0x–18:4x EDT): nine lanes merged, main a27d5d97 (abi 44), UNPUSHED pending one red
+
+**Owed from 83 closed:** the combined make test on 4a546fba was GREEN (nm only).
+
+**Merged to main today (all validated per lane; final full make test RED, see below):**
+- pf36 ([PATFACTS] 3.6: shared `pcrec_sat_add/mul`, 0/8,102 movers) — the last PATFACTS migration step.
+- litf5 ([OPT-LITSCAN] F5 / D127: lit-run floor 3, abi 42->43, S320). land84 proved the 429 VM movers are
+  EXACTLY the base artifacts with a 2-byte lit-run site (set equality, |A△B|=0).
+- findb5 ([FINDINGS] B5 build: cpfreq, encode-utf8/latin1, generated weblog/log bundles, S325-S328).
+- findtie ([FIND-TIE], Frank-ruled: the run reader's data tie follows its NONE order = rightmost; abi
+  43->44, S329). Default-path movers: 134 of 5,751 corpus artifacts under -e byte, 0 under utf8.
+- optc2 ([OPTLOOP] cycle 2 CLOSED, docs/dev/optloop/cycle2_close.md).
+- findb6 ([FINDINGS] B6: analyzer in C, analyze/ -> build/pcrec-analyze, python prototype deleted;
+  47/47 agreement proven before deletion; golden pinned-output check replaces it).
+- ucpthink (docs/dev/ucp_study.md), lacensus (docs/dev/lookaround_census.md) — studies only.
+- land85 + tri86 (landing fixes: registry limits reader, S311 re-anchor, findtie witness re-pins,
+  run_scan guard, FILEPIN ed51481b, run.sh bundle-by-declaration P-C2 gate + golden/ path exclusion,
+  ABI_EXPECT 44, rxtsource leg-A pipefail + cache fixes).
+- k70fix (K70: `(?r)` was a silent no-op under -e utf8 — WRONG ANSWERS, found by ucpthink; now refused
+  under encodings whose fold crosses ASCII; S332; implementation priced in K70).
+- Census pins at the k70fix merge combined by mechanism: CENSUS 247/4061/29398, RUNSH 223/4061/29398;
+  rxtsource 269/0 on the merged tree.
+
+**Rulings (Frank):** [FIND-TIE] do now; [FIND-UTF8-DEFAULT] filed; B4 HELD (option c — no reader has a
+trigger: C6 needs unbuilt S4, C3's cells are S1-dominated, C2 has only 16 synthetic movers); findb4's data
+half stays parked on lane/findb4 (e054d1ce) to land with S4. Phase-3 dispositions ALL AGREED
+(docs/dev/ph3_reassessment_2026-09-28.md: re-charter DD-11.5, CC-CLANG STEP 3, CLS-TREE; close-and-file
+DD-8; re-park the rest) — NOT YET APPLIED to plan.md (admin lane owed). [CC-CLANG] STEP 3 closes against
+the bench's standing cc axis (O-70; cc-gate census PARITY at a32bc86e, byte mode only).
+**Filed:** [FINDINGS-BENCH-TIERS] (default/declared/profiled/oracle-best; numbers first), [FIND-MIX]
+(weighted mixture — deferrable, the counts format already supports it), [UCP] (re-opened for thought;
+CLS-TREE prerequisite; Frank's normalize-then-recognize idea Q1-Q3), [XART-TABLES] (large tables linked
+once across artifacts), [UCD-RECORD] (one shared per-code-point property record table).
+**Bench:** O-68 (I-114 x86: reseed twin identical, one gcc ×0.957 cell), O-69 (I-116: per-process
+bimodality = CPU frequency governor, NOT layout — no [EMIT-ALIGN] trigger), O-70 (I-117), O-71 (utf8
+features/(*UTF)/(*UCP) — feeds [UCP]).
+
+**AT CLOSE — THE ONE RED:** final make test on a27d5d97 (log /private/tmp/claude-501/-Users-fdicostanzo-
+pcrec/final84/make_test.log; chain.log ends `FINAL84 DONE test=N mech=N`): test-codegen = nm only
+(accepted); test-corpus = 9 TIMED OUT, the SAME 9 as land85's run. tri86 had dismissed them as
+concurrent-load; REFUTED (this run had no concurrent lane). Triage lane tri87 running (regression vs
+margin; bisect today's merges if slower). MAIN IS UNPUSHED (origin at 4a546fba-era; ~66 commits ahead).
+
+**Lessons:** (1) Three lanes idled on a completion Monitor in one day — BOILERPLATE now forbids it
+(0caeb076). (2) "Reproduces clean standalone" is not an explanation for a timeout under make test's own
+-j load. (3) A census taken from a TRUNCATED pattern column silently drops patterns (lacensus: 493 vs 492).
+(4) Two lanes re-pinning one census conflict every time; combine deltas by mechanism at merge.
