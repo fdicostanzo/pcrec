@@ -339,7 +339,14 @@ record() { checks_recorded=$((checks_recorded + 1)); echo "RECORD: $*"; }
 # by the file's own awk census, not derived: found 238/4052/29385 against
 # the prior pin. Not under tests/known_fail/, so RUNSH_* moves by the same
 # +0/+1/+4 below.
-CENSUS_FILES=238
+# 2026-09-28 (lane tri86, triage of land85's `make test` red) — +8 files /
+# +0 blocks / +0 lines for tests/findings/golden/*.rxt ([FINDINGS] B6, lane
+# findb6, merged at c90e4481 — EIGHT golden analyzer-output fixtures this
+# pin was never re-derived for). Each is head-only (an `analysis <name>`
+# bundle, no `pattern` block), the exact shape findb2's own +16/+0/+0
+# entry above already measured, confirmed here by the same awk census run
+# per-file over tests/findings/golden/: 246/4052/29385.
+CENSUS_FILES=246
 CENSUS_BLOCKS=4052
 CENSUS_LINES=29385
 # 2026-09-23 (lane rxtfix, K34 closure via lane b2fix's [OPTLOOP.1.impl]
@@ -421,6 +428,17 @@ CENSUS_LINES=29385
 # COMBINED at the findb2 merge: k69fix's +1/+16/+70; findb2tri's +0 -> 222 / 4051 / 29381.
 # 2026-09-28 (lane litf5, [OPT-LITSCAN] F5, D127) — +0/+1/+4, the SAME delta
 # as CENSUS_* above (tests/litscan/litrun.rxt is not under tests/known_fail/).
+# 2026-09-28 (lane tri86, triage of land85's `make test` red) — UNCHANGED
+# (+0/+0/+0). Same shape as findb2tri's own entry above, one directory
+# over: run.sh's no-argument branch grows a THIRD exclusion,
+# tests/findings/golden/ ([FINDINGS] B6's 8 golden analyzer-output
+# fixtures, CENSUS_* above) — head-only `analysis` bundles carrying no
+# `pattern` block, PLUS (five of the eight) an analyzer-output dialect
+# `pcrec --list-source` cannot parse at all today (a "bigram" bundle
+# directive; a relaxed provenance rule) — so neither the general
+# declaration-based P-C2 exemption this same triage added nor an
+# unexempted P-C2 floor could score them sanely. Census now counts them
+# (246); run.sh's own population still does not (222).
 RUNSH_FILES=222
 RUNSH_BLOCKS=4052
 RUNSH_LINES=29385
@@ -553,9 +571,13 @@ kf_files=${kf_files:-0}; kf_blocks=${kf_blocks:-0}; kf_lines=${kf_lines:-0}
 # exclusion, same shape as known_fail's above — see RUNSH_FILES's own
 # note. Derived the identical way: a grep on the path, never a second
 # `find`, so this can never disagree with run.sh's own `-not -path` about
-# which files it names.
+# which files it names. [tri86 triage, 2026-09-28] widened to THREE
+# directories: tests/findings/golden/ joined run.sh's own `-not -path`
+# list (RUNSH_FILES's own note above) and must join this grep the same
+# way, or the reconciliation below would read a real population move as
+# a mismatch.
 read -r adv_files adv_blocks adv_lines <<EOF
-$(grep -E '/findings/(adversarial|witness)/' "$FILES" | tr '\n' '\0' | xargs -0 --no-run-if-empty awk '
+$(grep -E '/findings/(adversarial|witness|golden)/' "$FILES" | tr '\n' '\0' | xargs -0 --no-run-if-empty awk '
     FNR == 1 { files++ }
     /^pattern-esc[ \t]/ { blocks++; next }
     /^pattern[ \t]/ { blocks++; next }
@@ -576,10 +598,11 @@ else
   $((CENSUS_FILES - kf_files - adv_files))/$((CENSUS_BLOCKS - kf_blocks - adv_blocks))/$((CENSUS_LINES - kf_lines - adv_lines)),
   but run.sh's population is pinned at $RUNSH_FILES/$RUNSH_BLOCKS/$RUNSH_LINES.
   C1 reads all $CENSUS_FILES files and C2 reads run.sh's $RUNSH_FILES; the
-  two differ by exactly the two directories run.sh's no-argument branch
-  excludes (tests/known_fail/, tests/findings/adversarial/ and
-  tests/findings/witness/). If that stopped being true, one of the two
-  checks is now asserting a population it does not read."
+  two differ by exactly the directories run.sh's no-argument branch
+  excludes (tests/known_fail/, tests/findings/adversarial/,
+  tests/findings/witness/ and tests/findings/golden/). If that stopped
+  being true, one of the two checks is now asserting a population it
+  does not read."
 fi
 
 # ---------------------------------------------------------------------
@@ -644,18 +667,36 @@ head_files=$(wc -l < "$HEAD_FILE_LIST" | tr -d ' ')
 # reads a diff.
 #
 # [FINDINGS] B2 (lane findb2, 2026-09-27): run.sh's P-C2 floor
-# (`record_fail ... "no pattern blocks parsed from file"`) is unconditional
-# per-file, `--dump` included, and correctly so for run.sh's PRIMARY use
-# (a file that runs nothing must not read as a clean pass) — the
-# head_only.rxt fixture below asserts exactly that. But `--dump` never
-# RUNS a case at all, for any file, so the floor's own reason does not
-# apply to it, and the 16 head-bearing findings bundles (HEAD_FILE_LIST
-# above) are correctly zero-pattern by design. So: an exit status of 0 is
-# still the clean pass; a nonzero one is tolerated ONLY when legB.err's
-# non-banner content is EXACTLY one "no pattern blocks parsed" line per
-# HEAD_FILE_LIST entry and nothing else — a real dump defect (a crash, a
-# parse error, a P-C2 floor on a file that DOES carry a pattern) still
+# (`record_fail ... "no pattern blocks parsed from file"`) used to be
+# unconditional per-file, `--dump` included — so EVERY head-bearing,
+# zero-pattern file (the findings bundles, HEAD_FILE_LIST above) tripped
+# it, deliberately tolerated below by name. [tri86 triage, 2026-09-28]:
+# run.sh's P-C2 floor is now DECLARATION-gated (a file whose own head
+# says it carries no `pattern` row is not scored as though it forgot its
+# cases — tests/harness/run.sh's own head-boundary comment), so it no
+# longer fires on ANY head-bearing file in this corpus — `legb_pc2` below
+# is asserted at 0, not `$head_files`, and a nonzero reading is now a
+# REGRESSION (P-C2 firing where declaration says it should not) rather
+# than the healthy state.
+#
+# What that fix cannot make disappear: HEAD_PARSE_FAIL_FILES head-bearing
+# files whose OWN HEAD `pcrec --list-source` refuses to parse AT ALL
+# today — [FINDINGS] B6's golden analyzer-output fixtures, five of whose
+# eight use an analyzer dialect ("bigram" bundles; a relaxed provenance
+# rule) no wave has taught `pcrec --list-source` yet. Declaration cannot
+# recognise a file whose declaration itself does not parse — the P-C2
+# floor never gets a chance to run on them. Each contributes its own
+# TWO-LINE `[resolution]` diagnostic (the entry-closure walk cannot even
+# start) plus ONE `HARNESS FAILURE: pcrec --list-source failed` line
+# (the main loop's own head-bearing branch, carrying pcrec's diagnostic
+# verbatim) — three lines each, asserted by name rather than folded into
+# an unlabelled "other" bucket. So: an exit status of 0 is still the
+# clean pass; a nonzero one is tolerated ONLY when legB.err's non-banner
+# content is EXACTLY these two named populations and nothing else — a
+# real dump defect (a crash, a P-C2 floor on a file that DOES carry a
+# pattern, or a THIRD kind of failure this file has never seen) still
 # fails loudly.
+HEAD_PARSE_FAIL_FILES=5
 DUMP_B="$WORKDIR/legB.tsv"
 tB0=$(date +%s.%N)
 if xargs "$TIMEOUT_BIN" 900 bash "$RUNSH" --dump \
@@ -663,13 +704,20 @@ if xargs "$TIMEOUT_BIN" 900 bash "$RUNSH" --dump \
     :
 else
     legb_pc2=$(grep -c 'no pattern blocks parsed from file (P-C2 floor)' "$WORKDIR/legB.err" || true)
+    legb_harness_fail=$(grep -c 'HARNESS FAILURE: pcrec --list-source failed' "$WORKDIR/legB.err" || true)
+    legb_resolution=$(grep -c '\[resolution\]' "$WORKDIR/legB.err" || true)
     legb_other=$(grep -v -e '^\[MACPORT\]' \
                           -e 'no pattern blocks parsed from file (P-C2 floor)' \
+                          -e 'HARNESS FAILURE: pcrec --list-source failed' \
+                          -e '\[resolution\]' \
                           -e '^entry files: ' \
                           -e '^fragments spliced: ' \
         "$WORKDIR/legB.err" | grep -c . || true)
-    if [ "$legb_pc2" = "$head_files" ] && [ "$legb_other" = "0" ]; then
-        pass "leg B: run.sh --dump's only nonzero-exit cause is the P-C2 floor on exactly the $head_files known head-bearing (zero-pattern) file(s)"
+    if [ "$legb_pc2" = "0" ] && \
+       [ "$legb_harness_fail" = "$HEAD_PARSE_FAIL_FILES" ] && \
+       [ "$legb_resolution" = "$((HEAD_PARSE_FAIL_FILES * 2))" ] && \
+       [ "$legb_other" = "0" ]; then
+        pass "leg B: run.sh --dump's only nonzero-exit cause is the $HEAD_PARSE_FAIL_FILES known unparseable-head (golden analyzer-dialect) file(s); the P-C2 floor never fires (declaration-gated) on any of the $head_files head-bearing file(s)"
     else
         fail "leg B: run.sh --dump failed
 $(head -20 "$WORKDIR/legB.err")"
@@ -718,18 +766,41 @@ DUMP_A="$WORKDIR/legA.tsv"
 : > "$DUMP_A_RAW"
 tA0=$(date +%s.%N)
 a_rc=0
+a_parse_fail=0
+# [tri86 triage, 2026-09-28] THE `if !` BELOW WAS TESTING THE PIPELINE'S
+# EXIT STATUS, NOT PCREC'S: with no `set -o pipefail` in this script, a
+# `cmd1 | cmd2` pipeline's status is cmd2's (here, `awk`'s), which reads
+# from an EMPTY stdin and exits 0 whether or not `$PCREC` upstream failed
+# — so this loop's own error path had ZERO population (nothing in the
+# corpus made `pcrec --list-source` fail) until [FINDINGS] B6's five
+# golden analyzer-dialect fixtures existed to exercise it, and it turned
+# out to be silently inert: the failing file was skipped with no row and
+# no `fail`, and the loop simply continued rather than the `break` its
+# own comment intended. Fixed by capturing pcrec's OWN exit status
+# directly (a two-step capture, no pipe to lose it across) and tolerating
+# EXACTLY the known population by count — one more file failing is a new,
+# unplanned defect and still stops the differential; the known five do
+# not, since leg B (run.sh --dump) omits the identical five rows for the
+# identical reason and the A-vs-B diff below only needs the two dumps to
+# agree, not to be complete.
 while IFS= read -r f; do
     # the file name is prefixed as its own field by awk, not by sed: `\t`
     # in a sed replacement is a GNU extension, and a literal tab in the
     # script would be invisible to the next person to edit this line.
-    if ! "$TIMEOUT_BIN" 30 "$PCREC" --list-source "$f" \
-            | awk -v f="$f" 'BEGIN { OFS = "\t" } { print f, $0 }' \
-            >> "$DUMP_A_RAW"; then
-        fail "leg A: pcrec --list-source failed on $f"
-        a_rc=1
-        break
+    ls_one="$WORKDIR/legA_one.out"
+    if "$TIMEOUT_BIN" 30 "$PCREC" --list-source "$f" > "$ls_one" 2>&1; then
+        awk -v f="$f" 'BEGIN { OFS = "\t" } { print f, $0 }' "$ls_one" >> "$DUMP_A_RAW"
+    else
+        a_parse_fail=$((a_parse_fail + 1))
     fi
 done < "$FILES"
+if [ "$a_parse_fail" != "$HEAD_PARSE_FAIL_FILES" ]; then
+    fail "leg A: pcrec --list-source failed on $a_parse_fail file(s), expected exactly
+  $HEAD_PARSE_FAIL_FILES (tests/findings/golden/'s analyzer-dialect fixtures,
+  leg B's own HEAD_PARSE_FAIL_FILES above) — a different count is a new,
+  unaccounted-for parse failure, not this known population."
+    a_rc=1
+fi
 tA1=$(date +%s.%N)
 
 # ---------------------------------------------------------------------
@@ -830,19 +901,29 @@ a_blocks=$(awk -F'\t' '
     $2 ~ /^#/ { next }
     sect == "" && $2 == "pattern" { n++ }
     END { print n+0 }' "$DUMP_A_RAW")
-if [ "$a_head_rows" = "$head_files" ]; then
+# [tri86 triage, 2026-09-28] a_head_rows is $head_files MINUS
+# HEAD_PARSE_FAIL_FILES, not $head_files itself: a file whose own head
+# does not parse (leg A's own note above) emits NO row at all, main
+# table or otherwise — a genuinely unparseable head is a THIRD
+# observable, distinct from both "no head" and "a head that parses and
+# declares zero patterns", so it is subtracted here by name rather than
+# folded into either.
+a_head_rows_expect=$((head_files - HEAD_PARSE_FAIL_FILES))
+if [ "$a_head_rows" = "$a_head_rows_expect" ]; then
     if [ "$a_head_rows" = "0" ]; then
         pass "C1: leg A emitted 0 head-declaration rows (pcrec's own view of C0a)"
     else
         # [FINDINGS] B2 (lane findb2, 2026-09-27), same event as C0a's own
-        # note above: 16 head-bearing files, one `analysis` declaration row
-        # each, agreeing with the independent head_files census.
-        pass "C1: leg A emitted $a_head_rows head-declaration row(s), matching the $head_files head-bearing file(s) the independent census finds (pcrec's own view of C0a)"
+        # note above: head-bearing files that parse each emit one
+        # `analysis` declaration row, agreeing with the independent
+        # head_files census minus the HEAD_PARSE_FAIL_FILES that cannot.
+        pass "C1: leg A emitted $a_head_rows head-declaration row(s), matching the $head_files head-bearing file(s) the independent census finds minus $HEAD_PARSE_FAIL_FILES known unparseable-head file(s) (pcrec's own view of C0a)"
     fi
 else
     fail "C1: leg A emitted $a_head_rows head-declaration row(s), but the independent census
-  finds $head_files head-bearing file(s) — pcrec's own view of C0a disagrees
-  with C0a's own count."
+  finds $head_files head-bearing file(s) minus $HEAD_PARSE_FAIL_FILES known
+  unparseable-head file(s) = $a_head_rows_expect expected — pcrec's own
+  view of C0a disagrees with C0a's own count."
 fi
 if [ "$a_blocks" = "$CENSUS_BLOCKS" ]; then
     pass "C1: leg A emitted $a_blocks block rows (matches the census)"
@@ -1443,7 +1524,15 @@ C3_TIMEOUT=1
 # REPORT", never a crash of the whole run), but has no PASS/FAIL line to
 # report for that file, so it counts toward CRASHED rather than FAIL —
 # a real, permanent, EXPECTED bucket, not a discovery to triage.
-C3_CRASHED_HEADBEARING=16
+# [FINDINGS] B6 (lane findb6, merged c90e4481) — +8, the SAME shape:
+# tests/findings/golden/'s eight golden analyzer-output fixtures are
+# ALSO head-bearing (`analysis <name>`), so they refuse identically —
+# five of them for a SECOND, independent reason too (`pcrec
+# --list-source` itself cannot parse their analyzer dialect, leg A/B's
+# own HEAD_PARSE_FAIL_FILES above), which changes nothing here: this
+# oracle never gets far enough to notice which reason a head-bearing
+# file has. 16 + 8 = 24.
+C3_CRASHED_HEADBEARING=24
 # [DD-13b.W1.1 r46chk finding 3 / r46sem finding 6] THE "89" NAMED, WITH
 # ITS OWN UPDATE PROCEDURE. This is `tests/base/d27_k23_ambiguous_
 # decomposition.rxt`'s own expectation-line count (MEASURED: the census
