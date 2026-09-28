@@ -275,8 +275,11 @@ forced VM and synthetic, and no bench target names it.
   owed by the bench. **Revisit this recommendation when it lands.**
 - **The plan row should record, as `[OPT-LITSCAN]` F5 and F6** (manager's
   hand; this lane does not edit `plan.md`):
-  - **F5**: S2a's bench effect is codegen/placement-only on the named
-    population, the §1.5 lesson.
+  - **F5** has two parts:
+    - S2a's bench effect is codegen/placement-only on the named population,
+      the §1.5 lesson;
+    - the `L ≥ 3` narrowing candidate above, with its trigger. It sits
+      beside F4, which it would also dispose of.
   - **F6**: the dense-match pre-check cost, drafted in §5 below.
 
 ## 5. The unasked finding: the pre-check costs ×2-×9 on dense-match find-all
