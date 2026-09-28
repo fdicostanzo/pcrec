@@ -1,0 +1,72 @@
+== D. WHY A PATTERN IS OFF THE DFA (auto, compiled rows; VM rows by WHY kind)
+  compiled 3287: dfa 2185, vm 1101
+  VM by ENGINE_SEL: {'selected': 1056, 'declined-nullable-default': 36, 'collapsed-prefilter': 6, 'declined-nullable': 2, 'size-cap-retry': 1}
+      162  (?>...)
+      137  (?<=...)
+      115  (?=...)
+       87  (?!...)
+       81  \\1
+       73  \\K
+       73  (?<!...)
+       64  (?*a)
+       55  (?<*a)
+       50  possessive quantifier
+       30  (?1)
+       27  \\k<name>
+       20  \\g{-1}
+       19  \\2
+       18  ${name}
+       16  (?&name)
+       10  (?R)
+        8  (?P=n)
+        8  dfa overflow (dfa overflowed: >32000 states...)
+        6  (?0)
+        5  \\g<1>
+        5  \\g'1'
+        4  (?2)
+        3  (*pla:a)
+        3  (*nla:a)
+        3  (*negative_lookahead:a)
+        3  (*nlb:a)
+        3  (*negative_lookbehind:a)
+        2  \\8
+        2  (*positive_lookahead:a)
+        2  (*plb:a)
+        2  (*positive_lookbehind:a)
+        1  \\9
+        1  (*napla:a)
+        1  (*non_atomic_positive_lookahead:a)
+        1  (*naplb:a)
+        1  (*non_atomic_positive_lookbehind:a)
+  corpus VM n=1055: {'(?>...)': 158, '(?<=...)': 132, '(?=...)': 112, '(?!...)': 83, '\\\\1': 73, '\\\\K': 72, '(?<!...)': 69, '(?*a)': 63, '(?<*a)': 55, 'possessive quantifier': 50, '(?1)': 28, '\\\\k<name>': 25}
+  bench VM n=49: {'\\\\1': 8, 'dfa overflowed: >32000 states': 6, '(?>...)': 5, '(?<=...)': 5, '(?!...)': 4, '(?<!...)': 4, '(?=...)': 3, 'possessive quantifier': 2, '(?&name)': 2, '(?1)': 2, '\\\\k<name>': 2, '(?R)': 1}
+== D2. VM rows (no-captures) by the SET of excluding families present (lexical)
+      179  lookahead
+      176  lookbehind
+      126  backref
+      103  nonatomic-look
+       86  atomic
+       63  call
+       61  \K
+       43  possessive
+       21  call + lookbehind
+       19  backref + lookahead
+       18  var
+       18  lookahead + lookbehind
+       18  atomic + lookbehind
+       16  atomic + lookahead
+       14  lookahead + nonatomic-look
+       14  atomic + nonatomic-look
+       13  backref + nonatomic-look
+       11  atomic + call
+       10  call + lookahead
+        8  call + cond
+        8  dfa-overflow
+        7  atomic + call + cond
+        6  \K + call + lookahead
+        5  backref + call
+        5  call + cond + lookbehind
+  VM rows whose ONLY excluding families are lookarounds: 492 of 1101 (44.7%)
+    ... of which lookbehind only: 176
+    corpus: 475 of 1055
+    bench: 17 of 49

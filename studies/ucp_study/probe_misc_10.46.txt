@@ -1,0 +1,47 @@
+#version 10.46 2025-08-27
+UTF      b'(?i)\xc3\xa9'              b'\xc3\x89'            caseless e-acute, UTF only               match (0,2)
+UTF|UCP  b'(?i)\xc3\xa9'              b'\xc3\x89'            caseless e-acute, UTF|UCP                match (0,2)
+-        b'(?i)\xe9'                  b'\xc9'                caseless 0xE9 vs 0xC9, bytes, no UCP     nomatch
+UCP      b'(?i)\xe9'                  b'\xc9'                caseless 0xE9 vs 0xC9, bytes, UCP no UTF match (0,1)
+UTF      b'(?i)k'                     b'\xe2\x84\xaa'        caseless k vs KELVIN SIGN, UTF only      match (0,3)
+UTF|UCP  b'(?i)k'                     b'\xe2\x84\xaa'        caseless k vs KELVIN SIGN, UTF|UCP       match (0,3)
+UTF      b'(?i)[a-z]'                 b'\xc5\xbf'            caseless [a-z] vs LONG S, UTF only       match (0,2)
+UTF      b'(?i)[[:lower:]]'           b'\xc3\x89'            caseless [:lower:] vs E-acute cap, UTF   nomatch
+UTF|UCP  b'(?i)[[:lower:]]'           b'\xc3\x89'            caseless [:lower:] vs E-acute cap, UTF|UCP nomatch
+UTF|UCP  b'(?i)[[:lower:]]'           b'A'                   caseless [:lower:] vs A, UTF|UCP         nomatch
+UTF      b'(?i)[[:lower:]]'           b'A'                   caseless [:lower:] vs A, UTF             match (0,1)
+UTF|UCP  b'(?i)\\p{Ll}'               b'A'                   caseless \p{Ll} vs A, UTF|UCP            match (0,1)
+UTF|UCP  b'(?i)\\w'                   b'\xc3\x89'            caseless \w, UTF|UCP (control)           match (0,2)
+-        b'\\w'                       b'\xe9'                \w vs byte 0xE9, no flags                nomatch
+UCP      b'\\w'                       b'\xe9'                \w vs byte 0xE9, UCP no UTF (Latin-1 e-acute) match (0,1)
+UCP      b'\\d'                       b'\xb2'                \d vs byte 0xB2 superscript two, UCP no UTF nomatch
+UCP      b'\\s'                       b'\xa0'                \s vs byte 0xA0 NBSP, UCP no UTF         match (0,1)
+-        b'\\s'                       b'\x85'                \s vs byte 0x85 NEL, no flags            nomatch
+UCP      b'\\s'                       b'\x85'                \s vs byte 0x85 NEL, UCP no UTF          match (0,1)
+UCP      b'x\\b'                      b'x\xe9'               \b between x and 0xE9, UCP no UTF        nomatch
+-        b'x\\b'                      b'x\xe9'               \b between x and 0xE9, no flags          match (0,1)
+UTF      b'(*UCP)\\w'                 b'\xc3\xa9'            (*UCP) verb under UTF                    match (0,2)
+-        b'(*UCP)\\w'                 b'\xe9'                (*UCP) verb, bytes (no UTF)              match (0,1)
+-        b'(*UTF)(*UCP)\\w'           b'\xc3\xa9'            (*UTF)(*UCP) both verbs                  match (0,2)
+-        b'(*UCP)(*UTF)\\w'           b'\xc3\xa9'            (*UCP)(*UTF) order swapped               match (0,2)
+UTF      b'a(*UCP)\\w'                b'a\xc3\xa9'           (*UCP) not at start                      COMPILE-ERROR 160 @6: (*VERB) not recognized or malformed
+UTF      b'(?i)(*UCP)\\w'             b'\xc3\xa9'            (*UCP) after an option setting           COMPILE-ERROR 160 @9: (*VERB) not recognized or malformed
+UTF|UCP  b'(?aD)\\d'                  b'\xd9\xa3'            (?aD): \d ASCII under UCP                nomatch
+UTF|UCP  b'(?aW)\\w'                  b'\xc3\xa9'            (?aW): \w ASCII under UCP                nomatch
+UTF|UCP  b'(?aS)\\s'                  b'\xc2\xa0'            (?aS): \s ASCII under UCP                nomatch
+UTF|UCP  b'(?aW)x\\b'                 b'x\xc3\xa9'           (?aW): does \b follow the \w restriction? match (0,1)
+UTF|UCP  b'(?aP)[[:alpha:]]'          b'\xc3\xa9'            (?aP): POSIX ASCII under UCP             nomatch
+UTF|UCP  b'(?aT)[[:digit:]]'          b'\xd9\xa3'            (?aT): [:digit:] ASCII, rest UCP         nomatch
+UTF|UCP  b'(?a)\\w'                   b'\xc3\xa9'            (?a): all ASCII restrictions             nomatch
+UTF      b'(?-a)\\w'                  b'\xc3\xa9'            (?-a) under UTF only                     nomatch
+UTF|UCP  b'(?i)(?r)k'                 b'\xe2\x84\xaa'        (?r) caseless-restrict: k vs KELVIN      nomatch
+UTF      b'(?i)(?r)k'                 b'\xe2\x84\xaa'        (?r) caseless-restrict, UTF only: k vs KELVIN nomatch
+UTF      b'(?r)(?i)k'                 b'\xe2\x84\xaa'        (?r) before (?i), UTF only               nomatch
+UTF      b'(?i)(?r)s'                 b'\xc5\xbf'            (?r) UTF only: s vs LONG S               nomatch
+UTF      b'(?i)(?r)[a-z]'             b'\xe2\x84\xaa'        (?r) UTF only: [a-z] vs KELVIN           nomatch
+UTF      b'(?i)(?r)\xe2\x84\xaa'      b'k'                   (?r) UTF only: KELVIN pattern vs k       nomatch
+UTF      b'(?i)(?r)\\x{e9}'           b'\xc3\x89'            (?r) UTF only: \xe9 vs E-acute cap (non-ASCII pair survives) match (0,2)
+UTF|UCP  b'\\b\xd0\x9c\xd0\xbe\xd1\x81\xd0\xba\xd0\xb2\xd0\xb0\\b' b' \xd0\x9c\xd0\xbe\xd1\x81\xd0\xba\xd0\xb2\xd0\xb0 ' asr-b-cyr-ucp shape                      match (1,13)
+UTF      b'\\b\xd0\x9c\xd0\xbe\xd1\x81\xd0\xba\xd0\xb2\xd0\xb0\\b' b' \xd0\x9c\xd0\xbe\xd1\x81\xd0\xba\xd0\xb2\xd0\xb0 ' asr-b-cyr shape (no UCP)                 nomatch
+UTF|UCP  b'\\d{4}'                    b'\xd9\xa3\xd9\xa4\xd9\xa5\xd9\xa6' cls-d-ucp shape                          match (0,8)
+UTF|UCP  b'a\\sb'                     b'a\xc2\xa0b'          cls-s-ucp shape                          match (0,4)

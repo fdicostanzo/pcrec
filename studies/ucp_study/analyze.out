@@ -1,0 +1,68 @@
+== 10.46
+UTF  \w == [A-Za-z0-9_]                      EQUAL   (|A|=63 |B|=63, A-B=0, B-A=0)
+UTF  \s == [\t\n\v\f\r ]                     EQUAL   (|A|=6 |B|=6, A-B=0, B-A=0)
+UCP  \w == \p{Xwd}                           EQUAL   (|A|=144969 |B|=144969, A-B=0, B-A=0)
+UCP  \w == [\p{L}\p{N}\p{Mn}\p{Pc}]          EQUAL   (|A|=144969 |B|=144969, A-B=0, B-A=0)
+UCP  \w == [\p{L}\p{N}_] (pre-10.43 def)     DIFFER  (|A|=144969 |B|=142940, A-B=2029, B-A=0)  A-B e.g. ['0x300', '0x301', '0x302', '0x303', '0x304', '0x305'] B-A e.g. []
+UCP  \d == \p{Nd}                            EQUAL   (|A|=760 |B|=760, A-B=0, B-A=0)
+UCP  \s == \p{Xsp}                           EQUAL   (|A|=26 |B|=26, A-B=0, B-A=0)
+UCP  \s == \p{Xps}                           EQUAL   (|A|=26 |B|=26, A-B=0, B-A=0)
+UCP  \s == \h|\v                             EQUAL   (|A|=26 |B|=26, A-B=0, B-A=0)
+UCP  \h unchanged by UCP                     EQUAL   (|A|=19 |B|=19, A-B=0, B-A=0)
+UCP  \v unchanged by UCP                     EQUAL   (|A|=7 |B|=7, A-B=0, B-A=0)
+UCP  [:alpha:] == \p{L}                      EQUAL   (|A|=141028 |B|=141028, A-B=0, B-A=0)
+UCP  [:digit:] == \p{Nd}                     EQUAL   (|A|=760 |B|=760, A-B=0, B-A=0)
+UCP  [:alnum:] == \p{Xan}                    EQUAL   (|A|=142939 |B|=142939, A-B=0, B-A=0)
+UCP  [:space:] == \p{Xps}                    EQUAL   (|A|=26 |B|=26, A-B=0, B-A=0)
+UCP  [:word:] == \w                          EQUAL   (|A|=144969 |B|=144969, A-B=0, B-A=0)
+UCP  [:lower:] == \p{Ll}                     EQUAL   (|A|=2258 |B|=2258, A-B=0, B-A=0)
+UCP  [:upper:] == \p{Lu}                     EQUAL   (|A|=1858 |B|=1858, A-B=0, B-A=0)
+UCP  [:blank:] == \h                         EQUAL   (|A|=19 |B|=19, A-B=0, B-A=0)
+UCP  [:cntrl:] == \p{Cc}                     EQUAL   (|A|=65 |B|=65, A-B=0, B-A=0)
+UCP  [:xdigit:] vs UTF [:xdigit:]            DIFFER  (|A|=44 |B|=22, A-B=22, B-A=0)  A-B e.g. ['0xff10', '0xff11', '0xff12', '0xff13', '0xff14', '0xff15'] B-A e.g. []
+UCP  [:punct:] == \p{P} | (\p{S} & ASCII)    EQUAL   (|A|=864 |B|=864, A-B=0, B-A=0)
+UCP  (?i)[:lower:] == [:lower:]  (NO fold)   EQUAL   (|A|=2258 |B|=2258, A-B=0, B-A=0)
+UTF  (?i)[:lower:] == [A-Za-z]  (folds)      EQUAL   (|A|=52 |B|=52, A-B=0, B-A=0)
+UCP  (?i)\p{Ll} == (?i)\p{Lu}                EQUAL   (|A|=4147 |B|=4147, A-B=0, B-A=0)
+UTF  (?i)\p{Ll} == UCP (?i)\p{Ll}            EQUAL   (|A|=4147 |B|=4147, A-B=0, B-A=0)
+UCP  (?i)\p{Ll} vs \p{Ll}|\p{Lu}             DIFFER  (|A|=4147 |B|=4116, A-B=31, B-A=0)  A-B e.g. ['0x1c5', '0x1c8', '0x1cb', '0x1f2', '0x1f88', '0x1f89'] B-A e.g. []
+UCP-indep \p{Xwd} (UTF == UTF|UCP)           EQUAL   (|A|=144969 |B|=144969, A-B=0, B-A=0)
+UCP-indep \p{Nd} (UTF == UTF|UCP)            EQUAL   (|A|=760 |B|=760, A-B=0, B-A=0)
+UCP-indep \p{Xsp} (UTF == UTF|UCP)           EQUAL   (|A|=26 |B|=26, A-B=0, B-A=0)
+UCP-indep \p{L} (UTF == UTF|UCP)             EQUAL   (|A|=141028 |B|=141028, A-B=0, B-A=0)
+UCP \w members >= 0x80: 144906 of 144969
+UCP \w intervals: 930
+== 10.48
+UTF  \w == [A-Za-z0-9_]                      EQUAL   (|A|=63 |B|=63, A-B=0, B-A=0)
+UTF  \s == [\t\n\v\f\r ]                     EQUAL   (|A|=6 |B|=6, A-B=0, B-A=0)
+UCP  \w == \p{Xwd}                           EQUAL   (|A|=149665 |B|=149665, A-B=0, B-A=0)
+UCP  \w == [\p{L}\p{N}\p{Mn}\p{Pc}]          EQUAL   (|A|=149665 |B|=149665, A-B=0, B-A=0)
+UCP  \w == [\p{L}\p{N}_] (pre-10.43 def)     DIFFER  (|A|=149665 |B|=147597, A-B=2068, B-A=0)  A-B e.g. ['0x300', '0x301', '0x302', '0x303', '0x304', '0x305'] B-A e.g. []
+UCP  \d == \p{Nd}                            EQUAL   (|A|=770 |B|=770, A-B=0, B-A=0)
+UCP  \s == \p{Xsp}                           EQUAL   (|A|=26 |B|=26, A-B=0, B-A=0)
+UCP  \s == \p{Xps}                           EQUAL   (|A|=26 |B|=26, A-B=0, B-A=0)
+UCP  \s == \h|\v                             EQUAL   (|A|=26 |B|=26, A-B=0, B-A=0)
+UCP  \h unchanged by UCP                     EQUAL   (|A|=19 |B|=19, A-B=0, B-A=0)
+UCP  \v unchanged by UCP                     EQUAL   (|A|=7 |B|=7, A-B=0, B-A=0)
+UCP  [:alpha:] == \p{L}                      EQUAL   (|A|=145672 |B|=145672, A-B=0, B-A=0)
+UCP  [:digit:] == \p{Nd}                     EQUAL   (|A|=770 |B|=770, A-B=0, B-A=0)
+UCP  [:alnum:] == \p{Xan}                    EQUAL   (|A|=147596 |B|=147596, A-B=0, B-A=0)
+UCP  [:space:] == \p{Xps}                    EQUAL   (|A|=26 |B|=26, A-B=0, B-A=0)
+UCP  [:word:] == \w                          EQUAL   (|A|=149665 |B|=149665, A-B=0, B-A=0)
+UCP  [:lower:] == \p{Ll}                     EQUAL   (|A|=2283 |B|=2283, A-B=0, B-A=0)
+UCP  [:upper:] == \p{Lu}                     EQUAL   (|A|=1886 |B|=1886, A-B=0, B-A=0)
+UCP  [:blank:] == \h                         EQUAL   (|A|=19 |B|=19, A-B=0, B-A=0)
+UCP  [:cntrl:] == \p{Cc}                     EQUAL   (|A|=65 |B|=65, A-B=0, B-A=0)
+UCP  [:xdigit:] vs UTF [:xdigit:]            DIFFER  (|A|=44 |B|=22, A-B=22, B-A=0)  A-B e.g. ['0xff10', '0xff11', '0xff12', '0xff13', '0xff14', '0xff15'] B-A e.g. []
+UCP  [:punct:] == \p{P} | (\p{S} & ASCII)    EQUAL   (|A|=865 |B|=865, A-B=0, B-A=0)
+UCP  (?i)[:lower:] == [:lower:]  (NO fold)   EQUAL   (|A|=2283 |B|=2283, A-B=0, B-A=0)
+UTF  (?i)[:lower:] == [A-Za-z]  (folds)      EQUAL   (|A|=52 |B|=52, A-B=0, B-A=0)
+UCP  (?i)\p{Ll} == (?i)\p{Lu}                EQUAL   (|A|=4200 |B|=4200, A-B=0, B-A=0)
+UTF  (?i)\p{Ll} == UCP (?i)\p{Ll}            EQUAL   (|A|=4200 |B|=4200, A-B=0, B-A=0)
+UCP  (?i)\p{Ll} vs \p{Ll}|\p{Lu}             DIFFER  (|A|=4200 |B|=4169, A-B=31, B-A=0)  A-B e.g. ['0x1c5', '0x1c8', '0x1cb', '0x1f2', '0x1f88', '0x1f89'] B-A e.g. []
+UCP-indep \p{Xwd} (UTF == UTF|UCP)           EQUAL   (|A|=149665 |B|=149665, A-B=0, B-A=0)
+UCP-indep \p{Nd} (UTF == UTF|UCP)            EQUAL   (|A|=770 |B|=770, A-B=0, B-A=0)
+UCP-indep \p{Xsp} (UTF == UTF|UCP)           EQUAL   (|A|=26 |B|=26, A-B=0, B-A=0)
+UCP-indep \p{L} (UTF == UTF|UCP)             EQUAL   (|A|=145672 |B|=145672, A-B=0, B-A=0)
+UCP \w members >= 0x80: 149602 of 149665
+UCP \w intervals: 939

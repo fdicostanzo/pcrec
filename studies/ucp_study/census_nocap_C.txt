@@ -1,0 +1,11 @@
+== C. \b/\B POPULATION ROUTES (compiled rows only)
+  corpus  n=105  own-enc engine {'vm': 9, 'dfa': 96} | under -e utf8 {'vm': 9, 'dfa': 96} | lookaround rewrite {'vm': 105}
+          DFA under utf8 -> VM after rewrite: 96 (91.4%)
+  bench   n=27  own-enc engine {'dfa': 18, 'vm': 9} | under -e utf8 {'dfa': 18, 'vm': 9} | lookaround rewrite {'vm': 26, 'REFUSED': 1}
+          DFA under utf8 -> VM after rewrite: 17 (63.0%)
+          rewrite REFUSED: 1 e.g. pcrec: pattern too large: 1196259 bytes of emitted C source (limit 1000000, ~198 KB .o). Lower a rep
+  all     n=130  own-enc engine {'vm': 18, 'dfa': 112} | under -e utf8 {'vm': 18, 'dfa': 112} | lookaround rewrite {'vm': 129, 'REFUSED': 1}
+          DFA under utf8 -> VM after rewrite: 111 (85.4%)
+          rewrite REFUSED: 1 e.g. pcrec: pattern too large: 1196259 bytes of emitted C source (limit 1000000, ~198 KB .o). Lower a rep
+
+== D. WHY A PATTERN IS OFF THE DFA (auto, compiled rows; VM rows by WHY kind)
