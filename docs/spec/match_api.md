@@ -2033,7 +2033,31 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `42` on every artifact today (K69 bumped it from 41,
+- **`rx_info.abi` is `43` on every artifact today ([OPT-LITSCAN] F5 bumped it
+  from 42, 2026-09-28, D127: A TWO-BYTE VM LITERAL RUN KEEPS THE BYTE
+  CHAIN).** S2a's one-compare form (abi 41) applied to every VM literal run
+  of two or more consecutive one-byte literals; the `[B108]` read
+  (`docs/dev/optloop/b108_reading.md`) measured a two-byte run's compare as
+  the smallest gain in the whole L-sweep on a matching subject (0.929x) and
+  a real per-call regression on a failing one (`asr-lb-fixed`, +30% — a
+  two-byte compare amortizes nothing a two-node early-exit byte chain does
+  not already have). The floor moves from two bytes to three, in
+  `pcrec_lit_run`'s own predicate (`src/core/cpset.c`) — the one node-grain
+  fact the VM's chain emission, cost walk and slot walk all share — so a
+  declined two-byte pair falls through to the ordinary per-element path,
+  which IS the pre-S2a byte chain; no new deny flag, `-fno-lit-run`
+  unchanged. The movers are exactly the VM (or VM-hybrid) artifacts whose
+  ONLY lit-run sites were two-byte runs, which now return to the byte chain
+  and lose `<PREFIX>_VM_LIT_RUNS`' count for that site along with the
+  compare's bytes; an artifact with no two-byte-only site is unaffected.
+  `<PREFIX>_VM_PROGRAM_BYTES` moves with the program text on every mover; no
+  struct offset moves and no `rx_info` member is added or changed. NO ANSWER
+  AND NO GIVE-UP MOVES: the byte chain accepts exactly the bytes the compare
+  accepted, and the step, work and node budgets charge what the compare
+  charged (`limits.md` §3.1, narrowed to say so only where the compare
+  replaces a real chain). The island's single-child trie chain is untouched
+  (a different mechanism sharing only the P4 primitive).
+- **`rx_info.abi` was `42` (K69 bumped it from 41,
   2026-09-27: A CALL'S NULLABILITY IS THE LEAST FIXPOINT).** A subroutine
   call is nullable iff its callee's minimum width is 0 (`u.call.minw`'s own
   least fixpoint, published by the call graph before the pattern-facts E1
@@ -3304,13 +3328,16 @@ for `_VM_CLS_FOLDS`' reason.**
 ```
 
 **The IFF: it is the number of literal-run compares this artifact's VM
-program writes** — a run of two or more one-byte literals in a
-concatenation, and an alternation island's single-child trie chain, each
-compared as one bounds check and one constant-length `memcmp`
-(`docs/spec/tuning.md` §2.31). UNCONDITIONAL on every VM artifact, hybrids
-included, never defined on a pure-DFA artifact, `0` under `-fno-lit-run`.
-A COUNT for the two entries above' reason. What a consumer may NOT conclude:
-anything about the answers, which are identical either way.
+program writes** — a run of three or more one-byte literals in a
+concatenation ([OPT-LITSCAN] F5, `abi` 43, D127, narrowed from two: a
+two-byte run reads cheaper as its own two-node byte chain, `tuning.md`
+§2.31), and an alternation island's single-child trie chain (unaffected by
+F5's floor, its own mechanism), each compared as one bounds check and one
+constant-length `memcmp` (`docs/spec/tuning.md` §2.31). UNCONDITIONAL on
+every VM artifact, hybrids included, never defined on a pure-DFA artifact,
+`0` under `-fno-lit-run`. A COUNT for the two entries above' reason. What a
+consumer may NOT conclude: anything about the answers, which are identical
+either way.
 
 **[OPT-1], 2026-08-25: two more (b) macros —
 `<PREFIX>_FAST_FRAMES` and `<PREFIX>_FAST_TRAIL`.** They report the

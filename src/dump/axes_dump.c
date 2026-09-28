@@ -605,12 +605,14 @@ static void emit_predicate_axes(StrBuf *sb)
                      0, 0, "", "always (fallback) — the class keeps its singleton/range/bitmap shape");
     }
     /* [OPT-LITSCAN] S2a lit-run — §2.31. RX_VM_LIT_RUNS is an ACTIVITY
-     * COUNT, stamp_value left empty on both rows for alt-island's reason. */
+     * COUNT, stamp_value left empty on both rows for alt-island's reason.
+     * F5 (D127, abi 43) narrowed the floor from two to three: it lives in
+     * pcrec_lit_run itself, so this row's prose narrows with it. */
     {
         PredAxis p = { "lit-run", NULL, "RX_VM_LIT_RUNS", "", 0, NULL, 0, NULL, NULL, NULL };
         emit_pred_row(sb, &p, 1, "run", "",
                      PCREC_NO_LIT_RUN, 0, "",
-                     "per VM literal run: two or more consecutive one-byte literals on one concatenation (pcrec_lit_run), or an island's single-child trie chain, compared as one bounds check and one constant-length memcmp");
+                     "per VM literal run: three or more consecutive one-byte literals on one concatenation (pcrec_lit_run; a two-byte pair keeps its own byte chain), or an island's single-child trie chain, compared as one bounds check and one constant-length memcmp");
         emit_pred_row(sb, &p, 2, "denied", "",
                      0, 0, "", "always (fallback) — one per-byte compare per literal");
     }

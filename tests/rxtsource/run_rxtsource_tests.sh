@@ -329,9 +329,19 @@ record() { checks_recorded=$((checks_recorded + 1)); echo "RECORD: $*"; }
 # RUNSH_* move by the same +16/+0/+0: 237 / 4035 / 29311.
 # COMBINED at the findb2 merge (2026-09-28, manager): k69fix +1/+16/+70 and
 # findb2 +16/+0/+0 from the same base 221/4035/29311 -> 238 / 4051 / 29381.
+# 2026-09-28 (lane litf5, [OPT-LITSCAN] F5, D127) — +0 files / +1 block /
+# +4 lines for tests/litscan/litrun.rxt: F5's floor (pcrec_lit_run, len < 3)
+# took the file's shared two-byte witness `xy(a|ab)c` below the compare form,
+# widened in place to `xyz(a|ab)c` (no block/line count change — same
+# pattern shape, same 5 m/n lines), the "shortest run" block relabelled in
+# place (bare `ab`, no count change), and ONE NEW block added as the new
+# shortest-compare witness (`pattern abc` + 4 m/n lines: m/n/n/m). Measured
+# by the file's own awk census, not derived: found 238/4052/29385 against
+# the prior pin. Not under tests/known_fail/, so RUNSH_* moves by the same
+# +0/+1/+4 below.
 CENSUS_FILES=238
-CENSUS_BLOCKS=4051
-CENSUS_LINES=29381
+CENSUS_BLOCKS=4052
+CENSUS_LINES=29385
 # 2026-09-23 (lane rxtfix, K34 closure via lane b2fix's [OPTLOOP.1.impl]
 # batch 2 — docs/dev/known_issues.md K34) — -1 file, -3 blocks, +0 lines.
 # tests/known_fail/k34_leftrec_giveup.rxt (1 file, 3 blocks, 11 lines) was
@@ -409,9 +419,11 @@ CENSUS_LINES=29381
 # every one of them a hard failure in `make test-corpus` forever. Census
 # still counts them (237); run.sh's own population does not (221).
 # COMBINED at the findb2 merge: k69fix's +1/+16/+70; findb2tri's +0 -> 222 / 4051 / 29381.
+# 2026-09-28 (lane litf5, [OPT-LITSCAN] F5, D127) — +0/+1/+4, the SAME delta
+# as CENSUS_* above (tests/litscan/litrun.rxt is not under tests/known_fail/).
 RUNSH_FILES=222
-RUNSH_BLOCKS=4051
-RUNSH_LINES=29381
+RUNSH_BLOCKS=4052
+RUNSH_LINES=29385
 # 2026-09-23 (lane rxtfix, K34 closure, same event as CENSUS_* above) —
 # +0/+0/+11 where CENSUS_* moved -1/-3/+0. tests/known_fail/ is now EMPTY
 # (kf_files=kf_blocks=kf_lines=0 at run time — `find tests/known_fail

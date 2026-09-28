@@ -25,8 +25,8 @@ step-budget	500000000	backtrack resumptions
 resume-frames	5	
 trail-entries	3	
 subject-ceiling		exact: no subject ceiling
-labels	10	
-events	39	
+labels	11	
+events	42	
 resume-points	2	the PRE-PASS count the resume-point cap is checked against, never a recount of the event stream
 max-replicas	0	limit 64, checked before emission
 prune-ceiling	subject-end	the subject end -- either no prefilter, or the prefilter's window END is not a bound on this match's end: the pattern carries an ATOMIC GROUP (atomic_groups_design.md 4.4 H3) or a LOOKAROUND (lookaround_design.md 5.6), or the prefilter was built from the COUNT-COLLAPSED superset (prefilter_count_independence.md 2 H3, K39/[OPT-4]) -- the prefilter row above says which
@@ -83,7 +83,10 @@ L7	label			lookbehind branch 2 of 2, fixed width 2: step back and run the branch
 	note			lookbehind: the back-step ran off the start of the subject -- dead under the byte backend, where the guard above is exact
 	goto		L8	
 L8	label			
-	compare	'bc' (2 bytes)	L9	
+	consume	'b'	L10	
+	fail			backtrack
+L10	label			
+	consume	'c'	L9	
 	fail			backtrack
 L9	label			lookbehind END-CHECK: the branch must finish exactly where the assertion started -- the only runtime evidence that the width analysis and this emission agree
 	note			lookbehind end-check FAILED -- this branch declines

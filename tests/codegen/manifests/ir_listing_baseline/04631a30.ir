@@ -14,8 +14,8 @@
 
 #section summary
 #fact	value	note
-pattern	xy(a|ab)c	
-engine	vm	forced by: capture group at pattern offset 2
+pattern	xyz(a|ab)c	
+engine	vm	forced by: capture group at pattern offset 3
 prefilter	no-engine-vm	--engine=vm -- the VM scans from search_from itself (R21 E-6)
 rungs	none	comma-joined; the rungs section below says which quantifier took which
 strategies	none	comma-joined; the strategies section below says which quantifier took which
@@ -61,7 +61,7 @@ lookpos
 #section program
 #label	op	args	target	note
 L0	label			
-	compare	'xy' (2 bytes)	L2	
+	compare	'xyz' (3 bytes)	L2	
 	fail			backtrack
 L2	label			group 1 opens
 	set	slot_values[2] <- scan_position		group 1 open, written on traverse

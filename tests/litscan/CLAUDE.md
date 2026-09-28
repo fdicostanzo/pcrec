@@ -14,7 +14,11 @@ emitted compare.
   short of it (P8's `pos + L <= n`), bytes the emitted C string literal must
   escape (quote, backslash, `?`, NUL, control and high bytes, an octal escape
   before a digit), a run beside a capture, a choice point, a star, a repeat
-  and a lookahead, and the island's single-child chains. `xy(a|ab)c` is also
+  and a lookahead, and the island's single-child chains. **[OPT-LITSCAN F5,
+  D127, 2026-09-28]** the floor moved from two bytes to three, so `ab` now
+  demonstrates the declined byte-chain form and `abc` is the new shortest
+  compare witness; the run-before-a-choice-point block widened from
+  `xy(a|ab)c` to `xyz(a|ab)c` for the same reason. `xyz(a|ab)c` is also
   `tests/codegen/run_ir_listing.sh`'s witness for sabotage S305; the blocks
   that put a non-literal element after a run are S304's detector.
 - **gen_litrun.py** — writes `litrun.rxt`; every expectation comes from

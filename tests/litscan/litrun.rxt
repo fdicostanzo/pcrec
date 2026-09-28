@@ -31,20 +31,27 @@ m "zzxabcdefgzz" 2 10
 m "xabcdefgh" 0 8
 
 # a run immediately followed by a choice point: the element after the run carries a resume frame
-pattern xy(a|ab)c
-m "xyac" 0 4
-m "xyabc" 0 5
-n "xyab"
-n "xyc"
-m "qxyabcq" 1 6
+pattern xyz(a|ab)c
+m "xyzac" 0 5
+m "xyzabc" 0 6
+n "xyzab"
+n "xyzc"
+m "qxyzabcq" 1 7
 
-# the shortest run, two bytes
+# [OPT-LITSCAN F5, D127] a two-byte run: BELOW pcrec_lit_run's own floor, so the VM side reads the pre-S2a per-byte byte chain, not a compare
 pattern ab
 m "ab" 0 2
 n "a"
 n "b"
 n "ba"
 m "xxab" 2 4
+
+# [OPT-LITSCAN F5, D127] the shortest run that still takes the one-compare form, three bytes
+pattern abc
+m "abc" 0 3
+n "ab"
+n "c"
+m "xabcx" 1 4
 
 # bytes the C string literal must escape: a quote, a backslash and a question mark
 pattern a\x22b\\c\?d

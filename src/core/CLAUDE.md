@@ -437,6 +437,18 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   reads `u.cls` unconditionally. Pure, no memo; the VM emitter's chain
   emission, cost walk and slot walk all ask it.
 
+  **[OPT-LITSCAN] F5 (D127, 2026-09-28, abi 43): THE FLOOR IS THREE, NOT
+  TWO.** The `[B108]` bench read measured a two-byte run's one-compare form
+  as the smallest gain in the whole L-sweep on a matching subject (0.929x)
+  and a real per-call regression on a failing one (F4's `asr-lb-fixed`,
+  +30%) — a two-byte compare amortizes nothing a two-node early-exit byte
+  chain does not already pay for, cheaper. The floor lives in this ONE
+  fact rather than as a second predicate at a call site (D122 addendum 2's
+  "one row, one deny"): `vm_cat` falls through to its ordinary per-element
+  path for a declined pair, which IS the pre-S2a byte chain, so narrowing
+  `pcrec_lit_run`'s own floor is the whole fix. `-fno-lit-run` is
+  unchanged; the floor is not a flag.
+
 - **arena.c** — zeroing arena allocator; 16-byte aligned blocks, minimum 64KB per block.
   **[M4.7b/K7]** carries a `Ctx *cx` back-pointer, and a failed malloc now
   calls `pcrec_ctx_nomem()` instead of `abort()`. That one pointer is K7's worst

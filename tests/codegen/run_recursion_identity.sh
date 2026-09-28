@@ -201,8 +201,14 @@ FOLD_PATTERNS='(?i)(?>abc)
 # and an island whose single-child chains are runs. (`(abc){2}x` is NOT one:
 # a fixed-length repeat body takes the cursor rung, whose own `&&` chain S2a
 # leaves alone — tuning.md §2.31. Measured, when it was first listed here.)
+# [OPT-LITSCAN] F5 (D127, 2026-09-28): `xy(a|ab)c`'s run before the push was
+# TWO bytes, which is now below pcrec_lit_run's own floor -- it stamps
+# RX_VM_LIT_RUNS 0 (MEASURED), and a manifest entry asserting ">0" would go
+# red for a reason that has nothing to do with the manifest's own claim.
+# Replaced with `xyz(a|ab)c`, the same shape at three bytes, re-verified to
+# stamp RX_VM_LIT_RUNS 1 and carry the one-compare "xyz" memcmp.
 LIT_PATTERNS='x(abc)defg
-xy(a|ab)c
+xyz(a|ab)c
 foo(?:username|password|passphrase)bar'
 #
 # [recidfix->varland] A FOURTH NAMED EXCEPTION EXISTS, `bref_rename_rewrite()`
@@ -1096,7 +1102,21 @@ REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
 # src/opt/callgraph.c). This gate's population is CALL-FREE, where the fix
 # cannot reach (no call graph is built), so (A) is untouched and (B) moves by
 # the abi digit alone. The self-pin convention: the manager re-pins to the merge.
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-bcffbd42}"   # K69, abi 41->42: (B) re-pinned to bcffbd42 on lane/k69fix (D76, 2026-09-27). Prior pin: f97c26a6 ([OPT-LITSCAN] S2a, abi 40->41).
+# **(B) RE-PINNED AGAIN — [OPT-LITSCAN] F5, 2026-09-28 (D127): abi 42 -> 43,
+# to `51e10961`, the `lane/litf5` commit that is its last `src/` change.**
+# `pcrec_lit_run`'s own floor moves from two consecutive one-byte literals
+# to three, so a two-byte-only VM literal run falls through to the
+# pre-S2a per-byte byte chain instead of S2a's one-compare form. THIS ONE
+# MOVES (A) TOO, on whatever population of this gate's CALL-BEARING corpus
+# has a two-byte-only lit-run site — the fourth change in this file's
+# history to do so (after the island, the fold and S2a itself), excused
+# the same way: `-fno-lit-run` still restores the abi-42 program on every
+# artifact, so a moved region is excused IFF the deny set restores the pin;
+# both converse directions are asserted; `LIT_PATTERNS` is S2a's own
+# manifest and unaffected (every S2a mover was three bytes or longer to
+# begin with, since the whole population it built from was L >= 2 and this
+# lane's movers are the L == 2 subset of it, disjoint from L >= 3).
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-51e10961}"   # [OPT-LITSCAN] F5, abi 42->43: (B) re-pinned to 51e10961 on lane/litf5 (D76, 2026-09-28). Prior pin: bcffbd42 (K69, abi 41->42).
 
 WORKDIR="$(mktemp -d)"
 cleanup() {

@@ -10,20 +10,26 @@
 # points, and an uncounted resume point means PCREC_MAX_VM_RESUME_POINTS is
 # checked against a number smaller than the program it bounds — the
 # `resume-points` comparison in tests/codegen/run_ir_listing.sh, whose sweep
-# carries `xy(a|ab)c` (tests/litscan/litrun.rxt) for exactly this: a run,
+# carries `xyz(a|ab)c` (tests/litscan/litrun.rxt) for exactly this: a run,
 # then a capture over a two-branch chain that pushes one frame.
 #
 # The cost walk's twin plant is not a row: an A_CLASS run costs nothing and
 # the element after it is sized against the default frame capacity on every
 # witness tried, so it moves no stamp or answer this tree can read
 # (docs/dev/lanes/s2a_report.md).
+#
+# [OPT-LITSCAN F5, D127, 2026-09-28] RE-ANCHORED: the floor moved from two
+# bytes to three, and the row's own witness (`xy(a|ab)c`) no longer takes
+# the compare form at all, so `run_ir_listing.sh`'s PATTERNS array (and this
+# row) widened it to `xyz(a|ab)c` -- the identical run-then-push shape, one
+# byte longer, still above the new floor. Intent unchanged.
 SAB_ID="S305-lit-run-slot-walk-overskips"
 SAB_FILE="src/gen/emit_vm.c"
 SAB_SUITES="irlisting"
-SAB_DESC="vm_count_slots skips the spine element after every literal run, so the slot/resume-point pre-pass under-counts what vm_cat emits after a run: xy(a|ab)c's pre-pass counts 0 resume points against 1 emitted RX_PUSH"
-SAB_DOC_FIGURE="PREDICTED (lane s2a, 2026-09-27): DETECTED by run_ir_listing.sh's resume-points under-count check on xy(a|ab)c. MEASURED 2026-09-27 (lane s2a, single-row mech at b04e7ab3): DETECTED -- reach:ok(1/1), irlist:2fail/153pass (the resume-points under-count on xy(a|ab)c). Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S305."
+SAB_DESC="vm_count_slots skips the spine element after every literal run, so the slot/resume-point pre-pass under-counts what vm_cat emits after a run: xyz(a|ab)c's pre-pass counts 0 resume points against 1 emitted RX_PUSH"
+SAB_DOC_FIGURE="PREDICTED (lane s2a, 2026-09-27): DETECTED by run_ir_listing.sh's resume-points under-count check on xy(a|ab)c. MEASURED 2026-09-27 (lane s2a, single-row mech at b04e7ab3): DETECTED -- reach:ok(1/1), irlist:2fail/153pass (the resume-points under-count on xy(a|ab)c). RE-ANCHORED 2026-09-28 (lane litf5, [OPT-LITSCAN] F5/D127): witness widened xy(a|ab)c -> xyz(a|ab)c; re-run owed at merge. Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S305."
 # [MECH-REACH] the witness takes the run arm and pushes after it.
-SAB_REACH='"$PCREC" --engine=vm -p rx -o "$REACH_TMP/o.c" --pattern "xy(a|ab)c" && grep -qF "!memcmp(subject + scan_position, \"xy\", 2)" "$REACH_TMP/o.c" && grep -q "RX_PUSH(" "$REACH_TMP/o.c" && echo REACH-RUN-THEN-PUSH'
+SAB_REACH='"$PCREC" --engine=vm -p rx -o "$REACH_TMP/o.c" --pattern "xyz(a|ab)c" && grep -qF "!memcmp(subject + scan_position, \"xyz\", 3)" "$REACH_TMP/o.c" && grep -q "RX_PUSH(" "$REACH_TMP/o.c" && echo REACH-RUN-THEN-PUSH'
 SAB_REACH_EXPECT="REACH-RUN-THEN-PUSH"
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
