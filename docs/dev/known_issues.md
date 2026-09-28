@@ -11,7 +11,40 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 ---
 
-## K69 — OPEN, awaiting a ruling — the two node-nullability definitions DISAGREE on `A_CALL` (found by lane pf35, [PATFACTS] step 3.5's stop rule, 2026-09-27)
+## K69 — FIXED 2026-09-27 (lane k69fix, disposition (a), abi 41 -> 42; NOT yet merged at this writing) — the two node-nullability definitions DISAGREED on `A_CALL` (found by lane pf35, [PATFACTS] step 3.5's stop rule, 2026-09-27)
+
+**FIXED ADDENDUM (lane k69fix, branch `lane/k69fix`, off main `25854c26`).**
+The manager ruled disposition (a). A call is nullable iff its callee's
+`minw == 0`: `src/opt/callgraph.c`'s `cg_minw_publish` writes
+`u.call.nonnullable = minw != 0` beside `minw` itself, the LEAST fixpoint,
+before the E1 seal (M1 and M2 both closed by the one line). The emitter's
+`vm_resolve_nonnull`/`vm_publish_nonnull` (the greatest fixpoint) are
+deleted. `pcrec_nullable`'s `A_CALL` arm is unchanged and now reads the exact
+answer, and the E1 `nullable` fact composes `pcrec_nullable(root)`
+(`src/facts/widths.c`): one owner, one definition — [PATFACTS] 3.5 closed.
+- **Movers, measured** (the A/B emit gate, `s1_identity.py` over pcrec-bench's
+  capability patterns × 4 configs and every corpus pattern × {auto, vm},
+  `{byte, utf8}` × pf35's eight deny sets, abi digit normalized): on main's
+  corpus and the bench, **ZERO**. The only movers are the six quantified
+  left-recursive calls of the new `tests/recursion/k69.rxt` × {auto, vm}, each
+  losing one empty-iteration guard (slot, `RX_SET`, compare) — M1's class and
+  nothing else. `(a|(?1))*` by hand: 17 diff lines, guard 2 -> 0.
+- **The E1 value moved on NO pattern**: `(a)?(?1)`, `(?:(a)|)(?1)`,
+  `(?(DEFINE)(?<g>a))(?&g)` (both encodings) and `(a|(?1))` read `no` before
+  and after. Their movers in the table above (and pf35 §5's 130-140 line
+  diffs, the utf8 start gate) were the SWAP build's M2 artifact — composing
+  `pcrec_nullable` while the field still read the arena zero at the seal —
+  which publishing before the seal removes, so they are not movers of the fix.
+- **Regression**: `tests/recursion/k69.rxt` (16 blocks, 70 cases, libpcre2
+  10.46-verified: witnesses + nullable-callee controls + pf35's controls + the
+  M2 E1 witnesses), 70/0 on both the base and the fixed build (answers do not
+  move); `run_facts_checks.sh` [facts-e1] gains six call rows. Sabotage
+  **S318** (every call nullable; `facts`) and **S319** (no call nullable;
+  `harness` on k69.rxt); S206/S207 re-anchored. Report:
+  `docs/dev/lanes/k69fix_report.md`.
+
+The original entry follows, unchanged.
+
 
 **Status: OPEN. Blocks [PATFACTS] 3.5's second half** (the E1 fact composing
 `pcrec_nullable` at the root). Not an answer defect today: each copy is sound

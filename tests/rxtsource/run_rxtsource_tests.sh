@@ -315,9 +315,13 @@ record() { checks_recorded=$((checks_recorded + 1)); echo "RECORD: $*"; }
 # lines for tests/litscan/litrun.rxt (the VM literal-run corpus, 19 patterns,
 # 87 oracle-generated cases). Not under tests/known_fail/, so RUNSH_* move by
 # the same +1/+19/+87: 221 / 4035 / 29311.
-CENSUS_FILES=221
-CENSUS_BLOCKS=4035
-CENSUS_LINES=29311
+# 2026-09-27 (lane k69fix, K69) — +1 file / +16 blocks / +70 lines for
+# tests/recursion/k69.rxt (the least call-nullability fixpoint's witnesses
+# and controls, libpcre2 10.46-verified). Not under tests/known_fail/, so
+# RUNSH_* move by the same +1/+16/+70: 222 / 4051 / 29381.
+CENSUS_FILES=222
+CENSUS_BLOCKS=4051
+CENSUS_LINES=29381
 # 2026-09-23 (lane rxtfix, K34 closure via lane b2fix's [OPTLOOP.1.impl]
 # batch 2 — docs/dev/known_issues.md K34) — -1 file, -3 blocks, +0 lines.
 # tests/known_fail/k34_leftrec_giveup.rxt (1 file, 3 blocks, 11 lines) was
@@ -384,9 +388,11 @@ CENSUS_LINES=29311
 # as CENSUS_* above (tests/offsetskip/run_pinned.rxt).
 # 2026-09-27 (lane s2a, [OPT-LITSCAN] S2a) — +1/+19/+87, the SAME delta as
 # CENSUS_* above (tests/litscan/litrun.rxt).
-RUNSH_FILES=221
-RUNSH_BLOCKS=4035
-RUNSH_LINES=29311
+# 2026-09-27 (lane k69fix, K69) — +1/+16/+70, the SAME delta as CENSUS_*
+# above (tests/recursion/k69.rxt).
+RUNSH_FILES=222
+RUNSH_BLOCKS=4051
+RUNSH_LINES=29381
 # 2026-09-23 (lane rxtfix, K34 closure, same event as CENSUS_* above) —
 # +0/+0/+11 where CENSUS_* moved -1/-3/+0. tests/known_fail/ is now EMPTY
 # (kf_files=kf_blocks=kf_lines=0 at run time — `find tests/known_fail
