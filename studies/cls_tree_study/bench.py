@@ -51,9 +51,39 @@ static unsigned long long rnd_s = 88172645463325252ULL;
 static unsigned long long rnd(void)
 { rnd_s ^= rnd_s << 13; rnd_s ^= rnd_s >> 7; rnd_s ^= rnd_s << 17; return rnd_s; }
 
+static unsigned pick_member(const unsigned *mlo, const unsigned *mhi,
+                            int mn, unsigned long nmem)
+{
+    unsigned long r = rnd() % nmem, acc = 0; int k = 0;
+    for (k = 0; k < mn; k++) {
+        unsigned long c = mhi[k] - mlo[k] + 1;
+        if (r < acc + c) break;
+        acc += c;
+    }
+    if (k == mn) k = mn - 1;
+    return mlo[k] + (unsigned)(r - acc);
+}
+
 static void build_subject(const char *regime, const unsigned *mlo,
                           const unsigned *mhi, int mn, unsigned long nmem)
 {
+    /* `runs` (added 2026-09-28, lane clsdes88): a crude model of TEXT —
+     * runs of 1..32 code points drawn uniformly from the 256-code-point
+     * block around one random member, so consecutive probes land in the
+     * same region the way a script run does and the dispatch tree's
+     * branches become predictable.  Members and non-members both occur. */
+    if (!strcmp(regime, "runs")) {
+        unsigned i = 0;
+        while (i < NCP) {
+            unsigned blk = pick_member(mlo, mhi, mn, nmem) & ~0xFFu;
+            unsigned len = 1u + (unsigned)(rnd() % 32);
+            for (unsigned j = 0; j < len && i < NCP; j++, i++) {
+                unsigned cp = blk + (unsigned)(rnd() & 0xFF);
+                subj[i] = cp > 0x10FFFFu ? 0x10FFFFu : cp;
+            }
+        }
+        return;
+    }
     for (unsigned i = 0; i < NCP; i++) {
         unsigned cp;
         if (!strcmp(regime, "member") ||
@@ -119,7 +149,7 @@ def loadavg():
             return 99.0
 
 
-def gen(setname, iv, lams, outdir):
+def gen(setname, iv, lams, outdir, whole_arms=False):
     arms, names, srcs = [], [], []
 
     srcs.append(emit.reference("a_refbs", iv))
@@ -145,6 +175,15 @@ def gen(setname, iv, lams, outdir):
 
     arms = ["a_refbs", "a_bm1"] + \
            ["a_l%s" % str(l).replace(".", "_") for l in lams]
+
+    # WHOLE-SET indexed tables (wholeset.py), OFF by default so the
+    # committed 2026-09-11 arm set reproduces unchanged.
+    if whole_arms:
+        import wholeset
+        srcs.append(wholeset.PageW2(iv).c("a_pw2"))
+        srcs.append(wholeset.PageW3(iv).c("a_pw3"))
+        names += ["page2w", "page3w"]
+        arms += ["a_pw2", "a_pw3"]
 
     nmem = sum(h - l + 1 for l, h in iv)
     tbl = ("static const unsigned ref_lo[%d] = { %s };\n"
@@ -178,6 +217,8 @@ def main():
     ap.add_argument("--regimes", default="member,mixed,ascii,full")
     ap.add_argument("--max-load", type=float, default=0.5)
     ap.add_argument("--out", default="bench.tsv")
+    ap.add_argument("--whole", action="store_true",
+                    help="add the whole-set page2w/page3w arms (wholeset.py)")
     args = ap.parse_args()
 
     import clsets
@@ -204,7 +245,7 @@ def main():
         out.write("set\tregime\tarm\tround\tns_per_char\thits\tchk\n")
         for name, iv in pop:
             tag = "".join(c if c.isalnum() else "_" for c in name)
-            cpath, names = gen(tag, iv, lams, outdir)
+            cpath, names = gen(tag, iv, lams, outdir, args.whole)
             bpath = os.path.join(outdir, tag + "_bench")
             r = subprocess.run([CC, "-O2", "-std=gnu11", "-w", cpath,
                                 "-o", bpath], capture_output=True, text=True)

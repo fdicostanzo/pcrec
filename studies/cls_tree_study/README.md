@@ -20,6 +20,8 @@ by `build/pcrec`) — and writes only under this directory.
     make crosscheck          # C DP vs Python DP over a population
     make proptest            # deliverable (4): the composition property test
     make bench               # ns/char — REFUSES unless load1 < 0.5
+    make bench2              # + whole-set tables and the `runs` regime (design note §7)
+    python3 verify_whole.py  # whole-set tables: exhaustive verify + rodata
 
 `make all-sweeps` runs the sizing/verification arms in the order the memo
 reports them. `CC` defaults to `gcc-16` (this box's real gcc; bare `cc`/`gcc`
@@ -49,6 +51,8 @@ not reproducible, however green it looks.
 | `crosscheck.py` | the two DP implementations compared over a population |
 | `proptest.py` | the provenance-blindness composition property test |
 | `bench.py` | ns/char, house protocol (interleaved, load-gated, checksummed) |
+| `wholeset.py` | whole-set indexed tables (2- and 3-stage), unreachable by the DP's MAXK cap |
+| `verify_whole.py` | exhaustive verify + rodata of the whole-set tables |
 | `extract_byteclasses.py` | byte classes parsed off EMITTED artifacts |
 
 ## Five things not to simplify away

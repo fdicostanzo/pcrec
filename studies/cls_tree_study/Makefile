@@ -15,7 +15,7 @@ CFLAGS  ?= -O2 -std=gnu11 -Wall -Wextra
 PY      ?= python3
 
 .PHONY: all discover populations k53 uprops byteclasses baseline \
-        crosscheck proptest bench all-sweeps clean
+        crosscheck proptest bench bench2 all-sweeps clean
 
 all: discover
 
@@ -54,6 +54,14 @@ all-sweeps: k53 baseline byteclasses uprops
 
 bench: discover
 	CC=$(CC) $(PY) bench.py --population k53 --lams 0,16,256 --rounds 11
+
+# The [CLS-TREE] design note's owed arm (docs/design/cls_tree_design.md §7):
+# the 2026-09-11 arms PLUS the whole-set indexed tables (wholeset.py) and the
+# `runs` text-like regime. Same gate, same protocol; its own results file so
+# the committed bench_ubuntubudu_20260911.tsv is never overwritten.
+bench2: discover
+	CC=$(CC) $(PY) bench.py --population k53 --lams 0,16,256 --rounds 11 \
+	    --whole --regimes member,mixed,ascii,full,runs --out bench2.tsv
 
 clean:
 	rm -rf build discover
