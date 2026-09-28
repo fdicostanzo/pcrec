@@ -1,0 +1,24 @@
+byte A0 engine=auto pat=\b  A0_ENGINE "dfa" A0_ENGINE_SEL "selected" 
+byte A1 engine=auto pat=(?:(?<=\w)(?!\w)|(?<!\w)(?=\w))  A1_ENGINE "vm" A1_ENGINE_SEL "declined-nullable-default" A1_ENGINE_WHY "(\?=...) at pattern offset 3" 
+byte A2 engine=vm pat=\b  A2_ENGINE "vm" A2_ENGINE_SEL "forced" A2_ENGINE_WHY "--engine=vm" 
+byte A3 engine=auto pat=\B  A3_ENGINE "dfa" A3_ENGINE_SEL "selected" 
+byte A4 engine=auto pat=(?:(?<=\w)(?=\w)|(?<!\w)(?!\w))  A4_ENGINE "vm" A4_ENGINE_SEL "declined-nullable-default" A4_ENGINE_WHY "(\?!...) at pattern offset 3" 
+byte A5 engine=vm pat=\B  A5_ENGINE "vm" A5_ENGINE_SEL "forced" A5_ENGINE_WHY "--engine=vm" 
+byte A0 sha1=37d5403a56d3
+byte A1 sha1=37d5403a56d3
+byte A2 sha1=37d5403a56d3
+byte A3 sha1=56979cb72385
+byte A4 sha1=56979cb72385
+byte A5 sha1=56979cb72385
+utf8 A0 engine=auto pat=\b  A0_ENGINE "dfa" A0_ENGINE_SEL "selected" 
+utf8 A1 engine=auto pat=(?:(?<=\w)(?!\w)|(?<!\w)(?=\w))  A1_ENGINE "vm" A1_ENGINE_SEL "declined-nullable-default" A1_ENGINE_WHY "(\?=...) at pattern offset 3" 
+utf8 A2 engine=vm pat=\b  A2_ENGINE "vm" A2_ENGINE_SEL "forced" A2_ENGINE_WHY "--engine=vm" 
+utf8 A3 engine=auto pat=\B  A3_ENGINE "dfa" A3_ENGINE_SEL "selected" 
+utf8 A4 engine=auto pat=(?:(?<=\w)(?=\w)|(?<!\w)(?!\w))  A4_ENGINE "vm" A4_ENGINE_SEL "declined-nullable-default" A4_ENGINE_WHY "(\?!...) at pattern offset 3" 
+utf8 A5 engine=vm pat=\B  A5_ENGINE "vm" A5_ENGINE_SEL "forced" A5_ENGINE_WHY "--engine=vm" 
+utf8 A0 sha1=37d5403a56d3
+utf8 A1 sha1=37d5403a56d3
+utf8 A2 sha1=37d5403a56d3
+utf8 A3 sha1=594c96035f53
+utf8 A4 sha1=594c96035f53
+utf8 A5 sha1=594c96035f53
