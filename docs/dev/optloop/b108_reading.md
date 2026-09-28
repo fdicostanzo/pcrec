@@ -415,3 +415,34 @@ attributes compile-side (the 6-vs-5 register save placed before the 2-byte
 `": "` test). The recommendation is unchanged: S2a stays default-on, and F5's
 L>=3 narrowing is measured first. lp's 2-byte `": "` run is one of F5's
 three witnesses. The placement/code split waits on I-115 ([B110]).
+
+## Addendum 2026-09-28 (manager): O-66 + O-67, I-115 answered; the placement twin
+
+**O-66** answers I-115:
+- **Q1:** aws throughput makes 0 matches and 0 VM verify calls, so the whole
+  cost is the exact-language prefilter scan. S2a's VM-body change never
+  executes there.
+- **Q4:** none of lp-removed's 74 no-match subjects passes the
+  `facility.severity` prefix, and on throughput the prefilter rejects before
+  the VM runs.
+- **Q5:** the 1/2/10 memchr-per-call model (§5, F6) is confirmed exactly by a
+  counter. The 10 is [K65]'s `rq_set[]` past [K66]'s cap.
+- **Q6:** alignment explains the plateau extremes only; compare width is the
+  other variable.
+- **Q7:** the ctx subjects are byte-identical across 64/256/1024, so that
+  spread is placement.
+
+**O-67** is the placement twin (Q2): `-falign-functions=64 -falign-loops=64`,
+with program_sha256 identical between the aligned and unaligned builds.
+- aws throughput 1.036 → **1.014** (inside the window's ±3.9% DFA-null band).
+- lp-removed throughput 1.117 → **1.029** (inside).
+- lp-removed search 1.083 → **1.034** (still outside ±2.4%).
+
+The window's null band is wider than the earlier twins' ~±1%.
+
+**Verdict:** the named-population misses are PLACEMENT. The only residual is
+lp-removed on short search (+3.4%), where the VM does run on the prefix
+(F5's 2-byte `": "` witness). S2a stays default-on. F5 keeps exactly that one
+witness plus F4 and bnd-l2, and it stays filed and measure-first. We declined
+the bench's offer to re-measure logparse-atomic aligned: its same-window twin
+already reads 0.971 (O-65), so there is nothing to explain.
