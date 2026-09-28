@@ -6061,37 +6061,41 @@ long long pcrec_minw(const Ast *a);                  /* src/opt/mrl.c */
  * agrees with `pcrec_minw(a) == 0` on every kind. */
 bool pcrec_nullable(const Ast *a);                   /* src/opt/mrl.c */
 
-/* [REVW.U L5-R2] THE SIX SATURATING-ARITHMETIC HELPERS, DECLARED SO
- * tests/core/sat_arith_check.c CAN REACH THEM.
+/* [REVW.U L5-R2] / [PATFACTS] step 3.6 (R3, lane pf36) — THE SHARED
+ * SATURATING-ARITHMETIC PRIMITIVE, DECLARED SO tests/core/sat_arith_check.c
+ * CAN REACH IT.
  *
  * src/opt/CLAUDE.md's mrl.c entry states the requirement in prose: the
  * minimum-width arithmetic saturates at PCREC_MINW_MAX, shared with the
  * emitter's follow-min accumulator, so a long enough concatenation of
  * saturated subtrees cannot overflow past the ceiling that exists to
- * prevent exactly that. Nothing checked the AGREEMENT until this row — two
- * sources stated the requirement, and it held only because two authors
- * happened to type the same five lines.
+ * prevent exactly that. Nothing checked the AGREEMENT until [REVW.U L5-R2]
+ * — two sources stated the requirement, and it held only because two
+ * authors happened to type the same five lines.
  *
- * Each was `static` (file-private) until this row, which a linker cannot
- * reach from a separate translation unit — the ONLY change here is
- * dropping `static` so tests/core/sat_arith_check.c can call the shipped
- * functions directly rather than transcribing their bodies (a
- * transcription checks nothing but itself). NOT emitted into any
- * generated artifact — these are pcrec's OWN compile-time arithmetic, so
- * this is not an `abi` event and moves no byte any identity gate reads.
+ * ORIGINALLY SIX FUNCTIONS (three independent copies: mrl.c, callgraph.c,
+ * src/gen/emit_vm.c), each `static` until L5-R2 dropped it so this file's
+ * check could call the shipped functions directly rather than
+ * transcribing their bodies. lens 1's X3 (docs/dev/reviews/
+ * 2026-09-17-code-review.md) named the unification "pcrec_sat_add/
+ * pcrec_sat_mul taking the ceiling as a parameter"; step 3.6 BUILDS TWO OF
+ * THE THREE — mrl.c's and callgraph.c's copies are now ONE definition
+ * (`pcrec_sat_add`/`pcrec_sat_mul`, below, declared once). NOT emitted
+ * into any generated artifact — these are pcrec's OWN compile-time
+ * arithmetic, so this is not an `abi` event and moves no byte any identity
+ * gate reads.
  *
- * X3 (lens 1, wave 2) unifies all three pairs into pcrec_sat_add/
- * pcrec_sat_mul taking the ceiling as a parameter; these six declarations
- * retire with that unification, not before — the check is written against
- * TODAY's three separate implementations first, per R2's own ordering
- * argument. */
-long long pcrec_mrl_sat_add(long long a, long long b);     /* src/opt/mrl.c */
+ * `pcrec_vm_fadd`/`pcrec_vm_fmul` (src/gen/emit_vm.c, declared further down
+ * this file in the gen-tier section) are the THIRD copy and are DELIBERATELY
+ * NOT retired here — design.md's step 3.6 row scopes this step to
+ * mrl.c/callgraph.c, and emit_vm.c sits in a higher layer (gen) than this
+ * pair's home (opt). tests/core/sat_arith_check.c's cross-family check now
+ * compares this ONE primitive against `pcrec_vm_fadd`/`pcrec_vm_fmul` — two
+ * independent implementations survive where three did, so the check's
+ * reason for existing (an agreement nothing enforced) is unweakened. */
+long long pcrec_sat_add(long long a, long long b, long long cap);  /* src/opt/mrl.c */
 
-long long pcrec_mrl_sat_mul(long long a, long long b);     /* src/opt/mrl.c */
-
-long long pcrec_cg_sat_add(long long a, long long b);      /* src/opt/callgraph.c */
-
-long long pcrec_cg_sat_mul(long long a, long long b);      /* src/opt/callgraph.c */
+long long pcrec_sat_mul(long long a, long long b, long long cap);  /* src/opt/mrl.c */
 
 /* The SATURATION ceiling every minimum-width arithmetic pins itself to. Shared
  * because the emitter's own accumulator has to hold the same ceiling the
@@ -6206,16 +6210,18 @@ long long pcrec_vm_fmul(long long a, long long b);         /* src/gen/emit_vm.c 
  * a backreference, or any arithmetic that ran off the top.
  *
  * IT IS DELIBERATELY THE SAME VALUE AS `PCREC_MINW_MAX`, and the reason is
- * that it must COMPOSE with `pcrec_mrl_sat_add`/`pcrec_mrl_sat_mul` rather than need a
- * check at every arm:
+ * that it must COMPOSE with `pcrec_sat_add`/`pcrec_sat_mul` (src/opt/mrl.c,
+ * called with `MRL_MINW_MAX`/`PCREC_MINW_MAX` as their ceiling) rather than
+ * need a check at every arm:
  *
- *   - `pcrec_mrl_sat_add(UNBOUNDED, anything)` saturates, so unbounded ABSORBS
- *     through a concatenation, which is what "unbounded" has to do;
- *   - `pcrec_mrl_sat_mul(UNBOUNDED, 0)` is 0, so an unbounded repeat of a
- *     ZERO-WIDTH body is correctly 0 (`(?:\b)*` consumes nothing however many
- *     times it runs) instead of being needlessly widened;
- *   - `pcrec_mrl_sat_mul(UNBOUNDED, k>0)` saturates, so a bounded repeat of an
- *     unbounded body stays unbounded.
+ *   - `pcrec_sat_add(UNBOUNDED, anything, MRL_MINW_MAX)` saturates, so
+ *     unbounded ABSORBS through a concatenation, which is what "unbounded"
+ *     has to do;
+ *   - `pcrec_sat_mul(UNBOUNDED, 0, MRL_MINW_MAX)` is 0, so an unbounded
+ *     repeat of a ZERO-WIDTH body is correctly 0 (`(?:\b)*` consumes nothing
+ *     however many times it runs) instead of being needlessly widened;
+ *   - `pcrec_sat_mul(UNBOUNDED, k>0, MRL_MINW_MAX)` saturates, so a bounded
+ *     repeat of an unbounded body stays unbounded.
  *
  * The cost of sharing the value is that a SATURATED-but-finite maxw is
  * indistinguishable from a genuinely unbounded one. That is maxw's SAFE

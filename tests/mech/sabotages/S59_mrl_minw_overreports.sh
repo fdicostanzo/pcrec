@@ -20,11 +20,20 @@
 # is the SAFE direction and would leave `X*`-shaped follows undetected. The
 # sabotage keeps `rmin` where there is no maximum so that what it tests is the
 # over-estimate and nothing else.
+#
+# RE-ANCHORED at [PATFACTS] step 3.6 (R3, 2026-09-28, lane pf36):
+# `pcrec_mrl_sat_add`/`pcrec_mrl_sat_mul` retired into the shared
+# `pcrec_sat_add`/`pcrec_sat_mul(a, b, cap)` (src/opt/mrl.c); the anchor's
+# call to `pcrec_minw(a->l)` as the inner argument is still what makes this
+# line unique to `pcrec_minw`'s own A_REP arm (the identical-looking
+# `pcrec_cwmin`/`pcrec_cwmax` A_REP arms call `pcrec_cwmin`/`pcrec_cwmax`
+# there instead), so the disambiguation this row already relied on is
+# unchanged; only the ceiling parameter was added.
 SAB_ID="S59-mrl-minw-overreports"
 SAB_FILE="src/opt/mrl.c"
 SAB_SUITES="mrldiff harness"
 SAB_DESC="pcrec_minw uses a bounded repeat's MAXIMUM count instead of its minimum, making minrest an upper bound: the clamp then cuts positions a real match needed and the matcher answers nomatch"
 SAB_DOC_FIGURE="docs/design/k23_impl/k23_design.md §4.2 failure mode 1"
 SAB_COUNT=1
-SAB_BEFORE='            return pcrec_mrl_sat_add(acc, pcrec_mrl_sat_mul(a->u.rep.rmin, pcrec_minw(a->l)));'
-SAB_AFTER='            return pcrec_mrl_sat_add(acc, pcrec_mrl_sat_mul(a->u.rep.rmax >= 0 ? a->u.rep.rmax : a->u.rep.rmin, pcrec_minw(a->l)));  /* SABOTAGE S59 */'
+SAB_BEFORE='            return pcrec_sat_add(acc, pcrec_sat_mul(a->u.rep.rmin, pcrec_minw(a->l), MRL_MINW_MAX), MRL_MINW_MAX);'
+SAB_AFTER='            return pcrec_sat_add(acc, pcrec_sat_mul(a->u.rep.rmax >= 0 ? a->u.rep.rmax : a->u.rep.rmin, pcrec_minw(a->l), MRL_MINW_MAX), MRL_MINW_MAX);  /* SABOTAGE S59 */'

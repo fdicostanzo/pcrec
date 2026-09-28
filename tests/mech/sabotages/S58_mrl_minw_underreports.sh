@@ -41,6 +41,14 @@ SAB_DOC_FIGURE="tests/mrl/run_mrl_tests.sh §1: the exemplar inside eight steps"
 # lookbehind branch as fixed) and its own detector
 # (tests/mrl/cwmax_check.c's CHECK 2), so it is a DIFFERENT claim and owes a
 # different row rather than being folded into this one.
+#
+# RE-ANCHORED at [PATFACTS] step 3.6 (R3, 2026-09-28, lane pf36):
+# `pcrec_mrl_sat_add` was retired into the shared `pcrec_sat_add(a, b, cap)`
+# (src/opt/mrl.c), so the A_CLASS arm's line gained a third argument
+# (`MRL_MINW_MAX`). The SIGNATURE-anchored shape is unchanged and still
+# disambiguates from `pcrec_cwmax`'s identical-looking arm, which now reads
+# `return pcrec_sat_add(acc, 1, MRL_MINW_MAX);` too — same rename, same
+# collision this anchor already exists to avoid.
 SAB_COUNT=1
 SAB_BEFORE='long long pcrec_minw(const Ast *a)
 {
@@ -49,7 +57,7 @@ SAB_BEFORE='long long pcrec_minw(const Ast *a)
     for (;;) {
         switch (a->k) {
         case A_CLASS:
-            return pcrec_mrl_sat_add(acc, 1);'
+            return pcrec_sat_add(acc, 1, MRL_MINW_MAX);'
 SAB_AFTER='long long pcrec_minw(const Ast *a)
 {
     long long acc = 0;
@@ -57,4 +65,4 @@ SAB_AFTER='long long pcrec_minw(const Ast *a)
     for (;;) {
         switch (a->k) {
         case A_CLASS:
-            return pcrec_mrl_sat_add(acc, 0);  /* SABOTAGE S58 */'
+            return pcrec_sat_add(acc, 0, MRL_MINW_MAX);  /* SABOTAGE S58 */'

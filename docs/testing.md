@@ -4635,14 +4635,17 @@ uniform regime deliberately (`unit_cc.sh`'s own header explains why).
 single feature directory** (R0.3) — NOT a generic `tests/unit/`; every
 pre-existing unit check stays where it is. `make test-core` (part of
 `make test`) carries the tier's first new instance: `sat_arith_check.c`,
-the saturating-arithmetic agreement between `pcrec_mrl_sat_add`/`pcrec_mrl_sat_mul`
-(`src/opt/mrl.c`), `pcrec_vm_fadd`/`pcrec_vm_fmul` (`src/gen/emit_vm.c`) and
-`pcrec_cg_sat_add`/`pcrec_cg_sat_mul` (`src/opt/callgraph.c`) — a requirement the tree
-stated twice in prose and enforced nowhere. The six functions are no
-longer `static` (declared in `core/internal.h` beside `pcrec_minw`) so the
+the saturating-arithmetic agreement between `pcrec_sat_add`/`pcrec_sat_mul`
+(`src/opt/mrl.c` — the shared primitive mrl.c and `src/opt/callgraph.c`
+both call since [PATFACTS] step 3.6 unified what were two independent
+copies) and `pcrec_vm_fadd`/`pcrec_vm_fmul` (`src/gen/emit_vm.c`, the one
+copy step 3.6 deliberately left out of scope) — a requirement the tree
+stated twice in prose and enforced nowhere. The functions are not
+`static` (declared in `core/internal.h` beside `pcrec_minw`) so the
 check can call the shipped functions directly; no behaviour change, no
 `abi` event (this arithmetic is never emitted into generated text).
-Sabotage row S254, mech arm `core` (registered before the row, R31 C11).
+Sabotage row S254, mech arm `core` (registered before the row, R31 C11;
+re-anchored at step 3.6 onto the unified `pcrec_sat_mul`).
 
 **`make alloc` (opt-in, NOT part of `make test`) is the ALLOCATION-FAILURE
 INJECTOR** (lens 5's R1, reclassified from lens 8's assumed DESIGN-EVENT

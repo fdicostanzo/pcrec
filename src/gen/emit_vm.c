@@ -12505,10 +12505,10 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
      * has to be consumed. That is why it is written as a WIDTH COMPARISON
      * rather than an unconditional `return 0`, and the distinction is not
      * cosmetic. `PCREC_MINW_MAX` is reached by TWO routes -- the call
-     * fixpoint's genuine infinity, and `pcrec_mrl_sat_add`/`pcrec_mrl_sat_mul`
-     * SATURATION on a pattern whose true minimum is merely enormous -- and
-     * this function cannot tell them apart from the value alone. An
-     * unconditional `return 0` would be a MISCOMPILE on the second route for
+     * fixpoint's genuine infinity, and `pcrec_sat_add`/`pcrec_sat_mul`
+     * (src/opt/mrl.c) SATURATION on a pattern whose true minimum is merely
+     * enormous -- and this function cannot tell them apart from the value
+     * alone. An unconditional `return 0` would be a MISCOMPILE on the second route for
      * a subject of 2^40 bytes or more, which `size_t` can represent; the
      * width comparison is exactly right on both routes and needs no
      * distinction to be exactly right.

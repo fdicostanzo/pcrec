@@ -15,11 +15,13 @@ be a second home for something that already has one, for zero gain.
 
 A helper qualifies for a check here when its SUBJECT does not belong to any
 one existing test directory. The first instance
-(`sat_arith_check.c`) checks three functions living in three different
-directories (`src/opt/mrl.c`, `src/gen/emit_vm.c`, `src/opt/callgraph.c`) —
-no single existing test directory owns all three. `sb.c`/`arena.c`
-(`src/core/`) and the growable-array/text-kit primitives wave 1 builds
-(R3/R4 of the same lens 5 report) are the intended future population.
+(`sat_arith_check.c`) checks a primitive whose two remaining independent
+implementations live in two different directories (`src/opt/mrl.c` — the
+shared caller since [PATFACTS] step 3.6 unified mrl.c's and callgraph.c's
+own copies — and `src/gen/emit_vm.c`) — no single existing test directory
+owns both. `sb.c`/`arena.c` (`src/core/`) and the growable-array/text-kit
+primitives wave 1 builds (R3/R4 of the same lens 5 report) are the intended
+future population.
 
 ## The build
 
@@ -39,42 +41,51 @@ under D45's gen-timeout budgets), and no check in this tier may read the
 
 ## Files
 
-- **sat_arith_check.c** / **run_core_tests.sh** — [REVW.U L5-R2] THE
-  SATURATING-ARITHMETIC AGREEMENT: `pcrec_mrl_sat_add`/`pcrec_mrl_sat_mul`
-  (`src/opt/mrl.c`), `pcrec_vm_fadd`/`pcrec_vm_fmul` (`src/gen/emit_vm.c`) and
-  `pcrec_cg_sat_add`/`pcrec_cg_sat_mul` (`src/opt/callgraph.c`) must agree — the tree
+- **sat_arith_check.c** / **run_core_tests.sh** — [REVW.U L5-R2], REVISED at
+  [PATFACTS] step 3.6 (R3, 2026-09-28, lane pf36): THE SATURATING-ARITHMETIC
+  AGREEMENT between `pcrec_sat_add`/`pcrec_sat_mul` (`src/opt/mrl.c`, taking
+  the ceiling as a parameter — the primitive mrl.c's own analysis and
+  `src/opt/callgraph.c`'s fixpoints now BOTH call, since step 3.6 unified
+  what were two independent copies of the same four-line algorithm) and
+  `pcrec_vm_fadd`/`pcrec_vm_fmul` (`src/gen/emit_vm.c`, the third copy
+  step 3.6 deliberately left out of scope — design.md's row names
+  mrl.c/callgraph.c only, and emit_vm.c sits in a higher layer). The tree
   states the requirement twice in prose (`src/opt/CLAUDE.md`'s `mrl.c`
-  entry, `emit_vm.c`'s own comment above `pcrec_vm_fadd`) and, until this check,
+  entry, `emit_vm.c`'s own comment above `pcrec_vm_fadd`) and, until L5-R2,
   enforced it nowhere. Checked for CROSS-FAMILY EQUALITY over the
-  non-negative domain every real caller uses (which also answers lens 1's
-  own open question — `pcrec_cg_sat_add`'s extra `CG_EXP_INF` guard is redundant
-  on that domain, proved by evaluation rather than by reading) and for
-  three algebraic laws the callers rely on and the implementations do not
-  themselves state: MONOTONE, CAPPED, ABSORBING. See the check's own
+  non-negative domain every real caller uses — before step 3.6 this also
+  answered lens 1's open question about `callgraph.c`'s own extra
+  `CG_EXP_INF` guard, now provably redundant and dropped in the merge — and
+  for three algebraic laws the callers rely on and the implementations do
+  not themselves state: MONOTONE, CAPPED, ABSORBING. See the check's own
   header for the domain argument (why no pair literally pairs `LLONG_MAX`
   with itself — that is genuine signed-overflow UB in the subject
   functions, and this file is wired into `san_scripts.txt`, so a real hit
   there would ABORT the sanitizer battery rather than FAIL cleanly) and
   the four-sabotage failing-direction story, of which one — a one-character
-  boundary weakening in `pcrec_mrl_sat_mul` — is invisible to every answer-level
+  boundary weakening in `pcrec_sat_mul` — is invisible to every answer-level
   check in the tree by construction (it under-estimates, which is
-  `pcrec_minw`'s safe direction). Sabotage row S254.
+  `pcrec_minw`'s safe direction). Sabotage row S254 (re-anchored at
+  step 3.6; the plant now reaches both mrl.c's and callgraph.c's callers
+  through the one shared function).
 
-  **The six functions are not `static` any more** (`src/opt/mrl.c`,
-  `src/gen/emit_vm.c`, `src/opt/callgraph.c`, declared in
-  `core/internal.h` beside `pcrec_minw`) — a linker cannot reach a
-  file-private symbol from a separate translation unit, and this check
-  calls the shipped functions directly rather than transcribing their
-  bodies (a transcription checks only itself). No behaviour change: this
-  is pcrec's own compile-time arithmetic, never emitted into generated
-  text, so it is not an `abi` event.
+  **THE FOUR FUNCTIONS ARE NOT `static`** (`src/opt/mrl.c`,
+  `src/gen/emit_vm.c`, declared in `core/internal.h` beside `pcrec_minw`) —
+  a linker cannot reach a file-private symbol from a separate translation
+  unit, and this check calls the shipped functions directly rather than
+  transcribing their bodies (a transcription checks only itself). No
+  behaviour change: this is pcrec's own compile-time arithmetic, never
+  emitted into generated text, so it is not an `abi` event.
 
-  Written against TODAY's three separate implementations. Lens 1's X3
-  (wave 2 of the code review) unifies them into `pcrec_sat_add`/
-  `pcrec_sat_mul` taking the ceiling as a parameter; this check must keep
-  passing unchanged against the unified pair — that is what proves the
-  unification changed nothing, and the six declarations in `internal.h`
-  retire with it, not before.
+  Written originally against THREE separate implementations (mrl.c,
+  callgraph.c, emit_vm.c). Lens 1's X3 (the 2026-09-17 code review) named
+  the unification `pcrec_sat_add`/`pcrec_sat_mul` taking the ceiling as a
+  parameter; step 3.6 built TWO OF THE THREE (mrl.c/callgraph.c) under this
+  check — re-run unchanged before and after and it still passes (same
+  values in, same values out), which is what proves the unification
+  changed nothing rather than merely asserting it. `pcrec_vm_fadd`/
+  `pcrec_vm_fmul`'s own declarations stay in `internal.h`'s gen-tier
+  section, unretired, until a future step brings emit_vm.c's copy in too.
 
 - **sb_fragf_check.c** — [REVW.2] wave 2 stage 3: `pcrec_sb_fragf`'s own
   property, below any emitted artifact. The primitive promises that

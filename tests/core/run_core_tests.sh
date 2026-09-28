@@ -37,12 +37,15 @@ ok()  { echo "PASS: $1"; pass=$((pass + 1)); }
 bad() { echo "FAIL: $1" >&2; fail=$((fail + 1)); }
 
 # ---------------------------------------------------------------------------
-# [REVW.U L5-R2] the saturating-arithmetic agreement — pcrec_mrl_sat_add/pcrec_vm_fadd/
-# pcrec_cg_sat_add and their _mul siblings, checked for cross-family equality and
+# [REVW.U L5-R2] / [PATFACTS] step 3.6 (R3) the saturating-arithmetic
+# agreement — pcrec_sat_add/pcrec_sat_mul (src/opt/mrl.c, the shared
+# primitive mrl.c and callgraph.c both call since step 3.6) against
+# pcrec_vm_fadd/pcrec_vm_fmul (src/gen/emit_vm.c, the one copy step 3.6
+# deliberately left out of scope), checked for cross-family equality and
 # the three algebraic laws the callers rely on. See sat_arith_check.c's own
 # header for the full argument, the domain choice, and the failing-direction
 # story (four sabotages, one of which — the boundary-off-by-one in
-# pcrec_mrl_sat_mul — is invisible to every answer-level check in this tree,
+# pcrec_sat_mul — is invisible to every answer-level check in this tree,
 # because under-estimating is the safe direction).
 # ---------------------------------------------------------------------------
 BIN="$WORKDIR/sat_arith_check"

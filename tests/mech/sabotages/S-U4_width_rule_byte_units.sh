@@ -24,8 +24,13 @@ SAB_SUITES="harness lookaround"
 SAB_HARNESS_TARGET="tests/lookaround"
 SAB_DESC="pcrec_cwmax's A_CLASS arm answers the encoding's maximum code-unit length (the [M5.0] cross-note's refuted cure) instead of the definitional 1 character; every lookbehind whose branch contains any class reads cwmin != cwmax and refuses, (?<=a)x included"
 SAB_DOC_FIGURE="PREDICTED: every lookbehind block in tests/lookaround/ that has a class (or literal, which parses to a class) in a branch goes red as a pattern-compile failure; lookahead blocks are unmoved (no width rule). MEASURED at stage 2: lookbehind.rxt and lookbehind_widths.rxt red wholesale, refused.rxt's perr blocks still red-for-the-right-reason where the refusal text changed."
+# RE-ANCHORED at [PATFACTS] step 3.6 (R3, 2026-09-28, lane pf36):
+# `pcrec_mrl_sat_add` retired into the shared `pcrec_sat_add(a, b, cap)`
+# (src/opt/mrl.c); the disambiguating comment line above the call is
+# unchanged and still what makes this anchor unique to `pcrec_cwmax`'s
+# A_CLASS arm.
 SAB_COUNT=1
 SAB_BEFORE='            /* One CHARACTER, exactly and by definition — see the header. */
-            return pcrec_mrl_sat_add(acc, 1);'
+            return pcrec_sat_add(acc, 1, MRL_MINW_MAX);'
 SAB_AFTER='            /* SABOTAGE S-U4: the cross-note cure — max code-unit length. */
-            return pcrec_mrl_sat_add(acc, 4);'
+            return pcrec_sat_add(acc, 4, MRL_MINW_MAX);'

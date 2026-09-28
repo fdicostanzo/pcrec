@@ -96,21 +96,44 @@
  * prevent exactly that. */
 #define MRL_MINW_MAX PCREC_MINW_MAX
 
-/* [REVW.U L5-R2] not `static`: tests/core/sat_arith_check.c links this
- * symbol directly (declared in core/internal.h). No behaviour change —
- * this is pcrec's own compile-time arithmetic, never emitted text. */
-long long pcrec_mrl_sat_add(long long a, long long b)
+/* [PATFACTS] step 3.6 (R3, docs/design/patfacts/inventory.md, lane pf36):
+ * THE SHARED SATURATING-ARITHMETIC PRIMITIVE. Until this row, this file's
+ * `pcrec_mrl_sat_add`/`pcrec_mrl_sat_mul` and src/opt/callgraph.c's
+ * `pcrec_cg_sat_add`/`pcrec_cg_sat_mul` were the SAME four-line algorithm
+ * typed twice -- R3's own finding, and the ceiling is a PARAMETER here
+ * (not a macro each file redefined) because `MRL_MINW_MAX` and callgraph.c's
+ * retired `CG_EXP_INF` were already the same VALUE by construction (both
+ * `PCREC_MINW_MAX`, `(1LL << 40)`) -- two names for one number.
+ *
+ * callgraph.c's own `pcrec_cg_sat_add`/`pcrec_cg_sat_mul` carried an extra
+ * leading guard (`a >= cap || b >= cap`) that tests/core/sat_arith_check.c's
+ * own CHECK 1 proves REDUNDANT on the non-negative domain every real call
+ * site uses (a >= 0, b >= 0: a >= cap implies a + b >= a >= cap, so the
+ * plain add-then-clamp form saturates identically) -- dropped here rather
+ * than carried forward as a second spelling.
+ *
+ * src/gen/emit_vm.c's `pcrec_vm_fadd`/`pcrec_vm_fmul` are a THIRD,
+ * independent copy of this same algorithm (the code review's lens 1 X3,
+ * docs/dev/reviews/2026-09-17-code-review.md) -- scoped OUT of this
+ * unification, since design.md's step 3.6 row names mrl.c/callgraph.c only
+ * and emit_vm.c sits in a higher layer (gen) than this file (opt).
+ * tests/core/sat_arith_check.c's cross-family check now compares THIS
+ * primitive (mrl.c + callgraph.c's shared caller) against
+ * `pcrec_vm_fadd`/`pcrec_vm_fmul`, so the agreement property the check
+ * exists for is unweakened by the merge -- two independent implementations
+ * survive where three did. */
+long long pcrec_sat_add(long long a, long long b, long long cap)
 {
     long long r = a + b;
-    return r > MRL_MINW_MAX ? MRL_MINW_MAX : r;
+    return r > cap ? cap : r;
 }
 
-/* Saturating multiply at MRL_MINW_MAX: 0 for a non-positive operand,
- * MRL_MINW_MAX on overflow -- pcrec_mrl_sat_add's own multiply sibling. */
-long long pcrec_mrl_sat_mul(long long a, long long b)
+/* Saturating multiply at `cap`: 0 for a non-positive operand, `cap` on
+ * overflow -- pcrec_sat_add's own multiply sibling. */
+long long pcrec_sat_mul(long long a, long long b, long long cap)
 {
     if (a <= 0 || b <= 0) return 0;
-    if (a > MRL_MINW_MAX / b) return MRL_MINW_MAX;
+    if (a > cap / b) return cap;
     return a * b;
 }
 
@@ -130,7 +153,7 @@ long long pcrec_minw(const Ast *a)
     for (;;) {
         switch (a->k) {
         case A_CLASS:
-            return pcrec_mrl_sat_add(acc, 1);
+            return pcrec_sat_add(acc, 1, MRL_MINW_MAX);
         case A_EMPTY:
         case A_BOL:
         case A_EOL:
@@ -226,9 +249,9 @@ long long pcrec_minw(const Ast *a)
          * position), and `pcrec_minw` is legitimately called from
          * `src/opt/possessify.c` before the graph exists. */
         case A_CALL:
-            return pcrec_mrl_sat_add(acc, a->u.call.minw);
+            return pcrec_sat_add(acc, a->u.call.minw, MRL_MINW_MAX);
         case A_CAT:
-            acc = pcrec_mrl_sat_add(acc, pcrec_minw(a->r));
+            acc = pcrec_sat_add(acc, pcrec_minw(a->r), MRL_MINW_MAX);
             a = a->l;
             continue;
         case A_CAP:
@@ -246,12 +269,12 @@ long long pcrec_minw(const Ast *a)
             continue;
         case A_ALT: {
             long long l = pcrec_minw(a->l), r = pcrec_minw(a->r);
-            return pcrec_mrl_sat_add(acc, l < r ? l : r);
+            return pcrec_sat_add(acc, l < r ? l : r, MRL_MINW_MAX);
         }
         case A_REP:
             /* `rmax == -1` (unbounded) is not special: the MINIMUM is rmin
              * copies whether or not there is a maximum. */
-            return pcrec_mrl_sat_add(acc, pcrec_mrl_sat_mul(a->u.rep.rmin, pcrec_minw(a->l)));
+            return pcrec_sat_add(acc, pcrec_sat_mul(a->u.rep.rmin, pcrec_minw(a->l), MRL_MINW_MAX), MRL_MINW_MAX);
         }
         /* No default arm: see the header comment. Reaching here means a new
          * AKind was added and this switch was not extended, which -Wswitch
@@ -494,7 +517,7 @@ long long pcrec_cwmax(const Ast *a)
         switch (a->k) {
         case A_CLASS:
             /* One CHARACTER, exactly and by definition — see the header. */
-            return pcrec_mrl_sat_add(acc, 1);
+            return pcrec_sat_add(acc, 1, MRL_MINW_MAX);
         case A_EMPTY:
         case A_BOL:
         case A_EOL:
@@ -525,7 +548,7 @@ long long pcrec_cwmax(const Ast *a)
         case A_VAR:
             /* UNBOUNDED — see the header. This is the one arm where minw's
              * "and it is EXACT" argument does not carry over to maxw. */
-            return pcrec_mrl_sat_add(acc, PCREC_W_UNBOUNDED);
+            return pcrec_sat_add(acc, PCREC_W_UNBOUNDED, MRL_MINW_MAX);
         /* [DD-14] UNBOUNDED UNLESS THE FIXPOINT HAS SAID OTHERWISE, and the
          * asymmetry with `pcrec_minw`'s arm is the whole point of this file
          * having two headers.
@@ -560,10 +583,10 @@ long long pcrec_cwmax(const Ast *a)
          * written; the pair is symmetric here and, since [DD-14.LB], in
          * `src/opt/callgraph.c` as well. */
         case A_CALL:
-            return pcrec_mrl_sat_add(acc, a->u.call.cwmax_known ? a->u.call.cwmax
-                                                          : PCREC_W_UNBOUNDED);
+            return pcrec_sat_add(acc, a->u.call.cwmax_known ? a->u.call.cwmax
+                                                          : PCREC_W_UNBOUNDED, MRL_MINW_MAX);
         case A_CAT:
-            acc = pcrec_mrl_sat_add(acc, pcrec_cwmax(a->r));
+            acc = pcrec_sat_add(acc, pcrec_cwmax(a->r), MRL_MINW_MAX);
             a = a->l;
             continue;
         case A_CAP:
@@ -582,7 +605,7 @@ long long pcrec_cwmax(const Ast *a)
             continue;
         case A_ALT: {
             long long l = pcrec_cwmax(a->l), r = pcrec_cwmax(a->r);
-            return pcrec_mrl_sat_add(acc, l > r ? l : r);
+            return pcrec_sat_add(acc, l > r ? l : r, MRL_MINW_MAX);
         }
         case A_REP: {
             /* `rmax == -1` (unbounded) IS special here, unlike in `minw`:
@@ -591,13 +614,14 @@ long long pcrec_cwmax(const Ast *a)
              *
              * Note what the saturating multiply then does for free, and it
              * is the whole reason PCREC_W_UNBOUNDED shares MRL_MINW_MAX's
-             * value: `pcrec_mrl_sat_mul(UNBOUNDED, 0)` is 0, so `(?:\b)*` and
-             * `(?:)*` answer 0 rather than "unbounded" — a zero-width body
-             * repeated any number of times still consumes nothing, and a
-             * lookbehind branch made of them is legitimately fixed-width. */
+             * value: `pcrec_sat_mul(UNBOUNDED, 0, MRL_MINW_MAX)` is 0, so
+             * `(?:\b)*` and `(?:)*` answer 0 rather than "unbounded" — a
+             * zero-width body repeated any number of times still consumes
+             * nothing, and a lookbehind branch made of them is legitimately
+             * fixed-width. */
             long long reps = a->u.rep.rmax < 0 ? PCREC_W_UNBOUNDED
                                                : (long long)a->u.rep.rmax;
-            return pcrec_mrl_sat_add(acc, pcrec_mrl_sat_mul(reps, pcrec_cwmax(a->l)));
+            return pcrec_sat_add(acc, pcrec_sat_mul(reps, pcrec_cwmax(a->l), MRL_MINW_MAX), MRL_MINW_MAX);
         }
         }
         /* No default arm: see `pcrec_minw`'s trap and the header. Returning
@@ -632,7 +656,7 @@ long long pcrec_cwmin(const Ast *a)
     for (;;) {
         switch (a->k) {
         case A_CLASS:
-            return pcrec_mrl_sat_add(acc, 1);
+            return pcrec_sat_add(acc, 1, MRL_MINW_MAX);
         case A_EMPTY:
         case A_BOL:
         case A_EOL:
@@ -655,9 +679,9 @@ long long pcrec_cwmin(const Ast *a)
          * The arena's zero is this function's SAFE direction (see the
          * header), so a walker running before the fixpoint reads a sound 0. */
         case A_CALL:
-            return pcrec_mrl_sat_add(acc, a->u.call.cwmin);
+            return pcrec_sat_add(acc, a->u.call.cwmin, MRL_MINW_MAX);
         case A_CAT:
-            acc = pcrec_mrl_sat_add(acc, pcrec_cwmin(a->r));
+            acc = pcrec_sat_add(acc, pcrec_cwmin(a->r), MRL_MINW_MAX);
             a = a->l;
             continue;
         case A_CAP:
@@ -671,11 +695,12 @@ long long pcrec_cwmin(const Ast *a)
             continue;
         case A_ALT: {
             long long l = pcrec_cwmin(a->l), r = pcrec_cwmin(a->r);
-            return pcrec_mrl_sat_add(acc, l < r ? l : r);
+            return pcrec_sat_add(acc, l < r ? l : r, MRL_MINW_MAX);
         }
         case A_REP:
-            return pcrec_mrl_sat_add(acc,
-                               pcrec_mrl_sat_mul(a->u.rep.rmin, pcrec_cwmin(a->l)));
+            return pcrec_sat_add(acc,
+                               pcrec_sat_mul(a->u.rep.rmin, pcrec_cwmin(a->l), MRL_MINW_MAX),
+                               MRL_MINW_MAX);
         }
         /* No default arm: `pcrec_minw`'s trap, same safe value (0 under-
          * estimates, which for THIS consumer means refuse). */
