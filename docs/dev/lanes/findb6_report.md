@@ -156,14 +156,36 @@ is a correction to B3.
   switch): GREEN both times — `run_findings_tests.sh` (B1/B2/B5's own
   sections, including the §10 sampled answer-identity slice through
   `tests/axes/run_axes.sh`) + `run_analyzer_tests.py` (37/1/0) +
-  `run_analyzer_agree.py` (47/0) on the first run; `run_findings_tests.sh`
-  + `run_analyzer_tests.py` + `run_analyzer_pinned.py` (11/0) on the
-  second, after the switch and deletion.
-- `run_analyzer_pinned.py` (the post-deletion standing check): **11/11
-  PASS** — 8 golden-file matches, R26, and both shipped bundles'
-  `generate.py --check`.
-- `strict` + full `make test-findings` re-verified GREEN after EVERY
-  commit in the chain (not just at the end).
+  `run_analyzer_agree.py` (47/0) on the first run (pre-switch); the
+  second run (post-switch, still with the prototype present) reads clean
+  in `/tmp/tf2.log` — `run_findings_tests.sh` + `run_analyzer_tests.py`
+  (37/1/0) + `run_analyzer_agree.py` (47/0), zero FAIL/Error lines
+  anywhere in the log.
+- `run_analyzer_pinned.py` (the post-deletion standing check), run
+  STANDALONE: **11/11 PASS** — 8 golden-file matches, R26, and both
+  shipped bundles' `generate.py --check` (which now runs
+  `build/pcrec-analyze` exclusively, since the prototype is gone).
+  `python3 tests/findings/run_analyzer_tests.py` also re-run standalone
+  post-deletion: 37/1/0 unchanged (it never imported the deleted module).
+  `make strict` clean post-deletion.
+- **OWED**: the FULL `make test-findings` (all three scripts together,
+  `run_findings_tests.sh` + `run_analyzer_tests.py` +
+  `run_analyzer_pinned.py`) launched as this lane's last act on the
+  fully-deleted tree, detached (`nohup make test-findings CC=gcc-16 >
+  /tmp/tf3.log 2>&1 &`, PID 65515) per BOILERPLATE's DO-THEN-FINISH —
+  the box was carrying concurrent load from another lane's (`findb4`)
+  own FINDINGS-axis `run_axes.sh` sweep for this whole window, so the
+  §10 slice was still running at hand-off. Every individual piece it
+  would re-run has already been verified standalone above (this run adds
+  nothing new except confirming they hold TOGETHER, in one process, on
+  the fully-deleted tree). Log path: `/tmp/tf3.log` on the dev Mac
+  (**note**: this is outside the session scratchpad the brief named —
+  the run was already in flight when that was noticed; nothing here is
+  committed, but a future lane should launch OWED background runs inside
+  the assigned scratchpad, not bare `/tmp`). Completion line to look for:
+  `checks passed: 11` with no `FAIL` above it (the `run_analyzer_pinned.py`
+  section) preceded by clean `run_findings_tests.sh`/`run_analyzer_tests.py`
+  sections and no `*** [test-findings] Error` line.
 
 ## What §11.8's own acceptance line got right and wrong
 
