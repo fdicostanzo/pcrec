@@ -5361,16 +5361,20 @@ typedef struct {
 } RxtServe;
 
 /* [FINDINGS] B1: one DATA block of an `analysis` bundle — its kind, the
- * bundle it belongs to, its `serves` lines and its counts. `counts` holds
- * 256 entries, zero where the block has no row (a `freq` block's key is a
- * byte); every count is <= PCREC_MAX_FIND_COUNT, checked at the row. */
+ * bundle it belongs to, its `serves` lines and its counts. A `freq` block's
+ * `counts` holds 256 entries, zero where the block has no row (its key is a
+ * byte); a `cpfreq` block's rows are `cps`, ascending by code point, and its
+ * `counts` is NULL ([FINDINGS] B5). Every count is <= PCREC_MAX_FIND_COUNT,
+ * checked at the row. */
 typedef struct {
     size_t              line;      /* the kind keyword's own line */
     const char         *bundle;    /* the owning bundle's name */
-    const char         *kind;      /* "freq" */
+    const char         *kind;      /* "freq" or "cpfreq" */
     RxtServe           *serves;
     size_t              nserves, servecap;
     unsigned long long *counts;
+    PcrecFindCp        *cps;
+    size_t              ncps, cpcap;
     /* [FINDINGS] B2: the block's declarations as written (NULL where
      * absent), for `--list-analysis`; read by no compile. */
     const char         *encoding, *question, *reader, *analyzer;

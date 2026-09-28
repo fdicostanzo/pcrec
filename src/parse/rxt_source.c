@@ -515,33 +515,20 @@ static int analysis_name_check(RxtP *p, size_t line, const char *what,
                     what, (int)n, v);
 }
 
-/* [FINDINGS] B0: THE CLOSED DERIVATION VOCABULARY (findings design §2.4)
- * as DATA — which block KIND may declare each derivation and which QUERY it
- * answers. The query vocabulary is this table's second column, never a
- * second list. Rows whose kind is not a schema row yet (`cpfreq` at B5,
- * `bigram` at B4) are the spec-stated vocabulary, so a `via markov1` on a
- * `freq` block is refused as the wrong KIND's derivation rather than as an
- * unknown word. B1's `src/core/findings.c` implements each derivation; this
- * table moves beside those functions then, so there is one home. */
-static const struct {
-    const char *kind, *derivation, *query;
-} rxt_find_derivations[] = {
-    { "freq",   "unigram",       "byte-rate"  },
-    { "cpfreq", "encode-utf8",   "byte-rate"  },
-    { "cpfreq", "encode-latin1", "byte-rate"  },
-    { "bigram", "markov1",       "run-rarity" },
-};
-#define RXT_NFIND_DERIV (sizeof rxt_find_derivations / sizeof *rxt_find_derivations)
-
-/* [FINDINGS] B0: a data block's `row` KEY arity, per kind — the number of
- * byte keys (`HH`, two lowercase hex digits each) before the count. Only
- * the kinds this build admits have an entry; `bigram` joins with 2 at B4,
- * `cpfreq` with its `U+HHHH` key at B5. */
+/* [FINDINGS] B0: a data block's `row` KEY grammar, per kind — how many
+ * keys come before the count, and their FORM: a byte (`HH`, two lowercase
+ * hex digits) or a code point (`U+HHHH`..`U+HHHHHH`, uppercase, B5). Only
+ * the kinds this build admits have an entry; `bigram` joins with two byte
+ * keys at B4. The closed DERIVATION vocabulary `serves ... via` is checked
+ * against is `pcrec_find_deriv` (src/core/findings.c), beside the functions
+ * that implement it. */
 static const struct {
     const char *kind;
     int         nkeys;
+    bool        cp;
 } rxt_find_row_keys[] = {
-    { "freq", 1 },
+    { "freq",   1, false },
+    { "cpfreq", 1, true  },
 };
 
 /* Reads one space-delimited word from `*s` into (`*w`, `*n`), advancing
@@ -587,31 +574,28 @@ static int serves_check(RxtP *p, size_t line, const char *kind,
                         "<derivation>' (got '%s')", v);
 
     int qknown = 0;
-    for (size_t i = 0; i < RXT_NFIND_DERIV; i++)
-        if (word_is(q, qn, rxt_find_derivations[i].query)) qknown = 1;
+    const PcrecFindDeriv *dv = NULL, *x;
+    for (size_t i = 0; (x = pcrec_find_deriv(i)); i++) {
+        if (word_is(q, qn, x->query)) qknown = 1;
+        if (word_is(d, dn, x->name)) dv = x;
+    }
     if (!qknown)
         return rxt_fail(p, RXTD_VALUE_SHAPE, line,
                         "'serves' names query '%.*s', which is not a findings "
                         "query (byte-rate, run-rarity)", (int)qn, q);
-
-    size_t di = RXT_NFIND_DERIV;
-    for (size_t i = 0; i < RXT_NFIND_DERIV; i++)
-        if (word_is(d, dn, rxt_find_derivations[i].derivation)) di = i;
-    if (di == RXT_NFIND_DERIV)
+    if (!dv)
         return rxt_fail(p, RXTD_VALUE_SHAPE, line,
                         "'serves' names derivation '%.*s', which is not one "
                         "(unigram, encode-utf8, encode-latin1, markov1)",
                         (int)dn, d);
-    if (strcmp(rxt_find_derivations[di].kind, kind) != 0)
+    if (strcmp(dv->kind, kind) != 0)
         return rxt_fail(p, RXTD_VALUE_SHAPE, line,
                         "'serves ... via %s' is a '%s' derivation; this is a "
-                        "'%s' block", rxt_find_derivations[di].derivation,
-                        rxt_find_derivations[di].kind, kind);
-    if (!word_is(q, qn, rxt_find_derivations[di].query))
+                        "'%s' block", dv->name, dv->kind, kind);
+    if (!word_is(q, qn, dv->query))
         return rxt_fail(p, RXTD_VALUE_SHAPE, line,
                         "'via %s' answers '%s', not '%.*s'",
-                        rxt_find_derivations[di].derivation,
-                        rxt_find_derivations[di].query, (int)qn, q);
+                        dv->name, dv->query, (int)qn, q);
 
     const char *qs = arena_strndup(p->arena, q, qn);
     /* [FINDINGS] B1: the block KEEPS the line — (query, encodings, via) —
@@ -625,8 +609,7 @@ static int serves_check(RxtP *p, size_t line, const char *kind,
         fb->servecap = nc;
     }
     fb->serves[fb->nserves++] = (RxtServe){
-        qs, arena_strndup(p->arena, e, en),
-        rxt_find_derivations[di].derivation };
+        qs, arena_strndup(p->arena, e, en), dv->name };
     const char *ep = e, *eend = e + en;
     while (ep <= eend) {
         const char *c = ep;
@@ -668,50 +651,93 @@ static int serves_check(RxtP *p, size_t line, const char *kind,
     return 0;
 }
 
+/* [FINDINGS] B0/B5: reads one `row` KEY `w[0..n)` into `*key`, in its
+ * kind's FORM: a byte, two LOWERCASE hex digits; or (`cp`) a code point,
+ * `U+` and four to six UPPERCASE hex digits with no leading zero past the
+ * fourth — the analyzer's own spelling, so the text stays canonical — naming
+ * a Unicode scalar value (never a surrogate, at most U+10FFFF). */
+static int row_key(RxtP *p, size_t line, const char *w, size_t n, bool cp,
+                   unsigned long *key)
+{
+    unsigned long k = 0;
+    if (!cp) {
+        for (size_t j = 0; n == 2 && j < 2; j++) {
+            char c = w[j];
+            int h = (c >= '0' && c <= '9') ? c - '0'
+                  : (c >= 'a' && c <= 'f') ? c - 'a' + 10 : -1;
+            if (h < 0) break;
+            k = k * 16 + (unsigned long)h;
+            if (j == 1) { *key = k; return 0; }
+        }
+        return rxt_fail(p, RXTD_VALUE_SHAPE, line,
+                        "'row' key '%.*s' is not a byte: two lowercase hex "
+                        "digits, 00..ff", (int)n, w);
+    }
+    bool ok = n >= 6 && n <= 8 && w[0] == 'U' && w[1] == '+' &&
+              (n == 6 || w[2] != '0');
+    for (size_t j = 2; ok && j < n; j++) {
+        char c = w[j];
+        int h = (c >= '0' && c <= '9') ? c - '0'
+              : (c >= 'A' && c <= 'F') ? c - 'A' + 10 : -1;
+        if (h < 0) ok = false;
+        else k = k * 16 + (unsigned long)h;
+    }
+    if (!ok || k > 0x10FFFF)
+        return rxt_fail(p, RXTD_VALUE_SHAPE, line,
+                        "'row' key '%.*s' is not a code point: U+ then four "
+                        "to six uppercase hex digits, no leading zero past "
+                        "the fourth, U+0000..U+10FFFF", (int)n, w);
+    if (k >= 0xD800 && k <= 0xDFFF)
+        return rxt_fail(p, RXTD_VALUE_SHAPE, line,
+                        "'row' key '%.*s' is a surrogate, not a Unicode "
+                        "scalar value: decoded text never holds one",
+                        (int)n, w);
+    *key = k;
+    return 0;
+}
+
 /* [FINDINGS] B0: validates one `row <key>... <count>` line of data frame
- * `f` (findings design §2.3): the kind's key arity, each key two LOWERCASE
- * hex digits, the keys (read as one big-endian number) STRICTLY ascending
- * across the block, and the count a canonical decimal — no leading zero,
- * and never 0 itself, because an absent row IS a zero count. The count's
- * upper limit (`PCREC_MAX_FIND_COUNT`) is B1's, with the limit row. */
+ * `f` (findings design §2.3): the kind's key arity and form (`row_key`), the
+ * keys (read as one big-endian number) STRICTLY ascending across the block,
+ * and the count a canonical decimal — no leading zero, and never 0 itself,
+ * because an absent row IS a zero count — at most `PCREC_MAX_FIND_COUNT`.
+ * A `freq` row lands in the block's 256 `counts`; a `cpfreq` row is
+ * appended to its `cps` (B5), at most `PCREC_MAX_FIND_CPFREQ_ROWS` of them. */
 static int row_check(RxtP *p, size_t line, RxtFrame *f, RxtFindBlock *fb,
                      const char *v)
 {
     int nkeys = 0;
+    bool cp = false;
     for (size_t i = 0; i < sizeof rxt_find_row_keys / sizeof *rxt_find_row_keys; i++)
-        if (!strcmp(rxt_find_row_keys[i].kind, f->open_kind))
+        if (!strcmp(rxt_find_row_keys[i].kind, f->open_kind)) {
             nkeys = rxt_find_row_keys[i].nkeys;
+            cp = rxt_find_row_keys[i].cp;
+        }
     if (!nkeys)
         return rxt_fail(p, RXTD_VALUE_SHAPE, line,
                         "internal: no 'row' key grammar for a '%s' block",
                         f->open_kind);
 
     const char *s = v, *w;
+    const char *form = cp ? "code-point" : "byte";
     size_t n;
     unsigned long key = 0;
     for (int k = 0; k < nkeys; k++) {
+        unsigned long one;
         if (!next_word(&s, &w, &n))
             return rxt_fail(p, RXTD_VALUE_SHAPE, line,
-                            "'row' in a '%s' block wants %d byte key(s) then "
-                            "a count (got '%s')", f->open_kind, nkeys, v);
-        int hv[2] = { -1, -1 };
-        for (size_t j = 0; n == 2 && j < 2; j++) {
-            char c = w[j];
-            hv[j] = (c >= '0' && c <= '9') ? c - '0'
-                  : (c >= 'a' && c <= 'f') ? c - 'a' + 10 : -1;
-        }
-        if (n != 2 || hv[0] < 0 || hv[1] < 0)
-            return rxt_fail(p, RXTD_VALUE_SHAPE, line,
-                            "'row' key '%.*s' is not a byte: two lowercase hex "
-                            "digits, 00..ff", (int)n, w);
-        key = key * 256 + (unsigned long)(hv[0] * 16 + hv[1]);
+                            "'row' in a '%s' block wants %d %s key(s) then "
+                            "a count (got '%s')", f->open_kind, nkeys, form, v);
+        int r = row_key(p, line, w, n, cp, &one);
+        if (r != 0) return r;
+        key = key * 256 + one;
     }
     const char *extra;
     size_t extra_n;
     if (!next_word(&s, &w, &n) || next_word(&s, &extra, &extra_n))
         return rxt_fail(p, RXTD_VALUE_SHAPE, line,
-                        "'row' in a '%s' block wants %d byte key(s) then a "
-                        "count (got '%s')", f->open_kind, nkeys, v);
+                        "'row' in a '%s' block wants %d %s key(s) then a "
+                        "count (got '%s')", f->open_kind, nkeys, form, v);
     for (size_t j = 0; j < n; j++)
         if (!isdigit((unsigned char)w[j]))
             return rxt_fail(p, RXTD_VALUE_SHAPE, line,
@@ -738,10 +764,46 @@ static int row_check(RxtP *p, size_t line, RxtFrame *f, RxtFindBlock *fb,
                             "(%llu)", (int)n, w,
                             (unsigned long long)PCREC_MAX_FIND_COUNT);
     }
-    fb->counts[key] = c;
+    if (!cp) {
+        fb->counts[key] = c;
+    } else {
+        if (fb->ncps == PCREC_MAX_FIND_CPFREQ_ROWS)
+            return rxt_fail(p, RXTD_VALUE_SHAPE, line,
+                            "a 'cpfreq' block carries more than "
+                            "PCREC_MAX_FIND_CPFREQ_ROWS (%d) rows",
+                            PCREC_MAX_FIND_CPFREQ_ROWS);
+        if (fb->ncps == fb->cpcap) {
+            size_t nc = fb->cpcap ? fb->cpcap * 2 : 64;
+            PcrecFindCp *nv = pcrec_arena_alloc(p->arena, nc * sizeof *nv);
+            if (fb->ncps) memcpy(nv, fb->cps, fb->ncps * sizeof *nv);
+            fb->cps = nv;
+            fb->cpcap = nc;
+        }
+        fb->cps[fb->ncps++] = (PcrecFindCp){ (uint32_t)key, c };
+    }
     f->have_key = 1;
     f->last_key = key;
     f->last_key_line = line;
+    return 0;
+}
+
+/* [FINDINGS] B5: refuses, at the close of data block `fb`, a `serves` line
+ * whose derivation would put more than `PCREC_MAX_FIND_COUNT` on one byte —
+ * the bound every row count already obeys, applied to the counts a compile
+ * would actually normalize, by the ONE derivation function the compile runs
+ * (`pcrec_find_derive_counts`). Only a `cpfreq` block can: `unigram` is the
+ * identity on counts the row check already bounded. */
+static int fblock_close_check(RxtP *p, const RxtFindBlock *fb)
+{
+    unsigned long long c[256];
+    for (size_t j = 0; fb->cps && j < fb->nserves; j++)
+        if (pcrec_find_derive_counts(fb->serves[j].via, fb->counts, fb->cps,
+                                     fb->ncps, c, NULL) == -1)
+            return rxt_fail(p, RXTD_VALUE_SHAPE, fb->line,
+                            "this '%s' block's 'via %s' derives a byte count "
+                            "over PCREC_MAX_FIND_COUNT (%llu)", fb->kind,
+                            fb->serves[j].via,
+                            (unsigned long long)PCREC_MAX_FIND_COUNT);
     return 0;
 }
 
@@ -974,8 +1036,9 @@ static int split_lines(RxtP *p, char *buf, size_t got, RxtLines *out)
 /* ------------------------------------------------------- the productions */
 
 /* [FINDINGS] B1: opens one DATA block of the bundle `owner` (the
- * `analysis` row its frame attaches under) at `line`, with a zeroed 256-entry
- * count table, and returns its index in `src->fblocks`. */
+ * `analysis` row its frame attaches under) at `line` — a `freq` block with a
+ * zeroed 256-entry count table, a `cpfreq` one with no rows yet — and returns
+ * its index in `src->fblocks`. */
 static size_t fblock_push(Arena *a, RxtSource *src, size_t line,
                           const RxtRow *owner, const char *kind)
 {
@@ -991,7 +1054,8 @@ static size_t fblock_push(Arena *a, RxtSource *src, size_t line,
     fb->line = line;
     fb->bundle = owner ? owner->name : NULL;
     fb->kind = kind;
-    fb->counts = pcrec_arena_alloc(a, 256 * sizeof *fb->counts);
+    if (!strcmp(kind, "freq"))
+        fb->counts = pcrec_arena_alloc(a, 256 * sizeof *fb->counts);
     return src->nfblocks++;
 }
 
@@ -2699,6 +2763,9 @@ static RxtSource *parse_src(const char *path, pcrec_error *err,
     do {                                                                    \
         if (!(F)->tree) {                                                   \
             if (frame_constraints(&p, (F), rowbase, nrows, (LINE)) != 0)    \
+                goto fail;                                                  \
+            if ((F)->scope == RXT_SCOPE_DATA &&                             \
+                fblock_close_check(&p, &src->fblocks[(F)->fbi]) != 0)       \
                 goto fail;                                                  \
             close_section_frame(&src->arena, src, rowbase, nrows, (F));    \
         }                                                                   \

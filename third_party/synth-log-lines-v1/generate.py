@@ -1,43 +1,31 @@
 #!/usr/bin/env python3
 """generate.py -- this SOURCE's derivation step (`third_party/README.md`'s
 general rule: a data source compiles to generated tables, generator beside
-the data).
-
-**SOURCING-HALF STUB.** This lane (`findb5src`, `[FINDINGS]` B5's sourcing
-half) is scoped to nothing under `src/`, `cli/`, `tests/`. It runs the real
-analyzer over the real (here, synthesized) exemplar and writes the result to
-`generated_preview.rxt`, BESIDE THIS FILE -- a SCRATCH CHECK proving the
-pipeline works end to end, committed here for review, and DELIBERATELY NOT
-`src/findings/log.rxt`. Wiring this generator to write the shipped file,
-adding `--check` against it, and adding the derived file to the Makefile's
-`GEN_TABLES` list (`third_party/CLAUDE.md`'s "Adding a source" step 4,
-`[r2 A-6]`) is `[FINDINGS]` B5's BUILD half, a later lane.
+the data): the shipped `log` analysis, `src/findings/log.rxt` ([FINDINGS]
+B5; docs/design/findings/design.md §8.1, §13 B5).
 
 WHAT IT READS   `synthetic_log_lines.txt`, beside this file (itself produced,
                 deterministically, by `gen_corpus.py` -- see that file's own
                 header for why this class is synthesized rather than vendored:
                 D123-8 item 6, [r2 A-4]).
-WHAT IT WRITES  `generated_preview.rxt`, beside this file (SCRATCH; see above).
+WHAT IT WRITES  `src/findings/log.rxt`: a header comment, then EXACTLY what
+                the analyzer (`scripts/pcrec_analyze.py`, R27b: a generator
+                never counts itself) prints for that file.
 
     python3 third_party/synth-log-lines-v1/generate.py          # writes it
     python3 third_party/synth-log-lines-v1/generate.py --check  # verifies
 
-This is the SAME two-mode contract every `third_party/*/generate.py` offers
-(`third_party/README.md` item 3), applied to a preview output rather than a
-shipped one: `--check` regenerates in memory and fails if the committed
-preview has drifted, so an edit to the corpus or the analyzer invocation
-below cannot silently go stale even before the build half retargets this
-script.
+`make gen-tables` runs the bare form and then `make gen-findings`, which
+re-embeds the store from the new text; `make test-findings` runs `--check`
+for every shipped bundle whose provenance names a `third_party/` source
+(tests/findings/ §12).
 
-NAME/ANALYZER ARGUMENTS: `--name log` matches design.md's own naming
-(`src/findings/{log,weblog}.rxt`, §13 B5; the accept fixture
-`tests/rxtsource/fixtures/analysis_bundle_accept.rxtin` already shows
-`weblog`'s `include <log>`, so `log` is the name the build half must use for
-the two bundles to compose as designed). `--scan freq,cpfreq` matches the B5
-row's stated scope (bigram is B4/B6 territory, already landed separately).
-`--source synth-log-lines-v1` and no `--url`/`--ref` (there is none -- this
-is SYNTHESIZED, not fetched); `--license` names the repository's own MIT
-licence, since the data originates here.
+ARGUMENTS: `--scan freq,cpfreq` is B5's scope (R5); `bigram` joins at B4.
+`--source` is this directory's name (how tests/findings/ §12 finds this
+generator from the bundle). No `--url`/`--ref`: the data is SYNTHESIZED, not
+fetched, so the provenance says so -- `--fidelity synthesized` with its
+`--adaptation` line, the label D123-8 item 6 requires -- and `--license`
+names this repository's own MIT licence, since the data originates here.
 """
 from __future__ import annotations
 
@@ -50,11 +38,25 @@ HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
 ANALYZE = ROOT / "scripts" / "pcrec_analyze.py"
 CORPUS = HERE / "synthetic_log_lines.txt"
-OUT = HERE / "generated_preview.rxt"
+OUT = ROOT / "src" / "findings" / "log.rxt"
 
-RETRIEVED = "2026-09-27"  # the date this lane generated the corpus (R27c: no
-                          # clock read at analysis time; this is the fixed
-                          # date recorded, not derived from anything live)
+RETRIEVED = "2026-09-27"  # the date the corpus was generated (R27c: no
+                          # clock read at analysis time)
+
+HEADER = """\
+# src/findings/log.rxt -- THE SHIPPED `log` ANALYSIS ([FINDINGS] B5).
+# GENERATED -- never edit by hand. Written by
+# third_party/synth-log-lines-v1/generate.py, which runs
+# scripts/pcrec_analyze.py over that directory's synthetic_log_lines.txt: a
+# SYNTHESIZED, Hadoop-DataNode-shaped log corpus (no licensable real one was
+# found -- PROVENANCE.md there, which also records where its byte mix is
+# known to differ from real HDFS logs). Regenerate with `make gen-tables`;
+# `make test-findings` checks it is not stale.
+#
+# `freq` answers byte-rate under -e byte and `cpfreq` under -e utf8
+# (encode-utf8): name it with `--analysis log` or a config's `analysis log`
+# (docs/spec/findings.md).
+"""
 
 
 def run_analyzer() -> bytes:
@@ -66,8 +68,12 @@ def run_analyzer() -> bytes:
         "--name", "log",
         "--retrieved", RETRIEVED,
         "--scan", "freq,cpfreq",
-        "--source", "synth-log-lines-v1",
-        "--license", "MIT (this repository; the exemplar is SYNTHESIZED, not vendored -- see PROVENANCE.md)",
+        "--source", HERE.name,
+        "--license", "MIT",
+        "--fidelity", "synthesized",
+        "--adaptation", "generated by gen_corpus.py (SEED 20260927) in the "
+                        "structural shape of a Hadoop DataNode log; no real "
+                        "log text is copied",
         str(CORPUS),
     ]
     cp = subprocess.run(args, capture_output=True)
@@ -82,27 +88,16 @@ def main() -> int:
     ap.add_argument("--check", action="store_true")
     args = ap.parse_args()
 
-    header = (
-        "# " + "=" * 74 + "\n"
-        "# generated_preview.rxt -- [FINDINGS] B5 SOURCING-HALF SCRATCH CHECK.\n"
-        "# NOT src/findings/log.rxt. Produced by third_party/synth-log-lines-v1/\n"
-        "# generate.py running scripts/pcrec_analyze.py over the SYNTHESIZED\n"
-        "# exemplar synthetic_log_lines.txt (fidelity synthesized, D123-8 item 6;\n"
-        "# see PROVENANCE.md and gen_corpus.py). Proves the analyzer pipeline runs\n"
-        "# end to end on this source; the build half retargets this generator to\n"
-        "# write the real src/findings/log.rxt and wires it into GEN_TABLES.\n"
-        "# " + "=" * 74 + "\n"
-    ).encode("ascii")
-
-    body = run_analyzer()
-    data = header + body
+    data = HEADER.encode("ascii") + run_analyzer()
 
     if args.check:
         if not OUT.exists():
             print(f"MISSING: {OUT}", file=sys.stderr)
             return 1
         if OUT.read_bytes() != data:
-            print(f"STALE: {OUT} does not match a fresh analyzer run", file=sys.stderr)
+            print(f"STALE: {OUT} does not match a fresh analyzer run over "
+                  f"{CORPUS.name} -- regenerate with `make gen-tables`",
+                  file=sys.stderr)
             return 1
         print(f"OK: {OUT} matches a fresh analyzer run ({len(data)} bytes)")
         return 0

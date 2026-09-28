@@ -24,6 +24,7 @@ Command forms (design.md §10.2):
 
     pcrec-analyze --name NAME --retrieved DATE [--scan freq,cpfreq,bigram]
                   [--source TOKEN] [--url U] [--ref R] [--license L]
+                  [--fidelity F --adaptation TEXT]   ([FINDINGS] B5)
                   [--shard K/N] [FILE | -]           -> one bundle on stdout
     pcrec-analyze --merge --name NAME PART.rxt...    -> merged bundle
                   [--bytes N --sha256 HEX]               (see NOTE)
@@ -231,6 +232,8 @@ class KindBlock:
         self.url: Optional[str] = None
         self.ref: Optional[str] = None
         self.license: Optional[str] = None
+        self.fidelity: Optional[str] = None
+        self.adaptation: Optional[str] = None
         self.provenance_bytes: Optional[int] = None
         self.provenance_sha256: Optional[str] = None
 
@@ -333,6 +336,10 @@ def render_kind_block(block: KindBlock, has_freq: bool, has_cpfreq: bool,
         lines.append(f"            ref {block.ref}")
     if block.license:
         lines.append(f"            license {block.license}")
+    if block.fidelity:
+        lines.append(f"            fidelity {block.fidelity}")
+    if block.adaptation:
+        lines.append(f"            adaptation {block.adaptation}")
     return lines
 
 
@@ -523,6 +530,8 @@ def cmd_scan(args: argparse.Namespace) -> int:
         b.url = args.url
         b.ref = args.ref
         b.license = args.license
+        b.fidelity = args.fidelity
+        b.adaptation = args.adaptation
         b.provenance_bytes = provenance_bytes
         b.provenance_sha256 = provenance_sha256
 
@@ -574,7 +583,8 @@ def cmd_merge(args: argparse.Namespace) -> int:
         )
         # provenance metadata must agree across parts, or this is a caller
         # error (never silently pick one — "never" per design.md §9).
-        for field_name in ("source", "retrieved", "url", "ref", "license"):
+        for field_name in ("source", "retrieved", "url", "ref", "license",
+                           "fidelity", "adaptation"):
             values = {pk.provenance.get(field_name) for pk in parsed_list}
             values.discard(None)
             if len(values) > 1:
@@ -701,6 +711,11 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--url")
     p.add_argument("--ref")
     p.add_argument("--license")
+    p.add_argument("--fidelity", choices=("verbatim", "adapted", "synthesized"),
+                   help="provenance fidelity of the exemplar (a data source's label, "
+                        "e.g. D123-8 item 6's `synthesized`)")
+    p.add_argument("--adaptation", help="one-line prose: how the exemplar departs "
+                   "from its source (the schema requires it when fidelity is not verbatim)")
     p.add_argument("--shard", metavar="K/N", help="scan only shard K of N (design.md §10.4)")
     p.add_argument("--bytes", type=int, help="--merge: the verified whole-input byte total")
     p.add_argument("--sha256", help="--merge: the verified whole-input sha256")

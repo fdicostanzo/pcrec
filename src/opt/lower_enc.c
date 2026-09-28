@@ -175,23 +175,6 @@ static unsigned pat_char_byte(Ctx *cx, size_t at, int *len)
 
 /* ---- the UTF8 instance --------------------------------------------------- */
 
-/* Encode `cp` (a scalar value: not a surrogate, <= 0x10FFFF — both excluded
- * by the callers) into b[0..3]; returns the length 1..4. */
-static int u8_enc(unsigned cp, unsigned char *b)
-{
-    if (cp <= 0x7F)   { b[0] = (unsigned char)cp; return 1; }
-    if (cp <= 0x7FF)  { b[0] = (unsigned char)(0xC0 | (cp >> 6));
-                        b[1] = (unsigned char)(0x80 | (cp & 0x3F)); return 2; }
-    if (cp <= 0xFFFF) { b[0] = (unsigned char)(0xE0 | (cp >> 12));
-                        b[1] = (unsigned char)(0x80 | ((cp >> 6) & 0x3F));
-                        b[2] = (unsigned char)(0x80 | (cp & 0x3F)); return 3; }
-    b[0] = (unsigned char)(0xF0 | (cp >> 18));
-    b[1] = (unsigned char)(0x80 | ((cp >> 12) & 0x3F));
-    b[2] = (unsigned char)(0x80 | ((cp >> 6) & 0x3F));
-    b[3] = (unsigned char)(0x80 | (cp & 0x3F));
-    return 4;
-}
-
 /* A growable list of alternation BRANCHES, arena-backed for cpset.c's own
  * reason: this runs inside a compile that can `pcrec_ctx_fail` mid-build. */
 typedef struct {
@@ -253,8 +236,8 @@ static Ast *u8_seq(Ctx *cx, const unsigned char *rlo, const unsigned char *rhi,
 static void u8_box(U8Branches *bl, unsigned lo, unsigned hi, int n)
 {
     unsigned char lb[4], hb[4];
-    u8_enc(lo, lb);
-    u8_enc(hi, hb);
+    pcrec_utf8_encode(lo, lb);
+    pcrec_utf8_encode(hi, hb);
 
     /* longest common prefix */
     int p = 0;

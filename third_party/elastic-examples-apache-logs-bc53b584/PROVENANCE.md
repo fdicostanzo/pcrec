@@ -51,16 +51,12 @@ ref), not the bytes.
 
 | derived artifact | produced by | consumed by |
 |---|---|---|
-| `src/findings/weblog.rxt` **(NOT YET BUILT — the build half of `[FINDINGS]` B5, see `generate.py` below)** | `generate.py` in this directory, running `scripts/pcrec_analyze.py` over `apache_logs.txt` | module `findings`' `analysis weblog` bundle: `freq` + `cpfreq` blocks (design.md §13 B5), a byte-rate exemplar for C6 (the WAF sign check / S4(a)'s run pick) |
+| `src/findings/weblog.rxt` (the shipped `weblog` analysis, `[FINDINGS]` B5) | `generate.py` in this directory, running `scripts/pcrec_analyze.py` over `apache_logs.txt` | module `findings`' `analysis weblog` bundle: `freq` + `cpfreq` blocks (design.md §13 B5), a byte-rate exemplar for C6 (the WAF sign check / S4(a)'s run pick) |
 
-`generate.py` here is a **SOURCING-HALF STUB**: it demonstrates the
-analyzer call and writes its output to `generated_preview.rxt` in this
-directory (committed as a SCRATCH CHECK, not wired into any build — see
-that file's own header and `src/findings/CLAUDE.md`). The build half
-(a later lane) retargets it to write `src/findings/weblog.rxt`, adds
-`--check` verification, and adds the derived file to the Makefile's
-`GEN_TABLES` list (`third_party/CLAUDE.md`'s "Adding a source" step 4;
-`[r2 A-6]`).
+`generate.py` writes it (lane `findb5`, 2026-09-28; the sourcing lane's
+`generated_preview.rxt` scratch check is retired); `make gen-tables`
+regenerates it and the store, and `make test-findings` §12 runs
+`generate.py --check`.
 
 ## Why this class ships (D123 addendum 7)
 

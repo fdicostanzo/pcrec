@@ -298,15 +298,16 @@ PCREC_RXT_SCHEMA(VARIANT, "note",        PROSE, 0, PROSE, AT_MOST_ONE, "forbidde
  *
  * At most one data block per KIND, an optional `include <other>` in C's
  * SEARCH spelling (one per bundle, D123-8 item 4, so the chain stays a
- * chain), and a prose `description`. `cpfreq` and `bigram` are NOT rows
- * yet: each is admitted with its first reader (R2 — B5 and B4). With one
- * kind a bundle holds at most one block, which is why the bundle-level
- * (query, encoding) collision rule (r2 M-B1) reaches only a duplicated
- * encoding on ONE `serves` line until `cpfreq` lands. */
+ * chain), and a prose `description`. `cpfreq` joined at B5, with the
+ * byte-rate readers it feeds through `encode-utf8`/`encode-latin1`; `bigram`
+ * is NOT a row yet — it is admitted with its first reader (R2, B4). With two
+ * kinds a bundle can hold two blocks, which is the bundle-level (query,
+ * encoding) collision rule's (r2 M-B1) designed population. */
 
 PCREC_RXT_SCHEMA(BUNDLE, "include",     TOKEN, 0, NONE,  AT_MOST_ONE, "", FORMAT, PCREC, 23)
 PCREC_RXT_SCHEMA(BUNDLE, "description", PROSE, 0, PROSE, AT_MOST_ONE, "", FORMAT, PCREC, 23)
 PCREC_RXT_SCHEMA(BUNDLE, "freq",        NONE,  0, DATA,  AT_MOST_ONE, "", FORMAT, PCREC, 23)
+PCREC_RXT_SCHEMA(BUNDLE, "cpfreq",      NONE,  0, DATA,  AT_MOST_ONE, "", FORMAT, PCREC, 23)
 
 /* ---- DATA scope — a kind block's body (§2.10; findings design §2.3-§2.4)
  *

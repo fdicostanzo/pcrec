@@ -117,10 +117,21 @@ int main(int argc, char **argv)
                         fb->serves[j].query, fb->serves[j].encs,
                         fb->serves[j].via);
             }
-            fprintf(out, "};\nstatic const unsigned long long pcrec_find_tbl_counts_%zu[256] = {\n", nb);
-            for (int b = 0; b < 256; b++)
-                fprintf(out, "%lluull,%s", fb->counts[b], (b & 7) == 7 ? "\n" : " ");
             fprintf(out, "};\n");
+            /* a `freq` block's 256 counts; a `cpfreq` block's rows ([B5]) */
+            if (fb->counts) {
+                fprintf(out, "static const unsigned long long pcrec_find_tbl_counts_%zu[256] = {\n", nb);
+                for (int b = 0; b < 256; b++)
+                    fprintf(out, "%lluull,%s", fb->counts[b], (b & 7) == 7 ? "\n" : " ");
+                fprintf(out, "};\n");
+            }
+            if (fb->ncps) {
+                fprintf(out, "static const PcrecFindCp pcrec_find_tbl_cps_%zu[] = {\n", nb);
+                for (size_t j = 0; j < fb->ncps; j++)
+                    fprintf(out, "    { 0x%lxu, %lluull },\n",
+                            (unsigned long)fb->cps[j].cp, fb->cps[j].count);
+                fprintf(out, "};\n");
+            }
         }
         pcrec_rxt_source_free(src);
         free(text);
@@ -137,9 +148,14 @@ int main(int argc, char **argv)
             const RxtFindBlock *fb = &src->fblocks[i];
             check_plain(fb->bundle, "bundle name");
             check_plain(fb->kind, "kind");
+            char counts[64] = "NULL", cps[64] = "NULL";
+            if (fb->counts)
+                snprintf(counts, sizeof counts, "pcrec_find_tbl_counts_%zu", nb);
+            if (fb->ncps)
+                snprintf(cps, sizeof cps, "pcrec_find_tbl_cps_%zu", nb);
             fprintf(out, "    { \"%s\", \"%s\", %zu, pcrec_find_tbl_serves_%zu, %zu, "
-                    "pcrec_find_tbl_counts_%zu },\n", fb->bundle, fb->kind,
-                    fb->line, nb, fb->nserves, nb);
+                    "%s, %s, %zu },\n", fb->bundle, fb->kind, fb->line, nb,
+                    fb->nserves, counts, cps, fb->ncps);
         }
         pcrec_rxt_source_free(src);
         free(text);

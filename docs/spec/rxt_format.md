@@ -889,10 +889,11 @@ read the same way.
 |---|---|---|
 | `include <other>` | at most one | another analysis, in C's SEARCH spelling `<name>` (the bundle-name grammar). A quoted path is refused: this is not the head's `include "path"` splice. **Resolved** (B2, `findings.md` §7) through the same stops as a config's name; `<other>` may name the bundle's OWN name, which resolves starting at the stop AFTER the one this bundle was found at (`#include_next`: the way to extend a shipped analysis under its own name). Any other repeat is an include cycle and refused |
 | `description <text>` | at most one | prose; takes the block-scalar form |
-| `freq` | at most one | a DATA block (below), takes no value: a kind block is named by its bundle |
+| `freq` | at most one | a DATA block (below) counting BYTES, takes no value: a kind block is named by its bundle |
+| `cpfreq` | at most one | a DATA block counting decoded CODE POINTS ([FINDINGS] B5), takes no value |
 
-`cpfreq` and `bigram` are not bundle lines in this build; each is admitted
-with its first reader.
+`bigram` is not a bundle line in this build; it is admitted with its first
+reader.
 
 **The DATA block** (a kind block's indented body):
 
@@ -916,13 +917,22 @@ with its first reader.
 - **At most one block per (query, encoding) in a bundle.** A second claim
   of one (query, encoding) pair anywhere in the same bundle — a second
   block, or the same encoding twice on one line — is refused, naming the
-  line that claimed it first. (While `freq` is the only kind, a bundle
-  holds one block, so the reachable case is the duplicated encoding.)
+  line that claimed it first — for example a `freq` and a `cpfreq` block
+  of one bundle both listing `utf8` for `byte-rate`.
 - **`row`'s key grammar is per kind.** Under `freq` a row is `row HH N`:
   one byte key as TWO LOWERCASE hex digits (`00`..`ff`) and a count.
-  Keys are **strictly ascending** through the block, so a duplicate key is
-  refused at the line. The count is a canonical decimal: no leading zero,
-  and never `0` — **a zero count is written by omitting the row**.
+  Under `cpfreq` it is `row U+HHHH N`: one code-point key as `U+` and four
+  to six UPPERCASE hex digits, with no leading zero past the fourth
+  (`U+000A`, `U+20AC`, `U+1F600`, `U+10FFFF`), naming a Unicode scalar
+  value — a surrogate (`U+D800`..`U+DFFF`) or anything above `U+10FFFF` is
+  refused. Keys are **strictly ascending** through the block, so a
+  duplicate key is refused at the line. The count is a canonical decimal:
+  no leading zero, and never `0` — **a zero count is written by omitting
+  the row** — and at most `PCREC_MAX_FIND_COUNT`. A `cpfreq` block holds
+  at most `PCREC_MAX_FIND_CPFREQ_ROWS` rows, and one whose derivation
+  would put more than `PCREC_MAX_FIND_COUNT` on a single byte is refused
+  at the block, by that limit's name (`limits.md` §3.7, `findings.md`
+  §3a).
 
 A bundle's own reach into the dump: see `--list-source`'s `analysis` row
 below.

@@ -992,7 +992,7 @@ is head-scoped; the head has one parser). Design:
 
 The REFUSALS are generated inline (`fb0_case LABEL CLASS NEEDLE BODY`,
 one scratch file per case, asserted on the class tag AND a needle naming
-the rule), with a population floor of 34 (the case count) so a case that stops being driven
+the rule), with a population floor of 46 (the case count: B0's 34 + B5's 12) so a case that stops being driven
 is red. Controls: an exemplar with `bytes`/`sha256`, a `pcrec` line whose
 word is not `--analysis`, and a fragment broken for ANOTHER reason (it must
 NOT fail the entry's parse — only the bundle rule propagates; everything
@@ -1002,10 +1002,18 @@ refusal). `include_head.rxtin` was re-pointed from the library
 `common.rxt` (a file-level `description`, the tree's one §2.5 violator) to
 `include_basic_frag.rxtfrag`.
 
-**THE BUNDLE-LEVEL (query, encoding) COLLISION HAS AN EMPTY DESIGNED
-POPULATION AT B0**: `freq` is the only kind row and a bundle holds one, so
-no file can put two blocks in one bundle. The claim table lives on the
-BUNDLE frame regardless; its one reachable input is one `serves` line
-claiming one pair twice (`serves-collision`). B5 (`cpfreq`) owes the
-two-block fixture. Sabotage rows: S290 (the ` and ` conjunction read as its
-first conjunct only), S291 (the fragment refusal swallowed).
+**THE BUNDLE-LEVEL (query, encoding) COLLISION** had an empty designed
+population at B0 (`freq` the only kind row); its one reachable input was one
+`serves` line claiming one pair twice (`serves-collision`). **[FINDINGS] B5**
+admits `cpfreq` and adds the owed two-block case (`serves-collision-2`: a
+`freq` and a `cpfreq` block both serving `byte-rate` under `utf8`), the
+`cpfreq` key grammar's refusals (`U+HHHH` case, width, leading zero, a byte
+key, above U+10FFFF, a surrogate, descending), the derivation-kind pair both
+ways, a second `cpfreq`, and a derived count over `PCREC_MAX_FIND_COUNT`
+refused at the block's close (`cp-derived-over`: U+00E8 at 2^40 and U+00E9
+at 1 share the lead byte 0xC3); its control accepts keys at every width and
+at the surrogate edges, and 2^40 on an unshared byte. `unknown-in-bundle`
+now uses `bigram` (still not a row). Sabotage rows: S290 (the ` and `
+conjunction read as its first conjunct only), S291 (the fragment refusal
+swallowed), S327 (a surrogate key accepted), S328 (the derived-count ceiling
+unchecked).

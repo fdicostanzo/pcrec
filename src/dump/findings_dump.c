@@ -61,19 +61,22 @@ static void section(StrBuf *sb, const char *name, const char *comment,
 }
 
 /* The `digest` cell for (query, enc) along `chain`: the 16-hex digest a stamp
- * would carry, or "none". Fills `cells` (link, bundle, kind, via, digest)
- * from `buf`, which must outlive the row. -1 with `err` filled when the
- * answering block cannot be normalized (the compile would refuse too). */
+ * would carry, or "none". Fills `cells` (link, bundle, kind, via, digest,
+ * dropped) from the buffers, which must outlive the row; `dropped` is the
+ * count of code-point occurrences the derivation dropped (`encode-latin1`'s
+ * code points above U+00FF, design §2.4), 0 for the others, empty with no
+ * answer. -1 with `err` filled when the answering block cannot be
+ * normalized (the compile would refuse too). */
 static int resolution_cells(const PcrecFindChain *chain, const char *query,
                             const char *enc, char linkbuf[24],
-                            char digbuf[24], const char *cells[5],
-                            pcrec_error *err)
+                            char digbuf[24], char dropbuf[24],
+                            const char *cells[6], pcrec_error *err)
 {
     size_t link = 0;
     const PcrecFindServe *sv = NULL;
     const PcrecFindTblBlock *fb =
         pcrec_find_chain_answer(chain, query, enc, &link, &sv);
-    cells[0] = cells[1] = cells[2] = cells[3] = "";
+    cells[0] = cells[1] = cells[2] = cells[3] = cells[5] = "";
     cells[4] = "none";
     if (!fb) return 0;
     snprintf(linkbuf, 24, "%zu", link);
@@ -83,15 +86,18 @@ static int resolution_cells(const PcrecFindChain *chain, const char *query,
     cells[3] = sv->via;
     if (!strcmp(query, "byte-rate")) {
         uint32_t ppm[256];
-        if (pcrec_find_normalize(fb->counts, ppm) != 0) {
+        unsigned long long dropped = 0;
+        if (pcrec_find_block_byte_rate(fb, sv->via, ppm, &dropped) != 0) {
             snprintf(err->msg, sizeof err->msg, "analysis '%s': its '%s' block "
-                     "at line %zu counts nothing, so it has no byte-rate",
-                     fb->bundle, fb->kind, fb->line);
+                     "at line %zu counts nothing via %s, so it has no "
+                     "byte-rate", fb->bundle, fb->kind, fb->line, sv->via);
             return -1;
         }
         snprintf(digbuf, 24, "%016llx",
                  (unsigned long long)pcrec_find_byte_rate_digest(ppm));
+        snprintf(dropbuf, 24, "%llu", dropped);
         cells[4] = digbuf;
+        cells[5] = dropbuf;
     }
     return 0;
 }
@@ -126,17 +132,17 @@ static int resolution_rows(StrBuf *sb, const PcrecFindChain *chain,
     for (size_t q = 0; q < N_FIND_QUERIES; q++)
         for (int id = 0; pcrec_enc_by_id(id); id++) {
             const PcrecEnc *e = pcrec_enc_by_id(id);
-            char lk[24], dg[24];
-            const char *res[5], *cells[10];
+            char lk[24], dg[24], dr[24];
+            const char *res[6], *cells[10];
             size_t n = 0;
             if (!pcrec_enc_ready(e)) continue;
-            if (resolution_cells(chain, FIND_QUERIES[q], e->name, lk, dg, res,
-                                 err) != 0)
+            if (resolution_cells(chain, FIND_QUERIES[q], e->name, lk, dg, dr,
+                                 res, err) != 0)
                 return -1;
             for (size_t i = 0; i < nlead; i++) cells[n++] = lead[i];
             cells[n++] = FIND_QUERIES[q];
             cells[n++] = e->name;
-            for (size_t i = 0; i < 5; i++) cells[n++] = res[i];
+            for (size_t i = 0; i < 6; i++) cells[n++] = res[i];
             pcrec_sb_row(sb, cells, n);
         }
     return 0;
@@ -195,17 +201,24 @@ static void bundle_sections(StrBuf *sb, Arena *a, const RxtSource *src,
             if (strcmp(fb->bundle, bundle) || strcmp(fb->kind, FIND_KINDS[k]))
                 continue;
             section(sb, fb->kind, "the named bundle's own rows: one per nonzero "
-                    "key, ascending; ppm is the normalized byte-rate (design "
-                    "§2.5)", freq_cols, freq ? 3 : 2);
-            if (freq && pcrec_find_normalize(fb->counts, ppm) != 0) freq = false;
-            for (int b = 0; b < 256; b++) {
+                    "key, ascending; ppm (freq) is the normalized byte-rate "
+                    "(design §2.5)", freq_cols, freq ? 3 : 2);
+            bool rated = freq && pcrec_find_normalize(fb->counts, ppm) == 0;
+            for (int b = 0; fb->counts && b < 256; b++) {
                 char key[4], cnt[24], pp[16];
                 const char *cells[3] = { key, cnt, pp };
                 if (!fb->counts[b]) continue;
                 snprintf(key, sizeof key, "%02x", b);
                 snprintf(cnt, sizeof cnt, "%llu", fb->counts[b]);
-                snprintf(pp, sizeof pp, "%u", freq ? ppm[b] : 0u);
-                pcrec_sb_row(sb, cells, !strcmp(fb->kind, "freq") ? 3 : 2);
+                snprintf(pp, sizeof pp, "%u", rated ? ppm[b] : 0u);
+                pcrec_sb_row(sb, cells, freq ? 3 : 2);
+            }
+            for (size_t j = 0; j < fb->ncps; j++) {
+                char key[16], cnt[24];
+                const char *cells[2] = { key, cnt };
+                snprintf(key, sizeof key, "U+%04lX", (unsigned long)fb->cps[j].cp);
+                snprintf(cnt, sizeof cnt, "%llu", fb->cps[j].count);
+                pcrec_sb_row(sb, cells, 2);
             }
         }
     section(sb, "declarations", "one row per block of the named bundle: what "
@@ -308,7 +321,7 @@ char *pcrec_find_list_names(void)
 static const char *const CHAIN_COLS[] = {
     "link", "bundle", "stop", "location", "include" };
 static const char *const RES_COLS[] = {
-    "query", "encoding", "link", "bundle", "kind", "via", "digest" };
+    "query", "encoding", "link", "bundle", "kind", "via", "digest", "dropped" };
 
 char *pcrec_find_list_name(const char *name, const char *const *dirs,
                            pcrec_error *err)
@@ -330,8 +343,9 @@ char *pcrec_find_list_name(const char *name, const char *const *dirs,
             "built-in default (by identity)", CHAIN_COLS, 5);
     chain_rows(&sb, &chain, NULL, 0);
     section(&sb, "resolution", "one row per query x compile encoding; digest "
-            "is exactly what a <PREFIX>_FINDINGS stamp would carry, or none",
-            RES_COLS, 7);
+            "is exactly what a <PREFIX>_FINDINGS stamp would carry, or none; "
+            "dropped counts the code points its derivation dropped",
+            RES_COLS, 8);
     if (resolution_rows(&sb, &chain, NULL, 0, err) != 0 ||
         !(src = link_source(&chain.links[0], err))) {
         pcrec_sb_free(&sb);
@@ -362,7 +376,7 @@ char *pcrec_find_list_file(const char *path, const char *const *dirs,
         "target", "link", "bundle", "stop", "location", "include" };
     static const char *const rcols[] = {
         "target", "query", "encoding", "link", "bundle", "kind", "via",
-        "digest" };
+        "digest", "dropped" };
     StrBuf sb = { 0 };
     Arena a = { 0 };
     RxtSource *src;
@@ -414,7 +428,7 @@ char *pcrec_find_list_file(const char *path, const char *const *dirs,
     for (size_t i = 0; i < nt; i++) chain_rows(&sb, &chains[i], &ts[i].prefix, 1);
     section(&sb, "resolution", "one row per target x query x compile "
             "encoding; digest is what that target's <PREFIX>_FINDINGS would "
-            "carry, or none", rcols, 8);
+            "carry, or none; dropped as in the name view", rcols, 9);
     for (size_t i = 0; i < nt; i++)
         if (resolution_rows(&sb, &chains[i], &ts[i].prefix, 1, err) != 0) {
             pcrec_sb_free(&sb);

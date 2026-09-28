@@ -16,6 +16,16 @@ never from the C (learnings §3: two readings of one function share a source).
                                    above. NAME defaults to the file's only
                                    bundle. The independent side of design
                                    §11.5 #17 (R18).
+  findings_ref.py bundle-digest RXT NAME KIND VIA
+                                   [B5] the same for bundle NAME's KIND block
+                                   derived by VIA: `cpfreq` rows (`row U+HHHH
+                                   N`) through `encode-utf8` or
+                                   `encode-latin1` (derive, below).
+  findings_ref.py derive VIA       [B5] stdin: `cp count` lines (hex, decimal);
+                                   stdout: the 256 derived byte counts, then
+                                   `dropped N` — design §2.4's definitions,
+                                   with Python's own UTF-8 codec as the
+                                   encoder (never pcrec's).
 """
 import re
 import sys
@@ -48,6 +58,30 @@ def digest(ppm):
     return "%016x" % fnv1a64(data)
 
 
+MAX_COUNT = 2**40
+
+
+def derive(via, cps):
+    """design §2.4: encode-utf8 adds a code point's count once per byte of
+    its UTF-8 encoding; encode-latin1 puts a code point <= U+00FF's count on
+    that byte and DROPS the rest. None when a derived count exceeds the
+    count ceiling (the reader refuses such a block)."""
+    out, dropped = [0] * 256, 0
+    for cp, n in cps:
+        if via == "encode-utf8":
+            bs = chr(cp).encode("utf-8")
+        elif cp <= 0xFF:
+            bs = bytes([cp])
+        else:
+            dropped += n
+            continue
+        for b in bs:
+            out[b] += n
+    if max(out) > MAX_COUNT:
+        return None, dropped
+    return out, dropped
+
+
 VECTORS = {
     # all-equal: 10^6/256 = 3906.25 floors to 3906, residue 64 on byte 0
     "all-equal": [1] * 256,
@@ -72,6 +106,39 @@ if __name__ == "__main__":
         for b, v in rows:
             ppm[int(b)] = int(v)
         print(digest(ppm))
+    elif mode == "derive":
+        cps = [(int(a, 16), int(b)) for a, b in
+               (l.split() for l in sys.stdin if l.strip())]
+        out, dropped = derive(sys.argv[2], cps)
+        if out is None:
+            print("error -1")
+        else:
+            print(" ".join(map(str, out)))
+            print("dropped %d" % dropped)
+    elif mode == "bundle-digest" and len(sys.argv) > 5:
+        name, kind, via = sys.argv[3], sys.argv[4], sys.argv[5]
+        cur, blk, cps, counts = None, None, [], [0] * 256
+        for ln in open(sys.argv[2], encoding="utf-8"):
+            m = re.match(r"analysis (\S+)$", ln.rstrip("\n"))
+            if m:
+                cur, blk = m.group(1), None
+                continue
+            m = re.match(r"    (\S+)$", ln.rstrip("\n"))
+            if m:
+                blk = m.group(1)
+                continue
+            if cur != name or blk != kind:
+                continue
+            m = re.match(r"\s+row U\+([0-9A-F]{4,6}) (\d+)$", ln)
+            if m:
+                cps.append((int(m.group(1), 16), int(m.group(2))))
+            m = re.match(r"\s+row ([0-9a-f]{2}) (\d+)$", ln)
+            if m:
+                counts[int(m.group(1), 16)] = int(m.group(2))
+        if via != "unigram":
+            counts, _ = derive(via, cps)
+        p = normalize(counts) if counts else None
+        print("none" if p is None else digest(p))
     elif mode == "bundle-digest":
         want = sys.argv[3] if len(sys.argv) > 3 else None
         cur, counts = None, {}

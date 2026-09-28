@@ -3362,3 +3362,16 @@ never edited afterwards.
   contract), the FINDINGS axis, S308-S317 (all detected locally). Read §3
   for F-9: its per-attempt witness population is empty, so S314 is
   detected through the per-compile half.
+- **findb5_report.md** — lane `findb5` (opus, 2026-09-28): [FINDINGS] B5's
+  BUILD half, NO abi event (0 changed of 1,316 bench artifact-configs
+  against the branch point; corpus in the owed chain). `cpfreq` (schema
+  row, `U+HHHH` keys, `PCREC_MAX_FIND_CPFREQ_ROWS`), `encode-utf8`/
+  `encode-latin1` beside the derivation vocabulary in `findings.c` (the one
+  path the accessor and the listing read), `pcrec_utf8_encode` hoisted into
+  `src/enc/`, the shipped `log`/`weblog` bundles generated from
+  `third_party/`, `gen-tables` -> `gen-findings`, `tests/findings` §12,
+  twelve rxtsource refusals, S325-S328, the R35 census (both bundles'
+  movers non-empty; `iso-ts` reproduces). Read §6: the shipped corpora are
+  ASCII-only, so under `-e utf8` every non-ASCII byte ties at the floor and
+  the run reader's leftmost tie re-creates O-60's lead-byte pick; the
+  default path's utf8 lottery is NOT fixed by B5.

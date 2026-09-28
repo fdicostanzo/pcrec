@@ -15,9 +15,14 @@
  *                                     check diffs the two
  *   findings_probe default-digest     the default's byte-rate digest, as the
  *                                     library computes it
+ *   findings_probe derive VIA         [B5] stdin: `cp count` lines (hex cp,
+ *                                     decimal count); stdout: the library's
+ *                                     derived 256 byte counts on one line,
+ *                                     then `dropped N` — or `error N`
  *
- * A block line is `bundle kind line nserves serve;serve;… c0,c1,…,c255`,
- * each serve `query|encs|via`. */
+ * A block line is `bundle kind line nserves serve;serve;… ROWS`, each serve
+ * `query|encs|via`; ROWS is `c0,c1,…,c255` for a `freq` block and
+ * `U+HHHH:count,…` (ascending) for a `cpfreq` block ([FINDINGS] B5). */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -28,13 +33,18 @@
 static void block_line(const char *bundle, const char *kind, size_t line,
                        size_t nserves, const char *const *q,
                        const char *const *e, const char *const *v,
-                       const unsigned long long *counts)
+                       const unsigned long long *counts,
+                       const PcrecFindCp *cps, size_t ncps)
 {
     printf("%s %s %zu %zu ", bundle, kind, line, nserves);
     for (size_t j = 0; j < nserves; j++)
         printf("%s%s|%s|%s", j ? ";" : "", q[j], e[j], v[j]);
     printf(" ");
-    for (int b = 0; b < 256; b++) printf("%s%llu", b ? "," : "", counts[b]);
+    for (int b = 0; counts && b < 256; b++)
+        printf("%s%llu", b ? "," : "", counts[b]);
+    for (size_t j = 0; j < ncps; j++)
+        printf("%sU+%04lX:%llu", j ? "," : "", (unsigned long)cps[j].cp,
+               cps[j].count);
     printf("\n");
 }
 
@@ -65,7 +75,7 @@ int main(int argc, char **argv)
                     v[j] = fb->serves[j].via;
                 }
                 block_line(fb->bundle, fb->kind, fb->line, fb->nserves, q, e, v,
-                           fb->counts);
+                           fb->counts, fb->cps, fb->ncps);
             }
             pcrec_rxt_source_free(src);
         }
@@ -80,7 +90,7 @@ int main(int argc, char **argv)
                 v[j] = tbl[i].serves[j].via;
             }
             block_line(tbl[i].bundle, tbl[i].kind, tbl[i].line, tbl[i].nserves,
-                       q, e, v, tbl[i].counts);
+                       q, e, v, tbl[i].counts, tbl[i].cps, tbl[i].ncps);
         }
         return 0;
     }
@@ -104,6 +114,21 @@ int main(int argc, char **argv)
             for (b = 0; b < 256; b++) printf("%s%u", b ? " " : "", ppm[b]);
             printf("\n");
         }
+    }
+    if (!strcmp(argv[1], "derive") && argc > 2) {
+        static PcrecFindCp cps[70000];
+        unsigned long long c[256], dropped = 0;
+        unsigned long cp;
+        size_t ncps = 0;
+        int r;
+        while (ncps < sizeof cps / sizeof *cps &&
+               scanf("%lx %llu", &cp, &cps[ncps].count) == 2)
+            cps[ncps++].cp = (uint32_t)cp;
+        r = pcrec_find_derive_counts(argv[2], NULL, cps, ncps, c, &dropped);
+        if (r) { printf("error %d\n", r); return 0; }
+        for (int b = 0; b < 256; b++) printf("%s%llu", b ? " " : "", c[b]);
+        printf("\ndropped %llu\n", dropped);
+        return 0;
     }
     if (!strcmp(argv[1], "default-digest")) {
         uint32_t ppm[256];
