@@ -400,3 +400,18 @@ for the manager:
    byte strings across ctx-lazy-64/256/1024? The VM bodies differ by one
    immediate (§1.4), so identical subjects would make their
    1.010/1.034/1.042 spread pure placement.
+
+## Addendum 2026-09-28 (manager): O-65, the OWED FLAT cells
+
+pcrec-bench O-65 (the same window 04:10-05:21 EDT, roster fixed, all 64
+capability patterns, both arms): **7 of the 8 FLAT cells are CONFIRMED**
+(0.928-1.024). `logparse-atomic-removed` is refuted again at **×1.117**. The
+first window reproduces (aws 1.036; lp-removed 1.117/1.083). O-65 also
+corrects O-64: its cross-pin stand-in for `logparse-atomic` (+6.7%) had the
+wrong sign. The true same-window twin reads **0.971 on throughput** (search
++3.2%). So the §1 verdict row for the FLAT population becomes
+7 MET / 1 MISSED, and the MISSED cell is lp-removed, whose mechanism §1.2
+attributes compile-side (the 6-vs-5 register save placed before the 2-byte
+`": "` test). The recommendation is unchanged: S2a stays default-on, and F5's
+L>=3 narrowing is measured first. lp's 2-byte `": "` run is one of F5's
+three witnesses. The placement/code split waits on I-115 ([B110]).
