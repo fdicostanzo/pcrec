@@ -1,0 +1,112 @@
+unique rows 3659, compiled 3286, refused 373
+
+== A. DEMAND: corpus, all encodings (n=3359)
+  UCP-sensitive (any of \w \d \s \b \B [:posix:]): 185 (5.5%)
+    w         39  (21.1% of sensitive)
+    d         22  (11.9% of sensitive)
+    s          4  (2.2% of sensitive)
+    b         77  (41.6% of sensitive)
+    B         43  (23.2% of sensitive)
+    posix     27  (14.6% of sensitive)
+  needs \b or \B: 115 of 185 sensitive = 62.2%
+  \b/\B is the ONLY sensitive construct: 98
+  posix names: {'posix:lower': 6, 'posix:alpha': 5, 'posix:xdigit': 1, 'posix:digit': 3, 'posix:blank': 1, 'posix:upper': 1, 'posix:alnum': 1, 'posix:ascii': 1, 'posix:cntrl': 1, 'posix:graph': 1, 'posix:print': 1, 'posix:punct': 1, 'posix:space': 1, 'posix:word': 1, 'posix:<': 1, 'posix:foo': 1}
+  caseless AND sensitive: 11; of which caseless [:lower:]/[:upper:] (the one UCP x CASELESS cell): 5
+  sensitive AND non-ASCII pattern bytes: 0
+  start-of-pattern verbs: {}
+
+== A. DEMAND: corpus, utf8 blocks (n=292)
+  UCP-sensitive (any of \w \d \s \b \B [:posix:]): 9 (3.1%)
+    w          4  (44.4% of sensitive)
+    d          0  (0.0% of sensitive)
+    s          0  (0.0% of sensitive)
+    b          0  (0.0% of sensitive)
+    B          3  (33.3% of sensitive)
+    posix      2  (22.2% of sensitive)
+  needs \b or \B: 3 of 9 sensitive = 33.3%
+  \b/\B is the ONLY sensitive construct: 3
+  posix names: {'posix:lower': 2}
+  caseless AND sensitive: 3; of which caseless [:lower:]/[:upper:] (the one UCP x CASELESS cell): 2
+  sensitive AND non-ASCII pattern bytes: 0
+  start-of-pattern verbs: {}
+
+== A. DEMAND: bench, all sets (n=331)
+  UCP-sensitive (any of \w \d \s \b \B [:posix:]): 91 (27.5%)
+    w         17  (18.7% of sensitive)
+    d         38  (41.8% of sensitive)
+    s         19  (20.9% of sensitive)
+    b         27  (29.7% of sensitive)
+    B          2  (2.2% of sensitive)
+    posix      2  (2.2% of sensitive)
+  needs \b or \B: 29 of 91 sensitive = 31.9%
+  \b/\B is the ONLY sensitive construct: 23
+  posix names: {'posix:alpha': 2}
+  caseless AND sensitive: 4; of which caseless [:lower:]/[:upper:] (the one UCP x CASELESS cell): 0
+  sensitive AND non-ASCII pattern bytes: 3
+  start-of-pattern verbs: {'verb:UCP': 5}
+
+== A. DEMAND: bench/utf8 only (n=75)
+  UCP-sensitive (any of \w \d \s \b \B [:posix:]): 12 (16.0%)
+    w          2  (16.7% of sensitive)
+    d          2  (16.7% of sensitive)
+    s          3  (25.0% of sensitive)
+    b          3  (25.0% of sensitive)
+    B          1  (8.3% of sensitive)
+    posix      1  (8.3% of sensitive)
+  needs \b or \B: 4 of 12 sensitive = 33.3%
+  \b/\B is the ONLY sensitive construct: 4
+  posix names: {'posix:alpha': 1}
+  caseless AND sensitive: 0; of which caseless [:lower:]/[:upper:] (the one UCP x CASELESS cell): 0
+  sensitive AND non-ASCII pattern bytes: 2
+  start-of-pattern verbs: {'verb:UCP': 5}
+
+== bench (*UCP) patterns
+   utf8/asr-b-cyr-ucp (*UCP)\bМосква\b | REFUSED pcrec: (*...) requires module 'verbs' (pattern offset 0)
+   utf8/ci-ucp-invariance (*UCP)(?i)é | REFUSED pcrec: (*...) requires module 'verbs' (pattern offset 0)
+   utf8/cls-d-ucp (*UCP)\d{4} | REFUSED pcrec: (*...) requires module 'verbs' (pattern offset 0)
+   utf8/cls-s-ucp (*UCP)a\sb | REFUSED pcrec: (*...) requires module 'verbs' (pattern offset 0)
+   utf8/cls-w-ucp (*UCP)\w+ | REFUSED pcrec: (*...) requires module 'verbs' (pattern offset 0)
+
+== C. \b/\B POPULATION ROUTES (compiled rows only)
+  corpus  n=105  own-enc engine {'vm': 24, 'dfa': 81} | under -e utf8 {'vm': 24, 'dfa': 81} | lookaround rewrite {'vm': 105}
+          DFA under utf8 -> VM after rewrite: 81 (77.1%)
+  bench   n=27  own-enc engine {'dfa': 16, 'vm': 11} | under -e utf8 {'dfa': 16, 'vm': 11} | lookaround rewrite {'vm': 26, 'REFUSED': 1}
+          DFA under utf8 -> VM after rewrite: 15 (55.6%)
+          rewrite REFUSED: 1 e.g. pcrec: pattern too large: 1196259 bytes of emitted C source (limit 1000000, ~198 KB .o). Lower a rep
+  all     n=130  own-enc engine {'vm': 35, 'dfa': 95} | under -e utf8 {'vm': 35, 'dfa': 95} | lookaround rewrite {'vm': 129, 'REFUSED': 1}
+          DFA under utf8 -> VM after rewrite: 94 (72.3%)
+          rewrite REFUSED: 1 e.g. pcrec: pattern too large: 1196259 bytes of emitted C source (limit 1000000, ~198 KB .o). Lower a rep
+
+== D. WHY A PATTERN IS OFF THE DFA (auto, compiled rows; VM rows by WHY kind)
+  compiled 3286: dfa 1638, vm 1647
+  VM by ENGINE_SEL: {'selected': 1534, 'declined-nullable-default': 104, 'collapsed-prefilter': 6, 'declined-nullable': 2, 'size-cap-retry': 1}
+      949  capture group
+      135  (?>...)
+      104  (?<=...)
+       80  (?=...)
+       59  (?<!...)
+       56  (?!...)
+       56  \\K
+       48  possessive quantifier
+       42  (?*a)
+       40  (?<*a)
+       17  ${name}
+       15  (?&name)
+        7  (?1)
+        7  dfa overflow (dfa overflowed: >32000 states...)
+        6  (?R)
+        3  (*pla:a)
+        3  (*nla:a)
+        3  (*negative_lookahead:a)
+        3  (*nlb:a)
+        3  (*negative_lookbehind:a)
+        2  (*positive_lookahead:a)
+        2  (*plb:a)
+        2  (*positive_lookbehind:a)
+        1  (*napla:a)
+        1  (*non_atomic_positive_lookahead:a)
+        1  (*naplb:a)
+        1  (*non_atomic_positive_lookbehind:a)
+        1  (?0)
+  corpus VM n=1578: {'capture group': 909, '(?>...)': 132, '(?<=...)': 99, '(?=...)': 77, '\\\\K': 55, '(?<!...)': 55, '(?!...)': 53, 'possessive quantifier': 48, '(?*a)': 41, '(?<*a)': 40, '${name}': 17, '(?&name)': 14}
+  bench VM n=73: {'capture group': 41, 'dfa overflowed: >32000 states': 6, '(?<=...)': 5, '(?>...)': 4, '(?<!...)': 4, '(?=...)': 3, '(?!...)': 3, 'possessive quantifier': 2, '(?R)': 1, '(?&name)': 1, '\\\\K': 1, '(?*a)': 1}

@@ -1,0 +1,9 @@
+id	form	engine	vm_prefilter	emit_bytes	obj_total
+loglines/bignum	orig	dfa		18521	3053
+loglines/bignum	rewrite	vm	hybrid	35725	5651
+loglines/uuid	orig	dfa		26397	5407
+loglines/uuid	rewrite	vm	hybrid	40813	7535
+capability/wild-codegrammar-json-constant	orig	dfa		21550	3913
+capability/wild-codegrammar-json-constant	rewrite	vm	hybrid	34383	6123
+utf8/asr-b-cyr	orig	dfa		19821	3615
+utf8/asr-b-cyr	rewrite	vm	hybrid	34768	6143

@@ -1,0 +1,31 @@
+pattern	engine	status	selected	emit_bytes	obj_text	obj_ro	obj_total	pcrec_s
+\w	auto	OK	dfa	13971	672	1363	2035	0.03
+\w	dfa	OK	dfa	13969	672	1363	2035	0.03
+\w	vm	OK	vm	14154	756	287	1043	0.03
+\p{Xwd}	auto	OK	dfa	435618	788	196897	197685	0.22
+\p{Xwd}	dfa	OK	dfa	435610	788	196897	197685	0.22
+\p{Xwd}	vm	REFUSED: pcrec: pattern too large: 576063 bytes of emitted code (limit 500000), which gcc cannot compile in r
+\p{Nd}	auto	OK	dfa	70051	672	18479	19151	0.03
+\p{Nd}	dfa	OK	dfa	70049	672	18479	19151	0.03
+\p{Nd}	vm	OK	vm	50535	8864	519	9383	0.03
+\p{Xsp}	auto	OK	dfa	18996	672	2901	3573	0.03
+\p{Xsp}	dfa	OK	dfa	18994	672	2901	3573	0.03
+\p{Xsp}	vm	OK	vm	17930	2520	295	2815	0.03
+\p{Xwd}+	auto	OK	dfa	960810	788	330097	330885	65.81
+\p{Xwd}+	dfa	OK	dfa	960802	788	330097	330885	67.91
+\p{Xwd}+	vm	REFUSED: pcrec: pattern too large: 1138574 bytes of emitted code (limit 500000), which gcc cannot compile in 
+\p{Nd}{4}	auto	OK	dfa	234626	672	68214	68886	0.05
+\p{Nd}{4}	dfa	OK	dfa	234624	672	68214	68886	0.05
+\p{Nd}{4}	vm	OK	vm	162166	31288	527	31815	0.03
+a\p{Xsp}b	auto	OK	dfa	19424	792	3173	3965	0.03
+a\p{Xsp}b	dfa	OK	dfa	19422	792	3173	3965	0.03
+a\p{Xsp}b	vm	OK	vm	18630	2644	303	2947	0.03
+(?:(?<=\p{Xwd})(?!\p{Xwd})|(?<!\p{Xwd})(?=\p{Xwd}))	auto	REFUSED: pcrec: pattern too large: 2275105 bytes of emitted code (limit 500000), which gcc cannot compile in 
+(?:(?<=\p{Xwd})(?!\p{Xwd})|(?<!\p{Xwd})(?=\p{Xwd}))	dfa	REFUSED: pcrec: (?=...) requires the VM engine, which --engine=dfa excludes (pattern offset 3)
+(?:(?<=\p{Xwd})(?!\p{Xwd})|(?<!\p{Xwd})(?=\p{Xwd}))	vm	REFUSED: pcrec: pattern too large: 2275086 bytes of emitted code (limit 500000), which gcc cannot compile in 
+(?:(?<=\p{Xwd})(?!\p{Xwd})|(?<!\p{Xwd})(?=\p{Xwd}))Москва(?:(?<=\p{Xwd})(?!\p{Xwd})|(?<!\p{Xwd})(?=\p{Xwd}))	auto	REFUSED: pcrec: pattern too large: 4565400 bytes of emitted code (limit 500000), which gcc cannot compile in 
+(?:(?<=\p{Xwd})(?!\p{Xwd})|(?<!\p{Xwd})(?=\p{Xwd}))Москва(?:(?<=\p{Xwd})(?!\p{Xwd})|(?<!\p{Xwd})(?=\p{Xwd}))	dfa	REFUSED: pcrec: (?=...) requires the VM engine, which --engine=dfa excludes (pattern offset 3)
+(?:(?<=\p{Xwd})(?!\p{Xwd})|(?<!\p{Xwd})(?=\p{Xwd}))Москва(?:(?<=\p{Xwd})(?!\p{Xwd})|(?<!\p{Xwd})(?=\p{Xwd}))	vm	REFUSED: pcrec: pattern too large: 4562309 bytes of emitted code (limit 500000), which gcc cannot compile in 
+\bМосква\b	auto	OK	dfa	19821	1208	2407	3615	0.03
+\bМосква\b	dfa	OK	dfa	19819	1208	2407	3615	0.03
+\bМосква\b	vm	OK	vm	17755	2004	351	2355	0.03
