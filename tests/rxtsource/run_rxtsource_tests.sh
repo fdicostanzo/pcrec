@@ -392,10 +392,15 @@ CENSUS_LINES=29311
 # as CENSUS_* above (tests/offsetskip/run_pinned.rxt).
 # 2026-09-27 (lane s2a, [OPT-LITSCAN] S2a) — +1/+19/+87, the SAME delta as
 # CENSUS_* above (tests/litscan/litrun.rxt).
-# 2026-09-27 (lane findb2, [FINDINGS] B2) — +16/+0/+0, the SAME delta as
-# CENSUS_* above (tests/findings/adversarial/ and tests/findings/witness/
-# are not under tests/known_fail/).
-RUNSH_FILES=237
+# 2026-09-27 (lane findb2tri, triage of [FINDINGS] B2's own delivery) —
+# UNCHANGED (+0/+0/+0). run.sh's no-argument branch grew a SECOND
+# exclusion, alongside tests/known_fail/, for exactly the same reason:
+# tests/findings/adversarial/ and tests/findings/witness/'s 16 head-only
+# bundle files (CENSUS_* above) carry no `pattern` block, so run.sh's own
+# P-C2 floor ("no pattern blocks parsed from file") would otherwise score
+# every one of them a hard failure in `make test-corpus` forever. Census
+# still counts them (237); run.sh's own population does not (221).
+RUNSH_FILES=221
 RUNSH_BLOCKS=4035
 RUNSH_LINES=29311
 # 2026-09-23 (lane rxtfix, K34 closure, same event as CENSUS_* above) —
@@ -523,18 +528,36 @@ $(grep '/known_fail/' "$FILES" | tr '\n' '\0' | xargs -0 --no-run-if-empty awk '
 EOF
 kf_files=${kf_files:-0}; kf_blocks=${kf_blocks:-0}; kf_lines=${kf_lines:-0}
 
-if [ "$((CENSUS_FILES - kf_files))" = "$RUNSH_FILES" ] && \
-   [ "$((CENSUS_BLOCKS - kf_blocks))" = "$RUNSH_BLOCKS" ] && \
-   [ "$((CENSUS_LINES - kf_lines))" = "$RUNSH_LINES" ]; then
-    pass "denominators reconcile: census $CENSUS_FILES/$CENSUS_BLOCKS/$CENSUS_LINES minus known_fail's $kf_files/$kf_blocks/$kf_lines = run.sh's $RUNSH_FILES/$RUNSH_BLOCKS/$RUNSH_LINES"
+# [FINDINGS] B2 triage (lane findb2tri, 2026-09-27): run.sh's SECOND
+# exclusion, same shape as known_fail's above — see RUNSH_FILES's own
+# note. Derived the identical way: a grep on the path, never a second
+# `find`, so this can never disagree with run.sh's own `-not -path` about
+# which files it names.
+read -r adv_files adv_blocks adv_lines <<EOF
+$(grep -E '/findings/(adversarial|witness)/' "$FILES" | tr '\n' '\0' | xargs -0 --no-run-if-empty awk '
+    FNR == 1 { files++ }
+    /^pattern-esc[ \t]/ { blocks++; next }
+    /^pattern[ \t]/ { blocks++; next }
+    /^(m|n|ms|ns|gu|perr|g|gp)([ \t]|$)/ { lines++ }
+    END { printf "%d %d %d\n", files+0, blocks+0, lines+0 }' \
+  | awk '{ f += $1; b += $2; l += $3 } END { printf "%d %d %d\n", f+0, b+0, l+0 }')
+EOF
+adv_files=${adv_files:-0}; adv_blocks=${adv_blocks:-0}; adv_lines=${adv_lines:-0}
+
+if [ "$((CENSUS_FILES - kf_files - adv_files))" = "$RUNSH_FILES" ] && \
+   [ "$((CENSUS_BLOCKS - kf_blocks - adv_blocks))" = "$RUNSH_BLOCKS" ] && \
+   [ "$((CENSUS_LINES - kf_lines - adv_lines))" = "$RUNSH_LINES" ]; then
+    pass "denominators reconcile: census $CENSUS_FILES/$CENSUS_BLOCKS/$CENSUS_LINES minus known_fail's $kf_files/$kf_blocks/$kf_lines minus findings' fire/witness $adv_files/$adv_blocks/$adv_lines = run.sh's $RUNSH_FILES/$RUNSH_BLOCKS/$RUNSH_LINES"
 else
     fail "denominators DO NOT reconcile: census $CENSUS_FILES/$CENSUS_BLOCKS/$CENSUS_LINES
-  minus tests/known_fail/'s $kf_files/$kf_blocks/$kf_lines gives
-  $((CENSUS_FILES - kf_files))/$((CENSUS_BLOCKS - kf_blocks))/$((CENSUS_LINES - kf_lines)),
+  minus tests/known_fail/'s $kf_files/$kf_blocks/$kf_lines and findings'
+  fire/witness $adv_files/$adv_blocks/$adv_lines gives
+  $((CENSUS_FILES - kf_files - adv_files))/$((CENSUS_BLOCKS - kf_blocks - adv_blocks))/$((CENSUS_LINES - kf_lines - adv_lines)),
   but run.sh's population is pinned at $RUNSH_FILES/$RUNSH_BLOCKS/$RUNSH_LINES.
-  C1 reads all $CENSUS_FILES files and C2 reads run.sh's $RUNSH_FILES; the two
-  differ by exactly the known-fail ratchet's own file, which run.sh's
-  no-argument branch excludes. If that stopped being true, one of the two
+  C1 reads all $CENSUS_FILES files and C2 reads run.sh's $RUNSH_FILES; the
+  two differ by exactly the two directories run.sh's no-argument branch
+  excludes (tests/known_fail/, tests/findings/adversarial/ and
+  tests/findings/witness/). If that stopped being true, one of the two
   checks is now asserting a population it does not read."
 fi
 

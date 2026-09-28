@@ -4,7 +4,12 @@
 # Usage: bash tests/harness/run.sh [file-or-dir ...]
 #   With no arguments, runs every *.rxt under <repo-root>/tests/, EXCEPT
 #   tests/known_fail/ (deferred-bug regressions that are expected to fail —
-#   see docs/dev/known_issues.md). Pass such a file explicitly to run it.
+#   see docs/dev/known_issues.md) and tests/findings/adversarial/ and
+#   tests/findings/witness/ ([FINDINGS] B2's fire/witness analysis bundles
+#   — head-only .rxt-format DATA with no `pattern` block at all, read by
+#   `pcrec --analysis`/`-I` rather than run as test cases; the P-C2 floor
+#   below would otherwise score every one of them a hard failure). Pass
+#   such a file explicitly to run it.
 #   Arguments may be individual .rxt files or directories (searched
 #   recursively for *.rxt).
 #
@@ -301,7 +306,9 @@ named_files=()
 if [ $# -eq 0 ]; then
     while IFS= read -r f; do files+=("$f"); done \
         < <(find "$ROOT_DIR/tests" -name '*.rxt' \
-                 -not -path "*/known_fail/*" | LC_ALL=C sort)
+                 -not -path "*/known_fail/*" \
+                 -not -path "*/findings/adversarial/*" \
+                 -not -path "*/findings/witness/*" | LC_ALL=C sort)
 else
     for arg in "$@"; do
         if [ -d "$arg" ]; then
