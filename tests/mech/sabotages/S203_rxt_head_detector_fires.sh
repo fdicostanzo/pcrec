@@ -22,10 +22,15 @@
 SAB_ID="S203-rxt-head-detector-fires"
 SAB_FILE="tests/harness/run.sh"
 SAB_SUITES="rxtsource harness"
-SAB_DESC="run.sh treats every file as head-bearing, so all 210 corpus files take the --list-source path they are supposed to skip entirely"
-# [DD-13b.W23.4] STALE-COUNT RE-STATEMENT (w23_impl.md §6.4 item 6): 210 is
-# the corpus's live CENSUS_FILES count at this pin, not the "179" an
+SAB_DESC="run.sh treats every file as head-bearing, so all 247 corpus files take the --list-source path they are supposed to skip entirely"
+# [DD-13b.W23.4] STALE-COUNT RE-STATEMENT (w23_impl.md §6.4 item 6): 210 was
+# the corpus's live CENSUS_FILES count at that pin, not the "179" an even
 # earlier pin had.
+# admin88 RE-STATEMENT (2026-09-28): 247 is CENSUS_FILES at this pin
+# (tests/rxtsource/run_rxtsource_tests.sh); flagged stale by lane tri86
+# (tri86_report.md, "Not fixed, flagged only") at 210. This string is
+# descriptive only, never asserted against a count — mech scores this row
+# DETECTED/UNDETECTED, never SAB_DESC's text.
 SAB_COUNT=1
 SAB_BEFORE='    if [ -n "$head_probe" ] && [ "$head_probe" != "pattern" ]; then'
 SAB_AFTER='    if [ -n "$head_probe" ]; then   # SABOTAGE S203: every file looks head-bearing'
