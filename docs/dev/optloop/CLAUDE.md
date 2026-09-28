@@ -708,3 +708,41 @@ that cycle's analysis lands.
 - `b108/` — its instruments (`fncmp.sh`, `offs.py`) and `transcript.txt`.
   See its own `CLAUDE.md`.
 
+## Cycle 2 CLOSE (lane `optc2`, 2026-09-28)
+
+- `cycle2_close.md` — **[OPTLOOP.2] CYCLE 2 CLOSE**, docs-only, nothing
+  under `src/`/`cli`/`lib/`/`tests/`. Closes `[OPTLOOP.2.analysis]` and its
+  four chartered mechanisms (`[OPT-FREQPICK]`, `[OPT-REQPOS]` tier 2b,
+  `[OPT-PRECHECK-ADMIT]` with the K64/K65/K66 give-up family it found and
+  fixed along the way, `[OPT-REQRUN-ENC]` with K68) against the D119 bar,
+  citing every ledger reading above by name. Two residuals have no
+  existing plan row and are listed as PROPOSED, not filed — a
+  `cycle1_caps_view.md` re-render under the bench's I-99/I-100
+  classification, and `captures_via_dfa_survey.md` candidate (c)'s M-B
+  measurement at realistic subject sizes. Three lessons: "aligned arms
+  agree ≠ alignment is faster" (the `[B108]` O-67 alignment twin cleared
+  S2a of causing two misses without showing alignment itself is a net
+  win); "profile where VM time goes before the next VM optimization" (S2a's
+  named-faster population was chosen by what the emitted program contains,
+  not by what the bench subjects execute — a prefilter answers first on
+  every named cell, so the compare runs at most once per match, and the
+  reading found a larger unattributed pre-check cost only by profiling
+  calls); and O-68/O-69, where a bimodal per-process timing signature that
+  first read as a code-layout question turned out to be the CPU frequency
+  governor at process launch — the reason `[EMIT-ALIGN]` is filed BOONIES
+  tier rather than opened now. `[OPT-LITSCAN]` and its own open tails
+  (F1-F6), `[OPT-VMSEED]`, `[OPT-RETRY-REUSE]`, `[OPT-CLOSURE-CTX]`, and
+  cycle 1's own deferred `[OPT-FIRSTSET]`/`[OPT-ATTEMPT-SPLIT]`/
+  `[OPTLOOP.1.M6]` are explicitly NOT closed by this document — each is
+  named with its reason for staying open, and inventoried (not chartered:
+  D125 holds cycle 3) as candidate input for the next cycle. `plan.md`'s
+  `[OPTLOOP.2.analysis]` and `[OPT-REQRUN-ENC]` rows (the latter's
+  non-canonical `STATE:done` normalized to `STATE:completed`, and its
+  stale "make test/mech OWED" note retired against `dev_journal.md`'s
+  2026-09-27 K68-chain read) point here; both rows are kept RESIDENT in
+  `plan.md` rather than archived to `plan_completed.md`, matching the
+  precedent `[OPTLOOP.1.analysis]` already set (`admin2_report.md`'s
+  archive sweep named it a deliberate exception) — an `[OPTLOOP]` cycle's
+  own analysis row stays beside its still-`STATE:started` parent and its
+  sibling cycles, archived only at a later full-sweep pass.
+
