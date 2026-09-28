@@ -210,6 +210,14 @@ re-measure before load-bearing use.
   give-up codes). Backs `docs/dev/tt4m_darwin_validation.md`. See its own
   CLAUDE.md (`make check` is a smoke test, not the load-bearing sweep).
 
+- `ucp_study/` — [UCP]'s thinking-and-testing study (lane ucpthink,
+  2026-09-28; study only). libpcre2 probes run on 10.46 over ssh stdin (they
+  write nothing remote) and on 10.48 locally: a per-code-point classifier in
+  two independent forms, the exhaustive `\b`-vs-lookaround equivalence, point
+  probes, a Latin-1 UCP probe. It also carries a pcrec driver that reproduces
+  the equivalence stream from generated matchers, the corpus+bench census
+  (lexical UCP features + engine stamps, default and `--no-captures`), and
+  the size probes. Backs `docs/dev/ucp_study.md`. See its CLAUDE.md.
 - `cls_tree_study/` — [CLS-TREE]'s STUDY (lane clstudy, 2026-09-11; study
   only, nothing under `src/`/`tests/`/`docs/spec/`): does a class matcher
   COMPOSED PER-SECTION from a small kit of representations, statically

@@ -95,3 +95,15 @@ if "nocap" in sys.argv[1]:
     print("    ... of which lookbehind only: %d" % len(only_lb))
     for lab, f in (("corpus", lambda r: "corpus" in r["src"]), ("bench", lambda r: "bench" in r["src"])):
         print("    %s: %d of %d" % (lab, sum(1 for r in only_look if f(r)), sum(1 for r in vm if f(r))))
+
+# ---- A2: partial-UCP split -- which sensitive patterns need ONLY the small
+# sets (\d = Nd 71 intervals, \s = Xsp 11, the small POSIX names), and which
+# need a \p{Xwd}/\p{L}-sized set (\w, \b, \B, and the letter/print POSIX names).
+CHEAP = {"d", "s", "posix:digit", "posix:space", "posix:blank", "posix:cntrl", "posix:xdigit"}
+print("\n== A2. PARTIAL-UCP SPLIT (sensitive patterns, unique)")
+for label, f in (("corpus", lambda r: "corpus" in r["src"]), ("bench", lambda r: "bench" in r["src"])):
+    sens = [r for r in R if f(r) and UCPSENS(r["F"])]
+    cheap = [r for r in sens if UCPSENS(r["F"]) <= CHEAP]
+    wonly = [r for r in sens if not (UCPSENS(r["F"]) <= CHEAP) and not (r["F"] & {"b", "B"})]
+    print("  %-7s sensitive %d: small-sets-only %d | needs a big set but no \\b %d | needs \\b/\\B %d" % (
+        label, len(sens), len(cheap), len(wonly), len([r for r in sens if r["F"] & {"b", "B"}])))

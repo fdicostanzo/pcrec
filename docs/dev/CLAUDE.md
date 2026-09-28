@@ -766,3 +766,21 @@ change.
   driver, and Mac scratch numbers) for a bench dev with no access to
   pcrec's tree. Own CLAUDE.md.
 - `ph3_reassessment_2026-09-28.md` — D125 close-out PHASE 3 (lane ph3survey, read-only, 2026-09-28): the eleven dormant/parked rows ([TT-4M], [DD-8], [DD-11], [CC-CLANG], [OPT-3], [OPT-5], [ENG-ABS], [ENG-ISL], [DD-13], [DD-13b.W1.3], [CLS-TREE]) each reassessed — charter, delivered vs remaining, trigger state against what shipped since, a PROPOSED disposition (CLOSE / CLOSE-AND-FILE / RE-PARK / RE-CHARTER) — for Frank's ruling. Proposals, not rulings; the plan rows change only when ruled.
+- `ucp_study.md` — [UCP] THE STUDY (2026-09-28, lane ucpthink, opus, study
+  only, nothing under `src/`/`tests/`/`docs/spec/`; the design is a later
+  scheduled task): demand (corpus + bench census: 62% of UCP-sensitive
+  corpus patterns need `\b`, bench 32%; bench 46/91 need only `\d`/`\s`/small
+  POSIX), the oracle semantics on 10.46 and 10.48 (UCP `\w` ≡ `\p{Xwd}` incl.
+  Mn/Pc, `\d` ≡ Nd, `\s` ≡ Xsp; the two caseless cells; UCP without UTF),
+  `\b` ≡ its lookaround spelling (579,195 subjects × 3 modes, 0
+  disagreements; pcrec's `\b` and the spelling identical to libpcre2, but
+  the rewrite moves 72-85% of `\b` patterns off the DFA and is unbuildable
+  over `\p{Xwd}`), a SKETCH of Frank's head-state insertion as a predicate
+  VIEW (the `eolvar`/`endvar` mechanism generalized, dispatched from
+  [OPT-EDGE]'s top rows) with its hazards and the VM-forcing population it
+  would cover (492/1,101 no-captures VM rows are lookaround-only), the
+  [CLS-TREE] dependency measured (`\p{Xwd}` 197,685 B DFA, REFUSED on the
+  VM, so any captured UCP `\w` is unbuildable today), and options (a)/(b)/(c)
+  with open questions. §G carries side findings (`(?r)` ignored under
+  `-e utf8`: a 4-cell answer divergence; the ENGINE_WHY kind/offset
+  mismatch). Harness `studies/ucp_study/` (own CLAUDE.md).

@@ -110,3 +110,7 @@ unique rows 3659, compiled 3286, refused 373
         1  (?0)
   corpus VM n=1578: {'capture group': 909, '(?>...)': 132, '(?<=...)': 99, '(?=...)': 77, '\\\\K': 55, '(?<!...)': 55, '(?!...)': 53, 'possessive quantifier': 48, '(?*a)': 41, '(?<*a)': 40, '${name}': 17, '(?&name)': 14}
   bench VM n=73: {'capture group': 41, 'dfa overflowed: >32000 states': 6, '(?<=...)': 5, '(?>...)': 4, '(?<!...)': 4, '(?=...)': 3, '(?!...)': 3, 'possessive quantifier': 2, '(?R)': 1, '(?&name)': 1, '\\\\K': 1, '(?*a)': 1}
+
+== A2. PARTIAL-UCP SPLIT (sensitive patterns, unique)
+  corpus  sensitive 185: small-sets-only 28 | needs a big set but no \b 42 | needs \b/\B 115
+  bench   sensitive 91: small-sets-only 46 | needs a big set but no \b 16 | needs \b/\B 29
