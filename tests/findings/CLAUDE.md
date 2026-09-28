@@ -83,6 +83,10 @@ Two halves, both run by `make test-findings`, which is part of `make test`
 - `manifests/` — [B1] the named mover manifests (design §11.3):
   `b1_byte_movers.txt` and `b1_utf8_movers.txt`, one row per moved
   ARTIFACT naming every stamp that moved on it.
+  [B5] `ship_weblog_movers.txt` and `ship_log_movers.txt`: R35's census of
+  each shipped bundle against the default, both encodings, written by
+  `docs/dev/lanes/findb5_evidence/make_manifests.py` from
+  `ship_census.py`'s output.
 - `run_analyzer_tests.py` — [B3] the analyzer's checks (INFO lines are OWED
   items, never a silent skip).
 - `res_fixtures.py` — [B2] writes the RESOLUTION fixture tree (§6) into a

@@ -1,0 +1,231 @@
+# tests/findings/manifests/ship_weblog_movers.txt — [FINDINGS] B5's R35
+# census for the shipped `weblog` analysis (design §11.3 `ship_<name>_movers`):
+# every artifact-config whose emitted C moves between `pcrec` (no analysis
+# named) and `pcrec --analysis weblog`, after deleting §7's named lines (the
+# RX_FINDINGS stamp, the `.findings =` initializer, the rx_info member) by
+# name and nothing else. Produced by
+# docs/dev/lanes/findb5_evidence/ship_census.py + make_manifests.py (lane
+# findb5) over: /private/tmp/claude-501/-Users-fdicostanzo-pcrec/findb5/bench_ship_census.json.
+# Per encoding:
+#   -e byte: 658 artifact-configs {'bench-cap': 256, 'bench-rxt': 402}, 610 consumed byte-rate=weblog, MOVERS 50
+#   -e utf8: 658 artifact-configs {'bench-cap': 256, 'bench-rxt': 402}, 608 consumed byte-rate=weblog, MOVERS 168
+# Columns: encoding, population:source, config, stamps moved, pattern
+# (python unicode_escape).
+byte	bench-cap:capability	auto-caps	RX_REQ_BYTE,RX_REQ_WHY,program	codegrammar-flat
+byte	bench-cap:capability	auto-nocaps	RX_REQ_BYTE,RX_REQ_WHY,program	codegrammar-flat
+byte	bench-cap:capability	vm-caps	RX_REQ_BYTE,program	codegrammar-flat
+byte	bench-cap:capability	vm-nocaps	RX_REQ_BYTE,program	codegrammar-flat
+byte	bench-cap:capability	auto-caps	RX_REQ_BYTE,RX_REQ_WHY,program	codegrammar-xflag
+byte	bench-cap:capability	auto-nocaps	RX_REQ_BYTE,RX_REQ_WHY,program	codegrammar-xflag
+byte	bench-cap:capability	vm-caps	RX_REQ_BYTE,program	codegrammar-xflag
+byte	bench-cap:capability	vm-nocaps	RX_REQ_BYTE,program	codegrammar-xflag
+byte	bench-cap:capability	auto-caps	RX_DFA_PREFILTER_OFFSETS,RX_REQ_BYTE,RX_REQ_RUN,program	file-ext-order
+byte	bench-cap:capability	auto-nocaps	RX_DFA_PREFILTER_OFFSETS,RX_REQ_BYTE,RX_REQ_RUN,program	file-ext-order
+byte	bench-cap:capability	vm-caps	RX_REQ_BYTE,RX_REQ_RUN,program	file-ext-order
+byte	bench-cap:capability	vm-nocaps	RX_REQ_BYTE,RX_REQ_RUN,program	file-ext-order
+byte	bench-cap:capability	auto-caps	RX_DFA_PREFILTER_OFFSETS,RX_REQ_BYTE,RX_REQ_RUN,program	router-prefix-order
+byte	bench-cap:capability	auto-nocaps	RX_DFA_PREFILTER_OFFSETS,RX_REQ_BYTE,RX_REQ_RUN,program	router-prefix-order
+byte	bench-cap:capability	vm-caps	RX_REQ_BYTE,RX_REQ_RUN,program	router-prefix-order
+byte	bench-cap:capability	vm-nocaps	RX_REQ_BYTE,RX_REQ_RUN,program	router-prefix-order
+byte	bench-cap:capability	auto-caps	RX_VM_PREFILTER_LANG_WHY	wild-logparse-syslogbase-expanded
+byte	bench-cap:capability	auto-nocaps	RX_VM_PREFILTER_LANG_WHY	wild-logparse-syslogbase-expanded
+byte	bench-cap:capability	auto-caps	RX_DFA_PREFILTER_OFFSETS,RX_REQ_BYTE,RX_REQ_RUN,program	wild-secrets-slack-webhook-url
+byte	bench-cap:capability	auto-nocaps	RX_DFA_PREFILTER_OFFSETS,RX_REQ_BYTE,RX_REQ_RUN,program	wild-secrets-slack-webhook-url
+byte	bench-cap:capability	vm-caps	RX_REQ_BYTE,RX_REQ_RUN,program	wild-secrets-slack-webhook-url
+byte	bench-cap:capability	vm-nocaps	RX_REQ_BYTE,RX_REQ_RUN,program	wild-secrets-slack-webhook-url
+byte	bench-rxt:litrun	auto	RX_DFA_PREFILTER,RX_DFA_PREFILTER_OFFSETS,RX_REQ_BYTE,RX_REQ_RUN,RX_REQ_WHY,program	abcd
+byte	bench-rxt:litrun	vm	RX_REQ_BYTE,RX_REQ_RUN,program	abcd
+byte	bench-rxt:litrun	auto	RX_DFA_PREFILTER_OFFSETS,RX_REQ_BYTE,RX_REQ_RUN,program	abcdefg
+byte	bench-rxt:litrun	vm	RX_REQ_BYTE,RX_REQ_RUN,program	abcdefg
+byte	bench-rxt:litrun	auto	RX_DFA_PREFILTER_OFFSETS,RX_REQ_BYTE,RX_REQ_RUN,program	abcdefgh
+byte	bench-rxt:litrun	vm	RX_REQ_BYTE,RX_REQ_RUN,program	abcdefgh
+byte	bench-rxt:litrun	auto	RX_REQ_BYTE,RX_REQ_RUN,program	abcdefghijklmnopqrstuvwxyzABCDE
+byte	bench-rxt:litrun	vm	RX_REQ_BYTE,RX_REQ_RUN,program	abcdefghijklmnopqrstuvwxyzABCDE
+byte	bench-rxt:litrun	auto	RX_REQ_RUN,program	abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMN
+byte	bench-rxt:litrun	vm	RX_REQ_RUN,program	abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMN
+byte	bench-rxt:loglines	auto	RX_DFA_PREFILTER_OFFSETS,RX_REQ_BYTE,program	\\d{4}-\\d{2}-\\d{2}[T ]\\d{2}:\\d{2}:\\d{2}(?:[.,]\\d{1,6})?(?:Z|[+-]\\d{2}:?\\d{2})?
+byte	bench-rxt:loglines	vm	RX_REQ_BYTE,program	\\d{4}-\\d{2}-\\d{2}[T ]\\d{2}:\\d{2}:\\d{2}(?:[.,]\\d{1,6})?(?:Z|[+-]\\d{2}:?\\d{2})?
+byte	bench-rxt:syntax	auto	RX_DFA_PREFILTER,RX_DFA_PREFILTER_OFFSETS,RX_REQ_WHY,program	(?'w'cat)
+byte	bench-rxt:syntax	auto	RX_DFA_PREFILTER,RX_DFA_PREFILTER_OFFSETS,RX_REQ_WHY,program	(?<w>cat)
+byte	bench-rxt:syntax	auto	RX_DFA_PREFILTER,RX_DFA_PREFILTER_OFFSETS,RX_REQ_WHY,program	(?n)(ca)t
+byte	bench-rxt:syntax	auto	RX_DFA_PREFILTER,RX_DFA_PREFILTER_OFFSETS,RX_REQ_WHY,program	(?x) c a t # comment
+byte	bench-rxt:syntax	auto	RX_DFA_PREFILTER,RX_DFA_PREFILTER_OFFSETS,RX_REQ_WHY,program	(cat)
+byte	bench-rxt:syntax	auto	RX_DFA_PREFILTER,RX_DFA_PREFILTER_OFFSETS,RX_REQ_WHY,program	\\x63at
+byte	bench-rxt:syntax	auto	RX_DFA_PREFILTER,RX_DFA_PREFILTER_OFFSETS,RX_REQ_WHY,program	c.t
+byte	bench-rxt:syntax	auto	RX_DFA_PREFILTER,RX_DFA_PREFILTER_OFFSETS,RX_REQ_WHY,program	c[^aeiou]t
+byte	bench-rxt:syntax	auto	RX_DFA_PREFILTER,RX_DFA_PREFILTER_OFFSETS,RX_REQ_WHY,program	c[a-zA-Z]t
+byte	bench-rxt:syntax	auto	RX_DFA_PREFILTER,RX_DFA_PREFILTER_OFFSETS,RX_REQ_WHY,program	c[aA]t
+byte	bench-rxt:syntax	auto	RX_DFA_PREFILTER,RX_DFA_PREFILTER_OFFSETS,RX_REQ_WHY,program	c[ac]t
+byte	bench-rxt:syntax	auto	RX_DFA_PREFILTER,RX_DFA_PREFILTER_OFFSETS,RX_REQ_WHY,program	cat
+byte	bench-rxt:syntax	auto	RX_DFA_PREFILTER,RX_DFA_PREFILTER_OFFSETS,program	cat\\s+sat
+byte	bench-rxt:syntax	auto	RX_DFA_PREFILTER_OFFSETS,RX_REQ_BYTE,RX_REQ_RUN,program	item\\040done
+byte	bench-rxt:syntax	vm	RX_REQ_BYTE,RX_REQ_RUN,program	item\\040done
+byte	bench-rxt:syntax	auto	RX_DFA_PREFILTER,RX_DFA_PREFILTER_OFFSETS,program	key\\h*=\\h*value
+utf8	bench-cap:capability	auto-caps	RX_REQ_BYTE,program	dup-param-detect
+utf8	bench-cap:capability	auto-nocaps	RX_REQ_BYTE,program	dup-param-detect
+utf8	bench-cap:capability	vm-caps	RX_REQ_BYTE,program	dup-param-detect
+utf8	bench-cap:capability	vm-nocaps	RX_REQ_BYTE,program	dup-param-detect
+utf8	bench-cap:capability	auto-caps	RX_DFA_PREFILTER,RX_DFA_PREFILTER_OFFSETS,RX_REQ_WHY,program	file-ext-order
+utf8	bench-cap:capability	auto-nocaps	RX_DFA_PREFILTER,RX_DFA_PREFILTER_OFFSETS,RX_REQ_WHY,program	file-ext-order
+utf8	bench-cap:capability	auto-caps	RX_REQ_BYTE,RX_REQ_RUN	logparse-atomic
+utf8	bench-cap:capability	auto-nocaps	RX_REQ_BYTE,RX_REQ_RUN	logparse-atomic
+utf8	bench-cap:capability	vm-caps	RX_REQ_BYTE,RX_REQ_RUN,program	logparse-atomic
+utf8	bench-cap:capability	vm-nocaps	RX_REQ_BYTE,RX_REQ_RUN,program	logparse-atomic
+utf8	bench-cap:capability	auto-caps	RX_REQ_BYTE,RX_REQ_RUN	logparse-atomic-removed
+utf8	bench-cap:capability	auto-nocaps	RX_REQ_BYTE,RX_REQ_RUN	logparse-atomic-removed
+utf8	bench-cap:capability	vm-caps	RX_REQ_BYTE,RX_REQ_RUN,program	logparse-atomic-removed
+utf8	bench-cap:capability	vm-nocaps	RX_REQ_BYTE,RX_REQ_RUN,program	logparse-atomic-removed
+utf8	bench-cap:capability	auto-caps	RX_REQ_BYTE,RX_REQ_RUN,program	nested-comment-rec
+utf8	bench-cap:capability	auto-nocaps	RX_REQ_BYTE,RX_REQ_RUN,program	nested-comment-rec
+utf8	bench-cap:capability	vm-caps	RX_REQ_BYTE,RX_REQ_RUN,program	nested-comment-rec
+utf8	bench-cap:capability	vm-nocaps	RX_REQ_BYTE,RX_REQ_RUN,program	nested-comment-rec
+utf8	bench-cap:capability	auto-caps	RX_DFA_PREFILTER,RX_DFA_PREFILTER_OFFSETS,RX_REQ_BYTE,RX_REQ_RUN,RX_REQ_WHY,program	router-prefix-order
+utf8	bench-cap:capability	auto-nocaps	RX_DFA_PREFILTER,RX_DFA_PREFILTER_OFFSETS,RX_REQ_BYTE,RX_REQ_RUN,RX_REQ_WHY,program	router-prefix-order
+utf8	bench-cap:capability	vm-caps	RX_REQ_BYTE,RX_REQ_RUN,program	router-prefix-order
+utf8	bench-cap:capability	vm-nocaps	RX_REQ_BYTE,RX_REQ_RUN,program	router-prefix-order
+utf8	bench-cap:capability	auto-caps	RX_REQ_BYTE,RX_REQ_RUN,program	tag-depth3-bound
+utf8	bench-cap:capability	auto-nocaps	RX_REQ_BYTE,RX_REQ_RUN,program	tag-depth3-bound
+utf8	bench-cap:capability	vm-caps	RX_REQ_BYTE,RX_REQ_RUN,program	tag-depth3-bound
+utf8	bench-cap:capability	vm-nocaps	RX_REQ_BYTE,RX_REQ_RUN,program	tag-depth3-bound
+utf8	bench-cap:capability	auto-caps	RX_REQ_BYTE,RX_REQ_RUN,program	tag-pair-match
+utf8	bench-cap:capability	auto-nocaps	RX_REQ_BYTE,RX_REQ_RUN,program	tag-pair-match
+utf8	bench-cap:capability	vm-caps	RX_REQ_BYTE,RX_REQ_RUN,program	tag-pair-match
+utf8	bench-cap:capability	vm-nocaps	RX_REQ_BYTE,RX_REQ_RUN,program	tag-pair-match
+utf8	bench-cap:capability	auto-caps	RX_VM_PREFILTER_LANG_WHY	wild-logparse-syslogbase-expanded
+utf8	bench-cap:capability	auto-nocaps	RX_VM_PREFILTER_LANG_WHY	wild-logparse-syslogbase-expanded
+utf8	bench-cap:capability	auto-caps	RX_DFA_PREFILTER,RX_DFA_PREFILTER_OFFSETS,RX_REQ_RUN,RX_REQ_WHY,program	wild-secrets-github-pat
+utf8	bench-cap:capability	auto-nocaps	RX_DFA_PREFILTER,RX_DFA_PREFILTER_OFFSETS,RX_REQ_RUN,RX_REQ_WHY,program	wild-secrets-github-pat
+utf8	bench-cap:capability	vm-caps	RX_REQ_RUN,program	wild-secrets-github-pat
+utf8	bench-cap:capability	vm-nocaps	RX_REQ_RUN,program	wild-secrets-github-pat
+utf8	bench-cap:capability	auto-caps	RX_REQ_BYTE,RX_REQ_RUN,program	wild-secrets-slack-webhook-url
+utf8	bench-cap:capability	auto-nocaps	RX_REQ_BYTE,RX_REQ_RUN,program	wild-secrets-slack-webhook-url
+utf8	bench-cap:capability	vm-caps	RX_REQ_BYTE,RX_REQ_RUN,program	wild-secrets-slack-webhook-url
+utf8	bench-cap:capability	vm-nocaps	RX_REQ_BYTE,RX_REQ_RUN,program	wild-secrets-slack-webhook-url
+utf8	bench-cap:capability	auto-caps	RX_DFA_PREFILTER,RX_DFA_PREFILTER_OFFSETS,RX_REQ_BYTE,RX_REQ_RUN,RX_REQ_WHY,program	wild-semdiv-altorder-foo-foobar-rustregex
+utf8	bench-cap:capability	auto-nocaps	RX_DFA_PREFILTER,RX_DFA_PREFILTER_OFFSETS,RX_REQ_BYTE,RX_REQ_RUN,RX_REQ_WHY,program	wild-semdiv-altorder-foo-foobar-rustregex
+utf8	bench-cap:capability	vm-caps	RX_REQ_BYTE,RX_REQ_RUN,program	wild-semdiv-altorder-foo-foobar-rustregex
+utf8	bench-cap:capability	vm-nocaps	RX_REQ_BYTE,RX_REQ_RUN,program	wild-semdiv-altorder-foo-foobar-rustregex
+utf8	bench-cap:capability	auto-caps	RX_DFA_PREFILTER,RX_DFA_PREFILTER_OFFSETS,RX_REQ_BYTE,RX_REQ_RUN,RX_REQ_WHY,program	wild-semdiv-dollar-trailing-newline-pcre2
+utf8	bench-cap:capability	auto-nocaps	RX_DFA_PREFILTER,RX_DFA_PREFILTER_OFFSETS,RX_REQ_BYTE,RX_REQ_RUN,RX_REQ_WHY,program	wild-semdiv-dollar-trailing-newline-pcre2
+utf8	bench-cap:capability	vm-caps	RX_REQ_BYTE,RX_REQ_RUN,program	wild-semdiv-dollar-trailing-newline-pcre2
+utf8	bench-cap:capability	vm-nocaps	RX_REQ_BYTE,RX_REQ_RUN,program	wild-semdiv-dollar-trailing-newline-pcre2
+utf8	bench-cap:capability	auto-caps	RX_REQ_BYTE	wild-validator-email-owasp
+utf8	bench-cap:capability	auto-nocaps	RX_REQ_BYTE	wild-validator-email-owasp
+utf8	bench-cap:capability	vm-caps	RX_REQ_BYTE,program	wild-validator-email-owasp
+utf8	bench-cap:capability	vm-nocaps	RX_REQ_BYTE,program	wild-validator-email-owasp
+utf8	bench-cap:capability	auto-caps	RX_DFA_PREFILTER_OFFSETS,program	wild-validator-uuid-grok
+utf8	bench-cap:capability	auto-nocaps	RX_DFA_PREFILTER_OFFSETS,program	wild-validator-uuid-grok
+utf8	bench-cap:capability	auto-caps	RX_REQ_BYTE,RX_REQ_RUN,program	wild-waf-crs-942500-comment-obfuscation
+utf8	bench-cap:capability	auto-nocaps	RX_REQ_BYTE,RX_REQ_RUN,program	wild-waf-crs-942500-comment-obfuscation
+utf8	bench-cap:capability	vm-caps	RX_REQ_BYTE,RX_REQ_RUN,program	wild-waf-crs-942500-comment-obfuscation
+utf8	bench-cap:capability	vm-nocaps	RX_REQ_BYTE,RX_REQ_RUN,program	wild-waf-crs-942500-comment-obfuscation
+utf8	bench-rxt:email	auto	RX_REQ_BYTE,program	(?:(?<atom>[a-z0-9!#$%&'*+/=?^_`{|}~-]+)){0}(?:(?<qchar>[\\x01-\\x08\\x0b\\x0c\\x0e-\\x1f\\x21\\x23-\\x5b\\x5d-\\x7f]|\\\\[\\x01-\\x09\\x0b\\x0c\\x0e-\\x7f])){0}(?:(?<label>[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)){0}(?:(?<octet>25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){0}(?:(?&atom)(?:\\.(?&atom))*|"(?:(?&qchar))*")@(?:(?:(?&label)\\.)+(?&label)|\\[(?:(?:(?&octet))\\.){3}(?:(?&octet)|[a-z0-9-]*[a-z0-9]:(?:[\\x01-\\x08\\x0b\\x0c\\x0e-\\x1f\\x21-\\x5a\\x53-\\x7f]|\\\\[\\x01-\\x09\\x0b\\x0c\\x0e-\\x7f])+)\\])
+utf8	bench-rxt:email	vm	RX_REQ_BYTE,program	(?:(?<atom>[a-z0-9!#$%&'*+/=?^_`{|}~-]+)){0}(?:(?<qchar>[\\x01-\\x08\\x0b\\x0c\\x0e-\\x1f\\x21\\x23-\\x5b\\x5d-\\x7f]|\\\\[\\x01-\\x09\\x0b\\x0c\\x0e-\\x7f])){0}(?:(?<label>[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)){0}(?:(?<octet>25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){0}(?:(?&atom)(?:\\.(?&atom))*|"(?:(?&qchar))*")@(?:(?:(?&label)\\.)+(?&label)|\\[(?:(?:(?&octet))\\.){3}(?:(?&octet)|[a-z0-9-]*[a-z0-9]:(?:[\\x01-\\x08\\x0b\\x0c\\x0e-\\x1f\\x21-\\x5a\\x53-\\x7f]|\\\\[\\x01-\\x09\\x0b\\x0c\\x0e-\\x7f])+)\\])
+utf8	bench-rxt:email	auto	RX_REQ_BYTE,program	(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*|"(?:[\\x01-\\x08\\x0b\\x0c\\x0e-\\x1f\\x21\\x23-\\x5b\\x5d-\\x7f]|\\\\[\\x01-\\x09\\x0b\\x0c\\x0e-\\x7f])*")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\\[(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-z0-9-]*[a-z0-9]:(?:[\\x01-\\x08\\x0b\\x0c\\x0e-\\x1f\\x21-\\x5a\\x53-\\x7f]|\\\\[\\x01-\\x09\\x0b\\x0c\\x0e-\\x7f])+)\\])
+utf8	bench-rxt:email	vm	RX_REQ_BYTE,program	(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*|"(?:[\\x01-\\x08\\x0b\\x0c\\x0e-\\x1f\\x21\\x23-\\x5b\\x5d-\\x7f]|\\\\[\\x01-\\x09\\x0b\\x0c\\x0e-\\x7f])*")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\\[(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-z0-9-]*[a-z0-9]:(?:[\\x01-\\x08\\x0b\\x0c\\x0e-\\x1f\\x21-\\x5a\\x53-\\x7f]|\\\\[\\x01-\\x09\\x0b\\x0c\\x0e-\\x7f])+)\\])
+utf8	bench-rxt:litrun	auto	RX_DFA_PREFILTER,RX_DFA_PREFILTER_OFFSETS,RX_REQ_RUN,RX_REQ_WHY,program	\\b(github_pat_[0-9a-zA-Z_]{82})\\b
+utf8	bench-rxt:litrun	vm	RX_REQ_RUN,program	\\b(github_pat_[0-9a-zA-Z_]{82})\\b
+utf8	bench-rxt:litrun	auto	RX_DFA_PREFILTER,RX_DFA_PREFILTER_OFFSETS,RX_REQ_BYTE,RX_REQ_RUN,RX_REQ_WHY,program	abc
+utf8	bench-rxt:litrun	vm	RX_REQ_BYTE,RX_REQ_RUN,program	abc
+utf8	bench-rxt:litrun	auto	RX_DFA_PREFILTER,RX_DFA_PREFILTER_OFFSETS,RX_REQ_BYTE,RX_REQ_RUN,RX_REQ_WHY,program	abc$
+utf8	bench-rxt:litrun	vm	RX_REQ_BYTE,RX_REQ_RUN,program	abc$
+utf8	bench-rxt:litrun	auto	RX_DFA_PREFILTER,RX_DFA_PREFILTER_OFFSETS,RX_REQ_BYTE,RX_REQ_RUN,RX_REQ_WHY,program	abcdefg
+utf8	bench-rxt:litrun	vm	RX_REQ_BYTE,RX_REQ_RUN,program	abcdefg
+utf8	bench-rxt:litrun	auto	RX_DFA_PREFILTER,RX_DFA_PREFILTER_OFFSETS,RX_REQ_BYTE,RX_REQ_RUN,RX_REQ_WHY,program	abcdefgh
+utf8	bench-rxt:litrun	vm	RX_REQ_BYTE,RX_REQ_RUN,program	abcdefgh
+utf8	bench-rxt:litrun	auto	RX_DFA_PREFILTER,RX_DFA_PREFILTER_OFFSETS,RX_REQ_WHY,program	abcdefghij
+utf8	bench-rxt:litrun	auto	RX_DFA_PREFILTER,RX_DFA_PREFILTER_OFFSETS,RX_REQ_BYTE,RX_REQ_RUN,RX_REQ_WHY,program	abcdefghijklmnop
+utf8	bench-rxt:litrun	vm	RX_REQ_BYTE,RX_REQ_RUN,program	abcdefghijklmnop
+utf8	bench-rxt:litrun	auto	RX_DFA_PREFILTER_OFFSETS,RX_REQ_BYTE,RX_REQ_RUN,program	abcdefghijklmnopqrstuvwxyzABCDE
+utf8	bench-rxt:litrun	vm	RX_REQ_BYTE,RX_REQ_RUN,program	abcdefghijklmnopqrstuvwxyzABCDE
+utf8	bench-rxt:litrun	auto	RX_DFA_PREFILTER_OFFSETS,RX_REQ_BYTE,RX_REQ_RUN,program	abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMN
+utf8	bench-rxt:litrun	vm	RX_REQ_BYTE,RX_REQ_RUN,program	abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMN
+utf8	bench-rxt:litrun	auto	RX_DFA_PREFILTER,RX_DFA_PREFILTER_OFFSETS,RX_REQ_BYTE,RX_REQ_RUN,RX_REQ_WHY,program	foo.x|foobar|foo.
+utf8	bench-rxt:litrun	vm	RX_REQ_BYTE,RX_REQ_RUN,program	foo.x|foobar|foo.
+utf8	bench-rxt:loglines	auto	RX_REQ_BYTE,RX_REQ_RUN,program	"(?:GET|POST|PUT|PATCH|DELETE|HEAD) [^ "]+ HTTP/1\\.[01]" 5[0-9]{2}\\b
+utf8	bench-rxt:loglines	vm	RX_REQ_BYTE,RX_REQ_RUN,program	"(?:GET|POST|PUT|PATCH|DELETE|HEAD) [^ "]+ HTTP/1\\.[01]" 5[0-9]{2}\\b
+utf8	bench-rxt:loglines	auto	RX_DFA_PREFILTER_OFFSETS,program	\\b[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\\b
+utf8	bench-rxt:loglines	auto	RX_REQ_BYTE,RX_REQ_RUN,program	\\b[a-z_][a-z0-9_]{0,31}="(?:[^"\\\\]|\\\\.)*"
+utf8	bench-rxt:loglines	vm	RX_REQ_BYTE,RX_REQ_RUN,program	\\b[a-z_][a-z0-9_]{0,31}="(?:[^"\\\\]|\\\\.)*"
+utf8	bench-rxt:loglines	auto	RX_REQ_BYTE,RX_REQ_RUN,program	\\bat (?:[A-Za-z_$][A-Za-z0-9_$]*\\.){2,}[A-Za-z_$][A-Za-z0-9_$]*\\((?:[A-Za-z0-9_$]+\\.java:[0-9]+|Native Method|Unknown Source)\\)
+utf8	bench-rxt:loglines	vm	RX_REQ_BYTE,RX_REQ_RUN,program	\\bat (?:[A-Za-z_$][A-Za-z0-9_$]*\\.){2,}[A-Za-z_$][A-Za-z0-9_$]*\\((?:[A-Za-z0-9_$]+\\.java:[0-9]+|Native Method|Unknown Source)\\)
+utf8	bench-rxt:loglines	auto	RX_DFA_PREFILTER_OFFSETS,RX_REQ_WHY,program	\\d{4}-\\d{2}-\\d{2}[T ]\\d{2}:\\d{2}:\\d{2}(?:[.,]\\d{1,6})?(?:Z|[+-]\\d{2}:?\\d{2})?
+utf8	bench-rxt:syntax	auto	RX_REQ_BYTE,RX_REQ_RUN,program	(?'w'cat)
+utf8	bench-rxt:syntax	vm	RX_REQ_BYTE,RX_REQ_RUN,program	(?'w'cat)
+utf8	bench-rxt:syntax	auto	RX_DFA_PREFILTER,RX_DFA_PREFILTER_OFFSETS,RX_REQ_WHY,program	(?*item)item
+utf8	bench-rxt:syntax	auto	RX_DFA_PREFILTER_OFFSETS,RX_REQ_BYTE,RX_REQ_RUN,program	(?<!item )done
+utf8	bench-rxt:syntax	vm	RX_REQ_BYTE,RX_REQ_RUN,program	(?<!item )done
+utf8	bench-rxt:syntax	auto	RX_DFA_PREFILTER_OFFSETS,RX_REQ_BYTE,RX_REQ_RUN,program	(?<=item )done
+utf8	bench-rxt:syntax	vm	RX_REQ_BYTE,RX_REQ_RUN,program	(?<=item )done
+utf8	bench-rxt:syntax	auto	RX_REQ_BYTE,RX_REQ_RUN,program	(?<w>cat)
+utf8	bench-rxt:syntax	vm	RX_REQ_BYTE,RX_REQ_RUN,program	(?<w>cat)
+utf8	bench-rxt:syntax	auto	RX_DFA_PREFILTER,RX_DFA_PREFILTER_OFFSETS,RX_REQ_BYTE,RX_REQ_RUN,RX_REQ_WHY,program	(?i)c(?-i)at
+utf8	bench-rxt:syntax	vm	RX_REQ_BYTE,RX_REQ_RUN,program	(?i)c(?-i)at
+utf8	bench-rxt:syntax	auto	RX_DFA_PREFILTER,RX_DFA_PREFILTER_OFFSETS,RX_REQ_BYTE,RX_REQ_RUN,RX_REQ_WHY,program	(?i)c(?^)at
+utf8	bench-rxt:syntax	vm	RX_REQ_BYTE,RX_REQ_RUN,program	(?i)c(?^)at
+utf8	bench-rxt:syntax	auto	RX_DFA_PREFILTER_OFFSETS,RX_REQ_BYTE,RX_REQ_RUN,program	(?m)done$
+utf8	bench-rxt:syntax	vm	RX_REQ_BYTE,RX_REQ_RUN,program	(?m)done$
+utf8	bench-rxt:syntax	auto	RX_REQ_BYTE,RX_REQ_RUN,program	(?n)(ca)t
+utf8	bench-rxt:syntax	vm	RX_REQ_BYTE,RX_REQ_RUN,program	(?n)(ca)t
+utf8	bench-rxt:syntax	auto	RX_DFA_PREFILTER_OFFSETS,RX_REQ_BYTE,RX_REQ_RUN,program	(?s)item.done
+utf8	bench-rxt:syntax	vm	RX_REQ_BYTE,RX_REQ_RUN,program	(?s)item.done
+utf8	bench-rxt:syntax	auto	RX_REQ_BYTE,RX_REQ_RUN,program	(?x) c a t # comment
+utf8	bench-rxt:syntax	vm	RX_REQ_BYTE,RX_REQ_RUN,program	(?x) c a t # comment
+utf8	bench-rxt:syntax	auto	RX_REQ_BYTE,RX_REQ_RUN,program	(cat)
+utf8	bench-rxt:syntax	vm	RX_REQ_BYTE,RX_REQ_RUN,program	(cat)
+utf8	bench-rxt:syntax	auto	RX_REQ_BYTE,RX_REQ_RUN,program	<(?<t>\\w+)>[^<]*</\\k<t>>
+utf8	bench-rxt:syntax	vm	RX_REQ_BYTE,RX_REQ_RUN,program	<(?<t>\\w+)>[^<]*</\\k<t>>
+utf8	bench-rxt:syntax	auto	RX_REQ_BYTE,RX_REQ_RUN,program	\\Bcat\\B
+utf8	bench-rxt:syntax	vm	RX_REQ_BYTE,RX_REQ_RUN,program	\\Bcat\\B
+utf8	bench-rxt:syntax	auto	RX_REQ_BYTE,RX_REQ_RUN,program	\\Qf(x)\\E
+utf8	bench-rxt:syntax	vm	RX_REQ_BYTE,RX_REQ_RUN,program	\\Qf(x)\\E
+utf8	bench-rxt:syntax	auto	RX_REQ_BYTE,RX_REQ_RUN,program	\\bcat\\b
+utf8	bench-rxt:syntax	vm	RX_REQ_BYTE,RX_REQ_RUN,program	\\bcat\\b
+utf8	bench-rxt:syntax	auto	RX_REQ_BYTE,RX_REQ_RUN,program	\\x63at
+utf8	bench-rxt:syntax	vm	RX_REQ_BYTE,RX_REQ_RUN,program	\\x63at
+utf8	bench-rxt:syntax	auto	RX_REQ_BYTE,RX_REQ_WHY,program	c.t
+utf8	bench-rxt:syntax	vm	RX_REQ_BYTE,program	c.t
+utf8	bench-rxt:syntax	auto	RX_REQ_BYTE,RX_REQ_WHY,program	c[^aeiou]t
+utf8	bench-rxt:syntax	vm	RX_REQ_BYTE,program	c[^aeiou]t
+utf8	bench-rxt:syntax	auto	RX_REQ_BYTE,RX_REQ_WHY,program	c[a-zA-Z]t
+utf8	bench-rxt:syntax	vm	RX_REQ_BYTE,program	c[a-zA-Z]t
+utf8	bench-rxt:syntax	auto	RX_REQ_BYTE,RX_REQ_WHY,program	c[aA]t
+utf8	bench-rxt:syntax	vm	RX_REQ_BYTE,program	c[aA]t
+utf8	bench-rxt:syntax	auto	RX_REQ_BYTE,RX_REQ_WHY,program	c[ac]t
+utf8	bench-rxt:syntax	vm	RX_REQ_BYTE,program	c[ac]t
+utf8	bench-rxt:syntax	auto	RX_REQ_BYTE,RX_REQ_WHY,program	ca*t
+utf8	bench-rxt:syntax	vm	RX_REQ_BYTE,program	ca*t
+utf8	bench-rxt:syntax	auto	RX_DFA_PREFILTER,RX_DFA_PREFILTER_OFFSETS,RX_REQ_BYTE,RX_REQ_RUN,RX_REQ_WHY,program	caf\\x{e9}
+utf8	bench-rxt:syntax	vm	RX_REQ_BYTE,RX_REQ_RUN,program	caf\\x{e9}
+utf8	bench-rxt:syntax	auto	RX_REQ_BYTE,RX_REQ_RUN,program	cat
+utf8	bench-rxt:syntax	vm	RX_REQ_BYTE,RX_REQ_RUN,program	cat
+utf8	bench-rxt:syntax	auto	RX_REQ_BYTE,RX_REQ_RUN,program	cat\\s+sat
+utf8	bench-rxt:syntax	vm	RX_REQ_BYTE,RX_REQ_RUN,program	cat\\s+sat
+utf8	bench-rxt:syntax	auto	RX_DFA_PREFILTER_OFFSETS,RX_REQ_BYTE,RX_REQ_RUN,program	colou?r
+utf8	bench-rxt:syntax	vm	RX_REQ_BYTE,RX_REQ_RUN,program	colou?r
+utf8	bench-rxt:syntax	auto	RX_DFA_PREFILTER_OFFSETS,RX_REQ_BYTE,RX_REQ_RUN,program	done$
+utf8	bench-rxt:syntax	vm	RX_REQ_BYTE,RX_REQ_RUN,program	done$
+utf8	bench-rxt:syntax	auto	RX_DFA_PREFILTER_OFFSETS,RX_REQ_BYTE,RX_REQ_RUN,program	done\\Z
+utf8	bench-rxt:syntax	vm	RX_REQ_BYTE,RX_REQ_RUN,program	done\\Z
+utf8	bench-rxt:syntax	auto	RX_DFA_PREFILTER_OFFSETS,RX_REQ_BYTE,RX_REQ_RUN,program	done\\z
+utf8	bench-rxt:syntax	vm	RX_REQ_BYTE,RX_REQ_RUN,program	done\\z
+utf8	bench-rxt:syntax	auto	RX_REQ_BYTE,RX_REQ_RUN,RX_REQ_WHY,program	it\\Nm
+utf8	bench-rxt:syntax	vm	RX_REQ_BYTE,RX_REQ_RUN,program	it\\Nm
+utf8	bench-rxt:syntax	auto	RX_DFA_PREFILTER,RX_DFA_PREFILTER_OFFSETS,RX_REQ_WHY,program	item(*pla: done)
+utf8	bench-rxt:syntax	auto	RX_DFA_PREFILTER,RX_DFA_PREFILTER_OFFSETS,RX_REQ_WHY,program	item(?! done)
+utf8	bench-rxt:syntax	auto	RX_DFA_PREFILTER,RX_DFA_PREFILTER_OFFSETS,RX_REQ_WHY,program	item(?= done)
+utf8	bench-rxt:syntax	auto	RX_DFA_PREFILTER,RX_DFA_PREFILTER_OFFSETS,RX_REQ_BYTE,RX_REQ_RUN,RX_REQ_WHY,program	item\\040done
+utf8	bench-rxt:syntax	vm	RX_REQ_BYTE,RX_REQ_RUN,program	item\\040done
+utf8	bench-rxt:syntax	auto	RX_DFA_PREFILTER,RX_DFA_PREFILTER_OFFSETS,RX_REQ_BYTE,RX_REQ_RUN,RX_REQ_WHY,program	item\\ndone
+utf8	bench-rxt:syntax	vm	RX_REQ_BYTE,RX_REQ_RUN,program	item\\ndone
+utf8	bench-rxt:syntax	auto	RX_DFA_PREFILTER,RX_DFA_PREFILTER_OFFSETS,RX_REQ_BYTE,RX_REQ_RUN,RX_REQ_WHY,program	item\\r\\ndone
+utf8	bench-rxt:syntax	vm	RX_REQ_BYTE,RX_REQ_RUN,program	item\\r\\ndone
+utf8	bench-rxt:syntax	auto	RX_DFA_PREFILTER_OFFSETS,RX_REQ_BYTE,RX_REQ_RUN,program	item\\v+done
+utf8	bench-rxt:syntax	vm	RX_REQ_BYTE,RX_REQ_RUN,program	item\\v+done
+utf8	bench-rxt:syntax	auto	RX_DFA_PREFILTER,RX_DFA_PREFILTER_OFFSETS,RX_REQ_WHY,program	key=\\K\\w+
+utf8	bench-rxt:syntax	auto	RX_DFA_PREFILTER_OFFSETS,RX_REQ_BYTE,RX_REQ_RUN,program	key\\h*=\\h*value
+utf8	bench-rxt:syntax	vm	RX_REQ_BYTE,RX_REQ_RUN,program	key\\h*=\\h*value
+utf8	bench-rxt:syntax	auto	RX_DFA_PREFILTER,RX_DFA_PREFILTER_OFFSETS,RX_REQ_BYTE,RX_REQ_RUN,RX_REQ_WHY,program	key\\tvalue
+utf8	bench-rxt:syntax	vm	RX_REQ_BYTE,RX_REQ_RUN,program	key\\tvalue
+utf8	bench-rxt:utf8	auto	RX_REQ_BYTE,RX_REQ_RUN,program	\\bcat\\b
+utf8	bench-rxt:utf8	vm	RX_REQ_BYTE,RX_REQ_RUN,program	\\bcat\\b

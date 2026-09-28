@@ -20,7 +20,8 @@ and records:
 Populations (pcrec-bench read-only):
   bench-cap   bench/capability/patterns/*.rx, 4 configs (s1_identity's)
   bench-rxt   every `pattern` line of bench/*/export/*.rxt and
-              bench/utf8/patterns.rxt, configs auto/vm
+              bench/utf8/patterns.rxt, configs auto/vm (SKIP_SRC, default
+              `altwide`, left out by name: see below)
   corpus      every distinct `pattern` line of tests/**/*.rxt, auto/vm
 each under `-e byte` and `-e utf8`.
 
@@ -44,6 +45,10 @@ TXT_CFG = {"auto": ["--features", "all"],
 ENCS = ("byte", "utf8")
 SHIPPED = ("weblog", "log")
 POPS = os.environ.get("POPS", "bench-cap,bench-rxt,corpus").split(",")
+# bench-rxt sources left out, BY NAME, with the reason in the report:
+# `altwide` (33 wide alternations) compiles at 30-60 s per artifact on this
+# box, i.e. hours for its 528 compiles, and is not where a rate reader sits.
+SKIP_SRC = set(filter(None, os.environ.get("SKIP_SRC", "altwide").split(",")))
 
 
 def drop_named(text):
@@ -138,6 +143,8 @@ def jobs():
     for path in [] if "bench-rxt" not in POPS else \
             sorted(glob.glob(f"{BENCH}/*/export/*.rxt") + [f"{BENCH}/utf8/patterns.rxt"]):
         src = path[len(BENCH) + 1:].split("/")[0]
+        if src in SKIP_SRC:
+            continue
         for pat in rxt_patterns(path):
             if (src, pat) in seen:
                 continue
