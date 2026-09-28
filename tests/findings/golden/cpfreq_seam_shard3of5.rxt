@@ -1,0 +1,15 @@
+analysis pin
+    cpfreq
+        question How often does each Unicode code point occur in this exemplar?
+        reader byte-rate (docs/spec/findings.md §4)
+        analyzer pcrec-analyze 0.1 --scan cpfreq
+        encoding utf8
+        serves byte-rate when utf8 via encode-utf8
+        row U+0078 28
+        row U+00E9 20
+        row U+20AC 20
+        row U+1F600 20
+        provenance
+            source exemplar
+            retrieved 2026-09-28
+            bytes 208

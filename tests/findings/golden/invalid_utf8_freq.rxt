@@ -1,0 +1,47 @@
+analysis pin
+    freq
+        question How often does each byte occur in this exemplar?
+        reader byte-rate (docs/spec/findings.md §4)
+        analyzer pcrec-analyze 0.1 --scan freq,bigram
+        encoding bytes
+        serves byte-rate when byte via unigram
+        row 2d 2
+        row 65 1
+        row 66 3
+        row 69 2
+        row 70 1
+        row 72 1
+        row 73 1
+        row 75 1
+        row 78 2
+        row fe 1
+        row ff 1
+        provenance
+            source exemplar
+            retrieved 2026-09-28
+            bytes 16
+            sha256 7b61c584352dedc31af46d49bc4235462e4f165bea51585fb3eb5c3f0d0f67be
+    bigram
+        question How often does each adjacent byte pair occur in this exemplar?
+        reader run-rarity (docs/spec/findings.md §4)
+        analyzer pcrec-analyze 0.1 --scan freq,bigram
+        encoding bytes
+        serves run-rarity when byte via markov1
+        row 2d 73 1
+        row 2d ff 1
+        row 65 66 1
+        row 66 66 1
+        row 66 69 2
+        row 69 78 2
+        row 70 72 1
+        row 72 65 1
+        row 73 75 1
+        row 75 66 1
+        row 78 2d 1
+        row fe 2d 1
+        row ff fe 1
+        provenance
+            source exemplar
+            retrieved 2026-09-28
+            bytes 16
+            sha256 7b61c584352dedc31af46d49bc4235462e4f165bea51585fb3eb5c3f0d0f67be

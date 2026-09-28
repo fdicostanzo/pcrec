@@ -3375,3 +3375,26 @@ never edited afterwards.
   ASCII-only, so under `-e utf8` every non-ASCII byte ties at the floor and
   the run reader's leftmost tie re-creates O-60's lead-byte pick; the
   default path's utf8 lottery is NOT fixed by B5.
+- **findb6_report.md** — lane `findb6` (sonnet, 2026-09-28): [FINDINGS] B6,
+  the analyzer in C. `analyze/` -> `build/pcrec-analyze` (own CLAUDE.md), a
+  separate zero-dependency binary ported 1:1 from `scripts/pcrec_analyze.py`
+  (B3), four commits (build; repoint the acceptance suite + prove agreement
+  with `run_analyzer_agree.py`, 47/47 PASS, while the prototype still
+  existed; switch both `third_party/*/generate.py` AND two internal
+  `run_findings_tests.sh` call sites found by grepping the tree rather than
+  assumed; delete the prototype and convert the agreement check into
+  `run_analyzer_pinned.py`, design.md §11.8's own suggested pinned-output
+  shape, 11/11 PASS). Read it for the FINDING against §13's own B6
+  acceptance line: `make gen-tables` is NOT byte-identical before/after the
+  switch, because the generators' committed HEADER text names the
+  analyzer's path by string, and the port itself changes that string --
+  confirmed comment-only (the parsed table and every digest are untouched)
+  and idempotent after the one corrective regeneration. Also worth reading
+  for the port's own four findings (the canonical-kind-order rendering
+  rule holding regardless of `--scan`'s typed order; `--merge`'s
+  order-independence, which simplified the port; a dead branch in the
+  bundle-text parser mirrored deliberately rather than "fixed"; the full
+  Unicode well-formed-UTF-8 table, not a naive continuation-byte check,
+  verified against CPython on 800 seeded-random invocations) and the
+  coordination note for lane findb4 (bigram is already a full `analyze/`
+  CLI/bundle-text citizen; only the BUNDLE-scope schema row is B4's).

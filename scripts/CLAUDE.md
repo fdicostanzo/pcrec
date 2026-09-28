@@ -334,7 +334,7 @@ pcrec (the Makefile owns that).
   the validation transcript and the five-lane reconciliation.
 
 - **embed_text.sh** — [FINDINGS] B1 (`docs/design/findings/design.md` §8.1):
-  a BUILD-facing script like `pcrec_analyze.py` below, run by the Makefile to
+  a BUILD-facing script, run by the Makefile to
   embed every `src/findings/<name>.rxt` as a C array plus a name index in
   `src/core/findings_store.inc` (committed; `make gen-findings`). POSIX sh and `od` only, so
   a clone without python still builds; the `LC_ALL=C od -An -v -tx1`
@@ -354,25 +354,17 @@ pcrec (the Makefile owns that).
   [B5] a `cpfreq` block is written as its sparse code-point rows
   (`PcrecFindCp`), a `freq` block as its 256 counts.
 
-- **pcrec_analyze.py** — an exception to this directory's own "process
-  tooling" framing above, kept here because `docs/design/findings/
-  design.md` §10.1 names this exact path: the `[FINDINGS]` exemplar
-  analyzer's PROTOTYPE (step B3), grown from `docs/dev/findings_measure/
-  scripts/ngram_count.py`'s one-pass counting shape (that module's own
-  docstring: "intended as the prototype for the one-counter rule" — this
-  file is what graduates that role, without importing it, so the two
-  lifecycles do not couple). It is not a dev-process tool; it is a
-  BUILD-facing dependency (`third_party/*/generate.py` calls it since
-  design.md §13 step B5 — the shipped `log`/`weblog` bundles are its output) that happens to live under `scripts/` because the
-  design's own build plan puts the prototype tier there before the C end
-  state (`analyze/`, step B6) replaces it (implement-then-replace, §10.1).
-  Emits an `.rxt` `analysis <name>` bundle fragment (design.md §2.7) for
-  `--name`/`--retrieved [--scan freq,cpfreq,bigram]`/`--shard K/N`; also
-  `--merge`, `--digest-only` and `--check` (design.md §10.2); B5 added
-  `--fidelity`/`--adaptation`, provenance fields a synthesized exemplar
-  must carry (D123-8 item 6) — B6's C analyzer owes them too. No clock is
-  read anywhere in it (R27c). See `tests/findings/CLAUDE.md` for its own
-  checks and `docs/dev/lanes/findb3_report.md` for what B3 built, what it
-  left as a manager-review judgment call, and what is owed to B1/B2/B6.
+- **pcrec_analyze.py — DELETED at [FINDINGS] B6** (lane `findb6`,
+  implement-then-replace, design.md §10.1/§12): this was the `[FINDINGS]`
+  exemplar analyzer's PROTOTYPE (step B3), grown from `docs/dev/
+  findings_measure/scripts/ngram_count.py`'s one-pass counting shape. B6
+  ported it 1:1 to `analyze/` -> `build/pcrec-analyze` (own CLAUDE.md), a
+  separate zero-dependency C binary every generator (`third_party/*/
+  generate.py`) and check (`tests/findings/run_analyzer_tests.py`) now
+  invokes instead, proven byte-identical on the in-tree samples, the two
+  real shipped corpora and 800+ seeded-random invocations (invalid UTF-8
+  included) before this file was deleted — see
+  `docs/dev/lanes/findb6_report.md` and `docs/dev/lanes/findb3_report.md`
+  (what B3 built) for the history.
 
 Maintenance: update this file when scripts are added/removed or change role.
