@@ -125,7 +125,7 @@ C4's prediction), and under `log` its offset-k set gains offset 7
 `ship_log_movers.txt` (262 rows) — **bench populations only as committed**;
 the chain below rewrites both with the corpus added (§5).
 
-**Corpus population — OWED** (the chain, §5): `$S/corpus_census.txt`.
+**Corpus population — DONE (manager, from the chain's `corpus_census.txt`, 2026-09-28):** IDENTITY (no analysis named) 0 changed of 6,466 artifact-configs on both encodings (byte: 5,751 identical / 715 refused; utf8: 5,799 / 667). SHIP movers, corpus only: weblog 153 byte / 781 utf8; log 315 byte / 971 utf8. Manifests re-written with the corpus added (ship_weblog_movers.txt 1,165 lines, ship_log_movers.txt 1,561). Chain: every step rc=0; S325-S328 each DETECTED.
 
 ## 5. Owed / for the manager
 
