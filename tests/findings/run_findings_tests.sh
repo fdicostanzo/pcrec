@@ -36,6 +36,7 @@ export LC_ALL=C   # [K35] every sort below compares structured names
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
+ANALYZE="${ANALYZE:-$ROOT_DIR/build/pcrec-analyze}"  # [FINDINGS] B6: analyze/, not scripts/pcrec_analyze.py
 . "$ROOT_DIR/tests/lib/cc_resolve.sh"
 . "$ROOT_DIR/tests/lib/gen_timeout.sh"   # [K37] pcrec_run / gen_cc
 WORKDIR="$(mktemp -d)"
@@ -381,7 +382,7 @@ fi
 # digest is the reference's (the freq/cpfreq equal-digest half is §12 (b),
 # on the shipped ASCII bundles, since B5)
 mkdir -p "$R/AN"
-if python3 "$ROOT_DIR/scripts/pcrec_analyze.py" --name ana --retrieved 2026-09-27 --scan freq \
+if "$ANALYZE" --name ana --retrieved 2026-09-27 --scan freq \
         "$SCRIPT_DIR/fixtures/basic.txt" > "$R/AN/ana.rxt" 2>"$WORKDIR/res.err" &&
    pcrec_run "$PCREC" --list-analysis ana -I "$R/AN" > "$WORKDIR/l21" 2>>"$WORKDIR/res.err" &&
    [ "$(awk -F'\t' '/^#section resolution/{s=1;next} /^#section/{s=0} s&&$1=="byte-rate"&&$2=="byte"{print $7}' "$WORKDIR/l21")" = "$(bdig "$R/AN/ana.rxt")" ]; then
@@ -618,7 +619,7 @@ done
 # reference and the derived 0xC3 count against the accented letters' total.
 mkdir -p "$R/L1"
 printf 'Le caf\xc3\xa9 \xc3\xa0 c\xc3\xb4t\xc3\xa9 de l\x27h\xc3\xb4tel, d\xc3\xa9j\xc3\xa0 ferm\xc3\xa9.\n%.0s' $(seq 50) > "$R/L1/fr.txt"
-if python3 "$ROOT_DIR/scripts/pcrec_analyze.py" --name fr --retrieved 2026-09-28 --scan cpfreq \
+if "$ANALYZE" --name fr --retrieved 2026-09-28 --scan cpfreq \
         "$R/L1/fr.txt" > "$R/L1/fr.rxt" 2>"$WORKDIR/res.err" &&
    pcrec_run "$PCREC" --list-analysis fr -I "$R/L1" > "$WORKDIR/l12d" 2>>"$WORKDIR/res.err"; then
     got="$(awk -F'\t' '/^#section resolution/{s=1;next} /^#section/{s=0} s&&$1=="byte-rate"&&$2=="utf8"{print $7}' "$WORKDIR/l12d")"

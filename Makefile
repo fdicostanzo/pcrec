@@ -1243,8 +1243,10 @@ test-spec: all
 	bash tests/spec_mod0/run_spec_mod0.sh
 
 # [FINDINGS] the findings seam's own checks. Step B3 (lane `findb3`) built the
-# analyzer prototype's (scripts/pcrec_analyze.py, python3-only); step B1 (lane
-# `findb1`) adds the compiler side — tests/findings/run_findings_tests.sh: the
+# analyzer prototype (scripts/pcrec_analyze.py); step B6 (lane `findb6`)
+# ported it to `analyze/` -> $(BUILD_DIR)/pcrec-analyze, the zero-dependency
+# C end state every generator now invokes (implement-then-replace). Step B1
+# (lane `findb1`) adds the compiler side — tests/findings/run_findings_tests.sh: the
 # embedded default's values against RUNEST's pinned dump and an independent
 # python normalization, the store's text against its source, the pre-parsed
 # table against the library reader's own parse, the `<PREFIX>_FINDINGS` stamp

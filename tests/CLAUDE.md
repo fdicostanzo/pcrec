@@ -696,7 +696,9 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
   embedded text against its file, the build-time pre-parse against the
   library reader, the `<PREFIX>_FINDINGS` digest against an independent FNV,
   and the rule that no reader tests a rate. B3's `run_analyzer_tests.py`
-  checks the exemplar analyzer prototype (`scripts/pcrec_analyze.py`).
+  checks the analyzer, `build/pcrec-analyze` ([FINDINGS] B6, `analyze/`;
+  was the python prototype `scripts/pcrec_analyze.py`, B3, until B6
+  implement-then-replaced it).
   `manifests/` holds B1's named mover manifests. See its own CLAUDE.md.
 
 ## Conventions
