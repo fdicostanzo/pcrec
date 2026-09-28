@@ -38,7 +38,11 @@ of your branch point before claiming a red as yours or pre-existing.
 ## Process rules (each has cost a lane before)
 - COMMIT INCREMENTALLY (WIP commits) — commit age is your liveness signal.
 - Long validation (>~2 min) runs in a BACKGROUND task writing a log — never
-  a blocking foreground call; never a Monitor on a progress log.
+  a blocking foreground call; never a Monitor on a progress log. NOR a
+  Monitor/notification on a COMPLETION you then go idle waiting for: an
+  idle wait longer than ~4 min is DO-THEN-FINISH's case — commit, report
+  the run OWED with its log path, hand back, END (three lanes idled this
+  way on 2026-09-28 alone: pf36, land84, findb6).
 - ARM OWED RUNS DETACHED: a run you launch as a plain background task DIES
   WITH YOUR SHELL the moment the manager closes your session (b1triage's
   did, 2026-09-22) — a chain you are owing past your own end must be
