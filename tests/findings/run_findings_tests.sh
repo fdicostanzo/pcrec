@@ -259,7 +259,7 @@ else
     bad "§6 [#9] an -I dir holding default.rxt MOVED an artifact that named no analysis (design §0.6)"
 fi
 # #10 an explicit include <default> reaches the store and is not repeated
-"$PCREC" --list-analysis withdef -I "$R/B" > "$WORKDIR/l10" 2>&1
+pcrec_run "$PCREC" --list-analysis withdef -I "$R/B" > "$WORKDIR/l10" 2>&1
 n10="$(awk '/^#section chain/{s=1;next} /^#section/{s=0} s&&!/^#/' "$WORKDIR/l10" | wc -l | tr -d ' ')"
 if [ "$n10" = 2 ] && awk -F'\t' '$1=="1"&&$2=="default"&&$3=="store"{f=1} END{exit !f}' "$WORKDIR/l10"; then
     ok "§6 [#10] include <default> reaches the store's default, and the terminal is not added twice (2 links)"
@@ -302,8 +302,8 @@ fi
 res_refuse "#12 --analysis in a config's pcrec line" "may not carry '--analysis'" $FEAT "$R/pcrecline.rxt"
 # #13 R13: the same invocation from two cwds, explicit paths
 mkdir -p "$WORKDIR/c13a" "$WORKDIR/c13b"
-( cd "$WORKDIR/c13a" && "$PCREC" -p rx -o x.c $FEAT -I "$R/A" --analysis ord --pattern "$PAT" ) >/dev/null 2>&1
-( cd "$R" && "$PCREC" -p rx -o "$WORKDIR/c13b/x.c" $FEAT -I "$R/A" --analysis ord --pattern "$PAT" ) >/dev/null 2>&1
+( cd "$WORKDIR/c13a" && pcrec_run "$PCREC" -p rx -o x.c $FEAT -I "$R/A" --analysis ord --pattern "$PAT" ) >/dev/null 2>&1
+( cd "$R" && pcrec_run "$PCREC" -p rx -o "$WORKDIR/c13b/x.c" $FEAT -I "$R/A" --analysis ord --pattern "$PAT" ) >/dev/null 2>&1
 if [ -s "$WORKDIR/c13a/x.c" ] && cmp -s "$WORKDIR/c13a/x.c" "$WORKDIR/c13b/x.c"; then
     ok "§6 [#13] the same invocation from two working directories is byte-identical (no ambient state, R13)"
 else
@@ -334,7 +334,7 @@ else
     bad "§6 [#15] a byte-identical copy of the shipped default moved the artifact"
 fi
 # #17 R18: the listing's resolution digest IS the stamp's, and the reference's
-"$PCREC" --list-analysis ord -I "$R/A" > "$WORKDIR/l17" 2>/dev/null
+pcrec_run "$PCREC" --list-analysis ord -I "$R/A" > "$WORKDIR/l17" 2>/dev/null
 l17="$(awk -F'\t' '/^#section resolution/{s=1;next} /^#section/{s=0} s&&$1=="byte-rate"&&$2=="byte"{print $7}' "$WORKDIR/l17")"
 res_stamp "#17 the compile under the same resolution" "byte-rate=ord:$l17" $FEAT -I "$R/A" --analysis ord --pattern "$PAT"
 if [ "$l17" = "$(bdig "$R/A/ord.rxt")" ]; then
@@ -345,16 +345,16 @@ fi
 # #18 every embedded bundle lists (parses in the no-filesystem mode, normalizes)
 while IFS=$'\t' read -r n _; do
     case "$n" in '#'*|'') continue ;; esac
-    if "$PCREC" --list-analysis "$n" >/dev/null 2>"$WORKDIR/res.err"; then
+    if pcrec_run "$PCREC" --list-analysis "$n" >/dev/null 2>"$WORKDIR/res.err"; then
         ok "§6 [#18] the embedded '$n' lists (parses, normalizes)"
     else
         bad "§6 [#18] the embedded '$n' does not list: $(head -c 200 "$WORKDIR/res.err")"
     fi
-done < <("$PCREC" --list-analyses)
+done < <(pcrec_run "$PCREC" --list-analyses)
 # #19 is §2 above: every embedded text is its committed file, byte for byte.
 # #20 the per-target view: named_by, and each resolution digest = the stamp
 mkdir -p "$WORKDIR/o20"
-"$PCREC" --list-analysis "$R/view.rxt" -I "$R/A" --analysis ord > "$WORKDIR/l20" 2>/dev/null
+pcrec_run "$PCREC" --list-analysis "$R/view.rxt" -I "$R/A" --analysis ord > "$WORKDIR/l20" 2>/dev/null
 nb20="$(awk -F'\t' '/^#section targets/{s=1;next} /^#section/{s=0} s&&!/^#/{print $1":"$4}' "$WORKDIR/l20" | tr '\n' ' ')"
 if [ "$nb20" = "t_cfg:config t_fill:cli-fill " ]; then
     ok "§6 [#20] the per-target view names each target's analysis source ($nb20)"
@@ -378,7 +378,7 @@ fi
 mkdir -p "$R/AN"
 if python3 "$ROOT_DIR/scripts/pcrec_analyze.py" --name ana --retrieved 2026-09-27 --scan freq \
         "$SCRIPT_DIR/fixtures/basic.txt" > "$R/AN/ana.rxt" 2>"$WORKDIR/res.err" &&
-   "$PCREC" --list-analysis ana -I "$R/AN" > "$WORKDIR/l21" 2>>"$WORKDIR/res.err" &&
+   pcrec_run "$PCREC" --list-analysis ana -I "$R/AN" > "$WORKDIR/l21" 2>>"$WORKDIR/res.err" &&
    [ "$(awk -F'\t' '/^#section resolution/{s=1;next} /^#section/{s=0} s&&$1=="byte-rate"&&$2=="byte"{print $7}' "$WORKDIR/l21")" = "$(bdig "$R/AN/ana.rxt")" ]; then
     ok "§6 [#21] the analyzer's output resolves through --list-analysis -I with the reference digest (R27a)"
 else
@@ -396,7 +396,7 @@ else
     bad "§6 [#22] the second target's stamp is \"$(anystamp "$WORKDIR/o22/t_quiet.c" 2>/dev/null)\" — a consumption record leaked across compiles (design §6.4)"
 fi
 # the -I lift's other half: still refused where nothing resolves (r2 M-S7)
-if "$PCREC" -I "$R/A" --list-syntax >/dev/null 2>&1; then
+if pcrec_run "$PCREC" -I "$R/A" --list-syntax >/dev/null 2>&1; then
     bad "§6 [-I] -I with --list-syntax was accepted; it resolves no bundle"
 else
     ok "§6 [-I] -I is refused where nothing resolves a bundle (--list-syntax)"
@@ -488,9 +488,9 @@ fi
 # rather than splitting its row.
 # =========================================================================
 . "$ROOT_DIR/tests/lib/table.sh"
-"$PCREC" --list-analyses > "$WORKDIR/t11a" 2>/dev/null
-"$PCREC" --list-analysis tabq -I "$R/A" > "$WORKDIR/t11b" 2>/dev/null
-"$PCREC" --list-analysis "$R/view.rxt" -I "$R/A" --analysis ord > "$WORKDIR/t11c" 2>/dev/null
+pcrec_run "$PCREC" --list-analyses > "$WORKDIR/t11a" 2>/dev/null
+pcrec_run "$PCREC" --list-analysis tabq -I "$R/A" > "$WORKDIR/t11b" 2>/dev/null
+pcrec_run "$PCREC" --list-analysis "$R/view.rxt" -I "$R/A" --analysis ord > "$WORKDIR/t11c" 2>/dev/null
 t11=0
 table_check_truthfulness "$WORKDIR/t11a" >/dev/null 2>"$WORKDIR/t11.err" || t11=1
 for sec in chain resolution freq declarations provenance; do
