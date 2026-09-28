@@ -15,6 +15,10 @@
  *                                     check diffs the two
  *   findings_probe default-digest     the default's byte-rate digest, as the
  *                                     library computes it
+ *   findings_probe derive VIA         [B5] stdin: `cp count` lines (hex cp,
+ *                                     decimal count); stdout: the library's
+ *                                     derived 256 byte counts on one line,
+ *                                     then `dropped N` — or `error N`
  *
  * A block line is `bundle kind line nserves serve;serve;… ROWS`, each serve
  * `query|encs|via`; ROWS is `c0,c1,…,c255` for a `freq` block and
@@ -110,6 +114,21 @@ int main(int argc, char **argv)
             for (b = 0; b < 256; b++) printf("%s%u", b ? " " : "", ppm[b]);
             printf("\n");
         }
+    }
+    if (!strcmp(argv[1], "derive") && argc > 2) {
+        static PcrecFindCp cps[70000];
+        unsigned long long c[256], dropped = 0;
+        unsigned long cp;
+        size_t ncps = 0;
+        int r;
+        while (ncps < sizeof cps / sizeof *cps &&
+               scanf("%lx %llu", &cp, &cps[ncps].count) == 2)
+            cps[ncps++].cp = (uint32_t)cp;
+        r = pcrec_find_derive_counts(argv[2], NULL, cps, ncps, c, &dropped);
+        if (r) { printf("error %d\n", r); return 0; }
+        for (int b = 0; b < 256; b++) printf("%s%llu", b ? " " : "", c[b]);
+        printf("\ndropped %llu\n", dropped);
+        return 0;
     }
     if (!strcmp(argv[1], "default-digest")) {
         uint32_t ppm[256];

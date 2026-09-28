@@ -510,6 +510,172 @@ else
     bad "§11 a TAB in a bundle's question was not escaped (table_contract.md producer rule 5)"
 fi
 
+# =========================================================================
+# §12 THE SHIPPED BUNDLES AND `cpfreq` ([B5]; design §8.1, §11.4, §13 B5).
+# Every expected number is findings_ref.py's (a regex over the bundle's rows,
+# derived with Python's own UTF-8 codec and normalized in python), never the
+# compiler's own.
+# =========================================================================
+# (a) GENERATOR DRIFT: every shipped bundle whose provenance names a source
+# other than `authored` is the output of third_party/<source>/generate.py,
+# found BY THAT NAME — no list of bundles here — and `--check` must pass.
+ngen=0
+for f in "$ROOT_DIR"/src/findings/*.rxt; do
+    n="$(basename "$f" .rxt)"
+    for src in $(sed -n 's/^ *source \([^ ]*\)$/\1/p' "$f" | sort -u); do
+        [ "$src" = authored ] && continue
+        g="$ROOT_DIR/third_party/$src/generate.py"
+        if [ ! -f "$g" ]; then
+            bad "§12 [$n] names source '$src', which has no third_party/$src/generate.py"
+        elif python3 "$g" --check > "$WORKDIR/gen.out" 2>&1; then
+            ok "§12 [$n] third_party/$src/generate.py --check: the bundle is its analyzer's output"
+            ngen=$((ngen + 1))
+        else
+            bad "§12 [$n] third_party/$src/generate.py --check: $(head -c 200 "$WORKDIR/gen.out")"
+        fi
+    done
+done
+if [ "$ngen" -ge 2 ]; then
+    ok "§12 generated-bundle population: $ngen (log, weblog at B5 — never an empty loop)"
+else
+    bad "§12 generated-bundle population is $ngen; B5 ships two (a check over nothing is not a check, K35)"
+fi
+# (b) VALUES: for every shipped bundle, each (byte-rate, encoding) its
+# listing resolves has the reference digest of the answering block derived
+# by the listed `via`, and a compile naming it stamps exactly that.
+nres=0; nascii=0
+while read -r n; do
+    pcrec_run "$PCREC" --list-analysis "$n" > "$WORKDIR/l12" 2>/dev/null
+    if grep -q '^#section cpfreq' "$WORKDIR/l12" &&
+       table_check_truthfulness "$WORKDIR/l12" cpfreq >/dev/null 2>&1 &&
+       table_check_truthfulness "$WORKDIR/l12" resolution >/dev/null 2>&1; then
+        ok "§12 [$n] --list-analysis carries a cpfreq section, and it and resolution match their headers"
+    else
+        bad "§12 [$n] --list-analysis has no cpfreq section, or a cpfreq/resolution row's field count differs from its header"
+    fi
+    fdig=""; cdig=""
+    while IFS=$'\t' read -r q e lk bn kind via dig drop; do
+        [ "$q" = byte-rate ] && [ -n "$kind" ] || continue
+        [ "$lk" = 0 ] || continue          # the bundle's own blocks only
+        want="$($REF bundle-digest "$ROOT_DIR/src/findings/$n.rxt" "$n" "$kind" "$via")"
+        f="$WORKDIR/s12.c"
+        if [ "$dig" = "$want" ] &&
+           pcrec_run "$PCREC" -p rx -e "$e" --analysis "$n" -o "$f" --pattern 'GET /index\.html' >/dev/null 2>&1 &&
+           [ "$(stamp_of "$f")" = "byte-rate=$n:$want" ]; then
+            ok "§12 [$n -e $e] $kind via $via: listing and stamp carry the reference digest $want"
+            nres=$((nres + 1))
+        else
+            bad "§12 [$n -e $e] $kind via $via: listing '$dig', stamp '$(stamp_of "$f" 2>/dev/null)', reference '$want'"
+        fi
+        [ "$kind" = freq ] && fdig="$dig"
+        [ "$kind" = cpfreq ] && cdig="$dig"
+    done < <(awk '/^#section resolution/{s=1;next} /^#section/{s=0} s&&!/^#/' "$WORKDIR/l12")
+    # §11.4: on an ASCII-only sample, encode-utf8 gives exactly the freq view
+    if grep -q '^        encoding ascii$' "$ROOT_DIR/src/findings/$n.rxt" && [ -n "$cdig" ]; then
+        if [ "$fdig" = "$cdig" ]; then
+            ok "§12 [$n] ASCII sample: cpfreq via encode-utf8 derives exactly the freq byte-rate (digest $cdig, design §11.4)"
+            nascii=$((nascii + 1))
+        else
+            bad "§12 [$n] ASCII sample: freq digest $fdig but cpfreq/encode-utf8 $cdig — decoding then re-encoding ASCII must be the identity (§10.2)"
+        fi
+    fi
+done < <("$PROBE" names | grep -vx default)
+if [ "$nres" -ge 4 ] && [ "$nascii" -ge 2 ]; then
+    ok "§12 populations: $nres (bundle, encoding) byte-rate answers checked, $nascii ASCII identities"
+else
+    bad "§12 populations too small: $nres answers (want >= 4), $nascii ASCII identities (want >= 2)"
+fi
+# (c) THE DERIVATIONS against the reference, over code points of every UTF-8
+# length (seeded), both derivations: the library's derived counts and drop
+# count equal Python's.
+python3 - > "$WORKDIR/cps" <<'PY'
+import random
+r = random.Random(20260928)
+cps = sorted(set([0x41, 0x7F, 0x80, 0xE9, 0xFF, 0x100, 0x7FF, 0x800, 0x20AC, 0xFFFF,
+                  0x10000, 0x1F600, 0x10FFFF] +
+                 [r.choice([r.randrange(0x80), r.randrange(0x80, 0x800),
+                            r.randrange(0xE000, 0x10000), r.randrange(0x10000, 0x110000)])
+                  for _ in range(400)]))
+for c in cps:
+    print("%x %d" % (c, r.randrange(1, 10**6)))
+PY
+for via in encode-utf8 encode-latin1; do
+    "$PROBE" derive "$via" < "$WORKDIR/cps" > "$WORKDIR/d.c"
+    $REF derive "$via" < "$WORKDIR/cps" > "$WORKDIR/d.py"
+    if [ -s "$WORKDIR/d.py" ] && cmp -s "$WORKDIR/d.c" "$WORKDIR/d.py"; then
+        ok "§12 via $via: the library's derived byte counts and drop count equal the reference ($(wc -l < "$WORKDIR/cps" | tr -d ' ') code points, all four UTF-8 lengths)"
+    else
+        bad "§12 via $via: the library's derivation disagrees with findings_ref.py: $(diff "$WORKDIR/d.c" "$WORKDIR/d.py" | head -c 200)"
+    fi
+done
+# (d) §11.4: a Latin-1-text sample comes out 0xC3-heavy under encode-utf8 —
+# the analyzer over French prose, then the listing's digest against the
+# reference and the derived 0xC3 count against the accented letters' total.
+mkdir -p "$R/L1"
+printf 'Le caf\xc3\xa9 \xc3\xa0 c\xc3\xb4t\xc3\xa9 de l\x27h\xc3\xb4tel, d\xc3\xa9j\xc3\xa0 ferm\xc3\xa9.\n%.0s' $(seq 50) > "$R/L1/fr.txt"
+if python3 "$ROOT_DIR/scripts/pcrec_analyze.py" --name fr --retrieved 2026-09-28 --scan cpfreq \
+        "$R/L1/fr.txt" > "$R/L1/fr.rxt" 2>"$WORKDIR/res.err" &&
+   pcrec_run "$PCREC" --list-analysis fr -I "$R/L1" > "$WORKDIR/l12d" 2>>"$WORKDIR/res.err"; then
+    got="$(awk -F'\t' '/^#section resolution/{s=1;next} /^#section/{s=0} s&&$1=="byte-rate"&&$2=="utf8"{print $7}' "$WORKDIR/l12d")"
+    want="$($REF bundle-digest "$R/L1/fr.rxt" fr cpfreq encode-utf8)"
+    sed -n 's/^ *row U+\([0-9A-F]*\) \([0-9]*\)$/\1 \2/p' "$R/L1/fr.rxt" > "$WORKDIR/frcps"
+    c3="$("$PROBE" derive encode-utf8 < "$WORKDIR/frcps" | head -1 | awk '{print $196}')"
+    acc="$(python3 -c 'import sys; print(sum(int(n) for c,n in (l.split() for l in open(sys.argv[1])) if 0xC0<=int(c,16)<=0xFF))' "$WORKDIR/frcps")"
+    top="$("$PROBE" derive encode-utf8 < "$WORKDIR/frcps" | head -1 | tr ' ' '\n' | awk 'NR>129{if($1>m){m=$1;b=NR-1}} END{printf "%02x", b}')"
+    if [ "$got" = "$want" ] && [ "$c3" = "$acc" ] && [ "$acc" -gt 0 ] && [ "$top" = c3 ]; then
+        ok "§12 a Latin-1-text sample is 0xC3-heavy under encode-utf8: 0xC3 carries all $acc accented letters, the top non-ASCII byte; digest $got is the reference's (design §11.4)"
+    else
+        bad "§12 Latin-1 sample: digest '$got' vs reference '$want'; 0xC3 count '$c3' vs accented '$acc'; top non-ASCII byte '$top'"
+    fi
+else
+    bad "§12 the Latin-1 sample did not analyze/list: $(head -c 200 "$WORKDIR/res.err")"
+fi
+# (e) §11.4: encode-latin1 reports its drop count — a bundle with two code
+# points above U+00FF (7 + 5 occurrences) lists `dropped 12`, and its stamp is
+# the reference's; a bundle ALL of whose code points drop is refused at
+# compile, naming the derivation (§9: a block with all-zero counts).
+cat > "$R/L1/l1.rxt" <<'RXT'
+analysis l1
+    cpfreq
+        question q
+        reader r
+        analyzer authored
+        encoding utf8
+        serves byte-rate when utf8 via encode-latin1
+        row U+0041 30
+        row U+00E9 20
+        row U+20AC 7
+        row U+4E2D 5
+        provenance
+            source authored
+            retrieved 2026-09-28
+RXT
+cat > "$R/L1/l1none.rxt" <<'RXT'
+analysis l1none
+    cpfreq
+        question q
+        reader r
+        analyzer authored
+        encoding utf8
+        serves byte-rate when utf8 via encode-latin1
+        row U+20AC 7
+        provenance
+            source authored
+            retrieved 2026-09-28
+RXT
+drop="$(pcrec_run "$PCREC" --list-analysis l1 -I "$R/L1" 2>/dev/null |
+        awk -F'\t' '/^#section resolution/{s=1;next} /^#section/{s=0} s&&$1=="byte-rate"&&$2=="utf8"{print $8}')"
+if [ "$drop" = 12 ]; then
+    ok "§12 encode-latin1 reports its drop count: 'dropped 12' for U+20AC x7 + U+4E2D x5"
+else
+    bad "§12 encode-latin1's drop count reads '$drop', want 12 (design §2.4)"
+fi
+res_stamp "§12 encode-latin1 stamps the reference digest" \
+    "byte-rate=l1:$($REF bundle-digest "$R/L1/l1.rxt" l1 cpfreq encode-latin1)" \
+    -e utf8 -I "$R/L1" --analysis l1 --pattern 'caf.'
+res_refuse "§12 a block every code point of which drops is refused" \
+    "counts nothing via encode-latin1" -e utf8 -I "$R/L1" --analysis l1none --pattern 'caf.'
+
 echo "== Summary =="
 echo "checks passed: $pass"
 echo "checks failed: $fail"

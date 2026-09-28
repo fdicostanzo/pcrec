@@ -4643,7 +4643,7 @@ fb0_case include-upper   value-shape       'LOWERCASE'                "analysis 
 fb0_case include-two     schema-constraint "one 'include'"            "analysis w\n    include <a>\n    include <b>\n"
 fb0_case freq-two        schema-constraint "one 'freq'"               "$fb0_hd$fb0_enc$fb0_srv$fb0_pv    freq\n"
 fb0_case freq-at-file    unknown-token-in-scope "'freq' is not a file-level" "freq w\n"
-fb0_case unknown-in-bundle unknown-token-in-scope "'cpfreq'"          "analysis w\n    cpfreq\n"
+fb0_case unknown-in-bundle unknown-token-in-scope "'bigram'"          "analysis w\n    bigram\n"
 fb0_case encoding-none   schema-constraint "'encoding' line"          "$fb0_hd$fb0_srv$fb0_pv"
 fb0_case encoding-closed schema-constraint "'ebcdic' is not in the closed set" "$fb0_hd        encoding ebcdic\n$fb0_srv$fb0_pv"
 fb0_case encoding-two    schema-constraint "one 'encoding'"           "$fb0_hd$fb0_enc$fb0_enc$fb0_srv$fb0_pv"
@@ -4656,14 +4656,32 @@ fb0_case serves-kind     value-shape       "'bigram' derivation"      "$fb0_hd$f
 fb0_case serves-answers  value-shape       "answers 'byte-rate'"      "$fb0_hd$fb0_enc        serves run-rarity when byte via unigram\n$fb0_pv"
 fb0_case serves-enc      value-shape       "'latin1', which is not a compile encoding" "$fb0_hd$fb0_enc        serves byte-rate when latin1 via unigram\n$fb0_pv"
 fb0_case serves-query-twice schema-constraint "duplicate 'serves'"    "$fb0_hd$fb0_enc$fb0_srv        serves byte-rate when utf8 via unigram\n$fb0_pv"
-# THE BUNDLE-LEVEL (query, encoding) COLLISION (r2 M-B1). Its designed
-# population — two kind blocks of one bundle serving one pair — is EMPTY
-# at B0: `freq` is the only kind row and a bundle holds one (`freq-two`
-# above), so no file can put two blocks in one bundle. The claim table
-# lives on the BUNDLE frame all the same, and this is its one reachable
-# input: one line claiming one pair twice. B5 (`cpfreq`) owes the
-# two-block fixture — docs/dev/lanes/findb0_report.md.
+# THE BUNDLE-LEVEL (query, encoding) COLLISION (r2 M-B1). At B0 its
+# designed population — two kind blocks of one bundle serving one pair — was
+# EMPTY (`freq` the only kind row), so one line claiming one pair twice was
+# its one reachable input. [FINDINGS] B5 admits `cpfreq`, and the two-block
+# case B0 owed is `serves-collision-2` below: a `freq` and a `cpfreq` block
+# of one bundle both serving (byte-rate, utf8).
 fb0_case serves-collision schema-constraint 'at most one block'       "$fb0_hd$fb0_enc        serves byte-rate when byte,byte via unigram\n$fb0_pv"
+# [FINDINGS] B5: `cpfreq` — its `U+HHHH` key grammar, the scalar-value rule,
+# its derivations' kind, the row limit's name is PCREC_MAX_FIND_CPFREQ_ROWS
+# (not driven: 65,537 lines), and a derived count over PCREC_MAX_FIND_COUNT
+# refused at the block's close: U+00E8 and U+00E9 share the lead byte 0xC3,
+# so 2^40 + 1 lands on it under encode-utf8 though no ROW exceeds 2^40.
+fb0_cp='analysis w\n    cpfreq\n        question q\n        reader r\n        analyzer a\n'
+fb0_cpsrv='        serves byte-rate when utf8 via encode-utf8\n'
+fb0_case serves-collision-2 schema-constraint 'at most one block'     "analysis w\n    freq\n        question q\n        reader r\n        analyzer a\n$fb0_enc        serves byte-rate when byte,utf8 via unigram\n$fb0_pv    cpfreq\n        question q\n        reader r\n        analyzer a\n$fb0_enc$fb0_cpsrv$fb0_pv"
+fb0_case cp-key-lower    value-shape       "'U+00e9' is not a code point" "$fb0_cp$fb0_enc$fb0_cpsrv        row U+00e9 3\n$fb0_pv"
+fb0_case cp-key-short    value-shape       "'U+E9' is not a code point"   "$fb0_cp$fb0_enc$fb0_cpsrv        row U+E9 3\n$fb0_pv"
+fb0_case cp-key-lead0    value-shape       "'U+0E9E9' is not a code point" "$fb0_cp$fb0_enc$fb0_cpsrv        row U+0E9E9 3\n$fb0_pv"
+fb0_case cp-key-byte     value-shape       "'e9' is not a code point"     "$fb0_cp$fb0_enc$fb0_cpsrv        row e9 3\n$fb0_pv"
+fb0_case cp-key-over     value-shape       "'U+110000' is not a code point" "$fb0_cp$fb0_enc$fb0_cpsrv        row U+110000 3\n$fb0_pv"
+fb0_case cp-key-surr     value-shape       'is a surrogate'               "$fb0_cp$fb0_enc$fb0_cpsrv        row U+D800 3\n$fb0_pv"
+fb0_case cp-descending   schema-constraint 'strictly ascending'           "$fb0_cp$fb0_enc$fb0_cpsrv        row U+00E9 3\n        row U+0041 3\n$fb0_pv"
+fb0_case cp-deriv-kind   value-shape       "'freq' derivation"            "$fb0_cp$fb0_enc        serves byte-rate when utf8 via unigram\n$fb0_pv"
+fb0_case freq-deriv-kind value-shape       "'cpfreq' derivation"          "$fb0_hd$fb0_enc        serves byte-rate when byte via encode-utf8\n$fb0_pv"
+fb0_case cp-two          schema-constraint "one 'cpfreq'"                 "$fb0_cp$fb0_enc$fb0_cpsrv$fb0_pv    cpfreq\n"
+fb0_case cp-derived-over value-shape       'derives a byte count over PCREC_MAX_FIND_COUNT' "$fb0_cp$fb0_enc$fb0_cpsrv        row U+00E8 1099511627776\n        row U+00E9 1\n$fb0_pv"
 fb0_case row-key-case    value-shape       "'0A' is not a byte"       "$fb0_hd$fb0_enc$fb0_srv        row 0A 3\n$fb0_pv"
 fb0_case row-key-arity   value-shape       'wants 1 byte key'         "$fb0_hd$fb0_enc$fb0_srv        row 61 62 3\n$fb0_pv"
 fb0_case row-descending  schema-constraint 'strictly ascending'       "$fb0_hd$fb0_enc$fb0_srv        row 61 3\n        row 41 3\n$fb0_pv"
@@ -4676,10 +4694,22 @@ fb0_case config-upper    value-shape       'LOWERCASE'                "config c\
 fb0_case config-two      schema-constraint "one 'analysis'"           "config c\n    analysis a\n    analysis b\n"
 fb0_case config-pcrec    schema-constraint "may not carry '--analysis'" "config c\n    pcrec -e utf8 --analysis x\n"
 fb0_case config-pcrec-eq schema-constraint "may not carry '--analysis'" "config c\n    pcrec --analysis=x\n"
-if [ "$fb0_n" -ge 34 ]; then
-    pass "findings/B0: $fb0_n refusal cases driven (population floor 34)"
+if [ "$fb0_n" -ge 46 ]; then
+    pass "findings/B0: $fb0_n refusal cases driven (population floor 46: B0's 34 + B5's 12)"
 else
-    fail "findings/B0: only $fb0_n refusal cases ran; the floor is 34 — a case stopped being driven"
+    fail "findings/B0: only $fb0_n refusal cases ran; the floor is 46 — a case stopped being driven"
+fi
+
+# [FINDINGS] B5's CONTROL: `cpfreq` keys of every width at the edges of the
+# grammar (U+0000, the last 4-digit U+FFFF, U+10000, U+10FFFF, either side of
+# the surrogates) accept, beside a `freq` block splitting the encodings with
+# it (the collision's other half), and 2^40 on a byte no other row shares
+# (U+0041 under encode-utf8) accepts — the derived ceiling is `>`, not `>=`.
+printf '%bpattern a\nm "a" 0 1\n' "analysis w\n    freq\n        question q\n        reader r\n        analyzer a\n$fb0_enc$fb0_srv$fb0_pv    cpfreq\n        question q\n        reader r\n        analyzer a\n$fb0_enc$fb0_cpsrv        row U+0000 1\n        row U+0041 1099511627776\n        row U+D7FF 2\n        row U+E000 2\n        row U+FFFF 2\n        row U+10000 3\n        row U+10FFFF 4\n$fb0_pv" > "$FB0/cpctl.rxt"
+if "$TIMEOUT_BIN" 30 "$PCREC" --list-source "$FB0/cpctl.rxt" >/dev/null 2>"$WORKDIR/fb0cp.err"; then
+    pass "findings/B5 control: cpfreq keys U+0000..U+10FFFF at every width (surrogate edges included) and a freq/cpfreq byte/utf8 split accept"
+else
+    fail "findings/B5 control: a legal cpfreq bundle was refused: $(cat "$WORKDIR/fb0cp.err")"
 fi
 
 # THE CONTROLS the refusals need: an exemplar that states bytes/sha256 and
