@@ -1,4 +1,4 @@
-# tests/findings/ — the [FINDINGS] checks (steps B3, B1 and B2)
+# tests/findings/ — the [FINDINGS] checks (steps B3/B6, B1 and B2)
 
 Two halves, both run by `make test-findings`, which is part of `make test`
 (`TEST_SECTIONS`) since B1:
@@ -7,13 +7,19 @@ Two halves, both run by `make test-findings`, which is part of `make test`
   findings seam's DATA, STORE, STAMP and STRUCTURE, each held to a source the
   compiler does not share (`docs/design/findings/design.md` §8.1, §11.4,
   §11.6, §11.7, §13 B1).
-- **B3, the analyzer prototype** (`run_analyzer_tests.py`, lane `findb3`,
-  `scripts/pcrec_analyze.py`, design §10): determinism, sharding/merging, the
-  k=1 shard exception and the cpfreq lead-byte seam ([r2 A-1]/[r2 A-2]),
-  `--check`, R26, and the collision-free declaration split ([r2 M-B1]).
-  R27a (analyzer output round-trips through `--list-analysis`) is
-  discharged by B2 (§6 #21), the python≡C item is B6's
-  (`docs/dev/lanes/findb3_report.md`).
+- **B3/B6, the analyzer** (`run_analyzer_tests.py`, design §10): determinism,
+  sharding/merging, the k=1 shard exception and the cpfreq lead-byte seam
+  ([r2 A-1]/[r2 A-2]), `--check`, R26, R27a (analyzer output round-trips
+  through `pcrec --list-analysis`), and the collision-free declaration
+  split ([r2 M-B1]). Built at B3 (lane `findb3`) against the python
+  PROTOTYPE, `scripts/pcrec_analyze.py`; REPOINTED at B6 (lane `findb6`) to
+  `build/pcrec-analyze`, the C END STATE — same suite, same population,
+  different binary, own bundle-text reader (never the deleted prototype's;
+  `learnings.md` §3's "a reader and its check must not share a source").
+  `run_analyzer_pinned.py` is the golden-output regression check design.md
+  §11.8's own "python ≡ C (implement-then-replace)" row became once the
+  prototype was deleted — see its own header and
+  `docs/dev/lanes/findb6_report.md`.
 - **B5, the shipped bundles and `cpfreq`** (`run_findings_tests.sh` §12,
   lane `findb5`): every shipped bundle whose provenance names a
   `third_party/` source is that directory's `generate.py --check` output
@@ -87,8 +93,19 @@ Two halves, both run by `make test-findings`, which is part of `make test`
   each shipped bundle against the default, both encodings, written by
   `docs/dev/lanes/findb5_evidence/make_manifests.py` from
   `ship_census.py`'s output.
-- `run_analyzer_tests.py` — [B3] the analyzer's checks (INFO lines are OWED
-  items, never a silent skip).
+- `run_analyzer_tests.py` — [B3/B6] the analyzer's standing acceptance
+  suite (design §11.8), run against `build/pcrec-analyze` (INFO lines are
+  OWED items or discharged-elsewhere pointers, never a silent skip); its
+  own `parse_bundle`/`shard_bounds`/`is_continuation_byte` are a SEPARATE,
+  independently-written reader (never the analyzer's own `analyze/count.c`
+  parser, and no longer the deleted python prototype's either).
+- `run_analyzer_pinned.py` — [B6] the golden-output regression check
+  `run_analyzer_agree.py`'s python-comparison role became once
+  `scripts/pcrec_analyze.py` was deleted (implement-then-replace): a fixed
+  case population re-run against committed golden `.rxt` files under
+  `golden/` (regenerate with `--write`), plus R26 and the two shipped
+  bundles' own `generate.py --check`.
+- `golden/` — [B6] `run_analyzer_pinned.py`'s committed golden outputs.
 - `res_fixtures.py` — [B2] writes the RESOLUTION fixture tree (§6) into a
   directory: two `-I` dirs, compiling files, parse-refusal cases, each
   bundle's counts distinct so an answer is identifiable by its digest.

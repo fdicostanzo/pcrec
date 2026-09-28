@@ -1256,6 +1256,7 @@ test-findings: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-findings.ran"; fi
 	bash tests/findings/run_findings_tests.sh
 	python3 tests/findings/run_analyzer_tests.py
+	python3 tests/findings/run_analyzer_agree.py
 
 # [TT-1] make smoke — MEASURED <60s inner-loop subset (docs/testing.md
 # "Tiered testing" has the per-section numbers this was chosen from). The

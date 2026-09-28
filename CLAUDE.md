@@ -110,6 +110,11 @@ tier, and PCRE2 is a moving target with no specification.
   composition, sanitizer findings).
 - `lib/pcrec.h` — the only public header. `src/` is internal (core/, parse/,
   ir/, opt/, gen/), `cli/` the command-line tool, `tests/` per-module .rxt corpora.
+- `analyze/` — `pcrec-analyze` ([FINDINGS] B6, `docs/design/findings/
+  design.md` §10.1's end-state row): a SEPARATE, zero-dependency binary
+  (`build/pcrec-analyze`) that counts an exemplar file into an `analysis`
+  bundle — links neither `libpcrec` nor anything under `src/`/`cli/`/`lib/`.
+  See analyze/CLAUDE.md.
 - `examples/` — buildable, TESTED examples of using pcrec (own section
   under `tests/examples/`, part of `make test`) — unlike `studies/`, never
   merely illustrative. `examples/makefile/` is [REL-1.10]/D118's own test
