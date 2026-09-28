@@ -164,17 +164,22 @@ corroborating pre-checks, not a substitute.**
 
 ## 4. The detached chain
 
-Launched in this worktree (main + this lane's fixes) via
-`nohup caffeinate -s bash chain.sh > chain.log 2>&1 & disown`, sequentially:
+`chain.sh` (its own commands, standing alone) lives in the session
+scratchpad (never committed), `cd`s into this worktree first, and is
+launched via `nohup caffeinate -s bash chain.sh > chain.log 2>&1 & disown`
+from the worktree, sequentially:
 
   (i) `timeout 9000 make test CC=gcc-16`
   (ii) `make test-findings` (rides inside `make test`'s `TEST_SECTIONS`,
-       already covers findb6's owed run per the brief)
-  (iii) mech rows S329 (this lane's re-derivation) + S311 (this lane's
-        re-anchor)
+       already covers findb6's owed run per the brief — run standalone
+       here too, its own rc reported separately)
+  (iii) mech row S329 (this lane's re-derivation), then S311 (this lane's
+        re-anchor) — each its own `run_sabotage_matrix.sh` invocation, the
+        tool takes one row at a time
 
-Log: `/Users/fdicostanzo/pcrec/worktrees/land85/chain.log`. Completion
-line: `LAND85 CHAIN DONE <rcs>`.
+Log: `/private/tmp/claude-501/-Users-fdicostanzo-pcrec/land85/chain.log`.
+Completion line: `LAND85 CHAIN DONE test=<rc> findings=<rc>
+mechS329=<rc> mechS311=<rc>`.
 
 ## Files touched
 
