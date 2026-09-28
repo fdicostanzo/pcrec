@@ -11,6 +11,29 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 ---
 
+## K71 — OPEN, diagnostic-text-only (not an answer-correctness defect) (found by lane ucpthink, `docs/dev/ucp_study.md` §G item 2, 2026-09-28) — `RX_ENGINE_WHY` names one construct's KIND at ANOTHER construct's OFFSET
+
+**Witness**: `x(?<=a)(?!b)` stamps `"(?!...) at pattern offset 1"`, but
+offset 1 is where the `(?<=` sits, not the `(?!`. The `\b` spelling shows
+the same shape the other way: it stamps `(?=...)` at the `(?<=`'s offset.
+A lone lookbehind, with no companion construct, is labelled correctly.
+
+**Mechanism.** `forces_registry` (`src/opt/select_engine.c:327`) builds
+the stamp from TWO INDEPENDENT SOURCES for one sentence: the kind comes
+from `first_dfa_excluding(a)`, the offset from `cx->first_vmonly_pos` —
+different accessors, walking the pattern in ways that need not agree on
+which construct they are each naming when more than one VM-forcing
+construct is present.
+
+**Status.** Deferred, no fix scheduled: this is a debug/diagnostic
+attribution defect (`RX_ENGINE_WHY`'s own text is wrong), not a match
+answer ever being wrong — no repro is filed under `tests/known_fail/`.
+Fix shape (not built): make both halves of the stamp read from the SAME
+walk, so the kind and the offset it names are never independently
+derived.
+
+---
+
 ## K70 — FIXED 2026-09-28 (lane k70fix, refusal, NOT an abi event) — `(?r)` (caseless-restrict) was a silent no-op under `-e utf8`, four oracle-divergent cells (found by lane ucpthink, `docs/dev/ucp_study.md` §G.1, 2026-09-28)
 
 **Witness** (libpcre2 10.46, `UTF` only, no UCP — transcript

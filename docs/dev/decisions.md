@@ -8711,3 +8711,63 @@ recorded in this log: `-fno-lit-run` required by D122 add. 2 (4); B1's
 committed pre-parsed `.inc`; syslogbase's byte mover as a manifest row; S2a
 memcmp -> S4's overlapping-load emitter; K69 disposition (a). They go to a
 D128 when next touched.
+
+## D128 — SESSION-82 AND SESSION-84 MANAGER RULINGS RECORDED (admin88, 2026-09-28, closing D127's own owed list)
+
+**Context.** D127's tail listed five session-82 rulings never logged here,
+and the eighty-fourth session (2026-09-28, `dev_journal.md`) produced
+several more of the same shape — decisions already acted on in a lane
+report or a plan.md row, never formalized as a decision entry. This row
+is bookkeeping, not new judgment: each item below is a POINTER to where
+the ruling already lives, not a re-derivation.
+
+**Session 82 rulings (D127's owed list):**
+1. **`-fno-lit-run` is REQUIRED, not optional**, per D122 addendum 2 (4)'s
+   "every kit form choice is a row with its own deny" — ratified when
+   `[OPT-LITSCAN]` S2a shipped bit 33 (`docs/dev/plan.md`'s `[OPT-LITSCAN]`
+   row, S2a delivery note).
+2. **`[FINDINGS]` B1's committed pre-parsed `.inc` files are ACCEPTED**
+   as a deliberate departure from design.md §8.2's "never commit a
+   generated `.inc`" — ruled per the `GEN_TABLES`/`fold_tables.inc`
+   precedent (`docs/dev/lanes/findb1_report.md` §4.1, "RULED (manager):
+   the committed `.inc` files are ACCEPTED").
+3. **syslogbase's `RX_VM_PREFILTER_LANG_WHY` byte-count mover (+385 B
+   scaffolding) is a MANIFEST ROW**, not a gate-widening trigger — ruled
+   at `[FINDINGS]` B1's merge (`dev_journal.md`, 2026-09-27 eighty-second
+   session: "ruled a manifest row, gate not widened"). `[SIZE-CMT-CLASS]`
+   was filed separately for the +385 code-byte/artifact question.
+4. **S2a's memcmp form does NOT change now; S4 builds ONE overlapping-load
+   emitter** and S2a's exact arm moves onto it (mask elided) in S4's own
+   abi event, carrying S2a's measured 5.6-7.6% exact win — ruled on
+   `docs/dev/memcmp_lowering_study.md`'s findings, recorded verbatim in
+   `[OPT-LITSCAN]`'s own plan.md row ("MANAGER DISPOSITION: no P4 change
+   now; S4 builds ONE overlapping-load emitter...").
+5. **K69 disposition (a)**: the node-nullability disagreement on `A_CALL`
+   is resolved by the LEAST fixpoint, moved into `callgraph.c` — fixed,
+   `docs/dev/known_issues.md` K69, abi 41 -> 42.
+
+**2026-09-28 (eighty-fourth session) rulings:**
+6. **`[FINDINGS]` B4 HELD, option (c)**: no reader has a trigger yet — C6
+   needs unbuilt S4, C3's cells are S1-dominated, C2 has only 16 synthetic
+   movers. `lane/findb4` (`e054d1ce`) stays parked, its data half landing
+   with S4.
+7. **`[FIND-TIE]` RULED**: the run reader's DATA tie follows its NONE
+   order (rightmost), the one inconsistent PICK spelling in the findings
+   readers. Built same day (lane findtie): abi 43 -> 44, S329.
+8. **The `[BACKLOG-TRIAGE]`-era phase-3 dispositions are ALL AGREED**
+   (`docs/dev/ph3_reassessment_2026-09-28.md`): RE-CHARTER `[DD-11.5]`;
+   RE-CHARTER `[CLS-TREE]` (re-baselined, `docs/dev/ucp_study.md` §G.4);
+   CLOSE-AND-FILE `[DD-8]` (table-mechanism half done; `--emit-dot` +
+   DFA/prefilter listing filed as a new row); RE-PARK `[TT-4M]`,
+   `[OPT-3]`, `[OPT-5]`, `[ENG-ABS]`, `[ENG-ISL]`, `[DD-13]`,
+   `[DD-13b.W1.3]`, each on the trigger stated in the reassessment doc.
+9. **`[CC-CLANG]` STEP 3 CLOSES** against the bench's standing cc axis
+   rather than being re-chartered: O-70 re-ran `[B33]`'s cc-gate-census
+   (`[B24]`'s per-config cc axis) at pin `a32bc86e` and found PARITY
+   still holds, byte mode only — the utf8 gate was not exercised and is
+   recorded as an open note, not a blocker.
+
+**Consequences.** No code or design changes; this closes D127's own
+"also owed" list and gives the 2026-09-28 rulings a citable decision
+number. The plan.md rows named in items 6-9 carry their own detailed
+disposition text — this entry is the index, not the substance.
