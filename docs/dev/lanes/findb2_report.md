@@ -122,3 +122,73 @@ Result: **12,876 artifact-configs.** 11,494 are identical, 1,382 are refused on 
    - Stale spots: §6.4, §8.2's bundle index, and §11.2 F-5/F-9 (see §3).
    - Findings for the design's owner: F-5 is adapted to B2's one query, and F-9 has no per-attempt witness.
 7. **`FINDINGS_SKIP_SLICE`** exists for quick runs. The mech `findings` arm runs the whole suite, slice included, at about 3.5 minutes per row.
+
+## Triage (findb2tri)
+
+Triage of the detached chain's reds (§5's log,
+`/private/tmp/claude-501/-Users-fdicostanzo-pcrec/findb2/scratchpad/chain.log`,
+which ran to completion: `FINDB2 CHAIN DONE`). Every red traces to the SAME
+root cause, `test-codegen`'s `nm arm_a.o` aside (the one accepted darwin
+red): the 16 fire/witness fixtures under `tests/findings/adversarial/` and
+`tests/findings/witness/` are the corpus's first HEAD-ONLY `.rxt` files
+(`analysis <name>` bundles, zero `pattern` blocks) — a shape the harness's
+own three-parser census/differential machinery and `run.sh`'s default
+sweep had never been exercised against (population was 0 before this
+lane). No `pmset -g log` sleep/wake event falls in the chain's window
+(22:38-01:11); `git merge-tree HEAD main` shows one conflict, `docs/dev/
+plan.md` (a routine two-lane tracker collision, not a source of any red —
+`src/core/internal.h` and `tests/mech/CLAUDE.md` auto-merge clean).
+
+| failure | class | fix commit |
+|---|---|---|
+| `test-registry`: `[count] --list-limits reports 66 row(s)` (EXPECT_NAMES already had 66, the `-eq 64`/"64 named rows" pin was not bumped) | (i) | `69f066ac` |
+| `test-registry`: `[code] PCREC_FIND_NTBL/PCREC_FIND_NBUNDLES` unallowlisted (sizeof-derived table cardinalities, `VM_NRUNG`'s own idiom) | (i) | `69f066ac` |
+| `test-codegen`: `[K37]` 12 bare `"$PCREC"` invocations in `run_findings_tests.sh` §6/§11 | (i) | `93446542` |
+| `test-codegen`: `run_inline_capability.sh`'s `nm could not read arm_a.o` | (iv), accepted standing darwin red | not fixed (BOILERPLATE's own accepted red) |
+| `test-rxtsource`: census `237/4035/29311` vs pinned `221/4035/29311` (+16 files/+0 blocks/+0 lines — the bundles carry no `pattern` block) | (ii) | `42cbd6b4` |
+| `test-rxtsource`: keyword census `COLLISION — analysis=16` (`analysis`'s arm landed at B0, 2026-09-26; B2 is the first corpus growth to use it) | (ii) | `42cbd6b4` |
+| `test-rxtsource`: C0a / C1 leg-A "third view" (`expected 0 and 0, got 16`) — an unconditional `fail` written when 0/0 was the only state ever measured | (ii) | `42cbd6b4` |
+| `test-rxtsource`: leg C (`verify_rxt.py --dump`) crashes the WHOLE multi-file dump on the first head-bearing file, truncating every later file (`1948/4035` blocks) — no per-file exception isolation, unlike the oracle-check loop's `run_supervised` | (i) | `42cbd6b4` |
+| `test-rxtsource`: C3's `verify_rxt.py reported failures` (16 files landing in `run_supervised`'s uncounted `CRASHED` bucket) | (ii), a real bucket needing a pin, not a discovery | `42cbd6b4` |
+| `test-corpus`: `cases failed: 16` — `run.sh`'s P-C2 floor scores every zero-`pattern`-block file a hard failure, unconditionally, `--dump` and real runs alike | (i) | `8803ab8e` |
+| `test-axes` (`axes-findings`): `FATAL: the BASELINE run itself failed (rc=1)` — the baseline is `run.sh` with no arguments, same P-C2 floor | (i) | `8803ab8e` |
+| mech S308-S317 | already DETECTED 10/10 in the original chain; unaffected by any fix here (test-script/harness only, no `src/` touched) | none owed |
+
+**Fix summary.** `69f066ac`/`93446542` are narrow, single-file fixes,
+re-verified standalone (`limits_check.sh` 33/0, `run_codegen_tests.sh`
+109/0). `42cbd6b4` re-pins `tests/rxtsource/run_rxtsource_tests.sh`'s
+census/keyword list, turns C0a/C1's "agreement at a nonzero count" branch
+from an unconditional fail into a pass, narrows leg C's own file list to
+exclude head-bearing files (`BODY_FILES`, since they contribute zero rows
+to leg B too — nothing the B-vs-C comparison could see is lost), and adds
+a pinned `C3_CRASHED_HEADBEARING=16` bucket for the oracle's own
+by-design head-bearing refusal. `8803ab8e` adds a SECOND `run.sh`
+no-argument exclusion, `tests/findings/adversarial/` and `tests/findings/
+witness/`, alongside the existing `tests/known_fail/` one — the bundles
+are `pcrec --analysis`/`-I` DATA, never test cases, and P-C2's own reason
+("a file that runs nothing must not read as a clean pass") does not apply
+to a directory that isn't meant to run as tests in the first place;
+`tests/rxtsource`'s own `RUNSH_*` pins and reconciliation formula move
+with it (a second subtraction term, same shape `kf_*` already has).
+`find tests -name '*.rxt' -not -path "*/known_fail/*" -not -path
+"*/findings/adversarial/*" -not -path "*/findings/witness/*" | wc -l`
+reads 221, matching the pin. `tests/rxtsource/run_rxtsource_tests.sh`
+standalone: 256/0 (1 RECORD, the pre-existing python-3.9-vs-3.14 pin
+skew — class (iii), unrelated, reproduces on the branch point too).
+
+**OWED.** `test-corpus`, `test-axes`'s full FINDINGS sweep and a full
+`make test` were not re-run here directly (heavy suites; the Mac's
+heavy slot was held by lane `k69fix`'s own detached chain for this
+lane's whole working period). A second detached chain, launched under
+`caffeinate -s`, first waits for `k69fix`'s `K69 CHAIN: ALL DONE`, then
+runs `make -j4 CC=gcc-16`, `make test-registry`, `make test-rxtsource`,
+`make test-codegen`, mech S308-S317 one row at a time, `AXES=--analysis
+make test-axes CC=gcc-16` and finally `make test CC=gcc-16` in that
+order, one stage per line:
+
+- Script: `/private/tmp/claude-501/-Users-fdicostanzo-pcrec/findb2tri/scratchpad/chain.sh`
+- Log: `/private/tmp/claude-501/-Users-fdicostanzo-pcrec/findb2tri/scratchpad/chain.log`
+- Completion line: `FINDB2TRI CHAIN: ALL DONE`
+- Expected verdicts: every stage `rc=0` except `test-codegen`
+  (`rc=2`, the one accepted darwin `nm arm_a.o` red) and mech's own
+  per-row `DETECTED` lines.
