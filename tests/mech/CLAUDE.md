@@ -3141,3 +3141,17 @@ S277's K65 revert seen through bundles that move the pick; **S317** (F-13)
 lets G1 elide a pre-check with no DFA scan in front. S316/S317 are the two
 whose detector is a GIVE-UP (the §9 K65 witness exits 3 where NOMATCH is the
 answer), the transition design §6.2a forbids a rate to cause.
+
+### [FINDINGS] B5 — rows S325-S328 (lane findb5, 2026-09-28)
+
+Two rows on the `findings` arm and two on `rxtsource`, each validated
+locally by planting it, rebuilding and reading the named suite red
+(`docs/dev/lanes/findb5_report.md`). **S325** makes `encode-utf8` count a
+code point's LEAD byte only — invisible on the shipped `log`/`weblog`
+bundles, which are pure ASCII (one byte per code point), so its detectors
+are `tests/findings` §12's derivation oracle over code points of every UTF-8
+length and its Latin-1 sample; **S326** drops an `encode-latin1` code point
+above U+00FF without counting it — the rate does not move, only the
+listing's `dropped` column does; **S327** accepts a surrogate `cpfreq` key;
+**S328** skips the parse-time derived-count ceiling (two code points sharing
+a lead byte sum past `PCREC_MAX_FIND_COUNT` though no row does).

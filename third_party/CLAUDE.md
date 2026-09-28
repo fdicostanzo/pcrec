@@ -50,9 +50,8 @@ the row.
   `bc53b584` (superseding an earlier committed copy of the same bytes that
   cited the moving `master` branch, `docs/dev/findings_measure/manifest.tsv`).
   Holds `PROVENANCE.md`, `apache_logs.txt`, `LICENSE` and a `generate.py`
-  STUB that runs `scripts/pcrec_analyze.py` and writes `generated_preview.rxt`
-  (a committed scratch check) — NOT `src/findings/weblog.rxt` and NOT yet in
-  `GEN_TABLES`; that wiring is B5's build half.
+  that runs `scripts/pcrec_analyze.py` and writes the shipped
+  `src/findings/weblog.rxt` (B5's build half, lane `findb5`, 2026-09-28).
 - `synth-log-lines-v1/` — `[FINDINGS]` B5's `log` source (lane `findb5src`,
   2026-09-27, sourcing half only): a `fidelity synthesized` (D123-8 item 6)
   HDFS/Hadoop-DataNode-shaped corpus, generated deterministically by
@@ -60,8 +59,8 @@ the row.
   found no licensable real `log_lines`-class source (loghub's HDFS_2k.log is
   research/academic-only; see `PROVENANCE.md` for the full attempt and the
   fidelity gap it discloses against `requirements.md`'s own C4 `iso-ts`
-  finding). Same stub shape as the row above: `generate.py` writes a
-  `generated_preview.rxt` scratch check, not `src/findings/log.rxt`.
+  finding). `generate.py` writes the shipped `src/findings/log.rxt`, its
+  provenance labelled `fidelity synthesized` (lane `findb5`).
 
 ## Adding a source
 
@@ -73,13 +72,21 @@ Four things, and the first two are the whole of `README.md`'s requirement:
    **which generated artifacts derive from it**.
 3. A `generate.py` beside the data, supporting a bare run (write) and
    `--check` (exit 1 if the committed output is stale). It is picked up by
-   `make gen-tables` and by `tests/uprops/run_uprops_tests.sh` §1 with no
-   edit to either, because both iterate `third_party/*/generate.py`.
-4. The generated file added to `GEN_TABLES` in the Makefile. **Do not skip
+   `make gen-tables` with no edit, because it iterates
+   `third_party/*/generate.py`. Its `--check` must run in `make test`: the
+   UCD's in `tests/uprops/run_uprops_tests.sh` §1; a generator writing a
+   shipped ANALYSIS (`src/findings/<name>.rxt`) is found by
+   `tests/findings/` §12 from the bundle's provenance `source`, which must
+   be this directory's name — no edit there either.
+4. A generated C table added to `GEN_TABLES` in the Makefile. **Do not skip
    this**: it is the object-build prerequisite, and omitting it means editing
    the source rebuilds NOTHING — the same defect the Makefile's own comment
    records for `cls_bits.inc` (MOD-0.3e) and twice for `limits.def`, and
    which happened a third time here within minutes of this directory landing.
+   A generated ANALYSIS is not a C table and does not join it: no object
+   reads a `.rxt`; `make gen-tables` ends by re-embedding the store
+   (`make gen-findings`), and `tests/findings/` §2/§3 are its drift checks
+   (the Makefile's `gen-tables` comment, [FINDINGS] B5).
 
 ## Maintenance
 

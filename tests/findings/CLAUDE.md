@@ -14,6 +14,16 @@ Two halves, both run by `make test-findings`, which is part of `make test`
   R27a (analyzer output round-trips through `--list-analysis`) is
   discharged by B2 (§6 #21), the python≡C item is B6's
   (`docs/dev/lanes/findb3_report.md`).
+- **B5, the shipped bundles and `cpfreq`** (`run_findings_tests.sh` §12,
+  lane `findb5`): every shipped bundle whose provenance names a
+  `third_party/` source is that directory's `generate.py --check` output
+  (found by the name, never listed here); each shipped bundle's byte-rate
+  answers carry `findings_ref.py`'s digest in the listing AND the stamp;
+  on the ASCII samples `cpfreq` via `encode-utf8` is exactly the `freq` view
+  (design §11.4); both derivations equal an independent Python derivation
+  over code points of every UTF-8 length; a Latin-1-text sample comes out
+  0xC3-heavy; `encode-latin1` reports its drop count and an all-dropped
+  block is refused. Sabotage S325/S326.
 - **B2, resolution and the invariant** (`run_findings_tests.sh` §6-§11, lane
   `findb2`): the stops, the chain, the CLI and library surfaces and the
   listings against fixtures written fresh per run (§6, design §11.5 #1-#22);
@@ -40,12 +50,17 @@ Two halves, both run by `make test-findings`, which is part of `make test`
   lines and a `checks passed`/`checks failed` trailer. Mech arm `findings`.
 - `findings_probe.c` — [B1] reads the seam's data out of the built
   `libpcrec.a` (store names and texts, the pre-parsed table, a fresh parse,
-  the normalization, the default's digest) for the script to judge.
+  the normalization, the default's digest) for the script to judge. [B5]
+  `derive VIA`: the library's `cpfreq` derivation of stdin's code points;
+  a `cpfreq` block's table line carries `U+HHHH:count` rows.
 - `findings_ref.py` — [B1] the INDEPENDENT reference: §2.5's normalization
   and §7's digest written from the spec text, never from the C (learnings
   §3), plus the three §2.5 test vectors. [B2] `bundle-digest RXT [NAME]`:
   the digest a compile reading that bundle would stamp, its rows read by a
-  regex rather than pcrec's parser — every §6 expectation's source.
+  regex rather than pcrec's parser — every §6 expectation's source. [B5]
+  `bundle-digest RXT NAME KIND VIA` (a `cpfreq` block through a derivation)
+  and `derive VIA`, design §2.4's two code-point derivations with Python's
+  own UTF-8 codec as the encoder — never pcrec's.
 - `structural_check.py` — [B1] the structural rules: S1 no function that
   calls a `pcrec_find_*` tests a rate pointer or the encoding (the four
   primitives exempt — their bodies ARE the NONE answers), with the known

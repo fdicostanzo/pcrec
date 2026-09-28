@@ -1,14 +1,15 @@
 # Findings — the contract (`[FINDINGS]`)
 
-**Status: B2 (2026-09-27).** This page is the contract for what pcrec reads
+**Status: B5 (2026-09-28).** This page is the contract for what pcrec reads
 from *findings* — measured facts about the subjects a build will see — and
 what it promises about them. It grows by step
 (`docs/design/findings/design.md` §13–§14): B1 wrote §1–§6 below (the data
 the compiler reads, the normalization, the per-kind NONE answers, the stamp);
 B2 wrote §7–§9 (resolution, naming an analysis, the listings, the library
-fields) and widened §2 and §6; the analyzer's command line is B3/B6's,
-`run-rarity` B4's, `cpfreq` B5's. Where a section is not yet built it says
-so. Design record: `docs/design/findings/design.md`;
+fields) and widened §2 and §6; B5 wrote §3a (`cpfreq` and its two
+derivations) and the shipped `log` and `weblog` analyses (§6); the
+analyzer's command line is B3/B6's, `run-rarity` B4's. Where a section is
+not yet built it says so. Design record: `docs/design/findings/design.md`;
 decisions D122, D123, D126.
 
 **The one promise that frames the rest: findings may change SPEED, never an
@@ -22,7 +23,7 @@ only which sound option the artifact takes.
 | term | meaning |
 |---|---|
 | **analysis** (bundle) | one `analysis <name>` block of an `.rxt` file (`rxt_format.md`): at most one data block per kind, and an optional `include <other>` |
-| **block** | one data block inside a bundle, headed by its kind (`freq`), holding COUNTS plus declarations plus provenance |
+| **block** | one data block inside a bundle, headed by its kind (`freq`, `cpfreq`), holding COUNTS plus declarations plus provenance |
 | **query** | what a compiler reader asks. Closed set: `byte-rate`, `run-rarity` |
 | **derivation** | the named arithmetic turning a block's counts into a query's answer (§3). Closed set; each is legal on its kinds only |
 | **answer** | for (query, compile encoding): the first block along the chain whose `serves` line names that query and lists that encoding, derived by its `via`; otherwise **NONE** |
@@ -36,7 +37,7 @@ derivations:
 | kind | counts | key | derivations | built |
 |---|---|---|---|---|
 | `freq` | occurrences of each byte | `HH` (lowercase hex) | `byte-rate via unigram` | B1 |
-| `cpfreq` | occurrences of each decoded code point | `U+HHHH`… | `byte-rate via encode-utf8` \| `encode-latin1` | B5 |
+| `cpfreq` | occurrences of each decoded code point | `U+HHHH`…`U+HHHHHH` (uppercase; a Unicode scalar value) | `byte-rate via encode-utf8` \| `encode-latin1` (§3a) | B5 |
 | `bigram` | occurrences of each adjacent byte pair | `HH HH` | `run-rarity via markov1` | B4 |
 
 A block's **`serves <query> when <enc>[,<enc>…] via <derivation>`** line is
@@ -78,6 +79,36 @@ are bit-identical on every box.
 | all equal (every count 1) | byte 0x00: 3,970; every other byte: 3,906 (`R = 64`) |
 | one nonzero (0x61 → 5) | 0x61: 999,490; every other byte: 2 |
 | negative residue (0x00 → 10^12, every other byte → 1) | 0x00: 999,490; every other byte: 2 (`R = −509`) |
+
+## 3a. `encode-utf8` and `encode-latin1`: code points → byte counts
+
+A `cpfreq` block's rows count CODE POINTS; a byte-rate reader wants BYTES.
+Its derivation turns the one into the other, then §3 normalizes the result
+exactly as it does a `freq` block's counts:
+
+- **`encode-utf8`**: `count(b) = Σ_cp count(cp) × occ(b, utf8(cp))` — each
+  code point's count added once for every byte of its UTF-8 encoding. The
+  encoder is the one pcrec lowers a `-e utf8` pattern with, so the bytes a
+  rate is derived for are the bytes the matcher scans. On an ASCII-only
+  sample every encoding is one byte and this is exactly the `freq` view:
+  the same rates and the same digest.
+- **`encode-latin1`**: a code point at or below `U+00FF` puts its count on
+  that byte; a larger one is **dropped**, and `--list-analysis`'s
+  `resolution` row says how many occurrences were (its `dropped` column).
+  A block all of whose code points drop counts nothing and is refused at
+  compile (§3 step 1).
+
+A derived count above **`PCREC_MAX_FIND_COUNT`** is refused when the block
+is parsed, by that name (two code points sharing a lead byte can sum past it
+though no row does); a `cpfreq` block holds at most
+**`PCREC_MAX_FIND_CPFREQ_ROWS`** (65,536) rows (`limits.md` §3.7).
+
+**Why a code-point kind at all.** A `freq` block describes one byte
+sequence; under `-e utf8` a byte's rate depends on which characters the
+subjects hold, and the analyzer's default declarations (design §10.2) give
+the `byte` compile the block counting bytes and the `utf8` compile the block
+whose applicability the data declares per code point. The two can never
+both claim one (query, encoding) in a bundle (§2).
 
 ## 4. The readers: one NONE answer per question KIND
 
@@ -129,7 +160,7 @@ Every artifact records which findings it was built from
 A shipped-data change (editing `default.rxt`) moves the digest of every
 artifact that consumed it, which is how such a change becomes visible.
 
-## 6. The shipped default and the store
+## 6. The shipped analyses and the store
 
 `src/findings/default.rxt` is the one authored analysis: a `freq` block
 whose counts are the static byte-frequency prior pcrec shipped before B1
@@ -140,6 +171,22 @@ no-filesystem mode (an `include "…"` or `lib` line is refused there). A
 compile does not parse it: `make gen-findings` pre-parses the same text into
 a committed table, and `tests/findings/` checks the table, the embedded text
 and the source file all agree.
+
+**The shipped `log` and `weblog` analyses** ([FINDINGS] B5) are GENERATED,
+never hand-edited: each is what the analyzer (`scripts/pcrec_analyze.py`)
+prints for a corpus vendored under `third_party/`, whose `generate.py`
+writes `src/findings/<name>.rxt` (`make gen-tables` regenerates them and the
+store; `make test-findings` fails when one is stale).
+
+| analysis | corpus | blocks | serves |
+|---|---|---|---|
+| `weblog` | 1,000,000 bytes of Apache combined-format web-server request lines (`elastic/examples`, Apache-2.0, pinned commit) | `freq`, `cpfreq` | `byte-rate` under `byte` (freq) and `utf8` (cpfreq, `encode-utf8`) |
+| `log` | 999,960 bytes of SYNTHESIZED Hadoop-DataNode-shaped log lines (no licensable real corpus was found; its provenance says `fidelity synthesized`) | `freq`, `cpfreq` | the same split |
+
+Neither is consulted unless named (`--analysis weblog`, a config's `analysis
+log`): the chain of a compile that names nothing is still `default` alone,
+so under `-e utf8` its `byte-rate` answer is still NONE. Naming one gives a
+`-e utf8` compile a measured byte-rate. Neither includes another bundle.
 
 `--list-analyses` lists the store (§8).
 
@@ -212,8 +259,9 @@ blocks answer), `include`, `source`/`license`/`retrieved` (its first block's
 provenance), `rows_digest`, `bytes` (the embedded text's size).
 `rows_digest` is a DIFFERENT hash from the stamp's: FNV-1a-64 over
 `pcrec-find-rows-1\0`, then per block its kind and a NUL followed by each
-nonzero `(key u8, count u64le)` in key order — it identifies a bundle's rows,
-where the stamp identifies what a compile consumed.
+nonzero `(key u8, count u64le)` in key order (a `cpfreq` block's key as
+`u32le`) — it identifies a bundle's rows, where the stamp identifies what a
+compile consumed.
 
 **`--list-analysis NAME [-I DIR…]`** — the chain THIS invocation would resolve
 for `NAME`, then the named bundle's own data:
@@ -221,8 +269,8 @@ for `NAME`, then the named bundle's own data:
 | section | rows | columns |
 |---|---|---|
 | `chain` | one per link, in order | `link`, `bundle`, `stop` (`source` / `-I` / `store` / `store-default`), `location` (the file, for `-I`), `include` |
-| `resolution` | one per query × compile encoding | `query`, `encoding`, `link`, `bundle`, `kind`, `via`, `digest` — the exact digest a `<PREFIX>_FINDINGS` stamp would carry, or `none` |
-| `freq` (and later `cpfreq`/`bigram`) | the named bundle's own rows | `key`, `count`, and for `freq` the normalized `ppm` |
+| `resolution` | one per query × compile encoding | `query`, `encoding`, `link`, `bundle`, `kind`, `via`, `digest` — the exact digest a `<PREFIX>_FINDINGS` stamp would carry, or `none` — and `dropped`, the code-point occurrences the derivation dropped (`encode-latin1`, §3a; `0` for the others, empty with no answer) |
+| `freq`, `cpfreq` (and later `bigram`) | the named bundle's own rows | `key`, `count`, and for `freq` the normalized `ppm`; a `cpfreq` key is spelled `U+HHHH` |
 | `declarations` | one per block | `kind`, `encoding`, `serves` (as written), `question`, `reader`, `analyzer` |
 | `provenance` | one per block × field written | `kind`, `field`, `value` |
 

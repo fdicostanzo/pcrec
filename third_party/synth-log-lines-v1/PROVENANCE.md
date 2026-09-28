@@ -72,11 +72,11 @@ this corpus's authority alone.
 
 | derived artifact | produced by | consumed by |
 |---|---|---|
-| `src/findings/log.rxt` **(NOT YET BUILT — the build half of `[FINDINGS]` B5)** | `generate.py` in this directory, running `scripts/pcrec_analyze.py` over `synthetic_log_lines.txt` | module `findings`' `analysis log` bundle: `freq` + `cpfreq` blocks (design.md §13 B5). `weblog` (`third_party/elastic-examples-apache-logs-bc53b584/`) `include <log>`s this bundle per the accept fixture `tests/rxtsource/fixtures/analysis_bundle_accept.rxtin` |
+| `src/findings/log.rxt` (the shipped `log` analysis, `[FINDINGS]` B5) | `generate.py` in this directory, running `scripts/pcrec_analyze.py` over `synthetic_log_lines.txt` with `--fidelity synthesized` | module `findings`' `analysis log` bundle: `freq` + `cpfreq` blocks (design.md §13 B5). The shipped `weblog` does NOT `include` it (lane `findb5`: the two corpora are meant to be independent, and no query `weblog` lacks is one `log` answers) |
 
-`generate.py` here is a SOURCING-HALF STUB (see its own header): it writes
-`generated_preview.rxt` in this directory as a committed SCRATCH CHECK, not
-`src/findings/log.rxt`.
+`generate.py` writes it (lane `findb5`, 2026-09-28; the sourcing lane's
+`generated_preview.rxt` scratch check is retired); `make test-findings` §12
+runs `generate.py --check`.
 
 ## Why this class ships (D123 addendum 7)
 

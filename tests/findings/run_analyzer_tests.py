@@ -422,6 +422,32 @@ def check_runest_web_request() -> None:
 
 
 # ---------------------------------------------------------------------------
+# 12. [B5] --fidelity/--adaptation: the provenance a synthesized exemplar
+# must carry (D123-8 item 6), rendered on every block and kept by --merge
+# ---------------------------------------------------------------------------
+
+def check_fidelity() -> None:
+    f = FIXTURES / "basic.txt"
+    common = ("--retrieved", "d", "--scan", "freq,cpfreq", "--fidelity", "synthesized",
+              "--adaptation", "made up here")
+    whole = analyze("--name", "fi", *common, str(f)).decode()
+    want = ("            fidelity synthesized\n"
+            "            adaptation made up here\n")
+    parts = []
+    with tempfile.TemporaryDirectory() as td:
+        for k in (1, 2):
+            pp = Path(td) / f"p{k}.rxt"
+            pp.write_bytes(analyze("--name", "fi", *common, "--shard", f"{k}/2", str(f)))
+            parts.append(str(pp))
+        merged = analyze("--merge", "--name", "fi", *parts).decode()
+    if whole.count(want) == 2 and merged.count(want) == 2:
+        ok("[B5] --fidelity/--adaptation render on both blocks and survive --merge")
+    else:
+        bad(f"[B5] --fidelity/--adaptation: {whole.count(want)} block(s) in the scan form, "
+            f"{merged.count(want)} after --merge (want 2 and 2)")
+
+
+# ---------------------------------------------------------------------------
 
 def main() -> int:
     if not ANALYZE.exists():
@@ -439,6 +465,7 @@ def main() -> int:
     check_collision_free_declarations()
     check_r27a()
     check_runest_web_request()
+    check_fidelity()
 
     print(f"checks passed: {_pass}")
     print(f"checks info (not pass/fail): {_info}")
