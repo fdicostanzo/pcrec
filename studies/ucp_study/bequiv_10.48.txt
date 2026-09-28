@@ -1,0 +1,8 @@
+#version 10.48 2026-08-31
+#subjects 579195 alphabet 14 maxlen 5
+none	\b	subjects=579195	positions-holding=1013364	disagreements=0	sha1(prim marks)=37d5403a56d3
+none	\B	subjects=579195	positions-holding=5676021	disagreements=0	sha1(prim marks)=56979cb72385
+UTF	\b	subjects=579195	positions-holding=1013364	disagreements=0	sha1(prim marks)=37d5403a56d3
+UTF	\B	subjects=579195	positions-holding=2417253	disagreements=0	sha1(prim marks)=594c96035f53
+UTF|UCP	\b	subjects=579195	positions-holding=1788048	disagreements=0	sha1(prim marks)=84a262c36834
+UTF|UCP	\B	subjects=579195	positions-holding=1642569	disagreements=0	sha1(prim marks)=ec64f7474bba
