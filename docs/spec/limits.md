@@ -424,7 +424,7 @@ caller never meets either at match time.
 Neither number is movable by a flag; both are `--list-limits` rows like
 every other number in this document.
 
-### 3.7 Findings data: a count's ceiling, the rate floor, and resolution's bounds ([FINDINGS] B1, B2)
+### 3.7 Findings data: a count's ceiling, the rate floor, and resolution's bounds ([FINDINGS] B1, B2, B5)
 
 An analysis's data blocks store COUNTS, which the compiler turns into rates
 (`docs/spec/findings.md` §2–§3). Two numbers bound that arithmetic:
@@ -448,8 +448,17 @@ An analysis's data blocks store COUNTS, which the compiler turns into rates
   `analysis_source`. A larger one is refused by this name before it is
   parsed, never truncated.
 
+[FINDINGS] B5 adds one bound on a `cpfreq` block (`docs/spec/findings.md` §3a):
+
+- **A `cpfreq` block carries at most `PCREC_MAX_FIND_CPFREQ_ROWS` = 65,536
+  `row` lines** (distinct code points). A larger block is refused at parse,
+  naming this limit; nothing is truncated. With `PCREC_MAX_FIND_COUNT` it keeps
+  every derived byte count inside 64-bit integers; a block whose
+  `encode-utf8`/`encode-latin1` derivation would put more than
+  `PCREC_MAX_FIND_COUNT` on one byte is refused at parse by THAT limit's name.
+
 None of these numbers is movable by a flag. The remaining findings limits
-(store size, `cpfreq` rows, run length) arrive with the steps that read them.
+(store size, run length) arrive with the steps that read them.
 
 ## 4. Worked example: `^(a(?1)?b)$`, re-measured
 

@@ -19,6 +19,13 @@ typedef struct {
     const char *query, *encs, *via;
 } PcrecFindServe;
 
+/* One `row` of a `cpfreq` block: a Unicode scalar value and its count
+ * (design §2.2-§2.3; key `U+HHHH`). */
+typedef struct {
+    uint32_t           cp;
+    unsigned long long count;
+} PcrecFindCp;
+
 /* One DATA block of a store bundle, PRE-PARSED at build time (design §13 B1
  * (3)): what the one `.rxt` reader returns for the embedded text, generated
  * from that text by `scripts/findgen.c` into
@@ -28,11 +35,13 @@ typedef struct {
  * it agrees with this, block for block. */
 typedef struct {
     const char               *bundle;   /* the owning bundle's name */
-    const char               *kind;     /* "freq" */
+    const char               *kind;     /* "freq" or "cpfreq" */
     size_t                    line;     /* the kind keyword's line */
     const PcrecFindServe     *serves;
     size_t                    nserves;
-    const unsigned long long *counts;   /* 256 entries */
+    const unsigned long long *counts;   /* freq: 256 entries; else NULL */
+    const PcrecFindCp        *cps;      /* cpfreq: its rows, ascending */
+    size_t                    ncps;     /* ... and how many; else 0 */
 } PcrecFindTblBlock;
 
 /* One BUNDLE of the pre-parsed store: its name, its `include <x>` name (the
@@ -129,6 +138,39 @@ const PcrecFindTblBlock *pcrec_find_chain_answer(const PcrecFindChain *chain,
                                                  size_t *link,
                                                  const PcrecFindServe **serve);
 
+/* One word of the closed DERIVATION vocabulary (design §2.4): the block KIND
+ * that may declare it and the QUERY it answers. The vocabulary's one home —
+ * the `.rxt` reader validates `serves ... via` against it and
+ * `pcrec_find_derive_counts` implements it, beside each other here. */
+typedef struct {
+    const char *kind, *name, *query;
+} PcrecFindDeriv;
+
+/* The vocabulary's `i`th derivation, or NULL past the last. */
+const PcrecFindDeriv *pcrec_find_deriv(size_t i);
+
+/* The 256 byte COUNTS a block's rows yield under byte-rate derivation `via`
+ * (design §2.4), into `out`: `unigram` the `freq` block's own `counts`;
+ * `encode-utf8` each `cps` count added once per byte of its UTF-8 encoding
+ * (the enc seam's encoder, R5); `encode-latin1` each code point <= U+00FF's
+ * count on that byte, the larger ones DROPPED with their total count in
+ * `*dropped` (NULL to ignore; 0 for the other two). -1 when a derived count
+ * exceeds `PCREC_MAX_FIND_COUNT` (the normalization's arithmetic bound);
+ * -2 when `via` is not a byte-rate derivation. The `.rxt` reader asks it at
+ * a block's close, so a stored block never reaches -1 at a compile. */
+int pcrec_find_derive_counts(const char *via, const unsigned long long *counts,
+                             const PcrecFindCp *cps, size_t ncps,
+                             unsigned long long out[256],
+                             unsigned long long *dropped);
+
+/* The byte-rate block `fb` answers through derivation `via`: its derived
+ * counts (`pcrec_find_derive_counts`) normalized (`pcrec_find_normalize`).
+ * 0, or the first nonzero code of the two (a derivation's -1 is returned as
+ * -3, so every code names one cause). The compile's accessor and the
+ * `--list-analysis` resolution both read a rate through it. */
+int pcrec_find_block_byte_rate(const PcrecFindTblBlock *fb, const char *via,
+                               uint32_t ppm[256], unsigned long long *dropped);
+
 /* §2.5's NORMALIZATION, the ONE function turning 256 counts into a byte-rate:
  * each count scaled into the mass the floors leave, every byte at least
  * `PCREC_FIND_FLOOR_PPM`, the residue on the largest entry (ties to the
@@ -155,7 +197,8 @@ uint64_t pcrec_find_byte_rate_digest(const uint32_t ppm[256]);
 
 /* `--list-analyses`' `rows_digest` (design §5.2): FNV-1a-64 over the tag
  * `pcrec-find-rows-1\0` and then, per block in order, the block's kind and a
- * NUL followed by each nonzero `(key, count)` as `u8, u64le`, ascending. A
+ * NUL followed by each nonzero `(key, count)` as `u8, u64le` (a `cpfreq`
+ * block's code point as `u32le`), ascending. A
  * DIFFERENT hash from the stamp's, named apart so the two cannot be
  * confused (§7): this one covers a bundle's rows, the stamp's covers what a
  * compile consumed. */

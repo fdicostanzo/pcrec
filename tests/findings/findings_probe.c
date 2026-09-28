@@ -16,8 +16,9 @@
  *   findings_probe default-digest     the default's byte-rate digest, as the
  *                                     library computes it
  *
- * A block line is `bundle kind line nserves serve;serve;… c0,c1,…,c255`,
- * each serve `query|encs|via`. */
+ * A block line is `bundle kind line nserves serve;serve;… ROWS`, each serve
+ * `query|encs|via`; ROWS is `c0,c1,…,c255` for a `freq` block and
+ * `U+HHHH:count,…` (ascending) for a `cpfreq` block ([FINDINGS] B5). */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -28,13 +29,18 @@
 static void block_line(const char *bundle, const char *kind, size_t line,
                        size_t nserves, const char *const *q,
                        const char *const *e, const char *const *v,
-                       const unsigned long long *counts)
+                       const unsigned long long *counts,
+                       const PcrecFindCp *cps, size_t ncps)
 {
     printf("%s %s %zu %zu ", bundle, kind, line, nserves);
     for (size_t j = 0; j < nserves; j++)
         printf("%s%s|%s|%s", j ? ";" : "", q[j], e[j], v[j]);
     printf(" ");
-    for (int b = 0; b < 256; b++) printf("%s%llu", b ? "," : "", counts[b]);
+    for (int b = 0; counts && b < 256; b++)
+        printf("%s%llu", b ? "," : "", counts[b]);
+    for (size_t j = 0; j < ncps; j++)
+        printf("%sU+%04lX:%llu", j ? "," : "", (unsigned long)cps[j].cp,
+               cps[j].count);
     printf("\n");
 }
 
@@ -65,7 +71,7 @@ int main(int argc, char **argv)
                     v[j] = fb->serves[j].via;
                 }
                 block_line(fb->bundle, fb->kind, fb->line, fb->nserves, q, e, v,
-                           fb->counts);
+                           fb->counts, fb->cps, fb->ncps);
             }
             pcrec_rxt_source_free(src);
         }
@@ -80,7 +86,7 @@ int main(int argc, char **argv)
                 v[j] = tbl[i].serves[j].via;
             }
             block_line(tbl[i].bundle, tbl[i].kind, tbl[i].line, tbl[i].nserves,
-                       q, e, v, tbl[i].counts);
+                       q, e, v, tbl[i].counts, tbl[i].cps, tbl[i].ncps);
         }
         return 0;
     }

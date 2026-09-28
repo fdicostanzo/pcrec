@@ -123,8 +123,17 @@ static void link_from_source(FindWalk *w, const RxtSource *src,
             sv[j].via = find_strndup(w->a, fb->serves[j].via,
                                      strlen(fb->serves[j].via));
         }
-        c = pcrec_arena_alloc(w->a, 256 * sizeof *c);
-        memcpy(c, fb->counts, 256 * sizeof *c);
+        c = NULL;
+        if (fb->counts) {
+            c = pcrec_arena_alloc(w->a, 256 * sizeof *c);
+            memcpy(c, fb->counts, 256 * sizeof *c);
+        }
+        if (fb->ncps) {
+            PcrecFindCp *cp = pcrec_arena_alloc(w->a, fb->ncps * sizeof *cp);
+            memcpy(cp, fb->cps, fb->ncps * sizeof *cp);
+            bl[k].cps = cp;
+        }
+        bl[k].ncps = fb->ncps;
         bl[k].bundle = out->bundle;
         bl[k].kind = find_strndup(w->a, fb->kind, strlen(fb->kind));
         bl[k].line = fb->line;

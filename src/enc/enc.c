@@ -243,3 +243,20 @@ bool pcrec_enc_start_cls_ok(const PcrecEnc *e)
     }
     return true;
 }
+
+/* The one compile-time UTF-8 encoder (enc.h). It lives here, not in
+ * enc_utf8.c, because that file is artifact TEXT and this is compiler code. */
+int pcrec_utf8_encode(unsigned cp, unsigned char b[4])
+{
+    if (cp <= 0x7F)   { b[0] = (unsigned char)cp; return 1; }
+    if (cp <= 0x7FF)  { b[0] = (unsigned char)(0xC0 | (cp >> 6));
+                        b[1] = (unsigned char)(0x80 | (cp & 0x3F)); return 2; }
+    if (cp <= 0xFFFF) { b[0] = (unsigned char)(0xE0 | (cp >> 12));
+                        b[1] = (unsigned char)(0x80 | ((cp >> 6) & 0x3F));
+                        b[2] = (unsigned char)(0x80 | (cp & 0x3F)); return 3; }
+    b[0] = (unsigned char)(0xF0 | (cp >> 18));
+    b[1] = (unsigned char)(0x80 | ((cp >> 12) & 0x3F));
+    b[2] = (unsigned char)(0x80 | ((cp >> 6) & 0x3F));
+    b[3] = (unsigned char)(0x80 | (cp & 0x3F));
+    return 4;
+}

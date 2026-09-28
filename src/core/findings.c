@@ -173,6 +173,73 @@ int pcrec_find_normalize(const unsigned long long c[256], uint32_t ppm[256])
     return 0;
 }
 
+/* ---- THE DERIVATIONS (design §2.4): the closed vocabulary, and the
+ * arithmetic of each byte-rate derivation ------------------------------- */
+
+/* The vocabulary as DATA. The query vocabulary is this table's third column,
+ * never a second list; a row whose kind the schema does not admit yet
+ * (`bigram`, B4) is still the spec-stated vocabulary, so the reader refuses
+ * `via markov1` on a `freq` block as the wrong KIND's derivation rather than
+ * as an unknown word. */
+static const PcrecFindDeriv find_derivs[] = {
+    { "freq",   "unigram",       "byte-rate"  },
+    { "cpfreq", "encode-utf8",   "byte-rate"  },
+    { "cpfreq", "encode-latin1", "byte-rate"  },
+    { "bigram", "markov1",       "run-rarity" },
+};
+
+const PcrecFindDeriv *pcrec_find_deriv(size_t i)
+{
+    return i < sizeof find_derivs / sizeof *find_derivs ? &find_derivs[i] : NULL;
+}
+
+/* A derived count is a sum of stored counts, each <= PCREC_MAX_FIND_COUNT
+ * (2^40), over at most PCREC_MAX_FIND_CPFREQ_ROWS rows and four bytes each,
+ * so it stays below 2^58 and `out[b] += c` cannot wrap before the ceiling
+ * test sees it. */
+int pcrec_find_derive_counts(const char *via, const unsigned long long *counts,
+                             const PcrecFindCp *cps, size_t ncps,
+                             unsigned long long out[256],
+                             unsigned long long *dropped)
+{
+    bool utf8 = !strcmp(via, "encode-utf8");
+    memset(out, 0, 256 * sizeof *out);
+    if (dropped) *dropped = 0;
+    if (!strcmp(via, "unigram")) {
+        memcpy(out, counts, 256 * sizeof *out);
+        return 0;
+    }
+    if (!utf8 && strcmp(via, "encode-latin1") != 0) return -2;
+    for (size_t i = 0; i < ncps; i++) {
+        unsigned char b[4];
+        int n = 1;
+        if (utf8) {
+            n = pcrec_utf8_encode(cps[i].cp, b);
+        } else if (cps[i].cp <= 0xFF) {
+            b[0] = (unsigned char)cps[i].cp;
+        } else {
+            if (dropped) *dropped += cps[i].count;
+            continue;
+        }
+        for (int k = 0; k < n; k++) {
+            out[b[k]] += cps[i].count;
+            if (out[b[k]] > PCREC_MAX_FIND_COUNT) return -1;
+        }
+    }
+    return 0;
+}
+
+int pcrec_find_block_byte_rate(const PcrecFindTblBlock *fb, const char *via,
+                               uint32_t ppm[256], unsigned long long *dropped)
+{
+    unsigned long long c[256];
+    int r = pcrec_find_derive_counts(via, fb->counts, fb->cps, fb->ncps, c,
+                                     dropped);
+    if (r == -1) return -3;
+    if (r != 0) return -2;
+    return pcrec_find_normalize(c, ppm);
+}
+
 /* Is `enc` one of the comma-joined encoding names in `encs`? */
 static bool encs_list(const char *encs, const char *enc)
 {
@@ -210,9 +277,9 @@ const PcrecFindTblBlock *pcrec_find_chain_answer(const PcrecFindChain *chain,
 }
 
 /* The byte-rate this compile's CHAIN declares for its encoding, into `fr`:
- * the ONE block the selection rule picks (§2.4, §4.4), derived `via
- * unigram`. No such block -> NONE (`byte_rate_have` stays false). A chain
- * the attempt never resolved (a `Ctx` built outside `compile_driver`) reads
+ * the ONE block the selection rule picks (§2.4, §4.4), derived by its
+ * `serves` line's `via`. No such block -> NONE (`byte_rate_have` stays
+ * false). A chain the attempt never resolved (a `Ctx` built outside `compile_driver`) reads
  * as the built-in `default` alone — the terminal every chain ends in. */
 static void find_derive_byte_rate(Ctx *cx, PcrecFindRec *fr)
 {
@@ -221,6 +288,7 @@ static void find_derive_byte_rate(Ctx *cx, PcrecFindRec *fr)
     PcrecFindChain one = { &dflt, 0 };
     const PcrecFindChain *chain = &fr->chain;
     const PcrecFindTblBlock *fb;
+    const PcrecFindServe *sv = NULL;
     size_t link = 0;
     int nr;
     if (chain->n == 0) {
@@ -228,13 +296,13 @@ static void find_derive_byte_rate(Ctx *cx, PcrecFindRec *fr)
             one.n = 1;
         chain = &one;
     }
-    fb = pcrec_find_chain_answer(chain, "byte-rate", enc, &link, NULL);
+    fb = pcrec_find_chain_answer(chain, "byte-rate", enc, &link, &sv);
     if (!fb) return;
-    nr = pcrec_find_normalize(fb->counts, fr->byte_rate);
+    nr = pcrec_find_block_byte_rate(fb, sv->via, fr->byte_rate, NULL);
     if (nr == -1)
         pcrec_ctx_fail(cx, 0, "analysis '%s': its '%s' block at line "
-                       "%zu counts nothing, so it has no byte-rate",
-                       fb->bundle, fb->kind, fb->line);
+                       "%zu counts nothing via %s, so it has no byte-rate",
+                       fb->bundle, fb->kind, fb->line, sv->via);
     if (nr != 0)
         pcrec_ctx_fail(cx, 0, "internal error: analysis '%s': its "
                        "'%s' block at line %zu normalizes to a "
@@ -280,7 +348,15 @@ uint64_t pcrec_find_rows_digest(const PcrecFindTblBlock *blocks, size_t n)
     for (size_t i = 0; i < n; i++) {
         h = fnv1a(h, (const unsigned char *)blocks[i].kind,
                   strlen(blocks[i].kind) + 1);
-        for (int b = 0; b < 256; b++) {
+        for (size_t j = 0; j < blocks[i].ncps; j++) {
+            uint32_t cp = blocks[i].cps[j].cp;
+            unsigned long long c = blocks[i].cps[j].count;
+            unsigned char row[12];
+            for (int k = 0; k < 4; k++) row[k] = (unsigned char)(cp >> (8 * k));
+            for (int k = 0; k < 8; k++) row[4 + k] = (unsigned char)(c >> (8 * k));
+            h = fnv1a(h, row, sizeof row);
+        }
+        for (int b = 0; blocks[i].counts && b < 256; b++) {
             unsigned long long c = blocks[i].counts[b];
             unsigned char row[9];
             if (!c) continue;

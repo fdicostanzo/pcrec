@@ -189,8 +189,20 @@ $(BUILD_DIR)/obj/%.o: src/%.c src/core/internal.h src/core/limits.h src/core/lim
 # this target is for regenerating after a source bump, never a build step a
 # stranger's `make` depends on — a clone with no python3 still builds. What
 # `make test` runs is each generator's `--check` mode, inside
-# tests/uprops/run_uprops_tests.sh, which fails if a committed table has
-# drifted from what its source produces.
+# tests/uprops/run_uprops_tests.sh (the UCD tables) and tests/findings/ §12
+# (the shipped analyses), which fail if a committed table has drifted from
+# what its source produces.
+#
+# [FINDINGS] B5: a generator may write a shipped ANALYSIS,
+# src/findings/<name>.rxt, rather than a C table — and that text is itself
+# the source of the embedded store (FIND_INCS below). So the loop is followed
+# by `gen-findings`, and `make gen-tables && git diff --exit-code` covers the
+# whole chain, corpus -> bundle -> store (design §13 B5's verdict). The
+# bundles are NOT in GEN_TABLES, the object prerequisite list: no object
+# reads a `.rxt`; the object that reads the store, findings.o, already has
+# FIND_INCS as its prerequisite, and the step from a bundle to FIND_INCS is
+# this regeneration, drift-checked by tests/findings/ §2/§3 (the r2 A-6
+# defect's "editing the source rebuilds nothing" cannot recur silently).
 .PHONY: gen-tables
 gen-tables:
 	@for g in third_party/*/generate.py; do \
@@ -198,6 +210,7 @@ gen-tables:
 	    echo "  gen-tables: $$g"; \
 	    python3 "$$g" || exit 1; \
 	done
+	$(MAKE) gen-findings
 
 # [FINDINGS] B1 THE EMBEDDED FINDINGS STORE (docs/design/findings/design.md
 # §8.1-§8.2, §13 B1 (3)): every src/findings/<name>.rxt, compiled in TWICE

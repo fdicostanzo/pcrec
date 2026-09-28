@@ -392,6 +392,13 @@ bool pcrec_enc_start_guard(const PcrecEnc *e, char *buf, size_t cap,
  * True when the backend has no restriction at all. */
 bool pcrec_enc_start_cls_ok(const PcrecEnc *e);
 
+/* The UTF-8 encoding of scalar value `cp` (not a surrogate, <= U+10FFFF:
+ * the caller's to exclude) into b[0..3]; returns its length, 1..4. The ONE
+ * compile-time UTF-8 encoder: the utf8 lowering's byte-range decomposition
+ * and the findings' `encode-utf8` derivation (src/core/findings.c) both read
+ * it, so the bytes a rate is derived for are the bytes a pattern lowers to. */
+int pcrec_utf8_encode(unsigned cp, unsigned char b[4]);
+
 /* The backends themselves, one file each. */
 extern const PcrecEnc pcrec_enc_backend_byte;   /* enc_byte.c */
 extern const PcrecEnc pcrec_enc_backend_utf8;   /* enc_utf8.c, [M5.0] stage 2 */
