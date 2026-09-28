@@ -1090,7 +1090,13 @@ REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
 # stamps, `-fno-lit-run` always in it — see the excuse) restores the pin;
 # both converse directions are asserted; `LIT_PATTERNS` is the manifest.
 # THE MANAGER RE-PINS TO THE MERGE, the precedent above.
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-f97c26a6}"   # [OPT-LITSCAN] S2a, abi 40->41: (B) re-pinned to f97c26a6 on lane/s2a (D76, 2026-09-27). Prior pin: 93e80da7 ([FINDINGS] B1, abi 39->40).
+# **(B) RE-PINNED AGAIN — K69, 2026-09-27: abi 41 -> 42, to `bcffbd42`, the
+# `lane/k69fix` commit that is its last `src/` change.** A call's nullability
+# is the least call-graph fixpoint (`minw != 0`, published by
+# src/opt/callgraph.c). This gate's population is CALL-FREE, where the fix
+# cannot reach (no call graph is built), so (A) is untouched and (B) moves by
+# the abi digit alone. The self-pin convention: the manager re-pins to the merge.
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-bcffbd42}"   # K69, abi 41->42: (B) re-pinned to bcffbd42 on lane/k69fix (D76, 2026-09-27). Prior pin: f97c26a6 ([OPT-LITSCAN] S2a, abi 40->41).
 
 WORKDIR="$(mktemp -d)"
 cleanup() {
