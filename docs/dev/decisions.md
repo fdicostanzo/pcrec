@@ -8674,3 +8674,40 @@ exists whose early force could change a stamp (D77).
 **Consequence.** Step 3 opens with 3.0a (the `internal.h` split), then
 3.0 (the skeleton, the facts dump, the first relocations). [FINDINGS] B1
 follows as the machinery's first customer; 3.0 is a hard prerequisite.
+
+## D127 — [OPT-LITSCAN] F5 RULED BUILD: the VM's one-compare literal run starts at L >= 3; a 2-byte run stays the byte chain (Frank, 2026-09-28, eighty-third session)
+
+**Context.** S2a (abi 41) made every exact VM literal run of length >= 2 ONE
+constant-length compare (`pos + L <= n && !memcmp(...)`). The [B108] read
+(pcrec-bench O-64..O-67; docs/dev/optloop/b108_reading.md) measured L=2 in
+four regimes:
+- success path: 0.929, the smallest gain in the L-sweep (0.253 at L=40);
+- first-byte failure: null (x1.007 / x1.000);
+- entry cost: `bnd-l2` +1.54 ns per call;
+- per-position failing path with the VM running: `logparse-atomic-removed`
+  short search +3.4% (it survived the align64 placement twin);
+  `asr-lb-fixed` +30% (Mac scratch, F4).
+No cell shows a 2-byte run paying.
+
+**Decision.** F5 is BUILD, not measure-first. Its filed trigger was a
+confirmation twin, which the measurements above already answer. The
+single-compare form applies to runs of L >= 3; runs of L = 2 keep the
+early-exit byte chain. The length floor is part of the lit-run row's
+predicate (D122 addendum 2: one row, one deny, `-fno-lit-run` unchanged).
+Frank's reason: "that makes the cost flatter but the benefits (budget)
+cleaner". With the floor, the one-compare-per-run budget charge (limits.md
+§3.1) applies only where the compare replaces a real chain.
+
+**Consequences.** An abi event (42 -> 43) with the D76/D94 ritual. The movers
+are the artifacts whose only lit-run sites are 2-byte runs; they return to
+the pre-S2a byte chain. reqpos_2b.md §1.2's 62.7%-at-L=2 figure is a RELATED
+population, so the mover count is measured, not assumed. Validation is the
+usual mover census + identity gates + sabotage (a row planting L >= 2 back),
+then a bench pass as confirmation, not as a gate. D125 phase 2: this is a
+tail of an active row, so it is schedulable now.
+
+**Also owed (not ruled here):** session 82's manager rulings, still not
+recorded in this log: `-fno-lit-run` required by D122 add. 2 (4); B1's
+committed pre-parsed `.inc`; syslogbase's byte mover as a manifest row; S2a
+memcmp -> S4's overlapping-load emitter; K69 disposition (a). They go to a
+D128 when next touched.
