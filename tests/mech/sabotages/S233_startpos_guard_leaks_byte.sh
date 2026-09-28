@@ -29,5 +29,9 @@ SAB_DOC_FIGURE="src/enc/enc.h's start_cls/start_guard field comment; src/enc/enc
 SAB_COUNT=1
 SAB_REACH='"$PCREC" -p rx --features assertions -o - --pattern "\\B" | grep -o "_STARTPOS_GUARD \"permissive\"" | head -1'
 SAB_REACH_EXPECT='_STARTPOS_GUARD "permissive"'
-SAB_BEFORE='    NULL, NULL   /* [K50] start_cls / start_guard: every position is a start */'
-SAB_AFTER='    NULL, "@P >= @N || @S[@P] != 0"   /* SABOTAGE S233 */'
+# RE-ANCHORED 2026-09-28 (lane k70fix, K70): [K70]'s `PcrecEnc.restrict_ok`
+# field landed right after this initializer pair, which is what makes the
+# line end in a comma now (it is no longer the initializer's last member).
+# Intent unchanged (start_cls/start_guard stay NULL,NULL under `byte`).
+SAB_BEFORE='    NULL, NULL,  /* [K50] start_cls / start_guard: every position is a start */'
+SAB_AFTER='    NULL, "@P >= @N || @S[@P] != 0",   /* SABOTAGE S233 */'
