@@ -42,7 +42,11 @@ of your branch point before claiming a red as yours or pre-existing.
 - ARM OWED RUNS DETACHED: a run you launch as a plain background task DIES
   WITH YOUR SHELL the moment the manager closes your session (b1triage's
   did, 2026-09-22) — a chain you are owing past your own end must be
-  `nohup … > log 2>&1 & disown`, not a bare `&`.
+  `nohup … > log 2>&1 & disown`, not a bare `&`. On the Mac, ALSO keep the
+  box awake for the chain's life (`nohup caffeinate -s -w <chain PID> &`, or
+  prefix the chain with `caffeinate -s`): a maintenance sleep counts toward
+  GNU timeout's wall clock and fails a check as if the code did (pf35's
+  test-recursion red, 2026-09-27, an 879 s sleep read as "does not build").
 - DO-THEN-FINISH (Frank 2026-09-08): your context cache lives 5 MINUTES; an
   idle wait longer than that busts it and every later turn re-pays your
   whole context at full price. So: a run ≤~4 min you may poll (log tail)
