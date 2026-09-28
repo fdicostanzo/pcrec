@@ -285,7 +285,7 @@ static void cg_minw_publish(void *ud, const Ast *a)
  * A TARGET IN A CYCLE IS A FIXED POINT AT UNBOUNDED, WITH NO CYCLE TEST. The
  * `reach` closure two functions up could answer "is target i in a cycle"
  * directly (`reaches(i,i)`), and this fixpoint deliberately does not ask it:
- * `pcrec_mrl_sat_add` saturates, so a body that calls back into its own SCC reads
+ * `pcrec_sat_add` saturates, so a body that calls back into its own SCC reads
  * the published `PCREC_W_UNBOUNDED`, computes `k + UNBOUNDED == UNBOUNDED`,
  * and never leaves the top. The same absorption gives the RIGHT answer for a
  * target that merely REACHES a cycle without being in one (`g = (?&h)x` with
@@ -471,29 +471,18 @@ static void cg_publish_link(void *ud, const Ast *a)
 
 /* The ceiling `exp` saturates at, and the value a cyclic target starts at.
  * Well below LLONG_MAX so a sum of several of them cannot overflow, and far
- * above PCREC_MAX_SPLICE_NODES so it is never mistaken for a passing size. */
-#define CG_EXP_INF ((long long)1 << 40)
-
-/* [REVW.U L5-R2] not `static`: tests/core/sat_arith_check.c links this
- * symbol directly (declared in core/internal.h). No behaviour change —
- * this is pcrec's own compile-time arithmetic, never emitted text. */
-long long pcrec_cg_sat_add(long long a, long long b)
-{
-    if (a >= CG_EXP_INF || b >= CG_EXP_INF) return CG_EXP_INF;
-    long long r = a + b;
-    return r >= CG_EXP_INF ? CG_EXP_INF : r;
-}
-
-/* Saturating multiply at CG_EXP_INF: 0 for a non-positive operand, CG_EXP_INF
- * on overflow or either operand already at the ceiling -- pcrec_cg_sat_add's
- * own multiply sibling. */
-long long pcrec_cg_sat_mul(long long a, long long b)
-{
-    if (a <= 0 || b <= 0) return 0;
-    if (a >= CG_EXP_INF || b >= CG_EXP_INF) return CG_EXP_INF;
-    if (a > CG_EXP_INF / b) return CG_EXP_INF;
-    return a * b;
-}
+ * above PCREC_MAX_SPLICE_NODES so it is never mistaken for a passing size.
+ *
+ * [PATFACTS] step 3.6 (R3, lane pf36): this USED TO be a second definition
+ * of `PCREC_MINW_MAX` under a different name (`CG_EXP_INF ==
+ * (long long)1 << 40 == PCREC_MINW_MAX`), and this file's own
+ * `pcrec_cg_sat_add`/`pcrec_cg_sat_mul` were a second implementation of
+ * src/opt/mrl.c's saturating add/multiply against it -- R3's own finding.
+ * Both are retired here: this file now calls `pcrec_sat_add`/
+ * `pcrec_sat_mul` (mrl.c) directly with `PCREC_MINW_MAX` as the ceiling,
+ * which is the SAME NUMBER this macro named. See mrl.c's header comment
+ * above those two functions for the redundant-guard proof this merge
+ * relies on. */
 
 /* Decides each target's linkage — CALL_SPLICE (an exact finite inlining) or
  * link — and fills `cg->exp` with the composed expansion size a splice
@@ -516,7 +505,7 @@ static void cg_eligibility(Ctx *cx, struct CallGraph *cg, Ast *root)
      * trace anywhere else — not in the budget arithmetic, not in a stamp
      * computed from it. Returning here is what makes the denied build the
      * control rather than a fourth variant of it. */
-    for (int i = 0; i < n; i++) { cg->splice[i] = false; cg->exp[i] = CG_EXP_INF; }
+    for (int i = 0; i < n; i++) { cg->splice[i] = false; cg->exp[i] = PCREC_MINW_MAX; }
     if (cx->opt->flags & PCREC_NO_SPLICE_CALLS) return;
 
     /* Nodes per region, and the cycles settled first. */
@@ -549,8 +538,9 @@ static void cg_eligibility(Ctx *cx, struct CallGraph *cg, Ast *root)
             for (int j = 0; j < n; j++) {
                 if (j == i || !cg->site[(size_t)i * nn + (size_t)j]) continue;
                 if (!cg->splice[j]) continue;
-                e = pcrec_cg_sat_add(e, pcrec_cg_sat_mul(cg->site[(size_t)i * nn + (size_t)j],
-                                             cg->exp[j] - 1));
+                e = pcrec_sat_add(e, pcrec_sat_mul(cg->site[(size_t)i * nn + (size_t)j],
+                                             cg->exp[j] - 1, PCREC_MINW_MAX),
+                                  PCREC_MINW_MAX);
             }
             cg->exp[i]    = e;
             cg->splice[i] = e <= PCREC_MAX_SPLICE_NODES;
@@ -575,7 +565,8 @@ static void cg_eligibility(Ctx *cx, struct CallGraph *cg, Ast *root)
         long long total = 0;
         for (int i = 0; i < n; i++)
             if (cg->splice[i])
-                total = pcrec_cg_sat_add(total, pcrec_cg_sat_mul(lex[i], cg->exp[i] - 1));
+                total = pcrec_sat_add(total, pcrec_sat_mul(lex[i], cg->exp[i] - 1, PCREC_MINW_MAX),
+                                       PCREC_MINW_MAX);
         if (total <= PCREC_MAX_SPLICE_TOTAL) break;
         /* Drop the largest contributor; ties by descending target number, so
          * the rule is a function of the pattern and nothing else. */
@@ -583,7 +574,7 @@ static void cg_eligibility(Ctx *cx, struct CallGraph *cg, Ast *root)
         long long worstc = -1;
         for (int i = 0; i < n; i++) {
             if (!cg->splice[i]) continue;
-            long long c = pcrec_cg_sat_mul(lex[i], cg->exp[i] - 1);
+            long long c = pcrec_sat_mul(lex[i], cg->exp[i] - 1, PCREC_MINW_MAX);
             if (c >= worstc) { worstc = c; worst = i; }
         }
         if (worst < 0) break;      /* nothing left to drop; unreachable */

@@ -105,6 +105,16 @@ construction (src/ir) and emission (src/gen).
   fixpoints iterate over, exported so the emitter does not re-derive "which
   groups are called and what does each reach".
 
+  **[PATFACTS] 3.6 (R3, 2026-09-28, lane pf36): `pcrec_cg_sat_add`/
+  `pcrec_cg_sat_mul` AND `CG_EXP_INF` ARE RETIRED.** They were a second
+  spelling of `src/opt/mrl.c`'s saturating add/multiply and of
+  `PCREC_MINW_MAX` under a different name; this file now calls `mrl.c`'s
+  `pcrec_sat_add`/`pcrec_sat_mul` directly with `PCREC_MINW_MAX` as the
+  ceiling. `pcrec_cg_sat_add`'s own extra leading guard
+  (`a >= cap || b >= cap`) is dropped rather than carried forward — it is
+  provably redundant on the non-negative domain every real call here uses
+  (mrl.c's own header carries the proof). See `mrl.c`'s entry below.
+
   **THE MEMO LIVES ON THE NODE, NOT IN THIS FILE.** `u.call.minw` and
   `u.call.nonnullable` are cached on the `A_CALL` because the walkers that
   READ them have no `Ctx` to reach a memo through, and the only other spelling
@@ -136,7 +146,7 @@ construction (src/ir) and emission (src/gen).
   direction and under-estimating is its miscompile. **It uses NO CYCLE TEST**,
   and the `reach` closure sitting right there is why that is worth stating:
   `reaches(i, i)` would answer "is target i in a cycle" directly, and it is the
-  WRONG question. `pcrec_mrl_sat_add` saturates, so a target in a cycle reads its own
+  WRONG question. `pcrec_sat_add` saturates, so a target in a cycle reads its own
   published `PCREC_W_UNBOUNDED`, computes `k + UNBOUNDED == UNBOUNDED` and
   never leaves the top — and the same absorption gives the right answer for a
   target that merely REACHES a cycle without being in one (`g = (?&h)x` with
@@ -873,6 +883,21 @@ construction (src/ir) and emission (src/gen).
   agree on every kind now, and the E1 fact (`src/facts/widths.c`) composes
   `pcrec_nullable(root)` — step 3.5 closed, one owner, one definition.
 
+  **[PATFACTS] 3.6 (R3, 2026-09-28, lane pf36): `pcrec_sat_add`/
+  `pcrec_sat_mul` LIVE HERE NOW, TAKING THE CEILING AS A PARAMETER** —
+  `pcrec_mrl_sat_add`/`pcrec_mrl_sat_mul` and `src/opt/callgraph.c`'s
+  `pcrec_cg_sat_add`/`pcrec_cg_sat_mul` (with its own retired `CG_EXP_INF`
+  macro, the same value as `PCREC_MINW_MAX` under a different name) were the
+  same four-line saturating-arithmetic algorithm typed twice — R3's finding.
+  `callgraph.c` now calls this pair directly with `PCREC_MINW_MAX` as the
+  ceiling. `src/gen/emit_vm.c`'s `pcrec_vm_fadd`/`pcrec_vm_fmul` are a THIRD
+  copy (lens 1's X3, the 2026-09-17 code review) left OUT of this step —
+  design.md's row scopes 3.6 to mrl.c/callgraph.c, and emit_vm.c sits in a
+  higher layer (gen) than this pair's home (opt); `tests/core/
+  sat_arith_check.c`'s cross-family check now compares this shared
+  primitive against `pcrec_vm_fadd`/`pcrec_vm_fmul` (two independent
+  implementations, where three agreed before).
+
   **[M5.0] STAGE 2 RE-AIMED THE MAX-WIDTH CHAIN INTO CHARACTERS, so this file
   now holds THREE functions in TWO units.** `pcrec_minw` is unchanged (BYTES,
   the MRL prune, EXACT per byte-class on the LOWERED tree). `pcrec_maxw`
@@ -900,7 +925,7 @@ construction (src/ir) and emission (src/gen).
   carries its own header saying which way it rounds. `PCREC_W_UNBOUNDED`
   (core/internal.h) is where rounding up runs out, and it is deliberately the
   SAME VALUE as `PCREC_MINW_MAX` so that unbounded ABSORBS through
-  `pcrec_mrl_sat_add` and, at `pcrec_mrl_sat_mul(UNBOUNDED, 0)`, correctly collapses to 0
+  `pcrec_sat_add` and, at `pcrec_sat_mul(UNBOUNDED, 0, MRL_MINW_MAX)`, correctly collapses to 0
   for an unbounded repeat of a zero-width body.
 
   **[DD-14 wave B+C] `pcrec_minw`'s `A_CALL` ARM READS A VALUE OFF THE NODE**
