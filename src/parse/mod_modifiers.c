@@ -37,6 +37,7 @@
 #include <stdio.h>
 
 #include "core/internal.h"
+#include "enc/enc.h"
 #include "parse/parse_mods.h"
 
 /* Splitting the catch-all into eleven option-letter rows fixed the BYTE and
@@ -403,10 +404,46 @@ ExtResult pcrec_modport_optrun(Ctx *cx, const RegRow *rw, ExtWant want,
             }
             break;
         case 'r':
-            break;                        /* measured no-op at options=0 */
+            /* [K70] "measured no-op at options=0" was TRUE only while `byte`
+             * was the only encoding — MEASURED against libpcre2 10.46 across
+             * the whole ASCII alphabet and the Latin-1 range, both with and
+             * without `(?r)` (`studies/k70_probe/probe_k70.py`). Under
+             * `-e utf8` it is FALSE: `(?i)(?r)k` matches U+212A on
+             * pcrec (nomatch on 10.46), and three more cells diverge the
+             * same way — pcrec's fold machinery folds per contribution
+             * (fold.c) with no ASCII/non-ASCII boundary test anywhere, so
+             * accepting `(?r)` there would silently keep crossing the
+             * boundary it names. Ask the ENCODING (DD-12 (7): no
+             * `if (enc == UTF8)` in a shared parse file) rather than the
+             * encoding's identity — `byte` answers true because its fold
+             * never crosses the boundary to begin with; `utf8` answers
+             * false because pcrec has not built the restriction there. An
+             * unhyphenated `(?-r)` is untouched: nothing ever persists an
+             * `r` state (measured true no-op in both directions), so
+             * unsetting a restriction that was never set is harmless
+             * whatever it refuses to SET. */
+            if (!hyphen) {
+                const PcrecEnc *e = pcrec_enc_by_id(cx->opt->encoding);
+                if (!e->restrict_ok) {
+                    char buf[112];
+                    snprintf(buf, sizeof buf,
+                             "inline option 'r' (caseless-restrict) is not "
+                             "implemented under encoding '%s'", e->name);
+                    return modport_refuse(want, i, buf);
+                }
+            }
+            break;
         case 'a':
             /* One optional ASCII-restrict sub-letter (the measured grammar);
-             * the pair is a no-op at options=0 (census-identical). */
+             * the pair is a no-op at options=0 (census-identical). [K70]
+             * STAYS a no-op under `-e utf8` WITHOUT UCP, unlike `r` above —
+             * pcrec has no UCP support at all (`\d`/`\w`/`\s` are already
+             * ASCII-only regardless of encoding, registry.c's shorthand
+             * rows), so an ASCII-restrict sub-letter has nothing to
+             * restrict. MEASURED against libpcre2 10.46 under UTF alone
+             * (no UCP) for all five sub-letters plus the bare `(?a)`:
+             * identical answers with and without the letter, every case
+             * (`studies/k70_probe/probe_k70.py`). */
             if (i + 1 < n && (p[i + 1] == 'D' || p[i + 1] == 'P' ||
                               p[i + 1] == 'S' || p[i + 1] == 'T' ||
                               p[i + 1] == 'W'))

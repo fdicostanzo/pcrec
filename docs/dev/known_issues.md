@@ -11,6 +11,82 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 ---
 
+## K70 — FIXED 2026-09-28 (lane k70fix, refusal, NOT an abi event) — `(?r)` (caseless-restrict) was a silent no-op under `-e utf8`, four oracle-divergent cells (found by lane ucpthink, `docs/dev/ucp_study.md` §G.1, 2026-09-28)
+
+**Witness** (libpcre2 10.46, `UTF` only, no UCP — transcript
+`studies/k70_probe/probe_k70_10.46.txt`):
+
+| pattern | subject | 10.46 | pcrec (pre-fix) |
+|---|---|---|---|
+| `(?i)(?r)k` | U+212A (KELVIN SIGN) | nomatch | match (0,3) |
+| `(?i)(?r)s` | U+017F (LONG S) | nomatch | match (0,2) |
+| `(?i)(?r)[a-z]` | U+212A | nomatch | match (0,3) |
+| `(?i)(?r)\x{212a}` | `k` | nomatch | match (0,1) |
+
+**Mechanism.** `src/parse/mod_modifiers.c`'s `(?` doorway treated the `r`
+option letter as "measured no-op at options=0" — true only while `byte` was
+pcrec's one encoding: `pcrec_fold_ascii` never crosses the ASCII boundary
+(52 letters, each folding to its own partner, no byte >= 0x80 folding to
+anything — D23), so `(?r)`'s restriction has nothing to act on. Under
+`-e utf8`, `pcrec_fold_ucd_simple` DOES cross the boundary (`k`/`K`/U+212A is
+one fold class) and pcrec's fold machinery (`cls_casefold` at parse time,
+`$_span_match_caseless` for backreferences at match time) folds PER
+CONTRIBUTION with no ASCII/non-ASCII boundary test anywhere — so `(?r)`
+silently kept folding across the boundary it names.
+
+**Fix.** Per the house rule (unsupported construct fails clean, never
+miscompiles): `(?r)` (the SET form, `!hyphen`) now REFUSES under any
+encoding whose fold crosses the boundary, named `"inline option 'r'
+(caseless-restrict) is not implemented under encoding '%s'"`. The test is a
+new `PcrecEnc.restrict_ok` capability field (`src/enc/enc.h`), asked of the
+ENCODING rather than branched on its identity (DD-12 (7): no
+`if (enc == UTF8)` in a shared parse file) — `byte` states `true` (verified
+no-op, including the whole Latin-1 range, not merely the letters), `utf8`
+states `false`. `(?-r)` (UNSET) is untouched in either encoding: nothing
+ever persists an `r` state, so unsetting a restriction that was never set is
+harmless regardless of what the SET form refuses. See `src/enc/CLAUDE.md`'s
+"[K70]" section for the full D58 seam-event record.
+
+**The neighbouring `(?aD)`/`(?aP)`/`(?aS)`/`(?aT)`/`(?aW)` sub-letters were
+checked too and STAY true no-ops under `-e utf8` WITHOUT UCP** (probe rows
+in the same transcript): pcrec implements no UCP at all, so `\d`/`\w`/`\s`
+are already ASCII-only regardless of encoding (`registry.c`'s shorthand
+rows) — there is nothing for an ASCII-restrict sub-letter to restrict. No
+code change there; the claim is recorded as a comment at the call site
+(`mod_modifiers.c`'s `case 'a':`).
+
+**Not built: implementing the restriction under `-e utf8`.** Priced for a
+later row rather than built here (see the brief's own D77 gate: the box was
+shared and this lane's time box is one construct's refusal, not a
+cross-cutting mechanism). The shape, if built: (1) a per-scope
+`ParseMods.restrict` bit set/cleared by `(?r)`/`(?-r)` exactly as
+`caseless` is; (2) `cls_casefold`'s two callers (`char_node`, `p_class`)
+filter each contribution's own partner set to same-side-of-128 members when
+the scope's restrict bit is set — LOCAL and oracle-testable per §4.2's
+per-contribution rule (`fold.c`, `utf8s4_report.md` §3.1), since the test
+is one comparison per orbit member the walk already visits; (3) a THIRD
+utf8 residual entry, `$_span_match_caseless_restrict` (mirroring
+`$_span_match_caseless`'s decode-fold-compare shape with one extra
+`(x < 128) == (y < 128)` conjunct), chosen per `A_BREF`/`A_VAR` node at
+compile time when the scope at the reference is restricted — a SECOND
+spelling of the fold this house's own precedent (`fold.c`'s header) flags
+as a drift risk, needing its own agreement check the way
+`fold_agreement_utf8_check.c` ties `cls_casefold` to the plain caseless
+residual. Rough cost: one `ParseMods` field, ~15 lines across two
+`cls_casefold` callers, ~40 lines of new residual text plus its own
+agreement check, a `(?r)`-scoped `.rxt` corpus, and a D6 panel given the
+cross-cutting shape (parse state + two independent emission sites) — a
+half-to-one-day lane, not a same-session fold-in.
+
+**Regression**: `tests/utf8/restrict.rxt` (oracle-verified against libpcre2
+10.46, light probe transcript archived at `studies/k70_probe/`), a
+`tests/reject/` row for the refusal, sabotage row **S332** (revert the
+refusal to a bare `break`, verified DETECTED). abi: unchanged — a refusal
+compiles no artifact, so no emitted byte moves; `run_encoding_checks.sh`
+re-run clean. Report: `docs/dev/lanes/k70fix_report.md`.
+
+---
+
 ## K69 — FIXED 2026-09-27 (lane k69fix, disposition (a), abi 41 -> 42; NOT yet merged at this writing) — the two node-nullability definitions DISAGREED on `A_CALL` (found by lane pf35, [PATFACTS] step 3.5's stop rule, 2026-09-27)
 
 **FIXED ADDENDUM (lane k69fix, branch `lane/k69fix`, off main `25854c26`).**
