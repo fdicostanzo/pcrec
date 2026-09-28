@@ -1560,6 +1560,24 @@ general-mechanisms memory).
 | **B4** `bigram` + `run-rarity` + its first reader | the `bigram` schema row, `markov1` (§2.6, `L(x)` by its algorithm, the empty-set guard and tie rule), `pcrec_find_run_rarity`, bigram blocks regenerated into the shipped bundles, and **in the same change** the first reader: S4(a)'s run pick (C6) if its row is ready, otherwise whichever of C2-window / C3-widening has a measured trigger first — with its own §6.2a row written first. Witness C6, sabotage F-5. **[r3 F4] OWED at this step**: §2.6's tie rule and C6's row (letter argmin's own order) have no verified TIEBREAK population beyond §11.4's rank-equality acceptance — a near-tie in a shipped bundle could diverge with no test naming it; this step must add that population or state why none exists | opus | §11.4 markov1 acceptance (RUNEST rank equality + the WAF sign) and the independent `L(x)` re-implementation bit-equal [r2 S-F5]; the reader's own row's measured bench cell with `analysis weblog` (R38: names the analysis; disjoint subject, R30); give-up transitions zero under `fire-C6`. Verdict: `make test-findings` + the reader row's own suite [r2 S-F13] | B5, and the reader's own row |
 | **B6** analyzer in C (end state) | `analyze/` → `build/pcrec-analyze`; generators switch to it; python ≡ C agreement; then the python prototype is DELETED | sonnet | §11.8 python ≡ C on in-tree samples + seeded random input; `make gen-tables` byte-identical before/after the switch. Verdict: `make test-findings` [r2 S-F13] | B3 (can run in parallel with B4/B5) |
 
+- **[B5] Revised 2026-09-28 (lane findb5; the manager rules at merge):**
+  (1) the derived bundles do NOT join `GEN_TABLES`. B1's committed-store
+  revision (§8.2) moved the step from a bundle to what `findings.o` reads
+  into `make gen-findings`, so `GEN_TABLES` (the OBJECT prerequisite list)
+  would name files no object reads; instead `make gen-tables` ends with
+  `gen-findings`, making `make gen-tables && git diff --exit-code` cover the
+  whole corpus -> bundle -> store chain, and `tests/findings/` §12 runs
+  every bundle generator's `--check` (found from the bundle's provenance
+  `source`). A-6's defect cannot recur silently: a stale bundle is §12 red,
+  a stale store §2/§3 red. (2) The manifest-only `--check` skip and the
+  fail-closed fetch target [r2 A-5] are NOT built: both B5 sources are in
+  tree, so their population is zero (D77); the first manifest-only source
+  builds them. (3) The shipped `weblog` does not `include <log>`: no query
+  `weblog` lacks is one `log` answers, and the two corpora are meant to be
+  independent (`findb5src_report.md` §2). (4) The analyzer gained
+  `--fidelity`/`--adaptation` so `log`'s `fidelity synthesized` label
+  (D123-8 item 6) is the analyzer's output, not a generator's edit; B6 owes
+  them too.
 - **After B6:** the D123-2 round-trip helper script (reading
   `--list-analysis` sections, writing an includable bundle) is a separate
   small row.

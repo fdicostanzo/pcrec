@@ -24,7 +24,8 @@ Populations (pcrec-bench read-only):
   corpus      every distinct `pattern` line of tests/**/*.rxt, auto/vm
 each under `-e byte` and `-e utf8`.
 
-  BASE=<pcrec> NEW=<pcrec> SCR=<scratch> [PROCS=4] [LIMIT=N] python3 ship_census.py
+  BASE=<pcrec> NEW=<pcrec> SCR=<scratch> [PROCS=4] [LIMIT=N]
+      [POPS=bench-cap,bench-rxt,corpus] python3 ship_census.py
 Writes $SCR/ship_census.json and, per (analysis, encoding), a
 b1_mover_answers.py-shaped $SCR/movers_<n>_<enc>.json; prints tallies.
 """
@@ -42,6 +43,7 @@ TXT_CFG = {"auto": ["--features", "all"],
            "vm": ["--features", "all", "--engine=vm"]}
 ENCS = ("byte", "utf8")
 SHIPPED = ("weblog", "log")
+POPS = os.environ.get("POPS", "bench-cap,bench-rxt,corpus").split(",")
 
 
 def drop_named(text):
@@ -123,7 +125,7 @@ def rxt_patterns(path):
 
 def jobs():
     n = 0
-    for fn in sorted(os.listdir(f"{BENCH}/capability/patterns")):
+    for fn in [] if "bench-cap" not in POPS else sorted(os.listdir(f"{BENCH}/capability/patterns")):
         if not fn.endswith(".rx"):
             continue
         pat = open(f"{BENCH}/capability/patterns/{fn}", "rb").read().rstrip(b"\n") \
@@ -133,7 +135,8 @@ def jobs():
                 n += 1
                 yield (n, "bench-cap", "capability", fn[:-3], pat, cfg, flags, enc)
     seen = set()
-    for path in sorted(glob.glob(f"{BENCH}/*/export/*.rxt") + [f"{BENCH}/utf8/patterns.rxt"]):
+    for path in [] if "bench-rxt" not in POPS else \
+            sorted(glob.glob(f"{BENCH}/*/export/*.rxt") + [f"{BENCH}/utf8/patterns.rxt"]):
         src = path[len(BENCH) + 1:].split("/")[0]
         for pat in rxt_patterns(path):
             if (src, pat) in seen:
@@ -144,7 +147,8 @@ def jobs():
                     n += 1
                     yield (n, "bench-rxt", src, pat, pat, cfg, flags, enc)
     seen = set()
-    for path in sorted(glob.glob(f"{ROOT}/tests/**/*.rxt", recursive=True)):
+    for path in [] if "corpus" not in POPS else \
+            sorted(glob.glob(f"{ROOT}/tests/**/*.rxt", recursive=True)):
         for pat in rxt_patterns(path):
             if pat in seen:
                 continue

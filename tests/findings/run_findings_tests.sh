@@ -23,6 +23,11 @@
 #   §5 STRUCTURE structural_check.py (§6.3, §11.7): no reader tests a rate,
 #                no rate table outside src/core/findings.c, no table pointer
 #                in a *Sel struct.
+#   §6-§11       [B2] resolution, reach, witnesses, give-up identity, the
+#                sampled slice, the table contract (each section's header).
+#   §12 SHIPPED  [B5] the generated bundles against their generators, their
+#                byte-rates against the reference, and `cpfreq`'s two
+#                derivations against Python's own UTF-8 codec.
 #
 # Verdict: this script's own `checks failed: 0` line, and under make, the
 # absence of `*** [test-findings] Error` (BOILERPLATE, r2 S-F13).
@@ -373,8 +378,8 @@ else
     bad "§6 [#20] view.rxt did not compile"
 fi
 # #21 R27a: the analyzer's output lists through --list-analysis, and its
-# digest is the reference's (the freq/cpfreq equal-digest half waits for
-# `cpfreq`, B5)
+# digest is the reference's (the freq/cpfreq equal-digest half is §12 (b),
+# on the shipped ASCII bundles, since B5)
 mkdir -p "$R/AN"
 if python3 "$ROOT_DIR/scripts/pcrec_analyze.py" --name ana --retrieved 2026-09-27 --scan freq \
         "$SCRIPT_DIR/fixtures/basic.txt" > "$R/AN/ana.rxt" 2>"$WORKDIR/res.err" &&
