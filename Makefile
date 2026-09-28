@@ -112,7 +112,7 @@ LIBSRCS := $(wildcard src/core/*.c) $(wildcard src/parse/*.c) \
            $(wildcard src/dump/*.c)
 LIBOBJS := $(patsubst src/%.c,$(BUILD_DIR)/obj/%.o,$(LIBSRCS))
 
-all: $(BUILD_DIR)/pcrec $(BUILD_DIR)/libpcrec.a
+all: $(BUILD_DIR)/pcrec $(BUILD_DIR)/libpcrec.a $(BUILD_DIR)/pcrec-analyze
 
 # src/parse/cls_bits.inc joined the prerequisites at MOD-0.3e, found the
 # hard way: a PC-4 bitmap sabotage produced ZERO disagreements because the
@@ -257,6 +257,17 @@ $(BUILD_DIR)/libpcrec.a: $(LIBOBJS)
 $(BUILD_DIR)/pcrec: cli/main.c $(BUILD_DIR)/libpcrec.a lib/pcrec.h src/core/axes.def src/core/internal.h $(FACTS_HDRS)
 	@mkdir -p $(BUILD_DIR)
 	$(CC) $(ALLFLAGS) -o $@ cli/main.c $(BUILD_DIR)/libpcrec.a
+
+# [FINDINGS] B6 (design.md §10.1's end-state row): pcrec-analyze, a
+# SEPARATE, ZERO-DEPENDENCY binary -- it links neither libpcrec nor
+# cli/main.c, so it has its own small flag set rather than $(ALLFLAGS)'s
+# -Ilib -Isrc (unused here, and misleading about the dependency this
+# binary deliberately does not have). generate.py (third_party/*/) and
+# tests/findings/run_analyzer_tests.py both invoke it directly.
+ANALYZEFLAGS = $(CFLAGS) $(WARN) -std=gnu11
+$(BUILD_DIR)/pcrec-analyze: analyze/main.c analyze/count.c analyze/sha256.c analyze/analyze.h analyze/sha256.h
+	@mkdir -p $(BUILD_DIR)
+	$(CC) $(ANALYZEFLAGS) -o $@ analyze/main.c analyze/count.c analyze/sha256.c
 
 # [TT-2] `test:` is PREREQUISITE-based, not a 13-line recipe of its own —
 # each line moved to become the section target's OWN recipe below (unchanged
@@ -1232,8 +1243,10 @@ test-spec: all
 	bash tests/spec_mod0/run_spec_mod0.sh
 
 # [FINDINGS] the findings seam's own checks. Step B3 (lane `findb3`) built the
-# analyzer prototype's (scripts/pcrec_analyze.py, python3-only); step B1 (lane
-# `findb1`) adds the compiler side — tests/findings/run_findings_tests.sh: the
+# analyzer prototype (scripts/pcrec_analyze.py); step B6 (lane `findb6`)
+# ported it to `analyze/` -> $(BUILD_DIR)/pcrec-analyze, the zero-dependency
+# C end state every generator now invokes (implement-then-replace). Step B1
+# (lane `findb1`) adds the compiler side — tests/findings/run_findings_tests.sh: the
 # embedded default's values against RUNEST's pinned dump and an independent
 # python normalization, the store's text against its source, the pre-parsed
 # table against the library reader's own parse, the `<PREFIX>_FINDINGS` stamp
@@ -1245,6 +1258,7 @@ test-findings: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-findings.ran"; fi
 	bash tests/findings/run_findings_tests.sh
 	python3 tests/findings/run_analyzer_tests.py
+	python3 tests/findings/run_analyzer_pinned.py
 
 # [TT-1] make smoke — MEASURED <60s inner-loop subset (docs/testing.md
 # "Tiered testing" has the per-section numbers this was chosen from). The
@@ -1319,7 +1333,7 @@ smoke: all
 # [FINDINGS] B1: scripts/findgen.c, the store's generator, is checked
 # beside the library.
 strict:
-	@set -e; for f in $(LIBSRCS) scripts/findgen.c cli/main.c; do \
+	@set -e; for f in $(LIBSRCS) scripts/findgen.c cli/main.c analyze/main.c analyze/count.c analyze/sha256.c; do \
 	    $(CC) $(ALLFLAGS) -Wshadow -Werror -c -o /dev/null $$f; \
 	done
 	@echo "strict: whole tree compiles clean with -Werror -Wshadow"

@@ -9,7 +9,7 @@ WHAT IT READS   `apache_logs.txt`, beside this file (see PROVENANCE.md: the
                 Formats/apache_logs/apache_logs" at the pinned commit
                 `bc53b584c0f9f574d4373193334bf03541a54936`, Apache-2.0).
 WHAT IT WRITES  `src/findings/weblog.rxt`: a header comment, then EXACTLY
-                what the analyzer (`scripts/pcrec_analyze.py`, R27b: a
+                what the analyzer (`build/pcrec-analyze`, R27b: a
                 generator never counts itself) prints for that file.
 
     python3 third_party/elastic-examples-apache-logs-bc53b584/generate.py          # writes it
@@ -39,7 +39,7 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
-ANALYZE = ROOT / "scripts" / "pcrec_analyze.py"
+ANALYZE = ROOT / "build" / "pcrec-analyze"
 CORPUS = HERE / "apache_logs.txt"
 OUT = ROOT / "src" / "findings" / "weblog.rxt"
 
@@ -55,7 +55,7 @@ HEADER = """\
 # src/findings/weblog.rxt -- THE SHIPPED `weblog` ANALYSIS ([FINDINGS] B5).
 # GENERATED -- never edit by hand. Written by
 # third_party/elastic-examples-apache-logs-bc53b584/generate.py, which runs
-# scripts/pcrec_analyze.py over that directory's apache_logs.txt (Apache
+# build/pcrec-analyze over that directory's apache_logs.txt (Apache
 # combined-format web-server request lines; PROVENANCE.md there). Regenerate
 # with `make gen-tables`; `make test-findings` checks it is not stale.
 #
@@ -66,11 +66,14 @@ HEADER = """\
 
 
 def run_analyzer() -> bytes:
+    if not ANALYZE.exists():
+        print(f"MISSING: {ANALYZE} -- run `make` first", file=sys.stderr)
+        raise SystemExit(1)
     if not CORPUS.exists():
         print(f"MISSING: {CORPUS}", file=sys.stderr)
         raise SystemExit(1)
     args = [
-        sys.executable, str(ANALYZE),
+        str(ANALYZE),
         "--name", "weblog",
         "--retrieved", RETRIEVED,
         "--scan", "freq,cpfreq",

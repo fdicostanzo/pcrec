@@ -50,7 +50,8 @@ the row.
   `bc53b584` (superseding an earlier committed copy of the same bytes that
   cited the moving `master` branch, `docs/dev/findings_measure/manifest.tsv`).
   Holds `PROVENANCE.md`, `apache_logs.txt`, `LICENSE` and a `generate.py`
-  that runs `scripts/pcrec_analyze.py` and writes the shipped
+  that runs `build/pcrec-analyze` ([FINDINGS] B6's C analyzer, `analyze/`;
+  ran the python prototype until then) and writes the shipped
   `src/findings/weblog.rxt` (B5's build half, lane `findb5`, 2026-09-28).
 - `synth-log-lines-v1/` — `[FINDINGS]` B5's `log` source (lane `findb5src`,
   2026-09-27, sourcing half only): a `fidelity synthesized` (D123-8 item 6)

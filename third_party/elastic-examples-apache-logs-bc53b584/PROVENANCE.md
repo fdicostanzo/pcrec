@@ -51,7 +51,7 @@ ref), not the bytes.
 
 | derived artifact | produced by | consumed by |
 |---|---|---|
-| `src/findings/weblog.rxt` (the shipped `weblog` analysis, `[FINDINGS]` B5) | `generate.py` in this directory, running `scripts/pcrec_analyze.py` over `apache_logs.txt` | module `findings`' `analysis weblog` bundle: `freq` + `cpfreq` blocks (design.md §13 B5), a byte-rate exemplar for C6 (the WAF sign check / S4(a)'s run pick) |
+| `src/findings/weblog.rxt` (the shipped `weblog` analysis, `[FINDINGS]` B5) | `generate.py` in this directory, running `build/pcrec-analyze` over `apache_logs.txt` | module `findings`' `analysis weblog` bundle: `freq` + `cpfreq` blocks (design.md §13 B5), a byte-rate exemplar for C6 (the WAF sign check / S4(a)'s run pick) |
 
 `generate.py` writes it (lane `findb5`, 2026-09-28; the sourcing lane's
 `generated_preview.rxt` scratch check is retired); `make gen-tables`

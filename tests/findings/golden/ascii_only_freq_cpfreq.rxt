@@ -1,0 +1,75 @@
+analysis pin
+    freq
+        question How often does each byte occur in this exemplar?
+        reader byte-rate (docs/spec/findings.md §4)
+        analyzer pcrec-analyze 0.1 --scan freq,cpfreq
+        encoding ascii
+        serves byte-rate when byte via unigram
+        row 0a 3
+        row 0d 3
+        row 20 3
+        row 2e 3
+        row 2f 2
+        row 31 2
+        row 3a 1
+        row 45 1
+        row 47 1
+        row 48 2
+        row 50 1
+        row 54 3
+        row 61 1
+        row 63 1
+        row 64 1
+        row 65 3
+        row 68 1
+        row 69 1
+        row 6c 2
+        row 6d 3
+        row 6e 1
+        row 6f 2
+        row 70 1
+        row 73 1
+        row 74 2
+        row 78 2
+        provenance
+            source exemplar
+            retrieved 2026-09-28
+            bytes 47
+            sha256 5861de6a5434003d828305aa33ecf8dac9f3691c70baa3b52182ef2ede6c0533
+    cpfreq
+        question How often does each Unicode code point occur in this exemplar?
+        reader byte-rate (docs/spec/findings.md §4)
+        analyzer pcrec-analyze 0.1 --scan freq,cpfreq
+        encoding ascii
+        serves byte-rate when utf8 via encode-utf8
+        row U+000A 3
+        row U+000D 3
+        row U+0020 3
+        row U+002E 3
+        row U+002F 2
+        row U+0031 2
+        row U+003A 1
+        row U+0045 1
+        row U+0047 1
+        row U+0048 2
+        row U+0050 1
+        row U+0054 3
+        row U+0061 1
+        row U+0063 1
+        row U+0064 1
+        row U+0065 3
+        row U+0068 1
+        row U+0069 1
+        row U+006C 2
+        row U+006D 3
+        row U+006E 1
+        row U+006F 2
+        row U+0070 1
+        row U+0073 1
+        row U+0074 2
+        row U+0078 2
+        provenance
+            source exemplar
+            retrieved 2026-09-28
+            bytes 47
+            sha256 5861de6a5434003d828305aa33ecf8dac9f3691c70baa3b52182ef2ede6c0533

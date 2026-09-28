@@ -9,7 +9,7 @@ WHAT IT READS   `synthetic_log_lines.txt`, beside this file (itself produced,
                 header for why this class is synthesized rather than vendored:
                 D123-8 item 6, [r2 A-4]).
 WHAT IT WRITES  `src/findings/log.rxt`: a header comment, then EXACTLY what
-                the analyzer (`scripts/pcrec_analyze.py`, R27b: a generator
+                the analyzer (`build/pcrec-analyze`, R27b: a generator
                 never counts itself) prints for that file.
 
     python3 third_party/synth-log-lines-v1/generate.py          # writes it
@@ -36,7 +36,7 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
-ANALYZE = ROOT / "scripts" / "pcrec_analyze.py"
+ANALYZE = ROOT / "build" / "pcrec-analyze"
 CORPUS = HERE / "synthetic_log_lines.txt"
 OUT = ROOT / "src" / "findings" / "log.rxt"
 
@@ -47,7 +47,7 @@ HEADER = """\
 # src/findings/log.rxt -- THE SHIPPED `log` ANALYSIS ([FINDINGS] B5).
 # GENERATED -- never edit by hand. Written by
 # third_party/synth-log-lines-v1/generate.py, which runs
-# scripts/pcrec_analyze.py over that directory's synthetic_log_lines.txt: a
+# build/pcrec-analyze over that directory's synthetic_log_lines.txt: a
 # SYNTHESIZED, Hadoop-DataNode-shaped log corpus (no licensable real one was
 # found -- PROVENANCE.md there, which also records where its byte mix is
 # known to differ from real HDFS logs). Regenerate with `make gen-tables`;
@@ -60,11 +60,14 @@ HEADER = """\
 
 
 def run_analyzer() -> bytes:
+    if not ANALYZE.exists():
+        print(f"MISSING: {ANALYZE} -- run `make` first", file=sys.stderr)
+        raise SystemExit(1)
     if not CORPUS.exists():
         print(f"MISSING: {CORPUS} -- run gen_corpus.py first", file=sys.stderr)
         raise SystemExit(1)
     args = [
-        sys.executable, str(ANALYZE),
+        str(ANALYZE),
         "--name", "log",
         "--retrieved", RETRIEVED,
         "--scan", "freq,cpfreq",

@@ -1,0 +1,15 @@
+analysis pin
+    freq
+        question How often does each byte occur in this exemplar?
+        reader byte-rate (docs/spec/findings.md §4)
+        analyzer pcrec-analyze 0.1 --scan freq
+        encoding ascii
+        serves byte-rate when byte,utf8 via unigram
+        row 5a 1
+        row 61 15
+        row 62 21
+        row 63 11
+        provenance
+            source exemplar
+            retrieved 2026-09-28
+            bytes 48

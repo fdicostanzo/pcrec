@@ -173,8 +173,9 @@ a committed table, and `tests/findings/` checks the table, the embedded text
 and the source file all agree.
 
 **The shipped `log` and `weblog` analyses** ([FINDINGS] B5) are GENERATED,
-never hand-edited: each is what the analyzer (`scripts/pcrec_analyze.py`)
-prints for a corpus vendored under `third_party/`, whose `generate.py`
+never hand-edited: each is what the analyzer (`build/pcrec-analyze`,
+`analyze/`, [FINDINGS] B6) prints for a corpus vendored under
+`third_party/`, whose `generate.py`
 writes `src/findings/<name>.rxt` (`make gen-tables` regenerates them and the
 store; `make test-findings` fails when one is stale).
 

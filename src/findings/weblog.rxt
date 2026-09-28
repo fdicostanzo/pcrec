@@ -1,7 +1,7 @@
 # src/findings/weblog.rxt -- THE SHIPPED `weblog` ANALYSIS ([FINDINGS] B5).
 # GENERATED -- never edit by hand. Written by
 # third_party/elastic-examples-apache-logs-bc53b584/generate.py, which runs
-# scripts/pcrec_analyze.py over that directory's apache_logs.txt (Apache
+# build/pcrec-analyze over that directory's apache_logs.txt (Apache
 # combined-format web-server request lines; PROVENANCE.md there). Regenerate
 # with `make gen-tables`; `make test-findings` checks it is not stale.
 #

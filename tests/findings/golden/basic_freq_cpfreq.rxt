@@ -1,0 +1,79 @@
+analysis pin
+    freq
+        question How often does each byte occur in this exemplar?
+        reader byte-rate (docs/spec/findings.md §4)
+        analyzer pcrec-analyze 0.1 --scan freq,cpfreq
+        encoding ascii
+        serves byte-rate when byte via unigram
+        row 0a 3
+        row 20 20
+        row 61 4
+        row 62 3
+        row 63 2
+        row 64 3
+        row 65 7
+        row 66 3
+        row 67 3
+        row 68 5
+        row 69 4
+        row 6a 2
+        row 6b 3
+        row 6c 2
+        row 6d 2
+        row 6e 2
+        row 6f 9
+        row 70 2
+        row 71 2
+        row 72 4
+        row 73 3
+        row 74 6
+        row 75 4
+        row 76 2
+        row 77 2
+        row 78 3
+        row 79 2
+        row 7a 2
+        provenance
+            source exemplar
+            retrieved 2026-09-28
+            bytes 109
+            sha256 a13a7af5d622948128a77d3b07547437e7bf8d99385110f70b74abbddb31fdca
+    cpfreq
+        question How often does each Unicode code point occur in this exemplar?
+        reader byte-rate (docs/spec/findings.md §4)
+        analyzer pcrec-analyze 0.1 --scan freq,cpfreq
+        encoding ascii
+        serves byte-rate when utf8 via encode-utf8
+        row U+000A 3
+        row U+0020 20
+        row U+0061 4
+        row U+0062 3
+        row U+0063 2
+        row U+0064 3
+        row U+0065 7
+        row U+0066 3
+        row U+0067 3
+        row U+0068 5
+        row U+0069 4
+        row U+006A 2
+        row U+006B 3
+        row U+006C 2
+        row U+006D 2
+        row U+006E 2
+        row U+006F 9
+        row U+0070 2
+        row U+0071 2
+        row U+0072 4
+        row U+0073 3
+        row U+0074 6
+        row U+0075 4
+        row U+0076 2
+        row U+0077 2
+        row U+0078 3
+        row U+0079 2
+        row U+007A 2
+        provenance
+            source exemplar
+            retrieved 2026-09-28
+            bytes 109
+            sha256 a13a7af5d622948128a77d3b07547437e7bf8d99385110f70b74abbddb31fdca

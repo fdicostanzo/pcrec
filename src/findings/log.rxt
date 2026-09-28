@@ -1,7 +1,7 @@
 # src/findings/log.rxt -- THE SHIPPED `log` ANALYSIS ([FINDINGS] B5).
 # GENERATED -- never edit by hand. Written by
 # third_party/synth-log-lines-v1/generate.py, which runs
-# scripts/pcrec_analyze.py over that directory's synthetic_log_lines.txt: a
+# build/pcrec-analyze over that directory's synthetic_log_lines.txt: a
 # SYNTHESIZED, Hadoop-DataNode-shaped log corpus (no licensable real one was
 # found -- PROVENANCE.md there, which also records where its byte mix is
 # known to differ from real HDFS logs). Regenerate with `make gen-tables`;

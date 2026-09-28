@@ -1,0 +1,107 @@
+analysis pin
+    freq
+        question How often does each byte occur in this exemplar?
+        reader byte-rate (docs/spec/findings.md §4)
+        analyzer pcrec-analyze 0.1 --scan freq,cpfreq,bigram
+        encoding utf8
+        serves byte-rate when byte via unigram
+        row 0a 4
+        row 20 16
+        row 30 8
+        row 31 4
+        row 61 12
+        row 63 4
+        row 65 8
+        row 66 4
+        row 6e 4
+        row 72 4
+        row 73 4
+        row 74 4
+        row 76 4
+        row 80 4
+        row 82 4
+        row 98 4
+        row 9f 8
+        row a9 4
+        row ac 4
+        row af 4
+        row c3 12
+        row e2 4
+        row f0 4
+        provenance
+            source exemplar
+            retrieved 2026-09-28
+            bytes 132
+            sha256 3c9df41352123df1d939a0a82f4c33802ae678f096e9922a0258960b95a5f671
+    cpfreq
+        question How often does each Unicode code point occur in this exemplar?
+        reader byte-rate (docs/spec/findings.md §4)
+        analyzer pcrec-analyze 0.1 --scan freq,cpfreq,bigram
+        encoding utf8
+        serves byte-rate when utf8 via encode-utf8
+        row U+000A 4
+        row U+0020 16
+        row U+0030 8
+        row U+0031 4
+        row U+0061 12
+        row U+0063 4
+        row U+0065 8
+        row U+0066 4
+        row U+006E 4
+        row U+0072 4
+        row U+0073 4
+        row U+0074 4
+        row U+0076 4
+        row U+00DF 4
+        row U+00E9 4
+        row U+00EF 4
+        row U+20AC 4
+        row U+1F600 4
+        provenance
+            source exemplar
+            retrieved 2026-09-28
+            bytes 132
+            sha256 3c9df41352123df1d939a0a82f4c33802ae678f096e9922a0258960b95a5f671
+    bigram
+        question How often does each adjacent byte pair occur in this exemplar?
+        reader run-rarity (docs/spec/findings.md §4)
+        analyzer pcrec-analyze 0.1 --scan freq,cpfreq,bigram
+        encoding utf8
+        serves run-rarity when byte,utf8 via markov1
+        row 0a 63 3
+        row 20 6e 4
+        row 20 73 4
+        row 20 e2 4
+        row 20 f0 4
+        row 30 20 4
+        row 30 30 4
+        row 31 30 4
+        row 61 66 4
+        row 61 c3 8
+        row 63 61 4
+        row 65 0a 4
+        row 65 20 4
+        row 66 c3 4
+        row 6e 61 4
+        row 72 61 4
+        row 73 74 4
+        row 74 72 4
+        row 76 65 4
+        row 80 20 4
+        row 82 ac 4
+        row 98 80 4
+        row 9f 65 4
+        row 9f 98 4
+        row a9 20 4
+        row ac 31 4
+        row af 76 4
+        row c3 9f 4
+        row c3 a9 4
+        row c3 af 4
+        row e2 82 4
+        row f0 9f 4
+        provenance
+            source exemplar
+            retrieved 2026-09-28
+            bytes 132
+            sha256 3c9df41352123df1d939a0a82f4c33802ae678f096e9922a0258960b95a5f671
