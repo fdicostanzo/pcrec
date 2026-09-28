@@ -3330,6 +3330,14 @@ never edited afterwards.
   seal-time), K69. What landed is c1 only: `vm_nullable` exported as
   `src/opt/mrl.c`'s `pcrec_nullable`, under the zero-mover gate. The E1
   migration waits on K69's ruling.
+- **k69fix_report.md** — lane `k69fix` (opus, 2026-09-27): K69 fixed by
+  disposition (a), [PATFACTS] step 3.5 closed, abi 41 -> 42. A call's
+  nullability is `minw != 0`, published by `callgraph.c` before the E1 seal
+  (the least fixpoint), and E1 composes `pcrec_nullable(root)`. §2 the mover
+  census (zero on main's corpus and the bench; the new k69.rxt's six
+  quantified left-recursive calls) and the correction to the predicted list
+  (pf35's M2 movers were a swap-build artifact); §3 the libpcre2 10.46
+  transcript; §4 S318/S319; §5 the abi readers; STATE AT HANDOFF the chain.
 - **s2a_report.md** — lane `s2a` (opus, 2026-09-27): [OPT-LITSCAN] S2a, the
   VM's exact literal run as ONE P4 compare, abi 40 -> 41. `pcrec_lit_run`
   (the one node-grain fact, three readers), the island's single-child chains
