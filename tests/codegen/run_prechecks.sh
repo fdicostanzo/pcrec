@@ -784,19 +784,24 @@ fi
 
 # §4.5 — TRUNCATION, and the expected window is computed FROM THE PRIOR BY HAND
 # rather than by this check. `github_pat_` is eleven bytes; the rarest member
-# under the shipped table is `_` (2,492 ppm) at index 6, and of the four 8-byte
-# windows containing index 6 the four sums are
+# under the shipped table is `_` (2,492 ppm), and it occurs TWICE — index 6
+# and index 10 — so which one the pick names is [FIND-TIE]'s own question,
+# not a window-mass one. Pre-[FIND-TIE] the leftmost tie (index 6) was
+# scanned, and of the four 8-byte windows containing it the four sums were
 #   s=0 "github_p" 203,444   s=1 "ithub_pa" 254,232
 #   s=2 "thub_pat" 268,188   s=3 "hub_pat_" 200,619
-# so the lowest is s=3 and the scanned member lands at index 3 of the truncated
-# run. A rule that took the LEFTMOST window containing the member would answer
-# s=0 and a rule that ignored the member would answer s=3 for a different
-# reason, so this row discriminates both.
+# with s=3 lowest, landing the scan at local index 3. [FIND-TIE]'s rightmost
+# tie (index 10) leaves ONLY s=3 as a valid 8-byte window containing it (the
+# run is 11 bytes, so `hi_s = n - 8 = 3`) — the SAME window content,
+# "hub_pat_", now scanned at its own last byte, local index 7. The window
+# mass comparison this row's prose used to discriminate is therefore moot on
+# this witness now; K66's own §5.9r witness above is where a tie forces the
+# window choice itself to move.
 if emit "$WORKDIR/s45.c" 'github_pat_[A-Za-z0-9]{4}' -fno-offset-skip; then   # §4.1's reason
     got="$(stamp "$WORKDIR/s45.c" REQ_RUN)"
-    [ "$got" = "6875625f7061745f@3" ] \
-        && ok "[4.5] an 11-byte run truncates to the lowest-prior 8-byte window containing its scanned member (hub_pat_ @3)" \
-        || bad "[4.5] RX_REQ_RUN is \"${got:-<absent>}\", expected 6875625f7061745f@3 — the truncation window rule moved"
+    [ "$got" = "6875625f7061745f@7" ] \
+        && ok "[4.5] an 11-byte run's tied rarest member (two '_'s) truncates to the SAME window either way, scanned at its rightmost tie (hub_pat_ @7)" \
+        || bad "[4.5] RX_REQ_RUN is \"${got:-<absent>}\", expected 6875625f7061745f@7 — the truncation window rule or [FIND-TIE]'s tie rule moved"
     reqrun_fn "$WORKDIR/s45.c" | grep -qF '"hub_pat_", 8)) return cand;' \
         && ok "[4.5b] the emitted compare carries the truncated 8-byte window and no more" \
         || bad "[4.5b] the emitted compare does not carry the truncated window"
@@ -916,20 +921,66 @@ fi
 # THE BYTE-ENCODING CONTROL: the identical two-byte-tie population under
 # `byte` (where "lead byte" is not even a meaningful concept, and `bytekey`
 # is unconditionally true — `rn_scan_index`'s changed line never runs). If
-# the byte path degraded to "rightmost" too, this witness would read "64"
-# (the rightmost byte, '@') instead of the RARE byte the frequency argmin
-# actually prefers — 0xC3/0xA9 both sit at the shipped table's 2 ppm floor,
-# strictly rarer than the ordinary ASCII byte '@', and the argmin's own
-# strict-less-than tie rule keeps the LEFTMOST of the tied minima (0xC3),
-# unrelated to and unmoved by this change.
+# the byte path degraded to "always rightmost, rate ignored" it would read
+# "64" (the rightmost byte, '@') instead of one of the RARE tied members —
+# 0xC3/0xA9 both sit at the shipped table's 2 ppm floor, strictly rarer than
+# the ordinary ASCII byte '@', so the argmin still correctly narrows to that
+# pair; only the TIE between them is at stake, and [FIND-TIE] (below) is
+# what decides it now. Expected value updated in the same change: rightmost
+# of the tie (0xA9), matching [FIND-TIE]'s rule, not the pre-[FIND-TIE]
+# leftmost (0xC3) this control used to pin.
 if emit "$WORKDIR/s49c.c" 'é@'; then   # default encoding: byte
     got="$(stamp "$WORKDIR/s49c.c" REQ_BYTE)"
     gotrun="$(stamp "$WORKDIR/s49c.c" REQ_RUN)"
-    [ "$got" = "195" ] && [ "$gotrun" = "c3a940@0" ] \
-        && ok "[4.9c] byte encoding: é@ -> RX_REQ_BYTE \"195\" (the frequency argmin, still) — the mechanism is untouched" \
-        || bad "[4.9c] byte encoding: é@: RX_REQ_BYTE \"${got:-<absent>}\" / RX_REQ_RUN \"${gotrun:-<absent>}\", expected \"195\" / \"c3a940@0\" — the !bytekey branch may have leaked into the byte path"
+    [ "$got" = "169" ] && [ "$gotrun" = "c3a940@1" ] \
+        && ok "[4.9c] byte encoding: é@ -> RX_REQ_BYTE \"169\" (the frequency argmin's tied pair, rightmost per [FIND-TIE]) — the mechanism is untouched, only the tie rule" \
+        || bad "[4.9c] byte encoding: é@: RX_REQ_BYTE \"${got:-<absent>}\" / RX_REQ_RUN \"${gotrun:-<absent>}\", expected \"169\" / \"c3a940@1\" — the !bytekey branch may have leaked into the byte path, or [FIND-TIE]'s rightmost tie rule regressed"
 else
     bad "[4.9c] byte encoding: é@: refused"
+fi
+
+# §4.10 — [FIND-TIE] (2026-09-28): A PICK's DATA TIE FOLLOWS ITS NONE ORDER,
+# IN THE RUN READER (docs/dev/plan.md [FIND-TIE], findb5_report.md §6). The
+# run reader's DATA tie rule (leftmost, pre-fix) disagreed with its own NONE
+# rule (rightmost, [OPT-REQRUN-ENC] above): a tie carries no information, so
+# a PICK's data tie should equal its NONE answer, exactly as
+# `pcrec_find_set_pick`'s own `[rightmost, ...]` candidate order already
+# makes true for the SET reader. Witnesses named `weblog`/`log` (findb5's
+# shipped ASCII-only bundles, where every byte >= 0x80 ties at the 2 ppm
+# floor) so the run's own scan member is decided ENTIRELY by the tie rule:
+# a Cyrillic run must scan its own CONTINUATION byte (0x80-0xBF), never the
+# shared UTF-8 LEAD byte (`кириллица+` must no longer scan 0xD0), and a
+# two-byte tied literal must scan the SAME member regardless of which
+# shipped bundle is named (`[a-z]+@é` must no longer scan 0xC3 under either).
+if emit "$WORKDIR/s410a.c" 'кириллица+' -e utf8 --analysis weblog; then
+    got="$(stamp "$WORKDIR/s410a.c" REQ_BYTE)"
+    if [ -n "$got" ] && [ "$got" -ge 194 ] 2>/dev/null && [ "$got" -le 244 ] 2>/dev/null; then
+        bad "[4.10a] -e utf8 weblog: кириллица+: RX_REQ_BYTE \"$got\" IS a UTF-8 lead byte (0xC2-0xF4) — the pre-[FIND-TIE] leftmost-tie defect"
+    elif [ "$got" = "208" ]; then
+        bad "[4.10a] -e utf8 weblog: кириллица+: RX_REQ_BYTE \"208\" is 0xD0, the exact lead byte the tie rule must no longer pick"
+    elif [ -n "$got" ]; then
+        ok "[4.10a] -e utf8 weblog: кириллица+ -> RX_REQ_BYTE \"$got\", not the shared lead byte 0xD0"
+    else
+        bad "[4.10a] -e utf8 weblog: кириллица+: no RX_REQ_BYTE stamp — refused or absent"
+    fi
+else
+    bad "[4.10a] -e utf8 weblog: кириллица+: refused"
+fi
+if emit "$WORKDIR/s410b.c" '[a-z]+@é' -e utf8 --analysis weblog; then
+    got="$(stamp "$WORKDIR/s410b.c" REQ_BYTE)"
+    [ "$got" = "169" ] \
+        && ok "[4.10b] -e utf8 weblog: [a-z]+@é -> RX_REQ_BYTE \"169\" ('é''s trailing byte), not the shared lead byte 195" \
+        || bad "[4.10b] -e utf8 weblog: [a-z]+@é: RX_REQ_BYTE is \"${got:-<absent>}\", expected \"169\" (was \"195\" pre-[FIND-TIE])"
+else
+    bad "[4.10b] -e utf8 weblog: [a-z]+@é: refused"
+fi
+if emit "$WORKDIR/s410c.c" '[a-z]+@é' -e utf8 --analysis log; then
+    got="$(stamp "$WORKDIR/s410c.c" REQ_BYTE)"
+    [ "$got" = "169" ] \
+        && ok "[4.10c] -e utf8 log: [a-z]+@é -> RX_REQ_BYTE \"169\", the SAME member as weblog's — the tie rule, not the bundle, decides it" \
+        || bad "[4.10c] -e utf8 log: [a-z]+@é: RX_REQ_BYTE is \"${got:-<absent>}\", expected \"169\""
+else
+    bad "[4.10c] -e utf8 log: [a-z]+@é: refused"
 fi
 
 # =========================================================================
@@ -1344,9 +1395,15 @@ ROWS
 # ... and the witness really is the route the rule reads, with a run longer
 # than its window — or the whole-run rows test nothing.
 if emit "$WORKDIR/s59r.c" '(x?)([a-z]+)+eeeeeeee~#~#~#~#\1' -e byte; then
+    # [FIND-TIE]: the window content is unchanged ("~#~#~#~#", the lowest-
+    # mass 8-byte window either tie rule finds — an 'e' costs more than a
+    # '~'/'#', so any window that drops the run's leading 'e's beats one
+    # that keeps it), but the SCAN INDEX inside it moved. The four '~'
+    # occurrences in the window tie (positions 0/2/4/6); the pre-[FIND-TIE]
+    # leftmost rule picked index 0, [FIND-TIE]'s rightmost rule picks 6.
     [ "$(stamp "$WORKDIR/s59r.c" VM_PREFILTER)" = "none" ] \
       && [ "$(stamp "$WORKDIR/s59r.c" REQ_WHY)" = "emitted" ] \
-      && [ "$(stamp "$WORKDIR/s59r.c" REQ_RUN)" = "7e237e237e237e23@0" ] \
+      && [ "$(stamp "$WORKDIR/s59r.c" REQ_RUN)" = "7e237e237e237e23@6" ] \
         && ok "[5.9r] the K66 witness is an unguarded VM artifact whose REQ_RUN names an 8-byte window of a longer run" \
         || bad "[5.9r] the K66 witness is no longer an unguarded VM artifact with an 8-byte window — [5.9]'s rows test nothing"
 fi

@@ -44,6 +44,20 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   `--list-analyses`' `rows_digest` (`pcrec_find_rows_digest`, deliberately a
   different hash from the stamp's).
 
+  **[FIND-TIE] (2026-09-28): a PICK's DATA tie now follows its NONE order,
+  in the run reader.** `pcrec_find_run_scan_index` was the one PICK reader
+  here whose two arms disagreed — a data tie (a real byte-rate, two or more
+  run members sharing the argmin) went LEFTMOST while its own NONE answer
+  ([OPT-REQRUN-ENC], above) is RIGHTMOST. `pcrec_find_set_pick`'s candidate
+  order (`[rightmost, 255..0]`) already made both arms agree; the run
+  reader's now does too (`[n-1, n-2, ..., 0]`), and `pcrec_find_run_window_
+  start` (the window's own MASS tie) was already consistent (leftmost both
+  arms) and is untouched. Found on the shipped ASCII-only `weblog`/`log`
+  bundles under `-e utf8`, where every byte >= 0x80 ties at the 2 ppm floor
+  and the old rule re-created O-60's lead-byte pick one call down from the
+  fallback `[OPT-REQRUN-ENC]` already fixed. `abi` 43 -> 44. Sabotage S329
+  (structural-only, S294's own precedent one tie-rule over).
+
 - **varexp.c** — [VAR] M1 (2026-09-23): THE EXPANSION GRAMMAR,
   `${ [!] selector [operator word] }`, parsed ONCE and shared by both
   consumers — a variable inside a PATTERN (module `vars`,

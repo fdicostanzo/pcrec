@@ -463,10 +463,30 @@ int pcrec_find_set_pick(const uint32_t *rate, const unsigned char bits[32],
     return cand[pcrec_find_pick(rate, cand, n, 0)];
 }
 
-/* Which member of the RUN the emitted `memchr` tests: the run in order, so
- * ties go to the LEFTMOST, and the positional rightmost is the NONE answer.
- * The per-candidate cost of the whole run check is the number of occurrences
- * of THIS byte in the window, which is why the choice is not cosmetic.
+/* Which member of the RUN the emitted `memchr` tests: PICK over the run in
+ * REVERSE order — `[n-1, n-2, ..., 0]` — the same shape `pcrec_find_set_pick`
+ * already threads its own `rightmost` candidate first in. That order IS the
+ * tie rule: a data tie goes to the RIGHTMOST member (the earliest candidate
+ * in this order), matching the positional rightmost that is also the NONE
+ * answer. The per-candidate cost of the whole run check is the number of
+ * occurrences of THIS byte in the window, which is why the choice is not
+ * cosmetic.
+ *
+ * [FIND-TIE] (2026-09-28, D126 Q4's own rule applied to itself) A tie
+ * carries no information, so a PICK's data-tie answer should equal its NONE
+ * answer's — and this reader was the one inconsistent spelling among the
+ * three PICK readers in this file: `pcrec_find_set_pick`'s candidate order
+ * already starts at `rightmost` (data tie -> rightmost, matching its own
+ * NONE), while this reader's left-to-right order made a data tie go
+ * LEFTMOST against a rightmost NONE (R13's shape again, this time between
+ * one reader's own two arms rather than between two readers). Found on the
+ * shipped ASCII-only `weblog`/`log` bundles under `-e utf8`, where every
+ * byte >= 0x80 ties at the 2 ppm floor: naming an analysis re-created
+ * [OPT-REQRUN-ENC]'s lead-byte defect one call down, in the argmin's own
+ * tie rule rather than in the NONE fallback that row already fixed
+ * (findb5_report.md §6, docs/dev/optloop/reqrunenc_census.md). Answer-
+ * identical (every run byte is necessary regardless of which is scanned) —
+ * a SPEED fix, like every other reader in this file.
  *
  * [OPT-REQRUN-ENC] The NONE answer WAS the leftmost, and pcrec-bench's O-60
  * finding falsified it under `-e utf8`: a run's LEFTMOST member is a lead
@@ -479,7 +499,14 @@ int pcrec_find_set_pick(const uint32_t *rate, const unsigned char bits[32],
 int pcrec_find_run_scan_index(const uint32_t *rate, const unsigned char *bytes,
                               int n)
 {
-    return pcrec_find_pick(rate, bytes, n, n - 1);
+    /* `bytes[0..n)`, n <= PCREC_MAX_REQ_RUN_SCAN by its one caller's own
+     * bound (RbRun/ReqRun's `whole` array, src/facts/facts_derive.h,
+     * src/facts/facts.h) — the only fact about `n` this file, below the
+     * facts layer, is entitled to lean on for a fixed buffer's size. */
+    unsigned char cand[PCREC_MAX_REQ_RUN_SCAN];
+    int i;
+    for (i = 0; i < n; i++) cand[i] = bytes[n - 1 - i];
+    return n - 1 - pcrec_find_pick(rate, cand, n, 0);
 }
 
 /* Where a run longer than `PCREC_MAX_REQ_RUN_EMIT` is TRUNCATED to: the start
