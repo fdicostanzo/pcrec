@@ -25961,3 +25961,53 @@ I-114 (re-seed twin, x86) queued behind it. The Linux pcrec checkout's origin is
 disagreement before any edit. (2) A sanitizer sweep over inlined constant memcmp is BLIND without
 -fno-builtin-memcmp (s2afix) — a control that could not fail. (3) A re-seed that re-asks a candidate
 finder can LOSE on dense candidates; "fewer wasted attempts" needs the per-ask cost priced (reseedtwin).
+
+## 2026-09-27/28 (overnight) — eighty-third session (manager, Opus 5.5): pf35 + K69 merged (abi 42, PATFACTS 3.5 CLOSED), findb2 triaged, [B108] read and settled
+
+**Merged + pushed:**
+- **pf35** (9a2f6303): PATFACTS 3.5's byte-identical half + K69 filed. Its chain's one non-accepted red
+  (test-recursion, `'^((?:a(?1)?))a$'` "builds by default and NOT under -fno-splice-calls") was
+  ENVIRONMENTAL. A triage lane (pf35tri) found a matcher run with wall=877 s, cpu=0.00, exit 124, and
+  `pmset -g log` showed an 879 s maintenance sleep over it. It does not reproduce on main or pf35, and the
+  gen.c is byte-identical. Re-run alone: 10/0. Rule added to BOILERPLATE (25854c26): detached Mac chains
+  run under `caffeinate -s`.
+- **K69 fix** (768247dd, lane k69fix, opus): call nullability is the least fixpoint, `cg_minw_publish`
+  in callgraph.c before the E1 seal; `vm_resolve_nonnull` deleted; widths.c returns
+  pcrec_nullable(root). One owner, so **[PATFACTS] 3.5 CLOSED**; abi 41→42. Gate: bench 0 movers;
+  corpus exactly the 6 new tests/recursion/k69.rxt witnesses × {auto,vm} on all 16 runs (each loses one
+  empty-iteration guard). MY PREDICTION WAS PARTLY WRONG: `(a)?(?1)`, `(?:(a)|)(?1)` and
+  DEFINE-under-utf8 do NOT move. pf35's §5 movers came from its scratch swap build reading the arena zero
+  at the seal. make test green except the accepted nm probe; S318/S319 new, S206/S207 re-anchored,
+  all DETECTED.
+- **o64read** (docs): the [B108]/O-64 reading, docs/dev/optloop/b108_reading.md + exec summary
+  docs/dev/summaries/2026-09-28-b108-exec-summary.md + memcmp study §12 (the x86 column). [OPT-LITSCAN]
+  F5 (L>=3 narrowing, measure-first) and F6 (the VM-no-DFA-scan run pre-check: ×2-×9 on dense-match
+  find-all, 1/2/10 memchr per call) FILED.
+- Plan rows FILED (D125, not scheduled): [SEL-COST] (Frank's viewer read: short patterns like
+  anc-m-caret, where the VM-with-caps beats auto-nocaps; auto's engine choice has no measured cost model;
+  folds [SEL-SIZE] + O-63's finding); an [OPT-SIMD] note (an exhaustive engine and dfa/vm comparison
+  when it opens); [EMIT-ALIGN] (boonies, Frank: "test it when 'all' our optimizations are in").
+
+**[B108] settled with the bench** (O-64, O-65, O-66, O-67; our I-115 = their [B110], closed):
+- 0 answer changes; DFA-null 153/153.
+- S2a's named FASTER population MISSED. Compile-side: zero added entry instructions. The bench showed
+  the VM never runs on aws throughput or on lp-removed's throughput subjects.
+- The align64+loops64 twin put aws and lp-removed throughput inside the null band. The misses are
+  PLACEMENT, except lp-removed short search +3.4% (F5's 2-byte witness).
+- 7/8 FLAT cells confirmed. S2a STAYS DEFAULT-ON.
+
+**findb2** ([FINDINGS] B2): its first chain was red in registry/rxtsource/codegen/corpus/axes. There
+was no sleep this time. The triage lane findb2tri found:
+- real gaps in findb2 itself: the limits count, a registry allowlist, 12 bare $PCREC calls, and
+  verify_rxt.py leg C crashing the whole multi-file dump;
+- legitimate census moves from B0's `analysis` keyword;
+- run.sh's P-C2 floor failing the 16 zero-pattern fire/witness bundles. Fixed by a PATH exclusion, the
+  known_fail shape. Accepted to land; the declaration-based form is a FOLLOW-UP to file.
+Its re-validation chain was green through build/registry/rxtsource/codegen(nm only)/mech
+S308-S317/axes --analysis; make test was running at close.
+
+**Lessons:** (1) A maintenance sleep reads as a code defect under GNU timeout's wall clock. The watchdog
+signature is wall≈sleep length with cpu≈0. (2) "Aligned arms agree" is not "alignment is faster": a
+placement twin clears a mechanism; it does not motivate a new one. (3) A mover prediction built from a
+scratch swap build can inherit that build's own ordering bug. Publish before the seal, and diff against
+the real ordering.
