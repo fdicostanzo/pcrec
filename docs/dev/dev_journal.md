@@ -26011,3 +26011,8 @@ signature is wall≈sleep length with cpu≈0. (2) "Aligned arms agree" is not "
 placement twin clears a mechanism; it does not motivate a new one. (3) A mover prediction built from a
 scratch swap build can inherit that build's own ordering bug. Publish before the seal, and diff against
 the real ordering.
+- **Close (08:4x):** findb2 MERGED (4a546fba) after its re-validation chain went green (44/44, nm only;
+  S308-S317 DETECTED; axes --analysis rc 0). The census conflict with K69 was resolved by re-derivation
+  (CENSUS 238/4051/29381, RUNSH 222/4051/29381; rxtsource 256/0); build and strict clean; pushed. The
+  combined make test on 4a546fba is OWED: detached, log /private/tmp/…/mergetest.log. Frank asked for a
+  reset before the next two lanes (PATFACTS 3.6 ∥ FINDINGS B5 build); wake.md carries the order.
