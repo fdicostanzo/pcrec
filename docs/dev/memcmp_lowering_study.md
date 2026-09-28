@@ -637,3 +637,52 @@ one realistic-but-synthetic subject shape); the qualitative ranking
 (overlap ≤ memcmp ≪ wide) held across every length tried and both
 regimes measured in §10-§11, which is the strongest claim this study's
 scale supports.
+
+## 12. Addendum (2026-09-28, lane o64read): the gcc-15 x86_64 column, measured by the bench
+
+§6 listed this column as OWED. pcrec-bench measured it on ubuntubudu
+(budu-ryzen1600), with gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0 on x86_64. The
+source is `pcrec-bench/docs/dev/measurements/2026-09-27-x86-gcc15-memcmp-lowering.txt`
+(synthetic `memcmp(p,q,L)==0`, L = 1..64, four flag levels). O-64 item 7 and
+its [B108] ledger §4.5 carry the real-artifact half.
+
+| L | gcc-16 arm64 -O2 | clang arm64 -O2 | clang→x86_64 -O2 | **gcc-15 x86_64 -O2/-O3** | **gcc-15 x86_64 -O1/-Os** |
+|---|---|---|---|---|---|
+| 1 | inline | inline | inline | inline | inline |
+| 2–30 | inline | inline | inline | inline | **CALL** |
+| 31 | **CALL** | inline | inline | inline (two overlapping 16-byte `xor`/`or` blocks) | **CALL** |
+| 32 | inline | inline | inline | inline | **CALL** |
+| 33–64 | inline | inline | **CALL** | inline | **CALL** |
+
+- **On x86 gcc-15 the out-of-line call is a FLAG property, not a length
+  property.**
+  - At `-O2`/`-O3` every tested L inlines, and L=31 is two overlapping
+    16-byte blocks. That is the overlapping form §3 found clang using and
+    gcc-16 arm64 NOT using.
+  - At `-O1`/`-Os` every L ≥ 2 calls `memcmp`.
+  - So the gcc-16 arm64 L=31 cliff (§4) does not exist on this toolchain.
+    gcc-15 x86 is instead the one column where `-O1` differs from `-O2`.
+- The bench builds at `-O2`. The real `a32bc86e` `lit-l31` forced-VM
+  artifact has 0 `memcmp` references (`objdump -T`/`-d`, `readelf -r`,
+  `lit-l16` as the control; bench file
+  `2026-09-27-litrun-l31-artifact-memcmp.txt`).
+- Timed, L=31 sits between its neighbours on every subject kind. PRIMARY
+  row, lit ÷ nolit:
+  - match: 0.485 / **0.284** / 0.253 at L = 16 / 31 / 40;
+  - first-byte flip: 0.999 / **0.523** / 0.615.
+  - There is no L=31 regression.
+- Independently, `docs/dev/optloop/b108_reading.md` §1.1 assembled six real
+  S2a artifacts with the same compiler at `-O2 -fPIC`: 0 `memcmp` calls.
+  Every run of 2-8 bytes lowers to `cmpw`/`cmpl` immediates plus at most one
+  `cmpb`, and gcc drops the string constants as dead.
+- **Consequence for §9's recommendation.** It stands, and the
+  "split a 31-byte run" remedy §7.2 of `s2a_report.md` held in reserve is
+  NOT needed on the bench's toolchain.
+  - The harness's own `GENCFLAGS` level is `-O1`. The x86 `-O1` column now
+    says every L ≥ 2 compare there is a library call on gcc-15.
+  - That is a harness-speed fact, not an answer fact, and no check reads
+    it.
+- **Still not measured**: clang on real x86 hardware (the column above is
+  a cross-compile), and gcc-15 `-O2 -fsanitize=address`. That second one
+  matters for the `-fno-builtin-memcmp` ASan sweep lesson in the
+  `[OPT-LITSCAN]` row.
