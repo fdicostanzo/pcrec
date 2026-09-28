@@ -1,0 +1,33 @@
+
+== S2 reproduction ==
+no-captures: vm=1101, lookaround-only (own lexical scan)=493  [ucp_study.md: 492 of 1101]
+default:     vm=1647, lookaround-only AND capture-free (own lexical scan)=378, naive WHY-names-a-lookaround=12
+default_sel == nocap_sel (same pattern set): False (symmetric diff 115)
+  only in default_sel: []
+  only in nocap_sel:   ['capability/wild-logparse-syslogbase-expanded', 'tests/lookaround/captures.rxt:100', 'tests/lookaround/captures.rxt:107', 'tests/lookaround/captures.rxt:113', 'tests/lookaround/captures.rxt:34', 'tests/lookaround/captures.rxt:43', 'tests/lookaround/captures.rxt:56', 'tests/lookaround/captures.rxt:64', 'tests/lookaround/captures.rxt:71', 'tests/lookaround/captures.rxt:88']
+
+== S3. worst-shape distribution, union population (n=493, 0 unparsed excluded) ==
+  all     n=493  {'a': 172, 'b': 155, 'c': 52, 'd': 3, 'e': 111}
+  corpus  n=475  {'a': 164, 'b': 147, 'c': 52, 'd': 1, 'e': 111}
+  bench   n=18  {'a': 8, 'b': 8, 'd': 2}
+  corpus\matrix.rxt n=187  {'a': 92, 'b': 39, 'c': 16, 'd': 1, 'e': 39}
+  matrix.rxt only n=288  {'a': 72, 'b': 108, 'c': 36, 'e': 72}
+
+== S3b. same, restricted to the DEFAULT (captures-on) population (n=378: lookaround-only AND capture-free) ==
+  all     n=378  {'a': 154, 'b': 135, 'c': 46, 'd': 3, 'e': 40}  ALL-(a)=154  ALL-(a)-or-(b,k<=2)=248
+  corpus  n=361  {'a': 146, 'b': 128, 'c': 46, 'd': 1, 'e': 40}  ALL-(a)=146  ALL-(a)-or-(b,k<=2)=239
+  bench   n=17  {'a': 8, 'b': 7, 'd': 2}  ALL-(a)=8  ALL-(a)-or-(b,k<=2)=9
+
+== per-occurrence shape totals (every lookaround occurrence, not per pattern) ==
+   {'a': 234, 'b': 155, 'c': 52, 'd': 6, 'e': 113}
+  shape-b k distribution: {0: 45, 1: 7, 2: 56, 3: 40, 4: 2, 5: 5}
+
+== S4. HEADLINE: how many VM-only-because-of-lookaround patterns are ALL-(a), or ALL-(a)-or-(b,k<=2) ==
+  all     n=493  ALL-(a)=172 (34.9%)  ALL-(a)-or-(b,k<=2)=280 (56.8%)
+  corpus  n=475  ALL-(a)=164 (34.5%)  ALL-(a)-or-(b,k<=2)=270 (56.8%)
+  bench   n=18  ALL-(a)=8 (44.4%)  ALL-(a)-or-(b,k<=2)=10 (55.6%)
+  corpus\matrix.rxt n=187  ALL-(a)=92 (49.2%)  ALL-(a)-or-(b,k<=2)=126 (67.4%)
+  matrix.rxt only n=288  ALL-(a)=72 (25.0%)  ALL-(a)-or-(b,k<=2)=144 (50.0%)
+
+== combine only (a) with an existing view anchor (\b \B ^ $ \A \Z \z) ==
+  n=5 of 172 ALL-(a) patterns

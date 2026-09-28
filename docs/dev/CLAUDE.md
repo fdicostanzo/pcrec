@@ -784,3 +784,28 @@ change.
   with open questions. §G carries side findings (`(?r)` ignored under
   `-e utf8`: a 4-cell answer divergence; the ENGINE_WHY kind/offset
   mismatch). Harness `studies/ucp_study/` (own CLAUDE.md).
+- `lookaround_census.md` — [UCP] Q2/Q3's SHAPE census (2026-09-28, lane
+  lacensus, sonnet, measurement only, nothing under `src/`/`tests/`/
+  `docs/spec/`): reproduces `ucp_study.md`'s 492/1,101 "VM-only-because-of-
+  lookaround" population (493, +1 — a truncation artifact in the original
+  census's 200-byte pattern column, found and explained rather than just
+  corrected) from its own committed TSVs (reused, not recompiled — the 18
+  commits since only touch `tests/findings/`), then classifies every
+  lookaround OCCURRENCE by SHAPE via a from-scratch pattern-text parser
+  (not `--emit-ir`, which states lookbehind width directly but not
+  lookahead's): (a) single char/class width 1, (b) fixed width k (incl.
+  k=0), (c) bounded variable width, (d) unbounded, (e) contains a
+  capture/backref/call/nested lookaround. Headline: shape (a) alone reaches
+  34.9% of the population (44-49% on the bench and non-adversarial corpus
+  sub-populations); widening to (a) or (b) with k≤2 reaches 56.8%
+  (55.6-67.4%) — a bounded-context DFA predicate view does not need the
+  full general mechanism to cover the majority. One systematically-
+  enumerated adversarial test file (`tests/lookaround/d27/matrix.rxt`) is
+  58% of the whole population and reads materially LOWER on shape (a) than
+  either the bench or the rest of the corpus, so the memo carries both
+  readings rather than one blended number. Two found-and-fixed bugs in the
+  census's OWN lexical family regex (a naive "capturing group" test
+  false-positived on `(*pla:`-style alpha-verb spellings, in both the
+  population-selection scan and the shape parser itself, caught by
+  comparing against expectation on `tests/lookaround/alpha_spellings.rxt`).
+  Harness `docs/dev/lookaround_census/` (own CLAUDE.md).
