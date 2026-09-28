@@ -3235,6 +3235,12 @@ that was already cheaper, or on top of a pass the artifact was already running.
   `pcrec_emit_prologue` parameter). `-fno-lit-run` denies both
   (docs/spec/tuning.md §2.31). The node and step budgets charge what the
   per-byte chain charged; the island's size-rule estimates are unchanged.
+  **[OPT-LITSCAN] F5 (D127, 2026-09-28, abi 43): `pcrec_lit_run`'s own floor
+  moved from two bytes to three** — a two-byte run reads cheaper as its own
+  byte chain than as a compare (`[B108]`'s L-sweep), so `vm_cat` falls
+  through to `vm_emit_f` on the declined pair, which emits exactly the
+  pre-S2a per-byte form. The island's single-child chain is a different
+  mechanism (its own recognizer) and keeps its own floor unchanged.
 - **THE THREE STAMPS SPLIT ALONG ANALYSIS vs EMISSION.**
   `<PREFIX>_REQ_BYTE`/`<PREFIX>_REQ_RUN` keep naming what the analysis found;
   `<PREFIX>_REQ_WHY` names whether the artifact acted on it. Folding the

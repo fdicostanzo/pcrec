@@ -2707,9 +2707,27 @@ compares the program writes, `0` on every VM artifact that writes none and
 on every VM artifact under the flag. Denied, the program is the one this
 compiler emitted before `abi` 41, byte for byte apart from that stamp line.
 
-**What it is.** In a concatenation, two or more CONSECUTIVE elements that are
-each one exact byte form a RUN, and the run is consumed by one bounds check
-and one constant-length compare:
+**[OPT-LITSCAN] F5, `abi` 43 (D127, 2026-09-28): THE FLOOR IS THREE BYTES,
+NOT TWO.** The `[B108]` read (`docs/dev/optloop/b108_reading.md`) measured a
+two-byte run's compare as the smallest gain in the whole L-sweep on a
+matching subject (0.929x, against 0.253x at L=40) and a real per-call cost
+on a failing one (`asr-lb-fixed`, +30%): a two-byte compare has nothing to
+amortize that a two-node early-exit byte chain does not already pay for,
+cheaper. Frank's ruling: "that makes the cost flatter but the benefits
+(budget) cleaner." The floor is part of `pcrec_lit_run`'s own predicate
+(`src/core/cpset.c`) — the one node-grain fact all three VM readers (the
+chain emission, the cost walk, the slot walk) share — rather than a second
+predicate at a call site (D122 addendum 2's "one row, one deny"); a declined
+two-byte pair falls through to `vm_cat`'s ordinary per-element path, which
+IS the pre-S2a byte chain. `-fno-lit-run` is unchanged: the floor is not a
+flag, and denying the axis still restores the abi-40 program exactly. The
+island's single-child trie chain (below) is untouched — it is a different
+mechanism sharing only the P4 primitive, and its own commit-rule floor is
+unaffected.
+
+**What it is.** In a concatenation, three or more CONSECUTIVE elements that
+are each one exact byte form a RUN, and the run is consumed by one bounds
+check and one constant-length compare:
 `if (scan_position + L <= subject_length && !memcmp(subject + scan_position, "<run>", L))`,
 under ONE label where the per-byte chain wrote `L`. In an alternation island
 (§2.20) a trie node's single-child chain, down to the first node that

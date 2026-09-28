@@ -322,8 +322,8 @@ static int lit_byte(const Ast *a)
 /* Returns the length of the EMISSION-CONTIGUOUS LITERAL RUN that begins at
  * spine element `j` of the flattened concatenation `el[0..n)`, and writes its
  * bytes to `out` when `out` is not NULL (room for the returned length).
- * Returns 0 where fewer than two consecutive elements from `j` on are
- * one-byte literals, so a lone byte is never a run.
+ * Returns 0 where fewer than THREE consecutive elements from `j` on are
+ * one-byte literals, so a lone byte is never a run and neither is a pair.
  *
  * [OPT-LITSCAN] S2a, docs/design/patfacts/design.md §8.2: ONE node-grain fact
  * (§4.3) read by the VM emitter's chain emission, its cost walk and its slot
@@ -334,12 +334,26 @@ static int lit_byte(const Ast *a)
  * separates this fact from `rb_walk`'s necessary run, which is
  * subject-contiguous across `A_CAP` (two questions, two facts, one singleton
  * primitive). EXACT only: a caseless letter is a two-member class, so it
- * ends the run ([OPT-LITSCAN] S4 owns the mask form). */
+ * ends the run ([OPT-LITSCAN] S4 owns the mask form).
+ *
+ * [OPT-LITSCAN] F5 (D127, 2026-09-28): THE FLOOR IS THREE, NOT TWO. The
+ * [B108] read measured a two-byte run's one-compare form (`pos + L <= n &&
+ * !memcmp(...)`) as the smallest gain in the whole L-sweep on the success
+ * path (0.929x) and a real per-call cost on a failing one (F4's
+ * `asr-lb-fixed`, +30%): a two-byte compare has nothing to amortize that a
+ * two-node early-exit byte chain does not already pay for, cheaper. Frank's
+ * ruling: "that makes the cost flatter but the benefits (budget) cleaner."
+ * The floor lives HERE, in the one fact all three readers share, rather
+ * than as a second predicate at a call site — D122 addendum 2's "one row,
+ * one deny" rule: `vm_cat` falls through to its ordinary per-element path
+ * for a declined pair, which IS the pre-S2a byte chain (`vm_emit_f` on an
+ * `A_CLASS` singleton), so narrowing this fact's own floor is the whole
+ * fix. `-fno-lit-run` is unchanged; the floor is not a flag. */
 int pcrec_lit_run(const Ast *const *el, int n, int j, unsigned char *out)
 {
     int len = 0;
     while (j + len < n && lit_byte(el[j + len]) >= 0) len++;
-    if (len < 2) return 0;
+    if (len < 3) return 0;
     if (out)
         for (int i = 0; i < len; i++) out[i] = (unsigned char)lit_byte(el[j + i]);
     return len;

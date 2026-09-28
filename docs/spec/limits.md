@@ -73,9 +73,12 @@ so the numbers below have somewhere to attach.
   `docs/spec/match_api.md`) as `-1` when disabled, a real count
   otherwise.
 - **A literal run is charged as ONE compare, which is what the per-byte
-  chain it replaced was charged** (`[OPT-LITSCAN]` S2a, abi 41). A VM
-  program compares a run of two or more consecutive literal bytes as one
-  constant-length `memcmp` (`tuning.md` §2.31). The STEP budget counts
+  chain it replaced was charged** (`[OPT-LITSCAN]` S2a, abi 41; F5, abi 43,
+  narrowed the floor). A VM program compares a run of THREE or more
+  consecutive literal bytes as one constant-length `memcmp` (`tuning.md`
+  §2.31); a two-byte run stays its own two-node early-exit byte chain, so
+  this paragraph's charge applies only where the compare actually replaces
+  a chain. The STEP budget counts
   backtrack resumptions, and forward progress is free (D51): a run that
   mismatches at ANY of its bytes enters the fail label once, as the
   per-byte chain did at whichever byte mismatched, so the step count of
