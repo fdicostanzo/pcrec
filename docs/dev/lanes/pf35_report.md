@@ -156,3 +156,38 @@ ends with `PF35 CHAIN: ALL DONE`. It first waits for gate c1
 | `make test-recursion-identity` | `recid.log` | rc 0; the (B) pin must NOT move |
 | mech S56 S100 S107 S127 S156 | `mech_S*.log` | `mech run COMPLETE ... (unexpected: 0 ...)`, each at its recorded verdict |
 | `make test CC=gcc-16` | `make_test.log` | make's `*** [test-X] Error` lines; the known darwin red is `test-codegen`'s nm probe |
+
+## 7. test-recursion red triage (2026-09-27, lane pf35tri)
+
+The chain's `make test CC=gcc-16` (`scratchpad/make_test.log:3828`) failed
+`test-recursion` §5 (A==B, `tests/recursion/run_recursion_diff.sh:518`):
+`'^((?:a(?1)?))a$' builds by default and NOT under -fno-splice-calls`.
+**Verdict: ENVIRONMENTAL — the Mac went to sleep mid-run. Not pf35, not
+main, not K69. No fix.**
+
+- **The watchdog line** (`worktrees/pf35/build/watchdog.log:8477`): the
+  `-fno-splice-calls` arm's matcher run (`gen_run`) ended
+  `verdict=timeout wall=877.12 cpu=0.00 exit=124` at 21:51:19. Zero CPU over
+  877 s is a suspended process, not a hang or a slow compile; the default
+  arm one line earlier ran `wall=0.30`. `run_arm` returns 1 on any
+  compile/cc/run failure, so a run timeout reads as "does not build".
+- **The system log** (`pmset -g log`): `21:36:40 Sleep ... 'Maintenance
+  Sleep' ... 879 secs` then `21:51:19 Wake ... HID Activity`. The kill
+  lands at the wake instant; the 877 s wall is the sleep.
+- **Reproduction** (script `scratchpad/../pf35tri/probe.sh`: the section's
+  own `run_arm`, extracted verbatim by sed, its FEATS/BATCH/GENCFLAGS and
+  its 24-subject grid, both arms on the one pattern): main `d47ea50f`
+  (throwaway worktree `worktrees/pf35tri`) and pf35 `50d91f91`, 3 runs
+  each: both arms compile and run on every run (102 cells, `wall` 0.5-1.0 s,
+  `cpu` 0.01), the arms' answers identical. Does not reproduce on either.
+- **Byte identity:** the generated `gen.c`/`gen.h` for this pattern, with
+  the section's FEATS, are byte-identical main vs pf35 on both the default
+  and the `-fno-splice-calls` linkage — the `pcrec_nullable` move does not
+  reach this artifact differently.
+
+Consequence for the chain: `test-recursion` is owed a re-run (the section
+alone, `make test-recursion`, on an awake box) before the merge can call
+`make test` green; the rest of `make_test.log`'s verdicts stand (the only
+other red is `test-codegen`'s accepted darwin nm probe). Lesson for any
+detached run on this Mac: a wall-clock `timeout` counts sleep; keep the
+box awake (`caffeinate -s`) for unattended chains.
