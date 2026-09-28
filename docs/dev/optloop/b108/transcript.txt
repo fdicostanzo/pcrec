@@ -1,0 +1,164 @@
+# b108 reading (lane o64read, 2026-09-28): compile-side transcript
+# compiler: pcrec a32bc86e (git archive, built gcc-16 on the Mac); artifacts: --features all, -p rx, same -o basename per arm
+# assembly: x86_64 gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0 -O2 -fPIC on ubuntubudu, source piped over ssh stdin (header inlined), nothing written there
+# names: lp=logparse-atomic-removed aws=wild-secrets-aws-access-key-id ctx64/ctx/ctx1024=ctx-lazy-64/256/1024 ctxg=ctx-greedy-256; off=-fno-lit-run on=default
+
+## 1. per-function instruction identity (fncmp.sh)
+#### lp order off: rx_match_anchored: rx_prefilter: rx_search_run: rx_search: rx_search_in: rx_match: rx_match_in: rx_match_caps: rx_match_caps_in: rx_next_pos: 
+#### lp order on:  rx_prefilter: rx_match_anchored: rx_search_run: rx_search: rx_search_in: rx_match: rx_match_in: rx_match_caps: rx_match_caps_in: rx_next_pos: 
+  rx_prefilter       off= 721 on= 721 identical=Y
+  rx_match_anchored  off= 600 on= 436 identical=N
+  rx_search_run      off= 103 on= 103 identical=Y
+  rx_search          off=  23 on=  23 identical=Y
+  rx_search_in       off=  36 on=  36 identical=Y
+  rx_match           off=  37 on=  37 identical=Y
+  rx_match_in        off=  50 on=  50 identical=Y
+  rx_match_caps      off=  54 on=  54 identical=Y
+  rx_match_caps_in   off=  69 on=  69 identical=Y
+  rx_next_pos        off=   7 on=   7 identical=Y
+#### aws order off: rx_match_anchored: rx_search_run: rx_search: rx_search_in: rx_match: rx_match_in: rx_match_caps: rx_match_caps_in: rx_next_pos: 
+#### aws order on:  rx_match_anchored: rx_search_run: rx_search: rx_search_in: rx_match: rx_match_in: rx_match_caps: rx_match_caps_in: rx_next_pos: 
+  rx_match_anchored  off= 462 on= 442 identical=N
+  rx_search_run      off= 230 on= 230 identical=Y
+  rx_search          off=  23 on=  23 identical=Y
+  rx_search_in       off=  36 on=  36 identical=Y
+  rx_match           off=  37 on=  37 identical=Y
+  rx_match_in        off=  50 on=  50 identical=Y
+  rx_match_caps      off=  56 on=  56 identical=Y
+  rx_match_caps_in   off=  71 on=  71 identical=Y
+  rx_next_pos        off=   7 on=   7 identical=Y
+#### ctx64 order off: rx_prefilter: rx_match_anchored: rx_search_run: rx_search: rx_search_in: rx_match: rx_match_in: rx_match_caps: rx_match_caps_in: rx_next_pos: 
+#### ctx64 order on:  rx_prefilter: rx_match_anchored: rx_search_run: rx_search: rx_search_in: rx_match: rx_match_in: rx_match_caps: rx_match_caps_in: rx_next_pos: 
+  rx_prefilter       off= 202 on= 202 identical=Y
+  rx_match_anchored  off= 498 on= 376 identical=N
+  rx_search_run      off= 124 on= 124 identical=Y
+  rx_search          off=  23 on=  23 identical=Y
+  rx_search_in       off=  36 on=  36 identical=Y
+  rx_match           off=  37 on=  37 identical=Y
+  rx_match_in        off=  50 on=  50 identical=Y
+  rx_match_caps      off=  53 on=  53 identical=Y
+  rx_match_caps_in   off=  66 on=  66 identical=Y
+  rx_next_pos        off=   7 on=   7 identical=Y
+#### ctx order off: rx_prefilter: rx_match_anchored: rx_search_run: rx_search: rx_search_in: rx_match: rx_match_in: rx_match_caps: rx_match_caps_in: rx_next_pos: 
+#### ctx order on:  rx_prefilter: rx_match_anchored: rx_search_run: rx_search: rx_search_in: rx_match: rx_match_in: rx_match_caps: rx_match_caps_in: rx_next_pos: 
+  rx_prefilter       off= 202 on= 202 identical=Y
+  rx_match_anchored  off= 498 on= 376 identical=N
+  rx_search_run      off= 124 on= 124 identical=Y
+  rx_search          off=  23 on=  23 identical=Y
+  rx_search_in       off=  36 on=  36 identical=Y
+  rx_match           off=  37 on=  37 identical=Y
+  rx_match_in        off=  50 on=  50 identical=Y
+  rx_match_caps      off=  53 on=  53 identical=Y
+  rx_match_caps_in   off=  66 on=  66 identical=Y
+  rx_next_pos        off=   7 on=   7 identical=Y
+#### ctx1024 order off: rx_prefilter: rx_match_anchored: rx_search_run: rx_search: rx_search_in: rx_match: rx_match_in: rx_match_caps: rx_match_caps_in: rx_next_pos: 
+#### ctx1024 order on:  rx_prefilter: rx_match_anchored: rx_search_run: rx_search: rx_search_in: rx_match: rx_match_in: rx_match_caps: rx_match_caps_in: rx_next_pos: 
+  rx_prefilter       off= 202 on= 202 identical=Y
+  rx_match_anchored  off= 498 on= 376 identical=N
+  rx_search_run      off= 124 on= 124 identical=Y
+  rx_search          off=  23 on=  23 identical=Y
+  rx_search_in       off=  36 on=  36 identical=Y
+  rx_match           off=  37 on=  37 identical=Y
+  rx_match_in        off=  50 on=  50 identical=Y
+  rx_match_caps      off=  53 on=  53 identical=Y
+  rx_match_caps_in   off=  66 on=  66 identical=Y
+  rx_next_pos        off=   7 on=   7 identical=Y
+#### ctxg order off: rx_prefilter: rx_match_anchored: rx_search_run: rx_search: rx_search_in: rx_match: rx_match_in: rx_match_caps: rx_match_caps_in: rx_next_pos: 
+#### ctxg order on:  rx_prefilter: rx_match_anchored: rx_search_run: rx_search: rx_search_in: rx_match: rx_match_in: rx_match_caps: rx_match_caps_in: rx_next_pos: 
+  rx_prefilter       off= 225 on= 225 identical=Y
+  rx_match_anchored  off= 511 on= 391 identical=N
+  rx_search_run      off= 124 on= 124 identical=Y
+  rx_search          off=  23 on=  23 identical=Y
+  rx_search_in       off=  36 on=  36 identical=Y
+  rx_match           off=  37 on=  37 identical=Y
+  rx_match_in        off=  50 on=  50 identical=Y
+  rx_match_caps      off=  53 on=  53 identical=Y
+  rx_match_caps_in   off=  66 on=  66 identical=Y
+  rx_next_pos        off=   7 on=   7 identical=Y
+
+## 2. function start offsets in .text (offs.py over gas -aln listings)
+lp.off.lst match_anchored@0(m64=0) prefilter@2032(m64=48) search_run@4736(m64=0) search@5104(m64=48) search_in@5216(m64=32) match@5344(m64=32) match_in@5520(m64=16) match_caps@5712(m64=16) match_caps_in@5952(m64=0) next_pos@6208(m64=0)
+lp.on.lst prefilter@0(m64=0) match_anchored@2704(m64=16) search_run@4096(m64=0) search@4464(m64=48) search_in@4576(m64=32) match@4704(m64=32) match_in@4880(m64=16) match_caps@5072(m64=16) match_caps_in@5312(m64=0) next_pos@5568(m64=0)
+aws.off.lst match_anchored@0(m64=0) search_run@1744(m64=16) search@2608(m64=48) search_in@2720(m64=32) match@2848(m64=32) match_in@3024(m64=16) match_caps@3216(m64=16) match_caps_in@3456(m64=0) next_pos@3712(m64=0)
+aws.on.lst match_anchored@0(m64=0) search_run@1680(m64=16) search@2544(m64=48) search_in@2656(m64=32) match@2784(m64=32) match_in@2960(m64=16) match_caps@3152(m64=16) match_caps_in@3392(m64=0) next_pos@3648(m64=0)
+ctx.off.lst prefilter@0(m64=0) match_anchored@704(m64=0) search_run@2512(m64=16) search@2944(m64=0) search_in@3056(m64=48) match@3184(m64=48) match_in@3360(m64=32) match_caps@3552(m64=32) match_caps_in@3776(m64=0) next_pos@4032(m64=0)
+ctx.on.lst prefilter@0(m64=0) match_anchored@704(m64=0) search_run@2016(m64=32) search@2464(m64=32) search_in@2576(m64=16) match@2704(m64=16) match_in@2880(m64=0) match_caps@3072(m64=0) match_caps_in@3296(m64=32) next_pos@3552(m64=32)
+ctxg.off.lst prefilter@0(m64=0) match_anchored@768(m64=0) search_run@2608(m64=48) search@3040(m64=32) search_in@3152(m64=16) match@3280(m64=16) match_in@3456(m64=0) match_caps@3648(m64=0) match_caps_in@3872(m64=32) next_pos@4128(m64=32)
+ctxg.on.lst prefilter@0(m64=0) match_anchored@768(m64=0) search_run@2160(m64=48) search@2592(m64=32) search_in@2704(m64=16) match@2832(m64=16) match_in@3008(m64=0) match_caps@3200(m64=0) match_caps_in@3424(m64=32) next_pos@3680(m64=32)
+
+## 3. the VM function (rx_match_anchored) shape
+lp.off callee-saved-pushes=5 insns=465 cond-branches=167 memcmp-calls=0
+lp.on callee-saved-pushes=6 insns=303 cond-branches=92 memcmp-calls=0
+aws.off callee-saved-pushes=2 insns=394 cond-branches=92 memcmp-calls=0
+aws.on callee-saved-pushes=2 insns=380 cond-branches=84 memcmp-calls=0
+ctx64.off callee-saved-pushes=3 insns=433 cond-branches=117 memcmp-calls=0
+ctx64.on callee-saved-pushes=3 insns=317 cond-branches=75 memcmp-calls=0
+ctx.off callee-saved-pushes=3 insns=433 cond-branches=117 memcmp-calls=0
+ctx.on callee-saved-pushes=3 insns=317 cond-branches=75 memcmp-calls=0
+ctx1024.off callee-saved-pushes=3 insns=433 cond-branches=117 memcmp-calls=0
+ctx1024.on callee-saved-pushes=3 insns=317 cond-branches=75 memcmp-calls=0
+ctxg.off callee-saved-pushes=3 insns=441 cond-branches=120 memcmp-calls=0
+ctxg.on callee-saved-pushes=2 insns=327 cond-branches=82 memcmp-calls=0
+
+## 4. lp: where the callee-saved registers are saved (on: before the ': ' test = cmpw $8250; off: after both ':' and ' ')
+--- on (lp.on.rma lines 229-248)
+	cmpl	$1735746149, 2(%rcx,%rax)
+	jne	.L240
+.L311:
+	leaq	-5(%r9), %rax
+	movq	%rax, 88(%rsi)
+	testq	%rax, %rax
+	js	.L287
+.L254:
+	leaq	2(%r8), %rax
+	pushq	%r15
+	pushq	%r14
+	pushq	%r13
+	pushq	%r12
+	pushq	%rbp
+	pushq	%rbx
+	movq	%rax, %rbx
+	cmpq	%rax, %rdx
+	jb	.L198
+	cmpw	$8250, (%rcx,%r8)
+	jne	.L198
+--- off (lp.off.rma lines 297-315)
+.L101:
+	cmpq	%rdx, %rax
+	jnb	.L172
+	cmpb	$58, (%rcx,%rax)
+	jne	.L172
+	leaq	1(%rax), %r8
+	cmpq	%rdx, %r8
+	jnb	.L172
+	cmpb	$32, 1(%rcx,%rax)
+	jne	.L172
+	movq	56(%rsi), %r11
+	movq	72(%rsi), %r10
+	pushq	%r15
+	pushq	%r14
+	movq	%r11, %r14
+	pushq	%r12
+	pushq	%rbp
+	pushq	%rbx
+	cmpq	%r11, %r10
+
+## 5. L-sweep forced-VM pre-check shape at default flags (lsweep/lL.c)
+L=2 RX_REQ_RUN "6162@1" rx_reqrun-calls=1 k65-set-rest-members=0
+L=3 RX_REQ_RUN "616263@1" rx_reqrun-calls=1 k65-set-rest-members=0
+L=4 RX_REQ_RUN "61626364@1" rx_reqrun-calls=1 k65-set-rest-members=0
+L=7 RX_REQ_RUN "61626364656667@1" rx_reqrun-calls=1 k65-set-rest-members=0
+L=8 RX_REQ_RUN "6162636465666768@1" rx_reqrun-calls=1 k65-set-rest-members=0
+L=10 RX_REQ_RUN "636465666768696a@7" rx_reqrun-calls=2 k65-set-rest-members=0
+L=16 RX_REQ_RUN "666768696a6b6c6d@4" rx_reqrun-calls=2 k65-set-rest-members=0
+L=31 RX_REQ_RUN "78797a4142434445@2" rx_reqrun-calls=2 k65-set-rest-members=0
+L=40 RX_REQ_RUN "464748494a4b4c4d@4" rx_reqrun-calls=2 k65-set-rest-members=8
+--- l40 search-entry pre-check (lsweep/l40.c)
+207:    if (rx_reqrun(subject, subject_length, search_from) >= subject_length) return 0;
+208-    if (rx_reqrun_whole(subject, subject_length, search_from) >= subject_length) return 0;
+209-    {
+210-        static const unsigned char rq_set[] = { 97, 98, 99, 100, 101, 102, 103, 104 };
+211-        for (size_t rq_i = 0; rq_i < sizeof rq_set; rq_i++)
+212-            if (!memchr(subject + search_from, rq_set[rq_i], subject_length - search_from))
+213-                return 0;
+214-    }

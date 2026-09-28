@@ -687,3 +687,24 @@ that cycle's analysis lands.
   bench's regenerated throughput subjects), `timedrv.c` (the same-box
   timing proxy driver), `harness_logs/` (the L/R/S correctness run logs).
 
+## `[OPT-LITSCAN]` S2a's bench reading (lane `o64read`, 2026-09-28)
+
+- `b108_reading.md` — **THE READING of pcrec-bench's [B108] ledger / O-64**
+  (S2a at `a32bc86e`).
+  - **Contents**: a per-prediction verdict table for s2a_report §7/§7.1/§7.2
+    (MET / MISSED / NULL / OWED, cited by ledger row), the D119 bar (NOT met
+    on the named population), and the stock-take recommendation (keep; file
+    F5 and F6).
+  - **§1, the compile-side attribution**: six artifacts were assembled by the
+    bench's own gcc-15, default against `-fno-lit-run`. Every non-VM
+    function is instruction-identical, so the ≤0.7 ns/call slowdowns are
+    codegen (lp's register saves hoisted above a 2-byte `": "` test) and
+    placement (aws's byte-identical scan loop moved by 64 B; ctx sisters
+    differing by one immediate read 1.010-1.042).
+  - **§5, the dense-match pre-check**: 5.0-5.9 ns per `memchr` pass per
+    `rx_search` call, with 1, 2 or 10 passes by L. It is independent of
+    lit-run, and placed as `[OPT-LITSCAN]` F6 beside F1.
+  - **§6**: seven bench questions.
+- `b108/` — its instruments (`fncmp.sh`, `offs.py`) and `transcript.txt`.
+  See its own `CLAUDE.md`.
+

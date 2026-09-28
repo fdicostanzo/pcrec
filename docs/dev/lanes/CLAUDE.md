@@ -3350,3 +3350,4 @@ never edited afterwards.
   defects or a stale witness. Among them, gcc's inlined `memcmp` is invisible
   to ASan, and a necessary run is shielded from its own edge. It also adds
   §7.1 (factoring × lit-run 2×2) and §7.2 (the L-sweep).
+- `o64read_report.md` — lane o64read (2026-09-28): the [B108]/O-64 reading of `[OPT-LITSCAN]` S2a at `a32bc86e` (deliverables in `docs/dev/optloop/b108_reading.md`, the exec summary, and memcmp study §12).

@@ -90,4 +90,19 @@ Maintenance: update this file when files are added or removed.
   `docs/dev/plan.md` `[OPT-REQRUN-ENC]`/`[OPT-LITSCAN]`/`[OPT-A]`/
   `[ENG-LOOK]`/`[OPT-RETRY-REUSE]`/`[OPT-CLOSURE-CTX]` rows for every
   derivation.
-
+- `2026-09-28-b108-exec-summary.md` — [B108]'s bench read of pin
+  `a32bc86e`: `[OPT-LITSCAN]` S2a (the VM literal run as one compare).
+  - The results:
+    - 0 answer changes;
+    - DFA-null exact;
+    - the named FASTER population null or slower on x86;
+    - the D119 bar NOT met on it;
+    - wins confined to the forced-VM L-sweep;
+    - size and acceptance wins.
+  - The compile-side attribution: every non-VM function is
+    instruction-identical, so the slowdowns are codegen and placement.
+  - The unasked ~5.5 ns-per-pass pre-check cost in find-all.
+  - Recommends keeping S2a, and filing F5 (the `L >= 3` narrowing, measured
+    first) and F6 (the pre-check per-call price).
+  - Cites pcrec-bench's ledger `docs/dev/ledgers/2026-09-28-b108-a32bc86e.md`,
+    outbox O-64, and `docs/dev/optloop/b108_reading.md`.
