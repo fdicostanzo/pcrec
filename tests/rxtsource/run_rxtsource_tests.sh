@@ -315,7 +315,15 @@ record() { checks_recorded=$((checks_recorded + 1)); echo "RECORD: $*"; }
 # lines for tests/litscan/litrun.rxt (the VM literal-run corpus, 19 patterns,
 # 87 oracle-generated cases). Not under tests/known_fail/, so RUNSH_* move by
 # the same +1/+19/+87: 221 / 4035 / 29311.
-CENSUS_FILES=221
+# 2026-09-27 (lane findb2, [FINDINGS] B2) — +16 files / +0 blocks / +0
+# lines: tests/findings/adversarial/*.rxt (11) and tests/findings/witness/
+# *.rxt (5), design §11.1/§11.9's fire/witness bundles. Each is HEAD-ONLY
+# (an `analysis <name>` bundle declaration plus `freq`/`row` data) with NO
+# `pattern` block at all, so `find tests -name '*.rxt'` counts the files
+# while the awk block/line census — which counts off `pattern` blocks and
+# their case lines — counts none of them. Not under tests/known_fail/, so
+# RUNSH_* move by the same +16/+0/+0: 237 / 4035 / 29311.
+CENSUS_FILES=237
 CENSUS_BLOCKS=4035
 CENSUS_LINES=29311
 # 2026-09-23 (lane rxtfix, K34 closure via lane b2fix's [OPTLOOP.1.impl]
@@ -384,7 +392,10 @@ CENSUS_LINES=29311
 # as CENSUS_* above (tests/offsetskip/run_pinned.rxt).
 # 2026-09-27 (lane s2a, [OPT-LITSCAN] S2a) — +1/+19/+87, the SAME delta as
 # CENSUS_* above (tests/litscan/litrun.rxt).
-RUNSH_FILES=221
+# 2026-09-27 (lane findb2, [FINDINGS] B2) — +16/+0/+0, the SAME delta as
+# CENSUS_* above (tests/findings/adversarial/ and tests/findings/witness/
+# are not under tests/known_fail/).
+RUNSH_FILES=237
 RUNSH_BLOCKS=4035
 RUNSH_LINES=29311
 # 2026-09-23 (lane rxtfix, K34 closure, same event as CENSUS_* above) —
@@ -563,6 +574,21 @@ exec "$PCREC" "\$@"
 WRAP
 chmod +x "$WRAPDIR/pcrec"
 
+# the independent census of head-bearing files: one whose first non-blank,
+# non-comment line's first token is not `pattern`. Derived here by awk
+# over the raw bytes — no parser, no harness, no pcrec. (xargs -a has no
+# BSD spelling; < "$FILES" is the portable form this script's own census
+# derivation above already uses.) Computed BEFORE leg B, which needs it
+# to size its own P-C2-floor tolerance below.
+HEAD_FILE_LIST="$WORKDIR/head_files.list"
+xargs awk < "$FILES" '
+    FNR == 1 { done = 0 }
+    done { next }
+    /^[ \t]*$/ { next }
+    /^#/ { next }
+    { done = 1; if ($1 != "pattern") { print FILENAME } }' > "$HEAD_FILE_LIST"
+head_files=$(wc -l < "$HEAD_FILE_LIST" | tr -d ' ')
+
 # ---------------------------------------------------------------------
 # LEG B — run.sh --dump, through the ARGUMENT branch (§3.1's N2).
 #
@@ -572,12 +598,38 @@ chmod +x "$WRAPDIR/pcrec"
 # backstop: if this were ever invoked the default way its counts would
 # fall short of the census and C1 goes red on the count, before anyone
 # reads a diff.
+#
+# [FINDINGS] B2 (lane findb2, 2026-09-27): run.sh's P-C2 floor
+# (`record_fail ... "no pattern blocks parsed from file"`) is unconditional
+# per-file, `--dump` included, and correctly so for run.sh's PRIMARY use
+# (a file that runs nothing must not read as a clean pass) — the
+# head_only.rxt fixture below asserts exactly that. But `--dump` never
+# RUNS a case at all, for any file, so the floor's own reason does not
+# apply to it, and the 16 head-bearing findings bundles (HEAD_FILE_LIST
+# above) are correctly zero-pattern by design. So: an exit status of 0 is
+# still the clean pass; a nonzero one is tolerated ONLY when legB.err's
+# non-banner content is EXACTLY one "no pattern blocks parsed" line per
+# HEAD_FILE_LIST entry and nothing else — a real dump defect (a crash, a
+# parse error, a P-C2 floor on a file that DOES carry a pattern) still
+# fails loudly.
 DUMP_B="$WORKDIR/legB.tsv"
 tB0=$(date +%s.%N)
-if ! xargs "$TIMEOUT_BIN" 900 bash "$RUNSH" --dump \
+if xargs "$TIMEOUT_BIN" 900 bash "$RUNSH" --dump \
         < "$FILES" > "$DUMP_B" 2> "$WORKDIR/legB.err"; then
-    fail "leg B: run.sh --dump failed
+    :
+else
+    legb_pc2=$(grep -c 'no pattern blocks parsed from file (P-C2 floor)' "$WORKDIR/legB.err" || true)
+    legb_other=$(grep -v -e '^\[MACPORT\]' \
+                          -e 'no pattern blocks parsed from file (P-C2 floor)' \
+                          -e '^entry files: ' \
+                          -e '^fragments spliced: ' \
+        "$WORKDIR/legB.err" | grep -c . || true)
+    if [ "$legb_pc2" = "$head_files" ] && [ "$legb_other" = "0" ]; then
+        pass "leg B: run.sh --dump's only nonzero-exit cause is the P-C2 floor on exactly the $head_files known head-bearing (zero-pattern) file(s)"
+    else
+        fail "leg B: run.sh --dump failed
 $(head -20 "$WORKDIR/legB.err")"
+    fi
 fi
 tB1=$(date +%s.%N)
 
@@ -588,18 +640,6 @@ PCREC="$WRAPDIR/pcrec" xargs "$TIMEOUT_BIN" 900 bash "$RUNSH" --dump \
     < "$FILES" > /dev/null 2>&1
 ls_calls=$(grep -c -- '--list-source' "$CALLLOG" || true)
 
-# (b) the independent census: a head-bearing file is one whose first
-# non-blank, non-comment line's first token is not `pattern`. Derived
-# here by awk over the raw bytes — no parser, no harness, no pcrec.
-# (xargs -a has no BSD spelling; < "$FILES" is the portable form this
-# script's own census derivation above already uses.)
-head_files=$(xargs awk < "$FILES" '
-    FNR == 1 { done = 0 }
-    done { next }
-    /^[ \t]*$/ { next }
-    /^#/ { next }
-    { done = 1; if ($1 != "pattern") { print FILENAME } }' | wc -l | tr -d ' ')
-
 if [ "$ls_calls" = "0" ] && [ "$head_files" = "0" ]; then
     pass "C0a: --list-source invoked 0 times over the corpus, and 0 head-bearing files exist (two sources, agreeing)"
 elif [ "$ls_calls" != "$head_files" ]; then
@@ -609,10 +649,17 @@ elif [ "$ls_calls" != "$head_files" ]; then
   making one it does not. This disagreement is a failure in its own right,
   not merely a count being wrong."
 else
-    fail "C0a: expected 0 and 0, got $ls_calls invocation(s) / $head_files head-bearing file(s).
-  A corpus file grew a head. That is not forbidden — but INV-COMPAT's
-  argument is that the 179 files take a byte-identical code path, and it
-  no longer holds unchanged."
+    # [FINDINGS] B2 (lane findb2, 2026-09-27) grew the head-bearing
+    # population from 0 to 16 for the first time — the 16 fire/witness
+    # `analysis` bundles under tests/findings/adversarial/ and tests/
+    # findings/witness/ (see CENSUS_FILES's own note above). This branch
+    # used to be an unconditional `fail`, back when 0/0 was the only state
+    # this check's own design had ever measured; a corpus file growing a
+    # head is NOT forbidden (the sentence this note replaces already said
+    # so), and the two sources agreeing at a nonzero count is exactly the
+    # healthy state the disagreement branch above exists to distinguish
+    # this from — so it is a pass, not a "read this and decide" red.
+    pass "C0a: --list-source invoked $ls_calls time(s) over the corpus, matching the $head_files head-bearing file(s) the independent census finds (two sources, agreeing)"
 fi
 
 # ---------------------------------------------------------------------
@@ -739,10 +786,19 @@ a_blocks=$(awk -F'\t' '
     $2 ~ /^#/ { next }
     sect == "" && $2 == "pattern" { n++ }
     END { print n+0 }' "$DUMP_A_RAW")
-if [ "$a_head_rows" = "0" ]; then
-    pass "C1: leg A emitted 0 head-declaration rows (pcrec's own view of C0a)"
+if [ "$a_head_rows" = "$head_files" ]; then
+    if [ "$a_head_rows" = "0" ]; then
+        pass "C1: leg A emitted 0 head-declaration rows (pcrec's own view of C0a)"
+    else
+        # [FINDINGS] B2 (lane findb2, 2026-09-27), same event as C0a's own
+        # note above: 16 head-bearing files, one `analysis` declaration row
+        # each, agreeing with the independent head_files census.
+        pass "C1: leg A emitted $a_head_rows head-declaration row(s), matching the $head_files head-bearing file(s) the independent census finds (pcrec's own view of C0a)"
+    fi
 else
-    fail "C1: leg A emitted $a_head_rows head-declaration row(s); the corpus has no head"
+    fail "C1: leg A emitted $a_head_rows head-declaration row(s), but the independent census
+  finds $head_files head-bearing file(s) — pcrec's own view of C0a disagrees
+  with C0a's own count."
 fi
 if [ "$a_blocks" = "$CENSUS_BLOCKS" ]; then
     pass "C1: leg A emitted $a_blocks block rows (matches the census)"
@@ -814,10 +870,30 @@ fi
 # §3.1 says plainly that it therefore has no differential control; what
 # covers it is the grammar's refusals, the manifest above, and the fact —
 # asserted twice — that on this corpus the head is empty.)
+#
+# [FINDINGS] B2 (lane findb2, 2026-09-27) is what made this file list a
+# THIRD denominator rather than $FILES again. `verify_rxt.py --dump`'s
+# per-file loop (`main()`, `if dump:`) has no per-file exception
+# isolation — unlike the oracle-check loop above, which subprocesses each
+# file and catches a head-bearing refusal cleanly (C3's own "ORACLE DID
+# NOT REPORT" bucket) — so ONE head-bearing file among many kills the
+# WHOLE multi-file dump with an uncaught ValueError, silently truncating
+# every file after it in argument order. Population ZERO before this
+# lane (0 head-bearing files, HEAD_FILE_LIST above always empty), so
+# nothing before now exercised that gap. Rather than teach --dump a
+# second parser for the head (exactly what the seam ruling forbids), leg
+# C's own population EXCLUDES head-bearing files the same way run.sh's
+# no-argument branch excludes tests/known_fail/ — legitimate, since a
+# head-bearing file's leg-B dump is exactly zero rows too (a body-less
+# `analysis` bundle has no `pattern` block to disagree about), so
+# dropping it from both sides of the B-vs-C comparison changes nothing
+# it could have compared.
+BODY_FILES="$WORKDIR/body_files.list"
+grep -vFxf "$HEAD_FILE_LIST" "$FILES" > "$BODY_FILES" || true
 DUMP_C="$WORKDIR/legC.tsv"
 tC0=$(date +%s.%N)
 if ! xargs "$TIMEOUT_BIN" 900 python3 "$VERIFY" --dump \
-        < "$FILES" > "$DUMP_C" 2> "$WORKDIR/legC.err"; then
+        < "$BODY_FILES" > "$DUMP_C" 2> "$WORKDIR/legC.err"; then
     fail "leg C: verify_rxt.py --dump failed
 $(head -20 "$WORKDIR/legC.err")"
 fi
@@ -1313,6 +1389,17 @@ C3_SKIP_OWNORACLE=10356
 C3_INFO=0
 C3_STOREUNCOVERED=0
 C3_TIMEOUT=1
+# [FINDINGS] B2 (lane findb2, 2026-09-27): the 16 head-bearing findings
+# fixtures (HEAD_FILE_LIST above) are the corpus's first, and this oracle
+# refuses a head-bearing file BY NAME ("this oracle reads the BODY only",
+# verify_rxt.py's own seam-ruling ValueError) — the identical, permanent
+# refusal the single-file check below ("head: verify_rxt.py refuses a
+# head-bearing file...") already asserts. `run_supervised`'s per-file
+# subprocess isolation catches it cleanly (printed as "ORACLE DID NOT
+# REPORT", never a crash of the whole run), but has no PASS/FAIL line to
+# report for that file, so it counts toward CRASHED rather than FAIL —
+# a real, permanent, EXPECTED bucket, not a discovery to triage.
+C3_CRASHED_HEADBEARING=16
 # [DD-13b.W1.1 r46chk finding 3 / r46sem finding 6] THE "89" NAMED, WITH
 # ITS OWN UPDATE PROCEDURE. This is `tests/base/d27_k23_ambiguous_
 # decomposition.rxt`'s own expectation-line count (MEASURED: the census
@@ -1366,6 +1453,11 @@ C3OUT="$WORKDIR/c3.out"
 c3rc=$?
 c3_files=$(awk -F= '/^FILES=/ { print $2 }' "$C3OUT")
 c3_pass=$(awk '/^PASS=/ { sub(/^PASS=/, "", $1); print $1 }' "$C3OUT")
+c3_fail=$(awk '/^PASS=/ { sub(/.* FAIL=/, "", $0); print $0 }' "$C3OUT")
+# [FINDINGS] B2's own bucket, see C3_CRASHED_HEADBEARING's note above: a
+# file `run_supervised` could not get a PASS/FAIL line from at all (never
+# printed when the population is 0, matching every C3 run before this).
+c3_crashed=$(awk -F= '/^CRASHED=/ { print $2 }' "$C3OUT")
 c3_skip=$(awk -F'[=( ]' '/^SKIP=/ { print $2 }' "$C3OUT")
 c3_timeout=$(awk -F'[=( ]' '/^TIMEOUT=/ { print $2 }' "$C3OUT")
 # [C3 THREE-WAY VERDICT] the fourth, always-printed bucket
@@ -1387,8 +1479,12 @@ else
     fail "C3: verify_rxt.py discovered ${c3_files:-<no FILES line>} files, expected $CENSUS_FILES"
 fi
 
-if [ "$c3rc" -eq 0 ]; then
-    pass "C3: verify_rxt.py verified $c3_pass expectation(s) with $c3_skip skip(s) and $c3_info info (python-divergent, pcre2-confirmed), 0 failures"
+if [ "${c3_fail:-0}" -eq 0 ] && [ "${c3_crashed:-0}" -eq "$C3_CRASHED_HEADBEARING" ]; then
+    if [ "${c3_crashed:-0}" -eq 0 ]; then
+        pass "C3: verify_rxt.py verified $c3_pass expectation(s) with $c3_skip skip(s) and $c3_info info (python-divergent, pcre2-confirmed), 0 failures"
+    else
+        pass "C3: verify_rxt.py verified $c3_pass expectation(s) with $c3_skip skip(s) and $c3_info info (python-divergent, pcre2-confirmed), 0 failures, and $c3_crashed head-bearing file(s) it structurally cannot verify (pinned, see C3_CRASHED_HEADBEARING)"
+    fi
 
     # THE TOTALS, AGAINST THEIR PINS. The verified count alone is not
     # enough: a skip predicate that WIDENS moves work out of PASS and
@@ -1579,27 +1675,36 @@ fi
 # mechanism, and it is why this list shrinks instead of a keyword being
 # marked somewhere as retired. The other direction (a word GRADUATES only
 # with its arm demonstrably landed) is unchanged and is the note above.
-CENSUS_WORDS_30="name target lib include config use variant oracle tag mc freq gap def with from repl s sg serr unsupported analysis question reader exemplar bytes sha256 analyzer date row groups"
+# `analysis` GRADUATED OUT OF THE CENSUS 2026-09-27: [FINDINGS] B0 (lane
+# findb0, merged 2026-09-26) landed its arm as real head-scope grammar
+# (`src/parse/rxt_find.c`'s S1/S2/S3 chain, the `analysis` bundle head
+# declaration), and [FINDINGS] B2 (lane findb2) is the first corpus growth
+# to USE it — 16 real `.rxt` files under `tests/findings/adversarial/` and
+# `tests/findings/witness/` (design §11.1/§11.9's fire/witness bundles),
+# each opening with `analysis <name>`. Same shape as `encoding`'s note
+# above: the census protects a word whose arm has NOT landed, and a landed
+# keyword the corpus legitimately uses is the opposite case.
+CENSUS_WORDS_29="name target lib include config use variant oracle tag mc freq gap def with from repl s sg serr unsupported question reader exemplar bytes sha256 analyzer date row groups"
 CENSUS_WORDS_W1="description only pcrec"
 
 collisions=""
 ncensus=0
-for w in $CENSUS_WORDS_30 $CENSUS_WORDS_W1; do
+for w in $CENSUS_WORDS_29 $CENSUS_WORDS_W1; do
     ncensus=$((ncensus + 1))
     c=$(xargs grep -h -c "^$w\\b" < "$FILES" 2>/dev/null \
         | awk '{ n += $1 } END { print n+0 }')
     [ "$c" != "0" ] && collisions="$collisions $w=$c"
 done
 
-n30=$(printf '%s\n' $CENSUS_WORDS_30 | wc -l | tr -d ' ')
-if [ "$n30" != "30" ]; then
-    fail "keyword census: the pinned 30-word list has $n30 words.
+n29=$(printf '%s\n' $CENSUS_WORDS_29 | wc -l | tr -d ' ')
+if [ "$n29" != "29" ]; then
+    fail "keyword census: the pinned 29-word list has $n29 words.
   It is the format's candidate-keyword set; if it changed, say WHY here —
   a word leaves by WITHDRAWAL (no schema row, so no derived refusal list
   can name it) or by GRADUATION (its arm landed, and the note above says
   what that costs). Neither is a silent edit."
 else
-    pass "keyword census: the pinned list is 30 words plus W1's 3 still-candidate words (testee/option withdrawn 2026-09-13, D99/N-42; encoding graduated 2026-09-05)"
+    pass "keyword census: the pinned list is 29 words plus W1's 3 still-candidate words (testee/option withdrawn 2026-09-13, D99/N-42; encoding graduated 2026-09-05, analysis graduated 2026-09-27)"
 fi
 
 if [ -z "$collisions" ]; then
