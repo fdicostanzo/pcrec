@@ -360,9 +360,15 @@ record() { checks_recorded=$((checks_recorded + 1)); echo "RECORD: $*"; }
 # for tests/ucp/*.rxt (module `ucp`'s corpus: sets_utf8, knobs, caseless,
 # byte, refusals — generated from libpcre2, re-verified on 10.46). MEASURED
 # by this check's own census on the lane's branch: 252/4181/30967.
-CENSUS_FILES=252
-CENSUS_BLOCKS=4181
-CENSUS_LINES=30967
+# 2026-09-29 (lane ucpu2, [UCP] U2) — +2 files / +49 blocks / +218 lines:
+# tests/ucp/ctxnode.rxt (the context node's corpus: overlap witnesses, T3's
+# rows and declines, startpos seeds, UCP \b under -e byte, the atom-cap
+# decline) and tests/utf8/axis13_ctx_illformed.rxt (§2.3's hazard cells),
+# both generated from libpcre2 and re-verified on 10.46. MEASURED by this
+# check's own census on the lane's branch: 254/4230/31185.
+CENSUS_FILES=254
+CENSUS_BLOCKS=4230
+CENSUS_LINES=31185
 # 2026-09-23 (lane rxtfix, K34 closure via lane b2fix's [OPTLOOP.1.impl]
 # batch 2 — docs/dev/known_issues.md K34) — -1 file, -3 blocks, +0 lines.
 # tests/known_fail/k34_leftrec_giveup.rxt (1 file, 3 blocks, 11 lines) was
@@ -459,9 +465,11 @@ CENSUS_LINES=30967
 # k70fix +1/+9/+13 -> 223/4061/29398 (restrict.rxt is a run.sh file; the 8 golden bundles are not).
 # 2026-09-28 (lane ucpu1, [UCP] U1) — +5/+120/+1569, the SAME delta as
 # CENSUS_* above (tests/ucp/ is a run.sh directory, not tests/known_fail/).
-RUNSH_FILES=228
-RUNSH_BLOCKS=4181
-RUNSH_LINES=30967
+# 2026-09-29 (lane ucpu2, [UCP] U2) — +2/+49/+218, the SAME delta as
+# CENSUS_* above (tests/ucp/ and tests/utf8/ are run.sh directories).
+RUNSH_FILES=230
+RUNSH_BLOCKS=4230
+RUNSH_LINES=31185
 # 2026-09-23 (lane rxtfix, K34 closure, same event as CENSUS_* above) —
 # +0/+0/+11 where CENSUS_* moved -1/-3/+0. tests/known_fail/ is now EMPTY
 # (kf_files=kf_blocks=kf_lines=0 at run time — `find tests/known_fail
