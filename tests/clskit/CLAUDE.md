@@ -84,8 +84,9 @@ at `PROCS=4`, most of it in the study's Python DP (crosscheck.py).
   whose partition fits in 64 atoms.** At landing that is all 41, with 40
   atoms. The `ATOMS` line reports both numbers. The cross-check recomputes
   the atom count with the study's partition.
-- **The four sabotage rows S360-S363 are on the `clskit` mech arm**, the
+- **The five sabotage rows S360-S364 are on the `clskit` mech arm**, the
   only arm that can see them at S1. S363 plants a table row firing on a
-  false predicate. Every emitted form stays a correct matcher under it, so
-  the differential is green by construction and the cross-check is the
-  detector.
+  false predicate; S364 (clss1b) drops D131 addendum 1's fitted K-byte
+  term back out of the selection. Every emitted form stays a correct
+  matcher under either, so the differential is green by construction and
+  the cross-check is the detector.

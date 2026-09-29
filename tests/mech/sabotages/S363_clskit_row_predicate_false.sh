@@ -7,13 +7,20 @@
 # handful of sections and pays for no dispatch tree. Every emitted form is
 # still a CORRECT matcher, so the differential stays green by construction:
 # only crosscheck.py's independent restatement of the table can see it.
+#
+# RE-ANCHORED 2026-09-29 (lane clss1b, D131 addendum 1): `mid_gate` reads
+# `kit_sel_bytes(s)` in place of the bare `s->k->bytes`
+# (clss1b's fitted dispatch/prologue term, PLACE.kit_disp_bytes); the
+# anchor's tail is respelled to match, same site, same one dropped conjunct,
+# intent unchanged (verified: the AFTER substitution applies at exactly 1
+# site and `gcc -fsyntax-only`s clean on a scratch copy).
 SAB_ID="S363-clskit-row-predicate-false"
 SAB_FILE="src/gen/clskit.c"
 SAB_SUITES="clskit"
 SAB_DESC="the mid gate drops its section-count conjunct, so the 0/+1/+2 positions choose P3 on sets whose K has fewer than 16 sections (a row fires whose predicate is false)"
-SAB_DOC_FIGURE="MEASURED solo 2026-09-29 at 52d63c9f (lane clss1): clskit:1fail/4pass DETECTED -- the cross-check alone, as predicted; the differential, the law and the census stay green."
+SAB_DOC_FIGURE="MEASURED solo 2026-09-29 at 52d63c9f (lane clss1): clskit:1fail/4pass DETECTED -- the cross-check alone, as predicted; the differential, the law and the census stay green. Re-anchored 2026-09-29 (lane clss1b) for kit_sel_bytes; re-run OWED."
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='    return s->k->nsec >= PLACE.mid_min_sections
-        && whole(s, CLSF_PAGE3) * 100 <= (long long)PLACE.z_mid_pct * s->k->bytes;'
-SAB_AFTER='    return whole(s, CLSF_PAGE3) * 100 <= (long long)PLACE.z_mid_pct * s->k->bytes;'
+        && whole(s, CLSF_PAGE3) * 100 <= (long long)PLACE.z_mid_pct * kit_sel_bytes(s);'
+SAB_AFTER='    return whole(s, CLSF_PAGE3) * 100 <= (long long)PLACE.z_mid_pct * kit_sel_bytes(s);'

@@ -28,9 +28,9 @@
  * so `tests/clskit/` does not import it live: `tests/clskit/ref/` is a
  * FROZEN, provenance-headed copy of those files (plus their two transitive
  * imports, `emit.py`/`loadgate.py`) that `tests/clskit/`'s own scripts
- * import instead (clss1b's fix; see `tests/clskit/ref/README.md`). The
- * copy is re-implemented against here, and tests/clskit/ runs both over
- * the populations and compares their sectionings and table choices
+ * import instead (clss1b's fix; see `tests/clskit/CLAUDE.md`'s `ref/`
+ * entry). It is re-implemented against here, and tests/clskit/ runs both
+ * over the populations and compares their sectionings and table choices
  * (design §6's S1 row). Two departures from it, both deliberate:
  *   - the DP is INTEGER (Q16 fixed point, `log2_q16`) where the study's is
  *     floating point. A selection must be bit-reproducible across boxes,
