@@ -172,7 +172,7 @@ PREMUL_DEAD=65535
 # source. `-1` means "this machine has no numeric transition table here".
 # ---------------------------------------------------------------------------
 read_artifact() {
-    awk '
+    awk -v pdead="$PREMUL_DEAD" '
         # ---- (i) DERIVED: emitted matcher text, and nothing else -----------
         # The transition table DECLARATIONS. The TYPE is the form and the
         # SUBSCRIPT is states*classes; emit_tr_table writes both in one line.
@@ -196,15 +196,18 @@ read_artifact() {
         /^    static const unsigned char rx_reverse_is_accepting\[/ { racc = ent($0) }
         /^    static const unsigned char rx_anchored_is_accepting\[/ { aacc = ent($0) }
         # THE SEED TABLES, cell by cell: does a machine start DEAD for some
-        # context byte? A dead cell is spelled -1 (the indexed dead value)
-        # and the pre-multiplied form refuses such a machine, so a small
-        # machine with one is INDEXED by rule rather than in violation of it
-        # ([bound] below). Read from the emitted cells, not from the
-        # compiler predicate that makes the choice.
+        # context byte? A dead cell is -1 in the indexed form and PREMUL_DEAD
+        # in the pre-multiplied one (both are read, so a premultiplied machine
+        # that should have declined is SEEN, not hidden by its own spelling).
+        # The pre-multiplied form refuses such a machine, so a small machine
+        # with one is INDEXED by rule rather than in violation of it ([bound]
+        # below). Read from the emitted cells, not from the compiler
+        # predicate that makes the choice.
         /^    static const (unsigned )?short rx_[a-z]+_seed_state\[/ {
             t = $0; sub(/^.*short rx_/, "", t); sub(/_seed_state.*$/, "", t); inseed = t; next }
         inseed != "" && /\};/ { inseed = ""; next }
-        inseed != "" && /(^|[ ,])-1,/ { sdead[inseed] = 1 }
+        inseed != "" { n = split($0, a, ","); for (i = 1; i <= n; i++) {
+                           gsub(/[ \t]/, "", a[i]); if (a[i] == "-1" || a[i] == pdead) sdead[inseed] = 1 } }
         # [ENG-FORM] THE STATE TYPE AND ITS INDEX ARITHMETIC BOTH MOVED INTO
         # THE ACCESSOR BLOCK, and this section follows them there rather than
         # hunting the loop. The loop is FORM-INDEPENDENT now -- it reads
@@ -426,9 +429,11 @@ EOF
 echo "== [OPT-3] §2 the BOUND, read off the artifact on both sides =="
 
 # The rule under test: a machine takes the premultiplied form IFF its
-# states*classes is at or below PREMUL_MAX_ENTRIES. Asserted on the two
-# adjacent members of the state-explosion family, whose entry counts are read
-# out of the emitted declarations rather than computed here.
+# states*classes is at or below PREMUL_MAX_ENTRIES AND its seed table has no
+# dead cell. This section asserts the SIZE clause, on the two adjacent members
+# of the state-explosion family (no seed table, so the seed clause is
+# silent), whose entry counts are read out of the emitted declarations rather
+# than computed here; §3's corpus sweep asserts both clauses.
 bound_bad=0; bound_seen=0
 for k in 11 12 13; do
     f="$WORKDIR/b$k.c"
@@ -514,7 +519,7 @@ else
         fi
         imp="$(implied_stamp "$(eff_pm "$fpm" "$fvar")" "$(eff_pm "$rpm" "$rvar")" "$(eff_pm "$apm" "$avar")")"
         [ "$imp" = "$stamp" ] || { drift=$((drift + 1));
-            echo "    DRIFT '$pat': stamps \"$stamp\", tables imply \"$imp\" (fwd $fent/$fpm rev $rent/$rpm rev_pass=${rev:-0})" >&2; }
+            echo "    DRIFT '$pat': stamps \"$stamp\", tables imply \"$imp\" (fwd $fent/$fpm rev $rent/$rpm anch $aent/$apm rev_pass=${rev:-0})" >&2; }
         case "$stamp" in premultiplied) prem=$((prem+1)) ;; indexed) idx=$((idx+1)) ;;
                          mixed) mix=$((mix+1)) ;; none) non=$((non+1)) ;; esac
         # The BOUND, on every machine of every artifact — the anchored one
@@ -626,9 +631,9 @@ else
         ok "[agreement] all $cmp_n artifacts stamp the table form their emitted declarations imply"
     fi
     if [ "$boundviol" -ne 0 ]; then
-        bad "[bound] $boundviol machine(s) took a form the generation-time rule forbids at their size (bound $PREMUL_MAX_ENTRIES entries)"
+        bad "[bound] $boundviol machine(s) took a form the generation-time rule forbids — premultiplied IFF states*classes <= $PREMUL_MAX_ENTRIES AND no dead seed cell (the BOUND lines above name each machine and which clause)"
     else
-        ok "[bound] every machine in the corpus took the form its own states*classes calls for"
+        ok "[bound] every machine in the corpus took the form its own states*classes and seed table call for ($seeddead machine(s) indexed by the seed clause)"
     fi
     if [ "$accviol" -ne 0 ]; then
         bad "[accept] $accviol accept table(s) have a length inconsistent with their machine's table form — a premultiplied machine's accept table is states*classes long, an indexed one's is states"
