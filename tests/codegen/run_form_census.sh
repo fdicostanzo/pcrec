@@ -315,7 +315,33 @@ floor_check "D:RX_DFA_PREFILTER=byte-class"   250
 # 14 (both floored on first sight, K35).
 floor_check "D:RX_DFA_PREFILTER=offset-set"   290
 floor_check "D:RX_DFA_PREFILTER=offset-set-bounded" 30
-floor_check "D:RX_DFA_PREFILTER=run-pinned"   130
+# [FIND-TIE] (2026-09-28, merge 72e3ae41, abi 43->44) legitimately re-derives
+# run-pinned's floor, by mechanism (lane rpfloor, docs/dev/lanes/
+# rpfloor_report.md): `pf_run_applies_common` (src/gen/emit_dfa.c ~5357)
+# requires `pin.o + r->idx` (the run reader's OWN chosen scan offset,
+# `pcrec_find_run_scan_index`, src/core/findings.c) to equal
+# `o->walk->k[o->sel[o->scan]].k` (the offset-set walk's OWN chosen scan
+# offset, an INDEPENDENT cost-greedy selection, `pcrec_prefix_ksets`,
+# src/opt/prefix_k.c ~209-322, whose own ties keep its first-found/leftmost
+# candidate, unchanged by FIND-TIE). FIND-TIE flipped ONLY the run reader's
+# own data-tie rule from leftmost to rightmost (D126 Q4: a PICK's tie must
+# equal its own NONE answer) — so on any pattern whose run bytes tie in rate
+# (measured broad: FIND-TIE's own report calls out that the DEFAULT
+# byte-rate table ties every zero-count byte at its floor, so the DEFAULT
+# axis this census compiles under is squarely in scope), the two
+# independently-computed offsets now disagree and the identity clause fails,
+# dropping the artifact to offset-set/memchr/etc instead. Confirmed by
+# direct A/B (pcrec built at 4666ba54 vs 72e3ae41): population 165 -> 117,
+# exactly 48 corpus patterns move (`(a)(bb)(ccc)`, `SS`, `\(\)`,
+# `(abc)(abc)`, ... — every witness answer-identical, matches unchanged,
+# only the emitted form moves), and 165->117 is the WHOLE drop from the S1
+# build's own 150/155 baseline — nothing between 72e3ae41 and today's main
+# (eee1d36a) moves it further (main measures 117 directly; U2's own -4
+# lands on top of that, 117->113, a distinct further application of the
+# same mechanism to U2's newly-exact one-char-lookaround DFA machines).
+# Floored per K35's convention (~85-90% margin, matching offset-set's own
+# 290/322): 100 clears both main's 117 and U2's 113 with margin to spare.
+floor_check "D:RX_DFA_PREFILTER=run-pinned"   100
 floor_check "D:RX_DFA_PREFILTER=run-pinned-bounded" 12
 floor_check "D:RX_DFA_TABLE=premultiplied"    1500
 # [ENG-ABS] (2026-08-29, abi 10) axis G. Measured on this tree: 825
