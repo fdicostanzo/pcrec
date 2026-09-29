@@ -1523,18 +1523,39 @@ C3_FILES=179
 # tests/base/k66_precheck_whole_run.rxt` reports `PASS=14 FAIL=0` and
 # `SKIP=2 (... giveup=2 ...)`: 12 n + 2 m cells python `re` answers and the
 # two `gu steps` controls.
-C3_PASS=13764
+# [clstri re-pin, 2026-09-29, lane clstri] C3 had NOT been re-pinned since
+# 2026-09-25 while the census moved by +318 lines (C3_PASS + C3_SKIP +
+# C3_TIMEOUT_FILE_LINES = 30649 against CENSUS_LINES 30967); S1's Linux
+# `make test` was the first run to look. NOT box-dependent and NOT an S1
+# effect (S1 adds no .rxt and no rxtsource edit; main carries these very
+# pins and this very corpus): the Mac (python 3.9) full run reproduces the
+# +318 total and the box-independent classes (pcre2-only +22, own-oracle
+# +83) EXACTLY as the Linux (python 3.14) run does; only PASS and
+# no-python-expression are python-version-sensitive (this file's own
+# C3_PY_REF note) and these pins are the 3.14 numbers, as they always were.
+# Attribution, per file (verify_rxt.py on 20ba2453's tree vs this one):
+#   PASS +139: tests/litscan/litrun.rxt +91 (s2a), tests/offsetskip/
+#     run_pinned.rxt +51 (s1build; 3.9 reads 48 + 7 nopython, 3.14 reads 51
+#     + 4), axis10_surrogate_witness.rxt -3 (3 PASS cells now classify
+#     pcre2-only, +9 net there; the reclassifying edit is not chased here);
+#   pcre2-only +22: utf8/restrict.rxt +13 (K70) and axis10's +9 (18 -> 27);
+#   no-python-expression +74: recursion/k69.rxt +70, run_pinned +4;
+#   own-oracle +83: the [VAR] MVP's tests/vars (verify_vars.py, 2026-09-23,
+#     the census drift's start: bd5a7e13 76 + 7) -- never in C3's pin.
+# The tests/ucp files' +1563 own-oracle were already pinned (98e94f1d).
+# Reconciliation: 13903+16975+89 = 30967 = CENSUS_LINES.
+C3_PASS=13903
 # [UCP] U1 (lane ucpu1): +1563 SKIP, all own-oracle — tests/ucp/ carries
 # its own verifier (verify_ucp.py), so verify_rxt.py skips every one of its
 # 1,563 cells on every python version (measured: `verify_rxt.py tests/ucp`
 # reports SKIP=1563, own-oracle=1563, PASS=0).
-C3_SKIP=16796
-C3_SKIP_PCRE2ONLY=2944
+C3_SKIP=16975
+C3_SKIP_PCRE2ONLY=2966
 C3_SKIP_GIVEUP=29
 C3_SKIP_COMPOSED=0
-C3_SKIP_NOPYTHON=1890
+C3_SKIP_NOPYTHON=1964
 C3_SKIP_PERRACCEPT=14
-C3_SKIP_OWNORACLE=11919
+C3_SKIP_OWNORACLE=12002
 C3_INFO=0
 C3_STOREUNCOVERED=0
 C3_TIMEOUT=1
