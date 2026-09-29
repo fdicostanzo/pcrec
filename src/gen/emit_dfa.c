@@ -3331,6 +3331,29 @@ static bool dfa_needs_gseed(const Dfa *d)
     return false;
 }
 
+/* Does this machine's emitted seed table hold a dead cell? The loop mirrors
+ * `emit_seed_table`'s own, so the two cannot disagree about which cells are
+ * emitted; a machine with no seed table has none. Read by `dfa_premul`'s seed
+ * precondition and by `dfa_entry_can_be_dead` — one fact, both readers. */
+static bool dfa_seed_has_dead(const Dfa *d)
+{
+    if (!dfa_needs_seed(d)) return false;
+    for (int cl = 0; cl < d->ncls; cl++)
+        if (d->s1u[upc_of_class(d, cl)] < 0) return true;
+    return false;
+}
+
+/* Can the scan's initializer write the dead state? True when the
+ * no-context start `s0` is dead or a seed cell is. Both seed forms write
+ * `s0`'s cell somewhere (the constant form always, the seeded form when no
+ * context byte exists), so `s0` is asked unconditionally. The answer gates
+ * a direction's `dead_entry` statement: a machine entered dead has no match,
+ * and saying so at entry costs one compare per call and nothing per byte. */
+static bool dfa_entry_can_be_dead(const Dfa *d)
+{
+    return d->s0 < 0 || dfa_seed_has_dead(d);
+}
+
 /* Does THIS machine's table take the pre-multiplied form?
  *
  * ONE DERIVATION, THREE READERS — this file's standing rule (`unanch_start`,
@@ -3347,10 +3370,10 @@ static bool dfa_needs_gseed(const Dfa *d)
  * Measured 2026-08-26 over the 1,256 corpus patterns that compile under
  * `--features all`: no emitted seed table has a negative cell. Rather than
  * rest on that sweep, the transform REFUSES a machine that has one, so the
- * wilder read is unreachable by construction and the pre-existing `[-1]`
- * question is left exactly as it was — it is not [OPT-3]'s to answer. The loop
- * mirrors `emit_seed_table`'s own, so the two cannot disagree about which
- * cells are emitted. */
+ * wilder read is unreachable by construction. The `[-1]` question itself is
+ * answered at the scan's entry, by the direction's `dead_entry` statement
+ * (`dfa_entry_can_be_dead`); the clause is `dfa_seed_has_dead`, shared with
+ * that gate. */
 /* Does this machine's transition table take the pre-multiplied form?
  *
  * [ENG-FORM] `PCREC_NO_PREMUL_TABLE` IS NOT TESTED HERE ANY MORE. The deny
@@ -3364,9 +3387,7 @@ static bool dfa_premul(Ctx *cx, const Dfa *d)
     (void)cx;
     long ents = (long)d->n * (long)d->ncls;
     if (ents > PREMUL_MAX_ENTRIES) return false;   /* the RANGE condition */
-    if (dfa_needs_seed(d))
-        for (int cl = 0; cl < d->ncls; cl++)
-            if (d->s1u[upc_of_class(d, cl)] < 0) return false;
+    if (dfa_seed_has_dead(d)) return false;        /* the SEED PRECONDITION */
     return true;
 }
 
@@ -4448,6 +4469,16 @@ struct DfaDir {
     const char *tbl_hdr;      /* the table section's block comment */
     const char *acc_meaning;  /* what a 1 in the accept table means */
     const char *range_guard;  /* emitted beside the initializer, or NULL */
+    /* The statement a walk ENTERED AT THE DEAD STATE takes: this entry's
+     * "no match". A machine entered dead has no match, and the loop cannot
+     * be the one to say so — its first statement is the accept probe, which
+     * reads `is_accepting[state]` before any dead test. So the entry answers
+     * it, once per call and off the loop, wherever `dfa_entry_can_be_dead`
+     * says the initializer can write the dead state at all. NULL where the
+     * caller has already established a live entry: the REVERSE walk begins
+     * at an end the forward pass accepted, and that acceptance read the same
+     * right-hand context the reverse seed reads. */
+    const char *dead_entry;
     const char *seed_cond;    /* "a context byte exists" */
     const char *seed_byte;    /* that byte */
     const char *at_bound;     /* "there is no byte left to consume" */
@@ -6215,7 +6246,7 @@ static const DfaDir dfa_dir_forward = {
     "     * rather than 256.\n"
     "     *\n",
     "a match may end",
-    "    if (search_from > subject_length) return 0;\n",
+    "    if (search_from > subject_length) return 0;\n", "return 0;",
     "search_from", "subject[search_from - 1]",
     "scan_position >= subject_length",
     "subject[scan_position]", "subject[scan_position++]", "scan_position++",
@@ -6234,7 +6265,7 @@ static const DfaDir dfa_dir_reverse = {
     "     * The two machines are independent and need not agree.\n"
     "     *\n",
     "the backwards walk has consumed a whole match",
-    NULL,
+    NULL, NULL,
     "match_end_position < subject_length", "subject[match_end_position]",
     "rewind_position <= search_from",
     "subject[rewind_position - 1]", "subject[--rewind_position]", "rewind_position--",
@@ -6254,9 +6285,12 @@ static const DfaDir dfa_dir_reverse = {
  *
  * THE TWO EXCEPTIONS.
  *
- *   - `range_guard` returns `-1`, not `0`: this machine's loop is the body of
- *     `<prefix>_match`, whose failure value is the entry's (a length, or -1)
- *     and not `<prefix>_search`'s found-count.
+ *   - `range_guard` and `dead_entry` return `-1`, not `0`: this machine's
+ *     loop is the body of `<prefix>_match`, whose failure value is the
+ *     entry's (a length, or -1) and not `<prefix>_search`'s found-count.
+ *     `dead_entry` is the one of the three directions' that FIRES: with no
+ *     start-anywhere self-loop, the no-left-context start or a seed of a
+ *     machine whose match needs a left context (`(?<=a)b`) is the dead state.
  *   - `prefilter_owns_start` is FALSE. A candidate-start prefilter CHOOSES
  *     WHERE THE SCAN BEGINS, which is sound for a search and wrong for a
  *     match-here, where the start is the caller's. Nothing here has to say so:
@@ -6284,7 +6318,7 @@ static const DfaDir dfa_dir_anchored = {
     "     * has found one that begins there, so no backwards pass is needed.\n"
     "     *\n",
     "a match beginning at ctx->pos may end",
-    "    if (search_from > subject_length) return -1;\n",
+    "    if (search_from > subject_length) return -1;\n", "return -1;",
     "search_from", "subject[search_from - 1]",
     "scan_position >= subject_length",
     "subject[scan_position]", "subject[scan_position++]", "scan_position++",
@@ -7246,6 +7280,13 @@ static void emit_scan_loop(StrBuf *c, const DfaForm *f)
     const char *le = scan_label(f, "edge");
 
     f->seed->emit_init(c, f);
+    /* A MACHINE ENTERED DEAD HAS NO MATCH, and this is the only place that
+     * can say so: the loop's first statement is the accept probe, and the
+     * dead state has no row in the accept table. `dead_entry` is the
+     * direction's own "no match" (see `DfaDir`). */
+    if (f->dir->dead_entry && dfa_entry_can_be_dead(f->d))
+        pcrec_sb_printf(c, "%sif (%s_%s_is_dead(%s)) %s\n", ind, f->p,
+                  f->dir->c.name, f->dir->statev, f->dir->dead_entry);
     /* THE ONE ENTRY, and it costs at most one compare PER SEARCH rather than
      * per byte. `emit_init` is the only writer of the state variable outside
      * the loop, and a state that is already a head must reach the edge body

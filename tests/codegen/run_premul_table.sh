@@ -163,6 +163,8 @@ PREMUL_DEAD=65535
 #   scan=<0|1> fpm=<-1|0|1> rpm=<-1|0|1> fent=<N> rent=<N> fcls=<N> rcls=<N>
 #   facc=<N> racc=<N> fvar=<int|unsigned|-> rvar=<...> fix=<mul|add|-> rix=<...>
 #   leak=<N: transition-table subscripts outside the table's own declaration>
+#   apm aent aacc avar aix: the same five facts for [ENG-ABS]'s ANCHORED machine
+#   fsd rsd asd=<0|1>: that machine's emitted SEED TABLE holds a dead (-1) cell
 #   stamp=<value|->
 #
 # derived ENTIRELY from the emitted matcher text, except `stamp`, which is the
@@ -178,12 +180,31 @@ read_artifact() {
         /^    static const unsigned short rx_forward_next_state\[/ { fpm = 1; fent = ent($0) }
         /^    static const short rx_reverse_next_state\[/          { rpm = 0; rent = ent($0) }
         /^    static const unsigned short rx_reverse_next_state\[/ { rpm = 1; rent = ent($0) }
+        # [ENG-ABS] THE THIRD MACHINE, the scan of `<prefix>_match`, present
+        # when axis G took the unwrapped form. Read off its declarations like
+        # the other two, never off the `RX_DFA_MATCH` stamp (one stamp must
+        # not vouch for another). Until [UCP] U2 no corpus artifact had this
+        # machine in a form different from the forward one, so a fold over
+        # two machines agreed with the emitter by accident (triu2 report §5a).
+        /^    static const short rx_anchored_next_state\[/          { apm = 0; aent = ent($0) }
+        /^    static const unsigned short rx_anchored_next_state\[/ { apm = 1; aent = ent($0) }
         # The ACCEPT tables. Under the premultiplied form these are indexed by
         # the premultiplied value and are therefore states*classes long; under
         # the indexed form they are states long. A DERIVED cross-check on the
         # form, from a different emitter function than the one above.
         /^    static const unsigned char rx_forward_is_accepting\[/ { facc = ent($0) }
         /^    static const unsigned char rx_reverse_is_accepting\[/ { racc = ent($0) }
+        /^    static const unsigned char rx_anchored_is_accepting\[/ { aacc = ent($0) }
+        # THE SEED TABLES, cell by cell: does a machine start DEAD for some
+        # context byte? A dead cell is spelled -1 (the indexed dead value)
+        # and the pre-multiplied form refuses such a machine, so a small
+        # machine with one is INDEXED by rule rather than in violation of it
+        # ([bound] below). Read from the emitted cells, not from the
+        # compiler predicate that makes the choice.
+        /^    static const (unsigned )?short rx_[a-z]+_seed_state\[/ {
+            t = $0; sub(/^.*short rx_/, "", t); sub(/_seed_state.*$/, "", t); inseed = t; next }
+        inseed != "" && /\};/ { inseed = ""; next }
+        inseed != "" && /(^|[ ,])-1,/ { sdead[inseed] = 1 }
         # [ENG-FORM] THE STATE TYPE AND ITS INDEX ARITHMETIC BOTH MOVED INTO
         # THE ACCESSOR BLOCK, and this section follows them there rather than
         # hunting the loop. The loop is FORM-INDEPENDENT now -- it reads
@@ -202,11 +223,14 @@ read_artifact() {
         # subscript the transition table at all.
         /^typedef (int|unsigned) rx_forward_state;$/               { fvar = $2 }
         /^typedef (int|unsigned) rx_reverse_state;$/               { rvar = $2 }
+        /^typedef (int|unsigned) rx_anchored_state;$/              { avar = $2 }
         /^static inline rx_forward_state rx_forward_step\(/        { instep = "f" }
         /^static inline rx_reverse_state rx_reverse_step\(/        { instep = "r" }
+        /^static inline rx_anchored_state rx_anchored_step\(/      { instep = "a" }
         /^\{ return transitions\[/ {
             v = ($0 ~ /\* [0-9]+ \+/) ? "mul" : "add"
             if (instep == "f") fix = v; else if (instep == "r") rix = v
+            else if (instep == "a") aix = v
             instep = "" }
         # [CC-DIFF] STEP 1(b): THE REVERSE STEP CALL SITE, TABLE ARGUMENT
         # STILL PRESENT. This is the fold-aware half of the [agreement] check
@@ -227,7 +251,7 @@ read_artifact() {
         # anywhere else is the representation escaping the block, which is the
         # failure that would make every witness above describe a form the loop
         # no longer takes.
-        /rx_(forward|reverse)_next_state\[/ && $0 !~ /^    static const/ { leak++ }
+        /rx_(forward|reverse|anchored)_next_state\[/ && $0 !~ /^    static const/ { leak++ }
         # [OPT-5 STEP 2] DOES THIS ARTIFACT STILL RUN A REVERSE PASS? Matcher
         # text — the cursor local the reverse scan carries — never the
         # `RX_DFA_START` stamp, which is what `implied_stamp` below must NOT
@@ -261,7 +285,7 @@ read_artifact() {
                                     sub(/"$/, "", s); stamp = s }
         function ent(l,   t) { t = l; sub(/^[^[]*\[/, "", t); sub(/\].*$/, "", t); return t + 0 }
         END {
-            printf "scan=%d fpm=%d rpm=%d fent=%d rent=%d facc=%d racc=%d fvar=%s rvar=%s fix=%s rix=%s leak=%d rev=%d rtblcall=%d stamp=%s\n",
+            printf "scan=%d fpm=%d rpm=%d fent=%d rent=%d facc=%d racc=%d fvar=%s rvar=%s fix=%s rix=%s leak=%d rev=%d rtblcall=%d apm=%d aent=%d aacc=%d avar=%s aix=%s fsd=%d rsd=%d asd=%d stamp=%s\n",
                    (scan ? 1 : 0),
                    (fent ? fpm : -1), (rent ? rpm : -1),
                    fent + 0, rent + 0, facc + 0, racc + 0,
@@ -269,6 +293,9 @@ read_artifact() {
                    (fix == "" ? "-" : fix), (rix == "" ? "-" : rix), leak + 0,
                    (rev ? 1 : 0),
                    (rtblcall ? 1 : 0),
+                   (aent ? apm : -1), aent + 0, aacc + 0,
+                   (avar == "" ? "-" : avar), (aix == "" ? "-" : aix),
+                   ("forward" in sdead), ("reverse" in sdead), ("anchored" in sdead),
                    (stamp == "" ? "-" : stamp)
         }
     '
@@ -332,19 +359,23 @@ eff_pm() {   # <pm> <var>
     fi
 }
 
-implied_stamp() {   # <fpm> <rpm>
-    case "$1:$2" in
-        -1:-1) echo none ;;
-        1:1)   echo premultiplied ;;
-        0:0)   echo indexed ;;
-        # THE PINNED PAIR: a forward machine with a table and NO reverse
-        # machine at all. The composition is the forward machine's own form.
-        1:-1)  echo premultiplied ;;
-        0:-1)  echo indexed ;;
-        # A machine that has no numeric table at all cannot disagree with one
-        # that does; ENG_ATTEMPT is `-1:-1` above, so this arm is a genuinely
-        # mixed pair and nothing else.
-        *)     echo mixed ;;
+# [UCP] U2 lane ucpu3: THE FOLD IS OVER A SET, not a pair. It was a
+# `<fpm>:<rpm>` case table, written for two machines and never widened when
+# [ENG-ABS] added the anchored one, so an artifact whose forward and reverse
+# machines were premultiplied and whose anchored machine was indexed read
+# "premultiplied" here against the emitter's correct "mixed" (51 false
+# DRIFTs, triu2 report §5a). Stated over the forms of whatever machines are
+# passed, a fourth machine is one more argument rather than a new table.
+implied_stamp() {   # <form>... one per machine the artifact can contain; -1 = absent
+    local x pre=0 idx=0
+    for x in "$@"; do
+        case "$x" in 1) pre=1 ;; 0) idx=1 ;; esac
+    done
+    case "$pre$idx" in
+        00) echo none ;;            # no machine has a numeric table
+        10) echo premultiplied ;;
+        01) echo indexed ;;
+        11) echo mixed ;;           # the machines present took both forms
     esac
 }
 
@@ -377,7 +408,7 @@ while IFS='~' read -r pat want why; do
         continue
     fi
     eval "$(read_artifact < "$f")"
-    imp="$(implied_stamp "$(eff_pm "$fpm" "$fvar")" "$(eff_pm "$rpm" "$rvar")")"
+    imp="$(implied_stamp "$(eff_pm "$fpm" "$fvar")" "$(eff_pm "$rpm" "$rvar")" "$(eff_pm "$apm" "$avar")")"
     case " $TABLE_VALUES " in *" $stamp "*) ;; *)
         bad "[witness] '$pat' stamps RX_DFA_TABLE \"$stamp\", which is not in the documented value set ($TABLE_VALUES) — a new value needs a docs/spec/match_api.md §6.3 hunk and a line in this file, in the same change" ;;
     esac
@@ -443,6 +474,7 @@ else
     npat=$(grep -c . "$PATFILE" || true)
 
     swept=0; cmp_n=0; drift=0; boundviol=0; accviol=0; shapeviol=0; leakviol=0
+    anch_n=0; seeddead=0
     prem=0; idx=0; mix=0; non=0
     : > "$WORKDIR/premul_artifacts"
     while IFS= read -r pat; do
@@ -480,20 +512,34 @@ else
             bad "[agreement] '$pat' has no reverse transition table but its reverse step call still names one — the reverse pass reads a table the artifact does not contain"
             drift=$((drift + 1)); continue
         fi
-        imp="$(implied_stamp "$(eff_pm "$fpm" "$fvar")" "$(eff_pm "$rpm" "$rvar")")"
+        imp="$(implied_stamp "$(eff_pm "$fpm" "$fvar")" "$(eff_pm "$rpm" "$rvar")" "$(eff_pm "$apm" "$avar")")"
         [ "$imp" = "$stamp" ] || { drift=$((drift + 1));
             echo "    DRIFT '$pat': stamps \"$stamp\", tables imply \"$imp\" (fwd $fent/$fpm rev $rent/$rpm rev_pass=${rev:-0})" >&2; }
         case "$stamp" in premultiplied) prem=$((prem+1)) ;; indexed) idx=$((idx+1)) ;;
                          mixed) mix=$((mix+1)) ;; none) non=$((non+1)) ;; esac
-        # The BOUND, on every machine of every artifact.
-        for pair in "f:$fpm:$fent:$facc" "r:$rpm:$rent:$racc"; do
+        # The BOUND, on every machine of every artifact — the anchored one
+        # included, which this loop skipped until [UCP] U2 lane ucpu3.
+        #
+        # THE RULE HAS TWO CLAUSES, and this loop stated one until then: a
+        # machine is premultiplied IFF its states*classes is within the bound
+        # AND its seed table has no dead cell (`dfa_premul`'s seed
+        # precondition, 2026-08-26 — the pre-multiplied dead value would index
+        # the accept table far out of range). `sd` is that clause's fact read
+        # off the EMITTED seed cells. Without it every small machine that
+        # starts dead for some context byte — U2's one-character lookaheads'
+        # reverse machines, the first population with such a seed — read as a
+        # violation (17 false reports, triu2 report §5b).
+        for pair in "f:$fpm:$fent:$facc:$fsd" "r:$rpm:$rent:$racc:$rsd" "a:$apm:$aent:$aacc:$asd"; do
             d=${pair%%:*}; rest=${pair#*:}; pm=${rest%%:*}; rest=${rest#*:}
-            ent=${rest%%:*}; acc=${rest#*:}
+            ent=${rest%%:*}; rest=${rest#*:}; acc=${rest%%:*}; sd=${rest#*:}
             [ "$ent" -gt 0 ] || continue
-            if [ "$pm" = "1" ] && [ "$ent" -gt "$PREMUL_MAX_ENTRIES" ]; then
-                boundviol=$((boundviol + 1)); fi
-            if [ "$pm" = "0" ] && [ "$ent" -le "$PREMUL_MAX_ENTRIES" ]; then
-                boundviol=$((boundviol + 1)); fi
+            [ "$sd" = "1" ] && seeddead=$((seeddead + 1))
+            if [ "$pm" = "1" ] && { [ "$ent" -gt "$PREMUL_MAX_ENTRIES" ] || [ "$sd" = "1" ]; }; then
+                boundviol=$((boundviol + 1))
+                echo "    BOUND '$pat' dir=$d: premultiplied at $ent entries, seed-dead=$sd" >&2; fi
+            if [ "$pm" = "0" ] && [ "$ent" -le "$PREMUL_MAX_ENTRIES" ] && [ "$sd" != "1" ]; then
+                boundviol=$((boundviol + 1))
+                echo "    BOUND '$pat' dir=$d: indexed at $ent entries with no dead seed cell" >&2; fi
             # THE ACCEPT TABLE'S LENGTH IS A SECOND, INDEPENDENT WITNESS of the
             # form: premultiplied-indexed means states*classes cells, indexed
             # means states. It comes from a different emitter function than the
@@ -526,6 +572,12 @@ else
             [ "$rpm" = "1" ] && { want_var=unsigned; want_ix=add; }
             { [ "$rvar" = "$want_var" ] && [ "$rix" = "$want_ix" ]; } || shapeviol=$((shapeviol + 1))
         }
+        [ "$aent" -gt 0 ] && {
+            want_var=int; want_ix=mul
+            [ "$apm" = "1" ] && { want_var=unsigned; want_ix=add; }
+            { [ "$avar" = "$want_var" ] && [ "$aix" = "$want_ix" ]; } || shapeviol=$((shapeviol + 1))
+        }
+        [ "$aent" -gt 0 ] && anch_n=$((anch_n + 1))
         # [ENG-FORM] the token-leak witness, counted per ARTIFACT.
         [ "${leak:-0}" -ne 0 ] && leakviol=$((leakviol + 1))
         # Keep ONE premultiplied artifact per distinct forward-table size for
@@ -538,6 +590,7 @@ else
 
     echo "    corpus: $npat pattern(s), $swept compiled, $cmp_n contain a DFA scan"
     echo "    stamp distribution: premultiplied=$prem indexed=$idx mixed=$mix none=$non"
+    echo "    anchored machines read: $anch_n; machines with a dead seed cell: $seeddead"
 
     # K35's remedy: a population nobody counts is a check nobody can trust.
     if [ "$cmp_n" -lt 500 ]; then

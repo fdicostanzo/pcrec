@@ -151,19 +151,26 @@ while IFS= read -r pat; do
         -o "$d/on.c" --pattern "$pat" >/dev/null 2>&1 || { echo SKIP_REFUSED; continue; }
     grep -q '^#define ON_DFA_MATCH "unwrapped"' "$d/on.c" || { echo SKIP_NOTFORM; continue; }
     pcrec_run "$PCREC" -p off --no-captures --features all -fno-anchored-dfa \
-        -o "$d/off.c" --pattern "$pat" >/dev/null 2>&1 || { echo BAD_ASYMMETRIC; echo "BAD: the denied build refused a pattern the default build compiled: $pat"; continue; }
+        -o "$d/off.c" --pattern "$pat" >/dev/null 2>&1 || { echo BAD_ASYMMETRIC; echo "BAD_ASYM: the denied build refused a pattern the default build compiled: $pat"; continue; }
     # `-Werror` on the generated C is the harness's own default and is part of
     # the claim: the anchored body is source SOMEBODY ELSE compiles.
     if ! gen_cc "anchored-diff $pat" $CC $GENCFLAGS -I"$d" \
             -o "$d/drv" "$ROOT_DIR/tests/anchored/anchdiff_driver.c" \
             "$d/on.c" "$d/off.c" > "$d/cc.log" 2>&1; then
-        echo BAD_CC; echo "BAD: could not build the two-artifact driver for: $pat"
+        echo BAD_CC; echo "BAD_CC: could not build the two-artifact driver for: $pat"
         head -3 "$d/cc.log"; continue
     fi
     # `gen_run <label> <cmd...>` — the LABEL is its first argument (it names
     # the run in build/watchdog.log); passing the command as $1 silently makes
     # the whole sweep report "no COMMAND given" as a divergence, which is how
     # the first version of this file measured 1213 false positives.
+    #
+    # EACH KIND'S DETAIL LINE CARRIES ITS OWN TAG (`BAD_DIVERGE:`, `BAD_INFRA:`,
+    # `BAD_CC:`, `BAD_ASYM:`), and each reporter below greps only its own. They
+    # once shared one `BAD: ` prefix under a `grep -m6`, and at [UCP] U2 57
+    # crashing patterns filled all six slots of the DIVERGE reporter, so the two
+    # divergent patterns it counted were never named (triu2_report.md §4). The
+    # DIVERGE list is uncapped: a divergence is the finding this file exists for.
     #
     # THE EXIT CODE IS CLASSIFIED, never collapsed to "not zero". The driver
     # returns 1 for a DIVERGENCE and 2 for a malformed subject or zero cells;
@@ -176,8 +183,8 @@ while IFS= read -r pat; do
     rc=$?
     case "$rc" in
         0) echo "OK ${out#cells }" ;;
-        1) echo BAD_DIVERGE; echo "BAD: $pat"; head -6 "$d/run.err" ;;
-        *) echo BAD_INFRA; echo "BAD: driver exited $rc (neither agreement nor divergence) on: $pat"
+        1) echo BAD_DIVERGE; echo "BAD_DIVERGE: $pat"; head -6 "$d/run.err" ;;
+        *) echo BAD_INFRA; echo "BAD_INFRA: driver exited $rc (neither agreement nor divergence) on: $pat"
            head -3 "$d/run.err" ;;
     esac
 done
@@ -205,15 +212,15 @@ echo "cells: $cells (pattern × subject × every position 0..n+1 × 4 anchored e
 
 [ "$n_div" -eq 0 ] \
     && ok "the unwrapped form and the search-and-filter form agree on every anchored entry, every capture slot and every position over $cells cells" \
-    || { bad "$n_div patterns DIVERGE between the unwrapped form and the search-and-filter form — the identity argument (docs/design/anchored_match_unwrapped.md §3) is refuted on a real input"; grep -m6 '^BAD: ' "$WORKDIR/all.out" >&2; }
+    || { bad "$n_div patterns DIVERGE between the unwrapped form and the search-and-filter form — the identity argument (docs/design/anchored_match_unwrapped.md §3) is refuted on a real input"; grep '^BAD_DIVERGE: ' "$WORKDIR/all.out" >&2; }
 
 [ "$n_infra" -eq 0 ] \
     && ok "every compared artifact pair RAN to a verdict — no watchdog kill, no loader failure, no malformed subject" \
-    || { bad "$n_infra pattern(s) produced a driver exit that is neither agreement nor divergence — this file cannot tell its own breakage from its subject's while that is nonzero"; grep -m6 '^BAD: driver exited' "$WORKDIR/all.out" >&2; }
+    || { bad "$n_infra pattern(s) produced a driver exit that is neither agreement nor divergence — this file cannot tell its own breakage from its subject's while that is nonzero"; grep -m6 '^BAD_INFRA: ' "$WORKDIR/all.out" >&2; }
 
 [ "$n_cc" -eq 0 ] \
     && ok "every compared artifact pair built under $GENCFLAGS" \
-    || { bad "$n_cc pattern(s) produced emitted C that does not compile under $GENCFLAGS — the anchored body is source somebody else compiles"; grep -m6 '^BAD: ' "$WORKDIR/all.out" >&2; }
+    || { bad "$n_cc pattern(s) produced emitted C that does not compile under $GENCFLAGS — the anchored body is source somebody else compiles"; grep -m6 '^BAD_CC: ' "$WORKDIR/all.out" >&2; }
 
 [ "$n_asym" -eq 0 ] \
     && ok "the deny flag refuses no pattern the default build accepts — it selects a form, it does not change what compiles" \

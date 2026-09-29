@@ -2983,7 +2983,7 @@ engine-scoped.**
   |---|---|
   | `"premultiplied"` | every numeric transition table in this artifact's DFA scan holds `next_state * classes`, so the emitted step is `state = table[state + class]` |
   | `"indexed"` | every one holds `next_state`, and the step multiplies (the form pcrec emitted before `[OPT-3]`) |
-  | `"mixed"` | the forward and reverse machines took different forms — the choice is per machine, on that machine's own `states * classes` |
+  | `"mixed"` | the machines this artifact contains took different forms — the choice is per machine, on that machine's own `states * classes` and seed table (a machine that can start dead for some context byte is indexed). The machines are the forward one, the reverse one unless the search is start-pinned, and the anchored one under `<PREFIX>_DFA_MATCH "unwrapped"` ([ENG-ABS]) |
   | `"none"` | the scan has no numeric transition table at all: `_DFA_SCAN "attempt"` (states are labels, a step is a computed `goto`) or `_DFA_SCAN "empty"` |
 
   It is a SELECTION FACT and therefore (a), read off the same predicate the
