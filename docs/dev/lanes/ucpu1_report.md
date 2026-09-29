@@ -169,16 +169,35 @@ binary reproduces identically (the known darwin red).
 
 Deferred / not in this lane: plan.md's [UCP] row and the journal (the
 manager's); the D27-blinded corpus for UCP (none chartered); U2–U4.
-Side finding (not fixed, out of scope): pcrec's `\h`/`\v` under `-e utf8`
-are the byte sets (`\h` does not match U+3000; PCRE2_UTF's `\h` does) — a
-pre-existing divergence from PCRE2 independent of UCP; UCP `[:blank:]` is
-built from the Unicode `\h` list, so it is right.
+Side finding, filed as **K72** (`docs/dev/known_issues.md`, lane ucpu1b,
+not fixed): pcrec's `\h`/`\v` under `-e utf8` are the byte sets (`\h` does
+not match U+3000; PCRE2_UTF's `\h` does, confirmed by a light ssh probe
+against libpcre2 10.46 — `docs/dev/lanes/ucpu1_evidence/probe_hv.py` +
+`probe_hv_10.46.txt`) — a pre-existing divergence from PCRE2 independent
+of UCP (`h_def`/`v_def`, `src/parse/registry.c`, are fixed `DEF_ALWAYS`
+strings never widened); UCP `[:blank:]` is built from the Unicode `\h`
+list directly, so it is right.
 
 ## 6. Questions sent to the manager (Q-A..Q-D), with the defaults taken
 
-- **Q-A** abi: no bump taken. rx_info's layout is unchanged; no UCP-free
-  artifact moves; `--features all` artifacts' module-list stamp gains
-  `,ucp` (intrinsic to adding any module).
+- **Q-A** abi: **RULED (lane ucpu1b, 2026-09-29): bump taken, 44 -> 45.**
+  The lane's own default ("no bump — rx_info's layout is unchanged, no
+  UCP-free artifact moves") is overridden: adding module `ucp` changes
+  the `--features all` `PCREC_FEATURE_MODULES` stamp regardless of
+  whether the requesting build ever asked for the module, which is
+  emitted SCAFFOLDING and by D76/D94 plus the `vars` precedent
+  (`d755a944`, abi 31 -> 32, the landing that added `,vars` to the same
+  stamp) is an `abi` event on its own. Full D94 ritual applied (the
+  constant, `docs/spec/match_api.md` §6's change-log entry, `tests/
+  codegen/run_codegen_tests.sh`'s `ABI_EXPECT`/failure-message copy,
+  `run_recursion_identity.sh`'s FILEPIN self-pinned to `a6e367a7`).
+  Identity result restated: **UCP-free artifacts are byte-identical
+  except the abi digit (a same-length 44->45 substitution — 0 net
+  bytes) and the `--features all` module stamp** (`,ucp`, +4 bytes,
+  present only under `--features all`, present on every artifact —
+  UCP-bearing or not — compiled that way). See
+  `docs/dev/lanes/ucpu1b_report.md` for the triage/ritual/validation
+  record.
 - **Q-B** UCP `\b` under `byte`: refused at U1 (design §6 staging).
 - **Q-C** implied modules: mask only; stamps keep the requested set.
 - **Q-D** spellings: `flags u`; `(*UTF8)` ≡ `(*UTF)`; UTF rows owned by
