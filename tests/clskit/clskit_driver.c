@@ -32,6 +32,12 @@
 enum { MAXSET = 4096, MAXCOMP = 1024 };
 static const long long WHOLE_CAP = 40000;
 static const long long CHUNK_BYTES = 1500000;   /* emitted-text budget per compile unit */
+/* Run-cost budget per unit: checker variants (each is checked over every code
+ * point, ~4 ms) plus 2 per composition (the law pass). MEASURED on ubuntubudu
+ * solo, 2026-09-29: ~4.1 ms per variant, so 500 is ~2 s against the 10 s
+ * GENRUNTIMEOUT -- the headroom is what a full-suite -j load eats; the byte
+ * budget alone let a unit of 118 small sets (1550 variants) run 6.4 s. */
+static const long long CHUNK_VARS = 500;
 static const unsigned LAMS[] = { 0, 4, 16, 256 };
 
 typedef struct {
@@ -115,11 +121,6 @@ static void census_kit(const ClsKit *k)
 }
 
 /* One variant: emit it into `c` and register it in the VARS table text. */
-static void add_var(StrBuf *vars, int si, const char *fn, const char *var)
-{
-    pcrec_sb_printf(vars, "    { %d, \"%s\", %s },\n", si, var, fn);
-}
-
 /* One atomic group's checker text (a set's reference arrays and every kit
  * variant of it, plus the VARS/SETS/COMPS rows naming them). Groups are the
  * unit populations.py guarantees a composition's operands and result share;
@@ -127,7 +128,14 @@ static void add_var(StrBuf *vars, int si, const char *fn, const char *var)
 typedef struct {
     StrBuf body, vars, setsb, comps;
     int atom, nin, ncomps;
+    long long nvar;   /* checker variants: the unit's run cost */
 } Unit;
+
+static void add_var(Unit *u, int si, const char *fn, const char *var)
+{
+    u->nvar++;
+    pcrec_sb_printf(&u->vars, "    { %d, \"%s\", %s },\n", si, var, fn);
+}
 
 static void unit_free(Unit *u)
 {
@@ -141,7 +149,7 @@ static void unit_free(Unit *u)
 static void emit_group(Unit *u, int ch)
 {
     Arena a = { NULL, NULL };
-    StrBuf *c = &u->body, *vars = &u->vars, *setsb = &u->setsb;
+    StrBuf *c = &u->body, *setsb = &u->setsb;
 
     for (int i = 0; i < nset; i++) {
         Set *s = &sets[i];
@@ -165,7 +173,7 @@ static void emit_group(Unit *u, int ch)
             snprintf(fn, sizeof fn, "s%d_k%u", s->idx, LAMS[l]);
             snprintf(var, sizeof var, "K%u", LAMS[l]);
             pcrec_clskit_emit_kit(c, fn, &k);
-            add_var(vars, s->idx, fn, var);
+            add_var(u, s->idx, fn, var);
             census_kit(&k);
         }
         for (size_t o = 0; o < sizeof ONLY / sizeof ONLY[0]; o++) {
@@ -175,7 +183,7 @@ static void emit_group(Unit *u, int ch)
             snprintf(fn, sizeof fn, "s%d_only%zu", s->idx, o);
             snprintf(var, sizeof var, "only-%s", pcrec_clskit_leaf_name(ONLY[o]));
             pcrec_clskit_emit_kit(c, fn, &k);
-            add_var(vars, s->idx, fn, var);
+            add_var(u, s->idx, fn, var);
             census_kit(&k);
         }
         for (ClsForm f = CLSF_PAGE3; f <= CLSF_BITMAP1; f++) {
@@ -186,14 +194,14 @@ static void emit_group(Unit *u, int ch)
             }
             snprintf(fn, sizeof fn, "s%d_%s", s->idx, pcrec_clskit_form_name(f));
             pcrec_clskit_emit_whole(c, &a, fn, f, s->iv, s->n);
-            add_var(vars, s->idx, fn, pcrec_clskit_form_name(f));
+            add_var(u, s->idx, fn, pcrec_clskit_form_name(f));
             form_census[f]++;
         }
         if (s->atom_index >= 0) {
             char fn[96];
             snprintf(fn, sizeof fn, "s%d_ATOM", s->idx);
             pcrec_clskit_emit_atom(c, fn, "atom_tab", &atoms, s->atom_index);
-            add_var(vars, s->idx, fn, "ATOM");
+            add_var(u, s->idx, fn, "ATOM");
             form_census[CLSF_ATOM]++;
         }
     }
@@ -241,28 +249,30 @@ static void write_chunk(const char *outdir, int index, const Unit *units, int lo
 }
 
 /* Emit every group, then pack CONSECUTIVE groups into compile units by their
- * emitted BYTES: gcc's time on a unit follows the text it is handed (measured
+ * emitted BYTES (and, second, by RUN COST -- CHUNK_VARS): gcc's time on a unit follows the text it is handed (measured
  * ~0.8 s/MB at -O1 on the Mac, 4.3 s for a 5.2 MB unit that the old fixed
  * twelve-sets-per-unit rule produced from twelve wide uprops sets), not the
  * number of sets or intervals in it. A group is never split (a composition's
  * operands and result share one); a group over the budget gets a unit alone.
  * Returns the number of units written. */
-static int pack_chunks(const char *outdir, long long budget)
+static int pack_chunks(const char *outdir, long long budget, long long vbudget)
 {
     Unit *units = calloc((size_t)(ngroup ? ngroup : 1), sizeof *units);
     int nunit = 0, lo = 0;
-    long long acc = 0;
+    long long acc = 0, vacc = 0;
 
     for (int g = 0; g < ngroup; g++) emit_group(&units[g], g);
     for (int g = 0; g < ngroup; g++) {
         long long sz = (long long)units[g].body.len;
         if (units[g].nin == 0) continue;
-        if (acc > 0 && acc + sz > budget) {
+        long long vc = units[g].nvar + 2LL * units[g].ncomps;
+        if (acc > 0 && (acc + sz > budget || vacc + vc > vbudget)) {
             write_chunk(outdir, nunit++, units, lo, g);
             lo = g;
-            acc = 0;
+            acc = vacc = 0;
         }
         acc += sz;
+        vacc += vc;
     }
     if (acc > 0) write_chunk(outdir, nunit++, units, lo, ngroup);
     for (int g = 0; g < ngroup; g++) unit_free(&units[g]);
@@ -317,7 +327,7 @@ int main(int argc, char **argv)
     if (!strcmp(argv[1], "dump")) { dump(); return 0; }
     if (strcmp(argv[1], "emit") || argc < 4) { fprintf(stderr, "clskit_driver: bad mode\n"); return 2; }
     long long budget = argc > 4 ? atoll(argv[4]) : CHUNK_BYTES;
-    int nunit = pack_chunks(argv[3], budget);
+    int nunit = pack_chunks(argv[3], budget, argc > 5 ? atoll(argv[5]) : CHUNK_VARS);
     printf("CHUNKS %d SETS %d COMPS %d\n", nunit, nset, ncomp);
     for (int l = 0; l < CLSK_NLEAF; l++)
         printf("LEAF %s %lld\n", pcrec_clskit_leaf_name((ClsLeaf)l), leaf_census[l]);

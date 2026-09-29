@@ -54,7 +54,10 @@ at `PROCS=4`, most of it in the study's Python DP (crosscheck.py).
   populations.py's atomic groups into units by EMITTED BYTES (budget
   `CHUNK_BYTES`, optional argv[4]) so gcc's time per unit is bounded by the
   text it compiles, not by a set count (clstri: a fixed 12 sets/unit made
-  one unit 5.2 MB and over gcc-15's 10 s GENCPU on Linux). Its `dump` mode
+  one unit 5.2 MB and over gcc-15's 10 s GENCPU on Linux) AND by RUN COST
+  (`CHUNK_VARS` checker variants per unit, optional argv[5]: bytes alone let
+  118 small sets run 6.4 s solo against the 10 s GENRUNTIMEOUT and time out
+  under make test's -j load, s1tri 2026-09-29). Its `dump` mode
   prints `SEC`/`WHOLE`/`ATOMS`/`SEL`/`ROW` lines for the cross-check.
   **The reference in each checker is plain interval arrays written by THIS
   file from the population file.** No line of `clskit.c` produces it.
