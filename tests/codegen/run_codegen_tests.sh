@@ -1346,6 +1346,13 @@ while IFS=$'\t' read -r nm pat extra decl; do
     # first draft did not, and the script died at `v: unbound variable` under
     # `set -u`, which is the loud version of this mistake; the quiet version
     # (an unset variable expanding to nothing) is what `set -u` is on for.
+    #
+    # [UCP] U2: every lookbehind fixture here must STAY a lookbehind — a
+    # one-character body (`(?<=b)`, `(?<=a)`) is T3's context node now and
+    # calls no back_step at all (src/parse/ctxnode.c). `residlbtwo` and
+    # `residlbbref` were `(?<=ab)(?<=b)c` and `(a)(?<=a)\1`; their second /
+    # only lookbehind is two characters wide now, which keeps the call-site
+    # count each row declares.
 done <<EOF
 residmemchr	a(b|c)+d	--no-captures	next_pos:0
 residbitmap	[ab]c[de]	--no-captures	next_pos:0
@@ -1362,8 +1369,8 @@ residlb2	(?<=a|bc)x	--features lookaround	next_pos:0,back_step:2
 residlb3	(?<=a|bc|def)x	--features lookaround	next_pos:0,back_step:3
 residlbneg	(?<!ab|cd)x	--features lookaround	next_pos:0,back_step:2
 residlbna	(?<*a|bc)x	--features lookaround	next_pos:0,back_step:2
-residlbtwo	(?<=ab)(?<=b)c	--features lookaround	next_pos:0,back_step:2
-residlbbref	(a)(?<=a)\1	--features backrefs,lookaround	next_pos:0,span_match:1,back_step:1
+residlbtwo	(?<=ab)(?<=xb)c	--features lookaround	next_pos:0,back_step:2
+residlbbref	(a)(?<=aa)\1	--features backrefs,lookaround	next_pos:0,span_match:1,back_step:1
 residvar	^\${v}$	--features vars	next_pos:0,span_match:1
 residvarci	^(?i)\${v}$	--features vars,modifiers	next_pos:0,span_match_caseless:1
 residvarbref	(a)\1\${v}	--features vars,backrefs	next_pos:0,span_match:2
@@ -2141,9 +2148,15 @@ ceil_keep 'M6.4-ATOMIC' '' '(x)*(?:a|ab)c|abcd'
 # predicate this exact artifact answered NOMATCH on all three of its subjects.
 # Its erasure is the twin below, which is the pattern the prefilter actually
 # compiles — so the two fixtures are the two halves of one measurement.
-ceil_drop 'M6.6-LOOKAROUND' '--features lookaround' '((?:a(?!q)|aq)(?:xy){0,4}q)' \
+# [UCP] U2: `(?!q)` has a one-character body, so T3 makes it a CONTEXT NODE,
+# whose NFA lowering is EXACT (no erasure) — the prefilter's window end IS a
+# bound there and the ceiling is correctly KEPT (the third call below). The
+# erased-prefilter hazard this pair pins is asked where the lookaround stays
+# an A_LOOK: under `-fno-ctx-node`, T3's denied configuration.
+ceil_drop 'M6.6-LOOKAROUND' '--features lookaround -fno-ctx-node' '((?:a(?!q)|aq)(?:xy){0,4}q)' \
     "The prefilter answers for the lookaround-ERASED language (nfa.c's A_LOOK arm is an epsilon), so that number is not a bound on this match's end — '((?:a(?!q)|aq)(?:xy){0,4}q)' on \"aqq\" is (0,3) while the erasure '((?:a|aq)(?:xy){0,4}q)' anchored there ends at 2, and a ceiling of 2 prunes the real match away silently (tests/lookaround/prefilter.rxt is the corpus half of this)"
 ceil_keep 'M6.6-LOOKAROUND' '' '((?:a|aq)(?:xy){0,4}q)'
+ceil_keep 'U2-CTXNODE' '--features lookaround' '((?:a(?!q)|aq)(?:xy){0,4}q)'
 
 # --- rule 2: -fno-possessify STILL EMITS A WRITTEN CUT ----------------------
 #

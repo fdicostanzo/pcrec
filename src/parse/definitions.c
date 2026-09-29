@@ -187,10 +187,12 @@ const char *pcrec_def_tag_name(DefTag tag)
  * ("classes, cat, alt, {m,n}+preference, atomic cut, capture, \A, \z,
  * lookaround, and the path-fact family (\K, backrefs, DD-14 call) — \G
  * stays primitive")? A definition's OWN core-syntax text must never contain
- * `A_EOL`/`A_WORDB`/`A_NWORDB` — those are exactly the three kinds full
- * reduction REMOVES (`\Z`/`(?m)$`/`\b`/`\B` all reduce to `A_LOOK`+`A_END`
- * or `A_LOOK` alone, definitions_table.md §2), so their appearance inside a
+ * `A_EOL` — the kind full reduction REMOVES (`\Z`/`(?m)$` reduce to
+ * `A_LOOK`+`A_END`, definitions_table.md §2), so its appearance inside a
  * definition's expansion is the regression this check exists to catch.
+ * [UCP] U2: `\b`/`\B` used to be two more such kinds (A_WORDB/A_NWORDB);
+ * they now build the CONTEXT NODE, A_CTX, which is the reduction's target
+ * rather than a spelling reduced away (ucp_design.md §2.2), so it is core.
  *
  * EXHAUSTIVE, NO DEFAULT (mrl.c's rule): a new `AKind` is a compile error
  * here until this function states which side of the reduction it falls on. */
