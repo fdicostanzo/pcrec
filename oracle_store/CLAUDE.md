@@ -42,6 +42,20 @@ dev box) is a separate, gitignored cache under `build/oracle_cache/` — see
   digit-MB bound `docs/design/oracle_interface.md` §7.3/§13 left as an
   open question — now MEASURED rather than estimated, so plain committed
   text needs no revisiting.
+- `libpcre2-10.46-ucp/membership.tsv` — [UCP] U1 (D130 Q9): the SAME kind
+  under a UCP OracleId (`ucp=1`), 46 rows — every construct of
+  `tests/ucp/ucp_sets.py` (`\d \s \w` and the 13 POSIX classes) under `byte`
+  and `utf8`, plus each DEFK_SET spelling under `utf8`. Under UCP a row's
+  `property` is the construct's PATTERN TEXT (`tests/oracle/oracle_store.py`'s
+  OracleId docstring). Captured by `tests/ucp/build_ucp_store.py` over one
+  light ssh session to the 10.46 box; read by `tests/ucp/ucp_compare.py`.
+
+STORE FORMAT VERSION 2 ([UCP] U1): every header carries a `ucp=` field. The
+three files above that predate it were RE-HEADERED in that change
+(`store_format_version=2`, `ucp=0`) with their rows untouched — each was
+captured with PCRE2_UCP off, which is what `ucp=0` records, and every row's
+hash recomputes identically (`property` joined the byte-escaped fields with no
+existing row containing a byte the escape rewrites).
 
   **Wiring this store as `tests/utf8/axis12_scripts.rxt`'s actual oracle is
   NOT this lane's build** (D77 / the design's own migration-ladder scoping,

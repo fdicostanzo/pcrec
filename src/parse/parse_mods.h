@@ -81,9 +81,31 @@ struct ParseMods {
      * BEATS the API bit, so the letter — not an option word — is the
      * authoritative state even in PCRE2. */
     bool    dupnames;
+    /* [UCP] UCP semantics (`(*UCP)` / `--ucp`, ucp_design.md §1). A
+     * WHOLE-PATTERN option in PCRE2 (a start-of-pattern verb, never an inline
+     * letter), so nothing scoped sets or clears it; it lives here because its
+     * consumers — the definitions table's `DEF_UCP_*` tags and the class fold
+     * (T2) — are parse-time readers of exactly this struct. */
+    bool    ucp;
+    /* [UCP] PCRE2's ASCII-restriction letters `(?aD)/(?aS)/(?aW)/(?aP)/(?aT)`
+     * (`(?a)` sets all five), a `PARSE_ARESTRICT_*` mask. SCOPED like `i`, and
+     * MEASURED to SURVIVE `(?^)` like `U` and `J` do (10.48: `(?aD)(?^)\d`
+     * stays ASCII). Meaningful only under `ucp` — without it every set is
+     * ASCII already, which is why pcrec accepted the letters as no-ops. */
+    uint8_t arestrict;
     uint8_t xlevel;     /* 0 off / 1 `x` / 2 `xx` — consumed by the
                          * MOD-0.5d lexer; the state exists so one run
                          * parser owns every letter */
+};
+
+/* [UCP] `ParseMods.arestrict`'s bits, one per PCRE2 restriction letter. */
+enum {
+    PARSE_ARESTRICT_D = 1u << 0,
+    PARSE_ARESTRICT_S = 1u << 1,
+    PARSE_ARESTRICT_W = 1u << 2,
+    PARSE_ARESTRICT_P = 1u << 3,
+    PARSE_ARESTRICT_T = 1u << 4,
+    PARSE_ARESTRICT_ALL = 0x1fu
 };
 
 #endif /* PCREC_PARSE_MODS_H */

@@ -16,8 +16,10 @@ SAB_DOC_FIGURE="measured MOD-0.4c: 1 reject failure (the a(*CR) manifest pin); t
 # verdict.
 SAB_REACH='"$PCREC" --features none -p rx -o "$REACH_TMP/o0.c" --pattern "a(*UTF)"'
 SAB_REACH_EXPECT="(*VERB) not recognized or malformed (pattern offset 1)"
+# [UCP] U0 re-aim (lane ucpu1): the position rule is the general option-RUN
+# rule now (`at != cx->optrun_end`); deleting it is the same deletion.
 SAB_COUNT=1
-SAB_BEFORE="    if ((v->forms & VF_ATSTART) && at != 0)
+SAB_BEFORE="    if ((v->forms & VF_ATSTART) && at != cx->optrun_end)
         REFUSE(at, \"%s\", t->unknown_msg);
 
     /* K14"

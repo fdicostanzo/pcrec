@@ -145,5 +145,26 @@ static void ucd_partners(const PcrecCpSet *in, PcrecCpSet *out)
     }
 }
 
+/* [UCP] The Unicode simple fold RESTRICTED to pairs whose both members are
+ * Latin-1 (<= 0xFF): PCRE2_UCP without PCRE2_UTF (ucp_design.md §1.5, [S]
+ * §B.3) — the 26 ASCII pairs plus the 30 of U+00C0..U+00DE / U+00E0..U+00FE.
+ * DERIVED from `ucd_partners`' own table rather than listed, so the byte tier
+ * cannot disagree with the utf8 fold about a pair both can see; a member
+ * whose only partners are outside Latin-1 (µ, ÿ, ß) folds to nothing. */
+static void latin1_partners(const PcrecCpSet *in, PcrecCpSet *out)
+{
+    size_t n = sizeof pcrec_ucd_fold_links / sizeof *pcrec_ucd_fold_links;
+    for (size_t i = 0; i < n; i++) {
+        unsigned cp = pcrec_ucd_fold_links[i].cp, m;
+        int guard = 0;
+        if (cp > 0xFFu || !pcrec_cpset_has(in, cp)) continue;
+        for (m = pcrec_ucd_fold_links[i].next;
+             m != cp && guard < PCREC_FOLD_MAX_ORBIT;
+             m = ucd_fold_next(m), guard++)
+            if (m <= 0xFFu) pcrec_cpset_add(out, m, m);
+    }
+}
+
 const PcrecFold pcrec_fold_ascii      = { "ascii", ascii_partners };
 const PcrecFold pcrec_fold_ucd_simple = { "ucd-simple", ucd_partners };
+const PcrecFold pcrec_fold_latin1     = { "latin1", latin1_partners };

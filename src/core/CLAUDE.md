@@ -347,6 +347,12 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   patterns that need it. `-2`'s cell itself is UNCHANGED (narrowing it was
   disposition 1, not taken).
 
+- **fold.c ([UCP] U1 addition)** — `pcrec_fold_latin1`: the Unicode simple
+  fold restricted to pairs whose both members are Latin-1, DERIVED from the
+  same link table `pcrec_fold_ucd_simple` walks (26 ASCII + 30 Latin-1
+  pairs) — PCRE2_UCP without PCRE2_UTF's fold, selected by src/parse/parse.c's
+  T2 `latin1` row; checked against 10.46 over all 256×256 byte pairs by
+  tests/ucp/latin1_fold_check.c.
 - **fold.c** — THE ASCII CASE-FOLD PARTITION AS ONE OBJECT ([M6.5.2], D23,
   R32 E8). `pcrec_ascii_fold[c]` is c's case PARTNER, or c itself when it has
   none: exactly the 52 ASCII letters, each with one partner, and no byte

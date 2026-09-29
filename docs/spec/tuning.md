@@ -3054,16 +3054,22 @@ their home, not this document. The six `max_*` caps and
 `warn_emit_bytes` are the same: resource bounds, `limits.md`'s territory,
 quoted as shipped in `match_api.md` §8.2.
 
-**The four `flags` bits that are NOT tuning axes**, named here so the
+**The five `flags` bits that are NOT tuning axes**, named here so the
 table above can be read as exhaustive rather than as merely long:
 `PCREC_CASELESS`, `PCREC_EMIT_MAIN` and `PCREC_NO_CAPTURES` are semantic
 and output options (`docs/spec/match_api.md` §8.2 and `docs/spec/cli.md`),
+`PCREC_UCP` (bit 34, `--ucp`, [UCP] U1, D130 Q1) is a SEMANTIC axis — it
+changes what `\d \s \w` and the POSIX classes MATCH, so it is reflected in
+`rx_info.flags` UNMASKED, no `--tune` position may set it (D125's
+structurally-ineligible bucket: its two arms disagree about answers on
+purpose), and `make test-axes` does not sweep it (`docs/spec/cli.md`
+`--ucp`),
 and `PCREC_TRACE` (`--trace`) selects an INSTRUMENTED matcher that writes
 an event stream to stderr — a generation axis that deliberately changes
 what the artifact DOES at run time, which is exactly what a §2 axis may
 not do (`docs/spec/table_contract.md`'s Scope section places the stream
 explicitly OUT of the table contract and names `[V-H]` as its design
-home). None of the four is answer-preserving in §1's sense, so none
+home). None of the five is answer-preserving in §1's sense, so none
 belongs in §2, and `--trace`'s bit has no mirror row for that reason
 rather than by oversight.
 

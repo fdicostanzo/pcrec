@@ -2637,6 +2637,12 @@ struct Ctx {
      * comments in parse.c for why the close has to happen there and not
      * inside the quoted-byte reader itself. */
     bool                 in_quote;
+    /* [UCP] The end of the ACCEPTED leading run of start-of-pattern options
+     * (`(*UTF)`, `(*UCP)`), 0 before any. PCRE2 allows a RUN of them —
+     * `(*UTF)(*UCP)` in either order — and a start-of-pattern verb is valid
+     * exactly when it begins where this run ends (mod_verbs.c). Written only
+     * by the port that accepts one of those verbs. */
+    size_t               optrun_end;
     /* SCOPED PARSE STATE (PARSE-1; widened to a struct at MOD-0.5c, the
      * D31-note's "expect a struct, not more bools"). Seeded at parse entry
      * and saved/restored around every BODY-CARRYING group, because that is
@@ -3157,7 +3163,12 @@ enum {
      * supplies per call. The REPLACEMENT-side consumer is NOT this module —
      * it rides D38's already-named `subst` / `subst-extended` / `subst-pcrec`
      * (variables_common.md §7 Q6, ruled). */
-    FEAT_VARS             = 1u << 17
+    FEAT_VARS             = 1u << 17,
+    /* [UCP] module `ucp` (docs/design/ucp_design.md §1.2, D130): the
+     * `(*UCP)` verb, the `--ucp` axis and the `(?a…)` letters' UCP meaning.
+     * Also owns `(*UTF)`/`(*UTF8)`, which restate `--encoding=utf8`. An
+     * encoding may IMPLY it (`PcrecEnc.implied_features`, O-71). */
+    FEAT_UCP              = 1u << 18
 };
 
 /* Flavour: which construct a byte MEANS. Exactly one today, by design — D18's
@@ -3787,6 +3798,24 @@ typedef struct {
 
 extern const PcrecFold pcrec_fold_ascii;        /* the 52 ASCII letters */
 extern const PcrecFold pcrec_fold_ucd_simple;   /* Unicode simple folding */
+extern const PcrecFold pcrec_fold_latin1;       /* [UCP] ucd-simple within Latin-1 */
+
+/* [UCP] What KIND of contribution a class set is, which is what the fold
+ * table (T2, src/parse/parse.c's `fold_rows`) selects a fold relation by
+ * (ucp_design.md §0.1 T2). */
+typedef enum {
+    CLS_LITERAL,        /* a literal or range written in the pattern */
+    CLS_NAMED_BYTES,    /* a named byte set: \d \w \s, a POSIX bracket */
+    CLS_PROPERTY,       /* a \p set — unicode-props picked its own span */
+    CLS_UCP_SET,        /* a UCP set (mod_ucp.c), fold-closed or not */
+    CLS_UCP_SET_INERT   /* a UCP set that is fold-INERT ([:lower:]/[:upper:]) */
+} ClsContrib;
+
+/* [UCP] The one set-to-A_CLASS constructor every producer ends in: folds `s`
+ * by the relation T2 selects for `kind`, complements within the encoding's
+ * universe when `negate` (fold BEFORE negate), publishes. */
+Ast *pcrec_ast_class_from_cpset(Ctx *cx, PcrecCpSet *s, ClsContrib kind,
+                                bool negate);
 
 /* [DD-11.1] THE REPLACEMENT/DEFINITION TABLE (D85, docs/design/
  * definitions_table.md, r43-revised). For a row whose construct stands for
@@ -3814,13 +3843,18 @@ typedef enum {
     DEF_ALWAYS,          /* the row's only entry, or its unconditional tail */
     DEF_MULTILINE,       /* cx->mods->multiline true at the construct */
     DEF_NOCAP,           /* cx->mods->nocap true at the construct */
-    DEF_UCP,             /* Unicode class semantics active — NO PRODUCER YET
-                          * (module unicode-props has no \w-shaped producer);
-                          * the evaluator answers false unconditionally until
-                          * one exists, which is sound (the row falls through
-                          * to its DEF_ALWAYS entry, today's byte behaviour) */
+    /* [UCP] UCP semantics are active at the construct AND its PCRE2
+     * ASCII-restriction family is not restricted (ucp_design.md §1.4, D130
+     * Q5) — one tag per family, because `(?aD)/(?aS)/(?aW)/(?aP)/(?aT)` each
+     * restrict exactly one (MEASURED, [O]). `_T` is `[:digit:]`/`[:xdigit:]`,
+     * which `aP` restricts too: its predicate is UCP ∧ ¬aP ∧ ¬aT. */
+    DEF_UCP_D,           /* \d \D */
+    DEF_UCP_S,           /* \s \S */
+    DEF_UCP_W,           /* \w \W \b \B */
+    DEF_UCP_P,           /* the POSIX classes but the digit pair */
+    DEF_UCP_T,           /* [:digit:] [:xdigit:] */
     DEF_ENCODING_UTF8,   /* --encoding=utf8 — NO PRODUCER YET ([DD-12]/[M5]);
-                          * same false-until-built shape as DEF_UCP */
+                          * answers false until built */
     DEF_NEWLINE_CONV,    /* a non-LF newline convention is active — NO
                           * PRODUCER YET (D64, parked); same shape */
     DEF_LIB_NAME_BOUND   /* [LIB]/[DD-13b]: the name is bound in the
@@ -3869,7 +3903,31 @@ typedef enum {
  * punctuation for `\c`, boundary code points for `\N{U+}`, the octal edge
  * cases) rather than a single string, since no ONE operand could stand for
  * the row the way a fixed `DEFK_STR` value does. */
-typedef enum { DEFK_END, DEFK_STR, DEFK_BUILDER, DEF_IDENTITY, DEFK_TEXTFN, DEFK_ROW } DefKind;
+/* DEFK_SET ([UCP], ucp_design.md §1.4): a SET-VALUED definition — a code-point
+ * set composed from existing tables (`set`, a `PcrecSetDef`) and built at the
+ * occurrence under the compile's encoding (clamped to its universe) by the
+ * one set producer (`pcrec_setdef_class`, src/parse/mod_ucp.c). `str` is the
+ * set's core-syntax spelling under `utf8`, for the dump; the definitions check
+ * ties the two. It exists because `[:lower:]`'s UCP definition is `\p{Ll}`
+ * FOLD-INERT, which no string can say (`(?i)\p{Ll}` folds), and because a set
+ * the byte universe clamps (`\x{ff10}` under `byte`) has no byte-legal
+ * spelling. */
+typedef enum { DEFK_END, DEFK_STR, DEFK_BUILDER, DEF_IDENTITY, DEFK_TEXTFN, DEFK_ROW, DEFK_SET } DefKind;
+
+/* [UCP] A composed code-point set: the union of `terms` — each a
+ * unicode-props BARE-namespace name (normalised, e.g. "ND") or, with `prop`
+ * NULL, the range [lo, hi] — complemented over Unicode when `complement`.
+ * `fold_inert` is T2's `inert` row (§1.3 rule 1: UCP `[:lower:]`/`[:upper:]`
+ * are added unfolded under `(?i)`). Data, so `--list-definitions` and the
+ * definitions check read what the producer builds. */
+typedef struct PcrecSetTerm { const char *prop; unsigned lo, hi; } PcrecSetTerm;
+typedef struct PcrecSetDef {
+    const char         *name;
+    bool                complement;
+    bool                fold_inert;
+    const PcrecSetTerm *terms;
+    int                 nterms;
+} PcrecSetDef;
 
 /* A DEFK_BUILDER's `builder` takes the body the construct would otherwise
  * wrap or number, and returns the CORE-syntax equivalent — e.g. the
@@ -3968,6 +4026,10 @@ typedef struct RegDef {
      * changed) — a lesson for the next field added here: "compiles" and
      * "compiles clean under strict" are different claims. */
     const char  *operand;
+    /* DEFK_SET only (NULL everywhere else): the composed set the producer
+     * builds. Appended LAST for `operand`'s reason (every positional
+     * initializer gained a trailing `, NULL`, mechanically). */
+    const PcrecSetDef *set;
 } RegDef;
 
 /* src/parse/definitions.c */
@@ -4404,6 +4466,30 @@ const RegRow *pcrec_atomic_suffix_row(int quant_byte);
 ExtResult pcrec_laport_group(Ctx *cx, const RegRow *rw, ExtWant want,
                              size_t at, size_t from);
 
+/* [UCP] module `ucp`'s verb ports (src/parse/mod_ucp.c): `(*UTF)`/`(*UTF8)`
+ * accepted as a restatement under a Unicode encoding and refused by the row's
+ * own sentence otherwise. */
+ExtResult pcrec_ucpport_utf(Ctx *cx, const RegRow *rw, ExtWant want,
+                            size_t at, size_t from);
+ExtResult pcrec_ucpport_ucp(Ctx *cx, const RegRow *rw, ExtWant want,
+                            size_t at, size_t from);
+/* [UCP] the composed UCP sets the definitions table's DEFK_SET entries name,
+ * and their one producer: `pcrec_setdef_build` builds a set clamped to the
+ * encoding's universe; `pcrec_setdef_class` routes it (the narrow/wide table)
+ * and returns its A_CLASS, or NULL with `why` filled for a refused wide set. */
+extern const PcrecSetDef pcrec_ucp_set_digit, pcrec_ucp_set_space,
+    pcrec_ucp_set_pspace, pcrec_ucp_set_word, pcrec_ucp_set_alpha,
+    pcrec_ucp_set_alnum, pcrec_ucp_set_lower, pcrec_ucp_set_upper,
+    pcrec_ucp_set_cntrl, pcrec_ucp_set_blank, pcrec_ucp_set_xdigit,
+    pcrec_ucp_set_punct, pcrec_ucp_set_graph, pcrec_ucp_set_print;
+void pcrec_setdef_build(Ctx *cx, const PcrecSetDef *d, PcrecCpSet *s);
+Ast *pcrec_setdef_class(Ctx *cx, const PcrecSetDef *d, bool negate,
+                        const char *construct, char *why, size_t whysz);
+/* [UCP] the POSIX row's per-NAME resolution: the first applicable entry
+ * whose `operand` is `name` (definitions.c). */
+const RegDef *pcrec_def_resolve_operand(const Ctx *cx, const RegRow *rw,
+                                        const char *name, size_t len);
+
 /* [DD-14.LB] MODULE `lookaround`'s HALF OF THE DEFERRED WIDTH RE-CHECK — the
  * §2.5 fixed-width rule, asked a SECOND TIME, at a second TIMING.
  *
@@ -4727,6 +4813,9 @@ ExtResult pcrec_modport_uprops(Ctx *cx, const RegRow *rw, ExtWant want,
  * generator's and is not a contract; nothing on the compile path calls
  * these.  `pcrec_uprops_unicode_version` is the PIN, to be compared against
  * `pcre2_abi_unicode_version`'s report of the oracle's. */
+/* [UCP] a bare-namespace property's case-sensitive interval span by its
+ * normalised name, NULL if absent (mod_ucp.c's set recipes read it). */
+const PcrecCpRange *pcrec_uprops_span(const char *normname, int *n);
 size_t pcrec_uprops_row_count(void);
 const char *pcrec_uprops_row_name(size_t i, unsigned *ns);
 const char *pcrec_uprops_unicode_version(void);

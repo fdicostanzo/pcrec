@@ -25,6 +25,12 @@ DATA this code produces and reads; this directory is the CODE.
   silently wrong answer). A `store_format_version` the reader does not
   implement is a CLEAN MISS (§8 Claim 4), not a raise. No adapter code here
   — this module knows nothing about libpcre2 or ssh.
+  **[UCP] U1 (D130 Q9): `OracleId.config` gains `ucp`** (dirname tag
+  `-ucp`, header field `ucp=`), the store format is version 2, and
+  `property` became a byte-escaped field so a UCP question can carry a class
+  CONSTRUCT's text (`\d`, `[[:alpha:]]`) — hash-preserving for every row
+  written before it. `remote_adapter.py` takes `ucp=True` and then compiles
+  the question verbatim with PCRE2_UCP instead of `\p{..}`.
 
   **ONE IMPLEMENTATION CHOICE the design left open, recorded rather than
   silently decided**: the per-kind ANSWER columns that are naturally

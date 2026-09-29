@@ -216,11 +216,11 @@ bool pcrec_registry_option_run_recognise(const char *at, size_t avail,
  *               rule). The reset is to-constant, not to-`opt` — a `(?^)`
  *               under `-i` turns caseless OFF (the PARSE-1 landmine, now
  *               load-bearing).
- *   r, a+sub    MEASURED NO-OPS at options=0 in the C locale: `(?ri)` vs
- *               `(?i)` is 0 diff cells over 256x256, and all four a-sub
- *               pairs are census-identical (probe_mod05.c). They become
- *               real under UTF/UCP — MOD-0.6/M5 own that day; the letters
- *               are consumed here so the run parses, and nothing is set.
+ *   r           a MEASURED NO-OP at options=0 in the C locale: `(?ri)` vs
+ *               `(?i)` is 0 diff cells over 256x256 (probe_mod05.c);
+ *               refused under an encoding whose fold crosses ASCII (K70).
+ *   a+sub       the ASCII restrictions, SCOPED state read only under UCP
+ *               ([UCP] U1; without UCP a measured no-op, probe_mod05.c).
  *   m           REAL as of [M6.2] wave C — module `assertions`. Sets the
  *               scoped multiline state; `p_atom`'s `^`/`$` rows resolve it
  *               onto the node at the assertion itself (D62), which is what
@@ -273,6 +273,7 @@ ExtResult pcrec_modport_optrun(Ctx *cx, const RegRow *rw, ExtWant want,
     bool set_m = false, set_J = false;
     bool un_i = false, un_s = false, un_U = false, un_n = false, un_x = false;
     bool un_m = false, un_J = false;
+    unsigned set_a = 0, un_a = 0;   /* [UCP] PARSE_ARESTRICT_* masks */
     int xlvl = -1;              /* -1 = the run does not touch the level */
 
     if (i < n && p[i] == '^') { caret = true; i++; }
@@ -433,22 +434,30 @@ ExtResult pcrec_modport_optrun(Ctx *cx, const RegRow *rw, ExtWant want,
                 }
             }
             break;
-        case 'a':
-            /* One optional ASCII-restrict sub-letter (the measured grammar);
-             * the pair is a no-op at options=0 (census-identical). [K70]
-             * STAYS a no-op under `-e utf8` WITHOUT UCP, unlike `r` above —
-             * pcrec has no UCP support at all (`\d`/`\w`/`\s` are already
-             * ASCII-only regardless of encoding, registry.c's shorthand
-             * rows), so an ASCII-restrict sub-letter has nothing to
-             * restrict. MEASURED against libpcre2 10.46 under UTF alone
-             * (no UCP) for all five sub-letters plus the bare `(?a)`:
-             * identical answers with and without the letter, every case
-             * (`studies/k70_probe/probe_k70.py`). */
-            if (i + 1 < n && (p[i + 1] == 'D' || p[i + 1] == 'P' ||
-                              p[i + 1] == 'S' || p[i + 1] == 'T' ||
-                              p[i + 1] == 'W'))
-                i++;
+        case 'a': {
+            /* [UCP] One optional ASCII-restrict sub-letter (the measured
+             * grammar). REAL since [UCP] U1 (D130 Q5): each letter restricts
+             * one PCRE2 family, read by the definitions table's `DEF_UCP_*`
+             * tags; bare `a` is all five, `-a` clears all five, `-aX` one
+             * (MEASURED on 10.48: `(?a)(?-aD)\d` is UCP again, `(?-a)` clears
+             * everything). WITHOUT UCP the state is set and never read, which
+             * is the measured no-op the letters always were: without UCP every
+             * one of those sets is ASCII already (`studies/k70_probe/`). */
+            unsigned bit = PARSE_ARESTRICT_ALL;
+            if (i + 1 < n) {
+                switch (p[i + 1]) {
+                case 'D': bit = PARSE_ARESTRICT_D; break;
+                case 'S': bit = PARSE_ARESTRICT_S; break;
+                case 'W': bit = PARSE_ARESTRICT_W; break;
+                case 'P': bit = PARSE_ARESTRICT_P; break;
+                case 'T': bit = PARSE_ARESTRICT_T; break;
+                default:  break;
+                }
+            }
+            if (bit != PARSE_ARESTRICT_ALL) i++;
+            if (hyphen) un_a |= bit; else set_a |= bit;
             break;
+        }
         default:
             /* Unreachable: option_run_ok admitted the run. A wall, not a
              * decline — declining here would re-read the construct. */
@@ -470,9 +479,16 @@ ExtResult pcrec_modport_optrun(Ctx *cx, const RegRow *rw, ExtWant want,
          * it here would turn a legal pattern into an error — the safe-looking
          * direction, and still wrong. */
         bool keep_dupnames = ns.dupnames;
+        /* [UCP] the ASCII restrictions SURVIVE it too (MEASURED on 10.48:
+         * `(?aD)(?^)\d` stays ASCII), and UCP itself is a start-of-pattern
+         * verb, never an inline letter, so no caret can reach it. */
+        uint8_t keep_arestrict = ns.arestrict;
+        bool keep_ucp = ns.ucp;
         ns = (ParseMods){0};
         ns.ungreedy = keep_ungreedy;
         ns.dupnames = keep_dupnames;
+        ns.arestrict = keep_arestrict;
+        ns.ucp = keep_ucp;
     }
     if (set_i) ns.caseless = true;
     if (set_s) ns.dotall = true;
@@ -480,6 +496,7 @@ ExtResult pcrec_modport_optrun(Ctx *cx, const RegRow *rw, ExtWant want,
     if (set_n) ns.nocap = true;
     if (set_m) ns.multiline = true;
     if (set_J) ns.dupnames = true;
+    ns.arestrict = (uint8_t)(ns.arestrict | set_a);
     if (xlvl >= 0) ns.xlevel = (uint8_t)xlvl;
     if (un_i) ns.caseless = false;
     if (un_s) ns.dotall = false;
@@ -488,6 +505,7 @@ ExtResult pcrec_modport_optrun(Ctx *cx, const RegRow *rw, ExtWant want,
     if (un_m) ns.multiline = false;
     if (un_J) ns.dupnames = false;
     if (un_x) ns.xlevel = 0;
+    ns.arestrict = (uint8_t)(ns.arestrict & ~un_a);
 
     if (p[i] == ')') {
         /* Bare run: mutate the enclosing scope and produce the construct's

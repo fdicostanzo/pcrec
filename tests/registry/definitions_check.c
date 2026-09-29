@@ -130,6 +130,65 @@ static void check_str_entry(const char *owner, const char *str)
     release(&cx);
 }
 
+/* [UCP] One DEFK_SET entry: its `str` is the SPELLING of the set the one
+ * producer builds (`pcrec_setdef_build`), and the two are separate sources —
+ * a spelling written by hand beside a term list — so they are TIED here:
+ * `str`, parsed by the real parser under `-e utf8` with every module on, must
+ * produce exactly the interval list the producer builds under `-e utf8`.
+ * (Under `byte` the spelling does not parse at all — `\x{ff10}` names a code
+ * point the byte universe lacks — which is the reason DEFK_SET exists.) The
+ * `negate` is the ROW's port flag (`\D`'s spelling is `\P{Nd}`, its set is
+ * `\d`'s). The entry must also be CONDITIONAL: a set entry under DEF_ALWAYS would replace
+ * the row's shipped byte set for every compile. */
+static void check_set_entry(const char *owner, const RegDef *d, bool negate)
+{
+    if (!d->set || !d->str) {
+        bad("definitions: %s: DEFK_SET entry without its set or its spelling",
+            owner);
+        return;
+    }
+    if (d->tag == DEF_ALWAYS) {
+        bad("definitions: %s: DEFK_SET entry '%s' under DEF_ALWAYS — a UCP set "
+            "would replace the row's byte set on every compile", owner, d->str);
+        return;
+    }
+    Ctx cx; pcrec_options defo;
+    memset(&cx, 0, sizeof cx);
+    cx.enabled_features = pcrec_enabled_mask();
+    pcrec_default_options(&defo);
+    defo.encoding = PCREC_ENC_UTF8;
+    cx.pat = d->str;
+    cx.patlen = strlen(d->str);
+    cx.opt = &defo;
+    cx.job = calloc(1, sizeof(Job));
+    if (!cx.job) { fprintf(stderr, "FAIL: out of memory\n"); exit(2); }
+    cx.arena.cx = &cx;
+    Ast *volatile root = NULL;
+    PcrecCpSet built;
+    if (setjmp(cx.jb) == 0) {
+        pcrec_parse_mods_init(&cx);
+        root = pcrec_parse_info(&cx, NULL);
+        pcrec_setdef_build(&cx, d->set, &built);
+        /* the PORT negates (`\D` is `\d`'s set with the port's flag), so a
+         * negated row's spelling is the complement of the set it names */
+        if (negate) pcrec_cpset_complement(&built, 0x10FFFFu);
+    }
+    if (!root || root->k != A_CLASS) {
+        bad("definitions: %s: DEFK_SET spelling '%s' does not parse to ONE "
+            "class under -e utf8", owner, d->str);
+    } else if (root->u.cls.n != built.n ||
+               memcmp(root->u.cls.iv, built.iv,
+                      (size_t)built.n * sizeof *built.iv) != 0) {
+        bad("definitions: %s: DEFK_SET spelling '%s' (%d intervals) and the "
+            "set '%s' the producer builds (%d intervals) DIFFER under -e utf8",
+            owner, d->str, root->u.cls.n, d->set->name, built.n);
+    } else {
+        ok("definitions: %s: DEFK_SET '%s' == set '%s' (%d intervals, utf8)",
+           owner, d->str, d->set->name, built.n);
+    }
+    release(&cx);
+}
+
 /* One row's DEFK_ROW chain: `str` names the TARGET row's `syntax`
  * ("an alias row defines to the row it aliases, never to the alias's own
  * expansion" — internal.h's comment before `DEFK_ROW` has the full rule).
@@ -249,7 +308,7 @@ static void check_textfn_entry(const char *owner, DefTextFn textfn,
  * registry_check.c) so a sixth RegKind added later is swept with no edit
  * here — silence on a new kind is exactly the "half-done invisibly" failure
  * shape that precedent was written to close. */
-static int n_rows_with_defs = 0, n_str_entries = 0, n_textfn_entries = 0, n_row_entries = 0;
+static int n_rows_with_defs = 0, n_str_entries = 0, n_textfn_entries = 0, n_row_entries = 0, n_set_entries = 0;
 
 static void sweep_definitions(void)
 {
@@ -315,6 +374,11 @@ static void sweep_definitions(void)
                         bad("definitions: %s: DEFK_TEXTFN entry with no "
                             "template text (--list-definitions would print "
                             "an empty `definition` field)", owner);
+                } else if (d->kind == DEFK_SET) {
+                    n_set_entries++;
+                    check_set_entry(d->operand ? d->operand : owner, d,
+                                    r->aport.kind == PORT_SET &&
+                                    r->aport.scalar != 0);
                 } else if (d->kind == DEF_IDENTITY) {
                     if (d->tag != DEF_ALWAYS)
                         bad("definitions: %s: DEF_IDENTITY entry with "
@@ -345,8 +409,9 @@ static void sweep_definitions(void)
             "(coverage regression)");
     else
         ok("definitions: swept %d rows / %d DEFK_STR + %d DEFK_TEXTFN + "
-           "%d DEFK_ROW entries with `definitions` populated",
-           n_rows_with_defs, n_str_entries, n_textfn_entries, n_row_entries);
+           "%d DEFK_ROW + %d DEFK_SET entries with `definitions` populated",
+           n_rows_with_defs, n_str_entries, n_textfn_entries, n_row_entries,
+           n_set_entries);
 }
 
 /* The two shipped builders, tested directly once each (see the comment in
@@ -450,9 +515,9 @@ static void check_predicate_bites(void)
 static const RegDef synthetic_w_def[] = {
     /* fictional: stands in for a future real DEF_UCP entry, never claims
      * to BE one -- see the function comment above. */
-    {DEFK_STR, DEF_MULTILINE, "[\\p{L}0-9_]", NULL, NULL, NULL},
-    {DEFK_STR, DEF_ALWAYS,    "[A-Za-z0-9_]", NULL, NULL, NULL}, /* == real \w */
-    {DEFK_END, DEF_ALWAYS,    NULL,           NULL, NULL, NULL},
+    {DEFK_STR, DEF_MULTILINE, "[\\p{L}0-9_]", NULL, NULL, NULL, NULL},
+    {DEFK_STR, DEF_ALWAYS,    "[A-Za-z0-9_]", NULL, NULL, NULL, NULL}, /* == real \w */
+    {DEFK_END, DEF_ALWAYS,    NULL,           NULL, NULL, NULL, NULL},
 };
 static const RegDef synthetic_b_def[] = {
     /* == the real \b row's own definition text, chosen because it embeds
@@ -460,8 +525,8 @@ static const RegDef synthetic_b_def[] = {
      * this guard exists to exercise. DEF_ALWAYS-only: \b's own tag never
      * varies; only the (independently resolved) \w reference inside its
      * TEXT would, once DD-11.5 wires real substitution. */
-    {DEFK_STR, DEF_ALWAYS, "(?:(?<=\\w)(?!\\w)|(?<!\\w)(?=\\w))", NULL, NULL, NULL},
-    {DEFK_END, DEF_ALWAYS, NULL, NULL, NULL, NULL},
+    {DEFK_STR, DEF_ALWAYS, "(?:(?<=\\w)(?!\\w)|(?<!\\w)(?=\\w))", NULL, NULL, NULL, NULL},
+    {DEFK_END, DEF_ALWAYS, NULL, NULL, NULL, NULL, NULL},
 };
 
 /* A minimal RegRow: pcrec_def_resolve reads only `.definitions` (and

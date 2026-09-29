@@ -129,6 +129,17 @@ PCRE2-divergent answer; `<prefix>_next_pos` is the supported way to produce a
 valid `startpos`, and the find-all loop of `docs/spec/match_api.md` §3.1
 already uses it.
 
+**`-e utf8` IMPLIES modules `unicode-props` and `ucp`** ([UCP], D130 Q2,
+O-71): they are enabled for that compile whatever `--features` says, so
+`\p{…}` and `(*UCP)`/`(*UTF)` need no `--features` under UTF-8. ENABLED is
+not ON — UCP semantics still need `(*UCP)` or `--ucp`. The artifact's
+`PCREC_FEATURE_SET`/`PCREC_FEATURE_MODULES` stamps keep recording the
+REQUESTED set (so no artifact moves); the implication is a function of the
+stamped encoding. **`(*UTF)` and `(*UTF8)`** at pattern start restate the
+encoding: accepted under `-e utf8`, refused BY NAME under `byte` ("`(*UTF)`
+requires --encoding=utf8") at every gate state — a pattern may confirm the
+artifact's encoding and may never change it.
+
 **Under `-e byte`** a code point above `0xFF` written as `\x{…}` is a compile
 error (as PCRE2's `options=0` gives error 134); a NEGATED class or `.`
 complements within `[0, 0xFF]`, unchanged from before this milestone.
@@ -189,6 +200,41 @@ The fold data is pinned at Unicode 16.0.0 (`third_party/ucd-16.0.0/`), the
 reference oracle's version, exactly as the property tables are. A libpcre2 at
 a different Unicode version will disagree about recently-assigned code points;
 that is a re-measurement event under D26, not a defect.
+
+### `--ucp` — PCRE2_UCP's semantics ([UCP] U1, D130)
+
+`\d \s \w` and the POSIX classes read Unicode properties: `\d` is
+`\p{Nd}`, `\s` `\p{Xsp}`, `\w` `\p{Xwd}`, `[:alpha:]` `\p{L}`, and so on —
+every set a measured equality against libpcre2 10.46 under UTF|UCP
+(`docs/design/ucp_design.md` §1.1; `--list-definitions` prints each under
+its `DEF_UCP_*` predicate). The pattern spelling is `(*UCP)` at pattern
+start (combinable with `(*UTF)` in either order); the `.rxt` spelling is
+`flags u` (`docs/spec/rxt_format.md`). One bit, `PCREC_UCP` (bit 34), carried
+in `pcrec_options.flags` and reflected in `rx_info.flags` unmasked — it is a
+SEMANTIC axis, not a tuning one (`docs/spec/tuning.md` §4).
+
+- **OPT-IN** (D130 Q1): `-e utf8` alone reads `\w` as ASCII, which is
+  PCRE2_UTF's own default. Module `ucp` is IMPLIED by `-e utf8` (O-71) and
+  must be enabled under `byte` (`--features …,ucp`); `--ucp` with the module
+  off is refused by name ("--ucp requires module 'ucp'").
+- **`(?aD)/(?aS)/(?aW)/(?aP)/(?aT)`** are real under UCP: each restricts one
+  PCRE2 family back to ASCII (`aW` covers `\w \W \b \B`; `aP` every POSIX
+  class; `aT` `[:digit:] [:xdigit:]`, which `aP` restricts too); `(?a)` sets
+  all five, `(?-a)`/`(?-aX)` unset, and the letters are scoped and survive
+  `(?^)`. Without UCP they change nothing (every such set is ASCII already).
+- **Caseless**: `[:lower:]`/`[:upper:]` are FOLD-INERT under UCP
+  (`(?i)[[:lower:]]` does not match `A`); an ASCII-restricted set folds by the
+  ASCII fold; everything else by the encoding's fold — except that under
+  `byte` UCP folds the 26 ASCII + 30 Latin-1 letter pairs (PCRE2_UCP without
+  PCRE2_UTF; `é` reaches `É`, and without UCP it does not).
+- **Under `byte`** the bytes are Latin-1 code points: every UCP set is its
+  Unicode set clamped to `[0, 0xFF]`.
+- **REFUSED BY NAME at this stage** (D130 Q3; `docs/spec/limits.md` §3.8):
+  under `-e utf8` the WIDE sets (`\w \W`, `[:alpha:] [:alnum:] [:word:]
+  [:lower:] [:upper:] [:graph:] [:print:] [:punct:]`) until a kit-sized class
+  route exists; UCP `\b`/`\B` under both encodings. `(?aW)`/`(?aP)` make a
+  refused construct ASCII again, and it compiles. A refusal is never
+  answered with the ASCII meaning.
 
 ### `--pattern-esc` — the `--pattern` value in `.rxt` escaped form
 
@@ -387,7 +433,7 @@ write (D19) — see `docs/spec/match_api.md` §8.2 for the field's own
 contract, including why `NULL` there means "no request" rather than the
 CLI's own `std1` bare default.
 
-**The 17 module names** (confirmed live,
+**The 18 module names** (confirmed live,
 `build/pcrec --list-syntax | cut -f4 | sort -u`), each with its shipped
 status measured the same way
 (`build/pcrec --list-syntax | awk -F'\t' '$4!="" {print $4,$16}' | sort -u`
@@ -412,6 +458,7 @@ no module is split):
 | `misc` | not built | scattered rarer constructs |
 | `quoting` | **built** | `\Q…\E` literal quoting, including inside a character class |
 | `unicode-props` | **built (partial)** | `\p{…}`/`\P{…}` — the Unicode GENERAL CATEGORIES and PCRE2's derived families ([M5.0] stage 3) plus the SCRIPTS, bare and under `sc=`/`scx=` ([M5.0] stage 5). See the note below for exactly which names |
+| `ucp` | **built (partial)** — IMPLIED by `-e utf8`; the wide utf8 sets and UCP `\b`/`\B` are refused by name at [UCP] U1 (`--ucp` above) | `(*UCP)`, `--ucp`, `(*UTF)`/`(*UTF8)` (restating `-e utf8`), the `(?a…)` restriction letters' UCP meaning |
 | `verbs` | not built (per-name; the 12 alpha-spelled lookaround verbs are attributed to `lookaround`/`assertions` instead, D71 item 3) | `(*PRUNE)`/`(*COMMIT)`/etc. |
 
 **`unicode-props` is the first module in this table to ship a PROPER SUBSET

@@ -338,6 +338,13 @@ typedef struct {
      * K70). `false` names exactly that: a real capability gap, not a
      * decoration — D58's revisit clause, one boolean over. */
     bool restrict_ok;
+    /* [UCP] THE MODULES THIS ENCODING IMPLIES (O-71, ucp_design.md §1.2, D130
+     * Q2): a `FEAT_*` mask OR'd into every compile's enabled set under this
+     * encoding, so `\p{..}` and `(*UCP)` under `-e utf8` need no `--features`.
+     * ENABLED is not ON — UCP semantics still need `(*UCP)` or `--ucp`. The
+     * feature STAMPS keep rendering the REQUESTED set (compile.c), so no
+     * artifact's bytes move with this field. `byte` implies nothing. */
+    unsigned implied_features;
 } PcrecEnc;
 
 /* The registry. Lookup is total over the namespace and returns NULL for a

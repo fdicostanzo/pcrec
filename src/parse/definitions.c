@@ -2,7 +2,18 @@
  * ONE evaluator, resolver, tag-name table, and the core-set structural
  * predicate (D85, docs/design/definitions_table.md, r43-revised).
  *
- * WHAT THIS FILE DOES NOT DO: it does not wire the table into real parsing.
+ * [UCP] U1 IS THE FIRST WIRING CUSTOMER, for SET-VALUED entries only
+ * (DEFK_SET, ucp_design.md §1.4): the class-escape port (ext.c's PORT_SET
+ * branch) and the POSIX port (mod_classes.c, through
+ * `pcrec_def_resolve_operand` below) resolve their row's definitions and
+ * build a DEFK_SET entry through the one set producer (mod_ucp.c); every
+ * other resolution is the row's DEF_ALWAYS entry, which the port's own byte
+ * table already is. A set-valued definition splices no text, so the
+ * lookaround-erasure hazard gating [DD-11.5] does not apply to it. Module
+ * `assertions` reads `\b`/`\B`'s resolution only to REFUSE the UCP entry.
+ *
+ * WHAT THIS FILE DOES NOT DO (still true of every TEXT entry): it does not
+ * wire the table into real parsing.
  * `pcrec_def_resolve` exists so a test (the self-oracle, [DD-11.3]) and the
  * structural check below can ask "what would this row's definition be under
  * this ParseMods state", but no `p_atom`/module producer calls it yet — the
@@ -13,8 +24,8 @@
  *
  * THE PREDICATE IS A TAG, evaluated by exactly one exhaustive no-default
  * switch (`pcrec_def_tag_applies`, below) — internal.h's own comment before
- * `struct RegRow` has the full ruling (r43 K1/K2/K3/K9). Four of the seven
- * tags have NO PRODUCER yet (UCP, UTF-8 encoding, a non-LF newline
+ * `struct RegRow` has the full ruling (r43 K1/K2/K3/K9). Three of the
+ * tags have NO PRODUCER yet (UTF-8 encoding, a non-LF newline
  * convention, a bound [LIB] name) and answer `false` unconditionally, which
  * is sound: a row whose only other entry is `DEF_ALWAYS` simply falls
  * through to it, reproducing today's byte/LF/no-library behaviour exactly.
@@ -28,7 +39,7 @@
 #include "parse_mods.h"
 
 /* Exhaustive no-default switch answering whether `tag` applies under `cx`'s
- * current mods -- the four NO-PRODUCER tags (UCP, UTF-8 encoding, newline
+ * current mods -- the three NO-PRODUCER tags (UTF-8 encoding, newline
  * convention, [LIB] name) always answer false, which is sound while nothing
  * produces them (see the file header). */
 bool pcrec_def_tag_applies(DefTag tag, const Ctx *cx)
@@ -41,12 +52,24 @@ bool pcrec_def_tag_applies(DefTag tag, const Ctx *cx)
     case DEF_NOCAP:
         return cx->mods->nocap;
     /* NO PRODUCER YET — see the file header. Each is the FUTURE second row
-     * for a family this table already carries (class escapes' UCP, the
+     * for a family this table already carries (the
      * literal-escape family's encoding, `\N`/`\R`/`$`/`^`'s newline
      * convention, [LIB]'s name binding); until one exists the question can
      * never be true, which is the SOUND default (the row's DEF_ALWAYS entry
      * is what fires, matching today's shipped behaviour exactly). */
-    case DEF_UCP:
+    /* [UCP] UCP ∧ the family unrestricted (ucp_design.md §1.4). `_T` is also
+     * restricted by `aP` — MEASURED, `(?aP-aT)[[:digit:]]` stays ASCII. */
+    case DEF_UCP_D:
+        return cx->mods->ucp && !(cx->mods->arestrict & PARSE_ARESTRICT_D);
+    case DEF_UCP_S:
+        return cx->mods->ucp && !(cx->mods->arestrict & PARSE_ARESTRICT_S);
+    case DEF_UCP_W:
+        return cx->mods->ucp && !(cx->mods->arestrict & PARSE_ARESTRICT_W);
+    case DEF_UCP_P:
+        return cx->mods->ucp && !(cx->mods->arestrict & PARSE_ARESTRICT_P);
+    case DEF_UCP_T:
+        return cx->mods->ucp &&
+               !(cx->mods->arestrict & (PARSE_ARESTRICT_P | PARSE_ARESTRICT_T));
     case DEF_ENCODING_UTF8:
     case DEF_NEWLINE_CONV:
     case DEF_LIB_NAME_BOUND:
@@ -115,6 +138,29 @@ const RegDef *pcrec_def_resolve(const Ctx *cx, const RegRow *rw)
     return def_resolve_depth(cx, rw, 0);
 }
 
+/* [UCP] The POSIX row's per-NAME walk: first-applicable-wins over the
+ * entries whose `operand` is `name` — the same first-match rule
+ * `pcrec_def_resolve` applies to a whole row, restricted to one name's
+ * entries (a name's UCP entry precedes its DEF_ALWAYS one). NULL for a name
+ * with no entries; a name whose entries lack a DEF_ALWAYS terminal is a
+ * malformed row, asserted as `def_resolve_depth` asserts its own. */
+const RegDef *pcrec_def_resolve_operand(const Ctx *cx, const RegRow *rw,
+                                        const char *name, size_t len)
+{
+    bool seen = false;
+    if (!rw->definitions) return NULL;
+    for (const RegDef *d = rw->definitions; d->kind != DEFK_END; d++) {
+        if (!d->operand || strlen(d->operand) != len ||
+            memcmp(d->operand, name, len) != 0)
+            continue;
+        seen = true;
+        if (pcrec_def_tag_applies(d->tag, cx)) return d;
+    }
+    assert(!seen && "pcrec_def_resolve_operand: a name's entries have no "
+                    "DEF_ALWAYS terminal (malformed row in registry.c)");
+    return NULL;
+}
+
 /* The tag's OWN name — `--list-definitions` prints this, never hand-authored
  * prose (r43's ruling: the predicate column and a stored callable were two
  * derivations of one fact; the tag name is the single one). */
@@ -124,7 +170,11 @@ const char *pcrec_def_tag_name(DefTag tag)
     case DEF_ALWAYS:          return "DEF_ALWAYS";
     case DEF_MULTILINE:       return "DEF_MULTILINE";
     case DEF_NOCAP:           return "DEF_NOCAP";
-    case DEF_UCP:             return "DEF_UCP";
+    case DEF_UCP_D:           return "DEF_UCP_D";
+    case DEF_UCP_S:           return "DEF_UCP_S";
+    case DEF_UCP_W:           return "DEF_UCP_W";
+    case DEF_UCP_P:           return "DEF_UCP_P";
+    case DEF_UCP_T:           return "DEF_UCP_T";
     case DEF_ENCODING_UTF8:   return "DEF_ENCODING_UTF8";
     case DEF_NEWLINE_CONV:    return "DEF_NEWLINE_CONV";
     case DEF_LIB_NAME_BOUND:  return "DEF_LIB_NAME_BOUND";

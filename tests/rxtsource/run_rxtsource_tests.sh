@@ -356,9 +356,13 @@ record() { checks_recorded=$((checks_recorded + 1)); echo "RECORD: $*"; }
 # tests/known_fail/, so RUNSH_* moves by the same +1/+9/+13 below.
 # COMBINED at merge (manager, 2026-09-28): tri86 (+8/+0/+0) and k70fix (+1/+9/+13) are
 # independent deltas from 238/4052/29385 -> 247/4061/29398.
-CENSUS_FILES=247
-CENSUS_BLOCKS=4061
-CENSUS_LINES=29398
+# 2026-09-28 (lane ucpu1, [UCP] U1) — +5 files / +120 blocks / +1569 lines
+# for tests/ucp/*.rxt (module `ucp`'s corpus: sets_utf8, knobs, caseless,
+# byte, refusals — generated from libpcre2, re-verified on 10.46). MEASURED
+# by this check's own census on the lane's branch: 252/4181/30967.
+CENSUS_FILES=252
+CENSUS_BLOCKS=4181
+CENSUS_LINES=30967
 # 2026-09-23 (lane rxtfix, K34 closure via lane b2fix's [OPTLOOP.1.impl]
 # batch 2 — docs/dev/known_issues.md K34) — -1 file, -3 blocks, +0 lines.
 # tests/known_fail/k34_leftrec_giveup.rxt (1 file, 3 blocks, 11 lines) was
@@ -453,9 +457,11 @@ CENSUS_LINES=29398
 # above (tests/utf8/restrict.rxt is not under tests/known_fail/).
 # COMBINED at merge (manager, 2026-09-28): tri86 +0/+0/+0 (golden excluded from run.sh) and
 # k70fix +1/+9/+13 -> 223/4061/29398 (restrict.rxt is a run.sh file; the 8 golden bundles are not).
-RUNSH_FILES=223
-RUNSH_BLOCKS=4061
-RUNSH_LINES=29398
+# 2026-09-28 (lane ucpu1, [UCP] U1) — +5/+120/+1569, the SAME delta as
+# CENSUS_* above (tests/ucp/ is a run.sh directory, not tests/known_fail/).
+RUNSH_FILES=228
+RUNSH_BLOCKS=4181
+RUNSH_LINES=30967
 # 2026-09-23 (lane rxtfix, K34 closure, same event as CENSUS_* above) —
 # +0/+0/+11 where CENSUS_* moved -1/-3/+0. tests/known_fail/ is now EMPTY
 # (kf_files=kf_blocks=kf_lines=0 at run time — `find tests/known_fail
@@ -1518,13 +1524,17 @@ C3_FILES=179
 # `SKIP=2 (... giveup=2 ...)`: 12 n + 2 m cells python `re` answers and the
 # two `gu steps` controls.
 C3_PASS=13764
-C3_SKIP=15233
+# [UCP] U1 (lane ucpu1): +1563 SKIP, all own-oracle — tests/ucp/ carries
+# its own verifier (verify_ucp.py), so verify_rxt.py skips every one of its
+# 1,563 cells on every python version (measured: `verify_rxt.py tests/ucp`
+# reports SKIP=1563, own-oracle=1563, PASS=0).
+C3_SKIP=16796
 C3_SKIP_PCRE2ONLY=2944
 C3_SKIP_GIVEUP=29
 C3_SKIP_COMPOSED=0
 C3_SKIP_NOPYTHON=1890
 C3_SKIP_PERRACCEPT=14
-C3_SKIP_OWNORACLE=10356
+C3_SKIP_OWNORACLE=11919
 C3_INFO=0
 C3_STOREUNCOVERED=0
 C3_TIMEOUT=1
@@ -1745,7 +1755,10 @@ END_MARK='# --- END PINNED ARM REGION ---'
 # same sentence the three W1.1 directives beside it carry. The two `var`
 # ARMS are deliberately OUTSIDE the region, appended after it with every arm
 # added since W1.1, so what moved inside is one initialiser and nothing else.
-ARM_PIN='bcd81d89fab3af14fa1dcb4d4e4376cb9586c36ee6d50fba5fe5390ff9f1fc0a'
+# [UCP] U1 (lane ucpu1) re-pin: the `flags` arm's BODY now accepts `u`
+# (`--ucp`) beside `i` — the arm's own regex, its position in the chain and
+# every other arm are unchanged, so no existing line reaches a different arm.
+ARM_PIN='278f45903d630b4c4594166fcca351e587ca7a6a7fcb625e15c31da46a9ad955'
 
 region="$WORKDIR/armregion.txt"
 awk -v b="$BEGIN_MARK" -v e="$END_MARK" '
@@ -2367,8 +2380,8 @@ fi
 # --- sem2: a tab inside a `from` config list (head-only) --------------
 check_refusal tab_in_config_list.rxt tab-in-list 'comma-separated config list'
 
-# --- sem3: 'flags xmz' — only 'i' is defined, all three legs -----------
-check_refusal_all3_kind flags bad_flags.rxt bad-flags value-shape "only 'i' is defined"
+# --- sem3: 'flags xmz' — only 'i' and 'u' are defined, all three legs ---
+check_refusal_all3_kind flags bad_flags.rxt bad-flags value-shape "only 'i' and 'u' are defined"
 
 # --- sem4: 'engine dfa' — only 'vm' is defined for W1.1, all three legs
 check_refusal_all3_kind engine bad_engine.rxt bad-engine value-shape 'only vm is defined'

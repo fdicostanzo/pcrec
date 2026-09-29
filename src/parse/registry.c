@@ -153,6 +153,7 @@
 #define M_verbs          FEAT_VERBS,         "verbs"
 #define M_extended_classes FEAT_EXTENDED_CLASSES, "extended-classes"
 #define M_vars           FEAT_VARS,          "vars"
+#define M_ucp            FEAT_UCP,           "ucp"
 /* THERE IS NO COMPOUND MODULE MACRO ANY MORE. `M_lookaround_named`
  * ("lookaround/named-groups") lived here for `(?<`, one byte meaning two
  * constructs, and SR-9's `tail` retired it: `(?<=`, `(?<!` and `(?<*` are
@@ -408,17 +409,17 @@ static bool recognise_N_name_brace(const char *at, size_t avail,
  * revision 1's own probes) — `\d`==`[0-9]`, `\s`==`[\t\n\x0b\f\r ]`,
  * `\w`==`[A-Za-z0-9_]`, `\h`==`[\t \xa0]`, `\v`==`[\n\x0b\f\r\x85]`, each
  * confirmed a byte-for-byte set match, 0 disagreements. */
-static const RegDef d_def[] = { {DEFK_STR, DEF_ALWAYS, "[0-9]", NULL, NULL, NULL}, {DEFK_END, DEF_ALWAYS, NULL, NULL, NULL, NULL} };
-static const RegDef D_def[] = { {DEFK_STR, DEF_ALWAYS, "[^0-9]", NULL, NULL, NULL}, {DEFK_END, DEF_ALWAYS, NULL, NULL, NULL, NULL} };
-static const RegDef s_def[] = { {DEFK_STR, DEF_ALWAYS, "[\\t\\n\\x0b\\f\\r ]", NULL, NULL, NULL}, {DEFK_END, DEF_ALWAYS, NULL, NULL, NULL, NULL} };
-static const RegDef S_def[] = { {DEFK_STR, DEF_ALWAYS, "[^\\t\\n\\x0b\\f\\r ]", NULL, NULL, NULL}, {DEFK_END, DEF_ALWAYS, NULL, NULL, NULL, NULL} };
-static const RegDef w_def[] = { {DEFK_STR, DEF_ALWAYS, "[A-Za-z0-9_]", NULL, NULL, NULL}, {DEFK_END, DEF_ALWAYS, NULL, NULL, NULL, NULL} };
-static const RegDef W_def[] = { {DEFK_STR, DEF_ALWAYS, "[^A-Za-z0-9_]", NULL, NULL, NULL}, {DEFK_END, DEF_ALWAYS, NULL, NULL, NULL, NULL} };
-static const RegDef h_def[] = { {DEFK_STR, DEF_ALWAYS, "[\\t \\xa0]", NULL, NULL, NULL}, {DEFK_END, DEF_ALWAYS, NULL, NULL, NULL, NULL} };
-static const RegDef H_def[] = { {DEFK_STR, DEF_ALWAYS, "[^\\t \\xa0]", NULL, NULL, NULL}, {DEFK_END, DEF_ALWAYS, NULL, NULL, NULL, NULL} };
-static const RegDef v_def[] = { {DEFK_STR, DEF_ALWAYS, "[\\n\\x0b\\f\\r\\x85]", NULL, NULL, NULL}, {DEFK_END, DEF_ALWAYS, NULL, NULL, NULL, NULL} };
-static const RegDef V_def[] = { {DEFK_STR, DEF_ALWAYS, "[^\\n\\x0b\\f\\r\\x85]", NULL, NULL, NULL}, {DEFK_END, DEF_ALWAYS, NULL, NULL, NULL, NULL} };
-static const RegDef bare_N_def[] = { {DEFK_STR, DEF_ALWAYS, "[^\\n]", NULL, NULL, NULL}, {DEFK_END, DEF_ALWAYS, NULL, NULL, NULL, NULL} };
+static const RegDef d_def[] = { {DEFK_SET, DEF_UCP_D, "\\p{Nd}", NULL, NULL, NULL, &pcrec_ucp_set_digit}, {DEFK_STR, DEF_ALWAYS, "[0-9]", NULL, NULL, NULL, NULL}, {DEFK_END, DEF_ALWAYS, NULL, NULL, NULL, NULL, NULL} };
+static const RegDef D_def[] = { {DEFK_SET, DEF_UCP_D, "\\P{Nd}", NULL, NULL, NULL, &pcrec_ucp_set_digit}, {DEFK_STR, DEF_ALWAYS, "[^0-9]", NULL, NULL, NULL, NULL}, {DEFK_END, DEF_ALWAYS, NULL, NULL, NULL, NULL, NULL} };
+static const RegDef s_def[] = { {DEFK_SET, DEF_UCP_S, "\\p{Xsp}", NULL, NULL, NULL, &pcrec_ucp_set_space}, {DEFK_STR, DEF_ALWAYS, "[\\t\\n\\x0b\\f\\r ]", NULL, NULL, NULL, NULL}, {DEFK_END, DEF_ALWAYS, NULL, NULL, NULL, NULL, NULL} };
+static const RegDef S_def[] = { {DEFK_SET, DEF_UCP_S, "\\P{Xsp}", NULL, NULL, NULL, &pcrec_ucp_set_space}, {DEFK_STR, DEF_ALWAYS, "[^\\t\\n\\x0b\\f\\r ]", NULL, NULL, NULL, NULL}, {DEFK_END, DEF_ALWAYS, NULL, NULL, NULL, NULL, NULL} };
+static const RegDef w_def[] = { {DEFK_SET, DEF_UCP_W, "\\p{Xwd}", NULL, NULL, NULL, &pcrec_ucp_set_word}, {DEFK_STR, DEF_ALWAYS, "[A-Za-z0-9_]", NULL, NULL, NULL, NULL}, {DEFK_END, DEF_ALWAYS, NULL, NULL, NULL, NULL, NULL} };
+static const RegDef W_def[] = { {DEFK_SET, DEF_UCP_W, "\\P{Xwd}", NULL, NULL, NULL, &pcrec_ucp_set_word}, {DEFK_STR, DEF_ALWAYS, "[^A-Za-z0-9_]", NULL, NULL, NULL, NULL}, {DEFK_END, DEF_ALWAYS, NULL, NULL, NULL, NULL, NULL} };
+static const RegDef h_def[] = { {DEFK_STR, DEF_ALWAYS, "[\\t \\xa0]", NULL, NULL, NULL, NULL}, {DEFK_END, DEF_ALWAYS, NULL, NULL, NULL, NULL, NULL} };
+static const RegDef H_def[] = { {DEFK_STR, DEF_ALWAYS, "[^\\t \\xa0]", NULL, NULL, NULL, NULL}, {DEFK_END, DEF_ALWAYS, NULL, NULL, NULL, NULL, NULL} };
+static const RegDef v_def[] = { {DEFK_STR, DEF_ALWAYS, "[\\n\\x0b\\f\\r\\x85]", NULL, NULL, NULL, NULL}, {DEFK_END, DEF_ALWAYS, NULL, NULL, NULL, NULL, NULL} };
+static const RegDef V_def[] = { {DEFK_STR, DEF_ALWAYS, "[^\\n\\x0b\\f\\r\\x85]", NULL, NULL, NULL, NULL}, {DEFK_END, DEF_ALWAYS, NULL, NULL, NULL, NULL, NULL} };
+static const RegDef bare_N_def[] = { {DEFK_STR, DEF_ALWAYS, "[^\\n]", NULL, NULL, NULL, NULL}, {DEFK_END, DEF_ALWAYS, NULL, NULL, NULL, NULL, NULL} };
 
 /* [DD-11.1] `\R`'s definition (definitions_table.md §1/§4): any Unicode
  * newline sequence, atomic so the CRLF branch cannot be torn by backtracking
@@ -426,8 +427,8 @@ static const RegDef bare_N_def[] = { {DEFK_STR, DEF_ALWAYS, "[^\\n]", NULL, NULL
  * agree, incl. "\r\n", "\r\r", empty). `\R` is module `misc`, UNBUILT today;
  * the table carries the definition as data ahead of any producer. */
 static const RegDef R_def[] = {
-    {DEFK_STR, DEF_ALWAYS, "(?>\\r\\n|\\n|\\x0b|\\f|\\r|\\x85)", NULL, NULL, NULL},
-    {DEFK_END, DEF_ALWAYS, NULL, NULL, NULL, NULL},
+    {DEFK_STR, DEF_ALWAYS, "(?>\\r\\n|\\n|\\x0b|\\f|\\r|\\x85)", NULL, NULL, NULL, NULL},
+    {DEFK_END, DEF_ALWAYS, NULL, NULL, NULL, NULL, NULL},
 };
 
 /* [DD-11.1] `\b`/`\B`'s shared definition family (definitions_table.md §1/
@@ -436,13 +437,20 @@ static const RegDef R_def[] = {
  * now a real row (§3 item 5's un-parked recursion guard is [DD-11.4], not a
  * blocker for populating these two). Verified against libpcre2 10.46 at
  * docs/design/lookaround_design.md:1792-1793 (0 disagreements). */
+/* [UCP] `\b`/`\B` read the UCP word set under UCP (§1.4: DEF_UCP_W covers
+ * them, `(?aW:x\b)` is ASCII \b). The entry is the lookaround spelling over
+ * `\p{Xwd}` — the self-oracle's [S] §C equivalence — and it has NO PRODUCER in
+ * U1: module `assertions` refuses it by name (D130 Q3; the byte tier's UCP
+ * `\b` needs U2's per-machine word set, utf8's needs U3/U4). */
 static const RegDef wordb_def[] = {
-    {DEFK_STR, DEF_ALWAYS, "(?:(?<=\\w)(?!\\w)|(?<!\\w)(?=\\w))", NULL, NULL, NULL},
-    {DEFK_END, DEF_ALWAYS, NULL, NULL, NULL, NULL},
+    {DEFK_STR, DEF_UCP_W, "(?:(?<=\\p{Xwd})(?!\\p{Xwd})|(?<!\\p{Xwd})(?=\\p{Xwd}))", NULL, NULL, NULL, NULL},
+    {DEFK_STR, DEF_ALWAYS, "(?:(?<=\\w)(?!\\w)|(?<!\\w)(?=\\w))", NULL, NULL, NULL, NULL},
+    {DEFK_END, DEF_ALWAYS, NULL, NULL, NULL, NULL, NULL},
 };
 static const RegDef nwordb_def[] = {
-    {DEFK_STR, DEF_ALWAYS, "(?:(?<=\\w)(?=\\w)|(?<!\\w)(?!\\w))", NULL, NULL, NULL},
-    {DEFK_END, DEF_ALWAYS, NULL, NULL, NULL, NULL},
+    {DEFK_STR, DEF_UCP_W, "(?:(?<=\\p{Xwd})(?=\\p{Xwd})|(?<!\\p{Xwd})(?!\\p{Xwd}))", NULL, NULL, NULL, NULL},
+    {DEFK_STR, DEF_ALWAYS, "(?:(?<=\\w)(?=\\w)|(?<!\\w)(?!\\w))", NULL, NULL, NULL, NULL},
+    {DEFK_END, DEF_ALWAYS, NULL, NULL, NULL, NULL, NULL},
 };
 
 /* [DD-11.4b] the 6 FIXED base-tier literal escapes' definitions — see
@@ -450,12 +458,12 @@ static const RegDef nwordb_def[] = {
  * all. Each is DEF_ALWAYS-only (no identity case: none of these six is
  * itself the string it substitutes, `\x07` etc. is base/core `\x` syntax
  * a level further down, not a second table entry). */
-static const RegDef a_def[] = { {DEFK_STR, DEF_ALWAYS, "\\x07", NULL, NULL, NULL}, {DEFK_END, DEF_ALWAYS, NULL, NULL, NULL, NULL} };
-static const RegDef e_def[] = { {DEFK_STR, DEF_ALWAYS, "\\x1b", NULL, NULL, NULL}, {DEFK_END, DEF_ALWAYS, NULL, NULL, NULL, NULL} };
-static const RegDef f_def[] = { {DEFK_STR, DEF_ALWAYS, "\\x0c", NULL, NULL, NULL}, {DEFK_END, DEF_ALWAYS, NULL, NULL, NULL, NULL} };
-static const RegDef n_def[] = { {DEFK_STR, DEF_ALWAYS, "\\x0a", NULL, NULL, NULL}, {DEFK_END, DEF_ALWAYS, NULL, NULL, NULL, NULL} };
-static const RegDef r_def[] = { {DEFK_STR, DEF_ALWAYS, "\\x0d", NULL, NULL, NULL}, {DEFK_END, DEF_ALWAYS, NULL, NULL, NULL, NULL} };
-static const RegDef t_def[] = { {DEFK_STR, DEF_ALWAYS, "\\x09", NULL, NULL, NULL}, {DEFK_END, DEF_ALWAYS, NULL, NULL, NULL, NULL} };
+static const RegDef a_def[] = { {DEFK_STR, DEF_ALWAYS, "\\x07", NULL, NULL, NULL, NULL}, {DEFK_END, DEF_ALWAYS, NULL, NULL, NULL, NULL, NULL} };
+static const RegDef e_def[] = { {DEFK_STR, DEF_ALWAYS, "\\x1b", NULL, NULL, NULL, NULL}, {DEFK_END, DEF_ALWAYS, NULL, NULL, NULL, NULL, NULL} };
+static const RegDef f_def[] = { {DEFK_STR, DEF_ALWAYS, "\\x0c", NULL, NULL, NULL, NULL}, {DEFK_END, DEF_ALWAYS, NULL, NULL, NULL, NULL, NULL} };
+static const RegDef n_def[] = { {DEFK_STR, DEF_ALWAYS, "\\x0a", NULL, NULL, NULL, NULL}, {DEFK_END, DEF_ALWAYS, NULL, NULL, NULL, NULL, NULL} };
+static const RegDef r_def[] = { {DEFK_STR, DEF_ALWAYS, "\\x0d", NULL, NULL, NULL, NULL}, {DEFK_END, DEF_ALWAYS, NULL, NULL, NULL, NULL, NULL} };
+static const RegDef t_def[] = { {DEFK_STR, DEF_ALWAYS, "\\x09", NULL, NULL, NULL, NULL}, {DEFK_END, DEF_ALWAYS, NULL, NULL, NULL, NULL, NULL} };
 
 /* [DD-11.1] the 5 DEFK_TEXTFN rows (manager ruling, 2026-08-29): each is
  * parameterized by TEXT AT THE OCCURRENCE, so no fixed `DEFK_STR` string
@@ -467,24 +475,24 @@ static const RegDef t_def[] = { {DEFK_STR, DEF_ALWAYS, "\\x09", NULL, NULL, NULL
  * `backrefs`). See src/parse/definitions.c's own header on this block for
  * why an unbuilt row's textfn is sound to write today (the `\R` precedent). */
 static const RegDef cx_def[] = {
-    {DEFK_TEXTFN, DEF_ALWAYS, "\\cX = byte (X uppercased, then xor 0x40)", NULL, pcrec_def_text_cx, NULL},
-    {DEFK_END,    DEF_ALWAYS, NULL, NULL, NULL, NULL},
+    {DEFK_TEXTFN, DEF_ALWAYS, "\\cX = byte (X uppercased, then xor 0x40)", NULL, pcrec_def_text_cx, NULL, NULL},
+    {DEFK_END,    DEF_ALWAYS, NULL, NULL, NULL, NULL, NULL},
 };
 static const RegDef bare_x_def[] = {
-    {DEFK_TEXTFN, DEF_ALWAYS, "\\xHH or \\x{HHHH} = byte HH..HHHH (hex)", NULL, pcrec_def_text_hex, NULL},
-    {DEFK_END,    DEF_ALWAYS, NULL, NULL, NULL, NULL},
+    {DEFK_TEXTFN, DEF_ALWAYS, "\\xHH or \\x{HHHH} = byte HH..HHHH (hex)", NULL, pcrec_def_text_hex, NULL, NULL},
+    {DEFK_END,    DEF_ALWAYS, NULL, NULL, NULL, NULL, NULL},
 };
 static const RegDef o_def[] = {
-    {DEFK_TEXTFN, DEF_ALWAYS, "\\o{OOO} = byte OOO (octal)", NULL, pcrec_def_text_octal, NULL},
-    {DEFK_END,    DEF_ALWAYS, NULL, NULL, NULL, NULL},
+    {DEFK_TEXTFN, DEF_ALWAYS, "\\o{OOO} = byte OOO (octal)", NULL, pcrec_def_text_octal, NULL, NULL},
+    {DEFK_END,    DEF_ALWAYS, NULL, NULL, NULL, NULL, NULL},
 };
 static const RegDef octal0_def[] = {
-    {DEFK_TEXTFN, DEF_ALWAYS, "\\0OO = byte OOO (octal, never a backreference)", NULL, pcrec_def_text_octal, NULL},
-    {DEFK_END,    DEF_ALWAYS, NULL, NULL, NULL, NULL},
+    {DEFK_TEXTFN, DEF_ALWAYS, "\\0OO = byte OOO (octal, never a backreference)", NULL, pcrec_def_text_octal, NULL, NULL},
+    {DEFK_END,    DEF_ALWAYS, NULL, NULL, NULL, NULL, NULL},
 };
 static const RegDef unicode_def[] = {
-    {DEFK_TEXTFN, DEF_ALWAYS, "\\N{U+HHHH} = code point HHHH -- byte today, a sequence under utf8 (encoding tag's 2nd row)", NULL, pcrec_def_text_unicode, NULL},
-    {DEFK_END,    DEF_ALWAYS, NULL, NULL, NULL, NULL},
+    {DEFK_TEXTFN, DEF_ALWAYS, "\\N{U+HHHH} = code point HHHH -- byte today, a sequence under utf8 (encoding tag's 2nd row)", NULL, pcrec_def_text_unicode, NULL, NULL},
+    {DEFK_END,    DEF_ALWAYS, NULL, NULL, NULL, NULL, NULL},
 };
 
 /* [DD-11.1 chaining ruling, r43-second-round, 2026-08-29] `\Z`'s OWN
@@ -496,8 +504,8 @@ static const RegDef unicode_def[] = {
  * extension) applies identically here, which is why this is a REAL
  * DEFK_STR substitution and not DEF_IDENTITY. */
 static const RegDef z_def[] = {
-    {DEFK_STR, DEF_ALWAYS, "(?=\\n?\\z)", NULL, NULL, NULL},
-    {DEFK_END, DEF_ALWAYS, NULL, NULL, NULL, NULL},
+    {DEFK_STR, DEF_ALWAYS, "(?=\\n?\\z)", NULL, NULL, NULL, NULL},
+    {DEFK_END, DEF_ALWAYS, NULL, NULL, NULL, NULL, NULL},
 };
 
 static const RegRow esc_rows[] = {
@@ -1240,6 +1248,34 @@ VERB_LA("naplb", "(*naplb:a)", "(?<*a)",
 VERB_LA("non_atomic_positive_lookbehind",
         "(*non_atomic_positive_lookbehind:a)", "(?<*a)",
         "non-atomic positive lookbehind, long alpha spelling of (?<*...)"),
+/* [UCP] module `ucp`'s three verb NAMES (ucp_design.md §1.2, D130 Q2),
+ * RF_INDEX name rows on the alpha-lookaround rows' own model above: before
+ * them `(*UCP)` answered "requires module 'verbs'", a module `--features all`
+ * could not satisfy (O-71) — D26's exact tier is the OWNER. `(*UTF)` and
+ * `(*UTF8)` (a live synonym on 10.46/10.48) restate `--encoding=utf8`: their
+ * port accepts under a Unicode encoding and their FIXED sentence refuses
+ * under `byte` whatever the gate says, because enabling a module cannot make
+ * a byte artifact's subject UTF-8 — a CAPABILITY sentence, not a module
+ * promise, which is why these two index rows are RD_FIXED where every other
+ * index row renders the module template. `(*UTF8)`'s `family` is `(*UTF)`'s;
+ * `(*UCP)` and `(*UTF)` are families of one. QF_NO on all three: a
+ * start-of-pattern option is not a repeatable item (`(*UCP)*` is PCRE2 error
+ * 109). */
+{RK_VERB, REG_SEL_ANY, "UCP", "(*UCP)a", M_ucp, FLAV_PCRE2, ANY_ENGINE,
+ RS_MODULE, RD_MODULE, NULL, NULL, RF_INDEX,
+ "Unicode properties for \\d \\s \\w \\b and the POSIX classes (PCRE2_UCP)",
+ ROADMAP_PLANNED, QF_NO, NULL, 0, NULL,
+ {PORT_FN, false, 0, NULL, pcrec_ucpport_ucp}, NO_PORT, "(*UCP)a", NULL},
+{RK_VERB, REG_SEL_ANY, "UTF", "(*UTF)a", M_ucp, FLAV_PCRE2, ANY_ENGINE,
+ RS_MODULE, RD_FIXED, "(*UTF) requires --encoding=utf8", NULL, RF_INDEX,
+ "UTF mode — a restatement of --encoding=utf8, refused under byte",
+ ROADMAP_PLANNED, QF_NO, NULL, 0, NULL,
+ {PORT_FN, false, 0, NULL, pcrec_ucpport_utf}, NO_PORT, "(*UTF)a", NULL},
+{RK_VERB, REG_SEL_ANY, "UTF8", "(*UTF8)a", M_ucp, FLAV_PCRE2, ANY_ENGINE,
+ RS_MODULE, RD_FIXED, "(*UTF8) requires --encoding=utf8", NULL, RF_INDEX,
+ "UTF mode, older spelling of (*UTF) — refused under byte",
+ ROADMAP_PLANNED, QF_NO, NULL, 0, NULL,
+ {PORT_FN, false, 0, NULL, pcrec_ucpport_utf}, NO_PORT, "(*UTF)a", NULL},
 /* THE DOORWAY ROW STAYS LAST, and that is a requirement rather than a
  * convention now: `pcrec_registry_arbitrate` elects the LAST REG_SEL_ANY row
  * it walks as the kind's catch-all. The twelve above carry RF_INDEX and are
@@ -1307,21 +1343,34 @@ const RegRow *pcrec_registry_verb_name_row(const char *name, size_t len)
  * another construct expressible in core syntax" — there is no
  * substitution to write. */
 static const RegDef posix_def[] = {
-    {DEFK_STR, DEF_ALWAYS, "[0-9A-Za-z]",       NULL, NULL, "alnum"},
-    {DEFK_STR, DEF_ALWAYS, "[A-Za-z]",          NULL, NULL, "alpha"},
-    {DEFK_STR, DEF_ALWAYS, "[\\x00-\\x7f]",     NULL, NULL, "ascii"},
-    {DEFK_STR, DEF_ALWAYS, "[\\t ]",            NULL, NULL, "blank"},
-    {DEFK_STR, DEF_ALWAYS, "[\\x00-\\x1f\\x7f]",NULL, NULL, "cntrl"},
-    {DEFK_STR, DEF_ALWAYS, "[0-9]",             NULL, NULL, "digit"},
-    {DEFK_STR, DEF_ALWAYS, "[!-~]",             NULL, NULL, "graph"},
-    {DEFK_STR, DEF_ALWAYS, "[a-z]",             NULL, NULL, "lower"},
-    {DEFK_STR, DEF_ALWAYS, "[ -~]",             NULL, NULL, "print"},
-    {DEFK_STR, DEF_ALWAYS, "[!-/:-@[-`{-~]",    NULL, NULL, "punct"},
-    {DEFK_STR, DEF_ALWAYS, "[\\t\\n\\x0b\\f\\r ]", NULL, NULL, "space"},
-    {DEFK_STR, DEF_ALWAYS, "[A-Z]",             NULL, NULL, "upper"},
-    {DEFK_STR, DEF_ALWAYS, "[A-Za-z0-9_]",      NULL, NULL, "word"},
-    {DEFK_STR, DEF_ALWAYS, "[0-9A-Fa-f]",       NULL, NULL, "xdigit"},
-    {DEFK_END, DEF_ALWAYS, NULL,                NULL, NULL, NULL},
+    {DEFK_SET, DEF_UCP_P, "\\p{Xan}", NULL, NULL, "alnum", &pcrec_ucp_set_alnum},
+    {DEFK_STR, DEF_ALWAYS, "[0-9A-Za-z]",       NULL, NULL, "alnum", NULL},
+    {DEFK_SET, DEF_UCP_P, "\\p{L}", NULL, NULL, "alpha", &pcrec_ucp_set_alpha},
+    {DEFK_STR, DEF_ALWAYS, "[A-Za-z]",          NULL, NULL, "alpha", NULL},
+    {DEFK_STR, DEF_ALWAYS, "[\\x00-\\x7f]",     NULL, NULL, "ascii", NULL},
+    {DEFK_SET, DEF_UCP_P, "[\\t \\xa0\\x{1680}\\x{180e}\\x{2000}-\\x{200a}\\x{202f}\\x{205f}\\x{3000}]", NULL, NULL, "blank", &pcrec_ucp_set_blank},
+    {DEFK_STR, DEF_ALWAYS, "[\\t ]",            NULL, NULL, "blank", NULL},
+    {DEFK_SET, DEF_UCP_P, "\\p{Cc}", NULL, NULL, "cntrl", &pcrec_ucp_set_cntrl},
+    {DEFK_STR, DEF_ALWAYS, "[\\x00-\\x1f\\x7f]",NULL, NULL, "cntrl", NULL},
+    {DEFK_SET, DEF_UCP_T, "\\p{Nd}", NULL, NULL, "digit", &pcrec_ucp_set_digit},
+    {DEFK_STR, DEF_ALWAYS, "[0-9]",             NULL, NULL, "digit", NULL},
+    {DEFK_SET, DEF_UCP_P, "[^\\p{Z}\\p{Cc}\\p{Cs}\\p{Co}\\p{Cn}\\x{61c}\\x{180e}\\x{2066}-\\x{2069}]", NULL, NULL, "graph", &pcrec_ucp_set_graph},
+    {DEFK_STR, DEF_ALWAYS, "[!-~]",             NULL, NULL, "graph", NULL},
+    {DEFK_SET, DEF_UCP_P, "\\p{Ll}", NULL, NULL, "lower", &pcrec_ucp_set_lower},
+    {DEFK_STR, DEF_ALWAYS, "[a-z]",             NULL, NULL, "lower", NULL},
+    {DEFK_SET, DEF_UCP_P, "[^\\p{Zl}\\p{Zp}\\p{Cc}\\p{Cs}\\p{Co}\\p{Cn}\\x{61c}\\x{2066}-\\x{2069}]", NULL, NULL, "print", &pcrec_ucp_set_print},
+    {DEFK_STR, DEF_ALWAYS, "[ -~]",             NULL, NULL, "print", NULL},
+    {DEFK_SET, DEF_UCP_P, "[\\p{P}$+<=>^`|~]", NULL, NULL, "punct", &pcrec_ucp_set_punct},
+    {DEFK_STR, DEF_ALWAYS, "[!-/:-@[-`{-~]",    NULL, NULL, "punct", NULL},
+    {DEFK_SET, DEF_UCP_P, "\\p{Xps}", NULL, NULL, "space", &pcrec_ucp_set_pspace},
+    {DEFK_STR, DEF_ALWAYS, "[\\t\\n\\x0b\\f\\r ]", NULL, NULL, "space", NULL},
+    {DEFK_SET, DEF_UCP_P, "\\p{Lu}", NULL, NULL, "upper", &pcrec_ucp_set_upper},
+    {DEFK_STR, DEF_ALWAYS, "[A-Z]",             NULL, NULL, "upper", NULL},
+    {DEFK_SET, DEF_UCP_P, "\\p{Xwd}", NULL, NULL, "word", &pcrec_ucp_set_word},
+    {DEFK_STR, DEF_ALWAYS, "[A-Za-z0-9_]",      NULL, NULL, "word", NULL},
+    {DEFK_SET, DEF_UCP_T, "[0-9A-Fa-f\\x{ff10}-\\x{ff19}\\x{ff21}-\\x{ff26}\\x{ff41}-\\x{ff46}]", NULL, NULL, "xdigit", &pcrec_ucp_set_xdigit},
+    {DEFK_STR, DEF_ALWAYS, "[0-9A-Fa-f]",       NULL, NULL, "xdigit", NULL},
+    {DEFK_END, DEF_ALWAYS, NULL,                NULL, NULL, NULL, NULL},
 };
 
 static const RegRow classbracket_rows[] = {
@@ -1429,8 +1478,8 @@ REJECTED_DELIM(RK_CLASSBRACKET, '=', "[[=a=]]", "POSIX collating elements are no
  * {n,m}+`, only the QUANTIFIER producing the body differs, and the
  * template names the general shape rather than four near-duplicates. */
 static const RegDef possessive_def[] = {
-    {DEFK_BUILDER, DEF_ALWAYS, "X<quant>+ ≡ (?>X<quant>)", pcrec_def_build_atomic, NULL, NULL},
-    {DEFK_END,     DEF_ALWAYS, NULL, NULL, NULL, NULL},
+    {DEFK_BUILDER, DEF_ALWAYS, "X<quant>+ ≡ (?>X<quant>)", pcrec_def_build_atomic, NULL, NULL, NULL},
+    {DEFK_END,     DEF_ALWAYS, NULL, NULL, NULL, NULL, NULL},
 };
 
 #define QUANTSUFFIX(sel, syn, note) \
@@ -1491,9 +1540,9 @@ QUANTSUFFIX('{', "a{1,2}+", "possessive braces — `X{n,m}+` is `(?>X{n,m})`; al
  * `reachable = (kind == RK_ESC || kind == RK_CLASSBRACKET)` rule already
  * excludes RK_BARE with no edit needed. */
 static const RegDef bol_def[] = {
-    {DEFK_STR, DEF_MULTILINE, "\\A|(?<=\\n)(?!\\z)", NULL, NULL, NULL},
-    {DEF_IDENTITY, DEF_ALWAYS, NULL, NULL, NULL, NULL},
-    {DEFK_END, DEF_ALWAYS, NULL, NULL, NULL, NULL},
+    {DEFK_STR, DEF_MULTILINE, "\\A|(?<=\\n)(?!\\z)", NULL, NULL, NULL, NULL},
+    {DEF_IDENTITY, DEF_ALWAYS, NULL, NULL, NULL, NULL, NULL},
+    {DEFK_END, DEF_ALWAYS, NULL, NULL, NULL, NULL, NULL},
 };
 /* NOTE the ASYMMETRY with bol_def, FOUND BY THE STRUCTURAL CHECK ITSELF
  * (definitions_check.c's `check_str_entry(owner, r->syntax)` call for a
@@ -1520,17 +1569,17 @@ static const RegDef bol_def[] = {
  * expansion"). `\Z`'s own entry (`z_def`, above esc_rows) carries the real
  * text now. */
 static const RegDef eol_def[] = {
-    {DEFK_STR, DEF_MULTILINE, "(?=\\n)|\\z", NULL, NULL, NULL},
-    {DEFK_ROW, DEF_ALWAYS, "\\Z", NULL, NULL, NULL},
-    {DEFK_END, DEF_ALWAYS, NULL, NULL, NULL, NULL},
+    {DEFK_STR, DEF_MULTILINE, "(?=\\n)|\\z", NULL, NULL, NULL, NULL},
+    {DEFK_ROW, DEF_ALWAYS, "\\Z", NULL, NULL, NULL, NULL},
+    {DEFK_END, DEF_ALWAYS, NULL, NULL, NULL, NULL, NULL},
 };
 /* [DD-11.1 builder-template ruling] `(?n)`'s own template: the identity
  * builder's contract stated as text, `(?n)`'s definitions_table.md §1 row
  * restated in the placeholder convention. */
 static const RegDef cap_def[] = {
-    {DEFK_BUILDER, DEF_NOCAP, "(?n)(X) ≡ (?:X)", pcrec_def_build_identity, NULL, NULL},
-    {DEF_IDENTITY, DEF_ALWAYS, NULL, NULL, NULL, NULL},
-    {DEFK_END, DEF_ALWAYS, NULL, NULL, NULL, NULL},
+    {DEFK_BUILDER, DEF_NOCAP, "(?n)(X) ≡ (?:X)", pcrec_def_build_identity, NULL, NULL, NULL},
+    {DEF_IDENTITY, DEF_ALWAYS, NULL, NULL, NULL, NULL, NULL},
+    {DEFK_END, DEF_ALWAYS, NULL, NULL, NULL, NULL, NULL},
 };
 
 static const RegRow bare_rows[] = {

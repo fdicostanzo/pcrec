@@ -1,0 +1,404 @@
+# [UCP] U1 -- PCRE2's ASCII-RESTRICTION letters made real (D130 Q5;
+# ucp_design.md §1.4): `(?aD)` restricts \d \D, `(?aS)` \s \S, `(?aW)` \w \W
+# \b \B, `(?aP)` every POSIX class, `(?aT)` [:digit:] [:xdigit:] (which aP
+# restricts too). `(?a)` sets all five, `(?-a)` clears all, `(?-aX)` one; the
+# letters are SCOPED (`(?aD:...)`) and SURVIVE `(?^)`. Without UCP they are
+# no-ops, as they always were (the no-UCP controls at the end).#
+# ORACLE: libpcre2, the options the block states (`encoding utf8` = PCRE2_UTF,
+# `(*UCP)`/`flags u` = PCRE2_UCP, `flags i` = PCRE2_CASELESS). Every expectation
+# was READ FROM THE ORACLE (10.48, the generator) and re-verified against the
+# 10.46 reference; `verify_ucp.py` in this directory re-checks every cell on
+# every `make test` against the resolved libpcre2 (it SKIPS loudly without one).
+# `# pcre2-only` throughout: python `re` has no PCRE2_UCP and its subject
+# decoder is byte-oriented (U14).
+
+# pcre2-only
+pattern (*UCP)(?aD)\d
+encoding utf8
+n "\xd9\xa0"
+m "5" 0 1
+n "\xc2\xa0"
+n " "
+n "\xc3\xa9"
+n "a"
+n "\xe2\x84\xaa"
+n "k"
+n "\xef\xbc\x90"
+n "\xe3\x80\x80"
+
+# pcre2-only
+pattern (*UCP)(?a)\d
+encoding utf8
+n "\xd9\xa0"
+m "5" 0 1
+n "\xc2\xa0"
+n " "
+n "\xc3\xa9"
+n "a"
+n "\xe2\x84\xaa"
+n "k"
+n "\xef\xbc\x90"
+n "\xe3\x80\x80"
+
+# pcre2-only
+pattern (*UCP)(?a)(?-aD)\d
+encoding utf8
+m "\xd9\xa0" 0 2
+m "5" 0 1
+n "\xc2\xa0"
+n " "
+n "\xc3\xa9"
+n "a"
+n "\xe2\x84\xaa"
+n "k"
+m "\xef\xbc\x90" 0 3
+n "\xe3\x80\x80"
+
+# pcre2-only
+pattern (*UCP)(?a)(?-aD)\s
+encoding utf8
+n "\xd9\xa0"
+n "5"
+n "\xc2\xa0"
+m " " 0 1
+n "\xc3\xa9"
+n "a"
+n "\xe2\x84\xaa"
+n "k"
+n "\xef\xbc\x90"
+n "\xe3\x80\x80"
+
+# pcre2-only
+pattern (*UCP)(?-a)\d
+encoding utf8
+m "\xd9\xa0" 0 2
+m "5" 0 1
+n "\xc2\xa0"
+n " "
+n "\xc3\xa9"
+n "a"
+n "\xe2\x84\xaa"
+n "k"
+m "\xef\xbc\x90" 0 3
+n "\xe3\x80\x80"
+
+# pcre2-only
+pattern (*UCP)(?aD-aD)\d
+encoding utf8
+m "\xd9\xa0" 0 2
+m "5" 0 1
+n "\xc2\xa0"
+n " "
+n "\xc3\xa9"
+n "a"
+n "\xe2\x84\xaa"
+n "k"
+m "\xef\xbc\x90" 0 3
+n "\xe3\x80\x80"
+
+# pcre2-only
+pattern (*UCP)(?aDaS)\s
+encoding utf8
+n "\xd9\xa0"
+n "5"
+n "\xc2\xa0"
+m " " 0 1
+n "\xc3\xa9"
+n "a"
+n "\xe2\x84\xaa"
+n "k"
+n "\xef\xbc\x90"
+n "\xe3\x80\x80"
+
+# pcre2-only
+pattern (*UCP)(?aD:\d)\d
+encoding utf8
+n "\xd9\xa0"
+n "5"
+n "\xc2\xa0"
+n " "
+n "\xc3\xa9"
+n "a"
+n "\xe2\x84\xaa"
+n "k"
+n "\xef\xbc\x90"
+n "\xe3\x80\x80"
+
+# pcre2-only
+pattern (*UCP)(?aD)(?^)\d
+encoding utf8
+n "\xd9\xa0"
+m "5" 0 1
+n "\xc2\xa0"
+n " "
+n "\xc3\xa9"
+n "a"
+n "\xe2\x84\xaa"
+n "k"
+n "\xef\xbc\x90"
+n "\xe3\x80\x80"
+
+# pcre2-only
+pattern (*UCP)(?aD)(?^i)\d
+encoding utf8
+n "\xd9\xa0"
+m "5" 0 1
+n "\xc2\xa0"
+n " "
+n "\xc3\xa9"
+n "a"
+n "\xe2\x84\xaa"
+n "k"
+n "\xef\xbc\x90"
+n "\xe3\x80\x80"
+
+# pcre2-only
+pattern (*UCP)(?aS)\s
+encoding utf8
+n "\xd9\xa0"
+n "5"
+n "\xc2\xa0"
+m " " 0 1
+n "\xc3\xa9"
+n "a"
+n "\xe2\x84\xaa"
+n "k"
+n "\xef\xbc\x90"
+n "\xe3\x80\x80"
+
+# pcre2-only
+pattern (*UCP)(?aS)[[:space:]]
+encoding utf8
+n "\xd9\xa0"
+n "5"
+m "\xc2\xa0" 0 2
+m " " 0 1
+n "\xc3\xa9"
+n "a"
+n "\xe2\x84\xaa"
+n "k"
+n "\xef\xbc\x90"
+m "\xe3\x80\x80" 0 3
+
+# pcre2-only
+pattern (*UCP)(?aP)[[:space:]]
+encoding utf8
+n "\xd9\xa0"
+n "5"
+n "\xc2\xa0"
+m " " 0 1
+n "\xc3\xa9"
+n "a"
+n "\xe2\x84\xaa"
+n "k"
+n "\xef\xbc\x90"
+n "\xe3\x80\x80"
+
+# pcre2-only
+pattern (*UCP)(?aP)\d
+encoding utf8
+m "\xd9\xa0" 0 2
+m "5" 0 1
+n "\xc2\xa0"
+n " "
+n "\xc3\xa9"
+n "a"
+n "\xe2\x84\xaa"
+n "k"
+m "\xef\xbc\x90" 0 3
+n "\xe3\x80\x80"
+
+# pcre2-only
+pattern (*UCP)(?aT)[[:digit:]]
+encoding utf8
+n "\xd9\xa0"
+m "5" 0 1
+n "\xc2\xa0"
+n " "
+n "\xc3\xa9"
+n "a"
+n "\xe2\x84\xaa"
+n "k"
+n "\xef\xbc\x90"
+n "\xe3\x80\x80"
+
+# pcre2-only
+pattern (*UCP)(?aT)\d
+encoding utf8
+m "\xd9\xa0" 0 2
+m "5" 0 1
+n "\xc2\xa0"
+n " "
+n "\xc3\xa9"
+n "a"
+n "\xe2\x84\xaa"
+n "k"
+m "\xef\xbc\x90" 0 3
+n "\xe3\x80\x80"
+
+# pcre2-only
+pattern (*UCP)(?aP-aT)[[:digit:]]
+encoding utf8
+n "\xd9\xa0"
+m "5" 0 1
+n "\xc2\xa0"
+n " "
+n "\xc3\xa9"
+n "a"
+n "\xe2\x84\xaa"
+n "k"
+n "\xef\xbc\x90"
+n "\xe3\x80\x80"
+
+# pcre2-only
+pattern (*UCP)(?aT)[[:xdigit:]]
+encoding utf8
+n "\xd9\xa0"
+m "5" 0 1
+n "\xc2\xa0"
+n " "
+n "\xc3\xa9"
+m "a" 0 1
+n "\xe2\x84\xaa"
+n "k"
+n "\xef\xbc\x90"
+n "\xe3\x80\x80"
+
+# pcre2-only
+pattern (*UCP)(?aW)\w+
+encoding utf8
+n "\xd9\xa0"
+m "5" 0 1
+n "\xc2\xa0"
+n " "
+n "\xc3\xa9"
+m "a" 0 1
+n "\xe2\x84\xaa"
+m "k" 0 1
+n "\xef\xbc\x90"
+n "\xe3\x80\x80"
+
+# pcre2-only
+pattern (*UCP)(?aW)\W
+encoding utf8
+m "\xd9\xa0" 0 2
+n "5"
+m "\xc2\xa0" 0 2
+m " " 0 1
+m "\xc3\xa9" 0 2
+n "a"
+m "\xe2\x84\xaa" 0 3
+n "k"
+m "\xef\xbc\x90" 0 3
+m "\xe3\x80\x80" 0 3
+
+# pcre2-only
+pattern (*UCP)(?aP)[[:word:]]
+encoding utf8
+n "\xd9\xa0"
+m "5" 0 1
+n "\xc2\xa0"
+n " "
+n "\xc3\xa9"
+m "a" 0 1
+n "\xe2\x84\xaa"
+m "k" 0 1
+n "\xef\xbc\x90"
+n "\xe3\x80\x80"
+
+# pcre2-only
+pattern (*UCP)(?aP)[[:alpha:]]+
+encoding utf8
+n "\xd9\xa0"
+n "5"
+n "\xc2\xa0"
+n " "
+n "\xc3\xa9"
+m "a" 0 1
+n "\xe2\x84\xaa"
+m "k" 0 1
+n "\xef\xbc\x90"
+n "\xe3\x80\x80"
+
+# pcre2-only
+pattern (*UCP)(?aP)[[:^lower:]]
+encoding utf8
+m "\xd9\xa0" 0 2
+m "5" 0 1
+m "\xc2\xa0" 0 2
+m " " 0 1
+m "\xc3\xa9" 0 2
+n "a"
+m "\xe2\x84\xaa" 0 3
+n "k"
+m "\xef\xbc\x90" 0 3
+m "\xe3\x80\x80" 0 3
+
+# pcre2-only
+pattern (*UCP)(?aD)[\d\x{660}]
+encoding utf8
+m "\xd9\xa0" 0 2
+m "5" 0 1
+n "\xc2\xa0"
+n " "
+n "\xc3\xa9"
+n "a"
+n "\xe2\x84\xaa"
+n "k"
+n "\xef\xbc\x90"
+n "\xe3\x80\x80"
+
+# pcre2-only
+pattern (?aD)\d
+encoding utf8
+n "\xd9\xa0"
+m "5" 0 1
+n "\xc2\xa0"
+n " "
+n "\xc3\xa9"
+n "a"
+n "\xe2\x84\xaa"
+n "k"
+n "\xef\xbc\x90"
+n "\xe3\x80\x80"
+
+# pcre2-only
+pattern (?a)\s
+encoding utf8
+n "\xd9\xa0"
+n "5"
+n "\xc2\xa0"
+m " " 0 1
+n "\xc3\xa9"
+n "a"
+n "\xe2\x84\xaa"
+n "k"
+n "\xef\xbc\x90"
+n "\xe3\x80\x80"
+
+# `(?aW)` REACHES `\b`/`\B`: inside its scope the boundary reads the ASCII word set, which U1 builds (UCP `\b` itself is refused, refusals.rxt)
+# pcre2-only
+pattern (*UCP)(?aW:a\b)
+encoding utf8
+features classes,modifiers,assertions
+m "a\xc3\xa9" 0 1
+m "a b" 0 1
+n "ab"
+
+# `(?aW)` REACHES `\b`/`\B`: inside its scope the boundary reads the ASCII word set, which U1 builds (UCP `\b` itself is refused, refusals.rxt)
+# pcre2-only
+pattern (*UCP)(?aW)a\b
+encoding utf8
+features classes,modifiers,assertions
+m "a\xc3\xa9" 0 1
+m "a b" 0 1
+n "ab"
+
+# `(?aW)` REACHES `\b`/`\B`: inside its scope the boundary reads the ASCII word set, which U1 builds (UCP `\b` itself is refused, refusals.rxt)
+# pcre2-only
+pattern (*UCP)(?aW)a\B
+encoding utf8
+features classes,modifiers,assertions
+n "a\xc3\xa9"
+n "a b"
+m "ab" 0 1

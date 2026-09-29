@@ -421,8 +421,12 @@ off.
     --list-source`. This is stated here because it is observable by any
     caller comparing the two, not only by the two harness legs above.
 - `flags <letters>` — compile options for the current block, block-scoped
-  (does not carry to the next block). Only `i` is defined (case-insensitive,
-  `pcrec -i`). An unknown letter is a hard error, not a silent no-op.
+  (does not carry to the next block). Two letters are defined, each at most
+  once, in either order: `i` (case-insensitive, `pcrec -i`) and `u` (UCP,
+  `pcrec --ucp` — [UCP] U1; python `re` has no UCP, so the default oracle
+  SKIPS a `u` block, counted with the `# pcre2-only` ones, and
+  `tests/ucp/verify_ucp.py` is its oracle). An unknown letter is a hard
+  error, not a silent no-op.
 - `features <list>` — enabled feature modules for the current block,
   block-scoped: a comma-separated list of module names exactly as
   `--list-syntax`'s module column spells them, passed to pcrec as

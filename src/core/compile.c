@@ -722,6 +722,15 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
             return -1;
         }
     }
+    /* [UCP] O-71: the encoding's implied modules join the MASK only. The
+     * label and the rendered module list stay the REQUESTED set, which is what
+     * `PCREC_FEATURE_SET`/`PCREC_FEATURE_MODULES` stamp — so no artifact moves;
+     * the implication is a function of `rx_info.encoding`, stamped already.
+     * An unknown encoding is refused later, by name, where it always was. */
+    {
+        const PcrecEnc *fe = pcrec_enc_by_id(defo.encoding);
+        if (fe) feat_mask |= fe->implied_features;
+    }
 
     /* [SEL-1] `dfa_disabled` is this driver's own retry input, carried across
      * attempts; `overflow_why` carries the failed attempt's own diagnosis

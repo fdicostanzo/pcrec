@@ -511,5 +511,8 @@ const PcrecEnc pcrec_enc_backend_utf8 = {
      * capability here — `mod_modifiers.c` refuses it by name rather than
      * silently mismatching libpcre2 on four measured cells (enc.h's field
      * comment). */
-    false
+    false,
+    /* [UCP] O-71: `\p{..}` is the ordinary case under UTF-8, and `(*UCP)` /
+     * `(*UTF)` are then accepted (enc.h's field comment). */
+    FEAT_UNICODE_PROPS | FEAT_UCP
 };

@@ -1231,10 +1231,12 @@ static int parse_setting(RxtP *p, RxtRow *r, size_t line, const char *l,
          * the exact "three parsers, three answers, on a line the spec
          * rules" class this step's remedy targets. */
         if (!*v) return rxt_fail(p, RXTD_VALUE_SHAPE, line, "'flags' needs its letters");
-        if (strcmp(v, "i") != 0)
+        /* [UCP] `u` is `--ucp`; each letter at most once, either order. */
+        if (strcmp(v, "i") != 0 && strcmp(v, "u") != 0 &&
+            strcmp(v, "iu") != 0 && strcmp(v, "ui") != 0)
             return rxt_fail(p, RXTD_VALUE_SHAPE, line,
-                            "unknown flag letter(s) '%s' (only 'i' is "
-                            "defined)", v);
+                            "unknown flag letter(s) '%s' (only 'i' and 'u' "
+                            "are defined)", v);
         r->flags = arena_strdup(p->arena, v);
         return 0;
     }
@@ -4058,6 +4060,7 @@ int pcrec_rxt_flags_from_letters(const char *letters, unsigned long long *out,
     if (letters) {
         for (const char *c = letters; *c; c++) {
             if (*c == 'i') f |= (unsigned long long)PCREC_CASELESS;
+            else if (*c == 'u') f |= (unsigned long long)PCREC_UCP;   /* [UCP] */
             else { if (bad) *bad = *c; return -1; }
         }
     }

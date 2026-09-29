@@ -11,6 +11,40 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 ---
 
+## K72 — OPEN, no fix scheduled (found by lane ucpu1, [UCP] U1, 2026-09-28/29) — `\h`/`\v` under `-e utf8` are the BYTE sets, not PCRE2_UTF's
+
+**Witness** (libpcre2 10.46, `PCRE2_UTF` only, no UCP — transcript
+`docs/dev/lanes/ucpu1_evidence/probe_hv_10.46.txt`, `probe_hv.py`): under
+PCRE2_UTF, `^\h$` matches U+3000 IDEOGRAPHIC SPACE (`E3 80 80`) as well as
+U+00A0 NO-BREAK SPACE, ASCII space and tab. pcrec's own `\h` under
+`-e utf8` matches U+00A0/space/tab but answers `nomatch` on U+3000
+(verified live: `build/pcrec -e utf8 --emit-main --pattern '^\h$'`, run
+against the four subjects).
+
+**Mechanism.** `\h`/`\v` are `DEF_ALWAYS` string-literal entries —
+`h_def`/`v_def` in `src/parse/registry.c` (`[\t \xa0]` and
+`[\n\x0b\f\r\x85]` respectively, DEFK_STR, fixed at every encoding) —
+never widened when the encoding lowering (`src/opt/lower_enc.c`) or [UCP]
+gave `\d`/`\s`/`\w` their Unicode-aware DEFK_SET route. Independent of
+UCP: `--ucp`/`(*UCP)` do not touch `\h`/`\v` at all (neither is one of
+`DEF_UCP_{D,S,W,P,T}`), so this divergence is a pre-existing
+byte-set-vs-PCRE2_UTF gap, not a UCP defect. UCP's own POSIX `[:blank:]`
+(module `ucp`, `mod_ucp.c`'s `t_blank`/`pcrec_ucp_set_blank`) is built
+from the Unicode "`\h` under UTF" LIST directly, comment-cited as "19
+code points, `[[:blank:]]` = `\h`" — not from this `\h` ESCAPE's own
+`h_def` row — so it is unaffected and correctly carries U+3000; this
+entry is scoped to the bare `\h`/`\v` escapes only.
+
+**Status.** Deferred, no fix scheduled: found while confirming [UCP] U1's
+identity gate (nothing under U0/U1 changed `\h`/`\v`'s definition), out of
+that lane's charter. No repro filed under `tests/known_fail/` (module
+`unicode-props`/a widened `\h`/`\v` table would need to change the base
+`DEF_ALWAYS` entry, which is base-tier and reaches every encoding — a
+design question for whichever milestone widens `\h`/`\v`, not a one-line
+fix).
+
+---
+
 ## K71 — OPEN, diagnostic-text-only (not an answer-correctness defect) (found by lane ucpthink, `docs/dev/ucp_study.md` §G item 2, 2026-09-28) — `RX_ENGINE_WHY` names one construct's KIND at ANOTHER construct's OFFSET
 
 **Witness**: `x(?<=a)(?!b)` stamps `"(?!...) at pattern offset 1"`, but

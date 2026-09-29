@@ -90,8 +90,21 @@ ExtResult pcrec_asrtport_atom(Ctx *cx, const RegRow *rw, ExtWant want,
      * src/ir/dfa.c. Two kinds rather than one plus a negation flag, on D62's
      * principle: no option turns `\b` into `\B`, so the distinction is
      * structure. */
-    case 'b': k = A_WORDB; break;
-    case 'B': k = A_NWORDB; break;
+    case 'b':
+    case 'B': {
+        /* [UCP] T1 FIRST: under UCP with `aW` unrestricted the row's
+         * definition is the UCP word set's boundary, which has no producer in
+         * U1 (ucp_design.md §6; D130 Q3) — refused by name rather than
+         * answered with the ASCII word set, which would be a miscompile. The
+         * DEF_ALWAYS entry is today's A_WORDB/A_NWORDB. */
+        const RegDef *def = pcrec_def_resolve(cx, rw);
+        if (def && def->tag != DEF_ALWAYS)
+            REFUSE(at, "UCP \\%c is not built yet: it reads the Unicode word "
+                       "set, which needs [UCP] U2 (-e byte) or U3/U4 (-e utf8); "
+                       "(?aW) restricts it to the ASCII word set", rw->sel);
+        k = rw->sel == 'b' ? A_WORDB : A_NWORDB;
+        break;
+    }
     /* [M6.2 wave D] `\G`, and it is a THIRD kind of question again. `\A`/
      * `\Z`/`\z` compare the position against a COMPILE-TIME constant (0, n,
      * n-1); `\b`/`\B` read the two bytes around it; `\G` compares it against

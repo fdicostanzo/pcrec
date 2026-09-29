@@ -490,10 +490,12 @@ static const PcrecEnc *cls_enc(Ctx *cx)
  *   - a NAMED BYTE SET — `\d`, `\w`, `\s`, a POSIX bracket, anything arriving
  *     through `pcrec_ast_class_from_bits` — folds by `pcrec_fold_ascii` AT
  *     EVERY ENCODING, because the set is named in the ASCII alphabet and
- *     PCRE2 widens it no further without `PCRE2_UCP`, which pcrec has no axis
- *     for (§4.5). MEASURED: under `PCRE2_UTF|PCRE2_CASELESS`, `[[:lower:]]`
- *     and `\w` do NOT match U+212A while `[a-z]` and `[k]` do — and both DO
- *     match it under `|PCRE2_UCP`, which is the arm pcrec does not implement.
+ *     PCRE2 widens it no further without `PCRE2_UCP` (§4.5). MEASURED: under
+ *     `PCRE2_UTF|PCRE2_CASELESS`, `[[:lower:]]` and `\w` do NOT match U+212A
+ *     while `[a-z]` and `[k]` do (the encoding's fold, no UCP needed). Under
+ *     UCP `\w` is a different SET — `\p{Xwd}`, which contains U+212A
+ *     outright — while `(?i)[[:lower:]]` still does not match it: UCP makes
+ *     `[:lower:]` fold-inert (ucp_design.md §1.3, r1 SEM-1).
  *
  * A PROPERTY SET IS NOT FOLDED HERE AT ALL, by either relation, and stage 3
  * measured why: `\p{Lu}` under `-i` IS `\p{L&}` (the substitution module
@@ -578,6 +580,93 @@ static void cls_casefold(Ctx *cx, PcrecCpSet *s, const PcrecFold *f)
  * for why a missing row is a loud internal error rather than a default. */
 static unsigned cls_universe(Ctx *cx) { return cls_enc(cx)->max_cp; }
 
+/* ---- [UCP] T2: WHICH FOLD A CLASS CONTRIBUTION TAKES (ucp_design.md §0.1) --
+ *
+ * One first-match TABLE serving every class site, replacing what used to be a
+ * per-caller argument (char_node and p_class passed the encoding's fold,
+ * `pcrec_ast_class_from_bits` the ASCII one). Rows are DATA — name, the fact
+ * the predicate tests in one line, the predicate, the action — walked first
+ * match, the last row always true. No row carries a deny flag: every one
+ * changes ANSWERS, so all are D125's structurally ineligible kind.
+ *
+ * ORDER: each row narrows the next one's population. `inert` and
+ * `ascii-named` are MEASURED exceptions to `latin1`/`encoding` (§1.3 rules 1
+ * and 3: `(?i)[[:lower:]]` under UCP does not fold, `(?aW)(?i)\w` folds by
+ * ASCII even under UTF|UCP), so they come first. `property` is not a fold at
+ * all — module `unicode-props` already chose the caseless SPAN (`\p{Lu}` ->
+ * `\p{L&}`), and folding on top of it is wrong (mod_uprops.c). */
+typedef struct {
+    const char *name;
+    const char *applies;   /* the predicate, as one listable line */
+    bool (*pred)(const Ctx *cx, ClsContrib k);
+    const PcrecFold *(*fold)(const Ctx *cx);   /* NULL result: no fold */
+} FoldRow;
+
+static bool fr_caseful(const Ctx *cx, ClsContrib k)
+{ (void)k; return !cx->mods->caseless; }
+static bool fr_property(const Ctx *cx, ClsContrib k)
+{ (void)cx; return k == CLS_PROPERTY; }
+static bool fr_inert(const Ctx *cx, ClsContrib k)
+{ (void)cx; return k == CLS_UCP_SET_INERT; }
+static bool fr_named(const Ctx *cx, ClsContrib k)
+{ (void)cx; return k == CLS_NAMED_BYTES; }
+/* "the encoding is `byte`" asked of the encoding (DD-12 (7)): its universe is
+ * one byte. PCRE2_UCP without PCRE2_UTF reads the bytes as Latin-1. */
+static bool fr_latin1(const Ctx *cx, ClsContrib k)
+{ (void)k; return cx->mods->ucp && cls_enc((Ctx *)cx)->max_cp <= 0xFFu; }
+static bool fr_always(const Ctx *cx, ClsContrib k)
+{ (void)cx; (void)k; return true; }
+
+static const PcrecFold *fa_none(const Ctx *cx)   { (void)cx; return NULL; }
+static const PcrecFold *fa_ascii(const Ctx *cx)  { (void)cx; return &pcrec_fold_ascii; }
+static const PcrecFold *fa_latin1(const Ctx *cx) { (void)cx; return &pcrec_fold_latin1; }
+static const PcrecFold *fa_enc(const Ctx *cx)    { return cls_enc((Ctx *)cx)->fold; }
+
+static const FoldRow fold_rows[] = {
+    { "none",        "(?i) is off at the contribution",                      fr_caseful,  fa_none   },
+    { "property",    "a \\p set: unicode-props already chose its caseless span", fr_property, fa_none },
+    { "inert",       "a fold-inert UCP set ([:lower:]/[:upper:] under UCP)",  fr_inert,    fa_none   },
+    { "ascii-named", "a named or ASCII-restricted byte set (\\d \\w, POSIX)", fr_named, fa_ascii  },
+    { "latin1",      "UCP under a one-byte encoding (PCRE2_UCP without UTF)",  fr_latin1,   fa_latin1 },
+    { "encoding",    "always: the encoding's own fold relation",              fr_always,   fa_enc    },
+};
+
+/* T2's walk: the fold relation the first applicable row names for a
+ * contribution of kind `k` under `cx`'s state, NULL for "no fold". */
+static const PcrecFold *cls_fold_select(const Ctx *cx, ClsContrib k)
+{
+    for (size_t i = 0; i < sizeof fold_rows / sizeof fold_rows[0]; i++)
+        if (fold_rows[i].pred(cx, k)) return fold_rows[i].fold(cx);
+    return NULL;   /* unreachable: the last row is always true */
+}
+
+/* Folds `s` in place by the relation T2 selects for kind `k` (a no-op when it
+ * selects none). */
+static void cls_fold(Ctx *cx, PcrecCpSet *s, ClsContrib k)
+{
+    const PcrecFold *f = cls_fold_select(cx, k);
+    if (f) cls_casefold(cx, s, f);
+}
+
+/* Finishes the already-allocated A_CLASS `a` from `s`: fold by T2, THEN
+ * negate within the encoding's universe (the order cls_casefold's comment
+ * explains), publish. `a` is allocated by the caller BEFORE its set, which is
+ * the arena order every producer has always had. */
+static Ast *cls_finish(Ctx *cx, Ast *a, PcrecCpSet *s, ClsContrib kind,
+                       bool negate)
+{
+    cls_fold(cx, s, kind);
+    if (negate) pcrec_cpset_complement(s, cls_universe(cx));
+    pcrec_cpset_publish(s, a);
+    return a;
+}
+
+Ast *pcrec_ast_class_from_cpset(Ctx *cx, PcrecCpSet *s, ClsContrib kind,
+                                bool negate)
+{
+    return cls_finish(cx, node(cx, A_CLASS), s, kind, negate);
+}
+
 /* Builds an A_CLASS node for the single code point `c` (already range-checked
  * against the encoding's universe), folding in its case partners under the
  * scoped `-i` state via cls_casefold. */
@@ -598,7 +687,7 @@ static Ast *char_node(Ctx *cx, unsigned c)
      * members encode to one and three bytes, which §2.3's lowering already
      * builds as an alternation of byte sequences with no new machinery
      * (§4.2d). Under `byte` it is the 52-letter table, unchanged. */
-    if (cx->mods->caseless) cls_casefold(cx, &s, cls_enc(cx)->fold);
+    cls_fold(cx, &s, CLS_LITERAL);
     pcrec_cpset_publish(&s, a);
     return a;
 }
@@ -651,14 +740,13 @@ Ast *pcrec_ast_class_from_bits(Ctx *cx, const unsigned char bits[32],
      * bracket — and PCRE2 widens such a set no further under UTF unless
      * `PCRE2_UCP` is set, which pcrec has no axis for (§4.5). MEASURED under
      * `PCRE2_UTF|PCRE2_CASELESS`: `[[:lower:]]` and `\w` do NOT match U+212A,
-     * while `[a-z]` and `[k]` DO — and all four match it once `PCRE2_UCP` is
-     * added. Handing this constructor the encoding's fold would implement
-     * that UCP arm by accident, on the one axis pcrec deliberately does not
-     * have, and would do it silently. */
-    if (cx->mods->caseless) cls_casefold(cx, &s, &pcrec_fold_ascii);
-    if (negate) pcrec_cpset_complement(&s, cls_universe(cx));
-    pcrec_cpset_publish(&s, a);
-    return a;
+     * while `[a-z]` and `[k]` DO — by the encoding's own fold, with no UCP.
+     * What UCP changes is the SET, not this fold: UCP `\w` is `\p{Xwd}`,
+     * which contains U+212A outright, and `(?i)[[:lower:]]` still does not
+     * match it (ucp_design.md §1.3, r1 SEM-1). Handing this constructor the
+     * encoding's fold would widen an ASCII-named set silently. */
+    /* [UCP] now spelled as T2's `ascii-named` row rather than an argument. */
+    return cls_finish(cx, a, &s, CLS_NAMED_BYTES, negate);
 }
 
 /* [M5.0 stage 3] THE SAME CONSTRUCTOR FOR A SET THAT ARRIVES AS INTERVALS —
@@ -710,9 +798,8 @@ Ast *pcrec_ast_class_from_iv(Ctx *cx, const PcrecCpRange *iv, int n,
         if (iv[i].lo > uni) break;
         pcrec_cpset_add(&s, iv[i].lo, iv[i].hi > uni ? uni : iv[i].hi);
     }
-    if (negate) pcrec_cpset_complement(&s, uni);
-    pcrec_cpset_publish(&s, a);
-    return a;
+    /* [UCP] T2's `property` row, which selects no fold (above). */
+    return cls_finish(cx, a, &s, CLS_PROPERTY, negate);
 }
 
 /* ---- escapes ---- */
@@ -1303,7 +1390,7 @@ static Ast *p_class(Ctx *cx)
      * fold is what makes "the caller owns caselessness" true of `\p`
      * inside a class as well as at an atom — see this function's own
      * `prod` declaration. */
-    if (cx->mods->caseless) cls_casefold(cx, &set, cls_enc(cx)->fold);
+    cls_fold(cx, &set, CLS_LITERAL);
     pcrec_cpset_add_set(&set, prod.iv, prod.n);
     if (neg) pcrec_cpset_complement(&set, cls_universe(cx));
     pcrec_cpset_publish(&set, a);
@@ -2061,8 +2148,14 @@ void pcrec_parse_mods_init(Ctx *cx)
 {
     ParseMods *m = pcrec_arena_alloc(&cx->arena, sizeof *m);
     *m = (ParseMods){ .caseless = cx->opt &&
-                                  (cx->opt->flags & PCREC_CASELESS) != 0 };
+                                  (cx->opt->flags & PCREC_CASELESS) != 0,
+                      .ucp = cx->opt && (cx->opt->flags & PCREC_UCP) != 0 };
     cx->mods = m;
+    /* [UCP] `--ucp` asks for module `ucp`'s semantics, so it is refused by
+     * the module's name when the module is not enabled — `(*UCP)`'s own gate,
+     * reached from the CLI spelling. Under `-e utf8` the encoding implies it. */
+    if (m->ucp && !pcrec_feature_enabled(cx->enabled_features, FEAT_UCP))
+        pcrec_ctx_fail(cx, 0, "--ucp requires module 'ucp'");
 }
 
 /* The group-body entry point: p_alt_info directly, with no trailing-garbage

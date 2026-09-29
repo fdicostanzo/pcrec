@@ -653,6 +653,17 @@ fi
 # two literal runs (`foo` in the lookbehind body, `bar`) each collapse from
 # three per-byte label blocks to one P4 compare. Diffed at the same `-o`
 # basename against main b0b9f0fa; no other stamp in this census moved.
+#
+# RE-RECORDED A FIFTEENTH TIME, 2026-09-28, lane ucpu1 ([UCP] U0+U1, no abi
+# event — Q-A's ruled default), EVERY ROW, EMITTED_BYTES only, each exactly
+# +4: `,ucp` inside `PCREC_FEATURE_MODULES` — a `--features all` fact, not a
+# per-artifact one (this census compiles with `--features all`), the SAME
+# mechanism `,vars`'s own +5 re-record above already names for module `vars`.
+# VERIFIED BY DIFFING the `abc` artifact against a scratch build of main
+# `7a756066` at the same `-o` basename: the only changed line is
+# `PCREC_FEATURE_MODULES`'s value gaining `,ucp` (4 bytes); no other stamp
+# in this census moved, and no UCP-free artifact moves at any other flag
+# combination (ucpu1_report.md §3's identity-gate numbers).
 MANIFEST="$ROOT_DIR/tests/codegen/manifests/m5_stage1_stamps.tsv"
 if [ -d "$(dirname "$MANIFEST")" ]; then
     if [ -f "$MANIFEST" ]; then

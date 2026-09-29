@@ -316,5 +316,6 @@ const PcrecEnc pcrec_enc_backend_byte = {
     /* [K70] `(?r)` IS a true no-op here — `pcrec_fold_ascii` never crosses
      * the ASCII boundary, MEASURED against libpcre2 10.46 (enc.h's field
      * comment). */
-    true
+    true,
+    0u   /* [UCP] implies no module */
 };

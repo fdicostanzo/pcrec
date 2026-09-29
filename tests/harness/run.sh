@@ -1717,6 +1717,7 @@ flush_block() {
     # is rejected at parse time, so this can only hold letters we map here
     local pflags=()
     [[ "$cur_flags" == *i* ]] && pflags+=(-i)
+    [[ "$cur_flags" == *u* ]] && pflags+=(--ucp)
     # [DD-13b.W23.3] `pattern-esc`: THE STILL-ENCODED TEXT GOES THROUGH,
     # and NOTHING IN THIS FILE DECODES IT (format_design §2.19). A
     # `printf %b` approximation would be a SECOND escape vocabulary — a
@@ -2695,9 +2696,11 @@ for file in "${files[@]}"; do
             flag_letters="${BASH_REMATCH[1]}"
             if [ "$have_block" != "1" ]; then
                 record_fail_class unknown-token-in-scope "$file" "$lineno" "'flags' line before any pattern block"
-            elif [ "$flag_letters" != "i" ]; then
+            elif ! [[ "$flag_letters" =~ ^(i|u|iu|ui)$ ]]; then
+                # [UCP] `u` is `--ucp` (PCRE2_UCP, module `ucp`); each
+                # letter at most once, in either order.
                 record_fail_class value-shape "$file" "$lineno" \
-                    "unknown flag letter(s) '$flag_letters' (only 'i' is defined)"
+                    "unknown flag letter(s) '$flag_letters' (only 'i' and 'u' are defined)"
             else
                 cur_flags="$flag_letters"
             fi

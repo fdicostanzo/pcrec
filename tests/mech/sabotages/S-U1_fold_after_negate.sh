@@ -33,11 +33,13 @@ SAB_REACH='"$PCREC" -i -e utf8 -p rx -o - --pattern "[^k]"'
 SAB_REACH_EXPECT='Pattern: [^k] */'
 SAB_REACH_POP='tests/utf8/fold.rxt|^pattern \[\^|3'
 SAB_EXPECT=DETECTED
+# [UCP] U1 re-aim (lane ucpu1): p_class's fold is now T2's `cls_fold(..., CLS_LITERAL)`
+# (the same call, table-selected); the edit's intent — fold AFTER negate — is unchanged.
 SAB_COUNT=1
-SAB_BEFORE='    if (cx->mods->caseless) cls_casefold(cx, &set, cls_enc(cx)->fold);
+SAB_BEFORE='    cls_fold(cx, &set, CLS_LITERAL);
     pcrec_cpset_add_set(&set, prod.iv, prod.n);
     if (neg) pcrec_cpset_complement(&set, cls_universe(cx));'
 SAB_AFTER='    /* SABOTAGE S-U1: negate first, then fold */
     pcrec_cpset_add_set(&set, prod.iv, prod.n);
     if (neg) pcrec_cpset_complement(&set, cls_universe(cx));
-    if (cx->mods->caseless) cls_casefold(cx, &set, cls_enc(cx)->fold);'
+    cls_fold(cx, &set, CLS_LITERAL);'

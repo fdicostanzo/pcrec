@@ -14,6 +14,8 @@ SAB_SUITES="codegen harness"
 SAB_HARNESS_TARGET="tests/base/caseless.rxt"
 SAB_DESC="char_node: delete the cls_casefold() call (literals stop folding under -i)"
 SAB_DOC_FIGURE="tests/codegen/CLAUDE.md: 1 codegen check + 14 caseless.rxt cases"
+# [UCP] U1 re-aim (lane ucpu1): char_node's fold is T2's `cls_fold(..., CLS_LITERAL)`;
+# deleting it is still "the literal constructor stops folding".
 SAB_COUNT=1
 # RE-ANCHORED 2026-08-21 (sabanchors lane): same drift as S08 —
 # Ctx.mods became a pointer to ParseMods at [M6.2] wave A, so
@@ -23,5 +25,5 @@ SAB_COUNT=1
 # \`PcrecCpSet\` and publishes once. The deletion this row makes, and everything
 # it detects, is unchanged — a literal stops folding while classes keep doing
 # it, which is what makes its symptom disjoint from S08's.
-SAB_BEFORE="    if (cx->mods->caseless) cls_casefold(cx, &s, cls_enc(cx)->fold);"
+SAB_BEFORE="    cls_fold(cx, &s, CLS_LITERAL);"
 SAB_AFTER="    /* SABOTAGE S09: the literal constructor stops folding */"
