@@ -4854,6 +4854,61 @@ See `docs/dev/lanes/bsweep_report.md` for this tool's own validation
 three scratch-sabotage detection transcripts) and the reconciliation of the
 five prior lanes' composition-arm figures.
 
+## S3 triple-sweep identity instrument (`scripts/cls_identity.py`, [CLS-TREE] S3, 2026-09-29)
+
+`docs/design/cls_tree_design.md` §6's S3 row promises "byte-identical over
+the corpus + bench, every encoding x features triple" ([K53-SELRETRY]'s
+3,348/3,348 method), and `docs/dev/cls_s3_reader_inventory.md` §7 found the
+driver for it was never committed (D-8: the instrument lands FIRST, its
+baseline recorded on main before S3 starts). `scripts/emit_sweep.py` cannot
+serve: its streams run at the default `byte` encoding, where an `A_WCLASS`
+is never produced.
+
+**What it does.** Compiles every distinct (pattern, encoding, features,
+flags, engine) triple with a baseline and a candidate `pcrec` and compares
+the emitted C byte for byte (`-o -` on both sides: the `-o`-basename trap).
+Populations, all derived from the tree: corpus blocks as written
+(`--list-source`), the same patterns widened over {byte, utf8} x {written
+features, `all`}, every pcrec-bench pattern (read-only; skipped loudly when
+the sibling repo is absent) x {byte, utf8} x `all` x {auto, vm}, the `\p{X}`
+names present in the corpus in five shapes (utf8, `all`, auto and vm), and
+the inventory's named witnesses.
+
+**REACH, and what it can and cannot see.** A pass count is not evidence
+under `byte` or for ASCII patterns, where nothing is lowered. REACH counts
+the utf8 triples in which the wide-class lowering fired, read from the
+compiler's own output: the `--engine=vm --emit-ir` listing of the pattern
+under `-e utf8` differs from its listing under `-e byte`. No stamp says
+"`lower_class_utf8` returned non-NULL" and this lane added no hook; the
+counterfactual is a LOWER BOUND (a lowering whose program equals byte's
+spelling, e.g. a lone non-ASCII literal, is not counted; a triple whose
+forced-VM listing is refused is counted `unmeasured`, 1,437 of 8,258 utf8
+triples on main because the large `\p{..}` sets refuse on the VM) and can
+also fire on a char-vs-byte width fact that is not a class. If S3 wants an
+exact number, a stamp is the S3 lane's to ask for.
+
+**Controls.** (1) always: one byte of one candidate output is flipped in
+memory and pushed through the SAME comparison; it must be reported.
+(2) `--control`: a scratch build of the candidate with one band boundary of
+`lower_class_utf8` moved by one (anchored plant, refused if the anchor is
+gone) is swept against the unperturbed candidate over the reached utf8
+triples plus a sample of byte triples; it must move utf8 triples and no byte
+triple.
+
+**Why a script and not a `make` target.** It needs a reference revision (the
+branch point), which `make` has no default for; main-vs-main is vacuous
+(only the baseline record below); and it runs ~15 min at 2 workers. Same
+shape as `emit_sweep.py`. Usage:
+
+    # a lane's own build against its branch point (S3's gate)
+    python3 scripts/cls_identity.py --ref <branch-point-sha> --control
+    # today's baseline: two independent builds of one revision
+    python3 scripts/cls_identity.py --ref HEAD --cand-ref HEAD --control
+
+Scratch under `build-clsid/` (gitignored). Floors (`PINS`) are D110-style
+floors, not equality pins. Recorded baseline and runtime:
+`docs/dev/lanes/clsid_report.md`.
+
 ### 2026-09-26 — first Linux full-battery figures (ubuntubudu, S1 step 6)
 
 The first complete sanitizer + axes figures on the Linux box, all at
