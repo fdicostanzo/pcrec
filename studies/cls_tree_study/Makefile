@@ -81,5 +81,18 @@ bench2: discover
 	CC=$(CC) $(PY) bench.py --population k53 --lams 0,16,256 --rounds 11 \
 	    --whole --regimes member,mixed,ascii,full,runs --out bench2.tsv
 
+# [OPT-CLSPACK] timing arm (D129 item 5): N=4/16/32 live class sites in one
+# loop, bitmap vs kit vs shared-atom-table, same gate/protocol as bench2.
+# Separate target (not folded into bench.py's per-set driver, which times
+# one class at a time) so it can ride the SAME executor invocation as bench2
+# without changing that committed arm set; see docs/design/cls_tree_design.md
+# §7(b)'s updated brief for the one exact-command sequence. Reads the
+# COMMITTED results/byteclasses.tsv (same rule as whole-byteclasses/
+# asm-byteclasses above) -- no build/pcrec needed, and it is the read-only
+# study run's only input besides its own script.
+bench2-bytes: discover
+	CC=$(CC) $(PY) bench_bytes.py --ns 4,16,32 --lam 16 --rounds 11 \
+	    --out bench2_bytes.tsv
+
 clean:
 	rm -rf build discover
