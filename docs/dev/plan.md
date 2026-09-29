@@ -781,7 +781,7 @@ spine, not before):
   behavior for the tower family. When it lands, tests/vm/run_vm_tests.sh's
   K22 block inverts (refusal -> compiles-and-runs, refusal re-pinned under
   the deny flag) per R25 C1's rewrite plan.
-- [ENG-LOOK] STATE:not-started — LOOKAROUND BY PRODUCT CONSTRUCTION IN
+- [ENG-LOOK] STATE:not-started **STEP 0 FILED 2026-09-29 (Frank: "measurements as the first step"; scheduling decided later against everything else): a census of FIXED-LENGTH lookarounds of 2-4 characters (lookaround census 493 + bench VM-only patterns) with the per-pattern state growth each product would cost (lookbehind in the forward machine, lookahead in the reverse). It decides whether the bounded slice pays. U2's A_CTX + per-machine context-set table is the base (the one-character case is this row's minimal instance, as ruled 2026-08-23).** — LOOKAROUND BY PRODUCT CONSTRUCTION IN
   THE DFA ENGINE (chartered by Frank, 2026-08-23 13:5x, on the manager's
   analysis; Frank's framing: "my concern is unnecessary special handling
   code and duplicate code paths. Ideally we implement this in such a way
