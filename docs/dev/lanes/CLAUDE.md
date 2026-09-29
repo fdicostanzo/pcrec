@@ -3406,3 +3406,21 @@ never edited afterwards.
   `ucpu1_evidence/` holds the corpus generator (`gen_ucp.py`,
   `gen_corpus.py`), the two remote 10.46 probes (`remote_verify.py`,
   `remote_latin1.py`) and the 10.46 re-verification transcript.
+- `clss1_report.md` — [CLS-TREE] S1 (2026-09-29, lane clss1, opus): the
+  class-matcher kit in `src/gen/clskit.{c,h}`, with no emitter calling it,
+  no abi event and nothing caller-visible. It carries:
+  - the seven leaf forms and the size-only sectioning DP `K`, integer Q16
+    and cross-checked against the study;
+  - the whole-set `P3`/`P2`/`B1`;
+  - the byte atom table;
+  - D131's `--tune` class-form selection as ONE first-match table of rows
+    as data.
+  `tests/clskit/` (`make test-clskit`, in `TEST_SECTIONS`) checks every
+  emitted form on every code point over the 312 uprops sets, the K53
+  twelve, the 41 byte classes and the proptest compositions. It also runs
+  a census and the study cross-check. The sabotage rows are S360-S363 on
+  the new `clskit` mech arm, all DETECTED. **Read §3 first: a STOPPED design
+  point.** The table's byte predicates can only read the DP's MODEL bytes,
+  which run ~13% under the measured object for `K`. So D131's `0` row takes
+  `P3` on 2 of the K53 twelve where the ruled evidence says 12; a ruling
+  is owed.
