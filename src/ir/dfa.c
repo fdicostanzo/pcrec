@@ -253,7 +253,7 @@ static bool ctx_collect(Ctx *cx, Nfa *nfa, Dfa *d, int8_t *cbit)
  * vectors — the two consumers — so an edit to how the LIST is filled (where
  * sabotages S71/S76 now plant) cannot cancel in the knob-built reference.
  * tests/codegen/run_wordctx_identity.sh / run_mlinectx_identity.sh. */
-static bool ctx_entry_live(const Dfa *d, int k)
+static unsigned ctx_rows_knobbed(void)
 {
     unsigned knobbed = 0;
 #ifdef PCREC_NO_WORDCTX
@@ -262,8 +262,16 @@ static bool ctx_entry_live(const Dfa *d, int k)
 #ifdef PCREC_NO_MLINECTX
     knobbed |= 1u << CTXROW_NEWLINE;
 #endif
-    /* Live while ANY row that reads it is not knobbed out. */
-    return (d->ctx[k].rows & ~knobbed) != 0;
+    return knobbed;
+}
+
+static bool ctx_entry_live(const Dfa *d, int k)
+{
+    /* Live while ANY row that reads it is not knobbed out. A SHARED entry
+     * therefore stays on the axis for its other reader, and the knobbed
+     * row's own READERS are cut instead (`pcrec_build_dfa`: `cbit`,
+     * `nl_bit`), so the knob still removes exactly what it names. */
+    return (d->ctx[k].rows & ~ctx_rows_knobbed()) != 0;
 }
 
 /* The byte-equivalence partition, refined by every N_CLASS set and then by
@@ -1482,11 +1490,15 @@ void pcrec_build_dfa(Ctx *cx, Nfa *nfa, Dfa *d, bool prune, bool reverse,
     Mach m = { prune, reverse, has_end, has_gst, d->natoms, d->atomvec };
     sc.cbit = cbit;
     sc.nl_bit = sc.ns_bit = -1;
+    const unsigned readable = d->nctx ? ~ctx_rows_knobbed() : 0u;
     for (int k = 0; k < d->nctx; k++) {
         if (!ctx_entry_live(d, k)) continue;
-        if (d->ctx[k].rows & (1u << CTXROW_NEWLINE)) sc.nl_bit = k;
-        if (d->ctx[k].rows & (1u << CTXROW_NOSTART)) sc.ns_bit = k;
+        unsigned r = d->ctx[k].rows & readable;
+        if (r & (1u << CTXROW_NEWLINE)) sc.nl_bit = k;
+        if (r & (1u << CTXROW_NOSTART)) sc.ns_bit = k;
     }
+    if (!(readable & (1u << CTXROW_CTX)))   /* a knob cuts the A_CTX readers */
+        for (int i = 0; i < nfa->n; i++) cbit[i] = -1;
 
     /* [ENG-ABS] `root` IS A PARAMETER. It was `nfa->start` here, which is the
      * state `pcrec_nfa_wrap_unanchored` installs — the start-anywhere self-loop. The

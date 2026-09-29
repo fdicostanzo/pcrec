@@ -78,7 +78,12 @@ worktree; scratch in `/tmp/ucpu2s/`. Reproduction pieces:
   cells of `run_expansion_diff.sh`'s policy P2, A≠B and A≠C). Each entry now
   carries `rows`, every contributor row that reads it; readers and knobs go
   through it. Three witness blocks joined `ctxnode.rxt` (red on the pre-fix
-  binary: 3 cells) and sabotage S343 plants the first-row-only form.
+  binary: 3 cells) and sabotage S343 plants the first-row-only form. The
+  reference knobs follow the same rule: a shared entry stays on the axis for
+  its other reader and the KNOBBED row's readers are cut (`cbit` / `nl_bit`),
+  which `run_mlinectx_identity.sh`'s positive control required (its two new
+  shared-set witnesses read "agree unexplained" until then; now 76 differ,
+  0 unexplained, 4/0).
 
 ## 2. Tables (§0.1's rule), with their rows
 
@@ -156,7 +161,9 @@ two `wild-logparse-*-noatomic`); `utf8/asr-lb-{class,fixed,neg}` stay VM
 - `run_ctxnode_tests.sh`: corpus default 220/0, under `-fno-ctx-node` 220/0,
   route manifest 499 rows — **502 passed / 0 failed**.
 - The assertion-expansion corpus (`make test-lookaround`'s
-  `run_expansion_diff.sh`, A==B==C against local libpcre2): see §7.
+  `run_expansion_diff.sh`, A==B==C against local libpcre2 10.48 over the
+  10.46-verified assertions cells): 0 disagreements after the shared-set fix
+  (68 before it — that corpus is what found the defect).
 
 ## 6. Sabotage rows (main's highest was S336; new S337–S343)
 
@@ -180,14 +187,17 @@ knobs at its consumers so they cannot cancel), S75 (`vm_ctx`'s pool bitmap),
 S78, S81, S83, S218, S220, S269, S276 (signature-only). Anchor checker: 343
 rows, all resolve. Their DETECTED re-runs: see §7.
 
-## 7. Validation
+## 7. Validation (all on the branch, darwin, gcc-16)
 
 Run and green on the branch (darwin, gcc-16): `make strict` (clean);
 `test-reject` (655/0, coverage 290/120/0/112 re-pinned); `test-definitions`
 (22/0); `test-registry` (re-pinned: axes coverage 138 → 141, limits 35 → 37,
 limits manifest +2 names; the lookaround VM_ONLY witnesses asked under
 `-fno-ctx-node`, the configuration where the column is exactly true);
-`test-assertions`' `run_wordctx_identity.sh` (2,893 `\b`-free patterns identical,
+`test-lookaround` (green after the shared-set fix: `run_expansion_diff.sh`
+policy P2 had 68 A≠B / A≠C cells, now 0); `test-assertions` (green, every
+script; `run_mlinectx_identity.sh` 4/0 after the knob refinement above;
+`run_wordctx_identity.sh` 2,893 `\b`-free patterns identical,
 positive control 106 differ — BOTH builds now deny T3: a one-character
 lookaround is a context node on the very axis `-DPCREC_NO_WORDCTX` removes, so
 without the deny 173 `\b`-free lookaround patterns read as paying for the word
@@ -202,7 +212,17 @@ language the DFA now proves), `run_facts_checks.sh` 0 failed (the first full
 `run_inline_capability.sh`'s standing darwin `nm arm_a.o` red, pre-existing);
 `run_ctxnode_tests.sh` 502/0; mech S337–S342 DETECTED.
 
-OWED — filled in below by the chain's own lines (see §9).
+**OWED — the detached final chain** (`/tmp/ucpu2s/final_chain.sh`, log
+`/tmp/ucpu2s/final_chain.log`, `nohup caffeinate -s`): mech S343 and the
+eleven re-aimed rows (S69, S71, S75, S76, S78, S81, S83, S218, S220, S269,
+S276), one id per invocation, each line `MECH <id> rc=… :: <verdict> :: ==
+mech run COMPLETE …`; `make test-rxtsource` (census re-pinned
+254/4230/31185 — the extra `ctxnode.rxt` blocks landed after that pin was
+measured, so this run may ask for a +3/+12 re-pin); `make test-axes
+AXES=-fno-ctx-node`; then ONE full `make test CC=gcc-16`, whose line reads
+`MAKE-TEST rc=… :: sections ran: N/M … :: errors: <make's *** [test-X]
+Error lines>`. The chain's last line is `FINAL_CHAIN_DONE <date>`. The
+standing darwin red `run_inline_capability.sh` (`nm arm_a.o`) is expected.
 
 ## 8. abi decision
 
