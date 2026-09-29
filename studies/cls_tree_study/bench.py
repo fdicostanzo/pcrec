@@ -7,8 +7,16 @@ changes per study cannot be compared across studies:
 
   * N rounds (default 11), ARMS INTERLEAVED round by round — never arm A's
     eleven rounds then arm B's.
-  * the 1-minute load average gated below a threshold BEFORE the run, and
-    the harness REFUSES rather than caveats.
+  * the 1-minute load average gated (`loadgate.wait_for_quiet`) BEFORE every
+    timed unit (one regime run), waiting up to `--max-load-wait` seconds for
+    a quiet box rather than refusing on the first over-threshold reading —
+    the harness's OWN compiles and timing runs are sustained CPU work with
+    no idle gaps, so a gate checked once per SET was measuring itself (lane
+    clsgate, 2026-09-29; see loadgate.py's header). The threshold itself is
+    UNCHANGED (still 0.5 by default) and a box that stays loaded past the
+    bound still gets an honest refusal with its readings — never a caveat.
+  * ALL arms for ALL sets are built before ANY timing starts, so a set's
+    compile never straddles a gate check.
   * median ns/char reported with the per-round range.
   * every round's answer CHECKSUMMED (the hit count and a positional sum)
     and compared against the reference arm — a timing run that stops
@@ -33,6 +41,7 @@ import time
 
 import emit
 import kit
+import loadgate
 import section
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -137,25 +146,6 @@ int main(int argc, char **argv)
 """
 
 
-def loadavg():
-    # os.getloadavg() first: it is the portable path (Linux AND darwin), so the
-    # ubuntubudu run no longer reaches its gate through the sysctl branch's
-    # exception handler (r1 panel, lane clsdes88).
-    try:
-        return os.getloadavg()[0]
-    except OSError:
-        pass
-    out = subprocess.run(["sysctl", "-n", "vm.loadavg"],
-                         capture_output=True, text=True).stdout
-    try:
-        return float(out.strip().strip("{}").split()[0])
-    except (IndexError, ValueError):
-        try:
-            return os.getloadavg()[0]
-        except OSError:
-            return 99.0
-
-
 def gen(setname, iv, lams, outdir, whole_arms=False):
     arms, names, srcs = [], [], []
 
@@ -223,6 +213,11 @@ def main():
     ap.add_argument("--rounds", type=int, default=11)
     ap.add_argument("--regimes", default="member,mixed,ascii,full")
     ap.add_argument("--max-load", type=float, default=0.5)
+    ap.add_argument("--max-load-wait", type=float, default=600.0,
+                    help="bounded wait (seconds) for a quiet box before a "
+                         "timed unit refuses (default 600 = 10 min)")
+    ap.add_argument("--max-load-poll", type=float, default=10.0,
+                    help="poll interval (seconds) while waiting for quiet")
     ap.add_argument("--out", default="bench.tsv")
     ap.add_argument("--whole", action="store_true",
                     help="add the whole-set page2w/page3w arms (wholeset.py)")
@@ -235,35 +230,41 @@ def main():
         pop = [(n, iv) for n, iv in pop if n in want]
     lams = [float(x) for x in args.lams.split(",")]
 
-    la = loadavg()
-    if la >= args.max_load:
-        sys.exit("bench: REFUSING — load1 %.2f >= %.2f (quiet box required; "
-                 "this harness does not caveat a noisy measurement)"
-                 % (la, args.max_load))
+    la0 = loadgate.wait_for_quiet(args.max_load, args.max_load_wait,
+                                  args.max_load_poll, tag="bench")
 
     outdir = os.path.join(HERE, "build", "bench")
     os.makedirs(outdir, exist_ok=True)
     os.makedirs(os.path.join(HERE, "results"), exist_ok=True)
     path = os.path.join(HERE, "results", args.out)
 
+    # --- BUILD PHASE: every arm for every set, compiled BEFORE any timing
+    # starts, so a set's gcc invocation never straddles a load-gate check
+    # (lane clsgate, 2026-09-29 — see loadgate.py's header). ---
+    built = []
+    for name, iv in pop:
+        tag = "".join(c if c.isalnum() else "_" for c in name)
+        cpath, names = gen(tag, iv, lams, outdir, args.whole)
+        bpath = os.path.join(outdir, tag + "_bench")
+        r = subprocess.run([CC, "-O2", "-std=gnu11", "-w", cpath,
+                            "-o", bpath], capture_output=True, text=True)
+        if r.returncode:
+            sys.stderr.write("BUILD FAIL %s: %s\n"
+                             % (name, r.stderr.strip()[:200]))
+            continue
+        built.append((name, bpath))
+
+    # --- TIMING PHASE: gate-and-wait immediately before EACH timed unit
+    # (one regime run), not once per set. ---
     with open(path, "w") as out:
         out.write("# cc=%s rounds=%d load1_at_start=%.2f date=%s\n"
-                  % (CC, args.rounds, la, time.strftime("%Y-%m-%dT%H:%M:%S")))
+                  % (CC, args.rounds, la0, time.strftime("%Y-%m-%dT%H:%M:%S")))
         out.write("set\tregime\tarm\tround\tns_per_char\thits\tchk\n")
-        for name, iv in pop:
-            tag = "".join(c if c.isalnum() else "_" for c in name)
-            cpath, names = gen(tag, iv, lams, outdir, args.whole)
-            bpath = os.path.join(outdir, tag + "_bench")
-            r = subprocess.run([CC, "-O2", "-std=gnu11", "-w", cpath,
-                                "-o", bpath], capture_output=True, text=True)
-            if r.returncode:
-                sys.stderr.write("BUILD FAIL %s: %s\n"
-                                 % (name, r.stderr.strip()[:200]))
-                continue
+        for name, bpath in built:
             for regime in args.regimes.split(","):
-                la2 = loadavg()
-                if la2 >= args.max_load:
-                    sys.exit("bench: REFUSING mid-run — load1 %.2f" % la2)
+                loadgate.wait_for_quiet(args.max_load, args.max_load_wait,
+                                        args.max_load_poll,
+                                        tag="bench %s/%s" % (name, regime))
                 r = subprocess.run([bpath, regime, str(args.rounds)],
                                    capture_output=True, text=True)
                 ref = {}

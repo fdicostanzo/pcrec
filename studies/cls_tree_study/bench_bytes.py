@@ -4,7 +4,13 @@ it"): STEP 0 measured the shared atom table 24% faster than the bit array
 at N=16 (`.text`/`.rodata` only); its Q5-revised disposition is that the
 kit's inline byte tests were never timed against it either. This is that
 timing, box-independent house protocol (bench.py's own: interleaved rounds,
-load-gated, checksummed against an independent reference).
+load-gated, checksummed against an independent reference). The load gate is
+`loadgate.wait_for_quiet` (lane clsgate, 2026-09-29): all N's arms are built
+before any timing starts, and the gate is checked immediately before EACH
+timed unit (one N's run), waiting up to `--max-load-wait` for a quiet box
+rather than refusing on the first over-threshold reading -- see
+loadgate.py's header for why the harness's own compiles+runs were tripping
+the gate on themselves.
 
 THE SHAPE THE OTHER TWO REGIMES DO NOT HAVE: bench.py times ONE class's
 matcher at a time. [OPT-CLSPACK]'s question is about MANY class sites live
@@ -61,6 +67,7 @@ import sys
 import time
 
 import clsets
+import loadgate
 import emit
 import section
 
@@ -115,22 +122,6 @@ int main(int argc, char **argv)
     return 0;
 }
 """
-
-
-def loadavg():
-    try:
-        return os.getloadavg()[0]
-    except OSError:
-        pass
-    out = subprocess.run(["sysctl", "-n", "vm.loadavg"],
-                         capture_output=True, text=True).stdout
-    try:
-        return float(out.strip().strip("{}").split()[0])
-    except (IndexError, ValueError):
-        try:
-            return os.getloadavg()[0]
-        except OSError:
-            return 99.0
 
 
 def atom_partition(bytesets):
@@ -237,6 +228,11 @@ def main():
     ap.add_argument("--rounds", type=int, default=11)
     ap.add_argument("--nprobe", type=int, default=1 << 20)
     ap.add_argument("--max-load", type=float, default=0.5)
+    ap.add_argument("--max-load-wait", type=float, default=600.0,
+                    help="bounded wait (seconds) for a quiet box before a "
+                         "timed unit refuses (default 600 = 10 min)")
+    ap.add_argument("--max-load-poll", type=float, default=10.0,
+                    help="poll interval (seconds) while waiting for quiet")
     ap.add_argument("--out", default="bench2_bytes.tsv")
     ap.add_argument("--smoke", action="store_true",
                     help="tiny --rounds/--nprobe, CORRECTNESS ONLY -- never "
@@ -247,11 +243,8 @@ def main():
         args.rounds = min(args.rounds, 2)
         args.nprobe = min(args.nprobe, 1 << 12)
 
-    la = loadavg()
-    if la >= args.max_load:
-        sys.exit("bench_bytes: REFUSING -- load1 %.2f >= %.2f (quiet box "
-                 "required; this harness does not caveat a noisy "
-                 "measurement)" % (la, args.max_load))
+    la0 = loadgate.wait_for_quiet(args.max_load, args.max_load_wait,
+                                  args.max_load_poll, tag="bench_bytes")
 
     pop = clsets.byteclasses()
     ns = [int(x) for x in args.ns.split(",")]
@@ -275,29 +268,36 @@ def main():
         f = line.rstrip("\n").split("\t")
         bits_by_name[f[1]] = int(f[0], 16)
 
+    # --- BUILD PHASE: every N's arms built BEFORE any timing starts (lane
+    # clsgate, 2026-09-29 -- see loadgate.py's header). ---
+    built = []
+    for n in ns:
+        classes = [(name, iv, bits_by_name[name])
+                  for name, iv in pop[:n]]
+        cpath, names, n_atoms = gen(n, classes, args.lam, outdir)
+        bpath = os.path.join(outdir, "bytes_n%d" % n)
+        nprobe = args.nprobe
+        src = open(cpath).read() + (DRIVER_TMPL % {"nprobe": nprobe})
+        open(cpath, "w").write(src)
+        r = subprocess.run([CC, "-O2", "-std=gnu11", "-w", cpath,
+                           "-o", bpath], capture_output=True, text=True)
+        if r.returncode:
+            sys.stderr.write("BUILD FAIL n=%d: %s\n"
+                             % (n, r.stderr.strip()[:400]))
+            continue
+        built.append((n, bpath, n_atoms))
+
+    # --- TIMING PHASE: gate-and-wait immediately before EACH N's run. ---
     with open(out_path, "w") as out:
         out.write("# cc=%s rounds=%d nprobe=%d smoke=%s load1_at_start=%.2f "
                   "date=%s\n"
-                  % (CC, args.rounds, args.nprobe, args.smoke, la,
+                  % (CC, args.rounds, args.nprobe, args.smoke, la0,
                      time.strftime("%Y-%m-%dT%H:%M:%S")))
         out.write("n\tn_atoms\tarm\tround\tns_per_call\thits\tchk\n")
-        for n in ns:
-            classes = [(name, iv, bits_by_name[name])
-                      for name, iv in pop[:n]]
-            cpath, names, n_atoms = gen(n, classes, args.lam, outdir)
-            bpath = os.path.join(outdir, "bytes_n%d" % n)
-            nprobe = args.nprobe
-            src = open(cpath).read() + (DRIVER_TMPL % {"nprobe": nprobe})
-            open(cpath, "w").write(src)
-            r = subprocess.run([CC, "-O2", "-std=gnu11", "-w", cpath,
-                               "-o", bpath], capture_output=True, text=True)
-            if r.returncode:
-                sys.stderr.write("BUILD FAIL n=%d: %s\n"
-                                 % (n, r.stderr.strip()[:400]))
-                continue
-            la2 = loadavg()
-            if la2 >= args.max_load:
-                sys.exit("bench_bytes: REFUSING mid-run -- load1 %.2f" % la2)
+        for n, bpath, n_atoms in built:
+            loadgate.wait_for_quiet(args.max_load, args.max_load_wait,
+                                    args.max_load_poll,
+                                    tag="bench_bytes n=%d" % n)
             r = subprocess.run([bpath, str(args.rounds)],
                                capture_output=True, text=True)
             if r.returncode:
