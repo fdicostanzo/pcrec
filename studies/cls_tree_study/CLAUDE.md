@@ -43,8 +43,30 @@ nothing is linked into pcrec, `make test` does not run it. It READS
   single-form matchers. The two routes disagree and the memo says why.
 - `crosscheck.py` — the two DP implementations compared over a population.
 - `proptest.py` — the provenance-blindness composition property test.
-- `bench.py` — ns/char, house protocol; REFUSES on a loaded box.
+- `bench.py` — ns/char, house protocol; REFUSES on a loaded box. `--whole`
+  (added 2026-09-28, lane clsdes88) adds the `page2w`/`page3w` arms and the
+  `runs` regime (runs of 1..32 code points from one 256-cp block — a crude
+  text model where dispatch branches predict); off by default, so `make bench`
+  reproduces the committed 2026-09-11 arm set unchanged.
+- `wholeset.py` — WHOLE-SET indexed tables, the forms `section.py`'s
+  MAXK=64 cap makes unreachable: `PageW2` (idx[cp>>6] -> deduplicated 64-bit
+  leaf) and `PageW3` (three stages, TS=10). Branch-free after one bound test;
+  take a bare interval list only (Constraint 1). `python3 wholeset.py k53`
+  is the TS stage-width sweep (`results/page3_ts_k53.tsv`). NOT in `kit.KIT` — whether
+  the DP offers whole-set sections is `docs/design/cls_tree_design.md`'s
+  decision, gated on `make bench2`'s timing.
+- `automaton.py` — the UTF-8 byte automaton of a set three ways (today's
+  flat `u8_box` alternation transcribed, the minimal forward automaton, the
+  exact minimal reverse one) with the closure fan-out on entry; the design
+  note's §3 numbers (`results/automaton_k53.tsv`).
+- `timefit.py` — analysis only: does the DP's `model_ops` predict the
+  ubuntubudu ns/char? (No: `results/timefit_20260928.txt`, design note §1.2.)
+- `verify_whole.py` — exhaustive (all 1,114,112 code points) check of the two
+  whole-set forms against `emit.reference`, plus their exact rodata; writes
+  `results/whole_<population>.tsv`.
 - `Makefile` — targets named in README.md. `CC` defaults to `gcc-16`.
+  `bench2` is the design note's owed ubuntubudu arm (`--whole`, five
+  regimes, `results/bench2.tsv`).
 - `results/` — committed TSVs (the measurements the memo cites).
 - `build/` — gitignored scratch (generated `.c`/`.o`/binaries/interval files).
 

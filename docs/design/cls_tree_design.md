@@ -1,0 +1,764 @@
+# [CLS-TREE] — THE DESIGN NOTE: a class matcher as one node, a kit predicate, and a shared byte automaton
+
+Lane `clsdes88` (opus), branch `lane/clsdes88`, on `main` at `73590d19`,
+2026-09-28. **Design only**: nothing under `src/`, `tests/`, `docs/spec/`.
+The plan row is `docs/dev/plan.md` [CLS-TREE] (UNPARKED 2026-09-28), and this
+note answers the eight things the row and the lane brief ask it to DECIDE
+(§1-§8). A light D6 panel reviewed it; findings and dispositions are in
+`docs/dev/reviews/2026-09-28-r1-cls-tree-design.md`, and the fixes are made
+inline, marked **[r1 ID]**. Panel verdict: no BLOCKER; four MUST-FIX/SHOULD
+measurement fixes and two SHOULD notes applied; the decode/automaton
+ill-formed agreement and the splice's priority safety were verified against
+the source by the semantics critic.
+
+**Status: PROPOSED.** Frank rules §8. Every cell this note proposes for the
+`--tune` table is a PROPOSAL under D103 (the table is a pinned contract, and
+a measurement landing never moves a cell by itself).
+
+**Sources, and what each is.** Every number below names its file. There are
+four kinds, and they are not interchangeable:
+
+| tag | what | where | citable for |
+|---|---|---|---|
+| **[S]** | the study (lane clstudy, 2026-09-11), Mac, gcc-16, exhaustive verification | `docs/dev/cls_tree_study.md`, `studies/cls_tree_study/results/{sweep_*,baseline,crosscheck_*,proptest}.tsv` | sizes, compile time, answer identity |
+| **[T]** | the ns/char membership arm, **ubuntubudu**, gcc, load1 0.10, 11 interleaved rounds, checksummed (2026-09-11, I-65 rider) | `studies/cls_tree_study/results/bench_ubuntubudu_20260911.tsv` (2,641 rows); analysed by `timefit.py` → `results/timefit_20260928.txt` | **timing** — the only citable timing in this note |
+| **[N]** | new, this lane, Mac, **box-independent** (byte counts, automaton sizes, exhaustive answer checks; no timing) | `studies/cls_tree_study/results/{whole_k53,whole_uprops,automaton_k53}.tsv`, produced by `verify_whole.py`/`automaton.py` | sizes, state counts, answer identity |
+| **[P]** | a probe of the shipped compiler, `build/pcrec` at `73590d19` (abi 44), `--features all -e utf8` | quoted inline with the command | what pcrec emits today |
+
+Darwin timing appears nowhere (Frank, 2026-09-11). The Mac-run bench smoke in
+§7 checked ANSWERS only and its times were discarded.
+
+---
+
+## 0. The decisions, in one table
+
+| # | question (row item) | DECISION | rests on |
+|---|---|---|---|
+| **CT-1** | kit members | the study's seven (`ALL RANGES CUBES MASK64 BITMAP PAGE64 BSEARCH`), `CUBES` at tier 1 only, **plus WHOLE-SET sections for the table members** (a section may span the whole set; today `MAXK = 64` forbids it) | [S] §2, §6.1; [T]; [N] §1.3 |
+| **CT-2** | the sectioning DP | kept, exact over contiguous partitions, O(n·64) + O(k) whole-set candidates — **but its speed term is REPLACED**: the study's `λ·Σops` sums op counts over all sections, which is a code-size proxy; [T] shows it predicts nothing about ns/char (r = −0.00, pairwise 17/36 on member subjects). The replacement prices a PER-PROBE time, calibrated on ubuntubudu (§7 b) | [T] via `timefit.py`; §1.2 |
+| **CT-3** | λ → `--tune` | all five positions are the SAME DP with different pinned λ; whole-set tables are ordinary candidates, so +2's extreme-speed forms arrive by the DP choosing them, not by a +2 special case. The pinned constants 4/16/16/64/256 (opt_dial_design.md §4) were derived from the refuted term and **are re-proposed after calibration, as a ruled diff** | D103; §1.4 |
+| **CT-4** | how a class becomes ONE node | a new AST kind (`A_WCLASS`, name the implementer's) produced by `pcrec_lower_enc` for every class whose encoding automaton is deeper than one code unit; it carries the code-point set AND today's lowered byte alternation as a child during implement-then-replace. **Not a flag on `A_CLASS`**: 49 `case A_CLASS` arms + 6 comparisons read "a class is bytes" after lowering, and `vm_cls` would silently intern the first 32 bytes of a code-point set (r54 E1) | [P] grep; `src/core/compile.c:1479-1523`; §2.1 |
+| **CT-5** | VM instruction shape | `len = $_decode(s, n, pos, &cp)` then the set's kit predicate `$_clsN(cp)`; a NEW encoding-seam entry `PCREC_ENCE_DECODE`, `engine_callable`, **`static inline`**, whose body IS stage 4's `$_span_ci_decode` (ill-formed ⇒ 0, the automaton's exact ill-formed set), which then retires into it. Byte backend: no row (depth-1 classes never decode) | `src/enc/enc_utf8.c:187-214`; DD-12 (7); §2.2 |
+| **CT-6** | byte-DFA seam | **two pieces, staged separately**: (ii-a) the class's MINIMAL byte automaton per direction, spliced as its NFA fragment (fan-out on entry **827 → 30 forward, 827 → 65 reverse** for `\p{L}`) — the class's compile-time share of K67; (ii-b) the DFA-side CONSUMING ISLAND (decode + kit inside the DFA walk) is **not designed here**: it is [ENG-ISL]'s splice and [UCP] §D's mechanism, and this note fixes only its interface (the kit predicate is the island's test). (ii-a) does NOT shrink DFA tables: the minimal automaton is 299 states and so is today's forward DFA | [N] `automaton_k53.tsv`; [P]; §3 |
+| **CT-7** | caseless | folded at CONSTRUCTION (stage 4's per-contribution rule, `cls_casefold` via `PcrecEnc.fold`); the kit receives the folded set and never learns it was caseless (Constraint 1). No runtime fold anywhere | [S] §4.3, §7; §4 |
+| **CT-8** | retirements | K55's `--engine=vm` refusal (and every captured wide class, e.g. `(\p{L})`, refused today); `vm_cls_shape`/`-fno-cls-fold` (the kit's one-cube `CUBES` is its general form, 8 corpus classes vs 4); [OPT-CLSPACK] (the byte tier needs no tables at all); K67's class share. **STAYS**: [K53-SELRETRY] (the DFA route keeps its ~200 KB tables until the island) | §5 |
+| **CT-9** | staging | S0 (measure) → S1 (kit in `src/`, no artifact moves) → S2 (byte tier, VM; abi) → S3 (`A_WCLASS`, byte-identical refactor) → S4 (VM decode+kit; abi; the UCP prerequisite) → S5 (minimal-automaton splice; gated on [OPT-CLOSURE-CTX] + a K67 re-measure). Island: not staged here | §6 |
+
+---
+
+## 1. The kit, the sectioning DP, and the dial
+
+### 1.1 Members: the study's seven, kept
+
+The study's verdict stands and is not re-litigated: **the answer is the kit,
+not a pick from it** — no single representation wins any real code-point
+set; `\p{L}` at the middle policy is 27 sections of four forms ([S] §4). The
+members and their preconditions are [S] §2's table. Two things from the study
+carry into the design as decisions rather than observations:
+
+- **`CUBES` ships at tier 1 only** (the O(k) `cube_of` single-cube test). The
+  exact Quine-McCluskey tier costs 4.9× discovery time for 0.36% fewer probe
+  ops on 10 of 126 sectionings ([S] §6.1). Re-openable on [UTF-RW]'s
+  population, which may carry many-interval byte classes this corpus lacks
+  ([S] §9).
+- **The kit takes a bare interval list and nothing else** (Constitutional
+  Constraint 1). It is what lets `cube_of` rediscover the ASCII fold (`{S,s}`
+  → `(c|0x20)=='s'`) and three case-blind cubes today's classifier cannot see
+  ([S] §4.3), and it is what makes the composition identity
+  `kit(A∪B) ≡ kit(A)||kit(B)` a law the implementation can be tested against
+  (438 cells × 1,114,112 code points, 0 mismatches, [S] §7). **An
+  implementation that adds a provenance or "hint" argument retires that test
+  silently** (studies/cls_tree_study/CLAUDE.md, "two invariants"); S1's review
+  checks the signature.
+
+### 1.2 The DP's speed term was never a time model, and the timing run shows it
+
+The study's objective is
+
+```
+best[j] = min over i of  best[i] + rodata(i..j) + text(i..j) + λ·ops(i..j)
+```
+
+and `ops(i..j)` is the section's leaf op count (`section.py` `offer(...)`,
+plus `DISP_OPS = 1.0` per section). Summed over the partition, `Σ ops` is the
+op count of the WHOLE matcher's code. A single probe runs the dispatch path
+and ONE leaf. So the term the dial has been pricing is a second code-size
+measure, not a per-probe cost. `kit.py`'s own header said as much — "`ops` (a
+MODEL weight used only to steer the sectioning search) ... the emitted matcher
+is compiled and TIMED, and the model's job is only to generate candidates for
+the measurement to rank" — and the ranking by timing was then never done: the
+Mac refused ([S] §11), the ubuntubudu run landed 2026-09-11, and nobody read it
+against the model. `opt_dial_design.md` §4 pinned λ from the ops column in the
+meantime.
+
+**[T], read by `timefit.py` (`results/timefit_20260928.txt`), 12 K53 sets ×
+3 policies (λ = 0, 16, 256):**
+
+| regime | r(ns, model ops) | ρ | fewer model ops ⇒ faster, within a set | geomean vs flat bsearch: `bitmap1` / λ0 / λ16 / λ256 |
+|---|---:|---:|---:|---|
+| member | **−0.00** | +0.13 | **17 / 36** | **0.109** / 0.416 / 0.499 / 0.417 |
+| mixed | +0.07 | +0.17 | 20 / 36 | 0.147 / 0.461 / 0.514 / 0.439 |
+| full | +0.16 | +0.25 | 24 / 36 | 0.159 / 0.429 / 0.469 / 0.401 |
+| ascii | −0.02 | +0.01 | 15 / 36 | 0.190 / 0.300 / 0.303 / 0.306 |
+
+Three readings, each from the table and nothing else:
+
+1. **The kit is 1.9-3.3× faster than [CLS-TREE]'s own seed** (the flat binary
+   search, `refbs`) at every policy and regime. The kit is worth building.
+2. **Among kit policies the model ranks nothing.** On uniformly random
+   members, "fewer model ops is faster" holds 17 times in 36, a coin toss.
+   `\p{L}` itself: λ0 has 206 model ops and 10.2 ns/char, λ16 has 108 ops and
+   11.4 ns ([T] medians; ops from `results/sweep_k53.tsv`). So the five pinned
+   λ constants select among matchers with the same speed.
+3. **The one arm that is much faster has NO dispatch tree.** `bitmap1` — one
+   bitmap over the whole span, one bound test and one load — is 3.8× faster
+   than the fastest kit policy and 4.6× faster than the middle on member
+   subjects (geomean 0.109 vs 0.416 and 0.499 of `refbs`)
+   and never slower than the kit in any regime. The dispatch tree's
+   data-dependent branches are the cost on random subjects; the leaves are
+   not. (The `ascii` regime makes the point from the other side: every probe
+   takes the same dispatch path, the branches predict, and the kit closes to
+   within 11-17% of `bitmap1` — `\p{L}` λ0 5.88, λ16 6.10, λ256 6.22 vs
+   5.31 ns, [T] **[r1 ALT-1]**. `bitmap1` itself
+   pays a mispredicted BOUND branch there, cp < 65 or not.)
+
+**[r1 MEAS-2] One noisy cell, disclosed and bounded.** `^C` on member
+subjects is BIMODAL in [T]: rounds {0,6,7,8,9} read high and the other six
+low, in lockstep across all five arms (`bitmap1` 1.60 vs 13.30 ns) — an
+environmental effect on that one run, not arm behaviour; no other cell
+varies >2×. The medians land in the low cluster. Dropping `^C` entirely
+(11 sets) leaves every reading standing: member r = +0.06, pairwise 16/33,
+geomean `bitmap1` 0.113 / λ0 0.409 / λ16 0.467 of `refbs` (mixed 18/33,
+full 21/33, ascii 14/33). b1 re-measures it.
+
+**Decision CT-2.** The DP stays (its byte model is verified to ~3%, [S] §5.2;
+its search is exact; its compile time is 25.86 ms worst, [S] §6). Its speed
+term is replaced by a **modelled per-probe time**:
+
+```
+T(partition) = t_bound + t_disp(m) + Σ_s p_s · t_leaf(form_s)
+```
+
+with `m` the section count, `t_disp` the dispatch tree's cost (a function of
+depth ≈ log2 m and of branch predictability), `p_s` the probability a probe
+lands in section `s`, and `t_leaf` per form (dependent loads counted
+separately from ALU ops, the study's `OP_DEP_LOAD` distinction). Two things
+about this form are decided here and two are left to the calibration:
+
+- **Decided: it is per probe.** Whatever the calibration finds, the objective
+  never again sums leaf costs over sections unweighted.
+- **Decided: `p_s` is a DECLARED distribution, uniform over the set's
+  members.** The compiler cannot know the subject, and "member" is the regime
+  where the matcher's answer matters most (a match continues the walk). The
+  study named the alternative — a frequency-weighted tree — and its
+  dependency, a code-point frequency model from [UTF-RW] ([S] §9). Uniform
+  over members is the one choice that needs no data.
+- **Left to calibration: `t_disp(m)`'s shape and each form's `t_leaf`.** They
+  are fitted from `make bench2` on ubuntubudu (§7 b1), which adds the
+  whole-set arms and a `runs` regime (text-like: the dispatch branches
+  predict). **The DP's exactness survives only if `t_disp` is additive per
+  section** (the study's `DISP_OPS` form). If the fit says it is logarithmic
+  in `m`, the DP gains a section-count dimension (`best[j][m]`, O(n·64·M)); at
+  M ≈ 40 that multiplies 25.86 ms by ~40, about 1 s on the worst set, which
+  would re-open [S] §6's D77 cache verdict. That is a measured consequence to
+  weigh at S0, not a reason to pick a form now.
+
+### 1.3 Whole-set tables: the forms `MAXK = 64` made unreachable
+
+`section.py` caps a section at 64 intervals "to make the DP O(n·64)" and the
+study names the cap as never swept ([S] §9). The cap has a consequence the
+study did not draw out: **no sectioning of a 677-931-interval set can be ONE
+section**, so the fastest measured arm (`bitmap1`) and PCRE2's own lookup
+shape (a staged table over the whole set) are outside the search space. At
+λ = ∞ the DP builds `\p{L}` as 11 `BITMAP` sections behind a dispatch tree
+([S] §5.2), which is the worst of both.
+
+This lane built two whole-set forms (`studies/cls_tree_study/wholeset.py`),
+both branch-free after one bound test, both taking a bare interval list, and
+verified them exhaustively on all 1,114,112 code points against the study's
+independent reference ([N] `verify_whole.py`): **0 mismatches on the 12 K53
+sets**, and on all 312 `uprops` sets (`results/whole_uprops.tsv`).
+
+**[N] `results/whole_k53.tsv`, object bytes (`.text + .rodata`, the study's
+unit), set to the right of the study's own policies ([S] `sweep_k53.tsv`) and
+today's emitted DFA ([S] `baseline.tsv` at `13b56a12`; `\p{Xwd}` re-baselined
+at `13b7c202`, `ucp_study.md` §E):**
+
+| set | kit λ0 | kit λ16 (mid) | kit λ256 | **page3w** (3-stage) | page2w (2-stage) | `bitmap1` | today, DFA |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| `\p{L}` | 4,318 | 4,359 | 5,850 | **4,249** | 8,666 | 25,710 | 227,409 |
+| `\P{L}` | 4,242 | 4,395 | 6,305 | **5,128** | 37,044 | 139,264 | — |
+| `\p{C}` | 4,586 | 4,667 | 6,530 | **5,480** | 37,140 | 139,264 | 228,957 |
+| `\p{Cn}` | 4,538 | 4,580 | 6,409 | **5,472** | 37,100 | 139,153 | 211,305 |
+| `\p{Xan}` | 4,625 | 4,959 | 7,561 | **4,641** | 8,898 | 25,712 | 267,541 |
+| `\p{Xwd}` | 4,947 | 5,326 | 6,866 | **5,545** | 31,300 | 114,744 | 294,153 → **197,685** |
+| `\P{Xwd}` | 4,958 | 5,292 | 7,643 | **5,728** | 37,420 | 139,264 | — |
+| `\p{Unknown}` | 4,506 | 4,684 | 6,369 | **5,432** | 37,092 | 139,153 | 215,055 |
+
+(`bitmap1` is rodata only, `⌈span/8⌉`; its `.text` is ~60 B. The `—` cells
+were not in the study's baseline.)
+
+**The three-stage table costs about the kit's middle in bytes** (−6% to
++20% across the eight rows, and SMALLER than λ16 on `\p{L}` and `\p{Xan}`),
+with no dispatch tree at all: `top[cp>>10] → a deduplicated block of 16 page
+indices → a deduplicated 64-bit leaf`, three dependent loads. Its speed is
+UNMEASURED — it is the headline arm of §7 b1. If it lands near `bitmap1`, it
+dominates every multi-section kit matcher for the huge sets on both axes, and
+the multi-section DP becomes the SIZE end's mechanism only. The design is
+built so that outcome needs no redesign:
+
+**Decision CT-1 (the whole-set half).** The DP offers, in addition to its
+contiguous ≤ 64-interval sections, ONE extra candidate: the whole set as a
+single section, for each table member (`BITMAP`, `PAGE64`, and a three-stage
+`PAGE` if §7 b1 admits it). Pricing stays O(k): `BITMAP` is `⌈span/8⌉`,
+`PAGE64`'s distinct-leaf count is already O(k) ([S] §6), and a three-stage
+table's distinct-block count is O(k) by the same argument (only blocks an
+interval starts or ends in can be partial). No table is materialized unless
+chosen. **This is not a special case**: a whole-set section is a section; the
+cap was a search bound, not a statement about the answer.
+
+**Population-wide ([N] `results/whole_uprops.tsv`, all 312 sets, 0
+mismatches):** `page3w` totals **114,609** object bytes against the kit's
+85,613 at λ16 and 84,106 at λ0 ([S] `sweep_uprops.tsv`). The whole excess is
+in the SMALL sets, where the kit emits a few compares and no table: over the
+28 sets with ≥ 46 intervals `page3w` is **59,991** against the kit's 58,038
+(+3.4%). **[r1 MEAS-1]** (first draft: 58,466 / +2.6% — a name-keyed sum
+that double-counted one of two same-named sets). That is the DP's job, not a problem — offered as a candidate, a
+whole-set table is chosen only where it pays.
+
+**[r1 ALT-3] How the whole-set candidate enters the DP.** `section.py`'s
+recurrence reaches a section only through its ≤ 64-interval window, so a
+whole-set section cannot be a PART of a larger partition; it is compared at
+`best[n]` as a one-section alternative. S1 may generalise this (a table
+section over any contiguous run, priced in O(k)); the first build offers the
+whole set only, which is exactly the population §1.3's numbers measure.
+
+`page3w`'s stage width (TS = 10) was chosen as the size-minimum of TS ∈ {10,
+12, 14} on the K53 twelve (4.2-5.6 KB at 10, 5.8-6.8 KB at 12, 8.3-9.8 KB at
+14, rodata only — [N] `results/page3_ts_k53.tsv`, `python3 wholeset.py k53`;
+committed at **[r1 MEAS-4]**, the first draft cited an uncommitted sweep). A general three-stage member
+would let the DP pick TS per set; that is S1's implementer's choice under the
+same O(k) pricing, and it is not a new member.
+
+### 1.4 λ → `--tune`
+
+**What is pinned today.** `opt_dial_design.md` §4: −2 → λ 4, −1 → 16,
+0 → 16, +1 → 64, +2 → 256, derived by the rubric from the study's ops
+column. `src/core/tune.c:86-98` records +2 as "IDENTICAL TO +1 ON EVERY CELL"
+until "lambda is implemented (`[CLS-TREE]`)". And Frank's +2 direction
+(2026-09-16, the plan row): the extreme-speed forms — "full-table/huge-bitmap
+class membership ... its few huge bitmaps at 5.6x size for 6 probe ops notch"
+— are **+2's intended content**, priced as a real λ position with its measured
+rate, not excluded by the rubric's `Z₂ = 2.0` budget.
+
+**What [T] changes.** Every one of the five constants picks among matchers the
+timing cannot tell apart (§1.2 reading 2). They are pinned to a term that is
+a size proxy, so at today's constants the dial's speed positions buy BYTES,
+not speed: on `\p{L}`, member subjects, λ256 costs +34% bytes over λ16 and
+runs 10.23 vs 11.42 ns — while λ0, the SIZE end, runs 10.18 ([T] medians).
+
+**Decision CT-3.**
+
+1. **One mechanism, five constants.** Every position runs the same DP (CT-2's
+   objective, CT-1's candidates) with its own pinned λ. No position names a
+   form. +2's extreme-speed content arrives because at +2's λ the DP chooses
+   the whole-set bitmap where it is the fastest measured form — which is
+   Frank's direction reached by the general mechanism, not a +2 special case.
+2. **The five constants are RE-PROPOSED after S0's calibration, as one ruled
+   diff to `opt_dial_design.md` §4 and `tuning.md`'s λ row** (D103 point 1:
+   a measurement landing never moves a cell by itself; D103 addendum: the
+   rubric proposes, placement is art). Until then the λ row stays
+   "reservation", as `tuning.md` has it.
+3. **The +2 rate is stated now, from [T] and [N], so the ruling has it:**
+   `bitmap1` is **3.8-4.6× faster than the kit on member subjects** (geomean
+   over the twelve sets, against the fastest and the middle policy, [T]); on
+   `\p{L}` it costs **5.9× the middle's bytes** (25,710 vs 4,359); on `\P{L}` the bytes are 32× (139,264 vs 4,395), because the
+   complement's span is all of Unicode. Against TODAY's emitted DFA for the
+   same set, `bitmap1` is still 1.5-10.4× SMALLER (`\p{Cn}` 139,153 vs
+   211,305; `\p{Xan}` 25,712 vs 267,541; [S] `baseline.tsv`). If `page3w` times near `bitmap1`, +2's rate collapses
+   and the proposal will say so.
+
+### 1.5 The byte tier
+
+Every one of the 41 distinct byte classes in the shipped corpus (2-4
+intervals each, 319 sites) compiles at the middle policy to **1,584 B of
+`.text` and zero `.rodata`**, 82 sections (69 `ALL`, 8 `CUBES`, 5 `MASK64`),
+246/246 exhaustively verified ([S] §4.4) — against a 32-byte bitmap table per
+bitmap-class site today. At the byte tier the policies agree ([S] §5.3 item
+5): no table appears at any λ, so the dial is invariant there in practice and
+the calibration question of §1.2 does not arise.
+
+Its TIMING is not in [T] (a code-point membership loop), and the one byte-tier
+timing on file points the other way at noise level: the bench's abi-23 AFTER
+measured `cls-fold` slower on its single witness (ci-256 forced-VM ×1.027
+search / ×1.045 thr / ×1.095 match vs a 1.34% floor; plan.md [FORM-CHAR2]).
+That is the byte tier's owed measurement (§7 b2).
+
+### 1.6 Where it lives, and what it costs to compile
+
+One module (`src/gen/clskit.c`, the name is the implementer's), a pure
+function from a code-point set and a λ to (a) the chosen sectioning and (b)
+its emitted C text, called once per DISTINCT set per artifact (sites share one
+`static inline int $_clsN(unsigned cp)`). It reads λ from the tune table and
+nothing else (D82: one decision point). Compile time is [S] §6's: 25.86 ms on
+the worst set, per distinct set, less than a fifth of the 144 ms `build/pcrec`
+already spent compiling `\p{Xwd}` at `13b56a12`. **No per-artifact limit is
+added**: nothing measured needs one (D77). The trigger that would: a pattern
+with hundreds of distinct large classes ([S] §6's own qualification), which
+no corpus or bench pattern is known to be.
+
+---
+
+## 2. The VM instruction shape
+
+### 2.1 The node (CT-4)
+
+Today `pcrec_lower_enc` rewrites every non-ASCII class, in place, into
+`A_CAT(A_EMPTY, A_ALT(...))` of byte-range chains (`src/opt/lower_enc.c:309-
+360`), before BOTH the NFA builder and the VM emitter, because "those are the
+two consumers that can only express BYTES" (`src/core/compile.c:1479-1485`).
+After that line every `A_CLASS` is a byte class, and the tree relies on it:
+**145 mentions of `A_CLASS` under `src/`, 49 `case A_CLASS` arms and 6
+`==`/`!=` comparisons, across 19 files** ([P] grep at `73590d19`) — PATFACTS'
+necessary sets, the prefilter, possessify, the start-anchor and end-window
+derivations, `vm_cls`'s 32-byte interning. A code-point set reaching `vm_cls`
+compiles to a silent miscompile (r54 E1, quoted at compile.c:1482).
+
+**So the one node is a NEW kind, not a flag.** `pcrec_lower_enc` replaces a
+class whose encoding automaton is deeper than one code unit with an
+`A_WCLASS` node carrying:
+
+- the code-point set (sorted, disjoint, non-adjacent — cpset's invariant), and
+- **during implement-then-replace, today's lowered alternation as a child**,
+  built by the unchanged `u8_box`/`u8_ranges`.
+
+The depth-1 test is not new: it is `lower_class_utf8`'s existing ASCII
+identity fast path (`hi <= 0x7F` → untouched, lower_enc.c:311-314), which
+under the byte encoding is every class. The rule reads the ENCODING'S answer,
+so DD-12 (7)'s "no encoding conditionals" holds: the byte backend never makes
+the node because no byte class is deeper than one unit.
+
+**The readers are enumerated by the compiler, not by memory.** The coding
+guide's no-`default:` exhaustive-switch rule (coding_guide.md §1.3) makes
+`-Wswitch` fire at each of the 49 `case A_CLASS` switches that does not handle
+the new kind; the 6 comparisons are found by grep. At S3 every reader walks the
+child — byte-identical artifacts by construction — and later stages move
+readers off the child one at a time; the child is deleted when no reader walks
+it. (The splice-in-place invariant compile.c:1497-1508 states holds: the new
+node replaces a leaf, and leaves are not group roots.)
+
+### 2.2 The test (CT-5)
+
+At a VM class site whose operand is an `A_WCLASS`:
+
+```c
+/* shape, not final text */
+if (pos >= n) goto fail;
+len = $_decode(subject, n, pos, &cp);
+if (len == 0 || !$_cls3(cp)) goto fail;
+pos += len;
+```
+
+and the same pair inside the possessified span loops and counted-class loops
+(`while (pos < n && (len = $_decode(...)) && $_cls3(cp)) pos += len;`).
+
+- **`$_decode` is a new encoding-seam entry, `PCREC_ENCE_DECODE`.**
+  `engine_callable` (an engine body calls it — the `PCREC_ENCE_SPAN`
+  precedent, `src/enc/enc.h`), in the artifact's mask only when a decode site exists.
+- **Its body is stage 4's `$_span_ci_decode`, verbatim** (enc_utf8.c:187-214):
+  1-4 bytes, returns 0 on a truncated sequence, a bad continuation, an
+  overlong form, a surrogate or a value above U+10FFFF. The comment there
+  already states the property this design needs: "the ill-formed set is
+  exactly the automaton's (overlong forms, surrogates and code points above
+  U+10FFFF are excluded from every lowered class), so a subject this compare
+  rejects is one no other part of the artifact would have matched either."
+  **One decoder, not two**: `SPAN_CASELESS`'s private copy retires into the
+  entry, and `SPAN_CASELESS` in the mask implies `DECODE` in the mask. That
+  implication is a new seam fact (an entry depending on an entry) and is a
+  D58 event, recorded against D58 as its revisit clause asks.
+- **`static inline`, not exported.** The existing entries are exported only
+  because an always-emitted unused `static` fails the harness's `-Werror`
+  build (`src/enc/enc.h`, the entries-table header comment); a masked-in-only-when-called entry has no such problem,
+  and an exported function is interposable under `-fPIC`, so gcc will not
+  inline it into a shared-object build ([CC-DIFF] STEP 0's finding is gcc
+  stopping at exactly such call boundaries). The class predicate is
+  `static inline` for the same reason.
+- **The byte backend has no `DECODE` row.** A depth-1 class never decodes
+  (CT-4), and a backend under which the entry is never needed has no row —
+  `PCREC_ENCE_VAR_VALID`'s precedent (`src/enc/enc.h`).
+
+**Surrogates.** A complemented set (`\P{L}`, `[^a]`) includes
+U+D800-U+DFFF, because cpset complements within `[0, max_cp]`. The decoder
+never yields them, so the kit's answer there is unreachable. Treating the gap
+as a don't-care would let the DP merge across it (fewer intervals); it is NOT
+done, because nothing measured says it pays and it would make the kit's input
+something other than the set (Constraint 1). Named, D77.
+
+**Backward reads.** The VM's `\b` reads `subject[scan_position-1]` as a byte
+(emit_vm.c:7908). That is ASCII `\w`'s correct semantics today and is not
+touched. UCP's `\b` needs "decode the character ENDING here": `back_step`
+(PCREC_ENCE_BACK_STEP) plus `$_decode` plus the kit (§9).
+
+### 2.3 What the VM gains, measured
+
+| pattern (`-e utf8`) | today, VM | with the kit (S4) |
+|---|---|---|
+| `\P{Unknown}` `--engine=vm` | REFUSED: 689,367 B code > 500,000 (K55) | one `static inline` matcher, 4.5-6.7 KB object across policies ([S] `sweep_k53.tsv`, `^Unknown(Zzzz)`) |
+| `\p{Xwd}` | REFUSED: 576,063 B code (`ucp_study.md` §E) | 4.9-6.9 KB ([S]) |
+| `(\p{Xwd})` — captures route to the VM | REFUSED: 579,674 B (`ucp_study.md` §E) | as above: **any captured UCP `\w` becomes buildable** |
+| `(\p{L})` | REFUSED: "1187962 bytes of emitted C source (limit 1000000)" ([P]: `build/pcrec -p rx --features all -e utf8 -o out.c --pattern '(\p{L})'`) | 4.2-5.9 KB ([N] page3w 4,249; [S] 4,318-5,850) |
+
+The per-character COST in the VM loop is not measured anywhere: [T] is a
+membership loop behind an indirect call. It is S4's own acceptance
+measurement (§7 b3).
+
+---
+
+## 3. The byte-DFA / hybrid seam
+
+### 3.1 What the DFA's bytes are, and why piece (ii-a) does not shrink them
+
+[P] `\p{L}` under `-e utf8`: the emitted forward table is
+`rx_forward_next_state[29900]` and the reverse `rx_reverse_next_state[45300]`
+— **299 × 100 and 453 × 100** (states × byte classes), plus per-cell
+`is_accepting` arrays of the same length; the artifact ships at
+`RX_ENGINE_SEL "size-cap-retry"` (the anchored machine dropped, K53's ladder).
+
+[N] `automaton_k53.tsv`: the **minimal forward automaton of `\p{L}`'s UTF-8
+encodings is exactly 299 states**, and the minimal REVERSE one exactly **453**
+— the emitted DFAs' own state counts. Subset construction plus minimization
+already finds the class's minimal automaton. The table is big because a
+byte-level DFA for a wide class needs ~100 byte classes and hundreds of states
+at once; no NFA-side restructuring changes the minimal DFA. **So the
+prefix/suffix-shared automaton buys COMPILE TIME and nothing else.** Shrinking
+the DFA route's artifact is the island's job (§3.4).
+
+### 3.2 Piece (ii-a): splice the class's minimal automaton (CT-6)
+
+K67's class share is the fan-out an epsilon-closure walks when it ENTERS the
+class: under `\p{L}+`, every loop-boundary DFA state re-offers every branch
+head, and 92% of closure visits take the ~466 ns loop-context memo path
+(K67; [OPT-CLOSURE-CTX]). [N] `automaton_k53.tsv`, `\p{L}`:
+
+| NFA fragment for the class | states | class edges | **entered by (closure fan-out)** |
+|---|---:|---:|---:|
+| today: flat alternation of `u8_box` chains (this lane's transcription) | 2,799 class nodes | — | **827** branch heads |
+| minimal forward automaton, set-labelled edges | 299 | 627 | **30** |
+| minimal reverse automaton, exact over bytes | 453 | 4,497 | **65** |
+| (reversed forward automaton, for contrast; `revfwd_root_fanout` column, added **[r1 MEAS-3]**) | 299 | 627 | 270 |
+
+(The transcription's 2,799 class nodes differ by 3% from K67's instrumented
+2,711 forward NFA states; the gap is not explained here, and the fan-out
+comparison does not depend on it. Across the K53 twelve the forward fan-out
+is 21-32 and the reverse 64-65, against 809-1,118 flat branches.)
+
+**The splice.** The encoding row gains one function: *given a code-point set
+and a direction, return the minimal byte automaton of its encodings*. It is
+built from the same `u8_box` decomposition that ships today, hash-consed
+bottom-up (forward), or built over the reversed member encodings (reverse;
+the reversed forward automaton is 4× wider on entry, the table's last row). The
+NFA builder expands an `A_WCLASS` into that automaton — one entry state, one
+exit, set-labelled class edges. The byte backend's automaton is one class
+state, which is exactly what the NFA builds for a byte class today, so the NFA
+builder has one code path (DD-12 (7)).
+
+**Its boundary with the siblings, stated so neither is absorbed:**
+
+- **[OPT-CLOSURE-CTX]** makes the loop-context closure path cheap, or
+  unnecessary for a loop whose body cannot match empty — for every pattern.
+  Its fix (1), if it holds, takes K67's witness "from ~26 s to well under 1 s"
+  on its own (plan.md [OPT-CLOSURE-CTX]).
+- **[OPT-RETRY-REUSE]** removes the ×3 ladder rebuild (77.49 s → 26.32 s on
+  K67's witness), for every pattern that takes the ladder.
+- **This piece** divides the per-entry fan-out by 27 (forward) and 13
+  (reverse), for wide classes only.
+
+The three multiply. **Decision: S5 is built AFTER [OPT-CLOSURE-CTX], and only
+if K67's witness re-measured on that tree still shows the class fan-out as a
+material share** (D77). If [OPT-CLOSURE-CTX]'s fix (1) already brings
+`\p{L}+` under a second, a 13-27× cut to the remainder is a small absolute
+number, and S5's cost — below — may not pay.
+
+**S5's identity question is not byte identity.** A different NFA gives a
+different raw DFA; minimization then gives the same minimal machine, but the
+emitted state NUMBERING follows raw creation order
+(`dfa_online_minimization_study.md` §1, `minimize.c:161`). So S5's gate is
+DFA ISOMORPHISM over the corpus + bench (tables equal under a state
+permutation), and every artifact whose numbering moves is an `abi`-visible
+byte change. How many move is §7 a3's measurement, taken before S5 is
+chartered.
+
+### 3.3 The hybrid's prefilter
+
+A VM-hybrid artifact's DFA prefilter is built from the NFA and so reads the
+same fragment. At S4 the VM stops reading the byte child; the prefilter keeps
+it (and at S5 moves to the minimal automaton with every other NFA reader). No
+separate decision.
+
+### 3.4 Piece (ii-b): the island — interface only
+
+A byte-wise DFA cannot run a decode-and-test mid-state; the way a wide class
+stops costing hundreds of KB on the DFA route is to leave the DFA for one
+character — decode, test with the kit, resume at the class's exit state or
+die. That is `ucp_study.md` §D.4's observation: "[CLS-TREE]'s DFA side and
+[UCP]'s predicate island need the same splice", and it is [ENG-ISL]'s framing
+("islands of VM in DFA", its scan edge being the first instance). **This note
+does not design the island.** It fixes the two things the island will need
+from here:
+
+1. **The island's test is the kit predicate and the decode entry, unchanged**
+   — `len = $_decode(...); ok = len && $_clsN(cp)`. Nothing about the kit is
+   VM-specific.
+2. **The class is one node until the NFA builder**, so an island-aware
+   builder can choose, per `A_WCLASS`, between the S5 automaton and an island
+   edge, without re-lowering.
+
+**Trigger (D77):** the island is built when either [UCP]'s design takes its
+predicate-island route, or a bench cell measures the DFA route of a wide class
+as a cost the VM route (S4) does not fix. Which island lands first builds the
+splice and the other reuses it (`ucp_study.md` §F Q5).
+
+---
+
+## 4. Caseless composition (CT-7)
+
+The fold happens at CONSTRUCTION, per contribution, through
+`PcrecEnc.fold` (`cls_casefold`; `src/enc/enc.h`'s `fold` field: "byte folds exactly the 52
+ASCII letters and MUST NOT fold 0xE9 to 0xC9 ... utf8 folds U+00E9 to
+U+00C9"). The class node — `A_CLASS` or `A_WCLASS` — holds the folded set, and
+the kit tests it. There is no runtime fold anywhere in a class test; D23
+measured a runtime fold indirection at 26% on a pattern with no letters.
+
+This is also why the kit's `CUBES` finds the fold without being told: the
+folded set `{S,s}` IS a one-cube set ([S] §4.3). And it is why the one
+UCP × caseless trap `ucp_study.md` §B.3 found — `(?i)[[:lower:]]` must NOT
+fold under UCP while `(?i)\p{Ll}` must — is a construction-time rule that the
+kit cannot break or fix: the kit receives whichever set construction built.
+[UCP]'s design owns that rule.
+
+The caseless BACKREFERENCE compare (`$_span_match_caseless`) is not a class
+and keeps its runtime fold; it only shares the decoder (§2.2).
+
+---
+
+## 5. What it retires, and what stays (CT-8)
+
+| item | today | after | stage |
+|---|---|---|---|
+| **K55** — `\P{Unknown}` under `--engine=vm` | refused (689,367 B > 500,000); `tests/axes/run_axes.sh`'s `REFUSAL_PATTERN["--engine=vm"]` entry documents it | compiles; the `--engine=vm` entry is DELETED (the `-fno-size-term` entry with the same substring stays — K45's witness). A refusal-set move is an identity break (`opt_dial_design.md` §6.2) and is recorded as one | S4 |
+| captured wide classes (`(\p{L})`, `(\p{Xwd})`, any `(\w)` under a future UCP) | refused (§2.3) | compile on the VM | S4 |
+| `vm_cls_shape` + `-fno-cls-fold` + `RX_VM_CLS_FOLDS` | the ASCII-pair fold classifier (4 of the corpus's 8 one-cube classes) | retired into the kit's `CUBES` (all 8) — Frank ruled it subsumed 2026-09-11; the flag's fate is Q2 | S2 |
+| [OPT-CLSPACK] (N byte classes' 32N bytes of bitmaps) | not started | **proposed CLOSE as answered**: the kit's byte tier emits zero `.rodata` for all 41 corpus classes ([S] §4.4); nothing is left to pack. Re-opens if [UTF-RW] brings table-bearing byte classes | S2 |
+| [FORM-CHAR2] (i)/(ii) | chartered as calibration inputs | stay calibration inputs (§7 b2); no standalone ruling (Frank, 2026-09-11) | S0/S2 |
+| K67 — the class's share | 827-branch fan-out per closure entry | 30 / 65 | S5, gated |
+| **K53 known_fail rows** | **already gone**: [K53-SELRETRY] moved the 16 blocks back into `tests/utf8/` on 2026-09-10 (known_fail/CLAUDE.md) | nothing further to retire | — |
+| **[K53-SELRETRY]** (the drop ladder) | the DFA route of `\p{L}` etc. ships at `size-cap-retry` | **STAYS.** S1-S5 do not shrink the DFA route (§3.1); only the island does. It is also selection-layer correctness independent of classes (its population is 8 altwide literal alternations, K53 entry) | — |
+| the size caps themselves | — | unchanged | — |
+
+---
+
+## 6. Staging (CT-9)
+
+Each stage is one lane, merges alone, and states its abi event. "Identity"
+below means the house gates (the four `.c` byte-identity gates, the recursion
+identity gate's two pins, `run_ir_listing.sh`'s `irsb` arm — coding_guide.md
+§3.1-3.3), **with readers of the abi number found by grep at the time**
+(D94) — never from this list.
+
+| stage | what | answer checks | identity / abi | sabotage rows (numbered from main's highest S-id at the time) |
+|---|---|---|---|---|
+| **S0** | measure: §7 a1-a3 (Mac) and b1 (ubuntubudu); fit CT-2's per-probe model; re-propose the five λ constants as ONE ruled diff | — | none | — |
+| **S1** | the kit in `src/`: DP + forms + C emitter + the whole-set candidates; **no emitter calls it yet** | a new `tests/clskit/` differential: every set of the 312 `uprops` + the 41 byte classes + the proptest compositions, the EMITTED C compiled and compared to a reference on all 1,114,112 code points (the study's own shape, now against `src/`); a C-vs-study cross-check of sectionings (the study's `crosscheck.py` found two bugs this way, [S] §8) | no artifact moves; no abi | a leaf off by one at a section seam; `cube_of` accepting a non-cube; a whole-set page table with one leaf dedup collision — each must be DETECTED by the differential |
+| **S2** | the byte tier on the VM: `vm_cls_test`'s bitmap/range/fold shapes replaced by the kit's byte forms; `vm_cls_shape` retired; the scan edge's axis-I class bodies re-pointed at the same emitter **as a separate commit/abi event** (DFA artifacts move) | whole-corpus answer identity default vs the kit-deny axis (Q2) in `make test-axes`; PC-4 live oracle; `tests/base/cls_fold.rxt`'s 58 cells | **abi bump** (every VM artifact with a class site moves; 319 sites / 41 sets in the corpus); the recursion gate's FOLD deny-axis IFF and `FOLD_PATTERNS` manifest re-pinned; form-census floors re-measured | the kit's byte form widened by one byte (the unsound direction — S228's shape for the fold) |
+| **S3** | `A_WCLASS` + every reader walking the byte child | — | **BYTE-IDENTICAL over the corpus + bench, every encoding × features triple** ([K53-SELRETRY]'s 3,348/3,348 method); no abi | a reader that walks the SET instead of the child (the r54 E1 shape) must fail loudly, not miscompile |
+| **S4** | VM decode + kit for `A_WCLASS`; `PCREC_ENCE_DECODE`; `SPAN_CASELESS` onto it; λ read from `--tune`; K55's axes entry deleted | `tests/utf8/`'s `\p` corpora ([STORE] 387/387, PC-4) under `--engine=vm` AND default; a new ill-formed matrix: every class kind × {truncated, overlong, surrogate, >U+10FFFF, stray continuation} × both engines, expected "no match" — the DFA's answer is the oracle and must agree; `make test-axes` over all five `--tune` positions (answer identity) | **abi bump** (VM artifacts with wide classes; `SPAN_CASELESS` artifacts' text); the refusal set shrinks — recorded as the identity break it is | `$_decode` accepting an overlong 2-byte form (`C0 80`); accepting a surrogate (`ED A0 80`); the depth-1 test mis-routing an ASCII class to decode (answer-neutral — must be caught by a structural codegen check, not by answers) |
+| **S5** | minimal-automaton splice, **gated** (§3.2) | as S4, both engines | **DFA isomorphism** over corpus + bench (not byte identity); abi bump iff any artifact's numbering moves (§7 a3 says how many) | the automaton builder dropping one box; merging two states whose suffix sets differ |
+
+**The ritual's price, stated once.** S2, S4 and (probably) S5 are abi events:
+bump `PCREC_ARTIFACT_ABI` (`src/gen/emit_dfa.c:51`), the change log in
+`docs/spec/match_api.md` §6, every reader found by grep, `make test-codegen`,
+then registry + codegen + rxtsource suites (the D94 addendum's "suites that
+count"). S2 also moves `docs/spec/tuning.md` §2.22 and `match_api.md` §6.3
+(the fold stamp and flag), and S4 moves `tuning.md`'s λ row from
+"reservation" to its pinned cells, `limits.md` if any refusal text changes,
+and the encoding-seam spec for the new entry — all D80, in the same change.
+Pre-1.0, these are deliberate and permitted (memory
+`pcrec-abi-changes-pre-release`).
+
+---
+
+## 7. Measurements still owed
+
+### (a) The Mac can do these (box-independent: counts, bytes, answers)
+
+- **a1. `page3w`/`page2w` over all 312 sets** — DONE by this lane
+  (`results/whole_uprops.tsv`: 312 sets exhaustive, 0 mismatches; totals in
+  §1.3). Owed: the same for the 41 byte classes (expected: the DP never picks a
+  whole-set table there, since `MASK64`/`CUBES` carry no load).
+- **a2. The `A_CLASS` reader census, classified**: for each of the 49 arms and
+  6 comparisons, "reads bytes / reads the set / structural only" — and for
+  every "reads bytes" site, what `A_WCLASS` must answer (width, count,
+  first-unit set), spelled out before S3 merges: `-Wswitch` forces every site
+  to be TOUCHED, not to be RIGHT **[r1 SEM-1]**. S3's lane
+  does this as its first act; it sizes S3 and S4.
+- **a3. S5's renumbering population**: build the minimal-automaton NFA
+  fragment in a scratch compiler, compile the corpus + bench, count artifacts
+  whose DFA is isomorphic-but-renumbered vs byte-identical. Decides whether S5
+  is an abi event.
+- **a4. After [OPT-CLOSURE-CTX] lands: K67's witness re-timed** — compile
+  time is a single-process CPU measurement and the Mac's direction is honest
+  for a 77 s vs 1 s question; the citable number, if S5's gate is close, runs
+  on ubuntubudu with b1.
+- **a5. The [FORM-CHAR2] (i) asm-counting half**: per-site instruction counts
+  on the fold-vs-bitmap pair, now extended to the kit's byte forms (`gcc -O2
+  -S`; box-independent).
+
+### (b) The timing arm — ubuntubudu only, relayed to the pcrecdev2 executor
+
+**b1 is ready to run today.** The following is the exact-command brief, for
+the manager to relay:
+
+> **pcrecdev2 — [CLS-TREE] b1: kit/whole-set ns/char (read-only study run;
+> writes ONLY `studies/cls_tree_study/results/bench2.tsv` and
+> `studies/cls_tree_study/build/`).**
+> Box: ubuntubudu, quiet (the harness itself refuses at load1 ≥ 0.5 and never
+> caveats; a refusal is a result — report it with its load readings, do not
+> loosen `--max-load`). Tree: pcrec at the merge of `lane/clsdes88` (or later;
+> nothing in `src/` is read — the study reads `src/parse/uprops_tables.inc`
+> only).
+> ```
+> cd <pcrec checkout on ubuntubudu>
+> git log -1 --format=%h                      # record the pin
+> gcc --version | head -1                      # record the compiler
+> gnutimeout 7200 make -C studies/cls_tree_study bench2 CC=gcc 2>&1 | tail -5
+> wc -l studies/cls_tree_study/results/bench2.tsv
+> head -1 studies/cls_tree_study/results/bench2.tsv   # load1_at_start
+> ```
+> Expected: 4,620 data rows (12 sets × 5 regimes × 7 arms × 11 rounds), fewer
+> only if a set fails to build — a BUILD FAIL line is a finding, report
+> it). Any `ANSWER MISMATCH` line aborts the run and is a finding. Return the
+> TSV (commit it on a scratch branch or scp it back) and the three recorded
+> facts. Wall time is dominated by 60 set×regime runs of 7 arms × 11 rounds ×
+> 1 M probes; the 2026-09-11 run of 5 arms × 4 regimes fitted inside the I-65
+> session.
+
+What b1 answers: `page3w`/`page2w` vs `bitmap1` vs the kit's three policies,
+under the four old regimes and the new `runs` regime (text-like runs of 1-32
+code points within one 256-code-point block). That is CT-2's calibration data
+and CT-3's re-proposal input.
+
+**b2. The byte tier, in the VM loop** — after S2 lands, through pcrec-bench,
+not the study harness: the ci-256 witness and the csv/loglines class-heavy
+cells at the S2 pin vs its parent, forced-VM and auto. This is [FORM-CHAR2]'s
+timing half and the bench's abi-23 AFTER precedent (plan.md [FORM-CHAR2]).
+It rides a bench window (memory `pcrec-bench-status`), relayed as an inbox
+item when S2 merges.
+
+**b3. The code-point tier, in the VM loop** — after S4 lands: the bench's
+utf8 subbench cells that use `\p{...}` or would under UCP, forced-VM vs auto
+at S4's pin, plus K55's `\P{Unknown}` (newly buildable, so a first sample, not
+a comparison). This is where the membership-loop numbers of b1 meet the
+decode and the VM's own loop; nothing in this note licenses an end-to-end
+claim before it.
+
+---
+
+## 8. Questions for Frank, each with a recommendation
+
+**Q1. Re-propose the five λ constants after S0's calibration, as one ruled
+diff — and until then, is the λ row still "reservation"?**
+*Recommend YES to both.* The pinned 4/16/16/64/256 select among matchers the
+timing cannot tell apart ([T]: 17/36 on member subjects, §1.2), because the
+term they price is a code-size proxy. Keeping them would ship a dial whose
+speed positions buy bytes. D103 says a recalibration is "evidence for a NEW
+proposal ... re-ratified as its own diff", which is this.
+
+**Q2. `-fno-cls-fold` at S2: retire it, or keep it as the deny flag for the
+`CUBES` member?** *Recommend: retire it, and add ONE kit-level deny
+(`-fno-cls-kit`) whose meaning is "emit today's class forms".* The fold is one
+cube among the kit's forms; a per-member deny set would grow with the kit, and
+the axis `make test-axes` needs is kit-vs-no-kit (the answer-identity
+control). Pre-1.0 flag removal is a spec change, not a compatibility break
+(`pcrec-abi-changes-pre-release`). `RX_VM_CLS_FOLDS` is replaced by one
+activity stamp the implementer names (a count of kit-emitted class sites,
+D81's VM-only activity family).
+
+**Q3. The +2 position: is "the same DP at a high λ, with whole-set tables as
+candidates" the right reading of the 2026-09-16 direction?** *Recommend YES.*
+It delivers the huge-bitmap forms at +2 (3.8× faster than the kit's middle,
+5.9-32× its bytes, still smaller than today's DFA tables; §1.4) without a
++2-only mechanism, and if `page3w` times near `bitmap1`, +2 then honestly
+costs almost nothing extra and the note will say so rather than invent a
+difference.
+
+**Q4. S5 (the minimal-automaton splice) gated behind [OPT-CLOSURE-CTX] and a
+K67 re-measure — or built with the rest, per "hit everything class related
+at the same time"?** *Recommend GATED.* The splice cuts closure fan-out 13-27×
+but does not shrink any artifact (§3.1), its gate is isomorphism rather than
+byte identity, and [OPT-CLOSURE-CTX] may make its target small first. The
+DESIGN is done together (this note); only the BUILD waits on its measurement
+(D77).
+
+**Q5. Close [OPT-CLSPACK] as answered by the kit's byte tier?** *Recommend
+YES.* Its premise is 32N bytes of per-class bitmaps; the kit emits zero
+`.rodata` for every class in the corpus ([S] §4.4). A table-bearing byte class
+from [UTF-RW] would re-open it with a population.
+
+**Q6. The island ([ENG-ISL]/[UCP]) — confirm it is out of this row's staging,
+with only its interface fixed here.** *Recommend YES.* It is the one piece
+that shrinks the DFA route, and it is also UCP's `\b` mechanism; designing it
+twice, once per customer, is the parallel-mechanism shape the general-
+mechanisms rule forbids. Its trigger is in §3.4.
+
+**Q7. Order against [UCP].** *Recommend S0 → S1 → S3 → S4 before S2,* if UCP
+is the next customer: S4 is what makes `\p{Xwd}`-sized classes buildable on
+the VM (UCP's hard prerequisite, `ucp_study.md` §E), and S2's byte tier is
+independent and can follow. If UCP is not scheduled, S2 first is the smaller,
+corpus-wide change.
+
+---
+
+## 9. What [UCP] can build on
+
+In `ucp_study.md` §F's terms:
+
+- **Option (b), partial UCP** (`\d`→`\p{Nd}`, `\s`→`\p{Xsp}`, small POSIX)
+  needs nothing from here: those sets are affordable today (3-19 KB DFA,
+  `ucp_study.md` §E).
+- **Option (c)'s VM half** — `\w`, `[:alpha:]`, `[:alnum:]` as `\p{Xwd}`-,
+  `\p{L}`-, `\p{Xan}`-sized sets, and every CAPTURED form of them — is
+  unbuildable today and **buildable at S4**: one kit matcher per distinct set,
+  for `\p{Xwd}` 5.5 KB as a whole-set three-stage table ([N]) or 4.9-6.9 KB
+  across the kit's policies ([S]), behind `$_decode`.
+- **Option (c)'s `\b`** needs a word test on the character BEFORE and AFTER a
+  position. S4 supplies both halves' parts — `$_decode` forward, `back_step`
+  + `$_decode` backward, and the kit predicate for `\p{Xwd}` — but not the
+  DFA-side mechanism (the predicate island, `ucp_study.md` §D.2), which is the
+  §3.4 island and is triggered by UCP's own design.
+- **The `[:lower:]` caseless trap** (§4) is construction-time and UCP's; the
+  kit neither helps nor hurts.
+- **Status of the `\b` parts [r1 SEM-2]**: `back_step(k=1)` is verified to
+  return the start of the character ending at `pos` (enc_utf8.c), but the
+  COMPOSITION `back_step + decode + kit` against PCRE2's UCP `\b` is asserted
+  here, not measured; UCP's design owes that differential.
+- **What UCP must not assume**: that the DFA route's `\w` becomes small. It
+  does not until the island (§3.1).
+
+---
+
+## Appendix A. Reproduction
+
+All in `studies/cls_tree_study/` (its `README.md` and `CLAUDE.md`):
+
+| number | command | output |
+|---|---|---|
+| §1.2's table | `python3 timefit.py` | `results/timefit_20260928.txt` |
+| §1.3's whole-set columns (K53) | `CC=gcc-16 python3 verify_whole.py k53` | `results/whole_k53.tsv` |
+| a1 (312 sets) | `CC=gcc-16 python3 verify_whole.py uprops` | `results/whole_uprops.tsv` |
+| §3's automaton sizes | `python3 automaton.py k53 --exact-rev` | `results/automaton_k53.tsv` |
+| b1 | `make bench2 CC=gcc` (ubuntubudu only) | `results/bench2.tsv` |
+
+The Mac smoke of `bench2`'s generator (3 sets × 3 regimes, `--max-load 99`,
+1 round, output discarded) confirmed that every new arm's hit count and
+positional checksum equal the reference arm's in every cell; its times were
+not read.

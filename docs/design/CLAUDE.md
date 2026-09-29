@@ -2624,5 +2624,34 @@ exactly +34 bytes.
   (§11) the `--emit-facts` inspection listing.
   See `patfacts/CLAUDE.md`. STEP 3 (implement-then-replace) is later.
 
+- `cls_tree_design.md` — **[CLS-TREE] THE DESIGN NOTE, PROPOSED; light D6
+  panel r1** (lane clsdes88, 2026-09-28; `../dev/reviews/2026-09-28-r1-cls-tree-design.md`;
+  design only, nothing under `src/`/`tests/`/`docs/spec/`). Decides CT-1..CT-9
+  from `../dev/cls_tree_study.md`, the committed ubuntubudu ns/char run
+  (`studies/cls_tree_study/results/bench_ubuntubudu_20260911.tsv`, which no
+  document had read against the model until this note) and three new
+  box-independent measurements. **Its sharpest finding: the DP's λ·Σops term
+  is a code-size proxy, not a time model** — among kit policies it predicts
+  nothing on ubuntubudu (r = −0.00, 17/36 pairwise on member subjects), so
+  the five λ constants `opt_dial_design.md` §4 pinned select among
+  matchers the timing cannot tell apart, and are re-proposed after
+  calibration as a ruled diff (Q1). The one much faster arm has no dispatch
+  tree (`bitmap1`, 3.8-4.6× faster than the kit), and `MAXK = 64` made
+  every WHOLE-SET table unreachable; a three-stage whole-set table
+  (`wholeset.py`) costs about the kit's bytes (\p{L} 4,249 vs 4,359) with
+  no branches, its timing owed (§7 b1, an exact-command pcrecdev2 brief).
+  The class becomes ONE node (`A_WCLASS`, a new kind, not a flag — 49
+  `case A_CLASS` readers assume bytes); the VM tests it with a new
+  `static inline` `PCREC_ENCE_DECODE` seam entry (stage 4's ill-formed
+  decoder, verbatim) plus the kit predicate — retiring K55 and making every
+  captured wide class (UCP's `(\w)`) buildable. For the byte DFA, the
+  class's MINIMAL automaton (299 fwd / 453 rev states — exactly the emitted
+  DFAs' own counts) cuts closure fan-out 827 → 30 / 65 but shrinks no
+  table; that build is gated behind [OPT-CLOSURE-CTX], and the DFA-side
+  island is left to [ENG-ISL]/[UCP] with its interface fixed. Staging S0-S5
+  with per-stage checks and abi events (§6), owed measurements split
+  Mac/ubuntubudu (§7), seven questions for Frank (§8), what [UCP] can build
+  on (§9).
+
 Maintenance: update this file when files are added/removed or their roles
 change.
