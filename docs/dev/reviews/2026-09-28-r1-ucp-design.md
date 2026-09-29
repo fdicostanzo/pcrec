@@ -61,3 +61,36 @@ The GEN critic ran the §0.1 check against the T1-T8 tables after the lane merge
 | NIT | NIT | T5 row 1 (`dead`) had no derivation. | FIXED: one paragraph at the head of §3.3. |
 
 The "critic-run pass owed at the U2/U3 charter" above is now DONE for this revision. Any later table edit re-owes it.
+
+## Second addendum — the critic-run "no spiderweb" pass at U2's charter (lane ucpu2, 2026-09-29)
+
+Owed by the addendum above ("any later table edit re-owes it") and by U2's
+charter. Two read-only sonnet critics were spawned by lane `ucpu2`: the first,
+at charter (before code), never delivered a report through this session's
+handback channel; the second reviewed the IMPLEMENTATION on `lane/ucpu2`
+(`src/parse/ctxnode.c`, `src/ir/dfa.c`, `src/gen/emit_vm.c`,
+`src/gen/emit_dfa.c`, `src/parse/mod_assertions.c`, `src/ir/nfa.c`) and wrote
+its report to the lane's scratchpad. Verdict: **no BLOCKER, no MUST-FIX**; the
+charter is met — every selection the design calls a table is a table in the
+code (row struct + array + first-match walk), and GEN-1's priority if-chain is
+a table read (`upc_of_class` returns `Dfa.catom[c]`).
+
+| id | severity | finding | disposition |
+|---|---|---|---|
+| U2-NS1 | SHOULD | T3 row 1 as built ANDs the LANGUAGE test with a BYTE-EXPRESSIBILITY test (`pcrec_enc_set_bytes`) that §0.1's T3 text does not state; the design otherwise uses FILED rows (T6) for "not built yet". Functionally correct: a failing set falls through to row 2, the sound VM lookaround. Either state it in §0.1 or split the row. | APPLIED as (a): §0.1 now carries a *[U2 build]* note under T3 naming the conjunct, why it exists (U2 has no engine that reads a non-byte-expressible context set — T4's island is U3, T8's `decode` row U4) and that U3/U4 drop it. A FILED always-false row was not added (D77: no producer, no measurement). |
+| U2-NS2 | SHOULD (judgment) | `Ast.u.ctx.anchor` — is it a special case? | HELD: PCRE2's GRAMMAR refuses `\b*` (error 109) and accepts `(?=a)*`, a spelling fact; the field is parse-resolved spelling state (D62's field rule, `A_BOL`/`A_EOL`'s `multiline` precedent), read only by `pcrec_is_bare_anchor`, never by an engine. No action. |
+| U2-NS3 | NIT | Stale prose naming the retired `A_WORDB`/`A_NWORDB` in `definitions.c`'s `pcrec_ast_is_core` header and `mod_assertions.c`'s D70 comment. | APPLIED: both rewritten. |
+
+Verified sound by the critic (recorded so it is not re-derived): T3 is a
+genuine first-match table and `-fno-ctx-node` reaches the `lookaround` row
+(GEN-4(a)); a non-byte-expressible set is never read byte-wise — checked at
+`\b`'s producer (refused by name), T3, `nfa.c`'s A_CTX arm and `vm_ctx`
+(GEN-4(b)); over `PCREC_MAX_CTX_SETS`/`PCREC_MAX_CTX_ATOMS` the machine is
+DECLINED through the state-cap overflow's own shape (`[SEL-1]` retry to the
+VM), never truncated, and the check runs before any state is interned
+(GEN-4(c)); `\b`/`\B` build A_CTX directly rather than through T3 — one node,
+two producers, no parallel mechanism; `vm_ctx_forms[]` is keyed only on the
+truth function. The GEN-4 shape also has a sabotage row now: S342 (a denied
+T3 row falling through to an erased lowering) is DETECTED by the `ctxnode`
+mech arm's `-fno-ctx-node` half and route manifest, which the default path
+cannot see. Any later edit to T3 or to the context-set table re-owes this pass.

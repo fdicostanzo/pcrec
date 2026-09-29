@@ -16,7 +16,7 @@ SAB_ID="S342-t3-denial-falls-to-unsound"
 SAB_FILE="src/parse/ctxnode.c"
 SAB_SUITES="ctxnode"
 SAB_DESC="with -fno-ctx-node, T3's walk returns an erased (empty) node for the denied row instead of continuing to the lookaround row"
-SAB_DOC_FIGURE="ctxnode arm §2 (-fno-ctx-node): tests/ucp/ctxnode.rxt's T3 cells disagree with libpcre2 (e.g. \`(?<=a|b)x\` on \"cx\" matches); §1 (default) stays green. Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S342."
+SAB_DOC_FIGURE="ctxnode arm §2 (-fno-ctx-node): tests/ucp/ctxnode.rxt's T3 cells disagree with libpcre2 (e.g. \`(?<=a|b)x\` on \"cx\" matches) and §3's route manifest (the denied column reads dfa where vm is required); the default path never reaches the denied row. Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S342."
 SAB_REACH='"$PCREC" --features all -fno-ctx-node -p rx -o "$REACH_TMP/o0.c" --pattern "(?<=a|b)x" >/dev/null 2>&1 && grep -c "define RX_ENGINE \"vm\"" "$REACH_TMP/o0.c"'
 SAB_REACH_EXPECT="1"
 SAB_EXPECT=DETECTED
