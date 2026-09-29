@@ -15,7 +15,8 @@ CFLAGS  ?= -O2 -std=gnu11 -Wall -Wextra
 PY      ?= python3
 
 .PHONY: all discover populations k53 uprops byteclasses baseline \
-        crosscheck proptest bench bench2 all-sweeps clean
+        crosscheck proptest bench bench2 bench2-bytes all-sweeps \
+        whole-byteclasses asm-byteclasses clean
 
 all: discover
 
@@ -37,6 +38,23 @@ uprops: discover
 byteclasses: discover
 	CC=$(CC) $(PY) extract_byteclasses.py
 	CC=$(CC) $(PY) sweep.py byteclasses --lams 0,16,256
+
+# [CLS-TREE] S0, a1's byte-tier remainder (design note §7 a1): does a
+# whole-set indexed table ever beat the kit's own size-minimal answer over
+# the 41 corpus byte classes?  Exhaustive verify + rodata, then the
+# comparison that turns it into a verdict.  Reads the COMMITTED
+# results/byteclasses.tsv/sweep_byteclasses.tsv (`make byteclasses` only if
+# re-extracting from a rebuilt ../../build/pcrec is actually wanted).
+whole-byteclasses:
+	$(PY) verify_whole.py byteclasses > results/whole_byteclasses.tsv
+	$(PY) compare_whole_kit.py
+
+# [CLS-TREE] S0, a5: per-site instruction counts (gcc -O2 -S) for the kit's
+# byte forms (ALL/RANGES/CUBES/MASK64) vs today's BITMAP, over the same 41
+# classes -- the [FORM-CHAR2] (i) asm-counting method generalized off one
+# hand-picked witness onto the real population.  Same committed-input rule.
+asm-byteclasses:
+	CC=$(CC) $(PY) asm_count.py byteclasses
 
 # what pcrec emits TODAY for the same sets; needs ../../build/pcrec
 baseline:
