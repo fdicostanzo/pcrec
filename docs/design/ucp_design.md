@@ -34,7 +34,128 @@ No darwin timing appears anywhere, and nothing here needed any.
 | **UD-4** | the predicate's forms | the island's interface is "the membership vector of one decoded character"; its producers are (i) one [CLS-TREE] kit predicate per set (built first), (ii) a multi-valued **atom map** (a proposed kit member: page-table leaves carry atom ids), (iii) the **[UCD-RECORD]** shared record, one probe for a bitmap of standard classes, linked once via **[XART-TABLES]**. (ii)/(iii) are dial choices with named D77 triggers, not built first | [C] [T]; §4 |
 | **UD-5** | [CLS-TREE] interaction | the island (stage U3) needs **S1** (the kit in `src/`) and **S3** (`A_WCLASS`, a wide class arrives at the NFA as one node), and introduces `PCREC_ENCE_DECODE` itself if it lands before **S4**. U0, U1 and U2 start **now**, before any [CLS-TREE] stage | §5 |
 | **UD-6** | staging | U0 registry/O-71 → U1 surface (small tier + byte tier; wide sets refused by name until a kit-sized route exists) → U2 `A_CTX` (byte-expressible sets; moves lookaround patterns VM → DFA) → U3 island (after a ubuntubudu hand-twin measurement) → U4 VM UCP `\b` (after S4). Checks, sabotage shapes and abi events per stage in §6 | §6 |
+| **UD-8** | every selection as a table | eight first-match tables T1-T8 (§0.1): definitions, fold, lookaround lowering, machine form, state cell, vector producer, table linkage, VM context test; each row is data (name + one-line predicate) for [LIST-TABLES]; the one optimizer (the sectioning DP) lives inside T6's `kit` row | Frank 2026-09-28; §0.1 |
 | **UD-7** | measurements owed | Mac: the `A_CTX` identity sweep, the per-state vector-width census, island twin correctness. ubuntubudu: the island-vs-all-byte per-char timing (the D77 trigger for U3), the U2 DFA-vs-VM throughput on the moved patterns | §7 |
+
+---
+
+## 0.1 Every selection in this note is a first-match TABLE (UD-8)
+
+Frank's standing requirement (2026-09-28): a selection is an ORDERED list of
+rows — name, deny flag, an `applies` predicate stated as a measurable fact,
+an action — walked first-match, a non-applying or denied row transparent, the
+last row always true. The precedent is `dfa_pfs[]` + `DFA_SELECT`
+(`src/gen/emit_dfa.c:4544`, `:5804-5815`) and D122 addendum 4 ("one selector
+decides every scan form"). An OPTIMIZER may live inside one row's action
+(ruled); a nested if/else chain deciding a form or route may not. **Every
+table below is DATA — each row carries its name and a one-line predicate
+description — so `[LIST-TABLES]`'s future `--list-…` option and the
+per-artifact "which row fired" stamp are plain reads of it** (the
+definitions table already has such a listing, `--list-definitions`).
+
+Deny flags are PROPOSED spellings; the implementer names them. A row whose
+denial would change ANSWERS rather than form carries no deny flag (D125's
+STRUCTURALLY INELIGIBLE bucket, opt_dial_inventory.md §2.25) — those are the
+semantic tables T1-T2.
+
+**T1 — a class construct's definition** (per construct, the D85 definitions
+table; the rows ARE `RegDef` entries, walked by `pcrec_def_resolve`, which is
+already first-match with a `DEF_ALWAYS` terminal — `definitions.c:66-99`).
+Example: `\w`; every class escape and POSIX name has the same two-row shape,
+its tag from §1.4's family column.
+
+| # | row | deny | applies | action |
+|---|---|---|---|---|
+| 1 | `ucp` | — (semantic) | `DEF_UCP_W`: the node's resolved mods have UCP ∧ ¬`aW` | the UCP set (`\p{Xwd}`); for `[:lower:]`/`[:upper:]` the set is marked fold-inert |
+| 2 | `ascii` | — | `DEF_ALWAYS` | today's set (`cls_bits.inc`) |
+
+*Order*: UCP is the more specific condition; `DEF_ALWAYS` is the ruled
+terminal. `\b`/`\B` are rows of the same table whose action is `A_CTX` with the
+UCP or ASCII word set (§2.2).
+
+**T2 — a class contribution's fold** (per contribution, at construction; one
+table serving every class site — today this is a per-caller argument,
+`parse.c:640-660`, and the table replaces the argument with rows).
+
+| # | row | deny | applies | action |
+|---|---|---|---|---|
+| 1 | `none` | — | `(?i)` is off | contribution unfolded |
+| 2 | `inert` | — | UCP ∧ the contribution is `[:lower:]`/`[:upper:]` (§1.3 rule 1) | added unfolded |
+| 3 | `ascii-named` | — | the contribution is a named/ASCII-restricted byte set (§1.3 rule 3; today's named-byte-set rule) | `pcrec_fold_ascii` |
+| 4 | `latin1` | — | encoding `byte` ∧ UCP | Unicode simple fold restricted to Latin-1 pairs (§1.5) |
+| 5 | `encoding` | — | always | the encoding's own fold (`PcrecEnc.fold`) |
+
+*Order*: each row is a narrowing of the next one's population; rows 2-3 are
+exceptions to 4-5 by measurement ([O] §1.3), so they precede them.
+
+**T3 — a lookaround's lowering** (per `A_LOOK`, the recognition pass, §2.2).
+
+| # | row | deny | applies | action |
+|---|---|---|---|---|
+| 1 | `ctx-node` | `-fno-ctx-node` (the answer-identity axis) | body is capture-free and assertion-free and its LANGUAGE is a set of single characters | `A_CTX(set, side, fn)` |
+| 2 | `lookaround` | — | always | today's `A_LOOK` lowering |
+
+**T4 — the DFA machine's non-ASCII form** (per MACHINE, `-e utf8`; under
+`-e byte` row 5 always fires). "Wide" and "byte-expressible" are the facts
+§2.3 and §3.7 define; θ is a pinned `--tune` cell read by the predicate (the
+dial lives in the row's predicate, D82's one decision point).
+
+| # | row | deny | applies | action |
+|---|---|---|---|---|
+| 1 | `island-forced` | `-fno-cls-island` | some CONTEXT set has a non-ASCII member (no all-byte form is exact, §2.3) | character-stepped mode (§3) |
+| 2 | `bytes-under-theta` | `-fno-cls-bytes` (the island's identity axis: denying it forces row 3) | every CONSUMING non-ASCII set is byte-lowerable and their summed byte-automaton states ≤ θ | all-byte mode (today's lowering) |
+| 3 | `island` | `-fno-cls-island` | some consuming non-ASCII set exists | character-stepped mode |
+| 4 | `bytes` | — | no context set has a non-ASCII member | all-byte mode (the K53 ladder as today) |
+| 5 | `decline` | — | always | the DFA route declines this machine: engine selection's own table routes the pattern to the VM (a `forces_registry`-style reason, stamped) |
+
+*Order*: row 1 first because when it applies rows 2 and 4 would be WRONG, not
+slower (§2.3's hazard cells); row 2 before 3 because it is the narrower
+(dial-admitted) case; row 4 is what a denied island leaves when it is still
+exact; row 5 is the always-true fallback — `-fno-cls-island` on a machine
+with a non-ASCII context set lands here, never on a sampled answer. The
+engine (DFA vs VM) is NOT re-decided here: row 5 is this table reporting "no
+DFA form", read by the existing engine-selection table.
+
+**T5 — a character-stepped state's non-ASCII cell** (per state, inside T4's
+island action).
+
+| # | row | deny | applies | action |
+|---|---|---|---|---|
+| 1 | `dead` | — | every non-ASCII character and ⊥ lead to dead, and no accept depends on the next character | dead cell |
+| 2 | `self-loop` | `-fno-island-fold` | every non-ASCII character and ⊥ lead back to this state with the same context (§3.3) | ordinary self-loop cells |
+| 3 | `island` | — | always | an island token (§3.1) |
+
+**T6 — the island's vector producer** (per island vector, §4; built rows 3
+only at U3 — rows 1-2 are FILED rows whose predicates are false until their
+producers exist, so the table's shape does not change when they land).
+
+| # | row | deny | applies | action |
+|---|---|---|---|---|
+| 1 | `ucd-record` | `-fno-ucd-record` | every set in the vector is a standard class the record carries ∧ vector width ≥ K_rec (a `limits.def`/tune cell set by §4's trigger measurement) | one [UCD-RECORD] probe, bits tested |
+| 2 | `atom-map` | `-fno-atom-map` | vector width ≥ 2 ∧ the atom map's bytes ≤ the tune position's size budget | one multi-valued page-table lookup |
+| 3 | `kit` | — | always | one kit predicate per set, OR'd into the vector; **each predicate's FORM is chosen by [CLS-TREE]'s sectioning DP inside this action** (CT-1/CT-2: kit members + whole-set tables) — an optimizer inside a row, not a table beside it |
+
+*Order*: most amortizing first; the kit is always valid. The binary search
+(`BSEARCH`) and the whole-set page table/bitmap are not rows here — they are
+the DP's candidates inside row 3, priced by CT-2's per-probe model.
+
+**T7 — a large table's LINKAGE** (per emitted table, [XART-TABLES]; FILED, not
+built).
+
+| # | row | deny | applies | action |
+|---|---|---|---|---|
+| 1 | `shared` | `-fno-shared-tables` | the table's bytes ≥ a pinned floor ∧ its content is a general table (a `\p`/UCP set or the record) | content-hash-named COMDAT/weak definition, linked once per program |
+| 2 | `static` | — | always | `static const` in the artifact (today) |
+
+*Orthogonal to T6*: T6 picks WHAT the table is, T7 how it links — two
+questions, two tables, never one nested chain.
+
+**T8 — a VM `A_CTX` side's test** (per side, §6 U4).
+
+| # | row | deny | applies | action |
+|---|---|---|---|---|
+| 1 | `byte` | — | the set is byte-expressible (§2.3) | today's byte read (`emit_vm.c:7902`'s shape with the node's set) |
+| 2 | `decode` | — | always | `back_step`/`$_decode` + the set's T6 producer |
 
 ---
 
@@ -455,7 +576,7 @@ cost. **So the honest reading is that the island is a SIZE and COMPILE-TIME
 win (hundreds of KB → ~5 KB; K67's class share gone — no byte fan-out exists)
 whose SPEED against a cache-resident all-byte machine is unknown, and at the
 kit's middle policy on dense non-ASCII text plausibly a loss.** That is Frank's
-D129 residual question, and it is why the choice is a dial:
+D129 residual question, and it is why the choice is a dial — expressed as §0.1's table **T4**, whose rows are, in prose:
 
 - **Forced island**: a machine with a context set that is not byte-expressible
   (§2.3) — UCP `\b`/`\B`, a non-ASCII lookaround context. No all-byte form
