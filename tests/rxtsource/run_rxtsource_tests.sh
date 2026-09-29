@@ -1539,13 +1539,20 @@ C3_PASS=13764
 # its own verifier (verify_ucp.py), so verify_rxt.py skips every one of its
 # 1,563 cells on every python version (measured: `verify_rxt.py tests/ucp`
 # reports SKIP=1563, own-oracle=1563, PASS=0).
-C3_SKIP=16796
-C3_SKIP_PCRE2ONLY=2944
+# [UCP] U2 (lane ucpu2): +230 SKIP, structural on every python version —
+# tests/ucp/ctxnode.rxt +200 own-oracle (199 cells + 1 g line; tests/ucp/ is
+# verify_ucp.py's), tests/ucp/refusals.rxt -2 own-oracle (the two byte-tier
+# UCP \b perr blocks, which BUILD now), tests/utf8/axis13_ctx_illformed.rxt
+# +32 pcre2-only (MATCH_INVALID_UTF oracle). Measured: `verify_rxt.py
+# tests/ucp` SKIP=1761 own-oracle (was 1563); `verify_rxt.py
+# tests/utf8/axis13_ctx_illformed.rxt` SKIP=32 pcre2-only; PASS unmoved.
+C3_SKIP=17026
+C3_SKIP_PCRE2ONLY=2976
 C3_SKIP_GIVEUP=29
 C3_SKIP_COMPOSED=0
 C3_SKIP_NOPYTHON=1890
 C3_SKIP_PERRACCEPT=14
-C3_SKIP_OWNORACLE=11919
+C3_SKIP_OWNORACLE=12117
 C3_INFO=0
 C3_STOREUNCOVERED=0
 C3_TIMEOUT=1
