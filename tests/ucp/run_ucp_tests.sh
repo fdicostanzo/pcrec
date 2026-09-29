@@ -21,6 +21,7 @@ ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 . "$ROOT_DIR/tests/lib/cc_resolve.sh"
 . "$ROOT_DIR/tests/lib/unit_cc.sh"
 . "$ROOT_DIR/tests/lib/resolve_pcre2.sh"
+. "$ROOT_DIR/tests/lib/timeout_bin.sh"
 export PCRE2_AVAILABLE PCRE2_CFLAGS PCRE2_LIBS CC
 PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
 WORKDIR="$(mktemp -d "${TMPDIR:-/tmp}/pcrec-ucp.XXXXXX")"
@@ -32,7 +33,7 @@ python3 "$SCRIPT_DIR/verify_ucp.py" || rc=1
 
 echo "== [UCP] 2. the UCP sets against the committed 10.46 store =="
 mkdir -p "$WORKDIR/cmp"
-python3 "$SCRIPT_DIR/ucp_compare.py" "$PCREC" "$CC" "$WORKDIR/cmp" || rc=1
+"$TIMEOUT_BIN" 1800 python3 "$SCRIPT_DIR/ucp_compare.py" "$PCREC" "$CC" "$WORKDIR/cmp" || rc=1   # [K37] bounded; each compile inside is bounded too
 
 echo "== [UCP] 3. the byte-tier Latin-1 fold relation =="
 if unit_build "$WORKDIR/l1" "$SCRIPT_DIR/latin1_fold_check.c"; then

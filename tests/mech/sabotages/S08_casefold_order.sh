@@ -18,6 +18,8 @@ SAB_SUITES="codegen harness"
 SAB_HARNESS_TARGET="tests/base/caseless.rxt"
 SAB_DESC="p_class: move the cls_casefold() call from before the negation loop to after it"
 SAB_DOC_FIGURE="tests/codegen/CLAUDE.md: 1 codegen check + 6 caseless.rxt cases"
+# [UCP] U1 re-aim (lane ucpu1): p_class's fold is now T2's `cls_fold(..., CLS_LITERAL)`
+# (the same call, table-selected); the edit's intent — fold AFTER negate — is unchanged.
 SAB_COUNT=1
 # RE-ANCHORED 2026-08-21 (sabanchors lane): [M6.2] wave A (parse_mods.h)
 # turned Ctx.mods from a ModState struct value into a pointer to an
@@ -33,10 +35,10 @@ SAB_COUNT=1
 # bitmap's implicit 0..255. Under `--encoding=byte` the two are the same
 # function on the same set, which is why this row's detector corpus
 # (tests/base/caseless.rxt) is unchanged and its cells are the same cells.
-SAB_BEFORE="    if (cx->mods->caseless) cls_casefold(cx, &set, cls_enc(cx)->fold);
+SAB_BEFORE="    cls_fold(cx, &set, CLS_LITERAL);
     pcrec_cpset_add_set(&set, prod.iv, prod.n);
     if (neg) pcrec_cpset_complement(&set, cls_universe(cx));"
 SAB_AFTER="    /* SABOTAGE S08: negate first, then fold */
     pcrec_cpset_add_set(&set, prod.iv, prod.n);
     if (neg) pcrec_cpset_complement(&set, cls_universe(cx));
-    if (cx->mods->caseless) cls_casefold(cx, &set, cls_enc(cx)->fold);"
+    cls_fold(cx, &set, CLS_LITERAL);"

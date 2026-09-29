@@ -3398,3 +3398,11 @@ never edited afterwards.
   verified against CPython on 800 seeded-random invocations) and the
   coordination note for lane findb4 (bigram is already a full `analyze/`
   CLI/bundle-text citizen; only the BUNDLE-scope schema row is B4's).
+- `ucpu1_report.md` — [UCP] U0 + U1 (2026-09-28, lane ucpu1): module `ucp`
+  (`(*UCP)`, `--ucp`, `flags u`, `(*UTF)`/`(*UTF8)`, O-71's implied modules),
+  the definitions table's first wiring (DEFK_SET), the T2 fold table, the
+  byte tier, the wide-set/UCP-`\b` refusals, the oracle-store UCP config, the
+  identity-gate numbers and the sabotage rows S333–S336.
+  `ucpu1_evidence/` holds the corpus generator (`gen_ucp.py`,
+  `gen_corpus.py`), the two remote 10.46 probes (`remote_verify.py`,
+  `remote_latin1.py`) and the 10.46 re-verification transcript.

@@ -10,6 +10,8 @@ SAB_SUITES="harness"
 SAB_HARNESS_TARGET="tests/modifiers/letters.rxt"
 SAB_DESC="pcrec_modport_optrun: apply un_* before set_*, so set wins a contested letter"
 SAB_DOC_FIGURE="measured R17: 1 harness case (tests/modifiers/letters.rxt, the (?i-i)a block — (?-ii)a is NOT contested under this flip: both its i's are unset-side, so it pins the unset path itself, not the order)"
+# [UCP] U1 re-aim (lane ucpu1): the block gained the `(?a…)` restriction
+# mask's set/unset lines, each in its own half; the swap is the same swap.
 SAB_COUNT=1
 # RE-ANCHORED 2026-08-21 (sabanchors lane): [M6.2] wave C added the 'm'
 # (multiline) letter to this same set/unset block (set_m/un_m, ns.multiline),
@@ -23,6 +25,7 @@ SAB_BEFORE="    if (set_i) ns.caseless = true;
     if (set_n) ns.nocap = true;
     if (set_m) ns.multiline = true;
     if (set_J) ns.dupnames = true;
+    ns.arestrict = (uint8_t)(ns.arestrict | set_a);
     if (xlvl >= 0) ns.xlevel = (uint8_t)xlvl;
     if (un_i) ns.caseless = false;
     if (un_s) ns.dotall = false;
@@ -30,7 +33,8 @@ SAB_BEFORE="    if (set_i) ns.caseless = true;
     if (un_n) ns.nocap = false;
     if (un_m) ns.multiline = false;
     if (un_J) ns.dupnames = false;
-    if (un_x) ns.xlevel = 0;"
+    if (un_x) ns.xlevel = 0;
+    ns.arestrict = (uint8_t)(ns.arestrict & ~un_a);"
 SAB_AFTER="    if (un_i) ns.caseless = false;
     if (un_s) ns.dotall = false;
     if (un_U) ns.ungreedy = false;
@@ -38,10 +42,12 @@ SAB_AFTER="    if (un_i) ns.caseless = false;
     if (un_m) ns.multiline = false;
     if (un_J) ns.dupnames = false;
     if (un_x) ns.xlevel = 0;
+    ns.arestrict = (uint8_t)(ns.arestrict & ~un_a);
     if (set_i) ns.caseless = true;
     if (set_s) ns.dotall = true;
     if (set_U) ns.ungreedy = true;
     if (set_n) ns.nocap = true;
     if (set_m) ns.multiline = true;
     if (set_J) ns.dupnames = true;
+    ns.arestrict = (uint8_t)(ns.arestrict | set_a);
     if (xlvl >= 0) ns.xlevel = (uint8_t)xlvl;"
