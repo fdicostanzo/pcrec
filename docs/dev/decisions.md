@@ -8786,3 +8786,17 @@ disposition text — this entry is the index, not the substance.
 7. **Q7 — [UCP] IS NEXT** (Frank: "let's do UCP next while we're in the neighborhood"): staging S0 → S1 → S3 → S4, then S2. S4 makes `\p{Xwd}`-sized classes buildable on the VM (UCP's prerequisite).
 
 **Consequences.** [CLS-TREE] S0 (calibration plumbing + Mac-side measurements a1-a5) is chartered now; the [UCP] design lane opens alongside it (both Mac-side; no Linux heavy runs while [B115] holds the box). Note §6/§8 carry the pre-ruling text; this entry supersedes them on Q4/Q5.
+
+## D130 — [UCP] design note ruled: Q1-Q9 all YES (Frank, 2026-09-28, eighty-fifth session)
+
+`docs/design/ucp_design.md` (lane ucpdes, merged 36cc0485; critic-run no-spiderweb fixes 26d17351). Frank: "I agree to all 9."
+1. UCP is OPT-IN (`--ucp`, `(*UCP)`), not the default under `-e utf8`. A diagnostic for utf8 `\w`/`\b`/`\d` with no UCP decision is filed, not designed.
+2. O-71: `-e utf8` ENABLES `unicode-props` and `ucp`. `(*UTF)` is accepted under utf8 and refused by name under `-e byte`.
+3. At U1, the WIDE UCP sets and UCP `\b` under utf8 are REFUSED by name until a kit-sized route exists (S4 for the VM, U3 for the DFA). The small tier and the whole byte tier ship at U1.
+4. The byte tier (UCP without UTF, Latin-1 fold) ships in U1.
+5. `(?aD)/(?aS)/(?aW)/(?aP)/(?aT)/(?a)` become real in U1, as one `DEF_UCP` tag per family.
+6. U2 (`A_CTX` + the one-character-lookaround recognizer, with §2.4's per-machine context-set TABLE) ships under [UCP], before the island.
+7. U3's trigger is the b-island hand-twin measurement on ubuntubudu. θ is proposed only after it, as a ruled diff.
+8. [UCD-RECORD] and [XART-TABLES] stay unscheduled; the island's predicate interface admits the record as a producer.
+9. The oracle store's `OracleId.config` gains `UCP` at U1.
+Staging: U0 → U1 now (one lane); U2 after; U3 needs [CLS-TREE] S1+S3 plus the b-island trigger; U4 needs S4.
