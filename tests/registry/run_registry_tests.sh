@@ -585,17 +585,21 @@ fi
 # 135 -> 138 at `[OPT-LITSCAN]` S2a (2026-09-27): `-fno-lit-run`
 # (`PCREC_NO_LIT_RUN`, bit 33) is one single-bit axis self-registering the
 # (macro, bit, flag) triple — 3 lines, `req-run`'s shape.
+#
+# 138 -> 141 at [UCP] U2 (2026-09-29): `-fno-ctx-node` (`PCREC_NO_CTX_NODE`,
+# bit 35) is one single-bit axis self-registering its (macro, bit, flag)
+# triple — 3 lines, `lit-run`'s shape. Measured: 141 PASS, 0 failed.
 axesn="$(grep -c '^PASS: ' "$AXESOUT" || true)"
-if [ "$axesn" -ne 138 ]; then
+if [ "$axesn" -ne 141 ]; then
     if grep -q "^checks failed: 0" "$AXESOUT"; then
-        echo "registry: axes_registry_check COVERAGE CHANGED — $axesn passing checks, expected 138." >&2
+        echo "registry: axes_registry_check COVERAGE CHANGED — $axesn passing checks, expected 141." >&2
         echo "registry:   if you added or removed axes/checks on purpose, update this number" >&2
         echo "registry:   in the same commit; if not, coverage was removed" >&2
     else
         axesnf="$(sed -n 's/^checks failed: //p' "$AXESOUT" | tail -1)"
-        echo "registry: axes_registry_check shows $axesn passing checks (138 expected; ${axesnf:-?} failed," >&2
+        echo "registry: axes_registry_check shows $axesn passing checks (141 expected; ${axesnf:-?} failed," >&2
         echo "registry:   so a lower count is expected here). Fix the failures first; then this" >&2
-        echo "registry:   number must return to 138 — if it does not, coverage was removed too" >&2
+        echo "registry:   number must return to 141 — if it does not, coverage was removed too" >&2
     fi
     rc=1
 fi

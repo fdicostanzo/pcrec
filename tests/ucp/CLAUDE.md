@@ -2,7 +2,7 @@
 
 PCRE2_UCP's semantics: `(*UCP)` / `--ucp` / `.rxt` `flags u`. The `.rxt`
 files ride `test-corpus` like every module's; `make test-ucp`
-(`run_ucp_tests.sh`) runs the three checks the corpus cannot be.
+(`run_ucp_tests.sh`) runs the four checks the corpus cannot be.
 
 ## Oracle rule — this directory declares its own
 
@@ -31,8 +31,21 @@ not checked: they are pcrec's capability refusals.
 - `byte.rxt` — the byte tier: Latin-1 UCP sets (all narrow), the Latin-1 fold
   (T2's `latin1` row), `[:lower:]`/`[:upper:]` fold-inert.
 - `refusals.rxt` — `perr` only: the wide sets under utf8, UCP `\b`/`\B` under
-  both encodings, `--ucp` without the module, `(*UTF)` under byte, the
-  position and repeat rules for the verbs.
+  utf8 (the byte half builds since U2, `ctxnode.rxt`), `--ucp` without the
+  module, `(*UTF)` under byte, the position and repeat rules for the verbs.
+- `ctxnode.rxt` — [UCP] U2: the CONTEXT NODE. The overlap witnesses
+  (`(?<=\$)\d+(?:\.\d{2})?\b`, a V ⊂ W pair, a partial overlap, three sets on
+  one machine), T3's rows over the LANGUAGE and its declines, startpos cells
+  for the seeds on both machines, UCP `\b`/`\B` under `-e byte` (Latin-1), and
+  the atom-cap decline (17 sets over, 14 under). Generated from libpcre2 10.48,
+  re-verified on 10.46 (transcripts in `docs/dev/lanes/ucpu2_evidence/`).
+- `ctxnode_route.tsv` — the ROUTE MANIFEST: every lookaround-census pattern
+  (and six synthetic rows) with the engine it takes by default and under
+  `-fno-ctx-node`. A row whose default is `dfa` is a U2 mover.
+- `run_ctxnode_tests.sh` — U2's own section (run by `run_ucp_tests.sh` §4 and
+  by the mech `ctxnode` arm): the corpus default and under `-fno-ctx-node`
+  (the GEN-4-shaped check: a denied row must reach the sound lookaround row),
+  and the route manifest, with population floors.
 - `verify_ucp.py` — the oracle above.
 - `ucp_sets.py` — the UCP set POPULATION (construct, DEFK_SET spelling,
   wide-under-utf8), the ONE list both the capture and the comparison read.
@@ -47,7 +60,8 @@ not checked: they are pcrec's capability refusals.
   against 10.46's UCP|CASELESS relation over all 256×256 byte pairs (112
   partner pairs). Failing-direction controls measured at landing: the ASCII
   fold reads 60 disagreements, the utf8 fold 10.
-- `run_ucp_tests.sh` — the section driver (`make test-ucp`).
+- `run_ucp_tests.sh` — the section driver (`make test-ucp`); §4 runs
+  `run_ctxnode_tests.sh`.
 
 ## Maintenance
 
