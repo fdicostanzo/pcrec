@@ -18,7 +18,7 @@ SAB_ID="S364-clskit-dispatch-term-dropped"
 SAB_FILE="src/gen/clskit.c"
 SAB_SUITES="clskit"
 SAB_DESC="kit_sel_bytes drops D131 addendum 1's fitted dispatch/prologue term, so the 0/+1/+2 mid gate and the -2/-1 size gate compare against K's un-adjusted DP-model bytes again, moving most of the K53 twelve's 0/+1 picks from P3 back to K"
-SAB_DOC_FIGURE="MEASURED solo 2026-09-29 at (this lane's tip) via VALIDATE_ONLY plus a hand cross-check: with the term dropped, kit_sel_bytes(s) == s->k->bytes, reproducing clss1_report.md's STOPPED table (P3 on 2/12 of the K53 twelve at 0/+1, not 12/12) against crosscheck.py's KIT_DISP_BYTES-bearing restatement -- clskit:SELfail/pass DETECTED, differential/law/census unaffected. Canonical run OWED to the manager."
+SAB_DOC_FIGURE="MEASURED solo 2026-09-29 at c104e07c: clskit:1fail/4pass DETECTED -- the cross-check alone (its SEL lines disagree at the 0/+1/+2 positions on 10 of the K53 twelve), the S363 shape one predicate over; the differential, the law and the census stay green."
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='static long long kit_sel_bytes(SelCtx *s)
