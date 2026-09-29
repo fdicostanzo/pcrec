@@ -11,7 +11,11 @@ measurement fixes and two SHOULD notes applied; the decode/automaton
 ill-formed agreement and the splice's priority safety were verified against
 the source by the semantics critic.
 
-**Status: PROPOSED.** Frank rules §8. Every cell this note proposes for the
+**Status: PROPOSED.** Frank rules §8. **S0's calibration LANDED 2026-09-29
+(lane clsfit): §1.7** — the per-probe model fits (member r +0.98 all arms,
+kit orderings 30/36 held out), the whole-set `page3w` beats every kit
+policy, and the λ re-proposal is a first-match table with three programs
+(§1.7.5, PROPOSED; its diff is in `docs/dev/lanes/clsfit_report.md`). Every cell this note proposes for the
 `--tune` table is a PROPOSAL under D103 (the table is a pinned contract, and
 a measurement landing never moves a cell by itself).
 
@@ -306,6 +310,264 @@ already spent compiling `\p{Xwd}` at `13b56a12`. **No per-artifact limit is
 added**: nothing measured needs one (D77). The trigger that would: a pattern
 with hundreds of distinct large classes ([S] §6's own qualification), which
 no corpus or bench pattern is known to be.
+
+### 1.7 S0 calibration results (lane clsfit, 2026-09-29)
+
+**Status: MEASURED; the λ re-proposal in §1.7.5 is PROPOSED** (D129 Q1:
+one ruled diff; the manager takes it to Frank). Nothing under `src/`,
+`tests/` or `docs/spec/` moves here.
+
+**Sources.** Three new ubuntubudu files, copied verbatim from pcrec-bench
+branch `scratch/clstree-s0` (each carries a `# provenance:` first line), and
+one analysis:
+
+| tag | what | where |
+|---|---|---|
+| **[T2]** | `make bench2`: 12 K53 sets × 5 regimes × 7 arms × 11 interleaved rounds, gcc 15.2.0, pcrec pin `dd3be4e4` (archive form), load1 0.02, 4,620 rows, no `ANSWER MISMATCH` (bench `81f0982`, outbox O-76) | `studies/cls_tree_study/results/bench2_ubuntubudu_20260929.tsv`, column `ns_per_char` (medians over rounds) |
+| **[C2]** | the isolated `^C`/member re-run, 41 rounds, load1 0.21 (bench `d6e0106`) | `results/capC_isolated_ubuntubudu_20260929.tsv` |
+| **[B2]** | `make bench2-bytes` ([OPT-CLSPACK]), N = 4/16/32, load1 0.46 (the fixed gate waited once, at 0.54) (bench `81f0982`) | `results/bench2_bytes_ubuntubudu_20260929.tsv`, column `ns_per_call` |
+| **[F]** | `timefit_s0.py` (analysis only; runs anywhere) | `results/timefit_s0_20260929.txt` — every number below not cited to another file is read from it |
+
+#### 1.7.1 The per-probe model fits; the old term still does not
+
+**Method.** `timefit_s0.py` REPLAYS every timed arm probe by probe over the
+harness's own subject stream: `bench.py`'s xorshift generator reproduced bit
+for bit, and **verified** by regenerating all 2^20 probes of every (set,
+regime) and matching the harness's own `hits` + positional `chk` columns
+(60/60 streams, [F] line 1). The 09-11 run [T] used the identical streams
+(48/48 `refbs` hits+chk equal), so the replay applies to it exactly. Each
+probe is costed in four counted quantities: conditional branches, their
+MISPREDICTS under a 2-bit counter per static branch site, loads, and
+dependent loads. One OLS over all 420 (set, regime, arm) medians of [T2] —
+the kit's three policies, the flat bsearch and the three whole-set tables
+under one model — gives
+
+```
+ns/char = 2.095 + 3.892·mispredicts + 0.189·branches − 0.090·loads + 0.095·deploads
+```
+
+**The old term, re-read on the fresh run** ([F] "OLD term"; timefit.py's
+statistics): member r(ns, `model_ops`) = **+0.08**, fewer-ops-is-faster
+**19/36**; mixed +0.06, 20/36; full +0.11, 22/36; ascii −0.04, 12/36; runs
++0.43, 32/36. The 09-11 refutation replicates in every random regime. Only
+on `runs`, where the dispatch branches predict, does an op count track time.
+
+**The new model** ([F] "FIT"; LOSO = leave-one-SET-out, refitted twelve
+times):
+
+| regime | all 7 arms r (LOSO) | ρ | kit 3 policies r | kit pairwise (LOSO) | all-arm pairwise |
+|---|---:|---:|---:|---:|---:|
+| member | **+0.98** (+0.98) | +0.96 | +0.90 | **30/36** (30/36) | 236/252 |
+| mixed | +0.98 (+0.98) | +0.97 | +0.88 | 27/36 (27/36) | 232/252 |
+| full | +0.98 (+0.98) | +0.98 | +0.92 | 29/36 (29/36) | 231/252 |
+| ascii | +0.97 (+0.97) | +0.94 | +0.96 | 6/24 (14/24) | 191/216 |
+| runs | +0.96 (+0.96) | +0.96 | +0.80 | 29/36 (28/36) | 236/252 |
+
+Without `^C` (11 sets, refitted: 2.088 + 4.081·mis + 0.170·br − 0.075·ld +
+0.071·dep): member all-arm r +0.98, kit r +0.89, kit pairwise 27/33; every
+other r within 0.01 of the 12-set fit. **Held out — [T2]'s coefficients, unrefitted, on
+the 09-11 run [T]** ([F] "TRANSFER"): member kit pairwise **30/36** (the old
+term: 17/36), all-arm r +0.92 (+0.97 without `^C`); mixed 29/36, r +0.98;
+full 31/36, r +0.98; ascii 10/24, r +0.97.
+
+Four readings:
+
+1. **Yes: the refitted model predicts measured time where λ·Σops did not.**
+   Member-subject kit orderings go from a coin toss (17/36 on [T], 19/36 on
+   [T2]) to 30/36 on both, and r from −0.00 to +0.90 over the kit's
+   policies (+0.98 over all arms), out of sample on a run it never saw.
+2. **Per-probe time is branch MISPREDICTS**: 3.9 ns each, plus 0.19 ns per
+   predicted branch. Loads are free to within ±0.1 ns in this
+   throughput-bound loop (each table arm's load chain is fixed, so those two
+   coefficients are not separately determined). §1.2 reading 3 — the
+   dispatch tree's data-dependent branches are the cost — is now a fitted
+   model, not an inference.
+3. **Its limits, stated.** (a) The `ascii` kit ordering (6/24): there the
+   three policies sit within 0.5 ns of each other and several at the floor;
+   the model has nothing to resolve. (b) It does not resolve one TABLE
+   against another: `page3w` measures 1.20-1.37× `page2w` on member
+   subjects (0.35-0.63 ns), the model gives it one extra dependent load,
+   0.095 ns. It ranks trees against tables, not tables against tables.
+4. **CT-2's additivity question is answered "no", and §1.7.4 shows it no
+   longer matters.** A probe's mispredicts depend on the branch biases along
+   its whole path, a property of the tree's shape, not of one section; an
+   exact DP carrying this T would need tree-shape state.
+
+**`^C` [r1 MEAS-2] — closed.** [C2]: 41 rounds, max/min ≤ 1.13 on every arm
+(`bitmap1` 1.78-1.80, λ0 10.95-11.12), medians within 3% of [T2]'s 11-round
+cell. The 09-11 bimodality (`bitmap1` 1.60 vs 13.30) did not recur in 52
+rounds over two sessions: an environmental effect on that one run. Every
+reading above holds with and without `^C`.
+
+#### 1.7.2 Whole-set tables vs the kit, per regime (the +2 rate question)
+
+Geomean over the twelve sets of each arm's median ns/char, as a fraction of
+the flat bsearch `refbs` ([F] "geo/refbs" rows; [T2]):
+
+| regime | `bitmap1` | `page2w` | `page3w` | λ0 | λ16 | λ256 |
+|---|---:|---:|---:|---:|---:|---:|
+| member | 0.116 | 0.115 | **0.145** | 0.417 | 0.457 | 0.383 |
+| mixed | 0.147 | 0.145 | 0.171 | 0.453 | 0.506 | 0.434 |
+| full | 0.160 | 0.159 | 0.183 | 0.421 | 0.465 | 0.402 |
+| ascii | 0.211 | 0.211 | 0.236 | 0.283 | 0.284 | 0.290 |
+| runs | 0.163 | 0.162 | 0.209 | 0.390 | 0.381 | 0.307 |
+
+The harness floor is 1.69 ns (the fastest cell in [T2]): the per-probe
+indirect call through the arm table, the loop and the bound test, paid by
+every arm. `bitmap1` and `page2w` sit on it.
+
+1. **`page3w` comes close to `bitmap1`**: on member subjects 1.20-1.31×
+   `bitmap1` (2.13-2.32 vs 1.77-1.86 ns; 0.44-0.63 ns above the floor),
+   0.99-1.54× across the other regimes (the 1.54 is `runs` `^L`). It is **1.26-4.50×
+   faster than the FASTEST kit policy on member subjects** and faster in
+   **57 of 60** set×regime cells; one ties at the floor (`ascii`
+   `Unknown`, every arm but `refbs` at 1.77) and two go to the kit, both within 0.25 ns
+   (`ascii` `Cn` λ256 1.77 vs 1.92; `runs` `^L` λ256 2.49 vs 2.74) ([F]
+   "best-kit/page3w" column).
+2. **`page2w` times at `bitmap1` in every cell** (member 1.69-1.79 vs
+   1.77-1.86) and is 2.9-3.8× smaller (8,666-37,420 vs 25,770-139,324 B;
+   [N] `whole_k53.tsv` `page2w_obj`; `bitmap1` = its exact rodata + 60 B).
+   `bitmap1` is dominated on both axes on all twelve sets.
+3. **The +2 rate (§1.4 point 3), restated from measurement.** `page3w`
+   costs 1.01-1.23× the kit's size-minimal bytes (`K`, λ = 4, [S]
+   `sweep_k53.tsv` `total`); `page2w` costs 1.9-7.2× `page3w`'s bytes for
+   1.20-1.37× member speed. Against TODAY's pinned middle (kit λ16), `page3w`
+   is **3.2× faster** on member subjects (geomean 7.04 → 2.23 ns) for
+   **+11% bytes** (4,735 → 5,250 B geomean) ([F] "row cost"). So +2's
+   content is `page2w`, not `bitmap1`: the same speed at a third of the
+   bytes. The +2 step over the middle is real but small — 0.35-0.63 ns a
+   probe in a loop whose floor is 1.69.
+4. **`runs`** (text-like): the kit closes but does not catch up (best kit
+   policy 0.91-1.87× `page3w`, geomean λ256 0.307 vs `page3w` 0.209 of
+   `refbs`). λ256 buys 21% over λ0 here (0.307 vs 0.390), the one regime
+   where the kit's policies separate by more than noise.
+
+#### 1.7.3 [OPT-CLSPACK]: bitmap vs kit vs shared atom table ([B2])
+
+Median ns/call over 11 rounds [min-max]; `n_atoms` 5 / 16 / 29:
+
+| N | `refbs` | `bitmap` | `kit` (λ16) | `atom` |
+|---:|---:|---:|---:|---:|
+| 4 | 12.22 | 2.070 [2.069-2.084] | 9.69 [9.68-9.74] | 2.070 [2.069-2.077] |
+| 16 | 17.03 | 2.070 [2.069-2.076] | 11.50 [11.49-11.52] | 2.070 [2.068-2.074] |
+| 32 | 17.68 | 2.070 [2.069-2.090] | 12.18 [12.17-12.19] | 2.070 [2.069-2.093] |
+
+1. **`atom` vs `bitmap`: a tie at the harness floor**, identical medians at
+   every N and overlapping ranges. The loop is throughput-bound (independent
+   iterations), so it cannot see the atom's second dependent load; STEP 0's
+   24% atom-over-bit-array win (a latency-shaped VM hand twin,
+   `form_char_step0.md`) is neither reproduced nor refuted.
+2. **`kit` reads 4.7-5.9× slower, and the number is NOT the kit's test.**
+   `bench_bytes.py` reaches site i's kit test through a per-site FUNCTION
+   POINTER (`kit_fns[site]`), a data-dependent indirect call on random sites;
+   `bitmap` and `atom` reach site i by indexing DATA (`bm_tabs[site]`,
+   `atom_masks[site]`), with no control transfer. The gap is that dispatch
+   difference plus the kit's own branches on random bytes, and this data
+   cannot separate them. **Fixed shape, this lane:** `bench_bytes.py
+   --dispatch switch` gives every arm the same `switch (site)` with site
+   i's test inlined in case i — the shape a VM with one instruction per
+   class site has. Mac smoke: answers only, 24 rows, 0 mismatches; not
+   timed (Darwin timing is never citable).
+3. **Bytes** (box-independent; first N classes of `byteclasses.tsv`, the
+   same N [B2] timed): `bitmap` 32N rodata = 128 / 512 / 1,024 B; `atom`
+   256 + 8N = 288 / 384 / 512 B; `kit` 0 rodata, `.text` 128 / 596 / 1,276 B
+   ([S] `sweep_byteclasses.tsv` λ16 `total`, arm64 model; the two table arms'
+   per-site test code is not counted). `atom` beats `bitmap` above N = 10.7
+   (the row's own "~10"), and beats the kit's `.text` at N = 16 and 32.
+   D129 Q5's premise that the kit's byte tier answers the size question
+   holds for `.rodata` only; counted as `.text + .rodata`, the atom table is
+   the smaller form at N ≥ 16 on this population.
+
+**Recommendation: keep [OPT-CLSPACK] open, as a SIZE-PRIORITIZED row, and
+settle its default status with one re-run.** Frank's own filing rule ("if it
+impacts performance, limit to scenarios where we are prioritizing space")
+decides it once the time comparison that matters (atom vs the kit, since S2
+replaces bitmaps with the kit) exists. Proposed first-match rows for a byte
+class site, stated now so the re-run's outcome picks one without new
+argument: at `−2`/`−1`, (1) `atom` if the artifact has ≥ 11 byte-class sites
+and ≤ 64 atoms, (2) the kit; at `0`..`+2`, (1) `atom` under the same
+condition **only if** the `--dispatch switch` re-run times it ≤ the kit at
+N = 16 and 32 beyond the round range, (2) the kit. The re-run is `make -C
+studies/cls_tree_study bench2-bytes CC=gcc` with `--dispatch switch` added
+(about a minute of box time; §7 b).
+
+#### 1.7.4 The dial: the DP against a first-match table (Frank's option-2 trigger)
+
+[F] "DIAL" evaluates the DP's objective `min bytes + λ·T̂` over every
+candidate — the kit at λ = 4/0/16/256, `page3w`, `page2w`, `bitmap1` — with
+T̂ the fitted member-subject time, on the twelve timed sets:
+
+| λ (bytes per ns) | 0 | 250 | 500 … 100,000 | 1,000,000 |
+|---|---|---|---|---|
+| DP picks | `K` ×12 | `K` ×6, `page3w` ×6 | **`page3w` ×12** | `page3w` ×10, `page2w` ×2 |
+
+and the first-match rows of §1.7.5 pick `K` ×12 at `−2`/`−1`, `page3w` ×12
+at `0`/`+1`, `page2w` ×12 at `+2`. So:
+
+- **The DP reproduces the table at `−2` and `0`, and never picks a
+  multi-section kit sectioning at any λ > 4.** λ256 is DOMINATED by
+  `page3w` on both axes on all twelve sets (1.17-1.63× its bytes, slower in
+  every member cell); λ16 is larger than `K` and the slowest kit policy on
+  member subjects in 8 of 12 sets. λ256 does buy time over λ0 (up to 31% on
+  member subjects, 21% geomean on `runs`), but `page3w` buys 1.26-4.50× for
+  1-23% more bytes than `K`, so a price of time high enough to pay for a
+  λ256 sectioning pays for `page3w` first.
+- **At `+2` the DP is worse than the table.** The model does not resolve
+  `page2w` against `page3w` (§1.7.1 reading 3b), so even at 10⁶ B/ns it
+  takes `page2w` on 2 of 12 sets; the first-match row, written on the
+  MEASURED ordering, takes it on 12.
+- **So on these numbers the DP with a time term is no better than a greedy
+  first-match rule, and worse at one position. That is Frank's option-2
+  trigger, stated.** The DP keeps one job: the optimizer INSIDE the `K`
+  row, a size minimizer over contiguous partitions whose byte model is
+  verified to ~3% ([S] §5.2). CT-2's per-probe model stays too, as the
+  RUBRIC's instrument for arguing placements (it is what shows λ > 4 buys
+  nothing), not as a term the compiler evaluates.
+
+**Row cost** ([F] "row cost", geomean over the twelve; `K` is untimed at
+λ = 4 and read at λ0's time):
+
+| row | bytes | member | mixed | full | ascii | runs |
+|---|---:|---:|---:|---:|---:|---:|
+| today's pinned `0`/`−1` (kit λ16) | 4,735 | 7.04 | 8.03 | 6.65 | 3.30 | 4.15 |
+| today's pinned `+2` (kit λ256) | 6,767 | 5.89 | 6.89 | 5.76 | 3.37 | 3.34 |
+| proposed `−2`/`−1` (`K`) | 4,493 | 6.41 | 7.18 | 6.03 | 3.29 | 4.25 |
+| proposed `0`/`+1` (`page3w`) | 5,250 | **2.23** | 2.70 | 2.62 | 2.74 | 2.27 |
+| proposed `+2` (`page2w`) | 27,948 | 1.77 | 2.30 | 2.27 | 2.45 | 1.77 |
+
+**Population-wide (312 `uprops` sets, bytes only — no set outside K53 was
+timed; [F] "POPULATION", `K` = kit λ0, the size end `sweep_uprops.tsv`
+has):** with the 16-section gate the middle row sends **9/312** sets to
+`page3w` and totals 85,381 B (−0.3% vs the kit λ16 total of 85,613 B); the
+`+2` row totals 219,973 B (2.57×). Without the gate (any `K` with ≥ 2
+sections) it would send 52 sets and total +0.6%; the gate costs no bytes
+either way, and it exists because below 16 sections nothing is timed.
+
+#### 1.7.5 The λ re-proposal — PROPOSED
+
+The one diff to `docs/design/opt_dial_design.md` §4 and `docs/spec/tuning.md`'s
+λ row is verbatim in `docs/dev/lanes/clsfit_report.md` (it applies cleanly to
+`main` at `608bd094`; NOT applied here). Its table:
+
+| position | the class matcher — first match wins | kit λ |
+|---|---|---:|
+| `−2` | the smaller of {`K`, `P3`} | 4 |
+| `−1` | = `−2` | 4 |
+| `0` | (1) `P3` if `K` has ≥ 16 sections and bytes(`P3`) ≤ 1.26 × bytes(`K`); (2) `K` | 4 |
+| `+1` | = `0` | 4 |
+| `+2` | (1) where `0` chose `P3`: the smaller of {`P2`, `B1`}; (2) as `0` | 4 |
+
+**Three distinct programs, not five** — the class row collapses the way
+bench O-74 found `--tune` collapsing per route. What it changes in this
+note, if ruled: CT-2's DP keeps its exact size search and drops its speed
+term (§1.7.4); CT-3's "five pinned λ" become one kit constant and this
+table; CT-1's whole-set candidates are rows, not DP sections (§1.3 [r1
+ALT-3]'s one-section-alternative entry is exactly a row's argmin).
+Placements Frank may move (D103 addendum, "placement is art"): `z_mid`
+(1.26; at 1.20 six of the twelve fall back to `K`), the 16-section gate (a
+placement at the bottom of the timed range; `K` has 16-22 sections at λ = 4
+on the twelve), and whether `+1` should take `P2` where it is ≤ 2× `P3`
+(`L`, `Xan`).
 
 ---
 
@@ -632,6 +894,15 @@ Pre-1.0, these are deliberate and permitted (memory
   population (no byte class is a single contiguous run).
 
 ### (b) The timing arm — ubuntubudu only, relayed to the pcrecdev2 executor
+
+**b1, the CLSPACK arm and the isolated `^C` re-run are DONE** (pcrec-bench
+`scratch/clstree-s0` `81f0982` + `d6e0106`, O-76; read in §1.7). **One
+re-run is OWED**, about a minute of box time: the CLSPACK arm with every
+arm on the same dispatch shape (§1.7.3 reading 2),
+`CC=gcc gnutimeout 600 python3 studies/cls_tree_study/bench_bytes.py
+--ns 4,16,32 --lam 16 --rounds 11 --dispatch switch --out
+bench2_bytes_switch.tsv` (expected 132 data rows; its header line names
+`dispatch=switch`). The brief below is the record of what ran.
 
 **b1 is ready to run today, and lane clss0 (S0) adds two more items that ride
 the SAME executor session: the [OPT-CLSPACK] timing arm (D129 item 5,

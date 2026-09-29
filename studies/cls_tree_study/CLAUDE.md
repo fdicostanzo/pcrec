@@ -81,6 +81,18 @@ nothing is linked into pcrec, `make test` does not run it. It READS
   note's §3 numbers (`results/automaton_k53.tsv`).
 - `timefit.py` — analysis only: does the DP's `model_ops` predict the
   ubuntubudu ns/char? (No: `results/timefit_20260928.txt`, design note §1.2.)
+- `timefit_s0.py` — [CLS-TREE] S0 (lane clsfit, 2026-09-29), analysis only:
+  CT-2's PER-PROBE time model fitted on the ubuntubudu `bench2` run. It
+  replays every timed arm probe by probe over `bench.py`'s own subject
+  stream (the xorshift generator reproduced bit for bit and VERIFIED
+  against the harness's `hits`+`chk` columns, all 2^20 probes, 60/60
+  streams — a replay of a different stream would fit nothing), counts
+  branches, 2-bit-counter mispredicts, loads and dependent loads, and
+  fits one OLS over every arm; reports the old `model_ops` term on the new
+  run, the fit per regime (in-sample, leave-one-set-out, and unrefitted on
+  the 09-11 run), the whole-set/kit tables, the isolated `^C` re-run, the
+  DP-vs-first-match dial read, and the 312-set population rows. Output
+  `results/timefit_s0_20260929.txt`; design note §1.7.
 - `verify_whole.py` — exhaustive (all 1,114,112 code points) check of the two
   whole-set forms against `emit.reference`, plus their exact rodata; writes
   `results/whole_<population>.tsv`.
@@ -116,13 +128,28 @@ nothing is linked into pcrec, `make test` does not run it. It READS
   Gated the same way as `bench.py` (lane clsgate, 2026-09-29): every N's
   arms built before any timing starts, `loadgate.wait_for_quiet` polled
   immediately before each N's run.
+  `--dispatch switch` (lane clsfit, 2026-09-29): the default `table`
+  shape (what the committed ubuntubudu run used) reaches the kit's
+  per-site test through a FUNCTION POINTER but bitmap/atom through DATA,
+  so only the kit pays a mispredicted indirect branch per random site and
+  its measured 4.7-5.9x is not its test's (design note §1.7.3); `switch`
+  gives every arm the same `switch (site)` with the test inlined per case.
+  Its ubuntubudu re-run is owed (design note §7 b).
 - `Makefile` — targets named in README.md. `CC` defaults to `gcc-16`.
   `bench2` is the design note's owed ubuntubudu arm (`--whole`, five
   regimes, `results/bench2.tsv`). `bench2-bytes` rides the same executor
   session for the CLSPACK arm above. `whole-byteclasses`/`asm-byteclasses`
   are the byte-tier a1/a5 targets, reading the committed
   `results/byteclasses.tsv` (no `build/pcrec` rebuild needed).
-- `results/` — committed TSVs (the measurements the memo cites).
+- `results/` — committed TSVs (the measurements the memo cites). The
+  ubuntubudu S0 files are `bench2_ubuntubudu_20260929.tsv`,
+  `bench2_bytes_ubuntubudu_20260929.tsv` and
+  `capC_isolated_ubuntubudu_20260929.tsv`, each copied verbatim from
+  pcrec-bench `scratch/clstree-s0` under a `# provenance:` first line
+  naming the bench commit (`81f0982` / `81f0982` / `d6e0106`). They are
+  NOT the `make bench2`/`bench2-bytes` output names on purpose: a re-run
+  on any box writes `results/bench2*.tsv` and must not overwrite the cited
+  Linux numbers.
 - `build/` — gitignored scratch (generated `.c`/`.o`/binaries/interval files).
 
 ## Two invariants a future editor must not break

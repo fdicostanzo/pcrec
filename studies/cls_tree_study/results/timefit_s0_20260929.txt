@@ -1,0 +1,595 @@
+subject streams verified: 60/60 (set, regime) streams reproduce the harness's hits+chk over all 2^20 probes
+
+## ISOLATED ^C/member re-run (results/capC_isolated_ubuntubudu_20260929.tsv)
+refbs    rounds 41 median 22.28 min 22.22 max 23.69 max/min 1.07 | bench2 median 21.88
+bitmap1  rounds 41 median 1.78 min 1.78 max 1.80 max/min 1.01 | bench2 median 1.78
+lam0     rounds 41 median 11.02 min 10.95 max 11.12 max/min 1.02 | bench2 median 11.30
+lam16    rounds 41 median 12.28 min 12.18 max 13.74 max/min 1.13 | bench2 median 12.25
+lam256   rounds 41 median 9.77 min 9.75 max 9.87 max/min 1.01 | bench2 median 9.80
+
+## OLD term (model_ops, the pinned λ's currency) on bench2 (2026-09-29)
+member  r(ns,ops)=+0.08 rho=+0.20 fewer-ops-is-faster 19/36
+mixed   r(ns,ops)=+0.06 rho=+0.17 fewer-ops-is-faster 20/36
+full    r(ns,ops)=+0.11 rho=+0.23 fewer-ops-is-faster 22/36
+ascii   r(ns,ops)=-0.04 rho=-0.06 fewer-ops-is-faster 12/36
+runs    r(ns,ops)=+0.43 rho=+0.54 fewer-ops-is-faster 32/36
+
+## OLD term (model_ops, the pinned λ's currency) on bench2 without ^C
+member  r(ns,ops)=+0.07 rho=+0.17 fewer-ops-is-faster 17/33
+mixed   r(ns,ops)=+0.05 rho=+0.15 fewer-ops-is-faster 18/33
+full    r(ns,ops)=+0.10 rho=+0.22 fewer-ops-is-faster 20/33
+ascii   r(ns,ops)=-0.04 rho=-0.09 fewer-ops-is-faster 11/33
+runs    r(ns,ops)=+0.41 rho=+0.53 fewer-ops-is-faster 29/33
+
+## replayed features, first 16384 probes per regime
+set	regime	arm	mispredicts	branches	loads	deploads	measured_ns
+C	member	refbs	1.147	27.179	18.078	0.000	11.48
+C	member	bitmap1	0.000	1.000	1.000	0.000	1.79
+C	member	lam0	0.199	9.377	0.287	0.009	3.52
+C	member	lam16	0.435	10.038	0.255	0.007	4.80
+C	member	lam256	0.332	8.164	0.092	0.041	2.70
+C	member	page2w	0.000	1.000	2.000	1.000	1.79
+C	member	page3w	0.000	1.000	3.000	2.000	2.14
+C	mixed	refbs	1.443	27.193	17.964	0.000	13.01
+C	mixed	bitmap1	0.000	1.000	1.000	0.000	1.79
+C	mixed	lam0	0.312	9.375	0.352	0.018	5.13
+C	mixed	lam16	0.579	10.026	0.326	0.013	6.42
+C	mixed	lam256	0.450	8.115	0.120	0.051	4.15
+C	mixed	page2w	0.000	1.000	2.000	1.000	1.78
+C	mixed	page3w	0.000	1.000	3.000	2.000	2.13
+C	full	refbs	1.727	27.183	17.841	0.000	14.13
+C	full	bitmap1	0.000	1.000	1.000	0.000	1.78
+C	full	lam0	0.422	9.335	0.400	0.028	5.85
+C	full	lam16	0.705	9.973	0.381	0.019	7.20
+C	full	lam256	0.561	8.070	0.145	0.059	4.95
+C	full	page2w	0.000	1.000	2.000	1.000	1.78
+C	full	page3w	0.000	1.000	3.000	2.000	2.13
+C	ascii	refbs	2.057	19.725	9.994	0.000	10.86
+C	ascii	bitmap1	0.000	1.000	1.000	0.000	1.77
+C	ascii	lam0	0.317	6.744	0.000	0.000	4.54
+C	ascii	lam16	0.000	6.000	2.000	1.000	2.95
+C	ascii	lam256	0.000	6.000	1.000	0.000	2.96
+C	ascii	page2w	0.000	1.000	2.000	1.000	1.77
+C	ascii	page3w	0.000	1.000	3.000	2.000	2.13
+C	runs	refbs	1.119	26.992	17.957	0.000	9.26
+C	runs	bitmap1	0.000	1.000	1.000	0.000	1.78
+C	runs	lam0	0.146	9.363	0.273	0.008	3.79
+C	runs	lam16	0.130	10.013	0.215	0.006	3.68
+C	runs	lam256	0.050	8.132	0.093	0.042	2.73
+C	runs	page2w	0.000	1.000	2.000	1.000	1.78
+C	runs	page3w	0.000	1.000	3.000	2.000	2.14
+Cn	member	refbs	1.199	21.406	14.220	0.000	9.46
+Cn	member	bitmap1	0.000	1.000	1.000	0.000	1.84
+Cn	member	lam0	0.208	9.401	0.312	0.012	4.90
+Cn	member	lam16	2.121	17.125	5.160	0.007	7.14
+Cn	member	lam256	0.169	8.042	0.090	0.039	3.38
+Cn	member	page2w	0.000	1.000	2.000	1.000	1.73
+Cn	member	page3w	0.000	1.000	3.000	2.000	2.32
+Cn	mixed	refbs	1.507	22.114	14.505	0.000	12.64
+Cn	mixed	bitmap1	0.000	1.000	1.000	0.000	1.87
+Cn	mixed	lam0	0.309	9.332	0.348	0.019	5.99
+Cn	mixed	lam16	2.214	17.071	5.142	0.011	9.74
+Cn	mixed	lam256	0.471	8.093	0.120	0.051	5.32
+Cn	mixed	page2w	0.000	1.000	2.000	1.000	1.78
+Cn	mixed	page3w	0.000	1.000	2.999	2.000	2.32
+Cn	full	refbs	1.814	22.846	14.807	0.000	14.84
+Cn	full	bitmap1	0.001	1.000	0.999	0.000	1.88
+Cn	full	lam0	0.404	9.266	0.385	0.028	6.62
+Cn	full	lam16	2.292	17.012	5.124	0.016	11.46
+Cn	full	lam256	0.750	8.153	0.144	0.060	6.79
+Cn	full	page2w	0.001	1.000	1.999	0.999	1.79
+Cn	full	page3w	0.001	1.000	2.998	1.999	2.32
+Cn	ascii	refbs	1.000	19.000	9.000	0.000	7.53
+Cn	ascii	bitmap1	0.000	1.000	0.000	0.000	1.77
+Cn	ascii	lam0	0.000	1.000	0.000	0.000	2.07
+Cn	ascii	lam16	0.000	1.000	0.000	0.000	2.07
+Cn	ascii	lam256	0.000	1.000	0.000	0.000	1.77
+Cn	ascii	page2w	0.000	1.000	0.000	0.000	1.77
+Cn	ascii	page3w	0.000	1.000	0.000	0.000	1.92
+Cn	runs	refbs	1.159	21.448	14.254	0.000	8.33
+Cn	runs	bitmap1	0.000	1.000	1.000	0.000	1.78
+Cn	runs	lam0	0.110	9.314	0.241	0.009	4.63
+Cn	runs	lam16	2.006	17.214	5.195	0.006	6.57
+Cn	runs	lam256	0.033	8.061	0.070	0.031	2.85
+Cn	runs	page2w	0.000	1.000	2.000	1.000	1.71
+Cn	runs	page3w	0.000	1.000	3.000	2.000	2.32
+L	member	refbs	3.782	24.113	15.275	0.000	20.88
+L	member	bitmap1	0.000	1.000	1.000	0.000	1.77
+L	member	lam0	1.215	9.108	1.059	0.099	10.13
+L	member	lam16	1.727	9.674	1.061	0.038	11.06
+L	member	lam256	1.360	7.983	0.329	0.116	10.25
+L	member	page2w	0.000	1.000	2.000	1.000	1.78
+L	member	page3w	0.000	1.000	3.000	2.000	2.32
+L	mixed	refbs	2.719	26.955	17.189	0.000	18.03
+L	mixed	bitmap1	0.466	1.000	0.593	0.000	5.09
+L	mixed	lam0	1.231	5.935	0.715	0.059	10.26
+L	mixed	lam16	1.536	6.315	0.738	0.028	10.99
+L	mixed	lam256	1.291	5.138	0.224	0.081	10.12
+L	mixed	page2w	0.466	1.000	1.186	0.593	5.08
+L	mixed	page3w	0.466	1.000	1.779	1.186	5.31
+L	full	refbs	1.632	29.838	19.132	0.000	12.78
+L	full	bitmap1	0.211	1.000	0.180	0.000	3.34
+L	full	lam0	0.520	2.674	0.345	0.022	5.38
+L	full	lam16	0.616	2.849	0.368	0.014	5.71
+L	full	lam256	0.485	2.243	0.108	0.041	5.39
+L	full	page2w	0.211	1.000	0.360	0.180	3.35
+L	full	page3w	0.211	1.000	0.540	0.360	3.31
+L	ascii	refbs	1.173	18.672	9.286	0.000	13.80
+L	ascii	bitmap1	0.504	1.000	0.491	0.000	5.40
+L	ascii	lam0	0.504	3.454	0.981	0.491	5.84
+L	ascii	lam16	0.504	3.454	0.491	0.000	5.88
+L	ascii	lam256	0.504	3.454	0.491	0.000	6.21
+L	ascii	page2w	0.504	1.000	0.981	0.491	5.44
+L	ascii	page3w	0.504	1.000	1.472	0.981	5.60
+L	runs	refbs	3.765	24.302	15.367	0.000	12.02
+L	runs	bitmap1	0.001	1.000	1.000	0.000	1.78
+L	runs	lam0	0.470	9.264	1.138	0.099	4.73
+L	runs	lam16	0.579	9.812	1.135	0.038	4.59
+L	runs	lam256	0.193	8.003	0.345	0.123	4.34
+L	runs	page2w	0.001	1.000	1.999	1.000	1.78
+L	runs	page3w	0.001	1.000	2.999	1.999	2.32
+Unknown(Zzzz)	member	refbs	1.913	28.988	19.034	0.000	12.29
+Unknown(Zzzz)	member	bitmap1	0.000	1.000	1.000	0.000	1.86
+Unknown(Zzzz)	member	lam0	0.170	9.305	0.241	0.009	4.25
+Unknown(Zzzz)	member	lam16	0.411	9.966	0.187	0.006	5.57
+Unknown(Zzzz)	member	lam256	0.327	8.203	0.082	0.037	4.78
+Unknown(Zzzz)	member	page2w	0.000	1.000	2.000	1.000	1.78
+Unknown(Zzzz)	member	page3w	0.000	1.000	3.000	2.000	2.32
+Unknown(Zzzz)	mixed	refbs	2.111	28.803	18.806	0.000	13.79
+Unknown(Zzzz)	mixed	bitmap1	0.000	1.000	1.000	0.000	1.87
+Unknown(Zzzz)	mixed	lam0	0.309	9.326	0.325	0.017	5.44
+Unknown(Zzzz)	mixed	lam16	0.575	9.968	0.279	0.011	6.85
+Unknown(Zzzz)	mixed	lam256	0.442	8.064	0.119	0.052	5.48
+Unknown(Zzzz)	mixed	page2w	0.000	1.000	2.000	1.000	1.79
+Unknown(Zzzz)	mixed	page3w	0.000	1.000	2.999	2.000	2.32
+Unknown(Zzzz)	full	refbs	2.281	28.628	18.593	0.000	14.99
+Unknown(Zzzz)	full	bitmap1	0.001	1.000	0.999	0.000	1.87
+Unknown(Zzzz)	full	lam0	0.419	9.298	0.385	0.028	6.11
+Unknown(Zzzz)	full	lam16	0.706	9.893	0.329	0.017	7.72
+Unknown(Zzzz)	full	lam256	0.545	7.937	0.144	0.060	6.05
+Unknown(Zzzz)	full	page2w	0.001	1.000	1.999	0.999	1.80
+Unknown(Zzzz)	full	page3w	0.001	1.000	2.998	1.999	2.33
+Unknown(Zzzz)	ascii	refbs	1.000	19.000	9.000	0.000	7.53
+Unknown(Zzzz)	ascii	bitmap1	0.000	1.000	0.000	0.000	1.77
+Unknown(Zzzz)	ascii	lam0	0.000	1.000	0.000	0.000	1.77
+Unknown(Zzzz)	ascii	lam16	0.000	1.000	0.000	0.000	1.77
+Unknown(Zzzz)	ascii	lam256	0.000	1.000	0.000	0.000	1.77
+Unknown(Zzzz)	ascii	page2w	0.000	1.000	0.000	0.000	1.77
+Unknown(Zzzz)	ascii	page3w	0.000	1.000	0.000	0.000	1.77
+Unknown(Zzzz)	runs	refbs	1.854	29.057	19.093	0.000	9.85
+Unknown(Zzzz)	runs	bitmap1	0.000	1.000	1.000	0.000	1.78
+Unknown(Zzzz)	runs	lam0	0.103	9.255	0.191	0.006	3.71
+Unknown(Zzzz)	runs	lam16	0.101	9.918	0.131	0.003	4.09
+Unknown(Zzzz)	runs	lam256	0.050	8.213	0.066	0.031	2.98
+Unknown(Zzzz)	runs	page2w	0.000	1.000	2.000	1.000	1.79
+Unknown(Zzzz)	runs	page3w	0.000	1.000	3.000	2.000	2.33
+Xan	member	refbs	3.433	24.168	15.300	0.000	21.57
+Xan	member	bitmap1	0.000	1.000	1.000	0.000	1.78
+Xan	member	lam0	1.432	9.350	1.191	0.108	10.53
+Xan	member	lam16	1.481	8.733	0.284	0.110	10.76
+Xan	member	lam256	0.830	8.099	1.328	0.608	7.22
+Xan	member	page2w	0.000	1.000	2.000	1.000	1.69
+Xan	member	page3w	0.000	1.000	3.000	2.000	2.32
+Xan	mixed	refbs	2.494	26.992	17.214	0.000	19.11
+Xan	mixed	bitmap1	0.466	1.000	0.593	0.000	5.07
+Xan	mixed	lam0	1.373	6.127	0.800	0.065	10.60
+Xan	mixed	lam16	1.359	5.569	0.186	0.073	10.33
+Xan	mixed	lam256	0.971	5.199	0.784	0.357	8.51
+Xan	mixed	page2w	0.466	1.000	1.186	0.593	4.90
+Xan	mixed	page3w	0.466	1.000	1.779	1.186	5.21
+Xan	full	refbs	1.564	29.852	19.143	0.000	13.83
+Xan	full	bitmap1	0.211	1.000	0.180	0.000	3.35
+Xan	full	lam0	0.586	2.834	0.403	0.023	5.71
+Xan	full	lam16	0.514	2.339	0.086	0.037	5.36
+Xan	full	lam256	0.394	2.247	0.219	0.095	4.75
+Xan	full	page2w	0.211	1.000	0.360	0.180	3.31
+Xan	full	page3w	0.211	1.000	0.540	0.360	3.30
+Xan	ascii	refbs	2.088	19.584	9.971	0.000	16.50
+Xan	ascii	bitmap1	0.446	1.000	0.621	0.000	4.85
+Xan	ascii	lam0	0.446	4.107	1.243	0.621	5.18
+Xan	ascii	lam16	0.446	4.107	0.621	0.000	5.72
+Xan	ascii	lam256	0.446	4.107	0.621	0.000	5.57
+Xan	ascii	page2w	0.446	1.000	1.243	0.621	4.65
+Xan	ascii	page3w	0.446	1.000	1.864	1.243	4.99
+Xan	runs	refbs	3.324	24.524	15.535	0.000	12.75
+Xan	runs	bitmap1	0.002	1.000	0.998	0.000	1.79
+Xan	runs	lam0	0.551	9.192	1.057	0.099	4.89
+Xan	runs	lam16	0.214	8.753	0.261	0.102	4.05
+Xan	runs	lam256	0.129	8.151	1.360	0.630	3.98
+Xan	runs	page2w	0.002	1.000	1.997	0.998	1.69
+Xan	runs	page3w	0.002	1.000	2.995	1.997	2.32
+Xwd	member	refbs	4.015	24.005	15.176	0.000	22.56
+Xwd	member	bitmap1	0.000	1.000	1.000	0.000	1.78
+Xwd	member	lam0	1.283	9.046	1.030	0.113	9.92
+Xwd	member	lam16	1.527	8.982	0.259	0.084	11.36
+Xwd	member	lam256	1.436	8.370	0.338	0.105	10.48
+Xwd	member	page2w	0.000	1.000	2.000	1.000	1.78
+Xwd	member	page3w	0.000	1.000	3.000	2.000	2.32
+Xwd	mixed	refbs	3.163	26.664	16.881	0.000	21.18
+Xwd	mixed	bitmap1	0.094	1.000	0.913	0.000	2.48
+Xwd	mixed	lam0	1.126	8.521	0.717	0.067	9.79
+Xwd	mixed	lam16	1.233	8.900	0.174	0.061	9.78
+Xwd	mixed	lam256	1.243	7.921	0.212	0.067	10.00
+Xwd	mixed	page2w	0.094	1.000	1.825	0.913	2.49
+Xwd	mixed	page3w	0.094	1.000	2.738	1.825	2.91
+Xwd	full	refbs	2.282	29.263	18.537	0.000	16.30
+Xwd	full	bitmap1	0.208	1.000	0.820	0.000	3.10
+Xwd	full	lam0	0.608	7.916	0.384	0.024	6.78
+Xwd	full	lam16	0.578	8.770	0.083	0.034	6.54
+Xwd	full	lam256	0.596	7.425	0.080	0.024	6.73
+Xwd	full	page2w	0.208	1.000	1.640	0.820	3.12
+Xwd	full	page3w	0.208	1.000	2.461	1.640	3.48
+Xwd	ascii	refbs	2.458	20.661	10.626	0.000	17.13
+Xwd	ascii	bitmap1	0.446	1.000	0.621	0.000	4.84
+Xwd	ascii	lam0	0.446	4.107	1.243	0.621	5.28
+Xwd	ascii	lam16	0.446	4.728	0.621	0.000	5.54
+Xwd	ascii	lam256	0.446	4.107	0.621	0.000	5.75
+Xwd	ascii	page2w	0.446	1.000	1.243	0.621	4.82
+Xwd	ascii	page3w	0.446	1.000	1.864	1.243	4.97
+Xwd	runs	refbs	4.039	24.329	15.366	0.000	13.18
+Xwd	runs	bitmap1	0.000	1.000	1.000	0.000	1.78
+Xwd	runs	lam0	0.477	8.905	0.926	0.109	4.91
+Xwd	runs	lam16	0.210	9.015	0.262	0.084	4.23
+Xwd	runs	lam256	0.203	8.357	0.320	0.097	4.29
+Xwd	runs	page2w	0.000	1.000	2.000	1.000	1.79
+Xwd	runs	page3w	0.000	1.000	2.999	2.000	2.32
+^C	member	refbs	4.366	25.021	15.787	0.000	21.88
+^C	member	bitmap1	0.000	1.000	1.000	0.000	1.78
+^C	member	lam0	1.489	8.919	1.224	0.156	11.30
+^C	member	lam16	1.848	9.743	1.280	0.130	12.25
+^C	member	lam256	1.163	7.769	0.952	0.413	9.80
+^C	member	page2w	0.000	1.000	2.000	1.000	1.78
+^C	member	page3w	0.000	1.000	3.000	2.000	2.31
+^C	mixed	refbs	3.375	27.151	17.173	0.000	20.49
+^C	mixed	bitmap1	0.094	1.000	0.913	0.000	2.48
+^C	mixed	lam0	1.293	8.407	0.811	0.094	10.37
+^C	mixed	lam16	1.541	8.880	0.841	0.078	11.16
+^C	mixed	lam256	1.145	7.561	0.573	0.250	9.36
+^C	mixed	page2w	0.094	1.000	1.825	0.913	2.47
+^C	mixed	page3w	0.094	1.000	2.738	1.825	2.94
+^C	full	refbs	2.307	29.366	18.615	0.000	14.98
+^C	full	bitmap1	0.208	1.000	0.820	0.000	3.10
+^C	full	lam0	0.647	7.880	0.404	0.029	6.46
+^C	full	lam16	0.721	7.990	0.408	0.023	6.81
+^C	full	lam256	0.541	7.318	0.191	0.083	5.82
+^C	full	page2w	0.208	1.000	1.640	0.820	3.08
+^C	full	page3w	0.208	1.000	2.461	1.640	3.55
+^C	ascii	refbs	1.013	19.006	9.744	0.000	10.76
+^C	ascii	bitmap1	0.311	1.000	0.744	0.000	3.74
+^C	ascii	lam0	0.311	4.720	1.488	0.744	4.37
+^C	ascii	lam16	0.311	4.720	1.488	0.744	4.55
+^C	ascii	lam256	0.311	4.720	0.744	0.000	4.45
+^C	ascii	page2w	0.311	1.000	1.488	0.744	3.65
+^C	ascii	page3w	0.311	1.000	2.232	1.488	4.09
+^C	runs	refbs	4.555	25.085	15.793	0.000	12.77
+^C	runs	bitmap1	0.001	1.000	0.999	0.000	1.79
+^C	runs	lam0	0.586	8.745	1.138	0.159	5.11
+^C	runs	lam16	0.651	9.565	1.166	0.139	4.74
+^C	runs	lam256	0.165	7.784	0.965	0.420	3.82
+^C	runs	page2w	0.001	1.000	1.999	0.999	1.78
+^C	runs	page3w	0.001	1.000	2.998	1.999	2.32
+^Cn	member	refbs	2.617	25.797	16.706	0.000	20.40
+^Cn	member	bitmap1	0.000	1.000	1.000	0.000	1.78
+^Cn	member	lam0	1.117	8.944	0.683	0.084	9.27
+^Cn	member	lam16	1.614	10.008	0.651	0.071	10.07
+^Cn	member	lam256	1.327	8.393	0.565	0.249	11.01
+^Cn	member	page2w	0.000	1.000	2.000	1.000	1.78
+^Cn	member	page3w	0.000	1.000	3.000	2.000	2.13
+^Cn	mixed	refbs	3.089	25.942	16.497	0.000	20.85
+^Cn	mixed	bitmap1	0.000	1.000	1.000	0.000	1.79
+^Cn	mixed	lam0	0.775	9.172	0.562	0.055	7.95
+^Cn	mixed	lam16	1.447	10.199	0.542	0.046	10.60
+^Cn	mixed	lam256	1.287	8.613	0.390	0.174	10.87
+^Cn	mixed	page2w	0.000	1.000	2.000	1.000	1.79
+^Cn	mixed	page3w	0.000	1.000	3.000	2.000	2.14
+^Cn	full	refbs	3.572	26.041	16.249	0.000	16.30
+^Cn	full	bitmap1	0.000	1.000	1.000	0.000	1.78
+^Cn	full	lam0	0.426	9.322	0.403	0.029	6.21
+^Cn	full	lam16	0.849	10.306	0.399	0.023	7.72
+^Cn	full	lam256	0.731	8.842	0.204	0.090	7.09
+^Cn	full	page2w	0.000	1.000	2.000	1.000	1.78
+^Cn	full	page3w	0.000	1.000	3.000	2.000	2.13
+^Cn	ascii	refbs	1.000	19.000	10.000	0.000	7.53
+^Cn	ascii	bitmap1	0.000	1.000	1.000	0.000	1.77
+^Cn	ascii	lam0	0.000	6.000	2.000	1.000	2.96
+^Cn	ascii	lam16	0.000	7.000	2.000	1.000	2.66
+^Cn	ascii	lam256	0.000	6.000	1.000	0.000	3.55
+^Cn	ascii	page2w	0.000	1.000	2.000	1.000	1.77
+^Cn	ascii	page3w	0.000	1.000	3.000	2.000	2.13
+^Cn	runs	refbs	2.344	25.973	16.846	0.000	12.09
+^Cn	runs	bitmap1	0.000	1.000	1.000	0.000	1.78
+^Cn	runs	lam0	0.385	9.009	0.679	0.089	4.76
+^Cn	runs	lam16	0.410	10.070	0.656	0.076	4.40
+^Cn	runs	lam256	0.173	8.471	0.486	0.208	3.96
+^Cn	runs	page2w	0.000	1.000	2.000	1.000	1.78
+^Cn	runs	page3w	0.000	1.000	3.000	2.000	2.13
+^L	member	refbs	1.232	29.513	19.614	0.000	10.49
+^L	member	bitmap1	0.000	1.000	1.000	0.000	1.78
+^L	member	lam0	0.176	9.267	0.251	0.017	3.72
+^L	member	lam16	0.212	9.291	0.273	0.010	3.62
+^L	member	lam256	0.097	8.876	0.099	0.043	3.07
+^L	member	page2w	0.000	1.000	2.000	1.000	1.78
+^L	member	page3w	0.000	1.000	3.000	2.000	2.14
+^L	mixed	refbs	1.469	29.313	19.373	0.000	11.64
+^L	mixed	bitmap1	0.000	1.000	1.000	0.000	1.79
+^L	mixed	lam0	0.296	9.272	0.309	0.021	4.93
+^L	mixed	lam16	0.375	9.285	0.349	0.011	5.11
+^L	mixed	lam256	0.208	8.772	0.168	0.076	4.20
+^L	mixed	page2w	0.000	1.000	2.000	1.000	1.78
+^L	mixed	page3w	0.000	1.000	3.000	2.000	2.13
+^L	full	refbs	1.686	29.100	19.135	0.000	12.58
+^L	full	bitmap1	0.000	1.000	1.000	0.000	1.78
+^L	full	lam0	0.399	9.245	0.359	0.027	5.57
+^L	full	lam16	0.504	9.235	0.397	0.014	5.92
+^L	full	lam256	0.302	8.678	0.235	0.107	4.70
+^L	full	page2w	0.000	1.000	2.000	1.000	1.78
+^L	full	page3w	0.000	1.000	3.000	2.000	2.13
+^L	ascii	refbs	1.994	19.357	9.992	0.000	14.02
+^L	ascii	bitmap1	0.000	1.000	1.000	0.000	1.77
+^L	ascii	lam0	0.000	6.000	2.000	1.000	2.37
+^L	ascii	lam16	0.000	6.000	1.000	0.000	2.66
+^L	ascii	lam256	0.000	6.000	1.000	0.000	2.37
+^L	ascii	page2w	0.000	1.000	2.000	1.000	1.77
+^L	ascii	page3w	0.000	1.000	3.000	2.000	2.14
+^L	runs	refbs	1.200	29.576	19.662	0.000	9.94
+^L	runs	bitmap1	0.000	1.000	1.000	0.000	1.78
+^L	runs	lam0	0.078	9.232	0.206	0.011	3.47
+^L	runs	lam16	0.105	9.269	0.244	0.010	3.74
+^L	runs	lam256	0.017	8.885	0.080	0.036	2.49
+^L	runs	page2w	0.000	1.000	2.000	1.000	1.78
+^L	runs	page3w	0.000	1.000	3.000	2.000	2.74
+^Unknown(Zzzz)	member	refbs	3.522	21.566	13.627	0.000	21.24
+^Unknown(Zzzz)	member	bitmap1	0.000	1.000	1.000	0.000	1.78
+^Unknown(Zzzz)	member	lam0	1.532	8.997	1.286	0.162	11.20
+^Unknown(Zzzz)	member	lam16	1.813	9.655	1.219	0.134	12.39
+^Unknown(Zzzz)	member	lam256	1.188	7.701	0.962	0.416	9.63
+^Unknown(Zzzz)	member	page2w	0.000	1.000	2.000	1.000	1.78
+^Unknown(Zzzz)	member	page3w	0.000	1.000	3.000	2.000	2.14
+^Unknown(Zzzz)	mixed	refbs	2.843	25.239	15.981	0.000	18.82
+^Unknown(Zzzz)	mixed	bitmap1	0.094	1.000	0.913	0.000	2.45
+^Unknown(Zzzz)	mixed	lam0	1.311	8.499	0.862	0.093	10.41
+^Unknown(Zzzz)	mixed	lam16	1.589	8.252	0.834	0.076	11.58
+^Unknown(Zzzz)	mixed	lam256	1.176	6.899	0.578	0.252	9.77
+^Unknown(Zzzz)	mixed	page2w	0.094	1.000	1.826	0.913	2.50
+^Unknown(Zzzz)	mixed	page3w	0.094	1.000	2.738	1.826	2.71
+^Unknown(Zzzz)	full	refbs	2.177	28.904	18.323	0.000	14.05
+^Unknown(Zzzz)	full	bitmap1	0.208	1.000	0.820	0.000	3.00
+^Unknown(Zzzz)	full	lam0	0.638	7.884	0.403	0.029	6.53
+^Unknown(Zzzz)	full	lam16	0.726	6.711	0.399	0.023	6.72
+^Unknown(Zzzz)	full	lam256	0.541	6.050	0.191	0.084	5.95
+^Unknown(Zzzz)	full	page2w	0.208	1.000	1.641	0.820	3.10
+^Unknown(Zzzz)	full	page3w	0.208	1.000	2.461	1.641	3.25
+^Unknown(Zzzz)	ascii	refbs	1.000	19.000	10.000	0.000	7.53
+^Unknown(Zzzz)	ascii	bitmap1	0.000	1.000	1.000	0.000	1.78
+^Unknown(Zzzz)	ascii	lam0	0.000	6.000	2.000	1.000	2.96
+^Unknown(Zzzz)	ascii	lam16	0.000	6.000	2.000	1.000	2.67
+^Unknown(Zzzz)	ascii	lam256	0.000	6.000	1.000	0.000	3.26
+^Unknown(Zzzz)	ascii	page2w	0.000	1.000	2.000	1.000	1.78
+^Unknown(Zzzz)	ascii	page3w	0.000	1.000	3.000	2.000	2.14
+^Unknown(Zzzz)	runs	refbs	3.651	21.816	13.746	0.000	11.57
+^Unknown(Zzzz)	runs	bitmap1	0.000	1.000	1.000	0.000	1.78
+^Unknown(Zzzz)	runs	lam0	0.622	8.948	1.273	0.167	4.92
+^Unknown(Zzzz)	runs	lam16	0.608	9.624	1.231	0.148	4.71
+^Unknown(Zzzz)	runs	lam256	0.167	7.724	0.956	0.412	3.74
+^Unknown(Zzzz)	runs	page2w	0.000	1.000	2.000	1.000	1.78
+^Unknown(Zzzz)	runs	page3w	0.000	1.000	2.999	2.000	2.13
+^Xan	member	refbs	1.206	29.452	19.574	0.000	10.41
+^Xan	member	bitmap1	0.000	1.000	1.000	0.000	1.78
+^Xan	member	lam0	0.197	9.361	0.298	0.014	3.68
+^Xan	member	lam16	0.123	8.957	0.075	0.034	3.22
+^Xan	member	lam256	0.096	8.893	0.092	0.035	3.61
+^Xan	member	page2w	0.000	1.000	2.000	1.000	1.78
+^Xan	member	page3w	0.000	1.000	3.000	2.000	2.13
+^Xan	mixed	refbs	1.380	29.223	19.314	0.000	11.75
+^Xan	mixed	bitmap1	0.000	1.000	1.000	0.000	1.79
+^Xan	mixed	lam0	0.312	9.377	0.354	0.017	5.13
+^Xan	mixed	lam16	0.258	8.906	0.081	0.036	4.63
+^Xan	mixed	lam256	0.179	8.806	0.164	0.069	4.69
+^Xan	mixed	page2w	0.000	1.000	2.000	1.000	1.78
+^Xan	mixed	page3w	0.000	1.000	3.000	2.000	2.13
+^Xan	full	refbs	1.568	28.980	19.047	0.000	12.78
+^Xan	full	bitmap1	0.000	1.000	1.000	0.000	1.78
+^Xan	full	lam0	0.412	9.357	0.400	0.024	5.77
+^Xan	full	lam16	0.366	8.852	0.088	0.037	5.28
+^Xan	full	lam256	0.261	8.713	0.234	0.102	5.11
+^Xan	full	page2w	0.000	1.000	2.000	1.000	1.78
+^Xan	full	page3w	0.000	1.000	3.000	2.000	2.13
+^Xan	ascii	refbs	2.670	20.366	10.588	0.000	17.18
+^Xan	ascii	bitmap1	0.000	1.000	1.000	0.000	1.78
+^Xan	ascii	lam0	0.000	6.000	2.000	1.000	2.52
+^Xan	ascii	lam16	0.000	6.000	1.000	0.000	2.96
+^Xan	ascii	lam256	0.000	6.000	1.000	0.000	3.26
+^Xan	ascii	page2w	0.000	1.000	2.000	1.000	1.78
+^Xan	ascii	page3w	0.000	1.000	3.000	2.000	2.14
+^Xan	runs	refbs	1.212	29.379	19.519	0.000	9.95
+^Xan	runs	bitmap1	0.000	1.000	1.000	0.000	1.78
+^Xan	runs	lam0	0.118	9.374	0.321	0.019	3.51
+^Xan	runs	lam16	0.028	8.946	0.070	0.031	3.04
+^Xan	runs	lam256	0.023	8.887	0.093	0.033	3.04
+^Xan	runs	page2w	0.000	1.000	2.000	1.000	1.78
+^Xan	runs	page3w	0.000	1.000	3.000	2.000	2.13
+^Xwd	member	refbs	1.224	27.465	18.241	0.000	12.67
+^Xwd	member	bitmap1	0.000	1.000	1.000	0.000	1.78
+^Xwd	member	lam0	0.182	9.354	0.289	0.012	3.88
+^Xwd	member	lam16	0.353	10.120	0.069	0.032	3.21
+^Xwd	member	lam256	0.352	9.691	0.073	0.023	4.51
+^Xwd	member	page2w	0.000	1.000	2.000	1.000	1.78
+^Xwd	member	page3w	0.000	1.000	3.000	2.000	2.13
+^Xwd	mixed	refbs	1.474	27.439	18.109	0.000	13.90
+^Xwd	mixed	bitmap1	0.000	1.000	1.000	0.000	1.78
+^Xwd	mixed	lam0	0.299	9.369	0.354	0.019	4.83
+^Xwd	mixed	lam16	0.485	9.977	0.079	0.035	4.64
+^Xwd	mixed	lam256	0.475	9.498	0.089	0.029	5.56
+^Xwd	mixed	page2w	0.000	1.000	2.000	1.000	1.78
+^Xwd	mixed	page3w	0.000	1.000	3.000	2.000	2.13
+^Xwd	full	refbs	1.704	27.396	17.976	0.000	14.88
+^Xwd	full	bitmap1	0.000	1.000	1.000	0.000	1.78
+^Xwd	full	lam0	0.404	9.348	0.403	0.027	5.53
+^Xwd	full	lam16	0.575	9.847	0.087	0.036	5.36
+^Xwd	full	lam256	0.578	9.314	0.105	0.034	6.46
+^Xwd	full	page2w	0.000	1.000	2.000	1.000	1.78
+^Xwd	full	page3w	0.000	1.000	3.000	2.000	2.13
+^Xwd	ascii	refbs	2.898	21.058	11.036	0.000	17.19
+^Xwd	ascii	bitmap1	0.000	1.000	1.000	0.000	1.77
+^Xwd	ascii	lam0	0.000	6.000	2.000	1.000	2.66
+^Xwd	ascii	lam16	0.000	7.000	1.000	0.000	3.25
+^Xwd	ascii	lam256	0.000	6.000	1.000	0.000	2.96
+^Xwd	ascii	page2w	0.000	1.000	2.000	1.000	1.88
+^Xwd	ascii	page3w	0.000	1.000	3.000	2.000	2.13
+^Xwd	runs	refbs	1.183	27.582	18.327	0.000	10.29
+^Xwd	runs	bitmap1	0.000	1.000	1.000	0.000	1.78
+^Xwd	runs	lam0	0.083	9.243	0.194	0.003	3.24
+^Xwd	runs	lam16	0.058	10.160	0.042	0.020	2.99
+^Xwd	runs	lam256	0.057	9.696	0.051	0.017	2.63
+^Xwd	runs	page2w	0.000	1.000	2.000	1.000	1.78
+^Xwd	runs	page3w	0.000	1.000	3.000	2.000	2.13
+
+## FIT, bench2, all 12 sets: ns/char = 2.095 + 3.892*mispredicts + 0.189*branches + -0.090*loads + 0.095*deploads   (420 medians)
+regime   | all 7 arms: r   rho  (LOSO r) | kit 3 policies: r    rho  pairwise  (LOSO pairwise) | all-arm pairwise
+member   |          +0.98 +0.96  (+0.98) |                +0.90 +0.88  30/36     (30/36)        | 236/252
+mixed    |          +0.98 +0.97  (+0.98) |                +0.88 +0.91  27/36     (27/36)        | 232/252
+full     |          +0.98 +0.98  (+0.98) |                +0.92 +0.81  29/36     (29/36)        | 231/252
+ascii    |          +0.97 +0.94  (+0.97) |                +0.96 +0.85   6/24     (14/24)        | 191/216
+runs     |          +0.96 +0.96  (+0.96) |                +0.80 +0.89  29/36     (28/36)        | 236/252
+
+## FIT, bench2, without ^C: ns/char = 2.088 + 4.081*mispredicts + 0.170*branches + -0.075*loads + 0.071*deploads   (385 medians)
+regime   | all 7 arms: r   rho  (LOSO r) | kit 3 policies: r    rho  pairwise  (LOSO pairwise) | all-arm pairwise
+member   |          +0.98 +0.87  (+0.97) |                +0.89 +0.86  27/33     (27/33)        | 199/231
+mixed    |          +0.98 +0.95  (+0.98) |                +0.88 +0.89  24/33     (24/33)        | 197/231
+full     |          +0.98 +0.95  (+0.98) |                +0.93 +0.81  26/33     (26/33)        | 202/231
+ascii    |          +0.97 +0.91  (+0.97) |                +0.97 +0.89  19/22     (15/22)        | 172/196
+runs     |          +0.96 +0.87  (+0.96) |                +0.80 +0.90  27/33     (27/33)        | 196/231
+
+## TRANSFER: bench2's coefficients, unrefitted, on the 09-11 run [T] (240 medians, 5 arms)
+member  12 sets  all-arm r +0.92 rho +0.94 | kit r +0.78 rho +0.87 pairwise 30/36 | all-arm pairwise 112/120
+member  no ^C    all-arm r +0.97 rho +0.95 | kit r +0.89 rho +0.89 pairwise 28/33 | all-arm pairwise 104/110
+mixed   12 sets  all-arm r +0.98 rho +0.97 | kit r +0.89 rho +0.92 pairwise 29/36 | all-arm pairwise 112/120
+mixed   no ^C    all-arm r +0.97 rho +0.97 | kit r +0.88 rho +0.91 pairwise 26/33 | all-arm pairwise 102/110
+full    12 sets  all-arm r +0.98 rho +0.96 | kit r +0.93 rho +0.86 pairwise 31/36 | all-arm pairwise 114/120
+full    no ^C    all-arm r +0.97 rho +0.96 | kit r +0.94 rho +0.85 pairwise 29/33 | all-arm pairwise 105/110
+ascii   12 sets  all-arm r +0.97 rho +0.97 | kit r +0.96 rho +0.89 pairwise 10/24 | all-arm pairwise 88/102
+ascii   no ^C    all-arm r +0.97 rho +0.97 | kit r +0.96 rho +0.85 pairwise 10/22 | all-arm pairwise 81/93
+
+## median ns/char ABOVE the harness floor (1.69 ns = the fastest cell in the run: call + loop + bound test)
+-- member
+set                refbs  bitmap1     lam0    lam16   lam256   page2w   page3w   page3w/bitmap1  best-kit/page3w
+C                   9.79     0.10     1.83     3.11     1.01     0.10     0.45             1.20             1.26
+Cn                  7.77     0.16     3.21     5.45     1.69     0.04     0.63             1.26             1.46
+L                  19.19     0.09     8.44     9.37     8.56     0.09     0.63             1.31             4.37
+Unknown(Zzzz)      10.60     0.17     2.56     3.89     3.09     0.09     0.63             1.25             1.83
+Xan                19.88     0.09     8.84     9.07     5.53     0.00     0.63             1.30             3.12
+Xwd                20.87     0.09     8.23     9.67     8.79     0.09     0.63             1.30             4.28
+^C                 20.19     0.09     9.62    10.56     8.11     0.09     0.63             1.30             4.23
+^Cn                18.71     0.09     7.58     8.38     9.32     0.09     0.44             1.20             4.35
+^L                  8.80     0.09     2.03     1.93     1.38     0.09     0.45             1.20             1.43
+^Unknown(Zzzz)     19.55     0.09     9.51    10.71     7.94     0.09     0.45             1.20             4.50
+^Xan                8.72     0.09     1.99     1.53     1.92     0.09     0.45             1.20             1.51
+^Xwd               10.98     0.09     2.19     1.52     2.82     0.09     0.44             1.20             1.50
+geo/refbs          1.000    0.116    0.417    0.457    0.383    0.115    0.145
+-- mixed
+set                refbs  bitmap1     lam0    lam16   lam256   page2w   page3w   page3w/bitmap1  best-kit/page3w
+C                  11.32     0.10     3.44     4.73     2.46     0.09     0.44             1.19             1.95
+Cn                 10.95     0.18     4.30     8.05     3.63     0.09     0.63             1.24             2.30
+L                  16.34     3.40     8.57     9.31     8.43     3.39     3.63             1.04             1.90
+Unknown(Zzzz)      12.10     0.18     3.75     5.16     3.80     0.10     0.63             1.24             2.34
+Xan                17.43     3.39     8.91     8.64     6.82     3.22     3.52             1.03             1.63
+Xwd                19.49     0.79     8.10     8.09     8.31     0.80     1.22             1.17             3.36
+^C                 18.81     0.79     8.68     9.48     7.67     0.78     1.25             1.18             3.19
+^Cn                19.16     0.11     6.26     8.91     9.18     0.10     0.45             1.19             3.71
+^L                  9.95     0.10     3.24     3.42     2.52     0.09     0.44             1.19             1.97
+^Unknown(Zzzz)     17.13     0.76     8.72     9.89     8.08     0.81     1.02             1.11             3.61
+^Xan               10.06     0.10     3.44     2.94     3.00     0.09     0.45             1.19             2.17
+^Xwd               12.21     0.09     3.14     2.95     3.87     0.09     0.45             1.20             2.17
+geo/refbs          1.000    0.147    0.453    0.506    0.434    0.145    0.171
+-- full
+set                refbs  bitmap1     lam0    lam16   lam256   page2w   page3w   page3w/bitmap1  best-kit/page3w
+C                  12.44     0.09     4.16     5.52     3.26     0.09     0.44             1.20             2.32
+Cn                 13.15     0.20     4.93     9.77     5.10     0.10     0.63             1.23             2.85
+L                  11.09     1.65     3.69     4.02     3.70     1.66     1.62             0.99             1.62
+Unknown(Zzzz)      13.30     0.18     4.42     6.03     4.36     0.11     0.64             1.25             2.59
+Xan                12.14     1.66     4.03     3.67     3.06     1.63     1.62             0.99             1.44
+Xwd                14.61     1.41     5.09     4.85     5.04     1.43     1.79             1.12             1.88
+^C                 13.29     1.41     4.77     5.12     4.13     1.39     1.86             1.14             1.64
+^Cn                14.61     0.09     4.52     6.03     5.40     0.09     0.44             1.20             2.91
+^L                 10.89     0.09     3.88     4.23     3.01     0.09     0.44             1.20             2.21
+^Unknown(Zzzz)     12.36     1.31     4.84     5.03     4.26     1.42     1.57             1.09             1.83
+^Xan               11.10     0.09     4.08     3.59     3.42     0.09     0.44             1.20             2.40
+^Xwd               13.20     0.09     3.85     3.67     4.77     0.09     0.44             1.20             2.52
+geo/refbs          1.000    0.160    0.421    0.465    0.402    0.159    0.183
+-- ascii
+set                refbs  bitmap1     lam0    lam16   lam256   page2w   page3w   page3w/bitmap1  best-kit/page3w
+C                   9.18     0.09     2.86     1.27     1.27     0.09     0.44             1.20             1.39
+Cn                  5.85     0.09     0.38     0.38     0.09     0.08     0.23             1.08             0.92
+L                  12.11     3.72     4.15     4.19     4.52     3.76     3.91             1.04             1.04
+Unknown(Zzzz)       5.84     0.09     0.08     0.09     0.08     0.08     0.08             1.00             1.00
+Xan                14.82     3.16     3.49     4.03     3.88     2.96     3.30             1.03             1.04
+Xwd                15.44     3.15     3.59     3.85     4.06     3.13     3.28             1.03             1.06
+^C                  9.07     2.05     2.68     2.86     2.76     1.96     2.40             1.10             1.07
+^Cn                 5.84     0.09     1.27     0.97     1.86     0.09     0.44             1.20             1.25
+^L                 12.34     0.09     0.68     0.97     0.68     0.08     0.45             1.20             1.11
+^Unknown(Zzzz)      5.84     0.09     1.28     0.98     1.57     0.09     0.45             1.20             1.25
+^Xan               15.49     0.09     0.83     1.27     1.57     0.09     0.45             1.20             1.18
+^Xwd               15.50     0.09     0.97     1.56     1.27     0.19     0.44             1.20             1.25
+geo/refbs          1.000    0.211    0.283    0.284    0.290    0.211    0.236
+-- runs
+set                refbs  bitmap1     lam0    lam16   lam256   page2w   page3w   page3w/bitmap1  best-kit/page3w
+C                   7.57     0.09     2.11     2.00     1.04     0.09     0.45             1.20             1.28
+Cn                  6.64     0.09     2.94     4.88     1.16     0.02     0.63             1.30             1.23
+L                  10.33     0.09     3.04     2.90     2.65     0.09     0.63             1.30             1.87
+Unknown(Zzzz)       8.16     0.10     2.02     2.41     1.29     0.10     0.64             1.30             1.28
+Xan                11.06     0.10     3.20     2.36     2.29     0.00     0.63             1.30             1.71
+Xwd                11.49     0.09     3.22     2.54     2.60     0.10     0.63             1.30             1.82
+^C                 11.08     0.10     3.42     3.05     2.13     0.09     0.63             1.29             1.65
+^Cn                10.40     0.09     3.07     2.71     2.27     0.09     0.44             1.20             1.86
+^L                  8.25     0.09     1.78     2.05     0.80     0.09     1.06             1.54             0.91
+^Unknown(Zzzz)      9.88     0.09     3.23     3.02     2.05     0.09     0.45             1.20             1.75
+^Xan                8.26     0.09     1.82     1.35     1.35     0.09     0.44             1.20             1.42
+^Xwd                8.60     0.09     1.55     1.30     0.94     0.09     0.44             1.20             1.23
+geo/refbs          1.000    0.163    0.390    0.381    0.307    0.162    0.209
+
+## DIAL: first-match picks vs the DP objective min(bytes + lam*T), T = fitted member-subject ns (lam in BYTES PER NS)
+position -2 first-match: {'lam4': 12}
+position -1 first-match: {'lam4': 12}
+position +0 first-match: {'page3w': 12}
+position +1 first-match: {'page3w': 12}
+position +2 first-match: {'page2w': 12}
+lam(B/ns)  DP picks (12 sets)                         agrees with first-match at position
+0          {'lam4': 12}                                  [-2]
+250        {'lam4': 6, 'page3w': 6}                      -
+500        {'page3w': 12}                                [0]
+1000       {'page3w': 12}                                [0]
+2000       {'page3w': 12}                                [0]
+4000       {'page3w': 12}                                [0]
+8000       {'page3w': 12}                                [0]
+16000      {'page3w': 12}                                [0]
+64000      {'page3w': 12}                                [0]
+100000     {'page3w': 12}                                [0]
+1e+06      {'page3w': 10, 'page2w': 2}                   -
+
+per set: bytes of K(lam4) / P3 / P2 / B1, P3/K, and the measured member ns of lam0 / lam16 / lam256 / P3 / P2 / B1
+C                 4469   5480   37140  139324  1.226    3.52  4.80  2.70  2.14  1.79  1.79
+Cn                4450   5472   37100  139213  1.230    4.90  7.14  3.38  2.32  1.73  1.84
+L                 4196   4249    8666   25770  1.013   10.13 11.06 10.25  2.32  1.78  1.77
+Unknown(Zzzz)     4430   5432   37092  139213  1.226    4.25  5.57  4.78  2.32  1.78  1.86
+Xan               4513   4641    8898   25772  1.028   10.53 10.76  7.22  2.32  1.69  1.78
+Xwd               4818   5545   31300  114804  1.151    9.92 11.36 10.48  2.32  1.78  1.78
+^C                4506   5297   31020  114806  1.176   11.30 12.25  9.80  2.31  1.78  1.78
+^Cn               4466   5468   37096  139324  1.224    9.27 10.07 11.01  2.13  1.78  1.78
+^L                4201   5128   37044  139324  1.221    3.72  3.62  3.07  2.14  1.78  1.78
+^Unknown(Zzzz)    4466   5237   30960  114810  1.173   11.20 12.39  9.63  2.14  1.78  1.78
+^Xan              4583   5520   37276  139324  1.204    3.68  3.22  3.61  2.13  1.78  1.78
+^Xwd              4866   5728   37420  139324  1.177    3.88  3.21  4.51  2.13  1.78  1.78
+
+row cost, geomean over the 12 sets (bytes; measured ns/char per regime; lam4 is untimed and read at lam0's time)
+today lam16 (pinned 0/-1)       4735 B  member 7.04  mixed 8.03  full 6.65  ascii 3.30  runs 4.15
+today lam256 (pinned +2)        6767 B  member 5.89  mixed 6.89  full 5.76  ascii 3.37  runs 3.34
+proposed -2/-1                  4493 B  member 6.41  mixed 7.18  full 6.03  ascii 3.29  runs 4.25
+proposed 0/+1                   5250 B  member 2.23  mixed 2.70  full 2.62  ascii 2.74  runs 2.27
+proposed +2                    27948 B  member 1.77  mixed 2.30  full 2.27  ascii 2.45  runs 1.77
+
+## POPULATION (312 uprops sets, bytes only; K = kit lam0, the size end of results/sweep_uprops.tsv, which has no lam4)
+kit lam0 total 84106 B, kit lam16 total 85613 B, page3w total 114609 B
+gate sections>=2  z_mid 0.26: middle sends  52/312 sets to page3w, row total  86139 B (+0.6% vs kit lam16); +2 (page2w there) 284477 B (3.32x kit lam16)
+gate sections>=2  z_mid 0.20: middle sends  38/312 sets to page3w, row total  82721 B (-3.4% vs kit lam16); +2 (page2w there) 183956 B (2.15x kit lam16)
+gate sections>=16 z_mid 0.26: middle sends   9/312 sets to page3w, row total  85381 B (-0.3% vs kit lam16); +2 (page2w there) 219973 B (2.57x kit lam16)
+gate sections>=16 z_mid 0.20: middle sends   7/312 sets to page3w, row total  83521 B (-2.4% vs kit lam16); +2 (page2w there) 154825 B (1.81x kit lam16)
