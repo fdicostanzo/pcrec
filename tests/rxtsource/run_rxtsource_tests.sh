@@ -1525,23 +1525,40 @@ C3_FILES=179
 # two `gu steps` controls.
 # [clstri re-pin, 2026-09-29, lane clstri] C3 had NOT been re-pinned since
 # 2026-09-25 while the census moved by +318 lines (C3_PASS + C3_SKIP +
-# C3_TIMEOUT_FILE_LINES = 30649 against CENSUS_LINES 30967); S1's Linux
-# `make test` was the first run to look. NOT box-dependent and NOT an S1
-# effect (S1 adds no .rxt and no rxtsource edit; main carries these very
-# pins and this very corpus): the Mac (python 3.9) full run reproduces the
-# +318 total and the box-independent classes (pcre2-only +22, own-oracle
-# +83) EXACTLY as the Linux (python 3.14) run does; only PASS and
-# no-python-expression are python-version-sensitive (this file's own
-# C3_PY_REF note) and these pins are the 3.14 numbers, as they always were.
-# Attribution, per file (verify_rxt.py on 20ba2453's tree vs this one):
-#   PASS +139: tests/litscan/litrun.rxt +91 (s2a), tests/offsetskip/
-#     run_pinned.rxt +51 (s1build; 3.9 reads 48 + 7 nopython, 3.14 reads 51
-#     + 4), axis10_surrogate_witness.rxt -3 (3 PASS cells now classify
-#     pcre2-only, +9 net there; the reclassifying edit is not chased here);
-#   pcre2-only +22: utf8/restrict.rxt +13 (K70) and axis10's +9 (18 -> 27);
+# C3_TIMEOUT_FILE_LINES = 30649 against CENSUS_LINES 30967). It was invisible
+# on every box but the reference: the exact asserts below run only where
+# python resolves to C3_PY_REF (3.14 -- ubuntubudu); the Mac (3.9) and CI
+# (ubuntu-latest, no setup-python step, so the image's own python, not 3.14)
+# take the RECORD branch, and only the census reconciliation stays hard
+# there. S1's Linux `make test` on ubuntubudu was the first 3.14 run to look;
+# main carries the same stale pins and would have failed there too.
+# NOT an S1 effect (S1 adds no .rxt and no rxtsource edit).
+#
+# WHICH POPULATIONS DEPEND ON THE PYTHON VERSION, AND WHY. A cell is PASS
+# when python's `re` COMPILES the pattern and agrees with the expectation,
+# and `no-python-expression` when `re` cannot compile it at all
+# (`compiled is None` in verify_rxt.py). So a python release that gains
+# syntax moves cells from no-python-expression to PASS (or to INFO/FAIL if it
+# then disagrees): 3.14 added `\z` (`/user\z` in run_pinned.rxt: 3 cells;
+# 979 cells corpus-wide between 3.9 and 3.14, `\z` and, before it, 3.11's
+# atomic groups/possessive quantifiers), and INFO/perr-python-accepts move
+# the same way. pcre2-only, giveup, composed, own-oracle and the timed-out
+# file are decided by the corpus and by verify_rxt's own classifier, not by
+# what `re` accepts, so they are version-INVARIANT. So the check now asserts
+# in two tiers: the invariant populations and the fixed sum PASS + INFO +
+# no-python-expression + perr-python-accepts (= C3_VERIFIABLE) EVERYWHERE,
+# and the version-sensitive split (PASS/SKIP/INFO/nopython/perr-accept)
+# exactly only at C3_PY_REF. Measured identical on Mac py3.9 and ubuntubudu
+# py3.14: pcre2-only 2966, own-oracle 12002, sum 15881 (Mac 12921+7+2943+10,
+# Linux 13903+0+1964+14).
+# Attribution of the +318 (verify_rxt.py per file, 20ba2453 vs now):
+#   PASS +139: tests/litscan/litrun.rxt +91, offsetskip/run_pinned.rxt +51
+#     (3.14 reads its `\z` block; 3.9 reads 48 + 7 nopython), utf8/
+#     axis10_surrogate_witness.rxt -3;
+#   pcre2-only +22: utf8/restrict.rxt +13, axis10 +9;
 #   no-python-expression +74: recursion/k69.rxt +70, run_pinned +4;
 #   own-oracle +83: the [VAR] MVP's tests/vars (verify_vars.py, 2026-09-23,
-#     the census drift's start: bd5a7e13 76 + 7) -- never in C3's pin.
+#     the census drift's start), never in C3's pin.
 # The tests/ucp files' +1563 own-oracle were already pinned (98e94f1d).
 # Reconciliation: 13903+16975+89 = 30967 = CENSUS_LINES.
 C3_PASS=13903
@@ -1556,6 +1573,7 @@ C3_SKIP_COMPOSED=0
 C3_SKIP_NOPYTHON=1964
 C3_SKIP_PERRACCEPT=14
 C3_SKIP_OWNORACLE=12002
+C3_VERIFIABLE=15881   # PASS+INFO+no-python-expression+perr-python-accepts: python-version-INVARIANT
 C3_INFO=0
 C3_STOREUNCOVERED=0
 C3_TIMEOUT=1
@@ -1670,24 +1688,41 @@ if [ "${c3_fail:-0}" -eq 0 ] && [ "${c3_crashed:-0}" -eq "$C3_CRASHED_HEADBEARIN
     # pinned separately. They also reconcile — pass + info + skip + the
     # timed-out file's own lines must be the whole census — which is
     # what makes this an accounting rather than eleven loose numbers.
+    # Two tiers (see the clstri re-pin note at C3_PASS): the populations no
+    # python release can move, asserted on EVERY python, and the split that
+    # depends on what `re` can compile, asserted exactly only at C3_PY_REF.
+    c3_inv_bad=""
+    for chk in "TIMEOUT:${c3_timeout:-x}:$C3_TIMEOUT" \
+               "STOREUNCOVERED:$c3_storeuncovered:$C3_STOREUNCOVERED" \
+               "pcre2-only:$(c3_reason pcre2-only):$C3_SKIP_PCRE2ONLY" \
+               "giveup:$(c3_reason giveup):$C3_SKIP_GIVEUP" \
+               "composed:$(c3_reason composed):$C3_SKIP_COMPOSED" \
+               "own-oracle:$(c3_reason own-oracle):$C3_SKIP_OWNORACLE" \
+               "verifiable (PASS+INFO+no-python-expression+perr-python-accepts):$((c3_pass + c3_info + $(c3_reason no-python-expression) + $(c3_reason perr-python-accepts))):$C3_VERIFIABLE"; do
+        nm=${chk%%:*}; rest=${chk#*:}; got=${rest%%:*}; want=${rest#*:}
+        [ "$got" = "$want" ] || c3_inv_bad="$c3_inv_bad
+    $nm: got ${got:-<absent>}, pinned $want"
+    done
+    if [ -z "$c3_inv_bad" ]; then
+        pass "C3: the python-version-invariant population pins hold on python $C3_PY_VER (timeouts, store-uncovered, pcre2-only, giveup, composed, own-oracle, and PASS+INFO+no-python-expression+perr-python-accepts = $C3_VERIFIABLE)"
+    else
+        fail "C3: version-INVARIANT population pin(s) MOVED on python $C3_PY_VER:$c3_inv_bad
+  These do not depend on what python's re accepts, so this is a corpus move
+  (a file added, a block newly marked, a classifier edit), not version skew.
+  Re-pin in a reviewed commit saying which and why."
+    fi
     c3_bad=""
     for chk in "PASS:$c3_pass:$C3_PASS" \
                "SKIP:$c3_skip:$C3_SKIP" \
                "INFO:$c3_info:$C3_INFO" \
-               "STOREUNCOVERED:$c3_storeuncovered:$C3_STOREUNCOVERED" \
-               "TIMEOUT:${c3_timeout:-x}:$C3_TIMEOUT" \
-               "pcre2-only:$(c3_reason pcre2-only):$C3_SKIP_PCRE2ONLY" \
-               "giveup:$(c3_reason giveup):$C3_SKIP_GIVEUP" \
-               "composed:$(c3_reason composed):$C3_SKIP_COMPOSED" \
                "no-python-expression:$(c3_reason no-python-expression):$C3_SKIP_NOPYTHON" \
-               "perr-python-accepts:$(c3_reason perr-python-accepts):$C3_SKIP_PERRACCEPT" \
-               "own-oracle:$(c3_reason own-oracle):$C3_SKIP_OWNORACLE"; do
+               "perr-python-accepts:$(c3_reason perr-python-accepts):$C3_SKIP_PERRACCEPT"; do
         nm=${chk%%:*}; rest=${chk#*:}; got=${rest%%:*}; want=${rest#*:}
         [ "$got" = "$want" ] || c3_bad="$c3_bad
     $nm: got ${got:-<absent>}, pinned $want"
     done
     if [ -z "$c3_bad" ]; then
-        pass "C3: all eleven population pins hold (verified, informational, skips by reason, timeouts)"
+        pass "C3: the version-sensitive split holds too (exact at python $C3_PY_REF: verified, informational, no-python-expression, perr-python-accepts, skips)"
     elif [ "$C3_PY_VER" != "$C3_PY_REF" ]; then
         # The pins are the REFERENCE BOX's numbers, at python $C3_PY_REF
         # (I-61's pins; the BOX SENSITIVITY notes above). This process's
