@@ -107,3 +107,20 @@ class PageW3:
                    ", ".join("0x%016XULL" % v for v in self.leaves),
                    fn, self.lo, self.hi - self.lo,
                    fn, fn, fn, self.ts, self.ts - 6, self.bs - 1))
+
+
+def main():
+    """`python3 wholeset.py [population]` — the stage-width sweep behind the
+    design note's TS = 10 (§1.3): PageW3 rodata at TS in {10, 12, 14} per set.
+    Sizes only; exhaustive answers are verify_whole.py's (at TS = 10)."""
+    import sys
+    import clsets
+    which = sys.argv[1] if len(sys.argv) > 1 else "k53"
+    print("set\tintervals\tts10_rodata\tts12_rodata\tts14_rodata")
+    for name, iv in clsets.population(which):
+        print("\t".join([name, str(len(iv))] +
+                        [str(PageW3(iv, ts).rodata()) for ts in (10, 12, 14)]))
+
+
+if __name__ == "__main__":
+    main()

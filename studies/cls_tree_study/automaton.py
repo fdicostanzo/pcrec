@@ -97,6 +97,32 @@ def minimal(seqs):
     return len(memo), nedges[0], len(rootkey)
 
 
+def sink_indegree(seqs):
+    """Root fan-out of the forward automaton walked BACKWARDS: the number of
+    set-edges into its accepting sink (the design note's "reversed forward
+    automaton" contrast row)."""
+    root = {}
+    for seq in seqs:
+        node = root
+        for lab in seq:
+            node = node.setdefault(lab, {})
+    memo, ind = {}, {}
+
+    def canon(node):
+        tg = {}
+        for lab, ch in node.items():
+            tg.setdefault(canon(ch), []).append(lab)
+        key = tuple(sorted((t, tuple(sorted(ls))) for t, ls in tg.items()))
+        if key not in memo:
+            memo[key] = len(memo)
+            for t, _ in key:
+                ind[t] = ind.get(t, 0) + 1
+        return memo[key]
+
+    canon(root)
+    return ind[memo[()]]
+
+
 def exact_rev(iv):
     seqs = (enc(c)[::-1] for lo, hi in iv for c in range(lo, hi + 1)
             if not 0xD800 <= c <= 0xDFFF)
@@ -108,13 +134,15 @@ def main():
     which = args[0] if args else "k53"
     print("set\tintervals\tflat_branches\tflat_class_nodes"
           "\tfwd_states\tfwd_set_edges\tfwd_root_fanout"
-          "\trev_states\trev_set_edges\trev_root_fanout")
+          "\trev_states\trev_set_edges\trev_root_fanout"
+          "\trevfwd_root_fanout")
     for name, iv in clsets.population(which):
         br = branches(iv)
         f = minimal(br)
         r = exact_rev(iv) if "--exact-rev" in sys.argv else ("-",) * 3
         print("\t".join(map(str, (name, len(iv), len(br),
-                                  sum(len(b) for b in br)) + f + tuple(r))))
+                                  sum(len(b) for b in br)) + f + tuple(r)
+                             + (sink_indegree(br),))))
 
 
 if __name__ == "__main__":

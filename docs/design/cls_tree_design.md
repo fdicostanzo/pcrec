@@ -6,7 +6,10 @@ The plan row is `docs/dev/plan.md` [CLS-TREE] (UNPARKED 2026-09-28), and this
 note answers the eight things the row and the lane brief ask it to DECIDE
 (§1-§8). A light D6 panel reviewed it; findings and dispositions are in
 `docs/dev/reviews/2026-09-28-r1-cls-tree-design.md`, and the fixes are made
-inline, marked **[r1]**.
+inline, marked **[r1 ID]**. Panel verdict: no BLOCKER; four MUST-FIX/SHOULD
+measurement fixes and two SHOULD notes applied; the decode/automaton
+ill-formed agreement and the splice's priority safety were verified against
+the source by the semantics critic.
 
 **Status: PROPOSED.** Frank rules §8. Every cell this note proposes for the
 `--tune` table is a PROPOSAL under D103 (the table is a pinned contract, and
@@ -115,8 +118,18 @@ Three readings, each from the table and nothing else:
    data-dependent branches are the cost on random subjects; the leaves are
    not. (The `ascii` regime makes the point from the other side: every probe
    takes the same dispatch path, the branches predict, and the kit closes to
-   within ~11% of `bitmap1` — `\p{L}` 5.9 vs 5.3 ns, [T]. `bitmap1` itself
+   within 11-17% of `bitmap1` — `\p{L}` λ0 5.88, λ16 6.10, λ256 6.22 vs
+   5.31 ns, [T] **[r1 ALT-1]**. `bitmap1` itself
    pays a mispredicted BOUND branch there, cp < 65 or not.)
+
+**[r1 MEAS-2] One noisy cell, disclosed and bounded.** `^C` on member
+subjects is BIMODAL in [T]: rounds {0,6,7,8,9} read high and the other six
+low, in lockstep across all five arms (`bitmap1` 1.60 vs 13.30 ns) — an
+environmental effect on that one run, not arm behaviour; no other cell
+varies >2×. The medians land in the low cluster. Dropping `^C` entirely
+(11 sets) leaves every reading standing: member r = +0.06, pairwise 16/33,
+geomean `bitmap1` 0.113 / λ0 0.409 / λ16 0.467 of `refbs` (mixed 18/33,
+full 21/33, ascii 14/33). b1 re-measures it.
 
 **Decision CT-2.** The DP stays (its byte model is verified to ~3%, [S] §5.2;
 its search is exact; its compile time is 25.86 ms worst, [S] §6). Its speed
@@ -208,13 +221,22 @@ cap was a search bound, not a statement about the answer.
 mismatches):** `page3w` totals **114,609** object bytes against the kit's
 85,613 at λ16 and 84,106 at λ0 ([S] `sweep_uprops.tsv`). The whole excess is
 in the SMALL sets, where the kit emits a few compares and no table: over the
-28 sets with ≥ 46 intervals `page3w` is **59,991** against the kit's 58,466
-(+2.6%). That is the DP's job, not a problem — offered as a candidate, a
+28 sets with ≥ 46 intervals `page3w` is **59,991** against the kit's 58,038
+(+3.4%). **[r1 MEAS-1]** (first draft: 58,466 / +2.6% — a name-keyed sum
+that double-counted one of two same-named sets). That is the DP's job, not a problem — offered as a candidate, a
 whole-set table is chosen only where it pays.
+
+**[r1 ALT-3] How the whole-set candidate enters the DP.** `section.py`'s
+recurrence reaches a section only through its ≤ 64-interval window, so a
+whole-set section cannot be a PART of a larger partition; it is compared at
+`best[n]` as a one-section alternative. S1 may generalise this (a table
+section over any contiguous run, priced in O(k)); the first build offers the
+whole set only, which is exactly the population §1.3's numbers measure.
 
 `page3w`'s stage width (TS = 10) was chosen as the size-minimum of TS ∈ {10,
 12, 14} on the K53 twelve (4.2-5.6 KB at 10, 5.8-6.8 KB at 12, 8.3-9.8 KB at
-14 — this lane's scratch sweep, rodata only). A general three-stage member
+14, rodata only — [N] `results/page3_ts_k53.tsv`, `python3 wholeset.py k53`;
+committed at **[r1 MEAS-4]**, the first draft cited an uncommitted sweep). A general three-stage member
 would let the DP pick TS per set; that is S1's implementer's choice under the
 same O(k) pricing, and it is not a new member.
 
@@ -423,7 +445,7 @@ head, and 92% of closure visits take the ~466 ns loop-context memo path
 | today: flat alternation of `u8_box` chains (this lane's transcription) | 2,799 class nodes | — | **827** branch heads |
 | minimal forward automaton, set-labelled edges | 299 | 627 | **30** |
 | minimal reverse automaton, exact over bytes | 453 | 4,497 | **65** |
-| (reversed forward automaton, for contrast) | 299 | 627 | 270 |
+| (reversed forward automaton, for contrast; `revfwd_root_fanout` column, added **[r1 MEAS-3]**) | 299 | 627 | 270 |
 
 (The transcription's 2,799 class nodes differ by 3% from K67's instrumented
 2,711 forward NFA states; the gap is not explained here, and the fan-out
@@ -574,7 +596,10 @@ Pre-1.0, these are deliberate and permitted (memory
   §1.3). Owed: the same for the 41 byte classes (expected: the DP never picks a
   whole-set table there, since `MASK64`/`CUBES` carry no load).
 - **a2. The `A_CLASS` reader census, classified**: for each of the 49 arms and
-  6 comparisons, "reads bytes / reads the set / structural only". S3's lane
+  6 comparisons, "reads bytes / reads the set / structural only" — and for
+  every "reads bytes" site, what `A_WCLASS` must answer (width, count,
+  first-unit set), spelled out before S3 merges: `-Wswitch` forces every site
+  to be TOUCHED, not to be RIGHT **[r1 SEM-1]**. S3's lane
   does this as its first act; it sizes S3 and S4.
 - **a3. S5's renumbering population**: build the minimal-automaton NFA
   fragment in a scratch compiler, compile the corpus + bench, count artifacts
@@ -712,6 +737,10 @@ In `ucp_study.md` §F's terms:
   §3.4 island and is triggered by UCP's own design.
 - **The `[:lower:]` caseless trap** (§4) is construction-time and UCP's; the
   kit neither helps nor hurts.
+- **Status of the `\b` parts [r1 SEM-2]**: `back_step(k=1)` is verified to
+  return the start of the character ending at `pos` (enc_utf8.c), but the
+  COMPOSITION `back_step + decode + kit` against PCRE2's UCP `\b` is asserted
+  here, not measured; UCP's design owes that differential.
 - **What UCP must not assume**: that the DFA route's `\w` becomes small. It
   does not until the island (§3.1).
 

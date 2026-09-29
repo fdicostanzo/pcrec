@@ -51,7 +51,8 @@ nothing is linked into pcrec, `make test` does not run it. It READS
 - `wholeset.py` — WHOLE-SET indexed tables, the forms `section.py`'s
   MAXK=64 cap makes unreachable: `PageW2` (idx[cp>>6] -> deduplicated 64-bit
   leaf) and `PageW3` (three stages, TS=10). Branch-free after one bound test;
-  take a bare interval list only (Constraint 1). NOT in `kit.KIT` — whether
+  take a bare interval list only (Constraint 1). `python3 wholeset.py k53`
+  is the TS stage-width sweep (`results/page3_ts_k53.tsv`). NOT in `kit.KIT` — whether
   the DP offers whole-set sections is `docs/design/cls_tree_design.md`'s
   decision, gated on `make bench2`'s timing.
 - `automaton.py` — the UTF-8 byte automaton of a set three ways (today's

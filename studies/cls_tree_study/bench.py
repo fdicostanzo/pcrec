@@ -138,6 +138,13 @@ int main(int argc, char **argv)
 
 
 def loadavg():
+    # os.getloadavg() first: it is the portable path (Linux AND darwin), so the
+    # ubuntubudu run no longer reaches its gate through the sysctl branch's
+    # exception handler (r1 panel, lane clsdes88).
+    try:
+        return os.getloadavg()[0]
+    except OSError:
+        pass
     out = subprocess.run(["sysctl", "-n", "vm.loadavg"],
                          capture_output=True, text=True).stdout
     try:
