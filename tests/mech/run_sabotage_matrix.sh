@@ -310,7 +310,7 @@
 #     route manifest. Its own arm because its §2 is the only net that can see
 #     a T3 denial falling through to an unsound lowering (S342, the GEN-4
 #     shape): on the default path the denied row never fires, so `harness`
-#     is green on it by construction. Registered before S337-S342.
+#     is green on it by construction. Registered before S337-S343.
 #
 # THE THREE NEWEST WORDS WERE REGISTERED FIRST, DELIBERATELY, which is the
 # lesson R31 C11 left one module earlier: this vocabulary is CLOSED, so a
