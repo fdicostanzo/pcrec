@@ -490,10 +490,12 @@ static const PcrecEnc *cls_enc(Ctx *cx)
  *   - a NAMED BYTE SET — `\d`, `\w`, `\s`, a POSIX bracket, anything arriving
  *     through `pcrec_ast_class_from_bits` — folds by `pcrec_fold_ascii` AT
  *     EVERY ENCODING, because the set is named in the ASCII alphabet and
- *     PCRE2 widens it no further without `PCRE2_UCP`, which pcrec has no axis
- *     for (§4.5). MEASURED: under `PCRE2_UTF|PCRE2_CASELESS`, `[[:lower:]]`
- *     and `\w` do NOT match U+212A while `[a-z]` and `[k]` do — and both DO
- *     match it under `|PCRE2_UCP`, which is the arm pcrec does not implement.
+ *     PCRE2 widens it no further without `PCRE2_UCP` (§4.5). MEASURED: under
+ *     `PCRE2_UTF|PCRE2_CASELESS`, `[[:lower:]]` and `\w` do NOT match U+212A
+ *     while `[a-z]` and `[k]` do (the encoding's fold, no UCP needed). Under
+ *     UCP `\w` is a different SET — `\p{Xwd}`, which contains U+212A
+ *     outright — while `(?i)[[:lower:]]` still does not match it: UCP makes
+ *     `[:lower:]` fold-inert (ucp_design.md §1.3, r1 SEM-1).
  *
  * A PROPERTY SET IS NOT FOLDED HERE AT ALL, by either relation, and stage 3
  * measured why: `\p{Lu}` under `-i` IS `\p{L&}` (the substitution module
@@ -651,10 +653,11 @@ Ast *pcrec_ast_class_from_bits(Ctx *cx, const unsigned char bits[32],
      * bracket — and PCRE2 widens such a set no further under UTF unless
      * `PCRE2_UCP` is set, which pcrec has no axis for (§4.5). MEASURED under
      * `PCRE2_UTF|PCRE2_CASELESS`: `[[:lower:]]` and `\w` do NOT match U+212A,
-     * while `[a-z]` and `[k]` DO — and all four match it once `PCRE2_UCP` is
-     * added. Handing this constructor the encoding's fold would implement
-     * that UCP arm by accident, on the one axis pcrec deliberately does not
-     * have, and would do it silently. */
+     * while `[a-z]` and `[k]` DO — by the encoding's own fold, with no UCP.
+     * What UCP changes is the SET, not this fold: UCP `\w` is `\p{Xwd}`,
+     * which contains U+212A outright, and `(?i)[[:lower:]]` still does not
+     * match it (ucp_design.md §1.3, r1 SEM-1). Handing this constructor the
+     * encoding's fold would widen an ASCII-named set silently. */
     if (cx->mods->caseless) cls_casefold(cx, &s, &pcrec_fold_ascii);
     if (negate) pcrec_cpset_complement(&s, cls_universe(cx));
     pcrec_cpset_publish(&s, a);

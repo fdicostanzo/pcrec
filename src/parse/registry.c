@@ -153,6 +153,7 @@
 #define M_verbs          FEAT_VERBS,         "verbs"
 #define M_extended_classes FEAT_EXTENDED_CLASSES, "extended-classes"
 #define M_vars           FEAT_VARS,          "vars"
+#define M_ucp            FEAT_UCP,           "ucp"
 /* THERE IS NO COMPOUND MODULE MACRO ANY MORE. `M_lookaround_named`
  * ("lookaround/named-groups") lived here for `(?<`, one byte meaning two
  * constructs, and SR-9's `tail` retired it: `(?<=`, `(?<!` and `(?<*` are
@@ -1240,6 +1241,33 @@ VERB_LA("naplb", "(*naplb:a)", "(?<*a)",
 VERB_LA("non_atomic_positive_lookbehind",
         "(*non_atomic_positive_lookbehind:a)", "(?<*a)",
         "non-atomic positive lookbehind, long alpha spelling of (?<*...)"),
+/* [UCP] module `ucp`'s three verb NAMES (ucp_design.md §1.2, D130 Q2),
+ * RF_INDEX name rows on the alpha-lookaround rows' own model above: before
+ * them `(*UCP)` answered "requires module 'verbs'", a module `--features all`
+ * could not satisfy (O-71) — D26's exact tier is the OWNER. `(*UTF)` and
+ * `(*UTF8)` (a live synonym on 10.46/10.48) restate `--encoding=utf8`: their
+ * port accepts under a Unicode encoding and their FIXED sentence refuses
+ * under `byte` whatever the gate says, because enabling a module cannot make
+ * a byte artifact's subject UTF-8 — a CAPABILITY sentence, not a module
+ * promise, which is why these two index rows are RD_FIXED where every other
+ * index row renders the module template. `(*UTF8)`'s `family` is `(*UTF)`'s;
+ * `(*UCP)` and `(*UTF)` are families of one. QF_NO on all three: a
+ * start-of-pattern option is not a repeatable item (`(*UCP)*` is PCRE2 error
+ * 109). */
+{RK_VERB, REG_SEL_ANY, "UCP", "(*UCP)a", M_ucp, FLAV_PCRE2, ANY_ENGINE,
+ RS_MODULE, RD_MODULE, NULL, NULL, RF_INDEX,
+ "Unicode properties for \\d \\s \\w \\b and the POSIX classes (PCRE2_UCP)",
+ ROADMAP_PLANNED, QF_NO, NULL, 0, NULL, NO_PORT, NO_PORT, "(*UCP)a", NULL},
+{RK_VERB, REG_SEL_ANY, "UTF", "(*UTF)a", M_ucp, FLAV_PCRE2, ANY_ENGINE,
+ RS_MODULE, RD_FIXED, "(*UTF) requires --encoding=utf8", NULL, RF_INDEX,
+ "UTF mode — a restatement of --encoding=utf8, refused under byte",
+ ROADMAP_PLANNED, QF_NO, NULL, 0, NULL,
+ {PORT_FN, false, 0, NULL, pcrec_ucpport_utf}, NO_PORT, "(*UTF)a", NULL},
+{RK_VERB, REG_SEL_ANY, "UTF8", "(*UTF8)a", M_ucp, FLAV_PCRE2, ANY_ENGINE,
+ RS_MODULE, RD_FIXED, "(*UTF8) requires --encoding=utf8", NULL, RF_INDEX,
+ "UTF mode, older spelling of (*UTF) — refused under byte",
+ ROADMAP_PLANNED, QF_NO, NULL, 0, NULL,
+ {PORT_FN, false, 0, NULL, pcrec_ucpport_utf}, NO_PORT, "(*UTF)a", NULL},
 /* THE DOORWAY ROW STAYS LAST, and that is a requirement rather than a
  * convention now: `pcrec_registry_arbitrate` elects the LAST REG_SEL_ANY row
  * it walks as the kind's catch-all. The twelve above carry RF_INDEX and are

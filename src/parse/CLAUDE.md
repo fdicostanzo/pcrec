@@ -147,6 +147,13 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   164-probe differential had missed (quoted quantifier chars live; the
   p_rep in_quote guard is the fix, S212 pins it). The impl lane itself
   wrote no tests here — that remains the point.
+- **mod_ucp.c** — module `ucp` ([UCP], docs/design/ucp_design.md, D130).
+  U0: the `(*UTF)`/`(*UTF8)` name rows' port — accepted as a restatement
+  when the compile's encoding is Unicode (`max_cp`), refused by the row's
+  fixed sentence otherwise — and the start-of-pattern OPTION RUN
+  (`Ctx.optrun_end`) that lets `(*UTF)(*UCP)` combine in either order
+  (mod_verbs.c's position rule reads it). `-e utf8` IMPLIES this module and
+  `unicode-props` (`PcrecEnc.implied_features`, O-71).
 - **registry.c** — the syntax construct registry (D24/SR-1): every non-base
   construct as one `static const` row, plus the lookup. Since Q1 (D25) it also
   holds the `(*` doorway's two verb-NAME tables — 31 upper + 19 lower, chosen by

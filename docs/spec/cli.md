@@ -129,6 +129,17 @@ PCRE2-divergent answer; `<prefix>_next_pos` is the supported way to produce a
 valid `startpos`, and the find-all loop of `docs/spec/match_api.md` §3.1
 already uses it.
 
+**`-e utf8` IMPLIES modules `unicode-props` and `ucp`** ([UCP], D130 Q2,
+O-71): they are enabled for that compile whatever `--features` says, so
+`\p{…}` and `(*UCP)`/`(*UTF)` need no `--features` under UTF-8. ENABLED is
+not ON — UCP semantics still need `(*UCP)` or `--ucp`. The artifact's
+`PCREC_FEATURE_SET`/`PCREC_FEATURE_MODULES` stamps keep recording the
+REQUESTED set (so no artifact moves); the implication is a function of the
+stamped encoding. **`(*UTF)` and `(*UTF8)`** at pattern start restate the
+encoding: accepted under `-e utf8`, refused BY NAME under `byte` ("`(*UTF)`
+requires --encoding=utf8") at every gate state — a pattern may confirm the
+artifact's encoding and may never change it.
+
 **Under `-e byte`** a code point above `0xFF` written as `\x{…}` is a compile
 error (as PCRE2's `options=0` gives error 134); a NEGATED class or `.`
 complements within `[0, 0xFF]`, unchanged from before this milestone.
@@ -387,7 +398,7 @@ write (D19) — see `docs/spec/match_api.md` §8.2 for the field's own
 contract, including why `NULL` there means "no request" rather than the
 CLI's own `std1` bare default.
 
-**The 17 module names** (confirmed live,
+**The 18 module names** (confirmed live,
 `build/pcrec --list-syntax | cut -f4 | sort -u`), each with its shipped
 status measured the same way
 (`build/pcrec --list-syntax | awk -F'\t' '$4!="" {print $4,$16}' | sort -u`
@@ -412,6 +423,7 @@ no module is split):
 | `misc` | not built | scattered rarer constructs |
 | `quoting` | **built** | `\Q…\E` literal quoting, including inside a character class |
 | `unicode-props` | **built (partial)** | `\p{…}`/`\P{…}` — the Unicode GENERAL CATEGORIES and PCRE2's derived families ([M5.0] stage 3) plus the SCRIPTS, bare and under `sc=`/`scx=` ([M5.0] stage 5). See the note below for exactly which names |
+| `ucp` | not built ([UCP] U0: the `(*UTF)`/`(*UTF8)` restatements compile under `-e utf8`; `(*UCP)` names this module) — IMPLIED by `-e utf8` | `(*UCP)`, `--ucp`, the `(?a…)` restriction letters' UCP meaning |
 | `verbs` | not built (per-name; the 12 alpha-spelled lookaround verbs are attributed to `lookaround`/`assertions` instead, D71 item 3) | `(*PRUNE)`/`(*COMMIT)`/etc. |
 
 **`unicode-props` is the first module in this table to ship a PROPER SUBSET

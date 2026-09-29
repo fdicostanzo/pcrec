@@ -2637,6 +2637,12 @@ struct Ctx {
      * comments in parse.c for why the close has to happen there and not
      * inside the quoted-byte reader itself. */
     bool                 in_quote;
+    /* [UCP] The end of the ACCEPTED leading run of start-of-pattern options
+     * (`(*UTF)`, `(*UCP)`), 0 before any. PCRE2 allows a RUN of them —
+     * `(*UTF)(*UCP)` in either order — and a start-of-pattern verb is valid
+     * exactly when it begins where this run ends (mod_verbs.c). Written only
+     * by the port that accepts one of those verbs. */
+    size_t               optrun_end;
     /* SCOPED PARSE STATE (PARSE-1; widened to a struct at MOD-0.5c, the
      * D31-note's "expect a struct, not more bools"). Seeded at parse entry
      * and saved/restored around every BODY-CARRYING group, because that is
@@ -3157,7 +3163,12 @@ enum {
      * supplies per call. The REPLACEMENT-side consumer is NOT this module —
      * it rides D38's already-named `subst` / `subst-extended` / `subst-pcrec`
      * (variables_common.md §7 Q6, ruled). */
-    FEAT_VARS             = 1u << 17
+    FEAT_VARS             = 1u << 17,
+    /* [UCP] module `ucp` (docs/design/ucp_design.md §1.2, D130): the
+     * `(*UCP)` verb, the `--ucp` axis and the `(?a…)` letters' UCP meaning.
+     * Also owns `(*UTF)`/`(*UTF8)`, which restate `--encoding=utf8`. An
+     * encoding may IMPLY it (`PcrecEnc.implied_features`, O-71). */
+    FEAT_UCP              = 1u << 18
 };
 
 /* Flavour: which construct a byte MEANS. Exactly one today, by design — D18's
@@ -4403,6 +4414,12 @@ const RegRow *pcrec_atomic_suffix_row(int quant_byte);
  * lookarounds, matching libpcre2's default (err 199). */
 ExtResult pcrec_laport_group(Ctx *cx, const RegRow *rw, ExtWant want,
                              size_t at, size_t from);
+
+/* [UCP] module `ucp`'s verb ports (src/parse/mod_ucp.c): `(*UTF)`/`(*UTF8)`
+ * accepted as a restatement under a Unicode encoding and refused by the row's
+ * own sentence otherwise. */
+ExtResult pcrec_ucpport_utf(Ctx *cx, const RegRow *rw, ExtWant want,
+                            size_t at, size_t from);
 
 /* [DD-14.LB] MODULE `lookaround`'s HALF OF THE DEFERRED WIDTH RE-CHECK — the
  * §2.5 fixed-width rule, asked a SECOND TIME, at a second TIMING.

@@ -89,7 +89,7 @@ whole reason the utf8 encoding module needs to exist).
 | axis07_caseless_1ton.rxt | 11 | 0 | 11 | pinned to today's behaviour; agrees with the oracle on every cell |
 | axis08_lookbehind_varwidth.rxt | 24 | 3 | 21 | promoted; `features` line added per block (missing as authored) |
 | axis09_nextpos_findall.rxt | 18 | 0 | 18 | promoted; the block moved to `known_fail` at promotion is BACK (K49 fixed). **-2 at [K50]**: the two mid-character-`startpos` blocks moved to `run_startbnd_diff.sh` §6, which can express the deny arm — see below |
-| axis10_surrogate_witness.rxt | 9 | 3 | 6 | promoted clean |
+| axis10_surrogate_witness.rxt | 9 | 0 | 9 | promoted clean; the 3 `^\p{L}$` blocks promoted at [UCP] U0 (`-e utf8` implies `unicode-props`) |
 | axis11_startpos_boundary.rxt | 7 | 0 | 7 | **NEW at [K50]**, and the first file here outside the D27 extract's axes — see below |
 | axis12_scripts.rxt | 26 | 7 | 19 | **NEW at [M5.0] stage 5** — the SCRIPT properties, and the first file in this directory whose every expectation is the 10.46 REFERENCE's own answer rather than a local library's; see below |
 

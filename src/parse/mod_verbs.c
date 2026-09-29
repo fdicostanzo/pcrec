@@ -433,16 +433,12 @@ static ExtResult verb_answer(Ctx *cx, ExtWant want, size_t at,
                (v->own_forms & form) ? v->own_msg : t->unknown_msg);
 
     /* Start-of-pattern options are valid only at the start. PCRE2 allows a RUN
-     * of them — `(*UTF)(*CR)` compiles — and pcrec's rule is `at == 0` exactly.
-     *
-     * That is equivalent TO THE GENERAL PREFIX-RUN RULE, as an implementation
-     * choice inside pcrec, and to nothing else: any earlier verb would already
-     * have ended this compile with "requires module 'verbs'", so a run can
-     * never reach here with a non-zero offset, and the two rules cannot differ
-     * on any pattern. Writing the general scan now would be code whose only
-     * interesting branch nothing can execute. When module 'verbs' lands and
-     * these constructs start being ACCEPTED, that stops being true and the scan
-     * is what replaces this line.
+     * of them — `(*UTF)(*UCP)` compiles, in either order — so the rule is the
+     * GENERAL PREFIX-RUN one: a start-of-pattern verb must begin exactly where
+     * the run of ACCEPTED ones ends (`Ctx.optrun_end`, 0 before any). [UCP]
+     * built the first two such verbs (`(*UTF)`, `(*UCP)`, mod_ucp.c), which is
+     * what made the old `at == 0` spelling and this rule stop being the same
+     * rule: before, any earlier verb had already ended the compile.
      *
      * IT DOES NOT MEAN pcrec's message matches PCRE2's on every pattern with an
      * option in it (R8/C2). `(*UTF)a(*UTF)` is PCRE2 error 160 — about the
@@ -451,7 +447,7 @@ static ExtResult verb_answer(Ctx *cx, ExtWant want, size_t at,
      * at every doorway (`\d{3,1}` is "requires module 'classes'" here and
      * "numbers out of order" in PCRE2), and the general prefix scan would not
      * change it. */
-    if ((v->forms & VF_ATSTART) && at != 0)
+    if ((v->forms & VF_ATSTART) && at != cx->optrun_end)
         REFUSE(at, "%s", t->unknown_msg);
 
     /* K14 (design §17.2): disposition is a PER-NAME fact — `(*COMMIT)` is
@@ -530,8 +526,8 @@ static ExtResult verb_answer(Ctx *cx, ExtWant want, size_t at,
      * the lookup above. */
     if (r->diag == RD_FIXED)
         REFUSE(at, "%s", r->msg);
-    REFUSE(at, "(*%.*s:...) requires module '%s'", (int)namelen, name,
-           r->module);
+    REFUSE(at, "(*%.*s%s) requires module '%s'", (int)namelen, name,
+           (v->forms & VF_GROUPARG) ? ":..." : "", r->module);
 }
 
 /* The elected-row wrapper (MOD-0.7 slice 2; ext.c's wrappers carry the full

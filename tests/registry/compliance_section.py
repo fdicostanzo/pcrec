@@ -437,8 +437,10 @@ def dump():
     # (confirmed by grep: pure base grammar, no doorway at all).
     # 138 -> 139 ([VAR], 2026-09-23): `${name}` joins RK_BARE as a fourth
     # no-doorway row -- module `vars`' own row.
-    if len(rows) != 139:
-        sys.exit(f"compliance_section: dump has {len(rows)} rows, expected 139. "
+    # 139 -> 142 ([UCP] U0, 2026-09-28): module `ucp`'s `(*UCP)`, `(*UTF)`,
+    # `(*UTF8)` name rows.
+    if len(rows) != 142:
+        sys.exit(f"compliance_section: dump has {len(rows)} rows, expected 142. "
                  "If you added or removed a construct deliberately, update this "
                  "number in the same commit; if not, coverage was lost")
     return rows

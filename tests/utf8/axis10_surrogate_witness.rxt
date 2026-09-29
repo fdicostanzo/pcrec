@@ -8,7 +8,9 @@
 # `^[^a]$` over all three surrogate encodings) compile and match under
 # `-e utf8`, zero divergences -- the surrogate-subject rejection holds
 # exactly as measured, on every encoding shape tried. The 3 `^\p{L}$`
-# blocks stay `perr`: module `unicode-props` is still unbuilt (stage 3).
+# blocks stayed `perr` because `\p` needed `--features unicode-props` and the
+# blocks name none; [UCP] U0 (O-71) made `-e utf8` IMPLY that module, so they
+# compile now and carry the three cases their own header lines record.
 
 # axis10 block low-dot | surrogate=low (ED A0 80) | pattern: ^.$
 #   [SURROGATE WITNESS, must be rejected] n "\xed\xa0\x80"   # oracle=PCRE2_MATCH_INVALID_UTF
@@ -36,9 +38,12 @@ m "!" 0 1
 #   [SURROGATE WITNESS, must be rejected] n "\xed\xa0\x80"   # oracle=PCRE2_MATCH_INVALID_UTF
 #   [vacuity: well-formed member still matches] m "A" 0 1   # oracle=PCRE2_UTF
 #   [vacuity: well-formed non-member still fails] n "!"   # oracle=PCRE2_UTF
+# pcre2-only
 pattern ^\p{L}$
 encoding utf8
-perr
+n "\xed\xa0\x80"
+m "A" 0 1
+n "!"
 
 # axis10 block high-dot | surrogate=high (ED BF BF) | pattern: ^.$
 #   [SURROGATE WITNESS, must be rejected] n "\xed\xbf\xbf"   # oracle=PCRE2_MATCH_INVALID_UTF
@@ -66,9 +71,12 @@ m "!" 0 1
 #   [SURROGATE WITNESS, must be rejected] n "\xed\xbf\xbf"   # oracle=PCRE2_MATCH_INVALID_UTF
 #   [vacuity: well-formed member still matches] m "A" 0 1   # oracle=PCRE2_UTF
 #   [vacuity: well-formed non-member still fails] n "!"   # oracle=PCRE2_UTF
+# pcre2-only
 pattern ^\p{L}$
 encoding utf8
-perr
+n "\xed\xbf\xbf"
+m "A" 0 1
+n "!"
 
 # axis10 block cesu8-pair-dot | surrogate=cesu8-pair (ED A0 80 ED B0 80) | pattern: ^.$
 #   [SURROGATE WITNESS, must be rejected] n "\xed\xa0\x80\xed\xb0\x80"   # oracle=PCRE2_MATCH_INVALID_UTF
@@ -96,7 +104,10 @@ m "!" 0 1
 #   [SURROGATE WITNESS, must be rejected] n "\xed\xa0\x80\xed\xb0\x80"   # oracle=PCRE2_MATCH_INVALID_UTF
 #   [vacuity: well-formed member still matches] m "A" 0 1   # oracle=PCRE2_UTF
 #   [vacuity: well-formed non-member still fails] n "!"   # oracle=PCRE2_UTF
+# pcre2-only
 pattern ^\p{L}$
 encoding utf8
-perr
+n "\xed\xa0\x80\xed\xb0\x80"
+m "A" 0 1
+n "!"
 

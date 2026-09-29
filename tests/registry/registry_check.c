@@ -485,8 +485,17 @@ static void check_wellformed(void)
              * loosening: a verb row is RD_FIXED unless it is an INDEX row,
              * and an index row must be RD_MODULE (a fixed text there would be
              * a second home for the sentence the template already renders). */
+            /* [UCP] ONE EXCEPTION, and it is not a second home for the
+             * template: `(*UTF)`/`(*UTF8)` are refused under `byte` by a
+             * CAPABILITY sentence ("requires --encoding=utf8") that no module
+             * can satisfy, so an index row MAY be RD_FIXED when its text
+             * promises no module. A fixed text that DOES say "requires module"
+             * is still the duplicate this rule exists to refuse. */
             case RK_VERB:
                 if ((r->flags & RF_INDEX) != 0) {
+                    if (r->diag == RD_FIXED && r->msg &&
+                        !strstr(r->msg, "requires module"))
+                        break;
                     if (r->diag != RD_MODULE)
                         bad("%s (%s): an INDEX row on the (* doorway renders "
                             "the MODULE template (mod_verbs.c resolves the name "
@@ -614,8 +623,10 @@ static void check_wellformed(void)
     /* 138 -> 139 ([VAR], 2026-09-23): `${name}` joins RK_BARE as a fourth
      * no-doorway row — module `vars`' own row, RS_MODULE/VM_ONLY rather
      * than RS_BASE (registry.c's own header comment on the row). */
-    if (total != 139) {
-        bad("registry ROW COUNT CHANGED: %zu rows, expected 139. If you added or "
+    /* 139 -> 142 ([UCP] U0, 2026-09-28): module `ucp`'s three `(*` name
+     * rows, `(*UCP)`, `(*UTF)` and `(*UTF8)`. */
+    if (total != 142) {
+        bad("registry ROW COUNT CHANGED: %zu rows, expected 142. If you added or "
             "removed a construct deliberately, update this number in the same "
             "commit; if not, coverage was removed", total);
     } else {
@@ -1315,8 +1326,14 @@ static void check_table_to_parser(void)
             snprintf(label, sizeof label, "%s %s: diagnostic matches the row",
                      kind_name((RegKind)k), r->syntax);
             if (r->diag == RD_MODULE && r->tail) {
-                snprintf(want, sizeof want, "(*%s:...) requires module '%s'",
-                         r->tail, r->module);
+                /* [UCP] the `:...` is the GROUP-ARGUMENT forms' only: a bare
+                 * start-of-pattern name (`(*UCP)`) renders without it. */
+                const VerbName *vn = pcrec_registry_verb_find(
+                    pcrec_registry_verb_table((unsigned char)r->tail[0]),
+                    r->tail, strlen(r->tail));
+                snprintf(want, sizeof want, "(*%s%s) requires module '%s'",
+                         r->tail, vn && (vn->forms & VF_GROUPARG) ? ":..." : "",
+                         r->module);
                 expect_msg(label, r->syntax, want);
                 continue;
             }
@@ -1894,12 +1911,14 @@ static void check_class_ports(void)
      * CLASS PORTS ARE UNMOVED at 7/10/9 for the fourth wave running: a
      * subroutine call has no class position, and the two `\g` rows' BASE
      * scalar class ports (the literal letter `g`) were already counted. */
-    if (scalar != 7 || set != 10 || fn != 9 || aports != 92)
+    /* [UCP] U0: ATOM PORTS 92 -> 94, module `ucp`'s `(*UTF)`/`(*UTF8)` name
+     * rows sharing `pcrec_ucpport_utf`. */
+    if (scalar != 7 || set != 10 || fn != 9 || aports != 94)
         bad("class ports: populations moved — %d scalar (7: b g k 8 9 and the "
             "two \\g< / \\g' rows), "
             "%d SET class ports (10: the char-types, slice 2), %d FN class "
             "ports (9: posix + the eight octal digits, slice 3), %d atom "
-            "ports (92: the char-types + \\N, the twelve GROUP_OPT rows' "
+            "ports (94: the char-types + \\N, the twelve GROUP_OPT rows' "
             "option-run producer since MOD-0.5c, the three "
             "named-groups declaring rows' producer since [M6.3], the "
             "three assertions rows \\A/\\Z/\\z since [M6.2] wave A, plus "
@@ -3055,9 +3074,14 @@ static void check_built_status_defects(void)
      * stamps an A_VAR node, so it classifies `built` — the module `vars`
      * producer having actually landed. `unbuilt`/`na` are unmoved: no
      * other row's classification changes with it. */
-    else if (checked != 139 || built != 111 || unbuilt != 12 || na != 16)
+    /* 139 = 111 + 12 + 16 -> 142 = 111 + 15 + 16 ([UCP] U0): module `ucp`'s
+     * three name rows are unbuilt at this stage's probe — `(*UCP)` has no
+     * producer yet, and `(*UTF)`/`(*UTF8)` are REFUSED under the probe's
+     * default `byte` encoding (they compile under `-e utf8`, which the
+     * registry's byte-default probe does not ask). */
+    else if (checked != 142 || built != 111 || unbuilt != 15 || na != 16)
         bad("built-status POPULATION MOVED: %d rows = %d built + %d unbuilt + "
-            "%d n/a, expected 139 = 111 + 12 + 16. Zero defects does NOT imply "
+            "%d n/a, expected 142 = 111 + 15 + 16. Zero defects does NOT imply "
             "nothing changed — a construct that silently stopped being built "
             "moves `built` down and `unbuilt` up with the sum unchanged, and "
             "the generated compliance index renders this column. If the move "
@@ -3135,8 +3159,14 @@ static void check_families(void)
                     const RegRow *r2 = pcrec_registry((RegKind)k2, &n2);
                     if (!r2) continue;
                     for (size_t j = 0; j < n2; j++)
+                        /* [UCP] a SELF-PRIMARY row (family == its own
+                         * syntax: a verb NAME with no other spelling, which
+                         * an index row still needs a family to be) is a
+                         * primary, not an alias, so naming it is no chain. */
                         if (r2[j].syntax && strcmp(r2[j].syntax, r->family) == 0
-                            && r2[j].family) {
+                            && r2[j].family
+                            && strcmp(r2[j].family, r2[j].syntax) != 0
+                            && &r2[j] != r) {
                             bad("family: '%s' names '%s', which is ITSELF an "
                                 "alias (family '%s'). Families are one level "
                                 "deep -- mod_lookaround.c's la_kind resolves "
@@ -3265,9 +3295,11 @@ static void check_families(void)
     /* 100 -> 101 ([VAR], 2026-09-23): `${name}` is a fourth RK_BARE row,
      * also its own family (family == NULL, the same shape as `^`/`$`/`(a)`
      * above it). `multi`/`members_in_multi` are untouched. */
-    if (families != 101 || multi != 12 || members_in_multi != 50)
+    /* 101/12/50 -> 103/13/52 ([UCP] U0): `(*UCP)` is a family of one and
+     * `(*UTF)`+`(*UTF8)` a family of two, both self-primary verb names. */
+    if (families != 103 || multi != 13 || members_in_multi != 52)
         bad("family POPULATION MOVED: %d families, %d with more than one "
-            "member, %d members in those -- expected 101 / 12 / 50. The index "
+            "member, %d members in those -- expected 103 / 13 / 52. The index "
             "layer's grouping changed; if deliberately, update these numbers "
             "in the same commit", families, multi, members_in_multi);
     else if (bads == 0) {
@@ -3424,10 +3456,11 @@ swept:
      * relative calls, the eight `(?+N)` siblings, `\g<0>`/`\g'0'`, and the
      * leading-zero absolutes). They are the FIRST byte-keyed index rows and
      * the reason the verb-name assertions above are now RK_VERB's alone. */
-    if (nindex != 21)
-        bad("INDEX-ROW POPULATION MOVED: %d rows carry RF_INDEX, expected 21 "
-            "(the twelve (* alpha lookaround spellings and module "
-            "`recursion`'s nine missing spellings). If deliberate, update "
+    /* 21 -> 24 ([UCP] U0): module `ucp`'s three `(*` names. */
+    if (nindex != 24)
+        bad("INDEX-ROW POPULATION MOVED: %d rows carry RF_INDEX, expected 24 "
+            "(the twelve (* alpha lookaround spellings, module "
+            "`recursion`'s nine missing spellings and module `ucp`'s three). If deliberate, update "
             "this number in the same commit", nindex);
     else if (bads == 0) {
         char label[288];

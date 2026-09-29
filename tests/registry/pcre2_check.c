@@ -560,10 +560,15 @@ static int required_answer(int rc, const char **want)
     }
 }
 
-/* The OBL_MODULE shape. Deliberately not `strstr(msg, "verbs")`. */
+/* The OBL_MODULE shape. Deliberately not `strstr(msg, "verbs")`.
+ * [UCP] OR the ENCODING shape: `(*UTF)`/`(*UTF8)` are real and refused under
+ * `byte` by the encoding they restate ("requires --encoding=utf8"), the one
+ * way a construct pcrec knows can be refused truthfully without a module
+ * (D130 Q2) — D26's tier-2 obligation is to name what would make it legal. */
 static int names_a_module(const char *msg)
 {
     const char *p = strstr(msg, "requires module '");
+    if (strstr(msg, "requires --encoding=")) return 1;
     return p && strchr(p + 17, '\'') != NULL;
 }
 

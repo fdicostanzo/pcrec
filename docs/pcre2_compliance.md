@@ -1035,7 +1035,8 @@ survey). Pure lexing, `PLANNED`-trivial.
 | `(*LIMIT_DEPTH=)` `(*LIMIT_HEAP=)` `(*LIMIT_MATCH=)` `(*LIMIT_RECURSION=)` | `OUT-OF-SCOPE` | — |
 | `(*NO_JIT)` `(*NO_START_OPT)` `(*NO_AUTO_POSSESS)` `(*NO_DOTSTAR_ANCHOR)` | `OUT-OF-SCOPE` | — |
 | `(*NOTEMPTY)` `(*NOTEMPTY_ATSTART)` | `REJECTED` | `PLANNED` |
-| `(*UTF)` `(*UCP)` | `REJECTED` | `PLANNED` |
+| `(*UTF)` `(*UTF8)` — a restatement of `--encoding=utf8`: accepted under `-e utf8`, refused by name under `byte` (module `ucp`, D130 Q2) | `OK-LIMITED` | — |
+| `(*UCP)` — module `ucp` ([UCP] U1) | `REJECTED` | `PLANNED` |
 | `(*CASELESS_RESTRICT)` `(*TURKISH_CASING)` | `OUT-OF-SCOPE` | — |
 
 <!-- BEGIN GENERATED ANNOTATIONS: option-setting -->
@@ -2250,7 +2251,7 @@ a miscompile of the kind D26 tier 1 forbids. The tally moved 104 rows =
 
 ## Registry construct index (generated)
 
-Every non-base construct pcrec knows, as the parser itself sees it — 139 rows from one declarative table (D24), rendered as 101 lines because a construct with several SPELLINGS gets one line naming them all (D71 item 3). The prose sections above carry the analysis; this is the inventory, and it cannot drift from the compiler because it is printed by it.
+Every non-base construct pcrec knows, as the parser itself sees it — 142 rows from one declarative table (D24), rendered as 103 lines because a construct with several SPELLINGS gets one line naming them all (D71 item 3). The prose sections above carry the analysis; this is the inventory, and it cannot drift from the compiler because it is printed by it.
 
 `built` on a multi-spelling line is ANDed over its spellings: the line reads `built` only if every one of them does.
 
@@ -2345,6 +2346,8 @@ Every non-base construct pcrec knows, as the parser itself sees it — 139 rows 
 | after `(?` | `(?s)` | `REJECTED` | `built` | planned | `modifiers` | dfa|vm | dotall: . matches newline |
 | after `(?` | `(?x)` | `REJECTED` | `built` | planned | `modifiers` | dfa|vm | extended: ignore unescaped whitespace and # comments |
 | after `(?` | `(?q)` | `AGREES-REJECT` | — | never | — | — | no construct begins with this byte — PCRE2 error 111 |
+| after `(*` | `(*UCP)a` | `REJECTED` | `unbuilt` | planned | `ucp` | dfa|vm | Unicode properties for \d \s \w \b and the POSIX classes (PCRE2_UCP) |
+| after `(*` | `(*UTF)a` | `REJECTED` | `unbuilt` | planned | `ucp` | dfa|vm | UTF mode — a restatement of --encoding=utf8, refused under byte — also spelled `(*UTF8)a` |
 | after `(*` | `(*ACCEPT)` | `REJECTED` | `unbuilt` | planned | `verbs` | vm | backtracking verb ((*SKIP), (*ACCEPT)), start-of-pattern option ((*CR), (*UTF)) or script run ((*script_run:...)) |
 | after `[` in a class | `[[:alpha:]]` | `REJECTED` | `built` | planned | `classes` | dfa|vm | POSIX character class |
 | after `[` in a class | `[[.a.]]` | `AGREES-REJECT` | — | never | — | — | POSIX collating element — PCRE2 rejects it, and so must we |
