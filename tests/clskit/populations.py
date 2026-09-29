@@ -19,11 +19,13 @@ live studies/cls_tree_study/ is never imported here, docs/CLAUDE.md's
 
 Output (one line per record, intervals as hex `lo:hi`):
 
-  CHUNK                                  start a new compile unit
+  CHUNK                                  start a new ATOMIC GROUP (clskit_driver
+                                         packs groups into compile units by
+                                         emitted bytes; never splits one)
   SET <idx> <kind> <name> <lo:hi>...     one set
   COMP <c> <a> <b> <op>                  set c must equal op(a, b)
 
-A composition's operands and results share a CHUNK, so the checker can
+A composition's operands and results share a group (CHUNK), so the checker can
 evaluate the law inside one program. Reads only; writes only the path given.
 """
 
@@ -38,7 +40,6 @@ sys.path.insert(0, REF)
 import clsets      # noqa: E402  (the frozen copy's population readers)
 import proptest    # noqa: E402  (the frozen copy's generators and set algebra)
 
-SETS_PER_CHUNK = 12
 PROP_SEED = 1
 PROP_CASES = 40
 
@@ -59,9 +60,8 @@ def main():
 
     for kind, pop in (("uprops", clsets.uprops()), ("k53", clsets.k53()),
                       ("byte", clsets.byteclasses())):
-        for k, (name, iv) in enumerate(pop):
-            if k % SETS_PER_CHUNK == 0:
-                out.append("CHUNK")
+        for name, iv in pop:
+            out.append("CHUNK")     # one set per group: no law spans them
             put(kind, name, iv)
 
     # The study's proptest draw order, reproduced exactly: case c takes its
