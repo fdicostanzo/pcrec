@@ -88,8 +88,8 @@ BENCH_ROOT = "/Users/fdicostanzo/pcrec-bench/bench"
 # set at ~90% so a corpus edit does not redden the instrument, while a
 # population that COLLAPSES (an extractor break, K35) still does.
 PINS = {
-    "triples": 0,        # filled from the baseline record below
-    "reach": 0,
+    "triples": 14000,    # measured 15,771 (main 1f0dcda3, 2026-09-29)
+    "reach": 1250,       # measured 1,421 of 8,258 utf8 triples
 }
 
 # The inventory's S7 witnesses, plus the shapes its D-3/row-10 discussion names.
@@ -348,7 +348,9 @@ def main():
     ap.add_argument("--tree", default=DEFAULT_TREE)
     ap.add_argument("--out")
     ap.add_argument("--jobs", type=int, default=2)
-    ap.add_argument("--timeout", type=int, default=60)
+    ap.add_argument("--timeout", type=int, default=300,
+                    help="per-compile timeout; `\\p{L}+` under utf8 takes ~75 s "
+                         "(K25/K59 slow zone), so 60 s read as a false finding")
     ap.add_argument("--sample", type=int, default=0,
                     help="every Nth-th triple only (smoke; floors do not apply)")
     ap.add_argument("--control", action="store_true",
