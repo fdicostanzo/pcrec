@@ -809,3 +809,26 @@ change.
   population-selection scan and the shape parser itself, caught by
   comparing against expectation on `tests/lookaround/alpha_spellings.rxt`).
   Harness `docs/dev/lookaround_census/` (own CLAUDE.md).
+- `sel_cost_census.md` — [SEL-COST] STEP 0 (2026-09-29, lane selcost0,
+  sonnet, analysis only, nothing under `src/`/`tests/`/`docs/spec/`, no
+  builds): the mandated exhaustive read of pcrec-bench's `syntax@0.1`
+  roster (pin `751b9c6d`) before any selection mechanism is designed —
+  every (pattern, regime) cell, auto vs the only non-auto comparator the
+  roster carries (forced `--engine=vm`, caps class only; no forced-DFA
+  and no forced-VM-nocaps testee exist there, flagged as bench asks),
+  cause-grouped. Of four cause buckets, TWO are already filed elsewhere
+  (D: the `(?:P)\z` whole-subject wrapper's fixed cost, [OS-4],
+  corroborated by bench findings O-74/O-63; B: the class-run DFA's
+  pointer-chasing loss to the VM, [OPT-5]) and two are new — A, a small
+  consistent ~1.05-1.27x fixed per-call cost on anchored/bounded-position
+  DFA forms, and C, the genuinely open one: the DFA-front hybrid
+  prefilter's cost vs. the plain `req_byte`/`req_run` precheck it
+  suppresses is NOT uniformly a win or a loss on the SAME compile-time
+  pattern signature — it flips by regime (large-subject-throughput vs. a
+  short/whole-subject call) and, on one pair (`lka-pos`/`lka-neg`,
+  identical stamps), by the subject's own match density — the boundary a
+  selection term must actually clear, since no compile-time-only signal
+  distinguishes the two. Recommends the mechanism's SHAPE (a first-match
+  predicate-row table keyed on compile-time pattern signature, valued
+  per assumed call regime) without designing it. Reproduction:
+  `docs/dev/sel_cost_census/` (own CLAUDE.md).
