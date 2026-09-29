@@ -3451,3 +3451,10 @@ never edited afterwards.
   re-anchored in-lane after `make test-codegen`'s own SABANCHOR check
   caught the drift this lane's own edit caused; S364 is the new row, the
   S363 shape one predicate over).
+
+- `clstri_report.md` — triage of [CLS-TREE] S1's two Linux reds (2026-09-29,
+  lane clstri, sonnet): test-clskit's gcc-15 GENCPU timeout fixed by packing
+  atomic groups into compile units by EMITTED BYTES (591/591 on the Mac), and
+  test-rxtsource C3's pin move diagnosed as stale pins (census +318 since
+  2026-09-25, identical on both boxes for the box-independent classes), not
+  box-dependent and not S1's; re-pinned to the Linux py3.14 numbers.
