@@ -13,7 +13,7 @@ SAB_ID="S362-clskit-dedup-collision"
 SAB_FILE="src/gen/clskit.c"
 SAB_SUITES="clskit"
 SAB_DESC="intern_records compares only the low half of each record, so two distinct page leaves that agree in their low 32 bits collapse into one and a page table answers with the wrong leaf"
-SAB_DOC_FIGURE="lane clss1 2026-09-29: see docs/dev/lanes/clss1_report.md for the measured row"
+SAB_DOC_FIGURE="MEASURED solo 2026-09-29 at 52d63c9f (lane clss1): clskit:4fail/1pass DETECTED."
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='            if (!memcmp(x, y, sizeof *x * (size_t)words)) { idx[r] = slot[p] - 1; break; }'

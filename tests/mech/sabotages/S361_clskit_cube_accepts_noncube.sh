@@ -12,7 +12,7 @@ SAB_ID="S361-clskit-cube-accepts-noncube"
 SAB_FILE="src/gen/clskit.c"
 SAB_SUITES="clskit"
 SAB_DESC="cube_of keeps only its O(k) spill budget and drops the exact containment check, so a section that is not one cube is emitted as one and claims non-members inside its span"
-SAB_DOC_FIGURE="lane clss1 2026-09-29: see docs/dev/lanes/clss1_report.md for the measured row"
+SAB_DOC_FIGURE="MEASURED solo 2026-09-29 at 52d63c9f (lane clss1): clskit:4fail/1pass DETECTED -- the differential goes red, and so does the cross-check, because a wrongly-offered cube also moves the sectioning away from the study's."
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='    for (unsigned x = 0; x < w; x++)
