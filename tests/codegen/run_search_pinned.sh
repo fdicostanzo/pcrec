@@ -549,20 +549,39 @@ fi
 # 23 under these flags and 70 under the corpus's own. Both are real; this
 # floor is on the one this file measures.
 #
-# THE FLOOR IS 20, NOT 12 (r51 finding 4). A floor of 12 against a measured
+# THE FLOOR WAS 20, NOT 12 (r51 finding 4). A floor of 12 against a measured
 # 23 is 48% slack, where the sibling floor four lines up (:501, 140 against
 # 175) sits at 20% — and this is the population that was INVISIBLE before
 # the force arm existed at all (§9's own floor above answers "did the axis
 # stay live"; this one answers "did the axis stay live ON THE POPULATION
 # NOTHING ELSE IN THE TREE EXERCISES", which is the harder direction to lose
-# quietly and the wrong one to leave the loosest). 20 keeps the same ~20%
+# quietly and the wrong one to leave the loosest). 20 kept the same ~20%
 # margin the sibling uses (23 * 0.8 ≈ 18, rounded up to the next even floor)
 # rather than the ad hoc 48% the original number left.
+#
+# RE-PINNED BY MECHANISM, 2026-09-29 (lane triu2, triaging [UCP] U2's
+# `make test` run). MEASURED 14 on this tree, below the 20 floor — a genuine
+# population move, not staleness: U2's own report (ucpu2_report.md §4)
+# documents 141 corpus patterns (159 under --no-captures) moving VM -> DFA
+# because a one-character lookaround is now a context node the DFA's class
+# axis reads directly. A SUBSET of exactly that population previously needed
+# `-fprefilter`'s forced hybrid to get a candidate-start prefilter over a
+# lookaround the old VM-only path could not otherwise skip past; with the
+# construct now native to the plain DFA (no VM, no hybrid, no pin needed to
+# recover the search start across it), those patterns leave the FORCE axis's
+# pinned-hybrid bucket entirely. Confirmed by A/B against main `fdcf3e00`
+# (this row's own branch point) under identical flags: 23 there, 14 here,
+# 9 fewer — the same direction and the same order of magnitude as the
+# mover count above. Re-floored to 12 (14 * 0.8 = 11.2, rounded up to the
+# next even floor, the same ~20% margin rule the paragraph above states);
+# `70` in the two lines below is the CAPTURES-ON figure, not asserted by
+# this floor and left as historical prose (§7 item 9's own number, not
+# re-measured here).
 n_pf=$(tok PINNED-force)
-if [ "$n_pf" -lt 20 ]; then
-    bad "§9 only $n_pf artifacts are PINNED on the -fprefilter force axis, below the 20 floor (measured 23 under this file's own --no-captures flags, 70 with captures on). The pinned-HYBRID population has collapsed, and with it every corpus-scale claim in this file about a hybrid — read it before re-pinning"
+if [ "$n_pf" -lt 12 ]; then
+    bad "§9 only $n_pf artifacts are PINNED on the -fprefilter force axis, below the 12 floor (measured 14 on this tree 2026-09-29, was 23 pre-[UCP] U2; 70 with captures on). The pinned-HYBRID population has collapsed, and with it every corpus-scale claim in this file about a hybrid — read it before re-pinning"
 else
-    ok "§9 the force axis carries $n_pf pinned artifacts (measured 23 under this file's flags; 70 with captures on, which is §7 item 9's own answer), so the PINNED HYBRID population this file's §2/§3 claims run over is real and not §4's single named witness"
+    ok "§9 the force axis carries $n_pf pinned artifacts (measured 14 on this tree 2026-09-29, was 23 pre-[UCP] U2; 70 with captures on, which is §7 item 9's own answer), so the PINNED HYBRID population this file's §2/§3 claims run over is real and not §4's single named witness"
 fi
 
 # =========================================================================
