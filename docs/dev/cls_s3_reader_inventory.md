@@ -330,3 +330,15 @@ code, D-1..D-4 rulings needed first).
    committed `(encoding, features)` sweep would serve S3, S4 and every
    later encoding-touching change)? Recommend yes, and fold it into c1's
    acceptance.
+
+## 10. Manager rulings (2026-09-29, eighty-sixth session)
+
+All eight recommendations ADOPTED as written:
+- D-1: loud (`pcrec_ctx_fail`) for the 8 set-reading U rows; silent for structural walkers.
+- D-2: S3 keeps the chain's byte answer for `cwmax`/`cwmin`; the one-character meaning is S4's question.
+- D-3 (a): one see-through helper, following the `ast_bare` precedent. Every spine flattener uses it. `éabc`'s lit run is the identity gate's first witness.
+- D-4: the wrapper arm emits the child without re-charging, and `vm_cost` agrees. cost == charge stays the invariant, and the identity gate proves it.
+- D-5: distinct `u.wcls`, child in `l`, kind-checked accessors. `pcrec_cls_has` (no callers) is deleted.
+- D-6: the five `default:` switches become full enumerations.
+- D-7: S3 builds AFTER both lane/ucpu2 (U2) and lane/clss1 (S1) merge to main.
+- D-8: the (encoding, features) triple-sweep identity instrument is its OWN small lane FIRST (lane clsid). It is committed with a REACH counter and a positive control, and its baseline is recorded on main before S3 starts.
