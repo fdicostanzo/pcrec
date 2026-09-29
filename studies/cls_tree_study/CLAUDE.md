@@ -64,9 +64,41 @@ nothing is linked into pcrec, `make test` does not run it. It READS
 - `verify_whole.py` — exhaustive (all 1,114,112 code points) check of the two
   whole-set forms against `emit.reference`, plus their exact rodata; writes
   `results/whole_<population>.tsv`.
+- `compare_whole_kit.py` — [CLS-TREE] S0 (lane clss0, 2026-09-28): turns
+  `verify_whole.py`'s size columns into a VERDICT against `sweep.py`'s own
+  size-minimal kit answer (`results/sweep_<population>.tsv`'s lam=0 "size"
+  policy row) — does a whole-set form ever beat the kit on size? Writes
+  `results/whole_vs_kit_<population>.tsv`. Confirmed 0/41 (WHOLE-WINS) on
+  the byte-class population (design note §7 a1's owed byte-tier half).
+- `asm_count.py` — [CLS-TREE] S0 (lane clss0): the [FORM-CHAR2] (i)
+  asm-counting method (`studies/form_char_twins/asm_evidence.c`'s one
+  hand-picked fold-vs-bitmap witness) extended to every kit byte form the
+  emitter can build (`ALL`/`RANGES`/`CUBES`/`MASK64`) vs `BITMAP`, over the
+  real 41-class byte population: `gcc -O2 -S`, real per-function
+  instruction counts (not sampled), via the SAME `emit.py`/`kit.py`
+  machinery `sweep.py` uses (no hand twins). Writes
+  `results/asm_count_<population>.tsv` (design note §7 a5).
+- `bench_bytes.py` — [CLS-TREE] S0 (lane clss0): the [OPT-CLSPACK] timing
+  arm (D129 item 5) — N=4/16/32 live class sites cycled in ONE loop (random
+  site + random byte per iteration, the many-live-classes shape a real
+  matcher's scan loop has, unlike `bench.py`'s one-class-at-a-time arms):
+  `bitmap` (today's shape, read straight off `byteclasses.tsv`'s own hex
+  column), `kit` (the sectioning DP's own answer per class, emitted by
+  `emit.py`/`section.py`), `atom` ([OPT-CLSPACK]'s shared byte→atom[256] +
+  per-class 64-bit mask, generalized from `form_char_twins/twin_D.py`'s
+  base.c-parsing method to build straight from membership sets; refuses
+  loudly rather than truncating if N classes need >64 atoms). Checked
+  against an INDEPENDENT bsearch reference (not the bitmap arm, even
+  though its table already IS ground truth — sharing that source with the
+  check is the K35 blind spot). Writes `results/<out>` (default
+  `bench2_bytes.tsv`); `--smoke` cuts rounds/probes for Mac
+  correctness-only runs (`results/smoke_bytes.tsv`, NOT citable timing).
 - `Makefile` — targets named in README.md. `CC` defaults to `gcc-16`.
   `bench2` is the design note's owed ubuntubudu arm (`--whole`, five
-  regimes, `results/bench2.tsv`).
+  regimes, `results/bench2.tsv`). `bench2-bytes` rides the same executor
+  session for the CLSPACK arm above. `whole-byteclasses`/`asm-byteclasses`
+  are the byte-tier a1/a5 targets, reading the committed
+  `results/byteclasses.tsv` (no `build/pcrec` rebuild needed).
 - `results/` — committed TSVs (the measurements the memo cites).
 - `build/` — gitignored scratch (generated `.c`/`.o`/binaries/interval files).
 

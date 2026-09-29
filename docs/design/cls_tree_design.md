@@ -593,59 +593,130 @@ Pre-1.0, these are deliberate and permitted (memory
 
 - **a1. `page3w`/`page2w` over all 312 sets** — DONE by this lane
   (`results/whole_uprops.tsv`: 312 sets exhaustive, 0 mismatches; totals in
-  §1.3). Owed: the same for the 41 byte classes (expected: the DP never picks a
-  whole-set table there, since `MASK64`/`CUBES` carry no load).
+  §1.3). **DONE, lane clss0 (S0)**: the same for the 41 byte classes
+  (`results/whole_byteclasses.tsv`, 0/41 mismatches; `compare_whole_kit.py`
+  → `results/whole_vs_kit_byteclasses.tsv`). CONFIRMED, not merely expected:
+  WHOLE-WINS=0 / TIE=13 / kit-wins=28 against the size-minimal kit answer —
+  no byte class in the corpus population has a whole-set object strictly
+  smaller than the kit's own answer, so a byte-tier whole-set DP candidate
+  would win nothing on size there.
 - **a2. The `A_CLASS` reader census, classified**: for each of the 49 arms and
   6 comparisons, "reads bytes / reads the set / structural only" — and for
   every "reads bytes" site, what `A_WCLASS` must answer (width, count,
   first-unit set), spelled out before S3 merges: `-Wswitch` forces every site
-  to be TOUCHED, not to be RIGHT **[r1 SEM-1]**. S3's lane
-  does this as its first act; it sizes S3 and S4.
-- **a3. S5's renumbering population**: build the minimal-automaton NFA
-  fragment in a scratch compiler, compile the corpus + bench, count artifacts
-  whose DFA is isomorphic-but-renumbered vs byte-identical. Decides whether S5
-  is an abi event.
+  to be TOUCHED, not to be RIGHT **[r1 SEM-1]**. **RE-HOMED: this is S3's
+  first act, not an S0 measurement** (staging table, §6) — it sizes S3/S4 and
+  needs `A_WCLASS` to already exist as a target to classify readers against,
+  which S0 has no reason to build. Dropped from this list so S0's owed count
+  reads honestly against what S0 actually charters.
+- **a3. S5's renumbering population** — **WITHDRAWN (D129 Q4): S5 (the
+  minimal-automaton splice) is DROPPED.** Frank: "why use a DFA to do a
+  lookup? what about binary search?" — the splice shrinks no artifact (the
+  emitted DFAs are already minimal, 299/453 states) and buys compile time
+  only; the island ([UCP]'s mechanism) is what shrinks the DFA route and
+  removes the class's K67 share. No renumbering population is ever needed.
 - **a4. After [OPT-CLOSURE-CTX] lands: K67's witness re-timed** — compile
   time is a single-process CPU measurement and the Mac's direction is honest
-  for a 77 s vs 1 s question; the citable number, if S5's gate is close, runs
-  on ubuntubudu with b1.
-- **a5. The [FORM-CHAR2] (i) asm-counting half**: per-site instruction counts
-  on the fold-vs-bitmap pair, now extended to the kit's byte forms (`gcc -O2
-  -S`; box-independent).
+  for a 77 s vs 1 s question; the citable number runs on ubuntubudu with b1.
+  (No longer gated on S5's abi question, per D129 Q4 above — [OPT-CLOSURE-CTX]
+  is its only remaining trigger.)
+- **a5. The [FORM-CHAR2] (i) asm-counting half** — **DONE, lane clss0 (S0)**:
+  per-site instruction counts (`gcc -O2 -S`, `results/asm_count_byteclasses.tsv`,
+  `asm_count.py`), extended from the one hand-picked fold-vs-bitmap witness to
+  every kit byte form the emitter can build (`ALL`/`RANGES`/`CUBES`/`MASK64`)
+  vs `BITMAP` (today's shape), over all 41 corpus byte classes. Mean
+  instruction counts (arm64/Mach-O, this run — instruction COUNTS are the
+  portable comparison, not mnemonic text): `MASK64` 7.40 (n=15, never a
+  branch), `RANGES` 9.12 (n=41), `CUBES` 11.63 (n=19, up to 23 on a 4-cube
+  cover), `BITMAP` 12.37 (n=41, always one load). `ALL` fits no class in this
+  population (no byte class is a single contiguous run).
 
 ### (b) The timing arm — ubuntubudu only, relayed to the pcrecdev2 executor
 
-**b1 is ready to run today.** The following is the exact-command brief, for
-the manager to relay:
+**b1 is ready to run today, and lane clss0 (S0) adds two more items that ride
+the SAME executor session: the [OPT-CLSPACK] timing arm (D129 item 5,
+`bench_bytes.py`/`make bench2-bytes`) and the isolated `^C`/member re-run
+[r1 MEAS-2] asked for.** Below is the exact-command brief, for the manager to
+relay verbatim — the pcrecdev2 executor is sonnet and does nothing
+judgment-shaped, so every command is copy-paste exact and assumes a pcrec
+checkout at the commit the manager names.
 
-> **pcrecdev2 — [CLS-TREE] b1: kit/whole-set ns/char (read-only study run;
-> writes ONLY `studies/cls_tree_study/results/bench2.tsv` and
+> **pcrecdev2 — [CLS-TREE] S0 timing session (read-only study run; writes
+> ONLY `studies/cls_tree_study/results/bench2.tsv`,
+> `studies/cls_tree_study/results/bench2_bytes.tsv`,
+> `studies/cls_tree_study/results/capC_isolated.tsv`, and
 > `studies/cls_tree_study/build/`).**
 > Box: ubuntubudu, quiet (the harness itself refuses at load1 ≥ 0.5 and never
 > caveats; a refusal is a result — report it with its load readings, do not
-> loosen `--max-load`). Tree: pcrec at the merge of `lane/clsdes88` (or later;
-> nothing in `src/` is read — the study reads `src/parse/uprops_tables.inc`
-> only).
+> loosen `--max-load`). Tree: pcrec at `<COMMIT the manager names>` (at or
+> after the merge of `lane/clss0`; nothing in `src/` is read for b1/the
+> isolated re-run — the study reads `src/parse/uprops_tables.inc` and its own
+> committed `results/byteclasses.tsv` only. `bench2-bytes` needs no
+> `build/pcrec` either — same committed-input rule).
 > ```
 > cd <pcrec checkout on ubuntubudu>
-> git log -1 --format=%h                      # record the pin
-> gcc --version | head -1                      # record the compiler
-> gnutimeout 7200 make -C studies/cls_tree_study bench2 CC=gcc 2>&1 | tail -5
+> git log -1 --format=%h                                  # record the pin
+> gcc --version | head -1                                 # record the compiler
+> mkdir -p build/clstree_s0
+>
+> # --- b1: kit/whole-set ns/char, the committed 2026-09-11 arm set + whole-set tables ---
+> gnutimeout 7200 make -C studies/cls_tree_study bench2 CC=gcc \
+>     > build/clstree_s0/b1_bench2.log 2>&1
+> tail -5 build/clstree_s0/b1_bench2.log
 > wc -l studies/cls_tree_study/results/bench2.tsv
-> head -1 studies/cls_tree_study/results/bench2.tsv   # load1_at_start
+> head -1 studies/cls_tree_study/results/bench2.tsv        # load1_at_start
+>
+> # --- CLSPACK: N=4/16/32 live byte-class sites, bitmap vs kit vs shared atom table ---
+> gnutimeout 1800 make -C studies/cls_tree_study bench2-bytes CC=gcc \
+>     > build/clstree_s0/clspack_bench2_bytes.log 2>&1
+> tail -5 build/clstree_s0/clspack_bench2_bytes.log
+> wc -l studies/cls_tree_study/results/bench2_bytes.tsv
+> head -1 studies/cls_tree_study/results/bench2_bytes.tsv  # load1_at_start
+>
+> # --- isolated ^C/member re-run [r1 MEAS-2]: the one bimodal cell, alone, more rounds ---
+> gnutimeout 600 python3 studies/cls_tree_study/bench.py \
+>     --population k53 --sets '^C' --regimes member --lams 0,16,256 \
+>     --rounds 41 --out capC_isolated.tsv \
+>     > build/clstree_s0/measc_isolated.log 2>&1
+> tail -5 build/clstree_s0/measc_isolated.log
+> wc -l studies/cls_tree_study/results/capC_isolated.tsv
+>
+> echo "CLS-TREE-S0-TIMING DONE"
 > ```
-> Expected: 4,620 data rows (12 sets × 5 regimes × 7 arms × 11 rounds), fewer
-> only if a set fails to build — a BUILD FAIL line is a finding, report
-> it). Any `ANSWER MISMATCH` line aborts the run and is a finding. Return the
-> TSV (commit it on a scratch branch or scp it back) and the three recorded
-> facts. Wall time is dominated by 60 set×regime runs of 7 arms × 11 rounds ×
-> 1 M probes; the 2026-09-11 run of 5 arms × 4 regimes fitted inside the I-65
-> session.
+> Expected row counts (fewer only if a build/run fails — a `BUILD FAIL` or
+> `RUN FAIL` line is a finding, report it verbatim; any `ANSWER MISMATCH` line
+> aborts that command's run and is a finding):
+>   - `bench2.tsv`: 4,620 data rows (12 sets × 5 regimes × 7 arms × 11 rounds).
+>   - `bench2_bytes.tsv`: 132 data rows (3 N values {4,16,32} × 4 arms
+>     {refbs,bitmap,kit,atom} × 11 rounds); also report the `n_atoms` column's
+>     three values (expect small integers well under 64 — a refusal naming
+>     ">64 atoms" is itself the finding, not a crash).
+>   - `capC_isolated.tsv`: 205 data rows (1 set × 1 regime × 5 arms {refbs,
+>     bitmap1, lam0, lam16, lam256} × 41 rounds).
+> The `CLS-TREE-S0-TIMING DONE` line is the done-trailer — its absence means
+> the session did not reach the end (report whichever log's `tail` is last).
+> Return all three TSVs (commit on a scratch branch or scp back) plus the
+> `build/clstree_s0/*.log` files, the recorded pin/compiler, and the three
+> `load1_at_start` readings. Wall time: b1 is dominated by 60 set×regime runs
+> of 7 arms × 11 rounds × 1 M probes (the 2026-09-11 run of 5 arms × 4
+> regimes fitted inside the I-65 session); `bench2-bytes` is 3 builds × 11
+> rounds × 4 arms × 2^20 probes, small (well under b1's); the isolated
+> re-run is 1 build × 41 rounds × 5 arms × 2^20 probes, also small. Total
+> session is expected to land well inside b1's own 7200 s budget — the two
+> added commands' own timeouts (1800 s, 600 s) are generous relative to their
+> actual size, not a sign they are expected to run long.
 
 What b1 answers: `page3w`/`page2w` vs `bitmap1` vs the kit's three policies,
 under the four old regimes and the new `runs` regime (text-like runs of 1-32
 code points within one 256-code-point block). That is CT-2's calibration data
-and CT-3's re-proposal input.
+and CT-3's re-proposal input. What the CLSPACK arm answers: D129 item 5 —
+whether the shared atom table's measured .text/.rodata win at N=16
+(`studies/form_char_twins`, STEP 0) also holds ns/call against both the kit's
+own inline tests and today's bit array, at N=4/16/32. What the isolated
+re-run answers: whether `^C`'s bimodal member-subject timing (`bitmap1` 1.60
+vs 13.30 ns in the 2026-09-11 run, in lockstep across every arm — an
+environmental effect, not arm behaviour, [r1 MEAS-2]) recurs under the same
+harness on a fresh session, at 4x the round count.
 
 **b2. The byte tier, in the VM loop** — after S2 lands, through pcrec-bench,
 not the study harness: the ci-256 witness and the csv/loglines class-heavy
