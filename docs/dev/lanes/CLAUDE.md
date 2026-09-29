@@ -3424,3 +3424,30 @@ never edited afterwards.
   which run ~13% under the measured object for `K`. So D131's `0` row takes
   `P3` on 2 of the K53 twelve where the ruled evidence says 12; a ruling
   is owed.
+- `clss1b_report.md` — [CLS-TREE] S1 follow-up (2026-09-29, lane clss1b,
+  sonnet): closes clss1's §3 STOPPED point and applies three more manager
+  rulings, all in the same worktree/branch. **D131 addendum 1**:
+  `PLACE.kit_disp_bytes` (578 B, a CONSTANT fit — `measured - model` over
+  the K53 twelve at λ=4, sweep_k53.tsv; a per-section linear term was
+  tried and explains only R²=0.06, rejected), read by the SELECTION's
+  `kit_sel_bytes()` alone (never by the DP's own sectioning bytes or by a
+  chosen `CLSF_KIT` row's reported bytes). Reproduces clsfit's ruled picks
+  on the K53 twelve EXACTLY — 12/12 K at `−2`, 12/12 P3 at `0`, 12/12 P2
+  at `+2` — where the unadjusted model read P3 on only 2/12 at `0`. **The
+  `studies/` dependency is retired**: `tests/clskit/ref/` freezes the
+  EIGHT Python modules the suite actually needs (crosscheck.py's own
+  "six" undercounted two transitive `import`s inside `bench_bytes.py`/
+  `proptest.py`, found by trying to import the six alone), each with a
+  provenance header, verified byte-identical to the live study's output
+  before the switch. **The atom table leaves the per-class `ROWS`**: D131
+  item 6's atom table is an artifact-level choice (a per-set table has no
+  input for an artifact-wide byte-class-site count) — the row, its
+  predicate tag, `CLSD_ATOM` and `ClsSelectIn`'s now-dead atom fields are
+  gone; the atom FORM, emitter and differential (which exercised it
+  directly, never through `ROWS`) are untouched. `make strict` clean,
+  `test-clskit` 5/5 (20,685 selections, 0 disagreements — 591×5×7 after
+  the row removal), `limits_check` 35/0, `test-codegen` 11/12 (the sole
+  red is the standing darwin `nm` probe), S360-S364 all DETECTED (S363
+  re-anchored in-lane after `make test-codegen`'s own SABANCHOR check
+  caught the drift this lane's own edit caused; S364 is the new row, the
+  S363 shape one predicate over).
