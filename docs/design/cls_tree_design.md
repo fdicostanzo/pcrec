@@ -709,7 +709,7 @@ tree (which has no `.git`).
 > head -1 studies/cls_tree_study/results/bench2_bytes.tsv  # load1_at_start
 >
 > # --- isolated ^C/member re-run [r1 MEAS-2]: the one bimodal cell, alone, more rounds ---
-> gnutimeout 600 python3 studies/cls_tree_study/bench.py \
+> CC=gcc gnutimeout 600 python3 studies/cls_tree_study/bench.py \
 >     --population k53 --sets '^C' --regimes member --lams 0,16,256 \
 >     --rounds 41 --out capC_isolated.tsv \
 >     > build/clstree_s0/measc_isolated.log 2>&1
