@@ -28,15 +28,49 @@ section targets depend on.
 - **ncpu.sh** — [MACPORT] `$NCPU`, resolved once: `nproc` (present via
   Homebrew on this box) else `sysctl -n hw.ncpu` else
   `getconf _NPROCESSORS_ONLN` else the project's pre-existing fallback
-  constant (2). Most `nproc 2>/dev/null || echo N` call sites in this tree
-  already degrade safely without this — it exists for a box with no
-  `nproc` on PATH at all, which `|| echo N` alone cannot distinguish from
-  "nproc ran and said N". Wired into tests/registry/run_definitions_oracle.sh,
-  run_pc4.sh, scripts/battery.sh, tests/lib/load_guard.sh,
-  tests/size/run_size_log.sh; ~30 other `nproc`-using sites in the tree were
-  left unwired (all already degrade gracefully via their own `|| echo N` or
-  a subsequent `-ge 1` guard, and `nproc` is present on this box) — see
-  docs/dev/lanes/macport_report.md for the full list.
+  constant (2). Answers "how many CPUs does this box have" — TOTAL
+  capacity, including efficiency cores on darwin — which is the right
+  question for scripts/battery.sh and tests/lib/load_guard.sh's
+  load-average ratio (a real contention signal has to be measured against
+  every schedulable cycle, not just the fast ones). Most
+  `nproc 2>/dev/null || echo N` call sites in this tree already degrade
+  safely without this — it exists for a box with no `nproc` on PATH at
+  all, which `|| echo N` alone cannot distinguish from "nproc ran and said
+  N". **[CORPUS-PCAP] moved every WORKER-CONCURRENCY default site (as
+  opposed to a total-capacity reading) onto procs_default.sh below**, which
+  falls back to this file's `$NCPU` on Linux/non-Apple-silicon boxes —
+  see that entry for the sites. See docs/dev/lanes/macport_report.md for
+  the original full site survey this file's own landing did.
+- **procs_default.sh** — [CORPUS-PCAP] `$PROCS_DEFAULT`, the shared answer
+  to "how many concurrent WORKERS should a parallel test section default
+  to" — a DIFFERENT quantity from ncpu.sh's `$NCPU` above: on this box
+  (8 performance + 2 efficiency cores) `$NCPU`/`nproc` reads 10, but
+  docs/dev/lanes/tt4m2_report.md measured the real concurrency KNEE at
+  P=8, the performance-core count, and tri87 diagnosed `test-corpus`'s
+  intermittent `TIMED OUT (>10s)` reds as exactly the oversubscription
+  above that knee (docs/dev/lanes/tri87_report.md, plan.md
+  [CORPUS-PCAP]). Resolution: `sysctl -n hw.perflevel0.physicalcpu` on
+  darwin when present, else ncpu.sh's `$NCPU` (Linux/CI/an Intel Mac —
+  unchanged there). Sourceable (sets `$PROCS_DEFAULT`, same convention
+  ncpu.sh's call sites use) AND directly executable (prints the number —
+  a Makefile recipe's `$$(tests/lib/procs_default.sh)` in place of the old
+  `$$(nproc)`), self-locating in either mode via `$0`. Wired into every
+  Makefile `PROCS=`/`GROUP_PROCS=` `nproc` default, `tests/size/
+  run_size_log.sh`, `tests/registry/run_definitions_oracle.sh`/`run_pc4.sh`
+  (their `JOBS` halving), `tests/mech/run_sabotage_matrix.sh` (its `JOBS`/
+  `INNER_PROCS` division), `tests/lib/run_san_group.sh` (its own
+  `INNER_PROCS` division), `tests/axes/run_axes.sh`,
+  `tests/lookaround/run_expansion_diff.sh`,
+  `tests/anchored/run_anchored_diff.sh`,
+  `tests/codegen/run_lookaround_identity.sh` (`JOBS`), and the `NSHARD`
+  default in `tests/codegen/run_dfa_uniform_fold.sh`/`run_dfa_stamps.sh`/
+  `run_form_census.sh`/`run_anchored_match.sh`/`run_vm_frameless.sh`/
+  `run_search_pinned.sh`. NOT wired into `tests/lib/load_guard.sh`,
+  `tests/lib/loadavg.sh`, `scripts/battery.sh` or `tests/bench/`'s own
+  `nproc` mentions — those read total capacity for a load-average ratio or
+  print it as diagnostic text, a different question this file does not
+  answer. An explicit `PROCS=`/`JOBS=`/`NSHARD=` still overrides every one
+  of these sites, unchanged.
 - **cc_resolve.sh** — [MACPORT] resolves a real GNU gcc when the bare `gcc`
   on PATH is Apple clang wearing gcc's name (verified: `/usr/bin/gcc
   --version` prints "Apple clang"). Tries `gcc-16`/`gcc-15`/`gcc-14`/

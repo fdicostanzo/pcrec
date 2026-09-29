@@ -171,7 +171,8 @@
 # Usage: bash tests/codegen/run_lookaround_identity.sh
 # Env: PCREC (default <root>/build/pcrec), CC, KEEP=1, SANFLAGS,
 #      LOOKAROUND_IDENTITY_REF (the pin), STRICT_ALL (default 0; see above),
-#      JOBS (sweep concurrency, default nproc)
+#      JOBS (sweep concurrency, default tests/lib/procs_default.sh's count
+#      — [CORPUS-PCAP])
 
 set -u
 
@@ -182,7 +183,8 @@ PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
 SANFLAGS="${SANFLAGS:-}"
 KEEP="${KEEP:-0}"
 STRICT_ALL="${STRICT_ALL:-0}"
-JOBS="${JOBS:-$(nproc 2>/dev/null || echo 4)}"
+. "$ROOT_DIR/tests/lib/procs_default.sh"   # [CORPUS-PCAP] perf-core count on darwin, else NCPU
+JOBS="${JOBS:-$PROCS_DEFAULT}"
 
 # THE PIN. `eacac76` is [M6.6.2]'s branch point — the last commit before D70's
 # tagged union, i.e. the last tree whose `struct Ast` carries the per-kind

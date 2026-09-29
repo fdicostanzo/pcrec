@@ -32,7 +32,8 @@
 # oracle_a is definitions_oracle_check.c's own field, read straight from
 # the TSV file it opens itself.
 #
-# Env: PCREC, CC, KEEP=1, JOBS (parallel compile fan-out, default nproc/2),
+# Env: PCREC, CC, KEEP=1, JOBS (parallel compile fan-out, default tests/lib/
+#   procs_default.sh's count / 2 — [CORPUS-PCAP]),
 #   GENCFLAGS (SAN-1, default -O0 -std=gnu11), SANFLAGS (SAN-1)
 
 set -u
@@ -48,8 +49,8 @@ KEEP="${KEEP:-0}"
 GENCFLAGS="${GENCFLAGS:--O0 -std=gnu11}"
 if [ "${LINTGEN:-0}" = "1" ]; then GENCFLAGS="$GENCFLAGS -fanalyzer -Werror"; fi
 SANFLAGS="${SANFLAGS:-}"
-. "$ROOT_DIR/tests/lib/ncpu.sh"; ncpu="$NCPU"   # [MACPORT] a real reading on a box with no `nproc` on PATH at all
-JOBS="${JOBS:-$(( ncpu / 2 > 1 ? ncpu / 2 : 1 ))}"
+. "$ROOT_DIR/tests/lib/procs_default.sh"   # [CORPUS-PCAP] perf-core count on darwin, else NCPU
+JOBS="${JOBS:-$(( PROCS_DEFAULT / 2 > 1 ? PROCS_DEFAULT / 2 : 1 ))}"
 
 WORKDIR="$(mktemp -d "${TMPDIR:-/tmp}/pcrec-definitions-oracle.XXXXXX")"
 cleanup() {

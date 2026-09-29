@@ -70,9 +70,11 @@ trap 'rm -rf "$dir"' EXIT
 # ALSO fanning out to nproc internally. [TT-8]'s own fix (mech's
 # INNER_PROCS = ncpu/PROCS) is the general mechanism, not a special case;
 # applied here identically: every script (PROCS-aware or not — harmless for
-# the 30 that ignore it) runs with PROCS capped to ceil(nproc/SAN_GROUP_PROCS)
-# rather than whatever SAN_ENV set.
-_nproc="$(nproc 2>/dev/null || echo 1)"
+# the 30 that ignore it) runs with PROCS capped to
+# ceil(tests/lib/procs_default.sh's count/SAN_GROUP_PROCS) — [CORPUS-PCAP],
+# the box's own performance-core count on darwin, nproc elsewhere — rather
+# than whatever SAN_ENV set.
+_nproc="$(bash "$(dirname "${BASH_SOURCE[0]}")/procs_default.sh")"
 INNER_PROCS=$(( (_nproc + SAN_GROUP_PROCS - 1) / SAN_GROUP_PROCS ))
 [ "$INNER_PROCS" -ge 1 ] || INNER_PROCS=1
 

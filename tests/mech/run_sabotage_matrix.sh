@@ -96,7 +96,9 @@
 #   MECH_SCRATCH    scratch root for tree copies (default: a mktemp dir under
 #                   $TMPDIR, or /tmp)
 #   KEEP=1          do not delete scratch trees on exit (prints their paths)
-#   JOBS            parallel make jobs per tree build (default: nproc,
+#   JOBS            parallel make jobs per tree build (default: tests/lib/
+#                   procs_default.sh's count — [CORPUS-PCAP], the box's own
+#                   performance-core count on darwin, nproc elsewhere —
 #                   divided by PROCS when PROCS > 1 so concurrent tree builds
 #                   do not oversubscribe the box)
 #   PROCS           run N SABOTAGES concurrently (default 1 — serial,
@@ -352,6 +354,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 . "$ROOT_DIR/tests/lib/cc_resolve.sh"   # [MACPORT] resolves a real GNU gcc when bare gcc is Apple clang
 . "$ROOT_DIR/tests/lib/resolve_pcre2.sh"   # [ORACLE-LINK] D98: the pc3/pc4 arms build pcre2_check.c/pc4_check.c, which direct-link libpcre2 now
+. "$ROOT_DIR/tests/lib/procs_default.sh"   # [CORPUS-PCAP] perf-core count on darwin, else NCPU — this row's own JOBS division wants the box's real usable-for-CPU-bound-work core count, not nproc's efficiency-core-inclusive total
 KEEP="${KEEP:-0}"
 # [MECH-REACH] VALIDATE_ONLY=1 -- source every selected definition, run the
 # FIELD VALIDATIONS, and stop. It exists because those validations are FATALs
@@ -364,7 +367,7 @@ VALIDATE_ONLY="${VALIDATE_ONLY:-0}"
 PROCS="${PROCS:-1}"
 case "$PROCS" in (''|*[!0-9]*) echo "FATAL: PROCS must be a positive integer, got '$PROCS'" >&2; exit 2;; esac
 [ "$PROCS" -ge 1 ] || { echo "FATAL: PROCS must be >= 1, got '$PROCS'" >&2; exit 2; }
-ncpu="$(nproc 2>/dev/null || echo 2)"
+ncpu="$PROCS_DEFAULT"
 if [ -z "${JOBS:-}" ]; then
     JOBS=$(( ncpu / PROCS )); [ "$JOBS" -ge 1 ] || JOBS=1
 fi

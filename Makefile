@@ -375,7 +375,7 @@ test:
 # reads as a pass.
 test-corpus: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-corpus.ran"; fi
-	@set +e; TMPDIR=$${TMPDIR:-/var/tmp} PROCS=$${PROCS:-$$(nproc)} bash tests/size/run_size_log.sh; rc=$$?; \
+	@set +e; TMPDIR=$${TMPDIR:-/var/tmp} PROCS=$${PROCS:-$$(bash tests/lib/procs_default.sh)} bash tests/size/run_size_log.sh; rc=$$?; \
 	bash tests/size/check_size_tripwire.sh; rc2=$$?; \
 	if [ "$$rc" -ne 0 ]; then exit "$$rc"; fi; exit "$$rc2"
 
@@ -401,7 +401,9 @@ test-cli: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-cli.ran"; fi
 	bash tests/cli/run_cli_tests.sh
 
-# [TT-2] PROCS defaults to nproc here too, same as test-corpus above:
+# [TT-2] PROCS defaults to tests/lib/procs_default.sh here too, same as
+# test-corpus above ([CORPUS-PCAP]: the box's own performance-core count on
+# darwin, nproc elsewhere):
 # run_reject_tests.sh gained the harness's own worker-reinvocation pattern
 # (sharded by CALL INDEX — see its own header comment), measured 59.5s at
 # PROCS=1 down to ~5.8s at PROCS=12. Output at PROCS>1 is content-identical
@@ -413,7 +415,7 @@ test-cli: all
 # changed.
 test-reject: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-reject.ran"; fi
-	PROCS=$${PROCS:-$$(nproc)} bash tests/reject/run_reject_tests.sh
+	PROCS=$${PROCS:-$$(bash tests/lib/procs_default.sh)} bash tests/reject/run_reject_tests.sh
 
 test-registry: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-registry.ran"; fi
@@ -487,7 +489,7 @@ test-examples: all
 # the pattern-facts record's structural check, born with the record.
 test-codegen: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-codegen.ran"; fi
-	GROUP_PROCS=$${PROCS:-$$(nproc)} bash tests/lib/run_group.sh \
+	GROUP_PROCS=$${PROCS:-$$(bash tests/lib/procs_default.sh)} bash tests/lib/run_group.sh \
 	    'bash tests/codegen/run_codegen_tests.sh' \
 	    'bash tests/codegen/run_dfa_stamps.sh' \
 	    'bash tests/codegen/run_offset_skip.sh' \
@@ -533,7 +535,7 @@ test-premul-table: all
 # wrapper is spared it.
 test-anchored-match: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-anchored-match.ran"; fi
-	GROUP_PROCS=$${PROCS:-$$(nproc)} bash tests/lib/run_group.sh \
+	GROUP_PROCS=$${PROCS:-$$(bash tests/lib/procs_default.sh)} bash tests/lib/run_group.sh \
 	    'bash tests/codegen/run_anchored_match.sh' \
 	    'bash tests/anchored/run_anchored_diff.sh'
 
@@ -675,7 +677,7 @@ test-gentimeout: all
 # test-codegen above does. PROCS=1 keeps the exact old sequential order.
 test-vm: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-vm.ran"; fi
-	GROUP_PROCS=$${PROCS:-$$(nproc)} bash tests/lib/run_group.sh \
+	GROUP_PROCS=$${PROCS:-$$(bash tests/lib/procs_default.sh)} bash tests/lib/run_group.sh \
 	    'bash tests/codegen/run_vm_identity.sh' \
 	    'bash tests/codegen/run_ir_listing.sh' \
 	    'bash tests/vm/run_vm_tests.sh'
@@ -689,7 +691,7 @@ test-vm: all
 # mktemp -d workdirs, so they take run_group.sh's treatment like test-vm.
 test-possessify: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-possessify.ran"; fi
-	GROUP_PROCS=$${PROCS:-$$(nproc)} bash tests/lib/run_group.sh \
+	GROUP_PROCS=$${PROCS:-$$(bash tests/lib/procs_default.sh)} bash tests/lib/run_group.sh \
 	    'bash tests/possessify/run_possdiff.sh' \
 	    'bash tests/possessify/run_possessify_tests.sh'
 
@@ -702,7 +704,7 @@ test-possessify: all
 # and nowhere when denied (run_rungselect_tests.sh).
 test-rungselect: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-rungselect.ran"; fi
-	GROUP_PROCS=$${PROCS:-$$(nproc)} bash tests/lib/run_group.sh \
+	GROUP_PROCS=$${PROCS:-$$(bash tests/lib/procs_default.sh)} bash tests/lib/run_group.sh \
 	    'bash tests/rungselect/run_rungdiff.sh' \
 	    'bash tests/rungselect/run_rungselect_tests.sh'
 
@@ -718,7 +720,7 @@ test-rungselect: all
 # 855 cells because its corpus had neither axis. See the script's header.
 test-counterk: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-counterk.ran"; fi
-	GROUP_PROCS=$${PROCS:-$$(nproc)} bash tests/lib/run_group.sh \
+	GROUP_PROCS=$${PROCS:-$$(bash tests/lib/procs_default.sh)} bash tests/lib/run_group.sh \
 	    'bash tests/counterk/run_counterkdiff.sh' \
 	    'bash tests/counterk/run_counterk_tests.sh'
 
@@ -741,7 +743,7 @@ test-counterk: all
 # is unsound if it is ever stale.
 test-mrl: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-mrl.ran"; fi
-	GROUP_PROCS=$${PROCS:-$$(nproc)} bash tests/lib/run_group.sh \
+	GROUP_PROCS=$${PROCS:-$$(bash tests/lib/procs_default.sh)} bash tests/lib/run_group.sh \
 	    'bash tests/mrl/run_mrldiff.sh' \
 	    'bash tests/mrl/run_mrl_tests.sh'
 
@@ -781,7 +783,7 @@ test-island: all
 # (run_altcls_tests.sh).
 test-altcls: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-altcls.ran"; fi
-	GROUP_PROCS=$${PROCS:-$$(nproc)} bash tests/lib/run_group.sh \
+	GROUP_PROCS=$${PROCS:-$$(bash tests/lib/procs_default.sh)} bash tests/lib/run_group.sh \
 	    'bash tests/altcls/run_altdiff.sh' \
 	    'bash tests/altcls/run_altcls_tests.sh'
 
@@ -863,7 +865,7 @@ test-vars: all
 
 test-backrefs: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-backrefs.ran"; fi
-	GROUP_PROCS=$${PROCS:-$$(nproc)} bash tests/lib/run_group.sh \
+	GROUP_PROCS=$${PROCS:-$$(bash tests/lib/procs_default.sh)} bash tests/lib/run_group.sh \
 	    'bash tests/backrefs/run_backref_diff.sh' \
 	    'bash tests/backrefs/run_dupnames_diff.sh'
 
@@ -926,7 +928,9 @@ test-backrefs-identity: all
 # for the other, and §11's landing bar asks for both.
 #
 # It SKIPS LOUDLY without libpcre2, like every other oracle-dependent script
-# here, and it parallelizes internally on PROCS (default nproc). MEASURED on the
+# here, and it parallelizes internally on PROCS (default tests/lib/
+# procs_default.sh — [CORPUS-PCAP], the box's own performance-core count on
+# darwin, nproc elsewhere). MEASURED on the
 # project box: 40s warm, 1m43s cold, at PROCS=12.
 test-lookaround: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-lookaround.ran"; fi
@@ -1087,7 +1091,7 @@ test-lookaround-identity: all
 # tests/assertions/CLAUDE.md.
 test-assertions: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-assertions.ran"; fi
-	GROUP_PROCS=$${PROCS:-$$(nproc)} bash tests/lib/run_group.sh \
+	GROUP_PROCS=$${PROCS:-$$(bash tests/lib/procs_default.sh)} bash tests/lib/run_group.sh \
 	    'bash tests/assertions/run_assertions_tests.sh' \
 	    'bash tests/codegen/run_endvar_identity.sh' \
 	    'bash tests/codegen/run_wordctx_identity.sh' \
@@ -1383,7 +1387,7 @@ UBSAN_ENV    = PCREC=$(CURDIR)/$(UBSAN_DIR)/pcrec CC=$(CC) \
                GENCFLAGS="-O1 -std=gnu11 -Wall -Wextra $(UBSAN_CFLAGS)" \
                SANFLAGS="$(UBSAN_CFLAGS)" \
                UBSAN_OPTIONS="print_stacktrace=1:halt_on_error=1" \
-               PROCS=$${PROCS:-$$(nproc)} TMPDIR=$${TMPDIR:-/var/tmp}
+               PROCS=$${PROCS:-$$(bash tests/lib/procs_default.sh)} TMPDIR=$${TMPDIR:-/var/tmp}
 
 # [M6.4.4] `tests/codegen/run_atomic_identity.sh` is deliberately ABSENT
 # from both sanitizer lists as well as from `make test`. It never runs a
@@ -1431,7 +1435,7 @@ ASAN_ENV     = PCREC=$(CURDIR)/$(ASAN_DIR)/pcrec CC=$(CC) \
                SANFLAGS="$(ASAN_CFLAGS)" \
                ASAN_OPTIONS="detect_leaks=$(SAN_DETECT_LEAKS)" \
                LSAN_OPTIONS="" \
-               PROCS=$${PROCS:-$$(nproc)} TMPDIR=$${TMPDIR:-/var/tmp}
+               PROCS=$${PROCS:-$$(bash tests/lib/procs_default.sh)} TMPDIR=$${TMPDIR:-/var/tmp}
 
 # K7 (docs/dev/known_issues.md) has NO automated repro in `make test` today — it
 # is reproduced only by hand (`ulimit -v ...; pcrec -p rx ... 'a{0,65535}'`)
@@ -1492,7 +1496,7 @@ SAN_ENV      = PCREC=$(CURDIR)/$(SAN_DIR)/pcrec CC=$(CC) \
                UBSAN_OPTIONS="print_stacktrace=1:halt_on_error=1" \
                ASAN_OPTIONS="detect_leaks=$(SAN_DETECT_LEAKS)" \
                LSAN_OPTIONS="" \
-               PROCS=$${PROCS:-$$(nproc)} TMPDIR=$${TMPDIR:-/var/tmp}
+               PROCS=$${PROCS:-$$(bash tests/lib/procs_default.sh)} TMPDIR=$${TMPDIR:-/var/tmp}
 
 # Same suite list as `ubsan:`/`asan:` (tests/thread/ excluded, same TSan
 # reason; see docs/testing.md's Exclusions section for the full rationale).
@@ -1508,7 +1512,8 @@ SAN_ENV      = PCREC=$(CURDIR)/$(SAN_DIR)/pcrec CC=$(CC) \
 # GROUP_PROCS is a real throttle only at exactly 1 (serial); above that it
 # launches its whole group unthrottled, which is fine for its own 2-3-
 # script call sites but would stack san's 34 scripts (several already
-# internally parallel at PROCS=nproc) into the same K44-shaped
+# internally parallel at PROCS=tests/lib/procs_default.sh's default) into
+# the same K44-shaped
 # oversubscription this project is retiring elsewhere.
 san:
 	@echo "== san: building the compiler axis at $(SAN_DIR)/ =="
@@ -1588,7 +1593,7 @@ alloc:
 # quick local check.
 test-axes: all
 	bash tests/axes/run_axes.sh
-	PROCS=$${PROCS:-$$(nproc)} bash tests/codegen/run_form_census.sh
+	PROCS=$${PROCS:-$$(bash tests/lib/procs_default.sh)} bash tests/codegen/run_form_census.sh
 
 # [ART-SIZE] THE K-SWEEP IDENTITY GATE. `--unroll=K` is a VALUE axis, not a
 # `PCREC_(NO|FORCE)_*` bit, so `run_axes.sh` — which derives its list from
@@ -1605,7 +1610,7 @@ test-ksweep: all
 # tree ~20 times (about 6 minutes); run it when a sabotage table's figures are
 # in doubt and after changing any file a sabotage targets.
 mech:
-	TMPDIR=$${TMPDIR:-/var/tmp} PROCS=$${PROCS:-$$(nproc)} bash tests/mech/run_sabotage_matrix.sh
+	TMPDIR=$${TMPDIR:-/var/tmp} PROCS=$${PROCS:-$$(bash tests/lib/procs_default.sh)} bash tests/mech/run_sabotage_matrix.sh
 
 bench: all
 	bash tests/bench/run_bench.sh

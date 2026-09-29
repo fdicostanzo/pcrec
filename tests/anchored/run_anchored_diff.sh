@@ -75,6 +75,7 @@ PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
 KEEP="${KEEP:-0}"
 GENCFLAGS="${GENCFLAGS:--O1 -std=gnu11 -Wall -Wextra -Werror}"
 . "$ROOT_DIR/tests/lib/gen_timeout.sh"   # [K37] pcrec_run / gen_cc / gen_run
+. "$ROOT_DIR/tests/lib/procs_default.sh"   # [CORPUS-PCAP] perf-core count on darwin, else NCPU
 
 WORKDIR="$(mktemp -d)"
 cleanup() {
@@ -129,7 +130,7 @@ if [ "$npat" -lt 2640 ]; then
     echo; echo "checks passed: $pass"; echo "checks failed: $fail"; exit 1
 fi
 
-NSHARD="${PROCS:-$(nproc)}"
+NSHARD="${PROCS:-$PROCS_DEFAULT}"
 [ "$NSHARD" -ge 1 ] 2>/dev/null || NSHARD=1
 mkdir -p "$WORKDIR/sh"
 split -n "l/$NSHARD" -d "$WORKDIR/pats" "$WORKDIR/sh/p" 2>/dev/null \

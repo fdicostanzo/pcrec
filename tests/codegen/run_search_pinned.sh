@@ -105,6 +105,7 @@ CC="${CC:-cc}"
 KEEP="${KEEP:-0}"
 GENCFLAGS="${GENCFLAGS:-}"
 . "$ROOT_DIR/tests/lib/gen_timeout.sh"   # [K37] pcrec_run / gen_cc / gen_run
+. "$ROOT_DIR/tests/lib/procs_default.sh"   # [CORPUS-PCAP] perf-core count on darwin, else NCPU
 . "$ROOT_DIR/tests/lib/c_artifact_cmp.sh"   # cmp_c_artifacts (adm71 item 5)
 
 WORKDIR="$(mktemp -d)"
@@ -371,7 +372,7 @@ export -f fold_repr fold_edge_one fold_join fold_edge
 # the corpus (`run_dfa_stamps.sh`'s own recorded reason). Each worker writes
 # verdict TOKENS to its own file and the parent tallies them, so no counter is
 # shared across processes.
-NSHARD="${PROCS:-$(nproc)}"
+NSHARD="${PROCS:-$PROCS_DEFAULT}"
 [ "$NSHARD" -ge 1 ] 2>/dev/null || NSHARD=1
 mkdir -p "$WORKDIR/sh"
 split -n "l/$NSHARD" -d "$WORKDIR/pats" "$WORKDIR/sh/p" 2>/dev/null \

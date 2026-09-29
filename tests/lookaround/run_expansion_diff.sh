@@ -100,7 +100,8 @@
 # rule against a second home for one fact, and this would have been the THIRD.
 #
 # Usage: bash tests/lookaround/run_expansion_diff.sh [--policy=all|P1|P2|none]
-# Env: PCREC, CC, GENCFLAGS, PROCS (default nproc), KEEP=1
+# Env: PCREC, CC, GENCFLAGS, PROCS (default tests/lib/procs_default.sh's
+#   count — [CORPUS-PCAP]), KEEP=1
 #
 # SKIPS LOUDLY when libpcre2 is absent (PC-3's pattern), never silently.
 
@@ -119,7 +120,8 @@ GENERATOR="$SCRIPT_DIR/expand_corpus.py"
 CORPUS="$ROOT_DIR/tests/assertions"
 # shellcheck source=/dev/null
 . "$ROOT_DIR/tests/lib/timeout_bin.sh"
-PROCS="${PROCS:-$(nproc 2>/dev/null || echo 2)}"
+. "$ROOT_DIR/tests/lib/procs_default.sh"   # [CORPUS-PCAP] perf-core count on darwin, else NCPU
+PROCS="${PROCS:-$PROCS_DEFAULT}"
 
 POLICY="all"
 for a in "$@"; do

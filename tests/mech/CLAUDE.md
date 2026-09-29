@@ -29,7 +29,9 @@ copied number. Docs should cite this script's output, not a hand-typed count.
   them), `MECH_SCRATCH` (scratch root), `JOBS`, and `PROCS=N` (2026-08-12) —
   N sabotages concurrently, safe because run_one was already isolated per
   sabotage; rows are merged in sabotages/ listing order so the matrix is
-  byte-identical to a serial run's, and `JOBS` defaults to nproc/PROCS so
+  byte-identical to a serial run's, and `JOBS` defaults to `tests/lib/
+  procs_default.sh`'s count / `PROCS` — [CORPUS-PCAP], the box's own
+  performance-core count on darwin, nproc elsewhere — so
   concurrent tree builds do not oversubscribe. In BOTH modes the summary now
   guards its row count against the number of definitions requested: before
   this, a sabotage whose definition failed validation produced NO row and the

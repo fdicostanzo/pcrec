@@ -614,8 +614,9 @@ Only the third shipped. The sweep shards by LINE CHUNKS of one pattern file
 arbitrary bytes and every quoting scheme for passing it as an argument is a
 bug the corpus will find — and each worker writes verdict TOKENS to its own
 file, so no counter crosses a process. `PROCS` selects the shard count
-(default `nproc`); the population and all sixteen verdicts are identical
-serial and sharded, measured both ways. Because `test-codegen` runs its three
+(default `tests/lib/procs_default.sh`'s count — [CORPUS-PCAP], the box's own
+performance-core count on darwin, `nproc` elsewhere); the population and all
+sixteen verdicts are identical serial and sharded, measured both ways. Because `test-codegen` runs its three
 scripts through `tests/lib/run_group.sh`, the section's own wall time is the
 max of the three rather than the sum.
 
@@ -4350,6 +4351,20 @@ are never compared).
   `docs/dev/lanes/santriage2_report.md` carry the full record. No box
   currently runs a WORKING leak tier (K26 = Linux no-op), so K26's
   canary obligation now covers both boxes.
+
+  **[CORPUS-PCAP] (2026-09-28): this box's 10 `nproc` cores are 8
+  PERFORMANCE + 2 EFFICIENCY (`sysctl -n hw.perflevel0.physicalcpu` = 8,
+  `hw.perflevel1.physicalcpu` = 2), and `docs/dev/lanes/tt4m2_report.md`
+  measured the real concurrency KNEE at P=8 — going P=8->P=12 buys 0-5%
+  wall and COSTS up to 15% more CPU to contention. `tri87` diagnosed
+  `test-corpus`'s intermittent `TIMED OUT (>10s)` reds as oversubscription
+  from fanning its file-workers out to bare `nproc` (10) past that knee.
+  The harness's worker-concurrency defaults (`test-corpus`, `test-reject`,
+  every `GROUP_PROCS`/`JOBS`/`NSHARD` site that used to read `nproc`) now
+  read `tests/lib/procs_default.sh` instead: 8 on this box, unchanged
+  (`nproc`-equivalent) on ubuntubudu/Linux/CI, where the physical core
+  count already equals the schedulable one. An explicit `PROCS=`/`JOBS=`/
+  `NSHARD=` still overrides, as before.**
 
 ### The `sed` binary itself — GNU-only constructs SILENTLY NO-OP on this box
 
