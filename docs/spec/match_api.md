@@ -2033,7 +2033,28 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `44` on every artifact today ([FIND-TIE] bumped it from
+- **`rx_info.abi` is `45` on every artifact today (module `ucp` bumped it
+  from 44, 2026-09-28/29: ADDING A MODULE MOVES THE `--features all`
+  SCAFFOLDING, EVEN WITH NO OTHER EMITTED CHANGE).** [UCP] U0+U1 landed
+  module `ucp` (`(*UCP)`, `--ucp`, `flags u`) with the row's own default
+  answer to Q-A ("no bump — no UCP-free artifact moves, and stamps keep
+  the requested set") — but under `--features all` every module's name
+  joins `PCREC_FEATURE_MODULES`, which is emitted SCAFFOLDING regardless
+  of whether the requesting caller ever asked for the new module, and
+  D76/D94 plus the `vars` precedent (`d755a9445`, abi 31 -> 32, the same
+  landing that added module `vars`' own name to the same stamp) make that
+  an `abi` event on its own. Manager ruling overrides Q-A. **VERIFIED BY
+  DIFFING** the `abc` artifact against a scratch build of main `7a756066`
+  at the same `-o` basename: the only changed line is
+  `PCREC_FEATURE_MODULES`'s value gaining `,ucp` (4 bytes) — no struct
+  offset moves, no `rx_info` member is added or changed, and NO ANSWER
+  MOVES on any artifact, UCP-free or otherwise: a byte-for-byte identical
+  compile at every other flag combination (`docs/dev/lanes/
+  ucpu1_report.md` §3's identity-gate numbers, unchanged by this bump).
+  `tests/codegen/run_cpset_structure.sh` CHECK 3's manifest is the
+  detector — its `--features all` census reads exactly +4 on all twelve
+  sample rows, the same `,vars`/+5 shape one bump before it.
+- **`rx_info.abi` was `44` ([FIND-TIE] bumped it from
   43, 2026-09-28: A PICK'S DATA TIE FOLLOWS ITS NONE ORDER, IN THE RUN
   READER).** The necessary RUN's scan-member pick (`pcrec_find_run_scan_index`,
   `src/core/findings.c`) built its candidate order in the run's own

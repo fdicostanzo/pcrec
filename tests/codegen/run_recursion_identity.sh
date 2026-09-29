@@ -1116,7 +1116,7 @@ REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
 # manifest and unaffected (every S2a mover was three bytes or longer to
 # begin with, since the whole population it built from was L >= 2 and this
 # lane's movers are the L == 2 subset of it, disjoint from L >= 3).
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-ed51481b}"   # [FIND-TIE], abi 43->44: (B) re-pinned to ed51481b (findtie's own last src commit, self-pin per the k64fix/k66fix convention) on lane/land85 (D76, 2026-09-28). Prior pin: 51e10961 ([OPT-LITSCAN] F5, abi 42->43).
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-a6e367a7}"   # [UCP], abi 44->45: (B) re-pinned to a6e367a7 (this lane's own last src commit, self-pin per the k64fix/k66fix/findtie convention) on lane/ucpu1 (D76, 2026-09-29). Prior pin: ed51481b ([FIND-TIE], abi 43->44).
 
 WORKDIR="$(mktemp -d)"
 cleanup() {
