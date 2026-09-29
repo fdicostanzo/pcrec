@@ -638,24 +638,59 @@ the SAME executor session: the [OPT-CLSPACK] timing arm (D129 item 5,
 `bench_bytes.py`/`make bench2-bytes`) and the isolated `^C`/member re-run
 [r1 MEAS-2] asked for.** Below is the exact-command brief, for the manager to
 relay verbatim — the pcrecdev2 executor is sonnet and does nothing
-judgment-shaped, so every command is copy-paste exact and assumes a pcrec
-checkout at the commit the manager names.
+judgment-shaped, so every command is copy-paste exact and assumes an
+extracted `git archive` copy of pcrec at the commit the manager names.
+
+**FIXED 2026-09-29 (lane clsgate), after this brief's first two runs both
+returned REFUSED** (pcrec-bench branch `scratch/clstree-s0`, `0d7392c`:
+attempt 1 REFUSING mid-run at load1 0.61 after 3 of 12 sets, attempt 2 at
+load1 0.52 after 10 of 12 sets, the SECOND attempt with nothing else of ours
+running on the box). Diagnosis: the harness's own gate was tripping on the
+harness's own work — `bench2` compiles a fresh binary per set (bitmap +
+three kit policies + the wholeset `page2w`/`page3w` arms) and then runs it
+once per regime, back to back with no idle gap, and the old gate checked
+load1 only once per SET. A 1-minute load average is an exponential moving
+average with a ~1-minute time constant; sustained single-core CPU work with
+no cooldown drives it toward 1.0 regardless of anything else on the box —
+attempt 2's own trajectory (pre-wait 0.07 → refusal at 0.52 after 10 sets,
+nothing else running) is exactly that curve, not external contention. Fixed
+in `studies/cls_tree_study/loadgate.py` (`wait_for_quiet`, shared by
+`bench.py` and `bench_bytes.py`): the 0.5 threshold is UNCHANGED, but a
+build phase now compiles every arm for every unit before any timing starts,
+and the gate is checked immediately before EACH timed unit (one
+set×regime run, not one whole set) and POLLS for quiet — logging every
+reading — for up to `--max-load-wait` seconds (default 600 = 10 min)
+before refusing. A self-inflicted reading decays within a poll cycle or two
+once the harness is idle waiting on the gate; only genuine, sustained
+external contention reaches the bound, and that case still refuses with its
+load readings, same as before. See `loadgate.py`'s header for the full
+diagnosis and `docs/dev/lanes/clsgate_report.md` for the fix's own
+correctness smoke (Mac, `--max-load 99`).
+
+Also fixed at the same time: the executor's pcrec copy is a `git archive`
+extraction, not a worktree checkout — confirmed by pcrecdev1 (O-73) that no
+`~/pcrec` worktree exists on that box, and the pin is recorded from the
+archive command itself, never from a `git log` run inside the extracted
+tree (which has no `.git`).
 
 > **pcrecdev2 — [CLS-TREE] S0 timing session (read-only study run; writes
 > ONLY `studies/cls_tree_study/results/bench2.tsv`,
 > `studies/cls_tree_study/results/bench2_bytes.tsv`,
 > `studies/cls_tree_study/results/capC_isolated.tsv`, and
 > `studies/cls_tree_study/build/`).**
-> Box: ubuntubudu, quiet (the harness itself refuses at load1 ≥ 0.5 and never
-> caveats; a refusal is a result — report it with its load readings, do not
-> loosen `--max-load`). Tree: pcrec at `<COMMIT the manager names>` (at or
-> after the merge of `lane/clss0`; nothing in `src/` is read for b1/the
+> Box: ubuntubudu. The harness polls for a quiet box before each timed unit
+> (up to 10 minutes) rather than refusing instantly; a bound-exceeded
+> refusal is still a result — report it with its load readings, do not
+> loosen `--max-load`. Tree: pcrec at `<COMMIT the manager names>` (at or
+> after the merge of `lane/clsgate`; nothing in `src/` is read for b1/the
 > isolated re-run — the study reads `src/parse/uprops_tables.inc` and its own
 > committed `results/byteclasses.tsv` only. `bench2-bytes` needs no
 > `build/pcrec` either — same committed-input rule).
 > ```
-> cd <pcrec checkout on ubuntubudu>
-> git log -1 --format=%h                                  # record the pin
+> mkdir -p /var/tmp/clstree_s0/pcrec
+> git -C ~/pcrec archive <COMMIT> | tar -x -C /var/tmp/clstree_s0/pcrec
+> echo "pin: <COMMIT>"                                     # record the pin from THIS command, not git log
+> cd /var/tmp/clstree_s0/pcrec
 > gcc --version | head -1                                 # record the compiler
 > mkdir -p build/clstree_s0
 >
@@ -701,10 +736,18 @@ checkout at the commit the manager names.
 > of 7 arms × 11 rounds × 1 M probes (the 2026-09-11 run of 5 arms × 4
 > regimes fitted inside the I-65 session); `bench2-bytes` is 3 builds × 11
 > rounds × 4 arms × 2^20 probes, small (well under b1's); the isolated
-> re-run is 1 build × 41 rounds × 5 arms × 2^20 probes, also small. Total
-> session is expected to land well inside b1's own 7200 s budget — the two
-> added commands' own timeouts (1800 s, 600 s) are generous relative to their
-> actual size, not a sign they are expected to run long.
+> re-run is 1 build × 41 rounds × 5 arms × 2^20 probes, also small. **Expected
+> wall time, gate-quiet case**: a few minutes total — Mac gcc-16 measured
+> ~0.25 s/set to build every arm (including the wholeset ones) and ~2.2 s/set
+> to run all five regimes, so twelve sets is on the order of 30 s of real
+> compute even before any ubuntubudu-vs-Mac speed difference; the fixed
+> gate's own overhead when the box is already quiet is one `os.getloadavg()`
+> call per timed unit, not a sleep. The two added commands' own timeouts
+> (1800 s, 600 s) and b1's 7200 s stay generous relative to that, covering
+> both a slower box and the gate's bounded wait (up to 10 min per timed unit,
+> reached only under genuine external contention — in which case the
+> `gnutimeout` firing first and the gate's own bounded refusal are both
+> legitimate outcomes to report, not harness failures).
 
 What b1 answers: `page3w`/`page2w` vs `bitmap1` vs the kit's three policies,
 under the four old regimes and the new `runs` regime (text-like runs of 1-32

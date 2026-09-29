@@ -19,7 +19,7 @@ by `build/pcrec`) — and writes only under this directory.
     make byteclasses         # extract the corpus byte-class population
     make crosscheck          # C DP vs Python DP over a population
     make proptest            # deliverable (4): the composition property test
-    make bench               # ns/char — REFUSES unless load1 < 0.5
+    make bench               # ns/char — polls for a quiet box (load1 < 0.5) before each timed unit
     make bench2              # + whole-set tables and the `runs` regime (design note §7)
     python3 verify_whole.py  # whole-set tables: exhaustive verify + rodata
 
@@ -86,8 +86,16 @@ points. The reference is deliberately the dumbest correct thing (a flat
 binary search over the whole interval list) so that a disagreement can never
 be both sides making the same mistake.
 
-**5. `bench.py` REFUSES on a loaded box.** It does not caveat. The sizing and
-verification arms are static properties and run any time; ns/char is not.
+**5. `bench.py`/`bench_bytes.py` REFUSE on a loaded box.** They do not
+caveat. The sizing and verification arms are static properties and run any
+time; ns/char is not. The gate (`loadgate.wait_for_quiet`, lane clsgate,
+2026-09-29) polls for a quiet box for up to `--max-load-wait` seconds
+(default 600) before each timed unit rather than refusing on the first
+over-threshold reading — the threshold itself (0.5) is unchanged, only a
+box that STAYS loaded past the bound gets refused. See `loadgate.py`'s
+header for why: the harness's own compiles and timing runs are sustained
+CPU work, and a gate checked too coarsely (once per SET, as it used to be)
+was tripping on itself rather than on anything else running on the box.
 
 ## The bug this study's own cross-check found
 
