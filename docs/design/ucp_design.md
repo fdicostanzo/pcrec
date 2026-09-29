@@ -6,7 +6,10 @@ Lane `ucpdes` (opus), branch `lane/ucpdes`, on `main` at `4bb74bda`,
 Frank 2026-09-28, D129 Q7). This note answers the eight things the lane brief
 asks it to DECIDE (§1-§8). A light D6 panel reviewed it; findings and
 dispositions are in `docs/dev/reviews/2026-09-28-r1-ucp-design.md`, and the
-fixes are made inline, marked **[r1 ID]**.
+fixes are made inline, marked **[r1 ID]**. Panel verdict: one BLOCKER
+(GEN-1: the class axis was not already general — now §2.4's context-set
+table, priced in U2) and four SHOULDs, all applied; every count in the note
+reproduced by the critics.
 
 **Status: PROPOSED.** Frank rules §8.
 
@@ -251,10 +254,14 @@ class node holds the folded set (CT-7), so rules 1-3 are rules about how the
 set is BUILT, and the kit, the island and the VM never see caseless at all.
 
 **Side finding (a comment, not a behaviour):** `src/parse/parse.c:652-657`
-says `[[:lower:]]` "DO[ES] match [U+212A] once `PCRE2_UCP` is added". Measured,
-it does not (`(?i)[[:lower:]]` vs U+212A under UTF|UCP: nomatch, [O] points).
-The comment's conclusion — use the ASCII fold for named sets absent UCP — is
-right and stays; its UCP clause is wrong and U1 corrects it.
+says "`[[:lower:]]` and `\w` do NOT match U+212A, while `[a-z]` and `[k]` DO
+— and all four match it once `PCRE2_UCP` is added". Wrong in both halves:
+`(?i)[[:lower:]]` vs U+212A is nomatch even under UCP ([O] points), and
+`(?i)[a-z]`/`(?i)[k]` match it WITHOUT UCP (UTF|CASELESS suffices — the
+shipped encoding fold). **[r1 SEM-1]** U0 rewords it to the correctly scoped
+form the same file already uses at `parse.c:494-496`, naming only `\w` (whose
+UCP set contains U+212A outright). The comment's conclusion — the ASCII fold
+for named sets absent UCP — is right and stays.
 
 ### 1.4 The lowering: `DEF_UCP`, and the ASCII-restriction knobs
 
@@ -349,8 +356,10 @@ membership kind then carries UCP sets exactly as it carries `\p` sets today
   the end), `(?!C)` its negation, `(?<=C)` "previous ∈ C" (false at the
   start), `(?<!C)` its negation; `\b` is `prev∈W ⊕ next∈W`. The DFA already
   implements exactly that shape for `W` (the class-axis views + the consumed
-  class in state identity, internal.h:1682-1722) — generalizing the SET is the
-  whole change.
+  class in state identity, internal.h:1682-1722) — but for two fixed,
+  disjoint, named sets only; generalizing it to a per-machine list of
+  arbitrary, possibly overlapping sets is a real data-structure change, §2.4
+  **[r1 GEN-1]**.
 - **Q3 — does it widen the DFA route? YES, measurably.** [S] lookaround census:
   of the 493 patterns that are VM-routed with lookaround as the ONLY excluding
   construct, **172 (34.9%)** have every lookaround one-character-shaped (bench
@@ -425,6 +434,51 @@ context would read the byte 0x80 as "in `[^a]`" and answer **(1,2)**.
 under UTF-8 is not homogeneous over bytes in EITHER direction, because the same
 byte begins or ends both a valid character and an ill-formed run.
 
+### 2.4 The context axis becomes a per-machine TABLE of sets **[r1 GEN-1]**
+
+The first draft said "generalizing the SET is the whole change". It is not,
+and the panel showed why: `upc_of_class` (`internal.h:3654`) is a fixed
+priority if-chain over two NAMED GLOBAL sets (`pcrec_cls_word_esc`,
+`pcrec_cls_newline`), `eqclasses` refines by each behind a per-set boolean
+(`dfa.c:176-182`), and `DState.up[UPC_N]` is a fixed 4-slot array whose
+correctness rests on the values being DISJOINT ("a newline is not a word
+character", internal.h:1709). `A_CTX` brings arbitrary sets, several per
+machine, and they need not be disjoint — the census's own k=2 witness
+`(?<=\$)\d+(?:\.\d{2})?\b` reads `{$}` and `\w`; a vowel lookbehind beside
+`\b` reads `V ⊂ W`. The if-chain would silently collapse `V∩W` into `W` — a
+sampled answer of exactly LEG 2's kind.
+
+**The replacement is the table model, and it is the SAME atom mechanism U3
+uses** (one mechanism, not two):
+
+- **`Dfa.ctxsets`** — a per-machine ORDERED LIST of context sets, DATA: each
+  entry `{name, cpset, one-line description}` (`word`, `newline`, `start`
+  (K50's character-start set), then one per distinct `A_CTX` set, deduplicated
+  by set equality, in first-occurrence order). Listable per [LIST-TABLES];
+  the artifact's stamp names the list.
+- **The context of a character is its ATOM**: the vector of its memberships
+  in the list, restricted to realizable vectors (a cpset computation at
+  compile time). `eqclasses` refines the byte alphabet by every list entry
+  (byte tier), so each byte class has ONE atom, exactly as each class has one
+  `UPC_*` value today; under U3 the island's vector IS the atom of a
+  non-ASCII character. `upc_of_class` becomes a table read
+  `atom_of_class[c]` — no if-chain.
+- **`up[]` is sized to the realized atom count**, not `UPC_N`; `s1u[]`/`s1g[]`
+  likewise (one seed per atom). Overlap is handled by construction: `V∩W`,
+  `W∖V`, `V∖W` and neither are four atoms.
+- **The closure evaluates `A_CTX(C, fn)` by reading bit `C` of the
+  (consumed-atom, next-atom) pair**; `N_WORDB`/`N_NWORDB`/`N_BOT_M`/`N_EOL_M`/
+  `N_CSTART` read the list's first three entries the same way.
+- **Identity**: when the list is exactly `{word, newline, start}` the atoms
+  ARE `UPC_WORD/NL/NOSTART/PLAIN` (disjoint sets, four atoms, same order), so
+  every shipped artifact interns the same states and emits the same tables.
+  That is a claim, not a proof — **U2's identity gate over every shipped
+  artifact that carries a class axis** (every `\b`, `\B`, `(?m)^/$`, K50-gated
+  utf8 machine; all encodings × features) is its check.
+- **Bound**: atoms ≤ 2^k for k list entries; one `limits.def` row caps the
+  realized atom count for U2 and U3 alike (H4), above which T4's `decline`
+  row routes the pattern to the VM.
+
 ---
 
 ## 3. The island (UD-3)
@@ -454,7 +508,12 @@ state = tgt_Q[v]; pos = p + len;        /* resume, or dead */
 `tgt_Q[v]` is `δ*(Q, bytes(c))` for any character `c` with vector `v` — well
 defined because the NFA's non-ASCII transitions are labelled by code-point
 SETS (`A_WCLASS`, CT-4) and so δ* over a whole character depends only on which
-sets it is in. Subset construction computes `tgt_Q` over the machine's **atoms**
+sets it is in. **Minimization sees atoms as alphabet symbols** **[r1 GEN-3]**: each atom is
+one column exactly as a byte class is, so `minimize.c`'s partition
+refinement runs unchanged over (ASCII byte classes ∪ atoms ∪ {⊥}); island
+tokens are an EMISSION-time renumbering into the reserved top range after
+minimization — the scan-edge heads' own order (`scanedge.c:624-666`).
+Subset construction computes `tgt_Q` over the machine's **atoms**
 (the realizable vectors, a cpset computation at compile time) instead of over
 bytes: `\p{L}` is ONE column pair (in/out) instead of the ~100 byte classes and
 299 forward / 453 reverse states of its byte automaton ([C] §3.1).
@@ -691,7 +750,7 @@ from this list. Sabotage rows are numbered from main's highest S-id at the time.
 |---|---|---|---|---|
 | **U0** | registry: `(*UCP)` → module `ucp` (unbuilt: "requires module 'ucp'"); `(*UTF)` accepted under utf8, refused by name under byte; `-e utf8` enables `unicode-props`+`ucp`; `parse.c:652` comment corrected | PC-3 against 10.46 (compile-accept); reject-table rows for both verbs × both encodings | no artifact moves; no abi; D80 spec hunk (the verbs' tier in the compliance/limits spec, `-e utf8`'s implied modules) | `(*UCP)` answering module `verbs` again |
 | **U1** | the surface: `ucp` built; `--ucp` + `(*UCP)` + `.rxt` letter; `DEF_UCP_{D,S,W,P,T}` producers for the class escapes and POSIX classes; fold-inert rule; the (encoding, UCP) fold; `(?a…)` real; the byte tier. **Wide sets under UCP -e utf8 (`\w`, `\W`, alpha/alnum/word/lower/upper/graph/print/punct) and `\b`/`\B` under UCP -e utf8 refused by name** until a kit-sized route exists (Q3) | `oracle_store` membership arm gains UCP config (§1.6): every UCP set × {byte, utf8} vs 10.46; §1.3's caseless cells and §1.4's knob cells as `.rxt` corpora oracle-verified against 10.46; the [S] §B.3 Latin-1 cells | UCP-free artifacts **byte-identical** (UCP is an axis; nothing moves without it); UCP artifacts are new, no abi; D80: `tuning.md` axis row, `match_api.md` if `rx_info.flags` gains a UCP bit (then an abi event, readers by grep) | a `DEF_UCP` tag answering true without UCP (every `\d` moves — the identity gate must catch it); `[:lower:]` folding under `(?i)` UCP; `(?aW)` not reaching `\b` |
-| **U2** | `A_CTX`: `\b`/`\B` producers build it; the recognition pass for one-character lookarounds; the DFA class axis generalized from the fixed word/newline sets to the machine's context sets; the byte-expressibility precondition checked (§2.3); UCP `\b` under **`-e byte`** lands here | **identity over every `\b`/`\B` pattern** (corpus + bench, all encodings × features — the plan row's named control); the moved lookaround patterns: default vs `--engine=vm` answer identity over the whole corpus; 10.46 differential on the assertion-expansion corpus; the §2.3 hazard cells (`(?<=[^a])a` on `80 61` nomatch) | **abi bump** (the moved patterns' artifacts change VM → DFA; the refusal set does not move); the census of movers pinned by NAMED manifest, not count (r49's rule) | the recognizer accepting a two-character body (`(?<=ab)`); accepting a capture-bearing body; the precondition skipped for a non-ASCII set under utf8 (must be detected by the §2.3 cells, not by answers on ASCII subjects); an `A_CTX` whose "absent" side reads as in-set |
+| **U2** | `A_CTX`: `\b`/`\B` producers build it; the recognition pass for one-character lookarounds; **the class axis becomes §2.4's per-machine context-set TABLE — a DATA-STRUCTURE change**: `Dfa.ctxsets`, `eqclasses` refining by the list, `upc_of_class` → `atom_of_class[]`, `DState.up[]`/`s1u[]`/`s1g[]` sized to the realized atom count, the atom-count `limits.def` row; the byte-expressibility precondition checked (§2.3); UCP `\b` under **`-e byte`** lands here | **identity over every `\b`/`\B` pattern** (corpus + bench, all encodings × features — the plan row's named control); the moved lookaround patterns: default vs `--engine=vm` answer identity over the whole corpus; 10.46 differential on the assertion-expansion corpus; the §2.3 hazard cells (`(?<=[^a])a` on `80 61` nomatch) | **abi bump** (the moved patterns' artifacts change VM → DFA; the refusal set does not move); **byte identity for every non-moving artifact that carries a class axis** (§2.4's claim); the census of movers pinned by NAMED manifest, not count (r49's rule) | **the old first-match if-chain restored over two OVERLAPPING sets** — must be caught by the overlap witnesses, answer-checked vs 10.46 on subjects that separate all four atoms: the census's k=2 `(?<=\$)\d+(?:\.\d{2})?\b` and a synthetic `V ⊂ W` pattern (`(?<=[aeiou])x\b`-shaped); the recognizer accepting a two-character body (`(?<=ab)`); accepting a capture-bearing body; the precondition skipped for a non-ASCII set under utf8 (must be detected by the §2.3 cells, not by answers on ASCII subjects); an `A_CTX` whose "absent" side reads as in-set |
 | **U3** | the island: character-stepped mode; the atom/vector builder over `A_WCLASS` + non-ASCII context sets; island tokens in the top range; the self-loop fold; seeds and reverse boundary via `back_step`; the dial's θ; UCP `\w`/`\b` and wide classes on the DFA route under utf8; U1's wide-set refusals lifted for the DFA route | whole-corpus answer identity island vs all-byte where both exist (a deny axis, `-fno-cls-island` or the kit deny Q2 of D129 extended — the implementer's spelling); 10.46 UCP differential (the [S] §C 579,195-subject `\b` stream, UCP mode, both engines); the **ill-formed matrix**: every set kind × {truncated, overlong, surrogate, >U+10FFFF, stray continuation, 0xFF} × {forward, reverse, seed, `ENG_ATTEMPT`} — [M]'s model is the expectation generator and 10.46 UCP|MIU its oracle | **abi bump** (utf8 artifacts with wide classes move; K53's ladder stops firing for them — a refusal/selection-set move recorded as the identity break it is); `PREMUL_MAX_ENTRIES` accounting | the decoder accepting `C0 80`; ⊥ read as a word character; the reverse island skipping a whole truncated run (the [M] control's shape); an island state not excluded from a scan edge (H2); the H7 accept column read on a non-ASCII byte — a STRUCTURAL check, since answers on well-formed ASCII subjects cannot see it |
 | **U4** | the VM `A_CTX` with non-ASCII sets: `back_step` + decode + kit per side; UCP `\b` on the VM; U1's remaining VM refusals lifted | 10.46 UCP differential, `--engine=vm` and default; the mid-character `startpos` cells under `-fno-startpos-guard` (utf8_design.md §2.6.1's inversion) for a leading `\B` | **abi bump** (VM artifacts with UCP `\b`) | `back_step` returning the lead of a malformed run (the E4 shape); the test reading one byte instead of decoding |
 
