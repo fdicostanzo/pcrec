@@ -8771,3 +8771,18 @@ the ruling already lives, not a re-derivation.
 "also owed" list and gives the 2026-09-28 rulings a citable decision
 number. The plan.md rows named in items 6-9 carry their own detailed
 disposition text — this entry is the index, not the substance.
+
+## D129 — [CLS-TREE] design note ruled; S5 dropped for the island; [UCP] next (Frank, 2026-09-28, eighty-fifth session)
+
+**Context.** `docs/design/cls_tree_design.md` (lane clsdes88, merged 48ae27dd) put Q1-Q7 to Frank (§8). The note's headline: the ubuntubudu ns/char run refutes the sectioning DP's λ·Σops speed term (r = -0.00 on member subjects; 17/36 pairwise orderings), so the pinned λ constants select among matchers of equal speed.
+
+**Rulings.**
+1. **Q1 YES:** the five λ constants are re-proposed as ONE ruled diff after S0's calibration; the λ row stays "reservation" until then. The calibration timing arm (note §7(b), `make -C studies/cls_tree_study bench2 CC=gcc`) runs on the BENCH box via the pcrecdev2 executor, queued behind [B115].
+2. **Q2 YES:** retire `-fno-cls-fold`; one kit-level deny `-fno-cls-kit` ("emit today's class forms").
+3. **Q3 YES:** +2's huge-bitmap content is the same DP at a high λ with whole-set tables as candidates — no +2-only mechanism.
+4. **Q4 REVISED — S5 (minimal-automaton splice) is DROPPED.** Frank: "why use a DFA to do a lookup? what about binary search?" The splice shrinks no artifact (the emitted DFAs are already the class's minimal automata, 299/453 states) and buys compile time only. The ISLAND (the DFA leaves for one character: decode, kit test — binary search / page table / bitmap as the dial picks — resume or die; note §3.4) shrinks the DFA route AND removes K67's class share (the class is never expanded into byte structure). The island is built by [UCP] (Q6). Residual question, measured not assumed: whether the all-byte DFA route stays faster per char for small/medium classes at speed-leaning --tune — a dial choice, not a second mechanism.
+5. **Q5 REVISED — [OPT-CLSPACK] is NOT closed.** Its size question is answered by the kit's byte tier (zero `.rodata`, 41/41 corpus classes), but its STEP 0 measured the shared atom table 24% faster than the bit array at N=16, and the kit's inline tests were never timed against it. Frank: "time it" — added to the byte-tier timing arm (note §7 b2). Frank's shared utf class table ([XART-TABLES], [UCD-RECORD]) becomes a first-class INPUT to the [UCP] design (a shared table is one more kit/predicate form, as an option).
+6. **Q6 YES:** the island is out of [CLS-TREE]'s staging; its interface is fixed by note §3.4.
+7. **Q7 — [UCP] IS NEXT** (Frank: "let's do UCP next while we're in the neighborhood"): staging S0 → S1 → S3 → S4, then S2. S4 makes `\p{Xwd}`-sized classes buildable on the VM (UCP's prerequisite).
+
+**Consequences.** [CLS-TREE] S0 (calibration plumbing + Mac-side measurements a1-a5) is chartered now; the [UCP] design lane opens alongside it (both Mac-side; no Linux heavy runs while [B115] holds the box). Note §6/§8 carry the pre-ruling text; this entry supersedes them on Q4/Q5.
