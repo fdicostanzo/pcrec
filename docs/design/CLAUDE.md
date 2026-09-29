@@ -2653,5 +2653,39 @@ exactly +34 bytes.
   Mac/ubuntubudu (§7), seven questions for Frank (§8), what [UCP] can build
   on (§9).
 
+- `ucp_design.md` — **[UCP] THE DESIGN NOTE, PROPOSED; light D6 panel r1**
+  (lane ucpdes, 2026-09-28; `../dev/reviews/2026-09-28-r1-ucp-design.md`;
+  design only, nothing under `src/`/`cli/`/`lib/`/`tests/`/`docs/spec/`).
+  Decides UD-1..UD-8. **The surface** (§1): module `ucp`, opt-in (`--ucp`,
+  `(*UCP)`), lowered through the definitions table's `DEF_UCP` rows split
+  per PCRE2 ASCII-restriction family so `(?aD/aS/aW/aP/aT)` become real;
+  every UCP set checked as a 10.46 set equality (57 relations, including the
+  new `[:graph:]`/`[:print:]` Cf-carve-out formulas); three caseless rules
+  (`[:lower:]`/`[:upper:]` fold-INERT under UCP, per-contribution folding,
+  ASCII-restricted sets fold by the ASCII fold — the last refuting this
+  lane's own first guess); the byte tier as the same definitions under the
+  byte universe plus a Latin-1 fold; O-71 adopted (`-e utf8` enables
+  `unicode-props`+`ucp`). **Normalize-then-recognize is ADAPTED** (§2): not a
+  text rewrite but ONE context NODE (`A_CTX`, `N_WORDB` generalized) that
+  `\b` builds directly and every one-character-language lookaround reaches by
+  recognition — 158 of the 172 all-one-character lookaround patterns need no
+  island. **The island** (§3) is a CHARACTER-STEPPED DFA MODE entered through
+  [OPT-EDGE]'s existing top-row stop test: decode one character, its
+  membership vector over the machine's non-ASCII sets, accept, resume; an
+  ill-formed byte is the pseudo-character ⊥. UCP `\b` needs no new view kind.
+  The ⊥ rule is measured against 10.46 UCP|MIU (209/0, two firing controls)
+  and forward/backward segmentation agrees on 3,368,421 strings. The
+  island's SPEED against a cache-resident all-byte DFA is unmeasured and
+  owed (a ubuntubudu hand-twin, U3's D77 trigger). **§0.1 states every
+  selection as a first-match table (T1-T8)**, rows as listable data. Staging
+  U0-U4 against [CLS-TREE]'s S1/S3/S4 (§5-§6), owed measurements (§7), nine
+  questions for Frank (§8). Measurements: `ucp_measurements/`.
+- `ucp_measurements/` — the [UCP] design lane's oracle probes (10.46 over
+  ssh-stdin, 10.48 local), the ⊥ context model and the segmentation-symmetry
+  sweep with their failing-direction controls, the context-set census, and
+  the transcripts. Its CLAUDE.md records two instrument defects (a global
+  `pcre2_substitute` boundary stream that under-marked under
+  `MATCH_INVALID_UTF`; two guessed expectations that were wrong).
+
 Maintenance: update this file when files are added/removed or their roles
 change.

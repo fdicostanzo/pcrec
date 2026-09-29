@@ -1,0 +1,7 @@
+# illformed_ctx_cells.txt -- the one-character-context hazard cell (ucp_design.md s3.1)
+# pcrec: build/pcrec at 4bb74bda, -e utf8 --features all --emit-main, gcc-16 -O1 (Mac)
+# oracle: libpcre2 10.46 (ubuntubudu, ssh stdin), options PCRE2_UTF|PCRE2_MATCH_INVALID_UTF
+# pattern          subject          10.46 (UTF|MIU)   pcrec -e utf8 today (VM lookbehind)   naive all-byte context (class of the byte before)
+(?<=[^a])a         80 61            nomatch           nomatch                               match (1,2)  <- 0x80 is a continuation byte, "in [^a]" as a byte
+(?<=[^a])a         C3 A9 61         match (2,3)       match (2,3)                           match (2,3)
+(?![^a])           E6 97 61         match (0,0)       match (0,0)                           nomatch at 0 <- E6 is a lead byte, "in [^a]" as a byte

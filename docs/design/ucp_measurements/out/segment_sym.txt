@@ -1,0 +1,2 @@
+#strings 3368421 (alphabet 20, len 0..5): forward==backward on all but 0
+#control unrepaired back_step disagrees on 267786; control run-skipping forward disagrees on 1895172

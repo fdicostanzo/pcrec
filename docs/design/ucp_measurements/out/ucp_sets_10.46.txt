@@ -1,0 +1,59 @@
+#version 10.46 2025-08-27
+UTF|UCP  [:graph:] formula                            |A|=154973  |B|=154973  EQUAL
+UTF|UCP  [:print:] formula                            |A|=154991  |B|=154991  EQUAL
+UTF|UCP  [:graph:] naive (control: Cf matters)        |A|=154973  |B|=154809  DIFF  A-B=164 AD,600,601,602,603,604  B-A=0 
+UTF|UCP  [:punct:] formula                            |A|=864     |B|=864     EQUAL
+UTF|UCP  [:xdigit:] formula                           |A|=44      |B|=44      EQUAL
+UTF|UCP  [:cntrl:]                                    |A|=65      |B|=65      EQUAL
+UTF|UCP  [:blank:]                                    |A|=19      |B|=19      EQUAL
+UTF|UCP  [:space:]                                    |A|=26      |B|=26      EQUAL
+UTF|UCP  \s                                           |A|=26      |B|=26      EQUAL
+UTF|UCP  [:word:]                                     |A|=144969  |B|=144969  EQUAL
+UTF|UCP  \w                                           |A|=144969  |B|=144969  EQUAL
+UTF|UCP  [:alnum:]                                    |A|=142939  |B|=142939  EQUAL
+UTF|UCP  [:alpha:]                                    |A|=141028  |B|=141028  EQUAL
+UTF|UCP  [:digit:]                                    |A|=760     |B|=760     EQUAL
+UTF|UCP  \d                                           |A|=760     |B|=760     EQUAL
+UTF|UCP  [:lower:]                                    |A|=2258    |B|=2258    EQUAL
+UTF|UCP  [:upper:]                                    |A|=1858    |B|=1858    EQUAL
+UTF|UCP  \W is the complement                         |A|=967095  |B|=967095  EQUAL
+UTF|UCP  [\W] in a class                              |A|=967095  |B|=967095  EQUAL
+UTF|UCP  [^\w]                                        |A|=967095  |B|=967095  EQUAL
+UTF|UCP  [:^alpha:]                                   |A|=971036  |B|=971036  EQUAL
+UTF|UCP  \D                                           |A|=1111304 |B|=1111304 EQUAL
+UTF|UCP  \S                                           |A|=1112038 |B|=1112038 EQUAL
+UTF|UCP  (?i) does NOT fold [:lower:] under UCP       |A|=2258    |B|=2258    EQUAL
+UTF|UCP  (?i) does NOT fold [:upper:] under UCP       |A|=1858    |B|=1858    EQUAL
+UTF|UCP  (?i) DOES fold \p{Ll} (control)              |A|=4147    |B|=2258    DIFF  A-B=1889 41,42,43,44,45,46  B-A=0 
+UTF|UCP  (?i) negated [:lower:] also inert            |A|=1109806 |B|=1109806 EQUAL
+UTF|UCP  \w fold-closed                               |A|=144969  |B|=144969  EQUAL
+UTF|UCP  \W fold-closed                               |A|=967095  |B|=967095  EQUAL
+UTF|UCP  [:alpha:] fold-closed                        |A|=141028  |B|=141028  EQUAL
+UTF|UCP  [:alnum:] fold-closed                        |A|=142939  |B|=142939  EQUAL
+UTF|UCP  [:graph:] fold-closed                        |A|=154973  |B|=154973  EQUAL
+UTF|UCP  [:punct:] fold-closed                        |A|=864     |B|=864     EQUAL
+UTF|UCP  [:xdigit:] fold-closed                       |A|=44      |B|=44      EQUAL
+UTF|UCP  per-contribution: the x still folds          |A|=2259    |B|=2259    EQUAL
+UTF|UCP  union with \p{Ll} folds that contribution    |A|=4147    |B|=4147    EQUAL
+UTF      non-UCP (?i)[:lower:] = ASCII letters only   |A|=52      |B|=52      EQUAL
+UTF      non-UCP (?i)\w = ASCII only (no KELVIN)      |A|=63      |B|=63      EQUAL
+UTF|UCP  (?aW)\w                                      |A|=63      |B|=63      EQUAL
+UTF|UCP  (?aD)\d                                      |A|=10      |B|=10      EQUAL
+UTF|UCP  (?aS)\s                                      |A|=6       |B|=6       EQUAL
+UTF|UCP  (?aP)[:alpha:]                               |A|=52      |B|=52      EQUAL
+UTF|UCP  (?aP)[:word:]                                |A|=63      |B|=63      EQUAL
+UTF|UCP  (?aP) does not touch \w                      |A|=144969  |B|=144969  EQUAL
+UTF|UCP  (?aW) does not touch [:word:]                |A|=144969  |B|=144969  EQUAL
+UTF|UCP  (?aT)[:digit:]                               |A|=10      |B|=10      EQUAL
+UTF|UCP  (?aT)[:xdigit:]                              |A|=22      |B|=22      EQUAL
+UTF|UCP  (?aT) leaves [:alpha:] UCP                   |A|=141028  |B|=141028  EQUAL
+UTF|UCP  (?aD) does not touch [:digit:]               |A|=760     |B|=760     EQUAL
+UTF|UCP  (?a)\w                                       |A|=63      |B|=63      EQUAL
+UTF|UCP  (?a)[:alpha:]                                |A|=52      |B|=52      EQUAL
+UTF|UCP  (?-aW) unsets                                |A|=144969  |B|=144969  EQUAL
+UTF|UCP  (?aW:...) is scoped                          |A|=144969  |B|=144969  EQUAL
+UTF|UCP  (?aW)(?i)\w = ASCII, ASCII fold              |A|=63      |B|=63      EQUAL
+UTF|UCP  (?aW)(?i)\w: no KELVIN/LONG S                |A|=63      |B|=65      DIFF  A-B=0   B-A=2 17F,212A
+UTF|UCP  (?aP)(?i)[:lower:] = ASCII-folded            |A|=52      |B|=52      EQUAL
+UTF|UCP  (?aP)(?i)[:lower:]: no KELVIN/LONG S         |A|=52      |B|=54      DIFF  A-B=0   B-A=2 17F,212A
+#rows 57, rows differing from the stated expectation: 0 []
