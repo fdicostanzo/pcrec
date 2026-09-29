@@ -1147,3 +1147,17 @@ The Mac smoke of `bench2`'s generator (3 sets × 3 regimes, `--max-load 99`,
 1 round, output discarded) confirmed that every new arm's hit count and
 positional checksum equal the reference arm's in every cell; its times were
 not read.
+
+### §1.7 addendum — the fair-dispatch CLSPACK re-run (I-121 / bench O-77, 2026-09-29; manager)
+
+`results/bench2_bytes_switch_ubuntubudu_20260929.tsv` (132/132 rows, `--dispatch switch`, pcrec cdd8607d). Medians are in ns/call, over 11 rounds each.
+
+| N live sites | bitmap | atom | kit (λ16) | refbs |
+|---|---:|---:|---:|---:|
+| 4 | 7.59 | 7.61 | 8.57 | 12.33 |
+| 16 | 10.66 | 9.64 | 12.38 | 16.55 |
+| 32 | 10.96 | 11.38 | 12.99 | 18.55 |
+
+With the dispatch confound removed, **the kit's byte tier is the SLOWEST of the three table-free/table forms at every N**: +13% / +16% / +19% against the bitmap. The instruction-count win (§7 a5) does not become a time win. The atom table and the bitmap are within noise of each other; N=16's spread is max/min ≈ 1.26 on both. The atom table is smaller than per-site bitmaps from N ≈ 11. Consequences, owed to Frank as rulings:
+1. **S2** (the byte tier on the VM) as designed, which replaces bitmaps with kit forms by default, would be a measured SPEED REGRESSION. The kit's byte forms belong at the size-leaning `--tune` positions only.
+2. **[OPT-CLSPACK]**'s condition "default only if atom ≤ kit" is met at every N. Against the bitmap, the atom table is a size win at no measured time cost for N ≥ ~11. That makes it a candidate for the byte tier's default table form above that N.
