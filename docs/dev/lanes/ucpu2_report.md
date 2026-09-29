@@ -217,8 +217,7 @@ language the DFA now proves), `run_facts_checks.sh` 0 failed (the first full
 eleven re-aimed rows (S69, S71, S75, S76, S78, S81, S83, S218, S220, S269,
 S276), one id per invocation, each line `MECH <id> rc=… :: <verdict> :: ==
 mech run COMPLETE …`; `make test-rxtsource` (census re-pinned
-254/4230/31185 — the extra `ctxnode.rxt` blocks landed after that pin was
-measured, so this run may ask for a +3/+12 re-pin); `make test-axes
+254/4233/31197, measured by the check's own awk; run.sh 230/4233/31197); `make test-axes
 AXES=-fno-ctx-node`; then ONE full `make test CC=gcc-16`, whose line reads
 `MAKE-TEST rc=… :: sections ran: N/M … :: errors: <make's *** [test-X]
 Error lines>`. The chain's last line is `FINAL_CHAIN_DONE <date>`. The
