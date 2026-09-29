@@ -12,6 +12,7 @@ import sys
 
 import clsets
 import emit
+import sweep
 import wholeset
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -37,7 +38,8 @@ def main():
     which = sys.argv[1] if len(sys.argv) > 1 else "k53"
     out = os.path.join(HERE, "build", "whole")
     os.makedirs(out, exist_ok=True)
-    print("set\tintervals\tpage2w_rodata\tpage3w_rodata\tmismatch2\tmismatch3")
+    print("set\tintervals\tpage2w_rodata\tpage3w_rodata\tpage2w_obj\tpage3w_obj"
+          "\tmismatch2\tmismatch3")
     fails = 0
     for name, iv in clsets.population(which):
         tag = "".join(c if c.isalnum() else "_" for c in name)
@@ -51,8 +53,20 @@ def main():
         m2, m3 = subprocess.run([b], capture_output=True, text=True,
                                 check=True).stdout.split()
         fails += int(m2) + int(m3)
-        print("%s\t%d\t%d\t%d\t%s\t%s" % (name, len(iv), w2.rodata(),
-                                          w3.rodata(), m2, m3))
+        # OBJECT bytes (.text + .rodata) of each form ALONE, the unit every
+        # other size in the study is quoted in (sweep.obj_sizes).
+        objs = []
+        for fn, w in (("pw2", w2), ("pw3", w3)):
+            oc, oo = os.path.join(out, tag + fn + ".c"), \
+                os.path.join(out, tag + fn + ".o")
+            open(oc, "w").write(w.c(fn))
+            subprocess.run([CC, "-O2", "-std=gnu11", "-w", "-c", oc, "-o", oo],
+                           check=True)
+            t, ro, _, _ = sweep.obj_sizes(oo)
+            objs.append(t + ro)
+        print("%s\t%d\t%d\t%d\t%d\t%d\t%s\t%s"
+              % (name, len(iv), w2.rodata(), w3.rodata(), objs[0], objs[1],
+                 m2, m3))
     print("TOTAL mismatches: %d" % fails)
     return 1 if fails else 0
 

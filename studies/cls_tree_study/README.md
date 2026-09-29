@@ -53,6 +53,8 @@ not reproducible, however green it looks.
 | `bench.py` | ns/char, house protocol (interleaved, load-gated, checksummed) |
 | `wholeset.py` | whole-set indexed tables (2- and 3-stage), unreachable by the DP's MAXK cap |
 | `verify_whole.py` | exhaustive verify + rodata of the whole-set tables |
+| `automaton.py` | UTF-8 byte automaton: flat vs minimal fwd/rev, closure fan-out |
+| `timefit.py` | does the DP's op model predict the measured ns/char (analysis only) |
 | `extract_byteclasses.py` | byte classes parsed off EMITTED artifacts |
 
 ## Five things not to simplify away

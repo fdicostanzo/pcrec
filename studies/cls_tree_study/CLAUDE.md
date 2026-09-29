@@ -54,6 +54,12 @@ nothing is linked into pcrec, `make test` does not run it. It READS
   take a bare interval list only (Constraint 1). NOT in `kit.KIT` — whether
   the DP offers whole-set sections is `docs/design/cls_tree_design.md`'s
   decision, gated on `make bench2`'s timing.
+- `automaton.py` — the UTF-8 byte automaton of a set three ways (today's
+  flat `u8_box` alternation transcribed, the minimal forward automaton, the
+  exact minimal reverse one) with the closure fan-out on entry; the design
+  note's §3 numbers (`results/automaton_k53.tsv`).
+- `timefit.py` — analysis only: does the DP's `model_ops` predict the
+  ubuntubudu ns/char? (No: `results/timefit_20260928.txt`, design note §1.2.)
 - `verify_whole.py` — exhaustive (all 1,114,112 code points) check of the two
   whole-set forms against `emit.reference`, plus their exact rodata; writes
   `results/whole_<population>.tsv`.
