@@ -53,7 +53,7 @@ same population, same as bench.py's `refbs` arm.
 
 Usage:
     python3 bench_bytes.py [--ns 4,16,32] [--rounds 11] [--regimes ...]
-        [--max-load 0.5] [--out bench2_bytes.tsv]
+        [--max-load 0.5] [--out bench2_bytes.tsv] [--dispatch table|switch]
 
 Writes results/<out> (default `bench2_bytes.tsv`).  `--smoke` cuts the
 per-round probe count down for a Mac correctness-only run (never for citing
@@ -145,10 +145,30 @@ def atom_partition(bytesets):
     return atoms, masks, n_atoms
 
 
-def gen(n, classes, lam, outdir):
+def _switch(fn, exprs):
+    """One `switch (site)` whose case i returns exprs[i] -- the `switch`
+    dispatch shape every arm shares (see gen()'s `dispatch`)."""
+    return ("static int %s(int site, unsigned cp)\n{\n    switch (site) {\n"
+            % fn
+            + "".join("    case %d: return %s;\n" % (i, e)
+                      for i, e in enumerate(exprs))
+            + "    default: return 0;\n    }\n}\n")
+
+
+def gen(n, classes, lam, outdir, dispatch="table"):
     """classes: list of (name, iv, bits) for N live sites, `bits` a 256-bit
     int membership word (LSB = byte 0, same convention as byteclasses.tsv).
-    Returns (path, armnames)."""
+    Returns (path, armnames).
+
+    `dispatch` is how an arm reaches site i's test.  "table" (the default,
+    the shape of the committed 2026-09-29 ubuntubudu run) indexes DATA for
+    bitmap/atom (a per-site table pointer / mask) but CALLS through a
+    per-site function pointer for kit, so on random sites only the kit arm
+    (and refbs's switch) pays a mispredicted indirect branch per probe --
+    the arms' dispatch costs differ, not just their tests (lane clsfit,
+    cls_tree_design.md §1.7.3).  "switch" gives every arm the SAME
+    `switch (site)` with site i's test inlined in case i, which is also the
+    shape a VM with one instruction per class site has."""
     bytesets = [frozenset(b for b in range(256) if (bits >> b) & 1)
                 for _, _, bits in classes]
 
@@ -173,11 +193,15 @@ def gen(n, classes, lam, outdir):
         rows = ", ".join("0x%02X" % ((bits >> (8 * j)) & 0xFF) for j in range(32))
         parts.append("static const unsigned char %s[32] = { %s };\n" % (t, rows))
         bm_tabs.append(t)
-    parts.append("static const unsigned char *const bm_tabs[%d] = { %s };\n"
-                 % (n, ", ".join(bm_tabs)))
-    parts.append("static int bitmap_dispatch(int site, unsigned cp)\n{\n"
-                 "    const unsigned char *t = bm_tabs[site];\n"
-                 "    return (int)((t[cp >> 3] >> (cp & 7)) & 1u);\n}\n")
+    if dispatch == "switch":
+        parts.append(_switch("bitmap_dispatch", [
+            "(int)((%s[cp >> 3] >> (cp & 7)) & 1u)" % t for t in bm_tabs]))
+    else:
+        parts.append("static const unsigned char *const bm_tabs[%d] = { %s };\n"
+                     % (n, ", ".join(bm_tabs)))
+        parts.append("static int bitmap_dispatch(int site, unsigned cp)\n{\n"
+                     "    const unsigned char *t = bm_tabs[site];\n"
+                     "    return (int)((t[cp >> 3] >> (cp & 7)) & 1u);\n}\n")
 
     # --- kit: the DP's own answer per class, lam fixed ---------------------
     kit_fns = []
@@ -187,10 +211,13 @@ def gen(n, classes, lam, outdir):
         s, _ = emit.emit(fn, iv, sc, fo, static=True)
         parts.append(s)
         kit_fns.append(fn)
-    parts.append("static int (*const kit_fns[%d])(unsigned) = { %s };\n"
-                 % (n, ", ".join(kit_fns)))
-    parts.append("static int kit_dispatch(int site, unsigned cp)\n{\n"
-                 "    return kit_fns[site](cp);\n}\n")
+    if dispatch == "switch":
+        parts.append(_switch("kit_dispatch", ["%s(cp)" % f for f in kit_fns]))
+    else:
+        parts.append("static int (*const kit_fns[%d])(unsigned) = { %s };\n"
+                     % (n, ", ".join(kit_fns)))
+        parts.append("static int kit_dispatch(int site, unsigned cp)\n{\n"
+                     "    return kit_fns[site](cp);\n}\n")
 
     # --- atom: ONE shared table + a mask per class -------------------------
     atoms, masks, n_atoms = atom_partition(bytesets)
@@ -200,11 +227,15 @@ def gen(n, classes, lam, outdir):
                          "than silently truncating" % (n, n_atoms))
     rows = ", ".join(str(v) for v in atoms)
     parts.append("static const unsigned char atom_tbl[256] = { %s };\n" % rows)
-    parts.append("static const unsigned long long atom_masks[%d] = { %s };\n"
-                 % (n, ", ".join("0x%016XULL" % m for m in masks)))
-    parts.append("static int atom_dispatch(int site, unsigned cp)\n{\n"
-                 "    return (int)((atom_masks[site] >> atom_tbl[cp]) & 1ULL);\n"
-                 "}\n")
+    if dispatch == "switch":
+        parts.append(_switch("atom_dispatch", [
+            "(int)((0x%016XULL >> atom_tbl[cp]) & 1ULL)" % m for m in masks]))
+    else:
+        parts.append("static const unsigned long long atom_masks[%d] = { %s };\n"
+                     % (n, ", ".join("0x%016XULL" % m for m in masks)))
+        parts.append("static int atom_dispatch(int site, unsigned cp)\n{\n"
+                     "    return (int)((atom_masks[site] >> atom_tbl[cp]) & 1ULL);\n"
+                     "}\n")
 
     parts.append("#define N_SITES %d\n" % n)
     parts.append("#define NARMS 4\n")
@@ -234,6 +265,10 @@ def main():
     ap.add_argument("--max-load-poll", type=float, default=10.0,
                     help="poll interval (seconds) while waiting for quiet")
     ap.add_argument("--out", default="bench2_bytes.tsv")
+    ap.add_argument("--dispatch", choices=("table", "switch"),
+                    default="table",
+                    help="how each arm reaches site i's test (gen()'s "
+                         "docstring); `switch` = one shared switch shape")
     ap.add_argument("--smoke", action="store_true",
                     help="tiny --rounds/--nprobe, CORRECTNESS ONLY -- never "
                          "cite its timing (Darwin is never citable anyway)")
@@ -274,7 +309,8 @@ def main():
     for n in ns:
         classes = [(name, iv, bits_by_name[name])
                   for name, iv in pop[:n]]
-        cpath, names, n_atoms = gen(n, classes, args.lam, outdir)
+        cpath, names, n_atoms = gen(n, classes, args.lam, outdir,
+                                    args.dispatch)
         bpath = os.path.join(outdir, "bytes_n%d" % n)
         nprobe = args.nprobe
         src = open(cpath).read() + (DRIVER_TMPL % {"nprobe": nprobe})
@@ -289,10 +325,10 @@ def main():
 
     # --- TIMING PHASE: gate-and-wait immediately before EACH N's run. ---
     with open(out_path, "w") as out:
-        out.write("# cc=%s rounds=%d nprobe=%d smoke=%s load1_at_start=%.2f "
-                  "date=%s\n"
-                  % (CC, args.rounds, args.nprobe, args.smoke, la0,
-                     time.strftime("%Y-%m-%dT%H:%M:%S")))
+        out.write("# cc=%s rounds=%d nprobe=%d smoke=%s dispatch=%s "
+                  "load1_at_start=%.2f date=%s\n"
+                  % (CC, args.rounds, args.nprobe, args.smoke, args.dispatch,
+                     la0, time.strftime("%Y-%m-%dT%H:%M:%S")))
         out.write("n\tn_atoms\tarm\tround\tns_per_call\thits\tchk\n")
         for n, bpath, n_atoms in built:
             loadgate.wait_for_quiet(args.max_load, args.max_load_wait,
