@@ -2,13 +2,17 @@
 """tests/clskit/populations.py — write the S1 differential's POPULATION file.
 
 Four populations (docs/design/cls_tree_design.md §6, the S1 row), each read
-from where the study reads it so the two cannot be looking at different sets:
+from where a frozen copy of the study reads it so the two cannot be looking
+at different sets (tests/clskit/ref/ — a FROZEN COPY of the six study
+modules crosscheck.py also imports, plus their two transitive imports; the
+live studies/cls_tree_study/ is never imported here, docs/CLAUDE.md's
+"studies/ ... never built or tested by pcrec's make", clss1b's fix):
 
   uprops  the 312 distinct `unicode-props` sets, parsed out of
-          src/parse/uprops_tables.inc by the study's own `clsets.uprops()`;
+          src/parse/uprops_tables.inc by the frozen `clsets.uprops()`;
   k53     the six K53 sets and their complements (`clsets.k53()`);
   byte    the 41 distinct corpus byte classes (`clsets.byteclasses()`, from
-          the study's committed results/byteclasses.tsv);
+          the frozen copy's own committed results/byteclasses.tsv);
   prop    the study's proptest compositions: for each case, operands A and B
           from `proptest.GENS` (same seed, same generators, same draw order)
           and their union / intersection / difference / complement.
@@ -28,12 +32,11 @@ import random
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-STUDY = os.path.abspath(os.path.join(HERE, "..", "..", "studies",
-                                     "cls_tree_study"))
-sys.path.insert(0, STUDY)
+REF = os.path.join(HERE, "ref")
+sys.path.insert(0, REF)
 
-import clsets      # noqa: E402  (the study's population readers)
-import proptest    # noqa: E402  (the study's generators and set algebra)
+import clsets      # noqa: E402  (the frozen copy's population readers)
+import proptest    # noqa: E402  (the frozen copy's generators and set algebra)
 
 SETS_PER_CHUNK = 12
 PROP_SEED = 1

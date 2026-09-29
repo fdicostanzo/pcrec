@@ -245,9 +245,7 @@ static void dump(void)
         pcrec_clskit_partition(&a, s->iv, s->n, pcrec_clskit_kit_lambda(), 0, &kk);
         for (int tune = -2; tune <= 2; tune++)
             for (int d = 0; d < CLSD_NDENY; d++) {
-                ClsSelectIn in = { tune, d ? 1u << d : 0, atom_n,
-                                   s->atom_index >= 0 ? &atoms : NULL, s->atom_index,
-                                   d == 0 ? NULL : &kk };
+                ClsSelectIn in = { tune, d ? 1u << d : 0, d == 0 ? NULL : &kk };
                 ClsChoice ch;
                 pcrec_clskit_select(&a, s->iv, s->n, &in, &ch);
                 printf("SEL %d %d %d %s %s\n", s->idx, tune, d, rows[ch.row].name,

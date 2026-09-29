@@ -11,7 +11,9 @@
  * WHAT IT READS THAT IS NOT A PARAMETER. Two tables, both below and both
  * data: `LEAF` (each per-section form's fit window and its size and op
  * model) and `PLACE` (the ruled placements: K's λ, the `0` row's gate, the
- * atom threshold). `ROWS` is the selection itself. No global state and no
+ * atom threshold, and D131 addendum 1's fitted dispatch/prologue term).
+ * `ROWS` is the selection itself, over the per-SET forms only — no row
+ * answers the atom table (its own comment, below). No global state and no
  * function-local statics: every scratch array is the caller's arena.
  *
  * THE INVARIANT A CALLER MUST NOT BREAK. The input is sorted, disjoint and
@@ -20,10 +22,16 @@
  * study's cross-check would stop meaning anything.
  *
  * THE REFERENCE IMPLEMENTATION is `studies/cls_tree_study/` (`kit.py`,
- * `section.py`, `wholeset.py`, `emit.py`). It is never imported. It is
- * re-implemented here, and tests/clskit/ runs both over the populations and
- * compares their sectionings and table choices (design §6's S1 row). Two
- * departures from it, both deliberate:
+ * `section.py`, `wholeset.py`, `emit.py`, plus `clsets.py`/`proptest.py`
+ * for the populations and `bench_bytes.py` for the atom partition).
+ * `studies/` is "never built or tested by pcrec's make" (docs/CLAUDE.md),
+ * so `tests/clskit/` does not import it live: `tests/clskit/ref/` is a
+ * FROZEN, provenance-headed copy of those files (plus their two transitive
+ * imports, `emit.py`/`loadgate.py`) that `tests/clskit/`'s own scripts
+ * import instead (clss1b's fix; see `tests/clskit/ref/README.md`). The
+ * copy is re-implemented against here, and tests/clskit/ runs both over
+ * the populations and compares their sectionings and table choices
+ * (design §6's S1 row). Two departures from it, both deliberate:
  *   - the DP is INTEGER (Q16 fixed point, `log2_q16`) where the study's is
  *     floating point. A selection must be bit-reproducible across boxes,
  *     and a libm `log2` is not a promise that it is (prefix_k.c's rule);
@@ -69,7 +77,25 @@ static const LeafModel LEAF[CLSK_NLEAF] = {
  * `atom_*` are item 6's. `max_k` is the study's section cap (MAXK), a
  * search bound and not a statement about the answer (design §1.3). The
  * `*_text` values are the whole-set forms' MEASURED `.text` (whole_k53.tsv:
- * obj minus rodata; bitmap1 per clsfit_report.md). */
+ * obj minus rodata; bitmap1 per clsfit_report.md).
+ *
+ * `kit_disp_bytes` is D131 ADDENDUM 1's fitted cell: K's DP-MODEL bytes
+ * (rodata, exact, plus the study's per-form `.text` constants, `LEAF[]`
+ * above) run a near-constant amount below the MEASURED object, because the
+ * model omits the sectioned matcher's own dispatch tree and prologue
+ * (`DISP_BYTES = 0`, "inside the measured slopes" — clss1_report.md §3).
+ * Fit: `measured - model` over the K53 twelve at lambda=4
+ * (studies/cls_tree_study/results/sweep_k53.tsv `total` column vs. the
+ * model this file computes), a CONSTANT — mean 578 B, residuals -49..+113
+ * (std ~44 B). A linear regression against the sectioning's own section
+ * count was tried and rejected: R^2 = 0.06 (the fit explains 6% of the
+ * variance a constant does not), so the extra term buys nothing and a
+ * constant is both simpler and no worse. `kit_sel_bytes()` is the ONE
+ * reader: it is added to `ClsKit.bytes` ONLY where the SELECTION compares
+ * K's bytes against another form's (`P_P3_SMALLER`, `mid_gate`), never to
+ * `ClsKit.bytes` itself — the DP's own sectioning model, and `out->bytes`
+ * for a chosen `CLSF_KIT` row, stay the unadjusted model (D131 addendum 1:
+ * "The DP's own sectioning model is unchanged"). */
 static const struct {
     unsigned kit_lambda;
     int      disp_ops;
@@ -80,12 +106,14 @@ static const struct {
     int      atom_max;
     unsigned page3_ts;
     int      page2_text, page3_text, bitmap1_text;
+    int      kit_disp_bytes;
 } PLACE = {
     .kit_lambda = 4, .disp_ops = 1, .max_k = 64,
     .mid_min_sections = 16, .z_mid_pct = 126,
     .atom_min_sites = 11, .atom_max = 64,
     .page3_ts = 10,
     .page2_text = 68, .page3_text = 88, .bitmap1_text = 60,
+    .kit_disp_bytes = 578,
 };
 
 /* The DP's fixed-point unit: an op weight of 1 is Q16 units, a byte is Q16
@@ -491,7 +519,6 @@ bool pcrec_clskit_atoms(Arena *a, const PcrecCpRange *const *sets,
  * stored callable (the definitions table's rule, definitions_table.md r43). */
 typedef enum {
     P_TRUE,
-    P_BYTE_ATOM,
     P_BYTE,
     P_P3_SMALLER,
     P_MID_P2,
@@ -503,19 +530,24 @@ typedef enum {
 enum { TP_M2, TP_M1, TP_0, TP_P1, TP_P2 };
 #define TPOS(p) (1u << (p))
 
-/* D131 item 1 (code-point classes) and items 4-6 (byte classes), as ONE
+/* D131 item 1 (code-point classes) and items 4-5 (byte classes), as ONE
  * first-match table. A row fires where its position bit is set, its deny
  * is not, and its predicate holds; the first such row's form is the
  * answer. The last row is undeniable and always holds, so every set gets
  * a form. `+2`'s "as `0`" fallback is row order, not a special case: with
  * `speed-*` denied, `mid-page3` (which lists `+2`) answers exactly as `0`
- * does. */
+ * does.
+ *
+ * NO ATOM ROW ([OPT-CLSPACK], D131 item 6, per the manager's clss1b
+ * ruling). D131 item 6's "N ~ 11 live class sites" counts sites ACROSS AN
+ * ARTIFACT, a fact this per-SET table cannot see — a set is chosen without
+ * knowing how many other byte-class sites its own artifact carries, and a
+ * table row here would be answering a question it has no input for. The
+ * atom table's FORM, its emitter (`pcrec_clskit_emit_atom_table`/
+ * `pcrec_clskit_emit_atom`) and its differential all stay (§2.1 below):
+ * choosing IT is an ARTIFACT-LEVEL table built once over every byte-class
+ * site, at S2, not a per-set `ROWS` outcome. */
 static const ClsRow ROWS[] = {
-    { "atom-shared",
-      "byte set; the artifact shares an atom table over >= atom_min_sites "
-      "byte-class sites with <= atom_max atoms",
-      TPOS(TP_M2) | TPOS(TP_M1) | TPOS(TP_0) | TPOS(TP_P1) | TPOS(TP_P2),
-      P_BYTE_ATOM, CLSF_ATOM, CLSD_ATOM },
     { "byte-kit",
       "byte set (every member <= 0xFF): the kit's byte forms, size-leaning "
       "positions only",
@@ -572,27 +604,33 @@ static bool is_byte_set(const PcrecCpRange *iv, int n)
     return n == 0 || iv[n - 1].hi <= 0xFF;
 }
 
+/* K's byte ESTIMATE as read by the SELECTION's comparisons (D131 ADDENDUM
+ * 1): the DP's own model bytes (`s->k->bytes`, unchanged) plus the fitted
+ * dispatch/prologue term `PLACE.kit_disp_bytes` (see PLACE's comment for
+ * the fit). The ONLY reader is a predicate comparing K against another
+ * form; `s->k->bytes` itself, and `out->bytes` for a chosen `CLSF_KIT` row,
+ * are never adjusted. */
+static long long kit_sel_bytes(SelCtx *s)
+{
+    return s->k->bytes + PLACE.kit_disp_bytes;
+}
+
 /* The `0` row's gate: `K` has enough sections that a dispatch tree is
- * being paid for, and `P3` costs at most `z_mid` times `K`'s bytes. */
+ * being paid for, and `P3` costs at most `z_mid` times `K`'s (selection)
+ * bytes. */
 static bool mid_gate(SelCtx *s)
 {
     return s->k->nsec >= PLACE.mid_min_sections
-        && whole(s, CLSF_PAGE3) * 100 <= (long long)PLACE.z_mid_pct * s->k->bytes;
+        && whole(s, CLSF_PAGE3) * 100 <= (long long)PLACE.z_mid_pct * kit_sel_bytes(s);
 }
 
 /* Does predicate `p` hold for the set under selection? */
 static bool pred_holds(SelCtx *s, ClsPred p)
 {
-    const ClsSelectIn *in = s->in;
     switch (p) {
     case P_TRUE:       return true;
-    case P_BYTE_ATOM:  return is_byte_set(s->iv, s->n) && in->atoms
-                           && in->nsites >= PLACE.atom_min_sites
-                           && in->atoms->natoms <= PLACE.atom_max
-                           && in->atom_index >= 0
-                           && in->atom_index < in->atoms->nset;
     case P_BYTE:       return is_byte_set(s->iv, s->n);
-    case P_P3_SMALLER: return whole(s, CLSF_PAGE3) < s->k->bytes;
+    case P_P3_SMALLER: return whole(s, CLSF_PAGE3) < kit_sel_bytes(s);
     case P_MID_P2:     return mid_gate(s) && whole(s, CLSF_PAGE2) <= whole(s, CLSF_BITMAP1);
     case P_MID_B1:     return mid_gate(s) && whole(s, CLSF_BITMAP1) < whole(s, CLSF_PAGE2);
     case P_MID:        return mid_gate(s);
@@ -623,8 +661,11 @@ void pcrec_clskit_select(Arena *a, const PcrecCpRange *iv, int n,
         if (!pred_holds(&s, (ClsPred)row->pred)) continue;
         out->form = row->form;
         out->row = r;
-        out->bytes = row->form == CLSF_KIT ? out->kit.bytes
-                   : row->form == CLSF_ATOM ? 8 : whole(&s, row->form);
+        /* No `ROWS` row answers `CLSF_ATOM` (the comment above `ROWS`); the
+         * two live forms here are `CLSF_KIT` (the DP's own MODEL bytes,
+         * unadjusted by `kit_sel_bytes`'s selection-only term) and a
+         * whole-set form. */
+        out->bytes = row->form == CLSF_KIT ? out->kit.bytes : whole(&s, row->form);
         return;
     }
 }

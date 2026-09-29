@@ -10,14 +10,16 @@ nothing is linked into pcrec, `make test` does not run it. It READS
 `../../src/parse/uprops_tables.inc` and `../../tests/**/*.rxt` and invokes
 `../../build/pcrec`; it WRITES only under this directory.
 
-**One consumer in `make test` since [CLS-TREE] S1 (lane clss1,
-2026-09-29).** `tests/clskit/` IMPORTS `clsets.py`, `proptest.py`,
-`kit.py`, `section.py`, `wholeset.py` and `bench_bytes.py`. It uses them
-READ-ONLY, as the reference that the kit in `src/gen/clskit.c` is
-cross-checked against. Nothing here is linked into pcrec. Nothing here
-became the compiler. But an edit to those six files now changes what
-`make test-clskit` compares against, so it needs the same care as editing
-a test oracle.
+**`tests/clskit/` does NOT import this directory** (reverted at [CLS-TREE]
+S1's own clss1b fix, 2026-09-29): a first cut had `tests/clskit/` import six
+of these files live, which `studies/CLAUDE.md`'s own rule above forbids —
+`make test` cannot reach into `studies/`. `tests/clskit/ref/` is a FROZEN,
+provenance-headed copy of six of these files (`clsets.py`, `proptest.py`,
+`kit.py`, `section.py`, `wholeset.py`, `bench_bytes.py`) plus their two
+transitive imports (`emit.py`, `loadgate.py`) instead — see
+`tests/clskit/CLAUDE.md`. An edit here no longer changes what
+`make test-clskit` compares against; re-copying by hand into
+`tests/clskit/ref/` does.
 
 ## Files
 

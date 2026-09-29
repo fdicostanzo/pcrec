@@ -15,9 +15,13 @@
  *     partition`), the design's `K`. It is a SIZE optimizer only (D131
  *     item 2), and its one pinned λ is table data in clskit.c;
  *   - the WHOLE-SET forms `PAGE3`/`PAGE2`/`BITMAP1` (§1.3);
- *   - the shared byte ATOM table ([OPT-CLSPACK], D131 item 6);
- *   - THE SELECTION, D131 item 1's `--tune` class-form table. It is one
- *     first-match table with rows as data (`pcrec_clskit_rows`).
+ *   - the shared byte ATOM table ([OPT-CLSPACK], D131 item 6) — its FORM
+ *     and emitter live here, but choosing it is an ARTIFACT-LEVEL decision
+ *     (S2, D131 item 6's "N ~ 11 live class sites" counts sites across an
+ *     artifact), never a `ROWS` outcome — see `ROWS`'s own comment;
+ *   - THE SELECTION, D131 item 1's `--tune` class-form table over the
+ *     per-SET forms (`K`/`PAGE3`/`PAGE2`/`BITMAP1`). It is one first-match
+ *     table with rows as data (`pcrec_clskit_rows`).
  *
  * NO EMITTER CALLS ANY OF IT YET (S1). The first caller is S4 (VM decode +
  * kit), or S2 for the byte tier. That caller wires `tune` from `--tune` and
@@ -87,10 +91,12 @@ typedef struct {
 } ClsAtomTable;
 
 /* One row's deny, an ORDINAL (bit `1u << d` in a deny mask). CLSD_NONE is
- * the terminal row's, which cannot be denied. */
+ * the terminal row's, which cannot be denied. NO `CLSD_ATOM`: the atom
+ * table is not a `ROWS` outcome (see `ROWS`'s own comment in clskit.c) —
+ * S2's artifact-level selection will mint its own deny when it builds
+ * that mechanism, mapped onto D129 Q2's public `-fno-cls-kit` there. */
 typedef enum {
     CLSD_NONE,
-    CLSD_ATOM,
     CLSD_BYTE_KIT,
     CLSD_BYTE_TABLE,
     CLSD_SIZE_PAGE3,
@@ -110,23 +116,24 @@ typedef struct {
     ClsDeny     deny;
 } ClsRow;
 
-/* What the selection sees beyond the set: the dial position, the row
- * denies, and the artifact's byte-class population (the atom rows' input).
- * `atoms` may be NULL, meaning no shared table is on offer. `kit` may be
- * NULL; if not, it must be this set's `K` (`pcrec_clskit_partition` at
- * `pcrec_clskit_kit_lambda()`, all leaves), and the selection reuses it
- * rather than running the DP again. */
+/* What the selection sees beyond the set: the dial position and the row
+ * denies. `kit` may be NULL; if not, it must be this set's `K`
+ * (`pcrec_clskit_partition` at `pcrec_clskit_kit_lambda()`, all leaves),
+ * and the selection reuses it rather than running the DP again. NO atom
+ * fields: a PER-SET selection cannot see the artifact-level byte-class
+ * population an atom-table choice needs (`ROWS`'s own comment); S2's own
+ * artifact-level call carries whatever input its mechanism needs. */
 typedef struct {
     int                 tune;       /* -2..+2 */
     unsigned            deny;       /* OR of 1u << ClsDeny */
-    int                 nsites;     /* byte-class sites sharing `atoms` */
-    const ClsAtomTable *atoms;
-    int                 atom_index; /* this set's row in `atoms` */
     const ClsKit       *kit;
 } ClsSelectIn;
 
 /* The selection's answer. `kit` is always filled (every predicate but the
- * byte and atom rows reads it). `row` indexes `pcrec_clskit_rows`. */
+ * byte row reads it). `row` indexes `pcrec_clskit_rows`. `bytes` is the
+ * DP's own MODEL bytes for a `CLSF_KIT` row (never the selection-only
+ * `kit_sel_bytes` estimate, clskit.c D131 addendum 1) or the whole-set
+ * form's model bytes otherwise; `ROWS` answers no `CLSF_ATOM` row. */
 typedef struct {
     ClsForm   form;
     int       row;

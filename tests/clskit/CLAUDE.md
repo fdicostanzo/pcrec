@@ -10,6 +10,23 @@ at `PROCS=4`, most of it in the study's Python DP (crosscheck.py).
 
 ## Files
 
+- `ref/`: a FROZEN, provenance-headed copy of the six `studies/
+  cls_tree_study/` modules `crosscheck.py`/`populations.py` import
+  (`kit.py`, `section.py`, `wholeset.py`, `bench_bytes.py`, `clsets.py`,
+  `proptest.py`) plus their two transitive imports (`emit.py`,
+  `loadgate.py` — module-level `import`s inside `bench_bytes.py`/
+  `proptest.py`, so importing the six without them fails at import time),
+  and `ref/results/byteclasses.tsv` (`clsets.byteclasses()`'s own data
+  file). `docs/CLAUDE.md`: `studies/` is "never built or tested by
+  pcrec's make" — `tests/clskit/` first imported those six live and that
+  was a scope violation, fixed here (lane clss1b, 2026-09-29). Each file
+  carries a header naming its source path and the commit it was copied
+  at; `clsets.py`'s own note is the one behavioural deviation (its
+  `HERE`-relative path arithmetic re-derived for one extra directory
+  level). Edit `ref/` with the same care as a test oracle — an edit here
+  changes what `make test-clskit` compares against — and re-copy by hand
+  from `studies/cls_tree_study/` (never patch a `ref/` file to read
+  differently from its source) to pick up a real study change.
 - `run_clskit_tests.sh`: the section. It has three parts, each with its own
   PASS/FAIL line.
   1. THE DIFFERENTIAL. Every emitted form is compiled under `GENCFLAGS`
@@ -29,8 +46,9 @@ at `PROCS=4`, most of it in the study's Python DP (crosscheck.py).
   - the 41 corpus byte classes;
   - the study's proptest compositions (seed 1, 40 cases, the study's own
     generators and draw order).
-  It reads them through the study's own `clsets.py`/`proptest.py`, so the
-  kit and the study cannot be looking at different sets. Writes one file.
+  It reads them through `ref/clsets.py`/`ref/proptest.py` — the same
+  frozen copy `crosscheck.py` imports — so the kit and the study cannot be
+  looking at different sets. Writes one file.
 - `clskit_driver.c`: linked against `libpcrec.a` (`unit_build`). Its `emit`
   mode writes one checker `.c` per chunk plus the census. Its `dump` mode
   prints `SEC`/`WHOLE`/`ATOMS`/`SEL`/`ROW` lines for the cross-check.
@@ -38,11 +56,16 @@ at `PROCS=4`, most of it in the study's Python DP (crosscheck.py).
   file from the population file.** No line of `clskit.c` produces it.
 - `checker_main.inc`: the checker's `main()`, included at the end of every
   chunk.
-- `crosscheck.py`: recomputes each decision with the study's reference code:
-  `section.partition` at CUBES tier 1, `wholeset.PageW2/PageW3`, and
-  `bench_bytes.atom_partition`. The selection TABLE is restated
-  independently from D131, and `clskit.c`'s printed `ROW` listing is held to
-  that restatement.
+- `crosscheck.py`: recomputes each decision with the frozen reference code
+  in `ref/`: `section.partition` at CUBES tier 1, `wholeset.PageW2/PageW3`,
+  and `bench_bytes.atom_partition`. The selection TABLE is restated
+  independently from D131 (NO atom row — item 6's atom table is an
+  artifact-level choice, not a per-set `ROWS` outcome), and `clskit.c`'s
+  printed `ROW` listing is held to that restatement. `KIT_DISP_BYTES`
+  restates clskit.c `PLACE.kit_disp_bytes` (D131 addendum 1's fitted
+  dispatch/prologue term), added to K's bytes wherever the restated
+  predicates compare K against another form — never to the DP's own
+  sectioning bytes.
 
 ## Things to know before changing anything here
 

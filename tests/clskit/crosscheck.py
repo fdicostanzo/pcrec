@@ -2,11 +2,14 @@
 """tests/clskit/crosscheck.py — the kit in src/ against the STUDY, set by set.
 
 `clskit_driver dump` prints what src/gen/clskit.c decides; this script
-recomputes the same decisions with the study's own reference code
-(studies/cls_tree_study: `section.partition`, `wholeset.PageW2/PageW3`,
-`bench_bytes.atom_partition`) and compares (design §6's S1 row: "a
-C-vs-study cross-check of sectionings and table choices"; the study's own
-crosscheck.py found two bugs this way, cls_tree_study.md §8).
+recomputes the same decisions with a FROZEN COPY of the study's reference
+code (tests/clskit/ref/: `section.partition`, `wholeset.PageW2/PageW3`,
+`bench_bytes.atom_partition` — see that directory's own provenance headers;
+the live source is studies/cls_tree_study/, never imported here — docs/
+CLAUDE.md's "studies/ ... never built or tested by pcrec's make", clss1b's
+fix) and compares (design §6's S1 row: "a C-vs-study cross-check of
+sectionings and table choices"; the study's own crosscheck.py found two
+bugs this way, cls_tree_study.md §8).
 
 What is compared, per set:
   SEC    the sectioning at each λ: section starts, leaf forms, model bytes.
@@ -18,7 +21,9 @@ What is compared, per set:
   ATOMS  the shared atom table's atom count
   SEL    the --tune class-form choice at every position, with no deny and
          with each single row denied. The TABLE is restated below from
-         D131 item 1 and items 4-6, independently of clskit.c's ROWS; the
+         D131 item 1 and items 4-5, independently of clskit.c's ROWS (NO
+         atom row — D131 item 6's atom table is an ARTIFACT-level choice,
+         not a per-set one; see clskit.c's own comment above `ROWS`); the
          printed ROW lines are held to it too, so the two statements of the
          table cannot drift apart silently.
 
@@ -37,9 +42,8 @@ import os
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-STUDY = os.path.abspath(os.path.join(HERE, "..", "..", "studies",
-                                     "cls_tree_study"))
-sys.path.insert(0, STUDY)
+REF = os.path.join(HERE, "ref")
+sys.path.insert(0, REF)
 
 import kit          # noqa: E402
 import section      # noqa: E402
@@ -53,22 +57,32 @@ kit.FormCubes.TIER2 = False
 P3_TEXT, P2_TEXT, B1_TEXT = 88, 68, 60
 KIT_LAMBDA = 4
 MID_MIN_SECTIONS, Z_MID_PCT = 16, 126
-ATOM_MIN_SITES, ATOM_MAX = 11, 64
+
+# D131 ADDENDUM 1's fitted cell (clskit.c PLACE.kit_disp_bytes's own
+# comment carries the fit): K's DP-model bytes run a constant ~578 B below
+# the measured object (the sectioned matcher's own dispatch tree and
+# prologue, which the model omits), fit as `measured - model` over the K53
+# twelve at lambda=4. The SELECTION's comparisons of K's bytes against
+# another form read `kbytes + KIT_DISP_BYTES`; the DP's own sectioning
+# bytes (`kbytes` itself, `price()`, `study_one()`) are never adjusted.
+KIT_DISP_BYTES = 578
 
 # THE TABLE, restated: (name, positions, predicate, form, deny ordinal).
+# NO atom row: D131 item 6's atom table is chosen ARTIFACT-wide (S2), which
+# a per-SET table has no input to decide (clskit.c's own comment above
+# `ROWS`) — so it is not part of this per-set restatement either.
 SIZE, MID, SPEED = (-2, -1), (0, 1, 2), (2,)
 ALLPOS = (-2, -1, 0, 1, 2)
 ROWS = [
-    ("atom-shared",   ALLPOS, "atom",   "ATOM", 1),
-    ("byte-kit",      SIZE,   "byte",   "K",    2),
-    ("byte-table",    MID,    "byte",   "B1",   3),
-    ("size-page3",    SIZE,   "p3<k",   "P3",   4),
-    ("speed-page2",   SPEED,  "mid&p2", "P2",   5),
-    ("speed-bitmap1", SPEED,  "mid&b1", "B1",   6),
-    ("mid-page3",     MID,    "mid",    "P3",   7),
+    ("byte-kit",      SIZE,   "byte",   "K",    1),
+    ("byte-table",    MID,    "byte",   "B1",   2),
+    ("size-page3",    SIZE,   "p3<k",   "P3",   3),
+    ("speed-page2",   SPEED,  "mid&p2", "P2",   4),
+    ("speed-bitmap1", SPEED,  "mid&b1", "B1",   5),
+    ("mid-page3",     MID,    "mid",    "P3",   6),
     ("kit",           ALLPOS, "true",   "K",    0),
 ]
-NDENY = 8
+NDENY = 7
 
 
 def load_pop(path):
@@ -90,11 +104,12 @@ def whole_bytes(iv):
             (iv[-1][1] - iv[0][0] + 1 + 7) // 8 + B1_TEXT)
 
 
-def select(iv, kbytes, knsec, whole, tune, deny, atom_ok):
+def select(iv, kbytes, knsec, whole, tune, deny):
     p3, p2, b1 = whole
     byte = not iv or iv[-1][1] <= 0xFF
-    mid = knsec >= MID_MIN_SECTIONS and p3 * 100 <= Z_MID_PCT * kbytes
-    holds = {"atom": byte and atom_ok, "byte": byte, "p3<k": p3 < kbytes,
+    ksel = kbytes + KIT_DISP_BYTES
+    mid = knsec >= MID_MIN_SECTIONS and p3 * 100 <= Z_MID_PCT * ksel
+    holds = {"byte": byte, "p3<k": p3 < ksel,
              "mid&p2": mid and p2 <= b1, "mid&b1": mid and b1 < p2,
              "mid": mid, "true": True}
     for name, pos, pred, form, d in ROWS:
@@ -187,12 +202,6 @@ def main():
         _a, _m, n_atoms = bench_bytes.atom_partition(bytesets[:shared])
         if n_atoms != int(datoms["natoms"]):
             fail("ATOMS: clskit.c %s, study %d" % (datoms["natoms"], n_atoms))
-    atom_idx = {}
-    k = 0
-    for idx, kind, _n, _iv in sets:
-        if kind == "byte":
-            atom_idx[idx] = k < shared
-            k += 1
 
     jobs = [(idx, iv, plams if kind == "prop" else lams)
             for idx, kind, _n, iv in sets]
@@ -223,8 +232,7 @@ def main():
         kbytes, kforms = study[idx][KIT_LAMBDA]
         for tune in range(-2, 3):
             for d in range(NDENY):
-                want = select(iv, kbytes, len(kforms), w, tune, d,
-                              atom_idx.get(idx, False) and shared >= ATOM_MIN_SITES)
+                want = select(iv, kbytes, len(kforms), w, tune, d)
                 got = dsel.get((idx, tune, d))
                 nsel += 1
                 if got != want:
