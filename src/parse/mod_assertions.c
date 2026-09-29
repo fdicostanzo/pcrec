@@ -125,6 +125,7 @@ ExtResult pcrec_asrtport_atom(Ctx *cx, const RegRow *rw, ExtWant want,
         res.end = cx->pos;
         res.node = pcrec_ast_ctx(cx, w.iv, w.n, rw->sel == 'b'
                                  ? CTXFN_BOUNDARY : CTXFN_NONBOUNDARY);
+        res.node->u.ctx.anchor = true;
         pcrec_ast_stamp(cx, res.node, rw, at);
         return res;
     }

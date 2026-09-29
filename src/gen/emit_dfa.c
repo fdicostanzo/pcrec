@@ -2546,6 +2546,19 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
                                            * answer, and `<PREFIX>_REQ_RUN` is where
                                            * what the emitter DID is recorded. */
                                           PCREC_NO_REQ_RUN |
+                                          /* [UCP] U2 T3's `ctx-node` row
+                                           * ([UCP] ucp_design.md §2.2). An
+                                           * answer-identity axis: denied, a
+                                           * one-character lookaround keeps its
+                                           * VM sub-match and accepts the same
+                                           * subjects, so it belongs to the
+                                           * mask for the mask's own reason —
+                                           * and concretely so that every
+                                           * artifact with no such lookaround
+                                           * is byte-for-byte the same under
+                                           * `-fno-ctx-node`. `RX_ENGINE` is
+                                           * where what it changed shows. */
+                                          PCREC_NO_CTX_NODE |
                                           /* [K68] (FIXED) the three [OPTLOOP.1]
                                            * batch-1 whole-window pre-check bits
                                            * join the mask for the mask's own

@@ -133,8 +133,14 @@ void pcrec_ast_stamp(Ctx *cx, Ast *a, const RegRow *rw, size_t at)
 bool pcrec_is_bare_anchor(const Ast *a)
 {
     switch (a->k) {
+    /* [UCP] U2 the context node is a bare anchor exactly when it was SPELLED
+     * as one: `\b`/`\B` (error 109 on `\b*`, measured by wave B) and not a
+     * lookaround T3 recognized, which PCRE2 quantifies (`(?=a)*` compiles).
+     * The grammar is about the spelling, so the field carries it. */
+    case A_CTX:
+        return a->u.ctx.anchor;
     case A_BOL: case A_EOL: case A_END:
-    case A_CTX: case A_GSTART:
+    case A_GSTART:
     /* [M6.2 wave E] `\K` joins them, and it is the one member of this list
      * that is not an assertion — which changes nothing here, because the rule
      * this predicate encodes is PCRE2's GRAMMAR, not a semantic property.

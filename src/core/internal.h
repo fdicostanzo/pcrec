@@ -1007,7 +1007,17 @@ struct Ast {
         /* [UCP] U2 A_CTX: the context set (code points, sorted disjoint
          * intervals — A_CLASS's own representation) and the truth function,
          * a 4-bit table indexed by (prev ∈ C) << 1 | (next ∈ C). */
-        struct { const PcrecCpRange *iv; int n; uint8_t fn; } ctx;
+        struct {
+            const PcrecCpRange *iv;
+            int                 n;
+            uint8_t             fn;
+            /* SPELLED AS AN ESCAPE ANCHOR (`\b`/`\B`), so PCRE2's grammar
+             * makes it not directly quantifiable (`\b*` is error 109) while
+             * a lookaround-born node is (`(?=a)*` compiles) —
+             * `pcrec_is_bare_anchor`'s one reader. Parse-resolved spelling
+             * state, D62's field rule; no engine reads it. */
+            bool                anchor;
+        } ctx;
 
         /* A_BOL and A_EOL — a CLOSED FAMILY sharing one meaning, so they share
          * one payload rather than getting a member each (D70's family rule).
@@ -3734,6 +3744,20 @@ ExtResult pcrec_clsport_octal(Ctx *cx, const RegRow *rw, ExtWant want,
 Ast *pcrec_ast_node(Ctx *cx, AKind k);   /* bare-kind ctor for module TUs */
 /* [UCP] U2 a context-assertion node (A_CTX) over a published set. */
 Ast *pcrec_ast_ctx(Ctx *cx, const PcrecCpRange *iv, int n, uint8_t fn);
+
+/* [UCP] U2 T3, a lookaround's lowering (src/parse/ctxnode.c): the ordered
+ * first-match rows as DATA — name, deny flag, one-line predicate, its test,
+ * and whether the row builds the context node — and the walk. */
+typedef struct {
+    const char *name;
+    uint64_t    deny;
+    const char *applies_desc;
+    bool (*applies)(Ctx *cx, const Ast *body, PcrecCpSet *set);
+    bool        ctx;
+} PcrecLookRow;
+extern const PcrecLookRow pcrec_look_rows[];
+extern const int pcrec_look_nrows;
+Ast *pcrec_look_t3(Ctx *cx, const Ast *body, bool behind, bool neg);
 /* [M6.4.2 / SR-8, D67] THE STAMP, and the ONE call that applies it.
  *
  * A module's producer calls this on every node it creates, with the row it was

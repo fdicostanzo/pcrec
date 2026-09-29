@@ -125,6 +125,10 @@ PCREC_AXIS(PCREC_NO_ALT_ISLAND,    "-fno-alt-island",    0, "", PCREC_AXIS_DEFAU
 PCREC_AXIS(PCREC_NO_CLS_FOLD,      "-fno-cls-fold",      0, "", PCREC_AXIS_DEFAULT_ON)
 /* [OPT-LITSCAN] S2a: the VM's literal-run compare, the kit's L2 row there. */
 PCREC_AXIS(PCREC_NO_LIT_RUN,       "-fno-lit-run",       0, "", PCREC_AXIS_DEFAULT_ON)
+/* [UCP] U2: T3's `ctx-node` row — a one-character lookaround becomes the
+ * context node (src/parse/ctxnode.c). ENGINE-SELECTING like atomic-discharge:
+ * denied, the lookaround stays VM-only. */
+PCREC_AXIS(PCREC_NO_CTX_NODE,      "-fno-ctx-node",      0, "", PCREC_AXIS_DEFAULT_ON)
 
 /* ---- emitted-shape axes: the VM entry chain and the unroll ladder ------ */
 PCREC_AXIS(PCREC_NO_TIERED_ENTRY, "-fno-tiered-entry", 0, "", PCREC_AXIS_DEFAULT_ON)

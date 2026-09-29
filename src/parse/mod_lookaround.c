@@ -496,6 +496,24 @@ ExtResult pcrec_laport_group(Ctx *cx, const RegRow *rw, ExtWant want,
      * `(?:(?!))|a` is (0,1)). The cells are in the corpus because "legal" is
      * the surprising answer, not because the code has an arm for them. */
 
+    /* [UCP] U2 T3 FIRST (src/parse/ctxnode.c): a body whose LANGUAGE is a
+     * set of single byte-expressible characters becomes the context node,
+     * which both engines implement directly — unstamped, because the
+     * lookaround rows' VM_ONLY mask is a per-ROW conservative fact and this
+     * node's per-PATTERN answer is "any engine" (`(?>`'s free discharge is
+     * the precedent: the tree says the per-pattern answer). No width rule is
+     * asked of it: one character is fixed-width by construction. */
+    {
+        Ast *cn = pcrec_look_t3(cx, body, k->behind, k->neg);
+        if (cn) {
+            ExtResult cres = { .what = EXT_NODE, .at = at, .msg = "",
+                               .answered_at = want };
+            cres.node = cn;
+            cres.end = end;
+            return cres;
+        }
+    }
+
     Ast *a = pcrec_ast_node(cx, A_LOOK);
     a->l = body;
     /* `r` is unused for this kind — internal.h's A_LOOK comment. */

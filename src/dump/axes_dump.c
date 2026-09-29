@@ -744,6 +744,17 @@ static void emit_predicate_axes(StrBuf *sb)
         emit_pred_row(sb, &p, 2, "denied", "",
                      0, 0, "", "always (fallback) — ENGINE-SELECTING: the A_ATOMIC node stays, which is DFA-excluding, so RX_ENGINE can move to \"vm\"");
     }
+    /* [UCP] U2 ctx-node — §2.32, ENGINE-SELECTING; T3's rows WALKED LIVE off
+     * `pcrec_look_rows` (src/parse/ctxnode.c), so this surface cannot state
+     * a predicate the recognizer does not ask. No stamp: RX_ENGINE is the
+     * observable consequence when it moves a pattern VM -> DFA. */
+    {
+        PredAxis p = { "ctx-node", NULL, "", "", 0, NULL, 0, NULL, NULL, NULL };
+        for (int i = 0; i < pcrec_look_nrows; i++)
+            emit_pred_row(sb, &p, i + 1, pcrec_look_rows[i].name, "",
+                         pcrec_look_rows[i].deny, 0, "",
+                         pcrec_look_rows[i].applies_desc);
+    }
     /* splice-calls — §2.9, ENGINE-SELECTING; RX_VM_CALL_SPLICED/_LINKED are
      * two separate counts, one per candidate. */
     {
