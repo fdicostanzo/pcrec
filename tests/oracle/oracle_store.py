@@ -57,7 +57,12 @@ import hashlib
 import os
 import re
 
-STORE_FORMAT_VERSION = 1
+# 1 -> 2 ([UCP] U1, D130 Q9; oracle_interface.md §3's fourth staleness claim):
+# `OracleId.config` gains `ucp`, so every header gains a `ucp=` field. A
+# version-1 file is a CLEAN MISS to this reader by the rule above; the three
+# committed files were re-headered in the same change (answers unchanged —
+# every one was captured with PCRE2_UCP off, which is what `ucp=0` says).
+STORE_FORMAT_VERSION = 2
 
 KIND_QUESTION_FIELDS = {
     "compile-accept": ("pattern",),
@@ -86,7 +91,12 @@ KIND_ANSWER_COLUMNS = {
     "pattern-info": ("capturecount", "namecount", "nametable"),
 }
 
-_BYTE_FIELDS = frozenset(("pattern", "subject"))
+# [UCP] `property` joins them: under a UCP OracleId it carries a class
+# CONSTRUCT's pattern text (`\d`, `[[:alpha:]]`), so it takes the pattern
+# field's escaping. HASH-PRESERVING for every row written before it: a `\p`
+# name contains no byte `escape_field` rewrites (checked when this landed —
+# every committed membership row's hash recomputes identically).
+_BYTE_FIELDS = frozenset(("pattern", "subject", "property"))
 
 _HEX_RE = re.compile(r"^[0-9A-Fa-f]+$")
 
@@ -214,18 +224,23 @@ DEFAULT_HEAP_LIMIT = 20_000_000
 
 class OracleId(object):
     """`(name, version, config)` (§3). `config` is the answer-affecting
-    subset only: `utf`, `caseless`, and the limit triple (R56-2). Explicitly
-    EXCLUDED, by measured-fact argument (§3): PCRE2_NO_UTF_CHECK (perf-only,
-    inert on the well-formed subjects every kind here can construct),
-    PCRE2_UCP (no producer in this tree), newline/BSR convention and
+    subset only: `utf`, `caseless`, `ucp` ([UCP] U1 is its producer — D130
+    Q9) and the limit triple (R56-2). Explicitly EXCLUDED, by measured-fact
+    argument (§3): PCRE2_NO_UTF_CHECK (perf-only, inert on the well-formed
+    subjects every kind here can construct), newline/BSR convention and
+
+    UNDER `ucp` A `membership` QUESTION'S `property` IS A CLASS CONSTRUCT'S
+    PATTERN TEXT (`\\d`, `[[:alpha:]]`), not a `\\p` name: UCP changes what
+    those constructs mean and never what `\\p{..}` means, so the construct
+    is the question. The question's FIELDS are unchanged (no hash moves).
     JIT-vs-interpreted (no adapter surveyed varies either, R56-8) -- an
     adapter that ever varies one of these four must widen `config` FIRST,
     measuring the divergence, before adding the field."""
 
-    __slots__ = ("name", "version", "utf", "caseless",
+    __slots__ = ("name", "version", "utf", "caseless", "ucp",
                  "match_limit", "depth_limit", "heap_limit")
 
-    def __init__(self, name, version, utf=False, caseless=False,
+    def __init__(self, name, version, utf=False, caseless=False, ucp=False,
                  match_limit=DEFAULT_MATCH_LIMIT,
                  depth_limit=DEFAULT_DEPTH_LIMIT,
                  heap_limit=DEFAULT_HEAP_LIMIT):
@@ -233,6 +248,7 @@ class OracleId(object):
         self.version = version
         self.utf = bool(utf)
         self.caseless = bool(caseless)
+        self.ucp = bool(ucp)
         self.match_limit = match_limit
         self.depth_limit = depth_limit
         self.heap_limit = heap_limit
@@ -251,6 +267,8 @@ class OracleId(object):
             parts.append("utf")
         if self.caseless:
             parts.append("caseless")
+        if self.ucp:
+            parts.append("ucp")
         if (self.match_limit, self.depth_limit, self.heap_limit) != (
                 DEFAULT_MATCH_LIMIT, DEFAULT_DEPTH_LIMIT, DEFAULT_HEAP_LIMIT):
             parts.append("lim%d-%d-%d" % (self.match_limit, self.depth_limit,
@@ -269,6 +287,7 @@ class OracleId(object):
             "oracle_version": self.version,
             "utf": "1" if self.utf else "0",
             "caseless": "1" if self.caseless else "0",
+            "ucp": "1" if self.ucp else "0",
             "match_limit": str(self.match_limit),
             "depth_limit": str(self.depth_limit),
             "heap_limit": str(self.heap_limit),

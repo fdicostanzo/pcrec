@@ -68,6 +68,7 @@ import ctypes, json, sys
 
 PCRE2_ZERO_TERMINATED = ctypes.c_size_t(-1).value
 PCRE2_UTF_OPT = 0x00080000
+PCRE2_UCP_OPT = 0x00020000
 PCRE2_NO_UTF_CHECK_OPT = 0x40000000
 
 _lib = pcre2_ctypes._lib
@@ -111,15 +112,17 @@ def _build_subject(utf):
 _subjects = {}
 
 
-def sweep(prop, encoding):
+def sweep(prop, encoding, ucp):
     utf = encoding == "utf8"
     if encoding not in _subjects:
         _subjects[encoding] = _build_subject(utf)
     subj, cp_at = _subjects[encoding]
-    pat = ("\\p{%s}" % prop).encode("latin-1")
+    # [UCP] under a UCP OracleId the question is a class CONSTRUCT's text
+    # (oracle_store.OracleId's own docstring), compiled with PCRE2_UCP.
+    pat = (prop if ucp else "\\p{%s}" % prop).encode("latin-1")
     errcode = ctypes.c_int(0)
     erroff = ctypes.c_size_t(0)
-    copts = PCRE2_UTF_OPT if utf else 0
+    copts = (PCRE2_UTF_OPT if utf else 0) | (PCRE2_UCP_OPT if ucp else 0)
     code = _lib.pcre2_compile_8(pat, len(pat), copts,
                                  ctypes.byref(errcode), ctypes.byref(erroff),
                                  None)
@@ -157,7 +160,7 @@ _lib.pcre2_match_data_create_8.argtypes = [ctypes.c_uint32, ctypes.c_void_p]
 batch = json.loads(_BATCH_JSON)
 out = []
 for q in batch:
-    ivs = sweep(q["property"], q["encoding"])
+    ivs = sweep(q["property"], q["encoding"], q.get("ucp", False))
     out.append({"property": q["property"], "encoding": q["encoding"],
                 "intervals": ivs})
 sys.stdout.write("__ORACLE_STORE_RESULT__ " + json.dumps(out) + "\n")
@@ -236,8 +239,9 @@ class RemoteAdapter(object):
     # timing sweep across the whole property table -- OWED, named in the
     # lane report, not silently assumed safe at any N.
 
-    def __init__(self, host):
+    def __init__(self, host, ucp=False):
         self.host = host
+        self.ucp = bool(ucp)   # [UCP] the OracleId config this adapter asks under
         self._version = None  # discovered on first successful call
 
     def capabilities(self):
@@ -254,7 +258,7 @@ class RemoteAdapter(object):
             raise RuntimeError(
                 "RemoteAdapter.oracle_id() called before any answer() -- "
                 "the version is read off the remote run, never hand-typed")
-        return _os_.OracleId(self.NAME, self._version)
+        return _os_.OracleId(self.NAME, self._version, ucp=self.ucp)
 
     def answer(self, batch):
         """`batch`: list of (kind, question_fields_dict), every kind must
@@ -269,7 +273,7 @@ class RemoteAdapter(object):
         for start in range(0, len(batch), self.MAX_BATCH):
             chunk_idx = list(range(start, min(start + self.MAX_BATCH,
                                                len(batch))))
-            chunk = [batch[i][1] for i in chunk_idx]
+            chunk = [dict(batch[i][1], ucp=self.ucp) for i in chunk_idx]
             results, version = self._one_round_trip(chunk)
             self._version = version
             by_key = {(r["property"], r["encoding"]): r for r in results}

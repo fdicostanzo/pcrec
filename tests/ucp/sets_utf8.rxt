@@ -1,0 +1,481 @@
+# [UCP] U1 -- the NARROW UCP sets under `-e utf8` (docs/design/ucp_design.md
+# §1.1, D130 Q3): `\d \D \s \S` and `[:digit:] [:xdigit:] [:space:] [:blank:]
+# [:cntrl:]`, both polarities, at an atom and inside a class, spelled `(*UCP)`,
+# `(*UTF)(*UCP)` in either order, and `flags u` (`--ucp`). The WIDE sets are
+# refused at U1 (refusals.rxt). Controls: the same patterns WITHOUT UCP read
+# ASCII, which is PCRE2_UTF's own default (D130 Q1: UCP is opt-in).#
+# ORACLE: libpcre2, the options the block states (`encoding utf8` = PCRE2_UTF,
+# `(*UCP)`/`flags u` = PCRE2_UCP, `flags i` = PCRE2_CASELESS). Every expectation
+# was READ FROM THE ORACLE (10.48, the generator) and re-verified against the
+# 10.46 reference; `verify_ucp.py` in this directory re-checks every cell on
+# every `make test` against the resolved libpcre2 (it SKIPS loudly without one).
+# `# pcre2-only` throughout: python `re` has no PCRE2_UCP and its subject
+# decoder is byte-oriented (U14).
+
+# pcre2-only
+pattern (*UCP)\d
+encoding utf8
+m "\xd9\xa0\xd9\xa1\xd9\xa2" 0 2
+m "12" 0 1
+n "a"
+n "\xc2\xa0"
+n "\xe3\x80\x80"
+n "\xe2\x80\xa8"
+n "\xc2\x85"
+m "x\xef\xbc\x90y" 1 4
+n "\xef\xbc\xa1"
+n "\x7f"
+n "\xc2\x80"
+n "\xc3\xa9"
+n " \x09"
+n "_"
+m "\xdb\xb5" 0 2
+m "\xf0\x9d\x9f\x8e" 0 4
+
+# pcre2-only
+pattern (*UCP)\d+
+encoding utf8
+m "\xd9\xa0\xd9\xa1\xd9\xa2" 0 6
+m "12" 0 2
+n "a"
+n "\xc2\xa0"
+n "\xe3\x80\x80"
+n "\xe2\x80\xa8"
+n "\xc2\x85"
+m "x\xef\xbc\x90y" 1 4
+n "\xef\xbc\xa1"
+n "\x7f"
+n "\xc2\x80"
+n "\xc3\xa9"
+n " \x09"
+n "_"
+m "\xdb\xb5" 0 2
+m "\xf0\x9d\x9f\x8e" 0 4
+
+# pcre2-only
+pattern (*UCP)\D
+encoding utf8
+n "\xd9\xa0\xd9\xa1\xd9\xa2"
+n "12"
+m "a" 0 1
+m "\xc2\xa0" 0 2
+m "\xe3\x80\x80" 0 3
+m "\xe2\x80\xa8" 0 3
+m "\xc2\x85" 0 2
+m "x\xef\xbc\x90y" 0 1
+m "\xef\xbc\xa1" 0 3
+m "\x7f" 0 1
+m "\xc2\x80" 0 2
+m "\xc3\xa9" 0 2
+m " \x09" 0 1
+m "_" 0 1
+n "\xdb\xb5"
+n "\xf0\x9d\x9f\x8e"
+
+# pcre2-only
+pattern (*UCP)\s
+encoding utf8
+n "\xd9\xa0\xd9\xa1\xd9\xa2"
+n "12"
+n "a"
+m "\xc2\xa0" 0 2
+m "\xe3\x80\x80" 0 3
+m "\xe2\x80\xa8" 0 3
+m "\xc2\x85" 0 2
+n "x\xef\xbc\x90y"
+n "\xef\xbc\xa1"
+n "\x7f"
+n "\xc2\x80"
+n "\xc3\xa9"
+m " \x09" 0 1
+n "_"
+n "\xdb\xb5"
+n "\xf0\x9d\x9f\x8e"
+
+# pcre2-only
+pattern (*UCP)^\s+$
+encoding utf8
+n "\xd9\xa0\xd9\xa1\xd9\xa2"
+n "12"
+n "a"
+m "\xc2\xa0" 0 2
+m "\xe3\x80\x80" 0 3
+m "\xe2\x80\xa8" 0 3
+m "\xc2\x85" 0 2
+n "x\xef\xbc\x90y"
+n "\xef\xbc\xa1"
+n "\x7f"
+n "\xc2\x80"
+n "\xc3\xa9"
+m " \x09" 0 2
+n "_"
+n "\xdb\xb5"
+n "\xf0\x9d\x9f\x8e"
+
+# pcre2-only
+pattern (*UCP)\S+
+encoding utf8
+m "\xd9\xa0\xd9\xa1\xd9\xa2" 0 6
+m "12" 0 2
+m "a" 0 1
+n "\xc2\xa0"
+n "\xe3\x80\x80"
+n "\xe2\x80\xa8"
+n "\xc2\x85"
+m "x\xef\xbc\x90y" 0 5
+m "\xef\xbc\xa1" 0 3
+m "\x7f" 0 1
+m "\xc2\x80" 0 2
+m "\xc3\xa9" 0 2
+n " \x09"
+m "_" 0 1
+m "\xdb\xb5" 0 2
+m "\xf0\x9d\x9f\x8e" 0 4
+
+# pcre2-only
+pattern (*UCP)[[:digit:]]+
+encoding utf8
+m "\xd9\xa0\xd9\xa1\xd9\xa2" 0 6
+m "12" 0 2
+n "a"
+n "\xc2\xa0"
+n "\xe3\x80\x80"
+n "\xe2\x80\xa8"
+n "\xc2\x85"
+m "x\xef\xbc\x90y" 1 4
+n "\xef\xbc\xa1"
+n "\x7f"
+n "\xc2\x80"
+n "\xc3\xa9"
+n " \x09"
+n "_"
+m "\xdb\xb5" 0 2
+m "\xf0\x9d\x9f\x8e" 0 4
+
+# pcre2-only
+pattern (*UCP)[[:^digit:]]
+encoding utf8
+n "\xd9\xa0\xd9\xa1\xd9\xa2"
+n "12"
+m "a" 0 1
+m "\xc2\xa0" 0 2
+m "\xe3\x80\x80" 0 3
+m "\xe2\x80\xa8" 0 3
+m "\xc2\x85" 0 2
+m "x\xef\xbc\x90y" 0 1
+m "\xef\xbc\xa1" 0 3
+m "\x7f" 0 1
+m "\xc2\x80" 0 2
+m "\xc3\xa9" 0 2
+m " \x09" 0 1
+m "_" 0 1
+n "\xdb\xb5"
+n "\xf0\x9d\x9f\x8e"
+
+# pcre2-only
+pattern (*UCP)[[:xdigit:]]+
+encoding utf8
+n "\xd9\xa0\xd9\xa1\xd9\xa2"
+m "12" 0 2
+m "a" 0 1
+n "\xc2\xa0"
+n "\xe3\x80\x80"
+n "\xe2\x80\xa8"
+n "\xc2\x85"
+m "x\xef\xbc\x90y" 1 4
+m "\xef\xbc\xa1" 0 3
+n "\x7f"
+n "\xc2\x80"
+n "\xc3\xa9"
+n " \x09"
+n "_"
+n "\xdb\xb5"
+n "\xf0\x9d\x9f\x8e"
+
+# pcre2-only
+pattern (*UCP)[[:space:]]
+encoding utf8
+n "\xd9\xa0\xd9\xa1\xd9\xa2"
+n "12"
+n "a"
+m "\xc2\xa0" 0 2
+m "\xe3\x80\x80" 0 3
+m "\xe2\x80\xa8" 0 3
+m "\xc2\x85" 0 2
+n "x\xef\xbc\x90y"
+n "\xef\xbc\xa1"
+n "\x7f"
+n "\xc2\x80"
+n "\xc3\xa9"
+m " \x09" 0 1
+n "_"
+n "\xdb\xb5"
+n "\xf0\x9d\x9f\x8e"
+
+# pcre2-only
+pattern (*UCP)[[:blank:]]
+encoding utf8
+n "\xd9\xa0\xd9\xa1\xd9\xa2"
+n "12"
+n "a"
+m "\xc2\xa0" 0 2
+m "\xe3\x80\x80" 0 3
+n "\xe2\x80\xa8"
+n "\xc2\x85"
+n "x\xef\xbc\x90y"
+n "\xef\xbc\xa1"
+n "\x7f"
+n "\xc2\x80"
+n "\xc3\xa9"
+m " \x09" 0 1
+n "_"
+n "\xdb\xb5"
+n "\xf0\x9d\x9f\x8e"
+
+# pcre2-only
+pattern (*UCP)[[:cntrl:]]
+encoding utf8
+n "\xd9\xa0\xd9\xa1\xd9\xa2"
+n "12"
+n "a"
+n "\xc2\xa0"
+n "\xe3\x80\x80"
+n "\xe2\x80\xa8"
+m "\xc2\x85" 0 2
+n "x\xef\xbc\x90y"
+n "\xef\xbc\xa1"
+m "\x7f" 0 1
+m "\xc2\x80" 0 2
+n "\xc3\xa9"
+m " \x09" 1 2
+n "_"
+n "\xdb\xb5"
+n "\xf0\x9d\x9f\x8e"
+
+# pcre2-only
+pattern (*UCP)[\d_]+
+encoding utf8
+m "\xd9\xa0\xd9\xa1\xd9\xa2" 0 6
+m "12" 0 2
+n "a"
+n "\xc2\xa0"
+n "\xe3\x80\x80"
+n "\xe2\x80\xa8"
+n "\xc2\x85"
+m "x\xef\xbc\x90y" 1 4
+n "\xef\xbc\xa1"
+n "\x7f"
+n "\xc2\x80"
+n "\xc3\xa9"
+n " \x09"
+m "_" 0 1
+m "\xdb\xb5" 0 2
+m "\xf0\x9d\x9f\x8e" 0 4
+
+# pcre2-only
+pattern (*UCP)[^\d]
+encoding utf8
+n "\xd9\xa0\xd9\xa1\xd9\xa2"
+n "12"
+m "a" 0 1
+m "\xc2\xa0" 0 2
+m "\xe3\x80\x80" 0 3
+m "\xe2\x80\xa8" 0 3
+m "\xc2\x85" 0 2
+m "x\xef\xbc\x90y" 0 1
+m "\xef\xbc\xa1" 0 3
+m "\x7f" 0 1
+m "\xc2\x80" 0 2
+m "\xc3\xa9" 0 2
+m " \x09" 0 1
+m "_" 0 1
+n "\xdb\xb5"
+n "\xf0\x9d\x9f\x8e"
+
+# pcre2-only
+pattern (*UCP)[^\s\d]+
+encoding utf8
+n "\xd9\xa0\xd9\xa1\xd9\xa2"
+n "12"
+m "a" 0 1
+n "\xc2\xa0"
+n "\xe3\x80\x80"
+n "\xe2\x80\xa8"
+n "\xc2\x85"
+m "x\xef\xbc\x90y" 0 1
+m "\xef\xbc\xa1" 0 3
+m "\x7f" 0 1
+m "\xc2\x80" 0 2
+m "\xc3\xa9" 0 2
+n " \x09"
+m "_" 0 1
+n "\xdb\xb5"
+n "\xf0\x9d\x9f\x8e"
+
+# pcre2-only
+pattern (*UTF)(*UCP)\d
+encoding utf8
+m "\xd9\xa0\xd9\xa1\xd9\xa2" 0 2
+m "12" 0 1
+n "a"
+n "\xc2\xa0"
+n "\xe3\x80\x80"
+n "\xe2\x80\xa8"
+n "\xc2\x85"
+m "x\xef\xbc\x90y" 1 4
+n "\xef\xbc\xa1"
+n "\x7f"
+n "\xc2\x80"
+n "\xc3\xa9"
+n " \x09"
+n "_"
+m "\xdb\xb5" 0 2
+m "\xf0\x9d\x9f\x8e" 0 4
+
+# pcre2-only
+pattern (*UCP)(*UTF)\s
+encoding utf8
+n "\xd9\xa0\xd9\xa1\xd9\xa2"
+n "12"
+n "a"
+m "\xc2\xa0" 0 2
+m "\xe3\x80\x80" 0 3
+m "\xe2\x80\xa8" 0 3
+m "\xc2\x85" 0 2
+n "x\xef\xbc\x90y"
+n "\xef\xbc\xa1"
+n "\x7f"
+n "\xc2\x80"
+n "\xc3\xa9"
+m " \x09" 0 1
+n "_"
+n "\xdb\xb5"
+n "\xf0\x9d\x9f\x8e"
+
+# pcre2-only
+pattern \d
+encoding utf8
+n "\xd9\xa0\xd9\xa1\xd9\xa2"
+m "12" 0 1
+n "a"
+n "\xc2\xa0"
+n "\xe3\x80\x80"
+n "\xe2\x80\xa8"
+n "\xc2\x85"
+n "x\xef\xbc\x90y"
+n "\xef\xbc\xa1"
+n "\x7f"
+n "\xc2\x80"
+n "\xc3\xa9"
+n " \x09"
+n "_"
+n "\xdb\xb5"
+n "\xf0\x9d\x9f\x8e"
+
+# pcre2-only
+pattern \s
+encoding utf8
+n "\xd9\xa0\xd9\xa1\xd9\xa2"
+n "12"
+n "a"
+n "\xc2\xa0"
+n "\xe3\x80\x80"
+n "\xe2\x80\xa8"
+n "\xc2\x85"
+n "x\xef\xbc\x90y"
+n "\xef\xbc\xa1"
+n "\x7f"
+n "\xc2\x80"
+n "\xc3\xa9"
+m " \x09" 0 1
+n "_"
+n "\xdb\xb5"
+n "\xf0\x9d\x9f\x8e"
+
+# the CLI spelling: `flags u` is `--ucp`
+# pcre2-only
+pattern \d+
+encoding utf8
+flags u
+m "\xd9\xa0\xd9\xa1\xd9\xa2" 0 6
+m "12" 0 2
+n "a"
+n "\xc2\xa0"
+n "\xe3\x80\x80"
+n "\xe2\x80\xa8"
+n "\xc2\x85"
+m "x\xef\xbc\x90y" 1 4
+n "\xef\xbc\xa1"
+n "\x7f"
+n "\xc2\x80"
+n "\xc3\xa9"
+n " \x09"
+n "_"
+m "\xdb\xb5" 0 2
+m "\xf0\x9d\x9f\x8e" 0 4
+
+# the CLI spelling: `flags u` is `--ucp`
+# pcre2-only
+pattern [[:xdigit:]]+
+encoding utf8
+flags u
+n "\xd9\xa0\xd9\xa1\xd9\xa2"
+m "12" 0 2
+m "a" 0 1
+n "\xc2\xa0"
+n "\xe3\x80\x80"
+n "\xe2\x80\xa8"
+n "\xc2\x85"
+m "x\xef\xbc\x90y" 1 4
+m "\xef\xbc\xa1" 0 3
+n "\x7f"
+n "\xc2\x80"
+n "\xc3\xa9"
+n " \x09"
+n "_"
+n "\xdb\xb5"
+n "\xf0\x9d\x9f\x8e"
+
+# the CLI spelling: `flags u` is `--ucp`
+# pcre2-only
+pattern \S
+encoding utf8
+flags u
+m "\xd9\xa0\xd9\xa1\xd9\xa2" 0 2
+m "12" 0 1
+m "a" 0 1
+n "\xc2\xa0"
+n "\xe3\x80\x80"
+n "\xe2\x80\xa8"
+n "\xc2\x85"
+m "x\xef\xbc\x90y" 0 1
+m "\xef\xbc\xa1" 0 3
+m "\x7f" 0 1
+m "\xc2\x80" 0 2
+m "\xc3\xa9" 0 2
+n " \x09"
+m "_" 0 1
+m "\xdb\xb5" 0 2
+m "\xf0\x9d\x9f\x8e" 0 4
+
+# the CLI spelling: `flags u` is `--ucp`
+# pcre2-only
+pattern [[:^space:]]
+encoding utf8
+flags u
+m "\xd9\xa0\xd9\xa1\xd9\xa2" 0 2
+m "12" 0 1
+m "a" 0 1
+n "\xc2\xa0"
+n "\xe3\x80\x80"
+n "\xe2\x80\xa8"
+n "\xc2\x85"
+m "x\xef\xbc\x90y" 0 1
+m "\xef\xbc\xa1" 0 3
+m "\x7f" 0 1
+m "\xc2\x80" 0 2
+m "\xc3\xa9" 0 2
+n " \x09"
+m "_" 0 1
+m "\xdb\xb5" 0 2
+m "\xf0\x9d\x9f\x8e" 0 4

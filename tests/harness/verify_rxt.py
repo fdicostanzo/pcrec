@@ -716,9 +716,10 @@ def parse_rxt(path):
             # treating everything else as a no-op flag string that meant
             # nothing to python and nothing to the differential either.
             v = line[len('flags '):].strip()
-            if v != 'i':
+            # [UCP] `u` is `--ucp`; each letter at most once, either order.
+            if v not in ('i', 'u', 'iu', 'ui'):
                 _fail(path, lineno, 'value-shape',
-                      f"unknown flag letter(s) {v!r} (only 'i' is defined)")
+                      f"unknown flag letter(s) {v!r} (only 'i' and 'u' are defined)")
             results.append((lineno, 'flags', v))
         elif line.startswith('features '):
             # [DD-13b.W1] `features only <list>` (M14): the list REPLACES
@@ -1787,6 +1788,13 @@ def main():
                 # duplicate check this arm used to carry is unreachable
                 # and removed rather than left as a second copy of a rule
                 # with one home.
+                # [UCP] python `re` has no PCRE2_UCP: a `u` block is outside
+                # this oracle's domain and is SKIPPED, counted with the
+                # `# pcre2-only` blocks (its directory's own libpcre2
+                # verifier is what checks it — tests/ucp/verify_ucp.py).
+                if 'u' in data:
+                    cur_skip = True
+                    continue
                 cur_reflags = re.IGNORECASE | re.ASCII
                 if not cur_skip:
                     compile_error = None

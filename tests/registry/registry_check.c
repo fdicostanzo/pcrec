@@ -1912,13 +1912,13 @@ static void check_class_ports(void)
      * subroutine call has no class position, and the two `\g` rows' BASE
      * scalar class ports (the literal letter `g`) were already counted. */
     /* [UCP] U0: ATOM PORTS 92 -> 94, module `ucp`'s `(*UTF)`/`(*UTF8)` name
-     * rows sharing `pcrec_ucpport_utf`. */
-    if (scalar != 7 || set != 10 || fn != 9 || aports != 94)
+     * rows sharing `pcrec_ucpport_utf`; U1: 94 -> 95, `(*UCP)`'s own port. */
+    if (scalar != 7 || set != 10 || fn != 9 || aports != 95)
         bad("class ports: populations moved — %d scalar (7: b g k 8 9 and the "
             "two \\g< / \\g' rows), "
             "%d SET class ports (10: the char-types, slice 2), %d FN class "
             "ports (9: posix + the eight octal digits, slice 3), %d atom "
-            "ports (94: the char-types + \\N, the twelve GROUP_OPT rows' "
+            "ports (95: the char-types + \\N, the twelve GROUP_OPT rows' "
             "option-run producer since MOD-0.5c, the three "
             "named-groups declaring rows' producer since [M6.3], the "
             "three assertions rows \\A/\\Z/\\z since [M6.2] wave A, plus "
@@ -3079,9 +3079,11 @@ static void check_built_status_defects(void)
      * producer yet, and `(*UTF)`/`(*UTF8)` are REFUSED under the probe's
      * default `byte` encoding (they compile under `-e utf8`, which the
      * registry's byte-default probe does not ask). */
-    else if (checked != 142 || built != 111 || unbuilt != 15 || na != 16)
+    /* 142 = 111 + 15 + 16 -> 142 = 112 + 14 + 16 ([UCP] U1): `(*UCP)` is
+     * built. `(*UTF)`/`(*UTF8)` stay `unbuilt` in this BYTE-default probe. */
+    else if (checked != 142 || built != 112 || unbuilt != 14 || na != 16)
         bad("built-status POPULATION MOVED: %d rows = %d built + %d unbuilt + "
-            "%d n/a, expected 142 = 111 + 15 + 16. Zero defects does NOT imply "
+            "%d n/a, expected 142 = 112 + 14 + 16. Zero defects does NOT imply "
             "nothing changed — a construct that silently stopped being built "
             "moves `built` down and `unbuilt` up with the sum unchanged, and "
             "the generated compliance index renders this column. If the move "

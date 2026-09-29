@@ -91,6 +91,7 @@ static const char *const UNICODE_OPS[] = {
 #define NOPS(a) (sizeof (a) / sizeof (a)[0])
 
 static int n_cells = 0, n_deferred = 0;
+static int n_ucp_sets = 0;   /* [UCP] DEFK_SET entries, see operand_cells */
 
 /* `oracle_a` is the FIFTH TSV column (r43-third-round follow-up): "-"
  * means "definitions_oracle_check.c's libpcre2 leg uses Pattern A as-is",
@@ -371,6 +372,15 @@ static void operand_cells(const RegRow *r)
 {
     for (const RegDef *d = r->definitions; d->kind != DEFK_END; d++) {
         if (!d->operand) continue;
+        /* [UCP] a UCP entry (DEFK_SET) is a SET the one producer builds, not
+         * core text to compile beside the construct; its A==C question —
+         * does pcrec's UCP set equal libpcre2's — is asked EXHAUSTIVELY, per
+         * code point, by tests/ucp's membership check against the committed
+         * 10.46 store. Counted here, never silently dropped. */
+        if (d->kind == DEFK_SET) {
+            n_ucp_sets++;
+            continue;
+        }
         if (d->kind != DEFK_STR) {
             fprintf(stderr, "NOTE: %s: operand '%s' on a non-DEFK_STR "
                     "entry — skipping (harness needs updating)\n",
@@ -600,7 +610,8 @@ int main(void)
         }
     }
 
-    fprintf(stderr, "definitions_oracle_gen: %d cells, %d deferred\n",
-            n_cells, n_deferred);
+    fprintf(stderr, "definitions_oracle_gen: %d cells, %d deferred, %d UCP "
+            "set entries left to tests/ucp's membership check\n",
+            n_cells, n_deferred, n_ucp_sets);
     return 0;
 }

@@ -349,6 +349,14 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
   implementation lane. See its own CLAUDE.md for why the sweep had to be
   batched (44 cells/minute -> 60 seconds) and for the non-vacuity floor that
   stops the whole thing being green on a compiler that ignores the atomicity
+- **`ucp/`** — module `ucp` ([UCP] U1, D130): five `.rxt` files (the narrow
+  UCP sets under utf8, the `(?a…)` restriction letters, the caseless rules,
+  the byte tier, and what is refused by name), `verify_ucp.py` (the
+  directory's own libpcre2 oracle — python `re` has no UCP), `ucp_compare.py`
+  + `ucp_sets.py` (every UCP set against the committed 10.46 store),
+  `build_ucp_store.py` (its capture), `latin1_fold_check.c` +
+  `latin1_fold_10.46.tsv` (the byte-tier fold relation), and
+  `run_ucp_tests.sh` (`make test-ucp`). See its own CLAUDE.md.
 - **`vars/`** — module `vars` ([VAR] M10): `${name}` in a pattern, whose
   bytes the CALLER supplies per call. Three `.rxt` files (the SET state and
   the literal rule; the UNSET/EMPTY/SET model and the five operators; the

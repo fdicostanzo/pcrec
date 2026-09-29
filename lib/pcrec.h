@@ -920,6 +920,16 @@ enum {
  * kit is a row with its own deny flag). A `#define` for bit 32's reason. */
 #define PCREC_NO_LIT_RUN PCREC_BIT(33)
 
+/* [UCP] `--ucp`: PCRE2_UCP's semantics (docs/design/ucp_design.md §1, D130
+ * Q1). `\d \s \w` and the POSIX classes read Unicode properties (under
+ * `byte`, the Latin-1 code points the byte universe holds, with the Latin-1
+ * case fold). A SEMANTIC axis, not a tuning one — it changes answers, so it is
+ * NOT masked out of `rx_info.flags` and no dial position may set it. The
+ * in-pattern spelling `(*UCP)` means the same thing. Opt-in: `-e utf8` alone
+ * reads `\w` as ASCII, which is PCRE2_UTF's own default. A `#define` for
+ * bit 32's reason. */
+#define PCREC_UCP PCREC_BIT(34)
+
 /* [ENG-BREP] the counter rung's UNROLL FACTOR, K (counterk_design.md §4.1;
  * eng_brep_design.md §4.5's "K must not become a per-pattern heuristic in v1",
  * held strictly by D47's ADDENDUM). ONE per-artifact constant: every

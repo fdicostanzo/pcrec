@@ -2367,8 +2367,8 @@ fi
 # --- sem2: a tab inside a `from` config list (head-only) --------------
 check_refusal tab_in_config_list.rxt tab-in-list 'comma-separated config list'
 
-# --- sem3: 'flags xmz' — only 'i' is defined, all three legs -----------
-check_refusal_all3_kind flags bad_flags.rxt bad-flags value-shape "only 'i' is defined"
+# --- sem3: 'flags xmz' — only 'i' and 'u' are defined, all three legs ---
+check_refusal_all3_kind flags bad_flags.rxt bad-flags value-shape "only 'i' and 'u' are defined"
 
 # --- sem4: 'engine dfa' — only 'vm' is defined for W1.1, all three legs
 check_refusal_all3_kind engine bad_engine.rxt bad-engine value-shape 'only vm is defined'

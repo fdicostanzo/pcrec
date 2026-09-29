@@ -1,0 +1,942 @@
+# [UCP] U1 -- THE BYTE TIER: PCRE2_UCP WITHOUT PCRE2_UTF (ucp_design.md §1.5,
+# D130 Q4). The bytes are Latin-1 code points, every UCP set is its Unicode
+# set clamped to [0, 0xFF] (so every one is narrow and all compile), and
+# `(?i)` folds the 26 ASCII + 30 Latin-1 pairs (T2's `latin1` row) -- `\xe9`
+# reaches `\xc9` under UCP and not without it. `[:lower:]`/`[:upper:]` are
+# FOLD-INERT under UCP here too (T2's `inert` row). Module `ucp` is named in
+# `features`: `-e byte` does not imply it (O-71 is utf8's).#
+# ORACLE: libpcre2, the options the block states (`encoding utf8` = PCRE2_UTF,
+# `(*UCP)`/`flags u` = PCRE2_UCP, `flags i` = PCRE2_CASELESS). Every expectation
+# was READ FROM THE ORACLE (10.48, the generator) and re-verified against the
+# 10.46 reference; `verify_ucp.py` in this directory re-checks every cell on
+# every `make test` against the resolved libpcre2 (it SKIPS loudly without one).
+# `# pcre2-only` throughout: python `re` has no PCRE2_UCP and its subject
+# decoder is byte-oriented (U14).
+
+# pcre2-only
+pattern (*UCP)\w
+encoding byte
+features classes,modifiers,ucp
+m "\xb2" 0 1
+m "\xe9" 0 1
+n "\xd7"
+m "\xaa" 0 1
+m "\xb5" 0 1
+m "\xba" 0 1
+n "\xa7"
+n "\xa2"
+n "\xab"
+m "5" 0 1
+n "\x85"
+n "\xa0"
+n "\xad"
+m "\xc9" 0 1
+m "\xdf" 0 1
+m "\xff" 0 1
+m "A" 0 1
+m "a" 0 1
+m "K" 0 1
+m "k" 0 1
+m "\xe6" 0 1
+n "\x7f"
+m "_" 0 1
+
+# pcre2-only
+pattern (*UCP)\W
+encoding byte
+features classes,modifiers,ucp
+n "\xb2"
+n "\xe9"
+m "\xd7" 0 1
+n "\xaa"
+n "\xb5"
+n "\xba"
+m "\xa7" 0 1
+m "\xa2" 0 1
+m "\xab" 0 1
+n "5"
+m "\x85" 0 1
+m "\xa0" 0 1
+m "\xad" 0 1
+n "\xc9"
+n "\xdf"
+n "\xff"
+n "A"
+n "a"
+n "K"
+n "k"
+n "\xe6"
+m "\x7f" 0 1
+n "_"
+
+# pcre2-only
+pattern (*UCP)\d
+encoding byte
+features classes,modifiers,ucp
+n "\xb2"
+n "\xe9"
+n "\xd7"
+n "\xaa"
+n "\xb5"
+n "\xba"
+n "\xa7"
+n "\xa2"
+n "\xab"
+m "5" 0 1
+n "\x85"
+n "\xa0"
+n "\xad"
+n "\xc9"
+n "\xdf"
+n "\xff"
+n "A"
+n "a"
+n "K"
+n "k"
+n "\xe6"
+n "\x7f"
+n "_"
+
+# pcre2-only
+pattern (*UCP)\s
+encoding byte
+features classes,modifiers,ucp
+n "\xb2"
+n "\xe9"
+n "\xd7"
+n "\xaa"
+n "\xb5"
+n "\xba"
+n "\xa7"
+n "\xa2"
+n "\xab"
+n "5"
+m "\x85" 0 1
+m "\xa0" 0 1
+n "\xad"
+n "\xc9"
+n "\xdf"
+n "\xff"
+n "A"
+n "a"
+n "K"
+n "k"
+n "\xe6"
+n "\x7f"
+n "_"
+
+# pcre2-only
+pattern (*UCP)[[:alpha:]]
+encoding byte
+features classes,modifiers,ucp
+n "\xb2"
+m "\xe9" 0 1
+n "\xd7"
+m "\xaa" 0 1
+m "\xb5" 0 1
+m "\xba" 0 1
+n "\xa7"
+n "\xa2"
+n "\xab"
+n "5"
+n "\x85"
+n "\xa0"
+n "\xad"
+m "\xc9" 0 1
+m "\xdf" 0 1
+m "\xff" 0 1
+m "A" 0 1
+m "a" 0 1
+m "K" 0 1
+m "k" 0 1
+m "\xe6" 0 1
+n "\x7f"
+n "_"
+
+# pcre2-only
+pattern (*UCP)[[:alnum:]]
+encoding byte
+features classes,modifiers,ucp
+m "\xb2" 0 1
+m "\xe9" 0 1
+n "\xd7"
+m "\xaa" 0 1
+m "\xb5" 0 1
+m "\xba" 0 1
+n "\xa7"
+n "\xa2"
+n "\xab"
+m "5" 0 1
+n "\x85"
+n "\xa0"
+n "\xad"
+m "\xc9" 0 1
+m "\xdf" 0 1
+m "\xff" 0 1
+m "A" 0 1
+m "a" 0 1
+m "K" 0 1
+m "k" 0 1
+m "\xe6" 0 1
+n "\x7f"
+n "_"
+
+# pcre2-only
+pattern (*UCP)[[:punct:]]
+encoding byte
+features classes,modifiers,ucp
+n "\xb2"
+n "\xe9"
+n "\xd7"
+n "\xaa"
+n "\xb5"
+n "\xba"
+m "\xa7" 0 1
+n "\xa2"
+m "\xab" 0 1
+n "5"
+n "\x85"
+n "\xa0"
+n "\xad"
+n "\xc9"
+n "\xdf"
+n "\xff"
+n "A"
+n "a"
+n "K"
+n "k"
+n "\xe6"
+n "\x7f"
+m "_" 0 1
+
+# pcre2-only
+pattern (*UCP)[[:graph:]]
+encoding byte
+features classes,modifiers,ucp
+m "\xb2" 0 1
+m "\xe9" 0 1
+m "\xd7" 0 1
+m "\xaa" 0 1
+m "\xb5" 0 1
+m "\xba" 0 1
+m "\xa7" 0 1
+m "\xa2" 0 1
+m "\xab" 0 1
+m "5" 0 1
+n "\x85"
+n "\xa0"
+m "\xad" 0 1
+m "\xc9" 0 1
+m "\xdf" 0 1
+m "\xff" 0 1
+m "A" 0 1
+m "a" 0 1
+m "K" 0 1
+m "k" 0 1
+m "\xe6" 0 1
+n "\x7f"
+m "_" 0 1
+
+# pcre2-only
+pattern (*UCP)[[:print:]]
+encoding byte
+features classes,modifiers,ucp
+m "\xb2" 0 1
+m "\xe9" 0 1
+m "\xd7" 0 1
+m "\xaa" 0 1
+m "\xb5" 0 1
+m "\xba" 0 1
+m "\xa7" 0 1
+m "\xa2" 0 1
+m "\xab" 0 1
+m "5" 0 1
+n "\x85"
+m "\xa0" 0 1
+m "\xad" 0 1
+m "\xc9" 0 1
+m "\xdf" 0 1
+m "\xff" 0 1
+m "A" 0 1
+m "a" 0 1
+m "K" 0 1
+m "k" 0 1
+m "\xe6" 0 1
+n "\x7f"
+m "_" 0 1
+
+# pcre2-only
+pattern (*UCP)[[:space:]]
+encoding byte
+features classes,modifiers,ucp
+n "\xb2"
+n "\xe9"
+n "\xd7"
+n "\xaa"
+n "\xb5"
+n "\xba"
+n "\xa7"
+n "\xa2"
+n "\xab"
+n "5"
+m "\x85" 0 1
+m "\xa0" 0 1
+n "\xad"
+n "\xc9"
+n "\xdf"
+n "\xff"
+n "A"
+n "a"
+n "K"
+n "k"
+n "\xe6"
+n "\x7f"
+n "_"
+
+# pcre2-only
+pattern (*UCP)[[:blank:]]
+encoding byte
+features classes,modifiers,ucp
+n "\xb2"
+n "\xe9"
+n "\xd7"
+n "\xaa"
+n "\xb5"
+n "\xba"
+n "\xa7"
+n "\xa2"
+n "\xab"
+n "5"
+n "\x85"
+m "\xa0" 0 1
+n "\xad"
+n "\xc9"
+n "\xdf"
+n "\xff"
+n "A"
+n "a"
+n "K"
+n "k"
+n "\xe6"
+n "\x7f"
+n "_"
+
+# pcre2-only
+pattern (*UCP)[[:cntrl:]]
+encoding byte
+features classes,modifiers,ucp
+n "\xb2"
+n "\xe9"
+n "\xd7"
+n "\xaa"
+n "\xb5"
+n "\xba"
+n "\xa7"
+n "\xa2"
+n "\xab"
+n "5"
+m "\x85" 0 1
+n "\xa0"
+n "\xad"
+n "\xc9"
+n "\xdf"
+n "\xff"
+n "A"
+n "a"
+n "K"
+n "k"
+n "\xe6"
+m "\x7f" 0 1
+n "_"
+
+# pcre2-only
+pattern (*UCP)[[:xdigit:]]
+encoding byte
+features classes,modifiers,ucp
+n "\xb2"
+n "\xe9"
+n "\xd7"
+n "\xaa"
+n "\xb5"
+n "\xba"
+n "\xa7"
+n "\xa2"
+n "\xab"
+m "5" 0 1
+n "\x85"
+n "\xa0"
+n "\xad"
+n "\xc9"
+n "\xdf"
+n "\xff"
+m "A" 0 1
+m "a" 0 1
+n "K"
+n "k"
+n "\xe6"
+n "\x7f"
+n "_"
+
+# pcre2-only
+pattern (*UCP)[[:lower:]]
+encoding byte
+features classes,modifiers,ucp
+n "\xb2"
+m "\xe9" 0 1
+n "\xd7"
+n "\xaa"
+m "\xb5" 0 1
+n "\xba"
+n "\xa7"
+n "\xa2"
+n "\xab"
+n "5"
+n "\x85"
+n "\xa0"
+n "\xad"
+n "\xc9"
+m "\xdf" 0 1
+m "\xff" 0 1
+n "A"
+m "a" 0 1
+n "K"
+m "k" 0 1
+m "\xe6" 0 1
+n "\x7f"
+n "_"
+
+# pcre2-only
+pattern (*UCP)[[:upper:]]
+encoding byte
+features classes,modifiers,ucp
+n "\xb2"
+n "\xe9"
+n "\xd7"
+n "\xaa"
+n "\xb5"
+n "\xba"
+n "\xa7"
+n "\xa2"
+n "\xab"
+n "5"
+n "\x85"
+n "\xa0"
+n "\xad"
+m "\xc9" 0 1
+n "\xdf"
+n "\xff"
+m "A" 0 1
+n "a"
+m "K" 0 1
+n "k"
+n "\xe6"
+n "\x7f"
+n "_"
+
+# pcre2-only
+pattern (*UCP)[[:word:]]
+encoding byte
+features classes,modifiers,ucp
+m "\xb2" 0 1
+m "\xe9" 0 1
+n "\xd7"
+m "\xaa" 0 1
+m "\xb5" 0 1
+m "\xba" 0 1
+n "\xa7"
+n "\xa2"
+n "\xab"
+m "5" 0 1
+n "\x85"
+n "\xa0"
+n "\xad"
+m "\xc9" 0 1
+m "\xdf" 0 1
+m "\xff" 0 1
+m "A" 0 1
+m "a" 0 1
+m "K" 0 1
+m "k" 0 1
+m "\xe6" 0 1
+n "\x7f"
+m "_" 0 1
+
+# pcre2-only
+pattern (*UCP)(?i)[[:lower:]]
+encoding byte
+features classes,modifiers,ucp
+n "\xb2"
+m "\xe9" 0 1
+n "\xd7"
+n "\xaa"
+m "\xb5" 0 1
+n "\xba"
+n "\xa7"
+n "\xa2"
+n "\xab"
+n "5"
+n "\x85"
+n "\xa0"
+n "\xad"
+n "\xc9"
+m "\xdf" 0 1
+m "\xff" 0 1
+n "A"
+m "a" 0 1
+n "K"
+m "k" 0 1
+m "\xe6" 0 1
+n "\x7f"
+n "_"
+
+# pcre2-only
+pattern (*UCP)(?i)[[:upper:]]
+encoding byte
+features classes,modifiers,ucp
+n "\xb2"
+n "\xe9"
+n "\xd7"
+n "\xaa"
+n "\xb5"
+n "\xba"
+n "\xa7"
+n "\xa2"
+n "\xab"
+n "5"
+n "\x85"
+n "\xa0"
+n "\xad"
+m "\xc9" 0 1
+n "\xdf"
+n "\xff"
+m "A" 0 1
+n "a"
+m "K" 0 1
+n "k"
+n "\xe6"
+n "\x7f"
+n "_"
+
+# pcre2-only
+pattern (*UCP)(?i)[^[:lower:]]
+encoding byte
+features classes,modifiers,ucp
+m "\xb2" 0 1
+n "\xe9"
+m "\xd7" 0 1
+m "\xaa" 0 1
+n "\xb5"
+m "\xba" 0 1
+m "\xa7" 0 1
+m "\xa2" 0 1
+m "\xab" 0 1
+m "5" 0 1
+m "\x85" 0 1
+m "\xa0" 0 1
+m "\xad" 0 1
+m "\xc9" 0 1
+n "\xdf"
+n "\xff"
+m "A" 0 1
+n "a"
+m "K" 0 1
+n "k"
+n "\xe6"
+m "\x7f" 0 1
+m "_" 0 1
+
+# pcre2-only
+pattern (*UCP)(?i)[[:lower:]x]
+encoding byte
+features classes,modifiers,ucp
+n "\xb2"
+m "\xe9" 0 1
+n "\xd7"
+n "\xaa"
+m "\xb5" 0 1
+n "\xba"
+n "\xa7"
+n "\xa2"
+n "\xab"
+n "5"
+n "\x85"
+n "\xa0"
+n "\xad"
+n "\xc9"
+m "\xdf" 0 1
+m "\xff" 0 1
+n "A"
+m "a" 0 1
+n "K"
+m "k" 0 1
+m "\xe6" 0 1
+n "\x7f"
+n "_"
+
+# pcre2-only
+pattern (*UCP)(?i)\xe9
+encoding byte
+features classes,modifiers,ucp
+n "\xb2"
+m "\xe9" 0 1
+n "\xd7"
+n "\xaa"
+n "\xb5"
+n "\xba"
+n "\xa7"
+n "\xa2"
+n "\xab"
+n "5"
+n "\x85"
+n "\xa0"
+n "\xad"
+m "\xc9" 0 1
+n "\xdf"
+n "\xff"
+n "A"
+n "a"
+n "K"
+n "k"
+n "\xe6"
+n "\x7f"
+n "_"
+
+# pcre2-only
+pattern (*UCP)(?i)[\xe0-\xe9]
+encoding byte
+features classes,modifiers,ucp
+n "\xb2"
+m "\xe9" 0 1
+n "\xd7"
+n "\xaa"
+n "\xb5"
+n "\xba"
+n "\xa7"
+n "\xa2"
+n "\xab"
+n "5"
+n "\x85"
+n "\xa0"
+n "\xad"
+m "\xc9" 0 1
+n "\xdf"
+n "\xff"
+n "A"
+n "a"
+n "K"
+n "k"
+m "\xe6" 0 1
+n "\x7f"
+n "_"
+
+# pcre2-only
+pattern (*UCP)(?i)\xb5
+encoding byte
+features classes,modifiers,ucp
+n "\xb2"
+n "\xe9"
+n "\xd7"
+n "\xaa"
+m "\xb5" 0 1
+n "\xba"
+n "\xa7"
+n "\xa2"
+n "\xab"
+n "5"
+n "\x85"
+n "\xa0"
+n "\xad"
+n "\xc9"
+n "\xdf"
+n "\xff"
+n "A"
+n "a"
+n "K"
+n "k"
+n "\xe6"
+n "\x7f"
+n "_"
+
+# pcre2-only
+pattern (*UCP)(?i)\xff
+encoding byte
+features classes,modifiers,ucp
+n "\xb2"
+n "\xe9"
+n "\xd7"
+n "\xaa"
+n "\xb5"
+n "\xba"
+n "\xa7"
+n "\xa2"
+n "\xab"
+n "5"
+n "\x85"
+n "\xa0"
+n "\xad"
+n "\xc9"
+n "\xdf"
+m "\xff" 0 1
+n "A"
+n "a"
+n "K"
+n "k"
+n "\xe6"
+n "\x7f"
+n "_"
+
+# pcre2-only
+pattern (*UCP)(?i)\xdf
+encoding byte
+features classes,modifiers,ucp
+n "\xb2"
+n "\xe9"
+n "\xd7"
+n "\xaa"
+n "\xb5"
+n "\xba"
+n "\xa7"
+n "\xa2"
+n "\xab"
+n "5"
+n "\x85"
+n "\xa0"
+n "\xad"
+n "\xc9"
+m "\xdf" 0 1
+n "\xff"
+n "A"
+n "a"
+n "K"
+n "k"
+n "\xe6"
+n "\x7f"
+n "_"
+
+# pcre2-only
+pattern (*UCP)(?i)k
+encoding byte
+features classes,modifiers,ucp
+n "\xb2"
+n "\xe9"
+n "\xd7"
+n "\xaa"
+n "\xb5"
+n "\xba"
+n "\xa7"
+n "\xa2"
+n "\xab"
+n "5"
+n "\x85"
+n "\xa0"
+n "\xad"
+n "\xc9"
+n "\xdf"
+n "\xff"
+n "A"
+n "a"
+m "K" 0 1
+m "k" 0 1
+n "\xe6"
+n "\x7f"
+n "_"
+
+# pcre2-only
+pattern (*UCP)(?i)(?aW)\w
+encoding byte
+features classes,modifiers,ucp
+n "\xb2"
+n "\xe9"
+n "\xd7"
+n "\xaa"
+n "\xb5"
+n "\xba"
+n "\xa7"
+n "\xa2"
+n "\xab"
+m "5" 0 1
+n "\x85"
+n "\xa0"
+n "\xad"
+n "\xc9"
+n "\xdf"
+n "\xff"
+m "A" 0 1
+m "a" 0 1
+m "K" 0 1
+m "k" 0 1
+n "\xe6"
+n "\x7f"
+m "_" 0 1
+
+# pcre2-only
+pattern (*UCP)(?i)(?aP)[[:lower:]]
+encoding byte
+features classes,modifiers,ucp
+n "\xb2"
+n "\xe9"
+n "\xd7"
+n "\xaa"
+n "\xb5"
+n "\xba"
+n "\xa7"
+n "\xa2"
+n "\xab"
+n "5"
+n "\x85"
+n "\xa0"
+n "\xad"
+n "\xc9"
+n "\xdf"
+n "\xff"
+m "A" 0 1
+m "a" 0 1
+m "K" 0 1
+m "k" 0 1
+n "\xe6"
+n "\x7f"
+n "_"
+
+# pcre2-only
+pattern (*UCP)(?aW)\w
+encoding byte
+features classes,modifiers,ucp
+n "\xb2"
+n "\xe9"
+n "\xd7"
+n "\xaa"
+n "\xb5"
+n "\xba"
+n "\xa7"
+n "\xa2"
+n "\xab"
+m "5" 0 1
+n "\x85"
+n "\xa0"
+n "\xad"
+n "\xc9"
+n "\xdf"
+n "\xff"
+m "A" 0 1
+m "a" 0 1
+m "K" 0 1
+m "k" 0 1
+n "\xe6"
+n "\x7f"
+m "_" 0 1
+
+# pcre2-only
+pattern (?i)\xe9
+encoding byte
+features classes,modifiers,ucp
+n "\xb2"
+m "\xe9" 0 1
+n "\xd7"
+n "\xaa"
+n "\xb5"
+n "\xba"
+n "\xa7"
+n "\xa2"
+n "\xab"
+n "5"
+n "\x85"
+n "\xa0"
+n "\xad"
+n "\xc9"
+n "\xdf"
+n "\xff"
+n "A"
+n "a"
+n "K"
+n "k"
+n "\xe6"
+n "\x7f"
+n "_"
+
+# pcre2-only
+pattern \w
+encoding byte
+features classes,modifiers,ucp
+n "\xb2"
+n "\xe9"
+n "\xd7"
+n "\xaa"
+n "\xb5"
+n "\xba"
+n "\xa7"
+n "\xa2"
+n "\xab"
+m "5" 0 1
+n "\x85"
+n "\xa0"
+n "\xad"
+n "\xc9"
+n "\xdf"
+n "\xff"
+m "A" 0 1
+m "a" 0 1
+m "K" 0 1
+m "k" 0 1
+n "\xe6"
+n "\x7f"
+m "_" 0 1
+
+# `flags u` (`--ucp`) under `byte`
+# pcre2-only
+pattern \w
+encoding byte
+flags u
+features classes,modifiers,ucp
+m "\xb2" 0 1
+m "\xe9" 0 1
+n "\xd7"
+m "\xaa" 0 1
+m "\xb5" 0 1
+m "\xba" 0 1
+n "\xa7"
+n "\xa2"
+n "\xab"
+m "5" 0 1
+n "\x85"
+n "\xa0"
+n "\xad"
+m "\xc9" 0 1
+m "\xdf" 0 1
+m "\xff" 0 1
+m "A" 0 1
+m "a" 0 1
+m "K" 0 1
+m "k" 0 1
+m "\xe6" 0 1
+n "\x7f"
+m "_" 0 1
+
+# `flags u` (`--ucp`) under `byte`
+# pcre2-only
+pattern (?i)\xe9
+encoding byte
+flags u
+features classes,modifiers,ucp
+n "\xb2"
+m "\xe9" 0 1
+n "\xd7"
+n "\xaa"
+n "\xb5"
+n "\xba"
+n "\xa7"
+n "\xa2"
+n "\xab"
+n "5"
+n "\x85"
+n "\xa0"
+n "\xad"
+m "\xc9" 0 1
+n "\xdf"
+n "\xff"
+n "A"
+n "a"
+n "K"
+n "k"
+n "\xe6"
+n "\x7f"
+n "_"

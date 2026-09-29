@@ -1,4 +1,4 @@
-# oracle_name=libpcre2 oracle_version=10.46 utf=0 caseless=0 match_limit=10000000 depth_limit=10000000 heap_limit=20000000 store_format_version=1 rows=387 captured_at=2026-09-10T23:46:23Z captured_by=duxevents@100.69.121.107 command=python3 tests/oracle/build_uprops_store.py remote --chunk 60
+# oracle_name=libpcre2 oracle_version=10.46 utf=0 caseless=0 ucp=0 match_limit=10000000 depth_limit=10000000 heap_limit=20000000 store_format_version=2 rows=387 captured_at=2026-09-10T23:46:23Z captured_by=duxevents@100.69.121.107 command=python3 tests/oracle/build_uprops_store.py remote --chunk 60
 # question_hash	question	intervals
 002f1fc5b41016e4	Nko	utf8	60C-60C 61B-61B 61F-61F 7C0-7FA 7FD-7FF FD3E-FD3F
 013b4fc3b0954983	sc=Buginese	utf8	1A00-1A1B 1A1E-1A1F

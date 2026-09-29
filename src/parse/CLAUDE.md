@@ -154,6 +154,21 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   (`Ctx.optrun_end`) that lets `(*UTF)(*UCP)` combine in either order
   (mod_verbs.c's position rule reads it). `-e utf8` IMPLIES this module and
   `unicode-props` (`PcrecEnc.implied_features`, O-71).
+  U1: the `(*UCP)` port (sets `ParseMods.ucp`; `--ucp` seeds it in
+  `pcrec_parse_mods_init`, refused by name when the module is off); the UCP
+  SETS as data (`PcrecSetDef` term lists over unicode-props' own tables,
+  `pcrec_uprops_span`), their one producer `pcrec_setdef_class` (build over
+  Unicode, clamp to the encoding's universe, then the narrow/wide ROUTE
+  table — a wide set under utf8 is refused by name, D130 Q3,
+  `PCREC_UCP_NARROW_MAX_INTERVALS`), folding through parse.c's T2. The
+  definitions table's `DEF_UCP_{D,S,W,P,T}` DEFK_SET entries (registry.c)
+  name these sets; ext.c's PORT_SET branch and mod_classes.c's POSIX port
+  are the two readers. The `(?a…)` letters are real in mod_modifiers.c
+  (`ParseMods.arestrict`); UCP `\b`/`\B` are refused in mod_assertions.c.
+  **T2 (the class fold) lives in parse.c** (`fold_rows`): none / property /
+  inert / ascii-named / latin1 / encoding, first match, rows as data — it
+  replaced the per-caller fold argument at char_node, p_class, from_bits and
+  from_iv.
 - **registry.c** — the syntax construct registry (D24/SR-1): every non-base
   construct as one `static const` row, plus the lookup. Since Q1 (D25) it also
   holds the `(*` doorway's two verb-NAME tables — 31 upper + 19 lower, chosen by

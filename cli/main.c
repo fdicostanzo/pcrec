@@ -164,6 +164,10 @@ static void usage(FILE *f)
           "                 encodings\n"
           "  -i             match case-insensitively (ASCII letters); folded\n"
           "                 into the automaton, no run-time cost\n"
+          "  --ucp          Unicode semantics for \\d \\s \\w and the POSIX\n"
+          "                 classes (PCRE2_UCP; the pattern spelling is\n"
+          "                 (*UCP)). Module 'ucp', implied by -e utf8; under\n"
+          "                 byte it means Latin-1. See docs/spec/cli.md\n"
           "  --emit-main    append a standalone main() (subject from argv[1])\n"
           "  --pattern-esc  the --pattern VALUE is the .rxt format's quoted-\n"
           "                 escape form (\\\" \\\\ \\n \\t \\r \\f \\v \\xHH), decoded by\n"
@@ -815,6 +819,8 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
             st->want_version = 1;
         else if (!strcmp(a, "--emit-main")) opt.flags |= PCREC_EMIT_MAIN;
         else if (!strcmp(a, "-i")) opt.flags |= PCREC_CASELESS;
+        /* [UCP] a SEMANTIC axis (D130 Q1), `(*UCP)`'s CLI spelling. */
+        else if (!strcmp(a, "--ucp")) opt.flags |= PCREC_UCP;
         /* [M4.5b] the generation axes engine_m4.md §4.6/§5.3/§5.6 name.
          * `--engine=` takes its value with `=` rather than as a separate
          * argument because it is a MODE, not a file or a name — and the

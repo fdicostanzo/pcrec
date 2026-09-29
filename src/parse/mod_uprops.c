@@ -216,6 +216,16 @@ static unsigned uprops_namespace(const char *body, size_t sep)
     return 0;
 }
 
+/* [UCP] A bare-namespace property's CASE-SENSITIVE span, by its normalised
+ * name ("ND", "XWD") — module `ucp`'s composed sets (mod_ucp.c) are unions of
+ * these, so a UCP set is built from the same generated table `\p{..}` is and
+ * cannot acquire a second spelling of it. NULL for a name the table lacks. */
+const PcrecCpRange *pcrec_uprops_span(const char *normname, int *n)
+{
+    return uprops_lookup(normname, strlen(normname), PCREC_UPROP_NS_BARE,
+                         false, n);
+}
+
 /* THE TABLE, READ-ONLY, FOR THE ONE CHECK THAT MUST ASK THE ORACLE ABOUT
  * EVERY NAME PCREC SHIPS.
  *

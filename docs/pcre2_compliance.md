@@ -1036,7 +1036,7 @@ survey). Pure lexing, `PLANNED`-trivial.
 | `(*NO_JIT)` `(*NO_START_OPT)` `(*NO_AUTO_POSSESS)` `(*NO_DOTSTAR_ANCHOR)` | `OUT-OF-SCOPE` | — |
 | `(*NOTEMPTY)` `(*NOTEMPTY_ATSTART)` | `REJECTED` | `PLANNED` |
 | `(*UTF)` `(*UTF8)` — a restatement of `--encoding=utf8`: accepted under `-e utf8`, refused by name under `byte` (module `ucp`, D130 Q2) | `OK-LIMITED` | — |
-| `(*UCP)` — module `ucp` ([UCP] U1) | `REJECTED` | `PLANNED` |
+| `(*UCP)` (and `--ucp`) — module `ucp`, [UCP] U1: `\d \s` and the narrow POSIX classes as Unicode sets under `-e utf8`, the whole byte tier (Latin-1 sets + Latin-1 fold), `(?a…)` restrictions real, `[:lower:]`/`[:upper:]` fold-inert; the WIDE sets under `-e utf8` and `\b`/`\B` under either encoding refused by name (docs/spec/limits.md §3.8) | `OK-LIMITED` | — |
 | `(*CASELESS_RESTRICT)` `(*TURKISH_CASING)` | `OUT-OF-SCOPE` | — |
 
 <!-- BEGIN GENERATED ANNOTATIONS: option-setting -->
@@ -2346,7 +2346,7 @@ Every non-base construct pcrec knows, as the parser itself sees it — 142 rows 
 | after `(?` | `(?s)` | `REJECTED` | `built` | planned | `modifiers` | dfa|vm | dotall: . matches newline |
 | after `(?` | `(?x)` | `REJECTED` | `built` | planned | `modifiers` | dfa|vm | extended: ignore unescaped whitespace and # comments |
 | after `(?` | `(?q)` | `AGREES-REJECT` | — | never | — | — | no construct begins with this byte — PCRE2 error 111 |
-| after `(*` | `(*UCP)a` | `REJECTED` | `unbuilt` | planned | `ucp` | dfa|vm | Unicode properties for \d \s \w \b and the POSIX classes (PCRE2_UCP) |
+| after `(*` | `(*UCP)a` | `REJECTED` | `built` | planned | `ucp` | dfa|vm | Unicode properties for \d \s \w \b and the POSIX classes (PCRE2_UCP) |
 | after `(*` | `(*UTF)a` | `REJECTED` | `unbuilt` | planned | `ucp` | dfa|vm | UTF mode — a restatement of --encoding=utf8, refused under byte — also spelled `(*UTF8)a` |
 | after `(*` | `(*ACCEPT)` | `REJECTED` | `unbuilt` | planned | `verbs` | vm | backtracking verb ((*SKIP), (*ACCEPT)), start-of-pattern option ((*CR), (*UTF)) or script run ((*script_run:...)) |
 | after `[` in a class | `[[:alpha:]]` | `REJECTED` | `built` | planned | `classes` | dfa|vm | POSIX character class |

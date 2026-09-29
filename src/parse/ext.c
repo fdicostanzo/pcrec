@@ -309,7 +309,25 @@ static ExtResult esc_answer(Ctx *cx, ExtWant want, int c, bool in_class,
             /* PORT_SET */
             ExtResult res = { .what = in_class ? EXT_MEMBERS : EXT_NODE,
                               .at = at, .msg = "", .answered_at = w };
-            res.node = pcrec_ast_class_from_bits(cx, p->set, p->scalar != 0);
+            /* [UCP] THE ROW'S DEFINITION DECIDES WHICH SET (ucp_design.md
+             * §0.1 T1, D85): a `DEFK_SET` entry that applies here — `\d` under
+             * UCP unrestricted — is built by the one set producer; every other
+             * resolution is the row's DEF_ALWAYS entry, which `p->set` IS (the
+             * self-oracle ties the two). A refused wide set is this port's
+             * refusal, at the escape. */
+            const RegDef *def = pcrec_def_resolve(cx, r);
+            if (def && def->kind == DEFK_SET) {
+                char cons[3] = { '\\', (char)c, 0 };
+                res.node = pcrec_setdef_class(cx, def->set, p->scalar != 0,
+                                              cons, res.msg, sizeof res.msg);
+                if (!res.node) {
+                    res.what = EXT_REFUSAL;
+                    return res;
+                }
+            } else {
+                res.node = pcrec_ast_class_from_bits(cx, p->set,
+                                                     p->scalar != 0);
+            }
             /* [M6.5.2] `end` IS NOW REPORTED HERE TOO, because `esc_atom`
              * stopped assuming every atom producer's construct is exactly the
              * two-byte escape. For a set port it IS — the cursor already sits

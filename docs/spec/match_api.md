@@ -4181,12 +4181,19 @@ included, with no case and no meaning attached, which is precisely what
 "ASCII" does not say. D58's own ruling text names the encoding `byte`.
 
 Every boolean option (`PCREC_CASELESS`, `PCREC_EMIT_MAIN`,
-`PCREC_NO_CAPTURES`, and the strategy-denial/force flags in `lib/
+`PCREC_NO_CAPTURES`, `PCREC_UCP`, and the strategy-denial/force flags in `lib/
 pcrec.h`) is one representation end-to-end: the same bit set by a CLI
 flag, carried in `pcrec_options.flags`, and reflected verbatim (where not
 deliberately masked, §6.3) in the compiled artifact's `rx_info.flags`.
 `PCREC_NO_CAPTURES` recovers the pre-captures-default pure-DFA artifact
 (`<PREFIX>_NCAPS 1`); captures are on by default since M4.5.
+**`PCREC_UCP` (bit 34, [UCP] U1, D130)** is PCRE2_UCP's semantics
+(`docs/spec/cli.md` `--ucp`); it changes answers, so it is NOT masked —
+`rx_info.flags` of an artifact compiled with `--ucp` has bit 34 set. A
+pattern that turns UCP on INSIDE itself with `(*UCP)` does not set the bit
+(the same way an inline `(?i)` does not set `PCREC_CASELESS`); the pattern
+text, `rx_info.pattern`, records it. The bit's arrival moved no emitted
+byte of any artifact compiled without it — no `abi` event.
 
 **A caller that round-trips its own flags through `rx_info.flags` will
 find some bits missing, legitimately.** The masked ones are the

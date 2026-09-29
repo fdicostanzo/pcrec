@@ -463,6 +463,31 @@ An analysis's data blocks store COUNTS, which the compiler turns into rates
 None of these numbers is movable by a flag. The remaining findings limits
 (store size, run length) arrive with the steps that read them.
 
+### 3.8 Module `ucp`: which UCP sets compile today ([UCP] U1, D130 Q3)
+
+Under `(*UCP)`/`--ucp` a class escape or POSIX class means a Unicode set
+(`docs/spec/cli.md` `--ucp`). One number decides which of those sets
+compile at this stage:
+
+- **A UCP set with more than `PCREC_UCP_NARROW_MAX_INTERVALS` = 128
+  code-point intervals — counted AFTER clamping to the encoding's universe —
+  is REFUSED by name** ("UCP \w is a wide set (930 intervals) and is refused
+  under encoding 'utf8' until a kit-sized class route exists"). Under
+  `-e utf8` that is `\w \W` and `[:alpha:] [:alnum:] [:word:] [:lower:]
+  [:upper:] [:graph:] [:print:] [:punct:]` at both polarities; `\d \D \s
+  \S` and `[:digit:] [:xdigit:] [:space:] [:blank:] [:cntrl:]` compile
+  (the widest, `\p{Nd}`, is 71 intervals). Under `-e byte` every set clamps
+  far below it and all compile. It is a SELECTION knee, not a ceiling on a
+  resource: accepting a wide set is correct and costs a minute-long compile
+  today (`\w+` under UCP utf8: 330 KB, 66 s), and the refusal lifts when
+  [CLS-TREE] S4 (VM) / [UCP] U3 (DFA) give such a set a kit-sized route.
+  Restricting the family (`(?aW)`, `(?aP)`) makes the construct ASCII again,
+  and it compiles.
+
+UCP `\b`/`\B` are refused by name at this stage under both encodings — no
+number is involved: they read the Unicode word set, which needs [UCP] U2
+(`-e byte`) or U3/U4 (`-e utf8`). Not movable by a flag.
+
 ## 4. Worked example: `^(a(?1)?b)$`, re-measured
 
 This is D73's own example, re-measured against this worktree's build

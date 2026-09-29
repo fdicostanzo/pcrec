@@ -295,7 +295,7 @@ TEST_SECTIONS := test-corpus test-cli test-reject test-registry test-parse \
       test-tune-dial test-prechecks \
       test-prefilter-collapse test-rxtsource test-definitions \
       test-entry-shape-identity test-cpset-structure test-startbnd \
-      test-uprops test-core test-vars test-examples test-findings
+      test-uprops test-core test-vars test-examples test-findings test-ucp
 
 # [CHK-2 trailer] `test:` STOPPED being purely prerequisite-based here
 # (2026-08-26, manager finding, journal part 7): under `make -j12 test`,
@@ -1165,6 +1165,12 @@ test-core: all
 test-uprops: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-uprops.ran"; fi
 	ENC=byte bash tests/uprops/run_uprops_tests.sh
+
+# [UCP] module `ucp`'s own checks: the corpus against libpcre2 (tests/ucp's own
+# oracle), the UCP sets against the committed 10.46 store, the byte-tier fold.
+test-ucp: all
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-ucp.ran"; fi
+	bash tests/ucp/run_ucp_tests.sh
 
 test-uprops-utf8: all
 	ENC=utf8 bash tests/uprops/run_uprops_tests.sh

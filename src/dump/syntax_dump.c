@@ -450,6 +450,11 @@ char *pcrec_definitions_tsv(unsigned flavours)
                               d->operand, d->str);
                 } else
                     pcrec_sb_text(&sb, d->str);
+                /* [UCP] a DEFK_SET's `str` is its set's spelling; the one fact
+                 * a spelling cannot carry — that `(?i)` leaves it unfolded
+                 * (T2's `inert` row) — is read from the set itself. */
+                if (d->kind == DEFK_SET && d->set && d->set->fold_inert)
+                    pcrec_sb_puts(&sb, " [fold-inert]");
                 pcrec_sb_putc(&sb, '\t');
                 /* `applies` comes FROM THE KIND, never inferred (the
                  * manager's identity ruling) — DEF_IDENTITY is the only

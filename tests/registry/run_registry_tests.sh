@@ -663,16 +663,18 @@ fi
 # (limits.md §3.7) — limits_check.sh's own manifest was ALSO missing this
 # name (fixed in the same change; see that script's own EXPECT_NAMES).
 # Read from a run (34), not predicted, per this guard's own standing rule.
+# 34 -> 35 ([UCP] U1): PCREC_UCP_NARROW_MAX_INTERVALS, one more anchored row
+# (limits.md §3.8), read from a run.
 limitsn="$(grep -c '^PASS: ' "$LIMITSOUT" || true)"
-if [ "$limitsn" -ne 34 ]; then
+if [ "$limitsn" -ne 35 ]; then
     if grep -q "^checks failed: 0" "$LIMITSOUT"; then
-        echo "registry: limits_check COVERAGE CHANGED — $limitsn passing checks, expected 34." >&2
+        echo "registry: limits_check COVERAGE CHANGED — $limitsn passing checks, expected 35." >&2
         echo "registry:   if you added/removed a limits.def row, an anchor or a part-3 arm" >&2
         echo "registry:   on purpose, update this number in the same commit; if not," >&2
         echo "registry:   coverage was removed" >&2
     else
         limitsnf="$(sed -n 's/^checks failed: //p' "$LIMITSOUT" | tail -1)"
-        echo "registry: limits_check shows $limitsn passing checks (34 expected; ${limitsnf:-?} failed," >&2
+        echo "registry: limits_check shows $limitsn passing checks (35 expected; ${limitsnf:-?} failed," >&2
         echo "registry:   so a lower count is expected here). Fix the failures first; then this" >&2
         echo "registry:   number must return to 34 — if it does not, coverage was removed too" >&2
     fi
