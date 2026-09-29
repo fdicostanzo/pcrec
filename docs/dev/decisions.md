@@ -8800,3 +8800,21 @@ disposition text — this entry is the index, not the substance.
 8. [UCD-RECORD] and [XART-TABLES] stay unscheduled; the island's predicate interface admits the record as a producer.
 9. The oracle store's `OracleId.config` gains `UCP` at U1.
 Staging: U0 → U1 now (one lane); U2 after; U3 needs [CLS-TREE] S1+S3 plus the b-island trigger; U4 needs S4.
+
+## D131 — [CLS-TREE] S0 calibration ruled; [OPT-CLSPACK] promoted; [FINDINGS] B115 dispositions (Frank, 2026-09-29, eighty-fifth session)
+
+Frank: "I agree with you on all" (on the manager's ten-item status list). Sources: docs/dev/lanes/clsfit_report.md, cls_tree_design.md §1.7 + addendum (O-76/O-77), bench O-74 (ledger 2026-09-29-b115-findings-tiers-f7f5a143).
+1. **The --tune class-form table is RULED as proposed by clsfit.** It is one kit constant K (λ=4) plus a first-match table giving three programs:
+   - −2 = −1: the smaller of K and page3w.
+   - 0 = +1: page3w if K has ≥16 sections and page3w ≤ 1.26·K, else K.
+   - +2: the smaller of page2w and bitmap1 wherever 0 chose page3w, else as 0.
+   z_mid (1.26) and the 16-section gate are placements Frank may move. Apply clsfit's verbatim diff to opt_dial_design.md §4 and tuning.md's λ row.
+2. **The sectioning DP drops its speed term** and stays only as K's size optimizer. The refitted per-probe model (timefit_s0.py) becomes the rubric's instrument. Frank's option-2 trigger (D129 addendum on the table model) is met.
+3. **+1 does NOT take page2w** on \p{L}/Xan.
+4. **D129 Q5's premise is amended:** the kit's byte tier wins on .rodata only. Under a fair dispatch it is the SLOWEST byte form at every N (+13/+16/+19% vs the bitmap, O-77).
+5. **S2 is re-scoped:** the kit's byte forms are SIZE-leaning --tune positions only. The default byte-class form stays a table.
+6. **[OPT-CLSPACK] is PROMOTED to build:** the shared atom table is the default byte-class table from N ≈ 11 live class sites up (≤ 64 atoms), because it ties the bitmap on time (O-77) and is smaller there. Per-site bitmaps stay below that N.
+7. **[FINDINGS] DECLARED:** a bundle is recommended only after a DOMAIN-MATCH check, because weblog made iso-ts ×1.47/×1.84 slower (O-74). The check's design is filed, not built. PROFILED is the honest positive result (never slower; stack-frame ×0.72).
+8. **[SEL-COST] is pulled forward** into the next opt cycle's queue, on O-74's email whole-subject finding (forced VM ×0.648 floor / ×0.856 orig vs auto). It is the first measured selection loss outside the syntax subbench.
+9. **The B115 executive summary is written** (standing rule), even though the run is scratch tier.
+10. **Next work:** [UCP] U2 is chartered. [CLS-TREE] S1 runs alongside it (disjoint: the kit in src/, no emitter calls it).
