@@ -55,6 +55,7 @@ not reproducible, however green it looks.
 | `verify_whole.py` | exhaustive verify + rodata of the whole-set tables |
 | `automaton.py` | UTF-8 byte automaton: flat vs minimal fwd/rev, closure fan-out |
 | `timefit.py` | does the DP's op model predict the measured ns/char (analysis only) |
+| `timefit_s0.py` | [CLS-TREE] S0: fits the per-probe model (mispredicts/branches/loads, replayed over the harness's own verified subject stream) on the ubuntubudu `bench2` run, and reads the dial's first-match rows off it (analysis only; `results/timefit_s0_20260929.txt`) |
 | `extract_byteclasses.py` | byte classes parsed off EMITTED artifacts |
 
 ## Five things not to simplify away
