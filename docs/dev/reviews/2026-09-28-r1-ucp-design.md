@@ -48,3 +48,16 @@ Two things are left to the implementer and are not selections: `ENG_ATTEMPT`'s
 carried-vector optimization (H6) and the island's per-state predicate order
 inside T6 row 3. **A critic-run "no spiderweb" pass is owed at the U2/U3
 charter** (recommended in the lane report).
+
+## Addendum — the critic-run "no spiderweb" pass (GEN critic, after the merge at 36cc0485; applied by the manager)
+
+The GEN critic ran the §0.1 check against the T1-T8 tables after the lane merged. It found a BLOCKER that the lane's self-check above had missed.
+
+| id | severity | finding | disposition |
+|---|---|---|---|
+| GEN-4 | BLOCKER | T4 row 2 (`bytes-under-theta`) tested only CONSUMING sets. Denying row 1 (`-fno-cls-island`) on a machine with a non-ASCII CONTEXT set could fall through to row 2 and emit an UNSOUND all-byte machine (§2.3's hazard). The Order prose's "lands on row 5" guarantee was not in the table data. | FIXED: row 2's `applies` gains "no context set has a non-ASCII member" (row 4 already had it). Denying row 1 now reaches row 5. U3's sabotage rows should include "row 2 missing this conjunct, with row 1 denied" at charter. |
+| GEN-5 | MUST-FIX | T4's scope note said "under -e byte row 5 always fires", contradicting §1.5. | FIXED: row 4. |
+| GEN-6 | SHOULD | §3.7's three bullets were a second derivation of T4's selection. | FIXED: replaced by a per-row gloss, with T4 named the sole source. |
+| NIT | NIT | T5 row 1 (`dead`) had no derivation. | FIXED: one paragraph at the head of §3.3. |
+
+The "critic-run pass owed at the U2/U3 charter" above is now DONE for this revision. Any later table edit re-owes it.

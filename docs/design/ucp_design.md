@@ -99,14 +99,14 @@ exceptions to 4-5 by measurement ([O] §1.3), so they precede them.
 | 2 | `lookaround` | — | always | today's `A_LOOK` lowering |
 
 **T4 — the DFA machine's non-ASCII form** (per MACHINE, `-e utf8`; under
-`-e byte` row 5 always fires). "Wide" and "byte-expressible" are the facts
+`-e byte` row 4 always fires — the byte tier has no multi-byte characters, §1.5 [r1 GEN-5]). "Wide" and "byte-expressible" are the facts
 §2.3 and §3.7 define; θ is a pinned `--tune` cell read by the predicate (the
 dial lives in the row's predicate, D82's one decision point).
 
 | # | row | deny | applies | action |
 |---|---|---|---|---|
 | 1 | `island-forced` | `-fno-cls-island` | some CONTEXT set has a non-ASCII member (no all-byte form is exact, §2.3) | character-stepped mode (§3) |
-| 2 | `bytes-under-theta` | `-fno-cls-bytes` (the island's identity axis: denying it forces row 3) | every CONSUMING non-ASCII set is byte-lowerable and their summed byte-automaton states ≤ θ | all-byte mode (today's lowering) |
+| 2 | `bytes-under-theta` | `-fno-cls-bytes` (the island's identity axis: denying it forces row 3) | no context set has a non-ASCII member ∧ every CONSUMING non-ASCII set is byte-lowerable and their summed byte-automaton states ≤ θ [r1 GEN-4: row 1's hazard is encoded here, so denying row 1 can never reach an all-byte form] | all-byte mode (today's lowering) |
 | 3 | `island` | `-fno-cls-island` | some consuming non-ASCII set exists | character-stepped mode |
 | 4 | `bytes` | — | no context set has a non-ASCII member | all-byte mode (the K53 ladder as today) |
 | 5 | `decline` | — | always | the DFA route declines this machine: engine selection's own table routes the pattern to the VM (a `forces_registry`-style reason, stamped) |
@@ -548,6 +548,8 @@ atom of the consumed side: the character ENDING at `startpos` is found by
 
 ### 3.3 The self-loop fold: most non-ASCII bytes never leave the table
 
+**The `dead` cell (T5 row 1) [r1 NIT].** A state whose every non-ASCII character and ⊥ lead to dead, with no accept depending on the next character, needs no island: its cells are dead exactly as today. This is stronger than the self-loop case below and needs no mid-character argument — no thread survives the character.
+
 A state `q` whose island would map EVERY non-ASCII character and ⊥ back to `q`
 itself, with the same context, needs no island: its non-ASCII cells are
 ordinary self-loop cells, and stepping the character's bytes one at a time
@@ -637,21 +639,21 @@ whose SPEED against a cache-resident all-byte machine is unknown, and at the
 kit's middle policy on dense non-ASCII text plausibly a loss.** That is Frank's
 D129 residual question, and it is why the choice is a dial — expressed as §0.1's table **T4**, whose rows are, in prose:
 
-- **Forced island**: a machine with a context set that is not byte-expressible
+T4 is the SOLE source of truth for this selection [r1 GEN-6]; by row:
+
+- **Row 1** (`island-forced`): a context set that is not byte-expressible
   (§2.3) — UCP `\b`/`\B`, a non-ASCII lookaround context. No all-byte form
   exists in pcrec (the exact byte product of [S] §D.2 is not built and not
   proposed).
-- **Forced all-byte**: every set byte-expressible (the byte tier, ASCII sets) —
-  there is no island to take.
-- **Dial choice**: wide consuming classes under utf8 (`\p{L}`, UCP `\w` as a
-  consuming class, `[\x{100}-\x{2000}]`). The rule is per MACHINE: island
-  when the byte lowering of the machine's non-ASCII sets exceeds a threshold
-  θ (the sum of their byte-automaton states, which the cpset lowering knows
-  before subset construction), all-byte below it. θ is a `--tune` cell,
-  PROPOSED only after §7's b-island measurement, as a ruled diff (D103). A
-  per-machine rule, not per class, because a state that mixes byte-stepped and
-  character-stepped non-ASCII threads would need both an island and mid-character
-  states at once.
+- **Rows 2/3** (the dial): wide consuming classes under utf8 (`\p{L}`, UCP
+  `\w` as a consuming class, `[\x{100}-\x{2000}]`); all-byte while the summed
+  byte-automaton states of the machine's non-ASCII sets are ≤ θ, island above.
+  θ is a `--tune` cell, PROPOSED only after §7's b-island measurement, as a
+  ruled diff (D103). Per MACHINE, not per class, because a state that mixes
+  byte-stepped and character-stepped non-ASCII threads would need both an
+  island and mid-character states at once.
+- **Row 4** (`bytes`): every set byte-expressible (the byte tier, ASCII sets).
+- **Row 5** (`decline`): what remains; the VM takes the pattern.
 
 ### 3.8 Hazards
 
