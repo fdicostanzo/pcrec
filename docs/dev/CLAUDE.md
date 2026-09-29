@@ -832,3 +832,48 @@ change.
   predicate-row table keyed on compile-time pattern signature, valued
   per assumed call regime) without designing it. Reproduction:
   `docs/dev/sel_cost_census/` (own CLAUDE.md).
+- `ctx_prefilter_census.md` — [CTX-PREFILTER] STEP 0 (2026-09-29, lane
+  lacens2, sonnet, measurement only, nothing under `src/`): over the 354
+  patterns still VM-routed post-[UCP]-U2, every POSITIVE multi-character
+  lookaround's necessary one-character condition. 146 such occurrences
+  (143 patterns, 96 from one boundary-matrix test file); 31 (21%) have NO
+  sound necessary byte (body can match zero-width, e.g. `(?=\n?\z)`,
+  correctly excluded rather than guessed); of the remaining 115, 111
+  (96.5%) are NARROW (size<=8, or not already implied by the adjacent
+  consuming atom). A tightening estimate is stated explicitly as an
+  INDEPENDENCE MODEL (today's compiled `RX_REQ_BYTE` selectivity times the
+  necessary set's own selectivity on `APPROACH.md`'s prose as the
+  representative subject), not a joint-position measurement — the real gap
+  before this is decision-grade. Verdict: the narrowness finding is real
+  and cheap to confirm; recommends NOT building from this alone (the
+  independence-model gap, and a thin 6-pattern bench-derived share of the
+  population) — a joint-position measurement is the D77 trigger. Harness
+  `docs/dev/lookaround_census/` (own CLAUDE.md, shared with
+  `eng_look_census.md` below).
+- `eng_look_census.md` — [ENG-LOOK] STEP 0 (2026-09-29, lane lacens2,
+  sonnet, measurement only, nothing under `src/`): over the same
+  population, FIXED-LENGTH k=2-4 lookarounds' product-construction state
+  growth, by length and direction. 98 candidates (97 compile; one bench
+  pattern skipped, over pcrec's own emit-size limit before any lookaround
+  product is added). LOOKBEHIND (54 occurrences, composed against the
+  FORWARD erased-pattern machine — the correctly-scoped construction):
+  real, small growth, baselines of 2-3 states growing to 3-10. LOOKAHEAD
+  (86 rows, two constructions each) surfaced a MECHANISM PROBLEM: this
+  census's own literal brief (product against the REVERSE machine) reads
+  EXACTLY ZERO growth in all 43 cases, because pcrec's reverse machine
+  only walks the matched span and never traverses a lookahead's own body
+  (past the match end, zero-width) — a wrong-shaped-but-reproducible
+  measurement, recorded as the finding rather than silently corrected.
+  plan.md's OWN stated ENG-LOOK mechanism (bounded lookahead as a forward-
+  pass "k-byte delayed acceptance") is built and measured too, but this
+  script composes it from the pattern's START rather than at the
+  assertion's own position, so ITS number is a model, not a clean bound
+  either (can even read negative growth, an artifact of the simplification
+  — the trustworthy fact from that half is just the delayed-accept
+  sub-automaton's own size, 3-5 states). Verdict: state-count is not what
+  would block building (every number measured or modeled is small,
+  nowhere near the 32,000/10,000-state caps) — what blocks it is the
+  unresolved lookahead attachment-point design question and a population
+  that is 72/98 one boundary-matrix file. Recommends the D6 design panel
+  plan.md's own row already schedules, not a build from this alone.
+  Harness `docs/dev/lookaround_census/` (own CLAUDE.md).

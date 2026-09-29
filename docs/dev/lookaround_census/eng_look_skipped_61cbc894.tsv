@@ -1,0 +1,2 @@
+id	reason
+capability/wild-logparse-syslogbase-expanded	erased-pattern compile refused: pcrec: pattern too large: 1075611 bytes of emitted C source (limit 1000000, ~178 KB .o). Lower a repeat count, try --unroll=1, or raise --max-emit-bytes; see li
