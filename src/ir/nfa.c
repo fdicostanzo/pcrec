@@ -612,17 +612,30 @@ static Frag compile_ast(NB *b, const Ast *a)
      * evaluates it at the position its own walk STARTS from, which is the
      * pattern's right end. */
     case A_END:   return frag_single(b, N_END);
-    /* [M6.2 wave B] `\b` / `\B`. Reversal is identity here too, but for a
-     * DIFFERENT reason than N_BOT/N_EOL/N_END's, and the difference is worth
-     * a sentence because it is what the whole reverse half of this wave rests
-     * on. Those three are absolute-position assertions, so reversing the
-     * machine cannot change what they mean. A word boundary is not absolute —
-     * it is a predicate on the two bytes AROUND the position — and it
-     * survives reversal because that predicate is SYMMETRIC in them: `\b` is
-     * "they differ" and `\B` is "they agree", and neither says which side is
-     * which. See src/ir/dfa.c's Clo comment. */
-    case A_WORDB:  return frag_single(b, N_WORDB);
-    case A_NWORDB: return frag_single(b, N_NWORDB);
+    /* [UCP] U2 A_CTX (`\b`, `\B`, a recognized one-character lookaround).
+     * Reversal is identity here too, for a DIFFERENT reason than N_BOT/
+     * N_EOL/N_END's: a context assertion is not absolute, it is a predicate
+     * on the two characters AROUND the position, and the closure names those
+     * by SUBJECT side (left/right) rather than by walk order — so the reverse
+     * machine reads the same function of the same two sides (src/ir/dfa.c's
+     * `sides_of`). `\b` alone is also symmetric, which is why wave B never
+     * needed that mapping; a lookbehind is not.
+     *
+     * THE BYTE IMAGE IS TAKEN UNDER §2.3's PRECONDITION, and a set that fails
+     * it is refused here rather than sampled: every producer (`\b`'s port,
+     * src/opt/ctxnode.c's recognizer) asks the same `pcrec_enc_set_bytes`
+     * first, so this is reachable only through a producer that skipped it. */
+    case A_CTX: {
+        Frag f = frag_single(b, N_CTX);
+        NState *st = &b->nfa->st[f.start];
+        if (!pcrec_enc_set_bytes(pcrec_enc_by_id(b->cx->opt->encoding),
+                                 a->u.ctx.iv, a->u.ctx.n, st->cls))
+            pcrec_ctx_fail(b->cx, 0, "internal error: a context assertion's "
+                           "set is not byte-expressible under this encoding "
+                           "(ucp_design.md §2.3); it needs [UCP] U3/U4");
+        st->ctxfn = a->u.ctx.fn;
+        return f;
+    }
     /* [M6.2 wave D] `\G`. Reversal is identity for N_BOT/N_EOL/N_END's
      * reason — it is an absolute-position assertion — and no reverse machine
      * is ever built for a pattern carrying it anyway: `pcrec_nfa_has_bot` answers

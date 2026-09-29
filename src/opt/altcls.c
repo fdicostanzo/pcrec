@@ -404,8 +404,7 @@ static Ast *altcls_walk(Ctx *cx, Ast *a)
     case A_END:
     /* [M6.2 wave B] zero-width, so there is nothing for either stage to
      * merge or factor -- the same answer A_BOL/A_EOL/A_END already give. */
-    case A_WORDB:
-    case A_NWORDB:
+    case A_CTX:
     /* [M6.2 wave D] `\G` likewise: zero-width, nothing to merge or factor. */
     case A_GSTART:
     /* [M6.5.2] A backreference is a LEAF to both stages and must stay one.

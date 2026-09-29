@@ -3040,15 +3040,13 @@ static int acc_cell(const Dfa *d, int i)
     return d->st[i].up[UPC_PLAIN].accept ? 1 : 0;
 }
 
-static int upc_emit_of_class(const Dfa *d, int cl);
 
 /* One cell of the WIDE, class-indexed accept table: does state `i` accept
  * when the next byte falls in class `cl`? The class goes through
- * `upc_emit_of_class`, so a context the emitter is pinned against collapses
- * onto UPC_PLAIN and the cell reads as it did before that wave. */
+ * `upc_of_class`, the class's context atom. */
 static int accw_cell(const Dfa *d, int i, int cl)
 {
-    return d->st[i].up[upc_emit_of_class(d, cl)].accept ? 1 : 0;
+    return d->st[i].up[upc_of_class(d, cl)].accept ? 1 : 0;
 }
 
 /* "Every cell of this table is `value`", or `folded == false`. A table with a
@@ -3158,30 +3156,11 @@ static bool dfa_has_eolvar(const Dfa *d)
  * the identity gates' own subject builds are the standing check on.
  * =================================================================== */
 
-/* Is the emitter willing to see class-axis context `u` as distinct from
- * UPC_PLAIN? Wave B's knob answers for UPC_WORD, wave C's for UPC_NL. */
-static bool upc_emit_live(int u)
-{
-#ifdef PCREC_NO_WORDCTX
-    if (u == UPC_WORD) return false;
-#endif
-#ifdef PCREC_NO_MLINECTX
-    if (u == UPC_NL) return false;
-#endif
-    (void)u;
-    return true;
-}
-
-/* Reads `upc_of_class` the way the EMITTER must, collapsing a masked class onto UPC_PLAIN.
- *
- * `upc_of_class` as the EMITTER reads it: a masked class collapses onto
- * UPC_PLAIN, so every derived table (§3.6's accept, §3.8's seed) emits
- * the pre-wave column. */
-static int upc_emit_of_class(const Dfa *d, int cl)
-{
-    int u = upc_of_class(d, cl);
-    return upc_emit_live(u) ? u : UPC_PLAIN;
-}
+/* [UCP] U2: the emitter's half of the `\b`/`(?m)` reference knobs is GONE.
+ * It existed because the old `upc_of_class` read the global word/newline sets
+ * whether or not the analysis had built that context; the atoms
+ * `upc_of_class` now reads exist only for the sets the analysis built
+ * (src/ir/dfa.c's `ctx_entry_live`), so there is nothing left to collapse. */
 
 /* A state's END view as the EMITTER reads it — wave A's knob. -1 is
  * "same as the EOL view", so pinning it there puts every site on the
@@ -3291,10 +3270,9 @@ static void emit_acc_table(StrBuf *c, const char *p, const char *tag,
 /* Does this state's accept bit depend on the next byte?
  *
  * [M6.2 wave B] Does THIS state's accept bit DEPEND ON THE NEXT BYTE? */
-static bool state_acc_varies(const DState *st)
+static bool state_acc_varies(const Dfa *d, const DState *st)
 {
-    for (int u = UPC_PLAIN + 1; u < UPC_N; u++) {
-        if (!upc_emit_live(u)) continue;
+    for (int u = UPC_PLAIN + 1; u < d->natoms; u++) {
         if ((bool)st->up[u].accept != (bool)st->up[UPC_PLAIN].accept)
             return true;
     }
@@ -3304,10 +3282,10 @@ static bool state_acc_varies(const DState *st)
 /* Does this state accept at a position whose next byte is in ANY class? The
  * OR over the class views, and §3.6.1 is emphatic about why the prefilter's
  * gate needs the OR rather than one bit. */
-static bool state_acc_any(const DState *st)
+static bool state_acc_any(const Dfa *d, const DState *st)
 {
-    for (int u = 0; u < UPC_N; u++)
-        if (upc_emit_live(u) && st->up[u].accept) return true;
+    for (int u = 0; u < d->natoms; u++)
+        if (st->up[u].accept) return true;
     return false;
 }
 
@@ -3318,8 +3296,8 @@ static bool state_acc_any(const DState *st)
  * unmoved. */
 static bool dfa_needs_seed(const Dfa *d)
 {
-    for (int u = UPC_PLAIN + 1; u < UPC_N; u++)
-        if (upc_emit_live(u) && d->s1u[u] != d->s1u[UPC_PLAIN]) return true;
+    for (int u = UPC_PLAIN + 1; u < d->natoms; u++)
+        if (d->s1u[u] != d->s1u[UPC_PLAIN]) return true;
     return false;
 }
 
@@ -3335,7 +3313,7 @@ static bool dfa_needs_seed(const Dfa *d)
  * disagree with. */
 static bool dfa_needs_gseed(const Dfa *d)
 {
-    for (int u = 0; u < UPC_N; u++)
+    for (int u = 0; u < d->natoms; u++)
         if (d->s1g[u] != d->s1u[u]) return true;
     return false;
 }
@@ -3375,7 +3353,7 @@ static bool dfa_premul(Ctx *cx, const Dfa *d)
     if (ents > PREMUL_MAX_ENTRIES) return false;   /* the RANGE condition */
     if (dfa_needs_seed(d))
         for (int cl = 0; cl < d->ncls; cl++)
-            if (d->s1u[upc_emit_of_class(d, cl)] < 0) return false;
+            if (d->s1u[upc_of_class(d, cl)] < 0) return false;
     return true;
 }
 
@@ -3384,9 +3362,9 @@ static bool dfa_premul(Ctx *cx, const Dfa *d)
  * attempt at `start > startpos` match at all"; `s1g` answers it for
  * `start == startpos`. §4.1's three-valued `start_max` is exactly the two
  * answers read together. */
-static bool dfa_interior_dead(const int fam[UPC_N])
+static bool dfa_interior_dead(const Dfa *d, const int *fam)
 {
-    for (int u = 0; u < UPC_N; u++) if (fam[u] >= 0) return false;
+    for (int u = 0; u < d->natoms; u++) if (fam[u] >= 0) return false;
     return true;
 }
 
@@ -3403,7 +3381,7 @@ static bool dfa_interior_dead(const int fam[UPC_N])
 static bool dfa_has_clsacc(const Dfa *d)
 {
     for (int i = 0; i < d->n; i++)
-        if (state_acc_varies(&d->st[i])) return true;
+        if (state_acc_varies(d, &d->st[i])) return true;
     return false;
 }
 
@@ -3437,7 +3415,7 @@ static int upc_of_newline(const Dfa *d)
 {
     for (int b = 0; b < 256; b++)
         if (cls_has(pcrec_cls_newline, (unsigned)b))
-            return upc_emit_of_class(d, d->clsmap[b]);
+            return upc_of_class(d, d->clsmap[b]);
     return UPC_PLAIN;
 }
 
@@ -3451,12 +3429,12 @@ static int upc_of_newline(const Dfa *d)
  * handles with its own branch because the condition differs per machine
  * (`startpos == 0` forward, `end == n` reverse). */
 static void emit_seed_table(StrBuf *c, const char *p, const char *tag,
-                            const Dfa *d, const int fam[UPC_N], const DfaRepr *r)
+                            const Dfa *d, const int *fam, const DfaRepr *r)
 {
     pcrec_sb_printf(c, "    static const %s %s_%s[%d] = {", r->cell_type, p, tag, d->ncls);
     for (int cl = 0; cl < d->ncls; cl++) {
         if (cl % 16 == 0) pcrec_sb_puts(c, "\n       ");
-        int v = fam[upc_emit_of_class(d, cl)];
+        int v = fam[upc_of_class(d, cl)];
         /* [OPT-3] the pre-multiplied candidate's `applies` guarantees `v >= 0`
          * under that form; the branch is not a fallback, it is the assertion
          * written where a reader of the emitted table will look for it. */
@@ -3536,7 +3514,7 @@ static void cand_from_escapes(CandSet *cs, const Dfa *d, int st)
  * state is DEAD cannot begin a match and the attempt loop may skip it.
  *
  * This is `(?m)^`'s candidate set without naming `(?m)^` anywhere: for
- * `(?m)^ERROR` only the UPC_NL seed is live, so the set is the newline
+ * `(?m)^ERROR` only the newline atom's seed is live, so the set is the newline
  * definition and the derivation picks `memchr`; for a pattern with no
  * BOT-family node every seed is live, the set is all 256 and `usable` is
  * false, so nothing is emitted. `\b`-only patterns land there too — both
@@ -3548,7 +3526,7 @@ static void cand_from_live_seeds(CandSet *cs, const Dfa *d)
 {
     uint8_t set[256];
     for (int b = 0; b < 256; b++)
-        set[b] = (uint8_t)(d->s1u[upc_emit_of_class(d, d->clsmap[b])] >= 0);
+        set[b] = (uint8_t)(d->s1u[upc_of_class(d, d->clsmap[b])] >= 0);
     cand_derive(cs, set, 1);
 }
 
@@ -3570,7 +3548,7 @@ static bool attempt_cand(const Dfa *d, CandSet *cs)
     /* A fully-anchored pattern already runs ONE attempt (`start_max` is the
      * literal 0), so there is nothing between attempts to skip. */
     bool anchored = true;
-    for (int u = 0; u < UPC_N; u++) if (d->s1u[u] >= 0) anchored = false;
+    for (int u = 0; u < d->natoms; u++) if (d->s1u[u] >= 0) anchored = false;
     if (d->n == 0 || anchored) return false;
     cand_from_live_seeds(cs, d);
     /* THE MEMCHR FORM ONLY, and that is a deliberate scope line rather than an
@@ -3720,11 +3698,11 @@ static void unanch_start(Ctx *cx, UnanchStart *o)
      * premise, and note that it therefore ships NO sabotage row: a check with
      * no failing direction is exactly what this file's own neighbouring
      * comment warns about. */
-    bool start_acc = state_acc_any(&fd->st[fs]);
+    bool start_acc = state_acc_any(fd, &fd->st[fs]);
     bool fseed = dfa_needs_seed(fd);
     if (fseed) {
-        for (int u = 0; u < UPC_N; u++)
-            start_acc = start_acc || state_acc_any(&fd->st[fd->s1u[u]]);
+        for (int u = 0; u < fd->natoms; u++)
+            start_acc = start_acc || state_acc_any(fd, &fd->st[fd->s1u[u]]);
     }
     /* [D63] THE SHARED DERIVATION, this engine's caller. */
     cand_from_escapes(&o->cand, fd, fs);
@@ -4027,7 +4005,7 @@ static int pick_skip_states(const Dfa *d, int exclude, int out[4])
              * and costs nothing on any pattern without a next-byte-sensitive
              * accept — i.e. nothing in the pre-wave corpus, where this test
              * is false at every state. */
-            if (state_acc_varies(&d->st[i])) continue;
+            if (state_acc_varies(d, &d->st[i])) continue;
             /* [OPT-5] A STATE CARRYING A SCAN EDGE IS NOT SKIP-ELIGIBLE, and
              * this is a structural exclusion rather than a preference: the
              * scan edge's own soundness argument (src/opt/scanedge.c's
@@ -5859,7 +5837,7 @@ static const DfaPf *dfa_pf_of(Ctx *cx, const UnanchStart *us)
  * one-attempt artifacts read `<PREFIX>_DFA_PREFILTER "none"`. The pre-check is
  * emitted one level above, and did not inherit the decline. It does now, from
  * the same two predicates each route's own bound is written from
- * (`dfa_interior_dead(d->s1u)` on the DFA route, the `start_anchor` fact on the
+ * (`dfa_interior_dead(d, d->s1u)` on the DFA route, the `start_anchor` fact on the
  * VM's), never a third statement of either. */
 
 /* What the artifact's candidate-start scan already proves, for G1: the byte
@@ -5926,7 +5904,7 @@ static void dfa_cand_scan(Ctx *cx, CandScan *cs)
  * ONE QUESTION, TWO MACHINES, and that is not a parallel mechanism: the two
  * routes carry different bounds derived by different passes, and each arm here
  * reads the field its own emitter writes the bound from. The DFA's
- * `emit_attempt` writes `start_max` from `dfa_interior_dead(d->s1u)` (the
+ * `emit_attempt` writes `start_max` from `dfa_interior_dead(d, d->s1u)` (the
  * `^`-anchored row gives the literal 0 and the `\G`-anchored row gives
  * `search_from`; both are one iteration at most), and `attempt_cand` declines
  * the prefilter on that same predicate. The VM's `emit_vm` writes
@@ -5958,7 +5936,7 @@ static bool req_route_one_attempt(Ctx *cx)
                ((cx->job->fit.prefilter && !cx->job->fit.prefilter_collapsed) ||
                 cx->job->vm_frameless);
     return cx->job->engine == PCREC_ENG_ATTEMPT &&
-           dfa_interior_dead(cx->job->dfa.s1u);
+           dfa_interior_dead(&cx->job->dfa, cx->job->dfa.s1u);
 }
 
 /* Is a pre-check on `q` dominated by the candidate-start scan `cs` the
@@ -6472,7 +6450,7 @@ static void start_pinned_assert_routing(Ctx *cx, const Dfa *fd, int fs)
                         "elision's proof is about a state the search at "
                         "startpos == 0 may not occupy (docs/design/"
                         "opt5_step2_twopass.md P0)", fs, fd->s1u[UPC_PLAIN]);
-    for (int u = 0; u < UPC_N; u++)
+    for (int u = 0; u < fd->natoms; u++)
         if (fd->s1g[u] != fd->s1u[u])
             pcrec_ctx_fail(cx, 0, "internal error: the start-pinned search reached a "
                             "machine with a \\G start family (s1g[%d] = %d, "
@@ -6481,8 +6459,7 @@ static void start_pinned_assert_routing(Ctx *cx, const Dfa *fd, int fs)
                             "elision's P0 premise", u, fd->s1g[u], u,
                             fd->s1u[u]);
     if (dfa_needs_seed(fd))
-        for (int u = 0; u < UPC_N; u++) {
-            if (!upc_emit_live(u)) continue;
+        for (int u = 0; u < fd->natoms; u++) {
             if (fd->s1u[u] < 0)
                 pcrec_ctx_fail(cx, 0, "internal error: the start-pinned search "
                                 "accepted a machine with a DEAD seed state "
@@ -6511,17 +6488,16 @@ static bool start_pinned_applies(const DfaSel *s)
     /* P1 — the NARROWED read. */
     if (!fd->st[fs].up[UPC_PLAIN].accept) return false;
     /* P2 — one derivation, shared with the scan-edge pass. */
-    if (!pcrec_state_view_invariant(&fd->st[fs])) return false;
+    if (!pcrec_state_view_invariant(fd, &fd->st[fs])) return false;
 
     /* P3 — every LIVE seed state, and liveness first. */
     if (dfa_needs_seed(fd)) {
-        for (int u = 0; u < UPC_N; u++) {
-            if (!upc_emit_live(u)) continue;
+        for (int u = 0; u < fd->natoms; u++) {
             int su = fd->s1u[u];
             if (su < 0) return false;                       /* the LIVENESS half */
             if (su >= fd->n) return false;
             if (!fd->st[su].up[UPC_PLAIN].accept) return false;
-            if (!pcrec_state_view_invariant(&fd->st[su])) return false;
+            if (!pcrec_state_view_invariant(fd, &fd->st[su])) return false;
         }
     }
     return true;
@@ -7059,7 +7035,7 @@ static void dfa_form_derive(Ctx *cx, const Dfa *d, const UnanchStart *us,
      *      dispatch sends it to the edge path, and so it does every other
      *      head-valued seed since STEP 1.1. */
     if (f->nscan > 0 && f->pf->reseeds && dfa_needs_seed(d))
-        for (int u = 0; u < UPC_N; u++)
+        for (int u = 0; u < d->natoms; u++)
             for (int fam = 0; fam < 2; fam++) {
                 int t = fam ? d->s1g[u] : d->s1u[u];
                 if (t < 0 || t >= d->n || t == d->s0) continue;
@@ -7206,7 +7182,7 @@ static bool dfa_seed_can_be_scan_head(const Dfa *d)
 {
     if (dfa_start_is_scan_head(d)) return true;
     if (!dfa_needs_seed(d)) return false;
-    for (int u = 0; u < UPC_N; u++) {
+    for (int u = 0; u < d->natoms; u++) {
         int a = d->s1u[u], b = d->s1g[u];
         if (a >= 0 && a < d->n && d->st[a].scan_span != 0) return true;
         if (b >= 0 && b < d->n && d->st[b].scan_span != 0) return true;
@@ -7783,8 +7759,8 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
      * it. */
     bool gtbl = false;
     if (gseed)
-        for (int u = UPC_PLAIN + 1; u < UPC_N; u++)
-            if (upc_emit_live(u) && d->s1g[u] != d->s1g[UPC_PLAIN]) gtbl = true;
+        for (int u = UPC_PLAIN + 1; u < d->natoms; u++)
+            if (d->s1g[u] != d->s1g[UPC_PLAIN]) gtbl = true;
 #ifdef PCREC_NO_GSTART
     /* [M6.2 wave D] THE REFERENCE-BUILD KNOB, and its PLACEMENT is the whole
      * point of it. `tests/codegen/run_gstart_identity.sh` builds a compiler
@@ -7855,7 +7831,7 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
                   p, d->ncls);
         for (int cl = 0; cl < d->ncls; cl++) {
             if (cl) pcrec_sb_puts(c, ", ");
-            emit_target(c, p, d->s1u[upc_emit_of_class(d, cl)]);
+            emit_target(c, p, d->s1u[upc_of_class(d, cl)]);
         }
         pcrec_sb_puts(c, " };\n");
     }
@@ -7870,7 +7846,7 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
                   p, d->ncls);
         for (int cl = 0; cl < d->ncls; cl++) {
             if (cl) pcrec_sb_puts(c, ", ");
-            emit_target(c, p, d->s1g[upc_emit_of_class(d, cl)]);
+            emit_target(c, p, d->s1g[upc_of_class(d, cl)]);
         }
         pcrec_sb_puts(c, " };\n");
     }
@@ -7905,8 +7881,8 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
      * On a `\G`-free machine `s1g[] == s1u[]` entry for entry, so the middle
      * row is unreachable and the two surviving rows are the pre-wave
      * `anchored ? "0" : "n"` character for character. */
-    bool a_bot = dfa_interior_dead(d->s1u);
-    bool a_gst = dfa_interior_dead(d->s1g);
+    bool a_bot = dfa_interior_dead(d, d->s1u);
+    bool a_gst = dfa_interior_dead(d, d->s1g);
 #ifdef PCREC_NO_GSTART
     a_gst = a_bot;   /* the reference build's third `start_max` string is
                       * unreachable — see the knob's comment above */
@@ -8119,7 +8095,7 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
          * artifact typically has a handful of such states and keeps the
          * pre-wave text at every other, which is what makes the byte-identity
          * property hold at state granularity rather than at file granularity. */
-        bool wsplit = acc2 && state_acc_varies(st);
+        bool wsplit = acc2 && state_acc_varies(d, st);
         if (wsplit) {
             /* THE ORDER FLIPS, and it has to. The pre-wave arms record the
              * accept and THEN test for `pos >= n`, which is sound while the

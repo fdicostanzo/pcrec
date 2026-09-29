@@ -215,12 +215,15 @@ bool pcrec_ast_is_core(AKind k)
                       * substitution in any other construct's vocabulary that
                       * could stand for it. CORE, for A_BREF's own reason. */
     case A_LOOK:     /* lookaround */
+    case A_CTX:      /* [UCP] U2 the context node: what `\b`/`\B` and every
+                      * one-character lookaround NORMALIZE to (ucp_design.md
+                      * §2.2 — normalize to a node, not to text), so it is
+                      * the reduction's target vocabulary, not a spelling
+                      * replaced away */
     case A_CALL:     /* DD-14 call, the path-fact family */
         return true;
     case A_EOL:      /* $/\Z's shipped alias — replaced away under full
                       * reduction (definitions_table.md §2) */
-    case A_WORDB:    /* \b — replaced away */
-    case A_NWORDB:   /* \B — replaced away */
         return false;
     }
     return false; /* unreachable */

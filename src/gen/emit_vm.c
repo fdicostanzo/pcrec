@@ -1789,7 +1789,7 @@ static void vm_rev_caps(const Ast *a, int *out, int *n, int cap)
          * function's own subject matter: the rung recovers capture values by
          * a backward walk over iteration boundaries, and a `\K` position is
          * not on that lattice. */
-        case A_WORDB: case A_NWORDB: case A_GSTART: case A_KRESET:
+        case A_CTX: case A_GSTART: case A_KRESET:
         /* [M6.5.2] carries no capture NUMBER and is UNREACHABLE for `\K`'s
          * reason: `rd_shape` declines every body holding a backreference,
          * because there is no reversed spelling of "compare against what group
@@ -2625,7 +2625,7 @@ static Cost vm_cost(Vm *v, const Ast *a, bool under_atomic)
      * compare's byte-by-byte work is charged against the WORK budget at the
      * emission site, which is per-SUBJECT work this analysis does not size. */
     case A_VAR:
-    case A_WORDB: case A_NWORDB: case A_GSTART: case A_BREF: {
+    case A_CTX: case A_GSTART: case A_BREF: {
         Cost c = { 0, 0, 0, 0, false, false };
         return c;
     }
@@ -2895,7 +2895,7 @@ static void vm_count_slots(Vm *v, const Ast *a, long long repl,
      * entry wrapper's own stack table before the match loop begins — which
      * is this feature's whole distinction from a backreference. */
     case A_VAR:
-    case A_WORDB: case A_NWORDB: case A_GSTART: case A_KRESET:
+    case A_CTX: case A_GSTART: case A_KRESET:
         return;
     case A_CAP: vm_count_slots(v, a->l, repl, false); return;
     case A_LOOK: vm_count_slots_look(v, a, repl); return;
@@ -6948,7 +6948,7 @@ static void vm_walk_caps(Vm *v, const Ast *a,
     for (;;) {
         switch (a->k) {
         case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
-        case A_WORDB: case A_NWORDB: case A_GSTART: case A_KRESET:
+        case A_CTX: case A_GSTART: case A_KRESET:
         case A_BREF: case A_CALL:
         case A_VAR:
             return;
@@ -7032,7 +7032,7 @@ static void vm_walk_calls(Vm *v, Ast *a,
     for (;;) {
         switch (a->k) {
         case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
-        case A_WORDB: case A_NWORDB: case A_GSTART: case A_KRESET:
+        case A_CTX: case A_GSTART: case A_KRESET:
         case A_BREF:
         case A_VAR:
             return;
@@ -7868,49 +7868,86 @@ static void vm_region(Vm *v, int i)
           "return to the caller through the frame's own label");
 }
 
-/* `\b` / `\B`. Emits the word-boundary assertion for both polarities —
- * `neg` is the ONLY difference and it is one comparison operator, which is
- * why the two kinds share an arm rather than two emitters.
+/* [UCP] U2 THE CONTEXT ASSERTION'S EMITTED FORMS, one row per truth
+ * function: which side(s) the test reads, how two sides combine, and whether
+ * one side is negated. A table rather than a branch per spelling, and the
+ * function is the only key — no row knows whether `\b` or a lookaround
+ * produced its node. The two two-sided rows are [M6.2] wave B's `\b`/`\B`
+ * text, character for character, so every shipped `\b` artifact is unmoved. */
+enum { VMCTX_BOTH, VMCTX_PREV, VMCTX_NEXT };
+typedef struct {
+    uint8_t     fn;      /* CTXFN_* */
+    int         side;    /* VMCTX_*: which neighbour(s) the test reads */
+    const char *join;    /* VMCTX_BOTH: the comparison between the two sides */
+    bool        neg;     /* one side: the assertion holds when it is NOT in */
+    const char *role;    /* the listing's description */
+} VmCtxForm;
+
+static const VmCtxForm vm_ctx_forms[] = {
+    { CTXFN_BOUNDARY,    VMCTX_BOTH, "!=", false, "\\b word boundary" },
+    { CTXFN_NONBOUNDARY, VMCTX_BOTH, "==", false, "\\B not a word boundary" },
+    { CTXFN_PREV,        VMCTX_PREV, NULL, false, "previous character in the set" },
+    { CTXFN_NOT_PREV,    VMCTX_PREV, NULL, true,  "previous character not in the set" },
+    { CTXFN_NEXT,        VMCTX_NEXT, NULL, false, "next character in the set" },
+    { CTXFN_NOT_NEXT,    VMCTX_NEXT, NULL, true,  "next character not in the set" },
+};
+
+/* One side's guarded membership test, `(bound && (set test))`. */
+static void vm_ctx_side(Vm *v, StrBuf *b, int ci, int side)
+{
+    pcrec_sb_puts(b, side == VMCTX_PREV ? "(scan_position > 0 && ("
+                                        : "(scan_position < subject_length && (");
+    vm_cls_test(v, b, ci, side == VMCTX_PREV ? "subject[scan_position-1]"
+                                             : "subject[scan_position]");
+    pcrec_sb_puts(b, "))");
+}
+
+/* A_CTX — `\b`, `\B` and every recognized one-character lookaround — as one
+ * guarded test of the byte(s) around the cursor, in the form `vm_ctx_forms`
+ * names for the node's truth function.
  *
- * [REVW.2 step 12] Extracted verbatim from `vm_emit`'s A_WORDB/A_NWORDB
- * arm (lens 11's F7): the dispatcher's ten arms were six one-line
- * delegations and four whole programs, so reading it told you six of the
- * ten things it does. */
-static void vm_wordb(Vm *v, int entry, const Ast *a, int next)
+ * THE GUARDS ARE IN THE EXPRESSION, and that is R30 m2's correction rather
+ * than defensive padding: the natural spelling reads `s[-1]` at `pos == 0`
+ * and `s[n]` at `pos == n`, and docs/spec/match_api.md §3.1 makes
+ * `(s == NULL, n == 0)` a LEGAL subject — K27's exact class. Out-of-subject
+ * counts as NOT IN THE SET, which is what makes the guard and the semantics
+ * the same expression.
+ *
+ * THE SET COMES OUT OF THE CLASS POOL (§7.2 item 3), interned by content, so
+ * `\b`'s is `pcrec_cls_word_esc`'s bitmap — the same one `\w` emits — and
+ * the two constructs cannot disagree about what a word character is. It is
+ * the byte image under §2.3's precondition (`pcrec_enc_set_bytes`), which
+ * every producer asked first; failing it here is an internal error. */
+static void vm_ctx(Vm *v, int entry, const Ast *a, int next)
 {
     StrBuf *b = v->b;
-    /* [M6.2 wave B] `\b` / `\B` (assertions_design.md §9.3).
-     *
-     * THE GUARDS ARE IN THE EXPRESSION, and that is R30 m2's correction
-     * rather than defensive padding. The natural spelling —
-     * `word(s[pos-1]) != word(s[pos])` — reads `s[-1]` at `pos == 0` and
-     * `s[n]` at `pos == n`, and docs/spec/match_api.md §3.1 makes
-     * `(s == NULL, n == 0)` a LEGAL subject, so at `n == 0` BOTH operands
-     * must short-circuit before any dereference. That is K27's exact
-     * class: undefined behaviour in EMITTED code, which a user compiling
-     * a generated matcher under their own -fsanitize=undefined sees
-     * pcrec's name on.
-     *
-     * Out-of-subject counts as NON-WORD, which is what makes the guard
-     * and the semantics the same expression: a failed bounds test yields
-     * 0, which is exactly the value the missing byte would contribute.
-     *
-     * THE WORD SET COMES OUT OF THE CLASS POOL (§7.2 item 3), so it is
-     * `pcrec_cls_word_esc` — the SAME table `\w` compiles from, interned
-     * by content, so a pattern using both emits ONE bitmap and the two
-     * constructs cannot disagree about what a word character is. */
-    int wi = vm_cls(v, pcrec_cls_word_esc);
-    bool neg = a->k == A_NWORDB;
+    uint8_t bits[32];
+    if (!pcrec_enc_set_bytes(pcrec_enc_by_id(v->cx->opt->encoding),
+                             a->u.ctx.iv, a->u.ctx.n, bits))
+        pcrec_ctx_fail(v->cx, 0, "internal error: a context assertion's set "
+                       "is not byte-expressible under this encoding "
+                       "(ucp_design.md §2.3); it needs [UCP] U4");
+    const VmCtxForm *f = NULL;
+    for (size_t k = 0; k < sizeof vm_ctx_forms / sizeof vm_ctx_forms[0]; k++)
+        if (vm_ctx_forms[k].fn == a->u.ctx.fn) { f = &vm_ctx_forms[k]; break; }
+    if (!f)
+        pcrec_ctx_fail(v->cx, 0, "internal error: a context assertion carries "
+                       "truth function 0x%x, which has no emitted form",
+                       (unsigned)a->u.ctx.fn);
+    int ci = vm_cls(v, bits);
     vm_lbl(v, entry, NULL);
-    vm_ev(v, VE_ASSERT, next, 0,
-          neg ? "\\B not a word boundary" : "\\b word boundary");
-    pcrec_sb_puts(b, "    if (((scan_position > 0 && (");
-    vm_cls_test(v, b, wi, "subject[scan_position-1]");
-    pcrec_sb_puts(b, ")) ");
-    pcrec_sb_puts(b, neg ? "==" : "!=");
-    pcrec_sb_puts(b, " (scan_position < subject_length && (");
-    vm_cls_test(v, b, wi, "subject[scan_position]");
-    pcrec_sb_printf(b, ")))) goto %s_L%d;\n", v->p, next);
+    vm_ev(v, VE_ASSERT, next, 0, f->role);
+    if (f->side == VMCTX_BOTH) {
+        pcrec_sb_puts(b, "    if ((");
+        vm_ctx_side(v, b, ci, VMCTX_PREV);
+        pcrec_sb_printf(b, " %s ", f->join);
+        vm_ctx_side(v, b, ci, VMCTX_NEXT);
+        pcrec_sb_printf(b, ")) goto %s_L%d;\n", v->p, next);
+    } else {
+        pcrec_sb_puts(b, f->neg ? "    if (!" : "    if (");
+        vm_ctx_side(v, b, ci, f->side);
+        pcrec_sb_printf(b, ") goto %s_L%d;\n", v->p, next);
+    }
     vm_fail(v);
 }
 
@@ -8487,8 +8524,7 @@ static void vm_emit(Vm *v, int entry, const Ast *a, int next)
                "\\K resets the reported start of the match to here");
         vm_goto(v, next);
         return;
-    case A_WORDB:
-    case A_NWORDB: vm_wordb(v, entry, a, next); return;
+    case A_CTX:    vm_ctx(v, entry, a, next); return;
     case A_CAP:    vm_cap(v, entry, a, next);   return;
     case A_BREF:   vm_bref(v, entry, a, next);  return;
     case A_VAR:    vm_var(v, entry, a, next);   return;

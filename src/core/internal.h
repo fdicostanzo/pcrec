@@ -433,18 +433,30 @@ typedef enum {
      * adding this member is a compile error at every analysis that must
      * decide about it. */
     A_END,
-    /* [M6.2 wave B] `\b` and `\B` — the WORD BOUNDARY assertions. Two kinds
-     * rather than one kind plus a negation flag, on the same D62 principle
-     * `\z` was ruled by: `\B` is not `\b` under a modifier, it is the
-     * complementary position set, and no option turns one into the other.
+    /* [UCP] U2 (ucp_design.md §2.2) THE CONTEXT ASSERTION: a zero-width
+     * node carrying a code-point SET `C` (`u.ctx.iv`/`n`) and a TRUTH
+     * FUNCTION (`u.ctx.fn`) over the two booleans (prev ∈ C, next ∈ C), with
+     * "absent" (start/end of subject) reading as NOT in `C`. It is `\b`/`\B`
+     * generalized — [M6.2] wave B's two kinds, A_WORDB/A_NWORDB, retired into
+     * it — and every lookaround whose body's LANGUAGE is a set of single
+     * characters reaches it by recognition (src/opt/ctxnode.c):
      *
-     * They are the module's first CONTEXT assertions: unlike `\A`/`\Z`/`\z`,
-     * whose truth is a function of the position alone, these read the byte on
-     * EACH SIDE of the position. That is what costs an alphabet refinement
-     * (assertions_design.md §3.4), a bit of DFA state identity (§3.5) and a
-     * class-indexed accept (§3.6) — see src/ir/dfa.c. */
-    A_WORDB,
-    A_NWORDB,
+     *     \b      A_CTX(W, prev XOR next)      (?<=C)  A_CTX(C, prev)
+     *     \B      A_CTX(W, prev XNOR next)     (?<!C)  A_CTX(C, NOT prev)
+     *     (?=C)   A_CTX(C, next)               (?!C)   A_CTX(C, NOT next)
+     *
+     * ONE KIND FOR ALL SIX, because every consumer asks the same question of
+     * each: it is zero-width, it reads the byte (character) on either side,
+     * and the DFA carries it on the class axis (src/ir/dfa.c's context-set
+     * list and atoms) with no notion of which spelling produced it. The fn is
+     * DATA (`CTXFN_*`), never a kind: a consumer that needed to know the
+     * spelling would be the special case this node exists to remove.
+     *
+     * THE SET IS CODE POINTS, and an engine reads it byte-wise only where
+     * every member is one byte of the encoding (§2.3) —
+     * `pcrec_ctx_set_bytes` is that precondition, and it is CHECKED at every
+     * site that turns the set into bytes. */
+    A_CTX,
     /* [M6.2 wave D] `\G` — the FIRST MATCHING POSITION, i.e. the `startpos`
      * the match call was given (`docs/spec/match_api.md` §3.1;
      * assertions_design.md §4). A third kind on D62's principle, and the
@@ -799,6 +811,17 @@ typedef enum {
  * never a byte and never a width. */
 typedef struct { unsigned lo, hi; } PcrecCpRange;
 
+/* [UCP] U2 A_CTX's truth functions: bit `(p << 1) | q` is the answer when
+ * the previous character's membership is `p` and the next one's is `q`. */
+enum {
+    CTXFN_BOUNDARY    = 0x6,   /* \b: p != q */
+    CTXFN_NONBOUNDARY = 0x9,   /* \B: p == q */
+    CTXFN_PREV        = 0xC,   /* (?<=C) */
+    CTXFN_NOT_PREV    = 0x3,   /* (?<!C) */
+    CTXFN_NEXT        = 0xA,   /* (?=C)  */
+    CTXFN_NOT_NEXT    = 0x5    /* (?!C)  */
+};
+
 typedef struct Ast Ast;
 struct Ast {
     /* ---- COMMON FIELDS ----------------------------------------------------
@@ -980,6 +1003,11 @@ struct Ast {
 
         /* A_CAP: 1-based capturing group number. */
         struct { int no; } cap;
+
+        /* [UCP] U2 A_CTX: the context set (code points, sorted disjoint
+         * intervals — A_CLASS's own representation) and the truth function,
+         * a 4-bit table indexed by (prev ∈ C) << 1 | (next ∈ C). */
+        struct { const PcrecCpRange *iv; int n; uint8_t fn; } ctx;
 
         /* A_BOL and A_EOL — a CLOSED FAMILY sharing one meaning, so they share
          * one payload rather than getting a member each (D70's family rule).
@@ -1574,16 +1602,14 @@ typedef enum {
      * of the NON-multiline `^`/`$` under `(?m)` too, as PCRE2 has them. */
     N_BOT_M,
     N_EOL_M,
-    /* [M6.2 wave B] `\b` / `\B`, goto t1. The FIRST assertions in this
-     * machine whose truth is not a function of the position alone: both read
-     * the byte on either side of it. src/ir/dfa.c's closure evaluates them
-     * from TWO bits — the word-ness of the byte the walk already consumed
-     * (carried in the DFA state's identity) and the word-ness of the byte it
-     * is about to consume (a per-class parameter). The test is SYMMETRIC in
-     * those two bits, which is exactly why one closure serves the forward and
-     * the reverse machine with no notion of direction anywhere in it. */
-    N_WORDB,
-    N_NWORDB,
+    /* [UCP] U2 A_CTX, goto t1: `cls` is the context set's BYTE image (exact
+     * by `pcrec_ctx_set_bytes`' precondition) and `ctxfn` its truth function
+     * (CTXFN_*). src/ir/dfa.c's closure evaluates it from TWO bits of the
+     * context ATOMS — the set's membership bit in the atom of the byte on the
+     * LEFT and in the atom of the byte on the RIGHT, in subject order, which
+     * make_state's one direction mapping supplies. `\b`/`\B` are two of its
+     * six functions ([M6.2] wave B's N_WORDB/N_NWORDB, retired into it). */
+    N_CTX,
     /* [M6.2 wave D] `\G`, goto t1. An ABSOLUTE POSITION TEST like N_BOT — it
      * reads no byte and needs no class axis — but against a value that is not
      * known until the match call: `pos == startpos` where N_BOT is `pos == 0`.
@@ -1624,6 +1650,7 @@ typedef struct {
     int     t1, t2;
     uint8_t loop;        /* star/plus loop-entry split */
     uint8_t exit_is_t2;  /* which edge leaves the loop (greedy: t2) */
+    uint8_t ctxfn;       /* N_CTX only: its CTXFN_* truth function */
 } NState;
 
 typedef struct {
@@ -1680,46 +1707,39 @@ typedef struct {
 
 /* ---- DFA (priority subset construction) ---- */
 
-/* [M6.2 wave C] THE CLASS AXIS IS THREE-VALUED, and this enum is it.
+/* [UCP] U2 (ucp_design.md §2.4) THE CLASS AXIS IS A PER-MACHINE TABLE OF
+ * CONTEXT SETS, and a byte's context is its ATOM.
  *
- * Wave B gave the closure one class-axis bit — "the byte about to be consumed
- * is a word character" — because `\b` was the only assertion that read it.
- * `(?m)$` reads a DIFFERENT property of that same byte ("it is a newline"), so
- * the axis stops being a bool and becomes a partition of the alphabet:
+ * [M6.2] waves B/C and K50 built the axis as a fixed partition of FOUR named
+ * values — UPC_PLAIN / UPC_WORD / UPC_NL / UPC_NOSTART — read off a priority
+ * if-chain over two global sets and one encoding set. That was exact only
+ * because the three sets were DISJOINT ("a newline is not a word character").
+ * A_CTX brings arbitrary sets, several per machine, and they need not be
+ * disjoint: `(?<=\$)\d+(?:\.\d{2})?\b` reads `{$}` and `\w`, a vowel
+ * lookbehind beside `\b` reads V ⊂ W, and the if-chain would silently
+ * collapse V∩W into W. So the axis is now DATA:
  *
- *   UPC_PLAIN  neither a word character nor a newline
- *   UPC_WORD   a word character
- *   UPC_NL     a newline (the D64 definition, `pcrec_cls_newline`)
+ *   - `Dfa.ctx[]`, the machine's ORDERED list of distinct context sets
+ *     (src/ir/dfa.c's contributor table fills it: every A_CTX set in NFA
+ *     order, then the newline set, then the encoding's non-start set);
+ *   - a byte's ATOM is its membership vector over that list, bit i for entry
+ *     i; `Dfa.atomvec[]` holds the realized vectors SORTED, so atom 0 is the
+ *     empty vector — "in no set", which is also what an ABSENT side (start or
+ *     end of subject) reads as;
+ *   - `upc_of_class` is a table read of `Dfa.catom[]`, and every per-context
+ *     array (`DState.up[]`, `Dfa.s1u[]`/`s1g[]`) is indexed by atom.
  *
- * [K50] A FOURTH VALUE, and it is a REFINEMENT OF UPC_PLAIN rather than a new
- * dimension:
+ * THE OLD FOUR ARE THE ATOMS OF THE LIST {word, newline, non-start} — vectors
+ * 0, 1, 2, 4 in that sorted order — so a machine whose list is exactly that
+ * (or any prefix-preserving subset of it) interns the same states in the same
+ * order and emits the same tables; the identity gate over every class-axis
+ * artifact is the check (ucp_design.md §6 U2). Overlap is handled by
+ * construction: V∩W, W∖V, V∖W and neither are four atoms.
  *
- *   UPC_NOSTART  a byte this artifact's encoding may not begin a character
- *                at (`PcrecEnc.start_cls`'s complement; under UTF-8 the
- *                continuation bytes 0x80..0xBF)
- *
- * `N_CSTART` reads it, and it is a partition member for the same reason the
- * other three are: a byte that is not a character start is neither a word
- * byte nor a newline. THAT IS A PRECONDITION ON THE BACKEND, not a fact about
- * bytes in general — `pcrec_enc_start_cls_ok()` checks it and
- * `pcrec_build_dfa` refuses a backend that violates it, because the failure
- * mode is silent: a non-start byte classified UPC_WORD would read as a
- * character start to the gate and re-open K50.
- *
- * THE THREE — now four — ARE DISJOINT AND EXHAUSTIVE because a newline is not
- * a word character; there is no further combination to represent. src/ir/dfa.c's
- * `eqclasses` refines the byte-equivalence partition by whichever of the
- * sets the machine actually needs, so every byte of a class has the same
- * answer and `upc_of_class` is exact rather than a sample.
- *
- * THE SAME THREE VALUES INDEX THE OTHER SIDE. The byte the walk has already
- * CONSUMED carries the same partition — `\b` reads its word-ness and `(?m)^`
- * reads its newline-ness — but that side is carried in the state IDENTITY
- * (§3.5's mechanism), so it indexes the START states (`Dfa.s1u`) rather than
- * a per-state array. One enum, two uses, and the symmetry is real: the
- * forward and reverse machines swap which side is which, which is what
- * make_state's `reverse` mapping is for. */
-enum { UPC_PLAIN = 0, UPC_WORD = 1, UPC_NL = 2, UPC_NOSTART = 3, UPC_N = 4 };
+ * `UPC_PLAIN` keeps its name as atom 0. `PCREC_MAX_CTX_ATOMS` (limits.def)
+ * bounds the realized count; a machine over it is declined, never
+ * truncated. */
+enum { UPC_PLAIN = 0 };
 
 
 /* One closure of a pre-set under one class-axis context. */
@@ -1758,7 +1778,7 @@ typedef struct {
      * differ in it close differently wherever it matters, so they intern
      * apart, and where it does not matter they intern together, which is the
      * merge a separate field would have to forbid. */
-    DView    up[UPC_N];
+    DView   *up;       /* [UCP] U2: `Dfa.natoms` views, indexed by atom (arena) */
     int      eolvar;   /* EOL-variant state (the eol_ok=true closure of the same
                           pre-set: correctly priority-pruned accept + threads),
                           used at EOL positions; -1 = identical to this state */
@@ -1835,6 +1855,16 @@ typedef struct {
  * array one short of what the pass chose would silently drop an edge whose
  * states the pass had already deleted. */
 
+/* [UCP] U2 one entry of a machine's context-set list (`Dfa.ctx[]`). `row` is
+ * the contributor-table row that added it (src/ir/dfa.c), which is what the
+ * reference-build knobs filter on. */
+typedef struct {
+    const char *name;     /* the contributor row's name ("ctx", "newline", "nostart") */
+    const char *desc;     /* one line: what this set is */
+    int         row;      /* index of the contributor row that added it */
+    uint8_t     bits[32]; /* the set's byte image */
+} PcrecCtxSet;
+
 typedef struct {
     DState  *st;       /* heap (realloc'd) */
     int      n, cap;
@@ -1856,7 +1886,7 @@ typedef struct {
      * that reads the consumed byte, because the closures then coincide and
      * intern together — which is what keeps every existing artifact's start
      * dispatch a compile-time constant. */
-    int      s1u[UPC_N];
+    int      s1u[PCREC_MAX_CTX_ATOMS];
     /* [M6.2 wave D] `\G`'s own interior start states: the SAME class-axis
      * family as `s1u[]`, closed with the `\G` bit SET (assertions_design.md
      * §4.2). The three reachable start states of that section's table are
@@ -1869,30 +1899,31 @@ typedef struct {
      * the extra views and assigns the same interned ids. That is what keeps
      * every pre-wave artifact's start dispatch and `start_max` string
      * unmoved, by construction rather than by a flag test in the emitter. */
-    int      s1g[UPC_N];
-    /* True when this machine was built with a CLASS AXIS at all — i.e. its
-     * NFA carries an N_WORDB/N_NWORDB (`\b`'s word-ness) or an N_BOT_M/
-     * N_EOL_M (`(?m)`'s newline-ness). It is the flag every emitter site that
-     * must choose between the pre-wave text and the class-indexed text reads,
-     * and it is derived from the NFA rather than from any state's contents so
-     * the two emitters cannot disagree about which shape they are in.
+    int      s1g[PCREC_MAX_CTX_ATOMS];
+    /* True when this machine was built with a CLASS AXIS that the emitter's
+     * class-indexed text must serve — i.e. its context list carries an A_CTX
+     * set (`\b`, a one-character lookaround) or the newline set (`(?m)^/$`).
+     * The encoding's non-start set alone does NOT set it, as K50's gate never
+     * did. It is the flag every emitter site that must choose between the
+     * pre-wave text and the class-indexed text reads, and it is derived from
+     * the context list rather than from any state's contents so the two
+     * emitters cannot disagree about which shape they are in.
      *
      * Named `wordctx` through wave B, when `\b` was the only customer. */
     bool     clsctx;
-    /* [K50] THE ENCODING'S CHARACTER-START SET, or NULL — the datum
-     * `upc_of_class` reads to answer UPC_NOSTART, and the ONLY thing in this
-     * structure that knows an encoding exists.
-     *
-     * Set by `pcrec_build_dfa` from `PcrecEnc.start_cls`, and set ONLY when
-     * this machine's NFA actually carries an `N_CSTART` — same discipline as
-     * `has_word`/`has_nl`, and for the same reason: a machine that asks no
-     * boundary question must not gain a fourth alphabet refinement or a
-     * fourth column in any derived table. NULL on every `byte` machine (the
-     * backend expresses no restriction) and on every utf8 machine with no
-     * gate — the anchored MATCH-HERE machine, the reverse machine, and every
-     * ENG_ATTEMPT machine, none of which carry the self-loop the gate rides
-     * on. */
-    const unsigned char *startcls;
+    /* [UCP] U2 THE CONTEXT-SET LIST (ucp_design.md §2.4), per machine, as
+     * data: `nctx` distinct sets in contributor order, each with its name and
+     * one-line description so a listing is a plain read of it. Filled and
+     * reset by `pcrec_build_dfa` on every build (a `Dfa` is reused). */
+    int      nctx;
+    PcrecCtxSet ctx[PCREC_MAX_CTX_SETS];
+    /* The machine's ATOMS: `natoms` realized membership vectors over
+     * `ctx[]`, sorted ascending (atom 0 is the empty vector, the absent
+     * side's context), and every byte class's atom. `upc_of_class` reads
+     * `catom[]`; nothing re-derives an atom from a byte. */
+    int      natoms;
+    uint32_t atomvec[PCREC_MAX_CTX_ATOMS];
+    uint8_t  catom[256];
     int      maxstates;/* engine-dependent cap (R1 A-3): table-mode machines
                           afford far more states than computed-goto ones */
     /* [ENG-ABS] IS THIS MACHINE OPTIONAL, i.e. may the compile continue
@@ -3649,30 +3680,18 @@ extern const unsigned char pcrec_cls_digit_esc[32], pcrec_cls_space_esc[32],
     pcrec_cls_px_graph[32], pcrec_cls_px_lower[32], pcrec_cls_px_print[32],
     pcrec_cls_px_punct[32], pcrec_cls_px_space[32], pcrec_cls_px_upper[32],
     pcrec_cls_px_word[32],  pcrec_cls_px_xdigit[32];
-/* Which class-axis context does byte class `c` carry? Declared here rather
- * than in src/ir/dfa.c because BOTH emitters ask it — the accept table, the
- * seed table and ENG_ATTEMPT's per-state arms all have to agree with the
- * subset construction about which view a class selects, and a second copy of
- * this two-line rule is exactly the drift this project keeps recording.
+/* The context ATOM byte class `c` carries: a table read of `Dfa.catom[]`.
+ * Declared here rather than in src/ir/dfa.c because BOTH emitters ask it —
+ * the accept table, the seed table and ENG_ATTEMPT's per-state arms all have
+ * to agree with the subset construction about which view a class selects.
  *
- * Well-defined ONLY because `eqclasses` refined the partition by whichever of
- * the two sets the machine needs: every byte of a class then has the same
- * answer, so reading it off the class's representative byte is exact rather
- * than a sample. A machine that skipped a refinement never asks the
- * corresponding question — with no N_WORDB nothing distinguishes UPC_WORD
- * from UPC_PLAIN, and this answer is then consumed only as an index into
- * views that are all the same list. */
+ * Exact rather than a sample because `eqclasses` refined the partition by
+ * every set on the machine's context list, so every byte of a class has the
+ * same membership vector ([UCP] U2, ucp_design.md §2.4 — this replaced the
+ * fixed word/newline/non-start if-chain). */
 static inline int upc_of_class(const Dfa *d, int c)
 {
-    if (cls_has(pcrec_cls_word_esc, d->rep[c])) return UPC_WORD;
-    if (cls_has(pcrec_cls_newline,  d->rep[c])) return UPC_NL;
-    /* [K50] `startcls` is set only when this machine actually HAS a gate node
-     * — `pcrec_build_dfa` scans for `N_CSTART` exactly as it scans for
-     * `N_WORDB` — so a machine with no gate asks no fourth question and every
-     * derived table emits its pre-K50 column. Under `byte` the field is never
-     * set at all, the backend having no restriction to express. */
-    if (d->startcls && !cls_has(d->startcls, d->rep[c])) return UPC_NOSTART;
-    return UPC_PLAIN;
+    return d->catom[c];
 }
 
 /* The GENERATED name->bits map for the POSIX named classes: emitted by
@@ -3713,6 +3732,8 @@ ExtResult pcrec_clsport_octal(Ctx *cx, const RegRow *rw, ExtWant want,
  * tell them apart — see cls_casefold's comment). The ONE constructor every
  * set-producing port uses, so the fold rule cannot be forgotten per site. */
 Ast *pcrec_ast_node(Ctx *cx, AKind k);   /* bare-kind ctor for module TUs */
+/* [UCP] U2 a context-assertion node (A_CTX) over a published set. */
+Ast *pcrec_ast_ctx(Ctx *cx, const PcrecCpRange *iv, int n, uint8_t fn);
 /* [M6.4.2 / SR-8, D67] THE STAMP, and the ONE call that applies it.
  *
  * A module's producer calls this on every node it creates, with the row it was
@@ -4293,7 +4314,7 @@ static inline void pcrec_ast_visit(const Ast *a, AstVisit f, void *ud)
         f(ud, a);
         switch (a->k) {
         case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
-        case A_WORDB: case A_NWORDB: case A_GSTART: case A_KRESET:
+        case A_CTX: case A_GSTART: case A_KRESET:
         case A_BREF:
         /* [VAR] A_VAR IS A LEAF LIKE A_BREF: its bytes come from the
          * caller, not from a subtree, and `l`/`r` are unused. The operator's
@@ -5951,7 +5972,7 @@ bool pcrec_scan_range(const Dfa *d, int cls, int *lo, int *hi);
  * `src/gen/emit_dfa.c`'s axis-J predicate both call this, never a local copy
  * (memory `pcrec-general-mechanisms-not-special-cases`). Stricter than STEP
  * 2's soundness needs on purpose — see the definition's own comment. */
-bool pcrec_state_view_invariant(const DState *st);  /* src/opt/scanedge.c */
+bool pcrec_state_view_invariant(const Dfa *d, const DState *st);  /* src/opt/scanedge.c */
 
 /* ---- [OPT-ALTCLS] alternation->class normalization (docs/dev/plan.md) ---- */
 

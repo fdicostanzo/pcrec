@@ -77,12 +77,20 @@
  * gate can cancel, and (b) a pin placed AFTER the scan loop and in front of
  * the flag's three consumers, so an edit to how the flag is COMPUTED cannot
  * cancel it either. Wave D reached the same conclusion one construct over and
- * put `-DPCREC_NO_GSTART` at the EMITTER; `src/gen/emit_dfa.c` now also
- * carries an emitter half of all three knobs, for the sites where the emitted
- * text — rather than the DFA — is what the construct decides. `\G` needed no
- * analysis half because it refines no alphabet and interns no state the
- * emitter cannot neutralize; `\b`, `(?m)` and `\z` all change the DFA
- * ITSELF, and no emitter branch can un-refine a partition.
+ * put `-DPCREC_NO_GSTART` at the EMITTER. `\G` needed no analysis half
+ * because it refines no alphabet and interns no state the emitter cannot
+ * neutralize; `\b`, `(?m)` and `\z` all change the DFA ITSELF, and no
+ * emitter branch can un-refine a partition.
+ *
+ * **[UCP] U2 MOVED THEM ONCE MORE, TO THE SAME KIND OF PLACE.** The flags are
+ * gone — the class axis is the context-set LIST (see "the context-set list
+ * and its atoms" below) — and the knobs now sit in `ctx_entry_live`, which
+ * the list's two CONSUMERS (the refinement and the atom vectors) ask. The
+ * list's FILLING is where S71/S76 now plant (they put the word / newline set
+ * on every machine's list), and a knob there would cancel them exactly as
+ * before. Because the atoms themselves now exclude a knobbed-out set, the
+ * EMITTER needs no half for `\b`/`(?m)` any more: `upc_of_class` can no
+ * longer answer a context the analysis did not build.
  *
  * `-DPCREC_NO_ENDVAR` compiles the third view's INTERNING out (the closure
  * still runs; `endvar` stays -1, so `dfa_has_endvar` is false and the emitter
@@ -129,31 +137,141 @@ static int refine_by(Dfa *d, int ncls, const uint8_t *bits)
     return next;
 }
 
-/* [M6.2 wave B] `has_word` refines the partition by the WORD SET, and it must:
- * the context bit `\b` carries is "the byte was a word character", so a class
- * straddling the word boundary would make that bit non-constant inside a
- * class and the whole class-indexed scheme meaningless.
+/* ---- [UCP] U2 the context-set list and its atoms (ucp_design.md §2.4) ----
  *
- * IT IS AT MOST ONE EXTRA CLASS and that is measured, not argued
- * (assertions_design.md §3.4, min/median/max 0/+1/+2 over the 1030-pattern
- * `.rxt` corpus): a pattern's class map already separates the bytes the
- * pattern NAMES, so the only class that can straddle the word boundary is the
- * catch-all of bytes it never mentions.
+ * THE CONTRIBUTOR TABLE. Which NFA states put which set on the machine's
+ * context list, as DATA, walked in row order — so the list's ORDER is a
+ * property of the table and not of a code path: every A_CTX set (NFA order,
+ * deduplicated by set equality), then the newline set, then the encoding's
+ * non-start set. That order is what makes the atoms of a machine whose list
+ * is {word, newline, non-start} the old UPC_PLAIN/WORD/NL/NOSTART in the old
+ * order (internal.h's comment), and so what keeps every pre-U2 class-axis
+ * artifact byte-identical.
  *
- * THE SET IS `pcrec_cls_word_esc` AND THERE IS NO SECOND SPELLING OF IT
- * ANYWHERE (§7.2 item 3). That table is what `\w` compiles from, it is
- * oracle-generated against libpcre2 and PC-4 re-measures it every run — and
- * whatever `\w` means, `\b` must agree with, which one definition with two
- * readers guarantees and two definitions cannot.
+ * Not a selection (nothing is chosen among alternatives; every applicable row
+ * contributes), but a table for the same reason a selection is one: the rows
+ * are listable, and a new context-reading node kind is one row rather than a
+ * new flag threaded through three consumers the way `has_word`/`has_nl`/
+ * `startcls` were. */
+enum { CTXROW_CTX = 0, CTXROW_NEWLINE = 1, CTXROW_NOSTART = 2 };
+
+typedef struct {
+    const char *name;
+    const char *desc;
+    /* Does NFA state `st` read a set this row contributes? */
+    bool (*reads)(const NState *st);
+    /* The set it reads, for this machine's encoding `e` (may be NULL: the
+     * node reads nothing this backend restricts). */
+    bool (*set)(const NState *st, const PcrecEnc *e, uint8_t out[32]);
+} CtxContrib;
+
+static bool cr_ctx_reads(const NState *st) { return st->k == N_CTX; }
+static bool cr_ctx_set(const NState *st, const PcrecEnc *e, uint8_t out[32])
+{ (void)e; memcpy(out, st->cls, 32); return true; }
+static bool cr_nl_reads(const NState *st)
+{ return st->k == N_BOT_M || st->k == N_EOL_M; }
+static bool cr_nl_set(const NState *st, const PcrecEnc *e, uint8_t out[32])
+{ (void)st; (void)e; memcpy(out, pcrec_cls_newline, 32); return true; }
+static bool cr_ns_reads(const NState *st) { return st->k == N_CSTART; }
+/* The NON-start set, i.e. `start_cls`'s complement, so that "absent" (the
+ * empty vector) reads as a character boundary — the right answer for the gate
+ * and the one wave C's UPC_PLAIN gave it. */
+static bool cr_ns_set(const NState *st, const PcrecEnc *e, uint8_t out[32])
+{
+    (void)st;
+    if (!e || !e->start_cls) return false;
+    for (int k = 0; k < 32; k++) out[k] = (uint8_t)~e->start_cls[k];
+    return true;
+}
+
+static const CtxContrib ctx_rows[] = {
+    [CTXROW_CTX]     = { "ctx", "an A_CTX set (\\b/\\B's word set, a one-character lookaround's set)",
+                         cr_ctx_reads, cr_ctx_set },
+    [CTXROW_NEWLINE] = { "newline", "the newline set (?m)^ and (?m)$ read (D64)",
+                         cr_nl_reads, cr_nl_set },
+    [CTXROW_NOSTART] = { "nostart", "bytes this encoding may not begin a character at (K50's gate)",
+                         cr_ns_reads, cr_ns_set },
+};
+enum { CTXROW_N = (int)(sizeof ctx_rows / sizeof ctx_rows[0]) };
+
+/* The machine has too many context sets or atoms: DECLINE it exactly as a
+ * state-cap overflow does — recorded for [SEL-1]'s auto retry (which routes
+ * the pattern to the VM), reported rather than refused on an optional
+ * machine, refused otherwise. Never a truncated list or partition. */
+static void ctx_decline(Ctx *cx, Dfa *d, const char *what, int limit)
+{
+    cx->dfa_overflowed = true;
+    snprintf(cx->dfa_overflow_why, sizeof cx->dfa_overflow_why,
+             "dfa overflowed: >%d context %s", limit, what);
+    if (d->optional) { d->overflowed = true; return; }
+    pcrec_ctx_fail(cx, 0, "pattern too complex for the DFA engine (more than %d "
+                   "context %s on one machine; try --engine=vm)", limit, what);
+}
+
+/* Fill `d->ctx[]` from the contributor table and write each N_CTX state's
+ * list index into `cbit[]` (-1 elsewhere). Returns false if the machine was
+ * declined (optional machines only; a mandatory one does not return). */
+static bool ctx_collect(Ctx *cx, Nfa *nfa, Dfa *d, int8_t *cbit)
+{
+    const PcrecEnc *e = pcrec_enc_by_id(cx->opt->encoding);
+    d->nctx = 0;
+    for (int i = 0; i < nfa->n; i++) cbit[i] = -1;
+    for (int r = 0; r < CTXROW_N; r++) {
+        for (int i = 0; i < nfa->n; i++) {
+            const NState *st = &nfa->st[i];
+            uint8_t bits[32];
+            if (!ctx_rows[r].reads(st) || !ctx_rows[r].set(st, e, bits))
+                continue;
+            int k = 0;
+            while (k < d->nctx &&
+                   memcmp(d->ctx[k].bits, bits, 32) != 0) k++;
+            if (k == d->nctx) {
+                if (d->nctx == PCREC_MAX_CTX_SETS) {
+                    ctx_decline(cx, d, "sets", PCREC_MAX_CTX_SETS);
+                    return false;
+                }
+                PcrecCtxSet *cs = &d->ctx[d->nctx++];
+                cs->name = ctx_rows[r].name;
+                cs->desc = ctx_rows[r].desc;
+                cs->row  = r;
+                memcpy(cs->bits, bits, 32);
+            }
+            if (r == CTXROW_CTX) cbit[i] = (int8_t)k;
+        }
+    }
+    return true;
+}
+
+/* Does list entry `k` take part in the class axis? True in every shipped
+ * build. THE REFERENCE KNOBS LIVE HERE, AT THE ACTION ([M6.2] repair slice's
+ * rule, carried over): `-DPCREC_NO_WORDCTX` removes every A_CTX set and
+ * `-DPCREC_NO_MLINECTX` the newline set from the refinement AND from the atom
+ * vectors — the two consumers — so an edit to how the LIST is filled (where
+ * sabotages S71/S76 now plant) cannot cancel in the knob-built reference.
+ * tests/codegen/run_wordctx_identity.sh / run_mlinectx_identity.sh. */
+static bool ctx_entry_live(const Dfa *d, int k)
+{
+#ifdef PCREC_NO_WORDCTX
+    if (d->ctx[k].row == CTXROW_CTX) return false;
+#endif
+#ifdef PCREC_NO_MLINECTX
+    if (d->ctx[k].row == CTXROW_NEWLINE) return false;
+#endif
+    (void)d; (void)k;
+    return true;
+}
+
+/* The byte-equivalence partition, refined by every N_CLASS set and then by
+ * every live context set — so each class has ONE atom and `upc_of_class` is
+ * exact rather than a sample. The class NUMBERING is by lowest member byte
+ * whatever the refinement order (refine_by renumbers in byte order), so
+ * adding the context sets as a loop rather than three gated lines moves no
+ * class id.
  *
- * [M6.2 wave C] THE NEWLINE SET REFINES IT ON EXACTLY THE SAME ARGUMENT, and
- * the set is `pcrec_cls_newline` — D64's ONE DEFINITION, consumed rather than
- * respelled as a `'\n'` comparison. It is the same oracle-generated table
- * `\N` compiles from, so `(?m)`'s idea of a line break and the rest of the
- * front end's cannot drift apart, and the day DD-11's typed definition lands
- * there is one table to rebind rather than a scatter of literals. */
-static void eqclasses(Nfa *nfa, Dfa *d, bool has_word, bool has_nl,
-                      const unsigned char *startcls)
+ * Wave B measured the word set's refinement at +0/+1/+2 classes over the
+ * corpus: a pattern's class map already separates the bytes it names, so only
+ * the catch-all of bytes it never mentions can straddle a context set. */
+static void eqclasses(Nfa *nfa, Dfa *d)
 {
     memset(d->clsmap, 0, 256);
     int ncls = 1;
@@ -162,46 +280,57 @@ static void eqclasses(Nfa *nfa, Dfa *d, bool has_word, bool has_nl,
         if (nfa->st[i].k != N_CLASS) continue;
         ncls = refine_by(d, ncls, nfa->st[i].cls);
     }
-    /* [M6.2 repair slice, 2026-08-19] THE REFERENCE KNOBS WRAP THESE TWO
-     * LINES, and the wrapping is the whole re-placement. They used to pin
-     * `has_word`/`has_nl` false up in `pcrec_build_dfa`'s NFA scan — a FLAG,
-     * inside the code sabotages S71 and S76 edit. Those two rows delete
-     * exactly the `if (...)` gate below, so the refinement then ran in the
-     * subject build AND in the knob-defined reference build (both are
-     * compiled from the same sabotaged sources) and the difference CANCELLED:
-     * MEASURED at 1186/1186 byte-identical `\b`-free artifacts with the knob
-     * anywhere else. A `#ifndef` around the ACTION is not cancellable by an
-     * edit to the action's own gate, which is what these rows are.
-     * See src/gen/emit_dfa.c's knob block for the other half. */
-#ifndef PCREC_NO_WORDCTX
-    if (has_word) ncls = refine_by(d, ncls, pcrec_cls_word_esc);
-#else
-    (void)has_word;
-#endif
-#ifndef PCREC_NO_MLINECTX
-    if (has_nl)   ncls = refine_by(d, ncls, pcrec_cls_newline);
-#else
-    (void)has_nl;
-#endif
-    /* [K50] The gate's own refinement, and it is the SAME rule as the two
-     * above: `upc_of_class` reads the answer off a class's representative
-     * byte, which is exact only if every byte of the class agrees. `startcls`
-     * is non-NULL only when this machine carries an `N_CSTART`, so a machine
-     * that asks no boundary question gains no split — which is what keeps
-     * every artifact without the gate (every `byte` one, and every utf8
-     * anchored/reverse/ENG_ATTEMPT one) at the alphabet it had.
-     *
-     * NO REFERENCE KNOB WRAPS THIS LINE, and that is deliberate rather than an
-     * omission: the [M6.2] repair slice put `#ifndef`s here because those two
-     * axes have identity gates that need a pre-wave reference compiler. K50's
-     * gate has no pre-K50 reference to build — its whole point is that the
-     * pre-K50 answer was WRONG, so the reference build would be the bug. What
-     * stands in for it is the deny arm, which is a runtime flag on the ENTRY
-     * GUARD and never on this refinement, plus the sabotage rows that delete
-     * the gate outright. */
-    if (startcls) ncls = refine_by(d, ncls, startcls);
+    for (int k = 0; k < d->nctx; k++)
+        if (ctx_entry_live(d, k)) ncls = refine_by(d, ncls, d->ctx[k].bits);
     d->ncls = ncls;
     for (int c = 255; c >= 0; c--) d->rep[d->clsmap[c]] = (uint8_t)c;
+}
+
+/* Membership vector of byte `b` over the live context list. */
+static uint32_t ctx_vec_of_byte(const Dfa *d, unsigned b)
+{
+    uint32_t v = 0;
+    for (int k = 0; k < d->nctx; k++)
+        if (ctx_entry_live(d, k) && cls_has(d->ctx[k].bits, b)) v |= 1u << k;
+    return v;
+}
+
+/* THE ATOMS: the realized membership vectors, plus the empty vector (the
+ * absent side's), sorted ascending, and each class's atom. Returns false if
+ * the machine was declined for too many atoms (optional machines only). */
+static bool ctx_atoms(Ctx *cx, Dfa *d)
+{
+    uint32_t seen[257];
+    int n = 0;
+    seen[n++] = 0;
+    for (int c = 0; c < d->ncls; c++) {
+        uint32_t v = ctx_vec_of_byte(d, d->rep[c]);
+        int k = 0;
+        while (k < n && seen[k] != v) k++;
+        if (k == n) seen[n++] = v;
+    }
+    if (n > PCREC_MAX_CTX_ATOMS) {
+        ctx_decline(cx, d, "atoms", PCREC_MAX_CTX_ATOMS);
+        return false;
+    }
+    for (int a = 1; a < n; a++)          /* insertion sort: n <= 16 */
+        for (int b = a; b > 0 && seen[b - 1] > seen[b]; b--) {
+            uint32_t t = seen[b]; seen[b] = seen[b - 1]; seen[b - 1] = t;
+        }
+    d->natoms = n;
+    for (int a = 0; a < n; a++) d->atomvec[a] = seen[a];
+    for (int c = 0; c < d->ncls; c++) {
+        uint32_t v = ctx_vec_of_byte(d, d->rep[c]);
+        int a = 0;
+        while (d->atomvec[a] != v) a++;
+        d->catom[c] = (uint8_t)a;
+    }
+    /* clsctx: some live entry is an A_CTX or newline set (not the gate's). */
+    d->clsctx = false;
+    for (int k = 0; k < d->nctx; k++)
+        if (ctx_entry_live(d, k) && d->ctx[k].row != CTXROW_NOSTART)
+            d->clsctx = true;
+    return true;
 }
 
 /* ---- epsilon closure ---- */
@@ -506,6 +635,9 @@ typedef struct {
     PMemo     memo;   /* (state, ctx) memo, ctx != 0 only */
     LCtxTab   ctxs;
     ContStack ks;
+    /* [UCP] U2 the machine's context-list facts the closure's arms read. */
+    const int8_t *cbit;
+    int       nl_bit, ns_bit;
 } CloScratch;
 
 typedef struct {
@@ -544,46 +676,35 @@ typedef struct {
      * empty subject is (bot, eol, end, gst) = (T,T,T,T), and a `startpos` in
      * the interior is (F,F,F,T). */
     bool      gst_ok;
-    /* [M6.2 wave B, renamed by SIDE in wave C] THE TWO BYTES AROUND THIS
-     * POSITION, described in SUBJECT ORDER rather than in walk order.
+    /* [M6.2 wave B, renamed by SIDE in wave C, ATOMS since [UCP] U2] THE TWO
+     * BYTES AROUND THIS POSITION, described in SUBJECT ORDER rather than in
+     * walk order, as their context ATOM VECTORS (bit k = "in `Dfa.ctx[k]`"):
      *
-     *   `left_*`  — the byte at `pos - 1`, i.e. `s[pos-1]`;
-     *   `right_*` — the byte at `pos`, i.e. `s[pos]`.
+     *   `left`  — the byte at `pos - 1`, i.e. `s[pos-1]`;
+     *   `right` — the byte at `pos`, i.e. `s[pos]`.
      *
-     * Out of subject on either side reads as FALSE for both properties, which
-     * is the truth for both consumers: out-of-subject is non-word (`\b` at
-     * offset 0 and at `n`), and it is not a newline (`(?m)^` at offset 0 and
-     * `(?m)$` at `n` are true for POSITION reasons, carried by `bot_ok` and
-     * `end_ok`, never by a byte that is not there).
+     * Out of subject on either side is the EMPTY vector: in no set. That is
+     * the truth for every reader — out-of-subject is non-word (`\b` at 0 and
+     * n), not a newline (`(?m)^` at 0 and `(?m)$` at n are true for POSITION
+     * reasons, carried by `bot_ok`/`end_ok`), not in any lookaround's set, and
+     * NOT in the non-start set, i.e. a character boundary.
      *
-     * Wave B named these `cons_word`/`up_word` — by WALK ORDER — and could,
-     * because `\b` holds iff its two operands DIFFER and `\B` iff they AGREE:
-     * both tests are SYMMETRIC, so a machine reading them backwards gets the
-     * same answer. `(?m)$` broke that: it reads ONE side, so the two machines
-     * must agree about which. Naming them by side puts the whole of the
-     * direction question in make_state's one mapping and leaves every
-     * assertion arm below reading like the assertion's own definition.
-     *
-     * Which side is a per-STATE fact and which is a per-CLASS parameter still
-     * differs by machine, and that too is make_state's business: one of the
-     * two is read off the class of the transition that built the state, the
-     * other is the class about to be consumed, and make_state closes each
-     * pre-set once per live class-axis context of the latter. */
-    bool      left_word;
-    bool      right_word;
-    bool      left_nl;
-    bool      right_nl;
-    /* [K50] "the byte at `pos` is one this encoding may start a character at",
-     * i.e. `pos` is a character boundary — the operand of `N_CSTART`.
-     *
-     * ONE SIDE ONLY, like `right_nl` and unlike `left_word`/`right_word`: the
-     * boundary property of a position is a fact about the byte AT it, so there
-     * is no left twin to carry and no symmetry question. A position past the
-     * end of the subject is a boundary, and that half is `end_ok` — read in
-     * the arm rather than folded in here, exactly as `N_EOL_M` reads it. */
-    bool      right_cstart;
+     * Naming them by SIDE puts the whole of the direction question in
+     * make_state's one mapping (`sides_of`) and leaves every assertion arm
+     * below reading like the assertion's own definition. */
+    uint32_t  left;
+    uint32_t  right;
+    const int8_t *cbit;   /* per NFA state: its A_CTX set's list index, or -1 */
+    int       nl_bit;     /* list index of the newline set, or -1 */
+    int       ns_bit;     /* list index of the non-start set, or -1 */
     bool      prune;
 } Clo;
+
+/* Bit `k` of a context atom vector, 0 when the machine has no such entry. */
+static inline int ctx_bit(uint32_t vec, int k)
+{
+    return k >= 0 ? (int)((vec >> k) & 1u) : 0;
+}
 
 /* Open loop `s` on top of `ctx`.
  *
@@ -808,28 +929,31 @@ static void clo_walk(Clo *cl, int s)
              * the default is off — which is the rule below, and the rule the
              * design's two sections do not have. */
             case N_BOT_M:
-                if (!cl->bot_ok && !(cl->left_nl && !cl->end_ok)) break;
+                if (!cl->bot_ok && !(ctx_bit(cl->left, cl->nl_bit) && !cl->end_ok)) break;
                 s = st->t1;
                 continue;
             case N_EOL_M:
-                if (!cl->end_ok && !cl->right_nl) break;
+                if (!cl->end_ok && !ctx_bit(cl->right, cl->nl_bit)) break;
                 s = st->t1;
                 continue;
-            case N_WORDB:
-                if (cl->left_word == cl->right_word) break;
+            /* [UCP] U2 A_CTX — `\b`, `\B` and every recognized one-character
+             * lookaround: the node's truth function applied to its set's
+             * membership bit on each side. No per-spelling arm, which is the
+             * point: the function is data. */
+            case N_CTX: {
+                int k = cl->cbit[s];
+                int in = (ctx_bit(cl->left, k) << 1) | ctx_bit(cl->right, k);
+                if (!((st->ctxfn >> in) & 1)) break;
                 s = st->t1;
                 continue;
-            case N_NWORDB:
-                if (cl->left_word != cl->right_word) break;
-                s = st->t1;
-                continue;
+            }
             /* [K50] "this position is a character boundary of the artifact's
              * encoding" — `N_EOL_M`'s shape three arms up, with the encoding's
              * start set in place of the newline set. `end_ok` is the "or the
              * end of the subject" half: there is no byte at `n` to ask about,
              * and `n` is a boundary. */
             case N_CSTART:
-                if (!cl->end_ok && !cl->right_cstart) break;
+                if (!cl->end_ok && ctx_bit(cl->right, cl->ns_bit)) break;
                 s = st->t1;
                 continue;
             }
@@ -845,13 +969,10 @@ static void clo_walk(Clo *cl, int s)
     }
 }
 
-/* The two neighbouring bytes' properties, travelling as one value so adding a
- * property to the class axis is one field rather than two parameters at every
- * call site (which is what wave B's four-bool signature would have become). */
+/* The two neighbouring bytes' context ATOM VECTORS, in subject order,
+ * travelling as one value (see Clo.left/right). */
 typedef struct {
-    bool left_word, right_word, left_nl, right_nl;
-    /* [K50] one side only — see Clo.right_cstart. */
-    bool right_cstart;
+    uint32_t left, right;
 } Sides;
 
 /* Computes the epsilon closure of pre[0..npre) under class-view flags
@@ -883,8 +1004,7 @@ static void closure(Nfa *nfa, const int *pre, int npre, bool bot_ok, bool eol_ok
     Clo cl = { sc->cx, nfa, &sc->ctxs, &sc->memo, &sc->ks,
                sc->seen.mark, sc->emit.mark, sc->seen.gen,
                out, 0, false, eol_ok, end_ok, bot_ok, gst_ok,
-               sd.left_word, sd.right_word, sd.left_nl, sd.right_nl,
-               sd.right_cstart, prune };
+               sd.left, sd.right, sc->cbit, sc->nl_bit, sc->ns_bit, prune };
     for (int i = 0; i < npre; i++) {
         if (prune && cl.accept) break;
         clo_walk(&cl, pre[i]);
@@ -901,10 +1021,10 @@ static void closure(Nfa *nfa, const int *pre, int npre, bool bot_ok, bool eol_ok
  * `d->n++`, i.e. insertion order, and the hash only picks which probe
  * sequence finds it. The per-view salt keeps the same list appearing in two
  * different views from cancelling. */
-static uint32_t dhash(const DView *up, int eolvar, int endvar)
+static uint32_t dhash(const DView *up, int natoms, int eolvar, int endvar)
 {
     uint32_t h = fnv1a_32_init();
-    for (int u = 0; u < UPC_N; u++) {
+    for (int u = 0; u < natoms; u++) {
         for (int i = 0; i < up[u].nlist; i++)
             h = fnv1a_32_mix(h, (uint32_t)up[u].list[i]);
         /* per-view salt, not part of FNV-1a — kept open-coded, internal.h's
@@ -920,7 +1040,7 @@ static uint32_t dhash(const DView *up, int eolvar, int endvar)
  * addressing, linear probing). */
 static void tab_insert(Dfa *d, int idx)
 {
-    uint32_t h = dhash(d->st[idx].up, d->st[idx].eolvar, d->st[idx].endvar);
+    uint32_t h = dhash(d->st[idx].up, d->natoms, d->st[idx].eolvar, d->st[idx].endvar);
     size_t i = h & (d->tabcap - 1);
     while (d->tab[i] >= 0) i = (i + 1) & (d->tabcap - 1);
     d->tab[i] = idx;
@@ -960,7 +1080,7 @@ static bool view_same(const DView *a, const DView *b)
  * same closures and MERGE, which is the whole reason §3.5's measured ratio is
  * 1.11x median rather than the theoretical 2x.
  *
- * [M6.2 wave C] The two hand-written view slots became a loop over `UPC_N`,
+ * [M6.2 wave C] The two hand-written view slots became a loop over the atoms,
  * and the sharing rule generalized with it: a view whose closure equals an
  * EARLIER view's shares that view's storage, so a machine with no class axis
  * still allocates exactly one list per state and charges K7's budget exactly
@@ -968,14 +1088,14 @@ static bool view_same(const DView *a, const DView *b)
 static int intern(Ctx *cx, Dfa *d, const DView *up, int eolvar, int endvar)
 {
     if (d->tabcap == 0 || (size_t)d->n * 2 >= d->tabcap) tab_grow(cx, d);
-    uint32_t h = dhash(up, eolvar, endvar);
+    uint32_t h = dhash(up, d->natoms, eolvar, endvar);
     size_t i = h & (d->tabcap - 1);
     while (d->tab[i] >= 0) {
         DState *s = &d->st[d->tab[i]];
         if (s->eolvar == eolvar && s->endvar == endvar) {
             int u = 0;
-            while (u < UPC_N && view_same(&s->up[u], &up[u])) u++;
-            if (u == UPC_N) return d->tab[i];
+            while (u < d->natoms && view_same(&s->up[u], &up[u])) u++;
+            if (u == d->natoms) return d->tab[i];
         }
         i = (i + 1) & (d->tabcap - 1);
     }
@@ -1009,8 +1129,8 @@ static int intern(Ctx *cx, Dfa *d, const DView *up, int eolvar, int endvar)
     /* Which views need storage of their own, and which alias an earlier one.
      * Computed BEFORE anything is spent so the K7 charge below counts exactly
      * the lists this state will really own. */
-    int owner[UPC_N];
-    for (int u = 0; u < UPC_N; u++) {
+    int owner[PCREC_MAX_CTX_ATOMS];
+    for (int u = 0; u < d->natoms; u++) {
         owner[u] = u;
         for (int v = 0; v < u; v++)
             if (view_same(&up[v], &up[u])) { owner[u] = v; break; }
@@ -1026,7 +1146,7 @@ static int intern(Ctx *cx, Dfa *d, const DView *up, int eolvar, int endvar)
      * multiplying the charge would have widened the cap it never touched.
      * Zero extra on every machine with no class axis, where all three views
      * are one list. */
-    for (int u = 0; u < UPC_N; u++)
+    for (int u = 0; u < d->natoms; u++)
         if (owner[u] == u) cx->subset_elems += up[u].nlist;
     /* [LIM-2] N1: raise-only per-compile overrides (0 = the built-in
      * default) for BOTH the hard cap below and the new AUTO-only work
@@ -1111,7 +1231,8 @@ static int intern(Ctx *cx, Dfa *d, const DView *up, int eolvar, int endvar)
      * already is for `src/opt/minimize.c`'s `calloc`'d rebuild — so the next
      * optional field costs nobody a second diagnosis. */
     memset(s, 0, sizeof *s);
-    for (int u = 0; u < UPC_N; u++) {
+    s->up = pcrec_arena_alloc(&cx->arena, (size_t)d->natoms * sizeof(DView));
+    for (int u = 0; u < d->natoms; u++) {
         int n = up[u].nlist;
         s->up[u].nlist  = n;
         s->up[u].accept = up[u].accept;
@@ -1144,37 +1265,27 @@ typedef struct {
     bool reverse;
     bool has_end;             /* a `pos == n`-only view must be computed */
     bool has_gst;             /* [wave D] a `\G` start family must be closed */
-    bool upc_live[UPC_N];     /* class-axis contexts needing their own closure */
+    int  natoms;              /* [UCP] U2 context atoms, each closed on its own */
+    const uint32_t *atomvec;  /* each atom's membership vector */
 } Mach;
 
-/* Map a machine's (consumed, upcoming) class-axis pair onto the SUBJECT-ORDER
- * pair the closure reads. The forward machine consumes leftward-to-rightward,
- * so the byte it has consumed is at `pos - 1`; the reverse machine consumes
- * rightward-to-leftward, so the byte it has consumed is at `pos` and the one
- * it is about to consume is at `pos - 1`. That single swap is the whole of
- * direction in the subset construction.
+/* Map a machine's (consumed, upcoming) context-atom pair onto the SUBJECT-
+ * ORDER pair the closure reads. The forward machine consumes leftward-to-
+ * rightward, so the byte it has consumed is at `pos - 1`; the reverse machine
+ * consumes rightward-to-leftward, so the byte it has consumed is at `pos` and
+ * the one it is about to consume is at `pos - 1`. That single swap is the
+ * whole of direction in the subset construction.
  *
  * "No byte on this side" — start of subject forward, end of subject reverse —
- * arrives here as UPC_PLAIN, which yields false for both properties: exactly
- * the out-of-subject rule `\b`, `(?m)^` and `(?m)$` all want. */
-static Sides sides_of(const Mach *m, int cons_upc, int up_upc)
+ * arrives here as atom 0, the EMPTY vector: in no context set, which is
+ * exactly the out-of-subject rule every reader wants (Clo.left/right). */
+static Sides sides_of(const Mach *m, int cons_atom, int up_atom)
 {
-    int lft = m->reverse ? up_upc   : cons_upc;
-    int rgt = m->reverse ? cons_upc : up_upc;
+    int lft = m->reverse ? up_atom   : cons_atom;
+    int rgt = m->reverse ? cons_atom : up_atom;
     Sides sd;
-    sd.left_word  = (lft == UPC_WORD);
-    sd.right_word = (rgt == UPC_WORD);
-    sd.left_nl    = (lft == UPC_NL);
-    sd.right_nl   = (rgt == UPC_NL);
-    /* [K50] The boundary property is a fact about the byte AT the position,
-     * i.e. the RIGHT side in subject order, for both machine directions —
-     * `sides_of`'s swap above has already put it there. A context that is not
-     * UPC_NOSTART is a byte a character may start at, which includes "there is
-     * no byte on this side" (UPC_PLAIN): out of subject reads as a BOUNDARY
-     * here, the opposite of what the word and newline properties want and the
-     * right answer for this one. The `pos == n` case does not rely on it — the
-     * arm reads `end_ok` — but a reverse machine's `pos == 0` does. */
-    sd.right_cstart = (rgt != UPC_NOSTART);
+    sd.left  = m->atomvec[lft];
+    sd.right = m->atomvec[rgt];
     return sd;
 }
 
@@ -1216,38 +1327,33 @@ static Sides sides_of(const Mach *m, int cons_upc, int up_upc)
  *    closure work on every pattern in the corpus, which is what
  *    tests/resource/'s CPU budget caught on `[a-z]{0,30000}` (57.6 s against
  *    a 45 s cap) the first time this landed without the guard.
- *  - `upc_live[u]` off: nothing in the machine reads the property that
- *    distinguishes context `u` from UPC_PLAIN, so their closures coincide.
- *    Sharing the BUFFER makes intern's aliasing test true, so such a machine
- *    pays no closure, no arena and no `subset_elems` for the axis — which is
- *    the whole content of the byte-identity claim
- *    tests/codegen/run_wordctx_identity.sh gates. */
+ *  - one closure per context ATOM, and a machine has only the atoms its
+ *    context list realizes ([UCP] U2): with no context set at all there is
+ *    exactly one atom and the class axis costs nothing — no closure, no arena
+ *    and no `subset_elems` — which is the whole content of the byte-identity
+ *    claim tests/codegen/run_wordctx_identity.sh gates. */
 static int make_state(Ctx *cx, Nfa *nfa, Dfa *d, const Mach *m,
                       const int *pre, int npre, bool bot_ok, bool gst_ok,
-                      int cons_upc, CloScratch *sc, int *scratch)
+                      int cons_atom, CloScratch *sc, int *scratch)
 {
     enum { V_BASE = 0, V_EOL = 1, V_END = 2, V_N = 3 };
-    DView vw[V_N][UPC_N];
+    DView vw[V_N][PCREC_MAX_CTX_ATOMS];
 
     for (int v = 0; v < V_N; v++) {
-        for (int u = 0; u < UPC_N; u++) {
+        for (int u = 0; u < m->natoms; u++) {
             if (v == V_END && !m->has_end) {
                 vw[v][u] = vw[V_EOL][u];
                 continue;
             }
-            if (u != UPC_PLAIN && !m->upc_live[u]) {
-                vw[v][u] = vw[v][UPC_PLAIN];
-                continue;
-            }
             bool acc;
             int nout;
-            int *buf = scratch + (size_t)(v * UPC_N + u) * nfa->n;
+            int *buf = scratch + (size_t)(v * m->natoms + u) * nfa->n;
             /* end_ok implies eol_ok — the Clo.end_ok invariant. `gst_ok` is
              * orthogonal to the position views and rides through unchanged:
              * `\G` and `\z` can both hold at once (an empty subject searched
              * from 0), so it is a caller's parameter and not a fourth view. */
             closure(nfa, pre, npre, bot_ok, v >= V_EOL, v >= V_END, gst_ok,
-                    sides_of(m, cons_upc, u), m->prune, sc, buf, &nout, &acc);
+                    sides_of(m, cons_atom, u), m->prune, sc, buf, &nout, &acc);
             vw[v][u].list   = buf;
             vw[v][u].nlist  = nout;
             vw[v][u].accept = acc;
@@ -1256,7 +1362,7 @@ static int make_state(Ctx *cx, Nfa *nfa, Dfa *d, const Mach *m,
 
     bool live = false;
     for (int v = 0; v < V_N && !live; v++)
-        for (int u = 0; u < UPC_N && !live; u++)
+        for (int u = 0; u < m->natoms && !live; u++)
             live = vw[v][u].accept || vw[v][u].nlist > 0;
     if (!live) return -1;
 
@@ -1268,14 +1374,14 @@ static int make_state(Ctx *cx, Nfa *nfa, Dfa *d, const Mach *m,
     int eolvar = -1, endvar = -1;
     {
         int u = 0;
-        while (u < UPC_N && view_same(&vw[V_BASE][u], &vw[V_EOL][u])) u++;
-        if (u < UPC_N) eolvar = intern(cx, d, vw[V_EOL], -1, -1);
+        while (u < m->natoms && view_same(&vw[V_BASE][u], &vw[V_EOL][u])) u++;
+        if (u < m->natoms) eolvar = intern(cx, d, vw[V_EOL], -1, -1);
     }
 #ifndef PCREC_NO_ENDVAR
     {
         int u = 0;
-        while (u < UPC_N && view_same(&vw[V_EOL][u], &vw[V_END][u])) u++;
-        if (u < UPC_N) endvar = intern(cx, d, vw[V_END], -1, -1);
+        while (u < m->natoms && view_same(&vw[V_EOL][u], &vw[V_END][u])) u++;
+        if (u < m->natoms) endvar = intern(cx, d, vw[V_END], -1, -1);
     }
 #endif
 
@@ -1301,46 +1407,23 @@ void pcrec_build_dfa(Ctx *cx, Nfa *nfa, Dfa *d, bool prune, bool reverse,
      * from the very first `make_state` below. */
     d->optional = optional;
     d->overflowed = false;
-    /* [K50] Cleared here rather than trusted to be zero: a `Dfa` is reused
-     * across the forward/reverse/anchored builds of one compile ([OPT-4]'s
-     * rebuild-in-place is the same reason `n` is reset), and a machine with no
-     * gate must not inherit the previous machine's start set — that would give
-     * it a fourth alphabet refinement it never asked for. */
-    d->startcls = NULL;
-    /* Hoisted once per machine, like `has_end` below and for the same reason.
-     * The ALPHABET refinement has to happen before eqclasses returns, so
-     * these cannot wait until the worklist. */
-    bool has_word = false, has_nl = false, has_end = false, has_gst = false;
-    /* [K50] Does this machine carry a character-boundary gate? Hoisted with
-     * its three siblings and for their reason — the alphabet refinement has to
-     * happen before `eqclasses` returns. Only `pcrec_nfa_wrap_unanchored` builds an
-     * N_CSTART, so this is false on the anchored MATCH-HERE machine, on the
-     * reverse machine and on every ENG_ATTEMPT machine, and false under any
-     * encoding whose backend places no restriction. */
-    bool has_cstart = false;
+    /* Hoisted once per machine, like `has_end` below and for the same reason:
+     * the closure needs to know which position views are live before the
+     * first state is built. */
+    bool has_end = false, has_gst = false;
     for (int i = 0; i < nfa->n; i++) {
         switch (nfa->st[i].k) {
-        case N_WORDB: case N_NWORDB: has_word = true; break;
         /* [K50] The gate makes the `pos == n` view live for `N_EOL_M`'s own
          * reason: "or the end of the subject" is wave A's `end_ok`, and a
          * machine that could not see `pos == n` would refuse the empty match
          * at the end of every subject. */
         case N_CSTART:
-            has_cstart = true;
-            has_end = true;
-            break;
-        /* [M6.2 wave C] BOTH `(?m)` kinds refine by the newline set, and both
-         * make the `pos == n` view live. `(?m)^` needs the refinement because
-         * its operand is the byte to the LEFT — which is a per-CLASS fact of
-         * the transition that built the state — and needs the `pos == n` view
-         * for nothing, but asking for it costs one closure on a construct
-         * that has already been routed to ENG_ATTEMPT. `(?m)$` needs both:
-         * `end_ok` IS its "or end of subject" half. */
+        /* [M6.2 wave C] BOTH `(?m)` kinds make the `pos == n` view live.
+         * `(?m)^` needs it for nothing, but asking costs one closure on a
+         * construct that has already been routed to ENG_ATTEMPT; `(?m)$`
+         * needs it: `end_ok` IS its "or end of subject" half. */
         case N_BOT_M:
         case N_EOL_M:
-            has_nl = true;
-            has_end = true;
-            break;
         case N_END:   has_end = true; break;
         /* [M6.2 wave D] `\G` refines NO alphabet and asks for NO position
          * view — it reads no byte and its truth at `pos` has nothing to do
@@ -1350,43 +1433,17 @@ void pcrec_build_dfa(Ctx *cx, Nfa *nfa, Dfa *d, bool prune, bool reverse,
         default: break;
         }
     }
-    /* [M6.2 repair slice] THE AXIS PIN, moved OUT of the scan loop above and
-     * placed in front of the flag's THREE consumers (`clsctx`, `eqclasses`,
-     * `upc_live[]`). Inside the loop it was one `#ifndef` per `case`, i.e.
-     * inside the region a construction sabotage edits; here it cannot be
-     * reached by an edit to how the flag is COMPUTED, and `eqclasses`'
-     * refinement additionally carries its own exclusion so an edit to how the
-     * flag is USED cannot cancel it either. Never defined in a shipped
-     * build. */
-#ifdef PCREC_NO_WORDCTX
-    has_word = false;
-#endif
-#ifdef PCREC_NO_MLINECTX
-    has_nl = false;
-#endif
-    d->clsctx = has_word || has_nl;
 
-    /* [K50] The class axis's fourth value exists for this machine only if the
-     * machine has a gate to read it. The backend is asked once, here, and the
-     * answer is the ONLY thing about an encoding this construction knows.
-     *
-     * THE PARTITION PRECONDITION IS CHECKED, NOT ASSUMED (enc.h's `start_cls`
-     * comment): `upc_of_class` returns ONE value, so a non-start byte that
-     * were also a word byte would classify UPC_WORD, read as a character start
-     * to the gate, and re-open K50 silently. A backend that violates it is an
-     * internal error at the site that would have committed the miscompile. */
-    if (has_cstart) {
-        const PcrecEnc *e = pcrec_enc_by_id(cx->opt->encoding);
-        if (!pcrec_enc_start_cls_ok(e))
-            pcrec_ctx_fail(cx, 0,
-                     "internal error: encoding '%s' has a character-start set "
-                     "that overlaps the word or newline sets, which the DFA "
-                     "class axis represents as one partition",
-                     e && e->name ? e->name : "?");
-        d->startcls = e ? e->start_cls : NULL;
-    }
-
-    eqclasses(nfa, d, has_word, has_nl, d->startcls);
+    /* [UCP] U2 THE CLASS AXIS: the context-set list (the contributor table
+     * above: every A_CTX set, the newline set of `(?m)^/$`, the encoding's
+     * non-start set for K50's gate), then the alphabet refined by it, then the
+     * atoms. It replaces wave B/C's `has_word`/`has_nl` flags and K50's
+     * `startcls` — three hand-threaded facts with three consumers each — and
+     * the fixed four-value partition they fed. */
+    int8_t *cbit = pcrec_arena_alloc(&cx->arena, (size_t)(nfa->n ? nfa->n : 1));
+    if (!ctx_collect(cx, nfa, d, cbit)) return;
+    eqclasses(nfa, d);
+    if (!ctx_atoms(cx, d)) return;
     /* R1 A-3: the binding constraint for table machines is total emitted
      * table entries (gcc time is flat in data size), not state count alone */
     d->maxstates = maxstates;
@@ -1413,11 +1470,17 @@ void pcrec_build_dfa(Ctx *cx, Nfa *nfa, Dfa *d, bool prune, bool reverse,
      * worst case and INDEXED by (view, class-context); the guards in
      * make_state decide how many are actually written. */
     int *scratch = pcrec_arena_alloc(&cx->arena,
-                               (size_t)nfa->n * 3 * UPC_N * sizeof(int));
+                               (size_t)nfa->n * 3 * d->natoms * sizeof(int));
     int *pre = pcrec_arena_alloc(&cx->arena, (size_t)nfa->n * sizeof(int));
 
-    Mach m = { prune, reverse, has_end, has_gst,
-               { true, has_word, has_nl, has_cstart } };
+    Mach m = { prune, reverse, has_end, has_gst, d->natoms, d->atomvec };
+    sc.cbit = cbit;
+    sc.nl_bit = sc.ns_bit = -1;
+    for (int k = 0; k < d->nctx; k++) {
+        if (!ctx_entry_live(d, k)) continue;
+        if (d->ctx[k].row == CTXROW_NEWLINE) sc.nl_bit = k;
+        if (d->ctx[k].row == CTXROW_NOSTART) sc.ns_bit = k;
+    }
 
     /* [ENG-ABS] `root` IS A PARAMETER. It was `nfa->start` here, which is the
      * state `pcrec_nfa_wrap_unanchored` installs — the start-anywhere self-loop. The
@@ -1448,14 +1511,12 @@ void pcrec_build_dfa(Ctx *cx, Nfa *nfa, Dfa *d, bool prune, bool reverse,
     d->s1u[UPC_PLAIN] =
         make_state(cx, nfa, d, &m, &root, 1, false, false, UPC_PLAIN,
                    &sc, scratch);
-    for (int u = UPC_PLAIN + 1; u < UPC_N; u++)
-        d->s1u[u] = m.upc_live[u]
-            ? make_state(cx, nfa, d, &m, &root, 1, false, false, u,
-                         &sc, scratch)
-            : d->s1u[UPC_PLAIN];
+    for (int u = UPC_PLAIN + 1; u < m.natoms; u++)
+        d->s1u[u] = make_state(cx, nfa, d, &m, &root, 1, false, false, u,
+                               &sc, scratch);
     /* [M6.2 wave D] `\G`'s interior family, closed only when the machine has
-     * a `\G` to gate — the same pay-only-when-it-differs guard `has_end` and
-     * `upc_live[]` above are written with, and for the sharper of the two
+     * a `\G` to gate — the same pay-only-when-it-differs guard `has_end` is
+     * written with, and for the sharper of the two
      * reasons. Without the guard these calls would compute closures identical
      * to `s1u[]`'s and intern to the same ids (so no state numbering and no
      * emitted byte would move), but they would still cost up to three extra
@@ -1473,11 +1534,13 @@ void pcrec_build_dfa(Ctx *cx, Nfa *nfa, Dfa *d, bool prune, bool reverse,
      * annotation). Putting the knob where the emitted TEXT is chosen makes
      * the reference build structurally the pre-wave emitter, which no edit to
      * the analysis can undo. */
-    for (int u = 0; u < UPC_N; u++)
+    for (int u = 0; u < m.natoms; u++)
         d->s1g[u] = m.has_gst
-            ? make_state(cx, nfa, d, &m, &root, 1, false, true,
-                         m.upc_live[u] ? u : UPC_PLAIN, &sc, scratch)
+            ? make_state(cx, nfa, d, &m, &root, 1, false, true, u,
+                         &sc, scratch)
             : d->s1u[u];
+    for (int u = m.natoms; u < PCREC_MAX_CTX_ATOMS; u++)
+        d->s1u[u] = d->s1g[u] = -1;   /* no such atom: never read */
 
     /* worklist: any state (including EOL variants) with an unfilled row */
     for (int si = 0; si < d->n; si++) {

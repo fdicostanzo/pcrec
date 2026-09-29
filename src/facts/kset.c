@@ -133,8 +133,7 @@ static void wclose(Walk *w, const int *seeds, int nseeds)
         case N_END:
         case N_BOT_M:
         case N_EOL_M:
-        case N_WORDB:
-        case N_NWORDB:
+        case N_CTX:
         case N_GSTART:
         /* [K50] The character-boundary gate is an assertion like the rest, and
          * PASSING it is the sound direction here for this file's own reason: a
