@@ -965,8 +965,49 @@ cls_tree_study's verified table."* §4.1-§4.3 below are UNCHANGED as
 ARITHMETIC — the verified frontier table, the caps, and the worked
 selection on `\p{L}` all survive exactly as revision 2 derived them — and
 they are reframed as what they now are: **THE RUBRIC that chose the five
-constants once, not a live per-class mechanism the compiler runs.** The
-five values, pinned:
+constants once, not a live per-class mechanism the compiler runs.**
+
+**RE-PROPOSED AFTER [CLS-TREE] S0's CALIBRATION (D131, ruling D129
+Q1; evidence `docs/design/cls_tree_design.md` §1.7).** The ubuntubudu
+calibration re-confirmed that the pinned constants priced a term that
+predicts nothing (member r = +0.08, 19/36 on the fresh run) and fitted
+the per-probe model that does (r = +0.98 over all arms, kit orderings
+30/36, 30/36 again on the 09-11 run it was never fitted on): per-probe
+time is branch MISPREDICTS. On all twelve timed sets no multi-section
+sectioning at λ > 4 is selected at any price of time against bytes,
+because the whole-set three-stage table (`P3`) is faster than every kit
+policy in 57 of 60 set×regime cells at 1.01-1.23× the kit's size-minimal
+bytes. So the dial's class row is ONE kit constant and a FIRST-MATCH
+table over whole-set forms, with three distinct programs, not five:
+
+| position | the class matcher — first match wins | kit λ |
+|---|---|---:|
+| `−2` | the smaller of {`K`, `P3`} | **4** |
+| `−1` | = `−2` | **4** |
+| `0` | (1) `P3` if `K` has ≥ 16 sections and bytes(`P3`) ≤ 1.26 × bytes(`K`); (2) `K` | **4** |
+| `+1` | = `0` | **4** |
+| `+2` | (1) where `0` chose `P3`: the smaller of {`P2`, `B1`}; (2) as `0` | **4** |
+
+`K` is the kit sectioning DP's answer at λ = 4 (the size-minimal swept
+point, §4.3's own `−2`); `P3`/`P2`/`B1` are the whole-set three-stage
+table, two-stage table and single bitmap (`cls_tree_design.md` §1.3).
+Each row is a first-match rule; the DP is the optimizer INSIDE `K`, and
+"the smaller of" is an argmin inside one row. **The rubric proposes,
+placement is art** (D103 addendum): the 1.26 is §3.2's `z_mid`
+unchanged (every timed set's `P3`/`K` is 1.01-1.23, so `z_mid` = 20%
+would move six of the twelve back to `K`); the 16-section gate is a
+PLACEMENT at the bottom of the timed range (the twelve `K`s have 16-22
+sections) — below it the kit's tree is shallow and no timing exists, and
+a `bench2` arm over 2-16-section sets is the measurement that would move
+it. `+1` = `0` because `P2` costs 1.9-7.2× `P3`'s bytes for 1.20-1.37×
+member speed, outside `Z₁` = 1.30 on every set; `+2` takes it anyway, by
+Frank's 2026-09-16 direction that the huge-table forms are `+2`'s
+content priced at their measured rate, not excluded by `Z₂`. `B1` is in
+the `+2` row only as `P2`'s size tie-break: they time identically and
+`P2` is 2.9-3.8× smaller on all twelve sets.
+
+The superseded pins (−2 → 4, −1 → 16, 0 → 16, +1 → 64, +2 → 256),
+kept for the record:
 
 | position | λ | condition |
 |---|---:|---|

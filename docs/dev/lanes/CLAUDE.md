@@ -3406,3 +3406,12 @@ never edited afterwards.
   `ucpu1_evidence/` holds the corpus generator (`gen_ucp.py`,
   `gen_corpus.py`), the two remote 10.46 probes (`remote_verify.py`,
   `remote_latin1.py`) and the 10.46 re-verification transcript.
+- `adm131_report.md` — D131's docs (2026-09-29, lane adm131, docs only):
+  clsfit's λ diff hand-applied to `opt_dial_design.md` §4 / `tuning.md`
+  (did not `git apply --check` cleanly — the file had drifted); the
+  `[CLS-TREE]`/`[OPT-CLSPACK]`/`[SEL-COST]`/`[LIST-TABLES]` plan.md rows
+  each appended with their D131 disposition; `[FINDINGS-BENCH-TIERS]`
+  closed and archived to plan_completed.md; new row `[FIND-DOMAIN-CHECK]`
+  filed; the B115 executive summary plus a second-section CLS-TREE S0
+  addendum. Three judgment calls flagged for Frank (OPT-CLSPACK's STATE
+  tag, closing FINDINGS-BENCH-TIERS outright, the addendum's placement).
