@@ -104,6 +104,8 @@ SAB_REACH_EXPECT="REACH-CLASSCTX-DECLINED-BY-P2"
 SAB_REACH_POP="tests/codegen/manifests/s220_view_decliners.txt|^\\\\B|3"
 SAB_COUNT=1
 SAB_BEFORE='    /* P2 — one derivation, shared with the scan-edge pass. */
-    if (!pcrec_state_view_invariant(&fd->st[fs])) return false;'
+    if (!pcrec_state_view_invariant(fd, &fd->st[fs])) return false;'
 SAB_AFTER='    /* SABOTAGE S220: P2 is dropped -- the accept no longer has to be
      * invariant in position or in class context. */'
+
+# RE-AIMED 2026-09-29 BY [UCP] U2 (lane ucpu2), intent re-verified: signature only: `pcrec_state_view_invariant(fd, st)`; the plant still drops P2.

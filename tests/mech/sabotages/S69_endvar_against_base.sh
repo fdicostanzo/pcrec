@@ -41,5 +41,7 @@ SAB_COUNT=1
 # three-valued; the sabotage is still "canonicalize the END view against the
 # BASE view instead of against the EOL view", now spelled as the one changed
 # subscript.
-SAB_BEFORE='        while (u < UPC_N && view_same(&vw[V_EOL][u], &vw[V_END][u])) u++;'
-SAB_AFTER='        while (u < UPC_N && view_same(&vw[V_BASE][u], &vw[V_END][u])) u++;   /* SABOTAGE S69 */'
+SAB_BEFORE='        while (u < m->natoms && view_same(&vw[V_EOL][u], &vw[V_END][u])) u++;'
+SAB_AFTER='        while (u < m->natoms && view_same(&vw[V_BASE][u], &vw[V_END][u])) u++;   /* SABOTAGE S69 */'
+
+# RE-AIMED 2026-09-29 BY [UCP] U2 (lane ucpu2), intent re-verified: the view loops run over the machine's atoms (`m->natoms`) instead of the fixed `UPC_N`; the plant still canonicalizes the END view against the BASE view.

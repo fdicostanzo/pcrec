@@ -7934,18 +7934,18 @@ static void vm_ctx(Vm *v, int entry, const Ast *a, int next)
         pcrec_ctx_fail(v->cx, 0, "internal error: a context assertion carries "
                        "truth function 0x%x, which has no emitted form",
                        (unsigned)a->u.ctx.fn);
-    int ci = vm_cls(v, bits);
+    int si = vm_cls(v, bits);
     vm_lbl(v, entry, NULL);
     vm_ev(v, VE_ASSERT, next, 0, f->role);
     if (f->side == VMCTX_BOTH) {
         pcrec_sb_puts(b, "    if ((");
-        vm_ctx_side(v, b, ci, VMCTX_PREV);
+        vm_ctx_side(v, b, si, VMCTX_PREV);
         pcrec_sb_printf(b, " %s ", f->join);
-        vm_ctx_side(v, b, ci, VMCTX_NEXT);
+        vm_ctx_side(v, b, si, VMCTX_NEXT);
         pcrec_sb_printf(b, ")) goto %s_L%d;\n", v->p, next);
     } else {
         pcrec_sb_puts(b, f->neg ? "    if (!" : "    if (");
-        vm_ctx_side(v, b, ci, f->side);
+        vm_ctx_side(v, b, si, f->side);
         pcrec_sb_printf(b, ") goto %s_L%d;\n", v->p, next);
     }
     vm_fail(v);

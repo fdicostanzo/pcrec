@@ -44,10 +44,12 @@ SAB_BEFORE='static bool req_route_one_attempt(Ctx *cx)
                ((cx->job->fit.prefilter && !cx->job->fit.prefilter_collapsed) ||
                 cx->job->vm_frameless);
     return cx->job->engine == PCREC_ENG_ATTEMPT &&
-           dfa_interior_dead(cx->job->dfa.s1u);
+           dfa_interior_dead(&cx->job->dfa, cx->job->dfa.s1u);
 }'
 SAB_AFTER='static bool req_route_one_attempt(Ctx *cx)
 {
     (void)cx;
     return false;   /* SABOTAGE S269: the G2 admission rule removed */
 }'
+
+# RE-AIMED 2026-09-29 BY [UCP] U2 (lane ucpu2), intent re-verified: signature only: `dfa_interior_dead(&cx->job->dfa, ...)` (the seed family is atom-sized); the plant still removes the G2 admission rule.

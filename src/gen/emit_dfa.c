@@ -3674,8 +3674,16 @@ static void unanch_start(Ctx *cx, UnanchStart *o)
     o->views = o->viewsel || wctx;
 
     int fs = fd->s0;   /* no asserts -> s0 == s1 */
-    int rs = rd->s0;
-    if (fs < 0 || rs < 0) { o->empty = true; return; }
+    /* [UCP] U2 THE REVERSE MACHINE IS EMPTY ONLY IF EVERY START IS DEAD. Its
+     * `s0` is "no character to the right of the match", and a pattern ending
+     * in a lookahead that needs one (`z(?=a)`) cannot end there — so `s0` is
+     * dead while the seeds a match's own right-hand character selects are
+     * live. `s0` alone was a sufficient emptiness test only while every
+     * context the reverse machine read was satisfiable by an absent side. */
+    if (fs < 0 || (rd->s0 < 0 && dfa_interior_dead(rd, rd->s1u))) {
+        o->empty = true;
+        return;
+    }
 
     /* start-state prefilter analysis: bytes that advance the pattern.
      *
@@ -4990,6 +4998,17 @@ static const DfaView dfa_views[] = {
  * seeding — a start state chosen from the CONTEXT BYTE rather than fixed? */
 static bool seed_applies(const DfaSel *s) { return dfa_needs_seed(s->d); }
 
+/* The start state's cell, the dead cell when `s0` is dead. [UCP] U2: a
+ * REVERSE machine's `s0` ("no character to the right") is dead for a pattern
+ * that ends in a lookahead needing a next character — `(?=a)` cannot hold at
+ * the end of the subject — while its seeds are live; the forward pass never
+ * reports a match ending at `n` there, so the dead cell is never the state a
+ * walk starts in, and it must still be a well-formed cell to emit. */
+static int dfa_s0_cell(const DfaForm *f)
+{
+    return f->d->s0 < 0 ? f->repr->dead_cell : f->repr->cell_of(f->d->s0, f->d);
+}
+
 /* AXIS D, `seeded`: declares the scan's state local INITIALISED FROM THE
  * CONTEXT BYTE — the byte just outside the window the walk consumes — so a
  * leading or trailing `\b` is answered against the real subject rather than
@@ -5027,7 +5046,7 @@ static void seed_emit_seeded(StrBuf *c, const DfaForm *f)
                  " : %d;\n",
               f->dir->ind, f->p, f->dir->c.name, f->dir->statev,
               f->dir->seed_cond, f->p, f->dir->c.name, f->p, f->dir->c.name,
-              f->dir->seed_byte, f->repr->cell_of(f->d->s0, f->d));
+              f->dir->seed_byte, dfa_s0_cell(f));
 }
 
 /* AXIS D, `constant`: one start state, so the local is initialised to it and
@@ -5036,7 +5055,7 @@ static void seed_emit_seeded(StrBuf *c, const DfaForm *f)
 static void seed_emit_constant(StrBuf *c, const DfaForm *f)
 {
     pcrec_sb_printf(c, "%s%s_%s_state %s = %d;\n", f->dir->ind, f->p, f->dir->c.name,
-              f->dir->statev, f->repr->cell_of(f->d->s0, f->d));
+              f->dir->statev, dfa_s0_cell(f));
     if (f->dir->range_guard) pcrec_sb_puts(c, f->dir->range_guard);
 }
 
@@ -5169,7 +5188,7 @@ static bool pf_bcls_applies(const DfaSel *s)
 static void pf_open(StrBuf *c, const DfaForm *f)
 {
     pcrec_sb_printf(c, "%sif (%s == %d && %s == (size_t)-1) {\n",
-              f->dir->bind, f->dir->statev, f->repr->cell_of(f->d->s0, f->d),
+              f->dir->bind, f->dir->statev, dfa_s0_cell(f),
               f->dir->recv);
 }
 
@@ -5713,7 +5732,7 @@ static void pf_emit_ofs_reseed(StrBuf *c, const DfaForm *f, const char *ind)
     pcrec_sb_printf(c, "%s%s = %s ? %s_%s_seed_state[%s_%s_byte_class[subject[%s - 1]]] : %d;\n",
               ind, f->dir->statev, f->dir->posv,
               f->p, f->dir->c.name, f->p, f->dir->c.name, f->dir->posv,
-              f->repr->cell_of(f->d->s0, f->d));
+              dfa_s0_cell(f));
 }
 
 /* The offset-set skip's emitted explanation, naming how many offsets the

@@ -48,5 +48,7 @@ SAB_HARNESS_TARGET="tests/assertions/wordb_vm.rxt"   # wordb.rxt split 2026-08-2
 SAB_DESC="the VM's \\b arm interns pcrec_cls_digit_esc instead of pcrec_cls_word_esc, so \\b and \\w disagree about what a word character is and the artifact carries two class tables where it must carry one (assertions_design.md S7.2 item 3)"
 SAB_DOC_FIGURE="tests/codegen/run_codegen_tests.sh: [M6.2-WORDB rule 3] reports 2 class tables in '(\\b\\w+\\b)'s artifact"
 SAB_COUNT=1
-SAB_BEFORE='    int wi = vm_cls(v, pcrec_cls_word_esc);'
-SAB_AFTER='    int wi = vm_cls(v, pcrec_cls_digit_esc);   /* SABOTAGE S75 */'
+SAB_BEFORE='    int si = vm_cls(v, bits);'
+SAB_AFTER='    int si = vm_cls(v, pcrec_cls_digit_esc);   /* SABOTAGE S75 */'
+
+# RE-AIMED 2026-09-29 BY [UCP] U2 (lane ucpu2), intent re-verified: `vm_wordb` became `vm_ctx` (every A_CTX, the word boundary included, is tested through its own set's pool bitmap `si`); the plant still makes the VM's word-boundary test read a SECOND, wrong set (the digit set) - now for every context node, the word boundary among them.

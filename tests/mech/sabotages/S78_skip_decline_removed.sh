@@ -53,5 +53,7 @@ SAB_HARNESS_TARGET="tests/assertions/multiline.rxt"
 SAB_DESC="pick_skip_states stops declining states whose accept varies across the class axis, so a (?m)\$-family self-loop skip advances past positions where the accept bit was true (D11 rule 1 under a class-indexed accept; the hazard §3.6.1 calls the most dangerous item in the module)"
 SAB_DOC_FIGURE="tests/assertions/run_mline_diff.sh: the (?m)\$-with-quantifier patterns diverge from libpcre2; tests/assertions/multiline.rxt section 3 goes red"
 SAB_COUNT=1
-SAB_BEFORE='            if (state_acc_varies(&d->st[i])) continue;'
+SAB_BEFORE='            if (state_acc_varies(d, &d->st[i])) continue;'
 SAB_AFTER='            /* SABOTAGE S78: decline removed */'
+
+# RE-AIMED 2026-09-29 BY [UCP] U2 (lane ucpu2), intent re-verified: signature only: `state_acc_varies(d, st)`; the plant still removes the decline.

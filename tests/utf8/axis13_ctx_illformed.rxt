@@ -1,0 +1,92 @@
+# [UCP] U2 -- the context node over ILL-FORMED UTF-8 (ucp_design.md §2.3's
+# hazard cells). A context set every member of which is ASCII reads EXACTLY on
+# bytes in both directions, ill-formed input included: a stray continuation
+# byte, a lead byte and 0xFF are all outside every ASCII set, which is ⊥'s
+# rule (§3.5). A set with a non-ASCII member does NOT, which is why T3's row 1
+# admits only byte-expressible sets (`pcrec_enc_set_bytes`) and `(?<=[^a])a`
+# keeps its VM lookbehind: an all-byte context would read 0x80 as "in [^a]"
+# and answer (1,2) on `80 61`, where libpcre2 answers nomatch. The first two
+# blocks are the design's own cells; the rest pin the ASCII sets T3 DOES turn
+# into context nodes against the same inputs.
+#
+# ORACLE: libpcre2 under PCRE2_UTF|PCRE2_MATCH_INVALID_UTF — pcrec's ruled
+# `-e utf8` semantics (utf8_design.md §2.6; axis03's rule). Generated from
+# 10.48, re-verified against 10.46 (docs/dev/lanes/ucpu2_evidence/). Plain
+# PCRE2_UTF would refuse these subjects outright, so `verify_ucp.py`'s in-
+# pattern-verb oracle cannot check this file; tests/harness/run.sh (pcrec's
+# live behaviour) does, and the expectations are the MIU oracle's.
+
+# §2.3: a NON-ASCII context set stays a lookaround (T3 declines it)
+# pcre2-only
+pattern (?<=[^a])a
+encoding utf8
+features all
+n "\x80a"
+m "\xc3\xa9a" 2 3
+m "ba" 1 2
+n "aa"
+n "\xffa"
+n "\xe6\x97a"
+
+# pcre2-only
+pattern (?![^a])
+encoding utf8
+features all
+m "\xe6\x97a" 0 0
+m "a" 0 0
+m "\xc3\xa9" 2 2
+m "" 0 0
+
+# ASCII context sets: the context node, exact over ill-formed bytes
+# pcre2-only
+pattern (?<=a)b
+encoding utf8
+features all
+n "a\x80b"
+m "ab" 1 2
+m "\x80ab" 2 3
+n "\xc3\xa9b"
+
+# pcre2-only
+pattern (?<![a])b
+encoding utf8
+features all
+m "\x80b" 1 2
+n "ab"
+m "\xffb" 1 2
+m "\xc3\xa9b" 2 3
+
+# pcre2-only
+pattern b(?!a)
+encoding utf8
+features all
+m "b\x80" 0 1
+n "ba"
+m "b\xc3\xa9" 0 1
+m "b" 0 1
+
+# a negated class whose complement is ASCII-only is byte-expressible
+# pcre2-only
+pattern b(?=[^\x80-\x{10ffff}])
+encoding utf8
+features all
+m "bz" 0 1
+n "b\xc3\xa9"
+n "b\x80"
+n "b"
+
+# pcre2-only
+pattern \b\w
+encoding utf8
+features all
+m "\x80a" 1 2
+m "\xc3\xa9a" 2 3
+m "a" 0 1
+
+# pcre2-only
+pattern (?<=[a-z])\x{e9}
+encoding utf8
+features all
+m "a\xc3\xa9" 1 3
+n "\x80\xc3\xa9"
+n "1\xc3\xa9"
