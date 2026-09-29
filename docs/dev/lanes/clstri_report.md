@@ -25,7 +25,7 @@ unchanged and are what prove the coverage.
 | box | compiler | units | sets checked | mismatches |
 |---|---|---|---|---|
 | Mac | gcc-16 | 47 (was 71) | 591/591 | 0 (8,451,676,390 code-point checks, 325,320,704 law checks) |
-| Linux | gcc-15 | OWED (see below) | | |
+| Linux | gcc-15 | 47 | 591/591 | 0 (identical counts; `run_clskit_tests.sh` 5/0, PROCS=4) |
 
 Largest unit after the fix: 3.2 MB (`chunk_024`, a 6-set proptest composition
 group, atomic), 2.7 s on the Mac; every packed unit is under 1.5 MB.
@@ -63,14 +63,34 @@ group, atomic), 2.7 s on the Mac; every packed unit is under 1.5 MB.
   pcre2-only +22 = restrict.rxt +13, axis10 +9; no-python-expression +74 =
   k69 +70, run_pinned +4 (3.14); own-oracle +83 = tests/vars.
 
-**Fix.** Re-pinned `C3_PASS/SKIP/PCRE2ONLY/NOPYTHON/OWNORACLE` to the Linux
-3.14 numbers (13903/16975/2966/1964/12002), reconciling to 30,967, with the
-attribution above written into the pin's comment. Lesson (learnings.md §3.z's
-class): lanes that add corpus files re-pinned CENSUS_*/RUNSH_* and not C3,
-because C3 is only exercised on the Linux/3.14 arm.
+**Fix (revised at the manager's ruling: do not pin one box's split).**
+Why main looked green elsewhere: the exact pin asserts run only where python
+resolves to `C3_PY_REF` (3.14, ubuntubudu). The Mac (3.9) and CI
+(`ubuntu-latest`, no `setup-python` step, so the image's own python) take the
+RECORD branch; only the census reconciliation is hard there. So main was red
+only on a 3.14 box, and CI never saw the stale pins. Mechanism of the version
+split: PASS needs python's `re` to COMPILE the pattern; `no-python-expression`
+is `compiled is None`. A python release that gains syntax moves cells between
+them: 3.14's `\z` (`/user\z` in run_pinned.rxt, 3 cells) and 3.11's atomic
+groups/possessive quantifiers; INFO and perr-python-accepts move the same way
+(979 cells corpus-wide, 3.9 vs 3.14).
+The check is now two-tiered: on EVERY python it asserts the invariant
+populations (timeout, store-uncovered, pcre2-only 2966, giveup, composed,
+own-oracle 12002) and the fixed sum PASS + INFO + no-python-expression +
+perr-python-accepts = `C3_VERIFIABLE` 15881; the split (PASS 13903, SKIP
+16975, INFO 0, no-python-expression 1964, perr 14) stays exact only at 3.14.
+Sum measured on both: Mac 12921+7+2943+10, Linux 13903+0+1964+14 = 15881.
 
 ## Re-run counts
 
-Mac gcc-16, this branch: `run_clskit_tests.sh` 5 passed / 0 failed;
-`run_rxtsource_tests.sh` (py3.9, RECORD arm) C3 reconciles 30,967. Linux
-re-runs: see the handback / OWED list.
+* Mac gcc-16 / py3.9: `run_clskit_tests.sh` 5/0 (591/591); `run_rxtsource_
+  tests.sh` 270 passed, 1 recorded (the version split), 0 failed; the invariant
+  tier PASSes on 3.9. No 3.14 on the Mac (only 3.9 and 3.10 exist).
+* ubuntubudu gcc-15 / py3.14, worktrees/clss1-lx with all four commits applied:
+  `PROCS=4 run_clskit_tests.sh` 5/0 (47 chunks built, 591 sets, 0 mismatches);
+  `run_rxtsource_tests.sh` 272 passed / 0 failed, both C3 tiers PASS.
+* CI (python != 3.14) takes the RECORD branch for the split and asserts the
+  invariant tier, which its python must satisfy (sum is version-independent
+  per the two boxes above; 3.10 not separately run).
+* Not run: mech rows scraping rxtsource's PASS count (rxtsource gained one
+  PASS line); grep found no pinned count of it.
