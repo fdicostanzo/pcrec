@@ -1865,13 +1865,15 @@ typedef struct {
  * array one short of what the pass chose would silently drop an edge whose
  * states the pass had already deleted. */
 
-/* [UCP] U2 one entry of a machine's context-set list (`Dfa.ctx[]`). `row` is
- * the contributor-table row that added it (src/ir/dfa.c), which is what the
- * reference-build knobs filter on. */
+/* [UCP] U2 one entry of a machine's context-set list (`Dfa.ctx[]`). `rows` is
+ * the set of contributor-table rows (src/ir/dfa.c) that READ this set — more
+ * than one when two constructs read the same set, `(?=\n)` beside `(?m)^` —
+ * which is what the newline/non-start readers find their entry by and what
+ * the reference-build knobs filter on. */
 typedef struct {
-    const char *name;     /* the contributor row's name ("ctx", "newline", "nostart") */
+    const char *name;     /* the first contributor row's name ("ctx", "newline", "nostart") */
     const char *desc;     /* one line: what this set is */
-    int         row;      /* index of the contributor row that added it */
+    unsigned    rows;     /* bit r: contributor row r reads this set */
     uint8_t     bits[32]; /* the set's byte image */
 } PcrecCtxSet;
 

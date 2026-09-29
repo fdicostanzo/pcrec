@@ -233,9 +233,13 @@ static bool ctx_collect(Ctx *cx, Nfa *nfa, Dfa *d, int8_t *cbit)
                 PcrecCtxSet *cs = &d->ctx[d->nctx++];
                 cs->name = ctx_rows[r].name;
                 cs->desc = ctx_rows[r].desc;
-                cs->row  = r;
+                cs->rows = 0;
                 memcpy(cs->bits, bits, 32);
             }
+            /* A SHARED set records every row that reads it: `(?=\n)` and
+             * `(?m)^` read one entry, and the newline arms must find it by
+             * their own row, not by which row happened to add it first. */
+            d->ctx[k].rows |= 1u << r;
             if (r == CTXROW_CTX) cbit[i] = (int8_t)k;
         }
     }
@@ -251,14 +255,15 @@ static bool ctx_collect(Ctx *cx, Nfa *nfa, Dfa *d, int8_t *cbit)
  * tests/codegen/run_wordctx_identity.sh / run_mlinectx_identity.sh. */
 static bool ctx_entry_live(const Dfa *d, int k)
 {
+    unsigned knobbed = 0;
 #ifdef PCREC_NO_WORDCTX
-    if (d->ctx[k].row == CTXROW_CTX) return false;
+    knobbed |= 1u << CTXROW_CTX;
 #endif
 #ifdef PCREC_NO_MLINECTX
-    if (d->ctx[k].row == CTXROW_NEWLINE) return false;
+    knobbed |= 1u << CTXROW_NEWLINE;
 #endif
-    (void)d; (void)k;
-    return true;
+    /* Live while ANY row that reads it is not knobbed out. */
+    return (d->ctx[k].rows & ~knobbed) != 0;
 }
 
 /* The byte-equivalence partition, refined by every N_CLASS set and then by
@@ -328,7 +333,8 @@ static bool ctx_atoms(Ctx *cx, Dfa *d)
     /* clsctx: some live entry is an A_CTX or newline set (not the gate's). */
     d->clsctx = false;
     for (int k = 0; k < d->nctx; k++)
-        if (ctx_entry_live(d, k) && d->ctx[k].row != CTXROW_NOSTART)
+        if (ctx_entry_live(d, k) &&
+            (d->ctx[k].rows & (1u << CTXROW_CTX | 1u << CTXROW_NEWLINE)))
             d->clsctx = true;
     return true;
 }
@@ -1478,8 +1484,8 @@ void pcrec_build_dfa(Ctx *cx, Nfa *nfa, Dfa *d, bool prune, bool reverse,
     sc.nl_bit = sc.ns_bit = -1;
     for (int k = 0; k < d->nctx; k++) {
         if (!ctx_entry_live(d, k)) continue;
-        if (d->ctx[k].row == CTXROW_NEWLINE) sc.nl_bit = k;
-        if (d->ctx[k].row == CTXROW_NOSTART) sc.ns_bit = k;
+        if (d->ctx[k].rows & (1u << CTXROW_NEWLINE)) sc.nl_bit = k;
+        if (d->ctx[k].rows & (1u << CTXROW_NOSTART)) sc.ns_bit = k;
     }
 
     /* [ENG-ABS] `root` IS A PARAMETER. It was `nfa->start` here, which is the

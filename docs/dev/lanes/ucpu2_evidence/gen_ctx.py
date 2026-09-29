@@ -115,6 +115,10 @@ for p, subs in [
 ]:
     block(p, '', '', subs, note=None)
 block(r'x\b', '', 'u', ['x\xe9','x '], note='`flags u` (--ucp) is the same axis as (*UCP)')
+block(r'(?m)^ERROR(?:(?=\n)|\z)', '', '', ['ab\nERROR\nx','ERROR','xERROR\n','ERRORx\n'],
+      note='a SHARED context set: `(?=\\n)` and `(?m)^` read the same newline set, one list entry that both\nthe context node and the multiline arms must find (the lookaround-expansion corpus found it)')
+block(r'(?m)(?:\A|(?<=\n)(?!\z))ERROR$', '', '', ['ab\nERROR\nx','ERROR','xERROR','\nERROR'])
+block(r'(?m)(?<=\n)a|b$', '', '', ['\na','b\n','ab','\nb'])
 block(r'x(?!a)(?!b)(?!c)(?!d)(?!e)(?!f)(?!g)(?!h)(?!i)(?!j)(?!k)(?!l)(?!m)(?!n)(?!o)(?!p)(?!q)', '', '', ['xa','xq','xz','x','axr'],
       note='17 singleton context sets: 18 atoms, over PCREC_MAX_CTX_ATOMS (16) -- the DFA is DECLINED\n(limits.md §3.9) and the VM answers; the route manifest pins which engine')
 block(r'x(?!a)(?!b)(?!c)(?!d)(?!e)(?!f)(?!g)(?!h)(?!i)(?!j)(?!k)(?!l)(?!m)(?!n)', '', '', ['xa','xn','xz','x'],

@@ -40,7 +40,7 @@ SAB_AFTER='            if (r == CTXROW_CTX) cbit[i] = (int8_t)k;
     }
     if (d->nctx < PCREC_MAX_CTX_SETS) {   /* SABOTAGE S71 */
         PcrecCtxSet *cs = &d->ctx[d->nctx++];
-        cs->name = "ctx"; cs->desc = "SABOTAGE S71"; cs->row = CTXROW_CTX;
+        cs->name = "ctx"; cs->desc = "SABOTAGE S71"; cs->rows = 1u << CTXROW_CTX;
         memcpy(cs->bits, pcrec_cls_word_esc, 32);
     }
     return true;

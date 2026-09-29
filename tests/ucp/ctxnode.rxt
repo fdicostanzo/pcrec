@@ -378,6 +378,32 @@ features all
 n "x\xe9"
 m "x " 0 1
 
+# a SHARED context set: `(?=\n)` and `(?m)^` read the same newline set, one list entry that both
+# the context node and the multiline arms must find (the lookaround-expansion corpus found it)
+# pcre2-only
+pattern (?m)^ERROR(?:(?=\n)|\z)
+features all
+m "ab\x0aERROR\x0ax" 3 8
+m "ERROR" 0 5
+n "xERROR\x0a"
+n "ERRORx\x0a"
+
+# pcre2-only
+pattern (?m)(?:\A|(?<=\n)(?!\z))ERROR$
+features all
+m "ab\x0aERROR\x0ax" 3 8
+m "ERROR" 0 5
+n "xERROR"
+m "\x0aERROR" 1 6
+
+# pcre2-only
+pattern (?m)(?<=\n)a|b$
+features all
+m "\x0aa" 1 2
+m "b\x0a" 0 1
+m "ab" 1 2
+m "\x0ab" 1 2
+
 # 17 singleton context sets: 18 atoms, over PCREC_MAX_CTX_ATOMS (16) -- the DFA is DECLINED
 # (limits.md §3.9) and the VM answers; the route manifest pins which engine
 # pcre2-only

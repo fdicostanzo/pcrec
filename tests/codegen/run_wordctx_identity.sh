@@ -104,8 +104,16 @@ fi
 # `--features all` because this is a pcrec-vs-pcrec BYTE comparison, not an
 # oracle differential — what `all` buys is that the corpus's module-gated
 # patterns reach the emitter instead of being refused before it.
-gen_a() { pcrec_run "$PCREC" --features all -p rx -o - --pattern "$1" 2>/dev/null; }
-gen_b() { "$REF"   --features all -p rx -o - --pattern "$1" 2>/dev/null; }
+# [UCP] U2: BOTH builds deny T3's `ctx-node` row. A one-character lookaround
+# is now a CONTEXT NODE on the very class axis this knob removes, so a
+# `\b`-free pattern like `(?=a)b` would read as "paying for the word context"
+# here when what it pays for is its own lookaround's set. The gate is about
+# `\b`'s axis; under `-fno-ctx-node` every such lookaround is its pre-U2 VM
+# sub-match in both builds, and `\b` still builds the node, so the positive
+# control below is unchanged. T3's own identity is tests/ucp/
+# run_ctxnode_tests.sh's (the corpus both ways, and the route manifest).
+gen_a() { pcrec_run "$PCREC" --features all -fno-ctx-node -p rx -o - --pattern "$1" 2>/dev/null; }
+gen_b() { "$REF"   --features all -fno-ctx-node -p rx -o - --pattern "$1" 2>/dev/null; }
 
 # ---- the corpus ----------------------------------------------------------
 # Every `pattern` line from every .rxt under tests/, known_fail included: a

@@ -46,7 +46,7 @@ SAB_AFTER='            if (r == CTXROW_CTX) cbit[i] = (int8_t)k;
     }
     if (d->nctx < PCREC_MAX_CTX_SETS) {   /* SABOTAGE S76 */
         PcrecCtxSet *cs = &d->ctx[d->nctx++];
-        cs->name = "newline"; cs->desc = "SABOTAGE S76"; cs->row = CTXROW_NEWLINE;
+        cs->name = "newline"; cs->desc = "SABOTAGE S76"; cs->rows = 1u << CTXROW_NEWLINE;
         memcpy(cs->bits, pcrec_cls_newline, 32);
     }
     return true;
