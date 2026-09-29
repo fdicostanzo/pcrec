@@ -1,0 +1,5 @@
+#all-(a) patterns: 172
+#distinct context sets per pattern (k): {1: 171, 2: 1}
+#byte all-byte exact     156
+#utf8 all-byte exact     2
+#utf8 needs the island   14
