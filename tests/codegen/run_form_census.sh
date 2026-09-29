@@ -72,7 +72,8 @@
 # Usage: bash tests/codegen/run_form_census.sh
 # Env: PCREC, CC (unused directly — compile-only, no gcc, like
 #      run_dfa_stamps.sh's own corpus sweep), PROCS (shard count, default
-#      nproc), KEEP=1 to keep the work directory.
+#      tests/lib/procs_default.sh's count — [CORPUS-PCAP]), KEEP=1 to keep
+#      the work directory.
 
 set -u
 export LC_ALL=C   # K35
@@ -80,6 +81,7 @@ export LC_ALL=C   # K35
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 . "$ROOT_DIR/tests/lib/gen_timeout.sh"
+. "$ROOT_DIR/tests/lib/procs_default.sh"   # [CORPUS-PCAP] perf-core count on darwin, else NCPU
 export WATCHDOG_SECTION="form_census"
 
 PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
@@ -117,7 +119,7 @@ echo "census: $npat corpus patterns (LC_ALL=C sort -u over tests/**/*.rxt)"
 # ---------------------------------------------------------------------------
 # §2 THE SHARDED SWEEP — every pattern, DEFAULT engine AND --engine=vm
 # ---------------------------------------------------------------------------
-NSHARD="${PROCS:-$(nproc)}"
+NSHARD="${PROCS:-$PROCS_DEFAULT}"
 [ "$NSHARD" -ge 1 ] 2>/dev/null || NSHARD=1
 mkdir -p "$WORKDIR/sh" "$WORKDIR/tally"
 split -n "l/$NSHARD" -d "$WORKDIR/pats" "$WORKDIR/sh/p" 2>/dev/null \

@@ -48,12 +48,12 @@ cleanup() { rm -f "$RAW" "$OUT"; }
 trap cleanup EXIT
 
 . "$ROOT_DIR/tests/lib/loadavg.sh"   # [MACPORT] real darwin load1, not "|| echo 0"
-. "$ROOT_DIR/tests/lib/ncpu.sh"      # [MACPORT] a box with no `nproc` on PATH at all still gets a real NCPU
+. "$ROOT_DIR/tests/lib/procs_default.sh"   # [CORPUS-PCAP] perf-core count on darwin, else NCPU
 load1_start="$(load1)"
 
 # Same defaults `test-corpus:`'s own Makefile recipe line uses — this
 # script is a drop-in replacement for that line, not a new invocation shape.
-TMPDIR="${TMPDIR:-/var/tmp}" PROCS="${PROCS:-$NCPU}" SIZELOG="$RAW" \
+TMPDIR="${TMPDIR:-/var/tmp}" PROCS="${PROCS:-$PROCS_DEFAULT}" SIZELOG="$RAW" \
     bash "$ROOT_DIR/tests/harness/run.sh" "$@" 2>&1 | tee "$OUT"
 run_rc="${PIPESTATUS[0]}"
 

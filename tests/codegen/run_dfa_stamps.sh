@@ -185,6 +185,7 @@ ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
 KEEP="${KEEP:-0}"
 . "$ROOT_DIR/tests/lib/gen_timeout.sh"   # [K37] pcrec_run: a bounded compiler
+. "$ROOT_DIR/tests/lib/procs_default.sh"   # [CORPUS-PCAP] perf-core count on darwin, else NCPU
 
 WORKDIR="$(mktemp -d)"
 cleanup() {
@@ -543,7 +544,7 @@ fi
 # scheme for passing it as an argument is a bug waiting to be found by the
 # corpus. Each worker writes VERDICT TOKENS to its own file and the parent
 # tallies them, so no counter is shared across processes.
-NSHARD="${PROCS:-$(nproc)}"
+NSHARD="${PROCS:-$PROCS_DEFAULT}"
 [ "$NSHARD" -ge 1 ] 2>/dev/null || NSHARD=1
 mkdir -p "$WORKDIR/sh"
 split -n "l/$NSHARD" -d "$WORKDIR/pats" "$WORKDIR/sh/p" 2>/dev/null \

@@ -18,7 +18,8 @@
 # The pattern space and the exact population predictions live in
 # pc4_check.c's header; edit them TOGETHER or not at all.
 #
-# Env: PCREC, CC, KEEP=1, JOBS (parallel compile fan-out, default nproc/2),
+# Env: PCREC, CC, KEEP=1, JOBS (parallel compile fan-out, default tests/lib/
+#   procs_default.sh's count / 2 — [CORPUS-PCAP]),
 #   GENCFLAGS (SAN-1: flags for the sweep's per-pattern gen.c compile —
 #   default -O0 -std=gnu11, was hardcoded and unreachable by the harness's
 #   GENCFLAGS hook until SAN-1 plumbed it here too), SANFLAGS (SAN-1: extra
@@ -48,8 +49,8 @@ GENCFLAGS="${GENCFLAGS:--O0 -std=gnu11}"
 # add -Werror too, or LINTGEN's "must fail loudly" promise breaks here alone.
 if [ "${LINTGEN:-0}" = "1" ]; then GENCFLAGS="$GENCFLAGS -fanalyzer -Werror"; fi
 SANFLAGS="${SANFLAGS:-}"
-. "$ROOT_DIR/tests/lib/ncpu.sh"; ncpu="$NCPU"   # [MACPORT] a real reading on a box with no `nproc` on PATH at all
-JOBS="${JOBS:-$(( ncpu / 2 > 1 ? ncpu / 2 : 1 ))}"
+. "$ROOT_DIR/tests/lib/procs_default.sh"   # [CORPUS-PCAP] perf-core count on darwin, else NCPU
+JOBS="${JOBS:-$(( PROCS_DEFAULT / 2 > 1 ? PROCS_DEFAULT / 2 : 1 ))}"
 
 WORKDIR="$(mktemp -d "${TMPDIR:-/tmp}/pcrec-pc4.XXXXXX")"
 cleanup() {

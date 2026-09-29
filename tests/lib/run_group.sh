@@ -22,8 +22,8 @@
 # throttling in between — there are only ever 2-3 scripts in a group here,
 # never enough to want real job-pool capping, so GROUP_PROCS's magnitude
 # above 1 does not change behaviour; it exists so the Makefile can pass the
-# same `PROCS=$${PROCS:-$$(nproc)}` expression every other [TT-2] target
-# uses without a special case.
+# same `PROCS=$${PROCS:-$$(tests/lib/procs_default.sh)}` expression ([CORPUS-PCAP])
+# every other [TT-2] target uses without a special case.
 #
 # At GROUP_PROCS>1, output is replayed in ARGUMENT ORDER (not completion
 # order) once every script has finished, each script's complete

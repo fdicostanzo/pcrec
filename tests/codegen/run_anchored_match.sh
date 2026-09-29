@@ -76,6 +76,7 @@ PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
 CC="${CC:-cc}"
 KEEP="${KEEP:-0}"
 . "$ROOT_DIR/tests/lib/gen_timeout.sh"   # [K37] pcrec_run / gen_cc / gen_run
+. "$ROOT_DIR/tests/lib/procs_default.sh"   # [CORPUS-PCAP] perf-core count on darwin, else NCPU
 . "$ROOT_DIR/tests/lib/c_artifact_cmp.sh"   # cmp_c_artifacts (adm71 item 5)
 
 WORKDIR="$(mktemp -d)"
@@ -620,7 +621,7 @@ npat="$(wc -l < "$WORKDIR/pats")"
 if [ "$npat" -lt 2640 ]; then
     bad "anchored-match: corpus extraction found only $npat patterns, below the 2640 floor (~95% of the 2786 this tree measures 2026-08-29). Either the corpus shrank (re-pin, deliberately) or the extraction is dropping patterns again (K35)"
 else
-    NSHARD="${PROCS:-$(nproc)}"
+    NSHARD="${PROCS:-$PROCS_DEFAULT}"
     [ "$NSHARD" -ge 1 ] 2>/dev/null || NSHARD=1
     mkdir -p "$WORKDIR/sh"
     split -n "l/$NSHARD" -d "$WORKDIR/pats" "$WORKDIR/sh/p" 2>/dev/null \

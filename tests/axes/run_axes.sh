@@ -158,7 +158,8 @@
 #               "--vm-entry-shape" already use). For a QUICK check, not the
 #               delivered run.
 #   PCREC/CC/GENCFLAGS   forwarded to tests/harness/run.sh verbatim.
-#   PROCS       forwarded to tests/harness/run.sh (default: nproc, matching
+#   PROCS       forwarded to tests/harness/run.sh (default: tests/lib/
+#               procs_default.sh's count — [CORPUS-PCAP] — matching
 #               test-corpus's own default).
 #   HARNESS_BATCH   ([TT-4M] STEP 2c/axbatch lane, 2026-09-10) forwarded to
 #               EVERY tests/harness/run.sh invocation this script makes
@@ -193,7 +194,8 @@ export WATCHDOG_SECTION="axes"
 PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
 . "$ROOT_DIR/tests/lib/cc_resolve.sh"   # [MACPORT] resolves a real GNU gcc when bare gcc is Apple clang
 GENCFLAGS="${GENCFLAGS:--O1 -std=gnu11 -Wall -Wextra -Werror}"
-PROCS="${PROCS:-$(nproc 2>/dev/null || echo 1)}"
+. "$ROOT_DIR/tests/lib/procs_default.sh"   # [CORPUS-PCAP] perf-core count on darwin, else NCPU
+PROCS="${PROCS:-$PROCS_DEFAULT}"
 KEEP="${KEEP:-0}"
 SKIP_ORACLE="${SKIP_ORACLE:-0}"
 AXES="${AXES:-}"
