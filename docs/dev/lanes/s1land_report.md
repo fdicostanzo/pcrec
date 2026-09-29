@@ -19,4 +19,11 @@ per-section logs worktrees/s1land/build/s1land_test-{clskit,rxtsource,registry,c
 | test-rxtsource | OWED |
 | test-registry | OWED |
 | test-codegen | OWED |
-| FULL make test | OWED (awaiting manager's LINUX/MAC) |
+| FULL make test (ubuntubudu) | OWED — see below |
+
+## Full make test — LINUX, OWED
+Worktree `~/pcrec/worktrees/s1land-lx` on ubuntubudu at d9a9fc56 (moved by git bundle; the bundle file `~/pcrec/worktrees/s1land.bundle` and local ref `lane/s1land-lx-src` were created there).
+Started 19:01 EDT: `gnutimeout 6600 make -j12 -Otarget test`, log `~/pcrec/worktrees/s1land-lx/build_s1land_test.log`,
+completion lines `MAKE_RC=<n>` then `sections ran: N/M`. Verdict = make's `*** [test-X] Error` lines only. Accepted red: none on Linux (the darwin `nm arm_a.o` line is Mac-only).
+Cleanup owed at the end: `git -C ~/pcrec worktree remove --force worktrees/s1land-lx`, `rm ~/pcrec/worktrees/s1land.bundle`, `git -C ~/pcrec branch -D lane/s1land-lx-src`, verify gone.
+
