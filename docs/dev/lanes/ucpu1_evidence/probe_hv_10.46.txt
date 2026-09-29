@@ -1,0 +1,7 @@
+# K72 probe: \h and \v under PCRE2_UTF (no UCP), libpcre2 10.46 2025-08-27; pattern ^\h$ / ^\v$ anchored
+h-U+3000 rc=1
+h-U+00A0 rc=1
+h-ASCII-space rc=1
+h-ASCII-tab rc=1
+v-U+2028 rc=1
+v-ASCII-LF rc=1
