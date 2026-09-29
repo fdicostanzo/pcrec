@@ -9,7 +9,9 @@ INPUT (committed, citable Linux timing — provenance lines in each file):
   results/bench_ubuntubudu_20260911.tsv          [T], the 09-11 run: used
                                                 ONLY as a held-out transfer
                                                 test (never fitted on)
-  results/sweep_k53.tsv                          the old `model_ops` column
+  results/capC_isolated_ubuntubudu_20260929.tsv  ^C/member alone, 41 rounds
+  results/sweep_k53.tsv, whole_k53.tsv,          sizes (the old `model_ops`
+  sweep_uprops.tsv, whole_uprops.tsv             column among them)
 
 THE MODEL (design note §1.2, CT-2):
     T = t_bound + t_disp + sum_s p_s * t_leaf(form_s)
@@ -562,11 +564,28 @@ def population_rows(z_mids=(0.26, 0.20)):
                      tot2 / tk16))
 
 
+def capc(path, bench2_meas):
+    """[r1 MEAS-2]: does the 09-11 run's bimodal ^C/member cell recur?
+    Max/min per arm over 41 rounds (a bimodal arm reads ~7x, as bitmap1's
+    1.60 vs 13.30 did on 09-11), beside bench2's 11-round median."""
+    ns = collections.defaultdict(list)
+    for r in rows(path):
+        ns[r["arm"]].append(float(r["ns_per_char"]))
+    print("\n## ISOLATED ^C/member re-run (%s)" % path)
+    for a, v in ns.items():
+        print("%-8s rounds %d median %.2f min %.2f max %.2f max/min %.2f |"
+              " bench2 median %.2f" % (a, len(v), st.median(v), min(v),
+                                       max(v), max(v) / min(v),
+                                       bench2_meas[("^C", "member", a)]))
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--nprobe", type=int, default=16384)
     ap.add_argument("--bench2", default="results/bench2_ubuntubudu_20260929.tsv")
     ap.add_argument("--t0911", default="results/bench_ubuntubudu_20260911.tsv")
+    ap.add_argument("--capc",
+                    default="results/capC_isolated_ubuntubudu_20260929.tsv")
     args = ap.parse_args()
 
     pop = clsets.k53()
@@ -575,6 +594,7 @@ def main():
     no_c = [s for s in sets if s != "^C"]
     floor = min(meas.values())
     verify_subjects(pop, args.bench2)
+    capc(args.capc, meas)
 
     old_term(meas, sets, REGIMES, "bench2 (2026-09-29)")
     old_term(meas, no_c, REGIMES, "bench2 without ^C")

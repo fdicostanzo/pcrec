@@ -1,5 +1,12 @@
 subject streams verified: 60/60 (set, regime) streams reproduce the harness's hits+chk over all 2^20 probes
 
+## ISOLATED ^C/member re-run (results/capC_isolated_ubuntubudu_20260929.tsv)
+refbs    rounds 41 median 22.28 min 22.22 max 23.69 max/min 1.07 | bench2 median 21.88
+bitmap1  rounds 41 median 1.78 min 1.78 max 1.80 max/min 1.01 | bench2 median 1.78
+lam0     rounds 41 median 11.02 min 10.95 max 11.12 max/min 1.02 | bench2 median 11.30
+lam16    rounds 41 median 12.28 min 12.18 max 13.74 max/min 1.13 | bench2 median 12.25
+lam256   rounds 41 median 9.77 min 9.75 max 9.87 max/min 1.01 | bench2 median 9.80
+
 ## OLD term (model_ops, the pinned λ's currency) on bench2 (2026-09-29)
 member  r(ns,ops)=+0.08 rho=+0.20 fewer-ops-is-faster 19/36
 mixed   r(ns,ops)=+0.06 rho=+0.17 fewer-ops-is-faster 20/36
