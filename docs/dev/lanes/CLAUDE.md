@@ -3415,3 +3415,9 @@ never edited afterwards.
   filed; the B115 executive summary plus a second-section CLS-TREE S0
   addendum. Three judgment calls flagged for Frank (OPT-CLSPACK's STATE
   tag, closing FINDINGS-BENCH-TIERS outright, the addendum's placement).
+- `clsid_report.md` — [CLS-TREE] S3's byte-identity instrument (2026-09-29,
+  lane clsid, sonnet): `scripts/cls_identity.py`, the (encoding, features)
+  triple sweep utf8k53_report.md §3.2 described and never committed; REACH
+  read from the VM listing counterfactual (no compiler stamp exists), two
+  positive controls, baseline main-vs-main 15,771/15,771 identical, REACH
+  1,421, 856 s at 2 workers.
