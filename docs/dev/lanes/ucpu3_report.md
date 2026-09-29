@@ -15,7 +15,7 @@ worktree; scratch in `/tmp/ucpu3s/` (never committed). Inputs:
 | 3. the 2 DIVERGE patterns | the reporter now lists each kind separately. The 59 bad patterns are the dead-entry population, and the fix clears all of them (§3) |
 | 4. `test-premul-table` gaps (i) + (ii) | check logic REWRITTEN, nothing re-pinned. 68 false reports → 0, and both sabotages fire (§4) |
 | 5. delete `lane/triaxes` | the branch does not exist, so there was nothing to delete |
-| 6. validation | see §6: targeted sections done; full `make test` + `make test-axes` are OWED (log paths there) |
+| 6. validation | targeted sections green except the accepted darwin `nm` red; full `make test` and `make test-axes` are OWED (§6) |
 
 ## 1. Merges
 
@@ -230,7 +230,24 @@ there was nothing to delete.
 
 ## 6. Validation
 
-VALIDATION_TABLE
+All runs used `CC=gcc-16` on the Mac. Verdicts are taken from make's
+`*** Error` lines and the scripts' own trailers.
+
+| check | verdict |
+|---|---|
+| `make strict` | clean |
+| `make test-anchored-match` | **green**, run_group 3/3: `run_anchored_match.sh` 20/0; `run_anchored_diff.sh` 7/0 (1,828 compared, 223,016 cells, 0 DIVERGE, 0 INFRA; was 57 INFRA + 2 DIVERGE); `run_anchored_dead_entry.sh` 7/0 |
+| `make test-premul-table` | **green** 16/0 (was 68 false reports) |
+| `make test-codegen` | 11/12. The only red is the accepted darwin `nm arm_a.o` line in `run_inline_capability.sh`. The identity gates inside `run_codegen_tests.sh` are green, which confirms §2.4 |
+| `make test-registry` | rc 0; every script reports `checks failed: 0` |
+| `make test-rxtsource` | rc 0, 269/0. The one `RECORD:` line is the standing python-3.9 C3 note |
+| full `make test` | **OWED**: log `/tmp/ucpu3s/logs/make_test.log`, verdict line `DONE make-test rc=N` in `/tmp/ucpu3s/logs/chain.log` |
+| `make test-axes` | **OWED**, runs after `make test`: log `/tmp/ucpu3s/logs/test_axes.log`, verdict line `DONE test-axes rc=N`, then `CHAIN COMPLETE` |
+
+The chain (`/tmp/ucpu3s/chain.sh`) was launched detached under
+`caffeinate -s`. A full `make test` rewrites
+`docs/dev/artifact_size_log.tsv`; that change must not be committed.
+
 
 ## 7. For a follow-up
 
