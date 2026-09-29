@@ -128,7 +128,11 @@ static void emit_chunk(const char *outdir, int ch)
     int nin = 0;
 
     pcrec_sb_puts(&c, "#include <stdio.h>\n#include <string.h>\n\n");
-    if (atom_n) pcrec_clskit_emit_atom_table(&c, "atom_tab", &atoms);
+    for (int i = 0; i < nset; i++)
+        if (sets[i].chunk == ch && sets[i].atom_index >= 0) {
+            pcrec_clskit_emit_atom_table(&c, "atom_tab", &atoms);
+            break;
+        }
     for (int i = 0; i < nset; i++) {
         Set *s = &sets[i];
         if (s->chunk != ch) continue;
