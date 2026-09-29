@@ -1026,6 +1026,30 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
 
 ## Files
 
+- **clskit.c / clskit.h** — [CLS-TREE] S1 (lane clss1, 2026-09-29;
+  docs/design/cls_tree_design.md §1, §6; D129, D131): THE CLASS-MATCHER KIT.
+  Given a code-point set and nothing else (Constitutional Constraint 1, no
+  provenance argument), it has five parts:
+  - the per-section LEAF forms (`ALL RANGES MASK64 CUBES BITMAP PAGE64
+    BSEARCH`; CUBES is tier 1 only);
+  - the size-only sectioning DP, the design's `K`. It is INTEGER (Q16),
+    so a selection is bit-reproducible across boxes;
+  - the whole-set tables `P3`/`P2`/`B1`;
+  - the shared byte ATOM table ([OPT-CLSPACK], D131 item 6);
+  - D131's `--tune` class-form selection. It is ONE first-match table,
+    `ROWS`, with the rows as data: a name, a one-line predicate, positions,
+    form and deny ordinal. The predicates are a closed tag set evaluated
+    by one exhaustive switch.
+  It also emits the C of each form: a `static inline int FN(unsigned cp)`
+  bounded for EVERY unsigned `cp`. **NO EMITTER CALLS IT YET**: no artifact
+  moves, there is no abi event, and nothing is caller-visible. Its first
+  caller is S4 (VM decode + kit) or S2 (the byte tier), which also wires
+  `--tune` and maps `ClsDeny` onto D129 Q2's public `-fno-cls-kit`. The
+  reference implementation is `studies/cls_tree_study/`, re-implemented
+  here, never imported. tests/clskit/ compares the two and checks every
+  emitted form on every code point. **Open at S1**: the table's byte
+  predicates read the DP's MODEL bytes, which run ~13% under the measured
+  object for `K`; see docs/dev/lanes/clss1_report.md.
 - **emit_vm.c** — the backtracking VM as emitted specialized C
   (docs/design/engine_m4.md §2). ONE function per pattern, one label per
   pattern position, every continuation resolved at compile time into a
