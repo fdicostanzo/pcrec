@@ -71,6 +71,14 @@ worktree; scratch in `/tmp/ucpu2s/`. Reproduction pieces:
   every seed dead"; `dfa_s0_cell` emits the dead cell for a dead `s0`
   (never a walk's start: the forward pass cannot end a match at `n` there).
   Found by the lookaround corpus (25 red cells) before it reached any report.
+- **A shared-set fix the expansion corpus forced**: the list is deduplicated
+  by set equality, so `(?=\n)` beside `(?m)^` share ONE entry; the first
+  version remembered only the row that CREATED it, so the multiline arms
+  found no newline entry — `(?m)^ERROR(?:(?=\n)|\z)` answered nomatch (68
+  cells of `run_expansion_diff.sh`'s policy P2, A≠B and A≠C). Each entry now
+  carries `rows`, every contributor row that reads it; readers and knobs go
+  through it. Three witness blocks joined `ctxnode.rxt` (red on the pre-fix
+  binary: 3 cells) and sabotage S343 plants the first-row-only form.
 
 ## 2. Tables (§0.1's rule), with their rows
 
@@ -137,9 +145,9 @@ two `wild-logparse-*-noatomic`); `utf8/asr-lb-{class,fixed,neg}` stay VM
 
 ## 5. Oracle agreement
 
-- `tests/ucp/ctxnode.rxt` (39 blocks): generated from libpcre2 10.48,
-  **re-verified on 10.46: 187/187 cells agree** (`verify_ctxnode_10.46.txt`);
-  `verify_ucp.py` (local 10.48) 178/0 at first landing.
+- `tests/ucp/ctxnode.rxt` (42 blocks): generated from libpcre2 10.48,
+  **re-verified on 10.46: 199/199 cells agree** (`verify_ctxnode_10.46.txt`);
+  `verify_ucp.py` (local 10.48) re-checks it on every `make test-ucp`.
 - `tests/utf8/axis13_ctx_illformed.rxt` (8 blocks, §2.3's hazard cells):
   oracle UTF|MATCH_INVALID_UTF, **10.46: 32/32** (`verify_axis13_10.46.txt`);
   `(?<=[^a])a` on `80 61` nomatch, on `C3 A9 61` (2,3).
@@ -150,7 +158,7 @@ two `wild-logparse-*-noatomic`); `utf8/asr-lb-{class,fixed,neg}` stay VM
 - The assertion-expansion corpus (`make test-lookaround`'s
   `run_expansion_diff.sh`, A==B==C against local libpcre2): see §7.
 
-## 6. Sabotage rows (main's highest was S336; new S337–S342, all DETECTED)
+## 6. Sabotage rows (main's highest was S336; new S337–S343)
 
 New `ctxnode` mech arm (`tests/ucp/run_ctxnode_tests.sh`), registered before
 the rows. One id per invocation, at `405a4de1`:
@@ -163,6 +171,7 @@ the rows. One id per invocation, at `405a4de1`:
 | S340 | the byte-expressibility precondition clamps instead of refusing (non-ASCII set under utf8) | DETECTED — 21 fail (the §2.3 hazard cell `80 61`) |
 | S341 | the absent side reads as in-set (`s0` closed under the last atom) | DETECTED — 2 fail |
 | S342 | **GEN-4 shape**: a DENIED T3 row falls through to an erased (unsound) lowering | DETECTED — 438 fail, only via the `-fno-ctx-node` half and the route's denied column; the default path never reaches the denied row |
+| S343 | a SHARED context set keeps only the row that created it | run in the final chain (§7); its witness is red on the pre-fix binary (3 cells) |
 
 **Re-aimed anchors (11), intent re-verified, each annotated in its own file**:
 S69, S71, S76 (the `has_word`/`has_nl` gates are gone — S71/S76 now plant the
@@ -178,6 +187,13 @@ Run and green on the branch (darwin, gcc-16): `make strict` (clean);
 (22/0); `test-registry` (re-pinned: axes coverage 138 → 141, limits 35 → 37,
 limits manifest +2 names; the lookaround VM_ONLY witnesses asked under
 `-fno-ctx-node`, the configuration where the column is exactly true);
+`test-assertions`' `run_wordctx_identity.sh` (2,893 `\b`-free patterns identical,
+positive control 106 differ — BOTH builds now deny T3: a one-character
+lookaround is a context node on the very axis `-DPCREC_NO_WORDCTX` removes, so
+without the deny 173 `\b`-free lookaround patterns read as paying for the word
+context; the gate is about `\b`'s axis and T3's own identity is
+`run_ctxnode_tests.sh`'s); `test-ucp` (all checks passed, §4 included);
+`test-cli` green;
 `test-codegen`'s three scripts that the change touched, re-run after fixture
 fixes: `run_codegen_tests.sh` 0 failed, `run_dfa_stamps.sh` 0 failed (empty-
 engine manifest +24 NAMED patterns — one-character lookarounds whose empty

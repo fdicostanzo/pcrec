@@ -3406,3 +3406,14 @@ never edited afterwards.
   `ucpu1_evidence/` holds the corpus generator (`gen_ucp.py`,
   `gen_corpus.py`), the two remote 10.46 probes (`remote_verify.py`,
   `remote_latin1.py`) and the 10.46 re-verification transcript.
+- `ucpu2_report.md` — [UCP] U2 (2026-09-29, lane ucpu2, opus): the CONTEXT
+  NODE (`A_CTX`, `\b`/`\B` retired into it), T3's first-match recognizer
+  (`src/parse/ctxnode.c`, `-fno-ctx-node`), UCP `\b` under `-e byte`, and the
+  per-machine context-set TABLE with atoms replacing the fixed UPC if-chain
+  (r1 GEN-1), abi 45 -> 46. The identity gate (every differing artifact
+  reverts byte for byte under `-fno-ctx-node`, or is a UCP `\b` row), the
+  mover census (159 = the design's 158 + one the LANGUAGE predicate found),
+  10.46 agreement, S337–S343, eleven re-aimed anchors, and two fixes the
+  corpora forced (a dead reverse `s0` with live seeds; a shared context set
+  losing its second reader). `ucpu2_evidence/` holds the generators, the
+  10.46 transcripts, the mover census and the identity sweep.
