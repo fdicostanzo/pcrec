@@ -50,15 +50,24 @@ at `PROCS=4`, most of it in the study's Python DP (crosscheck.py).
   frozen copy `crosscheck.py` imports — so the kit and the study cannot be
   looking at different sets. Writes one file.
 - `clskit_driver.c`: linked against `libpcrec.a` (`unit_build`). Its `emit`
-  mode writes checker `.c` compile units plus the census, packing
-  populations.py's atomic groups into units by EMITTED BYTES (budget
-  `CHUNK_BYTES`, optional argv[4]) so gcc's time per unit is bounded by the
-  text it compiles, not by a set count (clstri: a fixed 12 sets/unit made
-  one unit 5.2 MB and over gcc-15's 10 s GENCPU on Linux) AND by RUN COST
-  (`CHUNK_VARS` checker variants per unit, optional argv[5]: bytes alone let
-  118 small sets run 6.4 s solo against the 10 s GENRUNTIMEOUT and time out
-  under make test's -j load, s1tri 2026-09-29). Its `dump` mode
-  prints `SEC`/`WHOLE`/`ATOMS`/`SEL`/`ROW` lines for the cross-check.
+  mode writes checker `.c` compile units plus the census, packing VARIANTS
+  (each set's reference arrays are copied into every unit holding one of its
+  variants) into units by EMITTED BYTES (budget `CHUNK_BYTES` = 250 KB,
+  optional argv[4]) so gcc's time per unit is bounded by the text it
+  compiles, not by a set count (clstri: a fixed 12 sets/unit made one unit
+  5.2 MB and over gcc-15's 10 s GENCPU on Linux; citri: at 1.5 MB units gcc-13
+  on CI needed ~10x the Mac's CPU and 23 of 51 units exceeded it, so the
+  budget is sized for the slowest supported compiler, 0.2-0.4 s a unit on the
+  Mac) AND by RUN COST (`CHUNK_VARS` checker variants per unit, optional
+  argv[5]: bytes alone let 118 small sets run 6.4 s solo against the 10 s
+  GENRUNTIMEOUT and time out under make test's -j load, s1tri 2026-09-29).
+  The only indivisible part of a group is its LAW bundle: when a group has
+  compositions, the K4 and P3 variants of all its sets plus its COMPS rows
+  share one unit (the law compares a result against its operands in one
+  process). `emit` also prints `VARIANTS n`, which the script sums against
+  the `CHECKED` lines (a set is counted by NAME: it can appear in several
+  units). Its `dump` mode prints `SEC`/`WHOLE`/`ATOMS`/`SEL`/`ROW` lines for
+  the cross-check.
   **The reference in each checker is plain interval arrays written by THIS
   file from the population file.** No line of `clskit.c` produces it.
 - `checker_main.inc`: the checker's `main()`, included at the end of every

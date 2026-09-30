@@ -3592,3 +3592,4 @@ never edited afterwards.
   violations / 895 adaptive movers, answer_diff 0 DIFF over 2.36M cells, S370-S372
   DETECTED); `-fno-hyb-reseed` axes and the Linux full `make test` are owed with log
   paths.
+- `citri_report.md` — TRIAGE of CI's `test-clskit` red at main `58a2a417` (2026-09-30, lane citri, sonnet): 23 of 51 checker units exceeded D45's 10 s compile CPU on CI's gcc-13.3 (~10x the Mac's gcc-16 CPU to compile the same text, while the units RUN only ~1.7-2x slower — a compiler-version effect, not load, not a regression; inferred from the CI artifact joined against local per-unit times, gcc-13 itself not run). Fixed in `tests/clskit/` only: variants (not whole groups) packed into 250 KB units, the composition-law bundle the only indivisible part, sets counted by `idx=` and variants by sum, per-unit compile-CPU headroom printed every run. `make test-clskit` 5/0 locally; CI verification owed.

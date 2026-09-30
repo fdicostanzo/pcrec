@@ -3,8 +3,8 @@
  * differential then compiles, and DUMPS the kit's sectionings and table
  * choices for crosscheck.py to compare against the study.
  *
- *   clskit_driver emit POPFILE OUTDIR    one checker .c per CHUNK, plus a
- *                                        census of every form emitted
+ *   clskit_driver emit POPFILE OUTDIR    checker .c compile units (variants packed
+ *                                        by bytes), plus a census of every form emitted
  *   clskit_driver dump POPFILE           SEC / SEL / ATOMS lines
  *
  * THE REFERENCE IS NOT THE KIT'S. Each checker carries every set's interval
@@ -31,7 +31,14 @@
 
 enum { MAXSET = 4096, MAXCOMP = 1024 };
 static const long long WHOLE_CAP = 40000;
-static const long long CHUNK_BYTES = 1500000;   /* emitted-text budget per compile unit */
+/* Emitted-text budget per compile unit. gcc's -O1 time on these units is
+ * ~0.8 s/MB on the Mac's gcc-16 and about the same per CPU-second on gcc-15;
+ * on CI's gcc-13.3 it is ~10x that (a 1.2 s-on-the-Mac unit exceeded the
+ * 10 s GENCPU in run 36704000526, while the same units RUN only ~1.7-2x
+ * slower there), so a unit is sized for the SLOWEST supported compiler: 0.25 MB
+ * is ~0.2-0.4 s here (content-dependent, worst measured 0.6 s at 0.39 MB) and ~2-4 s on
+ * gcc-13, inside D45's budget with margin. */
+static const long long CHUNK_BYTES = 250000;
 /* Run-cost budget per unit: checker variants (each is checked over every code
  * point, ~4 ms) plus 2 per composition (the law pass). MEASURED on ubuntubudu
  * solo, 2026-09-29: ~4.1 ms per variant, so 500 is ~2 s against the 10 s
@@ -120,42 +127,56 @@ static void census_kit(const ClsKit *k)
     form_census[CLSF_KIT]++;
 }
 
-/* One variant: emit it into `c` and register it in the VARS table text. */
-/* One atomic group's checker text (a set's reference arrays and every kit
- * variant of it, plus the VARS/SETS/COMPS rows naming them). Groups are the
- * unit populations.py guarantees a composition's operands and result share;
- * pack_chunks() below decides how many groups one compile unit holds. */
+/* One checker VARIANT: its function text and its VARS row. `law` marks the
+ * variants (K4, P3) the composition law reads, which must share a compile
+ * unit with the COMPS rows that name them; every other variant is free to
+ * land in any unit that also carries its set's reference arrays. */
 typedef struct {
-    StrBuf body, vars, setsb, comps;
-    int atom, nin, ncomps;
-    long long nvar;   /* checker variants: the unit's run cost */
-} Unit;
+    int pos, law, atom;   /* pos: index into sets[] */
+    StrBuf text, var;
+} Item;
 
-static void add_var(Unit *u, int si, const char *fn, const char *var)
+/* A set's reference arrays and its SETS row, written once and copied into
+ * every unit that holds one of the set's variants. */
+typedef struct { StrBuf ref, row; } SetText;
+
+static Item *items;
+static int nitem, capitem;
+static SetText settext[MAXSET];
+static StrBuf grpcomps[MAXSET];   /* per group: its COMPS rows */
+static int grpncomps[MAXSET];
+static int grphascomps[MAXSET];
+
+/* Start a variant of set `pos` and return it; the caller emits into ->text. */
+static Item *add_item(int pos, const char *fn, const char *var)
 {
-    u->nvar++;
-    pcrec_sb_printf(&u->vars, "    { %d, \"%s\", %s },\n", si, var, fn);
+    if (nitem == capitem) items = realloc(items, sizeof *items * (size_t)(capitem = capitem ? capitem * 2 : 256));
+    Item *it = &items[nitem++];
+    memset(it, 0, sizeof *it);
+    it->pos = pos;
+    it->law = grphascomps[sets[pos].chunk] && (!strcmp(var, "K4") || !strcmp(var, "P3"));
+    pcrec_sb_printf(&it->var, "    { %d, \"%s\", %s },\n", sets[pos].idx, var, fn);
+    return it;
 }
 
-static void unit_free(Unit *u)
-{
-    pcrec_sb_free(&u->body);
-    pcrec_sb_free(&u->vars);
-    pcrec_sb_free(&u->setsb);
-    pcrec_sb_free(&u->comps);
-}
-
-/* Emit group `ch` into `u`. */
-static void emit_group(Unit *u, int ch)
+/* Emit group `ch`: each set's reference arrays, every variant as its own
+ * item, and the group's COMPS rows. Groups are the unit populations.py
+ * guarantees a composition's operands and result share; pack_chunks() below
+ * decides which compile unit each item lands in. */
+static void emit_group(int ch)
 {
     Arena a = { NULL, NULL };
-    StrBuf *c = &u->body, *setsb = &u->setsb;
 
+    for (int q = 0; q < ncomp; q++)
+        if (sets[comps[q].c].chunk == ch) {
+            pcrec_sb_printf(&grpcomps[ch], "    { %d, %d, %d, '%c' },\n", comps[q].c, comps[q].a, comps[q].b, comps[q].op[0]);
+            grpncomps[ch]++;
+            grphascomps[ch] = 1;
+        }
     for (int i = 0; i < nset; i++) {
         Set *s = &sets[i];
+        StrBuf *c = &settext[i].ref;
         if (s->chunk != ch) continue;
-        u->nin++;
-        if (s->atom_index >= 0) u->atom = 1;
         /* the reference: plain arrays, written here and nowhere else */
         pcrec_sb_printf(c, "static const unsigned s%d_lo[%d] = {", s->idx, s->n ? s->n : 1);
         for (int t = 0; t < s->n; t++) pcrec_sb_printf(c, "%s%uu,", t % 12 ? " " : "\n    ", s->iv[t].lo);
@@ -164,7 +185,7 @@ static void emit_group(Unit *u, int ch)
         for (int t = 0; t < s->n; t++) pcrec_sb_printf(c, "%s%uu,", t % 12 ? " " : "\n    ", s->iv[t].hi);
         if (!s->n) pcrec_sb_puts(c, "0");
         pcrec_sb_puts(c, "\n};\n");
-        pcrec_sb_printf(setsb, "    { %d, \"%s\", s%d_lo, s%d_hi, %d },\n", s->idx, s->name, s->idx, s->idx, s->n);
+        pcrec_sb_printf(&settext[i].row, "    { %d, \"%s\", s%d_lo, s%d_hi, %d },\n", s->idx, s->name, s->idx, s->idx, s->n);
 
         for (size_t l = 0; l < sizeof LAMS / sizeof LAMS[0]; l++) {
             ClsKit k;
@@ -172,8 +193,7 @@ static void emit_group(Unit *u, int ch)
             pcrec_clskit_partition(&a, s->iv, s->n, LAMS[l], 0, &k);
             snprintf(fn, sizeof fn, "s%d_k%u", s->idx, LAMS[l]);
             snprintf(var, sizeof var, "K%u", LAMS[l]);
-            pcrec_clskit_emit_kit(c, fn, &k);
-            add_var(u, s->idx, fn, var);
+            pcrec_clskit_emit_kit(&add_item(i, fn, var)->text, fn, &k);
             census_kit(&k);
         }
         for (size_t o = 0; o < sizeof ONLY / sizeof ONLY[0]; o++) {
@@ -182,8 +202,7 @@ static void emit_group(Unit *u, int ch)
             pcrec_clskit_partition(&a, s->iv, s->n, 4, 1u << ONLY[o], &k);
             snprintf(fn, sizeof fn, "s%d_only%zu", s->idx, o);
             snprintf(var, sizeof var, "only-%s", pcrec_clskit_leaf_name(ONLY[o]));
-            pcrec_clskit_emit_kit(c, fn, &k);
-            add_var(u, s->idx, fn, var);
+            pcrec_clskit_emit_kit(&add_item(i, fn, var)->text, fn, &k);
             census_kit(&k);
         }
         for (ClsForm f = CLSF_PAGE3; f <= CLSF_BITMAP1; f++) {
@@ -193,48 +212,70 @@ static void emit_group(Unit *u, int ch)
                 continue;
             }
             snprintf(fn, sizeof fn, "s%d_%s", s->idx, pcrec_clskit_form_name(f));
-            pcrec_clskit_emit_whole(c, &a, fn, f, s->iv, s->n);
-            add_var(u, s->idx, fn, pcrec_clskit_form_name(f));
+            pcrec_clskit_emit_whole(&add_item(i, fn, pcrec_clskit_form_name(f))->text, &a, fn, f, s->iv, s->n);
             form_census[f]++;
         }
         if (s->atom_index >= 0) {
             char fn[96];
             snprintf(fn, sizeof fn, "s%d_ATOM", s->idx);
-            pcrec_clskit_emit_atom(c, fn, "atom_tab", &atoms, s->atom_index);
-            add_var(u, s->idx, fn, "ATOM");
+            Item *it = add_item(i, fn, "ATOM");
+            it->atom = 1;
+            pcrec_clskit_emit_atom(&it->text, fn, "atom_tab", &atoms, s->atom_index);
             form_census[CLSF_ATOM]++;
         }
     }
-    /* compositions whose result lives in this group */
-    for (int q = 0; q < ncomp; q++)
-        if (sets[comps[q].c].chunk == ch) {
-            pcrec_sb_printf(&u->comps, "    { %d, %d, %d, '%c' },\n", comps[q].c, comps[q].a, comps[q].b, comps[q].op[0]);
-            u->ncomps++;
-        }
     pcrec_arena_free(&a);
 }
 
-/* Write one compile unit: units[lo..hi) concatenated behind one checker main. */
-static void write_chunk(const char *outdir, int index, const Unit *units, int lo, int hi)
+/* One compile unit under construction: a set of items plus the COMPS rows of
+ * the groups whose law variants it holds. */
+typedef struct {
+    int *it, nit;
+    char in_set[MAXSET];
+    int setorder[MAXSET], nset_in;
+    int cgroup[MAXSET], ncg;
+    int atom;
+    long long bytes, vars;
+} Pack;
+
+/* The bytes a set's reference text adds to `p` (0 once it is already in). */
+static long long ref_cost(const Pack *p, int pos)
+{
+    return p->in_set[pos] ? 0 : (long long)settext[pos].ref.len;
+}
+
+/* Put item `k` into `p`, with its set's reference arrays if they are new. */
+static void pack_add(Pack *p, int k)
+{
+    Item *it = &items[k];
+    p->bytes += ref_cost(p, it->pos) + (long long)it->text.len;
+    if (!p->in_set[it->pos]) { p->in_set[it->pos] = 1; p->setorder[p->nset_in++] = it->pos; }
+    p->it[p->nit++] = k;
+    p->vars++;
+    p->atom |= it->atom;
+}
+
+/* Write one compile unit. */
+static void write_chunk(const char *outdir, int index, const Pack *p)
 {
     StrBuf c = { 0 };
     char path[4096];
-    int atom = 0, nc = 0;
+    int nc = 0;
 
-    for (int g = lo; g < hi; g++) atom |= units[g].atom;
     pcrec_sb_puts(&c, "#include <stdio.h>\n#include <string.h>\n\n");
-    if (atom) pcrec_clskit_emit_atom_table(&c, "atom_tab", &atoms);
-    for (int g = lo; g < hi; g++) pcrec_sb_puts(&c, units[g].body.p ? units[g].body.p : "");
+    if (p->atom) pcrec_clskit_emit_atom_table(&c, "atom_tab", &atoms);
+    for (int k = 0; k < p->nset_in; k++) pcrec_sb_puts(&c, settext[p->setorder[k]].ref.p);
+    for (int k = 0; k < p->nit; k++) pcrec_sb_puts(&c, items[p->it[k]].text.p ? items[p->it[k]].text.p : "");
     pcrec_sb_puts(&c, "\ntypedef int (*fn_t)(unsigned);\n"
                       "static const struct { int set; const char *var; fn_t fn; } VARS[] = {\n");
-    for (int g = lo; g < hi; g++) pcrec_sb_puts(&c, units[g].vars.p ? units[g].vars.p : "");
+    for (int k = 0; k < p->nit; k++) pcrec_sb_puts(&c, items[p->it[k]].var.p);
     pcrec_sb_puts(&c, "};\nstatic const struct { int idx; const char *name; const unsigned *lo, *hi; int n; } SETS[] = {\n");
-    for (int g = lo; g < hi; g++) pcrec_sb_puts(&c, units[g].setsb.p ? units[g].setsb.p : "");
+    for (int k = 0; k < p->nset_in; k++) pcrec_sb_puts(&c, settext[p->setorder[k]].row.p);
     pcrec_sb_puts(&c, "};\n");
     pcrec_sb_puts(&c, "static const struct { int c, a, b; char op; } COMPS[] = {\n");
-    for (int g = lo; g < hi; g++) {
-        pcrec_sb_puts(&c, units[g].comps.p ? units[g].comps.p : "");
-        nc += units[g].ncomps;
+    for (int k = 0; k < p->ncg; k++) {
+        pcrec_sb_puts(&c, grpcomps[p->cgroup[k]].p);
+        nc += grpncomps[p->cgroup[k]];
     }
     if (!nc) pcrec_sb_puts(&c, "    { -1, -1, -1, 0 },\n");
     pcrec_sb_printf(&c, "};\nenum { NCOMP = %d };\n", nc);
@@ -248,35 +289,62 @@ static void write_chunk(const char *outdir, int index, const Unit *units, int lo
     pcrec_sb_free(&c);
 }
 
-/* Emit every group, then pack CONSECUTIVE groups into compile units by their
- * emitted BYTES (and, second, by RUN COST -- CHUNK_VARS): gcc's time on a unit follows the text it is handed (measured
- * ~0.8 s/MB at -O1 on the Mac, 4.3 s for a 5.2 MB unit that the old fixed
- * twelve-sets-per-unit rule produced from twelve wide uprops sets), not the
- * number of sets or intervals in it. A group is never split (a composition's
- * operands and result share one); a group over the budget gets a unit alone.
- * Returns the number of units written. */
+/* Emit every group, then pack its variants into compile units by their
+ * emitted BYTES (and, second, by RUN COST -- CHUNK_VARS): gcc's time on a
+ * unit follows the text it is handed, not the number of sets or intervals in
+ * it, and follows it at a rate that depends on the gcc VERSION (~0.8 s/MB at
+ * -O1 on the Mac's gcc-16; ~5-10x that on CI's gcc-13, see the budget note by
+ * CHUNK_BYTES). The atomic part of a group is only its LAW bundle -- the K4
+ * and P3 variants of every set in a group that has compositions, with the
+ * group's COMPS rows, because the law compares a result's variant against its
+ * operands' in one process. Every other variant of a set is checked against
+ * that set's own reference alone, so it may land in any unit carrying the
+ * set's reference arrays (copied into each). Returns the number of units. */
 static int pack_chunks(const char *outdir, long long budget, long long vbudget)
 {
-    Unit *units = calloc((size_t)(ngroup ? ngroup : 1), sizeof *units);
-    int nunit = 0, lo = 0;
-    long long acc = 0, vacc = 0;
+    int nunit = 0;
+    Pack p;
+    int *done, *slot;
 
-    for (int g = 0; g < ngroup; g++) emit_group(&units[g], g);
+    for (int g = 0; g < ngroup; g++) emit_group(g);
+    done = calloc((size_t)(nitem ? nitem : 1), sizeof *done);
+    slot = malloc(sizeof *slot * (size_t)(nitem ? nitem : 1));
+    memset(&p, 0, sizeof p);
+    p.it = slot;
+#define FLUSH() do { if (p.nit) { write_chunk(outdir, nunit++, &p); \
+        memset(p.in_set, 0, sizeof p.in_set); p.nit = p.nset_in = p.ncg = p.atom = 0; p.bytes = p.vars = 0; } } while (0)
     for (int g = 0; g < ngroup; g++) {
-        long long sz = (long long)units[g].body.len;
-        if (units[g].nin == 0) continue;
-        long long vc = units[g].nvar + 2LL * units[g].ncomps;
-        if (acc > 0 && (acc + sz > budget || vacc + vc > vbudget)) {
-            write_chunk(outdir, nunit++, units, lo, g);
-            lo = g;
-            acc = vacc = 0;
+        /* the law bundle first: all or nothing, so it is added as a whole */
+        if (grphascomps[g]) {
+            long long bytes = 0, vars = 2LL * grpncomps[g];
+            char seen[MAXSET] = { 0 };
+            for (int k = 0; k < nitem; k++)
+                if (items[k].law && sets[items[k].pos].chunk == g) {
+                    bytes += (long long)items[k].text.len;
+                    if (!seen[items[k].pos]) { seen[items[k].pos] = 1; bytes += (long long)settext[items[k].pos].ref.len; }
+                    vars++;
+                }
+            if (p.nit && (p.bytes + bytes > budget || p.vars + vars > vbudget)) FLUSH();
+            for (int k = 0; k < nitem; k++)
+                if (items[k].law && sets[items[k].pos].chunk == g) { pack_add(&p, k); done[k] = 1; }
+            p.cgroup[p.ncg++] = g;
+            p.vars += 2LL * grpncomps[g];
         }
-        acc += sz;
-        vacc += vc;
+        for (int k = 0; k < nitem; k++) {
+            if (done[k] || sets[items[k].pos].chunk != g) continue;
+            long long bytes = ref_cost(&p, items[k].pos) + (long long)items[k].text.len;
+            if (p.nit && (p.bytes + bytes > budget || p.vars + 1 > vbudget)) FLUSH();
+            pack_add(&p, k);
+            done[k] = 1;
+        }
     }
-    if (acc > 0) write_chunk(outdir, nunit++, units, lo, ngroup);
-    for (int g = 0; g < ngroup; g++) unit_free(&units[g]);
-    free(units);
+    FLUSH();
+#undef FLUSH
+    for (int k = 0; k < nitem; k++) { pcrec_sb_free(&items[k].text); pcrec_sb_free(&items[k].var); }
+    for (int i = 0; i < nset; i++) { pcrec_sb_free(&settext[i].ref); pcrec_sb_free(&settext[i].row); }
+    for (int g = 0; g < ngroup; g++) pcrec_sb_free(&grpcomps[g]);
+    free(done);
+    free(slot);
     return nunit;
 }
 
@@ -328,7 +396,7 @@ int main(int argc, char **argv)
     if (strcmp(argv[1], "emit") || argc < 4) { fprintf(stderr, "clskit_driver: bad mode\n"); return 2; }
     long long budget = argc > 4 ? atoll(argv[4]) : CHUNK_BYTES;
     int nunit = pack_chunks(argv[3], budget, argc > 5 ? atoll(argv[5]) : CHUNK_VARS);
-    printf("CHUNKS %d SETS %d COMPS %d\n", nunit, nset, ncomp);
+    printf("CHUNKS %d SETS %d COMPS %d VARIANTS %d\n", nunit, nset, ncomp, nitem);
     for (int l = 0; l < CLSK_NLEAF; l++)
         printf("LEAF %s %lld\n", pcrec_clskit_leaf_name((ClsLeaf)l), leaf_census[l]);
     for (int f = 0; f < CLSF_NFORM; f++)
