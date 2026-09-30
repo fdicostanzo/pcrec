@@ -26120,3 +26120,31 @@ margin; bisect today's merges if slower). MAIN IS UNPUSHED (origin at 4a546fba-e
 **OWED to Frank:** K75 M1 (protocol-only find-all alignment; recommended) vs M2; [UTF-VALID] §8's 11 questions (Q1/Q2/Q4 decide; recommend `whole` now, `extent` recorded); S4's drop-the-prefilter ladder rung for `(\p{Xwd})`.
 
 **Lessons:** (1) Frank: "you do a wave then go into test watching mode" — refill at every delivery, in the same turn (memory updated). (2) A lane that "expects DETECTED" without reading its own log hid a timeout (k67 S189 rc=124). (3) A GNU-only flag with a silent fallback turns a parallel check serial on darwin, for months. (4) Lanes repeatedly end before reading late manager messages; pure run-launching belongs in a script, not a briefed agent. (5) A critic panel found a HIGH (a size pin broken, hidden by counting one script as the target) that the lane's own "green" missed.
+
+### 2026-09-30 ~06:30 EDT — eighty-sixth session, close addendum: everything built tonight is MERGED (main d6cb0bb4, abi 49, pushed)
+
+**Merged after the mid-night entry:**
+- K72/K73 (04b45c19, abi 47; k73tri showed test-corpus's red was a load flake, re-run 31703/0).
+- [UTF-VALID] design revised (uvrev; critic r2).
+- K75 measurement (PCRE2 decides on the BYTE; M1 = protocol-only find-all alignment, 0 residual K75 divergences over 19,608 subjects).
+- K76 fix (pattern-esc is a block opener in run.sh/verify_rxt.py/census).
+- U3 island twin (correct; NOT a speed win over all-byte: slower 14/16 wide-class cells, one CJK win; capability route only).
+- S3+K67 via land3b (46/46).
+- portsplit (BSD `split -n` silently ran 7 test scripts serially on darwin).
+- silentred (two opt-in checks red on main that nobody counted: recursion identity 264->0 via a ctx-node-moved excuse, encoding checks 9/7->11/0).
+- admin86 (S189 figure by mechanism, K77, plan pointers).
+- S4+CLSPACK via land4 (e3ce677f, one abi event 47->48; -fno-cls-kit also denies the atom row per the manager's ruling).
+- HYB-RESEED via land5 (d6cb0bb4, abi 49; the r1 panel's HIGH size break fixed; `clamped` row; answer_diff 895 movers / 0 DIFF; test-axes -fno-hyb-reseed 27769/0).
+
+**In flight at close:** the final full make test then full test-axes on main d6cb0bb4 on ubuntubudu (~/pcrec/worktrees/final-lx, final_test.log MAKE_RC= / final_axes.log AXES_RC=). The last full test-axes (U2's, Mac) had load-induced trc=124 one-sided give-ups on backref/recursion axes; the Linux run settles that.
+
+**Owed to Frank (plain text, recommendations):**
+- K75 M1 vs M2 (rec M1).
+- [UTF-VALID] §8's 11 questions (Q1/Q2/Q4 decide; rec `whole` now).
+- U3 on capability grounds.
+- The drop-the-prefilter ladder rung for `(\p{Xwd})`.
+- Wiring the encoding checks into make test (+~10 min) and recursion identity into the battery.
+- CLSPACK fires on zero shipped corpus patterns (constructed witnesses only).
+- [OPT-HYB-RESEED-XCALL]'s trigger met on the Mac tier (×0.62 find-all); the bench's x86 ask (draft in reseed_report §8) is not yet sent.
+
+**Lessons (added):** (6) I chained `git merge` with other commands (silentred) — conflict caught before commit, but the rule is merge ALONE. (7) A cleanup glob (`lane/land*`) deleted an unrelated old Linux branch (its commit was safe in main) — name exactly. (8) A validation chain that waits on another chain's marker deadlocks when that chain is killed; write the marker when superseding. (9) A manager `cd` into a worktree moved the session cwd a third time.
