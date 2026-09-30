@@ -31,6 +31,9 @@
 # see the drift: every E1 reader keeps the value sealed before the lowering.
 # (The plant is not answer-neutral — the class stops consuming — so the
 # corpus would also go red on patterns neither check refuses.)
+# RE-ANCHORED at [CLS-TREE] S3 (2026-09-29, lane s3build): the non-empty
+# return became `return wclass_of(lc, a, res);`. The AFTER is unchanged: the
+# class still lowers to a bare A_EMPTY, and the E1/E2 cross-check refuses it.
 SAB_ID="S303-e1-nullability-moves-under-lowering"
 SAB_FILE="src/opt/lower_enc.c"
 SAB_SUITES="facts"
@@ -45,7 +48,7 @@ SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='                res = seal;
             }
-            return res;'
+            return wclass_of(lc, a, res);'
 SAB_AFTER='                res = seal;
             }
             return pcrec_ast_node(lc->cx, A_EMPTY);   /* SABOTAGE S303: a non-empty class lowers to A_EMPTY */'
