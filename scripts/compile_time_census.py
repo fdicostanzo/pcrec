@@ -168,7 +168,8 @@ def main():
 
     bins = []
     if a.ref:
-        scratch = tempfile.mkdtemp(prefix="ctcensus_")
+        scratch = os.path.join(a.tree, "build-ctcensus")   # gitignored
+        os.makedirs(scratch, exist_ok=True)
         b, _ = es.build_from_rev(a.tree, a.ref, scratch, es.resolve_cc(a.tree),
                                  "ref")
         bins.append(("ref", b))
