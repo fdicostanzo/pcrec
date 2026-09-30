@@ -1,0 +1,11 @@
+witness	table_classes	atoms	form	entry	__text	__TEXT,__const	seg_total
+atom-11	11	12	atom	"inline"	2632	256	3752
+atom-11	11	0	site	"inline"	3528	352	4704
+atom-reads	12	13	atom	"plain"	1928	256	3264
+atom-reads	12	0	site	"plain"	2120	384	3600
+atom-64	11	64	atom	"inline"	3284	256	5704
+atom-64	11	0	site	"inline"	3528	352	6000
+chain-16	16	17	atom	"inline"	3600	256	4800
+chain-16	16	0	site	"inline"	4904	512	6288
+chain-32	32	44	atom	"plain"	2216	256	3552
+chain-32	32	0	site	"plain"	2536	1024	4640

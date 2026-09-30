@@ -16,7 +16,10 @@ change it checks.
 With --cand BIN the same artifacts are compiled by a CANDIDATE binary and each
 row is classified: identical / moved, and whether the move is predicted. The
 acceptance is `moved == predicted` exactly, BY ID, plus every moved candidate
-artifact carrying `rx_class_atoms[256]` and no `rx_class_bitmap`.
+artifact carrying `rx_class_atoms[256]` and no `rx_class_bitmap`. "Moved" is
+after removing the two moves EVERY artifact makes at this abi event -- the
+abi digit (same length) and a `#define RX_VM_CLS_ATOMS 0` line -- so what it
+counts is a program or table move.
 
 USAGE
   python3 docs/dev/lanes/clspack_census.py --base BIN [--cand BIN] [--jobs N]
@@ -51,6 +54,17 @@ def natoms(sets):
     return len({tuple(s[b] for s in sets) for b in range(256)})
 
 
+ABI_RE = re.compile(rb"(abi 4[78]\)|\.abi = 4[78],)")
+STAMP0 = b"#define RX_VM_CLS_ATOMS 0\n"
+
+
+def norm(art):
+    """The artifact with the two known non-program moves removed: the abi
+    digit (47 -> 48, same length) and the new stamp line when it reads 0.
+    What is left differing is a PROGRAM or TABLE move."""
+    return ABI_RE.sub(b"abi", art).replace(STAMP0, b"")
+
+
 def one(args):
     base, cand, pat, engine = args
     ok, art, _ = emit_sweep.compile_stream_c(base, pat, 60, engine)
@@ -63,7 +77,7 @@ def one(args):
     moved = cok = None
     if cand:
         cok, cart, _ = emit_sweep.compile_stream_c(cand, pat, 60, engine)
-        moved = (not cok) or cart != art
+        moved = (not cok) or norm(cart) != norm(art)
         if cok and moved:
             cok = b"rx_class_atoms[256]" in cart and b"rx_class_bitmap" not in cart
     return (engine or "default", n, na, pred, moved, cok)
