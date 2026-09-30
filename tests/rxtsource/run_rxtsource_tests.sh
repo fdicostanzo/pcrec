@@ -387,9 +387,12 @@ record() { checks_recorded=$((checks_recorded + 1)); echo "RECORD: $*"; }
 # +1 block, +19 lines — tests/uprops/size_ladder_prefilter_drop.rxt (the
 # prefilter-drop rung's `(\p{Xwd})` under -e utf8 witness, 8 m + 3 n + 8 g
 # lines, oracle-verified on libpcre2 10.46/10.48): 259/4314/32545.
-CENSUS_FILES=259
-CENSUS_BLOCKS=4314
-CENSUS_LINES=32545
+# 2026-09-30 (triage s2tri, [CLS-TREE] S2 / S434's detector) — +1 file, +4 blocks,
+# +7 lines: tests/base/clskit_range_top.rxt (subjects that end a run on a
+# range's top byte, python3-re verified): 259/4314/32545 -> 260/4318/32552.
+CENSUS_FILES=260
+CENSUS_BLOCKS=4318
+CENSUS_LINES=32552
 # 2026-09-23 (lane rxtfix, K34 closure via lane b2fix's [OPTLOOP.1.impl]
 # batch 2 — docs/dev/known_issues.md K34) — -1 file, -3 blocks, +0 lines.
 # tests/known_fail/k34_leftrec_giveup.rxt (1 file, 3 blocks, 11 lines) was
@@ -494,9 +497,11 @@ CENSUS_LINES=32545
 # (tests/base/), the SAME deltas as CENSUS_* above (both run.sh directories).
 # 2026-09-30 (pfdrop) — +1/+1/+19, the SAME delta as CENSUS_* above
 # (tests/uprops/ is a run.sh directory, not tests/known_fail/).
-RUNSH_FILES=235
-RUNSH_BLOCKS=4314
-RUNSH_LINES=32545
+# 2026-09-30 (triage s2tri) — +1/+4/+7, the SAME delta as CENSUS_* above
+# (tests/base/ is a run.sh directory).
+RUNSH_FILES=236
+RUNSH_BLOCKS=4318
+RUNSH_LINES=32552
 # 2026-09-23 (lane rxtfix, K34 closure, same event as CENSUS_* above) —
 # +0/+0/+11 where CENSUS_* moved -1/-3/+0. tests/known_fail/ is now EMPTY
 # (kf_files=kf_blocks=kf_lines=0 at run time — `find tests/known_fail
@@ -1605,7 +1610,11 @@ C3_FILES=179
 # byte classes, a capture, \b) — tests/base/clspack_atoms.rxt's every cell.
 # Measured: `verify_rxt.py tests/base/clspack_atoms.rxt` ALL CHECKS PASSED,
 # SKIP=0; C3_VERIFIABLE moves by the same 79.
-C3_PASS=13982
+# 2026-09-30 (triage s2tri) — +7 PASS: tests/base/clskit_range_top.rxt's 7
+# expectations (4 m + 3 g, python `re` verifiable on every version). MEASURED on
+# python 3.9 only as C3_VERIFIABLE +7 (15979 -> 15986); this PASS pin is the
+# 3.14 number INFERRED (13982 + 7), not measured — no python 3.14 on the Mac.
+C3_PASS=13989
 # [UCP] U1 (lane ucpu1): +1563 SKIP, all own-oracle — tests/ucp/ carries
 # its own verifier (verify_ucp.py), so verify_rxt.py skips every one of its
 # 1,563 cells on every python version (measured: `verify_rxt.py tests/ucp`
@@ -1642,7 +1651,7 @@ C3_SKIP_COMPOSED=0
 C3_SKIP_NOPYTHON=1983
 C3_SKIP_PERRACCEPT=14
 C3_SKIP_OWNORACLE=12200
-C3_VERIFIABLE=15979   # PASS+INFO+no-python-expression+perr-python-accepts: python-version-INVARIANT
+C3_VERIFIABLE=15986   # PASS+INFO+no-python-expression+perr-python-accepts: python-version-INVARIANT
 C3_INFO=0
 C3_STOREUNCOVERED=0
 C3_TIMEOUT=1
