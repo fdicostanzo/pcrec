@@ -1,0 +1,32 @@
+| cell | row | subject | matches | answers | base ns/B | new ns/B | deny ns/B | base/new |
+|---|---|---|---:|---|---:|---:|---:|---:|
+| fixed | "adaptive" | synth-1m | 0 | same | 1.910 | 1.643 | 1.992 | x1.16 |
+| fixed | "adaptive" | synth-64k-asc | 0 | same | 1.648 | 1.434 | 1.648 | x1.15 |
+| fixed | "adaptive" | synth-dense | 10523 | same | 4.070 | 3.985 | 4.015 | x1.02 |
+| fixed | "adaptive" | gap1 | 0 | same | 1.641 | 1.395 | 1.651 | x1.18 |
+| fixed | "adaptive" | gap4 | 0 | same | 1.582 | 1.371 | 1.654 | x1.15 |
+| fixed | "adaptive" | gap16 | 0 | same | 1.650 | 1.361 | 1.655 | x1.21 |
+| fixed | "adaptive" | gap64 | 0 | same | 1.679 | 0.402 | 1.649 | x4.18 |
+| fixed | "adaptive" | bursty | 0 | same | 1.659 | 0.114 | 1.655 | x14.62 |
+| fixed | "adaptive" | adv16 | 0 | same | 1.673 | 1.392 | 1.661 | x1.20 |
+| fixed | "adaptive" | dense_sparse | 0 | same | 1.657 | 0.707 | 1.668 | x2.34 |
+| varwidth | "adaptive" | synth-1m | 6918 | same | 8.348 | 3.212 | 8.310 | x2.60 |
+| varwidth | "adaptive" | synth-64k-asc | 23 | same | 8.286 | 3.479 | 8.545 | x2.38 |
+| varwidth | "adaptive" | synth-dense | 22505 | same | 6.370 | 6.670 | 6.205 | x0.96 |
+| varwidth | "adaptive" | gap1 | 0 | same | 8.590 | 8.863 | 8.579 | x0.97 |
+| varwidth | "adaptive" | gap4 | 0 | same | 8.583 | 8.559 | 8.576 | x1.00 |
+| varwidth | "adaptive" | gap16 | 0 | same | 8.617 | 1.572 | 8.631 | x5.48 |
+| varwidth | "adaptive" | gap64 | 0 | same | 8.697 | 0.403 | 8.672 | x21.56 |
+| varwidth | "adaptive" | bursty | 0 | same | 8.699 | 0.434 | 8.699 | x20.05 |
+| varwidth | "adaptive" | adv16 | 0 | same | 8.469 | 2.850 | 8.659 | x2.97 |
+| varwidth | "adaptive" | dense_sparse | 0 | same | 8.518 | 4.433 | 8.707 | x1.92 |
+| neg | "adaptive" | synth-1m | 2771 | same | 4.288 | 0.427 | 4.391 | x10.04 |
+| neg | "adaptive" | synth-dense | 9093 | same | 5.520 | 5.145 | 5.700 | x1.07 |
+| neg | "adaptive" | cjk1 | 0 | same | 2.894 | 3.069 | 2.872 | x0.94 |
+| neg | "adaptive" | cjk4 | 0 | same | 2.782 | 2.345 | 2.789 | x1.19 |
+| neg | "adaptive" | cjk16 | 0 | same | 2.865 | 0.677 | 2.926 | x4.23 |
+| lkapos | "adaptive" | lka_sparse | 83 | same | 0.534 | 0.519 | 0.522 | x1.03 |
+| lkapos | "adaptive" | lka_dense | 20477 | same | 1.857 | 2.014 | 1.810 | x0.92 |
+| lkapos | "adaptive" | synth-1m | 0 | same | 0.514 | 0.513 | 0.509 | x1.00 |
+| dense1 | "adaptive-dense" | lka_sparse | 17318 | same | 2.206 | 2.217 | 2.178 | x0.99 |
+| dense1 | "adaptive-dense" | synth-1m | 6776 | same | 1.610 | 1.655 | 1.616 | x0.97 |

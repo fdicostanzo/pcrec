@@ -10571,23 +10571,33 @@ const int pcrec_reseed_nrows =
     (int)(sizeof pcrec_reseed_rows / sizeof pcrec_reseed_rows[0]);
 
 /* The measured calibration, one row per program class (hyb_reseed.md §3),
- * indexed by `has_push`. `gap` is the crossover in subject bytes below which
- * a re-seed gap counts as short; `steps` the failed attempts one step block
- * runs before its probe re-seed (4 x gap: amortizes the probe to under a
- * quarter of a re-seed per step, and one wrong block wastes a few re-seeds);
- * `first` the probation steps a call starts with (gap / 2, ski rental's
- * "rent for half the purchase price"). The `clskit.c` `PLACE` precedent: a
- * `--tune` cell would move these, and none does today (D103: a cell needs a
- * measured two-axis rate). */
-static const struct { unsigned gap, steps, first; } vm_reseed_cal[2] = {
-    { 16, 64, 8 },   /* frameless: a failed attempt is a few compares */
-    {  4, 16, 2 },   /* framed: a slot write, a trail entry, a push, a pop */
+ * indexed by `has_push`. All four are measured, none derived:
+ *
+ *   gap    the crossover, in subject bytes, below which a re-seed's jump
+ *          counts as SHORT (stepping that far is cheaper than re-seeding);
+ *   block  the first step block's length, in failed attempts, once two
+ *          short gaps in a row enter step mode. Each short PROBE after a
+ *          block doubles the next one, so a long dense run pays a
+ *          vanishing share of re-seeds, and a long gap resets it;
+ *   cap    the longest block, which bounds what one wrong block (the
+ *          subject turned sparse inside it) can waste;
+ *   first  the step budget a call spends before its first re-seed. A
+ *          find-all over a match-dense subject makes many short calls,
+ *          each re-learning its density, so a frameless call (a step costs
+ *          almost nothing) steps a whole block first, while a framed call
+ *          (a step costs a third of a re-seed) re-seeds almost at once.
+ *
+ * The `clskit.c` `PLACE` precedent: a `--tune` cell would move these, and
+ * none does today (D103: a cell needs a measured two-axis rate). */
+static const struct { unsigned gap, block, cap, first; } vm_reseed_cal[2] = {
+    { 16, 64, 1024, 64 },  /* frameless: a failed attempt is a few compares */
+    {  4, 16,   64,  2 },  /* framed: a slot write, a trail entry, a push, a pop */
 };
 
 /* The decision `vm_plan_reseed` hands the stamp and the search body. */
 typedef struct {
-    const PcrecReseedRow *row;     /* NULL: no prefilter, nothing to decide */
-    unsigned gap, steps, first;    /* the class calibration the text spells */
+    const PcrecReseedRow *row;          /* NULL: no prefilter, nothing to decide */
+    unsigned gap, block, cap, first;    /* the class calibration the text spells */
 } VmReseed;
 
 /* Does predicate `p` hold for this hybrid? The candidate rate is asked only
@@ -10617,7 +10627,8 @@ static void vm_plan_reseed(Vm *v, VmReseed *rs)
     memset(rs, 0, sizeof *rs);
     if (!v->cx->job->fit.prefilter) return;
     rs->gap   = vm_reseed_cal[v->has_push].gap;
-    rs->steps = vm_reseed_cal[v->has_push].steps;
+    rs->block = vm_reseed_cal[v->has_push].block;
+    rs->cap   = vm_reseed_cal[v->has_push].cap;
     rs->first = vm_reseed_cal[v->has_push].first;
     for (int i = 0; i < pcrec_reseed_nrows; i++) {
         const PcrecReseedRow *r = &pcrec_reseed_rows[i];
@@ -12742,11 +12753,13 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
      *
      * THE TAIL. In step mode (`reseed_steps_left > 0`) the loop steps as a
      * clamp-free hybrid always did. Otherwise it re-seeds exactly as
-     * `retry_win` does and records the gap the answer jumped: two consecutive
+     * `retry_win` does and reads the gap the answer jumped: two consecutive
      * gaps under the class's crossover start a step block, and the block ends
      * in one re-seed — its PROBE — so a dense-then-sparse subject cannot stay
-     * stepping. Two gaps rather than one is what keeps the alternating
-     * pattern (a failing candidate pair, then a long gap) in re-seed mode.
+     * stepping. A short probe doubles the next block up to the cap; a long
+     * gap resets both counters. Two gaps rather than one is what keeps the
+     * alternating pattern (a failing candidate pair, then a long gap) in
+     * re-seed mode. The dense row starts a call INSIDE a capped block.
      *
      * SOUND ON BOTH ARMS for the reasons each already was: stepping is
      * today's clamp-free retry, re-seeding is today's clamped one (D51 ruling
@@ -12764,8 +12777,8 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
                            "fired on an exact-language hybrid, whose clamp "
                            "window a step would carry stale");
         reseed_decl = vm_rolef(v,
-            "    unsigned reseed_steps_left = %u, reseed_short_gaps = %u;\n",
-            dense ? rs->steps : rs->first, dense ? 2u : 0u);
+            "    unsigned reseed_steps_left = %u, reseed_short_gaps = %u, reseed_block = %u;\n",
+            dense ? rs->cap : rs->first, dense ? 2u : 0u, rs->block);
         retry_seed = vm_rolef(v,
             "        if (reseed_steps_left > 0) reseed_steps_left--;\n"
             "        else {\n"
@@ -12774,13 +12787,18 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
             "            if (%s(subject, subject_length, attempt_position, window) != 1) return 0;\n"
             "            attempt_position = (size_t)window[0][0];\n"
             "%s"
-            "            reseed_short_gaps = attempt_position - reseed_from < %u\n"
-            "                ? (reseed_short_gaps < 2 ? reseed_short_gaps + 1 : 2) : 0;\n"
-            "            if (reseed_short_gaps == 2) reseed_steps_left = %u;\n"
+            "            if (attempt_position - reseed_from >= %u) {\n"
+            "                reseed_short_gaps = 0;\n"
+            "                reseed_block = %u;\n"
+            "            } else if (++reseed_short_gaps >= 2) {\n"
+            "                reseed_short_gaps = 2;\n"
+            "                reseed_steps_left = reseed_block;\n"
+            "                if (reseed_block < %u) reseed_block *= 2;\n"
+            "            }\n"
             "        }\n",
             prefn,
             v->nclamp > 0 ? "            window_end = subject_length;\n" : "",
-            rs->gap, rs->steps);
+            rs->gap, rs->block, rs->cap);
     }
 
     /* [M4.6d] THE MRL CEILING, and D51 ruling 2's three obligations, all
