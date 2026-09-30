@@ -8,6 +8,12 @@
 # decodes to U+0000 and `E0 80 80` to U+0000 -- members of `[^a]`, `.`,
 # `\P{L}` and `\P{Unknown}` -- and the VM matches where the automaton does not.
 #
+# THE PLANT KEEPS `floor` READ (`v < floor && len > 4u`, never true): a
+# first draft deleted the test outright, left `floor` set-but-unused, and
+# every decode artifact then failed the harness's own -Werror build -- a
+# DETECTED that measured a compiler warning, not the overlong subjects
+# (measured 2026-09-30: corpus:554fail/190pass).
+#
 # THE WITNESS IS A SUBJECT: tests/utf8/wclass_illformed.rxt's `engine vm`
 # blocks with the overlong cells (the default-engine blocks stay green,
 # which is the row's own point: only the kit route moved).
@@ -22,4 +28,4 @@ SAB_REACH_EXPECT='rx_decode(subject, subject_length, scan_position'
 SAB_REACH_POP='tests/utf8/wclass_illformed.rxt|xc0.x80|8'
 SAB_COUNT=1
 SAB_BEFORE='"    if (v < floor || v > 0x10FFFFu || (v >= 0xD800u && v <= 0xDFFFu)) return 0;\n"'
-SAB_AFTER='"    if (v > 0x10FFFFu || (v >= 0xD800u && v <= 0xDFFFu)) return 0;\n"'
+SAB_AFTER='"    if ((v < floor && len > 4u) || v > 0x10FFFFu || (v >= 0xD800u && v <= 0xDFFFu)) return 0;\n"'
