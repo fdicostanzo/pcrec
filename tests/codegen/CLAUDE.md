@@ -3404,7 +3404,7 @@ current DETECTED figure from a `make mech` run.
 The VM's TABLE-READ byte classes (no singleton/range/fold compare covers
 them) share ONE `<prefix>_class_atoms[256]` table and a 64-bit mask per class
 when there are at least 11 of them and their partition has at most 64 atoms
-(D131 item 6, `docs/spec/tuning.md` §2.35). Answer-identity-preserving, so
+(D131 item 6, `docs/spec/tuning.md` §2.34). Answer-identity-preserving, so
 the corpus sees nothing of the choice; this file does. Rides
 `make test-cpset-structure` (~15 s) and the mech arm `clspack`. Its
 witnesses are `tests/base/clspack_atoms.rxt`'s blocks, read by case name,

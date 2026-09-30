@@ -343,9 +343,13 @@ typedef struct {
      * rather than silently classifying a non-start byte as a word byte and
      * re-opening K50. */
     const unsigned char *start_cls;
-    /* The same predicate as C text, true when `@P` is a position a match may
-     * begin at. Substitution is `advance`'s, minus the indentation rule: this
-     * is ONE EXPRESSION, spliced into an `if`, never a statement list. */
+    /* The same predicate as C text, true when `@P` is a CHARACTER START
+     * (`start_cls` asked of `@S[@P]`, plus "the end of the subject is one").
+     * It carries no rule about WHO named `@P`: [K73] took offset 0's old
+     * exemption out of the backend text, and the emitter composes the
+     * caller's refusal and the offset-0 rule on top of this predicate.
+     * Substitution is `advance`'s, minus the indentation rule: this is ONE
+     * EXPRESSION, spliced into an `if`, never a statement list. */
     const char *start_guard;
     /* [K70] WHETHER `(?r)` (PCRE2's caseless-restrict: an ASCII character and
      * a non-ASCII character must never match each other caselessly) IS SAFE

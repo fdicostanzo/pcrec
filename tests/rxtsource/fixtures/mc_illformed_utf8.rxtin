@@ -6,20 +6,25 @@
 # (a continuation byte with no lead byte before it).
 #
 # `x?` is NULLABLE (the advance rule only fires on a ZERO-WIDTH match,
-# never on `en > st`) and the subject `\x80\x80\x80` is three ill-formed
-# continuation bytes with no lead byte anywhere — the sharpest witness:
-# EVERY byte in it is skip-eligible.
+# never on `en > st`) and the first subject `a\x80\x80\x80` is a lead-free
+# run of three ill-formed continuation bytes AFTER a character — every byte
+# of the run is skip-eligible.
 #
-#   WITH the rule: pos=0 matches empty, skip 0->3 in one step (three
-#     continuation bytes), pos=3 matches empty (end of subject) — count 2.
-#   WITHOUT it (naive `pos + 1` alone): pos=0,1,2,3 each match empty —
-#     count 4.
+#   WITH the rule: pos=0 matches empty, skip 1->4 in one step (three
+#     continuation bytes), pos=4 matches empty (end of subject) — count 2.
+#   WITHOUT it (naive `pos + 1` alone): pos=1,2,3 are searched too — a
+#     python leg counts 5, and the C leg's search REFUSES pos=1 (K50's
+#     caller-startpos guard), so neither leg reads 2.
 #
-# MEASURED (this fixture, both legs): `run.sh`'s C loop
-# (`<prefix>_next_pos`, the real encoding residual) and
-# `verify_rxt.py`'s independent python transcription both report 2, and
-# both FAIL loudly if the expected count here is changed to the naive
-# 4 — verified by hand before landing, not assumed.
+# [K73] (2026-09-29) MOVED THIS FIXTURE'S SUBJECT. It used to be the bare
+# `\x80\x80\x80` with an expected 2 (empty at 0, skip to 3, empty at 3).
+# Since K73 a search at offset 0 does not attempt a match at a continuation
+# byte — it starts at the first non-continuation byte, as libpcre2 does under
+# PCRE2_MATCH_INVALID_UTF — so that subject's count is 1, and it no longer
+# reached the advance rule at all. It stays as the SECOND case, now K73's own
+# witness for the protocol. Both counts are libpcre2 10.46's under this same
+# loop (`docs/dev/lanes/k73utf_evidence/k73_mc_findall_10.46.txt`).
 pattern x?
 encoding utf8
-mc "\x80\x80\x80" 2
+mc "a\x80\x80\x80" 2
+mc "\x80\x80\x80" 1

@@ -1,7 +1,7 @@
 # S400 ([OPT-CLSPACK], lane clspack) -- A TABLE-READ CLASS IS TESTED WITH
 # ANOTHER CLASS'S ATOM MASK.
 #
-# THE CLAIM (docs/spec/tuning.md §2.35): the shared atom table answers exactly
+# THE CLAIM (docs/spec/tuning.md §2.34): the shared atom table answers exactly
 # what each class's own 32-byte bitmap answers. The plant hands every matcher
 # the mask of the class before it in the table's order (the first keeps its
 # own), so the atom route answers a different class at ten of eleven

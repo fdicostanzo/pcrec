@@ -1,0 +1,97 @@
+case	comparison	cases	differing	kind
+c1	bb	31168	0	vs libpcre2
+c1	ia	31168	0	vs libpcre2
+c1	ib	31168	0	vs libpcre2
+c1	ic	31168	0	vs libpcre2
+c1	bb==ia	31168	0	arm vs arm
+c1	bb==ib	31168	0	arm vs arm
+c1	bb==ic	31168	0	arm vs arm
+c1	ia==ib	31168	0	arm vs arm
+c1	ia==ic	31168	0	arm vs arm
+c1	ib==ic	31168	0	arm vs arm
+c3	bb	31168	0	vs libpcre2
+c3	ia	31168	0	vs libpcre2
+c3	ib	31168	0	vs libpcre2
+c3	ic	31168	0	vs libpcre2
+c3	bb==ia	31168	0	arm vs arm
+c3	bb==ib	31168	0	arm vs arm
+c3	bb==ic	31168	0	arm vs arm
+c3	ia==ib	31168	0	arm vs arm
+c3	ia==ic	31168	0	arm vs arm
+c3	ib==ic	31168	0	arm vs arm
+nd	bb	31168	0	vs libpcre2
+nd	ia	31168	0	vs libpcre2
+nd	ib	31168	0	vs libpcre2
+nd	ic	31168	0	vs libpcre2
+nd	bb==ia	31168	0	arm vs arm
+nd	bb==ib	31168	0	arm vs arm
+nd	bb==ic	31168	0	arm vs arm
+nd	ia==ib	31168	0	arm vs arm
+nd	ia==ic	31168	0	arm vs arm
+nd	ib==ic	31168	0	arm vs arm
+l	bb	31168	0	vs libpcre2
+l	bd	31168	0	vs libpcre2
+l	ia	31168	0	vs libpcre2
+l	ib	31168	0	vs libpcre2
+l	ic	31168	0	vs libpcre2
+l	bb==bd	31168	0	arm vs arm
+l	bb==ia	31168	0	arm vs arm
+l	bb==ib	31168	0	arm vs arm
+l	bb==ic	31168	0	arm vs arm
+l	bd==ia	31168	0	arm vs arm
+l	bd==ib	31168	0	arm vs arm
+l	bd==ic	31168	0	arm vs arm
+l	ia==ib	31168	0	arm vs arm
+l	ia==ic	31168	0	arm vs arm
+l	ib==ic	31168	0	arm vs arm
+xwd	bb	31168	0	vs libpcre2
+xwd	bd	31168	0	vs libpcre2
+xwd	ia	31168	0	vs libpcre2
+xwd	ib	31168	0	vs libpcre2
+xwd	ic	31168	0	vs libpcre2
+xwd	bb==bd	31168	0	arm vs arm
+xwd	bb==ia	31168	0	arm vs arm
+xwd	bb==ib	31168	0	arm vs arm
+xwd	bb==ic	31168	0	arm vs arm
+xwd	bd==ia	31168	0	arm vs arm
+xwd	bd==ib	31168	0	arm vs arm
+xwd	bd==ic	31168	0	arm vs arm
+xwd	ia==ib	31168	0	arm vs arm
+xwd	ia==ic	31168	0	arm vs arm
+xwd	ib==ic	31168	0	arm vs arm
+x1	bb	31168	0	vs libpcre2
+x1	bv	31168	0	vs libpcre2
+x1	ia	31168	0	vs libpcre2
+x1	ib	31168	0	vs libpcre2
+x1	ic	31168	0	vs libpcre2
+x1	bb==bv	31168	0	arm vs arm
+x1	bb==ia	31168	0	arm vs arm
+x1	bb==ib	31168	0	arm vs arm
+x1	bb==ic	31168	0	arm vs arm
+x1	bv==ia	31168	0	arm vs arm
+x1	bv==ib	31168	0	arm vs arm
+x1	bv==ic	31168	0	arm vs arm
+x1	ia==ib	31168	0	arm vs arm
+x1	ia==ic	31168	0	arm vs arm
+x1	ib==ic	31168	0	arm vs arm
+x2	bb	31168	0	vs libpcre2
+x2	bv	31168	0	vs libpcre2
+x2	ia	31168	0	vs libpcre2
+x2	ib	31168	0	vs libpcre2
+x2	ic	31168	0	vs libpcre2
+x2	bb==bv	31168	0	arm vs arm
+x2	bb==ia	31168	0	arm vs arm
+x2	bb==ib	31168	0	arm vs arm
+x2	bb==ic	31168	0	arm vs arm
+x2	bv==ia	31168	0	arm vs arm
+x2	bv==ib	31168	0	arm vs arm
+x2	bv==ic	31168	0	arm vs arm
+x2	ia==ib	31168	0	arm vs arm
+x2	ia==ic	31168	0	arm vs arm
+x2	ib==ic	31168	0	arm vs arm
+x3	ia	31168	0	vs libpcre2
+x3	ib	31168	0	vs libpcre2
+x3	ic	31168	0	vs libpcre2
+x3	ia==ib	31168	0	arm vs arm
+x3	ia==ic	31168	0	arm vs arm
+x3	ib==ic	31168	0	arm vs arm

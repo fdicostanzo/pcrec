@@ -1,0 +1,14 @@
+case	control	cases_differing_from_libpcre2	verdict
+c1	overlong	233	DETECTED
+c3	surrogate	0	NOT DETECTED
+c1	bot-in-set	1737	DETECTED
+c1	back-len	0	NOT DETECTED
+c1	edge	505	DETECTED
+x2	overlong	0	NOT DETECTED
+x1	overlong	18	DETECTED
+x2	bot-in-set	3801	DETECTED
+x2	back-len	218	DETECTED
+x1	seed	279	DETECTED
+x2	seed	673	DETECTED
+x2	h7	9342	DETECTED
+x1	back-len	15	DETECTED

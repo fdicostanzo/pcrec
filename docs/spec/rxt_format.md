@@ -27,11 +27,12 @@ line-oriented list of **pattern blocks**: each block starts with a
 lines that apply to that pattern, until the next `pattern` line or end of
 file. The head is a list of file-level declarations.
 
-**The head ENDS at the first `pattern` line, and nothing file-level may
-appear after it.** That is the whole boundary rule, and everything below
+**The head ENDS at the first block-opening line (`pattern` or
+`pattern-esc`), and nothing file-level may appear after it.** That is the whole boundary rule, and everything below
 depends on it: a reader of any block needs to look in exactly one other
 place — the top of the file — and that place is bounded. A file whose
-first non-comment line is `pattern` has NO head, and behaves exactly as
+first non-comment line opens a block (`pattern` or `pattern-esc`) has NO
+head, and behaves exactly as
 it did before the head existed. Every file in `tests/` is of that shape
 today.
 
@@ -785,6 +786,16 @@ rule the emitted artifacts already implement, and it is written down
 rather than left to "the next character boundary" because for ill-formed
 input that phrase has no single reading and an `mc` count is exactly what
 a foreign consumer compares against.
+
+**[K73] AND THE FIRST SEARCH OF THE LOOP IS AT OFFSET 0, WHICH ON AN
+ILL-FORMED SUBJECT IS NOT WHERE A MATCH IS ATTEMPTED.** Under the same
+encodings, a search from offset 0 of a subject that begins with bytes in
+`0x80`-`0xBF` starts at the first byte outside that range (`match_api.md`
+§3.1's offset-0 bullet), so a consumer transcribing the protocol applies
+the same skip before its first search: `x?` over `"\x80\x80\x80"` is **1**
+(the empty match at the end), and over `"a\x80\x80\x80"` is **2** (offset
+0, then the advance above to the end) — both libpcre2 10.46's counts under
+`PCRE2_MATCH_INVALID_UTF` driven through this loop.
 
 ### `under` — a second correct answer, per convention
 

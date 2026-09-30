@@ -1,0 +1,3 @@
+zq[0-9]x: RX_REQ_WHY "dominated" RX_ENGINE "dfa" RX_DFA_PREFILTER "offset-set"  0.0023 ns/byte
+[a-z]+@[a-z]+: RX_REQ_WHY "emitted" RX_ENGINE "dfa" RX_DFA_PREFILTER "byte-class"  0.0250 ns/byte
+jumpz: RX_REQ_WHY "emitted" RX_ENGINE "dfa" RX_DFA_PREFILTER "offset-set"  0.3349 ns/byte

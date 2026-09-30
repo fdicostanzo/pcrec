@@ -147,7 +147,7 @@ Comprehensive test suite for base-tier PCRE features: literals, character classe
   boundary), six oracle-verified cases against python3 `re`
 
 - **clspack_atoms.rxt** + **gen_clspack_atoms.py** — [OPT-CLSPACK]'s answer
-  corpus (2026-09-30, lane clspack; `docs/spec/tuning.md` §2.35): VM byte
+  corpus (2026-09-30, lane clspack; `docs/spec/tuning.md` §2.34): VM byte
   classes that read a table and SHARE ONE ATOM TABLE. The shipped corpus has
   no artifact the atom row fires on (the most per-site bitmaps any corpus
   artifact carries is 6), so every block is a constructed witness, GENERATED

@@ -610,7 +610,7 @@ patterns, 995 DFA + 1,488 VM artifacts + 289 refused):
 | the same, sharded at `PROCS=4` | **37.3s** |
 
 Only the third shipped. The sweep shards by LINE CHUNKS of one pattern file
-(`split -n l/N`) rather than by `xargs` over pattern text — a pattern is
+(`shard_split N`, tests/lib/shard_split.sh) rather than by `xargs` over pattern text — a pattern is
 arbitrary bytes and every quoting scheme for passing it as an argument is a
 bug the corpus will find — and each worker writes verdict TOKENS to its own
 file, so no counter crosses a process. `PROCS` selects the shard count

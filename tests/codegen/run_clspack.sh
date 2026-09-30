@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # tests/codegen/run_clspack.sh — [OPT-CLSPACK]'s checks (docs/spec/tuning.md
-# §2.35; D131 item 6): the VM's table-read byte classes share ONE atom table
+# §2.34; D131 item 6): the VM's table-read byte classes share ONE atom table
 # when there are at least 11 of them and their byte partition has at most 64
 # atoms.
 #

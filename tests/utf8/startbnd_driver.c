@@ -22,6 +22,11 @@
  * with-its-subject failure this project keeps cataloguing
  * (docs/dev/learnings.md §3).
  *
+ * BOTH CALLER-FACING ENTRY KINDS ARE SWEPT, `<prefix>_search` and
+ * `<prefix>_match`, each with its own bucket line ([K73] added the second: the
+ * DFA's unwrapped `_match` had no guard, and a search-only sweep could not
+ * see it).
+ *
  * NON-VACUITY IS THE DRIVER'S OWN JOB, not the caller's: it prints the three
  * bucket counts and the script fails on `refused == 0`. An empty divergence
  * population means a dead guard, and a differential that reports "no
@@ -64,7 +69,12 @@
  * with no error return" into "ill-formed input is an error". MEASURED as a
  * defect before it was a clause: without it the guard refused offset 0 on 21
  * oracle-verified cells of this corpus (`a` on the one-byte subject 0x80 among
- * them), found by wiring the axis into `make test-axes`. */
+ * them), found by wiring the axis into `make test-axes`.
+ *
+ * [K73] "valid start" here means NEVER REFUSED, which is all this predicate
+ * is asked. Since K73 an offset 0 on a continuation byte is not where a match
+ * is ATTEMPTED — the search moves on and the anchored entry answers no-match —
+ * but that rule has no flag, so both arms agree there and the cell is SAME. */
 static int is_boundary(const unsigned char *s, size_t n, size_t p)
 {
     if (p == 0) return 1;              /* nothing precedes it to be inside of */
@@ -91,10 +101,54 @@ static size_t unhex(const char *h, unsigned char *out, size_t cap)
     return n;
 }
 
+/* The bucket counts of ONE entry's sweep. */
+typedef struct { long same, refused, other; } Buckets;
+
+/* Classifies one cell into `b`, printing a defect line for OTHER. `ga`/`pa`
+ * are the two arms' rendered answers and `gref`/`pref` whether each REFUSED
+ * with the typed code. Returns 1 on a defect. */
+static int classify(Buckets *b, const char *entry, const char *subj, size_t sp,
+                    int bnd, int gref, int pref, const char *ga, const char *pa)
+{
+    if (gref) {
+        /* A refusal is correct at a NON-boundary and only there, and the
+         * permissive arm must still have answered — a refusal on both arms
+         * would mean the flag did nothing. */
+        if (bnd) {
+            printf("OVER-FIRING %s subj=%s start=%zu: the guarded arm "
+                   "REFUSED a position that IS a character boundary "
+                   "(permissive arm said %s)\n", entry, subj, sp, pa);
+            b->other++; return 1;
+        }
+        if (pref) {
+            printf("LEAKED INTO THE DENY ARM %s subj=%s start=%zu: both "
+                   "arms refused, so -fno-startpos-guard emitted a "
+                   "guard it must not have\n", entry, subj, sp);
+            b->other++; return 1;
+        }
+        b->refused++; return 0;
+    }
+    if (strcmp(ga, pa) == 0) {
+        /* Agreement is correct at a boundary. At a NON-boundary it means the
+         * guard did not fire where it must: the deleted-guard direction. */
+        if (!bnd) {
+            printf("GUARD MISSING %s subj=%s start=%zu: a MID-CHARACTER "
+                   "position was answered (%s) instead of refused\n",
+                   entry, subj, sp, ga);
+            b->other++; return 1;
+        }
+        b->same++; return 0;
+    }
+    printf("DIVERGED WITHOUT A REFUSAL %s subj=%s start=%zu (boundary=%d): "
+           "guarded=%s permissive=%s — the two arms must differ ONLY by the "
+           "refusal\n", entry, subj, sp, bnd, ga, pa);
+    b->other++; return 1;
+}
+
 int main(int argc, char **argv)
 {
     unsigned char subj[512];
-    long same = 0, refused = 0, other = 0;
+    Buckets sb = {0, 0, 0}, mb = {0, 0, 0};
     int rc_exit = 0;
 
     if (argc < 2) {
@@ -118,52 +172,36 @@ int main(int argc, char **argv)
         for (size_t sp = 0; sp <= n; sp++) {
             ptrdiff_t gc[1][2], pc[1][2];
             char ga[64], pa[64];
+            int bnd = is_boundary(subj, n, sp);
             int gr = g_search(subj, n, sp, gc);
             int pr = p_search(subj, n, sp, pc);
-            int bnd = is_boundary(subj, n, sp);
 
             answer(ga, sizeof ga, gr, gc);
             answer(pa, sizeof pa, pr, pc);
+            rc_exit |= classify(&sb, "search", argv[a], sp, bnd,
+                                gr == PCREC_ERR_STARTPOS,
+                                pr == PCREC_ERR_STARTPOS, ga, pa);
 
-            if (gr == PCREC_ERR_STARTPOS) {
-                /* A refusal is correct at a NON-boundary and only there, and
-                 * the permissive arm must still have answered — a refusal on
-                 * both arms would mean the flag did nothing. */
-                if (bnd) {
-                    printf("OVER-FIRING subj=%s start=%zu: the guarded arm "
-                           "REFUSED a position that IS a character boundary "
-                           "(permissive arm said %s)\n", argv[a], sp, pa);
-                    other++; rc_exit = 1;
-                } else if (pr == PCREC_ERR_STARTPOS) {
-                    printf("LEAKED INTO THE DENY ARM subj=%s start=%zu: both "
-                           "arms refused, so -fno-startpos-guard emitted a "
-                           "guard it must not have\n", argv[a], sp);
-                    other++; rc_exit = 1;
-                } else {
-                    refused++;
-                }
-            } else if (strcmp(ga, pa) == 0) {
-                /* Agreement is correct at a boundary. At a NON-boundary it
-                 * means the guard did not fire where it must: the deleted-
-                 * guard direction. */
-                if (!bnd) {
-                    printf("GUARD MISSING subj=%s start=%zu: a MID-CHARACTER "
-                           "position was answered (%s) instead of refused\n",
-                           argv[a], sp, ga);
-                    other++; rc_exit = 1;
-                } else {
-                    same++;
-                }
-            } else {
-                printf("DIVERGED WITHOUT A REFUSAL subj=%s start=%zu "
-                       "(boundary=%d): guarded=%s permissive=%s — the two "
-                       "arms must differ ONLY by the refusal\n",
-                       argv[a], sp, bnd, ga, pa);
-                other++; rc_exit = 1;
-            }
+            /* [K73] THE ANCHORED ENTRY, SWEPT THE SAME WAY. §3.1 promises
+             * `<prefix>_match` carries the same guard; the search sweep above
+             * could not see an anchored body that skipped it, and the DFA's
+             * unwrapped form did, until K73's site survey found it. */
+            rx_ctx gx = {0}, px = {0};
+            gx.subject = px.subject = subj;
+            gx.len = px.len = n;
+            gx.pos = px.pos = sp;
+            ptrdiff_t gm = g_match(&gx), pm = p_match(&px);
+            snprintf(ga, sizeof ga, "%td", gm);
+            snprintf(pa, sizeof pa, "%td", pm);
+            rc_exit |= classify(&mb, "match", argv[a], sp, bnd,
+                                gm == PCREC_ERR_STARTPOS,
+                                pm == PCREC_ERR_STARTPOS, ga, pa);
         }
     }
 
-    printf("buckets: same=%ld refused=%ld other=%ld\n", same, refused, other);
+    printf("buckets: same=%ld refused=%ld other=%ld\n",
+           sb.same, sb.refused, sb.other);
+    printf("match-buckets: same=%ld refused=%ld other=%ld\n",
+           mb.same, mb.refused, mb.other);
     return rc_exit;
 }

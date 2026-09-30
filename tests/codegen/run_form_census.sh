@@ -28,7 +28,7 @@
 # the K39/[OPT-4] style of printing populations beside a verdict, applied
 # to the stamp vocabulary itself. Reuses `pcrec_run` (D45's bounded
 # compiler) and the sharded-worker/tally-token shape run_dfa_stamps.sh
-# established (`split -n l/N`, one verdict-token stream per shard, the
+# established (`shard_split N`, one verdict-token stream per shard, the
 # parent tallies — never a shared counter across processes); does not
 # reuse that script's `read_artifact`/`mirror_check` functions, which are
 # STRUCTURAL-comparison machinery this script has no use for.
@@ -122,8 +122,11 @@ echo "census: $npat corpus patterns (LC_ALL=C sort -u over tests/**/*.rxt)"
 NSHARD="${PROCS:-$PROCS_DEFAULT}"
 [ "$NSHARD" -ge 1 ] 2>/dev/null || NSHARD=1
 mkdir -p "$WORKDIR/sh" "$WORKDIR/tally"
-split -n "l/$NSHARD" -d "$WORKDIR/pats" "$WORKDIR/sh/p" 2>/dev/null \
-    || { cp "$WORKDIR/pats" "$WORKDIR/sh/p00"; NSHARD=1; }
+# tests/lib/shard_split.sh, not GNU `split -n` (BSD split has no -n; the old
+# `|| cp pats sh/p00; NSHARD=1` fallback made darwin silently serial).
+. "$ROOT_DIR/tests/lib/shard_split.sh"
+shard_split "$NSHARD" "$WORKDIR/pats" "$WORKDIR/sh/p" || exit 1
+NSHARD="$SHARD_COUNT"
 
 cat > "$WORKDIR/worker.sh" <<'WORKER'
 #!/usr/bin/env bash

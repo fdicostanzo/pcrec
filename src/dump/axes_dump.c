@@ -614,14 +614,14 @@ static void emit_predicate_axes(StrBuf *sb)
         emit_pred_row(sb, &p, 2, "denied", "",
                      0, 0, "", "always (fallback) — the class's byte alternation, and every one-member class (a literal) keeps its bytes");
     }
-    /* [OPT-CLSPACK] cls-pack — §2.35. RX_VM_CLS_ATOMS is an ACTIVITY COUNT
+    /* [OPT-CLSPACK] cls-pack — §2.34. RX_VM_CLS_ATOMS is an ACTIVITY COUNT
      * (the shared table's atoms), stamp_value empty for alt-island's reason.
      * The one artifact-level row of src/gen/clskit.c's TAB_ROWS. */
     {
         PredAxis p = { "cls-pack", NULL, "RX_VM_CLS_ATOMS", "", 0, NULL, 0, NULL, NULL, NULL };
         emit_pred_row(sb, &p, 1, "atom", "",
                      PCREC_NO_CLS_PACK, 0, "",
-                     "per VM artifact: at least 11 of its byte classes read a table (no singleton/range/fold compare covers them) and their byte partition has at most 64 atoms, so they share ONE 256-byte byte->atom table with a 64-bit mask per class instead of a 32-byte bitmap each (src/gen/clskit.c TAB_ROWS)");
+                     "per VM artifact: at least 11 of its byte classes read a table (no singleton/range/fold compare covers them) and their byte partition has at most 64 atoms, so they share ONE 256-byte byte->atom table with a 64-bit mask per class instead of a 32-byte bitmap each (src/gen/clskit.c TAB_ROWS); -fno-cls-kit denies this row too");
         emit_pred_row(sb, &p, 2, "denied", "",
                      0, 0, "", "always (fallback) — a 32-byte bitmap per table-read class");
     }

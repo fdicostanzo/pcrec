@@ -1,0 +1,137 @@
+libpcre2: 10.46
+## pattern []
+m "\x80" 1 1
+m "\x80\x80" 2 2
+m "\x80a" 1 1
+m "\x80\xc3\xa9" 1 1
+m "\x80\x80b" 2 2
+m "\xff" 0 0
+m "\xe3\x80" 0 0
+m "b" 0 0
+## pattern [\B]
+m "\x80" 1 1
+m "\x80\x80" 2 2
+n "\x80a"
+m "\x80\xc3\xa9" 1 1
+n "\x80\x80b"
+m "\xff" 0 0
+m "\xe3\x80" 0 0
+n "b"
+## pattern [x*]
+m "\x80" 1 1
+m "\x80\x80" 2 2
+m "\x80a" 1 1
+m "\x80\xc3\xa9" 1 1
+m "\x80\x80b" 2 2
+m "\xff" 0 0
+m "\xe3\x80" 0 0
+m "b" 0 0
+## pattern [(?=)]
+m "\x80" 1 1
+m "\x80\x80" 2 2
+m "\x80a" 1 1
+m "\x80\xc3\xa9" 1 1
+m "\x80\x80b" 2 2
+m "\xff" 0 0
+m "\xe3\x80" 0 0
+m "b" 0 0
+## pattern [^]
+n "\x80"
+n "\x80\x80"
+n "\x80a"
+n "\x80\xc3\xa9"
+n "\x80\x80b"
+m "\xff" 0 0
+m "\xe3\x80" 0 0
+m "b" 0 0
+## pattern [$]
+m "\x80" 1 1
+m "\x80\x80" 2 2
+m "\x80a" 2 2
+m "\x80\xc3\xa9" 3 3
+m "\x80\x80b" 3 3
+n "\xff"
+n "\xe3\x80"
+m "b" 1 1
+## pattern [\b]
+n "\x80"
+n "\x80\x80"
+m "\x80a" 1 1
+n "\x80\xc3\xa9"
+m "\x80\x80b" 2 2
+n "\xff"
+n "\xe3\x80"
+m "b" 0 0
+## pattern [\G]
+n "\x80"
+n "\x80\x80"
+n "\x80a"
+n "\x80\xc3\xa9"
+n "\x80\x80b"
+m "\xff" 0 0
+m "\xe3\x80" 0 0
+m "b" 0 0
+## pattern [\G|b]
+n "\x80"
+n "\x80\x80"
+n "\x80a"
+n "\x80\xc3\xa9"
+m "\x80\x80b" 2 3
+m "\xff" 0 0
+m "\xe3\x80" 0 0
+m "b" 0 0
+## pattern [(?m)^a|\B]
+m "\x80" 1 1
+m "\x80\x80" 2 2
+n "\x80a"
+m "\x80\xc3\xa9" 1 1
+n "\x80\x80b"
+m "\xff" 0 0
+m "\xe3\x80" 0 0
+n "b"
+## pattern [a|]
+m "\x80" 1 1
+m "\x80\x80" 2 2
+m "\x80a" 1 2
+m "\x80\xc3\xa9" 1 1
+m "\x80\x80b" 2 2
+m "\xff" 0 0
+m "\xe3\x80" 0 0
+m "b" 0 0
+#### PCRE2_ANCHORED at start 0
+## pattern [] anchored
+m "\x80" 1 1
+m "\x80\x80" 2 2
+m "\x80a" 1 1
+m "\x80\xc3\xa9" 1 1
+m "\x80\x80b" 2 2
+m "\xff" 0 0
+m "\xe3\x80" 0 0
+m "b" 0 0
+## pattern [x*] anchored
+m "\x80" 1 1
+m "\x80\x80" 2 2
+m "\x80a" 1 1
+m "\x80\xc3\xa9" 1 1
+m "\x80\x80b" 2 2
+m "\xff" 0 0
+m "\xe3\x80" 0 0
+m "b" 0 0
+## pattern [\B] anchored
+m "\x80" 1 1
+m "\x80\x80" 2 2
+n "\x80a"
+m "\x80\xc3\xa9" 1 1
+n "\x80\x80b"
+m "\xff" 0 0
+m "\xe3\x80" 0 0
+n "b"
+## pattern [(?:)]
+m "\x80" 1 1
+m "\x80\x80" 2 2
+m "\x80a" 1 1
+m "\x80\xc3\xa9" 1 1
+m "\x80\x80b" 2 2
+m "\xff" 0 0
+m "\xe3\x80" 0 0
+m "b" 0 0

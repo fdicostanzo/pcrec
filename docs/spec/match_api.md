@@ -586,16 +586,41 @@ byte of `s`.
   PCRE2's UTF modes in the SUCCEEDING direction — `(?<!.)` at offset 1 of the
   four bytes `CE B1 CE B2` reports `(1,1)` — because a truncated leading
   character has no path and a negative assertion succeeds exactly where its
-  body has none. **Neither arm ROUNDS the caller's `startpos`.** Refusing it
+  body has none. **Neither arm ROUNDS a caller's `startpos > 0`.** Refusing it
   and honouring it are the two choices on offer; silently advancing to the
   next boundary (which is `PCRE2_MATCH_INVALID_UTF`'s behaviour) is not one,
   because a caller handed an answer for a position it did not ask about
   cannot tell that from an answer for the one it did.
+- **OFFSET 0 IS NEVER REFUSED, AND ON AN ILL-FORMED SUBJECT IT IS NOT WHERE A
+  MATCH IS ATTEMPTED** ([K73], Frank's 2026-09-29 ruling (a)). No character
+  precedes offset 0, so a caller naming it cannot have pointed inside one; but
+  a subject may BEGIN with continuation bytes (`0x80`-`0xBF`), and then offset
+  0 is not a character start either. The search then begins at the first
+  non-continuation byte (or at `n`), exactly as `PCRE2_MATCH_INVALID_UTF`
+  advances its start offset, and every answer is the answer from there:
+  `''`, `\B`, `x*` and `(?=)` report `(1,1)` on `\x80` and `(2,2)` on
+  `\x80\x80`; `^`, `\A` and `\G` are FALSE at the moved start, so `^` finds
+  nothing on `\x80` and `\G|b` reports `(2,3)` on `\x80\x80b` (libpcre2 10.46,
+  `docs/dev/lanes/k73utf_evidence/k73_witness_10.46.txt`). An ill-formed
+  LEAD byte (`0xFF`, a truncated `0xE3`) is a valid start and is attempted,
+  as before. The rule has NO FLAG — it is the same under
+  `-fno-startpos-guard`, which governs only a `startpos > 0` — and it is the
+  one place pcrec now does what `PCRE2_MATCH_INVALID_UTF` does at a start
+  offset; an explicit mid-character `startpos > 0` keeps the refusal above,
+  a deliberate, stated divergence from that mode.
+- **The anchored entries (§3.2/§3.3) answer `-1` at `ctx->pos == 0` on such
+  a subject**, because they report only a match beginning exactly at
+  `ctx->pos` and none begins at a position that is not a character start.
+  libpcre2 under `PCRE2_ANCHORED` advances there too and reports the match at
+  the moved start (`(1,1)` for `x*` on `\x80`); pcrec's anchored contract has
+  no way to report a start other than `ctx->pos`, so this is a second stated
+  divergence, and both entry shapes agree on it.
 
 **WHAT THE ARTIFACT PROMISES ABOUT ITS OWN POSITIONS IS NOT PART OF THIS
 AXIS.** Every position the ENGINE generates — an unanchored search's candidate
-match starts, a failed attempt's retry — is a character boundary of the
-encoding, unconditionally and under either setting of the flag. That is K49's
+match starts, a failed attempt's retry, and since [K73] the first attempt of a
+search at offset 0 — is a character start of the encoding, unconditionally and
+under either setting of the flag. That is K49's
 and K50's fix, and it has no knob: a reported match span never begins inside a
 character on any subject, whichever arm the artifact carries. The flag governs
 only where a CALLER may point the entry.
@@ -2033,53 +2058,75 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `48` on every artifact today ([OPT-CLSPACK] bumped it
-  from 47, 2026-09-30: MANY TABLE-READ BYTE CLASSES SHARE ONE ATOM TABLE).**
-  A VM program whose byte classes that read a table (no singleton, range or
-  fold-pair compare covers them) number at least 11, and whose byte
-  partition has at most 64 atoms, emits ONE `static const unsigned char
-  <prefix>_class_atoms[256]` and one `static inline` matcher
-  `<prefix>_class_atom<N>` per such class (one load, one shift of a 64-bit
-  immediate), in place of a `<prefix>_class_bitmap<N>[32]` per class, and the
-  program calls the matcher where it read the bitmap (`docs/spec/tuning.md`
-  §2.35). Every VM artifact gains a `<PREFIX>_VM_CLS_ATOMS` line (§6.3).
+- **`rx_info.abi` is `48` on every artifact today ([CLS-TREE] S4 and
+  [OPT-CLSPACK] bumped it from 47 TOGETHER, ONE event, 2026-09-30: A WIDE CLASS
+  ON THE VM IS ONE DECODE AND ONE CLASS-MATCHER FUNCTION, AND MANY TABLE-READ
+  BYTE CLASSES SHARE ONE ATOM TABLE).**
+  - *The wide-class kit ([CLS-TREE] S4).* A class with more than one member,
+    some member of which encodes deeper than one code unit (`-e utf8`:
+    `\p{L}`, `[^a]`, `.`, `[é-ü]`), is tested by a VM program as
+    `<prefix>_decode` followed by `<prefix>_wcls<N>`, where it was the lowered
+    byte alternation (`docs/spec/tuning.md` §2.33). `<prefix>_wcls<N>` is a
+    `static inline` function whose form the `--tune` class table picks (§5.4's
+    λ row). `<prefix>_decode` is a new encoding-seam entry. It is `static
+    inline`, DECLARED NOWHERE, and emitted ahead of the program, and the utf8
+    caseless span compare calls it in place of the private decoder it carried.
+    So every utf8 caseless-backreference or caseless-variable artifact moves
+    too, with no answer change. Every VM artifact gains a
+    `<PREFIX>_VM_CLS_KIT` line (§6.3).
+    - Wide classes that refused on the VM's code cap now COMPILE: `\P{Unknown}`
+      under `--engine=vm` (K55), and the K53 sets under `--engine=vm`. This is a
+      refusal-set move.
+    - The new deny bit (`-fno-cls-kit`, `PCREC_NO_CLS_KIT`, bit 36) is MASKED
+      out of `rx_info.flags`. It denies the whole kit, the atom table below
+      included.
+  - *The shared atom table ([OPT-CLSPACK]).* A VM program whose byte classes
+    that read a table (no singleton, range or fold-pair compare covers them)
+    number at least 11, and whose byte partition has at most 64 atoms, emits ONE
+    `static const unsigned char <prefix>_class_atoms[256]` and one `static
+    inline` matcher `<prefix>_class_atom<N>` per such class (one load, one shift
+    of a 64-bit immediate), in place of a `<prefix>_class_bitmap<N>[32]` per
+    class, and the program calls the matcher where it read the bitmap
+    (`docs/spec/tuning.md` §2.34). Every VM artifact gains a
+    `<PREFIX>_VM_CLS_ATOMS` line (§6.3). The table is selected after the entry
+    rung, so the program length the rung's knee compares is unchanged.
+    - The new deny bit (`-fno-cls-pack`, `PCREC_NO_CLS_PACK`, bit 38) is MASKED
+      out of `rx_info.flags`; it denies the atom row alone.
   - That is an emitted-text move for identical inputs, and so an `abi` event
-    (D76). The program and tables move ONLY on artifacts the atom row fires
-    for; every other VM artifact moves by the stamp line alone.
-  - No struct offset moves, no `rx_info` member is added or changed, and no
-    refusal moves. The new deny bit (`-fno-cls-pack`, `PCREC_NO_CLS_PACK`,
-    bit 38) is MASKED out of `rx_info.flags`.
-  **VERIFIED BY A MOVER CENSUS** (`docs/dev/lanes/clspack_census.py`,
-  `docs/dev/lanes/clspack_report.md`): the program/table movers are exactly
-  the artifacts whose base emitted at least 11 bitmaps with at most 64 atoms,
-  by ID.
-- **`rx_info.abi` was `47` ([CLS-TREE] S4 bumped it
-  from 46, 2026-09-29: A WIDE CLASS ON THE VM IS ONE DECODE AND ONE
-  CLASS-MATCHER FUNCTION).** A class with more than one member, some member of
-  which encodes deeper than one code unit (`-e utf8`: `\p{L}`, `[^a]`, `.`,
-  `[é-ü]`), is tested by a VM program as `<prefix>_decode` followed by
-  `<prefix>_wcls<N>`, where it was the lowered byte alternation
-  (`docs/spec/tuning.md` §2.33). `<prefix>_wcls<N>` is a `static inline`
-  function whose form the `--tune` class table picks (§5.4's λ row).
-  `<prefix>_decode` is a new encoding-seam entry. It is `static inline`,
-  DECLARED NOWHERE, and emitted ahead of the program, and the utf8 caseless
-  span compare calls it in place of the private decoder it carried. So every
-  utf8 caseless-backreference or caseless-variable artifact moves too, with no
-  answer change. Every VM artifact gains a `<PREFIX>_VM_CLS_KIT` line (§6.3).
-  - That is an emitted-text move for identical inputs, and so an `abi` event
-    (D76).
-  - Wide classes that refused on the VM's code cap now COMPILE: `\P{Unknown}`
-    under `--engine=vm` (K55), and the K53 sets under `--engine=vm`. This is a
-    refusal-set move.
-  - No struct offset moves and no `rx_info` member is added or changed. The
-    new deny bit (`-fno-cls-kit`, `PCREC_NO_CLS_KIT`, bit 36) is MASKED out of
-    `rx_info.flags`.
-  **VERIFIED BY AN IDENTITY SWEEP** (`scripts/cls_identity.py`, 15,925
+    (D76). The kit moves the program and tables of the artifacts the wide-class
+    route reaches; the atom row moves them ONLY on artifacts it fires for;
+    every other VM artifact moves by the two stamp lines alone.
+  - No struct offset moves and no `rx_info` member is added or changed.
+  **VERIFIED BY AN IDENTITY SWEEP** (`scripts/cls_identity.py`, CLSIDENT_PLACEHOLDER
   triples at both encodings): under `-fno-cls-kit` every artifact equals the
-  abi-46 base with the new stamp line removed. There are two exceptions, both
-  expected. The 19 utf8 caseless span-compare artifacts move by the decoder's
-  relocation. And one bench artifact's size-retry WHY text quotes a byte
-  count that includes the stamp line (`docs/dev/lanes/s4build_report.md`).
+  abi-47 base with the two new stamp lines removed. There are two exceptions,
+  both expected. The 19 utf8 caseless span-compare artifacts move by the
+  decoder's relocation. And one bench artifact's size-retry WHY text quotes a
+  byte count that includes the stamp line (`docs/dev/lanes/s4build_report.md`).
+  **VERIFIED BY A MOVER CENSUS** (`docs/dev/lanes/clspack_census.py`,
+  `docs/dev/lanes/clspack_report.md`): the atom row's program/table movers are
+  exactly the artifacts whose base emitted at least 11 bitmaps with at most 64
+  atoms, by ID.
+- **`rx_info.abi` was `47` ([K73] bumped it from 46,
+  2026-09-29: THE OFFSET-0 START RULE IS EMITTED TEXT).** Under an encoding
+  that restricts where a match may begin (`utf8`), a NULLABLE pattern's
+  artifact gains one line at each caller-facing body — the unanchored DFA scan
+  (the DFA artifact's entry and a VM hybrid's internal prefilter) seeks
+  `search_from` past leading continuation bytes at offset 0, ENG_ATTEMPT's
+  start loop skips offset 0 there, the VM seeks its first `attempt_position`,
+  and the anchored match-here bodies answer `-1` (§3.1's two new bullets). A
+  non-nullable pattern gains none of it, by [K50-NULLGATE]'s proof: a match
+  that consumes a byte already begins on a character start. SEPARATELY, the
+  DFA's `"unwrapped"` `<prefix>_match` (§3.2) gains the [K50] caller-startpos
+  guard it had never carried — §3.1 promised it, and the entry answered a
+  mid-character `ctx->pos` instead of refusing it; that moves every `utf8`
+  DFA artifact of that form, nullable or not. ENG_ATTEMPT's existing
+  `continue` gate loses a dead `start == 0 ||` clause (the backend's start
+  predicate no longer carries the offset-0 exemption; the guard composes it).
+  No `byte` artifact moves beyond this number, no struct offset moves, no
+  `rx_info` member is added or changed, and answers move only on subjects that
+  begin with a continuation byte (to libpcre2's) and on mid-character
+  `ctx->pos` at the unwrapped DFA `_match` (to the promised refusal).
 - **`rx_info.abi` was `46` ([UCP] U2 bumped it from
   45, 2026-09-29: A ONE-CHARACTER LOOKAROUND IS A CONTEXT NODE, AND MOVES VM
   -> DFA).** A lookaround whose body's LANGUAGE is a set of single
@@ -3466,7 +3513,7 @@ every VM artifact, hybrids included, never defined on a pure-DFA artifact,
 consumer may NOT conclude: anything about the answers, which are identical
 either way.
 
-**[CLS-TREE] S4, 2026-09-29 (`abi` 47): `<PREFIX>_VM_CLS_KIT`, (b) for
+**[CLS-TREE] S4, 2026-09-29 (`abi` 48): `<PREFIX>_VM_CLS_KIT`, (b) for
 `_VM_CLS_FOLDS`' reason.**
 
 ```c
@@ -3492,7 +3539,7 @@ Nor may it conclude which form a matcher took: that is `--emit-ir`'s
 
 **The IFF: it is non-zero exactly when this artifact's VM program tests its
 table-read byte classes through ONE shared byte->atom table**
-(`<prefix>_class_atoms`, `docs/spec/tuning.md` §2.35), and then it is the
+(`<prefix>_class_atoms`, `docs/spec/tuning.md` §2.34), and then it is the
 number of atoms that table numbers. `0` means a 32-byte bitmap per class (or
 no table-read class at all). It is emitted on every VM artifact, hybrids
 included, and never on a pure-DFA artifact; it reads `0` under

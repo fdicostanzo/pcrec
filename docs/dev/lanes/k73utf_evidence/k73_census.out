@@ -1,0 +1,5 @@
+== byte: 3353 patterns; identical 2986, refused 367
+== utf8: 3353 patterns; changed 1361, identical 1626, refused 366
+   movers 1361: with zero-rule lines 384, with the new _match guard 1210, zero-rule lines total 849; UNPREDICTED 0
+== utf8-vm: 3353 patterns; changed 386, identical 2599, refused 368
+   movers 386: with zero-rule lines 386, with the new _match guard 0, zero-rule lines total 1158; UNPREDICTED 0

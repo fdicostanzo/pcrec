@@ -1,0 +1,5 @@
+10.46
+[(?<=a)b] "\x80b"@1: rc=-22 (UTF-8 error: isolated byte with 0x80 bit set) startchar=0
+[b] "\x80b"@0: rc=-22 (UTF-8 error: isolated byte with 0x80 bit set) startchar=0
+[a] "a b\xff"@0: rc=-23 (UTF-8 error: illegal byte (0xfe or 0xff)) startchar=3
+[a(?=..)] "a b\xff"@0: rc=-23 (UTF-8 error: illegal byte (0xfe or 0xff)) startchar=3

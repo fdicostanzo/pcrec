@@ -1084,7 +1084,7 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
   writes `<prefix>_class_atoms[256]` plus one `<prefix>_class_atom<N>`
   matcher per class through the kit's own emitters.
   `<PREFIX>_VM_CLS_ATOMS` is the atom count (0 = per-class bitmaps).
-  docs/spec/tuning.md §2.35.** ONE function per pattern, one label per
+  docs/spec/tuning.md §2.34.** ONE function per pattern, one label per
   pattern position, every continuation resolved at compile time into a
   fallthrough or a direct `goto`, and exactly one indirect jump (the `goto *`
   at the fail label). §2.7 is why D13's table-vs-computed-goto arbitration

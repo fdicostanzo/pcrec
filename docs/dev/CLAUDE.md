@@ -235,6 +235,7 @@ Append-only where noted; the restart/status-recovery record for the project.
   subsection. **STATUS: PENDING** the timing run — WHICH RAN 2026-08-23 (45:50 vs 63:43, adopted; see
   docs/testing.md "[TT-7] combined axis — ADOPTED"); the memo's own text
   predates the adoption and stays as the evidence record.
+- `k75_measurement.md` — K75's measurement (2026-09-30, lane k75m): PCRE2 10.48 at a continuation-byte startoffset, kinds A (mid-character) / B (stray) / T (truncated), U vs MATCH_INVALID_UTF, anchored or not; PCRE2 draws no A/B line; the find-all alignment `next_pos(end-1)` as the minimal fix. See `lanes/k75m_report.md`.
 - `wake.md` — untracked (gitignored) hand-off brief for session start/resume;
   lives in this directory but is not committed. Committed docs win on any
   disagreement with it.

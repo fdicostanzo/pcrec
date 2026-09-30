@@ -482,6 +482,16 @@ K50_CONT_END = ')) continue;'
 # the statement's own shape (emit_dfa.c's ENG_ATTEMPT guard) cannot be.
 K50_CONT_RE = re.compile(r'^\s*if \(start > search_from && !\(.*\)\) continue;$')
 K50_STAMP_RE = re.compile(r'^(#define RX_STARTPOS_GUARD ")(?:guarded|permissive)(")$')
+# [K73] THE OFFSET-0 START RULE (`pcrec_emit_start_zero`, emit_dfa.c): one
+# line per caller-facing body of a NULLABLE pattern, its predicate the same
+# `PcrecEnc.start_guard` text the two regions above splice, so encoding-owned
+# by their argument. Anchored on the STATEMENT's own shape — three spellings,
+# one per action — for the enctriage reason above: its marker comment is
+# NONESSENTIAL and absent from a default artifact. Under `-fcomments` the
+# marker opens a region that ends at that same statement.
+K73_ZERO_RE = re.compile(r'^\s*if \((search_from|start|attempt_position|ctx->pos) == 0 && '
+                         r'!\(.*\)\) (do \1\+\+; while \(!\(.*\)\);|return -1;|continue;)$')
+K73_ZERO_OPEN = '[K73] Offset 0 is a match start only if it is a character'
 
 # [enctriage, 2026-09-25] TWO ENCODING-KEYED SELECTIONS [OPTLOOP.1.impl]
 # landed on 2026-09-22 while this instrument still compared ZERO pairs, and
@@ -791,7 +801,8 @@ def excise(text, label):
               'encoding': 0, 'startpos_guard': 0, 'startpos_stamp': 0,
               'startpos_attempt': 0, 'end_window': 0, 'end_window_stamp': 0,
               'req_run_offset0': 0, 'req_check': 0, 'req_why_stamp': 0,
-              'var_valid_call': 0, 'span_ci_helper': 0, 'req_pick': 0}
+              'var_valid_call': 0, 'span_ci_helper': 0, 'req_pick': 0,
+              'start_zero': 0}
     out = []
     i, n = 0, len(lines)
     in_reqrun = False
@@ -875,6 +886,22 @@ def excise(text, label):
                 sys.exit(2)
             out.append("/* [K50] caller-startpos guard excised for comparison */\n")
             counts['startpos_guard'] += 1
+            i = gi + 1
+            continue
+        if K73_ZERO_RE.match(line.rstrip('\n')):
+            out.append("/* [K73] offset-0 start rule excised for comparison */\n")
+            counts['start_zero'] += 1
+            i += 1
+            continue
+        if K73_ZERO_OPEN in line:
+            gi = i
+            while gi < n and not K73_ZERO_RE.match(lines[gi].rstrip('\n')):
+                gi += 1
+            if gi >= n:
+                print("EXTRACT-FAIL %s: no statement closing the [K73] offset-0 rule" % label)
+                sys.exit(2)
+            out.append("/* [K73] offset-0 start rule excised for comparison */\n")
+            counts['start_zero'] += 1
             i = gi + 1
             continue
         if K50_CONT_RE.match(line.rstrip('\n')):
@@ -1029,7 +1056,8 @@ def main():
            'startpos_guard': 0, 'startpos_stamp': 0,
            'startpos_attempt': 0, 'end_window': 0, 'end_window_stamp': 0,
            'req_run_offset0': 0, 'req_check': 0, 'req_why_stamp': 0,
-           'var_valid_call': 0, 'span_ci_helper': 0, 'req_pick': 0}
+           'var_valid_call': 0, 'span_ci_helper': 0, 'req_pick': 0,
+           'start_zero': 0}
     nselect_bad = 0
     npairs = nstrict = nwidens = 0
     ndiverge_strict = ndiverge_widens = nbyteonly = nnextpos_bad = 0
@@ -1174,7 +1202,7 @@ def main():
               'startpos_guard', 'startpos_stamp', 'startpos_attempt',
               'end_window', 'end_window_stamp', 'req_run_offset0',
               'req_check', 'req_why_stamp', 'var_valid_call', 'span_ci_helper',
-              'req_pick'):
+              'req_pick', 'start_zero'):
         print("EXCISED %s=%d" % (k, agg[k]))
     for p in gate_pats:
         print("GATEPAT %s" % p)
@@ -1219,7 +1247,7 @@ else
     else
         # (a) non-vacuity: every named region reached at least once.
         vac=0
-        for k in next_pos back_step span_match span_match_caseless advance encoding startpos_guard startpos_stamp startpos_attempt end_window end_window_stamp req_run_offset0 req_check req_why_stamp var_valid_call span_ci_helper req_pick; do
+        for k in next_pos back_step span_match span_match_caseless advance encoding startpos_guard startpos_stamp startpos_attempt end_window end_window_stamp req_run_offset0 req_check req_why_stamp var_valid_call span_ci_helper req_pick start_zero; do
             v="$(grep "^EXCISED $k=" "$WORKDIR/dd12ai.out" | grep -oE '[0-9]+$')"
             if [ "${v:-0}" -eq 0 ]; then
                 bad "DD12a(i) region '$k' was never excised across the whole run — dead code, certifying nothing about it"
