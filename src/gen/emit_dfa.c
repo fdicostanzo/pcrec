@@ -3999,12 +3999,14 @@ static const char *dfa_table_name(Ctx *cx)
  * is an artifact-level fact (spec §6.3), so leaving the anchored machine out
  * would let it say `"range"` about an artifact carrying a membership table.
  *
- * The four values are `none` / `range` / `bitmap` / `mixed`, and they are a
- * COST statement rather than a decoration: `range` is a subtract-and-compare
- * against immediates, `bitmap` is a 256-byte table read per byte, and a
- * consumer picking between two spellings of a class can see which it got. The
- * value comes off `pcrec_scan_range` — the same predicate the emitted test is
- * written from, never a second reading of "is this class contiguous". */
+ * The values are `none` / `mixed` and the run tests an edge can take
+ * (`range` / `fold` / `kit` / `bitmap`), and they are a COST statement rather
+ * than a decoration: `range` and `fold` compare against immediates, `kit`
+ * calls a matcher, `bitmap` is a 256-byte table read per byte, and a
+ * consumer picking between spellings of a class can see which it got. The
+ * value comes off the class table's answer for the edge (`dfa_scan_body_
+ * name`) — the same choice the emitted test is written from, never a second
+ * reading of the class. */
 static const char *scan_edge_of(Ctx *cx, const Dfa *d, const char *so_far)
 {
     for (int i = 0; i < d->n; i++) {

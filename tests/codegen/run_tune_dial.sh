@@ -503,22 +503,29 @@ for pos in -2 -1 0 1 2; do
 done
 
 # ---------------------------------------------------------------------------
-# §3e — THE BYTE ROWS ([CLS-TREE] S2, D131 item 5): the VM test each position
-#       emits for a byte class, RECOVERED FROM THE EMITTED TEXT. The kit's
-#       byte forms are the size-leaning positions only: a scattered class
+# §3e — THE BYTE ROWS ([CLS-TREE] S2, D131 item 5, D139): the VM test each
+#       position emits for a byte class, RECOVERED FROM THE EMITTED TEXT. The
+#       kit's byte forms are the size-leaning positions only, and only where
+#       the kit is smaller than the class's table: a scattered class
 #       (`[aeiou]`) reads its kit matcher `rx_class_kit<N>` at -2/-1 and its
-#       32-byte bitmap at 0/+1/+2; `-fno-cls-kit` puts -2 back on the bitmap.
-#       A one-interval class (`[a-z]`) and an ASCII fold pair (`(?i)q`) are
-#       inline compares at EVERY position (the `byte-range`/`byte-fold`
-#       rows), with neither a table nor a matcher. And the stamp
-#       `RX_VM_CLS_KIT` equals the number of kit matchers the text defines.
+#       32-byte bitmap at 0/+1/+2; `-fno-cls-kit` puts -2 back on the bitmap;
+#       a class whose kit is LARGER than its bitmap (`[^\t \xa0]`, three
+#       sections) keeps the bitmap at -2 too. A one-interval class (`[a-z]`)
+#       and an ASCII fold pair (`(?i)q`) are inline compares at EVERY
+#       position, and each is RECOGNIZED BY ITS OWN SPELLING (review C-L8: a
+#       test that is none of the four named forms is a failure, never
+#       "inline" by default); `-fno-cls-fold` sends the pair to its kit at
+#       -2/-1 and its table at 0/+1/+2. The stamp `RX_VM_CLS_KIT` equals the number of
+#       kit matchers the text defines.
 # ---------------------------------------------------------------------------
 echo "== §3e — the byte rows: a byte class's test per position =="
-byte_form() {   # $1 = the emitted .c; prints kit / bitmap / inline
+byte_form() {   # $1 = the emitted .c; prints kit / bitmap / range / fold / other
     local f="$1"
     if   grep -q 'static inline int rx_class_kit0(' "$f"; then echo kit
     elif grep -q 'rx_class_bitmap0\[' "$f"; then echo bitmap
-    else echo inline; fi
+    elif grep -qE '\| 0x20\) == [0-9]+' "$f"; then echo fold
+    elif grep -qE '\(unsigned\)\([^()]*(\([^()]*\))?[^()]* - [0-9]+\) <= [0-9]+u' "$f"; then echo range
+    else echo other; fi
 }
 byte_case() {   # $1 = label, $2 = pattern, $3 = want per position (5 words), $4.. = extra flags
     local label="$1" pat="$2" want=($3); shift 3
@@ -548,8 +555,66 @@ byte_case() {   # $1 = label, $2 = pattern, $3 = want per position (5 words), $4
 }
 byte_case scattered '[aeiou]+x' "kit kit bitmap bitmap bitmap"
 byte_case scattered-denied '[aeiou]+x' "bitmap bitmap bitmap bitmap bitmap" -fno-cls-kit
-byte_case range '[a-z]+x' "inline inline inline inline inline"
-byte_case fold '(?i)q+x' "inline inline inline inline inline"
+byte_case kit-larger '[^\x09\x20\xa0]+x' "bitmap bitmap bitmap bitmap bitmap"
+byte_case range '[a-z]+x' "range range range range range"
+byte_case fold '(?i)q+x' "fold fold fold fold fold"
+byte_case fold-denied '(?i)q+x' "kit kit bitmap bitmap bitmap" -fno-cls-fold
+
+# ---------------------------------------------------------------------------
+# §3f — THE SCAN EDGE READS THE SAME TABLE (D139 item 2): a DFA scan edge's
+#       run test is the class-form table's answer at the scan site, spelled
+#       by the same emitters. Per position, the stamp `RX_DFA_SCAN_EDGE` AND
+#       the text: a range edge is the unsigned-subtract compare VM classes
+#       use; a fold pair is the fold compare at -2/-1 and its 256-byte table
+#       at 0/+1/+2 (D138 Q1 holds the default); a scattered class is its
+#       kit matcher `rx_<machine>_scankit<N>` at -2/-1, `-fno-cls-kit` puts it
+#       back on the table, and `-fno-cls-fold` sends a fold pair to the next
+#       row, its kit (the CUBES test) at -2/-1 (D139 item 3: a row's flag
+#       denies it wherever the table is read).
+# ---------------------------------------------------------------------------
+echo "== §3f — the scan edge's run test is the class table's answer =="
+scan_text() {   # $1 = the emitted .c, $2 = stamp value -> 0 iff the text carries that form
+    case "$2" in
+        range)  grep -qE '\(unsigned\)\(subject\[[^]]*\] - [0-9]+\) <= [0-9]+u|subject\[[^]]*\] <= [0-9]+\b' "$1" ;;
+        fold)   grep -qE '\(subject\[[^]]*\] \| 0x20\) == [0-9]+' "$1" ;;
+        kit)    grep -qE '^static inline int rx_[a-z]+_scankit[0-9]+\(unsigned cp\)' "$1" \
+                    && grep -qE 'rx_[a-z]+_scankit[0-9]+\(subject\[' "$1" ;;
+        bitmap) grep -qE 'rx_[a-z]+_scan[0-9]+\[subject\[' "$1" ;;
+        *)      return 1 ;;
+    esac
+}
+scan_case() {   # $1 = label, $2 = pattern, $3 = want per position (5 words), $4.. = extra flags
+    local label="$1" pat="$2" want=($3); shift 3
+    for pos in -2 -1 0 1 2; do
+        local SOUT="$WORKDIR/scan_${label}_$pos.c"
+        if ! pcrec_run "$PCREC" --tune="$pos" "$@" -p rx -o "$SOUT" --pattern "$pat" >/dev/null 2>&1; then
+            bad "§3f: $label --tune=$pos does not compile"
+            continue
+        fi
+        local got w="${want[$((pos + 2))]}"
+        got="$(sed -n 's/^#define RX_DFA_SCAN_EDGE "\(.*\)"$/\1/p' "$SOUT")"
+        if [ "$got" != "$w" ]; then
+            bad "§3f: $label --tune=$pos $* stamps RX_DFA_SCAN_EDGE '$got'; the class table says $w"
+        elif scan_text "$SOUT" "$w"; then
+            ok "§3f: $label --tune=$pos $* stamps $w and its text carries the $w test"
+        else
+            bad "§3f: $label --tune=$pos $* stamps $w but its text carries no $w test"
+        fi
+    done
+}
+scan_case range 'x\d{3,}y' "range range range range range"
+scan_case range-lo0 'x[\x00-\x40]{3,}b' "range range range range range"
+scan_case fold '(?i)xa{3,}b' "fold fold bitmap bitmap bitmap"
+scan_case fold-denied '(?i)xa{3,}b' "kit kit bitmap bitmap bitmap" -fno-cls-fold
+scan_case scattered 'x[aeiou]{3,}y' "kit kit bitmap bitmap bitmap"
+scan_case scattered-denied 'x[aeiou]{3,}y' "bitmap bitmap bitmap bitmap bitmap" -fno-cls-kit
+# the lo == 0 range spelling is the one-compare form, not a subtract of 0
+if grep -qE 'subject\[[^]]*\] <= 64\b' "$WORKDIR/scan_range-lo0_0.c" \
+        && ! grep -qE ' - 0\) <= ' "$WORKDIR/scan_range-lo0_0.c"; then
+    ok "§3f: a range from 0 is spelled as one compare (subject[...] <= 64), never a subtract of 0"
+else
+    bad "§3f: the range-from-0 witness is not spelled as one compare against its top"
+fi
 
 # ---------------------------------------------------------------------------
 # §4 — DIAL-S6: NESTING. The positions are an ORDINAL, not five unrelated

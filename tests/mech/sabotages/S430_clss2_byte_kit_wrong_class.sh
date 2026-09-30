@@ -12,6 +12,8 @@
 # THE DETECTOR is tests/codegen/run_clspack.sh PART 4 (arm `clspack`): the
 # `site-10` witness carries ten distinct kit-read classes, and its --tune=-2
 # artifact disagrees with the -fno-cls-kit build on the swept subjects.
+# RE-ANCHORED 2026-09-30 (lane clss2fix, [CLS-TREE] S2 review fixes, D139):
+# the kit emission gained its cp_max argument (the byte bound); same plant.
 SAB_ID="S430-clss2-byte-kit-wrong-class"
 SAB_FILE="src/gen/emit_vm.c"
 SAB_SUITES="clspack"
@@ -21,5 +23,5 @@ SAB_REACH='"$PCREC" --engine=vm --tune=-2 -p rx -o - --pattern "([aeiou])[bcdfg]
 SAB_REACH_EXPECT='#define RX_VM_CLS_KIT 10'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='                                      &v->clsch[i].kit);'
-SAB_AFTER='                                      &v->clsch[i ? i - 1 : 0].kit);'
+SAB_BEFORE='                                      &v->clsch[i].kit, 0xFFu);'
+SAB_AFTER='                                      &v->clsch[i ? i - 1 : 0].kit, 0xFFu);'

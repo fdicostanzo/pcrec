@@ -122,9 +122,10 @@ static const AxisDesc AXIS_DESC[] = {
     { "scan-edge", "scan-edge", "per STATE: src/opt/scanedge.c found a maximal run of states differing only in how many bytes of ONE class have been counted, rooted here, and DELETED the run's interior from the table -- so this state's edge is mandatory, not an accelerator ([OPT-5])" },
     { "scan-edge", "table-walk", "always (fallback) -- this state counts nothing, or the axis is denied and the pass left every state where it was" },
 
-    { "scan-body", "range", "the edge's class is a CONTIGUOUS byte set: subtract-and-compare against two immediates, no memory touched but the subject ([OPT-5])" },
-    { "scan-body", "kit", "size-leaning --tune positions only (-2/-1): the edge's class is on the class-form table's byte-kit row (not one interval, not an ASCII fold pair), tested by a static inline kit matcher <prefix>_<machine>_scankit<N> -- no 256-byte table; -fno-cls-kit denies it ([CLS-TREE] S2, D131 item 5)" },
-    { "scan-body", "bitmap", "always (fallback) -- any other byte set, tested by a 256-byte membership table. The load is VALUE-addressed, not result-addressed, so the cursor is still the only loop-carried register. A per-ISA SIMD run-extension form would sit ABOVE these two ([OPT-SIMD]; ISA-neutral by ruling, scalar forms always the fallback)" },
+    { "scan-body", "range", "the class-form table (src/gen/clskit.c ROWS, site scan) answers byte-range: the edge's class is ONE interval, tested inline against immediates (the same spelling a VM class read uses), no memory touched but the subject ([OPT-5]; D139)" },
+    { "scan-body", "fold", "size-leaning --tune positions only (-2/-1): the class-form table answers byte-fold, an ASCII case pair {X, x}, tested inline as (byte | 0x20) == x; at the default positions the scan edge's pair keeps its table until D138 Q1's measurement rules the default fold for both sites; -fno-cls-fold denies it ([CLS-TREE] S2 review fixes, D139)" },
+    { "scan-body", "kit", "size-leaning --tune positions only (-2/-1): the class-form table answers byte-kit, i.e. the class's kit matcher written at the edge's two test sites is smaller than its 256-byte table, tested by a static inline kit matcher <prefix>_<machine>_scankit<N>; -fno-cls-kit denies it ([CLS-TREE] S2, D131 item 5, D139 item 1)" },
+    { "scan-body", "bitmap", "always (fallback) -- the class-form table answers byte-table and the table selection (TAB_ROWS, site scan) picks the scan-table row: one 256-byte membership table per edge. The load is VALUE-addressed, not result-addressed, so the cursor is still the only loop-carried register. A per-ISA SIMD run-extension form would be a form of the edge's LOOP ([OPT-SIMD]; ISA-neutral by ruling, scalar forms always the fallback)" },
 
     { "match", "unwrapped", "the artifact's own ENG_UNANCH _match, and its anchored machine built inside the DFA caps ([ENG-ABS])" },
     { "match", "search-filter", "always (fallback) — ENG_ATTEMPT, the empty engine, an anchored machine over a cap, or the deny flag" },
@@ -355,9 +356,10 @@ static void emit_table_composite_rows(StrBuf *sb)
 }
 
 /* [OPT-5] `scan-body`'s TWO COMPOSITE ROWS, and they exist for `table`'s
- * reason exactly. `RX_DFA_SCAN_EDGE`'s real value set is FIVE strings
+ * reason exactly. `RX_DFA_SCAN_EDGE`'s real value set is SIX strings
  * (docs/spec/match_api.md §6.3) and `pcrec_dfa_axis_scanbody_cands()` reports
- * the THREE the body axis can select PER EDGE ([CLS-TREE] S2 added `kit`). `dfa_scan_edge_name()`
+ * the FOUR run tests an edge can take — the class-form table's byte rows at
+ * the scan site ([CLS-TREE] S2, D139 item 2). `dfa_scan_edge_name()`
  * (src/gen/emit_dfa.c) answers `"none"` when the REGION axis chose
  * `table-walk` at every state — no edge, so no body to name — and `"mixed"`
  * when the artifact's edges did not all take the same body. Neither is
@@ -370,12 +372,12 @@ static void emit_table_composite_rows(StrBuf *sb)
  * build stamps, which the prose below says rather than the column. */
 static void emit_scan_composite_rows(StrBuf *sb)
 {
-    axis_row(sb, "scan-body", 4, "none", "predicate",
+    axis_row(sb, "scan-body", 5, "none", "predicate",
              "RX_DFA_SCAN_EDGE", "none", "", "", "", "", "",
              "the artifact carries no scan edge, so there is no body to name: no machine has a collapsible counted run, or the engine is ENG_ATTEMPT (label dispatch, no table walk to shorten) or provably empty -- and it is also what every artifact stamps under -fno-scan-edge, which denies the scan-edge axis above rather than this one");
-    axis_row(sb, "scan-body", 5, "mixed", "predicate",
+    axis_row(sb, "scan-body", 6, "mixed", "predicate",
              "RX_DFA_SCAN_EDGE", "mixed", "", "", "", "", "",
-             "the artifact's own edges took DIFFERENT bodies (dfa_scan_edge_name(): one machine's edge tests a contiguous range, another's reads a membership table or calls a kit matcher) -- a per-artifact composition, never a single edge's own selection");
+             "the artifact's own edges took DIFFERENT bodies (dfa_scan_edge_name(): one machine's edge tests a contiguous range, another's reads a membership table, calls a kit matcher or compares a fold pair) -- a per-artifact composition, never a single edge's own selection");
 }
 
 /* ---- "predicate" axes: no candidate-list-as-data yet -------------------

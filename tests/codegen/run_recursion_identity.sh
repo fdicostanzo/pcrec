@@ -1912,8 +1912,8 @@ sweep() { # sweep <label> <extra pcrec args>
             fi
             # [FORM-CHAR] THE FOLD CONVERSE, the island pair's shape exactly
             # and SCOPED TO ARTIFACTS THAT CARRY THE STAMP (i.e. VM
-            # artifacts): the flag's one consumer is `vm_cls_shape` in
-            # emit_vm.c, so a DFA artifact is byte-identical under it BY
+            # artifacts): at the default position the flag's one consumer is
+            # the VM's fold row (clskit.c `byte-fold-default`, D138 Q1), so a DFA artifact is byte-identical under it BY
             # CONSTRUCTION rather than by sweep — running the deny build
             # there would double this gate's compile count to re-derive a
             # structural fact. An artifact that STAMPS folds must differ from
@@ -2195,7 +2195,7 @@ LIT_EOF
         bad "[$label] $lit_manifest_missing of the LIT_PATTERNS manifest no longer stamp a literal-run compare. Either pcrec_lit_run narrowed or the island run arm broke. Do not silently shorten the list"
     fi
     if [ "$fold_manifest_missing" -ne 0 ]; then
-        bad "[$label] $fold_manifest_missing of the FOLD_PATTERNS manifest no longer stamp an ascii-fold class test. Either vm_cls_shape's recognizer narrowed — in which case this list is the record of what that costs — or the classification broke. Do not silently shorten the list"
+        bad "[$label] $fold_manifest_missing of the FOLD_PATTERNS manifest no longer stamp an ascii-fold class test. Either clskit.c's is_ascii_fold_pair (the fold rows' predicate) narrowed — in which case this list is the record of what that costs — or the classification broke. Do not silently shorten the list"
     fi
     if [ "$rdiff" -ne 0 ]; then
         bad "[$label] (A) $rdiff call-free patterns emit a DIFFERENT PROGRAM REGION than $REFCOMMIT for a reason no ruling has recorded — this is the claim the pre-module pin exists to defend:"

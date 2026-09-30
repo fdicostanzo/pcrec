@@ -3383,8 +3383,8 @@ shape, tied to `src/core/fold.c`'s table (2026-09-25, [FORM-CHAR]'s CLS
 FOLD close-out; `docs/design/compare_stack.md` §duplications)
 
 The gap S228 (`tests/base/cls_fold.rxt`'s own detector) does not close:
-`vm_cls_shape`'s FOLD recognizer (`src/gen/emit_vm.c` ~1633) and the compare
-it emits (~1655) are the one ASCII-fold spelling in the tree with NO
+the class-form table's FOLD recognizer (`src/gen/clskit.c` `is_ascii_fold_pair`;
+`vm_cls_shape` before abi 51) and the compare it emits (`pcrec_clskit_emit_inline`) are the one ASCII-fold spelling in the tree with NO
 agreement check against `pcrec_ascii_fold` (`src/core/fold.c`), the table
 `tests/backrefs/fold_agreement_check.c` otherwise treats as ground truth.
 S228 sabotages the RECOGNIZER's conjuncts and is caught by hand-picked

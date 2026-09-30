@@ -1771,7 +1771,7 @@ if pcrec_run "$PCREC" -p rx --features all --engine=vm -o "$WORKDIR/wordset.c" \
     nwordtab=$(grep -c '  0,   0,   0,   0,   0,   0, 255,   3,' "$WORKDIR/wordset.c" || true)
     # THE DISCRIMINATOR, and its first two drafts were both blind — see the
     # note above the third assertion below. Extract every byte-set MEMBERSHIP
-    # TEST in the artifact (`vm_cls_shape`'s four emitted shapes: bitmap read,
+    # TEST in the artifact (the class kit's four byte-test spellings: bitmap read,
     # unsigned range subtract, ascii-fold or-mask compare ([FORM-CHAR]),
     # singleton compare), normalise away the subject-byte expression each is
     # applied to, and count the DISTINCT ones. `(\b\w+\b)` asks the same

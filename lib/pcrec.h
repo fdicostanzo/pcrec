@@ -576,10 +576,13 @@ enum {
      * activity COUNT (docs/spec/match_api.md §6.3 family (b)). */
     PCREC_NO_ALT_ISLAND = PCREC_BIT(23),
 
-    /* [FORM-CHAR] STEP 1 `-fno-cls-fold` — deny the VM's ASCII-FOLD class
-     * test (docs/dev/form_char_step0.md family A; docs/spec/tuning.md
-     * §2.22). A VM-route axis: which SHAPE `src/gen/emit_vm.c`'s
-     * `vm_cls_shape` gives a two-member class's membership test.
+    /* [FORM-CHAR] STEP 1 `-fno-cls-fold` — deny the ASCII-FOLD class test
+     * (docs/dev/form_char_step0.md family A; docs/spec/tuning.md §2.22):
+     * the fold rows of the class-form table (`src/gen/clskit.c` `ROWS`),
+     * WHEREVER that table is read — a VM program's byte-class reads at every
+     * position, and a DFA scan edge's run test at the size-leaning positions
+     * (D139 item 3). At the default positions a scan edge's fold pair is a
+     * table either way (D138 Q1).
      *
      * WHAT IT DENIES. D23 folds a caseless letter to a two-member CLASS at
      * parse time (`(?i)a` becomes {'A','a'}), so every VM test site for such
@@ -597,7 +600,7 @@ enum {
      * holds for exactly the two bytes {lo, lo|0x20} — the set's own two
      * members — so the fold test and the bitmap read are the same predicate.
      *
-     * DENY-ONLY, `-fno-alt-island`'s shape: the emitter takes the fold
+     * DENY-ONLY, `-fno-alt-island`'s shape: the table takes the fold
      * wherever the class IS a fold pair, so there is nothing for a caller to
      * ADDRESS and nothing to force. A class the shape declines (any
      * non-fold-pair set) keeps its singleton/range/bitmap form unchanged —
@@ -941,14 +944,16 @@ enum {
  * `#define` for bit 32's reason. */
 #define PCREC_NO_CTX_NODE PCREC_BIT(35)
 
-/* [CLS-TREE] S4 the CLASS-MATCHER KIT on the VM (docs/spec/tuning.md §2.33;
- * D129 Q2's one kit-level deny). A VM program tests a wide class — one
- * whose members encode deeper than one code unit — by decoding ONE
- * character and running a class-matcher function the `--tune` position
- * selects. Denied, every wide class on the VM is the byte alternation this
- * compiler emitted before abi 48. It also denies the shared atom table
- * below (a kit form): with it denied every table-read byte class keeps its own
- * bitmap. It accepts exactly the same subjects
+/* [CLS-TREE] S4/S2 the CLASS-MATCHER KIT (docs/spec/tuning.md §2.33; D129
+ * Q2's one kit-level deny). A VM program tests a wide class — one whose
+ * members encode deeper than one code unit — by decoding ONE character and
+ * running a class-matcher function the `--tune` position selects. Denied,
+ * every wide class on the VM is the byte alternation this compiler emitted
+ * before abi 48. It also denies the class-form table's `byte-kit` row
+ * wherever that table is read (a VM byte class, a DFA scan edge's run test,
+ * at the size-leaning positions; D139 item 3), which then reads a table, and
+ * the shared atom table below (a kit form): with it denied every table-read
+ * byte class keeps its own bitmap. It accepts exactly the same subjects
  * either way, so it is masked out of `rx_info.flags`;
  * `<PREFIX>_VM_CLS_KIT` counts the matchers the emitter wrote. Deny-only.
  * A `#define` for bit 32's reason. */

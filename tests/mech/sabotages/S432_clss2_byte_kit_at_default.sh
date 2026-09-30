@@ -9,6 +9,9 @@
 # matcher. The detectors are run_tune_dial.sh §3e (the `scattered` witness at
 # --tune=0 tested as `kit`) and the clskit crosscheck (the restated row's
 # positions disagree with clskit.c's).
+# RE-ANCHORED 2026-09-30 (lane clss2fix, [CLS-TREE] S2 review fixes, D139):
+# the byte-kit row gained its site mask and the smaller-than predicate; the
+# plant still adds position 0, intent unchanged.
 SAB_ID="S432-clss2-byte-kit-at-default"
 SAB_FILE="src/gen/clskit.c"
 SAB_SUITES="tunedial clskit"
@@ -18,9 +21,5 @@ SAB_REACH='"$PCREC" --engine=vm --tune=-2 -p rx -o - --pattern "[aeiou]+x"'
 SAB_REACH_EXPECT='#define RX_VM_CLS_KIT 1'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='      "positions only",
-      TPOS(TP_M2) | TPOS(TP_M1),
-      P_BYTE, CLSF_KIT, CLSD_BYTE_KIT },'
-SAB_AFTER='      "positions only",
-      TPOS(TP_M2) | TPOS(TP_M1) | TPOS(TP_0),
-      P_BYTE, CLSF_KIT, CLSD_BYTE_KIT },'
+SAB_BEFORE='      TPOS(TP_M2) | TPOS(TP_M1), CLSS_ALL, P_KIT_SMALLER, CLSF_KIT, CLSD_BYTE_KIT },'
+SAB_AFTER='      TPOS(TP_M2) | TPOS(TP_M1) | TPOS(TP_0), CLSS_ALL, P_KIT_SMALLER, CLSF_KIT, CLSD_BYTE_KIT },'
