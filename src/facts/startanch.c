@@ -123,8 +123,7 @@ static unsigned sa_walk(const Ast *a)
         case A_EMPTY:
         case A_EOL:
         case A_END:
-        case A_WORDB:
-        case A_NWORDB:
+        case A_CTX:
         case A_KRESET:
         case A_LOOK:
         /* The two deliberate declines — see the header. */

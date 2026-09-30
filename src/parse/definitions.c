@@ -193,10 +193,12 @@ const char *pcrec_def_tag_name(DefTag tag)
  * ("classes, cat, alt, {m,n}+preference, atomic cut, capture, \A, \z,
  * lookaround, and the path-fact family (\K, backrefs, DD-14 call) — \G
  * stays primitive")? A definition's OWN core-syntax text must never contain
- * `A_EOL`/`A_WORDB`/`A_NWORDB` — those are exactly the three kinds full
- * reduction REMOVES (`\Z`/`(?m)$`/`\b`/`\B` all reduce to `A_LOOK`+`A_END`
- * or `A_LOOK` alone, definitions_table.md §2), so their appearance inside a
+ * `A_EOL` — the kind full reduction REMOVES (`\Z`/`(?m)$` reduce to
+ * `A_LOOK`+`A_END`, definitions_table.md §2), so its appearance inside a
  * definition's expansion is the regression this check exists to catch.
+ * [UCP] U2: `\b`/`\B` used to be two more such kinds (A_WORDB/A_NWORDB);
+ * they now build the CONTEXT NODE, A_CTX, which is the reduction's target
+ * rather than a spelling reduced away (ucp_design.md §2.2), so it is core.
  *
  * EXHAUSTIVE, NO DEFAULT (mrl.c's rule): a new `AKind` is a compile error
  * here until this function states which side of the reduction it falls on. */
@@ -221,12 +223,15 @@ bool pcrec_ast_is_core(AKind k)
                       * substitution in any other construct's vocabulary that
                       * could stand for it. CORE, for A_BREF's own reason. */
     case A_LOOK:     /* lookaround */
+    case A_CTX:      /* [UCP] U2 the context node: what `\b`/`\B` and every
+                      * one-character lookaround NORMALIZE to (ucp_design.md
+                      * §2.2 — normalize to a node, not to text), so it is
+                      * the reduction's target vocabulary, not a spelling
+                      * replaced away */
     case A_CALL:     /* DD-14 call, the path-fact family */
         return true;
     case A_EOL:      /* $/\Z's shipped alias — replaced away under full
                       * reduction (definitions_table.md §2) */
-    case A_WORDB:    /* \b — replaced away */
-    case A_NWORDB:   /* \B — replaced away */
         return false;
     }
     return false; /* unreachable */

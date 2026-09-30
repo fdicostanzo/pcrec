@@ -80,13 +80,15 @@ SAB_BEFORE='    /* P1 — the NARROWED read. */
 SAB_AFTER='    /* SABOTAGE S218 hunk 1: P1 reads the WIDENED bit, the one
      * `unanch_start` computes for the prefilter and tells the reader not to
      * cite as a premise. */
-    if (!state_acc_any(&fd->st[fs])) return false;'
+    if (!state_acc_any(fd, &fd->st[fs])) return false;'
 # THE SECOND HUNK, in the same file. Without it this row is MEASURED inert
 # (224 pinned, searchpinned 17/0) — P2 refuses every state on which the two
 # spellings of P1 disagree, which is the defence-in-depth pair S108 is about.
 SAB_FILE2="src/gen/emit_dfa.c"
 SAB_COUNT2=1
 SAB_BEFORE2='    /* P2 — one derivation, shared with the scan-edge pass. */
-    if (!pcrec_state_view_invariant(&fd->st[fs])) return false;'
+    if (!pcrec_state_view_invariant(fd, &fd->st[fs])) return false;'
 SAB_AFTER2='    /* SABOTAGE S218 hunk 2: P2 dropped, so the widened P1 above can
      * actually reach a state whose accept is not invariant. */'
+
+# RE-AIMED 2026-09-29 BY [UCP] U2 (lane ucpu2), intent re-verified: signature only: `state_acc_any`/`pcrec_state_view_invariant` take the machine now (the atom count lives on the Dfa); both hunks plant exactly what they did.

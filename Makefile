@@ -538,7 +538,8 @@ test-anchored-match: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-anchored-match.ran"; fi
 	GROUP_PROCS=$${PROCS:-$$(bash tests/lib/procs_default.sh)} bash tests/lib/run_group.sh \
 	    'bash tests/codegen/run_anchored_match.sh' \
-	    'bash tests/anchored/run_anchored_diff.sh'
+	    'bash tests/anchored/run_anchored_diff.sh' \
+	    'bash tests/anchored/run_anchored_dead_entry.sh'
 
 # [OPT-5] STEP 2 the START-PINNED SEARCH's own checks
 # (docs/design/opt5_step2_twopass.md). Its OWN section rather than a sixth

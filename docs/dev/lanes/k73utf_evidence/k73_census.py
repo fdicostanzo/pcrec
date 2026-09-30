@@ -5,7 +5,7 @@ rule move, and by what?
 Compiles every distinct `pattern` line of tests/**/*.rxt with two compilers
 (BASE = the branch point, NEW = the fix) under three configs and compares the
 emitted .c byte for byte, same -p and same -o basename, after normalising the
-abi number (45 on BASE, 46 on NEW: the generated-by line and `.abi =`).
+abi number (45 on BASE, 46 on NEW at the census; 47 after the U2 merge: the generated-by line and `.abi =`).
 
 PREDICTION (stated before the run): a mover is exactly a NULLABLE pattern's
 utf8 artifact (the `pcrec_startgate_needed` fact), and every added line is one
@@ -26,7 +26,7 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../.."))
 CFG = {"byte":        ["--features", "all"],
        "utf8":        ["--features", "all", "-e", "utf8"],
        "utf8-vm":     ["--features", "all", "-e", "utf8", "--engine=vm"]}
-ABI = re.compile(r'(\(abi |\.abi = )4[56]\b')
+ABI = re.compile(r'(\(abi |\.abi = )4[5-7]\b')
 ZERO = re.compile(r'^\s*if \((search_from|start|attempt_position|ctx->pos) == 0 && !\(.*\)\) '
                   r'(do \1\+\+; while \(!\(.*\)\);|return -1;|continue;)$')
 GUARD = re.compile(r'^\s*if \(!\(search_from == 0 \|\| .*\)\) return PCREC_ERR_STARTPOS;$')

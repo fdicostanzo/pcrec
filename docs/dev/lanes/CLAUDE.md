@@ -3406,6 +3406,39 @@ never edited afterwards.
   `ucpu1_evidence/` holds the corpus generator (`gen_ucp.py`,
   `gen_corpus.py`), the two remote 10.46 probes (`remote_verify.py`,
   `remote_latin1.py`) and the 10.46 re-verification transcript.
+- `ucpu2_report.md` — [UCP] U2 (2026-09-29, lane ucpu2, opus): the CONTEXT
+  NODE (`A_CTX`, `\b`/`\B` retired into it), T3's first-match recognizer
+  (`src/parse/ctxnode.c`, `-fno-ctx-node`), UCP `\b` under `-e byte`, and the
+  per-machine context-set TABLE with atoms replacing the fixed UPC if-chain
+  (r1 GEN-1), abi 45 -> 46. The identity gate (every differing artifact
+  reverts byte for byte under `-fno-ctx-node`, or is a UCP `\b` row), the
+  mover census (159 = the design's 158 + one the LANGUAGE predicate found),
+  10.46 agreement, S337–S343, eleven re-aimed anchors, and two fixes the
+  corpora forced (a dead reverse `s0` with live seeds; a shared context set
+  losing its second reader). `ucpu2_evidence/` holds the generators, the
+  10.46 transcripts, the mover census and the identity sweep.
+- `triu2_report.md` — TRIAGE of ucpu2's full `make test` red (2026-09-29,
+  lane triu2, sonnet): two re-pins by mechanism (CHECK 2b's allowlist gains
+  `src/parse/ctxnode.c`; `run_search_pinned.sh` §9's force-axis floor
+  20 -> 12, A/B-ed 23 -> 14), the anchored match-here entry's
+  `is_accepting[-1]` read on a dead seed (§4, a REAL regression), and the
+  two premul-table check gaps (§5). Landed with lane ucpu3.
+- `tri220_report.md` — TRIAGE of S220's UNEXPECTED in ucpu2's mech chain
+  (2026-09-29, lane tri220, sonnet): the row's UNDETECTED expectation was
+  stale (a one-character lookahead's machine needs no seed, so P2's
+  start-state check becomes its sole guard); flipped to DETECTED. The exact
+  witness is OWED to a build-capable follow-up.
+- `ucpu3_report.md` — [UCP] U2 LANDING (2026-09-29, lane ucpu3, opus): the
+  triu2/tri220 merges; the anchored entry entered at the dead state now
+  returns -1 at entry (`DfaDir.dead_entry`, gated by `dfa_entry_can_be_dead`,
+  whose seed half is `dfa_premul`'s old seed clause factored out), a logic-
+  only change on 54 lookbehind artifacts, no abi event;
+  `tests/anchored/run_anchored_dead_entry.sh` (reach / answer / ASan arms,
+  red on the unfixed compiler); `run_anchored_diff.sh`'s per-kind failure
+  tags; and `run_premul_table.sh` rewritten over the SET of machines with
+  the seed clause read off the emitted cells (68 false reports -> 0, two
+  sabotages fire). §2.5 is the ASan sweep that bounds the hazard to the
+  anchored entry.
 - `adm131_report.md` — D131's docs (2026-09-29, lane adm131, docs only):
   clsfit's λ diff hand-applied to `opt_dial_design.md` §4 / `tuning.md`
   (did not `git apply --check` cleanly — the file had drifted); the
@@ -3486,7 +3519,7 @@ never edited afterwards.
   three actions (SEEK / SKIP / NOMATCH). It seeks the VM's
   `attempt_position` rather than `search_from` so that `\G` stays false.
   The unwrapped DFA `_match`'s missing K50 guard was found and fixed, and
-  `run_startbnd_diff.sh` now sweeps `_match`. The change is abi 45 -> 46.
+  `run_startbnd_diff.sh` now sweeps `_match`. The change is abi 46 -> 47.
   The mover census: 0 byte movers, 1,361 utf8, 386 utf8-vm, 0 unpredicted.
   The 10.46 transcripts, probes and census script are in the evidence dir.
   Findings F1-F5 cover a pre-existing end-of-subject divergence, the
@@ -3494,3 +3527,7 @@ never edited afterwards.
   pattern-esc-first head census, the always-emitted K50 guard comment, and
   pre-existing encoding-check reds. Part 2 is
   `../../design/utf_valid_design.md`.
+- `u2land_report.md` — [UCP] U2 landed onto current main (2026-09-29, lane
+  u2land, sonnet): the four-conflict merge, C3 pins combined by mechanism
+  (U2's +230 on clstri's two-tier pins), Mac section verdicts, and the Linux
+  full run owed with its log path.

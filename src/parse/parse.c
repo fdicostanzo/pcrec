@@ -59,6 +59,18 @@ static Ast *node(Ctx *cx, AKind k)
  * body). Kind only — payload fields are the caller's. */
 Ast *pcrec_ast_node(Ctx *cx, AKind k) { return node(cx, k); }
 
+/* [UCP] U2 A new A_CTX node over the published code-point set `iv[0..n)`
+ * with truth function `fn` (CTXFN_*). The set is shared, never copied: a
+ * published payload is read-only (cpset.c's rule). */
+Ast *pcrec_ast_ctx(Ctx *cx, const PcrecCpRange *iv, int n, uint8_t fn)
+{
+    Ast *a = node(cx, A_CTX);
+    a->u.ctx.iv = iv;
+    a->u.ctx.n  = n;
+    a->u.ctx.fn = fn;
+    return a;
+}
+
 /* [M6.4.2 / SR-8, D67] THE STAMP — see its declaration in core/internal.h for
  * the contract. It lives here rather than in a module TU because every module
  * calls it and none of them owns it. */
@@ -121,8 +133,14 @@ void pcrec_ast_stamp(Ctx *cx, Ast *a, const RegRow *rw, size_t at)
 bool pcrec_is_bare_anchor(const Ast *a)
 {
     switch (a->k) {
+    /* [UCP] U2 the context node is a bare anchor exactly when it was SPELLED
+     * as one: `\b`/`\B` (error 109 on `\b*`, measured by wave B) and not a
+     * lookaround T3 recognized, which PCRE2 quantifies (`(?=a)*` compiles).
+     * The grammar is about the spelling, so the field carries it. */
+    case A_CTX:
+        return a->u.ctx.anchor;
     case A_BOL: case A_EOL: case A_END:
-    case A_WORDB: case A_NWORDB: case A_GSTART:
+    case A_GSTART:
     /* [M6.2 wave E] `\K` joins them, and it is the one member of this list
      * that is not an assertion — which changes nothing here, because the rule
      * this predicate encodes is PCRE2's GRAMMAR, not a semantic property.

@@ -554,6 +554,16 @@ decides whether to perform it — and then run the row through
     arm is what makes a collision unreachable and the CELL arm cannot see
     this defect; the state variable left `int` → **14/1**, §3's shape arm
     ALONE on 1,824 machines, with every answer unchanged.
+  - **THREE MACHINES AND TWO CLAUSES (lane ucpu3, 2026-09-29).** The stamp
+    fold (`implied_stamp`) is over the SET of machines the artifact contains —
+    forward, reverse, and [ENG-ABS]'s anchored one — and the `[bound]` rule
+    carries `dfa_premul`'s SEED clause (a machine with a dead seed cell, read
+    off the emitted seed table as `-1` or `PREMUL_DEAD`, is indexed by rule).
+    Both gaps predated [UCP] U2 and had no population until U2's one-character
+    lookarounds reached the DFA (68 false reports, triu2_report.md §5).
+    Validated both directions: dropping the anchored clause from
+    `dfa_table_name` → `[agreement]` red on 51; dropping the seed clause from
+    `dfa_premul` → `[bound]` red on 68; clean 16/0.
   - **The first run of this file found five defects in ITSELF**, and they are
     worth reading before writing the next check here: a witness table split
     on `|`, which is a pattern byte; a DFA-scan discriminator keyed on "has a

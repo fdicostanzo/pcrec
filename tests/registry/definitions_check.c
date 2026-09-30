@@ -460,16 +460,24 @@ static void check_predicate_bites(void)
     }
     release(&cx);
 
-    Ast *b = parse_one("\\B", &cx, &defo);   /* A_NWORDB — not core (§2) */
+    /* [UCP] U2: the second control was `\\B` (A_NWORDB) and it is CORE now —
+     * `\\b`/`\\B` build the CONTEXT NODE (A_CTX), which is what the design
+     * normalizes every one-character lookaround TO rather than a spelling
+     * reduced away (ucp_design.md §2.2; `pcrec_ast_is_core`'s A_CTX arm). So
+     * the second control is the remaining exclusion, A_EOL, reached THROUGH
+     * a concatenation: it still rules out a predicate that answers "core"
+     * without descending the tree. */
+    Ast *b = parse_one("a$", &cx, &defo);   /* A_CAT(a, A_EOL) — not core (§2) */
     if (!b) {
-        bad("definitions: negative control '\\B' failed to parse "
+        bad("definitions: negative control 'a$' failed to parse "
             "(harness defect, not a real finding)");
     } else if (pcrec_ast_all_core(b)) {
-        bad("definitions: pcrec_ast_all_core answered CORE for '\\B' "
-            "(A_NWORDB) — the predicate does not discriminate");
+        bad("definitions: pcrec_ast_all_core answered CORE for 'a$' "
+            "(an A_EOL under a concatenation) — the predicate does not "
+            "discriminate");
     } else {
-        ok("definitions: predicate bites — '\\B' (A_NWORDB) correctly "
-           "rejected as non-core");
+        ok("definitions: predicate bites — 'a$' (A_EOL under a "
+           "concatenation) correctly rejected as non-core");
     }
     release(&cx);
 }

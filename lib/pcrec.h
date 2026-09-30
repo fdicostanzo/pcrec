@@ -930,6 +930,17 @@ enum {
  * bit 32's reason. */
 #define PCREC_UCP PCREC_BIT(34)
 
+/* [UCP] U2 T3's `ctx-node` row (docs/design/ucp_design.md §0.1, §2.2;
+ * docs/spec/tuning.md §2.32): a lookaround whose body's language is a set of
+ * single byte-expressible characters becomes ONE context node, which the DFA
+ * carries on its class axis and the VM tests as one guarded byte read.
+ * Denied, every lookaround keeps its VM sub-match lowering — the program this
+ * compiler emitted before abi 46. It accepts exactly the same subjects either
+ * way (the answer-identity axis), so it is masked out of `rx_info.flags`.
+ * `\b`/`\B` build the node directly and are not affected. Deny-only. A
+ * `#define` for bit 32's reason. */
+#define PCREC_NO_CTX_NODE PCREC_BIT(35)
+
 /* [ENG-BREP] the counter rung's UNROLL FACTOR, K (counterk_design.md §4.1;
  * eng_brep_design.md §4.5's "K must not become a per-pattern heuristic in v1",
  * held strictly by D47's ADDENDUM). ONE per-artifact constant: every

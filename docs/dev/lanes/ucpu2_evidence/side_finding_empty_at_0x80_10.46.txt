@@ -1,0 +1,2 @@
+DISAGREE {'p': '', 's': '80', 'o': 67633152, 'sp': 0, 'w': [0, 0]} got [1, 1]
+libpcre2 10.46 2025-08-27: 0 agree, 1 disagree

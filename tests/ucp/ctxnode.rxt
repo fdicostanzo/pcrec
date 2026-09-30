@@ -1,0 +1,425 @@
+# [UCP] U2 -- THE CONTEXT NODE (A_CTX) and T3's recognizer (ucp_design.md
+# §2.2, §2.4, §6 U2). A one-character lookaround and `\b`/`\B` are ONE node;
+# the DFA carries it on a per-machine context-SET list whose ATOMS (membership
+# vectors) replace the fixed word/newline/non-start partition. These cells
+# are the U2 row's own:
+#   - the OVERLAP WITNESSES: the census's k=2 pattern `(?<=\$)\d+(?:\.\d{2})?\b`,
+#     a nested V ⊂ W pair (`(?<=[aeiou])x\b`), and a partially overlapping
+#     pair (`(?<=[0-9a-f])x(?=[a-z_])`) — subjects separate every atom, so a
+#     partition that collapses V∩W onto one set answers some cell wrong;
+#   - T3's row 1 over the LANGUAGE (alternation, class, atomic, alpha and
+#     non-atomic spellings, quantified lookarounds) and its declines
+#     (two characters, a capture, a nullable body), each answer-checked;
+#   - startpos cells: a lookbehind's context lies BEFORE the window (the
+#     seeded start states) and a lookahead's after the match end (the reverse
+#     machine's seeds);
+#   - UCP `\b`/`\B` under `-e byte` (the Latin-1 word set).
+#
+# ORACLE: libpcre2 with the options each block states (`encoding utf8` =
+# PCRE2_UTF, `flags u` = PCRE2_UCP). Generated from 10.48 and re-verified
+# against the 10.46 reference (docs/dev/lanes/ucpu2_evidence/); `verify_ucp.py`
+# re-checks every cell on every `make test`. `# pcre2-only`: python `re` has
+# no PCRE2_UCP. Ill-formed-UTF-8 hazard cells (§2.3) live in
+# tests/utf8/axis13_ctx_illformed.rxt, whose oracle is MATCH_INVALID_UTF.
+
+# the census k=2 witness: sets {$} and \w (disjoint): three atoms
+# pcre2-only
+pattern (?<=\$)\d+(?:\.\d{2})?\b
+features all
+m "a $12.34 b" 3 8
+m "$12.3x" 1 3
+n "x12"
+n "$1_"
+m "$$9" 2 3
+m "$9.99." 1 5
+m "a$1 $2" 2 3
+n "$"
+n "9$"
+
+# V ⊂ W: every vowel is a word character; `axa` needs the W bit of a V∩W byte
+# pcre2-only
+pattern (?<=[aeiou])x\b
+features all
+m "ax" 1 2
+n "bx"
+n "axe"
+n "axa"
+m "ex y" 1 2
+n "ux_"
+n "Ax"
+n "x"
+m "aax" 2 3
+m "ax." 1 2
+n "ixi"
+
+# partial overlap: {0-9a-f} and {a-z_} share a-f; atoms hex-only, both, word-only, neither
+# pcre2-only
+pattern (?<=[0-9a-f])x(?=[a-z_])
+features all
+m "axb" 1 2
+m "7xz" 1 2
+n "gxb"
+n "ax7"
+m "fx_" 1 2
+n "9x"
+n "x"
+n "Fxb"
+n "ax"
+m "bxa" 1 2
+
+# three context sets on one machine (word, V twice by polarity)
+# pcre2-only
+pattern \b(?<![aeiou])\w+(?=[aeiou])
+features all
+m "strea" 0 4
+n "b"
+m "ba" 0 1
+n "ab"
+n "xyzzy"
+m "  tro" 2 4
+
+# pcre2-only
+pattern (?<=\$)\d+(?:\.\d{2})?\b
+encoding utf8
+features all
+m "a $12.34 b" 3 8
+m "$12.3x" 1 3
+n "x12"
+n "$1_"
+m "$$9" 2 3
+m "$9.99." 1 5
+m "a$1 $2" 2 3
+n "$"
+n "9$"
+
+# pcre2-only
+pattern (?<=[aeiou])x\b
+encoding utf8
+features all
+m "ax" 1 2
+n "bx"
+n "axe"
+n "axa"
+m "ex y" 1 2
+n "ux_"
+n "Ax"
+n "x"
+m "aax" 2 3
+m "ax." 1 2
+n "ixi"
+
+# pcre2-only
+pattern (?<=[0-9a-f])x(?=[a-z_])
+encoding utf8
+features all
+m "axb" 1 2
+m "7xz" 1 2
+n "gxb"
+n "ax7"
+m "fx_" 1 2
+n "9x"
+n "x"
+n "Fxb"
+n "ax"
+m "bxa" 1 2
+
+# pcre2-only
+pattern \b(?<![aeiou])\w+(?=[aeiou])
+encoding utf8
+features all
+m "strea" 0 4
+n "b"
+m "ba" 0 1
+n "ab"
+n "xyzzy"
+m "  tro" 2 4
+
+# pcre2-only
+pattern (?<=a|b)x
+features all
+m "ax" 1 2
+m "bx" 1 2
+n "cx"
+n "x"
+
+# pcre2-only
+pattern (?<=[ab])x
+features all
+m "ax" 1 2
+m "bx" 1 2
+n "cx"
+n "x"
+
+# pcre2-only
+pattern (?=[ab])\w+
+features all
+m "a1" 0 2
+m "ca" 1 2
+m "cb" 1 2
+n "c"
+
+# pcre2-only
+pattern (?<![a-c])\d
+features all
+n "a1"
+m "d1" 1 2
+m "1" 0 1
+n "c9"
+
+# pcre2-only
+pattern x(?!y)
+features all
+n "xy"
+m "xz" 0 1
+m "x" 0 1
+n "yxy"
+
+# pcre2-only
+pattern (?<=\d)(?=\d)
+features all
+m "12" 1 1
+n "1a2"
+n "a"
+m "123" 1 1
+
+# pcre2-only
+pattern (?*a)b
+features all
+n "ab"
+n "b"
+n "ba"
+
+# pcre2-only
+pattern (?<*a)b
+features all
+m "ab" 1 2
+n "b"
+n "cb"
+
+# pcre2-only
+pattern (*plb:a)b
+features all
+m "ab" 1 2
+n "b"
+
+# pcre2-only
+pattern (*nla:a)\w
+features all
+m "ab" 1 2
+m "ba" 0 1
+n "a"
+
+# pcre2-only
+pattern (?=a)*b
+features all
+m "b" 0 1
+m "ab" 1 2
+
+# pcre2-only
+pattern (?<=a)+b
+features all
+m "ab" 1 2
+n "b"
+
+# pcre2-only
+pattern (?=(?>a|b))\w
+features all
+m "a" 0 1
+m "b" 0 1
+n "c"
+
+# pcre2-only
+pattern (?<=(?:a))b
+features all
+m "ab" 1 2
+n "cb"
+
+# pcre2-only
+pattern (?i)(?<=a)b
+features all
+m "ab" 1 2
+m "Ab" 1 2
+m "aB" 1 2
+n "cb"
+
+# pcre2-only
+pattern (?=[^a])
+features all
+n "a"
+m "b" 0 0
+n ""
+
+# pcre2-only
+pattern (?<=[^a])b
+features all
+n "ab"
+m "cb" 1 2
+n "b"
+
+# pcre2-only
+pattern (?<=ab)x
+features all
+m "abx" 2 3
+n "bx"
+n "ax"
+
+# pcre2-only
+pattern (?=a|bc)\w
+features all
+m "a" 0 1
+m "bc" 0 1
+n "b"
+
+# pcre2-only
+pattern (?=a?)b
+features all
+m "b" 0 1
+m "ab" 1 2
+
+# pcre2-only
+pattern (?<=\b)a
+features all
+m "a" 0 1
+n "ba"
+m " a" 1 2
+
+# a capture-bearing body: T3 declines (the VM keeps the capture; g 1 read from the oracle ovector)
+# pcre2-only
+pattern (?<=(a))x
+features all
+m "ax" 1 2
+g 1 0 1
+n "bx"
+
+# the lookbehind context is BEFORE the window: startpos seeds
+# pcre2-only
+pattern (?<=a)b
+features all
+m "ab" 1 2
+ms 1 "ab" 1 2
+ns 1 "cb"
+ms 2 "aab" 2 3
+ns 0 "b"
+
+# pcre2-only
+pattern (?<!a)b
+features all
+n "ab"
+ns 1 "ab"
+ms 1 "cb" 1 2
+
+# the lookahead context is AFTER the match: the reverse machine seeds from s[end]
+# pcre2-only
+pattern b(?=a)
+features all
+m "ba" 0 1
+n "bb"
+ms 1 "bba" 1 2
+ms 0 "bab" 0 1
+
+# pcre2-only
+pattern b(?!a)
+features all
+n "ba"
+m "b" 0 1
+ns 1 "bba"
+ms 1 "bbc" 1 2
+
+# pcre2-only
+pattern \b\w
+features all
+m "a" 0 1
+ns 1 "ab"
+ms 1 " a" 1 2
+
+# pcre2-only
+pattern (*UCP)\b\w+\b
+features all
+m "caf\xe9 x" 0 4
+m "\xe9t\xe9" 0 3
+m "\xb2x" 0 2
+m " \xaa " 1 2
+m "a\xd7b" 0 1
+m "\xb5" 0 1
+
+# pcre2-only
+pattern (*UCP)x\b
+features all
+n "x\xe9"
+m "x " 0 1
+m "x\xd7" 0 1
+m "x" 0 1
+
+# pcre2-only
+pattern (*UCP)x\B
+features all
+m "x\xe9" 0 1
+n "x "
+m "x\xdf" 0 1
+
+# pcre2-only
+pattern (*UCP)(?aW)x\b
+features all
+m "x\xe9" 0 1
+m "x " 0 1
+
+# pcre2-only
+pattern (*UCP)(?<=\w)x
+features all
+m "\xe9x" 1 2
+n " x"
+n "\xd7x"
+
+# `flags u` (--ucp) is the same axis as (*UCP)
+# pcre2-only
+pattern x\b
+flags u
+features all
+n "x\xe9"
+m "x " 0 1
+
+# a SHARED context set: `(?=\n)` and `(?m)^` read the same newline set, one list entry that both
+# the context node and the multiline arms must find (the lookaround-expansion corpus found it)
+# pcre2-only
+pattern (?m)^ERROR(?:(?=\n)|\z)
+features all
+m "ab\x0aERROR\x0ax" 3 8
+m "ERROR" 0 5
+n "xERROR\x0a"
+n "ERRORx\x0a"
+
+# pcre2-only
+pattern (?m)(?:\A|(?<=\n)(?!\z))ERROR$
+features all
+m "ab\x0aERROR\x0ax" 3 8
+m "ERROR" 0 5
+n "xERROR"
+m "\x0aERROR" 1 6
+
+# pcre2-only
+pattern (?m)(?<=\n)a|b$
+features all
+m "\x0aa" 1 2
+m "b\x0a" 0 1
+m "ab" 1 2
+m "\x0ab" 1 2
+
+# 17 singleton context sets: 18 atoms, over PCREC_MAX_CTX_ATOMS (16) -- the DFA is DECLINED
+# (limits.md §3.9) and the VM answers; the route manifest pins which engine
+# pcre2-only
+pattern x(?!a)(?!b)(?!c)(?!d)(?!e)(?!f)(?!g)(?!h)(?!i)(?!j)(?!k)(?!l)(?!m)(?!n)(?!o)(?!p)(?!q)
+features all
+n "xa"
+n "xq"
+m "xz" 0 1
+m "x" 0 1
+m "axr" 1 2
+
+# 14 singleton sets: 15 atoms, under the cap -- the DFA builds it
+# pcre2-only
+pattern x(?!a)(?!b)(?!c)(?!d)(?!e)(?!f)(?!g)(?!h)(?!i)(?!j)(?!k)(?!l)(?!m)(?!n)
+features all
+n "xa"
+n "xn"
+m "xz" 0 1
+m "x" 0 1

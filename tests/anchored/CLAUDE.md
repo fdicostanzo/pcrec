@@ -93,6 +93,17 @@ the arm asserting its own non-vacuity rather than assuming it.
   chosen to make ITS pattern match, which biases the grid toward the matching
   case, and half of this row's claim is about the FAILING probe.
 
+- **`run_anchored_dead_entry.sh`** + **`dead_entry_driver.c`** — the entry
+  ENTERED AT THE DEAD STATE (lane ucpu3, 2026-09-29; triu2_report.md §4). A
+  one-character lookbehind makes the anchored machine's no-context start or a
+  seed cell dead, and before the fix the scan's accept probe read
+  `is_accepting[-1]` there (57 SIGSEGVs in `run_anchored_diff.sh`). Three
+  named witnesses (`(?<=a)b`, `(?<*a)b`, `(?<!a)b`), each asserted to REACH a
+  dead start off its own emitted seed table; `_match`/`_match_caps` answers
+  against python3 `re` cells; and an `-fsanitize=address` arm, skipped loudly
+  where the compiler cannot build one. Red in both arms on the unfixed
+  compiler (measured).
+
 ## Where it runs
 
 `make test-anchored-match`, part of `make test`, in a `run_group` beside

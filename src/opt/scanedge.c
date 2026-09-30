@@ -234,16 +234,16 @@ bool pcrec_scan_range(const Dfa *d, int cls, int *lo, int *hi)
  * conservative — sharing one derivation is worth a smaller accepted population
  * — and the relaxation is a separate soundness argument with its own trigger
  * (the note's §7 item 14). */
-bool pcrec_state_view_invariant(const DState *st)
+bool pcrec_state_view_invariant(const Dfa *d, const DState *st)
 {
     if (st->eolvar >= 0 || st->endvar >= 0) return false;
-    for (int u = 1; u < UPC_N; u++)
+    for (int u = 1; u < d->natoms; u++)
         if (st->up[u].accept != st->up[0].accept) return false;
     return true;
 }
 
 /* Membership eligibility for a scan chain: pcrec_state_view_invariant(st). */
-static bool member_ok(const DState *st) { return pcrec_state_view_invariant(st); }
+static bool member_ok(const Dfa *d, const DState *st) { return pcrec_state_view_invariant(d, st); }
 
 /* Precondition (1) for ONE class: is `s` scan-shaped for (cls, *exit)? */
 static bool shaped(const Dfa *d, int s, int cls, int *exit)
@@ -285,7 +285,7 @@ static void in_degrees(const Dfa *d, int *indeg, bool *viewtgt, bool *seedtgt)
         if (e >= 0 && e < d->n) { indeg[e]++; viewtgt[e] = true; }
     }
     if (d->s0 >= 0 && d->s0 < d->n) indeg[d->s0]++;
-    for (int u = 0; u < UPC_N; u++) {
+    for (int u = 0; u < d->natoms; u++) {
         /* THE SEED FAMILIES ARE ALSO A ROOT SET FOR PRECONDITION (8) below,
          * and that is why `seedtgt` is filled on the same pass rather than
          * recomputed: "how many ways in does this state have" and "is this
@@ -445,7 +445,7 @@ static int collect(const Dfa *d, int cls, const int *indeg, const bool *ok,
          * bit -- the emitted block records the two separately, which is what
          * admits an EXACT count (`[0-9]{16}`: sixteen non-accepting states in
          * front of one accepting one) rather than only the `{0,n}` family. */
-        if (f >= 0 && f < d->n && !member_ok(&d->st[f])) continue;
+        if (f >= 0 && f < d->n && !member_ok(d, &d->st[f])) continue;
         out[nout].head = s; out[nout].cls = cls;
         out[nout].span = m; out[nout].next = f;
         out[nout].nmembers = m;
@@ -539,7 +539,7 @@ void pcrec_scanedge_dfa(Ctx *cx, Dfa *d, bool prefilter_reseeds)
     int nfound = 0;
     for (int cls = 0; cls < d->ncls && nfound < n; cls++) {
         for (int s = 0; s < n; s++)
-            ok[s] = member_ok(&d->st[s]) && shaped(d, s, cls, &exitv[s]);
+            ok[s] = member_ok(d, &d->st[s]) && shaped(d, s, cls, &exitv[s]);
         nfound = collect(d, cls, indeg, ok, vtg, stg, prefilter_reseeds,
                          exitv, hp, found, n, nfound);
     }
@@ -694,7 +694,7 @@ void pcrec_scanedge_dfa(Ctx *cx, Dfa *d, bool prefilter_reseeds)
         free(ns);
         d->n = m;
         if (d->s0 >= 0) d->s0 = remap[d->s0];
-        for (int u = 0; u < UPC_N; u++) {
+        for (int u = 0; u < d->natoms; u++) {
             if (d->s1u[u] >= 0) d->s1u[u] = remap[d->s1u[u]];
             if (d->s1g[u] >= 0) d->s1g[u] = remap[d->s1g[u]];
         }

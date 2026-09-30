@@ -360,17 +360,23 @@ record() { checks_recorded=$((checks_recorded + 1)); echo "RECORD: $*"; }
 # for tests/ucp/*.rxt (module `ucp`'s corpus: sets_utf8, knobs, caseless,
 # byte, refusals — generated from libpcre2, re-verified on 10.46). MEASURED
 # by this check's own census on the lane's branch: 252/4181/30967.
-# 2026-09-29 (lane k7273, [K72]) — +1 file / +17 blocks / +420 lines for
-# tests/utf8/hv_space.rxt (`\h`/`\v` under -e utf8; every block `# pcre2-only`,
-# 420 cells, all subject-bearing). MEASURED by this check's own census:
-# 253/4198/31387. Not under tests/known_fail/, so RUNSH_* moves the same.
-# 2026-09-29 (lane k73utf, [K73]) — +1 file / +11 blocks / +86 lines for
-# tests/utf8/k73_startskip.rxt (offset 0 on a leading continuation byte; every
-# block `# pcre2-only`, 86 cells, all subject-bearing). MEASURED by this
-# check's own census: 254/4209/31473. RUNSH_* moves the same.
-CENSUS_FILES=254
-CENSUS_BLOCKS=4209
-CENSUS_LINES=31473
+# 2026-09-29 (lane ucpu2, [UCP] U2) — +2 files / +49 blocks / +218 lines:
+# tests/ucp/ctxnode.rxt (the context node's corpus: overlap witnesses, T3's
+# rows and declines, startpos seeds, UCP \b under -e byte, the atom-cap
+# decline) and tests/utf8/axis13_ctx_illformed.rxt (§2.3's hazard cells),
+# both generated from libpcre2 and re-verified on 10.46. MEASURED by this
+# check's own census on the lane's branch: 254/4230/31185, then +0/+3/+12 for
+# the three shared-context-set witness blocks the same lane added to
+# ctxnode.rxt after the lookaround-expansion corpus found that defect:
+# 254/4233/31197.
+# 2026-09-29 (lanes k7273 [K72] + k73utf [K73], merged onto U2 by mechanism):
+# tests/utf8/hv_space.rxt +1/+17/+420 and tests/utf8/k73_startskip.rxt
+# +1/+11/+86 (both measured by this check's own census on their branches:
+# 253/4198/31387 and 254/4209/31473 from the pre-U2 252/4181/30967), added to
+# U2's 254/4233/31197: 256/4261/31703. RUNSH_* moves the same.
+CENSUS_FILES=256
+CENSUS_BLOCKS=4261
+CENSUS_LINES=31703
 # 2026-09-23 (lane rxtfix, K34 closure via lane b2fix's [OPTLOOP.1.impl]
 # batch 2 — docs/dev/known_issues.md K34) — -1 file, -3 blocks, +0 lines.
 # tests/known_fail/k34_leftrec_giveup.rxt (1 file, 3 blocks, 11 lines) was
@@ -467,13 +473,13 @@ CENSUS_LINES=31473
 # k70fix +1/+9/+13 -> 223/4061/29398 (restrict.rxt is a run.sh file; the 8 golden bundles are not).
 # 2026-09-28 (lane ucpu1, [UCP] U1) — +5/+120/+1569, the SAME delta as
 # CENSUS_* above (tests/ucp/ is a run.sh directory, not tests/known_fail/).
-# 2026-09-29 (lane k7273, [K72]) — +1/+17/+420, the SAME delta as CENSUS_*
-# above (tests/utf8/hv_space.rxt is a run.sh file).
-# 2026-09-29 (lane k73utf, [K73]) — +1/+11/+86, the SAME delta as CENSUS_*
-# above (tests/utf8/k73_startskip.rxt is a run.sh file).
-RUNSH_FILES=230
-RUNSH_BLOCKS=4209
-RUNSH_LINES=31473
+# 2026-09-29 (lane ucpu2, [UCP] U2) — +2/+49/+218, the SAME delta as
+# CENSUS_* above (tests/ucp/ and tests/utf8/ are run.sh directories).
+# 2026-09-29 (lanes k7273 [K72] + k73utf [K73]) — +2/+28/+506, the SAME
+# delta as CENSUS_* above (both files are tests/utf8, a run.sh directory).
+RUNSH_FILES=232
+RUNSH_BLOCKS=4261
+RUNSH_LINES=31703
 # 2026-09-23 (lane rxtfix, K34 closure, same event as CENSUS_* above) —
 # +0/+0/+11 where CENSUS_* moved -1/-3/+0. tests/known_fail/ is now EMPTY
 # (kf_files=kf_blocks=kf_lines=0 at run time — `find tests/known_fail
@@ -1578,17 +1584,29 @@ C3_PASS=13903
 # its own verifier (verify_ucp.py), so verify_rxt.py skips every one of its
 # 1,563 cells on every python version (measured: `verify_rxt.py tests/ucp`
 # reports SKIP=1563, own-oracle=1563, PASS=0).
-# [K72] (lane k7273): +420 SKIP, all pcre2-only — tests/utf8/hv_space.rxt
-# (python's `re` has no \h/\v). Reconciliation: 13903+17395+89 = 31387.
-# [K73] (lane k73utf): +86 SKIP, all pcre2-only — tests/utf8/k73_startskip.rxt
-# (python's `re` has no invalid-UTF mode). Reconciliation: 13903+17481+89 = 31473.
-C3_SKIP=17481
-C3_SKIP_PCRE2ONLY=3472
+# [UCP] U2 (lane ucpu2): +230 SKIP, structural on every python version —
+# tests/ucp/ctxnode.rxt +200 own-oracle (199 cells + 1 g line; tests/ucp/ is
+# verify_ucp.py's), tests/ucp/refusals.rxt -2 own-oracle (the two byte-tier
+# UCP \b perr blocks, which BUILD now), tests/utf8/axis13_ctx_illformed.rxt
+# +32 pcre2-only (MATCH_INVALID_UTF oracle). Measured: `verify_rxt.py
+# tests/ucp` SKIP=1761 own-oracle (was 1563); `verify_rxt.py
+# tests/utf8/axis13_ctx_illformed.rxt` SKIP=32 pcre2-only; PASS unmoved.
+# Merged onto clstri's re-pin (u2land, 2026-09-29) BY MECHANISM: the two
+# deltas touch disjoint populations (clstri: litscan/offsetskip/recursion/
+# vars/utf8-restrict; U2: tests/ucp + axis13), so the merged pin is main's
+# value + U2's delta: SKIP 16975+230, pcre2-only 2966+32, own-oracle
+# 12002+198; C3_VERIFIABLE (PASS+INFO+nopython+perr-accept) is unmoved.
+# [K72] (lane k7273) +420 and [K73] (lane k73utf) +86 SKIP, all pcre2-only
+# (tests/utf8/hv_space.rxt: python's `re` has no \h/\v; tests/utf8/
+# k73_startskip.rxt: no invalid-UTF mode), added to U2's pin by mechanism:
+# SKIP 17205+506, pcre2-only 2998+506.
+C3_SKIP=17711
+C3_SKIP_PCRE2ONLY=3504
 C3_SKIP_GIVEUP=29
 C3_SKIP_COMPOSED=0
 C3_SKIP_NOPYTHON=1964
 C3_SKIP_PERRACCEPT=14
-C3_SKIP_OWNORACLE=12002
+C3_SKIP_OWNORACLE=12200
 C3_VERIFIABLE=15881   # PASS+INFO+no-python-expression+perr-python-accepts: python-version-INVARIANT
 C3_INFO=0
 C3_STOREUNCOVERED=0

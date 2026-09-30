@@ -127,8 +127,7 @@ static int ew_walk(const Ast *a)
          * special case here. */
         case A_EMPTY:
         case A_BOL:
-        case A_WORDB:
-        case A_NWORDB:
+        case A_CTX:
         case A_GSTART:
         case A_KRESET:
         case A_LOOK:

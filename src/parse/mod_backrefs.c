@@ -608,7 +608,7 @@ static Ast *br_strip_caps(Ast *a, const bool *keep, int nkeep)
     for (;;) {
         switch (a->k) {
         case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
-        case A_WORDB: case A_NWORDB: case A_GSTART: case A_KRESET:
+        case A_CTX: case A_GSTART: case A_KRESET:
         case A_BREF:
         case A_VAR:
         /* [DD-14] LEXICAL ONLY (design §4.4a site 27): the node is visited AS

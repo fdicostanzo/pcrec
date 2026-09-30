@@ -240,7 +240,9 @@ SEMANTIC axis, not a tuning one (`docs/spec/tuning.md` §4).
 - **REFUSED BY NAME at this stage** (D130 Q3; `docs/spec/limits.md` §3.8):
   under `-e utf8` the WIDE sets (`\w \W`, `[:alpha:] [:alnum:] [:word:]
   [:lower:] [:upper:] [:graph:] [:print:] [:punct:]`) until a kit-sized class
-  route exists; UCP `\b`/`\B` under both encodings. `(?aW)`/`(?aP)` make a
+  route exists; UCP `\b`/`\B` under `-e utf8` (the Unicode word set is not
+  byte-expressible there; [UCP] U3/U4). Under `-e byte` UCP `\b`/`\B` compile
+  ([UCP] U2): they read the Latin-1 word set. `(?aW)`/`(?aP)` make a
   refused construct ASCII again, and it compiles. A refusal is never
   answered with the ASCII meaning.
 
@@ -466,7 +468,7 @@ no module is split):
 | `misc` | not built | scattered rarer constructs |
 | `quoting` | **built** | `\Q…\E` literal quoting, including inside a character class |
 | `unicode-props` | **built (partial)** | `\p{…}`/`\P{…}` — the Unicode GENERAL CATEGORIES and PCRE2's derived families ([M5.0] stage 3) plus the SCRIPTS, bare and under `sc=`/`scx=` ([M5.0] stage 5). See the note below for exactly which names |
-| `ucp` | **built (partial)** — IMPLIED by `-e utf8`; the wide utf8 sets and UCP `\b`/`\B` are refused by name at [UCP] U1 (`--ucp` above) | `(*UCP)`, `--ucp`, `(*UTF)`/`(*UTF8)` (restating `-e utf8`), the `(?a…)` restriction letters' UCP meaning |
+| `ucp` | **built (partial)** — IMPLIED by `-e utf8`; the wide utf8 sets and UCP `\b`/`\B` under utf8 are refused by name (`--ucp` above); UCP `\b`/`\B` under `byte` build since [UCP] U2 | `(*UCP)`, `--ucp`, `(*UTF)`/`(*UTF8)` (restating `-e utf8`), the `(?a…)` restriction letters' UCP meaning |
 | `verbs` | not built (per-name; the 12 alpha-spelled lookaround verbs are attributed to `lookaround`/`assertions` instead, D71 item 3) | `(*PRUNE)`/`(*COMMIT)`/etc. |
 
 **`unicode-props` is the first module in this table to ship a PROPER SUBSET
@@ -559,12 +561,12 @@ A dozen-odd flags (`-fno-possessify`, `-fno-revdet`, `-fno-counter`,
 `-fno-splice-calls`, `-fno-tiered-entry`, `-fno-premul-table`,
 `-fno-offset-skip`, `-fno-anchored-dfa`, `-fno-size-term`,
 `-fno-scan-edge`, `-fno-start-pinned`, `-fno-alt-island`,
-`-fno-cls-fold`, `-fno-startpos-guard`)
+`-fno-cls-fold`, `-fno-startpos-guard`, `-fno-ctx-node`)
 deliberately do **not** appear in `--help` (D47.3:
 these are testing and tuning axes, not user features — `cli/CLAUDE.md`
 states the reasoning per flag). Each denies one optimization strategy
-(mostly byte-identity-safe controls for a differential; `-fno-splice-calls`
-and `-fno-atomic-discharge` can change which ENGINE a pattern gets, and
+(mostly byte-identity-safe controls for a differential; `-fno-splice-calls`,
+`-fno-atomic-discharge` and `-fno-ctx-node` can change which ENGINE a pattern gets, and
 `-fprefilter` is do-or-die like `--engine` itself). `--work-budget=N` is
 NOT part of this family despite sharing the `--flag=value` shape — it is a
 real generation axis on the give-up-code footing (§4/§8 above), which is

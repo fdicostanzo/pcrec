@@ -1036,7 +1036,7 @@ survey). Pure lexing, `PLANNED`-trivial.
 | `(*NO_JIT)` `(*NO_START_OPT)` `(*NO_AUTO_POSSESS)` `(*NO_DOTSTAR_ANCHOR)` | `OUT-OF-SCOPE` | — |
 | `(*NOTEMPTY)` `(*NOTEMPTY_ATSTART)` | `REJECTED` | `PLANNED` |
 | `(*UTF)` `(*UTF8)` — a restatement of `--encoding=utf8`: accepted under `-e utf8`, refused by name under `byte` (module `ucp`, D130 Q2) | `OK-LIMITED` | — |
-| `(*UCP)` (and `--ucp`) — module `ucp`, [UCP] U1: `\d \s` and the narrow POSIX classes as Unicode sets under `-e utf8`, the whole byte tier (Latin-1 sets + Latin-1 fold), `(?a…)` restrictions real, `[:lower:]`/`[:upper:]` fold-inert; the WIDE sets under `-e utf8` and `\b`/`\B` under either encoding refused by name (docs/spec/limits.md §3.8) | `OK-LIMITED` | — |
+| `(*UCP)` (and `--ucp`) — module `ucp`, [UCP] U1: `\d \s` and the narrow POSIX classes as Unicode sets under `-e utf8`, the whole byte tier (Latin-1 sets + Latin-1 fold), `(?a…)` restrictions real, `[:lower:]`/`[:upper:]` fold-inert; UCP `\b`/`\B` under `-e byte` ([UCP] U2: the Latin-1 word set); the WIDE sets and `\b`/`\B` under `-e utf8` refused by name (docs/spec/limits.md §3.8) | `OK-LIMITED` | — |
 | `(*CASELESS_RESTRICT)` `(*TURKISH_CASING)` | `OUT-OF-SCOPE` | — |
 
 <!-- BEGIN GENERATED ANNOTATIONS: option-setting -->

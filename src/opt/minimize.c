@@ -118,16 +118,27 @@ void pcrec_minimize_dfa(Ctx *cx, Dfa *d)
          * axis every view carries the same bit, so only the all-clear and
          * all-set keys occur, and they occur in the same order the two
          * pre-wave keys did. */
-        int accid[1 << UPC_N];
-        for (size_t k = 0; k < sizeof accid / sizeof accid[0]; k++)
-            accid[k] = -1;
-        for (int i = 0; i < n; i++) {
-            int a = 0;
-            for (int u = 0; u < UPC_N; u++)
-                if (d->st[i].up[u].accept) a |= 1 << (UPC_N - 1 - u);
-            if (accid[a] < 0) accid[a] = nparts++;
-            part[i] = accid[a];
+        /* [UCP] U2: the key is the accept bits over the machine's ATOMS, and
+         * the ids are still first-occurrence, so the ids — not the key's bit
+         * order — are what the rest reads. A short linear list of the keys
+         * seen replaces the old 16-entry direct table: at most
+         * 2^PCREC_MAX_CTX_ATOMS keys exist in principle, and a machine
+         * realizes a handful. */
+        uint32_t *keyseen = malloc((size_t)(n ? n : 1) * sizeof(uint32_t));
+        if (!keyseen) {
+            free(part); free(newpart); free(sig); free(htab); free(keys);
+            pcrec_ctx_nomem(cx);
         }
+        for (int i = 0; i < n; i++) {
+            uint32_t a = 0;
+            for (int u = 0; u < d->natoms; u++)
+                if (d->st[i].up[u].accept) a |= 1u << u;
+            int k = 0;
+            while (k < nparts && keyseen[k] != a) k++;
+            if (k == nparts) keyseen[nparts++] = a;
+            part[i] = k;
+        }
+        free(keyseen);
     }
 
     for (;;) {
@@ -186,7 +197,9 @@ void pcrec_minimize_dfa(Ctx *cx, Dfa *d)
              * downstream reads them), so every view keeps its accept bit and
              * drops its list rather than being left dangling into a freed
              * partition's storage. */
-            for (int u = 0; u < UPC_N; u++) {
+            ns[c].up = pcrec_arena_alloc(&cx->arena,
+                                         (size_t)d->natoms * sizeof(DView));
+            for (int u = 0; u < d->natoms; u++) {
                 ns[c].up[u].accept = o->up[u].accept;
                 ns[c].up[u].nlist  = 0;
                 ns[c].up[u].list   = NULL;
@@ -215,9 +228,9 @@ void pcrec_minimize_dfa(Ctx *cx, Dfa *d)
          * pre-merge id, so each is translated exactly once even on a
          * `\G`-free machine, where every `s1g[u]` happens to equal the
          * `s1u[u]` translated just above. */
-        for (int u = 0; u < UPC_N; u++)
+        for (int u = 0; u < d->natoms; u++)
             if (d->s1u[u] >= 0) d->s1u[u] = seq[part[d->s1u[u]]];
-        for (int u = 0; u < UPC_N; u++)
+        for (int u = 0; u < d->natoms; u++)
             if (d->s1g[u] >= 0) d->s1g[u] = seq[part[d->s1g[u]]];
         free(seq);
         free(ns);

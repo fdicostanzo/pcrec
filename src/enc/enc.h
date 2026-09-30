@@ -349,6 +349,16 @@ typedef struct {
      * feature STAMPS keep rendering the REQUESTED set (compile.c), so no
      * artifact's bytes move with this field. `byte` implies nothing. */
     unsigned implied_features;
+    /* [UCP] U2 THE ONE-BYTE REPERTOIRE: every code point <= this is written
+     * as exactly ONE byte (equal to the code point) and never begins or ends
+     * a longer sequence's worth of meaning — `byte` 0xFF, `utf8` 0x7F. It is
+     * what makes a context set BYTE-EXPRESSIBLE (ucp_design.md §2.3): an
+     * A_CTX set every member of which is <= this reads exactly on bytes in
+     * both directions, including over ill-formed input, and one with a member
+     * above it does not (`(?<=[^a])a` on `80 61` is the measured hazard).
+     * `pcrec_ctx_set_bytes` is the one reader. A third D58 seam scalar,
+     * recorded as `max_cp` and `fold` were. */
+    unsigned onebyte_max;
 } PcrecEnc;
 
 /* The registry. Lookup is total over the namespace and returns NULL for a
@@ -422,6 +432,17 @@ bool pcrec_enc_start_guard(const PcrecEnc *e, char *buf, size_t cap,
  * word byte nor a newline, because `UPC_NOSTART` is a member of a PARTITION.
  * True when the backend has no restriction at all. */
 bool pcrec_enc_start_cls_ok(const PcrecEnc *e);
+
+/* [UCP] U2 IS THIS CONTEXT SET BYTE-EXPRESSIBLE under `e` (ucp_design.md
+ * §2.3), and if so its byte image into `out`: true iff every member of the
+ * code-point set `iv[0..n)` is <= `e->onebyte_max`, i.e. the engine may read
+ * "is the previous / next CHARACTER in the set" off one BYTE on either side,
+ * exactly, over ill-formed input too. The ONE precondition every site that
+ * turns an A_CTX set into bytes asks — the recognizer, `\b`'s producer, the
+ * NFA lowering and the VM test — so a set that fails it is never read as a
+ * sampled answer. */
+bool pcrec_enc_set_bytes(const PcrecEnc *e, const PcrecCpRange *iv, int n,
+                         uint8_t out[32]);
 
 /* The UTF-8 encoding of scalar value `cp` (not a surrogate, <= U+10FFFF:
  * the caller's to exclude) into b[0..3]; returns its length, 1..4. The ONE

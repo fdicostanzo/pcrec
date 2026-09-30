@@ -2769,6 +2769,49 @@ no island is taken or declined differently. The backward walk (lookbehind
 bodies, the reverse-deterministic rung) and the cursor rung's fixed-length
 body keep their own per-byte compares.
 
+### 2.32 `-fno-ctx-node` — `PCREC_NO_CTX_NODE` (bit 35)
+
+**[UCP] U2, `abi` 46 (`docs/design/ucp_design.md` §0.1 T3, §2.2).
+ANSWER-IDENTITY-preserving and ENGINE-SELECTING.** How a lookaround whose
+body is a set of single characters is lowered. Deny-only, MASKED out of
+`rx_info.flags` (`strategy_denials`) for the mask's own reason: every
+artifact that carries no such lookaround is byte-for-byte the same under
+the flag. No stamp of its own: `<PREFIX>_ENGINE` is the observable
+consequence, the way `-fno-atomic-discharge` (§2.8) shows.
+
+**What it is.** T3 is a first-match table of two rows (`pcrec --list-axes`
+prints it, read live off `src/parse/ctxnode.c`'s `pcrec_look_rows`):
+
+| # | row | deny | applies | action |
+|---|---|---|---|---|
+| 1 | `ctx-node` | `-fno-ctx-node` | the body is capture-free and assertion-free, its LANGUAGE is a set of single characters, and every member is one byte of the encoding | the CONTEXT NODE: `(?<=C)`, `(?<!C)`, `(?=C)`, `(?!C)` (and the non-atomic and alpha spellings) read "is the previous / next character in `C`" |
+| 2 | `lookaround` | — | always | the lookaround's VM sub-match (§2.8's neighbour, `lookaround` module) |
+
+The predicate is over the LANGUAGE, not the spelling: `(?<=a|b)` and
+`(?<=[ab])` are the same node, and `(?=a?)`, `(?<=ab)`, `(?<=(a))` are not
+(width not exactly one character, or a capture). The context node is what
+`\b`/`\B` already were — the DFA carries it on its class axis (a
+per-machine list of context sets, whose ATOMS index every per-state view;
+overlapping sets are exact) and the VM tests it as one guarded byte read —
+so a pattern whose only DFA-excluding construct is such a lookaround MOVES
+from the VM to the DFA. `\b`/`\B` build the node directly and are not
+affected by the flag.
+
+**The encoding conjunct.** Row 1 requires every member of the set to be ONE
+byte of the encoding (`-e byte`: any set; `-e utf8`: ASCII-only). A set with
+a non-ASCII member under utf8 is not readable byte-wise — `(?<=[^a])a` on
+`80 61` would read the stray continuation byte as "in `[^a]`" — so it keeps
+row 2 until `[UCP]` U3/U4 build a character-stepped reading.
+
+**What it costs, and what it does not move.** Denied, every lookaround keeps
+its VM sub-match, the program this compiler emitted before `abi` 46, and
+accepts exactly the same subjects — `tests/ucp/run_ctxnode_tests.sh` runs the
+context-node corpus both ways, and `make test-axes` sweeps the flag like every
+deny axis. A DFA machine may carry at most `PCREC_MAX_CTX_SETS` distinct
+context sets and `PCREC_MAX_CTX_ATOMS` atoms (`limits.md` §3.9); over either,
+the DFA is declined exactly as for a state-cap overflow (`--engine=auto`
+takes the VM).
+
 ## 3. The DFA side's own stamps
 
 **CLOSED 2026-08-25 by plan row `[DD-13]`; this section stated the gap while
@@ -3048,6 +3091,9 @@ not-a-tuning-axis list that follows.
 | `flags` bit `PCREC_NO_END_WINDOW` | `-fno-end-window` | §2.26 |
 | `flags` bit `PCREC_NO_REQ_BYTE` | `-fno-req-byte` | §2.27 |
 | `flags` bit `PCREC_NO_REQ_RUN` | `-fno-req-run` | §2.28 |
+| `flags` bit `PCREC_NO_RUN_PREFILTER` | `-fno-run-prefilter` | §2.30 |
+| `flags` bit `PCREC_NO_LIT_RUN` | `-fno-lit-run` | §2.31 |
+| `flags` bit `PCREC_NO_CTX_NODE` | `-fno-ctx-node` | §2.32 |
 | `unroll_k` (`PCREC_UNROLL_K_DEFAULT` = 0) | `--unroll=K` | §2.10 |
 | `vm_entry_shape` (`PCREC_VM_ENTRY_AUTO` = 0, `_PLAIN`, `_SHARED`, `_FORWARD`, `_INLINE`) | `--vm-entry-shape=N` | §2.21 |
 | `engine` (`PCREC_ENGINE_AUTO`/`_DFA`/`_VM`) | `--engine=E` | §2.11 |

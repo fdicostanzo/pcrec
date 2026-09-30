@@ -30,8 +30,21 @@ SAB_SUITES="wordctxidentity harness"
 SAB_DESC="eqclasses refines the byte alphabet by the word set on EVERY pattern instead of only on those carrying a \\b/\\B: every artifact in the corpus gains classes and moves bytes, with every answer unchanged"
 SAB_DOC_FIGURE="tests/codegen/run_wordctx_identity.sh: the \\b-free identity population goes from all-identical to 1178 of 1186 DIFFERING; the corpus stays green. TRUE ONLY SINCE THE [M6.2] REPAIR SLICE MOVED THIS ROW'S REFERENCE KNOB (2026-08-19) -- before that the sweep stayed 1135/1135 identical and the row was scored DETECTED through an orphaned-parameter warning; see the annotation below. CANONICAL MATRIX RUN 2026-08-19: wordctxid:1fail/2pass, corpus:0fail/20533pass -- DETECTED"
 SAB_COUNT=1
-SAB_BEFORE='    if (has_word) ncls = refine_by(d, ncls, pcrec_cls_word_esc);'
-SAB_AFTER='    ncls = refine_by(d, ncls, pcrec_cls_word_esc);   /* SABOTAGE S71 */'
+SAB_BEFORE='            if (r == CTXROW_CTX) cbit[i] = (int8_t)k;
+        }
+    }
+    return true;
+}'
+SAB_AFTER='            if (r == CTXROW_CTX) cbit[i] = (int8_t)k;
+        }
+    }
+    if (d->nctx < PCREC_MAX_CTX_SETS) {   /* SABOTAGE S71 */
+        PcrecCtxSet *cs = &d->ctx[d->nctx++];
+        cs->name = "ctx"; cs->desc = "SABOTAGE S71"; cs->rows = 1u << CTXROW_CTX;
+        memcpy(cs->bits, pcrec_cls_word_esc, 32);
+    }
+    return true;
+}'
 
 # ---------------------------------------------------------------------------
 # ANNOTATED 2026-08-19 BY THE [M6.2] WAVE D LANE, THEN RESOLVED THE SAME DAY BY
@@ -78,3 +91,5 @@ SAB_AFTER='    ncls = refine_by(d, ncls, pcrec_cls_word_esc);   /* SABOTAGE S71 
 # sabotage that deletes the flag's consumer is the realistic edit, and it
 # cancels a flag pin exactly.
 # ---------------------------------------------------------------------------
+
+# RE-AIMED 2026-09-29 BY [UCP] U2 (lane ucpu2), intent re-verified: the `has_word` flag and its gated refinement are GONE: the class axis is the context-set LIST (src/ir/dfa.c `ctx_collect`), refined by one loop. The row's intent - the word set refines EVERY machine's alphabet, with every answer unchanged - is now planted where the list is FILLED (the word set appended to every machine's list), and -DPCREC_NO_WORDCTX sits at the list's two consumers (`ctx_entry_live`), so it cannot cancel the plant.

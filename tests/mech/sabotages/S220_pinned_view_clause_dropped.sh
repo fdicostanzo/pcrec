@@ -72,12 +72,67 @@
 # THE FLOOR STAYS, and [OPT-VEDGE] relaxes the same view precondition from
 # the other side (the S206/[OPT-4.2] lesson says that will move the
 # population), so it is declared from birth rather than watched.
+#
+# ============ 2026-09-29 (lane tri220, TRIAGE): THE DAY NAMED ABOVE ARRIVED
+# ============ -- A CORPUS PATTERN NOW LANDS WHOSE START STATE ACCEPTS UNDER
+# ============ THE PLAIN VIEW WHILE ITS ACCEPT VARIES, AND THE ROW SAYS SO.
+#
+# `bash tests/mech/run_sabotage_matrix.sh S220`, run inside [UCP] U2's own
+# merge chain (lane ucpu2, tree 61cbc894), reads NOW DETECTED --
+# `searchpinned:1fail/15pass` against the 2026-09-03 baseline's
+# `searchpinned:0fail/17pass` -- with `pop`/`reach` UNCHANGED (still exactly
+# the three named \B-shaped patterns, still reached the identical way). So
+# the three original witnesses and their P3 rescue are not what moved --
+# this predicate's DISCRIMINATING POPULATION has grown past them, which is
+# exactly the "day a corpus pattern lands" this row's own §69/74-lines-up
+# paragraph predicted rather than merely a stale claim.
+#
+# THE MOST PLAUSIBLE MECHANISM, from reading the tree rather than from a
+# rebuild (see the OWED note in SAB_DOC_FIGURE): [UCP] U2 (`dbe52a55`)
+# replaces the fixed four-atom UPC partition this row's population was
+# swept against with a per-machine LIST of context sets (`Dfa.ctx[]`), and
+# `src/ir/dfa.c`'s own `CTXROW_CTX` contributor row (line 188) now reads
+# "an A_CTX set (\b/\B's word set, a ONE-CHARACTER LOOKAROUND's set)" --
+# the abi 45 -> 46 landing's own message is "one-character lookarounds move
+# VM -> DFA". `N_CTX`'s truth function (`dfa.c` ~line 953) tests the
+# preceding AND following byte's atom membership SEPARATELY
+# (`ctx_bit(cl->left,k)` / `ctx_bit(cl->right,k)`), where `\b`/`\B` read
+# BOTH sides and a one-character LOOKAHEAD reads only the RIGHT (upcoming)
+# side. `pcrec_state_view_invariant` (this predicate's own P2, and
+# `src/opt/scanedge.c`'s precondition 3) tests accept variance across EVERY
+# atom uniformly, so it still catches a lookahead-only machine's start-state
+# variance correctly -- but `dfa_needs_seed` (P3's own gate, `emit_dfa.c`
+# ~line 3310) tests whether the SEED TARGET STATE differs across atoms,
+# which is a question about the PRECEDING byte only. A machine whose ONLY
+# live context set is a one-character lookahead may never read the LEFT
+# side at all, so every `s1u[u]` interns to the SAME state and
+# `dfa_needs_seed` answers false -- P3's per-seed loop, which is what
+# rescued the three \B witnesses (all of which ALSO read the left side, so
+# they genuinely need seeding), never runs, and P2's own start-state check
+# becomes the SOLE guard. That is exactly the shape this row's `SAB_BEFORE`
+# deletes and nothing downstream replaces.
+#
+# THIS IS REASONED FROM THE CODE, NOT FROM A RE-SWEPT CORPUS OR A HAND
+# REPRODUCTION -- a compiler build to isolate the exact failing witness
+# inside `tests/codegen/run_search_pinned.sh` was declined by this box's
+# one-heavy-suite-at-a-time concurrency guard while the scheduling chain and
+# this triage lane were both live, and re-deriving P2's own "exactly N
+# artifacts" corpus sweep (this row's own §2026-09-02 method, now against a
+# corpus that plausibly also carries [UCP] U2's new `tests/ucp/ctxnode.rxt`)
+# is therefore OWED to whichever lane next has build access. `SAB_REACH`
+# above is UNCHANGED and still passes, because it only asks whether `\bx*`
+# and `x*` keep their historical stamps -- it was never a claim about the
+# predicate's WHOLE discriminating population, which is what moved.
+#
+# THE ROW NOW SHIPS DECLARED `DETECTED` (the default; the `UNDETECTED`
+# field is removed rather than merely reworded, per this directory's own
+# rule that a stale expectation is never left standing), and
+# `SAB_DOC_FIGURE` below carries the exact re-measurement.
 SAB_ID="S220-pinned-view-clause-dropped"
-SAB_EXPECT=UNDETECTED
 SAB_FILE="src/gen/emit_dfa.c"
 SAB_SUITES="searchpinned harness"
 SAB_DESC="The start-pinned predicate's P2 stops asking whether the start state's accept is invariant in position and in class context, so a state that accepts only at some positions is treated as accepting at all of them. The elision then fires on a machine that has no match at every search_from and writes caps[0][0] = search_from where the true match begins later -- a span too wide at the front, with the verdict and the match end both still right"
-SAB_DOC_FIGURE="MEASURED UNDETECTED by the lane 2026-09-02: with this plant applied and the tree rebuilt, the corpus produces the SAME 224 pinned artifacts as the clean tree and tests/codegen/run_search_pinned.sh is 17 passed / 0 failed. See the header for the derivation and for the two-hunk row (S218) that IS detected, at 243 pinned with 19 artifacts flipping and the check red in three places. RE-MEASURED 2026-09-03 (r51fix item 2, solo mech run against the re-derived SAB_REACH_POP manifest, tree 26644f50edcafbceb056616650f6cca2f80f4d89): UNDETECTED (EXPECTED), unexpected: 0 -- pop:tests/codegen/manifests/s220_view_decliners.txt:/^\\B/=3(want>=3), reach:ok(1/1), searchpinned:0fail/17pass, corpus:0fail/26883pass. The manifest's population reads exactly 3, its own full measured population, confirming the floor is not decorative."
+SAB_DOC_FIGURE="MEASURED UNDETECTED by the lane 2026-09-02: with this plant applied and the tree rebuilt, the corpus produces the SAME 224 pinned artifacts as the clean tree and tests/codegen/run_search_pinned.sh is 17 passed / 0 failed. See the header for the derivation and for the two-hunk row (S218) that IS detected, at 243 pinned with 19 artifacts flipping and the check red in three places. RE-MEASURED 2026-09-03 (r51fix item 2, solo mech run against the re-derived SAB_REACH_POP manifest, tree 26644f50edcafbceb056616650f6cca2f80f4d89): UNDETECTED (EXPECTED), unexpected: 0 -- pop:tests/codegen/manifests/s220_view_decliners.txt:/^\\B/=3(want>=3), reach:ok(1/1), searchpinned:0fail/17pass, corpus:0fail/26883pass. The manifest's population reads exactly 3, its own full measured population, confirming the floor is not decorative. FLIPPED TO DETECTED 2026-09-29 (lane tri220, triage of the [UCP] U2 merge battery's mech chain): solo re-run at 61cbc894fadbe808a081e4b98b2357b1ed79f09a read NOW DETECTED -- pop:tests/codegen/manifests/s220_view_decliners.txt:/^\\B/=3(want>=3), reach:ok(1/1), searchpinned:1fail/15pass, corpus:0fail/31197pass -- unexpected: 1, undetected: 0, unreached: 0, anomalies: 0. The manifest and reach probe are UNCHANGED (still exactly the three \\B-shaped patterns, still reached the same way), so the three original witnesses and their P3 rescue are not what moved; a DIFFERENT construct now reaches the sabotaged clause with no P3 backstop. See the header's new paragraph for the mechanism; the exact witness inside run_search_pinned.sh was not hand-identified (a compiler build to isolate it was declined by the box's one-heavy-suite-at-a-time concurrency guard while the U2 chain and this lane ran, and is OWED to a build-capable follow-up)."
 # [MECH-REACH] THE PROBE says the SITE still answers: on the clean tree `\bx*`
 # is DECLINED, and it is declined at P2 rather than P1 (its start state DOES
 # accept under the plain view — a bare `x*` is nullable — so P1 passes).
@@ -104,6 +159,8 @@ SAB_REACH_EXPECT="REACH-CLASSCTX-DECLINED-BY-P2"
 SAB_REACH_POP="tests/codegen/manifests/s220_view_decliners.txt|^\\\\B|3"
 SAB_COUNT=1
 SAB_BEFORE='    /* P2 — one derivation, shared with the scan-edge pass. */
-    if (!pcrec_state_view_invariant(&fd->st[fs])) return false;'
+    if (!pcrec_state_view_invariant(fd, &fd->st[fs])) return false;'
 SAB_AFTER='    /* SABOTAGE S220: P2 is dropped -- the accept no longer has to be
      * invariant in position or in class context. */'
+
+# RE-AIMED 2026-09-29 BY [UCP] U2 (lane ucpu2), intent re-verified: signature only: `pcrec_state_view_invariant(fd, st)`; the plant still drops P2.

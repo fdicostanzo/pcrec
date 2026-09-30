@@ -2058,7 +2058,7 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `46` on every artifact today ([K73] bumped it from 45,
+- **`rx_info.abi` is `47` on every artifact today ([K73] bumped it from 46,
   2026-09-29: THE OFFSET-0 START RULE IS EMITTED TEXT).** Under an encoding
   that restricts where a match may begin (`utf8`), a NULLABLE pattern's
   artifact gains one line at each caller-facing body — the unanchored DFA scan
@@ -2078,6 +2078,30 @@ the bump's own commit.**
   `rx_info` member is added or changed, and answers move only on subjects that
   begin with a continuation byte (to libpcre2's) and on mid-character
   `ctx->pos` at the unwrapped DFA `_match` (to the promised refusal).
+- **`rx_info.abi` was `46` ([UCP] U2 bumped it from
+  45, 2026-09-29: A ONE-CHARACTER LOOKAROUND IS A CONTEXT NODE, AND MOVES VM
+  -> DFA).** A lookaround whose body's LANGUAGE is a set of single
+  byte-expressible characters (`(?<=\$)`, `(?!y)`, `(?=[ab])`, the non-atomic
+  and alpha spellings) is lowered to the same context node `\b`/`\B` build
+  (`docs/spec/tuning.md` §2.32, T3), which the DFA carries on its class axis
+  and the VM tests as one guarded byte read — so a pattern whose only
+  DFA-excluding construct was such a lookaround gets a DFA artifact for
+  identical inputs, and a VM artifact that keeps its captures gets the
+  one-read test in place of the lookaround sub-match. That is an emitted-text
+  move for identical inputs and so an `abi` event (D76/K64). UCP `\b`/`\B`
+  under `-e byte` COMPILE (the Latin-1 word set is byte-expressible), where
+  they were refused — a refusal-set move. No struct offset moves, no
+  `rx_info` member is added or changed, and the new deny bit
+  (`-fno-ctx-node`, `PCREC_NO_CTX_NODE`, bit 35) is MASKED out of
+  `rx_info.flags`, so no artifact without such a lookaround moves under it.
+  **VERIFIED BY AN IDENTITY SWEEP** over every corpus `pattern` line at
+  `--features all`, both encodings, base (main) vs this change, `-o -`:
+  every differing artifact is either a named mover — each one reverts to the
+  base artifact BYTE FOR BYTE under `-fno-ctx-node` — or one of the five UCP
+  `\b`/`\B` patterns; every other artifact (every `\b`, `\B`, `(?m)^/$` and
+  K50-gated utf8 machine included) is byte-identical apart from this digit.
+  The movers are pinned by NAMED manifest, `tests/ucp/ctxnode_route.tsv`
+  (`docs/dev/lanes/ucpu2_report.md` §4 has the counts).
 - **`rx_info.abi` was `45` (module `ucp` bumped it
   from 44, 2026-09-28/29: ADDING A MODULE MOVES THE `--features all`
   SCAFFOLDING, EVEN WITH NO OTHER EMITTED CHANGE).** [UCP] U0+U1 landed
@@ -3004,7 +3028,7 @@ engine-scoped.**
   |---|---|
   | `"premultiplied"` | every numeric transition table in this artifact's DFA scan holds `next_state * classes`, so the emitted step is `state = table[state + class]` |
   | `"indexed"` | every one holds `next_state`, and the step multiplies (the form pcrec emitted before `[OPT-3]`) |
-  | `"mixed"` | the forward and reverse machines took different forms — the choice is per machine, on that machine's own `states * classes` |
+  | `"mixed"` | the machines this artifact contains took different forms — the choice is per machine, on that machine's own `states * classes` and seed table (a machine that can start dead for some context byte is indexed). The machines are the forward one, the reverse one unless the search is start-pinned, and the anchored one under `<PREFIX>_DFA_MATCH "unwrapped"` ([ENG-ABS]) |
   | `"none"` | the scan has no numeric transition table at all: `_DFA_SCAN "attempt"` (states are labels, a step is a computed `goto`) or `_DFA_SCAN "empty"` |
 
   It is a SELECTION FACT and therefore (a), read off the same predicate the

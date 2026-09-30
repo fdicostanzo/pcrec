@@ -304,6 +304,13 @@
 #     the population this arm exists for. Registered before S275, its
 #     first consumer (renumbered from S273 to avoid colliding with the
 #     k64fix/varland lanes' own S273/S274).
+#   ctxnode — added 2026-09-29 ([UCP] U2); runs tests/ucp/run_ctxnode_tests.sh:
+#     the context-node corpus (tests/ucp/ctxnode.rxt + tests/utf8/
+#     axis13_ctx_illformed.rxt) DEFAULT and under `-fno-ctx-node`, and the
+#     route manifest. Its own arm because its §2 is the only net that can see
+#     a T3 denial falling through to an unsound lowering (S342, the GEN-4
+#     shape): on the default path the denied row never fires, so `harness`
+#     is green on it by construction. Registered before S337-S343.
 #   clskit — added 2026-09-29 ([CLS-TREE] S1, lane clss1); runs
 #     tests/clskit/run_clskit_tests.sh, the class-matcher kit's differential
 #     (emitted C against a reference on every code point), population census
@@ -2496,6 +2503,18 @@ run_one() {
                 p="$(grep -m1 '^checks passed:' "$work/findings.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/findings.log" | grep -oE '[0-9]+')"
                 score_arm "$work/findings.log" "$f" "findings:${f:-ERR}fail/${p:-?}pass"
+                ;;
+            ctxnode)
+                # [UCP] U2 tests/ucp/run_ctxnode_tests.sh — the context-node
+                # corpus default AND under `-fno-ctx-node` (the GEN-4-shaped
+                # half no other arm runs), plus the route manifest. See the
+                # vocabulary entry above.
+                PCREC="$pcrec" CC="$CC" PROCS="$INNER_PROCS" \
+                    bash "$tree/tests/ucp/run_ctxnode_tests.sh" \
+                    > "$work/ctxnode.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/ctxnode.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/ctxnode.log" | grep -oE '[0-9]+')"
+                score_arm "$work/ctxnode.log" "$f" "ctxnode:${f:-ERR}fail/${p:-?}pass"
                 ;;
             clskit)
                 # [CLS-TREE] S1 tests/clskit/run_clskit_tests.sh — see the

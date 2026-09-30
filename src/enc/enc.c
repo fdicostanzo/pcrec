@@ -260,3 +260,16 @@ int pcrec_utf8_encode(unsigned cp, unsigned char b[4])
     b[3] = (unsigned char)(0x80 | (cp & 0x3F));
     return 4;
 }
+
+/* Byte image of a byte-expressible context set (see enc.h). */
+bool pcrec_enc_set_bytes(const PcrecEnc *e, const PcrecCpRange *iv, int n,
+                         uint8_t out[32])
+{
+    memset(out, 0, 32);
+    for (int i = 0; i < n; i++) {
+        if (iv[i].hi > e->onebyte_max) return false;
+        for (unsigned c = iv[i].lo; c <= iv[i].hi; c++)
+            out[c >> 3] |= (uint8_t)(1u << (c & 7));
+    }
+    return true;
+}

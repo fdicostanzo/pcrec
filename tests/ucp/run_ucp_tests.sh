@@ -41,5 +41,8 @@ if unit_build "$WORKDIR/l1" "$SCRIPT_DIR/latin1_fold_check.c"; then
 else
     echo "FAIL: latin1_fold_check.c does not build"; rc=1
 fi
+echo "== [UCP] 4. U2: the context node (run_ctxnode_tests.sh) =="
+PCREC="$PCREC" bash "$SCRIPT_DIR/run_ctxnode_tests.sh" || rc=1
+
 [ "$rc" -eq 0 ] && echo "ucp: all checks passed" || echo "ucp: FAILED"
 exit "$rc"
