@@ -769,7 +769,31 @@ typedef enum {
      * walked one would reach that file's loud internal error. `has_var` in
      * `src/opt/select_engine.c` is what stops it, joining `has_bref` and
      * `has_call` (design §3; the D6 panel's MECH-B1). */
-    A_VAR
+    A_VAR,
+    /* [CLS-TREE] S3 THE WIDE CLASS (docs/design/cls_tree_design.md §2.1):
+     * a code-point class the ENCODING spells in more than one code unit,
+     * made by the encoding lowering (`src/opt/lower_enc.c`) and nowhere else,
+     * so no pass above `pcrec_lower_enc` ever sees one.
+     *
+     * TWO REPRESENTATIONS OF ONE SET, ON PURPOSE AND FOR NOW: `u.wcls` holds
+     * the code-point set (cpset's sorted, disjoint, non-adjacent invariant)
+     * and `l` holds the BYTE CHILD — exactly the lowered alternation that sat
+     * in this slot before the kind existed. S3 is implement-then-replace:
+     * EVERY reader walks the child, so every artifact is byte-identical, and
+     * later stages move readers off the child one at a time; the child is
+     * deleted when none is left. `r` is unused.
+     *
+     * READING THE SET AS BYTES IS r54 E1. The set is reachable only through
+     * `pcrec_wcls_set` (kind-checked), and `pcrec_cls_bits`/`_widen`/`_single`
+     * refuse this kind by name, because a set confined to U+0080..U+00FF
+     * (`é`) renders as a clean 32-byte bitmap of the WRONG bytes, which no
+     * range check can see (docs/dev/cls_s3_reader_inventory.md §4).
+     *
+     * A SPINE WALKER SEES THROUGH IT (`pcrec_ast_seethru`): a lowered class at
+     * the head of an `A_CAT` spine used to unroll INTO the spine (`éabc`
+     * flattens to five byte elements, and `pcrec_lit_run` reads a five-byte
+     * run), and a wrapper that stopped that would move artifacts. */
+    A_WCLASS
 } AKind;
 
 /* [DD-14] HOW AN `A_CALL`'s CALLEE REACHES THE ARTIFACT (design §6.2/§6.3).
@@ -960,7 +984,14 @@ struct Ast {
          * (§2.2.3). */
         struct { const PcrecCpRange *iv; int n; } cls;
 
-        /* A_REP: `l{rmin,rmax}`, rmax == -1 for unbounded. */
+        /* [CLS-TREE] S3 A_WCLASS: the code-point set, `cls`'s own
+         * representation, published by the lowering from the `A_CLASS` it
+         * replaced. A DISTINCT MEMBER so that no reader of `u.cls` names it by
+         * accident; read it through `pcrec_wcls_set` only. The byte child is
+         * `l`. */
+        struct { const PcrecCpRange *iv; int n; } wcls;
+
+        /* A_REP:`l{rmin,rmax}`, rmax == -1 for unbounded. */
         struct {
             int         rmin, rmax;
             bool        greedy;
@@ -1078,6 +1109,11 @@ struct Ast {
              *   - `pcrec_revdet_first` (revdet.c) WIDENS to all bytes, the sound
              *     direction, which makes the disjointness test fail and the
              *     quantifier keep its machinery.
+             *
+             * [CLS-TREE] S3 (2026-09-29, D-6): ALL FIVE ARE FULL ENUMERATIONS NOW,
+             * each answering what its `default:` answered, so there is no
+             * `default:` on an `AKind` switch left in the tree and `-Wswitch`
+             * names every one of them. The verdicts above stand.
              *
              * THE PATTERN WORTH CARRYING FORWARD: an analysis is at risk exactly when
              * it treats `$` as TRANSPARENT — reasoning about WHERE it is true and
@@ -1574,14 +1610,33 @@ void pcrec_cls_bits(Ctx *cx, const Ast *a, uint8_t out[32]);
  * rows), which see code points and must not refuse: a node reaching outside
  * the byte range widens to ALL BYTES, the sound direction for both callers'
  * disjointness tests. */
-void pcrec_cls_bits_widen(const Ast *a, uint8_t out[32]);
+void pcrec_cls_bits_widen(Ctx *cx, const Ast *a, uint8_t out[32]);
 /* "Exactly one code point, and it is a byte?" — the code point, or -1. */
-int  pcrec_cls_single(const Ast *a);
+int  pcrec_cls_single(Ctx *cx, const Ast *a);
+/* [CLS-TREE] S3: the three above refuse an `A_WCLASS` by `pcrec_ctx_fail`, a
+ * KIND check and not a range check — see the kind's own comment. This is the
+ * one spelling that reaches an `A_WCLASS`'s code-point set, and it refuses
+ * any other kind the same way. */
+const PcrecCpRange *pcrec_wcls_set(Ctx *cx, const Ast *a, int *n);
+/* The loud answer of a walk that can never meet an `A_WCLASS` and would read
+ * its SET if it did: a pass above the lowering, or one over a revdet body the
+ * lowering leaves byte-level (docs/dev/cls_s3_reader_inventory.md §10 D-1).
+ * `who` names the walk in the internal-error text. */
+void pcrec_wcls_misplaced(Ctx *cx, const char *who) __attribute__((noreturn));
+/* The node a spine walker treats as sitting in slot `a`: an `A_WCLASS`'s byte
+ * child, else `a` itself. A lowered class at the head of an `A_CAT` spine
+ * unrolled INTO that spine before S3 wrapped it, and every walker that
+ * flattens a spine below the lowering descends through this so it still
+ * does; `ast_bare`'s group erasure (src/ir/nfa.c) is the precedent. */
+static inline const Ast *pcrec_ast_seethru(const Ast *a)
+{
+    while (a->k == A_WCLASS) a = a->l;
+    return a;
+}
 /* [OPT-LITSCAN] S2a: the emission-contiguous literal run at element `j` of a
  * flattened concatenation — its length (0 below two bytes), bytes to `out`
  * when non-NULL. The one definition every VM reader of a run asks. */
-int  pcrec_lit_run(const Ast *const *el, int n, int j, unsigned char *out);
-bool pcrec_cls_has(const Ast *a, unsigned c);
+int  pcrec_lit_run(Ctx *cx, const Ast *const *el, int n, int j, unsigned char *out);
 
 /* ---- NFA (priority Thompson) ---- */
 
@@ -4351,6 +4406,9 @@ static inline void pcrec_ast_visit(const Ast *a, AstVisit f, void *ud)
         case A_CALL:
             return;
         case A_CAP: case A_REP: case A_ATOMIC: case A_LOOK:
+        /* [CLS-TREE] S3: its byte child is visited, which is what this
+         * walk saw in that slot before the kind existed. */
+        case A_WCLASS:
             a = a->l;
             continue;
         case A_CAT: case A_ALT: {
@@ -6179,7 +6237,7 @@ int  pcrec_revdet(Ctx *cx, Ast *root);               /* src/opt/revdet.c */
  * admits (non-nullable, assertion-free), exported so that the emitted backward
  * walk's byte dispatch and the analysis's own check that the dispatch is
  * well-defined read ONE computation. `out` is a 32-byte class bitmap. */
-void pcrec_revdet_first(const Ast *a, uint8_t *out);  /* src/opt/revdet.c */
+void pcrec_revdet_first(Ctx *cx, const Ast *a, uint8_t *out);  /* src/opt/revdet.c */
 
 /* ---- [M4.6d] MINIMUM-REMAINING-LENGTH pruning (k23_design.md §4.3) ---- */
 

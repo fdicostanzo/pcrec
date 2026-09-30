@@ -199,6 +199,11 @@ const char *pcrec_def_tag_name(DefTag tag)
 bool pcrec_ast_is_core(AKind k)
 {
     switch (k) {
+    /* [CLS-TREE] S3: a class, so core; it is made by the encoding
+     * lowering and a definition tree is never lowered. Its own arm, so no
+     * reader ever shares `A_CLASS`'s. */
+    case A_WCLASS:
+        return true;
     case A_CLASS:
     case A_CAT:
     case A_ALT:

@@ -187,7 +187,7 @@ static bool altcls_branch_peel(Ctx *cx, Ast *branch, int *byte0_out, Ast **rest_
      * 0xFF — which is right rather than conservative: `*byte0_out` is a BYTE
      * the factored prefix will be emitted as, and a two-byte character is not
      * one. */
-    int bit = pcrec_cls_single(arr[0]);
+    int bit = pcrec_cls_single(cx, arr[0]);
     if (bit < 0) return false;
     *byte0_out = bit;
     *rest_out = altcls_rebuild_cat(cx, arr + 1, n - 1);
@@ -472,6 +472,9 @@ static Ast *altcls_walk(Ctx *cx, Ast *a)
      * at its LEXICAL position, which is the one place its rebuilt node can be
      * stored back. */
     case A_CALL:
+        return a;
+    /* [CLS-TREE] S3: made by the encoding lowering, below this pass. */
+    case A_WCLASS:
         return a;
     case A_CAT:
         return altcls_walk_cat(cx, a);

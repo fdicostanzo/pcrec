@@ -232,6 +232,42 @@ void pcrec_cpset_publish(PcrecCpSet *s, Ast *a)
 
 /* ---- the readers of a published payload ---------------------------------- */
 
+/* [CLS-TREE] S3: refuses an `A_WCLASS` handed to one of the `u.cls` readers
+ * below. A KIND check, because the range check in `pcrec_cls_bits` cannot see
+ * the case that matters: a wide set confined to U+0080..U+00FF (`é`, every
+ * Latin-1 letter) renders as a valid bitmap of the wrong bytes, and a reader
+ * that took the set instead of the byte child would miscompile silently
+ * (docs/dev/cls_s3_reader_inventory.md §4, r54 E1). */
+static void cls_kind_guard(Ctx *cx, const Ast *a, const char *who)
+{
+    if (a->k == A_WCLASS)
+        pcrec_ctx_fail(cx, 0,
+                 "internal error: %s was handed a wide class; a reader below "
+                 "the encoding lowering walks its byte child, never its "
+                 "code-point set", who);
+}
+
+/* A walk that can never meet an `A_WCLASS` met one: refuse by name. */
+void pcrec_wcls_misplaced(Ctx *cx, const char *who)
+{
+    pcrec_ctx_fail(cx, 0, "internal error: %s met a wide class, which only "
+                    "the encoding lowering makes and which cannot reach this "
+                    "walk", who);
+}
+
+/* The code-point set of an `A_WCLASS`, and its interval count in `*n` — the
+ * one spelling that reaches `u.wcls`. Refuses any other kind, so a caller
+ * that meant an `A_CLASS` cannot read the wrong member and get the empty
+ * class (the arena's zero) back. */
+const PcrecCpRange *pcrec_wcls_set(Ctx *cx, const Ast *a, int *n)
+{
+    if (a->k != A_WCLASS)
+        pcrec_ctx_fail(cx, 0, "internal error: pcrec_wcls_set on a node of "
+                        "kind %d, not a wide class", (int)a->k);
+    *n = a->u.wcls.n;
+    return a->u.wcls.iv;
+}
+
 /* THE RENDER HELPER (§2.1.4) — the SOLE path from a class node to a 32-byte
  * bitmap, and the assertion is the point rather than the rendering.
  *
@@ -248,6 +284,7 @@ void pcrec_cpset_publish(PcrecCpSet *s, Ast *a)
  * out-of-memory path is a diagnosed refusal too. */
 void pcrec_cls_bits(Ctx *cx, const Ast *a, uint8_t out[32])
 {
+    cls_kind_guard(cx, a, "pcrec_cls_bits");
     memset(out, 0, 32);
     for (int i = 0; i < a->u.cls.n; i++) {
         unsigned lo = a->u.cls.iv[i].lo, hi = a->u.cls.iv[i].hi;
@@ -284,8 +321,9 @@ void pcrec_cls_bits(Ctx *cx, const Ast *a, uint8_t out[32])
  * measurement named (§2.5.1): a form census over a UTF-8 corpus reporting what
  * fraction of non-ASCII patterns loses a rung, and that corpus does not exist
  * until stage 2. */
-void pcrec_cls_bits_widen(const Ast *a, uint8_t out[32])
+void pcrec_cls_bits_widen(Ctx *cx, const Ast *a, uint8_t out[32])
 {
+    cls_kind_guard(cx, a, "pcrec_cls_bits_widen");
     for (int i = 0; i < a->u.cls.n; i++)
         if (a->u.cls.iv[i].hi > 0xFF) { memset(out, 0xFF, 32); return; }
     memset(out, 0, 32);
@@ -302,8 +340,9 @@ void pcrec_cls_bits_widen(const Ast *a, uint8_t out[32])
  * The `> 0xFF` arm is a DECLINE and not an error: `altcls` runs above the
  * lowering, and "this branch does not start with a single literal byte" is an
  * answer both callers already handle. */
-int pcrec_cls_single(const Ast *a)
+int pcrec_cls_single(Ctx *cx, const Ast *a)
 {
+    cls_kind_guard(cx, a, "pcrec_cls_single");
     if (a->u.cls.n != 1) return -1;
     if (a->u.cls.iv[0].lo != a->u.cls.iv[0].hi) return -1;
     if (a->u.cls.iv[0].lo > 0xFF) return -1;
@@ -314,9 +353,9 @@ int pcrec_cls_single(const Ast *a)
  * an `A_CLASS` or not a singleton byte. The kind guard is part of the fact,
  * because `pcrec_cls_single` reads `a->u.cls` unconditionally and that is a
  * union read on any other kind (patfacts design §8.2, r1 F5). */
-static int lit_byte(const Ast *a)
+static int lit_byte(Ctx *cx, const Ast *a)
 {
-    return a->k == A_CLASS ? pcrec_cls_single(a) : -1;
+    return a->k == A_CLASS ? pcrec_cls_single(cx, a) : -1;
 }
 
 /* Returns the length of the EMISSION-CONTIGUOUS LITERAL RUN that begins at
@@ -349,24 +388,12 @@ static int lit_byte(const Ast *a)
  * for a declined pair, which IS the pre-S2a byte chain (`vm_emit_f` on an
  * `A_CLASS` singleton), so narrowing this fact's own floor is the whole
  * fix. `-fno-lit-run` is unchanged; the floor is not a flag. */
-int pcrec_lit_run(const Ast *const *el, int n, int j, unsigned char *out)
+int pcrec_lit_run(Ctx *cx, const Ast *const *el, int n, int j, unsigned char *out)
 {
     int len = 0;
-    while (j + len < n && lit_byte(el[j + len]) >= 0) len++;
+    while (j + len < n && lit_byte(cx, el[j + len]) >= 0) len++;
     if (len < 3) return 0;
     if (out)
-        for (int i = 0; i < len; i++) out[i] = (unsigned char)lit_byte(el[j + i]);
+        for (int i = 0; i < len; i++) out[i] = (unsigned char)lit_byte(cx, el[j + i]);
     return len;
-}
-
-/* Membership test directly on a class node's own interval array (post-lowering
- * `Ast.u.cls`) -- the same linear scan as pcrec_cpset_has, over a list already
- * published into a node rather than wrapped in a PcrecCpSet. */
-bool pcrec_cls_has(const Ast *a, unsigned c)
-{
-    for (int i = 0; i < a->u.cls.n; i++) {
-        if (c < a->u.cls.iv[i].lo) return false;
-        if (c <= a->u.cls.iv[i].hi) return true;
-    }
-    return false;
 }

@@ -237,6 +237,7 @@ static bool la_has_kreset(const Ast *a)
         case A_CALL:
             return false;
         case A_CAP: case A_REP: case A_ATOMIC: case A_LOOK:
+        case A_WCLASS:   /* [CLS-TREE] S3: never at parse time; its child */
             a = a->l;
             continue;
         case A_CAT: case A_ALT: {

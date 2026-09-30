@@ -453,10 +453,16 @@ unsigned pcrec_pat_char(Ctx *cx, size_t at, int *len)
  * reason; A_CALL is a back edge and stops (a detached reversed body cannot
  * contain one today — revdet declines calls — but the arm costs nothing and
  * the walk must not be the first to find out otherwise). */
-static bool subtree_is_identity(const LowerOps *ops, const Ast *a)
+static bool subtree_is_identity(const LowerCtx *lc, const Ast *a)
 {
+    const LowerOps *ops = lc->ops;
     for (;;) {
         switch (a->k) {
+        /* [CLS-TREE] S3 (D-1): a detached reversed copy is built ABOVE this
+         * pass and never lowered, so it cannot hold one; LOUD, because this
+         * walk reads a class's set. */
+        case A_WCLASS:
+            pcrec_wcls_misplaced(lc->cx, "subtree_is_identity");
         case A_CLASS:
             for (int i = 0; i < a->u.cls.n; i++)
                 if (a->u.cls.iv[i].hi > ops->identity_max) return false;
@@ -471,14 +477,14 @@ static bool subtree_is_identity(const LowerOps *ops, const Ast *a)
             continue;
         case A_REP:
             if (a->u.rep.revbody &&
-                !subtree_is_identity(ops, a->u.rep.revbody))
+                !subtree_is_identity(lc, a->u.rep.revbody))
                 return false;
             a = a->l;
             continue;
         case A_CAT: case A_ALT: {
             const AKind k = a->k;
             while (a->k == k) {
-                if (!subtree_is_identity(ops, a->r)) return false;
+                if (!subtree_is_identity(lc, a->r)) return false;
                 a = a->l;
             }
             continue;
@@ -499,6 +505,11 @@ static void lower_walk(LowerCtx *lc, Ast **slot)
     for (;;) {
         Ast *a = *slot;
         switch (a->k) {
+        /* [CLS-TREE] S3: this pass's own product, spliced where a leaf
+         * `A_CLASS` stood and never walked again (the splice returns). Met
+         * here, the lowering is running over a tree it already lowered. */
+        case A_WCLASS:
+            pcrec_wcls_misplaced(lc->cx, "lower_walk");
         case A_CLASS: {
             Ast *repl = lc->ops->lower_class(lc, a);
             /* THE SPLICE: one pointer, in a parent this walk never rebuilt.
@@ -526,7 +537,7 @@ static void lower_walk(LowerCtx *lc, Ast **slot)
              * reverse machine. Cleared BEFORE descending, so the decision is
              * taken on the same un-lowered view revdet analysed. */
             if (a->u.rep.revbody &&
-                !subtree_is_identity(lc->ops, a->u.rep.revbody))
+                !subtree_is_identity(lc, a->u.rep.revbody))
                 a->u.rep.revbody = NULL;
             slot = &a->l;
             continue;
@@ -588,6 +599,9 @@ static void cap_sig(const Ast *a, int *n, uintptr_t *sig)
             a = a->l;
             continue;
         case A_REP: case A_ATOMIC: case A_LOOK:
+        /* [CLS-TREE] S3: the AFTER snapshot meets the lowering's product;
+         * its byte child holds no group root. */
+        case A_WCLASS:
             a = a->l;
             continue;
         case A_CAT: case A_ALT: {

@@ -93,8 +93,15 @@ typedef struct {
  * §5.4 byte-identity gate failure rather than as a wrong answer. */
 static const Ast *ast_bare(const Ast *a)
 {
-    while (a->k == A_CAP) a = a->l;
-    return a;
+    for (;;) {
+        /* [CLS-TREE] S3: a wide class erases to its byte child here too, the
+         * shared see-through, so a lowered class at a spine head still
+         * unrolls INTO the spine and the machine is state-for-state what it
+         * was before the kind existed. */
+        a = pcrec_ast_seethru(a);
+        if (a->k != A_CAP) return a;
+        a = a->l;
+    }
 }
 
 /* Dangling out-edges are encoded as state*2 + slot (slot 0 = t1, 1 = t2). */
@@ -853,6 +860,7 @@ static Frag compile_ast(NB *b, const Ast *a)
         }
         return f;
     }
+    case A_WCLASS:   /* [CLS-TREE] S3: stripped by ast_bare() too */
     case A_CAP:
         break;   /* unreachable: ast_bare() above strips every A_CAP. Listed
                   * so -Wswitch keeps this exhaustive, and falling into the

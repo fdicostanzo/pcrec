@@ -88,6 +88,10 @@ static unsigned sa_walk(const Ast *a)
             continue;
         case A_CAP:
         case A_ATOMIC:
+        /* [CLS-TREE] S3: TRANSPARENT to its byte child, which is exactly
+         * what sat in this slot before the kind existed, so the walk
+         * continues as it did then. */
+        case A_WCLASS:
             /* Transparent: a group's matches are its body's matches, so they
              * begin where its body's begin. The atomic cut removes MATCHES and
              * never moves a start. */

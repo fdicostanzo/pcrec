@@ -646,6 +646,7 @@ static Ast *br_strip_caps(Ast *a, const bool *keep, int nkeep)
          * design says it does not. */
         case A_LOOK:
         case A_REP: case A_ATOMIC:
+        case A_WCLASS:   /* [CLS-TREE] S3: never at parse time; its child */
             a->l = br_strip_caps(a->l, keep, nkeep);
             return a;
         case A_CAT:

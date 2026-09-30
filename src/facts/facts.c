@@ -162,7 +162,7 @@ static void pf_derive_req_walk(Ctx *cx)
     PatFacts *pf = &cx->job->pf;
     RbSet set;
     RbRun run;
-    pcrec_req_walk(pf->root, &set, &run);
+    pcrec_req_walk(cx, pf->root, &set, &run);
     if (pf_enter(cx, PF_REQ_SET, false)) {
         memcpy(pf->req_set.bits, set.bits, sizeof set.bits);
         pf->req_set.rightmost = set.pick;

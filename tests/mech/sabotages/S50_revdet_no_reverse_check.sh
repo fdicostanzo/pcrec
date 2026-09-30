@@ -27,6 +27,10 @@
 # row is stated as "the reverse direction is unchecked" because that is the
 # property that is load-bearing; see docs/design/rungselect_impl/
 # rungselect_design.md 1.1 for why both are kept anyway.
+# RE-ANCHORED at [CLS-TREE] S3 (2026-09-29, lane s3build): `rd_alt_disjoint`
+# gained a `Ctx *` (its `pcrec_revdet_first` call refuses an A_WCLASS by
+# `pcrec_ctx_fail`), so the call reads `rd_alt_disjoint(R->cx, rev)`. Same
+# line, same plant, one argument more.
 SAB_ID="S50-revdet-no-reverse-check"
 SAB_FILE="src/opt/revdet.c"
 SAB_SUITES="rungdiff"
@@ -34,5 +38,5 @@ SAB_DESC="the reverse direction left unchecked (both reverse tests dropped, forw
 SAB_DOC_FIGURE="tests/rungselect/run_rungdiff.sh: the (?:ab|b) family diverges"
 SAB_COUNT=1
 SAB_BEFORE='                if (pcrec_uniq_iteration(R->scratch, rev, &why)
-                    && rd_alt_disjoint(rev)) {'
+                    && rd_alt_disjoint(R->cx, rev)) {'
 SAB_AFTER='                if (1) {  /* SABOTAGE S50 */'
