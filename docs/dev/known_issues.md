@@ -17,15 +17,19 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 ---
 
-## K80 — OPEN, unscheduled (2026-09-30, lane pfx0) — the shared ABI block's include guard is the literal `PCREC_RX_ABI_H`, so a translation unit including two artifacts of DIFFERENT abi silently gets the first one's block
+## K80 — FIXED 2026-09-30 (lane k7980, abi 54) (found by lane pfx0) — the shared ABI block's include guard is the literal `PCREC_RX_ABI_H`, so a translation unit including two artifacts of DIFFERENT abi silently gets the first one's block
 
 **Witness:** docs/dev/lanes/pfx0_report.md (simulated with a mutated header: no diagnostic). The same-abi two-header case is checked and clean (run_codegen_tests.sh:437-520, :905+). No check covers the mixed-abi case. The fix shape is probably an abi-keyed guard or a static assert on the block's abi. Changing it is emitted scaffolding, so it is an abi event (D76/D94).
 
+**Fix:** the guard carries the abi as its VALUE (`#define PCREC_RX_ABI_H 54`) and the block opens with `#if defined(PCREC_RX_ABI_H) && (PCREC_RX_ABI_H + 0) != 54` / `#error`, so a mixed-abi TU fails to compile naming the cause; same-abi is unchanged (first block wins). One valued guard rather than an abi-keyed guard NAME, which would let both blocks through and fail, if at all, on a `struct` redefinition that does not name the cause. `+ 0` also refuses a pre-54 artifact included first; a pre-54 artifact included AFTER a 54 one stays silent (its `#ifndef` predates the rule). Spec: match_api.md §2 and §6. Check: run_codegen_tests.sh K80-a/-b/-c; sabotage S438. Report: docs/dev/lanes/k7980_report.md.
+
 ---
 
-## K79 — OPEN, unscheduled (2026-09-30, lane pfx0) — the prefix LENGTH is an input to the VM entry-shape decision, so the same pattern gets a different artifact depending on its name
+## K79 — FIXED 2026-09-30 (lane k7980, abi 54) (found by lane pfx0) — the prefix LENGTH is an input to the VM entry-shape decision, so the same pattern gets a different artifact depending on its name
 
 **Witness:** `(foo|bar)[0-9]{2,5}(x)` at `-p rx` / a 23-char prefix / a 60-char prefix stamps VM_PROGRAM_BYTES 2517 / 3714 / 5823 and ENTRY_SHAPE inline / inline / plain (docs/dev/lanes/pfx0_report.md). The cause is not chased (a size budget read off emitted text that includes the prefix, presumably). It is a determinism defect independent of [PFX-1]'s byte saving: selection must not depend on the caller's name for the matcher.
+
+**Cause, confirmed:** `vm_plan_entry` compared `pcrec_sb_len_uncut(&job->vmsb)` — the emitted program TEXT, 57 prefix occurrences in the witness — against the 4,096-byte knee; the size term's trigger, ladder and both caps (`compile.c`) likewise measured prefixed text. **Fix (the general form, not a per-decision correction):** the emitters never see the caller's prefix. `compile_driver` gives them a two-byte placeholder (`\x01q`, upper `\x01Q`) as `opt->prefix`, and `pcrec_sb_render_prefix` (sb.c) writes the real spelling onto the finished `.c`/`.h`/listing after every decision; diagnostics render in `pcrec_ctx_fail`. Every size decision, present or future, is then measured at a canonical length by construction. `-p rx` artifacts are byte-identical to before (300-pattern sweep); `<PREFIX>_VM_PROGRAM_BYTES` now reports the canonical length. Measured on the pre-fix compiler: of 500 sampled corpus patterns, 16 (default route) and 19 (`--engine=vm`) took a different VM entry shape at a 60-character prefix than at `-p rx`; no other selection stamp flipped in that sample. Spec: limits.md §8 "Size limits and the prefix", match_api.md §6.3, tuning.md §2.21. Check: tests/codegen/run_prefix_invariance.sh (test-codegen; mech arm `prefixinv`, sabotage S437). **Same class, not fixed here:** `header_name` (the `#include "…"` line) and `rx_info.name` when set are caller-chosen text that still enters the measured length once each; the placeholder mechanism takes them with one more tag byte if a measured case appears (D77). Report: docs/dev/lanes/k7980_report.md.
 
 ---
 

@@ -338,6 +338,12 @@
 #     run), so `harness` is green on it by construction, and the one wrong
 #     arm that IS loud (a reader rendering the set) is loud only through the
 #     kind guard this arm's W4 witness reaches. Registered before S365-S366.
+#   prefixinv — added 2026-09-30 (K79, lane k7980); runs
+#     tests/codegen/run_prefix_invariance.sh: the same pattern at prefixes of
+#     1, 2, 3, 23 and 60 characters must give the same artifact up to the
+#     prefix's spelling. Its own arm because a prefix-dependent SELECTION
+#     moves no answer, so `harness` is green on it by construction.
+#     Registered before S437.
 #
 # THE THREE NEWEST WORDS WERE REGISTERED FIRST, DELIBERATELY, which is the
 # lesson R31 C11 left one module earlier: this vocabulary is CLOSED, so a
@@ -2584,6 +2590,16 @@ run_one() {
                 p="$(grep -m1 '^checks passed:' "$work/wclass.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/wclass.log" | grep -oE '[0-9]+')"
                 score_arm "$work/wclass.log" "$f" "wclass:${f:-ERR}fail/${p:-?}pass"
+                ;;
+            prefixinv)
+                # K79 tests/codegen/run_prefix_invariance.sh — see the
+                # vocabulary entry above. Compiles with the sabotaged tree's
+                # own build/pcrec and reads the tree's own corpus slice.
+                PCREC="$pcrec" bash "$tree/tests/codegen/run_prefix_invariance.sh" \
+                    > "$work/prefixinv.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/prefixinv.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/prefixinv.log" | grep -oE '[0-9]+')"
+                score_arm "$work/prefixinv.log" "$f" "prefixinv:${f:-ERR}fail/${p:-?}pass"
                 ;;
             core)
                 # [REVW.U L5-R0/R2] tests/core/run_core_tests.sh — the unit

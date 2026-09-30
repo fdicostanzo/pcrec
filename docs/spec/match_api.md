@@ -294,6 +294,26 @@ noted under group 2, which are `PCREC_*`-named yet per-artifact):
    `-p rx` and `-p foo` builds of the same pattern emit byte-identical
    `#ifndef PCREC_RX_ABI_H` blocks).
 
+   **K80 (`abi` 54): the guard's VALUE is the abi, and a mixed-abi TU is
+   refused.** The block opens
+
+   ```c
+   #if defined(PCREC_RX_ABI_H) && (PCREC_RX_ABI_H + 0) != 54
+   #error "pcrec: this artifact (abi 54) shares a translation unit with an artifact of a different abi; regenerate both with one pcrec"
+   #endif
+   #ifndef PCREC_RX_ABI_H
+   #define PCREC_RX_ABI_H 54
+   ```
+
+   so artifacts of one abi still share the first block, and an artifact of
+   another abi (whose types may differ) fails to compile instead of
+   silently using the first block's types. One guard with a value, not a
+   guard NAME per abi: two keyed guards would let both blocks through and
+   fail, if at all, on a `struct` redefinition that does not name the
+   cause. `+ 0` makes the test refuse a pre-54 artifact included first (its
+   guard is defined empty). A pre-54 artifact included AFTER a 54 one is
+   not refused: its own `#ifndef` predates the rule.
+
    **[ABI-NS], 2026-08-18 (D60 + addendum).** The same guarded block also
    carries every emitted MACRO whose value is a pcrec-contract fact
    rather than an artifact-specific one, unprefixed and emitted
@@ -3783,6 +3803,14 @@ bytes — the exact quantity `VM_INLINE_CHAIN_MAX_BYTES` was compared against
 when AUTO chose the rung.** Both are **UNCONDITIONAL on every VM artifact,
 hybrids included, and never defined on a pure-DFA artifact**, on
 `_VM_FRAMELESS`'s own rule.
+
+**Since `abi` 54 (K79) the size is measured at the CANONICAL prefix length,
+two bytes**: the program is emitted under a two-byte placeholder prefix and
+the caller's `-p` spelling is written onto the finished text afterwards
+(`limits.md` "Size limits and the prefix"). So the number is the program's
+length as it reads at `-p rx`, the same under every prefix, and the rung it
+chose is too. Before 54 it counted the prefix's own bytes, and a long enough
+prefix pushed an artifact across the knee.
 
 **THE SECOND MACRO IS NOT DECORATION, and that is why there are two.** Four
 artifacts can stamp `"plain"` for four different reasons — framed, or
