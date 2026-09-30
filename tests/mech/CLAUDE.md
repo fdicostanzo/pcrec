@@ -1870,6 +1870,15 @@ commands: docs/testing.md's "[TT-8] the PROCS leak into inner suite
 sharding, fixed" and "D69 — the mech re-run policy is TIERED" sections,
 docs/dev/tt8_mech.md.
 
+**[portsplit] (2026-09-30) THE SAME GAP, FOUR MORE ARMS.** `anchdiff`,
+`anchoredmatch`, `searchpinned` and `vmframeless` each run a sweep that reads
+`PROCS` for its shard count (`tests/codegen/run_anchored_match.sh` etc.) and
+had no `PROCS="$INNER_PROCS"` on their command lines, so they inherited the
+outer row-concurrency `PROCS` undivided. All four now carry it. Found by
+listing every script under `tests/` that reads `PROCS` and checking which
+matrix invocations of them set it; the arms that call `run_clskit_tests.sh`,
+`run_expansion_diff.sh`, `run_reject_tests.sh` and `harness/run.sh` already did.
+
 ## D69 — the mech re-run policy is TIERED, and how to run it (2026-08-23)
 
 Full matrix != every merge. `docs/dev/decisions.md` D69 tiers the re-run

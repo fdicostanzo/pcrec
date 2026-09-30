@@ -15,7 +15,8 @@
 #   NSHARD="$SHARD_COUNT"              # the shards actually written
 # Contiguous LINE CHUNKS, balanced to within one line, EXACTLY min(N, lines)
 # files. `SHARD_COUNT` is set to the number written; any call that yields fewer
-# than the N asked for prints a NOTE on stderr, never silently. A failed split
+# than the N asked for prints a NOTE on stderr, never silently (and
+# SHARD_SPLIT_VERBOSE=1 prints the count on every call, for validation runs). A failed split
 # (no output at all) is FATAL: returns 1 after a stderr line, and callers that
 # `set -e`-less-ly ignore it still see SHARD_COUNT=0. Pure awk + wc: no GNU
 # split needed.
@@ -28,11 +29,14 @@ shard_split() {
     [ "${_ss_lines:-0}" -ge 1 ] || {
         echo "shard_split: FATAL: $_ss_in has no lines" >&2; return 1; }
     awk -v n="$_ss_n" -v lines="$_ss_lines" -v pre="$_ss_pre" \
-        '{ print > sprintf("%s%02d", pre, int((NR - 1) * n / lines)) }' \
+        '{ i = int((NR - 1) * n / lines); if (i >= n) i = n - 1
+           print > sprintf("%s%02d", pre, i) }' \
         "$_ss_in" || { echo "shard_split: FATAL: awk failed on $_ss_in" >&2; return 1; }
     SHARD_COUNT="$(ls "$_ss_pre"[0-9][0-9] 2>/dev/null | wc -l | tr -d ' ')"
     [ "$SHARD_COUNT" -ge 1 ] || {
         echo "shard_split: FATAL: no shard files written for $_ss_in" >&2; return 1; }
+    [ -z "${SHARD_SPLIT_VERBOSE:-}" ] || \
+        echo "shard_split: wrote $SHARD_COUNT shards (asked $_ss_n, $_ss_lines lines) at $_ss_pre" >&2
     if [ "$SHARD_COUNT" -lt "$_ss_n" ]; then
         echo "shard_split: NOTE: asked for $_ss_n shards, wrote $SHARD_COUNT ($_ss_lines lines in $_ss_in)" >&2
     fi
