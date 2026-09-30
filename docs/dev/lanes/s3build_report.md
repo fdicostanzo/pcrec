@@ -13,7 +13,7 @@ Inputs: `docs/dev/cls_s3_reader_inventory.md` (rulings D-1..D-8, §10),
 | c2 `aeb98163` | the producer: `lower_class_utf8` returns `wclass_of(lc, a, res)` for every non-empty multi-unit class; the empty-set case stays a byte-confined `A_CLASS` |
 | c3 `27b115c5` | `tests/codegen/run_wclass_census.sh` + `wclass_census.py` (in `make test-cpset-structure`), mech arm `wclass`, sabotage rows S365/S366, docs |
 | `353f0cc2` | S-U8 and S303 re-anchored onto the lowering's new `return wclass_of(...)` |
-| final | report, plan.md, gate numbers |
+| `28f40db3` + final | report, plan.md, lanes/CLAUDE.md, gate numbers |
 
 **Guards need a `Ctx *`.** `_widen` and `_single` had none, so a loud refusal
 meant threading one: `pcrec_cls_bits_widen(cx, …)`, `pcrec_cls_single(cx, …)`,
@@ -70,7 +70,22 @@ arm continues the same accumulation the old tree did.
 
 ## 3. Validation
 
-GATE_RESULTS
+- **Identity gate** — `python3 scripts/cls_identity.py --ref aab32f9b
+  --cand-ref aeb98163 --control --jobs 2` (candidate = c2; the later commits
+  change no `src/` byte except two comments): **RESULT: PASS — 15,843/15,843
+  identical (13,632) or both-refused (2,211), 0 movers in every population**
+  (corpus-asw 3,636, corpus-x 10,149, bench 1,228, classes 766, witnesses 64),
+  0 asymmetric, 0 timeouts. **REACH 1,425 / 1,425** of 8,294 utf8 triples
+  (floor 1,250; 1,440 unmeasured, the refused wide-set VM listings). CONTROL 1
+  PASS; CONTROL 2 PASS (750 movers, all utf8). 823 s. Log /tmp/s3b/gate.log
+  (scratch).
+- **`scripts/emit_sweep.py --ref aab32f9b --ref-bin <aab32f9b build> --bin
+  build/pcrec --jobs 2`**: self-check PASSED; real sweep 0 movers / 0
+  asymmetric on all five streams (argv 4,233 at reach 3,802/3,803/3,803;
+  composition 35 producing / 102 artifacts; dumps 7). 332 s.
+- **K67 (`\p{L}+ -e utf8`, compile)**: user CPU, alternating runs on a loaded
+  box — reference 78.15 s / 79.49 s, S3 79.70 s / 77.33 s. No slowdown
+  (wall times are load noise: 80-146 s).
 
 - `make strict CC=gcc-16`: clean (after c3 and after the re-anchors).
 - `bash tests/codegen/run_wclass_census.sh`: 10/0 (and W1-W4 10/0 against
