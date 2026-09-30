@@ -108,7 +108,7 @@ Sabotage rows: 41 files, 1-9 hits each (largest `S155_depth_capacity_untyped.sh`
 
 Two structural facts the counts hide: (1) nearly every reader hard-codes prefix `rx`, so the sweep is
 a rename of names inside greps, not a parameterization — STEP 1's cost is the 86 files, not new
-mechanism; (2) 27 of the 121 sabotage hits are `%s_`-template anchors into `src/gen/emit_*.c`, i.e.
+mechanism; (2) 35 of the 121 sabotage hits are `%s_`-template anchors into `src/gen/emit_*.c`, i.e.
 they read the internal name as EMITTER text, so re-anchoring is per-row work of the D107/S-row kind
 (`scripts/m6read_check_sab_anchors.py` is the checker).
 
