@@ -114,6 +114,18 @@ Accessed 2026-09-04.
 Cited by: `docs/dev/dfa_online_minimization_study.md` §2.2 (retrofitted by
 lane m5paper).
 
+### [ccache] ccache manual (software documentation, not a paper)
+
+First-hand for what ccache hashes (compiler identity, the input source, the
+compiler options; in direct mode a manifest of include paths and their
+hashes, in preprocessor mode the `-E` output), the `compiler_check` option
+and its default (`mtime`: the compiler's mtime and size; `content` hashes
+the binary), the shared-cache requirements (one group, umask 002, setgid
+directories) and LRU cleanup under a size limit (5 GB default).
+URL: <https://ccache.dev/manual/latest.html>.
+Accessed 2026-09-30.
+Cited by: `docs/design/artifact_manager.md` §8.
+
 ### [CC04] Champarnaud, J-M. & Coulon, F. (2004)
 
 Jean-Marc Champarnaud, Fabien Coulon — "NFA reduction algorithms by means of
@@ -305,6 +317,19 @@ URL: <https://intel.github.io/hyperscan/dev-reference/compilation.html>.
 Accessed 2026-09-22.
 Cited by: `docs/dev/optloop/captures_via_dfa_survey.md` §2.8, §2.11.
 
+### [HSserialize] Hyperscan developer reference, "Serialization" (software documentation, not a paper)
+
+First-hand for `hs_serialize_database` writing a database to "a flat
+relocatable buffer of bytes", deserialization requiring (a) the same
+Hyperscan version and (b) platform features the current host supports,
+`hs_serialized_database_info()` / `hs_serialized_database_size()` reporting
+on a serialized database without loading it, and the note that a live
+database contains pointers and alignment requirements and cannot be copied
+or relocated directly.
+URL: <https://intel.github.io/hyperscan/dev-reference/serialization.html>.
+Accessed 2026-09-30.
+Cited by: `docs/design/artifact_manager.md` §8.
+
 ### [Lau00] Laurikari, V. (2000)
 
 Ville Laurikari — "NFAs with Tagged Transitions, their Conversion to
@@ -414,6 +439,27 @@ backreference conditionals, script runs, scan-substring assertions, `\K`,
 URL: <https://www.pcre.org/current/doc/html/pcre2matching.html>.
 Accessed 2026-09-22.
 Cited by: `docs/dev/optloop/captures_via_dfa_survey.md` §2.9, §2.11.
+
+### [PCRE2jit] PCRE2 `pcre2jit` documentation (software documentation, not a paper)
+
+First-hand for JIT compilation being a separate in-process step after
+`pcre2_compile` (`pcre2_jit_compile`, with the COMPLETE / PARTIAL_HARD /
+PARTIAL_SOFT modes), JIT code being freed only with the whole compiled
+pattern (`pcre2_code_free`), and the per-thread JIT-stack rule.
+URL: <https://www.pcre.org/current/doc/html/pcre2jit.html>.
+Accessed 2026-09-30.
+Cited by: `docs/design/artifact_manager.md` §8.
+
+### [PCRE2serialize] PCRE2 `pcre2serialize` documentation (software documentation, not a paper)
+
+First-hand for serialization saving the compiled BYTECODE and never JIT
+code, reload requiring the same PCRE2 version, code-unit width, endianness,
+pointer width and `PCRE2_SIZE` type, load performing only "some simple
+consistency checking, not complete validation", and the facility being
+intended for trusted data within one application.
+URL: <https://www.pcre.org/current/doc/html/pcre2serialize.html>.
+Accessed 2026-09-30.
+Cited by: `docs/design/artifact_manager.md` §8.
 
 ### [RAhyb] Rust `regex-automata::hybrid` (software documentation, not a paper)
 
@@ -604,7 +650,8 @@ Cited by: `docs/dev/dfa_online_minimization_study.md` §2.2 (retrofitted by
 lane m5paper); `docs/dev/optloop/captures_via_dfa_survey.md` §2.8, §2.11;
 also referenced informally by name ("Hyperscan") in
 `docs/dev/decisions.md`, `docs/dev/plan.md` and `docs/dev/dev_journal.md`
-without a specific-paper citation — see "To retrofit" below.
+without a specific-paper citation — see "To retrofit" below;
+`docs/design/artifact_manager.md` §8.
 
 ### [Wat01] Watson, B. W. (2001)
 
