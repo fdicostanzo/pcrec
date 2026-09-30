@@ -104,7 +104,22 @@ removes only the abi digit and the `RX_VM_RESEED` line.
 
 ## 4. Answer identity at every startpos (`docs/dev/reseed/answer_diff.py`)
 
-RESULT-PLACEHOLDER
+**OWED at hand-off.** The run is detached with `nohup` and is running
+against the pre-renumber build. The deny bit is masked out of
+`rx_info.flags`, so the default artifacts it compares are the same text at
+bit 36 or bit 37.
+
+- Command: `python3 docs/dev/reseed/answer_diff.py /tmp/reseed_scratch/base/build/pcrec <tree>/build/pcrec /tmp/reseed_scratch/idsweep.tsv /tmp/reseed_scratch/answer_diff.log --jobs 2`.
+- Population: the 1,118 mover artifacts (549 byte + 569 utf8).
+- Completion line: `movers: 1118` at the head of
+  `/tmp/reseed_scratch/answer_diff.log`, with the tally on the lines after
+  it. Stdout goes to `/tmp/reseed_scratch/answer_diff.out`.
+- Verdict rule: any `DIFF`, `COMPILE-FAIL` or `ERROR:` line below the tally
+  is a finding. `SKIP-LINK` is a `vars` artifact, whose search takes the
+  environment pair. The script exits 1 on a finding.
+- Coverage elsewhere: the codegen block's budget arm exercises the adaptive
+  loop at run time, and every corpus answer runs through `make test`
+  (owed, §6).
 
 ## 5. Checks and sabotage
 
@@ -123,7 +138,37 @@ RESULT-PLACEHOLDER
 
 ## 6. Validation run, and what is owed
 
-REGISTRY-PLACEHOLDER
+Run on a scratch build of HEAD (`d27eb208`+, bit 37) unless noted:
+
+- `make strict CC=gcc-16`: clean (on the bit-36 tree; the renumber is one
+  macro value).
+- `tests/codegen/run_codegen_tests.sh`: **125 passed / 0 failed**
+  (bit-37 build).
+- `tests/registry/axes_registry_check.sh`: **147 / 0**. That MOVED the pin
+  in `tests/registry/run_registry_tests.sh` from 141 to 147, re-pinned with
+  its comment. It is a D94-addendum reader: the deny sits on TWO live table
+  rows, 2 × 3 triples.
+- Identity sweep: 0 violations (§3). S370 and S371 are DETECTED (§5).
+- `--list-axes` prints the four `hyb-reseed` rows, with bit 37 on the two
+  deniable ones.
+- PC-3 read 213/0 in the first registry run (bit-36 build). The rest of
+  that run was superseded by the renumber.
+
+**OWED** (the manager's battery):
+- The full `bash tests/registry/run_registry_tests.sh` on the bit-37 build
+  (PC-4 and the definitions oracle are long).
+- `make test-codegen`: the recursion-identity FILEPIN is self-pinned to
+  `9183433d`, this lane's abi-bump src commit, per convention.
+- `make test`.
+- `make test-axes AXES="-fno-hyb-reseed"`.
+- The answer differential (§4).
+- A `rxtsource` census run. No corpus file changed, so nothing is expected
+  to move there.
+
+**ABI SERIALIZATION.** This branch writes abi 46 → 47 (the u2land base).
+If k73utf or another lane lands first, the digit, `ABI_EXPECT`, the
+`match_api.md` §6 entry and the FILEPIN need the manager's renumber at
+merge.
 
 ## 7. Mac scratch timing (`docs/dev/reseed/timing_mac.md`)
 
