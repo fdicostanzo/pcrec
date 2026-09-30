@@ -2,7 +2,7 @@
 # tests/uprops/run_uprops_tests.sh — module `unicode-props` ([M5.0] stage 3):
 # the structural and differential checks a `.rxt` file cannot make.
 #
-# FOUR SECTIONS, each asking something none of the others can:
+# FIVE SECTIONS, each asking something none of the others can:
 #
 #   §1 THE GENERATED TABLE IS NOT STALE. `third_party/ucd-16.0.0/generate.py
 #      --check` re-derives `src/parse/uprops_tables.inc` from the vendored UCD
@@ -30,6 +30,9 @@
 #      `\P{X}`, `\P{^X}` is `\p{X}`, and a caseless `\p{Lu}` is `\p{L&}`.
 #      These hold at EVERY Unicode version, so they are the part of the check
 #      that never degrades to a drift budget.
+#   §5 THE SIZE-CAP LADDER'S LAST RUNG ([PF-DROP], D135): `(\p{Xwd})` under
+#      `utf8`, rescued at default axes by dropping the VM hybrid's
+#      prefilter, matches `\p{Xwd}` over the whole code-point space.
 #
 # Env: PCREC, CC, KEEP=1, ENC (limit to one encoding), UPROPS_NAMES (limit the
 #   name set — for bisecting, never for a green run).
@@ -314,6 +317,52 @@ for enc in ${ENC:-byte utf8}; do
     differ  "$enc" '\p{Lu}' '\p{L&}' "\\p{Lu} and \\p{L&} differ WITHOUT -i"
 done
 
+echo "== §5 the size-cap ladder's last rung ([PF-DROP], D135) =="
+# `(\p{Xwd})` under `-e utf8` is a VM hybrid whose byte-DFA PREFILTER alone
+# puts it over the 1,000,000-byte total cap. The ladder's last rung drops the
+# prefilter and re-emits; before D135 the compile REFUSED (the failing
+# direction: build this section's first cell at 736a07f1 and it is red).
+# Asked here, at DEFAULT axes, because a flag would be the caller choosing
+# the smaller form rather than the ladder choosing it. This section holds
+# what the rescued artifact MATCHES; tests/resource/run_resource_tests.sh's
+# [PF-DROP] section holds what compiling it does (stamps, note, identity with
+# `-fno-prefilter`, and `--fast-or-fail`'s refusal).
+wit='(\p{Xwd})'
+mkdir -p "$WORKDIR/pd"
+if "$TIMEOUT_BIN" 60 "$PCREC" -e utf8 -p rx -o "$WORKDIR/pd/pd.c" \
+        --pattern "$wit" 2>"$WORKDIR/pd.err"; then
+    ok "utf8: $wit compiles at default axes (the prefilter-drop rung rescued it)"
+    # WHAT IT MATCHES: the whole code-point space, against the plain
+    # `\p{Xwd}` artifact §3 holds to libpcre2 (oracle-free, so it runs on
+    # every box) and, where the oracle is here, against libpcre2 directly.
+    if gen_cc "uprops pfdrop" "$CC" -O1 -std=gnu11 -I "$WORKDIR/pd" \
+            -DUPROPS_ARTIFACT='"pd.c"' -DUPROPS_MAXCP=0x10FFFF \
+            -o "$WORKDIR/pdsweep" "$SCRIPT_DIR/uprops_sweep.c" >/dev/null 2>&1 &&
+       { printf 'Xwd'; gen_run "uprops pfdrop" "$WORKDIR/pdsweep" 2>/dev/null; } > "$WORKDIR/pd.txt" &&
+       sweep_one utf8 '\p{Xwd}' "$WORKDIR/px.txt"; then
+        if cmp -s <(tail -c +4 "$WORKDIR/pd.txt") "$WORKDIR/px.txt"
+        then ok "utf8: $wit answers \\p{Xwd}'s member set over the whole code-point space"
+        else bad "utf8: $wit and \\p{Xwd} answer different member sets"; fi
+        if [ "$PCRE2_AVAILABLE" = "1" ] && [ -x "$WORKDIR/uprops_oracle" ]; then
+            # `Xwd`'s drift exception is stated over `Mn` and `Pc`, and the
+            # drift policy reads each side's own `Cn`, so the comparator
+            # needs pcrec's own sweep of all three beside it.
+            for n in Mn Pc Cn; do
+                sweep_one utf8 "\\p{$n}" "$WORKDIR/pdx.txt" &&
+                    { printf '%s' "$n"; cat "$WORKDIR/pdx.txt"; } >> "$WORKDIR/pd.txt"
+            done
+            "$WORKDIR/uprops_oracle" utf8 Xwd Mn Pc Cn > "$WORKDIR/pdo.txt" 2>/dev/null
+            if python3 "$SCRIPT_DIR/uprops_compare.py" "$WORKDIR/pd.txt" \
+                    "$WORKDIR/pdo.txt" "$pin" "$uni_ver" >/dev/null
+            then ok "utf8: $wit agrees with libpcre2 $lib_ver (within the stated drift budget)"
+            else bad "utf8: $wit disagrees with libpcre2 $lib_ver"; fi
+        else
+            echo "SKIP: uprops §5: no libpcre2 oracle here; the member set was checked against \\p{Xwd}'s artifact only"
+        fi
+    else bad "utf8: the membership sweep over $wit did not run"; fi
+else
+    bad "utf8: $wit REFUSED at default axes: $(head -c 300 "$WORKDIR/pd.err")"
+fi
 echo
 echo "uprops: $pass passed, $fail failed"
 [ "$fail" = "0" ] || exit 1

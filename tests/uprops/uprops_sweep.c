@@ -75,8 +75,9 @@ int main(void)
      * single character, so a match at offset `o` means "the code point stored
      * at `o` is a member" and nothing else — the ovector's own end tells us
      * where to resume, so a multi-byte member advances by its own width with
-     * no decode here. */
-    ptrdiff_t caps[1][2];
+     * no decode here. `RX_NCAPS` rows, not one: a captured `(\p{X})`
+     * ([PF-DROP]'s witness, run_uprops_tests.sh §5) writes its group too. */
+    ptrdiff_t caps[RX_NCAPS][2];
     size_t pos = 0;
     unsigned lo = 0, hi = 0;
     int have = 0;

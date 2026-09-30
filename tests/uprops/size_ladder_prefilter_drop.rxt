@@ -1,0 +1,35 @@
+# [PF-DROP] (D135) the size-cap ladder's LAST rung: drop the VM hybrid's
+# prefilter. `(\p{Xwd})` under `-e utf8` is a VM hybrid (the capture) whose
+# byte-DFA prefilter alone puts the artifact over the 1,000,000-byte total
+# cap (1,026,588 B); before D135 it was REFUSED at default settings, and now
+# the rung drops the prefilter and it ships at ~31 KB, answering identically
+# (a prefilter is a filter). tests/uprops/run_uprops_tests.sh §5 checks the
+# stamps, the note, `--fast-or-fail`'s refusal and the whole-code-point
+# membership; this file checks spans and the capture.
+#
+# Every expectation was verified against libpcre2 10.46 (the reference,
+# pcre2test over ssh, 2026-09-30) and 10.48 (this Mac): `\p{Xwd}` is
+# PCRE2's UCP `\w`, so a connector punctuation (U+203F) and a combining mark
+# (U+0301) ARE members, and ASCII punctuation is not.
+
+pattern (\p{Xwd})
+encoding utf8
+m "a" 0 1
+g 1 0 1
+m "_" 0 1
+g 1 0 1
+m " \xc3\xa9" 1 3
+g 1 1 3
+n "!?"
+m "\xe2\x80\x94x" 3 4
+g 1 3 4
+m "\xd9\xa3" 0 2
+g 1 0 2
+m "\xe2\x80\xbf" 0 3
+g 1 0 3
+m "\xe6\x9d\xb1" 0 3
+g 1 0 3
+m "\xcc\x81" 0 2
+g 1 0 2
+n ""
+n " \t-.,;"

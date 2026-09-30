@@ -175,15 +175,32 @@ if emit "$w2" -- "$K41W2"; then
       *)
         bad "[K39/default] K41 witness 2 compiled but stamps LANG_WHY '$w2why', expected the size-cap retry — either the rung did not fire or something else made it small" ;;
     esac
-    # AND THE CONTROL, which is also the only thing -fno-prefilter-collapse
-    # still buys a caller under ruling B: denying the rungs restores the
-    # refusal.
+    # AND THE CONTROL. [PF-DROP] (D135) MOVED WHAT DENYING THE ROW BUYS:
+    # the size-cap ladder is a first-match table now, so with the collapse
+    # row denied the NEXT row — the prefilter drop, the ladder's last — takes
+    # the witness, and it ships with NO prefilter rather than refusing. That
+    # is still the control this row needs (the default's hybrid is the
+    # collapse row's doing, because denying that row alone moves the artifact
+    # to the other rung's stamp), and the REFUSAL the old control read is now
+    # `--fast-or-fail`'s, the switch that denies every degrading row.
     if emit "$WORK/k41w2_deny.c" -fno-prefilter-collapse -- "$K41W2"; then
-        bad "[K39/default] CONTROL VACUOUS: K41 witness 2 compiles under -fno-prefilter-collapse too, so the row above is not measuring the size rung"
-    elif grep -q 'bytes of emitted code' "$WORK/k41w2_deny.c.err"; then
-        ok "[K39/default] the control holds: -fno-prefilter-collapse restores the cap's refusal ($(head -1 "$WORK/k41w2_deny.c.err" | cut -c1-64)...)"
+        d_pf=$(stamp VM_PREFILTER "$WORK/k41w2_deny.c")
+        d_why=$(stamp VM_PREFILTER_WHY "$WORK/k41w2_deny.c")
+        case "$d_pf/$d_why" in
+          "none/size cap retry, hybrid "*)
+            ok "[K39/default] the control holds: -fno-prefilter-collapse moves the witness to the prefilter-drop rung (RX_VM_PREFILTER 'none', WHY '$d_why')" ;;
+          *)
+            bad "[K39/default] under -fno-prefilter-collapse K41 witness 2 stamps RX_VM_PREFILTER '$d_pf' / WHY '$d_why', expected 'none' / 'size cap retry, hybrid ...' — the collapse row's deny no longer hands the witness to the next rung" ;;
+        esac
     else
-        bad "[K39/default] under -fno-prefilter-collapse K41 witness 2 was refused, but not by a size cap: $(head -1 "$WORK/k41w2_deny.c.err")"
+        bad "[K39/default] K41 witness 2 is REFUSED under -fno-prefilter-collapse — the prefilter-drop rung should have taken it: $(head -1 "$WORK/k41w2_deny.c.err")"
+    fi
+    if emit "$WORK/k41w2_ff.c" --fast-or-fail -- "$K41W2"; then
+        bad "[K39/default] K41 witness 2 compiles under --fast-or-fail — the switch did not deny the size rungs"
+    elif grep -q 'bytes of emitted code' "$WORK/k41w2_ff.c.err"; then
+        ok "[K39/default] --fast-or-fail restores the cap's refusal ($(head -1 "$WORK/k41w2_ff.c.err" | cut -c1-64)...)"
+    else
+        bad "[K39/default] under --fast-or-fail K41 witness 2 was refused, but not by a size cap: $(head -1 "$WORK/k41w2_ff.c.err")"
     fi
 else
     bad "[K39/default] K41 witness 2 does not compile at the default — ruling B's size rung is not rescuing it: $(head -1 "$w2.err")"

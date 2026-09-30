@@ -633,20 +633,22 @@ static void size_drop_note(const char *what, const char *cost)
  * that applies is taken, and the last row always applies and refuses.
  *
  * THE ORDER IS BY MEASURED RUN-TIME COST, cheapest first
- * (docs/dev/lanes/pfdrop_report.md §2): K is at parity, the count collapse
- * keeps a filter that still dismisses most starts, the anchored machine
- * costs `_match` its reverse pass, the premultiplied table ~1.05-1.27x of
- * the scan, and dropping the VM hybrid's prefilter up to ~4x. Engine scope
+ * (docs/dev/lanes/pfdrop_report.md §2): a smaller K ~1.03-1.06x, the count
+ * collapse ~1.03x (its superset filter still dismisses most starts), the
+ * anchored machine costs `_match` its reverse pass, the premultiplied table
+ * ~1.05-1.27x of the scan, and dropping the VM hybrid's prefilter up to ~4x
+ * (on its witness, where matches are sparse). Engine scope
  * makes most pairs disjoint (the collapse and the prefilter drop need a VM
  * hybrid, the anchored and premul drops a DFA artifact), so the order binds
  * only within one engine.
  *
  * `degrading` IS THE CLASSIFICATION D135 asks for, one column, and
  * `fit_rung_denied` is the ONE predicate `--fast-or-fail` acts through —
- * no rung tests the switch itself. The unroll rescue is a row too, though
- * its choice is made inside `size_term_choose` rather than by this walk
- * (`applies` NULL): it is measured at parity, so it is not degrading, and
- * the table is where that is said. */
+ * no rung tests the switch itself. Every rung today measures slower, so
+ * every rung is degrading; the column exists so that a rung which costs no
+ * speed is allowed under the switch by saying so here. The unroll rescue is
+ * a row too, though its choice is made inside `size_term_choose` rather than
+ * by this walk (`applies` NULL). */
 typedef struct {
     const Ctx    *cx;               /* the attempt a size cap just refused */
     uint64_t      flags;            /* the options it ran under */
@@ -712,7 +714,7 @@ static bool fit_prefilter_applies(const FitSel *s)
 static bool fit_always(const FitSel *s) { (void)s; return true; }
 
 static const FitRung fit_rungs[] = {
-    { "unroll-rescue",  0,                           false, NULL,                  FIT_UNROLL_RESCUE  },
+    { "unroll-rescue",  0,                           true,  NULL,                  FIT_UNROLL_RESCUE  },
     { "prefilter-collapse", PCREC_NO_PREFILTER_COLLAPSE, true, fit_collapse_applies, FIT_COLLAPSE      },
     { "drop-anchored",  0,                           true,  fit_anchored_applies,  FIT_DROP_ANCHORED  },
     { "drop-premul",    0,                           true,  fit_premul_applies,    FIT_DROP_PREMUL    },
