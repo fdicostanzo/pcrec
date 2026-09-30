@@ -449,7 +449,7 @@ pcrec, root, blocks_tsv, max_blocks = sys.argv[1], sys.argv[2], sys.argv[3], int
 # compare), and `entries_byte[]` carries no row for it -- encoding-owned in
 # the same sharpest sense as `var_valid`. `span_ci_decode` stays in the
 # alternation so an artifact from before S4 is still read.
-SIG_RE = re.compile(r'^(?:size_t|ptrdiff_t|int|unsigned|static\s+unsigned|static\s+size_t|static\s+inline\s+size_t|static\s+const\s+unsigned)\s+rx_(next_pos|back_step|span_match|span_match_caseless|span_ci_fold|span_ci_decode|decode|span_ci_fold_pairs|var_valid)\s*[\(\[]')
+SIG_RE = re.compile(r'^(?:size_t|ptrdiff_t|int|unsigned|static\s+unsigned|static\s+size_t|static\s+inline\s+size_t|static\s+const\s+unsigned)\s+rx_(next_pos|valid_upto|back_step|span_match|span_match_caseless|span_ci_fold|span_ci_decode|decode|span_ci_fold_pairs|var_valid)\s*[\(\[]')
 ENC_RE = re.compile(r'^(\s*\.encoding = )\d+(,\s*)$')
 # [enctriage, 2026-09-25] TWO emitted forms of the loop's own end guard, not
 # one. [OPT-ANCHOR-VM] (2026-09-22) bounds an anchored VM's retry loop by
@@ -482,6 +482,13 @@ K50_CONT_END = ')) continue;'
 # the statement's own shape (emit_dfa.c's ENG_ATTEMPT guard) cannot be.
 K50_CONT_RE = re.compile(r'^\s*if \(start > search_from && !\(.*\)\) continue;$')
 K50_STAMP_RE = re.compile(r'^(#define RX_STARTPOS_GUARD ")(?:guarded|permissive)(")$')
+# [UTF-VALID] the subject check's contract stamp: "inert" under byte (no
+# ill-formed strings exist), "off"/"whole" under utf8 -- chosen per encoding
+# from the backend's table, declared in the artifact, normalized and counted
+# like the startpos-guard stamp above. `rx_valid_upto` itself joins SIG_RE:
+# its body is the backend's own text (byte `return n;`), and like `next_pos`
+# it is UNCONDITIONAL, so (a) holds it to exactly one per side.
+UTFCHK_STAMP_RE = re.compile(r'^(#define RX_UTF_CHECK ")(?:inert|off|whole)(")$')
 # [K73] THE OFFSET-0 START RULE (`pcrec_emit_start_zero`, emit_dfa.c): one
 # line per caller-facing body of a NULLABLE pattern, its predicate the same
 # `PcrecEnc.start_guard` text the two regions above splice, so encoding-owned
@@ -839,7 +846,7 @@ def widens_under_utf8(pat):
 
 def excise(text, label, drop_run=False):
     lines = text.splitlines(keepends=True)
-    counts = {'next_pos': 0, 'back_step': 0, 'span_match': 0,
+    counts = {'next_pos': 0, 'valid_upto': 0, 'utf_check_stamp': 0, 'back_step': 0, 'span_match': 0,
               'span_match_caseless': 0, 'var_valid': 0, 'advance': 0,
               'encoding': 0, 'startpos_guard': 0, 'startpos_stamp': 0,
               'startpos_attempt': 0, 'end_window': 0, 'end_window_stamp': 0,
@@ -1055,6 +1062,12 @@ def excise(text, label, drop_run=False):
             counts['startpos_stamp'] += 1
             i += 1
             continue
+        mu = UTFCHK_STAMP_RE.match(line.rstrip('\n'))
+        if mu:
+            out.append(mu.group(1) + "N" + mu.group(2) + "\n")
+            counts['utf_check_stamp'] += 1
+            i += 1
+            continue
         out.append(line)
         i += 1
     return ''.join(out), counts
@@ -1127,7 +1140,7 @@ def main():
     patterns += ['a*', '(?i)(?<=a)(b)\\1x', '(?<=a)(b)\\1x', '^${v}$', '(?i)(?<=ab)(b)\\1x']
 
     workdir = tempfile.mkdtemp(prefix="dd12ai_")
-    agg = {'next_pos': 0, 'back_step': 0, 'span_match': 0,
+    agg = {'next_pos': 0, 'valid_upto': 0, 'utf_check_stamp': 0, 'back_step': 0, 'span_match': 0,
            'span_match_caseless': 0, 'var_valid': 0, 'advance': 0, 'encoding': 0,
            'startpos_guard': 0, 'startpos_stamp': 0,
            'startpos_attempt': 0, 'end_window': 0, 'end_window_stamp': 0,
@@ -1170,11 +1183,12 @@ def main():
             npairs += 1
             for k in agg:
                 agg[k] += cb[k] + cu[k]
-            if cb['next_pos'] != 1 or cu['next_pos'] != 1:
+            if cb['next_pos'] != 1 or cu['next_pos'] != 1 or \
+               cb['valid_upto'] != 1 or cu['valid_upto'] != 1:
                 nnextpos_bad += 1
                 if len(findings) < 20:
-                    findings.append("pat=[%s]: next_pos not exactly 1 per side (byte=%d utf8=%d)"
-                                     % (pat, cb['next_pos'], cu['next_pos']))
+                    findings.append("pat=[%s]: next_pos/valid_upto not exactly 1 per side (byte=%d/%d utf8=%d/%d)"
+                                     % (pat, cb['next_pos'], cb['valid_upto'], cu['next_pos'], cu['valid_upto']))
             for k in ('back_step', 'span_match', 'span_match_caseless', 'advance'):
                 if cb[k] != cu[k] and len(findings) < 20:
                     findings.append("pat=[%s]: asymmetric %s (byte=%d utf8=%d) -- (b) the normalization count"
@@ -1317,7 +1331,7 @@ def main():
     print("PRIORFORM=%d" % nprior)
     for p in prior_pats:
         print("PRIORPAT %s" % p)
-    for k in ('next_pos', 'back_step', 'span_match', 'span_match_caseless',
+    for k in ('next_pos', 'valid_upto', 'utf_check_stamp', 'back_step', 'span_match', 'span_match_caseless',
               'var_valid', 'advance', 'encoding',
               'startpos_guard', 'startpos_stamp', 'startpos_attempt',
               'end_window', 'end_window_stamp', 'req_run_offset0',
@@ -1376,7 +1390,7 @@ else
         fi
         # (a) non-vacuity: every named region reached at least once.
         vac=0
-        for k in next_pos back_step span_match span_match_caseless advance encoding startpos_guard startpos_stamp startpos_attempt end_window end_window_stamp req_run_offset0 req_check req_why_stamp var_valid_call span_ci_helper req_pick start_zero findings_stamp req_run_asym; do
+        for k in next_pos valid_upto utf_check_stamp back_step span_match span_match_caseless advance encoding startpos_guard startpos_stamp startpos_attempt end_window end_window_stamp req_run_offset0 req_check req_why_stamp var_valid_call span_ci_helper req_pick start_zero findings_stamp req_run_asym; do
             v="$(grep "^EXCISED $k=" "$WORKDIR/dd12ai.out" | grep -oE '[0-9]+$')"
             if [ "${v:-0}" -eq 0 ]; then
                 bad "DD12a(i) region '$k' was never excised across the whole run — dead code, certifying nothing about it"
