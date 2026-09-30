@@ -11,4 +11,8 @@ PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
 WORKDIR="$(mktemp -d "${TMPDIR:-/tmp}/pcrec-utfcheck.XXXXXX")"
 trap 'rm -rf "$WORKDIR"' EXIT
 [ -x "$PCREC" ] || { echo "run_utfcheck.sh: FATAL: $PCREC is not built" >&2; exit 1; }
-python3 "$ROOT_DIR/tests/utfcheck/check.py" "$PCREC" "$WORKDIR"   # CC: exported by cc_resolve.sh
+# shellcheck source=../lib/timeout_bin.sh
+. "$ROOT_DIR/tests/lib/timeout_bin.sh"
+# [K37] bounded as a whole; every compile inside check.py has its own
+# subprocess timeout. CC comes from cc_resolve.sh's export.
+"$TIMEOUT_BIN" 1800 python3 "$ROOT_DIR/tests/utfcheck/check.py" "$PCREC" "$WORKDIR"
