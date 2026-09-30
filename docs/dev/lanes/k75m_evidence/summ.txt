@@ -1,0 +1,171 @@
+== a
+  A U        {'err-36': 10}
+  A I        {'nomatch': 6, 'MOVED': 4}
+  A UA       {'err-36': 10}
+  A IA       {'nomatch': 6, 'MOVED': 4}
+  A psearch  {'REFUSED': 10}
+  A pmatch   {'REFUSED': 10}
+  B U        {'err-22': 1, 'err-36': 12}
+  B I        {'nomatch': 7, 'MOVED': 6}
+  B UA       {'err-22': 1, 'err-36': 12}
+  B IA       {'nomatch': 7, 'MOVED': 6}
+  B psearch  {'nomatch': 1, 'REFUSED': 12}
+  B pmatch   {'nomatch': 1, 'REFUSED': 12}
+  T U        {'err-36': 4}
+  T I        {'MOVED': 4}
+  T UA       {'err-36': 4}
+  T IA       {'MOVED': 4}
+  T psearch  {'REFUSED': 4}
+  T pmatch   {'REFUSED': 4}
+== .
+  A U        {'err-36': 10}
+  A I        {'MOVED': 10}
+  A UA       {'err-36': 10}
+  A IA       {'MOVED': 10}
+  A psearch  {'REFUSED': 10}
+  A pmatch   {'REFUSED': 10}
+  B U        {'err-22': 1, 'err-36': 12}
+  B I        {'nomatch': 4, 'MOVED': 9}
+  B UA       {'err-22': 1, 'err-36': 12}
+  B IA       {'nomatch': 4, 'MOVED': 9}
+  B psearch  {'nomatch': 1, 'REFUSED': 12}
+  B pmatch   {'nomatch': 1, 'REFUSED': 12}
+  T U        {'err-36': 4}
+  T I        {'MOVED': 4}
+  T UA       {'err-36': 4}
+  T IA       {'MOVED': 4}
+  T psearch  {'REFUSED': 4}
+  T pmatch   {'REFUSED': 4}
+== x*
+  A U        {'err-36': 10}
+  A I        {'MOVED': 10}
+  A UA       {'err-36': 10}
+  A IA       {'MOVED': 10}
+  A psearch  {'REFUSED': 10}
+  A pmatch   {'REFUSED': 10}
+  B U        {'err-22': 1, 'err-36': 12}
+  B I        {'MOVED': 13}
+  B UA       {'err-22': 1, 'err-36': 12}
+  B IA       {'MOVED': 13}
+  B psearch  {'MOVED': 1, 'REFUSED': 12}
+  B pmatch   {'nomatch': 1, 'REFUSED': 12}
+  T U        {'err-36': 4}
+  T I        {'MOVED': 4}
+  T UA       {'err-36': 4}
+  T IA       {'MOVED': 4}
+  T psearch  {'REFUSED': 4}
+  T pmatch   {'REFUSED': 4}
+== \B
+  A U        {'err-36': 10}
+  A I        {'nomatch': 10}
+  A UA       {'err-36': 10}
+  A IA       {'nomatch': 10}
+  A psearch  {'REFUSED': 10}
+  A pmatch   {'REFUSED': 10}
+  B U        {'err-22': 1, 'err-36': 12}
+  B I        {'MOVED': 4, 'nomatch': 9}
+  B UA       {'err-22': 1, 'err-36': 12}
+  B IA       {'MOVED': 4, 'nomatch': 9}
+  B psearch  {'MOVED': 1, 'REFUSED': 12}
+  B pmatch   {'nomatch': 1, 'REFUSED': 12}
+  T U        {'err-36': 4}
+  T I        {'nomatch': 4}
+  T UA       {'err-36': 4}
+  T IA       {'nomatch': 4}
+  T psearch  {'REFUSED': 4}
+  T pmatch   {'REFUSED': 4}
+== (?<=a)x*
+  A U        {'err-36': 10}
+  A I        {'nomatch': 6, 'MOVED': 4}
+  A UA       {'err-36': 10}
+  A IA       {'nomatch': 10}
+  A psearch  {'REFUSED': 10}
+  A pmatch   {'REFUSED': 10}
+  B U        {'err-22': 1, 'err-36': 12}
+  B I        {'nomatch': 7, 'MOVED': 6}
+  B UA       {'err-22': 1, 'err-36': 12}
+  B IA       {'nomatch': 13}
+  B psearch  {'nomatch': 1, 'REFUSED': 12}
+  B pmatch   {'nomatch': 1, 'REFUSED': 12}
+  T U        {'err-36': 4}
+  T I        {'MOVED': 4}
+  T UA       {'err-36': 4}
+  T IA       {'nomatch': 4}
+  T psearch  {'REFUSED': 4}
+  T pmatch   {'REFUSED': 4}
+== (?<=a).
+  A U        {'err-36': 10}
+  A I        {'nomatch': 10}
+  A UA       {'err-36': 10}
+  A IA       {'nomatch': 10}
+  A psearch  {'REFUSED': 10}
+  A pmatch   {'REFUSED': 10}
+  B U        {'err-22': 1, 'err-36': 12}
+  B I        {'nomatch': 13}
+  B UA       {'err-22': 1, 'err-36': 12}
+  B IA       {'nomatch': 13}
+  B psearch  {'nomatch': 1, 'REFUSED': 12}
+  B pmatch   {'nomatch': 1, 'REFUSED': 12}
+  T U        {'err-36': 4}
+  T I        {'nomatch': 4}
+  T UA       {'err-36': 4}
+  T IA       {'nomatch': 4}
+  T psearch  {'REFUSED': 4}
+  T pmatch   {'REFUSED': 4}
+== (?<!a)
+  A U        {'err-36': 10}
+  A I        {'MOVED': 10}
+  A UA       {'err-36': 10}
+  A IA       {'MOVED': 10}
+  A psearch  {'REFUSED': 10}
+  A pmatch   {'REFUSED': 10}
+  B U        {'err-22': 1, 'err-36': 12}
+  B I        {'MOVED': 13}
+  B UA       {'err-22': 1, 'err-36': 12}
+  B IA       {'MOVED': 13}
+  B psearch  {'MOVED': 1, 'REFUSED': 12}
+  B pmatch   {'nomatch': 1, 'REFUSED': 12}
+  T U        {'err-36': 4}
+  T I        {'MOVED': 4}
+  T UA       {'err-36': 4}
+  T IA       {'MOVED': 4}
+  T psearch  {'REFUSED': 4}
+  T pmatch   {'REFUSED': 4}
+== (?<=é)x*
+  A U        {'err-36': 10}
+  A I        {'nomatch': 10}
+  A UA       {'err-36': 10}
+  A IA       {'nomatch': 10}
+  A psearch  {'REFUSED': 10}
+  A pmatch   {'REFUSED': 10}
+  B U        {'err-22': 1, 'err-36': 12}
+  B I        {'nomatch': 13}
+  B UA       {'err-22': 1, 'err-36': 12}
+  B IA       {'nomatch': 13}
+  B psearch  {'nomatch': 1, 'REFUSED': 12}
+  B pmatch   {'nomatch': 1, 'REFUSED': 12}
+  T U        {'err-36': 4}
+  T I        {'nomatch': 4}
+  T UA       {'err-36': 4}
+  T IA       {'nomatch': 4}
+  T psearch  {'REFUSED': 4}
+  T pmatch   {'REFUSED': 4}
+== (?<=.)x*
+  A U        {'err-36': 10}
+  A I        {'MOVED': 10}
+  A UA       {'err-36': 10}
+  A IA       {'nomatch': 10}
+  A psearch  {'REFUSED': 10}
+  A pmatch   {'REFUSED': 10}
+  B U        {'err-22': 1, 'err-36': 12}
+  B I        {'nomatch': 4, 'MOVED': 9}
+  B UA       {'err-22': 1, 'err-36': 12}
+  B IA       {'nomatch': 13}
+  B psearch  {'nomatch': 1, 'REFUSED': 12}
+  B pmatch   {'nomatch': 1, 'REFUSED': 12}
+  T U        {'err-36': 4}
+  T I        {'MOVED': 4}
+  T UA       {'err-36': 4}
+  T IA       {'nomatch': 4}
+  T psearch  {'REFUSED': 4}
+  T pmatch   {'REFUSED': 4}

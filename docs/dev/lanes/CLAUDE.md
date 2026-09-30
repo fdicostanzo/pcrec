@@ -3510,3 +3510,12 @@ never edited afterwards.
   u2land, sonnet): the four-conflict merge, C3 pins combined by mechanism
   (U2's +230 on clstri's two-tier pins), Mac section verdicts, and the Linux
   full run owed with its log path.
+- `k75m_report.md` — K75's measurement (2026-09-30, lane k75m, sonnet,
+  measurement only): what libpcre2 10.48 does for an EXPLICIT startpos on a
+  true mid-character position (A), a stray continuation byte (B) and a
+  truncated sequence's continuation (T), with and without
+  `MATCH_INVALID_UTF`, anchored and not. Headline: PCRE2 draws no A/B line
+  (typed error without the flag, advance with it, for all three); K75 is the
+  find-all loop's, and `p = next_pos(s, n, end - 1)` repairs five patterns'
+  19,608-subject divergences with no engine or abi change. Memo
+  `docs/dev/k75_measurement.md`; evidence in `k75m_evidence/` (own CLAUDE.md).
