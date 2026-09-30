@@ -755,6 +755,20 @@ check_value_set "RX_VM_RESEED" \
     "$(dump_stamp_vals RX_VM_RESEED)" \
     ""
 
+# [UTF-VALID] the two CONTRACT stamps, dump-vs-DOCS, one leg each for
+# `RX_VM_RESEED`'s reason above: the dump's rows are hand-stated in
+# src/dump/axes_dump.c and the §6.3 tables are hand-written, so the two are
+# independent sources; tests/utfcheck's per-config stamp asserts are the
+# emitter half.
+check_value_set "RX_STARTPOS_GUARD" \
+    "$(extract_md_table_values "$MATCHAPI" '`<PREFIX>_STARTPOS_GUARD`,')" \
+    "$(dump_stamp_vals RX_STARTPOS_GUARD)" \
+    ""
+check_value_set "RX_UTF_CHECK" \
+    "$(extract_md_table_values "$MATCHAPI" '`<PREFIX>_UTF_CHECK`, whether the')" \
+    "$(dump_stamp_vals RX_UTF_CHECK)" \
+    ""
+
 # The nine D46 bit constants: NOT in lib/pcrec.h (they are emitted-artifact
 # text — match_api.md §6.3's own [ABI-NS] paragraph), so EMITDFA (the
 # literal #define block emit_rx_abi_types writes) is this direction's

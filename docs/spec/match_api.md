@@ -251,7 +251,7 @@ noted under group 2, which are `PCREC_*`-named yet per-artifact):
 1. **Per-artifact symbols**, scoped by the caller's `pcrec_options.prefix`
    (default `"rx"`): `<prefix>_search`, `<prefix>_match`,
    `<prefix>_match_caps`, `<prefix>_info`, `<prefix>_next_pos` (§3.1.1),
-   and the `<PREFIX>_*` macro
+   `<prefix>_valid_upto` (§3.1.2, [UTF-VALID]), and the `<PREFIX>_*` macro
    family (`RX_NCAPS`, the D46 observability
    macros in §6.3). A pattern compiled with `-p foo` gets
    `foo_search`, `FOO_NCAPS`, etc. — verified by compiling the same
@@ -303,7 +303,8 @@ noted under group 2, which are `PCREC_*`-named yet per-artifact):
    `PCREC_ERR_RECURSE`/`PCREC_ERR_FLOOR` (§4 — `_RECURSE` joined and
    `_FLOOR` moved −4 → −5 at [DD-14] wave A, D71 item 1), the
    below-the-floor `PCREC_ERR_INTERNAL` (§4 — NOT a give-up, same wave,
-   commit 2), the caps-array
+   commit 2) and its three caller-refusal siblings `PCREC_ERR_STARTPOS`,
+   `PCREC_ERR_UNSET_VAR` and `PCREC_ERR_UTF` (§4), the caps-array
    unset sentinel `PCREC_UNSET`
    (§5), the two engine constants `PCREC_ENGINE_DFA`/`PCREC_ENGINE_VM`
    (§6), and the nine D46 stamp bit constants `PCREC_VM_RUNG_CURSOR`/
@@ -361,6 +362,7 @@ typedef ptrdiff_t rx_matchfn(const rx_ctx *ctx);
 #define PCREC_ERR_INTERNAL  (-6)  /* [DD-14] below PCREC_ERR_FLOOR: NOT a give-up, D71 item 1 */
 #define PCREC_ERR_STARTPOS  (-7)  /* [K50] below the floor: a mid-character startpos was REFUSED */
 #define PCREC_ERR_UNSET_VAR (-8)  /* [VAR] below the floor: an UNSET or ill-formed variable value was REFUSED */
+#define PCREC_ERR_UTF (-9)  /* [UTF-VALID] below PCREC_ERR_FLOOR: NOT a give-up -- an ill-formed subject was REFUSED (-futf-check) */
 
 #define PCREC_UNSET ((ptrdiff_t)-1)
 
@@ -538,6 +540,7 @@ Searches `s[startpos..n)` for the leftmost match and returns:
 | `<PREFIX>_ERR_STEPS` / `_FRAMES` / `_WORK` / `_RECURSE` | engine gave up (§4); `caps` also left **untouched**. `_RECURSE` is reserved with no producer yet ([DD-14] wave A, D71 item 1) |
 | `PCREC_ERR_INTERNAL` | NOT a give-up (§4) — the artifact detected its own analysis/emission inconsistency (module `lookaround`'s negative-polarity end-check is the one producer today); `caps` left **untouched** like every other negative return ([DD-14] wave A commit 2, D71 item 1) |
 | `PCREC_ERR_STARTPOS` | NOT a give-up (§4) — `startpos` is not a character boundary of this artifact's encoding, so the call is REFUSED and nothing is attempted; `caps` left **untouched**. Only an artifact compiled for an encoding with multi-byte characters can return it, and only when the guard is not denied ([K50], the paragraph below) |
+| `PCREC_ERR_UTF` | NOT a give-up (§4) — the artifact was compiled with `-futf-check` and an ill-formed sequence of its encoding begins in the checked range `[startpos − LB, n)`, so the call is REFUSED before any attempt; `caps` left **untouched**. `<prefix>_valid_upto(s, n, startpos)` (§3.1.2) is the offset. Only a `-futf-check` artifact under an encoding with ill-formed byte strings can return it ([UTF-VALID], the paragraph below) |
 
 Note that `0` here means **no match**, not a zero-length match. A
 zero-length match is a success: it returns `1` with
@@ -586,11 +589,25 @@ byte of `s`.
   PCRE2's UTF modes in the SUCCEEDING direction — `(?<!.)` at offset 1 of the
   four bytes `CE B1 CE B2` reports `(1,1)` — because a truncated leading
   character has no path and a negative assertion succeeds exactly where its
-  body has none. **Neither arm ROUNDS a caller's `startpos > 0`.** Refusing it
-  and honouring it are the two choices on offer; silently advancing to the
-  next boundary (which is `PCRE2_MATCH_INVALID_UTF`'s behaviour) is not one,
-  because a caller handed an answer for a position it did not ask about
-  cannot tell that from an answer for the one it did.
+  body has none. **Neither of those two arms ROUNDS a caller's `startpos >
+  0`**: silently advancing to the next boundary is not something a caller
+  gets without asking, because a caller handed an answer for a position it
+  did not ask about cannot tell that from an answer for the one it did.
+- **`-fstartpos-guard=align` is the axis's THIRD value, and it is that
+  rounding, asked for by name** ([UTF-VALID], D132 item 2, ruled D133;
+  `docs/spec/tuning.md` §2.23). It is for a caller holding a MISALIGNED
+  POINTER into valid text — one that split a buffer on arbitrary bytes. A
+  `startpos > 0` inside a character is moved FORWARD over continuation bytes
+  to the next character start (or `n`), ONCE, at entry, and the search runs
+  exactly as if that position had been passed: `caps` offsets, `\G` and a
+  lookbehind's context are all read from it. Offset 0 is never moved (it is
+  never refused either). The anchored entries (§3.2/§3.3) answer `-1` at a
+  misaligned `ctx->pos`, because no match begins inside a character. It is
+  refused together with `-fno-startpos-guard`, and inert under `byte`. It is
+  not a way to accept invalid UTF-8: under `-futf-check` (below) the check
+  then runs from the ALIGNED position, stepping back behind it as for any
+  `startpos`, so the bytes of the character the pointer landed inside are
+  checked as the caller's real text.
 - **OFFSET 0 IS NEVER REFUSED, AND ON AN ILL-FORMED SUBJECT IT IS NOT WHERE A
   MATCH IS ATTEMPTED** ([K73], Frank's 2026-09-29 ruling (a)). No character
   precedes offset 0, so a caller naming it cannot have pointed inside one; but
@@ -615,6 +632,46 @@ byte of `s`.
   the moved start (`(1,1)` for `x*` on `\x80`); pcrec's anchored contract has
   no way to report a start other than `ctx->pos`, so this is a second stated
   divergence, and both entry shapes agree on it.
+
+**`-futf-check` REFUSES AN ILL-FORMED SUBJECT, AS `PCRE2_UTF` DOES**
+([UTF-VALID], `docs/design/utf_valid_design.md`, ruled D133; the axis is
+`docs/spec/tuning.md` §2.36). By default an artifact is INVALID-TOLERANT: an
+ill-formed sequence matches nothing and nothing reports it
+(`PCRE2_MATCH_INVALID_UTF`'s semantics, K73's start rule above). An artifact
+compiled with `-futf-check` instead refuses the call with `PCREC_ERR_UTF`
+when an ill-formed sequence BEGINS anywhere in `[f, n)`, where `f` is
+`startpos` stepped back LB characters — before any attempt, and whether or
+not a match lies before the bad bytes (`a` on `a\xff` is refused, as
+libpcre2 10.46 refuses it). Otherwise the call answers exactly as the
+default artifact would.
+
+- **LB is PCRE2's `max_lookbehind` fact** (the design's §1.4, measured on
+  10.46): the widest lookbehind branch in characters, and 1 for `\b`, `\B`
+  and `\A`; never summed through nesting, and dead code (a `(?(DEFINE)...)`
+  body) counts. `^`, `$`, `\G`, `\z`, `\Z` and `\K` count 0. So `b` on
+  `\xffab` from 2 answers `(2,3)` while `(?<=..)b` there is refused.
+- **The step-back is PCRE2's raw walk**: per character, one byte back and
+  then back over every continuation byte, clamped at 0 and not validated.
+- **ORDER: the K50 guard FIRST, then the check** (measured on 10.46, the
+  design's §1.2). A mid-character `startpos > 0` is `PCREC_ERR_STARTPOS`
+  whether or not the subject is well-formed; under `-fstartpos-guard=align`
+  the check runs from the aligned position. `startpos > n` keeps `0` and is
+  not checked. At `startpos == 0` K50 does not refuse, so a subject that
+  BEGINS with a continuation byte is refused by the check at offset 0.
+- **Every entry that takes a subject checks, at one site per body**: the
+  check sits beside the K50 guard, so the anchored entries (§3.2/§3.3) and
+  §10's `_in` entries return `PCREC_ERR_UTF` on exactly the calls
+  `<prefix>_search` refuses from the same position. On the VM, a FRAMES
+  escalation of the tiered default entry (§10.9) re-runs the body and
+  validates a second time — the stated cost of re-running from scratch.
+- **The cost is one O(n) pass per call** (the design's §5, directional:
+  about as much again as a scanning call on sparse-accented text, and it
+  makes a call a prefilter answers sublinearly linear). That is why it is
+  off by default. A find-all loop over a checking artifact validates on
+  every call; §3.1.2 gives the linear idiom.
+- **Inert under `byte`**, where every byte string is well-formed: no check
+  is emitted, `<PREFIX>_UTF_CHECK` reads `"inert"`, and the artifact is
+  byte-identical to one built without the flag.
 
 **WHAT THE ARTIFACT PROMISES ABOUT ITS OWN POSITIONS IS NOT PART OF THIS
 AXIS.** Every position the ENGINE generates — an unanchored search's candidate
@@ -938,6 +995,58 @@ bitmap prefilter's skip loop advance through `<prefix>_next_pos` — the
 whole `.rxt` corpus stays green, because under this backend the two are
 the same value, and only the structural check sees it).
 
+#### 3.1.2 `<prefix>_valid_upto` — the subject validator ([UTF-VALID])
+
+```c
+size_t <prefix>_valid_upto(const unsigned char *s, size_t n, size_t startpos);
+```
+
+Returns the offset of the FIRST BYTE of the first ill-formed sequence of the
+artifact's encoding that begins at or after `f`, where `f` is `startpos`
+stepped back LB characters by PCRE2's raw walk (§3.1's `-futf-check`
+paragraph) — or `n` when there is none, and `n` when `startpos > n`. The
+first byte is the sequence's lead, or a stray continuation byte itself;
+that is `PCRE2_UTF`'s own error offset (`pcre2_get_startchar`) on every
+measured kind: truncated, overlong, surrogate, above U+10FFFF, `0xF5`-`0xFF`,
+isolated continuation (`docs/design/utf_valid_design.md` §1, 10.46).
+
+- **EVERY ARTIFACT EXPORTS IT, whatever `-futf-check` says** (D133 Q4). Under
+  `byte` the body is `return n;` and `s` is never read, so the `(s == NULL,
+  n == 0)` subject `<prefix>_search` accepts is legal here too, and a caller's
+  code compiles unchanged across encodings — `<prefix>_next_pos`'s rule.
+- **A `-futf-check` artifact refuses exactly the calls for which this is
+  `< n`**, and it is the offset of that refusal: pass the SAME `startpos` the
+  refused call was given (under `-fstartpos-guard=align`, the aligned one).
+  The step-back happens INSIDE the entry, so a lookbehind-window error before
+  `startpos` is reported, not missed.
+- **It is called once per call from the entry, never from an engine body**
+  (DD-12 (7); the [M5-SEAM] check counts its call sites like
+  `<prefix>_next_pos`'s). LB reaches the body as `<prefix>_VALID_LB`, a
+  `.c`-only macro, and is otherwise not part of this contract.
+- **Mid-character `startpos`.** The entry does not refuse one: with LB 0 the
+  walk starts ON the continuation byte, which is then reported as ill-formed.
+  The checking entries never ask that question, because the K50 guard (or
+  the alignment) runs first.
+
+**FIND-ALL UNDER THE CHECK — VALIDATE ONCE, LOOP ON THE DEFAULT ARTIFACT**
+(D133 Q6; the design's §4.4). A find-all loop (§3.1) over a `-futf-check`
+artifact validates `[f, n)` on every call, so `m` matches cost O(n·m)
+validation bytes — PCRE2's own property, which it documents
+`PCRE2_NO_UTF_CHECK` for. The linear idiom needs ONE artifact, compiled
+WITHOUT `-futf-check`:
+
+```c
+if (<prefix>_valid_upto(s, n, 0) != n) { /* refuse: offset is the return */ }
+else { /* run the §3.1 loop on this same artifact, unchanged */ }
+```
+
+It answers exactly as the checking artifact would on every call of the loop,
+because every call's checked range lies inside `[0, n)`. A validity cursor
+kept inside the artifact across calls is not offered: §5.3's reentrancy
+contract forbids the state. The per-call "check as you move forward"
+contract (`-futf-check=extent`) is RESERVED and refused until a caller
+measures a need for it (the design's §2.2/§2.4).
+
 ### 3.2 `<prefix>_match` — the unconditional, anchored match-here entry
 
 ```c
@@ -992,7 +1101,13 @@ what gets the anchored machine back.
 
 Returns the matched
 length (`>= 0`), `0` for a zero-length match at `ctx->pos`, `-1` on no
-match, or a typed give-up code (§4). Delivers
+match, or a typed give-up code (§4) — or one of §3.1's caller refusals at
+`ctx->pos`: `PCREC_ERR_STARTPOS` (K50), and under `-futf-check`
+`PCREC_ERR_UTF` from the same check at the same position, with the same
+order (guard first) and the same checked range `<prefix>_search` uses.
+Under `-fstartpos-guard=align` a misaligned `ctx->pos` answers `-1` (no
+match begins inside a character), after the check has run from the aligned
+position. Delivers
 **no captures** — `ctx->caps` is an *input* (§5), not an output channel,
 and there is no parameter for `<prefix>_match` to write group offsets
 into. Self-contained per its type's contract: a top-level caller passes
@@ -1291,6 +1406,8 @@ bound on the work ONE call may do uses `_in` or `-fno-tiered-entry`
 #define PCREC_ERR_FLOOR    (-5)  /* give-ups: [FLOOR,-2]; below: reserved (D49) */
 #define PCREC_ERR_INTERNAL (-6)  /* [DD-14] below PCREC_ERR_FLOOR: NOT a give-up, D71 item 1 */
 #define PCREC_ERR_STARTPOS (-7)  /* [K50] below PCREC_ERR_FLOOR: NOT a give-up -- a mid-character startpos was REFUSED */
+#define PCREC_ERR_UNSET_VAR (-8)  /* [VAR] below PCREC_ERR_FLOOR: NOT a give-up -- an UNSET or ill-formed variable value was REFUSED */
+#define PCREC_ERR_UTF (-9)  /* [UTF-VALID] below PCREC_ERR_FLOOR: NOT a give-up -- an ill-formed subject was REFUSED (-futf-check) */
 ```
 
 **[ABI-NS], 2026-08-18 (D60).** These four were spelled `<PREFIX>_ERR_STEPS`/
@@ -1378,6 +1495,30 @@ Three consequences, in the order a caller meets them:
 - **It does not renumber anything.** `PCREC_ERR_FLOOR` is unchanged at −5 and
   the give-up partition is unchanged; this is a new value in the region D49
   already reserved.
+
+**[UTF-VALID], 2026-09-30 (D133). `PCREC_ERR_UTF` (−9) IS THE THIRD CALLER
+REFUSAL, AND THE FIRST BELOW-THE-FLOOR CODE A COMPOSED CALL SITE PROPAGATES.**
+It means an artifact compiled with `-futf-check` found an ill-formed sequence
+beginning in the checked range `[startpos − LB, n)` (§3.1), so the call was
+refused before any attempt; `caps` is untouched, and
+`<prefix>_valid_upto(s, n, startpos)` (§3.1.2) is the offset. It is one code
+for every kind of ill-formedness (D26: pcrec owes the refusal and the offset,
+not PCRE2's twenty `PCRE2_ERROR_UTF8_*` values).
+
+- **Every artifact DEFINES it and only a `-futf-check` artifact under an
+  encoding with ill-formed byte strings can RETURN it** — `PCREC_ERR_STARTPOS`'s
+  rule, for a caller's `switch` written today.
+- **A composed call site PROPAGATES it and does NOT trap** (D133 Q11). This is
+  the one exception to the trap rule above, and the reason is what the code
+  means: −6 and −7 at a composed callee say the ENGINE broke its own rule, but
+  −9 is caused by the CALLER'S DATA — a checking callee handed the caller's
+  own subject can legitimately refuse it, because its LB may reach before the
+  outer call's range. So the trap becomes
+  `if (ret < PCREC_ERR_FLOOR && ret != PCREC_ERR_UTF) __builtin_trap();` and a
+  −9 is returned outward unchanged. No composed call sites are emitted today;
+  the line is recorded now so the first producer inherits it.
+- **It does not renumber anything**: a new value in the region D49 reserved,
+  below `PCREC_ERR_UNSET_VAR` (−8).
 
 **`PCREC_ERR_FRAMES` names a RESOURCE, not an array and not an owner.**
 Two distinct capacities can exhaust and both report this one code: the
@@ -2058,7 +2199,26 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `49` on every artifact today ([OPT-HYB-RESEED] bumped
+- **`rx_info.abi` is `50` on every artifact today ([UTF-VALID] bumped it
+  from 49, 2026-09-30: THE OPT-IN SUBJECT UTF-8 CHECK AND THE START
+  ALIGNMENT, ONE EVENT, D133).** Default-off artifacts move too, by exactly
+  three additions (utf_valid_design.md §6): the shared `PCREC_RX_ABI_H`
+  block gains `#define PCREC_ERR_UTF (-9)` (§4); every artifact gains the
+  `<PREFIX>_UTF_CHECK` stamp (§6.3) and the exported
+  `<prefix>_valid_upto` entry with its declaration (§3.1.2), plus the
+  `.c`-only `<prefix>_VALID_LB` macro its body reads; and a `-e utf8`
+  artifact carrying a `${name}` variable has its `<prefix>_var_valid`
+  re-spelled on the new entry (one validator, D133 Q7). A `-futf-check`
+  artifact under `-e utf8` gains ONE precheck line at each of the entries'
+  caller-position sites (§3.1); a `-fstartpos-guard=align` artifact under
+  `-e utf8` carries the alignment in place of the K50 refusal and its
+  `<PREFIX>_STARTPOS_GUARD` reads `"align"`. The two new bits
+  (`PCREC_FORCE_UTF_CHECK`, bit 39; `PCREC_FORCE_STARTPOS_ALIGN`, bit 40) are
+  CONTRACT bits: kept in `rx_info.flags`, masked only under `byte`, where
+  both are inert and a `byte` artifact is byte-identical under either. No
+  struct offset moves, no `rx_info` member is added, and no default
+  artifact's answer moves.
+- **`rx_info.abi` was `49` ([OPT-HYB-RESEED] bumped
   it from 48, 2026-09-30: THE VM HYBRID'S RETRY RE-SEEDS ADAPTIVELY).** A VM
   hybrid whose prefilter answers for a LARGER language than the pattern's (a
   lookaround or an atomic cut erased, or the `[OPT-4]` count collapse) used
@@ -3109,6 +3269,32 @@ engine-scoped.**
   time only: every value answers identically, except that an `adaptive*`
   artifact can answer where the pre-abi-49 retry gave up on a budget (§4.5,
   tuning.md §2.35).
+
+  **[K50] / [UTF-VALID], 2026-09-30 (abi 50): `<PREFIX>_STARTPOS_GUARD`,
+  what the entries do with a caller's mid-character position** (`tuning.md`
+  §2.23). UNCONDITIONAL, on every artifact of both engines — a family (a)
+  selection fact riding the shared prologue, because the axis belongs to
+  the ENTRIES rather than to either engine:
+
+  | value | meaning |
+  |---|---|
+  | `"guarded"` | a `startpos` (or `ctx->pos`) `> 0` inside a character is refused with `PCREC_ERR_STARTPOS` (§3.1) — the default under an encoding with multi-byte characters |
+  | `"align"` | `-fstartpos-guard=align`: such a position is moved forward to the next character start once at entry; an anchored entry answers `-1` (§3.1) |
+  | `"permissive"` | the artifact answers at whatever position the caller named: `-fno-startpos-guard`, or an encoding (`byte`) where every position is a character start |
+
+  **[UTF-VALID], 2026-09-30 (abi 50): `<PREFIX>_UTF_CHECK`, whether the
+  entries refuse an ill-formed subject** (`tuning.md` §2.36). UNCONDITIONAL,
+  beside `_STARTPOS_GUARD`, for the same reason:
+
+  | value | meaning |
+  |---|---|
+  | `"whole"` | `-futf-check`: every entry that takes a subject refuses with `PCREC_ERR_UTF` when an ill-formed sequence begins in `[startpos − LB, n)` (§3.1) |
+  | `"off"` | the default: invalid-tolerant, an ill-formed sequence matches nothing and is not reported |
+  | `"inert"` | the encoding has no ill-formed byte strings (`byte`); no check exists whatever was asked |
+
+  Both are read off the SAME predicate the emitted entry text is, so a stamp
+  and its body cannot disagree. Neither has an `rx_info` mirror (D77);
+  `rx_info.flags` carries the two request bits, masked where inert.
 
   **[OPT-3], 2026-08-26: a THIRD `_DFA_*` macro, `<PREFIX>_DFA_TABLE`**, on
   exactly the same footing and under exactly the same IFF — every artifact
