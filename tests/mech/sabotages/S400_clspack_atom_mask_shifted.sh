@@ -14,7 +14,7 @@ SAB_FILE="src/gen/emit_vm.c"
 SAB_SUITES="clspack harness"
 SAB_HARNESS_TARGET="tests/base/clspack_atoms.rxt"
 SAB_DESC="the atom-table emission passes each class the atom mask of the class before it, so the shared-table route tests the wrong set"
-SAB_DOC_FIGURE="MEASURED solo 2026-09-30 at the clspack tip: clspack:4fail/20pass (the three differentials + population), corpus:16fail/63pass (tests/base/clspack_atoms.rxt's atom blocks; site-10 and atom-65 green) DETECTED."
+SAB_DOC_FIGURE="RE-MEASURED solo 2026-09-30 at the land4 tip (run_clspack.sh gained [deny-kit], 24 -> 25 checks): clspack:4fail/21pass (the three differentials + population), corpus:16fail/63pass (tests/base/clspack_atoms.rxt's atom blocks; site-10 and atom-65 green) DETECTED."
 SAB_REACH='"$PCREC" --engine=vm -p rx -o - --pattern "([aeiou])[bcdfg][hjklm][npqrs][tvwxz][AEIOU][BCDFG][HJKLM][NPQRS][TVWXZ][02468]"'
 SAB_REACH_EXPECT='#define RX_VM_CLS_ATOMS 12'
 SAB_EXPECT=DETECTED

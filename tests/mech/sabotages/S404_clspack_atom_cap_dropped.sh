@@ -9,7 +9,7 @@ SAB_ID="S404-clspack-atom-cap-dropped"
 SAB_FILE="src/gen/clskit.c"
 SAB_SUITES="clspack"
 SAB_DESC="pcrec_clskit_atoms no longer refuses a partition of more than 64 atoms, so the atom row fires past the mask's width"
-SAB_DOC_FIGURE="MEASURED solo 2026-09-30 at the clspack tip: clspack:1fail/23pass -- [atom-65] (RX_VM_CLS_ATOMS 65 where 0 is due) DETECTED."
+SAB_DOC_FIGURE="RE-MEASURED solo 2026-09-30 at the land4 tip (run_clspack.sh gained [deny-kit], 24 -> 25 checks): clspack:1fail/24pass -- [atom-65] (RX_VM_CLS_ATOMS 65 where 0 is due) DETECTED."
 SAB_REACH='"$PCREC" --engine=vm -p rx -o - --pattern "([aeiou])[bcdfg][hjklm][npqrs][tvwxz][AEIOU][BCDFG][HJKLM][NPQRS][TVWXZ][02468]"'
 SAB_REACH_EXPECT='#define RX_VM_CLS_ATOMS 12'
 SAB_EXPECT=DETECTED
