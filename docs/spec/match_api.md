@@ -673,6 +673,30 @@ default artifact would.
 - **Inert under `byte`**, where every byte string is well-formed: no check
   is emitted, `<PREFIX>_UTF_CHECK` reads `"inert"`, and the artifact is
   byte-identical to one built without the flag.
+- **A STATED DIVERGENCE: `PCRE2_UTF` CLIPS BACKWARD READS AT `f`, pcrec DOES
+  NOT** (D142; measured on libpcre2 10.46 and 10.48). Under `PCRE2_UTF`,
+  libpcre2 treats `f` (the stepped-back start above) as the START OF THE
+  SUBJECT for the reads a lookbehind or `\b` makes backwards, even on
+  WELL-FORMED text: `(?<=\ba)b` on `"xab"` from `startpos` 2 reports `(2,3)`
+  under `PCRE2_UTF`, though the same pattern finds nothing from 0 and finds
+  nothing without UTF (the `\b` at `f` sees no previous character); and
+  `(?<=(?<=..)a)b` on `"zzzab"` from 4 finds nothing under `PCRE2_UTF` and
+  reports `(4,5)` without it (the inner lookbehind steps before `f` and
+  fails). pcrec reads the real bytes, with or without `-futf-check`, so it
+  answers as the default artifact does — `nomatch` and `(4,5)` above. **pcrec
+  takes this side because a match's answer must not depend on where the caller
+  started the search** (the same pattern and subject giving different answers
+  from 0 and from 2 is the defect, not the contract), and because the clip is
+  an artifact of how libpcre2 bounds its validated window, not a semantics
+  anyone specified. The refusal set and the refusal OFFSET are exact and
+  unaffected; only the accepted ANSWER differs, and only for patterns whose
+  backward reach exceeds LB (three patterns in the pinned set). The class is
+  4 cells per configuration, pinned EXACTLY (`CLIP` in
+  `tests/utfcheck/check.py`, the `clip-*` populations; measurement and
+  reproducers in `docs/dev/lanes/uvbuild_report.md` §3.1/§5, the class
+  described in `tests/utfcheck/CLAUDE.md`), so a change in either engine
+  moves a number rather than a sentence (D26: what a pattern matches is
+  exact, and a deliberate, stated divergence is the only allowed exception).
 
 **WHAT THE ARTIFACT PROMISES ABOUT ITS OWN POSITIONS IS NOT PART OF THIS
 AXIS.** Every position the ENGINE generates — an unanchored search's candidate
@@ -3269,7 +3293,7 @@ engine-scoped.**
 
   | value | meaning |
   |---|---|
-  | `"exact"` | the prefilter recognises the pattern's own language |
+  | `"exact"` | the count-collapse axis did not fire: the prefilter is not a count-collapsed superset (it may still over-approximate for another reason, below) |
   | `"count-collapsed"` | it recognises a count-collapsed SUPERSET: every `A_REP` with `rmin > 1` or `rmax > 1` lowered as `X{min(rmin,1),}`, so the machine does not scale with the count (`tuning.md` §2.17, K39) |
 
   **ITS OWN IFF, AND IT IS A DIFFERENT ONE FROM THE `_DFA_*` FAMILY'S.**
@@ -3291,6 +3315,17 @@ engine-scoped.**
   It has **no `rx_info` mirror**, on `<PREFIX>_DFA_TABLE`'s precedent and
   for the same reason: nothing measured reads one yet (D77), and the trigger
   to add one is a named consumer, not symmetry.
+
+  **THE STAMP REPORTS THE COUNT-COLLAPSE AXIS ONLY** (D142). `"exact"` does
+  NOT say the prefilter recognises the pattern's own language: a lookbehind,
+  a lookahead, an atomic group or `\K` is erased from the prefilter's
+  machine, which then over-approximates while this stamp still reads
+  `"exact"` (measured on 76 lookbehind, 47 lookahead, 132 atomic and 53 `\K`
+  hybrids, `docs/design/pf_know.md` §2.2/§8.4). Whether a successful
+  prefilter also proves the match END — the question a reader of `"exact"`
+  usually means — is read from `<PREFIX>_VM_RESEED` below: its `"exact"` row
+  is the one where the prefilter answers for the pattern's own language.
+  No stamp line is added for it.
 
   **[OPT-HYB-RESEED], 2026-09-29 (abi 49): `<PREFIX>_VM_RESEED`, what the
   hybrid's RETRY does after a failed attempt** (`tuning.md` §2.35). Same
@@ -4030,6 +4065,9 @@ annotations below are this document's, not emitted text):
 #define RX_ENGINE_WHY       "capture group at pattern offset 1"
 #define RX_VM_PREFILTER      "hybrid"               /* or "none" */
 #define RX_VM_PREFILTER_LANG "exact"                 /* or "count-collapsed";
+                                                        the count-collapse axis
+                                                        ONLY -- the END proof is
+                                                        _VM_RESEED "exact";
                                                         [OPT-4], emitted only
                                                         where _VM_PREFILTER
                                                         reads "hybrid" */
