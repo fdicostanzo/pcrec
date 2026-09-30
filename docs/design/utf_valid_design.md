@@ -166,6 +166,23 @@ agreed on both rows probed (`(?<=(?<=..)a)b` on `\xffzab` from 3: no match;
 `(?<=\ba)b` on `\xffab` from 2: (2,3)). Copying PCRE2's LB rather than the
 true reach is deliberate. A larger LB would refuse subjects PCRE2 accepts.
 
+**[uvbuild, 2026-09-30, MEASURED — this paragraph's mechanism is wrong,
+its conclusion stands.]** PCRE2 does NOT read the bytes before `f`: with
+UTF checking on, it treats `f` as the START OF THE SUBJECT for every
+backwards read (`mb->check_subject`), so a `\b` at `f` sees no previous
+character and a nested lookbehind stepping before `f` fails — on
+WELL-FORMED text too, which makes PCRE2_UTF's accepted answer depend on
+`startpos`: `(?<=\ba)b` on `xab` from 2 is (2,3) under PCRE2_UTF (10.46 and
+10.48) and no match from 0 or without UTF; `(?<=(?<=..)a)b` on `zzzab`
+from 4 is no match under PCRE2_UTF and (4,5) without it. The two rows above
+agreed by coincidence. pcrec reads the real bytes with or without
+`-futf-check`, so on the patterns whose reach exceeds LB the ACCEPTED answer
+can differ from PCRE2_UTF's; the refusal set and the offset do not. The
+build pins this class exactly (`tests/utfcheck/check.py`'s `CLIP`, 4 cells
+per config, each required to equal the default artifact's answer) rather
+than chasing PCRE2's clip, which would make an answer depend on where the
+caller started.
+
 ## 2. The contracts
 
 Notation: `f` = `startpos` stepped back LB characters (§1.3), computed
