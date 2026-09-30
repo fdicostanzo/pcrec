@@ -106,7 +106,7 @@ static void rd_shape(Shape *S, const Ast *a)
          * [M6.2 wave D] `\G` declines with them, and it is the least
          * interesting decline in the file: a `\G` inside a quantifier body
          * can be true at most once per search by definition. */
-        case A_WORDB: case A_NWORDB: case A_GSTART:
+        case A_CTX: case A_GSTART:
         /* [M6.2 wave E] `\K` declines too, and it is the ONLY member of this
          * list whose decline is a CORRECTNESS requirement rather than a
          * missed optimisation.
@@ -300,7 +300,7 @@ static Ast *rd_reverse(Ctx *cx, const Ast *a)
     /* [M6.2 wave B] reversal is identity -- the predicate is symmetric in
      * the two bytes it reads (src/ir/nfa.c). [M6.2 wave D] and for `\G`
      * because it is an absolute-position assertion, N_BOT's own reason. */
-    case A_WORDB: case A_NWORDB: case A_GSTART:
+    case A_CTX: case A_GSTART:
         return rd_node(cx, a);
 
     /* [M6.2 wave E] `\K` IS NOT REVERSAL-INVARIANT and must not be given the
@@ -583,7 +583,7 @@ static bool rd_alt_disjoint(const Ast *a)
     for (;;) {
         switch (a->k) {
         case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
-        case A_WORDB: case A_NWORDB: case A_GSTART:
+        case A_CTX: case A_GSTART:
             return true;
         /* [M6.2 wave E] `\K` DECLINES rather than joining the row above.
          * Unreachable (rd_shape rejects the body long before this runs), and
@@ -714,7 +714,7 @@ static void rd_walk(Rd *R, Ast *a, bool in_rep)
      * HUNTS for A_REP nodes to offer the rung to, and a leaf of any kind
      * hosts none. The verdict about `\K` is rd_shape's, one level down.
      * [M6.5.2] `A_BREF` joins for the identical reason. */
-    case A_WORDB: case A_NWORDB: case A_GSTART: case A_KRESET: case A_BREF:
+    case A_CTX: case A_GSTART: case A_KRESET: case A_BREF:
     case A_VAR:
         return;
     /* [M6.6.2] DOES NOT DESCEND, and this is the ONE arm in this file where

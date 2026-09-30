@@ -69,6 +69,9 @@ tests/recursion/run_recursion_diff.sh
 # compiles and RUNS generated C (two artifacts per pattern in one TU), which
 # is the same reason every diff script above is here.
 tests/anchored/run_anchored_diff.sh
+# The anchored entry ENTERED DEAD (lane ucpu3): its driver is built with
+# $GENCFLAGS like every generated-C witness, so it rides the san battery too.
+tests/anchored/run_anchored_dead_entry.sh
 # [K50] the caller-startpos boundary axis's differential. Same reason again —
 # two artifacts per witness in ONE TU, compiled and RUN — and it has a second
 # one of its own: its drivers do raw byte-buffer arithmetic over subjects that

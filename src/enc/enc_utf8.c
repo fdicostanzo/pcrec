@@ -514,5 +514,9 @@ const PcrecEnc pcrec_enc_backend_utf8 = {
     false,
     /* [UCP] O-71: `\p{..}` is the ordinary case under UTF-8, and `(*UCP)` /
      * `(*UTF)` are then accepted (enc.h's field comment). */
-    FEAT_UNICODE_PROPS | FEAT_UCP
+    FEAT_UNICODE_PROPS | FEAT_UCP,
+    /* [UCP] U2 ASCII is one byte; every other character is a lead byte plus
+     * continuation bytes, so a context set with a member above 0x7F is not
+     * byte-expressible (enc.h's field comment). */
+    0x7Fu
 };

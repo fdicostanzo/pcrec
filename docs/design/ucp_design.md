@@ -98,6 +98,13 @@ exceptions to 4-5 by measurement ([O] §1.3), so they precede them.
 | 1 | `ctx-node` | `-fno-ctx-node` (the answer-identity axis) | body is capture-free and assertion-free and its LANGUAGE is a set of single characters | `A_CTX(set, side, fn)` |
 | 2 | `lookaround` | — | always | today's `A_LOOK` lowering |
 
+*[U2 build, lane ucpu2]* Row 1 as BUILT also requires every member of the set
+to be one byte of the encoding (`pcrec_enc_set_bytes`, §2.3): U2 has no engine
+that reads a non-byte-expressible context set (T4's island is U3, T8's
+`decode` row U4), so such a lookaround takes row 2 — sound, and exactly
+today's answer. U3/U4 drop the conjunct. The critic-run no-spiderweb pass at
+U2's charter reviewed this placement (review file, second addendum).
+
 **T4 — the DFA machine's non-ASCII form** (per MACHINE, `-e utf8`; under
 `-e byte` row 4 always fires — the byte tier has no multi-byte characters, §1.5 [r1 GEN-5]). "Wide" and "byte-expressible" are the facts
 §2.3 and §3.7 define; θ is a pinned `--tune` cell read by the predicate (the

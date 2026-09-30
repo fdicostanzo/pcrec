@@ -2065,6 +2065,19 @@ static bool eng_refuses_by_name(const char *feats, const char *pat,
      * `(a)(?-1)` or `(a)(a)(?-2)`. Two rows that could not be witnessed at all
      * is a worse outcome than one uniform axis. */
     opt.flags |= PCREC_NO_SPLICE_CALLS;
+    /* [UCP] U2 `-fno-ctx-node`, FOR THE SAME REASON AS THE LINE ABOVE. A
+     * lookaround whose body is a set of single characters (`(?=a)`, every
+     * lookaround row's witness below) becomes a CONTEXT NODE that both
+     * engines implement (src/parse/ctxnode.c, T3), so the lookaround rows'
+     * VM_ONLY column is a per-ROW conservative fact and the per-PATTERN
+     * answer for these witnesses is "any engine". Denying T3's row puts the
+     * artifact back on the configuration the column describes, uniformly,
+     * with no per-module carve-out; no other row here has a one-character
+     * lookaround in its witness. The recognized behaviour is asserted in
+     * BOTH directions elsewhere: tests/ucp/run_ctxnode_tests.sh §3's route
+     * manifest requires every such lookaround to take the DFA by default and
+     * the VM under the flag. */
+    opt.flags |= PCREC_NO_CTX_NODE;
     memset(&out, 0, sizeof out);
     memset(&perr, 0, sizeof perr);
     bool okrefuse;

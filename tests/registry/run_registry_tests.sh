@@ -585,17 +585,21 @@ fi
 # 135 -> 138 at `[OPT-LITSCAN]` S2a (2026-09-27): `-fno-lit-run`
 # (`PCREC_NO_LIT_RUN`, bit 33) is one single-bit axis self-registering the
 # (macro, bit, flag) triple — 3 lines, `req-run`'s shape.
+#
+# 138 -> 141 at [UCP] U2 (2026-09-29): `-fno-ctx-node` (`PCREC_NO_CTX_NODE`,
+# bit 35) is one single-bit axis self-registering its (macro, bit, flag)
+# triple — 3 lines, `lit-run`'s shape. Measured: 141 PASS, 0 failed.
 axesn="$(grep -c '^PASS: ' "$AXESOUT" || true)"
-if [ "$axesn" -ne 138 ]; then
+if [ "$axesn" -ne 141 ]; then
     if grep -q "^checks failed: 0" "$AXESOUT"; then
-        echo "registry: axes_registry_check COVERAGE CHANGED — $axesn passing checks, expected 138." >&2
+        echo "registry: axes_registry_check COVERAGE CHANGED — $axesn passing checks, expected 141." >&2
         echo "registry:   if you added or removed axes/checks on purpose, update this number" >&2
         echo "registry:   in the same commit; if not, coverage was removed" >&2
     else
         axesnf="$(sed -n 's/^checks failed: //p' "$AXESOUT" | tail -1)"
-        echo "registry: axes_registry_check shows $axesn passing checks (138 expected; ${axesnf:-?} failed," >&2
+        echo "registry: axes_registry_check shows $axesn passing checks (141 expected; ${axesnf:-?} failed," >&2
         echo "registry:   so a lower count is expected here). Fix the failures first; then this" >&2
-        echo "registry:   number must return to 138 — if it does not, coverage was removed too" >&2
+        echo "registry:   number must return to 141 — if it does not, coverage was removed too" >&2
     fi
     rc=1
 fi
@@ -664,19 +668,21 @@ fi
 # name (fixed in the same change; see that script's own EXPECT_NAMES).
 # Read from a run (34), not predicted, per this guard's own standing rule.
 # 34 -> 35 ([UCP] U1): PCREC_UCP_NARROW_MAX_INTERVALS, one more anchored row
+# 35 -> 37 ([UCP] U2): PCREC_MAX_CTX_SETS and PCREC_MAX_CTX_ATOMS, two more
+# anchored rows (limits.md §3.9), each one [doc] check. Measured: 37 PASS.
 # (limits.md §3.8), read from a run.
 limitsn="$(grep -c '^PASS: ' "$LIMITSOUT" || true)"
-if [ "$limitsn" -ne 35 ]; then
+if [ "$limitsn" -ne 37 ]; then
     if grep -q "^checks failed: 0" "$LIMITSOUT"; then
-        echo "registry: limits_check COVERAGE CHANGED — $limitsn passing checks, expected 35." >&2
+        echo "registry: limits_check COVERAGE CHANGED — $limitsn passing checks, expected 37." >&2
         echo "registry:   if you added/removed a limits.def row, an anchor or a part-3 arm" >&2
         echo "registry:   on purpose, update this number in the same commit; if not," >&2
         echo "registry:   coverage was removed" >&2
     else
         limitsnf="$(sed -n 's/^checks failed: //p' "$LIMITSOUT" | tail -1)"
-        echo "registry: limits_check shows $limitsn passing checks (35 expected; ${limitsnf:-?} failed," >&2
+        echo "registry: limits_check shows $limitsn passing checks (37 expected; ${limitsnf:-?} failed," >&2
         echo "registry:   so a lower count is expected here). Fix the failures first; then this" >&2
-        echo "registry:   number must return to 34 — if it does not, coverage was removed too" >&2
+        echo "registry:   number must return to 37 — if it does not, coverage was removed too" >&2
     fi
     rc=1
 fi

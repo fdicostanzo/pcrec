@@ -66,6 +66,7 @@
 #include <string.h>
 
 #include "core/internal.h"
+#include "enc/enc.h"   /* [UCP] U2 pcrec_enc_set_bytes, `\b`'s precondition */
 
 /* Module assertions' single producer for the position/boundary escapes routed
  * to it (`\A`/`\Z`/`\z` position aliases; `\b`/`\B` word-boundary; `\G` -- see
@@ -92,18 +93,41 @@ ExtResult pcrec_asrtport_atom(Ctx *cx, const RegRow *rw, ExtWant want,
      * structure. */
     case 'b':
     case 'B': {
-        /* [UCP] T1 FIRST: under UCP with `aW` unrestricted the row's
-         * definition is the UCP word set's boundary, which has no producer in
-         * U1 (ucp_design.md §6; D130 Q3) — refused by name rather than
-         * answered with the ASCII word set, which would be a miscompile. The
-         * DEF_ALWAYS entry is today's A_WORDB/A_NWORDB. */
+        /* [UCP] U2 `\b`/`\B` BUILD THE CONTEXT NODE DIRECTLY (ucp_design.md
+         * §2.2): A_CTX over the word set the scope resolved, with the
+         * boundary / non-boundary function. T1 FIRST: the row's DEF_UCP_W
+         * entry answers under UCP with `aW` unrestricted and the set is then
+         * `\w`'s UCP set (`\p{Xwd}` clamped to the encoding — Latin-1 under
+         * `byte`); otherwise it is `\w`'s own byte table, exactly the set
+         * wave B's N_WORDB read, so every shipped `\b` artifact is unmoved.
+         *
+         * §2.3's PRECONDITION DECIDES WHETHER IT BUILDS: under `byte` every
+         * set is byte-expressible; under utf8 the UCP word set is not, and
+         * that `\b` is refused by name until the island ([UCP] U3) / the VM
+         * decode ([UCP] U4) — never answered from its ASCII bytes. */
         const RegDef *def = pcrec_def_resolve(cx, rw);
+        PcrecCpSet w;
+        pcrec_cpset_init(&w, &cx->arena);
         if (def && def->tag != DEF_ALWAYS)
-            REFUSE(at, "UCP \\%c is not built yet: it reads the Unicode word "
-                       "set, which needs [UCP] U2 (-e byte) or U3/U4 (-e utf8); "
-                       "(?aW) restricts it to the ASCII word set", rw->sel);
-        k = rw->sel == 'b' ? A_WORDB : A_NWORDB;
-        break;
+            pcrec_setdef_build(cx, &pcrec_ucp_set_word, &w);
+        else
+            pcrec_cpset_add_bits(&w, pcrec_cls_word_esc);
+        uint8_t bits[32];
+        if (!pcrec_enc_set_bytes(pcrec_enc_by_id(cx->opt->encoding),
+                                 w.iv, w.n, bits))
+            REFUSE(at, "UCP \\%c is not built yet under encoding '%s': it "
+                       "reads the Unicode word set, which is not "
+                       "byte-expressible, and needs [UCP] U3/U4; (?aW) "
+                       "restricts it to the ASCII word set, or use -e byte",
+                       rw->sel, pcrec_enc_by_id(cx->opt->encoding)->name);
+        ExtResult res = { .what = EXT_NODE, .at = at, .msg = "",
+                          .answered_at = want };
+        res.end = cx->pos;
+        res.node = pcrec_ast_ctx(cx, w.iv, w.n, rw->sel == 'b'
+                                 ? CTXFN_BOUNDARY : CTXFN_NONBOUNDARY);
+        res.node->u.ctx.anchor = true;
+        pcrec_ast_stamp(cx, res.node, rw, at);
+        return res;
     }
     /* [M6.2 wave D] `\G`, and it is a THIRD kind of question again. `\A`/
      * `\Z`/`\z` compare the position against a COMPILE-TIME constant (0, n,
@@ -182,10 +206,11 @@ ExtResult pcrec_asrtport_atom(Ctx *cx, const RegRow *rw, ExtWant want,
      * line and this comment exist so the next author cannot "harmonize" the
      * two sites, which is exactly the harmonization that would break it.
      *
-     * [D70] GUARDED ON THE KIND. This port produces EIGHT kinds and only two
-     * of them own `u.anch` — the pin ran for A_END, A_WORDB, A_NWORDB,
-     * A_GSTART and A_KRESET too. Today that aliases nothing, because those
-     * five kinds have no payload of their own; the day any of them gains one
+     * [D70] GUARDED ON THE KIND. This port produces SIX kinds and only two
+     * of them own `u.anch` — the pin ran for A_END, A_GSTART and A_KRESET
+     * too (and for `\b`/`\B`'s kinds before [UCP] U2, which now return their
+     * A_CTX node above, before this line, because it OWNS a payload). Today that aliases nothing, because those
+     * three kinds have no payload of their own; the day any of them gains one
      * it becomes a silent clobber of it, and nobody will re-read this line
      * then. The guard costs nothing, changes no bit today, and is what the
      * union's discipline (see the union in src/core/internal.h) requires of

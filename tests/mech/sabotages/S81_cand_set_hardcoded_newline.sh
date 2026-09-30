@@ -43,7 +43,7 @@ SAB_HARNESS_TARGET="tests/assertions/multiline.rxt"
 SAB_DESC="D63's candidate-start set is taken as 'the newline definition' rather than derived from which seeded start states are LIVE, so a (?m)^ pattern with a non-anchored branch skips every attempt that branch needs ('(?m)^a|b' on \"zzzb\" loses its match)"
 SAB_DOC_FIGURE="tests/assertions/multiline.rxt SECTION 6b goes red (the block exists for this row) and run_mline_diff.sh's (?m)^a|b arm diverges"
 SAB_COUNT=1
-SAB_BEFORE='        set[b] = (uint8_t)(d->s1u[upc_emit_of_class(d, d->clsmap[b])] >= 0);'
+SAB_BEFORE='        set[b] = (uint8_t)(d->s1u[upc_of_class(d, d->clsmap[b])] >= 0);'
 SAB_AFTER='        set[b] = (uint8_t)cls_has(pcrec_cls_newline, (unsigned)b);   /* SABOTAGE S81 */'
 
 # ---------------------------------------------------------------------------
@@ -58,3 +58,5 @@ SAB_AFTER='        set[b] = (uint8_t)cls_has(pcrec_cls_newline, (unsigned)b);   
 # Re-derived per this directory's own convention (`git show HEAD:<path>`,
 # never a weakened count check) rather than by contorting the source back.
 # ---------------------------------------------------------------------------
+
+# RE-AIMED 2026-09-29 BY [UCP] U2 (lane ucpu2), intent re-verified: the emitter's knob collapse `upc_emit_of_class` is gone (the atoms carry the knob now), so the line reads `upc_of_class`; the plant still hard-codes the newline set.

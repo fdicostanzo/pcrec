@@ -317,5 +317,6 @@ const PcrecEnc pcrec_enc_backend_byte = {
      * the ASCII boundary, MEASURED against libpcre2 10.46 (enc.h's field
      * comment). */
     true,
-    0u   /* [UCP] implies no module */
+    0u,   /* [UCP] implies no module */
+    0xFFu /* [UCP] U2 every code point is one byte */
 };

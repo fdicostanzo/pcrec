@@ -50,11 +50,13 @@ SAB_SUITES="gstartidentity"
 SAB_DESC="dfa_needs_gseed answers true unconditionally, so every ENG_ATTEMPT artifact emits the three-way \\G start dispatch whether or not the pattern contains a \\G. No answer changes; only bytes do — which is the whole reason the byte-identity gate exists"
 SAB_DOC_FIGURE="tests/codegen/run_gstart_identity.sh's identity sweep goes red over the \\G-free corpus population (and nothing else in the tree moves)"
 SAB_COUNT=1
-SAB_BEFORE='    for (int u = 0; u < UPC_N; u++)
+SAB_BEFORE='    for (int u = 0; u < d->natoms; u++)
         if (d->s1g[u] != d->s1u[u]) return true;
     return false;
 }'
-SAB_AFTER='    for (int u = 0; u < UPC_N; u++)
+SAB_AFTER='    for (int u = 0; u < d->natoms; u++)
         if (d->s1g[u] != d->s1u[u]) return true;
     return true;   /* SABOTAGE S83 */
 }'
+
+# RE-AIMED 2026-09-29 BY [UCP] U2 (lane ucpu2), intent re-verified: the seed-family loop runs over `d->natoms`; the plant still answers that a G-start family is present, unconditionally.

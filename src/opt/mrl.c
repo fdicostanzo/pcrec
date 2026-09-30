@@ -163,8 +163,7 @@ long long pcrec_minw(const Ast *a)
          * the position, which is not the same thing as consuming one, and a
          * minw of 1 would be an OVER-estimate -- this file's unsound
          * direction. */
-        case A_WORDB:
-        case A_NWORDB:
+        case A_CTX:
         /* [M6.5.2] A BACKREFERENCE CONTRIBUTES 0, and this file said so
          * before the kind existed: "Lookaround, backreferences and
          * (*ATOMIC) have no producers today; when they gain one, each
@@ -322,7 +321,7 @@ bool pcrec_nullable(const Ast *a)
         /* [M6.2 wave E] `\K` is nullable in the strongest sense in this
          * switch: it is not merely a test that consumes nothing, it is an
          * epsilon (src/ir/nfa.c). */
-        case A_WORDB: case A_NWORDB: case A_GSTART: case A_KRESET: return true;
+        case A_CTX: case A_GSTART: case A_KRESET: return true;
         /* [M6.5.2] TRUE, and getting it wrong is a HANG rather than a wrong
          * answer. A referenced group can publish an EMPTY capture, and the
          * reference then consumes nothing: `^(x?)y\1z$` on "yz" is (0,2) with
@@ -525,8 +524,7 @@ long long pcrec_cwmax(const Ast *a)
         /* The assertions consume no byte at their widest either: `\b`/`\B`
          * READ the bytes around the position without consuming one, so 0 is
          * exact at BOTH ends of the interval, not conservative at either. */
-        case A_WORDB:
-        case A_NWORDB:
+        case A_CTX:
         /* `\G` compares the position against `startpos`; `\K` writes one.
          * Neither reads or advances the cursor. */
         case A_GSTART:
@@ -661,8 +659,7 @@ long long pcrec_cwmin(const Ast *a)
         case A_BOL:
         case A_EOL:
         case A_END:
-        case A_WORDB:
-        case A_NWORDB:
+        case A_CTX:
         /* A backreference's minimum is 0 EXACTLY, `pcrec_minw`'s own measured
          * argument (a group can publish an empty capture), and the unit does
          * not change it: zero bytes is zero characters. */

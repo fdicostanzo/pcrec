@@ -5,7 +5,8 @@
 #     [:alpha:] [:alnum:] [:word:] [:lower:] [:upper:] [:graph:] [:print:]
 #     [:punct:], either polarity, at an atom or inside a class, spelled
 #     `(*UCP)` or `flags u`, and `(?aW)` does NOT help [:word:] (aP does);
-#   - UCP `\b`/`\B` under BOTH encodings (U2 for byte, U3/U4 for utf8);
+#   - UCP `\b`/`\B` under `-e utf8` (U3/U4: the Unicode word set is not
+#     byte-expressible there; under `-e byte` U2 builds it — tests/ucp/ctxnode.rxt);
 #   - `--ucp` without module `ucp` enabled (the byte default).
 # The last three are PCRE2 errors too: (*UTF) is refused under `byte`
 # (D130 Q2), and a start-of-pattern option is start-only.
@@ -98,19 +99,6 @@ perr
 pattern (*UCP)a\B
 encoding utf8
 features classes,modifiers,assertions
-perr
-
-# UCP \b under byte (U2)
-pattern (*UCP)\b
-encoding byte
-features classes,modifiers,assertions,ucp
-perr
-
-# `flags u` + \b under byte
-pattern \bx
-encoding byte
-flags u
-features classes,modifiers,assertions,ucp
 perr
 
 # --ucp with module ucp NOT enabled (byte does not imply it)

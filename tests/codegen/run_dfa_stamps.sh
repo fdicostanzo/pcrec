@@ -808,6 +808,15 @@ fi
 #       namespaces — while under `utf8` it is the one script property that
 #       exceeds the emitted-bytes cap (K53, tests/known_fail/).
 #
+# [UCP] U2 ADDED TWENTY-FOUR, all one-character lookarounds T3 turned into
+# context nodes, whose languages are EMPTY and which the DFA now proves so:
+# `(?=a)b` (the next character is both `a` and `b`), `z(?<=a)` (the previous
+# character is both `z` and `a`), their non-atomic and alpha spellings, and the
+# lookaround SPELLING of `a\bb` — `a(?:(?<=\w)(?!\w)|(?<!\w)(?=\w))b`, the
+# empty `a\bb` two rows up by another name. Before U2 each was a VM artifact
+# (lookaround sub-match) that never matched; every one is answer-checked empty
+# by its own corpus file (tests/lookaround/). Named, not counted.
+#
 # The last four reach this sweep from `tests/known_fail/`, which this check
 # harvests along with the rest of the corpus and compiles at the DEFAULT
 # encoding — where they compile perfectly well. Their K53 refusal is a
@@ -837,7 +846,31 @@ a\bb
 \p{sc=Grek}
 \p{sc=Thaana}
 \p{sc=Unknown}
-\p{scx=Unknown}'
+\p{scx=Unknown}
+(*napla:a)b
+(*non_atomic_positive_lookahead:a)b
+(*pla:a)b
+(*positive_lookahead:a)b
+(?*[ab])z
+(?*a)b
+(?*a)z
+(?*x)a
+(?=[ab])z
+(?=a)b
+(?=a)z
+a(?:(?<=\w)(?!\w)|(?<!\w)(?=\w))b
+y(?*[ab])z
+y(?*a)z
+y(?<*[ab])z
+y(?<*a)z
+y(?<=[ab])z
+y(?<=a)z
+y(?=[ab])z
+y(?=a)z
+z(?<*[ab])
+z(?<*a)
+z(?<=[ab])
+z(?<=a)'
 sed -n 's/^EMPTYPAT //p' "$WORKDIR/verdicts" | LC_ALL=C sort -u > "$WORKDIR/empty_seen"
 printf '%s\n' "$EMPTY_MANIFEST" | LC_ALL=C sort -u > "$WORKDIR/empty_want"
 if cmp -s "$WORKDIR/empty_seen" "$WORKDIR/empty_want"; then

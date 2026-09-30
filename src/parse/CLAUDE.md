@@ -147,6 +147,16 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   164-probe differential had missed (quoted quantifier chars live; the
   p_rep in_quote guard is the fix, S212 pins it). The impl lane itself
   wrote no tests here — that remains the point.
+- **ctxnode.c** — [UCP] U2's T3 (docs/design/ucp_design.md §0.1, §2.2):
+  the first-match table that lowers a lookaround. Row `ctx-node` (deny
+  `-fno-ctx-node`, `PCREC_NO_CTX_NODE`): a body whose LANGUAGE is a set of
+  single characters (alternation, class, `(?>…)`, `{1}` — not a capture, an
+  assertion or a nullable body) and whose every member is one byte of the
+  encoding (`pcrec_enc_set_bytes`) becomes an `A_CTX` context node; row
+  `lookaround` (always) keeps the `A_LOOK`. Asked by `mod_lookaround.c`'s port
+  at construction, so a context node is never stamped with the lookaround
+  rows' VM_ONLY mask. The rows are data (`pcrec_look_rows`), which
+  `--list-axes` walks.
 - **mod_ucp.c** — module `ucp` ([UCP], docs/design/ucp_design.md, D130).
   U0: the `(*UTF)`/`(*UTF8)` name rows' port — accepted as a restatement
   when the compile's encoding is Unicode (`max_cp`), refused by the row's

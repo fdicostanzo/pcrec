@@ -329,9 +329,12 @@ fi
 # hand from the patterns; the answers are libpcre2 10.46's
 # (tests/recursion/k69.rxt). Sabotage S318 (every call nullable) and S319
 # (no call nullable) each turn one side red.
+# [UCP] U2: the byte lookaround row was `a?(?=b)`; a one-character body is
+# T3's context node now (no `lookaround` kind — the prefilter reads it
+# exactly), so the witness is two characters wide to stay a lookaround.
 printf '%s\n' \
     'E1W	byte	abc	none	no' \
-    'E1W	byte	a?(?=b)	lookaround	yes' \
+    'E1W	byte	a?(?=bc)	lookaround	yes' \
     'E1W	utf8	\x{3b1}	none	no' \
     'E1W	utf8	[\x{3b1}-\x{3c9}]	none	no' \
     'E1W	utf8	\x{3b1}?	none	yes' \

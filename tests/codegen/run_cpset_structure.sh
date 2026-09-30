@@ -363,11 +363,20 @@ fi
 #   opt/altcls.c     §2.5.1's three WIDEN rows — a genuine interval union
 #                    ABOVE the lowering, which never makes a bitmap
 #   opt/lower_enc.c  the lowering itself, which must read what it lowers
+#   parse/ctxnode.c  [UCP] U2's T3, `lang_charset` — accumulates a lookaround
+#                    body's LANGUAGE into a code-point-level `PcrecCpSet`
+#                    (`pcrec_cpset_add_set`), never a byte bitmap; the result
+#                    is checked for byte-expressibility by `pcrec_enc_set_bytes`
+#                    BEFORE any engine reads it (the row's own byte-expressibility
+#                    conjunct), so it never reaches a byte-tier consumer the way
+#                    `pcrec_cls_bits`'s assertion polices. Added 2026-09-29 by
+#                    lane triu2 (U2's own population: one-character lookarounds
+#                    reaching this check's corpus sweep for the first time)
 #
 # Everything else — every emitter, the NFA builder, the two DECLINE analyses —
 # reaches a class ONLY through `pcrec_cls_bits`, `pcrec_cls_bits_widen`,
 # `pcrec_cls_single` or `pcrec_cls_has`.
-ALLOW='src/core/internal.h|src/core/cpset.c|src/parse/parse.c|src/opt/altcls.c|src/opt/lower_enc.c'
+ALLOW='src/core/internal.h|src/core/cpset.c|src/parse/parse.c|src/opt/altcls.c|src/opt/lower_enc.c|src/parse/ctxnode.c'
 # Run from ROOT_DIR over the relative path `src`, so grep's output prefixes
 # are the relative names the allowlist is written in — matching an absolute
 # path against a relative pattern is how an allowlist silently allows nothing.

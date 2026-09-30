@@ -474,6 +474,16 @@ caseless entry there is no cross-entry dependency and no customer, so both are
 gone (D77). `pcrec_enc_has_entry` survives, because the validity entry still
 asks a question about the table.
 
+## [UCP] U2 `PcrecEnc` GAINED `onebyte_max` — THE ONE-BYTE REPERTOIRE — AND `pcrec_enc_set_bytes`
+
+Every code point `<= onebyte_max` is written as exactly one byte equal to it
+(`byte` 0xFF, `utf8` 0x7F). It is what makes a context set BYTE-EXPRESSIBLE
+(ucp_design.md §2.3): `pcrec_enc_set_bytes` (enc.c) returns a set's byte image
+only when every member is at or below it, and every site that turns an A_CTX
+set into bytes asks it — `\b`'s port, the T3 recognizer (src/parse/ctxnode.c),
+the NFA lowering and the VM's `vm_ctx`. Recorded as a D58 seam event the way
+`max_cp`, `fold` and `restrict_ok` were: the entries table is unchanged.
+
 ## [K70] `PcrecEnc` GAINED A FIFTH SCALAR — `restrict_ok` — AND IT IS A D58 SEAM EVENT
 
 Found by lane `ucpthink` (`docs/dev/ucp_study.md` §G.1): `(?r)` (PCRE2's

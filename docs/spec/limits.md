@@ -484,9 +484,32 @@ compile at this stage:
   Restricting the family (`(?aW)`, `(?aP)`) makes the construct ASCII again,
   and it compiles.
 
-UCP `\b`/`\B` are refused by name at this stage under both encodings — no
-number is involved: they read the Unicode word set, which needs [UCP] U2
-(`-e byte`) or U3/U4 (`-e utf8`). Not movable by a flag.
+UCP `\b`/`\B` under `-e utf8` are refused by name — no number is
+involved: they read the Unicode word set, which is not byte-expressible
+there and needs [UCP] U3/U4. Under `-e byte` they compile ([UCP] U2): the
+Latin-1 word set is a byte set. Not movable by a flag.
+
+### 3.9 The DFA's context sets and atoms ([UCP] U2)
+
+A DFA machine reads "which set is the character on each side of this
+position in" for every context assertion it carries — `\b`/`\B` (the word
+set), a one-character lookaround turned context node (`tuning.md` §2.32;
+its own set), `(?m)^`/`(?m)$` (the newline set) and, under `-e utf8`, the
+unanchored machine's character-boundary gate (the non-start bytes). Two
+numbers bound it, both DECLINES rather than refusals:
+
+- **`PCREC_MAX_CTX_SETS` = 32** distinct context sets on one machine;
+- **`PCREC_MAX_CTX_ATOMS` = 16** context ATOMS — the distinct membership
+  vectors the machine's bytes realize over those sets, plus the empty one
+  (what an absent side, start or end of subject, reads as). Overlapping
+  sets are exact: `V ⊂ W` gives the atoms `V`, `W∖V` and neither.
+
+Over either, the DFA build is declined exactly as a state-cap overflow is
+(§3.3's `[SEL-1]` exception): `--engine=auto` compiles the pattern on the VM,
+`--engine=dfa` refuses ("more than 16 context atoms on one machine; try
+--engine=vm"). Never a truncated partition. Every class-axis machine the
+corpus builds realizes at most 4 atoms over at most 3 sets. Not movable by
+a flag (a raise would widen every per-state view array).
 
 ## 4. Worked example: `^(a(?1)?b)$`, re-measured
 

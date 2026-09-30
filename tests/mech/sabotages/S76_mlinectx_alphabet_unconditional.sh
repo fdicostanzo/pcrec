@@ -36,8 +36,21 @@ SAB_DOC_FIGURE="tests/codegen/run_mlinectx_identity.sh: the (?m)-free identity p
 # LF — which is exactly why the gate on it has to be a byte comparison and not
 # a behaviour test.
 SAB_COUNT=1
-SAB_BEFORE='    if (has_nl)   ncls = refine_by(d, ncls, pcrec_cls_newline);'
-SAB_AFTER='    ncls = refine_by(d, ncls, pcrec_cls_newline);   /* SABOTAGE S76 */'
+SAB_BEFORE='            if (r == CTXROW_CTX) cbit[i] = (int8_t)k;
+        }
+    }
+    return true;
+}'
+SAB_AFTER='            if (r == CTXROW_CTX) cbit[i] = (int8_t)k;
+        }
+    }
+    if (d->nctx < PCREC_MAX_CTX_SETS) {   /* SABOTAGE S76 */
+        PcrecCtxSet *cs = &d->ctx[d->nctx++];
+        cs->name = "newline"; cs->desc = "SABOTAGE S76"; cs->rows = 1u << CTXROW_NEWLINE;
+        memcpy(cs->bits, pcrec_cls_newline, 32);
+    }
+    return true;
+}'
 
 # ---------------------------------------------------------------------------
 # ANNOTATED 2026-08-19 BY THE [M6.2] WAVE D LANE, THEN RESOLVED THE SAME DAY BY
@@ -88,3 +101,5 @@ SAB_AFTER='    ncls = refine_by(d, ncls, pcrec_cls_newline);   /* SABOTAGE S76 *
 # sabotage that deletes the flag's consumer is the realistic edit, and it
 # cancels a flag pin exactly.
 # ---------------------------------------------------------------------------
+
+# RE-AIMED 2026-09-29 BY [UCP] U2 (lane ucpu2), intent re-verified: the `has_nl` flag and its gated refinement are GONE (see S71's note): the plant appends the newline set to every machine's context list, where it is FILLED; -DPCREC_NO_MLINECTX sits at the consumers (`ctx_entry_live`).

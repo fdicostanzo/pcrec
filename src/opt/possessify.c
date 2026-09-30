@@ -370,8 +370,7 @@ static First first_of(const Ast *a)
             return r;
         }
 
-    case A_WORDB:
-    case A_NWORDB:
+    case A_CTX:
         /* [M6.2 wave B] WIDEN AND DECLINE, and this is NOT the treatment
          * `\z`/`$` get one arm up -- it is `^`'s.
          *
@@ -632,8 +631,7 @@ static GkParts gk_build(Gk *g, const Ast *a)
     case A_BOL:
     case A_EOL:
     case A_END:
-    case A_WORDB:
-    case A_NWORDB:
+    case A_CTX:
     case A_GSTART:
     /* [M6.2 wave E] `\K` too, and here it is the LITERAL truth rather than
      * a modelling choice: this walk asks whether the body admits a unique
@@ -898,7 +896,7 @@ static void pss_walk(Pss *P, Ast *a, const uint8_t *follow, bool may_end,
     /* [M6.5.2] a leaf: this walk only HUNTS for A_REP nodes to offer the
      * verdict to, and a backreference hosts none. What it MEANS to the
      * analysis is `first_of`'s answer above (every byte, nullable). */
-    case A_WORDB: case A_NWORDB: case A_GSTART: case A_KRESET: case A_BREF:
+    case A_CTX: case A_GSTART: case A_KRESET: case A_BREF:
     case A_VAR:
         return;
 

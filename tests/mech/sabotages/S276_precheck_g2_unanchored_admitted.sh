@@ -47,7 +47,7 @@ SAB_BEFORE='static bool req_route_one_attempt(Ctx *cx)
                ((cx->job->fit.prefilter && !cx->job->fit.prefilter_collapsed) ||
                 cx->job->vm_frameless);
     return cx->job->engine == PCREC_ENG_ATTEMPT &&
-           dfa_interior_dead(cx->job->dfa.s1u);
+           dfa_interior_dead(&cx->job->dfa, cx->job->dfa.s1u);
 }'
 SAB_AFTER='static bool req_route_one_attempt(Ctx *cx)
 {
@@ -58,5 +58,7 @@ SAB_AFTER='static bool req_route_one_attempt(Ctx *cx)
     if (cx->job->fit.chosen == ENGM_VM)
         return true;
     return cx->job->engine == PCREC_ENG_ATTEMPT &&
-           dfa_interior_dead(cx->job->dfa.s1u);
+           dfa_interior_dead(&cx->job->dfa, cx->job->dfa.s1u);
 }'
+
+# RE-AIMED 2026-09-29 BY [UCP] U2 (lane ucpu2), intent re-verified: signature only: `dfa_interior_dead(&cx->job->dfa, ...)`; the plant still admits every VM route.
