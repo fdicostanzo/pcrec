@@ -249,4 +249,13 @@ re-measure before load-bearing use.
   sub-letters under `-e utf8` WITHOUT UCP. Both confirmed true no-ops;
   see `docs/dev/known_issues.md` K70.
 
+- `ctx_prefilter_joint/` — [CTX-PREFILTER] joint-position measurement (lane
+  ctxjoint, 2026-09-29; measurement only): of the positions a lookaround-free
+  prefilter admits, how many would the necessary one-character context
+  condition actually reject, measured with libpcre2 on the bench's own
+  subjects (capability + syntax throughput texts, sha-verified) and two
+  prose texts, 99 patterns x 6 subjects, soundness (`T ⊆ C1 ⊆ C0`) checked in
+  every cell plus four controls. Backs `docs/dev/ctx_prefilter_joint.md`. See
+  its own CLAUDE.md.
+
 Maintenance: update this file when studies are added/removed.
