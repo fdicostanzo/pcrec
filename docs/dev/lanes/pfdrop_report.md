@@ -295,3 +295,87 @@ line is `=== chain DONE`. Each step writes its own log in the same directory.
 - a Linux full `make test` at merge;
 - a Linux timing pass, only if the manager wants the three small rungs
   ordered by number (§2).
+
+## Triage (pftri)
+
+Lane `pftri` (sonnet, 2026-09-30) read the chain's `test-registry` and
+`test-rxtsource` logs (`worktrees/pfdrop-scratch/val/`). Both reds were STALE
+PINS that pfdrop's own delivery should have moved; neither is a regression, and
+neither is environmental. Verdicts are make's `*** [test-X] Error` lines, not
+grep counts.
+
+### test-registry (rc=2): one real check failure, one stale allowlist
+
+The log has exactly one `FAIL:` line (`test-registry.log:1042`), from
+`tests/registry/limits_check.sh`'s D107 detector:
+`src/core/internal.h:2430: enum member SDR_NO_PREFILTER = 3 -- ... on NEITHER
+allowlist`. `run_registry_tests.sh`'s coverage guard then reported
+`limits_check shows 36 passing checks (37 expected; 1 failed`, the same failure
+seen from the wrapper (line 1052), so it is one failure counted twice.
+
+- Cause: [PF-DROP] added the drop ladder's fourth rung ordinal
+  `SDR_NO_PREFILTER = 3` (and moved `SDR_MAX` 2 -> 3). It is the same kind as
+  `SDR_NONE`/`SDR_NO_ANCHORED`/`SDR_NO_PREMUL`/`SDR_MAX`, which are on the
+  NON-LIMIT allowlist as "THE FOURTH KIND — cardinalities and ordinals". The
+  new sibling was not added.
+- Fix (`tests/registry/limits_check.sh`): `SDR_NO_PREFILTER` added to the
+  NON-LIMIT allowlist with the existing kind's reason (a rung ordinal, a number
+  nothing can be measured against), and the comment that names the family
+  updated. Not a loosening: the constant is an ordinal beside three
+  already-allowlisted ones, and the detector still fires for any other unlisted
+  constant.
+- The coverage guard's pin (37) is unchanged and correct: the run before the
+  fix counted 36 only because the failed check did not print its PASS line.
+- Evidence: `bash tests/registry/limits_check.sh` after the fix:
+  `checks passed: 37`, `checks failed: 0`.
+
+### test-rxtsource (rc=2): the census was not re-pinned for the new corpus file
+
+10 FAILs, one cause: pfdrop added `tests/uprops/size_ladder_prefilter_drop.rxt`
+(1 file, 1 block, 19 non-comment lines: 8 `m`, 3 `n`, 8 `g`) and did not move the
+census. Every FAIL is that count read from a different angle: `census MOVED`
+(found 259/4314/32545, pinned 258/4313/32526), `file list`, the three C1 block
+counts, the case-row derivation, C3's file count, C3's reconcile line and the
+W23-S7 entry-file count. Deltas +1/+1/+19 match the new file exactly.
+
+The five `HARNESS FAILURE` lines for `tests/findings/golden/*.rxt` in the same
+log are NOT this lane's: they are the five known unparseable-head golden files
+that leg B / C0a already name (`PASS: leg B ... the 5 known unparseable-head
+(golden analyzer-dialect) file(s)`), untouched by pfdrop.
+
+Re-pins in `tests/rxtsource/run_rxtsource_tests.sh`, each with a dated comment
+naming the file and why:
+
+| pin | old | new | why |
+|---|---|---|---|
+| `CENSUS_FILES/BLOCKS/LINES` | 258/4313/32526 | 259/4314/32545 | the new file |
+| `RUNSH_FILES/BLOCKS/LINES` | 234/4313/32526 | 235/4314/32545 | same delta; `tests/uprops/` is a run.sh directory, not known_fail |
+| `C3_SKIP` | 18455 | 18474 | +19 SKIP |
+| `C3_SKIP_NOPYTHON` | 1964 | 1983 | all 19 are no-python-expression (`\p{Xwd}` has no python `re` spelling), so python-version-invariant |
+| `C3_VERIFIABLE` | 15960 | 15979 | PASS+INFO+nopython+perr-accept moves by the same 19 |
+
+C3's classification was MEASURED, not inferred: `verify_rxt.py
+tests/uprops/size_ladder_prefilter_drop.rxt` reports `SKIP=19 (...
+no-python-expression=19 ...)`, `PASS=0`. The C3 reconcile equation
+(`PASS + INFO + SKIP + 89 = CENSUS_LINES`) then holds with `CENSUS_LINES=32545`.
+
+### Re-validation
+
+- `bash tests/rxtsource/run_rxtsource_tests.sh` (the exact script
+  `make test-rxtsource` runs; log `worktrees/pfdrop-scratch/val/pftri_rxtsource.log`):
+  `checks passed: 271`, `checks recorded: 1`, `checks failed: 0`, rc=0, ending
+  `PASS: rxtsource: INV-COMPAT holds over 259 files / 4314 blocks / 32545
+  expectation lines`. The one RECORD is the standing darwin python-3.9 vs
+  3.14 C3 note. Before: 10 failed.
+- `bash tests/registry/limits_check.sh`: 37 passed, 0 failed (before: 36/1).
+- **OWED: `make test-registry` as a whole target.** pfdrop's chain (test-codegen,
+  mech S237/S252/S253/S420-S423, test-axes) was still running when this lane
+  ended, so the 6-minute registry run was not started alongside it. A detached
+  follow-up (`pftri_followup.sh`, under `nohup caffeinate`) waits for
+  `=== chain DONE` in `chain.log`, then runs `make test-registry CC=gcc-16`.
+  Its result is one line in `worktrees/pfdrop-scratch/val/pftri_followup.log`
+  ending `=== pftri DONE`; the full log is `pftri_test-registry.log` there.
+  Read the verdict as make's `*** [test-registry] Error` lines.
+- The later chain steps (codegen, uprops-utf8, mech, axes) had not reported
+  when this lane ended; their reds, if any, are unclassified. None of the
+  fixes above touches `src/`, so those steps are unaffected by this triage.
