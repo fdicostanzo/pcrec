@@ -357,6 +357,16 @@ fi
 # MEASURED FREE for the corpus: 0 of the discovered files are head-bearing
 # today, so this block calls pcrec zero times and the whole pass is one
 # empty loop.
+# rxt_is_opener TOKEN: true iff TOKEN opens a pattern block. THE ONE HOME of
+# "which first tokens mean this file has NO head" (docs/spec/rxt_format.md:
+# the head ends at the first BLOCK OPENER; `rxt_schema.def` gives
+# `opens_group` to exactly `pattern` and `pattern-esc`). Every head test in
+# this script goes through it [K76]: comparing against the literal `pattern`
+# read a file whose first block is `pattern-esc` as head-bearing.
+rxt_is_opener() {
+    case $1 in (pattern|pattern-esc) return 0 ;; esac
+    return 1
+}
 rxt_head_probe() {
     # rxt_head_probe FILE -> stdout: the first token of the first
     # non-comment, non-blank line, or empty for a file with no content.
@@ -436,7 +446,7 @@ if [ "${#files[@]}" -gt 0 ]; then
     assoc_new rxt_include_target      # resolved include target -> includer
     for _rxt_f in "${files[@]}"; do
         _rxt_probe="$(rxt_head_probe "$_rxt_f")"
-        [ -n "$_rxt_probe" ] && [ "$_rxt_probe" != "pattern" ] || continue
+        [ -n "$_rxt_probe" ] && ! rxt_is_opener "$_rxt_probe" || continue
         rxt_list_source_cached "$_rxt_f" || continue
         _rxt_ls="$RXT_LS_OUT"
         while IFS=$'\t' read -r _rxt_k _rxt_l _rxt_n _rxt_v _rxt_rest; do
@@ -2170,7 +2180,7 @@ rxt_expand_closure() {
     # resolved real path in one closure is REFUSED").
     local src="$1" seen="$2" probe
     probe="$(rxt_head_probe "$src")"
-    [ -n "$probe" ] && [ "$probe" != "pattern" ] || return 0
+    [ -n "$probe" ] && ! rxt_is_opener "$probe" || return 0
     if ! rxt_list_source_cached "$src"; then
         rxt_expand_failed=1
         echo "$src: [resolution] this file's own head does not parse — its includer's closure cannot complete" >&2
@@ -2365,7 +2375,7 @@ for file in "${files[@]}"; do
         break
     done < "$file"
 
-    if [ -n "$head_probe" ] && [ "$head_probe" != "pattern" ]; then
+    if [ -n "$head_probe" ] && ! rxt_is_opener "$head_probe"; then
         # [K37/D45] `pcrec_run`, on ONE line. The bound was there before
         # (an explicit $TIMEOUT_BIN) but split across a continuation, and
         # the structural check reads a LINE — so it correctly reported an

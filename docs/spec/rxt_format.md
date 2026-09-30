@@ -27,11 +27,12 @@ line-oriented list of **pattern blocks**: each block starts with a
 lines that apply to that pattern, until the next `pattern` line or end of
 file. The head is a list of file-level declarations.
 
-**The head ENDS at the first `pattern` line, and nothing file-level may
-appear after it.** That is the whole boundary rule, and everything below
+**The head ENDS at the first block-opening line (`pattern` or
+`pattern-esc`), and nothing file-level may appear after it.** That is the whole boundary rule, and everything below
 depends on it: a reader of any block needs to look in exactly one other
 place — the top of the file — and that place is bounded. A file whose
-first non-comment line is `pattern` has NO head, and behaves exactly as
+first non-comment line opens a block (`pattern` or `pattern-esc`) has NO
+head, and behaves exactly as
 it did before the head existed. Every file in `tests/` is of that shape
 today.
 
