@@ -379,3 +379,67 @@ no-python-expression=19 ...)`, `PASS=0`. The C3 reconcile equation
 - The later chain steps (codegen, uprops-utf8, mech, axes) had not reported
   when this lane ended; their reds, if any, are unclassified. None of the
   fixes above touches `src/`, so those steps are unaffected by this triage.
+
+## Triage (pftri2)
+
+Lane `pftri2` (sonnet, 2026-09-30), continuing pftri. Inputs:
+`worktrees/pfdrop-scratch/val/` (chain.sh, chain.log, per-step logs).
+
+### mech S237/S252/S253/S420-S423: HARNESS INVOCATION ERROR, not a detection result
+
+All seven rows `rc=2` in ~1 s. Each log reads
+`FATAL: no sabotage definitions matched 'S237-' under .../tests/mech/sabotages/`:
+`chain.sh` passed the row as `S237-` (trailing dash), but
+`run_sabotage_matrix.sh` takes an ID PREFIX (`S237`), matched against the
+`sabotages/S*.sh` listing (files are `S237_size_drop_rung_deleted.sh`, no `S237-`
+prefix). Nothing was measured; the rows were never run. Re-driven SOLO with the
+correct prefix (below).
+
+Intent of the two re-anchors (S237/S252) was re-verified by diff against the
+branch point: both move the rung's eligibility from the inline
+`cx.size_cap_refused && ...` chain into the `fit_rungs[]` row predicates
+(`fit_anchored_applies` / `fit_premul_applies`, `src/core/compile.c:~697`),
+conjunct for conjunct less the walk's own shared guard; the plant (`return
+false`) still removes exactly that one rung and the walk falls through as before.
+
+### test-codegen (rc=2): TWO reds, one accepted and ONE REAL (fixed)
+
+`test-codegen.log` has exactly two `FAIL:` lines and one `*** [test-codegen]
+Error 1`:
+
+1. `FAIL: nm could not read arm_a.o (no rx_search symbol)` — the standing darwin
+   probe red (documented in wake.md and 30+ lane reports). ACCEPTED, not this
+   lane's.
+2. `FAIL: [SABANCHOR] ... STALE ANCHORS: 1 -- S295_vm_anchor_bound_flags_leak.sh
+   src/gen/emit_dfa.c ANCHOR NOT FOUND` — REAL, pfdrop's own. [PF-DROP]
+   appended `| PCREC_FAST_OR_FAIL;` to `emit_info_def`'s `strategy_denials`
+   mask (`src/gen/emit_dfa.c:2697-2705`), so the line S295's `SAB_BEFORE` quotes
+   (`PCREC_NO_REQ_BYTE;`) is now `PCREC_NO_REQ_BYTE |`. The delivery re-anchored
+   S237/S252 but never ran `scripts/m6read_check_sab_anchors.py` over the whole
+   set, so a row whose FILE it edited (rather than a row it meant to touch)
+   went stale. Class: stale anchor after an emitter edit (coding_guide §4.3).
+   Fix (commit `7ac53930`): S295 `SAB_BEFORE`/`SAB_AFTER` trailing `;` -> `|`.
+   Intent unchanged: the plant still drops exactly `PCREC_NO_VM_ANCHOR_BOUND`
+   from the mask (the rest of the mask, incl. `PCREC_FAST_OR_FAIL`, is untouched
+   and still compiles). `python3 scripts/m6read_check_sab_anchors.py`:
+   `sabotages checked: 375 (391 anchor sites)` / `all anchors resolve`.
+
+### Other chain steps (verdicts from chain.log)
+
+- test-resource rc=0, test-uprops-utf8 rc=0 (green).
+- test-registry / test-rxtsource: pftri's stale-pin fixes (above).
+
+### OWED at hand-off (detached, `nohup caffeinate`, log paths)
+
+Armed by `val/pftri2_chain.sh`, which waits for `=== pftri DONE` in
+`pftri_followup.log` (itself waiting on the chain's `test-axes
+AXES=-fno-prefilter-collapse`, still in its baseline run at hand-off), then
+runs one at a time: mech `S237 S252 S253 S420 S421 S422 S423 S295` (logs
+`val/mech2_<id>.log`) and `make test-codegen` (`val/pftri2_test-codegen.log`).
+One-line-per-step summary: `val/pftri2.log`, ending `=== pftri2 DONE`.
+Read mech verdicts as DETECTED/UNDETECTED/UNREACHED/ANOMALY in each
+`mech2_*.log` (expected: all DETECTED; S421 is answer-identity-neutral by
+design, check its SAB_DESC for the expected suites); read test-codegen as
+make's `*** [test-codegen] Error` line -- expected: only the standing `nm
+arm_a.o` FAIL remains. Also still owed from pftri: `val/pftri_followup.log`
+(`make test-registry`) and `chain.log`'s test-axes line.
