@@ -72,6 +72,11 @@ one fold class in a span loop), hotchain (one constant x26). Subjects: bench `t-
 find-all: witness match text inserted every ~4 KB), short match string (match).
 
 ### 4a. ubuntubudu (citable tier): **OWED**
+**2026-09-30 re-arm (lane fc2x86, `lane/fc2x86`):** the first chain died at 10:38 with `build.py: error: --pcrec is required`
+(the script demanded `--pcrec` even under `--reuse`, which never calls it). Fixed in `build.py`; `chain.sh` is now committed in
+`studies/form_char2/` with the idle gate (load1 < 0.5, no `make`) and a GIVE-UP DEADLINE of 2026-10-01 06:00 box-local (bench owns the
+box all Thursday): it refuses to start within 30 min of the deadline and aborts between phases. Re-armed 13:17 EDT 2026-09-30.
+Completion lines in `chain.log`: `CHAIN COMPLETE` (ran) or `CHAIN GAVE UP: ...` (nothing timed; then 4a stays OWED and the scratch dir is removed).
 Chain `/home/duxevents/pcrec/.formchar2_scratch/chain.sh` (detached, log `chain.log`, waits for load1 < 0.5
 and no `make`, then builds with `--reuse` and runs; completion line `CHAIN COMPLETE`). Outputs
 `timing_raw.tsv`, `timing_summary.tsv`, `sizes_x86.tsv` in that directory. To finish: scp them into
