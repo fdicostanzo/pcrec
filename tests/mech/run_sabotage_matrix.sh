@@ -396,7 +396,9 @@ if [ -z "${JOBS:-}" ]; then
 fi
 # [TT-8 FIX] the per-row budget for the two suite arms that read PROCS from
 # THEIR OWN environment to pick an internal worker count (`reject`,
-# `harness` — see the header comment above). Computed exactly like JOBS,
+# `harness` — see the header comment above). [portsplit] The
+# sharded sweep arms (`anchdiff`, `anchoredmatch`, `searchpinned`,
+# `vmframeless`) read it too and take it the same way. Computed exactly like JOBS,
 # and always passed EXPLICITLY on those two arms' command lines below —
 # never left for the environment to supply, which is what let the outer
 # row-concurrency PROCS leak into inner suite sharding undivided (measured:
@@ -1313,7 +1315,7 @@ run_one() {
                 # [ENG-ABS] tests/codegen/run_anchored_match.sh — the anchored
                 # match-here FORM held to the artifact. Its own arm for the
                 # reason `offsetskip` gives one line up.
-                PCREC="$pcrec" CC="$CC" bash "$tree/tests/codegen/run_anchored_match.sh" \
+                PCREC="$pcrec" CC="$CC" PROCS="$INNER_PROCS" bash "$tree/tests/codegen/run_anchored_match.sh" \
                     > "$work/anchoredmatch.log" 2>&1
                 p="$(grep -m1 '^checks passed:' "$work/anchoredmatch.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/anchoredmatch.log" | grep -oE '[0-9]+')"
@@ -1331,7 +1333,7 @@ run_one() {
                 # sweeps every startpos and reads caps[0][0] explicitly,
                 # exists for. A row scoring `searchpinned:Nfail` with
                 # `corpus:0fail` is this arm working, not a half-detection.
-                PCREC="$pcrec" CC="$CC" bash "$tree/tests/codegen/run_search_pinned.sh" \
+                PCREC="$pcrec" CC="$CC" PROCS="$INNER_PROCS" bash "$tree/tests/codegen/run_search_pinned.sh" \
                     > "$work/searchpinned.log" 2>&1
                 p="$(grep -m1 '^checks passed:' "$work/searchpinned.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/searchpinned.log" | grep -oE '[0-9]+')"
@@ -1442,7 +1444,7 @@ run_one() {
                 # REGISTERED BEFORE THE ROWS THAT NAME IT (R31 C11): this
                 # vocabulary is CLOSED, and a row naming a word that does not
                 # exist yet scores UNKNOWN-SUITE rather than "not detected".
-                PCREC="$pcrec" bash "$tree/tests/codegen/run_vm_frameless.sh" \
+                PCREC="$pcrec" PROCS="$INNER_PROCS" bash "$tree/tests/codegen/run_vm_frameless.sh" \
                     > "$work/vmframeless.log" 2>&1
                 p="$(grep -m1 '^checks passed:' "$work/vmframeless.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/vmframeless.log" | grep -oE '[0-9]+')"
@@ -1488,7 +1490,7 @@ run_one() {
                 # ITS `harness` AND `anchoredmatch` ARMS ARE EXPECTED GREEN ON
                 # ITS OWN ROW. A row scoring `anchdiff:Nfail` with
                 # `corpus:0fail` is this arm working, not a half-detection.
-                PCREC="$pcrec" CC="$CC" bash "$tree/tests/anchored/run_anchored_diff.sh" \
+                PCREC="$pcrec" CC="$CC" PROCS="$INNER_PROCS" bash "$tree/tests/anchored/run_anchored_diff.sh" \
                     > "$work/anchdiff.log" 2>&1
                 p="$(grep -m1 '^checks passed:' "$work/anchdiff.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/anchdiff.log" | grep -oE '[0-9]+')"

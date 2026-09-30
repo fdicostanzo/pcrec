@@ -25,7 +25,7 @@ section targets depend on.
   on darwin was ALWAYS the fallback path, silently. Used by
   tests/lib/load_guard.sh, tests/harness/run.sh's SIZELOG timing line,
   tests/size/run_size_log.sh, scripts/battery.sh.
-- **shard_split.sh** — `shard_split N IN OUTPREFIX`: portable awk line-chunk split (BSD `split` has no `-n`; the `|| cp pats sh/p00; NSHARD=1` fallbacks made darwin silently serial). Used by anchored/run_anchored_diff.sh; six more sites still write `split -n` (s189tri_report.md).
+- **shard_split.sh** — `shard_split N IN OUTPREFIX` then `NSHARD="$SHARD_COUNT"`: portable awk line-chunk split, exactly min(N, lines) balanced contiguous shards (BSD `split` has no `-n`; the old `|| cp pats sh/p00; NSHARD=1` fallbacks made darwin silently serial). LOUD by construction: fewer shards than asked prints a stderr NOTE, an empty/failed split is FATAL (rc 1), `SHARD_SPLIT_VERBOSE=1` prints the count on every call. Used by anchored/run_anchored_diff.sh and the six codegen sweeps run_dfa_stamps/run_dfa_uniform_fold/run_form_census/run_anchored_match/run_vm_frameless/run_search_pinned ([portsplit], portsplit_report.md). A new sharded sweep uses it; never `split -n`.
 - **ncpu.sh** — [MACPORT] `$NCPU`, resolved once: `nproc` (present via
   Homebrew on this box) else `sysctl -n hw.ncpu` else
   `getconf _NPROCESSORS_ONLN` else the project's pre-existing fallback
