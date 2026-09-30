@@ -1,0 +1,25 @@
+{
+ "id": "cap-base10num-grok",
+ "pattern": "(?<![0-9.+-])(?>[+-]?(?:(?:[0-9]+(?:\\.[0-9]+)?)|(?:\\.[0-9]+)))",
+ "subject": "t-1m.bin",
+ "mode": "findall",
+ "matches": 49151,
+ "calls": 49152,
+ "attempts": 49151,
+ "tests": {
+  "lead": 49151,
+  "mid": 487524,
+  "trail": 0,
+  "dfa": 2762952,
+  "search": 442361
+ },
+ "test_lines": {
+  "lead": 1,
+  "mid": 12,
+  "trail": 0,
+  "dfa": 18,
+  "search": 12
+ },
+ "first_choice_line": 333,
+ "program_lines": 71
+}

@@ -1,0 +1,25 @@
+{
+ "id": "sec-github-pat",
+ "pattern": "\\b(github_pat_[0-9a-zA-Z_]{82})\\b",
+ "subject": "secrets.bin",
+ "mode": "findall",
+ "matches": 86,
+ "calls": 87,
+ "attempts": 86,
+ "tests": {
+  "lead": 258,
+  "mid": 7224,
+  "trail": 172,
+  "dfa": 57358,
+  "search": 604
+ },
+ "test_lines": {
+  "lead": 2,
+  "mid": 2,
+  "trail": 1,
+  "dfa": 16,
+  "search": 12
+ },
+ "first_choice_line": 723,
+ "program_lines": 29
+}

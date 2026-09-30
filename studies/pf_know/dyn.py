@@ -98,6 +98,8 @@ def main():
     else:
         print("%s\tno-gcov" % ident); return
     src = open(gen, encoding="latin-1").read().split("\n")
+    if not any(s.strip() == "goto rx_L0;" for s in src):
+        print("%s\tdfa-engine (no VM program; not a PF-KNOW cell)" % ident); return
     # locate the program region of rx_match_anchored
     l0 = next(i for i, s in enumerate(src) if s.strip() == "goto rx_L0;") + 1
     acc = next(i for i, s in enumerate(src) if s.startswith("rx_accept:"))
@@ -110,13 +112,29 @@ def main():
     for i in range(last_c + 1, acc):
         if re.match(r"^rx_L\d+:", src[i]): trail_start = i; break
     if not choice_lines: trail_start = acc
-    tot = {"lead": 0, "mid": 0, "trail": 0}
-    lines = {"lead": 0, "mid": 0, "trail": 0}
-    for i in region:
+    # the other regions: the DFA prefilter pair (`rx_prefilter` .. the VM
+    # body) and the search loop (`rx_search_run` .. the public entries)
+    def find(fn):
+        rx = re.compile(r"^(static |int |ptrdiff_t ).*\b" + fn + r"\(")
+        for i, s in enumerate(src):
+            if rx.match(s): return i
+        return None
+    pf0 = find("rx_prefilter"); pf1 = find("rx_match_anchored")
+    sr0 = find("rx_search_run"); sr1 = find("rx_search")
+    tot = {"lead": 0, "mid": 0, "trail": 0, "dfa": 0, "search": 0}
+    lines = {"lead": 0, "mid": 0, "trail": 0, "dfa": 0, "search": 0}
+    def bucket(i):
+        if i in region_set: return "lead" if i < first_c else "trail" if i >= trail_start else "mid"
+        if pf0 is not None and pf0 <= i < pf1: return "dfa"
+        if sr0 is not None and sr0 <= i < sr1: return "search"
+        return None
+    region_set = set(region)
+    for i in range(len(src)):
         s = src[i]
         if not TEST_RE.search(s) or s.strip().startswith(("/*", "*")): continue
+        k = bucket(i)
+        if k is None: continue
         c = counts.get(i + 1, 0)
-        k = "lead" if i < first_c else "trail" if i >= trail_start else "mid"
         tot[k] += c; lines[k] += 1
     # the entry and search-loop attempts: count executions of the `goto rx_L0;` line
     attempts = counts.get(l0, 0)
@@ -124,9 +142,11 @@ def main():
                matches=count, calls=calls, attempts=attempts, tests=tot, test_lines=lines,
                first_choice_line=first_c + 1 if choice_lines else None, program_lines=len(region))
     json.dump(rec, open(os.path.join(OUT, re.sub(r"[^A-Za-z0-9_.-]", "_", ident) + ".json"), "w"), indent=1)
-    allt = sum(tot.values()) or 1
-    print("%s\t%s\t%d\t%d\t%d\t%d\t%d\t%d\t%.1f%%\t%.1f%%" % (ident, mode, count, calls, attempts, tot["lead"], tot["mid"], tot["trail"],
-          100.0 * tot["lead"] / allt, 100.0 * (tot["lead"] + tot["trail"]) / allt))
+    vmt = tot["lead"] + tot["mid"] + tot["trail"] or 1
+    allt = vmt + tot["dfa"] + tot["search"]
+    print("%s\t%s\tmatches=%d\tcalls=%d\tattempts=%d\tlead=%d\tmid=%d\ttrail=%d\tdfa=%d\tsearch=%d\tlead/vm=%.1f%%\t(lead+trail)/vm=%.1f%%\tvm/all=%.1f%%" % (
+          ident, mode, count, calls, attempts, tot["lead"], tot["mid"], tot["trail"], tot["dfa"], tot["search"],
+          100.0 * tot["lead"] / vmt, 100.0 * (tot["lead"] + tot["trail"]) / vmt, 100.0 * vmt / allt))
 
 if __name__ == "__main__":
     main()

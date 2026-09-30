@@ -1,0 +1,25 @@
+{
+ "id": "syn-level-word",
+ "pattern": "\\b(ERROR|WARN|INFO|DEBUG)\\b ([a-z]+)",
+ "subject": "t-1024k-hit.bin",
+ "mode": "findall",
+ "matches": 798,
+ "calls": 799,
+ "attempts": 798,
+ "tests": {
+  "lead": 1596,
+  "mid": 10775,
+  "trail": 0,
+  "dfa": 4252581,
+  "search": 5589
+ },
+ "test_lines": {
+  "lead": 1,
+  "mid": 9,
+  "trail": 0,
+  "dfa": 23,
+  "search": 12
+ },
+ "first_choice_line": 418,
+ "program_lines": 82
+}

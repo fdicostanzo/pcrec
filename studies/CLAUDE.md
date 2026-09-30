@@ -257,6 +257,7 @@ re-measure before load-bearing use.
   sub-letters under `-e utf8` WITHOUT UCP. Both confirmed true no-ops;
   see `docs/dev/known_issues.md` K70.
 
+- `pf_know/` — [PF-KNOW] (D140; lane pfknow, 2026-09-30; research only): the proven-segment probe (`segprobe.c`, real parser + altcls + atomic discharge + enc lowering, captures on), the corpus+bench static census with the DFA-partition-refines-VM-bitmap check (question 2), the gcov dynamic-share instrument and the answer-checked hand twins (`detall`, `prefix`). Backs `docs/design/pf_know.md`. See its own CLAUDE.md.
 - `ctx_prefilter_joint/` — [CTX-PREFILTER] joint-position measurement (lane
   ctxjoint, 2026-09-29; measurement only): of the positions a lookaround-free
   prefilter admits, how many would the necessary one-character context

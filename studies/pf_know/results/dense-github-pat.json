@@ -1,0 +1,25 @@
+{
+ "id": "dense-github-pat",
+ "pattern": "\\b(github_pat_[0-9a-zA-Z_]{82})\\b",
+ "subject": "secrets_dense.bin",
+ "mode": "findall",
+ "matches": 2000,
+ "calls": 2001,
+ "attempts": 2000,
+ "tests": {
+  "lead": 6000,
+  "mid": 168000,
+  "trail": 4000,
+  "dfa": 1333996,
+  "search": 14002
+ },
+ "test_lines": {
+  "lead": 2,
+  "mid": 2,
+  "trail": 1,
+  "dfa": 16,
+  "search": 12
+ },
+ "first_choice_line": 723,
+ "program_lines": 29
+}

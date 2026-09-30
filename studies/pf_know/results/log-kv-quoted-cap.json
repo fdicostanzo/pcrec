@@ -1,0 +1,25 @@
+{
+ "id": "log-kv-quoted-cap",
+ "pattern": "\\b([a-z_][a-z0-9_]{0,31})=\"((?:[^\"\\\\]|\\\\.)*)\"",
+ "subject": "t-1024k-hit.bin",
+ "mode": "findall",
+ "matches": 386,
+ "calls": 387,
+ "attempts": 386,
+ "tests": {
+  "lead": 1158,
+  "mid": 8396,
+  "trail": 4922,
+  "dfa": 4209032,
+  "search": 3862
+ },
+ "test_lines": {
+  "lead": 2,
+  "mid": 6,
+  "trail": 4,
+  "dfa": 18,
+  "search": 13
+ },
+ "first_choice_line": 527,
+ "program_lines": 69
+}

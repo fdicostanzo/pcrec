@@ -7,6 +7,7 @@ append-only or historical records.
 
 ## Files
 
+- `pf_know.md` — [PF-KNOW] (D140, lane pfknow, 2026-09-30, RESEARCH NOTE, nothing built): what a successful prefilter PROVES to the VM and which VM tests that makes redundant (the leading/trailing fixed-width choice-free segment; the whole program only on the one-pass survey's `det_all` subset), with the soundness conditions (window START exact wherever a prefilter exists, END only under `mrl_win`; the `RX_VM_PREFILTER_LANG` stamp's blind spot), a static census over 3,347 artifacts, a gcov dynamic share and three answer-checked hand twins; and question 2, DFA/VM class-table sharing, refuted on benefit. Candidate [OPTLOOP] rows in its §8. Study: `studies/pf_know/`.
 - `extension_design.md` — ADOPTED (D34: Part II is the redesign of record)
   and progressively BUILT through MOD-0.1..0.3 (the first producers landed
   2026-08-12): how a regex feature plugs into pcrec — one table, a NAME per row as the unit of

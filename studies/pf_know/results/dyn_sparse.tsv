@@ -1,0 +1,19 @@
+cap-base10num-grok	findall	matches=49151	calls=49152	attempts=49151	lead=49151	mid=487524	trail=0	dfa=2762952	search=442361	lead/vm=9.2%	(lead+trail)/vm=9.2%	vm/all=14.3%
+cap-quotedstring-grok	findall	matches=2975	calls=2976	attempts=2975	lead=2975	mid=57696	trail=0	dfa=1276396	search=26777	lead/vm=4.9%	(lead+trail)/vm=4.9%	vm/all=4.4%
+log-level-context	findall	matches=-1	calls=-1	attempts=0	lead=0	mid=0	trail=0	dfa=0	search=0	lead/vm=0.0%	(lead+trail)/vm=0.0%	vm/all=100.0%
+sec-slack-webhook	findall	matches=85	calls=86	attempts=85	lead=2720	mid=4505	trail=0	dfa=48884	search=852	lead/vm=37.6%	(lead+trail)/vm=37.6%	vm/all=12.7%
+sec-aws-key	findall	matches=85	calls=86	attempts=85	lead=255	mid=1700	trail=170	dfa=4289799	search=853	lead/vm=12.0%	(lead+trail)/vm=20.0%	vm/all=0.0%
+email-orig-cap	findall	matches=40330	calls=40331	attempts=40330	lead=0	mid=2298818	trail=0	dfa=7703003	search=403302	lead/vm=0.0%	(lead+trail)/vm=0.0%	vm/all=22.1%
+email-orig-cap-sparse	findall	matches=496	calls=497	attempts=496	lead=0	mid=27040	trail=0	dfa=4507017	search=4962	lead/vm=0.0%	(lead+trail)/vm=0.0%	vm/all=0.6%
+log-iso-ts-cap	findall	matches=-1	calls=-1	attempts=0	lead=0	mid=0	trail=0	dfa=0	search=0	lead/vm=0.0%	(lead+trail)/vm=0.0%	vm/all=100.0%
+log-kv-quoted-cap	findall	matches=-1	calls=-1	attempts=0	lead=0	mid=0	trail=0	dfa=0	search=0	lead/vm=0.0%	(lead+trail)/vm=0.0%	vm/all=100.0%
+log-stack-frame-cap	findall	matches=-1	calls=-1	attempts=0	lead=0	mid=0	trail=0	dfa=0	search=0	lead/vm=0.0%	(lead+trail)/vm=0.0%	vm/all=100.0%
+cap-float-literal-bound	dfa-engine (no VM program; not a PF-KNOW cell)
+log-level-context	findall	matches=193	calls=194	attempts=193	lead=386	mid=39210	trail=386	dfa=4274824	search=1933	lead/vm=1.0%	(lead+trail)/vm=1.9%	vm/all=0.9%
+sec-github-pat	findall	matches=86	calls=87	attempts=86	lead=258	mid=7224	trail=172	dfa=57358	search=604	lead/vm=3.4%	(lead+trail)/vm=5.6%	vm/all=11.7%
+log-iso-ts-cap	findall	matches=193	calls=194	attempts=193	lead=0	mid=8685	trail=0	dfa=101935	search=1739	lead/vm=0.0%	(lead+trail)/vm=0.0%	vm/all=7.7%
+log-kv-quoted-cap	findall	matches=386	calls=387	attempts=386	lead=1158	mid=8396	trail=4922	dfa=4209032	search=3862	lead/vm=8.0%	(lead+trail)/vm=42.0%	vm/all=0.3%
+log-stack-frame-cap	findall	matches=659	calls=660	attempts=659	lead=3954	mid=70203	trail=659	dfa=364078	search=6592	lead/vm=5.3%	(lead+trail)/vm=6.2%	vm/all=16.8%
+syn-sshd-pid	findall	matches=150	calls=151	attempts=150	lead=150	mid=1144	trail=150	dfa=15362	search=902	lead/vm=10.4%	(lead+trail)/vm=20.8%	vm/all=8.2%
+syn-http-cap	findall	matches=0	calls=1	attempts=0	lead=0	mid=0	trail=0	dfa=21427	search=2	lead/vm=0.0%	(lead+trail)/vm=0.0%	vm/all=0.0%
+syn-level-word	findall	matches=798	calls=799	attempts=798	lead=1596	mid=10775	trail=0	dfa=4252581	search=5589	lead/vm=12.9%	(lead+trail)/vm=12.9%	vm/all=0.3%
