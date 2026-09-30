@@ -1734,12 +1734,17 @@ static void vm_cls_respell(Vm *v)
     pcrec_sb_puts(b, out);
 }
 
-/* How many table reads of class `ci` the program records (`vm_cls_note_read`). */
-static int vm_cls_reads(const Vm *v, int ci)
+/* How many times the finished program reads class `ci`'s table: the
+ * occurrences of its bitmap read's opening in `v->b`, the text
+ * `vm_cls_respell` re-spells — each one a call a kit matcher would be
+ * inlined at. (`tabrd` records distinct (class, byte) PAIRS, so two span
+ * loops on the same cursor expression are one record and two calls.) */
+static int vm_cls_reads(Vm *v, int ci)
 {
+    const char *needle = vm_rolef(v, "(%s_class_bitmap%d[", v->p, ci);
+    const char *q = v->b->p ? v->b->p : "";
     int n = 0;
-    for (int i = 0; i < v->ntabrd; i++)
-        if (v->tabrd[i].ci == ci) n++;
+    while ((q = strstr(q, needle)) != NULL) { n++; q++; }
     return n;
 }
 

@@ -203,7 +203,8 @@ done
 # smaller form). At `--tune=-2`/`-1` a scattered byte class with fewer than
 # 11 table-read siblings is tested by its kit matcher; `-fno-cls-kit` at the
 # same position and flags is the bitmap it replaced. The population spans
-# both size-leaning positions, a caseless class, and `-e utf8` — an ASCII
+# both size-leaning positions, a caseless class, a class reaching 0xFF from
+# above 0 (its kit keeps its bound; S436), and `-e utf8` — an ASCII
 # byte class and a wide class whose members all sit at or below U+00FF (its
 # `<prefix>_wcls<N>` matcher is the same row, read from vm_wcls) — review
 # C-L6. Same driver and cell shape as PART 3. Each witness must actually
@@ -264,6 +265,7 @@ kit_diff site-10-m1 --tune=-1 "$(pat_of site-10)" "ackrzACKRZ" "~~ugmszUGMSZ~"
 kit_diff mixed --tune=-2 '([aeiou]+)([^a-z0-9 ]*)([02468xX]{2,})' "aei!!24x" "u~0X8"
 kit_diff span --tune=-2 '[\x00-\x08\x0e-\x1f\x7f-\x9f]+|[ -/:-@]{2}' "a\x01\x02\x7f\x90b" "x!/:@y"
 kit_diff caseless --tune=-1 '(?i)([aeiou]+)([^a-z]{2,})' "AeI!!" "uO~0X8"
+kit_diff hi255 --tune=-2 '([a\x80-\x8f\xf0-\xff]+)z' "aaz" "a~az"
 kit_diff utf8-byte "--tune=-2 -e utf8" '([aeiou]+)x' "aeiox" "uuux"
 kit_diff utf8-wide "--tune=-2 -e utf8" '([\x{e0}\x{e2}\x{e9}\x{f4}]+)x' "$(printf '\303\240\303\251x')" "$(printf 'a\303\264\303\242x')"
 [ "$kcells" -ge 10000 ] && ok "[kit] population $kcells cells (floor 10,000)" \
