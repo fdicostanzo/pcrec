@@ -238,3 +238,19 @@ What the table shows:
 > Answers are identical by construction: the per-startpos differential over
 > 1,118 mover artifacts reads clean. A cell whose answer moves is a finding,
 > to be reported before any timing.
+
+## 9. Mac owed validation (reseedval, 2026-09-29): IN FLIGHT, verdicts OWED
+
+- The answer differential (§4) is still running (started 23:33, PID 17352;
+  a pass over 1,118 movers, ~150 done by 23:43, so ETA ~00:40). Its log is
+  written only at the end: `/tmp/reseed_scratch/answer_diff.log`, head line
+  `movers: 1118`. It reads `$W/build/pcrec`, so nothing was rebuilt in the
+  worktree.
+- (b) and (c) run from a scratch COPY of the tree (`/tmp/reseed_scratch/wt2`,
+  built at bit 37, PROCS=2), detached, in one chain
+  (`/tmp/reseed_scratch/chain.sh`): test-codegen, test-rxtsource, the full
+  registry script, then `make test-axes AXES="-fno-hyb-reseed"`. Status
+  lines land in `/tmp/reseed_scratch/chain.status` (`<step> rc=N`, then
+  `DONE`); logs are `v_codegen.log`, `v_rxtsource.log`, `v_registry.log`,
+  `v_axes.log`. Verdict is make's `*** [...] Error` lines / the rc, not a
+  grep for FAIL.
