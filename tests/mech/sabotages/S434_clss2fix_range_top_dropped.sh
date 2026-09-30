@@ -6,12 +6,14 @@
 # `pcrec_clskit_emit_inline`. The plant writes the span one short
 # (`hi - lo - 1`), so every subtract-form range test (`[a-z]`, `\d`) rejects
 # its top byte, wherever it is written. The detector is the corpus harness
-# on tests/base/d27_captures.rxt (capture-bearing, so VM-routed, with range
-# classes whose top bytes the file's subjects exercise).
+# on tests/base/clskit_range_top.rxt, whose subjects end a run on the top
+# byte of its class (VM and DFA scan edge). The first detector,
+# tests/base/d27_captures.rxt, read UNDETECTED (corpus:0fail/97pass): its
+# subjects never carry a 9 or a z (triage s2tri).
 SAB_ID="S434-clss2fix-range-top-dropped"
 SAB_FILE="src/gen/clskit.c"
 SAB_SUITES="harness"
-SAB_HARNESS_TARGET="tests/base/d27_captures.rxt"
+SAB_HARNESS_TARGET="tests/base/clskit_range_top.rxt"
 SAB_DESC="pcrec_clskit_emit_inline spells a range class's span one short (hi - lo - 1), so every subtract-form range test on the VM and on a DFA scan edge rejects its top byte"
 SAB_DOC_FIGURE="Read the current figure from a run (lane clss2fix measured it solo at landing; see docs/dev/lanes/clss2_report.md, Review fixes)."
 SAB_REACH='"$PCREC" --engine=vm -p rx -o - --pattern "([a-z]+)x"'
