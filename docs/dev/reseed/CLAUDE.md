@@ -24,7 +24,11 @@ session scratchpad, never from a checkout.
   startpos over the sweep's mover population. Each mover artifact is linked
   twice, base and new, with one driver. Subjects come from the pattern's own
   characters. The full result (return code and `caps[0]`) is compared per
-  (subject, startpos).
+  (subject, startpos). **Its driver was fixed by lane reseedfix**: it passed
+  ONE span pair, `rx_search` writes RX_NCAPS pairs, and lane reseed's run
+  read stack garbage on six capturing movers and reported them as DIFFs.
+  With the buffer sized, all six read 0 differences over 1,200 subject
+  seeds on both lane reseed's and this lane's compilers.
 - `answer_diff_witness.py` (+ `answer_diff_witness.log`) — lane
   reseedfix's witness differential for the r1 panel's coverage gaps:
   witnesses whose subjects MATCH thousands of times, subjects of 300 KB and

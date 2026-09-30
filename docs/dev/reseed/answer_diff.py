@@ -23,7 +23,12 @@ int main(int argc, char **argv) {
     while (fread(&len, 4, 1, f) == 1) {
         if (len > sizeof buf || fread(buf, 1, len, f) != len) return 2;
         for (size_t sp = 0; sp <= len; sp++) {
-            ptrdiff_t c[1][2] = {{-9, -9}};
+            /* `rx_search` writes EVERY group's span (RX_NCAPS pairs), so
+             * the buffer is sized for any corpus pattern: lane reseed's
+             * first run passed ONE pair and read stack garbage on six
+             * capturing movers (lane reseedfix, 2026-09-30). */
+            static ptrdiff_t c[4096][2];
+            c[0][0] = c[0][1] = -9;
             int r = rx_search(buf, len, sp, c);
             printf("%zu:%d:%td,%td ", sp, r, r == 1 ? c[0][0] : -1, r == 1 ? c[0][1] : -1);
         }

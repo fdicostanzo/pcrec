@@ -29,8 +29,9 @@ DRIVER = r'''
 #include <stddef.h>
 #include <string.h>
 extern int rx_search(const unsigned char *, size_t, size_t, ptrdiff_t (*)[2]);
+static ptrdiff_t c[4096][2];   /* rx_search writes every group's span */
 static void one(const unsigned char *s, size_t n, size_t sp) {
-    ptrdiff_t c[1][2] = {{-9, -9}};
+    c[0][0] = c[0][1] = -9;
     int r = rx_search(s, n, sp, c);
     printf("%zu:%d:%td,%td\n", sp, r, r == 1 ? c[0][0] : -1, r == 1 ? c[0][1] : -1);
 }
@@ -49,7 +50,7 @@ int main(int argc, char **argv) {
     }
     size_t pos = 0;             /* find-all, the bench driver's loop */
     while (pos <= n) {
-        ptrdiff_t c[1][2] = {{-9, -9}};
+        c[0][0] = c[0][1] = -9;
         int r = rx_search(s, n, pos, c);
         printf("%zu:%d:%td,%td\n", pos, r, r == 1 ? c[0][0] : -1, r == 1 ? c[0][1] : -1);
         if (r != 1) break;

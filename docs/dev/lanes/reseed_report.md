@@ -9,6 +9,14 @@ if last run, or last 2 runs before next try < N, then don't call dfa?"*,
 then *"charter it"*. Both are quoted in the plan row, which now reads
 STATE:started with a DELIVERED note.
 
+> **Revised 2026-09-30 by fix lane `reseedfix` after the r1 critic panel
+> (`docs/dev/reviews/2026-09-30-r1-hyb-reseed.md`).** §10 is the
+> fix-by-fix record and SUPERSEDES the sections above it where they
+> disagree. Four facts matter most. The table has a fifth row, `clamped`.
+> The adaptive text is smaller. The timing claims in §7 are replaced by
+> `docs/dev/reseed/timing_mac.md`'s re-run. §4's answer differential had a
+> driver bug, and its six DIFFs were that bug.
+
 ## 0. Summary for a fresh reader
 
 **The defect.** After a failed VM attempt, the hybrid's loop re-asked the
@@ -191,17 +199,15 @@ new, and deny (≡ base); every answer was identical.
 | lka-pos | match-dense prose | 1.857 | 2.014 | ×0.92 |
 | ` (?=the)` (adaptive-dense) | prose | 1.610 / 2.206 | 1.655 / 2.217 | ×0.97 / ×0.99 |
 
-What the table shows:
-- **Wins.** Every cell where the old loop stepped over a sparse region is
-  ×2.4-×28.
-- **The cell the brief worried about** (asr-lb-fixed dense) is now a small
-  win, where always-re-seed lost 19%.
-- **Losses.** The worst cells are per-call: find-all over a match-dense
-  subject re-learns the density on every call. They are filed as
-  `[OPT-HYB-RESEED-XCALL]` with these three cells as its witnesses.
-- **Scale.** The synthetic subjects do not reproduce the bench's ×25-×124.
-  They were not built to the bench's letter frequencies. The bench's own
-  subjects decide the magnitude.
+**SUPERSEDED by §10 F3 and `docs/dev/reseed/timing_mac.md`.** The table
+above is lane reseed's first run. The claims it carried were
+"×2.4-×28 on every cell where the old loop stepped", "asr-lb-fixed dense
+is now a small win" and "×0.81 always-re-seed twin". They were read
+against no noise floor, and the r1 panel refuted them. The re-run states
+the floor in every row. The largest ratio is ×21.2. asr-lb-fixed dense is
+flat within noise. The ×0.81 is a scratch figure plan row I-114 says not
+to cite; the bench's x86/gcc figure is ×0.957. There is also a real loss
+cell on denser prose: `item(?= done)` ×0.62.
 
 ## 8. Draft bench inbox ask (NOT SENT; for the manager to relay)
 
@@ -221,23 +227,28 @@ What the table shows:
 >      1/10/11);
 >    - I-114's three synthetic subjects.
 >
->    PREDICTION (Mac scratch):
->    - varwidth and neg on any subject with sparse candidates are ×2-×25
+>    PREDICTION (Mac scratch, re-run 2026-09-30 with its noise floor):
+>    - varwidth and neg on any subject with sparse candidates are ×2-×21
 >      faster;
 >    - asr-lb-fixed/synth-dense is flat (±5%), where I-114's always-re-seed
 >      twin was ×0.957 under gcc;
->    - no cell slower than ×0.90.
+>    - CLAMPED over-approximating hybrids do not move (row `clamped`: the
+>      abi-46 retry).
 > 2. **The syntax@0.1 `lka-pos`/`lka-verb` cell** (ctxjoint's attribution:
 >    its loss is per-byte VM stepping). PREDICTION: auto no longer equals
->    forced-VM there; faster on its throughput subjects.
+>    forced-VM there. Faster on sparse throughput subjects. On a
+>    MATCH-DENSE one (find-all, one call per match) it can be SLOWER: Mac
+>    scratch ×0.62 where `item` is a third of the words. That cell is
+>    `[OPT-HYB-RESEED-XCALL]`'s trigger, so please report it either way.
 > 3. **Any roster cell whose artifact stamps `adaptive*`**, bucketed by row
 >    and by `RX_VM_FRAMELESS`. Name any cell that reads more than 5% slower
 >    than `-fno-hyb-reseed`. Those are `[OPT-HYB-RESEED-XCALL]`'s trigger
 >    (the per-call re-learning cost), and the row wants them named.
 >
-> Answers are identical by construction: the per-startpos differential over
-> 1,118 mover artifacts reads clean. A cell whose answer moves is a finding,
-> to be reported before any timing.
+> Answers are identical by construction; a budget give-up can become an
+> answer, never the reverse. The per-startpos differential over the mover
+> population is re-run by lane reseedfix (report §10). A cell whose answer
+> moves is a finding, to be reported before any timing.
 
 ## 9. Mac owed validation (reseedval, 2026-09-29): IN FLIGHT, verdicts OWED
 
@@ -254,3 +265,91 @@ What the table shows:
   `DONE`); logs are `v_codegen.log`, `v_rxtsource.log`, `v_registry.log`,
   `v_axes.log`. Verdict is make's `*** [...] Error` lines / the rc, not a
   grep for FAIL.
+
+## 10. r1 panel fixes (lane `reseedfix`, opus, 2026-09-30)
+
+Branch `lane/reseedfix`, cut from `lane/reseed` at `8f6007b8`. The
+worktree is `worktrees/reseedfix`. The panel is
+`docs/dev/reviews/2026-09-30-r1-hyb-reseed{,-sem,-checks}.md`. The abi
+stays 47 on the branch; the manager renumbers at merge. The recursion
+identity FILEPIN is re-pinned to `843f9fd6`, this lane's src commit that
+re-shapes the adaptive text.
+
+### 10.1 Fix by fix
+
+| id | fix | evidence |
+|---|---|---|
+| chk F1 (HIGH) | (a) The adaptive text was re-spelled: two locals instead of three, three short tail lines, the same machine (design §4 maps the old states onto the new). (b) Clamped hybrids left the adaptive rows (sem F1 below), so the size witness `(?:aa\|a){8,12}+b` gains only its stamp. **No emitted helper**: a search body has one retry site, so a function would be the same bytes plus a signature. (c) Re-measured on a rebuilt reference compiler: K=6 36,211, K=4 31,130, K=3 32,015, K=2 29,900, each +62 over the B1 figures. The 31,500 cap still gives the shape the cell exists for, so the cap is NOT re-pinned; the script's comment and failure message record the new figures | Bytes per artifact (code, size model's measure): clamp-free adaptive `(?<=é)x` utf8 +778 → **+564**; clamped `(?:aa\|a){8,12}+b` +569 → **+31** (the stamp line). `tests/codegen/run_size_term.sh` **31/0**. Corpus total: **OWED**, `v_idsweep.log` (§10.3), which prints the per-row sum. Estimate: ~890 clamp-free adaptive artifacts × ~560 B ≈ 0.5 MB, against lane reseed's ~1,120 × ~700 |
+| chk F2 | The prior wording is fixed in `tuning.md` §2.33 row 3, `match_api.md` §6.3, design §4, the table row's `applies` text and this report. Under `-e byte` the default prior makes ` (?=the)` dense; under `-e utf8` NONE means cardinality. The codegen block pins both arms: ` (?=the)` byte → `adaptive-dense`, ` (?=the)` utf8 → `adaptive`, `[a-z](?=the)` utf8 → `adaptive-dense` | codegen 127/0 |
+| chk F3 | Timing re-run from the committed harness, with the noise floor (base/deny) in every row: `docs/dev/reseed/timing_mac.md`. Withdrawn: ×28 (max is ×21.2), "every cell" (asr-lb-fixed's ×1.17-×1.36 is unexplained and not counted), and "asr-lb-fixed dense is a small win" (it is flat within noise). The ×0.81 twin is cited with I-114's caveat and next to the bench's ×0.957. New loss cell: `item(?= done)` on denser prose **×0.62** | `studies/hyb_reseed_cal/results/timing_2026-09-30.md` |
+| chk F4 | Harness committed: `studies/hyb_reseed_cal/` (subjects, driver, twin, crossover, table, lane reseed's explorations). The crossover re-run reproduces 16 B / ~3 B / ~30 B / ~3 chars. Design §3 now says which calibration values are measured and which are chosen. New check: every adaptive witness's retry must spell its class's literals. New sabotage **S372** swaps the two calibration rows | `results/crossover_2026-09-30.txt`; S372 OWED (§10.3) |
+| chk F5 | S370's wording is corrected to "the SECOND block never ends" (the first still ends in its probe). S370/S371 are re-anchored on the new text | anchors: `m6read_check_sab_anchors.py` "all anchors resolve" (351 rows); S370/S371 OWED |
+| chk F6.1 | The block now has 15 checks: 11 witness rows, the clamped recompute, the budget control and its 2 subjects. `tests/codegen/CLAUDE.md` says so | codegen 127 = 112 + 15 |
+| chk F6.2 | The clamped-witness awk is gone. Every structural read is bounded to `<prefix>_search_run`'s body (`rs_body`) | — |
+| chk F6.3 | `check_value_set "RX_VM_RESEED"`: dump vs `match_api.md` §6.3 in both directions. There is deliberately no emitter-source leg: the dump and the stamp share `pcrec_reseed_rows`. Registry pin 147 → **149**, by mechanism | `axes_registry_check.sh` 149/0 |
+| chk F6.4 | `registry.md` §6 now reads 100 rows / 35 axes. It had been stale by 8 rows / 3 axes before this change (`lit-run`, `req-run`, `ctx-node`) | — |
+| chk F7 | The identity sweep is strict: a mover's diff must be exactly the adaptive text's lines | OWED (§10.3) |
+| sem F1 | MEASURED (`docs/dev/reseed/clamped.md`): clamped over-approximating hybrids gain ×1.3-×2.2 on three dense witnesses and lose **×0.46** on a fourth. The row also costs a contract clause (answer → give-up). **Excluded by a table row**: `clamped`, second and undeniable, on today's retry. The give-up qualifier is now in `match_api.md`'s abi paragraph, §6.3, `tuning.md` §2.33 and `lib/pcrec.h`: a give-up can become an answer, never the reverse | witness differential budget arm: 0 violations, 1 give-up → answer observed |
+| sem table | The start state is now row columns: `start` (which calibration column) and `armed`. `action` is FIXED/ADAPT only | — |
+| sem F10 | Design §6 now has a line on callouts and verbs. It also has a new line on a per-PROGRAM step cost, the ×0.46 mechanism | — |
+| sem gaps | `docs/dev/reseed/answer_diff_witness.py`: 19 witnesses (all sem's, the two zero-match ones fixed so they match), subjects of 4 KB (every startpos), 300 KB and 1 MiB (find-all plus 400 startpos), 3 densities, and a step/work-budget arm | **19 witnesses, 0 violations**, 100k-200k calls each, most with 100k+ matches (`answer_diff_witness.log`) |
+
+### 10.2 Findings this lane adds
+
+1. **§4's six DIFFs were an instrument bug.** `answer_diff.py`'s driver
+   passed ONE span pair, but `rx_search` writes all RX_NCAPS pairs. The
+   six DIFF rows are all capturing patterns: `((?>(a)|ab))c|(abc)` and
+   `(?>(a))*b` under both encodings, and the two `(1{0,30}?...)` rows under
+   utf8. They read stack garbage. Evidence: with the old driver they also
+   differ between base and this lane's `clamped` artifacts, which are the
+   same program. With the buffer sized, all six read **0 differences over
+   1,200 subject seeds** on both lane reseed's and this lane's compilers.
+   The driver is fixed. The full differential is re-run in the chain. The
+   one `TimeoutExpired` row, `^(?(DEFINE)(?<g>a|ab))(?!(?&g))xy$`, is
+   re-run there too.
+2. **`[OPT-HYB-RESEED-XCALL]`'s trigger is MET on the Mac scratch tier.**
+   `item(?= done)`, find-all, prose where `item` is a third of the words:
+   ×0.62. On lane reseed's realization of the same recipe it is ×0.94. Lane
+   reseed's own compiler reads the same ×0.62, so the new text is not the
+   cause. The mechanism is the per-call re-learning cost: 2-3 re-seeds per
+   ~160-byte call. The bench's `lka-pos` cell decides. §8's inbox draft now
+   asks for it.
+3. **The framed calibration misprices some programs.** The ×0.46 clamped
+   cell is a framed program whose step costs far more than the class
+   assumes. It is filed as a design §6 line with its trigger. It cannot
+   cause a loss against the abi-46 retry on a clamp-free artifact.
+
+### 10.3 Validation
+
+Done, on this lane's build (`b8589e73`, bit 37, abi 47), Mac:
+
+- `make strict CC=gcc-16`: clean.
+- `bash tests/codegen/run_codegen_tests.sh`: **127 passed / 0 failed**.
+- `bash tests/codegen/run_size_term.sh`: **31 / 0**.
+- `bash tests/registry/axes_registry_check.sh`: **149 / 0**.
+- `scripts/m6read_check_sab_anchors.py`: 351 rows, all anchors resolve.
+- `docs/dev/reseed/answer_diff_witness.py`: 19 / 0 violations.
+
+**OWED.** One detached chain, `/tmp/reseedfix_scratch/chain.sh`, runs at
+PROCS=2 with `caffeinate`. It WAITS for lane reseed's chain
+(`/tmp/reseed_scratch/chain.status` DONE; its `make test-axes` on the
+superseded code was still running at hand-off). Status lines go to
+`/tmp/reseedfix_scratch/v/chain.status` as `<step> rc=N`, ending in
+`DONE`. The logs are `/tmp/reseedfix_scratch/v/v_*.log`. The verdict is
+the rc and make's `*** [...] Error` lines, never a grep for FAIL. Steps, in
+order:
+
+1. `make test-codegen`: the TARGET. Expected red: only the darwin
+   `run_inline_capability.sh` nm line.
+2. `make test-rxtsource`.
+3. `tests/registry/run_registry_tests.sh`: the full script, pin 149.
+4. `identity_sweep.py`, strict. Its tail prints the corpus byte totals per
+   row (chk F1). The TSV is `v/idsweep.tsv`.
+5. `answer_diff.py`, fixed driver, over the new mover population. Its
+   verdict is `v/answer_diff.log`.
+6. `run_sabotage_matrix.sh S370`, `S371` and `S372`: `v/v_mech_S37*.log`.
+   Every row must read DETECTED. The rows' `SAB_DOC_FIGURE` fields say
+   OWED until then.
+7. `make test-axes AXES="-fno-hyb-reseed"`.
+
+Full `make test` is OWED to the manager's battery.
