@@ -1,0 +1,147 @@
+id	kind	shape	body	necessary_size	narrow	redundant	sel_today	sel_new	tighten_model	note
+capability/pwd-strength-chain	lookahead	d	.*[a-z]	255	False	n/a	n/a(RX_REQ_BYTE none)	0.9822	n/a	
+capability/pwd-strength-chain	lookahead	d	.*[A-Z]	255	False	n/a	n/a(RX_REQ_BYTE none)	0.9822	n/a	
+capability/pwd-strength-chain	lookahead	d	.*\d	255	False	n/a	n/a(RX_REQ_BYTE none)	0.9822	n/a	
+capability/pwd-strength-chain	lookahead	d	.*[^\w\s]	255	False	yes	n/a(RX_REQ_BYTE none)	0.9822	n/a	
+syntax/lka-nonatomic	lookahead	b	item	1	True	yes	0.0184	0.0446	0.000821	
+syntax/lka-pos	lookahead	b	 done	1	True	n/a	0.0184	0.1625	0.002993	
+syntax/lka-verb	lookahead	b	 done	1	True	n/a	0.0184	0.1625	0.002993	
+syntax/lkb-pos	lookbehind	b	item 	1	True	n/a	0.0254	0.1625	0.004122	
+tests/litscan/litrun.rxt:160	lookahead	b	def	1	True	n/a	0.0106	0.0254	0.000270	
+tests/lookaround/d27/adversarial.rxt:59	lookbehind	c	a{3}|bb	2	True	n/a	0.0037	0.0591	0.000218	
+tests/lookaround/d27/adversarial.rxt:69	lookbehind	c	(?:a{2})|(?:a{3})	1	True	n/a	0.0037	0.0485	0.000179	
+tests/lookaround/d27/adversarial.rxt:84	lookbehind	b	ab	1	True	n/a	0.0037	0.0106	0.000039	
+tests/lookaround/d27/expansions.rxt:33	lookahead	c	\n?\z	n/a-zero-width-possible	n/a					
+tests/lookaround/d27/longsubject.rxt:8	lookbehind	c	a|bb|ccc|dddd	4	True	n/a	0.0003	0.1161	0.000038	
+tests/lookaround/d27/matrix.rxt:1006	lookbehind	b		n/a-zero-width-possible	n/a					
+tests/lookaround/d27/matrix.rxt:1014	lookbehind	b		n/a-zero-width-possible	n/a					
+tests/lookaround/d27/matrix.rxt:1022	lookbehind	b		n/a-zero-width-possible	n/a					
+tests/lookaround/d27/matrix.rxt:1158	lookbehind	b	abc	1	True	n/a	0.0019	0.0316	0.000060	
+tests/lookaround/d27/matrix.rxt:1166	lookbehind	b	abc	1	True	no	0.0019	0.0316	0.000060	
+tests/lookaround/d27/matrix.rxt:1173	lookbehind	b	abc	1	True	no	0.0019	0.0316	0.000060	
+tests/lookaround/d27/matrix.rxt:1180	lookbehind	b	abc	1	True	n/a	n/a(RX_REQ_BYTE none)	0.0316	n/a	
+tests/lookaround/d27/matrix.rxt:1188	lookbehind	b	abc	1	True	n/a	0.0019	0.0316	0.000060	
+tests/lookaround/d27/matrix.rxt:1196	lookbehind	b	abc	1	True	n/a	0.0019	0.0316	0.000060	
+tests/lookaround/d27/matrix.rxt:1214	lookbehind	b	ab|cd	2	True	n/a	0.0019	0.0360	0.000069	
+tests/lookaround/d27/matrix.rxt:1222	lookbehind	b	ab|cd	2	True	no	0.0019	0.0360	0.000069	
+tests/lookaround/d27/matrix.rxt:1229	lookbehind	b	ab|cd	2	True	no	0.0019	0.0360	0.000069	
+tests/lookaround/d27/matrix.rxt:1236	lookbehind	b	ab|cd	2	True	n/a	n/a(RX_REQ_BYTE none)	0.0360	n/a	
+tests/lookaround/d27/matrix.rxt:1244	lookbehind	b	ab|cd	2	True	n/a	0.0019	0.0360	0.000069	
+tests/lookaround/d27/matrix.rxt:1252	lookbehind	b	ab|cd	2	True	n/a	0.0019	0.0360	0.000069	
+tests/lookaround/d27/matrix.rxt:1273	lookbehind	c	a|bc	2	True	n/a	0.0019	0.0801	0.000153	
+tests/lookaround/d27/matrix.rxt:1282	lookbehind	c	a|bc	2	True	no	0.0019	0.0801	0.000153	
+tests/lookaround/d27/matrix.rxt:1290	lookbehind	c	a|bc	2	True	no	0.0019	0.0801	0.000153	
+tests/lookaround/d27/matrix.rxt:1298	lookbehind	c	a|bc	2	True	n/a	n/a(RX_REQ_BYTE none)	0.0801	n/a	
+tests/lookaround/d27/matrix.rxt:13	lookahead	b		n/a-zero-width-possible	n/a					
+tests/lookaround/d27/matrix.rxt:1307	lookbehind	c	a|bc	2	True	n/a	0.0019	0.0801	0.000153	
+tests/lookaround/d27/matrix.rxt:1316	lookbehind	c	a|bc	2	True	n/a	0.0019	0.0801	0.000153	
+tests/lookaround/d27/matrix.rxt:163	lookahead	b	abc	1	True	no	0.0019	0.0485	0.000093	
+tests/lookaround/d27/matrix.rxt:170	lookahead	b	abc	1	True	n/a	0.0019	0.0485	0.000093	
+tests/lookaround/d27/matrix.rxt:177	lookahead	b	abc	1	True	no	0.0019	0.0485	0.000093	
+tests/lookaround/d27/matrix.rxt:184	lookahead	b	abc	1	True	no	n/a(RX_REQ_BYTE none)	0.0485	n/a	
+tests/lookaround/d27/matrix.rxt:191	lookahead	b	abc	1	True	no	0.0019	0.0485	0.000093	
+tests/lookaround/d27/matrix.rxt:198	lookahead	b	abc	1	True	no	0.0019	0.0485	0.000093	
+tests/lookaround/d27/matrix.rxt:1980	lookahead	b		n/a-zero-width-possible	n/a					
+tests/lookaround/d27/matrix.rxt:1988	lookahead	b		n/a-zero-width-possible	n/a					
+tests/lookaround/d27/matrix.rxt:1996	lookahead	b		n/a-zero-width-possible	n/a					
+tests/lookaround/d27/matrix.rxt:20	lookahead	b		n/a-zero-width-possible	n/a					
+tests/lookaround/d27/matrix.rxt:2004	lookahead	b		n/a-zero-width-possible	n/a					
+tests/lookaround/d27/matrix.rxt:2012	lookahead	b		n/a-zero-width-possible	n/a					
+tests/lookaround/d27/matrix.rxt:2020	lookahead	b		n/a-zero-width-possible	n/a					
+tests/lookaround/d27/matrix.rxt:212	lookahead	b	ab|cd	2	True	no	0.0019	0.0801	0.000153	
+tests/lookaround/d27/matrix.rxt:2151	lookahead	b	abc	1	True	no	0.0019	0.0485	0.000093	
+tests/lookaround/d27/matrix.rxt:2159	lookahead	b	abc	1	True	n/a	0.0019	0.0485	0.000093	
+tests/lookaround/d27/matrix.rxt:2167	lookahead	b	abc	1	True	no	0.0019	0.0485	0.000093	
+tests/lookaround/d27/matrix.rxt:2175	lookahead	b	abc	1	True	no	n/a(RX_REQ_BYTE none)	0.0485	n/a	
+tests/lookaround/d27/matrix.rxt:2183	lookahead	b	abc	1	True	no	0.0019	0.0485	0.000093	
+tests/lookaround/d27/matrix.rxt:219	lookahead	b	ab|cd	2	True	n/a	0.0019	0.0801	0.000153	
+tests/lookaround/d27/matrix.rxt:2191	lookahead	b	abc	1	True	no	0.0019	0.0485	0.000093	
+tests/lookaround/d27/matrix.rxt:2207	lookahead	b	ab|cd	2	True	no	0.0019	0.0801	0.000153	
+tests/lookaround/d27/matrix.rxt:2215	lookahead	b	ab|cd	2	True	n/a	0.0019	0.0801	0.000153	
+tests/lookaround/d27/matrix.rxt:2223	lookahead	b	ab|cd	2	True	no	0.0019	0.0801	0.000153	
+tests/lookaround/d27/matrix.rxt:2231	lookahead	b	ab|cd	2	True	no	n/a(RX_REQ_BYTE none)	0.0801	n/a	
+tests/lookaround/d27/matrix.rxt:2239	lookahead	b	ab|cd	2	True	no	0.0019	0.0801	0.000153	
+tests/lookaround/d27/matrix.rxt:2247	lookahead	b	ab|cd	2	True	no	0.0019	0.0801	0.000153	
+tests/lookaround/d27/matrix.rxt:226	lookahead	b	ab|cd	2	True	no	0.0019	0.0801	0.000153	
+tests/lookaround/d27/matrix.rxt:2263	lookahead	c	a|bc	2	True	no	0.0019	0.0591	0.000113	
+tests/lookaround/d27/matrix.rxt:2271	lookahead	c	a|bc	2	True	n/a	0.0019	0.0591	0.000113	
+tests/lookaround/d27/matrix.rxt:2279	lookahead	c	a|bc	2	True	no	0.0019	0.0591	0.000113	
+tests/lookaround/d27/matrix.rxt:2287	lookahead	c	a|bc	2	True	no	n/a(RX_REQ_BYTE none)	0.0591	n/a	
+tests/lookaround/d27/matrix.rxt:2295	lookahead	c	a|bc	2	True	no	0.0019	0.0591	0.000113	
+tests/lookaround/d27/matrix.rxt:2303	lookahead	c	a|bc	2	True	no	0.0019	0.0591	0.000113	
+tests/lookaround/d27/matrix.rxt:233	lookahead	b	ab|cd	2	True	no	n/a(RX_REQ_BYTE none)	0.0801	n/a	
+tests/lookaround/d27/matrix.rxt:240	lookahead	b	ab|cd	2	True	no	0.0019	0.0801	0.000153	
+tests/lookaround/d27/matrix.rxt:247	lookahead	b	ab|cd	2	True	no	0.0019	0.0801	0.000153	
+tests/lookaround/d27/matrix.rxt:2505	lookbehind	b		n/a-zero-width-possible	n/a					
+tests/lookaround/d27/matrix.rxt:2514	lookbehind	b		n/a-zero-width-possible	n/a					
+tests/lookaround/d27/matrix.rxt:2523	lookbehind	b		n/a-zero-width-possible	n/a					
+tests/lookaround/d27/matrix.rxt:2532	lookbehind	b		n/a-zero-width-possible	n/a					
+tests/lookaround/d27/matrix.rxt:2541	lookbehind	b		n/a-zero-width-possible	n/a					
+tests/lookaround/d27/matrix.rxt:2550	lookbehind	b		n/a-zero-width-possible	n/a					
+tests/lookaround/d27/matrix.rxt:261	lookahead	c	a|bc	2	True	no	0.0019	0.0591	0.000113	
+tests/lookaround/d27/matrix.rxt:268	lookahead	c	a|bc	2	True	n/a	0.0019	0.0591	0.000113	
+tests/lookaround/d27/matrix.rxt:27	lookahead	b		n/a-zero-width-possible	n/a					
+tests/lookaround/d27/matrix.rxt:2702	lookbehind	b	abc	1	True	n/a	0.0019	0.0316	0.000060	
+tests/lookaround/d27/matrix.rxt:2711	lookbehind	b	abc	1	True	no	0.0019	0.0316	0.000060	
+tests/lookaround/d27/matrix.rxt:2719	lookbehind	b	abc	1	True	no	0.0019	0.0316	0.000060	
+tests/lookaround/d27/matrix.rxt:2727	lookbehind	b	abc	1	True	n/a	n/a(RX_REQ_BYTE none)	0.0316	n/a	
+tests/lookaround/d27/matrix.rxt:2736	lookbehind	b	abc	1	True	n/a	0.0019	0.0316	0.000060	
+tests/lookaround/d27/matrix.rxt:2745	lookbehind	b	abc	1	True	n/a	0.0019	0.0316	0.000060	
+tests/lookaround/d27/matrix.rxt:275	lookahead	c	a|bc	2	True	no	0.0019	0.0591	0.000113	
+tests/lookaround/d27/matrix.rxt:2765	lookbehind	b	ab|cd	2	True	n/a	0.0019	0.0360	0.000069	
+tests/lookaround/d27/matrix.rxt:2774	lookbehind	b	ab|cd	2	True	no	0.0019	0.0360	0.000069	
+tests/lookaround/d27/matrix.rxt:2782	lookbehind	b	ab|cd	2	True	no	0.0019	0.0360	0.000069	
+tests/lookaround/d27/matrix.rxt:2790	lookbehind	b	ab|cd	2	True	n/a	n/a(RX_REQ_BYTE none)	0.0360	n/a	
+tests/lookaround/d27/matrix.rxt:2799	lookbehind	b	ab|cd	2	True	n/a	0.0019	0.0360	0.000069	
+tests/lookaround/d27/matrix.rxt:2808	lookbehind	b	ab|cd	2	True	n/a	0.0019	0.0360	0.000069	
+tests/lookaround/d27/matrix.rxt:282	lookahead	c	a|bc	2	True	no	n/a(RX_REQ_BYTE none)	0.0591	n/a	
+tests/lookaround/d27/matrix.rxt:2830	lookbehind	c	a|bc	2	True	n/a	0.0019	0.0801	0.000153	
+tests/lookaround/d27/matrix.rxt:2839	lookbehind	c	a|bc	2	True	no	0.0019	0.0801	0.000153	
+tests/lookaround/d27/matrix.rxt:2847	lookbehind	c	a|bc	2	True	no	0.0019	0.0801	0.000153	
+tests/lookaround/d27/matrix.rxt:2855	lookbehind	c	a|bc	2	True	n/a	n/a(RX_REQ_BYTE none)	0.0801	n/a	
+tests/lookaround/d27/matrix.rxt:2864	lookbehind	c	a|bc	2	True	n/a	0.0019	0.0801	0.000153	
+tests/lookaround/d27/matrix.rxt:2873	lookbehind	c	a|bc	2	True	n/a	0.0019	0.0801	0.000153	
+tests/lookaround/d27/matrix.rxt:289	lookahead	c	a|bc	2	True	no	0.0019	0.0591	0.000113	
+tests/lookaround/d27/matrix.rxt:296	lookahead	c	a|bc	2	True	no	0.0019	0.0591	0.000113	
+tests/lookaround/d27/matrix.rxt:34	lookahead	b		n/a-zero-width-possible	n/a					
+tests/lookaround/d27/matrix.rxt:41	lookahead	b		n/a-zero-width-possible	n/a					
+tests/lookaround/d27/matrix.rxt:48	lookahead	b		n/a-zero-width-possible	n/a					
+tests/lookaround/d27/matrix.rxt:982	lookbehind	b		n/a-zero-width-possible	n/a					
+tests/lookaround/d27/matrix.rxt:990	lookbehind	b		n/a-zero-width-possible	n/a					
+tests/lookaround/d27/matrix.rxt:998	lookbehind	b		n/a-zero-width-possible	n/a					
+tests/lookaround/d27/spellings.rxt:256	lookbehind	b		n/a-zero-width-possible	n/a					
+tests/lookaround/lookahead.rxt:107	lookahead	d	a+b	1	True	yes	0.0106	0.0485	0.000516	
+tests/lookaround/lookahead.rxt:158	lookahead	b		n/a-zero-width-possible	n/a					
+tests/lookaround/lookahead.rxt:176	lookahead	b		n/a-zero-width-possible	n/a					
+tests/lookaround/lookahead.rxt:197	lookahead	b	abc	1	True	yes	0.0106	0.0485	0.000516	
+tests/lookaround/lookahead.rxt:204	lookahead	b	ab	1	True	yes	0.0106	0.0485	0.000516	
+tests/lookaround/lookahead.rxt:242	lookahead	c	(?:aa|a)b	1	True	yes	0.0106	0.0485	0.000516	
+tests/lookaround/lookahead.rxt:32	lookahead	b	ab	1	True	yes	0.0106	0.0485	0.000516	
+tests/lookaround/lookbehind.rxt:128	lookbehind	b		n/a-zero-width-possible	n/a					
+tests/lookaround/lookbehind.rxt:212	lookbehind	b	bc	1	True	n/a	n/a(RX_REQ_BYTE none)	0.0316	n/a	
+tests/lookaround/lookbehind.rxt:257	lookbehind	b	ab	1	True	n/a	0.0316	0.0106	0.000336	
+tests/lookaround/lookbehind.rxt:264	lookbehind	b	ab	1	True	n/a	0.0316	0.0106	0.000336	
+tests/lookaround/lookbehind.rxt:303	lookbehind	b	a{2}	1	True	n/a	0.0106	0.0485	0.000516	
+tests/lookaround/lookbehind.rxt:334	lookbehind	b	\Ga	1	True	n/a	0.0106	0.0485	0.000516	
+tests/lookaround/lookbehind.rxt:45	lookbehind	b	abc	1	True	n/a	0.0037	0.0316	0.000116	
+tests/lookaround/lookbehind.rxt:55	lookbehind	b	[ab][cd]	2	True	n/a	0.0037	0.0569	0.000210	
+tests/lookaround/lookbehind.rxt:67	lookbehind	b	a{3}	1	True	n/a	0.0037	0.0485	0.000179	
+tests/lookaround/lookbehind.rxt:76	lookbehind	b	(?:ab){2}	1	True	n/a	0.0037	0.0106	0.000039	
+tests/lookaround/lookbehind.rxt:85	lookbehind	b	ab|cd	2	True	n/a	0.0037	0.0360	0.000133	
+tests/lookaround/lookbehind.rxt:96	lookbehind	b	ab|cd|ef	3	True	n/a	0.0037	0.0477	0.000176	
+tests/lookaround/lookbehind_widths.rxt:154	lookbehind	c	x|abc	2	True	n/a	0.0077	0.0352	0.000273	
+tests/lookaround/lookbehind_widths.rxt:168	lookbehind	c	ab|c	2	True	n/a	0.0037	0.0422	0.000155	
+tests/lookaround/lookbehind_widths.rxt:181	lookbehind	c	a|bc	2	True	n/a	0.0037	0.0801	0.000295	
+tests/lookaround/lookbehind_widths.rxt:193	lookbehind	c	a|xbc	2	True	yes	0.0106	0.0801	0.000851	
+tests/lookaround/lookbehind_widths.rxt:211	lookbehind	c	|a	n/a-zero-width-possible	n/a					
+tests/lookaround/lookbehind_widths.rxt:225	lookbehind	c	a|	n/a-zero-width-possible	n/a					
+tests/lookaround/lookbehind_widths.rxt:42	lookbehind	c	a|bc	2	True	n/a	0.0037	0.0801	0.000295	
+tests/lookaround/lookbehind_widths.rxt:58	lookbehind	c	a|bc|def	3	True	n/a	0.0037	0.0918	0.000338	
+tests/lookaround/nonatomic_ahead.rxt:137	lookahead	b	ab	1	True	yes	0.0106	0.0485	0.000516	
+tests/lookaround/nonatomic_behind.rxt:108	lookbehind	b	ab	1	True	n/a	0.0316	0.0106	0.000336	
+tests/lookaround/nonatomic_behind.rxt:121	lookbehind	c	a|bc	2	True	n/a	0.0037	0.0801	0.000295	
+tests/lookaround/prefilter.rxt:112	lookahead	b	!q	1	True	no	0.0014	0.0002	0.000000	
+tests/lookaround/startpos.rxt:69	lookbehind	b	ab	1	True	n/a	0.0316	0.0106	0.000336	
+tests/lookaround/workbudget.rxt:42	lookbehind	b	ab|cd|ef|gh	4	True	n/a	0.0037	0.0674	0.000248	
+tests/lookaround/workbudget.rxt:54	lookbehind	b	ab|cd|ef|gh	4	True	n/a	n/a(RX_REQ_BYTE none)	0.0674	n/a	
+utf8/asr-lb-varwidth	lookbehind	b	a|é	2	True	n/a	0.0037	0.0485	0.000179	

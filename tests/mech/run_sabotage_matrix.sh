@@ -311,6 +311,13 @@
 #     a T3 denial falling through to an unsound lowering (S342, the GEN-4
 #     shape): on the default path the denied row never fires, so `harness`
 #     is green on it by construction. Registered before S337-S343.
+#   clskit — added 2026-09-29 ([CLS-TREE] S1, lane clss1); runs
+#     tests/clskit/run_clskit_tests.sh, the class-matcher kit's differential
+#     (emitted C against a reference on every code point), population census
+#     and cross-check against studies/cls_tree_study/. Its own arm because
+#     NOTHING ELSE IN THE TREE CALLS src/gen/clskit.c at S1: every other arm
+#     scores a kit sabotage `0fail` by construction, so a row on this word is
+#     detected here or nowhere. Registered before S360-S363, its consumers.
 #
 # THE THREE NEWEST WORDS WERE REGISTERED FIRST, DELIBERATELY, which is the
 # lesson R31 C11 left one module earlier: this vocabulary is CLOSED, so a
@@ -2508,6 +2515,18 @@ run_one() {
                 p="$(grep -m1 '^checks passed:' "$work/ctxnode.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/ctxnode.log" | grep -oE '[0-9]+')"
                 score_arm "$work/ctxnode.log" "$f" "ctxnode:${f:-ERR}fail/${p:-?}pass"
+                ;;
+            clskit)
+                # [CLS-TREE] S1 tests/clskit/run_clskit_tests.sh — see the
+                # vocabulary entry above. Links the sabotaged tree's own
+                # libpcrec.a (LIBPCREC), and reads the study from the
+                # archived tree, which `git archive HEAD` carries.
+                LIBPCREC="$tree/build/libpcrec.a" PROCS="$INNER_PROCS" CC="$CC" \
+                    bash "$tree/tests/clskit/run_clskit_tests.sh" \
+                    > "$work/clskit.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/clskit.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/clskit.log" | grep -oE '[0-9]+')"
+                score_arm "$work/clskit.log" "$f" "clskit:${f:-ERR}fail/${p:-?}pass"
                 ;;
             core)
                 # [REVW.U L5-R0/R2] tests/core/run_core_tests.sh — the unit

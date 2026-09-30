@@ -11,6 +11,12 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 ---
 
+## K73 — OPEN, deferred (found by lane ucpu2, 2026-09-29, side finding) — empty pattern on a lone ill-formed byte under `-e utf8`
+
+**Witness:** the empty pattern on the subject `\x80` (one stray continuation byte) under `-e utf8`: pcrec reports a match at (0,0), and libpcre2 10.46 with PCRE2_MATCH_INVALID_UTF reports (1,1). Pre-existing, independent of UCP; not investigated. Status: deferred, no fix; the ill-formed-position semantics row ([UTF8-ATTRIB]-family) should own it.
+
+---
+
 ## K72 — OPEN, no fix scheduled (found by lane ucpu1, [UCP] U1, 2026-09-28/29) — `\h`/`\v` under `-e utf8` are the BYTE sets, not PCRE2_UTF's
 
 **Witness** (libpcre2 10.46, `PCRE2_UTF` only, no UCP — transcript

@@ -8818,3 +8818,8 @@ Frank: "I agree with you on all" (on the manager's ten-item status list). Source
 8. **[SEL-COST] is pulled forward** into the next opt cycle's queue, on O-74's email whole-subject finding (forced VM ×0.648 floor / ×0.856 orig vs auto). It is the first measured selection loss outside the syntax subbench.
 9. **The B115 executive summary is written** (standing rule), even though the run is scratch tier.
 10. **Next work:** [UCP] U2 is chartered. [CLS-TREE] S1 runs alongside it (disjoint: the kit in src/, no emitter calls it).
+
+**D131 ADDENDUM 1 (manager, 2026-09-29, lane clss1).** The kit DP's size model runs about 13% LOW for K: it omits a per-matcher dispatch/prologue text of ~530-690 B (K53 twelve, λ=4). With the model's own bytes, the 0/+1 row would pick page3w on 2/12 instead of the 12/12 clsfit measured. RULED:
+- K's byte ESTIMATE, as read by the SELECTION table, gains a fitted dispatch/prologue term: its own data cell with provenance (sweep_k53 λ=4, measured − model).
+- z_mid stays 1.26, because Frank placed it against measured bytes.
+- The DP's own sectioning model is unchanged. Recalibrating the DP text model is filed as a known bias (a follow-up row).

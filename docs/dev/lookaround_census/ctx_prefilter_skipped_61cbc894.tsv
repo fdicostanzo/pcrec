@@ -1,0 +1,3 @@
+id	kind	reason
+tests/utf8/axis08_lookbehind_varwidth.rxt:233	lookbehind	loose-parser unresolved: b'(?i)s'
+tests/utf8/axis08_lookbehind_varwidth.rxt:262	lookbehind	loose-parser unresolved: b'(?i)[a-z]'

@@ -3257,7 +3257,7 @@ lands.
 
 | axis | −2 `min-size` | −1 `size` | 0 `balanced` | +1 `speed` | +2 `max-speed` | why |
 |---|---|---|---|---|---|---|
-| λ (class-matcher kit) | reservation | reservation | reservation | reservation | reservation | `[CLS-TREE]` unbuilt; `docs/design/opt_dial_design.md` §4 states the five pinned frontier constants (4/16/16/64/256) it will read the day it lands |
+| λ (class-matcher kit) | smaller of `K`, `P3` | = `−2` | **`P3`** if `K` ≥ 16 sections and `P3` ≤ 1.26×`K`, else `K` | — | smaller of `P2`, `B1` where `0` chose `P3`, else as `0` | `[CLS-TREE]` unbuilt; `docs/design/opt_dial_design.md` §4 (D131): ONE kit constant (λ = 4, the sectioning DP's size end, `K`) at every position plus a first-match row over the whole-set tables `P3`/`P2`/`B1`; three distinct programs. Calibration: `cls_tree_design.md` §1.7 (ubuntubudu, per-probe model r = +0.98; `P3` 3.2× faster than today's pinned middle for +11% bytes) |
 | `[ART-SIZE]` ladder — bar | **0.95** | **0.85** | **0.75** | — | — | §2.16; `artifact_size_term.md` §3.3. Speed side em-dashed (**M13**): the speed it would buy is ≤3%, below `s` = 1.10 |
 | `[ART-SIZE]` ladder — threshold | **40,000** | **80,000** | **120,000** | — | — | §2.16; `limits.def:161`, `PCREC_SIZE_TERM_THRESHOLD` |
 | `-fno-premul-table` | **deny** | — `†` | **allow** | — | — | §2.13; `σ` = 22…25% ≥ `y`; `m` ≤ `x₂` = 2.00 for every `φ_scan` ≤ 1, so `−2` needs no measurement; `−1` iff `φ_scan` ≤ 0.126 (unmeasured) |

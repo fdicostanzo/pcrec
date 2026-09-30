@@ -342,6 +342,14 @@ spec and a design doc disagree, the spec is what the tool promises.
   emits two macros, `RX_VM_CALL_SPLICED`/`RX_VM_CALL_LINKED` — this document
   states the as-built name; `lib/pcrec.h`'s comment was corrected at 40d9f79.
 
+  **2026-09-29 (D131 item 1, lane adm131 applying clsfit's verbatim diff):**
+  §2's λ (class-matcher kit) row moves off `reservation` for the first
+  time — it states the RULED policy (one kit constant λ=4 plus a
+  first-match rule over the whole-set tables, `docs/design/
+  opt_dial_design.md` §4) — but is still a design-stage entry: `[CLS-TREE]`
+  is unbuilt, so the row documents what the mechanism will read the day it
+  lands, not a shipped behaviour.
+
 - `rxt_format.md` — **[SPEC-1.6], 2026-08-25.** The `.rxt` test-corpus
   format and the harness driver protocol, extracted from `docs/testing.md`
   (lines ~124-467 there): the full directive grammar (`pattern`/`flags`/

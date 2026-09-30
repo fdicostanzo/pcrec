@@ -106,3 +106,27 @@ Maintenance: update this file when files are added or removed.
     first) and F6 (the pre-check per-call price).
   - Cites pcrec-bench's ledger `docs/dev/ledgers/2026-09-28-b108-a32bc86e.md`,
     outbox O-64, and `docs/dev/optloop/b108_reading.md`.
+- `2026-09-29-b115-findings-tiers-exec-summary.md` — `[FINDINGS-BENCH-TIERS]`'s
+  first four-column read (DEFAULT/DECLARED/PROFILED/ORACLE-BEST,
+  `loglines@0.1` + `email-specimen@0.2`, scratch tier), plus a short
+  second-section addendum on `[CLS-TREE]` S0's ubuntubudu calibration
+  (O-76/O-77) — both land in D131 together.
+  - The four-column results: DECLARED can mislead (weblog makes `iso-ts`
+    ×1.47/×1.84 SLOWER on loglines' own text); PROFILED never measurably
+    regresses and wins on three cells; ORACLE-BEST headroom is ~0 on
+    loglines and real on email's whole-subject forms (forced-VM ×0.648
+    floor / ×0.856 orig vs auto); `--tune` moves the program at only two
+    positions, direct evidence for the D131 λ re-proposal.
+  - Recommends `[FIND-DOMAIN-CHECK]` (filed) for DECLARED's domain-mismatch
+    risk, pulls the email selector gap into `[SEL-COST]`'s queue, and notes
+    PROFILED's unattributed `iso-ts` program move in `[LIST-TABLES]`.
+    `[FINDINGS-BENCH-TIERS]` itself is closed and archived.
+  - The addendum: the pinned five-constant λ table predicted nothing twice
+    (member r +0.08 → the refitted per-probe model's +0.98, branch
+    mispredicts ~3.9 ns each); no multi-section kit sectioning beats the
+    whole-set tables at any measured price; the fair-dispatch CLSPACK
+    re-run reverses the byte tier's size argument. Records the D131 λ
+    table ruling and `[OPT-CLSPACK]`'s promotion to build.
+  - Cites pcrec-bench's ledger
+    `docs/dev/ledgers/2026-09-29-b115-findings-tiers-f7f5a143.md`, outbox
+    O-74, and `docs/design/cls_tree_design.md` §1.7 + its O-77 addendum.

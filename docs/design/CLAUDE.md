@@ -1995,6 +1995,16 @@ append-only or historical records.
   Q8 (solo battery) surviving unchanged as separate, renumbered items.
   See `../dev/lanes/dialdesign_report.md` § "D103 revision (rev 3)" for
   the finding-by-finding record.
+  **RE-PROPOSED 2026-09-29 (D131, lane clsfit's §4 diff, applied by lane
+  adm131): the λ row's five PINNED FRONTIER CONSTANTS above are
+  superseded.** `[CLS-TREE]` S0's ubuntubudu calibration refuted the
+  constants' own selection term a second time (member r +0.08 → the
+  refitted per-probe model's +0.98) and found no multi-section kit
+  sectioning beats the whole-set tables at any measured price; §4 now
+  reads ONE kit constant (λ=4) plus a first-match row over the whole-set
+  tables `page3w`/`page2w`/`bitmap1`, three distinct programs instead of
+  five. See `cls_tree_design.md` §1.7 for the calibration and
+  `../dev/lanes/clsfit_report.md` for the verbatim diff.
 
 - `alt_dispatch_study.md` — **[ENG-ISL.S0]**, the alternation-dispatch study
   (2026-09-03, lane altstudy): the measurement note behind `[ENG-ISL]`'s
@@ -2652,6 +2662,15 @@ exactly +34 bytes.
   with per-stage checks and abi events (§6), owed measurements split
   Mac/ubuntubudu (§7), seven questions for Frank (§8), what [UCP] can build
   on (§9).
+  **§1.7 ADDED 2026-09-29 (lane clsfit, S0 calibration): MEASURED; the λ
+  re-proposal (§1.7.5) RULED (D131 item 1) — one kit constant (λ=4) plus a
+  first-match row over the whole-set tables, superseding the five pinned
+  frontier constants. §1.7.3/the O-77 addendum: `[OPT-CLSPACK]`'s condition
+  is met (atom ties the bitmap on time, smaller from N ≈ 11) and it is
+  PROMOTED to build (D131 item 6); D129 Q5's byte-tier-answers-size premise
+  is amended (D131 item 4) — under fair dispatch the kit's byte tier is the
+  SLOWEST byte form at every N. See `docs/dev/plan.md`'s `[CLS-TREE]`/
+  `[OPT-CLSPACK]` rows and `docs/dev/lanes/clsfit_report.md`.**
 
 - `ucp_design.md` — **[UCP] THE DESIGN NOTE, PROPOSED; light D6 panel r1**
   (lane ucpdes, 2026-09-28; `../dev/reviews/2026-09-28-r1-ucp-design.md`;
