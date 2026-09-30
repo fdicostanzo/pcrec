@@ -2807,6 +2807,49 @@ context sets and `PCREC_MAX_CTX_ATOMS` atoms (`limits.md` §3.9); over either,
 the DFA is declined exactly as for a state-cap overflow (`--engine=auto`
 takes the VM).
 
+### 2.33 `-fno-cls-kit` — `PCREC_NO_CLS_KIT` (bit 36)
+
+**[CLS-TREE] S4, `abi` 47 (`docs/design/cls_tree_design.md` §2.2, §6.1;
+D129 Q2's one kit-level deny). ANSWER-IDENTITY-preserving.** How the VM tests
+a WIDE class: a class with more than one member, some member of which
+encodes deeper than one code unit. Under `-e byte` no class is wide, so the
+flag is inert there. Deny-only, and MASKED out of `rx_info.flags`
+(`strategy_denials`) for that mask's own reason.
+
+**What it is.** The VM decodes ONE character through the encoding's
+`<prefix>_decode` (a `static inline` entry, §6 of `match_api.md`). It then
+tests the character with `<prefix>_wcls<N>`, a `static inline` class-matcher
+function. There is one matcher per distinct set per artifact. The matcher's
+FORM is chosen by λ's row of the `--tune` table (§5.4), whose rows are
+`src/gen/clskit.c`'s first-match table: the sectioned kit `K`, or a
+whole-set table `P3`/`P2`/`B1`.
+
+The decoder rejects a truncated sequence, a stray continuation byte, an
+overlong form, a surrogate and anything above U+10FFFF. That is exactly the
+set the byte alternation cannot match, so ill-formed input matches nothing
+on either route.
+
+**Where the bytes stay.** A one-member wide class is a literal (`é`), so it
+keeps its bytes: that is a literal run, an island word, or a cursor stride.
+The DFA, the NFA and the VM hybrid's prefilter always read the byte
+alternation, whatever this flag says.
+
+**What it changes.** Most of all, it changes what the VM can BUILD:
+- a wide class that was hundreds of kilobytes of alternation is a few
+  kilobytes of matcher;
+- `\P{Unknown}` and the other large `\p` sets compile under
+  `--engine=vm` (K55 retired);
+- a CAPTURED wide class (`(\p{L})`) compiles on the default route wherever
+  its prefilter fits the size caps.
+
+**The stamp.** `<PREFIX>_VM_CLS_KIT` is the number of distinct matchers
+written, a D81 VM-only activity count. It reads 0 under the flag and in
+every `-e byte` artifact.
+
+**Denied**, every wide class on the VM is the byte alternation this compiler
+emitted before `abi` 47, and the artifact accepts exactly the same subjects.
+`make test-axes` sweeps the flag like every deny axis.
+
 ## 3. The DFA side's own stamps
 
 **CLOSED 2026-08-25 by plan row `[DD-13]`; this section stated the gap while
@@ -3089,6 +3132,7 @@ not-a-tuning-axis list that follows.
 | `flags` bit `PCREC_NO_RUN_PREFILTER` | `-fno-run-prefilter` | §2.30 |
 | `flags` bit `PCREC_NO_LIT_RUN` | `-fno-lit-run` | §2.31 |
 | `flags` bit `PCREC_NO_CTX_NODE` | `-fno-ctx-node` | §2.32 |
+| `flags` bit `PCREC_NO_CLS_KIT` | `-fno-cls-kit` | §2.33 |
 | `unroll_k` (`PCREC_UNROLL_K_DEFAULT` = 0) | `--unroll=K` | §2.10 |
 | `vm_entry_shape` (`PCREC_VM_ENTRY_AUTO` = 0, `_PLAIN`, `_SHARED`, `_FORWARD`, `_INLINE`) | `--vm-entry-shape=N` | §2.21 |
 | `engine` (`PCREC_ENGINE_AUTO`/`_DFA`/`_VM`) | `--engine=E` | §2.11 |
@@ -3257,7 +3301,7 @@ lands.
 
 | axis | −2 `min-size` | −1 `size` | 0 `balanced` | +1 `speed` | +2 `max-speed` | why |
 |---|---|---|---|---|---|---|
-| λ (class-matcher kit) | smaller of `K`, `P3` | = `−2` | **`P3`** if `K` ≥ 16 sections and `P3` ≤ 1.26×`K`, else `K` | — | smaller of `P2`, `B1` where `0` chose `P3`, else as `0` | `[CLS-TREE]` unbuilt; `docs/design/opt_dial_design.md` §4 (D131): ONE kit constant (λ = 4, the sectioning DP's size end, `K`) at every position plus a first-match row over the whole-set tables `P3`/`P2`/`B1`; three distinct programs. Calibration: `cls_tree_design.md` §1.7 (ubuntubudu, per-probe model r = +0.98; `P3` 3.2× faster than today's pinned middle for +11% bytes) |
+| λ (class-matcher kit) | smaller of `K`, `P3` | = `−2` | **`P3`** if `K` ≥ 16 sections and `P3` ≤ 1.26×`K`, else `K` | — | smaller of `P2`, `B1` where `0` chose `P3`, else as `0` | BUILT at `[CLS-TREE]` S4 (`abi` 47): the VM's wide-class matcher (§2.33); `docs/design/opt_dial_design.md` §4 (D131): ONE kit constant (λ = 4, the sectioning DP's size end, `K`) at every position plus a first-match row over the whole-set tables `P3`/`P2`/`B1`; three distinct programs. Calibration: `cls_tree_design.md` §1.7 (ubuntubudu, per-probe model r = +0.98; `P3` 3.2× faster than today's pinned middle for +11% bytes) |
 | `[ART-SIZE]` ladder — bar | **0.95** | **0.85** | **0.75** | — | — | §2.16; `artifact_size_term.md` §3.3. Speed side em-dashed (**M13**): the speed it would buy is ≤3%, below `s` = 1.10 |
 | `[ART-SIZE]` ladder — threshold | **40,000** | **80,000** | **120,000** | — | — | §2.16; `limits.def:161`, `PCREC_SIZE_TERM_THRESHOLD` |
 | `-fno-premul-table` | **deny** | — `†` | **allow** | — | — | §2.13; `σ` = 22…25% ≥ `y`; `m` ≤ `x₂` = 2.00 for every `φ_scan` ≤ 1, so `−2` needs no measurement; `−1` iff `φ_scan` ≤ 0.126 (unmeasured) |
@@ -3305,6 +3349,11 @@ codes above), and three (`-fno-anchored-dfa`, `-fno-tiered-entry`, λ)
 CONTINGENTLY, pending an unmeasured quantity named in their own row. That
 is the difference between an allowlist and a list of things nobody got
 round to.
+
+**λ has since been ruled (D131) and BUILT (`[CLS-TREE]` S4, `abi` 47)**,
+so it is the fifth row with cells. It is also the row that makes `+2`
+DISTINCT from `+1`: where `0` chooses `P3`, `+2` chooses the smaller of `P2`
+and `B1`. Every other row still reads `+2` equal to `+1`.
 
 ### 5.5 Acceptance
 

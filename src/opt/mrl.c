@@ -524,14 +524,14 @@ long long pcrec_cwmax(const Ast *a)
 
     for (;;) {
         switch (a->k) {
-        /* [CLS-TREE] S3: its byte child, the lowered alternation that sat in
-         * this slot before the kind existed, so the answer is unchanged.
-         * D-2: a width in CHARACTERS says 1 for a class in every encoding
-         * (the header); S3 keeps the byte child's answer for byte
-         * identity, and the one-character answer is S4's question. */
+        /* [CLS-TREE] S4 (D-2, ruled at S4, cls_tree_design.md §6.1): ONE
+         * CHARACTER, like `A_CLASS` — a class is one character by
+         * definition in every encoding. S3 read the byte child (its encoded
+         * length, a unit error) for byte identity; nothing moves either way,
+         * because every reader after the lowering asks only zero vs nonzero
+         * and the one that uses the value (endwin.c) declines under a
+         * multi-byte encoding first. */
         case A_WCLASS:
-            a = a->l;
-            continue;
         case A_CLASS:
             /* One CHARACTER, exactly and by definition — see the header. */
             return pcrec_sat_add(acc, 1, MRL_MINW_MAX);
@@ -671,14 +671,8 @@ long long pcrec_cwmin(const Ast *a)
 
     for (;;) {
         switch (a->k) {
-        /* [CLS-TREE] S3: its byte child, the lowered alternation that sat in
-         * this slot before the kind existed, so the answer is unchanged.
-         * D-2: a width in CHARACTERS says 1 for a class in every encoding
-         * (the header); S3 keeps the byte child's answer for byte
-         * identity, and the one-character answer is S4's question. */
+        /* [CLS-TREE] S4 (D-2): one character, `pcrec_cwmax`'s arm. */
         case A_WCLASS:
-            a = a->l;
-            continue;
         case A_CLASS:
             return pcrec_sat_add(acc, 1, MRL_MINW_MAX);
         case A_EMPTY:

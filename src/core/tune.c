@@ -84,16 +84,17 @@ static const PcrecTuneRow TUNE_TABLE[5] = {
      * next cell up) and admits nothing beyond them. */
     { PCREC_TUNE_SPEED,     "speed",      0,      0, 8192, 0 },
 
-    /* +2 `max-speed`: IDENTICAL TO +1 ON EVERY CELL, and it ships that way
-     * DECLARED rather than hidden (design §6.3, S219's precedent).
+    /* +2 `max-speed`: IDENTICAL TO +1 ON EVERY CELL OF THIS TABLE.
      *
-     * ITS BECOME-REACHABLE CONDITION, stated here because a vacuous row
-     * nobody wrote a trigger for is a row that stays vacuous: `+2` becomes
-     * distinct from `+1` the day EITHER lambda is implemented (`[CLS-TREE]`
-     * — the class-matcher kit's own dial, where `+1` selects frontier point
-     * 64 and `+2` selects 256) OR the speed-notch floor `s` is ruled below
-     * 1.03, which is what would let the `[ART-SIZE]` ladder's speed side
-     * stop being em-dashed. The `+2` cell that revision 1 of the design
+     * IT IS NO LONGER IDENTICAL AS A POSITION. This row's become-reachable
+     * condition was "the day lambda is implemented", and `[CLS-TREE]` S4
+     * implemented it: the class-matcher kit's own first-match table
+     * (src/gen/clskit.c, D131) reads the position directly, and where `0`
+     * chooses the three-stage table `+2` chooses the smaller of the
+     * two-stage table and the flat bitmap. That table is not a cell here
+     * because it is not a switch; `docs/spec/tuning.md` §5.4's λ row is its
+     * contract. The ladder half of the condition (the speed-notch floor `s`
+     * ruled below 1.03) is still unmet. The `+2` cell that revision 1 of the design
      * carried — an entry-chain term of 13,312 — was WITHDRAWN because its
      * number came from a recommendation phrase and not from a measurement,
      * and there is no measured cell above program 6,954 bytes to cite. */

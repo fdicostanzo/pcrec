@@ -2033,7 +2033,34 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `46` on every artifact today ([UCP] U2 bumped it from
+- **`rx_info.abi` is `47` on every artifact today ([CLS-TREE] S4 bumped it
+  from 46, 2026-09-29: A WIDE CLASS ON THE VM IS ONE DECODE AND ONE
+  CLASS-MATCHER FUNCTION).** A class with more than one member, some member of
+  which encodes deeper than one code unit (`-e utf8`: `\p{L}`, `[^a]`, `.`,
+  `[é-ü]`), is tested by a VM program as `<prefix>_decode` followed by
+  `<prefix>_wcls<N>`, where it was the lowered byte alternation
+  (`docs/spec/tuning.md` §2.33). `<prefix>_wcls<N>` is a `static inline`
+  function whose form the `--tune` class table picks (§5.4's λ row).
+  `<prefix>_decode` is a new encoding-seam entry. It is `static inline`,
+  DECLARED NOWHERE, and emitted ahead of the program, and the utf8 caseless
+  span compare calls it in place of the private decoder it carried. So every
+  utf8 caseless-backreference or caseless-variable artifact moves too, with no
+  answer change. Every VM artifact gains a `<PREFIX>_VM_CLS_KIT` line (§6.3).
+  - That is an emitted-text move for identical inputs, and so an `abi` event
+    (D76).
+  - Wide classes that refused on the VM's code cap now COMPILE: `\P{Unknown}`
+    under `--engine=vm` (K55), and the K53 sets under `--engine=vm`. This is a
+    refusal-set move.
+  - No struct offset moves and no `rx_info` member is added or changed. The
+    new deny bit (`-fno-cls-kit`, `PCREC_NO_CLS_KIT`, bit 36) is MASKED out of
+    `rx_info.flags`.
+  **VERIFIED BY AN IDENTITY SWEEP** (`scripts/cls_identity.py`, 15,925
+  triples at both encodings): under `-fno-cls-kit` every artifact equals the
+  abi-46 base with the new stamp line removed. There are two exceptions, both
+  expected. The 19 utf8 caseless span-compare artifacts move by the decoder's
+  relocation. And one bench artifact's size-retry WHY text quotes a byte
+  count that includes the stamp line (`docs/dev/lanes/s4build_report.md`).
+- **`rx_info.abi` was `46` ([UCP] U2 bumped it from
   45, 2026-09-29: A ONE-CHARACTER LOOKAROUND IS A CONTEXT NODE, AND MOVES VM
   -> DFA).** A lookaround whose body's LANGUAGE is a set of single
   byte-expressible characters (`(?<=\$)`, `(?!y)`, `(?=[ab])`, the non-atomic
@@ -3198,6 +3225,7 @@ engine-scoped.**
   section already said: `<PREFIX>_VM_RUNGS`, `_VM_STRATS`, `_VM_PRUNES`,
   `_VM_PRUNE_CEILING`, `_VM_CALL_SPLICED`/`_LINKED`, `_VM_ROOT_MINW`,
   `_VM_FRAMELESS`, `_VM_ALT_ISLANDS`, `_VM_CLS_FOLDS`, `_VM_LIT_RUNS`,
+  `_VM_CLS_KIT`,
   `_VM_START`, the
   budget macros and the frame/trail sizes. They report what the VM DID —
   per quantifier, per call site, per frame — and a DFA artifact has no
@@ -3417,6 +3445,23 @@ every VM artifact, hybrids included, never defined on a pure-DFA artifact,
 `0` under `-fno-lit-run`. A COUNT for the two entries above' reason. What a
 consumer may NOT conclude: anything about the answers, which are identical
 either way.
+
+**[CLS-TREE] S4, 2026-09-29 (`abi` 47): `<PREFIX>_VM_CLS_KIT`, (b) for
+`_VM_CLS_FOLDS`' reason.**
+
+```c
+#define RX_VM_CLS_KIT 1   /* or 0, or any count */
+```
+
+**The IFF: it is the number of distinct class-matcher functions
+(`<prefix>_wcls<N>`) this artifact's VM program calls.** Each is a wide class
+tested as one decode and one matcher (`docs/spec/tuning.md` §2.33). It is
+emitted on every VM artifact, hybrids included, and never on a pure-DFA
+artifact. It reads `0` under `-e byte` (no class is wide there) and under
+`-fno-cls-kit`. It is a COUNT, for the entries above' reason. A consumer may
+NOT conclude anything about the answers, which are identical either way.
+Nor may it conclude which form a matcher took: that is `--emit-ir`'s
+`consume` row, and the matcher's own text.
 
 **[OPT-1], 2026-08-25: two more (b) macros —
 `<PREFIX>_FAST_FRAMES` and `<PREFIX>_FAST_TRAIL`.** They report the
