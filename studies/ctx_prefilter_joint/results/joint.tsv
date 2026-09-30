@@ -1,0 +1,595 @@
+subject	id	enc	prefilter	req_byte	narrow	n_conds	conds	notes	c0	s0	c1	t	rej	false_rem	sound	nested	model_pass	meas_pass	n_bytes
+t-256k.bin	capability/pwd-strength-chain	byte	hybrid	none	n	4	lookahead/255/.*[a-z];lookahead/255/.*[A-Z];lookahead/255/.*\d;lookahead/255/.*[^\w\s]	-	0	0	0	0			1	1			262144
+t-256k.bin	syntax/lka-nonatomic	byte	hybrid	109	y	1	lookahead/1/item	-	0	0	0	0			1	1			262144
+t-256k.bin	syntax/lka-pos	byte	hybrid	109	y	1	lookahead/1/ done	-	0	0	0	0			1	1			262144
+t-256k.bin	syntax/lka-verb	byte	hybrid	109	y	1	lookahead/1/ done	-	0	0	0	0			1	1			262144
+t-256k.bin	syntax/lkb-pos	byte	hybrid	100	y	1	lookbehind/1/item 	-	0	0	0	0			1	1			262144
+t-256k.bin	tests/litscan/litrun.rxt:160	byte	hybrid	98	y	1	lookahead/1/def	-	0	0	0	0			1	1			262144
+t-256k.bin	tests/lookaround/d27/adversarial.rxt:59	byte	hybrid	120	y	1	lookbehind/2/a{3}|bb	-	2626	2626	0	0	1	1	1	1	0.041378	0	262144
+t-256k.bin	tests/lookaround/d27/adversarial.rxt:69	byte	hybrid	120	y	1	lookbehind/1/(?:a{2})|(?:a{3})	-	2626	2626	0	0	1	1	1	1	0.0366478	0	262144
+t-256k.bin	tests/lookaround/d27/adversarial.rxt:84	byte	hybrid	120	y	1	lookbehind/1/ab	-	2626	2626	0	0	1	1	1	1	0.00473022	0	262144
+t-256k.bin	tests/lookaround/d27/longsubject.rxt:8	byte	hybrid	88	y	1	lookbehind/4/a|bb|ccc|dddd	-	0	0	0	0			1	1			262144
+t-256k.bin	tests/lookaround/d27/matrix.rxt:1158	byte	hybrid	122	y	1	lookbehind/1/abc	-	0	0	0	0			1	1			262144
+t-256k.bin	tests/lookaround/d27/matrix.rxt:1166	byte	hybrid	122	y	1	lookbehind/1/abc	-	0	0	0	0			1	1			262144
+t-256k.bin	tests/lookaround/d27/matrix.rxt:1173	byte	hybrid	122	y	1	lookbehind/1/abc	-	0	0	0	0			1	1			262144
+t-256k.bin	tests/lookaround/d27/matrix.rxt:1180	byte	hybrid	none	y	1	lookbehind/1/abc	-	1484	1484	1484	1484	0		1	1	0.021553	1	262144
+t-256k.bin	tests/lookaround/d27/matrix.rxt:1196	byte	hybrid	122	y	1	lookbehind/1/abc	-	0	0	0	0			1	1			262144
+t-256k.bin	tests/lookaround/d27/matrix.rxt:1214	byte	hybrid	122	y	1	lookbehind/2/ab|cd	-	0	0	0	0			1	1			262144
+t-256k.bin	tests/lookaround/d27/matrix.rxt:1222	byte	hybrid	122	y	1	lookbehind/2/ab|cd	-	0	0	0	0			1	1			262144
+t-256k.bin	tests/lookaround/d27/matrix.rxt:1229	byte	hybrid	122	y	1	lookbehind/2/ab|cd	-	0	0	0	0			1	1			262144
+t-256k.bin	tests/lookaround/d27/matrix.rxt:1236	byte	hybrid	none	y	1	lookbehind/2/ab|cd	-	1484	1484	1484	1484	0		1	1	0.0320702	1	262144
+t-256k.bin	tests/lookaround/d27/matrix.rxt:1252	byte	hybrid	122	y	1	lookbehind/2/ab|cd	-	0	0	0	0			1	1			262144
+t-256k.bin	tests/lookaround/d27/matrix.rxt:1273	byte	hybrid	122	y	1	lookbehind/2/a|bc	-	0	0	0	0			1	1			262144
+t-256k.bin	tests/lookaround/d27/matrix.rxt:1282	byte	hybrid	122	y	1	lookbehind/2/a|bc	-	0	0	0	0			1	1			262144
+t-256k.bin	tests/lookaround/d27/matrix.rxt:1290	byte	hybrid	122	y	1	lookbehind/2/a|bc	-	0	0	0	0			1	1			262144
+t-256k.bin	tests/lookaround/d27/matrix.rxt:1298	byte	hybrid	none	y	1	lookbehind/2/a|bc	-	1484	1484	1484	1484	0		1	1	0.0582008	1	262144
+t-256k.bin	tests/lookaround/d27/matrix.rxt:1316	byte	hybrid	122	y	1	lookbehind/2/a|bc	-	0	0	0	0			1	1			262144
+t-256k.bin	tests/lookaround/d27/matrix.rxt:163	byte	hybrid	122	y	1	lookahead/1/abc	-	0	0	0	0			1	1			262144
+t-256k.bin	tests/lookaround/d27/matrix.rxt:170	byte	hybrid	122	y	1	lookahead/1/abc	-	0	0	0	0			1	1			262144
+t-256k.bin	tests/lookaround/d27/matrix.rxt:177	byte	hybrid	122	y	1	lookahead/1/abc	-	0	0	0	0			1	1			262144
+t-256k.bin	tests/lookaround/d27/matrix.rxt:184	byte	hybrid	none	y	1	lookahead/1/abc	-	1484	1484	1484	1484	0		1	1	0.0366478	1	262144
+t-256k.bin	tests/lookaround/d27/matrix.rxt:198	byte	hybrid	122	y	1	lookahead/1/abc	-	0	0	0	0			1	1			262144
+t-256k.bin	tests/lookaround/d27/matrix.rxt:212	byte	hybrid	122	y	1	lookahead/2/ab|cd	-	0	0	0	0			1	1			262144
+t-256k.bin	tests/lookaround/d27/matrix.rxt:2151	byte	hybrid	122	y	1	lookahead/1/abc	-	0	0	0	0			1	1			262144
+t-256k.bin	tests/lookaround/d27/matrix.rxt:2159	byte	hybrid	122	y	1	lookahead/1/abc	-	0	0	0	0			1	1			262144
+t-256k.bin	tests/lookaround/d27/matrix.rxt:2167	byte	hybrid	122	y	1	lookahead/1/abc	-	0	0	0	0			1	1			262144
+t-256k.bin	tests/lookaround/d27/matrix.rxt:2175	byte	hybrid	none	y	1	lookahead/1/abc	-	1484	1484	1484	1484	0		1	1	0.0366478	1	262144
+t-256k.bin	tests/lookaround/d27/matrix.rxt:219	byte	hybrid	122	y	1	lookahead/2/ab|cd	-	0	0	0	0			1	1			262144
+t-256k.bin	tests/lookaround/d27/matrix.rxt:2191	byte	hybrid	122	y	1	lookahead/1/abc	-	0	0	0	0			1	1			262144
+t-256k.bin	tests/lookaround/d27/matrix.rxt:2207	byte	hybrid	122	y	1	lookahead/2/ab|cd	-	0	0	0	0			1	1			262144
+t-256k.bin	tests/lookaround/d27/matrix.rxt:2215	byte	hybrid	122	y	1	lookahead/2/ab|cd	-	0	0	0	0			1	1			262144
+t-256k.bin	tests/lookaround/d27/matrix.rxt:2223	byte	hybrid	122	y	1	lookahead/2/ab|cd	-	0	0	0	0			1	1			262144
+t-256k.bin	tests/lookaround/d27/matrix.rxt:2231	byte	hybrid	none	y	1	lookahead/2/ab|cd	-	1484	1484	1484	1484	0		1	1	0.0582008	1	262144
+t-256k.bin	tests/lookaround/d27/matrix.rxt:2247	byte	hybrid	122	y	1	lookahead/2/ab|cd	-	0	0	0	0			1	1			262144
+t-256k.bin	tests/lookaround/d27/matrix.rxt:226	byte	hybrid	122	y	1	lookahead/2/ab|cd	-	0	0	0	0			1	1			262144
+t-256k.bin	tests/lookaround/d27/matrix.rxt:2263	byte	hybrid	122	y	1	lookahead/2/a|bc	-	0	0	0	0			1	1			262144
+t-256k.bin	tests/lookaround/d27/matrix.rxt:2271	byte	hybrid	122	y	1	lookahead/2/a|bc	-	0	0	0	0			1	1			262144
+t-256k.bin	tests/lookaround/d27/matrix.rxt:2279	byte	hybrid	122	y	1	lookahead/2/a|bc	-	0	0	0	0			1	1			262144
+t-256k.bin	tests/lookaround/d27/matrix.rxt:2287	byte	hybrid	none	y	1	lookahead/2/a|bc	-	1484	1484	1484	1484	0		1	1	0.041378	1	262144
+t-256k.bin	tests/lookaround/d27/matrix.rxt:2303	byte	hybrid	122	y	1	lookahead/2/a|bc	-	0	0	0	0			1	1			262144
+t-256k.bin	tests/lookaround/d27/matrix.rxt:233	byte	hybrid	none	y	1	lookahead/2/ab|cd	-	1484	1484	1484	1484	0		1	1	0.0582008	1	262144
+t-256k.bin	tests/lookaround/d27/matrix.rxt:247	byte	hybrid	122	y	1	lookahead/2/ab|cd	-	0	0	0	0			1	1			262144
+t-256k.bin	tests/lookaround/d27/matrix.rxt:261	byte	hybrid	122	y	1	lookahead/2/a|bc	-	0	0	0	0			1	1			262144
+t-256k.bin	tests/lookaround/d27/matrix.rxt:268	byte	hybrid	122	y	1	lookahead/2/a|bc	-	0	0	0	0			1	1			262144
+t-256k.bin	tests/lookaround/d27/matrix.rxt:2702	byte	hybrid	122	y	1	lookbehind/1/abc	-	0	0	0	0			1	1			262144
+t-256k.bin	tests/lookaround/d27/matrix.rxt:2711	byte	hybrid	122	y	1	lookbehind/1/abc	-	0	0	0	0			1	1			262144
+t-256k.bin	tests/lookaround/d27/matrix.rxt:2719	byte	hybrid	122	y	1	lookbehind/1/abc	-	0	0	0	0			1	1			262144
+t-256k.bin	tests/lookaround/d27/matrix.rxt:2727	byte	hybrid	none	y	1	lookbehind/1/abc	-	1484	1484	1484	1484	0		1	1	0.021553	1	262144
+t-256k.bin	tests/lookaround/d27/matrix.rxt:2745	byte	hybrid	122	y	1	lookbehind/1/abc	-	0	0	0	0			1	1			262144
+t-256k.bin	tests/lookaround/d27/matrix.rxt:275	byte	hybrid	122	y	1	lookahead/2/a|bc	-	0	0	0	0			1	1			262144
+t-256k.bin	tests/lookaround/d27/matrix.rxt:2765	byte	hybrid	122	y	1	lookbehind/2/ab|cd	-	0	0	0	0			1	1			262144
+t-256k.bin	tests/lookaround/d27/matrix.rxt:2774	byte	hybrid	122	y	1	lookbehind/2/ab|cd	-	0	0	0	0			1	1			262144
+t-256k.bin	tests/lookaround/d27/matrix.rxt:2782	byte	hybrid	122	y	1	lookbehind/2/ab|cd	-	0	0	0	0			1	1			262144
+t-256k.bin	tests/lookaround/d27/matrix.rxt:2790	byte	hybrid	none	y	1	lookbehind/2/ab|cd	-	1484	1484	1484	1484	0		1	1	0.0320702	1	262144
+t-256k.bin	tests/lookaround/d27/matrix.rxt:2808	byte	hybrid	122	y	1	lookbehind/2/ab|cd	-	0	0	0	0			1	1			262144
+t-256k.bin	tests/lookaround/d27/matrix.rxt:282	byte	hybrid	none	y	1	lookahead/2/a|bc	-	1484	1484	1484	1484	0		1	1	0.041378	1	262144
+t-256k.bin	tests/lookaround/d27/matrix.rxt:2830	byte	hybrid	122	y	1	lookbehind/2/a|bc	-	0	0	0	0			1	1			262144
+t-256k.bin	tests/lookaround/d27/matrix.rxt:2839	byte	hybrid	122	y	1	lookbehind/2/a|bc	-	0	0	0	0			1	1			262144
+t-256k.bin	tests/lookaround/d27/matrix.rxt:2847	byte	hybrid	122	y	1	lookbehind/2/a|bc	-	0	0	0	0			1	1			262144
+t-256k.bin	tests/lookaround/d27/matrix.rxt:2855	byte	hybrid	none	y	1	lookbehind/2/a|bc	-	1484	1484	1484	1484	0		1	1	0.0582008	1	262144
+t-256k.bin	tests/lookaround/d27/matrix.rxt:2873	byte	hybrid	122	y	1	lookbehind/2/a|bc	-	0	0	0	0			1	1			262144
+t-256k.bin	tests/lookaround/d27/matrix.rxt:296	byte	hybrid	122	y	1	lookahead/2/a|bc	-	0	0	0	0			1	1			262144
+t-256k.bin	tests/lookaround/lookahead.rxt:107	byte	hybrid	98	y	1	lookahead/1/a+b	-	0	0	0	0			1	1			262144
+t-256k.bin	tests/lookaround/lookahead.rxt:197	byte	hybrid	98	y	1	lookahead/1/abc	-	0	0	0	0			1	1			262144
+t-256k.bin	tests/lookaround/lookahead.rxt:204	byte	hybrid	98	y	1	lookahead/1/ab	-	0	0	0	0			1	1			262144
+t-256k.bin	tests/lookaround/lookahead.rxt:242	byte	hybrid	98	y	1	lookahead/1/(?:aa|a)b	-	0	0	0	0			1	1			262144
+t-256k.bin	tests/lookaround/lookahead.rxt:32	byte	hybrid	98	y	1	lookahead/1/ab	-	0	0	0	0			1	1			262144
+t-256k.bin	tests/lookaround/lookbehind.rxt:212	byte	hybrid	none	y	1	lookbehind/1/bc	-	7167	8407	0	0	1	1	1	1	0.021553	0	262144
+t-256k.bin	tests/lookaround/lookbehind.rxt:257	byte	hybrid	99	y	1	lookbehind/1/ab	-	1055	5650	0	0	1	1	1	1	0.00473022	0	262144
+t-256k.bin	tests/lookaround/lookbehind.rxt:264	byte	hybrid	99	y	1	lookbehind/1/ab	-	0	5650	0	0			1	1			262144
+t-256k.bin	tests/lookaround/lookbehind.rxt:303	byte	hybrid	98	y	1	lookbehind/1/a{2}	-	1240	1240	0	0	1	1	1	1	0.0366478	0	262144
+t-256k.bin	tests/lookaround/lookbehind.rxt:334	byte	hybrid	98	y	1	lookbehind/1/\Ga	-	1240	1240	0	0	1	1	1	1	0.0366478	0	262144
+t-256k.bin	tests/lookaround/lookbehind.rxt:45	byte	hybrid	120	y	1	lookbehind/1/abc	-	2626	2626	0	0	1	1	1	1	0.021553	0	262144
+t-256k.bin	tests/lookaround/lookbehind.rxt:55	byte	hybrid	120	y	1	lookbehind/2/[ab][cd]	-	2626	2626	0	0	1	1	1	1	0.048893	0	262144
+t-256k.bin	tests/lookaround/lookbehind.rxt:67	byte	hybrid	120	y	1	lookbehind/1/a{3}	-	2626	2626	0	0	1	1	1	1	0.0366478	0	262144
+t-256k.bin	tests/lookaround/lookbehind.rxt:76	byte	hybrid	120	y	1	lookbehind/1/(?:ab){2}	-	2626	2626	0	0	1	1	1	1	0.00473022	0	262144
+t-256k.bin	tests/lookaround/lookbehind.rxt:85	byte	hybrid	120	y	1	lookbehind/2/ab|cd	-	2626	2626	0	0	1	1	1	1	0.0320702	0	262144
+t-256k.bin	tests/lookaround/lookbehind.rxt:96	byte	hybrid	120	y	1	lookbehind/3/ab|cd|ef	-	2626	2626	0	0	1	1	1	1	0.050354	0	262144
+t-256k.bin	tests/lookaround/lookbehind_widths.rxt:154	byte	hybrid	121	y	1	lookbehind/2/x|abc	-	1149	1149	0	0	1	1	1	1	0.0315704	0	262144
+t-256k.bin	tests/lookaround/lookbehind_widths.rxt:168	byte	hybrid	120	y	1	lookbehind/2/ab|c	-	2626	2626	0	0	1	1	1	1	0.0262833	0	262144
+t-256k.bin	tests/lookaround/lookbehind_widths.rxt:193	byte	hybrid	98	y	1	lookbehind/2/a|xbc	-	0	0	0	0			1	1			262144
+t-256k.bin	tests/lookaround/lookbehind_widths.rxt:42	byte	hybrid	120	y	1	lookbehind/2/a|bc	-	2626	2626	0	0	1	1	1	1	0.0582008	0	262144
+t-256k.bin	tests/lookaround/lookbehind_widths.rxt:58	byte	hybrid	120	y	1	lookbehind/3/a|bc|def	-	2626	2626	0	0	1	1	1	1	0.0764847	0	262144
+t-256k.bin	tests/lookaround/nonatomic_ahead.rxt:137	byte	hybrid	98	y	1	lookahead/1/ab	-	0	0	0	0			1	1			262144
+t-256k.bin	tests/lookaround/nonatomic_behind.rxt:108	byte	hybrid	99	y	1	lookbehind/1/ab	-	5650	5650	0	0	1	1	1	1	0.00473022	0	262144
+t-256k.bin	tests/lookaround/nonatomic_behind.rxt:121	byte	hybrid	120	y	1	lookbehind/2/a|bc	-	2626	2626	0	0	1	1	1	1	0.0582008	0	262144
+t-256k.bin	tests/lookaround/prefilter.rxt:112	byte	hybrid	113	y	1	lookahead/1/!q	-	0	0	0	0			1	1			262144
+t-256k.bin	tests/lookaround/startpos.rxt:69	byte	hybrid	99	y	1	lookbehind/1/ab	-	5650	5650	0	0	1	1	1	1	0.00473022	0	262144
+t-256k.bin	tests/lookaround/workbudget.rxt:42	byte	hybrid	120	y	1	lookbehind/4/ab|cd|ef|gh	-	2626	2626	0	0	1	1	1	1	0.061985	0	262144
+t-256k.bin	tests/lookaround/workbudget.rxt:54	byte	hybrid	none	y	1	lookbehind/4/ab|cd|ef|gh	-	4261	4261	1635	1635	0.616287	1	1	1	0.061985	0.383713	262144
+t-256k.bin	utf8/asr-lb-varwidth	utf8	hybrid	120	n	1	lookbehind/2/a|Ã©	-	2626	2626	0	0	1	1	1	1	0.0366478	0	262144
+syntax-t-256k.bin	capability/pwd-strength-chain	byte	hybrid	none	n	4	lookahead/255/.*[a-z];lookahead/255/.*[A-Z];lookahead/255/.*\d;lookahead/255/.*[^\w\s]	-	0	0	0	0			1	1			262144
+syntax-t-256k.bin	syntax/lka-nonatomic	byte	hybrid	109	y	1	lookahead/1/item	-	681	681	681	681	0		1	1	0.0305786	1	262144
+syntax-t-256k.bin	syntax/lka-pos	byte	hybrid	109	y	1	lookahead/1/ done	-	681	681	277	6	0.593245	0.598519	1	1	0.146355	0.406755	262144
+syntax-t-256k.bin	syntax/lka-verb	byte	hybrid	109	y	1	lookahead/1/ done	-	681	681	277	6	0.593245	0.598519	1	1	0.146355	0.406755	262144
+syntax-t-256k.bin	syntax/lkb-pos	byte	hybrid	100	y	1	lookbehind/1/item 	-	665	665	555	6	0.165414	0.16692	1	1	0.146355	0.834586	262144
+syntax-t-256k.bin	tests/litscan/litrun.rxt:160	byte	hybrid	98	y	1	lookahead/1/def	-	0	0	0	0			1	1			262144
+syntax-t-256k.bin	tests/lookaround/d27/adversarial.rxt:59	byte	hybrid	120	y	1	lookbehind/2/a{3}|bb	-	2389	2389	0	0	1	1	1	1	0.0780449	0	262144
+syntax-t-256k.bin	tests/lookaround/d27/adversarial.rxt:69	byte	hybrid	120	y	1	lookbehind/1/(?:a{2})|(?:a{3})	-	2389	2389	0	0	1	1	1	1	0.0701027	0	262144
+syntax-t-256k.bin	tests/lookaround/d27/adversarial.rxt:84	byte	hybrid	120	y	1	lookbehind/1/ab	-	2389	2389	0	0	1	1	1	1	0.0079422	0	262144
+syntax-t-256k.bin	tests/lookaround/d27/longsubject.rxt:8	byte	hybrid	88	y	1	lookbehind/4/a|bb|ccc|dddd	-	0	0	0	0			1	1			262144
+syntax-t-256k.bin	tests/lookaround/d27/matrix.rxt:1158	byte	hybrid	122	y	1	lookbehind/1/abc	-	350	350	0	0	1	1	1	1	0.0313606	0	262144
+syntax-t-256k.bin	tests/lookaround/d27/matrix.rxt:1166	byte	hybrid	122	y	1	lookbehind/1/abc	-	350	350	0	0	1	1	1	1	0.0313606	0	262144
+syntax-t-256k.bin	tests/lookaround/d27/matrix.rxt:1173	byte	hybrid	122	y	1	lookbehind/1/abc	-	0	0	0	0			1	1			262144
+syntax-t-256k.bin	tests/lookaround/d27/matrix.rxt:1180	byte	hybrid	none	y	1	lookbehind/1/abc	-	3120	3120	2770	2770	0.112179	1	1	1	0.0313606	0.887821	262144
+syntax-t-256k.bin	tests/lookaround/d27/matrix.rxt:1196	byte	hybrid	122	y	1	lookbehind/1/abc	-	350	350	0	0	1	1	1	1	0.0313606	0	262144
+syntax-t-256k.bin	tests/lookaround/d27/matrix.rxt:1214	byte	hybrid	122	y	1	lookbehind/2/ab|cd	-	350	350	0	0	1	1	1	1	0.0459862	0	262144
+syntax-t-256k.bin	tests/lookaround/d27/matrix.rxt:1222	byte	hybrid	122	y	1	lookbehind/2/ab|cd	-	350	350	0	0	1	1	1	1	0.0459862	0	262144
+syntax-t-256k.bin	tests/lookaround/d27/matrix.rxt:1229	byte	hybrid	122	y	1	lookbehind/2/ab|cd	-	0	0	0	0			1	1			262144
+syntax-t-256k.bin	tests/lookaround/d27/matrix.rxt:1236	byte	hybrid	none	y	1	lookbehind/2/ab|cd	-	3120	3120	2770	2770	0.112179	1	1	1	0.0459862	0.887821	262144
+syntax-t-256k.bin	tests/lookaround/d27/matrix.rxt:1252	byte	hybrid	122	y	1	lookbehind/2/ab|cd	-	350	350	0	0	1	1	1	1	0.0459862	0	262144
+syntax-t-256k.bin	tests/lookaround/d27/matrix.rxt:1273	byte	hybrid	122	y	1	lookbehind/2/a|bc	-	350	350	0	0	1	1	1	1	0.101463	0	262144
+syntax-t-256k.bin	tests/lookaround/d27/matrix.rxt:1282	byte	hybrid	122	y	1	lookbehind/2/a|bc	-	350	350	0	0	1	1	1	1	0.101463	0	262144
+syntax-t-256k.bin	tests/lookaround/d27/matrix.rxt:1290	byte	hybrid	122	y	1	lookbehind/2/a|bc	-	0	0	0	0			1	1			262144
+syntax-t-256k.bin	tests/lookaround/d27/matrix.rxt:1298	byte	hybrid	none	y	1	lookbehind/2/a|bc	-	3120	3120	2770	2770	0.112179	1	1	1	0.101463	0.887821	262144
+syntax-t-256k.bin	tests/lookaround/d27/matrix.rxt:1316	byte	hybrid	122	y	1	lookbehind/2/a|bc	-	350	350	0	0	1	1	1	1	0.101463	0	262144
+syntax-t-256k.bin	tests/lookaround/d27/matrix.rxt:163	byte	hybrid	122	y	1	lookahead/1/abc	-	350	350	0	0	1	1	1	1	0.0701027	0	262144
+syntax-t-256k.bin	tests/lookaround/d27/matrix.rxt:170	byte	hybrid	122	y	1	lookahead/1/abc	-	350	350	0	0	1	1	1	1	0.0701027	0	262144
+syntax-t-256k.bin	tests/lookaround/d27/matrix.rxt:177	byte	hybrid	122	y	1	lookahead/1/abc	-	0	0	0	0			1	1			262144
+syntax-t-256k.bin	tests/lookaround/d27/matrix.rxt:184	byte	hybrid	none	y	1	lookahead/1/abc	-	3120	3120	2770	2770	0.112179	1	1	1	0.0701027	0.887821	262144
+syntax-t-256k.bin	tests/lookaround/d27/matrix.rxt:198	byte	hybrid	122	y	1	lookahead/1/abc	-	350	350	0	0	1	1	1	1	0.0701027	0	262144
+syntax-t-256k.bin	tests/lookaround/d27/matrix.rxt:212	byte	hybrid	122	y	1	lookahead/2/ab|cd	-	350	350	0	0	1	1	1	1	0.101463	0	262144
+syntax-t-256k.bin	tests/lookaround/d27/matrix.rxt:2151	byte	hybrid	122	y	1	lookahead/1/abc	-	350	350	0	0	1	1	1	1	0.0701027	0	262144
+syntax-t-256k.bin	tests/lookaround/d27/matrix.rxt:2159	byte	hybrid	122	y	1	lookahead/1/abc	-	350	350	0	0	1	1	1	1	0.0701027	0	262144
+syntax-t-256k.bin	tests/lookaround/d27/matrix.rxt:2167	byte	hybrid	122	y	1	lookahead/1/abc	-	0	0	0	0			1	1			262144
+syntax-t-256k.bin	tests/lookaround/d27/matrix.rxt:2175	byte	hybrid	none	y	1	lookahead/1/abc	-	3120	3120	2770	2770	0.112179	1	1	1	0.0701027	0.887821	262144
+syntax-t-256k.bin	tests/lookaround/d27/matrix.rxt:219	byte	hybrid	122	y	1	lookahead/2/ab|cd	-	350	350	0	0	1	1	1	1	0.101463	0	262144
+syntax-t-256k.bin	tests/lookaround/d27/matrix.rxt:2191	byte	hybrid	122	y	1	lookahead/1/abc	-	350	350	0	0	1	1	1	1	0.0701027	0	262144
+syntax-t-256k.bin	tests/lookaround/d27/matrix.rxt:2207	byte	hybrid	122	y	1	lookahead/2/ab|cd	-	350	350	0	0	1	1	1	1	0.101463	0	262144
+syntax-t-256k.bin	tests/lookaround/d27/matrix.rxt:2215	byte	hybrid	122	y	1	lookahead/2/ab|cd	-	350	350	0	0	1	1	1	1	0.101463	0	262144
+syntax-t-256k.bin	tests/lookaround/d27/matrix.rxt:2223	byte	hybrid	122	y	1	lookahead/2/ab|cd	-	0	0	0	0			1	1			262144
+syntax-t-256k.bin	tests/lookaround/d27/matrix.rxt:2231	byte	hybrid	none	y	1	lookahead/2/ab|cd	-	3120	3120	2770	2770	0.112179	1	1	1	0.101463	0.887821	262144
+syntax-t-256k.bin	tests/lookaround/d27/matrix.rxt:2247	byte	hybrid	122	y	1	lookahead/2/ab|cd	-	350	350	0	0	1	1	1	1	0.101463	0	262144
+syntax-t-256k.bin	tests/lookaround/d27/matrix.rxt:226	byte	hybrid	122	y	1	lookahead/2/ab|cd	-	0	0	0	0			1	1			262144
+syntax-t-256k.bin	tests/lookaround/d27/matrix.rxt:2263	byte	hybrid	122	y	1	lookahead/2/a|bc	-	350	350	0	0	1	1	1	1	0.0780449	0	262144
+syntax-t-256k.bin	tests/lookaround/d27/matrix.rxt:2271	byte	hybrid	122	y	1	lookahead/2/a|bc	-	350	350	0	0	1	1	1	1	0.0780449	0	262144
+syntax-t-256k.bin	tests/lookaround/d27/matrix.rxt:2279	byte	hybrid	122	y	1	lookahead/2/a|bc	-	0	0	0	0			1	1			262144
+syntax-t-256k.bin	tests/lookaround/d27/matrix.rxt:2287	byte	hybrid	none	y	1	lookahead/2/a|bc	-	3120	3120	2770	2770	0.112179	1	1	1	0.0780449	0.887821	262144
+syntax-t-256k.bin	tests/lookaround/d27/matrix.rxt:2303	byte	hybrid	122	y	1	lookahead/2/a|bc	-	350	350	0	0	1	1	1	1	0.0780449	0	262144
+syntax-t-256k.bin	tests/lookaround/d27/matrix.rxt:233	byte	hybrid	none	y	1	lookahead/2/ab|cd	-	3120	3120	2770	2770	0.112179	1	1	1	0.101463	0.887821	262144
+syntax-t-256k.bin	tests/lookaround/d27/matrix.rxt:247	byte	hybrid	122	y	1	lookahead/2/ab|cd	-	350	350	0	0	1	1	1	1	0.101463	0	262144
+syntax-t-256k.bin	tests/lookaround/d27/matrix.rxt:261	byte	hybrid	122	y	1	lookahead/2/a|bc	-	350	350	0	0	1	1	1	1	0.0780449	0	262144
+syntax-t-256k.bin	tests/lookaround/d27/matrix.rxt:268	byte	hybrid	122	y	1	lookahead/2/a|bc	-	350	350	0	0	1	1	1	1	0.0780449	0	262144
+syntax-t-256k.bin	tests/lookaround/d27/matrix.rxt:2702	byte	hybrid	122	y	1	lookbehind/1/abc	-	350	350	0	0	1	1	1	1	0.0313606	0	262144
+syntax-t-256k.bin	tests/lookaround/d27/matrix.rxt:2711	byte	hybrid	122	y	1	lookbehind/1/abc	-	350	350	0	0	1	1	1	1	0.0313606	0	262144
+syntax-t-256k.bin	tests/lookaround/d27/matrix.rxt:2719	byte	hybrid	122	y	1	lookbehind/1/abc	-	0	0	0	0			1	1			262144
+syntax-t-256k.bin	tests/lookaround/d27/matrix.rxt:2727	byte	hybrid	none	y	1	lookbehind/1/abc	-	3120	3120	2770	2770	0.112179	1	1	1	0.0313606	0.887821	262144
+syntax-t-256k.bin	tests/lookaround/d27/matrix.rxt:2745	byte	hybrid	122	y	1	lookbehind/1/abc	-	350	350	0	0	1	1	1	1	0.0313606	0	262144
+syntax-t-256k.bin	tests/lookaround/d27/matrix.rxt:275	byte	hybrid	122	y	1	lookahead/2/a|bc	-	0	0	0	0			1	1			262144
+syntax-t-256k.bin	tests/lookaround/d27/matrix.rxt:2765	byte	hybrid	122	y	1	lookbehind/2/ab|cd	-	350	350	0	0	1	1	1	1	0.0459862	0	262144
+syntax-t-256k.bin	tests/lookaround/d27/matrix.rxt:2774	byte	hybrid	122	y	1	lookbehind/2/ab|cd	-	350	350	0	0	1	1	1	1	0.0459862	0	262144
+syntax-t-256k.bin	tests/lookaround/d27/matrix.rxt:2782	byte	hybrid	122	y	1	lookbehind/2/ab|cd	-	0	0	0	0			1	1			262144
+syntax-t-256k.bin	tests/lookaround/d27/matrix.rxt:2790	byte	hybrid	none	y	1	lookbehind/2/ab|cd	-	3120	3120	2770	2770	0.112179	1	1	1	0.0459862	0.887821	262144
+syntax-t-256k.bin	tests/lookaround/d27/matrix.rxt:2808	byte	hybrid	122	y	1	lookbehind/2/ab|cd	-	350	350	0	0	1	1	1	1	0.0459862	0	262144
+syntax-t-256k.bin	tests/lookaround/d27/matrix.rxt:282	byte	hybrid	none	y	1	lookahead/2/a|bc	-	3120	3120	2770	2770	0.112179	1	1	1	0.0780449	0.887821	262144
+syntax-t-256k.bin	tests/lookaround/d27/matrix.rxt:2830	byte	hybrid	122	y	1	lookbehind/2/a|bc	-	350	350	0	0	1	1	1	1	0.101463	0	262144
+syntax-t-256k.bin	tests/lookaround/d27/matrix.rxt:2839	byte	hybrid	122	y	1	lookbehind/2/a|bc	-	350	350	0	0	1	1	1	1	0.101463	0	262144
+syntax-t-256k.bin	tests/lookaround/d27/matrix.rxt:2847	byte	hybrid	122	y	1	lookbehind/2/a|bc	-	0	0	0	0			1	1			262144
+syntax-t-256k.bin	tests/lookaround/d27/matrix.rxt:2855	byte	hybrid	none	y	1	lookbehind/2/a|bc	-	3120	3120	2770	2770	0.112179	1	1	1	0.101463	0.887821	262144
+syntax-t-256k.bin	tests/lookaround/d27/matrix.rxt:2873	byte	hybrid	122	y	1	lookbehind/2/a|bc	-	350	350	0	0	1	1	1	1	0.101463	0	262144
+syntax-t-256k.bin	tests/lookaround/d27/matrix.rxt:296	byte	hybrid	122	y	1	lookahead/2/a|bc	-	350	350	0	0	1	1	1	1	0.0780449	0	262144
+syntax-t-256k.bin	tests/lookaround/lookahead.rxt:107	byte	hybrid	98	y	1	lookahead/1/a+b	-	0	0	0	0			1	1			262144
+syntax-t-256k.bin	tests/lookaround/lookahead.rxt:197	byte	hybrid	98	y	1	lookahead/1/abc	-	377	377	377	0	0	0	1	1	0.0701027	1	262144
+syntax-t-256k.bin	tests/lookaround/lookahead.rxt:204	byte	hybrid	98	y	1	lookahead/1/ab	-	0	0	0	0			1	1			262144
+syntax-t-256k.bin	tests/lookaround/lookahead.rxt:242	byte	hybrid	98	y	1	lookahead/1/(?:aa|a)b	-	377	377	377	377	0		1	1	0.0701027	1	262144
+syntax-t-256k.bin	tests/lookaround/lookahead.rxt:32	byte	hybrid	98	y	1	lookahead/1/ab	-	0	0	0	0			1	1			262144
+syntax-t-256k.bin	tests/lookaround/lookbehind.rxt:212	byte	hybrid	none	y	1	lookbehind/1/bc	-	10350	12055	377	377	0.963575	1	1	1	0.0313606	0.0364251	262144
+syntax-t-256k.bin	tests/lookaround/lookbehind.rxt:257	byte	hybrid	99	y	1	lookbehind/1/ab	-	1117	8221	0	0	1	1	1	1	0.0079422	0	262144
+syntax-t-256k.bin	tests/lookaround/lookbehind.rxt:264	byte	hybrid	99	y	1	lookbehind/1/ab	-	0	8221	0	0			1	1			262144
+syntax-t-256k.bin	tests/lookaround/lookbehind.rxt:303	byte	hybrid	98	y	1	lookbehind/1/a{2}	-	2082	2082	377	0	0.818924	0.818924	1	1	0.0701027	0.181076	262144
+syntax-t-256k.bin	tests/lookaround/lookbehind.rxt:334	byte	hybrid	98	y	1	lookbehind/1/\Ga	-	2082	2082	377	0	0.818924	0.818924	1	1	0.0701027	0.181076	262144
+syntax-t-256k.bin	tests/lookaround/lookbehind.rxt:45	byte	hybrid	120	y	1	lookbehind/1/abc	-	2389	2389	0	0	1	1	1	1	0.0313606	0	262144
+syntax-t-256k.bin	tests/lookaround/lookbehind.rxt:55	byte	hybrid	120	y	1	lookbehind/2/[ab][cd]	-	2389	2389	0	0	1	1	1	1	0.0694046	0	262144
+syntax-t-256k.bin	tests/lookaround/lookbehind.rxt:67	byte	hybrid	120	y	1	lookbehind/1/a{3}	-	2389	2389	0	0	1	1	1	1	0.0701027	0	262144
+syntax-t-256k.bin	tests/lookaround/lookbehind.rxt:76	byte	hybrid	120	y	1	lookbehind/1/(?:ab){2}	-	2389	2389	0	0	1	1	1	1	0.0079422	0	262144
+syntax-t-256k.bin	tests/lookaround/lookbehind.rxt:85	byte	hybrid	120	y	1	lookbehind/2/ab|cd	-	2389	2389	0	0	1	1	1	1	0.0459862	0	262144
+syntax-t-256k.bin	tests/lookaround/lookbehind.rxt:96	byte	hybrid	120	y	1	lookbehind/3/ab|cd|ef	-	2389	2389	0	0	1	1	1	1	0.0591316	0	262144
+syntax-t-256k.bin	tests/lookaround/lookbehind_widths.rxt:154	byte	hybrid	121	y	1	lookbehind/2/x|abc	-	2683	2683	0	0	1	1	1	1	0.0404739	0	262144
+syntax-t-256k.bin	tests/lookaround/lookbehind_widths.rxt:168	byte	hybrid	120	y	1	lookbehind/2/ab|c	-	2389	2389	0	0	1	1	1	1	0.0393028	0	262144
+syntax-t-256k.bin	tests/lookaround/lookbehind_widths.rxt:193	byte	hybrid	98	y	1	lookbehind/2/a|xbc	-	377	377	377	377	0		1	1	0.101463	1	262144
+syntax-t-256k.bin	tests/lookaround/lookbehind_widths.rxt:42	byte	hybrid	120	y	1	lookbehind/2/a|bc	-	2389	2389	0	0	1	1	1	1	0.101463	0	262144
+syntax-t-256k.bin	tests/lookaround/lookbehind_widths.rxt:58	byte	hybrid	120	y	1	lookbehind/3/a|bc|def	-	2389	2389	0	0	1	1	1	1	0.114609	0	262144
+syntax-t-256k.bin	tests/lookaround/nonatomic_ahead.rxt:137	byte	hybrid	98	y	1	lookahead/1/ab	-	0	0	0	0			1	1			262144
+syntax-t-256k.bin	tests/lookaround/nonatomic_behind.rxt:108	byte	hybrid	99	y	1	lookbehind/1/ab	-	8221	8221	0	0	1	1	1	1	0.0079422	0	262144
+syntax-t-256k.bin	tests/lookaround/nonatomic_behind.rxt:121	byte	hybrid	120	y	1	lookbehind/2/a|bc	-	2389	2389	0	0	1	1	1	1	0.101463	0	262144
+syntax-t-256k.bin	tests/lookaround/prefilter.rxt:112	byte	hybrid	113	y	1	lookahead/1/!q	-	0	0	0	0			1	1			262144
+syntax-t-256k.bin	tests/lookaround/startpos.rxt:69	byte	hybrid	99	y	1	lookbehind/1/ab	-	8221	8221	0	0	1	1	1	1	0.0079422	0	262144
+syntax-t-256k.bin	tests/lookaround/workbudget.rxt:42	byte	hybrid	120	y	1	lookbehind/4/ab|cd|ef|gh	-	2389	2389	0	0	1	1	1	1	0.0883865	0	262144
+syntax-t-256k.bin	tests/lookaround/workbudget.rxt:54	byte	hybrid	none	y	1	lookbehind/4/ab|cd|ef|gh	-	2714	2714	325	325	0.880251	1	1	1	0.0883865	0.119749	262144
+syntax-t-256k.bin	utf8/asr-lb-varwidth	utf8	hybrid	120	n	1	lookbehind/2/a|Ã©	-	2389	2389	0	0	1	1	1	1	0.0701027	0	262144
+t-64k.bin	capability/pwd-strength-chain	byte	hybrid	none	n	4	lookahead/255/.*[a-z];lookahead/255/.*[A-Z];lookahead/255/.*\d;lookahead/255/.*[^\w\s]	-	0	0	0	0			1	1			65536
+t-64k.bin	syntax/lka-nonatomic	byte	hybrid	109	y	1	lookahead/1/item	-	0	0	0	0			1	1			65536
+t-64k.bin	syntax/lka-pos	byte	hybrid	109	y	1	lookahead/1/ done	-	0	0	0	0			1	1			65536
+t-64k.bin	syntax/lka-verb	byte	hybrid	109	y	1	lookahead/1/ done	-	0	0	0	0			1	1			65536
+t-64k.bin	syntax/lkb-pos	byte	hybrid	100	y	1	lookbehind/1/item 	-	0	0	0	0			1	1			65536
+t-64k.bin	tests/litscan/litrun.rxt:160	byte	hybrid	98	y	1	lookahead/1/def	-	0	0	0	0			1	1			65536
+t-64k.bin	tests/lookaround/d27/adversarial.rxt:59	byte	hybrid	120	y	1	lookbehind/2/a{3}|bb	-	596	596	0	0	1	1	1	1	0.0438538	0	65536
+t-64k.bin	tests/lookaround/d27/adversarial.rxt:69	byte	hybrid	120	y	1	lookbehind/1/(?:a{2})|(?:a{3})	-	596	596	0	0	1	1	1	1	0.0384216	0	65536
+t-64k.bin	tests/lookaround/d27/adversarial.rxt:84	byte	hybrid	120	y	1	lookbehind/1/ab	-	596	596	0	0	1	1	1	1	0.00543213	0	65536
+t-64k.bin	tests/lookaround/d27/longsubject.rxt:8	byte	hybrid	88	y	1	lookbehind/4/a|bb|ccc|dddd	-	0	0	0	0			1	1			65536
+t-64k.bin	tests/lookaround/d27/matrix.rxt:1158	byte	hybrid	122	y	1	lookbehind/1/abc	-	0	0	0	0			1	1			65536
+t-64k.bin	tests/lookaround/d27/matrix.rxt:1166	byte	hybrid	122	y	1	lookbehind/1/abc	-	0	0	0	0			1	1			65536
+t-64k.bin	tests/lookaround/d27/matrix.rxt:1173	byte	hybrid	122	y	1	lookbehind/1/abc	-	0	0	0	0			1	1			65536
+t-64k.bin	tests/lookaround/d27/matrix.rxt:1180	byte	hybrid	none	y	1	lookbehind/1/abc	-	417	417	417	417	0		1	1	0.0210724	1	65536
+t-64k.bin	tests/lookaround/d27/matrix.rxt:1196	byte	hybrid	122	y	1	lookbehind/1/abc	-	0	0	0	0			1	1			65536
+t-64k.bin	tests/lookaround/d27/matrix.rxt:1214	byte	hybrid	122	y	1	lookbehind/2/ab|cd	-	0	0	0	0			1	1			65536
+t-64k.bin	tests/lookaround/d27/matrix.rxt:1222	byte	hybrid	122	y	1	lookbehind/2/ab|cd	-	0	0	0	0			1	1			65536
+t-64k.bin	tests/lookaround/d27/matrix.rxt:1229	byte	hybrid	122	y	1	lookbehind/2/ab|cd	-	0	0	0	0			1	1			65536
+t-64k.bin	tests/lookaround/d27/matrix.rxt:1236	byte	hybrid	none	y	1	lookbehind/2/ab|cd	-	417	417	417	417	0		1	1	0.0325775	1	65536
+t-64k.bin	tests/lookaround/d27/matrix.rxt:1252	byte	hybrid	122	y	1	lookbehind/2/ab|cd	-	0	0	0	0			1	1			65536
+t-64k.bin	tests/lookaround/d27/matrix.rxt:1273	byte	hybrid	122	y	1	lookbehind/2/a|bc	-	0	0	0	0			1	1			65536
+t-64k.bin	tests/lookaround/d27/matrix.rxt:1282	byte	hybrid	122	y	1	lookbehind/2/a|bc	-	0	0	0	0			1	1			65536
+t-64k.bin	tests/lookaround/d27/matrix.rxt:1290	byte	hybrid	122	y	1	lookbehind/2/a|bc	-	0	0	0	0			1	1			65536
+t-64k.bin	tests/lookaround/d27/matrix.rxt:1298	byte	hybrid	none	y	1	lookbehind/2/a|bc	-	417	417	417	417	0		1	1	0.059494	1	65536
+t-64k.bin	tests/lookaround/d27/matrix.rxt:1316	byte	hybrid	122	y	1	lookbehind/2/a|bc	-	0	0	0	0			1	1			65536
+t-64k.bin	tests/lookaround/d27/matrix.rxt:163	byte	hybrid	122	y	1	lookahead/1/abc	-	0	0	0	0			1	1			65536
+t-64k.bin	tests/lookaround/d27/matrix.rxt:170	byte	hybrid	122	y	1	lookahead/1/abc	-	0	0	0	0			1	1			65536
+t-64k.bin	tests/lookaround/d27/matrix.rxt:177	byte	hybrid	122	y	1	lookahead/1/abc	-	0	0	0	0			1	1			65536
+t-64k.bin	tests/lookaround/d27/matrix.rxt:184	byte	hybrid	none	y	1	lookahead/1/abc	-	417	417	417	417	0		1	1	0.0384216	1	65536
+t-64k.bin	tests/lookaround/d27/matrix.rxt:198	byte	hybrid	122	y	1	lookahead/1/abc	-	0	0	0	0			1	1			65536
+t-64k.bin	tests/lookaround/d27/matrix.rxt:212	byte	hybrid	122	y	1	lookahead/2/ab|cd	-	0	0	0	0			1	1			65536
+t-64k.bin	tests/lookaround/d27/matrix.rxt:2151	byte	hybrid	122	y	1	lookahead/1/abc	-	0	0	0	0			1	1			65536
+t-64k.bin	tests/lookaround/d27/matrix.rxt:2159	byte	hybrid	122	y	1	lookahead/1/abc	-	0	0	0	0			1	1			65536
+t-64k.bin	tests/lookaround/d27/matrix.rxt:2167	byte	hybrid	122	y	1	lookahead/1/abc	-	0	0	0	0			1	1			65536
+t-64k.bin	tests/lookaround/d27/matrix.rxt:2175	byte	hybrid	none	y	1	lookahead/1/abc	-	417	417	417	417	0		1	1	0.0384216	1	65536
+t-64k.bin	tests/lookaround/d27/matrix.rxt:219	byte	hybrid	122	y	1	lookahead/2/ab|cd	-	0	0	0	0			1	1			65536
+t-64k.bin	tests/lookaround/d27/matrix.rxt:2191	byte	hybrid	122	y	1	lookahead/1/abc	-	0	0	0	0			1	1			65536
+t-64k.bin	tests/lookaround/d27/matrix.rxt:2207	byte	hybrid	122	y	1	lookahead/2/ab|cd	-	0	0	0	0			1	1			65536
+t-64k.bin	tests/lookaround/d27/matrix.rxt:2215	byte	hybrid	122	y	1	lookahead/2/ab|cd	-	0	0	0	0			1	1			65536
+t-64k.bin	tests/lookaround/d27/matrix.rxt:2223	byte	hybrid	122	y	1	lookahead/2/ab|cd	-	0	0	0	0			1	1			65536
+t-64k.bin	tests/lookaround/d27/matrix.rxt:2231	byte	hybrid	none	y	1	lookahead/2/ab|cd	-	417	417	417	417	0		1	1	0.059494	1	65536
+t-64k.bin	tests/lookaround/d27/matrix.rxt:2247	byte	hybrid	122	y	1	lookahead/2/ab|cd	-	0	0	0	0			1	1			65536
+t-64k.bin	tests/lookaround/d27/matrix.rxt:226	byte	hybrid	122	y	1	lookahead/2/ab|cd	-	0	0	0	0			1	1			65536
+t-64k.bin	tests/lookaround/d27/matrix.rxt:2263	byte	hybrid	122	y	1	lookahead/2/a|bc	-	0	0	0	0			1	1			65536
+t-64k.bin	tests/lookaround/d27/matrix.rxt:2271	byte	hybrid	122	y	1	lookahead/2/a|bc	-	0	0	0	0			1	1			65536
+t-64k.bin	tests/lookaround/d27/matrix.rxt:2279	byte	hybrid	122	y	1	lookahead/2/a|bc	-	0	0	0	0			1	1			65536
+t-64k.bin	tests/lookaround/d27/matrix.rxt:2287	byte	hybrid	none	y	1	lookahead/2/a|bc	-	417	417	417	417	0		1	1	0.0438538	1	65536
+t-64k.bin	tests/lookaround/d27/matrix.rxt:2303	byte	hybrid	122	y	1	lookahead/2/a|bc	-	0	0	0	0			1	1			65536
+t-64k.bin	tests/lookaround/d27/matrix.rxt:233	byte	hybrid	none	y	1	lookahead/2/ab|cd	-	417	417	417	417	0		1	1	0.059494	1	65536
+t-64k.bin	tests/lookaround/d27/matrix.rxt:247	byte	hybrid	122	y	1	lookahead/2/ab|cd	-	0	0	0	0			1	1			65536
+t-64k.bin	tests/lookaround/d27/matrix.rxt:261	byte	hybrid	122	y	1	lookahead/2/a|bc	-	0	0	0	0			1	1			65536
+t-64k.bin	tests/lookaround/d27/matrix.rxt:268	byte	hybrid	122	y	1	lookahead/2/a|bc	-	0	0	0	0			1	1			65536
+t-64k.bin	tests/lookaround/d27/matrix.rxt:2702	byte	hybrid	122	y	1	lookbehind/1/abc	-	0	0	0	0			1	1			65536
+t-64k.bin	tests/lookaround/d27/matrix.rxt:2711	byte	hybrid	122	y	1	lookbehind/1/abc	-	0	0	0	0			1	1			65536
+t-64k.bin	tests/lookaround/d27/matrix.rxt:2719	byte	hybrid	122	y	1	lookbehind/1/abc	-	0	0	0	0			1	1			65536
+t-64k.bin	tests/lookaround/d27/matrix.rxt:2727	byte	hybrid	none	y	1	lookbehind/1/abc	-	417	417	417	417	0		1	1	0.0210724	1	65536
+t-64k.bin	tests/lookaround/d27/matrix.rxt:2745	byte	hybrid	122	y	1	lookbehind/1/abc	-	0	0	0	0			1	1			65536
+t-64k.bin	tests/lookaround/d27/matrix.rxt:275	byte	hybrid	122	y	1	lookahead/2/a|bc	-	0	0	0	0			1	1			65536
+t-64k.bin	tests/lookaround/d27/matrix.rxt:2765	byte	hybrid	122	y	1	lookbehind/2/ab|cd	-	0	0	0	0			1	1			65536
+t-64k.bin	tests/lookaround/d27/matrix.rxt:2774	byte	hybrid	122	y	1	lookbehind/2/ab|cd	-	0	0	0	0			1	1			65536
+t-64k.bin	tests/lookaround/d27/matrix.rxt:2782	byte	hybrid	122	y	1	lookbehind/2/ab|cd	-	0	0	0	0			1	1			65536
+t-64k.bin	tests/lookaround/d27/matrix.rxt:2790	byte	hybrid	none	y	1	lookbehind/2/ab|cd	-	417	417	417	417	0		1	1	0.0325775	1	65536
+t-64k.bin	tests/lookaround/d27/matrix.rxt:2808	byte	hybrid	122	y	1	lookbehind/2/ab|cd	-	0	0	0	0			1	1			65536
+t-64k.bin	tests/lookaround/d27/matrix.rxt:282	byte	hybrid	none	y	1	lookahead/2/a|bc	-	417	417	417	417	0		1	1	0.0438538	1	65536
+t-64k.bin	tests/lookaround/d27/matrix.rxt:2830	byte	hybrid	122	y	1	lookbehind/2/a|bc	-	0	0	0	0			1	1			65536
+t-64k.bin	tests/lookaround/d27/matrix.rxt:2839	byte	hybrid	122	y	1	lookbehind/2/a|bc	-	0	0	0	0			1	1			65536
+t-64k.bin	tests/lookaround/d27/matrix.rxt:2847	byte	hybrid	122	y	1	lookbehind/2/a|bc	-	0	0	0	0			1	1			65536
+t-64k.bin	tests/lookaround/d27/matrix.rxt:2855	byte	hybrid	none	y	1	lookbehind/2/a|bc	-	417	417	417	417	0		1	1	0.059494	1	65536
+t-64k.bin	tests/lookaround/d27/matrix.rxt:2873	byte	hybrid	122	y	1	lookbehind/2/a|bc	-	0	0	0	0			1	1			65536
+t-64k.bin	tests/lookaround/d27/matrix.rxt:296	byte	hybrid	122	y	1	lookahead/2/a|bc	-	0	0	0	0			1	1			65536
+t-64k.bin	tests/lookaround/lookahead.rxt:107	byte	hybrid	98	y	1	lookahead/1/a+b	-	0	0	0	0			1	1			65536
+t-64k.bin	tests/lookaround/lookahead.rxt:197	byte	hybrid	98	y	1	lookahead/1/abc	-	0	0	0	0			1	1			65536
+t-64k.bin	tests/lookaround/lookahead.rxt:204	byte	hybrid	98	y	1	lookahead/1/ab	-	0	0	0	0			1	1			65536
+t-64k.bin	tests/lookaround/lookahead.rxt:242	byte	hybrid	98	y	1	lookahead/1/(?:aa|a)b	-	0	0	0	0			1	1			65536
+t-64k.bin	tests/lookaround/lookahead.rxt:32	byte	hybrid	98	y	1	lookahead/1/ab	-	0	0	0	0			1	1			65536
+t-64k.bin	tests/lookaround/lookbehind.rxt:212	byte	hybrid	none	y	1	lookbehind/1/bc	-	1779	2135	0	0	1	1	1	1	0.0210724	0	65536
+t-64k.bin	tests/lookaround/lookbehind.rxt:257	byte	hybrid	99	y	1	lookbehind/1/ab	-	264	1381	0	0	1	1	1	1	0.00543213	0	65536
+t-64k.bin	tests/lookaround/lookbehind.rxt:264	byte	hybrid	99	y	1	lookbehind/1/ab	-	0	1381	0	0			1	1			65536
+t-64k.bin	tests/lookaround/lookbehind.rxt:303	byte	hybrid	98	y	1	lookbehind/1/a{2}	-	356	356	0	0	1	1	1	1	0.0384216	0	65536
+t-64k.bin	tests/lookaround/lookbehind.rxt:334	byte	hybrid	98	y	1	lookbehind/1/\Ga	-	356	356	0	0	1	1	1	1	0.0384216	0	65536
+t-64k.bin	tests/lookaround/lookbehind.rxt:45	byte	hybrid	120	y	1	lookbehind/1/abc	-	596	596	0	0	1	1	1	1	0.0210724	0	65536
+t-64k.bin	tests/lookaround/lookbehind.rxt:55	byte	hybrid	120	y	1	lookbehind/2/[ab][cd]	-	596	596	0	0	1	1	1	1	0.0482178	0	65536
+t-64k.bin	tests/lookaround/lookbehind.rxt:67	byte	hybrid	120	y	1	lookbehind/1/a{3}	-	596	596	0	0	1	1	1	1	0.0384216	0	65536
+t-64k.bin	tests/lookaround/lookbehind.rxt:76	byte	hybrid	120	y	1	lookbehind/1/(?:ab){2}	-	596	596	0	0	1	1	1	1	0.00543213	0	65536
+t-64k.bin	tests/lookaround/lookbehind.rxt:85	byte	hybrid	120	y	1	lookbehind/2/ab|cd	-	596	596	0	0	1	1	1	1	0.0325775	0	65536
+t-64k.bin	tests/lookaround/lookbehind.rxt:96	byte	hybrid	120	y	1	lookbehind/3/ab|cd|ef	-	596	596	0	0	1	1	1	1	0.0515442	0	65536
+t-64k.bin	tests/lookaround/lookbehind_widths.rxt:154	byte	hybrid	121	y	1	lookbehind/2/x|abc	-	277	277	0	0	1	1	1	1	0.0301666	0	65536
+t-64k.bin	tests/lookaround/lookbehind_widths.rxt:168	byte	hybrid	120	y	1	lookbehind/2/ab|c	-	596	596	0	0	1	1	1	1	0.0265045	0	65536
+t-64k.bin	tests/lookaround/lookbehind_widths.rxt:193	byte	hybrid	98	y	1	lookbehind/2/a|xbc	-	0	0	0	0			1	1			65536
+t-64k.bin	tests/lookaround/lookbehind_widths.rxt:42	byte	hybrid	120	y	1	lookbehind/2/a|bc	-	596	596	0	0	1	1	1	1	0.059494	0	65536
+t-64k.bin	tests/lookaround/lookbehind_widths.rxt:58	byte	hybrid	120	y	1	lookbehind/3/a|bc|def	-	596	596	0	0	1	1	1	1	0.0784607	0	65536
+t-64k.bin	tests/lookaround/nonatomic_ahead.rxt:137	byte	hybrid	98	y	1	lookahead/1/ab	-	0	0	0	0			1	1			65536
+t-64k.bin	tests/lookaround/nonatomic_behind.rxt:108	byte	hybrid	99	y	1	lookbehind/1/ab	-	1381	1381	0	0	1	1	1	1	0.00543213	0	65536
+t-64k.bin	tests/lookaround/nonatomic_behind.rxt:121	byte	hybrid	120	y	1	lookbehind/2/a|bc	-	596	596	0	0	1	1	1	1	0.059494	0	65536
+t-64k.bin	tests/lookaround/prefilter.rxt:112	byte	hybrid	113	y	1	lookahead/1/!q	-	0	0	0	0			1	1			65536
+t-64k.bin	tests/lookaround/startpos.rxt:69	byte	hybrid	99	y	1	lookbehind/1/ab	-	1381	1381	0	0	1	1	1	1	0.00543213	0	65536
+t-64k.bin	tests/lookaround/workbudget.rxt:42	byte	hybrid	120	y	1	lookbehind/4/ab|cd|ef|gh	-	596	596	0	0	1	1	1	1	0.063324	0	65536
+t-64k.bin	tests/lookaround/workbudget.rxt:54	byte	hybrid	none	y	1	lookbehind/4/ab|cd|ef|gh	-	996	996	400	400	0.598394	1	1	1	0.063324	0.401606	65536
+t-64k.bin	utf8/asr-lb-varwidth	utf8	hybrid	120	n	1	lookbehind/2/a|Ã©	-	596	596	0	0	1	1	1	1	0.0384216	0	65536
+syntax-t-64k.bin	capability/pwd-strength-chain	byte	hybrid	none	n	4	lookahead/255/.*[a-z];lookahead/255/.*[A-Z];lookahead/255/.*\d;lookahead/255/.*[^\w\s]	-	0	0	0	0			1	1			65536
+syntax-t-64k.bin	syntax/lka-nonatomic	byte	hybrid	109	y	1	lookahead/1/item	-	179	179	179	179	0		1	1	0.0308228	1	65536
+syntax-t-64k.bin	syntax/lka-pos	byte	hybrid	109	y	1	lookahead/1/ done	-	179	179	78	3	0.564246	0.573864	1	1	0.146378	0.435754	65536
+syntax-t-64k.bin	syntax/lka-verb	byte	hybrid	109	y	1	lookahead/1/ done	-	179	179	78	3	0.564246	0.573864	1	1	0.146378	0.435754	65536
+syntax-t-64k.bin	syntax/lkb-pos	byte	hybrid	100	y	1	lookbehind/1/item 	-	151	151	122	3	0.192053	0.195946	1	1	0.146378	0.807947	65536
+syntax-t-64k.bin	tests/litscan/litrun.rxt:160	byte	hybrid	98	y	1	lookahead/1/def	-	0	0	0	0			1	1			65536
+syntax-t-64k.bin	tests/lookaround/d27/adversarial.rxt:59	byte	hybrid	120	y	1	lookbehind/2/a{3}|bb	-	602	602	0	0	1	1	1	1	0.0765533	0	65536
+syntax-t-64k.bin	tests/lookaround/d27/adversarial.rxt:69	byte	hybrid	120	y	1	lookbehind/1/(?:a{2})|(?:a{3})	-	602	602	0	0	1	1	1	1	0.0690155	0	65536
+syntax-t-64k.bin	tests/lookaround/d27/adversarial.rxt:84	byte	hybrid	120	y	1	lookbehind/1/ab	-	602	602	0	0	1	1	1	1	0.00753784	0	65536
+syntax-t-64k.bin	tests/lookaround/d27/longsubject.rxt:8	byte	hybrid	88	y	1	lookbehind/4/a|bb|ccc|dddd	-	0	0	0	0			1	1			65536
+syntax-t-64k.bin	tests/lookaround/d27/matrix.rxt:1158	byte	hybrid	122	y	1	lookbehind/1/abc	-	105	105	0	0	1	1	1	1	0.0319824	0	65536
+syntax-t-64k.bin	tests/lookaround/d27/matrix.rxt:1166	byte	hybrid	122	y	1	lookbehind/1/abc	-	105	105	0	0	1	1	1	1	0.0319824	0	65536
+syntax-t-64k.bin	tests/lookaround/d27/matrix.rxt:1173	byte	hybrid	122	y	1	lookbehind/1/abc	-	0	0	0	0			1	1			65536
+syntax-t-64k.bin	tests/lookaround/d27/matrix.rxt:1180	byte	hybrid	none	y	1	lookbehind/1/abc	-	813	813	708	708	0.129151	1	1	1	0.0319824	0.870849	65536
+syntax-t-64k.bin	tests/lookaround/d27/matrix.rxt:1196	byte	hybrid	122	y	1	lookbehind/1/abc	-	105	105	0	0	1	1	1	1	0.0319824	0	65536
+syntax-t-64k.bin	tests/lookaround/d27/matrix.rxt:1214	byte	hybrid	122	y	1	lookbehind/2/ab|cd	-	105	105	0	0	1	1	1	1	0.0455933	0	65536
+syntax-t-64k.bin	tests/lookaround/d27/matrix.rxt:1222	byte	hybrid	122	y	1	lookbehind/2/ab|cd	-	105	105	0	0	1	1	1	1	0.0455933	0	65536
+syntax-t-64k.bin	tests/lookaround/d27/matrix.rxt:1229	byte	hybrid	122	y	1	lookbehind/2/ab|cd	-	0	0	0	0			1	1			65536
+syntax-t-64k.bin	tests/lookaround/d27/matrix.rxt:1236	byte	hybrid	none	y	1	lookbehind/2/ab|cd	-	813	813	708	708	0.129151	1	1	1	0.0455933	0.870849	65536
+syntax-t-64k.bin	tests/lookaround/d27/matrix.rxt:1252	byte	hybrid	122	y	1	lookbehind/2/ab|cd	-	105	105	0	0	1	1	1	1	0.0455933	0	65536
+syntax-t-64k.bin	tests/lookaround/d27/matrix.rxt:1273	byte	hybrid	122	y	1	lookbehind/2/a|bc	-	105	105	0	0	1	1	1	1	0.100998	0	65536
+syntax-t-64k.bin	tests/lookaround/d27/matrix.rxt:1282	byte	hybrid	122	y	1	lookbehind/2/a|bc	-	105	105	0	0	1	1	1	1	0.100998	0	65536
+syntax-t-64k.bin	tests/lookaround/d27/matrix.rxt:1290	byte	hybrid	122	y	1	lookbehind/2/a|bc	-	0	0	0	0			1	1			65536
+syntax-t-64k.bin	tests/lookaround/d27/matrix.rxt:1298	byte	hybrid	none	y	1	lookbehind/2/a|bc	-	813	813	708	708	0.129151	1	1	1	0.100998	0.870849	65536
+syntax-t-64k.bin	tests/lookaround/d27/matrix.rxt:1316	byte	hybrid	122	y	1	lookbehind/2/a|bc	-	105	105	0	0	1	1	1	1	0.100998	0	65536
+syntax-t-64k.bin	tests/lookaround/d27/matrix.rxt:163	byte	hybrid	122	y	1	lookahead/1/abc	-	105	105	0	0	1	1	1	1	0.0690155	0	65536
+syntax-t-64k.bin	tests/lookaround/d27/matrix.rxt:170	byte	hybrid	122	y	1	lookahead/1/abc	-	105	105	0	0	1	1	1	1	0.0690155	0	65536
+syntax-t-64k.bin	tests/lookaround/d27/matrix.rxt:177	byte	hybrid	122	y	1	lookahead/1/abc	-	0	0	0	0			1	1			65536
+syntax-t-64k.bin	tests/lookaround/d27/matrix.rxt:184	byte	hybrid	none	y	1	lookahead/1/abc	-	813	813	708	708	0.129151	1	1	1	0.0690155	0.870849	65536
+syntax-t-64k.bin	tests/lookaround/d27/matrix.rxt:198	byte	hybrid	122	y	1	lookahead/1/abc	-	105	105	0	0	1	1	1	1	0.0690155	0	65536
+syntax-t-64k.bin	tests/lookaround/d27/matrix.rxt:212	byte	hybrid	122	y	1	lookahead/2/ab|cd	-	105	105	0	0	1	1	1	1	0.100998	0	65536
+syntax-t-64k.bin	tests/lookaround/d27/matrix.rxt:2151	byte	hybrid	122	y	1	lookahead/1/abc	-	105	105	0	0	1	1	1	1	0.0690155	0	65536
+syntax-t-64k.bin	tests/lookaround/d27/matrix.rxt:2159	byte	hybrid	122	y	1	lookahead/1/abc	-	105	105	0	0	1	1	1	1	0.0690155	0	65536
+syntax-t-64k.bin	tests/lookaround/d27/matrix.rxt:2167	byte	hybrid	122	y	1	lookahead/1/abc	-	0	0	0	0			1	1			65536
+syntax-t-64k.bin	tests/lookaround/d27/matrix.rxt:2175	byte	hybrid	none	y	1	lookahead/1/abc	-	813	813	708	708	0.129151	1	1	1	0.0690155	0.870849	65536
+syntax-t-64k.bin	tests/lookaround/d27/matrix.rxt:219	byte	hybrid	122	y	1	lookahead/2/ab|cd	-	105	105	0	0	1	1	1	1	0.100998	0	65536
+syntax-t-64k.bin	tests/lookaround/d27/matrix.rxt:2191	byte	hybrid	122	y	1	lookahead/1/abc	-	105	105	0	0	1	1	1	1	0.0690155	0	65536
+syntax-t-64k.bin	tests/lookaround/d27/matrix.rxt:2207	byte	hybrid	122	y	1	lookahead/2/ab|cd	-	105	105	0	0	1	1	1	1	0.100998	0	65536
+syntax-t-64k.bin	tests/lookaround/d27/matrix.rxt:2215	byte	hybrid	122	y	1	lookahead/2/ab|cd	-	105	105	0	0	1	1	1	1	0.100998	0	65536
+syntax-t-64k.bin	tests/lookaround/d27/matrix.rxt:2223	byte	hybrid	122	y	1	lookahead/2/ab|cd	-	0	0	0	0			1	1			65536
+syntax-t-64k.bin	tests/lookaround/d27/matrix.rxt:2231	byte	hybrid	none	y	1	lookahead/2/ab|cd	-	813	813	708	708	0.129151	1	1	1	0.100998	0.870849	65536
+syntax-t-64k.bin	tests/lookaround/d27/matrix.rxt:2247	byte	hybrid	122	y	1	lookahead/2/ab|cd	-	105	105	0	0	1	1	1	1	0.100998	0	65536
+syntax-t-64k.bin	tests/lookaround/d27/matrix.rxt:226	byte	hybrid	122	y	1	lookahead/2/ab|cd	-	0	0	0	0			1	1			65536
+syntax-t-64k.bin	tests/lookaround/d27/matrix.rxt:2263	byte	hybrid	122	y	1	lookahead/2/a|bc	-	105	105	0	0	1	1	1	1	0.0765533	0	65536
+syntax-t-64k.bin	tests/lookaround/d27/matrix.rxt:2271	byte	hybrid	122	y	1	lookahead/2/a|bc	-	105	105	0	0	1	1	1	1	0.0765533	0	65536
+syntax-t-64k.bin	tests/lookaround/d27/matrix.rxt:2279	byte	hybrid	122	y	1	lookahead/2/a|bc	-	0	0	0	0			1	1			65536
+syntax-t-64k.bin	tests/lookaround/d27/matrix.rxt:2287	byte	hybrid	none	y	1	lookahead/2/a|bc	-	813	813	708	708	0.129151	1	1	1	0.0765533	0.870849	65536
+syntax-t-64k.bin	tests/lookaround/d27/matrix.rxt:2303	byte	hybrid	122	y	1	lookahead/2/a|bc	-	105	105	0	0	1	1	1	1	0.0765533	0	65536
+syntax-t-64k.bin	tests/lookaround/d27/matrix.rxt:233	byte	hybrid	none	y	1	lookahead/2/ab|cd	-	813	813	708	708	0.129151	1	1	1	0.100998	0.870849	65536
+syntax-t-64k.bin	tests/lookaround/d27/matrix.rxt:247	byte	hybrid	122	y	1	lookahead/2/ab|cd	-	105	105	0	0	1	1	1	1	0.100998	0	65536
+syntax-t-64k.bin	tests/lookaround/d27/matrix.rxt:261	byte	hybrid	122	y	1	lookahead/2/a|bc	-	105	105	0	0	1	1	1	1	0.0765533	0	65536
+syntax-t-64k.bin	tests/lookaround/d27/matrix.rxt:268	byte	hybrid	122	y	1	lookahead/2/a|bc	-	105	105	0	0	1	1	1	1	0.0765533	0	65536
+syntax-t-64k.bin	tests/lookaround/d27/matrix.rxt:2702	byte	hybrid	122	y	1	lookbehind/1/abc	-	105	105	0	0	1	1	1	1	0.0319824	0	65536
+syntax-t-64k.bin	tests/lookaround/d27/matrix.rxt:2711	byte	hybrid	122	y	1	lookbehind/1/abc	-	105	105	0	0	1	1	1	1	0.0319824	0	65536
+syntax-t-64k.bin	tests/lookaround/d27/matrix.rxt:2719	byte	hybrid	122	y	1	lookbehind/1/abc	-	0	0	0	0			1	1			65536
+syntax-t-64k.bin	tests/lookaround/d27/matrix.rxt:2727	byte	hybrid	none	y	1	lookbehind/1/abc	-	813	813	708	708	0.129151	1	1	1	0.0319824	0.870849	65536
+syntax-t-64k.bin	tests/lookaround/d27/matrix.rxt:2745	byte	hybrid	122	y	1	lookbehind/1/abc	-	105	105	0	0	1	1	1	1	0.0319824	0	65536
+syntax-t-64k.bin	tests/lookaround/d27/matrix.rxt:275	byte	hybrid	122	y	1	lookahead/2/a|bc	-	0	0	0	0			1	1			65536
+syntax-t-64k.bin	tests/lookaround/d27/matrix.rxt:2765	byte	hybrid	122	y	1	lookbehind/2/ab|cd	-	105	105	0	0	1	1	1	1	0.0455933	0	65536
+syntax-t-64k.bin	tests/lookaround/d27/matrix.rxt:2774	byte	hybrid	122	y	1	lookbehind/2/ab|cd	-	105	105	0	0	1	1	1	1	0.0455933	0	65536
+syntax-t-64k.bin	tests/lookaround/d27/matrix.rxt:2782	byte	hybrid	122	y	1	lookbehind/2/ab|cd	-	0	0	0	0			1	1			65536
+syntax-t-64k.bin	tests/lookaround/d27/matrix.rxt:2790	byte	hybrid	none	y	1	lookbehind/2/ab|cd	-	813	813	708	708	0.129151	1	1	1	0.0455933	0.870849	65536
+syntax-t-64k.bin	tests/lookaround/d27/matrix.rxt:2808	byte	hybrid	122	y	1	lookbehind/2/ab|cd	-	105	105	0	0	1	1	1	1	0.0455933	0	65536
+syntax-t-64k.bin	tests/lookaround/d27/matrix.rxt:282	byte	hybrid	none	y	1	lookahead/2/a|bc	-	813	813	708	708	0.129151	1	1	1	0.0765533	0.870849	65536
+syntax-t-64k.bin	tests/lookaround/d27/matrix.rxt:2830	byte	hybrid	122	y	1	lookbehind/2/a|bc	-	105	105	0	0	1	1	1	1	0.100998	0	65536
+syntax-t-64k.bin	tests/lookaround/d27/matrix.rxt:2839	byte	hybrid	122	y	1	lookbehind/2/a|bc	-	105	105	0	0	1	1	1	1	0.100998	0	65536
+syntax-t-64k.bin	tests/lookaround/d27/matrix.rxt:2847	byte	hybrid	122	y	1	lookbehind/2/a|bc	-	0	0	0	0			1	1			65536
+syntax-t-64k.bin	tests/lookaround/d27/matrix.rxt:2855	byte	hybrid	none	y	1	lookbehind/2/a|bc	-	813	813	708	708	0.129151	1	1	1	0.100998	0.870849	65536
+syntax-t-64k.bin	tests/lookaround/d27/matrix.rxt:2873	byte	hybrid	122	y	1	lookbehind/2/a|bc	-	105	105	0	0	1	1	1	1	0.100998	0	65536
+syntax-t-64k.bin	tests/lookaround/d27/matrix.rxt:296	byte	hybrid	122	y	1	lookahead/2/a|bc	-	105	105	0	0	1	1	1	1	0.0765533	0	65536
+syntax-t-64k.bin	tests/lookaround/lookahead.rxt:107	byte	hybrid	98	y	1	lookahead/1/a+b	-	0	0	0	0			1	1			65536
+syntax-t-64k.bin	tests/lookaround/lookahead.rxt:197	byte	hybrid	98	y	1	lookahead/1/abc	-	98	98	98	0	0	0	1	1	0.0690155	1	65536
+syntax-t-64k.bin	tests/lookaround/lookahead.rxt:204	byte	hybrid	98	y	1	lookahead/1/ab	-	0	0	0	0			1	1			65536
+syntax-t-64k.bin	tests/lookaround/lookahead.rxt:242	byte	hybrid	98	y	1	lookahead/1/(?:aa|a)b	-	98	98	98	98	0		1	1	0.0690155	1	65536
+syntax-t-64k.bin	tests/lookaround/lookahead.rxt:32	byte	hybrid	98	y	1	lookahead/1/ab	-	0	0	0	0			1	1			65536
+syntax-t-64k.bin	tests/lookaround/lookbehind.rxt:212	byte	hybrid	none	y	1	lookbehind/1/bc	-	2592	2988	98	98	0.962191	1	1	1	0.0319824	0.0378086	65536
+syntax-t-64k.bin	tests/lookaround/lookbehind.rxt:257	byte	hybrid	99	y	1	lookbehind/1/ab	-	307	2096	0	0	1	1	1	1	0.00753784	0	65536
+syntax-t-64k.bin	tests/lookaround/lookbehind.rxt:264	byte	hybrid	99	y	1	lookbehind/1/ab	-	0	2096	0	0			1	1			65536
+syntax-t-64k.bin	tests/lookaround/lookbehind.rxt:303	byte	hybrid	98	y	1	lookbehind/1/a{2}	-	494	494	98	0	0.801619	0.801619	1	1	0.0690155	0.198381	65536
+syntax-t-64k.bin	tests/lookaround/lookbehind.rxt:334	byte	hybrid	98	y	1	lookbehind/1/\Ga	-	494	494	98	0	0.801619	0.801619	1	1	0.0690155	0.198381	65536
+syntax-t-64k.bin	tests/lookaround/lookbehind.rxt:45	byte	hybrid	120	y	1	lookbehind/1/abc	-	602	602	0	0	1	1	1	1	0.0319824	0	65536
+syntax-t-64k.bin	tests/lookaround/lookbehind.rxt:55	byte	hybrid	120	y	1	lookbehind/2/[ab][cd]	-	602	602	0	0	1	1	1	1	0.0700378	0	65536
+syntax-t-64k.bin	tests/lookaround/lookbehind.rxt:67	byte	hybrid	120	y	1	lookbehind/1/a{3}	-	602	602	0	0	1	1	1	1	0.0690155	0	65536
+syntax-t-64k.bin	tests/lookaround/lookbehind.rxt:76	byte	hybrid	120	y	1	lookbehind/1/(?:ab){2}	-	602	602	0	0	1	1	1	1	0.00753784	0	65536
+syntax-t-64k.bin	tests/lookaround/lookbehind.rxt:85	byte	hybrid	120	y	1	lookbehind/2/ab|cd	-	602	602	0	0	1	1	1	1	0.0455933	0	65536
+syntax-t-64k.bin	tests/lookaround/lookbehind.rxt:96	byte	hybrid	120	y	1	lookbehind/3/ab|cd|ef	-	602	602	0	0	1	1	1	1	0.0592804	0	65536
+syntax-t-64k.bin	tests/lookaround/lookbehind_widths.rxt:154	byte	hybrid	121	y	1	lookbehind/2/x|abc	-	622	622	0	0	1	1	1	1	0.0411682	0	65536
+syntax-t-64k.bin	tests/lookaround/lookbehind_widths.rxt:168	byte	hybrid	120	y	1	lookbehind/2/ab|c	-	602	602	0	0	1	1	1	1	0.0395203	0	65536
+syntax-t-64k.bin	tests/lookaround/lookbehind_widths.rxt:193	byte	hybrid	98	y	1	lookbehind/2/a|xbc	-	98	98	98	98	0		1	1	0.100998	1	65536
+syntax-t-64k.bin	tests/lookaround/lookbehind_widths.rxt:42	byte	hybrid	120	y	1	lookbehind/2/a|bc	-	602	602	0	0	1	1	1	1	0.100998	0	65536
+syntax-t-64k.bin	tests/lookaround/lookbehind_widths.rxt:58	byte	hybrid	120	y	1	lookbehind/3/a|bc|def	-	602	602	0	0	1	1	1	1	0.114685	0	65536
+syntax-t-64k.bin	tests/lookaround/nonatomic_ahead.rxt:137	byte	hybrid	98	y	1	lookahead/1/ab	-	0	0	0	0			1	1			65536
+syntax-t-64k.bin	tests/lookaround/nonatomic_behind.rxt:108	byte	hybrid	99	y	1	lookbehind/1/ab	-	2096	2096	0	0	1	1	1	1	0.00753784	0	65536
+syntax-t-64k.bin	tests/lookaround/nonatomic_behind.rxt:121	byte	hybrid	120	y	1	lookbehind/2/a|bc	-	602	602	0	0	1	1	1	1	0.100998	0	65536
+syntax-t-64k.bin	tests/lookaround/prefilter.rxt:112	byte	hybrid	113	y	1	lookahead/1/!q	-	0	0	0	0			1	1			65536
+syntax-t-64k.bin	tests/lookaround/startpos.rxt:69	byte	hybrid	99	y	1	lookbehind/1/ab	-	2096	2096	0	0	1	1	1	1	0.00753784	0	65536
+syntax-t-64k.bin	tests/lookaround/workbudget.rxt:42	byte	hybrid	120	y	1	lookbehind/4/ab|cd|ef|gh	-	602	602	0	0	1	1	1	1	0.0881348	0	65536
+syntax-t-64k.bin	tests/lookaround/workbudget.rxt:54	byte	hybrid	none	y	1	lookbehind/4/ab|cd|ef|gh	-	684	684	82	82	0.880117	1	1	1	0.0881348	0.119883	65536
+syntax-t-64k.bin	utf8/asr-lb-varwidth	utf8	hybrid	120	n	1	lookbehind/2/a|Ã©	-	602	602	0	0	1	1	1	1	0.0690155	0	65536
+decisions.md	capability/pwd-strength-chain	byte	hybrid	none	n	4	lookahead/255/.*[a-z];lookahead/255/.*[A-Z];lookahead/255/.*\d;lookahead/255/.*[^\w\s]	-	0	0	0	0			1	1			548428
+decisions.md	syntax/lka-nonatomic	byte	hybrid	109	y	1	lookahead/1/item	-	70	70	70	70	0		1	1	0.0474666	1	548428
+decisions.md	syntax/lka-pos	byte	hybrid	109	y	1	lookahead/1/ done	-	70	70	36	0	0.485714	0.485714	1	1	0.148878	0.514286	548428
+decisions.md	syntax/lka-verb	byte	hybrid	109	y	1	lookahead/1/ done	-	70	70	36	0	0.485714	0.485714	1	1	0.148878	0.514286	548428
+decisions.md	syntax/lkb-pos	byte	hybrid	100	y	1	lookbehind/1/item 	-	13	13	10	0	0.230769	0.230769	1	1	0.148878	0.769231	548428
+decisions.md	tests/litscan/litrun.rxt:160	byte	hybrid	98	y	1	lookahead/1/def	-	6	6	1	0	0.833333	0.833333	1	1	0.0275424	0.166667	548428
+decisions.md	tests/lookaround/d27/adversarial.rxt:59	byte	hybrid	120	y	1	lookbehind/2/a{3}|bb	-	2011	2011	193	0	0.904028	0.904028	1	1	0.0632991	0.0959722	548428
+decisions.md	tests/lookaround/d27/adversarial.rxt:69	byte	hybrid	120	y	1	lookbehind/1/(?:a{2})|(?:a{3})	-	2011	2011	192	0	0.904525	0.904525	1	1	0.0528201	0.0954749	548428
+decisions.md	tests/lookaround/d27/adversarial.rxt:84	byte	hybrid	120	y	1	lookbehind/1/ab	-	2011	2011	1	0	0.999503	0.999503	1	1	0.010479	0.000497265	548428
+decisions.md	tests/lookaround/d27/longsubject.rxt:8	byte	hybrid	88	y	1	lookbehind/4/a|bb|ccc|dddd	-	247	247	0	0	1	1	1	1	0.117735	0	548428
+decisions.md	tests/lookaround/d27/matrix.rxt:1158	byte	hybrid	122	y	1	lookbehind/1/abc	-	380	380	0	0	1	1	1	1	0.0268932	0	548428
+decisions.md	tests/lookaround/d27/matrix.rxt:1166	byte	hybrid	122	y	1	lookbehind/1/abc	-	380	380	0	0	1	1	1	1	0.0268932	0	548428
+decisions.md	tests/lookaround/d27/matrix.rxt:1173	byte	hybrid	122	y	1	lookbehind/1/abc	-	7	7	0	0	1	1	1	1	0.0268932	0	548428
+decisions.md	tests/lookaround/d27/matrix.rxt:1180	byte	hybrid	none	y	1	lookbehind/1/abc	-	5674	5674	5294	5294	0.0669722	1	1	1	0.0268932	0.933028	548428
+decisions.md	tests/lookaround/d27/matrix.rxt:1196	byte	hybrid	122	y	1	lookbehind/1/abc	-	380	380	0	0	1	1	1	1	0.0268932	0	548428
+decisions.md	tests/lookaround/d27/matrix.rxt:1214	byte	hybrid	122	y	1	lookbehind/2/ab|cd	-	380	380	0	0	1	1	1	1	0.0380214	0	548428
+decisions.md	tests/lookaround/d27/matrix.rxt:1222	byte	hybrid	122	y	1	lookbehind/2/ab|cd	-	380	380	0	0	1	1	1	1	0.0380214	0	548428
+decisions.md	tests/lookaround/d27/matrix.rxt:1229	byte	hybrid	122	y	1	lookbehind/2/ab|cd	-	7	7	0	0	1	1	1	1	0.0380214	0	548428
+decisions.md	tests/lookaround/d27/matrix.rxt:1236	byte	hybrid	none	y	1	lookbehind/2/ab|cd	-	5674	5674	5294	5294	0.0669722	1	1	1	0.0380214	0.933028	548428
+decisions.md	tests/lookaround/d27/matrix.rxt:1252	byte	hybrid	122	y	1	lookbehind/2/ab|cd	-	380	380	0	0	1	1	1	1	0.0380214	0	548428
+decisions.md	tests/lookaround/d27/matrix.rxt:1273	byte	hybrid	122	y	1	lookbehind/2/a|bc	-	380	380	26	26	0.931579	1	1	1	0.0797133	0.0684211	548428
+decisions.md	tests/lookaround/d27/matrix.rxt:1282	byte	hybrid	122	y	1	lookbehind/2/a|bc	-	380	380	0	0	1	1	1	1	0.0797133	0	548428
+decisions.md	tests/lookaround/d27/matrix.rxt:1290	byte	hybrid	122	y	1	lookbehind/2/a|bc	-	7	7	0	0	1	1	1	1	0.0797133	0	548428
+decisions.md	tests/lookaround/d27/matrix.rxt:1298	byte	hybrid	none	y	1	lookbehind/2/a|bc	-	5674	5674	5320	5320	0.0623898	1	1	1	0.0797133	0.93761	548428
+decisions.md	tests/lookaround/d27/matrix.rxt:1316	byte	hybrid	122	y	1	lookbehind/2/a|bc	-	380	380	26	26	0.931579	1	1	1	0.0797133	0.0684211	548428
+decisions.md	tests/lookaround/d27/matrix.rxt:163	byte	hybrid	122	y	1	lookahead/1/abc	-	380	380	0	0	1	1	1	1	0.0528201	0	548428
+decisions.md	tests/lookaround/d27/matrix.rxt:170	byte	hybrid	122	y	1	lookahead/1/abc	-	380	380	74	0	0.805263	0.805263	1	1	0.0528201	0.194737	548428
+decisions.md	tests/lookaround/d27/matrix.rxt:177	byte	hybrid	122	y	1	lookahead/1/abc	-	7	7	0	0	1	1	1	1	0.0528201	0	548428
+decisions.md	tests/lookaround/d27/matrix.rxt:184	byte	hybrid	none	y	1	lookahead/1/abc	-	5674	5674	5294	5294	0.0669722	1	1	1	0.0528201	0.933028	548428
+decisions.md	tests/lookaround/d27/matrix.rxt:198	byte	hybrid	122	y	1	lookahead/1/abc	-	380	380	0	0	1	1	1	1	0.0528201	0	548428
+decisions.md	tests/lookaround/d27/matrix.rxt:212	byte	hybrid	122	y	1	lookahead/2/ab|cd	-	380	380	0	0	1	1	1	1	0.0797133	0	548428
+decisions.md	tests/lookaround/d27/matrix.rxt:2151	byte	hybrid	122	y	1	lookahead/1/abc	-	380	380	0	0	1	1	1	1	0.0528201	0	548428
+decisions.md	tests/lookaround/d27/matrix.rxt:2159	byte	hybrid	122	y	1	lookahead/1/abc	-	380	380	74	0	0.805263	0.805263	1	1	0.0528201	0.194737	548428
+decisions.md	tests/lookaround/d27/matrix.rxt:2167	byte	hybrid	122	y	1	lookahead/1/abc	-	7	7	0	0	1	1	1	1	0.0528201	0	548428
+decisions.md	tests/lookaround/d27/matrix.rxt:2175	byte	hybrid	none	y	1	lookahead/1/abc	-	5674	5674	5294	5294	0.0669722	1	1	1	0.0528201	0.933028	548428
+decisions.md	tests/lookaround/d27/matrix.rxt:219	byte	hybrid	122	y	1	lookahead/2/ab|cd	-	380	380	74	0	0.805263	0.805263	1	1	0.0797133	0.194737	548428
+decisions.md	tests/lookaround/d27/matrix.rxt:2191	byte	hybrid	122	y	1	lookahead/1/abc	-	380	380	0	0	1	1	1	1	0.0528201	0	548428
+decisions.md	tests/lookaround/d27/matrix.rxt:2207	byte	hybrid	122	y	1	lookahead/2/ab|cd	-	380	380	0	0	1	1	1	1	0.0797133	0	548428
+decisions.md	tests/lookaround/d27/matrix.rxt:2215	byte	hybrid	122	y	1	lookahead/2/ab|cd	-	380	380	74	0	0.805263	0.805263	1	1	0.0797133	0.194737	548428
+decisions.md	tests/lookaround/d27/matrix.rxt:2223	byte	hybrid	122	y	1	lookahead/2/ab|cd	-	7	7	0	0	1	1	1	1	0.0797133	0	548428
+decisions.md	tests/lookaround/d27/matrix.rxt:2231	byte	hybrid	none	y	1	lookahead/2/ab|cd	-	5674	5674	5294	5294	0.0669722	1	1	1	0.0797133	0.933028	548428
+decisions.md	tests/lookaround/d27/matrix.rxt:2247	byte	hybrid	122	y	1	lookahead/2/ab|cd	-	380	380	0	0	1	1	1	1	0.0797133	0	548428
+decisions.md	tests/lookaround/d27/matrix.rxt:226	byte	hybrid	122	y	1	lookahead/2/ab|cd	-	7	7	0	0	1	1	1	1	0.0797133	0	548428
+decisions.md	tests/lookaround/d27/matrix.rxt:2263	byte	hybrid	122	y	1	lookahead/2/a|bc	-	380	380	0	0	1	1	1	1	0.0632991	0	548428
+decisions.md	tests/lookaround/d27/matrix.rxt:2271	byte	hybrid	122	y	1	lookahead/2/a|bc	-	380	380	74	74	0.805263	1	1	1	0.0632991	0.194737	548428
+decisions.md	tests/lookaround/d27/matrix.rxt:2279	byte	hybrid	122	y	1	lookahead/2/a|bc	-	7	7	0	0	1	1	1	1	0.0632991	0	548428
+decisions.md	tests/lookaround/d27/matrix.rxt:2287	byte	hybrid	none	y	1	lookahead/2/a|bc	-	5674	5674	5294	5294	0.0669722	1	1	1	0.0632991	0.933028	548428
+decisions.md	tests/lookaround/d27/matrix.rxt:2303	byte	hybrid	122	y	1	lookahead/2/a|bc	-	380	380	0	0	1	1	1	1	0.0632991	0	548428
+decisions.md	tests/lookaround/d27/matrix.rxt:233	byte	hybrid	none	y	1	lookahead/2/ab|cd	-	5674	5674	5294	5294	0.0669722	1	1	1	0.0797133	0.933028	548428
+decisions.md	tests/lookaround/d27/matrix.rxt:247	byte	hybrid	122	y	1	lookahead/2/ab|cd	-	380	380	0	0	1	1	1	1	0.0797133	0	548428
+decisions.md	tests/lookaround/d27/matrix.rxt:261	byte	hybrid	122	y	1	lookahead/2/a|bc	-	380	380	0	0	1	1	1	1	0.0632991	0	548428
+decisions.md	tests/lookaround/d27/matrix.rxt:268	byte	hybrid	122	y	1	lookahead/2/a|bc	-	380	380	74	74	0.805263	1	1	1	0.0632991	0.194737	548428
+decisions.md	tests/lookaround/d27/matrix.rxt:2702	byte	hybrid	122	y	1	lookbehind/1/abc	-	380	380	0	0	1	1	1	1	0.0268932	0	548428
+decisions.md	tests/lookaround/d27/matrix.rxt:2711	byte	hybrid	122	y	1	lookbehind/1/abc	-	380	380	0	0	1	1	1	1	0.0268932	0	548428
+decisions.md	tests/lookaround/d27/matrix.rxt:2719	byte	hybrid	122	y	1	lookbehind/1/abc	-	7	7	0	0	1	1	1	1	0.0268932	0	548428
+decisions.md	tests/lookaround/d27/matrix.rxt:2727	byte	hybrid	none	y	1	lookbehind/1/abc	-	5674	5674	5294	5294	0.0669722	1	1	1	0.0268932	0.933028	548428
+decisions.md	tests/lookaround/d27/matrix.rxt:2745	byte	hybrid	122	y	1	lookbehind/1/abc	-	380	380	0	0	1	1	1	1	0.0268932	0	548428
+decisions.md	tests/lookaround/d27/matrix.rxt:275	byte	hybrid	122	y	1	lookahead/2/a|bc	-	7	7	0	0	1	1	1	1	0.0632991	0	548428
+decisions.md	tests/lookaround/d27/matrix.rxt:2765	byte	hybrid	122	y	1	lookbehind/2/ab|cd	-	380	380	0	0	1	1	1	1	0.0380214	0	548428
+decisions.md	tests/lookaround/d27/matrix.rxt:2774	byte	hybrid	122	y	1	lookbehind/2/ab|cd	-	380	380	0	0	1	1	1	1	0.0380214	0	548428
+decisions.md	tests/lookaround/d27/matrix.rxt:2782	byte	hybrid	122	y	1	lookbehind/2/ab|cd	-	7	7	0	0	1	1	1	1	0.0380214	0	548428
+decisions.md	tests/lookaround/d27/matrix.rxt:2790	byte	hybrid	none	y	1	lookbehind/2/ab|cd	-	5674	5674	5294	5294	0.0669722	1	1	1	0.0380214	0.933028	548428
+decisions.md	tests/lookaround/d27/matrix.rxt:2808	byte	hybrid	122	y	1	lookbehind/2/ab|cd	-	380	380	0	0	1	1	1	1	0.0380214	0	548428
+decisions.md	tests/lookaround/d27/matrix.rxt:282	byte	hybrid	none	y	1	lookahead/2/a|bc	-	5674	5674	5294	5294	0.0669722	1	1	1	0.0632991	0.933028	548428
+decisions.md	tests/lookaround/d27/matrix.rxt:2830	byte	hybrid	122	y	1	lookbehind/2/a|bc	-	380	380	26	26	0.931579	1	1	1	0.0797133	0.0684211	548428
+decisions.md	tests/lookaround/d27/matrix.rxt:2839	byte	hybrid	122	y	1	lookbehind/2/a|bc	-	380	380	0	0	1	1	1	1	0.0797133	0	548428
+decisions.md	tests/lookaround/d27/matrix.rxt:2847	byte	hybrid	122	y	1	lookbehind/2/a|bc	-	7	7	0	0	1	1	1	1	0.0797133	0	548428
+decisions.md	tests/lookaround/d27/matrix.rxt:2855	byte	hybrid	none	y	1	lookbehind/2/a|bc	-	5674	5674	5320	5320	0.0623898	1	1	1	0.0797133	0.93761	548428
+decisions.md	tests/lookaround/d27/matrix.rxt:2873	byte	hybrid	122	y	1	lookbehind/2/a|bc	-	380	380	26	26	0.931579	1	1	1	0.0797133	0.0684211	548428
+decisions.md	tests/lookaround/d27/matrix.rxt:296	byte	hybrid	122	y	1	lookahead/2/a|bc	-	380	380	0	0	1	1	1	1	0.0632991	0	548428
+decisions.md	tests/lookaround/lookahead.rxt:107	byte	hybrid	98	y	1	lookahead/1/a+b	-	0	0	0	0			1	1			548428
+decisions.md	tests/lookaround/lookahead.rxt:197	byte	hybrid	98	y	1	lookahead/1/abc	-	911	911	911	6	0	0	1	1	0.0528201	1	548428
+decisions.md	tests/lookaround/lookahead.rxt:204	byte	hybrid	98	y	1	lookahead/1/ab	-	6	6	6	6	0		1	1	0.0528201	1	548428
+decisions.md	tests/lookaround/lookahead.rxt:242	byte	hybrid	98	y	1	lookahead/1/(?:aa|a)b	-	911	911	911	911	0		1	1	0.0528201	1	548428
+decisions.md	tests/lookaround/lookahead.rxt:32	byte	hybrid	98	y	1	lookahead/1/ab	-	6	6	6	6	0		1	1	0.0528201	1	548428
+decisions.md	tests/lookaround/lookbehind.rxt:212	byte	hybrid	none	y	1	lookbehind/1/bc	-	16016	20852	918	912	0.942682	0.999603	1	1	0.0268932	0.0573177	548428
+decisions.md	tests/lookaround/lookbehind.rxt:257	byte	hybrid	99	y	1	lookbehind/1/ab	-	1560	14749	0	0	1	1	1	1	0.010479	0	548428
+decisions.md	tests/lookaround/lookbehind.rxt:264	byte	hybrid	99	y	1	lookbehind/1/ab	-	18	14749	18	6	0	0	1	1	0.010479	1	548428
+decisions.md	tests/lookaround/lookbehind.rxt:303	byte	hybrid	98	y	1	lookbehind/1/a{2}	-	5747	5747	911	0	0.841483	0.841483	1	1	0.0528201	0.158517	548428
+decisions.md	tests/lookaround/lookbehind.rxt:334	byte	hybrid	98	y	1	lookbehind/1/\Ga	-	5747	5747	911	0	0.841483	0.841483	1	1	0.0528201	0.158517	548428
+decisions.md	tests/lookaround/lookbehind.rxt:45	byte	hybrid	120	y	1	lookbehind/1/abc	-	2011	2011	13	0	0.993536	0.993536	1	1	0.0268932	0.00646445	548428
+decisions.md	tests/lookaround/lookbehind.rxt:55	byte	hybrid	120	y	1	lookbehind/2/[ab][cd]	-	2011	2011	13	0	0.993536	0.993536	1	1	0.0544356	0.00646445	548428
+decisions.md	tests/lookaround/lookbehind.rxt:67	byte	hybrid	120	y	1	lookbehind/1/a{3}	-	2011	2011	192	0	0.904525	0.904525	1	1	0.0528201	0.0954749	548428
+decisions.md	tests/lookaround/lookbehind.rxt:76	byte	hybrid	120	y	1	lookbehind/1/(?:ab){2}	-	2011	2011	1	0	0.999503	0.999503	1	1	0.010479	0.000497265	548428
+decisions.md	tests/lookaround/lookbehind.rxt:85	byte	hybrid	120	y	1	lookbehind/2/ab|cd	-	2011	2011	1	0	0.999503	0.999503	1	1	0.0380214	0.000497265	548428
+decisions.md	tests/lookaround/lookbehind.rxt:96	byte	hybrid	120	y	1	lookbehind/3/ab|cd|ef	-	2011	2011	1	0	0.999503	0.999503	1	1	0.0502345	0.000497265	548428
+decisions.md	tests/lookaround/lookbehind_widths.rxt:154	byte	hybrid	121	y	1	lookbehind/2/x|abc	-	4847	4847	78	8	0.983908	0.985534	1	1	0.0305601	0.0160924	548428
+decisions.md	tests/lookaround/lookbehind_widths.rxt:168	byte	hybrid	120	y	1	lookbehind/2/ab|c	-	2011	2011	14	13	0.993038	0.999499	1	1	0.0373723	0.00696171	548428
+decisions.md	tests/lookaround/lookbehind_widths.rxt:193	byte	hybrid	98	y	1	lookbehind/2/a|xbc	-	911	911	911	911	0		1	1	0.0797133	1	548428
+decisions.md	tests/lookaround/lookbehind_widths.rxt:42	byte	hybrid	120	y	1	lookbehind/2/a|bc	-	2011	2011	205	192	0.898061	0.992853	1	1	0.0797133	0.101939	548428
+decisions.md	tests/lookaround/lookbehind_widths.rxt:58	byte	hybrid	120	y	1	lookbehind/3/a|bc|def	-	2011	2011	205	192	0.898061	0.992853	1	1	0.0919264	0.101939	548428
+decisions.md	tests/lookaround/nonatomic_ahead.rxt:137	byte	hybrid	98	y	1	lookahead/1/ab	-	6	6	6	6	0		1	1	0.0528201	1	548428
+decisions.md	tests/lookaround/nonatomic_behind.rxt:108	byte	hybrid	99	y	1	lookbehind/1/ab	-	14749	14749	18	6	0.99878	0.999186	1	1	0.010479	0.00122042	548428
+decisions.md	tests/lookaround/nonatomic_behind.rxt:121	byte	hybrid	120	y	1	lookbehind/2/a|bc	-	2011	2011	205	192	0.898061	0.992853	1	1	0.0797133	0.101939	548428
+decisions.md	tests/lookaround/prefilter.rxt:112	byte	hybrid	113	y	1	lookahead/1/!q	-	2	2	0	0	1	1	1	1	2.91743e-05	0	548428
+decisions.md	tests/lookaround/startpos.rxt:69	byte	hybrid	99	y	1	lookbehind/1/ab	-	14749	14749	18	6	0.99878	0.999186	1	1	0.010479	0.00122042	548428
+decisions.md	tests/lookaround/workbudget.rxt:42	byte	hybrid	120	y	1	lookbehind/4/ab|cd|ef|gh	-	2011	2011	1	0	0.999503	0.999503	1	1	0.0770931	0.000497265	548428
+decisions.md	tests/lookaround/workbudget.rxt:54	byte	hybrid	none	y	1	lookbehind/4/ab|cd|ef|gh	-	2385	2385	375	374	0.842767	0.999503	1	1	0.0770931	0.157233	548428
+decisions.md	utf8/asr-lb-varwidth	utf8	hybrid	120	n	1	lookbehind/2/a|Ã©	-	2011	2011	192	192	0.904525	1	1	1	0.0528201	0.0954749	548428
+APPROACH.md	capability/pwd-strength-chain	byte	hybrid	none	n	4	lookahead/255/.*[a-z];lookahead/255/.*[A-Z];lookahead/255/.*\d;lookahead/255/.*[^\w\s]	-	0	0	0	0			1	1			21447
+APPROACH.md	syntax/lka-nonatomic	byte	hybrid	109	y	1	lookahead/1/item	-	0	0	0	0			1	1			21447
+APPROACH.md	syntax/lka-pos	byte	hybrid	109	y	1	lookahead/1/ done	-	0	0	0	0			1	1			21447
+APPROACH.md	syntax/lka-verb	byte	hybrid	109	y	1	lookahead/1/ done	-	0	0	0	0			1	1			21447
+APPROACH.md	syntax/lkb-pos	byte	hybrid	100	y	1	lookbehind/1/item 	-	0	0	0	0			1	1			21447
+APPROACH.md	tests/litscan/litrun.rxt:160	byte	hybrid	98	y	1	lookahead/1/def	-	0	0	0	0			1	1			21447
+APPROACH.md	tests/lookaround/d27/adversarial.rxt:59	byte	hybrid	120	y	1	lookbehind/2/a{3}|bb	-	79	79	6	0	0.924051	0.924051	1	1	0.0591225	0.0759494	21447
+APPROACH.md	tests/lookaround/d27/adversarial.rxt:69	byte	hybrid	120	y	1	lookbehind/1/(?:a{2})|(?:a{3})	-	79	79	6	0	0.924051	0.924051	1	1	0.0484916	0.0759494	21447
+APPROACH.md	tests/lookaround/d27/adversarial.rxt:84	byte	hybrid	120	y	1	lookbehind/1/ab	-	79	79	0	0	1	1	1	1	0.0106309	0	21447
+APPROACH.md	tests/lookaround/d27/longsubject.rxt:8	byte	hybrid	88	y	1	lookbehind/4/a|bb|ccc|dddd	-	7	7	0	0	1	1	1	1	0.116054	0	21447
+APPROACH.md	tests/lookaround/d27/matrix.rxt:1158	byte	hybrid	122	y	1	lookbehind/1/abc	-	41	41	0	0	1	1	1	1	0.0315662	0	21447
+APPROACH.md	tests/lookaround/d27/matrix.rxt:1166	byte	hybrid	122	y	1	lookbehind/1/abc	-	41	41	0	0	1	1	1	1	0.0315662	0	21447
+APPROACH.md	tests/lookaround/d27/matrix.rxt:1173	byte	hybrid	122	y	1	lookbehind/1/abc	-	0	0	0	0			1	1			21447
+APPROACH.md	tests/lookaround/d27/matrix.rxt:1180	byte	hybrid	none	y	1	lookbehind/1/abc	-	166	166	125	125	0.246988	1	1	1	0.0315662	0.753012	21447
+APPROACH.md	tests/lookaround/d27/matrix.rxt:1196	byte	hybrid	122	y	1	lookbehind/1/abc	-	41	41	0	0	1	1	1	1	0.0315662	0	21447
+APPROACH.md	tests/lookaround/d27/matrix.rxt:1214	byte	hybrid	122	y	1	lookbehind/2/ab|cd	-	41	41	0	0	1	1	1	1	0.0359957	0	21447
+APPROACH.md	tests/lookaround/d27/matrix.rxt:1222	byte	hybrid	122	y	1	lookbehind/2/ab|cd	-	41	41	0	0	1	1	1	1	0.0359957	0	21447
+APPROACH.md	tests/lookaround/d27/matrix.rxt:1229	byte	hybrid	122	y	1	lookbehind/2/ab|cd	-	0	0	0	0			1	1			21447
+APPROACH.md	tests/lookaround/d27/matrix.rxt:1236	byte	hybrid	none	y	1	lookbehind/2/ab|cd	-	166	166	125	125	0.246988	1	1	1	0.0359957	0.753012	21447
+APPROACH.md	tests/lookaround/d27/matrix.rxt:1252	byte	hybrid	122	y	1	lookbehind/2/ab|cd	-	41	41	0	0	1	1	1	1	0.0359957	0	21447
+APPROACH.md	tests/lookaround/d27/matrix.rxt:1273	byte	hybrid	122	y	1	lookbehind/2/a|bc	-	41	41	4	4	0.902439	1	1	1	0.0800578	0.097561	21447
+APPROACH.md	tests/lookaround/d27/matrix.rxt:1282	byte	hybrid	122	y	1	lookbehind/2/a|bc	-	41	41	0	0	1	1	1	1	0.0800578	0	21447
+APPROACH.md	tests/lookaround/d27/matrix.rxt:1290	byte	hybrid	122	y	1	lookbehind/2/a|bc	-	0	0	0	0			1	1			21447
+APPROACH.md	tests/lookaround/d27/matrix.rxt:1298	byte	hybrid	none	y	1	lookbehind/2/a|bc	-	166	166	129	129	0.222892	1	1	1	0.0800578	0.777108	21447
+APPROACH.md	tests/lookaround/d27/matrix.rxt:1316	byte	hybrid	122	y	1	lookbehind/2/a|bc	-	41	41	4	4	0.902439	1	1	1	0.0800578	0.097561	21447
+APPROACH.md	tests/lookaround/d27/matrix.rxt:163	byte	hybrid	122	y	1	lookahead/1/abc	-	41	41	0	0	1	1	1	1	0.0484916	0	21447
+APPROACH.md	tests/lookaround/d27/matrix.rxt:170	byte	hybrid	122	y	1	lookahead/1/abc	-	41	41	9	0	0.780488	0.780488	1	1	0.0484916	0.219512	21447
+APPROACH.md	tests/lookaround/d27/matrix.rxt:177	byte	hybrid	122	y	1	lookahead/1/abc	-	0	0	0	0			1	1			21447
+APPROACH.md	tests/lookaround/d27/matrix.rxt:184	byte	hybrid	none	y	1	lookahead/1/abc	-	166	166	125	125	0.246988	1	1	1	0.0484916	0.753012	21447
+APPROACH.md	tests/lookaround/d27/matrix.rxt:198	byte	hybrid	122	y	1	lookahead/1/abc	-	41	41	0	0	1	1	1	1	0.0484916	0	21447
+APPROACH.md	tests/lookaround/d27/matrix.rxt:212	byte	hybrid	122	y	1	lookahead/2/ab|cd	-	41	41	0	0	1	1	1	1	0.0800578	0	21447
+APPROACH.md	tests/lookaround/d27/matrix.rxt:2151	byte	hybrid	122	y	1	lookahead/1/abc	-	41	41	0	0	1	1	1	1	0.0484916	0	21447
+APPROACH.md	tests/lookaround/d27/matrix.rxt:2159	byte	hybrid	122	y	1	lookahead/1/abc	-	41	41	9	0	0.780488	0.780488	1	1	0.0484916	0.219512	21447
+APPROACH.md	tests/lookaround/d27/matrix.rxt:2167	byte	hybrid	122	y	1	lookahead/1/abc	-	0	0	0	0			1	1			21447
+APPROACH.md	tests/lookaround/d27/matrix.rxt:2175	byte	hybrid	none	y	1	lookahead/1/abc	-	166	166	125	125	0.246988	1	1	1	0.0484916	0.753012	21447
+APPROACH.md	tests/lookaround/d27/matrix.rxt:219	byte	hybrid	122	y	1	lookahead/2/ab|cd	-	41	41	9	0	0.780488	0.780488	1	1	0.0800578	0.219512	21447
+APPROACH.md	tests/lookaround/d27/matrix.rxt:2191	byte	hybrid	122	y	1	lookahead/1/abc	-	41	41	0	0	1	1	1	1	0.0484916	0	21447
+APPROACH.md	tests/lookaround/d27/matrix.rxt:2207	byte	hybrid	122	y	1	lookahead/2/ab|cd	-	41	41	0	0	1	1	1	1	0.0800578	0	21447
+APPROACH.md	tests/lookaround/d27/matrix.rxt:2215	byte	hybrid	122	y	1	lookahead/2/ab|cd	-	41	41	9	0	0.780488	0.780488	1	1	0.0800578	0.219512	21447
+APPROACH.md	tests/lookaround/d27/matrix.rxt:2223	byte	hybrid	122	y	1	lookahead/2/ab|cd	-	0	0	0	0			1	1			21447
+APPROACH.md	tests/lookaround/d27/matrix.rxt:2231	byte	hybrid	none	y	1	lookahead/2/ab|cd	-	166	166	125	125	0.246988	1	1	1	0.0800578	0.753012	21447
+APPROACH.md	tests/lookaround/d27/matrix.rxt:2247	byte	hybrid	122	y	1	lookahead/2/ab|cd	-	41	41	0	0	1	1	1	1	0.0800578	0	21447
+APPROACH.md	tests/lookaround/d27/matrix.rxt:226	byte	hybrid	122	y	1	lookahead/2/ab|cd	-	0	0	0	0			1	1			21447
+APPROACH.md	tests/lookaround/d27/matrix.rxt:2263	byte	hybrid	122	y	1	lookahead/2/a|bc	-	41	41	0	0	1	1	1	1	0.0591225	0	21447
+APPROACH.md	tests/lookaround/d27/matrix.rxt:2271	byte	hybrid	122	y	1	lookahead/2/a|bc	-	41	41	9	9	0.780488	1	1	1	0.0591225	0.219512	21447
+APPROACH.md	tests/lookaround/d27/matrix.rxt:2279	byte	hybrid	122	y	1	lookahead/2/a|bc	-	0	0	0	0			1	1			21447
+APPROACH.md	tests/lookaround/d27/matrix.rxt:2287	byte	hybrid	none	y	1	lookahead/2/a|bc	-	166	166	125	125	0.246988	1	1	1	0.0591225	0.753012	21447
+APPROACH.md	tests/lookaround/d27/matrix.rxt:2303	byte	hybrid	122	y	1	lookahead/2/a|bc	-	41	41	0	0	1	1	1	1	0.0591225	0	21447
+APPROACH.md	tests/lookaround/d27/matrix.rxt:233	byte	hybrid	none	y	1	lookahead/2/ab|cd	-	166	166	125	125	0.246988	1	1	1	0.0800578	0.753012	21447
+APPROACH.md	tests/lookaround/d27/matrix.rxt:247	byte	hybrid	122	y	1	lookahead/2/ab|cd	-	41	41	0	0	1	1	1	1	0.0800578	0	21447
+APPROACH.md	tests/lookaround/d27/matrix.rxt:261	byte	hybrid	122	y	1	lookahead/2/a|bc	-	41	41	0	0	1	1	1	1	0.0591225	0	21447
+APPROACH.md	tests/lookaround/d27/matrix.rxt:268	byte	hybrid	122	y	1	lookahead/2/a|bc	-	41	41	9	9	0.780488	1	1	1	0.0591225	0.219512	21447
+APPROACH.md	tests/lookaround/d27/matrix.rxt:2702	byte	hybrid	122	y	1	lookbehind/1/abc	-	41	41	0	0	1	1	1	1	0.0315662	0	21447
+APPROACH.md	tests/lookaround/d27/matrix.rxt:2711	byte	hybrid	122	y	1	lookbehind/1/abc	-	41	41	0	0	1	1	1	1	0.0315662	0	21447
+APPROACH.md	tests/lookaround/d27/matrix.rxt:2719	byte	hybrid	122	y	1	lookbehind/1/abc	-	0	0	0	0			1	1			21447
+APPROACH.md	tests/lookaround/d27/matrix.rxt:2727	byte	hybrid	none	y	1	lookbehind/1/abc	-	166	166	125	125	0.246988	1	1	1	0.0315662	0.753012	21447
+APPROACH.md	tests/lookaround/d27/matrix.rxt:2745	byte	hybrid	122	y	1	lookbehind/1/abc	-	41	41	0	0	1	1	1	1	0.0315662	0	21447
+APPROACH.md	tests/lookaround/d27/matrix.rxt:275	byte	hybrid	122	y	1	lookahead/2/a|bc	-	0	0	0	0			1	1			21447
+APPROACH.md	tests/lookaround/d27/matrix.rxt:2765	byte	hybrid	122	y	1	lookbehind/2/ab|cd	-	41	41	0	0	1	1	1	1	0.0359957	0	21447
+APPROACH.md	tests/lookaround/d27/matrix.rxt:2774	byte	hybrid	122	y	1	lookbehind/2/ab|cd	-	41	41	0	0	1	1	1	1	0.0359957	0	21447
+APPROACH.md	tests/lookaround/d27/matrix.rxt:2782	byte	hybrid	122	y	1	lookbehind/2/ab|cd	-	0	0	0	0			1	1			21447
+APPROACH.md	tests/lookaround/d27/matrix.rxt:2790	byte	hybrid	none	y	1	lookbehind/2/ab|cd	-	166	166	125	125	0.246988	1	1	1	0.0359957	0.753012	21447
+APPROACH.md	tests/lookaround/d27/matrix.rxt:2808	byte	hybrid	122	y	1	lookbehind/2/ab|cd	-	41	41	0	0	1	1	1	1	0.0359957	0	21447
+APPROACH.md	tests/lookaround/d27/matrix.rxt:282	byte	hybrid	none	y	1	lookahead/2/a|bc	-	166	166	125	125	0.246988	1	1	1	0.0591225	0.753012	21447
+APPROACH.md	tests/lookaround/d27/matrix.rxt:2830	byte	hybrid	122	y	1	lookbehind/2/a|bc	-	41	41	4	4	0.902439	1	1	1	0.0800578	0.097561	21447
+APPROACH.md	tests/lookaround/d27/matrix.rxt:2839	byte	hybrid	122	y	1	lookbehind/2/a|bc	-	41	41	0	0	1	1	1	1	0.0800578	0	21447
+APPROACH.md	tests/lookaround/d27/matrix.rxt:2847	byte	hybrid	122	y	1	lookbehind/2/a|bc	-	0	0	0	0			1	1			21447
+APPROACH.md	tests/lookaround/d27/matrix.rxt:2855	byte	hybrid	none	y	1	lookbehind/2/a|bc	-	166	166	129	129	0.222892	1	1	1	0.0800578	0.777108	21447
+APPROACH.md	tests/lookaround/d27/matrix.rxt:2873	byte	hybrid	122	y	1	lookbehind/2/a|bc	-	41	41	4	4	0.902439	1	1	1	0.0800578	0.097561	21447
+APPROACH.md	tests/lookaround/d27/matrix.rxt:296	byte	hybrid	122	y	1	lookahead/2/a|bc	-	41	41	0	0	1	1	1	1	0.0591225	0	21447
+APPROACH.md	tests/lookaround/lookahead.rxt:107	byte	hybrid	98	y	1	lookahead/1/a+b	-	0	0	0	0			1	1			21447
+APPROACH.md	tests/lookaround/lookahead.rxt:197	byte	hybrid	98	y	1	lookahead/1/abc	-	38	38	38	0	0	0	1	1	0.0484916	1	21447
+APPROACH.md	tests/lookaround/lookahead.rxt:204	byte	hybrid	98	y	1	lookahead/1/ab	-	0	0	0	0			1	1			21447
+APPROACH.md	tests/lookaround/lookahead.rxt:242	byte	hybrid	98	y	1	lookahead/1/(?:aa|a)b	-	38	38	38	38	0		1	1	0.0484916	1	21447
+APPROACH.md	tests/lookaround/lookahead.rxt:32	byte	hybrid	98	y	1	lookahead/1/ab	-	0	0	0	0			1	1			21447
+APPROACH.md	tests/lookaround/lookbehind.rxt:212	byte	hybrid	none	y	1	lookbehind/1/bc	-	582	772	38	38	0.934708	1	1	1	0.0315662	0.0652921	21447
+APPROACH.md	tests/lookaround/lookbehind.rxt:257	byte	hybrid	99	y	1	lookbehind/1/ab	-	95	677	0	0	1	1	1	1	0.0106309	0	21447
+APPROACH.md	tests/lookaround/lookbehind.rxt:264	byte	hybrid	99	y	1	lookbehind/1/ab	-	2	677	2	0	0	0	1	1	0.0106309	1	21447
+APPROACH.md	tests/lookaround/lookbehind.rxt:303	byte	hybrid	98	y	1	lookbehind/1/a{2}	-	228	228	38	0	0.833333	0.833333	1	1	0.0484916	0.166667	21447
+APPROACH.md	tests/lookaround/lookbehind.rxt:334	byte	hybrid	98	y	1	lookbehind/1/\Ga	-	228	228	38	0	0.833333	0.833333	1	1	0.0484916	0.166667	21447
+APPROACH.md	tests/lookaround/lookbehind.rxt:45	byte	hybrid	120	y	1	lookbehind/1/abc	-	79	79	0	0	1	1	1	1	0.0315662	0	21447
+APPROACH.md	tests/lookaround/lookbehind.rxt:55	byte	hybrid	120	y	1	lookbehind/2/[ab][cd]	-	79	79	0	0	1	1	1	1	0.056931	0	21447
+APPROACH.md	tests/lookaround/lookbehind.rxt:67	byte	hybrid	120	y	1	lookbehind/1/a{3}	-	79	79	6	0	0.924051	0.924051	1	1	0.0484916	0.0759494	21447
+APPROACH.md	tests/lookaround/lookbehind.rxt:76	byte	hybrid	120	y	1	lookbehind/1/(?:ab){2}	-	79	79	0	0	1	1	1	1	0.0106309	0	21447
+APPROACH.md	tests/lookaround/lookbehind.rxt:85	byte	hybrid	120	y	1	lookbehind/2/ab|cd	-	79	79	0	0	1	1	1	1	0.0359957	0	21447
+APPROACH.md	tests/lookaround/lookbehind.rxt:96	byte	hybrid	120	y	1	lookbehind/3/ab|cd|ef	-	79	79	0	0	1	1	1	1	0.0477456	0	21447
+APPROACH.md	tests/lookaround/lookbehind_widths.rxt:154	byte	hybrid	121	y	1	lookbehind/2/x|abc	-	166	166	3	0	0.981928	0.981928	1	1	0.0352497	0.0180723	21447
+APPROACH.md	tests/lookaround/lookbehind_widths.rxt:168	byte	hybrid	120	y	1	lookbehind/2/ab|c	-	79	79	0	0	1	1	1	1	0.042197	0	21447
+APPROACH.md	tests/lookaround/lookbehind_widths.rxt:193	byte	hybrid	98	y	1	lookbehind/2/a|xbc	-	38	38	38	38	0		1	1	0.0800578	1	21447
+APPROACH.md	tests/lookaround/lookbehind_widths.rxt:42	byte	hybrid	120	y	1	lookbehind/2/a|bc	-	79	79	6	6	0.924051	1	1	1	0.0800578	0.0759494	21447
+APPROACH.md	tests/lookaround/lookbehind_widths.rxt:58	byte	hybrid	120	y	1	lookbehind/3/a|bc|def	-	79	79	6	6	0.924051	1	1	1	0.0918077	0.0759494	21447
+APPROACH.md	tests/lookaround/nonatomic_ahead.rxt:137	byte	hybrid	98	y	1	lookahead/1/ab	-	0	0	0	0			1	1			21447
+APPROACH.md	tests/lookaround/nonatomic_behind.rxt:108	byte	hybrid	99	y	1	lookbehind/1/ab	-	677	677	2	0	0.997046	0.997046	1	1	0.0106309	0.00295421	21447
+APPROACH.md	tests/lookaround/nonatomic_behind.rxt:121	byte	hybrid	120	y	1	lookbehind/2/a|bc	-	79	79	6	6	0.924051	1	1	1	0.0800578	0.0759494	21447
+APPROACH.md	tests/lookaround/prefilter.rxt:112	byte	hybrid	113	y	1	lookahead/1/!q	-	0	0	0	0			1	1			21447
+APPROACH.md	tests/lookaround/startpos.rxt:69	byte	hybrid	99	y	1	lookbehind/1/ab	-	677	677	2	0	0.997046	0.997046	1	1	0.0106309	0.00295421	21447
+APPROACH.md	tests/lookaround/workbudget.rxt:42	byte	hybrid	120	y	1	lookbehind/4/ab|cd|ef|gh	-	79	79	0	0	1	1	1	1	0.067422	0	21447
+APPROACH.md	tests/lookaround/workbudget.rxt:54	byte	hybrid	none	y	1	lookbehind/4/ab|cd|ef|gh	-	110	110	31	31	0.718182	1	1	1	0.067422	0.281818	21447
+APPROACH.md	utf8/asr-lb-varwidth	utf8	hybrid	120	n	1	lookbehind/2/a|Ã©	-	79	79	6	6	0.924051	1	1	1	0.0484916	0.0759494	21447

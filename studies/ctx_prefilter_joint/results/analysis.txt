@@ -1,0 +1,74 @@
+POPULATION: 354 still-VM rows; 145 carry a positive multi-char lookaround (census: 143); 99 of those have >=1 applicable one-char condition
+
+patterns with NO applicable condition, by note: {'zero-width-possible': 27, 'quantified-construct': 17, 'unresolved-body': 2} 
+
+subject              cells dormnt  live |    min    p25    med    p75    max | pooled  unsound nested-viol
+APPROACH.md             99     23    76 |  0.000  0.780  0.989  1.000  1.000 | 0.750   0       0
+decisions.md            99      2    97 |  0.000  0.805  0.994  1.000  1.000 | 0.604   0       0
+syntax-t-256k.bin       99     21    78 |  0.000  0.819  1.000  1.000  1.000 | 0.704   0       0
+syntax-t-64k.bin        99     21    78 |  0.000  0.802  1.000  1.000  1.000 | 0.708   0       0
+t-256k.bin              99     64    35 |  0.000  0.000  1.000  1.000  1.000 | 0.770   0       0
+t-64k.bin               99     64    35 |  0.000  0.000  1.000  1.000  1.000 | 0.739   0       0
+
+REJECTION BUCKETS (live byte-encoding cells; share of cells)
+subject              0 (no effect)       (0,25%)      [25,50%)      [50,75%)     [75,100%)    100% (all)
+APPROACH.md                 4 (5%)      12 (16%)        0 (0%)        1 (1%)      22 (29%)      36 (48%)
+decisions.md                8 (8%)      13 (14%)        2 (2%)        0 (0%)      32 (33%)      41 (43%)
+syntax-t-256k.bin           4 (5%)      13 (17%)        0 (0%)        2 (3%)        4 (5%)      54 (70%)
+syntax-t-64k.bin            4 (5%)      13 (17%)        0 (0%)        2 (3%)        4 (5%)      54 (70%)
+t-256k.bin                12 (35%)        0 (0%)        0 (0%)        1 (3%)        0 (0%)      21 (62%)
+t-64k.bin                 12 (35%)        0 (0%)        0 (0%)        1 (3%)        0 (0%)      21 (62%)
+
+NARROW-111 SUBSET (step-0 narrow==y on every condition), live byte cells
+  APPROACH.md          narrow n= 75 median 0.997 mean 0.787
+  decisions.md         narrow n= 96 median 0.996 mean 0.752
+  syntax-t-256k.bin    narrow n= 77 median 1.000 mean 0.782
+  syntax-t-64k.bin     narrow n= 77 median 1.000 mean 0.783
+  t-256k.bin           narrow n= 34 median 1.000 mean 0.636
+  t-64k.bin            narrow n= 34 median 1.000 mean 0.635
+
+FALSE-CANDIDATE REMOVAL (share of candidates that are NOT true starts which the condition removes), live byte cells with >=1 false candidate
+  APPROACH.md          n= 73 median 1.000 pooled 0.969  (removed 5578 of 5755 false)
+  decisions.md         n= 90 median 1.000 pooled 0.965  (removed 107537 of 111404 false)
+  syntax-t-256k.bin    n= 74 median 1.000 pooled 0.975  (removed 87178 of 89400 false)
+  syntax-t-64k.bin     n= 74 median 1.000 pooled 0.976  (removed 22708 of 23271 false)
+  t-256k.bin           n= 22 median 1.000 pooled 1.000  (removed 62541 of 62541 false)
+  t-64k.bin            n= 22 median 1.000 pooled 1.000  (removed 14734 of 14734 false)
+
+MODEL vs MEASURED survival (fraction of candidates the condition PASSES), live byte cells with a model value
+  APPROACH.md          n= 75  model rej median 0.952 | measured rej median 0.997 | mean|gap| 0.208 | model too optimistic on 25, too pessimistic on 13, within 5pt on 37
+  decisions.md         n= 96  model rej median 0.947 | measured rej median 0.996 | mean|gap| 0.244 | model too optimistic on 33, too pessimistic on 24, within 5pt on 39
+  syntax-t-256k.bin    n= 77  model rej median 0.930 | measured rej median 1.000 | mean|gap| 0.240 | model too optimistic on 21, too pessimistic on 33, within 5pt on 23
+  syntax-t-64k.bin     n= 77  model rej median 0.931 | measured rej median 1.000 | mean|gap| 0.238 | model too optimistic on 21, too pessimistic on 33, within 5pt on 23
+  t-256k.bin           n= 34  model rej median 0.963 | measured rej median 1.000 | mean|gap| 0.368 | model too optimistic on 13, too pessimistic on 5, within 5pt on 16
+  t-64k.bin            n= 34  model rej median 0.962 | measured rej median 1.000 | mean|gap| 0.369 | model too optimistic on 13, too pessimistic on 5, within 5pt on 16
+
+BENCH-DERIVED ROWS (id not under tests/)
+  t-256k.bi  capability/pwd-strength-chain          cond=lookahead/255/.*[a-z];lo c0=0      c1=0      true=0     rej=- falserem=- removed/KB=0.00
+  t-256k.bi  syntax/lka-nonatomic                   cond=lookahead/1/item         c0=0      c1=0      true=0     rej=- falserem=- removed/KB=0.00
+  t-256k.bi  syntax/lka-pos                         cond=lookahead/1/ done        c0=0      c1=0      true=0     rej=- falserem=- removed/KB=0.00
+  t-256k.bi  syntax/lka-verb                        cond=lookahead/1/ done        c0=0      c1=0      true=0     rej=- falserem=- removed/KB=0.00
+  t-256k.bi  syntax/lkb-pos                         cond=lookbehind/1/item        c0=0      c1=0      true=0     rej=- falserem=- removed/KB=0.00
+  t-256k.bi  utf8/asr-lb-varwidth                   cond=lookbehind/2/a|Ã©        c0=2626   c1=0      true=0     rej=1 falserem=1 removed/KB=10.26
+  syntax-t-  capability/pwd-strength-chain          cond=lookahead/255/.*[a-z];lo c0=0      c1=0      true=0     rej=- falserem=- removed/KB=0.00
+  syntax-t-  syntax/lka-nonatomic                   cond=lookahead/1/item         c0=681    c1=681    true=681   rej=0 falserem=- removed/KB=0.00
+  syntax-t-  syntax/lka-pos                         cond=lookahead/1/ done        c0=681    c1=277    true=6     rej=0.593245 falserem=0.598519 removed/KB=1.58
+  syntax-t-  syntax/lka-verb                        cond=lookahead/1/ done        c0=681    c1=277    true=6     rej=0.593245 falserem=0.598519 removed/KB=1.58
+  syntax-t-  syntax/lkb-pos                         cond=lookbehind/1/item        c0=665    c1=555    true=6     rej=0.165414 falserem=0.16692 removed/KB=0.43
+  syntax-t-  utf8/asr-lb-varwidth                   cond=lookbehind/2/a|Ã©        c0=2389   c1=0      true=0     rej=1 falserem=1 removed/KB=9.33
+  decisions  capability/pwd-strength-chain          cond=lookahead/255/.*[a-z];lo c0=0      c1=0      true=0     rej=- falserem=- removed/KB=0.00
+  decisions  syntax/lka-nonatomic                   cond=lookahead/1/item         c0=70     c1=70     true=70    rej=0 falserem=- removed/KB=0.00
+  decisions  syntax/lka-pos                         cond=lookahead/1/ done        c0=70     c1=36     true=0     rej=0.485714 falserem=0.485714 removed/KB=0.06
+  decisions  syntax/lka-verb                        cond=lookahead/1/ done        c0=70     c1=36     true=0     rej=0.485714 falserem=0.485714 removed/KB=0.06
+  decisions  syntax/lkb-pos                         cond=lookbehind/1/item        c0=13     c1=10     true=0     rej=0.230769 falserem=0.230769 removed/KB=0.01
+  decisions  utf8/asr-lb-varwidth                   cond=lookbehind/2/a|Ã©        c0=2011   c1=192    true=192   rej=0.904525 falserem=1 removed/KB=3.40
+
+ABSOLUTE DENSITY (per KB of subject), live byte cells
+  APPROACH.md          removed/KB: median 1.96 p75 3.49 max 32.2 | cells >=1/KB: 70/75  >=3/KB: 22/75 | false/KB median 1.96
+  decisions.md         removed/KB: median 0.71 p75 0.71 max 28.2 | cells >=1/KB: 22/96  >=3/KB: 21/96 | false/KB median 0.71
+  syntax-t-256k.bin    removed/KB: median 1.37 p75 6.66 max 39.0 | cells >=1/KB: 72/77  >=3/KB: 22/77 | false/KB median 1.37
+  syntax-t-64k.bin     removed/KB: median 1.64 p75 6.19 max 39.0 | cells >=1/KB: 72/77  >=3/KB: 22/77 | false/KB median 1.64
+  t-256k.bin           removed/KB: median 10.26 p75 10.26 max 28.0 | cells >=1/KB: 22/34  >=3/KB: 22/34 | false/KB median 10.26
+  t-64k.bin            removed/KB: median 9.31 p75 9.31 max 27.8 | cells >=1/KB: 22/34  >=3/KB: 22/34 | false/KB median 9.31
+
+PREFILTER STAMPS (RX_VM_PREFILTER, req_byte none?) over the measured patterns: {('hybrid', True): 15, ('hybrid', False): 84}
