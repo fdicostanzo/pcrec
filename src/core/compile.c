@@ -357,15 +357,14 @@ static void build_anchored_dfa(Ctx *cx)
      * tests/codegen/run_anchored_match.sh — can lower it and drive the
      * overflow arm, whose real-world population is zero because the caps are
      * shared and the mandatory machines reach them first. */
-    pcrec_build_dfa(cx, &cx->job->nfa, &cx->job->adfa, true, false,
-                    PCREC_ANCHORED_MAX_STATES,
-                    cx->job->nfa.anch_start, true);
+    pcrec_build_min_dfa(cx, &cx->job->nfa, &cx->job->adfa, true, false,
+                        PCREC_ANCHORED_MAX_STATES,
+                        cx->job->nfa.anch_start, true);
 
     cx->dfa_overflowed = saved_overflowed;
     memcpy(cx->dfa_overflow_why, saved_why, sizeof saved_why);
 
     if (cx->job->adfa.overflowed) return;   /* stays `anchored_ok == false` */
-    pcrec_minimize_dfa(cx, &cx->job->adfa);
     /* [OPT-5], the third machine. [ENG-ABS]'s anchored MATCH-HERE form has no
      * candidate-start prefilter at all — `anch_start` builds its `UnanchStart`
      * with `kind = DFA_PF_NONE` unconditionally, because a prefilter CHOOSES
@@ -777,6 +776,14 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
      * one-line stderr note belongs on a successful fallback attempt. */
     volatile bool budget_fallback = false;
     char overflow_why[PCREC_DFA_OVERFLOW_WHY_LEN];
+    /* [OPT-RETRY-REUSE] THE MACHINE MEMO, one per compile and lent to every
+     * attempt (src/opt/dfamemo.c): a rung that changes nothing a machine is
+     * built from gets the machine back instead of rebuilding it. Freed at
+     * every exit below this line. Not `volatile` for `overflow_why`'s and
+     * `st_k[]`'s reason: an aggregate whose address is taken lives in memory,
+     * and nothing here is cached in a register across the `setjmp`. */
+    DfaMemo dmemo;
+    memset(&dmemo, 0, sizeof dmemo);
 
     /* [ART-SIZE] The size term's own cross-attempt state, carried exactly the
      * way `overflow_why` is and for exactly the same reason: `job_cleanup`
@@ -905,6 +912,7 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
         cx.size_cap_bytes = size_cap_bytes;
         cx.size_cap_limit = size_cap_limit;
         cx.dfa_was_engine = dfa_was_engine;
+        cx.dfa_memo = &dmemo;
         if (dfa_disabled)
             memcpy(cx.dfa_overflow_why, overflow_why, sizeof overflow_why);
         /* [M4.7b/K7] Attach the compile's error channel to its allocators, so a
@@ -945,6 +953,7 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
         if (!cx.job || !out || !pattern) {
             job_cleanup(&cx);
             if (err) snprintf(err->msg, sizeof(err->msg), "invalid arguments");
+            pcrec_dfa_memo_free(&dmemo);
             return -1;
         }
 
@@ -1038,6 +1047,7 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
              * comment, internal.h). */
             if (cx.failed_nomem) {
                 job_cleanup(&cx);
+                pcrec_dfa_memo_free(&dmemo);
                 return -1;
             }
             /* [SEL-1] Retry ONLY under `--engine=auto`, ONLY when
@@ -1306,6 +1316,7 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
                 continue;
             }
             job_cleanup(&cx);
+            pcrec_dfa_memo_free(&dmemo);
             return -1;
         }
 
@@ -1687,14 +1698,12 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
                  * seals it. The first E3 ask is scanedge's, just below. */
                 pcrec_facts_seal_e3(&cx);
                 pcrec_build_nfa(&cx, root, &cx.job->rnfa, true, collapse);
-                pcrec_build_dfa(&cx, &cx.job->nfa, &cx.job->dfa, true, false,
-                                PCREC_MAX_DFA_STATES_TABLE,
-                                cx.job->nfa.start, false);
-                pcrec_build_dfa(&cx, &cx.job->rnfa, &cx.job->rdfa, false, true,
-                                PCREC_MAX_DFA_STATES_TABLE,
-                                cx.job->rnfa.start, false);
-                pcrec_minimize_dfa(&cx, &cx.job->dfa);
-                pcrec_minimize_dfa(&cx, &cx.job->rdfa);
+                pcrec_build_min_dfa(&cx, &cx.job->nfa, &cx.job->dfa, true,
+                                    false, PCREC_MAX_DFA_STATES_TABLE,
+                                    cx.job->nfa.start, false);
+                pcrec_build_min_dfa(&cx, &cx.job->rnfa, &cx.job->rdfa, false,
+                                    true, PCREC_MAX_DFA_STATES_TABLE,
+                                    cx.job->rnfa.start, false);
                 /* [OPT-5] The scan edge is a property of the FINAL transition
                  * table, so it runs after minimization on each machine and
                  * before anything reads one. The reverse pass gets it on the
@@ -1728,10 +1737,9 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
                                           ? defo.max_dfa_states_goto
                                           : (unsigned long long)PCREC_MAX_DFA_STATES_GOTO;
                     int mg = v > (unsigned long long)INT_MAX ? INT_MAX : (int)v;
-                    pcrec_build_dfa(&cx, &cx.job->nfa, &cx.job->dfa, true, false,
-                                    mg, cx.job->nfa.start, false);
+                    pcrec_build_min_dfa(&cx, &cx.job->nfa, &cx.job->dfa, true,
+                                        false, mg, cx.job->nfa.start, false);
                 }
-                pcrec_minimize_dfa(&cx, &cx.job->dfa);
                 /* [OPT-5] NOT run on ENG_ATTEMPT's machine, and the reason is
                  * [OPT-3]'s own for exempting that engine one row earlier:
                  * its states are LABELS and a step is
@@ -2068,6 +2076,7 @@ facts_force:
         out->h_src = cx.job->out_h;   cx.job->out_h  = NULL;
         if (ir_out) { *ir_out = cx.job->out_ir; cx.job->out_ir = NULL; }
         job_cleanup(&cx);
+        pcrec_dfa_memo_free(&dmemo);
         return 0;
     }
     /* EXHAUSTION IS A DEFECT, AND IT MUST SAY SO (r42 critic-sem S8).
@@ -2085,6 +2094,7 @@ facts_force:
                  "result -- the attempt budget is derived from the size-term "
                  "ladder and no longer covers this driver's retries",
                  COMPILE_MAX_ATTEMPTS);
+    pcrec_dfa_memo_free(&dmemo);
     return -1;
 }
 

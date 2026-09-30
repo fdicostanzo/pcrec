@@ -2808,6 +2808,10 @@ struct Ctx {
      * bounded — see PCREC_MAX_SUBSET_ELEMS in limits.h for the growth law and
      * the number. Charged in src/ir/dfa.c's intern(). */
     long long            subset_elems;
+    /* [OPT-RETRY-REUSE] The compile's machine memo (src/opt/dfamemo.c),
+     * owned by `compile_driver` and lent to every attempt; NULL = none, and
+     * `pcrec_build_min_dfa` then builds exactly as the two calls it wraps. */
+    struct DfaMemo      *dfa_memo;
     /* [SEL-1] (2026-08-28) `auto`'s DFA-cap-overflow contract (plan row
      * [SEL-1]): a `--engine=auto` compile whose DFA build overflows a cap
      * falls back to the VM instead of refusing, and an auto-selected
@@ -5969,6 +5973,27 @@ enum { PCREC_DFA_DEAD = -1 };
 /* ---- opt -- defined under src/opt/ ----------------------------------*/
 
 void pcrec_minimize_dfa(Ctx *cx, Dfa *dfa);         /* src/opt/minimize.c */
+
+/* [OPT-RETRY-REUSE] THE MACHINE MEMO (src/opt/dfamemo.c). The driver's retry
+ * ladders re-run the whole pipeline per rung, and most rungs change nothing
+ * a machine is built from — dropping the optional anchored machine, the
+ * premultiplied table layout, the VM's unroll K. So the build is memoized
+ * ACROSS ATTEMPTS, keyed by its inputs: `pcrec_build_min_dfa` is
+ * `pcrec_build_dfa` + `pcrec_minimize_dfa` (the latter skipped on an
+ * optional machine that overflowed), and when `cx->dfa_memo` already holds a
+ * machine built from an identical NFA, parameters, option fields and prior
+ * `subset_elems`, it restores that machine into `dfa` instead — the same
+ * bytes, and the same `subset_elems` charge. Every later pass (scan edge,
+ * emission) runs fresh on it. The memo's storage is its own arena, freed by
+ * `pcrec_dfa_memo_free` when the compile ends. */
+typedef struct DfaMemoEnt DfaMemoEnt;
+typedef struct DfaMemo {
+    Arena       arena;   /* every entry, keys and machines both */
+    DfaMemoEnt *head;
+} DfaMemo;
+void pcrec_build_min_dfa(Ctx *cx, Nfa *nfa, Dfa *dfa, bool prune,
+                         bool reverse, int maxstates, int root, bool optional);
+void pcrec_dfa_memo_free(DfaMemo *m);
 
 /* [OPT-5] THE SCAN-EDGE PASS (src/opt/scanedge.c). Runs on EVERY machine,
  * immediately after `pcrec_minimize_dfa` on that machine: it needs the
