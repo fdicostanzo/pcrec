@@ -8910,3 +8910,9 @@ Context: review r3 (docs/dev/reviews/2026-09-30-r3-cls-tree-s2.md). No answer mo
 3. A D107-style detector that flags numeric literals in estimator/selection code not drawn from the registry.
 4. Visible through `--list` ([LIST-TABLES]).
 No artifact changes: a refactor plus a check, with identity proven by the sweep. Until it is scheduled, new estimation constants go into `PLACE` or carry their provenance inline.
+
+## D142 — [PF-KNOW] closed; the RX_VM_PREFILTER_LANG "exact" wording; the PCRE2_UTF lookbehind clipping is a stated divergence (Frank, 2026-09-30, eighty-seventh session)
+
+1. **[PF-KNOW] is CLOSED as research-complete** (docs/design/pf_know.md). Its findings live under [OPTLOOP]: the prefix/whole-program skip is a member of the one-pass row with a D77 trigger (a match-dense bench cell where a hybrid's VM share is ≥10% of time on Linux); the Q2 evidence is added to [OPT-D]. No lane opens from it.
+2. **`RX_VM_PREFILTER_LANG "exact"` gets NO new stamp line (no abi event).** The spec sentence says the stamp reports the count-collapse axis only, and that whether the prefilter proves the window END (mrl_win) is read from the reseed stamp's `exact` row. pf_know.md §2.2/§8.4 measured "exact" on 76 lookbehind / 47 lookahead / 132 atomic / 53 `\K` hybrids whose end is unproven.
+3. **PCRE2_UTF's backward-read clipping is a STATED DIVERGENCE.** Under PCRE2_UTF, libpcre2 treats startpos − LB as the subject start for lookbehind/`\b` reads, even on valid text (`(?<=\ba)b` on "xab" from 2 → (2,3) under PCRE2_UTF, but no match from 0 or without UTF). pcrec reads the real bytes. That is 4 cells per config, pinned exactly (docs/dev/lanes/uvbuild_report.md §5). The spec states it beside the [UTF-VALID] contract (D26 tiering: what a pattern matches is exact, and a deliberate, stated divergence is the only allowed exception).
