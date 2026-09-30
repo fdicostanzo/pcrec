@@ -628,6 +628,18 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   not insurance against invisibility; it says WHICH property broke, and it
   covers the width x name-length space the shipped sites (two widths, one
   two-byte prefix) never reach.
+  **K79 (abi 54, lane k7980) ADDS THE PREFIX RENDER**: `pcrec_sb_render_prefix`
+  rewrites every `PCREC_PREFIX_PLACEHOLDER` (`\x01q` -> the caller's `-p`,
+  `\x01Q` -> it uppercased) in a finished buffer, refusing (returning
+  false) on a lead byte followed by anything else; `pcrec_render_prefix_msg`
+  is the same rewrite into `pcrec_error.msg`. `compile_driver` (compile.c)
+  hands the emitters the placeholder as `defo.prefix` before the first
+  attempt, keeps the caller's in `Ctx.user_prefix` (validated there; read by
+  `pcrec_ctx_fail`'s message render), and renders `csb`/`hsb`/`irsb` at
+  `facts_force` after the force loop, then shows the facts hook a
+  real-prefix options view (`hopt`). Every size decision is thereby
+  measured at a canonical two-byte prefix (`docs/spec/limits.md` §8 "Size
+  limits and the prefix"); `-p rx` output is byte-identical to before.
 - **limits.h** — every number that decides what pcrec ACCEPTS, REJECTS or
   PROMISES, in three sections that ARE D26's tiers: ours (free to tune), PCRE2
   syntax (exact, and measured — the 65535 repeat ceiling, the 250 nesting cap),

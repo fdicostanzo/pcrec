@@ -658,7 +658,12 @@ engines in two functions cannot collide on them. The file-scope names are:
   panel MEASURED that a per-prefix guard fails the exact composability case
   it exists for (two differently-prefixed headers in one TU each derive a
   DIFFERENT guard name, so both bodies redefine the same types — a hard
-  redefinition error). `<prefix>_span`, the one prior file-scope type,
+  redefinition error). **K80 (abi 54): the guard's VALUE is the abi**
+  (`#define PCREC_RX_ABI_H <abi>`), and the block opens with an `#error`
+  when an earlier block of a different value (or a pre-54 empty guard, via
+  `+ 0`) is already defined — one valued guard, not an abi-keyed guard name,
+  so same-abi stays "first block wins" and mixed-abi names its cause.
+  `<prefix>_span`, the one prior file-scope type,
   RETIRED at [M4.4] (D44.2) — no compatibility alias. **[ABI-NS] (D60 +
   addendum, 2026-08-18)**: the same guard now also carries every emitted
   UNIVERSAL MACRO, unprefixed and unconditional on every artifact — the
@@ -3459,3 +3464,21 @@ refused attempt's figures the driver carried forward. No artifact that
 compiled before the rung existed carries the line, so no emitted byte of an
 existing artifact moved (corpus sweep in `docs/dev/lanes/pfdrop_report.md`).
 `rx_info.flags` masks `PCREC_FAST_OR_FAIL` (`emit_dfa.c`'s strategy mask).
+
+## K79 (abi 54, lane k7980): the emitters see the render PLACEHOLDER, not the caller's prefix
+
+`cx->opt->prefix` (and so `v->p`, `g->upper`, every `<prefix>_…` fragment)
+is the two-byte placeholder `\x01q` on every emitting compile, upper `\x01Q`
+by the ordinary `pcrec_sb_upper`; `compile_driver` writes the caller's
+spelling onto the finished text (`pcrec_sb_render_prefix`, src/core/sb.c).
+So a length an emitter measures — `vm_plan_entry`'s entry-shape knee is the
+one in this directory — is prefix-free by construction. Two sites changed
+for it: the header guard is `upper` (the old `isalnum ? toupper : '_'` loop
+mapped the placeholder's lead byte to `_`; on a validated prefix the two
+agree byte for byte), and `rx_info.name`'s DEFAULT is written raw rather
+than through `emit_c_string_literal`, which would octal-escape the
+placeholder (a validated prefix needs no escaping). **The rule for a new
+site: never pass prefix-derived text through an escaper, and never
+transform the prefix other than by `pcrec_sb_upper`.** A violation leaves a
+placeholder the render cannot see; a raw stray `\x01` is an internal error
+at render time.

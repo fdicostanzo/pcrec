@@ -408,6 +408,12 @@ is EXPECTED to time out"*, and neither would a separate arm.
   `assertions`' structural checks (the libpcre2 re-verification of its
   corpus, the built-constructs control, and the D47.5 exemption read off the
   artifact's STRATS stamp in both directions).
+- `prefixinv` → `tests/codegen/run_prefix_invariance.sh` (K79, lane k7980,
+  2026-09-30): the same pattern at prefixes of 1..60 characters gives the
+  same artifact up to the prefix's spelling. A prefix-dependent SELECTION
+  moves no answer, so `harness` is green on it by construction. Row S437
+  (the emitters handed the real prefix instead of the render placeholder).
+  K80's row S438 (the mixed-abi `#error` fenced off) is on `codegen`.
 - `tunedial` → `tests/codegen/run_tune_dial.sh` ([OPT-DIAL] design §6.1a's
   MECHANISM-STATE CROSS-CHECK), **NOT YET REGISTERED IN THIS DRIVER'S
   DISPATCH as of 2026-09-17** — a sibling lane is building the script
