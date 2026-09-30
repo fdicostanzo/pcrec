@@ -176,6 +176,19 @@ srcs=$(find "$ROOT_DIR/src" -name '*.c' | tr '\n' ' ')
 # 31,068, K=3 31,953, K=2 29,838. At 31,500 the shape is the one this cell
 # exists for again: 6 and 3 do not fit, 4 does and is the largest that does,
 # and 2 fits too, so the wrong-direction walk is still distinguishable.
+#
+# RE-MEASURED, NOT RE-CALIBRATED, 2026-09-30 ([OPT-HYB-RESEED], abi 46 -> 47,
+# lane reseedfix after r1 panel chk F1). The witness is a CLAMPED
+# over-approximating hybrid (the possessive's cut is erased from its
+# prefilter), and lane reseed's first cut gave every such hybrid the adaptive
+# retry text: +569 B, which put K=4 at ~31,640 and the ladder took K=2. The
+# fix shrank that text and kept clamped hybrids on today's retry (the
+# `clamped` row, tuning.md §2.33), so the witness gains only its
+# `RX_VM_RESEED` stamp. Re-measured on this reference build (code bytes, .c
+# plus .h, the size model's own measure): K=6 36,211, K=4 31,130, K=3
+# 32,015, K=2 29,900 — every rung +62 against the B1 figures. 31,500 still
+# gives the shape this cell exists for (6 and 3 do not fit, 4 does and is
+# the largest that does, 2 fits too), so the cap does not move.
 if $CC -O1 -std=gnu11 -I"$ROOT_DIR/lib" -I"$ROOT_DIR/src" \
        -DPCREC_SIZE_TERM_THRESHOLD=20000 \
        -DPCREC_MAX_VM_EMIT_CODE_BYTES=31500 \
@@ -204,7 +217,7 @@ if $CC -O1 -std=gnu11 -I"$ROOT_DIR/lib" -I"$ROOT_DIR/src" \
         if [ "$rk" = "4" ]; then
             ok "the rescue took the LARGEST fitting K (4) — not merely a different one"
         else
-            bad "the rescue took K=$rk; under this reference build the ladder's rung 6 does NOT fit (36,149 B against the 31,500 cap) and rung 4 does (31,068 B), so the largest fitting rung is 4. A smaller K here means the ladder is being walked in the wrong direction"
+            bad "the rescue took K=$rk; under this reference build the ladder's rung 6 does NOT fit (36,211 B against the 31,500 cap) and rung 4 does (31,130 B, re-measured 2026-09-30), so the largest fitting rung is 4. A smaller K here means the ladder is being walked in the wrong direction"
         fi
     else
         bad "the cap-rescue witness '$RESCUE' did not compile under the lowered-cap compiler"

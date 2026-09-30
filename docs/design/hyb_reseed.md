@@ -47,7 +47,10 @@ nothing.
 ## 3. The measured crossover, and why it is per program class
 
 Hand-twins of the emitted C, Mac M1, gcc-16 `-O2`. SCRATCH tier: these show
-mechanism and ratio only. A subject family puts a FAILING candidate every
+mechanism and ratio only. The harness is committed as `studies/hyb_reseed_cal/`
+(`twin.py`, `xover.sh`, `subjects.py`, `drv.c`), and its 2026-09-30 re-run of
+four of the rows below is `results/crossover_2026-09-30.txt`: 16 B, ~3 B,
+~30 B and ~3 characters again. A subject family puts a FAILING candidate every
 `g` bytes. At each g we compare always-step against always-re-seed:
 
 | witness | frameless? | step ns/B | re-seed ns per call | crossover gap |
@@ -90,6 +93,24 @@ What each column is:
   - Framed: every step is a third of a re-seed, so the call re-seeds almost
     at once.
 
+**What is measured and what is chosen** (r1 panel chk F4). The GAP column is
+measured: each value is the smallest crossover of its class's witnesses.
+Frameless takes 16 from 16/26/30 B. Framed takes 4 from `(?<=a|é)x`'s
+~3 B, although `(?<!日)本` crosses at 9-12 B, so at framed gaps of 4-12 B
+the machine re-seeds where stepping is cheaper (the cjk4 ×1.21 and cjk1
+×0.94 cells in `docs/dev/reseed/timing_mac.md` sit there).
+
+Frameless `first` = 64 is measured on one pattern (`item(?= done)`: 8 steps
+×1.8 slower, 64 within 10%). The remaining columns are chosen settings, not
+measured optima: framed `first` = 2, both `block` values (64, 16) and both
+`cap` values (1024, 64). The doubling itself was measured (a fixed block's
+probe cost 5-17% on dense subjects, removed by doubling); the specific block
+and cap values were not swept.
+
+The calibration check in `tests/codegen/run_codegen_tests.sh` pins all four
+per class, so a swapped or altered row is red (sabotage S372). A re-sweep is
+what would move them.
+
 All four are calibrated constants in one table, the `clskit.c` `PLACE`
 precedent. `--tune` does not move them today: the dial's table is a pinned
 contract (D103), and a cell needs a measured two-axis rate first. The table
@@ -97,88 +118,143 @@ is where such a cell would point.
 
 ## 4. The mechanism: ONE first-match table, rows as data
 
-`vm_reseed_rows[]` in `src/gen/emit_vm.c` is selected once per hybrid
-artifact in the plan phase and stamped as `<P>_VM_RESEED`:
+`pcrec_reseed_rows[]` in `src/gen/emit_vm.c` is selected once per hybrid
+artifact in the plan phase and stamped as `<P>_VM_RESEED`. Revised
+2026-09-30 by lane reseedfix after the r1 panel: the `clamped` row is new,
+and an adaptive row's starting state moved from emitter code into two
+columns (`start`, `armed`):
 
-| # | row | deny | predicate | action |
-|---|---|---|---|---|
-| 1 | `exact` | — | the prefilter's language is exact (`Vm.mrl_win`: no cut, no lookaround, no collapse) | today's retry, unchanged: the clamp recompute where a clamp exists, else step |
-| 2 | `adaptive-dense` | `-fno-hyb-reseed` | the prior's MASS on the candidate scan predicts a gap under N | ADAPTIVE, starting inside a capped step block |
-| 3 | `adaptive` | `-fno-hyb-reseed` | always | ADAPTIVE, starting with the class's `first` step budget |
-| 4 | `fixed` | — | always | today's retry (the deny's landing row) |
+| # | row | deny | predicate | action | start |
+|---|---|---|---|---|---|
+| 1 | `exact` | — | the prefilter's language is exact (`Vm.mrl_win`: no cut, no lookaround, no collapse) | today's retry, unchanged: the clamp recompute where a clamp exists, else step | — |
+| 2 | `clamped` | — | an MRL clamp exists (`Vm.nclamp > 0`) | today's retry (the clamp recompute: re-seed after every failure) | — |
+| 3 | `adaptive-dense` | `-fno-hyb-reseed` | the compile's byte-rate prior puts the candidate scan's set at a mean gap under the class's crossover | ADAPTIVE | a cap-length step block, armed |
+| 4 | `adaptive` | `-fno-hyb-reseed` | always | ADAPTIVE | the class's `first` budget, unarmed |
+| 5 | `fixed` | — | always | today's retry (the deny's landing row) | — |
 
-Row 2 is the brief's "a findings bundle present" row, rewritten to obey D126
-Q4: a reader never tests the prior's NONE. The predicate hands the candidate
-scan's byte set to the MASS primitive. Under NONE that primitive answers
-CARDINALITY, so a singleton scan under `-e utf8` never looks dense and a
-64-byte class does. That is the no-information answer, and it is spelled
-once inside the primitive. The rate comes from `pcrec_dfa_cand_ppm`
-(`src/gen/emit_dfa.c`): the MASS of the set the emitted scan tests, read off
-the same derivations the scan is emitted from. It is 1,000,000 when the scan
-tests nothing.
+**Row 2 exists for the contract, and for a measurement** (r1 panel sem F1;
+`docs/dev/reseed/clamped.md`).
+
+- On a clamped hybrid, today's retry already re-seeds after every failure,
+  so a step block ADDS attempts.
+- Attempts charge the call's shared budgets, so an answer could become a
+  give-up.
+- The measured gain was mixed: ×1.3-×2.2 on three dense witnesses, ×0.46 on
+  a fourth whose step the class calibration misprices.
+- Past row 2 every adaptive artifact is clamp-free. On those, today's retry
+  stepped every position after a failure, so an adaptive retry's attempts
+  are a SUBSET of today's, in the same order. A give-up can become an
+  answer; an answer cannot become a give-up or change. That one-direction
+  property is what `match_api.md` §6's abi-47 paragraph states.
+
+**Row 3 is the brief's "a findings bundle present" row**, rewritten to obey
+D126 Q4: a reader never tests the prior's NONE. The predicate hands the
+candidate scan's byte set to the MASS primitive (`pcrec_find_set_ppm`). The
+prior it reads is the compile's own (r1 panel chk F2):
+
+- Under `-e byte` with no `--analysis`, the chain is the built-in `default`
+  analysis. That is English-like letter frequencies, so a single space (`
+  (?=the)`) reads dense, and `a(?=the)` does not.
+- Under `-e utf8` with no analysis naming a utf8 block, the prior is NONE.
+  The primitive then answers CARDINALITY, so a singleton scan never looks
+  dense and `[a-z]` does.
+- The codegen block pins both arms.
+- Which artifacts are `adaptive-dense` under `-e byte` is therefore a fact
+  about the default prior, not about the pattern alone. The starting mode on
+  logs, binary or CJK subjects is chosen from prose statistics. The cost of
+  a wrong start is bounded: the block's probe re-seed ends the first block.
+- The rate comes from `pcrec_dfa_cand_ppm` (`src/gen/emit_dfa.c`): the MASS
+  of the set the emitted scan tests, read off the same derivations the scan
+  is emitted from. It is 1,000,000 when the scan tests nothing.
 
 **ADAPTIVE** is two per-CALL locals in `<p>_search_run`. There are no
 globals and no `rx_ctx` fields, so the matcher stays stateless and
 reentrant.
 
-- `reseed_steps_left`: failed attempts to STEP before the next re-seed.
-- `reseed_short_gaps`: consecutive re-seed gaps under N, saturating at 2.
-- `reseed_block`: the next step block's length (K, doubling to the cap).
+- `reseed_steps`: failed attempts to STEP before the next re-seed.
+- `reseed_block`: the next step block's length, or 0 while UNARMED.
 
 After each failed attempt's encoding advance, the loop does one of two
 things:
 
-- **Step mode** (`reseed_steps_left > 0`): decrement the counter and retry
+- **Step mode** (`reseed_steps` nonzero): decrement the counter and retry
   at the next character.
 - **Otherwise, re-seed**: ask the prefilter from the current position, jump
-  to its answer, and record the gap. The gap counts as short when it is
-  under N. Two consecutive short gaps enter a step block, and a short probe
-  doubles the next one. A long gap resets the count and the block.
+  to its answer, and read the gap. A long gap (at least N) disarms the
+  block. A short gap with the block unarmed arms it at K. A short gap with
+  the block armed starts it (`reseed_steps = reseed_block`) and doubles the
+  next one, up to the cap.
 
 Each step block ends in exactly one re-seed. That re-seed is the PROBE, so a
-dense-then-sparse subject cannot stay stuck in step mode. Requiring TWO
-short gaps is what defeats the alternating adversary (`xx` then a long gap,
-repeated): its gaps read 0, L, 0, L and never enter step mode.
+dense-then-sparse subject cannot stay stuck in step mode. Arming on the
+first short gap, and stepping only on the second, is what defeats the
+alternating adversary (`xx` then a long gap, repeated): its gaps read 0, L,
+0, L and never start a block.
+
+This is lane reseed's machine, re-spelled. Lane reseed's three locals
+(steps, a short-gap count saturating at 2, and the block) map onto two: the
+count's states 0/1/2 are "block 0", "block K, not yet stepping", and "block
+K or more". The re-spelling was for size (r1 panel chk F1): the text rides
+every adaptive hybrid. It went from ~780 code bytes to ~560 on a
+clamp-free artifact.
 
 Soundness is today's on both arms. Stepping is today's clamp-free
 behaviour. Re-seeding is today's clamped retry, and D51 ruling 2 already
 states it as sound: the prefilter answers for `[attempt_position, n)` and
-L(P) ⊆ L(erase(P)). Where a clamp exists and the row is adaptive, the
-ceiling is `subject_length` on both arms (`mrl_win` is false on every
-over-approximating artifact), so stepping cannot carry a stale window.
+L(P) ⊆ L(erase(P)). Rows 1 and 2 put every clamped artifact on today's
+retry, so the adaptive text never meets a clamp window. The emitter carries
+an internal-error guard in its place.
 
-What can change is the GIVE-UP boundary, because the step budget is shared
-across a call's attempts (f3search):
+## 5. Scratch results (`docs/dev/reseed/timing_mac.md`)
 
-- On a clamp-free artifact, adaptive only removes attempts, so it can only
-  turn a give-up into an answer.
-- On a clamped over-approximating artifact, a step block runs attempts that
-  today's always-re-seed skips, so it could turn an answer into a give-up.
+On the emitted artifacts (base = the branch point, abi 46) every answer was
+identical. The table was re-run on 2026-09-30 with its noise floor in each
+row (base/deny, two copies of one program).
 
-The answer-identity sweep counts both directions.
-
-## 5. Scratch results (full table in the report)
-
-On the emitted artifacts (base = the branch point, abi 46), every answer
-was identical, and the stepping-to-the-end cells collapse. Examples:
-
-- `asr-lb-varwidth` synth-1m ×2.6.
-- `asr-lb-neg` synth-1m ×10.
-- The gap-64 families ×4-×21.
-- Bursty subjects ×15-×28.
-- The cell the design was asked to protect, `asr-lb-fixed`/synth-dense,
-  reads ×1.02, where the always-re-seed twin was ×0.81.
-
-The worst cells are the per-call regime a per-call rule cannot see ACROSS:
-`item(?= done)` on a match-dense subject ×0.92, framed CJK at a one-character
-gap ×0.94, and `asr-lb-varwidth` synth-dense ×0.96. The cross-call "last run"
-hint is out of scope and filed as its own row, with these cells as the
-measurement that would trigger it.
+- **Real, large wins** come where the old loop stepped a sparse region:
+  - `asr-lb-varwidth` synth-1m ×2.6;
+  - `asr-lb-neg` synth-1m ×10;
+  - the gap-64 families ×4-×21;
+  - the bursty subjects ×15-×20.
+  - The largest measured ratio is ×21.2. The "×28" in lane reseed's first
+    report matched no row and is withdrawn.
+- **The cell the design was asked to protect**, `asr-lb-fixed`/synth-dense,
+  reads ×1.03 against a ×0.92 noise floor: flat within noise. It is not a
+  win. Lane reseed compared it with the always-re-seed twin's ×0.81, but
+  that is a scratch figure plan row I-114 says not to cite without
+  fresh-launch medians. The bench's x86/gcc figure for the same twin is
+  ×0.957.
+- **asr-lb-fixed's ×1.17-×1.36 at gaps 1/4/16 is unexplained.** The model
+  predicts parity with the step arm. It is not counted as a mechanism win.
+- **Losses:**
+  - `item(?= done)` on a match-dense prose subject, where `item` is a third
+    of the words: **×0.62**. On lane reseed's realization of the same recipe
+    it is ×0.94.
+  - framed CJK at a one-character gap ×0.94;
+  - `asr-lb-varwidth` synth-dense ×0.93.
+- The ×0.62 is the per-call regime. Find-all makes one call per match, and
+  each call re-learns the density at the cost of 2-3 re-seeds.
 
 ## 6. Out of scope, filed
 
 - **The cross-call hint** (`[OPT-HYB-RESEED-XCALL]`). Its trigger is a
-  measured short-subject / find-all cell losing to the per-call probe.
+  measured short-subject / find-all cell losing to the per-call probe. The
+  Mac scratch table now has one: `item(?= done)` on match-dense prose,
+  ×0.62 (§5). The bench's own `lka-pos` cell decides whether it is met.
+- **A per-PROGRAM step cost.** The class calibration prices a step by frame
+  discipline alone. `(?<=a|bc)[a-c]{2,4}d` is framed, but its step costs far
+  more than the class assumes (a bounded counter and a lookbehind per
+  position), which is the ×0.46 cell in `docs/dev/reseed/clamped.md`. The
+  emitter already knows program bytes and rungs, so an estimate from those
+  would tighten every crossover. Its trigger is a clamp-free cell losing to
+  the step arm by more than the probe cost.
+- **Callouts and backtracking verbs** (r1 panel sem F10). A future
+  `callouts` module, or a verb whose effect is observable at positions a
+  match cannot start at, must decline the re-seed exactly as it must
+  decline the entry prefilter. A re-seed skips positions where a callout
+  prefix could fire and the whole cannot match; a step visits them. Nothing
+  observable is skipped today, because `(?C)`, `(*SKIP)` and `(*COMMIT)` are
+  refused.
 - **A cheaper re-seed.** R is a whole forward+reverse prefilter call, about
   25 ns, where the candidate scan alone would be a `memchr`. Seeding from
   the candidate scan without the verifying DFA would shrink R and move every

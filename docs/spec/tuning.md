@@ -2834,44 +2834,48 @@ choice is now a first-match table (`pcrec --list-axes`, axis
 | # | row | deny | applies | action |
 |---|---|---|---|---|
 | 1 | `exact` | — | the prefilter's language is the pattern's own (no cut, no lookaround, no collapse) | the pre-`abi`-47 retry: re-seed where an MRL clamp exists, else step. A failed attempt at an answer does not arise, and a clamped artifact's window must be recomputed |
-| 2 | `adaptive-dense` | `-fno-hyb-reseed` | the byte-rate prior's MASS on the candidate scan's byte set (`docs/spec/findings.md`) predicts a candidate closer than the crossover below; with no prior this is the set's cardinality, so a single byte never qualifies and a wide class can | ADAPTIVE, starting inside a step block |
-| 3 | `adaptive` | `-fno-hyb-reseed` | always | ADAPTIVE, starting with a short step budget |
-| 4 | `fixed` | — | always | the pre-`abi`-47 retry |
+| 2 | `clamped` | — | an MRL clamp exists | the pre-`abi`-47 retry, which already re-seeds after every failed attempt. A step block would ADD attempts that retry skips, so an answer could become a give-up, and the measured gain was mixed (×2.2 faster to ×0.46 slower, `docs/dev/reseed/clamped.md`) |
+| 3 | `adaptive-dense` | `-fno-hyb-reseed` | the compile's byte-rate PRIOR (`docs/spec/findings.md`) puts the candidate scan's byte set at a mean gap under the crossover below. Under `-e byte` with no `--analysis` the prior is the built-in `default` analysis (English-like letter frequencies), so a single common byte such as a space qualifies. Where the prior is NONE (`-e utf8` with no analysis naming a utf8 block) the rate is the set's CARDINALITY, so a single byte never qualifies and a wide class can | ADAPTIVE, starting inside an armed step block |
+| 4 | `adaptive` | `-fno-hyb-reseed` | always | ADAPTIVE, starting with a short step budget |
+| 5 | `fixed` | — | always | the pre-`abi`-47 retry |
 
-**ADAPTIVE** is decided per CALL, from two or three locals of the search
-function. No global and no `rx_ctx` field is involved, so a matcher stays
-reentrant and one call never changes the next.
+**ADAPTIVE** is decided per CALL, from two locals of the search function.
+No global and no `rx_ctx` field is involved, so a matcher stays reentrant
+and one call never changes the next.
 
 - Each re-seed reads how far the prefilter's answer jumped.
-- Two consecutive jumps shorter than the crossover start a STEP BLOCK.
+- A jump shorter than the crossover ARMS the step block. A second short
+  jump with the block armed starts it.
 - The block ends in one re-seed, which is the block's PROBE. A short probe
-  doubles the next block, up to a cap. A long jump resets both counters.
-- A call spends a small step budget before its first re-seed.
+  starts the next block at double the length, up to a cap. A long jump
+  disarms the block.
+- A call starts from its row's state: `adaptive` spends a small step
+  budget before its first re-seed, unarmed; `adaptive-dense` starts inside
+  a cap-length block, armed.
 
 The crossover, the first block, the cap and that first budget are
 calibrated per PROGRAM CLASS: a frameless program (`<PREFIX>_VM_FRAMELESS
 1`) versus a framed one. Stepping a frameless program costs a few compares
 per position. Stepping a framed one costs a slot write, a trail entry, a
-push and a pop. The values were measured on scratch hand-twins (the design
-note §3). No `--tune` position moves them today.
+push and a pop. The values come from scratch hand-twins on the Mac (the
+design note §3; the harness is `studies/hyb_reseed_cal/`). No `--tune`
+position moves them today.
 
 **What it costs, and what it does not move.** Both arms attempt only
 positions no match can be skipped past. Stepping is the pre-`abi`-47
 clamp-free retry. Re-seeding is the pre-`abi`-47 clamped retry, and it is
 sound because the prefilter's rejection is (L(P) ⊆ L(erase(P))). So no
-answer moves.
+MATCH, NO-MATCH or span moves.
 
-A GIVE-UP can move, because the step budget is shared across a call's
-attempts (`limits.md` §3.1) and the table changes how many attempts a call
-runs:
-
-- On a clamp-free artifact adaptive can only remove attempts.
-- On a clamped over-approximating artifact a step block can add attempts
-  the old always-re-seed skipped.
-
-Where a clamp exists and the row is adaptive, the MRL ceiling is the
-subject end on both arms, so a step block cannot carry a stale window.
-Denied, an adaptive hybrid's program is the pre-`abi`-47 one apart from its
+A GIVE-UP can move, in ONE direction. The step and work budgets are shared
+across a call's attempts (`limits.md` §3.1) and only attempts charge them.
+An adaptive row is reached only on a clamp-free artifact, where the
+pre-`abi`-47 retry attempted every position after a failure, so the
+attempts an adaptive retry runs are a subset of those, in the same order.
+A call that gave up can therefore now answer; a call that answered still
+answers the same. (Row 2 exists to keep that true: on a clamped artifact a
+step block would run attempts the old retry skipped.) Denied, an adaptive
+hybrid's program is the pre-`abi`-47 one apart from its
 `<PREFIX>_VM_RESEED` line. The flag is swept by `make test-axes` like every
 deny axis.
 

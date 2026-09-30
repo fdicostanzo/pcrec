@@ -948,11 +948,13 @@ enum {
  * answer; the retry then either steps one character or asks the prefilter
  * again, chosen per call from the gaps the prefilter's own answers measure.
  * Denied, the retry is the one this compiler emitted before `abi` 47 (step
- * where no MRL clamp exists, re-seed where one does). Both arms attempt only
- * positions no match can be skipped past, so it changes no answer (a give-up
- * may move, as with any change to how many attempts a call runs) and is
- * masked out of `rx_info.flags`; `<PREFIX>_VM_RESEED` names the row that
- * fired. Deny-only. A `#define` for bit 32's reason. */
+ * where no MRL clamp exists, re-seed where one does); a clamped hybrid keeps
+ * that retry either way. Both arms attempt only positions no match can be
+ * skipped past, so it changes no match, no-match or span; an adaptive retry
+ * runs a subset of the old retry's attempts, so a budget give-up can become
+ * an answer and never the reverse (tuning.md §2.33). Masked out of
+ * `rx_info.flags`; `<PREFIX>_VM_RESEED` names the row that fired. Deny-only.
+ * A `#define` for bit 32's reason. */
 #define PCREC_NO_HYB_RESEED PCREC_BIT(37)
 
 /* [ENG-BREP] the counter rung's UNROLL FACTOR, K (counterk_design.md §4.1;

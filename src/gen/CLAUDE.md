@@ -3291,11 +3291,23 @@ lookaround or a cut erased, or the count collapse) therefore stepped every
 character to the subject end once one prefilter answer failed.
 
 - **`pcrec_reseed_rows` is ONE first-match table, rows as data** —
-  `exact` / `adaptive-dense` / `adaptive` / `fixed`. Its predicates are a
-  closed tag set evaluated by one switch, `vm_reseed_holds` (clskit's
-  `ROWS` shape). It is exported so `--list-axes` walks the live table
-  (axis `hyb-reseed`, `src/dump/axes_dump.c`), `pcrec_look_rows`'
-  precedent.
+  `exact` / `clamped` / `adaptive-dense` / `adaptive` / `fixed`. Its
+  predicates are a closed tag set evaluated by one switch,
+  `vm_reseed_holds` (clskit's `ROWS` shape), and an adaptive row's
+  STARTING STATE is two columns (`start`, the calibration column a call's
+  first step budget comes from, and `armed`), so the two adaptive rows
+  differ in data only (r1 panel sem table note). It is exported so
+  `--list-axes` walks the live table (axis `hyb-reseed`,
+  `src/dump/axes_dump.c`), `pcrec_look_rows`' precedent.
+- **`clamped` keeps every clamped hybrid on today's retry** (r1 panel sem
+  F1). Past it, an adaptive retry's attempts are a SUBSET of today's
+  clamp-free step-everything retry's, so a budget give-up can become an
+  answer and never the reverse. On a clamped artifact today's retry
+  already re-seeds after every failure and a step block would ADD
+  attempts; the measured gain there was mixed
+  (`docs/dev/reseed/clamped.md`). It also means the adaptive text never
+  meets a clamp window, so the emitter carries no `window_end` arm for it
+  (an internal-error guard instead).
 - **`exact` reads `Vm.mrl_win`, and that is one derivation, not a second
   one.** `mrl_win` is exactly "a prefilter exists and its language is the
   pattern's own". Its three conjuncts are the three erasures `src/ir/nfa.c`
@@ -3309,22 +3321,29 @@ character to the subject end once one prefilter answer failed.
   from. NONE is answered by the MASS primitive itself (D126 Q4), so no
   reader tests it.
 - **The calibration is `vm_reseed_cal`, one row per program class indexed
-  by `has_push`** (frameless / framed). Every column is measured
-  (`hyb_reseed.md` §3). A step on a framed program costs about five times
-  one on a frameless program, so no single crossover serves both.
-- **The adaptive state is two or three per-CALL locals** (`reseed_steps_left`,
-  `reseed_short_gaps`, `reseed_block`), declared above the loop by the
-  `reseed_decl` insert. There are no globals and no `rx_ctx` fields, so a
-  matcher stays reentrant.
+  by `has_push`** (frameless / framed), copied whole into `VmReseed.cal`
+  at ONE site (sabotage S372's anchor). `hyb_reseed.md` §3 says which
+  columns are measured crossovers and which are chosen settings. A step on
+  a framed program costs about five times one on a frameless program, so
+  no single crossover serves both.
+- **The adaptive state is two per-CALL locals** (`reseed_steps`,
+  `reseed_block`, where `reseed_block == 0` is "unarmed"), declared above
+  the loop by the `reseed_decl` insert. There are no globals and no
+  `rx_ctx` fields, so a matcher stays reentrant. The text is PRICED — it
+  rides every adaptive hybrid (~560 code bytes each after the r1 shrink,
+  down from ~780) — and there is no emitted helper: a search body has one
+  retry site.
 - **A FIXED row emits `retry_win` byte for byte** (sabotage S63's anchor
   is untouched). `-fno-hyb-reseed` lands every over-approximating hybrid
   on `fixed`. The flag is masked out of `rx_info.flags`, so under it the
   artifact is the abi-46 one apart from the digit and its `VM_RESEED` line.
   `docs/dev/reseed/identity_sweep.py` measures exactly that.
 - Checks: `tests/codegen/run_codegen_tests.sh`'s `[OPT-HYB-RESEED]` block
-  (the stamp's IFF, the prefilter call sites in the search loop, the
-  clamped witness's `window_end`, and a `--step-budget` arm with its deny
-  control). Sabotage rows are S370 (the probe never ends a block, visible
-  to the budget arm only) and S371 (adaptive text dropped under an
-  adaptive stamp).
+  (the stamp's IFF on one witness per row, both arms of the dense row's
+  prior, the prefilter call sites in the search loop, the per-class
+  calibration literals, the clamped witness's clamp recompute, and a
+  `--step-budget` arm with its deny control). Sabotage rows are S370 (the
+  second block never ends, visible to the budget arm only), S371 (adaptive
+  text dropped under an adaptive stamp) and S372 (the two calibration rows
+  swapped, visible to the calibration check only).
 

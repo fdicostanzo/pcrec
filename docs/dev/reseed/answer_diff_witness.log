@@ -1,0 +1,23 @@
+witnesses: 19  violations: 0
+| pattern | enc | row | verdict | calls compared | matches | notes |
+|---|---|---|---|---:|---:|---|
+| `(?<=é)x` | utf8 | adaptive | same | 177573 | 172492 |  |
+| `(?<=a|é)x` | utf8 | adaptive | same | 181913 | 177219 |  |
+| `(?<!日)本` | utf8 | adaptive | same | 98299 | 91069 |  |
+| `item(?= done)` | byte | adaptive | same | 100882 | 100602 |  |
+| ` (?=the)` | byte | adaptive-dense | same | 175131 | 174836 |  |
+| ` (?=the)` | utf8 | adaptive | same | 145154 | 140711 |  |
+| `[a-z](?=the)` | utf8 | adaptive-dense | same | 152463 | 148269 |  |
+| `(?>a|ab)c` | byte | adaptive | same | 185504 | 185163 |  |
+| `(?>a|ab)c(?<=ac)` | byte | adaptive | same | 200555 | 200450 | --step-budget=2000 dens 0.05: 1 give-up(s) became answers |
+| `(?>日|日本)語(?=!)` | utf8 | adaptive | same | 81123 | 73924 |  |
+| `(?i)(?<=AB)x` | byte | adaptive | same | 187035 | 186946 |  |
+| `x(?=é)é` | utf8 | adaptive | same | 176772 | 171809 |  |
+| `(?>é|éa)c` | utf8 | adaptive | same | 127803 | 122201 |  |
+| `[é日](?>x|xy)z` | utf8 | adaptive | same | 105785 | 100288 |  |
+| `\bfoo(?=bar)` | byte | adaptive | same | 112238 | 112007 |  |
+| `(?m)^a(?=b)` | byte | - | same | 173056 | 172936 |  |
+| `(?<=a|bc)[a-c]{2,4}d` | byte | clamped | same | 133651 | 133535 |  |
+| `(?:aa|a)*+ab` | byte | clamped | same | 14697 | 0 |  |
+| `q(?!u)` | byte | - | same | 200866 | 200760 |  |
+

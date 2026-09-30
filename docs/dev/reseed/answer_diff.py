@@ -84,7 +84,8 @@ def main():
     a = ap.parse_args()
     work = []
     for line in open(a.tsv, encoding="utf-8", errors="surrogateescape").read().splitlines()[1:]:
-        f, enc, verdict, row, drow, pat = line.split("\t")
+        parts = line.split("\t")   # identity_sweep.py's columns; the pattern is always last
+        enc, verdict, pat = parts[1], parts[2], parts[-1]
         if verdict == "mover":
             work.append((ast.literal_eval(pat), enc))
     tally, cells, diffs = {}, 0, []

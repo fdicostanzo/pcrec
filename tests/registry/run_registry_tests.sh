@@ -595,17 +595,22 @@ fi
 # `pcrec_reseed_rows` table (`adaptive-dense`, `adaptive`), each checked as
 # its own (macro, bit, flag) triple — 2 x 3 = 6 lines, the run-pinned pair's
 # shape rather than lit-run's. Measured on a bit-37 build: 147 PASS, 0 failed.
+# 147 -> 149 at [OPT-HYB-RESEED]'s fix lane (2026-09-30, lane reseedfix, r1
+# panel chk F6.3): ONE new `check_value_set "RX_VM_RESEED"` pair (dump vs
+# match_api.md §6.3's table, both directions = 2 PASS). The new `clamped` row
+# carries no deny bit, so it adds no macro/flag/doc triple. Measured: 149
+# PASS, 0 failed.
 axesn="$(grep -c '^PASS: ' "$AXESOUT" || true)"
-if [ "$axesn" -ne 147 ]; then
+if [ "$axesn" -ne 149 ]; then
     if grep -q "^checks failed: 0" "$AXESOUT"; then
-        echo "registry: axes_registry_check COVERAGE CHANGED — $axesn passing checks, expected 147." >&2
+        echo "registry: axes_registry_check COVERAGE CHANGED — $axesn passing checks, expected 149." >&2
         echo "registry:   if you added or removed axes/checks on purpose, update this number" >&2
         echo "registry:   in the same commit; if not, coverage was removed" >&2
     else
         axesnf="$(sed -n 's/^checks failed: //p' "$AXESOUT" | tail -1)"
-        echo "registry: axes_registry_check shows $axesn passing checks (147 expected; ${axesnf:-?} failed," >&2
+        echo "registry: axes_registry_check shows $axesn passing checks (149 expected; ${axesnf:-?} failed," >&2
         echo "registry:   so a lower count is expected here). Fix the failures first; then this" >&2
-        echo "registry:   number must return to 147 — if it does not, coverage was removed too" >&2
+        echo "registry:   number must return to 149 — if it does not, coverage was removed too" >&2
     fi
     rc=1
 fi
