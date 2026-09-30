@@ -1,0 +1,25 @@
+{
+ "id": "syn-sshd-pid",
+ "pattern": "sshd\\[(\\d+)\\]: ",
+ "subject": "t-1024k-hit.bin",
+ "mode": "findall",
+ "matches": 150,
+ "calls": 151,
+ "attempts": 150,
+ "tests": {
+  "lead": 150,
+  "mid": 1144,
+  "trail": 150,
+  "dfa": 15362,
+  "search": 902
+ },
+ "test_lines": {
+  "lead": 1,
+  "mid": 3,
+  "trail": 1,
+  "dfa": 20,
+  "search": 12
+ },
+ "first_choice_line": 325,
+ "program_lines": 26
+}

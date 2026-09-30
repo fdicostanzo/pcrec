@@ -1,0 +1,25 @@
+{
+ "id": "dense-sshd-pid",
+ "pattern": "sshd\\[(\\d+)\\]: ",
+ "subject": "sshd_dense.bin",
+ "mode": "findall",
+ "matches": 60000,
+ "calls": 60001,
+ "attempts": 60000,
+ "tests": {
+  "lead": 60000,
+  "mid": 473330,
+  "trail": 60000,
+  "dfa": 6253312,
+  "search": 360002
+ },
+ "test_lines": {
+  "lead": 1,
+  "mid": 3,
+  "trail": 1,
+  "dfa": 20,
+  "search": 12
+ },
+ "first_choice_line": 325,
+ "program_lines": 26
+}

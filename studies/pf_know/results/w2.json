@@ -1,0 +1,21 @@
+{
+ "id": "w2",
+ "pattern": "([a-z0-9._%+-]+)@([a-z0-9.-]+)\\.([a-z]{2,})",
+ "subject": "t-64k.bin",
+ "mode": "findall",
+ "matches": 0,
+ "calls": 1,
+ "attempts": 0,
+ "tests": {
+  "lead": 0,
+  "mid": 0,
+  "trail": 0
+ },
+ "test_lines": {
+  "lead": 0,
+  "mid": 11,
+  "trail": 0
+ },
+ "first_choice_line": 334,
+ "program_lines": 66
+}
