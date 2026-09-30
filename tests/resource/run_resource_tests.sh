@@ -1021,6 +1021,56 @@ fi
 echo
 
 # ---------------------------------------------------------------------------
+# Section 1c — K67: compile TIME on the two witnesses of [OPT-CLOSURE-CTX]
+# and [OPT-RETRY-REUSE] (lane k67, 2026-09-29; docs/dev/lanes/k67_report.md).
+#
+#   '\p{L}+'       -e utf8   K67 itself. 78.4 s of CPU before (a loop context
+#                  split every closure's memo onto a clustered hash, and the
+#                  size-cap drop ladder rebuilt both machines three times);
+#                  0.37 s after, on the Mac dev box. It must still take the
+#                  drop ladder (`_ENGINE_SEL "size-cap-retry"`), or it has
+#                  stopped measuring [OPT-RETRY-REUSE] at all ([MECH-REACH]).
+#   '(?:\p{L}?)+'  -e utf8   a NULLABLE loop body, so the context is genuinely
+#                  needed and every visit takes the hash memo: 26.6 s before
+#                  the memo's hash was fixed, 0.49 s after.
+#
+# K67_CPU (default 20 s) is ~40x the Mac figure and still under a third of the
+# smaller defect, so the failing direction is a CPU kill on either box
+# (measured: the pre-fix binary is killed on both). The 123/124 arms route
+# through the load guard exactly as Section 1's do.
+# ---------------------------------------------------------------------------
+K67_CPU="${K67_CPU:-20}"
+echo "== [K67] COMPILE-TIME WITNESSES (CPU budget ${K67_CPU}s per compile) =="
+k67_case() {   # $1 pattern, $2 required ENGINE_SEL value or empty
+    local pat="$1" want="$2" out="$WORKDIR/k67.c" log rc
+    rm -f "$out"
+    log="$("$ROOT_DIR/scripts/watchdog" -l "k67 $pat" -s "$K7_SECS" -c "$K67_CPU" -m "$K7_MEM" -L "$WORKDIR/watchdog.log" -- "$PCREC" -p rx --features all -e utf8 -o "$out" --pattern "$pat" 2>&1)"   # [K37]: the wrapper IS the bound, on ONE line with the binary
+    rc=$?
+    case $rc in
+        0) if [ -n "$want" ] && ! grep -q "_ENGINE_SEL \"$want\"" "$out"; then
+               bad "[K67] '$pat' compiled but no longer stamps _ENGINE_SEL \"$want\" — the witness stopped reaching the ladder it times"
+           else
+               ok "[K67] '$pat' -e utf8 compiles within ${K67_CPU}s of CPU${want:+ (via $want)}"
+           fi ;;
+        123) if load_guard_tripped; then
+                 inc "[K67] '$pat' EXCEEDED ${K67_CPU}s of CPU, but the box is too contended for that to mean anything (ratio $(load_guard_ratio) > $LOAD_GUARD_RATIO) — solo re-run owed"
+             else
+                 bad "[K67] '$pat' EXCEEDED ${K67_CPU}s of CPU — the closure memo or the machine memo has regressed (K67)"
+             fi ;;
+        124) if load_guard_tripped; then
+                 inc "[K67] '$pat' EXCEEDED ${K7_SECS}s of wall time, but the box is too contended for that to mean anything (ratio $(load_guard_ratio) > $LOAD_GUARD_RATIO) — solo re-run owed"
+             else
+                 bad "[K67] '$pat' EXCEEDED ${K7_SECS}s of wall time (stuck, not working)"
+             fi ;;
+        *)   bad "[K67] '$pat' exited $rc, which is not a compile: $(printf '%s' "$log" | head -1)" ;;
+    esac
+}
+k67_case '\p{L}+' size-cap-retry
+k67_case '(?:\p{L}?)+' ''
+
+echo
+
+# ---------------------------------------------------------------------------
 # Section 2 — a real allocation failure is DIAGNOSED, not aborted.
 #
 # This is K7's third and worst measured consequence: "under a 2 GB
