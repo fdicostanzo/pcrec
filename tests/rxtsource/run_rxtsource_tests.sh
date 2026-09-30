@@ -360,9 +360,13 @@ record() { checks_recorded=$((checks_recorded + 1)); echo "RECORD: $*"; }
 # for tests/ucp/*.rxt (module `ucp`'s corpus: sets_utf8, knobs, caseless,
 # byte, refusals — generated from libpcre2, re-verified on 10.46). MEASURED
 # by this check's own census on the lane's branch: 252/4181/30967.
-CENSUS_FILES=252
-CENSUS_BLOCKS=4181
-CENSUS_LINES=30967
+# 2026-09-29 (lane k7273, [K72]) — +1 file / +17 blocks / +420 lines for
+# tests/utf8/hv_space.rxt (`\h`/`\v` under -e utf8; every block `# pcre2-only`,
+# 420 cells, all subject-bearing). MEASURED by this check's own census:
+# 253/4198/31387. Not under tests/known_fail/, so RUNSH_* moves the same.
+CENSUS_FILES=253
+CENSUS_BLOCKS=4198
+CENSUS_LINES=31387
 # 2026-09-23 (lane rxtfix, K34 closure via lane b2fix's [OPTLOOP.1.impl]
 # batch 2 — docs/dev/known_issues.md K34) — -1 file, -3 blocks, +0 lines.
 # tests/known_fail/k34_leftrec_giveup.rxt (1 file, 3 blocks, 11 lines) was
@@ -459,9 +463,11 @@ CENSUS_LINES=30967
 # k70fix +1/+9/+13 -> 223/4061/29398 (restrict.rxt is a run.sh file; the 8 golden bundles are not).
 # 2026-09-28 (lane ucpu1, [UCP] U1) — +5/+120/+1569, the SAME delta as
 # CENSUS_* above (tests/ucp/ is a run.sh directory, not tests/known_fail/).
-RUNSH_FILES=228
-RUNSH_BLOCKS=4181
-RUNSH_LINES=30967
+# 2026-09-29 (lane k7273, [K72]) — +1/+17/+420, the SAME delta as CENSUS_*
+# above (tests/utf8/hv_space.rxt is a run.sh file).
+RUNSH_FILES=229
+RUNSH_BLOCKS=4198
+RUNSH_LINES=31387
 # 2026-09-23 (lane rxtfix, K34 closure, same event as CENSUS_* above) —
 # +0/+0/+11 where CENSUS_* moved -1/-3/+0. tests/known_fail/ is now EMPTY
 # (kf_files=kf_blocks=kf_lines=0 at run time — `find tests/known_fail
@@ -1566,8 +1572,10 @@ C3_PASS=13903
 # its own verifier (verify_ucp.py), so verify_rxt.py skips every one of its
 # 1,563 cells on every python version (measured: `verify_rxt.py tests/ucp`
 # reports SKIP=1563, own-oracle=1563, PASS=0).
-C3_SKIP=16975
-C3_SKIP_PCRE2ONLY=2966
+# [K72] (lane k7273): +420 SKIP, all pcre2-only — tests/utf8/hv_space.rxt
+# (python's `re` has no \h/\v). Reconciliation: 13903+17395+89 = 31387.
+C3_SKIP=17395
+C3_SKIP_PCRE2ONLY=3386
 C3_SKIP_GIVEUP=29
 C3_SKIP_COMPOSED=0
 C3_SKIP_NOPYTHON=1964

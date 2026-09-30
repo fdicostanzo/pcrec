@@ -278,6 +278,13 @@ pulling in a partner outside itself), for fold-before-negate over a range, for
 the `byte` arm's §4.5 discriminator (0xE9 must NOT fold to 0xC9), or for
 stage 4's own per-contribution finding. 45 cells, oracle-first, 45/45.
 
+**`hv_space.rxt` is [K72]'s regression** (lane k7273, 2026-09-29, NOT part of
+the blinded corpus): `\h \H \v \V` and their bracketed forms under `-e utf8`
+against PCRE2_UTF's lists (every member, 24 edge non-members, run-lengths)
+plus the `byte` control. 17 blocks / 420 cells, every block `# pcre2-only`,
+every cell read from libpcre2 10.46 (transcript
+`docs/dev/lanes/k7273_evidence/hv_space_10.46.txt`).
+
 ## The gap as it stood before stage 4 (kept for the record)
 
 Per the manager's explicit instruction at promotion time: `axis06_
