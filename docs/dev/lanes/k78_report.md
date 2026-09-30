@@ -140,13 +140,21 @@ dead-group DFA artifacts change in length.
 - `make` clean. `make strict`: "whole tree compiles clean with -Werror -Wshadow".
 - `scripts/m6read_check_sab_anchors.py`: 391 / 407, all resolve.
 - `run_nomatch_caps.sh`: 7/0 here, 4 of 7 red pre-fix and under S439 (§4).
-- The chain (`build/k78s/chain.sh`, log `build/k78s/chain_summary.txt`, one
-  line per target, `CHAIN-DONE` at the end) runs `test-codegen`,
-  `test-registry`, `test-rxtsource`, `test-cpset-structure`,
-  `test-anchored-match`, and the corpus slice `tests/recursion/define.rxt
-  realworld.rxt tests/captures/*.rxt tests/base/groups.rxt`. RESULTS: see the
-  handback message; if this line was not updated, they are OWED from that log.
-  Read each target's verdict from its `v_<target>.log` make-error lines.
+- `make test-codegen`: **13/14 scripts** (191 s). `run_nomatch_caps.sh` 7/0.
+  `run_codegen_tests.sh` passes, which covers `ABI_EXPECT=55` and SABANCHOR's
+  391 rows. The one red is `run_inline_capability.sh` ("nm could not read
+  arm_a.o"), the standing darwin probe. It was A/B'd: it is red identically
+  with the branch-point compiler, so it predates this lane.
+- OWED, still running detached when this was written: `test-registry`,
+  `test-rxtsource`, `test-cpset-structure`, `test-anchored-match`, and the
+  corpus slice (`tests/recursion/define.rxt realworld.rxt tests/captures/*.rxt
+  tests/base/groups.rxt`). The chain is `worktrees/k78/build/k78s/chain.sh`.
+  Its summary is `worktrees/k78/build/k78s/chain_summary.txt`: one
+  `<target> rc=N Ns` line per target, ending in `CHAIN-DONE`. Read each
+  target's verdict from the make-error lines in its
+  `worktrees/k78/build/k78s/v_<target>.log` (`v_corpus.log` for the slice).
+  Of these, cpset's `EMITTED_BYTES` manifest and anchored-match's dead-group
+  witnesses are the likeliest readers to move.
 
 ## 8. Owed (manager)
 
