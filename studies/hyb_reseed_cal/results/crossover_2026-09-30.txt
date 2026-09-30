@@ -1,0 +1,7 @@
+# crossover re-run, lane reseedfix, 2026-09-30 00:19 EDT, Apple M1, gcc-16 -O2, load1 6.00
+# PCREC_BASE = branch point 23645945 (abi 46), built from git archive; xover.sh NAME PATTERN ENC UNIT
+# columns: step/always-re-seed ns-per-byte ratio at failing-candidate gap g (>1: re-seed wins)
+fixed fl=1 prog=1820ULL : g1:0.07 g2:0.13 g3:0.19 g4:0.25 g6:0.38 g8:0.53 g12:0.80 g16:1.03 g24:1.59 g32:2.15
+varw fl=0 prog=2630ULL : g1:0.33 g2:0.68 g3:0.98 g4:1.38 g6:1.90 g8:2.68 g12:4.09 g16:5.54 g24:8.51 g32:11.22
+lkab fl=1 prog=1818ULL : g1:0.03 g2:0.07 g3:0.10 g4:0.13 g6:0.19 g8:0.27 g12:0.39 g16:0.53 g24:0.83 g32:1.08
+neg fl=0 prog=2041ULL : g1:0.46 g2:0.72 g3:1.03 g4:1.21 g6:1.92 g8:2.28 g12:3.17 g16:4.44 g24:5.94 g32:8.02   (g in CHARACTERS: unit = (g-1)x語 + 日本, 3 bytes each)

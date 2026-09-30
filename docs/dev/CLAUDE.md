@@ -766,6 +766,10 @@ change.
   commands, the three hand-twin diffs, a subject generator, a find-all
   driver, and Mac scratch numbers) for a bench dev with no access to
   pcrec's tree. Own CLAUDE.md.
+- `reseed/` — `[OPT-HYB-RESEED]`'s instruments and results (2026-09-29,
+  lane reseed): the D77 census, the byte-identity sweep, the per-startpos
+  answer differential and the Mac scratch timing table. Own CLAUDE.md. The
+  design is `docs/design/hyb_reseed.md`.
 - `ph3_reassessment_2026-09-28.md` — D125 close-out PHASE 3 (lane ph3survey, read-only, 2026-09-28): the eleven dormant/parked rows ([TT-4M], [DD-8], [DD-11], [CC-CLANG], [OPT-3], [OPT-5], [ENG-ABS], [ENG-ISL], [DD-13], [DD-13b.W1.3], [CLS-TREE]) each reassessed — charter, delivered vs remaining, trigger state against what shipped since, a PROPOSED disposition (CLOSE / CLOSE-AND-FILE / RE-PARK / RE-CHARTER) — for Frank's ruling. Proposals, not rulings; the plan rows change only when ruled.
 - `ucp_study.md` — [UCP] THE STUDY (2026-09-28, lane ucpthink, opus, study
   only, nothing under `src/`/`tests/`/`docs/spec/`; the design is a later

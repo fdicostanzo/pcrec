@@ -10903,6 +10903,142 @@ static void vm_plan_entry(Vm *v, const VmPlan *pl, VmEntry *en)
     en->shape = shape;
 }
 
+/* ---- [OPT-HYB-RESEED] THE HYBRID RETRY'S RE-SEED DECISION ---------------
+ *
+ * docs/design/hyb_reseed.md is the note; docs/spec/tuning.md §2.35 the
+ * contract. After a failed attempt the hybrid's loop either STEPS to the
+ * next character or asks the prefilter again (RE-SEEDS). A failed attempt
+ * can only follow a prefilter answer when the prefilter's language is larger
+ * than the pattern's — the three erasures `Vm.mrl_win` already excludes — so
+ * that is where the choice matters, and which arm is cheaper depends on how
+ * far away the next prefilter answer is: re-seeding costs one prefilter call
+ * (~25 ns on the Mac, about constant), stepping costs one failed VM attempt
+ * per character (1.6 ns frameless to 8.6 ns framed, measured).
+ *
+ * The predicates are a CLOSED tag set evaluated by one exhaustive switch
+ * (`vm_reseed_holds`), clskit's `ROWS` shape; the actions likewise. */
+enum { VRS_P_EXACT, VRS_P_CLAMPED, VRS_P_DENSE, VRS_P_TRUE };
+enum { VRS_A_FIXED, VRS_A_ADAPT };
+enum { VRS_S_NONE, VRS_S_FIRST, VRS_S_CAP };
+
+/* The first-match table. The walk skips a row whose deny bit is set or whose
+ * predicate fails; the last row is undeniable and always holds. `exact`
+ * stays first and undeniable because nothing may make an exact-language
+ * hybrid's retry adaptive: its clamped form's window END is live (D51
+ * ruling 2) and a step would carry it stale. `clamped` is undeniable for
+ * the CONTRACT's sake: past it, an adaptive retry runs a subset of the
+ * attempts today's retry runs, so a give-up can become an answer and never
+ * the reverse; on a clamped hybrid today's retry already re-seeds after
+ * every failure, a step block would ADD attempts, and the measured gain was
+ * mixed (r1 panel sem F1, docs/dev/reseed/clamped.md). The two adaptive rows run ONE
+ * machine and differ only in the starting state their last two columns
+ * name: `adaptive-dense` starts inside a capped step block that is armed,
+ * `adaptive` starts with the class's `first` probation, unarmed. */
+const PcrecReseedRow pcrec_reseed_rows[] = {
+    { "exact", 0,
+      "the prefilter answers for the pattern's own language (no cut, no "
+      "lookaround, no count collapse — Vm.mrl_win), so nothing is gained: "
+      "today's retry, the clamp recompute where an MRL clamp exists, else a step",
+      VRS_P_EXACT, VRS_A_FIXED, VRS_S_NONE, false },
+    { "clamped", 0,
+      "an MRL clamp exists, so today's retry already re-seeds after every "
+      "failed attempt: kept, because a step block would add attempts it "
+      "skips (an answer could become a give-up) for a gain measured mixed",
+      VRS_P_CLAMPED, VRS_A_FIXED, VRS_S_NONE, false },
+    { "adaptive-dense", PCREC_NO_HYB_RESEED,
+      "the compile's byte-rate prior (the built-in default under -e byte, "
+      "cardinality where the prior is NONE) puts the candidate scan's byte "
+      "set at a mean gap under the class's calibrated crossover: adaptive, "
+      "starting inside an armed step block",
+      VRS_P_DENSE, VRS_A_ADAPT, VRS_S_CAP, true },
+    { "adaptive", PCREC_NO_HYB_RESEED,
+      "always, on an over-approximating prefilter: adaptive, starting with a "
+      "short step probation, then re-seed mode",
+      VRS_P_TRUE, VRS_A_ADAPT, VRS_S_FIRST, false },
+    { "fixed", 0,
+      "always (fallback, the deny's landing row): today's retry",
+      VRS_P_TRUE, VRS_A_FIXED, VRS_S_NONE, false },
+};
+const int pcrec_reseed_nrows =
+    (int)(sizeof pcrec_reseed_rows / sizeof pcrec_reseed_rows[0]);
+
+/* The measured calibration, one row per program class (hyb_reseed.md §3),
+ * indexed by `has_push`. `gap` and `first` (frameless) are measured
+ * crossovers; the rest are chosen settings §3 names as such:
+ *
+ *   gap    the crossover, in subject bytes, below which a re-seed's jump
+ *          counts as SHORT (stepping that far is cheaper than re-seeding);
+ *   block  the first step block's length, in failed attempts, entered on a
+ *          short gap once the block is ARMED (an earlier short gap arms
+ *          it). Each short PROBE after a block doubles the next one, so a
+ *          long dense run pays a vanishing share of re-seeds, and a long
+ *          gap disarms it;
+ *   cap    the longest block, which bounds what one wrong block (the
+ *          subject turned sparse inside it) can waste. A power-of-two
+ *          multiple of `block`, so the doubling lands on it exactly;
+ *   first  the step budget a call spends before its first re-seed. A
+ *          find-all over a match-dense subject makes many short calls,
+ *          each re-learning its density, so a frameless call (a step costs
+ *          almost nothing) steps a whole block first, while a framed call
+ *          (a step costs a third of a re-seed) re-seeds almost at once.
+ *
+ * The emitted retry spells all four as literals, and tests/codegen's
+ * [OPT-HYB-RESEED] calibration check reads them back per class. The
+ * `clskit.c` `PLACE` precedent: a `--tune` cell would move these, and none
+ * does today (D103: a cell needs a measured two-axis rate). */
+typedef struct { unsigned gap, block, cap, first; } VmReseedCal;
+static const VmReseedCal vm_reseed_cal[2] = {
+    { 16, 64, 1024, 64 },  /* frameless: a failed attempt is a few compares */
+    {  4, 16,   64,  2 },  /* framed: a slot write, a trail entry, a push, a pop */
+};
+
+/* The decision `vm_plan_reseed` hands the stamp and the search body. */
+typedef struct {
+    const PcrecReseedRow *row;          /* NULL: no prefilter, nothing to decide */
+    VmReseedCal cal;                    /* the class calibration the text spells */
+    unsigned steps0, block0;            /* the row's starting state, resolved */
+} VmReseed;
+
+/* Does predicate `p` hold for this hybrid? The candidate rate is asked only
+ * when a row reaches it, so an exact hybrid never records the ask. */
+static bool vm_reseed_holds(const Vm *v, const VmReseed *rs, unsigned char p)
+{
+    switch (p) {
+    case VRS_P_EXACT: return v->mrl_win;
+    case VRS_P_CLAMPED: return v->nclamp > 0;
+    case VRS_P_DENSE:
+        return (unsigned long long)pcrec_dfa_cand_ppm(v->cx) * rs->cal.gap > 1000000ull;
+    case VRS_P_TRUE:  return true;
+    }
+    return false;
+}
+
+/* Chooses the hybrid retry's re-seed row and its calibration into `rs`.
+ *
+ * READS `job->fit.prefilter` (the flag `prefn` is built from), `v->mrl_win`,
+ * `v->has_push` and the deny mask; the dense row asks the candidate scan's
+ * rate. Emits nothing.
+ *
+ * THE INVARIANT A CALLER MUST NOT BREAK: it runs after `vm_plan_entry`
+ * (`has_push` is final there) and before the first stamp, because
+ * `<PREFIX>_VM_RESEED` reports it and the search body spells it. */
+static void vm_plan_reseed(Vm *v, VmReseed *rs)
+{
+    memset(rs, 0, sizeof *rs);
+    if (!v->cx->job->fit.prefilter) return;
+    rs->cal = vm_reseed_cal[v->has_push];
+    for (int i = 0; i < pcrec_reseed_nrows; i++) {
+        const PcrecReseedRow *r = &pcrec_reseed_rows[i];
+        if (r->deny & v->cx->opt->flags) continue;
+        if (!vm_reseed_holds(v, rs, r->pred)) continue;
+        rs->row = r;
+        rs->steps0 = r->start == VRS_S_CAP ? rs->cal.cap
+                   : r->start == VRS_S_FIRST ? rs->cal.first : 0;
+        rs->block0 = r->armed ? rs->cal.block : 0;
+        return;
+    }
+}
+
 /* Writes the artifact's STAMPS: the `#define <PREFIX>_…` block a consumer, a
  * tests/codegen structural check or a build-time `#ifdef` reads the
  * compiler's own decisions off. Engine and why; the prefilter and which
@@ -10923,7 +11059,8 @@ static void vm_plan_entry(Vm *v, const VmPlan *pl, VmEntry *en)
  * THE INVARIANT A CALLER MUST NOT BREAK: it runs after `pcrec_emit_prologue`
  * — which writes the declarations — and before any storage type, macro or
  * entry, because those are declared FROM the sizing macros written here. */
-static void vm_emit_stamps(Vm *v, const VmPlan *pl, const VmEntry *en)
+static void vm_emit_stamps(Vm *v, const VmPlan *pl, const VmEntry *en,
+                           const VmReseed *rs)
 {
     Ctx *cx = v->cx;
     Job *job = cx->job;
@@ -11097,6 +11234,11 @@ static void vm_emit_stamps(Vm *v, const VmPlan *pl, const VmEntry *en)
             pcrec_sb_stamp_str(c, v->up, "VM_PREFILTER_LANG_WHY", "exact");
             break;
         }
+        /* [OPT-HYB-RESEED] AND WHAT THE RETRY DOES WITH IT: the name of the
+         * `pcrec_reseed_rows` row that fired, decided once in
+         * `vm_plan_reseed`. Gated with its two neighbours for their reason —
+         * with no prefilter there is nothing for a retry to re-ask. */
+        pcrec_sb_stamp_str(c, v->up, "VM_RESEED", rs->row->name);
     }
     /* [DD-13c] (r37 #6) A HYBRID ALSO STAMPS THE SCAN IT INLINES, and this is
      * the finding stated as code: `RX_VM_PREFILTER "hybrid"` says a DFA scan is
@@ -12316,7 +12458,7 @@ static const char *vm_vars_resolve_insert(Vm *v, const char *ctxexpr)
 }
 
 static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
-                                const VmEntry *en)
+                                const VmEntry *en, const VmReseed *rs)
 {
     Ctx *cx = v->cx;
     Job *job = cx->job;
@@ -13050,6 +13192,58 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
                    ? "            window_end = (size_t)window[0][1] < subject_length ? (size_t)window[0][1] : subject_length;\n"
                    : "            window_end = subject_length;\n");
 
+    /* [OPT-HYB-RESEED] THE RETRY'S SEED, as `vm_plan_reseed`'s row chose it.
+     * A FIXED row keeps `retry_win` above, today's text byte for byte. An
+     * ADAPTIVE row replaces it with the two-mode loop tail below, and its two
+     * per-call locals are declared above the loop (`reseed_decl`): the state
+     * is the CALL's, never the artifact's, so the matcher stays reentrant.
+     *
+     * THE TAIL. In step mode (`reseed_steps` nonzero) the loop steps as a
+     * clamp-free hybrid always did. Otherwise it re-seeds exactly as
+     * `retry_win` does and reads the gap the answer jumped. A short gap with
+     * the block unarmed (`reseed_block` 0) arms it; a short gap with the
+     * block armed starts a step block and doubles the next one up to the
+     * cap; a long gap disarms. The block ends in one re-seed — its PROBE —
+     * so a dense-then-sparse subject cannot stay stepping. Arming on the
+     * first short gap rather than stepping on it is what keeps the
+     * alternating pattern (a failing candidate pair, then a long gap) in
+     * re-seed mode. The row's own columns name where a call starts
+     * (`steps0`/`block0`, resolved in `vm_plan_reseed`).
+     *
+     * THE TEXT IS PRICED: every adaptive hybrid carries it, so it is two
+     * locals and three short lines, and no helper — a search body has ONE
+     * retry site, so an emitted function would be the same bytes plus a
+     * signature (r1 panel chk F1, docs/dev/lanes/reseed_report.md §10).
+     *
+     * SOUND ON BOTH ARMS for the reasons each already was: stepping is
+     * today's clamp-free retry, re-seeding is today's clamped one (D51 ruling
+     * 2 — the prefilter answers for `[attempt_position, n)`, and L(P) is a
+     * subset of L(erase(P))). An adaptive row is reached only past `exact`
+     * and `clamped`, so the artifact has no clamp and no window to carry:
+     * the attempts it runs are a subset of the ones today's step runs. */
+    const char *retry_seed = retry_win;
+    const char *reseed_decl = "";
+    if (rs->row && rs->row->action != VRS_A_FIXED) {
+        if (v->nclamp > 0)
+            pcrec_ctx_fail(v->cx, 0, "internal error: an adaptive re-seed row "
+                           "fired on a clamped hybrid, which the table keeps "
+                           "on today's retry");
+        reseed_decl = vm_rolef(v,
+            "    unsigned reseed_steps = %u, reseed_block = %u;\n",
+            rs->steps0, rs->block0);
+        retry_seed = vm_rolef(v,
+            "        if (reseed_steps) reseed_steps--;\n"
+            "        else {\n"
+            "            ptrdiff_t window[1][2];\n"
+            "            if (%s(subject, subject_length, attempt_position, window) != 1) return 0;\n"
+            "            if ((size_t)window[0][0] - attempt_position >= %u) reseed_block = 0;\n"
+            "            else if (!reseed_block) reseed_block = %u;\n"
+            "            else { reseed_steps = reseed_block; if (reseed_block < %u) reseed_block *= 2; }\n"
+            "            attempt_position = (size_t)window[0][0];\n"
+            "        }\n",
+            prefn, rs->cal.gap, rs->cal.block, rs->cal.cap);
+    }
+
     /* [M4.6d] THE MRL CEILING, and D51 ruling 2's three obligations, all
      * discharged in this one function.
      *
@@ -13178,6 +13372,7 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
          * because the resolve reads the fields the line above writes. */
         "%s"
         "%s"
+        "%s"
         "    for (;;) {\n"
         "        ctx.pos = attempt_position;\n"
         "        result = %s_match_anchored(&ctx, run%s%s);\n"
@@ -13213,6 +13408,7 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
         /* [VAR] the ctx's own `vars`/`nvars`, then the resolve. */
         v->cx->n_var_exps ? "    ctx.vars = vars; ctx.nvars = nvars;\n" : "",
         vm_vars_resolve_insert(v, "&ctx"),
+        reseed_decl,
         v->p, v->nclamp > 0 ? ", window_end" : "",
         /* [M6.2 wave D] `startpos`, NOT `start`. `start` is the position this
          * ATTEMPT begins at and the loop below moves it; `\G` asks about the
@@ -13222,7 +13418,7 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
          * `start` here would make `\G` an unconditional truth and turn
          * `\Gfoo` into `foo`. */
         v->ngst > 0 ? ", search_from" : "",
-        v->up, v->up, v->up, v->up, v->up, v->p, att_max, retry_adv, retry_win,
+        v->up, v->up, v->up, v->up, v->up, v->p, att_max, retry_adv, retry_seed,
         v->p);
 }
 
@@ -13673,6 +13869,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
     GenNames g;
     VmPlan pl;
     VmEntry en;
+    VmReseed rs;
 
     vm_init(&v, cx, root, &g);
     vm_plan(&v, root, &pl);
@@ -13682,11 +13879,12 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * AFTER the entry rung is chosen on the program's length, so the table
      * form moves the table and its reads and nothing the size term decides. */
     vm_cls_tables(&v);
+    vm_plan_reseed(&v, &rs);
 
     pcrec_emit_prologue(cx, &g, v.ncaps, &pl.bufs, v.nlitrun > 0);
-    vm_emit_stamps(&v, &pl, &en);
+    vm_emit_stamps(&v, &pl, &en, &rs);
     vm_emit_storage(&v, &pl);
-    vm_emit_search_body(&v, &g, &pl, &en);
+    vm_emit_search_body(&v, &g, &pl, &en, &rs);
     vm_emit_entries(&v, &g, &pl, &en);
     vm_emit_epilogue(&v, &g, &pl);
 }

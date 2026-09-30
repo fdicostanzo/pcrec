@@ -684,6 +684,18 @@ fi
 # `a(b|c)+d` against the lane's branch point (lane/s4build 1c887998) at the
 # same `-o` basename: the stamp line and the two same-length abi digits, no
 # other line; the DFA rows unchanged.
+#
+# RE-RECORDED, 2026-09-30, lane land5 ([OPT-HYB-RESEED] landed on land4, abi
+# 48 -> 49), THREE ROWS, EMITTED_BYTES only — the VM HYBRIDS in the sample:
+# `a(b|c)+d` and `(a)(b)(c)` each +29 (the `#define RX_VM_RESEED "exact"`
+# line: an exact-language hybrid keeps today's retry), `(?<=foo)bar` +564
+# (the `adaptive` row: the stamp line plus the adaptive retry's text; its
+# prefilter over-approximates and no MRL clamp exists). The two non-hybrid VM
+# rows and the DFA rows do not move. VERIFIED BY DIFFING each pattern's
+# artifact against a scratch build of lane/land4 (25964e26) at the same `-o`
+# basename (`-o -`): the stamp line and the two same-length abi digits for the
+# first two, and for the third the stamp line, the two abi digits and the
+# adaptive retry's lines only.
 MANIFEST="$ROOT_DIR/tests/codegen/manifests/m5_stage1_stamps.tsv"
 if [ -d "$(dirname "$MANIFEST")" ]; then
     if [ -f "$MANIFEST" ]; then

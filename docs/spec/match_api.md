@@ -2058,7 +2058,30 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `48` on every artifact today ([CLS-TREE] S4 and
+- **`rx_info.abi` is `49` on every artifact today ([OPT-HYB-RESEED] bumped
+  it from 48, 2026-09-30: THE VM HYBRID'S RETRY RE-SEEDS ADAPTIVELY).** A VM
+  hybrid whose prefilter answers for a LARGER language than the pattern's (a
+  lookaround or an atomic cut erased, or the `[OPT-4]` count collapse) used
+  to step one character after a failed attempt wherever no MRL clamp existed,
+  walking every character to the subject end once one prefilter answer
+  failed. Its retry now either steps or asks the prefilter again, chosen per
+  CALL from the gaps the prefilter's own answers jump (`docs/spec/tuning.md`
+  §2.35, `docs/design/hyb_reseed.md`); an exact-language hybrid and a
+  clamped one keep their retry byte for byte. That is an emitted-text move
+  for identical inputs and so an `abi` event (D76). Every hybrid artifact
+  gains ONE stamp line, `<PREFIX>_VM_RESEED` (§6.3), naming the row that
+  fired; a non-hybrid artifact gains nothing but this digit. No struct
+  offset moves, no `rx_info` member is added or changed, and no match,
+  no-match or span moves. A GIVE-UP can: the adaptive retry runs a subset of
+  the attempts the abi-48 retry ran, so a call that gave up
+  (`PCREC_ERR_STEPS`/`_WORK`) under a budget can now answer, and never the
+  reverse (tuning.md §2.35 states why, and why clamped hybrids are kept on
+  the old retry to hold that direction). The new deny bit
+  (`-fno-hyb-reseed`, `PCREC_NO_HYB_RESEED`, bit 37) is MASKED out of
+  `rx_info.flags`, so under it an adaptive hybrid's program is the abi-48
+  program apart from its `VM_RESEED` line and this digit
+  (`docs/dev/lanes/reseed_report.md` has the identity sweep).
+- **`rx_info.abi` was `48` ([CLS-TREE] S4 and
   [OPT-CLSPACK] bumped it from 47 TOGETHER, ONE event, 2026-09-30: A WIDE CLASS
   ON THE VM IS ONE DECODE AND ONE CLASS-MATCHER FUNCTION, AND MANY TABLE-READ
   BYTE CLASSES SHARE ONE ATOM TABLE).**
@@ -3066,6 +3089,26 @@ engine-scoped.**
   It has **no `rx_info` mirror**, on `<PREFIX>_DFA_TABLE`'s precedent and
   for the same reason: nothing measured reads one yet (D77), and the trigger
   to add one is a named consumer, not symmetry.
+
+  **[OPT-HYB-RESEED], 2026-09-29 (abi 49): `<PREFIX>_VM_RESEED`, what the
+  hybrid's RETRY does after a failed attempt** (`tuning.md` §2.35). Same
+  IFF as `_VM_PREFILTER_LANG` — every artifact whose `_VM_PREFILTER` reads
+  `"hybrid"`, and no other. The value is the name of the first-match row
+  that fired (`pcrec --list-axes` prints the table, axis `hyb-reseed`):
+
+  | value | meaning |
+  |---|---|
+  | `"exact"` | the prefilter answers for the pattern's own language, so a failed attempt cannot follow one of its answers; the retry is the one this compiler emitted before abi 49 |
+  | `"clamped"` | over-approximating prefilter on an artifact with an MRL clamp: the pre-abi-49 retry, which already re-seeds after every failed attempt |
+  | `"adaptive-dense"` | over-approximating clamp-free prefilter, and the compile's byte-rate prior predicts dense candidates: the retry steps or re-seeds per call, starting in step mode |
+  | `"adaptive"` | over-approximating clamp-free prefilter: the retry steps or re-seeds per call, starting with a short step budget |
+  | `"fixed"` | `-fno-hyb-reseed` on an over-approximating clamp-free prefilter: the pre-abi-49 retry |
+
+  A SELECTION FACT, emitted under `_VM_PREFILTER_LANG`'s IFF rather than
+  unconditionally, and like it with no `rx_info` mirror (D77). It describes run
+  time only: every value answers identically, except that an `adaptive*`
+  artifact can answer where the pre-abi-49 retry gave up on a budget (§4.5,
+  tuning.md §2.35).
 
   **[OPT-3], 2026-08-26: a THIRD `_DFA_*` macro, `<PREFIX>_DFA_TABLE`**, on
   exactly the same footing and under exactly the same IFF — every artifact

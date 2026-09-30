@@ -3568,3 +3568,27 @@ never edited afterwards.
   19,608-subject divergences with no engine or abi change. Memo
   `docs/dev/k75_measurement.md`; evidence in `k75m_evidence/` (own CLAUDE.md).
 - `land4_report.md` — [CLS-TREE] S4 + [OPT-CLSPACK] LANDED onto main's tip (2026-09-30, lane land4, sonnet): ONE abi event 47 -> 48 (the readers found by grep, K73's 47 entry kept), spec §2.35 -> §2.34, `-fno-cls-kit` also denies the atom row (manager ruling (a); `[deny-kit]`, S406, S401 re-anchored), every pin combined by mechanism, recursion-identity (A) ctx-node bucket combined with the atom axis. `cls_identity.py --ref main` explained (normalized run 514 movers / 67 refuse->ok; under `-fno-cls-kit` 21 movers, 0 asymmetric). Linux full `make test` OWED.
+- `reseed_report.md` — [OPT-HYB-RESEED] (2026-09-29, lane reseed, opus): the
+  VM hybrid's retry, re-seeding from the prefilter or stepping, chosen per
+  CALL by ONE first-match table (`pcrec_reseed_rows`: exact /
+  adaptive-dense / adaptive / fixed), with `-fno-hyb-reseed` (bit 37),
+  `<PREFIX>_VM_RESEED` and abi 46 → 47 (49 at the land5 landing, after
+  the S4/CLSPACK 48). Read §1 for the five deviations from
+  the brief. The sharpest is that N is not one number: the step cost varies
+  ~5× with the program's frame discipline, so the calibration is one row per
+  class. The report also carries the D77 census (439/455 clamp-free
+  over-approximating hybrids), the identity sweep (6,756 rows, 0
+  violations), the per-startpos answer differential, S370/S371, the Mac
+  scratch table and a DRAFT bench ask (not sent). Design:
+  `docs/design/hyb_reseed.md`. **§10 is fix lane `reseedfix`'s record
+  (2026-09-30, after the r1 panel) and supersedes the earlier sections
+  where they disagree**: a fifth row `clamped`, a smaller adaptive text,
+  the timing re-run with its noise floor (×0.62 XCALL trigger cell), and
+  §4's six DIFFs traced to the differential's own driver.
+- `land5_report.md` — [OPT-HYB-RESEED] LANDED on land4 (S4 + CLSPACK), abi 48 -> 49
+  (2026-09-30, lane land5, sonnet): the reseedfix merge, spec §2.33 -> §2.35, bit
+  37, registry axes pin 155, the cpset manifest's three hybrid rows, the land4
+  re-merge, and the validation numbers (recursion-identity 16/0, idsweep 0
+  violations / 895 adaptive movers, answer_diff 0 DIFF over 2.36M cells, S370-S372
+  DETECTED); `-fno-hyb-reseed` axes and the Linux full `make test` are owed with log
+  paths.

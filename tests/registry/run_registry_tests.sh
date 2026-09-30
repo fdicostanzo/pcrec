@@ -596,17 +596,27 @@ fi
 #
 # 144 -> 147 at [OPT-CLSPACK] (2026-09-30): `-fno-cls-pack`
 # (`PCREC_NO_CLS_PACK`, bit 38), one more single-bit triple, the same shape.
+# 147 -> 153 at [OPT-HYB-RESEED] (2026-09-29, lane reseed): `-fno-hyb-reseed`
+# (`PCREC_NO_HYB_RESEED`, bit 37) sits on TWO rows of the live
+# `pcrec_reseed_rows` table (`adaptive-dense`, `adaptive`), each checked as
+# its own (macro, bit, flag) triple — 2 x 3 = 6 lines, the run-pinned pair's
+# shape rather than lit-run's. (Measured on the reseed lane's own tree at 141 -> 147.)
+# 153 -> 155 at [OPT-HYB-RESEED]'s fix lane (2026-09-30, lane reseedfix, r1
+# panel chk F6.3): ONE new `check_value_set "RX_VM_RESEED"` pair (dump vs
+# match_api.md §6.3's table, both directions = 2 PASS). The new `clamped` row
+# carries no deny bit, so it adds no macro/flag/doc triple. Combined with land4's +6 (kit, pack)
+# and re-measured on the land5 tree: 155 PASS.
 axesn="$(grep -c '^PASS: ' "$AXESOUT" || true)"
-if [ "$axesn" -ne 147 ]; then
+if [ "$axesn" -ne 155 ]; then
     if grep -q "^checks failed: 0" "$AXESOUT"; then
-        echo "registry: axes_registry_check COVERAGE CHANGED — $axesn passing checks, expected 147." >&2
+        echo "registry: axes_registry_check COVERAGE CHANGED — $axesn passing checks, expected 155." >&2
         echo "registry:   if you added or removed axes/checks on purpose, update this number" >&2
         echo "registry:   in the same commit; if not, coverage was removed" >&2
     else
         axesnf="$(sed -n 's/^checks failed: //p' "$AXESOUT" | tail -1)"
-        echo "registry: axes_registry_check shows $axesn passing checks (147 expected; ${axesnf:-?} failed," >&2
+        echo "registry: axes_registry_check shows $axesn passing checks (155 expected; ${axesnf:-?} failed," >&2
         echo "registry:   so a lower count is expected here). Fix the failures first; then this" >&2
-        echo "registry:   number must return to 147 — if it does not, coverage was removed too" >&2
+        echo "registry:   number must return to 155 — if it does not, coverage was removed too" >&2
     fi
     rc=1
 fi

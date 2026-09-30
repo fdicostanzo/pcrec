@@ -743,6 +743,18 @@ check_value_set "RX_UNROLL_K_WHY (compile.c cx.size_term_why derivation)" \
     "" \
     "src/core/compile.c's cx.size_term_why derivation"
 
+# [OPT-HYB-RESEED] `RX_VM_RESEED`, 2026-09-30 (lane reseedfix, r1 panel chk
+# F6.3): dump-vs-DOCS for the hybrid retry's row names. ONE leg, not two: the
+# dump walks `pcrec_reseed_rows` live and the emitter stamps
+# `rs->row->name` off the SAME array, so a dump-vs-emitter-source leg would
+# be a control sharing its source with what it controls. The independent
+# source is the hand-written §6.3 table; tests/codegen's [OPT-HYB-RESEED]
+# witnesses stamp each of the five values once, which is the emitter half.
+check_value_set "RX_VM_RESEED" \
+    "$(extract_md_table_values "$MATCHAPI" '`<PREFIX>_VM_RESEED`, what the')" \
+    "$(dump_stamp_vals RX_VM_RESEED)" \
+    ""
+
 # The nine D46 bit constants: NOT in lib/pcrec.h (they are emitted-artifact
 # text — match_api.md §6.3's own [ABI-NS] paragraph), so EMITDFA (the
 # literal #define block emit_rx_abi_types writes) is this direction's

@@ -3477,6 +3477,37 @@ Sabotage rows S365 (a reader shares `A_CLASS`'s arm: [5b] + W4) and S366
 (`vm_isl_words`' default restored: [5a] + [5c] + W3). The W1/W2 plants
 (see-through removed from `vm_cat_flatten`; `vm_det_seq`'s arm declining)
 were measured by hand on the S3 lane (`docs/dev/lanes/s3build_report.md`).
+**[OPT-HYB-RESEED] (2026-09-29, lane reseed; reworked 2026-09-30, lane
+reseedfix, after the r1 panel): `run_codegen_tests.sh` gains an
+`[OPT-HYB-RESEED]` block** (15 checks: 11 witness rows, the clamped
+recompute, the budget arm's control and its two subjects). It covers:
+
+- `<PREFIX>_VM_RESEED` on one witness per `pcrec_reseed_rows` row, and its
+  absence on a forced-VM and a DFA artifact (both directions of the IFF).
+  The dense row reads the byte-rate PRIOR, so both of its arms are pinned:
+  ` (?=the)` is `adaptive-dense` under `-e byte` (the built-in default
+  prior) and `adaptive` under `-e utf8` (NONE: cardinality), and
+  `[a-z](?=the)` is `adaptive-dense` under NONE;
+- the prefilter call sites inside `<prefix>_search_run` (bounded to that
+  function's body): two on an adaptive artifact and on an exact or clamped
+  CLAMPED one, one on an exact clamp-free or a denied one; and no adaptive
+  text at all on a non-adaptive row;
+- THE CALIBRATION PER CLASS: every adaptive witness's retry must spell its
+  class's gap, block and cap and its row's starting state as literals,
+  hand-typed in the witness table from `docs/design/hyb_reseed.md` §3, so a
+  swapped or altered calibration row is red (r1 chk F4; S372);
+- the clamped witness keeping today's clamp recompute;
+- a BUDGET arm. `'(?<=a|é)x' -e utf8 --step-budget=2000 --emit-main` runs on
+  one failing candidate then 20,000 non-candidates, and on 40 dense failing
+  candidates then 20,000. Default must answer `nomatch` on both;
+  `-fno-hyb-reseed` must give up `steps` on both. The deny half is the arm's
+  own positive control: it is the evidence that the witness reaches the
+  step-everything retry.
+
+The budget arm is the only detector of S370, whose plant keeps every string
+the structural checks read, and the calibration check the only detector of
+S372. S371 trips both kinds of check.
+
 ## [silentred] 2026-09-30 — `run_recursion_identity.sh` comparison (A)'s sixth exception, module `ctx-node`
 
 [UCP] U2 moves every one-character lookaround / `\b` off the VM (the
