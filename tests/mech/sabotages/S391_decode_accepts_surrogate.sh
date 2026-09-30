@@ -12,7 +12,7 @@ SAB_FILE="src/enc/enc_utf8.c"
 SAB_SUITES="harness"
 SAB_HARNESS_TARGET="tests/utf8/wclass_illformed.rxt"
 SAB_DESC="the utf8 backend's one-character decode (\$_decode) loses its surrogate exclusion, so ED A0 80 decodes to U+D800, which every complemented wide class contains"
-SAB_DOC_FIGURE="PREDICTED: the engine-vm blocks of tests/utf8/wclass_illformed.rxt for PL, notA and dot red on their surrogate/surrogate-hi cells; the default-engine blocks green."
+SAB_DOC_FIGURE="MEASURED solo 2026-09-30 at the s4build tip: corpus:16fail/728pass DETECTED -- the engine-vm blocks' surrogate cells; the default-engine blocks green."
 SAB_REACH='"$PCREC" -e utf8 --engine=vm -p rx -o - --pattern "x[^a]y"'
 SAB_REACH_EXPECT='rx_decode(subject, subject_length, scan_position'
 SAB_REACH_POP='tests/utf8/wclass_illformed.rxt|xed.xa0.x80|8'

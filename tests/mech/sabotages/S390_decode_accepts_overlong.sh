@@ -22,7 +22,7 @@ SAB_FILE="src/enc/enc_utf8.c"
 SAB_SUITES="harness"
 SAB_HARNESS_TARGET="tests/utf8/wclass_illformed.rxt"
 SAB_DESC="the utf8 backend's one-character decode (\$_decode) loses its overlong floor, so an overlong 2-4 byte form decodes to a small code point that the kit route then accepts"
-SAB_DOC_FIGURE="PREDICTED: the engine-vm blocks of tests/utf8/wclass_illformed.rxt whose class holds U+0000 (PL, PUnknown, notA, dot) red on their overlong2/overlong3/overlong4 cells; the default-engine blocks green."
+SAB_DOC_FIGURE="MEASURED solo 2026-09-30 at the s4build tip: corpus:32fail/712pass DETECTED -- the engine-vm blocks' overlong cells of tests/utf8/wclass_illformed.rxt; the default-engine blocks green."
 SAB_REACH='"$PCREC" -e utf8 --engine=vm -p rx -o - --pattern "x[^a]y"'
 SAB_REACH_EXPECT='rx_decode(subject, subject_length, scan_position'
 SAB_REACH_POP='tests/utf8/wclass_illformed.rxt|xc0.x80|8'

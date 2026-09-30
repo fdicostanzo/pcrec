@@ -10,7 +10,7 @@ SAB_ID="S393-wcls-tune-unwired"
 SAB_FILE="src/gen/emit_vm.c"
 SAB_SUITES="tunedial"
 SAB_DESC="vm_wcls hands pcrec_clskit_select position 0 whatever --tune says, so the class table's size and speed rows never fire (answer-identical)"
-SAB_DOC_FIGURE="PREDICTED: tunedial §3d red at -2, -1 and +2 (3 fails)."
+SAB_DOC_FIGURE="MEASURED solo 2026-09-30 at the s4build tip: tunedial:3fail/19pass DETECTED -- §3d at -2, -1 and +2."
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='    ClsSelectIn in = { v->cx->opt->tune, 0, NULL };'
