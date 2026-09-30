@@ -1,0 +1,114 @@
+{
+ "by_pop": {
+  "bench": 299,
+  "corpus": 3048
+ },
+ "compiled": 3347,
+ "engine": {
+  "bench/dfa": 232,
+  "bench/vm": 67,
+  "corpus/dfa": 1615,
+  "corpus/vm": 1433
+ },
+ "hybrid_exact": {
+  "by_pop": {
+   "bench": 41,
+   "corpus": 1094
+  },
+  "choice_free": 185,
+  "det_all": 185,
+  "frameless": 518,
+  "lead_or_trail_nonzero": 956,
+  "lead_sets_nonzero": 406,
+  "lead_tests": {
+   "0": 705,
+   "1-2": 325,
+   "3-7": 88,
+   "8+": 17
+  },
+  "lead_tests_sum": 1605,
+  "maxw_bounded": 831,
+  "minw_sum": 7358,
+  "n": 1135,
+  "trail_tests": {
+   "0": 356,
+   "1-2": 677,
+   "3-7": 88,
+   "8+": 14
+  }
+ },
+ "hybrid_over": {
+  "by_pop": {
+   "bench": 6,
+   "corpus": 1
+  },
+  "choice_free": 0,
+  "det_all": 0,
+  "frameless": 0,
+  "lead_or_trail_nonzero": 6,
+  "lead_sets_nonzero": 1,
+  "lead_tests": {
+   "0": 7
+  },
+  "lead_tests_sum": 0,
+  "maxw_bounded": 5,
+  "minw_sum": 59,
+  "n": 7,
+  "trail_tests": {
+   "0": 6,
+   "1-2": 1
+  }
+ },
+ "q2": {
+  "artifacts_all_refined": 66,
+  "artifacts_with_dfa_and_vm_tables": 74,
+  "bitmaps_refined_by_dfa_fwd": 114,
+  "bitmaps_total": 118,
+  "bytes_saved_if_shared": 3373,
+  "dfa_nclasses_hist": {
+   "<=16": 6,
+   "<=32": 9,
+   "<=8": 56,
+   ">32": 3
+  },
+  "hybrid_artifacts": 1142,
+  "hybrid_with_atoms": 4,
+  "hybrid_with_kit": 0,
+  "hybrid_with_vm_bitmaps": 74,
+  "vm_bitmap_bytes_in_hybrids": 3776
+ },
+ "refused": 399,
+ "vm_noprefilter": {
+  "by_pop": {
+   "bench": 20,
+   "corpus": 338
+  },
+  "choice_free": 4,
+  "det_all": 4,
+  "frameless": 133,
+  "lead_or_trail_nonzero": 249,
+  "lead_sets_nonzero": 180,
+  "lead_tests": {
+   "0": 223,
+   "1-2": 128,
+   "3-7": 2,
+   "8+": 5
+  },
+  "lead_tests_sum": 203,
+  "maxw_bounded": 59,
+  "minw_sum": 422,
+  "n": 358,
+  "trail_tests": {
+   "0": 272,
+   "1-2": 86
+  }
+ },
+ "vm_prefilter": {
+  "bench/hybrid/count-collapsed": 6,
+  "bench/hybrid/exact": 41,
+  "bench/none/-": 20,
+  "corpus/hybrid/count-collapsed": 1,
+  "corpus/hybrid/exact": 1094,
+  "corpus/none/-": 338
+ }
+}

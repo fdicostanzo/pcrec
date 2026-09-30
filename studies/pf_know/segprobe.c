@@ -76,7 +76,14 @@ static bool det(const Ast *a, Seg *s)
     case A_REP: {
         if (a->u.rep.rmin != a->u.rep.rmax) return false;
         Seg one = {0}; if (!det(a->l, &one)) return false;
-        for (int i = 0; i < a->u.rep.rmin; i++) { Seg t = *s; det(a->l, &t); *s = t; }
+        /* Scale the body's measure by the count rather than walking it
+         * `rmin` times: a nested exact repeat is a product of counts. */
+        long long k = a->u.rep.rmin;
+        bool alllit = one.tests > 0 && one.lits == one.tests && one.zw == 0 && one.sets == 0;
+        s->w += one.w * k; s->tests += one.tests * k; s->zw += one.zw * k;
+        s->sets += one.sets * k; s->lits += one.lits * k;
+        if (alllit) { s->currun += one.w * k; if (s->currun > s->litrun) s->litrun = s->currun; }
+        else { if (one.litrun > s->litrun) s->litrun = one.litrun; s->currun = 0; }
         return true;
     }
     default: return false;
