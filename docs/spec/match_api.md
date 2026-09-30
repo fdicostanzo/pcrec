@@ -3918,7 +3918,7 @@ neither is parsed to produce the other.
 | `"overflowed-prefilter"` | `auto`, the VM was already chosen for another reason, and only its auto-selected PREFILTER's DFA overflowed, so the prefilter was dropped |
 | `"collapsed-prefilter"` | `auto`, a DFA build overflowed a STATE cap, and the [SEL-1] retry KEPT a prefilter by rebuilding it from the count-collapsed language (`tuning.md` §2.5, §2.17) |
 | `"declined-nullable"` | `auto`, a [SEL-1] OR [OPT-4] retry OFFERED the count-collapsed prefilter and it was DECLINED because the collapsed language is NULLABLE — it matches the empty string, so the filter could never dismiss a position. No prefilter survives, and the artifact is the one this compile produced before that retry existed (`tuning.md` §2.17, [OPT-4.1]) |
-| `"size-cap-retry"` | an emitted-SIZE cap (not a DFA state cap) REFUSED the exact artifact and a retry rebuilt a smaller one that SHIPPED. TWO rungs reach it, and they are mutually exclusive by ENGINE, so the artifact's own axis stamps say which: on a **VM hybrid** it is [LIM-1]/[OPT-4]'s rung and the count-collapsed prefilter survived (`tuning.md` §2.17, legible as `<PREFIX>_DFA_PREFILTER` with `<PREFIX>_PREFILTER_LANG_WHY "count-collapsed"`); on a **DFA artifact** it is [K53-SELRETRY]'s optional-contributor drop and the anchored match-here machine was dropped (`tuning.md` §2.15, legible as `<PREFIX>_DFA_MATCH "search-filter"`). Distinct from `"collapsed-prefilter"`, which is the [SEL-1] DFA-state-cap rung's own success — the rungs are offered under different conditions in `compile_driver`'s retry loop |
+| `"size-cap-retry"` | an emitted-SIZE cap (not a DFA state cap) REFUSED the exact artifact and a retry rebuilt a smaller one that SHIPPED. The rungs that reach it are the size-cap ladder's (`limits.md` §8), and the artifact's own axis stamps say which: on a **VM hybrid** it is [LIM-1]/[OPT-4]'s rung and the count-collapsed prefilter survived (`tuning.md` §2.17, legible as `<PREFIX>_DFA_PREFILTER` with `<PREFIX>_PREFILTER_LANG_WHY "count-collapsed"`), or — [PF-DROP], D135 — the ladder's last rung and the prefilter was DROPPED (legible as `<PREFIX>_VM_PREFILTER "none"` with `<PREFIX>_VM_PREFILTER_WHY "size cap retry, hybrid N > CAP"`, the refused artifact's bytes and the cap it exceeded — the only `"none"` that stamp is written beside); on a **DFA artifact** it is [K53-SELRETRY]'s optional-contributor drop and the anchored match-here machine was dropped (`tuning.md` §2.15, legible as `<PREFIX>_DFA_MATCH "search-filter"`), or [K59-PREMUL]'s premultiplied-table drop (`<PREFIX>_DFA_TABLE` off `"premultiplied"`). Distinct from `"collapsed-prefilter"`, which is the [SEL-1] DFA-state-cap rung's own success — the rungs are offered under different conditions in `compile_driver`'s retry loop |
 
 **THE LAST FIVE ARE ALL "FELL BACK", AND THAT IS THE DISTINCTION `_ENGINE_WHY`
 CANNOT CARRY** — the first four share one prose string (`"dfa overflowed: …"`)
@@ -4064,6 +4064,11 @@ annotations below are this document's, not emitted text):
 #define RX_ENGINE          "vm"                    /* mirrors rx_info.engine */
 #define RX_ENGINE_WHY       "capture group at pattern offset 1"
 #define RX_VM_PREFILTER      "hybrid"               /* or "none" */
+/* #define RX_VM_PREFILTER_WHY "size cap retry, hybrid 1026588 > 1000000"
+                                                     [PF-DROP], emitted ONLY
+                                                     where the size-cap
+                                                     ladder dropped the
+                                                     prefilter (below) */
 #define RX_VM_PREFILTER_LANG "exact"                 /* or "count-collapsed";
                                                         the count-collapse axis
                                                         ONLY -- the END proof is

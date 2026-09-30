@@ -2303,6 +2303,7 @@ enum {
      *   | [OPT-4] prefilter collapse | VM hybrid | `_DFA_PREFILTER` set, `_PREFILTER_LANG_WHY "count-collapsed"` |
      *   | [K53-SELRETRY] anchored drop | DFA | `_DFA_MATCH "search-filter"` (unaffected: `_DFA_TABLE`) |
      *   | [K59-PREMUL] premul drop | DFA | `_DFA_TABLE` "indexed"/"mixed" where it would otherwise read "premultiplied" (unaffected: `_DFA_MATCH`, unless rung 1 ALSO fired) |
+     *   | [PF-DROP] prefilter drop | VM hybrid | `_VM_PREFILTER "none"` with `_VM_PREFILTER_WHY "size cap retry, hybrid N > CAP"` (D135; may follow the [OPT-4] collapse on one compile) |
      *
      * A DFA-engine artifact reading this value with BOTH `_DFA_MATCH
      * "search-filter"` and `_DFA_TABLE` off "premultiplied" had both rungs
@@ -2415,7 +2416,19 @@ enum {
      * ladder mid-ladder with no measured need to justify the interaction —
      * D77, wait for one. */
     SDR_NO_PREMUL   = 2,
-    SDR_MAX         = 2
+    /* [PF-DROP] (D135) the VM HYBRID'S PREFILTER. Its loss costs the search
+     * the prefilter's candidate skipping — every start position is tried by
+     * the VM itself — and no answer (the prefilter is a filter; §6.1's
+     * exactness claim). The LAST rung because it is the dearest one
+     * measured (docs/dev/lanes/pfdrop_report.md §2). Scoped to the VM
+     * engine, so on a VM artifact rungs 1 and 2 were never applicable and
+     * "up to and including" drops only this one. `RX_VM_PREFILTER` reads
+     * `"none"`, `RX_VM_PREFILTER_WHY` names the rung, and `RX_ENGINE_SEL`
+     * reads `size-cap-retry`. Never offered on a [SEL-1] retry
+     * (`dfa_disabled`), so a drop rung and a DFA overflow still never meet
+     * on one compile (`esel_of`'s premise check). */
+    SDR_NO_PREFILTER = 3,
+    SDR_MAX         = 3
 };
 
 /* [PATFACTS] the pattern-facts record's CONSUMER header: types and

@@ -3408,3 +3408,14 @@ character to the subject end once one prefilter answer failed.
   `tests/codegen/run_codegen_tests.sh`'s [M5-SEAM] fixtures (every row
   declares `valid_upto`; three rows are its callers), `make test-axes`'
   `-futf-check` arm. Sabotage rows S409-S414.
+
+## [PF-DROP] `<PREFIX>_VM_PREFILTER_WHY` (2026-09-30, D135)
+
+`emit_vm.c`'s stamp block writes `<PREFIX>_VM_PREFILTER_WHY "size cap retry,
+hybrid N > CAP"` beside `_VM_PREFILTER "none"` ONLY when `compile_driver`'s
+size-cap ladder took its prefilter-drop row (`Ctx.size_drop_rung ==
+SDR_NO_PREFILTER`); `N`/`CAP` are `Ctx.size_cap_bytes`/`size_cap_limit`, the
+refused attempt's figures the driver carried forward. No artifact that
+compiled before the rung existed carries the line, so no emitted byte of an
+existing artifact moved (corpus sweep in `docs/dev/lanes/pfdrop_report.md`).
+`rx_info.flags` masks `PCREC_FAST_OR_FAIL` (`emit_dfa.c`'s strategy mask).

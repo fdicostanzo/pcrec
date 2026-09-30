@@ -1,0 +1,22 @@
+# S423 — [PF-DROP] (D135) THE PREFILTER DROP IS CLASSIFIED NOT DEGRADING.
+#
+# `fit_rungs[]`'s `degrading` column is the classification D135 asks for,
+# and `--fast-or-fail` reads nothing else. Flip the prefilter-drop row's
+# cell and the switch silently allows the dearest rung the ladder has
+# (measured up to ~4x on its witness): the one row where a wrong
+# classification costs the most, and a row-local defect S421 (the
+# predicate) cannot stand in for.
+#
+# WHAT SEES IT: the resource section's [PF-DROP/ff] prefilter-drop cell
+# (`(\p{Xwd})` must refuse under the switch) — and only that one; the other
+# three rungs' cells stay green, which is the row's own locality check.
+SAB_ID="S423-prefilter-drop-not-degrading"
+SAB_FILE="src/core/compile.c"
+SAB_SUITES="resource"
+SAB_DESC="the prefilter-drop row's degrading cell reads false, so --fast-or-fail still ships (\\p{Xwd}) -e utf8 without its prefilter instead of refusing"
+SAB_DOC_FIGURE="PREDICTED (lane pfdrop, 2026-09-30): resource exactly one [PF-DROP/ff] cell red (the prefilter-drop witness). docs/spec/limits.md §8's classification table"
+SAB_COUNT=1
+SAB_REACH='"$PCREC" -e utf8 --fast-or-fail -p rx -o - --pattern "(\p{Xwd})" 2>&1 | grep -o "pattern too large" | head -1'
+SAB_REACH_EXPECT='pattern too large'
+SAB_BEFORE='    { "drop-prefilter", 0,                           true,  fit_prefilter_applies, FIT_DROP_PREFILTER },'
+SAB_AFTER='    { "drop-prefilter", 0,                           false, fit_prefilter_applies, FIT_DROP_PREFILTER },   /* SABOTAGE S423 */'

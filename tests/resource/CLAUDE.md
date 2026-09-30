@@ -254,3 +254,16 @@ Each is caught by Section 2 (Linux, `ulimit -v`) AND Section 2b (both
 platforms, the allocation-failure injector) — the two are independent
 instruments over the same population, and a row detected by only one
 would be worth a note about which.
+
+## [PF-DROP] the size-cap ladder's last rung and `--fast-or-fail` (2026-09-30, D135)
+
+One section before "the refusal's identity". `(\p{Xwd})` under `-e utf8`
+compiles at the default through the ladder's prefilter-drop rung (stamps,
+note, and byte-identity with `-fno-prefilter` but for `RX_ENGINE_SEL` and
+`RX_VM_PREFILTER_WHY`); then ONE witness per rung (prefilter drop, collapse,
+anchored drop, premul drop) is shown to take its rung at the default and to
+REFUSE on the size cap under `--fast-or-fail`, and a fitting `(\p{L})` is
+byte-identical under the switch. The unroll rescue's own `--fast-or-fail`
+cell is in `tests/codegen/run_size_term.sh` §5, beside the reference
+compiler it needs. Mech S420/S421/S422/S423.
+

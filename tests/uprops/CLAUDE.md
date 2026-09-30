@@ -12,8 +12,11 @@ is everything those corpora structurally cannot express.
 
 ## Files
 
-- **run_uprops_tests.sh** — four sections, and the reason there are four is
-  that each sees something none of the others can. Read its own header for
+- **run_uprops_tests.sh** — five sections, and the reason there are five is
+  that each sees something none of the others can. §5 ([PF-DROP], D135,
+  utf8 arm only) sweeps `(\p{Xwd})`'s artifact — rescued by the size-cap
+  ladder's prefilter-drop rung — over the whole code-point space against
+  `\p{Xwd}`'s and libpcre2's member sets. Read its own header for
   the per-section argument; the summary is below.
 - **uprops_oracle.c** — the libpcre2 side, through the shared binding
   (`tests/fuzz/pcre2_abi.h`, direct-linked since [ORACLE-LINK]/D98,
@@ -22,7 +25,13 @@ is everything those corpora structurally cannot express.
   attempting the compile) rather than failing to load at runtime. Also the
   VERSION REPORTER the drift policy turns on.
 - **uprops_sweep.c** — the pcrec side, compiled once per property against
-  that property's own emitted artifact.
+  that property's own emitted artifact. Its capture array is `RX_NCAPS`
+  rows, so a captured `(\p{X})` artifact (§5's) sweeps too.
+- **size_ladder_prefilter_drop.rxt** — [PF-DROP] (D135): the witness
+  `(\p{Xwd})` under `-e utf8`, a VM hybrid refused at default axes before
+  the size-cap ladder gained its prefilter-drop rung; spans and group 1,
+  verified against libpcre2 10.46 and 10.48. Run by the corpus harness; mech
+  S420's target.
 - **uprops_compare.py** — the comparator, and the ONE place the
   Unicode-version drift policy is written down. **[ORWIRE] (2026-09-10):**
   the utf8 arm now ALSO consults the COMMITTED `oracle_store/

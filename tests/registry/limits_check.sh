@@ -258,7 +258,7 @@ done <<< "$anchored"
 # motivating instance, so it had better):
 #
 #   (i)  A constant whose value is an EXPRESSION rather than a literal —
-#        `COMPILE_MAX_ATTEMPTS = 3 + 2 * (SIZE_TERM_LADDER_N + 1) + 1 +
+#        `COMPILE_MAX_ATTEMPTS = 3 + 3 * (SIZE_TERM_LADDER_N + 1) + 1 +
 #        SDR_MAX` (compile.c) is invisible here, and deliberately: a value
 #        DERIVED from other named values is not a bare number given a name,
 #        which is the shape D90 is about. It was on the old allowlist and is
@@ -347,8 +347,8 @@ done <<< "$anchored"
 #     own initializer)
 #   THE FOURTH KIND — CARDINALITIES AND ORDINALS whose enum the (ii) rule
 #     re-armed: VM_NRUNG (how many rungs exist, i.e. an array's length),
-#     SDR_NONE/SDR_NO_ANCHORED/SDR_NO_PREMUL/SDR_MAX (the drop ladder's rung
-#     ordinals plus its own highest-rung marker, which is what makes the enum
+#     SDR_NONE/SDR_NO_ANCHORED/SDR_NO_PREMUL/SDR_NO_PREFILTER/SDR_MAX (the drop
+#     ladder's rung ordinals plus its own highest-rung marker, which is what makes the enum
 #     non-ordinal), TRIE_ENABLED (a 0/1 BUILD SWITCH, not a magnitude), and
 #     PCREC_FIND_NTBL/PCREC_FIND_NBUNDLES ([FINDINGS], src/core/findings.c —
 #     `sizeof pcrec_find_tbl / sizeof *pcrec_find_tbl` and its bundle-index
@@ -513,6 +513,7 @@ VM_NRUNG
 SDR_NONE
 SDR_NO_ANCHORED
 SDR_NO_PREMUL
+SDR_NO_PREFILTER
 SDR_MAX
 TRIE_ENABLED
 EW_EOL_SLACK

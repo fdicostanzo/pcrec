@@ -38,9 +38,9 @@ SAB_REACH='"$PCREC" -p rx --engine=vm -o "$REACH_TMP/base.c" --pattern "^abc" &&
 SAB_REACH_EXPECT="REACH-VM-ANCHOR-BOUND-MASKED"
 SAB_COUNT=1
 SAB_BEFORE='                                          PCREC_NO_VM_ANCHOR_BOUND | PCREC_NO_END_WINDOW |
-                                          PCREC_NO_REQ_BYTE;'
+                                          PCREC_NO_REQ_BYTE |'
 SAB_AFTER='                                          /* SABOTAGE S295: PCREC_NO_VM_ANCHOR_BOUND
                                            * dropped from the mask -- it now
                                            * leaks into rx_info.flags */
                                           PCREC_NO_END_WINDOW |
-                                          PCREC_NO_REQ_BYTE;'
+                                          PCREC_NO_REQ_BYTE |'

@@ -2831,7 +2831,14 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
                                            * `<PREFIX>_REQ_BYTE` are where what
                                            * each emitter DID is recorded. */
                                           PCREC_NO_VM_ANCHOR_BOUND | PCREC_NO_END_WINDOW |
-                                          PCREC_NO_REQ_BYTE;
+                                          PCREC_NO_REQ_BYTE |
+                                          /* [PF-DROP] (D135) not an axis
+                                           * at all: it decides only whether
+                                           * a slower artifact that fits
+                                           * ships or the compile refuses,
+                                           * so an artifact that fits is the
+                                           * same artifact under it. */
+                                          PCREC_FAST_OR_FAIL;
         pcrec_sb_printf(c, "    .flags = %lluULL,\n",
                   (unsigned long long)(cx->opt->flags & ~strategy_denials));
     }

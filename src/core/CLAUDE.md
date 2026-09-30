@@ -298,6 +298,23 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   this rung" shape composes them for free. A third contributor on the VM
   side is still the event that forces a MEASURED order between rungs that
   are not mutually exclusive by engine.
+  **[PF-DROP] (2026-09-30, D135) THE SIZE-CAP LADDER IS ONE FIRST-MATCH
+  TABLE NOW, AND IT GAINED A LAST ROW.** `fit_rungs[]` lists every rung that
+  makes an over-cap artifact smaller at a run-time cost — the unroll rescue
+  (chosen inside `size_term_choose`, `applies` NULL), the [OPT-4] collapse,
+  the anchored and premul drops, and the new VM-hybrid PREFILTER DROP
+  (`SDR_NO_PREFILTER`, spelled as the caller's `-fno-prefilter` OR'd in, the
+  premul rung's shape) — in measured cost order, each with its own caller
+  deny bit and a `degrading` column. `fit_select` takes the first row that
+  applies and is not denied; the catch branch's switch only carries it out.
+  `fit_rung_denied` is the ONE predicate `--fast-or-fail`
+  (`PCREC_FAST_OR_FAIL`) acts through: it denies every degrading row, and
+  no rung tests the switch itself. The prefilter drop restarts the size term
+  (the collapse rung's reason), so `COMPILE_MAX_ATTEMPTS` gained a third
+  ladder run; it is never taken on a [SEL-1] retry (`!dfa_disabled`), which
+  keeps `esel_of`'s premise (a drop rung and a DFA overflow never share a
+  compile) true. `docs/spec/limits.md` §8 "The size-cap ladder" is the
+  contract and carries the classification table.
 - **tune.c** — [OPT-DIAL] THE SPEED-VS-SIZE DIAL'S PINNED POLICY TABLE, and
   its ONE HOME (`docs/spec/tuning.md` §5 is the contract,
   `docs/design/opt_dial_design.md` the design record, D103 the governance).

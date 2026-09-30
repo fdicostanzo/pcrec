@@ -1274,6 +1274,106 @@ echo
 # naming the subset construction is what tells a reader which of the two DFA
 # bounds they hit and therefore which direction to shrink in.
 # ---------------------------------------------------------------------------
+echo "== [PF-DROP] the size-cap ladder's last rung, and --fast-or-fail (D135) =="
+# THE LAST RUNG. `(\p{Xwd})` under `-e utf8` is a VM hybrid whose byte-DFA
+# PREFILTER alone puts it over the total cap; the ladder's last rung drops the
+# prefilter and re-emits. Refused at 736a07f1 (the failing direction, and
+# what S420 restores). tests/uprops/run_uprops_tests.sh §5 holds what the
+# rescued artifact MATCHES; this section holds what compiling it does.
+#
+# THE SWITCH. `--fast-or-fail` denies every DEGRADING rung (all of them
+# today, `compile.c`'s `fit_rungs[]`), so each rung's own witness must
+# REFUSE under it on the size cap, and a pattern that fits must be the same
+# artifact with or without it. One witness per rung, each checked to take
+# that rung WITHOUT the switch first, so a witness that stopped reaching its
+# rung reads as its own failure rather than as the switch working
+# ([MECH-REACH]).
+pfd_emit() {    # pfd_emit <out.c> <label> <pcrec args...> — rc, stderr in <out.c>.err
+    local out="$1" label="$2"; shift 2
+    rm -f "$out"
+    "$ROOT_DIR/scripts/watchdog" -l "pfdrop $label" -s "$K7_SECS" -c "$K7_CPU" -m "$K7_MEM" -L "$WORKDIR/watchdog.log" -- "$PCREC" -p rx -o "$out" "$@" 2>"$out.err"
+}
+mkdir -p "$WORKDIR/pfd" "$WORKDIR/pfn"
+PFD_WIT='(\p{Xwd})'
+if pfd_emit "$WORKDIR/pfd/x.c" "xwd default" -e utf8 --pattern "$PFD_WIT"; then
+    pfd_sel=$(grep -oE '^#define RX_ENGINE_SEL .*' "$WORKDIR/pfd/x.c" | sed 's/.*SEL //;s/"//g')
+    pfd_pf=$(grep -oE '^#define RX_VM_PREFILTER .*' "$WORKDIR/pfd/x.c" | sed 's/.*PREFILTER //;s/"//g')
+    pfd_why=$(grep -oE '^#define RX_VM_PREFILTER_WHY .*' "$WORKDIR/pfd/x.c" | sed 's/.*WHY //;s/"//g')
+    if [ "$pfd_sel" = size-cap-retry ] && [ "$pfd_pf" = none ]; then
+        ok "[PF-DROP] '$PFD_WIT' -e utf8 compiles at the default via the prefilter-drop rung ($(wc -c < "$WORKDIR/pfd/x.c" | tr -d " ") B, RX_ENGINE_SEL '$pfd_sel', RX_VM_PREFILTER '$pfd_pf')"
+    else
+        bad "[PF-DROP] '$PFD_WIT' compiled but stamps RX_ENGINE_SEL '$pfd_sel' / RX_VM_PREFILTER '$pfd_pf', expected 'size-cap-retry' / 'none' — something other than the last rung made it fit"
+    fi
+    case "$pfd_why" in
+      "size cap retry, hybrid "*" > 1000000")
+        ok "[PF-DROP] RX_VM_PREFILTER_WHY names the rung and the refused size: '$pfd_why'" ;;
+      *)
+        bad "[PF-DROP] RX_VM_PREFILTER_WHY reads '$pfd_why', expected 'size cap retry, hybrid N > 1000000'" ;;
+    esac
+    if grep -qF "dropped the VM hybrid's prefilter" "$WORKDIR/pfd/x.c.err"; then
+        ok "[PF-DROP] the rung prints the ladder's loud note"
+    else
+        bad "[PF-DROP] the rung fired silently — no 'dropped the VM hybrid's prefilter' note on stderr"
+    fi
+    # THE RUNG'S ARTIFACT IS THE CALLER'S OWN `-fno-prefilter` ONE, but for the
+    # two stamps that say a cap chose it (same `-o` basename, so the
+    # `#include` line cannot differ).
+    if pfd_emit "$WORKDIR/pfn/x.c" "xwd -fno-prefilter" -e utf8 -fno-prefilter --pattern "$PFD_WIT"; then
+        if cmp -s <(grep -v -e '^#define RX_ENGINE_SEL ' -e '^#define RX_VM_PREFILTER_WHY ' "$WORKDIR/pfd/x.c") \
+                  <(grep -v -e '^#define RX_ENGINE_SEL ' "$WORKDIR/pfn/x.c"); then
+            ok "[PF-DROP] the rescued artifact is -fno-prefilter's, byte for byte, but for RX_ENGINE_SEL and RX_VM_PREFILTER_WHY"
+        else
+            bad "[PF-DROP] the rescued artifact differs from -fno-prefilter's beyond the two stamps"
+        fi
+    else
+        bad "[PF-DROP] '$PFD_WIT' -e utf8 -fno-prefilter does not compile: $(head -1 "$WORKDIR/pfn/x.c.err")"
+    fi
+else
+    bad "[PF-DROP] '$PFD_WIT' -e utf8 is REFUSED at the default — the prefilter-drop rung is not rescuing it: $(head -1 "$WORKDIR/pfd/x.c.err")"
+fi
+# pfd_ff <label> <stamp-regex the rung leaves> <pcrec args...>: the witness
+# takes its rung at the default, and REFUSES on a size cap under the switch.
+pfd_ff() {
+    local label="$1" rx="$2"; shift 2
+    if ! pfd_emit "$WORKDIR/pfd/f.c" "$label" "$@"; then
+        bad "[PF-DROP/ff] $label: does not compile at the default, so the switch has nothing to deny: $(head -1 "$WORKDIR/pfd/f.c.err")"
+        return
+    fi
+    if ! grep -qE "$rx" "$WORKDIR/pfd/f.c"; then
+        bad "[PF-DROP/ff] $label: compiles at the default without the stamp /$rx/ — the witness no longer reaches its rung"
+        return
+    fi
+    if pfd_emit "$WORKDIR/pfd/f.c" "$label ff" --fast-or-fail "$@"; then
+        bad "[PF-DROP/ff] $label: COMPILES under --fast-or-fail — the switch did not deny this rung"
+    elif grep -qF "pattern too large" "$WORKDIR/pfd/f.c.err"; then
+        ok "[PF-DROP/ff] $label: taken at the default, refused on the size cap under --fast-or-fail"
+    else
+        bad "[PF-DROP/ff] $label: refused under --fast-or-fail, but not by a size cap: $(head -1 "$WORKDIR/pfd/f.c.err")"
+    fi
+}
+pfd_ff "prefilter drop, (\\p{Xwd}) -e utf8" '^#define RX_VM_PREFILTER_WHY "size cap retry' \
+    -e utf8 --pattern "$PFD_WIT"
+pfd_ff "prefilter collapse, (a|b){1,30000} -fno-scan-edge" '^#define RX_VM_PREFILTER_LANG_WHY "size cap retry' \
+    -fno-scan-edge --pattern '(a|b){1,30000}'
+pfd_ff "anchored drop, \\p{L} -e utf8" '^#define RX_DFA_MATCH "search-filter"' \
+    -e utf8 --pattern '\p{L}'
+pfd_ff "premul drop, [^\\p{C}\\p{M}\\p{P}] -e utf8" '^#define RX_DFA_TABLE "indexed"' \
+    -e utf8 --pattern '[^\p{C}\p{M}\p{P}]'
+# A PATTERN THAT FITS IS THE SAME ARTIFACT UNDER THE SWITCH: it selects no
+# shape (masked out of `rx_info.flags`, lib/pcrec.h). `(\p{L})` is a VM
+# hybrid at 790 KB, close under the cap, so a switch that leaked into
+# selection would have room to show.
+if pfd_emit "$WORKDIR/pfd/y.c" "fits" -e utf8 --pattern '(\p{L})' &&
+   pfd_emit "$WORKDIR/pfn/y.c" "fits ff" -e utf8 --fast-or-fail --pattern '(\p{L})'; then
+    if cmp -s "$WORKDIR/pfn/y.c" "$WORKDIR/pfd/y.c"; then
+        ok "[PF-DROP/ff] a pattern that fits ((\\p{L}) -e utf8) is byte-identical under --fast-or-fail"
+    else
+        bad "[PF-DROP/ff] (\\p{L}) -e utf8 differs under --fast-or-fail though it fits — the switch leaked into selection or rx_info.flags"
+    fi
+else
+    bad "[PF-DROP/ff] (\\p{L}) -e utf8 does not compile with and without --fast-or-fail: $(head -1 "$WORKDIR/pfn/y.c.err")"
+fi
+
 echo "== [K7] the refusal's identity =="
 
 # name_check <pattern> <expected-substring> <what it proves> [extra pcrec flags...]
