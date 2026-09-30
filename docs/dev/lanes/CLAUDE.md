@@ -3506,3 +3506,11 @@ never edited afterwards.
   test-rxtsource C3's pin move diagnosed as stale pins (census +318 since
   2026-09-25, identical on both boxes for the box-independent classes), not
   box-dependent and not S1's; re-pinned to the Linux py3.14 numbers.
+
+- `s3build_report.md` — [CLS-TREE] S3 (2026-09-29, lane s3build, opus): the
+  `A_WCLASS` node, every reader walking its byte child, byte-identical over the
+  `scripts/cls_identity.py` triple sweep. Read §2: the inventory's rows 5/6
+  (`vm_det_seq`/`vm_cap_offsets`) are reached by the cursor rung and walk the
+  child (a loud arm would have refused `(é)+`), and the union aliasing means
+  the kind guard, not the distinct member, is what makes a set-reading
+  mistake loud.
