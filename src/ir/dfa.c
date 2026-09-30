@@ -455,20 +455,36 @@ static void *arena_regrow(Arena *ar, void *old, size_t oldsz, size_t newsz)
     return p;
 }
 
-/* The FNV 64-bit prime, used below at both sites as a plain Knuth-style
- * multiplicative-hash multiplier (a single multiply-and-shift, never the
- * xor/multiply FOLD `fnv1a_32_mix` implements) -- named so a reader does
- * not have to guess whether the specific value is load-bearing (it is,
- * mildly: it is odd and well-distributed) or arbitrary (L3-F3). */
-#define PCREC_HASH64_MUL 1099511628211ull
+/* The home slot of 64-bit key `k` in a power-of-two table of `cap` slots:
+ * the splitmix64 output finalizer (its published constants), so EVERY key
+ * bit reaches the low bits the mask keeps.
+ *
+ * [OPT-CLOSURE-CTX] It replaced `(k * FNV_PRIME) >> 20`, and that was K67's
+ * 466 ns per memo visit. Both keys here pack two small ints as
+ * `(hi << 32) | lo`, and a multiply only carries bits UPWARD: `hi` reached
+ * only product bits 32 and up (no table under 4,096 slots saw it at all),
+ * and FNV's sparse prime left
+ * `lo`'s contribution to bits 20.. near zero for any `lo` under ~2^20. So
+ * every (state, ctx) key of a closure landed in a handful of home slots and
+ * linear probing walked the cluster — `(?:\p{L}?)+ -e utf8` 26.9 s, 0.49 s
+ * with this. A membership table, so no answer or emitted byte depends on it. */
+static inline size_t hash_slot(uint64_t k, size_t cap)
+{
+    k ^= k >> 30;
+    k *= 0xbf58476d1ce4e5b9ull;
+    k ^= k >> 27;
+    k *= 0x94d049bb133111ebull;
+    k ^= k >> 31;
+    return (size_t)k & (cap - 1);
+}
 
-/* Open-addressed hash slot for (parent,loop) in `t`'s table (FNV-64
- * multiplicative hash, linear probing) -- the slot to read for lookup or write
+/* Open-addressed hash slot for (parent,loop) in `t`'s table (hash_slot,
+ * linear probing) -- the slot to read for lookup or write
  * for insertion. */
 static size_t lctx_slot(const LCtxTab *t, int parent, int loop)
 {
     uint64_t k = ((uint64_t)(uint32_t)parent << 32) | (uint32_t)loop;
-    size_t i = (size_t)((k * PCREC_HASH64_MUL) >> 20) & (t->tabcap - 1);
+    size_t i = hash_slot(k, t->tabcap);
     while (t->tab[i] >= 0 &&
            !(t->v[t->tab[i]].parent == parent && t->v[t->tab[i]].loop == loop))
         i = (i + 1) & (t->tabcap - 1);
@@ -553,11 +569,10 @@ static void pmemo_next(PMemo *m)
 }
 
 /* Open-addressed hash slot for key `k` in the current generation of `m`
- * (FNV-64 multiplicative hash, linear probing within this generation's live
- * entries). */
+ * (hash_slot, linear probing within this generation's live entries). */
 static size_t pmemo_slot(const PMemo *m, uint64_t k)
 {
-    size_t i = (size_t)((k * PCREC_HASH64_MUL) >> 20) & (m->cap - 1);
+    size_t i = hash_slot(k, m->cap);
     while (m->gen[i] == m->g && m->key[i] != k) i = (i + 1) & (m->cap - 1);
     return i;
 }
@@ -636,6 +651,106 @@ static void cont_push(ContStack *k, int s, int ctx, int push)
     k->n++;
 }
 
+/* ---- [OPT-CLOSURE-CTX] which loops can ever be RE-ARRIVED at -------------
+ *
+ * A context for loop L changes the walk in exactly one place: the redirect,
+ * which fires when the walk arrives at L while L is open. Every open context
+ * was opened at L's entry by THIS walk, and everything since is epsilon edges,
+ * so an arrival with L open is an epsilon CYCLE through L's entry. A loop
+ * whose entry lies on no epsilon cycle — its body always consumes, `\p{L}+`,
+ * `[a-z]*` — can never redirect, and opening a context for it only splits the
+ * memo: every state below it is walked once per context instead of once, all
+ * through the hash memo instead of the stamp array (K67: 55.0M slow visits
+ * against 4.7M fast on `\p{L}+ -e utf8`'s reverse machine, 99% of the pass).
+ *
+ * NOT opening it is exact, not an approximation, and the argument is short.
+ * Project every context by deleting its acyclic loops. Opens of cyclic loops,
+ * redirects and truncations all commute with the projection (the acyclic
+ * entries never redirect, and a truncation below one drops it in both walks),
+ * so the walk that never opens an acyclic loop is the original walk with
+ * (s, c1) and (s, c2) MERGED wherever c1 and c2 project alike. A merged
+ * second arrival would re-walk a subtree isomorphic to the first, so it can
+ * add no state and no accept — and it cannot even add them EARLIER, since that
+ * needs the second arrival inside the first's still-open subtree: an epsilon
+ * path from s back to s that removes or adds acyclic loop N. Adding N means
+ * passing N's entry; removing it means leaving N's body (a redirect below N
+ * sits outside it) and, proper nesting, re-entering through N's entry to get
+ * back to s — either way N's entry is on a cycle. So the thread list, its
+ * order and `accept` are unchanged; the machines are byte-identical, which
+ * scripts/cls_identity.py and scripts/emit_sweep.py measure.
+ *
+ * The edges are the closure's own: every kind the closure can continue
+ * through, each assertion counted as passable (an over-approximation, which
+ * can only keep a context the walk did not need — the pre-change behaviour).
+ * Returns the i-th epsilon successor of `st`, or -2 when there is none left. */
+static int eps_edge(const NState *st, int i)
+{
+    switch (st->k) {
+    case N_CLASS:
+    case N_ACCEPT:  return -2;
+    case N_SPLIT:   return i == 0 ? st->t1 : i == 1 ? st->t2 : -2;
+    case N_EPS:
+    case N_BOT:
+    case N_EOL:
+    case N_END:
+    case N_BOT_M:
+    case N_EOL_M:
+    case N_CTX:
+    case N_GSTART:
+    case N_CSTART:  return i == 0 ? st->t1 : -2;
+    }
+    return -2;
+}
+
+/* One flag per NFA state: 1 iff the state lies on an epsilon cycle (its
+ * strongly connected component over eps_edge has more than one member, or a
+ * self-edge). Tarjan's algorithm with an explicit frame stack — never C
+ * recursion, whose depth would be the pattern's length (K20). O(states). */
+static uint8_t *eps_cyclic(Arena *ar, const Nfa *nfa)
+{
+    int n = nfa->n;
+    size_t sz = (size_t)(n ? n : 1);
+    uint8_t *cyc = pcrec_arena_alloc(ar, sz);
+    int *idx = pcrec_arena_alloc(ar, sz * sizeof(int));   /* 0 = unvisited */
+    int *low = pcrec_arena_alloc(ar, sz * sizeof(int));
+    int *scc = pcrec_arena_alloc(ar, sz * sizeof(int));   /* Tarjan's stack */
+    int *fs  = pcrec_arena_alloc(ar, sz * sizeof(int));   /* frame: state */
+    int *fe  = pcrec_arena_alloc(ar, sz * sizeof(int));   /* frame: next edge */
+    uint8_t *on = pcrec_arena_alloc(ar, sz);
+    int counter = 0, nscc = 0;
+
+    for (int r = 0; r < n; r++) {
+        if (idx[r]) continue;
+        int top = 0;
+        fs[top] = r; fe[top] = 0; top++;
+        idx[r] = low[r] = ++counter; scc[nscc++] = r; on[r] = 1;
+        while (top > 0) {
+            int v = fs[top - 1];
+            int w = eps_edge(&nfa->st[v], fe[top - 1]++);
+            if (w != -2) {
+                if (w < 0) continue;
+                if (w == v) { cyc[v] = 1; continue; }
+                if (!idx[w]) {
+                    fs[top] = w; fe[top] = 0; top++;
+                    idx[w] = low[w] = ++counter; scc[nscc++] = w; on[w] = 1;
+                } else if (on[w] && idx[w] < low[v]) {
+                    low[v] = idx[w];
+                }
+                continue;
+            }
+            top--;
+            if (top > 0 && low[v] < low[fs[top - 1]]) low[fs[top - 1]] = low[v];
+            if (low[v] != idx[v]) continue;
+            int first = nscc;
+            do { first--; on[scc[first]] = 0; } while (scc[first] != v);
+            if (nscc - first > 1)
+                for (int i = first; i < nscc; i++) cyc[scc[i]] = 1;
+            nscc = first;
+        }
+    }
+    return cyc;
+}
+
 /* Per-COMPILE closure scratch. THREAD SCOPING (note §5 item 11, TS-3): this
  * is an automatic local of pcrec_build_dfa (see its declaration) and every
  * buffer it holds comes from that compile's own arena, so two concurrent
@@ -652,6 +767,7 @@ typedef struct {
     /* [UCP] U2 the machine's context-list facts the closure's arms read. */
     const int8_t *cbit;
     int       nl_bit, ns_bit;
+    const uint8_t *lcyc;   /* [OPT-CLOSURE-CTX] per state: on an eps cycle */
 } CloScratch;
 
 typedef struct {
@@ -712,6 +828,9 @@ typedef struct {
     int       nl_bit;     /* list index of the newline set, or -1 */
     int       ns_bit;     /* list index of the non-start set, or -1 */
     bool      prune;
+    /* [OPT-CLOSURE-CTX] per NFA state, eps_cyclic's flag: only a loop entry
+     * with it set ever opens a context (see eps_edge). */
+    const uint8_t *lcyc;
 } Clo;
 
 /* Bit `k` of a context atom vector, 0 when the machine has no such entry. */
@@ -801,7 +920,7 @@ static void clo_walk(Clo *cl, int s)
              * pops the loop AND everything above it, so the open-loop depth
              * strictly decreases at every redirect, and an infinite walk
              * would have to be an infinite suffix of redirects. */
-            if (st->loop && ctx != 0) {
+            if (st->loop && ctx != 0 && cl->lcyc[s]) {
                 int at = lctx_find(cl->ctxs, ctx, s);
                 if (at >= 0) {
                     /* THE OPEN LOOP IS THE STACK TOP. Correctness only asks
@@ -875,9 +994,11 @@ static void clo_walk(Clo *cl, int s)
                 }
                 if (st->exit_is_t2) {
                     /* Greedy: t1 is the BODY, so it runs with the loop open;
-                     * t2 leaves the loop and resumes at this context. */
+                     * t2 leaves the loop and resumes at this context. A loop
+                     * no epsilon path re-enters opens nothing: it can never
+                     * redirect (see eps_edge). */
                     cont_push(cl->ks, st->t2, ctx, -1);
-                    ctx = clo_open(cl, ctx, s);
+                    if (cl->lcyc[s]) ctx = clo_open(cl, ctx, s);
                     s = st->t1;
                     continue;
                 }
@@ -887,7 +1008,7 @@ static void clo_walk(Clo *cl, int s)
                  * walk that never gets back to the body -- because the exit
                  * branch reached ACCEPT and pruning cut everything below it
                  * -- never mints the body's context at all. */
-                cont_push(cl->ks, st->t2, ctx, s);
+                cont_push(cl->ks, st->t2, ctx, cl->lcyc[s] ? s : -1);
                 s = st->t1;
                 continue;
             case N_BOT:
@@ -1018,7 +1139,8 @@ static void closure(Nfa *nfa, const int *pre, int npre, bool bot_ok, bool eol_ok
     Clo cl = { sc->cx, nfa, &sc->ctxs, &sc->memo, &sc->ks,
                sc->seen.mark, sc->emit.mark, sc->seen.gen,
                out, 0, false, eol_ok, end_ok, bot_ok, gst_ok,
-               sd.left, sd.right, sc->cbit, sc->nl_bit, sc->ns_bit, prune };
+               sd.left, sd.right, sc->cbit, sc->nl_bit, sc->ns_bit, prune,
+               sc->lcyc };
     for (int i = 0; i < npre; i++) {
         if (prune && cl.accept) break;
         clo_walk(&cl, pre[i]);
@@ -1476,6 +1598,7 @@ void pcrec_build_dfa(Ctx *cx, Nfa *nfa, Dfa *d, bool prune, bool reverse,
     sc.emit.mark = pcrec_arena_alloc(&cx->arena, (size_t)nfa->n * sizeof(uint32_t));
     sc.emit.n = nfa->n;
     sc.memo.ar = sc.ctxs.ar = sc.ks.ar = &cx->arena;
+    sc.lcyc = eps_cyclic(&cx->arena, nfa);
 
     /* [M6.2 wave A] THREE closure buffers, not two — make_state computes
      * base / eol / end views.
