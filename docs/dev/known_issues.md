@@ -11,9 +11,11 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 ---
 
-## K78 — OPEN, unscheduled (2026-09-30, lane uvbuild) — a DFA artifact with DEAD groups writes `caps[1]` on a NO-MATCH, against match_api.md §3.1
+## K78 — FIXED 2026-09-30 (lane k78, abi 55) (found by lane uvbuild) — a DFA artifact with DEAD groups writes `caps[1]` on a NO-MATCH, against match_api.md §3.1
 
 **Witness:** `(?(DEFINE)(?<x>\b))b(?&x)` under `-e byte` (reproduces on base d8d40397, before [UTF-VALID]). The [DD-14 wave G] entry fill writes the dead group's slot even when the call returns no match. Reproducer and trace: docs/dev/lanes/uvbuild_report.md §5. Pre-existing; independent of UTF-VALID.
+
+**Cause, confirmed:** `emit_search_head` (src/gen/emit_dfa.c) wrote the PCREC_UNSET fill for slots 1..NCAPS-1 at the top of `<prefix>_search`, before the `startpos > n` return and before any answer, so every non-success return of a DFA artifact with `<PREFIX>_NCAPS >= 2` wrote `caps` (measured on the pre-fix compiler: 2,094 of 4,284 non-success calls over the eight witnesses on the auto route, and 1,041 corpus-slice calls). **Fix:** the fill is `emit_dead_group_fill`, called on each SUCCESS path after the `caps[0]` write and before `return 1` (the reverse-pass and pinned unanchored forms, and the per-start attempt form); the empty-engine exit has no success path and writes nothing. Only DFA artifacts with `NCAPS >= 2` move. **Other sites checked, all clean before and after:** the VM, the VM hybrid, `_match_caps` (unwrapped and search-filter), and the `_in` spellings with a NULL and a one-frame descriptor (FRAMES give-ups included). Spec: match_api.md §3.1 (a sentence) and §6 (the abi 55 entry). Check: tests/codegen/run_nomatch_caps.sh (test-codegen; mech arm `nomatchcaps`, sabotage S439). Report: docs/dev/lanes/k78_report.md.
 
 ---
 

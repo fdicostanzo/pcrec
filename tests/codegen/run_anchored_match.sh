@@ -33,8 +33,9 @@
 #       MISCOMPILE-1 one row over — a set derived for the SCAN role reused
 #       where it does not hold — and it is the reason this section exists.
 #   §3  `<prefix>_match_caps` writes the dead groups itself. Under
-#       `"search-filter"` those come from `emit_search_head`, which fills
-#       slots 1..NCAPS-1 with PCREC_UNSET at entry to `<prefix>_search`; the
+#       `"search-filter"` those come from `emit_dead_group_fill`, which fills
+#       slots 1..NCAPS-1 with PCREC_UNSET on `<prefix>_search`'s success
+#       paths (K78); the
 #       unwrapped form never calls that function, so the fill has to be in
 #       `_match_caps` or a DFA artifact with `RX_NCAPS > 1` returns whatever
 #       the caller's array held.
@@ -245,8 +246,8 @@ done
 # `caps_out[0] == [ctx->pos, ctx->pos + length)` is spec §3.3's sentence, and
 # under this form it is written rather than filtered. `RX_NCAPS > 1` on a DFA
 # artifact means every group above 0 is PERMANENTLY unset (wave G's
-# dead-capture elision) and the fill used to come from `emit_search_head`,
-# which this form never calls.
+# dead-capture elision) and the search entry's own fill (`emit_dead_group_fill`,
+# on its success paths since K78) is in a function this form never calls.
 f="$WORKDIR/c.c"
 if emit "$f" 'foo[0-9]+bar'; then
     b="$(match_caps_body "$f")"

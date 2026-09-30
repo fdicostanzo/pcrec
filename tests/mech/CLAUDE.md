@@ -414,6 +414,12 @@ is EXPECTED to time out"*, and neither would a separate arm.
   moves no answer, so `harness` is green on it by construction. Row S437
   (the emitters handed the real prefix instead of the render placeholder).
   K80's row S438 (the mixed-abi `#error` fenced off) is on `codegen`.
+- `nomatchcaps` → `tests/codegen/run_nomatch_caps.sh` (K78, lane k78,
+  2026-09-30): every entry that takes a caps array leaves it untouched on
+  every non-success return and writes all NCAPS pairs on a success. A caps
+  write on a no-match moves no return value and the harness driver never
+  reads caps after a 0, so `harness` is green on it by construction. Row S439
+  (the dead-group fill planted back at the search entry).
 - `tunedial` → `tests/codegen/run_tune_dial.sh` ([OPT-DIAL] design §6.1a's
   MECHANISM-STATE CROSS-CHECK), **NOT YET REGISTERED IN THIS DRIVER'S
   DISPATCH as of 2026-09-17** — a sibling lane is building the script
