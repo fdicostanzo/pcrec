@@ -215,4 +215,38 @@ the axis is expected answer-identical over the corpus).
 
 ## Part 2 — the [UTF-VALID] design note
 
-PART2_PLACEHOLDER
+The note is `docs/design/utf_valid_design.md`, with its evidence in
+`docs/design/utf_valid_evidence/`. Summary:
+
+- **PCRE2's contract, measured on 10.46**: before any attempt it checks
+  `[startoffset − max lookbehind (chars), n)`, and the error offset is the
+  first bad sequence's first byte. `a` on `a\xff` is REFUSED even though the
+  match precedes the bad byte, and a lookbehind that reaches back widens the
+  checked range.
+- **One option, two contracts, one first-match table** (inert / off /
+  scan-fused / precheck). The precheck is the total fallback, because its
+  promise implies the incremental one.
+- **Recommendation: build `whole` only.** It is a precheck through an
+  encoding-residual entry, called once per call by the entry wrapper, which
+  is `[VAR]`'s `$_var_valid` shape. It would become the ONE validator for
+  the precheck, the caller's offset query and `var_valid`.
+- **Do not build `scan`.** Its contract depends on the bytes the optimizer
+  skips, it has no VM coverage, and it costs states that can move the
+  refusal set.
+- **Caller surface**: a compile-time axis (D18), one code `PCREC_ERR_UTF`
+  (-9), and an exported `<prefix>_utf_invalid_at(s, n, from)` for the
+  offset, so that `caps` stays untouched.
+- **The find-all loop becomes quadratic** under `whole`, as it is in
+  PCRE2. The answer is to validate once and use a non-checking artifact.
+- **Cost (darwin, directional).** With an ASCII fast path the check costs
+  0.04 ns/B on ASCII text: 17x a call a prefilter answers, 1.6x a call a
+  pre-check answers, 12% of a scanning call. On non-ASCII text it costs
+  1.0-2.5 ns/B, 3x-7x a full DFA scan. The byte-class-DFA validator is a
+  flat 1.95 ns/B.
+- **It is an abi event once built**, default-off artifacts included,
+  through the shared-block code and an unconditional stamp.
+- **Ten questions for Frank**, each with a recommendation.
+
+Probes: two LIGHT tailnet probes to 10.46 (`pr4.c`, transcript archived).
+Timing: `utfcheck_bench.c` run twice at load average 7-10, plus
+`scanbench.c` for the pcrec reference rates.

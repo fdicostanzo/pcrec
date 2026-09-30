@@ -3480,3 +3480,17 @@ never edited afterwards.
   oracle advances any start on a continuation byte to the next non-continuation
   byte; pcrec's guard exempts 0; the fix is an abi event and a startpos-rounding
   contract choice, options in the report. Evidence in `k7273_evidence/`.
+- `k73utf_report.md`, `k73utf_evidence/` — K73 FIXED, ruling (a), plus the
+  [UTF-VALID] design note (2026-09-29, lane k73utf, opus). One emitter
+  primitive, `pcrec_emit_start_zero`, carries the offset-0 start rule with
+  three actions (SEEK / SKIP / NOMATCH). It seeks the VM's
+  `attempt_position` rather than `search_from` so that `\G` stays false.
+  The unwrapped DFA `_match`'s missing K50 guard was found and fixed, and
+  `run_startbnd_diff.sh` now sweeps `_match`. The change is abi 45 -> 46.
+  The mover census: 0 byte movers, 1,361 utf8, 386 utf8-vm, 0 unpredicted.
+  The 10.46 transcripts, probes and census script are in the evidence dir.
+  Findings F1-F5 cover a pre-existing end-of-subject divergence, the
+  find-all loop meeting K50 at a stray continuation byte, the
+  pattern-esc-first head census, the always-emitted K50 guard comment, and
+  pre-existing encoding-check reds. Part 2 is
+  `../../design/utf_valid_design.md`.
