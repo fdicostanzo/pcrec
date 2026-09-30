@@ -590,10 +590,14 @@ test-entry-shape-identity: all
 #
 # [CLS-TREE] S3 rides the same section: tests/codegen/run_wclass_census.sh,
 # the A_WCLASS switch census + four reader witnesses (~2 s).
+# [OPT-CLSPACK] rides it too: tests/codegen/run_clspack.sh, the shared atom
+# table's row read off the artifact + a 343,040-cell answer differential
+# against -fno-cls-pack (~15 s).
 test-cpset-structure: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-cpset-structure.ran"; fi
 	bash tests/codegen/run_cpset_structure.sh
 	bash tests/codegen/run_wclass_census.sh
+	bash tests/codegen/run_clspack.sh
 
 # [M5.0 stage 2] `test-encoding-checks` IS OPT-IN, the encoding backend's
 # behavioural + structural acceptance (docs/design/utf8_design.md §8.5, §8.1.1
