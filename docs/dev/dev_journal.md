@@ -26099,3 +26099,24 @@ margin; bisect today's merges if slower). MAIN IS UNPUSHED (origin at 4a546fba-e
 3. The kit's instruction-count win did not survive a fair timing (O-77).
 4. A study harness's load gate must not refuse on load the harness generates itself.
 5. Lanes keep handing back mid-ruling; re-check that rulings were applied (clss1 missed option (a)).
+
+## 2026-09-29/30 — eighty-sixth session (~18:20 EDT 09-29 → overnight; Frank afk from ~23:40 with "use the Linux box freely, coordinate"): S1 + U2 merged; S3, K67, K72/K73, HYB-RESEED, S4 built
+
+**Merged to main (pushed):**
+- [CLS-TREE] S1 + clstri + s1tri (31979ed3). clskit chunks are packed by emitted bytes AND run cost. rxtsource C3 is two-tier: the python-invariant populations are asserted everywhere, and the PASS/no-python split is exact only at py3.14. That split is why CI never saw the stale pins. test-resource's load guard now covers two more cells.
+- clsid: scripts/cls_identity.py, S3's byte-identity instrument (15,771 triples, REACH counterfactual, two controls).
+- [UCP] U2 via u2land (601f2e5e, abi 46). This includes ucpu3's anchored dead-entry fix (the accepting[-1] read, 57 SIGSEGV + 2 divergences on the same UB) and the premul-table check rewrite. Linux full make test 46/46 MAKE_RC=0; Mac full green (nm only). U2's own test-axes was still running at merge time (0 mismatches).
+- Docs/studies: the S3 reader inventory + rulings D-1..D-8, [CTX-PREFILTER] joint measurement (no D77 trigger; the loss is VM stepping), K75 measurement, reviews r1 (HYB-RESEED) and r2 (UTF-VALID), K74/K75/K76 filed, [UTF-VALID] filed and chartered.
+
+**Built, NOT merged:**
+- lane/land3 = U2 + S3 + K67. Linux full 46/46 green; cls_identity 15,843/15,843; mech S365/S366/S50/S-U8/S303/S189/S259 DETECTED, S262 running. K67: `\p{L}+ -e utf8` 78 s → 0.37 s. Cause: a weak FNV-shift hash in the dfa.c memo tables; also eps_cyclic, plus dfamemo reuse across retry rungs. Corpus compile CPU 584 → 147 s. Byte-identical.
+- lane/k73utf = K72 (\h/\v wide members) + K73 ruling (a) (default start skips continuation bytes; abi 47 on its branch). Linux full make test running (started 00:33).
+- lane/reseedfix = [OPT-HYB-RESEED] (adaptive per-call re-seed, one first-match table, `clamped` row, -fno-hyb-reseed bit 37) + every r1 panel fix. Mac chain running. XCALL's trigger was met on the Mac tier (×0.62 find-all cell).
+- lane/s4build = [CLS-TREE] S4 (VM decode + kit, -fno-cls-kit bit 36; K55 + K53 VM refusals retired). In validation.
+- lane/portsplit: the silent-serial `split -n` fallback in 7 test scripts (BSD split). Mac validation running. This is why S189 "timed out".
+
+**Rulings (Frank):** K73 (a); charter [UTF-VALID] (default-off subject check); charter [OPT-CLOSURE-CTX] + [OPT-RETRY-REUSE] (K67); K72/K73 fixes; charter [OPT-HYB-RESEED] with the adaptive live-stats design; use the Linux box freely tonight. Manager: S3 inventory D-1..D-8; S4 plan (D-2: one character).
+
+**OWED to Frank:** K75 M1 (protocol-only find-all alignment; recommended) vs M2; [UTF-VALID] §8's 11 questions (Q1/Q2/Q4 decide; recommend `whole` now, `extent` recorded); S4's drop-the-prefilter ladder rung for `(\p{Xwd})`.
+
+**Lessons:** (1) Frank: "you do a wave then go into test watching mode" — refill at every delivery, in the same turn (memory updated). (2) A lane that "expects DETECTED" without reading its own log hid a timeout (k67 S189 rc=124). (3) A GNU-only flag with a silent fallback turns a parallel check serial on darwin, for months. (4) Lanes repeatedly end before reading late manager messages; pure run-launching belongs in a script, not a briefed agent. (5) A critic panel found a HIGH (a size pin broken, hidden by counting one script as the target) that the lane's own "green" missed.

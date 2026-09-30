@@ -1,0 +1,59 @@
+10.48
+b                                        INFO_MAXLOOKBEHIND=0 measured_stepback=0
+(?<=a)b                                  INFO_MAXLOOKBEHIND=1 measured_stepback=1
+(?<=..)b                                 INFO_MAXLOOKBEHIND=2 measured_stepback=2
+(?<!a)b                                  INFO_MAXLOOKBEHIND=1 measured_stepback=1
+(?<=a|bc)d                               INFO_MAXLOOKBEHIND=2 measured_stepback=2
+(?<=a{1,3})b                             INFO_MAXLOOKBEHIND=3 measured_stepback=3
+\bb                                      INFO_MAXLOOKBEHIND=1 measured_stepback=1
+\Bb                                      INFO_MAXLOOKBEHIND=1 measured_stepback=1
+(*UCP)\bb                                INFO_MAXLOOKBEHIND=1 measured_stepback=1
+b\b                                      INFO_MAXLOOKBEHIND=1 measured_stepback=1
+(?=\b)b                                  INFO_MAXLOOKBEHIND=1 measured_stepback=1
+(?<=\ba)b                                INFO_MAXLOOKBEHIND=1 measured_stepback=1
+(?<=\b..)b                               INFO_MAXLOOKBEHIND=2 measured_stepback=2
+(?<=(?<=..)a)b                           INFO_MAXLOOKBEHIND=2 measured_stepback=2
+(?<=a(?<=..))b                           INFO_MAXLOOKBEHIND=2 measured_stepback=2
+(?=(?<=..))b                             INFO_MAXLOOKBEHIND=2 measured_stepback=2
+(?m)^b                                   INFO_MAXLOOKBEHIND=0 measured_stepback=0
+^b                                       INFO_MAXLOOKBEHIND=0 measured_stepback=0
+\Ab                                      INFO_MAXLOOKBEHIND=1 measured_stepback=1
+\Gb                                      INFO_MAXLOOKBEHIND=0 measured_stepback=0
+\Xb                                      INFO_MAXLOOKBEHIND=0 measured_stepback=0
+\Rb                                      INFO_MAXLOOKBEHIND=0 measured_stepback=0
+b$                                       INFO_MAXLOOKBEHIND=0 measured_stepback=0
+b\Z                                      INFO_MAXLOOKBEHIND=0 measured_stepback=0
+b\z                                      INFO_MAXLOOKBEHIND=0 measured_stepback=0
+(?(DEFINE)(?<x>(?<=...)))b               INFO_MAXLOOKBEHIND=3 measured_stepback=3
+(?(DEFINE)(?<x>\b))b(?&x)                INFO_MAXLOOKBEHIND=1 measured_stepback=1
+(?(?<=..)b|c)                            INFO_MAXLOOKBEHIND=2 measured_stepback=2
+(a)(?<=\1)b                              INFO_MAXLOOKBEHIND=1 measured_stepback=1
+(*naplb:..)b                             INFO_MAXLOOKBEHIND=2 measured_stepback=2
+(?<=\R)b                                 INFO_MAXLOOKBEHIND=2 measured_stepback=2
+(?<=\x{100})b                            INFO_MAXLOOKBEHIND=1 measured_stepback=1
+[[:<:]]b                                 INFO_MAXLOOKBEHIND=1 measured_stepback=1
+b[[:>:]]                                 INFO_MAXLOOKBEHIND=1 measured_stepback=1
+a\Kb                                     INFO_MAXLOOKBEHIND=0 measured_stepback=0
+(?:\b|(?<=...))b                         INFO_MAXLOOKBEHIND=3 measured_stepback=3
+b(?<=...)                                INFO_MAXLOOKBEHIND=3 measured_stepback=3
+[(?<=(?<=..)a)b] "\xffzab"@3: rc=-1 (no match) startchar=0
+[(?<=(?<=..)a)b] "\xffzab"@2: rc=-23 (UTF-8 error: illegal byte (0xfe or 0xff)) startchar=0
+[(?<=\ba)b] "\xffab"@2: match (2,3)
+[(?<=\b..)b] "\xffzab"@3: match (3,4)
+[\Ab] "\xffab"@2: rc=-1 (no match) startchar=0
+[\Ab] "\xffab"@1: rc=-23 (UTF-8 error: illegal byte (0xfe or 0xff)) startchar=0
+[\Ab] "\x80b"@1: rc=-22 (UTF-8 error: isolated byte with 0x80 bit set) startchar=0
+[(?<=\R)b] "\xff\x0d\x0ab"@3: match (3,4)
+[(?<=\R)b] "\xffz\x0d\x0ab"@4: match (4,5)
+[\Gb] "\xffb"@1: match (1,2)
+[a] "\xc3\xa9\xffa"@1: rc=-36 (bad offset into UTF string) startchar=0
+[a] "\x80\xa9a"@1: rc=-36 (bad offset into UTF string) startchar=0
+[(?<=a)b] "\xc3\xa9\xffb"@1: rc=-36 (bad offset into UTF string) startchar=0
+[a] "\xa9a\xff"@1: rc=-23 (UTF-8 error: illegal byte (0xfe or 0xff)) startchar=2
+[(?<=a)b] "\x80\x80\x80b"@3: rc=-22 (UTF-8 error: isolated byte with 0x80 bit set) startchar=0
+[(?<=a)b] "a\x80\x80b"@3: rc=-22 (UTF-8 error: isolated byte with 0x80 bit set) startchar=1
+[(?<=a)b] "\xff\xc3\xa9\xa9b"@4: rc=-22 (UTF-8 error: isolated byte with 0x80 bit set) startchar=3
+[a] "a\xff"@0: rc=-23 (UTF-8 error: illegal byte (0xfe or 0xff)) startchar=1
+[a] "\xffa"@2: rc=-1 (no match) startchar=0
+[\Ab|c] "\xffc"@1: rc=-23 (UTF-8 error: illegal byte (0xfe or 0xff)) startchar=0
+[(?<=a)b] "\xff"@3: rc=-33 (bad offset value) startchar=0

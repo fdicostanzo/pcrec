@@ -1,0 +1,12 @@
+# (A) sparse non-ASCII, 64 MiB, ns/byte best of 7
+subject	bytewise	ascii8+bytewise
+1-per-~16-bytes	0.9866	0.8965
+1-per-~64-bytes	0.7773	0.3370
+1-per-~256-bytes	0.6932	0.1222
+# (B) per call, ns, best of 7; subject = a window of the 1-per-~64 buffer
+size	check(LB=0)	check(LB=1)	p1_search(jumpz)	p2_search([a-z]+@[a-z]+)	p3_search(\bfox\b)
+8	6.00	5.80	5.91	4.27	6.63
+32	16.47	16.65	11.53	4.63	12.35
+128	56.60	57.69	42.45	7.70	43.80
+512	193.21	189.70	174.18	16.10	178.79
+4096	1391.60	1413.33	1301.27	108.64	1655.15

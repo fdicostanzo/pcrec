@@ -360,10 +360,20 @@ def _findall_protocol(compiled, subj, encoding):
     counted by driver.c's C loop and by leg A's own parse — which is the
     distinction §2.21 draws against the `printf %b` decoder it refuses one
     production over: a second implementation WITH a differential is a cost,
-    one without is a defect."""
+    one without is a defect.
+
+    [K73] AND THE FIRST SEARCH STARTS PAST LEADING CONTINUATION BYTES under
+    `utf8`: a search at offset 0 does not attempt a match on one (match_api.md
+    §3.1's offset-0 bullet), so the first `search` is issued from the first
+    non-continuation byte. `re.search(subj, pos)` then sees the moved start
+    exactly as the engine does — `^`/`\A` false there, `\b` reading the byte
+    before it."""
     n = len(subj)
     pos = 0
     count = 0
+    if encoding == 'utf8':
+        while pos < n and 0x80 <= ord(subj[pos]) <= 0xBF:
+            pos += 1
     while pos <= n:
         mo = compiled.search(subj, pos)
         if mo is None:
@@ -692,7 +702,7 @@ def parse_rxt(path):
             # below still reports the block's `pattern` column AS WRITTEN,
             # never decoded (the R-A seam, unchanged and ruled separately
             # -- see that arm's own comment).
-            if first not in ('pattern', 'pattern-esc'):
+            if first not in _RXT_BLOCK_OPENERS:
                 _fail(path, lineno, 'unknown-token-in-scope',
                       f"'{first}' line before any pattern block -- a body "
                       "directive has no open block to attach to (matches "
@@ -1284,6 +1294,13 @@ def dump_file(path, entries):
     flush()
 
 
+# The block openers -- `rxt_schema.def`'s `opens_group` rows. A file whose
+# first token is one of these has NO head (docs/spec/rxt_format.md); the one
+# tuple both this leg's attachment check and its head probe read [K76], and
+# the mirror of tests/harness/run.sh's `rxt_is_opener`.
+_RXT_BLOCK_OPENERS = ('pattern', 'pattern-esc')
+
+
 def _rxt_head_probe(path):
     """The first token of the first non-comment, non-blank line, or ''
     for a file with no content -- the SAME cheap test tests/harness/
@@ -1373,7 +1390,7 @@ def discover(args):
     included_by = {}
     for f in files:
         probe = _rxt_head_probe(f)
-        if not probe or probe == 'pattern':
+        if not probe or probe in _RXT_BLOCK_OPENERS:
             continue
         out = _rxt_list_source(f)
         if out is None:

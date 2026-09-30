@@ -217,6 +217,14 @@ SEMANTIC axis, not a tuning one (`docs/spec/tuning.md` §4).
   PCRE2_UTF's own default. Module `ucp` is IMPLIED by `-e utf8` (O-71) and
   must be enabled under `byte` (`--features …,ucp`); `--ucp` with the module
   off is refused by name ("--ucp requires module 'ucp'").
+- **`\h \H \v \V` read PCRE2_UTF's lists under any Unicode encoding, UCP or
+  not** ([K72]): `\h` is U+0009 U+0020 U+00A0 U+1680 U+180E U+2000-U+200A
+  U+202F U+205F U+3000 and `\v` U+000A-U+000D U+0085 U+2028 U+2029 (measured
+  against libpcre2 10.46 under PCRE2_UTF alone), inside a bracketed class as
+  at an atom; under `byte` they stay `[\t \xa0]` and `[\n\x0b\f\r\x85]`.
+  `--ucp` and the `(?a…)` letters do not touch them (neither is a UCP family),
+  and `--list-definitions` prints the Unicode entry under `DEF_ENCODING_UTF8`,
+  the tag's first producer.
 - **`(?aD)/(?aS)/(?aW)/(?aP)/(?aT)`** are real under UCP: each restricts one
   PCRE2 family back to ASCII (`aW` covers `\w \W \b \B`; `aP` every POSIX
   class; `aT` `[:digit:] [:xdigit:]`, which `aP` restricts too); `(?a)` sets

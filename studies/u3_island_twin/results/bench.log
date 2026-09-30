@@ -1,0 +1,186 @@
+c1/ascii done (load1 0.48, reps 100)
+c1/latin1 done (load1 0.48, reps 75)
+c1/cjk done (load1 0.48, reps 89)
+c1/mixed done (load1 0.48, reps 37)
+nd/ascii done (load1 0.48, reps 90)
+nd/latin1 done (load1 0.48, reps 175)
+nd/cjk done (load1 0.48, reps 101)
+nd/mixed done (load1 0.48, reps 118)
+l/ascii done (load1 0.48, reps 10)
+l/latin1 done (load1 0.48, reps 10)
+l/cjk done (load1 0.48, reps 11)
+l/mixed done (load1 0.47, reps 11)
+xwd/ascii done (load1 0.47, reps 10)
+xwd/latin1 done (load1 0.47, reps 11)
+xwd/cjk done (load1 0.47, reps 12)
+xwd/mixed done (load1 0.47, reps 11)
+x1/ascii done (load1 0.48, reps 4)
+x1/latin1 done (load1 0.48, reps 4)
+x1/cjk done (load1 0.48, reps 400)
+x1/mixed done (load1 0.48, reps 28)
+x2/ascii done (load1 0.48, reps 1)
+x2/latin1 done (load1 0.48, reps 1)
+x2/cjk done (load1 0.48, reps 94)
+x2/mixed done (load1 0.47, reps 2)
+x3/ascii done (load1 0.47, reps 9)
+x3/latin1 done (load1 0.47, reps 7)
+x3/cjk done (load1 0.47, reps 11)
+x3/mixed done (load1 0.47, reps 7)
+wrote results/bench_ubuntubudu.tsv
+BENCH_RC=0
+#host	ubuntubudu	Linux-7.0.0-29-generic-x86_64-with-glibc2.43
+#cpu	AMD Ryzen 5 1600 Six-Core Processor
+#cc	gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0 -O2
+#date	2026-09-30 01:08:13
+#rounds	11	#load_threshold	0.50
+case	regime	arm	median_ns_per_char	min	max	ratio_vs_bb	noise_floor	verdict	answers	matches
+c1	ascii	bb	0.342	0.342	0.385	1.000	6.3%		ok	0
+c1	ascii	bc	0.342	0.342	0.342	1.000	6.3%		ok	0
+c1	ascii	ia	0.449	0.449	0.451	1.314	6.3%	SLOWER	ok	0
+c1	ascii	ib	0.449	0.449	0.451	1.314	6.3%	SLOWER	ok	0
+c1	ascii	ic	0.449	0.449	0.449	1.314	6.3%	SLOWER	ok	0
+c1	latin1	bb	0.410	0.409	0.434	1.000	3.1%		ok	1250
+c1	latin1	bc	0.409	0.409	0.410	0.999	3.1%		ok	1250
+c1	latin1	ia	0.525	0.525	0.526	1.282	3.1%	SLOWER	ok	1250
+c1	latin1	ib	0.534	0.533	0.535	1.303	3.1%	SLOWER	ok	1250
+c1	latin1	ic	0.527	0.527	0.528	1.287	3.1%	SLOWER	ok	1250
+c1	cjk	bb	1.009	1.009	1.031	1.000	1.1%		ok	0
+c1	cjk	bc	1.009	1.009	1.010	1.000	1.1%		ok	0
+c1	cjk	ia	1.328	1.325	1.354	1.316	1.1%	SLOWER	ok	0
+c1	cjk	ib	1.327	1.325	1.346	1.315	1.1%	SLOWER	ok	0
+c1	cjk	ic	1.327	1.325	1.333	1.314	1.1%	SLOWER	ok	0
+c1	mixed	bb	2.784	2.781	2.810	1.000	0.5%		ok	46881
+c1	mixed	bc	2.788	2.787	2.792	1.001	0.5%		ok	46881
+c1	mixed	ia	4.582	4.574	4.593	1.645	0.5%	SLOWER	ok	46881
+c1	mixed	ib	4.899	4.892	4.920	1.759	0.5%	SLOWER	ok	46881
+c1	mixed	ic	4.625	4.619	4.674	1.661	0.5%	SLOWER	ok	46881
+nd	ascii	bb	0.630	0.623	0.638	1.000	1.2%		ok	11437
+nd	ascii	bc	0.623	0.616	0.641	0.990	1.2%		ok	11437
+nd	ascii	ia	0.663	0.659	0.665	1.053	1.2%	SLOWER	ok	11437
+nd	ascii	ib	0.747	0.745	0.754	1.185	1.2%	SLOWER	ok	11437
+nd	ascii	ic	0.740	0.739	0.743	1.174	1.2%	SLOWER	ok	11437
+nd	latin1	bb	0.379	0.378	0.393	1.000	1.9%		ok	0
+nd	latin1	bc	0.378	0.378	0.379	0.998	1.9%		ok	0
+nd	latin1	ia	0.370	0.370	0.381	0.978	1.9%	FASTER	ok	0
+nd	latin1	ib	0.486	0.486	0.488	1.284	1.9%	SLOWER	ok	0
+nd	latin1	ic	0.486	0.486	0.488	1.284	1.9%	SLOWER	ok	0
+nd	cjk	bb	1.776	1.774	1.823	1.000	1.4%		ok	5653
+nd	cjk	bc	1.776	1.774	1.779	1.000	1.4%		ok	5653
+nd	cjk	ia	2.092	2.074	2.124	1.178	1.4%	SLOWER	ok	5653
+nd	cjk	ib	2.273	2.267	2.282	1.280	1.4%	SLOWER	ok	5653
+nd	cjk	ic	2.198	2.192	2.233	1.238	1.4%	SLOWER	ok	5653
+nd	mixed	bb	0.724	0.721	0.739	1.000	1.3%		ok	2834
+nd	mixed	bc	0.723	0.719	0.725	0.998	1.3%		ok	2834
+nd	mixed	ia	0.854	0.852	0.879	1.179	1.3%	SLOWER	ok	2834
+nd	mixed	ib	0.974	0.973	0.976	1.345	1.3%	SLOWER	ok	2834
+nd	mixed	ic	0.955	0.952	0.956	1.318	1.3%	SLOWER	ok	2834
+l	ascii	bb	7.195	7.186	7.213	1.000	0.3%		ok	166245
+l	ascii	bc	7.216	7.211	7.230	1.003	0.3%		ok	166245
+l	ascii	bd	5.985	5.972	6.023	0.832	0.3%	FASTER	ok	166245
+l	ascii	ia	7.389	7.380	7.396	1.027	0.3%	SLOWER	ok	166245
+l	ascii	ib	7.344	7.335	7.510	1.021	0.3%	SLOWER	ok	166245
+l	ascii	ic	7.380	7.374	7.413	1.026	0.3%	SLOWER	ok	166245
+l	latin1	bb	7.652	7.646	7.662	1.000	0.6%		ok	176830
+l	latin1	bc	7.698	7.693	7.705	1.006	0.6%		ok	176830
+l	latin1	bd	6.169	6.131	6.194	0.806	0.6%	FASTER	ok	176830
+l	latin1	ia	9.838	9.826	9.866	1.286	0.6%	SLOWER	ok	176830
+l	latin1	ib	9.554	9.545	9.574	1.249	0.6%	SLOWER	ok	176830
+l	latin1	ic	9.209	9.199	9.221	1.204	0.6%	SLOWER	ok	176830
+l	cjk	bb	20.014	20.001	20.074	1.000	0.2%		ok	19759
+l	cjk	bc	20.055	20.045	20.098	1.002	0.2%		ok	19759
+l	cjk	bd	14.700	14.668	14.769	0.734	0.2%	FASTER	ok	19759
+l	cjk	ia	16.832	16.713	17.206	0.841	0.2%	FASTER	ok	19759
+l	cjk	ib	18.110	18.080	18.173	0.905	0.2%	FASTER	ok	19759
+l	cjk	ic	15.240	15.185	15.380	0.761	0.2%	FASTER	ok	19759
+l	mixed	bb	9.333	9.323	9.365	1.000	0.2%		ok	149911
+l	mixed	bc	9.329	9.318	9.371	1.000	0.2%		ok	149911
+l	mixed	bd	7.432	7.428	7.795	0.796	0.2%	FASTER	ok	149911
+l	mixed	ia	12.337	12.280	12.425	1.322	0.2%	SLOWER	ok	149911
+l	mixed	ib	11.284	11.268	11.331	1.209	0.2%	SLOWER	ok	149911
+l	mixed	ic	10.771	10.739	10.847	1.154	0.2%	SLOWER	ok	149911
+xwd	ascii	bb	6.990	6.976	7.054	1.000	0.6%		ok	168301
+xwd	ascii	bc	7.005	6.999	7.033	1.002	0.6%		ok	168301
+xwd	ascii	bd	6.848	6.837	6.863	0.980	0.6%	FASTER	ok	168301
+xwd	ascii	ia	8.412	8.406	8.659	1.203	0.6%	SLOWER	ok	168301
+xwd	ascii	ib	8.183	8.179	8.353	1.171	0.6%	SLOWER	ok	168301
+xwd	ascii	ic	8.478	8.474	8.500	1.213	0.6%	SLOWER	ok	168301
+xwd	latin1	bb	7.248	7.232	7.264	1.000	0.6%		ok	176830
+xwd	latin1	bc	7.288	7.282	7.296	1.006	0.6%		ok	176830
+xwd	latin1	bd	7.050	7.038	7.066	0.973	0.6%	FASTER	ok	176830
+xwd	latin1	ia	10.502	10.485	10.582	1.449	0.6%	SLOWER	ok	176830
+xwd	latin1	ib	10.149	10.139	10.385	1.400	0.6%	SLOWER	ok	176830
+xwd	latin1	ic	10.128	10.119	10.195	1.397	0.6%	SLOWER	ok	176830
+xwd	cjk	bb	18.386	18.348	18.463	1.000	0.3%		ok	14106
+xwd	cjk	bc	18.406	18.393	18.480	1.001	0.3%		ok	14106
+xwd	cjk	bd	18.405	18.386	18.440	1.001	0.3%	tie	ok	14106
+xwd	cjk	ia	19.870	19.722	20.994	1.081	0.3%	SLOWER	ok	14106
+xwd	cjk	ib	18.239	18.189	18.303	0.992	0.3%	FASTER	ok	14106
+xwd	cjk	ic	15.294	15.236	15.524	0.832	0.3%	FASTER	ok	14106
+xwd	mixed	bb	8.874	8.858	8.889	1.000	0.6%		ok	151043
+xwd	mixed	bc	8.925	8.919	8.943	1.006	0.6%		ok	151043
+xwd	mixed	bd	8.767	8.761	8.782	0.988	0.6%	FASTER	ok	151043
+xwd	mixed	ia	13.085	12.992	13.118	1.475	0.6%	SLOWER	ok	151043
+xwd	mixed	ib	12.139	12.110	12.153	1.368	0.6%	SLOWER	ok	151043
+xwd	mixed	ic	11.652	11.626	11.728	1.313	0.6%	SLOWER	ok	151043
+x1	ascii	bb	16.141	16.018	16.212	1.000	0.6%		ok	0
+x1	ascii	bc	16.131	16.045	16.239	0.999	0.6%		ok	0
+x1	ascii	bv	16.102	16.050	16.131	0.998	0.6%	tie	ok	0
+x1	ascii	ia	2.954	2.954	2.966	0.183	0.6%	FASTER	ok	0
+x1	ascii	ib	2.954	2.953	2.957	0.183	0.6%	FASTER	ok	0
+x1	ascii	ic	2.955	2.954	2.961	0.183	0.6%	FASTER	ok	0
+x1	latin1	bb	17.093	16.984	17.289	1.000	0.9%		ok	0
+x1	latin1	bc	17.154	17.036	17.311	1.004	0.9%		ok	0
+x1	latin1	bv	17.371	17.190	17.520	1.016	0.9%	SLOWER	ok	0
+x1	latin1	ia	4.098	4.096	4.129	0.240	0.9%	FASTER	ok	0
+x1	latin1	ib	4.072	4.069	4.075	0.238	0.9%	FASTER	ok	0
+x1	latin1	ic	3.926	3.924	3.975	0.230	0.9%	FASTER	ok	0
+x1	cjk	bb	0.049	0.049	0.108	1.000	59.1%		ok	0
+x1	cjk	bc	0.049	0.049	0.050	1.000	59.1%		ok	0
+x1	cjk	bv	0.049	0.049	0.050	1.000	59.1%	tie	ok	0
+x1	cjk	ia	0.049	0.049	0.050	1.000	59.1%	tie	ok	0
+x1	cjk	ib	0.049	0.049	0.049	1.000	59.1%	tie	ok	0
+x1	cjk	ic	0.049	0.049	0.050	1.000	59.1%	tie	ok	0
+x1	mixed	bb	3.689	3.681	3.703	1.000	0.3%		ok	968
+x1	mixed	bc	3.684	3.679	3.704	0.999	0.3%		ok	968
+x1	mixed	bv	16.493	16.460	16.915	4.470	0.3%	SLOWER	ok	968
+x1	mixed	ia	5.006	5.000	5.008	1.357	0.3%	SLOWER	ok	968
+x1	mixed	ib	5.309	5.302	5.315	1.439	0.3%	SLOWER	ok	968
+x1	mixed	ic	4.964	4.960	4.984	1.346	0.3%	SLOWER	ok	968
+x2	ascii	bb	41.138	41.049	41.349	1.000	10.5%		ok	168301
+x2	ascii	bc	36.811	36.716	36.906	0.895	10.5%		ok	168301
+x2	ascii	bv	41.778	41.656	42.251	1.016	10.5%	tie	ok	168301
+x2	ascii	ia	8.574	8.562	8.714	0.208	10.5%	FASTER	ok	168301
+x2	ascii	ib	8.507	8.418	8.651	0.207	10.5%	FASTER	ok	168301
+x2	ascii	ic	7.881	7.843	7.921	0.192	10.5%	FASTER	ok	168301
+x2	latin1	bb	48.264	47.917	49.063	1.000	10.1%		ok	176830
+x2	latin1	bc	43.403	43.170	43.704	0.899	10.1%		ok	176830
+x2	latin1	bv	40.991	40.783	41.787	0.849	10.1%	FASTER	ok	176830
+x2	latin1	ia	10.280	10.266	10.293	0.213	10.1%	FASTER	ok	176830
+x2	latin1	ib	10.732	10.694	10.746	0.222	10.1%	FASTER	ok	176830
+x2	latin1	ic	9.913	9.903	9.961	0.205	10.1%	FASTER	ok	176830
+x2	cjk	bb	2.400	2.394	2.417	1.000	7.0%		ok	2802
+x2	cjk	bc	2.232	2.210	2.246	0.930	7.0%		ok	2802
+x2	cjk	bv	68.483	68.182	69.358	28.530	7.0%	SLOWER	ok	2802
+x2	cjk	ia	6.691	6.676	6.704	2.788	7.0%	SLOWER	ok	2802
+x2	cjk	ib	6.350	6.329	6.384	2.645	7.0%	SLOWER	ok	2802
+x2	cjk	ic	6.356	6.341	6.375	2.648	7.0%	SLOWER	ok	2802
+x2	mixed	bb	50.997	50.748	51.214	1.000	10.3%		ok	147998
+x2	mixed	bc	45.754	45.338	46.138	0.897	10.3%		ok	147998
+x2	mixed	bv	50.195	49.984	50.400	0.984	10.3%	tie	ok	147998
+x2	mixed	ia	10.815	10.793	10.854	0.212	10.3%	FASTER	ok	147998
+x2	mixed	ib	11.661	11.636	11.671	0.229	10.3%	FASTER	ok	147998
+x2	mixed	ic	10.657	10.631	10.667	0.209	10.3%	FASTER	ok	147998
+x3	ascii	ia	7.934	7.906	7.953	nan			ok	168301
+x3	ascii	ib	8.444	8.432	8.489	nan			ok	168301
+x3	ascii	ic	7.749	7.697	7.777	nan			ok	168301
+x3	latin1	ia	10.396	10.391	10.426	nan			ok	176830
+x3	latin1	ib	10.749	10.741	10.755	nan			ok	176830
+x3	latin1	ic	9.892	9.878	9.940	nan			ok	176830
+x3	cjk	ia	19.354	19.178	19.500	nan			ok	14106
+x3	cjk	ib	17.566	17.496	18.044	nan			ok	14106
+x3	cjk	ic	15.273	15.222	15.693	nan			ok	14106
+x3	mixed	ia	13.088	13.053	13.120	nan			ok	151043
+x3	mixed	ib	12.784	12.775	12.811	nan			ok	151043
+x3	mixed	ic	11.644	11.634	11.682	nan			ok	151043
+
+ALL_DONE

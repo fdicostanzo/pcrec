@@ -93,6 +93,9 @@ static const PcrecSetTerm t_blank[] = {
     RANGE(0x09, 0x09), RANGE(0x20, 0x20), RANGE(0xA0, 0xA0),
     RANGE(0x1680, 0x1680), RANGE(0x180E, 0x180E), RANGE(0x2000, 0x200A),
     RANGE(0x202F, 0x202F), RANGE(0x205F, 0x205F), RANGE(0x3000, 0x3000) };
+/* `\v` under UTF: LF..CR, NEL, LS, PS ([K72], libpcre2 10.46 under UTF). */
+static const PcrecSetTerm t_vspace[] = {
+    RANGE(0x0A, 0x0D), RANGE(0x85, 0x85), RANGE(0x2028, 0x2029) };
 static const PcrecSetTerm t_xdigit[] = {
     RANGE('0', '9'), RANGE('A', 'F'), RANGE('a', 'f'),
     RANGE(0xFF10, 0xFF19), RANGE(0xFF21, 0xFF26), RANGE(0xFF41, 0xFF46) };
@@ -117,6 +120,10 @@ SETDEF(pcrec_ucp_set_lower,    "ucp-lower",    false, true,  t_ll);
 SETDEF(pcrec_ucp_set_upper,    "ucp-upper",    false, true,  t_lu);
 SETDEF(pcrec_ucp_set_cntrl,    "ucp-cntrl",    false, false, t_cc);
 SETDEF(pcrec_ucp_set_blank,    "ucp-blank",    false, false, t_blank);
+/* `\h`/`\v` under UTF WITHOUT UCP ([K72]): the same lists `\h`/`\v` mean in
+ * PCRE2_UTF, so `t_blank` is shared with `[:blank:]` under UCP. */
+SETDEF(pcrec_ucp_set_hspace,   "utf-hspace",   false, false, t_blank);
+SETDEF(pcrec_ucp_set_vspace,   "utf-vspace",   false, false, t_vspace);
 SETDEF(pcrec_ucp_set_xdigit,   "ucp-xdigit",   false, false, t_xdigit);
 SETDEF(pcrec_ucp_set_punct,    "ucp-punct",    false, false, t_punct);
 SETDEF(pcrec_ucp_set_graph,    "ucp-graph",    true,  false, t_graph_not);

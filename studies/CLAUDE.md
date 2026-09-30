@@ -13,6 +13,8 @@ re-measure before load-bearing use.
 
 ## Studies
 
+- `u3_island_twin/` -- [UCP] U3's D77 trigger (lane u3twin, 2026-09-30): the island form of ucp_design.md s3 hand-built as C twins, proven answer-identical to today's artifacts and libpcre2 10.46, timed island vs all-byte/VM. See its CLAUDE.md.
+
 - `simd1/` — precompiled AVX2/SSE fixed-pattern SIMD matchers (Frank +
   a separate Claude session, adopted 2026-08-16). Harness + 43 validated
   candidates + measured studies behind a generator design. See its

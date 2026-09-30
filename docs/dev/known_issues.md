@@ -11,13 +11,75 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 ---
 
-## K73 — OPEN, deferred (found by lane ucpu2, 2026-09-29, side finding) — empty pattern on a lone ill-formed byte under `-e utf8`
+## K76 — FIXED 2026-09-30 (lane k76fix) — a `.rxt` file whose FIRST block is `pattern-esc` was read as head-bearing (found by lane k73utf, 2026-09-29)
 
-**Witness:** the empty pattern on the subject `\x80` (one stray continuation byte) under `-e utf8`: pcrec reports a match at (0,0), and libpcre2 10.46 with PCRE2_MATCH_INVALID_UTF reports (1,1). Pre-existing, independent of UCP; not investigated. Status: deferred, no fix; the ill-formed-position semantics row ([UTF8-ATTRIB]-family) should own it.
+**Witness:** tests/harness/run.sh, tests/harness/verify_rxt.py's entry-set walk and the rxtsource head census each compared the file's first token against the literal `pattern`; the format's head ends at the first BLOCK OPENER, and `pattern-esc` is one (`rxt_schema.def` `opens_group`). Effect: a spurious `--list-source` call, and a refusal in ANY later block became a whole-file HARNESS FAILURE that lost the passing cases of the earlier blocks (measured: 1 pass + 1 bad later block read `0 passed / 2 failed`); the census counted the file head-bearing.
+
+**Fix:** `rxt_is_opener` in run.sh (the one home of the bash rule, four call sites), `_RXT_BLOCK_OPENERS` in verify_rxt.py (two sites), the census awk widened; regression `K76` in tests/rxtsource/run_rxtsource_tests.sh (wrapper-counted `--list-source` calls on `opener_pattern_esc_pair` from legs B and C, the census, and a pre-fix-rule control that must read the witness head-bearing); S203 re-aimed; spec sentence in rxt_format.md. tests/utf8/k73_startskip.rxt keeps `(?:)`: `pattern-esc ""` there turns C1 red on the separate R-A dump-value seam (leg A decoded, legs B/C as written); its comment is corrected. Report: docs/dev/lanes/k76fix_report.md.
 
 ---
 
-## K72 — OPEN, no fix scheduled (found by lane ucpu1, [UCP] U1, 2026-09-28/29) — `\h`/`\v` under `-e utf8` are the BYTE sets, not PCRE2_UTF's
+## K75 — OPEN, needs a RULING (found by lane k73utf, 2026-09-29) — the spec find-all loop stops at a stray continuation byte after a non-empty match under `-e utf8`
+
+**Witness:** `a` on `a\x80a` under `-e utf8`: pcrec's find-all (the match_api.md protocol: next startpos = previous end) finds 1 match; libpcre2 10.46 with PCRE2_MATCH_INVALID_UTF finds 2. After the first match the next startpos is the stray `\x80`, and K73 ruling (a) keeps K50's refusal of an EXPLICIT startpos on a continuation byte. Pre-existing. **The question:** a STRAY continuation byte (ill-formed, not inside any character) is not "mid-character"; skipping forward there, while refusing only a true mid-character position inside a well-formed sequence, may be the principled line. Measure PCRE2 on both kinds first. Frank's ruling; ruling (a) itself stands.
+
+---
+
+## K74 — OPEN, deferred (found by lane k73utf, 2026-09-29) — `$` and `\B` at an ill-formed subject END diverge from libpcre2 10.46 under `-e utf8`
+
+**Witness:** transcripts in docs/dev/lanes/k73utf_evidence/ (lane/k73utf). Pre-existing, independent of K73. Status: deferred; the ill-formed-position semantics family (with K75) should own it.
+
+---
+
+## K73 — FIXED 2026-09-29 (lane k73utf, ruling (a); abi 46 -> 47) — empty pattern on a lone ill-formed byte under `-e utf8` (found by lane ucpu2, 2026-09-29, side finding)
+
+**Witness:** the empty pattern on the subject `\x80` (one stray continuation byte) under `-e utf8`: pcrec reports a match at (0,0), and libpcre2 10.46 with PCRE2_MATCH_INVALID_UTF reports (1,1). Pre-existing, independent of UCP.
+
+**Measured (lane k7273, 2026-09-29; libpcre2 10.48 locally, 10.46 for the
+final cells — see `docs/dev/lanes/k7273_report.md`).** The oracle rule is not
+about the empty pattern: under PCRE2_MATCH_INVALID_UTF a `start_offset` (the
+implicit 0 included) that lands on a CONTINUATION byte (0x80-0xBF) is
+advanced to the next non-continuation byte before any attempt, whatever
+pattern follows (`\B`, `(?=)`, `x*`, `^` all answer as if started there:
+`\x80` -> (1,1), `\x80\x80` -> (2,2), `\x80\xc3\xa9` -> (1,1); `^` on `\x80`
+finds NOTHING). It is the same rule as `docs/spec/match_api.md` §3.1.1's
+normative `next_pos` advance. Every OTHER ill-formed lead (0xFF, 0xE3
+truncated, ...) is a valid start position and answers (0,0) exactly as pcrec
+does. pcrec's guard (`enc_utf8`'s `search_from == 0 || ...`) exempts 0, so
+the first candidate on a subject that begins with continuation bytes is not a
+boundary, contradicting §3.1's "every position the ENGINE generates is a
+character boundary". **Status: OPEN, held for a ruling** — the fix changes the
+emitted guard text of every `-e utf8` artifact (an `abi` event, D76/D94) and
+rounds a `startpos` where §3.1 says "neither arm ROUNDS the caller's
+startpos"; recommended shape and the two alternatives are in the lane report.
+
+**Fix (2026-09-29, Frank's ruling (a)).** Offset 0 is still never REFUSED,
+but on a subject that begins with continuation bytes it is no longer where a
+match is attempted: ONE emitter primitive, `pcrec_emit_start_zero`
+(`src/gen/emit_dfa.c`), renders the rule from the backend's start predicate at
+every caller-facing body, in the spelling each body's return convention needs
+— SEEK in the unanchored DFA scan (both its customers) and on the VM's first
+`attempt_position` (never on `search_from` there, which `\G` reads), SKIP in
+ENG_ATTEMPT's start loop, NOMATCH (`-1`) in the anchored match-here bodies. The
+backend text (`enc_utf8.c`'s `start_guard`) became the plain character-start
+predicate; the caller's offset-0 exemption from the REFUSAL moved into the
+emitter's guard composition, rendering the guard line byte-identical. Gated on
+`pcrec_startgate_needed` ([K50-NULLGATE]'s proof: non-nullable patterns cannot
+match at a continuation byte). No flag: identical under `-fno-startpos-guard`.
+An explicit mid-character `startpos > 0` keeps K50's refusal. **Found on the
+way and fixed with it**: the DFA's `"unwrapped"` `<prefix>_match` carried no
+K50 guard at all (`x*` at `ctx->pos == 1` of `C3 A9` answered 0, not
+PCREC_ERR_STARTPOS) — `tests/utf8/run_startbnd_diff.sh` swept `_search` only;
+its driver now sweeps `_match` too, with its own floor. Witnesses:
+`tests/utf8/k73_startskip.rxt` (86 cells, libpcre2 10.46 transcript
+`docs/dev/lanes/k73utf_evidence/k73_witness_10.46.txt`; 45 fail on the pre-fix
+compiler) and seven new §5 engine rows in `run_startbnd_diff.sh`. Spec:
+`docs/spec/match_api.md` §3.1 (two bullets) and §6, `docs/spec/tuning.md`
+§2.23. Report: `docs/dev/lanes/k73utf_report.md`.
+
+---
+
+## K72 — FIXED 2026-09-29 (lane k7273, NOT an abi event: it moves the parsed class, not emitted scaffolding) — `\h`/`\v` under `-e utf8` were the BYTE sets, not PCRE2_UTF's (found by lane ucpu1, [UCP] U1, 2026-09-28/29)
 
 **Witness** (libpcre2 10.46, `PCRE2_UTF` only, no UCP — transcript
 `docs/dev/lanes/ucpu1_evidence/probe_hv_10.46.txt`, `probe_hv.py`): under
@@ -41,7 +103,25 @@ code points, `[[:blank:]]` = `\h`" — not from this `\h` ESCAPE's own
 `h_def` row — so it is unaffected and correctly carries U+3000; this
 entry is scoped to the bare `\h`/`\v` escapes only.
 
-**Status.** Deferred, no fix scheduled: found while confirming [UCP] U1's
+**Fix (2026-09-29).** `h_def`/`H_def`/`v_def`/`V_def` (`src/parse/registry.c`)
+each gain a leading `DEFK_SET` entry under the `DEF_ENCODING_UTF8` tag — the
+tag's first producer (`pcrec_def_tag_applies`: the compile's encoding has
+Unicode's universe, `max_cp >= 0x10FFFF`, asked of the encoding and never of
+its identity, DD-12 (7) — the `(*UTF)` port's own question). The sets are
+`pcrec_ucp_set_hspace`/`_vspace` (`src/parse/mod_ucp.c`, built by the one set
+producer; `t_blank` is shared with UCP's `[:blank:]`, `\h`'s list being the
+same 19 code points). Lists (libpcre2 10.46, PCRE2_UTF, no UCP): `\h` U+0009
+U+0020 U+00A0 U+1680 U+180E U+2000-U+200A U+202F U+205F U+3000; `\v`
+U+000A-U+000D U+0085 U+2028 U+2029 — the FULL lists were checked, and the
+only members the byte sets lacked were the wide ones (U+1680, U+180E,
+U+2000-U+200A, U+202F, U+205F, U+3000; U+2028, U+2029). Witness:
+`tests/utf8/hv_space.rxt` (420 cells: every member, 24 edge non-members, all
+nine bracketed/negated spellings, run-lengths, plus the `byte` control), each
+cell oracle-read; 361/420 on the pre-fix binary, 420/420 fixed. Spec hunk:
+`docs/spec/cli.md` (the `--ucp` section's bullet on `\h \H \v \V`). The
+entry text below is the ORIGINAL diagnosis, kept as found.
+
+**Status (original).** Deferred, no fix scheduled: found while confirming [UCP] U1's
 identity gate (nothing under U0/U1 changed `\h`/`\v`'s definition), out of
 that lane's charter. No repro filed under `tests/known_fail/` (module
 `unicode-props`/a widened `\h`/`\v` table would need to change the base
