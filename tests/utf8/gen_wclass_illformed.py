@@ -115,6 +115,19 @@ def main():
         for engine in (None, "vm"):
             for grouped in (False, True):
                 p = ("x(" + cls + ")y") if grouped else pat
+                # A block pcrec REFUSES is not written as cases: it is named
+                # in a comment with the refusal, so a later change that
+                # retires the refusal is visible here on regeneration.
+                argv = [PCREC, "-p", "rx", "-e", "utf8", "--features", "all",
+                        "-o", os.path.join(tmp, "probe.c"), "--pattern", p]
+                if engine: argv.insert(1, "--engine=" + engine)
+                r = subprocess.run(argv, capture_output=True)
+                if r.returncode != 0:
+                    blocks.append("# %s, %s engine, %s: REFUSED at generation -- %s"
+                                  % (label, engine or "default",
+                                     "captured" if grouped else "bare",
+                                     r.stderr.decode().strip().split("\n")[0][:160]))
+                    continue
                 b = ["# %s, %s engine, %s" % (label, engine or "default",
                                               "captured" if grouped else "bare"),
                      "# pcre2-only", "pattern " + p, "encoding utf8",
