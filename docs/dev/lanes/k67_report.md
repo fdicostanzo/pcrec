@@ -234,10 +234,27 @@ by the final `git merge main` (`cmp` of `build/pcrec` before and after):
 - `leaks --atExit`: 0 leaks on K67, a VM unroll-ladder witness, two
   [SEL-1]/[OPT-4] fallbacks, the K59 witness and a refused compile.
 
-OWED (the manager schedules): the full `make test`, and `make test-codegen`
-at `PROCS=2`, launched detached as this lane's last act -- log
-`/tmp/k67/codegen.log`, completion line `rc=<n>` appended at its end (the
-verdict is make's `*** [test-codegen] Error` line, not a FAIL grep).
+- `PROCS=2 make test-codegen CC=gcc-16`: `run_group: 10/12`, `*** [test-codegen]
+  Error 1`. The two reds: the standing darwin `nm could not read arm_a.o`
+  probe (not this lane's), and **[SABANCHOR]: two sabotage anchors this lane
+  staled** -- S189 quoted the anchored machine's `pcrec_build_dfa(` call
+  (now `pcrec_build_min_dfa(`; `prune` is in the memo key, so the plant
+  still ships an unpruned machine) and S259 quoted the `failed_nomem` exit
+  (which gained the memo's free). Both re-anchored;
+  `python3 scripts/m6read_check_sab_anchors.py` (the file SABANCHOR runs)
+  now reads 349 rows / 365 sites, 0 stale. S262's plant still resolves but
+  its REACH narrowed (only a loop on an epsilon cycle reaches `clo_open`
+  now): its header says so, and the plant was checked by hand on a scratch
+  build -- `(a*)*b` and `(?:a|)+x` refuse, `a+` no longer does.
+
+OWED (the manager schedules): the full `make test`; the S189/S259 solo
+re-drive, launched detached as this lane's last act
+(`PROCS=2 bash tests/mech/run_sabotage_matrix.sh S189 S259`, log
+`/tmp/k67/mech.log`, completion line `rc=<n>` appended; expected DETECTED
+at their recorded figures, S189 `anchdiff:2fail/5pass`, S259
+`resource:1fail/...`); and S262's full-corpus re-drive (`bash
+tests/mech/run_sabotage_matrix.sh S262`, harness arm, ~25 min on darwin),
+not launched.
 
 ## 8. Findings
 
