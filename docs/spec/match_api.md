@@ -2265,7 +2265,33 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `53` on every artifact today ([CLS-TREE] S2's review
+- **`rx_info.abi` is `54` on every artifact today (lane k7980 bumped it
+  from 53, 2026-09-30: K79 AND K80 — NO SELECTION READS THE PREFIX, AND THE
+  SHARED BLOCK REFUSES A MIXED-ABI TRANSLATION UNIT).** (1) K80: the shared
+  block's guard now carries the abi as its value, `#define PCREC_RX_ABI_H 54`,
+  and the block opens with
+  `#if defined(PCREC_RX_ABI_H) && (PCREC_RX_ABI_H + 0) != 54` / `#error …`,
+  so a translation unit that includes artifacts of two different abis fails
+  to compile, naming the cause, where it used to compile the second against
+  the first one's types. The same-abi case is unchanged: the first block
+  wins and every later one is skipped. The `+ 0` makes the test refuse a
+  pre-54 artifact included FIRST (its guard is defined empty); a pre-54
+  artifact included AFTER a 54 one is the one order that stays silent, since
+  that artifact's own `#ifndef` was written before this rule existed. (2)
+  K79: the compiler emits every artifact under a fixed two-byte placeholder
+  prefix and writes the caller's `-p` spelling only onto the finished text,
+  so every size-predicated selection (the VM entry shape, the size term's
+  trigger and ladder, the emitted-size caps) is decided on the text at a
+  canonical prefix length, and the same pattern under the same options gets
+  the same artifact whatever its prefix, differing only in spelling
+  (`docs/spec/limits.md` "Size limits and the prefix"). At `-p rx` no byte
+  moves but this digit and the guard lines; under a prefix of any other
+  length, `<PREFIX>_VM_PROGRAM_BYTES` now reports the canonical length (it
+  counted the prefix's bytes before), and an artifact whose selection had
+  crossed a size knee because of its prefix takes the default-prefix
+  selection. `rx_info.name`'s default is still the prefix. No struct offset
+  moves, no `rx_info` member is added or changed, no answer moves.
+- **`rx_info.abi` was `53` ([CLS-TREE] S2's review
   fixes bumped it from 52, 2026-09-30, renumbered by the manager at merge:
   THE SCAN EDGE'S RUN TEST IS THE CLASS-FORM TABLE'S ANSWER, AND THE KIT IS
   TAKEN ONLY WHERE IT IS SMALLER — D139).** A DFA scan edge no longer

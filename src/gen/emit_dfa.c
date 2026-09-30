@@ -49,7 +49,7 @@
  * abi ritual fires next, bump this ONE constant; grep for its old value
  * finds both emission sites plus every out-of-tree reader the ritual's own
  * site list already enumerates. */
-#define PCREC_ARTIFACT_ABI 53
+#define PCREC_ARTIFACT_ABI 54
 
 /* Renders one byte of pattern-derived text safely into a C block comment, escaping whatever would close or falsely open the comment.
  *
@@ -1431,9 +1431,33 @@ static void emit_rx_abi_types(StrBuf *sb)
      * unit: it is emitted once per file, its size does not grow with the
      * pattern, and a reader who has half of it has a header they cannot use. */
     pcrec_sb_cmt_open(sb, PCREC_CMT_ESSENTIAL);
-    pcrec_sb_puts(sb,
+    /* [K80] THE GUARD CARRIES THE ABI, AND A MISMATCH IS AN #error. The
+     * guard was a bare `#define PCREC_RX_ABI_H`, so an artifact of a
+     * DIFFERENT abi included after this one skipped its own block silently
+     * and compiled against the first one's types. Now the guard's VALUE is
+     * the abi and the block refuses to follow a block of any other value.
+     *
+     * WHY NOT AN ABI-KEYED GUARD NAME (`PCREC_RX_ABI_54_H`). Two keyed
+     * guards would let both blocks through, and the second `struct rx_ctx`
+     * is then a redefinition error that names a type, not the cause — or,
+     * for a block whose members happened to agree, no error at all. One
+     * guard with a value keeps "the first block wins" for the same-abi case
+     * and says what went wrong for the mixed one.
+     *
+     * `+ 0` is what makes the test well-formed against an artifact from
+     * before this change, whose guard is defined EMPTY: `( + 0)` is 0, so
+     * old-then-new is refused too. New-then-old is the one order no
+     * emission can reach — the old block's `#ifndef` is already written —
+     * and the spec says so (match_api.md §6). */
+    pcrec_sb_printf(sb,
+        "#if defined(PCREC_RX_ABI_H) && (PCREC_RX_ABI_H + 0) != %d\n"
+        "#error \"pcrec: this artifact (abi %d) shares a translation unit with "
+        "an artifact of a different abi; regenerate both with one pcrec\"\n"
+        "#endif\n"
         "#ifndef PCREC_RX_ABI_H\n"
-        "#define PCREC_RX_ABI_H\n"
+        "#define PCREC_RX_ABI_H %d\n",
+        PCREC_ARTIFACT_ABI, PCREC_ARTIFACT_ABI, PCREC_ARTIFACT_ABI);
+    pcrec_sb_puts(sb,
         "\n"
         /* [VAR] ONE CALLER VARIABLE — a fixed-literal ABI type, never
          * `--prefix`-scoped, joining `rx_ctx`/`rx_matchfn`/`rx_callout_ref`
