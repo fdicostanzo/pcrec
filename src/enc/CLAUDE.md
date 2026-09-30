@@ -550,6 +550,38 @@ Two new `PcrecEncEntry` columns, each recorded against D58:
   exported entry is interposable under `-fPIC`, and a per-character decoder
   that does not inline is the cost.
 
-`$_var_valid` keeps its own decoding loop. Moving it onto `$_decode` would
-move every var-bearing utf8 artifact for no measured gain (D77); the comment
-at its definition says so.
+`$_var_valid` WAS RE-SPELLED ON `$_valid_upto` at [UTF-VALID] (below), which
+is the one-validator ruling (D133 Q7): the abi event was paying for the move
+anyway, so the D77 reason for leaving it on its own loop lapsed.
+
+## [UTF-VALID] (D133) the SUBJECT VALIDATOR, entry `PCREC_ENCE_VALID_UPTO`
+
+`$_valid_upto(s, n, startpos)`: the first byte of the first ill-formed
+sequence at or after `startpos` stepped back LB characters, or `n`
+(`docs/spec/match_api.md` §3.1.2). ALWAYS IN THE MASK, `next_pos`'s status:
+it is the find-all escape a caller runs on the DEFAULT artifact, so both
+emitters set it unconditionally and EVERY backend has a row — `byte`'s body is
+`return n;` (the contract has an answer, the trivial one). Not
+`engine_callable`: the `-futf-check` precheck calls it once per call beside
+the K50 guard. Three callers, one validator: that precheck, the caller asking
+for the offset, and utf8's `$_var_valid` (`requires` carries the call).
+
+- **The step-back is PCRE2's raw walk** (utf_valid_design.md §1.3): per
+  character one byte back, then back over EVERY continuation byte, clamped at
+  0, unvalidated. `$_back_step` is deliberately NOT reused — it validates and
+  stops after three continuations, which reports the wrong offset on exactly
+  the inputs this entry exists for.
+- **LB is a PATTERN fact the body reads as `$_VALID_LB`**, a macro the
+  emitter (`src/gen/emit_dfa.c`'s `emit_residual_defs`) defines from
+  `Ctx.lb_max` in the `.c` beside the definitions, on every artifact whatever
+  the encoding — `byte`'s body leaves it unread, so no encoding test decides
+  it (DD-12 (7)).
+- **The ASCII fast path** (ruled Q8): after an ASCII byte, eight bytes at a
+  time through `__builtin_memcpy` into a `uint64_t` while no high bit is set
+  — `__builtin_` so no `<string.h>` is needed (an artifact includes it only
+  when something else calls memchr).
+- **"Validity is a question under this backend"** is asked of the TABLE as
+  `pcrec_enc_has_entry(e, PCREC_ENCE_VAR_VALID)` — the row a backend under
+  which every byte string is valid does not carry. `pcrec_utf_check_on`
+  (src/gen/emit_dfa.c) is that predicate plus the flag, read by the emitted
+  check, the `<PREFIX>_UTF_CHECK` stamp and the `rx_info.flags` mask alike.

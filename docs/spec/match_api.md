@@ -251,7 +251,7 @@ noted under group 2, which are `PCREC_*`-named yet per-artifact):
 1. **Per-artifact symbols**, scoped by the caller's `pcrec_options.prefix`
    (default `"rx"`): `<prefix>_search`, `<prefix>_match`,
    `<prefix>_match_caps`, `<prefix>_info`, `<prefix>_next_pos` (§3.1.1),
-   and the `<PREFIX>_*` macro
+   `<prefix>_valid_upto` (§3.1.2, [UTF-VALID]), and the `<PREFIX>_*` macro
    family (`RX_NCAPS`, the D46 observability
    macros in §6.3). A pattern compiled with `-p foo` gets
    `foo_search`, `FOO_NCAPS`, etc. — verified by compiling the same
@@ -303,7 +303,8 @@ noted under group 2, which are `PCREC_*`-named yet per-artifact):
    `PCREC_ERR_RECURSE`/`PCREC_ERR_FLOOR` (§4 — `_RECURSE` joined and
    `_FLOOR` moved −4 → −5 at [DD-14] wave A, D71 item 1), the
    below-the-floor `PCREC_ERR_INTERNAL` (§4 — NOT a give-up, same wave,
-   commit 2), the caps-array
+   commit 2) and its three caller-refusal siblings `PCREC_ERR_STARTPOS`,
+   `PCREC_ERR_UNSET_VAR` and `PCREC_ERR_UTF` (§4), the caps-array
    unset sentinel `PCREC_UNSET`
    (§5), the two engine constants `PCREC_ENGINE_DFA`/`PCREC_ENGINE_VM`
    (§6), and the nine D46 stamp bit constants `PCREC_VM_RUNG_CURSOR`/
@@ -361,6 +362,7 @@ typedef ptrdiff_t rx_matchfn(const rx_ctx *ctx);
 #define PCREC_ERR_INTERNAL  (-6)  /* [DD-14] below PCREC_ERR_FLOOR: NOT a give-up, D71 item 1 */
 #define PCREC_ERR_STARTPOS  (-7)  /* [K50] below the floor: a mid-character startpos was REFUSED */
 #define PCREC_ERR_UNSET_VAR (-8)  /* [VAR] below the floor: an UNSET or ill-formed variable value was REFUSED */
+#define PCREC_ERR_UTF (-9)  /* [UTF-VALID] below PCREC_ERR_FLOOR: NOT a give-up -- an ill-formed subject was REFUSED (-futf-check) */
 
 #define PCREC_UNSET ((ptrdiff_t)-1)
 
@@ -538,6 +540,7 @@ Searches `s[startpos..n)` for the leftmost match and returns:
 | `<PREFIX>_ERR_STEPS` / `_FRAMES` / `_WORK` / `_RECURSE` | engine gave up (§4); `caps` also left **untouched**. `_RECURSE` is reserved with no producer yet ([DD-14] wave A, D71 item 1) |
 | `PCREC_ERR_INTERNAL` | NOT a give-up (§4) — the artifact detected its own analysis/emission inconsistency (module `lookaround`'s negative-polarity end-check is the one producer today); `caps` left **untouched** like every other negative return ([DD-14] wave A commit 2, D71 item 1) |
 | `PCREC_ERR_STARTPOS` | NOT a give-up (§4) — `startpos` is not a character boundary of this artifact's encoding, so the call is REFUSED and nothing is attempted; `caps` left **untouched**. Only an artifact compiled for an encoding with multi-byte characters can return it, and only when the guard is not denied ([K50], the paragraph below) |
+| `PCREC_ERR_UTF` | NOT a give-up (§4) — the artifact was compiled with `-futf-check` and an ill-formed sequence of its encoding begins in the checked range `[startpos − LB, n)`, so the call is REFUSED before any attempt; `caps` left **untouched**. `<prefix>_valid_upto(s, n, startpos)` (§3.1.2) is the offset. Only a `-futf-check` artifact under an encoding with ill-formed byte strings can return it ([UTF-VALID], the paragraph below) |
 
 Note that `0` here means **no match**, not a zero-length match. A
 zero-length match is a success: it returns `1` with
@@ -587,11 +590,25 @@ byte of `s`.
   PCRE2's UTF modes in the SUCCEEDING direction — `(?<!.)` at offset 1 of the
   four bytes `CE B1 CE B2` reports `(1,1)` — because a truncated leading
   character has no path and a negative assertion succeeds exactly where its
-  body has none. **Neither arm ROUNDS a caller's `startpos > 0`.** Refusing it
-  and honouring it are the two choices on offer; silently advancing to the
-  next boundary (which is `PCRE2_MATCH_INVALID_UTF`'s behaviour) is not one,
-  because a caller handed an answer for a position it did not ask about
-  cannot tell that from an answer for the one it did.
+  body has none. **Neither of those two arms ROUNDS a caller's `startpos >
+  0`**: silently advancing to the next boundary is not something a caller
+  gets without asking, because a caller handed an answer for a position it
+  did not ask about cannot tell that from an answer for the one it did.
+- **`-fstartpos-guard=align` is the axis's THIRD value, and it is that
+  rounding, asked for by name** ([UTF-VALID], D132 item 2, ruled D133;
+  `docs/spec/tuning.md` §2.23). It is for a caller holding a MISALIGNED
+  POINTER into valid text — one that split a buffer on arbitrary bytes. A
+  `startpos > 0` inside a character is moved FORWARD over continuation bytes
+  to the next character start (or `n`), ONCE, at entry, and the search runs
+  exactly as if that position had been passed: `caps` offsets, `\G` and a
+  lookbehind's context are all read from it. Offset 0 is never moved (it is
+  never refused either). The anchored entries (§3.2/§3.3) answer `-1` at a
+  misaligned `ctx->pos`, because no match begins inside a character. It is
+  refused together with `-fno-startpos-guard`, and inert under `byte`. It is
+  not a way to accept invalid UTF-8: under `-futf-check` (below) the check
+  then runs from the ALIGNED position, stepping back behind it as for any
+  `startpos`, so the bytes of the character the pointer landed inside are
+  checked as the caller's real text.
 - **OFFSET 0 IS NEVER REFUSED, AND ON AN ILL-FORMED SUBJECT IT IS NOT WHERE A
   MATCH IS ATTEMPTED** ([K73], Frank's 2026-09-29 ruling (a)). No character
   precedes offset 0, so a caller naming it cannot have pointed inside one; but
@@ -616,6 +633,70 @@ byte of `s`.
   the moved start (`(1,1)` for `x*` on `\x80`); pcrec's anchored contract has
   no way to report a start other than `ctx->pos`, so this is a second stated
   divergence, and both entry shapes agree on it.
+
+**`-futf-check` REFUSES AN ILL-FORMED SUBJECT, AS `PCRE2_UTF` DOES**
+([UTF-VALID], `docs/design/utf_valid_design.md`, ruled D133; the axis is
+`docs/spec/tuning.md` §2.36). By default an artifact is INVALID-TOLERANT: an
+ill-formed sequence matches nothing and nothing reports it
+(`PCRE2_MATCH_INVALID_UTF`'s semantics, K73's start rule above). An artifact
+compiled with `-futf-check` instead refuses the call with `PCREC_ERR_UTF`
+when an ill-formed sequence BEGINS anywhere in `[f, n)`, where `f` is
+`startpos` stepped back LB characters — before any attempt, and whether or
+not a match lies before the bad bytes (`a` on `a\xff` is refused, as
+libpcre2 10.46 refuses it). Otherwise the call answers exactly as the
+default artifact would.
+
+- **LB is PCRE2's `max_lookbehind` fact** (the design's §1.4, measured on
+  10.46): the widest lookbehind branch in characters, and 1 for `\b`, `\B`
+  and `\A`; never summed through nesting, and dead code (a `(?(DEFINE)...)`
+  body) counts. `^`, `$`, `\G`, `\z`, `\Z` and `\K` count 0. So `b` on
+  `\xffab` from 2 answers `(2,3)` while `(?<=..)b` there is refused.
+- **The step-back is PCRE2's raw walk**: per character, one byte back and
+  then back over every continuation byte, clamped at 0 and not validated.
+- **ORDER: the K50 guard FIRST, then the check** (measured on 10.46, the
+  design's §1.2). A mid-character `startpos > 0` is `PCREC_ERR_STARTPOS`
+  whether or not the subject is well-formed; under `-fstartpos-guard=align`
+  the check runs from the aligned position. `startpos > n` keeps `0` and is
+  not checked. At `startpos == 0` K50 does not refuse, so a subject that
+  BEGINS with a continuation byte is refused by the check at offset 0.
+- **Every entry that takes a subject checks, at one site per body**: the
+  check sits beside the K50 guard, so the anchored entries (§3.2/§3.3) and
+  §10's `_in` entries return `PCREC_ERR_UTF` on exactly the calls
+  `<prefix>_search` refuses from the same position. On the VM, a FRAMES
+  escalation of the tiered default entry (§10.9) re-runs the body and
+  validates a second time — the stated cost of re-running from scratch.
+- **The cost is one O(n) pass per call** (the design's §5, directional:
+  about as much again as a scanning call on sparse-accented text, and it
+  makes a call a prefilter answers sublinearly linear). That is why it is
+  off by default. A find-all loop over a checking artifact validates on
+  every call; §3.1.2 gives the linear idiom.
+- **Inert under `byte`**, where every byte string is well-formed: no check
+  is emitted, `<PREFIX>_UTF_CHECK` reads `"inert"`, and the artifact is
+  byte-identical to one built without the flag.
+- **A STATED DIVERGENCE: `PCRE2_UTF` CLIPS BACKWARD READS AT `f`, pcrec DOES
+  NOT** (D142; measured on libpcre2 10.46 and 10.48). Under `PCRE2_UTF`,
+  libpcre2 treats `f` (the stepped-back start above) as the START OF THE
+  SUBJECT for the reads a lookbehind or `\b` makes backwards, even on
+  WELL-FORMED text: `(?<=\ba)b` on `"xab"` from `startpos` 2 reports `(2,3)`
+  under `PCRE2_UTF`, though the same pattern finds nothing from 0 and finds
+  nothing without UTF (the `\b` at `f` sees no previous character); and
+  `(?<=(?<=..)a)b` on `"zzzab"` from 4 finds nothing under `PCRE2_UTF` and
+  reports `(4,5)` without it (the inner lookbehind steps before `f` and
+  fails). pcrec reads the real bytes, with or without `-futf-check`, so it
+  answers as the default artifact does — `nomatch` and `(4,5)` above. **pcrec
+  takes this side because a match's answer must not depend on where the caller
+  started the search** (the same pattern and subject giving different answers
+  from 0 and from 2 is the defect, not the contract), and because the clip is
+  an artifact of how libpcre2 bounds its validated window, not a semantics
+  anyone specified. The refusal set and the refusal OFFSET are exact and
+  unaffected; only the accepted ANSWER differs, and only for patterns whose
+  backward reach exceeds LB (three patterns in the pinned set). The class is
+  4 cells per configuration, pinned EXACTLY (`CLIP` in
+  `tests/utfcheck/check.py`, the `clip-*` populations; measurement and
+  reproducers in `docs/dev/lanes/uvbuild_report.md` §3.1/§5, the class
+  described in `tests/utfcheck/CLAUDE.md`), so a change in either engine
+  moves a number rather than a sentence (D26: what a pattern matches is
+  exact, and a deliberate, stated divergence is the only allowed exception).
 
 **WHAT THE ARTIFACT PROMISES ABOUT ITS OWN POSITIONS IS NOT PART OF THIS
 AXIS.** Every position the ENGINE generates — an unanchored search's candidate
@@ -980,6 +1061,58 @@ bitmap prefilter's skip loop advance through `<prefix>_next_pos` — the
 whole `.rxt` corpus stays green, because under this backend the two are
 the same value, and only the structural check sees it).
 
+#### 3.1.2 `<prefix>_valid_upto` — the subject validator ([UTF-VALID])
+
+```c
+size_t <prefix>_valid_upto(const unsigned char *s, size_t n, size_t startpos);
+```
+
+Returns the offset of the FIRST BYTE of the first ill-formed sequence of the
+artifact's encoding that begins at or after `f`, where `f` is `startpos`
+stepped back LB characters by PCRE2's raw walk (§3.1's `-futf-check`
+paragraph) — or `n` when there is none, and `n` when `startpos > n`. The
+first byte is the sequence's lead, or a stray continuation byte itself;
+that is `PCRE2_UTF`'s own error offset (`pcre2_get_startchar`) on every
+measured kind: truncated, overlong, surrogate, above U+10FFFF, `0xF5`-`0xFF`,
+isolated continuation (`docs/design/utf_valid_design.md` §1, 10.46).
+
+- **EVERY ARTIFACT EXPORTS IT, whatever `-futf-check` says** (D133 Q4). Under
+  `byte` the body is `return n;` and `s` is never read, so the `(s == NULL,
+  n == 0)` subject `<prefix>_search` accepts is legal here too, and a caller's
+  code compiles unchanged across encodings — `<prefix>_next_pos`'s rule.
+- **A `-futf-check` artifact refuses exactly the calls for which this is
+  `< n`**, and it is the offset of that refusal: pass the SAME `startpos` the
+  refused call was given (under `-fstartpos-guard=align`, the aligned one).
+  The step-back happens INSIDE the entry, so a lookbehind-window error before
+  `startpos` is reported, not missed.
+- **It is called once per call from the entry, never from an engine body**
+  (DD-12 (7); the [M5-SEAM] check counts its call sites like
+  `<prefix>_next_pos`'s). LB reaches the body as `<prefix>_VALID_LB`, a
+  `.c`-only macro, and is otherwise not part of this contract.
+- **Mid-character `startpos`.** The entry does not refuse one: with LB 0 the
+  walk starts ON the continuation byte, which is then reported as ill-formed.
+  The checking entries never ask that question, because the K50 guard (or
+  the alignment) runs first.
+
+**FIND-ALL UNDER THE CHECK — VALIDATE ONCE, LOOP ON THE DEFAULT ARTIFACT**
+(D133 Q6; the design's §4.4). A find-all loop (§3.1) over a `-futf-check`
+artifact validates `[f, n)` on every call, so `m` matches cost O(n·m)
+validation bytes — PCRE2's own property, which it documents
+`PCRE2_NO_UTF_CHECK` for. The linear idiom needs ONE artifact, compiled
+WITHOUT `-futf-check`:
+
+```c
+if (<prefix>_valid_upto(s, n, 0) != n) { /* refuse: offset is the return */ }
+else { /* run the §3.1 loop on this same artifact, unchanged */ }
+```
+
+It answers exactly as the checking artifact would on every call of the loop,
+because every call's checked range lies inside `[0, n)`. A validity cursor
+kept inside the artifact across calls is not offered: §5.3's reentrancy
+contract forbids the state. The per-call "check as you move forward"
+contract (`-futf-check=extent`) is RESERVED and refused until a caller
+measures a need for it (the design's §2.2/§2.4).
+
 ### 3.2 `<prefix>_match` — the unconditional, anchored match-here entry
 
 ```c
@@ -1034,7 +1167,13 @@ what gets the anchored machine back.
 
 Returns the matched
 length (`>= 0`), `0` for a zero-length match at `ctx->pos`, `-1` on no
-match, or a typed give-up code (§4). Delivers
+match, or a typed give-up code (§4) — or one of §3.1's caller refusals at
+`ctx->pos`: `PCREC_ERR_STARTPOS` (K50), and under `-futf-check`
+`PCREC_ERR_UTF` from the same check at the same position, with the same
+order (guard first) and the same checked range `<prefix>_search` uses.
+Under `-fstartpos-guard=align` a misaligned `ctx->pos` answers `-1` (no
+match begins inside a character), after the check has run from the aligned
+position. Delivers
 **no captures** — `ctx->caps` is an *input* (§5), not an output channel,
 and there is no parameter for `<prefix>_match` to write group offsets
 into. Self-contained per its type's contract: a top-level caller passes
@@ -1333,6 +1472,8 @@ bound on the work ONE call may do uses `_in` or `-fno-tiered-entry`
 #define PCREC_ERR_FLOOR    (-5)  /* give-ups: [FLOOR,-2]; below: reserved (D49) */
 #define PCREC_ERR_INTERNAL (-6)  /* [DD-14] below PCREC_ERR_FLOOR: NOT a give-up, D71 item 1 */
 #define PCREC_ERR_STARTPOS (-7)  /* [K50] below PCREC_ERR_FLOOR: NOT a give-up -- a mid-character startpos was REFUSED */
+#define PCREC_ERR_UNSET_VAR (-8)  /* [VAR] below PCREC_ERR_FLOOR: NOT a give-up -- an UNSET or ill-formed variable value was REFUSED */
+#define PCREC_ERR_UTF (-9)  /* [UTF-VALID] below PCREC_ERR_FLOOR: NOT a give-up -- an ill-formed subject was REFUSED (-futf-check) */
 ```
 
 **[ABI-NS], 2026-08-18 (D60).** These four were spelled `<PREFIX>_ERR_STEPS`/
@@ -1420,6 +1561,30 @@ Three consequences, in the order a caller meets them:
 - **It does not renumber anything.** `PCREC_ERR_FLOOR` is unchanged at −5 and
   the give-up partition is unchanged; this is a new value in the region D49
   already reserved.
+
+**[UTF-VALID], 2026-09-30 (D133). `PCREC_ERR_UTF` (−9) IS THE THIRD CALLER
+REFUSAL, AND THE FIRST BELOW-THE-FLOOR CODE A COMPOSED CALL SITE PROPAGATES.**
+It means an artifact compiled with `-futf-check` found an ill-formed sequence
+beginning in the checked range `[startpos − LB, n)` (§3.1), so the call was
+refused before any attempt; `caps` is untouched, and
+`<prefix>_valid_upto(s, n, startpos)` (§3.1.2) is the offset. It is one code
+for every kind of ill-formedness (D26: pcrec owes the refusal and the offset,
+not PCRE2's twenty `PCRE2_ERROR_UTF8_*` values).
+
+- **Every artifact DEFINES it and only a `-futf-check` artifact under an
+  encoding with ill-formed byte strings can RETURN it** — `PCREC_ERR_STARTPOS`'s
+  rule, for a caller's `switch` written today.
+- **A composed call site PROPAGATES it and does NOT trap** (D133 Q11). This is
+  the one exception to the trap rule above, and the reason is what the code
+  means: −6 and −7 at a composed callee say the ENGINE broke its own rule, but
+  −9 is caused by the CALLER'S DATA — a checking callee handed the caller's
+  own subject can legitimately refuse it, because its LB may reach before the
+  outer call's range. So the trap becomes
+  `if (ret < PCREC_ERR_FLOOR && ret != PCREC_ERR_UTF) __builtin_trap();` and a
+  −9 is returned outward unchanged. No composed call sites are emitted today;
+  the line is recorded now so the first producer inherits it.
+- **It does not renumber anything**: a new value in the region D49 reserved,
+  below `PCREC_ERR_UNSET_VAR` (−8).
 
 **`PCREC_ERR_FRAMES` names a RESOURCE, not an array and not an owner.**
 Two distinct capacities can exhaust and both report this one code: the
@@ -2132,8 +2297,8 @@ the bump's own commit.**
   no `rx_info` member is added or changed, no answer moves, and
   `-fno-cls-kit` restores the abi-51 body.
 - **`rx_info.abi` was `51` ([CLS-TREE] S2 bumped it
-  from 49, 2026-09-30, numbered after lane uvbuild's `50` and renumbered by
-  the manager at merge: THE VM'S BYTE-CLASS TESTS ARE CHOSEN BY THE KIT'S
+  from 50, 2026-09-30, after lane uvbuild's `50`; renumbered by the manager
+  at merge: THE VM'S BYTE-CLASS TESTS ARE CHOSEN BY THE KIT'S
   CLASS-FORM TABLE).** The VM's per-class byte shape classifier retired into
   `src/gen/clskit.c`'s first-match table (`docs/spec/tuning.md` §2.33 and
   §5.4's λ row). At `--tune=-2`/`-1` a byte class that is neither one
@@ -2146,7 +2311,26 @@ the bump's own commit.**
   it read a `B1` table — the one default-position mover, ten triples of
   `scripts/cls_identity.py`'s 16,009 (`docs/dev/lanes/clss2_report.md`). No
   struct offset moves, no `rx_info` member is added or changed, no answer
-  moves, and `-fno-cls-kit` restores the abi-49 byte tests at `-2`/`-1`.
+  moves, and `-fno-cls-kit` restores the abi-50 byte tests at `-2`/`-1`.
+- **`rx_info.abi` was `50` ([UTF-VALID] bumped it
+  from 49, 2026-09-30: THE OPT-IN SUBJECT UTF-8 CHECK AND THE START
+  ALIGNMENT, ONE EVENT, D133).** Default-off artifacts move too, by exactly
+  three additions (utf_valid_design.md §6): the shared `PCREC_RX_ABI_H`
+  block gains `#define PCREC_ERR_UTF (-9)` (§4); every artifact gains the
+  `<PREFIX>_UTF_CHECK` stamp (§6.3) and the exported
+  `<prefix>_valid_upto` entry with its declaration (§3.1.2), plus the
+  `.c`-only `<prefix>_VALID_LB` macro its body reads; and a `-e utf8`
+  artifact carrying a `${name}` variable has its `<prefix>_var_valid`
+  re-spelled on the new entry (one validator, D133 Q7). A `-futf-check`
+  artifact under `-e utf8` gains ONE precheck line at each of the entries'
+  caller-position sites (§3.1); a `-fstartpos-guard=align` artifact under
+  `-e utf8` carries the alignment in place of the K50 refusal and its
+  `<PREFIX>_STARTPOS_GUARD` reads `"align"`. The two new bits
+  (`PCREC_FORCE_UTF_CHECK`, bit 39; `PCREC_FORCE_STARTPOS_ALIGN`, bit 40) are
+  CONTRACT bits: kept in `rx_info.flags`, masked only under `byte`, where
+  both are inert and a `byte` artifact is byte-identical under either. No
+  struct offset moves, no `rx_info` member is added, and no default
+  artifact's answer moves.
 - **`rx_info.abi` was `49` ([OPT-HYB-RESEED] bumped
   it from 48, 2026-09-30: THE VM HYBRID'S RETRY RE-SEEDS ADAPTIVELY).** A VM
   hybrid whose prefilter answers for a LARGER language than the pattern's (a
@@ -3156,7 +3340,7 @@ engine-scoped.**
 
   | value | meaning |
   |---|---|
-  | `"exact"` | the prefilter recognises the pattern's own language |
+  | `"exact"` | the count-collapse axis did not fire: the prefilter is not a count-collapsed superset (it may still over-approximate for another reason, below) |
   | `"count-collapsed"` | it recognises a count-collapsed SUPERSET: every `A_REP` with `rmin > 1` or `rmax > 1` lowered as `X{min(rmin,1),}`, so the machine does not scale with the count (`tuning.md` §2.17, K39) |
 
   **ITS OWN IFF, AND IT IS A DIFFERENT ONE FROM THE `_DFA_*` FAMILY'S.**
@@ -3179,6 +3363,17 @@ engine-scoped.**
   for the same reason: nothing measured reads one yet (D77), and the trigger
   to add one is a named consumer, not symmetry.
 
+  **THE STAMP REPORTS THE COUNT-COLLAPSE AXIS ONLY** (D142). `"exact"` does
+  NOT say the prefilter recognises the pattern's own language: a lookbehind,
+  a lookahead, an atomic group or `\K` is erased from the prefilter's
+  machine, which then over-approximates while this stamp still reads
+  `"exact"` (measured on 76 lookbehind, 47 lookahead, 132 atomic and 53 `\K`
+  hybrids, `docs/design/pf_know.md` §2.2/§8.4). Whether a successful
+  prefilter also proves the match END — the question a reader of `"exact"`
+  usually means — is read from `<PREFIX>_VM_RESEED` below: its `"exact"` row
+  is the one where the prefilter answers for the pattern's own language.
+  No stamp line is added for it.
+
   **[OPT-HYB-RESEED], 2026-09-29 (abi 49): `<PREFIX>_VM_RESEED`, what the
   hybrid's RETRY does after a failed attempt** (`tuning.md` §2.35). Same
   IFF as `_VM_PREFILTER_LANG` — every artifact whose `_VM_PREFILTER` reads
@@ -3198,6 +3393,32 @@ engine-scoped.**
   time only: every value answers identically, except that an `adaptive*`
   artifact can answer where the pre-abi-49 retry gave up on a budget (§4.5,
   tuning.md §2.35).
+
+  **[K50] / [UTF-VALID], 2026-09-30 (abi 50): `<PREFIX>_STARTPOS_GUARD`,
+  what the entries do with a caller's mid-character position** (`tuning.md`
+  §2.23). UNCONDITIONAL, on every artifact of both engines — a family (a)
+  selection fact riding the shared prologue, because the axis belongs to
+  the ENTRIES rather than to either engine:
+
+  | value | meaning |
+  |---|---|
+  | `"guarded"` | a `startpos` (or `ctx->pos`) `> 0` inside a character is refused with `PCREC_ERR_STARTPOS` (§3.1) — the default under an encoding with multi-byte characters |
+  | `"align"` | `-fstartpos-guard=align`: such a position is moved forward to the next character start once at entry; an anchored entry answers `-1` (§3.1) |
+  | `"permissive"` | the artifact answers at whatever position the caller named: `-fno-startpos-guard`, or an encoding (`byte`) where every position is a character start |
+
+  **[UTF-VALID], 2026-09-30 (abi 50): `<PREFIX>_UTF_CHECK`, whether the
+  entries refuse an ill-formed subject** (`tuning.md` §2.36). UNCONDITIONAL,
+  beside `_STARTPOS_GUARD`, for the same reason:
+
+  | value | meaning |
+  |---|---|
+  | `"whole"` | `-futf-check`: every entry that takes a subject refuses with `PCREC_ERR_UTF` when an ill-formed sequence begins in `[startpos − LB, n)` (§3.1) |
+  | `"off"` | the default: invalid-tolerant, an ill-formed sequence matches nothing and is not reported |
+  | `"inert"` | the encoding has no ill-formed byte strings (`byte`); no check exists whatever was asked |
+
+  Both are read off the SAME predicate the emitted entry text is, so a stamp
+  and its body cannot disagree. Neither has an `rx_info` mirror (D77);
+  `rx_info.flags` carries the two request bits, masked where inert.
 
   **[OPT-3], 2026-08-26: a THIRD `_DFA_*` macro, `<PREFIX>_DFA_TABLE`**, on
   exactly the same footing and under exactly the same IFF — every artifact
@@ -3752,7 +3973,7 @@ neither is parsed to produce the other.
 | `"overflowed-prefilter"` | `auto`, the VM was already chosen for another reason, and only its auto-selected PREFILTER's DFA overflowed, so the prefilter was dropped |
 | `"collapsed-prefilter"` | `auto`, a DFA build overflowed a STATE cap, and the [SEL-1] retry KEPT a prefilter by rebuilding it from the count-collapsed language (`tuning.md` §2.5, §2.17) |
 | `"declined-nullable"` | `auto`, a [SEL-1] OR [OPT-4] retry OFFERED the count-collapsed prefilter and it was DECLINED because the collapsed language is NULLABLE — it matches the empty string, so the filter could never dismiss a position. No prefilter survives, and the artifact is the one this compile produced before that retry existed (`tuning.md` §2.17, [OPT-4.1]) |
-| `"size-cap-retry"` | an emitted-SIZE cap (not a DFA state cap) REFUSED the exact artifact and a retry rebuilt a smaller one that SHIPPED. TWO rungs reach it, and they are mutually exclusive by ENGINE, so the artifact's own axis stamps say which: on a **VM hybrid** it is [LIM-1]/[OPT-4]'s rung and the count-collapsed prefilter survived (`tuning.md` §2.17, legible as `<PREFIX>_DFA_PREFILTER` with `<PREFIX>_PREFILTER_LANG_WHY "count-collapsed"`); on a **DFA artifact** it is [K53-SELRETRY]'s optional-contributor drop and the anchored match-here machine was dropped (`tuning.md` §2.15, legible as `<PREFIX>_DFA_MATCH "search-filter"`). Distinct from `"collapsed-prefilter"`, which is the [SEL-1] DFA-state-cap rung's own success — the rungs are offered under different conditions in `compile_driver`'s retry loop |
+| `"size-cap-retry"` | an emitted-SIZE cap (not a DFA state cap) REFUSED the exact artifact and a retry rebuilt a smaller one that SHIPPED. The rungs that reach it are the size-cap ladder's (`limits.md` §8), and the artifact's own axis stamps say which: on a **VM hybrid** it is [LIM-1]/[OPT-4]'s rung and the count-collapsed prefilter survived (`tuning.md` §2.17, legible as `<PREFIX>_DFA_PREFILTER` with `<PREFIX>_PREFILTER_LANG_WHY "count-collapsed"`), or — [PF-DROP], D135 — the ladder's last rung and the prefilter was DROPPED (legible as `<PREFIX>_VM_PREFILTER "none"` with `<PREFIX>_VM_PREFILTER_WHY "size cap retry, hybrid N > CAP"`, the refused artifact's bytes and the cap it exceeded — the only `"none"` that stamp is written beside); on a **DFA artifact** it is [K53-SELRETRY]'s optional-contributor drop and the anchored match-here machine was dropped (`tuning.md` §2.15, legible as `<PREFIX>_DFA_MATCH "search-filter"`), or [K59-PREMUL]'s premultiplied-table drop (`<PREFIX>_DFA_TABLE` off `"premultiplied"`). Distinct from `"collapsed-prefilter"`, which is the [SEL-1] DFA-state-cap rung's own success — the rungs are offered under different conditions in `compile_driver`'s retry loop |
 
 **THE LAST FIVE ARE ALL "FELL BACK", AND THAT IS THE DISTINCTION `_ENGINE_WHY`
 CANNOT CARRY** — the first four share one prose string (`"dfa overflowed: …"`)
@@ -3898,7 +4119,15 @@ annotations below are this document's, not emitted text):
 #define RX_ENGINE          "vm"                    /* mirrors rx_info.engine */
 #define RX_ENGINE_WHY       "capture group at pattern offset 1"
 #define RX_VM_PREFILTER      "hybrid"               /* or "none" */
+/* #define RX_VM_PREFILTER_WHY "size cap retry, hybrid 1026588 > 1000000"
+                                                     [PF-DROP], emitted ONLY
+                                                     where the size-cap
+                                                     ladder dropped the
+                                                     prefilter (below) */
 #define RX_VM_PREFILTER_LANG "exact"                 /* or "count-collapsed";
+                                                        the count-collapse axis
+                                                        ONLY -- the END proof is
+                                                        _VM_RESEED "exact";
                                                         [OPT-4], emitted only
                                                         where _VM_PREFILTER
                                                         reads "hybrid" */

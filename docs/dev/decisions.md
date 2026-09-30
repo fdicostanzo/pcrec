@@ -8893,3 +8893,26 @@ Context: review r3 (docs/dev/reviews/2026-09-30-r3-cls-tree-s2.md). No answer mo
    - The TABLE REPRESENTATION (256-byte byte table vs 32-byte bitmap vs shared atom) is a row of the general table's table-choice sub-table (TAB_ROWS), not a scan-edge special case. The current per-context choice is kept as that row's predicate unless measured otherwise.
    - Default positions: D138 Q1 still holds (the default fold is the one ROWS row a later measurement flips). Where the VM's and the scan edge's spellings of the same form differ in text, ONE spelling serves both (the tighter), and any default artifact whose text moves is measured and reported (it is an abi event; its answers must be identical).
 3. `-fno-cls-fold` / `-fno-cls-kit` deny their ROWS rows wherever the table is read, on the VM and the DFA alike. The spec says so, and the stale "VM-route only" text is fixed.
+
+## D140 — [PF-KNOW] chartered: a speculative research lane on what a successful prefilter PROVES to the VM, and DFA/VM class-table sharing (Frank, 2026-09-30, eighty-seventh session)
+
+**Charter (Frank's words):** "when we use prefilter on a vm, is there elements of the vm that can presume certain conditions apply such that they can skip certain tests in such a way as to make the operation faster? For instance, if the pre filter is successful, one can presume a fixed prefix matches and skip ahead to the next piece. But if we trace the pre filter with the vm, there might be other pieces that we can prove as well such as class membership, even special case dfa-approved look-arounds. Another element- if the dfa uses class tables, is there overlap to allow the same table for vm? My strong guess is no but I'd like that validated."
+
+**Shape.** RESEARCH ONLY: a design/measurement note, no src/ change, no scheduling of a build. The model is fable at high effort (Frank's choice). It is filed as an [OPTLOOP] candidate (D137), and its output feeds the next cycle's measured selection (D119). Its conclusions must be measured: the dynamic frequency of each skippable test on the corpus/bench-derived patterns, and an upper-bound speedup from a hand twin where cheap. Refutations are an acceptable result, including of the manager's and Frank's own guesses.
+
+## D141 — [EST-REGISTRY] chartered, UNSCHEDULED: one table for every estimation weight, bias, threshold and fitted constant (Frank, 2026-09-30, eighty-seventh session)
+
+**Context.** Frank: "can we save our weights, bias, etc for estimations in a single table? i am concerned there are a bunch of magic numbers scattered around for this". Today clskit.c's `PLACE` struct (src/gen/clskit.c:76-118) is one home with provenance comments, for the class kit only. Limits already have the general shape: limits.h plus the D107 detector (tests/registry/limits_check.sh). Every other estimator (engine-selection costs, reseed thresholds, prefilter and size estimates such as the size-cap diagnostic's source-to-.o ratio, DFA/VM cost terms) keeps its numbers inline or local.
+
+**CHARTERED, UNSCHEDULED (Frank: "charter it, but unscheduled").** When scheduled:
+1. A census of every estimation/selection constant: where it lives, and whether its provenance is written anywhere.
+2. One registry, `estimates.def` (the X-macro shape of facts.def/axes.def). Each row: name, value, units, kind (RULED by Frank / FITTED by measurement), provenance for fitted values (data set, box, date, residuals), and the citing decision. `PLACE` folds into it.
+3. A D107-style detector that flags numeric literals in estimator/selection code not drawn from the registry.
+4. Visible through `--list` ([LIST-TABLES]).
+No artifact changes: a refactor plus a check, with identity proven by the sweep. Until it is scheduled, new estimation constants go into `PLACE` or carry their provenance inline.
+
+## D142 — [PF-KNOW] closed; the RX_VM_PREFILTER_LANG "exact" wording; the PCRE2_UTF lookbehind clipping is a stated divergence (Frank, 2026-09-30, eighty-seventh session)
+
+1. **[PF-KNOW] is CLOSED as research-complete** (docs/design/pf_know.md). Its findings live under [OPTLOOP]: the prefix/whole-program skip is a member of the one-pass row with a D77 trigger (a match-dense bench cell where a hybrid's VM share is ≥10% of time on Linux); the Q2 evidence is added to [OPT-D]. No lane opens from it.
+2. **`RX_VM_PREFILTER_LANG "exact"` gets NO new stamp line (no abi event).** The spec sentence says the stamp reports the count-collapse axis only, and that whether the prefilter proves the window END (mrl_win) is read from the reseed stamp's `exact` row. pf_know.md §2.2/§8.4 measured "exact" on 76 lookbehind / 47 lookahead / 132 atomic / 53 `\K` hybrids whose end is unproven.
+3. **PCRE2_UTF's backward-read clipping is a STATED DIVERGENCE.** Under PCRE2_UTF, libpcre2 treats startpos − LB as the subject start for lookbehind/`\b` reads, even on valid text (`(?<=\ba)b` on "xab" from 2 → (2,3) under PCRE2_UTF, but no match from 0 or without UTF). pcrec reads the real bytes. That is 4 cells per config, pinned exactly (docs/dev/lanes/uvbuild_report.md §5). The spec states it beside the [UTF-VALID] contract (D26 tiering: what a pattern matches is exact, and a deliberate, stated divergence is the only allowed exception).

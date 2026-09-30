@@ -406,6 +406,22 @@ The line it prints names the unroll factor and its reason, the prefilter
 language, and a pointer to `tuning.md` — see `limits.md` for the full text and
 the reasoning.
 
+### `--fast-or-fail` — refuse rather than ship a slower artifact that fits
+
+**[PF-DROP] (D135, 2026-09-30).** When an artifact is over
+`--max-emit-code-bytes`/`--max-emit-bytes`, pcrec normally walks the
+size-cap ladder (`docs/spec/limits.md` §8, "The size-cap ladder") and ships
+the first smaller form that fits, each one slower than the form the cap
+refused. `--fast-or-fail` denies every rung the ladder marks DEGRADING —
+today all of them — so the compile REFUSES instead, with the ordinary size
+diagnostic. One bit, `PCREC_FAST_OR_FAIL` (bit 41), for library callers.
+
+It is a size POLICY, not a `-f` tuning axis: it selects no shape, and an
+artifact that fits is byte-identical with or without it (masked out of
+`rx_info.flags`). Each rung's own deny flag (`-fno-prefilter-collapse`,
+`-fno-size-term`) still works on its own. Raising a cap remains the way to
+keep the faster form AND compile.
+
 ### `--backtrack-frames=N`
 
 Raises the emitted resume-stack (and its trail) capacity above the
@@ -561,7 +577,8 @@ A dozen-odd flags (`-fno-possessify`, `-fno-revdet`, `-fno-counter`,
 `-fno-splice-calls`, `-fno-tiered-entry`, `-fno-premul-table`,
 `-fno-offset-skip`, `-fno-anchored-dfa`, `-fno-size-term`,
 `-fno-scan-edge`, `-fno-start-pinned`, `-fno-alt-island`,
-`-fno-cls-fold`, `-fno-startpos-guard`, `-fno-ctx-node`, `-fno-hyb-reseed`)
+`-fno-cls-fold`, `-fno-startpos-guard`, `-fno-ctx-node`, `-fno-hyb-reseed`,
+`-fno-cls-kit`, `-fno-cls-pack`)
 deliberately do **not** appear in `--help` (D47.3:
 these are testing and tuning axes, not user features — `cli/CLAUDE.md`
 states the reasoning per flag). Each denies one optimization strategy
@@ -573,6 +590,18 @@ real generation axis on the give-up-code footing (§4/§8 above), which is
 why it alone is documented in `--help`. Full per-flag semantics, the
 force-vs-deny distinction, and the byte-identity/engine-selecting split:
 `docs/spec/tuning.md` ([SPEC-1.3]).
+
+**`-futf-check` and `-fstartpos-guard=align` share the family's spelling and
+are CONTRACT axes** ([UTF-VALID], D133; `tuning.md` §2.36 and §2.23). They
+select which ANSWER a call gives, not which shape finds it: `-futf-check`
+makes every entry refuse an ill-formed subject with `PCREC_ERR_UTF` (-9),
+PCRE2_UTF's contract, and `-fstartpos-guard=align` moves a caller's
+mid-character `startpos` forward to the next character start instead of
+refusing it (`match_api.md` §3.1). Both are OFF by default and inert under
+`-e byte`. `-futf-check=extent` is a RESERVED spelling and is refused by name
+(exit 1, "reserved and not built"); `-fstartpos-guard=align` together with
+`-fno-startpos-guard` is refused as a contradictory request (exit 1). Like the
+tuning family they are not listed in `--help`.
 
 **`-fcomments` / `-fno-comments` share the family's spelling and are not a
 tuning axis** ([EMIT-VERB], D112; `tuning.md` §2.24). They control the
@@ -1197,6 +1226,9 @@ Stated plainly rather than left for a stranger to discover by trial:
   either — see §1.
 
 ## Revision history
+
+- 2026-09-30 ([PF-DROP], D135): §1 gains `--fast-or-fail` (bit 41), the
+  switch that denies every degrading rung of the size-cap ladder.
 
 - 2026-09-27 ([FINDINGS] B2, D123-8): §1 gains `--analysis NAME` (FILL-ONLY,
   not a file-wins exception) and the `-I` lift (legal with `--pattern` and

@@ -11,6 +11,12 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 ---
 
+## K78 — OPEN, unscheduled (2026-09-30, lane uvbuild) — a DFA artifact with DEAD groups writes `caps[1]` on a NO-MATCH, against match_api.md §3.1
+
+**Witness:** `(?(DEFINE)(?<x>\b))b(?&x)` under `-e byte` (reproduces on base d8d40397, before [UTF-VALID]). The [DD-14 wave G] entry fill writes the dead group's slot even when the call returns no match. Reproducer and trace: docs/dev/lanes/uvbuild_report.md §5. Pre-existing; independent of UTF-VALID.
+
+---
+
 ## K80 — OPEN, unscheduled (2026-09-30, lane pfx0) — the shared ABI block's include guard is the literal `PCREC_RX_ABI_H`, so a translation unit including two artifacts of DIFFERENT abi silently gets the first one's block
 
 **Witness:** docs/dev/lanes/pfx0_report.md (simulated with a mutated header: no diagnostic). The same-abi two-header case is checked and clean (run_codegen_tests.sh:437-520, :905+). No check covers the mixed-abi case. The fix shape is probably an abi-keyed guard or a static assert on the block's abi. Changing it is emitted scaffolding, so it is an abi event (D76/D94).

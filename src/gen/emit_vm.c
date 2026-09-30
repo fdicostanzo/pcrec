@@ -10585,9 +10585,10 @@ static void vm_plan(Vm *v, Ast *root, VmPlan *pl)
     const long long bt_frames = pl->caps.bt_frames;
     const long long trail_frames = pl->caps.trail_frames;
     /* Always present (docs/spec/match_api.md §3.1 promises it unconditionally,
-     * and tests/codegen's K27 fixture calls it directly); the A_BREF arm ORs
+     * and tests/codegen's K27 fixture calls it directly), with [UTF-VALID]'s
+     * subject validator beside it (§3.1.2, the same promise); the A_BREF arm ORs
      * in whichever compare entries it actually emits. */
-    v->enc_mask = PCREC_ENCE_NEXT_POS;
+    v->enc_mask = PCREC_ENCE_NEXT_POS | PCREC_ENCE_VALID_UPTO;
 
     /* Emit the program into the scratch buffer FIRST: the class pool, the
      * cursor-local's presence and the emitted-node count are all discovered
@@ -11185,6 +11186,15 @@ static void vm_emit_stamps(Vm *v, const VmPlan *pl, const VmEntry *en,
      * derived default when neither was passed). */
     pcrec_sb_stamp_str(c, v->up, "VM_PREFILTER",
                  job->fit.prefilter ? "hybrid" : "none");
+    /* [PF-DROP] (D135) AND WHY IT IS "none", when the size-cap ladder's
+     * last rung dropped it — the one "none" a caller did not ask for.
+     * `_PREFILTER_LANG_WHY`'s shape: the refused artifact's bytes and the
+     * cap they exceeded, both carried from `compile_driver`, which decided.
+     * Written only where the rung fired, so no other artifact moves. */
+    if (cx->size_drop_rung == SDR_NO_PREFILTER)
+        pcrec_sb_stampf(c, v->up, "VM_PREFILTER_WHY",
+                  "\"size cap retry, hybrid %llu > %llu\"",
+                  cx->size_cap_bytes, cx->size_cap_limit);
     /* [OPT-4] AND WHICH LANGUAGE THAT HYBRID ANSWERS FOR (K39; docs/design/
      * prefilter_count_independence.md). `RX_VM_PREFILTER` says a DFA scan is
      * in this artifact; this says whether that scan recognises the pattern's
@@ -13100,7 +13110,7 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
      * through, so guarding here is what makes the six entries agree by
      * construction instead of by six copies of one test. */
     pcrec_emit_startpos_guard(v->cx, c, "    ", "search_from", "subject",
-                              "subject_length");
+                              "subject_length", false);
 
     /* [OPT-ENDWIN] THE END-ANCHOR START WINDOW, the same clamp the DFA's own
      * search entries write, from the same the `end_window` fact and the same
@@ -13476,6 +13486,16 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
         v->p);
 }
 
+/* [K50]/[UTF-VALID] The two ANCHORED `_run` bodies' caller-position
+ * prologue: the startpos-guard axis's value, then the subject check, on
+ * `ctx->pos` (src/gen/emit_dfa.c's `pcrec_emit_startpos_guard`). One
+ * function for both bodies, so they cannot acquire different guards. */
+static void vm_emit_match_guard(Vm *v, StrBuf *c)
+{
+    pcrec_emit_startpos_guard(v->cx, c, "    ", "ctx->pos", "ctx->subject",
+                              "ctx->len", true);
+}
+
 /* Writes the artifact's SIX PUBLIC ENTRIES: `<prefix>_search` /
  * `<prefix>_match` / `<prefix>_match_caps` and the `_in` sibling of each,
  * the caller-buffer variant that binds the caller's own storage.
@@ -13624,11 +13644,11 @@ static void vm_emit_entries(Vm *v, const GenNames *g, const VmPlan *pl,
     /* [K50] Sites 2 and 3: the two ANCHORED bodies. Their caller-supplied
      * position is `ctx->pos` rather than a `startpos` argument, which is
      * §2.6.1's third row — the one the design's table marked "NO" beside the
-     * search entry's. Rendered ONCE into a buffer and spliced into both, so
-     * the two anchored entries cannot acquire different guards. */
-    char mguard[PCREC_STARTPOS_GUARD_TEXT_MAX];
-    pcrec_startpos_guard_text(v->cx, mguard, sizeof mguard, "    ",
-                              "ctx->pos", "ctx->subject", "ctx->len");
+     * search entry's. ONE CALL, `vm_emit_match_guard`, writes it for both, so
+     * the two anchored entries cannot acquire different guards; [UTF-VALID]
+     * retired the rendered buffer this used to splice, because the entry
+     * prologue (guard or alignment, then the subject check) is now several
+     * statements written straight into the artifact. */
 
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
     pcrec_sb_puts(c,
@@ -13656,9 +13676,9 @@ static void vm_emit_entries(Vm *v, const GenNames *g, const VmPlan *pl,
         "static %sptrdiff_t %s_run(const rx_ctx *ctx, %s_run_state *run)\n"
         "{\n"
         "    ptrdiff_t result;\n"
-        "    if (ctx->pos > ctx->len) return -1;\n"
-        "%s",
-        en->ai, g->matchfn, v->p, mguard);
+        "    if (ctx->pos > ctx->len) return -1;\n",
+        en->ai, g->matchfn, v->p);
+    vm_emit_match_guard(v, c);
     /* [K73] The offset-0 start rule, NOMATCH form: a match-here entry cannot
      * report a match beginning anywhere but `ctx->pos`, and none begins at a
      * position that is not a character start. */
@@ -13713,9 +13733,9 @@ static void vm_emit_entries(Vm *v, const GenNames *g, const VmPlan *pl,
         "                        %s_run_state *run)\n"
         "{\n"
         "    ptrdiff_t result;\n"
-        "    if (ctx->pos > ctx->len) return -1;\n"
-        "%s",
-        en->ai, g->matchcapsfn, v->p, mguard);
+        "    if (ctx->pos > ctx->len) return -1;\n",
+        en->ai, g->matchcapsfn, v->p);
+    vm_emit_match_guard(v, c);
     pcrec_emit_start_zero(v->cx, c, "    ", "ctx->pos", "ctx->subject",
                           "ctx->len", PCREC_START0_NOMATCH);
     pcrec_sb_printf(c,

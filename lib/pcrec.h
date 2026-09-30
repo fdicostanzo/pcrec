@@ -646,10 +646,12 @@ enum {
      *
      * NEITHER ARM ROUNDS THE CALLER'S `startpos`. The default refuses it and
      * the denied arm honours it exactly; silently advancing to the next
-     * boundary — `PCRE2_MATCH_INVALID_UTF`'s behaviour — is a THIRD semantics
-     * this flag does not offer, because a caller who gets an answer for a
-     * position it did not ask about cannot tell that from an answer for the
-     * one it did.
+     * boundary is a THIRD semantics this flag does not offer, because a
+     * caller who gets an answer for a position it did not ask about cannot
+     * tell that from an answer for the one it did. [UTF-VALID] (D132 item 2,
+     * D133) added that third semantics as its OWN, explicitly-requested value
+     * of this axis — `PCREC_FORCE_STARTPOS_ALIGN`, below — for a caller who
+     * split a valid buffer on arbitrary bytes and asks for exactly that.
      *
      * IT DENIES NOTHING ON A `byte` ARTIFACT, and that is a property rather
      * than an exemption: every position is a character boundary there, so no
@@ -984,6 +986,56 @@ enum {
  * `rx_info.flags`; `<PREFIX>_VM_RESEED` names the row that fired. Deny-only.
  * A `#define` for bit 32's reason. */
 #define PCREC_NO_HYB_RESEED PCREC_BIT(37)
+
+/* [UTF-VALID] `-futf-check` — the opt-in SUBJECT UTF-8 VALIDITY CHECK
+ * (docs/design/utf_valid_design.md, ruled D133; docs/spec/tuning.md §2.36;
+ * docs/spec/match_api.md §3.1.2).
+ *
+ * THE SECOND CONTRACT AXIS, after `PCREC_NO_STARTPOS_GUARD`: it selects which
+ * answer a call gives, not which shape finds it, so it is NOT masked out of
+ * `rx_info.flags` and `make test-axes` excludes it from the identity sweep BY
+ * NAME, with its own oracle arm. OFF by default, `-fcomments`' shape: the
+ * force bit turns it on and there is no deny bit, because nothing turns it on
+ * that a command line would need to turn back off.
+ *
+ * WHAT IT DOES. Before any attempt, after the K50 guard, every entry that
+ * takes a subject refuses the call with `PCREC_ERR_UTF` (-9) when an
+ * ill-formed UTF-8 sequence begins in `[startpos − LB, n)` — PCRE2's own
+ * PCRE2_UTF contract, with LB its `max_lookbehind` fact. The offset is
+ * `<prefix>_valid_upto(s, n, startpos)`, which every artifact carries
+ * whatever this bit says. `-futf-check=extent` is RESERVED (utf_valid_design.md
+ * §2.2) and refused until it is built.
+ *
+ * INERT under an encoding whose every byte string is valid (`byte`): no check
+ * is emitted, the stamp reads "inert", and the bit is masked out of
+ * `rx_info.flags` there, `-fno-startpos-guard`'s precedent. A `#define` for
+ * bit 32's reason. */
+#define PCREC_FORCE_UTF_CHECK PCREC_BIT(39)
+/* [UTF-VALID] `-fstartpos-guard=align` — the START ALIGNMENT (D132 item 2,
+ * ruled D133; utf_valid_design.md §10; docs/spec/tuning.md §2.23): the THIRD
+ * value of the startpos-guard axis above. Where the default REFUSES a
+ * caller's mid-character `startpos` with `PCREC_ERR_STARTPOS`, this value
+ * SKIPS forward over continuation bytes to the next character start, once, at
+ * entry — for a caller holding a MISALIGNED POINTER into valid text. A
+ * search runs as if that aligned position had been passed; an anchored
+ * match-here entry answers -1 (no match begins mid-character). Offset 0 is
+ * never moved, exactly as it is never refused. Under `-futf-check` the check
+ * then runs from the ALIGNED position with no carve-out. A contract value:
+ * not masked out of `rx_info.flags` except under `byte`, where it is inert.
+ * Refused together with `-fno-startpos-guard`, which names a different
+ * answer for the same input. A `#define` for bit 32's reason. */
+#define PCREC_FORCE_STARTPOS_ALIGN PCREC_BIT(40)
+/* [PF-DROP] (D135) `--fast-or-fail`: refuse an artifact over an emitted-size
+ * cap rather than ship a SLOWER one that fits. Every rung of the size-cap
+ * ladder (docs/spec/limits.md §8) is classified degrading or not, and this
+ * bit denies every degrading rung at once — the prefilter collapse, the
+ * anchored-machine and premultiplied-table drops, the prefilter drop and the
+ * unroll ladder's cap rescue — leaving each rung's own deny flag in place.
+ * NOT an optimization axis: it selects no shape, it narrows what pcrec
+ * ACCEPTS, the way a limit does. A pattern that fits is byte-identical with
+ * or without it, so it is masked out of `rx_info.flags`. A `#define` for
+ * bit 32's reason. */
+#define PCREC_FAST_OR_FAIL PCREC_BIT(41)
 
 /* [ENG-BREP] the counter rung's UNROLL FACTOR, K (counterk_design.md §4.1;
  * eng_brep_design.md §4.5's "K must not become a per-pattern heuristic in v1",

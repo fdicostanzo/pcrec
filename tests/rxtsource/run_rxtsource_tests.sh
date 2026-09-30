@@ -383,9 +383,13 @@ record() { checks_recorded=$((checks_recorded + 1)); echo "RECORD: $*"; }
 # tests/base/gen_clspack_atoms.py, every cell python3-re verified; measured on
 # lane/clspack as 256/4285/32020): 256/4261/31703 + 1/47/744 + 1/5/79 =
 # 258/4313/32526.
-CENSUS_FILES=258
-CENSUS_BLOCKS=4313
-CENSUS_LINES=32526
+# 2026-09-30 (lane pfdrop, [PF-DROP] D135, re-pinned by triage pftri): +1 file,
+# +1 block, +19 lines — tests/uprops/size_ladder_prefilter_drop.rxt (the
+# prefilter-drop rung's `(\p{Xwd})` under -e utf8 witness, 8 m + 3 n + 8 g
+# lines, oracle-verified on libpcre2 10.46/10.48): 259/4314/32545.
+CENSUS_FILES=259
+CENSUS_BLOCKS=4314
+CENSUS_LINES=32545
 # 2026-09-23 (lane rxtfix, K34 closure via lane b2fix's [OPTLOOP.1.impl]
 # batch 2 — docs/dev/known_issues.md K34) — -1 file, -3 blocks, +0 lines.
 # tests/known_fail/k34_leftrec_giveup.rxt (1 file, 3 blocks, 11 lines) was
@@ -488,9 +492,11 @@ CENSUS_LINES=32526
 # delta as CENSUS_* above (both files are tests/utf8, a run.sh directory).
 # 2026-09-30 (land4) — S4's +1/+47/+744 (tests/utf8/) and clspack's +1/+5/+79
 # (tests/base/), the SAME deltas as CENSUS_* above (both run.sh directories).
-RUNSH_FILES=234
-RUNSH_BLOCKS=4313
-RUNSH_LINES=32526
+# 2026-09-30 (pfdrop) — +1/+1/+19, the SAME delta as CENSUS_* above
+# (tests/uprops/ is a run.sh directory, not tests/known_fail/).
+RUNSH_FILES=235
+RUNSH_BLOCKS=4314
+RUNSH_LINES=32545
 # 2026-09-23 (lane rxtfix, K34 closure, same event as CENSUS_* above) —
 # +0/+0/+11 where CENSUS_* moved -1/-3/+0. tests/known_fail/ is now EMPTY
 # (kf_files=kf_blocks=kf_lines=0 at run time — `find tests/known_fail
@@ -1624,14 +1630,19 @@ C3_PASS=13982
 # structural on every python version — tests/utf8/wclass_illformed.rxt's every
 # block is `# pcre2-only` (MATCH_INVALID_UTF oracle). Measured: `verify_rxt.py
 # tests/utf8/wclass_illformed.rxt` SKIP=744 pcre2-only, PASS=0.
-C3_SKIP=18455
+# [PF-DROP] (lane pfdrop, re-pinned by pftri): +19 SKIP, all
+# no-python-expression, structural on every python version — `\p{Xwd}` is not
+# spellable in python's `re`. Measured: `verify_rxt.py
+# tests/uprops/size_ladder_prefilter_drop.rxt` SKIP=19 (no-python-expression=19),
+# PASS=0; C3_SKIP_NOPYTHON and C3_VERIFIABLE move by the same 19.
+C3_SKIP=18474
 C3_SKIP_PCRE2ONLY=4248
 C3_SKIP_GIVEUP=29
 C3_SKIP_COMPOSED=0
-C3_SKIP_NOPYTHON=1964
+C3_SKIP_NOPYTHON=1983
 C3_SKIP_PERRACCEPT=14
 C3_SKIP_OWNORACLE=12200
-C3_VERIFIABLE=15960   # PASS+INFO+no-python-expression+perr-python-accepts: python-version-INVARIANT
+C3_VERIFIABLE=15979   # PASS+INFO+no-python-expression+perr-python-accepts: python-version-INVARIANT
 C3_INFO=0
 C3_STOREUNCOVERED=0
 C3_TIMEOUT=1

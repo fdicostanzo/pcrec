@@ -1,0 +1,25 @@
+{
+ "id": "log-level-context",
+ "pattern": "\\b(?:ERROR|FATAL|CRIT)\\b.{0,200}?\\b(?:timeout|timed out|refused|denied|unreachable)\\b",
+ "subject": "t-1024k-hit.bin",
+ "mode": "findall",
+ "matches": 193,
+ "calls": 194,
+ "attempts": 193,
+ "tests": {
+  "lead": 386,
+  "mid": 39210,
+  "trail": 386,
+  "dfa": 4274824,
+  "search": 1933
+ },
+ "test_lines": {
+  "lead": 1,
+  "mid": 17,
+  "trail": 1,
+  "dfa": 19,
+  "search": 13
+ },
+ "first_choice_line": 850,
+ "program_lines": 137
+}

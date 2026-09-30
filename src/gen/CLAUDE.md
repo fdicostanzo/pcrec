@@ -3420,3 +3420,42 @@ character to the subject end once one prefilter answer failed.
   text dropped under an adaptive stamp) and S372 (the two calibration rows
   swapped, visible to the calibration check only).
 
+## [UTF-VALID] THE SUBJECT CHECK AND THE START ALIGNMENT (abi 49 -> 50, D133)
+
+- **`pcrec_emit_startpos_guard(cx, c, indent, posvar, subjvar, lenvar,
+  anchored)`** (emit_dfa.c) is now the whole CALLER-POSITION ENTRY
+  PROLOGUE at the four sites that take a caller's position — the DFA's
+  search head and unwrapped match-here body, and the VM's three `_run`
+  statics (the two anchored ones through `vm_emit_match_guard`, which
+  retired the rendered `mguard` buffer). It writes the startpos-guard
+  axis's value — K50's refusal text byte for byte (default), nothing
+  (`-fno-startpos-guard`), or the ALIGN seek (`-fstartpos-guard=align`:
+  a search moves `posvar` forward to the next character start; an anchored
+  entry answers -1, validating from the aligned position first) — and
+  then `emit_utf_check`'s one precheck line under `-futf-check`. So the
+  check's site set IS the guard's, and "guard first, then check" (D133
+  Q10) is structural. `pcrec_startpos_guard_text` keeps K50's text and is
+  still what the `STARTPOS_GUARD` stamp probes.
+- **`pcrec_utf_check_on(cx)`**: the flag AND a backend with ill-formed
+  byte strings (its table carries a `VAR_VALID` row). One predicate for
+  the emitted check, the `<PREFIX>_UTF_CHECK` stamp ("inert"/"off"/
+  "whole", shared prologue beside `STARTPOS_GUARD`) and the
+  `rx_info.flags` mask (both new bits masked only where inert).
+- **Every artifact** gains `#define PCREC_ERR_UTF (-9)` in the ABI block,
+  the `<prefix>_valid_upto` entry (both emitters' masks), and the `.c`-only
+  `#define <prefix>_VALID_LB <n>` ahead of the residual definitions.
+- Checks: `tests/utfcheck/` (the differential, `make test-utfcheck`),
+  `tests/codegen/run_codegen_tests.sh`'s [M5-SEAM] fixtures (every row
+  declares `valid_upto`; three rows are its callers), `make test-axes`'
+  `-futf-check` arm. Sabotage rows S409-S414.
+
+## [PF-DROP] `<PREFIX>_VM_PREFILTER_WHY` (2026-09-30, D135)
+
+`emit_vm.c`'s stamp block writes `<PREFIX>_VM_PREFILTER_WHY "size cap retry,
+hybrid N > CAP"` beside `_VM_PREFILTER "none"` ONLY when `compile_driver`'s
+size-cap ladder took its prefilter-drop row (`Ctx.size_drop_rung ==
+SDR_NO_PREFILTER`); `N`/`CAP` are `Ctx.size_cap_bytes`/`size_cap_limit`, the
+refused attempt's figures the driver carried forward. No artifact that
+compiled before the rung existed carries the line, so no emitted byte of an
+existing artifact moved (corpus sweep in `docs/dev/lanes/pfdrop_report.md`).
+`rx_info.flags` masks `PCREC_FAST_OR_FAIL` (`emit_dfa.c`'s strategy mask).

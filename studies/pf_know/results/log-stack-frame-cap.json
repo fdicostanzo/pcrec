@@ -1,0 +1,25 @@
+{
+ "id": "log-stack-frame-cap",
+ "pattern": "\\bat ((?:[A-Za-z_$][A-Za-z0-9_$]*\\.){2,}[A-Za-z_$][A-Za-z0-9_$]*)\\((?:([A-Za-z0-9_$]+\\.java):([0-9]+)|Native Method|Unknown Source)\\)",
+ "subject": "t-1024k-hit.bin",
+ "mode": "findall",
+ "matches": 659,
+ "calls": 660,
+ "attempts": 659,
+ "tests": {
+  "lead": 3954,
+  "mid": 70203,
+  "trail": 659,
+  "dfa": 364078,
+  "search": 6592
+ },
+ "test_lines": {
+  "lead": 5,
+  "mid": 31,
+  "trail": 3,
+  "dfa": 15,
+  "search": 13
+ },
+ "first_choice_line": 804,
+ "program_lines": 176
+}

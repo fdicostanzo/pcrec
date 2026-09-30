@@ -1125,8 +1125,13 @@ REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
 # its last `src/` change (the k73utf convention).** The adaptive retry is emitted only on a VM hybrid whose
 # prefilter over-approximates and every hybrid gains a `<PREFIX>_VM_RESEED` line; this gate's population
 # is call-free `byte` artifacts, so (A) is untouched and (B) moves by the abi digit alone.
-# **(B) RE-PINNED AGAIN — [CLS-TREE] S2, 2026-09-30: abi 49 -> 51 (lane/clss2, numbered after uvbuild's 50;
-# the manager renumbers and re-pins at merge), pin = `22d150a8`, the lane commit that is its last `src/` change.**
+# **(B) RE-PINNED AGAIN — [UTF-VALID], 2026-09-30: abi 49 -> 50 (lane uvbuild), pin = the lane's
+# last `src/` commit (self-pin, the k73utf convention).** Every artifact gains `PCREC_ERR_UTF` in the
+# ABI block, the `<PREFIX>_UTF_CHECK` stamp, and the `<prefix>_valid_upto` entry with its `.c`-only
+# `<prefix>_VALID_LB` macro; this gate's population is call-free `byte` artifacts without the flag, so
+# (A) is untouched and (B) moves by exactly those lines and the digit.
+# **(B) RE-PINNED AGAIN — [CLS-TREE] S2, 2026-09-30: abi 50 -> 51 (lane/clss2, on top of uvbuild's 50;
+# the manager re-pins at merge), pin = `22d150a8`, the lane commit that is its last `src/` change.**
 # The kit's byte forms fire at --tune=-2/-1 only and this gate compiles at the default position; its
 # population is call-bearing `byte` artifacts, so no wide class is formed and (A) is untouched: (B) moves
 # by the abi digit alone.
@@ -1138,7 +1143,7 @@ REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
 # spelling at every position and a VM range from 0 reads `b <= hi`; this gate's call-bearing `byte`
 # population is VM-routed at the default position, and the gate's own run on the lane decides whether
 # (A) moves (docs/dev/lanes/clss2_report.md "Review fixes (clss2fix)").
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-2c45260a}"   # [CLS-TREE] S2 review fixes, abi 52->53 (lane/clss2): (B) self-pinned to 2c45260a. Prior pins: 979b0b62 (abi 52), 22d150a8 (abi 51), 7889ab1f. # [OPT-HYB-RESEED] on land4 (S4 + CLSPACK), ONE event abi 48->49 (land5): (B) re-pinned to the land5 merge commit (its last src change, the k73utf convention), D76, 2026-09-30. Prior pin: 64b55d15 (land4, abi 47->48). # [CLS-TREE] S4, abi 46->47 (lane/s4build, pin 0d0a514f), and [OPT-CLSPACK], 47->48 (lane/clspack, pin 8407666a), each on its own lane before this landing combined them onto main: # [K73], abi 46->47: (B) re-pinned to 40c56343 on lane/k73utf (D76, 2026-09-29). Prior pin: 7e8ab18a ([UCP] U2, abi 45->46).
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-@MERGE@}"   # [CLS-TREE] S2 on main at abi 50 (triage s2tri, abi 53): (B) self-pinned to the merge commit. Prior pins: 2c45260a (S2 review fixes, abi 52->53, pre-merge), 979b0b62 (abi 52), 22d150a8 (abi 51), 6c22a7cd ([UTF-VALID], abi 50). Older: 7889ab1f ([OPT-HYB-RESEED], land5, abi 48->49). # [OPT-HYB-RESEED] on land4 (S4 + CLSPACK), ONE event abi 48->49 (land5): (B) re-pinned to the land5 merge commit (its last src change, the k73utf convention), D76, 2026-09-30. Prior pin: 64b55d15 (land4, abi 47->48). # [CLS-TREE] S4, abi 46->47 (lane/s4build, pin 0d0a514f), and [OPT-CLSPACK], 47->48 (lane/clspack, pin 8407666a), each on its own lane before this landing combined them onto main: # [K73], abi 46->47: (B) re-pinned to 40c56343 on lane/k73utf (D76, 2026-09-29). Prior pin: 7e8ab18a ([UCP] U2, abi 45->46).
 
 WORKDIR="$(mktemp -d)"
 cleanup() {

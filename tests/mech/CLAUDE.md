@@ -3181,3 +3181,18 @@ non-`a` stray for free). Every well-formed find-all count and the byte-encoded
 encseam/backrefs/assertions drivers read `next_pos(end - 1) == end`, so they
 cannot see either plant. `SAB_REACH_POP` on both rows floors the fixture's
 stray-byte cells.
+
+### [PF-DROP] — rows S420-S423, and S237/S252 re-anchored (lane pfdrop, 2026-09-30, D135)
+
+The size-cap ladder became ONE first-match table (`fit_rungs[]`,
+`src/core/compile.c`), so S237 and S252 moved from the old `drop_eligible`/
+`premul_eligible` locals to their rows' predicates (`fit_anchored_applies`,
+`fit_premul_applies`); intent unchanged, re-verified. **S420** makes the new
+prefilter-drop row never apply (the witness `(\p{Xwd})` -e utf8 refuses:
+harness target `tests/uprops/size_ladder_prefilter_drop.rxt` + resource);
+**S421** makes `fit_rung_denied` ignore `PCREC_FAST_OR_FAIL` (resource's four
+`--fast-or-fail` refusal cells + pfcollapse's K41 control); **S422** drops the
+`<PREFIX>_VM_PREFILTER_WHY` stamp (resource WHY cell + pfcollapse); **S423**
+flips the prefilter-drop row's `degrading` cell (exactly one resource cell,
+the locality check).
+

@@ -1,0 +1,25 @@
+{
+ "id": "sec-aws-key",
+ "pattern": "\\b((?:A3T[A-Z0-9]|AKIA|AGPA|AIDA|AROA|AIPA|ANPA|ANVA|ASIA)[A-Z0-9]{16})\\b",
+ "subject": "secrets.bin",
+ "mode": "findall",
+ "matches": 85,
+ "calls": 86,
+ "attempts": 85,
+ "tests": {
+  "lead": 255,
+  "mid": 1700,
+  "trail": 170,
+  "dfa": 4289799,
+  "search": 853
+ },
+ "test_lines": {
+  "lead": 2,
+  "mid": 15,
+  "trail": 1,
+  "dfa": 16,
+  "search": 12
+ },
+ "first_choice_line": 496,
+ "program_lines": 108
+}

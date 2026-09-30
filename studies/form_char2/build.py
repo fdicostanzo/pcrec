@@ -6,8 +6,9 @@ atom table at >=11 table classes); bitmap = -fno-cls-fold -fno-cls-pack (32B per
 Prints, per (witness, arm): RX_VM_CLS_FOLDS/_ATOMS stamps, .text, .rodata."""
 import argparse, os, re, subprocess, sys, random
 here = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, here)
-ap = argparse.ArgumentParser(); ap.add_argument("work"); ap.add_argument("--pcrec", required=True)
+ap = argparse.ArgumentParser(); ap.add_argument("work"); ap.add_argument("--pcrec")
 ap.add_argument("--cc", default="gcc"); ap.add_argument("--reuse", action="store_true", help="reuse art/*.c (generated elsewhere; emitted C is byte-identical across boxes)"); ap.add_argument("--bench"); a = ap.parse_args()
+if not a.pcrec and not a.reuse: ap.error("--pcrec is required unless --reuse (art/*.c already generated)")
 if a.bench: os.environ["BENCH_DIR"] = a.bench
 import witnesses as WI
 ARMS = {"fold": [], "table": ["-fno-cls-fold"], "bitmap": ["-fno-cls-fold", "-fno-cls-pack"]}

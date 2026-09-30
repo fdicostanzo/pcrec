@@ -48,6 +48,19 @@ EMPTY documented column. Anchor on numbers a human does not maintain.
   cross-checks one DFA-side axis (`-fno-premul-table`) against LIVE
   libpcre2 through `tests/registry/run_pc4.sh`. `AXES=` restricts to a
   subset for a quick local run; `SKIP_ORACLE=1` skips the PC-4 leg.
+- **utfcheck_arm.py** — [UTF-VALID] `-futf-check`'s OWN ARM
+  (`docs/spec/tuning.md` §2.36). `-futf-check` is a CONTRACT axis whose
+  answer differs on purpose on every ill-formed corpus cell, so
+  `run_axes.sh` EXCLUDES it from the identity sweep BY NAME (the exclusion
+  asserted present, `PCREC_FORCE_PREFILTER`'s idiom) and runs this over
+  the baseline dump and an `RXTFLAGS=-futf-check` dump instead: identical
+  on a byte block (inert), and on a utf8 block identical iff python's
+  strict decoder finds `[startpos - LB, n)` well-formed (LB from libpcre2's
+  own `PCRE2_INFO_MAXLOOKBEHIND` through the borrowed `pcre2_ctypes`
+  binding), `utf <offset>` otherwise (tests/harness/driver.c's word for
+  -9). It reads each case's subject and block (pattern, encoding) back out
+  of the `.rxt` file by line; a line it cannot place is counted, never
+  dropped.
 - **dump_diff.awk** — the comparator: two `RXTDUMP` files keyed by
   `<.rxt file>:<line>` (unique — one case per source line), classifying
   every case AGREE / REFUSED / BUDGET / GIVEUP1 / LOST / MISMATCH / GAINED
@@ -505,3 +518,23 @@ nothing else (§6.2a). Selected by `--analysis` in `AXES` (every bundle) or
 `tests/findings/run_findings_tests.sh` §10 runs the same jobs over a fixed
 slice of the corpus inside `make test`.
 
+
+## [axtri] (2026-09-30) two axes' refusals after [CLS-TREE] S4 (abi 48)
+
+The Linux final `make test-axes` of main d6cb0bb4 ended red on refusals only
+(no answer moved), all in `tests/utf8/wclass_illformed.rxt`, the S4 wide-class
+corpus. `-fprefilter` (32 cases) and `-fno-cls-kit` (109) each got an entry:
+
+- `-fprefilter`: a SIXTH shape, "bytes of emitted C source (limit" — the forced
+  prefilter's byte DFA is charged against the emitted-bytes cap and §2.5/§2.17
+  make the rung that would drop it ineligible (`\p{Xwd}` `engine vm`,
+  1,013,468/1,013,932 vs 1,000,000). The existing 12,000 floor stands.
+- `-fno-cls-kit`: "bytes of emitted code (limit", floor 60 (measured 77): the
+  K55 refusal the kit retired returns on the byte alternation. The other 32
+  of the 109 (`x(\p{L})y`/`x(\P{L})y`, default route, total-bytes cap) are
+  deliberately NOT documented: D135's drop-the-prefilter rung (lane/pfdrop)
+  rescues them, so `-fno-cls-kit` stays red on those 32 until it merges.
+
+A single-file subset run breaches the `-fprefilter` floor by construction
+(222 refused against 12,000); read its `mismatches=` line, not the floor line.
+See docs/dev/lanes/axtri_report.md.

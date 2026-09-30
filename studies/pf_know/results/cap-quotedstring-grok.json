@@ -1,0 +1,25 @@
+{
+ "id": "cap-quotedstring-grok",
+ "pattern": "(?>(?<!\\\\)(?>\"(?>\\\\.|[^\\\\\"]+)+\"|\"\"|(?>'(?>\\\\.|[^\\\\']+)+')|''|(?>`(?>\\\\.|[^\\\\`]+)+`)|``))",
+ "subject": "t-1m.bin",
+ "mode": "findall",
+ "matches": 2975,
+ "calls": 2976,
+ "attempts": 2975,
+ "tests": {
+  "lead": 2975,
+  "mid": 57696,
+  "trail": 0,
+  "dfa": 1276396,
+  "search": 26777
+ },
+ "test_lines": {
+  "lead": 1,
+  "mid": 48,
+  "trail": 0,
+  "dfa": 29,
+  "search": 12
+ },
+ "first_choice_line": 586,
+ "program_lines": 331
+}

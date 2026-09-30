@@ -235,6 +235,9 @@ static void usage(FILE *f)
           "                 built-in limit is refused. Defaults 500,000 code\n"
           "                 / 1,000,000 total. For a real build put these in\n"
           "                 the pattern source's config block instead\n"
+          "  --fast-or-fail REFUSE an artifact over either limit rather than\n"
+          "                 ship a slower one that fits: denies every size-\n"
+          "                 cap retry that costs run time (docs/spec/limits.md)\n"
           "  --max-nfa-states=N, --max-dfa-states-goto=N, --max-subset-elems=N\n"
           "                 [LIM-2] RAISE three compile-time construction\n"
           "                 budgets (NFA states, the computed-goto attempt\n"
@@ -821,6 +824,9 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
         else if (!strcmp(a, "-i")) opt.flags |= PCREC_CASELESS;
         /* [UCP] a SEMANTIC axis (D130 Q1), `(*UCP)`'s CLI spelling. */
         else if (!strcmp(a, "--ucp")) opt.flags |= PCREC_UCP;
+        /* [PF-DROP] (D135) a size-cap POLICY, not a `-f` axis: it selects
+         * no shape (lib/pcrec.h at the bit). */
+        else if (!strcmp(a, "--fast-or-fail")) opt.flags |= PCREC_FAST_OR_FAIL;
         /* [M4.5b] the generation axes engine_m4.md §4.6/§5.3/§5.6 name.
          * `--engine=` takes its value with `=` rather than as a separate
          * argument because it is a MODE, not a file or a name — and the
@@ -860,6 +866,19 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
          * polarity. An unknown `-f...` returns 0 here and falls through to
          * the unknown-option diagnostic below exactly as it always did. */
         else if (cli_axis_apply(a, &opt.flags)) { }
+        /* [UTF-VALID] the contract axis's RESERVED second value
+         * (docs/design/utf_valid_design.md §2.2, ruled D133: recorded, not
+         * built). Refused by name rather than as an unknown option: the
+         * spelling is taken, and a caller who writes it is told what it would
+         * mean and why it is not here. It has no bit, so it has no axes.def
+         * row. */
+        else if (!strcmp(a, "-futf-check=extent")) {
+            cli_err("-futf-check=extent is reserved and not built: the "
+                    "'check as you move forward' contract "
+                    "(docs/design/utf_valid_design.md section 2.2) waits for "
+                    "a measured need; -futf-check is the whole-subject check");
+            return 1;
+        }
         /* [ENG-BREP] K, the counter rung's value parameter. One per artifact,
          * never per quantifier (D47 ADDENDUM). */
         else if (!strncmp(a, "--unroll=", 9)) {

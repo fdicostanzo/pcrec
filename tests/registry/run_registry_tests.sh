@@ -609,21 +609,21 @@ fi
 # 155 -> 158 at [CLS-TREE] S2 (lane clss2, 2026-09-30): `scan-body`'s `kit`
 # row carries `-fno-cls-kit` (`PCREC_NO_CLS_KIT`, bit 36), one more
 # (macro, bit, flag) triple — the review's V-1 red on chain2, where the pin
-# was not moved with the row. 158 -> 161 at the S2 review fixes (lane
+# was not moved with the row. 158 -> 171 at the S2 review fixes (lane
 # clss2fix, D139): `scan-body` reads its run tests off the class-form table,
 # whose `fold` row carries `-fno-cls-fold` (bit 24), one more triple.
-# Measured on the clss2fix tree: 161 PASS, 0 failed.
+# Measured on the clss2fix tree: 171 PASS, 0 failed.
 axesn="$(grep -c '^PASS: ' "$AXESOUT" || true)"
-if [ "$axesn" -ne 161 ]; then
+if [ "$axesn" -ne 171 ]; then
     if grep -q "^checks failed: 0" "$AXESOUT"; then
-        echo "registry: axes_registry_check COVERAGE CHANGED — $axesn passing checks, expected 161." >&2
+        echo "registry: axes_registry_check COVERAGE CHANGED — $axesn passing checks, expected 171." >&2
         echo "registry:   if you added or removed axes/checks on purpose, update this number" >&2
         echo "registry:   in the same commit; if not, coverage was removed" >&2
     else
         axesnf="$(sed -n 's/^checks failed: //p' "$AXESOUT" | tail -1)"
-        echo "registry: axes_registry_check shows $axesn passing checks (161 expected; ${axesnf:-?} failed," >&2
+        echo "registry: axes_registry_check shows $axesn passing checks (171 expected; ${axesnf:-?} failed," >&2
         echo "registry:   so a lower count is expected here). Fix the failures first; then this" >&2
-        echo "registry:   number must return to 161 — if it does not, coverage was removed too" >&2
+        echo "registry:   number must return to 171 — if it does not, coverage was removed too" >&2
     fi
     rc=1
 fi

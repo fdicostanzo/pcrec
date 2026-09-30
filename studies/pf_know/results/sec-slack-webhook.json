@@ -1,0 +1,25 @@
+{
+ "id": "sec-slack-webhook",
+ "pattern": "(?i)https://hooks.slack.com/services/(T[a-z0-9_]{8}/B[a-z0-9_]{8,12}/[a-z0-9_]{24})",
+ "subject": "secrets.bin",
+ "mode": "findall",
+ "matches": 85,
+ "calls": 86,
+ "attempts": 85,
+ "tests": {
+  "lead": 2720,
+  "mid": 4505,
+  "trail": 0,
+  "dfa": 48884,
+  "search": 852
+ },
+ "test_lines": {
+  "lead": 32,
+  "mid": 11,
+  "trail": 0,
+  "dfa": 28,
+  "search": 13
+ },
+ "first_choice_line": 1345,
+ "program_lines": 149
+}

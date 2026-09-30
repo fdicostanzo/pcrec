@@ -2303,6 +2303,7 @@ enum {
      *   | [OPT-4] prefilter collapse | VM hybrid | `_DFA_PREFILTER` set, `_PREFILTER_LANG_WHY "count-collapsed"` |
      *   | [K53-SELRETRY] anchored drop | DFA | `_DFA_MATCH "search-filter"` (unaffected: `_DFA_TABLE`) |
      *   | [K59-PREMUL] premul drop | DFA | `_DFA_TABLE` "indexed"/"mixed" where it would otherwise read "premultiplied" (unaffected: `_DFA_MATCH`, unless rung 1 ALSO fired) |
+     *   | [PF-DROP] prefilter drop | VM hybrid | `_VM_PREFILTER "none"` with `_VM_PREFILTER_WHY "size cap retry, hybrid N > CAP"` (D135; may follow the [OPT-4] collapse on one compile) |
      *
      * A DFA-engine artifact reading this value with BOTH `_DFA_MATCH
      * "search-filter"` and `_DFA_TABLE` off "premultiplied" had both rungs
@@ -2415,7 +2416,19 @@ enum {
      * ladder mid-ladder with no measured need to justify the interaction —
      * D77, wait for one. */
     SDR_NO_PREMUL   = 2,
-    SDR_MAX         = 2
+    /* [PF-DROP] (D135) the VM HYBRID'S PREFILTER. Its loss costs the search
+     * the prefilter's candidate skipping — every start position is tried by
+     * the VM itself — and no answer (the prefilter is a filter; §6.1's
+     * exactness claim). The LAST rung because it is the dearest one
+     * measured (docs/dev/lanes/pfdrop_report.md §2). Scoped to the VM
+     * engine, so on a VM artifact rungs 1 and 2 were never applicable and
+     * "up to and including" drops only this one. `RX_VM_PREFILTER` reads
+     * `"none"`, `RX_VM_PREFILTER_WHY` names the rung, and `RX_ENGINE_SEL`
+     * reads `size-cap-retry`. Never offered on a [SEL-1] retry
+     * (`dfa_disabled`), so a drop rung and a DFA overflow still never meet
+     * on one compile (`esel_of`'s premise check). */
+    SDR_NO_PREFILTER = 3,
+    SDR_MAX         = 3
 };
 
 /* [PATFACTS] the pattern-facts record's CONSUMER header: types and
@@ -2856,6 +2869,25 @@ struct Ctx {
      * `why` TEXT (which comes from the surviving node's own row) can name
      * different occurrences — D26 tier-3 wording, not a verdict. */
     size_t               first_vmonly_pos;
+    /* [UTF-VALID] LB: PCRE2's `max_lookbehind` FACT, the number of
+     * CHARACTERS `<prefix>_valid_upto` steps back from `startpos` before it
+     * validates (docs/design/utf_valid_design.md §1.4, measured on 10.46).
+     *
+     * A PARSE-TIME RUNNING MAX, as it is in PCRE2, with ONE WRITER PER
+     * CONSTRUCT and no walk: `\A`, `\b` and `\B` raise it to 1
+     * (src/parse/mod_assertions.c), and a lookbehind raises it to its widest
+     * branch in characters (src/parse/mod_lookaround.c — at parse time for a
+     * call-free body, in `pcrec_lookaround_fix_widths` for a deferred one).
+     * It is NOT derivable from the tree afterwards, which is why it is not a
+     * fact accessor: `\A` and `^` are one node kind (A_BOL) and only `\A`
+     * counts, a one-character lookbehind becomes an A_CTX node, and a DEFINE
+     * body PCRE2 counts may be dropped. Nesting does not accumulate (a `\b`
+     * inside a lookbehind is a max, not a sum), and dead code counts —
+     * PCRE2's own rule, copied rather than the true reach, because a larger
+     * LB would refuse subjects PCRE2 accepts. `[[:<:]]`/`[[:>:]]` count 1 in
+     * PCRE2 and are not built here (src/parse/ext.c refuses them); their
+     * producer raises this when it lands. */
+    int                  lb_max;
     /* [M4.7b/K7] Running total of NFA-state-list ELEMENTS interned by the
      * subset construction, across every machine this compile builds (forward
      * and reverse are charged to one budget because they are both live at
@@ -3109,6 +3141,13 @@ struct Ctx {
     const pcrec_options *opt;
     Job                 *job;
 };
+
+/* [UTF-VALID] Raises `Ctx.lb_max` (PCRE2's `max_lookbehind` fact) to `n`
+ * characters: the one spelling of the running max its writers share. */
+static inline void pcrec_lb_raise(Ctx *cx, int n)
+{
+    if (n > cx->lb_max) cx->lb_max = n;
+}
 
 /* [M6.2 wave A] `Ctx.mods`' type is DELIBERATELY INCOMPLETE HERE (§8.6): the
  * definition lives in src/parse/parse_mods.h and nothing outside src/parse/
@@ -5886,9 +5925,16 @@ void pcrec_emit_req_run_blocks(Ctx *cx, StrBuf *c);
  * caller for `n` bytes. */
 void pcrec_emit_exact_compare(StrBuf *c, const char *base,
                               const unsigned char *bytes, int n);
+/* [K50]/[UTF-VALID] The caller-startpos entry prologue: the startpos-guard
+ * axis's value (refuse / nothing / align) and then the `-futf-check`
+ * precheck, at the four sites that take a caller's position. `anchored`
+ * picks the align form: a search seeks, a match-here entry answers -1. */
 void pcrec_emit_startpos_guard(Ctx *cx, StrBuf *c, const char *indent,
                                const char *posvar, const char *subjvar,
-                               const char *lenvar);
+                               const char *lenvar, bool anchored);
+/* [UTF-VALID] Is the subject check emitted in this artifact (the flag, on an
+ * encoding with ill-formed byte strings)? src/gen/emit_dfa.c. */
+bool pcrec_utf_check_on(Ctx *cx);
 /* [K73] What a site does when offset 0 is not a character start: a search
  * SEEKs the next start, an anchored match-here entry answers NOMATCH, an
  * attempt loop SKIPs the attempt. See `pcrec_emit_start_zero`. */

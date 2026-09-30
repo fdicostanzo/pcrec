@@ -180,7 +180,29 @@ enum {
      * whose classes are all one unit deep (`byte`) has NO ROW, and the VM
      * then keeps the class's byte child: the emitter asks the table, never
      * the encoding. */
-    PCREC_ENCE_DECODE         = 1u << 5
+    PCREC_ENCE_DECODE         = 1u << 5,
+    /* [UTF-VALID] (utf_valid_design.md §4.3, ruled D133 Q4/Q7) THE SUBJECT
+     * VALIDATOR: `$_valid_upto(s, n, startpos)`, the first byte of the first
+     * ill-formed sequence at or after `startpos` stepped back LB characters,
+     * or `n`. ALWAYS IN THE MASK, `next_pos`'s status: it is the find-all
+     * escape a caller runs on the DEFAULT artifact (match_api.md §3.1.2), so
+     * every artifact carries it whatever `-futf-check` says, and EVERY
+     * backend has a row — `byte`'s body is `return n;`, because the
+     * contract (the offset of the first ill-formed sequence) has an answer
+     * under every encoding.
+     *
+     * ONE VALIDATOR, THREE CALLERS: the `-futf-check` precheck at the K50
+     * guard's sites, the caller asking for the offset, and utf8's
+     * `$_var_valid` above, which is re-spelled on it. NOT `engine_callable`:
+     * the precheck sits in the ENTRY, once per call, beside the K50 guard
+     * (DD-12 (7)'s terms, `var_valid`'s status), never in a scan loop.
+     *
+     * LB is a PATTERN fact, not an encoding one, so it does not live in the
+     * backend text: the body reads `$_VALID_LB`, which the emitter defines
+     * once per artifact from `Ctx.lb_max` (src/gen/emit_dfa.c's
+     * `emit_residual_defs`). A backend whose body does not step back (byte)
+     * leaves the macro unread. */
+    PCREC_ENCE_VALID_UPTO     = 1u << 6
 };
 
 typedef struct {

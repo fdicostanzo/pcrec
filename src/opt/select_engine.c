@@ -916,8 +916,12 @@ static void prefilter_decision(Ctx *cx, EngineFit *fit, size_t why_pos)
  *     MISSING FROM THE PROSE THIS TABLE REPLACES: [OPT-4.2]'s block argued
  *     non-overlap from `collapse_reason` and `dfa_disabled` alone, which
  *     predates arm 5 and says nothing about `size_drop_rung`. What keeps
- *     arms 2 and 5 apart is that the drop ladder's rungs are DFA-engine
- *     (note D) while this field requires a VM-chosen artifact.
+ *     arms 2 and 5 apart is that the drop ladder's first two rungs are
+ *     DFA-engine (note D) while this field requires a VM-chosen artifact;
+ *     the third ([PF-DROP]) is taken only when the refused attempt HAD a
+ *     prefilter, so this field was false there, and every input it reads
+ *     (`collapse_reason`, `dfa_disabled`, nullability, `-fprefilter`) is the
+ *     same on the retry — the rung's own `-fno-prefilter` is not one.
  * (C) The `fit->prefilter` conjunct on arm 4 is not belt-and-braces: a
  *     size-cap-refused VM compile can still end with no prefilter (a
  *     backreference or a linked call drops it), and stamping "a prefilter
@@ -926,11 +930,15 @@ static void prefilter_decision(Ctx *cx, EngineFit *fit, size_t why_pos)
  *     observable in any other stamp, so it is left alone pending a named
  *     consumer (D77).
  * (D) Arm 5 carries NO `fit->prefilter` conjunct, and that asymmetry with
- *     arm 4 is forced: the drop ladder's rungs are DFA-engine (rung 1 needs
- *     `Job.anchored_ok`, rung 2 tests `fit.chosen == ENGM_DFA`), a DFA
- *     artifact has no prefilter to survive, and requiring one would make the
- *     arm unreachable on exactly the population it exists for. The same
- *     DFA-engine fact is what keeps arm 5 disjoint from arms 6-9 — see the
+ *     arm 4 is forced: the drop ladder's first two rungs are DFA-engine
+ *     (rung 1 needs `Job.anchored_ok`, rung 2 tests `fit.chosen ==
+ *     ENGM_DFA`), a DFA artifact has no prefilter to survive, and the third
+ *     ([PF-DROP], D135) is the one that REMOVES a VM hybrid's prefilter, so
+ *     requiring one would make the arm unreachable on exactly the population
+ *     it exists for. What keeps arm 5 disjoint from arms 6-9 is that no drop
+ *     rung is ever taken on a [SEL-1] retry — the first two because an
+ *     overflow makes the engine the VM, the third by its own
+ *     `!dfa_disabled` conjunct (`fit_prefilter_applies`, compile.c) — see the
  *     check below, which is the first time this file asserts it. */
 static unsigned char esel_of(Ctx *cx, const EngineFit *fit)
 {

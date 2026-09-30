@@ -1,0 +1,21 @@
+{
+ "id": "w1",
+ "pattern": "foo(\\d+)bar",
+ "subject": "t-64k.bin",
+ "mode": "findall",
+ "matches": 0,
+ "calls": 1,
+ "attempts": 0,
+ "tests": {
+  "lead": 0,
+  "mid": 0,
+  "trail": 0
+ },
+ "test_lines": {
+  "lead": 1,
+  "mid": 3,
+  "trail": 1
+ },
+ "first_choice_line": 289,
+ "program_lines": 26
+}

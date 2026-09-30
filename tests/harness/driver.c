@@ -505,7 +505,11 @@ int main(int argc, char **argv) {
                                   : r == PCREC_ERR_INTERNAL  ? "internal"
                                   : r == PCREC_ERR_UNSET_VAR ? "unset-var"
                                   : NULL;
-                    if (w) printf("%s\n", w);
+                    /* [UTF-VALID] -9 prints `utf <offset>`: the refused
+                     * call's own position, as the main path below does. */
+                    if (r == PCREC_ERR_UTF)
+                        printf("utf %zu\n", RXFN(_valid_upto)(buf, len, p));
+                    else if (w) printf("%s\n", w);
                     else printf("giveup %d\n", r);
                     free_vars(vars, nvars);
                     free(buf);
@@ -737,7 +741,18 @@ int main(int argc, char **argv) {
                           : found == PCREC_ERR_INTERNAL  ? "internal"
                           : found == PCREC_ERR_UNSET_VAR ? "unset-var"
                           : NULL;
-        if (word) printf("%s\n", word);
+        /* [UTF-VALID] `utf <offset>`: PCREC_ERR_UTF is the third CALLER
+         * refusal below the floor (-futf-check refused an ill-formed
+         * subject), and the one whose meaning needs a NUMBER beside the
+         * word — the offset `<prefix>_valid_upto` reports for this same
+         * startpos, which is what an oracle arm compares. A corpus block
+         * cannot ask for it (no directive compiles -futf-check), so it has
+         * no `gu` word: it is reached only under RXTFLAGS, and there it
+         * must be NAMED rather than printed as `giveup -9` (utf_valid_design.md
+         * §7's harness obligation). */
+        if (found == PCREC_ERR_UTF)
+            printf("utf %zu\n", RXFN(_valid_upto)(buf, len, startpos));
+        else if (word) printf("%s\n", word);
         else printf("giveup %d\n", found);
         free_vars(vars, nvars);
         free(buf);

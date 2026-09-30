@@ -1,0 +1,25 @@
+{
+ "id": "dense-slack-webhook",
+ "pattern": "(?i)https://hooks.slack.com/services/(T[a-z0-9_]{8}/B[a-z0-9_]{8,12}/[a-z0-9_]{24})",
+ "subject": "secrets_dense.bin",
+ "mode": "findall",
+ "matches": 2000,
+ "calls": 2001,
+ "attempts": 2000,
+ "tests": {
+  "lead": 64000,
+  "mid": 106000,
+  "trail": 0,
+  "dfa": 1150000,
+  "search": 20002
+ },
+ "test_lines": {
+  "lead": 32,
+  "mid": 11,
+  "trail": 0,
+  "dfa": 28,
+  "search": 13
+ },
+ "first_choice_line": 1345,
+ "program_lines": 149
+}

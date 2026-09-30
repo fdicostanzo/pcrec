@@ -80,7 +80,10 @@ ExtResult pcrec_asrtport_atom(Ctx *cx, const RegRow *rw, ExtWant want,
 {
     AKind k;
     switch (rw->sel) {
-    case 'A': k = A_BOL; break;   /* \A — the alias, §3.2 */
+    /* [UTF-VALID] `\A` counts 1 toward LB and `^` does not (both are
+     * A_BOL, which is why the fact is raised HERE and not read off the
+     * tree): measured on 10.46, utf_valid_design.md §1.4. */
+    case 'A': k = A_BOL; pcrec_lb_raise(cx, 1); break;   /* \A — the alias, §3.2 */
     case 'Z': k = A_EOL; break;   /* \Z — the alias, §3.2 */
     case 'z': k = A_END; break;   /* \z — the one that needs a machine */
     /* [M6.2 wave B] the word-boundary pair, and they need the OTHER kind of
@@ -93,6 +96,10 @@ ExtResult pcrec_asrtport_atom(Ctx *cx, const RegRow *rw, ExtWant want,
      * structure. */
     case 'b':
     case 'B': {
+        /* [UTF-VALID] a word boundary reads the character BEFORE the
+         * position, so PCRE2 counts it 1 toward LB (utf_valid_design.md
+         * §1.4), whichever word set the scope resolves below. */
+        pcrec_lb_raise(cx, 1);
         /* [UCP] U2 `\b`/`\B` BUILD THE CONTEXT NODE DIRECTLY (ucp_design.md
          * §2.2): A_CTX over the word set the scope resolved, with the
          * boundary / non-boundary function. T1 FIRST: the row's DEF_UCP_W

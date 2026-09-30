@@ -1,0 +1,25 @@
+{
+ "id": "syn-http-cap",
+ "pattern": "HTTP/1\\.([01]) (\\d{3})",
+ "subject": "t-1024k-hit.bin",
+ "mode": "findall",
+ "matches": 0,
+ "calls": 1,
+ "attempts": 0,
+ "tests": {
+  "lead": 0,
+  "mid": 0,
+  "trail": 0,
+  "dfa": 21427,
+  "search": 2
+ },
+ "test_lines": {
+  "lead": 3,
+  "mid": 2,
+  "trail": 0,
+  "dfa": 20,
+  "search": 11
+ },
+ "first_choice_line": 344,
+ "program_lines": 35
+}

@@ -463,7 +463,26 @@ declare -A REFUSAL_PATTERN=(
     # below, verified live, substring shared between the two entries on
     # purpose. Measured population on this file alone: 2. No floor raised
     # (K35; this file's count is not a corpus-wide measurement).
-    ["-fprefilter"]="-fprefilter requires the VM engine${REFUSAL_DELIM}cannot be honoured for a pattern containing a${REFUSAL_DELIM}cannot both be requested${REFUSAL_DELIM}pattern too complex for the DFA engine${REFUSAL_DELIM}pattern too large (NFA exceeds"
+    # SIXTH shape, [axtri] (2026-09-30, triaging the Linux final `make
+    # test-axes` of main d6cb0bb4, abi 49): the forced prefilter's byte DFA
+    # is charged against the emitted-BYTES cap (limits.md §8), so a
+    # `engine vm` pattern that fits without it can overflow with it —
+    # tests/utf8/wclass_illformed.rxt's `\p{Xwd}` cells under `-e utf8`
+    # (bare 1,013,468 and captured 1,013,932 bytes against the 1,000,000
+    # cap; 32 cases, that one file, the same two patterns that file's line
+    # 219 comment records as refused at default when captured on the auto
+    # route). It is the do-or-die posture, not a defect: §2.5/§2.17 state
+    # that `-fprefilter` is never silently dropped and makes the size-ladder
+    # rungs that would undo it (the D135 drop-the-prefilter rung included)
+    # ineligible, so the size cap refuses with its own text. Verified live
+    # with `build/pcrec -p rx -e utf8 --features all --engine=vm -fprefilter
+    # --pattern 'x\p{Xwd}y'`, and against lane/pfdrop's compiler, which
+    # refuses identically with and without --fast-or-fail. The substring is
+    # the emitted-C-source cap's own wording (the code-bytes cap reads
+    # "bytes of emitted code", which this axis does not reach), and the
+    # existing 12,000 floor is unaffected (K35: 32 cases on one file is not
+    # a corpus-wide measurement).
+    ["-fprefilter"]="-fprefilter requires the VM engine${REFUSAL_DELIM}cannot be honoured for a pattern containing a${REFUSAL_DELIM}cannot both be requested${REFUSAL_DELIM}pattern too complex for the DFA engine${REFUSAL_DELIM}pattern too large (NFA exceeds${REFUSAL_DELIM}bytes of emitted C source (limit"
     # --engine=dfa's own do-or-die posture (§2.11) has TWO distinct shapes
     # in select_engine.c's switch (verified live against the full-corpus
     # REFUSED population — 3,874 of the first, 5,594 of the second): the
@@ -543,6 +562,31 @@ declare -A REFUSAL_PATTERN=(
     # code-bytes ceiling directly ("pattern too large: N bytes of emitted
     # code (limit 500000)").
     ["-fno-size-term"]="bytes of emitted code (limit"
+    # `-fno-cls-kit` ([axtri], 2026-09-30): denying the class-matcher kit
+    # returns every wide class on the VM to the byte alternation this
+    # compiler emitted before abi 48 (tuning.md §2.33), so the K55 refusal
+    # the kit retired comes back BY DESIGN on the same population: a
+    # `\p{Xwd}` at `-e utf8` under `engine vm` is 576,773 bytes (captured
+    # 577,122) of emitted code against the 500,000-byte code cap, and
+    # `\P{Unknown}` 526,899. Measured (Linux final run of main d6cb0bb4 and
+    # a local single-file run agree): 77 cases, five blocks of
+    # tests/utf8/wclass_illformed.rxt, all with this diagnostic, the same
+    # substring as `-fno-size-term`'s entry above. With the kit on those
+    # artifacts are ~31 KB. Nothing rescues them: `engine vm` has no
+    # prefilter for lane/pfdrop's D135 drop rung to drop (its compiler
+    # refuses identically). The floor is a measured number rounded down
+    # (K35), so a change that stops the byte alternation being reached is
+    # caught rather than read as "fewer refusals".
+    # NOT documented here, deliberately: the OTHER 32 cases of the 109
+    # (`x(\p{L})y`, `x(\P{L})y` on the default route, "bytes of emitted C
+    # source (limit 1000000": 1,179,060 / 1,153,832) are the size-CAP
+    # ladder's, not the kit axis's. Their bytes are the hybrid prefilter's
+    # byte alternation, and D135's drop-the-prefilter rung (lane/pfdrop)
+    # rescues them (measured: 430,907 / 413,437 bytes, `RX_VM_PREFILTER
+    # "none"`, answers unchanged) — so they clear when that lane merges and
+    # a substring for them would go vacuous the same day. Until then
+    # `-fno-cls-kit` reads red on exactly those 32.
+    ["-fno-cls-kit"]="bytes of emitted code (limit"
     # K55 RETIRED ([CLS-TREE] S4, abi 48): `--engine=vm` carried ONE entry
     # here, "bytes of emitted code (limit", for `\P{Unknown}` under
     # `-e utf8` (tests/utf8/axis12_scripts.rxt), whose VM body was a
@@ -558,6 +602,7 @@ declare -A REFUSAL_FLOOR=(
     ["-fno-counter"]=180
     ["-fprefilter"]=12000
     ["--engine=dfa"]=8000
+    ["-fno-cls-kit"]=60
 )
 
 # ============================================================================
@@ -1190,10 +1235,26 @@ declare -a job_label=() job_flags=() job_lost_ok=()
 # job_label's own index the moment any OTHER job type appended after it, so
 # every writer sets it by EXPLICIT INDEX instead (see the dial block below).
 declare -a job_savedump=()
+# [UTF-VALID] `-futf-check` IS EXCLUDED FROM THE IDENTITY SWEEP BY NAME
+# (docs/spec/tuning.md §2.36): it is a CONTRACT axis whose answers differ on
+# purpose on every ill-formed corpus cell, so an identity comparison would
+# report each one as a disagreement. It gets its OWN ARM below
+# (tests/axes/utfcheck_arm.py). The exclusion is ASSERTED PRESENT —
+# `PCREC_FORCE_PREFILTER`'s idiom one section up — so a rename of the bit
+# cannot silently put the axis back into (or drop it out of) both sweeps.
+utfcheck_bit=""
+for bit in "${!bit_macro[@]}"; do
+    [ "${bit_macro[$bit]}" = "PCREC_FORCE_UTF_CHECK" ] && utfcheck_bit="$bit"
+done
+if [ -z "$utfcheck_bit" ] || [ "${macro_flag[PCREC_FORCE_UTF_CHECK]:-}" != "-futf-check" ]; then
+    echo "run_axes.sh: FATAL: PCREC_FORCE_UTF_CHECK / -futf-check is not among the derived axes — the one axis this sweep excludes by name for its own arm has been renamed or removed, so neither sweep would cover it" >&2
+    exit 1
+fi
 for bit in $(printf '%s\n' "${!bit_macro[@]}" | LC_ALL=C sort -n); do
     macro="${bit_macro[$bit]}"
     flagtext="${macro_flag[$macro]}"
     label="$flagtext ($macro, bit $bit)"
+    [ "$bit" = "$utfcheck_bit" ] && continue    # its own arm, below
     if [ -n "$AXES" ]; then
         case " $AXES " in (*" $flagtext "*) ;; (*) continue ;; esac
     fi
@@ -1579,6 +1640,39 @@ EOF
 fi
 
 # ============================================================================
+# [UTF-VALID] THE `-futf-check` ARM (docs/spec/tuning.md §2.36). The same
+# corpus under RXTFLAGS=-futf-check, compared against the baseline dump by
+# tests/axes/utfcheck_arm.py: identical on every byte block (the flag is
+# inert there), and on a utf8 block identical iff python's strict decoder
+# finds the cell's checked range [startpos - LB, n) well-formed (LB from
+# libpcre2), `utf <offset>` otherwise.
+# ============================================================================
+utfcheck_verdict="not run (filtered out by AXES=)"
+if [ -z "$AXES" ] || case " $AXES " in (*" -futf-check "*) true ;; (*) false ;; esac; then
+    UTF_DUMP="$WORKDIR/axis_utfcheck.tsv"
+    echo
+    echo "axes: -futf-check arm (RXTFLAGS=\"-futf-check\", its own oracle, not identity)..."
+    "$ROOT_DIR/scripts/watchdog" -l axes-utfcheck -S axes -s 3600 -- \
+        env RXTFLAGS="-futf-check" RXTDUMP="$UTF_DUMP" PCREC="$PCREC" CC="$CC" \
+            GENCFLAGS="$GENCFLAGS" PROCS="$PROCS" TMPDIR="${TMPDIR:-/var/tmp}" \
+            HARNESS_BATCH="$HARNESS_BATCH" \
+            bash "$ROOT_DIR/tests/harness/run.sh" "$@" > "$WORKDIR/axis_utfcheck.out" 2>"$WORKDIR/axis_utfcheck.err"
+    if [ ! -f "$UTF_DUMP" ]; then
+        utfcheck_verdict="FAIL (no dump — see $WORKDIR/axis_utfcheck.err)"
+        fail=1
+    elif python3 "$SCRIPT_DIR/utfcheck_arm.py" "$BASE_DUMP" "$UTF_DUMP" "$ROOT_DIR" \
+            > "$WORKDIR/utfcheck_arm.out" 2>&1; then
+        utfcheck_verdict="OK — $(grep -m1 '^utfcheck arm:' "$WORKDIR/utfcheck_arm.out")"
+        cat "$WORKDIR/utfcheck_arm.out"
+    else
+        cat "$WORKDIR/utfcheck_arm.out"
+        utfcheck_verdict="FAIL — $(grep -m1 '^utfcheck arm:' "$WORKDIR/utfcheck_arm.out")"
+        fail=1
+    fi
+    echo "  $utfcheck_verdict"
+fi
+
+# ============================================================================
 # SUMMARY
 # ============================================================================
 
@@ -1591,6 +1685,7 @@ done
 echo "oracle cross-check: $oracle_verdict"
 echo "--vm-entry-shape tier: $_shape_tier"
 echo "DIAL-S3 (tune refusal-set, keyed): $dial_s3_verdict"
+echo "-futf-check arm (contract, own oracle): $utfcheck_verdict"
 echo "HARNESS_BATCH: $HARNESS_BATCH"
 echo "total wall time: $((t_end - t_start))s"
 if [ "$fail" -ne 0 ]; then
@@ -1604,5 +1699,5 @@ fi
 # verdict is named too, for the identical reason — "all axes answer-identical"
 # says nothing about the refusal SET, which is a different property this
 # script checks separately.
-echo "run_axes.sh: all axes answer-identical to default (documented refusal populations excepted); --vm-entry-shape tier: $_shape_tier; oracle cross-check $oracle_verdict; DIAL-S3 $dial_s3_verdict"
+echo "run_axes.sh: all axes answer-identical to default (documented refusal populations excepted); --vm-entry-shape tier: $_shape_tier; oracle cross-check $oracle_verdict; DIAL-S3 $dial_s3_verdict; -futf-check arm $utfcheck_verdict"
 exit 0
