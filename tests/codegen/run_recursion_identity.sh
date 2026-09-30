@@ -1545,7 +1545,7 @@ echo "recursion-identity: corpus $(grep -c . "$PATFILE") patterns; call-bearing:
 # this tree — a 29-pattern gap that reading the actual differing list
 # explained. The BROAD count (union of both spellings) is what the
 # non-vacuity check below compares against.
-python3 - "$WORKDIR/free" "$WORKDIR/bref_pop" "$WORKDIR/var_pop" <<'PY'
+python3 - "$WORKDIR/free" "$WORKDIR/bref_pop" "$WORKDIR/var_pop" "$WORKDIR/ctx_pop" <<'PY'
 import sys, re
 
 def mask_classes(pat):
@@ -1565,8 +1565,14 @@ NUMERIC_RE = re.compile(r"\\[1-9]")
 NAMED_RE = re.compile(
     r"\\k<[A-Za-z_][A-Za-z0-9_]*>|\\k'[A-Za-z_][A-Za-z0-9_]*'"
     r"|\\k\{[A-Za-z_][A-Za-z0-9_]*\}|\(\?P=[A-Za-z_][A-Za-z0-9_]*\)")
-src, brefout, varout = sys.argv[1], sys.argv[2], sys.argv[3]
-numeric = set(); named = set(); varhits = []
+# [silentred] the context-node census: a pattern that SAYS lookaround (any
+# spelling, symbolic or alpha, incl. non-atomic) or a word boundary. The
+# ctx-node bucket below may only admit these — it cannot excuse a pattern the
+# construct is not in — and the bucket's own count is read against this one.
+CTX_RE = re.compile(
+    r"\(\?(?:<[=!*]|[=!*])|\(\*(?:pla|plb|nla|nlb|napla|naplb|positive_look|negative_look|non_atomic_positive_look)|\\[bB]")
+src, brefout, varout, ctxout = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
+numeric = set(); named = set(); varhits = []; ctxhits = []
 for line in open(src, encoding="utf-8", errors="surrogateescape"):
     p = line.rstrip("\n")
     if not p:
@@ -1578,6 +1584,8 @@ for line in open(src, encoding="utf-8", errors="surrogateescape"):
         named.add(p)
     if "${" in m:
         varhits.append(p)
+    if CTX_RE.search(m):
+        ctxhits.append(p)
 bref_union = numeric | named
 open(brefout, "w", encoding="utf-8", errors="surrogateescape").write(
     "\n".join(sorted(bref_union)) + ("\n" if bref_union else ""))
@@ -1587,11 +1595,17 @@ print("recursion-identity: backref population in the call-free bucket "
       "(text census, independent of the artifact): numeric \\1..\\9 = %d, "
       "named (\\k<>/\\k''/\\k{}/(?P=)) = %d, union = %d"
       % (len(numeric), len(named), len(bref_union)))
+open(ctxout, "w", encoding="utf-8", errors="surrogateescape").write(
+    "\n".join(ctxhits) + ("\n" if ctxhits else ""))
+print("recursion-identity: lookaround/word-boundary population in the call-free bucket "
+      "(text census, independent of the artifact): %d" % len(ctxhits))
 print("recursion-identity: ${...} var population in the call-free bucket "
       "(text census, independent of the artifact): %d" % len(varhits))
 PY
 NBREF=$(grep -c . "$WORKDIR/bref_pop" || true)
 NVARPOP=$(grep -c . "$WORKDIR/var_pop" || true)
+CTX_POP="$(cat "$WORKDIR/ctx_pop")"
+NCTX=$(grep -c . "$WORKDIR/ctx_pop" || true)
 
 if [ "$nf" -lt 700 ]; then
     bad "corpus extraction found only $nf call-free patterns — the gate has no population"
@@ -1662,6 +1676,9 @@ sweep() { # sweep <label> <extra pcrec args>
     # that the construct is really what moved (`run->var_value[` in the
     # subject's own region).
     local rvarnew=0
+    # [silentred] the sixth exception's counter: a moved region excused by
+    # module `ctx-node` ([UCP] U2's `A_CTX`), see the branch below.
+    local rctx=0
     : > "$WORKDIR/diff.$label"
     while IFS= read -r pat; do
         [ -n "$pat" ] || continue
@@ -1755,7 +1772,8 @@ sweep() { # sweep <label> <extra pcrec args>
                 # population is ADMITTED here instead of excluded upstream.
                 rvarnew=$((rvarnew + 1))
                 printf 'REGION MOVED (ruled, [VAR] module postdates ac4917d entirely -- no earlier compiler can express ${...}) %s\n' "$pat" >> "$WORKDIR/diff.$label"
-            elif [ "${isl_a:-0}" -gt 0 ] || [ "${fold_a:-0}" -gt 0 ] || [ "${lit_a:-0}" -gt 0 ]; then
+            elif [ "${isl_a:-0}" -gt 0 ] || [ "${fold_a:-0}" -gt 0 ] || [ "${lit_a:-0}" -gt 0 ] \
+                 || printf '%s\n' "$CTX_POP" | grep -qxF -- "$pat"; then
                 # [ENG-ISL]/[FORM-CHAR] THE EXCUSE IS A CLAIM ABOUT THE DENY
                 # AXES, NOT A PER-ARTIFACT EXEMPTION (panel r53, F3). Build
                 # the SAME pattern with the SUBJECT compiler and exactly the
@@ -1790,7 +1808,47 @@ sweep() { # sweep <label> <extra pcrec args>
                 # asserts on every VM artifact.
                 deny="$deny -fno-lit-run"
                 rn="$(printf '%s\n' "$(gen_deny "$pat" "$args" "$deny")" | stamp_strip | prog_region)"
-                if [ "$rn" = "$rb_bref" ]; then
+                # [silentred] THE SIXTH DENY AXIS, `-fno-ctx-node` ([UCP] U2),
+                # AND IT HAS NO STAMP TO READ: the context node moves a
+                # one-character lookaround / `\b` off the VM (the pre-module
+                # reference's route) onto the DFA, so the moved region is the
+                # whole program. It is tried only AFTER the stamped axes fail
+                # to restore the pin (never folded into every deny set, so the
+                # stamped buckets keep their exact meaning) and only for a
+                # pattern whose TEXT carries a lookaround / word-boundary
+                # spelling (`CTX_POP`, read from the pattern, not the
+                # artifact). The claim is the one every bucket here makes:
+                # the pin is restored IFF exactly this axis (plus the stamped
+                # ones) is denied — an unrelated region change inside the
+                # same artifact is not restored and lands in rdiff.
+                ctxhit=0
+                stamped=0
+                if [ "${isl_a:-0}" -gt 0 ] || [ "${fold_a:-0}" -gt 0 ] || [ "${lit_a:-0}" -gt 0 ]; then stamped=1; fi
+                # a pattern that stamps nothing may not be excused by the
+                # stamped-axes build alone (only `-fno-lit-run`, which it
+                # does not stamp): that would be a bucket with no reason.
+                [ "$stamped" = 0 ] && rn=""
+                if [ "$rn" != "$rb_bref" ] && printf '%s\n' "$CTX_POP" | grep -qxF -- "$pat"; then
+                    # ...and the OTHER region-moving axes, all three, whether or
+                    # not the subject stamps them: the context node moved the
+                    # subject off the VM, where those stamps live (VM-route
+                    # only), so a caseless `(?<=(?i)s)x` reads fold=0 on its
+                    # DFA artifact while its deny build is a VM program whose
+                    # `(c|0x20)==115` is the fold the pin never had. The
+                    # restore is still an EQUALITY with the pinned region, so
+                    # naming all three cannot excuse anything the four axes
+                    # together do not explain.
+                    rn="$(printf '%s\n' "$(gen_deny "$pat" "$args" "$deny -fno-ctx-node -fno-alt-island -fno-cls-fold")" | stamp_strip | prog_region)"
+                    [ "$rn" = "$rb_bref" ] && ctxhit=1
+                fi
+                if [ "$ctxhit" = 1 ]; then
+                    rctx=$((rctx + 1))
+                    [ "${isl_a:-0}" -gt 0 ] && risland=$((risland + 1))
+                    [ "${fold_a:-0}" -gt 0 ] && rfold=$((rfold + 1))
+                    [ "${lit_a:-0}" -gt 0 ] && rlit=$((rlit + 1))
+                    [ "$rb_bref" != "$rb" ] && rbrefrename=$((rbrefrename + 1))
+                    printf 'REGION MOVED (ruled, [UCP] U2 context node; denying%s -fno-ctx-node restores the pinned region) %s\n' "$deny" "$pat" >> "$WORKDIR/diff.$label"
+                elif [ "$rn" = "$rb_bref" ]; then
                     [ "${isl_a:-0}" -gt 0 ] && risland=$((risland + 1))
                     [ "${fold_a:-0}" -gt 0 ] && rfold=$((rfold + 1))
                     [ "${lit_a:-0}" -gt 0 ] && rlit=$((rlit + 1))
@@ -1901,7 +1959,7 @@ sweep() { # sweep <label> <extra pcrec args>
         fi
     done < "$WORKDIR/free"
     echo "recursion-identity[$label] (B) whole-file vs $FILEPIN: same=$same differing=$diff elided=$elided refused-by-both=$refused refusal-mismatch=$mism stamp-filter-bad=$stampbad stamp-moved=$stampmoved"
-    echo "recursion-identity[$label] (A) program-region vs $REFCOMMIT: same=$rsame differing=$rdiff elided=$relided size-term-moved=$rsizeterm bref-rename-moved=$rbrefrename var-construct-moved=$rvarnew island-moved=$risland island-stamped-but-deny-is-a-noop=$rislsame unstamped-but-deny-moves=$rnoislmoved fold-moved=$rfold fold-stamped-but-deny-is-a-noop=$rfoldsame unstamped-but-fold-deny-moves=$rnofoldmoved litrun-moved=$rlit litrun-stamped-but-deny-is-a-noop=$rlitsame unstamped-but-litrun-deny-moves=$rnolitmoved call-bearing-in-population=$rcallbearing"
+    echo "recursion-identity[$label] (A) program-region vs $REFCOMMIT: same=$rsame differing=$rdiff elided=$relided size-term-moved=$rsizeterm bref-rename-moved=$rbrefrename var-construct-moved=$rvarnew ctx-node-moved=$rctx island-moved=$risland island-stamped-but-deny-is-a-noop=$rislsame unstamped-but-deny-moves=$rnoislmoved fold-moved=$rfold fold-stamped-but-deny-is-a-noop=$rfoldsame unstamped-but-fold-deny-moves=$rnofoldmoved litrun-moved=$rlit litrun-stamped-but-deny-is-a-noop=$rlitsame unstamped-but-litrun-deny-moves=$rnolitmoved call-bearing-in-population=$rcallbearing"
     SIZETERM_TOTAL=$((SIZETERM_TOTAL + rsizeterm))
     # THE SHARPER HALF: under `--no-captures` no VM body is emitted at all, so
     # the size term cannot act and this count must be ZERO. An axis-independent
@@ -1994,6 +2052,21 @@ sweep() { # sweep <label> <extra pcrec args>
     elif [ "$rvarnew" -lt $((NVARPOP - 10)) ] || [ "$rvarnew" -gt $((NVARPOP + 10)) ]; then
         bad "[$label] (A) the var-construct bucket admitted $rvarnew patterns against an independent text census of $NVARPOP \${...}-bearing call-free patterns -- outside the +/-10 band this cross-check allows"
     fi
+    # [silentred] THE SIXTH EXCEPTION'S NON-VACUITY ARM: `rctx` must fire on
+    # every axis that lets selection move the artifact (default, prefilter-off
+    # — where U2's DFA route is chosen), and can never exceed the independent
+    # text census it is drawn from. On `--engine=vm` and `--no-captures` the
+    # engine is forced on both sides / neither side promises a group, so 0 is
+    # possible there and is not asserted.
+    if [ "$rctx" -gt "$NCTX" ]; then
+        bad "[$label] (A) the ctx-node bucket admitted $rctx patterns against a text census of $NCTX lookaround/word-boundary call-free patterns — it cannot admit more than the population it is drawn from"
+    fi
+    case "$label" in
+        default|noprefilter)
+            if [ "$rctx" -eq 0 ]; then
+                bad "[$label] (A) the ctx-node bucket admitted ZERO patterns. Either [UCP] U2's context node stopped moving lookaround patterns off the VM (then this bucket is retired deliberately, with the pin re-derived), or -fno-ctx-node stopped restoring the pre-module region"
+            fi ;;
+    esac
     if [ "$rislsame" -ne 0 ]; then
         bad "[$label] (A) $rislsame artifacts stamp RX_VM_ALT_ISLANDS > 0 and yet are BYTE-IDENTICAL to their own -fno-alt-island build. The stamp claims a trie the program does not contain — the direction a merely decorative count fails in, and the reason this is a biconditional against the DENY AXIS rather than against a pin that decays:"
         grep '^ISLAND STAMPED BUT DENYING IT CHANGES NOTHING' "$WORKDIR/diff.$label" | head -10 >&2
