@@ -93,6 +93,11 @@ check_chunk() {
         echo "BUILDFAIL $(basename "$c")" >> "$b.log"
         return
     fi
+    # RUSAGE_CHILDREN of this subshell so far = the compile alone (user+sys,
+    # the RLIMIT_CPU clock D45 budgets), recorded so every run states its
+    # headroom rather than only its failures.
+    times > "$b.times"        # not piped: a pipeline's `times` is a subshell with no children
+    sed -n 2p "$b.times" > "$b.cpu"
     gen_run "clskit $(basename "$c")" "$b.bin" > "$b.log" 2>&1 || echo "RUNFAIL $(basename "$c") rc=$?" >> "$b.log"
 }
 nchunk=0
@@ -114,7 +119,13 @@ else
     ok "differential: all $nchunk checker chunks built under GENCFLAGS and ran"
 fi
 grep -h 'MISMATCH' "$WORKDIR"/chk/chunk_*.log 2>/dev/null | head -20 >&2
-nsets=$(grep -h '^CHECKED' "$WORKDIR"/chk/chunk_*.log | wc -l | tr -d ' ')
+# A set's variants may be spread over several units (the driver packs by
+# bytes), so its CHECKED lines are counted by set INDEX (names repeat) and the variants by SUM
+# against the driver's own emitted total: a variant that landed in no unit,
+# or a set in none, shows here.
+nsets=$(grep -h '^CHECKED' "$WORKDIR"/chk/chunk_*.log | sed -e 's/.* idx=//' | sort -u | wc -l | tr -d ' ')
+nvars=$(grep -h '^CHECKED' "$WORKDIR"/chk/chunk_*.log | sed -e 's/.* variants=\([0-9]*\) .*/\1/' | awk '{s+=$1} END{print s+0}')
+want_vars=$(sed -n 's/^CHUNKS .* VARIANTS \([0-9]*\)$/\1/p' "$WORKDIR/emit.out")
 want_sets=$(grep -c '^SET ' "$POP")
 read -r checks laws mism <<EOF
 $(grep -h '^TOTAL' "$WORKDIR"/chk/chunk_*.log | awk '{split($2,a,"=");split($3,b,"=");split($4,c,"="); A+=a[2];B+=b[2];C+=c[2]} END{print A+0, B+0, C+0}')
@@ -123,11 +134,16 @@ ncomp=$(grep -c '^COMP ' "$POP")
 nlaw=$(grep -h '^LAW' "$WORKDIR"/chk/chunk_*.log | wc -l | tr -d ' ')
 if [ "$nsets" -ne "$want_sets" ] || [ "$nsets" -eq 0 ]; then
     bad "differential: $nsets sets checked of $want_sets in the population"
+elif [ "$nvars" != "$want_vars" ]; then
+    bad "differential: $nvars variants checked of $want_vars emitted"
 elif [ "$mism" -ne 0 ]; then
     bad "differential: $mism mismatches over $checks code-point checks and $laws law checks"
 else
-    ok "differential: $nsets sets, $checks code-point checks, 0 mismatches"
+    ok "differential: $nsets sets, $nvars variants, $checks code-point checks, 0 mismatches"
 fi
+# Compile-CPU headroom against the D45 budget, from the per-unit records.
+cpu_line=$(cat "$WORKDIR"/chk/chunk_*.cpu 2>/dev/null | awk '{ split($1, u, /[ms]/); split($2, v, /[ms]/); t = u[1]*60 + u[2] + v[1]*60 + v[2]; if (t > m) m = t; s += t; n++ } END { printf "%d units, max %.2f s, total %.1f s", n, m, s }')
+echo "clskit: compile CPU per unit (D45 budget $(gen_cpu_secs)s): $cpu_line"
 if [ "$nlaw" -ne $((ncomp * 2)) ] || [ "$ncomp" -eq 0 ]; then
     bad "composition law: $nlaw law runs for $ncomp compositions x 2 variants"
 elif [ "$mism" -eq 0 ]; then

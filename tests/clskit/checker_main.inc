@@ -6,7 +6,8 @@
  * kit code wrote) against every variant. Then the composition law: for each
  * COMP, variant V of set c must equal op(V of a, V of b) on every code
  * point, for V in {K4, P3} — the law provenance-blindness makes testable
- * (clskit.h, Constraint 1). Prints one CHECKED line per set and a TOTAL.
+ * (clskit.h, Constraint 1). Prints one CHECKED line per set (a set whose variants the driver split
+ * across units prints one per unit; `idx=` is what the script counts by) and a TOTAL.
  */
 static const unsigned BEYOND[] = { 0x110000u, 0x7FFFFFFFu, 0xFFFFFFFFu };
 
@@ -45,7 +46,7 @@ int main(void)
         for (int q = 0; q < nv; q++) sbad += vbad[q];
         checks += (unsigned long long)nv * (0x110000ULL + 3);
         bad += sbad;
-        printf("CHECKED %s variants=%d mismatches=%llu\n", SETS[s].name, nv, sbad);
+        printf("CHECKED %s variants=%d mismatches=%llu idx=%d\n", SETS[s].name, nv, sbad, SETS[s].idx);
     }
 
     static const char *const LAWVARS[] = { "K4", "P3" };

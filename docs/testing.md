@@ -976,6 +976,23 @@ far. A genuine coverage drop still fails loudly; an ordinary different
 build of the same version does not. `docs/spec/registry.md`'s PC-3
 paragraph carries the same note.
 
+**`test-clskit` and CI'"'"'s gcc-13 (run 36704000526, 2026-09-30; lane `citri`).**
+CI is the one box whose compiler is gcc-13.3 (Ubuntu 24.04; the Mac is gcc-16,
+`ubuntubudu` gcc-15). `test-clskit` compiles 51 checker units of ~1-3 MB of
+class-matcher text at `-O1 -Werror` under D45's 10 s CPU budget: on gcc-13 23
+of them exceeded it (9 at e3ce677f; the failing set tracks each unit's Mac
+compile time, threshold ~1 s, i.e. gcc-13 needs ~10x the Mac's CPU to COMPILE
+these units while the same units RUN only ~1.7-2x slower there — so a compiler
+version effect on this text, not a slow runner and not load: `make test` runs
+serially in CI and nothing else in the suite comes near its budget). The
+check already named every over-budget unit; what it lacked was the units' size
+and its headroom. Fix: `clskit_driver` packs VARIANTS, not whole groups, into
+units of at most `CHUNK_BYTES` = 250000 (the composition law's K4/P3 variants
+plus their COMPS rows are the only indivisible part), the script counts a set's
+`CHECKED` lines by name and the variants by sum against the driver's own total,
+and every run prints the max/total compile CPU per unit against the budget. See
+`tests/clskit/CLAUDE.md`.
+
 **Deliberately NOT built**: a second `strict-clang` job. D2 fixes gcc as the
 target compiler and the generated code leans on GNU C extensions (computed
 goto and friends); `make strict` and `make test` both resolve `CC` to `gcc`
