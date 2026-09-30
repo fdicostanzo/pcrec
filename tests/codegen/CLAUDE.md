@@ -3415,5 +3415,5 @@ current DETECTED figure from a `make mech` run.
   own positive control: it is the evidence that the witness reaches the
   step-everything retry.
 
-The budget arm is the only detector of S367, whose plant keeps every string
-the structural checks read. S368 trips both kinds of check.
+The budget arm is the only detector of S370, whose plant keeps every string
+the structural checks read. S371 trips both kinds of check.

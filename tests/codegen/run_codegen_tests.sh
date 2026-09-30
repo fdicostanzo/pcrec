@@ -3377,7 +3377,7 @@ fi
 #       and only the block's closing re-seed gets it out. The denied build
 #       giving up on both subjects is the arm's own positive control — the
 #       witness demonstrably reaches the defect this change removes.
-# S367 (the probe exit removed) and S368 (the adaptive text never emitted
+# S370 (the probe exit removed) and S371 (the adaptive text never emitted
 # while the stamp still reads "adaptive") are this block's sabotage rows.
 rs_stamp() { sed -n 's/^#define RX_VM_RESEED "\([a-z-]*\)"$/\1/p' "$1" | head -1; }
 rs_calls() {   # prefilter call sites inside <prefix>_search_run's body

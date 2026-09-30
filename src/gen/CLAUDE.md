@@ -3324,7 +3324,7 @@ character to the subject end once one prefilter answer failed.
 - Checks: `tests/codegen/run_codegen_tests.sh`'s `[OPT-HYB-RESEED]` block
   (the stamp's IFF, the prefilter call sites in the search loop, the
   clamped witness's `window_end`, and a `--step-budget` arm with its deny
-  control). Sabotage rows are S367 (the probe never ends a block, visible
-  to the budget arm only) and S368 (adaptive text dropped under an
+  control). Sabotage rows are S370 (the probe never ends a block, visible
+  to the budget arm only) and S371 (adaptive text dropped under an
   adaptive stamp).
 

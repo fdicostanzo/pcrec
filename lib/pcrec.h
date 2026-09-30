@@ -953,7 +953,7 @@ enum {
  * may move, as with any change to how many attempts a call runs) and is
  * masked out of `rx_info.flags`; `<PREFIX>_VM_RESEED` names the row that
  * fired. Deny-only. A `#define` for bit 32's reason. */
-#define PCREC_NO_HYB_RESEED PCREC_BIT(36)
+#define PCREC_NO_HYB_RESEED PCREC_BIT(37)
 
 /* [ENG-BREP] the counter rung's UNROLL FACTOR, K (counterk_design.md §4.1;
  * eng_brep_design.md §4.5's "K must not become a per-pattern heuristic in v1",

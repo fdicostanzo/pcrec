@@ -27,7 +27,7 @@ the subject end once one prefilter answer failed.
   one probe re-seed, a short probe doubles the next block up to a cap, and
   a long jump resets.
 - A calibration per PROGRAM CLASS (frameless/framed, off `has_push`).
-- The deny `-fno-hyb-reseed` (bit 36) and the stamp `<PREFIX>_VM_RESEED`.
+- The deny `-fno-hyb-reseed` (bit 37) and the stamp `<PREFIX>_VM_RESEED`.
 - `abi` 46 → 47, with the full D76/D94 ritual.
 
 **Validation.** Verdicts are below with their logs.
@@ -118,8 +118,8 @@ RESULT-PLACEHOLDER
 
 | row | plant | measured |
 |---|---|---|
-| S367 | a short probe sets the next block to UINT_MAX (the probe never ends a block); every structurally-read string intact | DETECTED, `codegen:2fail/123pass` (the budget arm's dense subject + SABANCHOR) |
-| S368 | the adaptive text never emitted under an `adaptive` stamp | DETECTED, `codegen:8fail/117pass` |
+| S370 | a short probe sets the next block to UINT_MAX (the probe never ends a block); every structurally-read string intact | DETECTED, `codegen:2fail/123pass` (the budget arm's dense subject + SABANCHOR) |
+| S371 | the adaptive text never emitted under an `adaptive` stamp | DETECTED, `codegen:8fail/117pass` |
 
 ## 6. Validation run, and what is owed
 

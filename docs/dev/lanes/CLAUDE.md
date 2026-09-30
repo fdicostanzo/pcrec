@@ -3514,12 +3514,12 @@ never edited afterwards.
 - `reseed_report.md` — [OPT-HYB-RESEED] (2026-09-29, lane reseed, opus): the
   VM hybrid's retry, re-seeding from the prefilter or stepping, chosen per
   CALL by ONE first-match table (`pcrec_reseed_rows`: exact /
-  adaptive-dense / adaptive / fixed), with `-fno-hyb-reseed` (bit 36),
+  adaptive-dense / adaptive / fixed), with `-fno-hyb-reseed` (bit 37),
   `<PREFIX>_VM_RESEED` and abi 46 → 47. Read §1 for the five deviations from
   the brief. The sharpest is that N is not one number: the step cost varies
   ~5× with the program's frame discipline, so the calibration is one row per
   class. The report also carries the D77 census (439/455 clamp-free
   over-approximating hybrids), the identity sweep (6,756 rows, 0
-  violations), the per-startpos answer differential, S367/S368, the Mac
+  violations), the per-startpos answer differential, S370/S371, the Mac
   scratch table and a DRAFT bench ask (not sent). Design:
   `docs/design/hyb_reseed.md`.

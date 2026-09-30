@@ -2047,7 +2047,7 @@ the bump's own commit.**
   `<PREFIX>_VM_RESEED` (§6.3), naming the row that fired; a non-hybrid
   artifact gains nothing but this digit. No struct offset moves, no
   `rx_info` member is added or changed, no answer moves, and the new deny bit
-  (`-fno-hyb-reseed`, `PCREC_NO_HYB_RESEED`, bit 36) is MASKED out of
+  (`-fno-hyb-reseed`, `PCREC_NO_HYB_RESEED`, bit 37) is MASKED out of
   `rx_info.flags`, so under it an adaptive hybrid's program is the abi-46
   program apart from its `VM_RESEED` line and this digit
   (`docs/dev/lanes/reseed_report.md` has the identity sweep).

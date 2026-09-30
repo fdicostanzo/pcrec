@@ -2807,7 +2807,7 @@ context sets and `PCREC_MAX_CTX_ATOMS` atoms (`limits.md` §3.9); over either,
 the DFA is declined exactly as for a state-cap overflow (`--engine=auto`
 takes the VM).
 
-### 2.33 `-fno-hyb-reseed` — `PCREC_NO_HYB_RESEED` (bit 36)
+### 2.33 `-fno-hyb-reseed` — `PCREC_NO_HYB_RESEED` (bit 37)
 
 **[OPT-HYB-RESEED], `abi` 47 (`docs/design/hyb_reseed.md`).
 ANSWER-IDENTITY-preserving.** What a VM HYBRID's attempt loop does after a
