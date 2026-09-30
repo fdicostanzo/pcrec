@@ -301,11 +301,29 @@ static void u8_ranges(U8Branches *bl, unsigned lo, unsigned hi)
     }
 }
 
+/* [CLS-TREE] S3 THE PRODUCER: an `A_WCLASS` over `cls`'s own code-point set
+ * (the published list is shared, never copied — cpset.c's rule) with `child`,
+ * the byte-level rewrite, as its `l`. The one place the kind is made, and it
+ * is made only for a class this ENCODING spells in more than one code unit,
+ * which is what a non-NULL `lower_class` answer already means; the byte
+ * instance never reaches it. `reg` stays the arena's NULL, exactly as the
+ * rewrite's own nodes were. */
+static Ast *wclass_of(LowerCtx *lc, const Ast *cls, Ast *child)
+{
+    Ast *w = pcrec_ast_node(lc->cx, A_WCLASS);
+    w->u.wcls.iv = cls->u.cls.iv;
+    w->u.wcls.n  = cls->u.cls.n;
+    w->l = child;
+    return w;
+}
+
 /* The UTF8 rewrite of one class node: NULL for a class the byte tier already
  * expresses (every interval at or below 0x7F — the identity fast path that
  * keeps an ASCII pattern's tree untouched, and with it §8.5's expectation
  * that the two encodings' artifacts agree on ASCII by construction), else an
- * `A_ALT` of byte-range sequences covering the set. */
+ * `A_WCLASS` over the set whose byte child is an `A_ALT` of byte-range
+ * sequences covering it ([CLS-TREE] S3). A set with no encodable member
+ * stays a byte-confined empty `A_CLASS`. */
 static Ast *lower_class_utf8(LowerCtx *lc, Ast *a)
 {
     bool ascii = true;
@@ -366,7 +384,7 @@ static Ast *lower_class_utf8(LowerCtx *lc, Ast *a)
                 seal->r = res;
                 res = seal;
             }
-            return res;
+            return wclass_of(lc, a, res);
         }
     }
 }
@@ -453,10 +471,16 @@ unsigned pcrec_pat_char(Ctx *cx, size_t at, int *len)
  * reason; A_CALL is a back edge and stops (a detached reversed body cannot
  * contain one today — revdet declines calls — but the arm costs nothing and
  * the walk must not be the first to find out otherwise). */
-static bool subtree_is_identity(const LowerOps *ops, const Ast *a)
+static bool subtree_is_identity(const LowerCtx *lc, const Ast *a)
 {
+    const LowerOps *ops = lc->ops;
     for (;;) {
         switch (a->k) {
+        /* [CLS-TREE] S3 (D-1): a detached reversed copy is built ABOVE this
+         * pass and never lowered, so it cannot hold one; LOUD, because this
+         * walk reads a class's set. */
+        case A_WCLASS:
+            pcrec_wcls_misplaced(lc->cx, "subtree_is_identity");
         case A_CLASS:
             for (int i = 0; i < a->u.cls.n; i++)
                 if (a->u.cls.iv[i].hi > ops->identity_max) return false;
@@ -471,14 +495,14 @@ static bool subtree_is_identity(const LowerOps *ops, const Ast *a)
             continue;
         case A_REP:
             if (a->u.rep.revbody &&
-                !subtree_is_identity(ops, a->u.rep.revbody))
+                !subtree_is_identity(lc, a->u.rep.revbody))
                 return false;
             a = a->l;
             continue;
         case A_CAT: case A_ALT: {
             const AKind k = a->k;
             while (a->k == k) {
-                if (!subtree_is_identity(ops, a->r)) return false;
+                if (!subtree_is_identity(lc, a->r)) return false;
                 a = a->l;
             }
             continue;
@@ -499,6 +523,11 @@ static void lower_walk(LowerCtx *lc, Ast **slot)
     for (;;) {
         Ast *a = *slot;
         switch (a->k) {
+        /* [CLS-TREE] S3: this pass's own product, spliced where a leaf
+         * `A_CLASS` stood and never walked again (the splice returns). Met
+         * here, the lowering is running over a tree it already lowered. */
+        case A_WCLASS:
+            pcrec_wcls_misplaced(lc->cx, "lower_walk");
         case A_CLASS: {
             Ast *repl = lc->ops->lower_class(lc, a);
             /* THE SPLICE: one pointer, in a parent this walk never rebuilt.
@@ -526,7 +555,7 @@ static void lower_walk(LowerCtx *lc, Ast **slot)
              * reverse machine. Cleared BEFORE descending, so the decision is
              * taken on the same un-lowered view revdet analysed. */
             if (a->u.rep.revbody &&
-                !subtree_is_identity(lc->ops, a->u.rep.revbody))
+                !subtree_is_identity(lc, a->u.rep.revbody))
                 a->u.rep.revbody = NULL;
             slot = &a->l;
             continue;
@@ -588,6 +617,9 @@ static void cap_sig(const Ast *a, int *n, uintptr_t *sig)
             a = a->l;
             continue;
         case A_REP: case A_ATOMIC: case A_LOOK:
+        /* [CLS-TREE] S3: the AFTER snapshot meets the lowering's product;
+         * its byte child holds no group root. */
+        case A_WCLASS:
             a = a->l;
             continue;
         case A_CAT: case A_ALT: {

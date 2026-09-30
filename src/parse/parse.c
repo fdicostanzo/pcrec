@@ -153,6 +153,9 @@ bool pcrec_is_bare_anchor(const Ast *a)
      * is written must be a COMPILE ERROR here rather than silently inheriting
      * "not an anchor", because the failure is a silent over- or
      * under-rejection at a construct's very first cell. */
+    /* [CLS-TREE] S3: a class, never an anchor (and never at parse time). */
+    case A_WCLASS:
+        return false;
     case A_CLASS: case A_CAT: case A_ALT: case A_REP: case A_EMPTY:
     case A_CAP:
     /* [M6.5.2] NOT a bare anchor, and MEASURED rather than assumed: `\1*`,

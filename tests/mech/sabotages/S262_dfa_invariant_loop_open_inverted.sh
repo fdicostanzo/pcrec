@@ -27,6 +27,13 @@
 # ..."), so the harness runs to completion and reports an ordinary,
 # non-crashing sea of compile failures -- detected the same way any other
 # refusal is, never a crash.
+# [OPT-CLOSURE-CTX] (lane k67, 2026-09-29) NARROWED THE REACHED POPULATION,
+# not the plant: a loop whose entry lies on no epsilon cycle (`a+`, `\d*` --
+# the body always consumes) no longer opens a context at all, so `clo_open`
+# is reached only by a loop an epsilon path can re-enter (a nullable body:
+# `(a*)*`, `(?:a|)+`, `(a?)*`, tests/base/k18_*.rxt). Those are still an
+# ordinary corpus population, so the harness still reads a sea of refusals;
+# the examples above name the pre-k67 reach.
 SAB_ID="S262-dfa-invariant-loop-open-inverted"
 SAB_FILE="src/ir/dfa.c"
 SAB_SUITES="harness"

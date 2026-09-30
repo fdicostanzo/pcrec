@@ -256,6 +256,11 @@ long long pcrec_minw(const Ast *a)
         case A_CAP:
             a = a->l;
             continue;
+        /* [CLS-TREE] S3: its byte child, the lowered alternation that sat in
+         * this slot before the kind existed, so the answer is unchanged. */
+        case A_WCLASS:
+            a = a->l;
+            continue;
         /* [M6.4.2] `minw(A_ATOMIC(X)) == minw(X)`, and this is one of the two
          * arms in the whole tree where an atomic group is transparent WITHOUT
          * a caveat. The cut removes MATCHES, never BYTES: every string the
@@ -313,6 +318,11 @@ bool pcrec_nullable(const Ast *a)
      * child, whose own depth is bounded by the parser's group-nesting cap. */
     for (;;) {
         switch (a->k) {
+        /* [CLS-TREE] S3: its byte child, the lowered alternation that sat in
+         * this slot before the kind existed, so the answer is unchanged. */
+        case A_WCLASS:
+            a = a->l;
+            continue;
         case A_CLASS: return false;
         case A_EMPTY: case A_BOL: case A_EOL: case A_END: return true;
         /* [M6.2 wave B] zero-width, hence nullable. [M6.2 wave D] `\G` too.
@@ -514,6 +524,14 @@ long long pcrec_cwmax(const Ast *a)
 
     for (;;) {
         switch (a->k) {
+        /* [CLS-TREE] S3: its byte child, the lowered alternation that sat in
+         * this slot before the kind existed, so the answer is unchanged.
+         * D-2: a width in CHARACTERS says 1 for a class in every encoding
+         * (the header); S3 keeps the byte child's answer for byte
+         * identity, and the one-character answer is S4's question. */
+        case A_WCLASS:
+            a = a->l;
+            continue;
         case A_CLASS:
             /* One CHARACTER, exactly and by definition — see the header. */
             return pcrec_sat_add(acc, 1, MRL_MINW_MAX);
@@ -653,6 +671,14 @@ long long pcrec_cwmin(const Ast *a)
 
     for (;;) {
         switch (a->k) {
+        /* [CLS-TREE] S3: its byte child, the lowered alternation that sat in
+         * this slot before the kind existed, so the answer is unchanged.
+         * D-2: a width in CHARACTERS says 1 for a class in every encoding
+         * (the header); S3 keeps the byte child's answer for byte
+         * identity, and the one-character answer is S4's question. */
+        case A_WCLASS:
+            a = a->l;
+            continue;
         case A_CLASS:
             return pcrec_sat_add(acc, 1, MRL_MINW_MAX);
         case A_EMPTY:

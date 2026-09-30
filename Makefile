@@ -587,9 +587,13 @@ test-entry-shape-identity: all
 # encoding checks are `test-encoding-checks` below.
 #
 #     make test-cpset-structure                                # in `make test`
+#
+# [CLS-TREE] S3 rides the same section: tests/codegen/run_wclass_census.sh,
+# the A_WCLASS switch census + four reader witnesses (~2 s).
 test-cpset-structure: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-cpset-structure.ran"; fi
 	bash tests/codegen/run_cpset_structure.sh
+	bash tests/codegen/run_wclass_census.sh
 
 # [M5.0 stage 2] `test-encoding-checks` IS OPT-IN, the encoding backend's
 # behavioural + structural acceptance (docs/design/utf8_design.md §8.5, §8.1.1

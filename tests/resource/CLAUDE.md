@@ -8,8 +8,9 @@ could see.
 
 ## Files
 
-- **run_resource_tests.sh** — the [M4.7b] K7 pin, now SIX sections (this
-  list itself was stale — missing 1b — until [SIZECAP-CPU] below):
+- **run_resource_tests.sh** — the [M4.7b] K7 pin, now SEVEN sections (this
+  list itself was stale — missing 1b — until [SIZECAP-CPU] below; 1c is
+  [K67]'s):
 
   0. **[REVW.U L8-F6(a)] The allocation-site census.** Every raw
      `malloc`/`calloc`/`realloc`/`strdup` call in `src/`+`cli/`, swept by
@@ -42,6 +43,15 @@ could see.
       slower single core than the Mac dev box that calibrated it — not box
       contention, the battery's own load line was near-idle). See the
       loop's own header comment in the script for the measurement.
+
+  1c. **[K67] compile TIME, not a resource ceiling** (lane k67,
+      2026-09-29). Two `-e utf8 --features all` witnesses under their own
+      `K67_CPU` (default 20 s): `\p{L}+` (K67, 78.4 s before
+      [OPT-CLOSURE-CTX]/[OPT-RETRY-REUSE], 0.37 s after, and required to
+      still stamp `_ENGINE_SEL "size-cap-retry"` so it keeps reaching the
+      ladder it times) and `(?:\p{L}?)+` (a nullable loop body, so the
+      closure's hash memo carries every visit: 26.6 s before, 0.49 s after).
+      Verified in both directions: the pre-fix binary is CPU-killed on both.
 
   2. **A failed allocation is diagnosed, not aborted.** Four compiles under a
      40 MB (25 MB for the last) `ulimit -v`, which makes malloc genuinely

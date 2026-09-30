@@ -79,7 +79,7 @@ static inline bool rb_has(const RbSet *s, int b)
  * run. src/facts/req.c's header carries the whole account: why the whole
  * window and not PCRE2's "other than at its start", why a SET and a RUN, and
  * why a lookaround's body is a correctness decline. */
-void pcrec_req_walk(const Ast *root, RbSet *set, RbRun *run);
+void pcrec_req_walk(Ctx *cx, const Ast *root, RbSet *set, RbRun *run);
                                                         /* src/facts/req.c */
 
 /* THE DERIVED FACTS, speed choices over the core ones, composed in

@@ -159,6 +159,17 @@ construction (src/ir) and emission (src/gen).
   the one pass in this compiler that knows how an encoding spells a character.
   (`docs/design/utf8_design.md` §2.1, §2.1.2, §2.3.)
 
+  **[CLS-TREE] S3 (2026-09-29): IT IS THE ONE PRODUCER OF `A_WCLASS`.**
+  `lower_class_utf8` wraps its non-empty byte rewrite in `wclass_of`: an
+  `A_WCLASS` over the replaced class's own (shared) code-point set with the
+  rewrite as its child. The splice is still one pointer into a leaf slot, so
+  R2's group-root signature holds (`cap_sig` walks through the wrapper); the
+  empty-set case stays a byte-confined empty `A_CLASS`; the byte instance
+  never reaches it. `lower_walk` and `subtree_is_identity` refuse the kind
+  loudly (the pass never re-walks its own product; a revbody is built above
+  it). Every reader below walks the child, byte-identically
+  (`docs/dev/lanes/s3build_report.md`).
+
   **[M5.0] STAGE 2 LANDED THE UTF8 INSTANCE.** The file is now a `LowerOps`
   TABLE — one row per encoding, selected once by id, no `if (enc == UTF8)`
   anywhere (DD-12 (7) in the pass, mirroring the emitter's sealed backends).
@@ -1185,6 +1196,26 @@ construction (src/ir) and emission (src/gen).
   needs — it refuses a state carrying a view variant at all, where the
   elision needs only the variant's accept BIT to agree — and the relaxation
   has its own trigger (`docs/design/opt5_step2_twopass.md` §7 item 14).
+
+- **dfamemo.c** — [OPT-RETRY-REUSE] (lane k67, 2026-09-29) THE MACHINE
+  MEMO: `pcrec_build_min_dfa` is `pcrec_build_dfa` + `pcrec_minimize_dfa`, and
+  every DFA build site in `src/core/compile.c` goes through it. The driver's
+  retry ladders re-run the whole pipeline per attempt and most rungs change
+  nothing a machine is built from (the drop ladder's anchored machine and
+  premultiplied table, the VM's unroll K), so a machine is memoized ACROSS
+  ATTEMPTS keyed by everything construction and minimization read — the
+  NFA's states, the six build parameters, four `pcrec_options` fields and
+  the PRIOR `subset_elems` (a running budget, so an identical machine reached
+  with more already charged is a different question). A hit restores a deep
+  copy in a fresh build's ownership shape and charges the same
+  `subset_elems`; only clean builds are stored (an overflowed optional
+  machine also wrote `Ctx`, which a restore cannot replay). No per-rung
+  clause: a rung that changes a construction input misses by content. The
+  memo is `compile_driver`'s local, freed at its every exit; its storage is
+  its own arena. K67 (`\p{L}+ -e utf8`) 0.99 s -> 0.37 s on top of
+  [OPT-CLOSURE-CTX]; emitted bytes identical by `scripts/cls_identity.py` and
+  `scripts/emit_sweep.py`. **A new input read in `src/ir/dfa.c` or here must
+  join the key** — `pcrec_build_dfa`'s header says so beside the reads.
 
 - **minimize.c** — DFA minimization by Moore-style partition refinement with
   signature hashing. The EOL-view edge (`eolvar`) participates as an extra

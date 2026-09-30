@@ -1576,6 +1576,12 @@ static int vm_det_seq(Ctx *cx, const Ast *a, uint8_t (*out)[32], int cap)
 {
     a = bare(a);
     switch (a->k) {
+    /* [CLS-TREE] S3: its byte child, which is what sat here before the kind
+     * existed — `é` is a two-byte deterministic stride, and the cursor rung
+     * (`vm_cursor_fits`) takes it on ANY quantifier body, not only a revdet
+     * one, so a decline here would move artifacts. */
+    case A_WCLASS:
+        return vm_det_seq(cx, a->l, out, cap);
     case A_CLASS:
         if (cap < 1) return 0;
         pcrec_cls_bits(cx, a, out[0]);
@@ -1599,7 +1605,12 @@ static int vm_det_seq(Ctx *cx, const Ast *a, uint8_t (*out)[32], int cap)
         }
         return total;
     }
-    default:
+    /* [CLS-TREE] S3 (D-6): the `default:` that stood here became this full
+     * enumeration, so a kind added later is a `-Wswitch` alarm here rather
+     * than a silent decline. `A_CAP` is unreachable (`bare` above). */
+    case A_ALT: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
+    case A_CTX: case A_GSTART: case A_KRESET: case A_CAP: case A_ATOMIC:
+    case A_LOOK: case A_BREF: case A_VAR: case A_CALL:
         /* A_ALT (choice), A_EMPTY (zero length), A_BOL/A_EOL (zero-width
          * assertions, which would make "scan ahead by stride" wrong).
          *
@@ -1629,6 +1640,7 @@ static int vm_det_seq(Ctx *cx, const Ast *a, uint8_t (*out)[32], int cap)
          * unreachable rather than merely correct. */
         return 0;
     }
+    return 0;   /* unreachable: the switch is exhaustive (-Wswitch) */
 }
 
 /* For the D44.1 extension: every capturing group inside a deterministic
@@ -1645,6 +1657,10 @@ typedef struct { int group, off, len; } CapOff;
 static int vm_cap_offsets(const Ast *a, int base, CapOff *out, int *n, int cap)
 {
     switch (a->k) {
+    /* [CLS-TREE] S3: its byte child, for `vm_det_seq`'s reason — the two
+     * must agree on the stride, and a wide class is as many bytes as its
+     * child is. */
+    case A_WCLASS: return vm_cap_offsets(a->l, base, out, n, cap);
     case A_CLASS: return base + 1;
     case A_CAP: {
         int end = vm_cap_offsets(a->l, base, out, n, cap);
@@ -1669,7 +1685,11 @@ static int vm_cap_offsets(const Ast *a, int base, CapOff *out, int *n, int cap)
         }
         return at;
     }
-    default:
+    /* [CLS-TREE] S3 (D-6): the `default:` that stood here became this full
+     * enumeration; the answer is unchanged. */
+    case A_ALT: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
+    case A_CTX: case A_GSTART: case A_KRESET: case A_ATOMIC: case A_LOOK:
+    case A_BREF: case A_VAR: case A_CALL:
         /* [M6.6.2] RE-INSPECTED FOR `A_LOOK`, the third of design §11's four
          * `default:`-carrying sites. SOUND, and GATED by the row above: `-1`
          * IS the decline, and this runs only on a body `vm_det_seq` already
@@ -1686,6 +1706,7 @@ static int vm_cap_offsets(const Ast *a, int base, CapOff *out, int *n, int cap)
          * as well as the right one. */
         return -1;   /* unreachable for a vm_det_seq-approved body */
     }
+    return -1;   /* unreachable: the switch is exhaustive (-Wswitch) */
 }
 
 /* THE RUNG DECISION, in ONE place (§2.5's ladder, D44.1's extension).
@@ -1830,6 +1851,7 @@ static void vm_rev_caps(const Ast *a, int *out, int *n, int cap)
             a = a->l;
             continue;
         case A_REP:
+        case A_WCLASS:   /* [CLS-TREE] S3: its byte child holds no group */
             a = a->l;
             continue;
         case A_CAT:
@@ -1977,11 +1999,11 @@ static void cost_max(Cost *acc, Cost r)
 static int vm_alt_flatten(Ctx *cx, const Ast *a, const Ast ***out)
 {
     int nbr = 1;
-    for (const Ast *t = a; t->k == A_ALT; t = t->l) nbr++;
+    for (const Ast *t = a; t->k == A_ALT; t = pcrec_ast_seethru(t->l)) nbr++;
     const Ast **br = pcrec_arena_alloc(&cx->arena, (size_t)nbr * sizeof(Ast *));
     int i = nbr;
     const Ast *t = a;
-    while (t->k == A_ALT) { br[--i] = t->r; t = t->l; }
+    while (t->k == A_ALT) { br[--i] = t->r; t = pcrec_ast_seethru(t->l); }
     br[0] = t;
     *out = br;
     return nbr;
@@ -1995,11 +2017,11 @@ static int vm_alt_flatten(Ctx *cx, const Ast *a, const Ast ***out)
 static int vm_cat_flatten(Ctx *cx, const Ast *a, const Ast ***out)
 {
     int n = 1;
-    for (const Ast *t = a; t->k == A_CAT; t = t->l) n++;
+    for (const Ast *t = a; t->k == A_CAT; t = pcrec_ast_seethru(t->l)) n++;
     const Ast **el = pcrec_arena_alloc(&cx->arena, (size_t)n * sizeof(Ast *));
     int i = n;
     const Ast *t = a;
-    while (t->k == A_CAT) { el[--i] = t->r; t = t->l; }
+    while (t->k == A_CAT) { el[--i] = t->r; t = pcrec_ast_seethru(t->l); }
     el[0] = t;
     *out = el;
     return n;
@@ -2014,7 +2036,7 @@ static int vm_lit_run(Vm *v, const Ast *const *el, int n, int j,
                       unsigned char *out)
 {
     if (v->cx->opt->flags & PCREC_NO_LIT_RUN) return 0;
-    return pcrec_lit_run(el, n, j, out);
+    return pcrec_lit_run(v->cx, el, n, j, out);
 }
 
 /* Computes the frame/trail/step Cost of one `A_REP` quantifier -- the cost dispatcher's `A_REP` arm.
@@ -2630,6 +2652,11 @@ static Cost vm_cost(Vm *v, const Ast *a, bool under_atomic)
         return c;
     }
     case A_KRESET: return vm_cost_kreset();
+    /* [CLS-TREE] S3: its byte child's cost — the alternation's choice points
+     * are real frames, and a leaf-style zero here would under-size the
+     * artifact (D-4: the wrapper costs nothing of its own, and `vm_emit`
+     * charges nothing of its own for it). */
+    case A_WCLASS: return vm_cost(v, a->l, under_atomic);
     case A_CAP:    return vm_cost_cap(v, a);
     case A_CAT:    return vm_cost_cat(v, a);
     case A_ALT:    return vm_cost_alt(v, a);
@@ -2898,6 +2925,9 @@ static void vm_count_slots(Vm *v, const Ast *a, long long repl,
     case A_CTX: case A_GSTART: case A_KRESET:
         return;
     case A_CAP: vm_count_slots(v, a->l, repl, false); return;
+    /* [CLS-TREE] S3: its byte child, site for site with `vm_emit`'s arm, and
+     * with `under_atomic` passed THROUGH — the wrapper is not a bracket. */
+    case A_WCLASS: vm_count_slots(v, a->l, repl, under_atomic); return;
     case A_LOOK: vm_count_slots_look(v, a, repl); return;
     /* [DD-14] A LOUD REFUSAL, and design §4.4c is emphatic that this site is
      * the one whose FIRST answer was wrong: "the first version said LEXICAL
@@ -3041,7 +3071,7 @@ static void vm_count_slots(Vm *v, const Ast *a, long long repl,
         while (a->k == A_ALT) {
             v->npush++;
             vm_count_slots(v, a->r, repl, false);
-            a = a->l;
+            a = pcrec_ast_seethru(a->l);
         }
         vm_count_slots(v, a, repl, false);
         return;
@@ -3543,7 +3573,7 @@ static int vm_mrl_gate(Vm *v, int entry, long long minrest, int dst,
  * emitter's whole literal test: `src/parse/` normalizes a literal to a
  * singleton class (internal.h's A_CLASS comment), so "is a literal byte" and
  * "is a one-member class" are the same question asked once. */
-static int vm_isl_single(const Ast *a)
+static int vm_isl_single(Vm *v, const Ast *a)
 {
     if (a->k != A_CLASS) return -1;
     /* [M5.0 stage 1] §2.5.1's AFTER row 9, second site. The 256-value scan
@@ -3554,7 +3584,7 @@ static int vm_isl_single(const Ast *a)
      * one-mechanism rule: an island literal and a factored prefix byte are the
      * same fact ("this class is one literal character") asked twice, and the
      * two spellings had already drifted into a popcount and a scan. */
-    return pcrec_cls_single(a);
+    return pcrec_cls_single(v->cx, a);
 }
 
 /* ---- the island's INPUT: the subtree's literal words, in PREFERENCE ORDER --
@@ -3618,13 +3648,20 @@ static bool vm_isl_words(Vm *v, const Ast *a, VmIslWL *out, int depth,
     if (depth > VM_ISL_MAX_DEPTH) return false;
 
     switch (a->k) {
+    /* [CLS-TREE] S3: its byte child, at the SAME depth — the wrapper is
+     * transparent, so a wide literal (`é|x`) keeps its island exactly as it
+     * did before the kind existed. The `default: return false` this switch
+     * used to carry would have dropped the island SILENTLY
+     * (docs/dev/cls_s3_reader_inventory.md §3 row 10). */
+    case A_WCLASS:
+        return vm_isl_words(v, a->l, out, depth, budget);
     case A_EMPTY:
         out->w = pcrec_arena_alloc(&v->cx->arena, sizeof *out->w);
         out->w[0].b = empty; out->w[0].len = 0;
         out->n = 1;
         return true;
     case A_CLASS: {
-        int b = vm_isl_single(a);
+        int b = vm_isl_single(v, a);
         if (b < 0) return false;
         uint8_t *p = pcrec_arena_alloc(&v->cx->arena, 1);
         p[0] = (uint8_t)b;
@@ -3640,11 +3677,11 @@ static bool vm_isl_words(Vm *v, const Ast *a, VmIslWL *out, int depth,
          * left to right, which for a LEFT-NESTED chain means the deepest `l`
          * first. */
         int nbr = 1;
-        for (const Ast *t = a; t->k == A_ALT; t = t->l) nbr++;
+        for (const Ast *t = a; t->k == A_ALT; t = pcrec_ast_seethru(t->l)) nbr++;
         const Ast **br = pcrec_arena_alloc(&v->cx->arena, (size_t)nbr * sizeof *br);
         int i = nbr;
         const Ast *t = a;
-        while (t->k == A_ALT) { br[--i] = t->r; t = t->l; }
+        while (t->k == A_ALT) { br[--i] = t->r; t = pcrec_ast_seethru(t->l); }
         br[0] = t;
 
         VmIslWL *sub = pcrec_arena_alloc(&v->cx->arena, (size_t)nbr * sizeof *sub);
@@ -3661,12 +3698,14 @@ static bool vm_isl_words(Vm *v, const Ast *a, VmIslWL *out, int depth,
         return true;
     }
     case A_CAT: {
+        /* [CLS-TREE] S3: a lowered class at the spine head unrolls into the
+         * spine through `pcrec_ast_seethru`, as it did before the kind. */
         int nsp = 1;
-        for (const Ast *t = a; t->k == A_CAT; t = t->l) nsp++;
+        for (const Ast *t = a; t->k == A_CAT; t = pcrec_ast_seethru(t->l)) nsp++;
         const Ast **el = pcrec_arena_alloc(&v->cx->arena, (size_t)nsp * sizeof *el);
         int i = nsp;
         const Ast *t = a;
-        while (t->k == A_CAT) { el[--i] = t->r; t = t->l; }
+        while (t->k == A_CAT) { el[--i] = t->r; t = pcrec_ast_seethru(t->l); }
         el[0] = t;
 
         if (!vm_isl_words(v, el[0], out, depth + 1, budget)) return false;
@@ -3691,9 +3730,17 @@ static bool vm_isl_words(Vm *v, const Ast *a, VmIslWL *out, int depth,
         }
         return true;
     }
-    default:
+    /* [CLS-TREE] S3 (D-6): the `default: return false` that stood here became
+     * this full enumeration, so a kind added later is a `-Wswitch` alarm
+     * rather than a silent lost island. Every one of these declines: a
+     * repeat, a capture, an assertion or a runtime-width operand is not a
+     * finite set of literal words this enumeration writes. */
+    case A_REP: case A_CAP: case A_ATOMIC: case A_LOOK:
+    case A_BOL: case A_EOL: case A_END: case A_CTX: case A_GSTART:
+    case A_KRESET: case A_BREF: case A_VAR: case A_CALL:
         return false;
     }
+    return false;
 }
 
 /* Counts the AST nodes in one island-trie candidate subtree, the unit an island's size is compared to a chain's emitted bytes in.
@@ -3723,7 +3770,10 @@ static long long vm_isl_subtree_nodes(Vm *v, const Ast *a)
     const Ast **stk = pcrec_arena_alloc(&v->cx->arena, (size_t)cap * sizeof *stk);
     stk[sp++] = a;
     while (sp) {
-        const Ast *t = stk[--sp];
+        /* [CLS-TREE] S3: counted through a wide class, never as one node —
+         * its child is what the chain emits, and a node count that saw the
+         * wrapper as a leaf would move the island-versus-chain ratio. */
+        const Ast *t = pcrec_ast_seethru(stk[--sp]);
         while (t->k == A_CAT || t->k == A_ALT) {
             n++;
             if (sp == cap) {
@@ -3734,7 +3784,7 @@ static long long vm_isl_subtree_nodes(Vm *v, const Ast *a)
                 cap *= 2;
             }
             stk[sp++] = t->r;
-            t = t->l;
+            t = pcrec_ast_seethru(t->l);
         }
         n++;
     }
@@ -5053,7 +5103,7 @@ static void vm_rev_emit(Vm *v, int entry, const Ast *a, int next, const Rev *R)
                   R->cur, R->floor, v->p, R->faill);
         for (int j = 0; j < nbr; j++) {
             uint8_t f[32];
-            pcrec_revdet_first(br[j], f);
+            pcrec_revdet_first(v->cx, br[j], f);
             int ci = vm_cls(v, f);
             pcrec_sb_puts(b, "    if (");
             vm_cls_test(v, b, ci, byte);
@@ -5075,7 +5125,16 @@ static void vm_rev_emit(Vm *v, int entry, const Ast *a, int next, const Rev *R)
         }
         return;
     }
-    default:
+    /* [CLS-TREE] S3 (D-1): a reversed body is built above the encoding
+     * lowering and cleared by it when the lowering would change it, so it
+     * never holds a wide class; LOUD, because this arm would render its set. */
+    case A_WCLASS:
+        pcrec_wcls_misplaced(v->cx, "vm_rev_emit");
+    /* [CLS-TREE] S3 (D-6): the `default:` that stood here became this full
+     * enumeration, still falling to the hard error below. */
+    case A_EMPTY: case A_BOL: case A_EOL: case A_END: case A_CTX:
+    case A_GSTART: case A_KRESET: case A_ATOMIC: case A_LOOK:
+    case A_BREF: case A_VAR: case A_CALL:
         /* [M6.6.2] RE-INSPECTED FOR `A_LOOK`, the fourth and last of design
          * §11's `default:`-carrying sites. SOUND AND LOUD: this falls to a
          * hard compile error rather than a silent accept, which is the right
@@ -6957,6 +7016,7 @@ static void vm_walk_caps(Vm *v, const Ast *a,
             a = a->l;
             continue;
         case A_REP: case A_ATOMIC: case A_LOOK:
+        case A_WCLASS:   /* [CLS-TREE] S3: its byte child holds no group */
             a = a->l;
             continue;
         case A_CAT: case A_ALT: {
@@ -7040,6 +7100,7 @@ static void vm_walk_calls(Vm *v, Ast *a,
             on_call(v, a, u);
             return;
         case A_CAP: case A_REP: case A_ATOMIC: case A_LOOK:
+        case A_WCLASS:   /* [CLS-TREE] S3: its byte child holds no call */
             a = a->l;
             continue;
         case A_CAT: case A_ALT: {
@@ -8341,12 +8402,31 @@ static void vm_cat(Vm *v, int entry, const Ast *a, int next)
  * `select_engine.c`/`possessify.c`/`revdet.c` already decided. Every arm's
  * emission must match `vm_cost`'s charge for the same node exactly — the
  * two are read together, never audited separately. */
+static void vm_emit_node(Vm *v, int entry, const Ast *a, int next);
+
 static void vm_emit(Vm *v, int entry, const Ast *a, int next)
 {
-    StrBuf *b = v->b;
     vm_charge(v);
+    vm_emit_node(v, entry, a, next);
+}
+
+/* `vm_emit`'s arms without its charge — the one entry that emits a node the
+ * caller has already counted. Only `A_WCLASS` recurses here directly: the
+ * wrapper's own charge stands in for its child's, so the program's node count
+ * is what it was before the kind existed and `PCREC_MAX_VM_NODES` refuses the
+ * same patterns (D-4, docs/dev/cls_s3_reader_inventory.md §10). */
+static void vm_emit_node(Vm *v, int entry, const Ast *a, int next)
+{
+    StrBuf *b = v->b;
 
     switch (a->k) {
+    /* [CLS-TREE] S3: its byte child, uncharged. MUST NOT join the `A_CLASS`
+     * arm below: that renders the SET, and a set confined to U+0080..U+00FF
+     * would render as a valid bitmap of the wrong bytes — `pcrec_cls_bits`'
+     * kind guard is what makes that mistake loud. */
+    case A_WCLASS:
+        vm_emit_node(v, entry, a->l, next);
+        return;
     case A_CLASS: {
         /* [M5.0 stage 1] §2.5.1's AFTER row 9, fourth site — the FORWARD walk,
          * and the one every capture-bearing pattern in the corpus goes
@@ -8516,8 +8596,8 @@ static void vm_emit(Vm *v, int entry, const Ast *a, int next)
          * `report_captures` is total. `(?:a\K)?b` on "b" is the cell — PCRE2 (0,1),
          * the `\K` not crossed — beside `(?:a\K)?b` on "ab", which is (1,2).
          *
-         * `vm_charge` at the top of this function has already counted the
-         * node; nothing else here costs anything. */
+         * `vm_charge` in `vm_emit` has already counted the node; nothing
+         * else here costs anything. */
         v->nkreset++;
         vm_lbl(v, entry, NULL);
         vm_set(v, 0, "(ptrdiff_t)scan_position",

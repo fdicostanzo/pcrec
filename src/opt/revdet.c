@@ -99,6 +99,9 @@ static void rd_shape(Shape *S, const Ast *a)
     for (;;) {
         if (!S->ok) return;
         switch (a->k) {
+        /* [CLS-TREE] S3: made by the encoding lowering, below this pass. */
+        case A_WCLASS:
+            return;
         case A_CLASS:
             return;
         case A_EMPTY: case A_BOL: case A_EOL: case A_END:
@@ -296,6 +299,10 @@ static Ast *rd_node(Ctx *cx, const Ast *src)
 static Ast *rd_reverse(Ctx *cx, const Ast *a)
 {
     switch (a->k) {
+    /* [CLS-TREE] S3 (D-1): above the encoding lowering, so never
+     * met; LOUD, because this arm would read the set as bytes. */
+    case A_WCLASS:
+        pcrec_wcls_misplaced(cx, "rd_reverse");
     case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
     /* [M6.2 wave B] reversal is identity -- the predicate is symmetric in
      * the two bytes it reads (src/ir/nfa.c). [M6.2 wave D] and for `\G`
@@ -478,10 +485,14 @@ static Ast *rd_reverse(Ctx *cx, const Ast *a)
  * reversed body `a` -- simple on this restricted tree, since a concatenation's
  * first set is just its leftmost element's, no nullability propagation needed.
  * Writes the 256-bit set into `out`. */
-void pcrec_revdet_first(const Ast *a, uint8_t *out)
+void pcrec_revdet_first(Ctx *cx, const Ast *a, uint8_t *out)
 {
     for (;;) {
         switch (a->k) {
+        /* [CLS-TREE] S3 (D-1): above the encoding lowering, so never
+         * met; LOUD, because this arm would read the set as bytes. */
+        case A_WCLASS:
+            pcrec_wcls_misplaced(cx, "pcrec_revdet_first");
         case A_CLASS:
             /* [M5.0 stage 1] §2.5.1's DECLINE row 6. This runs inside
              * `pcrec_select_engine` (compile.c:988), above the encoding
@@ -490,7 +501,7 @@ void pcrec_revdet_first(const Ast *a, uint8_t *out)
              * the sound answer") is exactly what a class reaching outside the
              * byte range gets. The fallback already existed; all that is new
              * is a second reason to take it. */
-            pcrec_cls_bits_widen(a, out);
+            pcrec_cls_bits_widen(cx, a, out);
             return;
         case A_CAP: case A_REP:
             a = a->l;
@@ -503,11 +514,11 @@ void pcrec_revdet_first(const Ast *a, uint8_t *out)
             memset(acc, 0, 32);
             const Ast *t = a;
             while (t->k == A_ALT) {
-                pcrec_revdet_first(t->r, br);
+                pcrec_revdet_first(cx, t->r, br);
                 for (int i = 0; i < 32; i++) acc[i] |= br[i];
                 t = t->l;
             }
-            pcrec_revdet_first(t, br);
+            pcrec_revdet_first(cx, t, br);
             for (int i = 0; i < 32; i++) acc[i] |= br[i];
             memcpy(out, acc, 32);
             return;
@@ -532,7 +543,12 @@ void pcrec_revdet_first(const Ast *a, uint8_t *out)
         case A_CALL:
             memset(out, 0xff, 32);
             return;
-        default:
+        /* [CLS-TREE] S3 (D-6): the `default:` that stood here became the full
+         * enumeration, so a kind added later is a `-Wswitch` alarm here
+         * rather than a silent widening. The answer is unchanged. */
+        case A_EMPTY: case A_BOL: case A_EOL: case A_END:
+        case A_CTX: case A_GSTART: case A_KRESET:
+        case A_ATOMIC: case A_LOOK: case A_BREF: case A_VAR:
             /* Unreachable on a shape-scanned body; widening to ALL BYTES is
              * the sound direction, because it makes the disjointness test
              * below fail and the quantifier keep its machinery.
@@ -578,10 +594,13 @@ void pcrec_revdet_first(const Ast *a, uint8_t *out)
  * implies it, since an implication is how a dependency quietly survives a
  * change to the thing it depends on (see the comment above). A failure
  * declines the rung like every other check here. */
-static bool rd_alt_disjoint(const Ast *a)
+static bool rd_alt_disjoint(Ctx *cx, const Ast *a)
 {
     for (;;) {
         switch (a->k) {
+        /* [CLS-TREE] S3: made by the encoding lowering, below this pass. */
+        case A_WCLASS:
+            return true;
         case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
         case A_CTX: case A_GSTART:
             return true;
@@ -631,7 +650,7 @@ static bool rd_alt_disjoint(const Ast *a)
             continue;
         case A_CAT:
             while (a->k == A_CAT) {
-                if (!rd_alt_disjoint(a->r)) return false;
+                if (!rd_alt_disjoint(cx, a->r)) return false;
                 a = a->l;
             }
             continue;
@@ -643,8 +662,8 @@ static bool rd_alt_disjoint(const Ast *a)
              * reason, as possessify.c's `funion`/`fconflict` pair. */
             for (const Ast *t = a;; t = t->l) {
                 const Ast *br_ast = (t->k == A_ALT) ? t->r : t;
-                if (!rd_alt_disjoint(br_ast)) return false;
-                pcrec_revdet_first(br_ast, br);
+                if (!rd_alt_disjoint(cx, br_ast)) return false;
+                pcrec_revdet_first(cx, br_ast, br);
                 for (int i = 0; i < 32; i++) {
                     if (seen[i] & br[i]) return false;
                     seen[i] |= br[i];
@@ -689,7 +708,7 @@ static void rd_rep(Rd *R, Ast *a, bool in_rep)
             if (pcrec_uniq_iteration(R->scratch, a->l, &why)) {
                 const Ast *rev = rd_reverse(R->cx, a->l);
                 if (pcrec_uniq_iteration(R->scratch, rev, &why)
-                    && rd_alt_disjoint(rev)) {
+                    && rd_alt_disjoint(R->cx, rev)) {
                     a->u.rep.revbody = rev;
                     R->marked++;
                 }
@@ -709,6 +728,9 @@ static void rd_rep(Rd *R, Ast *a, bool in_rep)
 static void rd_walk(Rd *R, Ast *a, bool in_rep)
 {
     switch (a->k) {
+    /* [CLS-TREE] S3: made by the encoding lowering, below this pass. */
+    case A_WCLASS:
+        return;
     case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
     /* [M6.2 wave E] `\K` joins them here with no caveat: this walk only
      * HUNTS for A_REP nodes to offer the rung to, and a leaf of any kind

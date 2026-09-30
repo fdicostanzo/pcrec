@@ -14,7 +14,8 @@
  * structural tree, after the call graph and before engine selection, and
  * every later ask reads the stored value. Kind-presence is invariant under
  * every later pass (design §3: they rewrite node FLAGS, or `A_CLASS`
- * contents into `A_CLASS`/`A_CAT`/`A_ALT`/`A_EMPTY`), and the E2 seal
+ * contents into `A_CLASS`/`A_CAT`/`A_ALT`/`A_EMPTY`, wrapped since
+ * [CLS-TREE] S3 in an `A_WCLASS` every predicate walks through), and the E2 seal
  * re-derives this mask on the lowered tree and refuses the compile if the
  * two disagree, so the invariance is checked on every compile, not argued.
  *

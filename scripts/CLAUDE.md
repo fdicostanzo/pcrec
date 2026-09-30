@@ -358,6 +358,17 @@ pcrec (the Makefile owns that).
   docs/testing.md "S3 triple-sweep identity instrument" for the recorded
   baseline and runtimes.
 
+- **compile_time_census.py** — [OPT-CLOSURE-CTX]/[OPT-RETRY-REUSE]'s
+  compile-TIME census (lane k67, 2026-09-29): the child's own rusage CPU
+  (never wall) for every triple of `cls_identity.py`'s population (it imports
+  that script's `build_population`/`argv_for`), one or more binaries run
+  interleaved per row (`--ref REV` builds the first), plus the two stamps
+  that say a retry ladder ran (`_ENGINE_SEL "size-cap-retry"`, a non-default
+  `_UNROLL_K_WHY`). Prints totals per binary and per population, the ladder
+  population's share and the worst-N; `--summarise TSV` re-reads a run. A
+  population under the floor fails (K35). Measurement, not a gate: nothing
+  runs it; `docs/dev/lanes/k67_report.md` has its first before/after.
+
 - **embed_text.sh** — [FINDINGS] B1 (`docs/design/findings/design.md` §8.1):
   a BUILD-facing script, run by the Makefile to
   embed every `src/findings/<name>.rxt` as a C array plus a name index in

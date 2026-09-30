@@ -172,9 +172,13 @@ static First fst_seq(First x, First rest)
  * unmodellable (a wide class, a backreference) widens to ALL BYTES rather
  * than refusing, which can only cost a possessification, never a wrong
  * answer. Feeds §2.2's disjointness test in `pss_walk` below. */
-static First first_of(const Ast *a)
+static First first_of(Ctx *cx, const Ast *a)
 {
     switch (a->k) {
+    /* [CLS-TREE] S3 (D-1): above the encoding lowering, so never
+     * met; LOUD, because this arm would read the set as bytes. */
+    case A_WCLASS:
+        pcrec_wcls_misplaced(cx, "first_of");
     case A_CLASS: {
         First r;
         /* [M5.0 stage 1] §2.5.1's DECLINE row 4. This pass runs inside
@@ -185,7 +189,7 @@ static First first_of(const Ast *a)
          * lost possessification and never a wrong answer; under
          * `--encoding=byte` no interval can exceed 0xFF and the cost is zero,
          * which is why the identity gate still reads 100%. */
-        pcrec_cls_bits_widen(a, r.f);
+        pcrec_cls_bits_widen(cx, a, r.f);
         r.nullable = false;
         return r;
     }
@@ -408,7 +412,7 @@ static First first_of(const Ast *a)
      * not take it — the transparency is what §6.4a's 776,160-cell sweep was
      * measured over. */
     case A_ATOMIC:
-        return first_of(a->l);
+        return first_of(cx, a->l);
 
     case A_CAT: {
         /* The spine is left-nested, so walking it from the top visits the
@@ -418,28 +422,28 @@ static First first_of(const Ast *a)
         First acc = fst_empty(true);          /* the empty suffix */
         const Ast *t = a;
         while (t->k == A_CAT) {
-            acc = fst_seq(first_of(t->r), acc);
+            acc = fst_seq(first_of(cx, t->r), acc);
             t = t->l;
         }
-        return fst_seq(first_of(t), acc);
+        return fst_seq(first_of(cx, t), acc);
     }
     case A_ALT: {
         /* Union of the branches; order-independent, so a plain spine walk. */
         First acc = fst_empty(false);
         const Ast *t = a;
         while (t->k == A_ALT) {
-            First r = first_of(t->r);
+            First r = first_of(cx, t->r);
             bs_or(acc.f, r.f);
             acc.nullable = acc.nullable || r.nullable;
             t = t->l;
         }
-        First h = first_of(t);
+        First h = first_of(cx, t);
         bs_or(acc.f, h.f);
         acc.nullable = acc.nullable || h.nullable;
         return acc;
     }
     case A_REP: {
-        First r = first_of(a->l);
+        First r = first_of(cx, a->l);
         r.nullable = r.nullable || a->u.rep.rmin == 0;
         return r;
     }
@@ -491,6 +495,7 @@ enum {
 };
 
 typedef struct {
+    Ctx    *cx;                       /* the compile, for a loud refusal */
     int     npos;
     bool    ok;                       /* cleared by anything unmodellable */
     uint8_t set[PSS_MAX_POS][32];     /* position -> its byte set */
@@ -560,6 +565,10 @@ static GkParts gk_build(Gk *g, const Ast *a)
     if (!g->ok) return gk_parts_empty(true);
 
     switch (a->k) {
+    /* [CLS-TREE] S3 (D-1): above the encoding lowering, so never
+     * met; LOUD, because this arm would read the set as bytes. */
+    case A_WCLASS:
+        pcrec_wcls_misplaced(g->cx, "gk_build");
     case A_CLASS: {
         /* [M5.0 stage 1] §2.5.1's DECLINE row 5, `first_of`'s argument
          * verbatim one rung down: a Glushkov position's LABEL is a byte set,
@@ -568,7 +577,7 @@ static GkParts gk_build(Gk *g, const Ast *a)
          * and (U2)'s follow-set disjointness harder to prove, so the verdict
          * is lost and no answer moves. */
         uint8_t lab[32];
-        pcrec_cls_bits_widen(a, lab);
+        pcrec_cls_bits_widen(g->cx, a, lab);
         int p = gk_newpos(g, lab);
         if (p < 0) return gk_parts_empty(true);
         GkParts r = gk_parts_empty(false);
@@ -759,7 +768,9 @@ static bool body_admits_unique_iteration(Gk *g, const Ast *body,
  * cost. */
 void *pcrec_uniq_scratch(Ctx *cx)
 {
-    return pcrec_arena_alloc(&cx->arena, sizeof(Gk));
+    Gk *g = pcrec_arena_alloc(&cx->arena, sizeof(Gk));
+    g->cx = cx;
+    return g;
 }
 
 /* body_admits_unique_iteration over the scratch Gk `scratch` -- the verdict
@@ -812,7 +823,7 @@ static void pss_walk(Pss *P, Ast *a, const uint8_t *follow, bool may_end,
 static bool pss_verdict(Pss *P, const Ast *a, const uint8_t *follow,
                         bool may_end, const uint8_t *encl)
 {
-    First body = first_of(a->l);
+    First body = first_of(P->cx, a->l);
 
     /* The effective follow: what comes after Q here, plus what every
      * enclosing loop could restart with. */
@@ -848,7 +859,7 @@ static void pss_rep(Pss *P, Ast *a, const uint8_t *follow, bool may_end,
 {
     P->seen++;
 
-    First body = first_of(a->l);
+    First body = first_of(P->cx, a->l);
 
     /* The effective follow: what comes after Q here, plus what every
      * enclosing loop could restart with. */
@@ -889,6 +900,9 @@ static void pss_walk(Pss *P, Ast *a, const uint8_t *follow, bool may_end,
                      const uint8_t *encl)
 {
     switch (a->k) {
+    /* [CLS-TREE] S3: made by the encoding lowering, below this pass. */
+    case A_WCLASS:
+        return;
     case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
     /* [M6.2 wave E] `\K` joins them with no caveat: this walk only HUNTS
      * for A_REP nodes to offer the verdict to, and a leaf hosts none. What
@@ -1084,7 +1098,7 @@ static void pss_walk(Pss *P, Ast *a, const uint8_t *follow, bool may_end,
         Ast *t = a;
         while (t->k == A_CAT) {
             pss_walk(P, t->r, cur, cur_end, encl);
-            First x = first_of(t->r);
+            First x = first_of(P->cx, t->r);
             uint8_t nf[32];
             memcpy(nf, x.f, 32);
             if (x.nullable) bs_or(nf, cur);
@@ -1120,7 +1134,7 @@ void pcrec_poss_survey(Ctx *cx, Ast *root,
     P.cx = cx;
     P.fn = fn;
     P.user = user;
-    P.g = pcrec_arena_alloc(&cx->arena, sizeof(Gk));
+    P.g = pcrec_uniq_scratch(cx);
 
     /* The census counters this walk maintains are `pcrec_possessify`'s, and a
      * SURVEY must not move them: `--emit-ir`'s header reports them and the
@@ -1150,7 +1164,7 @@ int pcrec_possessify(Ctx *cx, Ast *root)
     /* One Gk for the whole pass, reset per quantifier: it is 16 KB of position
      * state and the corpus analyses up to a few thousand quantifiers per
      * compile, so allocating one per verdict would be the pass's whole cost. */
-    P.g = pcrec_arena_alloc(&cx->arena, sizeof(Gk));
+    P.g = pcrec_uniq_scratch(cx);
 
     /* At the top level nothing follows the pattern and the match may end —
      * pcrec's entry points are a SEARCH, so the pattern's end is a legitimate

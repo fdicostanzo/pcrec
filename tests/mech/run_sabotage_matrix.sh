@@ -318,6 +318,15 @@
 #     NOTHING ELSE IN THE TREE CALLS src/gen/clskit.c at S1: every other arm
 #     scores a kit sabotage `0fail` by construction, so a row on this word is
 #     detected here or nowhere. Registered before S360-S363, its consumers.
+#   wclass — added 2026-09-29 ([CLS-TREE] S3, lane s3build); runs
+#     tests/codegen/run_wclass_census.sh: the AKind switch census (every
+#     switch handles A_WCLASS, none shares an arm with A_CLASS, none has a
+#     default:) and four reader witnesses read off emitted artifacts. Its own
+#     arm because S3 is BYTE-IDENTICAL by design: a wrong A_WCLASS arm moves
+#     an artifact and no answer (the island, the cursor rung, the literal
+#     run), so `harness` is green on it by construction, and the one wrong
+#     arm that IS loud (a reader rendering the set) is loud only through the
+#     kind guard this arm's W4 witness reaches. Registered before S365-S366.
 #
 # THE THREE NEWEST WORDS WERE REGISTERED FIRST, DELIBERATELY, which is the
 # lesson R31 C11 left one module earlier: this vocabulary is CLOSED, so a
@@ -2527,6 +2536,16 @@ run_one() {
                 p="$(grep -m1 '^checks passed:' "$work/clskit.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/clskit.log" | grep -oE '[0-9]+')"
                 score_arm "$work/clskit.log" "$f" "clskit:${f:-ERR}fail/${p:-?}pass"
+                ;;
+            wclass)
+                # [CLS-TREE] S3 tests/codegen/run_wclass_census.sh — see the
+                # vocabulary entry above. Reads the sabotaged tree's own src/
+                # (the census) and compiles with its own build/pcrec.
+                PCREC="$pcrec" bash "$tree/tests/codegen/run_wclass_census.sh" \
+                    > "$work/wclass.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/wclass.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/wclass.log" | grep -oE '[0-9]+')"
+                score_arm "$work/wclass.log" "$f" "wclass:${f:-ERR}fail/${p:-?}pass"
                 ;;
             core)
                 # [REVW.U L5-R0/R2] tests/core/run_core_tests.sh — the unit

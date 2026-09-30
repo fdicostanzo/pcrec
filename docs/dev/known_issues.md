@@ -379,9 +379,44 @@ by design (litscan_s1.md §1.1 invariant 2), but §2.27 alone never says so.
 
 ---
 
-## K67 — DEFERRED into [CLS-TREE] — compile TIME: `\p{L}+` under `-e utf8` takes ~77 s in pcrec itself (found by pcrec-bench, utf8@0.1 rehearsal, prp-l, 2026-09-25; diagnosed by lane plplus the same night)
+## K67 — FIXED 2026-09-29 (lane k67: [OPT-CLOSURE-CTX] + [OPT-RETRY-REUSE]) — compile TIME: `\p{L}+` under `-e utf8` took ~77 s in pcrec itself (found by pcrec-bench, utf8@0.1 rehearsal, prp-l, 2026-09-25; diagnosed by lane plplus the same night)
 
-**Status: deferred** (Frank, 2026-09-25: "hit everything class related at the same time like the class tree work... finish [the open queue] before taking this on"). Answers are correct; this is compile time only.
+**Status: fixed** (2026-09-29, lane `k67`, `docs/dev/lanes/k67_report.md`).
+The witness now compiles in **0.37 s of CPU** (Mac, one core; was 78.4 s on
+the same box the same evening), through the same ladder, to a
+BYTE-IDENTICAL artifact. Three general changes, none class-specific:
+
+1. **The closure memo's hash was the 466 ns** ([OPT-CLOSURE-CTX]).
+   `(k * FNV_PRIME) >> 20` over a key `(state << 32) | ctx` cannot carry the
+   state into a small table's slot bits, so every (state, ctx) key of a
+   closure landed in a handful of home slots and linear probing walked the
+   cluster. `hash_slot` (the splitmix64 finalizer) replaces it at both
+   tables in `src/ir/dfa.c`. Alone: the witness 78.4 -> 1.16 s, and a
+   NULLABLE loop body — where the context is genuinely needed —
+   `(?:\p{L}?)+ -e utf8` 26.6 -> 0.49 s.
+2. **A loop no epsilon path re-enters opens no context**
+   ([OPT-CLOSURE-CTX]). The redirect is the only reader of a context, and it
+   needs an epsilon cycle through the loop's entry; `eps_cyclic` (an
+   iterative Tarjan over the closure's own edges) finds the loops that have
+   one and only those open a context. Exact, with the argument at
+   `eps_edge`; one pass of the witness 0.42 -> 0.34 s on top of 1.
+3. **The drop ladder no longer rebuilds the machines** ([OPT-RETRY-REUSE]).
+   `src/opt/dfamemo.c` memoizes build+minimize across the driver's retry
+   attempts, keyed by every input construction reads (NFA states, the build
+   parameters, four option fields, the prior `subset_elems`), so the two
+   drop rungs get the forward and reverse machines back instead of building
+   them twice more: 0.99 -> 0.37 s. General: the VM's unroll ladder hits it
+   the same way (its prefilter machines do not depend on K).
+
+The class-specific share — the utf8 class lowered to a flat 600+-branch
+alternation — is untouched and stays [CLS-TREE]'s; at 0.37 s it is no longer
+a compile-time problem. Guard: `tests/resource/run_resource_tests.sh`
+Section 1c (both witnesses under a 20 s CPU budget; the pre-fix binary is
+killed on both).
+
+The original entry follows.
+
+**Status (as filed): deferred** (Frank, 2026-09-25: "hit everything class related at the same time like the class tree work... finish [the open queue] before taking this on"). Answers are correct; this is compile time only.
 
 **Repro** (main 27a63314, Mac, one core): `build/pcrec -p rx -fcomments --features all -e utf8 -o out.c --pattern '\p{L}+'` → 77 s user, stamps `RX_ENGINE "dfa"`, `RX_ENGINE_SEL "size-cap-retry"`. Bench (ce658cb7, Linux gcc 15.2): 70.44 s plain / 106.22 s whole-subject; `\P{L}+` 41.04 / 61.89 s; gcc on the output 0.30 s. Controls: `\p{L}` (no `+`) 0.11 s; `\p{N}+` 0.07 s (`selected`).
 

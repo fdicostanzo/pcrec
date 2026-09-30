@@ -3531,6 +3531,22 @@ never edited afterwards.
   u2land, sonnet): the four-conflict merge, C3 pins combined by mechanism
   (U2's +230 on clstri's two-tier pins), Mac section verdicts, and the Linux
   full run owed with its log path.
+- `k67_report.md` — K67 FIXED (2026-09-29, lane k67, opus): [OPT-CLOSURE-CTX]
+  + [OPT-RETRY-REUSE]. The ctx!=0 closure memo's 466 ns/visit was a CLUSTERED
+  HASH (`(k * FNV) >> 20` cannot carry the state into a small table's slot
+  bits), fixed by `hash_slot` in `src/ir/dfa.c`; a loop on no epsilon cycle
+  opens no context (`eps_cyclic`, exact); and `src/opt/dfamemo.c` memoizes
+  build+minimize across the driver's retry attempts, keyed by content. K67
+  78.4 s -> 0.37 s CPU, byte-identical (cls_identity 15,843/15,843,
+  emit_sweep 0 movers); census over 15,843 triples 584 s -> 147 s
+  (`scripts/compile_time_census.py`, new). Guard: tests/resource §1c.
+- `s3build_report.md` — [CLS-TREE] S3 (2026-09-29, lane s3build, opus): the
+  `A_WCLASS` node, every reader walking its byte child, byte-identical over the
+  `scripts/cls_identity.py` triple sweep. Read §2: the inventory's rows 5/6
+  (`vm_det_seq`/`vm_cap_offsets`) are reached by the cursor rung and walk the
+  child (a loud arm would have refused `(é)+`), and the union aliasing means
+  the kind guard, not the distinct member, is what makes a set-reading
+  mistake loud.
 - `k75m_report.md` — K75's measurement (2026-09-30, lane k75m, sonnet,
   measurement only): what libpcre2 10.48 does for an EXPLICIT startpos on a
   true mid-character position (A), a stray continuation byte (B) and a

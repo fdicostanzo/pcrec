@@ -18,11 +18,15 @@ SAB_SUITES="resource"
 SAB_DESC="compile_driver's setjmp handler never tests cx.failed_nomem (if (0 && ...) instead of if (...)), so a genuine pcrec_ctx_nomem-routed allocation failure falls through to the [ART-SIZE] ladder's blanket catch and can be silently absorbed into a later attempt's success -- K60's ladder class, D109's own fix undone"
 SAB_DOC_FIGURE="tests/core/alloc_check.c's W4 witness (the size-term ladder) is D109's own repro: make alloc reads W4 absorbed 0 -> 108 under this plant (single-shot and sustained both). tests/resource/run_resource_tests.sh Section 2b (D110) is the make-test-reachable detector: it now asserts alloc_check's own rc and the absence of any SUCCEEDED THROUGH line, not only the signal grep. Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S259."
 SAB_COUNT=1
+# RE-ANCHORED 2026-09-29 (lane k67, [OPT-RETRY-REUSE]): the propagation's
+# exit gained the machine memo's free; the plant is unchanged.
 SAB_BEFORE='            if (cx.failed_nomem) {
                 job_cleanup(&cx);
+                pcrec_dfa_memo_free(&dmemo);
                 return -1;
             }'
 SAB_AFTER='            if (0 && cx.failed_nomem) {   /* SABOTAGE S259: the propagation never fires */
                 job_cleanup(&cx);
+                pcrec_dfa_memo_free(&dmemo);
                 return -1;
             }'

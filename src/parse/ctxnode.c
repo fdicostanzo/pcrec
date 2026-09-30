@@ -92,6 +92,10 @@ static bool lang_charset(const Ast *a, PcrecCpSet *acc)
         case A_BOL: case A_EOL: case A_END: case A_CTX: case A_GSTART:
         case A_KRESET: case A_LOOK:
         case A_BREF: case A_VAR: case A_CALL:
+        /* [CLS-TREE] S3: made below the lowering, never at parse time.
+         * Declining is the sound answer: its child is BYTES, not the
+         * characters this set is made of. */
+        case A_WCLASS:
             return false;
         }
         return false;   /* unreachable under -Wswitch (make strict) */

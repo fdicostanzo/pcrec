@@ -298,11 +298,10 @@ done <<< "$anchored"
 #     "local algorithmic bounds whose correctness argument lives beside
 #     them... moving those here would separate a bound from the reason it
 #     is sound"
-#   ABLOCK_MIN (src/core/arena.c), PCREC_HASH64_MUL (src/ir/dfa.c) — the same
-#     header's OTHER exclusion, "structural constants do not [belong here]":
-#     an arena block size (its own example, verbatim) and the FNV-1a 64-bit
-#     prime, which is a fact about a published hash function and not a choice
-#     pcrec could make differently
+#   ABLOCK_MIN (src/core/arena.c) — the same header's OTHER exclusion,
+#     "structural constants do not [belong here]": an arena block size (its
+#     own example, verbatim). (PCREC_HASH64_MUL, the FNV prime src/ir/dfa.c's
+#     memo hash multiplied by, left with that hash at [OPT-CLOSURE-CTX].)
 #   LEGEND_MAX_STATES, LEGEND_MAX_EXAMPLE (emit_dfa.c) — a DEBUG LISTING's
 #     own truncation width, not a promise about what pcrec accepts/rejects
 #   VM_MAX_STRIDE, VM_FAST_TIER_BYTES, VM_FAST_TIER_MIN (emit_vm.c) —
@@ -478,7 +477,6 @@ awk -f "$TMP3/enums.awk" "$TMP3/masked.txt" >> "$TMP3/scan.txt"
 LIMIT_ALLOWLIST="TRIE_MAX_RDEPTH
 MAX_GROUPS
 ABLOCK_MIN
-PCREC_HASH64_MUL
 LEGEND_MAX_STATES
 LEGEND_MAX_EXAMPLE
 VM_MAX_STRIDE

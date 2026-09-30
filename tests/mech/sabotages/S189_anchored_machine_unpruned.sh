@@ -40,5 +40,14 @@ SAB_HARNESS_TARGET="tests/base/alternation.rxt"
 SAB_DESC="the anchored MATCH-HERE machine is built with prune=false (the reverse machine's parameter), so <prefix>_match reports the LONGEST match from ctx->pos instead of the leftmost-first one — 'a|ab' at pos 0 over \"ab\" returns 2 where it must return 1. No .rxt cell and no structural check can see it: the corpus drives <prefix>_search and the structural check reads the artifact's shape"
 SAB_DOC_FIGURE="CANONICAL RUN 2026-08-29 (run_sabotage_matrix.sh S189 at 312612b): anchdiff:2fail/5pass, corpus:0fail/26pass -- DETECTED. THE GREEN CORPUS ARM IS THE POINT OF THE ROW, not a half-detection: tests/base/alternation.rxt CONTAINS a|ab with its m \"ab\" 0 1 cell and still passes 26/26, because the corpus drives <prefix>_search. Hand-validated the same day at run_anchored_match.sh 14pass/0fail on the same planted tree, i.e. the structural check cannot see it either"
 SAB_COUNT=1
-SAB_BEFORE='    pcrec_build_dfa(cx, &cx->job->nfa, &cx->job->adfa, true, false,'
-SAB_AFTER='    pcrec_build_dfa(cx, &cx->job->nfa, &cx->job->adfa, false, false,   /* SABOTAGE S189 */'
+# RE-DRIVEN 2026-09-30 (lane s189tri, darwin, at 8b6db305): anchdiff:1fail/6pass,
+# corpus:0fail/26pass -- DETECTED. The figure above (2fail/5pass) predates a
+# changed check count; the fail is the answer-level differential either way.
+# The sweep took ~60 min because BSD `split` has no `-n` and the script's
+# fallback silently ran ONE shard (fixed: tests/lib/shard_split.sh).
+# RE-ANCHORED 2026-09-29 (lane k67, [OPT-RETRY-REUSE]): the build call became
+# pcrec_build_min_dfa (build + minimize, memoized across retry attempts);
+# `prune` is part of the memo's key, so the plant still builds -- and ships --
+# an unpruned anchored machine.
+SAB_BEFORE='    pcrec_build_min_dfa(cx, &cx->job->nfa, &cx->job->adfa, true, false,'
+SAB_AFTER='    pcrec_build_min_dfa(cx, &cx->job->nfa, &cx->job->adfa, false, false,   /* SABOTAGE S189 */'
