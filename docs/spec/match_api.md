@@ -298,11 +298,11 @@ noted under group 2, which are `PCREC_*`-named yet per-artifact):
    refused.** The block opens
 
    ```c
-   #if defined(PCREC_RX_ABI_H) && (PCREC_RX_ABI_H + 0) != 54
-   #error "pcrec: this artifact (abi 54) shares a translation unit with an artifact of a different abi; regenerate both with one pcrec"
+   #if defined(PCREC_RX_ABI_H) && (PCREC_RX_ABI_H + 0) != 55
+   #error "pcrec: this artifact (abi 55) shares a translation unit with an artifact of a different abi; regenerate both with one pcrec"
    #endif
    #ifndef PCREC_RX_ABI_H
-   #define PCREC_RX_ABI_H 54
+   #define PCREC_RX_ABI_H 55
    ```
 
    so artifacts of one abi still share the first block, and an artifact of
@@ -567,6 +567,15 @@ zero-length match is a success: it returns `1` with
 `caps[0][0] == caps[0][1]`. (The anchored entries of §3.2/§3.3 use the
 other convention, because their return value carries a length: there `0`
 IS a zero-length match, and no-match is `-1`.)
+
+Every return other than `1` leaves the whole `caps` array untouched, on
+every engine and through every entry that takes one (`_search`,
+`_search_in`, `_match_caps`, `_match_caps_in`). That includes an artifact
+whose groups above 0 can never be set, because each is reached only through
+a subroutine call or sits under a `{0}` (a DFA artifact with
+`<PREFIX>_NCAPS >= 2`). Those slots are written `PCREC_UNSET` on a success
+only, never on a no-match (K78, `abi` 55;
+`tests/codegen/run_nomatch_caps.sh` checks it).
 
 `caps` may be `NULL` (existence-only search — every caller before M4.5
 did exactly this, and the signature costs them nothing new).
@@ -2285,7 +2294,25 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `54` on every artifact today (lane k7980 bumped it
+- **`rx_info.abi` is `55` on every artifact today (lane k78 bumped it from
+  54, 2026-09-30: K78 — A DFA ARTIFACT'S DEAD-GROUP FILL MOVES FROM THE
+  SEARCH ENTRY TO ITS SUCCESS PATHS).** A DFA artifact whose
+  `<PREFIX>_NCAPS` is 2 or more promises groups that no match can set
+  (each is reached only through a subroutine call, or sits under a `{0}`),
+  and `<prefix>_search` reports them as `PCREC_UNSET`. Through `abi` 54 that
+  fill ran once at the top of `<prefix>_search`, before any answer, so a
+  no-match (and `startpos > n`) returned `0` with `caps[1..NCAPS-1]`
+  overwritten, against §3.1's "`caps` left untouched" (witness
+  `(?(DEFINE)(?<x>\b))b(?&x)` over `"zz"`). The fill is now emitted on each
+  success path, after the `caps[0]` write and before `return 1`: the
+  reverse-pass and pinned unanchored forms and the per-start attempt form.
+  Only DFA artifacts with `<PREFIX>_NCAPS >= 2` move; every other artifact
+  differs from `abi` 54 in its abi digits alone. No struct offset moves, no
+  `rx_info` member is added or changed, and no successful answer moves. The
+  VM, the VM hybrid, the anchored `_match_caps` entries and the `_in`
+  spellings already left `caps` untouched on every non-success return and
+  are unchanged (checked by `tests/codegen/run_nomatch_caps.sh`).
+- **`rx_info.abi` was `54` (lane k7980 bumped it
   from 53, 2026-09-30: K79 AND K80 — NO SELECTION READS THE PREFIX, AND THE
   SHARED BLOCK REFUSES A MIXED-ABI TRANSLATION UNIT).** (1) K80: the shared
   block's guard now carries the abi as its value, `#define PCREC_RX_ABI_H 54`,
