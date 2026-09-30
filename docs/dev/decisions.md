@@ -8839,3 +8839,12 @@ Frank: "I agree with you on all" (on the manager's ten-item status list). Source
 
 **D132 item 3, the start alignment, ruled** with it: spelled `-fstartpos-guard=align` (a third value of the existing axis beside refuse/off); it skips continuation bytes only, forward, once at entry.
 **Framing (Frank, correcting the manager's):** the option's purpose is NOT to tolerate invalid UTF-8; it is to cope with a MISALIGNED POINTER into valid text (a caller that split a buffer on arbitrary bytes). So there is NO validation carve-out: the character the pointer landed inside lies BEHIND it, and validation — including Q1's `[aligned − LB, n)` step-back — runs behind the pointer exactly as for any startpos. Bytes behind the pointer are the caller's real text and are checked as such; a buffer that itself begins mid-character is ill-formed data, and the validator reports it.
+
+## D134 — [UCP] U3 chartered as a CAPABILITY route, queued behind [UTF-VALID] (Frank, 2026-09-30, eighty-seventh session)
+
+**Context.** The U3 island hand-twin (docs/design/ucp_measurements/u3_island_twin.md) was measured NOT a speed win where an all-byte DFA exists (slower in 14/16 cells, 1.2-1.65x on latin1/mixed). Where NO all-byte form exists (non-byte-expressible context, UCP `\b`), today's route is the VM hybrid. There the island DFA is 4-5x faster on ASCII/latin1 and 1.35-2.8x slower on mixed/CJK, where the hybrid's prefilter skips text. Its answers are libpcre2-identical.
+
+**RULED (Frank's summary: "the island is slower than dfa but sometimes adds capability dfa doesn't have allowing us to avoid vm").** Option (a):
+1. U3 is built ONLY for patterns with no all-byte DFA form. Where an all-byte form exists, it stays the choice; the island never competes with it.
+2. The island is chosen over the VM hybrid by a ROW in the engine-selection first-match table (memory pcrec-decisions-as-first-match-tables). The row's predicate is MEASURED first: the lane locates the island-vs-hybrid break-even (text class, prefilter strength) before the row lands, so the island is selected only where it beats the VM.
+3. Sequencing: after [UTF-VALID] lands (both touch the utf8 entry scaffolding).
