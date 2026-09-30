@@ -3506,3 +3506,7 @@ never edited afterwards.
   test-rxtsource C3's pin move diagnosed as stale pins (census +318 since
   2026-09-25, identical on both boxes for the box-independent classes), not
   box-dependent and not S1's; re-pinned to the Linux py3.14 numbers.
+- `u2land_report.md` — [UCP] U2 landed onto current main (2026-09-29, lane
+  u2land, sonnet): the four-conflict merge, C3 pins combined by mechanism
+  (U2's +230 on clstri's two-tier pins), Mac section verdicts, and the Linux
+  full run owed with its log path.
