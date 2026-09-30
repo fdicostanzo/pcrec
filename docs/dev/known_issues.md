@@ -22,7 +22,7 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 ---
 
-## K75 — OPEN, needs a RULING (found by lane k73utf, 2026-09-29) — the spec find-all loop stops at a stray continuation byte after a non-empty match under `-e utf8`
+## K75 — RULED M1 (D132, Frank 2026-09-30; fix owed, lane k75fix) (found by lane k73utf, 2026-09-29) — the spec find-all loop stops at a stray continuation byte after a non-empty match under `-e utf8`
 
 **Witness:** `a` on `a\x80a` under `-e utf8`: pcrec's find-all (the match_api.md protocol: next startpos = previous end) finds 1 match; libpcre2 10.46 with PCRE2_MATCH_INVALID_UTF finds 2. After the first match the next startpos is the stray `\x80`, and K73 ruling (a) keeps K50's refusal of an EXPLICIT startpos on a continuation byte. Pre-existing. **The question:** a STRAY continuation byte (ill-formed, not inside any character) is not "mid-character"; skipping forward there, while refusing only a true mid-character position inside a well-formed sequence, may be the principled line. Measure PCRE2 on both kinds first. Frank's ruling; ruling (a) itself stands.
 
