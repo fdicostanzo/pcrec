@@ -212,7 +212,32 @@ witness I could construct, and the identity sweeps are what would see it.
 
 ## 7. Validation
 
-VALIDATION
+Complete on this box (Mac, gcc-16), tip binary = `273d2902`'s, unchanged
+by the final `git merge main` (`cmp` of `build/pcrec` before and after):
+
+- `make strict CC=gcc-16`: clean (after both changes).
+- `scripts/cls_identity.py --control`: PASS, 15,843/15,843, both controls
+  (section 3).
+- `scripts/emit_sweep.py --no-self-check`: 0 movers / 0 asymmetric on all
+  five streams, DELIVER witness OK (section 3).
+- `bash tests/resource/run_resource_tests.sh`: first run 28/1 -- the one red
+  was Section 0's allocation-site FILE SET, which `src/opt/dfamemo.c`'s one
+  malloc correctly moved (a restored machine's `st` must be heap:
+  `job_cleanup` frees it); re-pinned with the reason, Section 0 re-run
+  standalone PASS (10 files), Section 1c PASS both witnesses. Failing
+  direction of 1c run against REF: both CPU-killed at 20 s.
+- `bash tests/registry/limits_check.sh`: 37/0 (the allowlist lost
+  `PCREC_HASH64_MUL`; `run_registry_tests.sh`'s 37-pin unchanged).
+- `make alloc CC=gcc-16`: PASS, all 8 witness runs, every forced failure
+  diagnosed, none absorbed; W4 (the size-term ladder, the memo's allocation
+  path) population 153 against its floor 81.
+- `leaks --atExit`: 0 leaks on K67, a VM unroll-ladder witness, two
+  [SEL-1]/[OPT-4] fallbacks, the K59 witness and a refused compile.
+
+OWED (the manager schedules): the full `make test`, and `make test-codegen`
+at `PROCS=2`, launched detached as this lane's last act -- log
+`/tmp/k67/codegen.log`, completion line `rc=<n>` appended at its end (the
+verdict is make's `*** [test-codegen] Error` line, not a FAIL grep).
 
 ## 8. Findings
 
