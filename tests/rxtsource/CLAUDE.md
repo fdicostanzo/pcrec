@@ -864,6 +864,15 @@ Both `run.sh`'s C loop (the real `<prefix>_next_pos` residual) and
 were confirmed to FAIL loudly against the naive 4 before this fixture
 was committed.
 
+**[K75] (2026-09-30) the fixture grew six cells** (now eight, run.sh and
+verify_rxt.py both pinned at 8 in `run_rxtsource_tests.sh`): a NON-EMPTY match
+ending before a stray continuation byte (`a`/`.`/`a|` over `a\x80a`, `a` over
+`a\x80\x80a` and `a\xc3\xa9\x80a`, `a|` over `a\x80`) — the loop resumes at
+`<prefix>_next_pos(end - 1)`, so the counts are libpcre2 10.48's under
+`MATCH_INVALID_UTF` (2/2/2/2/3/2), where the unaligned loop stopped at the
+stray. Subjects are ASCII + stray bytes so leg C (one python char per byte)
+stays a valid second reader. Sabotage S407 (C leg) / S408 (python leg).
+
 ## [K57FIX lane, 2026-09-15] K57 fixed — the dedent refusal, and its
 ## three-leg sibling
 
