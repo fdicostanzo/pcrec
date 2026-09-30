@@ -2033,7 +2033,25 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `46` on every artifact today ([UCP] U2 bumped it from
+- **`rx_info.abi` is `47` on every artifact today ([OPT-HYB-RESEED] bumped
+  it from 46, 2026-09-29: THE VM HYBRID'S RETRY RE-SEEDS ADAPTIVELY).** A VM
+  hybrid whose prefilter answers for a LARGER language than the pattern's (a
+  lookaround or an atomic cut erased, or the `[OPT-4]` count collapse) used
+  to step one character after a failed attempt wherever no MRL clamp existed,
+  walking every character to the subject end once one prefilter answer
+  failed. Its retry now either steps or asks the prefilter again, chosen per
+  CALL from the gaps the prefilter's own answers jump (`docs/spec/tuning.md`
+  §2.33, `docs/design/hyb_reseed.md`); an exact-language hybrid keeps its
+  retry byte for byte. That is an emitted-text move for identical inputs and
+  so an `abi` event (D76). Every hybrid artifact gains ONE stamp line,
+  `<PREFIX>_VM_RESEED` (§6.3), naming the row that fired; a non-hybrid
+  artifact gains nothing but this digit. No struct offset moves, no
+  `rx_info` member is added or changed, no answer moves, and the new deny bit
+  (`-fno-hyb-reseed`, `PCREC_NO_HYB_RESEED`, bit 36) is MASKED out of
+  `rx_info.flags`, so under it an adaptive hybrid's program is the abi-46
+  program apart from its `VM_RESEED` line and this digit
+  (`docs/dev/lanes/reseed_report.md` has the identity sweep).
+- **`rx_info.abi` was `46` ([UCP] U2 bumped it from
   45, 2026-09-29: A ONE-CHARACTER LOOKAROUND IS A CONTEXT NODE, AND MOVES VM
   -> DFA).** A lookaround whose body's LANGUAGE is a set of single
   byte-expressible characters (`(?<=\$)`, `(?!y)`, `(?=[ab])`, the non-atomic
@@ -2972,6 +2990,23 @@ engine-scoped.**
   It has **no `rx_info` mirror**, on `<PREFIX>_DFA_TABLE`'s precedent and
   for the same reason: nothing measured reads one yet (D77), and the trigger
   to add one is a named consumer, not symmetry.
+
+  **[OPT-HYB-RESEED], 2026-09-29 (abi 47): `<PREFIX>_VM_RESEED`, what the
+  hybrid's RETRY does after a failed attempt** (`tuning.md` §2.33). Same
+  IFF as `_VM_PREFILTER_LANG` — every artifact whose `_VM_PREFILTER` reads
+  `"hybrid"`, and no other. The value is the name of the first-match row
+  that fired (`pcrec --list-axes` prints the table, axis `hyb-reseed`):
+
+  | value | meaning |
+  |---|---|
+  | `"exact"` | the prefilter answers for the pattern's own language, so a failed attempt cannot follow one of its answers; the retry is the one this compiler emitted before abi 47 |
+  | `"adaptive-dense"` | over-approximating prefilter, and the prior predicts dense candidates: the retry steps or re-seeds per call, starting in step mode |
+  | `"adaptive"` | over-approximating prefilter: the retry steps or re-seeds per call, starting with a short step budget |
+  | `"fixed"` | `-fno-hyb-reseed` on an over-approximating prefilter: the pre-abi-47 retry |
+
+  A SELECTION FACT, emitted under `_VM_PREFILTER_LANG`'s IFF rather than
+  unconditionally, and like it with no `rx_info` mirror (D77). It describes run
+  time only: every value answers identically, give-ups aside (§4.5).
 
   **[OPT-3], 2026-08-26: a THIRD `_DFA_*` macro, `<PREFIX>_DFA_TABLE`**, on
   exactly the same footing and under exactly the same IFF — every artifact

@@ -2807,6 +2807,74 @@ context sets and `PCREC_MAX_CTX_ATOMS` atoms (`limits.md` §3.9); over either,
 the DFA is declined exactly as for a state-cap overflow (`--engine=auto`
 takes the VM).
 
+### 2.33 `-fno-hyb-reseed` — `PCREC_NO_HYB_RESEED` (bit 36)
+
+**[OPT-HYB-RESEED], `abi` 47 (`docs/design/hyb_reseed.md`).
+ANSWER-IDENTITY-preserving.** What a VM HYBRID's attempt loop does after a
+failed attempt. Deny-only, MASKED out of `rx_info.flags`
+(`strategy_denials`) for the mask's own reason. `<PREFIX>_VM_RESEED`
+(`match_api.md` §6.3) names the row that fired. It is emitted on every
+hybrid and on no other artifact.
+
+**What it is.** A hybrid seeds each search from its DFA prefilter. When an
+attempt at a prefilter answer fails, the loop moves on in one of two ways:
+
+- it STEPS to the next character and attempts there, or
+- it RE-SEEDS, asking the prefilter where the next candidate starts.
+
+An attempt can only fail at a prefilter answer when the prefilter
+recognises a LARGER language than the pattern. Three things make it
+larger: a lookaround erased, an atomic cut erased, or the `[OPT-4]` count
+collapse (§2.17). Before `abi` 47 a hybrid re-seeded only where an MRL
+clamp existed and stepped everywhere else. So on a subject where one
+answer failed, it ran a VM attempt at every remaining character. The
+choice is now a first-match table (`pcrec --list-axes`, axis
+`hyb-reseed`):
+
+| # | row | deny | applies | action |
+|---|---|---|---|---|
+| 1 | `exact` | — | the prefilter's language is the pattern's own (no cut, no lookaround, no collapse) | the pre-`abi`-47 retry: re-seed where an MRL clamp exists, else step. A failed attempt at an answer does not arise, and a clamped artifact's window must be recomputed |
+| 2 | `adaptive-dense` | `-fno-hyb-reseed` | the byte-rate prior's MASS on the candidate scan's byte set (`docs/spec/findings.md`) predicts a candidate closer than the crossover below; with no prior this is the set's cardinality, so a single byte never qualifies and a wide class can | ADAPTIVE, starting inside a step block |
+| 3 | `adaptive` | `-fno-hyb-reseed` | always | ADAPTIVE, starting with a short step budget |
+| 4 | `fixed` | — | always | the pre-`abi`-47 retry |
+
+**ADAPTIVE** is decided per CALL, from two or three locals of the search
+function. No global and no `rx_ctx` field is involved, so a matcher stays
+reentrant and one call never changes the next.
+
+- Each re-seed reads how far the prefilter's answer jumped.
+- Two consecutive jumps shorter than the crossover start a STEP BLOCK.
+- The block ends in one re-seed, which is the block's PROBE. A short probe
+  doubles the next block, up to a cap. A long jump resets both counters.
+- A call spends a small step budget before its first re-seed.
+
+The crossover, the first block, the cap and that first budget are
+calibrated per PROGRAM CLASS: a frameless program (`<PREFIX>_VM_FRAMELESS
+1`) versus a framed one. Stepping a frameless program costs a few compares
+per position. Stepping a framed one costs a slot write, a trail entry, a
+push and a pop. The values were measured on scratch hand-twins (the design
+note §3). No `--tune` position moves them today.
+
+**What it costs, and what it does not move.** Both arms attempt only
+positions no match can be skipped past. Stepping is the pre-`abi`-47
+clamp-free retry. Re-seeding is the pre-`abi`-47 clamped retry, and it is
+sound because the prefilter's rejection is (L(P) ⊆ L(erase(P))). So no
+answer moves.
+
+A GIVE-UP can move, because the step budget is shared across a call's
+attempts (`limits.md` §3.1) and the table changes how many attempts a call
+runs:
+
+- On a clamp-free artifact adaptive can only remove attempts.
+- On a clamped over-approximating artifact a step block can add attempts
+  the old always-re-seed skipped.
+
+Where a clamp exists and the row is adaptive, the MRL ceiling is the
+subject end on both arms, so a step block cannot carry a stale window.
+Denied, an adaptive hybrid's program is the pre-`abi`-47 one apart from its
+`<PREFIX>_VM_RESEED` line. The flag is swept by `make test-axes` like every
+deny axis.
+
 ## 3. The DFA side's own stamps
 
 **CLOSED 2026-08-25 by plan row `[DD-13]`; this section stated the gap while
@@ -3089,6 +3157,7 @@ not-a-tuning-axis list that follows.
 | `flags` bit `PCREC_NO_RUN_PREFILTER` | `-fno-run-prefilter` | §2.30 |
 | `flags` bit `PCREC_NO_LIT_RUN` | `-fno-lit-run` | §2.31 |
 | `flags` bit `PCREC_NO_CTX_NODE` | `-fno-ctx-node` | §2.32 |
+| `flags` bit `PCREC_NO_HYB_RESEED` | `-fno-hyb-reseed` | §2.33 |
 | `unroll_k` (`PCREC_UNROLL_K_DEFAULT` = 0) | `--unroll=K` | §2.10 |
 | `vm_entry_shape` (`PCREC_VM_ENTRY_AUTO` = 0, `_PLAIN`, `_SHARED`, `_FORWARD`, `_INLINE`) | `--vm-entry-shape=N` | §2.21 |
 | `engine` (`PCREC_ENGINE_AUTO`/`_DFA`/`_VM`) | `--engine=E` | §2.11 |
