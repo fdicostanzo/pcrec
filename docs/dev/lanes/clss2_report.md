@@ -491,3 +491,62 @@ Linux `make test` + `test-codegen` (C-M2) are the manager's.
   function, and D139 did not revisit it. Removing `byte-fold`'s -2/-1
   positions sends the pairs to `byte-kit`, where smaller. That is one row
   edit, if wanted.
+
+## Triage + main merge (s2tri)
+
+Lane `s2tri`, branch `lane/s2tri` (from lane/clss2 `f9913d2b`, a separate
+worktree `worktrees/s2tri`, because the clss2fix chain was still running on
+`worktrees/clss2` and its mech runner archives HEAD). Verdicts on the chain's
+reds, read from `worktrees/clss2fix-scratch/runs/chain/*.log`:
+
+| red | verdict | fix |
+|---|---|---|
+| `test-registry` rc=2 | **stale pin** (registry's `[code]` scan): `SCAN_TEST_CALLS` (emit_dfa.c, 2 = how many times `emit_scan_edge` writes the run test) is a new numeric `#define` on neither allowlist | NON-LIMIT allowlist, fourth kind (cardinality), with its reason in `tests/registry/limits_check.sh` |
+| `test-cpset-structure` rc=2 | **stale pin**: CHECK 3 manifest, `[a-z]+@[a-z]+ EMITTED_BYTES` 26760 -> 26736 (D139's `(unsigned char)(b - lo) <= span` -> `(unsigned)(b - lo) <= spanu`, -24 B); the diff was that one line | re-recorded deliberately (after the main merge: 27113 = main's 27137 - 24) |
+| `test-codegen` rc=2 | **accepted**: the single `FAIL:` line is `nm could not read arm_a.o` (run_inline_capability.sh, darwin); all 8 groups' other checks pass | none. Re-run post-merge: same and only that line |
+| `mech S434` rc=1 | **check defect**, not "an expired claim" (the runner's generic footer): the row reads UNDETECTED (`corpus:0fail/97pass`, reach ok). Its detector `tests/base/d27_captures.rxt` never ends a run on a range's top byte (`\d` subjects carry no 9). `DETECTED` was never measured | new `tests/base/clskit_range_top.rxt` (4 patterns, 7 expectations, python3 `re` verified, subjects end on z / 9); S434's `SAB_HARNESS_TARGET` points at it. Measured: `corpus:5fail/2pass` DETECTED (the two passes are the DFA patterns, whose `{n}` and `$`-anchored forms take no scan-edge compare at that run) |
+| `clsid` rc=1 | **both controls PASS; the RESULT is the expected movers**. The log's CONTROL 2 line reads `movers=607 by-enc={'utf8': 607}: PASS` (the brief's "60 / FAIL" was the 300-column summary cut plus the RESULT line). RESULT: FAIL is 369 movers against the abi-53 `92f4c9b7` build. Classified by an ad hoc sweep that normalizes the ONE spelling D139 changed (`(unsigned char)(X - N) <= M` -> `(unsigned)(X - N) <= Mu`) before comparing: 13,830 identical, 2,167 both-refuse, **12 movers, all `-e utf8`**, the wide-class one-interval-at-or-below-U+00FF family of §3 (`[\x{e0}-\x{ff}]`, `[\x80-\x8f]` in a repeat, `[\xc2-\xdf](?!..)`, `[a-\x{e9}]+`, `[é è]`, `[^\x{80}-\x{10ffff}]+`: six patterns across routes). So 357 of 369 are the range spelling alone. The script cannot read green while D139 stands: its movers check has no allowlist | none to the compiler. The script stays as is (its verdict is "these are the movers", and the movers are the predicted ones); a normalizing/allowlisting mode is not built ahead of a second need (D77) |
+
+The ad hoc classifier is `worktrees/s2tri/scratch/norm_movers.py`
+(untracked, not committed).
+
+### Main merge
+
+`git merge main` into lane/s2tri, conflicts in 7 files, resolved:
+`emit_dfa.c` (`PCREC_ARTIFACT_ABI` 53), `run_codegen_tests.sh` (`ABI_EXPECT=53`
+and its message now names [UTF-VALID] 49->50 before S2's 50->51, 51->52,
+52->53), `match_api.md` §6 (S2's three entries kept on top, UTF-VALID's entry
+demoted to "was `50`", S2's "from 49" -> "from 50", "restores the abi-49 byte
+tests" -> abi-50), `registry.md` (axis line = main's 38 values, with the
+clss2fix `scan-body` wording re-applied), `run_registry_tests.sh` (axes
+coverage 155 -> **171**: main's +10 and S2's +6), the cpset manifest, and
+`run_recursion_identity.sh` (UTF-VALID's comment first, S2's three after it).
+**S2's abi events already sat on uvbuild's 50 as 51/52/53** (the lane had been
+numbered after it), so no renumber was needed beyond the prose that still said
+"from 49" (grep: lanes/CLAUDE.md, match_api.md). No header bit moves: S2 adds
+no bit (its `-fno-cls-kit` is bit 36, `-fno-cls-fold` bit 24), main holds
+39/40/41. `make strict` clean.
+
+### Re-runs on the merged tree (lane/s2tri, Mac, gcc-16)
+
+- `make strict`: clean.
+- `test-registry`: rc=0 (axes coverage 171).
+- `test-rxtsource`: rc=0, census re-pinned 259/4314/32545 -> 260/4318/32552
+  (+ `RUNSH_*` 236/4318/32552, `C3_VERIFIABLE` 15986). `C3_PASS` 13982 ->
+  13989 is INFERRED (+7 python-verifiable expectations), NOT measured: the
+  pin is python 3.14's and this Mac has 3.9.
+- `test-cpset-structure`: rc=0 (59 checks).
+- `test-codegen`: rc=2, the accepted `nm arm_a.o` line only.
+- mech S434: DETECTED pre-merge (above).
+
+### OWED
+
+- `make recid` / `bash tests/codegen/run_recursion_identity.sh` on the merged
+  tree: its (B) pin is `6df81be3` (the merge commit, the k73utf self-pin
+  convention). ~22 min; not launched because the chain still owns the box.
+- Landing `lane/s2tri` on `lane/clss2`: `git -C worktrees/clss2 merge --ff-only
+  lane/s2tri` ONLY after `worktrees/clss2fix-scratch/runs/chain/summary.txt`
+  reads CHAIN COMPLETE (the chain's corpus `--tune=-1`/vm legs and test-axes
+  were still running at this writing).
+- The chain's remaining results (corpus `--tune=-1` and `--engine=vm`,
+  test-axes `-fno-cls-fold -fno-cls-kit`) are the chain's own.
