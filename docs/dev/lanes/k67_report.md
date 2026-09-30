@@ -131,7 +131,7 @@ REACH of the memo specifically (K35: identity over artifacts that never took
 a ladder proves nothing about the memo): every artifact stamped
 `size-cap-retry` or with a non-default `_UNROLL_K_WHY` ran two or more
 attempts over an unchanged NFA, so its later attempts restored rather than
-built -- the census below counts that population (LADDER_POP).
+built -- the census below counts that population: 82 artifacts (§4).
 
 The closure-only commit (`a5e36d56`'s binary) was swept first on its own:
 `cls_identity.py --ref REF`, 15,843/15,843 identical-or-both-refused
@@ -140,7 +140,45 @@ The closure-only commit (`a5e36d56`'s binary) was swept first on its own:
 
 ## 4. Compile-time census
 
-CENSUS_FINAL
+**`scripts/compile_time_census.py --ref REF --bin <tip binary> --jobs 2 --top 25`**
+over cls_identity's own population (15,843 triples: every corpus block as
+written and widened over {byte, utf8} x {its features, `all`}, the bench's
+patterns at both encodings and both engines, every `\p{X}` the corpus uses
+in five shapes, the witnesses), child rusage CPU, both binaries interleaved
+per row, 0 timeouts on either:
+
+| population | REF CPU s | tip CPU s |
+|---|---|---|
+| bench (1,296) | 242.62 | 74.06 |
+| classes (900) | 218.60 | 10.90 |
+| corpus-asw (3,636) | 17.36 | 15.27 |
+| corpus-x (13,764) | 51.77 | 45.47 |
+| witnesses (68) | 53.98 | 1.08 |
+| **total** | **584.33** | **146.77** (-74.9%) |
+
+Ladder population: **82 rows** stamp a ladder (`size-cap-retry` or a non-default
+`_UNROLL_K_WHY`): 156.41 s -> 21.14 s. That count is a floor on the memo's
+reach -- a compile the ladder ends in a REFUSAL leaves no artifact to stamp
+(bench `altwide/s-4096`, 20.1 -> 10.1 s, is one).
+
+Worst rows by REF (CPU s, REF -> tip):
+
+    77.32 ->  0.39  utf8 drop  bench      \p{L}+          (K67)
+    51.56 ->  0.40  utf8 -     classes    (\p{L}+)y
+    50.94 ->  0.40  utf8 -     witnesses  (\p{L})+x
+    44.77 ->  0.28  utf8 drop  bench      \P{L}+
+    22.72 ->  0.23  utf8 -     classes    (\p{C}+)y     (and 5 more \p{..}+ shapes at 21-22 s -> ~0.21)
+    20.48 -> 10.24  utf8 -     bench      altwide s-4096 (a REFUSAL after the drop ladder: the memo halves it)
+    20.17 -> 10.12  byte -     bench      altwide s-4096
+    13.92 ->  0.17  utf8 -     classes    (\p{Cn}+)y
+    10.93 ->  5.51  utf8 -     bench      altwide (?:yoslwssiyybw|...) (refused likewise)
+     5.45 ->  2.78  utf8 drop  bench      altwide s-2048
+     4.63 ->  4.63  utf8 -     bench      [a-z]{0,16384}   (untouched: K25 minimization, not this row)
+     3.59 ->  0.06  utf8 -     classes    (\p{Ll}+)y
+
+What is left at the top of the tip's own list is minimization and emission of
+genuinely large machines (the altwide family, `[a-z]{0,16384}`'s K25 chain),
+neither of which either row touches.
 
 A first corpus-only cut (3,378 distinct corpus pattern lines x {byte, utf8}
 at `--features all`, the script's earlier population): REF 33.73 s -> tip
