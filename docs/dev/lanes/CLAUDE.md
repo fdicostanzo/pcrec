@@ -3584,3 +3584,10 @@ never edited afterwards.
   where they disagree**: a fifth row `clamped`, a smaller adaptive text,
   the timing re-run with its noise floor (×0.62 XCALL trigger cell), and
   §4's six DIFFs traced to the differential's own driver.
+- `land5_report.md` — [OPT-HYB-RESEED] LANDED on land4 (S4 + CLSPACK), abi 48 -> 49
+  (2026-09-30, lane land5, sonnet): the reseedfix merge, spec §2.33 -> §2.35, bit
+  37, registry axes pin 155, the cpset manifest's three hybrid rows, the land4
+  re-merge, and the validation numbers (recursion-identity 16/0, idsweep 0
+  violations / 895 adaptive movers, answer_diff 0 DIFF over 2.36M cells, S370-S372
+  DETECTED); `-fno-hyb-reseed` axes and the Linux full `make test` are owed with log
+  paths.
