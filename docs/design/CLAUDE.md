@@ -2687,7 +2687,12 @@ exactly +34 bytes.
     Q4: the MASS primitive answers NONE by cardinality.
   - §5: the Mac scratch results.
   - §6: what is filed out of scope — the cross-call hint, a cheaper
-    re-seed, and `--tune` cells.
+    re-seed, `--tune` cells, and (lane reseedfix, 2026-09-30) a per-program
+    step cost and the callouts/verbs decline.
+  - Revised 2026-09-30 by lane reseedfix after the r1 panel: §3 says which
+    calibration values are measured and which chosen, §4 gains the
+    `clamped` row and the start-state columns, §5 is the re-run with its
+    noise floor.
 - `ucp_design.md` — **[UCP] THE DESIGN NOTE, PROPOSED; light D6 panel r1**
   (lane ucpdes, 2026-09-28; `../dev/reviews/2026-09-28-r1-ucp-design.md`;
   design only, nothing under `src/`/`cli/`/`lib/`/`tests/`/`docs/spec/`).

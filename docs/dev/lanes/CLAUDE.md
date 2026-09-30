@@ -3522,4 +3522,8 @@ never edited afterwards.
   over-approximating hybrids), the identity sweep (6,756 rows, 0
   violations), the per-startpos answer differential, S370/S371, the Mac
   scratch table and a DRAFT bench ask (not sent). Design:
-  `docs/design/hyb_reseed.md`.
+  `docs/design/hyb_reseed.md`. **§10 is fix lane `reseedfix`'s record
+  (2026-09-30, after the r1 panel) and supersedes the earlier sections
+  where they disagree**: a fifth row `clamped`, a smaller adaptive text,
+  the timing re-run with its noise floor (×0.62 XCALL trigger cell), and
+  §4's six DIFFs traced to the differential's own driver.
