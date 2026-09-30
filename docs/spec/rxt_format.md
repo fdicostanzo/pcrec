@@ -1614,7 +1614,13 @@ The driver:
    below-the-floor `PCREC_ERR_INTERNAL`, which is not a give-up. On either,
    the driver prints the matching word (`steps`/`frames`/`work`/`recurse`/
    `internal`; an unrecognized negative code prints `giveup <N>`) and
-   **exits `3`**. `run.sh` treats exit `3` as its own unconditional HARD
+   **exits `3`**. **[UTF-VALID]** `PCREC_ERR_UTF` (−9, a `-futf-check`
+   refusal) prints `utf <offset>` — the word and the refused call's own
+   `<prefix>_valid_upto(s, n, startpos)`, since the offset is what the
+   refusal means — and exits `3` like the rest. No block can expect it (no
+   directive compiles `-futf-check`, and `gu` has no `utf` word); it is
+   reached only under `RXTFLAGS=-futf-check`, where `make test-axes`' own
+   arm (`tests/axes/utfcheck_arm.py`) reads it. `run.sh` treats exit `3` as its own unconditional HARD
    failure for every case kind EXCEPT `gu`, which scores it against its
    expected word instead — the one case kind that WANTS this exit.
 6. **On a non-`default` route only**, the driver additionally calls the

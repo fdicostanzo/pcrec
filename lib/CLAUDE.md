@@ -397,3 +397,10 @@ read in the no-filesystem mode (a `lib`/`include "…"` line is refused). The
 fields' own comment carries the disclosure: the chosen bundle's NAME is
 stamped into every artifact built under it.
 
+## [UTF-VALID] (D133)
+
+Two `#define` bits beside bit 38: `PCREC_FORCE_UTF_CHECK` (39,
+`-futf-check`) and `PCREC_FORCE_STARTPOS_ALIGN` (40,
+`-fstartpos-guard=align`), both CONTRACT bits kept in `rx_info.flags` except
+under `byte`. `PCREC_ERR_UTF` (-9) is an EMITTED constant (the artifact's
+`PCREC_RX_ABI_H` block), like the other `PCREC_ERR_*`, not declared here.

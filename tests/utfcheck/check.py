@@ -2,7 +2,9 @@
 """tests/utfcheck/check.py -- [UTF-VALID]'s differential and its guards
 (docs/design/utf_valid_design.md §7; docs/spec/match_api.md §3.1/§3.1.2).
 
-Usage: check.py PCREC CC WORKDIR   (run_utfcheck.sh passes all three)
+Usage: check.py PCREC WORKDIR   (run_utfcheck.sh passes both; the C compiler
+is $CC, resolved by tests/lib/cc_resolve.sh; every compile it runs is
+bounded by a subprocess timeout)
 
 THE ORACLE is cases_10.46.tsv: libpcre2 10.46 under PCRE2_UTF with checking
 ON, the contract `-futf-check` reproduces, answering gen_cases.py's
@@ -32,7 +34,8 @@ floored, never assumed):
 """
 import os, subprocess, sys, collections
 
-PCREC, CC, WORK = sys.argv[1], sys.argv[2], sys.argv[3]
+PCREC, WORK = sys.argv[1], sys.argv[2]
+CC = os.environ.get("CC") or "cc"
 HERE = os.path.dirname(os.path.abspath(__file__))
 TIMEOUT = 120
 

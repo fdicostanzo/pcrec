@@ -9,9 +9,13 @@ with `-e byte|utf8` (or `PCREC_ENC_BYTE`/`PCREC_ENC_UTF8` in the library):
   a single byte, no Unicode meaning.
 - **`utf8`** — a character is one to four bytes; `.` and a character
   class match a whole character; `\x{…}` accepts code points above
-  `0xFF`. There's no validation pass: an ill-formed byte sequence in the
-  subject simply matches nothing, because the byte-wise automaton has no
-  path through it — not an error, just a dead end.
+  `0xFF`. By default there's no validation pass: an ill-formed byte
+  sequence in the subject simply matches nothing, because the byte-wise
+  automaton has no path through it — not an error, just a dead end.
+  Compile with `-futf-check` if you want PCRE2's behaviour instead: the
+  call is refused with `PCREC_ERR_UTF` and `<prefix>_valid_upto` tells you
+  where the bad bytes start (`docs/spec/match_api.md` §3.1/§3.1.2, which
+  also shows how to validate once and search many times).
 
 This is a per-compile choice, never a process-wide setting: two patterns
 in the same binary can use different encodings, because there's no global
@@ -23,7 +27,9 @@ boundary. A position inside a multi-byte character is refused outright
 (`PCREC_ERR_STARTPOS`) rather than silently rounded to the nearest
 boundary. `<prefix>_next_pos` is the supported way to produce a valid
 `startpos` — use it when scanning for successive matches, and you'll
-never hit this.
+never hit this. If your offsets come from splitting a valid buffer on
+arbitrary bytes, compile with `-fstartpos-guard=align` and the matcher
+moves such a `startpos` forward to the next character itself (§3.1).
 
 ## Subjects are length-counted; patterns are NUL-terminated
 

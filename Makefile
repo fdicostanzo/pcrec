@@ -296,7 +296,7 @@ TEST_SECTIONS := test-corpus test-cli test-reject test-registry test-parse \
       test-prefilter-collapse test-rxtsource test-definitions \
       test-entry-shape-identity test-cpset-structure test-startbnd \
       test-uprops test-core test-vars test-examples test-findings test-ucp \
-      test-clskit
+      test-clskit test-utfcheck
 
 # [CHK-2 trailer] `test:` STOPPED being purely prerequisite-based here
 # (2026-08-26, manager finding, journal part 7): under `make -j12 test`,
@@ -1149,6 +1149,14 @@ test-startbnd: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-startbnd.ran"; fi
 	bash tests/utf8/run_startbnd_diff.sh
 
+# [UTF-VALID] (D133) the `-futf-check` / `-fstartpos-guard=align` suite:
+# every compiled config against libpcre2 10.46's committed answers (and
+# python's strict decoder as a second oracle), the LB fact per pattern, and
+# the byte-inert identity. ~90 s on the Mac dev box.
+test-utfcheck: all
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-utfcheck.ran"; fi
+	bash tests/utfcheck/run_utfcheck.sh
+
 # [REVW.U L5-R0] tests/core/ — the unit tier's home for a check on a helper
 # that belongs to no single feature (today: the saturating-arithmetic
 # agreement, mrl.c/emit_vm.c/callgraph.c). One gcc invocation and one process
@@ -1671,6 +1679,6 @@ clean:
         test-prechecks \
         test-prefilter-collapse test-rxtsource test-definitions \
       test-entry-shape-identity test-cpset-structure \
-        test-encoding-checks test-startbnd test-core test-examples test-clskit \
+        test-encoding-checks test-startbnd test-utfcheck test-core test-examples test-clskit \
         smoke hooks strict testscripts ubsan asan san lint alloc mech bench \
         fuzz clean

@@ -687,6 +687,13 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
   under `build/oracle_cache/`. See its own CLAUDE.md; other suites do not
   read this store yet (wiring it in as an existing check's oracle is a
   separate, un-scheduled migration step).
+- **utfcheck/** — [UTF-VALID] (D133): `make test-utfcheck`, the
+  `-futf-check` / `-fstartpos-guard=align` differential against libpcre2
+  10.46's COMMITTED answers (`cases_10.46.tsv`, from `probe_pcre2.c` run
+  once on the reference box) with python's strict decoder as a second
+  oracle, per config (auto engine, forced VM, VM hybrid, align, default,
+  byte-inert), plus the LB fact per pattern. See its own CLAUDE.md,
+  including the measured PCRE2_UTF lookbehind-clip class.
 - **utf8/** — the [M5.0] `utf8`-encoding corpus: D27-blinded (cell
   `utf8corpus`, authored against the pre-stage-2 tree) then PROMOTED (lane
   `utfprom`, 2026-09-05) against the merged stage-2 tree. 529 blocks / 14

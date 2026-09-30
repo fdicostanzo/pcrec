@@ -136,10 +136,17 @@ for pat in ("a", "(?<=a)b", r"\bb", "(a)"):
             add("kinds", pat, subj, pos, "S")
 # the fast path's own windows: one bad byte after k ASCII bytes, k = 0..24,
 # and a valid two-byte character after k ASCII bytes (no error at all)
+# -- and with a LONG tail after the bad byte, so it can sit at the FIRST
+# byte of an eight-byte window the fast path actually reads (a window is
+# read only while eight bytes remain); a subject too short for a window
+# never reaches the fast path at all.
 for k in range(0, 25):
     add("kinds", "a", b"b" * k + b"\xff" + b"a", 0, "S")
     add("kinds", "a", b"b" * k + b"\xc3\xa9" + b"a", 0, "S")
     add("kinds", "a", b"b" * k + b"\xe6\x97\xa5" * 3 + b"\x80a", 0, "S")
+    add("kinds", "a", b"b" * k + b"\xff" + b"c" * 12, 0, "S")
+    add("kinds", "a", b"b" * k + b"\x80" + b"c" * 12, 0, "S")
+    add("kinds", "a", b"b" * k + b"\xed\xa0\x80" + b"c" * 12, 0, "S")
 
 # ---- align: every startpos of subjects with multi-byte characters --------
 def aligned(subj, pos):

@@ -11,4 +11,4 @@ PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
 WORKDIR="$(mktemp -d "${TMPDIR:-/tmp}/pcrec-utfcheck.XXXXXX")"
 trap 'rm -rf "$WORKDIR"' EXIT
 [ -x "$PCREC" ] || { echo "run_utfcheck.sh: FATAL: $PCREC is not built" >&2; exit 1; }
-python3 "$ROOT_DIR/tests/utfcheck/check.py" "$PCREC" "${CC:-cc}" "$WORKDIR"
+python3 "$ROOT_DIR/tests/utfcheck/check.py" "$PCREC" "$WORKDIR"   # CC: exported by cc_resolve.sh

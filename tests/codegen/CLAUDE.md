@@ -3522,3 +3522,18 @@ subject's DFA artifact has no VM stamps to read them from) restores the pinned
 region by EQUALITY. Non-vacuity: the bucket may not exceed the census, and
 must fire on `default`/`noprefilter`. `ctx-node-moved=` joins the (A) line.
 
+## [UTF-VALID] (abi 49 -> 50, 2026-09-30, lane uvbuild)
+
+- `run_codegen_tests.sh`'s [M5-SEAM] fixture table: every row declares the
+  new always-present entry `valid_upto:0`; three new rows are its callers —
+  `residutfdfa` (`-e utf8 -futf-check`, DFA: search head + unwrapped match
+  = 2), `residutfvm` (the VM's three `_run` bodies = 3) and `residutfvar`
+  (a utf8 `${v}` artifact, whose `var_valid` is re-spelled on it = 1;
+  the span-compare population guard moves 8 -> 9). `ABI_EXPECT` 49 -> 50.
+- `run_size_term.sh`'s cap-rescue witness re-calibrated 31,500 -> 31,900
+  (every rung +425 B of code, K-invariant; K=4 measured at 31,555 by
+  bisection).
+- `run_cpset_structure.sh`'s manifest re-recorded: every `EMITTED_BYTES` row
+  +377, itemized in the script.
+- `run_recursion_identity.sh`'s (B) pin re-pinned (see its comment).
+- S368's anchor re-aimed (the guard call gained its `anchored` argument).

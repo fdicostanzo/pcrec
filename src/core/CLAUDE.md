@@ -1443,3 +1443,15 @@ two share `compile_driver`, so there is exactly one compile pipeline and
 a `pcrec_options` field: D20 keeps the public option surface scalar, and a
 definition closure is a FILE's property that only the `.rxt` reader can
 build. A library caller that wants composition gets it through [LIB].
+
+## [UTF-VALID] (D133)
+
+- `Ctx.lb_max` / `pcrec_lb_raise` (internal.h): the LB fact, a parse-time
+  running max (see src/parse/CLAUDE.md for its writers); the emitter turns
+  it into `<prefix>_VALID_LB`.
+- `compile.c` refuses `-fstartpos-guard=align` together with
+  `-fno-startpos-guard` before the parse — a request naming two answers for
+  one input, `-fprefilter`'s rule for a contradictory pair.
+- `axes.def`'s contract-axes block: the startpos-guard row gained its force
+  column (`PCREC_FORCE_STARTPOS_ALIGN`, `-fstartpos-guard=align`) and the
+  new `PCREC_FORCE_UTF_CHECK` row (`-futf-check`, DEFAULT_OFF, no deny).

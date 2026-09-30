@@ -48,6 +48,19 @@ EMPTY documented column. Anchor on numbers a human does not maintain.
   cross-checks one DFA-side axis (`-fno-premul-table`) against LIVE
   libpcre2 through `tests/registry/run_pc4.sh`. `AXES=` restricts to a
   subset for a quick local run; `SKIP_ORACLE=1` skips the PC-4 leg.
+- **utfcheck_arm.py** — [UTF-VALID] `-futf-check`'s OWN ARM
+  (`docs/spec/tuning.md` §2.36). `-futf-check` is a CONTRACT axis whose
+  answer differs on purpose on every ill-formed corpus cell, so
+  `run_axes.sh` EXCLUDES it from the identity sweep BY NAME (the exclusion
+  asserted present, `PCREC_FORCE_PREFILTER`'s idiom) and runs this over
+  the baseline dump and an `RXTFLAGS=-futf-check` dump instead: identical
+  on a byte block (inert), and on a utf8 block identical iff python's
+  strict decoder finds `[startpos - LB, n)` well-formed (LB from libpcre2's
+  own `PCRE2_INFO_MAXLOOKBEHIND` through the borrowed `pcre2_ctypes`
+  binding), `utf <offset>` otherwise (tests/harness/driver.c's word for
+  -9). It reads each case's subject and block (pattern, encoding) back out
+  of the `.rxt` file by line; a line it cannot place is counted, never
+  dropped.
 - **dump_diff.awk** — the comparator: two `RXTDUMP` files keyed by
   `<.rxt file>:<line>` (unique — one case per source line), classifying
   every case AGREE / REFUSED / BUDGET / GIVEUP1 / LOST / MISMATCH / GAINED
