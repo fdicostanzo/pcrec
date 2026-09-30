@@ -8856,3 +8856,11 @@ Frank: "I agree with you on all" (on the manager's ten-item status list). Source
 **RULED.**
 1. **A new, general rung: drop the VM hybrid's prefilter** when the artifact is over the size cap. It is not an Xwd special case. It goes LAST among the rungs, because it is a pure speed loss, after the rungs that cost less at run time. The lane measures every rung's run-time cost to confirm that order, and the stamp names the rung, following the existing `*_WHY "size cap retry, ..."` pattern.
 2. **FAST-OR-FAIL (Frank: "i want to be able to turn off the dropping rung attempts. sometimes you want it fast-or-fail").** One caller switch denies EVERY rung that makes the artifact slower to make it fit, the existing ones and this one alike. With the switch set, an over-cap pattern is refused rather than shipped degraded. The existing per-rung denies stay. The switch is the general mechanism over them, one predicate on the ladder's rows (memory pcrec-decisions-as-first-match-tables), not a list of special cases. Rungs that cost no run-time speed are not "degrading" and stay allowed; the lane classifies each rung with measurements, and the spec lists the classification. Spelling and spec: the lane proposes and the manager rules (D80: the spec hunk lands in the same change).
+
+## D136 — two opt-in checks wired into counted runs (Frank, 2026-09-30, eighty-seventh session)
+
+**Context.** docs/dev/lanes/silentred_report.md: `test-encoding-checks` and `test-recursion-identity` were both red on main, and nobody noticed, because neither is in `make test` (only mech arms and hand runs reach them). This is the second time an opt-in gate has gone silently stale (the D118 -> [VAR] revival had PAIRS=0 for two days).
+
+**RULED (as recommended).**
+1. `test-encoding-checks` joins `TEST_SECTIONS`, so it runs in `make test` and in CI (+~10 min, bounded by `ENC_MAX_BLOCKS=250`).
+2. `test-recursion-identity` joins the merge battery (`scripts/battery.sh`), not `make test` (it builds two reference compilers, ~35 min).
