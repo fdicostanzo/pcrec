@@ -198,6 +198,64 @@ done
 [ "$cells" -ge 10000 ] && ok "[diff] population $cells cells (floor 10,000)" \
     || bad "[diff] population $cells cells, under the 10,000 floor — the sweep reached too little"
 
+# PART 4 — [CLS-TREE] S2: THE KIT'S BYTE FORMS (the `byte-kit` row, D131 item
+# 5: the size-leaning positions only). At `--tune=-2` a scattered byte class
+# with fewer than 11 table-read siblings is tested by its kit matcher
+# `<prefix>_class_kit<N>`; `-fno-cls-kit` at the same position is the
+# bitmap it replaced. Same driver and cell shape as PART 3. Each witness
+# must actually take the kit (the stamp and the text, on the pa side) and
+# the denied build must not, or the differential compares nothing.
+echo "== PART 4: answer identity, the kit's byte forms (--tune=-2) vs -fno-cls-kit =="
+kcells=0
+kit_diff() {   # kit_diff NAME PATTERN SUBJECT...
+    local name="$1" p="$2"; shift 2
+    local d="$TMP/kit-$name"; mkdir -p "$d"
+    if ! pcrec_run "$PCREC" --engine=vm --tune=-2 -p pa -o "$d/pa.c" --pattern "$p" >/dev/null 2>&1 \
+       || ! pcrec_run "$PCREC" --engine=vm --tune=-2 -fno-cls-kit -p pb -o "$d/pb.c" --pattern "$p" >/dev/null 2>&1; then
+        bad "[kit $name] a build refused"; return
+    fi
+    local nk nkb
+    nk="$(grep -c 'static inline int pa_class_kit[0-9]*(unsigned cp)' "$d/pa.c")"
+    nkb="$(grep -c '_class_kit[0-9]*(' "$d/pb.c")"
+    if [ "$nk" -gt 0 ] && [ "$nkb" -eq 0 ] \
+       && grep -q "^#define PA_VM_CLS_KIT $nk\$" "$d/pa.c" && grep -q '^#define PB_VM_CLS_KIT 0$' "$d/pb.c"; then
+        ok "[kit $name] --tune=-2 emits $nk byte-class kit matcher(s) (stamped), -fno-cls-kit none"
+    else
+        bad "[kit $name] kit matchers: $nk at --tune=-2 (stamp '$(sed -n 's/^#define PA_VM_CLS_KIT //p' "$d/pa.c")'), $nkb under -fno-cls-kit — the witness does not reach the byte-kit row"
+        return
+    fi
+    # shellcheck disable=SC2086
+    if ! gen_cc "clspack kit $name" $CC -O1 -Wall -Wextra -std=gnu11 ${GENCFLAGS:-} \
+            -DDIFF_A_LABEL='"byte kit (--tune=-2)"' -DDIFF_B_LABEL='"-fno-cls-kit"' \
+            -I "$d" -o "$d/t" "$DRIVER" "$d/pa.c" "$d/pb.c"; then
+        bad "[kit $name] the two-artifact driver did not compile: $(printf '%s' "$GEN_CC_LOG" | head -c 300)"; return
+    fi
+    printf '%s\n' "$@" | python3 -c '
+import sys
+for s in sys.stdin.read().split("\n"):
+    if not s: continue
+    b = s.encode("latin-1")
+    for j in range(len(b)):
+        for v in range(256):
+            m = b[:j] + bytes([v]) + b[j+1:]
+            print("".join("\\x%02x" % c for c in m))
+' > "$d/subj"
+    local out n
+    if out="$(gen_run "clspack kit $name" "$d/t" < "$d/subj" 2>"$d/div")"; then
+        n="$(printf '%s' "$out" | sed -n 's/^cells \([0-9]*\) .*/\1/p')"
+        kcells=$((kcells + ${n:-0}))
+        if [ "${n:-0}" -gt 0 ]; then ok "[kit $name] $n cells agree (span, every capture slot, failure surface)"
+        else bad "[kit $name] the driver compared no cells"; fi
+    else
+        bad "[kit $name] the byte kit and -fno-cls-kit disagree: $(head -4 "$d/div" | tr '\n' ' ')"
+    fi
+}
+kit_diff site-10 "$(pat_of site-10)" "ackrzACKRZ" "~~ugmszUGMSZ~"
+kit_diff mixed '([aeiou]+)([^a-z0-9 ]*)([02468xX]{2,})' "aei!!24x" "u~0X8"
+kit_diff span '[\x00-\x08\x0e-\x1f\x7f-\x9f]+|[ -/:-@]{2}' "a\x01\x02\x7f\x90b" "x!/:@y"
+[ "$kcells" -ge 10000 ] && ok "[kit] population $kcells cells (floor 10,000)" \
+    || bad "[kit] population $kcells cells, under the 10,000 floor — the sweep reached too little"
+
 echo "checks passed: $pass"
 echo "checks failed: $fail"
 [ "$fail" -eq 0 ]

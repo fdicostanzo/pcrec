@@ -74,15 +74,17 @@ KIT_DISP_BYTES = 578
 SIZE, MID, SPEED = (-2, -1), (0, 1, 2), (2,)
 ALLPOS = (-2, -1, 0, 1, 2)
 ROWS = [
+    ("byte-range",    ALLPOS, "byte1",  "K",    0),
+    ("byte-fold",     ALLPOS, "fold",   "K",    7),
     ("byte-kit",      SIZE,   "byte",   "K",    1),
-    ("byte-table",    MID,    "byte",   "B1",   2),
+    ("byte-table",    ALLPOS, "byte",   "B1",   2),
     ("size-page3",    SIZE,   "p3<k",   "P3",   3),
     ("speed-page2",   SPEED,  "mid&p2", "P2",   4),
     ("speed-bitmap1", SPEED,  "mid&b1", "B1",   5),
     ("mid-page3",     MID,    "mid",    "P3",   6),
     ("kit",           ALLPOS, "true",   "K",    0),
 ]
-NDENY = 7
+NDENY = 8
 
 
 def load_pop(path):
@@ -109,7 +111,10 @@ def select(iv, kbytes, knsec, whole, tune, deny):
     byte = not iv or iv[-1][1] <= 0xFF
     ksel = kbytes + KIT_DISP_BYTES
     mid = knsec >= MID_MIN_SECTIONS and p3 * 100 <= Z_MID_PCT * ksel
-    holds = {"byte": byte, "p3<k": p3 < ksel,
+    fold = (len(iv) == 2 and iv[0][0] == iv[0][1] and iv[1][0] == iv[1][1]
+            and iv[0][0] ^ iv[1][0] == 0x20 and 0x41 <= iv[0][0] <= 0x5A)
+    holds = {"byte": byte, "byte1": byte and len(iv) == 1, "fold": fold,
+             "p3<k": p3 < ksel,
              "mid&p2": mid and p2 <= b1, "mid&b1": mid and b1 < p2,
              "mid": mid, "true": True}
     for name, pos, pred, form, d in ROWS:

@@ -2100,7 +2100,23 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `49` on every artifact today ([OPT-HYB-RESEED] bumped
+- **`rx_info.abi` is `51` on every artifact today ([CLS-TREE] S2 bumped it
+  from 49, 2026-09-30, numbered after lane uvbuild's `50` and renumbered by
+  the manager at merge: THE VM'S BYTE-CLASS TESTS ARE CHOSEN BY THE KIT'S
+  CLASS-FORM TABLE).** The VM's per-class byte shape classifier retired into
+  `src/gen/clskit.c`'s first-match table (`docs/spec/tuning.md` §2.33 and
+  §5.4's λ row). At `--tune=-2`/`-1` a byte class that is neither one
+  interval nor an ASCII fold pair is tested by a `static inline`
+  `<prefix>_class_kit<N>` where it read a 32-byte bitmap (unless the artifact
+  takes the shared atom table), and `<PREFIX>_VM_CLS_KIT` counts those
+  matchers too (§6.3). At `0`/`+1`/`+2` a byte class's test is unchanged. At
+  every position, a WIDE class whose set is one interval of code points at
+  or below U+00FF (`-e utf8` `[\x{e0}-\x{ff}]`) is one range compare where
+  it read a `B1` table — the one default-position mover, ten triples of
+  `scripts/cls_identity.py`'s 16,009 (`docs/dev/lanes/clss2_report.md`). No
+  struct offset moves, no `rx_info` member is added or changed, no answer
+  moves, and `-fno-cls-kit` restores the abi-49 byte tests at `-2`/`-1`.
+- **`rx_info.abi` was `49` ([OPT-HYB-RESEED] bumped
   it from 48, 2026-09-30: THE VM HYBRID'S RETRY RE-SEEDS ADAPTIVELY).** A VM
   hybrid whose prefilter answers for a LARGER language than the pattern's (a
   lookaround or an atomic cut erased, or the `[OPT-4]` count collapse) used
@@ -3546,7 +3562,8 @@ the same one `RX_DFA_TABLE`'s entry names.
 **[FORM-CHAR] STEP 1, 2026-09-05: `<PREFIX>_VM_CLS_FOLDS`, and it is (b) for
 `_VM_ALT_ISLANDS`' reason.** There is no fold MODE anywhere upstream of the
 emitter; it is what the emitted program turned out to CONTAIN, decided pool
-class by pool class by `vm_cls_shape` while `src/gen/emit_vm.c` had the set
+class by pool class by the `byte-fold` row of `src/gen/clskit.c`'s class-form
+table (`vm_cls_shape` before `abi` 51) while `src/gen/emit_vm.c` had the set
 in hand.
 
 ```c
@@ -3561,7 +3578,7 @@ NO 32-byte bitmap table emitted for it** (`docs/spec/tuning.md` §2.22). It is
 a pure-DFA artifact**: `0` is spelled as readily as any other value, for the
 absence-discriminator rule every (b) entry above cites. The DFA route's class
 machinery (its byte-class partition, its scan-edge bodies) never consults
-`vm_cls_shape`, so there is nothing there to report.
+the `byte-fold` row, so there is nothing there to report.
 
 **A COUNT and not a boolean**, on `_VM_ALT_ISLANDS`' precedent: the shape is
 selected PER POOL CLASS, so a pattern can mix fold-pair positions with
@@ -3606,11 +3623,13 @@ either way.
 ```
 
 **The IFF: it is the number of distinct class-matcher functions
-(`<prefix>_wcls<N>`) this artifact's VM program calls.** Each is a wide class
-tested as one decode and one matcher (`docs/spec/tuning.md` §2.33). It is
+(`<prefix>_wcls<N>` and, since `abi` 51, `<prefix>_class_kit<N>`) this
+artifact's VM program calls.** A `wcls` matcher is a wide class tested as one
+decode and one matcher; a `class_kit` matcher is a byte class tested by the
+kit's `K` form at `--tune=-2`/`-1` (`docs/spec/tuning.md` §2.33). It is
 emitted on every VM artifact, hybrids included, and never on a pure-DFA
-artifact. It reads `0` under `-e byte` (no class is wide there) and under
-`-fno-cls-kit`. It is a COUNT, for the entries above' reason. A consumer may
+artifact. It reads `0` under `-fno-cls-kit`, and under `-e byte` at
+`0`/`+1`/`+2`. It is a COUNT, for the entries above' reason. A consumer may
 NOT conclude anything about the answers, which are identical either way.
 Nor may it conclude which form a matcher took: that is `--emit-ir`'s
 `consume` row, and the matcher's own text.

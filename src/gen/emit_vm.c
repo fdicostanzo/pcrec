@@ -781,8 +781,10 @@ typedef struct {
     int     **rgn_w;      /* W(i), ascending slot indices */
     int      *rgn_nw;     /* |W(i)| */
     Cost     *rgn_cost;   /* region i's own cost, memoised (§5.7) */
-    /* class bitmap pool, deduplicated */
+    /* class bitmap pool, deduplicated; `clsch[ci]` is class ci's `--tune`
+     * class-form choice (clskit.c `ROWS`), taken when it is interned */
     uint8_t (*cls)[32];
+    ClsChoice *clsch;
     int       ncls, clscap;
     /* [CLS-TREE] S4 the WIDE class pool, deduplicated by set: one kit
      * matcher per distinct set, emitted ahead of the program (vm_wcls) */
@@ -796,6 +798,9 @@ typedef struct {
     int       ntabrd, tabrdcap;
     ClsTabChoice clstab;
     int      *clsatom;
+    /* [CLS-TREE] S2 how each pool class's table-or-kit test is finally
+     * spelled (VmClsRead), once the table selection has run */
+    unsigned char *clsrd;
     /* [M4.5c] the listing's event stream — see VEvent above */
     VEvent   *ev;      /* the listing's event log, arena-backed and grown by
                          * doubling */
@@ -1446,11 +1451,33 @@ static bool vm_revdet_fits(const Ast *a, bool under_atomic)
 
 /* ---- the class pool -----------------------------------------------------*/
 
+/* A pool class's members as the kit's interval-set input: the bitmap's
+ * maximal runs, ascending (cpset.c's sorted, disjoint, non-adjacent
+ * invariant by construction). Arena-backed; the count goes to `*n`. */
+static const PcrecCpRange *vm_cls_runs(Vm *v, const uint8_t *bits, int *n)
+{
+    PcrecCpRange *iv = pcrec_arena_alloc(&v->cx->arena, 128 * sizeof *iv);
+    int k = 0;
+    for (unsigned c = 0; c < 256; ) {
+        if (!cls_has(bits, c)) { c++; continue; }
+        iv[k].lo = c;
+        while (c < 256 && cls_has(bits, c)) c++;
+        iv[k++].hi = c - 1;
+    }
+    *n = k;
+    return iv;
+}
+
 /* Interns a 256-bit class bitmap in the pool and returns its index, returning
  * the EXISTING index for a bitmap already there — so a pattern that tests the
  * same class at twenty sites emits one table, not twenty. The index is the
  * only name the emitted test and the emitted table array share. Pool is
- * arena-backed and doubled. */
+ * arena-backed and doubled.
+ *
+ * A NEW class's form is chosen here, once, by `pcrec_clskit_select` at the
+ * artifact's `--tune` position ([CLS-TREE] S2; clskit.c's byte rows):
+ * `-fno-cls-kit` denies the `byte-kit` row and `-fno-cls-fold` the
+ * `byte-fold` row, so either falls to the `byte-table` row. */
 static int vm_cls(Vm *v, const uint8_t *bits)
 {
     for (int i = 0; i < v->ncls; i++)
@@ -1458,11 +1485,24 @@ static int vm_cls(Vm *v, const uint8_t *bits)
     if (v->ncls == v->clscap) {
         int ncap = v->clscap ? v->clscap * 2 : 16;
         uint8_t (*nv)[32] = pcrec_arena_alloc(&v->cx->arena, (size_t)ncap * 32);
-        if (v->ncls) memcpy(nv, v->cls, (size_t)v->ncls * 32);
+        ClsChoice *nch = pcrec_arena_alloc(&v->cx->arena, (size_t)ncap * sizeof *nch);
+        if (v->ncls) {
+            memcpy(nv, v->cls, (size_t)v->ncls * 32);
+            memcpy(nch, v->clsch, (size_t)v->ncls * sizeof *nch);
+        }
         v->cls = nv;
+        v->clsch = nch;
         v->clscap = ncap;
     }
     memcpy(v->cls[v->ncls], bits, 32);
+    uint64_t fl = v->cx->opt->flags;
+    ClsSelectIn in = { v->cx->opt->tune,
+                       ((fl & PCREC_NO_CLS_KIT) ? 1u << CLSD_BYTE_KIT : 0)
+                     | ((fl & PCREC_NO_CLS_FOLD) ? 1u << CLSD_BYTE_FOLD : 0),
+                       NULL };
+    int n;
+    const PcrecCpRange *iv = vm_cls_runs(v, bits, &n);
+    pcrec_clskit_select(&v->cx->arena, iv, n, &in, &v->clsch[v->ncls]);
     return v->ncls++;
 }
 
@@ -1533,78 +1573,57 @@ static int vm_wcls(Vm *v, const Ast *a)
     return v->nwcls++;
 }
 
-/* The SHAPE of a class's membership test — [FORM-CHAR] STEP 1's one
- * derivation with three readers: `vm_cls_test` (the test expression), the
- * class-bitmap table emission in `pcrec_emit_vm` (which must emit a table
- * for EXACTLY the classes whose test reads one — the two used to be two
- * inline spellings of the same condition, the drift this enum retires), and
- * the `<PREFIX>_VM_CLS_FOLDS` stamp (an aggregation over the pool).
+/* How a pool class's membership test is spelled — the one reading of its
+ * `ROWS` choice (`clsch[ci].row`, taken at intern) with three readers:
+ * `vm_cls_test` (the test expression), the class-table emission in
+ * `vm_emit_search_body` (which must emit a table or matcher for EXACTLY the
+ * classes whose test reads one) and the two stamps that count forms.
  *
- * The choice is a property of the SET, not a heuristic (this function's
- * standing rule, one shape older than it): a singleton is one compare, a
- * contiguous range is the unsigned-subtract trick, an ASCII FOLD PAIR is one
- * or-mask-and-compare, and anything else reads the 32-byte bitmap.
+ * INLINE: the `byte-range` row (one interval: a singleton compare, the
+ * unsigned-subtract range trick, or no test for all 256) and the
+ * `byte-fold` row ([FORM-CHAR]'s ASCII fold pair `(byte | 0x20) == lower`,
+ * which gcc -O2 compiles to one mask + one compare with NO LOAD,
+ * docs/dev/form_char_step0.md §2). Neither reads memory, so neither has a
+ * table.
  *
- * THE FOLD SHAPE ([FORM-CHAR] object 2, `ascii-fold`): a two-member set
- * {B, B|0x20} with both members letters — exactly what D23's parse-time
- * folding makes of every caseless letter — tests as `(byte | 0x20) == lower`,
- * which gcc -O2 compiles to one mask + one compare + sete with NO LOAD
- * (docs/dev/form_char_step0.md §2, asm evidence in studies/form_char_twins/).
- * That deletes the 32-byte bitmap per site and is why a caseless literal
- * chain keeps its shape at 38% less .text and zero .rodata. The letters
- * conjunct is the recognizer for what caseless folding PRODUCES; the compare
- * itself would be exact for any 0x20-pair, but a non-letter pair is not a
- * fold and stays on the bitmap until someone measures a reason to widen.
- * `PCREC_NO_CLS_FOLD` (docs/spec/tuning.md §2.22) denies the shape here, at
- * the one derivation, so denied builds re-classify to BITMAP and emit the
- * pre-[FORM-CHAR] bytes.
- *
- * [FORM-CHAR] objects (4)/(5) — `utf8-simple-fold`, `utf8-full-fold` — are
- * M5.0's to add as members here when its stages land; nothing is built for
- * them now (the plan row's own sequencing). */
+ * Every other class is a TABLE-OR-KIT read. The program is written in the
+ * per-class bitmap spelling (`VCR_SITE`), and once the pool is final the
+ * table selection (`vm_cls_tables`) decides each one's final spelling: the
+ * shared atom table (`VCR_ATOM`), the class's kit matcher (`VCR_KIT`, the
+ * `byte-kit` row at the size-leaning positions, D131 item 5), or the bitmap
+ * as written. */
 typedef enum {
-    VM_CLS_SHAPE_ALL,     /* 256 members: no test beyond the bounds check */
-    VM_CLS_SHAPE_SINGLE,  /* 1 member: one compare */
-    VM_CLS_SHAPE_RANGE,   /* contiguous run: unsigned-subtract trick */
-    VM_CLS_SHAPE_FOLD,    /* ASCII fold pair: (byte | 0x20) == lower */
-    VM_CLS_SHAPE_BITMAP   /* anything else: the 32-byte bitmap read */
-} VmClsShape;
+    VCR_INLINE,
+    VCR_SITE,
+    VCR_ATOM,
+    VCR_KIT
+} VmClsRead;
 
-/* Classifies one class bitmap into the shapes above, and hands back its
- * lowest and highest members through `lo_out`/`hi_out` — the numbers the
- * SINGLE, RANGE and FOLD tests spell straight into the emitted expression
- * (both -1 for an empty set, which classifies as BITMAP). Reads
- * `PCREC_NO_CLS_FOLD` off the job's options, which is the whole reason it
- * takes `v` rather than the bitmap alone. */
-static VmClsShape vm_cls_shape(const Vm *v, const uint8_t *bits,
-                               int *lo_out, int *hi_out)
+/* Is class `ci` tested by an inline compare rather than a table or kit
+ * read? (The `byte-range` and `byte-fold` rows.) */
+static bool vm_cls_inline(const Vm *v, int ci)
 {
-    int lo = -1, hi = -1, count = 0;
-    for (int c = 0; c < 256; c++)
-        if (cls_has(bits, (unsigned)c)) { if (lo < 0) lo = c; hi = c; count++; }
-    *lo_out = lo;
-    *hi_out = hi;
-    if (count == 256) return VM_CLS_SHAPE_ALL;
-    if (count == 1)   return VM_CLS_SHAPE_SINGLE;
-    if (count == hi - lo + 1) return VM_CLS_SHAPE_RANGE;
-    if (count == 2 && (lo ^ hi) == 0x20 && lo >= 'A' && lo <= 'Z'
-        && !(v->cx->opt->flags & PCREC_NO_CLS_FOLD))
-        return VM_CLS_SHAPE_FOLD;
-    return VM_CLS_SHAPE_BITMAP;
+    int r = v->clsch[ci].row;
+    return r == CLSR_BYTE_RANGE || r == CLSR_BYTE_FOLD;
 }
 
-/* A TABLE READ's text: class `ci`'s membership of byte expression `byte`,
- * spelled for table form `f` — the class's own 32-byte bitmap, or its
- * matcher over the shared atom table. The one spelling of both, so the
- * atom re-spelling in `vm_cls_tables` finds exactly what was written. */
-static const char *vm_cls_read(Vm *v, ClsTabForm f, int ci, const char *byte)
+/* A TABLE-OR-KIT READ's text: class `ci`'s membership of byte expression
+ * `byte`, spelled for read form `f` — the class's own 32-byte bitmap, its
+ * matcher over the shared atom table, or its kit matcher. The one spelling
+ * of all three, so the re-spelling in `vm_cls_tables` finds exactly what was
+ * written. */
+static const char *vm_cls_read(Vm *v, VmClsRead f, int ci, const char *byte)
 {
     switch (f) {
-    case CLST_SITE:
+    case VCR_SITE:
         return vm_rolef(v, "(%s_class_bitmap%d[(%s) >> 3] >> ((%s) & 7)) & 1",
                         v->p, ci, byte, byte);
-    case CLST_ATOM:
+    case VCR_ATOM:
         return vm_rolef(v, "%s_class_atom%d(%s)", v->p, ci, byte);
+    case VCR_KIT:
+        return vm_rolef(v, "%s_class_kit%d(%s)", v->p, ci, byte);
+    case VCR_INLINE:
+        break;
     }
     return "";
 }
@@ -1627,49 +1646,60 @@ static void vm_cls_note_read(Vm *v, int ci, const char *byte)
     v->ntabrd++;
 }
 
-/* The membership test for class `ci` on byte expression `byte`. Shapes and
- * their selection: `vm_cls_shape` above. The bitmap is the same 256-bit
+/* The membership test for class `ci` on byte expression `byte`. Forms and
+ * their selection: `VmClsRead` above. The bitmap is the same 256-bit
  * representation the AST and the DFA already use (§2.9), so nothing here has
  * to agree with a second encoding of "which bytes". */
 static void vm_cls_test(Vm *v, StrBuf *b, int ci, const char *byte)
 {
-    int lo, hi;
-    switch (vm_cls_shape(v, v->cls[ci], &lo, &hi)) {
-    case VM_CLS_SHAPE_ALL:    pcrec_sb_puts(b, "1"); return;
-    case VM_CLS_SHAPE_SINGLE: pcrec_sb_printf(b, "%s == %d", byte, lo); return;
-    case VM_CLS_SHAPE_RANGE:
-        pcrec_sb_printf(b, "(unsigned)(%s - %d) <= %du", byte, lo, hi - lo);
+    if (vm_cls_inline(v, ci)) {
+        const PcrecCpRange *iv = v->clsch[ci].kit.iv;
+        int lo = (int)iv[0].lo, hi = (int)iv[v->clsch[ci].kit.n - 1].hi;
+        if (v->clsch[ci].row == CLSR_BYTE_FOLD)
+            /* {lo, hi} with hi == lo | 0x20 by the row's own predicate: the
+             * lowercase member is the compare constant, the mask folds the
+             * other onto it. */
+            pcrec_sb_printf(b, "(%s | 0x20) == %d", byte, hi);
+        else if (lo == 0 && hi == 255) pcrec_sb_puts(b, "1");
+        else if (lo == hi)             pcrec_sb_printf(b, "%s == %d", byte, lo);
+        else pcrec_sb_printf(b, "(unsigned)(%s - %d) <= %du", byte, lo, hi - lo);
         return;
-    case VM_CLS_SHAPE_FOLD:
-        /* hi == lo | 0x20 by the shape's own condition: the lowercase
-         * member is the compare constant, the mask folds the other onto it. */
-        pcrec_sb_printf(b, "(%s | 0x20) == %d", byte, hi);
-        return;
-    case VM_CLS_SHAPE_BITMAP: break;
     }
-    pcrec_sb_puts(b, vm_cls_read(v, CLST_SITE, ci, byte));
+    pcrec_sb_puts(b, vm_cls_read(v, VCR_SITE, ci, byte));
     vm_cls_note_read(v, ci, byte);
 }
 
-/* Counts how many interned classes take the FOLD comparison shape.
+/* Counts how many interned classes take the FOLD comparison.
  *
  * [FORM-CHAR] the `<PREFIX>_VM_CLS_FOLDS` stamp's one derivation: how many
- * pool classes take the FOLD shape. Distinct pool entries are distinct sets,
- * so distinct fold classes have distinct compare constants — which is what
- * lets a structural check count the stamp against the artifact's own text. */
+ * pool classes took the `byte-fold` row. Distinct pool entries are distinct
+ * sets, so distinct fold classes have distinct compare constants — which is
+ * what lets a structural check count the stamp against the artifact's own
+ * text. */
 static int vm_cls_fold_count(const Vm *v)
 {
-    int n = 0, lo, hi;
+    int n = 0;
     for (int i = 0; i < v->ncls; i++)
-        if (vm_cls_shape(v, v->cls[i], &lo, &hi) == VM_CLS_SHAPE_FOLD) n++;
+        if (v->clsch[i].row == CLSR_BYTE_FOLD) n++;
     return n;
 }
 
-/* Re-spells the finished program's table reads for the atom form: every
- * recorded read's bitmap spelling becomes its atom-matcher call, in one pass
- * over `v->b`. Every `(<prefix>_class_bitmap` in the program must be a
- * recorded read — the program is the text `vm_cls_test` wrote — so one that
- * is not is an internal error, never a table read left unconverted. */
+/* Counts the pool classes whose test is their KIT matcher (`VCR_KIT`), the
+ * byte half of `<PREFIX>_VM_CLS_KIT` ([CLS-TREE] S2). */
+static int vm_cls_kit_count(const Vm *v)
+{
+    int n = 0;
+    for (int i = 0; i < v->ncls; i++)
+        if (v->clsrd[i] == VCR_KIT) n++;
+    return n;
+}
+
+/* Re-spells the finished program's table reads for their final form: every
+ * recorded read of a class whose `clsrd` is not `VCR_SITE` becomes that
+ * form's spelling, in one pass over `v->b`. Every `(<prefix>_class_bitmap`
+ * in the program must be a recorded read — the program is the text
+ * `vm_cls_test` wrote — so one that is not is an internal error, never a
+ * table read left unconverted. */
 static void vm_cls_respell(Vm *v)
 {
     StrBuf *b = v->b;
@@ -1677,8 +1707,9 @@ static void vm_cls_respell(Vm *v)
     const char **from = pcrec_arena_alloc(&v->cx->arena, (size_t)v->ntabrd * sizeof *from);
     const char **to = pcrec_arena_alloc(&v->cx->arena, (size_t)v->ntabrd * sizeof *to);
     for (int i = 0; i < v->ntabrd; i++) {
-        from[i] = vm_cls_read(v, CLST_SITE, v->tabrd[i].ci, v->tabrd[i].byte);
-        to[i] = vm_cls_read(v, CLST_ATOM, v->tabrd[i].ci, v->tabrd[i].byte);
+        from[i] = vm_cls_read(v, VCR_SITE, v->tabrd[i].ci, v->tabrd[i].byte);
+        to[i] = vm_cls_read(v, (VmClsRead)v->clsrd[v->tabrd[i].ci],
+                            v->tabrd[i].ci, v->tabrd[i].byte);
     }
     /* Two passes over the same matches: the first sizes the output, the
      * second writes it. */
@@ -1692,8 +1723,8 @@ static void vm_cls_respell(Vm *v)
             while (r < v->ntabrd && strncmp(hit, from[r], strlen(from[r])) != 0) r++;
             if (r == v->ntabrd)
                 pcrec_ctx_fail(v->cx, 0, "internal error: a class table read in "
-                               "the VM program was not recorded, so the atom "
-                               "table cannot re-spell it");
+                               "the VM program was not recorded, so the table "
+                               "selection cannot re-spell it");
             size_t pre = (size_t)(hit - q), tl = strlen(to[r]);
             if (pass) { memcpy(out + o, q, pre); memcpy(out + o + pre, to[r], tl); }
             o += pre + tl;
@@ -1715,35 +1746,28 @@ static void vm_cls_respell(Vm *v)
  * the entry rung on the program's length (`VmEntry.program_bytes`), so the
  * re-spelling cannot move the rung: measured, a twelve-class witness whose
  * atom spelling is shorter crossed the 4,096-byte knee and took rung
- * `inline`, 2.5x the `__text` of its bitmap twin. Its input is every pool class whose
- * test reads a table (`vm_cls_shape`'s BITMAP), as a byte set; its deny is
- * `-fno-cls-pack`. When the atom row fires the program's table reads are
- * re-spelled (`vm_cls_respell`) and the table emission writes the shared
- * atom table and one matcher per class instead of the per-class bitmaps.
- * Fills `v->clstab` and `v->clsatom` for that emission. */
+ * `inline`, 2.5x the `__text` of its bitmap twin. Its input is every pool
+ * class whose test is a table-or-kit read (`vm_cls_inline` false), as a
+ * byte set; its deny is `-fno-cls-pack`. The atom row gives all of them the
+ * atom form; otherwise each keeps its own `ROWS` form — its kit matcher on
+ * the `byte-kit` row ([CLS-TREE] S2), its bitmap on `byte-table`. Fills
+ * `v->clstab`, `v->clsatom` and `v->clsrd`, and re-spells the program
+ * (`vm_cls_respell`) when any read is not the bitmap it was written as. */
 static void vm_cls_tables(Vm *v)
 {
     Ctx *cx = v->cx;
-    const PcrecCpRange **sets = pcrec_arena_alloc(&cx->arena,
-                                  (size_t)(v->ncls ? v->ncls : 1) * sizeof *sets);
-    int *nivs = pcrec_arena_alloc(&cx->arena, (size_t)(v->ncls ? v->ncls : 1) * sizeof *nivs);
+    size_t cap = (size_t)(v->ncls ? v->ncls : 1);
+    const PcrecCpRange **sets = pcrec_arena_alloc(&cx->arena, cap * sizeof *sets);
+    int *nivs = pcrec_arena_alloc(&cx->arena, cap * sizeof *nivs);
     int n = 0;
-    v->clsatom = pcrec_arena_alloc(&cx->arena, (size_t)(v->ncls ? v->ncls : 1) * sizeof *v->clsatom);
+    v->clsatom = pcrec_arena_alloc(&cx->arena, cap * sizeof *v->clsatom);
+    v->clsrd = pcrec_arena_alloc(&cx->arena, cap);
     for (int i = 0; i < v->ncls; i++) {
-        int lo, hi;
         v->clsatom[i] = -1;
-        if (vm_cls_shape(v, v->cls[i], &lo, &hi) != VM_CLS_SHAPE_BITMAP) continue;
-        /* the bitmap's runs, as the kit's interval-set input */
-        PcrecCpRange *iv = pcrec_arena_alloc(&cx->arena, 128 * sizeof *iv);
-        int k = 0;
-        for (unsigned c = 0; c < 256; ) {
-            if (!cls_has(v->cls[i], c)) { c++; continue; }
-            iv[k].lo = c;
-            while (c < 256 && cls_has(v->cls[i], c)) c++;
-            iv[k++].hi = c - 1;
-        }
-        sets[n] = iv;
-        nivs[n] = k;
+        v->clsrd[i] = VCR_INLINE;
+        if (vm_cls_inline(v, i)) continue;
+        sets[n] = v->clsch[i].kit.iv;
+        nivs[n] = v->clsch[i].kit.n;
         v->clsatom[i] = n++;
     }
     /* The atom table is a kit form, so `-fno-cls-kit` (D129 Q2's one kit-level
@@ -1752,7 +1776,15 @@ static void vm_cls_tables(Vm *v)
     unsigned deny = (cx->opt->flags & (PCREC_NO_CLS_PACK | PCREC_NO_CLS_KIT))
                         ? 1u << CLSTD_ATOM : 0;
     pcrec_clskit_select_tables(&cx->arena, sets, nivs, n, cx->opt->tune, deny, &v->clstab);
-    if (v->clstab.form == CLST_ATOM) vm_cls_respell(v);
+    bool respell = false;
+    for (int i = 0; i < v->ncls; i++) {
+        if (v->clsatom[i] < 0) continue;
+        if (v->clstab.form == CLST_ATOM)             v->clsrd[i] = VCR_ATOM;
+        else if (v->clsch[i].row == CLSR_BYTE_KIT)   v->clsrd[i] = VCR_KIT;
+        else                                         v->clsrd[i] = VCR_SITE;
+        if (v->clsrd[i] != VCR_SITE) respell = true;
+    }
+    if (respell) vm_cls_respell(v);
 }
 
 /* ---- §2.5's cursor ladder: is this body a deterministic fixed-length run? --
@@ -11385,10 +11417,10 @@ static void vm_emit_stamps(Vm *v, const VmPlan *pl, const VmEntry *en,
      * absence-discriminator rule, verbatim from the two stamps above).
      *
      * AN ACTIVITY COUNT AND NOT A BOOLEAN, on `RX_VM_ALT_ISLANDS`'
-     * precedent: the shape is selected PER POOL CLASS by `vm_cls_shape`, so
+     * precedent: the form is selected PER POOL CLASS (`clsch[ci].row`), so
      * a pattern can and does mix fold-pair positions with bitmap classes,
-     * and "did it" would lose which. The count is `vm_cls_shape`'s own
-     * aggregation over the pool — the SAME derivation `vm_cls_test` and the
+     * and "did it" would lose which. The count is an aggregation of that
+     * row over the pool — the SAME choice `vm_cls_test` and the
      * table-emission loop read — so it cannot report a fold the program does
      * not contain. The pool is FINAL here for `has_push`'s reason above: the
      * program was emitted into the scratch buffer before this line runs.
@@ -11404,12 +11436,13 @@ static void vm_emit_stamps(Vm *v, const VmPlan *pl, const VmEntry *en,
      * report a compare the program does not contain; no `rx_info` mirror
      * (D77). `-fno-lit-run` holds it at 0. */
     pcrec_sb_stampf(c, v->up, "VM_LIT_RUNS", "%lld", v->nlitrun);
-    /* [CLS-TREE] S4 the distinct wide-class kit matchers this program
-     * emitted — the pool `vm_wcls` fills in the same call that writes a
-     * test, so the count cannot report a matcher the artifact lacks; D81's
-     * VM-only activity family, no `rx_info` mirror (D77). `-fno-cls-kit`
-     * holds it at 0. */
-    pcrec_sb_stampf(c, v->up, "VM_CLS_KIT", "%d", v->nwcls);
+    /* [CLS-TREE] S4/S2 the distinct kit matchers this program emitted: one
+     * per wide set (the pool `vm_wcls` fills in the same call that writes a
+     * test) plus one per byte class whose final read is its kit matcher
+     * (`clsrd`, the choice the matcher emission also reads), so the count
+     * cannot report a matcher the artifact lacks; D81's VM-only activity
+     * family, no `rx_info` mirror (D77). `-fno-cls-kit` holds it at 0. */
+    pcrec_sb_stampf(c, v->up, "VM_CLS_KIT", "%d", v->nwcls + vm_cls_kit_count(v));
     /* [OPT-CLSPACK] the shared atom table's ATOM COUNT, 0 when the table
      * selection kept a bitmap per class (`vm_cls_tables`, the one reader of
      * the choice the table emission also reads, so the stamp cannot report a
@@ -12567,38 +12600,45 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
     /* ---- the class bitmaps ------------------------------------------------
      * File-scope `static const` (TS-1: all-const tables, no mutable globals),
      * named under --prefix like every other file-scope symbol this project
-     * emits, and only for classes whose TEST reads a bitmap — `vm_cls_shape`
-     * is the one derivation both this loop and `vm_cls_test` consult, so a
-     * class that compiles to a compare (singleton, range, [FORM-CHAR]'s fold
-     * pair) can never leave an unread table behind, and a class whose test
-     * reads a table can never find it missing. (This loop used to re-spell
-     * the shape condition inline; the shared classifier retired that.) */
+     * emits, and only for classes whose TEST reads one — `clsrd` is the one
+     * choice both this loop and the program's reads were spelled from, so a
+     * class that compiles to an inline compare (singleton, range,
+     * [FORM-CHAR]'s fold pair) can never leave an unread table behind, and a
+     * class whose test reads a table can never find it missing. */
     {
         bool any = false;
+        const char *tab = NULL;
         /* [OPT-CLSPACK] the atom table instead of the bitmaps below, when
          * `vm_cls_tables` chose it: one shared byte->atom table, and one
          * `static inline` matcher per table-read class over it — the kit's
          * own form and emitters (clskit.c). */
         if (v->clstab.form == CLST_ATOM) {
-            const char *tab = pcrec_sb_fragf(&cx->arena, "%s_class_atoms", v->p);
+            tab = pcrec_sb_fragf(&cx->arena, "%s_class_atoms", v->p);
             pcrec_clskit_emit_atom_table(c, tab, &v->clstab.atoms);
-            for (int i = 0; i < v->ncls; i++)
-                if (v->clsatom[i] >= 0)
-                    pcrec_clskit_emit_atom(c, pcrec_sb_fragf(&cx->arena, "%s_class_atom%d", v->p, i),
-                                           tab, &v->clstab.atoms, v->clsatom[i]);
-            any = true;
         }
-        for (int i = 0; i < v->ncls && v->clstab.form == CLST_SITE; i++) {
-            int lo, hi;
-            if (vm_cls_shape(v, v->cls[i], &lo, &hi) != VM_CLS_SHAPE_BITMAP)
+        for (int i = 0; i < v->ncls; i++) {
+            switch ((VmClsRead)v->clsrd[i]) {
+            case VCR_INLINE:
                 continue;
-            any = true;
-            pcrec_sb_printf(c, "static const unsigned char %s_class_bitmap%d[32] = {", v->p, i);
-            for (int j = 0; j < 32; j++) {
-                if (j % 8 == 0) pcrec_sb_puts(c, "\n   ");
-                pcrec_sb_printf(c, " %3d,", v->cls[i][j]);
+            case VCR_ATOM:
+                pcrec_clskit_emit_atom(c, pcrec_sb_fragf(&cx->arena, "%s_class_atom%d", v->p, i),
+                                       tab, &v->clstab.atoms, v->clsatom[i]);
+                break;
+            case VCR_KIT:
+                /* [CLS-TREE] S2 the `byte-kit` row, size-leaning positions only */
+                pcrec_clskit_emit_kit(c, pcrec_sb_fragf(&cx->arena, "%s_class_kit%d", v->p, i),
+                                      &v->clsch[i].kit);
+                break;
+            case VCR_SITE:
+                pcrec_sb_printf(c, "static const unsigned char %s_class_bitmap%d[32] = {", v->p, i);
+                for (int j = 0; j < 32; j++) {
+                    if (j % 8 == 0) pcrec_sb_puts(c, "\n   ");
+                    pcrec_sb_printf(c, " %3d,", v->cls[i][j]);
+                }
+                pcrec_sb_puts(c, "\n};\n");
+                break;
             }
-            pcrec_sb_puts(c, "\n};\n");
+            any = true;
         }
         if (any) pcrec_sb_puts(c, "\n");
     }

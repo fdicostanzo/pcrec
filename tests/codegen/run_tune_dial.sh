@@ -503,6 +503,55 @@ for pos in -2 -1 0 1 2; do
 done
 
 # ---------------------------------------------------------------------------
+# §3e — THE BYTE ROWS ([CLS-TREE] S2, D131 item 5): the VM test each position
+#       emits for a byte class, RECOVERED FROM THE EMITTED TEXT. The kit's
+#       byte forms are the size-leaning positions only: a scattered class
+#       (`[aeiou]`) reads its kit matcher `rx_class_kit<N>` at -2/-1 and its
+#       32-byte bitmap at 0/+1/+2; `-fno-cls-kit` puts -2 back on the bitmap.
+#       A one-interval class (`[a-z]`) and an ASCII fold pair (`(?i)q`) are
+#       inline compares at EVERY position (the `byte-range`/`byte-fold`
+#       rows), with neither a table nor a matcher. And the stamp
+#       `RX_VM_CLS_KIT` equals the number of kit matchers the text defines.
+# ---------------------------------------------------------------------------
+echo "== §3e — the byte rows: a byte class's test per position =="
+byte_form() {   # $1 = the emitted .c; prints kit / bitmap / inline
+    local f="$1"
+    if   grep -q 'static inline int rx_class_kit0(' "$f"; then echo kit
+    elif grep -q 'rx_class_bitmap0\[' "$f"; then echo bitmap
+    else echo inline; fi
+}
+byte_case() {   # $1 = label, $2 = pattern, $3 = want per position (5 words), $4.. = extra flags
+    local label="$1" pat="$2" want=($3); shift 3
+    for pos in -2 -1 0 1 2; do
+        local BOUT="$WORKDIR/byte_${label}_$pos.c"
+        if ! pcrec_run "$PCREC" --engine=vm --tune="$pos" "$@" \
+                -p rx -o "$BOUT" --pattern "$pat" >/dev/null 2>&1; then
+            bad "§3e: $label --tune=$pos does not compile"
+            continue
+        fi
+        local got w="${want[$((pos + 2))]}"
+        got="$(byte_form "$BOUT")"
+        if [ "$got" = "$w" ]; then
+            ok "§3e: $label --tune=$pos $* tests the class as $got"
+        else
+            bad "§3e: $label --tune=$pos $* tests the class as $got; the byte rows say $w"
+        fi
+        local stamp defs
+        stamp="$(sed -n 's/^#define RX_VM_CLS_KIT \([0-9]*\)$/\1/p' "$BOUT")"
+        defs="$(grep -cE '^static inline int rx_(class_kit|wcls)[0-9]+\(' "$BOUT")"
+        if [ "$stamp" = "$defs" ]; then
+            ok "§3e: $label --tune=$pos RX_VM_CLS_KIT $stamp = the kit matchers defined"
+        else
+            bad "§3e: $label --tune=$pos RX_VM_CLS_KIT is '$stamp' but the text defines $defs kit matchers"
+        fi
+    done
+}
+byte_case scattered '[aeiou]+x' "kit kit bitmap bitmap bitmap"
+byte_case scattered-denied '[aeiou]+x' "bitmap bitmap bitmap bitmap bitmap" -fno-cls-kit
+byte_case range '[a-z]+x' "inline inline inline inline inline"
+byte_case fold '(?i)q+x' "inline inline inline inline inline"
+
+# ---------------------------------------------------------------------------
 # §4 — DIAL-S6: NESTING. The positions are an ORDINAL, not five unrelated
 #      profiles, and the property that makes them one is that everything `-1`
 #      denies `-2` denies too. It is stated as a required property in the

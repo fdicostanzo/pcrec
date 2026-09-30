@@ -26,10 +26,12 @@
  *     not a `ROWS` row, because its input is every such class in the
  *     artifact at once — `ROWS` sees one set.
  *
- * Callers: the VM (S4 wires the per-set selection for wide classes, and
- * [OPT-CLSPACK] the table selection for byte classes). `--tune` reaches both
- * tables as their position bit; the per-set rows' denies are not mapped to a
- * public flag, the table selection's atom row is `-fno-cls-pack`'s.
+ * Callers: the VM (S4 wires the per-set selection for wide classes, S2 for
+ * byte classes, and [OPT-CLSPACK] the table selection for byte classes).
+ * `--tune` reaches both tables as their position bit. Two per-set row denies
+ * are mapped to public flags, both for byte classes only: `CLSD_BYTE_KIT` is
+ * `-fno-cls-kit`'s and `CLSD_BYTE_FOLD` is `-fno-cls-fold`'s; the table
+ * selection's atom row is `-fno-cls-pack`'s (and `-fno-cls-kit`'s).
  */
 #ifndef PCREC_CLSKIT_H
 #define PCREC_CLSKIT_H
@@ -105,8 +107,25 @@ typedef enum {
     CLSD_SPEED_PAGE2,
     CLSD_SPEED_BITMAP1,
     CLSD_MID_PAGE3,
+    CLSD_BYTE_FOLD,
     CLSD_NDENY
 } ClsDeny;
+
+/* The selection table's rows, by name: `ROWS` is indexed by these, so a
+ * caller that spells a row's form itself (the VM's inline byte compares)
+ * asks `ClsChoice.row == CLSR_...` rather than comparing a name. */
+typedef enum {
+    CLSR_BYTE_RANGE,
+    CLSR_BYTE_FOLD,
+    CLSR_BYTE_KIT,
+    CLSR_BYTE_TABLE,
+    CLSR_SIZE_PAGE3,
+    CLSR_SPEED_PAGE2,
+    CLSR_SPEED_BITMAP1,
+    CLSR_MID_PAGE3,
+    CLSR_KIT,
+    CLSR_NROWS
+} ClsRowId;
 
 /* A row of the selection table, as data a listing can print. */
 typedef struct {

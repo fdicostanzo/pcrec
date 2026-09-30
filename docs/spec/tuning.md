@@ -1937,8 +1937,10 @@ stop spelling it.
 
 ### 2.22 `-fno-cls-fold` — `PCREC_NO_CLS_FOLD` (bit 24)
 
-**What it controls.** Which SHAPE `src/gen/emit_vm.c`'s `vm_cls_shape` gives
-a two-member VM pool class's membership test — `[FORM-CHAR]` STEP 1, the
+**What it controls.** Which test a two-member VM pool class gets: the
+`byte-fold` row of `src/gen/clskit.c`'s class-form table (its predicate
+`is_ascii_fold_pair`; before `abi` 51 it was `emit_vm.c`'s `vm_cls_shape`,
+retired by `[CLS-TREE]` S2) — `[FORM-CHAR]` STEP 1, the
 char-match form family's first built object beyond today's exact forms.
 `--list-axes` reports it as `cls-fold`.
 
@@ -1950,9 +1952,14 @@ pair** — two members differing only in bit `0x20`, both letters, which is
 what caseless folding produces and nothing else in the base grammar makes —
 and emits `(byte | 0x20) == lower` instead: one or-mask and one compare, no
 table. The class's `<prefix>_class_bitmap<N>` declaration is then not
-emitted at all (`vm_cls_shape` is the ONE derivation the test emitter, the
-table emitter and the `<PREFIX>_VM_CLS_FOLDS` stamp all read, so a test and
-its table cannot disagree about the shape).
+emitted at all (the pool class's row choice is the ONE derivation the test
+emitter, the table emitter and the `<PREFIX>_VM_CLS_FOLDS` stamp all read, so
+a test and its table cannot disagree about the shape). The row fires at every
+`--tune` position. Denied, the class falls to the next byte row: its table at
+`0`/`+1`/`+2`, and at `-2`/`-1` its kit matcher (§2.33's byte tier, which
+finds the pair as one `CUBES` section). Whether the fold compare keeps the
+default positions once the kit's `CUBES` subsumes it is an open ruling
+(`docs/dev/lanes/clss2_report.md`, Q1).
 
 **The measured basis** (`docs/dev/form_char_step0.md` §2, family A;
 asm evidence committed at `studies/form_char_twins/`): gcc -O2 compiles
@@ -1980,7 +1987,7 @@ class keeps its singleton/range/bitmap shape unchanged:
 | the DFA scan edge's class bodies | `form_char_step0.md` family C — its `table`-vs-`range`/`fold` ranking is still open pending timing, so `emit_dfa.c` is deliberately untouched by this axis |
 
 **`[FORM-CHAR]`'s utf8 objects (4)/(5)** (`utf8-simple-fold`,
-`utf8-full-fold`) are M5.0's to add as `vm_cls_shape` members when its
+`utf8-full-fold`) are M5.0's to add as class-form rows when its
 stages land; this axis reserves the enum and name space and builds nothing
 for them.
 
@@ -1998,7 +2005,7 @@ reference. What the emitter DID is reported by `<PREFIX>_VM_CLS_FOLDS`
 
 **VM route only.** The DFA route's class machinery is the byte-class
 partition and the scan edge's own axis-I bodies; nothing there reads
-`vm_cls_shape`, and no DFA artifact carries the stamp.
+the `byte-fold` row, and no DFA artifact carries the stamp.
 
 **NOT A RUNG — off by RULING, not by a gate.** Frank ruled (2026-09-11)
 that this axis is SUBSUMED into `[CLS-TREE]`'s kit rather than placed on
@@ -2847,12 +2854,27 @@ alternation, whatever this flag says.
 - a CAPTURED wide class (`(\p{L})`) compiles on the default route wherever
   its prefilter fits the size caps.
 
+**The byte tier ([CLS-TREE] S2, `abi` 51; D131 item 5).** At the
+size-leaning positions (`--tune=-2`/`-1`) a VM BYTE class that is neither
+one interval nor an ASCII fold pair, in an artifact whose table-read byte
+classes do not take §2.34's shared atom table, is tested by
+`<prefix>_class_kit<N>(byte)`: the same kit's `K` matcher, `static inline`,
+in place of its 32-byte bitmap (zero `.rodata`). At `0`/`+1`/`+2` the byte
+class keeps its table: the kit's byte forms measured the SLOWEST byte form
+under a fair dispatch (O-77, `cls_tree_design.md` §1.7 addendum). The
+per-class choice is `src/gen/clskit.c`'s `ROWS` byte rows (§5.4's λ row).
+A wide class whose set is ONE interval of code points at or below U+00FF
+(`[\x{e0}-\x{ff}]` under `-e utf8`) now takes the same `byte-range` row
+and is one range compare at every position, where it read a `B1` table.
+
 **The stamp.** `<PREFIX>_VM_CLS_KIT` is the number of distinct matchers
-written, a D81 VM-only activity count. It reads 0 under the flag and in
-every `-e byte` artifact.
+written — wide-class matchers plus byte-class kit matchers — a D81 VM-only
+activity count. It reads 0 under the flag, and in every `-e byte` artifact
+at `0`/`+1`/`+2`.
 
 **Denied**, every wide class on the VM is the byte alternation this compiler
-emitted before `abi` 48, and the artifact accepts exactly the same subjects.
+emitted before `abi` 48, every byte class at `-2`/`-1` reads its table as
+before `abi` 51, and the artifact accepts exactly the same subjects.
 The flag denies the WHOLE kit: the shared byte-class atom table of §2.34 is a
 kit form too, so under `-fno-cls-kit` every table-read byte class keeps its
 own bitmap as well (`-fno-cls-pack` denies that table alone).
@@ -3425,7 +3447,7 @@ lands.
 
 | axis | −2 `min-size` | −1 `size` | 0 `balanced` | +1 `speed` | +2 `max-speed` | why |
 |---|---|---|---|---|---|---|
-| λ (class-matcher kit) | smaller of `K`, `P3` | = `−2` | **`P3`** if `K` ≥ 16 sections and `P3` ≤ 1.26×`K`, else `K` | — | smaller of `P2`, `B1` where `0` chose `P3`, else as `0` | BUILT at `[CLS-TREE]` S4 (`abi` 48): the VM's wide-class matcher (§2.33); `docs/design/opt_dial_design.md` §4 (D131): ONE kit constant (λ = 4, the sectioning DP's size end, `K`) at every position plus a first-match row over the whole-set tables `P3`/`P2`/`B1`; three distinct programs. Calibration: `cls_tree_design.md` §1.7 (ubuntubudu, per-probe model r = +0.98; `P3` 3.2× faster than today's pinned middle for +11% bytes) |
+| λ (class-matcher kit) | smaller of `K`, `P3` | = `−2` | **`P3`** if `K` ≥ 16 sections and `P3` ≤ 1.26×`K`, else `K` | — | smaller of `P2`, `B1` where `0` chose `P3`, else as `0` | BUILT at `[CLS-TREE]` S4 (`abi` 48): the VM's wide-class matcher (§2.33); `docs/design/opt_dial_design.md` §4 (D131): ONE kit constant (λ = 4, the sectioning DP's size end, `K`) at every position plus a first-match row over the whole-set tables `P3`/`P2`/`B1`; three distinct programs. Calibration: `cls_tree_design.md` §1.7 (ubuntubudu, per-probe model r = +0.98; `P3` 3.2× faster than today's pinned middle for +11% bytes). **BYTE classes** (`[CLS-TREE]` S2, `abi` 51, D131 item 5): a one-interval set is one inline compare and an ASCII fold pair the §2.22 fold compare at EVERY position; any other VM byte class reads its kit matcher `K` (`<prefix>_class_kit<N>`) at `−2`/`−1` and a table at `0`..`+2` (its 32-byte bitmap, or §2.34's shared atom table, which wins at every position from 11 table-read classes) — the kit's byte forms are a size-leaning position only (O-77: slowest byte form under a fair dispatch) |
 | `[ART-SIZE]` ladder — bar | **0.95** | **0.85** | **0.75** | — | — | §2.16; `artifact_size_term.md` §3.3. Speed side em-dashed (**M13**): the speed it would buy is ≤3%, below `s` = 1.10 |
 | `[ART-SIZE]` ladder — threshold | **40,000** | **80,000** | **120,000** | — | — | §2.16; `limits.def:161`, `PCREC_SIZE_TERM_THRESHOLD` |
 | `-fno-premul-table` | **deny** | — `†` | **allow** | — | — | §2.13; `σ` = 22…25% ≥ `y`; `m` ≤ `x₂` = 2.00 for every `φ_scan` ≤ 1, so `−2` needs no measurement; `−1` iff `φ_scan` ≤ 0.126 (unmeasured) |

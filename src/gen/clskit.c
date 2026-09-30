@@ -526,6 +526,8 @@ bool pcrec_clskit_atoms(Arena *a, const PcrecCpRange *const *sets,
 typedef enum {
     P_TRUE,
     P_BYTE,
+    P_BYTE_ONE,
+    P_BYTE_FOLD,
     P_P3_SMALLER,
     P_MID_P2,
     P_MID_B1,
@@ -552,35 +554,59 @@ enum { TP_M2, TP_M1, TP_0, TP_P1, TP_P2 };
  * atom table's FORM, its emitter (`pcrec_clskit_emit_atom_table`/
  * `pcrec_clskit_emit_atom`) and its differential all stay (§2.1 below):
  * choosing IT is the ARTIFACT-LEVEL table `TAB_ROWS` below, walked once
- * over every table-reading byte class, not a per-set `ROWS` outcome. */
-static const ClsRow ROWS[] = {
-    { "byte-kit",
+ * over every table-reading byte class, not a per-set `ROWS` outcome.
+ *
+ * THE BYTE ROWS ([CLS-TREE] S2, D131 item 5). The kit's byte forms are a
+ * size-leaning position only; the default byte-class form stays a table.
+ * `byte-range` comes first at every position because a one-interval set is
+ * one compare and no table can beat it; the caller spells it inline.
+ * `byte-fold` is the shipped [FORM-CHAR] ASCII-pair compare, unchanged at
+ * every position and deniable by `-fno-cls-fold` (`CLSD_BYTE_FOLD`), held
+ * so until its fate is ruled (docs/dev/lanes/clss2_report.md, Q1): the
+ * design retires it into K's `CUBES`, and D131 item 5 puts the kit's byte
+ * forms at the size-leaning positions only. `byte-table`
+ * lists every position so that denying `byte-kit` falls to a table rather
+ * than to a code-point row. A table-read byte class's TABLE (a bitmap per
+ * class, or the shared atom table) is `TAB_ROWS`' choice. */
+static const ClsRow ROWS[CLSR_NROWS] = {
+    [CLSR_BYTE_RANGE] = { "byte-range",
+      "byte set that is ONE interval (a single byte, a range, or all 256): "
+      "one inline compare, every position",
+      TPOS(TP_M2) | TPOS(TP_M1) | TPOS(TP_0) | TPOS(TP_P1) | TPOS(TP_P2),
+      P_BYTE_ONE, CLSF_KIT, CLSD_NONE },
+    [CLSR_BYTE_FOLD] = { "byte-fold",
+      "byte set that is an ASCII case pair {X, x}: the inline fold compare, "
+      "every position",
+      TPOS(TP_M2) | TPOS(TP_M1) | TPOS(TP_0) | TPOS(TP_P1) | TPOS(TP_P2),
+      P_BYTE_FOLD, CLSF_KIT, CLSD_BYTE_FOLD },
+    [CLSR_BYTE_KIT] = { "byte-kit",
       "byte set (every member <= 0xFF): the kit's byte forms, size-leaning "
       "positions only",
       TPOS(TP_M2) | TPOS(TP_M1),
       P_BYTE, CLSF_KIT, CLSD_BYTE_KIT },
-    { "byte-table",
-      "byte set: the default byte-class form stays a table",
-      TPOS(TP_0) | TPOS(TP_P1) | TPOS(TP_P2),
+    [CLSR_BYTE_TABLE] = { "byte-table",
+      "byte set: a table (the default byte-class form, and every position's "
+      "answer when the kit's byte forms are denied)",
+      TPOS(TP_M2) | TPOS(TP_M1) | TPOS(TP_0) | TPOS(TP_P1) | TPOS(TP_P2),
       P_BYTE, CLSF_BITMAP1, CLSD_BYTE_TABLE },
-    { "size-page3",
+    [CLSR_SIZE_PAGE3] = { "size-page3",
       "bytes(P3) < bytes(K): the smaller of K and P3",
       TPOS(TP_M2) | TPOS(TP_M1),
       P_P3_SMALLER, CLSF_PAGE3, CLSD_SIZE_PAGE3 },
-    { "speed-page2",
+    [CLSR_SPEED_PAGE2] = { "speed-page2",
       "the mid gate holds and bytes(P2) <= bytes(B1)",
       TPOS(TP_P2),
       P_MID_P2, CLSF_PAGE2, CLSD_SPEED_PAGE2 },
-    { "speed-bitmap1",
+    [CLSR_SPEED_BITMAP1] = { "speed-bitmap1",
       "the mid gate holds and bytes(B1) < bytes(P2)",
       TPOS(TP_P2),
       P_MID_B1, CLSF_BITMAP1, CLSD_SPEED_BITMAP1 },
-    { "mid-page3",
+    [CLSR_MID_PAGE3] = { "mid-page3",
       "the mid gate: K has >= mid_min_sections sections and "
       "bytes(P3) <= z_mid x bytes(K)",
       TPOS(TP_0) | TPOS(TP_P1) | TPOS(TP_P2),
       P_MID, CLSF_PAGE3, CLSD_MID_PAGE3 },
-    { "kit",
+    [CLSR_KIT] = { "kit",
       "always",
       TPOS(TP_M2) | TPOS(TP_M1) | TPOS(TP_0) | TPOS(TP_P1) | TPOS(TP_P2),
       P_TRUE, CLSF_KIT, CLSD_NONE },
@@ -610,6 +636,15 @@ static bool is_byte_set(const PcrecCpRange *iv, int n)
     return n == 0 || iv[n - 1].hi <= 0xFF;
 }
 
+/* True when the set is exactly an ASCII case pair {X, x}: two single
+ * letters one bit (0x20) apart. That is what D23's parse-time fold makes of
+ * a caseless letter, recognized from the set alone (Constraint 1). */
+static bool is_ascii_fold_pair(const PcrecCpRange *iv, int n)
+{
+    return n == 2 && iv[0].lo == iv[0].hi && iv[1].lo == iv[1].hi
+        && (iv[0].lo ^ iv[1].lo) == 0x20 && iv[0].lo >= 'A' && iv[0].lo <= 'Z';
+}
+
 /* K's byte ESTIMATE as read by the SELECTION's comparisons (D131 ADDENDUM
  * 1): the DP's own model bytes (`s->k->bytes`, unchanged) plus the fitted
  * dispatch/prologue term `PLACE.kit_disp_bytes` (see PLACE's comment for
@@ -636,6 +671,8 @@ static bool pred_holds(SelCtx *s, ClsPred p)
     switch (p) {
     case P_TRUE:       return true;
     case P_BYTE:       return is_byte_set(s->iv, s->n);
+    case P_BYTE_ONE:   return s->n == 1 && is_byte_set(s->iv, s->n);
+    case P_BYTE_FOLD:  return is_ascii_fold_pair(s->iv, s->n);
     case P_P3_SMALLER: return whole(s, CLSF_PAGE3) < kit_sel_bytes(s);
     case P_MID_P2:     return mid_gate(s) && whole(s, CLSF_PAGE2) <= whole(s, CLSF_BITMAP1);
     case P_MID_B1:     return mid_gate(s) && whole(s, CLSF_BITMAP1) < whole(s, CLSF_PAGE2);
@@ -690,9 +727,14 @@ const ClsRow *pcrec_clskit_rows(int *nrows)
  * and not a `ROWS` row: "N live class sites" is a count over the artifact.
  * A row fires where its position bit is set, its deny is clear and its
  * predicate holds; the last row is undeniable and always holds. All five
- * `--tune` positions take the atom row today (D131 item 6 rules it the
- * DEFAULT, and the kit byte forms S2 will offer the size-leaning positions
- * are not built); a later ruling moves a position by editing `positions`. */
+ * `--tune` positions take the atom row: D131 item 6 rules it the DEFAULT,
+ * and at `-2`/`-1` it is also smaller than the kit's byte forms at N >= 16
+ * (cls_tree_design.md §1.7.3 item 3, clsfit's proposed `-2`/`-1` order:
+ * atom first, then the kit). The input is every byte class `ROWS` did NOT
+ * answer with an inline compare (`byte-range`, `byte-fold`), and `site`
+ * means each keeps its own `ROWS` form: a 32-byte bitmap, or at the
+ * size-leaning positions its kit matcher (S2). A later ruling moves a
+ * position by editing `positions`. */
 typedef enum {
     TABP_ALWAYS,
     TABP_ATOM_FITS
@@ -707,7 +749,8 @@ static const ClsTabRow TAB_ROWS[] = {
       TPOS(TP_M2) | TPOS(TP_M1) | TPOS(TP_0) | TPOS(TP_P1) | TPOS(TP_P2),
       TABP_ATOM_FITS, CLST_ATOM, CLSTD_ATOM },
     { "site",
-      "always: a 32-byte bitmap per class",
+      "always: each class keeps its own form (a 32-byte bitmap, or its "
+      "kit matcher at the size-leaning positions)",
       TPOS(TP_M2) | TPOS(TP_M1) | TPOS(TP_0) | TPOS(TP_P1) | TPOS(TP_P2),
       TABP_ALWAYS, CLST_SITE, CLSTD_NONE },
 };

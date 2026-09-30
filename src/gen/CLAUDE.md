@@ -1056,6 +1056,13 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
   `vm_emit_search_body` emits the matchers (`<prefix>_wcls<N>`) beside the
   class bitmaps. D129 Q2's `-fno-cls-kit` is the whole-kit deny, read by
   emit_vm.c's `vm_wcls_bytes`, not a `ClsDeny`.
+  **THIRD CALLER, [CLS-TREE] S2 (lane clss2, 2026-09-30, abi 51):** the
+  VM's BYTE classes. `vm_cls` asks `pcrec_clskit_select` for each new pool
+  class, and `ROWS`' four byte rows answer: `byte-range` (one interval, an
+  inline compare, every position), `byte-fold` (the [FORM-CHAR] ASCII pair,
+  every position, `-fno-cls-fold`'s deny, held pending the Q1 ruling in
+  docs/dev/lanes/clss2_report.md), `byte-kit` (`-2`/`-1` only, D131 item 5;
+  `-fno-cls-kit`'s deny) and `byte-table`. `vm_cls_shape` is retired.
   **SECOND CALLER, [OPT-CLSPACK] (lane clspack, 2026-09-30, abi 48):** the
   TABLE SELECTION `TAB_ROWS` (`pcrec_clskit_select_tables`), an
   ARTIFACT-level first-match table over every VM byte class that reads a
@@ -1074,7 +1081,11 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
   matchers. docs/design/cls_tree_design.md §6.1.** **[OPT-CLSPACK] (abi
   48): once the program is emitted the class pool is final, and
   `vm_cls_tables` asks clskit.c's `TAB_ROWS` how the pool's TABLE-READ
-  byte classes (`vm_cls_shape`'s BITMAP) read their table. When the atom
+  byte classes (every class not on an inline row) read their table.
+  **[CLS-TREE] S2 (abi 51)** widened the re-spell: `VmClsRead` is each
+  class's final spelling (inline / bitmap / atom / kit), and a class on the
+  `byte-kit` row whose artifact did not take the atom table is re-spelled to
+  its `<prefix>_class_kit<N>` matcher, emitted beside the class bitmaps. When the atom
   row fires, `vm_cls_respell` re-spells every recorded read in `job->vmsb`
   from `vm_cls_read`'s bitmap form to its atom-matcher call (the one
   renderer of both; an unrecorded read is an internal error) AFTER
