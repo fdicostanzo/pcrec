@@ -1376,6 +1376,19 @@ bref_rename_rewrite() {
     '
 }
 
+# [clss2fix, D139 item 2] THE FIFTH NAMED EXCEPTION, MECHANICAL like the
+# fourth. D139 gave the VM class read and the DFA scan edge ONE spelling of a
+# one-interval byte class (`src/gen/clskit.c` `pcrec_clskit_emit_inline`),
+# the tighter of the two per case: a range from 0 is `b <= hi`, where the VM
+# wrote the subtract of 0, `(unsigned)(b - 0) <= hiu`. Every such class moves
+# for that one textual reason, so the admission rewrites the PRE-MODULE
+# region with that one substitution and compares again; any other difference
+# still lands in `rdiff`. (Measured at landing: 1 call-free pattern, `[\0-\7]`,
+# on --engine=vm; docs/dev/lanes/clss2_report.md "Review fixes".)
+cls_range0_rewrite() {
+    sed -E 's/\(unsigned\)\(([^()]*) - 0\) <= ([0-9]+)u/\1 <= \2/g'
+}
+
 # ---- the corpus ------------------------------------------------------------
 PATFILE="$WORKDIR/patterns"
 find "$ROOT_DIR/tests" -name '*.rxt' -print0 \
@@ -1688,6 +1701,7 @@ sweep() { # sweep <label> <extra pcrec args>
     # bucket above) the part of it the fold's own deny-axis excuse does not
     # explain.
     local rbrefrename=0
+    local rclsrange0=0
     # [recidfix->varland] the fifth exception's counter: a region admitted
     # because it uses module `vars`' `${...}` construct, which existed in NO
     # compiler before it shipped and needs no rewrite to explain, only proof
@@ -1769,6 +1783,11 @@ sweep() { # sweep <label> <extra pcrec args>
                 # the subject's.
                 rbrefrename=$((rbrefrename + 1))
                 printf 'REGION MOVED (ruled, [VAR] M6 seam rename bref_match(subject,len,off,off)->span_match(subject,len,ptr,len)) %s\n' "$pat" >> "$WORKDIR/diff.$label"
+            elif [ "$ra" = "$(printf '%s\n' "$rb" | cls_range0_rewrite)" ]; then
+                # [clss2fix, D139] the one-spelling range-from-0 rewrite
+                # explains the whole difference on its own.
+                rclsrange0=$((rclsrange0 + 1))
+                printf 'REGION MOVED (ruled, D139 one range spelling: (unsigned)(b - 0) <= Nu -> b <= N) %s\n' "$pat" >> "$WORKDIR/diff.$label"
             elif printf '%s\n' "$ra" | grep -qF 'run->var_value['; then
                 # [recidfix->varland] A FIFTH THING FOUND WHILE BUILDING THE
                 # FOURTH: reading the actual 170-pattern population (not just
@@ -1998,7 +2017,7 @@ sweep() { # sweep <label> <extra pcrec args>
         fi
     done < "$WORKDIR/free"
     echo "recursion-identity[$label] (B) whole-file vs $FILEPIN: same=$same differing=$diff elided=$elided refused-by-both=$refused refusal-mismatch=$mism stamp-filter-bad=$stampbad stamp-moved=$stampmoved"
-    echo "recursion-identity[$label] (A) program-region vs $REFCOMMIT: same=$rsame differing=$rdiff elided=$relided size-term-moved=$rsizeterm bref-rename-moved=$rbrefrename var-construct-moved=$rvarnew ctx-node-moved=$rctx island-moved=$risland island-stamped-but-deny-is-a-noop=$rislsame unstamped-but-deny-moves=$rnoislmoved fold-moved=$rfold fold-stamped-but-deny-is-a-noop=$rfoldsame unstamped-but-fold-deny-moves=$rnofoldmoved litrun-moved=$rlit litrun-stamped-but-deny-is-a-noop=$rlitsame unstamped-but-litrun-deny-moves=$rnolitmoved atoms-moved=$rpack atoms-stamped-but-deny-is-a-noop=$rpacksame call-bearing-in-population=$rcallbearing"
+    echo "recursion-identity[$label] (A) program-region vs $REFCOMMIT: same=$rsame differing=$rdiff elided=$relided size-term-moved=$rsizeterm bref-rename-moved=$rbrefrename cls-range0-moved=$rclsrange0 var-construct-moved=$rvarnew ctx-node-moved=$rctx island-moved=$risland island-stamped-but-deny-is-a-noop=$rislsame unstamped-but-deny-moves=$rnoislmoved fold-moved=$rfold fold-stamped-but-deny-is-a-noop=$rfoldsame unstamped-but-fold-deny-moves=$rnofoldmoved litrun-moved=$rlit litrun-stamped-but-deny-is-a-noop=$rlitsame unstamped-but-litrun-deny-moves=$rnolitmoved atoms-moved=$rpack atoms-stamped-but-deny-is-a-noop=$rpacksame call-bearing-in-population=$rcallbearing"
     SIZETERM_TOTAL=$((SIZETERM_TOTAL + rsizeterm))
     # THE SHARPER HALF: under `--no-captures` no VM body is emitted at all, so
     # the size term cannot act and this count must be ZERO. An axis-independent
@@ -2234,7 +2253,7 @@ LIT_EOF
        && [ "$elided" -eq 0 ] && [ "$rdiff" -eq 0 ] && [ "$rcallbearing" -eq 0 ] \
        && [ "$relided" -eq "$nelide_region" ]; then
         ok "[$label] (B) WHOLE-FILE byte identity: ALL $same call-free corpus patterns emit IDENTICAL C (raw, and therefore also past D37's three stamp lines, each verified present on both sides) against a compiler built from the pin $FILEPIN — zero differing, zero refusal mismatches, and zero elision movement, which is what a post-wave-G pin must show"
-        ok "[$label] (A) PROGRAM-REGION identity: $rsame call-free patterns emit an IDENTICAL program region ('goto <p>_L0;' .. '<p>_accept:', unfiltered past the D37 stamps, comment changes included) against the UNCHANGED PRE-MODULE pin $REFCOMMIT — the claim this gate was built for, still measured against the reference it was built against; exactly the $nelide_region NAMED wave-G elision patterns moved (the elision acts on engine selection, so a region moves only where selection is free — 4 on default and -fno-prefilter, 0 on --engine=vm where the engine is forced on both sides, 0 on --no-captures where neither side promises a group), 0 artifacts in this call-free population carry the call machinery whose two [DD-14.FB] region lines are the counted exception, $rbrefrename moved for the ruled [VAR] M6 seam rename (bref_match's two offsets generalised to span_match's pointer+length), and $rvarnew moved because module vars' \${...} construct exists in no compiler before it"
+        ok "[$label] (A) PROGRAM-REGION identity: $rsame call-free patterns emit an IDENTICAL program region ('goto <p>_L0;' .. '<p>_accept:', unfiltered past the D37 stamps, comment changes included) against the UNCHANGED PRE-MODULE pin $REFCOMMIT — the claim this gate was built for, still measured against the reference it was built against; exactly the $nelide_region NAMED wave-G elision patterns moved (the elision acts on engine selection, so a region moves only where selection is free — 4 on default and -fno-prefilter, 0 on --engine=vm where the engine is forced on both sides, 0 on --no-captures where neither side promises a group), 0 artifacts in this call-free population carry the call machinery whose two [DD-14.FB] region lines are the counted exception, $rbrefrename moved for the ruled [VAR] M6 seam rename (bref_match's two offsets generalised to span_match's pointer+length), $rclsrange0 moved for D139's one range spelling (a range from 0 is b <= hi), and $rvarnew moved because module vars' \${...} construct exists in no compiler before it"
     fi
 }
 

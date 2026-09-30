@@ -240,3 +240,167 @@ The four questions and the recommendations are in the handback and in
   Then `RX_VM_CLS_FOLDS` retires into `RX_VM_CLS_KIT`. That is only coherent
   once Q1 moves the fold into the kit.
 - **Q4, the scan-edge kit body. BUILT as recommended.**
+
+## Review fixes (clss2fix)
+
+Lane clss2fix (opus), 2026-09-30, on `lane/clss2` after merging main
+(`9cf941be`: D138, D139, review r3). Work list: the dispositions table of
+`docs/dev/reviews/2026-09-30-r3-cls-tree-s2.md`, D138 and D139. One abi
+event, numbered on the lane after this lane's 51/52: **abi 52 -> 53**
+(`ddfefeb7`; the src tip is `2c45260a`, recursion (B) self-pinned to it in
+`bc387736`). The manager renumbers at merge (S-M1: uvbuild first, then clss2
+with its "was 50" paragraph).
+
+### What was built
+
+**D139 item 2 — the scan edge has no class decision (E-M2, S-M2).**
+`dfa_scans[]`'s three class bodies and `pcrec_scan_range` (and its
+`internal.h` declaration) are gone. `emit_dfa.c`'s `scan_choice` asks
+`clskit.c`'s `ROWS` for the edge class's form at a new SITE, `CLSS_SCAN`,
+priced at `SCAN_TEST_CALLS` = 2 (the guard and the loop each write the test),
+and `scan_test` writes the answer through the kit's own emitters, the same
+ones the VM's class reads now use:
+
+| emitter (clskit.c) | forms | used by |
+|---|---|---|
+| `pcrec_clskit_emit_inline` | range (`1` / `b == c` / `b <= hi` / `(unsigned)(b - lo) <= span u`), fold (`(b \| 0x20) == x`) | `vm_cls_test`, `scan_test` |
+| `pcrec_clskit_read` | kit call `name(b)`; table read in a representation: 32-byte bitmap, atom matcher, 256-byte scan table `name[b]` | `vm_cls_read`, `scan_test` |
+| `pcrec_clskit_emit_kit` | the kit matcher (now takes `cp_max`) | VM byte/wide kits, the edge's file-scope `scankit` |
+
+- **The table representation is a `TAB_ROWS` row.** `TAB_ROWS` and `ROWS`
+  rows carry a `sites` mask. `TAB_ROWS` is `atom` (VM only, unchanged),
+  **`scan-table`** (scan site: one 256-byte table per edge, `CLST_BYTE256`,
+  today's per-context choice kept as the row's predicate), `site`.
+- **D138 Q1 at the scan edge.** The fold is two rows: `byte-fold` (-2/-1,
+  both sites) and **`byte-fold-default`** (0/+1/+2, VM only). So at the
+  default positions the VM keeps its fold byte-identically and a scan
+  edge's pair keeps its table, as today. FORM-CHAR2's measurement flips
+  both sites with one row: delete it (table everywhere), or add the scan
+  site (fold everywhere). tuning.md §2.22 and §2.18 say so.
+- **Stamp and listing.** `RX_DFA_SCAN_EDGE` is `pcrec_clskit_test_name` of
+  the answer (`range` / `fold` / `kit` / `bitmap`, plus the composites);
+  `"fold"` is new, -2/-1 only. `--list-axes`' `scan-body` rows are read off
+  `ROWS` (`pcrec_clskit_byte_tests`), not restated.
+- **One flags -> deny mapping.** `pcrec_clskit_deny_of` (a `DENY_FLAG`
+  table) and `pcrec_clskit_tabdeny_of`, used by `vm_cls`, `vm_wcls`,
+  `vm_cls_tables` and `scan_choice` (D139 item 3: a row's flag denies it
+  wherever the table is read).
+- **E-M2 witness.** `(?i)xa{3,}b` at `--tune=-2`, default route, gcc-16 -O2
+  `__text`+`__TEXT,__const`: 2,642 -> 2,158 B (-484). The edge now stamps
+  `"fold"` where it read the 256-byte table.
+
+**Spelling unification (D139 item 2's "one spelling serves both"), measured
+before committing.** The VM's `(unsigned)(b - lo) <= span u` and the scan
+edge's `(unsigned char)(b - lo) <= span` compile the same. The unified
+spelling keeps the tighter form of each case: `1` for all 256 (the scan
+edge wrote `b <= 255`), `b <= hi` from 0 (the VM wrote a subtract of 0),
+and the VM's type-general subtract otherwise (the `unsigned char` cast is
+only exact for a byte-typed operand).
+
+Default movers, emit sweep, lane base `9cf941be` vs the change, every
+distinct corpus `pattern` line with `--features all`:
+
+| route | same | refuse | movers | what moved |
+|---|---|---|---|---|
+| default | 3,052 | 406 | **79** | every mover is the scan edge's subtract range spelling, and nothing else |
+| `--engine=vm` | 3,130 | 406 | **1** | a VM range from 0 now reads `b <= N` |
+
+79 of 3,131 compiling default artifacts is 2.5% (under 5% of the 1,683
+DFA-engine ones), not a large share, so it was committed. Unifying the
+other way (the `unsigned char` spelling) would have moved 119 VM artifacts.
+Answers are identical by construction and by the checks below.
+
+**D139 item 1 — `byte-kit` only where smaller (E-M3).** The row's predicate
+is `P_KIT_SMALLER`, `P_P3_SMALLER`'s shape:
+`calls x kit_sel_bytes < table.rodata + calls x table.read_text`.
+- The table is the one the site reads for a lone set (`lone_table`, via
+  `TAB_ROWS`): a 32 B bitmap on the VM, the 256 B table on a scan edge.
+  `TABLE_COST` holds the measured standalone costs: bitmap read text 32 B,
+  256-table read text 16 B.
+- `calls` is the number of times the test is written, since a kit is
+  inlined at each: the VM counts its bitmap reads in the finished program
+  (`vm_cls_reads`, re-asked in `vm_cls_tables`), and the scan edge uses 2.
+- **The dispatch term is per domain.** `PLACE.kit_disp_bytes` (578) was
+  fitted on the K53 wide sets. Refitted the same way (standalone matchers,
+  gcc-16 -O2) on the 41 corpus byte classes, measured minus model is mean
+  -0.3 B, range -28..+26, so `kit_disp_bytes_byte` = 0. With 578, every
+  byte kit would price above every byte table, and the row would retire by
+  arithmetic, not by measurement.
+- The dead bound is gone. `emit_bound` skips the bound when the set spans
+  `0..cp_max`, and a byte kit passes `cp_max` 0xFF (that is exactly the
+  `(unsigned)(cp - 0u) > 255u` line).
+
+The review's five witnesses, re-measured (`--tune=-2`, gcc-16 -O2,
+`__text`+`__TEXT,__const`, bytes; "old" is the lane base, "deny" is
+`-fno-cls-kit`):
+
+| witness | route | old | new | deny |
+|---|---|---|---|---|
+| `x[^\n\r]{30}y` | default | 3,008 | 3,008 | 2,944 |
+| `x[^\n\r]{30}y` | VM | 1,064 | 1,064 | 1,000 |
+| `[^"\\]*"` | default | 1,950 | 1,950 | 2,174 |
+| `[^"\\]*"` | VM | 744 | 744 | 776 |
+| `\w+@\w+` | default | 2,440 | 2,440 | 3,048 |
+| `\w+@\w+` | VM | 1,460 | 1,460 | 1,108 |
+| `[0-9a-fA-F]+z` | default | 1,943 | 1,943 | 2,167 |
+| `[0-9a-fA-F]+z` | VM | 884 | 884 | 776 |
+| `x[acegikmoq]+y` | default | 1,532 | 1,532 | 1,532 |
+| `x[acegikmoq]+y` | VM | 788 | 788 | 852 |
+
+**The fix does not move these five witnesses, and that has to be said
+plainly.**
+- On the scan edge the model keeps the kit, which is right there: -224,
+  -224 and -608 against the 256-byte table.
+- On the VM the model predicts the kit smaller on all five, while the
+  in-context measurement has it larger on three: +64, +352 and +108.
+- The standalone model is accurate: 41/41 byte kits are within 28 B.
+  The miss is gcc's in-context code generation around the inlined
+  matcher. The pair that shows it: `[0-9a-fA-F]` and `[acegikmoq]` both
+  model at 24 B and 1 read, yet one loses 108 B and the other wins 64 B.
+- Over the 41 corpus byte classes in one VM shape (`x[C]+y`, 1 read), the
+  kit is smaller on 23, larger on 9 and ties on 9. Net, the model's
+  choices save 352 B against all-table.
+- A threshold fitted to that population (an extra ~19 B) saves more
+  (-800 B), but it splits two sectionings whose models differ by 2 B, which
+  is overfitting.
+
+The literal reading of D139 (`kit_sel_bytes` with 578 on byte sets) was
+raised with the manager at the start, with this data. It would turn the
+kit off on both sites: it fixes the three VM regressions and gives up the
+scan edge's 224-608 B wins. It is one PLACE cell, and the report does not
+choose it.
+
+### Review items
+
+| # | disposition | evidence |
+|---|---|---|
+| E-M3 | FIXED as above; the witnesses' VM residual is reported, not hidden | table above |
+| E-M2 | FIXED: the scan edge maps nothing — it reads ROWS | `(?i)xa{3,}b` -484 B at -2; tune-dial §3f; clspack PART 5 `fold` differential |
+| E-M1 | FIXED: spec says the row flags deny wherever the table is read | tuning.md §2.22/§2.33, lib/pcrec.h, match_api §6.3 |
+| S-M1 | for the manager at merge; this lane's event is 53 | match_api §6 "is 53 / was 52 / was 51" |
+| S-M2 | FIXED: tuning.md §2.18 rewritten (four run tests, the table's answer, SIMD reserved as a LOOP form); axes_dump.c descriptions + composite comment; emit_dfa.c axis I header and `scan_edge_of` comment | — |
+| C-M1 | owed: the `make test-axes` run below | chain log |
+| C-M2 | the manager's (Linux) | — |
+| C-M3 | owed: the corpus under `RXTFLAGS=--tune=-2` and `-1` below | chain log |
+| C-M4 | report wording only; nothing to build | — |
+| C-M5 | owed: `cls_identity.py --ref 92f4c9b7 --control` on this tree below | chain log |
+| V-1 | FIXED: `axes_registry_check` coverage pin 155 -> 158 (S2's `kit` row: one more deny triple, the pin never moved) -> 161 (the `fold` row's `-fno-cls-fold` triple) | `axes_registry_check.sh` 161/0 |
+| C-L6 | FIXED: S431's reach probe paired (`KIT-ON ... 1` / `KIT-OFF ... 0`); PART 4 widened to `-1`, a caseless class, a hi=0xFF class, `-e utf8` byte and wide classes; PART 5 to `-1`, `-e utf8`, a fold-vs-deny differential and, via the driver's new opt-in `-DDIFF_MATCH`, the MATCH entry (the anchored machine, which `_search` never runs) with a reach check that the witness carries kit edges on its reverse and anchored machines | clspack below |
+| C-L8 | FIXED: tune-dial §3e recognizes each form by its own spelling (kit / bitmap / fold / range; anything else fails); + a kit-larger case, a fold-denied case; new §3f for the scan edge (stamp AND text per position) | tune-dial below |
+| S-L3 | FIXED: every live `vm_cls_shape` reference (lib/pcrec.h, run_recursion_identity.sh's failure message and comment, run_cls_fold_agreement.sh, fold_pairs_dump.c, run_codegen_tests.sh, tests/codegen/CLAUDE.md, S275) now names `is_ascii_fold_pair` / `pcrec_clskit_emit_inline`; historical "before abi 51" mentions stay | `git grep vm_cls_shape` |
+| S-L4 | FIXED: tuning.md §2.22 and the plan row point at D138 | — |
+| E-L1/E-L3 | not in scope (file as `[CLS-ONE-TABLE]`); note that D139 retires one of E-L1's "two deny paths for the DFA kit" | — |
+
+**Sabotage anchors (by grep).** Eight rows went stale and were re-anchored
+with intent unchanged, each with a note: S275 (the fold spelling moved to
+clskit.c), S364 (the per-domain `kit_sel_bytes`), S393 (vm_wcls' select
+input), S401/S406 (the tab deny moved to `pcrec_clskit_tabdeny_of`), S430
+(`cp_max`), S431 (`DENY_FLAG`; now reaches both sites) and S432 (the row's
+new shape). `scripts/m6read_check_sab_anchors.py`: 378 rows / 394 sites,
+all resolve. **New rows S433-S436:**
+- S433: the scan site is ignored (tunedial);
+- S434: the one range spelling drops its top byte, both engines (harness,
+  `tests/base/d27_captures.rxt`);
+- S435: the kit's call count is ignored (clskit);
+- S436: the kit bound is dropped wherever a set reaches 0xFF (clspack's
+  new `hi255` witness).
