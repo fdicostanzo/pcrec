@@ -1130,7 +1130,20 @@ REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
 # ABI block, the `<PREFIX>_UTF_CHECK` stamp, and the `<prefix>_valid_upto` entry with its `.c`-only
 # `<prefix>_VALID_LB` macro; this gate's population is call-free `byte` artifacts without the flag, so
 # (A) is untouched and (B) moves by exactly those lines and the digit.
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-6c22a7cd}"   # [UTF-VALID], abi 49->50, lane uvbuild (self-pin). Prior pin: 7889ab1f ([OPT-HYB-RESEED], land5, abi 48->49). # [OPT-HYB-RESEED] on land4 (S4 + CLSPACK), ONE event abi 48->49 (land5): (B) re-pinned to the land5 merge commit (its last src change, the k73utf convention), D76, 2026-09-30. Prior pin: 64b55d15 (land4, abi 47->48). # [CLS-TREE] S4, abi 46->47 (lane/s4build, pin 0d0a514f), and [OPT-CLSPACK], 47->48 (lane/clspack, pin 8407666a), each on its own lane before this landing combined them onto main: # [K73], abi 46->47: (B) re-pinned to 40c56343 on lane/k73utf (D76, 2026-09-29). Prior pin: 7e8ab18a ([UCP] U2, abi 45->46).
+# **(B) RE-PINNED AGAIN — [CLS-TREE] S2, 2026-09-30: abi 50 -> 51 (lane/clss2, on top of uvbuild's 50;
+# the manager re-pins at merge), pin = `22d150a8`, the lane commit that is its last `src/` change.**
+# The kit's byte forms fire at --tune=-2/-1 only and this gate compiles at the default position; its
+# population is call-bearing `byte` artifacts, so no wide class is formed and (A) is untouched: (B) moves
+# by the abi digit alone.
+# **(B) RE-PINNED AGAIN — [CLS-TREE] S2's second event, 2026-09-30: abi 51 -> 52, pin = `979b0b62`.** The
+# scan edge's kit body applies at --tune=-2/-1 only; this gate compiles at the default position, so (A)
+# is untouched and (B) moves by the abi digit alone.
+# **(B) RE-PINNED AGAIN — [CLS-TREE] S2's review fixes (D139), 2026-09-30: abi 52 -> 53, pin = `2c45260a`,
+# the lane/clss2 commit that is its last `src/` change.** A DFA scan edge's range test takes the VM's
+# spelling at every position and a VM range from 0 reads `b <= hi`; this gate's call-bearing `byte`
+# population is VM-routed at the default position, and the gate's own run on the lane decides whether
+# (A) moves (docs/dev/lanes/clss2_report.md "Review fixes (clss2fix)").
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-6df81be3}"   # [CLS-TREE] S2 on main at abi 50 (triage s2tri, abi 53): (B) self-pinned to the merge commit. Prior pins: 2c45260a (S2 review fixes, abi 52->53, pre-merge), 979b0b62 (abi 52), 22d150a8 (abi 51), 6c22a7cd ([UTF-VALID], abi 50). Older: 7889ab1f ([OPT-HYB-RESEED], land5, abi 48->49). # [OPT-HYB-RESEED] on land4 (S4 + CLSPACK), ONE event abi 48->49 (land5): (B) re-pinned to the land5 merge commit (its last src change, the k73utf convention), D76, 2026-09-30. Prior pin: 64b55d15 (land4, abi 47->48). # [CLS-TREE] S4, abi 46->47 (lane/s4build, pin 0d0a514f), and [OPT-CLSPACK], 47->48 (lane/clspack, pin 8407666a), each on its own lane before this landing combined them onto main: # [K73], abi 46->47: (B) re-pinned to 40c56343 on lane/k73utf (D76, 2026-09-29). Prior pin: 7e8ab18a ([UCP] U2, abi 45->46).
 
 WORKDIR="$(mktemp -d)"
 cleanup() {
@@ -1366,6 +1379,19 @@ bref_rename_rewrite() {
         }
         { print }
     '
+}
+
+# [clss2fix, D139 item 2] THE FIFTH NAMED EXCEPTION, MECHANICAL like the
+# fourth. D139 gave the VM class read and the DFA scan edge ONE spelling of a
+# one-interval byte class (`src/gen/clskit.c` `pcrec_clskit_emit_inline`),
+# the tighter of the two per case: a range from 0 is `b <= hi`, where the VM
+# wrote the subtract of 0, `(unsigned)(b - 0) <= hiu`. Every such class moves
+# for that one textual reason, so the admission rewrites the PRE-MODULE
+# region with that one substitution and compares again; any other difference
+# still lands in `rdiff`. (Measured at landing: 1 call-free pattern, `[\0-\7]`,
+# on --engine=vm; docs/dev/lanes/clss2_report.md "Review fixes".)
+cls_range0_rewrite() {
+    sed -E 's/\(unsigned\)\(([^()]*) - 0\) <= ([0-9]+)u/\1 <= \2/g'
 }
 
 # ---- the corpus ------------------------------------------------------------
@@ -1680,6 +1706,7 @@ sweep() { # sweep <label> <extra pcrec args>
     # bucket above) the part of it the fold's own deny-axis excuse does not
     # explain.
     local rbrefrename=0
+    local rclsrange0=0
     # [recidfix->varland] the fifth exception's counter: a region admitted
     # because it uses module `vars`' `${...}` construct, which existed in NO
     # compiler before it shipped and needs no rewrite to explain, only proof
@@ -1761,6 +1788,11 @@ sweep() { # sweep <label> <extra pcrec args>
                 # the subject's.
                 rbrefrename=$((rbrefrename + 1))
                 printf 'REGION MOVED (ruled, [VAR] M6 seam rename bref_match(subject,len,off,off)->span_match(subject,len,ptr,len)) %s\n' "$pat" >> "$WORKDIR/diff.$label"
+            elif [ "$ra" = "$(printf '%s\n' "$rb" | cls_range0_rewrite)" ]; then
+                # [clss2fix, D139] the one-spelling range-from-0 rewrite
+                # explains the whole difference on its own.
+                rclsrange0=$((rclsrange0 + 1))
+                printf 'REGION MOVED (ruled, D139 one range spelling: (unsigned)(b - 0) <= Nu -> b <= N) %s\n' "$pat" >> "$WORKDIR/diff.$label"
             elif printf '%s\n' "$ra" | grep -qF 'run->var_value['; then
                 # [recidfix->varland] A FIFTH THING FOUND WHILE BUILDING THE
                 # FOURTH: reading the actual 170-pattern population (not just
@@ -1909,8 +1941,8 @@ sweep() { # sweep <label> <extra pcrec args>
             fi
             # [FORM-CHAR] THE FOLD CONVERSE, the island pair's shape exactly
             # and SCOPED TO ARTIFACTS THAT CARRY THE STAMP (i.e. VM
-            # artifacts): the flag's one consumer is `vm_cls_shape` in
-            # emit_vm.c, so a DFA artifact is byte-identical under it BY
+            # artifacts): at the default position the flag's one consumer is
+            # the VM's fold row (clskit.c `byte-fold-default`, D138 Q1), so a DFA artifact is byte-identical under it BY
             # CONSTRUCTION rather than by sweep — running the deny build
             # there would double this gate's compile count to re-derive a
             # structural fact. An artifact that STAMPS folds must differ from
@@ -1990,7 +2022,7 @@ sweep() { # sweep <label> <extra pcrec args>
         fi
     done < "$WORKDIR/free"
     echo "recursion-identity[$label] (B) whole-file vs $FILEPIN: same=$same differing=$diff elided=$elided refused-by-both=$refused refusal-mismatch=$mism stamp-filter-bad=$stampbad stamp-moved=$stampmoved"
-    echo "recursion-identity[$label] (A) program-region vs $REFCOMMIT: same=$rsame differing=$rdiff elided=$relided size-term-moved=$rsizeterm bref-rename-moved=$rbrefrename var-construct-moved=$rvarnew ctx-node-moved=$rctx island-moved=$risland island-stamped-but-deny-is-a-noop=$rislsame unstamped-but-deny-moves=$rnoislmoved fold-moved=$rfold fold-stamped-but-deny-is-a-noop=$rfoldsame unstamped-but-fold-deny-moves=$rnofoldmoved litrun-moved=$rlit litrun-stamped-but-deny-is-a-noop=$rlitsame unstamped-but-litrun-deny-moves=$rnolitmoved atoms-moved=$rpack atoms-stamped-but-deny-is-a-noop=$rpacksame call-bearing-in-population=$rcallbearing"
+    echo "recursion-identity[$label] (A) program-region vs $REFCOMMIT: same=$rsame differing=$rdiff elided=$relided size-term-moved=$rsizeterm bref-rename-moved=$rbrefrename cls-range0-moved=$rclsrange0 var-construct-moved=$rvarnew ctx-node-moved=$rctx island-moved=$risland island-stamped-but-deny-is-a-noop=$rislsame unstamped-but-deny-moves=$rnoislmoved fold-moved=$rfold fold-stamped-but-deny-is-a-noop=$rfoldsame unstamped-but-fold-deny-moves=$rnofoldmoved litrun-moved=$rlit litrun-stamped-but-deny-is-a-noop=$rlitsame unstamped-but-litrun-deny-moves=$rnolitmoved atoms-moved=$rpack atoms-stamped-but-deny-is-a-noop=$rpacksame call-bearing-in-population=$rcallbearing"
     SIZETERM_TOTAL=$((SIZETERM_TOTAL + rsizeterm))
     # THE SHARPER HALF: under `--no-captures` no VM body is emitted at all, so
     # the size term cannot act and this count must be ZERO. An axis-independent
@@ -2192,7 +2224,7 @@ LIT_EOF
         bad "[$label] $lit_manifest_missing of the LIT_PATTERNS manifest no longer stamp a literal-run compare. Either pcrec_lit_run narrowed or the island run arm broke. Do not silently shorten the list"
     fi
     if [ "$fold_manifest_missing" -ne 0 ]; then
-        bad "[$label] $fold_manifest_missing of the FOLD_PATTERNS manifest no longer stamp an ascii-fold class test. Either vm_cls_shape's recognizer narrowed — in which case this list is the record of what that costs — or the classification broke. Do not silently shorten the list"
+        bad "[$label] $fold_manifest_missing of the FOLD_PATTERNS manifest no longer stamp an ascii-fold class test. Either clskit.c's is_ascii_fold_pair (the fold rows' predicate) narrowed — in which case this list is the record of what that costs — or the classification broke. Do not silently shorten the list"
     fi
     if [ "$rdiff" -ne 0 ]; then
         bad "[$label] (A) $rdiff call-free patterns emit a DIFFERENT PROGRAM REGION than $REFCOMMIT for a reason no ruling has recorded — this is the claim the pre-module pin exists to defend:"
@@ -2226,7 +2258,7 @@ LIT_EOF
        && [ "$elided" -eq 0 ] && [ "$rdiff" -eq 0 ] && [ "$rcallbearing" -eq 0 ] \
        && [ "$relided" -eq "$nelide_region" ]; then
         ok "[$label] (B) WHOLE-FILE byte identity: ALL $same call-free corpus patterns emit IDENTICAL C (raw, and therefore also past D37's three stamp lines, each verified present on both sides) against a compiler built from the pin $FILEPIN — zero differing, zero refusal mismatches, and zero elision movement, which is what a post-wave-G pin must show"
-        ok "[$label] (A) PROGRAM-REGION identity: $rsame call-free patterns emit an IDENTICAL program region ('goto <p>_L0;' .. '<p>_accept:', unfiltered past the D37 stamps, comment changes included) against the UNCHANGED PRE-MODULE pin $REFCOMMIT — the claim this gate was built for, still measured against the reference it was built against; exactly the $nelide_region NAMED wave-G elision patterns moved (the elision acts on engine selection, so a region moves only where selection is free — 4 on default and -fno-prefilter, 0 on --engine=vm where the engine is forced on both sides, 0 on --no-captures where neither side promises a group), 0 artifacts in this call-free population carry the call machinery whose two [DD-14.FB] region lines are the counted exception, $rbrefrename moved for the ruled [VAR] M6 seam rename (bref_match's two offsets generalised to span_match's pointer+length), and $rvarnew moved because module vars' \${...} construct exists in no compiler before it"
+        ok "[$label] (A) PROGRAM-REGION identity: $rsame call-free patterns emit an IDENTICAL program region ('goto <p>_L0;' .. '<p>_accept:', unfiltered past the D37 stamps, comment changes included) against the UNCHANGED PRE-MODULE pin $REFCOMMIT — the claim this gate was built for, still measured against the reference it was built against; exactly the $nelide_region NAMED wave-G elision patterns moved (the elision acts on engine selection, so a region moves only where selection is free — 4 on default and -fno-prefilter, 0 on --engine=vm where the engine is forced on both sides, 0 on --no-captures where neither side promises a group), 0 artifacts in this call-free population carry the call machinery whose two [DD-14.FB] region lines are the counted exception, $rbrefrename moved for the ruled [VAR] M6 seam rename (bref_match's two offsets generalised to span_match's pointer+length), $rclsrange0 moved for D139's one range spelling (a range from 0 is b <= hi), and $rvarnew moved because module vars' \${...} construct exists in no compiler before it"
     fi
 }
 

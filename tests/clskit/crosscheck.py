@@ -20,7 +20,8 @@ What is compared, per set:
          table builders, plus the measured text constants)
   ATOMS  the shared atom table's atom count
   SEL    the --tune class-form choice at every position, with no deny and
-         with each single row denied. The TABLE is restated below from
+         with each single row denied, at both sites (VM, scan edge) and at
+         one and two calls ([CLS-TREE] S2 review fixes, D139). The TABLE is restated below from
          D131 item 1 and items 4-5, independently of clskit.c's ROWS (NO
          atom row — D131 item 6's atom table is an ARTIFACT-level choice,
          not a per-set one; see clskit.c's own comment above `ROWS`); the
@@ -66,23 +67,38 @@ MID_MIN_SECTIONS, Z_MID_PCT = 16, 126
 # another form read `kbytes + KIT_DISP_BYTES`; the DP's own sectioning
 # bytes (`kbytes` itself, `price()`, `study_one()`) are never adjusted.
 KIT_DISP_BYTES = 578
+# The same fit over the BYTE population is 0 (clskit.c PLACE.kit_disp_bytes_byte:
+# the 41 corpus byte classes' standalone kit matchers measure model -28..+26 B).
+KIT_DISP_BYTES_BYTE = 0
 
-# THE TABLE, restated: (name, positions, predicate, form, deny ordinal).
+# The byte-kit row's comparand (D139 item 1): the table a lone byte set
+# reads at each site -- (table bytes paid once, one read's .text paid per
+# call), clskit.c TABLE_COST, restated. VM: a 32-byte bitmap; scan edge: the
+# 256-byte table.
+VM, SCAN = 0, 1
+LONE_TABLE = {VM: (32, 32), SCAN: (256, 16)}
+
+# THE TABLE, restated: (name, positions, sites, predicate, form, deny ordinal).
 # NO atom row: D131 item 6's atom table is chosen ARTIFACT-wide (S2), which
 # a per-SET table has no input to decide (clskit.c's own comment above
 # `ROWS`) — so it is not part of this per-set restatement either.
 SIZE, MID, SPEED = (-2, -1), (0, 1, 2), (2,)
 ALLPOS = (-2, -1, 0, 1, 2)
+BOTH = (VM, SCAN)
 ROWS = [
-    ("byte-kit",      SIZE,   "byte",   "K",    1),
-    ("byte-table",    MID,    "byte",   "B1",   2),
-    ("size-page3",    SIZE,   "p3<k",   "P3",   3),
-    ("speed-page2",   SPEED,  "mid&p2", "P2",   4),
-    ("speed-bitmap1", SPEED,  "mid&b1", "B1",   5),
-    ("mid-page3",     MID,    "mid",    "P3",   6),
-    ("kit",           ALLPOS, "true",   "K",    0),
+    ("byte-range",        ALLPOS, BOTH,  "byte1",  "K",    0),
+    ("byte-fold",         SIZE,   BOTH,  "fold",   "K",    7),
+    ("byte-fold-default", MID,    (VM,), "fold",   "K",    7),
+    ("byte-kit",          SIZE,   BOTH,  "k<tab",  "K",    1),
+    ("byte-table",        ALLPOS, BOTH,  "byte",   "B1",   2),
+    ("size-page3",        SIZE,   BOTH,  "p3<k",   "P3",   3),
+    ("speed-page2",       SPEED,  BOTH,  "mid&p2", "P2",   4),
+    ("speed-bitmap1",     SPEED,  BOTH,  "mid&b1", "B1",   5),
+    ("mid-page3",         MID,    BOTH,  "mid",    "P3",   6),
+    ("kit",               ALLPOS, BOTH,  "true",   "K",    0),
 ]
-NDENY = 7
+NDENY = 8
+SITEBITS = {BOTH: 3, (VM,): 1}
 
 
 def load_pop(path):
@@ -104,16 +120,21 @@ def whole_bytes(iv):
             (iv[-1][1] - iv[0][0] + 1 + 7) // 8 + B1_TEXT)
 
 
-def select(iv, kbytes, knsec, whole, tune, deny):
+def select(iv, kbytes, knsec, whole, tune, deny, site, calls):
     p3, p2, b1 = whole
     byte = not iv or iv[-1][1] <= 0xFF
-    ksel = kbytes + KIT_DISP_BYTES
+    ksel = kbytes + (KIT_DISP_BYTES_BYTE if byte else KIT_DISP_BYTES)
+    tro, trd = LONE_TABLE[site]
     mid = knsec >= MID_MIN_SECTIONS and p3 * 100 <= Z_MID_PCT * ksel
-    holds = {"byte": byte, "p3<k": p3 < ksel,
+    fold = (len(iv) == 2 and iv[0][0] == iv[0][1] and iv[1][0] == iv[1][1]
+            and iv[0][0] ^ iv[1][0] == 0x20 and 0x41 <= iv[0][0] <= 0x5A)
+    holds = {"byte": byte, "byte1": byte and len(iv) == 1, "fold": fold,
+             "k<tab": byte and calls * ksel < tro + calls * trd,
+             "p3<k": p3 < ksel,
              "mid&p2": mid and p2 <= b1, "mid&b1": mid and b1 < p2,
              "mid": mid, "true": True}
-    for name, pos, pred, form, d in ROWS:
-        if tune not in pos or (d and d == deny):
+    for name, pos, sites, pred, form, d in ROWS:
+        if tune not in pos or site not in sites or (d and d == deny):
             continue
         if holds[pred]:
             return name, form
@@ -175,9 +196,10 @@ def main():
         elif f[0] == "WHOLE":
             dwhole[int(f[1])] = tuple(int(x) for x in f[2:5])
         elif f[0] == "SEL":
-            dsel[(int(f[1]), int(f[2]), int(f[3]))] = (f[4], f[5])
+            dsel[tuple(int(x) for x in f[1:6])] = (f[6], f[7])
         elif f[0] == "ROW":
-            drows.append((f[2], f[3], int(f[4].split("=")[1])))
+            drows.append((f[2], f[3], int(f[4].split("=")[1]),
+                          int(f[5].split("=")[1])))
         elif f[0] == "ATOMS":
             datoms = dict(kv.split("=") for kv in f[1:])
 
@@ -190,7 +212,7 @@ def main():
             print("DIFFER " + msg)
 
     # the table listing against the restatement
-    want_rows = [(n, fm, d) for n, _p, _q, fm, d in ROWS]
+    want_rows = [(n, fm, d, SITEBITS[st]) for n, _p, st, _q, fm, d in ROWS]
     if drows != want_rows:
         fail("ROWS: clskit.c lists %s, the restatement is %s" % (drows, want_rows))
 
@@ -232,12 +254,14 @@ def main():
         kbytes, kforms = study[idx][KIT_LAMBDA]
         for tune in range(-2, 3):
             for d in range(NDENY):
-                want = select(iv, kbytes, len(kforms), w, tune, d)
-                got = dsel.get((idx, tune, d))
-                nsel += 1
-                if got != want:
-                    fail("SEL %s tune=%d deny=%d: clskit %s, restatement %s"
-                         % (name, tune, d, got, want))
+                for site in (VM, SCAN):
+                    for calls in (1, 2):
+                        want = select(iv, kbytes, len(kforms), w, tune, d, site, calls)
+                        got = dsel.get((idx, tune, d, site, calls))
+                        nsel += 1
+                        if got != want:
+                            fail("SEL %s tune=%d deny=%d site=%d calls=%d: clskit %s, "
+                                 "restatement %s" % (name, tune, d, site, calls, got, want))
 
     print("crosscheck: %d sets, %d sectionings, %d selections, %d rows; "
           "atoms shared=%s natoms=%s; ties=%d; disagreements=%d"

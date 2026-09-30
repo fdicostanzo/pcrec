@@ -71,7 +71,10 @@ in a specific way.
 - **`possdiff_driver.c`** — links the possessified and denied artifacts under
   two prefixes into one TU. (`-DDIFF_EXACT_SUBJECT`, [OPT-LITSCAN] S2a: each
   subject is handed over in a block of exactly its length, `(NULL, 0)` for
-  the empty one, so AddressSanitizer sees a one-byte over-read.) That is itself a real property being exercised:
+  the empty one, so AddressSanitizer sees a one-byte over-read. `-DDIFF_MATCH`,
+  [CLS-TREE] S2 review fixes: `<prefix>_match` compared too at every start,
+  counted as `match-cells`, for an artifact whose anchored machine only the
+  match entry runs; tests/codegen/run_clspack.sh PART 5 alone.) That is itself a real property being exercised:
   the fixed ABI types are emitted under a prefix-INDEPENDENT include guard so
   differently-prefixed headers can share a TU (D44/A-2).
 

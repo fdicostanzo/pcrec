@@ -2265,7 +2265,54 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `50` on every artifact today ([UTF-VALID] bumped it
+- **`rx_info.abi` is `53` on every artifact today ([CLS-TREE] S2's review
+  fixes bumped it from 52, 2026-09-30, renumbered by the manager at merge:
+  THE SCAN EDGE'S RUN TEST IS THE CLASS-FORM TABLE'S ANSWER, AND THE KIT IS
+  TAKEN ONLY WHERE IT IS SMALLER — D139).** A DFA scan edge no longer
+  chooses its class test: it asks `src/gen/clskit.c`'s class-form table at
+  the scan site and writes the answer through the emitters a VM class read
+  uses (`docs/spec/tuning.md` §2.18). Three things move. (1) At EVERY
+  position, a scan edge over a byte range not starting at 0 is spelled
+  `(unsigned)(b - lo) <= span u`, the VM's spelling, where it read
+  `(unsigned char)(b - lo) <= span`; measured over the corpus's 3,131
+  compiling default-route artifacts, 79 move, by this spelling alone, and a
+  VM artifact whose class is a range from 0 is `b <= hi` (1 of 3,131 on
+  the forced VM). (2) At `--tune=-2`/`-1` a scan edge's ASCII case pair is
+  the fold compare (`<PREFIX>_DFA_SCAN_EDGE "fold"`, §6.3) where it read a
+  256-byte table. (3) At `-2`/`-1` a byte class takes its kit matcher only
+  where the kit, written once per read, is smaller than the table its site
+  reads (`byte-kit`, `docs/spec/tuning.md` §2.33), and a byte kit whose set
+  spans 0..255 carries no always-false bound. No struct offset moves, no
+  `rx_info` member is added or changed, no answer moves.
+- **`rx_info.abi` was `52` ([CLS-TREE] S2's SECOND
+  event bumped it from 51, 2026-09-30, renumbered by the manager at merge:
+  THE DFA SCAN EDGE'S CLASS BODY JOINS THE KIT AT THE SIZE-LEANING
+  POSITIONS).** Axis I (the scan edge's run-extension body) gains a third
+  object, `kit`: at `--tune=-2`/`-1` an edge whose class is on the class-form
+  table's `byte-kit` row (not one interval, not an ASCII fold pair) tests its
+  run with a file-scope `static inline` `<prefix>_<machine>_scankit<N>` where
+  it read a 256-byte table, and `<PREFIX>_DFA_SCAN_EDGE` gains the value
+  `"kit"` (§6.3). DFA artifacts and VM hybrids at those positions move; no
+  artifact at `0`/`+1`/`+2` moves but for this digit, no struct offset moves,
+  no `rx_info` member is added or changed, no answer moves, and
+  `-fno-cls-kit` restores the abi-51 body.
+- **`rx_info.abi` was `51` ([CLS-TREE] S2 bumped it
+  from 50, 2026-09-30, after lane uvbuild's `50`; renumbered by the manager
+  at merge: THE VM'S BYTE-CLASS TESTS ARE CHOSEN BY THE KIT'S
+  CLASS-FORM TABLE).** The VM's per-class byte shape classifier retired into
+  `src/gen/clskit.c`'s first-match table (`docs/spec/tuning.md` §2.33 and
+  §5.4's λ row). At `--tune=-2`/`-1` a byte class that is neither one
+  interval nor an ASCII fold pair is tested by a `static inline`
+  `<prefix>_class_kit<N>` where it read a 32-byte bitmap (unless the artifact
+  takes the shared atom table), and `<PREFIX>_VM_CLS_KIT` counts those
+  matchers too (§6.3). At `0`/`+1`/`+2` a byte class's test is unchanged. At
+  every position, a WIDE class whose set is one interval of code points at
+  or below U+00FF (`-e utf8` `[\x{e0}-\x{ff}]`) is one range compare where
+  it read a `B1` table — the one default-position mover, ten triples of
+  `scripts/cls_identity.py`'s 16,009 (`docs/dev/lanes/clss2_report.md`). No
+  struct offset moves, no `rx_info` member is added or changed, no answer
+  moves, and `-fno-cls-kit` restores the abi-50 byte tests at `-2`/`-1`.
+- **`rx_info.abi` was `50` ([UTF-VALID] bumped it
   from 49, 2026-09-30: THE OPT-IN SUBJECT UTF-8 CHECK AND THE START
   ALIGNMENT, ONE EVENT, D133).** Default-off artifacts move too, by exactly
   three additions (utf_valid_design.md §6): the shared `PCREC_RX_ABI_H`
@@ -3767,8 +3814,11 @@ the same one `RX_DFA_TABLE`'s entry names.
 **[FORM-CHAR] STEP 1, 2026-09-05: `<PREFIX>_VM_CLS_FOLDS`, and it is (b) for
 `_VM_ALT_ISLANDS`' reason.** There is no fold MODE anywhere upstream of the
 emitter; it is what the emitted program turned out to CONTAIN, decided pool
-class by pool class by `vm_cls_shape` while `src/gen/emit_vm.c` had the set
-in hand.
+class by pool class by the fold rows of `src/gen/clskit.c`'s class-form
+table (`byte-fold`, `byte-fold-default`; `vm_cls_shape` before `abi` 51)
+while `src/gen/emit_vm.c` had the set in hand. It counts a VM program's
+folds only; a DFA scan edge's fold (`abi` 53, `--tune=-2`/`-1`) is reported
+by `<PREFIX>_DFA_SCAN_EDGE "fold"`.
 
 ```c
 #define RX_VM_CLS_FOLDS 6   /* or 0, or any count */
@@ -3782,7 +3832,7 @@ NO 32-byte bitmap table emitted for it** (`docs/spec/tuning.md` §2.22). It is
 a pure-DFA artifact**: `0` is spelled as readily as any other value, for the
 absence-discriminator rule every (b) entry above cites. The DFA route's class
 machinery (its byte-class partition, its scan-edge bodies) never consults
-`vm_cls_shape`, so there is nothing there to report.
+the `byte-fold` row, so there is nothing there to report.
 
 **A COUNT and not a boolean**, on `_VM_ALT_ISLANDS`' precedent: the shape is
 selected PER POOL CLASS, so a pattern can mix fold-pair positions with
@@ -3827,11 +3877,16 @@ either way.
 ```
 
 **The IFF: it is the number of distinct class-matcher functions
-(`<prefix>_wcls<N>`) this artifact's VM program calls.** Each is a wide class
-tested as one decode and one matcher (`docs/spec/tuning.md` §2.33). It is
+(`<prefix>_wcls<N>` and, since `abi` 51, `<prefix>_class_kit<N>`) this
+artifact's VM program calls.** A `wcls` matcher is a wide class tested as one
+decode and one matcher; a `class_kit` matcher is a byte class tested by the
+kit's `K` form at `--tune=-2`/`-1`, where the kit is smaller than the class's
+table (`docs/spec/tuning.md` §2.33). A DFA scan edge's kit matcher
+(`<prefix>_<machine>_scankit<N>`) is not counted here; it is reported by
+`<PREFIX>_DFA_SCAN_EDGE "kit"`. It is
 emitted on every VM artifact, hybrids included, and never on a pure-DFA
-artifact. It reads `0` under `-e byte` (no class is wide there) and under
-`-fno-cls-kit`. It is a COUNT, for the entries above' reason. A consumer may
+artifact. It reads `0` under `-fno-cls-kit`, and under `-e byte` at
+`0`/`+1`/`+2`. It is a COUNT, for the entries above' reason. A consumer may
 NOT conclude anything about the answers, which are identical either way.
 Nor may it conclude which form a matcher took: that is `--emit-ir`'s
 `consume` row, and the matcher's own text.
@@ -4186,20 +4241,25 @@ CONTAINS a DFA scan** — DFA artifacts AND VM hybrids, the same iff the four
 carry — and names how that scan tests the class of a SCAN EDGE. An edge is a
 maximal run of states differing only in how many bytes of one fixed class have
 been counted, replaced by a bounded cursor loop and DELETED from the
-transition table (`docs/spec/tuning.md` §2.18; `src/opt/scanedge.c`). The four
-values below are all this macro ever reads:
+transition table (`docs/spec/tuning.md` §2.18; `src/opt/scanedge.c`). An
+edge's test is the class-form table's answer for its class at the artifact's
+`--tune` position and the scan site (`src/gen/clskit.c` `ROWS`/`TAB_ROWS`,
+`abi` 53, D139 item 2), spelled by the same emitters a VM program's class
+read uses. The six values below are all this macro ever reads:
 
 ```
-#define RX_DFA_SCAN_EDGE "range"    /* (unsigned char)(b - 97) <= 25 */
+#define RX_DFA_SCAN_EDGE "range"    /* (unsigned)(b - 97) <= 25u */
 #define RX_DFA_SCAN_EDGE "none"     /* no machine carries a collapsible run */
 ```
 
 | value | mechanism |
 |---|---|
 | `"none"` | the artifact carries no scan edge. Four causes and none of them a failure: no machine has a collapsible run; `_DFA_SCAN "attempt"`, whose states are code labels and whose step is a computed `goto`, so there is no loop-carried table load to shorten; `_DFA_SCAN "empty"`, whose body is one `return 0`; and any build under `-fno-scan-edge` |
-| `"range"` | every edge in the artifact tests a CONTIGUOUS byte range, emitted as a subtract-and-compare against two immediates baked into the instruction stream — the loop touches no memory but the subject |
-| `"bitmap"` | at least one edge's class is not contiguous, so its test is a 256-byte membership table read. The loop-carried register is still the cursor, which is the property the transform is for; the memory reference is the price |
-| `"mixed"` | an ARTIFACT-LEVEL composition, `RX_DFA_TABLE`'s own shape: this artifact's machines took both forms. The choice is per EDGE, and a machine may carry up to four |
+| `"range"` | every edge in the artifact tests a CONTIGUOUS byte range (the class table's `byte-range` row), emitted inline against immediates — `b == c`, `b <= hi` from 0, otherwise `(unsigned)(b - lo) <= span u`, the VM's own spelling since `abi` 53 — so the loop touches no memory but the subject |
+| `"fold"` | (`abi` 53) at `--tune=-2`/`-1` only: every edge's class is an ASCII case pair on the `byte-fold` row, tested inline as `(b \| 0x20) == x`. At `0`/`+1`/`+2` a scan edge's fold pair is a `"bitmap"` (D138 Q1: the default fold is held for both sites until its measurement rules). Never under `-fno-cls-fold` |
+| `"bitmap"` | at least one edge's class is on the `byte-table` row, and the table selection's `scan-table` row gives it a 256-byte membership table read. The loop-carried register is still the cursor, which is the property the transform is for; the memory reference is the price |
+| `"kit"` | ([CLS-TREE] S2, `abi` 52) at `--tune=-2`/`-1` only: every edge's class is on the class-form table's `byte-kit` row — its kit matcher, written at the edge's two test sites, is smaller than its 256-byte table (`abi` 53, D139 item 1) — so its test calls a `static inline` kit matcher `<prefix>_<machine>_scankit<N>` in place of the table (`docs/spec/tuning.md` §2.33). Never at `0`/`+1`/`+2`, and never under `-fno-cls-kit` |
+| `"mixed"` | an ARTIFACT-LEVEL composition, `RX_DFA_TABLE`'s own shape: this artifact's machines took more than one form. The choice is per EDGE, and a machine may carry up to four |
 
 **`<PREFIX>_DFA_START` ([OPT-5] STEP 2, `abi` 16) is on every artifact that
 CONTAINS a DFA scan** — DFA artifacts AND VM hybrids, the SAME IFF as

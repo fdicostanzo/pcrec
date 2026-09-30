@@ -14,6 +14,10 @@
 # CORRECT matcher either way -- only crosscheck.py's independent
 # restatement (which keeps its own `KIT_DISP_BYTES`) can see the divergence
 # in which ROW fired, the S363 shape one predicate over.
+# RE-ANCHORED 2026-09-30 (lane clss2fix, [CLS-TREE] S2 review fixes, D139):
+# kit_sel_bytes now adds the dispatch term for the set's DOMAIN (byte sets
+# PLACE.kit_disp_bytes_byte, fitted 0); the plant still drops the code-point
+# term D131 addendum 1 fitted, intent unchanged.
 SAB_ID="S364-clskit-dispatch-term-dropped"
 SAB_FILE="src/gen/clskit.c"
 SAB_SUITES="clskit"
@@ -21,11 +25,7 @@ SAB_DESC="kit_sel_bytes drops D131 addendum 1's fitted dispatch/prologue term, s
 SAB_DOC_FIGURE="MEASURED solo 2026-09-29 at c104e07c: clskit:1fail/4pass DETECTED -- the cross-check alone (its SEL lines disagree at the 0/+1/+2 positions on 10 of the K53 twelve), the S363 shape one predicate over; the differential, the law and the census stay green."
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='static long long kit_sel_bytes(SelCtx *s)
-{
-    return s->k->bytes + PLACE.kit_disp_bytes;
-}'
-SAB_AFTER='static long long kit_sel_bytes(SelCtx *s)
-{
-    return s->k->bytes;
-}'
+SAB_BEFORE='    return s->k->bytes + (is_byte_set(s->iv, s->n) ? PLACE.kit_disp_bytes_byte
+                                                   : PLACE.kit_disp_bytes);'
+SAB_AFTER='    return s->k->bytes + (is_byte_set(s->iv, s->n) ? PLACE.kit_disp_bytes_byte
+                                                   : 0);'

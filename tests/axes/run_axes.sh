@@ -570,7 +570,8 @@ declare -A REFUSAL_PATTERN=(
     # 577,122) of emitted code against the 500,000-byte code cap, and
     # `\P{Unknown}` 526,899. Measured (Linux final run of main d6cb0bb4 and
     # a local single-file run agree): 77 cases, five blocks of
-    # tests/utf8/wclass_illformed.rxt, all with this diagnostic, the same
+    # tests/utf8/wclass_illformed.rxt (one block, the capturing `\P{Unknown}`,
+    # is default-route: the VM is selected there), all with this diagnostic, the same
     # substring as `-fno-size-term`'s entry above. With the kit on those
     # artifacts are ~31 KB. Nothing rescues them: `engine vm` has no
     # prefilter for lane/pfdrop's D135 drop rung to drop (its compiler

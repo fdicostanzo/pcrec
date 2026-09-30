@@ -2,9 +2,10 @@
 # tests/codegen/run_cls_fold_agreement.sh — THE VM CLASS-FOLD SHAPE, TIED TO
 # src/core/fold.c's TABLE (docs/design/compare_stack.md §duplications).
 #
-# WHAT IS MISSING TODAY, AND WHY IT IS A GAP. `vm_cls_shape`'s FOLD arm
-# (src/gen/emit_vm.c ~1633) decides whether a two-member class takes the
-# `(byte | 0x20) == lower` compare (~1655) with its OWN recognizer —
+# WHAT IS MISSING TODAY, AND WHY IT IS A GAP. The class-form table's fold
+# rows (src/gen/clskit.c `is_ascii_fold_pair`; `vm_cls_shape` before abi 51)
+# decide whether a two-member class takes the `(byte | 0x20) == lower`
+# compare (`pcrec_clskit_emit_inline`) with their OWN recognizer —
 # `count == 2 && (lo ^ hi) == 0x20 && lo >= 'A' && lo <= 'Z'` — spelled with
 # no reference at all to `pcrec_ascii_fold` (src/core/fold.c), the ONE table
 # this project otherwise treats as the ground truth for which bytes fold
@@ -27,7 +28,7 @@
 #     see that file's own header for why 0x40..0x5f is the whole candidate
 #     range and not a shrinking of it.
 #   SOURCE B — a REAL COMPILED, LINKED, RUN artifact per pair: this script
-#     reads neither `vm_cls_shape` nor `vm_cls_test`'s source text. It
+#     reads neither `is_ascii_fold_pair` nor `pcrec_clskit_emit_inline`'s source text. It
 #     compiles `([\x<lo>\x<hi>])x` with `--emit-main`, reads the emitted
 #     C for the shape's OWN structural signature, and then RUNS the
 #     resulting binary against probe subjects, reading its EXIT CODE

@@ -606,23 +606,24 @@ fi
 # match_api.md §6.3's table, both directions = 2 PASS). The new `clamped` row
 # carries no deny bit, so it adds no macro/flag/doc triple. Combined with land4's +6 (kit, pack)
 # and re-measured on the land5 tree: 155 PASS.
-# 155 -> 165 at [UTF-VALID] (2026-09-30, lane uvbuild): the startpos-guard
-# axis's third value `align` (`PCREC_FORCE_STARTPOS_ALIGN`, bit 40) and the
-# new contract axis `utf-check` (`PCREC_FORCE_UTF_CHECK`, bit 39) are two
-# single-bit (macro, bit, flag) triples = 6, and the two contract stamps'
-# `check_value_set` pairs (RX_STARTPOS_GUARD, RX_UTF_CHECK, dump vs §6.3,
-# both directions) = 4. Measured: 165 PASS, 0 failed.
+# 155 -> 158 at [CLS-TREE] S2 (lane clss2, 2026-09-30): `scan-body`'s `kit`
+# row carries `-fno-cls-kit` (`PCREC_NO_CLS_KIT`, bit 36), one more
+# (macro, bit, flag) triple — the review's V-1 red on chain2, where the pin
+# was not moved with the row. 158 -> 171 at the S2 review fixes (lane
+# clss2fix, D139): `scan-body` reads its run tests off the class-form table,
+# whose `fold` row carries `-fno-cls-fold` (bit 24), one more triple.
+# Measured on the clss2fix tree: 171 PASS, 0 failed.
 axesn="$(grep -c '^PASS: ' "$AXESOUT" || true)"
-if [ "$axesn" -ne 165 ]; then
+if [ "$axesn" -ne 171 ]; then
     if grep -q "^checks failed: 0" "$AXESOUT"; then
-        echo "registry: axes_registry_check COVERAGE CHANGED — $axesn passing checks, expected 165." >&2
+        echo "registry: axes_registry_check COVERAGE CHANGED — $axesn passing checks, expected 171." >&2
         echo "registry:   if you added or removed axes/checks on purpose, update this number" >&2
         echo "registry:   in the same commit; if not, coverage was removed" >&2
     else
         axesnf="$(sed -n 's/^checks failed: //p' "$AXESOUT" | tail -1)"
-        echo "registry: axes_registry_check shows $axesn passing checks (165 expected; ${axesnf:-?} failed," >&2
+        echo "registry: axes_registry_check shows $axesn passing checks (171 expected; ${axesnf:-?} failed," >&2
         echo "registry:   so a lower count is expected here). Fix the failures first; then this" >&2
-        echo "registry:   number must return to 165 — if it does not, coverage was removed too" >&2
+        echo "registry:   number must return to 171 — if it does not, coverage was removed too" >&2
     fi
     rc=1
 fi

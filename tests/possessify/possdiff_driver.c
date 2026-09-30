@@ -149,6 +149,9 @@ int main(void)
 {
     char line[65536];
     long long cells = 0, diverged = 0;
+#ifdef DIFF_MATCH
+    long long mcells = 0;
+#endif
 #ifdef DIFF_A_MAY_ANSWER_MORE
     /* Declared under the same guard as its only writer and its only reader:
      * the other three suites build this driver -Wall -Wextra -Werror, and a
@@ -274,6 +277,25 @@ int main(void)
 #endif
             }
 #endif
+#ifdef DIFF_MATCH
+            /* [CLS-TREE] S2 review fixes (C-L6), opt-in and used by
+             * tests/codegen/run_clspack.sh alone: the MATCH-HERE entry too,
+             * at the same start. An artifact that selects the unwrapped
+             * match form answers `<prefix>_match` from its ANCHORED machine,
+             * which `_search` never runs, so a scan edge on that machine is
+             * compared only here. */
+            {
+                rx_ctx mx = { .subject = subj, .len = len, .pos = sp };
+                ptrdiff_t ma = pa_match(&mx), mb = pb_match(&mx);
+                mcells++;
+                if (ma != mb) {
+                    fprintf(stderr, "MATCH DIVERGENCE subject=%s startpos=%zu\n"
+                            "  " DIFF_A_LABEL ": %td\n  " DIFF_B_LABEL ": %td\n",
+                            line, sp, ma, mb);
+                    same = false;
+                }
+            }
+#endif
             if (!same) {
                 char da[4096], db[4096];
                 describe(ra, ca, da, sizeof da);
@@ -299,6 +321,9 @@ int main(void)
     }
 
     printf("cells %lld diverged %lld\n", cells, diverged);
+#ifdef DIFF_MATCH
+    printf("match-cells %lld\n", mcells);
+#endif
 #ifdef DIFF_A_MAY_ANSWER_MORE
     /* COUNTED AND PRINTED, never silently swallowed. A cell the asymmetry
      * excuses is a cell this sweep did NOT compare, so it has to be visible or

@@ -6128,14 +6128,6 @@ void pcrec_dfa_memo_free(DfaMemo *m);
  * the two that pass a constant say why at the call. */
 void pcrec_scanedge_dfa(Ctx *cx, Dfa *dfa, bool prefilter_reseeds);
 
-/* The emitted class test's two forms, ONE predicate and one emission site
- * (D75 addendum: a one-site boolean stays a boolean). True when the class's
- * byte set is a contiguous range, which the emitter writes as a
- * subtract-and-compare against two immediates — the shape
- * docs/dev/opt5_step0_profile.md S3.2 measured. `lo`/`hi` are filled only on
- * a true answer. */
-bool pcrec_scan_range(const Dfa *d, int cls, int *lo, int *hi);
-
 /* [OPT-5 STEP 2] IS THIS STATE'S ACCEPT INDEPENDENT OF POSITION AND OF THE
  * UPCOMING BYTE? — scan-edge preconditions (2) and (3), and the start-pinned
  * search's P2, which are the same question asked by two passes. ONE

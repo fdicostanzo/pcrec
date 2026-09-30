@@ -192,26 +192,6 @@ typedef struct {
     int nmembers;                /* head included; == span for a bounded chain */
 } Chain;
 
-/* THE CLASS'S BYTE SET AS A RANGE, the emitted test's cheap form. One
- * predicate, two readers by construction: this pass reports it (so the
- * artifact's stamp can say which form a machine took) and the emitter spells
- * it (so the test it writes and the value it stamps cannot disagree). */
-bool pcrec_scan_range(const Dfa *d, int cls, int *lo, int *hi)
-{
-    int a = -1, b = -1;
-    for (int i = 0; i < 256; i++) {
-        if (d->clsmap[i] != cls) continue;
-        if (a < 0) a = i;
-        b = i;
-    }
-    if (a < 0) return false;                       /* an empty class: no test */
-    for (int i = a; i <= b; i++)
-        if (d->clsmap[i] != cls) return false;     /* a hole: not a range */
-    if (lo) *lo = a;
-    if (hi) *hi = b;
-    return true;
-}
-
 /* Preconditions (2) and (3), asked of one state — AND, since [OPT-5] STEP 2,
  * the same question the start-pinned search's P2 asks of the forward machine's
  * start state, which is why the body moved out of this file's `member_ok` and

@@ -1562,30 +1562,53 @@ registry sees them as `scan-edge` and `scan-body`:
 | axis | candidates | question |
 |---|---|---|
 | `scan-edge` | `scan-edge`, `table-walk` | per STATE: does this state emit an edge at all? **This is the axis `-fno-scan-edge` denies** — the flag removes the first candidate and the ordinary walk selects the fallback. |
-| `scan-body` | `range`, `bitmap` | per EDGE: which run-extension body does that edge use? |
+| `scan-body` | `range`, `fold`, `kit`, `bitmap` | per EDGE: which run test does that edge use? **Not a scan-edge decision** — see below. |
+
+**THE EDGE'S RUN TEST IS THE CLASS-FORM TABLE'S ANSWER** ([CLS-TREE] S2
+review fixes, `abi` 53, D139 item 2). The scan edge has no class decision of
+its own: it asks the class-form table (`src/gen/clskit.c` `ROWS`, §2.33) for
+its class's form at the artifact's `--tune` position and at the SCAN SITE,
+and writes the answer through the same emitters a VM program's class read
+uses. The table's byte rows give `range` (one interval, an inline compare
+against immediates, spelled as the VM spells it), `fold` (an ASCII case pair,
+`(b | 0x20) == x`, at `-2`/`-1` only), `kit` (the class's kit matcher, at
+`-2`/`-1` only and only where it is smaller than the edge's table, §2.33) or
+a table read. WHICH table is the table selection's (`TAB_ROWS`) choice for the
+scan site — its `scan-table` row, one 256-byte table per edge, the edge's
+long-standing per-context choice, kept as that row's predicate until measured
+otherwise. What stays scan-edge-specific is only the loop around the test.
+`--list-axes` lists the four as `scan-body`'s candidates, read off the class
+table's byte rows, with the flag that denies each: `-fno-cls-fold` the fold
+and `-fno-cls-kit` the kit, here as on the VM (§2.22, §2.33).
+
+**AT THE DEFAULT POSITIONS A FOLD PAIR IS A TABLE ON THE SCAN EDGE**, as it
+always was, while a VM class read takes the fold compare: D138 Q1 holds the
+default fold pending FORM-CHAR2's timing measurement, and that ONE
+measurement rules the default for BOTH sites. The table carries it as one
+row (`byte-fold-default`, VM site only), so either ruling is a one-row edit.
 
 **The stamp** is `<PREFIX>_DFA_SCAN_EDGE` (§3 below and `match_api.md` §6.3)
-and it reports the **body** axis's chosen object by name: `"range"` when every
-edge the artifact carries tests a contiguous byte range (a subtract-and-compare
-against two immediates), `"bitmap"` when a class is not contiguous and the test
-is a 256-byte membership read — whose load is addressed by *the byte this
-iteration read*, never by a previous iteration's result, so the cursor is still
-the only loop-carried register — `"mixed"` when the artifact's machines took
-both forms, and `"none"` when the region axis chose `table-walk` everywhere.
+and it reports each edge's run test by name: `"range"` when every edge the
+artifact carries tests a contiguous byte range, `"fold"` / `"kit"` at the
+size-leaning positions as above, `"bitmap"` when the test is a 256-byte
+membership read — whose load is addressed by *the byte this iteration read*,
+never by a previous iteration's result, so the cursor is still the only
+loop-carried register — `"mixed"` when the artifact's edges took more than
+one form, and `"none"` when the region axis chose `table-walk` everywhere.
 Like `<PREFIX>_DFA_TABLE` and `<PREFIX>_DFA_PREFILTER` it is a fact about a DFA
 SCAN, so a VM HYBRID that inlines one reports it too ([DD-13c]'s (a)/(b)
 split).
 
-**A THIRD BODY IS RESERVED AND IS NOT BUILT.** A SIMD run-extension form —
+**A SIMD FORM IS RESERVED AND IS NOT BUILT.** A SIMD run-extension form —
 branchless classify plus count-leading-zeros, `studies/simd1`'s measured shape,
-plan row `[OPT-SIMD]`'s territory — belongs at the top of the `scan-body`
-preference list: a new candidate object and its test, with nothing above the
-axis moving (not the criterion, not the deletion, not the stamp's other
-values, not the gates). **Its contract is ISA-NEUTRAL by ruling**: it is "a
-SIMD run-extension form, per-ISA gated, with the scalar forms always available
-as the fallback", never an SSE2 or a NEON slot. Nothing this axis emits today
-is ISA-conditional, and `range`/`bitmap` are the portable baseline that keeps
-any per-ISA form optional forever.
+plan row `[OPT-SIMD]`'s territory — is a form of the edge's LOOP, not of its
+class test, so it belongs to the scan edge: a loop form selected ahead of the
+scalar loop, with nothing else moving (not the criterion, not the deletion,
+not the stamp's other values, not the gates). **Its contract is ISA-NEUTRAL
+by ruling**: it is "a SIMD run-extension form, per-ISA gated, with the scalar
+forms always available as the fallback", never an SSE2 or a NEON slot.
+Nothing emitted today is ISA-conditional, and the scalar loop is the portable
+baseline that keeps any per-ISA form optional forever.
 
 **AND THE COUNTED SEQUENCE HAS A PERIOD, WHICH IS 1.** The general shape of
 this mechanism is a chain whose advance classes CYCLE with period *k* — *k*
@@ -1971,8 +1994,13 @@ stop spelling it.
 
 ### 2.22 `-fno-cls-fold` — `PCREC_NO_CLS_FOLD` (bit 24)
 
-**What it controls.** Which SHAPE `src/gen/emit_vm.c`'s `vm_cls_shape` gives
-a two-member VM pool class's membership test — `[FORM-CHAR]` STEP 1, the
+**What it controls.** Which test an ASCII case pair gets wherever the
+class-form table is read — a VM pool class at every position, and a DFA scan
+edge's run test at `-2`/`-1` (D139 item 3): the two fold rows of
+`src/gen/clskit.c`'s class-form table, `byte-fold` (size-leaning positions,
+both sites) and `byte-fold-default` (`0`/`+1`/`+2`, the VM site only) (their predicate
+`is_ascii_fold_pair`; before `abi` 51 it was `emit_vm.c`'s `vm_cls_shape`,
+retired by `[CLS-TREE]` S2) — `[FORM-CHAR]` STEP 1, the
 char-match form family's first built object beyond today's exact forms.
 `--list-axes` reports it as `cls-fold`.
 
@@ -1984,9 +2012,19 @@ pair** — two members differing only in bit `0x20`, both letters, which is
 what caseless folding produces and nothing else in the base grammar makes —
 and emits `(byte | 0x20) == lower` instead: one or-mask and one compare, no
 table. The class's `<prefix>_class_bitmap<N>` declaration is then not
-emitted at all (`vm_cls_shape` is the ONE derivation the test emitter, the
-table emitter and the `<PREFIX>_VM_CLS_FOLDS` stamp all read, so a test and
-its table cannot disagree about the shape).
+emitted at all (the pool class's row choice is the ONE derivation the test
+emitter, the table emitter and the `<PREFIX>_VM_CLS_FOLDS` stamp all read, so
+a test and its table cannot disagree about the shape). On the VM a fold row
+fires at every `--tune` position. Denied, the class falls to the next byte
+row: its table at `0`/`+1`/`+2`, and at `-2`/`-1` its kit matcher where that
+is smaller (§2.33's byte tier, which finds the pair as one `CUBES` section).
+**The default is HELD, and one measurement rules it for both sites**
+(`docs/dev/decisions.md` D138 Q1): the default positions keep the fold on the
+VM, byte-identical, while a scan edge's fold pair there keeps its 256-byte
+table, as it always did; FORM-CHAR2's timing decides the default fold, and
+the flip — to the table everywhere, or to the fold everywhere — is the
+`byte-fold-default` row alone. Whether this flag then retires is D138 Q3,
+ruled with that measurement.
 
 **The measured basis** (`docs/dev/form_char_step0.md` §2, family A;
 asm evidence committed at `studies/form_char_twins/`): gcc -O2 compiles
@@ -2011,14 +2049,14 @@ class keeps its singleton/range/bitmap shape unchanged:
 | any set that is not exactly two members | the fold identity is about a pair |
 | a two-member set NOT differing only in bit `0x20` (`[ac]`) | the or-mask would admit bytes outside the set |
 | a `0x20`-pair of NON-letters (`` [@`] ``) | the compare would be exact, but the pair is not a FOLD — the recognizer names what caseless folding produces, and a wider two-member-compare form is unbuilt pending a measured need (D77) |
-| the DFA scan edge's class bodies | `form_char_step0.md` family C — its `table`-vs-`range`/`fold` ranking is still open pending timing, so `emit_dfa.c` is deliberately untouched by this axis |
+| a DFA scan edge's fold pair at `0`/`+1`/`+2` | D138 Q1: the default fold is held (above); at `-2`/`-1` the scan edge takes the fold (`<PREFIX>_DFA_SCAN_EDGE "fold"`, §2.18) |
 
 **`[FORM-CHAR]`'s utf8 objects (4)/(5)** (`utf8-simple-fold`,
-`utf8-full-fold`) are M5.0's to add as `vm_cls_shape` members when its
+`utf8-full-fold`) are M5.0's to add as class-form rows when its
 stages land; this axis reserves the enum and name space and builds nothing
 for them.
 
-**Deny-only**, `-fno-alt-island`'s shape: the emitter takes the fold
+**Deny-only**, `-fno-alt-island`'s shape: the table takes the fold
 wherever the set is a fold pair, so there is nothing for a caller to
 address and nothing to force.
 
@@ -2028,11 +2066,15 @@ identically must not differ in their reflection surface over it — and
 concretely, so that an artifact with no fold pair is byte-for-byte the same
 under the flag, which is what makes the denied population a usable
 reference. What the emitter DID is reported by `<PREFIX>_VM_CLS_FOLDS`
-(`docs/spec/match_api.md` §6.3 family (b)), an activity COUNT.
+(`docs/spec/match_api.md` §6.3 family (b)), an activity COUNT, on a VM
+program; a scan edge's fold is reported by `<PREFIX>_DFA_SCAN_EDGE "fold"`.
 
-**VM route only.** The DFA route's class machinery is the byte-class
-partition and the scan edge's own axis-I bodies; nothing there reads
-`vm_cls_shape`, and no DFA artifact carries the stamp.
+**Wherever the table is read** (D139 item 3). A row's flag denies that row at
+every site that reads the class-form table: a VM program's class reads and,
+since `abi` 53, a DFA scan edge's run test (§2.18). At the default positions
+no DFA artifact moves under the flag, because the scan site's fold row lists
+only `-2`/`-1`; the DFA's byte-class PARTITION itself never reads the
+table.
 
 **NOT A RUNG — off by RULING, not by a gate.** Frank ruled (2026-09-11)
 that this axis is SUBSUMED into `[CLS-TREE]`'s kit rather than placed on
@@ -2900,12 +2942,46 @@ alternation, whatever this flag says.
 - a CAPTURED wide class (`(\p{L})`) compiles on the default route wherever
   its prefilter fits the size caps.
 
+**The byte tier ([CLS-TREE] S2, `abi` 51; D131 item 5).** At the
+size-leaning positions (`--tune=-2`/`-1`) a VM BYTE class that is neither
+one interval nor an ASCII fold pair, in an artifact whose table-read byte
+classes do not take §2.34's shared atom table, is tested by
+`<prefix>_class_kit<N>(byte)`: the same kit's `K` matcher, `static inline`,
+in place of its 32-byte bitmap (zero `.rodata`) — **ONLY WHERE THE KIT IS
+SMALLER** (`abi` 53, D139 item 1): the `byte-kit` row carries `size-page3`'s
+smaller-than shape, comparing the kit written once per read of the class
+(each read inlines it) against the table its site reads — its bytes once,
+one read's `.text` per read. The kit's estimate is its model bytes plus the
+dispatch term fitted for its DOMAIN (578 B for a code-point set, 0 B for a
+byte set: the 41 corpus byte classes' matchers measure within -28..+26 B of
+the model); the table's is the measured cost of the table the site reads
+(`src/gen/clskit.c` `TABLE_COST`). A byte kit whose set spans every byte
+carries no bound. At `0`/`+1`/`+2` the byte
+class keeps its table: the kit's byte forms measured the SLOWEST byte form
+under a fair dispatch (O-77, `cls_tree_design.md` §1.7 addendum). The
+per-class choice is `src/gen/clskit.c`'s `ROWS` byte rows (§5.4's λ row).
+A wide class whose set is ONE interval of code points at or below U+00FF
+(`[\x{e0}-\x{ff}]` under `-e utf8`) now takes the same `byte-range` row
+and is one range compare at every position, where it read a `B1` table.
+
+**The DFA scan edge ([CLS-TREE] S2's second event, `abi` 52; D139).** At
+the same two positions, a DFA scan edge (§2.18) whose class the same table
+puts on the `byte-kit` row — asked at the scan site, where the table is the
+edge's 256-byte one and the test is written twice — tests its run with the
+kit's matcher `<prefix>_<machine>_scankit<N>` in place of that table,
+stamped `<PREFIX>_DFA_SCAN_EDGE "kit"` (`match_api.md` §6.3). The flag
+denies the row there too (D139 item 3: a row's flag denies it wherever the
+table is read), and the edge falls back to its table.
+
 **The stamp.** `<PREFIX>_VM_CLS_KIT` is the number of distinct matchers
-written, a D81 VM-only activity count. It reads 0 under the flag and in
-every `-e byte` artifact.
+written — wide-class matchers plus byte-class kit matchers — a D81 VM-only
+activity count. It reads 0 under the flag, and in every `-e byte` artifact
+at `0`/`+1`/`+2`.
 
 **Denied**, every wide class on the VM is the byte alternation this compiler
-emitted before `abi` 48, and the artifact accepts exactly the same subjects.
+emitted before `abi` 48, every byte class at `-2`/`-1` reads its table as
+before `abi` 51, every DFA scan edge reads its table as before `abi` 52, and
+the artifact accepts exactly the same subjects.
 The flag denies the WHOLE kit: the shared byte-class atom table of §2.34 is a
 kit form too, so under `-fno-cls-kit` every table-read byte class keeps its
 own bitmap as well (`-fno-cls-pack` denies that table alone).
@@ -2913,7 +2989,8 @@ own bitmap as well (`-fno-cls-pack` denies that table alone).
 
 **Denied, the byte alternation is the bytes again, so the K55 refusal returns
 on the same population.** A wide class whose alternation exceeds the
-emitted-code cap is refused under `--engine=vm` (`pattern too large: N bytes
+emitted-code cap is refused on the VM (`--engine=vm`, or a default-route
+pattern that selects it, e.g. a capturing `\P{Unknown}`) (`pattern too large: N bytes
 of emitted code (limit 500000)`): `\p{Xwd}` under `-e utf8` is 576,773 bytes
 (577,122 captured). That refusal is this axis's documented limit and the
 reason the kit exists; no size-ladder rung applies to it. `make test-axes`
@@ -3532,7 +3609,7 @@ lands.
 
 | axis | −2 `min-size` | −1 `size` | 0 `balanced` | +1 `speed` | +2 `max-speed` | why |
 |---|---|---|---|---|---|---|
-| λ (class-matcher kit) | smaller of `K`, `P3` | = `−2` | **`P3`** if `K` ≥ 16 sections and `P3` ≤ 1.26×`K`, else `K` | — | smaller of `P2`, `B1` where `0` chose `P3`, else as `0` | BUILT at `[CLS-TREE]` S4 (`abi` 48): the VM's wide-class matcher (§2.33); `docs/design/opt_dial_design.md` §4 (D131): ONE kit constant (λ = 4, the sectioning DP's size end, `K`) at every position plus a first-match row over the whole-set tables `P3`/`P2`/`B1`; three distinct programs. Calibration: `cls_tree_design.md` §1.7 (ubuntubudu, per-probe model r = +0.98; `P3` 3.2× faster than today's pinned middle for +11% bytes) |
+| λ (class-matcher kit) | smaller of `K`, `P3` | = `−2` | **`P3`** if `K` ≥ 16 sections and `P3` ≤ 1.26×`K`, else `K` | — | smaller of `P2`, `B1` where `0` chose `P3`, else as `0` | BUILT at `[CLS-TREE]` S4 (`abi` 48): the VM's wide-class matcher (§2.33); `docs/design/opt_dial_design.md` §4 (D131): ONE kit constant (λ = 4, the sectioning DP's size end, `K`) at every position plus a first-match row over the whole-set tables `P3`/`P2`/`B1`; three distinct programs. Calibration: `cls_tree_design.md` §1.7 (ubuntubudu, per-probe model r = +0.98; `P3` 3.2× faster than today's pinned middle for +11% bytes). **BYTE classes** (`[CLS-TREE]` S2, `abi` 51, D131 item 5): a one-interval set is one inline compare and an ASCII fold pair the §2.22 fold compare at EVERY position on the VM (and at `−2`/`−1` on a scan edge, D138 Q1); any other byte class reads its kit matcher `K` (`<prefix>_class_kit<N>`, a scan edge's `<prefix>_<machine>_scankit<N>`) at `−2`/`−1` where it is smaller than the table its site reads (`abi` 53, D139) and a table otherwise (a VM class's 32-byte bitmap or §2.34's shared atom table, which wins at every position from 11 table-read classes; a scan edge's 256-byte table) — the kit's byte forms are a size-leaning position only (O-77: slowest byte form under a fair dispatch). The same table serves the VM and the scan edge (§2.18) |
 | `[ART-SIZE]` ladder — bar | **0.95** | **0.85** | **0.75** | — | — | §2.16; `artifact_size_term.md` §3.3. Speed side em-dashed (**M13**): the speed it would buy is ≤3%, below `s` = 1.10 |
 | `[ART-SIZE]` ladder — threshold | **40,000** | **80,000** | **120,000** | — | — | §2.16; `limits.def:161`, `PCREC_SIZE_TERM_THRESHOLD` |
 | `-fno-premul-table` | **deny** | — `†` | **allow** | — | — | §2.13; `σ` = 22…25% ≥ `y`; `m` ≤ `x₂` = 2.00 for every `φ_scan` ≤ 1, so `−2` needs no measurement; `−1` iff `φ_scan` ≤ 0.126 (unmeasured) |

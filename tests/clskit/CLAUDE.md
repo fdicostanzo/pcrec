@@ -67,7 +67,9 @@ at `PROCS=4`, most of it in the study's Python DP (crosscheck.py).
   process). `emit` also prints `VARIANTS n`, which the script sums against
   the `CHECKED` lines (a set is counted by NAME: it can appear in several
   units). Its `dump` mode prints `SEC`/`WHOLE`/`ATOMS`/`SEL`/`ROW` lines for
-  the cross-check.
+  the cross-check; since clss2fix (D139) a `SEL` line is per (position,
+  deny, SITE, CALLS) — the VM and the scan edge, one and two writes of the
+  test — and a `ROW` line carries the row's site mask.
   **The reference in each checker is plain interval arrays written by THIS
   file from the population file.** No line of `clskit.c` produces it.
 - `checker_main.inc`: the checker's `main()`, included at the end of every
@@ -77,11 +79,19 @@ at `PROCS=4`, most of it in the study's Python DP (crosscheck.py).
   and `bench_bytes.atom_partition`. The selection TABLE is restated
   independently from D131 (NO atom row — item 6's atom table is an
   artifact-level choice, not a per-set `ROWS` outcome), and `clskit.c`'s
-  printed `ROW` listing is held to that restatement. `KIT_DISP_BYTES`
-  restates clskit.c `PLACE.kit_disp_bytes` (D131 addendum 1's fitted
-  dispatch/prologue term), added to K's bytes wherever the restated
-  predicates compare K against another form — never to the DP's own
-  sectioning bytes.
+  printed `ROW` listing is held to that restatement. Since [CLS-TREE] S2
+  (lane clss2; review fixes clss2fix, D139) the restatement carries the
+  BYTE rows and each row's SITES: `byte-range` (one interval, every
+  position and site), `byte-fold` (the ASCII case pair, -2/-1, both sites,
+  deny ordinal 7), `byte-fold-default` (0..+2, VM only, D138 Q1),
+  `byte-kit` (-2/-1, where `calls` x the kit is smaller than the lone-set
+  table its site reads, `LONE_TABLE`) and `byte-table` (every position, so
+  a denied or larger `byte-kit` falls to a table). `KIT_DISP_BYTES` /
+  `KIT_DISP_BYTES_BYTE` restate clskit.c `PLACE.kit_disp_bytes` (D131
+  addendum 1's fitted dispatch/prologue term, code points) and
+  `kit_disp_bytes_byte` (the byte domain's, 0), added to K's bytes wherever
+  the restated predicates compare K against another form — never to the
+  DP's own sectioning bytes.
 
 ## Things to know before changing anything here
 

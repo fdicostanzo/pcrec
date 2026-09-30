@@ -198,6 +198,167 @@ done
 [ "$cells" -ge 10000 ] && ok "[diff] population $cells cells (floor 10,000)" \
     || bad "[diff] population $cells cells, under the 10,000 floor — the sweep reached too little"
 
+# PART 4 — [CLS-TREE] S2: THE KIT'S BYTE FORMS (the `byte-kit` row, D131 item
+# 5 and D139 item 1: the size-leaning positions only, where the kit is the
+# smaller form). At `--tune=-2`/`-1` a scattered byte class with fewer than
+# 11 table-read siblings is tested by its kit matcher; `-fno-cls-kit` at the
+# same position and flags is the bitmap it replaced. The population spans
+# both size-leaning positions, a caseless class, a class reaching 0xFF from
+# above 0 (its kit keeps its bound; S436), and `-e utf8` — an ASCII
+# byte class and a wide class whose members all sit at or below U+00FF (its
+# `<prefix>_wcls<N>` matcher is the same row, read from vm_wcls) — review
+# C-L6. Same driver and cell shape as PART 3. Each witness must actually
+# take a kit on the pa side (the stamp equal to the matchers the text
+# defines, and > 0) and none on the pb side, or it compares nothing.
+echo "== PART 4: answer identity, the kit's byte forms (--tune=-2/-1) vs -fno-cls-kit =="
+kcells=0
+mutants() {   # every one-byte substitution of every subject argument, \x-escaped
+    printf '%s\n' "$@" | python3 -c '
+import sys
+for s in sys.stdin.read().split("\n"):
+    if not s: continue
+    b = s.encode("latin-1")
+    for j in range(len(b)):
+        for v in range(256):
+            m = b[:j] + bytes([v]) + b[j+1:]
+            print("".join("\\x%02x" % c for c in m))
+'
+}
+kit_diff() {   # kit_diff NAME "FLAGS" PATTERN SUBJECT...
+    local name="$1" fl="$2" p="$3"; shift 3
+    local d="$TMP/kit-$name"; mkdir -p "$d"
+    # shellcheck disable=SC2086
+    if ! pcrec_run "$PCREC" --engine=vm $fl -p pa -o "$d/pa.c" --pattern "$p" >/dev/null 2>&1 \
+       || ! pcrec_run "$PCREC" --engine=vm $fl -fno-cls-kit -p pb -o "$d/pb.c" --pattern "$p" >/dev/null 2>&1; then
+        bad "[kit $name] a build refused ($fl)"; return
+    fi
+    local nk nkb st
+    nk="$(grep -cE '^static inline int pa_(class_kit|wcls)[0-9]+\(unsigned cp\)' "$d/pa.c")"
+    nkb="$(grep -cE '_(class_kit|wcls)[0-9]+\(' "$d/pb.c")"
+    st="$(sed -n 's/^#define PA_VM_CLS_KIT //p' "$d/pa.c")"
+    if [ "$nk" -gt 0 ] && [ "$st" = "$nk" ] && [ "$nkb" -eq 0 ] \
+       && grep -q '^#define PB_VM_CLS_KIT 0$' "$d/pb.c"; then
+        ok "[kit $name] $fl emits $nk kit matcher(s) (stamped), -fno-cls-kit none"
+    else
+        bad "[kit $name] kit matchers: $nk under $fl (stamp '$st'), $nkb under -fno-cls-kit — the witness does not reach the byte-kit row"
+        return
+    fi
+    # shellcheck disable=SC2086
+    if ! gen_cc "clspack kit $name" $CC -O1 -Wall -Wextra -std=gnu11 ${GENCFLAGS:-} \
+            -DDIFF_A_LABEL='"byte kit"' -DDIFF_B_LABEL='"-fno-cls-kit"' \
+            -I "$d" -o "$d/t" "$DRIVER" "$d/pa.c" "$d/pb.c"; then
+        bad "[kit $name] the two-artifact driver did not compile: $(printf '%s' "$GEN_CC_LOG" | head -c 300)"; return
+    fi
+    mutants "$@" > "$d/subj"
+    local out n
+    if out="$(gen_run "clspack kit $name" "$d/t" < "$d/subj" 2>"$d/div")"; then
+        n="$(printf '%s' "$out" | sed -n 's/^cells \([0-9]*\) .*/\1/p')"
+        kcells=$((kcells + ${n:-0}))
+        if [ "${n:-0}" -gt 0 ]; then ok "[kit $name] $n cells agree (span, every capture slot, failure surface)"
+        else bad "[kit $name] the driver compared no cells"; fi
+    else
+        bad "[kit $name] the byte kit and -fno-cls-kit disagree: $(head -4 "$d/div" | tr '\n' ' ')"
+    fi
+}
+kit_diff site-10 --tune=-2 "$(pat_of site-10)" "ackrzACKRZ" "~~ugmszUGMSZ~"
+kit_diff site-10-m1 --tune=-1 "$(pat_of site-10)" "ackrzACKRZ" "~~ugmszUGMSZ~"
+kit_diff mixed --tune=-2 '([aeiou]+)([^a-z0-9 ]*)([02468xX]{2,})' "aei!!24x" "u~0X8"
+kit_diff span --tune=-2 '[\x00-\x08\x0e-\x1f\x7f-\x9f]+|[ -/:-@]{2}' "a\x01\x02\x7f\x90b" "x!/:@y"
+kit_diff caseless --tune=-1 '(?i)([aeiou]+)([^a-z]{2,})' "AeI!!" "uO~0X8"
+kit_diff hi255 --tune=-2 '([a\x80-\x8f\xf0-\xff]+)z' "aaz" "a~az"
+kit_diff utf8-byte "--tune=-2 -e utf8" '([aeiou]+)x' "aeiox" "uuux"
+kit_diff utf8-wide "--tune=-2 -e utf8" '([\x{e0}\x{e2}\x{e9}\x{f4}]+)x' "$(printf '\303\240\303\251x')" "$(printf 'a\303\264\303\242x')"
+[ "$kcells" -ge 10000 ] && ok "[kit] population $kcells cells (floor 10,000)" \
+    || bad "[kit] population $kcells cells, under the 10,000 floor — the sweep reached too little"
+
+# PART 5 — [CLS-TREE] S2's scan edge (D139 item 2): an edge's run test is the
+# class-form table's answer at the scan site. At --tune=-2/-1 an edge whose
+# class takes `byte-kit` tests its run with `<prefix>_<machine>_scankit<head>`
+# (stamp RX_DFA_SCAN_EDGE "kit") and a fold pair takes the fold compare
+# ("fold"); at 0 both read the 256-byte table ("bitmap"), and each row's flag
+# puts -2 back on the next row. A range class is "range" at every position.
+# Then the form-vs-deny answer differential over the DFA artifacts, as
+# PART 4, with the MATCH entry compared too (`-DDIFF_MATCH`): the witnesses
+# carry the edge on their reverse AND anchored machines, and `_match` is the
+# only entry that runs the anchored one (review C-L6).
+echo "== PART 5: the scan edge's run test is the class table's answer =="
+edge_of() { sed -n 's/^#define [A-Z0-9_]*_DFA_SCAN_EDGE "\(.*\)"$/\1/p' "$1"; }
+edge_case() {   # edge_case PATTERN WANT FLAGS...
+    local p="$1" want="$2"; shift 2
+    if ! pcrec_run "$PCREC" -p rx "$@" -o "$TMP/edge.c" --pattern "$p" >/dev/null 2>&1; then
+        bad "[edge] '$p' $* refused"; return
+    fi
+    local got nk
+    got="$(edge_of "$TMP/edge.c")"
+    nk="$(grep -c '^static inline int rx_[a-z]*_scankit[0-9]*(unsigned cp)' "$TMP/edge.c")"
+    local nk_ok=0
+    if [ "$want" = kit ]; then [ "$nk" -gt 0 ] && nk_ok=1; else [ "$nk" -eq 0 ] && nk_ok=1; fi
+    if [ "$got" = "$want" ] && [ "$nk_ok" = 1 ]; then
+        ok "[edge] '$p' $* stamps \"$got\" with $nk kit matcher(s)"
+    else
+        bad "[edge] '$p' $* stamps \"$got\" with $nk kit matcher(s); want \"$want\""
+    fi
+}
+edge_case 'x[aeiou]{5,30}y' kit --tune=-2
+edge_case 'x[aeiou]{5,30}y' kit --tune=-1
+edge_case 'x[aeiou]{5,30}y' bitmap --tune=0
+edge_case 'x[aeiou]{5,30}y' bitmap --tune=2
+edge_case 'x[aeiou]{5,30}y' bitmap --tune=-2 -fno-cls-kit
+edge_case '(?i)xa{3,30}b' fold --tune=-2
+edge_case '(?i)xa{3,30}b' bitmap --tune=0
+edge_case '0[a-z]{5,30}1' range --tune=-2
+edge_case '0[a-z]{5,30}1' range --tune=0
+ecells=0
+mcells=0
+edge_diff() {   # edge_diff NAME "FLAGS" DENY WANT_A WANT_B PATTERN SUBJECT...
+    local name="$1" fl="$2" deny="$3" wa="$4" wb="$5" p="$6"; shift 6
+    local d="$TMP/edge-$name"; mkdir -p "$d"
+    # shellcheck disable=SC2086
+    if ! pcrec_run "$PCREC" $fl -p pa -o "$d/pa.c" --pattern "$p" >/dev/null 2>&1 \
+       || ! pcrec_run "$PCREC" $fl "$deny" -p pb -o "$d/pb.c" --pattern "$p" >/dev/null 2>&1; then
+        bad "[edge-diff $name] a build refused"; return
+    fi
+    if [ "$(edge_of "$d/pa.c")" != "$wa" ] || [ "$(edge_of "$d/pb.c")" != "$wb" ]; then
+        bad "[edge-diff $name] the witness does not reach its forms (pa \"$(edge_of "$d/pa.c")\" want \"$wa\", pb \"$(edge_of "$d/pb.c")\" want \"$wb\")"; return
+    fi
+    # shellcheck disable=SC2086
+    if ! gen_cc "clspack edge $name" $CC -O1 -Wall -Wextra -std=gnu11 ${GENCFLAGS:-} -DDIFF_MATCH \
+            -DDIFF_A_LABEL="\"scan edge $wa\"" -DDIFF_B_LABEL="\"$deny\"" \
+            -I "$d" -o "$d/t" "$DRIVER" "$d/pa.c" "$d/pb.c"; then
+        bad "[edge-diff $name] the two-artifact driver did not compile: $(printf '%s' "$GEN_CC_LOG" | head -c 300)"; return
+    fi
+    mutants "$@" > "$d/subj"
+    local out n nm
+    if out="$(gen_run "clspack edge $name" "$d/t" < "$d/subj" 2>"$d/div")"; then
+        n="$(printf '%s' "$out" | sed -n 's/^cells \([0-9]*\) .*/\1/p')"
+        nm="$(printf '%s' "$out" | sed -n 's/^match-cells \([0-9]*\)$/\1/p')"
+        ecells=$((ecells + ${n:-0})); mcells=$((mcells + ${nm:-0}))
+        if [ "${n:-0}" -gt 0 ] && [ "${nm:-0}" -gt 0 ]; then
+            ok "[edge-diff $name] $n search + $nm match cells agree ($fl, $wa vs $deny)"
+        else bad "[edge-diff $name] the driver compared no cells (search ${n:-0}, match ${nm:-0})"; fi
+    else
+        bad "[edge-diff $name] the scan edge's $wa and $deny disagree: $(head -4 "$d/div" | tr '\n' ' ')"
+    fi
+}
+# THE MACHINES THE KIT REACHES, read off the text rather than assumed: the
+# vowel witness must carry a kit edge on its reverse AND anchored machines.
+if pcrec_run "$PCREC" --tune=-2 -p pa -o "$TMP/mach.c" --pattern 'x[aeiou]{5,30}y' >/dev/null 2>&1 \
+   && grep -q '^static inline int pa_reverse_scankit[0-9]*(' "$TMP/mach.c" \
+   && grep -q '^static inline int pa_anchored_scankit[0-9]*(' "$TMP/mach.c"; then
+    ok "[edge-diff] the vowel witness carries kit edges on its reverse and anchored machines"
+else
+    bad "[edge-diff] the vowel witness no longer carries kit edges on both its reverse and anchored machines — the match-entry arm below compares nothing it was added for"
+fi
+edge_diff vowels --tune=-2 -fno-cls-kit kit bitmap 'x[aeiou]{5,30}y' "xaeiouay" "zzxaaaaaey"
+edge_diff vowels-m1 --tune=-1 -fno-cls-kit kit bitmap 'x[aeiou]{5,30}y' "xaeiouay" "zzxaaaaaey"
+edge_diff hex --tune=-2 -fno-cls-kit kit bitmap '[0-9a-fA-F]{0,16}g' "0aF9g" "ffffffffffffffffffg"
+edge_diff fold --tune=-2 -fno-cls-fold fold kit '(?i)xa{3,30}b' "xAaAb" "zXaaaaAB"
+edge_diff utf8 "--tune=-2 -e utf8" -fno-cls-kit kit bitmap 'x[aeiou]{5,30}y' "xaeiouay" "zzxaaaaaey"
+[ "$ecells" -ge 5000 ] && ok "[edge-diff] population $ecells search cells (floor 5,000)" \
+    || bad "[edge-diff] population $ecells search cells, under the 5,000 floor — the sweep reached too little"
+[ "$mcells" -ge 5000 ] && ok "[edge-diff] population $mcells match cells (floor 5,000)" \
+    || bad "[edge-diff] population $mcells match cells, under the 5,000 floor — the match arm reached too little"
+
 echo "checks passed: $pass"
 echo "checks failed: $fail"
 [ "$fail" -eq 0 ]

@@ -4,8 +4,9 @@
  * §duplications).
  *
  * WHAT IT DERIVES AND WHY THE POPULATION IS NEVER HAND-TYPED. The VM class
- * emitter's fold shape (src/gen/emit_vm.c's `vm_cls_shape`/`vm_cls_test`) has
- * its own, SEPARATE recognizer for "is this two-member class a fold pair" —
+ * emitter's fold shape (src/gen/clskit.c's `is_ascii_fold_pair`/
+ * `pcrec_clskit_emit_inline`, `vm_cls_shape` before abi 51) has its own,
+ * SEPARATE recognizer for "is this two-member class a fold pair" —
  * `count == 2 && (lo ^ hi) == 0x20 && lo >= 'A' && lo <= 'Z'` — spelled with
  * no reference to `pcrec_ascii_fold` (src/core/fold.c), the ONE table this
  * project has otherwise made the ground truth for the ASCII fold relation
