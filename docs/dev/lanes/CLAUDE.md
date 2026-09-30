@@ -3526,3 +3526,14 @@ never edited afterwards.
   child (a loud arm would have refused `(é)+`), and the union aliasing means
   the kind guard, not the distinct member, is what makes a set-reading
   mistake loud.
+- `clspack_report.md`, `clspack_census.py`, `clspack_census.tsv`,
+  `clspack_size.tsv` — [OPT-CLSPACK] BUILT (2026-09-30, lane clspack, opus):
+  D131 item 6's shared atom table as an ARTIFACT-level first-match table in
+  `src/gen/clskit.c` (`TAB_ROWS`: `atom` at >= 11 table-read byte classes and
+  <= 64 atoms, else `site`), the VM re-spelling its finished program's table
+  reads, `-fno-cls-pack` (bit 38), `<PREFIX>_VM_CLS_ATOMS`, abi 47 -> 48.
+  Read §0: the shipped corpus has no artifact the row fires on (witnesses in
+  `tests/base/clspack_atoms.rxt`), and the first build let the shorter atom
+  spelling move the VM's entry rung (fixed by choosing the rung first). The
+  census script is the movers-by-ID instrument (6 = 6 predicted); the two TSVs
+  are its output and the size table.
