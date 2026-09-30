@@ -1116,7 +1116,7 @@ REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
 # manifest and unaffected (every S2a mover was three bytes or longer to
 # begin with, since the whole population it built from was L >= 2 and this
 # lane's movers are the L == 2 subset of it, disjoint from L >= 3).
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-7e8ab18a}"   # [UCP] U2, abi 45->46: (B) re-pinned to 7e8ab18a (this lane's own abi-bump src commit, self-pin per the k64fix/k66fix/findtie/ucpu1 convention) on lane/ucpu2 (D76, 2026-09-29). Prior pin: a6e367a7 ([UCP] U0+U1, abi 44->45).
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-9183433d}"   # [OPT-HYB-RESEED], abi 46->47: (B) re-pinned to 9183433d (this lane's own abi-bump src commit, self-pin per the k64fix/k66fix/findtie/ucpu1/ucpu2 convention) on lane/reseed (D76, 2026-09-29). Prior pin: 7e8ab18a ([UCP] U2, abi 45->46).
 
 WORKDIR="$(mktemp -d)"
 cleanup() {

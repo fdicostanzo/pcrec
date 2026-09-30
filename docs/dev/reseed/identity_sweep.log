@@ -1,0 +1,12 @@
+rows: 6756 (3378 unique patterns x 2 encodings)
+  byte  both-refuse        row=-               deny=-           366
+  byte  identical          row=-               deny=-          1930
+  byte  identical          row=exact           deny=exact       533
+  byte  mover              row=adaptive        deny=fixed       476
+  byte  mover              row=adaptive-dense  deny=fixed        73
+  utf8  both-refuse        row=-               deny=-           370
+  utf8  identical          row=-               deny=-          1907
+  utf8  identical          row=exact           deny=exact       532
+  utf8  mover              row=adaptive        deny=fixed       497
+  utf8  mover              row=adaptive-dense  deny=fixed        72
+violations: 0

@@ -3353,6 +3353,106 @@ else
     bad "[OPT-LITSCAN F5] could not compile the two- and three-byte lit-run witnesses ('xy', 'xyz') under --engine=vm"
 fi
 
+# ---- [OPT-HYB-RESEED] the hybrid retry's re-seed table (tuning.md §2.33) ----
+# What the VM hybrid's attempt loop does after a failed attempt, held to the
+# emitted TEXT and to a BUDGET, never to the row the emitter chose:
+#   (1) `<PREFIX>_VM_RESEED` names the expected row on one witness per row,
+#       and is ABSENT where no hybrid prefilter exists (both directions of
+#       its IFF, match_api.md §6.3);
+#   (2) an ADAPTIVE artifact's `<prefix>_search_run` carries TWO prefilter
+#       call sites (the entry and the retry's re-seed), the step-mode exit
+#       and the probe's block assignment; an EXACT clamp-free one and a
+#       DENIED clamp-free one carry ONE (the pre-abi-47 retry, which steps),
+#       and an EXACT clamped one keeps its pre-abi-47 clamp recompute (TWO);
+#   (3) the clamped adaptive witness re-seeds with `window_end =
+#       subject_length` and never with the prefilter's span end (an adaptive
+#       row is reached only where `mrl_win` is false);
+#   (4) THE BUDGET ARM, the one a structural reading cannot fake: under
+#       `--step-budget=2000` a framed lookbehind witness, on one failing
+#       candidate followed by 20,000 non-candidates, answers `nomatch` by
+#       default and gives up `steps` under `-fno-hyb-reseed` (today's
+#       step-everything retry: one backtrack per position). The same
+#       budget on 40 DENSE failing candidates then 20,000 non-candidates is
+#       the probe's detector: the dense run puts the call into step mode,
+#       and only the block's closing re-seed gets it out. The denied build
+#       giving up on both subjects is the arm's own positive control — the
+#       witness demonstrably reaches the defect this change removes.
+# S367 (the probe exit removed) and S368 (the adaptive text never emitted
+# while the stamp still reads "adaptive") are this block's sabotage rows.
+rs_stamp() { sed -n 's/^#define RX_VM_RESEED "\([a-z-]*\)"$/\1/p' "$1" | head -1; }
+rs_calls() {   # prefilter call sites inside <prefix>_search_run's body
+    awk '/^static .*int rx_search_run\(/{f=1} f&&/rx_prefilter\(subject/{n++} f&&/^}/{f=0} END{print n+0}' "$1"
+}
+rs_ok=1
+while IFS=';' read -r rs_name rs_pat rs_flags rs_want rs_calls_want; do
+    [ -n "$rs_name" ] || continue
+    # shellcheck disable=SC2086
+    if ! pcrec_run "$PCREC" --features all -p rx $rs_flags -o "$WORKDIR/rs_$rs_name.c" --pattern "$rs_pat" 2>/dev/null; then
+        bad "[OPT-HYB-RESEED] could not compile witness $rs_name ('$rs_pat' $rs_flags)"; rs_ok=0; continue
+    fi
+    got="$(rs_stamp "$WORKDIR/rs_$rs_name.c")"
+    if [ "$got" != "$rs_want" ]; then
+        bad "[OPT-HYB-RESEED] $rs_name ('$rs_pat' $rs_flags) stamps RX_VM_RESEED '${got:-<absent>}', expected '${rs_want:-<absent>}'"; rs_ok=0; continue
+    fi
+    if [ "$rs_calls_want" != "-" ]; then
+        n="$(rs_calls "$WORKDIR/rs_$rs_name.c")"
+        if [ "$n" != "$rs_calls_want" ]; then
+            bad "[OPT-HYB-RESEED] $rs_name ('$rs_pat' $rs_flags): <prefix>_search_run carries $n prefilter call site(s), expected $rs_calls_want — the retry's re-seed is $( [ "$rs_calls_want" = 2 ] && echo MISSING from an adaptive artifact || echo PRESENT on an artifact whose row keeps the step)"; rs_ok=0; continue
+        fi
+    fi
+    case "$rs_want" in adaptive*)
+        if ! grep -qF 'if (reseed_steps_left > 0) reseed_steps_left--;' "$WORKDIR/rs_$rs_name.c" \
+           || ! grep -qF 'reseed_steps_left = reseed_block;' "$WORKDIR/rs_$rs_name.c"; then
+            bad "[OPT-HYB-RESEED] $rs_name: the adaptive tail's step-mode exit or its probe's block assignment is missing from the emitted retry"; rs_ok=0; continue
+        fi ;;
+    esac
+    ok "[OPT-HYB-RESEED] $rs_name ('$rs_pat' $rs_flags): RX_VM_RESEED '${rs_want:-<absent>}'$( [ "$rs_calls_want" != "-" ] && echo ", $rs_calls_want prefilter call site(s) in the search loop")"
+done <<'RSEOF'
+framed;(?<=a|é)x;-e utf8;adaptive;2
+frameless;(?<=é)x;-e utf8;adaptive;2
+dense; (?=the);;adaptive-dense;2
+exact;(abc)d;;exact;1
+exactclamp;a(b|c)+d;;exact;2
+denied;(?<=é)x;-e utf8 -fno-hyb-reseed;fixed;1
+clamped;x*(?>a|ab)c|abcd;;adaptive;2
+forcedvm;(?<=é)x;-e utf8 --engine=vm;;-
+dfa;abc;;;-
+RSEOF
+if grep -q 'window\[0\]\[1\]' <(awk '/reseed_steps_left > 0/{f=1} f' "$WORKDIR/rs_clamped.c" 2>/dev/null) \
+   || ! awk '/reseed_steps_left > 0/{f=1} f' "$WORKDIR/rs_clamped.c" 2>/dev/null | grep -qF 'window_end = subject_length;'; then
+    bad "[OPT-HYB-RESEED] clamped witness ('x*(?>a|ab)c|abcd'): the adaptive re-seed does not reset window_end to subject_length, or reads the prefilter's span END — an over-approximating prefilter's end is not a bound"
+else
+    ok "[OPT-HYB-RESEED] clamped witness: the adaptive re-seed resets window_end = subject_length and never reads the prefilter's span end"
+fi
+rs_s1="yx$(printf '%20000s' '' | tr ' ' y)"
+rs_s2="$(printf 'yx%.0s' $(seq 1 40))$(printf '%20000s' '' | tr ' ' y)"
+for rs_f in default deny; do
+    rs_fl=""; [ "$rs_f" = deny ] && rs_fl="-fno-hyb-reseed"
+    # shellcheck disable=SC2086
+    if pcrec_run "$PCREC" --features all -p rx -e utf8 $rs_fl --step-budget=2000 --emit-main -o "$WORKDIR/rsb_$rs_f.c" --pattern '(?<=a|é)x' 2>/dev/null \
+       && gen_cc "reseed budget $rs_f" "$CC" $GENCFLAGS -o "$WORKDIR/rsb_$rs_f" "$WORKDIR/rsb_$rs_f.c"; then
+        eval "rs_o1_$rs_f=\"\$(gen_run 'reseed budget $rs_f sparse' \"\$WORKDIR/rsb_$rs_f\" \"\$rs_s1\" 2>/dev/null)\""
+        eval "rs_o2_$rs_f=\"\$(gen_run 'reseed budget $rs_f dense' \"\$WORKDIR/rsb_$rs_f\" \"\$rs_s2\" 2>/dev/null)\""
+    else
+        bad "[OPT-HYB-RESEED] budget arm: could not build the $rs_f witness '(?<=a|é)x' -e utf8 --step-budget=2000"
+    fi
+done
+if [ "${rs_o1_deny:-}" = "steps" ] && [ "${rs_o2_deny:-}" = "steps" ]; then
+    ok "[OPT-HYB-RESEED] budget arm's control: -fno-hyb-reseed gives up 'steps' on both subjects (the witness reaches the step-everything retry)"
+else
+    bad "[OPT-HYB-RESEED] budget arm's control: -fno-hyb-reseed answered '${rs_o1_deny:-?}' / '${rs_o2_deny:-?}', expected 'steps' / 'steps' — the witness no longer reaches the defect, so the default arm below proves nothing"
+fi
+if [ "${rs_o1_default:-}" = "nomatch" ]; then
+    ok "[OPT-HYB-RESEED] budget arm: one failing candidate then 20,000 non-candidates answers nomatch under --step-budget=2000 (the retry re-seeds)"
+else
+    bad "[OPT-HYB-RESEED] budget arm: one failing candidate then 20,000 non-candidates answered '${rs_o1_default:-?}', expected nomatch — the adaptive retry is stepping every position (its re-seed is lost)"
+fi
+if [ "${rs_o2_default:-}" = "nomatch" ]; then
+    ok "[OPT-HYB-RESEED] budget arm: 40 dense failing candidates then 20,000 non-candidates answers nomatch (the step block's probe re-seeds out of step mode)"
+else
+    bad "[OPT-HYB-RESEED] budget arm: 40 dense failing candidates then 20,000 non-candidates answered '${rs_o2_default:-?}', expected nomatch — once in step mode the retry never probes out (the block's closing re-seed is gone)"
+fi
+
 echo
 echo "== Summary =="
 echo "checks passed: $pass"
