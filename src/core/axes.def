@@ -133,6 +133,9 @@ PCREC_AXIS(PCREC_NO_CTX_NODE,      "-fno-ctx-node",      0, "", PCREC_AXIS_DEFAU
 /* ---- emitted-shape axes: the VM entry chain and the unroll ladder ------ */
 PCREC_AXIS(PCREC_NO_TIERED_ENTRY, "-fno-tiered-entry", 0, "", PCREC_AXIS_DEFAULT_ON)
 PCREC_AXIS(PCREC_NO_SIZE_TERM,    "-fno-size-term",    0, "", PCREC_AXIS_DEFAULT_ON)
+/* [OPT-HYB-RESEED]: the hybrid's retry, adaptive between stepping and asking
+ * the prefilter again (src/gen/emit_vm.c's `pcrec_reseed_rows`). */
+PCREC_AXIS(PCREC_NO_HYB_RESEED,   "-fno-hyb-reseed",   0, "", PCREC_AXIS_DEFAULT_ON)
 
 /* ---- the DFA scan's own axes ([OPT-3], [OPT-K], [ENG-ABS], [OPT-5],
  * [OPT-LITSCAN]) ----

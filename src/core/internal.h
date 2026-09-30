@@ -6422,6 +6422,26 @@ void pcrec_emit_dfa_scan_stamps(Ctx *cx, StrBuf *sb, const char *upper);
  * false on a non-hybrid VM artifact. */
 bool pcrec_artifact_has_dfa_scan(Ctx *cx);
 
+/* [OPT-HYB-RESEED] How often the artifact's candidate-start scan stops, in
+ * ppm of subject bytes (the prior's MASS over the set it tests; 1,000,000
+ * when it tests none). src/gen/emit_dfa.c. */
+unsigned pcrec_dfa_cand_ppm(Ctx *cx);
+
+/* [OPT-HYB-RESEED] the VM hybrid's retry re-seed decision
+ * (src/gen/emit_vm.c, docs/design/hyb_reseed.md §4): the ordered first-match
+ * rows as DATA — the name `<PREFIX>_VM_RESEED` carries, the deny flag, a
+ * one-line predicate, and the closed predicate/action tags the emitter's walk
+ * reads — so `--list-axes` walks the live table. */
+typedef struct {
+    const char   *name;
+    uint64_t      deny;
+    const char   *applies_desc;
+    unsigned char pred;     /* emit_vm.c's VRS_P_* */
+    unsigned char action;   /* emit_vm.c's VRS_A_* */
+} PcrecReseedRow;
+extern const PcrecReseedRow pcrec_reseed_rows[];
+extern const int pcrec_reseed_nrows;
+
 void pcrec_emit_c_string_literal(StrBuf *sb, const char *s, size_t len);
 
 /* [DD-14.FB] (D71 item 2, docs/spec/match_api.md §10.4) THE CALLER-BUFFER

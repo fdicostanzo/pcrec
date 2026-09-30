@@ -941,6 +941,20 @@ enum {
  * `#define` for bit 32's reason. */
 #define PCREC_NO_CTX_NODE PCREC_BIT(35)
 
+/* [OPT-HYB-RESEED] the VM hybrid's ADAPTIVE retry re-seed
+ * (docs/spec/tuning.md §2.33, docs/design/hyb_reseed.md). When the hybrid's
+ * prefilter answers for a LARGER language than the pattern's (a lookaround or
+ * a cut erased, or the count collapse), an attempt can fail at a prefilter
+ * answer; the retry then either steps one character or asks the prefilter
+ * again, chosen per call from the gaps the prefilter's own answers measure.
+ * Denied, the retry is the one this compiler emitted before `abi` 47 (step
+ * where no MRL clamp exists, re-seed where one does). Both arms attempt only
+ * positions no match can be skipped past, so it changes no answer (a give-up
+ * may move, as with any change to how many attempts a call runs) and is
+ * masked out of `rx_info.flags`; `<PREFIX>_VM_RESEED` names the row that
+ * fired. Deny-only. A `#define` for bit 32's reason. */
+#define PCREC_NO_HYB_RESEED PCREC_BIT(36)
+
 /* [ENG-BREP] the counter rung's UNROLL FACTOR, K (counterk_design.md §4.1;
  * eng_brep_design.md §4.5's "K must not become a per-pattern heuristic in v1",
  * held strictly by D47's ADDENDUM). ONE per-artifact constant: every
