@@ -3198,6 +3198,19 @@ and RUNS two artifacts per ASCII corpus block (~6,600 compiles at
   per encoding at compile time and stamp the choice), plus `var_valid`'s call
   site. Each is now a named, COUNTED, floored region held to its own stamp
   (`SELECT_BAD`); docs/dev/lanes/enctriage_report.md.
+  **[silentred] 2026-09-30**: seven reds (9 pass / 7 fail) after [FINDINGS] B1,
+  [UCP] U2 and [OPT-LITSCAN] S1 — all STALE-CHECK, no DD-12 (7) violation, one
+  mechanism family: the byte-rate prior is BYTE-KEYED, so `<P>_FINDINGS` reads
+  a table under byte and `none` under utf8 (new region `findings_stamp`, held
+  to that coherence per pair), G1's COMPARE-NONE lets the utf8 side elide the
+  pre-check by IDENTITY where the byte side keeps it (REQ_WHY now differs in
+  both directions; `req_run_asym` excises the whole `rx_reqrun` block when the
+  stamps differ), the run-pin / rarest-`memchr` prefilter form is selected by
+  that prior too (`PRIORFORM` bucket, stamp-declared, floored, never a K50
+  manifest row), and U2's context node removed `back_step` from the one-char
+  lookbehind witnesses (`(?<=ab)` added, DD12a(ii)'s `sigpat` re-aimed).
+  The K50 manifest was NOT touched; five of its reds were the FINDINGS stamp.
+  docs/dev/lanes/silentred_report.md.
   **[OPT-LITSCAN] S1 step 6 (abi 37)**: the run pre-check is a file-scope
   `rx_reqrun`/`rx_reqrun_whole` block, so the FREQPICK member-pick
   normalization reads its scan start and `cand = hit - K` INSIDE those blocks
@@ -3464,7 +3477,6 @@ Sabotage rows S365 (a reader shares `A_CLASS`'s arm: [5b] + W4) and S366
 (`vm_isl_words`' default restored: [5a] + [5c] + W3). The W1/W2 plants
 (see-through removed from `vm_cat_flatten`; `vm_det_seq`'s arm declining)
 were measured by hand on the S3 lane (`docs/dev/lanes/s3build_report.md`).
-
 **[OPT-HYB-RESEED] (2026-09-29, lane reseed; reworked 2026-09-30, lane
 reseedfix, after the r1 panel): `run_codegen_tests.sh` gains an
 `[OPT-HYB-RESEED]` block** (15 checks: 11 witness rows, the clamped
@@ -3495,3 +3507,18 @@ recompute, the budget arm's control and its two subjects). It covers:
 The budget arm is the only detector of S370, whose plant keeps every string
 the structural checks read, and the calibration check the only detector of
 S372. S371 trips both kinds of check.
+
+## [silentred] 2026-09-30 — `run_recursion_identity.sh` comparison (A)'s sixth exception, module `ctx-node`
+
+[UCP] U2 moves every one-character lookaround / `\b` off the VM (the
+pre-module reference's route) onto the DFA, or, under `--engine=vm`, into the
+context form, so 264 call-free patterns' program region differs from
+`ac4917d` on every axis and NO bucket named them (the gate is opt-in, so
+nothing counted the red). The bucket is keyed on the mechanism, in the file's
+own deny-axis style: a moved region is excused IFF the pattern's TEXT carries a
+lookaround / word-boundary spelling (`CTX_POP`, an independent census) AND
+denying `-fno-ctx-node` (with the three other region-moving axes, since the
+subject's DFA artifact has no VM stamps to read them from) restores the pinned
+region by EQUALITY. Non-vacuity: the bucket may not exceed the census, and
+must fire on `default`/`noprefilter`. `ctx-node-moved=` joins the (A) line.
+

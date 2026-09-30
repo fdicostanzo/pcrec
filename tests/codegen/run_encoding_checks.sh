@@ -568,13 +568,56 @@ REQCHK_MEMCHR_VAL_RE = re.compile(r'!memchr\(subject \+ search_from, (\d+),')
 # under utf8 it keeps it. The three-line pre-check is excised and COUNTED, the
 # `<PREFIX>_REQ_WHY` stamp normalized, and each side held to its stamp (a
 # pre-check — single-byte or run — is present iff the stamp reads "emitted");
-# the verdicts may differ in ONE direction only: byte "dominated", utf8
-# "emitted".
+# the verdicts may differ in TWO directions since [FINDINGS] B1 ([silentred],
+# 2026-09-30): byte "dominated"/utf8 "emitted" (the byte prior finds a pick no
+# commoner than the prefilter's byte) and byte "emitted"/utf8 "dominated" (under
+# utf8's NONE prior the pick is the rightmost run member and only IDENTITY
+# elides — `frank|fred` picks `r`, which is the prefilter's own byte). The
+# second is held to that identity; when the verdicts differ the run block's
+# `rx_reqrun` definition and call are excised from both sides (`req_run_asym`).
 REQCHK_IF_RE = re.compile(r'^\s*if \(subject_length <= search_from \|\|$')
 REQCHK_MEMCHR_RE = re.compile(r'^\s*!memchr\(subject \+ search_from, \d+, subject_length - search_from\)\)$')
 REQCHK_RET_RE = re.compile(r'^\s*return 0;$')
 REQWHY_STAMP_RE = re.compile(r'^(#define RX_REQ_WHY ")(?:emitted|none|one-attempt|dominated)(")$')
 REQWHY_STAMP_VAL_RE = re.compile(r'^#define RX_REQ_WHY "([^"]*)"$', re.M)
+# [silentred] `<PREFIX>_FINDINGS` ([FINDINGS] B1, abi 40) and its `rx_info.findings`
+# mirror: the byte-rate prior is BYTE-KEYED by design (findings design §6), so
+# the stamp reads `byte-rate=default:<digest>` under -e byte and
+# `byte-rate=none` under -e utf8 — an encoding-keyed STAMP VALUE, not a hot-path
+# conditional. It is the same shape as REQ_WHY/END_WINDOW: excised to `N` on
+# both lines, counted, floored, and held to its own coherence below.
+FINDINGS_STAMP_RE = re.compile(r'^(#define RX_FINDINGS ")[^"]*(")$')
+FINDINGS_INIT_RE = re.compile(r'^(\s*\.findings = ")[^"]*(",)$')
+FINDINGS_STAMP_VAL_RE = re.compile(r'^#define RX_FINDINGS "([^"]*)"$', re.M)
+#
+# (iv) [silentred] THE PRIOR-KEYED PREFILTER FORM. The same byte-keyed prior
+# also drives WHICH candidate-start prefilter form a DFA artifact takes: under
+# byte the run-pinned row pair ([OPT-LITSCAN] S1) or a rarest-byte `memchr`
+# wins; under utf8 the prior is NONE, so `foo` falls through to the offset-set
+# form (`run-pinned` "0*,1,2" vs `offset-set` "0,1*"). That is a SELECTION the
+# artifact declares in its own `<PREFIX>_DFA_PREFILTER` /
+# `_DFA_PREFILTER_OFFSETS` stamps, exactly the tier-two standard the K50 FORM
+# sub-class holds (a moved form is admitted only when announced). It is NOT a
+# K50 gate pair (those are nullable and manifested); it is its own counted,
+# floored bucket, and a pair belongs to it only when (1) its pattern is not a
+# manifest row, (2) the ONLY moved form stamps are those two, (3) the byte side
+# reads a prior-driven form (`run-pinned*` / `memchr*`), the utf8 side an
+# `offset-set*` form, and (4) the two sides' FINDINGS stamps say the prior is
+# what differs (a real table under byte, `none` under utf8).
+PF_BYTE_RE = re.compile(r'^(?:run-pinned|memchr)(?:-bounded)?$')
+PF_UTF8_RE = re.compile(r'^offset-set(?:-bounded)?$')
+PRIOR_FORM_STAMPS = ('DFA_PREFILTER', 'DFA_PREFILTER_OFFSETS')
+
+def prior_form(tb, tu, moved):
+    if not moved or any(k not in PRIOR_FORM_STAMPS for k in moved):
+        return False
+    a, b = form_stamps(tb), form_stamps(tu)
+    fb, fu = FINDINGS_STAMP_VAL_RE.search(tb), FINDINGS_STAMP_VAL_RE.search(tu)
+    if not fb or not fu or fb.group(1) == 'byte-rate=none' or fu.group(1) != 'byte-rate=none':
+        return False
+    pb = (a.get('DFA_PREFILTER') or '').strip('"')
+    pu = (b.get('DFA_PREFILTER') or '').strip('"')
+    return bool(PF_BYTE_RE.match(pb) and PF_UTF8_RE.match(pu))
 REQRUN_BLOCK_RE = re.compile(r'^\s*if \(rx_reqrun(?:_whole)?\(subject, subject_length, search_from\) >= subject_length\) return 0;$', re.M)
 ENDWIN_STAMP_VAL_RE = re.compile(r'^#define RX_END_WINDOW "([^"]*)"$', re.M)
 REQRUN_STAMP_VAL_RE = re.compile(r'^#define RX_REQ_RUN "([^"]*)"$', re.M)
@@ -794,7 +837,7 @@ def widens_under_utf8(pat):
         i += 1
     return False
 
-def excise(text, label):
+def excise(text, label, drop_run=False):
     lines = text.splitlines(keepends=True)
     counts = {'next_pos': 0, 'back_step': 0, 'span_match': 0,
               'span_match_caseless': 0, 'var_valid': 0, 'advance': 0,
@@ -802,12 +845,35 @@ def excise(text, label):
               'startpos_attempt': 0, 'end_window': 0, 'end_window_stamp': 0,
               'req_run_offset0': 0, 'req_check': 0, 'req_why_stamp': 0,
               'var_valid_call': 0, 'span_ci_helper': 0, 'req_pick': 0,
-              'start_zero': 0}
+              'start_zero': 0, 'findings_stamp': 0, 'req_run_asym': 0}
     out = []
     i, n = 0, len(lines)
     in_reqrun = False
     while i < n:
         line = lines[i]
+        # [silentred] WHEN THE TWO SIDES' `REQ_WHY` DIFFER the run pre-check is
+        # legitimately PRESENT on one side and ABSENT on the other (byte
+        # "emitted" / utf8 "dominated" since [FINDINGS] B1's COMPARE-NONE:
+        # only identity elides, and under NONE the pick is the rightmost run
+        # member, which can BE the prefilter's own byte). The whole block — the
+        # `rx_reqrun` definition and its one call — is then excised from BOTH
+        # sides, counted, and each side is held to its own stamp elsewhere
+        # (`pre > 0` iff "emitted"). Only when the stamps differ: where they
+        # agree the run block is still compared token for token.
+        if drop_run:
+            if REQRUN_FN_RE.match(line):
+                j = i
+                while j < n and lines[j].rstrip('\n') != '}':
+                    j += 1
+                out.append("/* [silentred] rx_reqrun definition excised for comparison (REQ_WHY differs) */\n")
+                counts['req_run_asym'] += 1
+                i = j + 1
+                continue
+            if REQRUN_BLOCK_RE.match(line.rstrip('\n')):
+                out.append("/* [silentred] rx_reqrun call excised for comparison (REQ_WHY differs) */\n")
+                counts['req_run_asym'] += 1
+                i += 1
+                continue
         if REQRUN_FN_RE.match(line):
             in_reqrun = True
         elif in_reqrun and line.rstrip('\n') == '}':
@@ -939,6 +1005,12 @@ def excise(text, label):
             counts['req_check'] += 1
             i += 3
             continue
+        mf = FINDINGS_STAMP_RE.match(line.rstrip('\n')) or FINDINGS_INIT_RE.match(line.rstrip('\n'))
+        if mf:
+            out.append(mf.group(1) + "N" + mf.group(2) + "\n")
+            counts['findings_stamp'] += 1
+            i += 1
+            continue
         mq = REQWHY_STAMP_RE.match(line.rstrip('\n'))
         if mq:
             out.append(mq.group(1) + "N" + mq.group(2) + "\n")
@@ -1048,7 +1120,11 @@ def main():
     # the sharpest test of the excision's own claim: the two sides must agree
     # after normalisation even when one of them carries a whole function the
     # other does not have.
-    patterns += ['a*', '(?i)(?<=a)(b)\\1x', '(?<=a)(b)\\1x', '^${v}$']
+    # [silentred] `(?<=ab)` beside the one-character `(?<=a)` witnesses: since
+    # [UCP] U2 a ONE-CHARACTER lookbehind is a context node and emits no
+    # `back_step` at all, so those two no longer reach the residual entry the
+    # region floor and DD12a(ii) exist to see; a two-character body still does.
+    patterns += ['a*', '(?i)(?<=a)(b)\\1x', '(?<=a)(b)\\1x', '^${v}$', '(?i)(?<=ab)(b)\\1x']
 
     workdir = tempfile.mkdtemp(prefix="dd12ai_")
     agg = {'next_pos': 0, 'back_step': 0, 'span_match': 0,
@@ -1057,7 +1133,7 @@ def main():
            'startpos_attempt': 0, 'end_window': 0, 'end_window_stamp': 0,
            'req_run_offset0': 0, 'req_check': 0, 'req_why_stamp': 0,
            'var_valid_call': 0, 'span_ci_helper': 0, 'req_pick': 0,
-           'start_zero': 0}
+           'start_zero': 0, 'findings_stamp': 0, 'req_run_asym': 0}
     nselect_bad = 0
     npairs = nstrict = nwidens = 0
     ndiverge_strict = ndiverge_widens = nbyteonly = nnextpos_bad = 0
@@ -1066,6 +1142,17 @@ def main():
     gate_pats = []
     ngateform = 0
     gateform_pats = []
+    nprior = 0
+    prior_pats = []
+    k50rows = set()
+    try:
+        for ln in open(os.path.join(root, 'tests/codegen/manifests/k50_gate_refinement.txt'),
+                       encoding='utf-8', errors='surrogateescape'):
+            ln = ln.rstrip('\n')
+            if ln and not ln.startswith('#') and ln.strip():
+                k50rows.add(ln)
+    except OSError:
+        pass
     strict_pats = []
     try:
         for idx, pat in enumerate(patterns):
@@ -1076,8 +1163,10 @@ def main():
                 nbyteonly += 1
                 continue
             tb, tu = r
-            nb, cb = excise(tb, "byte#%d" % idx)
-            nu, cu = excise(tu, "utf8#%d" % idx)
+            wbm, wum = REQWHY_STAMP_VAL_RE.search(tb), REQWHY_STAMP_VAL_RE.search(tu)
+            drop_run = bool(wbm and wum and wbm.group(1) != wum.group(1))
+            nb, cb = excise(tb, "byte#%d" % idx, drop_run)
+            nu, cu = excise(tu, "utf8#%d" % idx, drop_run)
             npairs += 1
             for k in agg:
                 agg[k] += cb[k] + cu[k]
@@ -1136,10 +1225,35 @@ def main():
                 elif (pre > 0) != (why[side] == 'emitted'):
                     bad_sel.append("%s REQ_WHY stamp \"%s\" but %d pre-check(s) present"
                                    % (side, why[side], pre))
-            if (why.get('byte') != why.get('utf8')
-                    and (why.get('byte'), why.get('utf8')) != ('dominated', 'emitted')):
+            # [silentred] BOTH DIRECTIONS ARE THE BYTE-KEYED RATE'S, since
+            # [FINDINGS] B1 (abi 40): under byte the prior picks a rarer member
+            # and G1's COMPARE elides the pre-check when the pick is no
+            # commoner than the DFA prefilter's byte (byte "dominated", utf8
+            # "emitted": no density claim, so the pick differs and is kept);
+            # under utf8 the prior is NONE, the PICK answer is the rightmost
+            # member and COMPARE-NONE is `false` so ONLY IDENTITY elides — a
+            # pick that IS the prefilter's own byte (byte "emitted", utf8
+            # "dominated", e.g. `frank|fred`: utf8 picks 'r', the prefilter
+            # scans 'r'). The second direction is held to that identity: the
+            # utf8 artifact's stamped REQ_BYTE must be a byte its own
+            # remaining memchr scans (it carries no pre-check when dominated,
+            # so every memchr left IS the DFA's).
+            wb, wu = why.get('byte'), why.get('utf8')
+            if wb != wu and (wb, wu) == ('emitted', 'dominated'):
+                mb2 = REQBYTE_STAMP_VAL_RE.search(tu)
+                left = set(re.findall(r'memchr\([^,]*,\s*(\d+),', tu))
+                if not mb2 or mb2.group(1) not in left:
+                    bad_sel.append("REQ_WHY byte \"emitted\" vs utf8 \"dominated\" but the utf8 REQ_BYTE \"%s\" is not the byte its own DFA prefilter scans (%s) -- not the identity elision"
+                                   % (mb2.group(1) if mb2 else '(absent)', ",".join(sorted(left)) or 'no memchr'))
+            elif wb != wu and (wb, wu) != ('dominated', 'emitted'):
                 bad_sel.append("REQ_WHY byte \"%s\" vs utf8 \"%s\" -- not the byte-keyed dominance rule"
-                               % (why.get('byte'), why.get('utf8')))
+                               % (wb, wu))
+            fb, fu = FINDINGS_STAMP_VAL_RE.search(tb), FINDINGS_STAMP_VAL_RE.search(tu)
+            if not fb or not fu or tb.count('.findings = "') != 1 or tu.count('.findings = "') != 1:
+                bad_sel.append("FINDINGS stamp/rx_info.findings not exactly 1 per side")
+            elif fb.group(1) == 'byte-rate=none' or fu.group(1) != 'byte-rate=none':
+                bad_sel.append("FINDINGS byte \"%s\" vs utf8 \"%s\" -- the byte-rate prior is byte-keyed: a real table under byte, none under utf8"
+                               % (fb.group(1), fu.group(1)))
             if (ew.get('byte') is not None and ew.get('utf8') is not None
                     and ew['byte'] != ew['utf8'] and ew['utf8'] != 'none'):
                 bad_sel.append("END_WINDOW byte \"%s\" vs utf8 \"%s\" -- not the utf8 decline"
@@ -1172,6 +1286,9 @@ def main():
                     if ok_data:
                         ngate += 1
                         gate_pats.append(pat)
+                    elif moved and pat not in k50rows and prior_form(tb, tu, moved):
+                        nprior += 1
+                        prior_pats.append(pat)
                     elif moved:
                         # [K50] SECOND TIER: the wider alphabet moved a FORM
                         # SELECTION (axis B's prefilter, axis E's accept
@@ -1197,12 +1314,15 @@ def main():
     print("PAIRS=%d STRICT=%d WIDENS=%d DIVERGE_STRICT=%d DIVERGE_WIDENS=%d BYTEONLY=%d NEXTPOS_BAD=%d GATE=%d GATEFORM=%d" %
           (npairs, nstrict, nwidens, ndiverge_strict, ndiverge_widens, nbyteonly, nnextpos_bad, ngate, ngateform))
     print("SELECT_BAD=%d" % nselect_bad)
+    print("PRIORFORM=%d" % nprior)
+    for p in prior_pats:
+        print("PRIORPAT %s" % p)
     for k in ('next_pos', 'back_step', 'span_match', 'span_match_caseless',
               'var_valid', 'advance', 'encoding',
               'startpos_guard', 'startpos_stamp', 'startpos_attempt',
               'end_window', 'end_window_stamp', 'req_run_offset0',
               'req_check', 'req_why_stamp', 'var_valid_call', 'span_ci_helper',
-              'req_pick', 'start_zero'):
+              'req_pick', 'start_zero', 'findings_stamp', 'req_run_asym'):
         print("EXCISED %s=%d" % (k, agg[k]))
     for p in gate_pats:
         print("GATEPAT %s" % p)
@@ -1230,6 +1350,8 @@ else
     # [enctriage] the encoding-keyed selections ([OPT-ENDWIN]'s clamp,
     # [OPT-FREQPICK]'s offset-0 form) must agree with their own stamps on
     # every pair — independent of the chain below, so it can never be masked.
+    PRIORFORM="$(grep -oE '^PRIORFORM=[0-9]+' "$WORKDIR/dd12ai.out" | cut -d= -f2)"
+    echo "  DD12a(i) prior-keyed prefilter-form pairs (byte prior -> run-pinned/memchr, utf8 NONE -> offset-set; declared by stamp): ${PRIORFORM:-?}"
     SELECT_BAD="$(grep -oE '^SELECT_BAD=[0-9]+' "$WORKDIR/dd12ai.out" | cut -d= -f2)"
     if [ "${SELECT_BAD:-missing}" != 0 ]; then
         bad "DD12a(i) ${SELECT_BAD:-an unknown number of} pair(s) carry an encoding-keyed selection ([OPT-ENDWIN] clamp / [OPT-FREQPICK] member pick / [OPT-PRECHECK-ADMIT] dominance) that disagrees with its own stamp, or an END_WINDOW asymmetry that is not the utf8 decline: $(grep '^FINDING .*encoding-keyed selection' "$WORKDIR/dd12ai.out" | head -1)"
@@ -1245,9 +1367,16 @@ else
     elif [ "$STRICT" -lt 150 ]; then
         bad "DD12a(i) only $STRICT pairs took the strict identity path (floor 150) — the widens exemption may be over-classifying"
     else
+        # [silentred] the prior-form bucket is FLOORED at 1: `foo` is the
+        # named witness (byte `run-pinned` vs utf8 `offset-set`), so a bucket
+        # that reads 0 means the tier stopped classifying anything and the
+        # pairs are being filed somewhere else (or the prior stopped keying).
+        if [ "${PRIORFORM:-0}" -lt 1 ]; then
+            bad "DD12a(i) the prior-keyed prefilter-form bucket is EMPTY — [FINDINGS] B1's byte-keyed prior no longer moves any DFA prefilter form under utf8, or the bucket's stamps read stopped matching; every pair it existed for is now classified elsewhere"
+        fi
         # (a) non-vacuity: every named region reached at least once.
         vac=0
-        for k in next_pos back_step span_match span_match_caseless advance encoding startpos_guard startpos_stamp startpos_attempt end_window end_window_stamp req_run_offset0 req_check req_why_stamp var_valid_call span_ci_helper req_pick start_zero; do
+        for k in next_pos back_step span_match span_match_caseless advance encoding startpos_guard startpos_stamp startpos_attempt end_window end_window_stamp req_run_offset0 req_check req_why_stamp var_valid_call span_ci_helper req_pick start_zero findings_stamp req_run_asym; do
             v="$(grep "^EXCISED $k=" "$WORKDIR/dd12ai.out" | grep -oE '[0-9]+$')"
             if [ "${v:-0}" -eq 0 ]; then
                 bad "DD12a(i) region '$k' was never excised across the whole run — dead code, certifying nothing about it"
@@ -1429,7 +1558,9 @@ fi
 # (the bref signatures wrap onto a second line, which a `)`-terminated grep
 # would miss). Prefix-normalised, the two backends' lines must be identical —
 # the entries-table interface is backend-neutral (D58 P-1).
-sigpat='(?i)(?<=a)(b)\1x'
+# [silentred] `(?<=ab)`, not `(?<=a)`: [UCP] U2 made the one-character lookbehind a
+# context node, which emits no `back_step` (the witness read 2 entries, not 3).
+sigpat='(?i)(?<=ab)(b)\1x'
 db="$WORKDIR/sigb"; du="$WORKDIR/sigu"; mkdir -p "$db" "$du"
 sigs_of() { grep -oE '(size_t|ptrdiff_t) [A-Za-z]+_(next_pos|back_step|span_match|span_match_caseless)\(' "$1" \
             | sed -E 's/ [bu]_/ PFX_/' | LC_ALL=C sort -u; }
