@@ -170,17 +170,63 @@ from libpcre2 via the borrowed `pcre2_ctypes` binding; startpos-0 cells need
 none), else `utf <offset>`. It reads each case's subject and block back from
 the `.rxt` by line; unplaceable lines are counted.
 
-## 5. Validation (Mac, gcc-16)
+## 5. Validation (Mac, gcc-16) — verdicts are make's `*** [test-X] Error` lines
 
-FILLED BELOW AT DELIVERY.
+On the pre-merge branch (`20e79b8d` / src `6c22a7cd`), logs `/tmp/uvbuild_c2_*.log`,
+`/tmp/uvbuild_c3_*.log`, `/tmp/uvbuild_enc2.log`:
+
+| target | verdict |
+|---|---|
+| `make strict` | clean (pre-merge AND post-merge `1777ba5e`) |
+| `make test-utfcheck` | EXIT 0: 42 patterns, every config agrees with 10.46 and python; K/KV/KW ≈6.1k rows each, KA 1,260, A 840, D ≈3.4k + ≈2.7k tolerant, B 41, LB 42/42, CLIP 4/config (pinned) |
+| `make test-codegen` | the ONLY `*** Error` sources were the accepted darwin `nm arm_a.o` line and a K37 false positive on `run_utfcheck.sh` (fixed in `20e79b8d`: the check now runs under `$TIMEOUT_BIN`); SABANCHOR 375 rows / 391 sites resolve; [M5-SEAM] fixtures green |
+| `make test-registry` | EXIT 0 (axes coverage 165) |
+| `make test-cpset-structure` | EXIT 0 (manifest re-recorded) |
+| `make test-rxtsource` | EXIT 0 |
+| `make test-recursion-identity` | EXIT 0 ((B) whole-file identity vs pin `6c22a7cd`: 2,765/2,766 call-free patterns identical per arm) |
+| `make test-encoding-checks` | EXIT 0 after DD12a(i) learned `valid_upto` + the `UTF_CHECK` stamp (EXCISED valid_upto=510, utf_check_stamp=510) |
+| `make test-cli` / `test-resource` / `test-reject` / `test-startbnd` / `test-search-pinned` / `test-vars` / `test-vm` / `test-examples` | EXIT 0 each |
+
+**Mech** (`bash tests/mech/run_sabotage_matrix.sh S<id>`, logs `/tmp/uvbuild_mech_S*.log`):
+S409 DETECTED (utfcheck 192 fail), S410 DETECTED (971), S411 DETECTED
+(2,499), S412 DETECTED (1,033), S413 DETECTED (934), S414 DETECTED, and the
+re-anchored S368 DETECTED (startbnd). All reach probes ok.
+
+**test-axes**: `AXES="-futf-check"` subset run over `tests/utf8 tests/ucp
+tests/vars tests/harness/giveup.rxt` — result in §5.1.
+
+### 5.1 test-axes, `-futf-check` arm (post-merge build `1777ba5e`)
+
+`CC=gcc-16 SKIP_ORACLE=1 AXES="-futf-check" bash tests/axes/run_axes.sh tests/utf8 tests/ucp tests/vars tests/harness/giveup.rxt`
+(log `/tmp/uvbuild_axes_subset.log`): EXIT 0. Baseline 4,884 cases; the arm read
+`byte=1336 utf8=3498 refused=949 agree=3498 unplaced=50 lb_unchecked=0 guard=0 fail=0 lost=0 gained=0`
+— 949 utf8 cells correctly `utf <offset>` against python + libpcre2's LB,
+every other cell identical. The 50 unplaced lines (pattern-esc blocks and
+other shapes the line reader does not place) are still held to identity.
+The identity job list correctly skipped `-futf-check`. Full corpus owed.
+
+### Reproducers for the two findings
+
+```sh
+# §3.1 — PCRE2_UTF clips backwards reads at f (libpcre2 10.46 and 10.48):
+#   (?<=\ba)b on "xab" from 2: PCRE2_UTF -> (2,3); from 0 -> nomatch; without UTF -> nomatch
+#   (?<=(?<=..)a)b on "zzzab" from 4: PCRE2_UTF -> nomatch; without UTF -> (4,5)
+printf 'x\t(?<=\\ba)b\t786162\t2\tS\t2\n' | ./probe          # tests/utfcheck/probe_pcre2.c
+# pcrec (any -e utf8 artifact, flag or not) answers from the real bytes: nomatch / (4,5).
+
+# §3.2 — a DFA artifact with dead groups writes caps on a no-match (predates this lane, -e byte):
+build/pcrec -p rx --features all -o gen.c --pattern '(?(DEFINE)(?<x>\b))b(?&x)'
+#   rx_search("zz", 2, 0, caps) returns 0 and sets caps[1] = {-1,-1} (caps[0] untouched);
+#   match_api.md §3.1 says caps is untouched on 0.
+```
 
 ## 6. Owed
 
 - **A Linux full `make test`** (the manager schedules it; not run on the Mac
   per the brief).
-- **The full-corpus `make test-axes AXES="-futf-check"`** if §5 records only
-  the subset run.
-- The merge: `Makefile`'s `TEST_SECTIONS` conflicts textually with main's
-  D136 (`test-encoding-checks` joined at `92f4c9b7`); both additions stand.
-  Mech ids S409-S414 were the next free on main at `92f4c9b7` (S408 was the
-  highest); a lane landing first with the same ids needs a renumber.
+- **The full-corpus `make test-axes AXES="-futf-check"`** (only the subset
+  in §5.1 ran on the Mac).
+- Main was merged into the lane at `1777ba5e` (k75fix, wirechk): the only
+  conflicts were TEST_SECTIONS (both `test-encoding-checks` and
+  `test-utfcheck` kept) and the lanes index; `make strict` clean after.
+  Mech rows use S409-S414 of the reserved S409-S419.
