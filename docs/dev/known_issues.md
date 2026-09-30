@@ -11,6 +11,9 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 ---
 
+## K77 — INFRASTRUCTURE, watch (2026-09-30, lane k73tri, filed by lane admin86) — the harness's pcrec compile budget is a WALL budget, so it is load-sensitive
+`tests/lib/gen_timeout.sh`'s `pcrec_timeout_secs()` (D45) budgets a pcrec compile at 20 s of WALL clock (`PCRECTIMEOUT`; 60 s under a sanitizer axis). Lane k73tri measured `((a)|ab){4000}c` at ~3 s of CPU that hit the 20 s wall at load 13.8, scored as a HARNESS FAILURE though nothing about the compiler had changed. The old "0.38 s corpus worst case" the budget was calibrated against is stale (now ~3 s CPU for that pattern), so the margin is thinner than the comment claimed. **Status:** not fixed, no measured recurrence beyond that one. **If it recurs:** move the pcrec compile to a CPU-primary budget (watchdog `-c`, wall as a generous backstop) as D45 already does for the generated-code compile, rather than raising the wall number. Pattern: same class as K58 (a budget calibrated on a quiet box).
+
 ## K76 — FIXED 2026-09-30 (lane k76fix) — a `.rxt` file whose FIRST block is `pattern-esc` was read as head-bearing (found by lane k73utf, 2026-09-29)
 
 **Witness:** tests/harness/run.sh, tests/harness/verify_rxt.py's entry-set walk and the rxtsource head census each compared the file's first token against the literal `pattern`; the format's head ends at the first BLOCK OPENER, and `pattern-esc` is one (`rxt_schema.def` `opens_group`). Effect: a spurious `--list-source` call, and a refusal in ANY later block became a whole-file HARNESS FAILURE that lost the passing cases of the earlier blocks (measured: 1 pass + 1 bad later block read `0 passed / 2 failed`); the census counted the file head-bearing.
