@@ -85,7 +85,7 @@ success wrote all NCAPS pairs and never wrote past NCAPS.
 | this branch | **7 passed / 0 failed**: 238,870 non-success calls, 33,290 successes, 27 DFA dead-group artifacts |
 | pre-fix (44fc6ad5 archive) | **3 passed / 4 failed**: W auto 2,094 of 4,284 non-success calls wrote caps; C auto 1,041 (from corpus dead-group patterns, e.g. `(?(DEFINE)(?<g>\Ga))(?&g)`); W nfad 2,094; W utf8 2,058. The VM routes and reach stay green, correctly. |
 | **S439** planted by hand (the fill re-emitted at the search entry) | 3 passed / 4 failed, the same four rows and counts |
-| second direction planted by hand (fill never emitted on success) | see §7 (the run's result) |
+| second direction planted by hand (`emit_dead_group_fill` returns at once: the fill is never emitted) | 3 passed / 4 failed, the same four rows: 0 non-success writes; 786 (W auto), 39 (C auto), 786 (W nfad), 774 (W utf8) successes left a slot unwritten. These are the `_search` successes; the unwrapped `_match_caps` keeps its own fill and stays clean. |
 
 The harness's own first run found a bug in itself: auto and vm rows shared one
 work-directory index, so two workers interleaved one `.c` file ("null
