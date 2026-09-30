@@ -160,9 +160,13 @@ src/core/compile.c
 src/core/sb.c
 src/ir/dfa.c
 src/ir/nfa.c
+src/opt/dfamemo.c
 src/opt/minimize.c
 src/opt/scanedge.c
 src/parse/rxt_source.c'
+    # [OPT-RETRY-REUSE] (lane k67, 2026-09-29) src/opt/dfamemo.c joined:
+    # a restored machine's `st` must be heap, because job_cleanup free()s
+    # every machine's `st`; the one malloc routes through pcrec_ctx_nomem.
 
     if [ "$files" = "$expected" ]; then
         local n
