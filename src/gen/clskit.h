@@ -27,11 +27,16 @@
  *     artifact at once — `ROWS` sees one set.
  *
  * Callers: the VM (S4 wires the per-set selection for wide classes, S2 for
- * byte classes, and [OPT-CLSPACK] the table selection for byte classes).
- * `--tune` reaches both tables as their position bit. Two per-set row denies
- * are mapped to public flags, both for byte classes only: `CLSD_BYTE_KIT` is
- * `-fno-cls-kit`'s and `CLSD_BYTE_FOLD` is `-fno-cls-fold`'s; the table
- * selection's atom row is `-fno-cls-pack`'s (and `-fno-cls-kit`'s).
+ * byte classes, and [OPT-CLSPACK] the table selection for byte classes) and
+ * the DFA's scan edge (S2, D139 item 2: its run test is whatever these two
+ * tables answer for its class, spelled by the SAME emitters below — the
+ * edge owns only the loop around the test). The SITE (`ClsSite`) is an
+ * input to both tables, so a row that differs between a VM program and a
+ * scan edge says so as data. `--tune` reaches both tables as their position
+ * bit. The public flags reach the row denies through ONE mapping,
+ * `pcrec_clskit_deny_of`/`pcrec_clskit_tabdeny_of`: `-fno-cls-kit` denies
+ * `byte-kit` (and the atom row), `-fno-cls-fold` the fold rows,
+ * `-fno-cls-pack` the atom row — wherever the tables are read.
  */
 #ifndef PCREC_CLSKIT_H
 #define PCREC_CLSKIT_H
@@ -112,11 +117,12 @@ typedef enum {
 } ClsDeny;
 
 /* The selection table's rows, by name: `ROWS` is indexed by these, so a
- * caller that spells a row's form itself (the VM's inline byte compares)
- * asks `ClsChoice.row == CLSR_...` rather than comparing a name. */
+ * check or a listing can name a row without comparing strings. A caller
+ * that SPELLS a byte class's test asks `pcrec_clskit_test` instead. */
 typedef enum {
     CLSR_BYTE_RANGE,
     CLSR_BYTE_FOLD,
+    CLSR_BYTE_FOLD_DEFAULT,
     CLSR_BYTE_KIT,
     CLSR_BYTE_TABLE,
     CLSR_SIZE_PAGE3,
@@ -127,11 +133,24 @@ typedef enum {
     CLSR_NROWS
 } ClsRowId;
 
+/* WHERE a class is tested, an input to both tables. A VM program's class
+ * read (`CLSS_VM`) and a DFA scan edge's run test (`CLSS_SCAN`) differ in
+ * what a table costs there (a 32-byte bitmap vs the edge's 256-byte table)
+ * and, at the default positions, in one held row (D138 Q1). As mask bits:
+ * `CLSSITE(s)`. */
+typedef enum {
+    CLSS_VM,
+    CLSS_SCAN
+} ClsSite;
+#define CLSSITE(s) (1u << (s))
+#define CLSS_ALL   (CLSSITE(CLSS_VM) | CLSSITE(CLSS_SCAN))
+
 /* A row of the selection table, as data a listing can print. */
 typedef struct {
     const char *name;
     const char *pred_desc;     /* the predicate, one line */
     unsigned    positions;     /* bit (tune + 2) for each --tune position */
+    unsigned    sites;         /* CLSSITE bits the row fires at */
     int         pred;          /* clskit.c's ClsPred tag */
     ClsForm     form;
     ClsDeny     deny;
@@ -148,6 +167,10 @@ typedef struct {
     int                 tune;       /* -2..+2 */
     unsigned            deny;       /* OR of 1u << ClsDeny */
     const ClsKit       *kit;
+    ClsSite             site;       /* where the test is written */
+    int                 calls;      /* how many times the test is written
+                                     * (each call inlines the matcher);
+                                     * <= 0 reads as 1 */
 } ClsSelectIn;
 
 /* The selection's answer. `kit` is always filled (every predicate but the
@@ -166,8 +189,10 @@ typedef struct {
  * classes (the ones no compare shape covers): one shared byte->atom table
  * plus a 64-bit mask per class, or a 32-byte bitmap per class. */
 typedef enum {
-    CLST_SITE,      /* one bitmap per class, the caller's own table */
-    CLST_ATOM       /* the shared atom table, `pcrec_clskit_emit_atom*` */
+    CLST_SITE,      /* one 32-byte bitmap per class, the caller's own table */
+    CLST_ATOM,      /* the shared atom table, `pcrec_clskit_emit_atom*` */
+    CLST_BYTE256,   /* one 256-byte table per scan edge, 1 per member byte */
+    CLST_NFORM
 } ClsTabForm;
 
 /* A table-selection row's deny, an ORDINAL like `ClsDeny`. */
@@ -182,6 +207,7 @@ typedef struct {
     const char *name;
     const char *pred_desc;     /* the predicate, one line */
     unsigned    positions;     /* bit (tune + 2) for each --tune position */
+    unsigned    sites;         /* CLSSITE bits the row fires at */
     int         pred;          /* clskit.c's ClsTabPred tag */
     ClsTabForm  form;
     ClsTabDeny  deny;
@@ -195,6 +221,17 @@ typedef struct {
     ClsAtomTable atoms;
 } ClsTabChoice;
 
+/* HOW A BYTE CLASS'S TEST IS SPELLED, read off its `ROWS` choice by
+ * `pcrec_clskit_test`: an inline compare (one interval, or the ASCII fold
+ * pair), a call of its kit matcher, or a read of the table `TAB_ROWS`
+ * chose. Every site that writes a byte-class test switches on this. */
+typedef enum {
+    CLS_TEST_RANGE,
+    CLS_TEST_FOLD,
+    CLS_TEST_KIT,
+    CLS_TEST_TABLE
+} ClsTest;
+
 void pcrec_clskit_partition(Arena *a, const PcrecCpRange *iv, int n,
                             unsigned lam, unsigned leaf_allow, ClsKit *out);
 long long pcrec_clskit_whole_bytes(Arena *a, ClsForm f,
@@ -206,14 +243,23 @@ void pcrec_clskit_select(Arena *a, const PcrecCpRange *iv, int n,
 const ClsRow *pcrec_clskit_rows(int *nrows);
 void pcrec_clskit_select_tables(Arena *a, const PcrecCpRange *const *sets,
                                 const int *nivs, int nset, int tune,
-                                unsigned deny, ClsTabChoice *out);
+                                ClsSite site, unsigned deny, ClsTabChoice *out);
 const ClsTabRow *pcrec_clskit_table_rows(int *nrows);
 unsigned pcrec_clskit_kit_lambda(void);
+unsigned pcrec_clskit_deny_of(uint64_t flags);
+unsigned pcrec_clskit_tabdeny_of(uint64_t flags);
+ClsTest pcrec_clskit_test(const ClsChoice *ch);
+const char *pcrec_clskit_test_name(ClsTest t, ClsTabForm f);
+size_t pcrec_clskit_byte_tests(ClsSite site, PcrecAxisCand *out, size_t cap);
 
 const char *pcrec_clskit_leaf_name(ClsLeaf l);
 const char *pcrec_clskit_form_name(ClsForm f);
 
-void pcrec_clskit_emit_kit(StrBuf *c, const char *fn, const ClsKit *k);
+void pcrec_clskit_emit_kit(StrBuf *c, const char *fn, const ClsKit *k,
+                           unsigned cp_max);
+void pcrec_clskit_emit_inline(StrBuf *c, const ClsChoice *ch, const char *byte);
+const char *pcrec_clskit_read(Arena *a, ClsTest t, ClsTabForm f,
+                              const char *name, const char *byte);
 void pcrec_clskit_emit_whole(StrBuf *c, Arena *a, const char *fn, ClsForm f,
                              const PcrecCpRange *iv, int n);
 void pcrec_clskit_emit_atom_table(StrBuf *c, const char *tab,

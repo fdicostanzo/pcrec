@@ -101,7 +101,16 @@ static const LeafModel LEAF[CLSK_NLEAF] = {
  * K's bytes against another form's (`P_P3_SMALLER`, `mid_gate`), never to
  * `ClsKit.bytes` itself — the DP's own sectioning model, and `out->bytes`
  * for a chosen `CLSF_KIT` row, stay the unadjusted model (D131 addendum 1:
- * "The DP's own sectioning model is unchanged"). */
+ * "The DP's own sectioning model is unchanged").
+ *
+ * `kit_disp_bytes_byte` is the same fit over the BYTE population, and it is
+ * 0: the 41 distinct corpus byte classes' standalone kit matchers (the
+ * study's method, gcc-16 -O2 Mach-O) measure model + (-28..+26) B, mean
+ * -0.3 B ([CLS-TREE] S2 review fixes, D139 item 1). A byte kit has one to
+ * three sections and no dispatch tree to speak of, so the 578 B the K53
+ * twelve carry is not a property of a byte kit; applied to one it would
+ * price every byte kit above every byte table and retire the row by
+ * arithmetic rather than by measurement. */
 static const struct {
     unsigned kit_lambda;
     int      disp_ops;
@@ -112,14 +121,30 @@ static const struct {
     int      atom_max;
     unsigned page3_ts;
     int      page2_text, page3_text, bitmap1_text;
-    int      kit_disp_bytes;
+    int      kit_disp_bytes, kit_disp_bytes_byte;
 } PLACE = {
     .kit_lambda = 4, .disp_ops = 1, .max_k = 64,
     .mid_min_sections = 16, .z_mid_pct = 126,
     .atom_min_sites = 11, .atom_max = 64,
     .page3_ts = 10,
     .page2_text = 68, .page3_text = 88, .bitmap1_text = 60,
-    .kit_disp_bytes = 578,
+    .kit_disp_bytes = 578, .kit_disp_bytes_byte = 0,
+};
+
+/* WHAT A TABLE COSTS WHERE IT IS READ, per `TAB_ROWS` representation: the
+ * table's own bytes (paid once) and one read's `.text` (paid per call). The
+ * read texts are MEASURED the way `kit_disp_bytes` was: a standalone
+ * non-inline function doing exactly that read, gcc-16 -O2 Mach-O `__text`
+ * (docs/dev/lanes/clss2_report.md, "Review fixes"). The byte-kit row's
+ * smaller-than predicate reads the representation its site would take for
+ * a lone set (`lone_table`); the atom table is never that (it needs
+ * `atom_min_sites` classes), so its row is the shared table plus a mask. */
+static const struct {
+    int rodata, read_text;
+} TABLE_COST[CLST_NFORM] = {
+    [CLST_SITE]    = { 32, 32 },
+    [CLST_ATOM]    = { 256 + 8, 32 },
+    [CLST_BYTE256] = { 256, 16 },
 };
 
 /* The DP's fixed-point unit: an op weight of 1 is Q16 units, a byte is Q16
@@ -528,6 +553,7 @@ typedef enum {
     P_BYTE,
     P_BYTE_ONE,
     P_BYTE_FOLD,
+    P_KIT_SMALLER,
     P_P3_SMALLER,
     P_MID_P2,
     P_MID_B1,
@@ -556,60 +582,60 @@ enum { TP_M2, TP_M1, TP_0, TP_P1, TP_P2 };
  * choosing IT is the ARTIFACT-LEVEL table `TAB_ROWS` below, walked once
  * over every table-reading byte class, not a per-set `ROWS` outcome.
  *
- * THE BYTE ROWS ([CLS-TREE] S2, D131 item 5). The kit's byte forms are a
- * size-leaning position only; the default byte-class form stays a table.
- * `byte-range` comes first at every position because a one-interval set is
- * one compare and no table can beat it; the caller spells it inline.
- * `byte-fold` is the shipped [FORM-CHAR] ASCII-pair compare, unchanged at
- * every position and deniable by `-fno-cls-fold` (`CLSD_BYTE_FOLD`), held
- * so until its fate is ruled (docs/dev/lanes/clss2_report.md, Q1): the
- * design retires it into K's `CUBES`, and D131 item 5 puts the kit's byte
- * forms at the size-leaning positions only. `byte-table`
- * lists every position so that denying `byte-kit` falls to a table rather
- * than to a code-point row. A table-read byte class's TABLE (a bitmap per
- * class, or the shared atom table) is `TAB_ROWS`' choice. */
+ * THE BYTE ROWS ([CLS-TREE] S2, D131 item 5, D138, D139). `byte-range`
+ * comes first at every position and site because a one-interval set is one
+ * compare and no table can beat it. The ASCII case pair takes the
+ * [FORM-CHAR] fold compare in TWO rows: `byte-fold` at the size-leaning
+ * positions, at both sites, and `byte-fold-default` at `0`/`+1`/`+2` on the
+ * VM only — D138 Q1 holds the default fold pending FORM-CHAR2's timing, and
+ * the scan edge's default for a fold pair stays its table, as it always
+ * was. That measurement rules BOTH sites: a flip to the table deletes
+ * `byte-fold-default`, a flip to the fold adds the scan site to it — one
+ * row either way. `-fno-cls-fold` denies both (`CLSD_BYTE_FOLD`).
+ * `byte-kit` fires at the size-leaning positions only where the kit is
+ * SMALLER than the table its site would read (D139 item 1: `P_KIT_SMALLER`,
+ * `P_P3_SMALLER`'s shape); `-fno-cls-kit` denies it. `byte-table` lists
+ * every position and site so a denied or larger kit falls to a table
+ * rather than to a code-point row; WHICH table is `TAB_ROWS`' choice. */
+#define TP_ALL (TPOS(TP_M2) | TPOS(TP_M1) | TPOS(TP_0) | TPOS(TP_P1) | TPOS(TP_P2))
 static const ClsRow ROWS[CLSR_NROWS] = {
     [CLSR_BYTE_RANGE] = { "byte-range",
       "byte set that is ONE interval (a single byte, a range, or all 256): "
       "one inline compare, every position",
-      TPOS(TP_M2) | TPOS(TP_M1) | TPOS(TP_0) | TPOS(TP_P1) | TPOS(TP_P2),
-      P_BYTE_ONE, CLSF_KIT, CLSD_NONE },
+      TP_ALL, CLSS_ALL, P_BYTE_ONE, CLSF_KIT, CLSD_NONE },
     [CLSR_BYTE_FOLD] = { "byte-fold",
       "byte set that is an ASCII case pair {X, x}: the inline fold compare, "
-      "every position",
-      TPOS(TP_M2) | TPOS(TP_M1) | TPOS(TP_0) | TPOS(TP_P1) | TPOS(TP_P2),
+      "size-leaning positions, every site",
+      TPOS(TP_M2) | TPOS(TP_M1), CLSS_ALL, P_BYTE_FOLD, CLSF_KIT, CLSD_BYTE_FOLD },
+    [CLSR_BYTE_FOLD_DEFAULT] = { "byte-fold-default",
+      "byte set that is an ASCII case pair {X, x}: the inline fold compare, "
+      "default positions, VM only (D138 Q1, held)",
+      TPOS(TP_0) | TPOS(TP_P1) | TPOS(TP_P2), CLSSITE(CLSS_VM),
       P_BYTE_FOLD, CLSF_KIT, CLSD_BYTE_FOLD },
     [CLSR_BYTE_KIT] = { "byte-kit",
-      "byte set (every member <= 0xFF): the kit's byte forms, size-leaning "
-      "positions only",
-      TPOS(TP_M2) | TPOS(TP_M1),
-      P_BYTE, CLSF_KIT, CLSD_BYTE_KIT },
+      "byte set whose kit matcher is smaller than the table its site reads: "
+      "the kit's byte forms, size-leaning positions only",
+      TPOS(TP_M2) | TPOS(TP_M1), CLSS_ALL, P_KIT_SMALLER, CLSF_KIT, CLSD_BYTE_KIT },
     [CLSR_BYTE_TABLE] = { "byte-table",
       "byte set: a table (the default byte-class form, and every position's "
-      "answer when the kit's byte forms are denied)",
-      TPOS(TP_M2) | TPOS(TP_M1) | TPOS(TP_0) | TPOS(TP_P1) | TPOS(TP_P2),
-      P_BYTE, CLSF_BITMAP1, CLSD_BYTE_TABLE },
+      "answer when the kit's byte forms are denied or larger)",
+      TP_ALL, CLSS_ALL, P_BYTE, CLSF_BITMAP1, CLSD_BYTE_TABLE },
     [CLSR_SIZE_PAGE3] = { "size-page3",
       "bytes(P3) < bytes(K): the smaller of K and P3",
-      TPOS(TP_M2) | TPOS(TP_M1),
-      P_P3_SMALLER, CLSF_PAGE3, CLSD_SIZE_PAGE3 },
+      TPOS(TP_M2) | TPOS(TP_M1), CLSS_ALL, P_P3_SMALLER, CLSF_PAGE3, CLSD_SIZE_PAGE3 },
     [CLSR_SPEED_PAGE2] = { "speed-page2",
       "the mid gate holds and bytes(P2) <= bytes(B1)",
-      TPOS(TP_P2),
-      P_MID_P2, CLSF_PAGE2, CLSD_SPEED_PAGE2 },
+      TPOS(TP_P2), CLSS_ALL, P_MID_P2, CLSF_PAGE2, CLSD_SPEED_PAGE2 },
     [CLSR_SPEED_BITMAP1] = { "speed-bitmap1",
       "the mid gate holds and bytes(B1) < bytes(P2)",
-      TPOS(TP_P2),
-      P_MID_B1, CLSF_BITMAP1, CLSD_SPEED_BITMAP1 },
+      TPOS(TP_P2), CLSS_ALL, P_MID_B1, CLSF_BITMAP1, CLSD_SPEED_BITMAP1 },
     [CLSR_MID_PAGE3] = { "mid-page3",
       "the mid gate: K has >= mid_min_sections sections and "
       "bytes(P3) <= z_mid x bytes(K)",
-      TPOS(TP_0) | TPOS(TP_P1) | TPOS(TP_P2),
-      P_MID, CLSF_PAGE3, CLSD_MID_PAGE3 },
+      TPOS(TP_0) | TPOS(TP_P1) | TPOS(TP_P2), CLSS_ALL, P_MID, CLSF_PAGE3, CLSD_MID_PAGE3 },
     [CLSR_KIT] = { "kit",
       "always",
-      TPOS(TP_M2) | TPOS(TP_M1) | TPOS(TP_0) | TPOS(TP_P1) | TPOS(TP_P2),
-      P_TRUE, CLSF_KIT, CLSD_NONE },
+      TP_ALL, CLSS_ALL, P_TRUE, CLSF_KIT, CLSD_NONE },
 };
 
 /* The selection's lazily-priced inputs for one set: each whole-set form's
@@ -647,13 +673,28 @@ static bool is_ascii_fold_pair(const PcrecCpRange *iv, int n)
 
 /* K's byte ESTIMATE as read by the SELECTION's comparisons (D131 ADDENDUM
  * 1): the DP's own model bytes (`s->k->bytes`, unchanged) plus the fitted
- * dispatch/prologue term `PLACE.kit_disp_bytes` (see PLACE's comment for
- * the fit). The ONLY reader is a predicate comparing K against another
- * form; `s->k->bytes` itself, and `out->bytes` for a chosen `CLSF_KIT` row,
- * are never adjusted. */
+ * dispatch/prologue term for the set's domain — `PLACE.kit_disp_bytes` for
+ * a code-point set, `PLACE.kit_disp_bytes_byte` for a byte set (see PLACE's
+ * comment for both fits). The ONLY reader is a predicate comparing K
+ * against another form; `s->k->bytes` itself, and `out->bytes` for a chosen
+ * `CLSF_KIT` row, are never adjusted. */
 static long long kit_sel_bytes(SelCtx *s)
 {
-    return s->k->bytes + PLACE.kit_disp_bytes;
+    return s->k->bytes + (is_byte_set(s->iv, s->n) ? PLACE.kit_disp_bytes_byte
+                                                   : PLACE.kit_disp_bytes);
+}
+
+static ClsTabForm lone_table(int tune, ClsSite site);
+
+/* The byte-kit row's predicate (D139 item 1): a byte set whose kit, written
+ * `calls` times (each call inlines it), is smaller than the table its site
+ * would read for it alone — that table once, plus one read per call. */
+static bool kit_smaller(SelCtx *s)
+{
+    long long calls = s->in->calls > 0 ? s->in->calls : 1;
+    ClsTabForm t = lone_table(s->in->tune, s->in->site);
+    return is_byte_set(s->iv, s->n)
+        && calls * kit_sel_bytes(s) < TABLE_COST[t].rodata + calls * TABLE_COST[t].read_text;
 }
 
 /* The `0` row's gate: `K` has enough sections that a dispatch tree is
@@ -673,6 +714,7 @@ static bool pred_holds(SelCtx *s, ClsPred p)
     case P_BYTE:       return is_byte_set(s->iv, s->n);
     case P_BYTE_ONE:   return s->n == 1 && is_byte_set(s->iv, s->n);
     case P_BYTE_FOLD:  return is_ascii_fold_pair(s->iv, s->n);
+    case P_KIT_SMALLER: return kit_smaller(s);
     case P_P3_SMALLER: return whole(s, CLSF_PAGE3) < kit_sel_bytes(s);
     case P_MID_P2:     return mid_gate(s) && whole(s, CLSF_PAGE2) <= whole(s, CLSF_BITMAP1);
     case P_MID_B1:     return mid_gate(s) && whole(s, CLSF_BITMAP1) < whole(s, CLSF_PAGE2);
@@ -683,7 +725,8 @@ static bool pred_holds(SelCtx *s, ClsPred p)
 
 /* THE CLASS-FORM SELECTION: the first row of `ROWS` whose position bit is
  * set for `in->tune` (an out-of-range position reads as `balanced`, as
- * tune.c's own rows do), whose deny is clear and whose predicate holds.
+ * tune.c's own rows do), whose site bit is set for `in->site`, whose deny
+ * is clear and whose predicate holds.
  * Always answers (the last row is undeniable). `out->kit` is `K` at the
  * table's λ whatever form wins (`in->kit`, when the caller has it). */
 void pcrec_clskit_select(Arena *a, const PcrecCpRange *iv, int n,
@@ -699,7 +742,7 @@ void pcrec_clskit_select(Arena *a, const PcrecCpRange *iv, int n,
     else pcrec_clskit_partition(a, iv, n, PLACE.kit_lambda, 0, &out->kit);
     for (int r = 0; r < nrow; r++) {
         const ClsRow *row = &ROWS[r];
-        if (!(row->positions & pos)) continue;
+        if (!(row->positions & pos) || !(row->sites & CLSSITE(in->site))) continue;
         if (row->deny != CLSD_NONE && ((in->deny >> row->deny) & 1)) continue;
         if (!pred_holds(&s, (ClsPred)row->pred)) continue;
         out->form = row->form;
@@ -725,16 +768,23 @@ const ClsRow *pcrec_clskit_rows(int *nrows)
  * How an artifact's TABLE-READING byte classes read their table. The input
  * is all of them at once, which is why this is its own first-match table
  * and not a `ROWS` row: "N live class sites" is a count over the artifact.
- * A row fires where its position bit is set, its deny is clear and its
- * predicate holds; the last row is undeniable and always holds. All five
- * `--tune` positions take the atom row: D131 item 6 rules it the DEFAULT,
- * and at `-2`/`-1` it is also smaller than the kit's byte forms at N >= 16
- * (cls_tree_design.md §1.7.3 item 3, clsfit's proposed `-2`/`-1` order:
- * atom first, then the kit). The input is every byte class `ROWS` did NOT
- * answer with an inline compare (`byte-range`, `byte-fold`), and `site`
- * means each keeps its own `ROWS` form: a 32-byte bitmap, or at the
- * size-leaning positions its kit matcher (S2). A later ruling moves a
- * position by editing `positions`. */
+ * A row fires where its position and site bits are set, its deny is clear
+ * and its predicate holds; the last row is undeniable and always holds.
+ *
+ * THE THREE REPRESENTATIONS ([CLS-TREE] S2, D139 item 2), each a row:
+ *   - `atom`, the VM only: D131 item 6 rules it the DEFAULT at every
+ *     position, and at `-2`/`-1` it is also smaller than the kit's byte
+ *     forms at N >= 16 (cls_tree_design.md §1.7.3 item 3, clsfit's proposed
+ *     `-2`/`-1` order: atom first, then the kit). When it fires every input
+ *     class reads it, a `byte-kit` one included;
+ *   - `scan-table`, the scan edge only: one 256-byte table per edge, a load
+ *     addressed by the byte itself, which is the per-context choice the
+ *     edge has always made ([OPT-5]) and is kept as this row's predicate
+ *     until measured otherwise;
+ *   - `site`, everywhere else: each class keeps its own `ROWS` form, a
+ *     32-byte bitmap, or at the size-leaning positions its kit matcher.
+ * The input is every byte class `ROWS` did NOT answer with an inline
+ * compare. A later ruling moves a position or a site by editing the row. */
 typedef enum {
     TABP_ALWAYS,
     TABP_ATOM_FITS
@@ -746,23 +796,26 @@ static const ClsTabRow TAB_ROWS[] = {
       "into atoms (bytes with the same class membership) has at most "
       "atom_max atoms: one shared 256-byte atom table and a 64-bit mask "
       "per class",
-      TPOS(TP_M2) | TPOS(TP_M1) | TPOS(TP_0) | TPOS(TP_P1) | TPOS(TP_P2),
-      TABP_ATOM_FITS, CLST_ATOM, CLSTD_ATOM },
+      TP_ALL, CLSSITE(CLSS_VM), TABP_ATOM_FITS, CLST_ATOM, CLSTD_ATOM },
+    { "scan-table",
+      "a scan edge's run test: one 256-byte table per edge, read by the "
+      "byte itself",
+      TP_ALL, CLSSITE(CLSS_SCAN), TABP_ALWAYS, CLST_BYTE256, CLSTD_NONE },
     { "site",
       "always: each class keeps its own form (a 32-byte bitmap, or its "
       "kit matcher at the size-leaning positions)",
-      TPOS(TP_M2) | TPOS(TP_M1) | TPOS(TP_0) | TPOS(TP_P1) | TPOS(TP_P2),
-      TABP_ALWAYS, CLST_SITE, CLSTD_NONE },
+      TP_ALL, CLSS_ALL, TABP_ALWAYS, CLST_SITE, CLSTD_NONE },
 };
 
 /* THE TABLE SELECTION over the `nset` byte sets an artifact's classes read
- * a table for (every member <= 0xFF), in the caller's order: the first row
- * of `TAB_ROWS` that fires. Always answers. `out->atoms` holds the partition
- * when the atom row wins; `pcrec_clskit_atoms` is the predicate's own
- * builder, so the table the caller emits is the one the predicate measured. */
+ * a table for at `site` (every member <= 0xFF), in the caller's order: the
+ * first row of `TAB_ROWS` that fires. Always answers. `out->atoms` holds
+ * the partition when the atom row wins; `pcrec_clskit_atoms` is the
+ * predicate's own builder, so the table the caller emits is the one the
+ * predicate measured. */
 void pcrec_clskit_select_tables(Arena *a, const PcrecCpRange *const *sets,
                                 const int *nivs, int nset, int tune,
-                                unsigned deny, ClsTabChoice *out)
+                                ClsSite site, unsigned deny, ClsTabChoice *out)
 {
     int t = pcrec_tune_valid(tune) ? tune : PCREC_TUNE_BALANCED;
     unsigned pos = TPOS(t - PCREC_TUNE_MIN_SIZE);
@@ -772,7 +825,7 @@ void pcrec_clskit_select_tables(Arena *a, const PcrecCpRange *const *sets,
     for (int r = 0; r < nrow; r++) {
         const ClsTabRow *row = &TAB_ROWS[r];
         bool holds = false;
-        if (!(row->positions & pos)) continue;
+        if (!(row->positions & pos) || !(row->sites & CLSSITE(site))) continue;
         if (row->deny != CLSTD_NONE && ((deny >> row->deny) & 1)) continue;
         switch ((ClsTabPred)row->pred) {
         case TABP_ALWAYS:
@@ -790,6 +843,16 @@ void pcrec_clskit_select_tables(Arena *a, const PcrecCpRange *const *sets,
     }
 }
 
+/* The representation a LONE byte set would read at `site` — the table
+ * selection over that one set. A set alone never meets the atom row's
+ * `atom_min_sites`, so no partition is built and no arena is needed. */
+static ClsTabForm lone_table(int tune, ClsSite site)
+{
+    ClsTabChoice ch;
+    pcrec_clskit_select_tables(NULL, NULL, NULL, 1, tune, site, 0, &ch);
+    return ch.form;
+}
+
 /* The table selection's rows, for a listing or a check. */
 const ClsTabRow *pcrec_clskit_table_rows(int *nrows)
 {
@@ -801,6 +864,97 @@ const ClsTabRow *pcrec_clskit_table_rows(int *nrows)
 unsigned pcrec_clskit_kit_lambda(void)
 {
     return PLACE.kit_lambda;
+}
+
+/* The `ROWS` deny mask the public flags ask for: `-fno-cls-kit` denies
+ * `byte-kit`, `-fno-cls-fold` both fold rows. The ONE mapping — every
+ * caller of `pcrec_clskit_select` passes this, so a flag denies its row
+ * wherever the table is read (D139 item 3). */
+static const uint64_t DENY_FLAG[CLSD_NDENY] = {
+    [CLSD_BYTE_KIT]  = PCREC_NO_CLS_KIT,
+    [CLSD_BYTE_FOLD] = PCREC_NO_CLS_FOLD,
+};
+
+unsigned pcrec_clskit_deny_of(uint64_t flags)
+{
+    unsigned m = 0;
+    for (int d = 0; d < CLSD_NDENY; d++)
+        if (DENY_FLAG[d] && (flags & DENY_FLAG[d])) m |= 1u << d;
+    return m;
+}
+
+/* The byte-class tests a site can take, for `--list-axes`: `ROWS`' byte
+ * rows at `site`, each named as a stamp names it (`pcrec_clskit_test_name`,
+ * a table read by the representation a lone set reads there), first row
+ * per name, with the public flag that denies it (0 where none does).
+ * Returns the count written, at most `cap`. */
+size_t pcrec_clskit_byte_tests(ClsSite site, PcrecAxisCand *out, size_t cap)
+{
+    size_t n = 0;
+    ClsTabForm tab = lone_table(PCREC_TUNE_BALANCED, site);
+    for (int r = 0; r < CLSR_NROWS && n < cap; r++) {
+        const ClsRow *row = &ROWS[r];
+        if (!(row->sites & CLSSITE(site))) continue;
+        switch ((ClsPred)row->pred) {
+        case P_BYTE_ONE: case P_BYTE_FOLD: case P_KIT_SMALLER: case P_BYTE:
+            break;
+        case P_TRUE: case P_P3_SMALLER: case P_MID_P2: case P_MID_B1: case P_MID:
+            continue;
+        }
+        ClsChoice ch = { row->form, r, { 0 }, 0 };
+        const char *name = pcrec_clskit_test_name(pcrec_clskit_test(&ch), tab);
+        bool seen = false;
+        for (size_t q = 0; q < n; q++) seen = seen || !strcmp(out[q].name, name);
+        if (seen) continue;
+        out[n].name = name;
+        out[n].deny = DENY_FLAG[row->deny];
+        n++;
+    }
+    return n;
+}
+
+/* The `TAB_ROWS` deny mask the public flags ask for: the atom table is a
+ * kit form, so `-fno-cls-kit` (D129 Q2's one kit-level switch) denies it as
+ * `-fno-cls-pack` does. */
+unsigned pcrec_clskit_tabdeny_of(uint64_t flags)
+{
+    return (flags & (PCREC_NO_CLS_PACK | PCREC_NO_CLS_KIT)) ? 1u << CLSTD_ATOM : 0;
+}
+
+/* How a byte class's test is spelled, read off its `ROWS` choice: the two
+ * inline rows by their predicate (one interval; the fold pair), a kit row
+ * as a kit call, and anything else as a table read. */
+ClsTest pcrec_clskit_test(const ClsChoice *ch)
+{
+    switch ((ClsPred)ROWS[ch->row].pred) {
+    case P_BYTE_ONE:  return CLS_TEST_RANGE;
+    case P_BYTE_FOLD: return CLS_TEST_FOLD;
+    case P_TRUE: case P_BYTE: case P_KIT_SMALLER: case P_P3_SMALLER:
+    case P_MID_P2: case P_MID_B1: case P_MID:
+        break;
+    }
+    return ch->form == CLSF_KIT ? CLS_TEST_KIT : CLS_TEST_TABLE;
+}
+
+/* The name a byte test reports in a stamp (`RX_DFA_SCAN_EDGE`'s values):
+ * the inline and kit tests by kind, a table read by its representation.
+ * `bitmap` is the 256-byte scan table's name from before it was a row, and
+ * it stays that stamp value. */
+const char *pcrec_clskit_test_name(ClsTest t, ClsTabForm f)
+{
+    switch (t) {
+    case CLS_TEST_RANGE: return "range";
+    case CLS_TEST_FOLD:  return "fold";
+    case CLS_TEST_KIT:   return "kit";
+    case CLS_TEST_TABLE: break;
+    }
+    switch (f) {
+    case CLST_SITE:    return "bitmap32";
+    case CLST_ATOM:    return "atom";
+    case CLST_BYTE256: return "bitmap";
+    case CLST_NFORM:   break;
+    }
+    return "?";
 }
 
 /* The design note's short names of the matcher forms. */
@@ -985,9 +1139,12 @@ static void emit_tree(StrBuf *c, Arena *a, const char *fn, const ClsKit *k,
 }
 
 /* The global bound every matcher opens with: outside `[lo, hi]`, not a
- * member. One unsigned compare. */
-static void emit_bound(StrBuf *c, unsigned lo, unsigned hi)
+ * member. One unsigned compare, and none at all where `[lo, hi]` covers
+ * every value the argument can take (`0..cp_max`) — a byte kit over a set
+ * spanning 0..255 would otherwise carry a bound that is always false. */
+static void emit_bound(StrBuf *c, unsigned lo, unsigned hi, unsigned cp_max)
 {
+    if (lo == 0 && hi >= cp_max) return;
     pcrec_sb_printf(c, "    if ((unsigned)(cp - %uu) > %uu) return 0;\n", lo, hi - lo);
 }
 
@@ -999,15 +1156,18 @@ static void emit_empty(StrBuf *c, const char *fn)
 
 /* THE KIT MATCHER for a sectioning: the sections' tables, then `FN`'s
  * global bound, balanced dispatch and leaves (the study's `emit.py`
- * shape). Its scratch text lives in a private arena freed on return. */
-void pcrec_clskit_emit_kit(StrBuf *c, const char *fn, const ClsKit *k)
+ * shape). `cp_max` is the largest argument a caller can pass (0xFF for a
+ * byte, `UINT_MAX` for a code point), which only the bound reads. Its
+ * scratch text lives in a private arena freed on return. */
+void pcrec_clskit_emit_kit(StrBuf *c, const char *fn, const ClsKit *k,
+                           unsigned cp_max)
 {
     Arena a = { NULL, c->cx };
     if (k->nsec <= 0) { emit_empty(c, fn); return; }
     for (int s = 0; s < k->nsec; s++)
         emit_leaf_tables(c, &a, fn, s, k->iv, &k->sec[s]);
     pcrec_sb_printf(c, "static inline int %s(unsigned cp)\n{\n", fn);
-    emit_bound(c, k->iv[0].lo, k->iv[k->n - 1].hi);
+    emit_bound(c, k->iv[0].lo, k->iv[k->n - 1].hi, cp_max);
     emit_tree(c, &a, fn, k, 0, k->nsec - 1, "    ");
     pcrec_sb_puts(c, "}\n");
     pcrec_arena_free(&a);
@@ -1032,7 +1192,7 @@ void pcrec_clskit_emit_whole(StrBuf *c, Arena *a, const char *fn, ClsForm f,
                 b[x >> 3] |= (unsigned char)(1u << (x & 7));
         emit_array(c, "unsigned char", pcrec_sb_fragf(a, "%s_b", fn), nb, b, 1, false);
         pcrec_sb_printf(c, "static inline int %s(unsigned cp)\n{\n", fn);
-        emit_bound(c, lo, hi);
+        emit_bound(c, lo, hi, UINT_MAX);
         pcrec_sb_printf(c, "    cp -= %uu;\n    return (int)((%s_b[cp >> 3] >> (cp & 7)) & 1u);\n}\n",
                         lo, fn);
         return;
@@ -1043,7 +1203,7 @@ void pcrec_clskit_emit_whole(StrBuf *c, Arena *a, const char *fn, ClsForm f,
         emit_array(c, lt, pcrec_sb_fragf(a, "%s_i", fn), w.npages, w.pidx, 4, false);
         emit_array(c, "unsigned long long", pcrec_sb_fragf(a, "%s_l", fn), w.nleaf, w.leaf, 8, true);
         pcrec_sb_printf(c, "static inline int %s(unsigned cp)\n{\n", fn);
-        emit_bound(c, lo, hi);
+        emit_bound(c, lo, hi, UINT_MAX);
         pcrec_sb_printf(c, "    return (int)((%s_l[%s_i[cp >> 6]] >> (cp & 63)) & 1u);\n}\n", fn, fn);
         return;
     case CLSF_PAGE3:
@@ -1054,7 +1214,7 @@ void pcrec_clskit_emit_whole(StrBuf *c, Arena *a, const char *fn, ClsForm f,
                    pcrec_sb_fragf(a, "%s_m", fn), w.nblk * w.bs, w.blk, 4, false);
         emit_array(c, "unsigned long long", pcrec_sb_fragf(a, "%s_l", fn), w.nleaf, w.leaf, 8, true);
         pcrec_sb_printf(c, "static inline int %s(unsigned cp)\n{\n", fn);
-        emit_bound(c, lo, hi);
+        emit_bound(c, lo, hi, UINT_MAX);
         pcrec_sb_printf(c,
             "    return (int)((%s_l[%s_m[(%s_t[cp >> %u] << %u) | ((cp >> 6) & %uu)]]"
             " >> (cp & 63)) & 1u);\n}\n",
@@ -1085,4 +1245,54 @@ void pcrec_clskit_emit_atom(StrBuf *c, const char *fn, const char *tab,
         "    if (cp > 255u) return 0;\n"
         "    return (int)((0x%016llXULL >> %s[cp]) & 1u);\n}\n",
         fn, (unsigned long long)t->mask[k], tab);
+}
+
+/* A byte class's INLINE test of byte expression `byte`, for the two inline
+ * `ROWS` answers: one interval (no test for all 256, an equality for one
+ * byte, one compare from 0, otherwise the unsigned-subtract range) or the
+ * ASCII fold pair (`(byte | 0x20) == lower`, one mask and one compare, no
+ * load — docs/dev/form_char_step0.md §2). The ONE spelling of both, for the
+ * VM's class reads and the DFA scan edge's run test alike (D139 item 2). */
+void pcrec_clskit_emit_inline(StrBuf *c, const ClsChoice *ch, const char *byte)
+{
+    int lo = (int)ch->kit.iv[0].lo, hi = (int)ch->kit.iv[ch->kit.n - 1].hi;
+    if (pcrec_clskit_test(ch) == CLS_TEST_FOLD)
+        /* {lo, hi} with hi == lo | 0x20 by the row's own predicate: the
+         * lowercase member is the compare constant, the mask folds the
+         * other onto it. */
+        pcrec_sb_printf(c, "(%s | 0x20) == %d", byte, hi);
+    else if (lo == 0 && hi == 255) pcrec_sb_puts(c, "1");
+    else if (lo == hi)             pcrec_sb_printf(c, "%s == %d", byte, lo);
+    else if (lo == 0)              pcrec_sb_printf(c, "%s <= %d", byte, hi);
+    else pcrec_sb_printf(c, "(unsigned)(%s - %d) <= %du", byte, lo, hi - lo);
+}
+
+/* A byte class's READ of byte expression `byte`, for the two non-inline
+ * answers: a call of its kit matcher `name`, or a read of its table `name`
+ * in representation `f` (a 32-byte bitmap, the 256-byte scan table, or the
+ * class's atom matcher over the shared table). The ONE spelling of each,
+ * for both sites. NULL for an inline test, which has no read. */
+const char *pcrec_clskit_read(Arena *a, ClsTest t, ClsTabForm f,
+                              const char *name, const char *byte)
+{
+    switch (t) {
+    case CLS_TEST_RANGE:
+    case CLS_TEST_FOLD:
+        return NULL;
+    case CLS_TEST_KIT:
+        return pcrec_sb_fragf(a, "%s(%s)", name, byte);
+    case CLS_TEST_TABLE:
+        break;
+    }
+    switch (f) {
+    case CLST_SITE:
+        return pcrec_sb_fragf(a, "(%s[(%s) >> 3] >> ((%s) & 7)) & 1", name, byte, byte);
+    case CLST_ATOM:
+        return pcrec_sb_fragf(a, "%s(%s)", name, byte);
+    case CLST_BYTE256:
+        return pcrec_sb_fragf(a, "%s[%s]", name, byte);
+    case CLST_NFORM:
+        break;
+    }
+    return NULL;
 }

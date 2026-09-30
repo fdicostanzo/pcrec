@@ -22,6 +22,7 @@
  * that WAS checked is stated rather than implied. The atom form is emitted
  * for every byte set the shared table covers.
  */
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -193,7 +194,7 @@ static void emit_group(int ch)
             pcrec_clskit_partition(&a, s->iv, s->n, LAMS[l], 0, &k);
             snprintf(fn, sizeof fn, "s%d_k%u", s->idx, LAMS[l]);
             snprintf(var, sizeof var, "K%u", LAMS[l]);
-            pcrec_clskit_emit_kit(&add_item(i, fn, var)->text, fn, &k);
+            pcrec_clskit_emit_kit(&add_item(i, fn, var)->text, fn, &k, UINT_MAX);
             census_kit(&k);
         }
         for (size_t o = 0; o < sizeof ONLY / sizeof ONLY[0]; o++) {
@@ -202,7 +203,7 @@ static void emit_group(int ch)
             pcrec_clskit_partition(&a, s->iv, s->n, 4, 1u << ONLY[o], &k);
             snprintf(fn, sizeof fn, "s%d_only%zu", s->idx, o);
             snprintf(var, sizeof var, "only-%s", pcrec_clskit_leaf_name(ONLY[o]));
-            pcrec_clskit_emit_kit(&add_item(i, fn, var)->text, fn, &k);
+            pcrec_clskit_emit_kit(&add_item(i, fn, var)->text, fn, &k, UINT_MAX);
             census_kit(&k);
         }
         for (ClsForm f = CLSF_PAGE3; f <= CLSF_BITMAP1; f++) {
@@ -355,8 +356,9 @@ static void dump(void)
     int nrows;
     const ClsRow *rows = pcrec_clskit_rows(&nrows);
     for (int r = 0; r < nrows; r++)
-        printf("ROW %d %s %s deny=%d | %s\n", r, rows[r].name,
-               pcrec_clskit_form_name(rows[r].form), (int)rows[r].deny, rows[r].pred_desc);
+        printf("ROW %d %s %s deny=%d sites=%u | %s\n", r, rows[r].name,
+               pcrec_clskit_form_name(rows[r].form), (int)rows[r].deny,
+               rows[r].sites, rows[r].pred_desc);
     for (int i = 0; i < nset; i++) {
         Set *s = &sets[i];
         Arena a = { NULL, NULL };
@@ -375,13 +377,16 @@ static void dump(void)
         ClsKit kk;
         pcrec_clskit_partition(&a, s->iv, s->n, pcrec_clskit_kit_lambda(), 0, &kk);
         for (int tune = -2; tune <= 2; tune++)
-            for (int d = 0; d < CLSD_NDENY; d++) {
-                ClsSelectIn in = { tune, d ? 1u << d : 0, d == 0 ? NULL : &kk };
-                ClsChoice ch;
-                pcrec_clskit_select(&a, s->iv, s->n, &in, &ch);
-                printf("SEL %d %d %d %s %s\n", s->idx, tune, d, rows[ch.row].name,
-                       pcrec_clskit_form_name(ch.form));
-            }
+            for (int d = 0; d < CLSD_NDENY; d++)
+                for (int site = CLSS_VM; site <= CLSS_SCAN; site++)
+                    for (int calls = 1; calls <= 2; calls++) {
+                        ClsSelectIn in = { tune, d ? 1u << d : 0, d == 0 ? NULL : &kk,
+                                           (ClsSite)site, calls };
+                        ClsChoice ch;
+                        pcrec_clskit_select(&a, s->iv, s->n, &in, &ch);
+                        printf("SEL %d %d %d %d %d %s %s\n", s->idx, tune, d, site, calls,
+                               rows[ch.row].name, pcrec_clskit_form_name(ch.form));
+                    }
         pcrec_arena_free(&a);
     }
 }

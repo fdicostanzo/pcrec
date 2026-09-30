@@ -3080,13 +3080,10 @@ static const DfaRepr *dfa_repr_of(Ctx *cx, const Dfa *d);
  * both, and the emitted loop asks both, so they are declared here and
  * DEFINED with the objects. Their types are opaque until then. */
 typedef struct DfaEdge DfaEdge;
-typedef struct DfaScan DfaScan;
 static const DfaEdge *dfa_edge_of(Ctx *cx, const Dfa *d, int st);
-static const DfaScan *dfa_scan_of(Ctx *cx, const Dfa *d, int st);
-/* The chosen BODY object's own `c.name`, i.e. the stamp value (D82 rule 2).
- * An accessor rather than a dereference at the stamp path, because `DfaScan`
- * is incomplete up here -- and the accessor is what keeps "the stamp is the
- * chosen object's name" a single expression instead of a second reading. */
+/* The edge's run-test name, i.e. the stamp value: the class table's answer
+ * for its class (axis I, below), named by `pcrec_clskit_test_name` -- one
+ * expression, never a second reading of the class. */
 static const char *dfa_scan_body_name(Ctx *cx, const Dfa *d, int st);
 /* Is `e` the region axis's FIRST candidate, i.e. did this state take an
  * edge? Spelled once here rather than compared against `&dfa_edges[0]` at
@@ -6882,111 +6879,52 @@ static const DfaEdge dfa_edges[] = {
     { { "table-walk", 0,                  cand_always  } },
 };
 
-/* ---- AXIS I: THE EDGE'S RUN-EXTENSION BODY ------------------------------
+/* ---- AXIS I: THE EDGE'S RUN TEST — THE CLASS TABLE'S ANSWER ------------
  *
- * Manager ruling R1.2: the body is its own form axis with representation
- * objects, and D82 bound 3 is satisfied on day one because two REAL forms
- * exist. Both keep the loop-carried register a CURSOR, which is the whole
- * property `docs/dev/opt5_step0_profile.md` §3 measured; they differ in what
- * the class test costs.
+ * The edge's class test is NOT a scan-edge decision (D139 item 2, Frank:
+ * "why can't it use the same structure the table recommends?"). The edge
+ * asks clskit.c's class-form table `ROWS` for its class's form at the
+ * artifact's `--tune` position and site `CLSS_SCAN`, and writes it through
+ * the SAME emitters a VM program's class read uses (`pcrec_clskit_emit_
+ * inline`, `pcrec_clskit_read`, `pcrec_clskit_emit_kit`):
  *
- *   `range`   a contiguous byte set, tested by subtract-and-compare against
- *             two IMMEDIATES baked into the instruction stream. No memory
- *             but the subject is touched.
- *   `bitmap`  any other byte set, tested by a 256-byte membership table.
- *             THE LOAD IS VALUE-ADDRESSED, NOT RESULT-ADDRESSED — its
- *             address is `table + the byte this iteration read`, never the
- *             value a previous iteration's load returned — so the cursor is
- *             still the only loop-carried register and the dependency-chain
- *             property the transform exists for is intact. That is the
- *             difference between this table read and the transition table's,
- *             and it is why a bitmap body is a cost rather than a defeat.
+ *   `range`   one interval: an inline compare against immediates, no
+ *             memory but the subject touched;
+ *   `fold`    an ASCII case pair at the size-leaning positions (D138 Q1
+ *             holds the default: there the scan site's pair is a table);
+ *   `kit`     the size-leaning positions, where the kit written twice is
+ *             smaller than the edge's table: a `static inline` matcher at
+ *             file scope (`emit_scan_defs`);
+ *   `bitmap`  any other set: the table `TAB_ROWS` picks for the scan site,
+ *             one 256-byte table per edge. THE LOAD IS VALUE-ADDRESSED, NOT
+ *             RESULT-ADDRESSED — its address is `table + the byte this
+ *             iteration read` — so the cursor is still the only loop-carried
+ *             register and the property the transform exists for
+ *             (docs/dev/opt5_step0_profile.md §3) is intact.
  *
- *   `kit`     ([CLS-TREE] S2, D131 item 5) at the SIZE-LEANING `--tune`
- *             positions only: a class the class-form table puts on its
- *             `byte-kit` row is tested by the kit's own `K` matcher, a
- *             `static inline` function at file scope (`emit_defs`), with no
- *             256-byte table. The kit's byte forms measured the slowest
- *             byte form under a fair dispatch (O-77), which is why this
- *             object never applies at `0`/`+1`/`+2`. It carries the
- *             `-fno-cls-kit` deny: denying it leaves the edge in place and
- *             falls to `bitmap`, so no reader can mistake it for the region
- *             decision, which stays axis H's alone.
+ * What stays scan-edge-specific is the LOOP around the test (`emit_scan_
+ * edge`) and the table's name and placement, nothing else. `-fno-cls-kit`
+ * and `-fno-cls-fold` deny their rows here as on the VM (clskit.c
+ * `pcrec_clskit_deny_of`); `-fno-scan-edge` belongs to axis H, which decides
+ * whether there is an edge at all.
  *
  * THE SIMD SLOT IS NAMED AND NOT BUILT. A SIMD run-extension form
  * (`studies/simd1`'s branchless classify + count-leading-zeros, [OPT-SIMD]'s
- * row) belongs at the TOP of this list: a new object plus its `emit_test`
- * body, with nothing above the axis moving — not the criterion, not the
- * stamp, not the deletion, not the gates. Manager ruling R2 (Frank, same
- * day) fixes its CONTRACT as ISA-NEUTRAL: it is "a SIMD run-extension form,
- * per-ISA gated, with the scalar forms always available as the fallback",
- * never an x86 slot — Frank's own machine is aarch64/NEON. Nothing this axis
- * emits today is ISA-conditional, and the two scalar forms are the portable
- * baseline that keeps a per-ISA form optional forever.
- *
- * `bitmap` applies unconditionally and is the list's total fallback (D82
- * rule 1): every byte set has a membership table. Neither `range` nor
- * `bitmap` carries a `deny` bit — `-fno-scan-edge` belongs to axis H, which
- * decides whether there is an edge at all; a body deny (`kit`'s) only ever
- * moves an edge to the next body, never removes the loop that replaces the
- * deleted states. */
-struct DfaScan {
-    DfaCand c;
-    void  (*emit_test)(StrBuf *c, const DfaForm *f, int head);
-    /* NULL == this body needs no table of its own. */
-    void  (*emit_tables)(StrBuf *c, const DfaForm *f, int head);
-    /* NULL == this body needs no FILE-SCOPE definition. A function cannot be
-     * declared where `emit_tables` writes (inside the search function), so
-     * a body whose test calls one emits it here, beside the machine's
-     * accessor block (`emit_scan_defs`). */
-    void  (*emit_defs)(StrBuf *c, const DfaForm *f, int head);
-};
+ * row) is a form of the LOOP, not of the class test, so it belongs to this
+ * file: a loop form selected ahead of the scalar loop, with nothing above
+ * the axis moving. Manager ruling R2 (Frank) fixes its CONTRACT as
+ * ISA-NEUTRAL: "a SIMD run-extension form, per-ISA gated, with the scalar
+ * forms always available as the fallback". Nothing emitted today is
+ * ISA-conditional. */
 
-/* The scan-BODY axis's first candidate: is this edge's class a contiguous
- * byte RANGE, so the run test can be a compare rather than a table read? */
-static bool scan_range_applies(const DfaSel *s)
-{
-    return s->st >= 0 && s->st < s->d->n &&
-           pcrec_scan_range(s->d, s->d->st[s->st].scan_cls, NULL, NULL);
-}
+/* How many times `emit_scan_edge` writes an edge's run test: the peeled
+ * first iteration's guard and the loop condition. A kit matcher is inlined
+ * at each, so the class table prices it at this many calls. */
+#define SCAN_TEST_CALLS 2
 
-/* The range body's emitted run test, in the tightest of three spellings the
- * bounds allow: an equality for a single byte, one compare where the range
- * starts at 0, and the unsigned-subtract trick otherwise. */
-static void scan_test_range(StrBuf *c, const DfaForm *f, int head)
-{
-    int lo, hi;
-    pcrec_scan_range(f->d, f->d->st[head].scan_cls, &lo, &hi);
-    if (lo == hi)       pcrec_sb_printf(c, "%s == %d", f->dir->peek, lo);
-    else if (lo == 0)   pcrec_sb_printf(c, "%s <= %d", f->dir->peek, hi);
-    else                pcrec_sb_printf(c, "(unsigned char)(%s - %d) <= %d",
-                                  f->dir->peek, lo, hi - lo);
-}
-
-/* The bitmap body's emitted run test: one subscript of this edge's own
- * membership table. */
-static void scan_test_bitmap(StrBuf *c, const DfaForm *f, int head)
-{
-    pcrec_sb_printf(c, "%s_%s_scan%d[%s]", f->p, f->dir->c.name, head, f->dir->peek);
-}
-
-/* That table — 1 for every byte in the edge's class — named per STATE, since
- * two edges on one machine need not share a class. */
-static void scan_tables_bitmap(StrBuf *c, const DfaForm *f, int head)
-{
-    uint8_t set[256];
-    int cls = f->d->st[head].scan_cls;
-    for (int b = 0; b < 256; b++) set[b] = (uint8_t)(f->d->clsmap[b] == cls);
-    emit_u8_table(c, f->p, dfa_fragf(f->cx, "%s_scan%d", f->dir->c.name, head),
-                  set, 256);
-}
-
-/* [CLS-TREE] S2 the edge class's `--tune` class-form choice: its byte set
- * off the machine's class map, through clskit.c's `ROWS` at the artifact's
- * position — the same table and the same byte rows the VM's byte classes
- * read. `-fno-cls-fold` maps to its row as it does there; `-fno-cls-kit` is
- * the `kit` object's own `deny` (D82 rule 3), so it is not repeated here. */
-static void scan_kit_choice(Ctx *cx, const Dfa *d, int head, ClsChoice *out)
+/* The edge class's `ROWS` choice: its byte set off the machine's class map,
+ * at the artifact's position, at the scan site. */
+static void scan_choice(Ctx *cx, const Dfa *d, int head, ClsChoice *out)
 {
     PcrecCpRange *iv = pcrec_arena_alloc(&cx->arena, 128 * sizeof *iv);
     int n = 0, cls = d->st[head].scan_cls;
@@ -6996,69 +6934,45 @@ static void scan_kit_choice(Ctx *cx, const Dfa *d, int head, ClsChoice *out)
         while (b < 256 && d->clsmap[b] == cls) b++;
         iv[n++].hi = b - 1;
     }
-    ClsSelectIn in = { cx->opt->tune,
-                       (cx->opt->flags & PCREC_NO_CLS_FOLD) ? 1u << CLSD_BYTE_FOLD : 0,
-                       NULL };
+    ClsSelectIn in = { cx->opt->tune, pcrec_clskit_deny_of(cx->opt->flags),
+                       NULL, CLSS_SCAN, SCAN_TEST_CALLS };
     pcrec_clskit_select(&cx->arena, iv, n, &in, out);
 }
 
-/* The scan-BODY axis's `kit` candidate ([CLS-TREE] S2): does the class
- * table put this edge's class on its `byte-kit` row, i.e. is the artifact
- * at a size-leaning position (D131 item 5) and the class neither one
- * interval nor an ASCII fold pair? */
-static bool scan_kit_applies(const DfaSel *s)
+/* The table representation a table-read edge reads (`TAB_ROWS` at the scan
+ * site, one class). */
+static ClsTabForm scan_table(Ctx *cx)
 {
-    if (s->st < 0 || s->st >= s->d->n) return false;
-    ClsChoice ch;
-    scan_kit_choice(s->cx, s->d, s->st, &ch);
-    return ch.row == CLSR_BYTE_KIT;
+    ClsTabChoice t;
+    pcrec_clskit_select_tables(&cx->arena, NULL, NULL, 1, cx->opt->tune, CLSS_SCAN,
+                               pcrec_clskit_tabdeny_of(cx->opt->flags), &t);
+    return t.form;
 }
 
-/* The kit matcher's name for the edge at `head`, per machine. */
-static const char *scan_kit_name(const DfaForm *f, int head)
+/* The name of the edge's kit matcher or table, per machine and per STATE,
+ * since two edges on one machine need not share a class. */
+static const char *scan_name(const DfaForm *f, ClsTest t, int head)
 {
-    return dfa_fragf(f->cx, "%s_%s_scankit%d", f->p, f->dir->c.name, head);
+    return dfa_fragf(f->cx, "%s_%s_scan%s%d", f->p, f->dir->c.name,
+                     t == CLS_TEST_KIT ? "kit" : "", head);
 }
 
-/* The kit body's emitted run test: one call of the edge's kit matcher. */
-static void scan_test_kit(StrBuf *c, const DfaForm *f, int head)
-{
-    pcrec_sb_printf(c, "%s(%s)", scan_kit_name(f, head), f->dir->peek);
-}
-
-/* That matcher — the class's `K`, a `static inline` function at file scope,
- * named per STATE for `scan_tables_bitmap`'s reason. */
-static void scan_defs_kit(StrBuf *c, const DfaForm *f, int head)
+/* The edge's test kind, for the stamp: the class table's answer, named. */
+static const char *dfa_scan_body_name(Ctx *cx, const Dfa *d, int st)
 {
     ClsChoice ch;
-    scan_kit_choice(f->cx, f->d, head, &ch);
-    pcrec_clskit_emit_kit(c, scan_kit_name(f, head), &ch.kit);
+    scan_choice(cx, d, st, &ch);
+    return pcrec_clskit_test_name(pcrec_clskit_test(&ch), scan_table(cx));
 }
 
-static const DfaScan dfa_scans[] = {
-    { { "range",  0, scan_range_applies }, scan_test_range,  NULL, NULL },
-    { { "kit",    PCREC_NO_CLS_KIT, scan_kit_applies }, scan_test_kit, NULL, scan_defs_kit },
-    { { "bitmap", 0, cand_always        }, scan_test_bitmap, scan_tables_bitmap, NULL },
-};
-
-/* THE TWO SELECTIONS, per state. They are the ONLY readers of these lists
- * and every consumer — the emitted test, the emitted table, the artifact's
- * stamp — goes through them, so "the stamp is the chosen object's name"
- * (D82 rule 2) holds structurally rather than by convention. */
+/* THE ONE SELECTION per state for axis H. It is the ONLY reader of
+ * `dfa_edges`, and every consumer — the emitted loop, the artifact's stamp —
+ * goes through it, so "the stamp is the chosen object's name" (D82 rule 2)
+ * holds structurally rather than by convention. */
 static const DfaEdge *dfa_edge_of(Ctx *cx, const Dfa *d, int st)
 {
     DfaSel s = { cx, d, NULL, true, st };
     return DFA_SELECT(DfaEdge, dfa_edges, &s, cx->opt->flags);
-}
-
-/* The scan-BODY selection for one state, and the only reader of `dfa_scans`:
- * the emitted test, the table it may need and the artifact's stamp all come
- * through here, so "the stamp is the chosen object's name" holds
- * structurally. */
-static const DfaScan *dfa_scan_of(Ctx *cx, const Dfa *d, int st)
-{
-    DfaSel s = { cx, d, NULL, true, st };
-    return DFA_SELECT(DfaScan, dfa_scans, &s, cx->opt->flags);
 }
 
 /* Did this state take an edge at all — the edge axis's first candidate,
@@ -7066,49 +6980,60 @@ static const DfaScan *dfa_scan_of(Ctx *cx, const Dfa *d, int st)
  * of which sit above it. */
 static bool dfa_edge_taken(const DfaEdge *e) { return e == &dfa_edges[0]; }
 
-/* The chosen scan body's name, for the stamp fold. An accessor rather than a
- * dereference, because `DfaScan` is incomplete where that fold is written. */
-static const char *dfa_scan_body_name(Ctx *cx, const Dfa *d, int st)
-{ return dfa_scan_of(cx, d, st)->c.name; }
-
-/* [CHK-2]'s generic walk over axes H and I. They sit HERE rather than with
- * the other six accessors ~150 lines above because that block is written
- * before these two arrays exist; `AXIS_LIST` is `#undef`-ed at the end of
- * that block, so the two calls are spelled out. Adding the ISA-neutral SIMD
- * body object ruling R2 reserves a slot for needs NO edit here, in
- * `axes_dump.c`'s iteration, or in the registry check's row sweep -- only
- * its own `applies` and `emit_test`. */
+/* [CHK-2]'s generic walk over axis H. It sits HERE rather than with the
+ * other six accessors ~150 lines above because that block is written before
+ * this array exists; `AXIS_LIST` is `#undef`-ed at the end of that block, so
+ * the call is spelled out. */
 size_t pcrec_dfa_axis_edge_cands(PcrecAxisCand *out, size_t cap)
 {
     return pcrec_dfa_axis_cands(dfa_edges, sizeof dfa_edges / sizeof dfa_edges[0],
                                 sizeof dfa_edges[0], out, cap);
 }
-/* The scan-BODY axis's candidates. Spelled out rather than routed through
- * `AXIS_LIST` for the reason above: that macro is gone by the time these two
- * arrays exist. */
+/* The run tests an edge can take, for `--list-axes`: the class table's own
+ * byte rows at the scan site, named as the stamp names them — read off
+ * `ROWS`, never restated here. */
 size_t pcrec_dfa_axis_scanbody_cands(PcrecAxisCand *out, size_t cap)
 {
-    return pcrec_dfa_axis_cands(dfa_scans, sizeof dfa_scans / sizeof dfa_scans[0],
-                                sizeof dfa_scans[0], out, cap);
+    return pcrec_clskit_byte_tests(CLSS_SCAN, out, cap);
 }
 
-/* Emits the FILE-SCOPE definitions this machine's scan-edge bodies need
- * (`DfaScan.emit_defs`), beside its accessor block: asked through each
- * edge's own body object, as `emit_machine_tables` asks for tables. */
+/* Emits the FILE-SCOPE kit matchers this machine's edges call, beside its
+ * accessor block: a function cannot be declared where `emit_machine_tables`
+ * writes (inside the search function). */
 static void emit_scan_defs(StrBuf *c, const DfaForm *f)
 {
     for (int k = 0; k < f->nscan; k++) {
-        const DfaScan *sc = dfa_scan_of(f->cx, f->d, f->scan[k]);
-        if (sc->emit_defs) sc->emit_defs(c, f, f->scan[k]);
+        ClsChoice ch;
+        scan_choice(f->cx, f->d, f->scan[k], &ch);
+        if (pcrec_clskit_test(&ch) == CLS_TEST_KIT)
+            pcrec_clskit_emit_kit(c, scan_name(f, CLS_TEST_KIT, f->scan[k]), &ch.kit, 0xFFu);
     }
 }
 
-/* The emitted run test for the edge at `head`, asked through the body object
- * so that the test and the table it may need can never come from two
- * different choices. */
+/* Emits the 256-byte table a table-read edge at `head` reads: 1 for every
+ * byte in the edge's class. */
+static void scan_tables_bitmap(StrBuf *c, const DfaForm *f, int head)
+{
+    uint8_t set[256];
+    int cls = f->d->st[head].scan_cls;
+    for (int b = 0; b < 256; b++) set[b] = (uint8_t)(f->d->clsmap[b] == cls);
+    emit_u8_table(c, f->p, dfa_fragf(f->cx, "%s_scan%d", f->dir->c.name, head),
+                  set, 256);
+}
+
+/* The emitted run test for the edge at `head`: the class table's form,
+ * through the class kit's own emitters. */
 static void scan_test(StrBuf *c, const DfaForm *f, int head)
 {
-    dfa_scan_of(f->cx, f->d, head)->emit_test(c, f, head);
+    ClsChoice ch;
+    scan_choice(f->cx, f->d, head, &ch);
+    ClsTest t = pcrec_clskit_test(&ch);
+    if (t == CLS_TEST_RANGE || t == CLS_TEST_FOLD) {
+        pcrec_clskit_emit_inline(c, &ch, f->dir->peek);
+        return;
+    }
+    pcrec_sb_puts(c, pcrec_clskit_read(&f->cx->arena, t, scan_table(f->cx),
+                                       scan_name(f, t, head), f->dir->peek));
 }
 
 /* Emits the [OPT-5] scan edge for chain head `head`: a bounded-count loop
@@ -7416,14 +7341,15 @@ static void emit_machine_tables(StrBuf *c, const DfaForm *f)
     const char *stay_tag = dfa_fragf(f->cx, "%s_stay", m);
     for (int k = 0; k < f->nskip; k++)
         emit_stay_table(f->cx, c, p, stay_tag, f->skip[k], f->d);
-    /* [OPT-5] and whatever table each edge's own BODY OBJECT owns — the
-     * object is asked here and at the emitted test, so a table can never be
-     * emitted for a body that compares against immediates, nor omitted for
-     * one that reads a membership table. A body added to `dfa_scans` needs
-     * no line here. */
+    /* [OPT-5] and the 256-byte table of each edge whose class the class
+     * table answers with a table read — the same choice the emitted test
+     * reads (`scan_test`), so a table can never be emitted for an inline or
+     * kit test, nor omitted for one that reads it. */
     for (int k = 0; k < f->nscan; k++) {
-        const DfaScan *sc = dfa_scan_of(f->cx, f->d, f->scan[k]);
-        if (sc->emit_tables) sc->emit_tables(c, f, f->scan[k]);
+        ClsChoice ch;
+        scan_choice(f->cx, f->d, f->scan[k], &ch);
+        if (pcrec_clskit_test(&ch) == CLS_TEST_TABLE && scan_table(f->cx) == CLST_BYTE256)
+            scan_tables_bitmap(c, f, f->scan[k]);
     }
 }
 

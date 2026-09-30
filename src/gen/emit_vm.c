@@ -54,6 +54,7 @@
  * The §2.5 cursor ladder lands at its two lowest rungs (see vm_det_seq).
  */
 
+#include <limits.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
@@ -1474,10 +1475,11 @@ static const PcrecCpRange *vm_cls_runs(Vm *v, const uint8_t *bits, int *n)
  * only name the emitted test and the emitted table array share. Pool is
  * arena-backed and doubled.
  *
- * A NEW class's form is chosen here, once, by `pcrec_clskit_select` at the
- * artifact's `--tune` position ([CLS-TREE] S2; clskit.c's byte rows):
- * `-fno-cls-kit` denies the `byte-kit` row and `-fno-cls-fold` the
- * `byte-fold` row, so either falls to the `byte-table` row. */
+ * A NEW class's form is chosen here by `pcrec_clskit_select` at the
+ * artifact's `--tune` position ([CLS-TREE] S2; clskit.c's byte rows), as
+ * one call's worth; `vm_cls_tables` re-asks for a table-or-kit class once
+ * the program is written and its call count is known. The flags reach the
+ * rows through `pcrec_clskit_deny_of`. */
 static int vm_cls(Vm *v, const uint8_t *bits)
 {
     for (int i = 0; i < v->ncls; i++)
@@ -1495,11 +1497,8 @@ static int vm_cls(Vm *v, const uint8_t *bits)
         v->clscap = ncap;
     }
     memcpy(v->cls[v->ncls], bits, 32);
-    uint64_t fl = v->cx->opt->flags;
-    ClsSelectIn in = { v->cx->opt->tune,
-                       ((fl & PCREC_NO_CLS_KIT) ? 1u << CLSD_BYTE_KIT : 0)
-                     | ((fl & PCREC_NO_CLS_FOLD) ? 1u << CLSD_BYTE_FOLD : 0),
-                       NULL };
+    ClsSelectIn in = { v->cx->opt->tune, pcrec_clskit_deny_of(v->cx->opt->flags),
+                       NULL, CLSS_VM, 1 };
     int n;
     const PcrecCpRange *iv = vm_cls_runs(v, bits, &n);
     pcrec_clskit_select(&v->cx->arena, iv, n, &in, &v->clsch[v->ncls]);
@@ -1548,8 +1547,8 @@ static const Ast *vm_seethru(Ctx *cx, const Ast *a)
 /* Interns wide class `a`'s set in the pool and returns its index: the one
  * `<prefix>_wcls<i>` every site testing that set shares. A new set's form is
  * chosen here, once, by `pcrec_clskit_select` at the artifact's `--tune`
- * position (D131's first-match table, unchanged; no row deny is mapped to a
- * public flag, so `deny` is 0). */
+ * position (D131's first-match table, unchanged; the flags' row denies
+ * through `pcrec_clskit_deny_of`, which no wide set's row carries). */
 static int vm_wcls(Vm *v, const Ast *a)
 {
     int n;
@@ -1566,7 +1565,8 @@ static int vm_wcls(Vm *v, const Ast *a)
         v->wclscap = ncap;
     }
     VmWcls *w = &v->wcls[v->nwcls];
-    ClsSelectIn in = { v->cx->opt->tune, 0, NULL };
+    ClsSelectIn in = { v->cx->opt->tune, pcrec_clskit_deny_of(v->cx->opt->flags),
+                       NULL, CLSS_VM, 1 };
     w->iv = iv;
     w->n = n;
     pcrec_clskit_select(&v->cx->arena, iv, n, &in, &w->ch);
@@ -1600,11 +1600,11 @@ typedef enum {
 } VmClsRead;
 
 /* Is class `ci` tested by an inline compare rather than a table or kit
- * read? (The `byte-range` and `byte-fold` rows.) */
+ * read? (One interval, or the ASCII fold pair.) */
 static bool vm_cls_inline(const Vm *v, int ci)
 {
-    int r = v->clsch[ci].row;
-    return r == CLSR_BYTE_RANGE || r == CLSR_BYTE_FOLD;
+    ClsTest t = pcrec_clskit_test(&v->clsch[ci]);
+    return t == CLS_TEST_RANGE || t == CLS_TEST_FOLD;
 }
 
 /* A TABLE-OR-KIT READ's text: class `ci`'s membership of byte expression
@@ -1614,14 +1614,17 @@ static bool vm_cls_inline(const Vm *v, int ci)
  * written. */
 static const char *vm_cls_read(Vm *v, VmClsRead f, int ci, const char *byte)
 {
+    Arena *a = &v->cx->arena;
     switch (f) {
     case VCR_SITE:
-        return vm_rolef(v, "(%s_class_bitmap%d[(%s) >> 3] >> ((%s) & 7)) & 1",
-                        v->p, ci, byte, byte);
+        return pcrec_clskit_read(a, CLS_TEST_TABLE, CLST_SITE,
+                                 vm_rolef(v, "%s_class_bitmap%d", v->p, ci), byte);
     case VCR_ATOM:
-        return vm_rolef(v, "%s_class_atom%d(%s)", v->p, ci, byte);
+        return pcrec_clskit_read(a, CLS_TEST_TABLE, CLST_ATOM,
+                                 vm_rolef(v, "%s_class_atom%d", v->p, ci), byte);
     case VCR_KIT:
-        return vm_rolef(v, "%s_class_kit%d(%s)", v->p, ci, byte);
+        return pcrec_clskit_read(a, CLS_TEST_KIT, CLST_SITE,
+                                 vm_rolef(v, "%s_class_kit%d", v->p, ci), byte);
     case VCR_INLINE:
         break;
     }
@@ -1653,16 +1656,7 @@ static void vm_cls_note_read(Vm *v, int ci, const char *byte)
 static void vm_cls_test(Vm *v, StrBuf *b, int ci, const char *byte)
 {
     if (vm_cls_inline(v, ci)) {
-        const PcrecCpRange *iv = v->clsch[ci].kit.iv;
-        int lo = (int)iv[0].lo, hi = (int)iv[v->clsch[ci].kit.n - 1].hi;
-        if (v->clsch[ci].row == CLSR_BYTE_FOLD)
-            /* {lo, hi} with hi == lo | 0x20 by the row's own predicate: the
-             * lowercase member is the compare constant, the mask folds the
-             * other onto it. */
-            pcrec_sb_printf(b, "(%s | 0x20) == %d", byte, hi);
-        else if (lo == 0 && hi == 255) pcrec_sb_puts(b, "1");
-        else if (lo == hi)             pcrec_sb_printf(b, "%s == %d", byte, lo);
-        else pcrec_sb_printf(b, "(unsigned)(%s - %d) <= %du", byte, lo, hi - lo);
+        pcrec_clskit_emit_inline(b, &v->clsch[ci], byte);
         return;
     }
     pcrec_sb_puts(b, vm_cls_read(v, VCR_SITE, ci, byte));
@@ -1680,7 +1674,7 @@ static int vm_cls_fold_count(const Vm *v)
 {
     int n = 0;
     for (int i = 0; i < v->ncls; i++)
-        if (v->clsch[i].row == CLSR_BYTE_FOLD) n++;
+        if (pcrec_clskit_test(&v->clsch[i]) == CLS_TEST_FOLD) n++;
     return n;
 }
 
@@ -1740,6 +1734,15 @@ static void vm_cls_respell(Vm *v)
     pcrec_sb_puts(b, out);
 }
 
+/* How many table reads of class `ci` the program records (`vm_cls_note_read`). */
+static int vm_cls_reads(const Vm *v, int ci)
+{
+    int n = 0;
+    for (int i = 0; i < v->ntabrd; i++)
+        if (v->tabrd[i].ci == ci) n++;
+    return n;
+}
+
 /* [OPT-CLSPACK] THE TABLE SELECTION (clskit.c `TAB_ROWS`, D131 item 6),
  * taken once the pool is final — after the program is emitted, because the
  * pool is discovered by emitting it, and after `vm_plan_entry` has chosen
@@ -1749,8 +1752,9 @@ static void vm_cls_respell(Vm *v)
  * `inline`, 2.5x the `__text` of its bitmap twin. Its input is every pool
  * class whose test is a table-or-kit read (`vm_cls_inline` false), as a
  * byte set; its deny is `-fno-cls-pack`. The atom row gives all of them the
- * atom form; otherwise each keeps its own `ROWS` form — its kit matcher on
- * the `byte-kit` row ([CLS-TREE] S2), its bitmap on `byte-table`. Fills
+ * atom form; otherwise each takes its `ROWS` form re-asked at the number of
+ * reads the program makes of it — its kit matcher where `byte-kit` finds
+ * the kit smaller ([CLS-TREE] S2, D139 item 1), else its bitmap. Fills
  * `v->clstab`, `v->clsatom` and `v->clsrd`, and re-spells the program
  * (`vm_cls_respell`) when any read is not the bitmap it was written as. */
 static void vm_cls_tables(Vm *v)
@@ -1770,17 +1774,22 @@ static void vm_cls_tables(Vm *v)
         nivs[n] = v->clsch[i].kit.n;
         v->clsatom[i] = n++;
     }
-    /* The atom table is a kit form, so `-fno-cls-kit` (D129 Q2's one kit-level
-     * deny) denies it with the wide-class route; `-fno-cls-pack` is the
-     * specific deny (manager ruling on clspack_report.md §6 (a), 2026-09-30). */
-    unsigned deny = (cx->opt->flags & (PCREC_NO_CLS_PACK | PCREC_NO_CLS_KIT))
-                        ? 1u << CLSTD_ATOM : 0;
-    pcrec_clskit_select_tables(&cx->arena, sets, nivs, n, cx->opt->tune, deny, &v->clstab);
+    /* `-fno-cls-pack`, and `-fno-cls-kit` since the atom table is a kit form
+     * (clskit.c `pcrec_clskit_tabdeny_of`). */
+    pcrec_clskit_select_tables(&cx->arena, sets, nivs, n, cx->opt->tune, CLSS_VM,
+                               pcrec_clskit_tabdeny_of(cx->opt->flags), &v->clstab);
     bool respell = false;
     for (int i = 0; i < v->ncls; i++) {
         if (v->clsatom[i] < 0) continue;
+        /* The class's form again, now priced at the number of times the
+         * program reads it: a kit is inlined per read, a table is paid once
+         * (clskit.c's `byte-kit` predicate, D139 item 1). */
+        ClsKit k = v->clsch[i].kit;
+        ClsSelectIn in = { cx->opt->tune, pcrec_clskit_deny_of(cx->opt->flags),
+                           &k, CLSS_VM, vm_cls_reads(v, i) };
+        pcrec_clskit_select(&cx->arena, k.iv, k.n, &in, &v->clsch[i]);
         if (v->clstab.form == CLST_ATOM)             v->clsrd[i] = VCR_ATOM;
-        else if (v->clsch[i].row == CLSR_BYTE_KIT)   v->clsrd[i] = VCR_KIT;
+        else if (pcrec_clskit_test(&v->clsch[i]) == CLS_TEST_KIT) v->clsrd[i] = VCR_KIT;
         else                                         v->clsrd[i] = VCR_SITE;
         if (v->clsrd[i] != VCR_SITE) respell = true;
     }
@@ -12627,7 +12636,7 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
             case VCR_KIT:
                 /* [CLS-TREE] S2 the `byte-kit` row, size-leaning positions only */
                 pcrec_clskit_emit_kit(c, pcrec_sb_fragf(&cx->arena, "%s_class_kit%d", v->p, i),
-                                      &v->clsch[i].kit);
+                                      &v->clsch[i].kit, 0xFFu);
                 break;
             case VCR_SITE:
                 pcrec_sb_printf(c, "static const unsigned char %s_class_bitmap%d[32] = {", v->p, i);
@@ -12657,7 +12666,7 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
             const VmWcls *w = &v->wcls[i];
             const char *fn = pcrec_sb_fragf(&cx->arena, "%s_wcls%d", v->p, i);
             if (w->ch.form == CLSF_KIT)
-                pcrec_clskit_emit_kit(c, fn, &w->ch.kit);
+                pcrec_clskit_emit_kit(c, fn, &w->ch.kit, UINT_MAX);
             else
                 pcrec_clskit_emit_whole(c, &cx->arena, fn, w->ch.form, w->iv, w->n);
         }
