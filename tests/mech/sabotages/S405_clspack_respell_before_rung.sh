@@ -11,7 +11,7 @@ SAB_ID="S405-clspack-respell-before-rung"
 SAB_FILE="src/gen/emit_vm.c"
 SAB_SUITES="clspack"
 SAB_DESC="vm_cls_tables re-spells the program before vm_plan_entry reads its length, so the atom table moves the entry rung and RX_VM_PROGRAM_BYTES"
-SAB_DOC_FIGURE="MEASURED solo 2026-09-30 at the clspack tip: clspack:4fail/20pass DETECTED -- the three rung/PROGRAM_BYTES rows and the straddle row."
+SAB_DOC_FIGURE="RE-MEASURED solo 2026-09-30 at the land4 tip (run_clspack.sh gained [deny-kit], 24 -> 25 checks): clspack:4fail/21pass DETECTED -- the three rung/PROGRAM_BYTES rows and the straddle row."
 SAB_REACH='"$PCREC" --engine=vm -p rx -o - --pattern "([aeiou])[bcdfg][hjklm][npqrs][tvwxz][AEIOU][BCDFG][HJKLM][NPQRS][TVWXZ][02468]"'
 SAB_REACH_EXPECT='#define RX_VM_CLS_ATOMS 12'
 SAB_EXPECT=DETECTED
