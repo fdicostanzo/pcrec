@@ -25,6 +25,7 @@ section targets depend on.
   on darwin was ALWAYS the fallback path, silently. Used by
   tests/lib/load_guard.sh, tests/harness/run.sh's SIZELOG timing line,
   tests/size/run_size_log.sh, scripts/battery.sh.
+- **shard_split.sh** — `shard_split N IN OUTPREFIX`: portable awk line-chunk split (BSD `split` has no `-n`; the `|| cp pats sh/p00; NSHARD=1` fallbacks made darwin silently serial). Used by anchored/run_anchored_diff.sh; six more sites still write `split -n` (s189tri_report.md).
 - **ncpu.sh** — [MACPORT] `$NCPU`, resolved once: `nproc` (present via
   Homebrew on this box) else `sysctl -n hw.ncpu` else
   `getconf _NPROCESSORS_ONLN` else the project's pre-existing fallback
