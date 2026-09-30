@@ -27,8 +27,14 @@ Branch `lane/k7980`, from `lane/s2tri` at `9cf5034b` (abi 53). Worktree
 - **Checks.** `tests/codegen/run_prefix_invariance.sh` (new, in
   `test-codegen`, mech arm `prefixinv`, row S437). K80-a/b/c cells in
   `run_codegen_tests.sh` (row S438 on `codegen`).
-- **Validation:** light targets only, as briefed; the full suite is the
-  manager's. Results are in the "Validation" section below.
+- **Validation (light targets only, as briefed):**
+  - green: `strict`, `test-registry`, `test-rxtsource`, the new invariance
+    check (9/0; 0/9 on the pre-fix compiler) and the cpset-structure
+    trio after the manifest re-record
+  - `test-codegen`: one red is pre-existing (`run_inline_capability.sh`, the
+    same on the branch point). One red was caused by the abi event
+    (`run_size_term.sh`'s pool) and is repaired: 32/0.
+  - The full suite and mech are OWED to the manager.
 
 ## K79 — the cause, measured
 
@@ -222,7 +228,62 @@ All other hits are historical ("since abi 53", "abi 52->53") and stay.
 
 ## Validation
 
-OWED-NUMBERS-BELOW (filled from the light chain's logs).
+Light targets only, run on the shared Mac with `CC=gcc-16`, `-j2`,
+`PROCS=2`. Logs were in `/tmp/k7980/light/`, which is session scratch.
+
+| target / file | result |
+|---|---|
+| `make strict` | rc 0 |
+| `make test-registry` | rc 0: 271 passed, 1 recorded, 0 failed |
+| `make test-rxtsource` | rc 0: INV-COMPAT 260 files / 4318 blocks / 32552 lines |
+| `make test-codegen` | rc 2 on the first run, two reds (see below) |
+| `tests/codegen/run_size_term.sh`, after its repair (the file the group runs) | 32 / 0 |
+| `tests/codegen/run_prefix_invariance.sh` (new) | 9 / 0; against the branch-point compiler 0 / 9 |
+| `make test-cpset-structure`'s three files, after the manifest re-record: `run_cpset_structure.sh`, `run_wclass_census.sh`, `run_clspack.sh` | 28/0, 17/0, 59/0 |
+| `tests/codegen/run_tune_dial.sh` (the entry-shape and ladder witnesses) | 113 / 0 |
+
+**The first `test-codegen` run had two reds:**
+
+- **`run_inline_capability.sh`: "nm could not read arm_a.o (no rx_search
+  symbol)".** This is PRE-EXISTING and not caused by this lane. It is red
+  the same way when that script runs from the branch-point tree
+  (`/tmp/k7980/base`) with the branch-point compiler. It is the darwin
+  symbol-underscore shape.
+- **`run_size_term.sh` §9: the band-eligible pool was down to one
+  below-bar shape.** This is CAUSED BY THIS LANE's abi event, and it is a
+  real selection move rather than a prefix one:
+  - The shared block's prelude adds a K-invariant 201 bytes to every
+    artifact. That raises every argmin/default ratio a little.
+  - `(a{1,3}){64}` went from 0.7498 (branch point, re-run there: 32/0) to
+    0.7514. It now stamps `size-model-declined` where it was `size-model`.
+    Prediction and stamp still agree.
+  - The repair adds the corpus pattern `(|a){0,12}b` (0.7345, from
+    tests/counterk), with a new shape tag, and a comment. The bar and the
+    band are untouched, as the file's own rule demands. Re-run: 32/0.
+  - The same class affects any pattern whose ratio sits within about 0.002
+    of 0.75. That is emitted scaffolding moving a size decision, which is
+    what an abi event is (D76). It is not prefix-dependent.
+
+**Manifest re-pinned.** `tests/codegen/manifests/m5_stage1_stamps.tsv`: all
+twelve `EMITTED_BYTES` rows +201. This was verified by diffing `a`'s
+artifact against the branch-point compiler (whole-file delta 201: the abi
+digits, the three prelude lines and the guard value). The re-record is noted
+in `run_cpset_structure.sh`.
+
+**K80 failing direction, by hand.** S438's plant spells the test as
+`#if 0 && …`. With it applied to two real headers, the abi-54 + abi-53 TU
+compiled clean under `-Wall -Wextra -Werror`, which is exactly what K80-a
+asserts must not happen.
+
+**OWED to the manager (not light, not run here):**
+
+- the full `make test`, `make test-axes` and `make mech`, including solo
+  runs of rows S437 and S438 and the S04 re-run
+- `make test-encoding-checks`, which is in `TEST_SECTIONS`. Its DD12a(i)
+  compares byte vs utf8 text at one prefix, so the render cannot move it.
+- the opt-in `make test-recursion-identity`, whose (B) pin moved
+- `docs/dev/artifact_size_log.tsv` moves by +201 per artifact. By its own
+  rule it is re-recorded only at a gate re-archive.
 
 ## Files
 
