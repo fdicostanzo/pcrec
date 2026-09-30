@@ -2850,6 +2850,48 @@ every `-e byte` artifact.
 emitted before `abi` 47, and the artifact accepts exactly the same subjects.
 `make test-axes` sweeps the flag like every deny axis.
 
+### 2.35 `-fno-cls-pack` — `PCREC_NO_CLS_PACK` (bit 38)
+
+**[OPT-CLSPACK], `abi` 48 (D131 item 6; `docs/design/cls_tree_design.md`
+§1.7.3 and its O-77 addendum). ANSWER-IDENTITY-preserving.** How a VM
+program's TABLE-READ byte classes read their table. A byte class reads a
+table when no compare shape covers it: it is not a single byte, a
+contiguous range, or an ASCII fold pair (§2.22). Deny-only, and MASKED out
+of `rx_info.flags` (`strategy_denials`) for that mask's own reason.
+
+**What it is.** One ARTIFACT-level choice, made once the program's class
+pool is known. It is `src/gen/clskit.c`'s `TAB_ROWS`, a first-match table
+of two rows:
+
+| row | deny | predicate | form |
+|---|---|---|---|
+| `atom` | `-fno-cls-pack` | at least 11 table-read classes, whose byte partition has at most 64 atoms | ONE `static const unsigned char <prefix>_class_atoms[256]` (byte -> atom), and per class a `static inline int <prefix>_class_atom<N>(unsigned)` that shifts a 64-bit immediate mask by the byte's atom |
+| `site` | — | always | a `static const unsigned char <prefix>_class_bitmap<N>[32]` per class |
+
+An ATOM is a set of bytes with identical class membership. Both rows list
+all five `--tune` positions today.
+
+**Why 11 and 64.** The shared form costs 256 bytes of table plus an 8-byte
+immediate per class; per-class bitmaps cost 32 bytes each. The shared form
+is smaller from 11 classes up. The fair-dispatch timing re-run (bench
+O-77) measured the two forms within noise of each other at 4, 16 and 32
+classes. 64 is the mask's width. Both numbers are `clskit.c`'s `PLACE`
+cells (`atom_min_sites`, `atom_max`), which a later ruling may move.
+
+**What it changes.** `.rodata`: 256 bytes in place of `32N`. The
+program's test at each site becomes a call of the class's matcher, one table
+load and one shift. It does not change which classes read a table, what the
+DFA or the prefilter emit, or any answer.
+
+**The stamp.** `<PREFIX>_VM_CLS_ATOMS` is the shared table's atom count,
+`0` when the per-class bitmaps are emitted: a D81 VM-only activity stamp
+(`match_api.md` §6.3). It reads 0 under the flag.
+
+**Denied**, every table-read class keeps its own 32-byte bitmap, the
+program this compiler emitted before `abi` 48, and the artifact accepts
+exactly the same subjects. `make test-axes` sweeps the flag like every deny
+axis.
+
 ## 3. The DFA side's own stamps
 
 **CLOSED 2026-08-25 by plan row `[DD-13]`; this section stated the gap while
@@ -3133,6 +3175,7 @@ not-a-tuning-axis list that follows.
 | `flags` bit `PCREC_NO_LIT_RUN` | `-fno-lit-run` | §2.31 |
 | `flags` bit `PCREC_NO_CTX_NODE` | `-fno-ctx-node` | §2.32 |
 | `flags` bit `PCREC_NO_CLS_KIT` | `-fno-cls-kit` | §2.33 |
+| `flags` bit `PCREC_NO_CLS_PACK` | `-fno-cls-pack` | §2.35 |
 | `unroll_k` (`PCREC_UNROLL_K_DEFAULT` = 0) | `--unroll=K` | §2.10 |
 | `vm_entry_shape` (`PCREC_VM_ENTRY_AUTO` = 0, `_PLAIN`, `_SHARED`, `_FORWARD`, `_INLINE`) | `--vm-entry-shape=N` | §2.21 |
 | `engine` (`PCREC_ENGINE_AUTO`/`_DFA`/`_VM`) | `--engine=E` | §2.11 |

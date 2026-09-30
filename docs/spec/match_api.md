@@ -2033,7 +2033,27 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `47` on every artifact today ([CLS-TREE] S4 bumped it
+- **`rx_info.abi` is `48` on every artifact today ([OPT-CLSPACK] bumped it
+  from 47, 2026-09-30: MANY TABLE-READ BYTE CLASSES SHARE ONE ATOM TABLE).**
+  A VM program whose byte classes that read a table (no singleton, range or
+  fold-pair compare covers them) number at least 11, and whose byte
+  partition has at most 64 atoms, emits ONE `static const unsigned char
+  <prefix>_class_atoms[256]` and one `static inline` matcher
+  `<prefix>_class_atom<N>` per such class (one load, one shift of a 64-bit
+  immediate), in place of a `<prefix>_class_bitmap<N>[32]` per class, and the
+  program calls the matcher where it read the bitmap (`docs/spec/tuning.md`
+  §2.35). Every VM artifact gains a `<PREFIX>_VM_CLS_ATOMS` line (§6.3).
+  - That is an emitted-text move for identical inputs, and so an `abi` event
+    (D76). The program and tables move ONLY on artifacts the atom row fires
+    for; every other VM artifact moves by the stamp line alone.
+  - No struct offset moves, no `rx_info` member is added or changed, and no
+    refusal moves. The new deny bit (`-fno-cls-pack`, `PCREC_NO_CLS_PACK`,
+    bit 38) is MASKED out of `rx_info.flags`.
+  **VERIFIED BY A MOVER CENSUS** (`docs/dev/lanes/clspack_census.py`,
+  `docs/dev/lanes/clspack_report.md`): the program/table movers are exactly
+  the artifacts whose base emitted at least 11 bitmaps with at most 64 atoms,
+  by ID.
+- **`rx_info.abi` was `47` ([CLS-TREE] S4 bumped it
   from 46, 2026-09-29: A WIDE CLASS ON THE VM IS ONE DECODE AND ONE
   CLASS-MATCHER FUNCTION).** A class with more than one member, some member of
   which encodes deeper than one code unit (`-e utf8`: `\p{L}`, `[^a]`, `.`,
@@ -3462,6 +3482,22 @@ artifact. It reads `0` under `-e byte` (no class is wide there) and under
 NOT conclude anything about the answers, which are identical either way.
 Nor may it conclude which form a matcher took: that is `--emit-ir`'s
 `consume` row, and the matcher's own text.
+
+**[OPT-CLSPACK], 2026-09-30 (`abi` 48): `<PREFIX>_VM_CLS_ATOMS`, (b) for
+`_VM_CLS_FOLDS`' reason.**
+
+```c
+#define RX_VM_CLS_ATOMS 0   /* or the shared table's atom count, 1..64 */
+```
+
+**The IFF: it is non-zero exactly when this artifact's VM program tests its
+table-read byte classes through ONE shared byte->atom table**
+(`<prefix>_class_atoms`, `docs/spec/tuning.md` §2.35), and then it is the
+number of atoms that table numbers. `0` means a 32-byte bitmap per class (or
+no table-read class at all). It is emitted on every VM artifact, hybrids
+included, and never on a pure-DFA artifact; it reads `0` under
+`-fno-cls-pack`. A consumer may NOT conclude anything about the answers,
+which are identical either way.
 
 **[OPT-1], 2026-08-25: two more (b) macros —
 `<PREFIX>_FAST_FRAMES` and `<PREFIX>_FAST_TRAIL`.** They report the

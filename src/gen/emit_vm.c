@@ -11256,6 +11256,13 @@ static void vm_emit_stamps(Vm *v, const VmPlan *pl, const VmEntry *en)
      * VM-only activity family, no `rx_info` mirror (D77). `-fno-cls-kit`
      * holds it at 0. */
     pcrec_sb_stampf(c, v->up, "VM_CLS_KIT", "%d", v->nwcls);
+    /* [OPT-CLSPACK] the shared atom table's ATOM COUNT, 0 when the table
+     * selection kept a bitmap per class (`vm_cls_tables`, the one reader of
+     * the choice the table emission also reads, so the stamp cannot report a
+     * table the artifact lacks); D81's VM-only activity family, no `rx_info`
+     * mirror (D77). `-fno-cls-pack` holds it at 0. */
+    pcrec_sb_stampf(c, v->up, "VM_CLS_ATOMS", "%d",
+                    v->clstab.form == CLST_ATOM ? v->clstab.atoms.natoms : 0);
     /* [CC-DIFF] STEP 2 — THE ENTRY-SHAPE STAMPS, §6.3 family (b), and there
      * are TWO because a selection and the number it was made on are two
      * facts. `<PREFIX>_VM_ENTRY_SHAPE` names the rung the emitter TOOK — a
