@@ -71,17 +71,22 @@ GNU/BSD divergence to test; the one behavioural difference from `split -n l/N` i
 chunk boundaries, which no script depends on (each shard is an independent pattern
 list; verdict tokens are summed).
 
-## 6. S189: 2fail/5pass (recorded) vs 1fail/6pass (s189tri) — OWED, hypothesis only
-Both are 7 checks; one check that was red at 312612b is green now. Not caused by
-shard count: sharding only partitions the same pattern list and the tallies are sums.
-What changed in the file since 312612b: only ucpu3's reporter split (23263eb2,
-per-kind detail tags, no change to which counts trip a `bad`), so the difference
-is in the compiler/corpus, not the script's own logic. Candidates for the second
-red then: the `n_infra`/`n_cc` checks or a §2 capture witness. The sabotage's
-current failing check is named by `FAIL:` lines in `/tmp/portsplit/s189.log`
-(KEEP=1, the row's `anchdiff.log` is under the printed scratch dir).
-Next step for whoever finishes: read which single check is red now; then answer
-"was the other one red at 312612b" by building 312612b + the S189 plant in a
-scratch tree (or `git log 312612b..HEAD -- src/core/compile.c`, 68 commits) and
-re-record `SAB_DOC_FIGURE` by MECHANISM (the answer-level divergence check is the
-detector; the second red, if any, is incidental) rather than by count.
+## 6. S189: 2fail/5pass (recorded) vs 1fail/6pass (s189tri) - PARTLY DONE, ONE RUN OWED
+Today's run (`/tmp/portsplit/s189.log`, rc=0, DETECTED, KEEP=1 scratch
+`.../pcrec-mech-sabotage.CkOhse/S189-anchored-machine-unpruned/anchdiff.log`):
+7 checks, 6 pass, 1 red. The single red check is
+`FAIL: 185 patterns DIVERGE between the unwrapped form and the search-and-filter
+form` (the answer-level divergence detector, the row's point). Green today: RAN
+to a verdict, built under -O1 -Werror, deny flag refuses nothing, population 1642
+(floor 1150), section 2 capture arrays over 976 cells, section 2 all 8 witnesses.
+Which check was the SECOND red at 312612b is not yet known (candidates: the
+population-floor check or a section 2 check, both of which have been re-derived
+since). OWED: a scratch worktree `worktrees/psfinish-312` (312612b, planted by
+`adfa, true, false` -> `false, false` at src/core/compile.c:143, build.log
+`/tmp/portsplit/b312_build.log`) runs `tests/anchored/run_anchored_diff.sh` at
+PROCS=2 detached; log `/tmp/portsplit/b312_anchdiff.log`, completion line
+`B312_DONE`. Read its `FAIL:` lines: two FAILs, one of them not the divergence one,
+names the second red. Then re-record `SAB_DOC_FIGURE` in
+tests/mech/sabotages/S189_anchored_machine_unpruned.sh by MECHANISM: the divergence
+FAIL is the detector; the count (now 1fail/6pass) is incidental. Delete the scratch
+worktree afterwards (`git worktree remove --force worktrees/psfinish-312`).
