@@ -1363,6 +1363,19 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
                                  "(an engine axis, not a module: no --features "
                                  "name enables it)", enc->name);
         }
+        /* [UTF-VALID] (D133) THE STARTPOS-GUARD AXIS HAS THREE VALUES AND A
+         * REQUEST NAMES ONE. `-fno-startpos-guard` (honour a mid-character
+         * startpos) and `-fstartpos-guard=align` (skip it forward) are two
+         * different answers for the same input, so asking for both is
+         * refused rather than resolved to either — `-fprefilter`'s own rule
+         * for a contradictory pair (src/opt/select_engine.c). Here, before
+         * the parse and whatever the encoding, because it is a fact about the
+         * REQUEST: the same two bits are contradictory on a `byte` artifact,
+         * where both happen to be inert. */
+        if ((defo.flags & PCREC_NO_STARTPOS_GUARD) &&
+            (defo.flags & PCREC_FORCE_STARTPOS_ALIGN))
+            pcrec_ctx_fail(&cx, 0, "-fstartpos-guard=align and "
+                           "-fno-startpos-guard cannot both be requested");
 
         /* [FINDINGS] B2 THE ANALYSIS CHAIN, resolved here — before the
          * parse, so a bad analysis name refuses even a pattern that would

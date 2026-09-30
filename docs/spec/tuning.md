@@ -39,9 +39,11 @@ the parser accepts are now one fact rather than three.
 A tuning flag is a **generation-time choice** (D18: options are compiled
 away, never a runtime parameter) that selects among machinery the compiler
 could otherwise choose on its own. The defining contract, true of every
-flag in §2 below except the two named ENGINE-SELECTING there **and §2.23,
-the one SEMANTIC axis** (added by [K50], 2026-09-06 — read its section
-before assuming the sentence below covers it):
+flag in §2 below except the two named ENGINE-SELECTING there **and the two
+CONTRACT (semantic) axes, §2.23** (added by [K50], 2026-09-06; its third
+value `-fstartpos-guard=align` by [UTF-VALID], 2026-09-30) **and §2.36**
+(`-futf-check`, [UTF-VALID]) — read their sections before assuming the
+sentence below covers them:
 
 > **Denying (or forcing) a tuning axis must not change what the emitted
 > matcher answers for any subject.** The span, every capture slot, and the
@@ -2008,24 +2010,26 @@ that kit's general cube form, selected by the sectioning DP and priced by
 decision that a special case folds into a general mechanism, not a
 measured or structural disqualification.
 
-### 2.23 `-fno-startpos-guard` — `PCREC_NO_STARTPOS_GUARD` (bit 25)
+### 2.23 `-fno-startpos-guard` / `-fstartpos-guard=align` — `PCREC_NO_STARTPOS_GUARD` (bit 25) / `PCREC_FORCE_STARTPOS_ALIGN` (bit 40)
 
-**THIS IS THE ONE AXIS IN THIS DOCUMENT THAT IS NOT ANSWER-IDENTITY-PRESERVING,
-AND EVERY OTHER ODDITY ABOUT IT FOLLOWS FROM THAT.** Read §1's contract, then
-read this: the two builds give DIFFERENT ANSWERS on one input class, on
-purpose. It is not an engine-selecting axis either (§2.8's family) — both arms
-compile to the same automaton and select the same engine. It selects between
-two SEMANTICS for a caller-supplied start position, both of which are ruled,
-so the axis is a contract choice wearing a tuning flag's spelling.
+**THIS IS A CONTRACT AXIS: IT IS NOT ANSWER-IDENTITY-PRESERVING, AND EVERY
+OTHER ODDITY ABOUT IT FOLLOWS FROM THAT** (the first of two; §2.36 is the
+other). Read §1's contract, then read this: the builds give DIFFERENT ANSWERS
+on one input class, on purpose. It is not an engine-selecting axis either
+(§2.8's family) — every arm compiles to the same automaton and selects the
+same engine. It selects between THREE SEMANTICS for a caller-supplied start
+position, all of them ruled, so the axis is a contract choice wearing a
+tuning flag's spelling.
 
 | | |
 |---|---|
-| **What it denies** | the caller-startpos boundary guard at the emitted entries (`docs/spec/match_api.md` §3.1) |
-| **Default** | the guard is ON |
-| **Stamp** | `<PREFIX>_STARTPOS_GUARD`, a closed token: `"guarded"` or `"permissive"` |
+| **What it controls** | what the emitted entries do with a caller `startpos` (or `ctx->pos`) inside a character (`docs/spec/match_api.md` §3.1) |
+| **Default** | refuse: the guard is ON |
+| **Values** | refuse (default); honour (`-fno-startpos-guard`); ALIGN forward (`-fstartpos-guard=align`, [UTF-VALID], D133). The two non-default spellings are refused together |
+| **Stamp** | `<PREFIX>_STARTPOS_GUARD`, a closed token: `"guarded"`, `"permissive"` or `"align"` |
 | **Answer-identical?** | **NO** — see below |
 | **Engine-selecting?** | no |
-| **Inert under** | the `byte` encoding, where every position is a character boundary; the two builds are byte-identical there |
+| **Inert under** | the `byte` encoding, where every position is a character boundary; all three builds are byte-identical there, and both bits are masked out of `rx_info.flags` |
 
 **WHAT THE TWO ARMS ANSWER.** Under an encoding with multi-byte characters:
 
@@ -2041,16 +2045,29 @@ so the axis is a contract choice wearing a tuning flag's spelling.
   `(1,1)`, because a truncated leading character has no path and a negative
   assertion succeeds exactly where its body has none.
 
-Neither arm ROUNDS a caller's `startpos > 0` to the next boundary. That third
-semantics (`PCRE2_MATCH_INVALID_UTF`'s) is deliberately not on offer there —
-`match_api.md` §3.1 says why. OFFSET 0 IS NOT THIS AXIS'S: it is never refused
+- **align (`-fstartpos-guard=align`)** — a `startpos > 0` inside a
+  character is moved FORWARD over continuation bytes to the next character
+  start (or `n`), ONCE, at entry, and a search runs exactly as if that
+  position had been passed; an anchored match-here entry answers `-1`,
+  because no match begins inside a character. It is for a MISALIGNED POINTER
+  INTO VALID TEXT — a caller that split a buffer on arbitrary bytes (D132
+  item 2, D133) — and it is not a way to accept invalid UTF-8: under §2.36's
+  `-futf-check` the check runs from the aligned position with no carve-out.
+  Each position the loop skips is a continuation byte, so it can never
+  lose a match a character start could have reported.
+
+Neither of the first two arms ROUNDS a caller's `startpos > 0` to the next
+boundary; the third does, and only because it is asked for by name —
+`match_api.md` §3.1 says why rounding is never silent. OFFSET 0 IS NOT THIS
+AXIS'S: it is never refused
 under either arm, and since [K73] a subject that begins with continuation
 bytes is searched from its first non-continuation byte under BOTH arms alike
 (`match_api.md` §3.1's offset-0 bullet) — an engine rule with no flag, which is
 why the two builds still agree there.
 
-**IT IS NOT MASKED OUT OF `rx_info.flags`,** and it is the only `-fno-` flag
-in this document that is not. Every other member of that mask changes an
+**IT IS NOT MASKED OUT OF `rx_info.flags`,** and with §2.36 it is one of the
+two contract axes in this document that are not (both bits, except under
+`byte`). Every other member of that mask changes an
 emitted SHAPE for one language, so stamping it would make two
 identically-behaving artifacts differ in their reflection surface over a knob
 with no observable effect. Here the effect IS observable, and a caller reading
@@ -2091,8 +2108,12 @@ divergence population is a dead guard and a RED result, not a pass. A third
 arm compiles the same family under `byte` and asserts the artifact is
 guard-free under either flag.
 
-**`make test-axes` SWEEPS IT FOR IDENTITY LIKE EVERY OTHER AXIS, AND THAT IS A
-MEASUREMENT RATHER THAN AN EXEMPTION.** This section opened by saying the axis
+**`make test-axes` SWEEPS IT FOR IDENTITY LIKE EVERY OTHER AXIS — BOTH
+NON-DEFAULT SPELLINGS — AND THAT IS A MEASUREMENT RATHER THAN AN EXEMPTION.**
+`-fstartpos-guard=align` differs from the default only at a mid-character
+`startpos > 0` too, so the argument below covers it word for word; its
+differential is `tests/utfcheck/`'s align arm, which compares an aligned
+call against libpcre2 10.46 at the aligned position. This section opened by saying the axis
 is not answer-identity-preserving, so a reader expects the sweep to need a
 documented divergence class for it. **It does not, because the corpus cannot
 reach the divergence.** Two facts, both measured:
@@ -2972,6 +2993,50 @@ hybrid's program is the pre-`abi`-49 one apart from its
 `<PREFIX>_VM_RESEED` line. The flag is swept by `make test-axes` like every
 deny axis.
 
+### 2.36 `-futf-check` — `PCREC_FORCE_UTF_CHECK` (bit 39)
+
+**THE SECOND CONTRACT AXIS** ([UTF-VALID], `docs/design/utf_valid_design.md`,
+ruled D133). OFF by default. It selects which ANSWER a call gives on an
+ill-formed subject, not which shape finds it.
+
+| | |
+|---|---|
+| **What it controls** | whether every entry that takes a subject refuses an ill-formed one before any attempt (`docs/spec/match_api.md` §3.1) |
+| **Default** | OFF: invalid-tolerant, an ill-formed sequence matches nothing and is not reported (`PCRE2_MATCH_INVALID_UTF`'s semantics) |
+| **Stamp** | `<PREFIX>_UTF_CHECK`, a closed token: `"off"`, `"whole"`, or `"inert"` |
+| **Answer-identical?** | **NO** — it is a contract |
+| **Engine-selecting?** | no: the check sits in the entry, before any engine runs, so the DFA, the VM and the hybrid are covered identically |
+| **Inert under** | the `byte` encoding, where every byte string is well-formed: no check is emitted, the stamp reads `"inert"`, the bit is masked out of `rx_info.flags`, and the artifact is byte-identical to one built without the flag |
+
+**WHAT IT DOES.** Under `-e utf8`, after the §2.23 guard (or alignment), the
+call is refused with `PCREC_ERR_UTF` when an ill-formed sequence begins in
+`[startpos − LB, n)` — PCRE2's own `PCRE2_UTF` contract, with LB PCRE2's
+`max_lookbehind` fact. `match_api.md` §3.1 states the range, the order and
+the step-back; §3.1.2 is `<prefix>_valid_upto`, the offset, which every
+artifact carries whatever this flag says. `-futf-check=extent` is RESERVED
+(the design's §2.2, recorded not built) and refused by name.
+
+**WHY IT IS OFF.** One O(n) pass per call — about the cost of a scanning call
+again on sparse-accented text, and it turns a call a prefilter answers
+sublinearly into a linear one (the design's §5, directional). A find-all
+loop validates on every call; `match_api.md` §3.1.2 gives the linear idiom
+(validate once with `<prefix>_valid_upto`, loop on an artifact built without
+this flag).
+
+**`make test-axes` EXCLUDES IT FROM THE IDENTITY SWEEP BY NAME**, with the
+exclusion asserted present, and gives it its own arm: on every corpus cell,
+the checking build must give the default answer iff an independent python
+oracle finds the cell's checked range well-formed, and `PCREC_ERR_UTF`
+otherwise. The corpus carries ill-formed subjects on purpose
+(`tests/utf8/k73_startskip.rxt` and the ill-formed axes), so an identity
+sweep would report every one as a disagreement. `tests/utfcheck/` is the
+differential against libpcre2 10.46 (offsets included) and the byte-inert
+identity.
+
+**NOT ON THE DIAL — GATE 1**, §2.23's reason: its builds disagree about
+answers on purpose, so no measurement can admit it to a mechanism whose
+acceptance is answer identity.
+
 ## 3. The DFA side's own stamps
 
 **CLOSED 2026-08-25 by plan row `[DD-13]`; this section stated the gap while
@@ -3245,7 +3310,8 @@ not-a-tuning-axis list that follows.
 | `flags` bit `PCREC_NO_START_PINNED` | `-fno-start-pinned` | §2.19 |
 | `flags` bit `PCREC_NO_ALT_ISLAND` | `-fno-alt-island` | §2.20 |
 | `flags` bit `PCREC_NO_CLS_FOLD` | `-fno-cls-fold` | §2.22 |
-| `flags` bit `PCREC_NO_STARTPOS_GUARD` | `-fno-startpos-guard` | §2.23 |
+| `flags` bits `PCREC_NO_STARTPOS_GUARD` / `PCREC_FORCE_STARTPOS_ALIGN` | `-fno-startpos-guard` / `-fstartpos-guard=align` | §2.23 |
+| `flags` bit `PCREC_FORCE_UTF_CHECK` | `-futf-check` | §2.36 |
 | `flags` bits `PCREC_NO_COMMENTS` / `PCREC_FORCE_COMMENTS` | `-fno-comments` / `-fcomments` | §2.24 |
 | `flags` bit `PCREC_NO_VM_ANCHOR_BOUND` | `-fno-vm-anchor-bound` | §2.25 |
 | `flags` bit `PCREC_NO_END_WINDOW` | `-fno-end-window` | §2.26 |
@@ -3449,7 +3515,8 @@ lands.
 | `-fno-start-pinned` | — | — | — | — | — | §2.19; **PURE WIN** — −3,232 B per pinned artifact AND ×1.985 faster |
 | `-fno-alt-island` | — | — | — | — | — | §2.20; **PURE WIN** — max growth 1.03×, 0 refused, prefix-free islands at 0.140-0.175× of chain time |
 | `-fno-cls-fold` | — | — | — | — | — | §2.22; **NOT A RUNG** — off by RULING (Frank, 2026-09-11); absorbed into λ |
-| `-fno-startpos-guard` | — | — | — | — | — | §2.23; **GATE 1** — the two arms disagree about answers on purpose; permanently flat |
+| `-fno-startpos-guard` / `-fstartpos-guard=align` | — | — | — | — | — | §2.23; **GATE 1** — the three values disagree about answers on purpose; permanently flat |
+| `-futf-check` | — | — | — | — | — | §2.36; **GATE 1** — a contract, off by default; permanently flat |
 | `-fno-size-term` | — | — | — | — | — | §2.16; **NOT A RUNG** — it is the MECHANISM the two ladder rows parameterise |
 | emitted-size caps | — | — | — | — | — | `limits.md` §8; **NOT A RUNG** — raise-only refusal boundaries; a dial that lowered one would manufacture refusals |
 

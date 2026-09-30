@@ -696,6 +696,17 @@ fi
 # basename (`-o -`): the stamp line and the two same-length abi digits for the
 # first two, and for the third the stamp line, the two abi digits and the
 # adaptive retry's lines only.
+#
+# RE-RECORDED 2026-09-30 at [UTF-VALID] (abi 49 -> 50, lane uvbuild): all
+# twelve `EMITTED_BYTES` rows +377, ONE number, because the event's footprint
+# on a `byte` artifact is K-invariant and engine-invariant. VERIFIED BY
+# DIFFING `a`'s artifact against a scratch build of d8d40397 at the same
+# `-o -` basename: the two same-length abi digits, and five inserted pieces
+# and nothing else — `#define RX_UTF_CHECK "inert"` (+29), `#define
+# PCREC_ERR_UTF (-9)` with its essential trailing comment in the ABI block
+# (+127), the `rx_valid_upto` declaration (+73), the `.c`-only `#define
+# rx_VALID_LB 0` (+21) and the byte backend's five-line `rx_valid_upto`
+# definition (+127).
 MANIFEST="$ROOT_DIR/tests/codegen/manifests/m5_stage1_stamps.tsv"
 if [ -d "$(dirname "$MANIFEST")" ]; then
     if [ -f "$MANIFEST" ]; then

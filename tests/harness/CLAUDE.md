@@ -105,3 +105,14 @@ Test runner and driver template. The runner (run.sh) orchestrates compilation an
 run.sh accepts file/directory arguments or scans tests/ recursively. Each .rxt pattern block is compiled to C, linked with driver.c (which includes the generated code), and executed for each m/n line. The driver decodes \" \\ \n \t \r \f \v \xHH escapes. Output is one line per case: "match START0 END0 [START1 END1 ...]" (one pair per RX_NCAPS slot — just "START END" while RX_NCAPS is 1, i.e. today) or "nomatch", compared against expected results; g/gp lines pick their slot's pair out of that line by position rather than triggering a separate driver invocation.
 
 Maintenance: update this file when files are added/removed or their roles change.
+
+## [UTF-VALID] (2026-09-30, lane uvbuild)
+
+`driver.c` NAMES `PCREC_ERR_UTF` (-9) instead of printing `giveup -9`: it
+prints `utf <offset>` — the word and the refused call's own
+`<prefix>_valid_upto(s, n, startpos)` — and exits 3, in both the single-call
+and the `mc` find-all paths. No block can expect it (no directive compiles
+`-futf-check`; `gu` has no `utf` word, D77): it is reached only under
+`RXTFLAGS=-futf-check`, where `make test-axes`' own arm
+(`tests/axes/utfcheck_arm.py`) reads the dump. `run.sh` and
+`verify_rxt.py` are unchanged.

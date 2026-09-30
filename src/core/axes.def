@@ -157,13 +157,25 @@ PCREC_AXIS(PCREC_NO_ANCHORED_DFA, "-fno-anchored-dfa", 0, "", PCREC_AXIS_DEFAULT
 PCREC_AXIS(PCREC_NO_SCAN_EDGE,    "-fno-scan-edge",    0, "", PCREC_AXIS_DEFAULT_ON)
 PCREC_AXIS(PCREC_NO_START_PINNED, "-fno-start-pinned", 0, "", PCREC_AXIS_DEFAULT_ON)
 
-/* ---- the one axis that is NOT answer-identical ([K50]) -----------------
- * Both settings describe a real semantics for a mid-character caller
- * startpos, so which one an artifact carries is a CONTRACT fact rather than
- * a shape choice — the reason it is the only member not masked out of
- * `rx_info.flags`. It is a row here all the same: what this table holds is
- * the SPELLING and the BIT, and those are the same kind of fact either way. */
-PCREC_AXIS(PCREC_NO_STARTPOS_GUARD, "-fno-startpos-guard", 0, "", PCREC_AXIS_DEFAULT_ON)
+/* ---- the CONTRACT axes ([K50], [UTF-VALID]) -----------------------------
+ * Axes whose settings describe different real SEMANTICS for one input class,
+ * so which one an artifact carries is a CONTRACT fact rather than a shape
+ * choice — the reason these are the members not masked out of
+ * `rx_info.flags` (except where an encoding makes them inert). They are rows
+ * here all the same: what this table holds is the SPELLING and the BIT, and
+ * those are the same kind of fact either way.
+ *
+ * The startpos-guard axis has THREE values: refuse a mid-character caller
+ * startpos (the default), honour it (`-fno-startpos-guard`), or align it
+ * forward to the next character start (`-fstartpos-guard=align`, D133). The
+ * third is this row's force column; the two non-default values are refused
+ * together. `-futf-check` is DEFAULT OFF with no deny spelling
+ * (`-fcomments`' shape without the pair's reason: no config turns it on
+ * that a command line must turn off). Its reserved `=extent` value is
+ * refused by name in cli/main.c, not spelled here, because it has no bit. */
+PCREC_AXIS(PCREC_NO_STARTPOS_GUARD, "-fno-startpos-guard",
+           PCREC_FORCE_STARTPOS_ALIGN, "-fstartpos-guard=align", PCREC_AXIS_DEFAULT_ON)
+PCREC_AXIS(0, "", PCREC_FORCE_UTF_CHECK, "-futf-check", PCREC_AXIS_DEFAULT_OFF)
 
 /* ---- the whole-window PRE-CHECKS ([OPTLOOP.1] batch 1, D119) -----------
  * Facts about the WHOLE pattern, derived from the AST above either engine,

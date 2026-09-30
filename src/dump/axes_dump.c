@@ -711,19 +711,43 @@ static void emit_predicate_axes(StrBuf *sb)
                      0, 0, "",
                      "always (fallback) — no run of two or more bytes is necessary (a single literal between non-literals, a caselessly folded literal, an alternation with no common affix), or either this axis's deny flag or -fno-req-byte's");
     }
-    /* [K50] startpos-guard — §2.23. THE ONE AXIS IN THIS DUMP THAT IS NOT
-     * ANSWER-IDENTICAL: both rows describe a real semantics for a
-     * mid-character caller startpos, and which one an artifact carries is a
-     * contract fact rather than a shape choice. Its stamp is a closed TOKEN,
-     * so `stamp_value` is spelled on both rows — unlike the two activity
-     * counts above, where there is no per-row value to name. */
+    /* [K50] startpos-guard — §2.23. A CONTRACT AXIS, NOT ANSWER-IDENTICAL:
+     * each row describes a real semantics for a mid-character caller
+     * startpos, and which one an artifact carries is a contract fact rather
+     * than a shape choice. Its stamp is a closed TOKEN, so `stamp_value` is
+     * spelled on every row — unlike the two activity counts above, where
+     * there is no per-row value to name. [UTF-VALID] (D133) added the third
+     * value, `align`, as the axis's FORCE column: it is first because a
+     * caller who asked for it gets it wherever the encoding restricts a
+     * position at all. */
     {
         PredAxis p = { "startpos-guard", NULL, "RX_STARTPOS_GUARD", "", 0, NULL, 0, NULL, NULL, NULL };
-        emit_pred_row(sb, &p, 1, "guarded", "guarded",
+        emit_pred_row(sb, &p, 1, "align", "align",
+                     0, PCREC_FORCE_STARTPOS_ALIGN, "",
+                     "per artifact, -fstartpos-guard=align: this encoding has positions that are not character boundaries, so a mid-character caller startpos other than 0 is advanced to the next character start ONCE, at entry (a search runs from there; an anchored match-here entry answers -1). For a misaligned pointer into valid text (D133); -futf-check then validates from the aligned position");
+        emit_pred_row(sb, &p, 2, "guarded", "guarded",
                      PCREC_NO_STARTPOS_GUARD, 0, "",
                      "per artifact: this encoding has positions that are not character boundaries (PcrecEnc.start_cls), so the entries refuse a mid-character caller startpos with PCREC_ERR_STARTPOS — libpcre2's own PCRE2_UTF behaviour (BADUTFOFFSET)");
-        emit_pred_row(sb, &p, 2, "permissive", "permissive",
-                     0, 0, "", "always (fallback) — the artifact answers at whatever position the caller named (utf8_design.md §2.6.1.1's ruled semantics), and on a byte artifact this row is the ONLY one reachable: every position is a boundary there and neither setting emits a guard");
+        emit_pred_row(sb, &p, 3, "permissive", "permissive",
+                     0, 0, "", "always (fallback) — the artifact answers at whatever position the caller named (utf8_design.md §2.6.1.1's ruled semantics), and on a byte artifact this row is the ONLY one reachable: every position is a boundary there and no setting emits a guard");
+    }
+    /* [UTF-VALID] utf-check — §2.36. The SECOND CONTRACT AXIS, OFF by
+     * default: the rows read `comments`' direction, the force flag reaching
+     * the non-default row. `inert` is first because it answers for the
+     * ENCODING before the flag is asked: a backend under which every byte
+     * string is valid has nothing to check (its table carries no
+     * value-validity row, src/enc/enc.h), whatever the caller passed. */
+    {
+        PredAxis p = { "utf-check", NULL, "RX_UTF_CHECK", "", 0, NULL, 0, NULL, NULL, NULL };
+        emit_pred_row(sb, &p, 1, "inert", "inert",
+                     0, 0, "",
+                     "per artifact: this encoding has no ill-formed byte strings (byte), so no check is emitted and the flag, if passed, is masked out of rx_info.flags");
+        emit_pred_row(sb, &p, 2, "whole", "whole",
+                     0, PCREC_FORCE_UTF_CHECK, "",
+                     "per artifact, -futf-check: every entry that takes a subject refuses the call with PCREC_ERR_UTF when an ill-formed sequence begins in [startpos - LB, n) — PCRE2_UTF's own contract, checked after the K50 guard and before any attempt; <prefix>_valid_upto(s, n, startpos) gives the offset");
+        emit_pred_row(sb, &p, 3, "off", "off",
+                     0, 0, "",
+                     "always (fallback, THE DEFAULT) — the artifact is invalid-tolerant: an ill-formed sequence matches nothing and is not reported (PCRE2_MATCH_INVALID_UTF's semantics); <prefix>_valid_upto is still emitted, the find-all escape (match_api.md §3.1.2)");
     }
     /* [EMIT-VERB] comments — §2.24, D112. THE ONE AXIS IN THIS DUMP THAT IS
      * OFF BY DEFAULT, so its ROWS READ IN THE OTHER DIRECTION: order 1 is

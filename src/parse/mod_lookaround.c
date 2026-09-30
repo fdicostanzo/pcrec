@@ -382,6 +382,16 @@ static void la_width_refusal(char *buf, size_t n, long long lo, long long hi)
                          "(this one can match %lld..%lld characters)", lo, hi);
 }
 
+/* [UTF-VALID] Raises LB (`Ctx.lb_max`) to this lookbehind's widest branch
+ * in characters — PCRE2's `max_lookbehind`, taken per assertion and never
+ * summed through nesting (utf_valid_design.md §1.4). Called wherever a
+ * width table is settled, at parse time or deferred, so both timings
+ * contribute exactly once. */
+static void la_lb_raise(Ctx *cx, const int *w, int nbr)
+{
+    for (int i = 0; i < nbr; i++) pcrec_lb_raise(cx, w[i]);
+}
+
 /* [DD-14.LB] THE TWO HALVES OF THE DEFERRED RE-CHECK — internal.h's
  * declarations carry the argument for the split; this is the rule.
  *
@@ -426,6 +436,7 @@ void pcrec_lookaround_fix_widths(Ctx *cx, Ast *a)
         pcrec_ctx_fail(cx, a->u.look.at, "%s", buf);
     }
     a->u.look.widths = w;
+    la_lb_raise(cx, w, nbr);
 }
 
 /* ONE group port for all six lookaround registry rows (three lookaheads,
@@ -507,6 +518,9 @@ ExtResult pcrec_laport_group(Ctx *cx, const RegRow *rw, ExtWant want,
     {
         Ast *cn = pcrec_look_t3(cx, body, k->behind, k->neg);
         if (cn) {
+            /* [UTF-VALID] a one-character lookbehind is width 1 toward LB
+             * whatever node it becomes (utf_valid_design.md §1.4). */
+            if (k->behind) pcrec_lb_raise(cx, 1);
             ExtResult cres = { .what = EXT_NODE, .at = at, .msg = "",
                                .answered_at = want };
             cres.node = cn;
@@ -590,6 +604,7 @@ ExtResult pcrec_laport_group(Ctx *cx, const RegRow *rw, ExtWant want,
         }
         a->u.look.widths  = w;
         a->u.look.nbranch = info.nbr;
+        la_lb_raise(cx, w, info.nbr);
     }
 
     /* PROPAGATED, not defaulted — A_CAP's rule and A_ATOMIC's, for their

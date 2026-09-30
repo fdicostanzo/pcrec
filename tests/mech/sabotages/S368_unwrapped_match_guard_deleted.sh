@@ -19,11 +19,16 @@ SAB_SUITES="startbnd"
 SAB_DESC="the DFA's unwrapped <prefix>_match stops emitting the K50 caller-startpos guard, so a mid-character ctx->pos is answered instead of refused (the state the form shipped in until K73)"
 SAB_DOC_FIGURE="docs/spec/match_api.md 3.1's anchored-entries bullet; docs/dev/known_issues.md K73's fix paragraph"
 SAB_COUNT=1
+# RE-ANCHORED [UTF-VALID] (lane uvbuild, 2026-09-30): the call gained its
+# `anchored` argument (the align value's NOMATCH form); the plant still
+# deletes the one call, and with it this body's whole caller-position
+# prologue — the intent (the K50 guard gone from the unwrapped form) is
+# unchanged and re-verified by the same startbnd detector.
 # REACH: a utf8 DFA artifact must still take the unwrapped match form.
 SAB_REACH='"$PCREC" -p rx -e utf8 -o - --pattern "x*" | grep -o "RX_DFA_MATCH \"unwrapped\"" | head -1'
 SAB_REACH_EXPECT='RX_DFA_MATCH "unwrapped"'
 SAB_BEFORE='    pcrec_emit_startpos_guard(cx, c, "    ", "search_from", "subject",
-                              "subject_length");
+                              "subject_length", true);
     pcrec_emit_start_zero(cx, c, "    ", "search_from", "subject",
                           "subject_length", PCREC_START0_NOMATCH);'
 SAB_AFTER='    /* SABOTAGE S368 */

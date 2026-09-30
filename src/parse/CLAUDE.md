@@ -2112,3 +2112,17 @@ Maintenance: update this file when files are added/removed or their roles change
   is written EXPLICITLY in both arms and never left to the arena zero — the
   unsound direction is a missed write reading "not deferred", which the
   composer then skips.
+
+## [UTF-VALID] the LB fact's writers (D133)
+
+`Ctx.lb_max` (PCRE2's `max_lookbehind`, utf_valid_design.md §1.4) is a
+parse-time running max with one writer per construct, through
+`pcrec_lb_raise` (core/internal.h): `mod_assertions.c` raises it to 1 for
+`\A`, `\b` and `\B` (not `^`, which is the same A_BOL node — the reason
+the fact cannot be read off the tree afterwards); `mod_lookaround.c` raises
+it to a lookbehind's widest branch in characters (`la_lb_raise`) wherever a
+width table is settled — at parse time for a call-free body, in
+`pcrec_lookaround_fix_widths` for a deferred one — and to 1 for a
+one-character lookbehind that T3 turns into a context node. Nesting is a
+max, never a sum; dead DEFINE bodies count. `[[:<:]]`/`[[:>:]]` (1 in PCRE2)
+are refused by `ext.c` today; their producer raises LB when it lands.

@@ -1479,3 +1479,10 @@ set including the fallback and needs no exception).
 The gap was found by walking into it: [OPT-4.1] added a sixth value
 (`"declined-nullable"`) and nothing in this directory would have noticed if
 the dump or the spec had been left behind.
+
+## [UTF-VALID] (2026-09-30)
+
+`axes_registry_check.sh` gains two `check_value_set` pairs
+(`RX_STARTPOS_GUARD`, `RX_UTF_CHECK`, dump vs `match_api.md` §6.3's tables);
+with the two new single-bit triples (bits 39, 40) `run_registry_tests.sh`'s
+pinned count moves 155 -> 165.

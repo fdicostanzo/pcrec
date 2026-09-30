@@ -1190,10 +1190,26 @@ declare -a job_label=() job_flags=() job_lost_ok=()
 # job_label's own index the moment any OTHER job type appended after it, so
 # every writer sets it by EXPLICIT INDEX instead (see the dial block below).
 declare -a job_savedump=()
+# [UTF-VALID] `-futf-check` IS EXCLUDED FROM THE IDENTITY SWEEP BY NAME
+# (docs/spec/tuning.md §2.36): it is a CONTRACT axis whose answers differ on
+# purpose on every ill-formed corpus cell, so an identity comparison would
+# report each one as a disagreement. It gets its OWN ARM below
+# (tests/axes/utfcheck_arm.py). The exclusion is ASSERTED PRESENT —
+# `PCREC_FORCE_PREFILTER`'s idiom one section up — so a rename of the bit
+# cannot silently put the axis back into (or drop it out of) both sweeps.
+utfcheck_bit=""
+for bit in "${!bit_macro[@]}"; do
+    [ "${bit_macro[$bit]}" = "PCREC_FORCE_UTF_CHECK" ] && utfcheck_bit="$bit"
+done
+if [ -z "$utfcheck_bit" ] || [ "${macro_flag[PCREC_FORCE_UTF_CHECK]:-}" != "-futf-check" ]; then
+    echo "run_axes.sh: FATAL: PCREC_FORCE_UTF_CHECK / -futf-check is not among the derived axes — the one axis this sweep excludes by name for its own arm has been renamed or removed, so neither sweep would cover it" >&2
+    exit 1
+fi
 for bit in $(printf '%s\n' "${!bit_macro[@]}" | LC_ALL=C sort -n); do
     macro="${bit_macro[$bit]}"
     flagtext="${macro_flag[$macro]}"
     label="$flagtext ($macro, bit $bit)"
+    [ "$bit" = "$utfcheck_bit" ] && continue    # its own arm, below
     if [ -n "$AXES" ]; then
         case " $AXES " in (*" $flagtext "*) ;; (*) continue ;; esac
     fi
@@ -1579,6 +1595,39 @@ EOF
 fi
 
 # ============================================================================
+# [UTF-VALID] THE `-futf-check` ARM (docs/spec/tuning.md §2.36). The same
+# corpus under RXTFLAGS=-futf-check, compared against the baseline dump by
+# tests/axes/utfcheck_arm.py: identical on every byte block (the flag is
+# inert there), and on a utf8 block identical iff python's strict decoder
+# finds the cell's checked range [startpos - LB, n) well-formed (LB from
+# libpcre2), `utf <offset>` otherwise.
+# ============================================================================
+utfcheck_verdict="not run (filtered out by AXES=)"
+if [ -z "$AXES" ] || case " $AXES " in (*" -futf-check "*) true ;; (*) false ;; esac; then
+    UTF_DUMP="$WORKDIR/axis_utfcheck.tsv"
+    echo
+    echo "axes: -futf-check arm (RXTFLAGS=\"-futf-check\", its own oracle, not identity)..."
+    "$ROOT_DIR/scripts/watchdog" -l axes-utfcheck -S axes -s 3600 -- \
+        env RXTFLAGS="-futf-check" RXTDUMP="$UTF_DUMP" PCREC="$PCREC" CC="$CC" \
+            GENCFLAGS="$GENCFLAGS" PROCS="$PROCS" TMPDIR="${TMPDIR:-/var/tmp}" \
+            HARNESS_BATCH="$HARNESS_BATCH" \
+            bash "$ROOT_DIR/tests/harness/run.sh" "$@" > "$WORKDIR/axis_utfcheck.out" 2>"$WORKDIR/axis_utfcheck.err"
+    if [ ! -f "$UTF_DUMP" ]; then
+        utfcheck_verdict="FAIL (no dump — see $WORKDIR/axis_utfcheck.err)"
+        fail=1
+    elif python3 "$SCRIPT_DIR/utfcheck_arm.py" "$BASE_DUMP" "$UTF_DUMP" "$ROOT_DIR" \
+            > "$WORKDIR/utfcheck_arm.out" 2>&1; then
+        utfcheck_verdict="OK — $(grep -m1 '^utfcheck arm:' "$WORKDIR/utfcheck_arm.out")"
+        cat "$WORKDIR/utfcheck_arm.out"
+    else
+        cat "$WORKDIR/utfcheck_arm.out"
+        utfcheck_verdict="FAIL — $(grep -m1 '^utfcheck arm:' "$WORKDIR/utfcheck_arm.out")"
+        fail=1
+    fi
+    echo "  $utfcheck_verdict"
+fi
+
+# ============================================================================
 # SUMMARY
 # ============================================================================
 
@@ -1591,6 +1640,7 @@ done
 echo "oracle cross-check: $oracle_verdict"
 echo "--vm-entry-shape tier: $_shape_tier"
 echo "DIAL-S3 (tune refusal-set, keyed): $dial_s3_verdict"
+echo "-futf-check arm (contract, own oracle): $utfcheck_verdict"
 echo "HARNESS_BATCH: $HARNESS_BATCH"
 echo "total wall time: $((t_end - t_start))s"
 if [ "$fail" -ne 0 ]; then
@@ -1604,5 +1654,5 @@ fi
 # verdict is named too, for the identical reason — "all axes answer-identical"
 # says nothing about the refusal SET, which is a different property this
 # script checks separately.
-echo "run_axes.sh: all axes answer-identical to default (documented refusal populations excepted); --vm-entry-shape tier: $_shape_tier; oracle cross-check $oracle_verdict; DIAL-S3 $dial_s3_verdict"
+echo "run_axes.sh: all axes answer-identical to default (documented refusal populations excepted); --vm-entry-shape tier: $_shape_tier; oracle cross-check $oracle_verdict; DIAL-S3 $dial_s3_verdict; -futf-check arm $utfcheck_verdict"
 exit 0

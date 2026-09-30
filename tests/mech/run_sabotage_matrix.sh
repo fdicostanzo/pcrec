@@ -232,6 +232,9 @@
 #     the heap and glibc aborts, exit 134). Detection-by-abort is a property of
 #     the ALLOCATOR, not of the test, so the flag stays as the guard for a box
 #     where the write lands in slack and nothing notices.
+#   utfcheck — added 2026-09-30 ([UTF-VALID], D133); runs
+#     tests/utfcheck/run_utfcheck.sh. Registered with the arm and before
+#     S409-S413, which name it.
 #   lookaround — added 2026-08-23 ([M6.6.2] wave B+C, R33 C2-7); the design put
 #     it at wave F, and two of wave B+C's own rows (S131's atomicity flag and
 #     S122's cut) cannot be scored without its DISAGREEMENT assertion
@@ -2450,6 +2453,21 @@ run_one() {
                 p="$(grep -m1 '^checks passed:' "$work/startbnd.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/startbnd.log" | grep -oE '[0-9]+')"
                 score_arm "$work/startbnd.log" "$f" "startbnd:${f:-ERR}fail/${p:-?}pass"
+                ;;
+            utfcheck)
+                # [UTF-VALID] tests/utfcheck/run_utfcheck.sh — `-futf-check`
+                # and `-fstartpos-guard=align` against libpcre2 10.46's
+                # committed answers, per config, with python's strict decoder
+                # as a second oracle. ITS OWN ARM for `startbnd`'s reason: the
+                # corpus never compiles `-futf-check` (no directive does), so
+                # a defect in the check, its order, its LB step-back or the
+                # alignment leaves `harness` green by construction. Registered
+                # with the arm and before S409-S413, which name it (R31 C11).
+                PCREC="$pcrec" CC="$CC" bash "$tree/tests/utfcheck/run_utfcheck.sh" \
+                    > "$work/utfcheck.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/utfcheck.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/utfcheck.log" | grep -oE '[0-9]+')"
+                score_arm "$work/utfcheck.log" "$f" "utfcheck:${f:-ERR}fail/${p:-?}pass"
                 ;;
             limits)
                 # [LIM-1] tests/registry/limits_check.sh — the numeric-limits

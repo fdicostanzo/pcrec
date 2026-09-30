@@ -504,3 +504,10 @@ block just above that relation's because they are the two that must free the
 FILE otherwise (a path always has a `.` or `/`), which selects the per-target
 view. Rendering is `src/dump/findings_dump.c`.
 
+## [UTF-VALID] (D133)
+
+`-futf-check` and `-fstartpos-guard=align` are `axes.def` rows, parsed by
+`cli_axis_apply` like every `-f` spelling. `-futf-check=extent` — the
+reserved second contract value (utf_valid_design.md §2.2) — has its own arm
+that refuses it BY NAME ("reserved and not built") rather than as an unknown
+option; it has no bit and so no row. docs/spec/cli.md carries both.

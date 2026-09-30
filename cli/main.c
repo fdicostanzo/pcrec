@@ -860,6 +860,19 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
          * polarity. An unknown `-f...` returns 0 here and falls through to
          * the unknown-option diagnostic below exactly as it always did. */
         else if (cli_axis_apply(a, &opt.flags)) { }
+        /* [UTF-VALID] the contract axis's RESERVED second value
+         * (docs/design/utf_valid_design.md §2.2, ruled D133: recorded, not
+         * built). Refused by name rather than as an unknown option: the
+         * spelling is taken, and a caller who writes it is told what it would
+         * mean and why it is not here. It has no bit, so it has no axes.def
+         * row. */
+        else if (!strcmp(a, "-futf-check=extent")) {
+            cli_err("-futf-check=extent is reserved and not built: the "
+                    "'check as you move forward' contract "
+                    "(docs/design/utf_valid_design.md section 2.2) waits for "
+                    "a measured need; -futf-check is the whole-subject check");
+            return 1;
+        }
         /* [ENG-BREP] K, the counter rung's value parameter. One per artifact,
          * never per quantifier (D47 ADDENDUM). */
         else if (!strncmp(a, "--unroll=", 9)) {
