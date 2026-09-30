@@ -301,11 +301,29 @@ static void u8_ranges(U8Branches *bl, unsigned lo, unsigned hi)
     }
 }
 
+/* [CLS-TREE] S3 THE PRODUCER: an `A_WCLASS` over `cls`'s own code-point set
+ * (the published list is shared, never copied — cpset.c's rule) with `child`,
+ * the byte-level rewrite, as its `l`. The one place the kind is made, and it
+ * is made only for a class this ENCODING spells in more than one code unit,
+ * which is what a non-NULL `lower_class` answer already means; the byte
+ * instance never reaches it. `reg` stays the arena's NULL, exactly as the
+ * rewrite's own nodes were. */
+static Ast *wclass_of(LowerCtx *lc, const Ast *cls, Ast *child)
+{
+    Ast *w = pcrec_ast_node(lc->cx, A_WCLASS);
+    w->u.wcls.iv = cls->u.cls.iv;
+    w->u.wcls.n  = cls->u.cls.n;
+    w->l = child;
+    return w;
+}
+
 /* The UTF8 rewrite of one class node: NULL for a class the byte tier already
  * expresses (every interval at or below 0x7F — the identity fast path that
  * keeps an ASCII pattern's tree untouched, and with it §8.5's expectation
  * that the two encodings' artifacts agree on ASCII by construction), else an
- * `A_ALT` of byte-range sequences covering the set. */
+ * `A_WCLASS` over the set whose byte child is an `A_ALT` of byte-range
+ * sequences covering it ([CLS-TREE] S3). A set with no encodable member
+ * stays a byte-confined empty `A_CLASS`. */
 static Ast *lower_class_utf8(LowerCtx *lc, Ast *a)
 {
     bool ascii = true;
@@ -366,7 +384,7 @@ static Ast *lower_class_utf8(LowerCtx *lc, Ast *a)
                 seal->r = res;
                 res = seal;
             }
-            return res;
+            return wclass_of(lc, a, res);
         }
     }
 }
