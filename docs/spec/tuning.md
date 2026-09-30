@@ -1336,7 +1336,13 @@ default (design note §10a).
 **The stamp** is `<PREFIX>_VM_PREFILTER_LANG`, `"exact"` or
 `"count-collapsed"`, emitted exactly where `<PREFIX>_VM_PREFILTER` reads
 `"hybrid"` — an artifact with no prefilter names no language. It reports
-what was BUILT, so a request that changed nothing stamps `"exact"`.
+what was BUILT, so a request that changed nothing stamps `"exact"`. **It
+reports the count-collapse axis ONLY** (D142): `"exact"` means the language
+was not count-collapsed, not that the prefilter recognises the pattern's own
+language — lookbehind, lookahead, atomic and `\K` hybrids read `"exact"` with
+an over-approximating prefilter whose match END is unproven. Whether the
+prefilter proves the window END is read from the reseed stamp's `exact` row,
+`<PREFIX>_VM_RESEED "exact"` (§2.35, `match_api.md` §6.3).
 
 **And `<PREFIX>_VM_PREFILTER_LANG_WHY` beside it** (D81's `_WHY`
 convention), because `"exact"` alone does not say which of several quite
