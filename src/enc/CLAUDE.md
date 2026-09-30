@@ -527,3 +527,29 @@ encoding could disagree about.
 
 Maintenance: update this file when files are added/removed or their roles
 change.
+
+## [CLS-TREE] S4 — THE `DECODE` ENTRY, AND TWO ENTRY COLUMNS (D58 EVENTS)
+
+`PCREC_ENCE_DECODE` (`$_decode`): one character at a position, its length or
+0 on the automaton's exact ill-formed set. It is the VM's wide-class test's
+decoder (`docs/design/cls_tree_design.md` §2.2, §6.1). Its body is stage 4's
+caseless-compare decoder, MOVED rather than copied: utf8's
+`$_span_match_caseless` now calls `$_decode`, so there is one decoder.
+`entries_byte[]` has no row, and the VM then keeps a class's byte child. The
+emitter asks the table (`pcrec_enc_has_entry`), never the encoding.
+
+Two new `PcrecEncEntry` columns, each recorded against D58:
+- `requires`: the entries an entry's BODY calls. Both emit functions close the
+  artifact's mask over it (`pcrec_enc_mask_close`), so the emitter never
+  learns that one backend's caseless compare decodes. [VAR] built and deleted
+  this column with no customer; `SPAN_CASELESS → DECODE` is the customer.
+- `inline_def`: the definition is `static inline`, has an EMPTY `decls` (so
+  nothing reaches a split artifact's `.h`), and is emitted by
+  `pcrec_enc_emit_inline_defs` ahead of the engine bodies.
+  `pcrec_enc_emit_defs` skips such entries. The reason is inlining: an
+  exported entry is interposable under `-fPIC`, and a per-character decoder
+  that does not inline is the cost.
+
+`$_var_valid` keeps its own decoding loop. Moving it onto `$_decode` would
+move every var-bearing utf8 artifact for no measured gain (D77); the comment
+at its definition says so.

@@ -105,6 +105,101 @@ else
     bad "[W4] x[é]y -e utf8 --engine=vm refused — a reader handed the A_WCLASS to a set renderer: $(head -c 300 "$TMP/w4.c.err")"
 fi
 
+# ---------------------------------------------------------------------------
+# PART 3 — [CLS-TREE] S4, THE KIT ROUTE (cls_tree_design.md §2.2, §6.1).
+# Structural facts the answer checks cannot see: the route is answer-neutral
+# by construction, so a build that took the wrong route — or ignored the
+# deny, or leaked the decoder into the public header — answers every corpus
+# cell correctly. Read off the artifact's TEXT, never its stamp alone.
+# ---------------------------------------------------------------------------
+echo "== PART 3: the kit route =="
+has()  { grep -q -- "$2" "$1"; }
+kitn() { grep -oE '^#define RX_VM_CLS_KIT [0-9]+' "$1" | awk '{print $3}'; }
+
+# [K1] a wide class on the VM is ONE decode + ONE matcher, and no byte
+# alternation is left for it (the program pushes no frame for the class).
+if compile 'x\p{L}y' "$TMP/k1.c" -e utf8 --engine=vm; then
+    if has "$TMP/k1.c" 'rx_decode(subject, subject_length, scan_position, &cp_)' \
+       && has "$TMP/k1.c" '^static inline int rx_wcls0(unsigned cp)' \
+       && [ "$(kitn "$TMP/k1.c")" = 1 ] && has "$TMP/k1.c" '^#define RX_VM_FRAMELESS 1$'; then
+        ok "[K1] x\\p{L}y --engine=vm: one decode + one kit matcher (RX_VM_CLS_KIT 1), frameless"
+    else
+        bad "[K1] x\\p{L}y --engine=vm: not one decode + kit test (kit=$(kitn "$TMP/k1.c"); $(grep '^#define RX_VM_FRAMELESS' "$TMP/k1.c"))"
+    fi
+else
+    bad "[K1] x\\p{L}y -e utf8 --engine=vm refused: $(head -c 300 "$TMP/k1.c.err")"
+fi
+
+# [K2] -fno-cls-kit: the byte alternation, no decoder, no matcher.
+if compile 'x\p{L}y' "$TMP/k2.c" -e utf8 --engine=vm -fno-cls-kit; then
+    if ! has "$TMP/k2.c" 'rx_decode' && ! has "$TMP/k2.c" 'rx_wcls' && [ "$(kitn "$TMP/k2.c")" = 0 ]; then
+        ok "[K2] -fno-cls-kit: no decoder, no matcher, RX_VM_CLS_KIT 0 — the byte alternation"
+    else
+        bad "[K2] -fno-cls-kit: the artifact still decodes or carries a matcher (kit=$(kitn "$TMP/k2.c")) — the deny does not reach the route"
+    fi
+else
+    bad "[K2] x\\p{L}y -fno-cls-kit refused (the byte alternation of \\p{L} fits the VM cap): $(head -c 300 "$TMP/k2.c.err")"
+fi
+
+# [K3] a ONE-member wide class is a literal: bytes, not a decode.
+if compile 'x(é)y' "$TMP/k3.c" -e utf8 --engine=vm; then
+    if ! has "$TMP/k3.c" 'rx_decode' && [ "$(kitn "$TMP/k3.c")" = 0 ]; then
+        ok "[K3] x(é)y: a one-member class keeps its bytes (RX_VM_CLS_KIT 0, no decoder)"
+    else
+        bad "[K3] x(é)y: a one-member class was routed to the kit (kit=$(kitn "$TMP/k3.c")) — vm_wcls_bytes lost its literal clause"
+    fi
+else
+    bad "[K3] x(é)y -e utf8 --engine=vm refused: $(head -c 300 "$TMP/k3.c.err")"
+fi
+
+# [K4] one matcher per DISTINCT set: two sites of one set share it.
+if compile '\p{L}x\p{L}y\p{N}' "$TMP/k4.c" -e utf8 --engine=vm; then
+    if [ "$(kitn "$TMP/k4.c")" = 2 ]; then
+        ok "[K4] \\p{L}x\\p{L}y\\p{N}: two distinct sets, two matchers (the pool dedups)"
+    else
+        bad "[K4] \\p{L}x\\p{L}y\\p{N}: RX_VM_CLS_KIT $(kitn "$TMP/k4.c"), want 2"
+    fi
+else
+    bad "[K4] refused: $(head -c 300 "$TMP/k4.c.err")"
+fi
+
+# [K5] the decoder is DECLARED NOWHERE: a split artifact's public header
+# carries neither it nor a matcher (a `static` prototype in a header warns
+# in every includer), and the .c defines it before the program calls it.
+if "$TIMEOUT_BIN" 120 "$PCREC" -p rx -e utf8 --engine=vm -o "$TMP/k5.c" \
+        --pattern 'x\p{L}y' > /dev/null 2> "$TMP/k5.err" && [ -f "$TMP/k5.h" ]; then
+    d="$(grep -n 'static inline size_t rx_decode' "$TMP/k5.c" | head -1 | cut -d: -f1)"
+    u="$(grep -n 'len_ = rx_decode(' "$TMP/k5.c" | head -1 | cut -d: -f1)"
+    if ! has "$TMP/k5.h" 'rx_decode' && ! has "$TMP/k5.h" 'rx_wcls' \
+       && [ -n "$d" ] && [ -n "$u" ] && [ "$d" -lt "$u" ]; then
+        ok "[K5] rx_decode: static inline, absent from the .h, defined (line $d) before its first call (line $u)"
+    else
+        bad "[K5] rx_decode placement: header mentions it, or defined at '${d:-none}' after its call at '${u:-none}'"
+    fi
+else
+    bad "[K5] the split artifact did not build: $(head -c 300 "$TMP/k5.err")"
+fi
+
+# [K6] the caseless span compare REQUIRES the decoder: a caseless
+# backreference artifact under utf8 defines rx_decode though no class is wide.
+if compile '(?i)(a)\1' "$TMP/k6.c" -e utf8 --features backrefs -fno-cls-kit; then
+    if has "$TMP/k6.c" 'static inline size_t rx_decode' && ! has "$TMP/k6.c" 'span_ci_decode'; then
+        ok "[K6] (?i)(a)\\1 -e utf8: the caseless span compare's decoder is the one rx_decode entry (requires closed the mask)"
+    else
+        bad "[K6] (?i)(a)\\1 -e utf8: no rx_decode, or a private span_ci_decode survives — PcrecEncEntry.requires is not closing the mask"
+    fi
+else
+    bad "[K6] (?i)(a)\\1 -e utf8 refused: $(head -c 300 "$TMP/k6.c.err")"
+fi
+
+# [K7] the refusals S4 retires: K55 and a captured wide class compile.
+if compile '\P{Unknown}' "$TMP/k7a.c" -e utf8 --engine=vm \
+   && compile '(\p{L})' "$TMP/k7b.c" -e utf8; then
+    ok "[K7] \\P{Unknown} --engine=vm (K55) and (\\p{L}) at default axes compile"
+else
+    bad "[K7] a retired refusal is back: $(head -c 300 "$TMP/k7a.c.err") $(head -c 300 "$TMP/k7b.c.err")"
+fi
+
 echo
 echo "checks passed: $pass"
 echo "checks failed: $fail"

@@ -3424,6 +3424,17 @@ The IDENTITY is `scripts/cls_identity.py`'s (it needs a reference build, which
   — and a reader that does refuses by `pcrec_cls_bits`' kind guard. W4 is a
   spine ITEM on purpose: at a spine head the see-through bypasses `vm_emit`.
 
+- **PART 3, the S4 kit route** ([CLS-TREE] S4, lane s4build): K1 a wide
+  class on the VM is one `rx_decode` + one `rx_wcls0` (`RX_VM_CLS_KIT 1`,
+  frameless); K2 `-fno-cls-kit` leaves neither; K3 a one-member class keeps
+  its bytes; K4 the pool dedups (two sets, two matchers); K5 the decoder is
+  absent from a split artifact's `.h` and defined before its first call; K6
+  a utf8 caseless backreference artifact carries `rx_decode` through
+  `PcrecEncEntry.requires`; K7 the retired refusals (`\P{Unknown}` under
+  `--engine=vm`, `(\p{L})` at default axes) compile. All answer-neutral
+  facts, which is why they are structural. Rows S392 (K3), S394 (K6), S395
+  (K2).
+
 Sabotage rows S365 (a reader shares `A_CLASS`'s arm: [5b] + W4) and S366
 (`vm_isl_words`' default restored: [5a] + [5c] + W3). The W1/W2 plants
 (see-through removed from `vm_cat_flatten`; `vm_det_seq`'s arm declining)

@@ -1050,8 +1050,21 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
   emitted form on every code point. **Open at S1**: the table's byte
   predicates read the DP's MODEL bytes, which run ~13% under the measured
   object for `K`; see docs/dev/lanes/clss1_report.md.
+  **FIRST CALLER, [CLS-TREE] S4 (lane s4build, 2026-09-29, abi 47):**
+  emit_vm.c's `vm_wcls` interns each distinct wide set and asks
+  `pcrec_clskit_select` at `cx->opt->tune` (row denies unmapped, `deny` 0);
+  `vm_emit_search_body` emits the matchers (`<prefix>_wcls<N>`) beside the
+  class bitmaps. D129 Q2's `-fno-cls-kit` is the whole-kit deny, read by
+  emit_vm.c's `vm_wcls_bytes`, not a `ClsDeny`.
 - **emit_vm.c** — the backtracking VM as emitted specialized C
-  (docs/design/engine_m4.md §2). ONE function per pattern, one label per
+  (docs/design/engine_m4.md §2). **[CLS-TREE] S4 (abi 47): a WIDE class
+  (`A_WCLASS`, more than one member) is ONE decode (`<prefix>_decode`, the
+  encoding's `static inline` `PCREC_ENCE_DECODE` entry) plus ONE kit matcher
+  call, where it was its byte alternation; `vm_wcls_bytes` is the one route
+  question (`-fno-cls-kit`, no decode row, or a one-member set keep the
+  bytes) that `vm_emit_node`, `vm_cost`, `vm_count_slots` and the spine
+  flatteners' `vm_seethru` all ask. `<PREFIX>_VM_CLS_KIT` counts the
+  matchers. docs/design/cls_tree_design.md §6.1.** ONE function per pattern, one label per
   pattern position, every continuation resolved at compile time into a
   fallthrough or a direct `goto`, and exactly one indirect jump (the `goto *`
   at the fail label). §2.7 is why D13's table-vs-computed-goto arbitration

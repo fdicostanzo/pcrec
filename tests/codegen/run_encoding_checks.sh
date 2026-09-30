@@ -443,7 +443,13 @@ pcrec, root, blocks_tsv, max_blocks = sys.argv[1], sys.argv[2], sys.argv[3], int
 # var-bearing pair would differ by a whole function. It returns `int`, which
 # no entry before it did, and a return type absent from this alternation is a
 # region this walk silently does not see.
-SIG_RE = re.compile(r'^(?:size_t|ptrdiff_t|int|unsigned|static\s+unsigned|static\s+size_t|static\s+const\s+unsigned)\s+rx_(next_pos|back_step|span_match|span_match_caseless|span_ci_fold|span_ci_decode|span_ci_fold_pairs|var_valid)\s*[\(\[]')
+# [CLS-TREE] S4 `static inline size_t` and `decode` JOIN: the caseless
+# compare's private decoder became the utf8 backend's own `$_decode` entry
+# (`static inline`, emitted ahead of the program, required by the caseless
+# compare), and `entries_byte[]` carries no row for it -- encoding-owned in
+# the same sharpest sense as `var_valid`. `span_ci_decode` stays in the
+# alternation so an artifact from before S4 is still read.
+SIG_RE = re.compile(r'^(?:size_t|ptrdiff_t|int|unsigned|static\s+unsigned|static\s+size_t|static\s+inline\s+size_t|static\s+const\s+unsigned)\s+rx_(next_pos|back_step|span_match|span_match_caseless|span_ci_fold|span_ci_decode|decode|span_ci_fold_pairs|var_valid)\s*[\(\[]')
 ENC_RE = re.compile(r'^(\s*\.encoding = )\d+(,\s*)$')
 # [enctriage, 2026-09-25] TWO emitted forms of the loop's own end guard, not
 # one. [OPT-ANCHOR-VM] (2026-09-22) bounds an anchored VM's retry loop by
@@ -810,7 +816,9 @@ def excise(text, label):
             # no floor reads and (b)'s per-pair symmetry rule does not compare:
             # counted under `span_match_caseless` they made every caseless
             # pair "asymmetric (byte=1 utf8=4)" by design.
-            if name.startswith('span_ci_'):
+            # [CLS-TREE] S4 the caseless compare's decoder is now the
+            # `$_decode` entry; it is still that compare's helper here.
+            if name.startswith('span_ci_') or name == 'decode':
                 name = 'span_ci_helper'
             if out and out[-1].rstrip().endswith('*/'):
                 k = len(out) - 1

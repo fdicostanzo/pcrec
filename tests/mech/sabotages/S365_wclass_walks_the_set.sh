@@ -21,6 +21,13 @@
 # plant + `cls_kind_guard` deleted -> `x[é]y` COMPILES and answers nomatch on
 # "x\xc3\xa9y" where the clean artifact answers (0,4). A silent miscompile;
 # the guard is the whole difference between that and this row's refusal.
+#
+# RE-ANCHORED at [CLS-TREE] S4 (lane s4build, 2026-09-29): the arm now asks
+# `vm_wcls_bytes` first and only its BYTE route walks the child (a
+# multi-member wide class takes one decode + kit test). The plant keeps the
+# row's claim on that route: it hands the node to `pcrec_cls_bits` -- the SET
+# -- before emitting. `x[é]y` is a one-member class, so it is on the byte
+# route and still W4's witness; the kind guard refuses it.
 SAB_ID="S365-wclass-walks-the-set"
 SAB_FILE="src/gen/emit_vm.c"
 SAB_SUITES="wclass"
@@ -28,9 +35,15 @@ SAB_DESC="vm_emit_node's A_WCLASS arm shares A_CLASS's label list, so the forwar
 SAB_DOC_FIGURE="MEASURED solo-plant 2026-09-29 at the S3 tip: wclass:2fail/8pass DETECTED -- [5b] (the census's shared-arm rule) and [W4] (x[é]y refuses by the kind guard); W1-W3 stay green, because their wrappers sit at spine heads the see-through already handles."
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    case A_WCLASS:
-        vm_emit_node(v, entry, a->l, next);
-        return;
-    case A_CLASS: {'
-SAB_AFTER='    case A_WCLASS:
-    case A_CLASS: {'
+SAB_BEFORE='    case A_WCLASS: {
+        if (vm_wcls_bytes(v->cx, a)) {
+            vm_emit_node(v, entry, a->l, next);
+            return;
+        }'
+SAB_AFTER='    case A_WCLASS: {
+        if (vm_wcls_bytes(v->cx, a)) {
+            uint8_t sab_bits[32];
+            pcrec_cls_bits(v->cx, a, sab_bits);
+            vm_emit_node(v, entry, a->l, next);
+            return;
+        }'

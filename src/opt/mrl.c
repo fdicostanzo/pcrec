@@ -530,8 +530,10 @@ long long pcrec_cwmax(const Ast *a)
          * length, a unit error) for byte identity; nothing moves either way,
          * because every reader after the lowering asks only zero vs nonzero
          * and the one that uses the value (endwin.c) declines under a
-         * multi-byte encoding first. */
+         * multi-byte encoding first. Its own arm, not `A_CLASS`'s label
+         * list: the census's no-shared-arm rule (run_wclass_census.sh [5b]). */
         case A_WCLASS:
+            return pcrec_sat_add(acc, 1, MRL_MINW_MAX);
         case A_CLASS:
             /* One CHARACTER, exactly and by definition — see the header. */
             return pcrec_sat_add(acc, 1, MRL_MINW_MAX);
@@ -673,6 +675,7 @@ long long pcrec_cwmin(const Ast *a)
         switch (a->k) {
         /* [CLS-TREE] S4 (D-2): one character, `pcrec_cwmax`'s arm. */
         case A_WCLASS:
+            return pcrec_sat_add(acc, 1, MRL_MINW_MAX);
         case A_CLASS:
             return pcrec_sat_add(acc, 1, MRL_MINW_MAX);
         case A_EMPTY:
