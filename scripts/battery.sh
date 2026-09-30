@@ -2,7 +2,16 @@
 # scripts/battery.sh — [TT-12] STEP 1 item 5: battery_v5, the manager's
 # merge/close validation chain as ONE detached, self-logging run.
 #
-# STAGES, IN ORDER: test -> strict -> axes -> san -> alloc -> lint -> mech.
+# STAGES, IN ORDER: test -> strict -> axes -> san -> alloc -> lint -> mech
+# -> recidentity.
+# `recidentity` is new here (D136, 2026-09-30): `make test-recursion-identity`,
+# the recursion landing gate. It sat red on main unnoticed because it was
+# opt-in and nothing counted it. It is a battery stage and NOT a `make test`
+# section because it builds a SECOND, pinned pre-producer compiler via
+# `git archive` (~35 min on the Mac) and sweeps the whole corpus on four axes.
+# It is LAST so its ~35 min never delays the verdicts of the stages before it,
+# and it needs the repo's full git history (`tests/codegen/
+# run_recursion_identity.sh` SKIPs loudly without one — read its stage log).
 # `alloc` is new here ([REVW.U L5-R1]/D110, 2026-09-18): `make alloc`, the
 # allocation-failure injector's own opt-in target (tests/core/alloc_check.c,
 # tests/core/CLAUDE.md), given a home in the merge/close battery rather than
@@ -122,12 +131,12 @@ run_battery() {
     } >> "$TRAILER"
 
     # BATTERY_STAGES (added 2026-09-09, K54): space-separated stage subset,
-    # default all six. Exists because darwin san is K54-pathological (gcc
+    # default all of them. Exists because darwin san is K54-pathological (gcc
     # libasan on arm64 — minutes per trivial compile); until that
     # investigation rules, a Mac battery runs BATTERY_STAGES="test strict
     # axes lint mech" and san rides the Linux executor channel. The trailer
     # records the chosen set so a reduced run can never masquerade as full.
-    local stages="${BATTERY_STAGES:-test strict axes san alloc lint mech}"
+    local stages="${BATTERY_STAGES:-test strict axes san alloc lint mech recidentity}"
     echo "== stages: $stages" >> "$TRAILER"
     for stage in $stages; do
         local slog="$LOGDIR/$stage.log"
@@ -177,6 +186,12 @@ run_battery() {
                 ;;
             mech)
                 PROCS="$MECH_PROCS" make mech > "$slog" 2>&1
+                ;;
+            recidentity)
+                # D136: an ordinary build+test shape (no $CC override). The
+                # verdict is make's own rc (`*** [test-recursion-identity]
+                # Error` in the stage log), like every other stage here.
+                make test-recursion-identity > "$slog" 2>&1
                 ;;
         esac
         rc=$?

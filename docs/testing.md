@@ -939,6 +939,14 @@ recipe's `RUN_STAMP_DIRTY` was read AFTER the section run, so
 print `(dirty)` regardless of the tree's state at push time — now captured
 before the run.
 
+**D136 (2026-09-30): `test-encoding-checks` joined `TEST_SECTIONS`**, so CI
+runs it: the section count is one higher and CI's `make test` wall grows by
+that section's own time, roughly +10 min (`ENC_MAX_BLOCKS=250`, the script's
+default; ~10 min at PROCS=1 on a loaded Mac, not measured on the runner). Run
+1's 39m17s and the later ~37-39 min figure therefore become an estimated
+~47-49 min, still well inside the workflow's 90-minute step timeout, which is
+unchanged. Re-read the real figure off the first CI run after this lands.
+
 **Building libpcre2 10.46 from source** (rather than trusting whatever a
 distro's package manager ships, D98): the official release tarball,
 `./configure && make && make install` into `$RUNNER_TEMP`, cached by
@@ -1115,7 +1123,10 @@ itself.
 
 `tests/codegen/run_recursion_identity.sh` is module `recursion`'s byte-identity
 gate, and the third in the tree whose reference is a PINNED COMMIT rather than
-a `-D` knob. It is NOT part of `make test`. Run it on demand:
+a `-D` knob. It is NOT part of `make test`; **since D136 (2026-09-30) it IS the
+merge battery's `recidentity` stage** (`scripts/battery.sh`, last stage, ~35 min
+on the Mac: it builds a second pinned compiler and sweeps four axes). Run it on
+demand:
 
     make test-recursion-identity
     RECURSION_IDENTITY_REF=<sha> make test-recursion-identity   # a moved base
@@ -2790,6 +2801,17 @@ its 34-script loop through a `SAN_PROCS`-wide job pool (item 3, above), and
 `scripts/CLAUDE.md`'s `battery.sh` entry. The first full end-to-end run is
 owed at the next merge/close battery — not performed by the STEP 1 lane.
 
+**`recidentity` joins the chain (D136, 2026-09-30, lane wirechk):** LAST, after
+`mech` — `test → strict → axes → san → alloc → lint → mech → recidentity`.
+`make test-recursion-identity` was opt-in and sat red on main, unnoticed,
+until a triage lane happened to run it (docs/dev/lanes/silentred_report.md).
+It is a battery stage and not a `make test` section because it builds a SECOND
+compiler from a pinned pre-producer commit (`git archive`, so it needs the
+full git history and SKIPs loudly without one) and runs ~35 min. Its verdict
+is make's own `*** [test-recursion-identity] Error` line in
+`recidentity.log`, like every other stage. The same ruling moved
+`test-encoding-checks` into `TEST_SECTIONS` ("The encoding seam's checks").
+
 **`alloc` joins the chain (D110, 2026-09-18, lane allocpins):** placed
 after `san`, before `lint` — `test → strict → axes → san → alloc → lint →
 mech`. `make alloc` (opt-in, `tests/core/alloc_check.c`'s allocation-
@@ -3237,6 +3259,12 @@ comments. `scripts/m6read_check_sab_anchors.py`: 118 sabotages checked
 run_sabotage_matrix.sh S43`: `gentmo:2fail/16pass`, DETECTED.
 
 ## The encoding seam's checks ([M5-SEAM], 2026-08-18)
+
+> **D136 (2026-09-30): `make test-encoding-checks` IS NOW A `make test`
+> SECTION** (in `TEST_SECTIONS`, so the completion trailer counts it and CI
+> runs it), bounded by `ENC_MAX_BLOCKS=250` (~10 min). It was opt-in and sat
+> red on main unnoticed (docs/dev/lanes/silentred_report.md). The
+> whole-corpus sweep (`ENC_MAX_BLOCKS=0`) is still a slot run.
 
 D58 built the DD-12 residual seam ahead of M6: an artifact embeds exactly
 one encoding's residual block, chosen per compile call, and the first
