@@ -8899,3 +8899,14 @@ Context: review r3 (docs/dev/reviews/2026-09-30-r3-cls-tree-s2.md). No answer mo
 **Charter (Frank's words):** "when we use prefilter on a vm, is there elements of the vm that can presume certain conditions apply such that they can skip certain tests in such a way as to make the operation faster? For instance, if the pre filter is successful, one can presume a fixed prefix matches and skip ahead to the next piece. But if we trace the pre filter with the vm, there might be other pieces that we can prove as well such as class membership, even special case dfa-approved look-arounds. Another element- if the dfa uses class tables, is there overlap to allow the same table for vm? My strong guess is no but I'd like that validated."
 
 **Shape.** RESEARCH ONLY: a design/measurement note, no src/ change, no scheduling of a build. The model is fable at high effort (Frank's choice). It is filed as an [OPTLOOP] candidate (D137), and its output feeds the next cycle's measured selection (D119). Its conclusions must be measured: the dynamic frequency of each skippable test on the corpus/bench-derived patterns, and an upper-bound speedup from a hand twin where cheap. Refutations are an acceptable result, including of the manager's and Frank's own guesses.
+
+## D141 — [EST-REGISTRY] chartered, UNSCHEDULED: one table for every estimation weight, bias, threshold and fitted constant (Frank, 2026-09-30, eighty-seventh session)
+
+**Context.** Frank: "can we save our weights, bias, etc for estimations in a single table? i am concerned there are a bunch of magic numbers scattered around for this". Today clskit.c's `PLACE` struct (src/gen/clskit.c:76-118) is one home with provenance comments, for the class kit only. Limits already have the general shape: limits.h plus the D107 detector (tests/registry/limits_check.sh). Every other estimator (engine-selection costs, reseed thresholds, prefilter and size estimates such as the size-cap diagnostic's source-to-.o ratio, DFA/VM cost terms) keeps its numbers inline or local.
+
+**CHARTERED, UNSCHEDULED (Frank: "charter it, but unscheduled").** When scheduled:
+1. A census of every estimation/selection constant: where it lives, and whether its provenance is written anywhere.
+2. One registry, `estimates.def` (the X-macro shape of facts.def/axes.def). Each row: name, value, units, kind (RULED by Frank / FITTED by measurement), provenance for fitted values (data set, box, date, residuals), and the citing decision. `PLACE` folds into it.
+3. A D107-style detector that flags numeric literals in estimator/selection code not drawn from the registry.
+4. Visible through `--list` ([LIST-TABLES]).
+No artifact changes: a refactor plus a check, with identity proven by the sweep. Until it is scheduled, new estimation constants go into `PLACE` or carry their provenance inline.
