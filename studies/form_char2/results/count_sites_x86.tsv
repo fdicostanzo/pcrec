@@ -1,0 +1,28 @@
+build.py
+count_sites.py
+cs
+drv.c
+fn_counts.py
+run.py
+w
+witnesses.py
+witness	form	fold_sites	text	rodata	instr
+ci256	fold	26	69865	2183	16564
+ci256	atom	0	74281	2439	15142
+ci256	bitmap	0	115081	3015	25565
+kw5	fold	5	697	98	191
+kw5	atom	0	1113	258	293
+kw5	bitmap	0	1113	258	293
+kw16	fold	16	1641	108	407
+kw16	atom	0	1641	364	398
+kw16	bitmap	0	2777	620	664
+kw32	fold	26	1401	127	339
+kw32	atom	0	1305	383	311
+kw32	bitmap	0	2089	959	525
+kw64	fold	26	3641	159	841
+kw64	atom	0	3433	415	778
+kw64	bitmap	0	5273	991	1155
+
+real	0m18.195s
+user	0m17.344s
+sys	0m0.866s

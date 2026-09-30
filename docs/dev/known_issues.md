@@ -11,6 +11,18 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 ---
 
+## K80 — OPEN, unscheduled (2026-09-30, lane pfx0) — the shared ABI block's include guard is the literal `PCREC_RX_ABI_H`, so a translation unit including two artifacts of DIFFERENT abi silently gets the first one's block
+
+**Witness:** docs/dev/lanes/pfx0_report.md (simulated with a mutated header: no diagnostic). The same-abi two-header case is checked and clean (run_codegen_tests.sh:437-520, :905+). No check covers the mixed-abi case. The fix shape is probably an abi-keyed guard or a static assert on the block's abi. Changing it is emitted scaffolding, so it is an abi event (D76/D94).
+
+---
+
+## K79 — OPEN, unscheduled (2026-09-30, lane pfx0) — the prefix LENGTH is an input to the VM entry-shape decision, so the same pattern gets a different artifact depending on its name
+
+**Witness:** `(foo|bar)[0-9]{2,5}(x)` at `-p rx` / a 23-char prefix / a 60-char prefix stamps VM_PROGRAM_BYTES 2517 / 3714 / 5823 and ENTRY_SHAPE inline / inline / plain (docs/dev/lanes/pfx0_report.md). The cause is not chased (a size budget read off emitted text that includes the prefix, presumably). It is a determinism defect independent of [PFX-1]'s byte saving: selection must not depend on the caller's name for the matcher.
+
+---
+
 ## K77 — INFRASTRUCTURE, watch (2026-09-30, lane k73tri, filed by lane admin86) — the harness's pcrec compile budget is a WALL budget, so it is load-sensitive
 `tests/lib/gen_timeout.sh`'s `pcrec_timeout_secs()` (D45) budgets a pcrec compile at 20 s of WALL clock (`PCRECTIMEOUT`; 60 s under a sanitizer axis). Lane k73tri measured `((a)|ab){4000}c` at ~3 s of CPU that hit the 20 s wall at load 13.8, scored as a HARNESS FAILURE though nothing about the compiler had changed. The old "0.38 s corpus worst case" the budget was calibrated against is stale (now ~3 s CPU for that pattern), so the margin is thinner than the comment claimed. **Status:** not fixed, no measured recurrence beyond that one. **If it recurs:** move the pcrec compile to a CPU-primary budget (watchdog `-c`, wall as a generous backstop) as D45 already does for the generated-code compile, rather than raising the wall number. Pattern: same class as K58 (a budget calibrated on a quiet box).
 

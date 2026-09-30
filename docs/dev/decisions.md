@@ -8864,3 +8864,32 @@ Frank: "I agree with you on all" (on the manager's ten-item status list). Source
 **RULED (as recommended).**
 1. `test-encoding-checks` joins `TEST_SECTIONS`, so it runs in `make test` and in CI (+~10 min, bounded by `ENC_MAX_BLOCKS=250`).
 2. `test-recursion-identity` joins the merge battery (`scripts/battery.sh`), not `make test` (it builds two reference compilers, ~35 min).
+
+## D137 — parked rows: satisfy their measurement and bench needs; every optimization row lives under [OPTLOOP] (Frank, 2026-09-30, eighty-seventh session)
+
+**Context.** Eight rows sat STATE:started but parked (OPT-3, OPT-5, TT-4M, ENG-ISL, DD-13, DD-13b.W1.3, the OPTLOOP parent, ENG-ABS). Each had shipped a piece and was waiting on a measurement, a bench cell, a sequencing word or a hold.
+
+**RULED (Frank: "lets get the measurement and bench needs satisfied for these. the opt lanes that are not under the umbrella of the optloop (if any) need to be put there for when we start that up- measured decisions").**
+1. The measurements and bench cells these rows wait on are COMMISSIONED now, not left as triggers nobody pulls: pcrec-side measurements as lanes (heavy runs on ubuntubudu), bench-side needs as I-notes to pcrecdev2 through the inbox (D78).
+2. Every optimization row outside [OPTLOOP] (including parked OPT-* rows, ENG-ABS's first mechanism, and not-started opt rows) moves under the [OPTLOOP] umbrella as a CANDIDATE for its next cycle, carrying its measured evidence and its measurement need. D125's hold on the next cycle is unchanged. When the cycle opens, its selection is by measurement (D119).
+3. Non-optimization parked rows (DD-13/DD-13b, TT-4M harness timing) keep their own homes, but their measurement needs are commissioned too.
+
+## D138 — [CLS-TREE] S2 rulings Q1-Q4 (Frank, 2026-09-30, eighty-seventh session)
+
+Context: lane clss2 (docs/dev/lanes/clss2_report.md on lane/clss2). D129 (the fold becomes a kit member, `-fno-cls-fold` retires) and D131 item 5 (the kit's byte forms are for size-leaning positions only; the default byte-class form stays a table) disagreed about the default fold once S2 landed.
+
+1. **Q1, the default form for caseless-letter VM class sites = (C), MEASURE FIRST.** The default positions (0/+1/+2) keep the fold, byte-identical; the kit's CUBES serve all 8 one-cube classes at -2/-1. The default fold is ONE ROWS row, so a later flip is one row. Lane formchar2 measures it (instruction counts: fold 4, atom 3 on x86 / 4-6 on arm64; size: fold -5.6..-6% .text on ci-256; population: 19 default-route patterns, none hot). Frank rules the default on its timing. The manager's first framing ("the size loss is large, 20%") was corrected to the measured ~6% .text.
+2. **Q2 = the 'byte-range' ROWS row first, at every position**: one-interval classes stay inline, `vm_cls_shape` retires into ROWS + TAB_ROWS, and 'byte-table' at 0..+2 means today's TAB_ROWS choice. Accepted AS BUILT, including the 10 default movers (utf8 wide classes that are one interval <= U+00FF: a B1 table became one compare).
+3. **Q3 = (a)**: `-fno-cls-fold`, bit 24 and `RX_VM_CLS_FOLDS` are KEPT until Q1's measurement rules. If the default flips to table, they retire in that change (the bit left unassigned with a "retired" comment, no alias). If the fold stays, the flag stays permanently as that row's deny.
+4. **Q4 = accepted as built**: a scan-edge axis-I `kit` body ahead of 'bitmap', at -2/-1 only, for non-range classes; `-fno-cls-kit` denies it; its own commit and abi event; default DFA artifacts unchanged.
+
+## D139 — [CLS-TREE] S2 review fixes: the kit only where smaller; the scan edge consumes the general class table's form directly (Frank, 2026-09-30, eighty-seventh session)
+
+Context: review r3 (docs/dev/reviews/2026-09-30-r3-cls-tree-s2.md). No answer mover. But (E-M3) the byte-kit row was taken unconditionally at -2/-1 and measured BIGGER than the table on 4 of 5 witnesses (+108..+352 B), and (E-M2) the scan edge's own body table (dfa_scans[]: its own `range` predicate, the kit via ROWS, else a 256-byte bitmap) sent ROWS' byte-fold pairs to the largest form at -2.
+
+**RULED.**
+1. **The byte-kit row gets the smaller-than predicate** the wide rows already carry (P3_SMALLER's shape). The kit is chosen at -2/-1 only where it is smaller than the table choice. The dead `> 255u` bound in the byte kit goes. The -2/-1 census reports BYTES. This narrows D131 item 5's premise: the kit's byte forms are the size form only where measured smaller.
+2. **The scan edge has NO class decision and NO mapping of its own** (Frank: "does it need a mapping? why can't it use the same structure the table recommends?"). It asks the general class table (ROWS) for the class's form at the artifact's position, and emits that form through the SAME emitter the VM uses: range compare, fold compare, kit matcher, table read. `dfa_scans[]`'s class bodies and `pcrec_scan_range` as a selector retire. What stays scan-edge-specific is only the loop around the test.
+   - The TABLE REPRESENTATION (256-byte byte table vs 32-byte bitmap vs shared atom) is a row of the general table's table-choice sub-table (TAB_ROWS), not a scan-edge special case. The current per-context choice is kept as that row's predicate unless measured otherwise.
+   - Default positions: D138 Q1 still holds (the default fold is the one ROWS row a later measurement flips). Where the VM's and the scan edge's spellings of the same form differ in text, ONE spelling serves both (the tighter), and any default artifact whose text moves is measured and reported (it is an abi event; its answers must be identical).
+3. `-fno-cls-fold` / `-fno-cls-kit` deny their ROWS rows wherever the table is read, on the VM and the DFA alike. The spec says so, and the stale "VM-route only" text is fixed.
