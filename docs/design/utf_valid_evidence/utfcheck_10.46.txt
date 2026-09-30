@@ -1,0 +1,18 @@
+libpcre2 10.46
+[a] "a\xff"@0: rc=-23 (UTF-8 error: illegal byte (0xfe or 0xff)) startchar=1
+[a] "xa\xffz"@0: rc=-23 (UTF-8 error: illegal byte (0xfe or 0xff)) startchar=2
+[a] "\xffab"@2: rc=-1 (no match) startchar=0
+[b] "\xffab"@2: match (2,3)
+[(?<=a)b] "\xffab"@2: match (2,3)
+[(?<=a)b] "x\xffab"@3: match (3,4)
+[(?<=\xff)b] "\xffab"@2: rc=-1 (no match) startchar=0
+[a] "ab\xe3\x80"@0: rc=-3 (UTF-8 error: 1 byte missing at end) startchar=2
+[a] "ab\xc0\x80"@0: rc=-17 (UTF-8 error: overlong 2-byte sequence) startchar=2
+[a] "ab\xed\xa0\x80"@0: rc=-16 (UTF-8 error: code points 0xd800-0xdfff are not defined) startchar=2
+[a] "ab\xf4\x90\x80\x80"@0: rc=-15 (UTF-8 error: code points greater than 0x10ffff are not defined) startchar=2
+[a] "ab\x80"@0: rc=-22 (UTF-8 error: isolated byte with 0x80 bit set) startchar=2
+[z] "ab\xffcd"@0: rc=-23 (UTF-8 error: illegal byte (0xfe or 0xff)) startchar=2
+[a] "\xc3\xa9a"@1: rc=-36 (bad offset into UTF string) startchar=0
+[(?<=..)b] "\xffab"@2: rc=-23 (UTF-8 error: illegal byte (0xfe or 0xff)) startchar=0
+[(?<=...)b] "\xffxab"@3: rc=-23 (UTF-8 error: illegal byte (0xfe or 0xff)) startchar=0
+[(?<=a|bc)d] "\xffbcd"@3: match (3,4)

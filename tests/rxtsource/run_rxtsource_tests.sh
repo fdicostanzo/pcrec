@@ -369,9 +369,14 @@ record() { checks_recorded=$((checks_recorded + 1)); echo "RECORD: $*"; }
 # the three shared-context-set witness blocks the same lane added to
 # ctxnode.rxt after the lookaround-expansion corpus found that defect:
 # 254/4233/31197.
-CENSUS_FILES=254
-CENSUS_BLOCKS=4233
-CENSUS_LINES=31197
+# 2026-09-29 (lanes k7273 [K72] + k73utf [K73], merged onto U2 by mechanism):
+# tests/utf8/hv_space.rxt +1/+17/+420 and tests/utf8/k73_startskip.rxt
+# +1/+11/+86 (both measured by this check's own census on their branches:
+# 253/4198/31387 and 254/4209/31473 from the pre-U2 252/4181/30967), added to
+# U2's 254/4233/31197: 256/4261/31703. RUNSH_* moves the same.
+CENSUS_FILES=256
+CENSUS_BLOCKS=4261
+CENSUS_LINES=31703
 # 2026-09-23 (lane rxtfix, K34 closure via lane b2fix's [OPTLOOP.1.impl]
 # batch 2 — docs/dev/known_issues.md K34) — -1 file, -3 blocks, +0 lines.
 # tests/known_fail/k34_leftrec_giveup.rxt (1 file, 3 blocks, 11 lines) was
@@ -470,9 +475,11 @@ CENSUS_LINES=31197
 # CENSUS_* above (tests/ucp/ is a run.sh directory, not tests/known_fail/).
 # 2026-09-29 (lane ucpu2, [UCP] U2) — +2/+49/+218, the SAME delta as
 # CENSUS_* above (tests/ucp/ and tests/utf8/ are run.sh directories).
-RUNSH_FILES=230
-RUNSH_BLOCKS=4233
-RUNSH_LINES=31197
+# 2026-09-29 (lanes k7273 [K72] + k73utf [K73]) — +2/+28/+506, the SAME
+# delta as CENSUS_* above (both files are tests/utf8, a run.sh directory).
+RUNSH_FILES=232
+RUNSH_BLOCKS=4261
+RUNSH_LINES=31703
 # 2026-09-23 (lane rxtfix, K34 closure, same event as CENSUS_* above) —
 # +0/+0/+11 where CENSUS_* moved -1/-3/+0. tests/known_fail/ is now EMPTY
 # (kf_files=kf_blocks=kf_lines=0 at run time — `find tests/known_fail
@@ -1589,8 +1596,12 @@ C3_PASS=13903
 # vars/utf8-restrict; U2: tests/ucp + axis13), so the merged pin is main's
 # value + U2's delta: SKIP 16975+230, pcre2-only 2966+32, own-oracle
 # 12002+198; C3_VERIFIABLE (PASS+INFO+nopython+perr-accept) is unmoved.
-C3_SKIP=17205
-C3_SKIP_PCRE2ONLY=2998
+# [K72] (lane k7273) +420 and [K73] (lane k73utf) +86 SKIP, all pcre2-only
+# (tests/utf8/hv_space.rxt: python's `re` has no \h/\v; tests/utf8/
+# k73_startskip.rxt: no invalid-UTF mode), added to U2's pin by mechanism:
+# SKIP 17205+506, pcre2-only 2998+506.
+C3_SKIP=17711
+C3_SKIP_PCRE2ONLY=3504
 C3_SKIP_GIVEUP=29
 C3_SKIP_COMPOSED=0
 C3_SKIP_NOPYTHON=1964
@@ -4582,9 +4593,9 @@ MIU="$FIXRUN/mc_illformed_utf8.rxt"
 miu_b_out="$("$TIMEOUT_BIN" 60 bash "$RUNSH" "$MIU" 2>&1)"; miu_b_rc=$?
 miu_c_out="$("$TIMEOUT_BIN" 60 python3 "$VERIFY" "$MIU" 2>&1)"; miu_c_rc=$?
 if [ "$miu_b_rc" = "0" ] && [ "$miu_c_rc" = "0" ] && \
-   printf '%s\n' "$miu_b_out" | grep -q '^cases passed: 1$' && \
-   printf '%s\n' "$miu_c_out" | grep -q '^PASS=1 FAIL=0$'; then
-    pass "mc/ill-formed-utf8: run.sh's C find-all loop and verify_rxt.py's python transcription both count 2 matches on three bare continuation bytes (SW7's skip rule)"
+   printf '%s\n' "$miu_b_out" | grep -q '^cases passed: 2$' && \
+   printf '%s\n' "$miu_c_out" | grep -q '^PASS=2 FAIL=0$'; then
+    pass "mc/ill-formed-utf8: run.sh's C find-all loop and verify_rxt.py's python transcription agree on both cells — 2 matches across a lead-free continuation run (SW7's skip rule) and 1 on three bare continuation bytes ([K73]'s offset-0 start)"
 else
     fail "mc/ill-formed-utf8: the two legs disagree with the fixture's expected count, or one of them errored.
   run.sh (rc=$miu_b_rc): $(printf '%s\n' "$miu_b_out" | tail -10)

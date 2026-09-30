@@ -48,7 +48,7 @@
  * abi ritual fires next, bump this ONE constant; grep for its old value
  * finds both emission sites plus every out-of-tree reader the ritual's own
  * site list already enumerates. */
-#define PCREC_ARTIFACT_ABI 46
+#define PCREC_ARTIFACT_ABI 47
 
 /* Renders one byte of pattern-derived text safely into a C block comment, escaping whatever would close or falsely open the comment.
  *
@@ -622,11 +622,20 @@ static int dfa_artifact_ncaps(Ctx *cx)
  * backend whose guard did not have that property would need this comment to
  * become a placement rule.
  *
+ * OFFSET 0 IS NEVER REFUSED, AND THAT CLAUSE IS COMPOSED HERE ([K73]). The
+ * backend's text is the plain character-start predicate; the `== 0 ||` in
+ * front of it is this function's, because it is a fact about who named the
+ * position, not about the encoding. A caller naming offset 0 cannot have
+ * pointed INSIDE a character (none precedes it), and refusing it would turn
+ * "ill-formed input matches nothing" (ASK 1) into an error — MEASURED at K50:
+ * 21 oracle-verified cells returned PCREC_ERR_STARTPOS without the clause.
+ * What offset 0 DOES when it is not a character start is not a refusal and
+ * not this function's: `pcrec_emit_start_zero` below. The rendered line is
+ * byte-identical to the one K50 shipped, where the clause was the backend's.
+ *
  * EMITTED ONLY WHEN THE BACKEND RESTRICTS SOMETHING AND THE FLAG IS ABSENT, so
- * a `byte` artifact is byte-identical under either setting and a `utf8` one
- * denied the guard is byte-identical to what it emitted before K50's entry
- * half. `ret` is the caller's own refusal spelling — the entries do not share
- * a return type. */
+ * a `byte` artifact is byte-identical under either setting. Every entry that
+ * emits it returns an integer type, so the one refusal spelling serves all. */
 const char *pcrec_startpos_guard_text(Ctx *cx, char *buf, size_t cap,
                                      const char *indent, const char *posvar,
                                      const char *subjvar, const char *lenvar)
@@ -652,8 +661,9 @@ const char *pcrec_startpos_guard_text(Ctx *cx, char *buf, size_t cap,
         "%s * not a give-up. libpcre2 under PCRE2_UTF refuses the same\n"
         "%s * positions (PCRE2_ERROR_BADUTFOFFSET). Compile with\n"
         "%s * -fno-startpos-guard for the permissive semantics instead. */\n"
-        "%sif (!(%s)) return PCREC_ERR_STARTPOS;\n",
-        indent, indent, indent, indent, indent, indent, indent, indent, g)
+        "%sif (!(%s == 0 || %s)) return PCREC_ERR_STARTPOS;\n",
+        indent, indent, indent, indent, indent, indent, indent, indent,
+        posvar, g)
             >= cap)
         pcrec_ctx_fail(cx, 0,
                  "internal error: the character-start guard's emitted text "
@@ -673,6 +683,82 @@ void pcrec_emit_startpos_guard(Ctx *cx, StrBuf *c, const char *indent,
     char t[PCREC_STARTPOS_GUARD_TEXT_MAX];
     pcrec_sb_puts(c, pcrec_startpos_guard_text(cx, t, sizeof t, indent,
                                          posvar, subjvar, lenvar));
+}
+
+/* Writes the OFFSET-0 START RULE at one site: when `posvar` is 0 and offset 0
+ * is not a character start of this artifact's encoding, no match is attempted
+ * there, and the site does what `act` names instead — SEEK moves `posvar` on to
+ * the next character start, NOMATCH returns -1, SKIP `continue`s the
+ * enclosing attempt loop. Emits nothing under an encoding with no start
+ * restriction, and nothing for a pattern `pcrec_startgate_needed` clears.
+ *
+ * [K73], Frank's 2026-09-29 ruling (a). libpcre2 under PCRE2_MATCH_INVALID_UTF
+ * advances a start offset that lands on a continuation byte to the next
+ * non-continuation byte before any attempt, whatever the pattern — `''`,
+ * `\B`, `x*` and `(?=)` answer (1,1) on `\x80` and `^` finds nothing
+ * (`docs/dev/lanes/k7273_evidence/k73_startskip_10.46.txt`). pcrec now does
+ * the same at OFFSET 0 ONLY: an explicit mid-character `startpos > 0` is
+ * still refused by the guard above (K50), a deliberate, stated divergence.
+ * Offset 0 is not a caller error — on a well-formed subject it is always a
+ * start — so this is ill-formed-subject behaviour and it has no flag: it is
+ * emitted under `-fno-startpos-guard` too, which governs only where a caller
+ * may point an entry (`docs/spec/tuning.md` §2.23).
+ *
+ * ONE RULE, THREE SPELLINGS, BECAUSE THE SITES HAVE THREE RETURN CONVENTIONS.
+ * A search entry SEEKs; an anchored match-here entry cannot report a match
+ * that begins anywhere but where it was asked, so it answers NOMATCH, which is
+ * what the search-and-filter form of the same entry already answers by
+ * construction; ENG_ATTEMPT's start loop SKIPs, which is the same seek with
+ * the loop's own increment doing the stepping.
+ *
+ * WHICH VARIABLE IS SOUGHT IS LOAD-BEARING. `\G` reads the CALLER's position
+ * by name (`start == search_from` in ENG_ATTEMPT, the VM's `, search_from`
+ * argument), and libpcre2 answers `\G` FALSE after the advance (`\G` on
+ * `\x80` finds nothing, `\G|b` on `\x80\x80b` reports (2,3)). So SEEK moves
+ * `search_from` only in the unanchored scan body, which never carries `\G`
+ * (`pcrec_nfa_has_bot` routes it to ENG_ATTEMPT), and the VM seeks its own
+ * `attempt_position` instead.
+ *
+ * GATED ON `pcrec_startgate_needed` FOR [K50-NULLGATE]'s PROOF: a match that
+ * consumes a byte begins on a byte `start_cls` admits, so a non-nullable
+ * pattern cannot match at a continuation byte and the rule is redundant with
+ * the machine's own first-byte test there. */
+void pcrec_emit_start_zero(Ctx *cx, StrBuf *c, const char *indent,
+                           const char *posvar, const char *subjvar,
+                           const char *lenvar, PcrecStart0 act)
+{
+    char g[256];
+    bool trunc;
+
+    if (!pcrec_startgate_needed(cx)) return;
+    if (!pcrec_enc_start_guard(pcrec_enc_by_id(cx->opt->encoding),
+                               g, sizeof g, posvar, subjvar, lenvar, &trunc)) {
+        if (trunc)
+            pcrec_ctx_fail(cx, 0,
+                     "internal error: this encoding's character-start guard "
+                     "does not fit the emitter's buffer");
+        return;   /* this encoding places no restriction: emit nothing */
+    }
+    pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
+    pcrec_sb_printf(c,
+        "%s/* [K73] Offset 0 is a match start only if it is a character\n"
+        "%s * start; on a subject that begins with continuation bytes no\n"
+        "%s * match is attempted there. */\n", indent, indent, indent);
+    pcrec_sb_cmt_close(c);
+    switch (act) {
+        case PCREC_START0_SEEK:
+            pcrec_sb_printf(c, "%sif (%s == 0 && !(%s)) do %s++; while (!(%s));\n",
+                            indent, posvar, g, posvar, g);
+            break;
+        case PCREC_START0_NOMATCH:
+            pcrec_sb_printf(c, "%sif (%s == 0 && !(%s)) return -1;\n",
+                            indent, posvar, g);
+            break;
+        case PCREC_START0_SKIP:
+            pcrec_sb_printf(c, "%sif (%s == 0 && !(%s)) continue;\n",
+                            indent, posvar, g);
+            break;
+    }
 }
 
 
@@ -7491,6 +7577,12 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
     if (cx->job->fit.chosen == ENGM_DFA) pcrec_emit_req_run_blocks(cx, c);
 
     emit_search_head(cx, c, fn, storage);
+    /* [K73] The offset-0 start rule, for BOTH customers: the VM hybrid calls
+     * its internal prefilter at the caller's own `search_from`, so a
+     * prefilter that offered offset 0 would hand the VM a first attempt on a
+     * continuation byte. This body has no `\G` to be moved by the seek. */
+    pcrec_emit_start_zero(cx, c, "    ", "search_from", "subject",
+                          "subject_length", PCREC_START0_SEEK);
     /* [OPT-ENDWIN] `fit.chosen == ENGM_DFA` for `emit_search_head`'s own
      * reason: this emitter's OTHER customer is the VM hybrid's internal
      * `static <prefix>_prefilter`, whose caller (`<prefix>_search_run`) has
@@ -7629,7 +7721,7 @@ static void anch_start(const Dfa *ad, const UnanchStart *us, UnanchStart *o)
  * dispatch here is the SAME emitted line as the forward scan's, reading the
  * SAME byte (`subject[search_from - 1]`, which for this entry is
  * `subject[ctx->pos - 1]`). */
-static void emit_anchored_match_def(StrBuf *c, const DfaForm *f,
+static void emit_anchored_match_def(Ctx *cx, StrBuf *c, const DfaForm *f,
                                     const char *matchfn)
 {
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
@@ -7653,6 +7745,17 @@ static void emit_anchored_match_def(StrBuf *c, const DfaForm *f,
         "    size_t subject_length = ctx->len;\n"
         "    size_t search_from = ctx->pos;\n",
         matchfn);
+    /* [K50] The caller-startpos guard, which this body did not carry until
+     * [K73] went looking for its sites: the search-and-filter form reaches
+     * the guard through `<prefix>_search`, and this form calls no search, so
+     * `x*` at `ctx->pos == 1` of `C3 A9` answered 0 here where §3.1 promises
+     * PCREC_ERR_STARTPOS. Then [K73]'s offset-0 rule in its NOMATCH form —
+     * the answer the search-and-filter form gives by construction, since its
+     * search moves off offset 0 and the filter then rejects the start. */
+    pcrec_emit_startpos_guard(cx, c, "    ", "search_from", "subject",
+                              "subject_length");
+    pcrec_emit_start_zero(cx, c, "    ", "search_from", "subject",
+                          "subject_length", PCREC_START0_NOMATCH);
     emit_machine_tables(c, f);
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
     pcrec_sb_puts(c, "    // ---- ANCHORED SCAN: where does the match that begins\n"
@@ -7727,7 +7830,7 @@ static void emit_anchored_entries(Ctx *cx, StrBuf *c, const GenNames *g)
     dfa_form_derive(cx, &cx->job->adfa, &aus, &dfa_dir_anchored, &anch);
 
     anch.repr->emit_token(c, &anch);
-    emit_anchored_match_def(c, &anch, g->matchfn);
+    emit_anchored_match_def(cx, c, &anch, g->matchfn);
     pcrec_sb_puts(c, "\n");
     emit_anchored_match_caps_def(c, g->matchcapsfn, g->matchfn, g->upper);
 }
@@ -8023,7 +8126,11 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
      * first iteration IS the position the caller supplied, which the entry
      * guard (§3.1) owns and the `-fno-startpos-guard` arm may leave
      * mid-character on purpose; every later iteration is a position this loop
-     * INVENTED, and those are the encoding's boundaries unconditionally. */
+     * INVENTED, and those are the encoding's boundaries unconditionally.
+     * [K73] moved the line by one position: offset 0, which the entry guard
+     * never refuses, is now skipped here when it is not a character start,
+     * because on a subject that begins with continuation bytes it is not the
+     * caller pointing inside a character but an ill-formed start. */
     /* [K50-NULLGATE] `pcrec_startgate_needed` (internal.h, which carries the
      * proof) is asked FIRST, and this is the site the narrowing is for: a
      * match consuming a byte already begins on a byte the backend's
@@ -8047,11 +8154,18 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
                 "        /* [K50] A match may begin only at a character\n"
                 "         * boundary of this artifact's encoding. The first\n"
                 "         * iteration is the caller's own start position and\n"
-                "         * is never skipped; every later one is a position\n"
-                "         * this loop invented. */\n");
+                "         * is skipped only at offset 0 (the [K73] line\n"
+                "         * below); every later one is a position this loop\n"
+                "         * invented. */\n");
             pcrec_sb_cmt_close(c);
             pcrec_sb_printf(c,
                 "        if (start > search_from && !(%s)) continue;\n", sbnd);
+            /* [K73] ...unless the caller's position is offset 0, which is
+             * never refused and is skipped here when it is not a start. It
+             * SKIPs `start` rather than seeking `search_from`, because the
+             * `\G` dispatch below compares `start` against `search_from`. */
+            pcrec_emit_start_zero(cx, c, "        ", "start", "subject",
+                                  "subject_length", PCREC_START0_SKIP);
         } else if (trunc)
             pcrec_ctx_fail(cx, 0,
                      "internal error: this encoding's character-start guard "

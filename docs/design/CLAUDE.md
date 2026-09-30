@@ -2706,5 +2706,21 @@ exactly +34 bytes.
   `pcre2_substitute` boundary stream that under-marked under
   `MATCH_INVALID_UTF`; two guessed expectations that were wrong).
 
+- `utf_valid_design.md` — **[UTF-VALID] THE DESIGN NOTE, PROPOSED, not
+  paneled** (lane k73utf, 2026-09-29; design only, nothing built). It covers
+  Frank's opt-in subject UTF-8 validity check. §1 measures PCRE2's contract
+  on 10.46: `[startoffset − max lookbehind, n)` is validated before any
+  attempt, and the error offset is the first bad sequence's first byte; a
+  match lying before the bad byte is still refused. §2 treats the two shapes
+  (a precheck, an incremental check riding the DFA) as CONTRACTS, and §3 is
+  ONE first-match table choosing the mechanism. The incremental form's
+  contract depends on which bytes the optimizer skips, so the note
+  recommends building only `whole`, via the `$_var_valid` residual shape.
+  §4 is the caller surface: a compile-time axis, one code `PCREC_ERR_UTF`,
+  and an exported `<prefix>_utf_invalid_at` for the offset; the find-all
+  loop becomes quadratic, as it is in PCRE2. §5 is the measured cost, §6
+  says the change is an abi event, and §8 asks ten questions.
+- `utf_valid_evidence/` — that note's probes and timing (own CLAUDE.md).
+
 Maintenance: update this file when files are added/removed or their roles
 change.

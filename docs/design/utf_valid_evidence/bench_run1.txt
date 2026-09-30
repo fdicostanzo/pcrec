@@ -1,0 +1,17 @@
+subject	validator	ns_per_byte_best_of_7
+ascii	bytewise	0.6403
+ascii	ascii8+bytewise	0.0416
+ascii	memchr(ref)	0.0246
+ascii	bytesum(ref)	0.0836
+ascii	table-dfa	1.9747
+cyrillic-1/3	bytewise	2.2116
+cyrillic-1/3	ascii8+bytewise	2.5347
+cyrillic-1/3	memchr(ref)	0.0236
+cyrillic-1/3	bytesum(ref)	0.0802
+cyrillic-1/3	table-dfa	1.9790
+cjk-8/9	bytewise	0.8807
+cjk-8/9	ascii8+bytewise	1.0084
+cjk-8/9	memchr(ref)	0.0246
+cjk-8/9	bytesum(ref)	0.0793
+cjk-8/9	table-dfa	1.9163
+correctness cases: 8/8 ok (offsets match libpcre2 10.46's startchar)

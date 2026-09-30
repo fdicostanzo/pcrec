@@ -1,0 +1,159 @@
+# [K73] OFFSET 0 ON A SUBJECT THAT BEGINS WITH CONTINUATION BYTES is not where
+# a match is attempted: the search moves on to the next non-continuation byte,
+# as libpcre2 does under PCRE2_MATCH_INVALID_UTF (Frank's 2026-09-29 ruling (a);
+# docs/dev/known_issues.md K73; docs/spec/match_api.md §3.1).
+#
+# WHAT THE BLOCKS COVER. Every pattern here can match EMPTY (the only
+# population the rule can reach: a match that consumes a byte begins on a
+# character start already) or asserts on the start position (`^`, `\G`),
+# over five subjects that begin with 0x80 and three controls that do not —
+# `\xff` and `\xe3\x80` are ill-formed leads, which ARE valid starts and
+# answer at 0 exactly as before. `\G` and `^` stay FALSE at the moved start.
+#
+# ORACLE: libpcre2 10.46, PCRE2_UTF|PCRE2_MATCH_INVALID_UTF, start offset 0
+# (docs/dev/lanes/k73utf_evidence/k73_witness_10.46.txt; the probe is pr2.c
+# beside it). `# pcre2-only`: python `re` has no invalid-UTF mode, and
+# verify_rxt.py's subject decoder is byte-oriented (U14), this directory's
+# standing exclusion. The EMPTY pattern is spelled `(?:)`, its own language
+# (10.46 answers it identically, same transcript): `pattern-esc ""` would be
+# the literal spelling, but a file whose first block opens with `pattern-esc`
+# is read as head-bearing by run.sh and by run_rxtsource_tests.sh's census. Two oracle cells are deliberately ABSENT: `$` on
+# `\xff` and on `\xe3\x80` answers no-match in libpcre2 and (1,1)/(2,2) in
+# pcrec, before and after this fix — a different ill-formed-subject
+# divergence (the end of a subject after an ill-formed lead), not K73's.
+
+# pcre2-only
+pattern (?:)
+encoding utf8
+m "\x80" 1 1
+m "\x80\x80" 2 2
+m "\x80a" 1 1
+m "\x80\xc3\xa9" 1 1
+m "\x80\x80b" 2 2
+m "\xff" 0 0
+m "\xe3\x80" 0 0
+m "b" 0 0
+
+# pcre2-only
+pattern \B
+encoding utf8
+features assertions
+m "\x80" 1 1
+m "\x80\x80" 2 2
+n "\x80a"
+m "\x80\xc3\xa9" 1 1
+n "\x80\x80b"
+m "\xff" 0 0
+m "\xe3\x80" 0 0
+n "b"
+
+# pcre2-only
+pattern x*
+encoding utf8
+m "\x80" 1 1
+m "\x80\x80" 2 2
+m "\x80a" 1 1
+m "\x80\xc3\xa9" 1 1
+m "\x80\x80b" 2 2
+m "\xff" 0 0
+m "\xe3\x80" 0 0
+m "b" 0 0
+
+# pcre2-only
+pattern (?=)
+encoding utf8
+features lookaround
+m "\x80" 1 1
+m "\x80\x80" 2 2
+m "\x80a" 1 1
+m "\x80\xc3\xa9" 1 1
+m "\x80\x80b" 2 2
+m "\xff" 0 0
+m "\xe3\x80" 0 0
+m "b" 0 0
+
+# pcre2-only
+pattern ^
+encoding utf8
+n "\x80"
+n "\x80\x80"
+n "\x80a"
+n "\x80\xc3\xa9"
+n "\x80\x80b"
+m "\xff" 0 0
+m "\xe3\x80" 0 0
+m "b" 0 0
+
+# pcre2-only
+pattern $
+encoding utf8
+m "\x80" 1 1
+m "\x80\x80" 2 2
+m "\x80a" 2 2
+m "\x80\xc3\xa9" 3 3
+m "\x80\x80b" 3 3
+m "b" 1 1
+
+# pcre2-only
+pattern \b
+encoding utf8
+features assertions
+n "\x80"
+n "\x80\x80"
+m "\x80a" 1 1
+n "\x80\xc3\xa9"
+m "\x80\x80b" 2 2
+n "\xff"
+n "\xe3\x80"
+m "b" 0 0
+
+# pcre2-only
+pattern \G
+encoding utf8
+features assertions
+n "\x80"
+n "\x80\x80"
+n "\x80a"
+n "\x80\xc3\xa9"
+n "\x80\x80b"
+m "\xff" 0 0
+m "\xe3\x80" 0 0
+m "b" 0 0
+
+# pcre2-only
+pattern \G|b
+encoding utf8
+features assertions
+n "\x80"
+n "\x80\x80"
+n "\x80a"
+n "\x80\xc3\xa9"
+m "\x80\x80b" 2 3
+m "\xff" 0 0
+m "\xe3\x80" 0 0
+m "b" 0 0
+
+# pcre2-only
+pattern (?m)^a|\B
+encoding utf8
+features assertions,modifiers
+m "\x80" 1 1
+m "\x80\x80" 2 2
+n "\x80a"
+m "\x80\xc3\xa9" 1 1
+n "\x80\x80b"
+m "\xff" 0 0
+m "\xe3\x80" 0 0
+n "b"
+
+# pcre2-only
+pattern a|
+encoding utf8
+m "\x80" 1 1
+m "\x80\x80" 2 2
+m "\x80a" 1 2
+m "\x80\xc3\xa9" 1 1
+m "\x80\x80b" 2 2
+m "\xff" 0 0
+m "\xe3\x80" 0 0
+m "b" 0 0

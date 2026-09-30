@@ -279,6 +279,27 @@ pulling in a partner outside itself), for fold-before-negate over a range, for
 the `byte` arm's §4.5 discriminator (0xE9 must NOT fold to 0xC9), or for
 stage 4's own per-contribution finding. 45 cells, oracle-first, 45/45.
 
+**`hv_space.rxt` is [K72]'s regression** (lane k7273, 2026-09-29, NOT part of
+the blinded corpus): `\h \H \v \V` and their bracketed forms under `-e utf8`
+against PCRE2_UTF's lists (every member, 24 edge non-members, run-lengths)
+plus the `byte` control. 17 blocks / 420 cells, every block `# pcre2-only`,
+every cell read from libpcre2 10.46 (transcript
+`docs/dev/lanes/k7273_evidence/hv_space_10.46.txt`).
+
+**`k73_startskip.rxt` is [K73]'s regression** (lane k73utf, 2026-09-29, NOT
+part of the blinded corpus): nullable and start-asserting patterns (`''`,
+`\B`, `x*`, `(?=)`, `^`, `$`, `\b`, `\G`, `\G|b`, `(?m)^a|\B`, `a|`) over
+five subjects that begin with a continuation byte and three that do not. 11
+blocks / 86 cells, every block `# pcre2-only`, every cell from libpcre2 10.46
+under PCRE2_UTF|PCRE2_MATCH_INVALID_UTF (`docs/dev/lanes/k73utf_evidence/
+k73_witness_10.46.txt`); 45 of them fail on the pre-fix compiler. Two oracle
+cells are left out on purpose and the file's header says which and why.
+**`run_startbnd_diff.sh` gained two things with it**: the two-arm driver
+sweeps `<prefix>_match` as well as `<prefix>_search`, with its own
+`match-buckets:` line and its own 150 floor (the DFA's unwrapped `_match` had
+no guard and a search-only sweep could not see it), and §5 carries seven
+[K73] engine rows pinned to the same 10.46 transcript.
+
 ## The gap as it stood before stage 4 (kept for the record)
 
 Per the manager's explicit instruction at promotion time: `axis06_

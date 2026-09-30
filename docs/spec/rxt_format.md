@@ -786,6 +786,16 @@ rather than left to "the next character boundary" because for ill-formed
 input that phrase has no single reading and an `mc` count is exactly what
 a foreign consumer compares against.
 
+**[K73] AND THE FIRST SEARCH OF THE LOOP IS AT OFFSET 0, WHICH ON AN
+ILL-FORMED SUBJECT IS NOT WHERE A MATCH IS ATTEMPTED.** Under the same
+encodings, a search from offset 0 of a subject that begins with bytes in
+`0x80`-`0xBF` starts at the first byte outside that range (`match_api.md`
+§3.1's offset-0 bullet), so a consumer transcribing the protocol applies
+the same skip before its first search: `x?` over `"\x80\x80\x80"` is **1**
+(the empty match at the end), and over `"a\x80\x80\x80"` is **2** (offset
+0, then the advance above to the end) — both libpcre2 10.46's counts under
+`PCRE2_MATCH_INVALID_UTF` driven through this loop.
+
 ### `under` — a second correct answer, per convention
 
 **[DD-13b.W23.3]** `under <convention> <case-line>`, where `<case-line>`
