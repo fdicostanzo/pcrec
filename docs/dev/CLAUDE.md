@@ -850,6 +850,7 @@ change.
   population) — a joint-position measurement is the D77 trigger. Harness
   `docs/dev/lookaround_census/` (own CLAUDE.md, shared with
   `eng_look_census.md` below).
+- `ctx_prefilter_joint.md` — [CTX-PREFILTER] JOINT-POSITION measurement (2026-09-29, lane ctxjoint, sonnet, measurement only, nothing under `src/`): replaces `ctx_prefilter_census.md`'s independence model with the measured joint quantity — of the positions the lookaround-free prefilter admits, how many the necessary one-character condition rejects — over the 99 applicable patterns x 6 subjects (bench capability + syntax throughput texts sha-verified, two prose texts), libpcre2 as the membership oracle, `T ⊆ C1 ⊆ C0` checked in all 594 cells, four positive/negative controls. Headline: rejection is large (candidate-weighted 60-77%, false candidates removed 96.5-100%) and the model's per-pattern gap is 0.21-0.37 in both directions; but NO D77 trigger is met — the one real bench construct that clears the removal threshold (`lka-pos`/`lka-verb`, 59% at 1.58/KB) has a per-byte, not candidate-bound, loss (auto == forced-VM at 1.21 ns/B, store pin 751b9c6d), i.e. `[OPT-HYB-RESEED]` sits upstream. Study code `studies/ctx_prefilter_joint/`.
 - `eng_look_census.md` — [ENG-LOOK] STEP 0 (2026-09-29, lane lacens2,
   sonnet, measurement only, nothing under `src/`): over the same
   population, FIXED-LENGTH k=2-4 lookarounds' product-construction state
