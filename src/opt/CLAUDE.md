@@ -1186,6 +1186,26 @@ construction (src/ir) and emission (src/gen).
   elision needs only the variant's accept BIT to agree — and the relaxation
   has its own trigger (`docs/design/opt5_step2_twopass.md` §7 item 14).
 
+- **dfamemo.c** — [OPT-RETRY-REUSE] (lane k67, 2026-09-29) THE MACHINE
+  MEMO: `pcrec_build_min_dfa` is `pcrec_build_dfa` + `pcrec_minimize_dfa`, and
+  every DFA build site in `src/core/compile.c` goes through it. The driver's
+  retry ladders re-run the whole pipeline per attempt and most rungs change
+  nothing a machine is built from (the drop ladder's anchored machine and
+  premultiplied table, the VM's unroll K), so a machine is memoized ACROSS
+  ATTEMPTS keyed by everything construction and minimization read — the
+  NFA's states, the six build parameters, four `pcrec_options` fields and
+  the PRIOR `subset_elems` (a running budget, so an identical machine reached
+  with more already charged is a different question). A hit restores a deep
+  copy in a fresh build's ownership shape and charges the same
+  `subset_elems`; only clean builds are stored (an overflowed optional
+  machine also wrote `Ctx`, which a restore cannot replay). No per-rung
+  clause: a rung that changes a construction input misses by content. The
+  memo is `compile_driver`'s local, freed at its every exit; its storage is
+  its own arena. K67 (`\p{L}+ -e utf8`) 0.99 s -> 0.37 s on top of
+  [OPT-CLOSURE-CTX]; emitted bytes identical by `scripts/cls_identity.py` and
+  `scripts/emit_sweep.py`. **A new input read in `src/ir/dfa.c` or here must
+  join the key** — `pcrec_build_dfa`'s header says so beside the reads.
+
 - **minimize.c** — DFA minimization by Moore-style partition refinement with
   signature hashing. The EOL-view edge (`eolvar`) participates as an extra
   alphabet symbol so `$`-machines minimize correctly, and since [M6.2] wave A
