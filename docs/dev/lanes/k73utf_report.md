@@ -68,17 +68,22 @@ sweeps `<prefix>_match` as well (own `match-buckets:` line, own 150 floor);
 the failing-direction run against the branch-point compiler reads the five
 DFA-routed witnesses at `match refused=0 other=15`, 75 < 150.
 
-### abi 45 -> 46 (D76/D94)
+### abi 46 -> 47 (D76/D94)
 
-Readers found by grep for `PCREC_ARTIFACT_ABI`/`ABI_EXPECT`/`FILEPIN`/
-`abi ... 45` (the ucpu1 bump's own reader list re-checked, same disposition):
-`src/gen/emit_dfa.c:51`; `docs/spec/match_api.md` §6 (new entry, 45 becomes
-"was"); `tests/codegen/run_codegen_tests.sh` `ABI_EXPECT` + its §6-copied
-failure message; `tests/codegen/run_recursion_identity.sh` (B) FILEPIN
-`a6e367a7` -> `2bed7d76` (this lane's last `src/` commit, the self-pin
-convention; the gate compiles `byte` only, so (A) cannot move). Every other
-hit is a number-free citation or dated history. Suites that count: see
-Validation.
+The branch first bumped the abi from 45 to 46. Main then landed [UCP] U2 at
+46, so the merge before delivery (`40c56343`) made this change 46 -> 47.
+The readers were found by grep for `PCREC_ARTIFACT_ABI`, `ABI_EXPECT`,
+`FILEPIN` and the digit, re-checking the ucpu1 bump's own list:
+
+- `src/gen/emit_dfa.c:51`.
+- `docs/spec/match_api.md` §6: the new entry, with U2's 46 now "was".
+- `tests/codegen/run_codegen_tests.sh`: `ABI_EXPECT`, and its §6-copied
+  failure message, which gains a 46->47 clause after U2's.
+- `tests/codegen/run_recursion_identity.sh` (B) FILEPIN: `7e8ab18a` ->
+  `40c56343`, the merge commit that carries this lane's last `src/` change
+  (self-pin). The gate compiles `byte` only, so (A) cannot move.
+
+Every other hit is a number-free citation or dated history.
 
 ### Oracle and witnesses
 
