@@ -2192,7 +2192,13 @@ alone cannot tell a refactor from a no-op.
 for a BYTE class off the text: a scattered class is a kit matcher at -2/-1
 and a bitmap at 0/+1/+2 (D131 item 5), `-fno-cls-kit` puts -2 back on the
 bitmap, a range and an ASCII fold pair are inline at every position, and
-`RX_VM_CLS_KIT` equals the kit matchers the text defines. Sabotage rows
+`RX_VM_CLS_KIT` equals the kit matchers the text defines. Since clss2fix
+(review C-L8) each form is recognized by its OWN spelling (kit / bitmap /
+fold / range; anything else is a failure, never "inline"), and a class
+whose kit is larger than its bitmap keeps the bitmap at -2. **§3f** (D139)
+does the same for a DFA scan edge: its `RX_DFA_SCAN_EDGE` value and its text
+per position (range, the range-from-0 one-compare spelling, fold at -2/-1
+and its table at the default, kit at -2/-1, each row's flag). Sabotage rows
 S431 and S432 (the kit leaking into position 0) land here.
 
 The speed-vs-size dial (`--tune=-2..+2`, `docs/spec/tuning.md` §5), held to
@@ -3448,16 +3454,24 @@ because the shipped corpus has no artifact the row fires on.
   byte 0..255 at every position of each matching subject the block carries —
   343,040 cells at landing, floor 10,000.
 Sabotage rows S400-S404 (all DETECTED solo at landing).
-- **PART 4** ([CLS-TREE] S2, lane clss2) the kit's BYTE forms: at
-  `--tune=-2` a scattered class with fewer than 11 table-read siblings reads
-  `<prefix>_class_kit<N>`; each witness must take the kit on the `pa` side
-  (text + `VM_CLS_KIT` stamp) and not under `-fno-cls-kit`, then the same
-  driver compares the two over every byte at every position (floor 10,000).
-- **PART 5** ([CLS-TREE] S2's second abi event) the DFA scan edge's axis-I
-  `kit` body: `RX_DFA_SCAN_EDGE "kit"` with its `_scankit<N>` matchers at
-  -2/-1, `"bitmap"` at 0/+2 and under `-fno-cls-kit`, `"range"` for a range
-  class at every position, then the kit-vs-deny answer differential over the
-  DFA artifacts (floor 5,000).
+- **PART 4** ([CLS-TREE] S2, lane clss2; widened by clss2fix, review C-L6)
+  the kit's BYTE forms: at `--tune=-2`/`-1` a scattered class with fewer
+  than 11 table-read siblings, whose kit is smaller than its bitmap, reads
+  `<prefix>_class_kit<N>` (or, `-e utf8`, a wide class at or below U+00FF
+  reads its `<prefix>_wcls<N>` from the same row); each witness must take a
+  kit on the `pa` side (text + `VM_CLS_KIT` stamp) and none under
+  `-fno-cls-kit`, then the same driver compares the two over every byte at
+  every position (floor 10,000). Population: both size-leaning positions, a
+  caseless class, `-e utf8` byte and wide classes.
+- **PART 5** ([CLS-TREE] S2; D139 item 2, clss2fix) the DFA scan edge's run
+  test is the class-form table's answer: `RX_DFA_SCAN_EDGE "kit"` with its
+  `_scankit<N>` matchers at -2/-1, `"fold"` for a fold pair at -2,
+  `"bitmap"` at 0/+2 and under the row's flag, `"range"` at every position;
+  then form-vs-deny answer differentials (kit vs `-fno-cls-kit` at -2 and
+  -1 and under `-e utf8`, fold vs `-fno-cls-fold`) that compare the SEARCH
+  entry and, with `-DDIFF_MATCH`, the MATCH entry at every start — the
+  vowel witness is checked to carry kit edges on its reverse and anchored
+  machines, and only `_match` runs the anchored one (floors 5,000 each).
 Sabotage rows S430 (kit matcher built from the wrong class) and S431
 (`-fno-cls-kit` not reaching the byte rows) are S2's.
 

@@ -1070,6 +1070,24 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
   atoms; deny `CLSTD_ATOM`, which emit_vm.c maps from `-fno-cls-pack`) then
   row `site`. The atom row's predicate IS `pcrec_clskit_atoms`, so the table
   the VM emits is the one the predicate measured.
+  **FOURTH CALLER + REVIEW FIXES, [CLS-TREE] S2 (lane clss2fix, 2026-09-30,
+  abi 53, D139):** the DFA SCAN EDGE (emit_dfa.c's axis I) reads the same
+  two tables at a new SITE: both `ROWS` and `TAB_ROWS` rows carry a
+  `sites` mask (`ClsSite`: `CLSS_VM`, `CLSS_SCAN`) and `ClsSelectIn` names
+  the site and the number of times the test is written (`calls`). The fold
+  is two rows, `byte-fold` (-2/-1, both sites) and `byte-fold-default`
+  (0..+2, VM only — D138 Q1's held default, one row to flip); `byte-kit`'s
+  predicate is `P_KIT_SMALLER` (the kit, times `calls`, smaller than the
+  lone-set table its site reads, `TABLE_COST`; the byte domain's dispatch
+  term `PLACE.kit_disp_bytes_byte` = 0 by measurement); `TAB_ROWS` gains
+  `scan-table` (`CLST_BYTE256`, scan site). The byte TEST's spellings live
+  here now, one per form for both sites: `pcrec_clskit_test` (which of
+  range/fold/kit/table), `pcrec_clskit_emit_inline`, `pcrec_clskit_read`,
+  `pcrec_clskit_test_name` (the stamp name) and `pcrec_clskit_byte_tests`
+  (`--list-axes`' scan-body rows). The public flags reach the denies through
+  ONE mapping, `pcrec_clskit_deny_of` (`DENY_FLAG`) / `pcrec_clskit_tabdeny_of`.
+  `pcrec_clskit_emit_kit` takes `cp_max`, and a byte kit spanning 0..255
+  carries no bound.
 - **emit_vm.c** — the backtracking VM as emitted specialized C
   (docs/design/engine_m4.md §2). **[CLS-TREE] S4 (abi 48): a WIDE class
   (`A_WCLASS`, more than one member) is ONE decode (`<prefix>_decode`, the
@@ -1085,7 +1103,10 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
   **[CLS-TREE] S2 (abi 51)** widened the re-spell: `VmClsRead` is each
   class's final spelling (inline / bitmap / atom / kit), and a class on the
   `byte-kit` row whose artifact did not take the atom table is re-spelled to
-  its `<prefix>_class_kit<N>` matcher, emitted beside the class bitmaps. When the atom
+  its `<prefix>_class_kit<N>` matcher, emitted beside the class bitmaps.
+  Since abi 53 (D139) `vm_cls_tables` re-asks `ROWS` for each table-or-kit
+  class at its read count (`vm_cls_reads`), and every spelling is the kit's
+  (`pcrec_clskit_emit_inline`/`pcrec_clskit_read`). When the atom
   row fires, `vm_cls_respell` re-spells every recorded read in `job->vmsb`
   from `vm_cls_read`'s bitmap form to its atom-matcher call (the one
   renderer of both; an unrecorded read is an internal error) AFTER
@@ -2376,18 +2397,26 @@ Every member of the run has the same exit target and the same accept bit, so
 leaving the variable at the HEAD is indistinguishable from setting it to the
 true `u_k` — and it is what removes the last table read from the construct.
 
-**TWO AXES, BOTH REAL CANDIDATE LISTS.** Axis H (`dfa_edges`) is the REGION
-decision — does this state emit an edge, or fall to the ordinary walk — and is
-where `-fno-scan-edge` rides the axis machinery, `-fno-anchored-dfa`'s shape
-one axis over. Axis I (`dfa_scans`) is the edge's RUN-EXTENSION BODY, with two
-real forms on day one (D82 bound 3): `range` (subtract-and-compare against two
-immediates) and `bitmap` (a 256-byte membership table whose load is
-VALUE-addressed, not result-addressed — the cursor is still the only
-loop-carried register, which is what makes a bitmap body a cost rather than a
-defeat). **A per-ISA SIMD form is the reserved third candidate and is
-ISA-NEUTRAL by ruling** (R2): a new object plus its `emit_test`, nothing above
-the axis moving, and never described as an x86 slot — the scalar forms are the
-portable baseline and stay the fallback forever.
+**TWO AXES; THE SECOND IS THE CLASS TABLE'S.** Axis H (`dfa_edges`) is the
+REGION decision — does this state emit an edge, or fall to the ordinary walk —
+and is where `-fno-scan-edge` rides the axis machinery, `-fno-anchored-dfa`'s
+shape one axis over. Axis I is the edge's RUN TEST, and since D139 (the
+[CLS-TREE] S2 review fixes, `abi` 53) it is NOT a scan-edge decision:
+`dfa_scans[]` and `pcrec_scan_range` retired, and `scan_choice` asks
+`clskit.c`'s class-form table (`ROWS` at site `CLSS_SCAN`, priced at
+`SCAN_TEST_CALLS` = 2 writes of the test) for the class's form, which
+`scan_test` writes through the kit's shared emitters —
+`pcrec_clskit_emit_inline` (range, fold), `pcrec_clskit_read` (kit call,
+table read) and `pcrec_clskit_emit_kit` (the file-scope `scankit` matcher,
+`emit_scan_defs`). Which table is `TAB_ROWS`' `scan-table` row: one 256-byte
+table per edge (`scan_tables_bitmap`), whose load is VALUE-addressed, not
+result-addressed — the cursor is still the only loop-carried register. The
+stamp value is `pcrec_clskit_test_name` of the answer, and `--list-axes`
+reads the candidates off `ROWS` (`pcrec_clskit_byte_tests`). What stays
+scan-edge-specific is the loop around the test. **A per-ISA SIMD form is
+reserved and ISA-NEUTRAL by ruling** (R2): a form of the LOOP, never
+described as an x86 slot — the scalar loop is the portable baseline and
+stays the fallback forever.
 
 **BOTH AXES ARE PER-STATE, WHICH IS WHAT `DfaSel.st` EXISTS FOR.** The other
 six axes describe a whole machine and never read it; a selection walk that
