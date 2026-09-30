@@ -360,10 +360,20 @@ def _findall_protocol(compiled, subj, encoding):
     counted by driver.c's C loop and by leg A's own parse — which is the
     distinction §2.21 draws against the `printf %b` decoder it refuses one
     production over: a second implementation WITH a differential is a cost,
-    one without is a defect."""
+    one without is a defect.
+
+    [K73] AND THE FIRST SEARCH STARTS PAST LEADING CONTINUATION BYTES under
+    `utf8`: a search at offset 0 does not attempt a match on one (match_api.md
+    §3.1's offset-0 bullet), so the first `search` is issued from the first
+    non-continuation byte. `re.search(subj, pos)` then sees the moved start
+    exactly as the engine does — `^`/`\A` false there, `\b` reading the byte
+    before it."""
     n = len(subj)
     pos = 0
     count = 0
+    if encoding == 'utf8':
+        while pos < n and 0x80 <= ord(subj[pos]) <= 0xBF:
+            pos += 1
     while pos <= n:
         mo = compiled.search(subj, pos)
         if mo is None:

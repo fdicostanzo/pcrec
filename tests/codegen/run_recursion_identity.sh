@@ -1116,7 +1116,12 @@ REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
 # manifest and unaffected (every S2a mover was three bytes or longer to
 # begin with, since the whole population it built from was L >= 2 and this
 # lane's movers are the L == 2 subset of it, disjoint from L >= 3).
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-a6e367a7}"   # [UCP], abi 44->45: (B) re-pinned to a6e367a7 (this lane's own last src commit, self-pin per the k64fix/k66fix/findtie convention) on lane/ucpu1 (D76, 2026-09-29). Prior pin: ed51481b ([FIND-TIE], abi 43->44).
+# **(B) RE-PINNED AGAIN — [K73], 2026-09-29: abi 45 -> 46, to `2bed7d76`, the
+# `lane/k73utf` commit that is its last `src/` change.** The offset-0 start
+# rule is emitted only under an encoding that restricts where a match may
+# begin, and this gate's population compiles under `byte`, so (A) is
+# untouched and (B) moves by the abi digit alone.
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-2bed7d76}"   # [K73], abi 45->46: (B) re-pinned to 2bed7d76 (this lane's own last src commit, self-pin convention) on lane/k73utf (D76, 2026-09-29). Prior pin: a6e367a7 ([UCP], abi 44->45).
 
 WORKDIR="$(mktemp -d)"
 cleanup() {
