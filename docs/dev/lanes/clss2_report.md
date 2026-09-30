@@ -550,3 +550,92 @@ no bit (its `-fno-cls-kit` is bit 36, `-fno-cls-fold` bit 24), main holds
   were still running at this writing).
 - The chain's remaining results (corpus `--tune=-1` and `--engine=vm`,
   test-axes `-fno-cls-fold -fno-cls-kit`) are the chain's own.
+
+## Triage (s2tri2)
+
+Lane s2tri2 (sonnet, read-only triage; no `src/` change). Question: the fix
+chain's `corpus_t-2_vm` / `corpus_t-1_vm` legs (`RXTFLAGS="--tune=N
+--engine=vm"`, tree 4cf2a5e8) each reported `cases failed: 10` while the
+`auto` legs passed. S2 defect, or pre-existing?
+
+**Verdict: PRE-EXISTING, NOT S2's. All 10 are VM give-ups (RX_ERR_STEPS /
+FRAMES) that forced `--engine=vm` has always produced on these two files, and
+`tests/axes/run_axes.sh` already carries every one of them in
+`GIVEUP1_ALLOWANCE` under the `--engine=vm|...` key (lines 924-925, 941-948).**
+No wrong answer, no refusal, no kit/fold involvement.
+
+### Method
+
+1. The 10 cases from `worktrees/clss2fix-scratch/runs/chain/corpus_t-2_vm.log`
+   (the `-1` log is identical, `diff` empty): every line is `test binary GAVE UP
+   (... VM budget exhausted)`, none a mismatch.
+2. A/B on the same two files (`tests/base/k18_deep_nesting.rxt`,
+   `tests/base/d27_k23_ambiguous_decomposition.rxt`; 113 cases) through
+   `tests/harness/run.sh` with `RXTFLAGS` as below, on BASE = main `c096a380`
+   (worktree `worktrees/s2tri2base`, scratch, branch `lane/s2tri2base`,
+   not for merge) and TIP = `lane/s2tri` `9803e949` (S2 + main):
+
+   | RXTFLAGS | base passed/failed | s2tri passed/failed |
+   |---|---|---|
+   | (default) | 113 / 0 | 113 / 0 |
+   | `--engine=vm` | 103 / 10 | 103 / 10 |
+   | `--engine=vm --tune=-2` | 103 / 10 | 103 / 10 |
+   | `--engine=vm --tune=-1` | 103 / 10 | 103 / 10 |
+
+   Base at default tune with `--engine=vm` already fails the same 10, so the
+   tune dial and S2's kit/fold forms add and remove nothing. The failing set
+   from the base `--engine=vm` run, listed case by case, equals the chain's.
+
+### Why they give up (the documented mechanism)
+
+`--engine=vm` turns the DFA prefilter off and skips the DFA (tuning.md
+§2.11). `k18_deep_nesting` (250 nested nullable stars) needs a frame per
+nesting level: auto selects the DFA and answers instantly, forced VM exhausts
+the resume stack (FRAMES). `(a{1,3}){65}` against a broken run of `a`s loses
+the sharp prefilter window that bounds K23's work (STEPS; tuning.md
+§2.5/§2.17, "the fourth cost's own worked example is this file's pattern").
+S2 has no say in either.
+
+### Per-case verdicts
+
+| # | file:line | pattern | subject / flags | expected | got (every leg) | verdict |
+|---|---|---|---|---|---|---|
+| 1 | d27_k23_ambiguous_decomposition.rxt:90 | `(a{1,3}){65}` | 69 x `a`, `b`, 71 x `a`, startpos 0 | match (per .rxt, oracle-backed) | give-up STEPS | pre-existing; allowance `--engine=vm\|...:90` |
+| 2 | d27_k23_ambiguous_decomposition.rxt:98 | `(a{1,3}){65}` | long `a` run, break, `a`s, startpos 0 | match | give-up STEPS | pre-existing; allowance `:98` |
+| 3 | k18_deep_nesting.rxt:51 | 250-deep `(?:...a*)*` (nested nullable star) | `a` | match | give-up FRAMES | pre-existing; allowance `:51` |
+| 4 | k18_deep_nesting.rxt:52 | same family | `aa` | match | give-up FRAMES | pre-existing; allowance `:52` |
+| 5 | k18_deep_nesting.rxt:56 | same family | `a` | match | give-up FRAMES | pre-existing; allowance `:56` |
+| 6 | k18_deep_nesting.rxt:57 | same family | `aa` | match | give-up FRAMES | pre-existing; allowance `:57` |
+| 7 | k18_deep_nesting.rxt:61 | same family | `a` | match | give-up FRAMES | pre-existing; allowance `:61` |
+| 8 | k18_deep_nesting.rxt:62 | same family | `aa` | match | give-up FRAMES | pre-existing; allowance `:62` |
+| 9 | k18_deep_nesting.rxt:66 | same family | `a` | match | give-up FRAMES | pre-existing; allowance `:66` |
+| 10 | k18_deep_nesting.rxt:67 | same family | `aa` | match | give-up FRAMES | pre-existing; allowance `:67` |
+
+(Expected answers are the files' own oracle-verified `m` lines; the harness
+reports the give-up instead of comparing, so no "got" answer exists to diff.)
+
+### Known-issues / runner disposition
+
+- No K row filed: the behaviour is documented (tuning.md §2.11, K22/K23
+  entries, the axes allowance with its own per-case reasons), so K81 stays free.
+- The plain corpus runner (`run.sh` under `RXTFLAGS=--engine=vm`) has no
+  allowance list, so its `cases failed: 10` is the EXPECTED floor, not a red.
+  If the chain's `--engine=vm` legs are kept as a standing check (the
+  manager's call), judge them as "failures == exactly these 10 (file:line
+  set)", i.e. a count AND a set compare; a count alone would hide a swap of
+  one give-up for one wrong answer. The authoritative oracle check of the VM
+  kit sites is `make test-axes` (its `--engine=vm` row reads these through
+  GIVEUP1_ALLOWANCE). Nothing was changed in the runner.
+- C-M3 consequence: with these 10 accounted for, the oracle-backed corpus at
+  `--tune=-2`/`-1` is clean on both engine routes (auto: 0 failed at both;
+  vm: only the 10 pre-existing give-ups, 32,516 cases passed).
+
+### Not run
+
+`run_clspack.sh` (only owed after a fix; none was made). The chain's
+`test-axes` step was still running and was not touched.
+
+### Scratch
+
+`worktrees/s2tri2base` (branch `lane/s2tri2base`, main `c096a380`) was created
+for the A/B; remove with `git worktree remove` when no longer wanted.
