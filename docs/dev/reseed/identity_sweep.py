@@ -64,7 +64,7 @@ def code_bytes(src):
 
 def diff_is_adaptive_text(nb, nn):
     removed, added = [], []
-    for l in difflib.unified_diff(nb.split(b"\n"), nn.split(b"\n"), lineterm=b"", n=0):
+    for l in difflib.diff_bytes(difflib.unified_diff, nb.split(b"\n"), nn.split(b"\n"), lineterm=b"", n=0):
         if l.startswith(b"---") or l.startswith(b"+++") or l.startswith(b"@@"): continue
         (removed if l.startswith(b"-") else added).append(l[1:])
     return not removed and len(added) == len(ADDED) and all(any(r.match(a) for r in ADDED) for a in added)

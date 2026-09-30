@@ -353,3 +353,34 @@ order:
 7. `make test-axes AXES="-fno-hyb-reseed"`.
 
 Full `make test` is OWED to the manager's battery.
+
+## 11. Triage of the §10 validation chain (lane `reseedtri`, sonnet, 2026-09-30)
+
+The chain in §10 ended with codegen rc=2, idsweep rc=1, answer_diff
+rc=0 on an EMPTY input, and axes rc=2. All three reds are harness or
+budget defects. None is an answer divergence. Nothing under `src/`,
+`cli/` or `lib/` changed.
+
+| red | cause (measured) | fix | state |
+|---|---|---|---|
+| codegen rc=2 | ONE `FAIL:` line in `v_codegen.log`: `nm could not read arm_a.o` (the standing darwin `run_inline_capability.sh` probe). Every other section printed `checks failed: 0` (127/33/23/31/7/14/13/9/65/163/8 passed) | none; not ours | CONFIRMED sole red |
+| idsweep rc=1 | NOT a missing base binary (it exists). 894 of 6,756 rows read `ERROR:TypeError`: `diff_is_adaptive_text` fed `bytes` lines to `difflib.unified_diff`, which raises for bytes. It fired only on the MOVER branch, so exactly the adaptive-mover population errored (439 byte, 455 utf8) and the sweep's `violations` count was 894. The other 5,862 rows read identical or both-refuse. | `docs/dev/reseed/identity_sweep.py`: `difflib.diff_bytes(difflib.unified_diff, ...)`. Reproduced the traceback on `(?>\Ga\|b)c` first | fix committed; re-run OWED |
+| answer_diff "movers 0 / cells 0" | empty input: its input TSV held only the `ERROR` rows, so it selected no movers. It proved nothing | re-run on the new TSV | OWED |
+| axes rc=2 | `run_axes.sh`: `the BASELINE run itself failed (rc=124)`, `watchdog: axes-baseline: wall timeout after 3600s`. The baseline corpus run never finished, so no axis cell was compared and `-fno-hyb-reseed` was NEVER tested. The box was loaded (another lane's `test-axes` at PROCS default, load ~7) and this lane ran PROCS=2 unbatched. A stale-budget timeout, not a divergence | re-run with `HARNESS_BATCH=64 PROCS=2` (baseline and axis both batched; the script's own contract) | OWED |
+| mech S370/S371/S372 | DETECTED (`codegen:7fail/120pass`, `8fail/119pass`, `6fail/121pass`), each `unexpected 0, undetected 0, unreached 0, anomalies 0` | none | CONFIRMED |
+| rxtsource, registry | rc 0 (254 files / 4233 blocks; registry tail PASS) | none | CONFIRMED |
+
+Re-run chain, detached (`nohup`, under `caffeinate`), logs in
+`/tmp/reseedfix_scratch/v2/`:
+
+1. `idsweep.tsv` / `v_idsweep.log`, status line `idsweep rc=N` in
+   `v2/status`. Expected: 0 `ERROR` rows, `violations: 0`, adaptive
+   movers about 894 (byte + utf8) reading `mover`.
+2. `answer_diff.log` / `v_answer_diff.out`, status `answer_diff rc=N`.
+   PASS bar: `movers:` nonzero and `0 DIFF`. A `movers: 0` is a FAIL of
+   the instrument, not a pass.
+3. `v_axes.log`, status in `v2/status3` (`axes rc=N`, then `DONE`).
+   It waits for `DONE` in `v2/status`. PASS bar: the axis line reads
+   0 mismatches / 0 lost / 0 gained.
+
+The verdict is each script's rc and make's `*** [...] Error` lines.
