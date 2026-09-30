@@ -35,11 +35,12 @@ headless file as head-bearing (C0a/C1 populations off by one, as k73utf saw: 25 
 (`$1 != "pattern"`) reads the witness head-bearing, so the witness must discriminate. Failing direction
 shown by restoring HEAD's run.sh and verify_rxt.py in place: B=1 C=1; fixed: B=0 C=0.
 
-## Workaround removed
+## Workaround: KEPT, comment corrected
 
-`tests/utf8/k73_startskip.rxt` first block `pattern (?:)` -> `pattern-esc ""`; harness 86 passed / 0 failed
-before and after, verify_rxt.py ALL CHECKS PASSED (86 skips, pcre2-only), census counts unmoved (both
-openers counted).
+`tests/utf8/k73_startskip.rxt`'s first block stays `pattern (?:)`. Trying `pattern-esc ""` kept the harness
+at 86/0 but turned the rxtsource C1 parse differential red: leg A dumps a `pattern-esc` text decoded (empty),
+legs B and C as written (`""`) -- the R-A seam, a separate ruled disagreement, not K76. The file's comment
+now says that, and that K76 is fixed. No answer change (86/0).
 
 ## Other edits
 

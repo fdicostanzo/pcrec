@@ -14,17 +14,20 @@
 # (docs/dev/lanes/k73utf_evidence/k73_witness_10.46.txt; the probe is pr2.c
 # beside it). `# pcre2-only`: python `re` has no invalid-UTF mode, and
 # verify_rxt.py's subject decoder is byte-oriented (U14), this directory's
-# standing exclusion. The EMPTY pattern is spelled `pattern-esc ""`, the
-# literal empty pattern (this file's first block, which K76 once made
-# unspellable: a file opening with `pattern-esc` was read as head-bearing;
-# it was spelled `(?:)`, whose language 10.46 answers identically, until
-# that was fixed). Two oracle cells are deliberately ABSENT: `$` on
+# standing exclusion. The EMPTY pattern is spelled `(?:)`, its own language
+# (10.46 answers it identically, same transcript): `pattern-esc ""` would be
+# the literal spelling, but it would put a `pattern-esc` text in the corpus:
+# leg A dumps it DECODED (empty) and legs B and C AS WRITTEN (`""`), the R-A
+# seam (run_rxtsource_tests.sh), and the C1 parse differential reports that as
+# a corpus diff (measured). K76 (a `pattern-esc` first block read as
+# head-bearing), the other reason this block was spelled `(?:)`, is fixed.
+# Two oracle cells are deliberately ABSENT: `$` on
 # `\xff` and on `\xe3\x80` answers no-match in libpcre2 and (1,1)/(2,2) in
 # pcrec, before and after this fix — a different ill-formed-subject
 # divergence (the end of a subject after an ill-formed lead), not K73's.
 
 # pcre2-only
-pattern-esc ""
+pattern (?:)
 encoding utf8
 m "\x80" 1 1
 m "\x80\x80" 2 2
