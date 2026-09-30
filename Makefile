@@ -295,7 +295,8 @@ TEST_SECTIONS := test-corpus test-cli test-reject test-registry test-parse \
       test-tune-dial test-prechecks \
       test-prefilter-collapse test-rxtsource test-definitions \
       test-entry-shape-identity test-cpset-structure test-startbnd \
-      test-uprops test-core test-vars test-examples test-findings test-ucp
+      test-uprops test-core test-vars test-examples test-findings test-ucp \
+      test-clskit
 
 # [CHK-2 trailer] `test:` STOPPED being purely prerequisite-based here
 # (2026-08-26, manager finding, journal part 7): under `make -j12 test`,
@@ -1172,6 +1173,14 @@ test-ucp: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-ucp.ran"; fi
 	bash tests/ucp/run_ucp_tests.sh
 
+# [CLS-TREE] S1: the class-matcher kit (src/gen/clskit.c) before any emitter
+# calls it — the emitted forms compiled and checked on every code point over
+# four populations, the population census, and the cross-check against
+# studies/cls_tree_study/. See tests/clskit/CLAUDE.md.
+test-clskit: all
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-clskit.ran"; fi
+	bash tests/clskit/run_clskit_tests.sh
+
 test-uprops-utf8: all
 	ENC=utf8 bash tests/uprops/run_uprops_tests.sh
 
@@ -1653,6 +1662,6 @@ clean:
         test-prechecks \
         test-prefilter-collapse test-rxtsource test-definitions \
       test-entry-shape-identity test-cpset-structure \
-        test-encoding-checks test-startbnd test-core test-examples \
+        test-encoding-checks test-startbnd test-core test-examples test-clskit \
         smoke hooks strict testscripts ubsan asan san lint alloc mech bench \
         fuzz clean
