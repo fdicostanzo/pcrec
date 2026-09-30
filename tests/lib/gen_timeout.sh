@@ -127,7 +127,10 @@ gen_cpu_secs() {
 # MEASURED 2026-08-15 at 0.38 s plain / 0.84 s asan / 0.85 s ubsan for the
 # worst case in the corpus — `tests/base/k18_deep_nesting.rxt`'s 250 nested
 # nullable stars, which is the deepest nesting the parser will accept at all
-# (PCREC_MAX_GROUP_DEPTH). 20 s and 60 s are ~50x and ~70x that, which is
+# (PCREC_MAX_GROUP_DEPTH). STALE as a worst case (2026-09-30): the corpus's
+# worst is now ~3 s CPU (`((a)|ab){4000}c`, lane k73tri), which hit the 20 s
+# wall at load 13.8 — K77: if that recurs, move to a CPU-primary budget. The
+# 20 s and 60 s were chosen as ~50x and ~70x the original figure, which is
 # headroom for a slow box without being the "still running, not failed" hole
 # D45 exists to close. Same revisit-when as above: if a LEGITIMATE pattern is
 # measured needing more, raise the default WITH the measurement recorded.
