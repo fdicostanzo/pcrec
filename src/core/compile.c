@@ -465,7 +465,11 @@ enum { SIZE_TERM_LADDER_N = (int)(sizeof SIZE_TERM_LADDER / sizeof SIZE_TERM_LAD
  * size rung does. Derived from `SDR_MAX` rather than typed, for the reason
  * both paragraphs above give for their own terms — a third rung raises
  * `SDR_MAX` and this formula grows with it automatically. */
-enum { COMPILE_MAX_ATTEMPTS = 3 + 2 * (SIZE_TERM_LADDER_N + 1) + 1 + SDR_MAX };
+/* [PF-DROP] (D135) AND A THIRD LADDER RUN: the prefilter-drop rung restarts
+ * the size term for [OPT-4]'s own reason (the artifact it chose `K` for no
+ * longer exists), and it can follow the collapse rung on one compile, so the
+ * ladder-bearing half is now THREE runs. `SDR_MAX` grew to three with it. */
+enum { COMPILE_MAX_ATTEMPTS = 3 + 3 * (SIZE_TERM_LADDER_N + 1) + 1 + SDR_MAX };
 
 /* [ART-SIZE] Which phase an attempt is in. The phases run in a fixed order and
  * compose with [SEL-1]'s retry in ONE stated direction: SEL-1's DFA-overflow
@@ -528,6 +532,7 @@ static void size_term_choose(const int *k, const bool *ok, const size_t *nodes,
                              const long long *fc, const long long *sc, int n,
                              unsigned long long cap_code,
                              unsigned long long cap_total, int bar,
+                             bool rescue_ok,
                              int *out_k, bool *out_rescue, bool *out_capexcl)
 {
     *out_rescue = false;
@@ -582,7 +587,9 @@ static void size_term_choose(const int *k, const bool *ok, const size_t *nodes,
      * claimed the largest — measured on §5's witness under the 30,000-byte
      * reference cap, the rescue chose K=1 (25,271 B) where K=3 (28,907) and
      * K=2 (27,711) both fit, giving up throughput the cap never asked for. */
-    for (int i = 0; i < n; i++) {
+    /* [PF-DROP] `rescue_ok` is `fit_rungs[]`' own verdict on this row
+     * (`unroll-rescue`); false skips the rescue and the cap refuses. */
+    for (int i = 0; rescue_ok && i < n; i++) {
         if (!ok[i] || !size_term_capacity_holds(fc, sc, i)) continue;
         if (code[i] <= cap_code && total[i] <= cap_total) {
             *out_k = k[i];
@@ -617,6 +624,128 @@ static void size_drop_note(const char *what, const char *cost)
             "dropped %s -- %s. Raise --max-emit-bytes/--max-emit-code-bytes "
             "to keep the faster form, or accept the fit.\n",
             what, cost);
+}
+
+/* [PF-DROP] (D135) THE SIZE-CAP LADDER AS ONE FIRST-MATCH TABLE: which rung
+ * the driver takes when an emitted-size cap has just refused an attempt.
+ * Rows are tried in order; a row whose deny bit the caller set, or a
+ * DEGRADING row under `PCREC_FAST_OR_FAIL`, is transparent; the first row
+ * that applies is taken, and the last row always applies and refuses.
+ *
+ * THE ORDER IS BY MEASURED RUN-TIME COST, cheapest first
+ * (docs/dev/lanes/pfdrop_report.md §2): K is at parity, the count collapse
+ * keeps a filter that still dismisses most starts, the anchored machine
+ * costs `_match` its reverse pass, the premultiplied table ~1.05-1.27x of
+ * the scan, and dropping the VM hybrid's prefilter up to ~4x. Engine scope
+ * makes most pairs disjoint (the collapse and the prefilter drop need a VM
+ * hybrid, the anchored and premul drops a DFA artifact), so the order binds
+ * only within one engine.
+ *
+ * `degrading` IS THE CLASSIFICATION D135 asks for, one column, and
+ * `fit_rung_denied` is the ONE predicate `--fast-or-fail` acts through —
+ * no rung tests the switch itself. The unroll rescue is a row too, though
+ * its choice is made inside `size_term_choose` rather than by this walk
+ * (`applies` NULL): it is measured at parity, so it is not degrading, and
+ * the table is where that is said. */
+typedef struct {
+    const Ctx    *cx;               /* the attempt a size cap just refused */
+    uint64_t      flags;            /* the options it ran under */
+    unsigned char collapse_reason;  /* the retry state it ran under */
+    unsigned char size_drop_rung;
+    bool          dfa_disabled;
+} FitSel;
+
+typedef enum {
+    FIT_UNROLL_RESCUE, FIT_COLLAPSE, FIT_DROP_ANCHORED, FIT_DROP_PREMUL,
+    FIT_DROP_PREFILTER, FIT_REFUSE
+} FitAct;
+
+typedef struct {
+    const char *name;
+    uint64_t    deny;        /* the rung's own caller deny bit, or 0 */
+    bool        degrading;   /* costs run time to make the artifact fit */
+    bool      (*applies)(const FitSel *s);   /* NULL: chosen at its own site */
+    FitAct      act;
+} FitRung;
+
+/* [OPT-4] the count-collapsed prefilter: a VM hybrid whose prefilter was
+ * built from the exact language (a DFA artifact's language must stay
+ * exact). */
+static bool fit_collapse_applies(const FitSel *s)
+{
+    const Job *j = s->cx->job;
+    return s->collapse_reason != CR_SIZECAP &&
+           j && j->fit.chosen != ENGM_DFA &&
+           j->fit.prefilter &&
+           !j->fit.prefilter_collapsed;
+}
+
+/* [K53-SELRETRY] the optional anchored machine: `anchored_ok` is exactly
+ * "this DFA artifact carries it". */
+static bool fit_anchored_applies(const FitSel *s)
+{
+    return s->size_drop_rung == SDR_NONE &&
+           s->cx->job && s->cx->job->anchored_ok;
+}
+
+/* [K59-PREMUL] the premultiplied table, DFA engine only; a caller's own
+ * `-fno-premul-table` means there is none to drop. */
+static bool fit_premul_applies(const FitSel *s)
+{
+    return s->size_drop_rung < SDR_NO_PREMUL &&
+           s->cx->job && s->cx->job->fit.chosen == ENGM_DFA &&
+           !(s->flags & PCREC_NO_PREMUL_TABLE);
+}
+
+/* [PF-DROP] the VM hybrid's prefilter. Not on a [SEL-1] retry
+ * (`dfa_disabled`: a drop rung and a DFA overflow never share a compile,
+ * `esel_of`'s premise), and not under `-fprefilter`, which demands one. */
+static bool fit_prefilter_applies(const FitSel *s)
+{
+    return s->size_drop_rung < SDR_NO_PREFILTER && !s->dfa_disabled &&
+           s->cx->job && s->cx->job->fit.chosen != ENGM_DFA &&
+           s->cx->job->fit.prefilter &&
+           !(s->flags & PCREC_FORCE_PREFILTER);
+}
+
+/* The total fallback: nothing smaller is left, and the refusal stands. */
+static bool fit_always(const FitSel *s) { (void)s; return true; }
+
+static const FitRung fit_rungs[] = {
+    { "unroll-rescue",  0,                           false, NULL,                  FIT_UNROLL_RESCUE  },
+    { "prefilter-collapse", PCREC_NO_PREFILTER_COLLAPSE, true, fit_collapse_applies, FIT_COLLAPSE      },
+    { "drop-anchored",  0,                           true,  fit_anchored_applies,  FIT_DROP_ANCHORED  },
+    { "drop-premul",    0,                           true,  fit_premul_applies,    FIT_DROP_PREMUL    },
+    { "drop-prefilter", 0,                           true,  fit_prefilter_applies, FIT_DROP_PREFILTER },
+    { "refuse",         0,                           false, fit_always,            FIT_REFUSE         },
+};
+
+/* True when the caller has turned row `r` off: its own deny bit, or
+ * `--fast-or-fail` on a degrading row. */
+static bool fit_rung_denied(const FitRung *r, uint64_t flags)
+{
+    return (r->deny & flags) != 0 ||
+           (r->degrading && (flags & PCREC_FAST_OR_FAIL) != 0);
+}
+
+/* The rung row whose action is `act`. */
+static const FitRung *fit_rung_of(FitAct act)
+{
+    for (size_t i = 0; i < sizeof fit_rungs / sizeof fit_rungs[0]; i++)
+        if (fit_rungs[i].act == act) return &fit_rungs[i];
+    return &fit_rungs[sizeof fit_rungs / sizeof fit_rungs[0] - 1];
+}
+
+/* The first rung that applies to the refused attempt `s` and is not
+ * denied; never NULL, because the last row always applies. */
+static const FitRung *fit_select(const FitSel *s)
+{
+    for (size_t i = 0; i < sizeof fit_rungs / sizeof fit_rungs[0]; i++) {
+        const FitRung *r = &fit_rungs[i];
+        if (!r->applies || fit_rung_denied(r, s->flags)) continue;
+        if (r->applies(s)) return r;
+    }
+    return fit_rung_of(FIT_REFUSE);
 }
 
 /* THE PIPELINE, and the tree's only `setjmp`: parse -> altcls -> discharge
@@ -762,6 +891,7 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
      * dropped, never a contributor that was simply never there to drop. */
     volatile bool dropped_anchored = false;
     volatile bool dropped_premul   = false;
+    volatile bool dropped_prefilter = false;   /* [PF-DROP] (D135) */
     /* [OPT-4] the size refusal that triggered CR_SIZECAP, carried across the
      * retry the way `overflow_why` is: `job_cleanup` has already run on the
      * attempt that measured it. */
@@ -807,6 +937,10 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
     const long long thr0 = pcrec_tune_size_term_threshold(defo.tune);
     const long long size_term_threshold =
         thr0 ? thr0 : (long long)PCREC_SIZE_TERM_THRESHOLD;
+    /* [PF-DROP] whether the caller allows the unroll ladder's cap rescue,
+     * asked of the ladder table once (`fit_rung_denied`). */
+    const bool st_rescue_ok =
+        !fit_rung_denied(fit_rung_of(FIT_UNROLL_RESCUE), defo.flags);
 
     volatile SizeTermPhase st_phase = ST_DEFAULT;
     volatile int  st_idx = 0;          /* next ladder rung to try */
@@ -1085,7 +1219,7 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
                                                               : PCREC_MAX_VM_EMIT_CODE_BYTES,
                                      defo.max_emit_bytes ? defo.max_emit_bytes
                                                          : PCREC_MAX_EMIT_BYTES,
-                                     size_term_bar,
+                                     size_term_bar, st_rescue_ok,
                                      &final_k, &rescue, &capexcl);
                     st_final_k = final_k; st_rescue = rescue; st_capexcl = capexcl;
                     st_phase = ST_FINAL;
@@ -1150,44 +1284,177 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
                 if (err) { err->msg[0] = 0; err->pos = 0; err->input = PCREC_ERR_INPUT_PATTERN; }
                 continue;
             }
-            /* [OPT-4] FRANK'S RULING B — THE SIZE RUNG. The exact artifact was
-             * refused by an emitted-size cap; before giving up, try ONE more
-             * attempt with the prefilter built from the count-collapsed
-             * language. This is the whole of the new default: the collapse
-             * acts where the caps say the exact artifact cannot ship, and
-             * nowhere else.
-             *
-             * IT IS THE SAME LADDER, not a second recovery point: one more
-             * pass of the existing loop around the existing single `setjmp`,
-             * labelled at the failure site by `cx.size_cap_refused` exactly as
-             * [SEL-1] labels its own with `cx.dfa_overflowed`.
-             *
-             * OFFERED AT MOST ONCE (`collapse_reason != CR_SIZECAP`), so a
-             * pattern whose COLLAPSED artifact is also over the cap refuses
-             * after two attempts rather than looping. The size-term ladder's
-             * own state is reset with it, because the smaller prefilter
-             * changes every figure that ladder chose `K` on and reusing the
-             * old record would pick a `K` for an artifact that no longer
-             * exists.
-             *
-             * THE CONJUNCTS ARE THE GATE'S, RESTATED HERE ONLY TO AVOID A
-             * POINTLESS ATTEMPT: no rung for a pattern with nothing to
-             * collapse, none for a DFA-engine artifact (a superset would be a
-             * miscompile), and none when the caller denied the axis — that
-             * caller gets the refusal, which is the only thing
-             * `-fno-prefilter-collapse` still buys them under ruling B. */
-            const bool size_eligible =
-                cx.size_cap_refused &&
-                collapse_reason != CR_SIZECAP &&
-                !(defo.flags & PCREC_NO_PREFILTER_COLLAPSE) &&
-                cx.job && cx.job->fit.chosen != ENGM_DFA &&
-                cx.job->fit.prefilter &&
-                !cx.job->fit.prefilter_collapsed;
-            if (size_eligible) {
+            /* [PF-DROP] (D135) THE SIZE-CAP LADDER. Every rung below is a row
+             * of `fit_rungs[]`, which carries the order, each rung's deny bit
+             * and its degrading classification; `fit_select` takes the first
+             * that applies and is not denied (`--fast-or-fail` denies every
+             * degrading row), and this switch only carries out the one taken.
+             * A rung that changes a VM artifact's figures restarts the
+             * size-term ladder, whose record would otherwise pick a `K` for an
+             * artifact that no longer exists. */
+            const FitSel fs = { &cx, defo.flags, collapse_reason,
+                                size_drop_rung, dfa_disabled };
+            const FitRung *rung = cx.size_cap_refused
+                                ? fit_select(&fs) : fit_rung_of(FIT_REFUSE);
+            bool restart_term = false;
+            switch (rung->act) {
+            case FIT_COLLAPSE:
+                /* [OPT-4] FRANK'S RULING B — THE SIZE RUNG. The exact artifact was
+                 * refused by an emitted-size cap; before giving up, try ONE more
+                 * attempt with the prefilter built from the count-collapsed
+                 * language. This is the whole of the new default: the collapse
+                 * acts where the caps say the exact artifact cannot ship, and
+                 * nowhere else.
+                 *
+                 * IT IS THE SAME LADDER, not a second recovery point: one more
+                 * pass of the existing loop around the existing single `setjmp`,
+                 * labelled at the failure site by `cx.size_cap_refused` exactly as
+                 * [SEL-1] labels its own with `cx.dfa_overflowed`.
+                 *
+                 * OFFERED AT MOST ONCE (`collapse_reason != CR_SIZECAP`), so a
+                 * pattern whose COLLAPSED artifact is also over the cap refuses
+                 * after two attempts rather than looping. The size-term ladder's
+                 * own state is reset with it, because the smaller prefilter
+                 * changes every figure that ladder chose `K` on and reusing the
+                 * old record would pick a `K` for an artifact that no longer
+                 * exists.
+                 *
+                 * THE CONJUNCTS (`fit_collapse_applies`) ARE THE GATE'S, RESTATED
+                 * ONLY TO AVOID A POINTLESS ATTEMPT: no rung for a pattern with
+                 * nothing to collapse, none for a DFA-engine artifact (a superset
+                 * would be a miscompile), and none when the caller denied the axis
+                 * (the row's deny bit) — that caller gets the refusal, which is
+                 * the only thing `-fno-prefilter-collapse` still buys them under
+                 * ruling B. */
                 size_cap_bytes = cx.size_cap_bytes;
                 size_cap_limit = cx.size_cap_limit;
-                job_cleanup(&cx);
                 collapse_reason = CR_SIZECAP;
+                restart_term = true;
+                break;
+            case FIT_DROP_ANCHORED:
+                /* [K53-SELRETRY] THE OPTIONAL-CONTRIBUTOR DROP RUNG — the same
+                 * ladder again, one budget over. K53: the artifact was refused by
+                 * an emitted-size cap and it CONTAINS a machine whose own design
+                 * says its cost is never allowed to become a diagnostic
+                 * (`docs/design/anchored_match_unwrapped.md` §2/§5.2). Drop it and
+                 * re-emit; the caller gets an artifact that answers identically
+                 * and pays [OPT-2]'s reverse pass in `<prefix>_match`, which is
+                 * strictly better than the refusal it gets today.
+                 *
+                 * OFFERED AT MOST ONCE (`size_drop_rung == SDR_NONE` — spelled
+                 * against rung 1's OWN value now that a second rung exists,
+                 * [K59-PREMUL]; `< SDR_MAX` would have kept working today only by
+                 * accident, through `anchored_ok` going false once rung 1 fires,
+                 * and that coincidence is exactly the kind of coupling a second
+                 * rung is supposed to break rather than inherit), so a pattern
+                 * still over the cap with the anchored machine dropped falls
+                 * through to rung 2 below rather than looping here.
+                 *
+                 * `anchored_ok` IS THE CONTRIBUTOR-PRESENT TEST, and it is exact
+                 * rather than approximate: it is set only when this emitter writes
+                 * the artifact's `_match` (`fit.chosen == ENGM_DFA`), the axis was
+                 * not denied, and the machine BUILT — which is precisely the
+                 * emitter's own axis-G `unwrapped` predicate less its empty-engine
+                 * conjunct. That conjunct is left out deliberately: an
+                 * empty-engine artifact is a handful of lines and cannot reach a
+                 * size cap, so adding it would guard an unreachable case.
+                 *
+                 * IT DOES NOT NEED TO BE ORDERED AGAINST [OPT-4]'s SIZE RUNG
+                 * ABOVE, AND THAT IS DERIVED RATHER THAN OBSERVED. That rung
+                 * requires `fit.chosen != ENGM_DFA` (a VM hybrid's prefilter);
+                 * this one requires `anchored_ok`, which implies `fit.chosen ==
+                 * ENGM_DFA`. The two are mutually exclusive on every pattern, so
+                 * no attempt can take both and their relative position in this
+                 * chain is free.
+                 *
+                 * [K59-PREMUL] THE SECOND DROPPABLE CONTRIBUTOR HAS ARRIVED, AND
+                 * IT IS RUNG 2 BELOW RATHER THAN A REORDERING HERE — Frank's
+                 * ruling (2026-09-17): APPEND. Rung 1 stays exactly as shipped
+                 * for its own population; rung 2 is tried only when this rung
+                 * declines (fired already and insufficient, or never applicable
+                 * to this artifact at all).
+                 *
+                 * THE SIZE-TERM LADDER'S STATE IS NOT RESET, unlike [OPT-4]'s rung
+                 * above, and the reason is the same exclusivity: that ladder runs
+                 * only for `fit.chosen == ENGM_VM` (`run`'s own conjunct at the
+                 * measurement below), so an attempt eligible here has never
+                 * entered it and its record is still the untouched entry state. */
+                size_drop_rung = SDR_NO_ANCHORED;
+                dropped_anchored = true;
+                break;
+            case FIT_DROP_PREMUL:
+                /* [K59-PREMUL] THE DROP LADDER'S SECOND RUNG — the premultiplied
+                 * DFA transition table (docs/dev/known_issues.md K59;
+                 * docs/dev/lanes/dialimpl_report.md §1). `--tune=min-size`
+                 * already denies `-fno-premul-table` UNCONDITIONALLY, and that
+                 * denial alone was already rescuing this rung's own witness
+                 * (`[^\p{C}\p{M}\p{P}]` under `-e utf8 --features unicode-props`)
+                 * at every dial position but the one that carries the flag —
+                 * K59's finding. The dial did not create the lever, and neither
+                 * does this rung: `PCREC_NO_PREMUL_TABLE` is an ordinary
+                 * `pcrec_options.flags` bit the emitter's candidate list already
+                 * filters on (`src/gen/emit_dfa.c`'s `dfa_premul`), so the rung
+                 * needs no new gate at a build site the way rung 1 needed
+                 * `build_anchored_dfa`'s own read — it is spelled as the flag
+                 * itself, OR'd into `defo.flags` for every attempt from here on,
+                 * exactly the way `[OPT-DIAL]`'s `--tune=-2` already ORs it in at
+                 * driver entry. That is also what makes an explicit
+                 * `-fno-premul-table` from the CALLER a naturally INELIGIBLE case
+                 * (the flag is already set; this rung's OR adds nothing) rather
+                 * than a second code path.
+                 *
+                 * NO FORCE-FLAG CONJUNCT: THERE IS NO FORCE FLAG. `-fprefilter`
+                 * has a conjunct on [OPT-4]'s own size rung because an explicit
+                 * force beats a rescue; `-fno-premul-table` is DENY-ONLY
+                 * (`docs/spec/tuning.md` §2.13, `lib/pcrec.h`'s own comment:
+                 * "there is one table form per machine and the compiler picks
+                 * it, so there is nothing to address and nothing to force") —
+                 * checked, not assumed, by grep over `cli/main.c` and
+                 * `lib/pcrec.h` before this rung was written. If a force
+                 * spelling is ever added, it needs the identical conjunct here.
+                 *
+                 * SCOPED TO THE DFA ENGINE (`fit.chosen == ENGM_DFA`), matching
+                 * rung 1's own scope rather than the axis's own reach (a VM
+                 * hybrid's embedded prefilter table can be premultiplied too):
+                 * extending this rung to `ENGM_VM` would let a retry re-enter the
+                 * size-term ladder above MID-LADDER with no measured population
+                 * to justify the interaction (D77) — `SDR_*`'s own comment states
+                 * the same narrowing. THE SIZE-TERM LADDER'S STATE THEREFORE
+                 * NEEDS NO RESET HERE EITHER, for rung 1's own reason: an attempt
+                 * eligible here has never entered it.
+                 *
+                 * OFFERED AT MOST ONCE (`size_drop_rung < SDR_NO_PREMUL`, spelled
+                 * against THIS rung's own value for the identical reason rung 1's
+                 * check now is), so a pattern still over the cap with everything
+                 * this ladder can drop already dropped refuses after one more
+                 * attempt rather than looping. */
+                size_drop_rung = SDR_NO_PREMUL;
+                defo.flags |= PCREC_NO_PREMUL_TABLE;
+                dropped_premul = true;
+                break;
+            case FIT_DROP_PREFILTER:
+                /* [PF-DROP] (D135) THE LAST RUNG: drop the VM hybrid's
+                 * prefilter. Spelled as the caller's own `-fno-prefilter`
+                 * OR'd in, the way the premul rung spells its flag, so the
+                 * prefilter decision (`src/opt/select_engine.c`) needs no
+                 * new input. The refused attempt's figures are carried
+                 * forward for `<PREFIX>_VM_PREFILTER_WHY`, and the size term
+                 * restarts, the collapse rung's reason. */
+                size_cap_bytes = cx.size_cap_bytes;
+                size_cap_limit = cx.size_cap_limit;
+                size_drop_rung = SDR_NO_PREFILTER;
+                defo.flags |= PCREC_NO_PREFILTER;
+                dropped_prefilter = true;
+                restart_term = true;
+                break;
+            case FIT_UNROLL_RESCUE:   /* chosen inside `size_term_choose` */
+            case FIT_REFUSE:
+                job_cleanup(&cx);
+                pcrec_dfa_memo_free(&dmemo);
+                return -1;
+            }
+            job_cleanup(&cx);
+            if (restart_term) {
                 st_phase = ST_DEFAULT; st_idx = 0; st_final_k = 0;
                 st_rescue = false; st_capexcl = false;
                 memset(st_k, 0, sizeof st_k);
@@ -1196,128 +1463,9 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
                 memset(st_total, 0, sizeof st_total);
                 memset(st_nodes, 0, sizeof st_nodes);
                 memset(st_whylen, 0, sizeof st_whylen);
-                if (err) { err->msg[0] = 0; err->pos = 0; err->input = PCREC_ERR_INPUT_PATTERN; }
-                continue;
             }
-            /* [K53-SELRETRY] THE OPTIONAL-CONTRIBUTOR DROP RUNG — the same
-             * ladder again, one budget over. K53: the artifact was refused by
-             * an emitted-size cap and it CONTAINS a machine whose own design
-             * says its cost is never allowed to become a diagnostic
-             * (`docs/design/anchored_match_unwrapped.md` §2/§5.2). Drop it and
-             * re-emit; the caller gets an artifact that answers identically
-             * and pays [OPT-2]'s reverse pass in `<prefix>_match`, which is
-             * strictly better than the refusal it gets today.
-             *
-             * OFFERED AT MOST ONCE (`size_drop_rung == SDR_NONE` — spelled
-             * against rung 1's OWN value now that a second rung exists,
-             * [K59-PREMUL]; `< SDR_MAX` would have kept working today only by
-             * accident, through `anchored_ok` going false once rung 1 fires,
-             * and that coincidence is exactly the kind of coupling a second
-             * rung is supposed to break rather than inherit), so a pattern
-             * still over the cap with the anchored machine dropped falls
-             * through to rung 2 below rather than looping here.
-             *
-             * `anchored_ok` IS THE CONTRIBUTOR-PRESENT TEST, and it is exact
-             * rather than approximate: it is set only when this emitter writes
-             * the artifact's `_match` (`fit.chosen == ENGM_DFA`), the axis was
-             * not denied, and the machine BUILT — which is precisely the
-             * emitter's own axis-G `unwrapped` predicate less its empty-engine
-             * conjunct. That conjunct is left out deliberately: an
-             * empty-engine artifact is a handful of lines and cannot reach a
-             * size cap, so adding it would guard an unreachable case.
-             *
-             * IT DOES NOT NEED TO BE ORDERED AGAINST [OPT-4]'s SIZE RUNG
-             * ABOVE, AND THAT IS DERIVED RATHER THAN OBSERVED. That rung
-             * requires `fit.chosen != ENGM_DFA` (a VM hybrid's prefilter);
-             * this one requires `anchored_ok`, which implies `fit.chosen ==
-             * ENGM_DFA`. The two are mutually exclusive on every pattern, so
-             * no attempt can take both and their relative position in this
-             * chain is free.
-             *
-             * [K59-PREMUL] THE SECOND DROPPABLE CONTRIBUTOR HAS ARRIVED, AND
-             * IT IS RUNG 2 BELOW RATHER THAN A REORDERING HERE — Frank's
-             * ruling (2026-09-17): APPEND. Rung 1 stays exactly as shipped
-             * for its own population; rung 2 is tried only when this rung
-             * declines (fired already and insufficient, or never applicable
-             * to this artifact at all).
-             *
-             * THE SIZE-TERM LADDER'S STATE IS NOT RESET, unlike [OPT-4]'s rung
-             * above, and the reason is the same exclusivity: that ladder runs
-             * only for `fit.chosen == ENGM_VM` (`run`'s own conjunct at the
-             * measurement below), so an attempt eligible here has never
-             * entered it and its record is still the untouched entry state. */
-            const bool drop_eligible =
-                cx.size_cap_refused &&
-                size_drop_rung == SDR_NONE &&
-                cx.job && cx.job->anchored_ok;
-            if (drop_eligible) {
-                job_cleanup(&cx);
-                size_drop_rung = SDR_NO_ANCHORED;
-                dropped_anchored = true;
-                if (err) { err->msg[0] = 0; err->pos = 0; err->input = PCREC_ERR_INPUT_PATTERN; }
-                continue;
-            }
-            /* [K59-PREMUL] THE DROP LADDER'S SECOND RUNG — the premultiplied
-             * DFA transition table (docs/dev/known_issues.md K59;
-             * docs/dev/lanes/dialimpl_report.md §1). `--tune=min-size`
-             * already denies `-fno-premul-table` UNCONDITIONALLY, and that
-             * denial alone was already rescuing this rung's own witness
-             * (`[^\p{C}\p{M}\p{P}]` under `-e utf8 --features unicode-props`)
-             * at every dial position but the one that carries the flag —
-             * K59's finding. The dial did not create the lever, and neither
-             * does this rung: `PCREC_NO_PREMUL_TABLE` is an ordinary
-             * `pcrec_options.flags` bit the emitter's candidate list already
-             * filters on (`src/gen/emit_dfa.c`'s `dfa_premul`), so the rung
-             * needs no new gate at a build site the way rung 1 needed
-             * `build_anchored_dfa`'s own read — it is spelled as the flag
-             * itself, OR'd into `defo.flags` for every attempt from here on,
-             * exactly the way `[OPT-DIAL]`'s `--tune=-2` already ORs it in at
-             * driver entry. That is also what makes an explicit
-             * `-fno-premul-table` from the CALLER a naturally INELIGIBLE case
-             * (the flag is already set; this rung's OR adds nothing) rather
-             * than a second code path.
-             *
-             * NO FORCE-FLAG CONJUNCT: THERE IS NO FORCE FLAG. `-fprefilter`
-             * has a conjunct on [OPT-4]'s own size rung because an explicit
-             * force beats a rescue; `-fno-premul-table` is DENY-ONLY
-             * (`docs/spec/tuning.md` §2.13, `lib/pcrec.h`'s own comment:
-             * "there is one table form per machine and the compiler picks
-             * it, so there is nothing to address and nothing to force") —
-             * checked, not assumed, by grep over `cli/main.c` and
-             * `lib/pcrec.h` before this rung was written. If a force
-             * spelling is ever added, it needs the identical conjunct here.
-             *
-             * SCOPED TO THE DFA ENGINE (`fit.chosen == ENGM_DFA`), matching
-             * rung 1's own scope rather than the axis's own reach (a VM
-             * hybrid's embedded prefilter table can be premultiplied too):
-             * extending this rung to `ENGM_VM` would let a retry re-enter the
-             * size-term ladder above MID-LADDER with no measured population
-             * to justify the interaction (D77) — `SDR_*`'s own comment states
-             * the same narrowing. THE SIZE-TERM LADDER'S STATE THEREFORE
-             * NEEDS NO RESET HERE EITHER, for rung 1's own reason: an attempt
-             * eligible here has never entered it.
-             *
-             * OFFERED AT MOST ONCE (`size_drop_rung < SDR_NO_PREMUL`, spelled
-             * against THIS rung's own value for the identical reason rung 1's
-             * check now is), so a pattern still over the cap with everything
-             * this ladder can drop already dropped refuses after one more
-             * attempt rather than looping. */
-            const bool premul_eligible =
-                cx.size_cap_refused &&
-                size_drop_rung < SDR_NO_PREMUL &&
-                cx.job && cx.job->fit.chosen == ENGM_DFA &&
-                !(defo.flags & PCREC_NO_PREMUL_TABLE);
-            if (premul_eligible) {
-                job_cleanup(&cx);
-                size_drop_rung = SDR_NO_PREMUL;
-                defo.flags |= PCREC_NO_PREMUL_TABLE;
-                dropped_premul = true;
-                if (err) { err->msg[0] = 0; err->pos = 0; err->input = PCREC_ERR_INPUT_PATTERN; }
-                continue;
-            }
-            job_cleanup(&cx);
-            pcrec_dfa_memo_free(&dmemo);
-            return -1;
+            if (err) { err->msg[0] = 0; err->pos = 0; err->input = PCREC_ERR_INPUT_PATTERN; }
+            continue;
         }
 
         /* [M6.2 wave A] After the setjmp, because it allocates: an arena failure
@@ -1908,7 +2056,7 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
                 size_term_choose(st_k, st_ok, st_nodes, st_code, st_total,
                                  st_fc, st_sc, SIZE_TERM_LADDER_N + 1,
                                  cap_code, cap_tot, size_term_bar,
-                                 &fk, &rescue, &capexcl);
+                                 st_rescue_ok, &fk, &rescue, &capexcl);
                 st_final_k = fk; st_rescue = rescue; st_capexcl = capexcl;
             }
             st_phase = ST_FINAL;
@@ -2057,6 +2205,11 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
                             "slower per-byte scan dispatch, measured ~1.27x "
                             "on scan-bound subjects "
                             "(docs/dev/opt3_dfa_scan_measurement.md)");
+        if (dropped_prefilter)
+            size_drop_note("the VM hybrid's prefilter",
+                            "the VM tries every start position itself, "
+                            "measured up to ~4x slower where matches are "
+                            "sparse (docs/dev/lanes/pfdrop_report.md)");
         /* [PATFACTS] `--emit-facts` (design §11): the facts no pass asked
          * are forced HERE, after the artifact and every stamp exist, so the
          * extra asks cannot move a byte of it; then the listing's hook reads

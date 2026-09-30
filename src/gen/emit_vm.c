@@ -11139,6 +11139,15 @@ static void vm_emit_stamps(Vm *v, const VmPlan *pl, const VmEntry *en,
      * derived default when neither was passed). */
     pcrec_sb_stamp_str(c, v->up, "VM_PREFILTER",
                  job->fit.prefilter ? "hybrid" : "none");
+    /* [PF-DROP] (D135) AND WHY IT IS "none", when the size-cap ladder's
+     * last rung dropped it — the one "none" a caller did not ask for.
+     * `_PREFILTER_LANG_WHY`'s shape: the refused artifact's bytes and the
+     * cap they exceeded, both carried from `compile_driver`, which decided.
+     * Written only where the rung fired, so no other artifact moves. */
+    if (cx->size_drop_rung == SDR_NO_PREFILTER)
+        pcrec_sb_stampf(c, v->up, "VM_PREFILTER_WHY",
+                  "\"size cap retry, hybrid %llu > %llu\"",
+                  cx->size_cap_bytes, cx->size_cap_limit);
     /* [OPT-4] AND WHICH LANGUAGE THAT HYBRID ANSWERS FOR (K39; docs/design/
      * prefilter_count_independence.md). `RX_VM_PREFILTER` says a DFA scan is
      * in this artifact; this says whether that scan recognises the pattern's

@@ -980,6 +980,18 @@ enum {
  * A `#define` for bit 32's reason. */
 #define PCREC_NO_HYB_RESEED PCREC_BIT(37)
 
+/* [PF-DROP] (D135) `--fast-or-fail`: refuse an artifact over an emitted-size
+ * cap rather than ship a SLOWER one that fits. Every rung of the size-cap
+ * ladder (docs/spec/limits.md §8) is classified degrading or not, and this
+ * bit denies every degrading rung at once — the prefilter collapse, the
+ * anchored-machine and premultiplied-table drops, the prefilter drop and the
+ * unroll ladder's cap rescue — leaving each rung's own deny flag in place.
+ * NOT an optimization axis: it selects no shape, it narrows what pcrec
+ * ACCEPTS, the way a limit does. A pattern that fits is byte-identical with
+ * or without it, so it is masked out of `rx_info.flags`. A `#define` for
+ * bit 32's reason. */
+#define PCREC_FAST_OR_FAIL PCREC_BIT(41)
+
 /* [ENG-BREP] the counter rung's UNROLL FACTOR, K (counterk_design.md §4.1;
  * eng_brep_design.md §4.5's "K must not become a per-pattern heuristic in v1",
  * held strictly by D47's ADDENDUM). ONE per-artifact constant: every

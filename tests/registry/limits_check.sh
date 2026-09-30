@@ -258,7 +258,7 @@ done <<< "$anchored"
 # motivating instance, so it had better):
 #
 #   (i)  A constant whose value is an EXPRESSION rather than a literal —
-#        `COMPILE_MAX_ATTEMPTS = 3 + 2 * (SIZE_TERM_LADDER_N + 1) + 1 +
+#        `COMPILE_MAX_ATTEMPTS = 3 + 3 * (SIZE_TERM_LADDER_N + 1) + 1 +
 #        SDR_MAX` (compile.c) is invisible here, and deliberately: a value
 #        DERIVED from other named values is not a bare number given a name,
 #        which is the shape D90 is about. It was on the old allowlist and is
