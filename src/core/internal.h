@@ -5780,6 +5780,21 @@ void pcrec_emit_exact_compare(StrBuf *c, const char *base,
 void pcrec_emit_startpos_guard(Ctx *cx, StrBuf *c, const char *indent,
                                const char *posvar, const char *subjvar,
                                const char *lenvar);
+/* [K73] What a site does when offset 0 is not a character start: a search
+ * SEEKs the next start, an anchored match-here entry answers NOMATCH, an
+ * attempt loop SKIPs the attempt. See `pcrec_emit_start_zero`. */
+typedef enum {
+    PCREC_START0_SEEK,
+    PCREC_START0_NOMATCH,
+    PCREC_START0_SKIP
+} PcrecStart0;
+/* [K73] The offset-0 start rule, emitted by src/gen/emit_dfa.c and called
+ * from BOTH emitters — one derivation over the backend's start predicate.
+ * Emits nothing under an encoding that restricts no position, or for a
+ * pattern that cannot match empty. Unconditional in `-fno-startpos-guard`. */
+void pcrec_emit_start_zero(Ctx *cx, StrBuf *c, const char *indent,
+                           const char *posvar, const char *subjvar,
+                           const char *lenvar, PcrecStart0 act);
 
 /* [OPT-DIAL] THE DIAL'S PINNED POLICY TABLE (src/core/tune.c, which is its
  * ONE home; the contract is docs/spec/tuning.md §5).

@@ -12669,6 +12669,13 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
         pcrec_sb_puts(c, "    attempt_position = search_from;\n");
         if (v->nclamp > 0) pcrec_sb_puts(c, "    window_end = subject_length;\n");
     }
+    /* [K73] The offset-0 start rule, on the FIRST ATTEMPT and not on the
+     * caller's `search_from`: `\G` reads `search_from` by name below, and
+     * libpcre2 answers `\G` false once the start has moved. After a
+     * prefilter this is a no-op — the prefilter's own scan applied the rule
+     * to the window it returned — so it is written once, after both arms. */
+    pcrec_emit_start_zero(v->cx, c, "    ", "attempt_position", "subject",
+                          "subject_length", PCREC_START0_SEEK);
 
     /* [OPT-ANCHOR-VM] THE ATTEMPT LOOP'S START BOUND, the DFA's `start_max`
      * arriving on this engine. The `start_anchor` fact (src/facts/startanch.c) is
@@ -12940,7 +12947,14 @@ static void vm_emit_entries(Vm *v, const GenNames *g, const VmPlan *pl,
         "{\n"
         "    ptrdiff_t result;\n"
         "    if (ctx->pos > ctx->len) return -1;\n"
-        "%s"
+        "%s",
+        en->ai, g->matchfn, v->p, mguard);
+    /* [K73] The offset-0 start rule, NOMATCH form: a match-here entry cannot
+     * report a match beginning anywhere but `ctx->pos`, and none begins at a
+     * position that is not a character start. */
+    pcrec_emit_start_zero(v->cx, c, "    ", "ctx->pos", "ctx->subject",
+                          "ctx->len", PCREC_START0_NOMATCH);
+    pcrec_sb_printf(c,
         "    %s_run_state_init(run);\n"
         /* [VAR] `rx_matchfn`'s OWN signature is untouched: the environment
          * arrives on `rx_ctx` (Frank, 2026-09-23), so this entry reads
@@ -12948,7 +12962,7 @@ static void vm_emit_entries(Vm *v, const GenNames *g, const VmPlan *pl,
          * for byte. That is the whole reason the pair rides the ctx. */
         "%s"
         "    result = %s_match_anchored(ctx, run%s%s);\n",
-        en->ai, g->matchfn, v->p, mguard, v->p,
+        v->p,
         vm_vars_resolve_insert(v, "ctx"), v->p,
         v->nclamp > 0 ? ", ctx->len" : "",
         /* [M6.2 wave D, R30 E8] The match-here entry's `startpos` IS
@@ -12990,7 +13004,11 @@ static void vm_emit_entries(Vm *v, const GenNames *g, const VmPlan *pl,
         "{\n"
         "    ptrdiff_t result;\n"
         "    if (ctx->pos > ctx->len) return -1;\n"
-        "%s"
+        "%s",
+        en->ai, g->matchcapsfn, v->p, mguard);
+    pcrec_emit_start_zero(v->cx, c, "    ", "ctx->pos", "ctx->subject",
+                          "ctx->len", PCREC_START0_NOMATCH);
+    pcrec_sb_printf(c,
         "    %s_run_state_init(run);\n"
         "%s"
         "    result = %s_match_anchored(ctx, run%s%s);\n"
@@ -12998,7 +13016,7 @@ static void vm_emit_entries(Vm *v, const GenNames *g, const VmPlan *pl,
         "    if (capture_spans_out) %s_report_captures(run, capture_spans_out, ctx->pos, result);\n"
         "    return result;\n"
         "}\n\n",
-        en->ai, g->matchcapsfn, v->p, mguard, v->p,
+        v->p,
         vm_vars_resolve_insert(v, "ctx"), v->p,
         v->nclamp > 0 ? ", ctx->len" : "",
         v->ngst > 0 ? ", ctx->pos" : "", v->p);
