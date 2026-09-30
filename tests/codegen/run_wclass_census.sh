@@ -182,14 +182,14 @@ fi
 
 # [K6] the caseless span compare REQUIRES the decoder: a caseless
 # backreference artifact under utf8 defines rx_decode though no class is wide.
-if compile '(?i)(a)\1' "$TMP/k6.c" -e utf8 --features backrefs -fno-cls-kit; then
+if compile '(a)\1' "$TMP/k6.c" -e utf8 -i --features backrefs -fno-cls-kit; then
     if has "$TMP/k6.c" 'static inline size_t rx_decode' && ! has "$TMP/k6.c" 'span_ci_decode'; then
-        ok "[K6] (?i)(a)\\1 -e utf8: the caseless span compare's decoder is the one rx_decode entry (requires closed the mask)"
+        ok "[K6] (a)\\1 -e utf8 -i: the caseless span compare's decoder is the one rx_decode entry (requires closed the mask)"
     else
-        bad "[K6] (?i)(a)\\1 -e utf8: no rx_decode, or a private span_ci_decode survives — PcrecEncEntry.requires is not closing the mask"
+        bad "[K6] (a)\\1 -e utf8 -i: no rx_decode, or a private span_ci_decode survives — PcrecEncEntry.requires is not closing the mask"
     fi
 else
-    bad "[K6] (?i)(a)\\1 -e utf8 refused: $(head -c 300 "$TMP/k6.c.err")"
+    bad "[K6] (a)\\1 -e utf8 -i refused: $(head -c 300 "$TMP/k6.c.err")"
 fi
 
 # [K7] the refusals S4 retires: K55 and a captured wide class compile.
