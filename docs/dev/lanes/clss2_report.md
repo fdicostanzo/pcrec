@@ -404,3 +404,90 @@ all resolve. **New rows S433-S436:**
 - S435: the kit's call count is ignored (clskit);
 - S436: the kit bound is dropped wherever a set reaches 0xFF (clspack's
   new `hi255` witness).
+
+### Spec hunks (D80) and abi readers (D94, found by grep)
+
+Spec hunks:
+- `docs/spec/tuning.md`: §2.18 (the edge's run test is the class table's
+  answer; four candidates; the D138 Q1 default; SIMD reserved as a LOOP
+  form), §2.22 (the fold rows at both sites; the default HELD per D138 Q1,
+  with Q3 pointing at D138; "wherever the table is read"), §2.33 (byte-kit
+  only where smaller, the per-domain dispatch term, the bound; the scan edge
+  row), §5.4 λ row.
+- `docs/spec/match_api.md`: §6 "is 53", §6.3 `RX_DFA_SCAN_EDGE` (six
+  values, `"fold"` new, the range spelling), `_VM_CLS_FOLDS` / `_VM_CLS_KIT`
+  scope.
+- `docs/spec/registry.md` §6: 106 rows / 37 axes, re-derived; the line was
+  stale by `cls-kit` and `cls-pack`.
+- `lib/pcrec.h`: `-fno-cls-fold` / `-fno-cls-kit` docs.
+- `docs/spec/cli.md` needed no change: no flag was added or removed (D138
+  Q3 (a) keeps `-fno-cls-fold`).
+
+abi readers, found by `git grep` for the digit:
+- `src/gen/emit_dfa.c` `PCREC_ARTIFACT_ABI`;
+- `tests/codegen/run_codegen_tests.sh` `ABI_EXPECT` and its transition
+  message;
+- `match_api.md` §6;
+- `run_recursion_identity.sh` FILEPIN, re-pinned to `2c45260a`.
+
+(A) moved on ONE pattern: `[\0-\7]` on `--engine=vm` (the range-from-0
+spelling). That gate now admits D139's one-spelling rewrite MECHANICALLY
+(`cls_range0_rewrite`, the [VAR] M6 rename's shape: the pre-module region
+rewritten with the one substitution, then compared again), with its own
+counter in the summary line. Every other reader of "the number" is
+historical narrative.
+
+### Validation (Mac, gcc-16)
+
+Run during the lane, each named by the file that ran:
+
+| check | result |
+|---|---|
+| `make strict` | clean |
+| `tests/codegen/run_tune_dial.sh` | 113 passed / 0 failed (was 62; §3e rewritten, §3f new) |
+| `tests/codegen/run_clspack.sh` | 57 / 0 before the `hi255` witness; PART 4 313,344 cells, PART 5 270,848 search + 270,848 match cells |
+| `tests/clskit/crosscheck.py` over `populations.py` + the rebuilt driver's dump | 591 sets, 94,560 selections (5 positions x 8 denies x 2 sites x 2 call counts), 10 rows, 3 ties, **0 disagreements** |
+| `tests/registry/axes_registry_check.sh` | 161 passed / 0 failed (the new pin) |
+| `scripts/m6read_check_sab_anchors.py` | 378 rows, all anchors resolve |
+| emit sweep, default and `--engine=vm`, lane base vs change | 79 / 1 movers, all the one spelling (above) |
+| `run_recursion_identity.sh` (first run, before the (A) exception) | (B) default: 2,765 call-free patterns byte-identical against the pin; (A) default and the other labels: pass; (A) `--engine=vm`: the one `[\0-\7]` region, now admitted by the rewrite. Re-run owed in the chain |
+
+**OWED: the detached chain**, `worktrees/clss2fix-scratch/chain.sh`, on
+tree `4cf2a5e8`. Summary:
+`worktrees/clss2fix-scratch/runs/chain/summary.txt`, one line per step with
+make's `*** [` count; the last line is `CHAIN COMPLETE`. Per-step logs sit
+beside it. Steps, in order:
+1. build, strict;
+2. `run_recursion_identity.sh` (the re-pinned gate with the new rewrite);
+3. the default and forced-VM emit sweeps (for the record);
+4. `make test-tune-dial`, `test-cpset-structure`, `test-registry`,
+   `test-rxtsource`, `test-clskit`, `test-codegen` (the accepted darwin
+   red is `nm arm_a.o` only);
+5. `run_clspack.sh` with the `hi255` witness;
+6. mech, solo, one row per run: S433-S436 (new), S430-S432, S228, and the
+   re-anchored S275 S364 S393 S400 S401 S403 S406 — the expected verdict
+   is DETECTED for every row;
+7. `scripts/cls_identity.py --ref-bin <92f4c9b7 built with its abi digit
+   set to 53> --bin build/pcrec --control` (C-M5). Both sides now share a
+   digit, so control 2 compares like with like. The expected movers are
+   S2's 10 wide-class triples plus this lane's range-spelling triples,
+   nothing else;
+8. the `.rxt` corpus under `RXTFLAGS=--tune=-2` and `--tune=-1`, each on
+   the default route and `--engine=vm` (C-M3);
+9. `make test-axes AXES="-fno-cls-fold -fno-cls-kit"` (C-M1).
+
+Linux `make test` + `test-codegen` (C-M2) are the manager's.
+
+### Open for the manager
+
+- **D139 item 1's calibration** (sent as a question at the start, no reply
+  before the handback). This lane built the per-domain term (byte = 0 by
+  measurement) and the per-site table cost. The literal 578 is one PLACE
+  cell away (`kit_disp_bytes_byte = 578`); it would turn the byte kit off on
+  both sites.
+- **D138 Q1's -2/-1 half.** "The kit's CUBES serve all 8 one-cube classes at
+  -2/-1" is still built as the fold compare at -2/-1 (`byte-fold`), as the
+  clss2 build left it. The fold compare is smaller than a CUBES kit
+  function, and D139 did not revisit it. Removing `byte-fold`'s -2/-1
+  positions sends the pairs to `byte-kit`, where smaller. That is one row
+  edit, if wanted.
