@@ -195,6 +195,15 @@ All on this Mac (darwin, gcc-16), at 2 workers or fewer, logs under
 - `tests/codegen/run_encoding_checks.sh` (slice 250): 10/5 — the same five
   reds, same FINDING set, as the branch point's own script + binary (F5).
 - Sabotage rows S367/S368: `VALIDATE_ONLY=1` FIELDS OK; anchors 344/344.
+- **Mover census** (`k73utf_evidence/k73_census.py`, output
+  `k73_census.out`): every distinct corpus `pattern` line (3,353) compiled by
+  the branch-point and the fixed compiler, same `-o` basename, abi digit
+  normalised. **`byte`: 0 movers** (2,986 identical, 367 refused both).
+  **`-e utf8` default route: 1,361 movers**, of which 1,210 carry the new
+  unwrapped-`_match` K50 guard and 384 carry the zero rule (849 lines).
+  **`-e utf8 --engine=vm`: 386 movers**, every one exactly the zero rule's
+  three lines (search + both anchored `_run`s), 1,158 lines. UNPREDICTED:
+  **0** on both utf8 configs. No refusal mismatch anywhere.
 
 **OWED to the manager:** the full `make test`; `make mech` rows S367 and
 S368 solo (their detectors' failing direction is measured above against the

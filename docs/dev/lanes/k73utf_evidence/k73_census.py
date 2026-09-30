@@ -73,6 +73,8 @@ def one(job):
     al, bl = a.splitlines(), b.splitlines()
     added, removed = [], []
     for op, i1, i2, j1, j2 in difflib.SequenceMatcher(None, bl, al, autojunk=False).get_opcodes():
+        if op == "equal":
+            continue
         removed += bl[i1:i2]
         added += al[j1:j2]
     rec["zero"] = sum(bool(ZERO.match(x)) for x in added)
