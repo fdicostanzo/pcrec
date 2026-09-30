@@ -2991,7 +2991,8 @@ own bitmap as well (`-fno-cls-pack` denies that table alone).
 
 **Denied, the byte alternation is the bytes again, so the K55 refusal returns
 on the same population.** A wide class whose alternation exceeds the
-emitted-code cap is refused under `--engine=vm` (`pattern too large: N bytes
+emitted-code cap is refused on the VM (`--engine=vm`, or a default-route
+pattern that selects it, e.g. a capturing `\P{Unknown}`) (`pattern too large: N bytes
 of emitted code (limit 500000)`): `\p{Xwd}` under `-e utf8` is 576,773 bytes
 (577,122 captured). That refusal is this axis's documented limit and the
 reason the kit exists; no size-ladder rung applies to it. `make test-axes`
