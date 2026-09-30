@@ -8864,3 +8864,12 @@ Frank: "I agree with you on all" (on the manager's ten-item status list). Source
 **RULED (as recommended).**
 1. `test-encoding-checks` joins `TEST_SECTIONS`, so it runs in `make test` and in CI (+~10 min, bounded by `ENC_MAX_BLOCKS=250`).
 2. `test-recursion-identity` joins the merge battery (`scripts/battery.sh`), not `make test` (it builds two reference compilers, ~35 min).
+
+## D137 — parked rows: satisfy their measurement and bench needs; every optimization row lives under [OPTLOOP] (Frank, 2026-09-30, eighty-seventh session)
+
+**Context.** Eight rows sat STATE:started but parked (OPT-3, OPT-5, TT-4M, ENG-ISL, DD-13, DD-13b.W1.3, the OPTLOOP parent, ENG-ABS). Each had shipped a piece and was waiting on a measurement, a bench cell, a sequencing word or a hold.
+
+**RULED (Frank: "lets get the measurement and bench needs satisfied for these. the opt lanes that are not under the umbrella of the optloop (if any) need to be put there for when we start that up- measured decisions").**
+1. The measurements and bench cells these rows wait on are COMMISSIONED now, not left as triggers nobody pulls: pcrec-side measurements as lanes (heavy runs on ubuntubudu), bench-side needs as I-notes to pcrecdev2 through the inbox (D78).
+2. Every optimization row outside [OPTLOOP] (including parked OPT-* rows, ENG-ABS's first mechanism, and not-started opt rows) moves under the [OPTLOOP] umbrella as a CANDIDATE for its next cycle, carrying its measured evidence and its measurement need. D125's hold on the next cycle is unchanged. When the cycle opens, its selection is by measurement (D119).
+3. Non-optimization parked rows (DD-13/DD-13b, TT-4M harness timing) keep their own homes, but their measurement needs are commissioned too.
