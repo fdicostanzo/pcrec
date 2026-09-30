@@ -1711,7 +1711,11 @@ static void vm_cls_respell(Vm *v)
 
 /* [OPT-CLSPACK] THE TABLE SELECTION (clskit.c `TAB_ROWS`, D131 item 6),
  * taken once the pool is final — after the program is emitted, because the
- * pool is discovered by emitting it. Its input is every pool class whose
+ * pool is discovered by emitting it, and after `vm_plan_entry` has chosen
+ * the entry rung on the program's length (`VmEntry.program_bytes`), so the
+ * re-spelling cannot move the rung: measured, a twelve-class witness whose
+ * atom spelling is shorter crossed the 4,096-byte knee and took rung
+ * `inline`, 2.5x the `__text` of its bitmap twin. Its input is every pool class whose
  * test reads a table (`vm_cls_shape`'s BITMAP), as a byte set; its deny is
  * `-fno-cls-pack`. When the atom row fires the program's table reads are
  * re-spelled (`vm_cls_respell`) and the table emission writes the shared
@@ -10128,6 +10132,10 @@ typedef struct {
     const char *ai;          /* the thin helpers' attribute text, or "" */
     const char *ai_body;     /* the matcher body's attribute text, or "" */
     bool        fwd_entries; /* the un-suffixed entries FORWARD to `_in` */
+    size_t      program_bytes; /* the program length the size term compared
+                                 * (and `<PREFIX>_VM_PROGRAM_BYTES` reports):
+                                 * taken BEFORE [OPT-CLSPACK]'s re-spelling,
+                                 * so the table form never moves the rung */
 } VmEntry;
 
 /* Fills `v` with every fact the emission phases read that does not depend on
@@ -10577,10 +10585,6 @@ static void vm_plan(Vm *v, Ast *root, VmPlan *pl)
         for (int i = 0; i < v->nregion; i++)
             if (v->rgn_emit[i]) vm_region(v, i);
     }
-    /* [OPT-CLSPACK] the pool is final: choose how its table-read classes
-     * read a table, and re-spell the program if that is the atom table —
-     * here, before anything reads the program's length. */
-    vm_cls_tables(v);
 
     /* [DD-14.FB] The caller-buffer sizing surface, computed HERE — after the
      * two capacities and after `has_linked_calls`, which are the only three
@@ -10725,6 +10729,10 @@ static void vm_plan_entry(Vm *v, const VmPlan *pl, VmEntry *en)
     Ctx *cx = v->cx;
     Job *job = cx->job;
 
+    /* [EMIT-VERB] `pcrec_sb_len_uncut`, never `len`: a size DECISION, and the
+     * comment axis must not reach it. */
+    en->program_bytes = pcrec_sb_len_uncut(&job->vmsb);
+
     /* [CC-CLANG fix, 2026-09-01] DOES THIS ARTIFACT EVER PUSH A RESUME FRAME
      * — the ONE bool three later readers share: the `<PREFIX>_VM_FRAMELESS`
      * stamp, the entry-rung ladder below, and the fail label's pop-and-resume
@@ -10857,7 +10865,7 @@ static void vm_plan_entry(Vm *v, const VmPlan *pl, VmEntry *en)
         if (!term) term = VM_INLINE_CHAIN_MAX_BYTES;
         /* [EMIT-VERB] `pcrec_sb_len_uncut`, never `len`: this comparison is a size
          * DECISION, and the comment axis must not reach it. */
-        if ((long long)pcrec_sb_len_uncut(&job->vmsb) <= term)
+        if ((long long)en->program_bytes <= term)
             shape = may_fwd ? PCREC_VM_ENTRY_FORWARD : PCREC_VM_ENTRY_INLINE;
         else
             shape = may_fwd ? PCREC_VM_ENTRY_SHARED : PCREC_VM_ENTRY_PLAIN;
@@ -11313,7 +11321,7 @@ static void vm_emit_stamps(Vm *v, const VmPlan *pl, const VmEntry *en)
                        pcrec_fact_stamp(v->cx, PF_START_ANCHOR));
     pcrec_sb_stamp_str(c, v->up, "VM_ENTRY_SHAPE", pcrec_vm_entry_shape_name(en->shape));
     pcrec_sb_stampf(c, v->up, "VM_PROGRAM_BYTES", "%lluULL",
-              (unsigned long long)pcrec_sb_len_uncut(&job->vmsb));
+              (unsigned long long)en->program_bytes);
     /* [D46] the RUNG STAMP: same PLACEMENT as RX_ENGINE/RX_ENGINE_WHY above
      * (a per-prefix, preprocessor-visible macro family, VM-artifacts-only
      * because it reports what the VM DID — §6.3's family (b), D81), but
@@ -13647,6 +13655,11 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
     vm_init(&v, cx, root, &g);
     vm_plan(&v, root, &pl);
     vm_plan_entry(&v, &pl, &en);
+    /* [OPT-CLSPACK] the pool is final: choose how its table-read classes
+     * read a table, and re-spell the program if that is the atom table —
+     * AFTER the entry rung is chosen on the program's length, so the table
+     * form moves the table and its reads and nothing the size term decides. */
+    vm_cls_tables(&v);
 
     pcrec_emit_prologue(cx, &g, v.ncaps, &pl.bufs, v.nlitrun > 0);
     vm_emit_stamps(&v, &pl, &en);

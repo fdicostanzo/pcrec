@@ -1077,8 +1077,10 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
   byte classes (`vm_cls_shape`'s BITMAP) read their table. When the atom
   row fires, `vm_cls_respell` re-spells every recorded read in `job->vmsb`
   from `vm_cls_read`'s bitmap form to its atom-matcher call (the one
-  renderer of both; an unrecorded read is an internal error), BEFORE the
-  entry-shape knee reads the program's length, and the table emission
+  renderer of both; an unrecorded read is an internal error) AFTER
+  `vm_plan_entry` chose the entry rung on the pre-respell length
+  (`VmEntry.program_bytes`, which `<PREFIX>_VM_PROGRAM_BYTES` also reports),
+  so the table form never moves the rung; and the table emission
   writes `<prefix>_class_atoms[256]` plus one `<prefix>_class_atom<N>`
   matcher per class through the kit's own emitters.
   `<PREFIX>_VM_CLS_ATOMS` is the atom count (0 = per-class bitmaps).
