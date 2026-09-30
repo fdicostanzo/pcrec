@@ -327,6 +327,16 @@ summary row does not claim that flag's credit: its value is
 `RX_ENGINE_WHY` overflow text §2.11 states — `docs/spec/ir_listing.md` has
 the nine-token vocabulary.
 
+**[PF-DROP] (2026-09-30, D135) A FOURTH OFF-ROUTE: THE EMITTED-SIZE CAP.**
+A hybrid whose ARTIFACT (not its DFA build) is over an emitted-size cap, and
+still over it after the [OPT-4] collapse (§2.17), has its prefilter dropped by
+the size-cap ladder's last rung (`limits.md` §8, "The size-cap ladder") and
+stamps `RX_VM_PREFILTER "none"` with `RX_VM_PREFILTER_WHY "size cap retry,
+hybrid N > CAP"` — the one `"none"` that stamp is written beside, since it is
+the one no flag explains. The artifact is otherwise the `-fno-prefilter` one.
+Never under `-fprefilter` (the rung is not offered; the compile refuses), and
+denied with every other slower-to-fit rung by `--fast-or-fail`.
+
 **[OPT-4] (2026-08-29) THE DROP IS NOW THE SECOND RUNG, NOT THE FIRST.**
 Before the prefilter is dropped, the fallback tries ONE more thing: building
 it from the count-collapsed language (§2.17). The ground for dropping it was
@@ -1249,10 +1259,14 @@ decides.
   first.
 - `-fno-prefilter-collapse` denies BOTH rungs. On a pattern whose exact build
   succeeds it changes nothing and the artifact is byte-identical; on one that
-  needed a rung it turns a compile into a REFUSAL, or a prefilter into none.
-  **Observing that refusal is the main thing this flag now buys a caller** —
-  someone who would rather be told their pattern is oversize than be handed a
-  superset prefilter.
+  needed a rung it turns a superset prefilter into none. **[PF-DROP] (D135):
+  on the SIZE rung that no longer means a refusal** — the size-cap ladder's
+  next row drops the prefilter and the pattern ships with none
+  (`<PREFIX>_VM_PREFILTER_WHY "size cap retry, hybrid N > CAP"`), so what
+  this flag buys a caller is "never a superset prefilter", not "refuse". A
+  caller who would rather be told their pattern is oversize than be handed
+  any slower artifact passes `--fast-or-fail` (`limits.md` §8, "The size-cap
+  ladder").
 
 **TWO CONJUNCTS ARE CORRECTNESS AND NEITHER FLAG REACHES THEM.** The collapse
 never applies when (a) these machines' sole customer is not the VM's prefilter
@@ -1356,9 +1370,10 @@ and this table carried it stale until [OPT-4.1] removed it):
 oversight.** Under ruling B `-fno-prefilter-collapse` denies the two ATTEMPTS.
 On a pattern whose exact build succeeds it changes nothing, so the honest stamp
 is whatever the default stamps — the byte-for-byte recovery promise. On a
-pattern that needed an attempt it turns a compile into a REFUSAL or a prefilter
-into none, and neither of those leaves an artifact carrying this macro. A value
-no witness can reach is a value that should not exist.
+pattern that needed an attempt it turns a prefilter into none (on the size
+rung since [PF-DROP], the ladder's prefilter drop; before it, a REFUSAL), and
+neither leaves an artifact carrying this macro. A value no witness can reach
+is a value that should not exist.
 
 The two lines are two readers of one derivation, written at
 `src/core/compile.c`'s build gate: `prefilter_lang_why` and

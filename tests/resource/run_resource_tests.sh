@@ -1289,7 +1289,7 @@ if pfd_emit "$WORKDIR/pfd/x.c" "xwd default" -e utf8 --pattern "$PFD_WIT"; then
     pfd_pf=$(grep -oE '^#define RX_VM_PREFILTER .*' "$WORKDIR/pfd/x.c" | sed 's/.*PREFILTER //;s/"//g')
     pfd_why=$(grep -oE '^#define RX_VM_PREFILTER_WHY .*' "$WORKDIR/pfd/x.c" | sed 's/.*WHY //;s/"//g')
     if [ "$pfd_sel" = size-cap-retry ] && [ "$pfd_pf" = none ]; then
-        ok "[PF-DROP] '$PFD_WIT' -e utf8 compiles at the default via the prefilter-drop rung ($(wc -c < "$WORKDIR/pfd/x.c") B, RX_ENGINE_SEL '$pfd_sel', RX_VM_PREFILTER '$pfd_pf')"
+        ok "[PF-DROP] '$PFD_WIT' -e utf8 compiles at the default via the prefilter-drop rung ($(wc -c < "$WORKDIR/pfd/x.c" | tr -d " ") B, RX_ENGINE_SEL '$pfd_sel', RX_VM_PREFILTER '$pfd_pf')"
     else
         bad "[PF-DROP] '$PFD_WIT' compiled but stamps RX_ENGINE_SEL '$pfd_sel' / RX_VM_PREFILTER '$pfd_pf', expected 'size-cap-retry' / 'none' — something other than the last rung made it fit"
     fi

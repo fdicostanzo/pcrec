@@ -2303,6 +2303,7 @@ enum {
      *   | [OPT-4] prefilter collapse | VM hybrid | `_DFA_PREFILTER` set, `_PREFILTER_LANG_WHY "count-collapsed"` |
      *   | [K53-SELRETRY] anchored drop | DFA | `_DFA_MATCH "search-filter"` (unaffected: `_DFA_TABLE`) |
      *   | [K59-PREMUL] premul drop | DFA | `_DFA_TABLE` "indexed"/"mixed" where it would otherwise read "premultiplied" (unaffected: `_DFA_MATCH`, unless rung 1 ALSO fired) |
+     *   | [PF-DROP] prefilter drop | VM hybrid | `_VM_PREFILTER "none"` with `_VM_PREFILTER_WHY "size cap retry, hybrid N > CAP"` (D135; may follow the [OPT-4] collapse on one compile) |
      *
      * A DFA-engine artifact reading this value with BOTH `_DFA_MATCH
      * "search-filter"` and `_DFA_TABLE` off "premultiplied" had both rungs

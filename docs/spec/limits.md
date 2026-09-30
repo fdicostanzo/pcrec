@@ -285,9 +285,14 @@ refused at 670,952 code bytes under the exact language and ships at 152,259
 through the retry, stamping
 `RX_VM_PREFILTER_LANG_WHY "size cap retry, exact 670952 > 500000"`.
 
-`-fno-prefilter-collapse` denies both rungs, so a caller who would rather be
-refused than handed a superset prefilter can be. The retry never applies where
-the DFA is the ENGINE, where the language must be exact.
+`-fno-prefilter-collapse` denies both rungs, so a caller who would rather not
+be handed a superset prefilter is not. **[PF-DROP] (D135) that caller is no
+longer REFUSED on the size cap, though**: the size rung is one row of the
+size-cap ladder (§8, "The size-cap ladder"), and with it denied the ladder's
+next row DROPS the prefilter instead — no superset, the same answers, slower.
+A caller who would rather be refused than handed ANY slower artifact passes
+`--fast-or-fail` (§8). The retry never applies where the DFA is the ENGINE,
+where the language must be exact.
 
 **[OPT-4.1] (2026-08-30) AND IT DOES NOT APPLY WHERE THE COLLAPSED LANGUAGE IS
 NULLABLE**, which is the one case where the retry ships NO prefilter rather
@@ -738,6 +743,47 @@ worst is 283,083 code bytes and 651,415 total, on every optimization
 axis — and both are checked AFTER emission and BEFORE anything is
 written, so an over-limit compile produces a refusal and no file.
 
+### The size-cap ladder, and `--fast-or-fail` ([PF-DROP], D135)
+
+**Before either limit refuses, pcrec tries a smaller form of the same
+artifact, one rung at a time, and every rung is listed here.** The rungs are
+ONE ordered table (`fit_rungs[]` in `src/core/compile.c`); the first row that
+applies to the refused artifact and is not denied is taken, and the compile
+re-emits. A row applies only where its contributor exists (engine scope
+below). Every rung costs run time, never an answer; the three drop rungs
+print the loud note shown in the next section.
+
+| order | rung | engine | what it gives up | measured cost (Mac, directional) | own deny | degrading |
+|---|---|---|---|---|---|---|
+| 1 | `unroll-rescue` — a smaller unroll factor K picked to fit ([ART-SIZE], §3 of `docs/design/artifact_size_term.md`) | VM | the unrolled counter copies | ~1.03-1.06x on a counter-rung witness; parity on the size term's own selected population | `-fno-size-term` (the whole term) | yes |
+| 2 | `prefilter-collapse` — the prefilter built from the count-collapsed language ([OPT-4]) | VM hybrid | a filter that dismisses exactly the non-matching starts | ~1.03x where both forms build | `-fno-prefilter-collapse` | yes |
+| 3 | `drop-anchored` — the optional anchored match-here machine ([K53-SELRETRY]) | DFA | `<prefix>_match`'s one-pass form | `_match` pays a reverse pass, ~50% of the DFA's time | none | yes |
+| 4 | `drop-premul` — the premultiplied DFA transition table ([K59-PREMUL]) | DFA | one add per step | ~1.05x (this lane) to ~1.27x (`opt3_dfa_scan_measurement.md`) on scan-bound subjects | none | yes |
+| 5 | `drop-prefilter` — the VM hybrid's prefilter itself ([PF-DROP], D135) | VM hybrid | candidate skipping; the VM tries every start | up to ~4x where matches are sparse (1.75-3.95x on its witness); FASTER (0.2-0.5x) where nearly every position matches | none | yes |
+
+The order is by measured cost, cheapest first, and the engine scope makes
+it bind only within one engine: rows 1, 2 and 5 are the VM's (1 runs inside
+every VM attempt, so it is tried before any retry), rows 3 and 4 the DFA's.
+The measurements are `docs/dev/lanes/pfdrop_report.md` §2 (Mac, directional;
+a Linux re-measure is the manager's to schedule).
+
+**`--fast-or-fail`** (`PCREC_FAST_OR_FAIL`, `cli.md`) denies every row the
+table marks degrading — today all five — so an artifact over either limit is
+REFUSED rather than shipped slower, with the ordinary diagnostic quoting the
+caller's own unrescued artifact. It is one predicate on the table's rows, not
+a test inside each rung, and a rung that costs no run time would be marked
+not degrading and stay allowed. A pattern that fits is byte-identical with or
+without it. Each rung's own deny flag still applies on its own.
+
+**What the prefilter drop stamps.** `<PREFIX>_VM_PREFILTER "none"`,
+`<PREFIX>_ENGINE_SEL "size-cap-retry"`, and `<PREFIX>_VM_PREFILTER_WHY "size
+cap retry, hybrid N > CAP"` (the refused artifact's bytes and the cap it
+exceeded), written only on this rung's artifacts. Apart from those two
+lines the artifact is the caller's own `-fno-prefilter` one. It is never
+taken under `-fprefilter` (which demands a prefilter) or on a [SEL-1]
+DFA-overflow retry. Witness: `(\p{Xwd})` under `-e utf8`, refused at
+1,026,588 bytes before D135 and shipped at ~31 KB after.
+
 ### The optional-contributor drop, before either cap refuses ([K53-SELRETRY], [K59-PREMUL])
 
 **Before either limit refuses, pcrec drops what the artifact did not need
@@ -788,6 +834,11 @@ premultiplied DFA transition table -- slower per-byte scan dispatch,
 measured ~1.27x on scan-bound subjects
 (docs/dev/opt3_dfa_scan_measurement.md). Raise --max-emit-bytes/
 --max-emit-code-bytes to keep the faster form, or accept the fit.
+pcrec: note: the emitted-size cap forced a smaller artifact: dropped the VM
+hybrid's prefilter -- the VM tries every start position itself, measured up
+to ~4x slower where matches are sparse (docs/dev/lanes/pfdrop_report.md).
+Raise --max-emit-bytes/--max-emit-code-bytes to keep the faster form, or
+accept the fit.
 ```
 
 Rung 1's cost is `<prefix>_match`'s reverse pass (measured at ~50% of the
@@ -810,6 +861,12 @@ own population for it is zero, exactly as rung 1's was before it landed.
 the diagnostic quotes are the SMALLER artifact's — the smallest pcrec could
 make without changing an answer, which is the honest number for a caller
 deciding how far to raise a cap.
+
+**[PF-DROP] (D135) FOR A VM HYBRID THE GAP BELOW IS NOW NARROWER**: a
+`+2`-induced overflow on a hybrid reaches the size-cap ladder's VM rows like
+any other overflow (the collapse, then the prefilter drop), so it ships
+smaller and slower rather than refusing. A prefilter-free VM artifact still
+has no rung, which is what the paragraph below records.
 
 **A `+2`-INDUCED OVERFLOW STILL HAS NO RUNG — RECORDED HERE AS A GAP, NOT A
 PROMISE** (`docs/design/opt_dial_design.md` §6.2b). `--tune=speed`/

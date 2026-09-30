@@ -33,10 +33,16 @@ SAB_COUNT=1
 # certifying nothing and says so rather than scoring.
 SAB_REACH='"$PCREC" --features unicode-props -e utf8 -p rx -o - --pattern "\p{L}" | grep -o "size-cap-retry" | head -1'
 SAB_REACH_EXPECT='size-cap-retry'
-SAB_BEFORE='                cx.size_cap_refused &&
-                size_drop_rung == SDR_NONE &&
-                cx.job && cx.job->anchored_ok;'
-SAB_AFTER='                false;   /* SABOTAGE S237: the rung is never offered. */'
+SAB_BEFORE='    return s->size_drop_rung == SDR_NONE &&
+           s->cx->job && s->cx->job->anchored_ok;'
+SAB_AFTER='    (void)s; return false;   /* SABOTAGE S237: the rung is never offered. */'
+# RE-ANCHORED 2026-09-30 (lane pfdrop, D135): the size-cap ladder became ONE
+# first-match table (`fit_rungs[]`, src/core/compile.c) and this rung's
+# eligibility moved, conjunct for conjunct less the shared
+# `cx.size_cap_refused` (now the walk's own guard), into its row's predicate
+# `fit_anchored_applies`. Intent unchanged and re-verified: a constant
+# `false` there makes the anchored-machine drop never taken, and only it —
+# the walk falls through to the premul row exactly as the old chain did.
 # RE-ANCHORED 2026-09-17 (lane k59rung): [K59-PREMUL] tightened this rung's
 # own budget conjunct from `size_drop_rung < SDR_MAX` to
 # `size_drop_rung == SDR_NONE` (SDR_MAX grew to 2 with the second rung, and

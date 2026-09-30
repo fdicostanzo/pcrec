@@ -36,10 +36,13 @@ SAB_COUNT=1
 # the RX_ENGINE_SEL stamp the rung is a co-writer of.
 SAB_REACH='"$PCREC" --features unicode-props -e utf8 -p rx -o - --pattern "[^\p{C}\p{M}\p{P}]" | grep -o "size-cap-retry" | head -1'
 SAB_REACH_EXPECT='size-cap-retry'
-SAB_BEFORE='            const bool premul_eligible =
-                cx.size_cap_refused &&
-                size_drop_rung < SDR_NO_PREMUL &&
-                cx.job && cx.job->fit.chosen == ENGM_DFA &&
-                !(defo.flags & PCREC_NO_PREMUL_TABLE);'
-SAB_AFTER='            const bool premul_eligible =
-                false;   /* SABOTAGE S252: the rung is never offered. */'
+SAB_BEFORE='    return s->size_drop_rung < SDR_NO_PREMUL &&
+           s->cx->job && s->cx->job->fit.chosen == ENGM_DFA &&
+           !(s->flags & PCREC_NO_PREMUL_TABLE);'
+SAB_AFTER='    (void)s; return false;   /* SABOTAGE S252: the rung is never offered. */'
+# RE-ANCHORED 2026-09-30 (lane pfdrop, D135): the rung's eligibility moved
+# into its `fit_rungs[]` row's predicate `fit_premul_applies`
+# (src/core/compile.c), conjunct for conjunct less the shared
+# `cx.size_cap_refused`. Intent unchanged and re-verified: the premul drop
+# is never taken, and the walk falls through to the next row, which for a
+# DFA artifact is the refusal.
