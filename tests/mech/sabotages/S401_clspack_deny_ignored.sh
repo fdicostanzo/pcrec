@@ -8,7 +8,7 @@ SAB_ID="S401-clspack-deny-ignored"
 SAB_FILE="src/gen/emit_vm.c"
 SAB_SUITES="clspack"
 SAB_DESC="vm_cls_tables no longer maps PCREC_NO_CLS_PACK onto the atom row's deny, so -fno-cls-pack builds still share one atom table"
-SAB_DOC_FIGURE="(measured below at landing)"
+SAB_DOC_FIGURE="MEASURED solo 2026-09-30 at the clspack tip: clspack:4fail/16pass -- the three PART 1 site-artifact rows and [deny] DETECTED."
 SAB_REACH='"$PCREC" --engine=vm -p rx -o - --pattern "([aeiou])[bcdfg][hjklm][npqrs][tvwxz][AEIOU][BCDFG][HJKLM][NPQRS][TVWXZ][02468]"'
 SAB_REACH_EXPECT='#define RX_VM_CLS_ATOMS 12'
 SAB_EXPECT=DETECTED

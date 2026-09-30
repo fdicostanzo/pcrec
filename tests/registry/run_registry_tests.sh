@@ -593,17 +593,20 @@ fi
 # 141 -> 144 at [CLS-TREE] S4 (2026-09-30): `-fno-cls-kit` (`PCREC_NO_CLS_KIT`,
 # bit 36), one more single-bit triple, the same shape. Measured: 144 PASS,
 # 0 failed.
+#
+# 144 -> 147 at [OPT-CLSPACK] (2026-09-30): `-fno-cls-pack`
+# (`PCREC_NO_CLS_PACK`, bit 38), one more single-bit triple, the same shape.
 axesn="$(grep -c '^PASS: ' "$AXESOUT" || true)"
-if [ "$axesn" -ne 144 ]; then
+if [ "$axesn" -ne 147 ]; then
     if grep -q "^checks failed: 0" "$AXESOUT"; then
-        echo "registry: axes_registry_check COVERAGE CHANGED — $axesn passing checks, expected 144." >&2
+        echo "registry: axes_registry_check COVERAGE CHANGED — $axesn passing checks, expected 147." >&2
         echo "registry:   if you added or removed axes/checks on purpose, update this number" >&2
         echo "registry:   in the same commit; if not, coverage was removed" >&2
     else
         axesnf="$(sed -n 's/^checks failed: //p' "$AXESOUT" | tail -1)"
-        echo "registry: axes_registry_check shows $axesn passing checks (144 expected; ${axesnf:-?} failed," >&2
+        echo "registry: axes_registry_check shows $axesn passing checks (147 expected; ${axesnf:-?} failed," >&2
         echo "registry:   so a lower count is expected here). Fix the failures first; then this" >&2
-        echo "registry:   number must return to 144 — if it does not, coverage was removed too" >&2
+        echo "registry:   number must return to 147 — if it does not, coverage was removed too" >&2
     fi
     rc=1
 fi

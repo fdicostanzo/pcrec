@@ -11,7 +11,7 @@ SAB_FILE="src/gen/emit_vm.c"
 SAB_SUITES="clspack harness"
 SAB_HARNESS_TARGET="tests/base/clspack_atoms.rxt"
 SAB_DESC="vm_cls_tables chooses the atom table but never re-spells the program's bitmap reads"
-SAB_DOC_FIGURE="(measured below at landing)"
+SAB_DOC_FIGURE="MEASURED solo 2026-09-30 at the clspack tip: clspack:10fail/10pass, corpus:46fail/33pass -- every atom artifact reads a bitmap it lacks and fails to build DETECTED."
 SAB_REACH='"$PCREC" --engine=vm -p rx -o - --pattern "([aeiou])[bcdfg][hjklm][npqrs][tvwxz][AEIOU][BCDFG][HJKLM][NPQRS][TVWXZ][02468]"'
 SAB_REACH_EXPECT='#define RX_VM_CLS_ATOMS 12'
 SAB_EXPECT=DETECTED
