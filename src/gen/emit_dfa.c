@@ -48,7 +48,7 @@
  * abi ritual fires next, bump this ONE constant; grep for its old value
  * finds both emission sites plus every out-of-tree reader the ritual's own
  * site list already enumerates. */
-#define PCREC_ARTIFACT_ABI 48
+#define PCREC_ARTIFACT_ABI 49
 
 /* Renders one byte of pattern-derived text safely into a C block comment, escaping whatever would close or falsely open the comment.
  *
@@ -2654,6 +2654,16 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
                                           /* [OPT-CLSPACK] the VM's shared
                                            * atom table, the same. */
                                           PCREC_NO_CLS_PACK |
+                                          /* [OPT-HYB-RESEED] the hybrid's
+                                           * adaptive retry: both arms attempt
+                                           * only positions no match can be
+                                           * skipped past, so no answer moves,
+                                           * and masked so an artifact the
+                                           * table does not reach is
+                                           * byte-identical under the flag.
+                                           * `<PREFIX>_VM_RESEED` is where
+                                           * what the emitter DID is recorded. */
+                                          PCREC_NO_HYB_RESEED |
                                           /* [K68] (FIXED) the three [OPTLOOP.1]
                                            * batch-1 whole-window pre-check bits
                                            * join the mask for the mask's own
@@ -6055,6 +6065,39 @@ static void dfa_cand_scan(Ctx *cx, CandScan *cs)
             cs->byte = us.cand.byte;
         }
     }
+}
+
+/* How often the artifact's candidate-start scan stops, in ppm of subject
+ * bytes: the prior's MASS over the byte set the emitted scan tests, or
+ * 1,000,000 when it tests none (every position is then a candidate).
+ *
+ * [OPT-HYB-RESEED] Read off `dfa_cand_scan` and axis B's selection — the
+ * derivations the scan is emitted from — so it cannot price a scan the
+ * artifact does not carry: a single-byte scan (memchr, or an offset/run row's
+ * scan byte) is that byte, a byte-class row is its candidate set. The prior's
+ * NONE is answered inside the MASS primitive (cardinality), never here
+ * (D126 Q4). The VM hybrid's re-seed table (src/gen/emit_vm.c) is the one
+ * reader. */
+unsigned pcrec_dfa_cand_ppm(Ctx *cx)
+{
+    uint8_t set[256];
+    CandScan cs;
+    memset(set, 0, sizeof set);
+    dfa_cand_scan(cx, &cs);
+    if (cs.byte >= 0) {
+        set[cs.byte] = 1;
+    } else {
+        UnanchStart us;
+        const DfaPf *pf;
+        if (!pcrec_artifact_has_dfa_scan(cx) || cx->job->engine == PCREC_ENG_ATTEMPT)
+            return 1000000u;
+        unanch_start(cx, &us);
+        pf = dfa_pf_of(cx, &us);
+        if (strcmp(pf->c.name, "byte-class") && strcmp(pf->c.name, "byte-class-bounded"))
+            return 1000000u;
+        memcpy(set, us.cand.set, sizeof set);
+    }
+    return pcrec_find_set_ppm(cx, set);
 }
 
 /* Does the artifact's search route try exactly ONE start position?

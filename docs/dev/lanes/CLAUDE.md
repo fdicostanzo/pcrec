@@ -3567,3 +3567,20 @@ never edited afterwards.
   find-all loop's, and `p = next_pos(s, n, end - 1)` repairs five patterns'
   19,608-subject divergences with no engine or abi change. Memo
   `docs/dev/k75_measurement.md`; evidence in `k75m_evidence/` (own CLAUDE.md).
+- `reseed_report.md` — [OPT-HYB-RESEED] (2026-09-29, lane reseed, opus): the
+  VM hybrid's retry, re-seeding from the prefilter or stepping, chosen per
+  CALL by ONE first-match table (`pcrec_reseed_rows`: exact /
+  adaptive-dense / adaptive / fixed), with `-fno-hyb-reseed` (bit 37),
+  `<PREFIX>_VM_RESEED` and abi 46 → 47 (49 at the land5 landing, after
+  the S4/CLSPACK 48). Read §1 for the five deviations from
+  the brief. The sharpest is that N is not one number: the step cost varies
+  ~5× with the program's frame discipline, so the calibration is one row per
+  class. The report also carries the D77 census (439/455 clamp-free
+  over-approximating hybrids), the identity sweep (6,756 rows, 0
+  violations), the per-startpos answer differential, S370/S371, the Mac
+  scratch table and a DRAFT bench ask (not sent). Design:
+  `docs/design/hyb_reseed.md`. **§10 is fix lane `reseedfix`'s record
+  (2026-09-30, after the r1 panel) and supersedes the earlier sections
+  where they disagree**: a fifth row `clamped`, a smaller adaptive text,
+  the timing re-run with its noise floor (×0.62 XCALL trigger cell), and
+  §4's six DIFFs traced to the differential's own driver.
