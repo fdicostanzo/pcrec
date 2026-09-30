@@ -115,11 +115,22 @@ rows are re-verified by `make test-cpset-structure` (§5).
     Each moved from a `B1` bitmap matcher to one range compare. Example:
     `rx_wcls0_b[4] = {255,...}` plus a load became `return 1` after the
     bound check. The instrument control passed.
-  - HEAD, with the abi digit normalized to 49 (`/tmp/clss2_h`): **(filled
-    below)**.
+  - HEAD `98deee54`, with the abi digit normalized to 49 (`/tmp/clss2_h`):
+    **the same 10 movers and nothing else**, 13,832 identical, 2,167 both
+    refuse. REACH is 1,582/1,582, and CONTROL 1 passed. CONTROL 2
+    (`--control`) read FAIL, but that is an artefact of the normalization,
+    not a finding. It builds its perturbed compiler from the tree at abi 52
+    and compares it against the digit-normalized abi-49 binary, so every
+    byte triple "moves" by the digit (163 of them). It was not run on
+    commit 1, and it is owed on a merged tree where both sides share a digit
+    (log: `/tmp/clss2_runs/clsid2.log`).
 - **Size-leaning positions, `docs/dev/lanes/clss2_tune_sweep.py`**: every
   corpus pattern at `--tune=-2` and `-1`, default route and `--engine=vm`,
-  against 92f4c9b7, with the digit normalized. **(filled below)**
+  against 92f4c9b7, with the digit normalized. The run is **OWED**, as step
+  one of the detached chain2 (§6). Its verdict line is `RESULT: PASS|FAIL`
+  in `/tmp/clss2_runs/chain2/tunesweep.log`, and its TSV is written to
+  `docs/dev/lanes/clss2_tune_sweep.tsv` in the validation worktree
+  `worktrees/clss2v` (copied into the chain2 directory).
 - **FORM-CHAR's default `.text` (Q1 evidence)**, ci-256 on the forced VM,
   gcc-16 -O2 Mach-O:
 
@@ -168,11 +179,40 @@ rows are re-verified by `make test-cpset-structure` (§5).
 | `make test-codegen` (commit 1 tree) | 11/12 scripts. The only red is the accepted darwin `nm could not read arm_a.o` (run_inline_capability.sh) |
 | `run_tune_dial.sh` | 62/0 |
 | `run_clspack.sh` (HEAD) | 42/0 |
-| (filled below) | |
+| `cls_identity.py --ref 92f4c9b7` (commit 1, and HEAD normalized) | the 10 predicted wide-class movers only (§3) |
+| `make test-clskit`, `test-cpset-structure`, `test-registry`, `test-rxtsource`, `test-tune-dial` on commit 1 | chain1, detached, **results OWED** in `/tmp/clss2_runs/chain1/summary.txt` (last line `CHAIN COMPLETE`) |
 
 ## 6. Owed
 
-(filled below)
+Everything below runs detached (`nohup caffeinate -s`). There is one line
+per step in the summary file, and its last line is `CHAIN COMPLETE`. The
+verdict is make's `*** [test-X] Error` count, which each summary line
+carries.
+
+- **chain1** (`/tmp/clss2_runs/chain1/summary.txt`, tree `9ff80d8d`, commit
+  1): `test-codegen` is done (above), then `test-clskit`,
+  `test-cpset-structure`, `test-registry`, `test-rxtsource` and
+  `test-tune-dial`.
+- **chain2** (`/tmp/clss2_runs/chain2/summary.txt`) starts when chain1
+  completes, on tree `f024bc5b` = HEAD, in the validation worktree
+  `worktrees/clss2v`:
+  1. the -2/-1 mover census (§3);
+  2. the six suites again on HEAD;
+  3. mech rows **S430 S431 S432** and the re-anchored **S228 S400 S403**,
+     solo, one row per run. The expected verdict is DETECTED. For S228,
+     S400 and S403, a detection rather than an anomaly is also the
+     re-anchor proof;
+  4. the whole `.rxt` corpus under `RXTFLAGS="--tune=-2"` on the default
+     route and under `--engine=vm`. That is the oracle-backed answer check
+     at the position the kit fires, standing in for `make test-axes` over
+     `--tune`, which runs all four positions and is multi-hour.
+- **Not run:** `make test-axes AXES="-fno-cls-kit"`. At the default position
+  the flag moves only the atom row, which is already swept. Its S2 meaning
+  is at -2/-1, and step 4 plus the PART 4/5 differentials cover that. Run it
+  if the manager wants the formal sweep.
+- **Linux full `make test`** is the manager's to schedule.
+- `worktrees/clss2v` is a detached validation worktree. Remove it after
+  chain2 with `git worktree remove`.
 
 ## 7. Open questions for Frank (the manager reopened Q1-Q4)
 
