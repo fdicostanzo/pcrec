@@ -129,6 +129,9 @@ PCREC_AXIS(PCREC_NO_LIT_RUN,       "-fno-lit-run",       0, "", PCREC_AXIS_DEFAU
  * context node (src/parse/ctxnode.c). ENGINE-SELECTING like atomic-discharge:
  * denied, the lookaround stays VM-only. */
 PCREC_AXIS(PCREC_NO_CTX_NODE,      "-fno-ctx-node",      0, "", PCREC_AXIS_DEFAULT_ON)
+/* [CLS-TREE] S4: the VM's wide-class test as decode + a kit matcher (D129
+ * Q2's one kit-level deny); denied, the byte alternation. */
+PCREC_AXIS(PCREC_NO_CLS_KIT,       "-fno-cls-kit",       0, "", PCREC_AXIS_DEFAULT_ON)
 
 /* ---- emitted-shape axes: the VM entry chain and the unroll ladder ------ */
 PCREC_AXIS(PCREC_NO_TIERED_ENTRY, "-fno-tiered-entry", 0, "", PCREC_AXIS_DEFAULT_ON)

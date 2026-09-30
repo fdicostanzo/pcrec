@@ -941,6 +941,17 @@ enum {
  * `#define` for bit 32's reason. */
 #define PCREC_NO_CTX_NODE PCREC_BIT(35)
 
+/* [CLS-TREE] S4 the CLASS-MATCHER KIT on the VM (docs/spec/tuning.md §2.33;
+ * D129 Q2's one kit-level deny). A VM program tests a wide class — one
+ * whose members encode deeper than one code unit — by decoding ONE
+ * character and running a class-matcher function the `--tune` position
+ * selects. Denied, every wide class on the VM is the byte alternation this
+ * compiler emitted before abi 47. It accepts exactly the same subjects
+ * either way, so it is masked out of `rx_info.flags`;
+ * `<PREFIX>_VM_CLS_KIT` counts the matchers the emitter wrote. Deny-only.
+ * A `#define` for bit 32's reason. */
+#define PCREC_NO_CLS_KIT PCREC_BIT(36)
+
 /* [ENG-BREP] the counter rung's UNROLL FACTOR, K (counterk_design.md §4.1;
  * eng_brep_design.md §4.5's "K must not become a per-pattern heuristic in v1",
  * held strictly by D47's ADDENDUM). ONE per-artifact constant: every

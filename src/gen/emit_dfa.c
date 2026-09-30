@@ -2559,6 +2559,12 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
                                            * `-fno-ctx-node`. `RX_ENGINE` is
                                            * where what it changed shows. */
                                           PCREC_NO_CTX_NODE |
+                                          /* [CLS-TREE] S4 the VM's
+                                           * class-matcher kit, the same:
+                                           * answer-identical, and
+                                           * `<PREFIX>_VM_CLS_KIT` records
+                                           * what the emitter did. */
+                                          PCREC_NO_CLS_KIT |
                                           /* [K68] (FIXED) the three [OPTLOOP.1]
                                            * batch-1 whole-window pre-check bits
                                            * join the mask for the mask's own

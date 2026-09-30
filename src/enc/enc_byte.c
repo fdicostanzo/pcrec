@@ -264,18 +264,26 @@ static const char defs_back_step[] =
 
 static const PcrecEncEntry entries_byte[] = {
     { PCREC_ENCE_NEXT_POS,      false,
-      decls_byte_doc,      decls_byte,      defs_byte_doc,      defs_byte      },
+      decls_byte_doc,      decls_byte,      defs_byte_doc,      defs_byte,
+      0, false },
     { PCREC_ENCE_SPAN,          true,
-      decls_bref_doc,      decls_bref,      defs_bref_doc,      defs_bref      },
+      decls_bref_doc,      decls_bref,      defs_bref_doc,      defs_bref,
+      0, false },
     { PCREC_ENCE_SPAN_CASELESS, true,
-      decls_bref_ci_doc,   decls_bref_ci,   defs_bref_ci_doc,   defs_bref_ci   },
+      decls_bref_ci_doc,   decls_bref_ci,   defs_bref_ci_doc,   defs_bref_ci,
+      0, false },
     { PCREC_ENCE_BACK_STEP,     true,
-      decls_back_step_doc, decls_back_step, defs_back_step_doc, defs_back_step },
+      decls_back_step_doc, decls_back_step, defs_back_step_doc, defs_back_step,
+      0, false },
     /* [VAR] NO `$_var_valid` ROW HERE, and the ABSENCE is the mechanism:
      * every byte string is a valid `byte` string, so this backend has no
      * answer to give and the emitter (asking `pcrec_enc_has_entry`) emits no
-     * check at all. `entries_utf8[]` carries one. */
-    { 0, false, NULL, NULL, NULL, NULL }
+     * check at all. `entries_utf8[]` carries one.
+     *
+     * [CLS-TREE] S4 NO `$_decode` ROW EITHER, for the same kind of reason:
+     * every class here is one unit deep, so no wide-class node exists and
+     * nothing would call it. */
+    { 0, false, NULL, NULL, NULL, NULL, 0, false }
 };
 
 /* [K49] THE UNANCHORED RETRY ADVANCE (enc.h's `advance` field). One byte is

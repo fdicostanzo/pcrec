@@ -184,14 +184,54 @@ static const char u8_defs_bref_ci[] =
 "    return c;\n"
 "}\n"
 "\n"
+"/* The walk is per CHARACTER on BOTH sides and the two cursors advance\n"
+" * independently, which is the whole difference from the exact compare: the\n"
+" * reference's character and the subject's may be different byte lengths.\n"
+" * The prefix reported on failure is the SUBJECT bytes that did compare\n"
+" * equal, because that is the work this call actually did. */\n"
+"ptrdiff_t $_span_match_caseless(const unsigned char *s, size_t n,\n"
+"                                const unsigned char *ref, size_t reflen,\n"
+"                                size_t at)\n"
+"{\n"
+"    size_t i = 0, j = at;\n"
+"    while (i < reflen) {\n"
+"        unsigned x = 0, y = 0;\n"
+"        size_t lx = $_decode(ref, reflen, i, &x);\n"
+"        size_t ly = (j < n) ? $_decode(s, n, j, &y) : 0;\n"
+"        if (lx == 0 || ly == 0 ||\n"
+"            $_span_ci_fold(x) != $_span_ci_fold(y))\n"
+"            return -(ptrdiff_t)(j - at) - 1;\n"
+"        i += lx;\n"
+"        j += ly;\n"
+"    }\n"
+"    return (ptrdiff_t)(j - at);\n"
+"}\n";
+
+/* ---- entry 8: the ONE-CHARACTER DECODE ([CLS-TREE] S4) --------------------
+ *
+ * cls_tree_design.md §2.2: the VM's wide-class test decodes one character and
+ * runs the kit's predicate on it, and this is the decoder. It is stage 4's
+ * caseless-compare decoder VERBATIM, moved out of that entry rather than
+ * copied: ONE decoder, so the caseless span compare `requires` it. Its
+ * ill-formed set is exactly the lowered automaton's — which is the whole
+ * correctness seam between the two routes a wide class can take — and the
+ * doc comment below says so in the artifact.
+ *
+ * `static inline` and declared NOWHERE (`decls` is empty): it is called once
+ * per character inside engine bodies, and an exported function is
+ * interposable under -fPIC, so gcc would not inline it into a shared-object
+ * build. That is `inline_def`'s meaning (enc.h). */
+static const char u8_defs_decode_doc[] =
 "/* Decode the character at s[p], bounded by `end`. Returns its length in\n"
 " * bytes, or 0 when the sequence is truncated or ILL-FORMED -- and the\n"
 " * ill-formed set is exactly the automaton's (overlong forms, surrogates and\n"
 " * code points above U+10FFFF are excluded from every lowered class), so a\n"
-" * subject this compare rejects is one no other part of the artifact would\n"
+" * subject this decoder rejects is one no other part of the artifact would\n"
 " * have matched either. This matcher's rule is that ill-formed input matches\n"
-" * nothing, never that it is an error. */\n"
-"static size_t $_span_ci_decode(const unsigned char *s, size_t end, size_t p,\n"
+" * nothing, never that it is an error. */\n";
+
+static const char u8_defs_decode[] =
+"static inline size_t $_decode(const unsigned char *s, size_t end, size_t p,\n"
 "                               unsigned *cp)\n"
 "{\n"
 "    unsigned char b = s[p];\n"
@@ -210,29 +250,6 @@ static const char u8_defs_bref_ci[] =
 "    if (v < floor || v > 0x10FFFFu || (v >= 0xD800u && v <= 0xDFFFu)) return 0;\n"
 "    *cp = v;\n"
 "    return len;\n"
-"}\n"
-"\n"
-"/* The walk is per CHARACTER on BOTH sides and the two cursors advance\n"
-" * independently, which is the whole difference from the exact compare: the\n"
-" * reference's character and the subject's may be different byte lengths.\n"
-" * The prefix reported on failure is the SUBJECT bytes that did compare\n"
-" * equal, because that is the work this call actually did. */\n"
-"ptrdiff_t $_span_match_caseless(const unsigned char *s, size_t n,\n"
-"                                const unsigned char *ref, size_t reflen,\n"
-"                                size_t at)\n"
-"{\n"
-"    size_t i = 0, j = at;\n"
-"    while (i < reflen) {\n"
-"        unsigned x = 0, y = 0;\n"
-"        size_t lx = $_span_ci_decode(ref, reflen, i, &x);\n"
-"        size_t ly = (j < n) ? $_span_ci_decode(s, n, j, &y) : 0;\n"
-"        if (lx == 0 || ly == 0 ||\n"
-"            $_span_ci_fold(x) != $_span_ci_fold(y))\n"
-"            return -(ptrdiff_t)(j - at) - 1;\n"
-"        i += lx;\n"
-"        j += ly;\n"
-"    }\n"
-"    return (ptrdiff_t)(j - at);\n"
 "}\n";
 
 /* ---- entry 4: the lookbehind back-step ----------------------------------
@@ -346,7 +363,13 @@ static const char u8_defs_back_step[] =
  * shapes. The two agree on what well-formed means — same lead-byte families,
  * same overlong floors, same surrogate and U+10FFFF exclusions, which are the
  * automaton's own — and that agreement is the thing to preserve if either
- * moves. */
+ * moves.
+ *
+ * [CLS-TREE] S4 moved that decoder out of the caseless entry into its own
+ * fold-free `$_decode` entry, so the fold-table reason above no longer
+ * holds. Rewriting this loop over `$_decode` would move every var-bearing
+ * utf8 artifact for no measured gain, so it is left as is (D77); the
+ * agreement between the two is still the thing to preserve. */
 static const char u8_decls_var_valid_doc[] =
 "/* $_var_valid -- is a caller-supplied value well-formed under this\n"
 " * artifact's encoding? (pcrec [VAR], variables_common.md section 2.1.)\n"
@@ -392,23 +415,34 @@ static const char u8_defs_var_valid[] =
 static const PcrecEncEntry entries_utf8[] = {
     { PCREC_ENCE_NEXT_POS,      false,
       u8_decls_next_pos_doc,  u8_decls_next_pos,
-      u8_defs_next_pos_doc,   u8_defs_next_pos  },
+      u8_defs_next_pos_doc,   u8_defs_next_pos,
+      0, false },
     { PCREC_ENCE_SPAN,          true,
       u8_decls_bref_doc,      u8_decls_bref,
-      u8_defs_bref_doc,       u8_defs_bref      },
+      u8_defs_bref_doc,       u8_defs_bref,
+      0, false },
     { PCREC_ENCE_SPAN_CASELESS, true,
       u8_decls_bref_ci_doc,   u8_decls_bref_ci,
-      u8_defs_bref_ci_doc,    u8_defs_bref_ci   },
+      u8_defs_bref_ci_doc,    u8_defs_bref_ci,
+      PCREC_ENCE_DECODE, false },
     { PCREC_ENCE_BACK_STEP,     true,
       u8_decls_back_step_doc, u8_decls_back_step,
-      u8_defs_back_step_doc,  u8_defs_back_step },
+      u8_defs_back_step_doc,  u8_defs_back_step,
+      0, false },
     /* [VAR] NOT engine-callable: the entry wrapper's once-per-call
      * resolution calls it, never an engine body -- `next_pos`'s own status,
      * and the [M5-SEAM] check's rule applies to it on the same terms. */
     { PCREC_ENCE_VAR_VALID,     false,
       u8_decls_var_valid_doc, u8_decls_var_valid,
-      u8_defs_var_valid_doc,  u8_defs_var_valid },
-    { 0, false, NULL, NULL, NULL, NULL }
+      u8_defs_var_valid_doc,  u8_defs_var_valid,
+      0, false },
+    /* [CLS-TREE] S4 the one-character decode: engine-callable, `static
+     * inline`, no declaration. The caseless span compare above requires it. */
+    { PCREC_ENCE_DECODE,        true,
+      NULL,                   "",
+      u8_defs_decode_doc,     u8_defs_decode,
+      0, true },
+    { 0, false, NULL, NULL, NULL, NULL, 0, false }
 };
 
 /* [K49] THE UNANCHORED RETRY ADVANCE (enc.h's `advance` field), and it is this

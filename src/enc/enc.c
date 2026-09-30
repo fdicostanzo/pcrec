@@ -72,6 +72,21 @@ void pcrec_enc_names(char *buf, size_t cap)
     buf[k] = 0;
 }
 
+/* Closes `mask` over every present entry's `requires` until nothing new is
+ * added: the set of entries an artifact must carry, given the ones its
+ * engine calls. */
+unsigned pcrec_enc_mask_close(const PcrecEnc *e, unsigned mask)
+{
+    if (!e || !e->entries) return mask;
+    for (;;) {
+        unsigned m = mask;
+        for (const PcrecEncEntry *t = e->entries; t->decls; t++)
+            if (m & t->id) m |= t->requires;
+        if (m == mask) return mask;
+        mask = m;
+    }
+}
+
 /* [M6.5.2] THE TWO EMITTERS, one loop each over the backend's entries.
  *
  * A backend with no table emits nothing, which is what keeps the `-e utf8`
@@ -83,6 +98,7 @@ void pcrec_enc_emit_decls(StrBuf *sb, const PcrecEnc *e, unsigned mask,
                           const char *prefix)
 {
     if (!e || !e->entries) return;
+    mask = pcrec_enc_mask_close(e, mask);
     for (const PcrecEncEntry *t = e->entries; t->decls; t++)
         if (mask & t->id) {
             /* [EMIT-VERB] the entry's doc half, through the render gate. */
@@ -96,14 +112,16 @@ void pcrec_enc_emit_decls(StrBuf *sb, const PcrecEnc *e, unsigned mask,
 }
 
 /* Emits every entry's `defs` text (and, gated through the comment layer, its
- * defs_doc) whose id is set in `mask` -- pcrec_enc_emit_decls' own sibling
- * loop over the DEFINITIONS half. A backend with no table emits nothing. */
-void pcrec_enc_emit_defs(StrBuf *sb, const PcrecEnc *e, unsigned mask,
-                         const char *prefix)
+ * defs_doc) whose id is set in the CLOSED `mask` and whose `inline_def` is
+ * `inline_half` -- pcrec_enc_emit_decls' own sibling loop over the
+ * DEFINITIONS half. A backend with no table emits nothing. */
+static void enc_emit_defs(StrBuf *sb, const PcrecEnc *e, unsigned mask,
+                          const char *prefix, bool inline_half)
 {
     if (!e || !e->entries) return;
+    mask = pcrec_enc_mask_close(e, mask);
     for (const PcrecEncEntry *t = e->entries; t->decls; t++)
-        if (mask & t->id) {
+        if ((mask & t->id) && t->inline_def == inline_half) {
             if (t->defs_doc) {
                 pcrec_sb_cmt_open(sb, PCREC_CMT_NONESSENTIAL);
                 pcrec_enc_emit_text(sb, t->defs_doc, prefix);
@@ -111,6 +129,21 @@ void pcrec_enc_emit_defs(StrBuf *sb, const PcrecEnc *e, unsigned mask,
             }
             pcrec_enc_emit_text(sb, t->defs, prefix);
         }
+}
+
+/* The out-of-line entries' definitions (the artifact's epilogue). */
+void pcrec_enc_emit_defs(StrBuf *sb, const PcrecEnc *e, unsigned mask,
+                         const char *prefix)
+{
+    enc_emit_defs(sb, e, mask, prefix, false);
+}
+
+/* The `static inline` entries' definitions, placed by the caller ahead of
+ * every engine body that calls them. */
+void pcrec_enc_emit_inline_defs(StrBuf *sb, const PcrecEnc *e, unsigned mask,
+                                const char *prefix)
+{
+    enc_emit_defs(sb, e, mask, prefix, true);
 }
 
 /* True iff entry `id` in `e`'s table is marked engine_callable; false for an
