@@ -6430,14 +6430,19 @@ unsigned pcrec_dfa_cand_ppm(Ctx *cx);
 /* [OPT-HYB-RESEED] the VM hybrid's retry re-seed decision
  * (src/gen/emit_vm.c, docs/design/hyb_reseed.md §4): the ordered first-match
  * rows as DATA — the name `<PREFIX>_VM_RESEED` carries, the deny flag, a
- * one-line predicate, and the closed predicate/action tags the emitter's walk
- * reads — so `--list-axes` walks the live table. */
+ * one-line predicate, the closed predicate/action tags the emitter's walk
+ * reads, and an adaptive row's STARTING STATE — so `--list-axes` walks the
+ * live table and no row's behaviour lives in emitter code. */
 typedef struct {
     const char   *name;
     uint64_t      deny;
     const char   *applies_desc;
     unsigned char pred;     /* emit_vm.c's VRS_P_* */
     unsigned char action;   /* emit_vm.c's VRS_A_* */
+    unsigned char start;    /* emit_vm.c's VRS_S_*: the calibration column a
+                             * call's first step budget is read from */
+    bool          armed;    /* the call starts with the step block ARMED, so
+                             * its first short re-seed gap starts a block */
 } PcrecReseedRow;
 extern const PcrecReseedRow pcrec_reseed_rows[];
 extern const int pcrec_reseed_nrows;

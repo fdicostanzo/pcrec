@@ -3358,33 +3358,43 @@ fi
 # emitted TEXT and to a BUDGET, never to the row the emitter chose:
 #   (1) `<PREFIX>_VM_RESEED` names the expected row on one witness per row,
 #       and is ABSENT where no hybrid prefilter exists (both directions of
-#       its IFF, match_api.md §6.3);
+#       its IFF, match_api.md §6.3). Row 3's predicate reads the compile's
+#       byte-rate PRIOR, so its witnesses pin BOTH arms: ` (?=the)` is dense
+#       under `-e byte` (the built-in default prior) and NOT under `-e utf8`
+#       (no prior: NONE answers by cardinality, 1/256 for one byte), and
+#       `[a-z](?=the)` is dense under NONE (26/256);
 #   (2) an ADAPTIVE artifact's `<prefix>_search_run` carries TWO prefilter
 #       call sites (the entry and the retry's re-seed), the step-mode exit
-#       and the probe's block assignment; an EXACT clamp-free one and a
-#       DENIED clamp-free one carry ONE (the pre-abi-47 retry, which steps),
-#       and an EXACT clamped one keeps its pre-abi-47 clamp recompute (TWO);
-#   (3) the clamped adaptive witness re-seeds with `window_end =
-#       subject_length` and never with the prefilter's span end (an adaptive
-#       row is reached only where `mrl_win` is false);
+#       and the block's start; an EXACT clamp-free one and a DENIED
+#       clamp-free one carry ONE (the pre-abi-47 retry, which steps), and an
+#       EXACT or CLAMPED clamped one keeps its pre-abi-47 clamp recompute
+#       (TWO) and carries no adaptive text;
+#   (3) THE CALIBRATION, per class: each adaptive witness's emitted retry
+#       spells its class's four numbers and its row's starting state as
+#       literals (the declaration and the three tail lines), hand-typed
+#       below from hyb_reseed.md §3 — so a swapped or altered calibration
+#       row is red here, where the budget arm cannot see it (r1 chk F4);
 #   (4) THE BUDGET ARM, the one a structural reading cannot fake: under
 #       `--step-budget=2000` a framed lookbehind witness, on one failing
 #       candidate followed by 20,000 non-candidates, answers `nomatch` by
 #       default and gives up `steps` under `-fno-hyb-reseed` (today's
 #       step-everything retry: one backtrack per position). The same
 #       budget on 40 DENSE failing candidates then 20,000 non-candidates is
-#       the probe's detector: the dense run puts the call into step mode,
-#       and only the block's closing re-seed gets it out. The denied build
-#       giving up on both subjects is the arm's own positive control — the
-#       witness demonstrably reaches the defect this change removes.
-# S370 (the probe exit removed) and S371 (the adaptive text never emitted
-# while the stamp still reads "adaptive") are this block's sabotage rows.
+#       the second block's probe detector: the dense run arms the block and
+#       enters it, and only the block's closing re-seed gets the call out.
+#       The denied build giving up on both subjects is the arm's own
+#       positive control — the witness demonstrably reaches the defect this
+#       change removes.
+# S370 (the second block never ends), S371 (the adaptive text never emitted
+# while the stamp still reads "adaptive") and S372 (the two calibration rows
+# swapped) are this block's sabotage rows.
 rs_stamp() { sed -n 's/^#define RX_VM_RESEED "\([a-z-]*\)"$/\1/p' "$1" | head -1; }
-rs_calls() {   # prefilter call sites inside <prefix>_search_run's body
-    awk '/^static .*int rx_search_run\(/{f=1} f&&/rx_prefilter\(subject/{n++} f&&/^}/{f=0} END{print n+0}' "$1"
+rs_body() {   # <prefix>_search_run's body, and nothing past its closing brace
+    awk '/^static .*int rx_search_run\(/{f=1} f{print} f&&/^}/{exit}' "$1"
 }
+rs_calls() { rs_body "$1" | grep -c 'rx_prefilter(subject'; }
 rs_ok=1
-while IFS=';' read -r rs_name rs_pat rs_flags rs_want rs_calls_want; do
+while IFS=';' read -r rs_name rs_pat rs_flags rs_want rs_calls_want rs_cal; do
     [ -n "$rs_name" ] || continue
     # shellcheck disable=SC2086
     if ! pcrec_run "$PCREC" --features all -p rx $rs_flags -o "$WORKDIR/rs_$rs_name.c" --pattern "$rs_pat" 2>/dev/null; then
@@ -3397,32 +3407,49 @@ while IFS=';' read -r rs_name rs_pat rs_flags rs_want rs_calls_want; do
     if [ "$rs_calls_want" != "-" ]; then
         n="$(rs_calls "$WORKDIR/rs_$rs_name.c")"
         if [ "$n" != "$rs_calls_want" ]; then
-            bad "[OPT-HYB-RESEED] $rs_name ('$rs_pat' $rs_flags): <prefix>_search_run carries $n prefilter call site(s), expected $rs_calls_want — the retry's re-seed is $( [ "$rs_calls_want" = 2 ] && echo MISSING from an adaptive artifact || echo PRESENT on an artifact whose row keeps the step)"; rs_ok=0; continue
+            bad "[OPT-HYB-RESEED] $rs_name ('$rs_pat' $rs_flags): <prefix>_search_run carries $n prefilter call site(s), expected $rs_calls_want — the retry's re-seed is $( [ "$rs_calls_want" = 2 ] && echo MISSING from an adaptive or clamped artifact || echo PRESENT on an artifact whose row keeps the step)"; rs_ok=0; continue
         fi
     fi
-    case "$rs_want" in adaptive*)
-        if ! grep -qF 'if (reseed_steps_left > 0) reseed_steps_left--;' "$WORKDIR/rs_$rs_name.c" \
-           || ! grep -qF 'reseed_steps_left = reseed_block;' "$WORKDIR/rs_$rs_name.c"; then
-            bad "[OPT-HYB-RESEED] $rs_name: the adaptive tail's step-mode exit or its probe's block assignment is missing from the emitted retry"; rs_ok=0; continue
+    case "$rs_want" in
+    adaptive*)
+        # (3) steps0 block0 gap block cap, the literals the class and row spell
+        read -r c_s0 c_b0 c_gap c_blk c_cap <<<"$rs_cal"
+        rs_body "$WORKDIR/rs_$rs_name.c" > "$WORKDIR/rs_$rs_name.body"
+        miss=""
+        for want in \
+            "unsigned reseed_steps = $c_s0, reseed_block = $c_b0;" \
+            'if (reseed_steps) reseed_steps--;' \
+            "if ((size_t)window[0][0] - attempt_position >= $c_gap) reseed_block = 0;" \
+            "else if (!reseed_block) reseed_block = $c_blk;" \
+            "else { reseed_steps = reseed_block; if (reseed_block < $c_cap) reseed_block *= 2; }"; do
+            grep -qF "$want" "$WORKDIR/rs_$rs_name.body" || miss="$miss [$want]"
+        done
+        if [ -n "$miss" ]; then
+            bad "[OPT-HYB-RESEED] $rs_name ('$rs_pat' $rs_flags): the adaptive retry does not spell its class's calibration (steps0 $c_s0, block0 $c_b0, gap $c_gap, block $c_blk, cap $c_cap) — missing:$miss"; rs_ok=0; continue
+        fi ;;
+    *)
+        if grep -q 'reseed_' "$WORKDIR/rs_$rs_name.c"; then
+            bad "[OPT-HYB-RESEED] $rs_name ('$rs_pat' $rs_flags): row '${rs_want:-<absent>}' keeps today's retry, but the artifact carries adaptive text"; rs_ok=0; continue
         fi ;;
     esac
-    ok "[OPT-HYB-RESEED] $rs_name ('$rs_pat' $rs_flags): RX_VM_RESEED '${rs_want:-<absent>}'$( [ "$rs_calls_want" != "-" ] && echo ", $rs_calls_want prefilter call site(s) in the search loop")"
+    ok "[OPT-HYB-RESEED] $rs_name ('$rs_pat' $rs_flags): RX_VM_RESEED '${rs_want:-<absent>}'$( [ "$rs_calls_want" != "-" ] && echo ", $rs_calls_want prefilter call site(s) in the search loop")$( [ -n "$rs_cal" ] && echo ", calibration '$rs_cal'")"
 done <<'RSEOF'
-framed;(?<=a|é)x;-e utf8;adaptive;2
-frameless;(?<=é)x;-e utf8;adaptive;2
-dense; (?=the);;adaptive-dense;2
-exact;(abc)d;;exact;1
-exactclamp;a(b|c)+d;;exact;2
-denied;(?<=é)x;-e utf8 -fno-hyb-reseed;fixed;1
-clamped;x*(?>a|ab)c|abcd;;adaptive;2
-forcedvm;(?<=é)x;-e utf8 --engine=vm;;-
-dfa;abc;;;-
+framed;(?<=a|é)x;-e utf8;adaptive;2;2 0 4 16 64
+frameless;(?<=é)x;-e utf8;adaptive;2;64 0 16 64 1024
+dense; (?=the);;adaptive-dense;2;1024 64 16 64 1024
+nonedense;[a-z](?=the);-e utf8;adaptive-dense;2;1024 64 16 64 1024
+nonesingle; (?=the);-e utf8;adaptive;2;64 0 16 64 1024
+exact;(abc)d;;exact;1;
+exactclamp;a(b|c)+d;;exact;2;
+clamped;x*(?>a|ab)c|abcd;;clamped;2;
+denied;(?<=é)x;-e utf8 -fno-hyb-reseed;fixed;1;
+forcedvm;(?<=é)x;-e utf8 --engine=vm;;-;
+dfa;abc;;;-;
 RSEOF
-if grep -q 'window\[0\]\[1\]' <(awk '/reseed_steps_left > 0/{f=1} f' "$WORKDIR/rs_clamped.c" 2>/dev/null) \
-   || ! awk '/reseed_steps_left > 0/{f=1} f' "$WORKDIR/rs_clamped.c" 2>/dev/null | grep -qF 'window_end = subject_length;'; then
-    bad "[OPT-HYB-RESEED] clamped witness ('x*(?>a|ab)c|abcd'): the adaptive re-seed does not reset window_end to subject_length, or reads the prefilter's span END — an over-approximating prefilter's end is not a bound"
+if ! rs_body "$WORKDIR/rs_clamped.c" 2>/dev/null | grep -qF 'window_end = subject_length;'; then
+    bad "[OPT-HYB-RESEED] clamped witness ('x*(?>a|ab)c|abcd'): <prefix>_search_run lost today's clamp recompute (window_end = subject_length) — the clamped row must keep the pre-abi-47 retry"
 else
-    ok "[OPT-HYB-RESEED] clamped witness: the adaptive re-seed resets window_end = subject_length and never reads the prefilter's span end"
+    ok "[OPT-HYB-RESEED] clamped witness: <prefix>_search_run keeps today's clamp recompute (window_end = subject_length)"
 fi
 rs_s1="yx$(printf '%20000s' '' | tr ' ' y)"
 rs_s2="$(printf 'yx%.0s' $(seq 1 40))$(printf '%20000s' '' | tr ' ' y)"
