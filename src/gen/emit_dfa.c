@@ -590,7 +590,8 @@ static void emit_search_decl(StrBuf *sb, Ctx *cx, const char *fn)
  * UNSET (MEASURED on 10.46: `(?(DEFINE)(?<g>a))(?&g)` has CAPTURECOUNT 1 and
  * answers g1 = unset after a match), so the artifact must still promise it.
  * A DFA artifact with `ncaps > 1` is exactly that pattern: every group above 0
- * is PERMANENTLY unset, which `emit_search_head` writes once at entry. */
+ * is PERMANENTLY unset, which `emit_dead_group_fill` writes on each success
+ * path (never on a no-match: K78). */
 static int dfa_artifact_ncaps(Ctx *cx)
 {
     return cx->want_caps ? (int)cx->ncap + 1 : 1;
@@ -1225,18 +1226,65 @@ void pcrec_emit_req_byte_check(Ctx *cx, StrBuf *c, const char *indent,
     emit_req_set_rest(cx, c, indent, posvar, subjvar, lenvar);
 }
 
+/* Writes the dead groups' PCREC_UNSET fill into a DFA search entry's SUCCESS
+ * path, at indent `ind`, just after the whole-match write and before
+ * `return 1;`; emits nothing unless this artifact promises more than group 0.
+ *
+ * [DD-14 wave G] On this engine a promised group above 0 is always DEAD (a
+ * live one would have forced the VM): reached only through a subroutine call
+ * or under a `{0}`, so no match can set it and PCRE2 reports it unset. The
+ * fill lives in the search entry rather than in `rx_match_caps` so a caller
+ * driving `rx_search` directly gets it too (tests/codegen's K27 fixture does).
+ *
+ * [K78] IT IS WRITTEN ON SUCCESS ONLY, BESIDE THE caps[0] WRITE, never at
+ * entry. match_api.md §3.1 leaves `caps` untouched on every non-positive
+ * return; the pre-K78 fill ran once at the top of the entry and so wrote
+ * slots 1..NCAPS-1 on a no-match (`(?(DEFINE)(?<x>\b))b(?&x)` over "zz").
+ * Every success site of every DFA search form calls this: the reverse-pass
+ * and pinned forms in `emit_unanchored`, the per-start form in
+ * `emit_attempt`. The empty-engine exit has no success path and writes
+ * nothing.
+ *
+ * `fit.chosen == ENGM_DFA` IS LOAD-BEARING AND WAS MEASURED THE HARD WAY.
+ * These emitters have TWO customers: the artifact's own engine, and the VM
+ * hybrid's internal DFA PREFILTER (`static` storage), whose search function
+ * takes the same `capture_spans` parameter and never reports a group — the
+ * VM does that. Filling there put this loop into every capture-bearing VM
+ * artifact: the first version of the fill moved 558 of the identity gate's
+ * 2442 call-free patterns, including `(((a)))`. */
+static void emit_dead_group_fill(Ctx *cx, StrBuf *c, const char *ind)
+{
+    if (cx->job->fit.chosen != ENGM_DFA || dfa_artifact_ncaps(cx) <= 1)
+        return;
+    GenNames gn;
+    pcrec_gen_names(cx, &gn);
+    pcrec_sb_printf(c,
+        "%sif (capture_spans)\n"
+        "%s    for (int rx_g = 1; rx_g < %s_NCAPS; rx_g++) {\n", ind, ind, gn.upper);
+    pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
+    pcrec_sb_printf(c,
+        "%s        /* every group this artifact promises is reached only\n"
+        "%s           through a subroutine call or sits under a {0}, so no\n"
+        "%s           match can set it (PCRE2 reports the same) */\n", ind, ind, ind);
+    pcrec_sb_cmt_close(c);
+    pcrec_sb_printf(c,
+        "%s        capture_spans[rx_g][0] = PCREC_UNSET;\n"
+        "%s        capture_spans[rx_g][1] = PCREC_UNSET;\n"
+        "%s    }\n", ind, ind, ind);
+}
+
 /* Writes the search entry's attributes, signature and opening brace, plus
  * everything that must run before the first table: the `noclone` block (K24,
- * argued above), the caller-startpos boundary guard, and the permanently
- * unset fill for the dead groups a wave-G artifact still promises.
+ * argued above) and the caller-startpos boundary guard. NOTHING HERE MAY WRITE
+ * `capture_spans`: this code runs before any answer, and match_api.md §3.1
+ * leaves the array untouched on a no-match (K78 — the dead-group fill used to
+ * sit here; it is `emit_dead_group_fill`, called from the success sites).
  *
  * Reads `cx->job->fit.chosen`, which is not a parameter and is load-bearing:
  * this emitter has TWO customers, the artifact's own exported entry and the
- * VM hybrid's internal `static` prefilter, and both the guard and the fill
- * belong to the first alone. Putting the fill on the second moved 558 of the
- * identity gate's call-free patterns the first time it was tried. `storage`
- * is "" for the entry and "static " for the prefilter; a caller must not
- * swap them. */
+ * VM hybrid's internal `static` prefilter, and the guard belongs to the first
+ * alone. `storage` is "" for the entry and "static " for the prefilter; a
+ * caller must not swap them. */
 static void emit_search_head(Ctx *cx, StrBuf *c, const char *fn,
                              const char *storage)
 {
@@ -1287,43 +1335,6 @@ static void emit_search_head(Ctx *cx, StrBuf *c, const char *fn,
     if (cx->job->fit.chosen == ENGM_DFA)
         pcrec_emit_startpos_guard(cx, c, "    ", "search_from", "subject",
                                   "subject_length", false);
-    /* [DD-14 wave G] THE DEAD GROUPS, DECLARED AND PERMANENTLY UNSET. Emitted
-     * only when this artifact promises more than the whole match, which on
-     * this engine means every promised group is dead (a live one would have
-     * forced the VM), so the honest value for all of them is the same constant
-     * and it can be written once at entry rather than on each exit. Writing it
-     * HERE rather than in `rx_match_caps` is what makes it true for a caller
-     * that drives `rx_search` directly, which tests/codegen's K27 fixture
-     * does. The failure paths below cast `capture_spans` to void; that stays
-     * correct — a redundant cast is not a diagnostic.
-     *
-     * `fit.chosen == ENGM_DFA` IS LOAD-BEARING AND WAS MEASURED THE HARD WAY.
-     * This emitter has TWO customers: it writes the artifact's own engine, and
-     * it writes the VM hybrid's internal DFA PREFILTER (`pcrec_emit_dfa_engine`
-     * with `static` storage). The prefilter's search function takes the same
-     * `capture_spans` parameter and never reports a group — the VM does that —
-     * so filling there would put this loop into every capture-bearing VM
-     * artifact in the corpus. It did: the first version of this line moved 558
-     * of the identity gate's 2442 call-free patterns, including `(((a)))`,
-     * which has nothing to do with wave G. The gate caught it on its first
-     * run, which is the argument for the gate. */
-    if (cx->job->fit.chosen == ENGM_DFA && dfa_artifact_ncaps(cx) > 1) {
-        GenNames gn;
-        pcrec_gen_names(cx, &gn);
-        pcrec_sb_printf(c,
-            "    if (capture_spans)\n"
-            "        for (int rx_g = 1; rx_g < %s_NCAPS; rx_g++) {\n", gn.upper);
-        pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
-        pcrec_sb_puts(c,
-            "            /* every group this artifact promises is reached only\n"
-            "               through a subroutine call or sits under a {0}, so no\n"
-            "               match can set it (PCRE2 reports the same) */\n");
-        pcrec_sb_cmt_close(c);
-        pcrec_sb_puts(c,
-            "            capture_spans[rx_g][0] = PCREC_UNSET;\n"
-            "            capture_spans[rx_g][1] = PCREC_UNSET;\n"
-            "        }\n");
-    }
 }
 
 /* The `<prefix>_match` declaration: the anchored match-here entry, taking a
@@ -7872,9 +7883,10 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
             "    // a backwards scan would walk back to exactly that\n"
             "    // position. The offset is ABSOLUTE into subject, never\n"
             "    // relative to search_from.\n"
-            "    if (capture_spans) { capture_spans[0][0] = (ptrdiff_t)search_from; capture_spans[0][1] = (ptrdiff_t)last_accept_position; }\n"
-            "    return 1;\n"
-            "}\n");
+            "    if (capture_spans) { capture_spans[0][0] = (ptrdiff_t)search_from; capture_spans[0][1] = (ptrdiff_t)last_accept_position; }\n");
+        emit_dead_group_fill(cx, c, "    ");
+        pcrec_sb_puts(c, "    return 1;\n"
+                   "}\n");
         return;
     }
     pcrec_sb_puts(c, "    if (last_accept_position == (size_t)-1) return 0;\n"
@@ -7884,8 +7896,9 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
                "        size_t rewind_position = match_end_position;\n");
     emit_scan_loop(c, &rev);
     pcrec_sb_puts(c, "        if (match_start_position == (size_t)-1) return 0;\n"
-               "        if (capture_spans) { capture_spans[0][0] = (ptrdiff_t)match_start_position; capture_spans[0][1] = (ptrdiff_t)match_end_position; }\n"
-               "        return 1;\n"
+               "        if (capture_spans) { capture_spans[0][0] = (ptrdiff_t)match_start_position; capture_spans[0][1] = (ptrdiff_t)match_end_position; }\n");
+    emit_dead_group_fill(cx, c, "        ");
+    pcrec_sb_puts(c, "        return 1;\n"
                "    }\n"
                "}\n");
 }
@@ -8012,9 +8025,10 @@ static void emit_anchored_match_def(Ctx *cx, StrBuf *c, const DfaForm *f,
  * re-emitting the scan — one machine, one loop, one place a change lands.
  *
  * IT WRITES THE DEAD GROUPS ITSELF, and that is not optional. On the
- * search-and-filter form those come from `emit_search_head`, which fills
- * slots 1..NCAPS-1 with PCREC_UNSET at entry to `<prefix>_search` (wave G's
- * dead-capture elision: a DFA artifact can promise groups it can never write,
+ * search-and-filter form those come from `emit_dead_group_fill`, which
+ * fills slots 1..NCAPS-1 with PCREC_UNSET on `<prefix>_search`'s success
+ * paths (wave G's dead-capture elision: a DFA artifact can promise groups it
+ * can never write,
  * because PCRE2 counts them and reports them unset). This form never calls
  * `<prefix>_search`, so the fill has to happen here or those slots would come
  * back as whatever the caller's array held. `RX_NCAPS` is 1 on almost every
@@ -8656,8 +8670,9 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
     pcrec_sb_printf(c, "%s_dead: __attribute__((unused));\n", p);
     pcrec_sb_printf(c, "%s_done:\n", p);
     pcrec_sb_puts(c, "        if (__builtin_expect(last_accept_position != (size_t)-1, 0)) {\n"
-               "            if (capture_spans) { capture_spans[0][0] = (ptrdiff_t)start; capture_spans[0][1] = (ptrdiff_t)last_accept_position; }\n"
-               "            return 1;\n"
+               "            if (capture_spans) { capture_spans[0][0] = (ptrdiff_t)start; capture_spans[0][1] = (ptrdiff_t)last_accept_position; }\n");
+    emit_dead_group_fill(cx, c, "            ");
+    pcrec_sb_puts(c, "            return 1;\n"
                "        }\n"
                "    }\n"
                "    return 0;\n"
