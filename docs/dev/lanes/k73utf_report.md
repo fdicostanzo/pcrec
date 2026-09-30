@@ -210,6 +210,19 @@ All on this Mac (darwin, gcc-16), at 2 workers or fewer, logs under
   three lines (search + both anchored `_run`s), 1,158 lines. UNPREDICTED:
   **0** on both utf8 configs. No refusal mismatch anywhere.
 
+**After merging main (U2, abi 46 -> 47), re-run on the merged tree:**
+- `make strict`: clean.
+- `k73_startskip.rxt` + U2's `axis13_ctx_illformed.rxt`: 118/0.
+- `run_startbnd_diff.sh`: 8/0.
+- `make test-rxtsource`: **270/0**, with the combined pins U2 + K72 + K73 =
+  256/4261/31703, C3 SKIP 17711 and pcre2-only 3504, holding on first run.
+- `make test-codegen`: 11/12, the standing `nm` probe only, with
+  `ABI_EXPECT=47` passing.
+
+The mover census was taken before the merge (abi 45 vs 46), and U2 moves
+lookaround artifacts on its own. The census script accepts 45-47, but it
+was not re-run.
+
 **OWED to the manager:** the full `make test`; `make mech` rows S367 and
 S368 solo (their detectors' failing direction is measured above against the
 branch-point compiler, which is both plants' state); the recursion-identity
