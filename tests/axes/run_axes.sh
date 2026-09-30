@@ -463,7 +463,26 @@ declare -A REFUSAL_PATTERN=(
     # below, verified live, substring shared between the two entries on
     # purpose. Measured population on this file alone: 2. No floor raised
     # (K35; this file's count is not a corpus-wide measurement).
-    ["-fprefilter"]="-fprefilter requires the VM engine${REFUSAL_DELIM}cannot be honoured for a pattern containing a${REFUSAL_DELIM}cannot both be requested${REFUSAL_DELIM}pattern too complex for the DFA engine${REFUSAL_DELIM}pattern too large (NFA exceeds"
+    # SIXTH shape, [axtri] (2026-09-30, triaging the Linux final `make
+    # test-axes` of main d6cb0bb4, abi 49): the forced prefilter's byte DFA
+    # is charged against the emitted-BYTES cap (limits.md §8), so a
+    # `engine vm` pattern that fits without it can overflow with it —
+    # tests/utf8/wclass_illformed.rxt's `\p{Xwd}` cells under `-e utf8`
+    # (bare 1,013,468 and captured 1,013,932 bytes against the 1,000,000
+    # cap; 32 cases, that one file, the same two patterns that file's line
+    # 219 comment records as refused at default when captured on the auto
+    # route). It is the do-or-die posture, not a defect: §2.5/§2.17 state
+    # that `-fprefilter` is never silently dropped and makes the size-ladder
+    # rungs that would undo it (the D135 drop-the-prefilter rung included)
+    # ineligible, so the size cap refuses with its own text. Verified live
+    # with `build/pcrec -p rx -e utf8 --features all --engine=vm -fprefilter
+    # --pattern 'x\p{Xwd}y'`, and against lane/pfdrop's compiler, which
+    # refuses identically with and without --fast-or-fail. The substring is
+    # the emitted-C-source cap's own wording (the code-bytes cap reads
+    # "bytes of emitted code", which this axis does not reach), and the
+    # existing 12,000 floor is unaffected (K35: 32 cases on one file is not
+    # a corpus-wide measurement).
+    ["-fprefilter"]="-fprefilter requires the VM engine${REFUSAL_DELIM}cannot be honoured for a pattern containing a${REFUSAL_DELIM}cannot both be requested${REFUSAL_DELIM}pattern too complex for the DFA engine${REFUSAL_DELIM}pattern too large (NFA exceeds${REFUSAL_DELIM}bytes of emitted C source (limit"
     # --engine=dfa's own do-or-die posture (§2.11) has TWO distinct shapes
     # in select_engine.c's switch (verified live against the full-corpus
     # REFUSED population — 3,874 of the first, 5,594 of the second): the
@@ -543,6 +562,31 @@ declare -A REFUSAL_PATTERN=(
     # code-bytes ceiling directly ("pattern too large: N bytes of emitted
     # code (limit 500000)").
     ["-fno-size-term"]="bytes of emitted code (limit"
+    # `-fno-cls-kit` ([axtri], 2026-09-30): denying the class-matcher kit
+    # returns every wide class on the VM to the byte alternation this
+    # compiler emitted before abi 48 (tuning.md §2.33), so the K55 refusal
+    # the kit retired comes back BY DESIGN on the same population: a
+    # `\p{Xwd}` at `-e utf8` under `engine vm` is 576,773 bytes (captured
+    # 577,122) of emitted code against the 500,000-byte code cap, and
+    # `\P{Unknown}` 526,899. Measured (Linux final run of main d6cb0bb4 and
+    # a local single-file run agree): 77 cases, five blocks of
+    # tests/utf8/wclass_illformed.rxt, all with this diagnostic, the same
+    # substring as `-fno-size-term`'s entry above. With the kit on those
+    # artifacts are ~31 KB. Nothing rescues them: `engine vm` has no
+    # prefilter for lane/pfdrop's D135 drop rung to drop (its compiler
+    # refuses identically). The floor is a measured number rounded down
+    # (K35), so a change that stops the byte alternation being reached is
+    # caught rather than read as "fewer refusals".
+    # NOT documented here, deliberately: the OTHER 32 cases of the 109
+    # (`x(\p{L})y`, `x(\P{L})y` on the default route, "bytes of emitted C
+    # source (limit 1000000": 1,179,060 / 1,153,832) are the size-CAP
+    # ladder's, not the kit axis's. Their bytes are the hybrid prefilter's
+    # byte alternation, and D135's drop-the-prefilter rung (lane/pfdrop)
+    # rescues them (measured: 430,907 / 413,437 bytes, `RX_VM_PREFILTER
+    # "none"`, answers unchanged) — so they clear when that lane merges and
+    # a substring for them would go vacuous the same day. Until then
+    # `-fno-cls-kit` reads red on exactly those 32.
+    ["-fno-cls-kit"]="bytes of emitted code (limit"
     # K55 RETIRED ([CLS-TREE] S4, abi 48): `--engine=vm` carried ONE entry
     # here, "bytes of emitted code (limit", for `\P{Unknown}` under
     # `-e utf8` (tests/utf8/axis12_scripts.rxt), whose VM body was a
@@ -558,6 +602,7 @@ declare -A REFUSAL_FLOOR=(
     ["-fno-counter"]=180
     ["-fprefilter"]=12000
     ["--engine=dfa"]=8000
+    ["-fno-cls-kit"]=60
 )
 
 # ============================================================================

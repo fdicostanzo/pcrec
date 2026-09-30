@@ -296,6 +296,17 @@ $ build/pcrec -p rx -fno-prefilter --emit-main -o /tmp/d.c 'a(b|c)+d'; grep RX_V
 #define RX_VM_PREFILTER "none"
 ```
 
+**It is charged against the emitted-size caps, and `-fprefilter` never
+drops it to fit.** The forced prefilter's byte DFA counts toward
+`limits.md` §8's emitted-bytes cap. A pattern that fits without it can
+therefore be REFUSED with it, with the size-cap diagnostic (`pattern too
+large: N bytes of emitted C source (limit ...)`): `\p{Xwd}` under `-e utf8`
+and `--engine=vm` is 1,013,468 bytes against 1,000,000 (1,013,932 when
+captured), where the same pattern without the flag is ~31 KB. This is the
+do-or-die posture above, not a defect: the size-ladder rungs that would make
+it fit by dropping the prefilter are ineligible under this flag (§2.17).
+`make test-axes` records this refusal as the axis's documented limit.
+
 **Reason it exists:** the hybrid prefilter (a capture-erased DFA
 forward+reverse pair used as an exact anchored-match window ahead of the
 VM) is an observability/controllability gap D46 names directly — without
@@ -2899,6 +2910,15 @@ The flag denies the WHOLE kit: the shared byte-class atom table of §2.34 is a
 kit form too, so under `-fno-cls-kit` every table-read byte class keeps its
 own bitmap as well (`-fno-cls-pack` denies that table alone).
 `make test-axes` sweeps the flag like every deny axis.
+
+**Denied, the byte alternation is the bytes again, so the K55 refusal returns
+on the same population.** A wide class whose alternation exceeds the
+emitted-code cap is refused under `--engine=vm` (`pattern too large: N bytes
+of emitted code (limit 500000)`): `\p{Xwd}` under `-e utf8` is 576,773 bytes
+(577,122 captured). That refusal is this axis's documented limit and the
+reason the kit exists; no size-ladder rung applies to it. `make test-axes`
+records it as such, with a floor.
+
 
 ### 2.34 `-fno-cls-pack` — `PCREC_NO_CLS_PACK` (bit 38)
 

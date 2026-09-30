@@ -518,3 +518,23 @@ nothing else (§6.2a). Selected by `--analysis` in `AXES` (every bundle) or
 `tests/findings/run_findings_tests.sh` §10 runs the same jobs over a fixed
 slice of the corpus inside `make test`.
 
+
+## [axtri] (2026-09-30) two axes' refusals after [CLS-TREE] S4 (abi 48)
+
+The Linux final `make test-axes` of main d6cb0bb4 ended red on refusals only
+(no answer moved), all in `tests/utf8/wclass_illformed.rxt`, the S4 wide-class
+corpus. `-fprefilter` (32 cases) and `-fno-cls-kit` (109) each got an entry:
+
+- `-fprefilter`: a SIXTH shape, "bytes of emitted C source (limit" — the forced
+  prefilter's byte DFA is charged against the emitted-bytes cap and §2.5/§2.17
+  make the rung that would drop it ineligible (`\p{Xwd}` `engine vm`,
+  1,013,468/1,013,932 vs 1,000,000). The existing 12,000 floor stands.
+- `-fno-cls-kit`: "bytes of emitted code (limit", floor 60 (measured 77): the
+  K55 refusal the kit retired returns on the byte alternation. The other 32
+  of the 109 (`x(\p{L})y`/`x(\P{L})y`, default route, total-bytes cap) are
+  deliberately NOT documented: D135's drop-the-prefilter rung (lane/pfdrop)
+  rescues them, so `-fno-cls-kit` stays red on those 32 until it merges.
+
+A single-file subset run breaches the `-fprefilter` floor by construction
+(222 refused against 12,000); read its `mismatches=` line, not the floor line.
+See docs/dev/lanes/axtri_report.md.
