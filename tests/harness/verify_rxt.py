@@ -362,6 +362,10 @@ def _findall_protocol(compiled, subj, encoding):
     production over: a second implementation WITH a differential is a cost,
     one without is a defect.
 
+    [K75] THE NON-EMPTY ARM SKIPS THE SAME BYTES from the match END
+    (`<prefix>_next_pos(end - 1)`, match_api.md §3.1), so a match ending before
+    a stray continuation byte resumes past it rather than on it.
+
     [K73] AND THE FIRST SEARCH STARTS PAST LEADING CONTINUATION BYTES under
     `utf8`: a search at offset 0 does not attempt a match on one (match_api.md
     §3.1's offset-0 bullet), so the first `search` is issued from the first
@@ -381,7 +385,12 @@ def _findall_protocol(compiled, subj, encoding):
         count += 1
         st, en = mo.span()
         if en > st:
+            # [K75] `<prefix>_next_pos(end - 1)`: from `end`, skip the
+            # continuation bytes (a no-op when `end` is a boundary).
             pos = en
+            if encoding == 'utf8':
+                while pos < n and 0x80 <= ord(subj[pos]) <= 0xBF:
+                    pos += 1
         else:
             pos = st + 1
             if encoding == 'utf8':

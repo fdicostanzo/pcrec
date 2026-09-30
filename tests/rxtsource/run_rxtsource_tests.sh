@@ -4649,9 +4649,9 @@ MIU="$FIXRUN/mc_illformed_utf8.rxt"
 miu_b_out="$("$TIMEOUT_BIN" 60 bash "$RUNSH" "$MIU" 2>&1)"; miu_b_rc=$?
 miu_c_out="$("$TIMEOUT_BIN" 60 python3 "$VERIFY" "$MIU" 2>&1)"; miu_c_rc=$?
 if [ "$miu_b_rc" = "0" ] && [ "$miu_c_rc" = "0" ] && \
-   printf '%s\n' "$miu_b_out" | grep -q '^cases passed: 2$' && \
-   printf '%s\n' "$miu_c_out" | grep -q '^PASS=2 FAIL=0$'; then
-    pass "mc/ill-formed-utf8: run.sh's C find-all loop and verify_rxt.py's python transcription agree on both cells — 2 matches across a lead-free continuation run (SW7's skip rule) and 1 on three bare continuation bytes ([K73]'s offset-0 start)"
+   printf '%s\n' "$miu_b_out" | grep -q '^cases passed: 8$' && \
+   printf '%s\n' "$miu_c_out" | grep -q '^PASS=8 FAIL=0$'; then
+    pass "mc/ill-formed-utf8: run.sh's C find-all loop and verify_rxt.py's python transcription agree on all eight cells — 2 matches across a lead-free continuation run (SW7's skip rule), 1 on three bare continuation bytes ([K73]'s offset-0 start), and the six [K75] cells where a NON-EMPTY match ends before a stray continuation byte (a/./a| over a\\x80a et al.)"
 else
     fail "mc/ill-formed-utf8: the two legs disagree with the fixture's expected count, or one of them errored.
   run.sh (rc=$miu_b_rc): $(printf '%s\n' "$miu_b_out" | tail -10)

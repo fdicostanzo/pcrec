@@ -28,3 +28,32 @@ pattern x?
 encoding utf8
 mc "a\x80\x80\x80" 2
 mc "\x80\x80\x80" 1
+
+# [K75] (D132, 2026-09-30) THE NON-EMPTY ARM. After a NON-EMPTY match the loop
+# resumes at `<prefix>_next_pos(end - 1)` — from the match END, past every
+# continuation byte — so a match ending before a STRAY continuation byte no
+# longer parks the loop on it (K50 refuses a caller startpos there, and the
+# loop used to stop and lose every later match). Every count below is
+# libpcre2 10.48's, PCRE2_UTF|PCRE2_MATCH_INVALID_UTF driven through the same
+# loop (`docs/dev/lanes/k75fix_report.md` carries the transcript and the
+# pre-change counts).
+#
+# Subjects stay ASCII plus stray continuation bytes: leg C's python decodes a
+# subject one character per BYTE, so a multi-byte character would make `.`
+# count its two bytes separately and the leg could not be the second reader.
+# `a` also carries one multi-byte subject, where the engine's own skip over a
+# whole character and the loop's skip over the stray both fire.
+pattern a
+encoding utf8
+mc "a\x80a" 2
+mc "a\x80\x80a" 2
+mc "a\xc3\xa9\x80a" 2
+
+pattern .
+encoding utf8
+mc "a\x80a" 2
+
+pattern a|
+encoding utf8
+mc "a\x80a" 3
+mc "a\x80" 2
