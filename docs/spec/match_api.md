@@ -586,16 +586,41 @@ byte of `s`.
   PCRE2's UTF modes in the SUCCEEDING direction — `(?<!.)` at offset 1 of the
   four bytes `CE B1 CE B2` reports `(1,1)` — because a truncated leading
   character has no path and a negative assertion succeeds exactly where its
-  body has none. **Neither arm ROUNDS the caller's `startpos`.** Refusing it
+  body has none. **Neither arm ROUNDS a caller's `startpos > 0`.** Refusing it
   and honouring it are the two choices on offer; silently advancing to the
   next boundary (which is `PCRE2_MATCH_INVALID_UTF`'s behaviour) is not one,
   because a caller handed an answer for a position it did not ask about
   cannot tell that from an answer for the one it did.
+- **OFFSET 0 IS NEVER REFUSED, AND ON AN ILL-FORMED SUBJECT IT IS NOT WHERE A
+  MATCH IS ATTEMPTED** ([K73], Frank's 2026-09-29 ruling (a)). No character
+  precedes offset 0, so a caller naming it cannot have pointed inside one; but
+  a subject may BEGIN with continuation bytes (`0x80`-`0xBF`), and then offset
+  0 is not a character start either. The search then begins at the first
+  non-continuation byte (or at `n`), exactly as `PCRE2_MATCH_INVALID_UTF`
+  advances its start offset, and every answer is the answer from there:
+  `''`, `\B`, `x*` and `(?=)` report `(1,1)` on `\x80` and `(2,2)` on
+  `\x80\x80`; `^`, `\A` and `\G` are FALSE at the moved start, so `^` finds
+  nothing on `\x80` and `\G|b` reports `(2,3)` on `\x80\x80b` (libpcre2 10.46,
+  `docs/dev/lanes/k73utf_evidence/k73_witness_10.46.txt`). An ill-formed
+  LEAD byte (`0xFF`, a truncated `0xE3`) is a valid start and is attempted,
+  as before. The rule has NO FLAG — it is the same under
+  `-fno-startpos-guard`, which governs only a `startpos > 0` — and it is the
+  one place pcrec now does what `PCRE2_MATCH_INVALID_UTF` does at a start
+  offset; an explicit mid-character `startpos > 0` keeps the refusal above,
+  a deliberate, stated divergence from that mode.
+- **The anchored entries (§3.2/§3.3) answer `-1` at `ctx->pos == 0` on such
+  a subject**, because they report only a match beginning exactly at
+  `ctx->pos` and none begins at a position that is not a character start.
+  libpcre2 under `PCRE2_ANCHORED` advances there too and reports the match at
+  the moved start (`(1,1)` for `x*` on `\x80`); pcrec's anchored contract has
+  no way to report a start other than `ctx->pos`, so this is a second stated
+  divergence, and both entry shapes agree on it.
 
 **WHAT THE ARTIFACT PROMISES ABOUT ITS OWN POSITIONS IS NOT PART OF THIS
 AXIS.** Every position the ENGINE generates — an unanchored search's candidate
-match starts, a failed attempt's retry — is a character boundary of the
-encoding, unconditionally and under either setting of the flag. That is K49's
+match starts, a failed attempt's retry, and since [K73] the first attempt of a
+search at offset 0 — is a character start of the encoding, unconditionally and
+under either setting of the flag. That is K49's
 and K50's fix, and it has no knob: a reported match span never begins inside a
 character on any subject, whichever arm the artifact carries. The flag governs
 only where a CALLER may point the entry.
@@ -2033,7 +2058,27 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `45` on every artifact today (module `ucp` bumped it
+- **`rx_info.abi` is `46` on every artifact today ([K73] bumped it from 45,
+  2026-09-29: THE OFFSET-0 START RULE IS EMITTED TEXT).** Under an encoding
+  that restricts where a match may begin (`utf8`), a NULLABLE pattern's
+  artifact gains one line at each caller-facing body — the unanchored DFA scan
+  (the DFA artifact's entry and a VM hybrid's internal prefilter) seeks
+  `search_from` past leading continuation bytes at offset 0, ENG_ATTEMPT's
+  start loop skips offset 0 there, the VM seeks its first `attempt_position`,
+  and the anchored match-here bodies answer `-1` (§3.1's two new bullets). A
+  non-nullable pattern gains none of it, by [K50-NULLGATE]'s proof: a match
+  that consumes a byte already begins on a character start. SEPARATELY, the
+  DFA's `"unwrapped"` `<prefix>_match` (§3.2) gains the [K50] caller-startpos
+  guard it had never carried — §3.1 promised it, and the entry answered a
+  mid-character `ctx->pos` instead of refusing it; that moves every `utf8`
+  DFA artifact of that form, nullable or not. ENG_ATTEMPT's existing
+  `continue` gate loses a dead `start == 0 ||` clause (the backend's start
+  predicate no longer carries the offset-0 exemption; the guard composes it).
+  No `byte` artifact moves beyond this number, no struct offset moves, no
+  `rx_info` member is added or changed, and answers move only on subjects that
+  begin with a continuation byte (to libpcre2's) and on mid-character
+  `ctx->pos` at the unwrapped DFA `_match` (to the promised refusal).
+- **`rx_info.abi` was `45` (module `ucp` bumped it
   from 44, 2026-09-28/29: ADDING A MODULE MOVES THE `--features all`
   SCAFFOLDING, EVEN WITH NO OTHER EMITTED CHANGE).** [UCP] U0+U1 landed
   module `ucp` (`(*UCP)`, `--ucp`, `flags u`) with the row's own default

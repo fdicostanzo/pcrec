@@ -2041,9 +2041,13 @@ so the axis is a contract choice wearing a tuning flag's spelling.
   `(1,1)`, because a truncated leading character has no path and a negative
   assertion succeeds exactly where its body has none.
 
-Neither arm ROUNDS the caller's position to the next boundary. That third
-semantics (`PCRE2_MATCH_INVALID_UTF`'s) is deliberately not on offer —
-`match_api.md` §3.1 says why.
+Neither arm ROUNDS a caller's `startpos > 0` to the next boundary. That third
+semantics (`PCRE2_MATCH_INVALID_UTF`'s) is deliberately not on offer there —
+`match_api.md` §3.1 says why. OFFSET 0 IS NOT THIS AXIS'S: it is never refused
+under either arm, and since [K73] a subject that begins with continuation
+bytes is searched from its first non-continuation byte under BOTH arms alike
+(`match_api.md` §3.1's offset-0 bullet) — an engine rule with no flag, which is
+why the two builds still agree there.
 
 **IT IS NOT MASKED OUT OF `rx_info.flags`,** and it is the only `-fno-` flag
 in this document that is not. Every other member of that mask changes an
@@ -2055,7 +2059,8 @@ an artifact needs to be able to tell which contract it carries.
 **WHAT IT DOES NOT TOUCH, and this is the half a reader is most likely to get
 wrong.** The positions the ENGINE generates — an unanchored search's candidate
 match starts, a failed attempt's retry — are the encoding's character
-boundaries under BOTH arms, unconditionally. That is K49's and K50's
+boundaries under BOTH arms, unconditionally — and since [K73] so is a
+search's first attempt at offset 0. That is K49's, K50's and K73's
 wrong-answer fix and it has no flag; a build that denied it would be the K50
 defect and there is no way to ask for one. The axis governs where a CALLER may
 point the entry, and nothing else.

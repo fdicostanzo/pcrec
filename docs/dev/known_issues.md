@@ -11,7 +11,7 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 ---
 
-## K73 — OPEN, held for a ruling (found by lane ucpu2, 2026-09-29, side finding) — empty pattern on a lone ill-formed byte under `-e utf8`
+## K73 — FIXED 2026-09-29 (lane k73utf, ruling (a); abi 45 -> 46) — empty pattern on a lone ill-formed byte under `-e utf8` (found by lane ucpu2, 2026-09-29, side finding)
 
 **Witness:** the empty pattern on the subject `\x80` (one stray continuation byte) under `-e utf8`: pcrec reports a match at (0,0), and libpcre2 10.46 with PCRE2_MATCH_INVALID_UTF reports (1,1). Pre-existing, independent of UCP.
 
@@ -32,6 +32,30 @@ character boundary". **Status: OPEN, held for a ruling** — the fix changes the
 emitted guard text of every `-e utf8` artifact (an `abi` event, D76/D94) and
 rounds a `startpos` where §3.1 says "neither arm ROUNDS the caller's
 startpos"; recommended shape and the two alternatives are in the lane report.
+
+**Fix (2026-09-29, Frank's ruling (a)).** Offset 0 is still never REFUSED,
+but on a subject that begins with continuation bytes it is no longer where a
+match is attempted: ONE emitter primitive, `pcrec_emit_start_zero`
+(`src/gen/emit_dfa.c`), renders the rule from the backend's start predicate at
+every caller-facing body, in the spelling each body's return convention needs
+— SEEK in the unanchored DFA scan (both its customers) and on the VM's first
+`attempt_position` (never on `search_from` there, which `\G` reads), SKIP in
+ENG_ATTEMPT's start loop, NOMATCH (`-1`) in the anchored match-here bodies. The
+backend text (`enc_utf8.c`'s `start_guard`) became the plain character-start
+predicate; the caller's offset-0 exemption from the REFUSAL moved into the
+emitter's guard composition, rendering the guard line byte-identical. Gated on
+`pcrec_startgate_needed` ([K50-NULLGATE]'s proof: non-nullable patterns cannot
+match at a continuation byte). No flag: identical under `-fno-startpos-guard`.
+An explicit mid-character `startpos > 0` keeps K50's refusal. **Found on the
+way and fixed with it**: the DFA's `"unwrapped"` `<prefix>_match` carried no
+K50 guard at all (`x*` at `ctx->pos == 1` of `C3 A9` answered 0, not
+PCREC_ERR_STARTPOS) — `tests/utf8/run_startbnd_diff.sh` swept `_search` only;
+its driver now sweeps `_match` too, with its own floor. Witnesses:
+`tests/utf8/k73_startskip.rxt` (86 cells, libpcre2 10.46 transcript
+`docs/dev/lanes/k73utf_evidence/k73_witness_10.46.txt`; 45 fail on the pre-fix
+compiler) and seven new §5 engine rows in `run_startbnd_diff.sh`. Spec:
+`docs/spec/match_api.md` §3.1 (two bullets) and §6, `docs/spec/tuning.md`
+§2.23. Report: `docs/dev/lanes/k73utf_report.md`.
 
 ---
 
