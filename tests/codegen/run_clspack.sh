@@ -256,6 +256,80 @@ kit_diff span '[\x00-\x08\x0e-\x1f\x7f-\x9f]+|[ -/:-@]{2}' "a\x01\x02\x7f\x90b" 
 [ "$kcells" -ge 10000 ] && ok "[kit] population $kcells cells (floor 10,000)" \
     || bad "[kit] population $kcells cells, under the 10,000 floor — the sweep reached too little"
 
+# PART 5 — [CLS-TREE] S2's SECOND abi event: the DFA scan edge's axis-I body
+# `kit`. At --tune=-2/-1 an edge whose class is on the `byte-kit` row tests
+# its run with `<prefix>_<machine>_scankit<head>` (stamp RX_DFA_SCAN_EDGE
+# "kit"); at 0 the same edge reads its 256-byte table ("bitmap"), and
+# -fno-cls-kit (the object's own deny) puts -2 back on the table. A range
+# class is "range" at every position. Then the kit-vs-deny answer
+# differential over the DFA artifacts, as PART 4.
+echo "== PART 5: the scan edge's kit body =="
+edge_of() { sed -n 's/^#define [A-Z0-9_]*_DFA_SCAN_EDGE "\(.*\)"$/\1/p' "$1"; }
+edge_case() {   # edge_case PATTERN WANT FLAGS...
+    local p="$1" want="$2"; shift 2
+    if ! pcrec_run "$PCREC" -p rx "$@" -o "$TMP/edge.c" --pattern "$p" >/dev/null 2>&1; then
+        bad "[edge] '$p' $* refused"; return
+    fi
+    local got nk
+    got="$(edge_of "$TMP/edge.c")"
+    nk="$(grep -c '^static inline int rx_[a-z]*_scankit[0-9]*(unsigned cp)' "$TMP/edge.c")"
+    local nk_ok=0
+    if [ "$want" = kit ]; then [ "$nk" -gt 0 ] && nk_ok=1; else [ "$nk" -eq 0 ] && nk_ok=1; fi
+    if [ "$got" = "$want" ] && [ "$nk_ok" = 1 ]; then
+        ok "[edge] '$p' $* stamps \"$got\" with $nk kit matcher(s)"
+    else
+        bad "[edge] '$p' $* stamps \"$got\" with $nk kit matcher(s); want \"$want\""
+    fi
+}
+edge_case 'x[aeiou]{5,30}y' kit --tune=-2
+edge_case 'x[aeiou]{5,30}y' kit --tune=-1
+edge_case 'x[aeiou]{5,30}y' bitmap --tune=0
+edge_case 'x[aeiou]{5,30}y' bitmap --tune=2
+edge_case 'x[aeiou]{5,30}y' bitmap --tune=-2 -fno-cls-kit
+edge_case '0[a-z]{5,30}1' range --tune=-2
+edge_case '0[a-z]{5,30}1' range --tune=0
+ecells=0
+edge_diff() {   # edge_diff NAME PATTERN SUBJECT...
+    local name="$1" p="$2"; shift 2
+    local d="$TMP/edge-$name"; mkdir -p "$d"
+    if ! pcrec_run "$PCREC" --tune=-2 -p pa -o "$d/pa.c" --pattern "$p" >/dev/null 2>&1 \
+       || ! pcrec_run "$PCREC" --tune=-2 -fno-cls-kit -p pb -o "$d/pb.c" --pattern "$p" >/dev/null 2>&1; then
+        bad "[edge-diff $name] a build refused"; return
+    fi
+    if [ "$(edge_of "$d/pa.c")" != kit ] || [ "$(edge_of "$d/pb.c")" = kit ]; then
+        bad "[edge-diff $name] the witness does not reach the kit body (pa \"$(edge_of "$d/pa.c")\", pb \"$(edge_of "$d/pb.c")\")"; return
+    fi
+    # shellcheck disable=SC2086
+    if ! gen_cc "clspack edge $name" $CC -O1 -Wall -Wextra -std=gnu11 ${GENCFLAGS:-} \
+            -DDIFF_A_LABEL='"scan-edge kit (--tune=-2)"' -DDIFF_B_LABEL='"-fno-cls-kit"' \
+            -I "$d" -o "$d/t" "$DRIVER" "$d/pa.c" "$d/pb.c"; then
+        bad "[edge-diff $name] the two-artifact driver did not compile: $(printf '%s' "$GEN_CC_LOG" | head -c 300)"; return
+    fi
+    printf '%s\n' "$@" | python3 -c '
+import sys
+for s in sys.stdin.read().split("\n"):
+    if not s: continue
+    b = s.encode("latin-1")
+    for j in range(len(b)):
+        for v in range(256):
+            m = b[:j] + bytes([v]) + b[j+1:]
+            print("".join("\\x%02x" % c for c in m))
+' > "$d/subj"
+    local out n
+    if out="$(gen_run "clspack edge $name" "$d/t" < "$d/subj" 2>"$d/div")"; then
+        n="$(printf '%s' "$out" | sed -n 's/^cells \([0-9]*\) .*/\1/p')"
+        ecells=$((ecells + ${n:-0}))
+        if [ "${n:-0}" -gt 0 ]; then ok "[edge-diff $name] $n cells agree (span, every capture slot, failure surface)"
+        else bad "[edge-diff $name] the driver compared no cells"; fi
+    else
+        bad "[edge-diff $name] the scan-edge kit and -fno-cls-kit disagree: $(head -4 "$d/div" | tr '\n' ' ')"
+    fi
+}
+edge_diff vowels 'x[aeiou]{5,30}y' "xaeiouay" "zzxaaaaaey"
+edge_diff hex '[0-9a-fA-F]{0,16}g' "0aF9g" "ffffffffffffffffffg"
+[ "$ecells" -ge 5000 ] && ok "[edge-diff] population $ecells cells (floor 5,000)" \
+    || bad "[edge-diff] population $ecells cells, under the 5,000 floor — the sweep reached too little"
+
 echo "checks passed: $pass"
 echo "checks failed: $fail"
 [ "$fail" -eq 0 ]

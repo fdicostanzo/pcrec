@@ -123,6 +123,7 @@ static const AxisDesc AXIS_DESC[] = {
     { "scan-edge", "table-walk", "always (fallback) -- this state counts nothing, or the axis is denied and the pass left every state where it was" },
 
     { "scan-body", "range", "the edge's class is a CONTIGUOUS byte set: subtract-and-compare against two immediates, no memory touched but the subject ([OPT-5])" },
+    { "scan-body", "kit", "size-leaning --tune positions only (-2/-1): the edge's class is on the class-form table's byte-kit row (not one interval, not an ASCII fold pair), tested by a static inline kit matcher <prefix>_<machine>_scankit<N> -- no 256-byte table; -fno-cls-kit denies it ([CLS-TREE] S2, D131 item 5)" },
     { "scan-body", "bitmap", "always (fallback) -- any other byte set, tested by a 256-byte membership table. The load is VALUE-addressed, not result-addressed, so the cursor is still the only loop-carried register. A per-ISA SIMD run-extension form would sit ABOVE these two ([OPT-SIMD]; ISA-neutral by ruling, scalar forms always the fallback)" },
 
     { "match", "unwrapped", "the artifact's own ENG_UNANCH _match, and its anchored machine built inside the DFA caps ([ENG-ABS])" },
@@ -354,9 +355,9 @@ static void emit_table_composite_rows(StrBuf *sb)
 }
 
 /* [OPT-5] `scan-body`'s TWO COMPOSITE ROWS, and they exist for `table`'s
- * reason exactly. `RX_DFA_SCAN_EDGE`'s real value set is FOUR strings
+ * reason exactly. `RX_DFA_SCAN_EDGE`'s real value set is FIVE strings
  * (docs/spec/match_api.md §6.3) and `pcrec_dfa_axis_scanbody_cands()` reports
- * the TWO the body axis can select PER EDGE. `dfa_scan_edge_name()`
+ * the THREE the body axis can select PER EDGE ([CLS-TREE] S2 added `kit`). `dfa_scan_edge_name()`
  * (src/gen/emit_dfa.c) answers `"none"` when the REGION axis chose
  * `table-walk` at every state — no edge, so no body to name — and `"mixed"`
  * when the artifact's edges did not all take the same body. Neither is
@@ -369,12 +370,12 @@ static void emit_table_composite_rows(StrBuf *sb)
  * build stamps, which the prose below says rather than the column. */
 static void emit_scan_composite_rows(StrBuf *sb)
 {
-    axis_row(sb, "scan-body", 3, "none", "predicate",
+    axis_row(sb, "scan-body", 4, "none", "predicate",
              "RX_DFA_SCAN_EDGE", "none", "", "", "", "", "",
              "the artifact carries no scan edge, so there is no body to name: no machine has a collapsible counted run, or the engine is ENG_ATTEMPT (label dispatch, no table walk to shorten) or provably empty -- and it is also what every artifact stamps under -fno-scan-edge, which denies the scan-edge axis above rather than this one");
-    axis_row(sb, "scan-body", 4, "mixed", "predicate",
+    axis_row(sb, "scan-body", 5, "mixed", "predicate",
              "RX_DFA_SCAN_EDGE", "mixed", "", "", "", "", "",
-             "the artifact's own edges took DIFFERENT bodies (dfa_scan_edge_name(): one machine's edge tests a contiguous range, another's reads a membership table) -- a per-artifact composition, never a single edge's own selection");
+             "the artifact's own edges took DIFFERENT bodies (dfa_scan_edge_name(): one machine's edge tests a contiguous range, another's reads a membership table or calls a kit matcher) -- a per-artifact composition, never a single edge's own selection");
 }
 
 /* ---- "predicate" axes: no candidate-list-as-data yet -------------------

@@ -2100,7 +2100,19 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `51` on every artifact today ([CLS-TREE] S2 bumped it
+- **`rx_info.abi` is `52` on every artifact today ([CLS-TREE] S2's SECOND
+  event bumped it from 51, 2026-09-30, renumbered by the manager at merge:
+  THE DFA SCAN EDGE'S CLASS BODY JOINS THE KIT AT THE SIZE-LEANING
+  POSITIONS).** Axis I (the scan edge's run-extension body) gains a third
+  object, `kit`: at `--tune=-2`/`-1` an edge whose class is on the class-form
+  table's `byte-kit` row (not one interval, not an ASCII fold pair) tests its
+  run with a file-scope `static inline` `<prefix>_<machine>_scankit<N>` where
+  it read a 256-byte table, and `<PREFIX>_DFA_SCAN_EDGE` gains the value
+  `"kit"` (§6.3). DFA artifacts and VM hybrids at those positions move; no
+  artifact at `0`/`+1`/`+2` moves but for this digit, no struct offset moves,
+  no `rx_info` member is added or changed, no answer moves, and
+  `-fno-cls-kit` restores the abi-51 body.
+- **`rx_info.abi` was `51` ([CLS-TREE] S2 bumped it
   from 49, 2026-09-30, numbered after lane uvbuild's `50` and renumbered by
   the manager at merge: THE VM'S BYTE-CLASS TESTS ARE CHOSEN BY THE KIT'S
   CLASS-FORM TABLE).** The VM's per-class byte shape classifier retired into
@@ -3976,7 +3988,7 @@ CONTAINS a DFA scan** — DFA artifacts AND VM hybrids, the same iff the four
 carry — and names how that scan tests the class of a SCAN EDGE. An edge is a
 maximal run of states differing only in how many bytes of one fixed class have
 been counted, replaced by a bounded cursor loop and DELETED from the
-transition table (`docs/spec/tuning.md` §2.18; `src/opt/scanedge.c`). The four
+transition table (`docs/spec/tuning.md` §2.18; `src/opt/scanedge.c`). The five
 values below are all this macro ever reads:
 
 ```
@@ -3989,6 +4001,7 @@ values below are all this macro ever reads:
 | `"none"` | the artifact carries no scan edge. Four causes and none of them a failure: no machine has a collapsible run; `_DFA_SCAN "attempt"`, whose states are code labels and whose step is a computed `goto`, so there is no loop-carried table load to shorten; `_DFA_SCAN "empty"`, whose body is one `return 0`; and any build under `-fno-scan-edge` |
 | `"range"` | every edge in the artifact tests a CONTIGUOUS byte range, emitted as a subtract-and-compare against two immediates baked into the instruction stream — the loop touches no memory but the subject |
 | `"bitmap"` | at least one edge's class is not contiguous, so its test is a 256-byte membership table read. The loop-carried register is still the cursor, which is the property the transform is for; the memory reference is the price |
+| `"kit"` | ([CLS-TREE] S2, `abi` 52) at `--tune=-2`/`-1` only: every edge's class is on the class-form table's `byte-kit` row, so its test calls a `static inline` kit matcher `<prefix>_<machine>_scankit<N>` in place of the 256-byte table (`docs/spec/tuning.md` §2.33). Never at `0`/`+1`/`+2`, and never under `-fno-cls-kit` |
 | `"mixed"` | an ARTIFACT-LEVEL composition, `RX_DFA_TABLE`'s own shape: this artifact's machines took both forms. The choice is per EDGE, and a machine may carry up to four |
 
 **`<PREFIX>_DFA_START` ([OPT-5] STEP 2, `abi` 16) is on every artifact that

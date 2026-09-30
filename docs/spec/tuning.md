@@ -2867,6 +2867,13 @@ A wide class whose set is ONE interval of code points at or below U+00FF
 (`[\x{e0}-\x{ff}]` under `-e utf8`) now takes the same `byte-range` row
 and is one range compare at every position, where it read a `B1` table.
 
+**The DFA scan edge ([CLS-TREE] S2's second event, `abi` 52).** At the
+same two positions, a DFA scan edge (§2.18) whose class is on the same
+`byte-kit` row tests its run with the kit's matcher
+`<prefix>_<machine>_scankit<N>` in place of its 256-byte table: axis I's
+`kit` body, stamped `<PREFIX>_DFA_SCAN_EDGE "kit"` (`match_api.md` §6.3).
+The flag denies it too, and the edge falls back to its table.
+
 **The stamp.** `<PREFIX>_VM_CLS_KIT` is the number of distinct matchers
 written — wide-class matchers plus byte-class kit matchers — a D81 VM-only
 activity count. It reads 0 under the flag, and in every `-e byte` artifact
@@ -2874,7 +2881,8 @@ at `0`/`+1`/`+2`.
 
 **Denied**, every wide class on the VM is the byte alternation this compiler
 emitted before `abi` 48, every byte class at `-2`/`-1` reads its table as
-before `abi` 51, and the artifact accepts exactly the same subjects.
+before `abi` 51, every DFA scan edge reads its table as before `abi` 52, and
+the artifact accepts exactly the same subjects.
 The flag denies the WHOLE kit: the shared byte-class atom table of §2.34 is a
 kit form too, so under `-fno-cls-kit` every table-read byte class keeps its
 own bitmap as well (`-fno-cls-pack` denies that table alone).
