@@ -1133,7 +1133,12 @@ REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
 # **(B) RE-PINNED AGAIN — [CLS-TREE] S2's second event, 2026-09-30: abi 51 -> 52, pin = `979b0b62`.** The
 # scan edge's kit body applies at --tune=-2/-1 only; this gate compiles at the default position, so (A)
 # is untouched and (B) moves by the abi digit alone.
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-979b0b62}"   # [CLS-TREE] S2 second event, abi 51->52 (lane/clss2): (B) self-pinned to 979b0b62. Prior pins: 22d150a8 (abi 51), 7889ab1f. # [OPT-HYB-RESEED] on land4 (S4 + CLSPACK), ONE event abi 48->49 (land5): (B) re-pinned to the land5 merge commit (its last src change, the k73utf convention), D76, 2026-09-30. Prior pin: 64b55d15 (land4, abi 47->48). # [CLS-TREE] S4, abi 46->47 (lane/s4build, pin 0d0a514f), and [OPT-CLSPACK], 47->48 (lane/clspack, pin 8407666a), each on its own lane before this landing combined them onto main: # [K73], abi 46->47: (B) re-pinned to 40c56343 on lane/k73utf (D76, 2026-09-29). Prior pin: 7e8ab18a ([UCP] U2, abi 45->46).
+# **(B) RE-PINNED AGAIN — [CLS-TREE] S2's review fixes (D139), 2026-09-30: abi 52 -> 53, pin = `ddfefeb7`,
+# the lane/clss2 commit that is its last `src/` change.** A DFA scan edge's range test takes the VM's
+# spelling at every position and a VM range from 0 reads `b <= hi`; this gate's call-bearing `byte`
+# population is VM-routed at the default position, and the gate's own run on the lane decides whether
+# (A) moves (docs/dev/lanes/clss2_report.md "Review fixes (clss2fix)").
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-ddfefeb7}"   # [CLS-TREE] S2 review fixes, abi 52->53 (lane/clss2): (B) self-pinned to ddfefeb7. Prior pins: 979b0b62 (abi 52), 22d150a8 (abi 51), 7889ab1f. # [OPT-HYB-RESEED] on land4 (S4 + CLSPACK), ONE event abi 48->49 (land5): (B) re-pinned to the land5 merge commit (its last src change, the k73utf convention), D76, 2026-09-30. Prior pin: 64b55d15 (land4, abi 47->48). # [CLS-TREE] S4, abi 46->47 (lane/s4build, pin 0d0a514f), and [OPT-CLSPACK], 47->48 (lane/clspack, pin 8407666a), each on its own lane before this landing combined them onto main: # [K73], abi 46->47: (B) re-pinned to 40c56343 on lane/k73utf (D76, 2026-09-29). Prior pin: 7e8ab18a ([UCP] U2, abi 45->46).
 
 WORKDIR="$(mktemp -d)"
 cleanup() {
