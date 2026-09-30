@@ -318,6 +318,14 @@
 #     NOTHING ELSE IN THE TREE CALLS src/gen/clskit.c at S1: every other arm
 #     scores a kit sabotage `0fail` by construction, so a row on this word is
 #     detected here or nowhere. Registered before S360-S363, its consumers.
+#   clspack — added 2026-09-30 ([OPT-CLSPACK], lane clspack); runs
+#     tests/codegen/run_clspack.sh: the shared atom table's row read off the
+#     artifact (the atom count stamp against a count computed from the
+#     -fno-cls-pack artifact's own bitmaps), both thresholds, the deny, every
+#     --tune position, and a 343,040-cell answer differential against
+#     -fno-cls-pack. Its own arm because the row is ANSWER-IDENTITY-
+#     preserving: a threshold or deny plant moves no answer, so `harness` is
+#     green on it by construction. Registered before S400-S404.
 #   wclass — added 2026-09-29 ([CLS-TREE] S3, lane s3build); runs
 #     tests/codegen/run_wclass_census.sh: the AKind switch census (every
 #     switch handles A_WCLASS, none shares an arm with A_CLASS, none has a
@@ -2536,6 +2544,16 @@ run_one() {
                 p="$(grep -m1 '^checks passed:' "$work/clskit.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/clskit.log" | grep -oE '[0-9]+')"
                 score_arm "$work/clskit.log" "$f" "clskit:${f:-ERR}fail/${p:-?}pass"
+                ;;
+            clspack)
+                # [OPT-CLSPACK] tests/codegen/run_clspack.sh — see the
+                # vocabulary entry above. Compiles with the sabotaged tree's
+                # own build/pcrec and reads its own corpus witnesses.
+                PCREC="$pcrec" bash "$tree/tests/codegen/run_clspack.sh" \
+                    > "$work/clspack.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/clspack.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/clspack.log" | grep -oE '[0-9]+')"
+                score_arm "$work/clspack.log" "$f" "clspack:${f:-ERR}fail/${p:-?}pass"
                 ;;
             wclass)
                 # [CLS-TREE] S3 tests/codegen/run_wclass_census.sh — see the
