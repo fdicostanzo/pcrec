@@ -3398,3 +3398,33 @@ both its `lo`/`hi` behavioural probes — MEASURED `clsfold:78fail/85pass`
 (bitmap-shape) rows and SOURCE A's own checks stay green. Read the
 current DETECTED figure from a `make mech` run.
 
+
+## `run_wclass_census.sh` + `wclass_census.py` — [CLS-TREE] S3's A_WCLASS checks (2026-09-29)
+
+S3 wraps every class the encoding spells in more than one code unit in an
+`A_WCLASS` (the code-point set in `u.wcls`, today's byte alternation as its
+child `l`) and makes every reader walk the child — a byte-identical refactor.
+The IDENTITY is `scripts/cls_identity.py`'s (it needs a reference build, which
+`make test` cannot have). This script holds what one tree can show, and rides
+`make test-cpset-structure` (~2 s) and the mech arm `wclass`:
+
+- **PART 1, the census** (`wclass_census.py`): every `switch` in `src/` whose
+  top-level labels name an `AKind` member (the member list READ from
+  `internal.h`'s enum) must carry `case A_WCLASS` [5a], must never put it in
+  one label run with `A_CLASS` [5b] (that arm renders the SET), and must carry
+  no `default:` [5c]. A population floor (49; 50 at landing) and a SELF-TEST
+  over a synthetic source that violates each rule make a blind scanner fail
+  rather than read clean.
+- **PART 2, four reader witnesses**, each an artifact fact the reader's wrong
+  walk moves and no answer check sees: W1 `éabc` keeps its five-byte literal
+  run (the spine see-through, D-3); W2 `(é)+` keeps the cursor rung
+  (`vm_det_seq`/`vm_cap_offsets` walk the child — the inventory classified
+  them unreachable, and they are not); W3 `café|naïve|résumé` keeps its
+  island (`vm_isl_words`); W4 `x[é]y` compiles, so no reader renders the set
+  — and a reader that does refuses by `pcrec_cls_bits`' kind guard. W4 is a
+  spine ITEM on purpose: at a spine head the see-through bypasses `vm_emit`.
+
+Sabotage rows S365 (a reader shares `A_CLASS`'s arm: [5b] + W4) and S366
+(`vm_isl_words`' default restored: [5a] + [5c] + W3). The W1/W2 plants
+(see-through removed from `vm_cat_flatten`; `vm_det_seq`'s arm declining)
+were measured by hand on the S3 lane (`docs/dev/lanes/s3build_report.md`).
