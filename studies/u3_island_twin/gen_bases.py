@@ -26,6 +26,7 @@ OUT = os.path.join(HERE, "out")
 # name, pattern, extra pcrec args for the base
 CASES = {
     "c1":  (r"[\x{100}-\x{2000}]+", []),
+    "c3":  (r"[\x{100}-\x{FFFF}]+", []),
     "nd":  (r"\p{Nd}+", []),
     "l":   (r"\p{L}+", []),
     "xwd": (r"\p{Xwd}+", []),
@@ -66,7 +67,7 @@ def gen(name, pat, extra, what):
 if __name__ == "__main__":
     sel = sys.argv[1].split(",") if len(sys.argv) > 1 and sys.argv[1] != "all" else list(CASES)
     plan = {
-        "c1": ["base", "basec", "flat"], "nd": ["base", "basec", "flat"],
+        "c1": ["base", "basec", "flat"], "c3": ["base", "flat"], "nd": ["base", "basec", "flat"],
         "l": ["base", "basec", "flat"], "xwd": ["base", "basec", "flat"],
         "x1": ["vm", "base"], "x2": ["vm", "base"],
     }

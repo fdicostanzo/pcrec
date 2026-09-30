@@ -20,6 +20,7 @@ OUT = os.path.join(HERE, "out")
 # case -> (pattern for libpcre2, flags)
 PATTERNS = {
     "c1": (r"[\x{100}-\x{2000}]+", "UTF|MIU"),
+    "c3": (r"[\x{100}-\x{FFFF}]+", "UTF|MIU"),
     "nd": (r"\p{Nd}+", "UTF|MIU"),
     "l": (r"\p{L}+", "UTF|MIU"),
     "xwd": (r"\p{Xwd}+", "UTF|MIU"),
@@ -56,18 +57,28 @@ def build(case, cc, arms, exe, extra=()):
 
 def main(case, cc="gcc-16", pattern=None, flags=None):
     d = os.path.join(OUT, case)
-    pat, fl = PATTERNS[case]
-    if pattern:
-        pat, fl = pattern, flags
+    pat, fl = (pattern, flags) if pattern else PATTERNS[case]
     arms = arms_for(case)
     exe = os.path.join(d, "check_exe")
-    build(case, cc, arms, exe)
+    san = os.environ.get("SAN") == "1"
+    build(case, cc, arms, exe, extra=["-fsanitize=address,undefined", "-fno-sanitize-recover=undefined", "-g"] if san else [])
     subs = oracle.read_subjects(os.path.join(OUT, "subjects.bin"))
     cases = oracle.read_cases(os.path.join(OUT, "cases.tsv"))
-    lib = oracle.load()
-    ora = {(i, f): (rc, s, e) for i, f, rc, s, e in oracle.answers(lib, pat.encode(), fl, subs, cases)}
+    if os.environ.get("ORACLE") == "remote":
+        import oracle_remote
+        oversion, orows = oracle_remote.remote_answers(pat, fl)
+        with open(os.path.join(d, "oracle_remote.tsv"), "w") as f:
+            f.write(oversion + "\n")
+            for r_ in orows:
+                f.write("\t".join(map(str, r_)) + "\n")
+    else:
+        lib = oracle.load()
+        oversion = "#libpcre2 " + oracle.version(lib)
+        orows = oracle.answers(lib, pat.encode(), fl, subs, cases)
+    ora = {(i, f): (rc, s, e) for i, f, rc, s, e in orows}
+    env = dict(os.environ, ASAN_OPTIONS="detect_leaks=0")
     r = subprocess.run([exe, os.path.join(OUT, "subjects.bin"), os.path.join(OUT, "cases.tsv")],
-                       capture_output=True, text=True)
+                       capture_output=True, text=True, env=env)
     if r.returncode:
         raise SystemExit("driver failed rc=%d\n%s" % (r.returncode, r.stderr[-2000:]))
     got = collections.defaultdict(dict)
@@ -76,8 +87,8 @@ def main(case, cc="gcc-16", pattern=None, flags=None):
         got[a][(int(i), int(f))] = (rc, s, e)
     nmatch = sum(1 for v in ora.values() if v[0] == "1")
     rows = []
-    print("case %s: %d cases, oracle libpcre2 %s: %d matches, %d errors" %
-          (case, len(cases), oracle.version(lib), nmatch, sum(1 for v in ora.values() if v[0].startswith("E"))))
+    print("case %s: %d cases, oracle %s: %d matches, %d errors" %
+          (case, len(cases), oversion, nmatch, sum(1 for v in ora.values() if v[0].startswith("E"))))
     names = [a for a, _ in arms]
     for a in names:
         bad = [k for k in ora if got[a][k] != (ora[k][0], str(ora[k][1]), str(ora[k][2]))]
@@ -94,7 +105,7 @@ def main(case, cc="gcc-16", pattern=None, flags=None):
                 bad = [k for k in ora if got[a][k] != got[b][k]]
                 rows.append((case, a + "==" + b, len(cases), len(bad), "arm vs arm"))
                 print("  %s vs %s: %d differ" % (a, b, len(bad)))
-    with open(os.path.join(d, "check.tsv"), "w") as f:
+    with open(os.path.join(d, "check_san.tsv" if san else "check.tsv"), "w") as f:
         f.write("case\tcomparison\tcases\tdiffering\tkind\n")
         for r_ in rows:
             f.write("\t".join(map(str, r_)) + "\n")

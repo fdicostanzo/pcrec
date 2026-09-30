@@ -34,7 +34,7 @@ def build_f1(case):
 
 if __name__ == "__main__":
     for c in sys.argv[1:]:
-        if c in ("c1", "nd", "l", "xwd"):
+        if c in ("c1", "c3", "nd", "l", "xwd"):
             build_f1(c)
         else:
             import f2
