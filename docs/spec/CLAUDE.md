@@ -58,6 +58,16 @@ spec and a design doc disagree, the spec is what the tool promises.
   MEASURED against libpcre2 driven through the same loop
   (`tests/assertions/run_kreset_diff.sh` §5) rather than argued.
 
+  **[K75] (D132, 2026-09-30) — §3.1's find-all loop resumes after a
+  non-empty match at `<prefix>_next_pos(s, n, end - 1)`, not `end`.** A
+  protocol change only (no emitted byte, no abi event): a no-op on a
+  well-formed subject, and under `-e utf8` it steps over a stray continuation
+  byte instead of handing the engine a `startpos` K50 refuses. §3.1 also now
+  states the boundary rule outright (a caller's `startpos` must be a
+  boundary; positions the loop computes always are; a continuation byte is
+  never a match start); `rxt_format.md`'s `mc` paragraph carries the same
+  advance.
+
   **[M4.7g], 2026-08-18 — the R29 fix pass** (`docs/dev/reviews/
   2026-08-18-r29-match-api-spec.md`) is the document's first revision,
   and its shape is worth knowing before editing this file again: the

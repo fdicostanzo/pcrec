@@ -71,7 +71,12 @@ multi-byte character is refused (`PCREC_ERR_STARTPOS`) rather than
 silently rounded. `<prefix>_next_pos(s, n, pos)` is the supported way to
 step to the next valid boundary — use it to advance past a match when
 scanning for all matches in a subject, exactly as pcrec's own find-all
-examples do.
+examples do. After a non-empty match, resume at
+`<prefix>_next_pos(s, n, end - 1)` rather than at `end`: the two are the same
+on well-formed text, and on text with a stray continuation byte after the
+match only the first steps over it instead of being refused. A `startpos`
+you pass in yourself must already be on a boundary; the positions the loop
+computes always are.
 
 ## The caller-provided buffer (`_in` entries)
 

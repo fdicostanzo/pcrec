@@ -73,7 +73,7 @@ int main(int argc, char **argv)
             printf("\n");
             m++;
             pos = (caps[0][1] > caps[0][0])
-                ? (size_t)caps[0][1]
+                ? rx_next_pos(s, n, (size_t)caps[0][1] - 1)   /* [K75] */
                 : rx_next_pos(s, n, (size_t)caps[0][0]);
             if (pos > n) break;
             if (m > 4096) { printf("s%d\tRUNAWAY\n", a); break; }

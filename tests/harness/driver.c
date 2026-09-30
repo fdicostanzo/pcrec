@@ -471,7 +471,10 @@ int main(int argc, char **argv) {
      * question. It is `docs/spec/match_api.md` §3.1's loop TRANSCRIBED —
      * the same transcription `tests/encseam/findall_driver.c` carries, and
      * deliberately so: if the two ever differ, one of them has stopped
-     * meaning what the spec says. The advance off an EMPTY match goes
+     * meaning what the spec says. A NON-EMPTY match resumes at
+     * `<prefix>_next_pos(end - 1)` ([K75]: the end aligned to a boundary,
+     * identical to `end` on a well-formed subject; on an ill-formed one it
+     * steps over a stray continuation byte K50 would refuse). The advance off an EMPTY match goes
      * through the artifact's own `<prefix>_next_pos` residual and off the
      * MATCH'S OWN START (`caps[0][0]`), never off the loop variable — an
      * empty match can be found at a position later than the one searched
@@ -512,7 +515,7 @@ int main(int argc, char **argv) {
             }
             nmatch++;
             p = (fa[0][1] > fa[0][0])
-                  ? (size_t)fa[0][1]
+                  ? RXFN(_next_pos)(buf, len, (size_t)fa[0][1] - 1)   /* [K75] */
                   : RXFN(_next_pos)(buf, len, (size_t)fa[0][0]);
         }
         printf("count %zu\n", nmatch);
