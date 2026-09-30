@@ -2188,6 +2188,13 @@ alone cannot tell a refactor from a no-op.
 
 ## `run_tune_dial.sh` — [OPT-DIAL]'s MECHANISM-STATE CROSS-CHECK (2026-09-17)
 
+**§3e ([CLS-TREE] S2, 2026-09-30)** reads the VM test each position emits
+for a BYTE class off the text: a scattered class is a kit matcher at -2/-1
+and a bitmap at 0/+1/+2 (D131 item 5), `-fno-cls-kit` puts -2 back on the
+bitmap, a range and an ASCII fold pair are inline at every position, and
+`RX_VM_CLS_KIT` equals the kit matchers the text defines. Sabotage rows
+S431 and S432 (the kit leaking into position 0) land here.
+
 The speed-vs-size dial (`--tune=-2..+2`, `docs/spec/tuning.md` §5), held to
 the ARTIFACT rather than to its stamp or to the compiler's own table. Its own
 section, `make test-tune-dial`, part of `make test` and NOT of `make smoke` —
@@ -3441,6 +3448,18 @@ because the shipped corpus has no artifact the row fires on.
   byte 0..255 at every position of each matching subject the block carries —
   343,040 cells at landing, floor 10,000.
 Sabotage rows S400-S404 (all DETECTED solo at landing).
+- **PART 4** ([CLS-TREE] S2, lane clss2) the kit's BYTE forms: at
+  `--tune=-2` a scattered class with fewer than 11 table-read siblings reads
+  `<prefix>_class_kit<N>`; each witness must take the kit on the `pa` side
+  (text + `VM_CLS_KIT` stamp) and not under `-fno-cls-kit`, then the same
+  driver compares the two over every byte at every position (floor 10,000).
+- **PART 5** ([CLS-TREE] S2's second abi event) the DFA scan edge's axis-I
+  `kit` body: `RX_DFA_SCAN_EDGE "kit"` with its `_scankit<N>` matchers at
+  -2/-1, `"bitmap"` at 0/+2 and under `-fno-cls-kit`, `"range"` for a range
+  class at every position, then the kit-vs-deny answer differential over the
+  DFA artifacts (floor 5,000).
+Sabotage rows S430 (kit matcher built from the wrong class) and S431
+(`-fno-cls-kit` not reaching the byte rows) are S2's.
 
 ## `run_wclass_census.sh` + `wclass_census.py` — [CLS-TREE] S3's A_WCLASS checks (2026-09-29)
 

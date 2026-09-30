@@ -77,7 +77,11 @@ at `PROCS=4`, most of it in the study's Python DP (crosscheck.py).
   and `bench_bytes.atom_partition`. The selection TABLE is restated
   independently from D131 (NO atom row — item 6's atom table is an
   artifact-level choice, not a per-set `ROWS` outcome), and `clskit.c`'s
-  printed `ROW` listing is held to that restatement. `KIT_DISP_BYTES`
+  printed `ROW` listing is held to that restatement. Since [CLS-TREE] S2
+  (lane clss2) the restatement carries the four BYTE rows: `byte-range`
+  (one interval, every position), `byte-fold` (the ASCII case pair, every
+  position, deny ordinal 7), `byte-kit` (-2/-1) and `byte-table` (every
+  position, so a denied `byte-kit` falls to a table). `KIT_DISP_BYTES`
   restates clskit.c `PLACE.kit_disp_bytes` (D131 addendum 1's fitted
   dispatch/prologue term), added to K's bytes wherever the restated
   predicates compare K against another form — never to the DP's own
