@@ -16,7 +16,10 @@
  * validation pass, no error return. The forward automaton delivers that by
  * construction (an ill-formed sequence has no path, §2.3); the two entries
  * here that walk bytes themselves (`next_pos`, `back_step`) deliver their own
- * halves of it, and `back_step`'s is the subtle one — see its block.
+ * halves of it, and `back_step`'s is the subtle one — see its block. That
+ * is the DEFAULT. [UTF-VALID] (D133) adds the opt-in opposite contract,
+ * PCRE2_UTF's: `-futf-check` refuses an ill-formed subject before any
+ * attempt, through `$_valid_upto` below, which every artifact carries.
  *
  * This file is TEXT, not emitter code (see enc.h): `$` stands for the
  * artifact's own --prefix and is the only character substituted. Keep the
@@ -356,20 +359,15 @@ static const char u8_defs_back_step[] =
  * has none, because every byte string is a valid `byte` string, and the
  * emitter then emits nothing — no encoding conditional anywhere (DD-12 (7)).
  *
- * IT IS ITS OWN DECODER AND DELIBERATELY NOT `$_span_ci_decode`'s. That one
- * ships only in a CASELESS artifact, and validity is asked of every variable
- * whatever its caselessness; depending on it would make an exact-compare
- * artifact drag in a 1,484-pair fold table to answer a question about byte
- * shapes. The two agree on what well-formed means — same lead-byte families,
- * same overlong floors, same surrogate and U+10FFFF exclusions, which are the
- * automaton's own — and that agreement is the thing to preserve if either
- * moves.
- *
- * [CLS-TREE] S4 moved that decoder out of the caseless entry into its own
- * fold-free `$_decode` entry, so the fold-table reason above no longer
- * holds. Rewriting this loop over `$_decode` would move every var-bearing
- * utf8 artifact for no measured gain, so it is left as is (D77); the
- * agreement between the two is still the thing to preserve. */
+ * [UTF-VALID] IT IS RE-SPELLED ON `$_valid_upto` BELOW (utf_valid_design.md
+ * §4.3, ruled D133 Q7), so the artifact has ONE spelling of "well-formed
+ * UTF-8": a value is valid iff the subject validator, run over it from
+ * offset 0, finds nothing before its end. `requires` carries the call. The
+ * earlier reason for a decoder of its own (`$_span_ci_decode` shipping only
+ * in a caseless artifact) had already lapsed at [CLS-TREE] S4; the
+ * agreement with `$_decode` over what well-formed means (same lead-byte
+ * families, overlong floors, surrogate and U+10FFFF exclusions, which are
+ * the automaton's own) is still the thing to preserve if either moves. */
 static const char u8_decls_var_valid_doc[] =
 "/* $_var_valid -- is a caller-supplied value well-formed under this\n"
 " * artifact's encoding? (pcrec [VAR], variables_common.md section 2.1.)\n"
@@ -383,39 +381,110 @@ static const char u8_decls_var_valid[] =
 "int $_var_valid(const unsigned char *v, size_t vlen);\n";
 
 static const char u8_defs_var_valid_doc[] =
-"/* Well-formed means exactly what the automaton's own lowered classes mean:\n"
-" * the four lead-byte families, the right number of continuation bytes, no\n"
-" * overlong form, no surrogate, nothing above U+10FFFF. */\n";
+"/* Well-formed means exactly what the subject validator means: the value\n"
+" * read from offset 0 holds no ill-formed sequence before its end. */\n";
 
 static const char u8_defs_var_valid[] =
 "int $_var_valid(const unsigned char *v, size_t vlen)\n"
 "{\n"
-"    size_t p = 0;\n"
-"    while (p < vlen) {\n"
-"        unsigned char b = v[p];\n"
+"    return $_valid_upto(v, vlen, 0) == vlen;\n"
+"}\n";
+
+/* ---- entry 8: the SUBJECT VALIDATOR ([UTF-VALID], utf_valid_design.md
+ * §1.3/§4.3, ruled D133) --------------------------------------------------
+ *
+ * THE STEP-BACK IS PCRE2's RAW WALK, and `$_back_step` is deliberately NOT
+ * it (§1.3, measured on 10.46): per character, one byte back and then back
+ * over EVERY continuation byte, unvalidated, unbounded, clamped at 0.
+ * `back_step` validates each run and stops after three continuations, and on
+ * exactly the ill-formed input this entry exists for it answers NONE — which
+ * mapped to 0 would report `ff` at 0 in `\xff\xc3\xa9\xa9b` from 4 where
+ * PCRE2 reports 3.
+ *
+ * THE VALIDATOR'S "WELL-FORMED" IS THE AUTOMATON'S: the four lead-byte
+ * families, the right number of continuation bytes, no overlong form, no
+ * surrogate, nothing above U+10FFFF. The reported offset is the ill-formed
+ * sequence's FIRST byte (its lead, or a stray continuation byte itself),
+ * which is PCRE2's error offset on all thirteen measured kinds.
+ *
+ * THE ASCII FAST PATH (§5, ruled Q8): after an ASCII byte, eight bytes at a
+ * time while none has its high bit set. It wins 2.3x-16x on ASCII and sparse
+ * text and loses 10-15% on dense non-ASCII (measured, §5); SIMD stays out.
+ * `__builtin_memcpy` into a `uint64_t` is the unaligned load gcc lowers to
+ * one instruction, reads only bytes below n, and needs no `<string.h>` —
+ * which an artifact includes only when something else in it calls memchr. */
+static const char u8_decls_valid_upto_doc[] =
+"/* $_valid_upto -- the SUBJECT VALIDATOR (pcrec [UTF-VALID]).\n"
+" *\n"
+" * Returns the offset of the first byte of the first ILL-FORMED sequence\n"
+" * of this artifact's encoding at or after `startpos` stepped back by the\n"
+" * pattern's lookbehind reach, or n when there is none (and n when\n"
+" * startpos > n). An artifact compiled with -futf-check refuses exactly\n"
+" * the calls for which this is < n, with PCREC_ERR_UTF; on any artifact it\n"
+" * is the validate-once half of a checked find-all loop (pcrec's\n"
+" * docs/spec/match_api.md S3.1.2). Pass the SAME startpos the refused call\n"
+" * was given and the result is PCRE2_UTF's own error offset.\n"
+" *\n"
+" * THIS artifact was compiled for the `utf8` encoding: ill-formed means a\n"
+" * byte that cannot begin a character, a missing or extra continuation\n"
+" * byte, an overlong form, a surrogate, or a value above U+10FFFF. */\n";
+
+static const char u8_decls_valid_upto[] =
+"size_t $_valid_upto(const unsigned char *s, size_t n, size_t startpos);\n";
+
+static const char u8_defs_valid_upto[] =
+"size_t $_valid_upto(const unsigned char *s, size_t n, size_t startpos)\n"
+"{\n"
+"    size_t p = startpos, k = $_VALID_LB;\n"
+"    if (startpos > n) return n;\n"
+"    /* The raw step-back: per character, one byte back and then over every\n"
+"     * continuation byte, clamped at 0 -- PCRE2's walk, unvalidated. */\n"
+"    while (k-- > 0 && p > 0) {\n"
+"        p--;\n"
+"        while (p > 0 && (s[p] & 0xC0u) == 0x80u) p--;\n"
+"    }\n"
+"    while (p < n) {\n"
+"        unsigned char b = s[p];\n"
 "        size_t len, i;\n"
 "        unsigned c, floor;\n"
-"        if (b < 0x80u)                 { p += 1; continue; }\n"
-"        else if ((b & 0xE0u) == 0xC0u) { len = 2; c = b & 0x1Fu; floor = 0x80u; }\n"
+"        if (b < 0x80u) {\n"
+"            /* ASCII: then eight bytes at a time while none is high. */\n"
+"            uint64_t w;\n"
+"            p++;\n"
+"            while (n - p >= 8) {\n"
+"                __builtin_memcpy(&w, s + p, 8);\n"
+"                if (w & 0x8080808080808080ull) break;\n"
+"                p += 8;\n"
+"            }\n"
+"            continue;\n"
+"        }\n"
+"        if ((b & 0xE0u) == 0xC0u)      { len = 2; c = b & 0x1Fu; floor = 0x80u; }\n"
 "        else if ((b & 0xF0u) == 0xE0u) { len = 3; c = b & 0x0Fu; floor = 0x800u; }\n"
 "        else if ((b & 0xF8u) == 0xF0u) { len = 4; c = b & 0x07u; floor = 0x10000u; }\n"
-"        else return 0;\n"
-"        if (p + len > vlen) return 0;\n"
+"        else return p;\n"
+"        if (len > n - p) return p;\n"
 "        for (i = 1; i < len; i++) {\n"
-"            if ((v[p + i] & 0xC0u) != 0x80u) return 0;\n"
-"            c = (c << 6) | (unsigned)(v[p + i] & 0x3Fu);\n"
+"            if ((s[p + i] & 0xC0u) != 0x80u) return p;\n"
+"            c = (c << 6) | (unsigned)(s[p + i] & 0x3Fu);\n"
 "        }\n"
 "        if (c < floor || c > 0x10FFFFu || (c >= 0xD800u && c <= 0xDFFFu))\n"
-"            return 0;\n"
+"            return p;\n"
 "        p += len;\n"
 "    }\n"
-"    return 1;\n"
+"    return n;\n"
 "}\n";
 
 static const PcrecEncEntry entries_utf8[] = {
     { PCREC_ENCE_NEXT_POS,      false,
       u8_decls_next_pos_doc,  u8_decls_next_pos,
       u8_defs_next_pos_doc,   u8_defs_next_pos,
+      0, false },
+    /* [UTF-VALID] always in the mask, `next_pos`'s status: caller-facing
+     * residue the entry's precheck calls once per call, never an engine
+     * body (enc.h's id comment). */
+    { PCREC_ENCE_VALID_UPTO,    false,
+      u8_decls_valid_upto_doc, u8_decls_valid_upto,
+      NULL,                    u8_defs_valid_upto,
       0, false },
     { PCREC_ENCE_SPAN,          true,
       u8_decls_bref_doc,      u8_decls_bref,
@@ -435,7 +504,7 @@ static const PcrecEncEntry entries_utf8[] = {
     { PCREC_ENCE_VAR_VALID,     false,
       u8_decls_var_valid_doc, u8_decls_var_valid,
       u8_defs_var_valid_doc,  u8_defs_var_valid,
-      0, false },
+      PCREC_ENCE_VALID_UPTO, false },
     /* [CLS-TREE] S4 the one-character decode: engine-callable, `static
      * inline`, no declaration. The caseless span compare above requires it. */
     { PCREC_ENCE_DECODE,        true,

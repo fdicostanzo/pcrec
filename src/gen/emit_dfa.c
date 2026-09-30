@@ -671,18 +671,126 @@ const char *pcrec_startpos_guard_text(Ctx *cx, char *buf, size_t cap,
     return buf;
 }
 
-/* `pcrec_startpos_guard_text` written straight into the artifact — the
- * convenience half, for the four sites that want the guard EMITTED rather
- * than composed into a larger line (this file's search-entry head, and
- * `emit_vm.c`'s three `_run` statics). Writes nothing at all where the
- * encoding places no restriction or the flag denies the guard. */
+/* [UTF-VALID] IS THE SUBJECT CHECK EMITTED IN THIS ARTIFACT? `-futf-check`
+ * asked for, AND an encoding with ill-formed byte strings — which is asked of
+ * the BACKEND'S TABLE, never of the encoding's identity (DD-12 (7)): a
+ * backend under which every byte string is valid carries no value-validity
+ * row (`PCREC_ENCE_VAR_VALID`, src/enc/enc.h), and that absence is the same
+ * answer here as it is for a `${name}` value. One predicate for the three
+ * readers — the emitted check, the `<PREFIX>_UTF_CHECK` stamp and the
+ * `rx_info.flags` mask — so they cannot disagree about which artifacts
+ * check. */
+bool pcrec_utf_check_on(Ctx *cx)
+{
+    return (cx->opt->flags & PCREC_FORCE_UTF_CHECK) &&
+           pcrec_enc_has_entry(pcrec_enc_by_id(cx->opt->encoding),
+                               PCREC_ENCE_VAR_VALID);
+}
+
+/* [UTF-VALID] Writes the `-futf-check` PRECHECK for a call starting at
+ * `posvar`: refuse with PCREC_ERR_UTF when the subject validator finds an
+ * ill-formed sequence in `[posvar - LB, lenvar)`. Nothing when the check is
+ * off or inert. One line, so an entry's order — K50 guard (or the
+ * alignment), then this, then everything else — is visible at the site. */
+static void emit_utf_check(Ctx *cx, StrBuf *c, const char *indent,
+                           const char *posvar, const char *subjvar,
+                           const char *lenvar)
+{
+    if (!pcrec_utf_check_on(cx)) return;
+    pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
+    pcrec_sb_printf(c,
+        "%s/* [UTF-VALID] -futf-check: refuse an ill-formed subject before any\n"
+        "%s * attempt, as PCRE2_UTF does -- the checked range is the start\n"
+        "%s * position stepped back by the pattern's lookbehind reach, to the\n"
+        "%s * end. The same call gives the caller the offset. */\n",
+        indent, indent, indent, indent);
+    pcrec_sb_cmt_close(c);
+    pcrec_sb_printf(c, "%sif (%s_valid_upto(%s, %s, %s) != %s) return PCREC_ERR_UTF;\n",
+                    indent, cx->opt->prefix, subjvar, lenvar, posvar, lenvar);
+}
+
+/* The CALLER-STARTPOS ENTRY PROLOGUE written straight into the artifact, at
+ * the four sites that take a caller's position (this file's search-entry head
+ * and unwrapped match-here body, and `emit_vm.c`'s three `_run` statics):
+ * the startpos-guard axis's value, then [UTF-VALID]'s precheck.
+ *
+ * THE AXIS'S THREE VALUES (tuning.md §2.23). Refuse (the default) is
+ * `pcrec_startpos_guard_text`, byte for byte what K50 shipped; permissive
+ * (`-fno-startpos-guard`) writes nothing; ALIGN (`-fstartpos-guard=align`,
+ * D133) replaces the refusal with a SKIP on exactly the refusal's condition,
+ * so offset 0 is never moved as it is never refused. A SEARCH moves its own
+ * `posvar` to the next character start and runs from there. An ANCHORED
+ * match-here entry cannot report a match beginning anywhere but where it was
+ * asked, so it answers -1 — K73's NOMATCH form, for the same reason.
+ *
+ * THEN THE CHECK, FROM THE POSITION THE CALL RUNS FROM — which under align is
+ * the ALIGNED one, with no carve-out (D133: the character the pointer landed
+ * inside lies behind it, and the LB step-back validates it as the caller's
+ * real text). An anchored entry validates from the aligned position BEFORE it
+ * answers -1, so no answer is given for an ill-formed checked range. Writes
+ * nothing at all where the encoding restricts no position and the check is
+ * off, so a `byte` artifact is byte-identical under every setting of both
+ * axes. */
 void pcrec_emit_startpos_guard(Ctx *cx, StrBuf *c, const char *indent,
                                const char *posvar, const char *subjvar,
-                               const char *lenvar)
+                               const char *lenvar, bool anchored)
 {
-    char t[PCREC_STARTPOS_GUARD_TEXT_MAX];
-    pcrec_sb_puts(c, pcrec_startpos_guard_text(cx, t, sizeof t, indent,
-                                         posvar, subjvar, lenvar));
+    const PcrecEnc *enc = pcrec_enc_by_id(cx->opt->encoding);
+    char g[256];
+    bool trunc = false;
+
+    if (!(cx->opt->flags & PCREC_FORCE_STARTPOS_ALIGN) ||
+        !pcrec_enc_start_guard(enc, g, sizeof g, posvar, subjvar, lenvar,
+                               &trunc)) {
+        char t[PCREC_STARTPOS_GUARD_TEXT_MAX];
+        /* refuse (the default), or nothing: K50's own text, unchanged */
+        pcrec_sb_puts(c, pcrec_startpos_guard_text(cx, t, sizeof t, indent,
+                                                   posvar, subjvar, lenvar));
+        emit_utf_check(cx, c, indent, posvar, subjvar, lenvar);
+        return;
+    }
+    pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
+    if (!anchored)
+        pcrec_sb_printf(c,
+            "%s/* [UTF-VALID] -fstartpos-guard=align: a caller's start position\n"
+            "%s * inside a character (a misaligned pointer into valid text)\n"
+            "%s * moves to the next character start, once, here, and the\n"
+            "%s * search runs from there. Offset 0 is never moved. */\n",
+            indent, indent, indent, indent);
+    else
+        pcrec_sb_printf(c,
+            "%s/* [UTF-VALID] -fstartpos-guard=align: no match begins inside a\n"
+            "%s * character, so a caller's position there (a misaligned pointer\n"
+            "%s * into valid text) answers no match. Offset 0 is never one. */\n",
+            indent, indent, indent);
+    pcrec_sb_cmt_close(c);
+    if (!anchored) {
+        pcrec_sb_printf(c, "%sif (!(%s == 0 || %s)) do %s++; while (!(%s));\n",
+                        indent, posvar, g, posvar, g);
+        emit_utf_check(cx, c, indent, posvar, subjvar, lenvar);
+        return;
+    }
+    if (!pcrec_utf_check_on(cx)) {
+        pcrec_sb_printf(c, "%sif (!(%s == 0 || %s)) return -1;\n",
+                        indent, posvar, g);
+        return;
+    }
+    /* Anchored AND checked: validate from the ALIGNED position before
+     * answering, so the -1 is an answer for a well-formed checked range. The
+     * guard buffer is re-rendered for the local once the condition using the
+     * caller's variable has been written. */
+    pcrec_sb_printf(c, "%sif (!(%s == 0 || %s)) {\n"
+                       "%s    size_t aligned_from = %s;\n",
+                    indent, posvar, g, indent, posvar);
+    if (!pcrec_enc_start_guard(enc, g, sizeof g, "aligned_from", subjvar,
+                               lenvar, &trunc))
+        pcrec_ctx_fail(cx, 0, "internal error: this encoding's character-start "
+                       "guard does not fit the emitter's buffer");
+    pcrec_sb_printf(c, "%s    do aligned_from++; while (!(%s));\n", indent, g);
+    emit_utf_check(cx, c, pcrec_sb_fragf(&cx->arena, "%s    ", indent),
+                   "aligned_from", subjvar, lenvar);
+    pcrec_sb_printf(c, "%s    return -1;\n%s}\n", indent, indent);
+    emit_utf_check(cx, c, indent, posvar, subjvar, lenvar);
 }
 
 /* Writes the OFFSET-0 START RULE at one site: when `posvar` is 0 and offset 0
@@ -1177,7 +1285,7 @@ static void emit_search_head(Ctx *cx, StrBuf *c, const char *fn,
      * un-suffixed siblings. */
     if (cx->job->fit.chosen == ENGM_DFA)
         pcrec_emit_startpos_guard(cx, c, "    ", "search_from", "subject",
-                                  "subject_length");
+                                  "subject_length", false);
     /* [DD-14 wave G] THE DEAD GROUPS, DECLARED AND PERMANENTLY UNSET. Emitted
      * only when this artifact promises more than the whole match, which on
      * this engine means every promised group is dead (a live one would have
@@ -1466,6 +1574,24 @@ static void emit_rx_abi_types(StrBuf *sb)
          * a variable in it. */
         "#define PCREC_ERR_UNSET_VAR (-8)  /* [VAR] below PCREC_ERR_FLOOR: "
         "NOT a give-up -- an UNSET or ill-formed variable value was REFUSED */\n"
+        /* [UTF-VALID] THE FOURTH BELOW-THE-FLOOR PRODUCER, and the third
+         * CALLER REFUSAL in `PCREC_ERR_STARTPOS`'s class: under `-futf-check`
+         * an ill-formed sequence begins in the checked range
+         * `[startpos - LB, n)`, so the call is refused before any attempt and
+         * `caps` is untouched. `<prefix>_valid_upto(s, n, startpos)` gives
+         * the offset.
+         *
+         * THE FIRST BELOW-THE-FLOOR CODE A COMPOSED CALL SITE PROPAGATES
+         * RATHER THAN TRAPS ON (utf_valid_design.md §4.2, ruled D133 Q11):
+         * -6/-7 at a composed callee mean the engine broke its own rule, but a
+         * checking callee handed the caller's own subject can legitimately
+         * refuse it, because its LB may reach before the outer call's range.
+         *
+         * EVERY ARTIFACT DEFINES IT; only a `-futf-check` artifact under an
+         * encoding with ill-formed sequences returns it — `PCREC_ERR_STARTPOS`'s
+         * rule, for a caller's `switch` written today. */
+        "#define PCREC_ERR_UTF (-9)  /* [UTF-VALID] below PCREC_ERR_FLOOR: "
+        "NOT a give-up -- an ill-formed subject was REFUSED (-futf-check) */\n"
         "\n"
         /* Same D60 move: the caps-array unset sentinel is a pcrec-contract
          * fact, formerly <PREFIX>_UNSET. */
@@ -2462,8 +2588,18 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
         const PcrecEnc *k50_enc = pcrec_enc_by_id(cx->opt->encoding);
         const uint64_t startpos_guard_inert =
             (k50_enc && k50_enc->start_guard) ? 0u
-                                              : (uint64_t)PCREC_NO_STARTPOS_GUARD;
-        const uint64_t strategy_denials = startpos_guard_inert |
+                                              : (uint64_t)(PCREC_NO_STARTPOS_GUARD |
+                                                           PCREC_FORCE_STARTPOS_ALIGN);
+        /* [UTF-VALID] the SECOND contract axis, on the first one's rule: kept
+         * where it selects a semantics (an encoding with ill-formed byte
+         * strings), masked where it could not have acted (`byte`), asked of
+         * the same backend-table predicate the emitted check reads. The
+         * align bit rides the startpos-guard mask above for the same reason
+         * — it is that axis's third value. */
+        const uint64_t utf_check_inert =
+            pcrec_enc_has_entry(k50_enc, PCREC_ENCE_VAR_VALID)
+                ? 0u : (uint64_t)PCREC_FORCE_UTF_CHECK;
+        const uint64_t strategy_denials = startpos_guard_inert | utf_check_inert |
                                           PCREC_NO_POSSESSIFY | PCREC_NO_REVDET |
                                           PCREC_NO_COUNTER |
                                           PCREC_NO_LENGTH_PRUNE |
@@ -2875,6 +3011,14 @@ static void emit_residual_defs(Ctx *cx, StrBuf *sb)
 {
     const PcrecEnc *enc = pcrec_enc_by_id(cx->opt->encoding);
     if (!pcrec_enc_ready(enc)) return;
+    /* [UTF-VALID] LB, the one PATTERN fact a residual body reads: how many
+     * characters `<prefix>_valid_upto` steps back before it validates
+     * (PCRE2's `max_lookbehind`, `Ctx.lb_max`). Emitted on every artifact
+     * whatever the encoding — a backend whose body does not step back leaves
+     * it unread — so no encoding test decides it (DD-12 (7)). In the `.c`
+     * only, beside the definitions that read it. */
+    pcrec_sb_printf(sb, "#define %s_VALID_LB %d\n", cx->opt->prefix,
+                    cx->lb_max);
     pcrec_enc_emit_defs(sb, enc, cx->job->enc_mask, cx->opt->prefix);
 }
 
@@ -7805,7 +7949,7 @@ static void emit_anchored_match_def(Ctx *cx, StrBuf *c, const DfaForm *f,
      * the answer the search-and-filter form gives by construction, since its
      * search moves off offset 0 and the filter then rejects the start. */
     pcrec_emit_startpos_guard(cx, c, "    ", "search_from", "subject",
-                              "subject_length");
+                              "subject_length", true);
     pcrec_emit_start_zero(cx, c, "    ", "search_from", "subject",
                           "subject_length", PCREC_START0_NOMATCH);
     emit_machine_tables(c, f);
@@ -8802,12 +8946,31 @@ void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
      * the SAME text the guard is emitted from, which is what stops a stamp
      * and its body drifting apart (this file's `unanch_start` rule). */
     {
+        /* [UTF-VALID] "align", D133's third value, is read off the BACKEND
+         * the same way the guard's own emission reads it: a restricting
+         * encoding and the flag. It is tested first because the align text
+         * REPLACES the refusal, so a probe of the refusal text alone would
+         * read "guarded" on an artifact that carries none. */
         char probe[PCREC_STARTPOS_GUARD_TEXT_MAX];
+        const PcrecEnc *sp_enc = pcrec_enc_by_id(cx->opt->encoding);
+        const bool sp_align = (cx->opt->flags & PCREC_FORCE_STARTPOS_ALIGN) &&
+                              sp_enc && sp_enc->start_guard;
         pcrec_sb_stamp_str(c, g->upper, "STARTPOS_GUARD",
-                     *pcrec_startpos_guard_text(cx, probe, sizeof probe, "",
-                                                "p", "s", "n")
+                     sp_align ? "align"
+                     : *pcrec_startpos_guard_text(cx, probe, sizeof probe, "",
+                                                  "p", "s", "n")
                          ? "guarded" : "permissive");
     }
+    /* [UTF-VALID] `<PREFIX>_UTF_CHECK` — THE SUBJECT CHECK'S CONTRACT, the
+     * startpos-guard stamp's family (a) sibling: unconditional, on every
+     * artifact of both engines, a closed token. "inert" where the encoding
+     * has no ill-formed byte strings (the flag could not act), else "whole"
+     * or "off" — from `pcrec_utf_check_on`, the predicate the emitted check
+     * itself reads, so the stamp and the body cannot drift apart. */
+    pcrec_sb_stamp_str(c, g->upper, "UTF_CHECK",
+                 !pcrec_enc_has_entry(pcrec_enc_by_id(cx->opt->encoding),
+                                      PCREC_ENCE_VAR_VALID) ? "inert"
+                 : pcrec_utf_check_on(cx) ? "whole" : "off");
     /* [OPT-DIAL] `<PREFIX>_TUNE` — THE DIAL POSITION THE ARTIFACT WAS BUILT
      * AT. A §6.3 family-(a) SELECTION FACT: unconditional, on every artifact
      * of both engines, with the same value shape on each, riding the SHARED
@@ -9339,8 +9502,9 @@ void pcrec_emit_dfa(Ctx *cx)
      * now checks instead. See `dfa_artifact_ncaps`. */
     /* A DFA artifact can carry no backreference — the construct is VM_ONLY by
      * its twelve registry rows and SR-8 refuses `--engine=dfa` on it by name —
-     * so its mask is the unconditional entry alone. */
-    cx->job->enc_mask = PCREC_ENCE_NEXT_POS;
+     * so its mask is the two unconditional entries alone ([UTF-VALID] added
+     * the second, the subject validator). */
+    cx->job->enc_mask = PCREC_ENCE_NEXT_POS | PCREC_ENCE_VALID_UPTO;
     {
         /* [DD-14.FB] spec §10.4: the surface is emitted on a DFA artifact
          * too, INERT. This engine has no resume stack and no trail, so the

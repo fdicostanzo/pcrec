@@ -262,9 +262,43 @@ static const char defs_back_step[] =
 "    return k > pos ? $_BACK_STEP_NONE : pos - k;\n"
 "}\n";
 
+/* ---- entry 7: the SUBJECT VALIDATOR ([UTF-VALID], utf_valid_design.md
+ * §4.3). Every byte string is a valid `byte` string, so the first ill-formed
+ * sequence at or after any position is none and the answer is `n` — the
+ * contract has an answer here, it is simply the trivial one, which is what
+ * lets a caller's find-all escape (validate once, loop on the default
+ * artifact) compile unchanged under either encoding. The subject is never
+ * read, `next_pos`'s own requirement for the (s == NULL, n == 0) subject. */
+static const char decls_valid_upto_doc[] =
+"/* $_valid_upto -- the SUBJECT VALIDATOR (pcrec [UTF-VALID]).\n"
+" *\n"
+" * Returns the offset of the first byte of the first ILL-FORMED sequence\n"
+" * of this artifact's encoding at or after `startpos` stepped back by the\n"
+" * pattern's lookbehind reach, or n when there is none (and n when\n"
+" * startpos > n). An artifact compiled with -futf-check refuses exactly\n"
+" * the calls for which this is < n, with PCREC_ERR_UTF; on any artifact it\n"
+" * is the validate-once half of a checked find-all loop (pcrec's\n"
+" * docs/spec/match_api.md S3.1.2).\n"
+" *\n"
+" * THIS artifact was compiled for the `byte` encoding, where every byte\n"
+" * string is well-formed: the answer is always n and s is never read. */\n";
+
+static const char decls_valid_upto[] =
+"size_t $_valid_upto(const unsigned char *s, size_t n, size_t startpos);\n";
+
+static const char defs_valid_upto[] =
+"size_t $_valid_upto(const unsigned char *s, size_t n, size_t startpos)\n"
+"{\n"
+"    (void)s; (void)startpos;\n"
+"    return n;\n"
+"}\n";
+
 static const PcrecEncEntry entries_byte[] = {
     { PCREC_ENCE_NEXT_POS,      false,
       decls_byte_doc,      decls_byte,      defs_byte_doc,      defs_byte,
+      0, false },
+    { PCREC_ENCE_VALID_UPTO,    false,
+      decls_valid_upto_doc, decls_valid_upto, NULL,             defs_valid_upto,
       0, false },
     { PCREC_ENCE_SPAN,          true,
       decls_bref_doc,      decls_bref,      defs_bref_doc,      defs_bref,
