@@ -3279,3 +3279,52 @@ that was already cheaper, or on top of a pass the artifact was already running.
   `^abc$` (G2, DFA), `^([a-z]+)+@` (G2, VM), `\[` (G1 by identity),
   `Q[0-9]+x` (G1 by density, and `-e utf8` on the same pattern is the
   encoding rule's own control), `x[0-9]+Q` (the direction that must EMIT).
+
+## [OPT-HYB-RESEED] THE HYBRID RETRY'S RE-SEED TABLE (abi 46 -> 47)
+
+`docs/design/hyb_reseed.md` is the note and `docs/spec/tuning.md` §2.33 the
+contract. After a failed attempt, `<prefix>_search_run`'s loop either steps
+to the next character or asks the prefilter again. Before this change it
+re-seeded only where an MRL clamp existed (`retry_win`, D51 ruling 2's
+window recompute). A clamp-free hybrid whose prefilter over-approximates (a
+lookaround or a cut erased, or the count collapse) therefore stepped every
+character to the subject end once one prefilter answer failed.
+
+- **`pcrec_reseed_rows` is ONE first-match table, rows as data** —
+  `exact` / `adaptive-dense` / `adaptive` / `fixed`. Its predicates are a
+  closed tag set evaluated by one switch, `vm_reseed_holds` (clskit's
+  `ROWS` shape). It is exported so `--list-axes` walks the live table
+  (axis `hyb-reseed`, `src/dump/axes_dump.c`), `pcrec_look_rows`'
+  precedent.
+- **`exact` reads `Vm.mrl_win`, and that is one derivation, not a second
+  one.** `mrl_win` is exactly "a prefilter exists and its language is the
+  pattern's own". Its three conjuncts are the three erasures `src/ir/nfa.c`
+  performs. A fourth over-approximation added there reaches both readers at
+  once, in the safe direction for this table (a row that wrongly reads
+  exact keeps today's retry). `exact` is first and undeniable because an
+  adaptive step on an exact CLAMPED artifact would carry a stale window END.
+- **The dense row reads `pcrec_dfa_cand_ppm`** (`emit_dfa.c`, beside
+  `dfa_cand_scan`): the prior's MASS over the byte set the emitted
+  candidate scan tests, read off the same derivations the scan is emitted
+  from. NONE is answered by the MASS primitive itself (D126 Q4), so no
+  reader tests it.
+- **The calibration is `vm_reseed_cal`, one row per program class indexed
+  by `has_push`** (frameless / framed). Every column is measured
+  (`hyb_reseed.md` §3). A step on a framed program costs about five times
+  one on a frameless program, so no single crossover serves both.
+- **The adaptive state is two or three per-CALL locals** (`reseed_steps_left`,
+  `reseed_short_gaps`, `reseed_block`), declared above the loop by the
+  `reseed_decl` insert. There are no globals and no `rx_ctx` fields, so a
+  matcher stays reentrant.
+- **A FIXED row emits `retry_win` byte for byte** (sabotage S63's anchor
+  is untouched). `-fno-hyb-reseed` lands every over-approximating hybrid
+  on `fixed`. The flag is masked out of `rx_info.flags`, so under it the
+  artifact is the abi-46 one apart from the digit and its `VM_RESEED` line.
+  `docs/dev/reseed/identity_sweep.py` measures exactly that.
+- Checks: `tests/codegen/run_codegen_tests.sh`'s `[OPT-HYB-RESEED]` block
+  (the stamp's IFF, the prefilter call sites in the search loop, the
+  clamped witness's `window_end`, and a `--step-budget` arm with its deny
+  control). Sabotage rows are S367 (the probe never ends a block, visible
+  to the budget arm only) and S368 (adaptive text dropped under an
+  adaptive stamp).
+

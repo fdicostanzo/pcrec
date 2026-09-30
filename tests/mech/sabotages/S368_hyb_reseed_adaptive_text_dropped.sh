@@ -16,7 +16,7 @@ SAB_ID="S368-hyb-reseed-adaptive-text-dropped"
 SAB_FILE="src/gen/emit_vm.c"
 SAB_SUITES="codegen"
 SAB_DESC="the adaptive retry's text is never emitted while vm_plan_reseed still selects an adaptive row and RX_VM_RESEED still says so: every over-approximating clamp-free hybrid steps every position after one failed attempt, the pre-abi-47 defect, under a stamp that claims otherwise"
-SAB_DOC_FIGURE="tests/codegen/run_codegen_tests.sh [OPT-HYB-RESEED]: the four adaptive witnesses report one prefilter call site where two are expected (framed, frameless, dense, clamped -- the clamped one's pre-abi-47 clamp recompute keeps two, so it fails on the missing step-mode exit instead), plus the budget arm's sparse subject answering steps. Expected codegen:>=5fail. Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S368."
+SAB_DOC_FIGURE="MEASURED 2026-09-29 (lane reseed): DETECTED, reach:ok(1/1),codegen:8fail/117pass -- the adaptive witnesses' prefilter-call-site and step-exit checks, the clamped witness's window_end check, both budget subjects answering steps, and [SABANCHOR]. Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S368."
 SAB_REACH='"$PCREC" --features all -p rx -e utf8 -o "$REACH_TMP/o.c" --pattern "(?<=é)x" && grep -qF "#define RX_VM_RESEED \"adaptive\"" "$REACH_TMP/o.c" && grep -qF "if (reseed_steps_left > 0) reseed_steps_left--;" "$REACH_TMP/o.c" && echo REACH-ADAPTIVE-TEXT'
 SAB_REACH_EXPECT="REACH-ADAPTIVE-TEXT"
 SAB_EXPECT=DETECTED

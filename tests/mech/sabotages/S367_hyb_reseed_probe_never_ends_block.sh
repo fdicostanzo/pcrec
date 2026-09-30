@@ -17,7 +17,7 @@ SAB_ID="S367-hyb-reseed-probe-never-ends-block"
 SAB_FILE="src/gen/emit_vm.c"
 SAB_SUITES="codegen"
 SAB_DESC="the adaptive retry's step block never ends: a short probe sets the next block to UINT_MAX, so after two short re-seed gaps a call steps every remaining position and a dense-then-sparse subject walks to the end one VM attempt at a time -- the [OPT-HYB-RESEED] defect reintroduced behind the adaptive row, with every structurally-checked string intact"
-SAB_DOC_FIGURE="tests/codegen/run_codegen_tests.sh [OPT-HYB-RESEED] budget arm: '40 dense failing candidates then 20,000 non-candidates answered steps, expected nomatch'. Expected codegen:1fail. Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S367."
+SAB_DOC_FIGURE="MEASURED 2026-09-29 (lane reseed): DETECTED, reach:ok(1/1),codegen:2fail/123pass -- the [OPT-HYB-RESEED] budget arm ('40 dense failing candidates then 20,000 non-candidates answered steps, expected nomatch') and [SABANCHOR] (the plant removes this row's own anchor from the sabotaged tree). Every structural [OPT-HYB-RESEED] check stays green. Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S367."
 SAB_REACH='"$PCREC" --features all -p rx -e utf8 -o "$REACH_TMP/o.c" --pattern "(?<=a|é)x" && grep -qF "#define RX_VM_RESEED \"adaptive\"" "$REACH_TMP/o.c" && grep -qF "reseed_steps_left = reseed_block;" "$REACH_TMP/o.c" && echo REACH-ADAPTIVE-PROBE'
 SAB_REACH_EXPECT="REACH-ADAPTIVE-PROBE"
 SAB_EXPECT=DETECTED

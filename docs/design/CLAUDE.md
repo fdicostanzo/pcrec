@@ -2672,6 +2672,22 @@ exactly +34 bytes.
   SLOWEST byte form at every N. See `docs/dev/plan.md`'s `[CLS-TREE]`/
   `[OPT-CLSPACK]` rows and `docs/dev/lanes/clsfit_report.md`.**
 
+- `hyb_reseed.md` — **[OPT-HYB-RESEED] THE DESIGN SECTION, BUILT** (lane
+  `reseed`, 2026-09-29; Frank's charter quoted at the top). It covers the VM
+  hybrid's retry after a failed attempt: step to the next character, or
+  re-seed from the prefilter.
+  - §2: the D77 census. 439/455 clamp-free over-approximating hybrids,
+    about 40% of all hybrids.
+  - §3: the measured crossover. The re-seed cost is about constant; the
+    step cost varies five-fold with the program's frame discipline, so the
+    calibration is one row per class (frameless/framed), not one N.
+  - §4: ONE first-match table (`pcrec_reseed_rows`, listable through
+    `--list-axes`) with rows `exact` / `adaptive-dense` / `adaptive` /
+    `fixed`. The "findings present" row is re-expressed so it obeys D126
+    Q4: the MASS primitive answers NONE by cardinality.
+  - §5: the Mac scratch results.
+  - §6: what is filed out of scope — the cross-call hint, a cheaper
+    re-seed, and `--tune` cells.
 - `ucp_design.md` — **[UCP] THE DESIGN NOTE, PROPOSED; light D6 panel r1**
   (lane ucpdes, 2026-09-28; `../dev/reviews/2026-09-28-r1-ucp-design.md`;
   design only, nothing under `src/`/`cli/`/`lib/`/`tests/`/`docs/spec/`).

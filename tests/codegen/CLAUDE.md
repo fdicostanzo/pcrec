@@ -3398,3 +3398,22 @@ both its `lo`/`hi` behavioural probes — MEASURED `clsfold:78fail/85pass`
 (bitmap-shape) rows and SOURCE A's own checks stay green. Read the
 current DETECTED figure from a `make mech` run.
 
+
+**[OPT-HYB-RESEED] (2026-09-29, lane reseed): `run_codegen_tests.sh` gains an
+`[OPT-HYB-RESEED]` block** (15 checks). It covers:
+
+- `<PREFIX>_VM_RESEED` on one witness per `pcrec_reseed_rows` row, and its
+  absence on a forced-VM and a DFA artifact (both directions of the IFF);
+- the prefilter call sites inside `<prefix>_search_run`: two on an adaptive
+  artifact and on an exact CLAMPED one, one on an exact clamp-free or a
+  denied one;
+- the clamped adaptive witness re-seeding with `window_end = subject_length`;
+- a BUDGET arm. `'(?<=a|é)x' -e utf8 --step-budget=2000 --emit-main` runs on
+  one failing candidate then 20,000 non-candidates, and on 40 dense failing
+  candidates then 20,000. Default must answer `nomatch` on both;
+  `-fno-hyb-reseed` must give up `steps` on both. The deny half is the arm's
+  own positive control: it is the evidence that the witness reaches the
+  step-everything retry.
+
+The budget arm is the only detector of S367, whose plant keeps every string
+the structural checks read. S368 trips both kinds of check.

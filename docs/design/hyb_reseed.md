@@ -62,23 +62,38 @@ The re-seed cost R is about constant, roughly one prefilter call. The step
 cost S varies about five-fold, and the program's FRAME DISCIPLINE predicts
 it. A frameless program (`<P>_VM_FRAMELESS 1`) fails a non-candidate
 position in a few compares. A framed one pays a slot write, a trail entry, a
-push and a pop per attempt. So there is no single N. There is ONE calibrated
-constant per program class, read off `has_push`, the bool the frameless
-stamp and the entry ladder already share:
+push and a pop per attempt. So there is no single N. There is ONE calibration row per program class,
+read off `has_push`, the bool the frameless stamp and the entry ladder
+already share (`vm_reseed_cal`, `src/gen/emit_vm.c`):
 
-| class | N (gap, bytes) | K (steps per step block) | first (probation steps) |
-|---|---:|---:|---:|
-| frameless | 16 | 64 | 8 |
-| framed | 4 | 16 | 2 |
+| class | gap N (bytes) | block K | cap | first |
+|---|---:|---:|---:|---:|
+| frameless | 16 | 64 | 1024 | 64 |
+| framed | 4 | 16 | 64 | 2 |
 
-K = 4N and first = N/2 are rules, not separate fits. K*S is a few R, which
-amortizes the probe re-seed in a dense run to under a quarter of R per step.
-It also bounds the waste of one wrong step block to a few R. first = N/2 is
-the ski-rental "rent for half the purchase price" start. These are
-calibrated constants in one table (`vm_reseed_cal`, `src/gen/emit_vm.c`),
-the `clskit.c` `PLACE` precedent. `--tune` does not move them today: the
-dial's table is a pinned contract (D103), and a cell needs a measured
-two-axis rate first. The table is where such a cell would point.
+What each column is:
+
+- **gap** is the crossover: a re-seed that jumped less than N bytes counts
+  as SHORT.
+- **block** is the first step block, entered after two short gaps in a row.
+- **cap** is the longest block. Each short probe doubles the next block up
+  to the cap, so a long dense run pays a vanishing share of re-seeds, and a
+  long gap resets the block. A fixed block was measured first: on dense
+  subjects its per-block probe cost 5-17%, and doubling removed it.
+- **first** is the step budget a call spends before its first re-seed. It
+  is the column that differs in kind between the classes, and it comes from
+  the one regime a per-call rule cannot see into: find-all over a
+  match-dense subject makes many short calls, and each call re-learns the
+  density.
+  - Frameless: a probation of 8 steps cost `item(?= done)` 1.8x on its
+    dense subject, and 64 steps brought it to within 10%.
+  - Framed: every step is a third of a re-seed, so the call re-seeds almost
+    at once.
+
+All four are calibrated constants in one table, the `clskit.c` `PLACE`
+precedent. `--tune` does not move them today: the dial's table is a pinned
+contract (D103), and a cell needs a measured two-axis rate first. The table
+is where such a cell would point.
 
 ## 4. The mechanism: ONE first-match table, rows as data
 
@@ -88,8 +103,8 @@ artifact in the plan phase and stamped as `<P>_VM_RESEED`:
 | # | row | deny | predicate | action |
 |---|---|---|---|---|
 | 1 | `exact` | — | the prefilter's language is exact (`Vm.mrl_win`: no cut, no lookaround, no collapse) | today's retry, unchanged: the clamp recompute where a clamp exists, else step |
-| 2 | `adaptive-dense` | `-fno-hyb-reseed` | the prior's MASS on the candidate scan predicts a gap under N | ADAPTIVE, starting in STEP mode |
-| 3 | `adaptive` | `-fno-hyb-reseed` | always | ADAPTIVE, starting after a `first`-step probation |
+| 2 | `adaptive-dense` | `-fno-hyb-reseed` | the prior's MASS on the candidate scan predicts a gap under N | ADAPTIVE, starting inside a capped step block |
+| 3 | `adaptive` | `-fno-hyb-reseed` | always | ADAPTIVE, starting with the class's `first` step budget |
 | 4 | `fixed` | — | always | today's retry (the deny's landing row) |
 
 Row 2 is the brief's "a findings bundle present" row, rewritten to obey D126
@@ -108,6 +123,7 @@ reentrant.
 
 - `reseed_steps_left`: failed attempts to STEP before the next re-seed.
 - `reseed_short_gaps`: consecutive re-seed gaps under N, saturating at 2.
+- `reseed_block`: the next step block's length (K, doubling to the cap).
 
 After each failed attempt's encoding advance, the loop does one of two
 things:
@@ -116,7 +132,8 @@ things:
   at the next character.
 - **Otherwise, re-seed**: ask the prefilter from the current position, jump
   to its answer, and record the gap. The gap counts as short when it is
-  under N. Two consecutive short gaps enter a step block of K.
+  under N. Two consecutive short gaps enter a step block, and a short probe
+  doubles the next one. A long gap resets the count and the block.
 
 Each step block ends in exactly one re-seed. That re-seed is the PROBE, so a
 dense-then-sparse subject cannot stay stuck in step mode. Requiring TWO
@@ -142,14 +159,21 @@ The answer-identity sweep counts both directions.
 
 ## 5. Scratch results (full table in the report)
 
-The two-gap rule with the class calibration stays near min(step, re-seed)
-on every witness family. The worst measured cell is 1.75x min, on the
-alternating adversary sitting exactly at the crossover. A per-call rule
-cannot see ACROSS calls, so find-all over a match-dense subject re-learns
-the density on every call. That is `asr-lb-fixed`/synth-dense, the one cell
-where today's pure stepping stays ahead. The cross-call "last run" hint is
-out of scope and filed as its own row, with this cell as the measurement
-that would trigger it.
+On the emitted artifacts (base = the branch point, abi 46), every answer
+was identical, and the stepping-to-the-end cells collapse. Examples:
+
+- `asr-lb-varwidth` synth-1m ×2.6.
+- `asr-lb-neg` synth-1m ×10.
+- The gap-64 families ×4-×21.
+- Bursty subjects ×15-×28.
+- The cell the design was asked to protect, `asr-lb-fixed`/synth-dense,
+  reads ×1.02, where the always-re-seed twin was ×0.81.
+
+The worst cells are the per-call regime a per-call rule cannot see ACROSS:
+`item(?= done)` on a match-dense subject ×0.92, framed CJK at a one-character
+gap ×0.94, and `asr-lb-varwidth` synth-dense ×0.96. The cross-call "last run"
+hint is out of scope and filed as its own row, with these cells as the
+measurement that would trigger it.
 
 ## 6. Out of scope, filed
 
