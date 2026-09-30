@@ -1534,7 +1534,14 @@ static int make_state(Ctx *cx, Nfa *nfa, Dfa *d, const Mach *m,
  * `d->overflowed` and returns `PCREC_DFA_DEAD` instead of `pcrec_ctx_fail`ing — a
  * selection outcome for a machine nothing needs, never a diagnostic, per
  * `[SEL-1]`. Resets `d`'s per-machine fields unconditionally at entry: one
- * `Dfa` is reused across a compile's several builds. */
+ * `Dfa` is reused across a compile's several builds.
+ *
+ * [OPT-RETRY-REUSE] A PURE FUNCTION OF A NAMED KEY, and the compile relies on
+ * it: every caller goes through `pcrec_build_min_dfa` (src/opt/dfamemo.c),
+ * which reuses a machine across retry attempts when the NFA's states, these
+ * parameters, `cx->opt`'s encoding/engine/two element budgets and the prior
+ * `cx->subset_elems` all match. Reading any OTHER input here — another option
+ * field, any `Ctx` state — must add it to that key in the same change. */
 void pcrec_build_dfa(Ctx *cx, Nfa *nfa, Dfa *d, bool prune, bool reverse,
                      int maxstates, int root, bool optional)
 {
