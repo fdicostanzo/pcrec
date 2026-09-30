@@ -3473,3 +3473,10 @@ never edited afterwards.
   test-rxtsource C3's pin move diagnosed as stale pins (census +318 since
   2026-09-25, identical on both boxes for the box-independent classes), not
   box-dependent and not S1's; re-pinned to the Linux py3.14 numbers.
+- `k7273_report.md` — K72 FIXED + K73 HELD (2026-09-29, lane k7273, sonnet):
+  `\h \H \v \V` under `-e utf8` become PCRE2_UTF's lists via `DEF_ENCODING_UTF8`'s
+  first producer (`tests/utf8/hv_space.rxt`, 420 oracle-read cells on 10.46,
+  spec hunk in `cli.md`, rxtsource re-pinned). K73 measured, not fixed: the
+  oracle advances any start on a continuation byte to the next non-continuation
+  byte; pcrec's guard exempts 0; the fix is an abi event and a startpos-rounding
+  contract choice, options in the report. Evidence in `k7273_evidence/`.
