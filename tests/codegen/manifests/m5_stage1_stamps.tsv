@@ -30,7 +30,7 @@ a(b|c)+d	EMITTED_BYTES	31565
 [a-z]+@[a-z]+	RX_ENGINE_SEL	"selected"
 [a-z]+@[a-z]+	RX_DFA_TABLE	"premultiplied"
 [a-z]+@[a-z]+	RX_DFA_PREFILTER	"byte-class"
-[a-z]+@[a-z]+	EMITTED_BYTES	26760
+[a-z]+@[a-z]+	EMITTED_BYTES	26736
 ^foo$	RX_ENGINE	"dfa"
 ^foo$	RX_ENGINE_SEL	"selected"
 ^foo$	RX_DFA_TABLE	"none"

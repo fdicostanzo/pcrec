@@ -1,0 +1,29 @@
+# tests/base/clskit_range_top.rxt — [CLS-TREE] S2 (D139): the one range
+# spelling's TOP BYTE, as ANSWERS.
+#
+# Since D139 a VM class read and a DFA scan edge spell a one-interval byte
+# class through the same emitter (`pcrec_clskit_emit_inline`,
+# `(unsigned)(byte - lo) <= span`). Every other corpus file's subjects stop
+# short of a range's top byte (`\d` subjects never carry a 9, `[a-z]` ones
+# never a z), so a span spelled one short (S434) read as UNDETECTED. Each
+# subject below ENDS ITS RUN on the top byte of the class that extends it.
+# Expectations are python3 re spans (re.search), transcribed unmodified.
+
+# a capture-bearing pattern (VM): the run ends on z
+pattern ([a-z]+)x
+m "zzx" 0 3
+g 1 0 2
+
+# a scan-edge run on the DFA, both ends of a run on z
+pattern [a-z]+@[a-z]+$
+m "az@zz" 0 5
+
+# digit runs ending on 9, captured (VM)
+pattern (\d+)-(\d+)
+m "99-99" 0 5
+g 1 0 2
+g 2 3 5
+
+# digit run on the DFA, ending on 9
+pattern [0-9]+z$
+m "99z" 0 3

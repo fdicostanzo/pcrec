@@ -353,7 +353,12 @@ done <<< "$anchored"
 #     PCREC_FIND_NTBL/PCREC_FIND_NBUNDLES ([FINDINGS], src/core/findings.c —
 #     `sizeof pcrec_find_tbl / sizeof *pcrec_find_tbl` and its bundle-index
 #     twin, VM_NRUNG's own idiom: how many rows the embedded, build-time-
-#     generated store parsed to, not a value anything is measured against).
+#     generated store parsed to, not a value anything is measured against),
+#     and SCAN_TEST_CALLS (src/gen/emit_dfa.c, [CLS-TREE] S2 — how many times
+#     emit_scan_edge WRITES an edge's run test, the multiplicity the class
+#     table prices a kit matcher at: a count of a code shape, forced by the
+#     loop's layout, that no pattern, subject or policy can be measured
+#     against).
 #     These are numbers nothing can be measured against by construction.
 #   A FIFTH KIND — A SEMANTIC WIDTH OF THE NEWLINE CONVENTION:
 #     EW_EOL_SLACK (src/facts/endwin.c, [OPT-ENDWIN]). It is how many bytes
@@ -519,7 +524,8 @@ EW_EOL_SLACK
 SA_BOT
 SA_GSTART
 PCREC_FIND_NTBL
-PCREC_FIND_NBUNDLES"
+PCREC_FIND_NBUNDLES
+SCAN_TEST_CALLS"
 
 TABLE_NAMES="$NAMES"
 SCANNED_NAMES="$(cut -f2 "$TMP3/scan.txt" | sort -u)"
