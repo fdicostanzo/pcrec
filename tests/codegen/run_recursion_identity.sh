@@ -1121,7 +1121,7 @@ REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
 # rule is emitted only under an encoding that restricts where a match may
 # begin, and this gate's population compiles under `byte`, so (A) is
 # untouched and (B) moves by the abi digit alone.
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-LAND4PIN}"   # [CLS-TREE] S4 + [OPT-CLSPACK], ONE event abi 47->48 (land4): (B) re-pinned to the land4 merge commit (its last src change, the k73utf convention), D76, 2026-09-30. Prior pin: 40c56343 ([K73], abi 46->47). # [CLS-TREE] S4, abi 46->47 (lane/s4build, pin 0d0a514f), and [OPT-CLSPACK], 47->48 (lane/clspack, pin 8407666a), each on its own lane before this landing combined them onto main: # [K73], abi 46->47: (B) re-pinned to 40c56343 on lane/k73utf (D76, 2026-09-29). Prior pin: 7e8ab18a ([UCP] U2, abi 45->46).
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-64b55d15}"   # [CLS-TREE] S4 + [OPT-CLSPACK], ONE event abi 47->48 (land4): (B) re-pinned to the land4 merge commit (its last src change, the k73utf convention), D76, 2026-09-30. Prior pin: 40c56343 ([K73], abi 46->47). # [CLS-TREE] S4, abi 46->47 (lane/s4build, pin 0d0a514f), and [OPT-CLSPACK], 47->48 (lane/clspack, pin 8407666a), each on its own lane before this landing combined them onto main: # [K73], abi 46->47: (B) re-pinned to 40c56343 on lane/k73utf (D76, 2026-09-29). Prior pin: 7e8ab18a ([UCP] U2, abi 45->46).
 
 WORKDIR="$(mktemp -d)"
 cleanup() {

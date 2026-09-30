@@ -1050,7 +1050,7 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
   emitted form on every code point. **Open at S1**: the table's byte
   predicates read the DP's MODEL bytes, which run ~13% under the measured
   object for `K`; see docs/dev/lanes/clss1_report.md.
-  **FIRST CALLER, [CLS-TREE] S4 (lane s4build, 2026-09-29, abi 47):**
+  **FIRST CALLER, [CLS-TREE] S4 (lane s4build, 2026-09-29, abi 48, one event with [OPT-CLSPACK]):**
   emit_vm.c's `vm_wcls` interns each distinct wide set and asks
   `pcrec_clskit_select` at `cx->opt->tune` (row denies unmapped, `deny` 0);
   `vm_emit_search_body` emits the matchers (`<prefix>_wcls<N>`) beside the
@@ -1064,7 +1064,7 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
   row `site`. The atom row's predicate IS `pcrec_clskit_atoms`, so the table
   the VM emits is the one the predicate measured.
 - **emit_vm.c** — the backtracking VM as emitted specialized C
-  (docs/design/engine_m4.md §2). **[CLS-TREE] S4 (abi 47): a WIDE class
+  (docs/design/engine_m4.md §2). **[CLS-TREE] S4 (abi 48): a WIDE class
   (`A_WCLASS`, more than one member) is ONE decode (`<prefix>_decode`, the
   encoding's `static inline` `PCREC_ENCE_DECODE` entry) plus ONE kit matcher
   call, where it was its byte alternation; `vm_wcls_bytes` is the one route

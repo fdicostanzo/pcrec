@@ -543,7 +543,7 @@ declare -A REFUSAL_PATTERN=(
     # code-bytes ceiling directly ("pattern too large: N bytes of emitted
     # code (limit 500000)").
     ["-fno-size-term"]="bytes of emitted code (limit"
-    # K55 RETIRED ([CLS-TREE] S4, abi 47): `--engine=vm` carried ONE entry
+    # K55 RETIRED ([CLS-TREE] S4, abi 48): `--engine=vm` carried ONE entry
     # here, "bytes of emitted code (limit", for `\P{Unknown}` under
     # `-e utf8` (tests/utf8/axis12_scripts.rxt), whose VM body was a
     # 689,367-byte byte alternation against the 500,000-byte code cap. The
