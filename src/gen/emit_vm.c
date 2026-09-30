@@ -382,6 +382,15 @@ typedef struct {
     ClsChoice           ch;
 } VmWcls;
 
+/* [OPT-CLSPACK] one distinct TABLE READ the program wrote: class `ci`
+ * tested on byte expression `byte` (arena-owned). The finished program's
+ * reads are re-spelled from this list if the table selection picks the atom
+ * table (`vm_cls_tables`). */
+typedef struct {
+    int         ci;
+    const char *byte;
+} VmTabRead;
+
 /* [DD-14 wave B+C] `Cost` gains a TAG and is forward-declared here, because
  * `Vm` now carries the per-region cost memo and `Vm` is defined first. The
  * struct's own definition and every comment on it are unmoved. */
@@ -779,6 +788,14 @@ typedef struct {
      * matcher per distinct set, emitted ahead of the program (vm_wcls) */
     VmWcls   *wcls;
     int       nwcls, wclscap;
+    /* [OPT-CLSPACK] the table reads the program wrote (VmTabRead), and the
+     * TABLE SELECTION taken once the pool is final: `clstab` says how the
+     * table-read classes read their table, `clsatom[ci]` is class ci's set
+     * index in `clstab.atoms` (-1 for a class no table is read for). */
+    VmTabRead *tabrd;
+    int       ntabrd, tabrdcap;
+    ClsTabChoice clstab;
+    int      *clsatom;
     /* [M4.5c] the listing's event stream — see VEvent above */
     VEvent   *ev;      /* the listing's event log, arena-backed and grown by
                          * doubling */
@@ -1576,6 +1593,40 @@ static VmClsShape vm_cls_shape(const Vm *v, const uint8_t *bits,
     return VM_CLS_SHAPE_BITMAP;
 }
 
+/* A TABLE READ's text: class `ci`'s membership of byte expression `byte`,
+ * spelled for table form `f` — the class's own 32-byte bitmap, or its
+ * matcher over the shared atom table. The one spelling of both, so the
+ * atom re-spelling in `vm_cls_tables` finds exactly what was written. */
+static const char *vm_cls_read(Vm *v, ClsTabForm f, int ci, const char *byte)
+{
+    switch (f) {
+    case CLST_SITE:
+        return vm_rolef(v, "(%s_class_bitmap%d[(%s) >> 3] >> ((%s) & 7)) & 1",
+                        v->p, ci, byte, byte);
+    case CLST_ATOM:
+        return vm_rolef(v, "%s_class_atom%d(%s)", v->p, ci, byte);
+    }
+    return "";
+}
+
+/* Records that the program read class `ci`'s table on `byte`, once per
+ * distinct pair (arena-backed, grown by doubling). */
+static void vm_cls_note_read(Vm *v, int ci, const char *byte)
+{
+    for (int i = 0; i < v->ntabrd; i++)
+        if (v->tabrd[i].ci == ci && strcmp(v->tabrd[i].byte, byte) == 0) return;
+    if (v->ntabrd == v->tabrdcap) {
+        int ncap = v->tabrdcap ? v->tabrdcap * 2 : 16;
+        VmTabRead *nv = pcrec_arena_alloc(&v->cx->arena, (size_t)ncap * sizeof *nv);
+        if (v->ntabrd) memcpy(nv, v->tabrd, (size_t)v->ntabrd * sizeof *nv);
+        v->tabrd = nv;
+        v->tabrdcap = ncap;
+    }
+    v->tabrd[v->ntabrd].ci = ci;
+    v->tabrd[v->ntabrd].byte = byte;
+    v->ntabrd++;
+}
+
 /* The membership test for class `ci` on byte expression `byte`. Shapes and
  * their selection: `vm_cls_shape` above. The bitmap is the same 256-bit
  * representation the AST and the DFA already use (§2.9), so nothing here has
@@ -1596,7 +1647,8 @@ static void vm_cls_test(Vm *v, StrBuf *b, int ci, const char *byte)
         return;
     case VM_CLS_SHAPE_BITMAP: break;
     }
-    pcrec_sb_printf(b, "(%s_class_bitmap%d[(%s) >> 3] >> ((%s) & 7)) & 1", v->p, ci, byte, byte);
+    pcrec_sb_puts(b, vm_cls_read(v, CLST_SITE, ci, byte));
+    vm_cls_note_read(v, ci, byte);
 }
 
 /* Counts how many interned classes take the FOLD comparison shape.
@@ -1611,6 +1663,88 @@ static int vm_cls_fold_count(const Vm *v)
     for (int i = 0; i < v->ncls; i++)
         if (vm_cls_shape(v, v->cls[i], &lo, &hi) == VM_CLS_SHAPE_FOLD) n++;
     return n;
+}
+
+/* Re-spells the finished program's table reads for the atom form: every
+ * recorded read's bitmap spelling becomes its atom-matcher call, in one pass
+ * over `v->b`. Every `(<prefix>_class_bitmap` in the program must be a
+ * recorded read — the program is the text `vm_cls_test` wrote — so one that
+ * is not is an internal error, never a table read left unconverted. */
+static void vm_cls_respell(Vm *v)
+{
+    StrBuf *b = v->b;
+    const char *needle = vm_rolef(v, "(%s_class_bitmap", v->p);
+    const char **from = pcrec_arena_alloc(&v->cx->arena, (size_t)v->ntabrd * sizeof *from);
+    const char **to = pcrec_arena_alloc(&v->cx->arena, (size_t)v->ntabrd * sizeof *to);
+    for (int i = 0; i < v->ntabrd; i++) {
+        from[i] = vm_cls_read(v, CLST_SITE, v->tabrd[i].ci, v->tabrd[i].byte);
+        to[i] = vm_cls_read(v, CLST_ATOM, v->tabrd[i].ci, v->tabrd[i].byte);
+    }
+    /* Two passes over the same matches: the first sizes the output, the
+     * second writes it. */
+    char *out = NULL;
+    size_t olen = 0;
+    for (int pass = 0; pass < 2; pass++) {
+        const char *q = b->p ? b->p : "", *hit;
+        size_t o = 0;
+        while ((hit = strstr(q, needle)) != NULL) {
+            int r = 0;
+            while (r < v->ntabrd && strncmp(hit, from[r], strlen(from[r])) != 0) r++;
+            if (r == v->ntabrd)
+                pcrec_ctx_fail(v->cx, 0, "internal error: a class table read in "
+                               "the VM program was not recorded, so the atom "
+                               "table cannot re-spell it");
+            size_t pre = (size_t)(hit - q), tl = strlen(to[r]);
+            if (pass) { memcpy(out + o, q, pre); memcpy(out + o + pre, to[r], tl); }
+            o += pre + tl;
+            q = hit + strlen(from[r]);
+        }
+        size_t rest = strlen(q);
+        if (pass) { memcpy(out + o, q, rest + 1); break; }
+        olen = o + rest;
+        out = pcrec_arena_alloc(&v->cx->arena, olen + 1);
+    }
+    b->len = 0;
+    if (b->p) b->p[0] = 0;
+    pcrec_sb_puts(b, out);
+}
+
+/* [OPT-CLSPACK] THE TABLE SELECTION (clskit.c `TAB_ROWS`, D131 item 6),
+ * taken once the pool is final — after the program is emitted, because the
+ * pool is discovered by emitting it. Its input is every pool class whose
+ * test reads a table (`vm_cls_shape`'s BITMAP), as a byte set; its deny is
+ * `-fno-cls-pack`. When the atom row fires the program's table reads are
+ * re-spelled (`vm_cls_respell`) and the table emission writes the shared
+ * atom table and one matcher per class instead of the per-class bitmaps.
+ * Fills `v->clstab` and `v->clsatom` for that emission. */
+static void vm_cls_tables(Vm *v)
+{
+    Ctx *cx = v->cx;
+    const PcrecCpRange **sets = pcrec_arena_alloc(&cx->arena,
+                                  (size_t)(v->ncls ? v->ncls : 1) * sizeof *sets);
+    int *nivs = pcrec_arena_alloc(&cx->arena, (size_t)(v->ncls ? v->ncls : 1) * sizeof *nivs);
+    int n = 0;
+    v->clsatom = pcrec_arena_alloc(&cx->arena, (size_t)(v->ncls ? v->ncls : 1) * sizeof *v->clsatom);
+    for (int i = 0; i < v->ncls; i++) {
+        int lo, hi;
+        v->clsatom[i] = -1;
+        if (vm_cls_shape(v, v->cls[i], &lo, &hi) != VM_CLS_SHAPE_BITMAP) continue;
+        /* the bitmap's runs, as the kit's interval-set input */
+        PcrecCpRange *iv = pcrec_arena_alloc(&cx->arena, 128 * sizeof *iv);
+        int k = 0;
+        for (unsigned c = 0; c < 256; ) {
+            if (!cls_has(v->cls[i], c)) { c++; continue; }
+            iv[k].lo = c;
+            while (c < 256 && cls_has(v->cls[i], c)) c++;
+            iv[k++].hi = c - 1;
+        }
+        sets[n] = iv;
+        nivs[n] = k;
+        v->clsatom[i] = n++;
+    }
+    unsigned deny = (cx->opt->flags & PCREC_NO_CLS_PACK) ? 1u << CLSTD_ATOM : 0;
+    pcrec_clskit_select_tables(&cx->arena, sets, nivs, n, cx->opt->tune, deny, &v->clstab);
+    if (v->clstab.form == CLST_ATOM) vm_cls_respell(v);
 }
 
 /* ---- §2.5's cursor ladder: is this body a deterministic fixed-length run? --
@@ -10443,6 +10577,10 @@ static void vm_plan(Vm *v, Ast *root, VmPlan *pl)
         for (int i = 0; i < v->nregion; i++)
             if (v->rgn_emit[i]) vm_region(v, i);
     }
+    /* [OPT-CLSPACK] the pool is final: choose how its table-read classes
+     * read a table, and re-spell the program if that is the atom table —
+     * here, before anything reads the program's length. */
+    vm_cls_tables(v);
 
     /* [DD-14.FB] The caller-buffer sizing surface, computed HERE — after the
      * two capacities and after `has_linked_calls`, which are the only three
@@ -12276,7 +12414,20 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
      * the shape condition inline; the shared classifier retired that.) */
     {
         bool any = false;
-        for (int i = 0; i < v->ncls; i++) {
+        /* [OPT-CLSPACK] the atom table instead of the bitmaps below, when
+         * `vm_cls_tables` chose it: one shared byte->atom table, and one
+         * `static inline` matcher per table-read class over it — the kit's
+         * own form and emitters (clskit.c). */
+        if (v->clstab.form == CLST_ATOM) {
+            const char *tab = pcrec_sb_fragf(&cx->arena, "%s_class_atoms", v->p);
+            pcrec_clskit_emit_atom_table(c, tab, &v->clstab.atoms);
+            for (int i = 0; i < v->ncls; i++)
+                if (v->clsatom[i] >= 0)
+                    pcrec_clskit_emit_atom(c, pcrec_sb_fragf(&cx->arena, "%s_class_atom%d", v->p, i),
+                                           tab, &v->clstab.atoms, v->clsatom[i]);
+            any = true;
+        }
+        for (int i = 0; i < v->ncls && v->clstab.form == CLST_SITE; i++) {
             int lo, hi;
             if (vm_cls_shape(v, v->cls[i], &lo, &hi) != VM_CLS_SHAPE_BITMAP)
                 continue;

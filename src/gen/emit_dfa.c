@@ -2565,6 +2565,9 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
                                            * `<PREFIX>_VM_CLS_KIT` records
                                            * what the emitter did. */
                                           PCREC_NO_CLS_KIT |
+                                          /* [OPT-CLSPACK] the VM's shared
+                                           * atom table, the same. */
+                                          PCREC_NO_CLS_PACK |
                                           /* [K68] (FIXED) the three [OPTLOOP.1]
                                            * batch-1 whole-window pre-check bits
                                            * join the mask for the mask's own
