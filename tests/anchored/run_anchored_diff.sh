@@ -136,7 +136,8 @@ mkdir -p "$WORKDIR/sh"
 # tests/lib/shard_split.sh, not GNU `split -n`: BSD split has no -n, and the
 # old `|| cp pats sh/p00; NSHARD=1` fallback made darwin silently serial.
 . "$ROOT_DIR/tests/lib/shard_split.sh"
-shard_split "$NSHARD" "$WORKDIR/pats" "$WORKDIR/sh/p"
+shard_split "$NSHARD" "$WORKDIR/pats" "$WORKDIR/sh/p" || exit 1
+NSHARD="$SHARD_COUNT"
 
 # The shards are LINE CHUNKS of one pattern file, never an `xargs` over pattern
 # text: a pattern is arbitrary bytes and every quoting scheme for passing it as

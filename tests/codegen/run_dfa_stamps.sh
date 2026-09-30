@@ -539,7 +539,7 @@ fi
 # inside `make test-codegen` — the inner-loop group `make smoke` includes.
 # MEASURED on this box: 3m50s with a `derive` plus four `sed`/`grep` per
 # artifact, 2m03s after collapsing those into one `awk`, ~35s at PROCS=4.
-# The shards are LINE CHUNKS of one pattern file (`split -n l/N`), not an
+# The shards are LINE CHUNKS of one pattern file (`shard_split N`), not an
 # `xargs` over pattern text: a pattern is arbitrary bytes and every quoting
 # scheme for passing it as an argument is a bug waiting to be found by the
 # corpus. Each worker writes VERDICT TOKENS to its own file and the parent
@@ -547,8 +547,11 @@ fi
 NSHARD="${PROCS:-$PROCS_DEFAULT}"
 [ "$NSHARD" -ge 1 ] 2>/dev/null || NSHARD=1
 mkdir -p "$WORKDIR/sh"
-split -n "l/$NSHARD" -d "$WORKDIR/pats" "$WORKDIR/sh/p" 2>/dev/null \
-    || { cp "$WORKDIR/pats" "$WORKDIR/sh/p00"; NSHARD=1; }
+# tests/lib/shard_split.sh, not GNU `split -n` (BSD split has no -n; the old
+# `|| cp pats sh/p00; NSHARD=1` fallback made darwin silently serial).
+. "$ROOT_DIR/tests/lib/shard_split.sh"
+shard_split "$NSHARD" "$WORKDIR/pats" "$WORKDIR/sh/p" || exit 1
+NSHARD="$SHARD_COUNT"
 
 cat > "$WORKDIR/worker.sh" <<'WORKER'
 #!/usr/bin/env bash

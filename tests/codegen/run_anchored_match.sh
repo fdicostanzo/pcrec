@@ -624,8 +624,11 @@ else
     NSHARD="${PROCS:-$PROCS_DEFAULT}"
     [ "$NSHARD" -ge 1 ] 2>/dev/null || NSHARD=1
     mkdir -p "$WORKDIR/sh"
-    split -n "l/$NSHARD" -d "$WORKDIR/pats" "$WORKDIR/sh/p" 2>/dev/null \
-        || { cp "$WORKDIR/pats" "$WORKDIR/sh/p00"; NSHARD=1; }
+    # tests/lib/shard_split.sh, not GNU `split -n` (BSD split has no -n; the old
+    # `|| cp pats sh/p00; NSHARD=1` fallback made darwin silently serial).
+    . "$ROOT_DIR/tests/lib/shard_split.sh"
+    shard_split "$NSHARD" "$WORKDIR/pats" "$WORKDIR/sh/p" || exit 1
+    NSHARD="$SHARD_COUNT"
     # The shards are LINE CHUNKS of one pattern file, not an `xargs` over
     # pattern text: a pattern is arbitrary bytes and every quoting scheme for
     # passing it as an argument is a bug waiting to be found by the corpus.
