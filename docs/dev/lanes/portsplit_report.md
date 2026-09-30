@@ -43,27 +43,33 @@ matrix arm. tests/mech/CLAUDE.md gains a paragraph under the [TT-8] section.
 tests/lib/CLAUDE.md (helper entry rewritten), tests/mech/CLAUDE.md, docs/testing.md
 (one stale `split -n l/N` phrase), plus comments at the six sites.
 
-## 5. Validation (Mac, PROCS=4) — OWED, RUNNING DETACHED
-Box: load ~9-11 the whole time (land3's mech chain); wall times are contended
-and the p1/p4 pairs run back to back, so read RATIOS, not absolutes.
-Chain (nohup+caffeinate, started 00:48): `/tmp/portsplit/chain.sh`, then
-`/tmp/portsplit/chain2.sh` (waits for `CHAIN_DONE`, then S189 solo).
-- Summary: `/tmp/portsplit/summary.txt`; completion lines `CHAIN_DONE` (six codegen
-  scripts at PROCS=4 then PROCS=1, then run_anchored_diff at PROCS=4) and
-  `CHAIN2_DONE` (S189 solo, PROCS=1 so INNER_PROCS = ncpu).
-- Per-script logs `/tmp/portsplit/<name>_p4.log` / `_p1.log`, `anchored_diff_p4.log`,
-  `s189.log`. Each summary row: rc, wall, load, `checks passed/failed`, and the
-  `shard_split: wrote N shards` line (confirms N actually ran).
-- Pass criterion: p4 and p1 rows show identical passed/failed counts; p4 rows say
-  `wrote 4 shards`; p4 wall < p1 wall. PROCS=1 IS the old behaviour (old fallback =
-  one shard), so p1 is the "before" leg.
-- Rows landed so far when this report was written:
-  - dfa_stamps p4: rc=0, 51 s, 33 passed / 0 failed, `wrote 4 shards (3493 lines)`.
-- GNU semantics: the helper uses only awk + wc + ls, no split at all, so there is
-  no GNU/BSD divergence to test; the one behavioural difference from `split -n l/N`
-  is chunk boundaries (GNU splits by bytes-aware line chunks), which no script
-  depends on (each shard is an independent pattern list; verdict tokens are summed).
-  `gsplit` was not needed.
+## 5. Validation (Mac, PROCS=4) - DONE (filled by psfinish, 2026-09-30)
+Chains `/tmp/portsplit/chain.sh` and `chain2.sh` both completed (`CHAIN_DONE`,
+`CHAIN2_DONE` in `/tmp/portsplit/summary.txt`). PROCS=1 is the old behaviour (old
+fallback = one shard), so p1 is the "before" leg and p4 the "after". Every row rc=0.
+Box load was ~6-25 the whole time (land3's mech chain) and the pairs ran back to
+back, so read the RATIOS; the load column is the 1-min load at start of each leg.
+
+| script | p4 pass/fail | p1 pass/fail | shards p4 | shards p1 | wall p4 | wall p1 | p1/p4 | load p4 / p1 |
+|---|---|---|---|---|---|---|---|---|
+| `run_dfa_stamps.sh` | 33/0 | 33/0 | 4 | 1 | 51 s | 117 s | 2.3x | 8.45 / 8.33 |
+| `run_dfa_uniform_fold.sh` | 6/0 | 6/0 | 4 | 1 | 77 s | 169 s | 2.2x | 16.00 / 6.15 |
+| `run_form_census.sh` | 1/0 | 1/0 | 4 | 1 | 148 s | 359 s | 2.4x | 13.24 / 6.81 |
+| `run_anchored_match.sh` | 20/0 | 20/0 | 4 | 1 | 77 s | 146 s | 1.9x | 7.31 / 7.28 |
+| `run_vm_frameless.sh` | 6/0 | 6/0 | 4 | 1 | 66 s | 166 s | 2.5x | 24.67 / 8.12 |
+| `run_search_pinned.sh` | 17/0 | 17/0 | 4 | 1 | 156 s | 216 s | 1.4x | 7.56 / 7.17 |
+| `run_anchored_diff.sh` | 7/0 | (no p1 leg) | 4 | - | 1207 s | - | - | 12.88 |
+
+Result: p4 and p1 pass/fail counts are identical on all six paired scripts; every
+p4 leg says `wrote 4 shards (asked 4, 3493 lines)` and every p1 leg `wrote 1`; p4 is
+faster on all six (1.4x-2.5x; the vm_frameless p4 leg ran at load 24.7 and
+search_pinned is dominated by a serial tail, so neither ratio is a clean scaling
+figure). No count mismatch, so no finding to diagnose. `run_anchored_diff.sh`
+unplanted at p4: 7 passed / 0 failed (the baseline S189 is scored against).
+GNU semantics: the helper uses only awk + wc + ls, no `split`, so there is no
+GNU/BSD divergence to test; the one behavioural difference from `split -n l/N` is
+chunk boundaries, which no script depends on (each shard is an independent pattern
+list; verdict tokens are summed).
 
 ## 6. S189: 2fail/5pass (recorded) vs 1fail/6pass (s189tri) — OWED, hypothesis only
 Both are 7 checks; one check that was red at 312612b is green now. Not caused by
