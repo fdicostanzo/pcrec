@@ -325,7 +325,7 @@
 #     --tune position, and a 343,040-cell answer differential against
 #     -fno-cls-pack. Its own arm because the row is ANSWER-IDENTITY-
 #     preserving: a threshold or deny plant moves no answer, so `harness` is
-#     green on it by construction. Registered before S400-S405.
+#     green on it by construction. Registered before S400-S406.
 #   wclass — added 2026-09-29 ([CLS-TREE] S3, lane s3build); runs
 #     tests/codegen/run_wclass_census.sh: the AKind switch census (every
 #     switch handles A_WCLASS, none shares an arm with A_CLASS, none has a

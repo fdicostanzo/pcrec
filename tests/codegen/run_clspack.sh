@@ -19,7 +19,7 @@
 #           Plus the size term's input: the entry rung and
 #           RX_VM_PROGRAM_BYTES equal the -fno-cls-pack build's.
 #   PART 2  the thresholds from both sides (10 classes, 65 atoms), the deny,
-#           every `--tune` position, and the stamp on a class-free VM
+#           (both flags), every `--tune` position, and the stamp on a class-free VM
 #           artifact and its absence on a DFA one.
 #   PART 3  answer identity: each firing witness compiled both ways, linked
 #           into one driver (tests/possessify/possdiff_driver.c, shared), over
@@ -139,6 +139,13 @@ else bad "[atom-65] refused"; fi
 if [ "$(stamp "$TMP/atom-11.site.c" 2>/dev/null)" = 0 ] && [ "$(ntable "$TMP/atom-11.site.c")" = 0 ]; then
     ok "[deny] -fno-cls-pack: RX_VM_CLS_ATOMS 0, no atom table, the eleven bitmaps"
 else bad "[deny] -fno-cls-pack left stamp '$(stamp "$TMP/atom-11.site.c")' / tables $(ntable "$TMP/atom-11.site.c") — the deny does not reach the row"; fi
+# D129 Q2's one kit-level deny also denies this kit form (manager ruling,
+# clspack_report.md §6 (a)): -fno-cls-kit alone leaves the bitmaps.
+if compile atom-11 "$TMP/atom-11.kit.c" -fno-cls-kit \
+   && [ "$(stamp "$TMP/atom-11.kit.c")" = 0 ] && [ "$(ntable "$TMP/atom-11.kit.c")" = 0 ] \
+   && [ "$(nbitmap "$TMP/atom-11.kit.c")" = "$(nbitmap "$TMP/atom-11.site.c")" ]; then
+    ok "[deny-kit] -fno-cls-kit: RX_VM_CLS_ATOMS 0, no atom table, the same bitmaps as -fno-cls-pack"
+else bad "[deny-kit] -fno-cls-kit left stamp '$(stamp "$TMP/atom-11.kit.c")' / tables $(ntable "$TMP/atom-11.kit.c") — the kit-level deny does not reach the atom row"; fi
 for t in -2 -1 0 1 2; do
     if compile atom-11 "$TMP/t$t.c" --tune="$t" && [ "$(stamp "$TMP/t$t.c")" = "$(stamp "$TMP/atom-11.c")" ]; then
         ok "[tune $t] the atom row lists this position"
