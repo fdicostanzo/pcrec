@@ -155,7 +155,9 @@ def mixed(r, n):
             lambda: prose(r, GR, r.randint(20, 300)), lambda: prose(r, CY, r.randint(20, 300)),
             lambda: cjk(r, r.randint(20, 300)), lambda: prose(r, DE, r.randint(20, 300)),
             lambda: b"".join(enc(0x0660 + r.randrange(10)) for _ in range(r.randint(1, 12))) + b" ",
-            lambda: str(r.randrange(10 ** 8)).encode() + b" "]
+            lambda: str(r.randrange(10 ** 8)).encode() + b" ",
+            # a context character in x1's set (U+100..U+2000) followed by 'x': plants matches
+            lambda: prose(r, EN, r.randint(10, 60)) + enc(0x100 + r.randrange(0x1F00)) + b"x "]
     while len(out) < n:
         out += r.choice(gens)() + b" "
     return bytes(out[:n]).decode("utf-8", "ignore").encode()

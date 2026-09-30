@@ -45,7 +45,7 @@ def x1():
              nxt=[[0, 0, 'I'], [2, 0, 'I'], [-1, -1, 'I']],
              tgt=[[0, 1, 0], [0, 1, 0], [-1, -1, -1]],
              acc=[0, 0, 1],
-             seed=dict(abs=0, asc=[0, 0], isl=[0, 1, 0]))
+             seed=dict(abs=0, asc=[0, 0], isl=[0, 1, 0]), req_byte=ord("x"))
     # reverse: R0 (at match end) --x--> R1; R1 accepts iff the char BEFORE is in W
     rev = CM("rev", 2, cls, 2,
              nxt=[[1, -1, 'I'], [-1, -1, 'I']],
