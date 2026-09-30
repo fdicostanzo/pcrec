@@ -392,3 +392,70 @@ const char *pcrec_sb_upper(Arena *a, const char *s)
     out[n] = 0;
     return out;
 }
+
+/* ---- [K79] THE PREFIX RENDER (contract at the declaration) --------------- */
+
+/* Writes the rendering of `src[0..n)` into `dst` (at most `cap` bytes, no
+ * NUL) and returns the FULL rendered length; `dst` NULL measures only. Sets
+ * `*stray` when a lead byte is not followed by `q`/`Q`, copying that byte
+ * through, so both callers share one scan and each picks its own policy. */
+static size_t render_prefix(char *dst, size_t cap, const char *src, size_t n,
+                            const char *prefix, bool *stray)
+{
+    size_t lp = strlen(prefix), o = 0;
+    for (size_t i = 0; i < n; i++) {
+        char ch = src[i];
+        bool lo = false, up = false;
+        if (ch == PCREC_PREFIX_LEAD && i + 1 < n) {
+            lo = src[i + 1] == 'q';
+            up = src[i + 1] == 'Q';
+        }
+        if (!lo && !up) {
+            if (ch == PCREC_PREFIX_LEAD) *stray = true;
+            if (dst && o < cap) dst[o] = ch;
+            o++;
+            continue;
+        }
+        for (size_t k = 0; k < lp; k++, o++)
+            if (dst && o < cap)
+                dst[o] = up ? (char)toupper((unsigned char)prefix[k]) : prefix[k];
+        i++;
+    }
+    return o;
+}
+
+/* Rewrites `sb`'s placeholders into a fresh exact-size buffer and swaps it
+ * in; the old storage is freed only once the new one exists, so an
+ * allocation failure leaves `sb` whole for the error path's pcrec_sb_free. */
+bool pcrec_sb_render_prefix(StrBuf *sb, const char *prefix)
+{
+    bool stray = false;
+    if (!sb->p) return true;
+    size_t n = render_prefix(NULL, 0, sb->p, sb->len, prefix, &stray);
+    if (stray) return false;
+    char *np = malloc(n + 1);
+    if (!np) {
+        if (sb->cx) pcrec_ctx_nomem(sb->cx);
+        abort();   /* a detached buffer has no error channel (sb_grow's rule) */
+    }
+    render_prefix(np, n, sb->p, sb->len, prefix, &stray);
+    np[n] = 0;
+    free(sb->p);
+    sb->p = np;
+    sb->len = n;
+    sb->cap = n + 1;
+    return true;
+}
+
+/* Renders `msg` in place through a stack copy, truncating to `cap` - 1. */
+void pcrec_render_prefix_msg(char *msg, size_t cap, const char *prefix)
+{
+    bool stray = false;
+    if (!cap || !strchr(msg, PCREC_PREFIX_LEAD)) return;
+    char tmp[sizeof ((pcrec_error *)0)->msg];   /* the one caller's buffer */
+    size_t n = strlen(msg);
+    if (n >= sizeof tmp) n = sizeof tmp - 1;
+    memcpy(tmp, msg, n);
+    size_t o = render_prefix(msg, cap - 1, tmp, n, prefix, &stray);
+    msg[o < cap - 1 ? o : cap - 1] = 0;
+}

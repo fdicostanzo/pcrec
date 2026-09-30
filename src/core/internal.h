@@ -281,6 +281,52 @@ const char *pcrec_sb_fragfv(Arena *a, const char *fmt, va_list ap);
  * the CASE TRANSFORM is a derivation somebody could get differently. */
 const char *pcrec_sb_upper(Arena *a, const char *s);
 
+/* ---- [K79] THE PREFIX IS RENDERED, NOT EMITTED ---------------------------
+ *
+ * The emitters never see the caller's `-p` prefix. `compile_driver` hands
+ * them this fixed two-byte PLACEHOLDER as `opt->prefix` (and `pcrec_sb_upper`
+ * of it as the upper spelling), and `pcrec_sb_render_prefix` rewrites every
+ * placeholder to the real spelling on the FINISHED text, after every
+ * decision has been made. So every length an emitter or the driver measures
+ * — the entry-shape knee, the size term's trigger, ladder and caps — is the
+ * text at a CANONICAL prefix length, and no selection can read the caller's
+ * name for the matcher: the same pattern gets the same artifact under every
+ * prefix, spelled differently (K79; docs/spec/limits.md "size limits and the
+ * prefix").
+ *
+ * WHY A PLACEHOLDER AND NOT A CORRECTION AT EACH DECISION. Several hundred
+ * sites put the prefix into text, through `%s`, fragments and derived names;
+ * counting them back out at each decision is a second spelling of the
+ * emission that a new site silently escapes. The placeholder is the general
+ * form: a decision added later is prefix-free by construction.
+ *
+ * WHY THESE BYTES. Two bytes, so an artifact at the default `-p rx` is
+ * byte-identical to what it was before the placeholder existed. The lead
+ * byte \x01 never reaches emitted text any other way — every pattern- or
+ * caller-derived byte outside printable ASCII is escaped at its emission
+ * site (`emit_comment_safe_byte`, `emit_c_string_literal`, the class and
+ * word renderers) — and the second byte is a LETTER so that `toupper`
+ * maps the lower spelling onto the upper one: `\x01q` -> `\x01Q`, with no
+ * special case in `pcrec_sb_upper` or any other case transform.
+ *
+ * THE ONE SEAM IT CREATES: a placeholder that passes through an ESCAPER is
+ * escaped and never rendered. A validated prefix is a C identifier and
+ * needs no escaping, so a site that writes the prefix inside a string
+ * literal writes it raw (`rx_info.name`'s default is the one such site). */
+#define PCREC_PREFIX_LEAD        '\x01'
+#define PCREC_PREFIX_PLACEHOLDER "\x01q"
+
+/* Rewrites every placeholder in `sb` (`\x01q` -> `prefix`, `\x01Q` -> the
+ * prefix uppercased, `toupper` per byte as `pcrec_sb_upper` does). Returns
+ * false, leaving `sb` untouched, if a lead byte is followed by anything else
+ * — a raw \x01 that reached the text by another route, which the caller
+ * reports as an internal error rather than rendering around. */
+bool pcrec_sb_render_prefix(StrBuf *sb, const char *prefix);
+
+/* The same rewrite into a fixed buffer, truncating: for a diagnostic's
+ * `pcrec_error.msg`, which has no StrBuf and no way to grow. */
+void pcrec_render_prefix_msg(char *msg, size_t cap, const char *prefix);
+
 /* ---- [VAR] M1: THE EXPANSION GRAMMAR (src/core/varexp.c) -----------------
  *
  * `${ [!] selector [ operator word ] }`, parsed ONCE and shared by both
@@ -3139,6 +3185,11 @@ struct Ctx {
     jmp_buf              jb;
     pcrec_error         *err;
     const pcrec_options *opt;
+    /* [K79] the CALLER's `-p` prefix. `opt->prefix` is the placeholder
+     * (PCREC_PREFIX_PLACEHOLDER) on every emitting compile; this is what
+     * `pcrec_sb_render_prefix` and `pcrec_ctx_fail`'s message render put
+     * back. NULL on a compile that emits nothing (`pcrec_count_groups`). */
+    const char          *user_prefix;
     Job                 *job;
 };
 

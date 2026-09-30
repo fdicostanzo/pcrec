@@ -2934,12 +2934,16 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
      *
      * IT IS THE `<prefix>` AND NOT THE LITERAL "rx": two differently-
      * prefixed artifacts in one TU must not both claim to be "rx". */
-    {
-        const char *nm = cx->opt->name ? cx->opt->name : cx->opt->prefix;
+    /* [K79] THE DEFAULT IS WRITTEN RAW, not through the escaper: here the
+     * prefix is the render placeholder, which the escaper would turn into an
+     * octal escape the render never sees — and a validated prefix is a C
+     * identifier, so escaping it is the identity anyway. */
+    if (cx->opt->name) {
         pcrec_sb_puts(c, "    .name = ");
-        emit_c_string_literal(c, nm, strlen(nm));
+        emit_c_string_literal(c, cx->opt->name, strlen(cx->opt->name));
         pcrec_sb_puts(c, ",\n");
-    }
+    } else
+        pcrec_sb_printf(c, "    .name = \"%s\",\n", cx->opt->prefix);
     /* [DD-13b.W1.3] THE DAY HAS COME. This comment used to say that
      * `nentries` read the same count `nnames` did "because today the array
      * holds the primary's rows and nothing else … what makes them different
@@ -3036,27 +3040,20 @@ static void emit_residual_defs(Ctx *cx, StrBuf *sb)
  * `<prefix>_info`, and the encoding residuals.
  *
  * Reads the prefix, the pattern and the feature set off `cx` rather than
- * through parameters. The include guard is a per-BYTE transform of the prefix
- * into `PCREC_GEN_<...>_H`, allocated FROM the prefix's length so it cannot
- * truncate. The feature MACROS are deliberately left out of the header: a
+ * through parameters. The include guard is `PCREC_GEN_<PREFIX>_H`, the
+ * prefix uppercased. The feature MACROS are deliberately left out of the header: a
  * `.c` that includes its own `.h` must not meet that pair twice. */
 static void emit_header(Ctx *cx, const char *fn, const char *matchfn,
                          const char *matchcapsfn, const char *infoname,
                          const char *upper, int ncaps, const BufSurface *bs)
 {
     StrBuf *h = &cx->job->hsb;
-    const char *p = cx->opt->prefix;
-    /* [REVW.2] wave 2 stage 3: arena storage sized FROM THE PREFIX rather
-     * than a fixed 80, so the loop's own `gi < sizeof(guard) - 1` bound --
-     * the thing that would have silently truncated an include guard -- is
-     * gone rather than merely generous. This is a per-byte TRANSFORM and not
-     * a format, so it does not go through `dfa_fragf`; what it needed was an
-     * allocation whose size the input decides. */
-    char *guard = pcrec_arena_alloc(&cx->arena, strlen(p) + 1);
-    size_t gi = 0;
-    for (const char *q = p; *q; q++)
-        guard[gi++] = (char)(isalnum((unsigned char)*q) ? toupper((unsigned char)*q) : '_');
-    guard[gi] = 0;
+    /* [K79] the guard is the prefix UPPERCASED — `upper`, the one
+     * derivation. It was a per-byte `isalnum ? toupper : '_'` loop, which is
+     * `toupper` on every byte a validated prefix (a C identifier) can hold,
+     * and which mapped the render placeholder's lead byte to `_` so the
+     * render could not find it. */
+    const char *guard = upper;
 
     emit_pattern_comment(h, cx->pat);
     emit_feature_comment(cx, h);
