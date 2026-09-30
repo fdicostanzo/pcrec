@@ -123,6 +123,7 @@ gen() {
 # §1-§3  THE TWO-ARM SWEEP
 # ---------------------------------------------------------------------------
 total_same=0; total_refused=0; total_other=0; swept=0; skipped=0
+m_refused=0
 
 subjects_argv=$(echo "$SUBJECTS" | tr '\n' ' ')
 
@@ -186,9 +187,16 @@ while IFS=$'\t' read -r label pat mods; do
     s=$(echo "$line" | sed 's/.*same=\([0-9]*\).*/\1/')
     r=$(echo "$line" | sed 's/.*refused=\([0-9]*\).*/\1/')
     o=$(echo "$line" | sed 's/.*other=\([0-9]*\).*/\1/')
-    total_same=$((total_same + s))
-    total_refused=$((total_refused + r))
-    total_other=$((total_other + o))
+    # [K73] the anchored entry's own buckets, counted into the same totals
+    # and floored on their own below.
+    mline=$(grep '^match-buckets:' "$d/out")
+    ms_=$(echo "$mline" | sed 's/.*same=\([0-9]*\).*/\1/')
+    mr=$(echo "$mline" | sed 's/.*refused=\([0-9]*\).*/\1/')
+    mo=$(echo "$mline" | sed 's/.*other=\([0-9]*\).*/\1/')
+    total_same=$((total_same + s + ms_))
+    total_refused=$((total_refused + r + mr))
+    total_other=$((total_other + o + mo))
+    m_refused=$((m_refused + mr))
     swept=$((swept + 1))
 
     # §3's per-pattern half. A family member that produces NO divergence has
@@ -198,7 +206,10 @@ while IFS=$'\t' read -r label pat mods; do
     if [ "$r" -eq 0 ]; then
         bad "[$label] divergence population is EMPTY: this witness produced no refused cell at all, so it certifies nothing about the guard"
     fi
-    echo "  [$label] same=$s refused=$r other=$o"
+    if [ "${mr:-0}" -eq 0 ]; then
+        bad "[$label] the ANCHORED entry's divergence population is EMPTY: <prefix>_match refused no mid-character position, so either its guard is missing or the driver stopped sweeping it"
+    fi
+    echo "  [$label] search same=$s refused=$r other=$o; match same=$ms_ refused=$mr other=$mo"
 done < "$WORKDIR/rows"
 
 # The loop above runs in this shell (a redirect, not a pipe), so the totals
@@ -234,17 +245,31 @@ fi
 #                      illegal one is still not a character start)
 #   E4B8AD61CEB1  3   (indices 1, 2, 5)
 #   B161          0   -- index 0 IS a continuation byte and is NOT refused:
-#   8080          1      offset 0 is always a valid start (match_api.md 3.1),
-#                        so 8080 contributes only its index 1. These two exist
+#   8080          1      offset 0 is never refused (match_api.md 3.1), so
+#                        8080 contributes only its index 1. These two exist
 #                        to exercise that clause, and a run in which they
 #                        started contributing 1 and 2 would mean the guard had
 #                        gone back to refusing offset 0 -- the defect
-#                        `make test-axes` found on the corpus.
+#                        `make test-axes` found on the corpus. (Since [K73]
+#                        offset 0 there is SKIPPED rather than attempted, on
+#                        both arms alike, so it stays a SAME cell.)
 #
 # It is a TRIPWIRE and not a target, so it is compared with `>=`: a run that
 # finds MORE (a witness or a subject added) is fine and a run that finds FEWER
 # means something stopped reaching the guard.
+#
+# [K73] THE FLOOR IS PER ENTRY and both entries owe it: `<prefix>_match` is
+# swept over the same witnesses and subjects, so the same 150 derivation
+# applies to it alone. The total is then 2 x 150; the per-entry floor is what
+# catches ONE entry's guard going missing while the other's cells hold the sum
+# up — the DFA unwrapped `_match`, before K73, was exactly that.
 REFUSED_FLOOR="${STARTBND_REFUSED_FLOOR:-150}"
+if [ "$m_refused" -ge "$REFUSED_FLOOR" ]; then
+    ok "§3 non-vacuity (anchored entry): $m_refused mid-character <prefix>_match cells diverged (floor $REFUSED_FLOOR)"
+else
+    bad "§3 non-vacuity (anchored entry): only $m_refused mid-character <prefix>_match cells diverged, below the floor of $REFUSED_FLOOR — an anchored body is answering a mid-character position the guard must refuse"
+fi
+REFUSED_FLOOR=$((REFUSED_FLOOR * 2))
 if [ "$total_refused" -ge "$REFUSED_FLOOR" ]; then
     ok "§3 non-vacuity: $total_refused mid-character cells actually diverged (floor $REFUSED_FLOOR) — the guard is live and the sweep reaches it"
 else
@@ -314,7 +339,7 @@ check_engine_cell() {   # <label> <pattern> <modules> <hexsubject> <startpos> <e
     local label="$1" pat="$2" mods="$3" subj="$4" sp="$5" want="$6"; shift 6
     local feat=""
     [ -n "$mods" ] && feat="--features $mods"
-    local arm
+    local arm gotg=""
     for arm in guarded permissive; do
         local d="$WORKDIR/eng_${label}_$arm" denyflag=""
         [ "$arm" = permissive ] && denyflag="-fno-startpos-guard"
@@ -333,8 +358,16 @@ check_engine_cell() {   # <label> <pattern> <modules> <hexsubject> <startpos> <e
         fi
         local got
         got=$(gen_run "startbnd:eng:$label:$arm" "$d/drv" "$subj" "$sp")
+        [ "$arm" = guarded ] && gotg="$got"
         if [ "$got" = "$want" ]; then
             [ "$arm" = guarded ] && echo "  §5 [$label] $got (both arms)"
+        elif [ "$arm" = permissive ] && [ "$got" = "$gotg" ]; then
+            # Both arms gave the SAME wrong answer: the flag moved nothing and
+            # the guarded arm's failure line already names the defect. Saying
+            # "the deny flag MOVED a position" here would blame the axis for
+            # an engine fault ([K73]'s failing-direction run printed exactly
+            # that, once per row).
+            eng_ok=0
         elif [ "$arm" = permissive ]; then
             bad "§5 [$label] under -fno-startpos-guard answered $got where the guarded arm answers $want — the deny flag MOVED a position the ENGINE generated. It governs where a CALLER may point the entry and nothing else; K49's and K50's fix has no flag"
             eng_ok=0
@@ -352,6 +385,19 @@ check_engine_cell attempt-startloop '(?m)^a|\B'  assertions,modifiers 61CEB1    
 check_engine_cell vm-retry          '(?<!.)'     lookaround           CEB1CEB2   2 'no-match'
 check_engine_cell dfa-forced        '\B'         assertions           61CEB1     0 '(3,3)' --engine=dfa
 check_engine_cell vm-forced         '\B'         assertions           61CEB1     0 '(3,3)' --engine=vm
+# [K73] OFFSET 0 ON A LEADING CONTINUATION BYTE, one row per mechanism that
+# now skips it: the DFA scan's seek, ENG_ATTEMPT's skip, the VM's first-attempt
+# seek (bare, and behind a -fprefilter hybrid whose own scan does the seek),
+# and `\G`, which must stay FALSE at the moved start. Oracle: libpcre2 10.46
+# under PCRE2_UTF|PCRE2_MATCH_INVALID_UTF (docs/dev/lanes/k73utf_evidence/).
+# Both arms must agree: the rule has no flag.
+check_engine_cell k73-dfa-scan      '\B'         assertions           8080       0 '(2,2)'
+check_engine_cell k73-dfa-attempt   '(?m)^a|\B'  assertions,modifiers 80C3A9     0 '(1,1)'
+check_engine_cell k73-vm            '\B'         assertions           8080       0 '(2,2)' --engine=vm
+check_engine_cell k73-vm-prefilter  '\B'         assertions           8080       0 '(2,2)' --engine=vm -fprefilter
+check_engine_cell k73-bot           '^'          ''                   80         0 'no-match'
+check_engine_cell k73-gstart        '\G|b'       assertions           808062     0 '(2,3)'
+check_engine_cell k73-gstart-vm     '\G|b'       assertions           808062     0 '(2,3)' --engine=vm
 
 [ "$eng_ok" -eq 1 ] && ok "§5 CROSS-ENGINE: every candidate match start the engine generates is a character boundary, on the DFA self-loop, ENG_ATTEMPT's start loop and the VM's retry; both engines agree with libpcre2 10.46 on the CORRECT answer (before this fix they agreed on the wrong one, which is why nothing caught K50); and every cell answers IDENTICALLY under -fno-startpos-guard, so the axis moves no position the engine invented"
 
