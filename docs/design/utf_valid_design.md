@@ -1,9 +1,11 @@
-# [UTF-VALID] — an opt-in subject UTF-8 validity check (DESIGN NOTE, PROPOSED)
+# [UTF-VALID] — an opt-in subject UTF-8 validity check (DESIGN NOTE, RULED)
 
 Lane `k73utf`, 2026-09-29; revised by lane `uvrev`, 2026-09-30, against
 the contract critic `docs/dev/reviews/2026-09-30-r2-utf-valid-contract.md`
-(findings F1-F8; §9 maps each finding to its change). This is a design note
-only. Nothing is built. Charter: `docs/dev/plan.md` [UTF-VALID]. Frank,
+(findings F1-F8; §9 maps each finding to its change). **RULED 2026-09-30
+(D133): §8 Q1-Q11 all as recommended; `whole` is built, `extent` is
+recorded and not built. §10 records D133's start-alignment ruling
+(`-fstartpos-guard=align`, D132 item 3).** Build lane `uvbuild`. Charter: `docs/dev/plan.md` [UTF-VALID]. Frank,
 2026-09-29: *"a default-off check for valid subject utf. either precheck
 whole subject or check as you move forward (dfa?)"*. Evidence is in
 `utf_valid_evidence/`, which has its own CLAUDE.md.
@@ -637,3 +639,56 @@ runtime reader exists.
 | F7.6 -9 free | Recorded (§4.2). |
 | F8 cost method | **Accepted and re-measured.** The sublinear-denominator ratios are withdrawn. The sparse subject and small-subject per-call rows are added. The fast path's losses are reported. The DFA-validator row is dropped (§5). |
 | "startpos > n" (critic, edge) | Stated: today's answer, no check (§1.1, §1.2). |
+
+## 10. The start alignment, `-fstartpos-guard=align` (D132 item 3, ruled D133)
+
+D132 item 2 chartered an opt-in START ALIGNMENT; D133 ruled its open
+questions with this note. What was ruled, and the choices the build made
+inside the ruling:
+
+**Its purpose is a MISALIGNED POINTER into valid text**, not tolerance of
+invalid UTF-8 (Frank's framing, correcting the manager's). A caller that
+splits a buffer on arbitrary bytes and hands each piece's offset in gets the
+tool to align itself before it begins. So:
+
+- **Spelling and place.** A third value of the existing `startpos-guard`
+  axis (tuning.md §2.23), beside refuse (the default) and permissive
+  (`-fno-startpos-guard`): `-fstartpos-guard=align`. It is the force column
+  of that axis's `axes.def` row, bit `PCREC_FORCE_STARTPOS_ALIGN`. It is a
+  CONTRACT value like the other two, so it is not masked out of
+  `rx_info.flags`, and like them it is inert under `byte` (every position is
+  a character start there). Combined with `-fno-startpos-guard` it is
+  refused as a conflict: the two name different answers for the same input.
+- **What it skips.** Continuation bytes only (`0x80..0xBF` under `utf8`),
+  forward, from the caller's `startpos` to the first position the backend's
+  own `start_guard` predicate calls a character start (or `n`). It is the
+  backend predicate the K50 guard already reads, looped; no second spelling
+  of "character start" exists.
+- **Once, at entry, never per match.** The positions pcrec's own find-all
+  loop computes are always boundaries (D132 item 1), so a per-match skip
+  would have nothing to do.
+- **Where the refusal is, the skip is.** It sits at the K50 guard's own
+  sites and replaces the guard's `return PCREC_ERR_STARTPOS` with a SEEK, on
+  exactly the guard's condition. So offset 0 is never moved, as it is never
+  refused: a caller naming offset 0 cannot have pointed INSIDE a character
+  (none precedes it). A buffer that itself begins mid-character is
+  ill-formed data, and the check reports it (below); without the check,
+  K73's offset-0 start rule handles it exactly as it does today.
+- **The aligned position IS the start position.** A search entry moves its
+  `startpos` and runs as if the caller had passed the aligned position, so
+  `\G` and lookbehind context read from there. An anchored match-here entry
+  cannot report a match beginning anywhere but where it was asked, so a
+  misaligned `ctx->pos` answers NOMATCH (-1) — K73's own NOMATCH form of the
+  start rule, for the same reason.
+- **Validation has no carve-out.** When `-futf-check` is also on, the order
+  is: align, then validate from the ALIGNED position, i.e. the checked range
+  is `[aligned − LB, n)` with §1.3's raw step-back, exactly as for any
+  startpos. The character the pointer landed inside lies BEHIND it; with
+  `LB ≥ 1` the step-back reaches its lead byte, and those bytes are the
+  caller's real text and are checked as such. An anchored entry validates
+  from the aligned position BEFORE answering NOMATCH, so its answer is still
+  given only for a well-formed checked range (§2.1's promise).
+- **No new result code, no new entry, no struct change.** The stamp
+  `<PREFIX>_STARTPOS_GUARD` gains the value `"align"`. It rides the same abi
+  event as the check.
+

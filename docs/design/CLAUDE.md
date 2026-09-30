@@ -2727,20 +2727,22 @@ exactly +34 bytes.
   `pcre2_substitute` boundary stream that under-marked under
   `MATCH_INVALID_UTF`; two guessed expectations that were wrong).
 
-- `utf_valid_design.md` — **[UTF-VALID] THE DESIGN NOTE, PROPOSED, not
-  paneled** (lane k73utf, 2026-09-29; design only, nothing built). It covers
-  Frank's opt-in subject UTF-8 validity check. §1 measures PCRE2's contract
-  on 10.46: `[startoffset − max lookbehind, n)` is validated before any
-  attempt, and the error offset is the first bad sequence's first byte; a
-  match lying before the bad byte is still refused. §2 treats the two shapes
-  (a precheck, an incremental check riding the DFA) as CONTRACTS, and §3 is
-  ONE first-match table choosing the mechanism. The incremental form's
-  contract depends on which bytes the optimizer skips, so the note
-  recommends building only `whole`, via the `$_var_valid` residual shape.
-  §4 is the caller surface: a compile-time axis, one code `PCREC_ERR_UTF`,
-  and an exported `<prefix>_utf_invalid_at` for the offset; the find-all
-  loop becomes quadratic, as it is in PCRE2. §5 is the measured cost, §6
-  says the change is an abi event, and §8 asks ten questions.
+- `utf_valid_design.md` — **[UTF-VALID] THE DESIGN NOTE, RULED (D133,
+  2026-09-30) and BUILT by lane uvbuild** (lane k73utf 2026-09-29; revised by
+  lane uvrev against the r2 contract critic). Frank's opt-in subject UTF-8
+  validity check. §1 measures PCRE2's contract on 10.46: `[startoffset − LB,
+  n)` is validated before any attempt (LB = PCRE2's `max_lookbehind`, §1.4;
+  the step-back is a raw continuation skip, §1.3), the K50 mid-character
+  guard fires first (§1.2), and the error offset is the first bad sequence's
+  first byte. §2 compares two sound CONTRACTS, `whole` (built) and `extent`
+  (recorded, not built, behind §2.4's trigger), and rejects the DFA-fused
+  sink. §4 is the caller surface: the compile-time contract axis
+  `-futf-check`, one code `PCREC_ERR_UTF` (-9), and
+  `<prefix>_valid_upto(s, n, startpos)` in every artifact. §5 is the
+  measured cost, §6 the abi event, §8 the eleven questions (all ruled as
+  recommended). **§10 records D133's start alignment,
+  `-fstartpos-guard=align`** — a third value of the startpos-guard axis for
+  a misaligned pointer into valid text, with no validation carve-out.
 - `utf_valid_evidence/` — that note's probes and timing (own CLAUDE.md).
 
 Maintenance: update this file when files are added/removed or their roles
