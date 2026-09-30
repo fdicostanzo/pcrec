@@ -26064,3 +26064,38 @@ margin; bisect today's merges if slower). MAIN IS UNPUSHED (origin at 4a546fba-e
 (0caeb076). (2) "Reproduces clean standalone" is not an explanation for a timeout under make test's own
 -j load. (3) A census taken from a TRUNCATED pattern column silently drops patterns (lacensus: 493 vs 492).
 (4) Two lanes re-pinning one census conflict every time; combine deltas by mechanism at merge.
+
+## 2026-09-28/29 — eighty-fifth session (~19:00 EDT 09-28 → ~17:00 EDT 09-29): UCP U0+U1 merged (abi 45); CLS-TREE designed + calibrated; U2 and S1 built but NOT merged
+
+**Merged to main (a27d5d97 → 1d5adb4c, all pushed):**
+- tri87 (not a regression: P-core oversubscription), admin88 (phase-3 dispositions, D128, K71).
+- pcap88 [CORPUS-PCAP]: tests/lib/procs_default.sh → 8 workers on darwin; full run 0 TIMED OUT.
+- clsdes88 [CLS-TREE] design note (D129: S5 dropped for the island; UCP next).
+- ucpdes [UCP] design note (D130), with a critic-run no-spiderweb fix to T4 (26d17351).
+- clss0/clsgate/clsfit (S0 calibration; the refitted per-probe model, r +0.90 30/36; page3w 3.2× faster than today's middle).
+- The O-77 fair CLSPACK re-run: the kit's byte tier is SLOWEST at every N; the atom table ties the bitmap.
+- D131: the ruled --tune class table; S2 re-scoped; CLSPACK promoted; the B115 dispositions. Addendum 1: K's selection estimate gains the dispatch term.
+- ucpu1/ucpu1b [UCP] U0+U1: module ucp, --ucp/(*UCP), DEF_UCP sets, (?a…), the Latin-1 byte tier, named refusals; abi 44→45; K72.
+- adm131 (D131 docs + the B115 exec summary), selcost0 ([SEL-COST] step 0: four cause groups, C = hybrid prefilter mispricing, regime-dependent up to 14.7×), lacens2 ([CTX-PREFILTER] + [ENG-LOOK] step 0).
+- rpfloor: the run-pinned floor 130→100. The 165→117 drop is [FIND-TIE]'s tie rule vs prefix_k's pick, answer-identical; filed [TIE-ALIGN].
+
+**Filed:** [LIST-TABLES], [LIST-CLASSES], [CTX-PREFILTER], [FIND-DOMAIN-CHECK], [TIE-ALIGN], K72, K73.
+
+**Frank's standing rules added:**
+- Every selection is a first-match predicate-row table, listable, with no if-then spiderweb.
+- Keep three lanes busy.
+- Reset when context is >35%.
+- No external exec-summary page.
+
+**Bench:** I-118 → O-74 (the four columns: DECLARED can mislead, PROFILED never regresses, email forced-VM ×0.648). I-119/120/121 → O-75/76/77 (the CLS-TREE S0 timing: refused once on OUR harness's self-inflicted load, fixed by clsgate).
+
+**NOT MERGED at close (the owed list, wake.md):**
+- **U2** (lane/ucpu2, abi 46) has a REAL regression: the anchored-match entry reads accepting[-1] (triu2).
+- **S1** (lane/clss1): Linux reds in test-clskit (a gcc-15 CPU limit) and rxtsource C3.
+
+**Lessons:**
+1. A floor that went stale on main unnoticed (test-axes is opt-in) was nearly re-pinned over an unexplained 33-witness loss. Diagnose first; rpfloor found FIND-TIE by bisect.
+2. A dormant emitter path becomes reachable when a mover census populates it (U2's anchored machine). Triage the full run, and never merge on targeted validation alone.
+3. The kit's instruction-count win did not survive a fair timing (O-77).
+4. A study harness's load gate must not refuse on load the harness generates itself.
+5. Lanes keep handing back mid-ruling; re-check that rulings were applied (clss1 missed option (a)).

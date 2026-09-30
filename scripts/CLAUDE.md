@@ -333,6 +333,31 @@ pcrec (the Makefile owns that).
   byte-neutrality sweep" section and `docs/dev/lanes/bsweep_report.md` for
   the validation transcript and the five-lane reconciliation.
 
+- **cls_identity.py** — [CLS-TREE] S3's BYTE-IDENTITY INSTRUMENT
+  (2026-09-29, lane `clsid`, `cls_s3_reader_inventory.md` §7/D-8), the
+  committed form of utf8k53_report.md §3.2's never-committed "3,348 of
+  3,348" sweep. Compiles every distinct (pattern, encoding, features, flags,
+  engine) TRIPLE with a BASELINE and a CANDIDATE `pcrec` (same `-o -` on both
+  sides — the `-o`-basename trap) and compares the emitted C byte for byte;
+  the encoding-axis sibling of `emit_sweep.py`, which has none and is
+  therefore vacuous for the wide-class lowering (it imports that script's
+  build/decode helpers). Populations are derived, not listed: corpus blocks
+  as written and widened over {byte, utf8} × {written features, `all`},
+  pcrec-bench's patterns (read-only, skipped loudly if absent), `\p{X}`
+  names found in the corpus in five shapes, and the inventory's witnesses.
+  **REACH** (K35): triples where `lower_class_utf8` fired, read from the
+  compiler's own output (the `--engine=vm --emit-ir` listing under utf8
+  differs from byte's; a lower bound; no compiler hook was added). **Two
+  positive controls**: an in-memory one-byte corruption pushed through the
+  same comparison, and (`--control`) a scratch build of the candidate with
+  one band boundary of `lower_class_utf8` moved by one, which must move
+  utf8 triples and no byte triple. A script, NOT a `make` target and not in
+  `make test`: it needs a reference revision (the branch point) that `make`
+  has no default for, main-vs-main is vacuous, and it runs minutes.
+  Scratch under `build-clsid/` (gitignored). See
+  docs/testing.md "S3 triple-sweep identity instrument" for the recorded
+  baseline and runtimes.
+
 - **embed_text.sh** — [FINDINGS] B1 (`docs/design/findings/design.md` §8.1):
   a BUILD-facing script, run by the Makefile to
   embed every `src/findings/<name>.rxt` as a C array plus a name index in

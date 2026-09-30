@@ -1,0 +1,747 @@
+{
+ "lit-cat": {
+  "family": "literal",
+  "constructs": [],
+  "text": "cat",
+  "note": "base grammar: the three-byte literal. Fourteen patterns spell this language or a superset of it with one construct added (`(cat)`, `(?<w>cat)`, `\\x63at`, `(?x) c a t`, `ca(?#comment)t`, `(?n)(ca)t`, `c\\Xt`, ...); their cost minus this one's is the construct's"
+ },
+ "anc-caret": {
+  "family": "anchors",
+  "constructs": [
+   "^"
+  ],
+  "text": "^item",
+  "note": "start of subject (no (?m)): the `bare` `^` row"
+ },
+ "anc-dollar": {
+  "family": "anchors",
+  "constructs": [
+   "$"
+  ],
+  "text": "done$",
+  "note": "end of subject OR before a final newline: `item done\\n` is the edge"
+ },
+ "anc-a-uc": {
+  "family": "anchors",
+  "constructs": [
+   "\\A"
+  ],
+  "text": "\\Aitem",
+  "note": "start of subject, the escape spelling"
+ },
+ "anc-z-uc": {
+  "family": "anchors",
+  "constructs": [
+   "\\Z"
+  ],
+  "text": "done\\Z",
+  "note": "end of subject or before a final newline, like `$` outside (?m)"
+ },
+ "anc-z-lc": {
+  "family": "anchors",
+  "constructs": [
+   "\\z"
+  ],
+  "text": "done\\z",
+  "note": "end of subject ONLY: rejects `item done\\n` where `\\Z` and `$` take it"
+ },
+ "anc-g-uc": {
+  "family": "anchors",
+  "constructs": [
+   "\\G"
+  ],
+  "text": "\\Gitem",
+  "note": "the search start: find-all counts consecutive hits from the cursor"
+ },
+ "anc-m-caret": {
+  "family": "anchors",
+  "constructs": [
+   "(?m)",
+   "^"
+  ],
+  "text": "(?m)^item",
+  "note": "`^` after an internal newline under multiline"
+ },
+ "anc-m-dollar": {
+  "family": "anchors",
+  "constructs": [
+   "(?m)",
+   "$"
+  ],
+  "text": "(?m)done$",
+  "note": "`$` before an internal newline under multiline"
+ },
+ "asr-wb": {
+  "family": "assertions",
+  "constructs": [
+   "\\b"
+  ],
+  "text": "\\bcat\\b",
+  "note": "word boundary both sides: `concatenate` is the designed miss"
+ },
+ "asr-nwb": {
+  "family": "assertions",
+  "constructs": [
+   "\\B"
+  ],
+  "text": "\\Bcat\\B",
+  "note": "NOT a word boundary both sides: `cat` alone is the designed miss"
+ },
+ "asr-k-uc": {
+  "family": "assertions",
+  "constructs": [
+   "\\K"
+  ],
+  "text": "key=\\K\\w+",
+  "note": "reset the reported start: the span begins after `key=`"
+ },
+ "cls-d": {
+  "family": "classes",
+  "constructs": [
+   "\\d"
+  ],
+  "text": "\\d+",
+  "note": "a digit run"
+ },
+ "cls-s-lc": {
+  "family": "classes",
+  "constructs": [
+   "\\s"
+  ],
+  "text": "cat\\s+sat",
+  "note": "whitespace between two words"
+ },
+ "cls-s-uc": {
+  "family": "classes",
+  "constructs": [
+   "\\S"
+  ],
+  "text": "\\S+@\\S+",
+  "note": "non-space runs around `@`"
+ },
+ "cls-w": {
+  "family": "classes",
+  "constructs": [
+   "\\w"
+  ],
+  "text": "\\w+",
+  "note": "a word run; C-locale tables, so a Latin-1 byte ends it"
+ },
+ "cls-h": {
+  "family": "classes",
+  "constructs": [
+   "\\h"
+  ],
+  "text": "key\\h*=\\h*value",
+  "note": "horizontal whitespace (space, tab) around `=`"
+ },
+ "cls-v": {
+  "family": "classes",
+  "constructs": [
+   "\\v"
+  ],
+  "text": "item\\v+done",
+  "note": "vertical whitespace: `\\n` one byte, `\\r\\n` two"
+ },
+ "cls-n-uc": {
+  "family": "classes",
+  "constructs": [
+   "\\N"
+  ],
+  "text": "it\\Nm",
+  "note": "any byte but newline, unaffected by (?s): `item` and `itxm`, never across a line end"
+ },
+ "cls-posix": {
+  "family": "classes",
+  "constructs": [
+   "[[:alpha:]]"
+  ],
+  "text": "[[:alpha:]]+",
+  "note": "a POSIX class: ASCII letters only under the default tables"
+ },
+ "cls-negset": {
+  "family": "classes",
+  "constructs": [],
+  "text": "c[^aeiou]t",
+  "note": "base grammar: a negated bracket class (`cat` misses, `cxt` hits)"
+ },
+ "cls-range": {
+  "family": "classes",
+  "constructs": [],
+  "text": "0x[0-9a-fA-F]+",
+  "note": "base grammar: a bracket class of three ranges"
+ },
+ "cls-dot": {
+  "family": "classes",
+  "constructs": [],
+  "text": "c.t",
+  "note": "base grammar: `.` (any byte but newline without (?s))"
+ },
+ "cls-fold-pair": {
+  "family": "classes",
+  "constructs": [],
+  "text": "c[aA]t",
+  "note": "FOLD-PAIR WITNESS: a two-member class that IS an ASCII fold pair; the same language as `(?i:a)` in the middle of `cat`"
+ },
+ "cls-pair-ctl": {
+  "family": "classes",
+  "constructs": [],
+  "text": "c[ac]t",
+  "note": "FOLD-PAIR WITNESS (the control): a two-member class that is NOT a fold pair -- the same class SIZE as `c[aA]t`, a different set"
+ },
+ "cls-mixed-case": {
+  "family": "classes",
+  "constructs": [],
+  "text": "c[a-zA-Z]t",
+  "note": "FOLD-PAIR WITNESS: a mixed-case ranged class (52 members, every letter's fold pair present)"
+ },
+ "cls-i-class": {
+  "family": "classes",
+  "constructs": [
+   "(?i)"
+  ],
+  "text": "(?i)c[aeiou]t",
+  "note": "FOLD-PAIR WITNESS: `(?i)` over a CLASS (the option folds the class and the literals both); `mod-i` is the option over a literal"
+ },
+ "qnt-star": {
+  "family": "quantifiers",
+  "constructs": [],
+  "text": "ca*t",
+  "note": "base grammar: greedy star (`ct`, `cat`, `caaat`)"
+ },
+ "qnt-plus": {
+  "family": "quantifiers",
+  "constructs": [],
+  "text": "a+b",
+  "note": "base grammar: greedy plus, the body the possessive/atomic shapes are read against"
+ },
+ "qnt-quest": {
+  "family": "quantifiers",
+  "constructs": [],
+  "text": "colou?r",
+  "note": "base grammar: optional"
+ },
+ "qnt-lazy": {
+  "family": "quantifiers",
+  "constructs": [],
+  "text": "\".*?\"",
+  "note": "base grammar: lazy star inside quotes (bench/bounded carries the counted forms)"
+ },
+ "qnt-poss-star": {
+  "family": "quantifiers",
+  "constructs": [
+   "a*+"
+  ],
+  "text": "a*+b",
+  "note": "possessive star"
+ },
+ "qnt-poss-plus": {
+  "family": "quantifiers",
+  "constructs": [
+   "a++"
+  ],
+  "text": "a++ab",
+  "note": "possessive plus with a body it can NEVER match (the plus keeps the last `a`): every subject is a miss, and `qnt-plus-ctl` is the control"
+ },
+ "qnt-plus-ctl": {
+  "family": "quantifiers",
+  "constructs": [],
+  "text": "a+ab",
+  "note": "the CONTROL for `a++ab`: the same text minus the possessive suffix, which matches `aaab`"
+ },
+ "qnt-poss-quest": {
+  "family": "quantifiers",
+  "constructs": [
+   "a?+"
+  ],
+  "text": "a?+a",
+  "note": "possessive optional: needs two `a`s (the first is kept)"
+ },
+ "qnt-poss-brace": {
+  "family": "quantifiers",
+  "constructs": [
+   "a{1,2}+"
+  ],
+  "text": "a{1,2}+b",
+  "note": "possessive bounded repeat"
+ },
+ "grp-cap": {
+  "family": "groups",
+  "constructs": [
+   "(a)"
+  ],
+  "text": "(cat)",
+  "note": "a capturing group around the plain word (the `bare` row)"
+ },
+ "grp-noncap": {
+  "family": "groups",
+  "constructs": [
+   "(?:...)"
+  ],
+  "text": "(?:ab)+",
+  "note": "a non-capturing group under a repeat"
+ },
+ "grp-named": {
+  "family": "groups",
+  "constructs": [
+   "(?<name>a)"
+  ],
+  "text": "(?<w>cat)",
+  "note": "a named group, angle spelling; the other two spellings are exercised by the named backreference and the python-style call"
+ },
+ "grp-named-quote": {
+  "family": "groups",
+  "constructs": [
+   "(?'name'...)"
+  ],
+  "text": "(?'w'cat)",
+  "note": "a named group, quote spelling"
+ },
+ "grp-atomic-rep": {
+  "family": "groups",
+  "constructs": [
+   "(?>...)"
+  ],
+  "text": "(?>a+)b",
+  "note": "an atomic group over a repeat: same language as `a+b`"
+ },
+ "grp-atomic-alt": {
+  "family": "groups",
+  "constructs": [
+   "(?>...)"
+  ],
+  "text": "(?>a|ab)c",
+  "note": "an atomic group over an alternation: FAILS on `abc` (the first branch is committed) where `(?:a|ab)c` would match"
+ },
+ "grp-comment": {
+  "family": "groups",
+  "constructs": [
+   "(?#...)"
+  ],
+  "text": "ca(?#comment)t",
+  "note": "a comment group: the language is `cat`"
+ },
+ "grp-branch-reset": {
+  "family": "groups",
+  "constructs": [
+   "(?|...)"
+  ],
+  "text": "(?|(cat)|(dog))",
+  "note": "a branch-reset group: both alternatives capture as group 1"
+ },
+ "grp-callout": {
+  "family": "groups",
+  "constructs": [
+   "(?C1)"
+  ],
+  "text": "ca(?C1)t",
+  "note": "a numbered callout with no callout function installed: the language is `cat`"
+ },
+ "alt-two": {
+  "family": "alternation",
+  "constructs": [],
+  "text": "cat|dog",
+  "note": "base grammar: a two-branch literal alternation (bench/altwide carries the width ladder)"
+ },
+ "alt-nested": {
+  "family": "alternation",
+  "constructs": [],
+  "text": "(?:c|d)(?:at|og)",
+  "note": "base grammar: two nested alternations, the same language as `cat|dog` plus `cog` and `dat`"
+ },
+ "bak-1": {
+  "family": "backrefs",
+  "constructs": [
+   "\\1"
+  ],
+  "text": "(\\w+) \\1",
+  "note": "a numbered backreference: a doubled word"
+ },
+ "bak-2": {
+  "family": "backrefs",
+  "constructs": [
+   "\\2",
+   "\\1"
+  ],
+  "text": "(\\w)(\\w)\\2\\1",
+  "note": "two backreferences in reverse order: a four-byte palindrome"
+ },
+ "bak-g-rel": {
+  "family": "backrefs",
+  "constructs": [
+   "\\g{-1}"
+  ],
+  "text": "(\\w+) \\g{-1}",
+  "note": "a relative backreference: the same language as `bak-1`"
+ },
+ "bak-k-named": {
+  "family": "backrefs",
+  "constructs": [
+   "\\k<name>",
+   "(?<name>a)"
+  ],
+  "text": "<(?<t>\\w+)>[^<]*</\\k<t>>",
+  "note": "a named backreference: a tag pair closed by its own name"
+ },
+ "bak-py": {
+  "family": "backrefs",
+  "constructs": [
+   "(?P=n)",
+   "(?P<name>a)"
+  ],
+  "text": "(?P<t>\\w+) (?P=t)",
+  "note": "the python-style named backreference: the same language as `bak-1`"
+ },
+ "lka-pos": {
+  "family": "lookaround",
+  "constructs": [
+   "(?=...)"
+  ],
+  "text": "item(?= done)",
+  "note": "positive lookahead: the span is `item`"
+ },
+ "lka-neg": {
+  "family": "lookaround",
+  "constructs": [
+   "(?!...)"
+  ],
+  "text": "item(?! done)",
+  "note": "negative lookahead"
+ },
+ "lkb-pos": {
+  "family": "lookaround",
+  "constructs": [
+   "(?<=...)"
+  ],
+  "text": "(?<=item )done",
+  "note": "positive lookbehind: the span is `done`"
+ },
+ "lkb-neg": {
+  "family": "lookaround",
+  "constructs": [
+   "(?<!...)"
+  ],
+  "text": "(?<!item )done",
+  "note": "negative lookbehind"
+ },
+ "lka-nonatomic": {
+  "family": "lookaround",
+  "constructs": [
+   "(?*a)"
+  ],
+  "text": "(?*item)item",
+  "note": "non-atomic positive lookahead over a literal: the same language as `item`"
+ },
+ "lka-verb": {
+  "family": "lookaround",
+  "constructs": [
+   "(*pla:a)"
+  ],
+  "text": "item(*pla: done)",
+  "note": "the alpha spelling of `lka-pos`: the same language, a different spelling"
+ },
+ "cnd-group": {
+  "family": "conditionals",
+  "constructs": [
+   "(?(1)a|b)"
+  ],
+  "text": "(<)?item(?(1)>)",
+  "note": "a group-number condition: `<item>` or `item`, never `<item`"
+ },
+ "rec-r-uc": {
+  "family": "recursion",
+  "constructs": [
+   "(?R)"
+  ],
+  "text": "\\((?:[^()]|(?R))*\\)",
+  "note": "whole-pattern recursion: balanced parentheses"
+ },
+ "rec-1": {
+  "family": "recursion",
+  "constructs": [
+   "(?1)"
+  ],
+  "text": "(\\((?:[^()]|(?1))*\\))",
+  "note": "recursion into group 1: the same language as `rec-r-uc`, the call target being the group and not the root"
+ },
+ "rec-name": {
+  "family": "recursion",
+  "constructs": [
+   "(?&name)",
+   "(?<name>a)"
+  ],
+  "text": "(?<p>\\((?:[^()]|(?&p))*\\))",
+  "note": "recursion into a named group: the same language as `rec-r-uc`"
+ },
+ "rec-define": {
+  "family": "recursion",
+  "constructs": [
+   "(?(DEFINE)(?<w>a))",
+   "(?&name)"
+  ],
+  "text": "(?(DEFINE)(?<d>\\d{2}))(?&d):(?&d)",
+  "note": "a DEFINE group called twice: `12:34`"
+ },
+ "rec-g-angle": {
+  "family": "recursion",
+  "constructs": [
+   "\\g<1>"
+  ],
+  "text": "(\\d{2})\\g<1>",
+  "note": "a subroutine call by number, angle spelling: four digits"
+ },
+ "rec-py": {
+  "family": "recursion",
+  "constructs": [
+   "(?P>n)",
+   "(?P<name>a)"
+  ],
+  "text": "(?P<d>\\d{2})(?P>d)",
+  "note": "the python-style subroutine call: the same language as `rec-g-angle`"
+ },
+ "rec-fwd": {
+  "family": "recursion",
+  "constructs": [
+   "(?+1)(a)"
+  ],
+  "text": "(?+1)(\\d{2})",
+  "note": "a relative call FORWARD to the group to its right: four digits"
+ },
+ "rec-back": {
+  "family": "recursion",
+  "constructs": [
+   "(a)(?-1)"
+  ],
+  "text": "(\\d{2})(?-1)",
+  "note": "a relative call BACK to the group to its left: four digits"
+ },
+ "mod-i": {
+  "family": "modifiers",
+  "constructs": [
+   "(?i)"
+  ],
+  "text": "(?i)cat",
+  "note": "caseless"
+ },
+ "mod-s": {
+  "family": "modifiers",
+  "constructs": [
+   "(?s)"
+  ],
+  "text": "(?s)item.done",
+  "note": "dotall: the `.` spans the newline in `item\\ndone`; NO unbounded repeat under (?s) anywhere in this set"
+ },
+ "mod-x": {
+  "family": "modifiers",
+  "constructs": [
+   "(?x)"
+  ],
+  "text": "(?x) c a t # comment",
+  "note": "extended: the language is `cat`"
+ },
+ "mod-n": {
+  "family": "modifiers",
+  "constructs": [
+   "(?n)"
+  ],
+  "text": "(?n)(ca)t",
+  "note": "no auto-capture: the plain group stops capturing"
+ },
+ "mod-u-uc": {
+  "family": "modifiers",
+  "constructs": [
+   "(?U)"
+  ],
+  "text": "(?U)\".+\"",
+  "note": "ungreedy: the same language as `qnt-lazy` by inverting `+`"
+ },
+ "mod-j-uc": {
+  "family": "modifiers",
+  "constructs": [
+   "(?J)",
+   "(?<name>a)",
+   "\\k<name>"
+  ],
+  "text": "(?J)(?:(?<w>the)|(?<w>\\w+)) \\k<w>",
+  "note": "duplicate names allowed: the backreference resolves to whichever `w` set"
+ },
+ "mod-a": {
+  "family": "modifiers",
+  "constructs": [
+   "(?a)"
+  ],
+  "text": "(?a)\\w+",
+  "note": "ASCII-restricted class escapes: under the default tables `\\w` is already ASCII, so the same language as `cls-w`"
+ },
+ "mod-r": {
+  "family": "modifiers",
+  "constructs": [
+   "(?r)",
+   "(?i)"
+  ],
+  "text": "(?ir)cat",
+  "note": "caseless restricted to one script: in byte mode the same language as `mod-i`"
+ },
+ "mod-reset": {
+  "family": "modifiers",
+  "constructs": [
+   "(?^)",
+   "(?i)"
+  ],
+  "text": "(?i)c(?^)at",
+  "note": "reset all options mid-pattern: `Cat` yes, `CAT` no"
+ },
+ "mod-unset": {
+  "family": "modifiers",
+  "constructs": [
+   "(?-i)",
+   "(?i)"
+  ],
+  "text": "(?i)c(?-i)at",
+  "note": "unset one option mid-pattern: the same language as `mod-reset`"
+ },
+ "esc-tab": {
+  "family": "escapes",
+  "constructs": [
+   "\\t"
+  ],
+  "text": "key\\tvalue",
+  "note": "the tab escape"
+ },
+ "esc-nl": {
+  "family": "escapes",
+  "constructs": [
+   "\\n"
+  ],
+  "text": "item\\ndone",
+  "note": "the newline escape"
+ },
+ "esc-cr": {
+  "family": "escapes",
+  "constructs": [
+   "\\r",
+   "\\n"
+  ],
+  "text": "item\\r\\ndone",
+  "note": "carriage return + newline as two escapes: `msc-r-uc` is the one-token spelling of the same pair"
+ },
+ "esc-hex": {
+  "family": "escapes",
+  "constructs": [
+   "\\x41"
+  ],
+  "text": "\\x63at",
+  "note": "a bare two-digit hex escape: the language is `cat`"
+ },
+ "esc-hex-braced": {
+  "family": "escapes",
+  "constructs": [
+   "\\x41"
+  ],
+  "text": "caf\\x{e9}",
+  "note": "the braced hex spelling of a Latin-1 byte (the seed's `\\x41` row names both spellings)"
+ },
+ "esc-ctrl": {
+  "family": "escapes",
+  "constructs": [
+   "\\cX"
+  ],
+  "text": "bell\\cGend",
+  "note": "a control escape: `\\cG` is 0x07"
+ },
+ "esc-octal-o": {
+  "family": "escapes",
+  "constructs": [
+   "\\o{101}"
+  ],
+  "text": "\\o{143}at",
+  "note": "the braced octal escape: the language is `cat`"
+ },
+ "esc-octal-0": {
+  "family": "escapes",
+  "constructs": [
+   "\\0"
+  ],
+  "text": "item\\040done",
+  "note": "the `\\0dd` octal escape (never a backreference): a space"
+ },
+ "esc-quote": {
+  "family": "escapes",
+  "constructs": [
+   "\\Q",
+   "\\E"
+  ],
+  "text": "\\Qf(x)\\E",
+  "note": "literal quoting: the parentheses are bytes"
+ },
+ "msc-r-uc": {
+  "family": "misc",
+  "constructs": [
+   "\\R"
+  ],
+  "text": "item\\Rdone",
+  "note": "any newline sequence: `\\n` and `\\r\\n` both, as one token"
+ },
+ "msc-x-uc": {
+  "family": "misc",
+  "constructs": [
+   "\\X"
+  ],
+  "text": "c\\Xt",
+  "note": "an extended grapheme cluster: one byte in byte mode"
+ },
+ "msc-c-uc": {
+  "family": "misc",
+  "constructs": [
+   "\\C"
+  ],
+  "text": "c\\Ct",
+  "note": "one data unit"
+ },
+ "unp-p-lc": {
+  "family": "uniprop",
+  "constructs": [
+   "\\p{L}"
+  ],
+  "text": "\\p{L}+",
+  "note": "letters by Unicode property: Latin-1 letters included, unlike `\\w`"
+ },
+ "unp-p-uc": {
+  "family": "uniprop",
+  "constructs": [
+   "\\P{L}"
+  ],
+  "text": "\\P{L}+",
+  "note": "non-letter runs"
+ },
+ "vrb-accept": {
+  "family": "verbs",
+  "constructs": [
+   "(*ACCEPT)"
+  ],
+  "text": "item(*ACCEPT)done",
+  "note": "end the match early: the span is `item`, `done` never runs"
+ },
+ "vrb-skip": {
+  "family": "verbs",
+  "constructs": [
+   "(*ACCEPT)"
+  ],
+  "text": "a+(*SKIP)b",
+  "note": "on failure after the verb, skip the search to the verb's position"
+ },
+ "xcl-minus": {
+  "family": "extclass",
+  "constructs": [
+   "(?[[a]])"
+  ],
+  "text": "(?[[a-z]-[aeiou]])+",
+  "note": "a set difference: consonant runs"
+ },
+ "floor": {
+  "family": "floor",
+  "constructs": [],
+  "text": "#",
+  "note": "requirements 5's per-call control: one literal byte, in `#42` and the order line only, absent from every run"
+ }
+}

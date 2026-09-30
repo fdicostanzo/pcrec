@@ -13,6 +13,8 @@ build-alloc/
 # and the report TSVs. Same shape as build-ubsan/ etc; never touched by
 # `make`/`make test`.
 build-emitsweep/
+# [CLS-TREE] S3: scratch tree of scripts/cls_identity.py (same shape).
+build-clsid/
 *.o
 *.a
 # Core dumps only — anchored, because an unanchored `core` also matches the

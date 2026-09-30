@@ -3439,3 +3439,70 @@ never edited afterwards.
   the seed clause read off the emitted cells (68 false reports -> 0, two
   sabotages fire). §2.5 is the ASan sweep that bounds the hazard to the
   anchored entry.
+- `adm131_report.md` — D131's docs (2026-09-29, lane adm131, docs only):
+  clsfit's λ diff hand-applied to `opt_dial_design.md` §4 / `tuning.md`
+  (did not `git apply --check` cleanly — the file had drifted); the
+  `[CLS-TREE]`/`[OPT-CLSPACK]`/`[SEL-COST]`/`[LIST-TABLES]` plan.md rows
+  each appended with their D131 disposition; `[FINDINGS-BENCH-TIERS]`
+  closed and archived to plan_completed.md; new row `[FIND-DOMAIN-CHECK]`
+  filed; the B115 executive summary plus a second-section CLS-TREE S0
+  addendum. Three judgment calls flagged for Frank (OPT-CLSPACK's STATE
+  tag, closing FINDINGS-BENCH-TIERS outright, the addendum's placement).
+- `clsid_report.md` — [CLS-TREE] S3's byte-identity instrument (2026-09-29,
+  lane clsid, sonnet): `scripts/cls_identity.py`, the (encoding, features)
+  triple sweep utf8k53_report.md §3.2 described and never committed; REACH
+  read from the VM listing counterfactual (no compiler stamp exists), two
+  positive controls, baseline main-vs-main 15,771/15,771 identical, REACH
+  1,421, 856 s at 2 workers.
+- `clss1_report.md` — [CLS-TREE] S1 (2026-09-29, lane clss1, opus): the
+  class-matcher kit in `src/gen/clskit.{c,h}`, with no emitter calling it,
+  no abi event and nothing caller-visible. It carries:
+  - the seven leaf forms and the size-only sectioning DP `K`, integer Q16
+    and cross-checked against the study;
+  - the whole-set `P3`/`P2`/`B1`;
+  - the byte atom table;
+  - D131's `--tune` class-form selection as ONE first-match table of rows
+    as data.
+  `tests/clskit/` (`make test-clskit`, in `TEST_SECTIONS`) checks every
+  emitted form on every code point over the 312 uprops sets, the K53
+  twelve, the 41 byte classes and the proptest compositions. It also runs
+  a census and the study cross-check. The sabotage rows are S360-S363 on
+  the new `clskit` mech arm, all DETECTED. **Read §3 first: a STOPPED design
+  point.** The table's byte predicates can only read the DP's MODEL bytes,
+  which run ~13% under the measured object for `K`. So D131's `0` row takes
+  `P3` on 2 of the K53 twelve where the ruled evidence says 12; a ruling
+  is owed.
+- `clss1b_report.md` — [CLS-TREE] S1 follow-up (2026-09-29, lane clss1b,
+  sonnet): closes clss1's §3 STOPPED point and applies three more manager
+  rulings, all in the same worktree/branch. **D131 addendum 1**:
+  `PLACE.kit_disp_bytes` (578 B, a CONSTANT fit — `measured - model` over
+  the K53 twelve at λ=4, sweep_k53.tsv; a per-section linear term was
+  tried and explains only R²=0.06, rejected), read by the SELECTION's
+  `kit_sel_bytes()` alone (never by the DP's own sectioning bytes or by a
+  chosen `CLSF_KIT` row's reported bytes). Reproduces clsfit's ruled picks
+  on the K53 twelve EXACTLY — 12/12 K at `−2`, 12/12 P3 at `0`, 12/12 P2
+  at `+2` — where the unadjusted model read P3 on only 2/12 at `0`. **The
+  `studies/` dependency is retired**: `tests/clskit/ref/` freezes the
+  EIGHT Python modules the suite actually needs (crosscheck.py's own
+  "six" undercounted two transitive `import`s inside `bench_bytes.py`/
+  `proptest.py`, found by trying to import the six alone), each with a
+  provenance header, verified byte-identical to the live study's output
+  before the switch. **The atom table leaves the per-class `ROWS`**: D131
+  item 6's atom table is an artifact-level choice (a per-set table has no
+  input for an artifact-wide byte-class-site count) — the row, its
+  predicate tag, `CLSD_ATOM` and `ClsSelectIn`'s now-dead atom fields are
+  gone; the atom FORM, emitter and differential (which exercised it
+  directly, never through `ROWS`) are untouched. `make strict` clean,
+  `test-clskit` 5/5 (20,685 selections, 0 disagreements — 591×5×7 after
+  the row removal), `limits_check` 35/0, `test-codegen` 11/12 (the sole
+  red is the standing darwin `nm` probe), S360-S364 all DETECTED (S363
+  re-anchored in-lane after `make test-codegen`'s own SABANCHOR check
+  caught the drift this lane's own edit caused; S364 is the new row, the
+  S363 shape one predicate over).
+
+- `clstri_report.md` — triage of [CLS-TREE] S1's two Linux reds (2026-09-29,
+  lane clstri, sonnet): test-clskit's gcc-15 GENCPU timeout fixed by packing
+  atomic groups into compile units by EMITTED BYTES (591/591 on the Mac), and
+  test-rxtsource C3's pin move diagnosed as stale pins (census +318 since
+  2026-09-25, identical on both boxes for the box-independent classes), not
+  box-dependent and not S1's; re-pinned to the Linux py3.14 numbers.

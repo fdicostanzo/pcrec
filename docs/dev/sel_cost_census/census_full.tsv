@@ -1,0 +1,244 @@
+cap	pattern	family	regime	auto_ns	best_vm_id	best_vm_ns	ratio_auto_over_vm	cause	auto_engine	dfa_prefilter	dfa_scan	req_why	ncaps
+caps	lka-pos	lookaround	large-subject-throughput	1666620.16	pcrec_751b9c6d_vm-in-caps-simdna	1282577.32	1.2994	C-hybrid-prefilter-pricing	vm	run-pinned	unanchored	dominated	1
+caps	lka-verb	lookaround	large-subject-throughput	1667504.27	pcrec_751b9c6d_vm-in-caps-simdna	1283939.29	1.2987	C-hybrid-prefilter-pricing	vm	run-pinned	unanchored	dominated	1
+caps	anc-g-uc	anchors	large-subject-throughput	22.05	pcrec_751b9c6d_vm-in-caps-simdna	17.81	1.2384	A-anchored-one-attempt	dfa	none	attempt	one-attempt	1
+caps	cls-w	classes	large-subject-throughput	7185365.61	pcrec_751b9c6d_vm-in-caps-simdna	5888386.90	1.2203	B-classrun-dfa-vs-vm	dfa	byte-class	unanchored	none	1
+caps	anc-caret	anchors	large-subject-throughput	18.47	pcrec_751b9c6d_vm-caps-simdna	15.15	1.2192	A-anchored-one-attempt	dfa	none	attempt	one-attempt	1
+caps	mod-a	modifiers	large-subject-throughput	7171317.24	pcrec_751b9c6d_vm-in-caps-simdna	5882563.09	1.2191	B-classrun-dfa-vs-vm	dfa	byte-class	unanchored	none	1
+caps	anc-a-uc	anchors	large-subject-throughput	18.28	pcrec_751b9c6d_vm-caps-simdna	15.18	1.2042	A-anchored-one-attempt	dfa	none	attempt	one-attempt	1
+caps	cls-posix	classes	large-subject-throughput	6666074.58	pcrec_751b9c6d_vm-in-caps-simdna	6093524.64	1.0940	B-classrun-dfa-vs-vm	dfa	byte-class	unanchored	none	1
+caps	unp-p-lc	uniprop	large-subject-throughput	6602644.05	pcrec_751b9c6d_vm-caps-simdna	6129402.44	1.0772	B-classrun-dfa-vs-vm	dfa	byte-class	unanchored	none	1
+caps	qnt-poss-quest	quantifiers	large-subject-throughput	2006987.18	pcrec_751b9c6d_vm-in-caps-simdna	1931994.05	1.0388	C-hybrid-prefilter-pricing	vm	memchr	unanchored	dominated	1
+caps	alt-nested	alternation	large-subject-throughput	2107061.47	pcrec_751b9c6d_vm-caps-simdna	2086604.88	1.0098	other	dfa	byte-class	unanchored	none	1
+caps	bak-1	backrefs	large-subject-throughput	15820836.71	pcrec_751b9c6d_vm-caps-simdna	15707823.61	1.0072	other	vm			emitted	2
+caps	bak-k-named	backrefs	large-subject-throughput	1563486.63	pcrec_751b9c6d_vm-caps-simdna	1561655.18	1.0012	other	vm			emitted	2
+caps	bak-py	backrefs	large-subject-throughput	15784878.24	pcrec_751b9c6d_vm-caps-simdna	15773091.17	1.0007	other	vm			emitted	2
+caps	esc-cr	escapes	large-subject-throughput	23142.78	pcrec_751b9c6d_vm-in-caps-simdna	23125.65	1.0007	other	dfa	run-pinned	unanchored	dominated	1
+caps	bak-2	backrefs	large-subject-throughput	13281188.80	pcrec_751b9c6d_vm-caps-simdna	13274963.20	1.0005	other	vm			none	3
+caps	floor	floor	large-subject-throughput	23121.61	pcrec_751b9c6d_vm-caps-simdna	23130.36	0.9996	other	dfa	memchr	unanchored	dominated	1
+caps	bak-g-rel	backrefs	large-subject-throughput	15705762.56	pcrec_751b9c6d_vm-caps-simdna	15711912.00	0.9996	other	vm			emitted	2
+caps	mod-j-uc	modifiers	large-subject-throughput	29663348.67	pcrec_751b9c6d_vm-caps-simdna	29692270.44	0.9990	other	vm			emitted	3
+caps	lkb-pos	lookaround	large-subject-throughput	4076146.83	pcrec_751b9c6d_vm-caps-simdna	4089451.33	0.9967	C-hybrid-prefilter-pricing	vm	offset-set	unanchored	emitted	1
+caps	anc-z-lc	anchors	large-subject-throughput	24.02	pcrec_751b9c6d_vm-caps-simdna	26.65	0.9014	other	dfa	offset-set-bounded	unanchored	emitted	1
+caps	anc-dollar	anchors	large-subject-throughput	23.98	pcrec_751b9c6d_vm-caps-simdna	26.65	0.8996	other	dfa	offset-set-bounded	unanchored	emitted	1
+caps	alt-two	alternation	large-subject-throughput	1972430.96	pcrec_751b9c6d_vm-in-caps-simdna	2290801.50	0.8610	other	dfa	byte-class	unanchored	none	1
+caps	unp-p-uc	uniprop	large-subject-throughput	5908754.24	pcrec_751b9c6d_vm-in-caps-simdna	6878146.55	0.8591	other	dfa	byte-class	unanchored	none	1
+caps	anc-z-uc	anchors	large-subject-throughput	24.01	pcrec_751b9c6d_vm-in-caps-simdna	31.15	0.7707	other	dfa	offset-set-bounded	unanchored	emitted	1
+caps	cls-i-class	classes	large-subject-throughput	1370289.75	pcrec_751b9c6d_vm-caps-simdna	1920139.78	0.7136	other	dfa	byte-class	unanchored	none	1
+caps	qnt-quest	quantifiers	large-subject-throughput	1205772.83	pcrec_751b9c6d_vm-in-caps-simdna	1810336.23	0.6660	other	dfa	offset-set	unanchored	emitted	1
+caps	mod-reset	modifiers	large-subject-throughput	975897.27	pcrec_751b9c6d_vm-in-caps-simdna	1651152.28	0.5910	other	dfa	run-pinned	unanchored	dominated	1
+caps	mod-unset	modifiers	large-subject-throughput	978763.18	pcrec_751b9c6d_vm-in-caps-simdna	1657415.94	0.5905	other	dfa	run-pinned	unanchored	dominated	1
+caps	mod-i	modifiers	large-subject-throughput	1268545.25	pcrec_751b9c6d_vm-in-caps-simdna	2167643.12	0.5852	other	dfa	byte-class	unanchored	none	1
+caps	mod-r	modifiers	large-subject-throughput	1269779.57	pcrec_751b9c6d_vm-in-caps-simdna	2170203.91	0.5851	other	dfa	byte-class	unanchored	none	1
+caps	qnt-star	quantifiers	large-subject-throughput	860289.41	pcrec_751b9c6d_vm-caps-simdna	1638416.20	0.5251	other	dfa	memchr	unanchored	dominated	1
+caps	cls-negset	classes	large-subject-throughput	743055.27	pcrec_751b9c6d_vm-caps-simdna	1415246.31	0.5250	other	dfa	memchr	unanchored	dominated	1
+caps	cls-dot	classes	large-subject-throughput	752996.56	pcrec_751b9c6d_vm-caps-simdna	1443987.36	0.5215	other	dfa	memchr	unanchored	dominated	1
+caps	cls-mixed-case	classes	large-subject-throughput	758325.63	pcrec_751b9c6d_vm-caps-simdna	1460955.76	0.5191	other	dfa	memchr	unanchored	dominated	1
+caps	cls-pair-ctl	classes	large-subject-throughput	788024.97	pcrec_751b9c6d_vm-caps-simdna	1521265.88	0.5180	other	dfa	memchr	unanchored	dominated	1
+caps	cls-d	classes	large-subject-throughput	1508536.39	pcrec_751b9c6d_vm-in-caps-simdna	3426461.78	0.4403	other	dfa	byte-class	unanchored	none	1
+caps	cls-fold-pair	classes	large-subject-throughput	787489.26	pcrec_751b9c6d_vm-in-caps-simdna	1850415.12	0.4256	other	dfa	memchr	unanchored	dominated	1
+caps	cls-s-lc	classes	large-subject-throughput	715068.14	pcrec_751b9c6d_vm-in-caps-simdna	1805912.46	0.3960	other	dfa	memchr	unanchored	emitted	1
+caps	anc-m-dollar	anchors	large-subject-throughput	555640.64	pcrec_751b9c6d_vm-caps-simdna	1413956.08	0.3930	other	dfa	offset-set-bounded	unanchored	emitted	1
+caps	grp-named	groups	large-subject-throughput	763179.66	pcrec_751b9c6d_vm-caps-simdna	1963576.04	0.3887	C-hybrid-prefilter-pricing	vm	run-pinned	unanchored	dominated	2
+caps	grp-cap	groups	large-subject-throughput	763092.05	pcrec_751b9c6d_vm-caps-simdna	1964621.01	0.3884	C-hybrid-prefilter-pricing	vm	run-pinned	unanchored	dominated	2
+caps	grp-named-quote	groups	large-subject-throughput	763196.38	pcrec_751b9c6d_vm-caps-simdna	1968522.37	0.3877	C-hybrid-prefilter-pricing	vm	run-pinned	unanchored	dominated	2
+caps	mod-x	modifiers	large-subject-throughput	678486.40	pcrec_751b9c6d_vm-in-caps-simdna	1939587.26	0.3498	other	dfa	run-pinned	unanchored	dominated	1
+caps	cls-v	classes	large-subject-throughput	439067.65	pcrec_751b9c6d_vm-in-caps-simdna	1255809.22	0.3496	other	dfa	offset-set	unanchored	emitted	1
+caps	mod-n	modifiers	large-subject-throughput	679126.53	pcrec_751b9c6d_vm-in-caps-simdna	1947467.28	0.3487	other	dfa	run-pinned	unanchored	dominated	1
+caps	esc-hex	escapes	large-subject-throughput	678639.44	pcrec_751b9c6d_vm-in-caps-simdna	1950059.14	0.3480	other	dfa	run-pinned	unanchored	dominated	1
+caps	lit-cat	literal	large-subject-throughput	678188.88	pcrec_751b9c6d_vm-caps-simdna	1956776.43	0.3466	other	dfa	run-pinned	unanchored	dominated	1
+caps	anc-m-caret	anchors	large-subject-throughput	422120.73	pcrec_751b9c6d_vm-caps-simdna	1230497.21	0.3430	other	dfa	memchr	attempt	emitted	1
+caps	cls-n-uc	classes	large-subject-throughput	827604.52	pcrec_751b9c6d_vm-caps-simdna	2448029.26	0.3381	other	dfa	offset-set	unanchored	emitted	1
+caps	qnt-poss-brace	quantifiers	large-subject-throughput	880253.42	pcrec_751b9c6d_vm-caps-simdna	2686646.77	0.3276	other	dfa	memchr	unanchored	emitted	1
+caps	cls-h	classes	large-subject-throughput	256506.66	pcrec_751b9c6d_vm-caps-simdna	810011.88	0.3167	other	dfa	memchr	unanchored	emitted	1
+caps	lka-nonatomic	lookaround	large-subject-throughput	527769.72	pcrec_751b9c6d_vm-caps-simdna	1730319.62	0.3050	C-hybrid-prefilter-pricing	vm	run-pinned	unanchored	dominated	1
+caps	mod-s	modifiers	large-subject-throughput	451310.51	pcrec_751b9c6d_vm-in-caps-simdna	1676803.98	0.2691	other	dfa	offset-set	unanchored	emitted	1
+caps	esc-nl	escapes	large-subject-throughput	330965.25	pcrec_751b9c6d_vm-caps-simdna	1275370.20	0.2595	other	dfa	run-pinned	unanchored	dominated	1
+caps	esc-quote	escapes	large-subject-throughput	268817.93	pcrec_751b9c6d_vm-in-caps-simdna	1156721.28	0.2324	other	dfa	offset-set	unanchored	emitted	1
+caps	grp-atomic-rep	groups	large-subject-throughput	849843.87	pcrec_751b9c6d_vm-caps-simdna	3932316.27	0.2161	other	dfa	memchr	unanchored	emitted	1
+caps	qnt-plus	quantifiers	large-subject-throughput	849510.40	pcrec_751b9c6d_vm-caps-simdna	3932453.94	0.2160	other	dfa	memchr	unanchored	emitted	1
+caps	asr-wb	assertions	large-subject-throughput	1126996.49	pcrec_751b9c6d_vm-caps-simdna	5416822.51	0.2081	other	dfa	offset-set-bounded	unanchored	emitted	1
+caps	qnt-poss-plus	quantifiers	large-subject-throughput	720465.41	pcrec_751b9c6d_vm-caps-simdna	3489640.80	0.2065	C-hybrid-prefilter-pricing	vm	offset-set	unanchored	emitted	1
+caps	asr-nwb	assertions	large-subject-throughput	1184607.91	pcrec_751b9c6d_vm-caps-simdna	5959583.34	0.1988	other	dfa	offset-set-bounded	unanchored	emitted	1
+caps	rec-back	recursion	large-subject-throughput	988214.33	pcrec_751b9c6d_vm-caps-simdna	5832444.62	0.1694	C-hybrid-prefilter-pricing	vm	byte-class	unanchored	none	2
+caps	rec-g-angle	recursion	large-subject-throughput	983797.23	pcrec_751b9c6d_vm-caps-simdna	5832319.31	0.1687	C-hybrid-prefilter-pricing	vm	byte-class	unanchored	none	2
+caps	rec-py	recursion	large-subject-throughput	983169.11	pcrec_751b9c6d_vm-caps-simdna	5835197.76	0.1685	C-hybrid-prefilter-pricing	vm	byte-class	unanchored	none	2
+caps	esc-octal-0	escapes	large-subject-throughput	404173.05	pcrec_751b9c6d_vm-caps-simdna	2865221.62	0.1411	other	dfa	run-pinned	unanchored	dominated	1
+caps	cls-range	classes	large-subject-throughput	247288.64	pcrec_751b9c6d_vm-caps-simdna	1976287.27	0.1251	other	dfa	offset-set	unanchored	dominated	1
+caps	lka-neg	lookaround	large-subject-throughput	589649.75	pcrec_751b9c6d_vm-in-caps-simdna	4717689.44	0.1250	C-hybrid-prefilter-pricing	vm	run-pinned	unanchored	dominated	1
+caps	cls-s-uc	classes	large-subject-throughput	2976194.31	pcrec_751b9c6d_vm-caps-simdna	25372539.64	0.1173	other	dfa	byte-class	unanchored	emitted	1
+caps	grp-atomic-alt	groups	large-subject-throughput	1044145.41	pcrec_751b9c6d_vm-caps-simdna	10986723.17	0.0950	C-hybrid-prefilter-pricing	vm	memchr	unanchored	emitted	1
+caps	lkb-neg	lookaround	large-subject-throughput	1354006.28	pcrec_751b9c6d_vm-caps-simdna	14911021.67	0.0908	C-hybrid-prefilter-pricing	vm	offset-set	unanchored	emitted	1
+caps	qnt-plus-ctl	quantifiers	large-subject-throughput	720634.52	pcrec_751b9c6d_vm-caps-simdna	8432697.22	0.0855	other	dfa	offset-set	unanchored	emitted	1
+caps	rec-fwd	recursion	large-subject-throughput	989717.21	pcrec_751b9c6d_vm-in-caps-simdna	12395423.54	0.0798	C-hybrid-prefilter-pricing	vm	byte-class	unanchored	none	2
+caps	qnt-poss-star	quantifiers	large-subject-throughput	320385.73	pcrec_751b9c6d_vm-caps-simdna	4189651.19	0.0765	other	dfa	memchr	unanchored	dominated	1
+caps	asr-k-uc	assertions	large-subject-throughput	96118.52	pcrec_751b9c6d_vm-caps-simdna	1411253.14	0.0681	C-hybrid-prefilter-pricing	vm	run-pinned	unanchored	dominated	1
+caps	grp-noncap	groups	large-subject-throughput	205865.38	pcrec_751b9c6d_vm-caps-simdna	3984596.08	0.0517	other	dfa	offset-set	unanchored	dominated	1
+caps	mod-u-uc	modifiers	large-subject-throughput	145215.16	pcrec_751b9c6d_vm-caps-simdna	3880822.79	0.0374	other	dfa	memchr	unanchored	dominated	1
+caps	qnt-lazy	quantifiers	large-subject-throughput	141359.88	pcrec_751b9c6d_vm-caps-simdna	3871959.30	0.0365	other	dfa	memchr	unanchored	dominated	1
+caps	esc-tab	escapes	large-subject-throughput	65950.19	pcrec_751b9c6d_vm-caps-simdna	1831162.24	0.0360	other	dfa	run-pinned	unanchored	dominated	1
+caps	esc-hex-braced	escapes	large-subject-throughput	38579.70	pcrec_751b9c6d_vm-caps-simdna	1345375.34	0.0287	other	dfa	run-pinned	unanchored	dominated	1
+caps	rec-define	recursion	large-subject-throughput	156442.85	pcrec_751b9c6d_vm-caps-simdna	8007693.58	0.0195	other	dfa	offset-set	unanchored	dominated	2
+caps	anc-m-caret	anchors	match-compliance	534.67	pcrec_751b9c6d_vm-in-caps-simdna	280.72	1.9046	D-OS4-regime-artifact	dfa	memchr	attempt	emitted	1
+caps	asr-nwb	assertions	match-compliance	440.46	pcrec_751b9c6d_vm-in-caps-simdna	235.70	1.8687	D-OS4-regime-artifact	dfa	offset-set-bounded	unanchored	emitted	1
+caps	alt-nested	alternation	match-compliance	459.39	pcrec_751b9c6d_vm-in-caps-simdna	266.78	1.7220	D-OS4-regime-artifact	dfa	byte-class	unanchored	none	1
+caps	mod-i	modifiers	match-compliance	459.05	pcrec_751b9c6d_vm-in-caps-simdna	272.76	1.6830	D-OS4-regime-artifact	dfa	byte-class	unanchored	none	1
+caps	esc-quote	escapes	match-compliance	441.18	pcrec_751b9c6d_vm-in-caps-simdna	264.23	1.6697	D-OS4-regime-artifact	dfa	offset-set	unanchored	emitted	1
+caps	cls-s-lc	classes	match-compliance	438.63	pcrec_751b9c6d_vm-in-caps-simdna	262.74	1.6695	D-OS4-regime-artifact	dfa	memchr	unanchored	emitted	1
+caps	anc-dollar	anchors	match-compliance	439.39	pcrec_751b9c6d_vm-in-caps-simdna	263.47	1.6677	D-OS4-regime-artifact	dfa	offset-set-bounded	unanchored	emitted	1
+caps	cls-i-class	classes	match-compliance	460.06	pcrec_751b9c6d_vm-in-caps-simdna	275.86	1.6677	D-OS4-regime-artifact	dfa	byte-class	unanchored	none	1
+caps	alt-two	alternation	match-compliance	444.59	pcrec_751b9c6d_vm-in-caps-simdna	266.76	1.6666	D-OS4-regime-artifact	dfa	byte-class	unanchored	none	1
+caps	anc-z-lc	anchors	match-compliance	439.22	pcrec_751b9c6d_vm-in-caps-simdna	263.56	1.6664	D-OS4-regime-artifact	dfa	offset-set-bounded	unanchored	emitted	1
+caps	mod-r	modifiers	match-compliance	454.42	pcrec_751b9c6d_vm-in-caps-simdna	272.78	1.6659	D-OS4-regime-artifact	dfa	byte-class	unanchored	none	1
+caps	anc-z-uc	anchors	match-compliance	438.58	pcrec_751b9c6d_vm-in-caps-simdna	263.50	1.6644	D-OS4-regime-artifact	dfa	offset-set-bounded	unanchored	emitted	1
+caps	qnt-quest	quantifiers	match-compliance	435.88	pcrec_751b9c6d_vm-in-caps-simdna	262.06	1.6633	D-OS4-regime-artifact	dfa	offset-set	unanchored	emitted	1
+caps	anc-m-dollar	anchors	match-compliance	438.17	pcrec_751b9c6d_vm-in-caps-simdna	263.48	1.6630	D-OS4-regime-artifact	dfa	offset-set-bounded	unanchored	emitted	1
+caps	esc-octal-0	escapes	match-compliance	453.53	pcrec_751b9c6d_vm-in-caps-simdna	274.22	1.6539	D-OS4-regime-artifact	dfa	run-pinned	unanchored	dominated	1
+caps	esc-nl	escapes	match-compliance	447.58	pcrec_751b9c6d_vm-in-caps-simdna	270.73	1.6532	D-OS4-regime-artifact	dfa	run-pinned	unanchored	dominated	1
+caps	cls-n-uc	classes	match-compliance	448.39	pcrec_751b9c6d_vm-in-caps-simdna	271.33	1.6526	D-OS4-regime-artifact	dfa	offset-set	unanchored	emitted	1
+caps	mod-s	modifiers	match-compliance	456.52	pcrec_751b9c6d_vm-in-caps-simdna	277.00	1.6481	D-OS4-regime-artifact	dfa	offset-set	unanchored	emitted	1
+caps	esc-tab	escapes	match-compliance	438.06	pcrec_751b9c6d_vm-in-caps-simdna	266.93	1.6411	D-OS4-regime-artifact	dfa	run-pinned	unanchored	dominated	1
+caps	cls-h	classes	match-compliance	454.68	pcrec_751b9c6d_vm-in-caps-simdna	278.80	1.6308	D-OS4-regime-artifact	dfa	memchr	unanchored	emitted	1
+caps	esc-hex-braced	escapes	match-compliance	430.72	pcrec_751b9c6d_vm-in-caps-simdna	264.52	1.6283	D-OS4-regime-artifact	dfa	run-pinned	unanchored	dominated	1
+caps	mod-unset	modifiers	match-compliance	434.73	pcrec_751b9c6d_vm-in-caps-simdna	267.96	1.6224	D-OS4-regime-artifact	dfa	run-pinned	unanchored	dominated	1
+caps	mod-reset	modifiers	match-compliance	433.81	pcrec_751b9c6d_vm-in-caps-simdna	268.01	1.6186	D-OS4-regime-artifact	dfa	run-pinned	unanchored	dominated	1
+caps	esc-cr	escapes	match-compliance	442.43	pcrec_751b9c6d_vm-in-caps-simdna	273.36	1.6184	D-OS4-regime-artifact	dfa	run-pinned	unanchored	dominated	1
+caps	cls-dot	classes	match-compliance	429.14	pcrec_751b9c6d_vm-in-caps-simdna	265.25	1.6179	D-OS4-regime-artifact	dfa	memchr	unanchored	dominated	1
+caps	cls-mixed-case	classes	match-compliance	428.73	pcrec_751b9c6d_vm-in-caps-simdna	265.23	1.6164	D-OS4-regime-artifact	dfa	memchr	unanchored	dominated	1
+caps	cls-fold-pair	classes	match-compliance	428.03	pcrec_751b9c6d_vm-in-caps-simdna	264.90	1.6158	D-OS4-regime-artifact	dfa	memchr	unanchored	dominated	1
+caps	cls-pair-ctl	classes	match-compliance	427.95	pcrec_751b9c6d_vm-in-caps-simdna	265.08	1.6144	D-OS4-regime-artifact	dfa	memchr	unanchored	dominated	1
+caps	cls-negset	classes	match-compliance	423.54	pcrec_751b9c6d_vm-in-caps-simdna	262.46	1.6137	D-OS4-regime-artifact	dfa	memchr	unanchored	dominated	1
+caps	cls-v	classes	match-compliance	457.08	pcrec_751b9c6d_vm-in-caps-simdna	286.14	1.5974	D-OS4-regime-artifact	dfa	offset-set	unanchored	emitted	1
+caps	anc-g-uc	anchors	match-compliance	431.00	pcrec_751b9c6d_vm-in-caps-simdna	270.85	1.5913	D-OS4-regime-artifact	dfa	none	attempt	one-attempt	1
+caps	esc-hex	escapes	match-compliance	416.01	pcrec_751b9c6d_vm-in-caps-simdna	264.46	1.5731	D-OS4-regime-artifact	dfa	run-pinned	unanchored	dominated	1
+caps	mod-n	modifiers	match-compliance	415.93	pcrec_751b9c6d_vm-in-caps-simdna	264.43	1.5730	D-OS4-regime-artifact	dfa	run-pinned	unanchored	dominated	1
+caps	lit-cat	literal	match-compliance	415.91	pcrec_751b9c6d_vm-in-caps-simdna	264.48	1.5725	D-OS4-regime-artifact	dfa	run-pinned	unanchored	dominated	1
+caps	floor	floor	match-compliance	404.94	pcrec_751b9c6d_vm-in-caps-simdna	260.49	1.5545	D-OS4-regime-artifact	dfa	memchr	unanchored	dominated	1
+caps	qnt-star	quantifiers	match-compliance	416.53	pcrec_751b9c6d_vm-in-caps-simdna	268.86	1.5492	D-OS4-regime-artifact	dfa	memchr	unanchored	dominated	1
+caps	cls-range	classes	match-compliance	421.70	pcrec_751b9c6d_vm-in-caps-simdna	273.00	1.5447	D-OS4-regime-artifact	dfa	offset-set	unanchored	dominated	1
+caps	qnt-poss-brace	quantifiers	match-compliance	425.04	pcrec_751b9c6d_vm-in-caps-simdna	276.83	1.5354	D-OS4-regime-artifact	dfa	memchr	unanchored	emitted	1
+caps	rec-define	recursion	match-compliance	469.78	pcrec_751b9c6d_vm-caps-simdna	313.39	1.4990	D-OS4-regime-artifact	dfa	offset-set	unanchored	dominated	2
+caps	anc-a-uc	anchors	match-compliance	397.96	pcrec_751b9c6d_vm-in-caps-simdna	268.83	1.4804	D-OS4-regime-artifact	dfa	none	attempt	one-attempt	1
+caps	anc-caret	anchors	match-compliance	397.86	pcrec_751b9c6d_vm-in-caps-simdna	269.10	1.4785	D-OS4-regime-artifact	dfa	none	attempt	one-attempt	1
+caps	grp-atomic-rep	groups	match-compliance	441.41	pcrec_751b9c6d_vm-in-caps-simdna	307.19	1.4369	D-OS4-regime-artifact	dfa	memchr	unanchored	emitted	1
+caps	qnt-plus	quantifiers	match-compliance	440.61	pcrec_751b9c6d_vm-in-caps-simdna	308.26	1.4294	D-OS4-regime-artifact	dfa	memchr	unanchored	emitted	1
+caps	asr-wb	assertions	match-compliance	429.02	pcrec_751b9c6d_vm-in-caps-simdna	302.53	1.4181	D-OS4-regime-artifact	dfa	offset-set-bounded	unanchored	emitted	1
+caps	qnt-poss-star	quantifiers	match-compliance	430.97	pcrec_751b9c6d_vm-in-caps-simdna	306.34	1.4068	D-OS4-regime-artifact	dfa	memchr	unanchored	dominated	1
+caps	grp-noncap	groups	match-compliance	426.66	pcrec_751b9c6d_vm-in-caps-simdna	316.24	1.3492	D-OS4-regime-artifact	dfa	offset-set	unanchored	dominated	1
+caps	cls-d	classes	match-compliance	452.13	pcrec_751b9c6d_vm-in-caps-simdna	342.27	1.3210	D-OS4-regime-artifact	dfa	byte-class	unanchored	none	1
+caps	unp-p-uc	uniprop	match-compliance	468.41	pcrec_751b9c6d_vm-in-caps-simdna	357.81	1.3091	D-OS4-regime-artifact	dfa	byte-class	unanchored	none	1
+caps	unp-p-lc	uniprop	match-compliance	619.22	pcrec_751b9c6d_vm-in-caps-simdna	483.56	1.2806	D-OS4-regime-artifact	dfa	byte-class	unanchored	none	1
+caps	cls-posix	classes	match-compliance	615.75	pcrec_751b9c6d_vm-in-caps-simdna	481.65	1.2784	D-OS4-regime-artifact	dfa	byte-class	unanchored	none	1
+caps	qnt-poss-plus	quantifiers	match-compliance	367.72	pcrec_751b9c6d_vm-in-caps-simdna	288.89	1.2728	D-OS4-regime-artifact	vm	offset-set	unanchored	emitted	1
+caps	mod-a	modifiers	match-compliance	632.19	pcrec_751b9c6d_vm-in-caps-simdna	501.78	1.2599	D-OS4-regime-artifact	dfa	byte-class	unanchored	none	1
+caps	cls-w	classes	match-compliance	631.33	pcrec_751b9c6d_vm-in-caps-simdna	502.02	1.2576	D-OS4-regime-artifact	dfa	byte-class	unanchored	none	1
+caps	mod-u-uc	modifiers	match-compliance	468.51	pcrec_751b9c6d_vm-caps-simdna	392.50	1.1937	D-OS4-regime-artifact	dfa	memchr	unanchored	dominated	1
+caps	qnt-lazy	quantifiers	match-compliance	466.13	pcrec_751b9c6d_vm-caps-simdna	395.91	1.1774	D-OS4-regime-artifact	dfa	memchr	unanchored	dominated	1
+caps	qnt-poss-quest	quantifiers	match-compliance	298.22	pcrec_751b9c6d_vm-in-caps-simdna	261.89	1.1387	D-OS4-regime-artifact	vm	memchr	unanchored	dominated	1
+caps	lkb-pos	lookaround	match-compliance	260.52	pcrec_751b9c6d_vm-caps-simdna	235.78	1.1049	D-OS4-regime-artifact	vm	offset-set	unanchored	emitted	1
+caps	lka-pos	lookaround	match-compliance	223.28	pcrec_751b9c6d_vm-caps-simdna	210.94	1.0585	D-OS4-regime-artifact	vm	run-pinned	unanchored	dominated	1
+caps	lka-verb	lookaround	match-compliance	223.23	pcrec_751b9c6d_vm-caps-simdna	211.00	1.0580	D-OS4-regime-artifact	vm	run-pinned	unanchored	dominated	1
+caps	lka-nonatomic	lookaround	match-compliance	245.40	pcrec_751b9c6d_vm-caps-simdna	234.07	1.0484	D-OS4-regime-artifact	vm	run-pinned	unanchored	dominated	1
+caps	rec-1	recursion	match-compliance	609.42	pcrec_751b9c6d_vm-caps-simdna	605.68	1.0062	D-OS4-regime-artifact	vm			emitted	2
+caps	bak-g-rel	backrefs	match-compliance	527.03	pcrec_751b9c6d_vm-caps-simdna	523.99	1.0058	D-OS4-regime-artifact	vm			emitted	2
+caps	grp-atomic-alt	groups	match-compliance	501.53	pcrec_751b9c6d_vm-caps-simdna	498.83	1.0054	D-OS4-regime-artifact	vm	memchr	unanchored	emitted	1
+caps	rec-g-angle	recursion	match-compliance	295.09	pcrec_751b9c6d_vm-caps-simdna	293.93	1.0039	D-OS4-regime-artifact	vm	byte-class	unanchored	none	2
+caps	rec-py	recursion	match-compliance	294.78	pcrec_751b9c6d_vm-caps-simdna	293.98	1.0027	D-OS4-regime-artifact	vm	byte-class	unanchored	none	2
+caps	rec-back	recursion	match-compliance	294.78	pcrec_751b9c6d_vm-caps-simdna	294.05	1.0025	D-OS4-regime-artifact	vm	byte-class	unanchored	none	2
+caps	grp-cap	groups	match-compliance	240.79	pcrec_751b9c6d_vm-caps-simdna	240.35	1.0018	D-OS4-regime-artifact	vm	run-pinned	unanchored	dominated	2
+caps	grp-named	groups	match-compliance	240.85	pcrec_751b9c6d_vm-caps-simdna	240.47	1.0016	D-OS4-regime-artifact	vm	run-pinned	unanchored	dominated	2
+caps	grp-named-quote	groups	match-compliance	240.75	pcrec_751b9c6d_vm-caps-simdna	240.41	1.0014	D-OS4-regime-artifact	vm	run-pinned	unanchored	dominated	2
+caps	bak-1	backrefs	match-compliance	522.66	pcrec_751b9c6d_vm-caps-simdna	522.21	1.0009	D-OS4-regime-artifact	vm			emitted	2
+caps	lka-neg	lookaround	match-compliance	379.49	pcrec_751b9c6d_vm-caps-simdna	379.51	1.0000	D-OS4-regime-artifact	vm	run-pinned	unanchored	dominated	1
+caps	rec-name	recursion	match-compliance	605.20	pcrec_751b9c6d_vm-caps-simdna	605.35	0.9997	D-OS4-regime-artifact	vm			emitted	2
+caps	lkb-neg	lookaround	match-compliance	541.84	pcrec_751b9c6d_vm-caps-simdna	542.06	0.9996	D-OS4-regime-artifact	vm	offset-set	unanchored	emitted	1
+caps	rec-fwd	recursion	match-compliance	305.82	pcrec_751b9c6d_vm-caps-simdna	306.13	0.9990	D-OS4-regime-artifact	vm	byte-class	unanchored	none	2
+caps	mod-j-uc	modifiers	match-compliance	991.10	pcrec_751b9c6d_vm-caps-simdna	992.19	0.9989	D-OS4-regime-artifact	vm			emitted	3
+caps	bak-k-named	backrefs	match-compliance	287.68	pcrec_751b9c6d_vm-caps-simdna	288.58	0.9969	D-OS4-regime-artifact	vm			emitted	2
+caps	bak-py	backrefs	match-compliance	522.56	pcrec_751b9c6d_vm-caps-simdna	524.91	0.9955	D-OS4-regime-artifact	vm			emitted	2
+caps	bak-2	backrefs	match-compliance	432.26	pcrec_751b9c6d_vm-caps-simdna	434.54	0.9948	D-OS4-regime-artifact	vm			none	3
+caps	qnt-plus-ctl	quantifiers	match-compliance	480.78	pcrec_751b9c6d_vm-caps-simdna	502.07	0.9576	D-OS4-regime-artifact	dfa	offset-set	unanchored	emitted	1
+caps	cls-s-uc	classes	match-compliance	759.71	pcrec_751b9c6d_vm-caps-simdna	1201.66	0.6322	D-OS4-regime-artifact	dfa	byte-class	unanchored	emitted	1
+caps	asr-k-uc	assertions	short-subject-search	520.42	pcrec_751b9c6d_vm-caps-simdna	320.62	1.6232	C-hybrid-prefilter-pricing	vm	run-pinned	unanchored	dominated	1
+caps	mod-a	modifiers	short-subject-search	799.94	pcrec_751b9c6d_vm-in-caps-simdna	578.08	1.3838	B-classrun-dfa-vs-vm	dfa	byte-class	unanchored	none	1
+caps	cls-w	classes	short-subject-search	797.41	pcrec_751b9c6d_vm-caps-simdna	578.42	1.3786	B-classrun-dfa-vs-vm	dfa	byte-class	unanchored	none	1
+caps	grp-cap	groups	short-subject-search	565.98	pcrec_751b9c6d_vm-caps-simdna	437.48	1.2937	C-hybrid-prefilter-pricing	vm	run-pinned	unanchored	dominated	2
+caps	grp-named	groups	short-subject-search	566.13	pcrec_751b9c6d_vm-caps-simdna	439.42	1.2884	C-hybrid-prefilter-pricing	vm	run-pinned	unanchored	dominated	2
+caps	grp-named-quote	groups	short-subject-search	566.16	pcrec_751b9c6d_vm-caps-simdna	441.84	1.2814	C-hybrid-prefilter-pricing	vm	run-pinned	unanchored	dominated	2
+caps	anc-caret	anchors	short-subject-search	279.45	pcrec_751b9c6d_vm-caps-simdna	220.12	1.2695	A-anchored-one-attempt	dfa	none	attempt	one-attempt	1
+caps	anc-g-uc	anchors	short-subject-search	318.65	pcrec_751b9c6d_vm-in-caps-simdna	251.21	1.2684	A-anchored-one-attempt	dfa	none	attempt	one-attempt	1
+caps	anc-a-uc	anchors	short-subject-search	278.30	pcrec_751b9c6d_vm-caps-simdna	219.64	1.2670	A-anchored-one-attempt	dfa	none	attempt	one-attempt	1
+caps	cls-posix	classes	short-subject-search	747.37	pcrec_751b9c6d_vm-in-caps-simdna	607.96	1.2293	B-classrun-dfa-vs-vm	dfa	byte-class	unanchored	none	1
+caps	anc-dollar	anchors	short-subject-search	468.79	pcrec_751b9c6d_vm-caps-simdna	381.84	1.2277	other	dfa	offset-set-bounded	unanchored	emitted	1
+caps	unp-p-lc	uniprop	short-subject-search	744.41	pcrec_751b9c6d_vm-in-caps-simdna	609.44	1.2215	B-classrun-dfa-vs-vm	dfa	byte-class	unanchored	none	1
+caps	anc-z-uc	anchors	short-subject-search	468.75	pcrec_751b9c6d_vm-caps-simdna	394.89	1.1870	other	dfa	offset-set-bounded	unanchored	emitted	1
+caps	lka-nonatomic	lookaround	short-subject-search	621.05	pcrec_751b9c6d_vm-caps-simdna	531.32	1.1689	C-hybrid-prefilter-pricing	vm	run-pinned	unanchored	dominated	1
+caps	anc-z-lc	anchors	short-subject-search	411.97	pcrec_751b9c6d_vm-caps-simdna	357.17	1.1534	other	dfa	offset-set-bounded	unanchored	emitted	1
+caps	qnt-poss-quest	quantifiers	short-subject-search	1087.92	pcrec_751b9c6d_vm-in-caps-simdna	956.73	1.1371	C-hybrid-prefilter-pricing	vm	memchr	unanchored	dominated	1
+caps	lka-pos	lookaround	short-subject-search	739.06	pcrec_751b9c6d_vm-caps-simdna	662.49	1.1156	C-hybrid-prefilter-pricing	vm	run-pinned	unanchored	dominated	1
+caps	lka-verb	lookaround	short-subject-search	739.83	pcrec_751b9c6d_vm-caps-simdna	665.49	1.1117	C-hybrid-prefilter-pricing	vm	run-pinned	unanchored	dominated	1
+caps	esc-octal-0	escapes	short-subject-search	419.11	pcrec_751b9c6d_vm-caps-simdna	400.47	1.0465	other	dfa	run-pinned	unanchored	dominated	1
+caps	mod-n	modifiers	short-subject-search	467.64	pcrec_751b9c6d_vm-in-caps-simdna	462.55	1.0110	other	dfa	run-pinned	unanchored	dominated	1
+caps	esc-hex	escapes	short-subject-search	468.12	pcrec_751b9c6d_vm-in-caps-simdna	463.78	1.0094	other	dfa	run-pinned	unanchored	dominated	1
+caps	lit-cat	literal	short-subject-search	468.23	pcrec_751b9c6d_vm-in-caps-simdna	463.94	1.0093	other	dfa	run-pinned	unanchored	dominated	1
+caps	mod-x	modifiers	short-subject-search	467.98	pcrec_751b9c6d_vm-in-caps-simdna	464.60	1.0073	other	dfa	run-pinned	unanchored	dominated	1
+caps	bak-g-rel	backrefs	short-subject-search	6353.69	pcrec_751b9c6d_vm-in-caps-simdna	6310.82	1.0068	other	vm			emitted	2
+caps	rec-1	recursion	short-subject-search	684.23	pcrec_751b9c6d_vm-caps-simdna	681.19	1.0045	other	vm			emitted	2
+caps	bak-py	backrefs	short-subject-search	6346.79	pcrec_751b9c6d_vm-in-caps-simdna	6322.00	1.0039	other	vm			emitted	2
+caps	bak-1	backrefs	short-subject-search	6344.22	pcrec_751b9c6d_vm-in-caps-simdna	6323.30	1.0033	other	vm			emitted	2
+caps	mod-j-uc	modifiers	short-subject-search	11959.40	pcrec_751b9c6d_vm-caps-simdna	11944.65	1.0012	other	vm			emitted	3
+caps	rec-r-uc	recursion	short-subject-search	604.33	pcrec_751b9c6d_vm-caps-simdna	605.60	0.9979	other	vm			emitted	1
+caps	bak-k-named	backrefs	short-subject-search	408.67	pcrec_751b9c6d_vm-caps-simdna	409.91	0.9970	other	vm			emitted	2
+caps	rec-name	recursion	short-subject-search	682.66	pcrec_751b9c6d_vm-caps-simdna	684.80	0.9969	other	vm			emitted	2
+caps	esc-hex-braced	escapes	short-subject-search	359.26	pcrec_751b9c6d_vm-caps-simdna	363.17	0.9892	other	dfa	run-pinned	unanchored	dominated	1
+caps	esc-nl	escapes	short-subject-search	348.76	pcrec_751b9c6d_vm-caps-simdna	355.46	0.9811	other	dfa	run-pinned	unanchored	dominated	1
+caps	asr-wb	assertions	short-subject-search	494.36	pcrec_751b9c6d_vm-in-caps-simdna	506.61	0.9758	other	dfa	offset-set-bounded	unanchored	emitted	1
+caps	esc-tab	escapes	short-subject-search	337.31	pcrec_751b9c6d_vm-caps-simdna	349.18	0.9660	other	dfa	run-pinned	unanchored	dominated	1
+caps	esc-cr	escapes	short-subject-search	332.00	pcrec_751b9c6d_vm-caps-simdna	346.57	0.9580	other	dfa	run-pinned	unanchored	dominated	1
+caps	anc-m-dollar	anchors	short-subject-search	601.92	pcrec_751b9c6d_vm-caps-simdna	629.30	0.9565	other	dfa	offset-set-bounded	unanchored	emitted	1
+caps	cls-h	classes	short-subject-search	392.80	pcrec_751b9c6d_vm-in-caps-simdna	414.37	0.9479	other	dfa	memchr	unanchored	emitted	1
+caps	esc-quote	escapes	short-subject-search	353.06	pcrec_751b9c6d_vm-caps-simdna	372.76	0.9471	other	dfa	offset-set	unanchored	emitted	1
+caps	bak-2	backrefs	short-subject-search	6226.30	pcrec_751b9c6d_vm-caps-simdna	6735.59	0.9244	other	vm			none	3
+caps	qnt-poss-plus	quantifiers	short-subject-search	1410.57	pcrec_751b9c6d_vm-in-caps-simdna	1533.04	0.9201	C-hybrid-prefilter-pricing	vm	offset-set	unanchored	emitted	1
+caps	mod-u-uc	modifiers	short-subject-search	414.43	pcrec_751b9c6d_vm-caps-simdna	452.25	0.9164	other	dfa	memchr	unanchored	dominated	1
+caps	mod-reset	modifiers	short-subject-search	861.69	pcrec_751b9c6d_vm-in-caps-simdna	943.35	0.9134	other	dfa	run-pinned	unanchored	dominated	1
+caps	mod-unset	modifiers	short-subject-search	863.54	pcrec_751b9c6d_vm-in-caps-simdna	947.34	0.9115	other	dfa	run-pinned	unanchored	dominated	1
+caps	floor	floor	short-subject-search	389.29	pcrec_751b9c6d_vm-caps-simdna	428.99	0.9074	other	dfa	memchr	unanchored	dominated	1
+caps	qnt-lazy	quantifiers	short-subject-search	412.37	pcrec_751b9c6d_vm-caps-simdna	461.52	0.8935	other	dfa	memchr	unanchored	dominated	1
+caps	cls-s-lc	classes	short-subject-search	399.04	pcrec_751b9c6d_vm-in-caps-simdna	453.05	0.8808	other	dfa	memchr	unanchored	emitted	1
+caps	cls-v	classes	short-subject-search	568.05	pcrec_751b9c6d_vm-caps-simdna	653.77	0.8689	other	dfa	offset-set	unanchored	emitted	1
+caps	lkb-pos	lookaround	short-subject-search	734.89	pcrec_751b9c6d_vm-caps-simdna	854.27	0.8603	C-hybrid-prefilter-pricing	vm	offset-set	unanchored	emitted	1
+caps	qnt-quest	quantifiers	short-subject-search	390.39	pcrec_751b9c6d_vm-caps-simdna	457.18	0.8539	other	dfa	offset-set	unanchored	emitted	1
+caps	alt-nested	alternation	short-subject-search	707.94	pcrec_751b9c6d_vm-caps-simdna	840.02	0.8428	other	dfa	byte-class	unanchored	none	1
+caps	mod-s	modifiers	short-subject-search	596.74	pcrec_751b9c6d_vm-caps-simdna	709.52	0.8410	other	dfa	offset-set	unanchored	emitted	1
+caps	cls-n-uc	classes	short-subject-search	593.47	pcrec_751b9c6d_vm-in-caps-simdna	725.09	0.8185	other	dfa	offset-set	unanchored	emitted	1
+caps	unp-p-uc	uniprop	short-subject-search	675.73	pcrec_751b9c6d_vm-caps-simdna	854.42	0.7909	other	dfa	byte-class	unanchored	none	1
+caps	anc-m-caret	anchors	short-subject-search	425.08	pcrec_751b9c6d_vm-caps-simdna	552.58	0.7693	other	dfa	memchr	attempt	emitted	1
+caps	cls-range	classes	short-subject-search	415.45	pcrec_751b9c6d_vm-in-caps-simdna	543.07	0.7650	other	dfa	offset-set	unanchored	dominated	1
+caps	cls-dot	classes	short-subject-search	516.29	pcrec_751b9c6d_vm-caps-simdna	688.54	0.7498	other	dfa	memchr	unanchored	dominated	1
+caps	cls-pair-ctl	classes	short-subject-search	507.28	pcrec_751b9c6d_vm-in-caps-simdna	685.96	0.7395	other	dfa	memchr	unanchored	dominated	1
+caps	cls-mixed-case	classes	short-subject-search	505.31	pcrec_751b9c6d_vm-in-caps-simdna	685.51	0.7371	other	dfa	memchr	unanchored	dominated	1
+caps	cls-i-class	classes	short-subject-search	673.37	pcrec_751b9c6d_vm-in-caps-simdna	933.18	0.7216	other	dfa	byte-class	unanchored	none	1
+caps	lka-neg	lookaround	short-subject-search	761.03	pcrec_751b9c6d_vm-caps-simdna	1065.97	0.7139	C-hybrid-prefilter-pricing	vm	run-pinned	unanchored	dominated	1
+caps	qnt-star	quantifiers	short-subject-search	507.21	pcrec_751b9c6d_vm-caps-simdna	728.08	0.6966	other	dfa	memchr	unanchored	dominated	1
+caps	asr-nwb	assertions	short-subject-search	556.00	pcrec_751b9c6d_vm-in-caps-simdna	821.83	0.6765	other	dfa	offset-set-bounded	unanchored	emitted	1
+caps	alt-two	alternation	short-subject-search	722.01	pcrec_751b9c6d_vm-in-caps-simdna	1067.35	0.6765	other	dfa	byte-class	unanchored	none	1
+caps	cls-fold-pair	classes	short-subject-search	501.14	pcrec_751b9c6d_vm-in-caps-simdna	742.89	0.6746	other	dfa	memchr	unanchored	dominated	1
+caps	rec-define	recursion	short-subject-search	392.09	pcrec_751b9c6d_vm-caps-simdna	630.58	0.6218	other	dfa	offset-set	unanchored	dominated	2
+caps	cls-negset	classes	short-subject-search	482.20	pcrec_751b9c6d_vm-in-caps-simdna	779.43	0.6187	other	dfa	memchr	unanchored	dominated	1
+caps	mod-r	modifiers	short-subject-search	678.88	pcrec_751b9c6d_vm-in-caps-simdna	1104.82	0.6145	other	dfa	byte-class	unanchored	none	1
+caps	mod-i	modifiers	short-subject-search	676.72	pcrec_751b9c6d_vm-in-caps-simdna	1104.31	0.6128	other	dfa	byte-class	unanchored	none	1
+caps	qnt-poss-brace	quantifiers	short-subject-search	690.56	pcrec_751b9c6d_vm-in-caps-simdna	1152.79	0.5990	other	dfa	memchr	unanchored	emitted	1
+caps	grp-noncap	groups	short-subject-search	499.32	pcrec_751b9c6d_vm-caps-simdna	873.42	0.5717	other	dfa	offset-set	unanchored	dominated	1
+caps	qnt-plus	quantifiers	short-subject-search	719.03	pcrec_751b9c6d_vm-caps-simdna	1422.81	0.5054	other	dfa	memchr	unanchored	emitted	1
+caps	qnt-poss-star	quantifiers	short-subject-search	549.34	pcrec_751b9c6d_vm-in-caps-simdna	1088.06	0.5049	other	dfa	memchr	unanchored	dominated	1
+caps	grp-atomic-rep	groups	short-subject-search	713.91	pcrec_751b9c6d_vm-caps-simdna	1431.82	0.4986	other	dfa	memchr	unanchored	emitted	1
+caps	lkb-neg	lookaround	short-subject-search	884.55	pcrec_751b9c6d_vm-caps-simdna	1991.37	0.4442	C-hybrid-prefilter-pricing	vm	offset-set	unanchored	emitted	1
+caps	qnt-plus-ctl	quantifiers	short-subject-search	629.30	pcrec_751b9c6d_vm-in-caps-simdna	1428.28	0.4406	other	dfa	offset-set	unanchored	emitted	1
+caps	cls-d	classes	short-subject-search	641.59	pcrec_751b9c6d_vm-in-caps-simdna	1975.34	0.3248	other	dfa	byte-class	unanchored	none	1
+caps	cls-s-uc	classes	short-subject-search	374.63	pcrec_751b9c6d_vm-caps-simdna	1193.63	0.3139	other	dfa	byte-class	unanchored	emitted	1
+caps	rec-py	recursion	short-subject-search	774.28	pcrec_751b9c6d_vm-caps-simdna	3010.02	0.2572	C-hybrid-prefilter-pricing	vm	byte-class	unanchored	none	2
+caps	rec-g-angle	recursion	short-subject-search	770.16	pcrec_751b9c6d_vm-caps-simdna	3011.40	0.2557	C-hybrid-prefilter-pricing	vm	byte-class	unanchored	none	2
+caps	rec-back	recursion	short-subject-search	770.68	pcrec_751b9c6d_vm-caps-simdna	3013.61	0.2557	C-hybrid-prefilter-pricing	vm	byte-class	unanchored	none	2
+caps	grp-atomic-alt	groups	short-subject-search	900.10	pcrec_751b9c6d_vm-caps-simdna	4404.86	0.2043	C-hybrid-prefilter-pricing	vm	memchr	unanchored	emitted	1
+caps	rec-fwd	recursion	short-subject-search	773.16	pcrec_751b9c6d_vm-in-caps-simdna	6192.48	0.1249	C-hybrid-prefilter-pricing	vm	byte-class	unanchored	none	2

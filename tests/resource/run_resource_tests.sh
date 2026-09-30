@@ -521,7 +521,10 @@ done
 out="$WORKDIR/o.c"; rm -f "$out"
 log="$("$ROOT_DIR/scripts/watchdog" -l "k59premul a{5,25000}" -s "$K7_SECS" -c "$K7_CPU" -m "$K7_MEM" -L "$WORKDIR/watchdog.log" -- "$PCREC" -p rx -fno-scan-edge -fno-start-pinned -o "$out" --pattern 'a{5,25000}' 2>&1)"
 rc=$?
-if [ "$rc" -eq 0 ] && printf '%s' "$log" | grep -q 'dropped the premultiplied DFA transition table'; then
+if { [ "$rc" -eq 123 ] || [ "$rc" -eq 124 ]; } && load_guard_tripped; then
+    # [TT-10] as in size_rung_cell: a watchdog kill under load is no verdict.
+    inc "[K59-PREMUL] 'a{5,25000}' -fno-scan-edge -fno-start-pinned hit the watchdog (rc $rc) but the box is too contended for that to mean anything (ratio $(load_guard_ratio) > $LOAD_GUARD_RATIO) — solo re-run owed"
+elif [ "$rc" -eq 0 ] && printf '%s' "$log" | grep -q 'dropped the premultiplied DFA transition table'; then
     # [EMIT-VERB]/D112, 2026-09-19: RE-PINNED 769835 -> 762105, and the move is
     # the FLIP, not the rung. This number is a raw `wc -c` of the emitted `.c`,
     # so it is COMMENT-INCLUSIVE, while the cap the row is about
@@ -704,6 +707,13 @@ size_rung_cell() {  # size_rung_cell PATTERN want_prefilter(none|hybrid) LABEL [
     # shellcheck disable=SC2086
     dflog="$("$ROOT_DIR/scripts/watchdog" -l "sizecap-default $label" -s "$K7_SECS" -c "$K7_CPU" -m "$K7_MEM" -L "$WORKDIR/watchdog.log" -- "$PCREC" -p rx $extra -o "$WORKDIR/o.c" --pattern "$pat" 2>&1)"
     rc=$?
+    # [TT-10] a 123/124 watchdog kill on a contended box is a load artifact,
+    # not a verdict (s1tri, 2026-09-29: this cell FAILed at load ratio 3.13
+    # inside the full-suite -j12 run, green solo) -- same rule as section 1.
+    if { [ "$rc" -eq 123 ] || [ "$rc" -eq 124 ]; } && load_guard_tripped; then
+        inc "[OPT-4] '$pat' hit the watchdog (rc $rc) but the box is too contended for that to mean anything (ratio $(load_guard_ratio) > $LOAD_GUARD_RATIO) — solo re-run owed"
+        return
+    fi
     if [ "$rc" -ne 0 ]; then
         bad "[OPT-4] '$pat' no longer compiles at the DEFAULT — the size rung has stopped rescuing this shape, or a cap moved: $(printf '%s' "$dflog" | head -1)"
         return

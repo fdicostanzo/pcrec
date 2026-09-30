@@ -360,6 +360,17 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
   `build_ucp_store.py` (its capture), `latin1_fold_check.c` +
   `latin1_fold_10.46.tsv` (the byte-tier fold relation), and
   `run_ucp_tests.sh` (`make test-ucp`). See its own CLAUDE.md.
+- **`clskit/`** — [CLS-TREE] S1: the class-matcher kit
+  (`src/gen/clskit.c`) checked before anything calls it (`make
+  test-clskit`). Three checks:
+  - every emitted kit form, compiled and compared against a reference the
+    kit did not write, on all 1,114,112 code points, over the 312 `uprops`
+    sets, the K53 twelve, the 41 corpus byte classes and the study's
+    proptest compositions (plus the composition law);
+  - a census that every form was emitted at least once;
+  - a cross-check of sectionings and `--tune` table choices against
+    `studies/cls_tree_study/`.
+  See its own CLAUDE.md.
 - **`vars/`** — module `vars` ([VAR] M10): `${name}` in a pattern, whose
   bytes the CALLER supplies per call. Three `.rxt` files (the SET state and
   the literal rule; the UNSET/EMPTY/SET model and the five operators; the
