@@ -26185,3 +26185,29 @@ margin; bisect today's merges if slower). MAIN IS UNPUSHED (origin at 4a546fba-e
 - (3) Summaries cut at 300 columns misread a PASS control as FAIL. Read the log line, not the summary.
 - (4) Validation chains invoked mech with a malformed id (`S237-`), so the rows silently never ran. A 1-second rc=2 is an invocation error, not a verdict.
 - (5) A heavy chain gated on "load < 0.5" starves while any other lane is active on the box.
+
+## 2026-09-30 ~17:00 EDT — eighty-eighth session (day; Frank present), put to bed
+
+**Rulings:**
+- D138 Q1: the class fold STAYS the default. The formchar2 x86 evidence is 0.98 on 10 witnesses; the ci256 penalty did not reproduce. `-fno-cls-fold` is now permanent as that row's deny. waf744's x86 regime is filed as the boonies row [CLS-FOLD-WAF744].
+- [REL-0.2]: version 0.2.0-beta, bumped only after every current item is complete and tested, Friday or later.
+- The [OPT-LITSCAN] S4 stock-take is held until Friday AND until current efforts finish.
+- [ART-MGR] chartered as design only.
+
+**Merged to main and pushed (main 374889f7):**
+- fc2fin: the formchar2 x86 results.
+- admin88: 38 completed rows archived; artifact_size_log.tsv stays tracked, restored after ordinary runs.
+- artmgr: docs/design/artifact_manager.md.
+- **[CLS-TREE] S2 at 1c12395f, abi 53.** The s2tri3 triage showed the chain's -fno-cls-kit red came from a stale tree: the chain ran in worktrees/clss2, which lacks axtri and pfdrop. The re-run on s2tri was green: 88 documented refusals, 0 undocumented. Recursion identity: 0 failures. make strict: clean. The S2 worktrees are removed.
+
+**Parked (not merged):**
+- **lane/k7980** (K79 + K80, abi 54, D143; main merged in at 0ba6983c). Its FULL make test on the Mac (worktrees/k7980/scratch/full/make_test.log) is RED beyond darwin's accepted nm line:
+  - test-registry's PC-4: "result file truncated at subject 0" on the class patterns 214-249, population 58536 vs 62872 predicted.
+  - test-codegen's ir-listing BYTE-NEUTRALITY: the listing moved on the `caps 2 RX_NCAPS` line, probably the prefix placeholder or render reaching the IR listing.
+  - test-vm and test-possessify are also red; not yet read.
+  - The lane's light run had test-registry 271/0, so these arrived with the main merge (S2 + s2tri3) or with a path the light targets skip. Friday's first job is a TRIAGE LANE.
+- **lane/k78** (K78, abi 55, stacked on k7980's pre-merge tip 44fc6ad5). Light targets are green except test-codegen, which is 13/14 with only the darwin nm red. It lands after k7980.
+
+**Bench:** I-126 (141b134): the box is handed over, [B117] keeps fc719ca4, O-78 is noted (filed under [OPT-LITSCAN] as a witness), and a K79 FYI.
+
+**Lesson:** a lane's light-target green, measured BEFORE a main merge, does not cover the merged tree. K79's render touched every emitted text path, and only the full suite reaches PC-4 and the IR listing.
