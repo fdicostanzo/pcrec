@@ -146,6 +146,20 @@ Comprehensive test suite for base-tier PCRE features: literals, character classe
   `(?:ab){0,16000}` (the smallest round N found past the 32,000-state
   boundary), six oracle-verified cases against python3 `re`
 
+- **clspack_atoms.rxt** + **gen_clspack_atoms.py** — [OPT-CLSPACK]'s answer
+  corpus (2026-09-30, lane clspack; `docs/spec/tuning.md` §2.35): VM byte
+  classes that read a table and SHARE ONE ATOM TABLE. The shipped corpus has
+  no artifact the atom row fires on (the most per-site bitmaps any corpus
+  artifact carries is 6), so every block is a constructed witness, GENERATED
+  by the script beside it with every expectation python3 `re`: eleven
+  scattered classes (the threshold, exactly), ten (one short), twelve read
+  from a span-loop cursor/lazy loop/counted repeat/`\b`, and two crafted
+  eleven-class blocks over 63 and 64 bytes with distinct membership codes
+  (64 atoms fires, 65 declines; `engine vm`, their default route is the
+  DFA). 79 cells. `tests/codegen/run_clspack.sh` reads the same blocks by
+  case name and asserts which took the atom table; sabotage S400/S403 are
+  this file's failing directions
+
 ## Conventions
 
 Format: `pattern <regex>` followed by `m "<subject>" START END` (match expected) or `n "<subject>"` (no match). Escapes in subjects (\" \\ \n etc) are encoded as literal backslash sequences for shell safety; driver.c decodes them. Run via `make test` or `bash tests/harness/run.sh tests/base/`.

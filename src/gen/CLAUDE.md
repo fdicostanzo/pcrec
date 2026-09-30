@@ -1056,6 +1056,13 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
   `vm_emit_search_body` emits the matchers (`<prefix>_wcls<N>`) beside the
   class bitmaps. D129 Q2's `-fno-cls-kit` is the whole-kit deny, read by
   emit_vm.c's `vm_wcls_bytes`, not a `ClsDeny`.
+  **SECOND CALLER, [OPT-CLSPACK] (lane clspack, 2026-09-30, abi 48):** the
+  TABLE SELECTION `TAB_ROWS` (`pcrec_clskit_select_tables`), an
+  ARTIFACT-level first-match table over every VM byte class that reads a
+  table: row `atom` (>= `PLACE.atom_min_sites` = 11 such classes, <= 64
+  atoms; deny `CLSTD_ATOM`, which emit_vm.c maps from `-fno-cls-pack`) then
+  row `site`. The atom row's predicate IS `pcrec_clskit_atoms`, so the table
+  the VM emits is the one the predicate measured.
 - **emit_vm.c** — the backtracking VM as emitted specialized C
   (docs/design/engine_m4.md §2). **[CLS-TREE] S4 (abi 47): a WIDE class
   (`A_WCLASS`, more than one member) is ONE decode (`<prefix>_decode`, the
@@ -1064,7 +1071,18 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
   question (`-fno-cls-kit`, no decode row, or a one-member set keep the
   bytes) that `vm_emit_node`, `vm_cost`, `vm_count_slots` and the spine
   flatteners' `vm_seethru` all ask. `<PREFIX>_VM_CLS_KIT` counts the
-  matchers. docs/design/cls_tree_design.md §6.1.** ONE function per pattern, one label per
+  matchers. docs/design/cls_tree_design.md §6.1.** **[OPT-CLSPACK] (abi
+  48): once the program is emitted the class pool is final, and
+  `vm_cls_tables` asks clskit.c's `TAB_ROWS` how the pool's TABLE-READ
+  byte classes (`vm_cls_shape`'s BITMAP) read their table. When the atom
+  row fires, `vm_cls_respell` re-spells every recorded read in `job->vmsb`
+  from `vm_cls_read`'s bitmap form to its atom-matcher call (the one
+  renderer of both; an unrecorded read is an internal error), BEFORE the
+  entry-shape knee reads the program's length, and the table emission
+  writes `<prefix>_class_atoms[256]` plus one `<prefix>_class_atom<N>`
+  matcher per class through the kit's own emitters.
+  `<PREFIX>_VM_CLS_ATOMS` is the atom count (0 = per-class bitmaps).
+  docs/spec/tuning.md §2.35.** ONE function per pattern, one label per
   pattern position, every continuation resolved at compile time into a
   fallthrough or a direct `goto`, and exactly one indirect jump (the `goto *`
   at the fail label). §2.7 is why D13's table-vs-computed-goto arbitration
