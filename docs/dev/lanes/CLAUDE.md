@@ -3567,3 +3567,4 @@ never edited afterwards.
   find-all loop's, and `p = next_pos(s, n, end - 1)` repairs five patterns'
   19,608-subject divergences with no engine or abi change. Memo
   `docs/dev/k75_measurement.md`; evidence in `k75m_evidence/` (own CLAUDE.md).
+- `land4_report.md` — [CLS-TREE] S4 + [OPT-CLSPACK] LANDED onto main's tip (2026-09-30, lane land4, sonnet): ONE abi event 47 -> 48 (the readers found by grep, K73's 47 entry kept), spec §2.35 -> §2.34, `-fno-cls-kit` also denies the atom row (manager ruling (a); `[deny-kit]`, S406, S401 re-anchored), every pin combined by mechanism, recursion-identity (A) ctx-node bucket combined with the atom axis. `cls_identity.py --ref main` explained (normalized run 514 movers / 67 refuse->ok; under `-fno-cls-kit` 21 movers, 0 asymmetric). Linux full `make test` OWED.
