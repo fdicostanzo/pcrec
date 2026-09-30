@@ -2,10 +2,10 @@
 #
 # `verify_rxt.py` carries its own transcription of §3.1's loop for `mc` lines
 # (leg C); K75 gave its non-empty arm the same continuation-byte skip
-# `<prefix>_next_pos(end - 1)` spells. This row disables the skip, so the python
-# count on `a` over `a\x80a` reads 1 (it searches from the stray, and python's
-# `re` happily matches nothing before the next `a`... and, for `.`, would match
-# the stray itself and count 3) where the fixture says 2.
+# `<prefix>_next_pos(end - 1)` spells. This row disables the skip, so python
+# resumes ON the stray: the `a` cells are unmoved (python's `re` steps over a
+# byte that is not an `a` for free) but `.` over `a\x80a` reads 3 (it matches
+# the stray itself) and `a|` over it reads 4, against the fixture's 2 and 3.
 #
 # THE DETECTOR is the same rxtsource check as S407's, its `verify_rxt.py` half.
 SAB_ID="S408-findall-nonempty-arm-unaligned-py"
