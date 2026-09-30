@@ -32,5 +32,5 @@ SAB_DESC="run.sh treats every file as head-bearing, so all 247 corpus files take
 # descriptive only, never asserted against a count — mech scores this row
 # DETECTED/UNDETECTED, never SAB_DESC's text.
 SAB_COUNT=1
-SAB_BEFORE='    if [ -n "$head_probe" ] && [ "$head_probe" != "pattern" ]; then'
+SAB_BEFORE='    if [ -n "$head_probe" ] && ! rxt_is_opener "$head_probe"; then'
 SAB_AFTER='    if [ -n "$head_probe" ]; then   # SABOTAGE S203: every file looks head-bearing'

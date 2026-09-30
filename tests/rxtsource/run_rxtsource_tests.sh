@@ -680,18 +680,23 @@ WRAP
 chmod +x "$WRAPDIR/pcrec"
 
 # the independent census of head-bearing files: one whose first non-blank,
-# non-comment line's first token is not `pattern`. Derived here by awk
+# non-comment line's first token is not a block opener. Derived here by awk
 # over the raw bytes — no parser, no harness, no pcrec. (xargs -a has no
 # BSD spelling; < "$FILES" is the portable form this script's own census
 # derivation above already uses.) Computed BEFORE leg B, which needs it
 # to size its own P-C2-floor tolerance below.
 HEAD_FILE_LIST="$WORKDIR/head_files.list"
-xargs awk < "$FILES" '
+# [K76] a head-bearing file is one whose first token is not a BLOCK OPENER,
+# and the format has had two openers since [DD-13b.W23.3] (`pattern`,
+# `pattern-esc`). The program is a variable so the K76 regression below runs
+# THIS census on its own witness rather than a restatement of it.
+HEAD_CENSUS_AWK='
     FNR == 1 { done = 0 }
     done { next }
     /^[ \t]*$/ { next }
     /^#/ { next }
-    { done = 1; if ($1 != "pattern") { print FILENAME } }' > "$HEAD_FILE_LIST"
+    { done = 1; if ($1 != "pattern" && $1 != "pattern-esc") { print FILENAME } }'
+xargs awk "$HEAD_CENSUS_AWK" < "$FILES" > "$HEAD_FILE_LIST"
 head_files=$(wc -l < "$HEAD_FILE_LIST" | tr -d ' ')
 
 # ---------------------------------------------------------------------
@@ -2764,6 +2769,38 @@ else
     fail "S242 detector, three-legged: leg B or leg C still refuses (or misreads) a file opening with 'pattern-esc':
   leg B rc=$opep_b_rc blocks='$opep_b_lines' (want '8 10 '): $(cat "$WORKDIR/opep_b.err")
   leg C rc=$opep_c_rc blocks='$opep_c_lines' (want '8 10 '): $(cat "$WORKDIR/opep_c.err")"
+fi
+
+# [K76] A FILE WHOSE FIRST BLOCK OPENS WITH `pattern-esc` HAS NO HEAD.
+# docs/spec/rxt_format.md: the head ends at the first block opener, and
+# `pattern-esc` is one. run.sh's `rxt_head_probe` callers, leg C's entry-set
+# walk and the census awk above each compared the first token against the
+# literal `pattern`, so this fixture (`opener_pattern_esc_pair`, whose first
+# token is `pattern-esc`) was read as head-bearing: a `--list-source` call it
+# does not owe (a refusal in ANY later block became a whole-file HARNESS
+# FAILURE instead of that block's own result), and a head-bearing count of 1
+# where the format's answer is 0. Three readers, one assertion each, all on
+# the SAME fixture; the wrapper counts pcrec's real invocations (C0a's
+# discipline: a counter inside the reader cannot see a call it never made).
+k76_fix="$FIXRUN/opener_pattern_esc_pair.rxt"
+: > "$CALLLOG"
+PCREC="$WRAPDIR/pcrec" "$TIMEOUT_BIN" 30 bash "$RUNSH" --dump "$k76_fix" >/dev/null 2>&1
+k76_b=$(grep -c -- '--list-source' "$CALLLOG" || true)
+: > "$CALLLOG"
+PCREC="$WRAPDIR/pcrec" "$TIMEOUT_BIN" 30 python3 "$VERIFY" --dump "$k76_fix" >/dev/null 2>&1
+k76_c=$(grep -c -- '--list-source' "$CALLLOG" || true)
+k76_census=$(printf '%s\n' "$k76_fix" | xargs awk "$HEAD_CENSUS_AWK" | wc -l | tr -d ' ')
+# the witness must DISCRIMINATE: the pre-fix rule (`$1 != "pattern"` alone)
+# reads this very file head-bearing, or the three zeros above prove nothing.
+k76_old=$(printf '%s\n' "$k76_fix" | xargs awk '
+    /^[ \t]*$/ { next } /^#/ { next }
+    { if ($1 != "pattern") { print FILENAME }; exit }' | wc -l | tr -d ' ')
+if [ "$k76_b" = "0" ] && [ "$k76_c" = "0" ] && [ "$k76_census" = "0" ] && [ "$k76_old" = "1" ]; then
+    pass "K76: a file whose first block opens with 'pattern-esc' has no head — run.sh (leg B) made $k76_b and verify_rxt.py (leg C) $k76_c --list-source call(s), the independent census counts $k76_census head-bearing file(s); the pre-fix rule reads it head-bearing ($k76_old), so the witness discriminates"
+else
+    fail "K76: pattern-esc-first file read as head-bearing —
+  leg B --list-source calls=$k76_b (want 0), leg C calls=$k76_c (want 0),
+  census head-bearing=$k76_census (want 0), pre-fix-rule control=$k76_old (want 1: the witness must discriminate)"
 fi
 
 # [DD-13b.W23.4] S243 (S-R4b): `opener_m_not_opener.rxtin` is one block

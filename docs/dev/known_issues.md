@@ -11,9 +11,11 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 ---
 
-## K76 — OPEN, test-infrastructure (found by lane k73utf, 2026-09-29) — a `.rxt` file whose FIRST block is `pattern-esc` is read as head-bearing
+## K76 — FIXED 2026-09-30 (lane k76fix) — a `.rxt` file whose FIRST block is `pattern-esc` was read as head-bearing (found by lane k73utf, 2026-09-29)
 
-**Witness:** tests/harness/run.sh and the rxtsource awk census both treat a file whose first block opens with a `pattern-esc` line as if it had a file head. k73utf worked around it in tests/utf8/k73_startskip.rxt (lane/k73utf). No wrong answer is certified; the risk is a silently mis-read block. Status: deferred; a small harness fix.
+**Witness:** tests/harness/run.sh, tests/harness/verify_rxt.py's entry-set walk and the rxtsource head census each compared the file's first token against the literal `pattern`; the format's head ends at the first BLOCK OPENER, and `pattern-esc` is one (`rxt_schema.def` `opens_group`). Effect: a spurious `--list-source` call, and a refusal in ANY later block became a whole-file HARNESS FAILURE that lost the passing cases of the earlier blocks (measured: 1 pass + 1 bad later block read `0 passed / 2 failed`); the census counted the file head-bearing.
+
+**Fix:** `rxt_is_opener` in run.sh (the one home of the bash rule, four call sites), `_RXT_BLOCK_OPENERS` in verify_rxt.py (two sites), the census awk widened; regression `K76` in tests/rxtsource/run_rxtsource_tests.sh (wrapper-counted `--list-source` calls on `opener_pattern_esc_pair` from legs B and C, the census, and a pre-fix-rule control that must read the witness head-bearing); S203 re-aimed; spec sentence in rxt_format.md. tests/utf8/k73_startskip.rxt's `(?:)` workaround is removed (`pattern-esc ""`, 86/0 unchanged). Report: docs/dev/lanes/k76fix_report.md.
 
 ---
 
