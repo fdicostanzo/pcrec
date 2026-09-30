@@ -16,6 +16,8 @@
 #           The stamp is checked against an atom count this script computes
 #           from the SAME pattern's `-fno-cls-pack` artifact's bitmaps — a
 #           different output, parsed here, never the compiler's own builder.
+#           Plus the size term's input: the entry rung and
+#           RX_VM_PROGRAM_BYTES equal the -fno-cls-pack build's.
 #   PART 2  the thresholds from both sides (10 classes, 65 atoms), the deny,
 #           every `--tune` position, and the stamp on a class-free VM
 #           artifact and its absence on a DFA one.
@@ -103,6 +105,24 @@ for w in atom-11:11 atom-reads:12 atom-64:11; do
 done
 [ "$(stamp "$TMP/atom-64.c")" = 64 ] && ok "[atom-64] exactly 64 atoms, the mask's width, fires" \
     || bad "[atom-64] RX_VM_CLS_ATOMS is '$(stamp "$TMP/atom-64.c")', want 64"
+
+# The table form must move the table and its reads and NOTHING the size
+# term decides: the entry rung is chosen on the program's length, and the
+# atom spelling is shorter than the bitmap one, so a re-spelling taken
+# before that choice crosses the 4,096-byte knee (measured on atom-reads,
+# 4,621 bytes: rung `inline`, 2.5x the __text of its bitmap twin).
+for name in atom-11 atom-reads atom-64; do
+    a1="$(grep -E '^#define RX_VM_(ENTRY_SHAPE|PROGRAM_BYTES) ' "$TMP/$name.c")"
+    a2="$(grep -E '^#define RX_VM_(ENTRY_SHAPE|PROGRAM_BYTES) ' "$TMP/$name.site.c")"
+    if [ -n "$a1" ] && [ "$a1" = "$a2" ]; then
+        ok "[$name] the entry rung and RX_VM_PROGRAM_BYTES are the -fno-cls-pack build's ($(printf '%s' "$a1" | tr '\n' ' '))"
+    else
+        bad "[$name] the atom table moved the size term's input: atom '$(printf '%s' "$a1" | tr '\n' ' ')' vs site '$(printf '%s' "$a2" | tr '\n' ' ')'"
+    fi
+done
+pb="$(sed -n 's/^#define RX_VM_PROGRAM_BYTES \([0-9]*\)ULL$/\1/p' "$TMP/atom-reads.c")"
+if [ "${pb:-0}" -gt 4096 ]; then ok "[atom-reads] straddles the entry knee from above ($pb bytes > 4,096), so the rung arm can fail"
+else bad "[atom-reads] RX_VM_PROGRAM_BYTES '$pb' is no longer above the 4,096 knee — the rung arm above cannot fail; re-choose the witness"; fi
 
 echo "== PART 2: the thresholds, the deny, --tune, the stamp's scope =="
 if compile site-10 "$TMP/s10.c"; then
