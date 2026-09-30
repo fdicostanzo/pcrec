@@ -11,11 +11,27 @@ Harness: `studies/u3_island_twin/`.
 - Correctness COMPLETE: 8 cases x 31,168 cases, 0 differences against libpcre2
   10.46, today's artifacts, forced VM and each other; ASan/UBSan clean.
 
-## OWED
-- ubuntubudu timing and the D77 verdict: not run, "TIMING GO" not received
-  before hand-off. Resume: memo section 5 (bundle at
-  `studies/u3_island_twin/out/u3twin_bundle.tgz`, regenerable by `bundle.sh`
-  after the gen/build steps in the study README).
+## Timing and verdict (ubuntubudu, 2026-09-30 01:08, COMPLETE)
+gcc 15.2 -O2, Ryzen 5 1600, 11 rounds, load1 0.47-0.48 before every unit
+(gate 0.5), 28 cells, answers/checksums identical across all arms and rounds
+in every cell. Data: `studies/u3_island_twin/results/bench_ubuntubudu.tsv`,
+`bench_summary.tsv`, `bench.log`. Full table and reading: memo s3-s4.
+- Consuming wide classes (16 cells): island slower than the best all-byte arm
+  in 14 (1.04-1.65x; latin1/mixed worst, 1.18-1.65x); one clear win, xwd/cjk
+  with bitmap1, 15.29 vs 18.39 ns/char (0.83x); nd/latin1 0.98x is 2.2%
+  against a 1.9% floor (marginal, not counted). Against today's default artifact
+  only, l/cjk is a win too (0.76x) but the raised-cap artifact beats it.
+- x1/x2 (no all-byte form): island DFA 4-5x faster than the VM hybrid on
+  ascii/latin1 (x1) and ascii/latin1/mixed (x2), 1.35x (x1/mixed) and 2.65x
+  (x2/cjk) slower where the hybrid prefilter skips text. x3 (UCP `\b`, no
+  baseline) 7.7-19.4 ns/char.
+- Null control bc/bb 0.990-1.006 (x2: 0.895-0.930, inside its 10.5% floor).
+- Verdict: the island is NOT a speed win over a cache-resident all-byte
+  machine; a speed-leaning theta setting is not supported. It stands as a
+  capability route (Row 1) and, unmeasured here, a size/compile-time route.
+- Caveats: one box/compiler; the twin has no premultiplied table or scan-edge
+  skip (up to 17-27% handicap on l, measured as bd vs bb); t_decode/t_stop not
+  separated; the CJK cause is a hypothesis.
 
 ## Findings so far
 1. F1 twins fall out of the byte tables mechanically: 2 boundary states per

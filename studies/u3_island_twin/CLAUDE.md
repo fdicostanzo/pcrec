@@ -29,6 +29,8 @@ proves it answer-identical, then times it against what pcrec emits today.
                 `reach.py` island/ill-formed REACH of the correctness set.
 - `bench.c`, `run_bench.py`, `summarize.py`, `bundle.sh`  timing (house
                 protocol, load gate, null-control arm, answer checksums).
-- `results/`    committed TSVs (correctness, controls, reach, bench).
+- `results/`    committed TSVs (correctness, controls, reach) plus the
+                ubuntubudu timing run: `bench_ubuntubudu.tsv` (raw per-round),
+                `bench_summary.tsv`, `bench.log`.
 
 Read the memo before the numbers; see README.md for the run recipe.
