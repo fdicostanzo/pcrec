@@ -600,8 +600,8 @@ S2 has no say in either.
 
 | # | file:line | pattern | subject / flags | expected | got (every leg) | verdict |
 |---|---|---|---|---|---|---|
-| 1 | d27_k23_ambiguous_decomposition.rxt:90 | `(a{1,3}){65}` | 69 x `a`, `b`, 71 x `a`, startpos 0 | match (per .rxt, oracle-backed) | give-up STEPS | pre-existing; allowance `--engine=vm\|...:90` |
-| 2 | d27_k23_ambiguous_decomposition.rxt:98 | `(a{1,3}){65}` | long `a` run, break, `a`s, startpos 0 | match | give-up STEPS | pre-existing; allowance `:98` |
+| 1 | d27_k23_ambiguous_decomposition.rxt:90 | `(a{1,3}){65}` | `a` run, `b`, `a` run (see file), startpos 0 | match (per .rxt, oracle-backed) | give-up STEPS | pre-existing; allowance `--engine=vm\|...:90` |
+| 2 | d27_k23_ambiguous_decomposition.rxt:98 | `(a{1,3}){65}` | longer `a` run, `b`, `a` run (see file), startpos 0 | match | give-up STEPS | pre-existing; allowance `:98` |
 | 3 | k18_deep_nesting.rxt:51 | 250-deep `(?:...a*)*` (nested nullable star) | `a` | match | give-up FRAMES | pre-existing; allowance `:51` |
 | 4 | k18_deep_nesting.rxt:52 | same family | `aa` | match | give-up FRAMES | pre-existing; allowance `:52` |
 | 5 | k18_deep_nesting.rxt:56 | same family | `a` | match | give-up FRAMES | pre-existing; allowance `:56` |
