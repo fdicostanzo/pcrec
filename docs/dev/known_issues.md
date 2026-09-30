@@ -11,6 +11,24 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 ---
 
+## K76 — OPEN, test-infrastructure (found by lane k73utf, 2026-09-29) — a `.rxt` file whose FIRST block is `pattern-esc` is read as head-bearing
+
+**Witness:** tests/harness/run.sh and the rxtsource awk census both treat a file whose first block opens with a `pattern-esc` line as if it had a file head. k73utf worked around it in tests/utf8/k73_startskip.rxt (lane/k73utf). No wrong answer is certified; the risk is a silently mis-read block. Status: deferred; a small harness fix.
+
+---
+
+## K75 — OPEN, needs a RULING (found by lane k73utf, 2026-09-29) — the spec find-all loop stops at a stray continuation byte after a non-empty match under `-e utf8`
+
+**Witness:** `a` on `a\x80a` under `-e utf8`: pcrec's find-all (the match_api.md protocol: next startpos = previous end) finds 1 match; libpcre2 10.46 with PCRE2_MATCH_INVALID_UTF finds 2. After the first match the next startpos is the stray `\x80`, and K73 ruling (a) keeps K50's refusal of an EXPLICIT startpos on a continuation byte. Pre-existing. **The question:** a STRAY continuation byte (ill-formed, not inside any character) is not "mid-character"; skipping forward there, while refusing only a true mid-character position inside a well-formed sequence, may be the principled line. Measure PCRE2 on both kinds first. Frank's ruling; ruling (a) itself stands.
+
+---
+
+## K74 — OPEN, deferred (found by lane k73utf, 2026-09-29) — `$` and `\B` at an ill-formed subject END diverge from libpcre2 10.46 under `-e utf8`
+
+**Witness:** transcripts in docs/dev/lanes/k73utf_evidence/ (lane/k73utf). Pre-existing, independent of K73. Status: deferred; the ill-formed-position semantics family (with K75) should own it.
+
+---
+
 ## K73 — OPEN, deferred (found by lane ucpu2, 2026-09-29, side finding) — empty pattern on a lone ill-formed byte under `-e utf8`
 
 **Witness:** the empty pattern on the subject `\x80` (one stray continuation byte) under `-e utf8`: pcrec reports a match at (0,0), and libpcre2 10.46 with PCRE2_MATCH_INVALID_UTF reports (1,1). Pre-existing, independent of UCP; not investigated. Status: deferred, no fix; the ill-formed-position semantics row ([UTF8-ATTRIB]-family) should own it.
