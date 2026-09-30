@@ -62,7 +62,7 @@ int main(int argc, char **argv)
         printf("%s%td,%td", first ? "" : " ", caps[0][0], caps[0][1]);
         first = 0;
         p = (caps[0][1] > caps[0][0])
-              ? (size_t)caps[0][1]                          /* non-empty */
+              ? fa_next_pos(s, n, (size_t)caps[0][1] - 1)   /* non-empty [K75] */
               : fa_next_pos(s, n, (size_t)caps[0][0]);      /* EMPTY */
     }
     printf("\n");

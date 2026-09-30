@@ -2624,6 +2624,10 @@ REBUILDS the node matters.
 
 ## [DD-14] waves D+E — `run_recursion_identity.sh`, opt-in as `make test-recursion-identity`
 
+> **D136 (2026-09-30): it is also the merge battery's `recidentity` stage**
+> (`scripts/battery.sh`, last). Still NOT a `make test` section (it builds a
+> second pinned compiler, ~35 min).
+
 Module `recursion`'s byte-identity gate, in `run_atomic_identity.sh`'s exact
 shape (a pinned pre-producer commit via `git archive`, since this module has
 no stage a `-D` knob could sit on — the whole surface is "is there an
@@ -3153,11 +3157,12 @@ compiler.
 
 The encoding BACKEND's acceptance, the half the `.rxt` corpus and the identity
 gate cannot make (`docs/design/utf8_design.md` §8.5, §8.1.1 check 3, §9.2's
-DD-12(7)(a) pair). `make test-encoding-checks`, OPT-IN for
-`test-encoding-identity`'s reason and one more: its §8.5 differential compiles
-and RUNS two artifacts per ASCII corpus block (~6,600 compiles at
-`ENC_MAX_BLOCKS=0`, the whole corpus, which rides a Linux slot), and
-`ENC_MAX_BLOCKS` bounds it for a light local run. Four sections:
+DD-12(7)(a) pair). `make test-encoding-checks` IS IN `TEST_SECTIONS` (D136,
+2026-09-30; it was opt-in until the silentred triage found it red and
+unnoticed): its §8.5 differential compiles and RUNS two artifacts per ASCII
+corpus block (~6,600 compiles at `ENC_MAX_BLOCKS=0`, the whole corpus, which
+rides a Linux slot), and `ENC_MAX_BLOCKS` (default 250, ~10 min) bounds it in
+`make test`. Four sections:
 
 - **§8.5 THE ASCII-CORPUS ENCODING DIFFERENTIAL.** Every ASCII-only corpus
   pattern is compiled under BOTH encodings and run on its subjects; the two
@@ -3346,8 +3351,8 @@ Three things about it are worth keeping:
 1. **Its own non-vacuity floor is the only reason it was visible.** With a
    `>= 0` there, a dead instrument and a clean one print the same thing. The
    floor is not decoration; it is the whole detector.
-2. **It went stale because `test-encoding-checks` is OPT-IN** and rides no
-   `TEST_SECTIONS` entry. An opt-in check is a check nothing re-runs when the
+2. **It went stale because `test-encoding-checks` was OPT-IN** and rode no
+   `TEST_SECTIONS` entry (D136 wired it in, 2026-09-30). An opt-in check is a check nothing re-runs when the
    surface it drives moves underneath it — which is the same reason
    `run_specimen_identity.sh` carried two independent stalenesses until
    [EMIT-VERB] met it.

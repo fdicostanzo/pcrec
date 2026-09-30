@@ -29,7 +29,9 @@ engine, and the two engines reach a span through completely different code.
 - **findall_driver.c** — spec §3.1's loop, TRANSCRIBED. If it and the spec
   ever differ, one of them is wrong and the check has stopped meaning what
   it says. Its advance goes through `fa_next_pos`, not a literal `+ 1`,
-  which is [M5-SEAM]'s whole claim. Prefix fixed at `fa` (a driver cannot
+  which is [M5-SEAM]'s whole claim (and, since [K75], the NON-EMPTY arm too:
+`fa_next_pos(s, n, end - 1)`, a no-op under this suite's byte encoding).
+Prefix fixed at `fa` (a driver cannot
   be generic over a C identifier prefix).
 - **findall_cases.txt** — TAB-separated CLASS / PATTERN / SUBJECT. The
   twelve agreeing pairs and three lossy ones are R29's set, re-measured

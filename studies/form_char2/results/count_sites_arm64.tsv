@@ -1,0 +1,16 @@
+witness	form	fold_sites	text	rodata	instr
+ci256	fold	26	65964	200	16491
+ci256	atom	0	69868	256	17467
+ci256	bitmap	0	98860	832	24715
+kw5	fold	5	724	32	181
+kw5	atom	0	1000	192	250
+kw5	bitmap	0	1000	192	250
+kw16	fold	16	1576	32	394
+kw16	atom	0	1748	288	437
+kw16	bitmap	0	2376	544	594
+kw32	fold	26	1264	32	316
+kw32	atom	0	1296	288	324
+kw32	bitmap	0	1744	864	436
+kw64	fold	26	2160	32	540
+kw64	atom	0	2224	288	556
+kw64	bitmap	0	3912	864	978

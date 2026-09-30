@@ -296,7 +296,7 @@ TEST_SECTIONS := test-corpus test-cli test-reject test-registry test-parse \
       test-prefilter-collapse test-rxtsource test-definitions \
       test-entry-shape-identity test-cpset-structure test-startbnd \
       test-uprops test-core test-vars test-examples test-findings test-ucp \
-      test-clskit test-utfcheck
+      test-clskit test-encoding-checks test-utfcheck
 
 # [CHK-2 trailer] `test:` STOPPED being purely prerequisite-based here
 # (2026-08-26, manager finding, journal part 7): under `make -j12 test`,
@@ -599,18 +599,19 @@ test-cpset-structure: all
 	bash tests/codegen/run_wclass_census.sh
 	bash tests/codegen/run_clspack.sh
 
-# [M5.0 stage 2] `test-encoding-checks` IS OPT-IN, the encoding backend's
+# [M5.0 stage 2] `test-encoding-checks` is the encoding backend's
 # behavioural + structural acceptance (docs/design/utf8_design.md §8.5, §8.1.1
-# check 3, §9.2's DD-12(7)(a) pair). Opt-in for `test-encoding-identity`'s
-# reason and one more: its §8.5 differential compiles and runs TWO artifacts
-# per ASCII corpus block, which at ENC_MAX_BLOCKS=0 is ~6,600 compiles — the
-# full sweep rides a Linux slot, and a light local run bounds it with
-# ENC_MAX_BLOCKS (the default). CHK3/DD12a/S-U8 are compile-only and run in
-# full either way.
+# check 3, §9.2's DD-12(7)(a) pair). It WAS opt-in and IS NOW in TEST_SECTIONS
+# (D136, 2026-09-30): it sat red on main unnoticed because nothing counted it.
+# Its §8.5 differential compiles and runs TWO artifacts per ASCII corpus
+# block, which at ENC_MAX_BLOCKS=0 is ~6,600 compiles — the full sweep rides a
+# Linux slot, and `make test` bounds it with ENC_MAX_BLOCKS (the default, 250,
+# ~10 min). CHK3/DD12a/S-U8 are compile-only and run in full either way.
 #
 #     make test-encoding-checks                            # bounded local run
 #     ENC_MAX_BLOCKS=0 make test-encoding-checks           # whole corpus (slot)
 test-encoding-checks: all
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-encoding-checks.ran"; fi
 	bash tests/codegen/run_encoding_checks.sh
 
 # [OPT-VMFL] `<PREFIX>_VM_FRAMELESS` held to the artifact's own `goto *`
@@ -984,6 +985,9 @@ test-recursion: all
 # and a second (SPLICE-vs-LINKAGE) control — this target is the SEED that
 # wave E grows to that shape, landed now so the claim has a standing home in
 # the tree rather than living only in a lane's own scratch run.
+#
+# D136 (2026-09-30): NOT in `make test`, but the merge battery's `recidentity`
+# stage (scripts/battery.sh, last) runs it, so it no longer goes stale unseen.
 #
 #     make test-recursion-identity                        # the gate, on demand
 #     RECURSION_IDENTITY_REF=<sha> make test-recursion-identity   # moved base

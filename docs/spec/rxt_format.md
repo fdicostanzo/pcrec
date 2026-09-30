@@ -757,9 +757,11 @@ matches. It takes no startpos.
 
 **THE COUNTING RULE HAS ONE HOME AND THIS IS NOT IT**: the rule is
 `docs/spec/match_api.md` §3.1's shipped find-all protocol, by reference —
-searching from a position, resuming at a non-empty match's END, and, off
-an EMPTY match, resuming one CHARACTER past the match's own **REPORTED
-START** (`<prefix>_next_pos(caps[0][0])`), with no empty-match retry.
+searching from a position, resuming at a non-empty match's END ALIGNED TO A
+CHARACTER BOUNDARY (`<prefix>_next_pos(caps[0][1] - 1)`, which is the end
+itself on a well-formed subject; [K75]), and, off an EMPTY match, resuming
+one CHARACTER past the match's own **REPORTED START**
+(`<prefix>_next_pos(caps[0][0])`), with no empty-match retry.
 That section states the loop, and an `mc` line asks for its count and
 nothing else.
 
@@ -786,6 +788,20 @@ rule the emitted artifacts already implement, and it is written down
 rather than left to "the next character boundary" because for ill-formed
 input that phrase has no single reading and an `mc` count is exactly what
 a foreign consumer compares against.
+
+**[K75] AND THE ADVANCE AFTER A NON-EMPTY MATCH SKIPS THE SAME BYTES.** A
+non-empty match that ends immediately before a STRAY continuation byte
+resumes at the next non-continuation byte (or the end of the subject), not on
+the stray: *from the match's end, past every byte in `0x80`-`0xBF`*, which a
+transcription spells `pos = end` followed by the same skip loop the
+empty-match advance uses. It is the same rule with a different starting point
+and is a no-op whenever the match end is already a character start, so no
+well-formed `mc` count moves. `a` over `"a\x80a"` is **2** (the `a` at 0,
+the stray stepped over, the `a` at 2); `.` over `"a\x80a"` is **2** and `a|`
+over it **3** — libpcre2 10.48's counts under `PCRE2_MATCH_INVALID_UTF`
+driven through this loop (`docs/dev/lanes/k75fix_report.md`). The rule is
+about positions the LOOP computes; a `startpos` a caller passes to an entry
+is still refused when it is not a boundary (`match_api.md` §3.1).
 
 **[K73] AND THE FIRST SEARCH OF THE LOOP IS AT OFFSET 0, WHICH ON AN
 ILL-FORMED SUBJECT IS NOT WHERE A MATCH IS ATTEMPTED.** Under the same

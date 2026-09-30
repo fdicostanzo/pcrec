@@ -3166,3 +3166,18 @@ above U+00FF without counting it — the rate does not move, only the
 listing's `dropped` column does; **S327** accepts a surrogate `cpfreq` key;
 **S328** skips the parse-time derived-count ceiling (two code points sharing
 a lead byte sum past `PCREC_MAX_FIND_COUNT` though no row does).
+
+### [K75] — rows S407/S408 on the `rxtsource` arm (lane k75fix, 2026-09-30)
+
+The find-all loop's NON-EMPTY arm resumes at `<prefix>_next_pos(end - 1)`; the
+two `mc` count implementations are `tests/harness/driver.c` (C leg, **S407**
+reverts the arm to the raw `end`) and `tests/harness/verify_rxt.py`'s
+`_findall_protocol` (python leg, **S408** drops the continuation-byte skip).
+Both are detected by ONE check, `tests/rxtsource/run_rxtsource_tests.sh`'s
+mc/ill-formed-utf8 block over `mc_illformed_utf8.rxtin`, which needs both legs
+to agree with libpcre2-derived counts; the C plant loses the `a` cells to a
+K50 refusal, the python plant moves only `.` and `a|` (python steps over a
+non-`a` stray for free). Every well-formed find-all count and the byte-encoded
+encseam/backrefs/assertions drivers read `next_pos(end - 1) == end`, so they
+cannot see either plant. `SAB_REACH_POP` on both rows floors the fixture's
+stray-byte cells.

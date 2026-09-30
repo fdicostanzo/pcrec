@@ -11,6 +11,18 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 ---
 
+## K80 — OPEN, unscheduled (2026-09-30, lane pfx0) — the shared ABI block's include guard is the literal `PCREC_RX_ABI_H`, so a translation unit including two artifacts of DIFFERENT abi silently gets the first one's block
+
+**Witness:** docs/dev/lanes/pfx0_report.md (simulated with a mutated header: no diagnostic). The same-abi two-header case is checked and clean (run_codegen_tests.sh:437-520, :905+). No check covers the mixed-abi case. The fix shape is probably an abi-keyed guard or a static assert on the block's abi. Changing it is emitted scaffolding, so it is an abi event (D76/D94).
+
+---
+
+## K79 — OPEN, unscheduled (2026-09-30, lane pfx0) — the prefix LENGTH is an input to the VM entry-shape decision, so the same pattern gets a different artifact depending on its name
+
+**Witness:** `(foo|bar)[0-9]{2,5}(x)` at `-p rx` / a 23-char prefix / a 60-char prefix stamps VM_PROGRAM_BYTES 2517 / 3714 / 5823 and ENTRY_SHAPE inline / inline / plain (docs/dev/lanes/pfx0_report.md). The cause is not chased (a size budget read off emitted text that includes the prefix, presumably). It is a determinism defect independent of [PFX-1]'s byte saving: selection must not depend on the caller's name for the matcher.
+
+---
+
 ## K77 — INFRASTRUCTURE, watch (2026-09-30, lane k73tri, filed by lane admin86) — the harness's pcrec compile budget is a WALL budget, so it is load-sensitive
 `tests/lib/gen_timeout.sh`'s `pcrec_timeout_secs()` (D45) budgets a pcrec compile at 20 s of WALL clock (`PCRECTIMEOUT`; 60 s under a sanitizer axis). Lane k73tri measured `((a)|ab){4000}c` at ~3 s of CPU that hit the 20 s wall at load 13.8, scored as a HARNESS FAILURE though nothing about the compiler had changed. The old "0.38 s corpus worst case" the budget was calibrated against is stale (now ~3 s CPU for that pattern), so the margin is thinner than the comment claimed. **Status:** not fixed, no measured recurrence beyond that one. **If it recurs:** move the pcrec compile to a CPU-primary budget (watchdog `-c`, wall as a generous backstop) as D45 already does for the generated-code compile, rather than raising the wall number. Pattern: same class as K58 (a budget calibrated on a quiet box).
 
@@ -22,9 +34,11 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 ---
 
-## K75 — RULED M1 (D132, Frank 2026-09-30; fix owed, lane k75fix) (found by lane k73utf, 2026-09-29) — the spec find-all loop stops at a stray continuation byte after a non-empty match under `-e utf8`
+## K75 — FIXED 2026-09-30 (D132 ruling M1; lane k75fix, commits 4d3a5681..lane tip; protocol only, no abi event) (found by lane k73utf, 2026-09-29) — the spec find-all loop stops at a stray continuation byte after a non-empty match under `-e utf8`
 
 **Witness:** `a` on `a\x80a` under `-e utf8`: pcrec's find-all (the match_api.md protocol: next startpos = previous end) finds 1 match; libpcre2 10.46 with PCRE2_MATCH_INVALID_UTF finds 2. After the first match the next startpos is the stray `\x80`, and K73 ruling (a) keeps K50's refusal of an EXPLICIT startpos on a continuation byte. Pre-existing. **The question:** a STRAY continuation byte (ill-formed, not inside any character) is not "mid-character"; skipping forward there, while refusing only a true mid-character position inside a well-formed sequence, may be the principled line. Measure PCRE2 on both kinds first. Frank's ruling; ruling (a) itself stands.
+
+**FIXED (M1, Frank's D132 ruling 2026-09-30; measurement docs/dev/k75_measurement.md).** PCRE2 draws no line between a stray and a mid-character continuation byte, so the fix is not a new engine line: after a NON-EMPTY match the find-all loop of match_api.md §3.1 resumes at `<prefix>_next_pos(s, n, end - 1)` (from `end`, past continuation bytes) instead of `end`. No emitted byte changes, no abi event; a no-op on a well-formed subject. K50's refusal of a CALLER-passed non-boundary startpos is untouched, and §3.1 now states the rule outright (caller startpos must be a boundary; loop-computed positions always are; a continuation byte is never a match start). Sites: match_api.md §3.1 (+ the startpos bullet), rxt_format.md `mc`, docs/guide/using-the-matcher-from-c.md, the find-all drivers (tests/harness/driver.c, verify_rxt.py's `_findall_protocol`, tests/encseam/findall_driver.c, tests/assertions/gstart_findall.c, tests/codegen/entry_shape_driver.c, the backrefs §6 driver). Witnesses: six new `mc` cells in tests/rxtsource/fixtures/mc_illformed_utf8.rxtin (`a`, `.`, `a|` over `a\x80a` et al., counts from libpcre2 10.48 with MATCH_INVALID_UTF); sabotage S407 (C leg) and S408 (python leg). Report: docs/dev/lanes/k75fix_report.md. The opt-in START ALIGNMENT (D132 item 2) is chartered into [UTF-VALID], not this fix. K74 (empty-match family at an ill-formed subject end) is unchanged.
 
 ---
 

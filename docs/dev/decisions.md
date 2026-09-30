@@ -8839,3 +8839,74 @@ Frank: "I agree with you on all" (on the manager's ten-item status list). Source
 
 **D132 item 3, the start alignment, ruled** with it: spelled `-fstartpos-guard=align` (a third value of the existing axis beside refuse/off); it skips continuation bytes only, forward, once at entry.
 **Framing (Frank, correcting the manager's):** the option's purpose is NOT to tolerate invalid UTF-8; it is to cope with a MISALIGNED POINTER into valid text (a caller that split a buffer on arbitrary bytes). So there is NO validation carve-out: the character the pointer landed inside lies BEHIND it, and validation — including Q1's `[aligned − LB, n)` step-back — runs behind the pointer exactly as for any startpos. Bytes behind the pointer are the caller's real text and are checked as such; a buffer that itself begins mid-character is ill-formed data, and the validator reports it.
+
+## D134 — [UCP] U3 chartered as a CAPABILITY route, queued behind [UTF-VALID] (Frank, 2026-09-30, eighty-seventh session)
+
+**Context.** The U3 island hand-twin (docs/design/ucp_measurements/u3_island_twin.md) was measured NOT a speed win where an all-byte DFA exists (slower in 14/16 cells, 1.2-1.65x on latin1/mixed). Where NO all-byte form exists (non-byte-expressible context, UCP `\b`), today's route is the VM hybrid. There the island DFA is 4-5x faster on ASCII/latin1 and 1.35-2.8x slower on mixed/CJK, where the hybrid's prefilter skips text. Its answers are libpcre2-identical.
+
+**RULED (Frank's summary: "the island is slower than dfa but sometimes adds capability dfa doesn't have allowing us to avoid vm").** Option (a):
+1. U3 is built ONLY for patterns with no all-byte DFA form. Where an all-byte form exists, it stays the choice; the island never competes with it.
+2. The island is chosen over the VM hybrid by a ROW in the engine-selection first-match table (memory pcrec-decisions-as-first-match-tables). The row's predicate is MEASURED first: the lane locates the island-vs-hybrid break-even (text class, prefilter strength) before the row lands, so the island is selected only where it beats the VM.
+3. Sequencing: after [UTF-VALID] lands (both touch the utf8 entry scaffolding).
+
+## D135 — the drop-the-prefilter size-ladder rung, and a FAST-OR-FAIL switch over every degrading rung (Frank, 2026-09-30, eighty-seventh session)
+
+**Context.** After [CLS-TREE] S4, `(\p{Xwd})` under `-e utf8` is refused at default settings on total emitted bytes (1,026,701 > 1,000,000). Almost all of that is the VM hybrid's byte-DFA prefilter (docs/dev/lanes/s4build_report.md §3). The size-cap attempt ladder in `compile_driver` already has rungs that trade run speed for size: [OPT-4]/[SEL-1] prefilter collapse (denied by `-fno-prefilter-collapse`), [K53-SELRETRY]'s optional-contributor drop, and [K59-PREMUL]'s premultiplied-table drop.
+
+**RULED.**
+1. **A new, general rung: drop the VM hybrid's prefilter** when the artifact is over the size cap. It is not an Xwd special case. It goes LAST among the rungs, because it is a pure speed loss, after the rungs that cost less at run time. The lane measures every rung's run-time cost to confirm that order, and the stamp names the rung, following the existing `*_WHY "size cap retry, ..."` pattern.
+2. **FAST-OR-FAIL (Frank: "i want to be able to turn off the dropping rung attempts. sometimes you want it fast-or-fail").** One caller switch denies EVERY rung that makes the artifact slower to make it fit, the existing ones and this one alike. With the switch set, an over-cap pattern is refused rather than shipped degraded. The existing per-rung denies stay. The switch is the general mechanism over them, one predicate on the ladder's rows (memory pcrec-decisions-as-first-match-tables), not a list of special cases. Rungs that cost no run-time speed are not "degrading" and stay allowed; the lane classifies each rung with measurements, and the spec lists the classification. Spelling and spec: the lane proposes and the manager rules (D80: the spec hunk lands in the same change).
+
+## D136 — two opt-in checks wired into counted runs (Frank, 2026-09-30, eighty-seventh session)
+
+**Context.** docs/dev/lanes/silentred_report.md: `test-encoding-checks` and `test-recursion-identity` were both red on main, and nobody noticed, because neither is in `make test` (only mech arms and hand runs reach them). This is the second time an opt-in gate has gone silently stale (the D118 -> [VAR] revival had PAIRS=0 for two days).
+
+**RULED (as recommended).**
+1. `test-encoding-checks` joins `TEST_SECTIONS`, so it runs in `make test` and in CI (+~10 min, bounded by `ENC_MAX_BLOCKS=250`).
+2. `test-recursion-identity` joins the merge battery (`scripts/battery.sh`), not `make test` (it builds two reference compilers, ~35 min).
+
+## D137 — parked rows: satisfy their measurement and bench needs; every optimization row lives under [OPTLOOP] (Frank, 2026-09-30, eighty-seventh session)
+
+**Context.** Eight rows sat STATE:started but parked (OPT-3, OPT-5, TT-4M, ENG-ISL, DD-13, DD-13b.W1.3, the OPTLOOP parent, ENG-ABS). Each had shipped a piece and was waiting on a measurement, a bench cell, a sequencing word or a hold.
+
+**RULED (Frank: "lets get the measurement and bench needs satisfied for these. the opt lanes that are not under the umbrella of the optloop (if any) need to be put there for when we start that up- measured decisions").**
+1. The measurements and bench cells these rows wait on are COMMISSIONED now, not left as triggers nobody pulls: pcrec-side measurements as lanes (heavy runs on ubuntubudu), bench-side needs as I-notes to pcrecdev2 through the inbox (D78).
+2. Every optimization row outside [OPTLOOP] (including parked OPT-* rows, ENG-ABS's first mechanism, and not-started opt rows) moves under the [OPTLOOP] umbrella as a CANDIDATE for its next cycle, carrying its measured evidence and its measurement need. D125's hold on the next cycle is unchanged. When the cycle opens, its selection is by measurement (D119).
+3. Non-optimization parked rows (DD-13/DD-13b, TT-4M harness timing) keep their own homes, but their measurement needs are commissioned too.
+
+## D138 — [CLS-TREE] S2 rulings Q1-Q4 (Frank, 2026-09-30, eighty-seventh session)
+
+Context: lane clss2 (docs/dev/lanes/clss2_report.md on lane/clss2). D129 (the fold becomes a kit member, `-fno-cls-fold` retires) and D131 item 5 (the kit's byte forms are for size-leaning positions only; the default byte-class form stays a table) disagreed about the default fold once S2 landed.
+
+1. **Q1, the default form for caseless-letter VM class sites = (C), MEASURE FIRST.** The default positions (0/+1/+2) keep the fold, byte-identical; the kit's CUBES serve all 8 one-cube classes at -2/-1. The default fold is ONE ROWS row, so a later flip is one row. Lane formchar2 measures it (instruction counts: fold 4, atom 3 on x86 / 4-6 on arm64; size: fold -5.6..-6% .text on ci-256; population: 19 default-route patterns, none hot). Frank rules the default on its timing. The manager's first framing ("the size loss is large, 20%") was corrected to the measured ~6% .text.
+2. **Q2 = the 'byte-range' ROWS row first, at every position**: one-interval classes stay inline, `vm_cls_shape` retires into ROWS + TAB_ROWS, and 'byte-table' at 0..+2 means today's TAB_ROWS choice. Accepted AS BUILT, including the 10 default movers (utf8 wide classes that are one interval <= U+00FF: a B1 table became one compare).
+3. **Q3 = (a)**: `-fno-cls-fold`, bit 24 and `RX_VM_CLS_FOLDS` are KEPT until Q1's measurement rules. If the default flips to table, they retire in that change (the bit left unassigned with a "retired" comment, no alias). If the fold stays, the flag stays permanently as that row's deny.
+4. **Q4 = accepted as built**: a scan-edge axis-I `kit` body ahead of 'bitmap', at -2/-1 only, for non-range classes; `-fno-cls-kit` denies it; its own commit and abi event; default DFA artifacts unchanged.
+
+## D139 — [CLS-TREE] S2 review fixes: the kit only where smaller; the scan edge consumes the general class table's form directly (Frank, 2026-09-30, eighty-seventh session)
+
+Context: review r3 (docs/dev/reviews/2026-09-30-r3-cls-tree-s2.md). No answer mover. But (E-M3) the byte-kit row was taken unconditionally at -2/-1 and measured BIGGER than the table on 4 of 5 witnesses (+108..+352 B), and (E-M2) the scan edge's own body table (dfa_scans[]: its own `range` predicate, the kit via ROWS, else a 256-byte bitmap) sent ROWS' byte-fold pairs to the largest form at -2.
+
+**RULED.**
+1. **The byte-kit row gets the smaller-than predicate** the wide rows already carry (P3_SMALLER's shape). The kit is chosen at -2/-1 only where it is smaller than the table choice. The dead `> 255u` bound in the byte kit goes. The -2/-1 census reports BYTES. This narrows D131 item 5's premise: the kit's byte forms are the size form only where measured smaller.
+2. **The scan edge has NO class decision and NO mapping of its own** (Frank: "does it need a mapping? why can't it use the same structure the table recommends?"). It asks the general class table (ROWS) for the class's form at the artifact's position, and emits that form through the SAME emitter the VM uses: range compare, fold compare, kit matcher, table read. `dfa_scans[]`'s class bodies and `pcrec_scan_range` as a selector retire. What stays scan-edge-specific is only the loop around the test.
+   - The TABLE REPRESENTATION (256-byte byte table vs 32-byte bitmap vs shared atom) is a row of the general table's table-choice sub-table (TAB_ROWS), not a scan-edge special case. The current per-context choice is kept as that row's predicate unless measured otherwise.
+   - Default positions: D138 Q1 still holds (the default fold is the one ROWS row a later measurement flips). Where the VM's and the scan edge's spellings of the same form differ in text, ONE spelling serves both (the tighter), and any default artifact whose text moves is measured and reported (it is an abi event; its answers must be identical).
+3. `-fno-cls-fold` / `-fno-cls-kit` deny their ROWS rows wherever the table is read, on the VM and the DFA alike. The spec says so, and the stale "VM-route only" text is fixed.
+
+## D140 — [PF-KNOW] chartered: a speculative research lane on what a successful prefilter PROVES to the VM, and DFA/VM class-table sharing (Frank, 2026-09-30, eighty-seventh session)
+
+**Charter (Frank's words):** "when we use prefilter on a vm, is there elements of the vm that can presume certain conditions apply such that they can skip certain tests in such a way as to make the operation faster? For instance, if the pre filter is successful, one can presume a fixed prefix matches and skip ahead to the next piece. But if we trace the pre filter with the vm, there might be other pieces that we can prove as well such as class membership, even special case dfa-approved look-arounds. Another element- if the dfa uses class tables, is there overlap to allow the same table for vm? My strong guess is no but I'd like that validated."
+
+**Shape.** RESEARCH ONLY: a design/measurement note, no src/ change, no scheduling of a build. The model is fable at high effort (Frank's choice). It is filed as an [OPTLOOP] candidate (D137), and its output feeds the next cycle's measured selection (D119). Its conclusions must be measured: the dynamic frequency of each skippable test on the corpus/bench-derived patterns, and an upper-bound speedup from a hand twin where cheap. Refutations are an acceptable result, including of the manager's and Frank's own guesses.
+
+## D141 — [EST-REGISTRY] chartered, UNSCHEDULED: one table for every estimation weight, bias, threshold and fitted constant (Frank, 2026-09-30, eighty-seventh session)
+
+**Context.** Frank: "can we save our weights, bias, etc for estimations in a single table? i am concerned there are a bunch of magic numbers scattered around for this". Today clskit.c's `PLACE` struct (src/gen/clskit.c:76-118) is one home with provenance comments, for the class kit only. Limits already have the general shape: limits.h plus the D107 detector (tests/registry/limits_check.sh). Every other estimator (engine-selection costs, reseed thresholds, prefilter and size estimates such as the size-cap diagnostic's source-to-.o ratio, DFA/VM cost terms) keeps its numbers inline or local.
+
+**CHARTERED, UNSCHEDULED (Frank: "charter it, but unscheduled").** When scheduled:
+1. A census of every estimation/selection constant: where it lives, and whether its provenance is written anywhere.
+2. One registry, `estimates.def` (the X-macro shape of facts.def/axes.def). Each row: name, value, units, kind (RULED by Frank / FITTED by measurement), provenance for fitted values (data set, box, date, residuals), and the citing decision. `PLACE` folds into it.
+3. A D107-style detector that flags numeric literals in estimator/selection code not drawn from the registry.
+4. Visible through `--list` ([LIST-TABLES]).
+No artifact changes: a refactor plus a check, with identity proven by the sweep. Until it is scheduled, new estimation constants go into `PLACE` or carry their provenance inline.

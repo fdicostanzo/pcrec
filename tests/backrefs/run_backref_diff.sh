@@ -429,7 +429,7 @@ int main(int argc, char **argv)
         if (++guard > 4096) { printf(" LOOP"); break; }
         if (rx_search(buf, n, pos, caps) != 1) break;
         printf(" %td,%td", caps[0][0], caps[0][1]);
-        pos = (caps[0][1] > caps[0][0]) ? (size_t)caps[0][1]
+        pos = (caps[0][1] > caps[0][0]) ? rx_next_pos(buf, n, (size_t)caps[0][1] - 1)
                                         : rx_next_pos(buf, n, (size_t)caps[0][1]);
     }
     printf("\n");

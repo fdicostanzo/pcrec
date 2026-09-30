@@ -580,8 +580,9 @@ byte of `s`.
   `ctx->pos`, so a caller cannot reach the permissive behaviour by choosing a
   different entry; §10's `_in` entries inherit it from the bodies they share.
 - **`<prefix>_next_pos` (§3.1.1) is the supported way to produce a valid
-  `startpos`**, and the find-all loop above already uses it — which is why
-  that loop is unaffected by this rule in either direction.
+  `startpos`**, and the find-all loop above uses it on BOTH arms — which is why
+  that loop is unaffected by this rule in either direction, ill-formed
+  subjects included ([K75]).
 - **`-fno-startpos-guard` selects the other semantics**, and it is a real
   alternative rather than a way to switch a check off: the artifact then
   answers at whatever position the caller named, with the automaton's own
@@ -766,23 +767,64 @@ while (p <= n) {
     int r = <prefix>_search(s, n, p, caps);
     if (r != 1) break;                       /* 0 = done; < 0 = gave up (§4) */
     report(caps[0][0], caps[0][1]);
-    p = (caps[0][1] > caps[0][0])            /* non-empty: resume at its end */
-          ? (size_t)caps[0][1]
-          : <prefix>_next_pos(s, n, (size_t)caps[0][0]);   /* EMPTY: next char */
+    p = (caps[0][1] > caps[0][0])            /* non-empty: resume at its end, */
+          ? <prefix>_next_pos(s, n, (size_t)caps[0][1] - 1)  /* boundary-aligned */
+          : <prefix>_next_pos(s, n, (size_t)caps[0][0]);     /* EMPTY: next char */
 }
 ```
 
+**The non-empty arm is aligned, and the alignment is a no-op on a well-formed
+subject** ([K75], D132). A non-empty match ends at a character boundary of a
+well-formed subject, so `<prefix>_next_pos(s, n, end - 1)` — which is *from
+`end`, skip every continuation byte* (§3.1.1) — returns `end` itself under
+`byte` (where it is `end - 1 + 1`) and under `utf8`. It differs only where
+the match ends immediately before a STRAY continuation byte, one that no lead
+byte claims: there the loop steps over the stray to the next non-continuation
+byte instead of handing the engine a `startpos` the guard below refuses. Left
+unaligned the loop stopped at the stray (`PCREC_ERR_STARTPOS`, `r < 0`) and
+lost every later match: `a` over `a\x80a` under `-e utf8` reported 1 match
+where libpcre2 with `PCRE2_MATCH_INVALID_UTF` driven through this same loop
+reports 2. The subtraction cannot underflow because a non-empty match has
+`end >= 1`, and `end - 1 < n` keeps `<prefix>_next_pos` in its
+boundary-skipping domain (`pos >= n` is where it returns `pos + 1`).
+
+**WHERE THE BOUNDARY RULE IS ENFORCED AND WHERE IT IS NOT** ([K75], D132; the
+guard itself is [K50], §3.1's startpos paragraph). Three sentences, each a
+separate fact:
+
+- **A `startpos` the CALLER passes in must be a character boundary** of the
+  artifact's encoding. A caller who names a continuation byte is REFUSED with
+  `PCREC_ERR_STARTPOS`, whether that byte is inside a well-formed character or
+  a stray. (libpcre2 draws no line between the two either: without
+  `PCRE2_MATCH_INVALID_UTF` both are `PCRE2_ERROR_BADUTFOFFSET`, with it both
+  are advanced; `docs/dev/k75_measurement.md`.)
+- **The positions THIS LOOP computes are always boundaries**: `0` (or the
+  offset-0 rule's own start), a match end aligned as above, and the
+  `<prefix>_next_pos` advance. So the loop never triggers the refusal, on a
+  well-formed subject or an ill-formed one, and a caller who writes it as
+  shown never sees `PCREC_ERR_STARTPOS` from it.
+- **A continuation byte is never a match START.** Every position the engine
+  generates is a character start (§3.1's paragraph on the engine's own
+  positions), so stepping over a continuation byte, as the loop now does after
+  a non-empty match and as `<prefix>_next_pos` always did after an empty one,
+  cannot lose a match. (The empty-match family at an ill-formed subject END is
+  a separate matter, [K74], and is not changed by this.)
+
 **The empty-match advance rule**: a zero-length match is reported like
 any other, and then the next search starts at the next CHARACTER boundary
-past its start. Note that the advance is off the match's own START
+past its start (after a NON-EMPTY match it starts at the first boundary at or
+after its end, per the aligned arm above). Note that the advance is off the match's own START
 (`caps[0][0]`), not off the loop variable — an empty match can be found at
 a position later than the one searched from. The loop terminates because
 `p` moves strictly forward every iteration (§3.1.1's contract makes
 `<prefix>_next_pos` return a position strictly greater than the one it was
 given) and `p > n` ends it.
 
-That loop, coded exactly as written above, was compiled against real
-artifacts and run against `python3 re.finditer` on twenty-six
+That loop, coded exactly as written above (its aligned non-empty arm is
+[K75]'s later, well-formed-subject no-op change; the twenty-six pairs below
+are `byte`-encoded and read the same under it, and the ill-formed-subject
+witnesses are `tests/rxtsource/fixtures/mc_illformed_utf8.rxtin`), was
+compiled against real artifacts and run against `python3 re.finditer` on twenty-six
 (pattern, subject) pairs, on BOTH engines — each pattern compiled twice,
 captures-on and `--no-captures`, for 52 runs. Twenty-two agree with
 `re.finditer` span for span, including the three that motivate the rule:

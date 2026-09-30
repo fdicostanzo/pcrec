@@ -43,6 +43,8 @@ def protocol(rx, s):
         # The advance is off the MATCH's own start, not off the loop
         # variable: an empty match can be found later than the position
         # searched from.
+        # [K75] the driver's non-empty arm is `next_pos(end - 1)`; under the
+        # byte encoding that IS `m.end()`, so this side is unchanged.
         p = m.end() if m.end() > m.start() else m.start() + 1
     return out
 
