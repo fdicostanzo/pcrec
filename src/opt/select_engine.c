@@ -238,6 +238,9 @@ static const RegRow *first_dfa_excluding(const Ast *a)
         if (a->k == A_CALL && a->u.call.link == CALL_SPLICE) return NULL;
         if (a->reg && !(a->reg->engines & ENGM_DFA)) return a->reg;
         switch (a->k) {
+        /* [CLS-TREE] S3: made by the encoding lowering, below this pass. */
+        case A_WCLASS:
+            return NULL;
         case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
         case A_CTX: case A_GSTART: case A_KRESET:
         /* [M6.5.2] A LEAF, and its OWN stamp is what excludes the DFA — the

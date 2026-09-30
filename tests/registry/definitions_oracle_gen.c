@@ -250,7 +250,7 @@ static void respell(unsigned byte, bool prefer_literal, char *out, size_t outsz)
  * "The decoded value comes off the textfn's own output AST bitmap" (the
  * ruling's own words) is this function, read literally — never a second
  * hex/octal/xor decode written here alongside the real one. */
-static int textfn_byte(const Ast *out)
+static int textfn_byte(Ctx *cx, const Ast *out)
 {
     if (!out || out->k != A_CLASS) return -1;
     /* [M5.0 stage 1] The A_CLASS payload is a code-point INTERVAL LIST now
@@ -265,7 +265,7 @@ static int textfn_byte(const Ast *out)
      * "any other shape" answer and the right one: the caller reports it as a
      * harness defect, and a textfn producing one under `--encoding=byte`
      * would be exactly that. */
-    return pcrec_cls_single(out);
+    return pcrec_cls_single(cx, out);
 }
 
 /* One DEFK_TEXTFN row, over its sampled operand set (or all 256 for bare
@@ -333,7 +333,7 @@ static void textfn_cells(const RegRow *r, const RegDef *d,
         pcrec_parse_mods_init(&cx);
 
         Ast *out = d->textfn(op, strlen(op), &cx);
-        int byte = textfn_byte(out);
+        int byte = textfn_byte(&cx, out);
 
         pcrec_arena_free(&cx.arena);
         free(cx.job);

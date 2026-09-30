@@ -332,7 +332,7 @@ static RbRuns rr_alt(RbRuns l, RbRuns r)
  * is what keeps the rightmost pick correct across an arbitrarily long spine
  * without a second pass — and, for the runs, what makes each step an ordinary
  * concatenation with the accumulated right-hand side. */
-static RbVal rb_walk(const Ast *a)
+static RbVal rb_walk(Ctx *cx, const Ast *a)
 {
     RbVal acc;
     acc.set  = rb_empty();
@@ -344,7 +344,7 @@ static RbVal rb_walk(const Ast *a)
             /* `a->r` is to the RIGHT of everything still to be walked and to
              * the LEFT of everything in `acc`, which is why the union and the
              * concatenation are spelled in this order and not the other. */
-            RbVal r = rb_walk(a->r);
+            RbVal r = rb_walk(cx, a->r);
             acc.set  = rb_union(r.set, acc.set);
             acc.runs = rr_cat(r.runs, acc.runs);
             a = a->l;
@@ -352,6 +352,10 @@ static RbVal rb_walk(const Ast *a)
         }
         case A_CAP:
         case A_ATOMIC:
+        /* [CLS-TREE] S3: TRANSPARENT to its byte child, which is exactly
+         * what sat in this slot before the kind existed, so the walk
+         * continues as it did then. */
+        case A_WCLASS:
             /* Transparent: a group matches what its body matches, and an
              * atomic cut removes MATCHES rather than bytes, so every string
              * the group matches is one the body matches. */
@@ -359,14 +363,14 @@ static RbVal rb_walk(const Ast *a)
             continue;
         case A_ALT: {
             const Ast *t = a->l;
-            RbVal r = rb_walk(a->r), b;
+            RbVal r = rb_walk(cx, a->r), b;
             while (t->k == A_ALT) {
-                b = rb_walk(t->r);
+                b = rb_walk(cx, t->r);
                 r.set  = rb_intersect(b.set, r.set);
                 r.runs = rr_alt(b.runs, r.runs);
                 t = t->l;
             }
-            b = rb_walk(t);
+            b = rb_walk(cx, t);
             r.set  = rb_intersect(b.set, r.set);
             r.runs = rr_alt(b.runs, r.runs);
             acc.set  = rb_union(r.set, acc.set);
@@ -386,7 +390,7 @@ static RbVal rb_walk(const Ast *a)
              * before, and its run contribution is taken here rather than by
              * falling through. */
             if (a->u.rep.rmin >= 1) {
-                RbVal b = rb_walk(a->l);
+                RbVal b = rb_walk(cx, a->l);
                 RbRuns rep = rr_none();
                 rep.best = b.runs.best;
                 acc.set  = rb_union(b.set, acc.set);
@@ -406,7 +410,7 @@ static RbVal rb_walk(const Ast *a)
             acc.runs = rr_cat(rr_none(), acc.runs);
             return acc;
         case A_CLASS: {
-            int b = pcrec_cls_single(a);
+            int b = pcrec_cls_single(cx, a);
             if (b < 0) {
                 /* A class of more than one member contributes no byte and no
                  * run, and it also BREAKS contiguity for everything around
@@ -456,9 +460,9 @@ static RbVal rb_walk(const Ast *a)
  * (`RbRun`, at most `PCREC_MAX_REQ_RUN_SCAN` bytes stored). Both are the
  * EMPTY answer where nothing is necessary, which disables every check built
  * on them and is always sound. Reads no prior and no option. */
-void pcrec_req_walk(const Ast *root, RbSet *set, RbRun *run)
+void pcrec_req_walk(Ctx *cx, const Ast *root, RbSet *set, RbRun *run)
 {
-    RbVal v = rb_walk(root);
+    RbVal v = rb_walk(cx, root);
     *set = v.set;
     *run = v.runs.best;
 }

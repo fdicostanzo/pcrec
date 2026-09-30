@@ -159,6 +159,17 @@ construction (src/ir) and emission (src/gen).
   the one pass in this compiler that knows how an encoding spells a character.
   (`docs/design/utf8_design.md` §2.1, §2.1.2, §2.3.)
 
+  **[CLS-TREE] S3 (2026-09-29): IT IS THE ONE PRODUCER OF `A_WCLASS`.**
+  `lower_class_utf8` wraps its non-empty byte rewrite in `wclass_of`: an
+  `A_WCLASS` over the replaced class's own (shared) code-point set with the
+  rewrite as its child. The splice is still one pointer into a leaf slot, so
+  R2's group-root signature holds (`cap_sig` walks through the wrapper); the
+  empty-set case stays a byte-confined empty `A_CLASS`; the byte instance
+  never reaches it. `lower_walk` and `subtree_is_identity` refuse the kind
+  loudly (the pass never re-walks its own product; a revbody is built above
+  it). Every reader below walks the child, byte-identically
+  (`docs/dev/lanes/s3build_report.md`).
+
   **[M5.0] STAGE 2 LANDED THE UTF8 INSTANCE.** The file is now a `LowerOps`
   TABLE — one row per encoding, selected once by id, no `if (enc == UTF8)`
   anywhere (DD-12 (7) in the pass, mirroring the emitter's sealed backends).

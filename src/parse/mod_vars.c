@@ -227,6 +227,7 @@ static void vars_assign(Ctx *cx, Ast *a)
         case A_BREF: case A_VAR: case A_CALL:
             return;
         case A_CAP: case A_REP: case A_ATOMIC: case A_LOOK:
+        case A_WCLASS:   /* [CLS-TREE] S3: never at parse time; its child */
             a = a->l;
             continue;
         case A_CAT: case A_ALT: {

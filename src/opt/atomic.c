@@ -78,6 +78,7 @@ bool pcrec_has_atomic(const Ast *a)
          * new door. */
         case A_LOOK:
         case A_CAP: case A_REP:
+        case A_WCLASS:   /* [CLS-TREE] S3: its byte child holds no cut */
             a = a->l;
             continue;
         /* [DD-14] DECLINES, and the decline is the WHOLE-TREE RULE (design
@@ -159,6 +160,7 @@ bool pcrec_has_lookaround(const Ast *a)
         case A_VAR:
             return false;
         case A_CAP: case A_REP: case A_ATOMIC:
+        case A_WCLASS:   /* [CLS-TREE] S3: its byte child holds no lookaround */
             a = a->l;
             continue;
         /* [DD-14] DECLINES, `pcrec_has_atomic`'s whole-tree argument verbatim
@@ -232,6 +234,7 @@ bool pcrec_has_collapsible_rep(const Ast *a)
         case A_VAR:
             return false;
         case A_CAP: case A_ATOMIC:
+        case A_WCLASS:   /* [CLS-TREE] S3: its byte child holds no repeat */
             a = a->l;
             continue;
         case A_LOOK:
@@ -306,6 +309,7 @@ bool pcrec_ast_stamped_by(const Ast *a, const RegRow *row)
          * the loop has already answered for the A_LOOK node itself. */
         case A_LOOK:
         case A_CAP: case A_REP: case A_ATOMIC:
+        case A_WCLASS:   /* [CLS-TREE] S3: its byte child carries no stamp */
             a = a->l;
             continue;
         /* [DD-14] DECLINES — and here the decline costs NOTHING AT ALL, which
@@ -458,6 +462,7 @@ static Ast *dis_walk(DischargeSet *d, Ast *a)
      * unmeasured rewrite riding a verdict computed for a different question. */
     case A_LOOK:
     case A_CAP: case A_REP:
+    case A_WCLASS:   /* [CLS-TREE] S3: its byte child holds no cut */
         a->l = dis_walk(d, a->l);
         return a;
     /* [DD-14] LEXICAL ONLY (design §4.4a site 11): the node is visited AS
@@ -595,6 +600,7 @@ bool pcrec_has_bref(const Ast *a)
          * from an approximation that is not even a sound superset. */
         case A_LOOK:
         case A_CAP: case A_REP: case A_ATOMIC:
+        case A_WCLASS:   /* [CLS-TREE] S3: its byte child holds no backreference */
             a = a->l;
             continue;
         /* [DD-14] DECLINES, the whole-tree rule again (design §4.4). A
@@ -662,6 +668,9 @@ void pcrec_bref_mark(const Ast *a, bool *mark, int nmark)
          * re-admitted through a lookaround body. */
         case A_LOOK:
         case A_CAP: case A_REP: case A_ATOMIC:
+        /* [CLS-TREE] S3: reached below the lowering (the VM emitter asks);
+         * its byte child holds no reference, so it marks nothing. */
+        case A_WCLASS:
             a = a->l;
             continue;
         /* [DD-14] MARKS `u.call.target` AND DESCENDS NOWHERE (design §4.3).
@@ -864,6 +873,7 @@ bool pcrec_has_live_capture(const Ast *a)
          * `(?=(a))a` on "a" answers g1 = (0,1) — an assertion that SUCCEEDS
          * leaves its captures set — so its body is walked like any other. */
         case A_ATOMIC:
+        case A_WCLASS:   /* [CLS-TREE] S3: its byte child holds no group */
             a = a->l;
             continue;
         case A_CAT:
@@ -929,6 +939,7 @@ bool pcrec_has_linked_call(const Ast *a)
             return false;
         case A_LOOK:
         case A_CAP: case A_REP: case A_ATOMIC:
+        case A_WCLASS:   /* [CLS-TREE] S3: its byte child holds no call */
             a = a->l;
             continue;
         case A_CAT:
@@ -965,6 +976,7 @@ bool pcrec_has_call(const Ast *a)
             return false;
         case A_LOOK:
         case A_CAP: case A_REP: case A_ATOMIC:
+        case A_WCLASS:   /* [CLS-TREE] S3: its byte child holds no call */
             a = a->l;
             continue;
         case A_CAT:

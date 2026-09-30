@@ -342,3 +342,27 @@ All eight recommendations ADOPTED as written:
 - D-6: the five `default:` switches become full enumerations.
 - D-7: S3 builds AFTER both lane/ucpu2 (U2) and lane/clss1 (S1) merge to main.
 - D-8: the (encoding, features) triple-sweep identity instrument is its OWN small lane FIRST (lane clsid). It is committed with a REACH counter and a positive control, and its baseline is recorded on main before S3 starts.
+
+## 11. Build-time corrections (lane s3build, 2026-09-29)
+
+The S3 build measured two rows of §3 wrong. Both are in the lane report
+(`docs/dev/lanes/s3build_report.md` §2) with their witnesses; this section
+exists so a later reader of the table is not misled by it.
+
+- **Rows 5 and 6 (`vm_det_seq`, `vm_cap_offsets`) are W, not U.** They run
+  for the CURSOR rung on ANY quantifier body (`vm_cursor_fits`), not only on
+  a revdet-approved one, so a lowered wide class reaches them: `(é)+` under
+  `-e utf8` is a two-byte deterministic stride today. The D-1 loud arm would
+  have REFUSED that pattern; a decline would have moved its artifact off the
+  cursor rung (measured: `(é)+`, `é{3}`, `(?:é)+x`, `x(?:é)*y` all move).
+  Both walk the child; `run_wclass_census.sh` W2 is the witness.
+- **§4's "u.cls is the arena zero" does not hold for a union.** Every member
+  of `Ast.u` starts at offset 0, so `u.wcls` and `u.cls` alias and a `u.cls`
+  read on an `A_WCLASS` returns its set, not the empty class. What makes a
+  set-reading mistake loud is the KIND guard in the three readers, not the
+  member's distinctness; the distinct member buys that no `u.cls.` grep or
+  review names the wide set by accident.
+
+The other U rows (11, 27, 34, 35, 38, 39) held: each runs above the lowering
+or over a revdet body the lowering keeps byte-level, and each now refuses the
+kind by `pcrec_wcls_misplaced`.

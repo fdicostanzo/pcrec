@@ -23,6 +23,10 @@
 # (utf8-only), and the corpus is structurally blind — which is §8.2's whole
 # point for this row: the detector is the STAMP-READING check (check 3 /
 # run_encoding_checks.sh's clamp-stride probe), not any answer.
+# RE-ANCHORED at [CLS-TREE] S3 (2026-09-29, lane s3build): the lowering's
+# non-empty return became `return wclass_of(lc, a, res);` (the A_WCLASS
+# wrapper over the rewrite). BEFORE and AFTER both end on that line, so the
+# plant still loosens the byte CHILD, which is what every reader walks.
 SAB_ID="S-U8-mrl-bound-loosened-utf8"
 SAB_FILE="src/opt/lower_enc.c"
 SAB_SUITES="codegen encoding"
@@ -38,7 +42,7 @@ SAB_BEFORE='            if (bl.n > 1) {
                 seal->r = res;
                 res = seal;
             }
-            return res;'
+            return wclass_of(lc, a, res);'
 SAB_AFTER='            {   /* SABOTAGE S-U8: a matches-nothing branch — language
                  * identical, minw of the alternation loosened to 1 */
                 Ast *alt = pcrec_ast_node(lc->cx, A_ALT);
@@ -54,4 +58,4 @@ SAB_AFTER='            {   /* SABOTAGE S-U8: a matches-nothing branch — langua
                 seal->r = res;
                 res = seal;
             }
-            return res;'
+            return wclass_of(lc, a, res);'

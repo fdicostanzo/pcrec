@@ -98,6 +98,10 @@ static int ew_walk(const Ast *a)
         }
         case A_CAP:
         case A_ATOMIC:
+        /* [CLS-TREE] S3: TRANSPARENT to its byte child, which is exactly
+         * what sat in this slot before the kind existed, so the walk
+         * continues as it did then. */
+        case A_WCLASS:
             a = a->l;
             continue;
         case A_ALT: {

@@ -335,7 +335,7 @@ echo "== CHECK 2: pcrec_cls_bits is the sole path from a class node to a bitmap 
 # produce 32 bytes. Both are needed: the family floor is the "every AFTER site
 # goes through an accessor" claim, and the bitmap floor is the one that would
 # notice a render site quietly reaching past the helper.
-FAM='pcrec_cls_bits(\|pcrec_cls_bits_widen(\|pcrec_cls_single(\|pcrec_cls_has('
+FAM='pcrec_cls_bits(\|pcrec_cls_bits_widen(\|pcrec_cls_single('
 NFA_FAM="$(grep -c "$FAM" "$SRC/ir/nfa.c" || true)"
 VM_FAM="$(grep -c "$FAM" "$SRC/gen/emit_vm.c" || true)"
 TOT=$(( ${NFA_FAM:-0} + ${VM_FAM:-0} ))
@@ -374,8 +374,10 @@ fi
 #                    reaching this check's corpus sweep for the first time)
 #
 # Everything else — every emitter, the NFA builder, the two DECLINE analyses —
-# reaches a class ONLY through `pcrec_cls_bits`, `pcrec_cls_bits_widen`,
-# `pcrec_cls_single` or `pcrec_cls_has`.
+# reaches a class ONLY through `pcrec_cls_bits`, `pcrec_cls_bits_widen` or
+# `pcrec_cls_single` (`pcrec_cls_has`, which had no caller, was deleted at
+# [CLS-TREE] S3; an `A_WCLASS`'s set is `u.wcls`, read only through
+# `pcrec_wcls_set`).
 ALLOW='src/core/internal.h|src/core/cpset.c|src/parse/parse.c|src/opt/altcls.c|src/opt/lower_enc.c|src/parse/ctxnode.c'
 # Run from ROOT_DIR over the relative path `src`, so grep's output prefixes
 # are the relative names the allowlist is written in — matching an absolute
@@ -387,13 +389,14 @@ if [ -n "$OFFENDERS" ]; then
     bad "[2b] a file outside the allowlist reads the A_CLASS payload directly. Rendering a class node is pcrec_cls_bits's job and its assertion is the only thing standing between this tree and r54 E1's recurrence:"
     printf '%s\n' "$OFFENDERS" | head -10 >&2
 else
-    ok "[2b] no file outside the allowlist touches u.cls — every other consumer goes through the four accessors"
+    ok "[2b] no file outside the allowlist touches u.cls — every other consumer goes through the three accessors"
 fi
 
 # 2c. THE ASSERTION SHIPS ENABLED (§13 obligation 5: *"an assertion compiled
 # out in the build everyone runs is a comment"*). It must be a `pcrec_ctx_fail`, not
 # an `assert`, and it must be in the render helper rather than in a caller.
-if grep -A6 'void pcrec_cls_bits(Ctx \*cx, const Ast \*a, uint8_t out\[32\])' "$SRC/core/cpset.c" \
+# (-A8, was -A6: [CLS-TREE] S3 put the A_WCLASS kind guard first in the body.)
+if grep -A8 'void pcrec_cls_bits(Ctx \*cx, const Ast \*a, uint8_t out\[32\])' "$SRC/core/cpset.c" \
      | grep -q 'pcrec_ctx_fail'; then
     ok "[2c] pcrec_cls_bits's out-of-range check is a pcrec_ctx_fail — it ships enabled in every build"
 else

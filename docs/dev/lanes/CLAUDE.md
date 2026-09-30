@@ -3519,3 +3519,10 @@ never edited afterwards.
   78.4 s -> 0.37 s CPU, byte-identical (cls_identity 15,843/15,843,
   emit_sweep 0 movers); census over 15,843 triples 584 s -> 147 s
   (`scripts/compile_time_census.py`, new). Guard: tests/resource §1c.
+- `s3build_report.md` — [CLS-TREE] S3 (2026-09-29, lane s3build, opus): the
+  `A_WCLASS` node, every reader walking its byte child, byte-identical over the
+  `scripts/cls_identity.py` triple sweep. Read §2: the inventory's rows 5/6
+  (`vm_det_seq`/`vm_cap_offsets`) are reached by the cursor rung and walk the
+  child (a loud arm would have refused `(é)+`), and the union aliasing means
+  the kind guard, not the distinct member, is what makes a set-reading
+  mistake loud.

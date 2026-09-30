@@ -469,6 +469,22 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   `pcrec_lit_run`'s own floor is the whole fix. `-fno-lit-run` is
   unchanged; the floor is not a flag.
 
+- **cpset.c ([CLS-TREE] S3 addition, 2026-09-29)** — the `A_WCLASS` kind
+  (`internal.h`: a wide class, its code-point set in the distinct `u.wcls`,
+  today's byte alternation as its child `l`) gets three things here and one
+  thing removed. `pcrec_cls_bits`/`_widen`/`_single` REFUSE the kind by
+  `pcrec_ctx_fail` (`cls_kind_guard`) — a KIND check, because a set confined to
+  U+0080..U+00FF renders as a valid bitmap of the wrong bytes and the range
+  check cannot see it; `_widen`/`_single` therefore take a `Ctx *` now, and
+  so do `pcrec_lit_run` and `pcrec_revdet_first`. `pcrec_wcls_set` is the one
+  kind-checked spelling that reaches the set (no caller at S3: every reader
+  walks the child; it is the spelling S4's readers will use).
+  `pcrec_wcls_misplaced` is the one loud answer of a walk that can never meet
+  the kind (D-1). `pcrec_cls_has`, a set reader with no caller, is DELETED.
+  `pcrec_ast_seethru` (inline in `internal.h`) is the one see-through helper
+  every spine flattener below the lowering descends through, so a lowered
+  class at a spine head still unrolls into the spine (`ast_bare`'s precedent,
+  which now calls it).
 - **arena.c** — zeroing arena allocator; 16-byte aligned blocks, minimum 64KB per block.
   **[M4.7b/K7]** carries a `Ctx *cx` back-pointer, and a failed malloc now
   calls `pcrec_ctx_nomem()` instead of `abort()`. That one pointer is K7's worst
