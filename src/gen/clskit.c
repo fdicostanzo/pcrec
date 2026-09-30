@@ -13,7 +13,8 @@
  * model) and `PLACE` (the ruled placements: K's λ, the `0` row's gate, the
  * atom threshold, and D131 addendum 1's fitted dispatch/prologue term).
  * `ROWS` is the selection itself, over the per-SET forms only — no row
- * answers the atom table (its own comment, below). No global state and no
+ * answers the atom table (its own comment, below); `TAB_ROWS` is the
+ * artifact-level TABLE selection that does. No global state and no
  * function-local statics: every scratch array is the caller's arena.
  *
  * THE INVARIANT A CALLER MUST NOT BREAK. The input is sorted, disjoint and
@@ -74,7 +75,12 @@ static const LeafModel LEAF[CLSK_NLEAF] = {
 
 /* THE PLACEMENTS, one home. `kit_lambda`, `mid_min_sections` and
  * `z_mid_pct` are D131 item 1's ruled cells (Frank may move the last two).
- * `atom_*` are item 6's. `max_k` is the study's section cap (MAXK), a
+ * `atom_*` are item 6's, read by `TAB_ROWS`' atom row: `atom_min_sites` is
+ * where `256 + 8N` bytes of shared table and masks undercut `32N` bytes of
+ * per-class bitmaps (N > 10.7, cls_tree_design.md §1.7.3 item 3), at no
+ * measured time cost (the O-77 fair-dispatch re-run, §1.7 addendum: atom and
+ * bitmap within noise at N = 4/16/32); `atom_max` is the 64-bit mask's
+ * width, the form's own limit. `max_k` is the study's section cap (MAXK), a
  * search bound and not a statement about the answer (design §1.3). The
  * `*_text` values are the whole-set forms' MEASURED `.text` (whole_k53.tsv:
  * obj minus rodata; bitmap1 per clsfit_report.md).
@@ -545,8 +551,8 @@ enum { TP_M2, TP_M1, TP_0, TP_P1, TP_P2 };
  * table row here would be answering a question it has no input for. The
  * atom table's FORM, its emitter (`pcrec_clskit_emit_atom_table`/
  * `pcrec_clskit_emit_atom`) and its differential all stay (§2.1 below):
- * choosing IT is an ARTIFACT-LEVEL table built once over every byte-class
- * site, at S2, not a per-set `ROWS` outcome. */
+ * choosing IT is the ARTIFACT-LEVEL table `TAB_ROWS` below, walked once
+ * over every table-reading byte class, not a per-set `ROWS` outcome. */
 static const ClsRow ROWS[] = {
     { "byte-kit",
       "byte set (every member <= 0xFF): the kit's byte forms, size-leaning "
@@ -675,6 +681,77 @@ const ClsRow *pcrec_clskit_rows(int *nrows)
 {
     *nrows = (int)(sizeof ROWS / sizeof ROWS[0]);
     return ROWS;
+}
+
+/* ---- THE TABLE SELECTION ([OPT-CLSPACK], D131 item 6) --------------------
+ *
+ * How an artifact's TABLE-READING byte classes read their table. The input
+ * is all of them at once, which is why this is its own first-match table
+ * and not a `ROWS` row: "N live class sites" is a count over the artifact.
+ * A row fires where its position bit is set, its deny is clear and its
+ * predicate holds; the last row is undeniable and always holds. All five
+ * `--tune` positions take the atom row today (D131 item 6 rules it the
+ * DEFAULT, and the kit byte forms S2 will offer the size-leaning positions
+ * are not built); a later ruling moves a position by editing `positions`. */
+typedef enum {
+    TABP_ALWAYS,
+    TABP_ATOM_FITS
+} ClsTabPred;
+
+static const ClsTabRow TAB_ROWS[] = {
+    { "atom",
+      "at least atom_min_sites table-read byte classes, whose partition "
+      "into atoms (bytes with the same class membership) has at most "
+      "atom_max atoms: one shared 256-byte atom table and a 64-bit mask "
+      "per class",
+      TPOS(TP_M2) | TPOS(TP_M1) | TPOS(TP_0) | TPOS(TP_P1) | TPOS(TP_P2),
+      TABP_ATOM_FITS, CLST_ATOM, CLSTD_ATOM },
+    { "site",
+      "always: a 32-byte bitmap per class",
+      TPOS(TP_M2) | TPOS(TP_M1) | TPOS(TP_0) | TPOS(TP_P1) | TPOS(TP_P2),
+      TABP_ALWAYS, CLST_SITE, CLSTD_NONE },
+};
+
+/* THE TABLE SELECTION over the `nset` byte sets an artifact's classes read
+ * a table for (every member <= 0xFF), in the caller's order: the first row
+ * of `TAB_ROWS` that fires. Always answers. `out->atoms` holds the partition
+ * when the atom row wins; `pcrec_clskit_atoms` is the predicate's own
+ * builder, so the table the caller emits is the one the predicate measured. */
+void pcrec_clskit_select_tables(Arena *a, const PcrecCpRange *const *sets,
+                                const int *nivs, int nset, int tune,
+                                unsigned deny, ClsTabChoice *out)
+{
+    int t = pcrec_tune_valid(tune) ? tune : PCREC_TUNE_BALANCED;
+    unsigned pos = TPOS(t - PCREC_TUNE_MIN_SIZE);
+    int nrow = (int)(sizeof TAB_ROWS / sizeof TAB_ROWS[0]);
+
+    memset(out, 0, sizeof *out);
+    for (int r = 0; r < nrow; r++) {
+        const ClsTabRow *row = &TAB_ROWS[r];
+        bool holds = false;
+        if (!(row->positions & pos)) continue;
+        if (row->deny != CLSTD_NONE && ((deny >> row->deny) & 1)) continue;
+        switch ((ClsTabPred)row->pred) {
+        case TABP_ALWAYS:
+            holds = true;
+            break;
+        case TABP_ATOM_FITS:
+            holds = nset >= PLACE.atom_min_sites
+                 && pcrec_clskit_atoms(a, sets, nivs, nset, &out->atoms);
+            break;
+        }
+        if (!holds) continue;
+        out->form = row->form;
+        out->row = r;
+        return;
+    }
+}
+
+/* The table selection's rows, for a listing or a check. */
+const ClsTabRow *pcrec_clskit_table_rows(int *nrows)
+{
+    *nrows = (int)(sizeof TAB_ROWS / sizeof TAB_ROWS[0]);
+    return TAB_ROWS;
 }
 
 /* The one λ the table runs the DP at (`K`). */

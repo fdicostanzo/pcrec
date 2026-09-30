@@ -2058,7 +2058,56 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `47` on every artifact today ([K73] bumped it from 46,
+- **`rx_info.abi` is `48` on every artifact today ([CLS-TREE] S4 and
+  [OPT-CLSPACK] bumped it from 47 TOGETHER, ONE event, 2026-09-30: A WIDE CLASS
+  ON THE VM IS ONE DECODE AND ONE CLASS-MATCHER FUNCTION, AND MANY TABLE-READ
+  BYTE CLASSES SHARE ONE ATOM TABLE).**
+  - *The wide-class kit ([CLS-TREE] S4).* A class with more than one member,
+    some member of which encodes deeper than one code unit (`-e utf8`:
+    `\p{L}`, `[^a]`, `.`, `[é-ü]`), is tested by a VM program as
+    `<prefix>_decode` followed by `<prefix>_wcls<N>`, where it was the lowered
+    byte alternation (`docs/spec/tuning.md` §2.33). `<prefix>_wcls<N>` is a
+    `static inline` function whose form the `--tune` class table picks (§5.4's
+    λ row). `<prefix>_decode` is a new encoding-seam entry. It is `static
+    inline`, DECLARED NOWHERE, and emitted ahead of the program, and the utf8
+    caseless span compare calls it in place of the private decoder it carried.
+    So every utf8 caseless-backreference or caseless-variable artifact moves
+    too, with no answer change. Every VM artifact gains a
+    `<PREFIX>_VM_CLS_KIT` line (§6.3).
+    - Wide classes that refused on the VM's code cap now COMPILE: `\P{Unknown}`
+      under `--engine=vm` (K55), and the K53 sets under `--engine=vm`. This is a
+      refusal-set move.
+    - The new deny bit (`-fno-cls-kit`, `PCREC_NO_CLS_KIT`, bit 36) is MASKED
+      out of `rx_info.flags`. It denies the whole kit, the atom table below
+      included.
+  - *The shared atom table ([OPT-CLSPACK]).* A VM program whose byte classes
+    that read a table (no singleton, range or fold-pair compare covers them)
+    number at least 11, and whose byte partition has at most 64 atoms, emits ONE
+    `static const unsigned char <prefix>_class_atoms[256]` and one `static
+    inline` matcher `<prefix>_class_atom<N>` per such class (one load, one shift
+    of a 64-bit immediate), in place of a `<prefix>_class_bitmap<N>[32]` per
+    class, and the program calls the matcher where it read the bitmap
+    (`docs/spec/tuning.md` §2.34). Every VM artifact gains a
+    `<PREFIX>_VM_CLS_ATOMS` line (§6.3). The table is selected after the entry
+    rung, so the program length the rung's knee compares is unchanged.
+    - The new deny bit (`-fno-cls-pack`, `PCREC_NO_CLS_PACK`, bit 38) is MASKED
+      out of `rx_info.flags`; it denies the atom row alone.
+  - That is an emitted-text move for identical inputs, and so an `abi` event
+    (D76). The kit moves the program and tables of the artifacts the wide-class
+    route reaches; the atom row moves them ONLY on artifacts it fires for;
+    every other VM artifact moves by the two stamp lines alone.
+  - No struct offset moves and no `rx_info` member is added or changed.
+  **VERIFIED BY AN IDENTITY SWEEP** (`scripts/cls_identity.py`, CLSIDENT_PLACEHOLDER
+  triples at both encodings): under `-fno-cls-kit` every artifact equals the
+  abi-47 base with the two new stamp lines removed. There are two exceptions,
+  both expected. The 19 utf8 caseless span-compare artifacts move by the
+  decoder's relocation. And one bench artifact's size-retry WHY text quotes a
+  byte count that includes the stamp line (`docs/dev/lanes/s4build_report.md`).
+  **VERIFIED BY A MOVER CENSUS** (`docs/dev/lanes/clspack_census.py`,
+  `docs/dev/lanes/clspack_report.md`): the atom row's program/table movers are
+  exactly the artifacts whose base emitted at least 11 bitmaps with at most 64
+  atoms, by ID.
+- **`rx_info.abi` was `47` ([K73] bumped it from 46,
   2026-09-29: THE OFFSET-0 START RULE IS EMITTED TEXT).** Under an encoding
   that restricts where a match may begin (`utf8`), a NULLABLE pattern's
   artifact gains one line at each caller-facing body — the unanchored DFA scan
@@ -3243,6 +3292,7 @@ engine-scoped.**
   section already said: `<PREFIX>_VM_RUNGS`, `_VM_STRATS`, `_VM_PRUNES`,
   `_VM_PRUNE_CEILING`, `_VM_CALL_SPLICED`/`_LINKED`, `_VM_ROOT_MINW`,
   `_VM_FRAMELESS`, `_VM_ALT_ISLANDS`, `_VM_CLS_FOLDS`, `_VM_LIT_RUNS`,
+  `_VM_CLS_KIT`,
   `_VM_START`, the
   budget macros and the frame/trail sizes. They report what the VM DID —
   per quantifier, per call site, per frame — and a DFA artifact has no
@@ -3462,6 +3512,39 @@ every VM artifact, hybrids included, never defined on a pure-DFA artifact,
 `0` under `-fno-lit-run`. A COUNT for the two entries above' reason. What a
 consumer may NOT conclude: anything about the answers, which are identical
 either way.
+
+**[CLS-TREE] S4, 2026-09-29 (`abi` 48): `<PREFIX>_VM_CLS_KIT`, (b) for
+`_VM_CLS_FOLDS`' reason.**
+
+```c
+#define RX_VM_CLS_KIT 1   /* or 0, or any count */
+```
+
+**The IFF: it is the number of distinct class-matcher functions
+(`<prefix>_wcls<N>`) this artifact's VM program calls.** Each is a wide class
+tested as one decode and one matcher (`docs/spec/tuning.md` §2.33). It is
+emitted on every VM artifact, hybrids included, and never on a pure-DFA
+artifact. It reads `0` under `-e byte` (no class is wide there) and under
+`-fno-cls-kit`. It is a COUNT, for the entries above' reason. A consumer may
+NOT conclude anything about the answers, which are identical either way.
+Nor may it conclude which form a matcher took: that is `--emit-ir`'s
+`consume` row, and the matcher's own text.
+
+**[OPT-CLSPACK], 2026-09-30 (`abi` 48): `<PREFIX>_VM_CLS_ATOMS`, (b) for
+`_VM_CLS_FOLDS`' reason.**
+
+```c
+#define RX_VM_CLS_ATOMS 0   /* or the shared table's atom count, 1..64 */
+```
+
+**The IFF: it is non-zero exactly when this artifact's VM program tests its
+table-read byte classes through ONE shared byte->atom table**
+(`<prefix>_class_atoms`, `docs/spec/tuning.md` §2.34), and then it is the
+number of atoms that table numbers. `0` means a 32-byte bitmap per class (or
+no table-read class at all). It is emitted on every VM artifact, hybrids
+included, and never on a pure-DFA artifact; it reads `0` under
+`-fno-cls-pack`. A consumer may NOT conclude anything about the answers,
+which are identical either way.
 
 **[OPT-1], 2026-08-25: two more (b) macros —
 `<PREFIX>_FAST_FRAMES` and `<PREFIX>_FAST_TRAIL`.** They report the

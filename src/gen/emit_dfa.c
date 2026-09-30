@@ -48,7 +48,7 @@
  * abi ritual fires next, bump this ONE constant; grep for its old value
  * finds both emission sites plus every out-of-tree reader the ritual's own
  * site list already enumerates. */
-#define PCREC_ARTIFACT_ABI 47
+#define PCREC_ARTIFACT_ABI 48
 
 /* Renders one byte of pattern-derived text safely into a C block comment, escaping whatever would close or falsely open the comment.
  *
@@ -2645,6 +2645,15 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
                                            * `-fno-ctx-node`. `RX_ENGINE` is
                                            * where what it changed shows. */
                                           PCREC_NO_CTX_NODE |
+                                          /* [CLS-TREE] S4 the VM's
+                                           * class-matcher kit, the same:
+                                           * answer-identical, and
+                                           * `<PREFIX>_VM_CLS_KIT` records
+                                           * what the emitter did. */
+                                          PCREC_NO_CLS_KIT |
+                                          /* [OPT-CLSPACK] the VM's shared
+                                           * atom table, the same. */
+                                          PCREC_NO_CLS_PACK |
                                           /* [K68] (FIXED) the three [OPTLOOP.1]
                                            * batch-1 whole-window pre-check bits
                                            * join the mask for the mask's own

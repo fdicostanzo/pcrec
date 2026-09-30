@@ -3412,6 +3412,31 @@ both its `lo`/`hi` behavioural probes — MEASURED `clsfold:78fail/85pass`
 current DETECTED figure from a `make mech` run.
 
 
+## `run_clspack.sh` — [OPT-CLSPACK]'s shared atom table (2026-09-30)
+
+The VM's TABLE-READ byte classes (no singleton/range/fold compare covers
+them) share ONE `<prefix>_class_atoms[256]` table and a 64-bit mask per class
+when there are at least 11 of them and their partition has at most 64 atoms
+(D131 item 6, `docs/spec/tuning.md` §2.34). Answer-identity-preserving, so
+the corpus sees nothing of the choice; this file does. Rides
+`make test-cpset-structure` (~15 s) and the mech arm `clspack`. Its
+witnesses are `tests/base/clspack_atoms.rxt`'s blocks, read by case name,
+because the shipped corpus has no artifact the row fires on.
+
+- **PART 1** the row, read off each firing witness: `RX_VM_CLS_ATOMS` equals
+  an atom count THIS SCRIPT computes from the same pattern's `-fno-cls-pack`
+  artifact's bitmaps (a different output, parsed here — never the compiler's
+  own `pcrec_clskit_atoms`), one shared table, one matcher per class, no
+  bitmap left, and every program read a matcher call.
+- **PART 2** both thresholds from the other side (ten classes; 65 atoms),
+  the deny, all five `--tune` positions, and the stamp's scope (0 on a
+  class-free VM artifact, absent on a DFA one).
+- **PART 3** answer identity: each firing witness built both ways under two
+  prefixes into `tests/possessify/possdiff_driver.c` (shared), over every
+  byte 0..255 at every position of each matching subject the block carries —
+  343,040 cells at landing, floor 10,000.
+Sabotage rows S400-S404 (all DETECTED solo at landing).
+
 ## `run_wclass_census.sh` + `wclass_census.py` — [CLS-TREE] S3's A_WCLASS checks (2026-09-29)
 
 S3 wraps every class the encoding spells in more than one code unit in an
@@ -3436,6 +3461,17 @@ The IDENTITY is `scripts/cls_identity.py`'s (it needs a reference build, which
   island (`vm_isl_words`); W4 `x[é]y` compiles, so no reader renders the set
   — and a reader that does refuses by `pcrec_cls_bits`' kind guard. W4 is a
   spine ITEM on purpose: at a spine head the see-through bypasses `vm_emit`.
+
+- **PART 3, the S4 kit route** ([CLS-TREE] S4, lane s4build): K1 a wide
+  class on the VM is one `rx_decode` + one `rx_wcls0` (`RX_VM_CLS_KIT 1`,
+  frameless); K2 `-fno-cls-kit` leaves neither; K3 a one-member class keeps
+  its bytes; K4 the pool dedups (two sets, two matchers); K5 the decoder is
+  absent from a split artifact's `.h` and defined before its first call; K6
+  a utf8 caseless backreference artifact carries `rx_decode` through
+  `PcrecEncEntry.requires`; K7 the retired refusals (`\P{Unknown}` under
+  `--engine=vm`, `(\p{L})` at default axes) compile. All answer-neutral
+  facts, which is why they are structural. Rows S392 (K3), S394 (K6), S395
+  (K2).
 
 Sabotage rows S365 (a reader shares `A_CLASS`'s arm: [5b] + W4) and S366
 (`vm_isl_words`' default restored: [5a] + [5c] + W3). The W1/W2 plants

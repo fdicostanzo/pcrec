@@ -676,6 +676,14 @@ fi
 # `PCREC_FEATURE_MODULES`'s value gaining `,ucp` (4 bytes); no other stamp
 # in this census moved, and no UCP-free artifact moves at any other flag
 # combination (ucpu1_report.md §3's identity-gate numbers).
+#
+# RE-RECORDED, 2026-09-30, lane clspack ([OPT-CLSPACK], abi 47 -> 48), FIVE
+# ROWS, EMITTED_BYTES only — the five VM artifacts in the sample, each
+# exactly +26: the new `#define RX_VM_CLS_ATOMS 0` line (none of the sample
+# reads 11 class tables, so no program moves). VERIFIED BY DIFFING
+# `a(b|c)+d` against the lane's branch point (lane/s4build 1c887998) at the
+# same `-o` basename: the stamp line and the two same-length abi digits, no
+# other line; the DFA rows unchanged.
 MANIFEST="$ROOT_DIR/tests/codegen/manifests/m5_stage1_stamps.tsv"
 if [ -d "$(dirname "$MANIFEST")" ]; then
     if [ -f "$MANIFEST" ]; then

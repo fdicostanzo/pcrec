@@ -2812,6 +2812,95 @@ context sets and `PCREC_MAX_CTX_ATOMS` atoms (`limits.md` §3.9); over either,
 the DFA is declined exactly as for a state-cap overflow (`--engine=auto`
 takes the VM).
 
+### 2.33 `-fno-cls-kit` — `PCREC_NO_CLS_KIT` (bit 36)
+
+**[CLS-TREE] S4, `abi` 48 (`docs/design/cls_tree_design.md` §2.2, §6.1;
+D129 Q2's one kit-level deny). ANSWER-IDENTITY-preserving.** How the VM tests
+a WIDE class: a class with more than one member, some member of which
+encodes deeper than one code unit. Under `-e byte` no class is wide, so the
+flag is inert there. Deny-only, and MASKED out of `rx_info.flags`
+(`strategy_denials`) for that mask's own reason.
+
+**What it is.** The VM decodes ONE character through the encoding's
+`<prefix>_decode` (a `static inline` entry, §6 of `match_api.md`). It then
+tests the character with `<prefix>_wcls<N>`, a `static inline` class-matcher
+function. There is one matcher per distinct set per artifact. The matcher's
+FORM is chosen by λ's row of the `--tune` table (§5.4), whose rows are
+`src/gen/clskit.c`'s first-match table: the sectioned kit `K`, or a
+whole-set table `P3`/`P2`/`B1`.
+
+The decoder rejects a truncated sequence, a stray continuation byte, an
+overlong form, a surrogate and anything above U+10FFFF. That is exactly the
+set the byte alternation cannot match, so ill-formed input matches nothing
+on either route.
+
+**Where the bytes stay.** A one-member wide class is a literal (`é`), so it
+keeps its bytes: that is a literal run, an island word, or a cursor stride.
+The DFA, the NFA and the VM hybrid's prefilter always read the byte
+alternation, whatever this flag says.
+
+**What it changes.** Most of all, it changes what the VM can BUILD:
+- a wide class that was hundreds of kilobytes of alternation is a few
+  kilobytes of matcher;
+- `\P{Unknown}` and the other large `\p` sets compile under
+  `--engine=vm` (K55 retired);
+- a CAPTURED wide class (`(\p{L})`) compiles on the default route wherever
+  its prefilter fits the size caps.
+
+**The stamp.** `<PREFIX>_VM_CLS_KIT` is the number of distinct matchers
+written, a D81 VM-only activity count. It reads 0 under the flag and in
+every `-e byte` artifact.
+
+**Denied**, every wide class on the VM is the byte alternation this compiler
+emitted before `abi` 48, and the artifact accepts exactly the same subjects.
+The flag denies the WHOLE kit: the shared byte-class atom table of §2.34 is a
+kit form too, so under `-fno-cls-kit` every table-read byte class keeps its
+own bitmap as well (`-fno-cls-pack` denies that table alone).
+`make test-axes` sweeps the flag like every deny axis.
+
+### 2.34 `-fno-cls-pack` — `PCREC_NO_CLS_PACK` (bit 38)
+
+**[OPT-CLSPACK], `abi` 48 (D131 item 6; `docs/design/cls_tree_design.md`
+§1.7.3 and its O-77 addendum). ANSWER-IDENTITY-preserving.** How a VM
+program's TABLE-READ byte classes read their table. A byte class reads a
+table when no compare shape covers it: it is not a single byte, a
+contiguous range, or an ASCII fold pair (§2.22). Deny-only, and MASKED out
+of `rx_info.flags` (`strategy_denials`) for that mask's own reason.
+
+**What it is.** One ARTIFACT-level choice, made once the program's class
+pool is known. It is `src/gen/clskit.c`'s `TAB_ROWS`, a first-match table
+of two rows:
+
+| row | deny | predicate | form |
+|---|---|---|---|
+| `atom` | `-fno-cls-pack`, or `-fno-cls-kit` (§2.33) | at least 11 table-read classes, whose byte partition has at most 64 atoms | ONE `static const unsigned char <prefix>_class_atoms[256]` (byte -> atom), and per class a `static inline int <prefix>_class_atom<N>(unsigned)` that shifts a 64-bit immediate mask by the byte's atom |
+| `site` | — | always | a `static const unsigned char <prefix>_class_bitmap<N>[32]` per class |
+
+An ATOM is a set of bytes with identical class membership. Both rows list
+all five `--tune` positions today.
+
+**Why 11 and 64.** The shared form costs 256 bytes of table plus an 8-byte
+immediate per class; per-class bitmaps cost 32 bytes each. The shared form
+is smaller from 11 classes up. The fair-dispatch timing re-run (bench
+O-77) measured the two forms within noise of each other at 4, 16 and 32
+classes. 64 is the mask's width. Both numbers are `clskit.c`'s `PLACE`
+cells (`atom_min_sites`, `atom_max`), which a later ruling may move.
+
+**What it changes.** `.rodata`: 256 bytes in place of `32N`. The
+program's test at each site becomes a call of the class's matcher, one table
+load and one shift. It does not change which classes read a table, what the
+DFA or the prefilter emit, or any answer.
+
+**The stamp.** `<PREFIX>_VM_CLS_ATOMS` is the shared table's atom count,
+`0` when the per-class bitmaps are emitted: a D81 VM-only activity stamp
+(`match_api.md` §6.3). It reads 0 under the flag.
+
+**Denied** (by this flag, or by `-fno-cls-kit`, which denies the whole kit),
+every table-read class keeps its own 32-byte bitmap, the
+program this compiler emitted before `abi` 48, and the artifact accepts
+exactly the same subjects. `make test-axes` sweeps the flag like every deny
+axis.
+
 ## 3. The DFA side's own stamps
 
 **CLOSED 2026-08-25 by plan row `[DD-13]`; this section stated the gap while
@@ -3094,6 +3183,8 @@ not-a-tuning-axis list that follows.
 | `flags` bit `PCREC_NO_RUN_PREFILTER` | `-fno-run-prefilter` | §2.30 |
 | `flags` bit `PCREC_NO_LIT_RUN` | `-fno-lit-run` | §2.31 |
 | `flags` bit `PCREC_NO_CTX_NODE` | `-fno-ctx-node` | §2.32 |
+| `flags` bit `PCREC_NO_CLS_KIT` | `-fno-cls-kit` | §2.33 |
+| `flags` bit `PCREC_NO_CLS_PACK` | `-fno-cls-pack` | §2.34 |
 | `unroll_k` (`PCREC_UNROLL_K_DEFAULT` = 0) | `--unroll=K` | §2.10 |
 | `vm_entry_shape` (`PCREC_VM_ENTRY_AUTO` = 0, `_PLAIN`, `_SHARED`, `_FORWARD`, `_INLINE`) | `--vm-entry-shape=N` | §2.21 |
 | `engine` (`PCREC_ENGINE_AUTO`/`_DFA`/`_VM`) | `--engine=E` | §2.11 |
@@ -3262,7 +3353,7 @@ lands.
 
 | axis | −2 `min-size` | −1 `size` | 0 `balanced` | +1 `speed` | +2 `max-speed` | why |
 |---|---|---|---|---|---|---|
-| λ (class-matcher kit) | smaller of `K`, `P3` | = `−2` | **`P3`** if `K` ≥ 16 sections and `P3` ≤ 1.26×`K`, else `K` | — | smaller of `P2`, `B1` where `0` chose `P3`, else as `0` | `[CLS-TREE]` unbuilt; `docs/design/opt_dial_design.md` §4 (D131): ONE kit constant (λ = 4, the sectioning DP's size end, `K`) at every position plus a first-match row over the whole-set tables `P3`/`P2`/`B1`; three distinct programs. Calibration: `cls_tree_design.md` §1.7 (ubuntubudu, per-probe model r = +0.98; `P3` 3.2× faster than today's pinned middle for +11% bytes) |
+| λ (class-matcher kit) | smaller of `K`, `P3` | = `−2` | **`P3`** if `K` ≥ 16 sections and `P3` ≤ 1.26×`K`, else `K` | — | smaller of `P2`, `B1` where `0` chose `P3`, else as `0` | BUILT at `[CLS-TREE]` S4 (`abi` 48): the VM's wide-class matcher (§2.33); `docs/design/opt_dial_design.md` §4 (D131): ONE kit constant (λ = 4, the sectioning DP's size end, `K`) at every position plus a first-match row over the whole-set tables `P3`/`P2`/`B1`; three distinct programs. Calibration: `cls_tree_design.md` §1.7 (ubuntubudu, per-probe model r = +0.98; `P3` 3.2× faster than today's pinned middle for +11% bytes) |
 | `[ART-SIZE]` ladder — bar | **0.95** | **0.85** | **0.75** | — | — | §2.16; `artifact_size_term.md` §3.3. Speed side em-dashed (**M13**): the speed it would buy is ≤3%, below `s` = 1.10 |
 | `[ART-SIZE]` ladder — threshold | **40,000** | **80,000** | **120,000** | — | — | §2.16; `limits.def:161`, `PCREC_SIZE_TERM_THRESHOLD` |
 | `-fno-premul-table` | **deny** | — `†` | **allow** | — | — | §2.13; `σ` = 22…25% ≥ `y`; `m` ≤ `x₂` = 2.00 for every `φ_scan` ≤ 1, so `−2` needs no measurement; `−1` iff `φ_scan` ≤ 0.126 (unmeasured) |
@@ -3310,6 +3401,11 @@ codes above), and three (`-fno-anchored-dfa`, `-fno-tiered-entry`, λ)
 CONTINGENTLY, pending an unmeasured quantity named in their own row. That
 is the difference between an allowlist and a list of things nobody got
 round to.
+
+**λ has since been ruled (D131) and BUILT (`[CLS-TREE]` S4, `abi` 48)**,
+so it is the fifth row with cells. It is also the row that makes `+2`
+DISTINCT from `+1`: where `0` chooses `P3`, `+2` chooses the smaller of `P2`
+and `B1`. Every other row still reads `+2` equal to `+1`.
 
 ### 5.5 Acceptance
 

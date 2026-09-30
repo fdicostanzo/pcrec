@@ -847,9 +847,128 @@ and the encoding-seam spec for the new entry — all D80, in the same change.
 Pre-1.0, these are deliberate and permitted (memory
 `pcrec-abi-changes-pre-release`).
 
----
+### 6.1 S4 build plan (lane s4build, 2026-09-29)
 
-## 7. Measurements still owed
+Written before the build, from `lane/land3` (U2 + S3 + K67, abi 46). It
+states what S4 builds and which rulings it reads. It is not a new design.
+
+**The instruction (§2.2, as ruled).** At `vm_emit_node`'s `A_WCLASS` arm, on
+the kit route, the VM emits one test for the whole class:
+
+```c
+if (scan_position < subject_length
+    && (len_ = <p>_decode(subject, subject_length, scan_position, &cp_)) != 0
+    && <p>_wclsN(cp_)) { scan_position += len_; goto next; }
+goto fail;
+```
+
+`<p>_wclsN` is `pcrec_clskit_emit_kit`/`_emit_whole`'s `static inline` matcher.
+There is one per DISTINCT set per artifact, interned the way `vm_cls` interns
+byte bitmaps, and emitted beside the class bitmaps ahead of the program. Its
+form is `pcrec_clskit_select` at `cx->opt->tune`, which is D131's ruled
+first-match table read unchanged. `vm_cost` and `vm_count_slots` answer the
+kit route as they answer `A_CLASS` (no frame, slot or trail). `vm_emit`
+already charges the wrapper one node (D-4). The listing gains one event,
+`VE_WCLASS`, whose row names the set, the form and the row that chose it.
+
+**The decode seam (§2.2).**
+- `PCREC_ENCE_DECODE` is a new entry: `engine_callable`, and a row in
+  `entries_utf8[]` only. The byte backend has no row, and a backend with no row
+  keeps the byte child (`pcrec_enc_has_entry`, the `VAR_VALID` precedent). So
+  the kit route needs no encoding test.
+- Its body is stage 4's `$_span_ci_decode`, verbatim, renamed `$_decode`. It
+  rejects exactly the automaton's ill-formed set: truncated, stray
+  continuation, overlong, surrogate, and anything above U+10FFFF.
+- `SPAN_CASELESS`'s private copy retires into the entry. Its utf8 body calls
+  `$_decode`.
+- **Two seam columns, both recorded as D58 events:**
+  - `requires`: a mask of entries this entry's body calls. The utf8
+    `SPAN_CASELESS` row requires `DECODE`. Both emit functions close the mask
+    over it. `varmvp` built this column and deleted it for want of a customer
+    (D77). This is the customer.
+  - `inline_def`: the definition is `static inline`, has no declaration (so
+    nothing reaches the public `.h`), and is emitted ahead of the engine
+    bodies rather than in the epilogue. §2.2 says why an exported decoder
+    would not inline under `-fPIC`.
+- The epilogue emits the non-inline entries. `vm_emit_search_body` emits the
+  inline ones before the class tables.
+
+**Which `A_WCLASS` sites switch to the kit.** The rule is a RULE, not a
+list: an `A_WCLASS` that reaches `vm_emit_node` takes the kit, unless
+`-fno-cls-kit` is given or the backend has no `DECODE` row. Every site that
+consumes the node's BYTE CHILD before `vm_emit_node` sees it keeps doing
+that, unchanged:
+
+| site | route | why |
+|---|---|---|
+| forward class test (`vm_emit_node`), incl. inside star / opt-chain / counter / possessive loops, lookbehind bodies, atomic bodies, call regions | **kit** | the loop rungs emit the body through `vm_emit`, so the loop's per-iteration test becomes the kit test |
+| literal run (`pcrec_lit_run`, S2a/F5) | byte child | a run of ≥ 3 known bytes is one `memcmp`; decoding it would be slower |
+| alternation island (`vm_isl_words`) | byte child | a literal trie over bytes, e.g. `café\|naïve` |
+| cursor rung (`vm_det_seq`, `vm_cap_offsets`) | byte child | a deterministic fixed-stride child (`(é)+`, `é{3}`) keeps its stride scan; a child with a choice point (`\p{L}`) has no stride and falls to the frames rung, whose body is the kit test |
+| revdet backward walk | never reached | loud (`pcrec_wcls_misplaced`), as at S3 |
+| NFA builder, DFA, VM hybrid prefilter, anchored machine | byte child | §3.3 and D129 Q4: the DFA side changes only with the [UCP] island |
+
+**The selection rows (D131, D131 addendum 1).** `ClsSelectIn.tune` is
+`cx->opt->tune`. `ClsSelectIn.deny` is 0: no row deny is mapped to a public
+flag. Answer identity ACROSS forms is what `tests/clskit/`'s exhaustive
+differential proves. Answer identity across positions is `make test-axes`
+over the five `--tune` positions. Answer identity kit-vs-no-kit is
+`-fno-cls-kit`.
+
+Consequence: **`+2` stops being identical to `+1`** where `0` chose `P3`.
+`tune.c`'s "declared vacuous" comment and `tuning.md`'s `+2` note name that
+become-reachable condition ("the day λ is implemented"). Both change in the
+same commit, and so does `run_tune_dial.sh` §3c's `+2 == +1` assertion.
+
+**`-fno-cls-kit` (D129 Q2's deny, first built here).**
+- It means "every `A_WCLASS` on the VM emits its byte child", i.e. today's
+  forms.
+- It gets a `PCREC_BIT`, an `axes.def` row, a `--list-axes` row, a
+  `tuning.md` §2 entry, and joins `rx_info.flags`' strategy-denial mask.
+- S2 later widens its meaning to the byte tier. `-fno-cls-fold` stays until
+  S2 (it governs `A_CLASS`, which S4 does not touch).
+
+**The activity stamp.** `<PREFIX>_VM_CLS_KIT` is the number of distinct kit
+matchers the artifact emits. It is a D81 VM-only activity count.
+
+**cwmax / cwmin — the D-2 ruling.** `A_WCLASS` answers **1 CHARACTER** in both
+`pcrec_cwmax` and `pcrec_cwmin`, the same as `A_CLASS`: a class is one
+character by definition. The byte child's answer (its encoded length) was a
+unit error kept at S3 for byte identity. Measured, it moves nothing:
+- Every reader that runs after `pcrec_lower_enc` (where the kind exists) asks
+  only zero-vs-nonzero. That is `startanch.c`'s `== 0` and `endwin.c`'s
+  `!= 0`.
+- The one reader that uses the value, `endwin.c`'s window, declines under any
+  multi-byte encoding first (`e->start_cls`).
+- `mod_lookaround.c` and `callgraph.c` run before the lowering, so they never
+  see the kind.
+
+`pcrec_minw` (a BYTE width, the MRL prune's unit) keeps walking the child,
+because the child's minimum encoded length is exactly the bytes a kit test
+consumes at least.
+
+**What this retires, and what it does not.**
+- **K55** stops refusing. `\P{Unknown}` under `--engine=vm` compiles, and
+  `run_axes.sh`'s `REFUSAL_PATTERN["--engine=vm"]` entry is deleted. Every
+  wide class under `--engine=vm` (the K53 twelve) stops refusing on code
+  bytes.
+- Captured wide classes (`(\p{L})`, `(\p{Xwd})`) stop refusing as far as the
+  VM PROGRAM is concerned. Whether the default route's hybrid then fits
+  depends on its byte PREFILTER, which S4 does not shrink (§3.3). That
+  population is MEASURED at build and reported. It is not assumed.
+- The refusal set shrinks. That is recorded as the identity break it is
+  (`opt_dial_design.md` §6.2), with the population listed by pattern.
+- **Not retired here:**
+  - [UCP] U1's by-name refusals of wide UCP sets and UCP `\b` under utf8.
+    Lifting those is U4's (`ucp_design.md` §6, D130 item 3).
+  - [K53-SELRETRY]'s drop ladder, which the DFA route keeps (§5).
+
+**abi.** This is one abi event, 46 → 47 at this lane's base; the manager
+serializes the number at merge. VM artifacts with a wide class move, and so do
+utf8 caseless-backreference artifacts (the decoder's name and placement). The
+D76/D94 ritual applies, with readers found by grep.
+
+
 
 ### (a) The Mac can do these (box-independent: counts, bytes, answers)
 

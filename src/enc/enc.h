@@ -101,6 +101,25 @@ typedef struct {
     const char *decls;           /* residual declarations, `$` = prefix */
     const char *defs_doc;        /* the definitions' doc-comment, or NULL */
     const char *defs;            /* residual definitions, `$` = prefix */
+    /* [CLS-TREE] S4 (cls_tree_design.md §2.2, §6.1) TWO MORE COLUMNS, and
+     * both are D58 events recorded rather than quietly added.
+     *
+     * `requires` is the OR of the entry ids this entry's BODY calls. Both
+     * emit functions close the artifact's mask over it, so an emitter asks
+     * for what IT calls and never for what a backend's residual happens to
+     * call — which is an encoding fact DD-12 (7) keeps out of the emitter.
+     * [VAR] built this column once and deleted it with no customer (D77);
+     * utf8's caseless span compare calling the shared `$_decode` is one.
+     *
+     * `inline_def` says the definition is `static inline`, has NO
+     * declaration (so nothing reaches a split artifact's public `.h`) and
+     * must therefore precede every engine body that calls it. An exported
+     * entry cannot be inlined into a `-fPIC` build (interposable), which is
+     * the whole reason a per-character helper is not exported. The emitter
+     * places these with `pcrec_enc_emit_inline_defs`; `pcrec_enc_emit_defs`
+     * skips them. */
+    unsigned    requires;
+    bool        inline_def;
 } PcrecEncEntry;
 
 /* The entry ids, which are also the bits of the per-artifact MASK. */
@@ -151,7 +170,17 @@ enum {
      * NOT `engine_callable`: it is called from the entry wrapper's
      * once-per-call resolution, never from an engine body, so the [M5-SEAM]
      * check's rule applies to it exactly as it does to `next_pos`. */
-    PCREC_ENCE_VAR_VALID      = 1u << 4
+    PCREC_ENCE_VAR_VALID      = 1u << 4,
+    /* [CLS-TREE] S4 DECODE ONE CHARACTER at a position: its length, or 0 on
+     * a truncated or ill-formed sequence — exactly the automaton's
+     * ill-formed set, so a subject this rejects is one no lowered class
+     * would have matched either (cls_tree_design.md §2.2). In the mask when
+     * the VM emits a wide-class kit test, and by `requires` whenever an
+     * entry's body calls it. `engine_callable` and `inline_def`. A backend
+     * whose classes are all one unit deep (`byte`) has NO ROW, and the VM
+     * then keeps the class's byte child: the emitter asks the table, never
+     * the encoding. */
+    PCREC_ENCE_DECODE         = 1u << 5
 };
 
 typedef struct {
@@ -388,6 +417,13 @@ void pcrec_enc_emit_decls(StrBuf *sb, const PcrecEnc *e, unsigned mask,
                           const char *prefix);
 void pcrec_enc_emit_defs(StrBuf *sb, const PcrecEnc *e, unsigned mask,
                          const char *prefix);
+/* [CLS-TREE] S4 the `inline_def` entries' definitions, for a caller to place
+ * ahead of the engine bodies; `pcrec_enc_emit_defs` emits the rest. Both,
+ * and `pcrec_enc_emit_decls`, close `mask` over `requires` first. */
+void pcrec_enc_emit_inline_defs(StrBuf *sb, const PcrecEnc *e, unsigned mask,
+                                const char *prefix);
+/* `mask` closed over every entry's `requires`, to a fixpoint. */
+unsigned pcrec_enc_mask_close(const PcrecEnc *e, unsigned mask);
 /* Is this entry callable from an engine body? Answered from the BACKEND's own
  * row, so a future backend's entry declares its own status rather than
  * inheriting one from a list somewhere else. False for an id no backend

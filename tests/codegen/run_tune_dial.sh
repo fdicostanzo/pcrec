@@ -457,13 +457,50 @@ if [ "$s3c_bad" -eq 0 ]; then
         bad "§3c: +1 leaves the entry chain at ${ent_ai[3]} always_inline attributes, same as the middle — the term's raise did not reach the emitter"
         s3c_bad=$((s3c_bad + 1))
     fi
-    # +2 is DECLARED identical to +1 on every cell.
+    # +2 equals +1 on THIS row's cell (§5.4: "8,192 (= +1)"). λ is where the
+    # two positions differ, and §3d holds that.
     if [ "${ent_ai[4]}" = "${ent_ai[3]}" ]; then
-        ok "§3c: +2 is identical to +1 on this row (${ent_ai[4]} attributes) — DECLARED VACUOUS, and it becomes distinct the day either λ lands ([CLS-TREE]) or the speed floor s is ruled below 1.03"
+        ok "§3c: +2 is identical to +1 on the entry-chain row (${ent_ai[4]} attributes), as its cell says; λ's row is where +2 differs (§3d)"
     else
-        bad "§3c: +2 differs from +1 (${ent_ai[4]} vs ${ent_ai[3]} attributes) — the contract says they are identical on every cell"
+        bad "§3c: +2 differs from +1 (${ent_ai[4]} vs ${ent_ai[3]} attributes) on the entry-chain row — the contract gives them one cell"
     fi
 fi
+
+# ---------------------------------------------------------------------------
+# §3d — λ's ROW ([CLS-TREE] S4, D131): the class-matcher FORM each position
+#       emits for one wide class, RECOVERED FROM THE MATCHER TEXT (the table
+#       reads each form leaves in `<prefix>_wcls0`), never from the listing
+#       or a stamp. The witness is `\p{L}` under `-e utf8 --engine=vm`,
+#       whose K has >= 16 sections and whose P3 is within 1.26x of K, so the
+#       §5.4 cells resolve to: -2/-1 the smaller of K and P3 = K (clsfit's
+#       12/12 at the size end, cls_tree_design.md §1.7.4); 0/+1 P3; +2 the
+#       smaller of P2 and B1 = P2. Three distinct programs.
+# ---------------------------------------------------------------------------
+echo "== §3d — λ's row: the matcher form per position =="
+lam_form() {   # $1 = the emitted .c; prints K / P3 / P2 / B1 / none
+    local f="$1"
+    if   grep -q 'rx_wcls0_m\[' "$f"; then echo P3
+    elif grep -q 'rx_wcls0_l\[rx_wcls0_i\[cp >> 6\]\]' "$f"; then echo P2
+    elif grep -q 'rx_wcls0_b\[cp >> 3\]' "$f"; then echo B1
+    elif grep -q 'static inline int rx_wcls0(' "$f"; then echo K
+    else echo none; fi
+}
+lam_want=(K K P3 P3 P2)
+for pos in -2 -1 0 1 2; do
+    LOUT="$WORKDIR/lam_$pos.c"
+    if ! pcrec_run "$PCREC" -e utf8 --engine=vm --tune="$pos" \
+            -p rx -o "$LOUT" --pattern '\p{L}' >/dev/null 2>&1; then
+        bad "§3d: \\p{L} --engine=vm --tune=$pos does not compile"
+        continue
+    fi
+    got="$(lam_form "$LOUT")"
+    want="${lam_want[$((pos + 2))]}"
+    if [ "$got" = "$want" ]; then
+        ok "§3d: --tune=$pos emits the $got matcher for \\p{L}, as λ's cell says"
+    else
+        bad "§3d: --tune=$pos emits the $got matcher for \\p{L}; λ's cell says $want"
+    fi
+done
 
 # ---------------------------------------------------------------------------
 # §4 — DIAL-S6: NESTING. The positions are an ORDINAL, not five unrelated

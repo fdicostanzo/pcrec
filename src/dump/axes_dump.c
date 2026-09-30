@@ -604,6 +604,27 @@ static void emit_predicate_axes(StrBuf *sb)
         emit_pred_row(sb, &p, 2, "denied", "",
                      0, 0, "", "always (fallback) — the class keeps its singleton/range/bitmap shape");
     }
+    /* [CLS-TREE] S4 cls-kit — §2.33. RX_VM_CLS_KIT is an ACTIVITY COUNT
+     * (distinct kit matchers), stamp_value empty for alt-island's reason. */
+    {
+        PredAxis p = { "cls-kit", NULL, "RX_VM_CLS_KIT", "", 0, NULL, 0, NULL, NULL, NULL };
+        emit_pred_row(sb, &p, 1, "kit", "",
+                     PCREC_NO_CLS_KIT, 0, "",
+                     "per wide class on the VM route (members encode deeper than one code unit, more than one member) where the encoding has a one-character decode entry: decode one character and test it with the class-matcher kit's function, its form chosen by the --tune class table (src/gen/clskit.c)");
+        emit_pred_row(sb, &p, 2, "denied", "",
+                     0, 0, "", "always (fallback) — the class's byte alternation, and every one-member class (a literal) keeps its bytes");
+    }
+    /* [OPT-CLSPACK] cls-pack — §2.34. RX_VM_CLS_ATOMS is an ACTIVITY COUNT
+     * (the shared table's atoms), stamp_value empty for alt-island's reason.
+     * The one artifact-level row of src/gen/clskit.c's TAB_ROWS. */
+    {
+        PredAxis p = { "cls-pack", NULL, "RX_VM_CLS_ATOMS", "", 0, NULL, 0, NULL, NULL, NULL };
+        emit_pred_row(sb, &p, 1, "atom", "",
+                     PCREC_NO_CLS_PACK, 0, "",
+                     "per VM artifact: at least 11 of its byte classes read a table (no singleton/range/fold compare covers them) and their byte partition has at most 64 atoms, so they share ONE 256-byte byte->atom table with a 64-bit mask per class instead of a 32-byte bitmap each (src/gen/clskit.c TAB_ROWS); -fno-cls-kit denies this row too");
+        emit_pred_row(sb, &p, 2, "denied", "",
+                     0, 0, "", "always (fallback) — a 32-byte bitmap per table-read class");
+    }
     /* [OPT-LITSCAN] S2a lit-run — §2.31. RX_VM_LIT_RUNS is an ACTIVITY
      * COUNT, stamp_value left empty on both rows for alt-island's reason.
      * F5 (D127, abi 43) narrowed the floor from two to three: it lives in

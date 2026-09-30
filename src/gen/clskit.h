@@ -10,23 +10,26 @@
  * law that tests/clskit/ can test against. A "hint" argument added to any
  * entry below retires that test silently.
  *
- * Four things live here:
+ * Five things live here:
  *   - the per-section LEAF forms plus the sectioning DP (`pcrec_clskit_
  *     partition`), the design's `K`. It is a SIZE optimizer only (D131
  *     item 2), and its one pinned λ is table data in clskit.c;
  *   - the WHOLE-SET forms `PAGE3`/`PAGE2`/`BITMAP1` (§1.3);
- *   - the shared byte ATOM table ([OPT-CLSPACK], D131 item 6) — its FORM
- *     and emitter live here, but choosing it is an ARTIFACT-LEVEL decision
- *     (S2, D131 item 6's "N ~ 11 live class sites" counts sites across an
- *     artifact), never a `ROWS` outcome — see `ROWS`'s own comment;
+ *   - the shared byte ATOM table ([OPT-CLSPACK], D131 item 6), its FORM and
+ *     emitter;
  *   - THE SELECTION, D131 item 1's `--tune` class-form table over the
  *     per-SET forms (`K`/`PAGE3`/`PAGE2`/`BITMAP1`). It is one first-match
- *     table with rows as data (`pcrec_clskit_rows`).
+ *     table with rows as data (`pcrec_clskit_rows`);
+ *   - THE TABLE SELECTION, D131 item 6's ARTIFACT-level choice of how the
+ *     byte classes that read a table read it: one shared atom table, or a
+ *     table per class. A second first-match table (`pcrec_clskit_table_rows`),
+ *     not a `ROWS` row, because its input is every such class in the
+ *     artifact at once — `ROWS` sees one set.
  *
- * NO EMITTER CALLS ANY OF IT YET (S1). The first caller is S4 (VM decode +
- * kit), or S2 for the byte tier. That caller wires `tune` from `--tune` and
- * maps the row denies (`ClsDeny`) onto whatever public deny flag D129 Q2's
- * `-fno-cls-kit` becomes. Until then nothing here is caller-observable.
+ * Callers: the VM (S4 wires the per-set selection for wide classes, and
+ * [OPT-CLSPACK] the table selection for byte classes). `--tune` reaches both
+ * tables as their position bit; the per-set rows' denies are not mapped to a
+ * public flag, the table selection's atom row is `-fno-cls-pack`'s.
  */
 #ifndef PCREC_CLSKIT_H
 #define PCREC_CLSKIT_H
@@ -92,9 +95,8 @@ typedef struct {
 
 /* One row's deny, an ORDINAL (bit `1u << d` in a deny mask). CLSD_NONE is
  * the terminal row's, which cannot be denied. NO `CLSD_ATOM`: the atom
- * table is not a `ROWS` outcome (see `ROWS`'s own comment in clskit.c) —
- * S2's artifact-level selection will mint its own deny when it builds
- * that mechanism, mapped onto D129 Q2's public `-fno-cls-kit` there. */
+ * table is not a `ROWS` outcome (see `ROWS`'s own comment in clskit.c);
+ * the table selection below carries its own deny (`ClsTabDeny`). */
 typedef enum {
     CLSD_NONE,
     CLSD_BYTE_KIT,
@@ -141,6 +143,39 @@ typedef struct {
     long long bytes;            /* model bytes of `form` */
 } ClsChoice;
 
+/* THE TABLE SELECTION's answer for an artifact's TABLE-READING byte
+ * classes (the ones no compare shape covers): one shared byte->atom table
+ * plus a 64-bit mask per class, or a 32-byte bitmap per class. */
+typedef enum {
+    CLST_SITE,      /* one bitmap per class, the caller's own table */
+    CLST_ATOM       /* the shared atom table, `pcrec_clskit_emit_atom*` */
+} ClsTabForm;
+
+/* A table-selection row's deny, an ORDINAL like `ClsDeny`. */
+typedef enum {
+    CLSTD_NONE,
+    CLSTD_ATOM,
+    CLSTD_NDENY
+} ClsTabDeny;
+
+/* A row of the table selection, as data a listing can print. */
+typedef struct {
+    const char *name;
+    const char *pred_desc;     /* the predicate, one line */
+    unsigned    positions;     /* bit (tune + 2) for each --tune position */
+    int         pred;          /* clskit.c's ClsTabPred tag */
+    ClsTabForm  form;
+    ClsTabDeny  deny;
+} ClsTabRow;
+
+/* The table selection's answer. `atoms` is filled when `form` is
+ * `CLST_ATOM`, and `atoms.mask[k]` is set `k`'s mask in the caller's order. */
+typedef struct {
+    ClsTabForm   form;
+    int          row;
+    ClsAtomTable atoms;
+} ClsTabChoice;
+
 void pcrec_clskit_partition(Arena *a, const PcrecCpRange *iv, int n,
                             unsigned lam, unsigned leaf_allow, ClsKit *out);
 long long pcrec_clskit_whole_bytes(Arena *a, ClsForm f,
@@ -150,6 +185,10 @@ bool pcrec_clskit_atoms(Arena *a, const PcrecCpRange *const *sets,
 void pcrec_clskit_select(Arena *a, const PcrecCpRange *iv, int n,
                          const ClsSelectIn *in, ClsChoice *out);
 const ClsRow *pcrec_clskit_rows(int *nrows);
+void pcrec_clskit_select_tables(Arena *a, const PcrecCpRange *const *sets,
+                                const int *nivs, int nset, int tune,
+                                unsigned deny, ClsTabChoice *out);
+const ClsTabRow *pcrec_clskit_table_rows(int *nrows);
 unsigned pcrec_clskit_kit_lambda(void);
 
 const char *pcrec_clskit_leaf_name(ClsLeaf l);
