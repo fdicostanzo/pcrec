@@ -171,3 +171,10 @@ in the handback message.
 - `docs/dev/lanes/clspack_census.py`, `clspack_census.tsv`, `clspack_size.tsv`
 - CLAUDE.md: `src/gen/`, `tests/base/`, `tests/codegen/`, `docs/dev/lanes/`
 - `docs/dev/plan.md` [OPT-CLSPACK] -> STATE:started, BUILT PENDING MERGE
+
+## 7. Manager rulings on §6 (2026-09-30, eighty-sixth session)
+- (a) YES: `-fno-cls-kit` also denies the atom row. The atom table IS a kit form (D129 Q2's one kit-level deny); `-fno-cls-pack` stays as the specific deny. To be wired at landing.
+- (b) KEEP the stamp (D81 activity-stamp precedent; `--list-axes` reads it).
+- (c) Spec section numbers are renumbered at merge by the manager, in merge order (reseed, S4, clspack).
+- (d) As built; S2 is a later row.
+- Noted for Frank: the promoted build fires on ZERO shipped corpus artifacts (max 6 bitmaps per pattern). Its population is constructed witnesses only; the ruling rested on O-77's time tie + size.
