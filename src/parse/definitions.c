@@ -25,8 +25,8 @@
  * THE PREDICATE IS A TAG, evaluated by exactly one exhaustive no-default
  * switch (`pcrec_def_tag_applies`, below) — internal.h's own comment before
  * `struct RegRow` has the full ruling (r43 K1/K2/K3/K9). Three of the
- * tags have NO PRODUCER yet (UTF-8 encoding, a non-LF newline
- * convention, a bound [LIB] name) and answer `false` unconditionally, which
+ * tags have NO PRODUCER yet (a non-LF newline convention, a bound [LIB]
+ * name; the encoding tag has one since [K72]) and answer `false` unconditionally, which
  * is sound: a row whose only other entry is `DEF_ALWAYS` simply falls
  * through to it, reproducing today's byte/LF/no-library behaviour exactly.
  */
@@ -36,6 +36,7 @@
 #include <string.h>
 
 #include "core/internal.h"
+#include "enc/enc.h"
 #include "parse_mods.h"
 
 /* Exhaustive no-default switch answering whether `tag` applies under `cx`'s
@@ -70,7 +71,12 @@ bool pcrec_def_tag_applies(DefTag tag, const Ctx *cx)
     case DEF_UCP_T:
         return cx->mods->ucp &&
                !(cx->mods->arestrict & (PARSE_ARESTRICT_P | PARSE_ARESTRICT_T));
+    /* [K72] the encoding's universe is Unicode's — asked of the encoding
+     * (`max_cp`), never of its identity (DD-12 (7)), the `(*UTF)` port's own
+     * question. `\h`/`\v` are the row family that reads it. */
     case DEF_ENCODING_UTF8:
+        return cx->opt &&
+               pcrec_enc_by_id(cx->opt->encoding)->max_cp >= 0x10FFFFu;
     case DEF_NEWLINE_CONV:
     case DEF_LIB_NAME_BOUND:
         return false;

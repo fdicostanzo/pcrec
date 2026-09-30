@@ -3853,8 +3853,8 @@ typedef enum {
     DEF_UCP_W,           /* \w \W \b \B */
     DEF_UCP_P,           /* the POSIX classes but the digit pair */
     DEF_UCP_T,           /* [:digit:] [:xdigit:] */
-    DEF_ENCODING_UTF8,   /* --encoding=utf8 — NO PRODUCER YET ([DD-12]/[M5]);
-                          * answers false until built */
+    DEF_ENCODING_UTF8,   /* the encoding's universe is Unicode's (`max_cp`);
+                          * `\h \H \v \V` read it ([K72]) */
     DEF_NEWLINE_CONV,    /* a non-LF newline convention is active — NO
                           * PRODUCER YET (D64, parked); same shape */
     DEF_LIB_NAME_BOUND   /* [LIB]/[DD-13b]: the name is bound in the
@@ -4481,7 +4481,8 @@ extern const PcrecSetDef pcrec_ucp_set_digit, pcrec_ucp_set_space,
     pcrec_ucp_set_pspace, pcrec_ucp_set_word, pcrec_ucp_set_alpha,
     pcrec_ucp_set_alnum, pcrec_ucp_set_lower, pcrec_ucp_set_upper,
     pcrec_ucp_set_cntrl, pcrec_ucp_set_blank, pcrec_ucp_set_xdigit,
-    pcrec_ucp_set_punct, pcrec_ucp_set_graph, pcrec_ucp_set_print;
+    pcrec_ucp_set_punct, pcrec_ucp_set_graph, pcrec_ucp_set_print,
+    pcrec_ucp_set_hspace, pcrec_ucp_set_vspace;
 void pcrec_setdef_build(Ctx *cx, const PcrecSetDef *d, PcrecCpSet *s);
 Ast *pcrec_setdef_class(Ctx *cx, const PcrecSetDef *d, bool negate,
                         const char *construct, char *why, size_t whysz);

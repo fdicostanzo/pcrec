@@ -415,10 +415,10 @@ static const RegDef s_def[] = { {DEFK_SET, DEF_UCP_S, "\\p{Xsp}", NULL, NULL, NU
 static const RegDef S_def[] = { {DEFK_SET, DEF_UCP_S, "\\P{Xsp}", NULL, NULL, NULL, &pcrec_ucp_set_space}, {DEFK_STR, DEF_ALWAYS, "[^\\t\\n\\x0b\\f\\r ]", NULL, NULL, NULL, NULL}, {DEFK_END, DEF_ALWAYS, NULL, NULL, NULL, NULL, NULL} };
 static const RegDef w_def[] = { {DEFK_SET, DEF_UCP_W, "\\p{Xwd}", NULL, NULL, NULL, &pcrec_ucp_set_word}, {DEFK_STR, DEF_ALWAYS, "[A-Za-z0-9_]", NULL, NULL, NULL, NULL}, {DEFK_END, DEF_ALWAYS, NULL, NULL, NULL, NULL, NULL} };
 static const RegDef W_def[] = { {DEFK_SET, DEF_UCP_W, "\\P{Xwd}", NULL, NULL, NULL, &pcrec_ucp_set_word}, {DEFK_STR, DEF_ALWAYS, "[^A-Za-z0-9_]", NULL, NULL, NULL, NULL}, {DEFK_END, DEF_ALWAYS, NULL, NULL, NULL, NULL, NULL} };
-static const RegDef h_def[] = { {DEFK_STR, DEF_ALWAYS, "[\\t \\xa0]", NULL, NULL, NULL, NULL}, {DEFK_END, DEF_ALWAYS, NULL, NULL, NULL, NULL, NULL} };
-static const RegDef H_def[] = { {DEFK_STR, DEF_ALWAYS, "[^\\t \\xa0]", NULL, NULL, NULL, NULL}, {DEFK_END, DEF_ALWAYS, NULL, NULL, NULL, NULL, NULL} };
-static const RegDef v_def[] = { {DEFK_STR, DEF_ALWAYS, "[\\n\\x0b\\f\\r\\x85]", NULL, NULL, NULL, NULL}, {DEFK_END, DEF_ALWAYS, NULL, NULL, NULL, NULL, NULL} };
-static const RegDef V_def[] = { {DEFK_STR, DEF_ALWAYS, "[^\\n\\x0b\\f\\r\\x85]", NULL, NULL, NULL, NULL}, {DEFK_END, DEF_ALWAYS, NULL, NULL, NULL, NULL, NULL} };
+static const RegDef h_def[] = { {DEFK_SET, DEF_ENCODING_UTF8, "[\\t \\xa0\\x{1680}\\x{180e}\\x{2000}-\\x{200a}\\x{202f}\\x{205f}\\x{3000}]", NULL, NULL, NULL, &pcrec_ucp_set_hspace}, {DEFK_STR, DEF_ALWAYS, "[\\t \\xa0]", NULL, NULL, NULL, NULL}, {DEFK_END, DEF_ALWAYS, NULL, NULL, NULL, NULL, NULL} };
+static const RegDef H_def[] = { {DEFK_SET, DEF_ENCODING_UTF8, "[^\\t \\xa0\\x{1680}\\x{180e}\\x{2000}-\\x{200a}\\x{202f}\\x{205f}\\x{3000}]", NULL, NULL, NULL, &pcrec_ucp_set_hspace}, {DEFK_STR, DEF_ALWAYS, "[^\\t \\xa0]", NULL, NULL, NULL, NULL}, {DEFK_END, DEF_ALWAYS, NULL, NULL, NULL, NULL, NULL} };
+static const RegDef v_def[] = { {DEFK_SET, DEF_ENCODING_UTF8, "[\\n\\x0b\\f\\r\\x85\\x{2028}\\x{2029}]", NULL, NULL, NULL, &pcrec_ucp_set_vspace}, {DEFK_STR, DEF_ALWAYS, "[\\n\\x0b\\f\\r\\x85]", NULL, NULL, NULL, NULL}, {DEFK_END, DEF_ALWAYS, NULL, NULL, NULL, NULL, NULL} };
+static const RegDef V_def[] = { {DEFK_SET, DEF_ENCODING_UTF8, "[^\\n\\x0b\\f\\r\\x85\\x{2028}\\x{2029}]", NULL, NULL, NULL, &pcrec_ucp_set_vspace}, {DEFK_STR, DEF_ALWAYS, "[^\\n\\x0b\\f\\r\\x85]", NULL, NULL, NULL, NULL}, {DEFK_END, DEF_ALWAYS, NULL, NULL, NULL, NULL, NULL} };
 static const RegDef bare_N_def[] = { {DEFK_STR, DEF_ALWAYS, "[^\\n]", NULL, NULL, NULL, NULL}, {DEFK_END, DEF_ALWAYS, NULL, NULL, NULL, NULL, NULL} };
 
 /* [DD-11.1] `\R`'s definition (definitions_table.md §1/§4): any Unicode
