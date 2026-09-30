@@ -9,7 +9,7 @@ SAB_ID="S402-clspack-threshold-off-by-one"
 SAB_FILE="src/gen/clskit.c"
 SAB_SUITES="clspack"
 SAB_DESC="the table selection's atom predicate compares nset > atom_min_sites, so exactly 11 table-read classes no longer share an atom table"
-SAB_DOC_FIGURE="MEASURED solo 2026-09-30 at the clspack tip: clspack:5fail/15pass -- [atom-11] and [atom-64] (both exactly eleven classes) and the exactly-64 row; the --tune rows compare a position with the default and move together DETECTED."
+SAB_DOC_FIGURE="MEASURED solo 2026-09-30 at the clspack tip: clspack:5fail/19pass -- [atom-11] and [atom-64] (both exactly eleven classes) and the exactly-64 row; the --tune rows compare a position with the default and move together DETECTED."
 SAB_REACH='"$PCREC" --engine=vm -p rx -o - --pattern "([aeiou])[bcdfg][hjklm][npqrs][tvwxz][AEIOU][BCDFG][HJKLM][NPQRS][TVWXZ][02468]"'
 SAB_REACH_EXPECT='#define RX_VM_CLS_ATOMS 12'
 SAB_EXPECT=DETECTED
