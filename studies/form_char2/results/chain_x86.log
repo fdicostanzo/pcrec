@@ -1,0 +1,148 @@
+2026-09-30 13:17:02 chain start pid 2899146 deadline 2026-10-01 06:00
+2026-09-30 13:17:03 waiting: load1=1.00 make_procs=1
+2026-09-30 13:22:03 waiting: load1=1.51 make_procs=1
+2026-09-30 13:27:04 waiting: load1=1.46 make_procs=1
+2026-09-30 13:32:04 waiting: load1=1.41 make_procs=1
+2026-09-30 13:37:05 waiting: load1=2.56 make_procs=1
+2026-09-30 13:42:06 waiting: load1=2.16 make_procs=1
+2026-09-30 13:47:06 waiting: load1=0.80 make_procs=1
+2026-09-30 13:49:37 quiet: load1=0.47 make=0 -- building
+2026-09-30 13:50:07 built; timing
+REFUSED load1=0.75 >= 0.5, waiting (0s)
+REFUSED load1=0.66 >= 0.5, waiting (30s)
+REFUSED load1=0.74 >= 0.5, waiting (60s)
+REFUSED load1=0.85 >= 0.5, waiting (90s)
+REFUSED load1=0.91 >= 0.5, waiting (120s)
+REFUSED load1=1.0 >= 0.5, waiting (150s)
+REFUSED load1=0.73 >= 0.5, waiting (180s)
+REFUSED load1=0.52 >= 0.5, waiting (210s)
+REFUSED load1=0.55 >= 0.5, waiting (0s)
+REFUSED load1=0.52 >= 0.5, waiting (0s)
+REFUSED load1=0.51 >= 0.5, waiting (30s)
+done ci256 search
+REFUSED load1=0.53 >= 0.5, waiting (0s)
+done ci256 findall
+REFUSED load1=0.51 >= 0.5, waiting (0s)
+REFUSED load1=0.6 >= 0.5, waiting (0s)
+REFUSED load1=0.89 >= 0.5, waiting (30s)
+REFUSED load1=0.98 >= 0.5, waiting (60s)
+REFUSED load1=1.49 >= 0.5, waiting (90s)
+REFUSED load1=1.14 >= 0.5, waiting (120s)
+REFUSED load1=1.09 >= 0.5, waiting (150s)
+REFUSED load1=1.12 >= 0.5, waiting (180s)
+REFUSED load1=1.07 >= 0.5, waiting (210s)
+REFUSED load1=0.96 >= 0.5, waiting (240s)
+REFUSED load1=0.58 >= 0.5, waiting (270s)
+done ci256 match
+REFUSED load1=0.58 >= 0.5, waiting (0s)
+REFUSED load1=0.53 >= 0.5, waiting (0s)
+done waf744 search
+REFUSED load1=0.52 >= 0.5, waiting (0s)
+done waf744 findall
+REFUSED load1=0.51 >= 0.5, waiting (0s)
+REFUSED load1=0.59 >= 0.5, waiting (0s)
+done waf744 match
+REFUSED load1=0.5 >= 0.5, waiting (0s)
+REFUSED load1=0.53 >= 0.5, waiting (30s)
+REFUSED load1=0.55 >= 0.5, waiting (0s)
+done waf186 search
+REFUSED load1=0.53 >= 0.5, waiting (0s)
+done waf186 findall
+REFUSED load1=0.53 >= 0.5, waiting (0s)
+REFUSED load1=0.5 >= 0.5, waiting (0s)
+done waf186 match
+REFUSED load1=0.91 >= 0.5, waiting (0s)
+REFUSED load1=0.73 >= 0.5, waiting (30s)
+REFUSED load1=0.53 >= 0.5, waiting (0s)
+REFUSED load1=0.51 >= 0.5, waiting (0s)
+REFUSED load1=0.51 >= 0.5, waiting (0s)
+REFUSED load1=0.71 >= 0.5, waiting (30s)
+REFUSED load1=0.82 >= 0.5, waiting (60s)
+REFUSED load1=0.89 >= 0.5, waiting (90s)
+REFUSED load1=0.93 >= 0.5, waiting (120s)
+REFUSED load1=0.95 >= 0.5, waiting (150s)
+REFUSED load1=0.71 >= 0.5, waiting (180s)
+REFUSED load1=0.54 >= 0.5, waiting (210s)
+REFUSED load1=0.68 >= 0.5, waiting (0s)
+REFUSED load1=0.81 >= 0.5, waiting (30s)
+REFUSED load1=0.89 >= 0.5, waiting (60s)
+REFUSED load1=0.93 >= 0.5, waiting (90s)
+REFUSED load1=0.96 >= 0.5, waiting (120s)
+REFUSED load1=0.98 >= 0.5, waiting (150s)
+REFUSED load1=0.99 >= 0.5, waiting (180s)
+REFUSED load1=1.31 >= 0.5, waiting (210s)
+REFUSED load1=1.19 >= 0.5, waiting (240s)
+REFUSED load1=1.11 >= 0.5, waiting (270s)
+REFUSED load1=1.19 >= 0.5, waiting (300s)
+REFUSED load1=1.18 >= 0.5, waiting (330s)
+REFUSED load1=1.19 >= 0.5, waiting (360s)
+REFUSED load1=1.17 >= 0.5, waiting (390s)
+REFUSED load1=1.39 >= 0.5, waiting (420s)
+REFUSED load1=1.14 >= 0.5, waiting (450s)
+REFUSED load1=0.88 >= 0.5, waiting (480s)
+REFUSED load1=0.58 >= 0.5, waiting (510s)
+done slack search
+REFUSED load1=0.53 >= 0.5, waiting (0s)
+REFUSED load1=0.5 >= 0.5, waiting (0s)
+REFUSED load1=1.47 >= 0.5, waiting (30s)
+REFUSED load1=1.28 >= 0.5, waiting (60s)
+REFUSED load1=1.17 >= 0.5, waiting (90s)
+REFUSED load1=1.1 >= 0.5, waiting (120s)
+REFUSED load1=1.06 >= 0.5, waiting (150s)
+REFUSED load1=1.04 >= 0.5, waiting (180s)
+REFUSED load1=1.02 >= 0.5, waiting (210s)
+REFUSED load1=0.74 >= 0.5, waiting (240s)
+REFUSED load1=0.78 >= 0.5, waiting (270s)
+REFUSED load1=0.79 >= 0.5, waiting (300s)
+REFUSED load1=0.76 >= 0.5, waiting (330s)
+REFUSED load1=1.43 >= 0.5, waiting (360s)
+REFUSED load1=0.93 >= 0.5, waiting (390s)
+REFUSED load1=0.85 >= 0.5, waiting (420s)
+REFUSED load1=0.74 >= 0.5, waiting (450s)
+REFUSED load1=0.84 >= 0.5, waiting (480s)
+REFUSED load1=0.9 >= 0.5, waiting (510s)
+REFUSED load1=0.94 >= 0.5, waiting (540s)
+REFUSED load1=0.89 >= 0.5, waiting (570s)
+REFUSED load1=0.62 >= 0.5, waiting (600s)
+REFUSED load1=0.6 >= 0.5, waiting (0s)
+done slack findall
+REFUSED load1=0.53 >= 0.5, waiting (0s)
+done slack match
+REFUSED load1=0.51 >= 0.5, waiting (0s)
+done union search
+REFUSED load1=0.51 >= 0.5, waiting (0s)
+REFUSED load1=0.5 >= 0.5, waiting (0s)
+done union findall
+REFUSED load1=0.5 >= 0.5, waiting (0s)
+done union match
+REFUSED load1=0.5 >= 0.5, waiting (0s)
+done kwalt search
+REFUSED load1=0.5 >= 0.5, waiting (0s)
+done kwalt findall
+REFUSED load1=0.5 >= 0.5, waiting (0s)
+done kwalt match
+REFUSED load1=0.5 >= 0.5, waiting (0s)
+done hdr search
+REFUSED load1=0.5 >= 0.5, waiting (0s)
+done hdr findall
+done hdr match
+REFUSED load1=0.5 >= 0.5, waiting (0s)
+done lit16 search
+REFUSED load1=0.52 >= 0.5, waiting (0s)
+done lit16 findall
+REFUSED load1=0.59 >= 0.5, waiting (0s)
+REFUSED load1=0.5 >= 0.5, waiting (0s)
+done lit16 match
+REFUSED load1=0.5 >= 0.5, waiting (0s)
+done hotloop search
+REFUSED load1=0.5 >= 0.5, waiting (0s)
+done hotloop findall
+REFUSED load1=0.5 >= 0.5, waiting (0s)
+done hotloop match
+REFUSED load1=0.5 >= 0.5, waiting (0s)
+done hotchain search
+REFUSED load1=0.5 >= 0.5, waiting (0s)
+done hotchain findall
+REFUSED load1=0.52 >= 0.5, waiting (0s)
+done hotchain match
+2026-09-30 14:53:42 CHAIN COMPLETE
