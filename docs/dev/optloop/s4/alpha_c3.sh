@@ -177,7 +177,8 @@ EOF
   done
 }
 
-norm() { sed -E -e 's/abi 5[89]\b/abi N/g; s/(PCREC_RX_ABI_H[^0-9]*)5[89]\b/\1N/g; s/(\.abi = )5[89]\b/\1N/' "$1"; }
+# no \b: BSD sed silently no-ops it, and this runs on both boxes
+norm() { sed -E -e 's/\(abi 5[89]\)/(abi N)/g; s/(PCREC_RX_ABI_H[^0-9]*)5[89]/\1N/g; s/(\.abi = )5[89],/\1N,/' "$1"; }
 
 check() {
   # (1) DENY == BASE modulo the abi digit ALONE (the fact deny restores the
