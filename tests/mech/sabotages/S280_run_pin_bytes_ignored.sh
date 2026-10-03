@@ -20,6 +20,6 @@ SAB_DOC_FIGURE="MEASURED 2026-09-25 (lane s1build, single-row mech): DETECTED --
 SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "/abcd[xy]/user" && grep -q "^#define RX_REQ_RUN \"2f75736572@0\"" "$REACH_TMP/o.c" && grep -q "^#define RX_DFA_PREFILTER \"memchr\"" "$REACH_TMP/o.c" && echo REACH-C0-PIN-WITNESS'
 SAB_REACH_EXPECT="REACH-C0-PIN-WITNESS"
 SAB_COUNT=1
-SAB_BEFORE='        while (i < r->len && o->k[ro + i].count == 1 &&
-               o->k[ro + i].byte == r->bytes[i])'
-SAB_AFTER='        while (i < r->len && o->k[ro + i].count == 1)   /* SABOTAGE S280 */'
+SAB_BEFORE='        while (i < l && o->k[ro + i].count == 1 &&
+               o->k[ro + i].byte == r->bytes[s0 + i])'
+SAB_AFTER='        while (i < l && o->k[ro + i].count == 1)   /* SABOTAGE S280 */'

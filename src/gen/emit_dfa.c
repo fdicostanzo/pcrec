@@ -6126,8 +6126,8 @@ static void ofs_test_emit_pair(Ctx *cx, StrBuf *c, const char *p,
     pcrec_sb_printf(c, "        if (cand + %d >= n) return n;\n", maxk);
     pcrec_sb_puts(c,   "        if (");
     ofsk_emit_verify(cx, c, p, t);
-    pcrec_sb_puts(c,   ") return cand;\n");
-    pcrec_sb_puts(c,   "        pos = cand + 1;\n"
+    pcrec_sb_puts(c,   ") return cand;\n"
+                       "        pos = cand + 1;\n"
                        "    }\n"
                        "    return n;\n}\n\n");
 }

@@ -32,5 +32,5 @@ SAB_DOC_FIGURE="Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S28
 SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "/user|/users" && grep -q "^#define RX_DFA_PREFILTER \"run-pinned\"" "$REACH_TMP/o.c" && grep -qF "rx_w4(subject + cand) == rx_w4(\"/use\") && rx_w4(subject + cand + 1) == rx_w4(\"user\")" "$REACH_TMP/o.c" && echo REACH-RUN-TERM-EMITTED'
 SAB_REACH_EXPECT="REACH-RUN-TERM-EMITTED"
 SAB_COUNT=1
-SAB_BEFORE='            PcrecRun run = { t->run_bytes, t->run_len };'
-SAB_AFTER='            PcrecRun run = { t->run_bytes, t->run_len + 1 };   /* SABOTAGE S285 */'
+SAB_BEFORE='            PcrecRun run = { t->run_bytes, t->run_mask, t->run_len };'
+SAB_AFTER='            PcrecRun run = { t->run_bytes, t->run_mask, t->run_len + 1 };   /* SABOTAGE S285 */'

@@ -1634,6 +1634,49 @@ else
     bad "[K27]: pcrec failed to compile the NULL-subject fixture 'abc'"
 fi
 
+# ---- [K27] the same contract through the PAIR ARM ([OPT-LITSCAN] S4 C3) -----
+# The caseless necessary run's pair block (two leapfrogged memchr streams)
+# makes every search inside its `while (pos + maxk < n)` guard, so on
+# (s == NULL, n == 0) no memchr is ever reached (litscan_s4.md §2.3.4,
+# r2 R2-S1). Two witnesses: `(?i)select`'s window block on a DFA artifact,
+# and the K66 site's whole-run block on a VM artifact with no DFA scan.
+# Under make ubsan/asan the RUN is the regression (S454 hoists a search).
+for k27p in 'k27p:(?i)select' 'k27w:(x?)(?i:abcdefghijkl)\1'; do
+    k27pre="${k27p%%:*}"; k27pat="${k27p#*:}"
+    k27up="$(printf '%s' "$k27pre" | tr '[:lower:]' '[:upper:]')"
+    if ! pcrec_run "$PCREC" --features all -p "$k27pre" -o - --pattern "$k27pat" > "$WORKDIR/$k27pre.c" 2>/dev/null; then
+        bad "[K27 pair arm]: pcrec failed to compile '$k27pat'"
+        continue
+    fi
+    if ! grep -q 'ha < pos' "$WORKDIR/$k27pre.c"; then
+        bad "[K27 pair arm]: '$k27pat' carries no pair-arm block -- this check has lost the arm it exists to cover"
+        continue
+    fi
+    cat > "$WORKDIR/${k27pre}_drv.c" <<K27PEOF
+#include <stdio.h>
+#include "$k27pre.c"
+int main(void)
+{
+    ptrdiff_t caps[${k27up}_NCAPS][2];
+    printf("%d\n", ${k27pre}_search(NULL, 0, 0, caps));
+    return 0;
+}
+K27PEOF
+    if ! gen_cc "K27 pair-arm driver $k27pre" "$CC" $GENCFLAGS -I"$WORKDIR" \
+                -o "$WORKDIR/${k27pre}_drv" "$WORKDIR/${k27pre}_drv.c"; then
+        bad "[K27 pair arm]: the NULL-subject driver for '$k27pat' failed to compile: $(printf '%s' "$GEN_CC_LOG" | head -3 | tr '\n' ' ')"
+        continue
+    fi
+    k27pout="$(gen_run "K27 pair arm $k27pre" "$WORKDIR/${k27pre}_drv" 2>&1)"; k27prc=$?
+    if [ "$k27prc" -ne 0 ]; then
+        bad "[K27 pair arm]: '$k27pat' <prefix>_search(NULL, 0, 0, caps) did not run cleanly (status $k27prc): $(printf '%s' "$k27pout" | head -3 | tr '\n' ' ')"
+    elif [ "$k27pout" = "0" ]; then
+        ok "[K27 pair arm]: '$k27pat' runs the legal (s == NULL, n == 0) subject clean through its pair-arm block (search 0)"
+    else
+        bad "[K27 pair arm]: '$k27pat' NULL-subject probe answered '$k27pout', want '0'"
+    fi
+done
+
 # ---- [M6.2-WORDB] the three structural rules `\b` lands with ---------------
 #
 # assertions_design.md §3.6.2, §3.8.3.1 and §7.2 each state a rule that NO
@@ -3612,6 +3655,30 @@ $rc_out
 EOF_RC
 if ! printf '%s\n' "$rc_out" | grep -q '^runcmp_check: '; then
     bad "[OPT-LITSCAN S4] runcmp_check.py did not run to completion: $(printf '%s' "$rc_out" | tail -3 | tr '\n' ' ')"
+fi
+
+# =========================================================================
+# [OPT-LITSCAN S4 C3] THE CASELESS NECESSARY RUN (src/facts/req.c, the pair
+# arm in src/gen/emit_dfa.c, runcmp.c's masked rows; abi 59;
+# docs/design/litscan_s4.md §5.4, docs/spec/tuning.md §2.39)
+# =========================================================================
+# Answer-identity-preserving: a masked verify spelling a mask the fact does
+# not carry, a pair block scanning one member, a search hoisted above the
+# loop guard, a REQ_BYTE naming T and a non-canonical position are all
+# invisible to an answer check on most subjects. reqcube_check.py reads
+# each witness's facts from `--emit-facts` and holds the emitted blocks and
+# stamps to them; see its own header. Sabotage rows S446-S455.
+rq_out="$("$TIMEOUT_BIN" 1200 python3 "$SCRIPT_DIR/reqcube_check.py" "$PCREC" "$WORKDIR" "${CC:-gcc}" 2>&1)"
+while IFS= read -r rq_line; do
+    case "$rq_line" in
+        "PASS: "*) ok "${rq_line#PASS: }" ;;
+        "FAIL: "*) bad "${rq_line#FAIL: }" ;;
+    esac
+done <<EOF_RQ
+$rq_out
+EOF_RQ
+if ! printf '%s\n' "$rq_out" | grep -q '^reqcube_check: '; then
+    bad "[OPT-LITSCAN S4 C3] reqcube_check.py did not run to completion: $(printf '%s' "$rq_out" | tail -3 | tr '\n' ' ')"
 fi
 
 echo

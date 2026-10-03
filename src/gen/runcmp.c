@@ -155,17 +155,15 @@ static void rc_emit_words(Ctx *cx, StrBuf *c, const char *base, int off,
         bool exact = rc_kword_is(r, at, w, 0xFF);
         if (!exact && rc_kword_is(r, at, w, 0x00)) continue;
         if (nw++) pcrec_sb_puts(c, " && ");
-        if (exact) {
-            pcrec_sb_printf(c, "%s_w%d(", p, w);
-            rc_base(c, base, off + at);
-            pcrec_sb_printf(c, ") == %s_w%d(\"", p, w);
-        } else {
-            pcrec_sb_printf(c, "(%s_w%d(", p, w);
-            rc_base(c, base, off + at);
+        if (!exact) pcrec_sb_putc(c, '(');
+        pcrec_sb_printf(c, "%s_w%d(", p, w);
+        rc_base(c, base, off + at);
+        if (!exact) {   /* `(w(b + o) & w("<K>")` -- the mask, the same load of a literal */
             pcrec_sb_printf(c, ") & %s_w%d(\"", p, w);
             pcrec_sb_cstr(c, r->k + at, (size_t)w);
-            pcrec_sb_printf(c, "\")) == %s_w%d(\"", p, w);
+            pcrec_sb_puts(c, "\")");
         }
+        pcrec_sb_printf(c, ") == %s_w%d(\"", p, w);
         pcrec_sb_cstr(c, r->t + at, (size_t)w);
         pcrec_sb_puts(c, "\")");
     }

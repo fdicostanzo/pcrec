@@ -22,7 +22,7 @@ SAB_COUNT=1
 SAB_BEFORE='    if (o->nsel > 0) {
         if (o->walk->k[o->sel[o->scan]].k != sp) return false;
     } else if (!(sp == 0 && u->kind == DFA_PF_MEMCHR &&
-                 u->cand.byte == r->bytes[r->idx])) {
+                 u->cand.byte == r->bytes[pin.at + pin.idx])) {
         return false;
     }'
 SAB_AFTER='    /* SABOTAGE S289: clause 3 (IDENTITY) dropped -- the run row is

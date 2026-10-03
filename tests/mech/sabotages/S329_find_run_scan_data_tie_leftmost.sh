@@ -41,7 +41,13 @@ SAB_DOC_FIGURE="tests/codegen/run_prechecks.sh is the whole detector: §4.9c (th
 SAB_REACH='"$PCREC" --features all -p rx -e utf8 --analysis weblog -o "$REACH_TMP/o.c" --pattern "[a-z]+@é" && grep -q "^#define RX_REQ_BYTE \"169\"" "$REACH_TMP/o.c" && echo REACH-FIND-RUN-SCAN-DATA-TIE-RIGHTMOST'
 SAB_REACH_EXPECT="REACH-FIND-RUN-SCAN-DATA-TIE-RIGHTMOST"
 SAB_COUNT=1
-SAB_BEFORE='    for (i = 0; i < n; i++) cand[i] = bytes[n - 1 - i];
-    return n - 1 - pcrec_find_pick(rate, cand, n, 0);'
-SAB_AFTER='    for (i = 0; i < n; i++) cand[i] = bytes[i];
-    return pcrec_find_pick(rate, cand, n, n - 1);   /* SABOTAGE S329: data tie reverts to leftmost */'
+SAB_BEFORE='    for (i = 0; i < n; i++) {
+        cand[i] = bytes[n - 1 - i];
+        care[i] = mask[n - 1 - i];
+    }
+    return n - 1 - pcrec_find_pick(rate, cand, care, n, 0);'
+SAB_AFTER='    for (i = 0; i < n; i++) {
+        cand[i] = bytes[i];
+        care[i] = mask[i];
+    }
+    return pcrec_find_pick(rate, cand, care, n, n - 1);   /* SABOTAGE S329: data tie reverts to leftmost */'
