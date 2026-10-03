@@ -59,7 +59,7 @@ CELLS=(
   "cls-pair-ctl|W|syntax/patterns/cls-pair-ctl.rx||$SYN"
   "ci-ascii-ctl|W|utf8/patterns/ci-ascii-control.rx|-e utf8|$U8"
   "ci-strasse|W|utf8/patterns/ci-strasse.rx|-e utf8|$U8"
-  "alt-distinct|W|utf8/patterns/alt-distinct-lead.rx|-e utf8|$U8"
+  "alt-shared|W|utf8/patterns/alt-shared-char.rx|-e utf8|$U8"
   "sleep-ctl|C|capability/patterns/wild-waf-crs-942160-sleep-benchmark.rx||$CAP"
   "dbnames-ctl|C|capability/patterns/wild-waf-crs-942140-dbnames.rx||$CAP"
   "concat-ctl|C|capability/patterns/wild-waf-crs-942360-concat-sqli.rx||$CAP"
