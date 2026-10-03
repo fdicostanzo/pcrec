@@ -1,0 +1,37 @@
+cell/regime:subjects           cc    role          d ns       a     ai     f1     f2     f3    f3i     f4   floor  ans
+possq/s:f-aaab+41              gcc   improve        999   1.308  1.426  1.006  1.433  1.273  1.415  1.446    0.2%  same
+possq/s:f-aaab+41              clang improve       1493   1.381  1.381  1.326  1.322  1.111  1.156  1.321    1.1%  same
+possq/f:t-1m+2                 gcc   improve    2005890   1.201  1.597  0.895  1.296  1.029  1.412  1.272    0.0%  same
+possq/f:t-1m+2                 clang improve    2774956   1.597  1.598  1.391  1.398  1.123  1.211  1.400    0.6%  same
+lkapos/s:f-aaab+41             gcc   improve        631   1.084  0.944  1.084  1.080  1.040  0.909  1.101    0.1%  same
+lkapos/s:f-aaab+41             clang improve        675   1.044  0.941  1.061  1.052  1.045  0.902  1.057    0.3%  same
+lkapos/f:t-1m+2                gcc   keep       1241255   0.425  0.417  0.425  0.424  0.426  0.428  0.424    0.0%  same
+lkapos/f:t-1m+2                clang keep       1264770   0.406  0.408  0.408  0.412  0.409  0.412  0.410   31.5%  same
+lkaverb/s:f-aaab+41            gcc   improve        630   1.085  0.946  1.085  1.081  1.041  0.909  1.102    0.1%  same
+lkaverb/s:f-aaab+41            clang improve        676   1.044  0.941  1.060  1.051  1.046  0.901  1.056    0.4%  same
+lkaverb/f:t-1m+2               gcc   keep       1241123   0.425  0.417  0.425  0.424  0.426  0.428  0.424    0.0%  same
+lkaverb/f:t-1m+2               clang keep       1264890   0.405  0.408  0.408  0.412  0.409  0.412  0.410   31.5%  same
+lkaneg/s:f-aaab+41             gcc   improve        639   1.165  0.971  1.066  1.010  1.166  0.978  0.990    0.0%  same
+lkaneg/s:f-aaab+41             clang improve        674   1.132  0.947  1.077  1.026  1.272  0.935  1.035    0.4%  same
+lkanon/s:f-aaab+41             gcc   improve        531   1.066  0.845  1.097  1.092  1.031  0.870  1.105    0.9%  same
+lkanon/s:f-aaab+41             clang improve        554   1.034  0.917  1.068  1.050  1.034  0.883  1.076    0.1%  same
+atalt/s:f-aaab+41              gcc   improve        836   1.085  1.013  1.003  0.997  1.087  1.021  0.998    0.1%  same
+atalt/s:f-aaab+41              clang improve        834   0.997  0.998  1.034  1.004  0.998  1.005  0.999    0.2%  same
+atalt/f:t-1m+2                 gcc   improve    1034310   1.060  1.028  1.045  1.046  1.062  1.044  1.031    0.1%  same
+atalt/f:t-1m+2                 clang improve    1031301   0.999  0.998  1.012  1.004  0.986  1.003  1.004    0.1%  same
+
+per compiler and form: improve rows (geomean of form/d, worst, rows above 1+floor); keep rows (worst loss vs a beyond the floor; <= 0 passes)
+  clang ai   improve geomean x1.068  worst x1.598 (possq/f:t-1m+2)  above-floor 2/8   keep worst -30.8% (lkapos/f:t-1m+2)
+  clang f1   improve geomean x1.121  worst x1.391 (possq/f:t-1m+2)  above-floor 8/8   keep worst -30.7% (lkaverb/f:t-1m+2)
+  clang f2   improve geomean x1.105  worst x1.398 (possq/f:t-1m+2)  above-floor 8/8   keep worst -29.9% (lkapos/f:t-1m+2)
+  clang f3   improve geomean x1.074  worst x1.272 (lkaneg/s:f-aaab+41)  above-floor 6/8   keep worst -30.4% (lkaverb/f:t-1m+2)
+  clang f3i  improve geomean x0.993  worst x1.211 (possq/f:t-1m+2)  above-floor 4/8   keep worst -29.9% (lkaverb/f:t-1m+2)
+  clang f4   improve geomean x1.110  worst x1.400 (possq/f:t-1m+2)  above-floor 7/8   keep worst -30.3% (lkaverb/f:t-1m+2)
+  gcc   ai   improve geomean x1.072  worst x1.597 (possq/f:t-1m+2)  above-floor 4/8   keep worst -1.9% (lkapos/f:t-1m+2)
+  gcc   f1   improve geomean x1.033  worst x1.097 (lkanon/s:f-aaab+41)  above-floor 7/8   keep worst +0.0% (lkapos/f:t-1m+2)
+  gcc   f2   improve geomean x1.121  worst x1.433 (possq/s:f-aaab+41)  above-floor 7/8   keep worst -0.2% (lkapos/f:t-1m+2)
+  gcc   f3   improve geomean x1.088  worst x1.273 (possq/s:f-aaab+41)  above-floor 8/8   keep worst +0.3% (lkapos/f:t-1m+2)
+  gcc   f3i  improve geomean x1.052  worst x1.415 (possq/s:f-aaab+41)  above-floor 4/8   keep worst +0.6% (lkapos/f:t-1m+2)
+  gcc   f4   improve geomean x1.122  worst x1.446 (possq/s:f-aaab+41)  above-floor 6/8   keep worst -0.1% (lkapos/f:t-1m+2)
+
+answers: same on every row

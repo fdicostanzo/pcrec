@@ -11,6 +11,10 @@
 #             d    -fno-hyb-reseed, the fixed retry: every ratio's denominator
 #             d2   d's binary again   } THE NOISE FLOOR: the same program
 #             dL   d, link order swapped } (d2: launch noise; dL: + layout)
+#             aL   a, link order swapped: the keep rows' floor (a keep row
+#                  compares a form against `a`, so `a`'s own layout spread
+#                  is its allowance; lane a2build, after round 1's clang
+#                  lkapos/f read dL/d 31.5% at d2/d 0.1%)
 #   timing    LAUNCHES fresh launches per binary (default 15, I-114's
 #             bimodal per-process state), round-robin with the order
 #             rotated each round, every launch `taskset -c CORE`; one launch
@@ -18,25 +22,37 @@
 #             ms (default 50, the bench's pinned-record rule) by calibrating
 #             the iteration count on d first.
 #   output    per (cell, regime, compiler): d's ns, then every variant's
-#             median / d's median, `floor` = the larger of |d2/d-1| and
-#             |dL/d-1|, and `ans` = same/DIFF. Then per compiler, for each
+#             median / d's median, the launch floor |d2/d-1| and the layout
+#             floor max(|dL/d-1|, |aL/a-1|), and `ans` = same/DIFF (table.py,
+#             which also lists every cells.tsv row NOT timed). Then per
+#             compiler, for each
 #             form: the geometric mean and the worst ratio over the
 #             IMPROVE rows, and the worst KEEP row measured against `a`
 #             (a form must keep the shipped win within the floor).
 #   accept    xcall.md §6: answers same on every row; an improve row reads
 #             form/d at or under 1 + floor on BOTH compilers; no keep row
 #             loses more than its floor against `a`.
-# Env: CCS ("gcc clang"), LAUNCHES, PASSES, MINMS, OPT (-O2).
+# Env: CCS ("gcc clang"), LAUNCHES, PASSES, MINMS, OPT (-O2), FORMS (the
+# forms to build and time; default below, any subset of mkforms.py's).
+#
+# Round 1 (2026-10-03) died under `set -e` after timing 20 of 40 rows: the
+# label's `$([ N -gt 1 ] && echo ...)` returns 1 on the first single-subject
+# row (lbvar), which fails the assignment. The label is now computed without
+# a failing substitution, an ERR trap names the line that stops a run, and
+# an EXIT trap renders whatever raw.tsv holds, with the NOT TIMED rows.
 set -euo pipefail
+trap 'echo "bakeoff: STOPPED at line $LINENO (rc $?): $BASH_COMMAND" >&2' ERR
 PACK=$(cd "$1" && pwd); CORE=${2:-2}
 CCS=${CCS:-"gcc clang"} LAUNCHES=${LAUNCHES:-15} PASSES=${PASSES:-7} MINMS=${MINMS:-50} OPT=${OPT:--O2}
 TO=$(command -v gnutimeout || command -v timeout)   # ubuntubudu: bare timeout is uutils (~105 ms/call)
 PIN=(); if command -v taskset >/dev/null; then PIN=(taskset -c "$CORE"); else echo "bakeoff: WARNING no taskset, launches are NOT pinned" >&2; fi
-FORMS="ai f1 f2 f3 f3i f4"
+FORMS=${FORMS:-"ai f1 f1i f3 f3i"}
 W="$PACK/work"; rm -rf "$W"; mkdir -p "$W"
 RAW="$W/raw.tsv"; : > "$RAW"
+render() { [ -s "$RAW" ] && python3 "$PACK/table.py" "$RAW" "$PACK/cells.tsv" "$FORMS" | tee "$W/table.txt"; echo "bakeoff: end $(date -u +%FT%TZ); raw $RAW, table $W/table.txt"; }
+trap render EXIT
 echo "bakeoff: pack $PACK, core $CORE, $LAUNCHES launches x $PASSES passes >= ${MINMS} ms, $(date -u +%FT%TZ), load $(cut -d' ' -f1-3 /proc/loadavg 2>/dev/null || uptime)" | tee "$W/header"
-head -3 "$PACK/MANIFEST" | tee -a "$W/header"
+head -4 "$PACK/MANIFEST" | tee -a "$W/header"
 for cc in $CCS; do echo "  $cc: $($cc --version | head -1)" | tee -a "$W/header"; done
 
 # rows: id pattern flags role mode subjects
@@ -54,6 +70,7 @@ for cc in $CCS; do
         done
         cp "$W/$cc/$id.d" "$W/$cc/$id.d2"
         (cd "$PACK/src" && $cc $OPT -w -include "$PACK/src/$id.d.h" -o "$W/$cc/$id.dL" "$id.d.c" ../sdrv.c)
+        (cd "$PACK/src" && $cc $OPT -w -include "$PACK/src/$id.a.h" -o "$W/$cc/$id.aL" "$id.a.c" ../sdrv.c)
     done <<<"$ids"
 done
 echo "bakeoff: built $(find "$W" -type f -perm -u+x | wc -l | tr -d ' ') binaries"
@@ -63,8 +80,9 @@ for row in "${ROWS[@]}"; do
     IFS=$'\t' read -r id _pat _fl role mode globs <<<"$row"
     # shellcheck disable=SC2206
     files=($(cd "$PACK" && ls $globs)); files=("${files[@]/#/$PACK/}")
-    label="$id/$mode:$(basename "${files[0]}" .bin)$([ ${#files[@]} -gt 1 ] && echo "+$((${#files[@]} - 1))" || true)"
-    vs="a d d2 dL"; [ "$role" != a1 ] && vs="a $FORMS d d2 dL"
+    label="$id/$mode:$(basename "${files[0]}" .bin)"
+    if [ ${#files[@]} -gt 1 ]; then label="$label+$((${#files[@]} - 1))"; fi
+    vs="a aL d d2 dL"; [ "$role" != a1 ] && vs="a aL $FORMS d d2 dL"
     for cc in $CCS; do
         B="$W/$cc/$id"
         hd=$("$TO" 120 "$B.d" "$mode" 1 1 "${files[@]}" | cut -d' ' -f3)
@@ -88,44 +106,4 @@ for row in "${ROWS[@]}"; do
     done
 done
 
-# ---- the table -----------------------------------------------------------
-python3 - "$RAW" "$FORMS" <<'PY' | tee "$W/table.txt"
-import math, statistics as st, sys
-raw, forms = sys.argv[1], sys.argv[2].split()
-cells = {}
-order = []
-for ln in open(raw):
-    label, role, cc, v, t, ans, it = ln.rstrip("\n").split("\t")
-    k = (label, cc)
-    if k not in cells: cells[k] = {"role": role, "ans": ans, "t": {}}; order.append(k)
-    cells[k]["t"].setdefault(v, []).append(float(t))
-cols = ["a"] + forms
-print("%-30s %-5s %-7s %10s  %s  %6s  %s" % ("cell/regime:subjects", "cc", "role", "d ns", " ".join("%6s" % c for c in cols), "floor", "ans"))
-summ = {}
-for k in order:
-    c = cells[k]; med = {v: st.median(x) for v, x in c["t"].items()}; d = med["d"]
-    floor = max(abs(med["d2"] / d - 1), abs(med["dL"] / d - 1))
-    r = {v: med[v] / d for v in med}
-    print("%-30s %-5s %-7s %10.0f  %s  %5.1f%%  %s" % (k[0], k[1], c["role"], d,
-          " ".join("%6.3f" % r[v] if v in r else "%6s" % "-" for v in cols), 100 * floor, c["ans"]))
-    for v in forms:
-        if v not in r: continue
-        s = summ.setdefault((k[1], v), {"imp": [], "worst_imp": (0, ""), "worst_keep": (-9, ""), "imp_over": 0})
-        if c["role"] == "improve":
-            s["imp"].append(r[v])
-            if r[v] > s["worst_imp"][0]: s["worst_imp"] = (r[v], k[0])
-            if r[v] > 1 + floor: s["imp_over"] += 1
-        elif c["role"] == "keep":
-            loss = r[v] / r["a"] - 1 - floor
-            if loss > s["worst_keep"][0]: s["worst_keep"] = (loss, k[0])
-print()
-print("per compiler and form: improve rows (geomean of form/d, worst, rows above 1+floor); keep rows (worst loss vs a beyond the floor; <= 0 passes)")
-for (cc, v), s in sorted(summ.items()):
-    gm = math.exp(sum(map(math.log, s["imp"])) / len(s["imp"])) if s["imp"] else float("nan")
-    print("  %-5s %-4s improve geomean x%.3f  worst x%.3f (%s)  above-floor %d/%d   keep worst %+.1f%% (%s)" % (
-        cc, v, gm, s["worst_imp"][0], s["worst_imp"][1], s["imp_over"], len(s["imp"]),
-        100 * s["worst_keep"][0], s["worst_keep"][1] or "-"))
-bad = [k for k in order if cells[k]["ans"] != "same"]
-print("\nanswers: %s" % ("same on every row" if not bad else "DIFF on %d row(s): %s" % (len(bad), bad)))
-PY
-echo "bakeoff: done $(date -u +%FT%TZ); raw $RAW, table $W/table.txt"
+# ---- the table: the EXIT trap (render) prints it -------------------------
