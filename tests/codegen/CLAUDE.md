@@ -3176,6 +3176,15 @@ written from the measured artifact rather than harvested at run time, plus a
 STALENESS arm (a listed pattern that is no longer a `pattern` line under
 `tests/` fails) and a non-vacuity floor.
 
+**[OPT-VEDGE] (lane vedge, 2026-10-03)** moved two manifest rows
+(`\b\w+\b\z` forward 1 -> 2, `\b\w+\z` 1 -> 3) and added SECTION (6): three
+patterns' forward/reverse/anchored edge counts under the view-tolerant edge
+(`(?:[a-z]{0,4})\z` the END-view chain and the reverse TRIM, `[0-9]{3}\z` the
+anchored machine, `a{0,4}$` the EOL-view refusal beside the trim), each
+required to read 0 0 0 under `-fno-view-edge`. Its direction half has no
+structural witness; tests/assertions/view_edge.rxt's answers are that
+detector (row S440).
+
 Two things it asserts and one it deliberately does not.
 
 - **The edge count per MACHINE**, read off the artifact's own `[OPT-5] SCAN

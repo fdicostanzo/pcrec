@@ -836,6 +836,18 @@ static void emit_predicate_axes(StrBuf *sb)
         emit_pred_row(sb, &p, 2, "single-tier", "",
                      0, 0, "", "always (fallback) — FAST_FRAMES==RESUME_FRAMES, FAST_TRAIL==TRAIL_FRAMES");
     }
+    /* [OPT-VEDGE] view-edge — §2.37, the view-tolerant half of the scan
+     * edge (src/opt/scanedge.c). It widens which chains `scan-edge` row 1
+     * takes and adds no stamp value: RX_DFA_SCAN_EDGE leaving "none" on a
+     * `(?:[a-z]{0,n})\z`-shaped artifact is its observable consequence. */
+    {
+        PredAxis p = { "view-edge", NULL, "RX_DFA_SCAN_EDGE", "", 0, NULL, 0, NULL, NULL, NULL };
+        emit_pred_row(sb, &p, 1, "view-tolerant", "",
+                     PCREC_NO_VIEW_EDGE, 0, "",
+                     "per CHAIN: on a machine whose walk ends at the subject's end, a member may carry an END (\\z) view the scan's pos == n exit evaluates; and on any machine a chain whose head is another state's view target starts one link later instead of being refused");
+        emit_pred_row(sb, &p, 2, "view-free", "",
+                     0, 0, "", "always (fallback) -- a chain touching a position view is refused, as before [OPT-VEDGE]; changes no answer");
+    }
     /* engine — §2.11, the coarsest-grained member; RX_ENGINE's own values.
      * `--engine=` is DO-OR-DIE (never a bit in pcrec_options.flags), so
      * deny/force columns are empty and the CLI spellings carry the axis. */

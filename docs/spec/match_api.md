@@ -2296,7 +2296,20 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `56` on every artifact today (lane rsform bumped it
+- **`rx_info.abi` is `57` on every artifact today (lane vedge bumped it from
+  56 at the lane/r1land landing (its own branch took 56), 2026-10-03: [OPT-VEDGE] — THE VIEW-TOLERANT SCAN EDGE).** The scan
+  edge (`docs/spec/tuning.md` §2.18) refused every counted chain that
+  touched a position view, so the `(?:[a-z]{0,n})\z` whole-subject form
+  walked its table once per byte on both passes. It now takes the edge in
+  two more cases (§2.37, `-fno-view-edge`): on the forward and anchored
+  machines, a chain whose members carry only an END (`\z`) view, which the
+  scan's own stop at `n` evaluates; and on any machine, a chain whose head
+  is another state's view target, which now starts one state later instead
+  of being refused. Artifacts whose `<PREFIX>_DFA_SCAN_EDGE` value or edge
+  set changes move (the scan-edge loop text, smaller tables); every other
+  artifact differs from `abi` 56 in its abi digits alone. No struct offset
+  moves, no `rx_info` member is added or changed, and no answer moves.
+- **`rx_info.abi` was `56` (lane rsform bumped it
   from 55, 2026-10-03: [OPT-HYB-RESEED-FORM] A1 — A START-ANCHORED HYBRID
   STOPS CARRYING AN UNREACHABLE ADAPTIVE RETRY).** `<PREFIX>_VM_RESEED`
   gains the value `"anchored"` (§6.3, `tuning.md` §2.35): a hybrid whose

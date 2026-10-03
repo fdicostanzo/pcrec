@@ -1,0 +1,2767 @@
+# tests/assertions/view_edge.rxt -- [OPT-VEDGE] the view-tolerant scan edge.
+#
+# Counted single-class chains under a `\z`/`\Z`/`$` position view: the forward
+# and anchored machines' END-view-only members (scanedge.c precondition (3)
+# relaxed) and the reverse machine's chain whose head is its start state's
+# view target (precondition (6) trimmed). Subjects straddle the count bound,
+# end on a non-class byte, carry a trailing newline, and every start position
+# is searched (`ms`), so each scan exit (bound reached, run stopped inside,
+# run stopped at n) is reached from each entry. -fno-view-edge is the
+# reference: the same cells must hold under it (test-axes).
+#
+# Expectations oracle-verified against python3 `re` (`search(s, pos)`; PCRE
+# `\z` -> `\Z`, PCRE `\Z` -> `(?=\n?\Z)`, `$` unchanged), generated 2026-10-03.
+
+pattern (?:[a-z]{0,4})\z
+features assertions
+m "-ab" 1 3
+ms 1 "-ab" 1 3
+ms 2 "-ab" 2 3
+ms 3 "-ab" 3 3
+m "-abcde" 2 6
+ms 1 "-abcde" 2 6
+ms 2 "-abcde" 2 6
+ms 3 "-abcde" 3 6
+ms 4 "-abcde" 4 6
+ms 5 "-abcde" 5 6
+ms 6 "-abcde" 6 6
+m "ab-cd" 3 5
+ms 1 "ab-cd" 3 5
+ms 2 "ab-cd" 3 5
+ms 3 "ab-cd" 3 5
+ms 4 "ab-cd" 4 5
+ms 5 "ab-cd" 5 5
+m "x123" 4 4
+ms 1 "x123" 4 4
+ms 2 "x123" 4 4
+ms 3 "x123" 4 4
+ms 4 "x123" 4 4
+m "abc123" 6 6
+ms 1 "abc123" 6 6
+ms 2 "abc123" 6 6
+ms 3 "abc123" 6 6
+ms 4 "abc123" 6 6
+ms 5 "abc123" 6 6
+ms 6 "abc123" 6 6
+m "x12" 3 3
+ms 1 "x12" 3 3
+ms 2 "x12" 3 3
+ms 3 "x12" 3 3
+m "a" 0 1
+ms 1 "a" 1 1
+m "ab" 0 2
+ms 1 "ab" 1 2
+ms 2 "ab" 2 2
+m "abcd" 0 4
+ms 1 "abcd" 1 4
+ms 2 "abcd" 2 4
+ms 3 "abcd" 3 4
+ms 4 "abcd" 4 4
+m "abcde" 1 5
+ms 1 "abcde" 1 5
+ms 2 "abcde" 2 5
+ms 3 "abcde" 3 5
+ms 4 "abcde" 4 5
+ms 5 "abcde" 5 5
+m "abcdef" 2 6
+ms 1 "abcdef" 2 6
+ms 2 "abcdef" 2 6
+ms 3 "abcdef" 3 6
+ms 4 "abcdef" 4 6
+ms 5 "abcdef" 5 6
+ms 6 "abcdef" 6 6
+m "abcdefgh" 4 8
+ms 1 "abcdefgh" 4 8
+ms 2 "abcdefgh" 4 8
+ms 3 "abcdefgh" 4 8
+ms 4 "abcdefgh" 4 8
+ms 5 "abcdefgh" 5 8
+ms 6 "abcdefgh" 6 8
+ms 7 "abcdefgh" 7 8
+ms 8 "abcdefgh" 8 8
+m "x" 0 1
+ms 1 "x" 1 1
+m "xab" 0 3
+ms 1 "xab" 1 3
+ms 2 "xab" 2 3
+ms 3 "xab" 3 3
+m "xabcdefg" 4 8
+ms 1 "xabcdefg" 4 8
+ms 2 "xabcdefg" 4 8
+ms 3 "xabcdefg" 4 8
+ms 4 "xabcdefg" 4 8
+ms 5 "xabcdefg" 5 8
+ms 6 "xabcdefg" 6 8
+ms 7 "xabcdefg" 7 8
+ms 8 "xabcdefg" 8 8
+m "ab1" 3 3
+ms 1 "ab1" 3 3
+ms 2 "ab1" 3 3
+ms 3 "ab1" 3 3
+m "1ab" 1 3
+ms 1 "1ab" 1 3
+ms 2 "1ab" 2 3
+ms 3 "1ab" 3 3
+m "12" 2 2
+ms 1 "12" 2 2
+ms 2 "12" 2 2
+m "123" 3 3
+ms 1 "123" 3 3
+ms 2 "123" 3 3
+ms 3 "123" 3 3
+m "1234" 4 4
+ms 1 "1234" 4 4
+ms 2 "1234" 4 4
+ms 3 "1234" 4 4
+ms 4 "1234" 4 4
+m "12345" 5 5
+ms 1 "12345" 5 5
+ms 2 "12345" 5 5
+ms 3 "12345" 5 5
+ms 4 "12345" 5 5
+ms 5 "12345" 5 5
+m "ab-" 3 3
+ms 1 "ab-" 3 3
+ms 2 "ab-" 3 3
+ms 3 "ab-" 3 3
+m "abc-d" 4 5
+ms 1 "abc-d" 4 5
+ms 2 "abc-d" 4 5
+ms 3 "abc-d" 4 5
+ms 4 "abc-d" 4 5
+ms 5 "abc-d" 5 5
+m "ab cd" 3 5
+ms 1 "ab cd" 3 5
+ms 2 "ab cd" 3 5
+ms 3 "ab cd" 3 5
+ms 4 "ab cd" 4 5
+ms 5 "ab cd" 5 5
+m "abc\n" 4 4
+ms 1 "abc\n" 4 4
+ms 2 "abc\n" 4 4
+ms 3 "abc\n" 4 4
+ms 4 "abc\n" 4 4
+m "abcdef\n" 7 7
+ms 1 "abcdef\n" 7 7
+ms 2 "abcdef\n" 7 7
+ms 3 "abcdef\n" 7 7
+ms 4 "abcdef\n" 7 7
+ms 5 "abcdef\n" 7 7
+ms 6 "abcdef\n" 7 7
+ms 7 "abcdef\n" 7 7
+m "aaaa" 0 4
+ms 1 "aaaa" 1 4
+ms 2 "aaaa" 2 4
+ms 3 "aaaa" 3 4
+ms 4 "aaaa" 4 4
+m "aaaaa" 1 5
+ms 1 "aaaaa" 1 5
+ms 2 "aaaaa" 2 5
+ms 3 "aaaaa" 3 5
+ms 4 "aaaaa" 4 5
+ms 5 "aaaaa" 5 5
+m "aa\n" 3 3
+ms 1 "aa\n" 3 3
+ms 2 "aa\n" 3 3
+ms 3 "aa\n" 3 3
+m "9abc" 1 4
+ms 1 "9abc" 1 4
+ms 2 "9abc" 2 4
+ms 3 "9abc" 3 4
+ms 4 "9abc" 4 4
+m "zz9" 3 3
+ms 1 "zz9" 3 3
+ms 2 "zz9" 3 3
+ms 3 "zz9" 3 3
+
+pattern (?:[a-z]{0,6})\z
+features assertions
+m "-ab" 1 3
+ms 1 "-ab" 1 3
+ms 2 "-ab" 2 3
+ms 3 "-ab" 3 3
+m "-abcde" 1 6
+ms 1 "-abcde" 1 6
+ms 2 "-abcde" 2 6
+ms 3 "-abcde" 3 6
+ms 4 "-abcde" 4 6
+ms 5 "-abcde" 5 6
+ms 6 "-abcde" 6 6
+m "ab-cd" 3 5
+ms 1 "ab-cd" 3 5
+ms 2 "ab-cd" 3 5
+ms 3 "ab-cd" 3 5
+ms 4 "ab-cd" 4 5
+ms 5 "ab-cd" 5 5
+m "x123" 4 4
+ms 1 "x123" 4 4
+ms 2 "x123" 4 4
+ms 3 "x123" 4 4
+ms 4 "x123" 4 4
+m "abc123" 6 6
+ms 1 "abc123" 6 6
+ms 2 "abc123" 6 6
+ms 3 "abc123" 6 6
+ms 4 "abc123" 6 6
+ms 5 "abc123" 6 6
+ms 6 "abc123" 6 6
+m "x12" 3 3
+ms 1 "x12" 3 3
+ms 2 "x12" 3 3
+ms 3 "x12" 3 3
+m "a" 0 1
+ms 1 "a" 1 1
+m "ab" 0 2
+ms 1 "ab" 1 2
+ms 2 "ab" 2 2
+m "abcd" 0 4
+ms 1 "abcd" 1 4
+ms 2 "abcd" 2 4
+ms 3 "abcd" 3 4
+ms 4 "abcd" 4 4
+m "abcde" 0 5
+ms 1 "abcde" 1 5
+ms 2 "abcde" 2 5
+ms 3 "abcde" 3 5
+ms 4 "abcde" 4 5
+ms 5 "abcde" 5 5
+m "abcdef" 0 6
+ms 1 "abcdef" 1 6
+ms 2 "abcdef" 2 6
+ms 3 "abcdef" 3 6
+ms 4 "abcdef" 4 6
+ms 5 "abcdef" 5 6
+ms 6 "abcdef" 6 6
+m "abcdefgh" 2 8
+ms 1 "abcdefgh" 2 8
+ms 2 "abcdefgh" 2 8
+ms 3 "abcdefgh" 3 8
+ms 4 "abcdefgh" 4 8
+ms 5 "abcdefgh" 5 8
+ms 6 "abcdefgh" 6 8
+ms 7 "abcdefgh" 7 8
+ms 8 "abcdefgh" 8 8
+m "x" 0 1
+ms 1 "x" 1 1
+m "xab" 0 3
+ms 1 "xab" 1 3
+ms 2 "xab" 2 3
+ms 3 "xab" 3 3
+m "xabcdefg" 2 8
+ms 1 "xabcdefg" 2 8
+ms 2 "xabcdefg" 2 8
+ms 3 "xabcdefg" 3 8
+ms 4 "xabcdefg" 4 8
+ms 5 "xabcdefg" 5 8
+ms 6 "xabcdefg" 6 8
+ms 7 "xabcdefg" 7 8
+ms 8 "xabcdefg" 8 8
+m "ab1" 3 3
+ms 1 "ab1" 3 3
+ms 2 "ab1" 3 3
+ms 3 "ab1" 3 3
+m "1ab" 1 3
+ms 1 "1ab" 1 3
+ms 2 "1ab" 2 3
+ms 3 "1ab" 3 3
+m "12" 2 2
+ms 1 "12" 2 2
+ms 2 "12" 2 2
+m "123" 3 3
+ms 1 "123" 3 3
+ms 2 "123" 3 3
+ms 3 "123" 3 3
+m "1234" 4 4
+ms 1 "1234" 4 4
+ms 2 "1234" 4 4
+ms 3 "1234" 4 4
+ms 4 "1234" 4 4
+m "12345" 5 5
+ms 1 "12345" 5 5
+ms 2 "12345" 5 5
+ms 3 "12345" 5 5
+ms 4 "12345" 5 5
+ms 5 "12345" 5 5
+m "ab-" 3 3
+ms 1 "ab-" 3 3
+ms 2 "ab-" 3 3
+ms 3 "ab-" 3 3
+m "abc-d" 4 5
+ms 1 "abc-d" 4 5
+ms 2 "abc-d" 4 5
+ms 3 "abc-d" 4 5
+ms 4 "abc-d" 4 5
+ms 5 "abc-d" 5 5
+m "ab cd" 3 5
+ms 1 "ab cd" 3 5
+ms 2 "ab cd" 3 5
+ms 3 "ab cd" 3 5
+ms 4 "ab cd" 4 5
+ms 5 "ab cd" 5 5
+m "abc\n" 4 4
+ms 1 "abc\n" 4 4
+ms 2 "abc\n" 4 4
+ms 3 "abc\n" 4 4
+ms 4 "abc\n" 4 4
+m "abcdef\n" 7 7
+ms 1 "abcdef\n" 7 7
+ms 2 "abcdef\n" 7 7
+ms 3 "abcdef\n" 7 7
+ms 4 "abcdef\n" 7 7
+ms 5 "abcdef\n" 7 7
+ms 6 "abcdef\n" 7 7
+ms 7 "abcdef\n" 7 7
+m "aaaa" 0 4
+ms 1 "aaaa" 1 4
+ms 2 "aaaa" 2 4
+ms 3 "aaaa" 3 4
+ms 4 "aaaa" 4 4
+m "aaaaa" 0 5
+ms 1 "aaaaa" 1 5
+ms 2 "aaaaa" 2 5
+ms 3 "aaaaa" 3 5
+ms 4 "aaaaa" 4 5
+ms 5 "aaaaa" 5 5
+m "aa\n" 3 3
+ms 1 "aa\n" 3 3
+ms 2 "aa\n" 3 3
+ms 3 "aa\n" 3 3
+m "9abc" 1 4
+ms 1 "9abc" 1 4
+ms 2 "9abc" 2 4
+ms 3 "9abc" 3 4
+ms 4 "9abc" 4 4
+m "zz9" 3 3
+ms 1 "zz9" 3 3
+ms 2 "zz9" 3 3
+ms 3 "zz9" 3 3
+
+pattern [a-z]{2,5}\z
+features assertions
+m "-ab" 1 3
+ms 1 "-ab" 1 3
+ns 2 "-ab"
+ns 3 "-ab"
+m "-abcde" 1 6
+ms 1 "-abcde" 1 6
+ms 2 "-abcde" 2 6
+ms 3 "-abcde" 3 6
+ms 4 "-abcde" 4 6
+ns 5 "-abcde"
+ns 6 "-abcde"
+m "ab-cd" 3 5
+ms 1 "ab-cd" 3 5
+ms 2 "ab-cd" 3 5
+ms 3 "ab-cd" 3 5
+ns 4 "ab-cd"
+ns 5 "ab-cd"
+n "x123"
+ns 1 "x123"
+ns 2 "x123"
+ns 3 "x123"
+ns 4 "x123"
+n "abc123"
+ns 1 "abc123"
+ns 2 "abc123"
+ns 3 "abc123"
+ns 4 "abc123"
+ns 5 "abc123"
+ns 6 "abc123"
+n "x12"
+ns 1 "x12"
+ns 2 "x12"
+ns 3 "x12"
+n "a"
+ns 1 "a"
+m "ab" 0 2
+ns 1 "ab"
+ns 2 "ab"
+m "abcd" 0 4
+ms 1 "abcd" 1 4
+ms 2 "abcd" 2 4
+ns 3 "abcd"
+ns 4 "abcd"
+m "abcde" 0 5
+ms 1 "abcde" 1 5
+ms 2 "abcde" 2 5
+ms 3 "abcde" 3 5
+ns 4 "abcde"
+ns 5 "abcde"
+m "abcdef" 1 6
+ms 1 "abcdef" 1 6
+ms 2 "abcdef" 2 6
+ms 3 "abcdef" 3 6
+ms 4 "abcdef" 4 6
+ns 5 "abcdef"
+ns 6 "abcdef"
+m "abcdefgh" 3 8
+ms 1 "abcdefgh" 3 8
+ms 2 "abcdefgh" 3 8
+ms 3 "abcdefgh" 3 8
+ms 4 "abcdefgh" 4 8
+ms 5 "abcdefgh" 5 8
+ms 6 "abcdefgh" 6 8
+ns 7 "abcdefgh"
+ns 8 "abcdefgh"
+n "x"
+ns 1 "x"
+m "xab" 0 3
+ms 1 "xab" 1 3
+ns 2 "xab"
+ns 3 "xab"
+m "xabcdefg" 3 8
+ms 1 "xabcdefg" 3 8
+ms 2 "xabcdefg" 3 8
+ms 3 "xabcdefg" 3 8
+ms 4 "xabcdefg" 4 8
+ms 5 "xabcdefg" 5 8
+ms 6 "xabcdefg" 6 8
+ns 7 "xabcdefg"
+ns 8 "xabcdefg"
+n "ab1"
+ns 1 "ab1"
+ns 2 "ab1"
+ns 3 "ab1"
+m "1ab" 1 3
+ms 1 "1ab" 1 3
+ns 2 "1ab"
+ns 3 "1ab"
+n "12"
+ns 1 "12"
+ns 2 "12"
+n "123"
+ns 1 "123"
+ns 2 "123"
+ns 3 "123"
+n "1234"
+ns 1 "1234"
+ns 2 "1234"
+ns 3 "1234"
+ns 4 "1234"
+n "12345"
+ns 1 "12345"
+ns 2 "12345"
+ns 3 "12345"
+ns 4 "12345"
+ns 5 "12345"
+n "ab-"
+ns 1 "ab-"
+ns 2 "ab-"
+ns 3 "ab-"
+n "abc-d"
+ns 1 "abc-d"
+ns 2 "abc-d"
+ns 3 "abc-d"
+ns 4 "abc-d"
+ns 5 "abc-d"
+m "ab cd" 3 5
+ms 1 "ab cd" 3 5
+ms 2 "ab cd" 3 5
+ms 3 "ab cd" 3 5
+ns 4 "ab cd"
+ns 5 "ab cd"
+n "abc\n"
+ns 1 "abc\n"
+ns 2 "abc\n"
+ns 3 "abc\n"
+ns 4 "abc\n"
+n "abcdef\n"
+ns 1 "abcdef\n"
+ns 2 "abcdef\n"
+ns 3 "abcdef\n"
+ns 4 "abcdef\n"
+ns 5 "abcdef\n"
+ns 6 "abcdef\n"
+ns 7 "abcdef\n"
+m "aaaa" 0 4
+ms 1 "aaaa" 1 4
+ms 2 "aaaa" 2 4
+ns 3 "aaaa"
+ns 4 "aaaa"
+m "aaaaa" 0 5
+ms 1 "aaaaa" 1 5
+ms 2 "aaaaa" 2 5
+ms 3 "aaaaa" 3 5
+ns 4 "aaaaa"
+ns 5 "aaaaa"
+n "aa\n"
+ns 1 "aa\n"
+ns 2 "aa\n"
+ns 3 "aa\n"
+m "9abc" 1 4
+ms 1 "9abc" 1 4
+ms 2 "9abc" 2 4
+ns 3 "9abc"
+ns 4 "9abc"
+n "zz9"
+ns 1 "zz9"
+ns 2 "zz9"
+ns 3 "zz9"
+
+pattern [0-9]{3}\z
+features assertions
+n "-ab"
+ns 1 "-ab"
+ns 2 "-ab"
+ns 3 "-ab"
+n "-abcde"
+ns 1 "-abcde"
+ns 2 "-abcde"
+ns 3 "-abcde"
+ns 4 "-abcde"
+ns 5 "-abcde"
+ns 6 "-abcde"
+n "ab-cd"
+ns 1 "ab-cd"
+ns 2 "ab-cd"
+ns 3 "ab-cd"
+ns 4 "ab-cd"
+ns 5 "ab-cd"
+m "x123" 1 4
+ms 1 "x123" 1 4
+ns 2 "x123"
+ns 3 "x123"
+ns 4 "x123"
+m "abc123" 3 6
+ms 1 "abc123" 3 6
+ms 2 "abc123" 3 6
+ms 3 "abc123" 3 6
+ns 4 "abc123"
+ns 5 "abc123"
+ns 6 "abc123"
+n "x12"
+ns 1 "x12"
+ns 2 "x12"
+ns 3 "x12"
+n "a"
+ns 1 "a"
+n "ab"
+ns 1 "ab"
+ns 2 "ab"
+n "abcd"
+ns 1 "abcd"
+ns 2 "abcd"
+ns 3 "abcd"
+ns 4 "abcd"
+n "abcde"
+ns 1 "abcde"
+ns 2 "abcde"
+ns 3 "abcde"
+ns 4 "abcde"
+ns 5 "abcde"
+n "abcdef"
+ns 1 "abcdef"
+ns 2 "abcdef"
+ns 3 "abcdef"
+ns 4 "abcdef"
+ns 5 "abcdef"
+ns 6 "abcdef"
+n "abcdefgh"
+ns 1 "abcdefgh"
+ns 2 "abcdefgh"
+ns 3 "abcdefgh"
+ns 4 "abcdefgh"
+ns 5 "abcdefgh"
+ns 6 "abcdefgh"
+ns 7 "abcdefgh"
+ns 8 "abcdefgh"
+n "x"
+ns 1 "x"
+n "xab"
+ns 1 "xab"
+ns 2 "xab"
+ns 3 "xab"
+n "xabcdefg"
+ns 1 "xabcdefg"
+ns 2 "xabcdefg"
+ns 3 "xabcdefg"
+ns 4 "xabcdefg"
+ns 5 "xabcdefg"
+ns 6 "xabcdefg"
+ns 7 "xabcdefg"
+ns 8 "xabcdefg"
+n "ab1"
+ns 1 "ab1"
+ns 2 "ab1"
+ns 3 "ab1"
+n "1ab"
+ns 1 "1ab"
+ns 2 "1ab"
+ns 3 "1ab"
+n "12"
+ns 1 "12"
+ns 2 "12"
+m "123" 0 3
+ns 1 "123"
+ns 2 "123"
+ns 3 "123"
+m "1234" 1 4
+ms 1 "1234" 1 4
+ns 2 "1234"
+ns 3 "1234"
+ns 4 "1234"
+m "12345" 2 5
+ms 1 "12345" 2 5
+ms 2 "12345" 2 5
+ns 3 "12345"
+ns 4 "12345"
+ns 5 "12345"
+n "ab-"
+ns 1 "ab-"
+ns 2 "ab-"
+ns 3 "ab-"
+n "abc-d"
+ns 1 "abc-d"
+ns 2 "abc-d"
+ns 3 "abc-d"
+ns 4 "abc-d"
+ns 5 "abc-d"
+n "ab cd"
+ns 1 "ab cd"
+ns 2 "ab cd"
+ns 3 "ab cd"
+ns 4 "ab cd"
+ns 5 "ab cd"
+n "abc\n"
+ns 1 "abc\n"
+ns 2 "abc\n"
+ns 3 "abc\n"
+ns 4 "abc\n"
+n "abcdef\n"
+ns 1 "abcdef\n"
+ns 2 "abcdef\n"
+ns 3 "abcdef\n"
+ns 4 "abcdef\n"
+ns 5 "abcdef\n"
+ns 6 "abcdef\n"
+ns 7 "abcdef\n"
+n "aaaa"
+ns 1 "aaaa"
+ns 2 "aaaa"
+ns 3 "aaaa"
+ns 4 "aaaa"
+n "aaaaa"
+ns 1 "aaaaa"
+ns 2 "aaaaa"
+ns 3 "aaaaa"
+ns 4 "aaaaa"
+ns 5 "aaaaa"
+n "aa\n"
+ns 1 "aa\n"
+ns 2 "aa\n"
+ns 3 "aa\n"
+n "9abc"
+ns 1 "9abc"
+ns 2 "9abc"
+ns 3 "9abc"
+ns 4 "9abc"
+n "zz9"
+ns 1 "zz9"
+ns 2 "zz9"
+ns 3 "zz9"
+
+pattern x[a-z]{0,5}\z
+features assertions
+n "-ab"
+ns 1 "-ab"
+ns 2 "-ab"
+ns 3 "-ab"
+n "-abcde"
+ns 1 "-abcde"
+ns 2 "-abcde"
+ns 3 "-abcde"
+ns 4 "-abcde"
+ns 5 "-abcde"
+ns 6 "-abcde"
+n "ab-cd"
+ns 1 "ab-cd"
+ns 2 "ab-cd"
+ns 3 "ab-cd"
+ns 4 "ab-cd"
+ns 5 "ab-cd"
+n "x123"
+ns 1 "x123"
+ns 2 "x123"
+ns 3 "x123"
+ns 4 "x123"
+n "abc123"
+ns 1 "abc123"
+ns 2 "abc123"
+ns 3 "abc123"
+ns 4 "abc123"
+ns 5 "abc123"
+ns 6 "abc123"
+n "x12"
+ns 1 "x12"
+ns 2 "x12"
+ns 3 "x12"
+n "a"
+ns 1 "a"
+n "ab"
+ns 1 "ab"
+ns 2 "ab"
+n "abcd"
+ns 1 "abcd"
+ns 2 "abcd"
+ns 3 "abcd"
+ns 4 "abcd"
+n "abcde"
+ns 1 "abcde"
+ns 2 "abcde"
+ns 3 "abcde"
+ns 4 "abcde"
+ns 5 "abcde"
+n "abcdef"
+ns 1 "abcdef"
+ns 2 "abcdef"
+ns 3 "abcdef"
+ns 4 "abcdef"
+ns 5 "abcdef"
+ns 6 "abcdef"
+n "abcdefgh"
+ns 1 "abcdefgh"
+ns 2 "abcdefgh"
+ns 3 "abcdefgh"
+ns 4 "abcdefgh"
+ns 5 "abcdefgh"
+ns 6 "abcdefgh"
+ns 7 "abcdefgh"
+ns 8 "abcdefgh"
+m "x" 0 1
+ns 1 "x"
+m "xab" 0 3
+ns 1 "xab"
+ns 2 "xab"
+ns 3 "xab"
+n "xabcdefg"
+ns 1 "xabcdefg"
+ns 2 "xabcdefg"
+ns 3 "xabcdefg"
+ns 4 "xabcdefg"
+ns 5 "xabcdefg"
+ns 6 "xabcdefg"
+ns 7 "xabcdefg"
+ns 8 "xabcdefg"
+n "ab1"
+ns 1 "ab1"
+ns 2 "ab1"
+ns 3 "ab1"
+n "1ab"
+ns 1 "1ab"
+ns 2 "1ab"
+ns 3 "1ab"
+n "12"
+ns 1 "12"
+ns 2 "12"
+n "123"
+ns 1 "123"
+ns 2 "123"
+ns 3 "123"
+n "1234"
+ns 1 "1234"
+ns 2 "1234"
+ns 3 "1234"
+ns 4 "1234"
+n "12345"
+ns 1 "12345"
+ns 2 "12345"
+ns 3 "12345"
+ns 4 "12345"
+ns 5 "12345"
+n "ab-"
+ns 1 "ab-"
+ns 2 "ab-"
+ns 3 "ab-"
+n "abc-d"
+ns 1 "abc-d"
+ns 2 "abc-d"
+ns 3 "abc-d"
+ns 4 "abc-d"
+ns 5 "abc-d"
+n "ab cd"
+ns 1 "ab cd"
+ns 2 "ab cd"
+ns 3 "ab cd"
+ns 4 "ab cd"
+ns 5 "ab cd"
+n "abc\n"
+ns 1 "abc\n"
+ns 2 "abc\n"
+ns 3 "abc\n"
+ns 4 "abc\n"
+n "abcdef\n"
+ns 1 "abcdef\n"
+ns 2 "abcdef\n"
+ns 3 "abcdef\n"
+ns 4 "abcdef\n"
+ns 5 "abcdef\n"
+ns 6 "abcdef\n"
+ns 7 "abcdef\n"
+n "aaaa"
+ns 1 "aaaa"
+ns 2 "aaaa"
+ns 3 "aaaa"
+ns 4 "aaaa"
+n "aaaaa"
+ns 1 "aaaaa"
+ns 2 "aaaaa"
+ns 3 "aaaaa"
+ns 4 "aaaaa"
+ns 5 "aaaaa"
+n "aa\n"
+ns 1 "aa\n"
+ns 2 "aa\n"
+ns 3 "aa\n"
+n "9abc"
+ns 1 "9abc"
+ns 2 "9abc"
+ns 3 "9abc"
+ns 4 "9abc"
+n "zz9"
+ns 1 "zz9"
+ns 2 "zz9"
+ns 3 "zz9"
+
+pattern [a-z]*\z
+features assertions
+m "-ab" 1 3
+ms 1 "-ab" 1 3
+ms 2 "-ab" 2 3
+ms 3 "-ab" 3 3
+m "-abcde" 1 6
+ms 1 "-abcde" 1 6
+ms 2 "-abcde" 2 6
+ms 3 "-abcde" 3 6
+ms 4 "-abcde" 4 6
+ms 5 "-abcde" 5 6
+ms 6 "-abcde" 6 6
+m "ab-cd" 3 5
+ms 1 "ab-cd" 3 5
+ms 2 "ab-cd" 3 5
+ms 3 "ab-cd" 3 5
+ms 4 "ab-cd" 4 5
+ms 5 "ab-cd" 5 5
+m "x123" 4 4
+ms 1 "x123" 4 4
+ms 2 "x123" 4 4
+ms 3 "x123" 4 4
+ms 4 "x123" 4 4
+m "abc123" 6 6
+ms 1 "abc123" 6 6
+ms 2 "abc123" 6 6
+ms 3 "abc123" 6 6
+ms 4 "abc123" 6 6
+ms 5 "abc123" 6 6
+ms 6 "abc123" 6 6
+m "x12" 3 3
+ms 1 "x12" 3 3
+ms 2 "x12" 3 3
+ms 3 "x12" 3 3
+m "a" 0 1
+ms 1 "a" 1 1
+m "ab" 0 2
+ms 1 "ab" 1 2
+ms 2 "ab" 2 2
+m "abcd" 0 4
+ms 1 "abcd" 1 4
+ms 2 "abcd" 2 4
+ms 3 "abcd" 3 4
+ms 4 "abcd" 4 4
+m "abcde" 0 5
+ms 1 "abcde" 1 5
+ms 2 "abcde" 2 5
+ms 3 "abcde" 3 5
+ms 4 "abcde" 4 5
+ms 5 "abcde" 5 5
+m "abcdef" 0 6
+ms 1 "abcdef" 1 6
+ms 2 "abcdef" 2 6
+ms 3 "abcdef" 3 6
+ms 4 "abcdef" 4 6
+ms 5 "abcdef" 5 6
+ms 6 "abcdef" 6 6
+m "abcdefgh" 0 8
+ms 1 "abcdefgh" 1 8
+ms 2 "abcdefgh" 2 8
+ms 3 "abcdefgh" 3 8
+ms 4 "abcdefgh" 4 8
+ms 5 "abcdefgh" 5 8
+ms 6 "abcdefgh" 6 8
+ms 7 "abcdefgh" 7 8
+ms 8 "abcdefgh" 8 8
+m "x" 0 1
+ms 1 "x" 1 1
+m "xab" 0 3
+ms 1 "xab" 1 3
+ms 2 "xab" 2 3
+ms 3 "xab" 3 3
+m "xabcdefg" 0 8
+ms 1 "xabcdefg" 1 8
+ms 2 "xabcdefg" 2 8
+ms 3 "xabcdefg" 3 8
+ms 4 "xabcdefg" 4 8
+ms 5 "xabcdefg" 5 8
+ms 6 "xabcdefg" 6 8
+ms 7 "xabcdefg" 7 8
+ms 8 "xabcdefg" 8 8
+m "ab1" 3 3
+ms 1 "ab1" 3 3
+ms 2 "ab1" 3 3
+ms 3 "ab1" 3 3
+m "1ab" 1 3
+ms 1 "1ab" 1 3
+ms 2 "1ab" 2 3
+ms 3 "1ab" 3 3
+m "12" 2 2
+ms 1 "12" 2 2
+ms 2 "12" 2 2
+m "123" 3 3
+ms 1 "123" 3 3
+ms 2 "123" 3 3
+ms 3 "123" 3 3
+m "1234" 4 4
+ms 1 "1234" 4 4
+ms 2 "1234" 4 4
+ms 3 "1234" 4 4
+ms 4 "1234" 4 4
+m "12345" 5 5
+ms 1 "12345" 5 5
+ms 2 "12345" 5 5
+ms 3 "12345" 5 5
+ms 4 "12345" 5 5
+ms 5 "12345" 5 5
+m "ab-" 3 3
+ms 1 "ab-" 3 3
+ms 2 "ab-" 3 3
+ms 3 "ab-" 3 3
+m "abc-d" 4 5
+ms 1 "abc-d" 4 5
+ms 2 "abc-d" 4 5
+ms 3 "abc-d" 4 5
+ms 4 "abc-d" 4 5
+ms 5 "abc-d" 5 5
+m "ab cd" 3 5
+ms 1 "ab cd" 3 5
+ms 2 "ab cd" 3 5
+ms 3 "ab cd" 3 5
+ms 4 "ab cd" 4 5
+ms 5 "ab cd" 5 5
+m "abc\n" 4 4
+ms 1 "abc\n" 4 4
+ms 2 "abc\n" 4 4
+ms 3 "abc\n" 4 4
+ms 4 "abc\n" 4 4
+m "abcdef\n" 7 7
+ms 1 "abcdef\n" 7 7
+ms 2 "abcdef\n" 7 7
+ms 3 "abcdef\n" 7 7
+ms 4 "abcdef\n" 7 7
+ms 5 "abcdef\n" 7 7
+ms 6 "abcdef\n" 7 7
+ms 7 "abcdef\n" 7 7
+m "aaaa" 0 4
+ms 1 "aaaa" 1 4
+ms 2 "aaaa" 2 4
+ms 3 "aaaa" 3 4
+ms 4 "aaaa" 4 4
+m "aaaaa" 0 5
+ms 1 "aaaaa" 1 5
+ms 2 "aaaaa" 2 5
+ms 3 "aaaaa" 3 5
+ms 4 "aaaaa" 4 5
+ms 5 "aaaaa" 5 5
+m "aa\n" 3 3
+ms 1 "aa\n" 3 3
+ms 2 "aa\n" 3 3
+ms 3 "aa\n" 3 3
+m "9abc" 1 4
+ms 1 "9abc" 1 4
+ms 2 "9abc" 2 4
+ms 3 "9abc" 3 4
+ms 4 "9abc" 4 4
+m "zz9" 3 3
+ms 1 "zz9" 3 3
+ms 2 "zz9" 3 3
+ms 3 "zz9" 3 3
+
+pattern [a-z]+\z
+features assertions
+m "-ab" 1 3
+ms 1 "-ab" 1 3
+ms 2 "-ab" 2 3
+ns 3 "-ab"
+m "-abcde" 1 6
+ms 1 "-abcde" 1 6
+ms 2 "-abcde" 2 6
+ms 3 "-abcde" 3 6
+ms 4 "-abcde" 4 6
+ms 5 "-abcde" 5 6
+ns 6 "-abcde"
+m "ab-cd" 3 5
+ms 1 "ab-cd" 3 5
+ms 2 "ab-cd" 3 5
+ms 3 "ab-cd" 3 5
+ms 4 "ab-cd" 4 5
+ns 5 "ab-cd"
+n "x123"
+ns 1 "x123"
+ns 2 "x123"
+ns 3 "x123"
+ns 4 "x123"
+n "abc123"
+ns 1 "abc123"
+ns 2 "abc123"
+ns 3 "abc123"
+ns 4 "abc123"
+ns 5 "abc123"
+ns 6 "abc123"
+n "x12"
+ns 1 "x12"
+ns 2 "x12"
+ns 3 "x12"
+m "a" 0 1
+ns 1 "a"
+m "ab" 0 2
+ms 1 "ab" 1 2
+ns 2 "ab"
+m "abcd" 0 4
+ms 1 "abcd" 1 4
+ms 2 "abcd" 2 4
+ms 3 "abcd" 3 4
+ns 4 "abcd"
+m "abcde" 0 5
+ms 1 "abcde" 1 5
+ms 2 "abcde" 2 5
+ms 3 "abcde" 3 5
+ms 4 "abcde" 4 5
+ns 5 "abcde"
+m "abcdef" 0 6
+ms 1 "abcdef" 1 6
+ms 2 "abcdef" 2 6
+ms 3 "abcdef" 3 6
+ms 4 "abcdef" 4 6
+ms 5 "abcdef" 5 6
+ns 6 "abcdef"
+m "abcdefgh" 0 8
+ms 1 "abcdefgh" 1 8
+ms 2 "abcdefgh" 2 8
+ms 3 "abcdefgh" 3 8
+ms 4 "abcdefgh" 4 8
+ms 5 "abcdefgh" 5 8
+ms 6 "abcdefgh" 6 8
+ms 7 "abcdefgh" 7 8
+ns 8 "abcdefgh"
+m "x" 0 1
+ns 1 "x"
+m "xab" 0 3
+ms 1 "xab" 1 3
+ms 2 "xab" 2 3
+ns 3 "xab"
+m "xabcdefg" 0 8
+ms 1 "xabcdefg" 1 8
+ms 2 "xabcdefg" 2 8
+ms 3 "xabcdefg" 3 8
+ms 4 "xabcdefg" 4 8
+ms 5 "xabcdefg" 5 8
+ms 6 "xabcdefg" 6 8
+ms 7 "xabcdefg" 7 8
+ns 8 "xabcdefg"
+n "ab1"
+ns 1 "ab1"
+ns 2 "ab1"
+ns 3 "ab1"
+m "1ab" 1 3
+ms 1 "1ab" 1 3
+ms 2 "1ab" 2 3
+ns 3 "1ab"
+n "12"
+ns 1 "12"
+ns 2 "12"
+n "123"
+ns 1 "123"
+ns 2 "123"
+ns 3 "123"
+n "1234"
+ns 1 "1234"
+ns 2 "1234"
+ns 3 "1234"
+ns 4 "1234"
+n "12345"
+ns 1 "12345"
+ns 2 "12345"
+ns 3 "12345"
+ns 4 "12345"
+ns 5 "12345"
+n "ab-"
+ns 1 "ab-"
+ns 2 "ab-"
+ns 3 "ab-"
+m "abc-d" 4 5
+ms 1 "abc-d" 4 5
+ms 2 "abc-d" 4 5
+ms 3 "abc-d" 4 5
+ms 4 "abc-d" 4 5
+ns 5 "abc-d"
+m "ab cd" 3 5
+ms 1 "ab cd" 3 5
+ms 2 "ab cd" 3 5
+ms 3 "ab cd" 3 5
+ms 4 "ab cd" 4 5
+ns 5 "ab cd"
+n "abc\n"
+ns 1 "abc\n"
+ns 2 "abc\n"
+ns 3 "abc\n"
+ns 4 "abc\n"
+n "abcdef\n"
+ns 1 "abcdef\n"
+ns 2 "abcdef\n"
+ns 3 "abcdef\n"
+ns 4 "abcdef\n"
+ns 5 "abcdef\n"
+ns 6 "abcdef\n"
+ns 7 "abcdef\n"
+m "aaaa" 0 4
+ms 1 "aaaa" 1 4
+ms 2 "aaaa" 2 4
+ms 3 "aaaa" 3 4
+ns 4 "aaaa"
+m "aaaaa" 0 5
+ms 1 "aaaaa" 1 5
+ms 2 "aaaaa" 2 5
+ms 3 "aaaaa" 3 5
+ms 4 "aaaaa" 4 5
+ns 5 "aaaaa"
+n "aa\n"
+ns 1 "aa\n"
+ns 2 "aa\n"
+ns 3 "aa\n"
+m "9abc" 1 4
+ms 1 "9abc" 1 4
+ms 2 "9abc" 2 4
+ms 3 "9abc" 3 4
+ns 4 "9abc"
+n "zz9"
+ns 1 "zz9"
+ns 2 "zz9"
+ns 3 "zz9"
+
+pattern (?:[a-z]{0,3})\z|[0-9]{2,4}
+features assertions
+m "-ab" 1 3
+ms 1 "-ab" 1 3
+ms 2 "-ab" 2 3
+ms 3 "-ab" 3 3
+m "-abcde" 3 6
+ms 1 "-abcde" 3 6
+ms 2 "-abcde" 3 6
+ms 3 "-abcde" 3 6
+ms 4 "-abcde" 4 6
+ms 5 "-abcde" 5 6
+ms 6 "-abcde" 6 6
+m "ab-cd" 3 5
+ms 1 "ab-cd" 3 5
+ms 2 "ab-cd" 3 5
+ms 3 "ab-cd" 3 5
+ms 4 "ab-cd" 4 5
+ms 5 "ab-cd" 5 5
+m "x123" 1 4
+ms 1 "x123" 1 4
+ms 2 "x123" 2 4
+ms 3 "x123" 4 4
+ms 4 "x123" 4 4
+m "abc123" 3 6
+ms 1 "abc123" 3 6
+ms 2 "abc123" 3 6
+ms 3 "abc123" 3 6
+ms 4 "abc123" 4 6
+ms 5 "abc123" 6 6
+ms 6 "abc123" 6 6
+m "x12" 1 3
+ms 1 "x12" 1 3
+ms 2 "x12" 3 3
+ms 3 "x12" 3 3
+m "a" 0 1
+ms 1 "a" 1 1
+m "ab" 0 2
+ms 1 "ab" 1 2
+ms 2 "ab" 2 2
+m "abcd" 1 4
+ms 1 "abcd" 1 4
+ms 2 "abcd" 2 4
+ms 3 "abcd" 3 4
+ms 4 "abcd" 4 4
+m "abcde" 2 5
+ms 1 "abcde" 2 5
+ms 2 "abcde" 2 5
+ms 3 "abcde" 3 5
+ms 4 "abcde" 4 5
+ms 5 "abcde" 5 5
+m "abcdef" 3 6
+ms 1 "abcdef" 3 6
+ms 2 "abcdef" 3 6
+ms 3 "abcdef" 3 6
+ms 4 "abcdef" 4 6
+ms 5 "abcdef" 5 6
+ms 6 "abcdef" 6 6
+m "abcdefgh" 5 8
+ms 1 "abcdefgh" 5 8
+ms 2 "abcdefgh" 5 8
+ms 3 "abcdefgh" 5 8
+ms 4 "abcdefgh" 5 8
+ms 5 "abcdefgh" 5 8
+ms 6 "abcdefgh" 6 8
+ms 7 "abcdefgh" 7 8
+ms 8 "abcdefgh" 8 8
+m "x" 0 1
+ms 1 "x" 1 1
+m "xab" 0 3
+ms 1 "xab" 1 3
+ms 2 "xab" 2 3
+ms 3 "xab" 3 3
+m "xabcdefg" 5 8
+ms 1 "xabcdefg" 5 8
+ms 2 "xabcdefg" 5 8
+ms 3 "xabcdefg" 5 8
+ms 4 "xabcdefg" 5 8
+ms 5 "xabcdefg" 5 8
+ms 6 "xabcdefg" 6 8
+ms 7 "xabcdefg" 7 8
+ms 8 "xabcdefg" 8 8
+m "ab1" 3 3
+ms 1 "ab1" 3 3
+ms 2 "ab1" 3 3
+ms 3 "ab1" 3 3
+m "1ab" 1 3
+ms 1 "1ab" 1 3
+ms 2 "1ab" 2 3
+ms 3 "1ab" 3 3
+m "12" 0 2
+ms 1 "12" 2 2
+ms 2 "12" 2 2
+m "123" 0 3
+ms 1 "123" 1 3
+ms 2 "123" 3 3
+ms 3 "123" 3 3
+m "1234" 0 4
+ms 1 "1234" 1 4
+ms 2 "1234" 2 4
+ms 3 "1234" 4 4
+ms 4 "1234" 4 4
+m "12345" 0 4
+ms 1 "12345" 1 5
+ms 2 "12345" 2 5
+ms 3 "12345" 3 5
+ms 4 "12345" 5 5
+ms 5 "12345" 5 5
+m "ab-" 3 3
+ms 1 "ab-" 3 3
+ms 2 "ab-" 3 3
+ms 3 "ab-" 3 3
+m "abc-d" 4 5
+ms 1 "abc-d" 4 5
+ms 2 "abc-d" 4 5
+ms 3 "abc-d" 4 5
+ms 4 "abc-d" 4 5
+ms 5 "abc-d" 5 5
+m "ab cd" 3 5
+ms 1 "ab cd" 3 5
+ms 2 "ab cd" 3 5
+ms 3 "ab cd" 3 5
+ms 4 "ab cd" 4 5
+ms 5 "ab cd" 5 5
+m "abc\n" 4 4
+ms 1 "abc\n" 4 4
+ms 2 "abc\n" 4 4
+ms 3 "abc\n" 4 4
+ms 4 "abc\n" 4 4
+m "abcdef\n" 7 7
+ms 1 "abcdef\n" 7 7
+ms 2 "abcdef\n" 7 7
+ms 3 "abcdef\n" 7 7
+ms 4 "abcdef\n" 7 7
+ms 5 "abcdef\n" 7 7
+ms 6 "abcdef\n" 7 7
+ms 7 "abcdef\n" 7 7
+m "aaaa" 1 4
+ms 1 "aaaa" 1 4
+ms 2 "aaaa" 2 4
+ms 3 "aaaa" 3 4
+ms 4 "aaaa" 4 4
+m "aaaaa" 2 5
+ms 1 "aaaaa" 2 5
+ms 2 "aaaaa" 2 5
+ms 3 "aaaaa" 3 5
+ms 4 "aaaaa" 4 5
+ms 5 "aaaaa" 5 5
+m "aa\n" 3 3
+ms 1 "aa\n" 3 3
+ms 2 "aa\n" 3 3
+ms 3 "aa\n" 3 3
+m "9abc" 1 4
+ms 1 "9abc" 1 4
+ms 2 "9abc" 2 4
+ms 3 "9abc" 3 4
+ms 4 "9abc" 4 4
+m "zz9" 3 3
+ms 1 "zz9" 3 3
+ms 2 "zz9" 3 3
+ms 3 "zz9" 3 3
+
+pattern (?:[a-z]{0,5})\Z
+features assertions
+m "-ab" 1 3
+ms 1 "-ab" 1 3
+ms 2 "-ab" 2 3
+ms 3 "-ab" 3 3
+m "-abcde" 1 6
+ms 1 "-abcde" 1 6
+ms 2 "-abcde" 2 6
+ms 3 "-abcde" 3 6
+ms 4 "-abcde" 4 6
+ms 5 "-abcde" 5 6
+ms 6 "-abcde" 6 6
+m "ab-cd" 3 5
+ms 1 "ab-cd" 3 5
+ms 2 "ab-cd" 3 5
+ms 3 "ab-cd" 3 5
+ms 4 "ab-cd" 4 5
+ms 5 "ab-cd" 5 5
+m "x123" 4 4
+ms 1 "x123" 4 4
+ms 2 "x123" 4 4
+ms 3 "x123" 4 4
+ms 4 "x123" 4 4
+m "abc123" 6 6
+ms 1 "abc123" 6 6
+ms 2 "abc123" 6 6
+ms 3 "abc123" 6 6
+ms 4 "abc123" 6 6
+ms 5 "abc123" 6 6
+ms 6 "abc123" 6 6
+m "x12" 3 3
+ms 1 "x12" 3 3
+ms 2 "x12" 3 3
+ms 3 "x12" 3 3
+m "a" 0 1
+ms 1 "a" 1 1
+m "ab" 0 2
+ms 1 "ab" 1 2
+ms 2 "ab" 2 2
+m "abcd" 0 4
+ms 1 "abcd" 1 4
+ms 2 "abcd" 2 4
+ms 3 "abcd" 3 4
+ms 4 "abcd" 4 4
+m "abcde" 0 5
+ms 1 "abcde" 1 5
+ms 2 "abcde" 2 5
+ms 3 "abcde" 3 5
+ms 4 "abcde" 4 5
+ms 5 "abcde" 5 5
+m "abcdef" 1 6
+ms 1 "abcdef" 1 6
+ms 2 "abcdef" 2 6
+ms 3 "abcdef" 3 6
+ms 4 "abcdef" 4 6
+ms 5 "abcdef" 5 6
+ms 6 "abcdef" 6 6
+m "abcdefgh" 3 8
+ms 1 "abcdefgh" 3 8
+ms 2 "abcdefgh" 3 8
+ms 3 "abcdefgh" 3 8
+ms 4 "abcdefgh" 4 8
+ms 5 "abcdefgh" 5 8
+ms 6 "abcdefgh" 6 8
+ms 7 "abcdefgh" 7 8
+ms 8 "abcdefgh" 8 8
+m "x" 0 1
+ms 1 "x" 1 1
+m "xab" 0 3
+ms 1 "xab" 1 3
+ms 2 "xab" 2 3
+ms 3 "xab" 3 3
+m "xabcdefg" 3 8
+ms 1 "xabcdefg" 3 8
+ms 2 "xabcdefg" 3 8
+ms 3 "xabcdefg" 3 8
+ms 4 "xabcdefg" 4 8
+ms 5 "xabcdefg" 5 8
+ms 6 "xabcdefg" 6 8
+ms 7 "xabcdefg" 7 8
+ms 8 "xabcdefg" 8 8
+m "ab1" 3 3
+ms 1 "ab1" 3 3
+ms 2 "ab1" 3 3
+ms 3 "ab1" 3 3
+m "1ab" 1 3
+ms 1 "1ab" 1 3
+ms 2 "1ab" 2 3
+ms 3 "1ab" 3 3
+m "12" 2 2
+ms 1 "12" 2 2
+ms 2 "12" 2 2
+m "123" 3 3
+ms 1 "123" 3 3
+ms 2 "123" 3 3
+ms 3 "123" 3 3
+m "1234" 4 4
+ms 1 "1234" 4 4
+ms 2 "1234" 4 4
+ms 3 "1234" 4 4
+ms 4 "1234" 4 4
+m "12345" 5 5
+ms 1 "12345" 5 5
+ms 2 "12345" 5 5
+ms 3 "12345" 5 5
+ms 4 "12345" 5 5
+ms 5 "12345" 5 5
+m "ab-" 3 3
+ms 1 "ab-" 3 3
+ms 2 "ab-" 3 3
+ms 3 "ab-" 3 3
+m "abc-d" 4 5
+ms 1 "abc-d" 4 5
+ms 2 "abc-d" 4 5
+ms 3 "abc-d" 4 5
+ms 4 "abc-d" 4 5
+ms 5 "abc-d" 5 5
+m "ab cd" 3 5
+ms 1 "ab cd" 3 5
+ms 2 "ab cd" 3 5
+ms 3 "ab cd" 3 5
+ms 4 "ab cd" 4 5
+ms 5 "ab cd" 5 5
+m "abc\n" 0 3
+ms 1 "abc\n" 1 3
+ms 2 "abc\n" 2 3
+ms 3 "abc\n" 3 3
+ms 4 "abc\n" 4 4
+m "abcdef\n" 1 6
+ms 1 "abcdef\n" 1 6
+ms 2 "abcdef\n" 2 6
+ms 3 "abcdef\n" 3 6
+ms 4 "abcdef\n" 4 6
+ms 5 "abcdef\n" 5 6
+ms 6 "abcdef\n" 6 6
+ms 7 "abcdef\n" 7 7
+m "aaaa" 0 4
+ms 1 "aaaa" 1 4
+ms 2 "aaaa" 2 4
+ms 3 "aaaa" 3 4
+ms 4 "aaaa" 4 4
+m "aaaaa" 0 5
+ms 1 "aaaaa" 1 5
+ms 2 "aaaaa" 2 5
+ms 3 "aaaaa" 3 5
+ms 4 "aaaaa" 4 5
+ms 5 "aaaaa" 5 5
+m "aa\n" 0 2
+ms 1 "aa\n" 1 2
+ms 2 "aa\n" 2 2
+ms 3 "aa\n" 3 3
+m "9abc" 1 4
+ms 1 "9abc" 1 4
+ms 2 "9abc" 2 4
+ms 3 "9abc" 3 4
+ms 4 "9abc" 4 4
+m "zz9" 3 3
+ms 1 "zz9" 3 3
+ms 2 "zz9" 3 3
+ms 3 "zz9" 3 3
+
+pattern [a-z]{0,5}$
+features assertions
+m "-ab" 1 3
+ms 1 "-ab" 1 3
+ms 2 "-ab" 2 3
+ms 3 "-ab" 3 3
+m "-abcde" 1 6
+ms 1 "-abcde" 1 6
+ms 2 "-abcde" 2 6
+ms 3 "-abcde" 3 6
+ms 4 "-abcde" 4 6
+ms 5 "-abcde" 5 6
+ms 6 "-abcde" 6 6
+m "ab-cd" 3 5
+ms 1 "ab-cd" 3 5
+ms 2 "ab-cd" 3 5
+ms 3 "ab-cd" 3 5
+ms 4 "ab-cd" 4 5
+ms 5 "ab-cd" 5 5
+m "x123" 4 4
+ms 1 "x123" 4 4
+ms 2 "x123" 4 4
+ms 3 "x123" 4 4
+ms 4 "x123" 4 4
+m "abc123" 6 6
+ms 1 "abc123" 6 6
+ms 2 "abc123" 6 6
+ms 3 "abc123" 6 6
+ms 4 "abc123" 6 6
+ms 5 "abc123" 6 6
+ms 6 "abc123" 6 6
+m "x12" 3 3
+ms 1 "x12" 3 3
+ms 2 "x12" 3 3
+ms 3 "x12" 3 3
+m "a" 0 1
+ms 1 "a" 1 1
+m "ab" 0 2
+ms 1 "ab" 1 2
+ms 2 "ab" 2 2
+m "abcd" 0 4
+ms 1 "abcd" 1 4
+ms 2 "abcd" 2 4
+ms 3 "abcd" 3 4
+ms 4 "abcd" 4 4
+m "abcde" 0 5
+ms 1 "abcde" 1 5
+ms 2 "abcde" 2 5
+ms 3 "abcde" 3 5
+ms 4 "abcde" 4 5
+ms 5 "abcde" 5 5
+m "abcdef" 1 6
+ms 1 "abcdef" 1 6
+ms 2 "abcdef" 2 6
+ms 3 "abcdef" 3 6
+ms 4 "abcdef" 4 6
+ms 5 "abcdef" 5 6
+ms 6 "abcdef" 6 6
+m "abcdefgh" 3 8
+ms 1 "abcdefgh" 3 8
+ms 2 "abcdefgh" 3 8
+ms 3 "abcdefgh" 3 8
+ms 4 "abcdefgh" 4 8
+ms 5 "abcdefgh" 5 8
+ms 6 "abcdefgh" 6 8
+ms 7 "abcdefgh" 7 8
+ms 8 "abcdefgh" 8 8
+m "x" 0 1
+ms 1 "x" 1 1
+m "xab" 0 3
+ms 1 "xab" 1 3
+ms 2 "xab" 2 3
+ms 3 "xab" 3 3
+m "xabcdefg" 3 8
+ms 1 "xabcdefg" 3 8
+ms 2 "xabcdefg" 3 8
+ms 3 "xabcdefg" 3 8
+ms 4 "xabcdefg" 4 8
+ms 5 "xabcdefg" 5 8
+ms 6 "xabcdefg" 6 8
+ms 7 "xabcdefg" 7 8
+ms 8 "xabcdefg" 8 8
+m "ab1" 3 3
+ms 1 "ab1" 3 3
+ms 2 "ab1" 3 3
+ms 3 "ab1" 3 3
+m "1ab" 1 3
+ms 1 "1ab" 1 3
+ms 2 "1ab" 2 3
+ms 3 "1ab" 3 3
+m "12" 2 2
+ms 1 "12" 2 2
+ms 2 "12" 2 2
+m "123" 3 3
+ms 1 "123" 3 3
+ms 2 "123" 3 3
+ms 3 "123" 3 3
+m "1234" 4 4
+ms 1 "1234" 4 4
+ms 2 "1234" 4 4
+ms 3 "1234" 4 4
+ms 4 "1234" 4 4
+m "12345" 5 5
+ms 1 "12345" 5 5
+ms 2 "12345" 5 5
+ms 3 "12345" 5 5
+ms 4 "12345" 5 5
+ms 5 "12345" 5 5
+m "ab-" 3 3
+ms 1 "ab-" 3 3
+ms 2 "ab-" 3 3
+ms 3 "ab-" 3 3
+m "abc-d" 4 5
+ms 1 "abc-d" 4 5
+ms 2 "abc-d" 4 5
+ms 3 "abc-d" 4 5
+ms 4 "abc-d" 4 5
+ms 5 "abc-d" 5 5
+m "ab cd" 3 5
+ms 1 "ab cd" 3 5
+ms 2 "ab cd" 3 5
+ms 3 "ab cd" 3 5
+ms 4 "ab cd" 4 5
+ms 5 "ab cd" 5 5
+m "abc\n" 0 3
+ms 1 "abc\n" 1 3
+ms 2 "abc\n" 2 3
+ms 3 "abc\n" 3 3
+ms 4 "abc\n" 4 4
+m "abcdef\n" 1 6
+ms 1 "abcdef\n" 1 6
+ms 2 "abcdef\n" 2 6
+ms 3 "abcdef\n" 3 6
+ms 4 "abcdef\n" 4 6
+ms 5 "abcdef\n" 5 6
+ms 6 "abcdef\n" 6 6
+ms 7 "abcdef\n" 7 7
+m "aaaa" 0 4
+ms 1 "aaaa" 1 4
+ms 2 "aaaa" 2 4
+ms 3 "aaaa" 3 4
+ms 4 "aaaa" 4 4
+m "aaaaa" 0 5
+ms 1 "aaaaa" 1 5
+ms 2 "aaaaa" 2 5
+ms 3 "aaaaa" 3 5
+ms 4 "aaaaa" 4 5
+ms 5 "aaaaa" 5 5
+m "aa\n" 0 2
+ms 1 "aa\n" 1 2
+ms 2 "aa\n" 2 2
+ms 3 "aa\n" 3 3
+m "9abc" 1 4
+ms 1 "9abc" 1 4
+ms 2 "9abc" 2 4
+ms 3 "9abc" 3 4
+ms 4 "9abc" 4 4
+m "zz9" 3 3
+ms 1 "zz9" 3 3
+ms 2 "zz9" 3 3
+ms 3 "zz9" 3 3
+
+pattern a{0,4}$
+features assertions
+m "-ab" 3 3
+ms 1 "-ab" 3 3
+ms 2 "-ab" 3 3
+ms 3 "-ab" 3 3
+m "-abcde" 6 6
+ms 1 "-abcde" 6 6
+ms 2 "-abcde" 6 6
+ms 3 "-abcde" 6 6
+ms 4 "-abcde" 6 6
+ms 5 "-abcde" 6 6
+ms 6 "-abcde" 6 6
+m "ab-cd" 5 5
+ms 1 "ab-cd" 5 5
+ms 2 "ab-cd" 5 5
+ms 3 "ab-cd" 5 5
+ms 4 "ab-cd" 5 5
+ms 5 "ab-cd" 5 5
+m "x123" 4 4
+ms 1 "x123" 4 4
+ms 2 "x123" 4 4
+ms 3 "x123" 4 4
+ms 4 "x123" 4 4
+m "abc123" 6 6
+ms 1 "abc123" 6 6
+ms 2 "abc123" 6 6
+ms 3 "abc123" 6 6
+ms 4 "abc123" 6 6
+ms 5 "abc123" 6 6
+ms 6 "abc123" 6 6
+m "x12" 3 3
+ms 1 "x12" 3 3
+ms 2 "x12" 3 3
+ms 3 "x12" 3 3
+m "a" 0 1
+ms 1 "a" 1 1
+m "ab" 2 2
+ms 1 "ab" 2 2
+ms 2 "ab" 2 2
+m "abcd" 4 4
+ms 1 "abcd" 4 4
+ms 2 "abcd" 4 4
+ms 3 "abcd" 4 4
+ms 4 "abcd" 4 4
+m "abcde" 5 5
+ms 1 "abcde" 5 5
+ms 2 "abcde" 5 5
+ms 3 "abcde" 5 5
+ms 4 "abcde" 5 5
+ms 5 "abcde" 5 5
+m "abcdef" 6 6
+ms 1 "abcdef" 6 6
+ms 2 "abcdef" 6 6
+ms 3 "abcdef" 6 6
+ms 4 "abcdef" 6 6
+ms 5 "abcdef" 6 6
+ms 6 "abcdef" 6 6
+m "abcdefgh" 8 8
+ms 1 "abcdefgh" 8 8
+ms 2 "abcdefgh" 8 8
+ms 3 "abcdefgh" 8 8
+ms 4 "abcdefgh" 8 8
+ms 5 "abcdefgh" 8 8
+ms 6 "abcdefgh" 8 8
+ms 7 "abcdefgh" 8 8
+ms 8 "abcdefgh" 8 8
+m "x" 1 1
+ms 1 "x" 1 1
+m "xab" 3 3
+ms 1 "xab" 3 3
+ms 2 "xab" 3 3
+ms 3 "xab" 3 3
+m "xabcdefg" 8 8
+ms 1 "xabcdefg" 8 8
+ms 2 "xabcdefg" 8 8
+ms 3 "xabcdefg" 8 8
+ms 4 "xabcdefg" 8 8
+ms 5 "xabcdefg" 8 8
+ms 6 "xabcdefg" 8 8
+ms 7 "xabcdefg" 8 8
+ms 8 "xabcdefg" 8 8
+m "ab1" 3 3
+ms 1 "ab1" 3 3
+ms 2 "ab1" 3 3
+ms 3 "ab1" 3 3
+m "1ab" 3 3
+ms 1 "1ab" 3 3
+ms 2 "1ab" 3 3
+ms 3 "1ab" 3 3
+m "12" 2 2
+ms 1 "12" 2 2
+ms 2 "12" 2 2
+m "123" 3 3
+ms 1 "123" 3 3
+ms 2 "123" 3 3
+ms 3 "123" 3 3
+m "1234" 4 4
+ms 1 "1234" 4 4
+ms 2 "1234" 4 4
+ms 3 "1234" 4 4
+ms 4 "1234" 4 4
+m "12345" 5 5
+ms 1 "12345" 5 5
+ms 2 "12345" 5 5
+ms 3 "12345" 5 5
+ms 4 "12345" 5 5
+ms 5 "12345" 5 5
+m "ab-" 3 3
+ms 1 "ab-" 3 3
+ms 2 "ab-" 3 3
+ms 3 "ab-" 3 3
+m "abc-d" 5 5
+ms 1 "abc-d" 5 5
+ms 2 "abc-d" 5 5
+ms 3 "abc-d" 5 5
+ms 4 "abc-d" 5 5
+ms 5 "abc-d" 5 5
+m "ab cd" 5 5
+ms 1 "ab cd" 5 5
+ms 2 "ab cd" 5 5
+ms 3 "ab cd" 5 5
+ms 4 "ab cd" 5 5
+ms 5 "ab cd" 5 5
+m "abc\n" 3 3
+ms 1 "abc\n" 3 3
+ms 2 "abc\n" 3 3
+ms 3 "abc\n" 3 3
+ms 4 "abc\n" 4 4
+m "abcdef\n" 6 6
+ms 1 "abcdef\n" 6 6
+ms 2 "abcdef\n" 6 6
+ms 3 "abcdef\n" 6 6
+ms 4 "abcdef\n" 6 6
+ms 5 "abcdef\n" 6 6
+ms 6 "abcdef\n" 6 6
+ms 7 "abcdef\n" 7 7
+m "aaaa" 0 4
+ms 1 "aaaa" 1 4
+ms 2 "aaaa" 2 4
+ms 3 "aaaa" 3 4
+ms 4 "aaaa" 4 4
+m "aaaaa" 1 5
+ms 1 "aaaaa" 1 5
+ms 2 "aaaaa" 2 5
+ms 3 "aaaaa" 3 5
+ms 4 "aaaaa" 4 5
+ms 5 "aaaaa" 5 5
+m "aa\n" 0 2
+ms 1 "aa\n" 1 2
+ms 2 "aa\n" 2 2
+ms 3 "aa\n" 3 3
+m "9abc" 4 4
+ms 1 "9abc" 4 4
+ms 2 "9abc" 4 4
+ms 3 "9abc" 4 4
+ms 4 "9abc" 4 4
+m "zz9" 3 3
+ms 1 "zz9" 3 3
+ms 2 "zz9" 3 3
+ms 3 "zz9" 3 3
+
+pattern [a-z]{1,4}(?:\z|-)
+features assertions
+m "-ab" 1 3
+ms 1 "-ab" 1 3
+ms 2 "-ab" 2 3
+ns 3 "-ab"
+m "-abcde" 2 6
+ms 1 "-abcde" 2 6
+ms 2 "-abcde" 2 6
+ms 3 "-abcde" 3 6
+ms 4 "-abcde" 4 6
+ms 5 "-abcde" 5 6
+ns 6 "-abcde"
+m "ab-cd" 0 3
+ms 1 "ab-cd" 1 3
+ms 2 "ab-cd" 3 5
+ms 3 "ab-cd" 3 5
+ms 4 "ab-cd" 4 5
+ns 5 "ab-cd"
+n "x123"
+ns 1 "x123"
+ns 2 "x123"
+ns 3 "x123"
+ns 4 "x123"
+n "abc123"
+ns 1 "abc123"
+ns 2 "abc123"
+ns 3 "abc123"
+ns 4 "abc123"
+ns 5 "abc123"
+ns 6 "abc123"
+n "x12"
+ns 1 "x12"
+ns 2 "x12"
+ns 3 "x12"
+m "a" 0 1
+ns 1 "a"
+m "ab" 0 2
+ms 1 "ab" 1 2
+ns 2 "ab"
+m "abcd" 0 4
+ms 1 "abcd" 1 4
+ms 2 "abcd" 2 4
+ms 3 "abcd" 3 4
+ns 4 "abcd"
+m "abcde" 1 5
+ms 1 "abcde" 1 5
+ms 2 "abcde" 2 5
+ms 3 "abcde" 3 5
+ms 4 "abcde" 4 5
+ns 5 "abcde"
+m "abcdef" 2 6
+ms 1 "abcdef" 2 6
+ms 2 "abcdef" 2 6
+ms 3 "abcdef" 3 6
+ms 4 "abcdef" 4 6
+ms 5 "abcdef" 5 6
+ns 6 "abcdef"
+m "abcdefgh" 4 8
+ms 1 "abcdefgh" 4 8
+ms 2 "abcdefgh" 4 8
+ms 3 "abcdefgh" 4 8
+ms 4 "abcdefgh" 4 8
+ms 5 "abcdefgh" 5 8
+ms 6 "abcdefgh" 6 8
+ms 7 "abcdefgh" 7 8
+ns 8 "abcdefgh"
+m "x" 0 1
+ns 1 "x"
+m "xab" 0 3
+ms 1 "xab" 1 3
+ms 2 "xab" 2 3
+ns 3 "xab"
+m "xabcdefg" 4 8
+ms 1 "xabcdefg" 4 8
+ms 2 "xabcdefg" 4 8
+ms 3 "xabcdefg" 4 8
+ms 4 "xabcdefg" 4 8
+ms 5 "xabcdefg" 5 8
+ms 6 "xabcdefg" 6 8
+ms 7 "xabcdefg" 7 8
+ns 8 "xabcdefg"
+n "ab1"
+ns 1 "ab1"
+ns 2 "ab1"
+ns 3 "ab1"
+m "1ab" 1 3
+ms 1 "1ab" 1 3
+ms 2 "1ab" 2 3
+ns 3 "1ab"
+n "12"
+ns 1 "12"
+ns 2 "12"
+n "123"
+ns 1 "123"
+ns 2 "123"
+ns 3 "123"
+n "1234"
+ns 1 "1234"
+ns 2 "1234"
+ns 3 "1234"
+ns 4 "1234"
+n "12345"
+ns 1 "12345"
+ns 2 "12345"
+ns 3 "12345"
+ns 4 "12345"
+ns 5 "12345"
+m "ab-" 0 3
+ms 1 "ab-" 1 3
+ns 2 "ab-"
+ns 3 "ab-"
+m "abc-d" 0 4
+ms 1 "abc-d" 1 4
+ms 2 "abc-d" 2 4
+ms 3 "abc-d" 4 5
+ms 4 "abc-d" 4 5
+ns 5 "abc-d"
+m "ab cd" 3 5
+ms 1 "ab cd" 3 5
+ms 2 "ab cd" 3 5
+ms 3 "ab cd" 3 5
+ms 4 "ab cd" 4 5
+ns 5 "ab cd"
+n "abc\n"
+ns 1 "abc\n"
+ns 2 "abc\n"
+ns 3 "abc\n"
+ns 4 "abc\n"
+n "abcdef\n"
+ns 1 "abcdef\n"
+ns 2 "abcdef\n"
+ns 3 "abcdef\n"
+ns 4 "abcdef\n"
+ns 5 "abcdef\n"
+ns 6 "abcdef\n"
+ns 7 "abcdef\n"
+m "aaaa" 0 4
+ms 1 "aaaa" 1 4
+ms 2 "aaaa" 2 4
+ms 3 "aaaa" 3 4
+ns 4 "aaaa"
+m "aaaaa" 1 5
+ms 1 "aaaaa" 1 5
+ms 2 "aaaaa" 2 5
+ms 3 "aaaaa" 3 5
+ms 4 "aaaaa" 4 5
+ns 5 "aaaaa"
+n "aa\n"
+ns 1 "aa\n"
+ns 2 "aa\n"
+ns 3 "aa\n"
+m "9abc" 1 4
+ms 1 "9abc" 1 4
+ms 2 "9abc" 2 4
+ms 3 "9abc" 3 4
+ns 4 "9abc"
+n "zz9"
+ns 1 "zz9"
+ns 2 "zz9"
+ns 3 "zz9"
+
+pattern [a-z]{2,4}(?:\z|[a-z])
+features assertions
+m "-ab" 1 3
+ms 1 "-ab" 1 3
+ns 2 "-ab"
+ns 3 "-ab"
+m "-abcde" 1 6
+ms 1 "-abcde" 1 6
+ms 2 "-abcde" 2 6
+ms 3 "-abcde" 3 6
+ms 4 "-abcde" 4 6
+ns 5 "-abcde"
+ns 6 "-abcde"
+m "ab-cd" 3 5
+ms 1 "ab-cd" 3 5
+ms 2 "ab-cd" 3 5
+ms 3 "ab-cd" 3 5
+ns 4 "ab-cd"
+ns 5 "ab-cd"
+n "x123"
+ns 1 "x123"
+ns 2 "x123"
+ns 3 "x123"
+ns 4 "x123"
+m "abc123" 0 3
+ns 1 "abc123"
+ns 2 "abc123"
+ns 3 "abc123"
+ns 4 "abc123"
+ns 5 "abc123"
+ns 6 "abc123"
+n "x12"
+ns 1 "x12"
+ns 2 "x12"
+ns 3 "x12"
+n "a"
+ns 1 "a"
+m "ab" 0 2
+ns 1 "ab"
+ns 2 "ab"
+m "abcd" 0 4
+ms 1 "abcd" 1 4
+ms 2 "abcd" 2 4
+ns 3 "abcd"
+ns 4 "abcd"
+m "abcde" 0 5
+ms 1 "abcde" 1 5
+ms 2 "abcde" 2 5
+ms 3 "abcde" 3 5
+ns 4 "abcde"
+ns 5 "abcde"
+m "abcdef" 0 5
+ms 1 "abcdef" 1 6
+ms 2 "abcdef" 2 6
+ms 3 "abcdef" 3 6
+ms 4 "abcdef" 4 6
+ns 5 "abcdef"
+ns 6 "abcdef"
+m "abcdefgh" 0 5
+ms 1 "abcdefgh" 1 6
+ms 2 "abcdefgh" 2 7
+ms 3 "abcdefgh" 3 8
+ms 4 "abcdefgh" 4 8
+ms 5 "abcdefgh" 5 8
+ms 6 "abcdefgh" 6 8
+ns 7 "abcdefgh"
+ns 8 "abcdefgh"
+n "x"
+ns 1 "x"
+m "xab" 0 3
+ms 1 "xab" 1 3
+ns 2 "xab"
+ns 3 "xab"
+m "xabcdefg" 0 5
+ms 1 "xabcdefg" 1 6
+ms 2 "xabcdefg" 2 7
+ms 3 "xabcdefg" 3 8
+ms 4 "xabcdefg" 4 8
+ms 5 "xabcdefg" 5 8
+ms 6 "xabcdefg" 6 8
+ns 7 "xabcdefg"
+ns 8 "xabcdefg"
+n "ab1"
+ns 1 "ab1"
+ns 2 "ab1"
+ns 3 "ab1"
+m "1ab" 1 3
+ms 1 "1ab" 1 3
+ns 2 "1ab"
+ns 3 "1ab"
+n "12"
+ns 1 "12"
+ns 2 "12"
+n "123"
+ns 1 "123"
+ns 2 "123"
+ns 3 "123"
+n "1234"
+ns 1 "1234"
+ns 2 "1234"
+ns 3 "1234"
+ns 4 "1234"
+n "12345"
+ns 1 "12345"
+ns 2 "12345"
+ns 3 "12345"
+ns 4 "12345"
+ns 5 "12345"
+n "ab-"
+ns 1 "ab-"
+ns 2 "ab-"
+ns 3 "ab-"
+m "abc-d" 0 3
+ns 1 "abc-d"
+ns 2 "abc-d"
+ns 3 "abc-d"
+ns 4 "abc-d"
+ns 5 "abc-d"
+m "ab cd" 3 5
+ms 1 "ab cd" 3 5
+ms 2 "ab cd" 3 5
+ms 3 "ab cd" 3 5
+ns 4 "ab cd"
+ns 5 "ab cd"
+m "abc\n" 0 3
+ns 1 "abc\n"
+ns 2 "abc\n"
+ns 3 "abc\n"
+ns 4 "abc\n"
+m "abcdef\n" 0 5
+ms 1 "abcdef\n" 1 6
+ms 2 "abcdef\n" 2 6
+ms 3 "abcdef\n" 3 6
+ns 4 "abcdef\n"
+ns 5 "abcdef\n"
+ns 6 "abcdef\n"
+ns 7 "abcdef\n"
+m "aaaa" 0 4
+ms 1 "aaaa" 1 4
+ms 2 "aaaa" 2 4
+ns 3 "aaaa"
+ns 4 "aaaa"
+m "aaaaa" 0 5
+ms 1 "aaaaa" 1 5
+ms 2 "aaaaa" 2 5
+ms 3 "aaaaa" 3 5
+ns 4 "aaaaa"
+ns 5 "aaaaa"
+n "aa\n"
+ns 1 "aa\n"
+ns 2 "aa\n"
+ns 3 "aa\n"
+m "9abc" 1 4
+ms 1 "9abc" 1 4
+ms 2 "9abc" 2 4
+ns 3 "9abc"
+ns 4 "9abc"
+n "zz9"
+ns 1 "zz9"
+ns 2 "zz9"
+ns 3 "zz9"
+
+pattern (?:\z|-)[a-z]{2,4}
+features assertions
+m "-ab" 0 3
+ns 1 "-ab"
+ns 2 "-ab"
+ns 3 "-ab"
+m "-abcde" 0 5
+ns 1 "-abcde"
+ns 2 "-abcde"
+ns 3 "-abcde"
+ns 4 "-abcde"
+ns 5 "-abcde"
+ns 6 "-abcde"
+m "ab-cd" 2 5
+ms 1 "ab-cd" 2 5
+ms 2 "ab-cd" 2 5
+ns 3 "ab-cd"
+ns 4 "ab-cd"
+ns 5 "ab-cd"
+n "x123"
+ns 1 "x123"
+ns 2 "x123"
+ns 3 "x123"
+ns 4 "x123"
+n "abc123"
+ns 1 "abc123"
+ns 2 "abc123"
+ns 3 "abc123"
+ns 4 "abc123"
+ns 5 "abc123"
+ns 6 "abc123"
+n "x12"
+ns 1 "x12"
+ns 2 "x12"
+ns 3 "x12"
+n "a"
+ns 1 "a"
+n "ab"
+ns 1 "ab"
+ns 2 "ab"
+n "abcd"
+ns 1 "abcd"
+ns 2 "abcd"
+ns 3 "abcd"
+ns 4 "abcd"
+n "abcde"
+ns 1 "abcde"
+ns 2 "abcde"
+ns 3 "abcde"
+ns 4 "abcde"
+ns 5 "abcde"
+n "abcdef"
+ns 1 "abcdef"
+ns 2 "abcdef"
+ns 3 "abcdef"
+ns 4 "abcdef"
+ns 5 "abcdef"
+ns 6 "abcdef"
+n "abcdefgh"
+ns 1 "abcdefgh"
+ns 2 "abcdefgh"
+ns 3 "abcdefgh"
+ns 4 "abcdefgh"
+ns 5 "abcdefgh"
+ns 6 "abcdefgh"
+ns 7 "abcdefgh"
+ns 8 "abcdefgh"
+n "x"
+ns 1 "x"
+n "xab"
+ns 1 "xab"
+ns 2 "xab"
+ns 3 "xab"
+n "xabcdefg"
+ns 1 "xabcdefg"
+ns 2 "xabcdefg"
+ns 3 "xabcdefg"
+ns 4 "xabcdefg"
+ns 5 "xabcdefg"
+ns 6 "xabcdefg"
+ns 7 "xabcdefg"
+ns 8 "xabcdefg"
+n "ab1"
+ns 1 "ab1"
+ns 2 "ab1"
+ns 3 "ab1"
+n "1ab"
+ns 1 "1ab"
+ns 2 "1ab"
+ns 3 "1ab"
+n "12"
+ns 1 "12"
+ns 2 "12"
+n "123"
+ns 1 "123"
+ns 2 "123"
+ns 3 "123"
+n "1234"
+ns 1 "1234"
+ns 2 "1234"
+ns 3 "1234"
+ns 4 "1234"
+n "12345"
+ns 1 "12345"
+ns 2 "12345"
+ns 3 "12345"
+ns 4 "12345"
+ns 5 "12345"
+n "ab-"
+ns 1 "ab-"
+ns 2 "ab-"
+ns 3 "ab-"
+n "abc-d"
+ns 1 "abc-d"
+ns 2 "abc-d"
+ns 3 "abc-d"
+ns 4 "abc-d"
+ns 5 "abc-d"
+n "ab cd"
+ns 1 "ab cd"
+ns 2 "ab cd"
+ns 3 "ab cd"
+ns 4 "ab cd"
+ns 5 "ab cd"
+n "abc\n"
+ns 1 "abc\n"
+ns 2 "abc\n"
+ns 3 "abc\n"
+ns 4 "abc\n"
+n "abcdef\n"
+ns 1 "abcdef\n"
+ns 2 "abcdef\n"
+ns 3 "abcdef\n"
+ns 4 "abcdef\n"
+ns 5 "abcdef\n"
+ns 6 "abcdef\n"
+ns 7 "abcdef\n"
+n "aaaa"
+ns 1 "aaaa"
+ns 2 "aaaa"
+ns 3 "aaaa"
+ns 4 "aaaa"
+n "aaaaa"
+ns 1 "aaaaa"
+ns 2 "aaaaa"
+ns 3 "aaaaa"
+ns 4 "aaaaa"
+ns 5 "aaaaa"
+n "aa\n"
+ns 1 "aa\n"
+ns 2 "aa\n"
+ns 3 "aa\n"
+n "9abc"
+ns 1 "9abc"
+ns 2 "9abc"
+ns 3 "9abc"
+ns 4 "9abc"
+n "zz9"
+ns 1 "zz9"
+ns 2 "zz9"
+ns 3 "zz9"
+
+pattern (?:\z|[a-z])[a-z]{2,4}
+features assertions
+n "-ab"
+ns 1 "-ab"
+ns 2 "-ab"
+ns 3 "-ab"
+m "-abcde" 1 6
+ms 1 "-abcde" 1 6
+ms 2 "-abcde" 2 6
+ms 3 "-abcde" 3 6
+ns 4 "-abcde"
+ns 5 "-abcde"
+ns 6 "-abcde"
+n "ab-cd"
+ns 1 "ab-cd"
+ns 2 "ab-cd"
+ns 3 "ab-cd"
+ns 4 "ab-cd"
+ns 5 "ab-cd"
+n "x123"
+ns 1 "x123"
+ns 2 "x123"
+ns 3 "x123"
+ns 4 "x123"
+m "abc123" 0 3
+ns 1 "abc123"
+ns 2 "abc123"
+ns 3 "abc123"
+ns 4 "abc123"
+ns 5 "abc123"
+ns 6 "abc123"
+n "x12"
+ns 1 "x12"
+ns 2 "x12"
+ns 3 "x12"
+n "a"
+ns 1 "a"
+n "ab"
+ns 1 "ab"
+ns 2 "ab"
+m "abcd" 0 4
+ms 1 "abcd" 1 4
+ns 2 "abcd"
+ns 3 "abcd"
+ns 4 "abcd"
+m "abcde" 0 5
+ms 1 "abcde" 1 5
+ms 2 "abcde" 2 5
+ns 3 "abcde"
+ns 4 "abcde"
+ns 5 "abcde"
+m "abcdef" 0 5
+ms 1 "abcdef" 1 6
+ms 2 "abcdef" 2 6
+ms 3 "abcdef" 3 6
+ns 4 "abcdef"
+ns 5 "abcdef"
+ns 6 "abcdef"
+m "abcdefgh" 0 5
+ms 1 "abcdefgh" 1 6
+ms 2 "abcdefgh" 2 7
+ms 3 "abcdefgh" 3 8
+ms 4 "abcdefgh" 4 8
+ms 5 "abcdefgh" 5 8
+ns 6 "abcdefgh"
+ns 7 "abcdefgh"
+ns 8 "abcdefgh"
+n "x"
+ns 1 "x"
+m "xab" 0 3
+ns 1 "xab"
+ns 2 "xab"
+ns 3 "xab"
+m "xabcdefg" 0 5
+ms 1 "xabcdefg" 1 6
+ms 2 "xabcdefg" 2 7
+ms 3 "xabcdefg" 3 8
+ms 4 "xabcdefg" 4 8
+ms 5 "xabcdefg" 5 8
+ns 6 "xabcdefg"
+ns 7 "xabcdefg"
+ns 8 "xabcdefg"
+n "ab1"
+ns 1 "ab1"
+ns 2 "ab1"
+ns 3 "ab1"
+n "1ab"
+ns 1 "1ab"
+ns 2 "1ab"
+ns 3 "1ab"
+n "12"
+ns 1 "12"
+ns 2 "12"
+n "123"
+ns 1 "123"
+ns 2 "123"
+ns 3 "123"
+n "1234"
+ns 1 "1234"
+ns 2 "1234"
+ns 3 "1234"
+ns 4 "1234"
+n "12345"
+ns 1 "12345"
+ns 2 "12345"
+ns 3 "12345"
+ns 4 "12345"
+ns 5 "12345"
+n "ab-"
+ns 1 "ab-"
+ns 2 "ab-"
+ns 3 "ab-"
+m "abc-d" 0 3
+ns 1 "abc-d"
+ns 2 "abc-d"
+ns 3 "abc-d"
+ns 4 "abc-d"
+ns 5 "abc-d"
+n "ab cd"
+ns 1 "ab cd"
+ns 2 "ab cd"
+ns 3 "ab cd"
+ns 4 "ab cd"
+ns 5 "ab cd"
+m "abc\n" 0 3
+ns 1 "abc\n"
+ns 2 "abc\n"
+ns 3 "abc\n"
+ns 4 "abc\n"
+m "abcdef\n" 0 5
+ms 1 "abcdef\n" 1 6
+ms 2 "abcdef\n" 2 6
+ms 3 "abcdef\n" 3 6
+ns 4 "abcdef\n"
+ns 5 "abcdef\n"
+ns 6 "abcdef\n"
+ns 7 "abcdef\n"
+m "aaaa" 0 4
+ms 1 "aaaa" 1 4
+ns 2 "aaaa"
+ns 3 "aaaa"
+ns 4 "aaaa"
+m "aaaaa" 0 5
+ms 1 "aaaaa" 1 5
+ms 2 "aaaaa" 2 5
+ns 3 "aaaaa"
+ns 4 "aaaaa"
+ns 5 "aaaaa"
+n "aa\n"
+ns 1 "aa\n"
+ns 2 "aa\n"
+ns 3 "aa\n"
+m "9abc" 1 4
+ms 1 "9abc" 1 4
+ns 2 "9abc"
+ns 3 "9abc"
+ns 4 "9abc"
+n "zz9"
+ns 1 "zz9"
+ns 2 "zz9"
+ns 3 "zz9"
+
+pattern [a-z]{0,4}\z[a-z]*
+features assertions
+m "-ab" 1 3
+ms 1 "-ab" 1 3
+ms 2 "-ab" 2 3
+ms 3 "-ab" 3 3
+m "-abcde" 2 6
+ms 1 "-abcde" 2 6
+ms 2 "-abcde" 2 6
+ms 3 "-abcde" 3 6
+ms 4 "-abcde" 4 6
+ms 5 "-abcde" 5 6
+ms 6 "-abcde" 6 6
+m "ab-cd" 3 5
+ms 1 "ab-cd" 3 5
+ms 2 "ab-cd" 3 5
+ms 3 "ab-cd" 3 5
+ms 4 "ab-cd" 4 5
+ms 5 "ab-cd" 5 5
+m "x123" 4 4
+ms 1 "x123" 4 4
+ms 2 "x123" 4 4
+ms 3 "x123" 4 4
+ms 4 "x123" 4 4
+m "abc123" 6 6
+ms 1 "abc123" 6 6
+ms 2 "abc123" 6 6
+ms 3 "abc123" 6 6
+ms 4 "abc123" 6 6
+ms 5 "abc123" 6 6
+ms 6 "abc123" 6 6
+m "x12" 3 3
+ms 1 "x12" 3 3
+ms 2 "x12" 3 3
+ms 3 "x12" 3 3
+m "a" 0 1
+ms 1 "a" 1 1
+m "ab" 0 2
+ms 1 "ab" 1 2
+ms 2 "ab" 2 2
+m "abcd" 0 4
+ms 1 "abcd" 1 4
+ms 2 "abcd" 2 4
+ms 3 "abcd" 3 4
+ms 4 "abcd" 4 4
+m "abcde" 1 5
+ms 1 "abcde" 1 5
+ms 2 "abcde" 2 5
+ms 3 "abcde" 3 5
+ms 4 "abcde" 4 5
+ms 5 "abcde" 5 5
+m "abcdef" 2 6
+ms 1 "abcdef" 2 6
+ms 2 "abcdef" 2 6
+ms 3 "abcdef" 3 6
+ms 4 "abcdef" 4 6
+ms 5 "abcdef" 5 6
+ms 6 "abcdef" 6 6
+m "abcdefgh" 4 8
+ms 1 "abcdefgh" 4 8
+ms 2 "abcdefgh" 4 8
+ms 3 "abcdefgh" 4 8
+ms 4 "abcdefgh" 4 8
+ms 5 "abcdefgh" 5 8
+ms 6 "abcdefgh" 6 8
+ms 7 "abcdefgh" 7 8
+ms 8 "abcdefgh" 8 8
+m "x" 0 1
+ms 1 "x" 1 1
+m "xab" 0 3
+ms 1 "xab" 1 3
+ms 2 "xab" 2 3
+ms 3 "xab" 3 3
+m "xabcdefg" 4 8
+ms 1 "xabcdefg" 4 8
+ms 2 "xabcdefg" 4 8
+ms 3 "xabcdefg" 4 8
+ms 4 "xabcdefg" 4 8
+ms 5 "xabcdefg" 5 8
+ms 6 "xabcdefg" 6 8
+ms 7 "xabcdefg" 7 8
+ms 8 "xabcdefg" 8 8
+m "ab1" 3 3
+ms 1 "ab1" 3 3
+ms 2 "ab1" 3 3
+ms 3 "ab1" 3 3
+m "1ab" 1 3
+ms 1 "1ab" 1 3
+ms 2 "1ab" 2 3
+ms 3 "1ab" 3 3
+m "12" 2 2
+ms 1 "12" 2 2
+ms 2 "12" 2 2
+m "123" 3 3
+ms 1 "123" 3 3
+ms 2 "123" 3 3
+ms 3 "123" 3 3
+m "1234" 4 4
+ms 1 "1234" 4 4
+ms 2 "1234" 4 4
+ms 3 "1234" 4 4
+ms 4 "1234" 4 4
+m "12345" 5 5
+ms 1 "12345" 5 5
+ms 2 "12345" 5 5
+ms 3 "12345" 5 5
+ms 4 "12345" 5 5
+ms 5 "12345" 5 5
+m "ab-" 3 3
+ms 1 "ab-" 3 3
+ms 2 "ab-" 3 3
+ms 3 "ab-" 3 3
+m "abc-d" 4 5
+ms 1 "abc-d" 4 5
+ms 2 "abc-d" 4 5
+ms 3 "abc-d" 4 5
+ms 4 "abc-d" 4 5
+ms 5 "abc-d" 5 5
+m "ab cd" 3 5
+ms 1 "ab cd" 3 5
+ms 2 "ab cd" 3 5
+ms 3 "ab cd" 3 5
+ms 4 "ab cd" 4 5
+ms 5 "ab cd" 5 5
+m "abc\n" 4 4
+ms 1 "abc\n" 4 4
+ms 2 "abc\n" 4 4
+ms 3 "abc\n" 4 4
+ms 4 "abc\n" 4 4
+m "abcdef\n" 7 7
+ms 1 "abcdef\n" 7 7
+ms 2 "abcdef\n" 7 7
+ms 3 "abcdef\n" 7 7
+ms 4 "abcdef\n" 7 7
+ms 5 "abcdef\n" 7 7
+ms 6 "abcdef\n" 7 7
+ms 7 "abcdef\n" 7 7
+m "aaaa" 0 4
+ms 1 "aaaa" 1 4
+ms 2 "aaaa" 2 4
+ms 3 "aaaa" 3 4
+ms 4 "aaaa" 4 4
+m "aaaaa" 1 5
+ms 1 "aaaaa" 1 5
+ms 2 "aaaaa" 2 5
+ms 3 "aaaaa" 3 5
+ms 4 "aaaaa" 4 5
+ms 5 "aaaaa" 5 5
+m "aa\n" 3 3
+ms 1 "aa\n" 3 3
+ms 2 "aa\n" 3 3
+ms 3 "aa\n" 3 3
+m "9abc" 1 4
+ms 1 "9abc" 1 4
+ms 2 "9abc" 2 4
+ms 3 "9abc" 3 4
+ms 4 "9abc" 4 4
+m "zz9" 3 3
+ms 1 "zz9" 3 3
+ms 2 "zz9" 3 3
+ms 3 "zz9" 3 3
+
+pattern (?:[a-z]{0,3}\z|x)[0-9]{3}
+features assertions
+n "-ab"
+ns 1 "-ab"
+ns 2 "-ab"
+ns 3 "-ab"
+n "-abcde"
+ns 1 "-abcde"
+ns 2 "-abcde"
+ns 3 "-abcde"
+ns 4 "-abcde"
+ns 5 "-abcde"
+ns 6 "-abcde"
+n "ab-cd"
+ns 1 "ab-cd"
+ns 2 "ab-cd"
+ns 3 "ab-cd"
+ns 4 "ab-cd"
+ns 5 "ab-cd"
+m "x123" 0 4
+ns 1 "x123"
+ns 2 "x123"
+ns 3 "x123"
+ns 4 "x123"
+n "abc123"
+ns 1 "abc123"
+ns 2 "abc123"
+ns 3 "abc123"
+ns 4 "abc123"
+ns 5 "abc123"
+ns 6 "abc123"
+n "x12"
+ns 1 "x12"
+ns 2 "x12"
+ns 3 "x12"
+n "a"
+ns 1 "a"
+n "ab"
+ns 1 "ab"
+ns 2 "ab"
+n "abcd"
+ns 1 "abcd"
+ns 2 "abcd"
+ns 3 "abcd"
+ns 4 "abcd"
+n "abcde"
+ns 1 "abcde"
+ns 2 "abcde"
+ns 3 "abcde"
+ns 4 "abcde"
+ns 5 "abcde"
+n "abcdef"
+ns 1 "abcdef"
+ns 2 "abcdef"
+ns 3 "abcdef"
+ns 4 "abcdef"
+ns 5 "abcdef"
+ns 6 "abcdef"
+n "abcdefgh"
+ns 1 "abcdefgh"
+ns 2 "abcdefgh"
+ns 3 "abcdefgh"
+ns 4 "abcdefgh"
+ns 5 "abcdefgh"
+ns 6 "abcdefgh"
+ns 7 "abcdefgh"
+ns 8 "abcdefgh"
+n "x"
+ns 1 "x"
+n "xab"
+ns 1 "xab"
+ns 2 "xab"
+ns 3 "xab"
+n "xabcdefg"
+ns 1 "xabcdefg"
+ns 2 "xabcdefg"
+ns 3 "xabcdefg"
+ns 4 "xabcdefg"
+ns 5 "xabcdefg"
+ns 6 "xabcdefg"
+ns 7 "xabcdefg"
+ns 8 "xabcdefg"
+n "ab1"
+ns 1 "ab1"
+ns 2 "ab1"
+ns 3 "ab1"
+n "1ab"
+ns 1 "1ab"
+ns 2 "1ab"
+ns 3 "1ab"
+n "12"
+ns 1 "12"
+ns 2 "12"
+n "123"
+ns 1 "123"
+ns 2 "123"
+ns 3 "123"
+n "1234"
+ns 1 "1234"
+ns 2 "1234"
+ns 3 "1234"
+ns 4 "1234"
+n "12345"
+ns 1 "12345"
+ns 2 "12345"
+ns 3 "12345"
+ns 4 "12345"
+ns 5 "12345"
+n "ab-"
+ns 1 "ab-"
+ns 2 "ab-"
+ns 3 "ab-"
+n "abc-d"
+ns 1 "abc-d"
+ns 2 "abc-d"
+ns 3 "abc-d"
+ns 4 "abc-d"
+ns 5 "abc-d"
+n "ab cd"
+ns 1 "ab cd"
+ns 2 "ab cd"
+ns 3 "ab cd"
+ns 4 "ab cd"
+ns 5 "ab cd"
+n "abc\n"
+ns 1 "abc\n"
+ns 2 "abc\n"
+ns 3 "abc\n"
+ns 4 "abc\n"
+n "abcdef\n"
+ns 1 "abcdef\n"
+ns 2 "abcdef\n"
+ns 3 "abcdef\n"
+ns 4 "abcdef\n"
+ns 5 "abcdef\n"
+ns 6 "abcdef\n"
+ns 7 "abcdef\n"
+n "aaaa"
+ns 1 "aaaa"
+ns 2 "aaaa"
+ns 3 "aaaa"
+ns 4 "aaaa"
+n "aaaaa"
+ns 1 "aaaaa"
+ns 2 "aaaaa"
+ns 3 "aaaaa"
+ns 4 "aaaaa"
+ns 5 "aaaaa"
+n "aa\n"
+ns 1 "aa\n"
+ns 2 "aa\n"
+ns 3 "aa\n"
+n "9abc"
+ns 1 "9abc"
+ns 2 "9abc"
+ns 3 "9abc"
+ns 4 "9abc"
+n "zz9"
+ns 1 "zz9"
+ns 2 "zz9"
+ns 3 "zz9"
