@@ -397,6 +397,13 @@ read in the no-filesystem mode (a `lib`/`include "…"` line is refused). The
 fields' own comment carries the disclosure: the chosen bundle's NAME is
 stamped into every artifact built under it.
 
+## [OPT-VEDGE] `PCREC_NO_VIEW_EDGE` (bit 42, 2026-10-03)
+
+A `#define` deny bit, `-fno-view-edge`: the view-tolerant scan edge
+(`src/opt/scanedge.c`, `docs/spec/tuning.md` §2.37). Answer-identity
+preserving, so MASKED out of `rx_info.flags` like the rest of the
+strategy-denial family.
+
 ## [UTF-VALID] (D133)
 
 Two `#define` bits beside bit 38: `PCREC_FORCE_UTF_CHECK` (39,

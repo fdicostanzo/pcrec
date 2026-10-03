@@ -420,6 +420,9 @@ is EXPECTED to time out"*, and neither would a separate arm.
   write on a no-match moves no return value and the harness driver never
   reads caps after a 0, so `harness` is green on it by construction. Row S439
   (the dead-group fill planted back at the search entry).
+- (no new arm) [OPT-VEDGE] row S440 (lane vedge, 2026-10-03) is on
+  `harness`, scoped to `tests/assertions`: the reverse machine handed
+  `end_is_exit = true` loses matches on view_edge.rxt's direction witness.
 - `tunedial` → `tests/codegen/run_tune_dial.sh` ([OPT-DIAL] design §6.1a's
   MECHANISM-STATE CROSS-CHECK), **NOT YET REGISTERED IN THIS DRIVER'S
   DISPATCH as of 2026-09-17** — a sibling lane is building the script
