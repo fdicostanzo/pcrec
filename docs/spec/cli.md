@@ -44,7 +44,7 @@ option, no alias): the file operand IS the mechanism now — see §1.1.
 
 ### `--version` — print the pcrec version and exit
 
-Prints one line, `pcrec 0.1.0-beta`, to stdout and exits 0 — verified live
+Prints one line, `pcrec 0.2.0-beta`, to stdout and exits 0 — verified live
 (`build/pcrec --version`). The string is `PCREC_VERSION` (`lib/pcrec.h`,
 D115, [REL-1.4]), a semver product version that names THIS TOOL and is
 **independent of `abi`** (`docs/spec/match_api.md` §6): `abi` versions one

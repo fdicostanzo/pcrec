@@ -23,7 +23,7 @@ of shelling out). Check what you built:
 build/pcrec --version
 ```
 
-prints one line, `pcrec 0.1.0-beta`, and exits.
+prints one line, `pcrec 0.2.0-beta`, and exits.
 
 ## Compile your first pattern
 

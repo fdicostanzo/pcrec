@@ -1,6 +1,6 @@
 # Contributing to pcrec
 
-Thanks for looking at this. pcrec is pre-1.0 (0.1.0-beta) and still moving
+Thanks for looking at this. pcrec is pre-1.0 (0.2.0-beta) and still moving
 fast, so please open an issue before a large change — small fixes and
 clarifications are welcome as PRs directly.
 

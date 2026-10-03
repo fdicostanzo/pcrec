@@ -42,7 +42,7 @@ directory was written.
   guide states the command and what to expect in words, not a pasted
   transcript, unless the transcript itself is the point.
 - No number that can drift: no `abi` digit, no byte counts, no test
-  counts, no dates. `PCREC_VERSION` (`"0.1.0-beta"`) is the one exception,
+  counts, no dates. `PCREC_VERSION` (`"0.2.0-beta"`) is the one exception,
   because `--version` is itself the thing that keeps it honest.
 - A fact that might change (an entry point's exact signature, a limit's
   default, a give-up code's value) is stated once here in plain words and
