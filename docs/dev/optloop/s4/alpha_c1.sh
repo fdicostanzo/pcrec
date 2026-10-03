@@ -10,7 +10,9 @@
 #   BASE_REV=<C0 commit>  NEW_REV=<C1 commit>  bash alpha_c1.sh [step0|build|check|time|all]
 #
 # BASE is the commit before C1 (C0, byte-identical to main by its zero-mover
-# sweep); NEW is C1; DENY is NEW with -fno-run-overlap. DENY's program must
+# sweep); NEW is C1. On the lane/r1land stack (C1 landed at abi 58 on top of
+# [OPT-VEDGE]'s abi 57) BASE is the [OPT-VEDGE] renumber commit and NEW the
+# stack tip — r1land_report.md names both shas; DENY is NEW with -fno-run-overlap. DENY's program must
 # equal BASE's apart from the abi digit and the RX_RUN_WORDS line, checked by
 # `check` before anything is timed, so BASE/DENY is the noise floor of each
 # cell (the same program twice) and a NEW/BASE ratio inside it is a NULL.
@@ -172,7 +174,7 @@ check() {
       [ -s "art/$name/$side/art.c" ] && [ -x "art/$name/$side/run" ] \
         || { echo "NOT BUILT: art/$name/$side (run 'build' first)"; return 1; }
     done
-    norm() { sed -E -e 's/abi 5[56]/abi N/g; s/(PCREC_RX_ABI_H[^0-9]*)5[56]/\1N/g; s/(\.abi = )5[56]/\1N/; /^#define RX_RUN_WORDS /d' "$1"; }
+    norm() { sed -E -e 's/abi 5[5-8]/abi N/g; s/(PCREC_RX_ABI_H[^0-9]*)5[5-8]/\1N/g; s/(\.abi = )5[5-8]/\1N/; /^#define RX_RUN_WORDS /d' "$1"; }
     if cmp -s <(norm "art/$name/base/art.c") <(norm "art/$name/deny/art.c"); then
       echo "DENY==BASE  $name"; else echo "DENY!=BASE  $name  (the floor is not the same program: STOP)"; rc=1; fi
     w=$(sed -n 's/^#define RX_RUN_WORDS //p' "art/$name/new/art.c")

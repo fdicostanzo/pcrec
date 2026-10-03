@@ -1,5 +1,5 @@
 /* runcmp.c — THE RUN COMPARE ([OPT-LITSCAN] S4 C1; docs/design/litscan_s4.md
- * §1.3-§1.5, §2.1; docs/spec/tuning.md §2.37).
+ * §1.3-§1.5, §2.1; docs/spec/tuning.md §2.38).
  *
  * ONE emitter function owns every literal-run compare in emitted C, both
  * engines: the offset-skip block's run term (which is also the run

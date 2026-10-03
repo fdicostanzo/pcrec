@@ -1,4 +1,4 @@
-# S442 ([OPT-LITSCAN] S4 C1, lane s4build) -- THE LAST WORD STOPS ONE BYTE
+# S444 ([OPT-LITSCAN] S4 C1, lane s4build) -- THE LAST WORD STOPS ONE BYTE
 # SHORT, SO THE RUN'S LAST BYTE IS NEVER COMPARED.
 #
 # The `overlap` row's two words must COVER the run: the first starts at 0 and
@@ -9,7 +9,7 @@
 # cells (tests/litscan/litrun.rxt flips every position of every run once),
 # and run_codegen_tests.sh's [OPT-LITSCAN S4] check that the last word sits
 # at exactly L - W.
-SAB_ID="S442-run-word-last-byte-unchecked"
+SAB_ID="S444-run-word-last-byte-unchecked"
 SAB_FILE="src/gen/runcmp.c"
 SAB_SUITES="codegen harness"
 SAB_HARNESS_TARGET="tests/litscan/litrun.rxt"
@@ -20,4 +20,4 @@ SAB_REACH_EXPECT="REACH-OVERLAP-ROW-EMITTED"
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='        int at = o + w <= r->len ? o : r->len - w;   /* the last word ends at L */'
-SAB_AFTER='        int at = o + w <= r->len ? o : r->len - w - 1;   /* SABOTAGE S442 */'
+SAB_AFTER='        int at = o + w <= r->len ? o : r->len - w - 1;   /* SABOTAGE S444 */'

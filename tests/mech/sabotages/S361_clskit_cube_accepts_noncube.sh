@@ -16,7 +16,7 @@
 # only SAB_FILE moved. Under the run facts' ABSOLUTE domain (base 0, w 256)
 # the plant is inert by arithmetic -- the O(k) budget is exact there, csize
 # must equal nmem -- so the detector is still the kit's section form, and
-# S440 is the absolute reader's own row.
+# S442 is the absolute reader's own row.
 SAB_ID="S361-clskit-cube-accepts-noncube"
 SAB_FILE="src/core/cpset.c"
 SAB_SUITES="clskit"

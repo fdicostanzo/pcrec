@@ -2302,7 +2302,7 @@ the bump's own commit.**
   C (the offset-skip block's run term, which is also the run pre-check's
   compare, the VM's literal run and the island's single-child chains) is now
   written by ONE emitter function with a first-match row table
-  (`src/gen/runcmp.c`, `docs/spec/tuning.md` §2.37). An EXACT run of length
+  (`src/gen/runcmp.c`, `docs/spec/tuning.md` §2.38). An EXACT run of length
   3, 5-7 or 9-15 — where gcc's constant `memcmp` decomposes into 2-4
   non-overlapping pieces — takes the `overlap` row: two overlapping
   natural-width words, the last at offset `L - W`, each loaded by a
@@ -2317,7 +2317,7 @@ the bump's own commit.**
   wrote), emitted after the engine body. **Movers:** an artifact's program
   moves if and only if it writes a run compare at an overlap length; every
   other artifact differs from `abi` 55 in its abi digits and the
-  `RUN_WORDS 0` line alone. `-fno-run-overlap` (bit 42, masked out of
+  `RUN_WORDS 0` line alone. `-fno-run-overlap` (bit 43, masked out of
   `rx_info.flags`) restores the `abi`-55 program apart from those two.
   **Invariants:** every word lies inside the run (`o + W <= L`), each
   word's constant is a string literal (never an integer literal of the
@@ -3773,11 +3773,11 @@ engine-scoped.**
   plain text in the artifact**: a binary built under a user's analysis
   discloses its name.
 
-  **[OPT-LITSCAN] S4 C1, 2026-10-03 (`abi` 56): `<PREFIX>_RUN_WORDS` — HOW
+  **[OPT-LITSCAN] S4 C1, 2026-10-03 (`abi` 58): `<PREFIX>_RUN_WORDS` — HOW
   MANY RUN COMPARES THE OVERLAP ROW WROTE.** On EVERY artifact, both engines.
   An ACTIVITY count, which (b) below keeps VM-only, and it is here instead
   because the mechanism it counts is both engines': the run compare
-  (`src/gen/runcmp.c`, `docs/spec/tuning.md` §2.37) writes the DFA scan's run
+  (`src/gen/runcmp.c`, `docs/spec/tuning.md` §2.38) writes the DFA scan's run
   term and run pre-check as well as the VM's literal runs and island chains.
 
   ```c
@@ -4025,7 +4025,7 @@ concatenation ([OPT-LITSCAN] F5, `abi` 43, D127, narrowed from two: a
 two-byte run reads cheaper as its own two-node byte chain, `tuning.md`
 §2.31), and an alternation island's single-child trie chain (unaffected by
 F5's floor, its own mechanism), each compared as one bounds check and one
-run compare (`docs/spec/tuning.md` §2.31, §2.37: since `abi` 56 a
+run compare (`docs/spec/tuning.md` §2.31, §2.38: since `abi` 58 a
 constant-length `memcmp` or, at the lengths gcc decomposes, two overlapping
 word compares). UNCONDITIONAL on
 every VM artifact, hybrids included, never defined on a pure-DFA artifact,

@@ -1,4 +1,4 @@
-# S443 ([OPT-LITSCAN] S4 C1, lane s4build) -- THE OVERLAP ROW'S SENSE IS
+# S445 ([OPT-LITSCAN] S4 C1, lane s4build) -- THE OVERLAP ROW'S SENSE IS
 # INVERTED.
 #
 # S267's twin for the run compare's `overlap` row: each word compare is
@@ -7,7 +7,7 @@
 # such a run reads nomatch on both engines (the VM's literal run, the
 # offset-skip run term, the run pre-check). Detector: the harness, on the
 # L-sweep (tests/litscan/litrun.rxt) and every corpus run at those lengths.
-SAB_ID="S443-run-word-sense-inverted"
+SAB_ID="S445-run-word-sense-inverted"
 SAB_FILE="src/gen/runcmp.c"
 SAB_SUITES="harness"
 SAB_HARNESS_TARGET="tests/litscan/litrun.rxt"
@@ -18,4 +18,4 @@ SAB_REACH_EXPECT="REACH-OVERLAP-ROW-EMITTED"
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='        pcrec_sb_printf(c, ") == %s_w%d(\"", p, w);'
-SAB_AFTER='        pcrec_sb_printf(c, ") != %s_w%d(\"", p, w);   /* SABOTAGE S443 */'
+SAB_AFTER='        pcrec_sb_printf(c, ") != %s_w%d(\"", p, w);   /* SABOTAGE S445 */'

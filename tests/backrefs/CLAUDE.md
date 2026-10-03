@@ -184,7 +184,7 @@ comment and the row's header.
   the other 204 bytes, T = c & K, plus two negative cells ({a,b}, {a,b,c}) and
   one non-caseless cube ([0-7], K = 0xF8) so the reader cannot pass by calling
   everything a cube. The caseless run mask (litscan_s4.md §1.2) is this cube,
-  so the arm ties P2 to P1. Sabotage S440 (a section-relative base) reads red
+  so the arm ties P2 to P1. Sabotage S442 (a section-relative base) reads red
   here. The design's (c) arm (an EMITTED 256-position masked run) belongs to
   C2, which is HELD.
 - **fold_agreement_utf8_check.c** — the same obligation for the `utf8`

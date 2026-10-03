@@ -2845,9 +2845,9 @@ under ONE label where the per-byte chain wrote `L`. In an alternation island
 (§2.20) a trie node's single-child chain, down to the first node that
 branches or where an alternative ends, is the same compare at that node's
 depth. The compare is the literal-compare kit's one emitter (the run
-compare, §2.37, since `abi` 56; P4 before it), the same function the
+compare, §2.38, since `abi` 58; P4 before it), the same function the
 run-pinned prefilter rows (§2.30) and the run pre-check use, so at the
-lengths §2.37's `overlap` row takes it is two overlapping word compares
+lengths §2.38's `overlap` row takes it is two overlapping word compares
 rather than a `memcmp`; gcc
 lowers a constant-length `memcmp` to word loads with no call, and it does not
 fuse a per-byte chain on its own (`docs/dev/optloop/vmlit_trigger_read.md`
@@ -3203,9 +3203,9 @@ bytes. The forced VM is 20 / 1,915 / 14,177 on the same subjects, so a
 whole-subject DFA call is still about twice the VM's: the reverse pass
 remains (§2.19's elision cannot apply, since the start state accepts only at
 `n`). Denied, the pass is the one before this row, byte for byte.
-### 2.37 `-fno-run-overlap` — `PCREC_NO_RUN_OVERLAP` (bit 42)
+### 2.38 `-fno-run-overlap` — `PCREC_NO_RUN_OVERLAP` (bit 43)
 
-**`[OPT-LITSCAN]` S4 C1, `abi` 56 (`docs/design/litscan_s4.md` §1.3-§1.5,
+**`[OPT-LITSCAN]` S4 C1, `abi` 58 (`docs/design/litscan_s4.md` §1.3-§1.5,
 §2.1). ANSWER-IDENTITY-preserving.** How a literal-run compare is spelled,
 on both engines. Deny-only, MASKED out of `rx_info.flags`
 (`strategy_denials`) for the mask's own reason; the deny is the
@@ -3213,7 +3213,7 @@ literal-compare kit's row flag (D122 addendum 2 (4)). `<PREFIX>_RUN_WORDS`
 (`match_api.md` §6.3) counts the compares the `overlap` row writes, `0` on
 every artifact that writes none and on every artifact under the flag.
 Denied, every run compare is the `memcmp` this compiler emitted before
-`abi` 56, byte for byte apart from that stamp line.
+`abi` 58, byte for byte apart from that stamp line.
 
 **What it is.** Every literal-run compare in emitted C — the offset-skip
 block's run term (§2.30, which is also the run pre-check's compare, §2.28)
@@ -3549,7 +3549,7 @@ not-a-tuning-axis list that follows.
 | `flags` bit `PCREC_NO_CLS_PACK` | `-fno-cls-pack` | §2.34 |
 | `flags` bit `PCREC_NO_HYB_RESEED` | `-fno-hyb-reseed` | §2.35 |
 | `flags` bit `PCREC_NO_VIEW_EDGE` | `-fno-view-edge` | §2.37 |
-| `flags` bit `PCREC_NO_RUN_OVERLAP` | `-fno-run-overlap` | §2.37 |
+| `flags` bit `PCREC_NO_RUN_OVERLAP` | `-fno-run-overlap` | §2.38 |
 | `unroll_k` (`PCREC_UNROLL_K_DEFAULT` = 0) | `--unroll=K` | §2.10 |
 | `vm_entry_shape` (`PCREC_VM_ENTRY_AUTO` = 0, `_PLAIN`, `_SHARED`, `_FORWARD`, `_INLINE`) | `--vm-entry-shape=N` | §2.21 |
 | `engine` (`PCREC_ENGINE_AUTO`/`_DFA`/`_VM`) | `--engine=E` | §2.11 |
@@ -3700,8 +3700,8 @@ the rule), and `tune` is precisely such a case, already covered.
 
 ### 5.4 The policy table
 
-**Twenty-eight rows: the 23 `tuning.md` §2 axes, `-fno-run-overlap` (§2.37,
-added at `abi` 56 with a cell at no position), λ, the `[ART-SIZE]`
+**Twenty-eight rows: the 23 `tuning.md` §2 axes, `-fno-run-overlap` (§2.38,
+added at `abi` 58 with a cell at no position), λ, the `[ART-SIZE]`
 ladder's two parameters, and the emitted-size caps** (the last three are
 not §2 axes in their own right — the ladder's parameters are
 `-fno-size-term`'s sub-parameters, listed separately because the dial
@@ -3746,7 +3746,7 @@ lands.
 | `-fno-startpos-guard` / `-fstartpos-guard=align` | — | — | — | — | — | §2.23; **GATE 1** — the three values disagree about answers on purpose; permanently flat |
 | `-futf-check` | — | — | — | — | — | §2.36; **GATE 1** — a contract, off by default; permanently flat |
 | `-fno-size-term` | — | — | — | — | — | §2.16; **NOT A RUNG** — it is the MECHANISM the two ladder rows parameterise |
-| `-fno-run-overlap` | — | — | — | — | — | §2.37; **NOT A RUNG** — the row and the `memcmp` it replaces are within a word in size, so no position trades on it; whether it ships at all is its own alpha (`litscan_s4.md` Q3), not a dial cell |
+| `-fno-run-overlap` | — | — | — | — | — | §2.38; **NOT A RUNG** — the row and the `memcmp` it replaces are within a word in size, so no position trades on it; whether it ships at all is its own alpha (`litscan_s4.md` Q3), not a dial cell |
 | emitted-size caps | — | — | — | — | — | `limits.md` §8; **NOT A RUNG** — raise-only refusal boundaries; a dial that lowered one would manufacture refusals |
 
 **The seven reason codes**, one per flat row above:

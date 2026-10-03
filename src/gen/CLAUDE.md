@@ -1031,15 +1031,15 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
 
 ## Files
 
-- **runcmp.c** — [OPT-LITSCAN] S4 C1 (lane s4build, 2026-10-03, abi 56;
-  `docs/design/litscan_s4.md` §1.3-§1.5, `docs/spec/tuning.md` §2.37): THE RUN
+- **runcmp.c** — [OPT-LITSCAN] S4 C1 (lane s4build, 2026-10-03, abi 58;
+  `docs/design/litscan_s4.md` §1.3-§1.5, `docs/spec/tuning.md` §2.38): THE RUN
   COMPARE. `pcrec_emit_run_compare(cx, c, base, off, run)` is the ONE emitter
   of a literal-run compare in emitted C, both engines, through a first-match
   row table `pcrec_runcmp_rows` (declared in `core/internal.h` beside
   `PcrecRun`, walked live by `--list-axes` as axis `run-overlap`): `overlap`
   (an exact run of length 3, 5-7 or 9-15: two overlapping natural-width
   words, the last at offset L - W, `&&` in offset order; deny
-  `-fno-run-overlap`, bit 42) then `memcmp` (P4's text byte for byte, the
+  `-fno-run-overlap`, bit 43) then `memcmp` (P4's text byte for byte, the
   total fallback). It took P4's place: `pcrec_emit_exact_compare` is
   RETIRED, and its three callers (`ofsk_emit_verify`'s run term, which is
   also the run pre-check's compare; `vm_lit`; `vm_isl_emit`'s single-child
@@ -1062,7 +1062,7 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
   caller would be code no cell reaches; `PcrecRun` gains its K column with
   them. Checks: `tests/codegen/runcmp_check.py` (structural), the
   `tests/litscan/litrun.rxt` L-sweep (answers, both routes). Sabotage rows
-  S267 (the `memcmp` row's sense), S441/S442 (the last word's offset), S443
+  S267 (the `memcmp` row's sense), S443/S444 (the last word's offset), S445
   (the overlap row's sense).
 - **clskit.c / clskit.h** — [CLS-TREE] S1 (lane clss1, 2026-09-29;
   docs/design/cls_tree_design.md §1, §6; D129, D131): THE CLASS-MATCHER KIT.

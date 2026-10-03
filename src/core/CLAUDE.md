@@ -502,7 +502,7 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   emitted byte changed (`scripts/emit_sweep.py` + `scripts/cls_identity.py`,
   `docs/dev/lanes/s4build_report.md`). `pcrec_cls_single` is NOT replaced
   (6+ readers, no customer). Sabotage rows S361 (re-aimed here, the section
-  form) and S440 (the absolute reader handed a section base).
+  form) and S442 (the absolute reader handed a section base).
 - **cpset.c ([CLS-TREE] S3 addition, 2026-09-29)** — the `A_WCLASS` kind
   (`internal.h`: a wide class, its code-point set in the distinct `u.wcls`,
   today's byte alternation as its child `l`) gets three things here and one

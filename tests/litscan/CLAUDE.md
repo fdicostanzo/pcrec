@@ -4,7 +4,7 @@ The literal-compare kit's (`docs/design/compare_stack.md`) `.rxt` net. Run by
 the harness like every other corpus directory, each block on the route it is
 written for: the default route unless the block says `engine vm`. (This
 paragraph said "both engines" until 2026-10-03; the harness has never run a
-block twice, and S4's sabotage S442 measured the consequence — a run compare
+block twice, and S4's sabotage S444 measured the consequence — a run compare
 that accepts too much is invisible on a DFA artifact, which re-verifies every
 candidate, so the S4 L-sweep carries a forced-VM copy of each run.)
 
@@ -24,14 +24,14 @@ candidate, so the S4 L-sweep carries a forced-VM copy of each run.)
   `xy(a|ab)c` to `xyz(a|ab)c` for the same reason. `xyz(a|ab)c` is also
   `tests/codegen/run_ir_listing.sh`'s witness for sabotage S305; the blocks
   that put a non-literal element after a run are S304's detector.
-  **[OPT-LITSCAN] S4 C1 (2026-10-03, abi 56)** adds THE L-SWEEP: for every
+  **[OPT-LITSCAN] S4 C1 (2026-10-03, abi 58)** adds THE L-SWEEP: for every
   run length 3..20, 31 and 32, the run alone (default route and forced VM)
   and behind `[0-9]+` (the run pre-check), each with every byte position
   flipped once, the run one byte short at the end, and an embedded match.
-  The run compare (`src/gen/runcmp.c`, `docs/spec/tuning.md` §2.37) writes
+  The run compare (`src/gen/runcmp.c`, `docs/spec/tuning.md` §2.38) writes
   two overlapping words at L in {3, 5-7, 9-15} and a `memcmp` elsewhere, so
   the sweep crosses every row boundary; a flip inside the overlap region must
-  fail both words. Detector of S441/S442/S443.
+  fail both words. Detector of S443/S444/S445.
 - **gen_litrun.py** — writes `litrun.rxt`; every expectation comes from
   python3 `re`, never by hand. Edit the case list there, not the `.rxt`.
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """tests/codegen/runcmp_check.py -- [OPT-LITSCAN] S4 C1's structural checks on
 the RUN COMPARE (src/gen/runcmp.c; docs/design/litscan_s4.md §5.4;
-docs/spec/tuning.md §2.37), run by run_codegen_tests.sh's [OPT-LITSCAN S4]
+docs/spec/tuning.md §2.38), run by run_codegen_tests.sh's [OPT-LITSCAN S4]
 block. Prints one `PASS: ...` / `FAIL: ...` line per check.
 
     python3 runcmp_check.py PCREC WORKDIR CC
@@ -30,8 +30,8 @@ under `-fno-run-overlap` no word compare and no helper remain, the stamp reads
 0, and each word compare became exactly one `memcmp`; and every witness
 compiles under the harness's own `-Wall -Wextra -Werror`.
 
-Failing direction, recorded at the landing: sabotage rows S441 (last word at
-L - W + 1) and S442 (at L - W - 1) each turn the offset/spelling checks red
+Failing direction, recorded at the landing: sabotage rows S443 (last word at
+L - W + 1) and S444 (at L - W - 1) each turn the offset/spelling checks red
 on every overlap witness (docs/dev/lanes/s4build_report.md).
 """
 import os

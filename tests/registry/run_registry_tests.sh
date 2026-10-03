@@ -622,16 +622,16 @@ fi
 # axis's `overlap` row, one single-bit (macro, bit, flag) triple, `lit-run`'s
 # shape. Measured: 177 PASS, 0 failed.
 axesn="$(grep -c '^PASS: ' "$AXESOUT" || true)"
-if [ "$axesn" -ne 174 ]; then
+if [ "$axesn" -ne 177 ]; then
     if grep -q "^checks failed: 0" "$AXESOUT"; then
-        echo "registry: axes_registry_check COVERAGE CHANGED — $axesn passing checks, expected 174." >&2
+        echo "registry: axes_registry_check COVERAGE CHANGED — $axesn passing checks, expected 177." >&2
         echo "registry:   if you added or removed axes/checks on purpose, update this number" >&2
         echo "registry:   in the same commit; if not, coverage was removed" >&2
     else
         axesnf="$(sed -n 's/^checks failed: //p' "$AXESOUT" | tail -1)"
-        echo "registry: axes_registry_check shows $axesn passing checks (174 expected; ${axesnf:-?} failed," >&2
+        echo "registry: axes_registry_check shows $axesn passing checks (177 expected; ${axesnf:-?} failed," >&2
         echo "registry:   so a lower count is expected here). Fix the failures first; then this" >&2
-        echo "registry:   number must return to 174 — if it does not, coverage was removed too" >&2
+        echo "registry:   number must return to 177 — if it does not, coverage was removed too" >&2
     fi
     rc=1
 fi

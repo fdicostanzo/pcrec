@@ -14,10 +14,10 @@ scaffolding version, which changes far more often than a release does. See
 ### Changed
 
 - The literal-run compare is one emitter with a row table ([OPT-LITSCAN] S4
-  C1, abi 56): an exact run of length 3, 5-7 or 9-15 is compared as two
+  C1, abi 58): an exact run of length 3, 5-7 or 9-15 is compared as two
   overlapping word loads instead of a `memcmp`, on both engines.
   `-fno-run-overlap` restores the `memcmp`; `<PREFIX>_RUN_WORDS` counts the
-  word compares (`docs/spec/tuning.md` §2.37).
+  word compares (`docs/spec/tuning.md` §2.38).
 
 ## [0.2.0-beta] — 2026-10-03
 

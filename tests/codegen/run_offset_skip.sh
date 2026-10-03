@@ -231,7 +231,7 @@ witness "needleXYZW"   'needleXYZW'                               offset-set    
 # [OPT-LITSCAN] S1: router (class B: scan at offset 0, no model selection),
 # `foo\b` (its bounded twin) and `[ab]/user` (class C1: the model's own scan
 # offset 1 is the run's scan member, offset 0 stays a table verify).
-# [OPT-LITSCAN] S4 C1 (abi 56): the run term is the RUN COMPARE now
+# [OPT-LITSCAN] S4 C1 (abi 58): the run term is the RUN COMPARE now
 # (src/gen/runcmp.c); all three runs are at an `overlap` length (5, 3, 5), so
 # each term is two overlapping word compares, the last at offset L - W.
 witness "router"       '/user|/users'                             run-pinned           '0*,1,2,3,4' 0 47  4 'rx_w4(subject + cand) == rx_w4("/use") && rx_w4(subject + cand + 1) == rx_w4("user")' 0

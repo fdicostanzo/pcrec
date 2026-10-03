@@ -640,7 +640,7 @@ static void emit_predicate_axes(StrBuf *sb)
         emit_pred_row(sb, &p, 2, "denied", "",
                      0, 0, "", "always (fallback) — one per-byte compare per literal");
     }
-    /* [OPT-LITSCAN] S4 run-overlap — §2.37, the run compare's rows WALKED
+    /* [OPT-LITSCAN] S4 run-overlap — §2.38, the run compare's rows WALKED
      * LIVE off `pcrec_runcmp_rows` (src/gen/runcmp.c), so this surface
      * cannot state a predicate the emitter does not ask. RX_RUN_WORDS is an
      * ACTIVITY COUNT, stamp_value empty for alt-island's reason. */

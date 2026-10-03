@@ -27,7 +27,7 @@ or it has no regression net at all.
   stay one `memcmp`). Witnesses cover the DFA run term (`/user|/users`,
   `foo\b`, `[ab]/user`), the run pre-check with escape-bearing runs (`a"b`,
   `*/x`), the island's chains and the VM literal run at every overlap length.
-  Failing direction measured at landing: S441 and S442 each 17 red, S443 72.
+  Failing direction measured at landing: S443 and S444 each 17 red, S445 72.
 - **run_prefix_invariance.sh** — K79 (lane k7980, 2026-09-30, abi 54): no
   SELECTION reads the prefix. In `make test-codegen` (~20 s) and on the mech
   arm `prefixinv` (S437). PART 1 compiles the K79 witnesses plus every 40th

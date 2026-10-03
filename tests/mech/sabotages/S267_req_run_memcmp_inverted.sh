@@ -34,7 +34,7 @@
 # `overlap` length, so the reach builds it under `-fno-run-overlap`; the
 # harness still sees the inversion through every run at a `memcmp` length
 # (L 4, 8, 16+, and the island's two-byte chains), and run_prechecks.sh §4.1b
-# reads it under the same flag. The `overlap` row's own sense is S443.
+# reads it under the same flag. The `overlap` row's own sense is S445.
 SAB_ID="S267-req-run-memcmp-inverted"
 SAB_FILE="src/gen/runcmp.c"
 SAB_SUITES="harness prechecks"

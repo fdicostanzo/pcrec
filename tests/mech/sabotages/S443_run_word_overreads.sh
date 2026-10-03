@@ -1,4 +1,4 @@
-# S441 ([OPT-LITSCAN] S4 C1, lane s4build) -- THE LAST WORD OVER-READS.
+# S443 ([OPT-LITSCAN] S4 C1, lane s4build) -- THE LAST WORD OVER-READS.
 #
 # The run compare's `overlap` row loads natural-width words and moves the
 # last one back so it ends exactly at L (offset L - W): every word lies
@@ -12,7 +12,7 @@
 # constant no longer gives. (litscan_s4.md §5.5's S442: there the plant is
 # answer-preserving behind a 0x00 mask byte; the masked rows are C3's, so on
 # an exact run the plant moves answers as well.)
-SAB_ID="S441-run-word-overreads"
+SAB_ID="S443-run-word-overreads"
 SAB_FILE="src/gen/runcmp.c"
 SAB_SUITES="codegen harness"
 SAB_HARNESS_TARGET="tests/litscan/litrun.rxt"
@@ -23,4 +23,4 @@ SAB_REACH_EXPECT="REACH-OVERLAP-ROW-EMITTED"
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='        int at = o + w <= r->len ? o : r->len - w;   /* the last word ends at L */'
-SAB_AFTER='        int at = o + w <= r->len ? o : r->len - w + 1;   /* SABOTAGE S441 */'
+SAB_AFTER='        int at = o + w <= r->len ? o : r->len - w + 1;   /* SABOTAGE S443 */'

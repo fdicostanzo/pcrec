@@ -1,5 +1,13 @@
 # s4build: `[OPT-LITSCAN]` S4 C0 + C1 (lane report)
 
+**LANDING NOTE (lane r1land, 2026-10-03):** landed on `lane/r1land` after
+[OPT-HYB-RESEED-FORM] A1 (abi 56) and [OPT-VEDGE] (abi 57, bit 42, S440), so
+this change is **abi 57 -> 58**, `-fno-run-overlap` is **bit 43**, its tuning
+section is **§2.38**, the registry axis pin is **174 -> 177**, and its sabotage
+rows are **S440 -> S442, S441 -> S443, S442 -> S444, S443 -> S445**. Every
+number below is branch-time. C2's planned bit is 44. `c1_movers.py` stays the
+branch-time census (abi 55 vs 56). See docs/dev/lanes/r1land_report.md.
+
 Lane `s4build` (opus), 2026-10-03. Branch `lane/s4build` from main
 `26152329` (abi 55), **NOT merged**. Round 1 of the `[OPTLOOP]` cycle under
 D144. Design: `docs/design/litscan_s4.md` (+ `docs/dev/lanes/s4des_report.md`,

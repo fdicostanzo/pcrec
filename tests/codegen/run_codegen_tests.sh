@@ -3425,7 +3425,7 @@ if pcrec_run "$PCREC" -p rx --engine=vm -o "$WORKDIR/litfloor2.c" --pattern 'xy'
         bad "[OPT-LITSCAN F5] a three-byte run ('xyz') stamps RX_VM_LIT_RUNS $lf3_runs, expected 1 -- three bytes must still take S2a's one-compare form"
         lf3_bad=1
     fi
-    # [OPT-LITSCAN] S4 C1 (abi 56): L = 3 is an `overlap` length, so the
+    # [OPT-LITSCAN] S4 C1 (abi 58): L = 3 is an `overlap` length, so the
     # one compare is the run compare's two overlapping words.
     if ! grep -qF 'rx_w2(subject + scan_position) == rx_w2("xy") && rx_w2(subject + scan_position + 1) == rx_w2("yz")' "$WORKDIR/litfloor3.c"; then
         bad "[OPT-LITSCAN F5] a three-byte run ('xyz') carries no one-compare run compare -- the floor over-narrowed past three bytes"
@@ -3591,8 +3591,8 @@ else
 fi
 
 # =========================================================================
-# [OPT-LITSCAN S4] THE RUN COMPARE (src/gen/runcmp.c, abi 56;
-# docs/design/litscan_s4.md §5.4, docs/spec/tuning.md §2.37)
+# [OPT-LITSCAN S4] THE RUN COMPARE (src/gen/runcmp.c, abi 58;
+# docs/design/litscan_s4.md §5.4, docs/spec/tuning.md §2.38)
 # =========================================================================
 # The overlap row is ANSWER-IDENTITY-preserving, so the corpus cannot see a
 # word that over-reads behind a guard that happens to hold, a last word that
@@ -3600,7 +3600,7 @@ fi
 # there, a constant spelled as an integer literal of this box's byte order,
 # or a deny that leaves a word behind. runcmp_check.py decodes every word
 # compare back to (offset, bytes) and holds it to the run each witness names
-# from its PATTERN text; see its own header. Sabotage rows S441/S442.
+# from its PATTERN text; see its own header. Sabotage rows S443/S444.
 rc_out="$("$TIMEOUT_BIN" 1200 python3 "$SCRIPT_DIR/runcmp_check.py" "$PCREC" "$WORKDIR" "${CC:-gcc}" 2>&1)"
 while IFS= read -r rc_line; do
     case "$rc_line" in

@@ -716,7 +716,7 @@ fi
 # the `#error`, `#endif`) and the guard's ` 54` value, nothing else. The
 # prefix render moves no byte at `-p rx`.
 #
-# RE-RECORDED 2026-10-03 at [OPT-LITSCAN] S4 C1 (abi 55 -> 56, lane s4build):
+# RE-RECORDED 2026-10-03 at [OPT-LITSCAN] S4 C1 (abi 57 -> 58, lane s4build):
 # all twelve `EMITTED_BYTES` rows move, nine by exactly +23 (the
 # unconditional `#define RX_RUN_WORDS 0` line, every artifact of both
 # engines) and three by more: `abc` and `(a)(b)(c)` +159 (the run pre-check's
