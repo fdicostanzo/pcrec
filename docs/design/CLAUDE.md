@@ -2590,6 +2590,26 @@ append-only or historical records.
   forced-VM residual as the next row's (the VM seed, `[OPT-REQPOS]` tier 2
   re-opened), four questions for Frank, and a ready Linux request.
 
+- `litscan_s4.md` — **`[OPT-LITSCAN]` S4's design note, PROPOSED, unpaneled**
+  (lane `s4des`, 2026-10-03, from main `c231ffc1`; design only, instruments in
+  `../dev/optloop/s4/`). The caseless stage, with `[WORD-FOLD]` as its member,
+  round 1 of the D144 `[OPTLOOP]` cycle. ONE run-compare emitter
+  (`pcrec_emit_run_compare`, a new `src/gen/runcmp.c`) with four first-match
+  rows (`words` masked, `overlap` exact at L 3/5-7/9-15, then `bytes` and
+  today's `memcmp` as the two domain fallbacks), P2's byte cube moved to
+  `src/core/` (clskit's `cube_of` becomes a caller), the VM run fact admitting
+  any one-cube position, and S4(a), the caseless NECESSARY run (the one
+  measured customer, `union-select`, O-55's twins), added only where today's
+  exact run declines and kept out of `dfa_pfs[]` by an exact-only pin. Three
+  commits / three abi events / deny bits 42-44, the alpha witness cells with a
+  base/deny noise floor, the fold-agreement check's third consumer (a
+  256-position emitted masked run), eight sabotage rows. Its findings: the
+  spelling (not the compiler) decides branchiness; the endian-neutral
+  `memcpy`-from-literal constants fold to immediates; the word loads are
+  ASan-visible where inlined `memcmp` is not; and a scratch probe contradicts
+  the exact arm's measured 5.6-7.6%, so that row ships only if its alpha
+  shows it. §10 holds eleven questions for the manager.
+
 **[VAR] THE MVP's PATTERN HALF LANDED 2026-09-23** (lane varmvp, M1-M8 +
 M10; M9 stays gated on `[M4-SUBST]`). The four notes stand as written except
 where the build met them and lost, and those places were first recorded in
