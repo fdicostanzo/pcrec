@@ -639,3 +639,57 @@ reports the give-up instead of comparing, so no "got" answer exists to diff.)
 
 `worktrees/s2tri2base` (branch `lane/s2tri2base`, main `c096a380`) was created
 for the A/B; remove with `git worktree remove` when no longer wanted.
+
+## Triage (s2tri3)
+
+Question: the chain's `make test-axes AXES="-fno-cls-fold -fno-cls-kit"`
+(`worktrees/clss2fix-scratch/runs/chain/test-axes.log`) read `-fno-cls-kit`
+RED with 109 undocumented size-limit refusals. `-fno-cls-fold` OK (27769/27769).
+
+**Verdict: no regression and no S2 effect. The chain ran on a tree without
+lane/axtri (fc719ca4) and lane/pfdrop (4ee4a90a).** The log says so itself:
+"this axis has NO documented refusal population at all"; `worktrees/clss2`
+(f9913d2b) is not a descendant of fc719ca4 and its `run_axes.sh` has zero
+`cls-kit` mentions. lane/s2tri (9cf5034b) already contains both merges, so the
+documentation + floor the brief asked for EXISTS (REFUSAL_PATTERN, floor 60,
+tuning.md §2.33). The 109 are exactly axtri's 77 + 32, all on
+`tests/utf8/wclass_illformed.rxt`, the same counts the Linux run of main gave.
+
+Family by family (emitted size, s2tri build vs a scratch build of `git archive
+main`; default and `-fno-cls-fold` compile every one of them, sizes in the
+table are `-fno-cls-kit`):
+
+| family (file:lines) | pattern / route | cap | s2tri vs main | class |
+|---|---|---|---|---|
+| wclass_illformed 131-149 (32 cases) | `x(\P{L})y`, `x(\p{L})y` style, default route, hybrid prefilter | emitted-C BYTES 1,000,000 (chain: 1,153,817) | `x(\P{L})y` 409,686 vs main 409,703; `x(\p{L})y` 427,173 = 427,173 (both compile, with pfdrop's drop rung) | rescued by D135; the chain lacked it. Not documented, by axtri's design |
+| 223-248, 311-336 (engine vm) and 290-310 (default route, capturing) (77 cases) | `\p{Xwd}` 579,045 / 579,471 captured; `\P{Unknown}` 529,152 / 529,577 | emitted-CODE 500,000 | identical or 17 B smaller than main (`\P{Unknown}` 529,152 vs 529,169) | documented axis limit (axtri), floor 60 |
+
+1. Size limit only: confirmed. Default and `-fno-cls-fold` compile all of them
+   (e.g. `x\p{Xwd}y` 33,931 B with the kit; the `-fno-cls-fold` legs are
+   byte-identical to `-fno-cls-kit` in the probes above because the fold is
+   downstream of the kit's byte alternation).
+2. Route: the 32 are default route (hybrid VM prefilter carries the alternation;
+   D135 drops it). The 77 are VM-body bytes against the CODE cap; there is no
+   prefilter to drop, so D135 cannot rescue them. One correction to axtri's
+   wording: one of the five blocks (line 290, capturing `\P{Unknown}`) is
+   default route rather than `engine vm`; the VM is selected there, same
+   refusal. Comment in `run_axes.sh` and the tuning.md §2.33 sentence amended.
+3. Regression check: S2 made the non-kit form no bigger anywhere probed
+   (14 pattern x route x flag legs; 7 patterns, eq or smaller by 17 B). No
+   regression.
+4. Fix: none needed to the table or floor (77 >= 60, substring
+   "bytes of emitted code (limit" cannot match the BYTES-cap text, so a
+   recurrence of the 32 would still read red). Only the wording amendment above.
+5. Validation:
+   - `make strict`: clean (`scratch/tri3/strict.log`).
+   - single file, s2tri build: `SKIP_ORACLE=1 AXES="-fno-cls-kit" bash
+     tests/axes/run_axes.sh tests/utf8/wclass_illformed.rxt`: OK, agree=667,
+     refused-documented=77 (floor 60), mismatches=0.
+   - Full `make test-axes AXES="-fno-cls-kit"`: OWED, launched detached;
+     log `worktrees/s2tri/scratch/tri3/axes_kit.log` (untracked). Completion
+     line: `run_axes.sh: all axes answer-identical to default (documented
+     refusal populations excepted)...` and make rc 0; expect
+     `refused_doc=77 refused_undoc=0`.
+
+The chain should be re-run on a tree that has fc719ca4 (i.e. lane/s2tri or
+main-merged clss2), not on the old clss2 worktree.

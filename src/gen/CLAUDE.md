@@ -3480,7 +3480,11 @@ for it: the header guard is `upper` (the old `isalnum ? toupper : '_'` loop
 mapped the placeholder's lead byte to `_`; on a validated prefix the two
 agree byte for byte), and `rx_info.name`'s DEFAULT is written raw rather
 than through `emit_c_string_literal`, which would octal-escape the
-placeholder (a validated prefix needs no escaping). **The rule for a new
+placeholder (a validated prefix needs no escaping). A third, found by
+the k7980 triage: `--emit-ir`'s `caps` row names `<PREFIX>_NCAPS` inside a
+listing cell, and every cell goes through `pcrec_sb_row`'s escaper, so it
+reads `cx->user_prefix` (the listing is output only; no decision measures
+it). **The rule for a new
 site: never pass prefix-derived text through an escaper, and never
 transform the prefix other than by `pcrec_sb_upper`.** A violation leaves a
 placeholder the render cannot see; a raw stray `\x01` is an internal error

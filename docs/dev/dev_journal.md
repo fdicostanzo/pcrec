@@ -26148,3 +26148,40 @@ margin; bisect today's merges if slower). MAIN IS UNPUSHED (origin at 4a546fba-e
 - [OPT-HYB-RESEED-XCALL]'s trigger met on the Mac tier (×0.62 find-all); the bench's x86 ask (draft in reseed_report §8) is not yet sent.
 
 **Lessons (added):** (6) I chained `git merge` with other commands (silentred) — conflict caught before commit, but the rule is merge ALONE. (7) A cleanup glob (`lane/land*`) deleted an unrelated old Linux branch (its commit was safe in main) — name exactly. (8) A validation chain that waits on another chain's marker deadlocks when that chain is killed; write the marker when superseding. (9) A manager `cd` into a worktree moved the session cwd a third time.
+
+## 2026-09-30 — eighty-seventh session (day; Frank present)
+
+**Rulings (D132-D142):**
+- D132: K75 = M1, plus an opt-in start alignment.
+- D133: [UTF-VALID] as recommended; align is for a MISALIGNED POINTER, with no validation carve-out.
+- D134: U3 as a capability route, queued behind UTF-VALID.
+- D135: the drop-prefilter rung plus fast-or-fail.
+- D136: encoding checks go into make test; recursion identity goes into the battery.
+- D137: parked rows' measurement needs commissioned; every optimization row sits under [OPTLOOP].
+- D138: S2 Q1-Q4. Q1 = measure first.
+- D139: S2 review fixes. The kit is taken only where smaller; the scan edge consumes ROWS' form directly, with no mapping (Frank's refinement).
+- D140: [PF-KNOW] research.
+- D141: [EST-REGISTRY], unscheduled.
+- D142: PF-KNOW closed; stamp wording; the PCRE2_UTF lookbehind clipping is a stated divergence.
+
+**Merged to main (c096a380, pushed; Linux full make test 48/48 at fc719ca4; CI green at fc719ca4):**
+- citri: CI clskit fix for gcc-13's compile cost.
+- k75fix, wirechk, retag, parkmeas, formchar2 (i)/(ii), pfx0.
+- uvbuild: [UTF-VALID] + align, abi 50; test-axes -futf-check green on Linux.
+- pfdrop (D135) + two triage lanes (stale pins; the S295 re-anchor).
+- axtri: the Linux axes refusals documented as axis limits.
+- pfknow: research, docs/design/pf_know.md.
+- d142doc, fc2x86.
+
+**Filed:** K78 (DFA dead-group caps write on a no-match), K79 (the prefix length moves the VM entry shape), K80 (the shared ABI block's guard ignores the abi).
+
+**Bench:** inbox b0fd162, I-122..I-125 (re-pin to fc719ca4; K75; the reseed x86 ask; the D137 asks). pcrecdev2 acked them as [B118]-[B121]. Their pin had been a32bc86e (abi 41). [B117] runs all day Thursday 2026-10-01.
+
+**Not merged:** [CLS-TREE] S2 on lane/clss2 + lane/s2tri (abi 53, main merged in). D6 panel r3 (docs/dev/reviews/2026-09-30-r3-cls-tree-s2.md) found no answer mover, and every fix is landed. Triage: stale pins, the S434 test gap fixed with a new corpus file, and the 10 forced-VM corpus fails are PRE-EXISTING budget give-ups already on the axes allowance list. Owed: the chain's test-axes (-fno-cls-fold -fno-cls-kit, started 14:38), recursion identity on the merged tree, ff lane/clss2 to lane/s2tri, then merge and a Linux full make test.
+
+**Lessons:**
+- (1) The manager `cd`'d into a worktree or scratch dir TWICE more; every Bash call uses an absolute path.
+- (2) A ruling built literally can be wrong: "kit only where smaller" priced with the wide-set 578 would have killed the byte kit; the lane measured and asked instead of shipping it.
+- (3) Summaries cut at 300 columns misread a PASS control as FAIL. Read the log line, not the summary.
+- (4) Validation chains invoked mech with a malformed id (`S237-`), so the rows silently never ran. A 1-second rc=2 is an invocation error, not a verdict.
+- (5) A heavy chain gated on "load < 0.5" starves while any other lane is active on the box.

@@ -9515,10 +9515,16 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
     /* The macro is <PREFIX>_NCAPS, not RX_NCAPS: naming a macro the artifact
      * does not contain would send a reader of a `-p myrx` listing looking for
      * a symbol that is not there. Every emitted name in this listing comes
-     * from the same v->up/v->p the emitter used. */
+     * from the caller's prefix. [K79] It is `cx->user_prefix`, not `v->up`:
+     * `v->up` is the placeholder, and a listing cell passes through
+     * `pcrec_sb_row`'s escaper, which would write it as the text `\x01Q`
+     * that the finished-text render can no longer recognise (the seam
+     * core/internal.h names). The listing is output only — no decision
+     * measures it — so naming the real prefix here reads nothing K79 bars. */
     vm_row3(o, "caps", vm_rolef(v, "%d", st->ncaps),
             vm_rolef(v, "%s_NCAPS; %d capturing group%s in the pattern text",
-                     v->up, (int)cx->ncap, cx->ncap == 1 ? "" : "s"));
+                     pcrec_sb_upper(&cx->arena, cx->user_prefix),
+                     (int)cx->ncap, cx->ncap == 1 ? "" : "s"));
     if (st->has_budget)
         vm_row3(o, "step-budget", vm_rolef(v, "%lld", st->budget),
                 "backtrack resumptions");
