@@ -25,25 +25,7 @@ import json
 import math
 import sys
 
-CAPS_YES = {"libpcre2:jit-caps", "libpcre2:interp-caps", "re2:default-caps",
-            "re2:longest-caps", "oniguruma:default-caps", "tre:default-caps"}
-CAPS_NO = {"rust:default-caps", "vectorscan:block-nosom-nocaps",
-           "libpcre2:dfa-nocaps"}
-# semantic flags for the reference ceilings (addendum 2 item 2)
-FLAGS = {
-    "libpcre2:jit-caps": "PEER",
-    "libpcre2:interp-caps": "same semantics, interpreter",
-    "libpcre2:dfa-nocaps": "longest-match DFA, no captures/backrefs",
-    "re2:default-caps": "leftmost-first, no backtracking features",
-    "re2:longest-caps": "LEFTMOST-LONGEST semantics",
-    "oniguruma:default-caps": "backtracker, Ruby dialect",
-    "rust:default-caps": "no backtracking features; NO-class driver; SIMD prefilters",
-    "vectorscan:block-nosom-nocaps": "SIMD multi-pattern, no start-of-match, no captures",
-    "tre:default-caps": "POSIX leftmost-longest",
-}
-REALISM = {"loglines": 1.0, "email-specimen": 1.0, "capability": 0.75,
-           "utf8": 0.6, "syntax": 0.4, "bounded": 0.4, "altwide": 0.4}
-
+from gapconfig import CAPS_NO, CAPS_YES, TIERS, realism
 
 def med(c, t):
     x = c["t"].get(t)
@@ -55,16 +37,13 @@ def med(c, t):
 def compare(pc, comp, n):
     lo = min(pc, comp) / n
     r = pc / comp
-    if lo >= 1000:
-        tier, band = "A", 1.10
-    elif lo >= 100:
-        tier, band = "B", 1.15
-    else:
+    tier, mode, param = next((t, m, p) for floor, t, m, p in TIERS if lo >= floor)
+    if mode == "delta":
         d = (pc - comp) / n
-        null = abs(d) < 0.41 * (comp / n)
+        null = abs(d) < param * (comp / n)
         verdict = "null" if null else ("behind" if d > 0 else "ahead")
-        return {"tier": "C", "ratio": r, "delta_ns_call": d, "verdict": verdict}
-    verdict = ("behind" if r > band else "ahead" if r < 1 / band else "null")
+        return {"tier": tier, "ratio": r, "delta_ns_call": d, "verdict": verdict}
+    verdict = ("behind" if r > param else "ahead" if r < 1 / param else "null")
     return {"tier": tier, "ratio": r, "verdict": verdict}
 
 
@@ -80,7 +59,7 @@ def main():
         nocaps = med(c, "pcrec:auto-nocaps")
         best = min(x for x in (caps, nocaps) if x is not None) if (caps or nocaps) else None
         row = {"sb": sb, "pattern": pat, "regime": regime, "form": form,
-               "fact": fact, "n": n, "realism": REALISM.get(sb, 0.4),
+               "fact": fact, "n": n, "realism": realism(sb),
                "auto_caps": caps, "auto_nocaps": nocaps,
                "pcrec_status": {t: v.get("status") for t, v in c["t"].items()
                                 if t.startswith("pcrec:")},

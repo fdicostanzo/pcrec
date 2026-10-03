@@ -23,11 +23,13 @@ import re
 import subprocess
 import sys
 
+from gapconfig import SETS as SETS_CONFIG
+
 PCREC = os.environ["PCREC"]
 BENCH = os.environ.get("BENCH", "/Users/fdicostanzo/pcrec-bench/bench")
 OUT = os.environ["OUT"]
-SETS = {"capability": [], "syntax": [], "utf8": ["-e", "utf8"],
-        "loglines": [], "bounded": [], "email": [], "altwide": []}
+SETS = SETS_CONFIG
+ABI = re.compile(r"\(abi (\d+)\)")
 DEF = re.compile(r'^#define\s+(RX_[A-Z0-9_]+)\s+("[^"]*"|-?[0-9][0-9A-Fa-fxuUL]*)\s*$', re.M)
 
 
@@ -60,6 +62,9 @@ def one(job):
         except OSError:
             pass
     st = {k: v.strip('"') for k, v in DEF.findall(text)}
+    m = ABI.search(text)
+    if m:
+        st["ABI"] = m.group(1)
     st["code_sha"] = norm(text)
     st["c_bytes"] = os.path.getsize(art)
     for p in (art, art[:-2] + ".h"):
@@ -72,11 +77,16 @@ def one(job):
 
 def main():
     os.makedirs(OUT, exist_ok=True)
+    for sb in SETS:
+        if not os.path.isdir(os.path.join(BENCH, sb, "patterns")):
+            print(f"stamps.py: WARNING set {sb} has no patterns/ under {BENCH}",
+                  file=sys.stderr)
     jobs = [(sb, fn, extra) for sb, extra in SETS.items()
+            if os.path.isdir(os.path.join(BENCH, sb, "patterns"))
             for fn in sorted(os.listdir(os.path.join(BENCH, sb, "patterns")))
             if fn.endswith(".rx")]
     res = {}
-    with cf.ThreadPoolExecutor(max_workers=2) as ex:
+    with cf.ThreadPoolExecutor(max_workers=int(os.environ.get("STAMPS_JOBS", "1"))) as ex:
         for sb, name, st in ex.map(one, jobs):
             res.setdefault(sb, {})[name] = st
     json.dump({"label": sys.argv[1], "pcrec": PCREC, "stamps": res},

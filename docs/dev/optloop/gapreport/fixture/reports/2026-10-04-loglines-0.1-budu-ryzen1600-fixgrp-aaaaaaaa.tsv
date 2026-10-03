@@ -1,0 +1,23 @@
+# reporter: fixture; filters: subbench=loglines, version=0.1; floor_pattern: floor
+section	pattern	subject_or_na	regime_or_na	form	fact	testee	status	tier	rank_or_na	metric	value	n	pass_rate	n_gave_up	n_wrong	gave_up_summary	delta_verdict
+rank	l-ctx	(set)	large-subject-throughput	plain	same program	pcrec_aaaaaaaa_auto-caps-simdna	measured	pinned	1	median_ns	4000000.000000	3	1.0	0	0		
+rank	l-ctx	(set)	large-subject-throughput	plain	same program	pcrec_aaaaaaaa_auto-caps-simdna	measured	pinned	1	min_ns	3960000.000000	3	1.0	0	0		
+rank	l-ctx	(set)	large-subject-throughput	plain	same program	pcrec_aaaaaaaa_auto-caps-simdna	measured	pinned	1	max_ns	4040000.000000	3	1.0	0	0		
+rank	l-ctx	(set)	large-subject-throughput	plain	same program	libpcre2_10.46_jit-caps-simdna	measured	pinned	1	median_ns	1000000.000000	3	1.0	0	0		
+rank	l-ctx	(set)	large-subject-throughput	plain	same program	libpcre2_10.46_jit-caps-simdna	measured	pinned	1	min_ns	990000.000000	3	1.0	0	0		
+rank	l-ctx	(set)	large-subject-throughput	plain	same program	libpcre2_10.46_jit-caps-simdna	measured	pinned	1	max_ns	1010000.000000	3	1.0	0	0		
+rank	l-ctx	(set)	large-subject-throughput	plain	same program	libpcre2_10.46_interp-caps-simdna	measured	pinned	1	median_ns	2000000.000000	3	1.0	0	0		
+rank	l-ctx	(set)	large-subject-throughput	plain	same program	libpcre2_10.46_interp-caps-simdna	measured	pinned	1	min_ns	1980000.000000	3	1.0	0	0		
+rank	l-ctx	(set)	large-subject-throughput	plain	same program	libpcre2_10.46_interp-caps-simdna	measured	pinned	1	max_ns	2020000.000000	3	1.0	0	0		
+rank	l-inner	(set)	large-subject-throughput	plain	same program	pcrec_aaaaaaaa_auto-caps-simdna	measured	pinned	1	median_ns	2000000.000000	3	1.0	0	0		
+rank	l-inner	(set)	large-subject-throughput	plain	same program	pcrec_aaaaaaaa_auto-caps-simdna	measured	pinned	1	min_ns	1980000.000000	3	1.0	0	0		
+rank	l-inner	(set)	large-subject-throughput	plain	same program	pcrec_aaaaaaaa_auto-caps-simdna	measured	pinned	1	max_ns	2020000.000000	3	1.0	0	0		
+rank	l-inner	(set)	large-subject-throughput	plain	same program	libpcre2_10.46_jit-caps-simdna	measured	pinned	1	median_ns	6000000.000000	3	1.0	0	0		
+rank	l-inner	(set)	large-subject-throughput	plain	same program	libpcre2_10.46_jit-caps-simdna	measured	pinned	1	min_ns	5940000.000000	3	1.0	0	0		
+rank	l-inner	(set)	large-subject-throughput	plain	same program	libpcre2_10.46_jit-caps-simdna	measured	pinned	1	max_ns	6060000.000000	3	1.0	0	0		
+rank	l-inner	(set)	large-subject-throughput	plain	same program	libpcre2_10.46_interp-caps-simdna	measured	pinned	1	median_ns	9000000.000000	3	1.0	0	0		
+rank	l-inner	(set)	large-subject-throughput	plain	same program	libpcre2_10.46_interp-caps-simdna	measured	pinned	1	min_ns	8910000.000000	3	1.0	0	0		
+rank	l-inner	(set)	large-subject-throughput	plain	same program	libpcre2_10.46_interp-caps-simdna	measured	pinned	1	max_ns	9090000.000000	3	1.0	0	0		
+rank	l-inner	(set)	large-subject-throughput	plain	same program	rust_1.13.1_default-caps-simdna	measured	pinned	1	median_ns	100000.000000	3	1.0	0	0		
+rank	l-inner	(set)	large-subject-throughput	plain	same program	rust_1.13.1_default-caps-simdna	measured	pinned	1	min_ns	99000.000000	3	1.0	0	0		
+rank	l-inner	(set)	large-subject-throughput	plain	same program	rust_1.13.1_default-caps-simdna	measured	pinned	1	max_ns	101000.000000	3	1.0	0	0		

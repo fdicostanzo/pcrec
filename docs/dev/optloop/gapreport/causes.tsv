@@ -2,6 +2,24 @@
 # reading its D81 stamps (stamps_main.json), its pattern text, its forced/interp/ceiling columns and the
 # compiler's own --emit-ir prefilter reason. gap.py/rank.py compute; this file decides. Group ids are
 # defined in ../gapreport_2026-10-03.md §2.
+# group descriptions (rendered by gapreport.py; one "#group<TAB>ID<TAB>text" line per id):
+#group	START-SET	START-SET = FS-DFA + FS-VM: where can a match start (D124: one question, two consumers; GROUP_MERGE)
+#group	FS-DFA	START-SET, DFA hat: a leading \b/\B defeats the first-byte skip
+#group	FS-VM	START-SET, VM hat: backreference/recursion routes have no candidate scan
+#group	CTX	two keywords within N (\bA\b.{0,N}?\bB\b): DFA overflow, count-collapsed hybrid
+#group	NULLABLE-ANCH	anchored nullable capture-forced VM with no DFA gate
+#group	U8-PICK	under -e utf8 literals scan at byte offset 1; run-pinned/memchr forms never appear
+#group	CI	caseless literal scans as a byte class
+#group	SCAN-SIMD	sparse literal/class scans where only vector search wins
+#group	WIDE-ALT	wide literal alternations (rust's Teddy)
+#group	DENSE	match-dense find-all, per-match cost
+#group	LKA	lookaround: literal scan plus the hybrid hand-off
+#group	INNER-LIT	necessary inner literal at a bounded offset behind a leading \b
+#group	BACKTRACK	backtracking against a JIT (D119 FUNDAMENTAL)
+#group	CARET	non-top-level ^ (ATTEMPT-SPLIT / ABS-CARET)
+#group	BCLS	bounded-class runs (.{80,}, pw-8-64, cls-*)
+#group	CALL-FLOOR	per-call floor, ns-scale only
+#group	ENDWIN-ENC	end-window encoding, ns-scale only
 set	pattern	group
 capability	wild-secrets-aws-access-key-id	FS-DFA
 capability	wild-codegrammar-json-constant	FS-DFA

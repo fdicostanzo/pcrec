@@ -16,7 +16,7 @@ four steps:
 The pipeline writes nothing in pcrec-bench and reads no clock. It reads
 only:
 
-- the report `.tsv` files, copied by scp from the Linux box;
+- the report `.tsv` files, fetched from the Linux box (ssh + tar);
 - each bench set's `manifest_throughput.tsv`, `expectations.tsv` and
   `patterns/*.rx`, from the read-only `/Users/fdicostanzo/pcrec-bench`
   checkout.
@@ -24,6 +24,58 @@ only:
 To re-run it for the next instance, point the inputs at the new pin's
 report group. Then re-judge `causes.tsv` before you trust `rank.json`,
 because the cause assignment is the human layer.
+
+## Usage: one command
+
+    docs/dev/optloop/gapreport/gapreport.sh --group b120b121-fc719ca4 \
+        --out docs/dev/optloop/gapreport_2026-10-04.md
+    docs/dev/optloop/gapreport/gapreport.sh --group latest --out ...
+    docs/dev/optloop/gapreport/gapreport.sh --check
+
+What `--group NAME|latest` does, in order:
+
+1. Fetches that report group's `.tsv` files (the group is the name after
+   `budu-<machine>-` in the bench's report filenames; `latest` is the group
+   with the newest date) and the seven bench sets' `manifest_throughput.tsv`,
+   `expectations.tsv` and `patterns/` read-only from the Linux box, by
+   `ssh -o BatchMode=yes` + `tar` (`gapconfig.REMOTE`; tailnet address) into
+   a scratch dir (`--scratch`, default a fresh `mkdtemp`; `--no-fetch` reuses
+   one).
+2. Runs extract, stamps, nmatch, gap and rank with `build/pcrec` (`--pcrec`).
+   Stamps compiles every bench pattern SERIALLY (`STAMPS_JOBS`, default 1),
+   bounded by `--stamps-timeout` (3600 s). It is the slow step: run it on a
+   quiet box.
+3. Renders the report: summary, ranked cause groups with their cells, where
+   pcrec leads, what could not be judged, stamp moves since the baseline
+   census (`--baseline`, default `stamps_main.json`; `--save-stamps FILE` keeps
+   the fresh census as the next baseline), and unassigned cells.
+4. Copies `judgement_<stem>.md` (`--judgement`; `<stem>` is the `--out` name
+   minus `gapreport_`) verbatim into a marked MANAGER JUDGEMENT section. That
+   file is hand-kept, so a re-run never overwrites judgement; if it is
+   missing the report says so and the script prints its expected path.
+
+A losing cell with no `causes.tsv` row is UNASSIGNED: the script prints a
+loud stderr banner naming each one, the report lists them in section 6 and
+the summary, and `--fail-unassigned` makes it exit 3. Add `set<TAB>pattern<TAB>group`
+rows (and a `#group<TAB>ID<TAB>text` line for a new group id) and re-run;
+the judgement of a NEW group's cause is still the manager's.
+
+The criteria are one set of first-match tables in `gapconfig.py` (scale tiers
+and null bands, comparator roles, realism weights, group merges, the ranking
+key). `gap.py`, `rank.py`, `stamps.py` and `gapreport.py` carry no literal
+criterion of their own.
+
+The mechanical ranking is: algorithmic evidence first (a scalar engine also
+beats auto), then combined realism-weighted score, then breadth. It differs
+from a hand-ordered slate (the first instance ranked CI below U8-PICK because
+round 1 owns CI); put reordering reasoning in the judgement file.
+
+`--check` runs the whole pipeline on `fixture/` (two sets, 15 cells, a fake
+compiler, a baseline census with one moved stamp, one unassigned cell, one
+tier-C cell, one refusal) and diffs the rendered report against
+`fixture/expected.md`, exit 1 with the diff on any mismatch. After an
+intended change to the renderer or the criteria, `--check --bless` rewrites
+`expected.md`; read the diff in git before committing it.
 
 ## Files
 
@@ -68,3 +120,11 @@ because the cause assignment is the human layer.
 - `u8pick_probe.txt` — the compile-side probe behind the U8-PICK finding.
   Seven literals, each in byte mode and under `-e utf8`, with their
   `RX_DFA_PREFILTER*` and `RX_REQ_*` stamps.
+- `gapreport.sh` / `gapreport.py` — the one-command driver (see Usage):
+  fetch, the four steps, render, `--check`. Stdlib only.
+- `gapconfig.py` — the declared first-match criteria tables.
+- `fixture/` — `--check`'s committed inputs: `reports/` (two report `.tsv`),
+  `inputs/` (bench-set manifests, expectations and patterns whose text is the
+  fake compiler's stamp source), `fakepcrec.py`, `causes.tsv`,
+  `baseline_stamps.json`, `judgement.md`, and `expected.md` (the rendered
+  report the check diffs against).
