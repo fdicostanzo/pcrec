@@ -1206,7 +1206,11 @@ def main():
                     bad_sel.append("%s END_WINDOW stamp \"%s\" but %d clamp(s) excised"
                                    % (side, ew[side], cnt['end_window']))
                 m = REQRUN_STAMP_VAL_RE.search(text)
-                off0 = bool(m) and m.group(1).endswith('@0')
+                # since C3 (abi 59) a masked run reads `hex@k/mask`; the
+                # offset and the member read the part before the `/`
+                rstamp = m.group(1).split('/')[0] if m else ''
+                rmask = m.group(1).split('/')[1] if m and '/' in m.group(1) else ''
+                off0 = bool(m) and rstamp.endswith('@0')
                 if cnt['var_valid_call'] > 0 and cnt['var_valid'] == 0:
                     bad_sel.append("%s calls var_valid %d time(s) but defines none"
                                    % (side, cnt['var_valid_call']))
@@ -1216,17 +1220,28 @@ def main():
                 # the scanned byte IS the stamped member, on both pre-check forms
                 mb = REQBYTE_STAMP_VAL_RE.search(text)
                 rbyte = mb.group(1) if mb else None
-                if m and '@' in m.group(1):
-                    hx, k = m.group(1).split('@')
-                    k = int(k)
-                    member = int(hx[2 * k:2 * k + 2], 16) if 2 * k + 2 <= len(hx) else -1
-                    if rbyte != str(member):
-                        bad_sel.append("%s REQ_BYTE \"%s\" is not REQ_RUN \"%s\"'s member"
-                                       % (side, rbyte, m.group(1)))
                 scanned = [b for body in REQRUN_FN_BODY_RE.findall(text)
                            for b in REQRUN_MEMCHR_VAL_RE.findall(body)]
                 scanned += REQCHK_MEMCHR_VAL_RE.findall(text)
-                if any(b != rbyte for b in scanned):
+                pair = None
+                if m and '@' in rstamp:
+                    hx, k = rstamp.split('@')
+                    k = int(k)
+                    member = int(hx[2 * k:2 * k + 2], 16) if 2 * k + 2 <= len(hx) else -1
+                    kmask = int(rmask[2 * k:2 * k + 2], 16) if 2 * k + 2 <= len(rmask) else 0xff
+                    if kmask != 0xff:
+                        # C3's pair arm (tuning.md §2.39): the scan position is
+                        # a two-member cube and both members are searched
+                        pair = {str(member & kmask), str((member & kmask) | (~kmask & 0xff))}
+                    elif rbyte != str(member):
+                        bad_sel.append("%s REQ_BYTE \"%s\" is not REQ_RUN \"%s\"'s member"
+                                       % (side, rbyte, m.group(1)))
+                if pair is not None:
+                    if any(b not in pair for b in scanned):
+                        bad_sel.append("%s pair arm scans %s, not REQ_RUN \"%s\"'s cube {%s}"
+                                       % (side, ",".join(scanned), m.group(1),
+                                          ",".join(sorted(pair))))
+                elif any(b != rbyte for b in scanned):
                     bad_sel.append("%s pre-check scans %s but REQ_BYTE is \"%s\""
                                    % (side, ",".join(scanned), rbyte))
             why = {}

@@ -390,9 +390,14 @@ fi
 # `none` where the artifact has no DFA scan), and on the sealed route the
 # walk and the pin by hand (`-` elsewhere). The walk is the listing's
 # spelling: a singleton offset as its byte in decimal, a wider set as `[N]`.
+# The pin is `run_pin`'s rendering: `o`, or `o:at+len` when its exact stretch
+# is narrower than the run window (C3, docs/spec/facts_listing.md). Since C3
+# (abi 59) `/abcd[xy]/user`'s run is the 8-byte masked window `/abcd[xy]/u`
+# (the {x,y} cube joins it), so its pin at 6 keeps the exact stretch `/u`
+# (6:6+2) where abi 58's exact run `/user` read `6`.
 printf '%s\n' \
     'E3W	-	abc	unanchored	97,98,99	0' \
-    'E3W	-	/abcd[xy]/user	unanchored	47,97,98,99,100,[2],47,117,115,101,114	6' \
+    'E3W	-	/abcd[xy]/user	unanchored	47,97,98,99,100,[2],47,117,115,101,114	6:6+2' \
     'E3W	-fno-req-run	/abcd[xy]/user	unanchored	47,97,98,99,100,[2],47,117,115,101,114	none' \
     'E3W	--engine=vm -fprefilter	abc+d	unanchored	97,98,99,[2]	0' \
     'E3W	-	\zabc	unanchored	97,98,99	0' \

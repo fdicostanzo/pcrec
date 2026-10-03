@@ -86,6 +86,12 @@ def cdecode(lit):
 
 
 WORD = re.compile(r'rx_w([248])\(([^()]*?)\) == rx_w\1\("((?:[^"\\]|\\.)*)"\)')
+# C3's masked `words` row (docs/spec/tuning.md §2.39) writes
+# `(<p>_w<W>(base + o) & <p>_w<W>("mask")) == <p>_w<W>("bytes")`; the stamp
+# counts its compares too (§2.38: the compares the `words` and `overlap` rows
+# write), so the per-artifact count reads both spellings. Its offsets and
+# spelling are reqcube_check.py's to assert, not this file's.
+MWORD = re.compile(r'\(rx_w([248])\([^()]*?\) & rx_w\1\("(?:[^"\\]|\\.)*"\)\) == rx_w\1\(')
 INTLIT = re.compile(r'rx_w[248]\([^()]*\) == (?:0x|[0-9])')
 
 
@@ -153,10 +159,14 @@ for tag, pat, flags, runs in WITNESSES:
     cs = chains(text)
     stamp = re.search(r"^#define RX_RUN_WORDS (\d+)$", text, re.M)
     nwords = int(stamp.group(1)) if stamp else -1
-    if nwords != len(cs):
-        bad(f"'{pat}': RX_RUN_WORDS reads {nwords}, the text carries {len(cs)} word compares")
+    # one masked compare per line that carries the masked spelling at all
+    nmasked = sum(1 for line in text.splitlines() if MWORD.search(line))
+    if nwords != len(cs) + nmasked:
+        bad(f"'{pat}': RX_RUN_WORDS reads {nwords}, the text carries {len(cs)} word compares"
+            f" + {nmasked} masked")
     else:
-        ok(f"'{pat}': RX_RUN_WORDS {nwords} equals the word compares in the text")
+        ok(f"'{pat}': RX_RUN_WORDS {nwords} equals the word compares in the text"
+           f" ({len(cs)} exact + {nmasked} masked)")
     if INTLIT.search(text):
         bad(f"'{pat}': a word is compared against an INTEGER literal -- a byte-order assumption")
     if runs is None:          # the island: every compare must still check out internally
