@@ -8,6 +8,11 @@
 # is a lost match on every run-pinned artifact. tests/offsetskip/
 # run_pinned.rxt is the corpus detector; tests/codegen/run_offset_skip.sh §2
 # is the structural one, naming the compare's offset verbatim.
+# RE-AIMED 2026-10-03 ([OPT-LITSCAN] S4 C1, lane s4build): the run term is
+# the run compare now (src/gen/runcmp.c) and `/user` (L = 5) takes its
+# `overlap` row, so the plant lands in two word compares, both shifted one
+# byte, and the reach greps their text. Intent unchanged: the compare sits
+# one byte past the proved pin and refuses every real start.
 SAB_ID="S279-run-term-offset-plus-one"
 SAB_FILE="src/gen/emit_dfa.c"
 SAB_SUITES="harness offsetskip"
@@ -15,7 +20,7 @@ SAB_HARNESS_TARGET="tests/offsetskip/run_pinned.rxt"
 SAB_DESC="the run-pinned prefilter rows compare the pinned run one byte past its proved offset (cand + run_o + 1), so the candidate test refuses every real match start and the skip returns n: every m cell of every run-pinned artifact reads nomatch"
 SAB_DOC_FIGURE="MEASURED 2026-09-25 (lane s1build, single-row mech): DETECTED -- reach:ok(1/1), corpus:27fail/28pass (tests/offsetskip/run_pinned.rxt, before the C0 block was added), offsetskip:3fail/25pass (run_offset_skip.sh §2 names the router/foo-b/ab-user run terms missing). Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S279."
 # [MECH-REACH] the router takes a run row and emits the P4 run term at cand.
-SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "/user|/users" && grep -q "^#define RX_DFA_PREFILTER \"run-pinned\"" "$REACH_TMP/o.c" && grep -qF "!memcmp(subject + cand, \"/user\", 5)" "$REACH_TMP/o.c" && echo REACH-RUN-TERM-EMITTED'
+SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "/user|/users" && grep -q "^#define RX_DFA_PREFILTER \"run-pinned\"" "$REACH_TMP/o.c" && grep -qF "rx_w4(subject + cand) == rx_w4(\"/use\") && rx_w4(subject + cand + 1) == rx_w4(\"user\")" "$REACH_TMP/o.c" && echo REACH-RUN-TERM-EMITTED'
 SAB_REACH_EXPECT="REACH-RUN-TERM-EMITTED"
 # [OPT-LITSCAN] S1 step 6 re-anchor (lane s1step6, 2026-09-26): the verify
 # chain lost its `DfaForm` (litscan_s1.md §1.3's narrowing), so `f->cx` reads
@@ -27,7 +32,5 @@ SAB_REACH_EXPECT="REACH-RUN-TERM-EMITTED"
 # `pcrec_emit_exact_compare` (the VM's literal runs are its second caller);
 # the call site's name is the only change, plant and intent unchanged.
 SAB_COUNT=1
-SAB_BEFORE='            pcrec_emit_exact_compare(c, t->run_o == 0
-                                  ? "subject + cand"
-                                  : dfa_fragf(cx, "subject + cand + %d", t->run_o),'
-SAB_AFTER='            pcrec_emit_exact_compare(c, dfa_fragf(cx, "subject + cand + %d", t->run_o + 1),   /* SABOTAGE S279 */'
+SAB_BEFORE='            pcrec_emit_run_compare(cx, c, "subject + cand", t->run_o, &run);'
+SAB_AFTER='            pcrec_emit_run_compare(cx, c, "subject + cand", t->run_o + 1, &run);   /* SABOTAGE S279 */'

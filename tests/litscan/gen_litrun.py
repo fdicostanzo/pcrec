@@ -48,6 +48,11 @@ for L in list(range(3, 21)) + [31, 32]:
     cases.append((run, subs, "S4 L-sweep, L = %d: the run alone" % L))
     cases.append(("[0-9]+" + run, ["7" + s for s in subs] + ["x" + run],
                   "S4 L-sweep, L = %d: a floating necessary run" % L))
+    # ...and the run alone ON THE VM: on the default route these patterns are
+    # DFA artifacts, where the run compare is a prefilter term the DFA then
+    # re-verifies, so a compare that ACCEPTS too much is invisible there. On
+    # the VM the run compare is the only test of those bytes.
+    cases.append((run, subs, "S4 L-sweep, L = %d: the run alone, forced VM" % L, "vm"))
 out = ["# tests/litscan/litrun.rxt -- [OPT-LITSCAN] S2a: the VM's EXACT literal run",
 "# (docs/design/patfacts/design.md §8.2; pcrec_lit_run in src/core/cpset.c).",
 "#",
@@ -58,13 +63,17 @@ out = ["# tests/litscan/litrun.rxt -- [OPT-LITSCAN] S2a: the VM's EXACT literal 
 "# emitted C string literal must escape (quote, backslash, '?', NUL, control",
 "# and high bytes, an octal escape before a digit), a run beside a capture, a",
 "# choice point, a star, a repeat and a lookahead, and the island's",
-"# single-child chains. The harness runs every file on both engines, so the",
-"# VM side is what reads the converted compare.",
+"# single-child chains. The harness runs each block on the route it is",
+"# written for (the default route unless a block says `engine vm`), so the",
+"# S4 L-sweep carries a forced-VM copy of each run: on the default route",
+"# those patterns are DFA artifacts that re-verify any candidate.",
 ""]
-for pat, subs, why in cases:
+for case in cases:
+    pat, subs, why = case[:3]
     out.append("# " + why)
     out.append("pattern " + pat)
     if "(?=" in pat: out.append("features lookaround")
+    if len(case) > 3 and case[3] == "vm": out.append("engine vm")
     rx = re.compile(pat.encode('latin-1'))
     for s in subs:
         b = s.encode('latin-1')

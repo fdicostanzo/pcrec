@@ -91,22 +91,21 @@ static void rc_base(StrBuf *c, const char *base, int o)
 }
 
 /* The words form: `<p>_w<W>(base + o) == <p>_w<W>("<t[o..o+W)>")` for each
- * window of D(L) (offsets 0, W, 2W, ... while a whole word still fits short
- * of the end, then L - W), joined by `&&`. */
+ * window of D(L) (offsets 0, W, 2W, ... while a whole word fits, then the
+ * last word moved back to end exactly at L), joined by `&&`. */
 static void rc_emit_words(Ctx *cx, StrBuf *c, const char *base, int off,
                           const PcrecRun *r)
 {
     const char *p = cx->opt->prefix;
     int w = rc_width(r->len);
-    for (int o = 0; ; o += w) {
-        int at = o + w < r->len ? o : r->len - w;
-        if (at) pcrec_sb_puts(c, " && ");
+    for (int o = 0; o < r->len; o += w) {
+        int at = o + w <= r->len ? o : r->len - w;   /* the last word ends at L */
+        if (o) pcrec_sb_puts(c, " && ");
         pcrec_sb_printf(c, "%s_w%d(", p, w);
         rc_base(c, base, off + at);
         pcrec_sb_printf(c, ") == %s_w%d(\"", p, w);
         pcrec_sb_cstr(c, r->t + at, (size_t)w);
         pcrec_sb_puts(c, "\")");
-        if (at == r->len - w) break;
     }
     cx->job->rc_wused |= (unsigned)w;
     cx->job->rc_words++;

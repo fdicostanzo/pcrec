@@ -270,7 +270,10 @@ read_artifact() {
         # every offset-set artifact with a run pre-check as run-pinned.
         /^static inline size_t rx_ofsskip\(/            { in_ofs = 1 }
         /^}$/                                           { in_ofs = 0 }
-        in_ofs && /!memcmp\(subject \+ cand/           { ofs_run = 1 }
+        # [OPT-LITSCAN] S4 C1: the overlap row of the run compare spells the
+        # term as word loads (`rx_w4(subject + cand ...`), its `memcmp` row
+        # as before; either is the run term.
+        in_ofs && /(!memcmp|rx_w[248])\(subject \+ cand/ { ofs_run = 1 }
         # ---- (ii) STAMPED: the `#define` lines, and nothing else -----------
         /^#define RX_ENGINE "/        { ne++; s_eng  = substr($3, 2, length($3) - 2) }
         /^#define RX_DFA_SCAN "/      { ns++; s_scan = substr($3, 2, length($3) - 2) }

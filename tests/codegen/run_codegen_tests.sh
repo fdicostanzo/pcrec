@@ -3425,11 +3425,13 @@ if pcrec_run "$PCREC" -p rx --engine=vm -o "$WORKDIR/litfloor2.c" --pattern 'xy'
         bad "[OPT-LITSCAN F5] a three-byte run ('xyz') stamps RX_VM_LIT_RUNS $lf3_runs, expected 1 -- three bytes must still take S2a's one-compare form"
         lf3_bad=1
     fi
-    if ! grep -qF '!memcmp(subject + scan_position, "xyz", 3)' "$WORKDIR/litfloor3.c"; then
-        bad "[OPT-LITSCAN F5] a three-byte run ('xyz') carries no one-compare memcmp -- the floor over-narrowed past three bytes"
+    # [OPT-LITSCAN] S4 C1 (abi 56): L = 3 is an `overlap` length, so the
+    # one compare is the run compare's two overlapping words.
+    if ! grep -qF 'rx_w2(subject + scan_position) == rx_w2("xy") && rx_w2(subject + scan_position + 1) == rx_w2("yz")' "$WORKDIR/litfloor3.c"; then
+        bad "[OPT-LITSCAN F5] a three-byte run ('xyz') carries no one-compare run compare -- the floor over-narrowed past three bytes"
         lf3_bad=1
     fi
-    [ "$lf3_bad" -eq 0 ] && ok "[OPT-LITSCAN F5] three-byte run ('xyz'): RX_VM_LIT_RUNS 1, the one-compare memcmp present"
+    [ "$lf3_bad" -eq 0 ] && ok "[OPT-LITSCAN F5] three-byte run ('xyz'): RX_VM_LIT_RUNS 1, the one run compare present"
 else
     bad "[OPT-LITSCAN F5] could not compile the two- and three-byte lit-run witnesses ('xy', 'xyz') under --engine=vm"
 fi
@@ -3559,6 +3561,30 @@ if [ "${rs_o2_default:-}" = "nomatch" ]; then
     ok "[OPT-HYB-RESEED] budget arm: 40 dense failing candidates then 20,000 non-candidates answers nomatch (the step block's probe re-seeds out of step mode)"
 else
     bad "[OPT-HYB-RESEED] budget arm: 40 dense failing candidates then 20,000 non-candidates answered '${rs_o2_default:-?}', expected nomatch — once in step mode the retry never probes out (the block's closing re-seed is gone)"
+fi
+
+# =========================================================================
+# [OPT-LITSCAN S4] THE RUN COMPARE (src/gen/runcmp.c, abi 56;
+# docs/design/litscan_s4.md §5.4, docs/spec/tuning.md §2.37)
+# =========================================================================
+# The overlap row is ANSWER-IDENTITY-preserving, so the corpus cannot see a
+# word that over-reads behind a guard that happens to hold, a last word that
+# leaves the run's final byte uncovered on a subject that never differs
+# there, a constant spelled as an integer literal of this box's byte order,
+# or a deny that leaves a word behind. runcmp_check.py decodes every word
+# compare back to (offset, bytes) and holds it to the run each witness names
+# from its PATTERN text; see its own header. Sabotage rows S441/S442.
+rc_out="$(python3 "$SCRIPT_DIR/runcmp_check.py" "$PCREC" "$WORKDIR" "${CC:-gcc}" 2>&1)"
+while IFS= read -r rc_line; do
+    case "$rc_line" in
+        "PASS: "*) ok "${rc_line#PASS: }" ;;
+        "FAIL: "*) bad "${rc_line#FAIL: }" ;;
+    esac
+done <<EOF_RC
+$rc_out
+EOF_RC
+if ! printf '%s\n' "$rc_out" | grep -q '^runcmp_check: '; then
+    bad "[OPT-LITSCAN S4] runcmp_check.py did not run to completion: $(printf '%s' "$rc_out" | tail -3 | tr '\n' ' ')"
 fi
 
 echo
