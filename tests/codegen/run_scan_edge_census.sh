@@ -98,13 +98,17 @@ bad()  { fail=$((fail+1)); printf 'FAIL [scan-edge-census] %s\n' "$*"; }
 # edge blocks that machine must carry. Written from the measured artifact and
 # NOT harvested at run time -- an expectation a script computes from the thing
 # it is checking is not an expectation.
+#
+# [OPT-VEDGE] (lane vedge, 2026-10-03) moved two rows: `\b\w+\b\z` 1 -> 2 and
+# `\b\w+\z` 1 -> 3 forward edges, the view-tolerant edge admitting their
+# END-view-only `\w` chains (section (6) below has that row's own witnesses).
 MANIFEST=(
   '(\b\w+\b)|f=1'
   '(foo\B)|r=1'
   '\b\w+\b|f=1'
   '\b\w+\b$|f=1'
-  '\b\w+\b\z|f=1'
-  '\b\w+\z|f=1'
+  '\b\w+\b\z|f=2'
+  '\b\w+\z|f=3'
   '\b\w\b|f=1'
   'foo\B|r=1'
   '\b\K\w+|f=2'
@@ -242,6 +246,51 @@ if [ "$p2" -eq 0 ]; then
     say "FINDING [K35] pairs a reseeding prefilter with a seed table. It is kept"
     say "FINDING [K35] because the mechanism is real, not because it was witnessed."
 fi
+
+# (6) [OPT-VEDGE] THE VIEW-TOLERANT EDGE, held per machine and per direction.
+#
+# `src/opt/scanedge.c` admits two chains precondition (3)/(6) used to refuse:
+# END-view-only members on a machine whose walk ENDS at `n` (forward and
+# anchored, never reverse), and a chain whose head is a view target, trimmed
+# one link. Each row below is `pattern|forward reverse anchored` edge counts,
+# measured on the landing tree; under `-fno-view-edge` every count must be 0
+# (none of these machines has a view-free chain). What each row pins:
+#   `(?:[a-z]{0,4})\z` forward = the END-view chain; reverse = the TRIM (its
+#                      start state reaches the chain only through its END
+#                      view); the row's own customer shape.
+#   `[0-9]{3}\z`       the anchored machine's END-view chain (an exact count).
+#   `a{0,4}$`          an EOL view: the forward members carry `eolvar` and
+#                      stay refused (forward 0), while the reverse trim fires.
+# The direction half (the reverse walk never takes END-view members) has no
+# structural witness here, since no corpus reverse machine has a scan-shaped
+# END-viewed state; its detector is tests/assertions/view_edge.rxt's answers
+# (mech row S440 plants exactly that).
+VEDGE=(
+  '(?:[a-z]{0,4})\z|1 1 0'
+  '[0-9]{3}\z|2 1 1'
+  'a{0,4}$|0 1 0'
+)
+for row in "${VEDGE[@]}"; do
+    pat=${row%|*}
+    want=${row##*|}
+    if ! grep -RFqx -- "pattern $pat" tests/ 2>/dev/null; then
+        bad "STALE [OPT-VEDGE] ROW: '$pat' is no longer a 'pattern' line under tests/"
+        continue
+    fi
+    for deny in "" -fno-view-edge; do
+        if ! pcrec_run "$PCREC" -p rx --features all -fcomments $deny -o "$TMP/v.c" --pattern "$pat" >"$TMP/err" 2>&1; then
+            bad "'$pat' $deny failed to compile: $(head -1 "$TMP/err")"
+            continue
+        fi
+        got="$(edges_on "$TMP/v.c" forward) $(edges_on "$TMP/v.c" reverse) $(edges_on "$TMP/v.c" anchored)"
+        exp=$want; [ -n "$deny" ] && exp="0 0 0"
+        if [ "$got" != "$exp" ]; then
+            bad "[OPT-VEDGE] '$pat' ${deny:-default}: edges forward/reverse/anchored $got, expected $exp"
+            continue
+        fi
+        ok
+    done
+done
 
 # (5) NON-VACUITY.
 if [ "$checked" -lt "$FLOOR" ]; then
