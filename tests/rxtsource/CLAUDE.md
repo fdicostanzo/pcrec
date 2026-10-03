@@ -407,7 +407,12 @@ shipped with nothing exercising them.
   not fail this section; but where it IS present, all 33 patterns are
   compared against the bench's own `.rx` files, because a provenance header
   is a CLAIM and a claim nothing checks is a comment. `PCREC_BENCH_PATTERNS`
-  overrides the path.
+  overrides the path. **The population is the FIXTURE's own 33 names, not
+  the live dir's**: the bench has since grown (altwide@0.3, 39 files) and a
+  control iterating a moving source shares it with what it controls. Each
+  pinned name must exist in the live dir and match byte for byte (a missing
+  file FAILS); files the fixture does not pin print a NOTE and are never
+  judged.
 
 - `record()` / the C3 pin RECORD (2026-09-11, manager landing-bar,
   post-pyrole; **re-keyed 2026-09-22, [REL-1.6]'s first real CI run**):
