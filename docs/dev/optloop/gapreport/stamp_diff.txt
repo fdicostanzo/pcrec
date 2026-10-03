@@ -1,0 +1,3 @@
+# selection-stamp diff, pcrec fc719ca4 (abi 50, the bench pin) -> main-d986874b (abi 55), every bench pattern, `--features all` (+ `-e utf8` on utf8)
+capability wild-logparse-syslogbase-expanded {'RX_VM_PREFILTER_LANG_WHY': ('size cap retry, exact 1456862 > 1000000', 'size cap retry, exact 1457063 > 1000000')}
+# 331 patterns compiled by both; 1 differ in any scalar RX_* stamp (refusal byte counts excluded)
