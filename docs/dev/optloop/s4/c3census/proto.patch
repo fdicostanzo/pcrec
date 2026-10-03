@@ -1,8 +1,143 @@
+diff --git a/src/core/findings.c b/src/core/findings.c
+index d2b618f8..de692f42 100644
+--- a/src/core/findings.c
++++ b/src/core/findings.c
+@@ -410,13 +410,22 @@ static uint32_t uniform_mass(int k)
+     return (uint32_t)((unsigned long long)k * 1000000u / 256u);
+ }
+ 
+-int pcrec_find_pick(const uint32_t *rate, const unsigned char *cand, int n,
+-                    int rightmost)
++/* PROTO r2: a candidate is the cube (cand[i], care[i]); care NULL = bytes. */
++static uint32_t cube_rate(const uint32_t *rate, int t, int k)
++{
++    uint32_t m = 0;
++    int f = ~k & 0xFF;
++    for (int b = f;; b = (b - 1) & f) { m += rate[t | b]; if (!b) break; }
++    return m;
++}
++int pcrec_find_pick(const uint32_t *rate, const unsigned char *cand,
++                    const unsigned char *care, int n, int rightmost)
+ {
+     int i, best = 0;
+     if (!rate) return rightmost;
+     for (i = 1; i < n; i++)
+-        if (rate[cand[i]] < rate[cand[best]]) best = i;
++        if (cube_rate(rate, cand[i], care ? care[i] : 0xFF) <
++            cube_rate(rate, cand[best], care ? care[best] : 0xFF)) best = i;
+     return best;
+ }
+ 
+@@ -461,7 +470,7 @@ int pcrec_find_set_pick(const uint32_t *rate, const unsigned char bits[32],
+     for (int b = 255; b >= 0; b--)
+         if (b != rightmost && (bits[b >> 3] & (unsigned char)(1u << (b & 7))))
+             cand[n++] = (unsigned char)b;
+-    return cand[pcrec_find_pick(rate, cand, n, 0)];
++    return cand[pcrec_find_pick(rate, cand, NULL, n, 0)];
+ }
+ 
+ /* Which member of the RUN the emitted `memchr` tests: PICK over the run in
+@@ -498,7 +507,7 @@ int pcrec_find_set_pick(const uint32_t *rate, const unsigned char bits[32],
+  * found in ZERO of 912 real `-e utf8` runs, so the rightmost rule closes it
+  * with no byte-range logic (D77). */
+ int pcrec_find_run_scan_index(const uint32_t *rate, const unsigned char *bytes,
+-                              int n)
++                              const unsigned char *mask, int n)
+ {
+     /* `bytes[0..n)`, n <= PCREC_MAX_REQ_RUN_SCAN by its one caller's own
+      * bound (RbRun/ReqRun's `whole` array, src/facts/facts_derive.h,
+@@ -510,10 +519,10 @@ int pcrec_find_run_scan_index(const uint32_t *rate, const unsigned char *bytes,
+      * no-error-channel sites do — coding_guide.md's fail-loudly rule, never
+      * silent truncation). */
+     if (n > PCREC_MAX_REQ_RUN_SCAN) abort();
+-    unsigned char cand[PCREC_MAX_REQ_RUN_SCAN];
++    unsigned char cand[PCREC_MAX_REQ_RUN_SCAN], care[PCREC_MAX_REQ_RUN_SCAN];
+     int i;
+-    for (i = 0; i < n; i++) cand[i] = bytes[n - 1 - i];
+-    return n - 1 - pcrec_find_pick(rate, cand, n, 0);
++    for (i = 0; i < n; i++) { cand[i] = bytes[n - 1 - i]; care[i] = mask ? mask[n - 1 - i] : 0xFF; }
++    return n - 1 - pcrec_find_pick(rate, cand, care, n, 0);
+ }
+ 
+ /* Where a run longer than `PCREC_MAX_REQ_RUN_EMIT` is TRUNCATED to: the start
+@@ -524,7 +533,8 @@ int pcrec_find_run_scan_index(const uint32_t *rate, const unsigned char *bytes,
+  * The scan member is in every candidate window by construction, so its own
+  * rate is a constant of the comparison and no term has to be excluded. */
+ int pcrec_find_run_window_start(const uint32_t *rate,
+-                                const unsigned char *bytes, int n, int idx)
++                                const unsigned char *bytes,
++                                const unsigned char *mask, int n, int idx)
+ {
+     int lo_s = idx - (PCREC_MAX_REQ_RUN_EMIT - 1), hi_s = idx;
+     int s, best;
+@@ -533,7 +543,12 @@ int pcrec_find_run_window_start(const uint32_t *rate,
+     if (hi_s > n - PCREC_MAX_REQ_RUN_EMIT) hi_s = n - PCREC_MAX_REQ_RUN_EMIT;
+     best = lo_s;
+     for (s = lo_s; s <= hi_s; s++) {
+-        uint32_t t = pcrec_find_seq_mass(rate, bytes + s, PCREC_MAX_REQ_RUN_EMIT);
++        unsigned char mem[2 * PCREC_MAX_REQ_RUN_EMIT]; int nm = 0;
++        for (int j = s; j < s + PCREC_MAX_REQ_RUN_EMIT; j++) {
++            mem[nm++] = bytes[j];
++            if (mask && mask[j] != 0xFF) mem[nm++] = (unsigned char)(bytes[j] | (~mask[j] & 0xFF));
++        }
++        uint32_t t = pcrec_find_seq_mass(rate, mem, nm);
+         if (s == lo_s || t < lo) { lo = t; best = s; }
+     }
+     return best;
+diff --git a/src/core/findings.h b/src/core/findings.h
+index 43b6e81b..f7fa197c 100644
+--- a/src/core/findings.h
++++ b/src/core/findings.h
+@@ -219,8 +219,8 @@ const uint32_t *pcrec_find_byte_rate(Ctx *cx);
+  * EARLIEST candidate. NONE: `rightmost`, the index of the reader's positional
+  * rightmost candidate (PCRE2's LASTCODEUNIT rule). The reader chooses only
+  * the candidate ORDER, which is its tie rule. n >= 1, 0 <= rightmost < n. */
+-int pcrec_find_pick(const uint32_t *rate, const unsigned char *cand, int n,
+-                    int rightmost);
++int pcrec_find_pick(const uint32_t *rate, const unsigned char *cand,
++                    const unsigned char *care, int n, int rightmost);
+ 
+ /* COMPARE: is `p` no commoner than `q` (rate[p] <= rate[q])? NONE: false —
+  * unknown, so no density claim. Identity (p == q) is not a density fact and
+@@ -256,13 +256,14 @@ int pcrec_find_set_pick(const uint32_t *rate, const unsigned char bits[32],
+  * shape): the rarest, ties to the RIGHTMOST — its own positional rightmost
+  * member, which is also the NONE answer [FIND-TIE]. */
+ int pcrec_find_run_scan_index(const uint32_t *rate, const unsigned char *bytes,
+-                              int n);
++                              const unsigned char *mask, int n);
+ 
+ /* Where a run longer than `PCREC_MAX_REQ_RUN_EMIT` is truncated to. MASS over
+  * each window of that length containing `idx`: the lowest, ties to the
+  * leftmost — so under NONE, where every window ties, the leftmost. */
+ int pcrec_find_run_window_start(const uint32_t *rate,
+-                                const unsigned char *bytes, int n, int idx);
++                                const unsigned char *bytes,
++                                const unsigned char *mask, int n, int idx);
+ 
+ /* The offset-k selection's per-set cost input (src/opt/prefix_k.c): MASS
+  * over `set` (`set[b]` nonzero for a member), in ppm, capped at 1,000,000. */
 diff --git a/src/facts/facts.c b/src/facts/facts.c
-index abc5704e..01e2597c 100644
+index abc5704e..f78c8c1e 100644
 --- a/src/facts/facts.c
 +++ b/src/facts/facts.c
-@@ -172,6 +172,7 @@ static void pf_derive_req_walk(Ctx *cx)
+@@ -36,6 +36,7 @@
+ 
+ #include "core/internal.h"
+ #include "enc/enc.h"
++#include "core/findings.h"
+ #include "facts/facts_derive.h"
+ 
+ /* The table's deny, epoch and name columns, indexed by `PfFactId`. */
+@@ -81,7 +82,7 @@ static void pf_store_empty(PatFacts *pf, PfFactId f)
+         break;
+     case PF_REQ_BYTE:     pf->req_byte = -1; break;
+     case PF_KSET_WALK:    memset(&pf->kset_walk, 0, sizeof pf->kset_walk); break;
+-    case PF_RUN_PIN:      pf->run_pin = (RunPin){ false, 0 }; break;
++    case PF_RUN_PIN:      pf->run_pin = (RunPin){ false, 0, 0, 0, 0 }; break;
+     case PF_NFACTS:       break;
+     }
+ }
+@@ -172,6 +173,7 @@ static void pf_derive_req_walk(Ctx *cx)
          memset(pf->req_run.whole, 0, sizeof pf->req_run.whole);
          pf->req_run.whole_len = 0;
          if (run.n >= 2) {
@@ -10,7 +145,16 @@ index abc5704e..01e2597c 100644
              memcpy(pf->req_run.whole, run.bytes, (size_t)run.n);
              pf->req_run.whole_len = run.n;
          }
-@@ -441,7 +442,11 @@ const char *pcrec_fact_render(Ctx *cx, PfFactId f)
+@@ -223,7 +225,7 @@ static void pf_derive(Ctx *cx, PfFactId f)
+     case PF_RUN_PIN:
+         pf_ask(cx, PF_KSET_WALK, false);
+         pf_ask(cx, PF_REQ_RUN, false);
+-        pcrec_run_pin(&pf->kset_walk, &pf->req_run, &pf->run_pin);
++        pcrec_run_pin(&pf->kset_walk, &pf->req_run, pcrec_find_byte_rate(cx), &pf->run_pin);
+         break;
+     case PF_NFACTS:
+         return;
+@@ -441,10 +443,18 @@ const char *pcrec_fact_render(Ctx *cx, PfFactId f)
      }
      case PF_REQ_WHOLE_RUN:
          if (pf->req_run.whole_len < 2) return "none";
@@ -22,21 +166,49 @@ index abc5704e..01e2597c 100644
 +                                pf_hex(cx, pf->req_run.whole_mask, pf->req_run.whole_len, -1)); }
      case PF_REQ_RUN:
          if (pf->req_run.len < 2) return "none";
-         return pf_hex(cx, pf->req_run.bytes, pf->req_run.len, pf->req_run.idx);
+-        return pf_hex(cx, pf->req_run.bytes, pf->req_run.len, pf->req_run.idx);
++        { bool msk = false;
++          for (int i = 0; i < pf->req_run.len; i++) if (pf->req_run.mask[i] != 0xFF) msk = true;
++          if (!msk) return pf_hex(cx, pf->req_run.bytes, pf->req_run.len, pf->req_run.idx);
++          return pcrec_sb_fragf(&cx->arena, "%s/%s", pf_hex(cx, pf->req_run.bytes, pf->req_run.len, pf->req_run.idx),
++                                pf_hex(cx, pf->req_run.mask, pf->req_run.len, -1)); }
+     case PF_REQ_BYTE:
+         if (pf->req_byte < 0) return "none";
+         return pcrec_sb_fragf(&cx->arena, "%d", pf->req_byte);
+@@ -465,7 +475,9 @@ const char *pcrec_fact_render(Ctx *cx, PfFactId f)
+     }
+     case PF_RUN_PIN:
+         if (!pf->run_pin.pinned) return "none";
+-        return pcrec_sb_fragf(&cx->arena, "%d", pf->run_pin.o);
++        if (pf->run_pin.at == 0 && pf->run_pin.len == pf->req_run.len)
++            return pcrec_sb_fragf(&cx->arena, "%d", pf->run_pin.o);
++        return pcrec_sb_fragf(&cx->arena, "%d:%d+%d", pf->run_pin.o, pf->run_pin.at, pf->run_pin.len);
+     case PF_NFACTS:
+         break;
+     }
 diff --git a/src/facts/facts.h b/src/facts/facts.h
-index aecd3bda..ab87b164 100644
+index aecd3bda..1c8ddfa3 100644
 --- a/src/facts/facts.h
 +++ b/src/facts/facts.h
-@@ -68,6 +68,7 @@ typedef struct {
+@@ -68,6 +68,8 @@ typedef struct {
      unsigned char whole[PCREC_MAX_REQ_RUN_SCAN];
      int whole_len;   /* 0 exactly when `len` is; otherwise len..SCAN */
      int at;          /* where the window starts inside `whole` */
 +    unsigned char whole_mask[PCREC_MAX_REQ_RUN_SCAN]; /* PROTO */
++    unsigned char mask[PCREC_MAX_REQ_RUN_EMIT];        /* PROTO r2 */
  } ReqRun;
  
  /* [K65] THE WHOLE NECESSARY SET, as a 256-bit membership table: every byte
+@@ -133,6 +135,7 @@ typedef struct {
+ typedef struct {
+     bool     pinned;
+     int      o;          /* meaningful only when pinned */
++    int      at, len, idx; /* PROTO r2: the pinned exact sub-window and its scan */
+ } RunPin;
+ 
+ /* THE KIND MASK's bits (fact `kinds`, E1): which construct kinds the pattern
 diff --git a/src/facts/facts_derive.h b/src/facts/facts_derive.h
-index 5b3daeaa..a1fbba3a 100644
+index 5b3daeaa..100314d8 100644
 --- a/src/facts/facts_derive.h
 +++ b/src/facts/facts_derive.h
 @@ -67,7 +67,7 @@ typedef struct { unsigned char bits[32]; int pick; } RbSet;
@@ -48,8 +220,64 @@ index 5b3daeaa..a1fbba3a 100644
  
  static inline bool rb_has(const RbSet *s, int b)
  {
+@@ -108,7 +108,7 @@ void pcrec_kset_walk(Ctx *cx, const Nfa *nfa, KsetWalk *o);
+  * singletons spell the run's WINDOW `r->bytes` byte for byte (the SAME bytes
+  * the run pre-check compares, litscan_s1.md R3-2). Reads the two facts it is
+  * handed and nothing else. */
+-void pcrec_run_pin(const KsetWalk *o, const ReqRun *r, RunPin *pin);
++void pcrec_run_pin(const KsetWalk *o, const ReqRun *r, const uint32_t *rate, RunPin *pin);
+                                                         /* src/facts/kset.c */
+ 
+ #endif /* PCREC_FACTS_DERIVE_H */
+diff --git a/src/facts/kset.c b/src/facts/kset.c
+index 927379d0..6f5e0386 100644
+--- a/src/facts/kset.c
++++ b/src/facts/kset.c
+@@ -69,6 +69,7 @@
+ #include <string.h>
+ 
+ #include "core/internal.h"
++#include "core/findings.h"
+ #include "facts/facts_derive.h"
+ 
+ /* ---- THE WALK ------------------------------------------------------------
+@@ -237,15 +238,27 @@ void pcrec_kset_walk(Ctx *cx, const Nfa *nfa, KsetWalk *o)
+  * at which the walk's singletons spell the run. Any satisfying offset is a
+  * true statement; the smallest is deterministic, and a later one would only
+  * ever be a lost opportunity for the run rows, never a wrong answer. */
+-void pcrec_run_pin(const KsetWalk *o, const ReqRun *r, RunPin *pin)
++void pcrec_run_pin(const KsetWalk *o, const ReqRun *r, const uint32_t *rate, RunPin *pin)
+ {
++    /* PROTO r2: PICK over the window's EXACT positions (reversed: ties and
++     * NONE to the rightmost); the pin is the maximal exact stretch around
++     * that position, when it has >= 2 positions and the walk spells it. */
+     pin->pinned = false;
+-    pin->o = 0;
+-    for (int ro = 0; r->len >= 2 && !pin->pinned && ro + r->len <= o->nwalk; ro++) {
++    pin->o = 0; pin->at = 0; pin->len = 0; pin->idx = 0;
++    unsigned char cand[PCREC_MAX_REQ_RUN_EMIT];
++    int pos[PCREC_MAX_REQ_RUN_EMIT], nc = 0;
++    for (int i = r->len - 1; i >= 0; i--)
++        if (r->mask[i] == 0xFF) { cand[nc] = r->bytes[i]; pos[nc] = i; nc++; }
++    if (r->len < 2 || nc == 0) return;
++    int x = pos[pcrec_find_pick(rate, cand, NULL, nc, 0)];
++    int s0 = x, e0 = x + 1;
++    while (s0 > 0 && r->mask[s0 - 1] == 0xFF) s0--;
++    while (e0 < r->len && r->mask[e0] == 0xFF) e0++;
++    int l = e0 - s0;
++    if (l < 2) return;
++    for (int ro = 0; !pin->pinned && ro + l <= o->nwalk; ro++) {
+         int i = 0;
+-        while (i < r->len && o->k[ro + i].count == 1 &&
+-               o->k[ro + i].byte == r->bytes[i])
+-            i++;
+-        if (i == r->len) { pin->pinned = true; pin->o = ro; }
++        while (i < l && o->k[ro + i].count == 1 && o->k[ro + i].byte == r->bytes[s0 + i]) i++;
++        if (i == l) { pin->pinned = true; pin->o = ro; pin->at = s0; pin->len = l; pin->idx = x - s0; }
+     }
+ }
 diff --git a/src/facts/req.c b/src/facts/req.c
-index 1c567ca4..d695653f 100644
+index 1c567ca4..c47455a6 100644
 --- a/src/facts/req.c
 +++ b/src/facts/req.c
 @@ -100,6 +100,7 @@
@@ -203,3 +431,43 @@ index 1c567ca4..d695653f 100644
              return acc;
          }
          /* Consumes nothing, so it can make no byte necessary. `A_LOOK`'s body
+@@ -499,12 +542,13 @@ void pcrec_req_window(Ctx *cx, ReqRun *run, PfWhyCode *why)
+     if (n < 2) return;
+     *why = req_rate_why(cx);
+     {
+-        int i = pcrec_find_run_scan_index(rate, run->whole, n);
++        int i = pcrec_find_run_scan_index(rate, run->whole, run->whole_mask, n);
+         int s = n > PCREC_MAX_REQ_RUN_EMIT
+-              ? pcrec_find_run_window_start(rate, run->whole, n, i) : 0;
++              ? pcrec_find_run_window_start(rate, run->whole, run->whole_mask, n, i) : 0;
+         int len = n - s;
+         if (len > PCREC_MAX_REQ_RUN_EMIT) len = PCREC_MAX_REQ_RUN_EMIT;
+         memcpy(run->bytes, run->whole + s, (size_t)len);
++        memcpy(run->mask, run->whole_mask + s, (size_t)len);
+         run->len = len;
+         run->idx = i - s;
+         run->at = s;
+@@ -521,7 +565,7 @@ int pcrec_req_pick(Ctx *cx, const ReqSet *set, const ReqRun *run,
+ {
+     const uint32_t *rate = pcrec_find_byte_rate(cx);
+     *why = req_rate_why(cx);
+-    if (run->len >= 2) return run->bytes[run->idx];
++    if (run->len >= 2 && run->mask[run->idx] == 0xFF) return run->bytes[run->idx];
+     if (set->rightmost < 0) *why = PF_WHY_NONE;
+     return pcrec_find_set_pick(rate, set->bits, set->rightmost);
+ }
+diff --git a/src/gen/emit_dfa.c b/src/gen/emit_dfa.c
+index 585b96e7..53b4c03c 100644
+--- a/src/gen/emit_dfa.c
++++ b/src/gen/emit_dfa.c
+@@ -5680,7 +5680,9 @@ static void ofs_test_model(const UnanchStart *us, OfsTest *t);
+ static RunPin us_run_pin(Ctx *cx, const UnanchStart *us)
+ {
+     if (us->kind == DFA_PF_NONE) return (RunPin){ false, 0 };
+-    return *pcrec_fact_run_pin(cx);
++    RunPin p = *pcrec_fact_run_pin(cx);   /* PROTO r2: emitter sees whole-window pins only */
++    if (p.at != 0 || p.len != pcrec_fact_req_run(cx)->len) p.pinned = false;
++    return p;
+ }
+ 
+ static bool pf_run_applies_common(const DfaSel *s)
