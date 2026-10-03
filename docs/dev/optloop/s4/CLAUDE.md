@@ -26,3 +26,17 @@ in the design note with its section.
   exact `memcmp`/`overlap`/`|` at L = 7. `gcc-16 -O2 -o hot hot.c && ./hot 0`
   (and `1`). Directional only: it is cited because it CONTRADICTS
   `memcmp_lowering_study.md` §11 in this loop shape (design note §1.6).
+- `c3census/` — lane `s4rev`'s r1 census for C3 (design note §2.3.7):
+  - `proto.patch` — the r1 necessary-run walk ONLY ((T, K) positions in the
+    two-member domain, the alternation cube hull, the information ranking,
+    `whole_mask` rendered in `--emit-facts`' `req_whole_run`), applied to a
+    SCRATCH copy of main `92b8bbf0`. Never applied under `src/`. Its emitted C
+    is not meaningful (window/pick/emitters still read T as exact).
+  - `c3_census.py` — compiles every corpus `.rxt` pattern (as written, via
+    `--list-source`) and every pcrec-bench export (read-only) at `--features
+    all --emit-facts` under `BASE` and `PROTO`. Patterns are passed to argv
+    as BYTES. Env `BASE PROTO BENCH CORPUS OUT JOBS`. It writes
+    `c3_census.tsv`.
+  - `c3_census.tsv` — that raw output (4,657 rows).
+  - `c3_report.py` / `c3_summary.txt` — applies the one floor (16 bits) and
+    classifies A0/A0b/A1/B/B!/C. The summary is the numbers the note cites.
