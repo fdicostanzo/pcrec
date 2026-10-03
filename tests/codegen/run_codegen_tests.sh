@@ -3574,7 +3574,7 @@ fi
 # or a deny that leaves a word behind. runcmp_check.py decodes every word
 # compare back to (offset, bytes) and holds it to the run each witness names
 # from its PATTERN text; see its own header. Sabotage rows S441/S442.
-rc_out="$(python3 "$SCRIPT_DIR/runcmp_check.py" "$PCREC" "$WORKDIR" "${CC:-gcc}" 2>&1)"
+rc_out="$("$TIMEOUT_BIN" 1200 python3 "$SCRIPT_DIR/runcmp_check.py" "$PCREC" "$WORKDIR" "${CC:-gcc}" 2>&1)"
 while IFS= read -r rc_line; do
     case "$rc_line" in
         "PASS: "*) ok "${rc_line#PASS: }" ;;

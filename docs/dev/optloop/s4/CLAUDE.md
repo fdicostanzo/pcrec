@@ -37,8 +37,9 @@ in the design note with its section.
   repo), `check` (DENY == BASE modulo the abi digit and the stamp line, the
   witnesses reached and the controls not, every arm and the two fused `|`
   twins answer-identical), `time` (`taskset`, load1 < 0.5, 5 launches
-  round-robin x 5 passes, median of medians, NEW/BASE beside DENY/BASE, the
-  noise floor). Its `build`/`check` steps were smoke-tested on the Mac with
+  round-robin x 5 timed loops of >= 60 ms each, median of medians; per D144
+  addendum 1 it reports ABSOLUTE ns/B deltas beside the floor |DENY - BASE|,
+  never a ratio, and a delta inside the floor reads NULL). Its `build`/`check` steps were smoke-tested on the Mac with
   the lane's own binaries; `time` is Linux-only.
 - `hot.c` — a darwin SCRATCH-tier find-all loop over 1 MiB (random text, and
   a near-miss band): today's per-byte fold chain, masked words `&&`/`|`, and

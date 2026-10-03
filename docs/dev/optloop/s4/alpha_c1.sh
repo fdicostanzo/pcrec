@@ -103,6 +103,8 @@ for L in g.littext.L_SWEEP:
         put("%s-l%d" % (kind, L), g.build_one(L, kind, fn))
 PY
   [ $? -eq 0 ] || exit 1
+  # D144 addendum 1: each TIMED LOOP runs >= ~60 ms (the find-all repeated
+  # R times, R calibrated from a warm-up pass), never a single ~30 us pass.
   cat > findall_med.c <<'EOF'
 #include <stdio.h>
 #include <stdlib.h>
@@ -111,20 +113,24 @@ PY
 #include "art.h"
 static double now(void){struct timespec t;clock_gettime(CLOCK_MONOTONIC,&t);return t.tv_sec+1e-9*t.tv_nsec;}
 static int cmpd(const void*a,const void*b){double x=*(const double*)a,y=*(const double*)b;return x<y?-1:x>y;}
+static long findall(const unsigned char*b,long n){
+  ptrdiff_t caps[RX_NCAPS][2]; size_t pos=0; long count=0;
+  for(;;){ int r=rx_search(b,(size_t)n,pos,caps); if(r==0) break;
+           if(r<0){ printf("giveup %d\n", r); exit(3); }
+           size_t s=(size_t)caps[0][0], e=(size_t)caps[0][1];
+           count++; pos=(e>s)?e:s+1; if(pos>(size_t)n) break; }
+  return count; }
 int main(int argc,char**argv){
   FILE*f=fopen(argv[1],"rb"); fseek(f,0,SEEK_END); long n=ftell(f); rewind(f);
   unsigned char*b=malloc(n); if(fread(b,1,n,f)!=(size_t)n) return 2; fclose(f);
   int passes=argc>2?atoi(argv[2]):5; double t[64]; long count=0;
-  ptrdiff_t caps[RX_NCAPS][2];
+  double t0=now(); count=findall(b,n); double one=now()-t0;
+  long reps=(long)(0.060/(one>1e-9?one:1e-9))+1;
   for(int it=0; it<passes&&it<64; it++){
-    double t0=now(); size_t pos=0; count=0;
-    for(;;){ int r=rx_search(b,(size_t)n,pos,caps); if(r==0) break;
-             if(r<0){ printf("giveup %d\n", r); return 3; }
-             size_t s=(size_t)caps[0][0], e=(size_t)caps[0][1];
-             count++; pos=(e>s)?e:s+1; if(pos>(size_t)n) break; }
-    t[it]=now()-t0; }
+    t0=now(); for(long r=0;r<reps;r++) count=findall(b,n); t[it]=now()-t0; }
   qsort(t,passes,sizeof t[0],cmpd);
-  printf("matches=%ld median=%.6f ns/byte\n", count, t[passes/2]*1e9/(double)n);
+  printf("matches=%ld median=%.6f ns/byte reps=%ld loop=%.1f ms\n", count,
+         t[passes/2]*1e9/((double)n*reps), reps, t[passes/2]*1e3);
   return 0; }
 EOF
   for cell in "${CELLS[@]}"; do
@@ -194,10 +200,13 @@ check() {
 
 time_cells() {
   # protocol §6.1: taskset -c $CPU, load1 < 0.5 before each cell, LAUNCHES
-  # launches round-robin across the arms, PASSES passes each; a cell is the
-  # median of the per-launch medians, ns per subject byte.
+  # launches round-robin across the arms, PASSES timed loops each; a cell is
+  # the median of the per-launch medians, ns per subject byte.
   echo "# $(date -u) $(uname -n) load1=$(cut -d' ' -f1 /proc/loadavg) gov=$(cat /sys/devices/system/cpu/cpu$CPU/cpufreq/scaling_governor 2>/dev/null) boost=$(cat /sys/devices/system/cpu/cpufreq/boost 2>/dev/null)"
-  printf '%-18s %-7s %10s %10s %10s %10s  %7s %7s %7s\n' cell subject base new deny fused new/base deny/base fused/base
+  # D144 addendum 1: ABSOLUTE deltas (ns per subject byte) beside the floor
+  # |DENY - BASE| (the same program twice), never a ratio; a delta inside the
+  # floor is NULL.
+  printf '%-18s %-7s %9s %9s %9s %9s  %9s %9s %9s  %s\n' cell subject base new deny fused new-base floor fused-new verdict
   for cell in "${CELLS[@]}"; do
     IFS='|' read -r name pat flags subjects <<<"$cell"
     for s in $subjects; do
@@ -211,8 +220,10 @@ time_cells() {
       done
       med() { tr ' ' '\n' <<<"$1" | grep . | sort -g | awk '{a[NR]=$1} END{print a[int((NR+1)/2)]}'; }
       b=$(med "${M[base]}"); n=$(med "${M[new]}"); d=$(med "${M[deny]}"); f=$(med "${M[fused]:-}")
-      printf '%-18s %-7s %10s %10s %10s %10s  %7.4f %7.4f %7s\n' "$name" "$s" "$b" "$n" "$d" "${f:--}" \
-        "$(awk "BEGIN{print $n/$b}")" "$(awk "BEGIN{print $d/$b}")" "$( [ -n "$f" ] && awk "BEGIN{printf \"%.4f\", $f/$b}" || echo -)"
+      dl=$(awk "BEGIN{printf \"%+.5f\", $n-$b}"); fl=$(awk "BEGIN{x=$d-$b; printf \"%.5f\", x<0?-x:x}")
+      fd=-; [ -n "$f" ] && fd=$(awk "BEGIN{printf \"%+.5f\", $f-$n}")
+      v=$(awk "BEGIN{x=$n-$b; a=x<0?-x:x; print (a<=$fl)?\"NULL\":(x<0?\"WIN\":\"REGRESSION\")}")
+      printf '%-18s %-7s %9s %9s %9s %9s  %9s %9s %9s  %s\n' "$name" "$s" "$b" "$n" "$d" "${f:--}" "$dl" "$fl" "$fd" "$v"
       unset M
     done
   done
