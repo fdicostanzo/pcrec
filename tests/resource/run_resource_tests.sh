@@ -678,10 +678,19 @@ elif [ "$rc" -eq 0 ] && printf '%s' "$log" | grep -q 'dropped the premultiplied 
     #   +21     `#define rx_VALID_LB 0`
     #   +120    the byte backend's five-line `rx_valid_upto` definition
     #   = 762551
-    if [ "$sz" -eq 762551 ]; then
-        ok "'a{5,25000}' -fno-scan-edge -fno-start-pinned is rescued by [K59-PREMUL]'s drop ladder at 762551 bytes (was 1104674 before the rung existed; 769835 before emitted comments went off by default; 762105 before the abi joined the generated-by line; 762114 before the version joined it; 762125 before [OPTLOOP.1] batch 1's two stamps and its memchr pre-check; 762312 before [OPTLOOP.2] batch 2's REQ_RUN stamp; 762338 before [OPT-PRECHECK-ADMIT]'s REQ_WHY stamp; 762367 before [VAR]'s two rx_info members; 762401 before [OPT-LITSCAN] S1's G1 conjunct elided this witness's own require-byte pre-check; 762270 before [FINDINGS] B1's stamp and rx_info mirror; 762381 before [UTF-VALID]'s subject validator) — the cap still works, this witness no longer reaches it"
+    #
+    # RE-PINNED AGAIN 762551 -> 762574, 2026-10-03 (r1tri, the round-1 stack
+    # lane/r1land: rsform A1 abi 56, [OPT-VEDGE] abi 57, [OPT-LITSCAN] S4
+    # C0+C1 abi 58): every artifact gains S4 C1's `<PREFIX>_RUN_WORDS` stamp.
+    # VERIFIED BY DIFFING the artifacts of the merge-base af615d01 (abi 55)
+    # and r1land d832fc2a at the SAME `-o` basename: three changed lines --
+    # the two abi digits (same length) and one INSERTED line:
+    #   +23     `#define RX_RUN_WORDS 0`
+    #   = 762574
+    if [ "$sz" -eq 762574 ]; then
+        ok "'a{5,25000}' -fno-scan-edge -fno-start-pinned is rescued by [K59-PREMUL]'s drop ladder at 762574 bytes (was 1104674 before the rung existed; 769835 before emitted comments went off by default; 762105 before the abi joined the generated-by line; 762114 before the version joined it; 762125 before [OPTLOOP.1] batch 1's two stamps and its memchr pre-check; 762312 before [OPTLOOP.2] batch 2's REQ_RUN stamp; 762338 before [OPT-PRECHECK-ADMIT]'s REQ_WHY stamp; 762367 before [VAR]'s two rx_info members; 762401 before [OPT-LITSCAN] S1's G1 conjunct elided this witness's own require-byte pre-check; 762270 before [FINDINGS] B1's stamp and rx_info mirror; 762381 before [UTF-VALID]'s subject validator; 762551 before [OPT-LITSCAN] S4 C1's RUN_WORDS stamp) — the cap still works, this witness no longer reaches it"
     else
-        bad "'a{5,25000}' -fno-scan-edge -fno-start-pinned rescued at $sz bytes, pinned 762551 — the rung's own byte count moved; re-measure and re-pin in the same commit if intended"
+        bad "'a{5,25000}' -fno-scan-edge -fno-start-pinned rescued at $sz bytes, pinned 762574 — the rung's own byte count moved; re-measure and re-pin in the same commit if intended"
     fi
 else
     bad "'a{5,25000}' -fno-scan-edge -fno-start-pinned expected the [K59-PREMUL] rescue (rc 0, dropped-premultiplied-table note); got rc=$rc: $log"

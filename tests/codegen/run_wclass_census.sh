@@ -70,7 +70,12 @@ compile() {
 }
 
 if compile 'éabc' "$TMP/w1.c" -e utf8 --engine=vm; then
-    if grep -q '"\\303\\251abc", 5)' "$TMP/w1.c"; then
+    # The five-byte run is spelled by the run-compare kit (src/gen/runcmp.c):
+    # `memcmp(..., "\303\251abc", 5)` under -fno-run-overlap, two overlapping
+    # four-byte words since [OPT-LITSCAN] S4 C1 (abi 58) — either spelling is
+    # the one run compare this witness asks for.
+    if grep -q '"\\303\\251abc", 5)' "$TMP/w1.c" ||
+       grep -q 'rx_w4(subject + scan_position) == rx_w4("\\303\\251ab") && rx_w4(subject + scan_position + 1) == rx_w4("\\251abc")' "$TMP/w1.c"; then
         ok "[W1] éabc: the lowered class unrolls into the spine — one five-byte run compare"
     else
         bad "[W1] éabc: no five-byte run \"\\303\\251abc\" in the artifact — a spine flattener stopped at the A_WCLASS wrapper (pcrec_ast_seethru, D-3)"
