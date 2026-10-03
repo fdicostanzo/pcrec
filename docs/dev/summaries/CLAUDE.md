@@ -130,3 +130,12 @@ Maintenance: update this file when files are added or removed.
   - Cites pcrec-bench's ledger
     `docs/dev/ledgers/2026-09-29-b115-findings-tiers-f7f5a143.md`, outbox
     O-74, and `docs/design/cls_tree_design.md` §1.7 + its O-77 addendum.
+- `2026-10-03-bench-o79-o82-notes.md` — pcrec's reading of pcrec-bench outbox
+  O-79..O-82 at pin `fc719ca4` (abi 50), lane benchnote, numbers re-verified
+  against the outbox text: [B117]'s compilee `-O` sweep (-O0 median x2.24 on
+  the DFA subset, x3.10 on forced VM), O-80's no-ill-formed-`-e utf8`-cell
+  answer to K75, O-81's reseed items (real-text wins x11-x200, 10 syntax
+  cells and 3 synthetic cells >5% slower), O-82's A1-A5/Q1-Q12 answers. Lists
+  the rows annotated and filed (`[GUIDE-OPT-LEVEL]`, `[BENCH-ASKS-PENDING]`).
+  Cites the bench ledgers `2026-10-01-b117-olevel-fc719ca4.md` and
+  `2026-10-02-b120-b121-fc719ca4.md`.
