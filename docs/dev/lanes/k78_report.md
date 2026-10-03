@@ -164,3 +164,44 @@ dead-group DFA artifacts change in length.
   is expected untouched because no VM program region moved.
 - Re-pin FILEPIN if the merge rewrites `6b86a29b`.
 - Linux run, per the two-machine rule.
+
+## 9. Post-merge with the k7980 tip (2026-10-03)
+
+`lane/k7980` 3698dae6 merged into `lane/k78` as 1a9d4eed. 3698dae6 is k7980
+plus main d0487a97's merge (the [CLS-TREE] S2 merge, artmgr docs, plan and
+journal) plus the k7980tri fix a111a150.
+
+- **Conflicts.** One, in the `docs/dev/lanes/CLAUDE.md` index, where both
+  sides appended report lines. All three are kept: k7980tri, artmgr, k78.
+- **abi.** It stays 55, with no conflict. S2's 50->53 and K79/K80's 54 were
+  already under k78's base 44fc6ad5. The merge brings no emitted-scaffolding
+  change. Readers checked by grep: `PCREC_ARTIFACT_ABI 55`, `ABI_EXPECT=55`,
+  and match_api.md §2's guard block (`!= 55` / `abi 55` /
+  `PCREC_RX_ABI_H 55`).
+- **Composition with a111a150.** The only incoming `src/` change is
+  `src/gen/emit_vm.c`'s `--emit-ir` caps cell, which now reads
+  `pcrec_sb_upper(&cx->arena, cx->user_prefix)`. K78's
+  `emit_dead_group_fill` (emit_dfa.c) writes `gn.upper` into artifact text
+  with `pcrec_sb_printf`. It never goes through `pcrec_sb_row`'s escaper, so
+  the finish-time prefix render still sees its placeholder. The two edits are
+  disjoint. Spot check: `--emit-ir '(a)(b)c'` prints `RX_NCAPS` at `-p rx`
+  and `MYRX_NCAPS` at `-p myrx`.
+- **Re-pin.** The recursion-identity (B) `FILEPIN` 6b86a29b -> 1a9d4eed.
+  The merge brings a111a150 (a `src/` change), so it is now the combined
+  tree's last `src/` commit, following the self-pin convention. a111a150
+  moves no artifact byte, so 6b86a29b would also still have held. No other
+  pin or manifest moves: the merge changes no emitted artifact.
+- **Checked (Mac, gcc-16; light only, because a full `make test` was running
+  in worktrees/k7980):**
+  - `make`: clean.
+  - `make strict`: "whole tree compiles clean with -Werror -Wshadow".
+  - `tests/codegen/run_ir_listing.sh`: 155/0, including every BYTE-NEUTRALITY
+    baseline.
+  - `run_prefix_invariance.sh`: 9/0.
+  - `run_nomatch_caps.sh`: 7/0. Same counts as §4: 238,870 non-success calls,
+    27 dead-group DFA artifacts.
+  - `run_codegen_tests.sh`: 130/0, covering `ABI_EXPECT=55` and SABANCHOR.
+  - `scripts/m6read_check_sab_anchors.py`: 391 rows / 407 sites, all resolve.
+- **OWED (manager, on Linux):** the full `make test`, `make mech` (S439 via
+  `nomatchcaps`) and `make test-recursion-identity` against the new
+  1a9d4eed pin.
