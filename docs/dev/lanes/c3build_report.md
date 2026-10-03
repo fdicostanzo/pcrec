@@ -84,9 +84,13 @@ modulo constants; see `tuning.md` §2.39).
   unmoved, answers identical on every throughput subject and the 75
   union-select short subjects (all bench subjects sha256-matched the committed
   manifests). `time` is Linux-only.
-- **Suites under the Mac lock** — see the handback for the final numbers of
-  `make test-rxtsource`, `make test-registry` and `make test-codegen`
-  (logs `c3build-scratch/rxtsource.log`, `registry.log`, `codegen.log`).
+- **Suites under the Mac lock** (gcc-16, final tip), verdict = make's `*** [`
+  lines: `test-rxtsource` green (271 passed / 0 failed, plus the standing
+  python-3.9 RECORD); `test-registry` green (all five sub-suites 0 failed);
+  `test-codegen` red ONLY on the standing darwin `nm arm_a.o` probe (accepted);
+  `test-prechecks`, `test-cpset-structure`, `test-encoding-checks` (slice 250)
+  and `test-recursion-identity` (FILEPIN `cc342ddc`) green. Each red met on the
+  way and its fix is under "Readers re-pinned". Logs in `c3build-scratch/`.
 
 ### Sabotage validation (by plant, scratch tree per row, this tip)
 
@@ -137,6 +141,25 @@ S266, S268, S277, S280, S285, S289, S316, S329. `scripts/m6read_check_sab_anchor
   arm's scanned bytes are its cube's members). And one stale since C1:
   `run_wclass_census.sh` [W1] grepped for the five-byte `memcmp` that C1's
   overlap row replaced (red on r1land `d832fc2a`'s own binary too).
+- `run_recursion_identity.sh` (A): reqcube.rxt's caseless patterns are the
+  gate's first whose `-fno-cls-fold` excuse build crosses CLSPACK's
+  11-table-read atom row (`(?i)information_schema`, fold 12 / atoms 0; the
+  deny build reads `rx_class_atomN`, the pin has bitmaps), so 1/3/1
+  REGION DIFFERS on default/vm/noprefilter. The deny builds are
+  region-identical on r1land's binary: a gate gap, not a C3 region move.
+  `-fno-cls-pack` now joins a fold excuse build (the `-fno-lit-run` argument).
+- `run_encoding_checks.sh` DD12a(i), three more after the parse fix (r1land's
+  own tree and binary read 0 failed on the same slice, so all are C3's): the
+  pair arm's re-search guards and back-off carry the pick offset K
+  (normalized, like the memchr lines); byte and utf8 may take DIFFERENT scan
+  forms (utf8's NONE picks the rightmost position, which can be a cube where
+  byte's argmin is an exact byte) — excised like a REQ_WHY split, each side
+  held to its stamp (a cube scan position must carry the pair arm, and scan
+  only its two members); and the prior-keyed prefilter-form bucket admits
+  C3's reverse orientation (byte `offset-set`, utf8 `run-pinned`:
+  `(frank)|fred`'s run became `fr[ae]`, the model's offsets stopped testing
+  the whole run, and the run rows' identity clause holds only under utf8's
+  rightmost pick), checked before the data-only K50 bar. 11 -> 13 pairs.
 - `run_prechecks.sh`: `[3.1w]` now asserts `REQ_WHY "none"` iff REQ_BYTE AND
   REQ_RUN are "none"; `[3.1b]`/`[3.6b]` check a pair scan position on both
   members (`run_scan_members`); literals moved: `(?i)abc` REQ_RUN

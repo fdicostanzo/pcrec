@@ -560,8 +560,10 @@ REQRUN0_MEMCHR_RE = re.compile(r'^(\s*const void \*q = memchr\(subject \+ pos), 
 REQRUNK_MEMCHR_RE = re.compile(r'^(\s*const void \*q = memchr\(subject \+ pos) \+ \d+, (\d+), n - pos - \d+\);$')
 REQRUN0_CAND_RE = re.compile(r'^(\s*cand = \(size_t\)\(\(const unsigned char \*\)q - subject\));$')
 REQRUNK_CAND_RE = re.compile(r'^(\s*cand = \(size_t\)\(\(const unsigned char \*\)q - subject\)) - \d+;$')
+PAIR_GUARD_RE = re.compile(r'^(\s*if \(fresh \|\| h[ab] < pos)(?: \+ \d+)?\) \{$')
+PAIR_BACKOFF_RE = re.compile(r'^\s*cand -= \d+;$')
 REQBYTE_STAMP_RE = re.compile(r'^(#define RX_REQ_BYTE ")\d+(")$')
-REQRUN_STAMP_RE = re.compile(r'^(#define RX_REQ_RUN "[0-9a-f]+@)\d+(")$')
+REQRUN_STAMP_RE = re.compile(r'^(#define RX_REQ_RUN "[0-9a-f]+@)\d+((?:/[0-9a-f]+)?")$')
 REQBYTE_STAMP_VAL_RE = re.compile(r'^#define RX_REQ_BYTE "([^"]*)"$', re.M)
 REQRUN_MEMCHR_VAL_RE = re.compile(r'memchr\(subject \+ pos(?: \+ \d+)?, (\d+),')
 REQRUN_FN_BODY_RE = re.compile(r'^static inline size_t rx_reqrun(?:_whole)?\(.*?^}$', re.M | re.S)
@@ -611,9 +613,18 @@ FINDINGS_STAMP_VAL_RE = re.compile(r'^#define RX_FINDINGS "([^"]*)"$', re.M)
 # reads a prior-driven form (`run-pinned*` / `memchr*`), the utf8 side an
 # `offset-set*` form, and (4) the two sides' FINDINGS stamps say the prior is
 # what differs (a real table under byte, `none` under utf8).
+# [OPT-LITSCAN] S4 C3 (abi 59) adds the REVERSE direction: a caseless or
+# one-bit hull position joins a run (`(frank)|fred`'s run is `fr[ae]`), the
+# model's offset set no longer tests the whole run, and the run rows' identity
+# clause (scan = the pin's picked member) then holds under utf8's NONE
+# (rightmost, `r` at 1 = the model's scan) and fails under byte's argmin (`f`
+# at 0): byte `offset-set*`, utf8 `run-pinned*`. Same selection, same prior,
+# same stamps; (3) admits either orientation. Checked BEFORE the data-only bar,
+# since such a pair can differ only in data once the run block is excised.
 PF_BYTE_RE = re.compile(r'^(?:run-pinned|memchr)(?:-bounded)?$')
 PF_UTF8_RE = re.compile(r'^offset-set(?:-bounded)?$')
 PRIOR_FORM_STAMPS = ('DFA_PREFILTER', 'DFA_PREFILTER_OFFSETS')
+RUNPIN_RE = re.compile(r'^run-pinned(?:-bounded)?$')
 
 def prior_form(tb, tu, moved):
     if not moved or any(k not in PRIOR_FORM_STAMPS for k in moved):
@@ -624,7 +635,8 @@ def prior_form(tb, tu, moved):
         return False
     pb = (a.get('DFA_PREFILTER') or '').strip('"')
     pu = (b.get('DFA_PREFILTER') or '').strip('"')
-    return bool(PF_BYTE_RE.match(pb) and PF_UTF8_RE.match(pu))
+    return bool((PF_BYTE_RE.match(pb) and PF_UTF8_RE.match(pu)) or
+                (PF_UTF8_RE.match(pb) and RUNPIN_RE.match(pu)))
 REQRUN_BLOCK_RE = re.compile(r'^\s*if \(rx_reqrun(?:_whole)?\(subject, subject_length, search_from\) >= subject_length\) return 0;$', re.M)
 ENDWIN_STAMP_VAL_RE = re.compile(r'^#define RX_END_WINDOW "([^"]*)"$', re.M)
 REQRUN_STAMP_VAL_RE = re.compile(r'^#define RX_REQ_RUN "([^"]*)"$', re.M)
@@ -844,6 +856,19 @@ def widens_under_utf8(pat):
         i += 1
     return False
 
+def pick_form(text):
+    """'pair' when the stamped run pick sits on a cube position (C3's pair
+    arm), 'exact' on a byte position, None with no run."""
+    m = REQRUN_STAMP_VAL_RE.search(text)
+    if not m or '@' not in m.group(1):
+        return None
+    st, _, mask = m.group(1).partition('/')
+    k = int(st.split('@')[1])
+    if mask and 2 * k + 2 <= len(mask) and int(mask[2 * k:2 * k + 2], 16) != 0xff:
+        return 'pair'
+    return 'exact'
+
+
 def excise(text, label, drop_run=False):
     lines = text.splitlines(keepends=True)
     counts = {'next_pos': 0, 'valid_upto': 0, 'utf_check_stamp': 0, 'back_step': 0, 'span_match': 0,
@@ -1041,6 +1066,16 @@ def excise(text, label, drop_run=False):
                 counts['req_pick'] += 1
                 i += 1
                 continue
+            # C3's pair arm: the re-search guards and the candidate's back-off
+            # carry the same offset K as the two memchr lines above
+            mf = PAIR_GUARD_RE.match(ln)
+            if mf:
+                out.append("%s + K) {\n" % mf.group(1))
+                i += 1
+                continue
+            if PAIR_BACKOFF_RE.match(ln):     # absent at K = 0, so dropped, not normalized
+                i += 1
+                continue
             mc = REQRUN0_CAND_RE.match(ln) or REQRUNK_CAND_RE.match(ln)
             if mc:
                 out.append("%s - K;\n" % mc.group(1))
@@ -1178,6 +1213,17 @@ def main():
             tb, tu = r
             wbm, wum = REQWHY_STAMP_VAL_RE.search(tb), REQWHY_STAMP_VAL_RE.search(tu)
             drop_run = bool(wbm and wum and wbm.group(1) != wum.group(1))
+            # [OPT-LITSCAN] S4 C3 (abi 59): the run pick's position may be a
+            # two-member CUBE (`hex@k/mask`, mask byte at k != ff), searched by
+            # the PAIR ARM (two leapfrogged memchr streams, tuning.md §2.39)
+            # rather than one memchr. Which position the pick takes reads the
+            # byte-keyed prior (utf8's NONE takes the rightmost, which may be a
+            # cube where byte's argmin is an exact byte — `(frank)|fred`), so
+            # when the two sides' scan FORMS differ the run block is excised
+            # from both exactly as for a REQ_WHY split, counted the same way,
+            # and each side is held to its own stamp below.
+            if not drop_run and pick_form(tb) != pick_form(tu):
+                drop_run = True
             nb, cb = excise(tb, "byte#%d" % idx, drop_run)
             nu, cu = excise(tu, "utf8#%d" % idx, drop_run)
             npairs += 1
@@ -1237,6 +1283,10 @@ def main():
                         bad_sel.append("%s REQ_BYTE \"%s\" is not REQ_RUN \"%s\"'s member"
                                        % (side, rbyte, m.group(1)))
                 if pair is not None:
+                    bodies = REQRUN_FN_BODY_RE.findall(text)
+                    if bodies and not any('int fresh = 1;' in b for b in bodies):
+                        bad_sel.append("%s REQ_RUN \"%s\" stamps a cube scan position but no rx_reqrun body carries the pair arm"
+                                       % (side, m.group(1)))
                     if any(b not in pair for b in scanned):
                         bad_sel.append("%s pair arm scans %s, not REQ_RUN \"%s\"'s cube {%s}"
                                        % (side, ",".join(scanned), m.group(1),
@@ -1312,12 +1362,12 @@ def main():
                     # `diff_is_data_only` and manifests/k50_gate_refinement.txt.
                     ok_data, offender = diff_is_data_only(nb, nu)
                     moved = form_moved(tb, tu)
-                    if ok_data:
-                        ngate += 1
-                        gate_pats.append(pat)
-                    elif moved and pat not in k50rows and prior_form(tb, tu, moved):
+                    if moved and pat not in k50rows and prior_form(tb, tu, moved):
                         nprior += 1
                         prior_pats.append(pat)
+                    elif ok_data:
+                        ngate += 1
+                        gate_pats.append(pat)
                     elif moved:
                         # [K50] SECOND TIER: the wider alphabet moved a FORM
                         # SELECTION (axis B's prefilter, axis E's accept
@@ -1380,7 +1430,7 @@ else
     # [OPT-FREQPICK]'s offset-0 form) must agree with their own stamps on
     # every pair — independent of the chain below, so it can never be masked.
     PRIORFORM="$(grep -oE '^PRIORFORM=[0-9]+' "$WORKDIR/dd12ai.out" | cut -d= -f2)"
-    echo "  DD12a(i) prior-keyed prefilter-form pairs (byte prior -> run-pinned/memchr, utf8 NONE -> offset-set; declared by stamp): ${PRIORFORM:-?}"
+    echo "  DD12a(i) prior-keyed prefilter-form pairs (byte prior -> run-pinned/memchr and utf8 NONE -> offset-set, or (C3) byte offset-set and utf8 run-pinned; declared by stamp): ${PRIORFORM:-?}"
     SELECT_BAD="$(grep -oE '^SELECT_BAD=[0-9]+' "$WORKDIR/dd12ai.out" | cut -d= -f2)"
     if [ "${SELECT_BAD:-missing}" != 0 ]; then
         bad "DD12a(i) ${SELECT_BAD:-an unknown number of} pair(s) carry an encoding-keyed selection ([OPT-ENDWIN] clamp / [OPT-FREQPICK] member pick / [OPT-PRECHECK-ADMIT] dominance) that disagrees with its own stamp, or an END_WINDOW asymmetry that is not the utf8 decline: $(grep '^FINDING .*encoding-keyed selection' "$WORKDIR/dd12ai.out" | head -1)"
