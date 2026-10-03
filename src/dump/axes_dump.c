@@ -720,10 +720,24 @@ static void emit_predicate_axes(StrBuf *sb)
         PredAxis p = { "req-run", NULL, "RX_REQ_RUN", "", 0, NULL, 0, NULL, NULL, NULL };
         emit_pred_row(sb, &p, 1, "run", "",
                      PCREC_NO_REQ_RUN, 0, "",
-                     "per artifact, both engines: every match of the pattern must contain a RUN of two or more contiguous literal bytes (the same bottom-up walk as req-byte with a second accumulator — a concatenation joins the left factor's guaranteed suffix to the right factor's guaranteed prefix, an alternation keeps only its branches' common prefix and suffix, nothing is joined across a repeat's iterations), so one memchr for the run's rarest member plus one constant-length memcmp per hit answers NOMATCH for the whole call where the byte alone could not; the stamp carries the run's bytes in lowercase hex and the scanned member's index");
+                     "per artifact, both engines: every match of the pattern must contain a RUN of contiguous positions carrying at least 16 bits of information, each position a literal byte or (req-run-fold) a two-member cube such as a caseless letter (the same bottom-up walk as req-byte with a second accumulator — a concatenation joins the left factor's guaranteed suffix to the right factor's guaranteed prefix, an alternation keeps only its branches' common prefix and suffix, nothing is joined across a repeat's iterations), so one memchr for the run's rarest member plus one run compare per hit answers NOMATCH for the whole call where the byte alone could not; the stamp carries the run's bytes in lowercase hex and the scanned member's index");
         emit_pred_row(sb, &p, 2, "none", "none",
                      0, 0, "",
                      "always (fallback) — no run of two or more bytes is necessary (a single literal between non-literals, a caselessly folded literal, an alternation with no common affix), or either this axis's deny flag or -fno-req-byte's");
+    }
+    /* [OPT-LITSCAN] S4 C3 req-run-fold — §2.39. The necessary run's CUBE
+     * positions (src/facts/req.c): a FACT-LEVEL deny, so its activity record
+     * is `RX_REQ_RUN`'s `/mask` suffix, which only a masked run carries;
+     * stamp_value empty for that reason (the stamp holds the run, not a
+     * token). */
+    {
+        PredAxis p = { "req-run-fold", NULL, "RX_REQ_RUN", "", 0, NULL, 0, NULL, NULL, NULL };
+        emit_pred_row(sb, &p, 1, "cube", "",
+                     PCREC_NO_REQ_RUN_FOLD, 0, "",
+                     "per necessary-run position, both engines: a class that is one two-member cube (a caseless letter [Ss], [jk], an alternation's one-bit hull fr[ae]) joins the run as a masked position; runs are ranked by information (popcount of each position's mask, 8 per byte, 7 per pair), an alternation's common head and tail are the cube hull of its branches, and the pre-check compares a masked run masked and scans a two-member position as two memchr streams; the stamp's run carries a /mask suffix");
+        emit_pred_row(sb, &p, 2, "exact", "",
+                     0, 0, "",
+                     "always (fallback) — single bytes only, the pre-row walk, ranked by length; the deny flag");
     }
     /* [K50] startpos-guard — §2.23. A CONTRACT AXIS, NOT ANSWER-IDENTICAL:
      * each row describes a real semantics for a mid-character caller
