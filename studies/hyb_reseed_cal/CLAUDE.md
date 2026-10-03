@@ -24,6 +24,10 @@ and `docs/dev/reseed/clamped.md`.
 - `bench.sh`, `dbl.sh`, `init.sh`, `modes.sh` — lane reseed's twin
   explorations (block sizes, doubling/caps, first budget, gap-rule modes),
   kept as they ran, paths parameterized.
+- `shape/` — lane xcalldes's O-81 slow-cell attribution probes (2026-10-03):
+  short-search/match/find-all driver, counting driver, the F1/F2/F3 emitted-
+  form rewriters, bench-subject regeneration. Backs `docs/design/xcall.md`.
+  See its own CLAUDE.md.
 - `results/` — the raw outputs this lane's re-runs produced
   (`crossover_2026-09-30.txt`, `timing_2026-09-30.md`,
   `clamped_2026-09-30.md`), each with its date, box and load.
