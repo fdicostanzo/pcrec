@@ -2,7 +2,7 @@
 
 All notable changes to pcrec are recorded here. Format loosely follows
 [Keep a Changelog](https://keepachangelog.com/). Tags are `v<version>`
-(the first is `v0.1.0-beta`).
+(the first is `v0.1.0-beta`, the current `v0.2.0-beta`).
 
 `PCREC_VERSION` (`lib/pcrec.h`) is the product version this file tracks —
 independent of `abi` (`docs/spec/match_api.md` §6), the emitted-artifact
@@ -11,56 +11,123 @@ scaffolding version, which changes far more often than a release does. See
 
 ## [Unreleased]
 
-### Added
+## [0.2.0-beta] — 2026-10-03
 
-- Three whole-subject PRE-CHECKS, each derived above either engine and each
-  its own `-f`/`-fno-` axis (`docs/spec/tuning.md` §2.25–§2.27). They change
-  no answer; they remove work a search would have done and thrown away, or
-  narrow the range of start positions it has to try.
-  - `-fno-vm-anchor-bound` — a VM-routed pattern whose every alternative
-    begins with `^`/`\A` or with `\G` can only match at one start position,
-    so its search loop stops after one attempt. The DFA route has bounded
-    its attempt loop on this fact since [M6.2]; both engines now read one
-    predicate. Stamp `<PREFIX>_VM_START`.
-  - `-fno-end-window` — a pattern whose every alternative ends in `$`/`\Z`/
-    `\z` outside multiline, with a finite maximum width, can only be matched
-    by a string ending at the subject's end, so a search scans only the tail.
-    Stamp `<PREFIX>_END_WINDOW`.
-  - `-fno-req-byte` — where every match must contain some literal byte, a
-    subject without that byte is rejected in one `memchr` pass. PCRE2 records
-    the same fact as `PCRE2_INFO_LASTCODEUNIT`. Stamp `<PREFIX>_REQ_BYTE`.
-- `-fno-req-run` — the same fact at WORD grain
-  (`docs/spec/tuning.md` §2.28): where every match must contain a RUN of two
-  or more contiguous literal bytes, the search scans for the run's rarest
-  member and compares the whole run at each hit, so a subject containing the
-  byte but not the run is rejected in one pass where the byte alone could not.
-  `-fno-req-byte` denies this with it; denying this alone leaves the one-byte
-  check standing. Stamp `<PREFIX>_REQ_RUN`.
+The second beta. Roughly 1,100 commits since `v0.1.0-beta`: two new feature
+modules (`vars`, `ucp`), a UTF-8 validity contract, a findings-driven
+rate-table mechanism, a composed class-matcher kit that makes the large
+Unicode classes small, and a run of optimizations that each remove work a
+search would have thrown away. `rx_info.abi` moved 28 → 55 across the
+interval — every step is recorded in `docs/spec/match_api.md` §6; the
+version below is the TOOL's, independent of it (D115). Still beta, still
+pre-1.0; streaming input (M3) is not implemented.
+
+### Added — new modules and capabilities
+
+- **Module `vars`: caller variables in a pattern** ([VAR], abi 32;
+  `docs/spec/vars.md`). `^${prefix}-[0-9]+$` compiles once and the caller
+  supplies `prefix`'s bytes per call; a variable's bytes always match as
+  themselves, never as pattern syntax. Enable with `--features vars`; the
+  five `${name op word}` operators; `rx_search` takes `vars`/`nvars`.
+- **Module `ucp`: Unicode semantics for `\d \s \w` and the POSIX classes**
+  ([UCP] U0–U2; `docs/spec/cli.md`). `--ucp`, `(*UCP)`, `(*UTF)`/`(*UTF8)`
+  and the `u` flag; implied by `-e utf8`, and Latin-1 under `byte`. `\b`/`\B`
+  are now a context node, so UCP `\b` stays on the DFA where it can. `(?a…)`
+  is real. Wide sets under UCP `\b` are refused by name.
+- **UTF-8 validity contract** ([UTF-VALID], abi 50). `-futf-check` (the
+  `whole` contract PCRE2_UTF has; `=extent` as the alternative), the typed
+  error `PCREC_ERR_UTF` (-9), a `<prefix>_valid_upto` entry in every artifact
+  built on one validator, and `-fstartpos-guard=align`. The default start now
+  skips leading continuation bytes the way libpcre2 does (K73).
+- **Findings: pcrec reads measured facts about your subjects** ([FINDINGS],
+  `docs/spec/findings.md`). `analysis` bundles in `.rxt` files, `--analysis=NAME`
+  (fill-only), `--list-analyses`, `--list-analysis`, the shipped `log` and
+  `weblog` bundles, `cpfreq` code-point frequencies, and `build/pcrec-analyze`,
+  a separate zero-dependency binary that counts an exemplar file into a bundle.
+  Findings change speed only — never an answer, never a give-up.
+- **`--emit-facts`**: prints the pattern-facts record (necessary byte/run/set,
+  start anchor, end window — each fact's status and why a pass asked for it)
+  as TAB-separated sections (`docs/spec/facts_listing.md`); `src/facts/`
+  computes each fact once, lazily, behind one accessor ([PATFACTS]).
+- **`--fast-or-fail`** (bit 41): refuse an artifact over a size limit rather
+  than ship a slower one that fits — denies every size-cap retry that costs
+  run time ([OPT-DIAL]/[PFDROP], `docs/spec/limits.md`).
+- **Large classes compile, and compile small** ([CLS-TREE] S1–S4,
+  [OPT-CLSPACK]). Code-point classes are composed per section from a kit of
+  representations chosen by one first-match table, on both engines; a shared
+  atom table serves artifacts with many byte classes. The VM refusals for
+  large classes (K53-family, K55) are retired. `-fno-cls-kit`, `-fno-cls-pack`.
+- **The size-cap ladder gained a last rung** ([PFDROP], D135): dropping the VM
+  hybrid's prefilter, so patterns such as `(\p{Xwd})` under `-e utf8` now
+  compile. The ladder is one first-match table.
+- `PCREC_BIT(n)` in `lib/pcrec.h`; the option-flag constants are spelled
+  through it. Bits 28–41 are new axes (below).
+
+### Added — optimizations (each its own `-f`/`-fno-` axis, `docs/spec/tuning.md`)
+
+None changes an answer. Each removes work a search would have done and
+discarded, or narrows the start positions it must try.
+
+- Whole-subject pre-checks ([OPTLOOP.1]): `-fno-vm-anchor-bound` (a VM pattern
+  that can only match at one start stops after one attempt), `-fno-end-window`
+  (a pattern anchored at the end scans only the tail), `-fno-req-byte` (a
+  subject lacking a byte every match must contain is rejected in one `memchr`
+  pass) and `-fno-req-run` (the same at run grain). The byte chosen is the one a
+  subject is least likely to contain, by a shipped byte-frequency prior;
+  admission and give-up behaviour were corrected along the way (K64–K66).
+- `-fno-lit-run` — a VM literal run becomes one compare ([OPT-LITSCAN] S2a);
+  `-fno-run-prefilter` — the run-pinned prefilter rows ([OPT-LITSCAN] S1).
+- `-fno-hyb-reseed` — the VM hybrid re-seeds from its prefilter per call, chosen
+  by one first-match table ([OPT-HYB-RESEED]); fixes the lookbehind-trio
+  slowdown on large subjects.
+- `-fno-ctx-node` — the context-node form of `\b`/`\B` ([UCP] U2).
+- Compile time: `\p{L}+` under `-e utf8` went from ~78 s to ~0.4 s CPU (K67:
+  a clustered hash, loops on no epsilon cycle opening no context, and
+  build+minimize memoized across retry attempts).
 
 ### Changed
 
-- Which member of the necessary set `-fno-req-byte`'s pre-check tests is now
-  the one a subject is least likely to contain, chosen by pcrec's shipped
-  static byte-frequency prior rather than by PCRE2's rightmost rule, which
-  survives as the tiebreak. Under any encoding the prior is not keyed to the
-  rightmost rule is the whole answer, unchanged. No axis and no answer moves:
-  every member is a byte every match must contain.
-- `rx_info.abi` 29 → 30: every artifact of both engines carries one more stamp
-  line (`<PREFIX>_REQ_RUN`), the run analysis's own population carries a scan
-  loop in place of the one-byte `memchr`, and the byte that `memchr` tests
-  moves on part of the rest. No struct offset moves and no `rx_info` member
-  changes.
-- `lib/pcrec.h`'s option-flag constants are spelled `1ull << N` rather than
-  `1u << N`. No value moved and `pcrec_options.flags` has always been
-  `uint64_t`; bit 31 is the last bit an `unsigned` constant can name.
-- `lib/pcrec.h`'s option-flag constants are respelled again, through a new
-  public macro `#define PCREC_BIT(n) (1ull << (n))`, every member now
-  `PCREC_BIT(N)` rather than a bare `1ull << N`. Still no value moved.
+- `rx_info.abi` 28 → 55. Every artifact's scaffolding moved (new stamps, the
+  pre-check and class-form emitters, the `<prefix>_valid_upto` entry); no
+  caller-visible answer moved except where a fix below says so.
+- Generated output no longer depends on the length of `-p`: the emitters see a
+  placeholder prefix that is rendered onto the finished text, so no
+  size-predicated selection reads it (K79). The shared ABI block's include
+  guard carries the abi, and a translation unit mixing artifacts of different
+  abi gets an `#error` instead of silently using the first block (K80).
+- The find-all protocol resumes after a non-empty match at
+  `next_pos(end - 1)` — a protocol and contract change, no emitter change
+  (K75, `docs/spec/match_api.md` §3.1).
+- `rx_info.flags` no longer keeps the deny bits for the three pre-check axes
+  set on every artifact (K68).
+- A DFA artifact with dead groups leaves `caps` untouched on a no-match; the
+  `PCREC_UNSET` fill moved to each success path (K78).
+- `--emit-ir`/`--list-*` surfaces are TAB-separated tables with named
+  `#section`s (`docs/spec/table_contract.md`); `--emit-facts` joins them.
 
-- `rx_info.abi` 28 → 29: every artifact of both engines carries two more
-  stamp lines, every VM artifact a third, and the three analyses' own
-  populations carry the emitted bound, clamp and `memchr` those stamps name.
-  No struct offset moves and no `rx_info` member changes.
+### Fixed
+
+- K64–K66: pre-check choices decided whether a no-DFA-front VM call answered
+  or gave up.
+- K69: call nullability disagreed between two definitions on `A_CALL`.
+- K70: `(?r)` was a silent no-op under `-e utf8`; now refused.
+- K72: `\h`/`\v` under `-e utf8` are PCRE2_UTF's lists, not the byte sets.
+- K73, K75: ill-formed UTF-8 at the start of a search and in the find-all loop.
+- K76: a `.rxt` file whose first block is `pattern-esc` was read as head-bearing.
+- K34: closed — the necessary-run pre-check proves the `(a|(?1)a)` family.
+- A DFA artifact's emit-time diagnostics, allocation-failure handling (K60) and
+  several test-infrastructure defects found by the checks added in this
+  interval.
+
+### Known gaps
+
+- Streaming input (milestone M3) is not implemented.
+- K74 (open): `$` and `\B` at an ill-formed subject end diverge from libpcre2
+  10.46 under `-e utf8`.
+- K71 (open, diagnostic text only): `RX_ENGINE_WHY` can name one construct's
+  kind at another's offset.
+- Compatibility against PCRE2 stays tiered (`docs/dev/decisions.md` D26,
+  `docs/pcre2_compliance.md`).
 
 ## [0.1.0-beta] — 2026-09-22
 

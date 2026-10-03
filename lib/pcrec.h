@@ -15,7 +15,7 @@
  * `pcrec --version` prints it; the emitted artifact's provenance line
  * stamps it beside the abi digit (docs/spec/match_api.md §6). Semver;
  * dropping the `-beta` suffix later is a one-line change. */
-#define PCREC_VERSION "0.1.0-beta"
+#define PCREC_VERSION "0.2.0-beta"
 
 /* [M5-SEAM] (D58, 2026-08-18) THE ENCODING NAMESPACE. Exactly one encoding
  * per COMPILE CALL — a `pcrec_options` field, never process- or file-global,
