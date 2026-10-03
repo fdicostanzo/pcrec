@@ -448,155 +448,469 @@ the listing).
 
 ### 2.3 S4(a): the caseless necessary run (the one measured customer)
 
-#### 2.3.1 The fact: `src/facts/req.c` widened to cube runs, additively
+**[r1] This section was rewritten against the light D6 panel
+(`docs/dev/reviews/2026-10-03-r1-litscan-s4-c3.md`).** Each change carries
+its finding's tag; §R1 is the disposition table. The round-0 text is at
+`26152329` for comparison. Two changes go beyond the panel's fixes, and §R1
+names them as SHAPE changes: the run's position domain (§2.3.1) and the
+dfa_pfs[] input population the single ranking moves (§2.3.5).
 
-- The walk is the core fact. Each subtree's `RbRuns` gains a second triple:
-  `cbest`/`chead`/`ctail`, the best cube run with per-position (T, K).
-- Cube runs join across a concatenation exactly as exact runs do. They obey
-  the same declines, each with its own reason (`req.c` header; reqpos_2b
-  §2.4):
-  - no join across a repeat;
-  - an alternation's common prefix and suffix only;
-  - no lookaround descent.
-- A position joins a cube run if its set is one cube. An exact position is
-  the `K = 0xFF` case: there is no separate path.
+#### 2.3.1 The fact: `src/facts/req.c`, one triple over (T, K) positions
 
-**The ranking is information, not length.**
-- Cube runs rank by `Σ popcount(K_i)`. Ties go to the longer run, then the
-  leftmost: today's tie order.
-- For exact runs this is `8 × len`. So the exact triple's ordering is
-  unchanged, and the exact triple keeps its own `best`.
-- A don't-care position (`K = 0`) can lengthen a run without making it win.
-  That is the reason length cannot be the ranking.
+**[r1 C5] One triple, one key.** The round-0 walk carried a second triple
+(`cbest`/`chead`/`ctail`) beside the exact one, each with its own declines.
+That is gone:
+- `RbRun` (`facts_derive.h:70`) gains `mask[PCREC_MAX_REQ_RUN_SCAN]`, the K
+  of each stored position. `bytes` holds T. An exact position is
+  `K = 0xFF`, and there is no other kind of exact.
+- `RbRuns` keeps its one `best`/`head`/`tail`/`all`. Every helper copies
+  `mask` beside `bytes` (`rn_app`, `rn_pre`). `rr_byte(b)` becomes
+  `rr_pos(T, K)`.
+- The declines are unchanged and are stated once (`req.c` header): no join
+  across a repeat, no lookaround descent, and the common affixes of an
+  alternation (now over (T, K), below).
 
-**Additive admission (Q5).** The derived `req_run` fact takes the EXACT run
-whenever one of length >= 2 exists: today's answer, today's stamp, today's
-bytes. It falls to the cube run only where the exact run declines, and then
-only if three conditions hold:
-- the cube run has at least three positions (Q8);
-- it has at least one member scannable by `memchr`, i.e. `|set| <= 2`;
-- `-fno-req-run-fold` (bit 44) is not set.
+**[r1, SHAPE] The position domain: a byte or a two-member cube.** A class
+joins a run iff it is one cube of at most `PCREC_MAX_REQ_RUN_POS_SET`
+members (2, a new `limits.def` row, §2.3.6). So `popcount(K)` is 8 or 7 at
+every run position.
+- The cube comes from C0's `pcrec_cls_cube` (P2, `src/core/cpset.c`). A
+  `K = 0xFF` answer is the singleton, so `pcrec_cls_single`'s set arm reads
+  the same call. The set's arm is unchanged: only a singleton is a set
+  member.
+- **Why the domain is narrower than round 0's "any cube".** Round 0
+  admitted any cube, including `K = 0` (`(?s).`) and `[0-7]`. It then
+  needed a second predicate at admission ("at least one member with
+  `|set| <= 2`"), and a run whose best-ranked form had no scannable member
+  would have declined. That decline would have LOST exact runs: an exact
+  `ab` beside a 25-bit `[0-7]{5}` run. With the domain at two members,
+  every position is a scan candidate. The scannability predicate
+  disappears, and no ranking can pick an unscannable run.
+- What it costs: non-letter cubes of four or more members and don't-care
+  positions do not join a run. `wordfold_census.md` §2 found them rare.
+  They remain C2's business (the VM run, `pcrec_lit_run`, any cube), which
+  is a different fact with a different consumer.
+- **Under `-fno-req-run-fold` (bit 44) the bound is 1.** That is the
+  fact-level deny (D126 Q3). The walk is then exactly today's: singletons
+  only, and the hull below requires `K' = 0xFF`, which is byte equality.
 
-So the movers are exactly the patterns with no exact run and an admissible
-cube run. That is a biconditional manifest, S2a's shape (§5.1). The ranking
-between an exact 2-byte run and a 42-bit caseless run is C6's question
-(Q7), not S4's.
+**[r1 S1] The alternation's common head and tail are the CUBE HULL.** Round
+0 compared T and kept the left branch's mask. That is order-dependent and
+unsound: `(?:S(?i:ab)|(?i:sab))` claimed an exact `S` at position 0, while
+`sab` matches. Position by position, for branches `a` and `b`:
+
+```
+K' = Ka & Kb & ~(Ta ^ Tb)        T' = Ta & K'
+```
+
+- `cube(T', K')` is the smallest cube holding both positions' member sets,
+  so every byte either branch can put there is in it. Each branch's head
+  starts where the alternation starts (each tail ends where it ends), so
+  position `i` holds a byte of branch `a`'s set or of branch `b`'s set, and
+  the hull holds both. The formula is symmetric in `a` and `b`, so the
+  branch order cannot change the answer.
+- `rn_common_head` and `rn_common_tail` continue while the hull passes the
+  position-domain predicate above, and stop at the first position that
+  fails. Stopping is a shorter claim, never an unsound one.
+- On exact branches the hull is NEW information where they differ in one
+  bit: `frank|fred` → `fr[ae]`, `(?:😀|😁)` → `F0 9F 98 [80|81]`. The census (§2.3.7) counts
+  these. They are general (no caseless special case), and they are movers.
+- `reqcube.rxt` carries both counterexamples in both branch orders, head
+  and tail (§5.1).
+
+**[r1 C4/C5] The ranking: one key, information.**
+`rn_longer` becomes `rn_better(a, b) = info(b) > info(a) ? b : a`, where
+`info = Σ popcount(K_i)`.
+- An exact run's information is `8 × len`. So among exact runs the order and
+  the tie rule (`a` on a tie: the earlier candidate) are exactly today's.
+- **Exact-only artifacts are byte-identical.** Wherever the winning run is
+  exact, it is today's run, byte for byte: 0 counter-examples in 603
+  (corpus 505, bench 98), §2.3.7 class B.
+- `info` is `log2(256/|set|)` summed. That is `findings/design.md` §6.2's
+  per-position cardinality model, so the walk's key and the pick's NONE
+  answer are the same model (D126 Q4).
+
+**[r1 C4] One floor, one constant.** The derived admission at publication
+(`facts.c` `pf_derive_req_walk`, today `run.n >= 2`) becomes
+`info(run) >= PCREC_MIN_REQ_RUN_BITS` (16, a new `limits.def` row).
+- 16 bits is two exact bytes, so every exact run admitted today is admitted
+  (`n >= 2` ⇔ `8n >= 16`).
+- Three caseless letters (21) pass. Two caseless letters (14) and a
+  caseless letter beside an exact byte (15) do not. Round 0's "cube runs need
+  three positions" (Q8) was a second floor spelled in positions; it is
+  subsumed, since a position is worth 7 or 8 bits.
+- A run that passes the floor has at least two positions. So every reader's
+  `len >= 2` / `whole_len >= 2` still means "a run shipped". No reader
+  re-spells the floor, and `facts.h`'s "len is never 1" stays true.
+- **Publication trims nothing.** With no `K = 0` positions in the domain,
+  round 0's question of trimming don't-care edges does not arise.
+
+**This OVERTURNS round 0's additive admission (Q5),** as the panel's C4
+asked. An exact run no longer shadows a better cube run:
+`(?i)select.*from 1=1` publishes `FROM 1=1` (60 bits) rather than today's
+` 1=1` (32 bits), and `(?i)union select 1,2` publishes its whole
+16-position run, windowed, rather than ` 1,2`.
+The price is a mover population among artifacts that carry an exact run
+today (§2.3.7 class C), which round 0's biconditional avoided by
+construction.
 
 #### 2.3.2 The record
 
-`ReqRun` (`src/facts/facts.h:64`) gains:
+**[r1 C5]** `ReqRun` (`src/facts/facts.h:64`) gains two arrays and no
+flags:
 
 ```c
-    unsigned char mask[PCREC_MAX_REQ_RUN_EMIT];        /* K per position; all 0xFF when exact */
-    unsigned char mask_whole[PCREC_MAX_REQ_RUN_SCAN];  /* [K66]'s whole run's K */
-    int pair;        /* -1, or the second byte when the scan member is a pair */
-    bool masked;     /* any mask byte != 0xFF */
+    unsigned char mask[PCREC_MAX_REQ_RUN_EMIT];        /* K of each window position; 0xFF exact */
+    unsigned char whole_mask[PCREC_MAX_REQ_RUN_SCAN];  /* [K66]'s whole run's K */
 ```
 
-- `bytes` holds T.
-- For an exact run every new field is inert (`mask` `0xFF`, `pair -1`,
-  `masked false`). Every existing reader can therefore keep reading `bytes`
-  and `len` unchanged.
-- The readers that cannot take a mask test `masked`. There are two:
-  `prefix_k.c`'s pin (§2.3.5) and G1's identity conjunct.
+- `bytes`/`whole` hold T. `mask == whole_mask + at`, the same derivation as
+  `bytes == whole + at`.
+- Round 0's `pair` and `masked` fields are dropped. They were derived
+  values stored beside their source:
+  - "the scan is a pair" is `mask[idx] != 0xFF`;
+  - "the run is masked" is one `static inline bool
+    pcrec_req_run_masked(const ReqRun *)` in `facts.h`, the one spelling
+    every reader calls.
+- For an exact run both arrays are all `0xFF`. A reader that reads only
+  `bytes`/`len` stays correct on every exact run.
 
-#### 2.3.3 The pick: the NONE answer, spelled once (D126 Q4)
+#### 2.3.3 The pick: the existing readers, generalized (D126 Q4)
 
-- **Which cube run:** the information ranking above. That is the per-position
-  cardinality model `findings/design.md` §6.2 names as `run-rarity`'s
-  obvious NONE answer, since `popcount(K) = log2(256/|set|)` for a cube.
-- On `union-select` it picks **`select`** (42 bits), over `union` (35) and
-  `from` (28).
-- When `[FINDINGS.B4]` lands, `pcrec_find_run_rarity` replaces this
-  ordering as the C6 reader, and the cardinality order stays its tiebreak
-  (findings design §2.6's tie rule).
-- **Which member to scan.** The candidates are the window's positions with
-  `|set| <= 2`. Cost is the prior's mass: one byte's ppm, or a pair's two
-  ppm summed. Lowest wins. Ties go to an exact member (one stream), then
-  the rightmost (the LASTCODEUNIT tradition, `rb_pick`'s tiebreak).
-- **The encoding gate.** The prior reads only under `byte`, behind the
-  accessor's own gate (D122 addendum 2 (3)). Under any other encoding the
-  scan member is the rightmost scannable one: `rb_pick`'s fallback, the
-  rule `reqrunenc_census.md` recommended for exact runs.
-- **The window.** A run longer than `PCREC_MAX_REQ_RUN_EMIT` (8) is cut to
-  the 8-position window containing the scan member with the most
-  information. That is today's "lowest-frequency window containing the scan
-  byte", read in bits.
-- **On `union-select` the pick is `select` on `c`.** That is O-55's
-  `ci_selectc` twin: **0.4389 ns/B against base 0.7178 (×1.64)**, still
-  behind re2's 0.319.
-- The bench-optimal `from`/`m` (0.2348) needs a subject-aware rate. That is
-  findings territory, and `from` is the deployment-wrong pick (WAF §3.2,
-  §5 Q2). Q6 asks the manager to accept the trade.
+**[r1 C1] There is no masked-only pick and no second window rule.** Round 0
+added a member rule with its own tie order ("exact first, then rightmost")
+beside `pcrec_find_run_scan_index`. That rule is withdrawn. The existing
+readers take (T, K) candidates:
 
-#### 2.3.4 The scan: a two-stream form in the run block
+| reader (`src/core/findings.c`) | today | r1 |
+|---|---|---|
+| `pcrec_find_run_scan_index(rate, T, K, n)` (findings.c:500) | PICK over bytes `[n-1 … 0]`, cost `rate[b]`, ties to the earliest (rightmost); NONE → rightmost | the same order and tie. Cost is the MASS of the position's member set: `rate[T]` for an exact position, `rate[T] + rate[T \| ~K]` for a pair (`pcrec_find_seq_mass` over the 1 or 2 members). NONE → rightmost, the PICK kind's one NONE answer |
+| `pcrec_find_run_window_start(rate, T, K, n, idx)` (findings.c:526) | MASS over each 8-byte window, ties leftmost | MASS over each 8-position window, summed member mass per position, ties leftmost. Under NONE that is cardinality, so a window with more exact positions wins; on an exact run every window ties, as today |
+| `pcrec_req_window` (req.c:489) | composes the two; copies `bytes` | the same; it also copies `mask` from `whole_mask + at` |
 
-`OfsTest` (`emit_dfa.c:331`) gains `run_mask` (NULL when exact) and
-`scan_pair` (-1 when the scan is one byte). `ofs_test_emit_fn`'s
-unreachable `else` arm (`emit_dfa.c:6032`) becomes the PAIR arm. It is
-reachable only through `req_run_tests`: `ofs_test_of`, which serves the
-prefilter rows, never builds a pair.
+- **One tie rule.** Round 0's "ties go to an exact member" is not a rule
+  any more. Under a rate it falls out of the cost: one stream's mass against
+  two summed. Under NONE the PICK answer is the positional rightmost, for
+  exact and masked runs alike. That is [OPT-REQRUN-ENC]'s rule. Under
+  `-e utf8` a run ending in a caseless character ends in a pair of
+  continuation bytes, so the rightmost rule lands there and never on the
+  character's lead byte. Round 0's "exact first" would have scanned the
+  lead byte, R13's shape again. Today the walk joins no such run past one
+  character (§2.3.7 item 4), so this is the rule's argument, not a counted
+  mover.
+- **Exact runs are byte-identical through both readers.** Every member has
+  mass `rate[b]` (or the NONE uniform constant), so the argmin, the tie and
+  the window are today's.
+- **The pair's cost model is DENSITY ONLY**, as today's exact cost is. The
+  second `memchr` stream's own per-byte cost is not modelled. O-55's twins
+  are the only measurement (the run on `c` against `m`), and the model is
+  revisited when `[FINDINGS.B4]`'s `run-rarity` replaces this reader as the
+  C6 reader (Q7). No new number enters: the pair's mass is the existing
+  MASS primitive (§2.3.6, C7).
+- **Which run** is the walk's (§2.3.1). On `union-select`
+  (`(?i)union.*?select.*?from`) it is `SELECT` (42 bits) over `UNION` (35)
+  and `FROM` (28), and the scan under the builtin prior is `c`'s pair: O-55's
+  `ci_selectc` twin, **0.4389 ns/B against base 0.7178 (×1.64)**, still
+  behind re2's 0.319. Q6 is unchanged.
 
-The pair arm is the leapfrog O-55 measured. It is restated against the
-block's own loop:
-- One pending hit per stream is held as an OFFSET.
-- Both streams are searched once before the loop.
-- A stream is re-searched only when its hit falls behind the cursor.
-- An exhausted stream parks at the end offset. The end offset is one past
-  the last hit at which the run still fits: `n - (maxk - k*)`.
-- The candidate is the smaller hit minus `k*`. The verify is the run
-  compare (row 1, masked).
-- [K27]'s `memchr(NULL, c, 0)` is closed by the loop guard, as in the
-  memchr arm.
-- Offsets are used rather than pointers, so no NULL pointer is ever compared
-  relationally.
+**[r1 S2a] `req_byte`: a run byte only from an EXACT scan member.**
+`pcrec_req_pick` (req.c:519) becomes:
 
-An exact scan member keeps today's `memchr` arm, with a masked verify. So a
-cube run that has a case-invariant member, such as `(?i)foo-bar`'s `-`, is
-one stream. That is the selection preference the `[WORD-FOLD]` row named.
+```c
+    if (run->len >= 2 && run->mask[run->idx] == 0xFF) return run->bytes[run->idx];
+    if (set->rightmost < 0) *why = PF_WHY_NONE;
+    return pcrec_find_set_pick(rate, set->bits, set->rightmost);
+```
 
-#### 2.3.5 Admission and the consumers: where the masked run reaches, and where it does not
+- Round 0 returned `bytes[idx]` whenever a run shipped. At a pair position
+  that is T, a byte not every match contains: `(?i:select)\d+x`'s stamp
+  would have read `T` (or `C`) where the analysis's answer is `x` (120).
+- **How `REQ_BYTE` relates to the emitted scan:**
+  - **(i) The run's scan member is exact, or no run shipped.** `REQ_BYTE` is
+    the byte the pre-check's `memchr` tests, as today. With a run, it is
+    `bytes[idx]` (§2.28's checkable pair, now conditional on
+    `mask[idx] == 0xFF`).
+  - **(ii) The run's scan member is a pair.** `REQ_BYTE` is the SET's pick,
+    or `"none"` when the set is empty (`union-select`). The run block scans
+    the pair (`REQ_RUN`'s `@idx` with its `/mask`).
+    - On the no-DFA-scan VM route, K65's whole-set test then memchr's
+      `REQ_BYTE` too (§2.3.5).
+    - On every other route the artifact tests no single byte, and
+      `REQ_BYTE` names the analysis. That is §2.27's existing "names the
+      ANALYSIS, not the emission" sentence, gaining this third case.
+  - Every `REQ_BYTE` value is a member of `req_set`, or `"none"`. §5.4
+    checks it from `--emit-facts`. Round 0 broke this invariant.
+- **Not built: a one-byte `memchr` of the set pick in front of the run
+  block on DFA routes.** It would make case (ii) emit what `REQ_BYTE`
+  names on every route. No cell asks for it (D77). Its trigger is a DFA-route
+  pair-scan mover whose set pick is rare and absent on a measured subject.
 
-**`req_admit` (P7, `emit_dfa.c:6374`).** Its first conjunct becomes "no
-necessary byte AND no masked run" → `NONE`.
+#### 2.3.4 The scan: the pair arm in the one block emitter
+
+`OfsTest` (`emit_dfa.c:331`) gains `run_mask`: NULL when the run is exact,
+otherwise the window's or the whole run's mask. Round 0's `scan_pair` field
+is dropped: the second member is `scan_byte | (~run_mask[scan_k] & 0xFF)`,
+read where it is emitted.
+
+**[r1 S4] Both `ofs_test_run` sites carry the mask.** `req_run_tests`
+(`emit_dfa.c:991`) builds two tests, and each gets its own mask:
+- `t[0]`, the window: `ofs_test_run(&t[0], r->bytes, r->mask, r->len, r->idx)`;
+- `t[1]`, [K66]'s whole run on the no-DFA-scan route:
+  `ofs_test_run(&t[1], r->whole, r->whole_mask, r->whole_len, r->at + r->idx)`.
+
+A whole-run test built without its mask is an EXACT compare of T. It
+deletes every match whose letters are not all upper case, on exactly the
+route where the pre-check is the only proof. S448 (§5.5) plants that.
+
+`ofs_test_emit_fn`'s unreachable `else` arm (`emit_dfa.c:6032`) becomes the
+PAIR arm. It is reached only when `run_mask[scan_k] != 0xFF`.
+`ofs_test_of`, which builds the prefilter rows' tests, never sets
+`run_mask`: it is reached only through a pin, and a masked run has none
+(§2.3.5).
+
+**The pair arm** is O-55's leapfrog against the block's own loop. The
+streams are `a = T[k*]` and `b = T[k*] | ~K[k*]`, where `k*` is the scan
+offset.
+- Each stream holds one pending hit, as an OFFSET into the subject (never a
+  pointer, so no NULL pointer is ever compared relationally). Both are
+  searched once before the loop.
+- **[r1 S4] The re-search bound is the cursor's scan position.** At the top
+  of each iteration a stream is re-searched iff its hit is
+  `< pos + k*`. After a failed verify, `pos = cand + 1`, so the bound is
+  `cand + 1 + k*`.
+  - Round 0 wrote "falls behind the cursor", i.e. `< pos`. With `k* >= 1`
+    that keeps the hit that just produced `cand` (it sits at `cand + k*`,
+    which is `>= cand + 1`).
+  - The next candidate is then the same `cand`, and `pos` never advances: a
+    hang. S449 plants it. A watchdog-bounded `reqcube.rxt` cell is its
+    detector.
+- An exhausted stream parks at `n`. The candidate is `min(ha, hb) - k*`,
+  and the block's existing `cand + maxk >= n → return n` exit ends the
+  search, exactly as the `memchr` arm's does.
+- The verify is the run compare (C1's row table, masked).
+- [K27]'s `memchr(NULL, c, 0)` is closed by the loop guard
+  `pos + maxk < n`, as in the `memchr` arm: every search's length is
+  `n - pos - k* >= 1`.
+- **An exact scan member keeps today's `memchr` arm** with a masked verify.
+  So `(?i)foo-bar` scans `-` in one stream whenever the rate says `-` is
+  rarer than the cheapest pair, which is the selection the `[WORD-FOLD]` row
+  named. It is now a consequence of the cost, not a rule.
+
+#### 2.3.5 Admission and the consumers
+
+**`req_admit` (P7, `emit_dfa.c:6374`).** Its first conjunct changes from
+"`req_byte < 0`" to "`req_byte < 0` AND no run" → `NONE`, which says
+"nothing necessary". Today the two spellings are equivalent, because a
+shipped run's bytes are set members. They differ only on a masked run over
+an empty set, which is exactly the population that needs the change.
+- The two early returns that restate the old conjunct move with it.
+  `pcrec_emit_req_byte_check`'s `if (b < 0) return;` (`emit_dfa.c:1194`)
+  becomes `b < 0 && run->len < 2`. S265's anchor is re-verified there.
+  `req_run_tests`'s `pcrec_fact_req_byte(cx) < 0 ||` (`emit_dfa.c:998`) is
+  deleted: admission decides.
 - **G2** (one attempt) applies unchanged.
-- **G1** (dominated) can elide a masked run only through an EXACT scan
-  member equal to `dfa_cand_scan_byte`'s byte. A pair scan is never
-  dominated: no prefilter row scans a pair.
-- This is the one shared-decision change in S4. D124 item 3 asks what it
-  guarantees to each consumer:
-  - **DFA:** a pre-check is a check that does not run, or a proof of absence
-    in one pass. It changes no answer.
-  - **VM hybrid, and VM with no DFA scan:** the same. On the VM it can only
-    turn a step-budget give-up into a NOMATCH, by running fewer attempts,
-    and never the reverse. That is the K64/K65/K66 family's direction, and
-    the differential must classify these transitions (§5.1).
-- `pcrec_emit_req_byte_check` (`emit_dfa.c:810`), with `req_byte < 0` and a
-  masked run admitted, emits the run block's call and no byte `memchr`.
+- **G1** (`req_byte_dominated_by`, `emit_dfa.c:6352`) never elides a masked
+  run. Its first conjunct requires `cs->run_verified`, and
+  `ofs_test_verifies_run` (`emit_dfa.c:5810`) is false without a pin, and a
+  masked run has no pin (below). That is not a special case. G1 elides a run
+  pre-check only behind a scan that verifies the run, and no scan verifies a
+  masked run today.
+- **D124 item 3, what P7's change guarantees to each consumer:**
+  - **DFA, and the VM hybrid:** a pre-check is a check that does not run, or
+    a proof of absence in one pass. It moves no answer.
+  - **VM with no DFA scan:** it can only turn a step-budget give-up into a
+    NOMATCH, by running fewer attempts, never the reverse. That holds
+    because the run block is a sound necessary condition, and because K65's
+    second half still tests every set member the run does not prove
+    (`done[]`, below).
 
-**`prefix_k.c`'s pin.** It publishes `run_pinned` only when
-`!req_run.masked`. So the `run-pinned[-bounded]` rows of `dfa_pfs[]`
-(S1, bit 32) never see a masked run.
-- **The table's shape, its predicates, its emitters and every existing
-  selection are untouched.** That is the argument (Q4) that S4 does not
-  take D122 addendum 4 item 3's full panel.
-- A later step that lets a pinned masked run with an exact scan member
-  enter the prefilter, the offset preference, does take that panel. It is
-  named, not built.
+**[r1 S2b] K65's `done[]` marks only exact positions.** `emit_req_set_rest`
+(`emit_dfa.c:1127`) marks `done[whole[k]]` for every whole-run position
+today. It becomes:
 
-**[K66]'s whole run** on a VM route with no DFA scan carries `mask_whole`.
-The no-match proof stays a fact about the pattern.
+```c
+    if (r->len >= 2) {
+        for (k = 0; k < r->whole_len; k++)
+            if (r->whole_mask[k] == 0xFF) done[r->whole[k]] = true;
+    } else done[pcrec_fact_req_byte(cx)] = true;
+```
 
-**[K65]'s set** is unchanged. It is empty exactly when `req_byte` is -1,
-which is the case on every S4(a) mover.
+- At a pair position, T is not a byte the run check proved present (the
+  subject may hold the other member). Round 0 marked it, so a set member
+  equal to that T lost its `memchr`, and NOMATCH became a give-up.
+- **Witness:** `(x?)([a-z]+)+S\d(?i:select)\1` on `"a"*30 + "1select"`.
+  - The set is `{S}`, and `select`'s T is `SELECT`, whose first position's
+    T is `S`.
+  - Today K65's `memchr('S')` answers NOMATCH in one pass. Under round 0
+    the run check passed on `select`, `S` was marked done, and the VM
+    backtracked `([a-z]+)+` to its step budget.
+  - D124 item 3 forbids that direction. §5.1 classifies it as a DEFECT,
+    and the witness is a committed case.
+
+**[r1 S3/C2] The pin's real site is `pcrec_run_pin` (`src/facts/kset.c:240`),
+not `prefix_k.c`.**
+- Today it already refuses a cube position: it needs `count == 1` at every
+  offset, and a pair has two members. It would accept a masked run only if
+  the NFA walk proved the exact byte T at every pair position at some
+  offset. That is a stronger fact than the run, and it is SOUND. But the
+  run rows would then compare T exactly through a pin the run fact did not
+  produce.
+- **r1 adds one conjunct at that site:** `pcrec_req_run_masked(r)` →
+  unpinned. It closes that edge by construction. The cost is a lost
+  opportunity, never a wrong answer. `run_pin` stays a fact about exact runs
+  only.
+- **Re-argued: what `dfa_pfs[]` sees.** D122 addendum 4 item 3 binds a
+  change to the table's SHAPE: rows, predicates, emitters, the selector.
+  C3 changes none of them. It moves one of the table's INPUTS, the
+  `run_pin` fact, on a counted population:
+  - **10 artifacts that are pinned today lose the pin** (corpus 8, bench
+    2, §2.3.7). Their exact run is outranked by a masked one, and a masked
+    run has no pin.
+  - **2 of them change `dfa_pfs[]` SELECTION**: `a[bc]de` and `(?i)x/1234`,
+    both corpus, both DFA, both `run-pinned` today. They fall to the next
+    row of the first-match table.
+    - The same two are the only artifacts whose G1 verdict moves. They are
+      `REQ_WHY "dominated"` today (their run-pinned scan verifies the run)
+      and become `"emitted"`.
+    - Both are plausible speed losses, since the exact run's pin was what
+      bought the run-pinned row. Neither is a bench cell.
+  - The other 8 select a row that does not read the pin: `offset-set`, or
+    `memchr`.
+  - Round 0 could claim "every existing selection is unchanged" because
+    additive admission never replaced an exact run. Under the single ranking
+    that claim is FALSE for these 2 artifacts. §R1 records it as a shape
+    change for the manager's second-round decision (Q4, revised).
+- The offset-preference step is still named and not built: a pinned masked
+  run with an exact scan member entering the prefilter. It takes the full
+  panel.
+
+**[K66]'s whole run** carries `whole_mask` (§2.3.4, `t[1]`). The no-match
+proof stays a fact about the pattern.
 
 **Stamps.**
-- `<PREFIX>_REQ_RUN` gains a `/`-suffixed hex mask ONLY when masked, for
-  example `"53454c454354@4/dfdfdfdfdfdf"`. Exact runs' stamp text is
-  unchanged.
-- `<PREFIX>_REQ_BYTE` stays the `req_byte` fact (`"none"` on every mover).
-- `<PREFIX>_REQ_WHY` reads `emitted`/`dominated`/`one-attempt`. A mover
-  that reads `none` is a defect, and §5.4 checks for it.
+- **`<PREFIX>_REQ_RUN`** gains a `/`-suffixed hex mask ONLY when masked:
+  `"53454c454354@4/dfdfdfdfdfdf"`. Exact runs' text is unchanged. The
+  stamp renders from the facts renderer (`facts.c:445`, D126 Q9), so the
+  stamp and `--emit-facts`' `req_run` row change together.
+  `req_whole_run` takes the same suffix.
+- **`<PREFIX>_REQ_BYTE`** is the `req_byte` fact, per §2.3.3 cases (i) and
+  (ii).
+- **`<PREFIX>_REQ_WHY`**: round 0's "`none` on a masked mover is a defect"
+  stands. The spec's invariant "`REQ_WHY "none"` iff `REQ_BYTE "none"`"
+  becomes "iff `REQ_BYTE "none"` AND `REQ_RUN "none"`" (`tuning.md` §2.29,
+  `match_api.md` §6.3). `union-select` reads `REQ_BYTE "none"`,
+  `REQ_RUN "…/dfdf…"` and `REQ_WHY "emitted"`.
+
+#### 2.3.6 The constants (D141) [r1 C7]
+
+D141 is chartered and unscheduled. Its interim rule is that new estimation
+or selection constants go into `PLACE` or carry their provenance inline.
+`PLACE` is clskit's own struct. These are fact-layer selection knees, and
+`limits.def` already holds that kind (`PCREC_MAX_REQ_RUN_EMIT`, "selection
+knee"). So they are rows there, with the provenance in each row's `desc`,
+checked by `tests/registry/limits_check.sh` (D107) and listed by
+`--list-limits`:
+
+| row | value | unit | kind | provenance (the row's desc) |
+|---|---|---|---|---|
+| `PCREC_MIN_REQ_RUN_BITS` | 16 | `bits` (a NEW unit token: `limits.def`'s header vocabulary, `limits.md` §3, `limits_check.sh`) | selection knee | RULED, not fitted. Today's exact floor (two bytes) restated in the ranking's own unit, so exact admission is unchanged (§2.3.7 class B: 0 counter-examples). Three caseless letters clear it and two do not, which matches every measured customer (4-6 letters, §7). Moving it takes a census plus a cell (D77) |
+| `PCREC_MAX_REQ_RUN_POS_SET` | 2 | `count` | selection knee | RULED: the largest member set a run position may have, because every position must be a scan candidate and the emitted scan has two arms, one stream (`memchr`) and two (the pair leapfrog, O-55's measured form). A wider set is a third arm no cell asks for (D77) |
+| `PCREC_MAX_REQ_RUN_EMIT` (existing) | 8 | `bytes` → **`positions`** | selection knee | its desc gains "positions: a masked window is 8 positions, compared by C1's row table". A `limits.md` hunk |
+
+- **The pair's cost is not a constant.** It is the MASS primitive over the
+  pair's two members, `pcrec_find_seq_mass`, which already serves the
+  window rule. The 1:1 summing is the definition of hit density for a
+  two-member scan, and it carries no fitted weight. Its NONE answer is the
+  primitive's own.
+- **The `|set| <= 2` cutoff is `PCREC_MAX_REQ_RUN_POS_SET`.** Round 0 had
+  it twice, as the admission predicate's `|set| <= 2` and the pick's
+  candidate filter. Now it is one row, read in one place: the walk's
+  position predicate, which the hull reads too.
+- `PCREC_MAX_REQ_RUN_SCAN` is unchanged; it stores positions as it stored
+  bytes.
+- The `limits_check.sh` manifest count moves by 2. That is a reader found by
+  grep (§4).
+
+#### 2.3.7 The census: what the single ranking moves (compile-only, this lane)
+
+**Instrument.** `docs/dev/optloop/s4/c3census/`:
+- `proto.patch` is the r1 walk only: (T, K) positions in the two-member
+  domain, the hull, the information ranking, `whole_mask` in
+  `--emit-facts`. It is applied to a SCRATCH copy of main `92b8bbf0`,
+  never committed under `src/`.
+- `c3_census.py` compiles every corpus pattern (as written, through
+  `--list-source`, with its `flags`/`encoding`) and every bench export at
+  `--features all --emit-facts` under BASE (main) and PROTO, Mac,
+  compile-only. Every compile is bounded by a 60 s `timeout`, and none
+  fired.
+- `c3_report.py` applies the floor and writes `c3_summary.txt`.
+- PROTO's emitted C is not read. Its window, pick and emitters still read T
+  as exact.
+
+| class | corpus (3,898 compiled) | bench (317 compiled) |
+|---|---|---|
+| A0: no run before, none after | 3,363 | 208 |
+| A0b: a masked run below the floor (not admitted) | 23 | 4 |
+| **A1: no run before, masked run after** (round 0's population) | **15** | **8** |
+| …of which the set is non-empty (S2's class: `REQ_BYTE` must stay the set pick) | 4 | 3 |
+| **B: exact run before, the identical exact run after** | **505** | **98** |
+| B!: exact before, a DIFFERENT exact run after (would falsify byte-identity) | **0** | **0** |
+| **C: exact run before, masked run after (the NEW mover population)** | **15** | **3** |
+| …caseless (`-i` or `(?i`) | 1 | 1 |
+| …the C4 shadow count: caseless AND the shadowing exact run was a 2-run | **0** | **0** |
+| …no `K = 0xDF` position (hull or non-letter pair only) | 14 | 2 |
+| …pinned today (`run_pin` lost) | 8 | 2 |
+| …G1 verdict moves (`dominated` → `emitted`) | 2 | 0 |
+| …`run-pinned` `dfa_pfs[]` row selected today (selection moves) | 2 | 0 |
+
+**What the counts say.**
+1. **The C4 shadowing is real but small in the corpus and the bench.** The
+   critic's `(?i)union select 1,2` is not in either population.
+   - The one bench case is `slack-webhook-url`: exact `://` (24 bits)
+     shadows `COM/SERVICES/T`, 14 positions and 100 bits, cut to an
+     8-position window.
+   - The one corpus case is `(?i)x/1234`: exact `/1234` shadows
+     `X/1234`, 47 bits.
+   - **No caseless pattern in either population is shadowed by an exact
+     2-run.** Round 0's additive rule cost nothing measured, which is why
+     it looked free. The single ranking is still the one-mechanism answer
+     (C4), and its cost is class C below.
+2. **Exact-only artifacts stay byte-identical**: B! is 0 of 603. Every
+   pattern whose winning run is exact gets today's run, byte for byte.
+   The C3 mover biconditional is therefore still **moved ⇔ `req_run` is
+   masked** (§5.1). Its population is A1 ∪ C: 41 here, against round 0's
+   23.
+3. **Class C is mostly the S1 hull, not caseless text.** 16 of its 18
+   cases have no `K = 0xDF` position:
+   - `frank|fred` → `fr[ae]` (`fra/fffffb`);
+   - `a[bc]de` → `a[bc]de`;
+   - `foo(?:username|password|passphrase)bar` → `[de]bar`;
+   - the six `^(a)…(i)(j|k)…$` recursion spellings → `abcdefghi[jk]`;
+   - three utf8 emoji pairs (`(?:😀|😁)`).
+
+   These are the general mechanism working: a one-bit alternation hull is
+   more information than the exact run beside it. They are also the
+   population that moves the pin (10) and the 2 `run-pinned` selections
+   (§2.3.5).
+4. **Utf8: no caseless non-ASCII mover.** A caseless non-ASCII letter is
+   a pair at its continuation byte (`(?i)é` → `C3 [89|A9]`, 15 bits). But
+   the walk never joins a run ACROSS such a character today. Every bench
+   `utf8/ci-*` pattern yields its FIRST character's two positions only:
+   - `ci-moskva` → `D0 [9C|BC]`;
+   - `ci-greek-run` → `CE [91|B1]`;
+   - `[Мм][Оо]` alone does the same.
+
+   That is a pre-existing property of how the encoding lowering shapes a
+   multi-byte class for the run walk, not something C3 adds. Every such
+   pattern is A0b (below the floor), unchanged. Extending the walk across
+   lowered multi-byte classes is a separate row with its own census, named
+   here and not built. `ci-strasse` moves on its ASCII `TRA` (A1).
+5. **Caveats.**
+   - The corpus is read as written (`config`/`with` cascades are not
+     applied), `wf_census.py`'s own scope.
+   - PROTO is the walk, not the build: the build lane's mover manifest
+     (§5.1) is the count of record, and these numbers are its prediction.
+     A disagreement between the two is a finding against one of them.
 
 ### 2.4 Sites that keep their own form, with the reason (compare_stack §5's record, updated in the same change)
 
