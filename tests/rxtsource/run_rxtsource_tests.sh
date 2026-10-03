@@ -398,9 +398,13 @@ record() { checks_recorded=$((checks_recorded + 1)); echo "RECORD: $*"; }
 # r1land, 2026-10-03): [OPT-VEDGE] added tests/assertions/view_edge.rxt (1 file,
 # 17 pattern blocks, 2703 case lines, every one own-oracle) and its lane did not
 # move these pins; measured by this file's own awk on the stack.
-CENSUS_FILES=261
-CENSUS_BLOCKS=4395
-CENSUS_LINES=36325
+# 2026-10-03 (lane c3build, [OPT-LITSCAN] S4 C3) — +1 file, +47 blocks, +275
+# lines: tests/litscan/reqcube.rxt (gen_reqcube.py; the caseless necessary run's
+# answer corpus, every m/n python3-re generated except one pcre2-only block):
+# 261/4395/36325 -> 262/4442/36600.
+CENSUS_FILES=262
+CENSUS_BLOCKS=4442
+CENSUS_LINES=36600
 # 2026-09-23 (lane rxtfix, K34 closure via lane b2fix's [OPTLOOP.1.impl]
 # batch 2 — docs/dev/known_issues.md K34) — -1 file, -3 blocks, +0 lines.
 # tests/known_fail/k34_leftrec_giveup.rxt (1 file, 3 blocks, 11 lines) was
@@ -510,9 +514,11 @@ CENSUS_LINES=36325
 # 2026-10-03 (lane s4build) — +0/+60/+1070, the SAME delta as CENSUS_* above
 # (tests/litscan/ is a run.sh directory).
 # 236/4378/33622 -> 237/4395/36325 with the census above (view_edge.rxt, r1land).
-RUNSH_FILES=237
-RUNSH_BLOCKS=4395
-RUNSH_LINES=36325
+# 2026-10-03 (lane c3build) — +1/+47/+275, the SAME delta as CENSUS_* above
+# (tests/litscan/ is a run.sh directory).
+RUNSH_FILES=238
+RUNSH_BLOCKS=4442
+RUNSH_LINES=36600
 # 2026-09-23 (lane rxtfix, K34 closure, same event as CENSUS_* above) —
 # +0/+0/+11 where CENSUS_* moved -1/-3/+0. tests/known_fail/ is now EMPTY
 # (kf_files=kf_blocks=kf_lines=0 at run time — `find tests/known_fail
@@ -1631,7 +1637,12 @@ C3_FILES=179
 # tests/litscan/litrun.rxt` PASS=1161 against main's 91, SKIP=0, and
 # C3_VERIFIABLE +1070 (15986 -> 17056); this PASS pin is the 3.14 number
 # INFERRED (13989 + 1070).
-C3_PASS=15059
+# 2026-10-03 (lane c3build, [OPT-LITSCAN] S4 C3) — +270 PASS:
+# tests/litscan/reqcube.rxt. Measured on python 3.9: `verify_rxt.py
+# tests/litscan/reqcube.rxt` PASS=270, SKIP=5 (pcre2-only 1, give-up 4), and
+# C3_VERIFIABLE +270 (17056 -> 17326); this PASS pin is the 3.14 number
+# INFERRED (15059 + 270).
+C3_PASS=15329
 # [UCP] U1 (lane ucpu1): +1563 SKIP, all own-oracle — tests/ucp/ carries
 # its own verifier (verify_ucp.py), so verify_rxt.py skips every one of its
 # 1,563 cells on every python version (measured: `verify_rxt.py tests/ucp`
@@ -1665,14 +1676,16 @@ C3_PASS=15059
 # all own-oracle (version-invariant, measured +2703 own-oracle on python 3.9),
 # so the python-3.14 SKIP total moves by the same 2703 — DERIVED, not measured
 # on 3.14 (the Mac has no 3.14); the Linux make test confirms it.
-C3_SKIP=21177
-C3_SKIP_PCRE2ONLY=4248
-C3_SKIP_GIVEUP=29
+# +5 at lane c3build: tests/litscan/reqcube.rxt's 1 pcre2-only + 4 give-up
+# lines (version-invariant, measured on python 3.9); the 3.14 total is DERIVED.
+C3_SKIP=21182
+C3_SKIP_PCRE2ONLY=4249
+C3_SKIP_GIVEUP=33
 C3_SKIP_COMPOSED=0
 C3_SKIP_NOPYTHON=1983
 C3_SKIP_PERRACCEPT=14
 C3_SKIP_OWNORACLE=14903   # 12200 -> 14903 at r1land: view_edge.rxt's 2703 own-oracle lines
-C3_VERIFIABLE=17056   # PASS+INFO+no-python-expression+perr-python-accepts: python-version-INVARIANT
+C3_VERIFIABLE=17326   # 17056 -> 17326 at c3build (reqcube.rxt's 270); PASS+INFO+no-python-expression+perr-python-accepts: python-version-INVARIANT
 C3_INFO=0
 C3_STOREUNCOVERED=0
 C3_TIMEOUT=1
