@@ -2,7 +2,7 @@
 
 All notable changes to pcrec are recorded here. Format loosely follows
 [Keep a Changelog](https://keepachangelog.com/). Tags are `v<version>`
-(the first is `v0.1.0-beta`, the current `v0.2.0-beta`).
+(the first is `v0.1.0-beta`).
 
 `PCREC_VERSION` (`lib/pcrec.h`) is the product version this file tracks —
 independent of `abi` (`docs/spec/match_api.md` §6), the emitted-artifact
@@ -33,7 +33,7 @@ pre-1.0; streaming input (M3) is not implemented.
   ([UCP] U0–U2; `docs/spec/cli.md`). `--ucp`, `(*UCP)`, `(*UTF)`/`(*UTF8)`
   and the `u` flag; implied by `-e utf8`, and Latin-1 under `byte`. `\b`/`\B`
   are now a context node, so UCP `\b` stays on the DFA where it can. `(?a…)`
-  is real. Wide sets under UCP `\b` are refused by name.
+  is real.
 - **UTF-8 validity contract** ([UTF-VALID], abi 50). `-futf-check` (the
   `whole` contract PCRE2_UTF has; `=extent` as the alternative), the typed
   error `PCREC_ERR_UTF` (-9), a `<prefix>_valid_upto` entry in every artifact
@@ -78,8 +78,8 @@ discarded, or narrows the start positions it must try.
 - `-fno-lit-run` — a VM literal run becomes one compare ([OPT-LITSCAN] S2a);
   `-fno-run-prefilter` — the run-pinned prefilter rows ([OPT-LITSCAN] S1).
 - `-fno-hyb-reseed` — the VM hybrid re-seeds from its prefilter per call, chosen
-  by one first-match table ([OPT-HYB-RESEED]); fixes the lookbehind-trio
-  slowdown on large subjects.
+  by one first-match table ([OPT-HYB-RESEED]), aimed at lookaround-erased
+  prefilters that left the VM stepping every position on large subjects.
 - `-fno-ctx-node` — the context-node form of `\b`/`\B` ([UCP] U2).
 - Compile time: `\p{L}+` under `-e utf8` went from ~78 s to ~0.4 s CPU (K67:
   a clustered hash, loops on no epsilon cycle opening no context, and
@@ -102,8 +102,6 @@ discarded, or narrows the start positions it must try.
   set on every artifact (K68).
 - A DFA artifact with dead groups leaves `caps` untouched on a no-match; the
   `PCREC_UNSET` fill moved to each success path (K78).
-- `--emit-ir`/`--list-*` surfaces are TAB-separated tables with named
-  `#section`s (`docs/spec/table_contract.md`); `--emit-facts` joins them.
 
 ### Fixed
 
@@ -115,9 +113,6 @@ discarded, or narrows the start positions it must try.
 - K73, K75: ill-formed UTF-8 at the start of a search and in the find-all loop.
 - K76: a `.rxt` file whose first block is `pattern-esc` was read as head-bearing.
 - K34: closed — the necessary-run pre-check proves the `(a|(?1)a)` family.
-- A DFA artifact's emit-time diagnostics, allocation-failure handling (K60) and
-  several test-infrastructure defects found by the checks added in this
-  interval.
 
 ### Known gaps
 
