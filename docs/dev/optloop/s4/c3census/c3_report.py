@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 """Renders c3_summary.txt from c3_census.tsv (read from the current dir).
 
+r2 adds the PROTO side's req_run / req_byte / run_pin: class B is checked
+on all four facts (B! now means ANY of them differs), and classes A1/C report
+the r2 exact sub-window pin against BASE's pin.
+
 Floor: one constant over the ranking key, sum popcount(K) >= FLOOR_BITS (16 =
 two exact bytes, today's exact floor in bits). Every PROTO position is a byte
 (K 0xFF, 8 bits) or a two-member cube (7 bits), so every run is scannable.
@@ -28,6 +32,10 @@ for r in rows:
     if g(r, "status") != "ok": continue
     pop = g(r, "pop"); pat = bytes.fromhex(g(r, "pattern_hex")).decode("latin-1")
     base = parse(g(r, "base_req_whole_run")); prot = parse(g(r, "proto_req_whole_run"))
+    bpin, ppin = g(r, "base_run_pin"), g(r, "proto_run_pin")
+    def pinof(v): return None if v in ("none", "-", "") else v
+    def pin_o(v):
+        v = pinof(v); return None if v is None else int(v.split(":")[0])
     adm = prot is not None and info(prot) >= FLOOR_BITS
     cl = "-i" in g(r, "args") or "(?i" in pat
     C[(pop, "ok")] += 1
@@ -39,9 +47,14 @@ for r in rows:
         C[(pop, "A1 none->masked (old additive movers)")] += 1
         if any(k == 0xdf for k in prot[1]): C[(pop, "A1 with a K=df position")] += 1
         if g(r, "base_req_byte") != "none": C[(pop, "A1 with a nonempty set (req_byte!=none: S2 class)")] += 1
-        ex[(pop, "A1")].append((pat, show(prot), info(prot), g(r, "base_req_byte")))
+        if pinof(ppin): C[(pop, "A1 r2 pinned (exact sub-window)")] += 1
+        ex[(pop, "A1")].append((pat, show(prot), info(prot), g(r, "base_req_byte"), "r2 pin " + ppin))
     elif not masked(prot):
-        if prot == base: C[(pop, "B exact->identical exact")] += 1
+        same4 = all(g(r, "base_" + k) == g(r, "proto_" + k) for k in ("req_run", "req_byte", "run_pin"))
+        if prot == base and same4: C[(pop, "B exact->identical exact (whole run, window+idx, req_byte, run_pin)")] += 1
+        elif prot == base:
+            C[(pop, "B! whole run identical, window/req_byte/pin DIFFERENT")] += 1
+            ex[(pop, "B!")].append((pat, show(base), g(r, "base_req_run"), g(r, "proto_req_run"), g(r, "base_req_byte"), g(r, "proto_req_byte"), bpin, ppin))
         else:
             C[(pop, "B! exact->DIFFERENT exact (identity claim broken)")] += 1
             ex[(pop, "B!")].append((pat, show(base), show(prot) if prot else None))
@@ -52,10 +65,17 @@ for r in rows:
         if cl and len(base[0]) == 2: C[(pop, "C caseless AND base 2-run (the C4 shadow count)")] += 1
         if not any(k == 0xdf for k in prot[1]): C[(pop, "C no K=df position (hull/non-letter pair only)")] += 1
         if base[0] in bytes(t for t in prot[0]) and False: pass
-        if g(r, "base_run_pin") not in ("none", "-", ""): C[(pop, "C base run_pin != none (pin lost)")] += 1
+        if pinof(bpin):
+            C[(pop, "C base pinned")] += 1
+            if not pinof(ppin): C[(pop, "C base pinned, r2 pin LOST")] += 1
+            elif pin_o(ppin) == pin_o(bpin) and ":" in ppin: C[(pop, "C base pinned, r2 sub-window pin at the SAME offset")] += 1
+            else: C[(pop, "C base pinned, r2 pin MOVED")] += 1
+            if "run" in g(r, "base_RX_DFA_PREFILTER"):
+                C[(pop, "C base run-pinned row: r2 pin %s" % ("same offset" if pinof(ppin) and pin_o(ppin) == pin_o(bpin) else "NOT same"))] += 1
+        elif pinof(ppin): C[(pop, "C base unpinned, r2 pinned (gained)")] += 1
         if "run" in g(r, "base_RX_DFA_PREFILTER"): C[(pop, "C base DFA_PREFILTER is a run row")] += 1
         C[(pop, "C base REQ_WHY=" + g(r, "base_RX_REQ_WHY"))] += 1
-        ex[(pop, "C")].append((pat, show(base), show(prot), info(prot), g(r, "base_run_pin"), g(r, "base_RX_DFA_PREFILTER")))
+        ex[(pop, "C")].append((pat, show(base), show(prot), info(prot), "pin " + bpin + " -> " + ppin, g(r, "base_RX_DFA_PREFILTER"), g(r, "base_RX_REQ_WHY")))
 
 out = []
 for k in sorted(C): out.append("%-8s %-62s %5d" % (k[0], k[1], C[k]))

@@ -2593,7 +2593,11 @@ append-only or historical records.
   forced-VM residual as the next row's (the VM seed, `[OPT-REQPOS]` tier 2
   re-opened), four questions for Frank, and a ready Linux request.
 
-- `litscan_s4.md` — **`[OPT-LITSCAN]` S4's design note, PROPOSED, unpaneled**
+- `litscan_s4.md` — **`[OPT-LITSCAN]` S4's design note, PROPOSED; C3 reviewed
+  by two light rounds (`../dev/reviews/2026-10-03-r1-litscan-s4-c3.md`) and
+  revised twice (§R1 lane `s4rev`, §R2 lane `s4rev2`: the pair arm guarded and
+  re-dispatched, the PICK primitive taking cube candidates, the pin keeping
+  its exact positions, census re-run; shape unchanged by r2)**
   (lane `s4des`, 2026-10-03, from main `c231ffc1`; design only, instruments in
   `../dev/optloop/s4/`). The caseless stage, with `[WORD-FOLD]` as its member,
   round 1 of the D144 `[OPTLOOP]` cycle. ONE run-compare emitter

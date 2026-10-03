@@ -46,17 +46,25 @@ in the design note with its section.
   exact `memcmp`/`overlap`/`|` at L = 7. `gcc-16 -O2 -o hot hot.c && ./hot 0`
   (and `1`). Directional only: it is cited because it CONTRADICTS
   `memcmp_lowering_study.md` §11 in this loop shape (design note §1.6).
-- `c3census/` — lane `s4rev`'s r1 census for C3 (design note §2.3.7):
-  - `proto.patch` — the r1 necessary-run walk ONLY ((T, K) positions in the
+- `c3census/` — lane `s4rev`'s r1 census for C3 (design note §2.3.7),
+  RE-RUN for r2 by lane `s4rev2` (2026-10-03, from main `af615d01`,
+  serial): `proto.patch` now also carries r2's fact half (the cube-candidate
+  PICK, the member-mass window, `req_byte`'s exact-member clause, the
+  exact-stretch `run_pin`, rendered `o` or `o:at+len`), the TSV gains
+  PROTO's `req_run`/`req_byte`/`run_pin` columns, and `c3_report.py` checks
+  class B on all four facts and reports the pins of classes A1/C:
+  - `proto.patch` — the necessary-run walk ((T, K) positions in the
     two-member domain, the alternation cube hull, the information ranking,
-    `whole_mask` rendered in `--emit-facts`' `req_whole_run`), applied to a
-    SCRATCH copy of main `92b8bbf0`. Never applied under `src/`. Its emitted C
-    is not meaningful (window/pick/emitters still read T as exact).
+    `whole_mask` rendered in `--emit-facts`' `req_whole_run`) plus r2's fact
+    half above, applied to a SCRATCH copy of main (`af615d01` at r2;
+    `92b8bbf0` at r1). Never applied under `src/`. Its emitted C is not
+    meaningful (the emitters still read T as exact; `us_run_pin` hides a
+    sub-window pin from them so the compile does not trip their checks).
   - `c3_census.py` — compiles every corpus `.rxt` pattern (as written, via
     `--list-source`) and every pcrec-bench export (read-only) at `--features
     all --emit-facts` under `BASE` and `PROTO`. Patterns are passed to argv
-    as BYTES. Env `BASE PROTO BENCH CORPUS OUT JOBS`. It writes
-    `c3_census.tsv`.
-  - `c3_census.tsv` — that raw output (4,657 rows).
+    as BYTES. Env `BASE PROTO BENCH CORPUS OUT JOBS` (JOBS defaults to 1:
+    serial). It writes `c3_census.tsv`.
+  - `c3_census.tsv` — that raw output (4,663 rows at r2).
   - `c3_report.py` / `c3_summary.txt` — applies the one floor (16 bits) and
     classifies A0/A0b/A1/B/B!/C. The summary is the numbers the note cites.
