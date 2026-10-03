@@ -285,7 +285,7 @@ typedef enum {
     VE_CALL,     /* a: the callee region's entry label id,
                   *    b: the return label id                       */
     VE_RETURN,   /* a: the callee region's entry label id           */
-    /* [OPT-LITSCAN] S2a one P4 compare consuming a literal run: a: its
+    /* [OPT-LITSCAN] S2a one run compare consuming a literal run: a: its
      * length, b: next label, text: the run's bytes as the listing shows them */
     VE_LIT,
     /* [CLS-TREE] S4 one decode + kit test consuming ONE CHARACTER of a wide
@@ -4458,11 +4458,12 @@ static void vm_isl_emit(Vm *v, VmIsl *t, int entry, int next)
                : NULL);
 
         if (n->nkids == 1 && inrun[n->child]) {
-            /* [OPT-LITSCAN] S2a THE ISLAND'S OWN RECOGNIZER, sharing only P4
-             * (patfacts design §8.2 item 3): the trie's single-child chain
-             * from here to the first node that branches or accepts is one
-             * literal run, compared at this node's depth in one bounds check
-             * and one constant-length `memcmp`. Its nodes charge the node
+            /* [OPT-LITSCAN] S2a THE ISLAND'S OWN RECOGNIZER, sharing only the
+             * run compare (patfacts design §8.2 item 3; S4's
+             * `pcrec_emit_run_compare`): the trie's single-child chain from
+             * here to the first node that branches or accepts is one literal
+             * run, compared at this node's depth in one bounds check and one
+             * run compare. Its nodes charge the node
              * budget each, as the per-node compares did. A mismatch dies at
              * THIS node, which charges the work budget this node's depth:
              * the run is one compare, charged as one (docs/spec/limits.md
@@ -4478,10 +4479,8 @@ static void vm_isl_emit(Vm *v, VmIsl *t, int entry, int next)
             }
             pcrec_sb_printf(b, "    if (scan_position + %d <= subject_length && ",
                             n->depth + len);
-            pcrec_emit_exact_compare(b, n->depth
-                                        ? pcrec_sb_fragf(&v->cx->arena, "subject + scan_position + %d", n->depth)
-                                        : "subject + scan_position",
-                                     run, len);
+            PcrecRun rr = { run, len };
+            pcrec_emit_run_compare(v->cx, b, "subject + scan_position", n->depth, &rr);
             v->nlitrun++;
             pcrec_sb_printf(b, ") goto %s_L%d;\n", v->p, t->nd[c].lbl);
             vm_ev(v, VE_GOTO, t->nd[c].lbl, 0,
@@ -8607,10 +8606,11 @@ static const char *vm_lit_describe(Vm *v, const unsigned char *run, int len)
     return vm_rolef(v, "'%s' (%d bytes)", q, len);
 }
 
-/* Emits a literal run at label `entry` as ONE P4 exact compare, continuing at
- * `next`: `pos + len <= n`, then a constant-length `memcmp`, so the run reads
- * exactly its own bytes and never past the subject's end (P8, compare_stack.md
- * §4). [OPT-LITSCAN] S2a, patfacts design §8.2; the bytes come from
+/* Emits a literal run at label `entry` as ONE run compare, continuing at
+ * `next`: `pos + len <= n`, then `pcrec_emit_run_compare` (a constant-length
+ * `memcmp`, or two overlapping words at the lengths gcc decomposes), so the
+ * run reads exactly its own bytes and never past the subject's end (P8,
+ * compare_stack.md §4). [OPT-LITSCAN] S2a, patfacts design §8.2; the bytes come from
  * `pcrec_lit_run`, the fact `vm_cost_cat` and `vm_count_slots` read too.
  *
  * WHAT IT CHARGES IS WHAT THE PER-BYTE CHAIN CHARGED. The node budget pays
@@ -8624,7 +8624,8 @@ static void vm_lit(Vm *v, int entry, const unsigned char *run, int len, int next
     vm_lbl(v, entry, NULL);
     vm_ev(v, VE_LIT, len, next, vm_lit_describe(v, run, len));
     pcrec_sb_printf(v->b, "    if (scan_position + %d <= subject_length && ", len);
-    pcrec_emit_exact_compare(v->b, "subject + scan_position", run, len);
+    PcrecRun rr = { run, len };
+    pcrec_emit_run_compare(v->cx, v->b, "subject + scan_position", 0, &rr);
     v->nlitrun++;
     pcrec_sb_printf(v->b, ") { scan_position += %d; goto %s_L%d; }\n",
                     len, v->p, next);
@@ -13843,6 +13844,7 @@ static void vm_emit_epilogue(Vm *v, const GenNames *g, const VmPlan *pl)
     const long long work_budget = pl->caps.work_budget;
     const bool      has_budget  = pl->caps.has_budget;
 
+    pcrec_emit_runcmp_stamp(cx, &job->csb, g->upper);
     pcrec_emit_residual(cx);
 
     pcrec_emit_info(cx, g, 2, job->fit.why,

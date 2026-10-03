@@ -1049,6 +1049,17 @@ enum {
  * pass is the pre-row one, byte for byte. It changes no answer either way,
  * so it is masked out of `rx_info.flags`. A `#define` for bit 32's reason. */
 #define PCREC_NO_VIEW_EDGE PCREC_BIT(42)
+/* [OPT-LITSCAN] S4 the run compare's OVERLAP row (docs/spec/tuning.md §2.37,
+ * docs/design/litscan_s4.md §1.3). An exact literal-run compare of length 3,
+ * 5-7 or 9-15 — where gcc's constant `memcmp` decomposes into 2-4
+ * non-overlapping pieces — is written as two overlapping natural-width word
+ * compares. Denied, every run compare is the constant-length `memcmp` this
+ * compiler emitted before abi 56, byte for byte apart from the
+ * `<PREFIX>_RUN_WORDS` stamp line. It reads exactly the same bytes either way,
+ * so it changes no answer and is masked out of `rx_info.flags`;
+ * `<PREFIX>_RUN_WORDS` counts what the emitter did. Deny-only (D122 addendum
+ * 2 (4)). A `#define` for bit 32's reason. */
+#define PCREC_NO_RUN_OVERLAP PCREC_BIT(43)
 
 /* [ENG-BREP] the counter rung's UNROLL FACTOR, K (counterk_design.md §4.1;
  * eng_brep_design.md §4.5's "K must not become a per-pattern heuristic in v1",

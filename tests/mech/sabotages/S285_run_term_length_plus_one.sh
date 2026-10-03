@@ -15,6 +15,12 @@
 # (lost matches on every run-pinned artifact), and — unlike row (a)'s offset
 # plant or row (d)'s width plant — it never touches `OfsTest.maxk`, so it is
 # invisible to ASan.
+# RE-AIMED 2026-10-03 ([OPT-LITSCAN] S4 C1, lane s4build): the run term's
+# record (`PcrecRun`) carries the length into the run compare; the plant
+# widens it by one there, so `/user` (L 5 -> 6) is compared as two words
+# reaching the string literal's terminating NUL. Intent unchanged. The
+# 12-space anchor is the verify chain's; `pf_block_ofs`'s helper-declaration
+# twin sits at 8 spaces and is not matched.
 SAB_ID="S285-run-term-length-plus-one"
 SAB_FILE="src/gen/emit_dfa.c"
 SAB_SUITES="harness offsetskip"
@@ -23,8 +29,8 @@ SAB_DESC="the run-pinned prefilter rows' P4 compare tests t->run_len + 1 bytes i
 SAB_DOC_FIGURE="Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S285."
 # [MECH-REACH] the router takes a run row and emits the P4 run term at cand,
 # comparing exactly run_len (5) bytes on the clean tree.
-SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "/user|/users" && grep -q "^#define RX_DFA_PREFILTER \"run-pinned\"" "$REACH_TMP/o.c" && grep -qF "!memcmp(subject + cand, \"/user\", 5)" "$REACH_TMP/o.c" && echo REACH-RUN-TERM-EMITTED'
+SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "/user|/users" && grep -q "^#define RX_DFA_PREFILTER \"run-pinned\"" "$REACH_TMP/o.c" && grep -qF "rx_w4(subject + cand) == rx_w4(\"/use\") && rx_w4(subject + cand + 1) == rx_w4(\"user\")" "$REACH_TMP/o.c" && echo REACH-RUN-TERM-EMITTED'
 SAB_REACH_EXPECT="REACH-RUN-TERM-EMITTED"
 SAB_COUNT=1
-SAB_BEFORE='                               t->run_bytes, t->run_len);'
-SAB_AFTER='                               t->run_bytes, t->run_len + 1);   /* SABOTAGE S285 */'
+SAB_BEFORE='            PcrecRun run = { t->run_bytes, t->run_len };'
+SAB_AFTER='            PcrecRun run = { t->run_bytes, t->run_len + 1 };   /* SABOTAGE S285 */'

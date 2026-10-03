@@ -38,6 +38,7 @@
  * 10.46's 8-bit non-UTF answer, and pcrec's own class fold re-measured against
  * it at zero disagreements. */
 #include <stdio.h>
+#include <string.h>
 
 #include "core/internal.h"
 #include "gen.h"
@@ -108,14 +109,87 @@ int main(void)
         bad++;
     }
 
+    /* (b) [OPT-LITSCAN] S4 P2 (litscan_s4.md §5.3): THE BYTE CUBE, the third
+     * consumer of the fold. A caseless run's mask is `pcrec_cls_cube` of the
+     * set `cls_casefold` built from `pcrec_ascii_fold`, never a second read
+     * of the table, so the cube of every fold set {c, fold[c]} must be
+     * K = 0xDF where c folds and K = 0xFF where it does not, with T = c & K.
+     * The domain is the ABSOLUTE byte cube (base 0, width 256); a reader
+     * that passed a section-relative base would answer T relative to the
+     * set's low member and fail here on every letter. */
+    {
+        Ctx cx;
+        int cube_bad = 0, cube_fold = 0;
+        memset(&cx, 0, sizeof cx);
+        for (i = 0; i < 256; i++) {
+            unsigned lo = (unsigned)i, hi = pcrec_ascii_fold[i];
+            PcrecCpRange iv[2];
+            Ast a;
+            unsigned char K = 0, T = 0, wantK;
+            if (hi < lo) { unsigned t = lo; lo = hi; hi = t; }
+            iv[0].lo = iv[0].hi = lo;
+            iv[1].lo = iv[1].hi = hi;
+            memset(&a, 0, sizeof a);
+            a.k = A_CLASS;
+            a.u.cls.iv = iv;
+            a.u.cls.n = lo == hi ? 1 : 2;
+            wantK = lo == hi ? 0xFF : 0xDF;
+            if (lo != hi) cube_fold++;
+            if (!pcrec_cls_cube(&cx, &a, &K, &T) || K != wantK
+                || T != (unsigned char)(i & wantK)) {
+                if (++cube_bad <= 10)
+                    printf("CUBE 0x%02x: pcrec_cls_cube gave K=0x%02x "
+                           "T=0x%02x, expected K=0x%02x T=0x%02x\n", i, K, T,
+                           wantK, (unsigned)(i & wantK));
+            }
+        }
+        /* Two NEGATIVE cells, so the reader cannot pass by calling every
+         * set a cube: {a, b} spans two free bits and spills onto 0x60 and
+         * 0x63; {a, b, c} has three members, never a power of two. And one
+         * non-caseless cube, [0-7], so the rule is not fold-shaped. */
+        {
+            static const PcrecCpRange ab[1]  = { { 0x61, 0x62 } };
+            static const PcrecCpRange abc[1] = { { 0x61, 0x63 } };
+            static const PcrecCpRange d07[1] = { { 0x30, 0x37 } };
+            Ast a;
+            unsigned char K = 0, T = 0;
+            memset(&a, 0, sizeof a);
+            a.k = A_CLASS;
+            a.u.cls.n = 1;
+            a.u.cls.iv = ab;
+            if (pcrec_cls_cube(&cx, &a, &K, &T)) {
+                printf("CUBE {a,b} accepted as one cube (K=0x%02x)\n", K);
+                cube_bad++;
+            }
+            a.u.cls.iv = abc;
+            if (pcrec_cls_cube(&cx, &a, &K, &T)) {
+                printf("CUBE {a,b,c} accepted as one cube (K=0x%02x)\n", K);
+                cube_bad++;
+            }
+            a.u.cls.iv = d07;
+            if (!pcrec_cls_cube(&cx, &a, &K, &T) || K != 0xF8 || T != 0x30) {
+                printf("CUBE [0-7] gave K=0x%02x T=0x%02x, expected "
+                       "K=0xf8 T=0x30\n", K, T);
+                cube_bad++;
+            }
+        }
+        if (cube_fold != 52) {
+            printf("DEFECT the cube arm saw %d fold sets, expected 52\n",
+                   cube_fold);
+            cube_bad++;
+        }
+        bad += cube_bad;
+    }
+
     if (bad) {
-        printf("fold-agreement: %d disagreement(s) over 65536 ordered pairs\n",
-               bad);
+        printf("fold-agreement: %d disagreement(s) over 65536 ordered pairs "
+               "and 256 fold-set cubes\n", bad);
         return 1;
     }
     printf("fold-agreement: 65536 ordered byte pairs, the SHIPPED "
            "$_span_match_caseless and pcrec_ascii_fold induce the SAME "
            "partition; %d bytes fold, each with exactly one partner, none "
-           ">= 0x80\n", partnered);
+           ">= 0x80; pcrec_cls_cube gives K=0xDF on all 52 fold sets and "
+           "K=0xFF on the other 204 bytes\n", partnered);
     return 0;
 }

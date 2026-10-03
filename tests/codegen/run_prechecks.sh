@@ -671,7 +671,11 @@ while IFS='%' read -r pat _sep run len idx off; do
     # and its pre-check elided (tuning.md §2.29/§2.30); `-fno-offset-skip`
     # removes both S1 row families and restores the run check this section
     # reads the text of. The VM route (§4.6) needs no flag.
-    if ! emit "$a" "$pat" -fno-offset-skip; then bad "[4.1] $pat: refused"; continue; fi
+    # [OPT-LITSCAN] S4 C1: `-fno-run-overlap` keeps the run compare on its
+    # `memcmp` row, so this arm reads the pre-check's LOOP text it was written
+    # for; the `overlap` row's spelling of these same four runs is pinned by
+    # run_codegen_tests.sh's [OPT-LITSCAN S4] block.
+    if ! emit "$a" "$pat" -fno-offset-skip -fno-run-overlap; then bad "[4.1] $pat: refused"; continue; fi
     # `run` is the run as the emitted STRING LITERAL reads it (escapes and all),
     # so its length in bytes is not its length in characters: `len` is the
     # compare's own third argument and is spelled per row rather than counted.
@@ -1378,7 +1382,10 @@ while IFS='%' read -r pat flags want wantrq why; do
     [ -n "$pat" ] || continue
     a="$WORKDIR/s59_$RANDOM$RANDOM.c"
     # shellcheck disable=SC2086  # $flags is a word list on purpose
-    if ! emit "$a" "$pat" $flags; then bad "[5.9] $pat [$flags]: refused"; continue; fi
+    # [OPT-LITSCAN] S4 C1: `-fno-run-overlap`, so a 10-byte whole run reads as
+    # the `memcmp` this arm extracts it from (its `overlap` spelling is the
+    # run compare's own check, run_codegen_tests.sh [OPT-LITSCAN S4]).
+    if ! emit "$a" "$pat" $flags -fno-run-overlap; then bad "[5.9] $pat [$flags]: refused"; continue; fi
     got="$(wholerun "$a")"; got="${got:-none}"
     gotrq="$(rqset "$a")"; gotrq="${gotrq:-none}"
     [ "$got" = "$want" ] && [ "$gotrq" = "$wantrq" ] \

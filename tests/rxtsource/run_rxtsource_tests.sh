@@ -390,9 +390,13 @@ record() { checks_recorded=$((checks_recorded + 1)); echo "RECORD: $*"; }
 # 2026-09-30 (triage s2tri, [CLS-TREE] S2 / S434's detector) — +1 file, +4 blocks,
 # +7 lines: tests/base/clskit_range_top.rxt (subjects that end a run on a
 # range's top byte, python3-re verified): 259/4314/32545 -> 260/4318/32552.
+# 2026-10-03 (lane s4build, [OPT-LITSCAN] S4 C1) — +0 files, +60 blocks,
+# +1070 lines: tests/litscan/litrun.rxt's L-sweep (gen_litrun.py; every run
+# length 3..20, 31, 32 alone, behind [0-9]+, and alone under `engine vm`;
+# every m/n line python3-re generated): 260/4318/32552 -> 260/4378/33622.
 CENSUS_FILES=260
-CENSUS_BLOCKS=4318
-CENSUS_LINES=32552
+CENSUS_BLOCKS=4378
+CENSUS_LINES=33622
 # 2026-09-23 (lane rxtfix, K34 closure via lane b2fix's [OPTLOOP.1.impl]
 # batch 2 — docs/dev/known_issues.md K34) — -1 file, -3 blocks, +0 lines.
 # tests/known_fail/k34_leftrec_giveup.rxt (1 file, 3 blocks, 11 lines) was
@@ -499,9 +503,11 @@ CENSUS_LINES=32552
 # (tests/uprops/ is a run.sh directory, not tests/known_fail/).
 # 2026-09-30 (triage s2tri) — +1/+4/+7, the SAME delta as CENSUS_* above
 # (tests/base/ is a run.sh directory).
+# 2026-10-03 (lane s4build) — +0/+60/+1070, the SAME delta as CENSUS_* above
+# (tests/litscan/ is a run.sh directory).
 RUNSH_FILES=236
-RUNSH_BLOCKS=4318
-RUNSH_LINES=32552
+RUNSH_BLOCKS=4378
+RUNSH_LINES=33622
 # 2026-09-23 (lane rxtfix, K34 closure, same event as CENSUS_* above) —
 # +0/+0/+11 where CENSUS_* moved -1/-3/+0. tests/known_fail/ is now EMPTY
 # (kf_files=kf_blocks=kf_lines=0 at run time — `find tests/known_fail
@@ -1614,7 +1620,13 @@ C3_FILES=179
 # expectations (4 m + 3 g, python `re` verifiable on every version). MEASURED on
 # python 3.9 only as C3_VERIFIABLE +7 (15979 -> 15986); this PASS pin is the
 # 3.14 number INFERRED (13982 + 7), not measured — no python 3.14 on the Mac.
-C3_PASS=13989
+# 2026-10-03 (lane s4build, [OPT-LITSCAN] S4 C1) — +1070 PASS:
+# tests/litscan/litrun.rxt's L-sweep, plain ASCII literals, python `re`
+# verifiable on every version. Measured on python 3.9: `verify_rxt.py
+# tests/litscan/litrun.rxt` PASS=1161 against main's 91, SKIP=0, and
+# C3_VERIFIABLE +1070 (15986 -> 17056); this PASS pin is the 3.14 number
+# INFERRED (13989 + 1070).
+C3_PASS=15059
 # [UCP] U1 (lane ucpu1): +1563 SKIP, all own-oracle — tests/ucp/ carries
 # its own verifier (verify_ucp.py), so verify_rxt.py skips every one of its
 # 1,563 cells on every python version (measured: `verify_rxt.py tests/ucp`
@@ -1651,7 +1663,7 @@ C3_SKIP_COMPOSED=0
 C3_SKIP_NOPYTHON=1983
 C3_SKIP_PERRACCEPT=14
 C3_SKIP_OWNORACLE=12200
-C3_VERIFIABLE=15986   # PASS+INFO+no-python-expression+perr-python-accepts: python-version-INVARIANT
+C3_VERIFIABLE=17056   # PASS+INFO+no-python-expression+perr-python-accepts: python-version-INVARIANT
 C3_INFO=0
 C3_STOREUNCOVERED=0
 C3_TIMEOUT=1

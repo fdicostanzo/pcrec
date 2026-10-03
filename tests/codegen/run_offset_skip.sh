@@ -206,7 +206,7 @@ witness() { # witness <label> <pattern> <stamp> <offsets> <k*> <byte> <maxk> [<r
     if [ -n "$xrun" ]; then
         want_terms="$xterms"
         printf '%s\n' "$blk" | grep -qF "$xrun" \
-            || bad "§2 [$lbl] the helper does not carry the run term '$xrun' — the pinned run is not compared as one P4 term at its pin"
+            || bad "§2 [$lbl] the helper does not carry the run term '$xrun' — the pinned run is not compared as one run-compare term at its pin"
     fi
     got_terms=$(printf '%s\n' "$blk" | grep -cE 'subject\[cand( \+ [0-9]+)?\]')
     # the scan's own line does not read subject[cand], so every match is a verify
@@ -231,9 +231,12 @@ witness "needleXYZW"   'needleXYZW'                               offset-set    
 # [OPT-LITSCAN] S1: router (class B: scan at offset 0, no model selection),
 # `foo\b` (its bounded twin) and `[ab]/user` (class C1: the model's own scan
 # offset 1 is the run's scan member, offset 0 stays a table verify).
-witness "router"       '/user|/users'                             run-pinned           '0*,1,2,3,4' 0 47  4 '!memcmp(subject + cand, "/user", 5)' 0
-witness "foo-b"        'foo\b'                                    run-pinned-bounded   '0*,1,2'     0 102 2 '!memcmp(subject + cand, "foo", 3)' 0
-witness "ab-user"      '[ab]/user'                                run-pinned           '0,1*,2,3,4,5' 1 47 5 '!memcmp(subject + cand + 1, "/user", 5)' 1
+# [OPT-LITSCAN] S4 C1 (abi 56): the run term is the RUN COMPARE now
+# (src/gen/runcmp.c); all three runs are at an `overlap` length (5, 3, 5), so
+# each term is two overlapping word compares, the last at offset L - W.
+witness "router"       '/user|/users'                             run-pinned           '0*,1,2,3,4' 0 47  4 'rx_w4(subject + cand) == rx_w4("/use") && rx_w4(subject + cand + 1) == rx_w4("user")' 0
+witness "foo-b"        'foo\b'                                    run-pinned-bounded   '0*,1,2'     0 102 2 'rx_w2(subject + cand) == rx_w2("fo") && rx_w2(subject + cand + 1) == rx_w2("oo")' 0
+witness "ab-user"      '[ab]/user'                                run-pinned           '0,1*,2,3,4,5' 1 47 5 'rx_w4(subject + cand + 1) == rx_w4("/use") && rx_w4(subject + cand + 2) == rx_w4("user")' 1
 
 # =========================================================================
 # §2b THE RESEED — the one place a wrong answer is reachable

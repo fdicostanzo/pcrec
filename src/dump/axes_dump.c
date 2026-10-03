@@ -636,9 +636,20 @@ static void emit_predicate_axes(StrBuf *sb)
         PredAxis p = { "lit-run", NULL, "RX_VM_LIT_RUNS", "", 0, NULL, 0, NULL, NULL, NULL };
         emit_pred_row(sb, &p, 1, "run", "",
                      PCREC_NO_LIT_RUN, 0, "",
-                     "per VM literal run: three or more consecutive one-byte literals on one concatenation (pcrec_lit_run; a two-byte pair keeps its own byte chain), or an island's single-child trie chain, compared as one bounds check and one constant-length memcmp");
+                     "per VM literal run: three or more consecutive one-byte literals on one concatenation (pcrec_lit_run; a two-byte pair keeps its own byte chain), or an island's single-child trie chain, compared as one bounds check and one run compare (run-overlap's rows)");
         emit_pred_row(sb, &p, 2, "denied", "",
                      0, 0, "", "always (fallback) — one per-byte compare per literal");
+    }
+    /* [OPT-LITSCAN] S4 run-overlap — §2.37, the run compare's rows WALKED
+     * LIVE off `pcrec_runcmp_rows` (src/gen/runcmp.c), so this surface
+     * cannot state a predicate the emitter does not ask. RX_RUN_WORDS is an
+     * ACTIVITY COUNT, stamp_value empty for alt-island's reason. */
+    {
+        PredAxis p = { "run-overlap", NULL, "RX_RUN_WORDS", "", 0, NULL, 0, NULL, NULL, NULL };
+        for (int i = 0; i < pcrec_runcmp_nrows; i++)
+            emit_pred_row(sb, &p, i + 1, pcrec_runcmp_rows[i].name, "",
+                         pcrec_runcmp_rows[i].deny, 0, "",
+                         pcrec_runcmp_rows[i].applies_desc);
     }
     /* [OPT-ANCHOR-VM] vm-anchor-bound — §2.25. The VM's attempt-loop start
      * bound, from the `start_anchor` fact's one AST-level derivation. Its stamp is

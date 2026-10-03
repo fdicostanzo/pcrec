@@ -616,6 +616,11 @@ fi
 # 171 -> 174 at [OPT-VEDGE] (lane vedge, 2026-10-03): `-fno-view-edge`
 # (`PCREC_NO_VIEW_EDGE`, bit 42) is one single-bit axis self-registering its
 # (macro, bit, flag) triple — 3 lines, `lit-run`'s shape. Measured: 174 PASS.
+# 174 -> 177 at [OPT-LITSCAN] S4 C1 (lane s4build, 2026-10-03; landed on
+# lane/r1land after [OPT-VEDGE], so 174 -> 177 there, 171 -> 174 on its branch):
+# `-fno-run-overlap` (`PCREC_NO_RUN_OVERLAP`, bit 43) on the `run-overlap`
+# axis's `overlap` row, one single-bit (macro, bit, flag) triple, `lit-run`'s
+# shape. Measured: 177 PASS, 0 failed.
 axesn="$(grep -c '^PASS: ' "$AXESOUT" || true)"
 if [ "$axesn" -ne 174 ]; then
     if grep -q "^checks failed: 0" "$AXESOUT"; then

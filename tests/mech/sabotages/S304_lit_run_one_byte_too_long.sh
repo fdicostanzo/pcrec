@@ -27,9 +27,9 @@ SAB_FILE="src/core/cpset.c"
 SAB_SUITES="harness"
 SAB_HARNESS_TARGET="tests/litscan/litrun.rxt"
 SAB_DESC="pcrec_lit_run returns one more element than the run of literal bytes whenever the spine continues, so the VM compares the run plus a 0xFF byte and never emits the element it swallowed: every m case whose literal is followed by a capture, class, alternation or lookahead reads nomatch on the VM"
-SAB_DOC_FIGURE="PREDICTED (lane s2a, 2026-09-27): DETECTED by the harness on tests/litscan/litrun.rxt (the m cells of the four blocks named in the header). MEASURED 2026-09-27 (lane s2a, single-row mech at b04e7ab3): DETECTED -- reach:ok(1/1), corpus:4fail/83pass on tests/litscan/litrun.rxt. RE-ANCHORED 2026-09-28 (lane litf5, [OPT-LITSCAN] F5/D127): witness widened xy(a|ab)c -> xyz(a|ab)c, anchor follows the len<3 floor; re-run owed at merge. Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S304."
+SAB_DOC_FIGURE="RE-AIMED REACH 2026-10-03 ([OPT-LITSCAN] S4 C1): L = 3 is an overlap length, so the reach greps the run compare's two words. PREDICTED (lane s2a, 2026-09-27): DETECTED by the harness on tests/litscan/litrun.rxt (the m cells of the four blocks named in the header). MEASURED 2026-09-27 (lane s2a, single-row mech at b04e7ab3): DETECTED -- reach:ok(1/1), corpus:4fail/83pass on tests/litscan/litrun.rxt. RE-ANCHORED 2026-09-28 (lane litf5, [OPT-LITSCAN] F5/D127): witness widened xy(a|ab)c -> xyz(a|ab)c, anchor follows the len<3 floor; re-run owed at merge. Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S304."
 # [MECH-REACH] the clean tree compares `xyz` as one run in front of the group.
-SAB_REACH='"$PCREC" --engine=vm -p rx -o "$REACH_TMP/o.c" --pattern "xyz(a|ab)c" && grep -qF "!memcmp(subject + scan_position, \"xyz\", 3)" "$REACH_TMP/o.c" && echo REACH-LIT-RUN-EMITTED'
+SAB_REACH='"$PCREC" --engine=vm -p rx -o "$REACH_TMP/o.c" --pattern "xyz(a|ab)c" && grep -qF "rx_w2(subject + scan_position) == rx_w2(\"xy\") && rx_w2(subject + scan_position + 1) == rx_w2(\"yz\")" "$REACH_TMP/o.c" && echo REACH-LIT-RUN-EMITTED'
 SAB_REACH_EXPECT="REACH-LIT-RUN-EMITTED"
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
