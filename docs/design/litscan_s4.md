@@ -1243,6 +1243,18 @@ that C3 MOVES:
 - **A masked necessary run reads `REQ_WHY` ≠ `none`,** and its pin reads
   `none` in `--emit-facts`. That is the dfa_pfs exclusion, read from the
   artifact.
+- **[r1 S2a] `REQ_BYTE` is a `req_set` member or `"none"`,** on every
+  artifact of the C3 mover manifest, read from `--emit-facts`' `req_byte`
+  and `req_set` rows. Where `REQ_RUN` carries a mask, `REQ_BYTE ==
+  bytes[idx]` holds iff `mask[idx] == ff`. This is the check S452 plants
+  against. `(?i:select)\d+x` reads `REQ_BYTE "120"`.
+- **[r1 S2b] On the no-DFA-scan route, K65's `rq_set` list contains every
+  set member that is not an EXACT position of the whole run.** On
+  `(x?)([a-z]+)+S\d(?i:select)\1` that means it contains `83` (`S`).
+- **[r1 S4] A pair arm's emitted re-search condition reads
+  `< pos + k*`** (a text check on the witness's block). Both
+  `<p>_reqrun` and `<p>_reqrun_whole` carry the masked compare on the K66
+  witness.
 - Each block is validated in the failing direction on a scratch rebuild
   before commit, as litf5 did.
 
@@ -1256,8 +1268,13 @@ that C3 MOVES:
 | S443 | `run-mask-word-swapped` (`runcmp.c`) | word 2 uses word 1's mask (mixed runs) | `caseless.rxt` mixed-word cells |
 | S444 | `lit-run-fold-admits-noncube` (`cpset.c`, `pcrec_lit_run`) | admit any two-member class (`[ab]`) as a cube | `caseless.rxt` `[ab]` cells (answers change) |
 | S445 | `req-cube-crosses-repeat` (`req.c`) | join a cube run across a min-0 repeat | `reqcube.rxt` + the C3 differential (deletes matches) |
-| S446 | `pair-scan-one-stream` (`emit_dfa.c`, the pair arm) | drop the upper-case stream | `reqcube.rxt` "present only in the other case" cells |
-| S447 | `req-pin-takes-masked` (`prefix_k.c`) | publish the pin for a masked run | the §5.4 `--emit-facts` check, plus axes on bit 44 |
+| S446 | `pair-scan-one-stream` (`emit_dfa.c`, the pair arm) | drop the second stream (`T \| ~K`) | `reqcube.rxt` "present only in the other case" cells, on BOTH blocks (`<p>_reqrun` and `<p>_reqrun_whole`) |
+| S447 | `req-pin-takes-masked` (**[r1 S3] `src/facts/kset.c` `pcrec_run_pin`**, not `prefix_k.c`) | delete the `pcrec_req_run_masked` conjunct | the §5.4 `--emit-facts` pin check on a witness where the walk proves T at the pair positions. Without one, the row is answer-preserving by the argument in §2.3.5 and is detected only by that structural check |
+| S448 | **[r1 S4]** `whole-run-unmasked` (`emit_dfa.c` `req_run_tests`, the `t[1]` site) | build `t[1]` without `whole_mask` | `reqcube.rxt`'s K66 block (lowercase subject deleted) |
+| S449 | **[r1 S4]** `pair-research-behind` (`emit_dfa.c`, the pair arm) | re-search bound `< pos` instead of `< pos + k*` | `reqcube.rxt`'s S4 block hangs and the watchdog fires |
+| S450 | **[r1 S1]** `req-hull-keeps-left` (`req.c` `rn_common_head`) | the round-0 rule: compare T and keep `a`'s mask | `reqcube.rxt` S1 head, order A (`sab` deleted) |
+| S451 | **[r1 S2b]** `set-rest-marks-masked` (`emit_dfa.c` `emit_req_set_rest`) | mark `done[]` at every whole-run position | `reqcube.rxt` S2b (`n` → `gu`: the DEFECT direction) |
+| S452 | **[r1 S2a]** `req-pick-takes-pair` (`req.c` `pcrec_req_pick`) | return `bytes[idx]` whenever a run shipped | §5.4's `REQ_BYTE ∈ req_set` check (answer-preserving: no answer reads `REQ_BYTE` on a run route) |
 
 **Anchor population to re-aim, by grep on main, a floor**
 (coding_guide §3.5):
@@ -1329,7 +1346,9 @@ made by `sed` on NEW (§1.5).
 | cell | why | expect |
 |---|---|---|
 | `union-select` thr, nocaps and caps | the one measured customer | ≈ **0.43 ns/B** from base 0.718. PREDICTED from O-55's `ci_selectc` 0.4389, whose verify was a byte loop; the word verify is not slower |
-| controls, byte-identical under C3: `sleep-benchmark`, `dbnames`, `concat-sqli` (no necessary cube run), `slack` (exact run exists) | — | noise |
+| **[r1] `slack-webhook-url` thr, nocaps and caps** (NO LONGER a control) | class C: the exact `://` (24 bits) is outranked by `COM/SERVICES/T` (100 bits), windowed to 8 positions; the pin (offset 5) is lost; the selected row (`offset-set`) does not read it | faster or null. A regression past the floor is the single ranking's cost on a real cell: a new issue row, bit 44 the interim kill switch (D144 item 3). This cell is also C1's `://` witness, so C1's alpha is read BEFORE C3 lands, never across it |
+| **[r1] `loglines/http-5xx` thr** | class C: exact `" HTTP/1."` (8 bytes) becomes the 12-position `" HTTP/1.[01]\" 5"` (95 bits), one pair; DFA, `memchr-bounded`, no pin today | null expected (the scan member is exact either way); the cell is there because it moves |
+| controls, byte-identical under C3: `sleep-benchmark`, `dbnames`, `concat-sqli` (class A0: no run before or after); `loglines/stack-frame`, `kv-quoted` (class B: the same exact run) | — | noise |
 | `union-select` srch | a short subject: the F1/F6 per-call-constant risk | within the floor, or a regression row |
 
 ### 6.3 The F4-class risk: first-byte-then-rest?
@@ -1384,8 +1403,9 @@ Forced-VM artifacts with at least 3 fold tests:
 | `utf8/ci-strasse` | 4 |
 
 **OWED to the build lane:** the corpus census (every `.rxt` pattern ×
-{auto, vm}) for all three commits, and the C3 cube-run census (which
-patterns gain a masked `req_run`). `wordfold_census.md` §2 bounds the C3
+{auto, vm}) for all three commits. [r1] The C3 cube-run census is now
+TAKEN, at the fact level, by this revision (§2.3.7, `c3census/`). The
+build lane's mover manifest confirms it against real artifacts. `wordfold_census.md` §2 bounds the C3
 corpus population: 0 of the corpus's 48 `(?i)` patterns has a run >= 4, and
 7 of the bench's 12 do. So C3's corpus movers will be few, and its witnesses
 are bench patterns. The build lane must commit them as corpus cells
@@ -1401,7 +1421,7 @@ are bench patterns. The build lane must commit them as corpus cells
 | **C0** | `pcrec_cube_of`/`pcrec_cls_cube` in `cpset.c`; clskit's `cube_of` becomes a caller; fold-agreement part (b); S440 (S361 re-aimed) | +90 / −40 | none (zero movers by `cls_identity.py` + `emit_sweep.py`) |
 | **C1** | `src/gen/runcmp.c`/`.h` (rows, helpers, emitter); P4's three callers re-pointed and `pcrec_emit_exact_compare` retired; the prologue's helper decision; bit 42 + axes row + `--list-axes` + `RUN_WORDS`; tuning §2.37; structural checks; S442/S443; litrun cells at L 3..20; P4 anchor re-aims | +420 / −30 | +1 |
 | **C2** | `pcrec_lit_run` cube admission; `vm_lit` takes `PcrecRun`; bit 43 + `VM_LIT_MASKED`; listing op; tuning §2.38 + §2.31 + limits §3.1; `caseless.rxt`; fold-agreement part (c); S441/S444; recursion identity (A) excuse | +160 / −20 | +1 |
-| **C3** | `req.c` cube triple + ranking; `ReqRun` fields; the derived pick; `prefix_k.c` pin gate; `req_admit` widening; the pair arm in `ofs_test_emit_fn`; `REQ_RUN` suffix; bit 44; tuning §2.39; `reqcube.rxt`; S445-S447 | +330 / −25 | +1 |
+| **C3** [r1] | `req.c`: (T, K) positions in the ONE triple, the hull, `rn_better`; the floor at `pf_derive_req_walk`; `ReqRun`'s two mask arrays + `pcrec_req_run_masked`; the two `findings.c` run readers over (T, K); `pcrec_req_pick`'s exact-member clause; `kset.c` pin conjunct; `req_admit` + its two restating early returns; `done[]`; both `ofs_test_run` sites masked; the pair arm; `REQ_RUN`/`req_whole_run` suffix; two `limits.def` rows + the `bits` unit; bit 44; the 11 spec hunks of §4; `reqcube.rxt` (§5.1's planned cells); S445-S452 | +300 / −30 (round 0's second triple is gone; the reader generalization and the pin/`done[]` lines are added) | +1 |
 | (C4) | `[FINDINGS.B4]`: bigram + `run-rarity` with C6 as its first reader. Its own lane and its own commit (Q7) | — | +1 if the pick moves |
 
 **Totals:**
@@ -1431,9 +1451,9 @@ alpha's other half. The full battery is the batch gate's.
 
 | lens | reading |
 |---|---|
-| specific vs general | General. Any one-cube class joins a run, with no caseless special case. One compare function serves every run site of both engines. The exact arm is the `K = 0xFF` case of the same rows |
+| specific vs general | General. Any one-cube class joins the VM run (C2), and any class of at most two members that is a cube joins the necessary run (C3, r1: every position must be a scan candidate), with no caseless special case. The alternation hull is the same rule on both branch orders and on exact branches. One compare function serves every run site of both engines. The exact arm is the `K = 0xFF` case of the same rows, and the exact run is the `K = 0xFF` case of the one ranking |
 | core vs derived | P2 and the cube runs are core facts with no prior read. The run pick and the scan member are derived, and read the prior through the accessor (D126 Q4 NONE answer) |
-| applicable vs assumption-changing | Applicable. Exact runs keep their facts, bytes and stamps. The masked run fills only today's declines (additive admission). `dfa_pfs[]` is untouched |
+| applicable vs assumption-changing | [r1] Applicable, with one assumption changed and counted. Every artifact whose winning run is exact keeps its facts, bytes and stamps (0 of 603 differ). Additive admission is withdrawn (C4): a masked run now outranks an exact one when it carries more information, which moves 18 exact-run artifacts, 10 pins and 2 `dfa_pfs[]` selections (§2.3.7). `dfa_pfs[]`'s shape is untouched |
 | fits the architecture vs refactor | Fits. A new shared file in `src/gen/` (clskit's precedent) and widened fields; no restructuring |
 | D124: a question both emissions share? | Yes. The compare is one table (`pcrec_runcmp_rows`), used by both emitters; the caseless pre-check is one text on every route. The engine appears only in which sites call |
 
@@ -1455,18 +1475,44 @@ alpha's other half. The full battery is the batch gate's.
    property holds either way, because the same function writes both rows.
    §1.6's scratch probe already contradicts §11 in a second loop shape, so
    the 5.6-7.6% should be treated as unproven, not as owed.
-4. **Does C3 need D122 addendum 4 item 3's FULL panel?** `dfa_pfs[]`'s shape
-   and every existing selection are unchanged by construction: the pin is
-   exact-only. But P7 (`req_admit`) gains a conjunct, and the VM give-up
-   surface moves in the safe direction. **Recommendation: a light D6 panel
-   on C3 only.** Use two lenses: answer soundness (the cube-run walk and its
-   declines), and the consumer contract (K64's class, D124 item 3). C0-C2
-   take no panel.
-5. **Additive admission:** a cube run is consulted only where no exact run
-   of length >= 2 exists. **Recommendation: accept.** It makes C3's movers
-   an exact biconditional and leaves every exact-run artifact
-   byte-identical. Ranking an exact 2-byte run against a 42-bit caseless run
-   is C6/B4's job, with a rate.
+4. **Does C3 need D122 addendum 4 item 3's FULL panel?** Round 0 asked for
+   a light panel, ruled light, and that panel held C3 (the r1 review).
+   - **[r1, revised] The shape question, re-argued at the fact layer.**
+     `dfa_pfs[]`'s rows, predicates, emitters and selector are unchanged,
+     and the pin's site (`pcrec_run_pin`) gains only a conjunct that
+     REFUSES. But the single ranking (Q5, revised) moves the table's INPUT
+     on a counted population:
+     - 10 pins are lost;
+     - 2 corpus artifacts move from `run-pinned` to the next row;
+     - the same 2 move from G1 `dominated` to `emitted` (§2.3.5, §2.3.7).
+   - Round 0's premise, "every existing selection is unchanged", is
+     therefore false for those 2.
+   - **Recommendation: a SECOND light round, not the full panel**, with two
+     lenses:
+     - answer soundness of the hull and the pair arm (the new code paths);
+     - selection semantics: are 2 moved selections, with no bench cell, an
+       acceptable price for one ranking, against the alternative of keeping
+       the exact run wherever it is pinned?
+   - The latter would be a second admission rule keyed on a downstream fact,
+     which is the C4/C1 class this revision removes. I recommend against it,
+     and name the trigger for revisiting: a measured regression on a
+     `run-pinned` artifact that C3 moved.
+   - The full panel stays reserved for the offset-preference step, where a
+     masked run ENTERS `dfa_pfs[]`.
+5. **Additive admission. [r1] OVERTURNED by the panel (C4), accepted.** Round
+   0 recommended consulting a cube run only where no exact run of length
+   >= 2 exists. The panel showed it defeats the caseless run
+   (`(?i)union select 1,2`, `(?i)select.*from 1=1`) and spells the floor
+   twice.
+   - r1 has ONE ranking (`Σ popcount(K)`, exact = `K` 0xFF) and ONE floor
+     (`PCREC_MIN_REQ_RUN_BITS` = 16).
+   - The census (§2.3.7): the shadowing it fixes is 2 artifacts over
+     corpus+bench (`slack`, `(?i)x/1234`). No caseless pattern there is
+     shadowed by an exact 2-run.
+   - The new mover population is 18 exact-run artifacts, 16 of them
+     through the alternation hull rather than caseless text.
+   - Exact-only artifacts stay byte-identical (0 of 603). So C3's movers are
+     still an exact biconditional (moved ⇔ masked), just a larger one.
 6. **The run pick's NONE answer:** cardinality (`Σ popcount(K)`), which
    picks `select` (×1.64 on `union-select`, still behind re2), against the
    letter argmin, which picks `from` (×2.09 on the bench, and wrong in
@@ -1478,11 +1524,15 @@ alpha's other half. The full battery is the batch gate's.
    alpha measures the mechanism and not the data, and B4 lands with its
    first reader (R2). Frank's option (c), "lands WITH S4", is honoured at
    round grain.
-8. **The cube-run floor in C3:** three positions, mirroring D127, or
-   today's exact run floor of two. **Recommendation: three.** Every measured
-   customer is 4-6 positions. A two-letter caseless run doubles the scan's
-   hit density for a two-byte verify, with no cell. Lowering it is a census
-   plus a cell (D77).
+8. **The cube-run floor in C3. [r1] Subsumed by the one floor (C4).**
+   `PCREC_MIN_REQ_RUN_BITS` = 16, in `limits.def` with its provenance
+   (§2.3.6), replaces round 0's two floors (exact 2 positions, cube 3).
+   - In positions it admits three caseless letters (21 bits) and every exact
+     run admitted today, and refuses two caseless letters (14) and a letter
+     beside one exact byte (15). That is round 0's recommendation, restated
+     in one unit.
+   - 27 masked runs over corpus+bench fall below it (§2.3.7 A0b).
+   - Lowering it is still a census plus a cell (D77).
 9. **The VM masked run (C2) has no losing bench cell.** Its witnesses are
    forced-VM WAF cells and synthetic per-position cells, and the default
    route carries it on two bench artifacts, both already won or
