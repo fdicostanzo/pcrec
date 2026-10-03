@@ -1864,7 +1864,16 @@ sweep() { # sweep <label> <extra pcrec args>
                 # fires nowhere is a byte no-op, which the converse arm below
                 # asserts on every VM artifact.
                 deny="$deny -fno-lit-run"
-                [ "${pack_a:-0}" -gt 0 ] && deny="$deny -fno-cls-pack"
+                # -fno-cls-pack joins a FOLD excuse build too, stamped or not
+                # ([OPT-LITSCAN] S4 C3's tests/litscan/reqcube.rxt found it):
+                # a denied fold respells each folded letter as a byte-class
+                # table read, and at >= 11 of them CLSPACK's atom row fires on
+                # the deny build where the subject (whose folds read no table)
+                # stamps 0 atoms — `(?i)information_schema --engine=vm`,
+                # measured: fold 12 / atoms 0, its -fno-cls-fold build reads
+                # rx_class_atomN. The same reasoning as -fno-lit-run above: an
+                # unstamped pack appears only under another axis's deny.
+                if [ "${pack_a:-0}" -gt 0 ] || [ "${fold_a:-0}" -gt 0 ]; then deny="$deny -fno-cls-pack"; fi
                 rn="$(printf '%s\n' "$(gen_deny "$pat" "$args" "$deny")" | stamp_strip | prog_region)"
                 # [silentred] THE SIXTH DENY AXIS, `-fno-ctx-node` ([UCP] U2),
                 # AND IT HAS NO STAMP TO READ: the context node moves a

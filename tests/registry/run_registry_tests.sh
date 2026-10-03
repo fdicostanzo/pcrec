@@ -621,9 +621,10 @@ fi
 # `-fno-run-overlap` (`PCREC_NO_RUN_OVERLAP`, bit 43) on the `run-overlap`
 # axis's `overlap` row, one single-bit (macro, bit, flag) triple, `lit-run`'s
 # shape. Measured: 177 PASS, 0 failed.
-# 177 -> 183 at [OPT-LITSCAN] S4 C3 (lane c3build, 2026-10-03): a NEW axis,
-# `req-run-fold`, carrying one single-bit triple (`PCREC_NO_REQ_RUN_FOLD`, bit 44,
-# `-fno-req-run-fold`) — a new axis row, not a row on an existing axis, hence +6.
+# 177 -> 183 at [OPT-LITSCAN] S4 C3 (lane c3build, 2026-10-03): two new
+# single-bit (macro, bit, flag) triples, 3 lines each as above — the new axis
+# `req-run-fold`'s `fold` row (`PCREC_NO_REQ_RUN_FOLD`, bit 44) and the
+# `run-overlap` axis's new `words` row (bit 43, beside `overlap`).
 # Measured: 183 PASS, 0 failed.
 axesn="$(grep -c '^PASS: ' "$AXESOUT" || true)"
 if [ "$axesn" -ne 183 ]; then

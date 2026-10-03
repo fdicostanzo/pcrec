@@ -16,7 +16,7 @@ of `docs/dev/reviews/2026-10-03-r1-litscan-s4-c3.md`.
 | limits.def | `PCREC_MIN_REQ_RUN_BITS` 16 (`bits`, a new unit token), `PCREC_MAX_REQ_RUN_POS_SET` 2; `PCREC_MAX_REQ_RUN_EMIT`'s unit `bytes` -> `positions`; manifest 70 -> 72 |
 | sabotage | **S446-S456** — the design's provisional S445-S455, renumbered +1 in order because S445 is C1's (r1land). All 11 validated by plant (table below) |
 | `--list-axes` | 115 -> **119 rows / 41 axes** (`run-overlap` +2 rows `words`/`bytes`; new axis `req-run-fold` +2); `registry.md` re-derived |
-| registry axis-coverage pin | 177 -> see "Validation" (measured by the suite) |
+| registry axis-coverage pin | 177 -> **183** (measured: two new triples, 3 PASS lines each) |
 
 **What it is.** A necessary-run position may be a byte or a two-member cube
 `(T, K)` (a caseless letter, `[jk]`, an alternation's one-bit hull). Runs are
@@ -121,9 +121,22 @@ S266, S268, S277, S280, S285, S289, S316, S329. `scripts/m6read_check_sab_anchor
   the pre-check sits outside the program region), CHANGELOG.
 - limits: `limits_check.sh` manifest (70 -> 72 names + count).
 - registry: `registry.md` §6 row/axis count and axis list; `cli.md` §2's flag
-  list. The axis-coverage pin in `run_registry_tests.sh` moves with the two
+  list. The axis-coverage pin in `run_registry_tests.sh` 177 -> 183 with the two
   new triples (`req-run-fold`'s bit 44, `words`'s bit 43) — measured by the
-  suite (handback).
+  suite.
+- rxtsource: census 261/4395/36325 -> 262/4442/36600 (and RUNSH_* the same
+  delta) for `tests/litscan/reqcube.rxt`; C3 PASS +270 (3.14 number inferred),
+  SKIP +5 (pcre2-only +1, give-up +4), VERIFIABLE 17056 -> 17326, measured on
+  python 3.9 by `verify_rxt.py tests/litscan/reqcube.rxt`.
+- Three run-spelling readers `make test-codegen`/`test-encoding-checks` found:
+  `runcmp_check.py`'s RX_RUN_WORDS count (now reads the masked spelling too),
+  `run_facts_checks.sh` [facts-e3]'s `/abcd[xy]/user` pin (`6` -> `6:6+2`; a
+  test-script-only witness outside the census's populations, so a mover the
+  manifest could not list; legitimately: the {x,y} cube joins its run window),
+  and `run_encoding_checks.sh` DD12a(i)'s REQ_RUN parse (`hex@k/mask`; a pair
+  arm's scanned bytes are its cube's members). And one stale since C1:
+  `run_wclass_census.sh` [W1] grepped for the five-byte `memcmp` that C1's
+  overlap row replaced (red on r1land `d832fc2a`'s own binary too).
 - `run_prechecks.sh`: `[3.1w]` now asserts `REQ_WHY "none"` iff REQ_BYTE AND
   REQ_RUN are "none"; `[3.1b]`/`[3.6b]` check a pair scan position on both
   members (`run_scan_members`); literals moved: `(?i)abc` REQ_RUN
