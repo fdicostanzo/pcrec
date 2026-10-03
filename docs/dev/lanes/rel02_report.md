@@ -69,6 +69,7 @@ a squash), re-pin to the merge commit.
 
 ## OWED
 
-Full `make test`: launched detached as the lane's last act,
+Full `make test`: armed detached as the lane's last act (it starts when
+`scratch/recid.log` shows its `RC=` line, to keep one heavy suite at a time),
 `scratch/full/make_test.log`, completion line `MAKE_RC=<n>`. Verdict is
 make's `*** [` lines.
