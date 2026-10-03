@@ -64,7 +64,7 @@ CELLS=(
   "dbnames-ctl|C|capability/patterns/wild-waf-crs-942140-dbnames.rx||$CAP"
   "concat-ctl|C|capability/patterns/wild-waf-crs-942360-concat-sqli.rx||$CAP"
   "stackframe-ctl|C|loglines/patterns/stack-frame.rx||$LOG"
-  "kvquoted-ctl|C|syntax/patterns/kv-quoted.rx||$SYN"
+  "kvquoted-ctl|C|loglines/patterns/kv-quoted.rx||$LOG"
 )
 # the per-call cell: union-select's own search_short subjects
 PERCALL="union-srch|W|capability/patterns/wild-waf-crs-942270-union-select.rx||short"
@@ -164,6 +164,7 @@ int main(int argc,char**argv){
 EOF
   for cell in "${CELLS[@]}" "$PERCALL"; do
     IFS='|' read -r name kind pat flags subjects <<<"$cell"
+    [ -s "$BENCH/bench/$pat" ] || { echo "NO SUCH PATTERN FILE: $pat"; exit 1; }
     for side in base new deny; do
       bin=base; extra=""
       [ "$side" != base ] && bin=new
