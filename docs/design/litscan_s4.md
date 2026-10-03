@@ -1068,9 +1068,20 @@ grep -rnE 'REQ_(BYTE|RUN|WHY)|req_(whole_)?run|req_byte' docs/spec tests
 | 21 | `ofs_test_emit_fn` (`emit_dfa.c:5981`) | `scan_byte >= 0` | the pair arm (§2.3.4) |
 
 The test and spec readers that grep prints are in §5.4 (the stamp
-cross-checks) and in the hunks below. `tests/codegen/run_prechecks.sh` is
-one: its `REQ_BYTE`/`REQ_RUN` agreement check reads "`REQ_BYTE ==
-bytes[idx]`", and r1 makes that conditional on the mask.
+cross-checks) and in the hunks below. The ones a grep at `92b8bbf0` names
+that C3 MOVES:
+- `tests/codegen/run_prechecks.sh:381`, check `[3.1w]`, asserts
+  `REQ_BYTE "none"` ⇔ `REQ_WHY "none"` on every row. r1 makes it
+  "⇔ `REQ_BYTE "none"` AND `REQ_RUN "none"`" (`union-select`'s shape).
+- Its `[3.1r]`/`[3.6r]` expected-`REQ_RUN` tables are re-read for any
+  pattern that becomes masked.
+- `run_codegen_tests.sh`, `run_encoding_checks.sh`, `run_cpset_structure.sh`,
+  `run_recursion_identity.sh`, `tests/axes/run_axes.sh`,
+  `tests/findings/gen_adversarial.py` and
+  `tests/findings/manifests/ship_weblog_movers.txt` each read `REQ_RUN`.
+  Each is re-run, not re-read (the D94 addendum).
+- `tests/registry/limits_check.sh`'s row manifest gains the two
+  `limits.def` rows.
 
 **[r1 C6] C3's spec hunks, each named:**
 
@@ -1101,14 +1112,32 @@ bytes[idx]`", and r1 makes that conditional on the mask.
    biconditional:
    - **C1:** moved ⇔ the artifact writes a compare at an overlap length.
    - **C2:** moved ⇔ the VM program writes a masked run.
-   - **C3:** moved ⇔ `req_run` is masked.
+   - **C3:** moved ⇔ `req_run` is masked. [r1] It is still a biconditional
+     under the single ranking, because every artifact whose winning run is
+     exact is byte-identical (§2.3.7 class B!, 0 of 603). The population is
+     A1 ∪ C, and the census predicts 41 (23 + 18) over corpus+bench auto.
+     The manifest is the count of record. It also lists, as named
+     sub-populations, the 10 lost pins, the 2 `run-pinned` → next-row
+     selections and the 2 `dominated` → `emitted` verdicts, each matched
+     against §2.3.7's list.
 
    Each has 0 off-diagonal, as S2a's 1,081 / 4,891 did.
 2. **The answer differential** (`tests/findings/b1_mover_answers.py`,
    reused) over every mover covers the span, every capture and the give-up
-   surface, at every startpos, BASE vs NEW. C3 classifies give-up → NOMATCH
-   transitions as allowed and lists them (§2.3.5). Any other transition is
-   a failure.
+   surface, at every startpos, BASE vs NEW. [r1 S2] C3's classification is
+   one table:
+
+   | BASE → NEW | verdict |
+   |---|---|
+   | identical | pass |
+   | give-up → NOMATCH | allowed, listed (the pre-check's only legal direction, D124 item 3) |
+   | **NOMATCH → give-up** | **DEFECT**: the `done[]` class (S2b); fails the commit |
+   | any change of span, capture, or match ↔ no-match | DEFECT (wrong answer, D144 item 3's disaster) |
+   | give-up → match | DEFECT (a pre-check cannot create a match) |
+
+   The NEW side runs at the corpus's own step budgets, so a NOMATCH that
+   needed K65's set member to stay linear shows up as a give-up and not as
+   a slow pass.
 3. **The oracle corpus.** New `tests/litscan/caseless.rxt`, python
    `re`-verified (`verify_rxt.py`'s C3 tier). Gaps that need libpcre2
    marking are flagged. It covers:
@@ -1128,6 +1157,24 @@ bytes[idx]`", and r1 makes that conditional on the mask.
    - starting at `startpos`, and inside a lookbehind's span;
    - a run with an exact member (one stream) against all-letters (two
      streams).
+
+   **[r1] The panel's counterexamples, as planned cells.** Each block runs
+   under `engine auto` and again under `engine vm`. Python `re`
+   (`re.ASCII`) verified every expectation below on 2026-10-03 unless the
+   cell says otherwise.
+
+   | block | pattern | cells | guards |
+   |---|---|---|---|
+   | S1 head, branch order A | `(?:S(?i:ab)\|(?i:sab))` | `m "sab" 0 3`, `m "SAB" 0 3`, `m "Sab" 0 3`, `m "xsAbx" 1 4`, `n "ab"`, `n "zab"` | the hull (S450) |
+   | S1 head, order B | `(?:(?i:sab)\|S(?i:ab))` | the same six | order-independence |
+   | S1 tail, order A | `(?:(?i:ab)S\|(?i:abs))` | `m "abs" 0 3`, `m "ABS" 0 3`, `m "abS" 0 3`, `m "xaBsx" 1 4`, `n "ab"`, `n "abz"` | the hull, tail arm |
+   | S1 tail, order B | `(?:(?i:abs)\|(?i:ab)S)` | the same six | |
+   | S1 exact-branch hull | `frank\|fred`; `a[bc]de` | `m "fred" 0 4`, `m "frank" 0 5`, `n "frx"`, `n "fre"`; `m "abde" 0 4`, `m "acde" 0 4`, `n "ade"` | the class-C mover shape (§2.3.7) |
+   | S2b give-up witness (`features backrefs`, `budget steps=10000`, `encoding byte` and `utf8`) | `(x?)([a-z]+)+S\d(?i:select)\1` | `n` on `"a"×16 + "1select"`, `×17`, `×18`; `m "abcS1SeLeCt" 0 11`; **`gu steps` on `"a"×18 + "Sx1select"`** (the control: every necessary byte and the run present, so the budget really is reached, the K65 file's shape) | `done[]` (S451) |
+   | S2b, the panel's exact witness | the same | `n` on `"a"×30 + "1select"` | **classified**: NOMATCH today (K65's `memchr('S')`); NOMATCH→give-up under round 0, which is the DEFECT. Its `n` expectation follows from absence alone (`S` is necessary and absent). Python backtracks exponentially at L = 30, and libpcre2's own required unit is the caseless `t`, which is present. So the build lane light-probes 10.46 (tailnet, one compile) and records whether it answers NOMATCH or a match-limit error, in the file's header, as `k65_precheck_whole_set.rxt` records its own. pcrec's answer is `n` either way |
+   | S2a stamp | `(?i:select)\d+x` | `m "SELECT12x" 0 9`, `n "select12"`, `m "sElEcT1x" 0 8` | the answers; `REQ_BYTE "120"` is §5.4's |
+   | S4 re-search | `(?i)select` | `m "selecX select" 7 13`, `m "SELECXSELECT" 6 12`, `m "xSelEcT" 1 7` | each first scan hit fails its verify. Under S449 the block stops advancing and the file's watchdog fires (a hang is the detector) |
+   | S4 whole run, K66 site (`features backrefs`: VM, no DFA scan, a 12-position run, so `t[1]` exists) | `(x?)(?i:abcdefghijkl)\1` | `m "abcdefghijkl" 0 12`, `m "ABCDEFGHIJKL" 0 12`, `m "zaBcDeFgHiJkLz" 1 13` | S448: a whole run compared unmasked deletes the first and third |
 4. **The axes.** `make test-axes` on the three new flags. With the deny
    applied, each must be answer-identical over the whole corpus.
 
