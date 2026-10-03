@@ -1,0 +1,29 @@
+[MACPORT] CC=gcc-16 (default 'gcc' is not GNU gcc on this box; tests/lib/cc_resolve.sh)
+axes: registry derived — 39 bit-flag axes (bits 4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,35,36,37,38,39,40,42,43,44), matching tuning.md §2's own       39 documented bit mentions
+
+axes: HARNESS_BATCH unset (0) — unbatched per-pattern compile, this sweep's historical shape
+axes: baseline run (no extra flags)...
+group cases pending-vm: 0
+under expectations skipped: 0
+oracle declarations skipped: 0
+entry files: 17
+fragments spliced: 0
+parallel: 17 of 17 file workers reported (PROCS=8)
+axes: baseline:     2434 cases dumped, 81s
+axes: --tune positions not run (filtered out by AXES=)
+axes: pairing two axes at a time, PROCS=4 each (was 8 sequential)
+
+axes: axis -fno-req-run-fold (PCREC_NO_REQ_RUN_FOLD, bit 44) (RXTFLAGS="-fno-req-run-fold")...
+  keys_base=2434 keys_axis=2434 agree=2434 budget=0 giveup1=0 refused=0 lost=0 gained=0 mismatches=0
+  agree=2434 budget-bound=0 giveup1-allowed=0 giveup1-unallowed=0 refused-documented=0 (floor none) lost-other=0 mismatches=0 gained=0
+
+== axes summary ==
+  -fno-req-run-fold (PCREC_NO_REQ_RUN_FOLD, bit 44)|OK|keys_base=2434 keys_axis=2434 agree=2434 budget=0 giveup1=0 refused=0 lost=0 gained=0 mismatches=0 refused_doc=0 refused_undoc=0 giveup1_allowed=0 giveup1_unallowed=0|92s
+oracle cross-check: SKIPPED
+--vm-entry-shape tier: not run (filtered out by AXES=)
+DIAL-S3 (tune refusal-set, keyed): SKIPPED (no --tune positions ran under this AXES= filter)
+-futf-check arm (contract, own oracle): not run (filtered out by AXES=)
+HARNESS_BATCH: 0
+total wall time: 173s
+run_axes.sh: all axes answer-identical to default (documented refusal populations excepted); --vm-entry-shape tier: not run (filtered out by AXES=); oracle cross-check SKIPPED; DIAL-S3 SKIPPED (no --tune positions ran under this AXES= filter); -futf-check arm not run (filtered out by AXES=)
+axes rc=0

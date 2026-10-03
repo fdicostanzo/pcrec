@@ -912,6 +912,20 @@ declare -A GIVEUP1_ALLOWANCE=(
     ["-fno-req-run|tests/base/k66_precheck_whole_run.rxt:55"]="K66 (tuning.md §2.29 & §2.428, known_issues.md K66): -fno-req-run removes the whole-run compare and leaves only the byte pick, which this subject's window does not cover — default proves nomatch, axis gives up (steps)"
     ["-fno-req-run|tests/base/k66_precheck_whole_run.rxt:56"]="K66 (tuning.md §2.29 & §2.428, known_issues.md K66): -fno-req-run removes the whole-run compare and leaves only the byte pick, which this subject's window does not cover — default proves nomatch, axis gives up (steps)"
 
+# GROUP F2 — bit 44, `-fno-req-run-fold` (PCREC_NO_REQ_RUN_FOLD, [OPT-LITSCAN]
+# S4 C3, litscan_s4.md §4 r2 R2-C6): the cells where denying the caseless
+# necessary run takes a masked run's no-match proof away and the axis gives
+# up where the default answers NOMATCH (K66's shape, one fold narrower).
+# EMPTY, and measured rather than assumed: lane c3build (2026-10-03) ran
+# SKIP_ORACLE=1 AXES="-fno-req-run-fold" over the 17 .rxt files that carry
+# one of the C3 mover manifest's 29 corpus patterns (the only files the
+# axis can move; docs/dev/optloop/s4/c3_movers.log) -- keys_base=2434
+# agree=2434 giveup1=0 lost=0 mismatches=0. The structural reason: the
+# denied walk keeps every EXACT byte of the run as a necessary-set member,
+# and on the no-DFA-scan route K65's whole-set half then memchrs each of
+# them, so the proof the masked run adds is never the only one left on the
+# corpus's hostile cells (the S2b witness's `S` is exactly such a member).
+# The full-corpus axes run at landing confirms or populates this group.
 # GROUP G — §2.11 `--engine=vm`, 10 cases, TWO mechanisms.
 #
 # G1 (2 cases) — tests/base/d27_k23_ambiguous_decomposition.rxt:90,98, the
