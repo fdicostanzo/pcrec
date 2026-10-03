@@ -728,6 +728,16 @@ fi
 # `(?<=foo)bar` against the lane's C0 compiler (byte-identical to main) at
 # `-o -`: the abi digits, the helper, the compares and the stamps, nothing
 # else.
+#
+# RE-RECORDED 2026-10-03 at [OPT-LITSCAN] S4 C3 (abi 58 -> 59, lane
+# c3build): ONE row moves, `(?i)HeLLo` +1115, and eleven do not (the abi
+# digit is the same length). `(?i)HeLLo` is a census class-A1 mover: its
+# caseless letters are a masked necessary run `48454c4c4f@3/dfdfdfdfdf` where
+# abi 58 had none, so it gains a run pre-check. VERIFIED BY DIFFING it
+# against lane/r1land's compiler at `-o -`: the abi digits, `RX_REQ_RUN` and
+# `RX_REQ_WHY` ("none" -> "emitted"), the `rx_w4` helper, the `rx_reqrun`
+# pair-arm block (two memchr streams for L/l, the masked `words` compare),
+# its call at the search entry, and `RX_RUN_WORDS` 0 -> 1, nothing else.
 MANIFEST="$ROOT_DIR/tests/codegen/manifests/m5_stage1_stamps.tsv"
 if [ -d "$(dirname "$MANIFEST")" ]; then
     if [ -f "$MANIFEST" ]; then
