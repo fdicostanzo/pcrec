@@ -21,6 +21,25 @@ in the design note with its section.
   gets one `__asan_report_load_n` per word at `gcc-16 -O2
   -fsanitize=address`; the constant `memcmp` (`two.c`) gets none, and is
   intercepted only under `-fno-builtin-memcmp`. Design note §0 item 5, §5.2.
+- `c1_movers.py` — **C1's mover census and deny arm** (lane `s4build`,
+  2026-10-03): every pcrec-bench `bench/*/patterns/*.rx` export and every
+  corpus pattern, x {auto, vm}, compiled by the C0 (abi 55) and C1 (abi 56)
+  compilers and by C1 under `-fno-run-overlap`. Asserts the BICONDITIONAL
+  (moved after normalizing the abi digit and dropping the `RX_RUN_WORDS`
+  line <=> the C1 artifact's `RX_RUN_WORDS > 0`) and that the deny restores
+  the abi-55 program. `BASE`/`NEW`/`SCR` from the environment; its transcript
+  is in `docs/dev/lanes/s4build_report.md`.
+- `alpha_c1.sh` — **C1's Linux alpha block** (design §6.1-§6.2, D144 item 1)
+  for the manager's executor run on ubuntubudu: `step0` ([WORD-FOLD]'s owed
+  gcc-15/x86 instruction arm on `spell.c`/`one.c`/`two.c`), `build` (BASE =
+  C0, NEW = C1, DENY = NEW `-fno-run-overlap`; the subjects regenerated and
+  sha256-checked against the bench's manifests, writing nothing in either
+  repo), `check` (DENY == BASE modulo the abi digit and the stamp line, the
+  witnesses reached and the controls not, every arm and the two fused `|`
+  twins answer-identical), `time` (`taskset`, load1 < 0.5, 5 launches
+  round-robin x 5 passes, median of medians, NEW/BASE beside DENY/BASE, the
+  noise floor). Its `build`/`check` steps were smoke-tested on the Mac with
+  the lane's own binaries; `time` is Linux-only.
 - `hot.c` — a darwin SCRATCH-tier find-all loop over 1 MiB (random text, and
   a near-miss band): today's per-byte fold chain, masked words `&&`/`|`, and
   exact `memcmp`/`overlap`/`|` at L = 7. `gcc-16 -O2 -o hot hot.c && ./hot 0`

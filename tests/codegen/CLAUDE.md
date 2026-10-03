@@ -10,6 +10,24 @@ or it has no regression net at all.
 
 ## Files
 
+- **runcmp_check.py** — [OPT-LITSCAN] S4 C1 (lane s4build, 2026-10-03, abi
+  56): the RUN COMPARE's structural checks (`src/gen/runcmp.c`,
+  `docs/design/litscan_s4.md` §5.4), run by `run_codegen_tests.sh`'s
+  `[OPT-LITSCAN S4]` block (PASS/FAIL lines forwarded; ~99 checks). Every
+  `rx_w<W>(base + o) == rx_w<W>("...")` chain in each witness artifact is
+  decoded back to (offset, bytes) words and held to the run the witness
+  names from its PATTERN text (never from the compiler): every word inside
+  the run, the first at 0, the last at exactly L - W, no byte uncovered, the
+  words spelling the run byte for byte, no integer-literal constant; per
+  artifact, helpers declared for exactly the widths used and ahead of use,
+  `RX_RUN_WORDS` equal to the word compares in the text, the artifact
+  compiling under `-Wall -Wextra -Werror`, and under `-fno-run-overlap` no
+  word compare or helper left, `RX_RUN_WORDS 0`, each word compare restored
+  to exactly one `memcmp`; and the pay-for-what-you-use lengths (L 4, 8, 16
+  stay one `memcmp`). Witnesses cover the DFA run term (`/user|/users`,
+  `foo\b`, `[ab]/user`), the run pre-check with escape-bearing runs (`a"b`,
+  `*/x`), the island's chains and the VM literal run at every overlap length.
+  Failing direction measured at landing: S441 and S442 each 17 red, S443 72.
 - **run_prefix_invariance.sh** — K79 (lane k7980, 2026-09-30, abi 54): no
   SELECTION reads the prefix. In `make test-codegen` (~20 s) and on the mech
   arm `prefixinv` (S437). PART 1 compiles the K79 witnesses plus every 40th
