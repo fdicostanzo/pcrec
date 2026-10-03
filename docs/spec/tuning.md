@@ -1917,7 +1917,9 @@ the same body-count family.
 
 **AUTO, and the size term.** `VM_INLINE_CHAIN_MAX_BYTES` (`src/core/limits.def`,
 4,096 bytes) is compared against the artifact's own emitted program bytes,
-stamped as `<PREFIX>_VM_PROGRAM_BYTES`. At or below it AUTO takes `forward`;
+stamped as `<PREFIX>_VM_PROGRAM_BYTES` — measured at the canonical two-byte
+prefix length since `abi` 54, so the caller's `-p` never moves the rung
+(K79; `limits.md` "Size limits and the prefix"). At or below it AUTO takes `forward`;
 above it, `shared`. Where the forward rungs are illegal AUTO takes `inline`
 below the term and `plain` above it — the two shapes that shipped before and
 after `[CC-DIFF]` STEP 1 respectively, so neither step is novel.

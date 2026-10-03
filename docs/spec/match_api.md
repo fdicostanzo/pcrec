@@ -294,6 +294,26 @@ noted under group 2, which are `PCREC_*`-named yet per-artifact):
    `-p rx` and `-p foo` builds of the same pattern emit byte-identical
    `#ifndef PCREC_RX_ABI_H` blocks).
 
+   **K80 (`abi` 54): the guard's VALUE is the abi, and a mixed-abi TU is
+   refused.** The block opens
+
+   ```c
+   #if defined(PCREC_RX_ABI_H) && (PCREC_RX_ABI_H + 0) != 54
+   #error "pcrec: this artifact (abi 54) shares a translation unit with an artifact of a different abi; regenerate both with one pcrec"
+   #endif
+   #ifndef PCREC_RX_ABI_H
+   #define PCREC_RX_ABI_H 54
+   ```
+
+   so artifacts of one abi still share the first block, and an artifact of
+   another abi (whose types may differ) fails to compile instead of
+   silently using the first block's types. One guard with a value, not a
+   guard NAME per abi: two keyed guards would let both blocks through and
+   fail, if at all, on a `struct` redefinition that does not name the
+   cause. `+ 0` makes the test refuse a pre-54 artifact included first (its
+   guard is defined empty). A pre-54 artifact included AFTER a 54 one is
+   not refused: its own `#ifndef` predates the rule.
+
    **[ABI-NS], 2026-08-18 (D60 + addendum).** The same guarded block also
    carries every emitted MACRO whose value is a pcrec-contract fact
    rather than an artifact-specific one, unprefixed and emitted
@@ -2265,7 +2285,33 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `53` on every artifact today ([CLS-TREE] S2's review
+- **`rx_info.abi` is `54` on every artifact today (lane k7980 bumped it
+  from 53, 2026-09-30: K79 AND K80 — NO SELECTION READS THE PREFIX, AND THE
+  SHARED BLOCK REFUSES A MIXED-ABI TRANSLATION UNIT).** (1) K80: the shared
+  block's guard now carries the abi as its value, `#define PCREC_RX_ABI_H 54`,
+  and the block opens with
+  `#if defined(PCREC_RX_ABI_H) && (PCREC_RX_ABI_H + 0) != 54` / `#error …`,
+  so a translation unit that includes artifacts of two different abis fails
+  to compile, naming the cause, where it used to compile the second against
+  the first one's types. The same-abi case is unchanged: the first block
+  wins and every later one is skipped. The `+ 0` makes the test refuse a
+  pre-54 artifact included FIRST (its guard is defined empty); a pre-54
+  artifact included AFTER a 54 one is the one order that stays silent, since
+  that artifact's own `#ifndef` was written before this rule existed. (2)
+  K79: the compiler emits every artifact under a fixed two-byte placeholder
+  prefix and writes the caller's `-p` spelling only onto the finished text,
+  so every size-predicated selection (the VM entry shape, the size term's
+  trigger and ladder, the emitted-size caps) is decided on the text at a
+  canonical prefix length, and the same pattern under the same options gets
+  the same artifact whatever its prefix, differing only in spelling
+  (`docs/spec/limits.md` "Size limits and the prefix"). At `-p rx` no byte
+  moves but this digit and the guard lines; under a prefix of any other
+  length, `<PREFIX>_VM_PROGRAM_BYTES` now reports the canonical length (it
+  counted the prefix's bytes before), and an artifact whose selection had
+  crossed a size knee because of its prefix takes the default-prefix
+  selection. `rx_info.name`'s default is still the prefix. No struct offset
+  moves, no `rx_info` member is added or changed, no answer moves.
+- **`rx_info.abi` was `53` ([CLS-TREE] S2's review
   fixes bumped it from 52, 2026-09-30, renumbered by the manager at merge:
   THE SCAN EDGE'S RUN TEST IS THE CLASS-FORM TABLE'S ANSWER, AND THE KIT IS
   TAKEN ONLY WHERE IT IS SMALLER — D139).** A DFA scan edge no longer
@@ -3757,6 +3803,14 @@ bytes — the exact quantity `VM_INLINE_CHAIN_MAX_BYTES` was compared against
 when AUTO chose the rung.** Both are **UNCONDITIONAL on every VM artifact,
 hybrids included, and never defined on a pure-DFA artifact**, on
 `_VM_FRAMELESS`'s own rule.
+
+**Since `abi` 54 (K79) the size is measured at the CANONICAL prefix length,
+two bytes**: the program is emitted under a two-byte placeholder prefix and
+the caller's `-p` spelling is written onto the finished text afterwards
+(`limits.md` "Size limits and the prefix"). So the number is the program's
+length as it reads at `-p rx`, the same under every prefix, and the rung it
+chose is too. Before 54 it counted the prefix's own bytes, and a long enough
+prefix pushed an artifact across the knee.
 
 **THE SECOND MACRO IS NOT DECORATION, and that is why there are two.** Four
 artifacts can stamp `"plain"` for four different reasons — framed, or

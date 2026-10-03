@@ -23,6 +23,11 @@ void pcrec_ctx_fail(Ctx *cx, size_t pos, const char *fmt, ...)
         va_start(ap, fmt);
         vsnprintf(cx->err->msg, sizeof(cx->err->msg), fmt, ap);
         va_end(ap);
+        /* [K79] a diagnostic that names an emitted identifier names it at
+         * the caller's prefix, never the placeholder. */
+        if (cx->user_prefix)
+            pcrec_render_prefix_msg(cx->err->msg, sizeof(cx->err->msg),
+                                    cx->user_prefix);
         cx->err->pos = pos;
         /* [M4.4] (subst note §9 Q8, D42.4): pcrec_compile()'s only input is
          * the pattern text today — the substitution-template compiler
@@ -798,6 +803,17 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
     }
     defo.flags |= pcrec_tune_deny_flags(defo.tune);
 
+    /* [K79] THE EMITTERS SEE THE PLACEHOLDER, NEVER THE CALLER'S PREFIX
+     * (core/internal.h, PCREC_PREFIX_PLACEHOLDER): every length measured
+     * below — the entry-shape knee, the size term's trigger, ladder and
+     * caps — is then the text at a canonical prefix length, so no selection
+     * can depend on what the caller named the matcher. The real spelling is
+     * put back on the finished text at `facts_force`. Set once, before the
+     * first `setjmp`, and never written again. */
+    const char *const user_prefix = defo.prefix;
+    defo.prefix = PCREC_PREFIX_PLACEHOLDER;
+    pcrec_options hopt;   /* the facts hook's real-prefix view, filled there */
+
     /* [REL-1.11] THE ENABLED FEATURE SET, RESOLVED ONCE, HERE — before the
      * retry loop, the same altitude as the tune validation just above.
      * `opt->features` is the same spec vocabulary the CLI's `--features`
@@ -983,6 +999,7 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
         cx.patlen = pattern ? strlen(pattern) : 0;
         cx.err = err;
         cx.opt = &defo;
+        cx.user_prefix = user_prefix;
         /* [REL-1.11] copied from the ONE resolution above — every retry
          * attempt of this same compile gets the identical resolved values,
          * never a re-resolve, and nothing here touches src/parse/enabled.c's
@@ -1474,7 +1491,7 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
          * here must be a diagnosed refusal, not an abort. */
         pcrec_parse_mods_init(&cx);
 
-        if (!valid_prefix(defo.prefix))
+        if (!valid_prefix(user_prefix))
             pcrec_ctx_fail(&cx, 0, "invalid symbol prefix (must be a C identifier, <= %d chars)",
                      PCREC_MAX_PREFIX_LEN);
         /* K14's shape on the ENCODING gate (R20, the D27 writer's divergence 5;
@@ -2232,8 +2249,24 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
          * attempt's record, is ever listed. The recovery point's first arm
          * resumes at this label when a forced ask fails. */
 facts_force:
+        if (facts_hook) pcrec_facts_force_all(&cx);
+        /* [K79] THE PREFIX RENDER: the one step that writes the caller's
+         * prefix, after every decision and the force loop, before anything
+         * outside the pipeline reads the text. A placeholder lead byte that
+         * is not a placeholder means some other route put a raw \x01 in the
+         * text; rendering around it would corrupt that byte silently. */
+        if (!pcrec_sb_render_prefix(&cx.job->csb, user_prefix) ||
+            !pcrec_sb_render_prefix(&cx.job->hsb, user_prefix) ||
+            !pcrec_sb_render_prefix(&cx.job->irsb, user_prefix))
+            pcrec_ctx_fail(&cx, 0, "internal error: a raw \\x01 byte reached "
+                           "the emitted text (the prefix placeholder's lead)");
         if (facts_hook) {
-            pcrec_facts_force_all(&cx);
+            /* The listing names stamps at the caller's prefix, so the hook
+             * reads a view whose `prefix` is the real one; `defo` itself
+             * keeps the placeholder for any later attempt. */
+            hopt = defo;
+            hopt.prefix = user_prefix;
+            cx.opt = &hopt;
             facts_hook(&cx, cx.job->csb.p ? cx.job->csb.p : "",
                        cx.job->csb.len, facts_ud);
         }

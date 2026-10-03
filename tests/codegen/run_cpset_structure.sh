@@ -707,6 +707,14 @@ fi
 # (+127), the `rx_valid_upto` declaration (+73), the `.c`-only `#define
 # rx_VALID_LB 0` (+21) and the byte backend's five-line `rx_valid_upto`
 # definition (+127).
+#
+# RE-RECORDED 2026-09-30 at K79+K80 (abi 53 -> 54, lane k7980): all twelve
+# `EMITTED_BYTES` rows +201, one number. VERIFIED BY DIFFING `a`'s artifact
+# against a scratch build of lane/s2tri 9cf5034b at the same `-o -`
+# basename (whole-file delta 201): the two same-length abi digits, the
+# shared block's three prelude lines (`#if defined(PCREC_RX_ABI_H) && …`,
+# the `#error`, `#endif`) and the guard's ` 54` value, nothing else. The
+# prefix render moves no byte at `-p rx`.
 MANIFEST="$ROOT_DIR/tests/codegen/manifests/m5_stage1_stamps.tsv"
 if [ -d "$(dirname "$MANIFEST")" ]; then
     if [ -f "$MANIFEST" ]; then

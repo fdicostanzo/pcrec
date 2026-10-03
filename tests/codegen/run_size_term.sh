@@ -438,7 +438,15 @@ fi
 #
 # Members are CORPUS patterns (tests/counterk/counterk.rxt) so that another
 # lane's change to the corpus keeps them honest. Fields: pattern, shape tag.
+#
+# `(|a){0,12}b` JOINED AT abi 54 (lane k7980, K80): the shared block's valued
+# guard and `#error` prelude add a K-INVARIANT ~200 code bytes to every
+# artifact, which raises every ratio a little. `(a{1,3}){64}` sat at 0.7498
+# and moved to 0.7514, so it now stamps `size-model-declined` (prediction and
+# stamp still agree), and the below-bar side was left with one shape. The new
+# member is a corpus pattern at 0.7345, a shape no other member has.
 POOL_PATTERNS='((a)|ab){4000}c	capture-alt
+(|a){0,12}b	empty-branch
 (?:[ab]a|[ab]){8,12}+b	class-leading
 (?:ab|ba|aa|bb){24}c	island-4lit
 (a{1,3}){64}	no-alternation

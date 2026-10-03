@@ -1143,7 +1143,11 @@ REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
 # spelling at every position and a VM range from 0 reads `b <= hi`; this gate's call-bearing `byte`
 # population is VM-routed at the default position, and the gate's own run on the lane decides whether
 # (A) moves (docs/dev/lanes/clss2_report.md "Review fixes (clss2fix)").
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-6df81be3}"   # [CLS-TREE] S2 on main at abi 50 (triage s2tri, abi 53): (B) self-pinned to the merge commit. Prior pins: 2c45260a (S2 review fixes, abi 52->53, pre-merge), 979b0b62 (abi 52), 22d150a8 (abi 51), 6c22a7cd ([UTF-VALID], abi 50). Older: 7889ab1f ([OPT-HYB-RESEED], land5, abi 48->49). # [OPT-HYB-RESEED] on land4 (S4 + CLSPACK), ONE event abi 48->49 (land5): (B) re-pinned to the land5 merge commit (its last src change, the k73utf convention), D76, 2026-09-30. Prior pin: 64b55d15 (land4, abi 47->48). # [CLS-TREE] S4, abi 46->47 (lane/s4build, pin 0d0a514f), and [OPT-CLSPACK], 47->48 (lane/clspack, pin 8407666a), each on its own lane before this landing combined them onto main: # [K73], abi 46->47: (B) re-pinned to 40c56343 on lane/k73utf (D76, 2026-09-29). Prior pin: 7e8ab18a ([UCP] U2, abi 45->46).
+# **(B) RE-PINNED AGAIN — K79+K80 (lane k7980), 2026-09-30: abi 53 -> 54, pin = `79ebcfd7`, the lane
+# commit that is its last `src/` change.** The shared block gains its valued guard and `#error` prelude
+# on every artifact; the prefix render changes no byte at `-p rx` (this gate's prefix), so (A) is
+# untouched and (B) moves by the prelude lines and the digit.
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-79ebcfd7}"   # K79+K80 (lane k7980, abi 53->54): the lane commit that is its last src/ change (the manager re-pins at merge if it rewrites that commit). Prior pins: 6df81be3 (S2 merge into s2tri, abi 53), 2c45260a (S2 review fixes, abi 52->53, pre-merge), 979b0b62 (abi 52), 22d150a8 (abi 51), 6c22a7cd ([UTF-VALID], abi 50). Older: 7889ab1f ([OPT-HYB-RESEED], land5, abi 48->49). # [OPT-HYB-RESEED] on land4 (S4 + CLSPACK), ONE event abi 48->49 (land5): (B) re-pinned to the land5 merge commit (its last src change, the k73utf convention), D76, 2026-09-30. Prior pin: 64b55d15 (land4, abi 47->48). # [CLS-TREE] S4, abi 46->47 (lane/s4build, pin 0d0a514f), and [OPT-CLSPACK], 47->48 (lane/clspack, pin 8407666a), each on its own lane before this landing combined them onto main: # [K73], abi 46->47: (B) re-pinned to 40c56343 on lane/k73utf (D76, 2026-09-29). Prior pin: 7e8ab18a ([UCP] U2, abi 45->46).
 
 WORKDIR="$(mktemp -d)"
 cleanup() {

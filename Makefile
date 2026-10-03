@@ -502,7 +502,8 @@ test-codegen: all
 	    'bash tests/codegen/run_comment_escape.sh' \
 	    'bash tests/codegen/run_comments_axis.sh' \
 	    'bash tests/codegen/run_cls_fold_agreement.sh' \
-	    'bash tests/codegen/run_facts_checks.sh'
+	    'bash tests/codegen/run_facts_checks.sh' \
+	    'bash tests/codegen/run_prefix_invariance.sh'
 
 # [OPT-3] the PRE-MULTIPLIED DFA TRANSITION TABLE's own checks
 # (docs/design/premultiplied_dfa_table.md). Its OWN section rather than a

@@ -10,6 +10,23 @@ or it has no regression net at all.
 
 ## Files
 
+- **run_prefix_invariance.sh** — K79 (lane k7980, 2026-09-30, abi 54): no
+  SELECTION reads the prefix. In `make test-codegen` (~20 s) and on the mech
+  arm `prefixinv` (S437). PART 1 compiles the K79 witnesses plus every 40th
+  distinct corpus pattern (default route and `--engine=vm`, 176 pairs) at
+  `-p rx` and at 3-, 23- and 60-character prefixes spelled `kpz…`, maps the
+  prefix back to `rx`/`RX` and requires the `.c` and `.h` (or the
+  diagnostic, on a refusal) to be BYTE-IDENTICAL — so everything is
+  "selection" and no stamp is exempt. PART 2 does the same for `-p q` (one
+  character, not back-mappable) on the value-stamp list. PART 3 is the reach:
+  a population floor, and six witnesses that each FLIPPED entry shape on the
+  pre-fix compiler, asserted to take one shape at every prefix length. Red
+  9/9 against the branch-point compiler; `docs/dev/lanes/k7980_report.md`.
+  **K80's mixed-abi cells live in `run_codegen_tests.sh`** (after D44/A-2's
+  two-prefix TU): K80-a an abi-N-1 header (a real one with its three digits
+  rewritten) after the real one, K80-b a pre-54 empty-guard header first,
+  both must fail on the `#error`'s text; K80-c each rewritten header
+  compiles alone. Sabotage S438.
 - **run_trie_identity.sh** — DIFFERENTIAL codegen check for the M2.8
   alternation trie (R3.3). Builds a reference compiler from the same sources
   with `-DPCREC_NO_TRIE` (which forces `elig[j] = false` in nfa.c's A_ALT path)

@@ -743,6 +743,37 @@ worst is 283,083 code bytes and 651,415 total, on every optimization
 axis — and both are checked AFTER emission and BEFORE anything is
 written, so an over-limit compile produces a refusal and no file.
 
+### Size limits and the prefix (K79, `abi` 54)
+
+**Every emitted length pcrec DECIDES on is measured at a canonical prefix
+length of two bytes, whatever `-p` says.** The compiler emits the whole
+artifact under a fixed two-byte placeholder prefix and writes the caller's
+spelling onto the finished text as the last step, after every decision. So
+the two caps above, the size term's trigger and ladder (§8a) and the VM
+entry-shape knee (`tuning.md` §2.21) all read the artifact as it would be at
+`-p rx`, and the same pattern under the same options is accepted or refused,
+and takes the same forms, under every prefix. Only the spelling differs.
+
+Before `abi` 54 these were measured on the prefixed text. The prefix occurs
+tens of times in an artifact (57 times in `(foo|bar)[0-9]{2,5}(x)`'s VM
+program), so a long prefix grew the measure by several KB and crossed the
+knee: that pattern took entry shape `inline` at `-p rx` and `plain` under a
+60-character prefix (K79).
+
+**What this means for the caps.** They bound the canonical length, so an
+artifact at a long prefix may exceed a cap's number in real bytes, by up to
+`(len(prefix) - 2)` bytes per occurrence of the prefix. At the maximum
+prefix (60, `PCREC_MAX_PREFIX_LEN`) that is under a third of the artifact.
+The caps are failsafes against pathological emission (above), which a
+prefix cannot cause, so they stay prefix-free rather than let a name decide
+whether a pattern compiles.
+
+**Which stamps can differ between two prefixes: none by value.** Every
+stamp's NAME carries the prefix (`<PREFIX>_…`), and `rx_info.name`
+defaults to it. No stamp's value is a count of prefixed text: the one stamp
+that counts emitted bytes, `<PREFIX>_VM_PROGRAM_BYTES`, counts them at the
+canonical length. `tests/codegen/run_prefix_invariance.sh` checks this.
+
 ### The size-cap ladder, and `--fast-or-fail` ([PF-DROP], D135)
 
 **Before either limit refuses, pcrec tries a smaller form of the same
