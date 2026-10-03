@@ -933,7 +933,7 @@ checked by `tests/registry/limits_check.sh` (D107) and listed by
 | the cursor rung's fixed-length `&&` chain (`vm_cursor_rep`) and the backward walk (`vm_rev_emit`) | S2a left both exact sites alone, and S4 keeps parity. A masked arm there needs the same emitter plus a cursor base. That is a small change with no measured population | a census of cursor/backward caseless bodies of length >= 3, plus a cell |
 | the offset-set verify chain over cube offsets (`ofsk_emit_verify`'s `ofs_k<k>[...]` probes) | under `(?i)` the offset-k skip is mostly not selected at all (73.8% of producible walks have no invariant offset, `wordfold_census.md` §6). Where it is selected, contiguous cube offsets could be one masked word, but the population is uncounted | a census of offset-set artifacts with >= 3 contiguous cube offsets, plus a cell |
 | `DFA_PF_MEMCHR`, `emit_attempt`'s `\n` | one byte, no verify (compare_stack §5) | — |
-| `dfa_pfs[]` rows | §2.3.5: the pin is exact-only by construction | the offset-preference step, with a full panel |
+| `dfa_pfs[]` rows | §2.3.5: the pin is exact-only (`pcrec_run_pin`'s count-1 test plus r1's explicit conjunct). [r1] No masked run enters the table. The single ranking does move its pin INPUT on 10 artifacts and 2 selections (§2.3.7) | the offset-preference step, with a full panel |
 | byte `$_span_match_caseless` | its K/T are run-time (S6) | S6's trigger |
 | utf8 `$_span_match_caseless` | length-changing folds; not a byte cube | never (D23) |
 | clskit's `is_ascii_fold_pair` | correct for any pair differing in bit 5 (the emitted `(c \| 0x20) == hi` does not need the letter conjunct). Making it a P2 reader is `[CLS-TREE]`'s D1 item, with no S4 customer | `[CLS-TREE]` touching the fold rows |
@@ -1554,3 +1554,44 @@ alpha's other half. The full battery is the batch gate's.
     order.** The landing lane takes the next free numbers at its merge and
     re-greps its readers, the findings design's "the next number at
     landing" rule.
+
+---
+
+## R1. Disposition of the light D6 panel (`docs/dev/reviews/2026-10-03-r1-litscan-s4-c3.md`)
+
+Lane `s4rev` (opus), 2026-10-03, from main `92b8bbf0`. Design only, nothing
+under `src/`. Each disposition is marked in place as `[r1 <id>]`.
+
+| # | sev | finding | disposition | where |
+|---|---|---|---|---|
+| S1 | HIGH | alternation head/tail compared T and kept the left mask: order-dependent, unsound | **FIXED** as asked. The cube hull `K' = Ka & Kb & ~(Ta ^ Tb)`, `T' = Ta & K'`, symmetric, stopping at the first position outside the domain. Both counterexamples are planned cells in both branch orders, head and tail; sabotage S450 | §2.3.1, §5.1, §5.5 |
+| S2 | HIGH | (a) `req_pick` returned a T byte; (b) `done[]` marked T values: NOMATCH → give-up | **FIXED** as asked. (a) A run byte only from an exact scan member, else the set pick, with `REQ_BYTE`'s two cases stated against the emitted scan. (b) `done[]` marks only `K == 0xFF` positions. The differential's table classifies NOMATCH → give-up as a DEFECT. The witness (and its L = 16..18 python-verifiable twins plus a `gu` control) is a planned cell; S451, S452 | §2.3.3, §2.3.5, §5.1, §5.4, §5.5 |
+| S3 | LOW | the pin is `pcrec_run_pin` in `kset.c`, not `prefix_k.c` | **FIXED**: real site named. One explicit refusing conjunct (`pcrec_req_run_masked`), argued sound-and-redundant except for a walk-proves-T edge, where it is a lost opportunity. S447 re-aimed | §2.3.5, §5.5 |
+| S4 | LOW | the pair arm's re-search bound; both `ofs_test_run` sites need the mask | **FIXED**: re-search iff hit `< pos + k*`, with the hang mechanism spelled out. `t[0]` and `t[1]` carry `mask`/`whole_mask`; S448 (the unmasked whole run) and S449 (the hang) | §2.3.4, §5.1, §5.5 |
+| C1 | HIGH | a second pick-a-byte and window rule | **FIXED** as asked. `pcrec_find_run_scan_index`/`_window_start`/`pcrec_req_window` take (T, K). Cost is the position's member-set MASS. One tie rule (rightmost) and one NONE answer (rightmost), so exact runs are byte-identical. Round 0's "exact first" tie is withdrawn: under a rate it is a consequence of the cost, under NONE it is not applied (it would have re-created R13 under utf8) | §2.3.3 |
+| C2 | HIGH | stale "dfa_pfs[] untouched" | **FIXED, and the conclusion CHANGED.** The shape is untouched. Under the single ranking 10 pins are lost and 2 corpus selections move (`run-pinned` → next row). Q4 re-recommends a second LIGHT round with a selection-semantics lens | §0 item 7, §2.3.5, §10 Q4 |
+| C3 | HIGH | reader list incomplete | **FIXED**: 21 code readers and the test readers by grep, with the recipe. `req_byte` for a pair scan is defined (§2.3.3 (ii)) | §4 |
+| C4 | HIGH | additive admission defeats the caseless run; two floors | **FIXED as asked, overturning Q5.** One ranking (`Σ popcount(K)`), one floor (`PCREC_MIN_REQ_RUN_BITS` = 16, `limits.def`). Census: the shadow count of caseless patterns behind an exact 2-run is **0** over corpus+bench (2 shadowed in all: `slack`, `(?i)x/1234`). The single ranking adds **18** exact-run movers (16 via the hull), and exact-only artifacts stay **byte-identical (0 of 603)** | §2.3.1, §2.3.7, §10 Q5/Q8 |
+| C5 | MED | two parallel triples | **FIXED**: one triple, one key. Round 0's `pair`/`masked` stored fields are dropped for a derivation and one accessor | §2.3.1, §2.3.2 |
+| C6 | MED | spec hunks not named | **FIXED**: 11 hunks named. `table_contract.md` has **no hunk, with the reason**: the header and column set are unchanged and the mask rides in the `value` cell by the shared renderer; the pair column does not exist because the `pair` field was dropped | §4 |
+| C7 | LOW | D141 constants | **FIXED**: two `limits.def` rows with provenance (`PCREC_MIN_REQ_RUN_BITS`, `PCREC_MAX_REQ_RUN_POS_SET`), plus `PCREC_MAX_REQ_RUN_EMIT`'s unit → `positions`. The pair cost is the existing MASS primitive, not a constant | §2.3.6 |
+
+**Shape changes beyond the fixes (they decide a second round):**
+1. **The position domain is narrowed** to a byte or a two-member cube
+   (`PCREC_MAX_REQ_RUN_POS_SET`), from round 0's any cube. This follows
+   from C1 + C4: with one ranking, a run with no scannable member could
+   outrank a scannable exact run, and then decline it. With the narrowed
+   domain every position is a scan candidate and no second predicate
+   exists. `K = 0`/`[0-7]` positions leave the necessary run. They stay in
+   C2's VM run.
+2. **The single ranking reaches `dfa_pfs[]`'s inputs.** That is 10 lost
+   pins, 2 moved selections and 2 G1 verdicts on corpus artifacts. Round 0
+   had none by construction.
+3. **The S1 hull makes exact-branch alternations masked movers**
+   (`frank|fred` → `fr[ae]`). It is general and sound, and it is most of
+   class C.
+
+The mechanism's own parts are unchanged from round 0: the walk-level
+fact, the pair-leapfrog scan, P7's one conjunct, bit 44, the stamps'
+suffix grammar and C3's position as the last commit.
+
