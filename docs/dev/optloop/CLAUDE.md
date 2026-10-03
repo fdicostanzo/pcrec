@@ -746,3 +746,8 @@ that cycle's analysis lands.
   own analysis row stays beside its still-`STATE:started` parent and its
   sibling cycles, archived only at a later full-sweep pass.
 
+## `[OPT-LITSCAN]` S4's design instruments (lane `s4des`, 2026-10-03)
+
+- `s4/` — the bench census, the emitted-spelling probes (`spell.c`), the
+  ASan-visibility pair (`one.c`/`two.c`) and a scratch hot loop (`hot.c`)
+  behind `docs/design/litscan_s4.md`. See its own `CLAUDE.md`.
