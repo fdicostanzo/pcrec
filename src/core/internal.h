@@ -6176,8 +6176,13 @@ void pcrec_dfa_memo_free(DfaMemo *m);
  * it is a parameter rather than something the pass derives because the answer
  * belongs to the EMITTER: it is axis B's own selection for this machine, asked
  * through `pcrec_dfa_scan_state_written` below. Every caller states it, and
- * the two that pass a constant say why at the call. */
-void pcrec_scanedge_dfa(Ctx *cx, Dfa *dfa, bool prefilter_reseeds);
+ * the two that pass a constant say why at the call.
+ *
+ * [OPT-VEDGE] `end_is_exit` is the machine's DIRECTION fact the pass needs:
+ * true where the walk ends at `pos == n` and never steps from an END view
+ * (the forward search and anchored match-here machines), false for the
+ * reverse walk, which starts there and steps from the view. */
+void pcrec_scanedge_dfa(Ctx *cx, Dfa *dfa, bool prefilter_reseeds, bool end_is_exit);
 
 /* [OPT-5 STEP 2] IS THIS STATE'S ACCEPT INDEPENDENT OF POSITION AND OF THE
  * UPCOMING BYTE? — scan-edge preconditions (2) and (3), and the start-pinned

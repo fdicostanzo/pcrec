@@ -49,7 +49,7 @@
  * abi ritual fires next, bump this ONE constant; grep for its old value
  * finds both emission sites plus every out-of-tree reader the ritual's own
  * site list already enumerates. */
-#define PCREC_ARTIFACT_ABI 55
+#define PCREC_ARTIFACT_ABI 56
 
 /* Renders one byte of pattern-derived text safely into a C block comment, escaping whatever would close or falsely open the comment.
  *
@@ -2836,6 +2836,13 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
                                            * `<PREFIX>_VM_RESEED` is where
                                            * what the emitter DID is recorded. */
                                           PCREC_NO_HYB_RESEED |
+                                          /* [OPT-VEDGE] the view-tolerant
+                                           * scan edge: answer-identical, and
+                                           * masked so an artifact it does not
+                                           * reach is byte-identical under the
+                                           * flag. `<PREFIX>_DFA_SCAN_EDGE`
+                                           * records what the pass did. */
+                                          PCREC_NO_VIEW_EDGE |
                                           /* [K68] (FIXED) the three [OPTLOOP.1]
                                            * batch-1 whole-window pre-check bits
                                            * join the mask for the mask's own

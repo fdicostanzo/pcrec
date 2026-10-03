@@ -70,6 +70,24 @@
  *      bounded away, it does not arise. This is what lets the scan run to `n`
  *      instead of stopping at `n - 1` the way the stay skips do.
  *
+ *      [OPT-VEDGE] RELAXES (3) FOR ONE VIEW ON ONE KIND OF MACHINE. Where the
+ *      walk ENDS at the subject's end (`end_is_exit`: the forward search and
+ *      the anchored match-here machine — never the reverse walk, which
+ *      STARTS there and steps from the view), a member may carry an END
+ *      (`\z`) view and no EOL view. The END view is consulted at exactly one
+ *      position, `pos == n`, and there the loop selects the view, probes its
+ *      accept and stops, never stepping from it. A scan that runs to `n`
+ *      therefore leaves the emitted state at the head (or at F), the view
+ *      select that follows reads THAT state's END view, and the answer is
+ *      right iff every member's END view carries the same accept bit — which
+ *      joins the chain-compatibility test as `end_acc_of`, beside the plain
+ *      bit. One more thing the emitted block does at `n` without the view:
+ *      it records the run's plain bit A at `pos` when the run stopped there.
+ *      That is wrong only if A is set and the END view's bit is clear, so
+ *      such a member is refused (`member_ok`). Patterns of the
+ *      `(?:[a-z]{0,n})\z` whole-subject shape are the customer (docs/design/
+ *      opt5_step2_twopass.md §2, docs/design/sel_cost.md T1).
+ *
  *  (4) THE FALL-THROUGH'S OWN ACCEPT IS POSITION-INDEPENDENT TOO: F inherits
  *      (2) and (3). It does NOT have to agree with A, and that is the
  *      difference between collapsing `{0,n}` and collapsing counted repeats
@@ -163,6 +181,10 @@
  * It is not SIMD either — §7 of the profile is explicit that a vector run
  * extension stacks ON TOP of this and is [OPT-SIMD]'s row, not a substitute.
  *
+ * `-fno-view-edge` (`PCREC_NO_VIEW_EDGE`) denies both [OPT-VEDGE] relaxations
+ * — (3)'s above and (6)'s trim in `collect` — and leaves the pass the one
+ * that shipped before them, byte for byte.
+ *
  * Pure computation: plain malloc/free like minimize.c beside it, and the only
  * `pcrec_ctx_fail` paths are the allocation-failure ones, which free every live
  * local before they longjmp. */
@@ -192,6 +214,15 @@ typedef struct {
     int nmembers;                /* head included; == span for a bounded chain */
 } Chain;
 
+/* True iff the state's accept bit is the same under every class context
+ * (precondition (2)'s half that is not about position). */
+static bool class_invariant(const Dfa *d, const DState *st)
+{
+    for (int u = 1; u < d->natoms; u++)
+        if (st->up[u].accept != st->up[0].accept) return false;
+    return true;
+}
+
 /* Preconditions (2) and (3), asked of one state — AND, since [OPT-5] STEP 2,
  * the same question the start-pinned search's P2 asks of the forward machine's
  * start state, which is why the body moved out of this file's `member_ok` and
@@ -216,14 +247,23 @@ typedef struct {
  * (the note's §7 item 14). */
 bool pcrec_state_view_invariant(const Dfa *d, const DState *st)
 {
-    if (st->eolvar >= 0 || st->endvar >= 0) return false;
-    for (int u = 1; u < d->natoms; u++)
-        if (st->up[u].accept != st->up[0].accept) return false;
-    return true;
+    return st->eolvar < 0 && st->endvar < 0 && class_invariant(d, st);
 }
 
-/* Membership eligibility for a scan chain: pcrec_state_view_invariant(st). */
-static bool member_ok(const Dfa *d, const DState *st) { return pcrec_state_view_invariant(d, st); }
+/* Membership eligibility for a scan chain, preconditions (2) and (3): the
+ * state's accept is the same under every class context, and it carries no
+ * position view — or, with `end_view_ok` ([OPT-VEDGE], the file header's
+ * relaxation of (3)), only an END view whose bit the scan's own `pos == n`
+ * exit can stand in for. */
+static bool member_ok(const Dfa *d, const DState *st, bool end_view_ok)
+{
+    if (pcrec_state_view_invariant(d, st)) return true;
+    if (!end_view_ok || st->eolvar >= 0 || !class_invariant(d, st)) return false;
+    /* `endvar >= 0` here. The emitted block records the run's plain bit at a
+     * stop on `n` without consulting the view, so a set plain bit over a
+     * clear END bit would be recorded where the view says no. */
+    return !(st->up[UPC_PLAIN].accept && !d->st[st->endvar].up[UPC_PLAIN].accept);
+}
 
 /* Precondition (1) for ONE class: is `s` scan-shaped for (cls, *exit)? */
 static bool shaped(const Dfa *d, int s, int cls, int *exit)
@@ -245,6 +285,21 @@ static bool shaped(const Dfa *d, int s, int cls, int *exit)
  * < 0. */
 static int acc_of(const Dfa *d, int s)
 { return s < 0 ? 0 : d->st[s].up[UPC_PLAIN].accept != 0; }
+
+/* The accept bit state `s` answers at `pos == n`: its END view's, or its own
+ * where it has none. Equal to `acc_of` on every member of a view-free
+ * machine, which is what keeps the pre-[OPT-VEDGE] chains unchanged. */
+static int end_acc_of(const Dfa *d, int s)
+{ return s < 0 ? 0 : acc_of(d, d->st[s].endvar >= 0 ? d->st[s].endvar : s); }
+
+/* True iff member-eligible `t` can follow `s` in one chain: the same exit,
+ * and the same accept bit both where the scan passes and at its `pos == n`
+ * exit. */
+static bool same_shape(const Dfa *d, const bool *ok, const int *exitv, int s, int t)
+{
+    return ok[t] && exitv[t] == exitv[s] && acc_of(d, t) == acc_of(d, s)
+        && end_acc_of(d, t) == end_acc_of(d, s);
+}
 
 /* Every in-edge in the machine, counted once per source, so "this state is
  * reachable only as the next link of its own chain" is a number and not an
@@ -291,7 +346,7 @@ static void in_degrees(const Dfa *d, int *indeg, bool *viewtgt, bool *seedtgt)
  * common machine, `[a-z]{0,n}`'s own alphabet being exactly two classes. */
 static int collect(const Dfa *d, int cls, const int *indeg, const bool *ok,
                    const bool *viewtgt, const bool *seedtgt,
-                   bool prefilter_reseeds,
+                   bool prefilter_reseeds, bool end_view_ok, bool trim_view_head,
                    const int *exitv, bool *haspred,
                    Chain *out, int cap, int nout)
 {
@@ -305,11 +360,11 @@ static int collect(const Dfa *d, int cls, const int *indeg, const bool *ok,
         if (!ok[p]) continue;
         int t = d->st[p].tr[cls];
         if (t < 0 || t >= d->n || t == p) continue;
-        if (ok[t] && exitv[t] == exitv[p] && acc_of(d, t) == acc_of(d, p))
-            haspred[t] = true;
+        if (same_shape(d, ok, exitv, p, t)) haspred[t] = true;
     }
 
-    for (int s = 0; s < d->n && nout < cap; s++) {
+    for (int cand = 0; cand < d->n && nout < cap; cand++) {
+        int s = cand;
         if (!ok[s] || haspred[s]) continue;
         /* PRECONDITION (6), and it is a MEASURED one — the deletion argument
          * had a hole exactly here and `a{0,4}$` found it, 87 cells of
@@ -331,8 +386,26 @@ static int collect(const Dfa *d, int cls, const int *indeg, const bool *ok,
          * costs nothing on a machine with no views, where `f->src` IS the
          * state variable. Precondition (3) is the neighbouring rule and NOT
          * the same one: (3) is about a member's OWN view, this is about
-         * being someone else's. */
-        if (viewtgt[s]) continue;
+         * being someone else's.
+         *
+         * [OPT-VEDGE] TRIMS THE HEAD RATHER THAN REFUSING THE CHAIN — the
+         * file's "truncated, not refused" rule applied at the front. The
+         * hazard is the view-selected step INTO `s` reading `tr[s][C]`;
+         * leave `s` an ordinary state and start the chain at its class
+         * successor `t`, and every step into `t` is an ordinary step whose
+         * result the loop's stop test sees. `t` needs `indeg == 1` (its only
+         * way in is `s`, so it is nobody's view target or seed itself) and
+         * the chain's shape. `(?:[a-z]{0,n})\z`'s REVERSE machine is the
+         * customer: its start state reaches the counting chain only through
+         * its END view, so the chain's would-be head is that view's target
+         * and the whole reverse walk kept one table step per byte. */
+        if (viewtgt[s]) {
+            int t = d->st[s].tr[cls];
+            if (!trim_view_head || t < 0 || t >= d->n || t == s || indeg[t] != 1 ||
+                !same_shape(d, ok, exitv, s, t))
+                continue;
+            s = t;
+        }
         /* PRECONDITION (8), [OPT-EDGE] STEP 1's, NARROWED AT STEP 1.1 TO THE
          * HAZARD IT IS ACTUALLY FOR. It exists because the emitted loop no
          * longer tests for a head on its generic path: under the shared
@@ -376,7 +449,7 @@ static int collect(const Dfa *d, int cls, const int *indeg, const bool *ok,
          * to emit, so a form that turns out to reseed after all is a loud
          * internal error rather than a scan the loop never enters. */
         if (prefilter_reseeds && seedtgt[s]) continue;
-        int e = exitv[s], a = acc_of(d, s), nx = d->st[s].tr[cls];
+        int a = acc_of(d, s), nx = d->st[s].tr[cls];
 
         /* THE UNBOUNDED FORM: the head's class edge is its own self-loop.
          * `*` and `+` are exactly this, and it is one state rather than a run,
@@ -412,7 +485,7 @@ static int collect(const Dfa *d, int cls, const int *indeg, const bool *ok,
         for (;;) {
             int t = d->st[cur].tr[cls];
             if (t < 0 || t >= d->n || t == s) break;
-            if (!ok[t] || exitv[t] != e || acc_of(d, t) != a) break;
+            if (!same_shape(d, ok, exitv, s, t)) break;
             if (indeg[t] != 1) break;                /* an outside way in */
             cur = t;
             m++;
@@ -425,7 +498,7 @@ static int collect(const Dfa *d, int cls, const int *indeg, const bool *ok,
          * bit -- the emitted block records the two separately, which is what
          * admits an EXACT count (`[0-9]{16}`: sixteen non-accepting states in
          * front of one accepting one) rather than only the `{0,n}` family. */
-        if (f >= 0 && f < d->n && !member_ok(d, &d->st[f])) continue;
+        if (f >= 0 && f < d->n && !member_ok(d, &d->st[f], end_view_ok)) continue;
         out[nout].head = s; out[nout].cls = cls;
         out[nout].span = m; out[nout].next = f;
         out[nout].nmembers = m;
@@ -456,10 +529,14 @@ static int chain_cmp(const void *a, const void *b)
  * into a bounded loop instead of `m` table steps. `prefilter_reseeds`
  * threads axis-B's own reseed fact through to precondition (8), narrowed at
  * [OPT-EDGE] STEP 1.1 to the ONE hazard it actually guards (a mid-body
- * state-variable write the emitted loop's stop test cannot see). A no-op
+ * state-variable write the emitted loop's stop test cannot see).
+ * `end_is_exit` says the machine's walk ends at `pos == n` and never steps
+ * from an END view there — the forward and anchored machines, not the
+ * reverse one — which is what lets [OPT-VEDGE] admit END-viewed members
+ * (precondition (3)'s relaxation). A no-op
  * under `-fno-scan-edge`, which is the soundness gate, not merely an
  * observability flag — see the file's own comment at that check. */
-void pcrec_scanedge_dfa(Ctx *cx, Dfa *d, bool prefilter_reseeds)
+void pcrec_scanedge_dfa(Ctx *cx, Dfa *d, bool prefilter_reseeds, bool end_is_exit)
 {
     /* THE DENIAL IS HERE AND NOWHERE ELSE THAT MATTERS. The emitter's own
      * axis reports the same flag so `--list-axes` can name it, but the
@@ -468,6 +545,8 @@ void pcrec_scanedge_dfa(Ctx *cx, Dfa *d, bool prefilter_reseeds)
      * the pre-[OPT-5] compiler emitted, byte for byte. */
     if (cx->opt->flags & PCREC_NO_SCAN_EDGE) return;
     if (d->n <= 0 || d->ncls < 2) return;
+    bool vedge = !(cx->opt->flags & PCREC_NO_VIEW_EDGE);
+    bool end_view_ok = vedge && end_is_exit;
 
     int    n     = d->n;
     int   *indeg = malloc((size_t)n * sizeof(int));
@@ -519,9 +598,9 @@ void pcrec_scanedge_dfa(Ctx *cx, Dfa *d, bool prefilter_reseeds)
     int nfound = 0;
     for (int cls = 0; cls < d->ncls && nfound < n; cls++) {
         for (int s = 0; s < n; s++)
-            ok[s] = member_ok(d, &d->st[s]) && shaped(d, s, cls, &exitv[s]);
+            ok[s] = member_ok(d, &d->st[s], end_view_ok) && shaped(d, s, cls, &exitv[s]);
         nfound = collect(d, cls, indeg, ok, vtg, stg, prefilter_reseeds,
-                         exitv, hp, found, n, nfound);
+                         end_view_ok, vedge, exitv, hp, found, n, nfound);
     }
     if (nfound == 0) {
         free(indeg); free(ok); free(hp); free(vtg); free(stg); free(drop);

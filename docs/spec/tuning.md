@@ -1437,7 +1437,10 @@ one such run of 16,384 states plus the state that has counted them all;
 `[a-z]*` and `[a-z]+` are the unbounded one-state form; `[0-9]{16}` is a run
 of sixteen. The pass is `src/opt/scanedge.c` and its header carries the exact
 criterion and its preconditions — five in the header, three more stated at
-their own sites: (6) a head may not be another state's position-VIEW target,
+their own sites: (6) a head may not be another state's position-VIEW target
+(since [OPT-VEDGE], §2.37, such a chain is trimmed to start one state later
+rather than refused, and precondition (3) admits an END-view-only member on
+the forward and anchored machines),
 (7) two chains that link must have their heads in ascending order, and
 (8) ([OPT-EDGE] STEP 1, narrowed at STEP 1.1) a head may not be a state any
 SEED family names **on a machine whose candidate-start prefilter writes the
@@ -3157,6 +3160,44 @@ identity.
 answers on purpose, so no measurement can admit it to a mechanism whose
 acceptance is answer identity.
 
+### 2.37 `-fno-view-edge` — `PCREC_NO_VIEW_EDGE` (bit 42)
+
+**[OPT-VEDGE], `abi` 56 (`docs/dev/lanes/vedge_report.md`;
+`docs/design/opt5_step2_twopass.md` §2). ANSWER-IDENTITY-preserving.**
+Deny-only, MASKED out of `rx_info.flags` (`strategy_denials`). No stamp of
+its own: it widens which chains §2.18's scan edge takes, and
+`<PREFIX>_DFA_SCAN_EDGE` leaving `"none"` is what it changes. `pcrec
+--list-axes` lists it as axis `view-edge`.
+
+**What it is.** §2.18's pass refused any chain that touched a `$`/`\Z`/`\z`
+position view. That left the whole-subject form `(?:[a-z]{0,n})\z`
+(`match_api.md` §3.6's idiom) walking its transition table once per byte, on
+both the forward pass and the reverse one. Two refusals are lifted:
+
+1. **A member may carry an END view** (`\z`, and no EOL view), on a machine
+   whose walk ENDS at the subject's end: the forward search machine and the
+   anchored match-here machine. There the END view is consulted at one
+   position, `n`, where the loop selects it, reads its accept bit and stops.
+   A scan that runs to `n` leaves the state at the chain's head, so every
+   member's END view must carry the same accept bit. A member whose own bit
+   is set while its END view's is clear is refused, because the scan records
+   its own bit at `n` too. The reverse machine steps from its END view (its
+   walk starts at `n`), so this half never applies to it.
+2. **A chain whose head is another state's view target is trimmed, not
+   refused**, on any machine. Precondition (6) refuses such a head: the view-
+   selected step into it would read the transition cell the edge deletes.
+   The chain now starts at the head's class successor, if that state's only
+   way in is the head. `(?:[a-z]{0,n})\z`'s reverse machine is the case: its
+   start state reaches the counting chain only through its END view.
+
+**What it buys (Mac scratch, `percall.c`, ns per whole-subject call).**
+`(?:[a-z]{0,4096})\z`: 40 letters 152 -> 46, 4,096 letters 16,774 -> 3,835,
+64 KiB of words 9,911 -> 2,864; the artifact drops from 465,741 to 247,889
+bytes. The forced VM is 20 / 1,915 / 14,177 on the same subjects, so a
+whole-subject DFA call is still about twice the VM's: the reverse pass
+remains (§2.19's elision cannot apply, since the start state accepts only at
+`n`). Denied, the pass is the one before this row, byte for byte.
+
 ## 3. The DFA side's own stamps
 
 **CLOSED 2026-08-25 by plan row `[DD-13]`; this section stated the gap while
@@ -3443,6 +3484,7 @@ not-a-tuning-axis list that follows.
 | `flags` bit `PCREC_NO_CLS_KIT` | `-fno-cls-kit` | §2.33 |
 | `flags` bit `PCREC_NO_CLS_PACK` | `-fno-cls-pack` | §2.34 |
 | `flags` bit `PCREC_NO_HYB_RESEED` | `-fno-hyb-reseed` | §2.35 |
+| `flags` bit `PCREC_NO_VIEW_EDGE` | `-fno-view-edge` | §2.37 |
 | `unroll_k` (`PCREC_UNROLL_K_DEFAULT` = 0) | `--unroll=K` | §2.10 |
 | `vm_entry_shape` (`PCREC_VM_ENTRY_AUTO` = 0, `_PLAIN`, `_SHARED`, `_FORWARD`, `_INLINE`) | `--vm-entry-shape=N` | §2.21 |
 | `engine` (`PCREC_ENGINE_AUTO`/`_DFA`/`_VM`) | `--engine=E` | §2.11 |

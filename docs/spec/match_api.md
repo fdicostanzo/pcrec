@@ -298,11 +298,11 @@ noted under group 2, which are `PCREC_*`-named yet per-artifact):
    refused.** The block opens
 
    ```c
-   #if defined(PCREC_RX_ABI_H) && (PCREC_RX_ABI_H + 0) != 55
-   #error "pcrec: this artifact (abi 55) shares a translation unit with an artifact of a different abi; regenerate both with one pcrec"
+   #if defined(PCREC_RX_ABI_H) && (PCREC_RX_ABI_H + 0) != 56
+   #error "pcrec: this artifact (abi 56) shares a translation unit with an artifact of a different abi; regenerate both with one pcrec"
    #endif
    #ifndef PCREC_RX_ABI_H
-   #define PCREC_RX_ABI_H 55
+   #define PCREC_RX_ABI_H 56
    ```
 
    so artifacts of one abi still share the first block, and an artifact of
@@ -2296,7 +2296,20 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `55` on every artifact today (lane k78 bumped it from
+- **`rx_info.abi` is `56` on every artifact today (lane vedge bumped it from
+  55, 2026-10-03: [OPT-VEDGE] — THE VIEW-TOLERANT SCAN EDGE).** The scan
+  edge (`docs/spec/tuning.md` §2.18) refused every counted chain that
+  touched a position view, so the `(?:[a-z]{0,n})\z` whole-subject form
+  walked its table once per byte on both passes. It now takes the edge in
+  two more cases (§2.37, `-fno-view-edge`): on the forward and anchored
+  machines, a chain whose members carry only an END (`\z`) view, which the
+  scan's own stop at `n` evaluates; and on any machine, a chain whose head
+  is another state's view target, which now starts one state later instead
+  of being refused. Artifacts whose `<PREFIX>_DFA_SCAN_EDGE` value or edge
+  set changes move (the scan-edge loop text, smaller tables); every other
+  artifact differs from `abi` 55 in its abi digits alone. No struct offset
+  moves, no `rx_info` member is added or changed, and no answer moves.
+- **`rx_info.abi` was `55` (lane k78 bumped it from
   54, 2026-09-30: K78 — A DFA ARTIFACT'S DEAD-GROUP FILL MOVES FROM THE
   SEARCH ENTRY TO ITS SUCCESS PATHS).** A DFA artifact whose
   `<PREFIX>_NCAPS` is 2 or more promises groups that no match can set

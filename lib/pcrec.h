@@ -1036,6 +1036,19 @@ enum {
  * or without it, so it is masked out of `rx_info.flags`. A `#define` for
  * bit 32's reason. */
 #define PCREC_FAST_OR_FAIL PCREC_BIT(41)
+/* [OPT-VEDGE] `-fno-view-edge` — deny the VIEW-TOLERANT SCAN EDGE
+ * (src/opt/scanedge.c; docs/spec/tuning.md §2.37). The scan edge
+ * (`PCREC_NO_SCAN_EDGE`) refused any counted chain that touched a `\z`
+ * position view, so the `(?:[a-z]{0,n})\z` whole-subject form kept one
+ * table step per byte on both of its passes. This axis admits two such
+ * chains: on a machine whose walk ENDS at the subject's end (the forward
+ * search and the anchored match-here machine), a member carrying only an
+ * END view, whose accept the scan's own `pos == n` exit evaluates; and on
+ * any machine, a chain whose HEAD is another state's view target, which is
+ * trimmed to start one link later instead of being refused. Denied, the
+ * pass is the pre-row one, byte for byte. It changes no answer either way,
+ * so it is masked out of `rx_info.flags`. A `#define` for bit 32's reason. */
+#define PCREC_NO_VIEW_EDGE PCREC_BIT(42)
 
 /* [ENG-BREP] the counter rung's UNROLL FACTOR, K (counterk_design.md §4.1;
  * eng_brep_design.md §4.5's "K must not become a per-pattern heuristic in v1",
