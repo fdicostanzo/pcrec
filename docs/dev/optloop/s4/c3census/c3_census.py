@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""[OPT-LITSCAN] S4 C3 r1: the single-ranking census (compile-only).
+"""[OPT-LITSCAN] S4 C3 r1/r2: the single-ranking census (compile-only).
 
 Compiles every corpus `.rxt` pattern (as written, via `--list-source`; flags
 `i` -> `-i`, `u` -> `--ucp`, column 9 -> `-e`) and every pcrec-bench
@@ -9,13 +9,16 @@ Compiles every corpus `.rxt` pattern (as written, via `--list-source`; flags
   BASE   main as-is (today's exact-only walk)
   PROTO  main + proto.patch: the r1 walk (one triple, positions (T,K) with K
          0xFF or a two-member cube, ranking by sum popcount(K), the
-         alternation cube hull). Facts only -- PROTO's emitted C is NOT
-         meaningful (its window/pick/emitters still read T as exact bytes),
-         and nothing here reads it.
+         alternation cube hull) plus, at r2, the (T, K) PICK primitive, the
+         member-mass window, `req_byte`'s exact-member clause and the
+         exact sub-window pin (`run_pin` renders `o` for a whole-window
+         pin, `o:at+len` for a sub-window). Facts only -- PROTO's emitted C
+         is NOT meaningful (its emitters still read T as exact bytes), and
+         nothing here reads it.
 
 and writes one TSV row per (population, pattern) for c3_report.py.
 
-Env: BASE PROTO BENCH CORPUS OUT JOBS
+Env: BASE PROTO BENCH CORPUS OUT JOBS (r2: run serially, JOBS=1, the default)
 """
 import os, sys, glob, subprocess, concurrent.futures as cf
 
@@ -93,18 +96,18 @@ def one(row):
     pop, ident, pat, args = row
     b = facts(E["BASE"], pat, args); p = facts(E["PROTO"], pat, args)
     if b is None or p is None:
-        return "\t".join([pop, ident, pat.hex(), " ".join(args), "refused"] + ["-"] * (len(FACTS) + len(STAMPS) + 1))
+        return "\t".join([pop, ident, pat.hex(), " ".join(args), "refused"] + ["-"] * (2 * len(FACTS) + len(STAMPS)))
     return "\t".join([pop, ident, pat.hex(), " ".join(args), "ok"]
                      + [b.get(k, "-") for k in FACTS] + [b.get(k, "-") for k in STAMPS]
-                     + [p.get("req_whole_run", "-")])
+                     + [p.get(k, "-") for k in FACTS])
 
 
 def main():
     rows = bench_pop() + corpus_pop()
     print("patterns:", len(rows), file=sys.stderr)
-    hdr = ["pop", "id", "pattern_hex", "args", "status"] + ["base_" + k for k in FACTS + STAMPS] + ["proto_req_whole_run"]
+    hdr = ["pop", "id", "pattern_hex", "args", "status"] + ["base_" + k for k in FACTS + STAMPS] + ["proto_" + k for k in FACTS]
     with open(os.path.join(E.get("OUT", "."), "c3_census.tsv"), "w") as out, \
-         cf.ThreadPoolExecutor(int(E.get("JOBS", "4"))) as ex:
+         cf.ThreadPoolExecutor(int(E.get("JOBS", "1"))) as ex:
         out.write("\t".join(hdr) + "\n")
         for i, line in enumerate(ex.map(one, rows)):
             out.write(line + "\n")

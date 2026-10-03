@@ -1,28 +1,32 @@
-bench    A0 none->none                                                    208
+bench    A0 none->none                                                    212
 bench    A0b none->masked-below-floor                                       4
 bench    A1 none->masked (old additive movers)                              8
 bench    A1 with a K=df position                                            7
 bench    A1 with a nonempty set (req_byte!=none: S2 class)                  3
-bench    B exact->identical exact                                          98
+bench    B exact->identical exact (whole run, window+idx, req_byte, run_pin)    98
 bench    C base REQ_WHY="emitted"                                           3
-bench    C base run_pin != none (pin lost)                                  2
+bench    C base pinned                                                      2
+bench    C base pinned, r2 pin LOST                                         1
+bench    C base pinned, r2 sub-window pin at the SAME offset                1
 bench    C caseless                                                         1
 bench    C exact->masked (NEW movers, single ranking)                       3
 bench    C no K=df position (hull/non-letter pair only)                     2
 bench    caseless                                                          25
-bench    ok                                                               317
+bench    ok                                                               321
 corpus   A0 none->none                                                   3363
 corpus   A0b none->masked-below-floor                                      23
 corpus   A1 none->masked (old additive movers)                             15
 corpus   A1 with a K=df position                                           13
 corpus   A1 with a nonempty set (req_byte!=none: S2 class)                  4
-corpus   B exact->identical exact                                         505
+corpus   B exact->identical exact (whole run, window+idx, req_byte, run_pin)   505
 corpus   C base DFA_PREFILTER is a run row                                  2
 corpus   C base REQ_WHY="dominated"                                         2
 corpus   C base REQ_WHY="emitted"                                           7
 corpus   C base REQ_WHY="one-attempt"                                       6
 corpus   C base exact run is a 2-run                                        3
-corpus   C base run_pin != none (pin lost)                                  8
+corpus   C base pinned                                                      8
+corpus   C base pinned, r2 sub-window pin at the SAME offset                8
+corpus   C base run-pinned row: r2 pin same offset                          2
 corpus   C caseless                                                         1
 corpus   C exact->masked (NEW movers, single ranking)                      15
 corpus   C no K=df position (hull/non-letter pair only)                    14
@@ -30,50 +34,50 @@ corpus   caseless                                                         200
 corpus   ok                                                              3898
 
 == examples bench A1 (8) ==
-  (?:username|USERNAME|user|USER)[ \t]*=[ \t]*["']([a-zA-Z0-9.@_\-+]{3,30})["']\s*[,;]?\s*(?:\s*(?:\#|//)[^\n\r]*[\n\r])*(?:password|pass|PASSWORD|PASS)[ \t]*=[ \t]*["']([^"']{5,30})["'] | USER/dfdfdfdf | 28 | 61
-  (?i)union.*?select.*?from | SELECT/dfdfdfdfdfdf | 42 | none
-  c[aA]t | cAt/ffdfff | 23 | 99
-  c[ac]t | cat/fffdff | 23 | 99
-  (?i)cat | CAT/dfdfdf | 21 | none
-  (?ir)cat | CAT/dfdfdf | 21 | none
-  (?i)abc | ABC/dfdfdf | 21 | none
-  (?i)straÃe | TRA/dfdfdf | 21 | none
+  (?:username|USERNAME|user|USER)[ \t]*=[ \t]*["']([a-zA-Z0-9.@_\-+]{3,30})["']\s*[,;]?\s*(?:\s*(?:\#|//)[^\n\r]*[\n\r])*(?:password|pass|PASSWORD|PASS)[ \t]*=[ \t]*["']([^"']{5,30})["'] | USER/dfdfdfdf | 28 | 61 | r2 pin none
+  (?i)union.*?select.*?from | SELECT/dfdfdfdfdfdf | 42 | none | r2 pin none
+  c[aA]t | cAt/ffdfff | 23 | 99 | r2 pin none
+  c[ac]t | cat/fffdff | 23 | 99 | r2 pin none
+  (?i)cat | CAT/dfdfdf | 21 | none | r2 pin none
+  (?ir)cat | CAT/dfdfdf | 21 | none | r2 pin none
+  (?i)abc | ABC/dfdfdf | 21 | none | r2 pin none
+  (?i)straÃe | TRA/dfdfdf | 21 | none | r2 pin none
 
 == examples bench C (3) ==
-  (?i)https://hooks.slack.com/services/(T[a-z0-9_]{8}/B[a-z0-9_]{8,12}/[a-z0-9_]{24}) | :// | COM/SERVICES/T/dfdfdfffdfdfdfdfdfdfdfdfffdf | 100 | 5 | "offset-set"
-  "(?:GET|POST|PUT|PATCH|DELETE|HEAD) [^ "]+ HTTP/1\.[01]" 5[0-9]{2}\b | \x20HTTP/1. | \x20HTTP/1.0"\x205/fffffffffffffffffeffffff | 95 | none | "memchr-bounded"
-  æ¥æ¬|æ¥æ|æ¥ä» | \xe6\x97\xa5 | \xe6\x97\xa5\xe4/fffffffd | 31 | 0 | "offset-set"
+  (?i)https://hooks.slack.com/services/(T[a-z0-9_]{8}/B[a-z0-9_]{8,12}/[a-z0-9_]{24}) | :// | COM/SERVICES/T/dfdfdfffdfdfdfdfdfdfdfdfffdf | 100 | pin 5 -> none | "offset-set" | "emitted"
+  "(?:GET|POST|PUT|PATCH|DELETE|HEAD) [^ "]+ HTTP/1\.[01]" 5[0-9]{2}\b | \x20HTTP/1. | \x20HTTP/1.0"\x205/fffffffffffffffffeffffff | 95 | pin none -> none | "memchr-bounded" | "emitted"
+  æ¥æ¬|æ¥æ|æ¥ä» | \xe6\x97\xa5 | \xe6\x97\xa5\xe4/fffffffd | 31 | pin 0 -> 0:0+3 | "offset-set" | "emitted"
 
 == examples corpus A1 (15) ==
-  (?i)\bcat\b | CAT/dfdfdf | 21 | none
-  (?i)(?>abc) | ABC/dfdfdf | 21 | none
-  abc | ABC/dfdfdf | 21 | none
-  aBc | ABC/dfdfdf | 21 | none
-  ^err | ERR/dfdfdf | 21 | none
-  log$ | LOG/dfdfdf | 21 | none
-  ([Aa])([ac])d | Aad/dffdff | 22 | 100
-  ((?i:abc)) | ABC/dfdfdf | 21 | none
-  (a[bc]d) | abd/fffeff | 23 | 100
-  (a(b|c)(d|e)) | abd/fffefe | 22 | 97
-  (ABC) | ABC/dfdfdf | 21 | none
-  (?i)abc | ABC/dfdfdf | 21 | none
-  \QABC\E | ABC/dfdfdf | 21 | none
-  (?i)\QABC\E | ABC/dfdfdf | 21 | none
-  a-z | A-Z/dfffdf | 22 | 45
+  (?i)\bcat\b | CAT/dfdfdf | 21 | none | r2 pin none
+  (?i)(?>abc) | ABC/dfdfdf | 21 | none | r2 pin none
+  abc | ABC/dfdfdf | 21 | none | r2 pin none
+  aBc | ABC/dfdfdf | 21 | none | r2 pin none
+  ^err | ERR/dfdfdf | 21 | none | r2 pin 
+  log$ | LOG/dfdfdf | 21 | none | r2 pin none
+  ([Aa])([ac])d | Aad/dffdff | 22 | 100 | r2 pin none
+  ((?i:abc)) | ABC/dfdfdf | 21 | none | r2 pin none
+  (a[bc]d) | abd/fffeff | 23 | 100 | r2 pin none
+  (a(b|c)(d|e)) | abd/fffefe | 22 | 97 | r2 pin none
+  (ABC) | ABC/dfdfdf | 21 | none | r2 pin none
+  (?i)abc | ABC/dfdfdf | 21 | none | r2 pin none
+  \QABC\E | ABC/dfdfdf | 21 | none | r2 pin none
+  (?i)\QABC\E | ABC/dfdfdf | 21 | none | r2 pin none
+  a-z | A-Z/dfffdf | 22 | 45 | r2 pin none
 
 == examples corpus C (15) ==
-  frank|fred | fr | fra/fffffb | 23 | 0 | "offset-set"
-  (frank)|fred | fr | fra/fffffb | 23 | 0 | "offset-set"
-  foo(?:username|password|passphrase)bar | bar | dbar/feffffff | 31 | none | "memchr"
-  a[bc]de | de | abde/fffeffff | 31 | 2 | "run-pinned"
-  (?i)x/1234 | /1234 | X/1234/dfffffffffff | 47 | 1 | "run-pinned"
-  /abcd[xy]/user | /user | /abcdx/user/fffffffffffeffffffffff | 87 | 6 | "memchr"
-  ^(a)(b)(c)(d)(e)(f)(g)(h)(i)(j|k)(?10)$ | abcdefghi | abcdefghij/fffffffffffffffffffe | 79 |  | "none"
-  ^(a)(b)(c)(d)(e)(f)(g)(h)(i)(j|k)\g<10>$ | abcdefghi | abcdefghij/fffffffffffffffffffe | 79 |  | "none"
-  ^(a)(b)(c)(d)(e)(f)(g)(h)(i)(j|k)\g'10'$ | abcdefghi | abcdefghij/fffffffffffffffffffe | 79 |  | "none"
-  ^(a)(b)(c)(d)(e)(f)(g)(h)(i)(j|k)(?-10)$ | abcdefghi | abcdefghij/fffffffffffffffffffe | 79 |  | "none"
-  ^(a)(b)(c)(d)(e)(f)(g)(h)(i)(j|k)(?-1)$ | abcdefghi | abcdefghij/fffffffffffffffffffe | 79 |  | "none"
-  ^(?+10)(a)(b)(c)(d)(e)(f)(g)(h)(i)(j|k)$ | abcdefghi | abcdefghij/fffffffffffffffffffe | 79 |  | "none"
-  (?:ð|ð) | \xf0\x9f\x98 | \xf0\x9f\x98\x80/fffffffe | 31 | 0 | "offset-set"
-  [ðð] | \xf0\x9f\x98 | \xf0\x9f\x98\x80/fffffffe | 31 | 0 | "offset-set"
-  (?:ð|ð) | \xf0\x9f\x98 | \xf0\x9f\x98\x80/fffffffe | 31 | 0 | "memchr"
+  frank|fred | fr | fra/fffffb | 23 | pin 0 -> 0:0+2 | "offset-set" | "emitted"
+  (frank)|fred | fr | fra/fffffb | 23 | pin 0 -> 0:0+2 | "offset-set" | "emitted"
+  foo(?:username|password|passphrase)bar | bar | dbar/feffffff | 31 | pin none -> none | "memchr" | "emitted"
+  a[bc]de | de | abde/fffeffff | 31 | pin 2 -> 2:2+2 | "run-pinned" | "dominated"
+  (?i)x/1234 | /1234 | X/1234/dfffffffffff | 47 | pin 1 -> 1:1+5 | "run-pinned" | "dominated"
+  /abcd[xy]/user | /user | /abcdx/user/fffffffffffeffffffffff | 87 | pin 6 -> 6:6+2 | "memchr" | "emitted"
+  ^(a)(b)(c)(d)(e)(f)(g)(h)(i)(j|k)(?10)$ | abcdefghi | abcdefghij/fffffffffffffffffffe | 79 | pin  ->  | "none" | "one-attempt"
+  ^(a)(b)(c)(d)(e)(f)(g)(h)(i)(j|k)\g<10>$ | abcdefghi | abcdefghij/fffffffffffffffffffe | 79 | pin  ->  | "none" | "one-attempt"
+  ^(a)(b)(c)(d)(e)(f)(g)(h)(i)(j|k)\g'10'$ | abcdefghi | abcdefghij/fffffffffffffffffffe | 79 | pin  ->  | "none" | "one-attempt"
+  ^(a)(b)(c)(d)(e)(f)(g)(h)(i)(j|k)(?-10)$ | abcdefghi | abcdefghij/fffffffffffffffffffe | 79 | pin  ->  | "none" | "one-attempt"
+  ^(a)(b)(c)(d)(e)(f)(g)(h)(i)(j|k)(?-1)$ | abcdefghi | abcdefghij/fffffffffffffffffffe | 79 | pin  ->  | "none" | "one-attempt"
+  ^(?+10)(a)(b)(c)(d)(e)(f)(g)(h)(i)(j|k)$ | abcdefghi | abcdefghij/fffffffffffffffffffe | 79 | pin  ->  | "none" | "one-attempt"
+  (?:ð|ð) | \xf0\x9f\x98 | \xf0\x9f\x98\x80/fffffffe | 31 | pin 0 -> 0:0+3 | "offset-set" | "emitted"
+  [ðð] | \xf0\x9f\x98 | \xf0\x9f\x98\x80/fffffffe | 31 | pin 0 -> 0:0+3 | "offset-set" | "emitted"
+  (?:ð|ð) | \xf0\x9f\x98 | \xf0\x9f\x98\x80/fffffffe | 31 | pin 0 -> 0:0+3 | "memchr" | "emitted"
