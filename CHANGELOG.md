@@ -18,6 +18,15 @@ scaffolding version, which changes far more often than a release does. See
   overlapping word loads instead of a `memcmp`, on both engines.
   `-fno-run-overlap` restores the `memcmp`; `<PREFIX>_RUN_WORDS` counts the
   word compares (`docs/spec/tuning.md` §2.38).
+- The necessary-run pre-check understands caseless words ([OPT-LITSCAN] S4
+  C3, abi 59): a run position may be a two-member cube such as `[Ss]`, runs
+  are ranked by information, an alternation's common affixes are the cube
+  hull of its branches (`frank|fred` → `fr[ae]`), and a masked run is
+  compared masked and scanned on both members of its scan position, so
+  `(?i)union.*?select.*?from` gains a whole-window pre-check.
+  `<PREFIX>_REQ_RUN` carries a `/mask` suffix on a masked run;
+  `-fno-req-run-fold` (bit 44) restores the exact-only analysis
+  (`docs/spec/tuning.md` §2.28, §2.39).
 
 ## [0.2.0-beta] — 2026-10-03
 

@@ -2296,7 +2296,39 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `58` on every artifact today (lane s4build bumped it
+- **`rx_info.abi` is `59` on every artifact today (lane c3build bumped it
+  from 58, 2026-10-03: `[OPT-LITSCAN]` S4 C3 — THE CASELESS NECESSARY RUN,
+  `docs/design/litscan_s4.md` §2.3).** The necessary-run analysis
+  (`src/facts/req.c`) admits, beside a single byte, a POSITION whose byte set
+  is one two-member cube `(T, K)` (a caseless letter `[Ss]`, `[jk]`, an
+  alternation's one-bit hull), ranks runs by information (`Σ popcount(K)`),
+  floors them at `PCREC_MIN_REQ_RUN_BITS` (16) and takes an alternation's
+  common head and tail as the cube hull of its branches
+  (`docs/spec/tuning.md` §2.28, §2.39). On an artifact whose `req_run` is
+  masked, the run pre-check's blocks (`<prefix>_reqrun`, and on the
+  no-DFA-scan VM route `<prefix>_reqrun_whole`) compare the run masked
+  through the run compare's new `words` row (`(<prefix>_w4(subject + cand) &
+  <prefix>_w4("\337\337\337\337")) == <prefix>_w4("SELE")`; `bytes` under
+  `-fno-run-overlap`), and a block whose scan member is a pair scans both
+  members as two `memchr` streams leapfrogged inside its one guarded loop;
+  its emitted comments name the mask; `<PREFIX>_REQ_RUN` gains a `/mask`
+  suffix (§6.3); `<PREFIX>_REQ_BYTE` becomes the set's pick where the run's
+  scan member is a pair; `<PREFIX>_REQ_WHY` may read `"emitted"` with
+  `<PREFIX>_REQ_BYTE "none"`; the K65 whole-set half tests every set member
+  the run's EXACT positions do not prove. **Movers:** an artifact's program
+  moves if and only if its `req_run` fact is masked — measured at landing,
+  byte-diffed against `abi` 58 over every corpus pattern (auto and
+  `--engine=vm`) and every pcrec-bench export (four compile configs): 30
+  corpus and 11 bench artifacts on the auto route, 0 off the diagonal; every
+  other artifact differs from `abi` 58 in its abi digits alone.
+  `-fno-req-run-fold` (bit 44, masked out of `rx_info.flags`) restores the
+  `abi`-58 program apart from those digits. **Invariants:** every masked
+  position is canonical (`T & ~K == 0`, `popcount(K)` 7 or 8; the compiler
+  refuses a non-canonical position as an internal error); every search of the
+  pair arm sits inside the block's `while (pos + maxk < n)` guard; a run pin
+  covers exact positions only, so no masked run enters `dfa_pfs[]`. No struct
+  offset moves, no `rx_info` member is added or changed, and no answer moves.
+- **`rx_info.abi` was `58` (lane s4build bumped it
   from 57 at the lane/r1land landing (its own branch took 56 from 55), 2026-10-03: `[OPT-LITSCAN]` S4 C1 — THE RUN COMPARE,
   `docs/design/litscan_s4.md` §1.3).** Every literal-run compare in emitted
   C (the offset-skip block's run term, which is also the run pre-check's
@@ -3696,8 +3728,10 @@ engine-scoped.**
   tiebreak and as the whole answer where the answer is NONE
   (`[OPT-FREQPICK]`, `tuning.md` §2.27, which carries the derivation and its
   declines; `docs/spec/findings.md` §4 for which analysis answers — today
-  the shipped default, which declares `byte` only). Where §2.28's RUN shipped it is the run's
-  own scan member.
+  the shipped default, which declares `byte` only). Where §2.28's RUN shipped
+  and its scan member is an EXACT byte it is that member; where the run's scan
+  member is a two-member cube (`tuning.md` §2.39) it is the set's pick, or
+  `"none"` for an empty set — every value is a member of the necessary set.
 
   A consumer may conclude that a non-`"none"` artifact rejects a whole
   subject in one pass when the byte is absent — **provided
@@ -3717,6 +3751,10 @@ engine-scoped.**
   ```c
   #define RX_REQ_RUN "2e746172@0"   /* every match contains ".tar"; the
                                        memchr scans member 0, '.' */
+  #define RX_REQ_RUN "53454c454354@4/dfdfdfdfdfdf"
+                                    /* (?i)select: every match contains a
+                                       member of each position (x & K) == T;
+                                       the scan is the pair at position 4 */
   #define RX_REQ_RUN "none"         /* no run of two or more bytes */
   ```
 
@@ -3725,9 +3763,13 @@ engine-scoped.**
   which is `<PREFIX>_REQ_BYTE`'s own case. Hex because a run is arbitrary
   bytes inside a `#define`'s string body; the index because it is the one fact
   about the emitted check a reader cannot derive from the bytes, and because
-  `<PREFIX>_REQ_BYTE` is exactly `bytes[idx]` — which is what makes the two
-  stamps checkable against each other. `tuning.md` §2.28 carries the
-  derivation. No `rx_info` mirror, its sibling's reason.
+  `<PREFIX>_REQ_BYTE` is exactly `bytes[idx]` wherever position `idx` is an
+  exact byte — which is what makes the two stamps checkable against each
+  other. **Since `abi` 59** a run whose positions are not all exact bytes
+  carries `/` and each position's mask `K` in hex: `T` (the bytes) is each
+  position's lower member and `(x & K) == T` its membership test; an exact
+  run's text is unchanged. `tuning.md` §2.28 carries the derivation. No
+  `rx_info` mirror, its sibling's reason.
 
   **[OPT-PRECHECK-ADMIT], 2026-09-23: `<PREFIX>_REQ_WHY` — WHETHER THE
   ARTIFACT ACTED ON EITHER FACT, AND WHY NOT.** A closed four-token
@@ -3740,13 +3782,15 @@ engine-scoped.**
   | value | what it says |
   |---|---|
   | `"emitted"` | the artifact emits a pre-check, on the byte or run its two siblings name |
-  | `"none"` | there is no necessary byte — the analysis found none, or `-fno-req-byte` denied it |
+  | `"none"` | nothing is necessary — no byte and no run (the analysis found neither, or `-fno-req-byte` denied them) |
   | `"one-attempt"` | declined: the search route tries ONE start position, so a whole-window pass in front of it can only add work |
   | `"dominated"` | declined: the artifact's own candidate-start `memchr` already scans a byte at least as rare |
 
-  `"none"` here holds **if and only if** `<PREFIX>_REQ_BYTE` is `"none"`. Any
-  other value asserts that a byte WAS derived, and only `"emitted"` asserts
-  that the artifact tests it — so a consumer asking "does this artifact reject
+  `"none"` here holds **if and only if** `<PREFIX>_REQ_BYTE` AND
+  `<PREFIX>_REQ_RUN` are both `"none"` (since `abi` 59; before it the byte
+  alone decided, every run byte being a set member). Any other value asserts
+  that a byte or a run WAS derived, and only `"emitted"` asserts that the
+  artifact tests it — so a consumer asking "does this artifact reject
   a subject in one pass" reads THIS stamp and then its siblings for the value,
   never the siblings alone. `tuning.md` §2.29 carries both rules and their
   measured populations. No `rx_info` mirror, its siblings' reason.
@@ -3785,9 +3829,10 @@ engine-scoped.**
   ```
 
   **The IFF: it is the number of literal-run compares this artifact writes as
-  two overlapping word compares** (the `overlap` row: an exact run of length
-  3, 5-7 or 9-15), counting each compare once whatever engine wrote it; a run
-  compare at any other length is a `memcmp` and is not counted. `0` on every
+  word compares** (the `overlap` row: an exact run of length 3, 5-7 or 9-15;
+  and since `abi` 59 the `words` row: a masked run, `tuning.md` §2.39),
+  counting each compare once whatever engine wrote it; any other exact run
+  compare is a `memcmp` and is not counted. `0` on every
   artifact that writes none and under `-fno-run-overlap`. It is written after
   the engine body — beside the `rx_info` definition, `<PREFIX>_FINDINGS`'
   placement — because a DFA artifact's compares sit in file-scope blocks

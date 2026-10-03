@@ -355,6 +355,16 @@ accurate) — `none` means nothing does. NULL on allocation
 failure. It is the same table `pcrec --list-limits` prints, from the same
 call.
 
+The `unit` column says how to read `value`. Most rows count a thing
+(`bytes`, `states`, `positions`, …); `percent` is a fraction of another
+row's quantity; and `bits` (since `abi` 59, `[OPT-LITSCAN]` S4 C3) is
+INFORMATION — `PCREC_MIN_REQ_RUN_BITS`, the necessary run's admission floor,
+is a sum of `popcount(K)` over the run's positions (8 per exact byte, 7 per
+two-member cube, `tuning.md` §2.28). That row, `PCREC_MAX_REQ_RUN_POS_SET`
+and `PCREC_MAX_REQ_RUN_EMIT` (whose unit became `positions` in the same
+change) are selection knees and carry no anchor in this document (§8b's
+rule); `tuning.md` §2.39 is where they are stated.
+
 **Why this matters and is not merely convenient.** The six `max_*` members
 of `pcrec_options` are RAISE-ONLY: a value below the built-in default is
 refused as a malformed option (§3.3, §8). So a caller raising a cap must

@@ -801,13 +801,19 @@ deleted, C1-C4 calling the primitives, and one abi event.
  * it: NULL is a primitive's input, not a reader's branch. */
 const uint32_t *pcrec_find_byte_rate(Ctx *cx);
 
-/* PICK: which of n candidates to scan. Argmin of rate[cand[i]], ties to the
- * EARLIEST candidate; returns the INDEX. NONE: `rightmost`, the index of the
- * reader's POSITIONAL rightmost candidate (PCRE2's LASTCODEUNIT rule). The
- * reader chooses only the candidate ORDER, which is its tie rule.
- * n >= 1, 0 <= rightmost < n. */
-int pcrec_find_pick(const uint32_t *rate, const uint8_t *cand, int n,
-                    int rightmost);
+/* PICK: which of n candidates to scan. Candidate i is the CUBE
+ * (cand[i], care[i]): its members are the bytes b with (b & care[i]) ==
+ * cand[i] (cand[i] & ~care[i] == 0). care == NULL means every care[i] is
+ * 0xFF, i.e. every candidate is the one byte cand[i]. Cost of a candidate:
+ * the rate summed over its members. Argmin, ties to the EARLIEST
+ * candidate; returns the INDEX. NONE: `rightmost`, the index of the
+ * reader's positional rightmost candidate, whatever the candidates' sizes.
+ * n >= 1, 0 <= rightmost < n.
+ * [`[OPT-LITSCAN]` S4 C3, abi 59, litscan_s4.md §2.3.3 r2 R2-C1: the
+ * candidates were bytes until the caseless necessary run; a kind row
+ * EXTENDED, not added — one PICK kind, one NONE answer.] */
+int pcrec_find_pick(const uint32_t *rate, const uint8_t *cand,
+                    const uint8_t *care, int n, int rightmost);
 
 /* COMPARE: is p no commoner than q (rate[p] <= rate[q])? NONE: false
  * (unknown, so no density claim). Identity (p == q) is not a density fact
@@ -895,7 +901,7 @@ answer once per kind and each reader's kind (R24 as amended, §14).
 
 | kind | primitive | NONE answer, spelled once | readers |
 |---|---|---|---|
-| PICK | `pcrec_find_pick` | `cand[rightmost]`, the reader's positional rightmost candidate | C1, C2a, C8 |
+| PICK | `pcrec_find_pick` | `cand[rightmost]`, the reader's positional rightmost candidate (a candidate is a cube, a byte the cube with care `0xFF`; S4 C3) | C1, C2a, C8 |
 | COMPARE | `pcrec_find_no_commoner` | `false` | C3 |
 | MASS | `pcrec_find_set_mass`, `pcrec_find_seq_mass` | the uniform-rate mass `⌊k·10^6/256⌋` (cardinality, §0.8) | C2b, C4, C5 (hit rate), C7, C9 |
 | (`run-rarity`) | `pcrec_find_run_rarity` | spelled in the primitive at B4 (§6.1) | C5 (restart arm), C6 |
@@ -903,7 +909,7 @@ answer once per kind and each reader's kind (R24 as amended, §14).
 | # | reader (site, today) | kind | candidates, in the order the reader passes them | NONE answer (the kind's) | lands |
 |---|---|---|---|---|---|
 | C1 | `rb_pick` (`reqbyte.c:517-532`) | PICK | `[pick, then the set's other members 255→0]`, `rightmost = 0`. An empty set (`pick < 0`) returns -1 before any call: nothing to pick, not a rate branch | the threaded rightmost member, PCRE2's rule (today's non-`byte` answer) | B1 (moved, byte-identical) |
-| C2a | `rn_scan_index` (`reqbyte.c:560-571`) | PICK | `r->bytes[0..n)`, `rightmost = n-1` | the run's rightmost member, today's `!bytekey` answer since `[OPT-REQRUN-ENC]` (`reqbyte.c:564`). The r2 row's "leftmost" was stale | B1 (moved, byte-identical) |
+| C2a | `rn_scan_index` (`reqbyte.c:560-571`) | PICK | `r->bytes[0..n)`, `rightmost = n-1`; since S4 C3 the run's positions as cubes `(T[i], K[i])`, reversed (`pcrec_find_run_scan_index`) | the run's rightmost member, today's `!bytekey` answer since `[OPT-REQRUN-ENC]` (`reqbyte.c:564`). The r2 row's "leftmost" was stale | B1 (moved, byte-identical) |
 | C2b | `rn_window_start` (`reqbyte.c:580-597`) | MASS (sequence) | each `PCREC_MAX_REQ_RUN_EMIT`-byte window from `lo_s` up; argmin, ties to the leftmost | every window ties, so `lo_s`, today's `!bytekey` answer (`:588`) | B1 (moved, byte-identical). Moving the WINDOW choice to `run-rarity` is its own row, with its trigger: a measured window mis-pick |
 | C3 | `req_byte_dominated_by` (`emit_dfa.c:5933-5943`; density conjunct `:5941-5942`), G1 | COMPARE | `(p, q)`, after the identity conjunct `p == q` (`:5938`) | `false`, so only identity elides | B1 (migrated; G1 stays in `emit_dfa.c`). The WIDENING (scan run rate vs prefilter byte rate, B2R §6) reads `run-rarity` + `byte-rate` and stays D77-held (I-103) |
 | C4 | `set_ppm` (`prefix_k.c:325-330`; callers `:418`, `:443`, `:475`) | MASS (set) | the set | **cardinality** (§0.8). NEW: today the read at `:328` is ungated | B1 (moved). **Moves** under `utf8` + default (named manifest, §11.3) |

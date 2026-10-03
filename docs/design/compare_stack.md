@@ -189,7 +189,7 @@ in the utf8 `$_span_match_caseless` residual.
 | P1 fold relation | `src/core/fold.c` (+ `utf8_fold_pairs.inc`, generated from `third_party/ucd-16.0.0`) | `fold_agreement_check.c` (S116), `fold_agreement_utf8_check.c` (A/B/C). **The kit joins as the third consumer** | L0 | `cls_casefold`, the span residuals, kit masks, the cls-fold recognizer (to be) |
 | P2 byte cube `(K,T)` | **CREATED at S4 C0 (2026-10-03)**: `pcrec_cube_of` (one definition parameterized by the domain) + `pcrec_cls_cube` (the absolute byte-domain reader) in `src/core/cpset.c`; clskit's `cube_of` is a caller over a section's span. Previously "to be created" in `src/core/` (next to `cpset.c`). Absolute byte domain, from an interval list | the exact 256-point membership check (wf's), run over every class the corpus produces; the fold pairs must come out K=0xDF (a P1 tie) | `[WORD-FOLD]`/kit or `[CLS-TREE]`, whichever lands first | L1 (cls-fold, the CLS-TREE sections), L2 lanes, L3 cube scan |
 | P3 literal run fact (bytes, or cubes per position, plus offset from the candidate start) | today split: `Job.req_run` (necessary, anywhere); `PrefixKSets` (per offset, sets); the VM chain (implicit in the AST) | the REQ_RUN stamps + `run_prechecks.sh` §4/§5; identity gates | `reqbyte.c`, `prefix_k.c`, (future) an emitter-level maximal-run recognizer | L2/L3 sites. **A `[PATFACTS]` customer: one record, not three walks** |
-| P4 the compare (L2) | **since S4 C1 (abi 58) `pcrec_emit_run_compare` (`src/gen/runcmp.c`), a first-match row table: `overlap` (exact, L in {3, 5-7, 9-15}, two overlapping words, deny `-fno-run-overlap`) then `memcmp` (P4's text, the exact fallback); the masked rows (`words`, `bytes`, cube positions → `(w&K)==T`) land with their first caller, S4 C3.** Before S4 the only fused form was `emit_req_run_check`'s constant-length `memcmp` | answer-identity (test-axes) per deny flag; UBSan/ASan both axes for the subject-end guard | `[OPT-LITSCAN]` | VM chain (`[OPT-VMLIT]`), island chain, cursor chain, ofsskip verify, REQ_RUN verify, span_match (run-time K/T, on need) |
+| P4 the compare (L2) | **since S4 C1 (abi 58) `pcrec_emit_run_compare` (`src/gen/runcmp.c`), a first-match row table: `overlap` (exact, L in {3, 5-7, 9-15}, two overlapping words, deny `-fno-run-overlap`) then `memcmp` (P4's text, the exact fallback); the masked rows (`words`, `bytes`, cube positions → `(w&K)==T`) landed with their first caller, S4 C3 (abi 59): the run pre-check's verify, in both its blocks.** Before S4 the only fused form was `emit_req_run_check`'s constant-length `memcmp` | answer-identity (test-axes) per deny flag; UBSan/ASan both axes for the subject-end guard | `[OPT-LITSCAN]` | VM chain (`[OPT-VMLIT]`), island chain, cursor chain, ofsskip verify, REQ_RUN verify, span_match (run-time K/T, on need) |
 | P5 the search (L3) | today `memchr` spelled at four sites. The kit's search is operand (byte, or cube via SWAR) + offset + FORM chosen from the prior | the `RX_DFA_PREFILTER`/`RX_REQ_*` stamps each derive from the SAME selection object as the text (the existing discipline) | `[OPT-LITSCAN]`, `[OPT-A]` (pair / skip / Teddy leads) | DFA prefilter, ofsskip, pre-check, emit_attempt |
 | P6 frequency prior | `prefix_k.c:89` table + the `pcrec_byte_freq_ppm` accessor; the ENCODING KEY belongs WITH the value (`reqbyte_freq_pick.md` §3.3) | sum check; the utf8 zero-movers control. **Owed: one gate at the accessor, not per reader** | static today; `[ENG-PGO]` `freq` block later | offset-k model, rb_pick/run window, G1 dominance, the kit's FORM choice |
 | P7 admission | `req_admit` | `run_prechecks.sh` §5, S269/S270 | `[OPT-PRECHECK-ADMIT]` | every pre-check emission + the three stamps. The router/keyword elision is a G1 widening INSIDE it, never a second predicate |
@@ -232,6 +232,15 @@ record):**
   bodies of length >= 3 plus a cell. Every OTHER exact literal-run compare
   (ofsskip run term, run pre-check, VM literal run, island single-child
   chains) is the run compare's caller since S4 C1.
+- [S4 C3, 2026-10-03, abi 59] the run pre-check (`<p>_reqrun`,
+  `<p>_reqrun_whole`) now has TWO scan arms: one stream (`memchr`) where
+  its scan position is an exact byte, and two leapfrogged streams where it
+  is a two-member cube (a caseless letter), every search inside the block's
+  guarded loop; its verify is the run compare MASKED (`words`, or `bytes`
+  under `-fno-run-overlap`). The run PIN, and so every `dfa_pfs[]` row's run
+  term, stays exact (a masked run never enters the table); the
+  offset-preference step that would put a masked run term in the prefilter
+  is named in `litscan_s4.md` §2.4 and not built.
 
 ---
 

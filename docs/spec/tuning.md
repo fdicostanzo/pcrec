@@ -2497,14 +2497,24 @@ direction and turns matching subjects into NOMATCH.
 **The stamp.** `<PREFIX>_REQ_BYTE`, on EVERY artifact of both engines: the
 byte as a decimal string, or `"none"`. A string with a `"none"` member for
 `<PREFIX>_END_WINDOW`'s reason — `0` is a legal byte value, so no number is
-free to mean "declined". Where §2.28's run shipped, this stamp is the run's
-own scan member rather than the whole set's pick, because there is ONE emitted
-`memchr` and this stamp reports what it tests.
+free to mean "declined". Where §2.28's run shipped and its scan member is ONE
+EXACT byte, this stamp is that member rather than the whole set's pick, because
+there is ONE emitted `memchr` and this stamp reports what it tests. Where the
+run's scan member is a two-member cube (§2.39, a caseless letter scanned as two
+streams), no single byte is what the pre-check tests, and this stamp is the
+SET's pick — or `"none"` where the set is empty, as on `(?i)union.*?select.*?from`
+— so every value it carries is a member of the necessary set
+(`--emit-facts`' `req_set`); a member the run's T at that position happens to
+equal is not a byte every match must contain.
 
 **This stamp names the ANALYSIS, not the emission.** Since §2.29 the two can
 differ: an artifact may carry a derived byte here and emit no pre-check at
-all. `<PREFIX>_REQ_WHY` is the stamp that says which, and a consumer asking
-"does this artifact pre-check a byte" must read that one.
+all — and, since §2.39, a third way: where the run's scan member is a pair,
+the artifact's run block scans the pair while this stamp names the set's pick
+(on the no-DFA-scan route §2.29's whole-set half then `memchr`s that pick as
+well). `<PREFIX>_REQ_WHY` is the stamp that says whether anything is emitted,
+and a consumer asking "does this artifact pre-check a byte" must read that
+one.
 
 **Facts emptied** (`--emit-facts`, `docs/spec/facts_listing.md`): `req_set`, `req_whole_run`, `req_run`, `req_byte`.
 A FACT deny over the whole necessary-byte family: every consumer of those facts
@@ -2545,9 +2555,12 @@ only its branches' longest common prefix and common suffix; and everything
 that breaks the byte analysis breaks the run too, plus three declines of its
 own, each of which is a missed opportunity and never an unsound claim:
 
-- a multi-member class contributes nothing and breaks contiguity around it,
-  which is every caselessly folded literal (D23 folds `(?i)a` to `[aA]` at
-  parse time) — the largest decline by population;
+- a class that is not ONE byte or ONE two-member cube contributes nothing
+  and breaks contiguity around it. Until §2.39 that was every multi-member
+  class, including every caselessly folded literal (D23 folds `(?i)a` to
+  `[aA]` at parse time), the largest decline by population; since §2.39 a
+  caseless letter, `[jk]`, or any class whose two members differ in one bit
+  is a run POSITION (below), and `-fno-req-run-fold` restores the old rule;
 - a quantifier that admits zero iterations breaks contiguity, and this is the
   one arm where the opposite would DELETE a match: a C-comment pattern's two
   delimiters abut only in the match where the repeat takes no iterations;
@@ -2577,9 +2590,10 @@ A run's LAST byte can only be a lead byte if the run itself is truncated
 mid-character (an alternation's common suffix stopping between a lead byte
 and its continuation), measured in ZERO of 912 real `-e utf8` runs, so the
 rightmost rule closes both arms with no byte-range logic either way. A run
-longer than `PCREC_MAX_REQ_RUN_EMIT` (8 bytes, a `--list-limits` row) is TRUNCATED and
-never split into two compares: to the 8-byte window containing the scan
-member whose bytes sum to the lowest byte-rate mass, ties leftmost, and so to
+longer than `PCREC_MAX_REQ_RUN_EMIT` (8 positions, a `--list-limits` row) is TRUNCATED and
+never split into two compares: to the 8-position window containing the scan
+member whose MEMBERS sum to the lowest byte-rate mass (a pair position counts
+both of its members), ties leftmost, and so to
 the LEFTMOST-of-the-admissible-range such window where no byte-rate applies
 (every window's mass is then the uniform one) —
 which, for a member at the run's own last index, collapses to the run's own
@@ -2610,13 +2624,36 @@ measured gain by 5×, 8× and 3,257× on the three measured rows and no threshol
 over that product separates them (`reqpos_2b.md` §4.2). This axis is the
 decline rule until a run-rate analysis exists.
 
+**A run is a run of POSITIONS** (`[OPT-LITSCAN]` S4 C3, `abi` 59, §2.39). A
+position is one byte or one two-member CUBE `(T, K)` — the bytes `x` with
+`(x & K) == T`, `K` `0xff` for a byte and one clear bit for a pair, `T` always
+the lower member. Every run is ranked by its INFORMATION, the sum over its
+positions of `popcount(K)` (8 per byte, 7 per pair), so among exact runs the
+order and the tie are exactly length's; a run ships only where that sum is at
+least `PCREC_MIN_REQ_RUN_BITS` (16, a `--list-limits` row) — every exact run of
+two bytes or more, as before, and three caseless letters but not two. An
+alternation's common prefix and suffix are, position by position, the
+smallest cube holding both branches' positions (`K' = Ka & Kb & ~(Ta ^ Tb)`,
+`T' = Ta & K'`), symmetric in the branches, stopping at the first position
+whose hull has more than two members — so `frank|fred` reports `fr[ae]`. The
+scan member's cost is its members' summed byte-rate (one PICK, its NONE answer
+the rightmost position either way); a masked run is compared masked by the run
+compare's `words`/`bytes` rows (§2.38), and a pair scan member is scanned as
+two `memchr` streams, one per member, leapfrogged inside the block's one
+guarded loop.
+
 **The stamp.** `<PREFIX>_REQ_RUN`, on EVERY artifact of both engines: the
 run's bytes as lowercase hex, then `@`, then the scanned member's index
-within them — `2e746172@0` for `.tar` — or `"none"` at `L < 2`. Hex because a
-run is arbitrary bytes inside a `#define`'s string body; the index because it
-is the one fact about the emitted check a reader cannot derive from the bytes,
-and because `<PREFIX>_REQ_BYTE` is exactly `bytes[idx]`, which makes the two
-stamps checkable against each other. Like its sibling it names the ANALYSIS
+within them — `2e746172@0` for `.tar` — then, ONLY where some position is not
+an exact byte, `/` and each position's `K` in hex —
+`53454c454354@4/dfdfdfdfdfdf` for `(?i)select` — or `"none"` when no run
+ships. Hex because a run is arbitrary bytes inside a `#define`'s string body;
+the index because it is the one fact about the emitted check a reader cannot
+derive from the bytes, and because `<PREFIX>_REQ_BYTE` is exactly `bytes[idx]`
+wherever `mask[idx]` is `ff` (an exact scan member), which makes the two
+stamps checkable against each other; the mask because a masked run's bytes
+alone would read as an exact run of its upper-case spelling. An exact run's
+text is unchanged by the suffix rule. Like its sibling it names the ANALYSIS
 and not the emission — see §2.29.
 
 **Facts emptied** (`--emit-facts`, `docs/spec/facts_listing.md`): `req_whole_run`, `req_run`.
@@ -2707,8 +2744,12 @@ compare of the whole run as the analysis holds it (up to
 `PCREC_MAX_REQ_RUN_SCAN` bytes, a structural bound no prior moves), scanned
 on the same member, and its absence answers NOMATCH — so the absence of ANY
 window of the run proves the no-match, and the answer rests on the run, a
-fact about the pattern. The whole-set half above then skips every byte of
-the whole run. `<PREFIX>_REQ_RUN` is unchanged and still names the window;
+fact about the pattern. A masked run (§2.39) is compared masked in BOTH
+blocks, each with its own array's mask. The whole-set half above then skips
+every EXACT position's byte of the whole run — a pair position proves only
+that one of its members is present, so a set member equal to its `T` keeps
+its own `memchr`, which is what keeps NOMATCH from becoming a step give-up on
+`(x?)([a-z]+)+S\d(?i:select)\1`. `<PREFIX>_REQ_RUN` is unchanged and still names the window;
 an artifact whose run fits its window emits nothing more; where a DFA scan
 runs in front nothing changes.
 
@@ -2729,6 +2770,11 @@ pre-check stays.) The pre-check on `q` declines where:
   it as one compare). A run check dismisses strictly more than a `memchr` on
   its scan byte does, so a byte scan alone never dominates it. A test that
   verifies the run but scans a DIFFERENT member of it keeps the pre-check.
+  Over a masked run (§2.39) the same question is read over cubes: every
+  position must be tested, a pair position by a byte or a term whose members
+  all lie in its cube — `(?i)x/1234`'s offset-0 model term `{x, X}` verifies
+  it, while `a[bc]de`, whose prefilter tests nothing at offset 1, keeps its
+  pre-check.
 - **density**, for the ONE-BYTE pre-check under a `memchr`-form prefilter
   only: `q` is not STRICTLY rarer than `p` by the byte-rate — the COMPARE
   kind's question, whose NONE answer is "no density claim", so where no
@@ -2761,12 +2807,15 @@ FOUR-TOKEN set:
 | value | meaning |
 |---|---|
 | `"emitted"` | the artifact emits a pre-check, on the byte or run its siblings name |
-| `"none"` | there is no necessary byte — the analysis found none, or `-fno-req-byte` denied it |
+| `"none"` | nothing is necessary — no necessary byte AND no necessary run (the analysis found neither, or `-fno-req-byte` denied them) |
 | `"one-attempt"` | G2 declined: the route tries one start position, linearly (a DFA, an exact hybrid, or a frameless VM program) |
 | `"dominated"` | G1 declined: an equally rare byte is already scanned (for a run, by a candidate test that also verifies the run) |
 
-`"none"` here holds if and only if `<PREFIX>_REQ_BYTE` is `"none"`, which is
-what makes the pair checkable against each other. It is a separate stamp
+`"none"` here holds if and only if `<PREFIX>_REQ_BYTE` AND `<PREFIX>_REQ_RUN`
+are both `"none"`, which is what makes the three checkable against each other.
+Until §2.39 the two spellings were equivalent, because every run byte was a set
+member; a masked run over an empty necessary set (`union-select`) has
+`<PREFIX>_REQ_BYTE "none"` and a pre-check (`"emitted"`). It is a separate stamp
 rather than a wider `<PREFIX>_REQ_BYTE` value in `<PREFIX>_ENGINE` /
 `<PREFIX>_ENGINE_WHY`'s shape: those two answer what the analysis found, a
 fact about the pattern, and this one answers whether the artifact acted on it.
@@ -2807,6 +2856,15 @@ and has no axis. `--list-axes` renders the pair `|`-joined
 (`docs/spec/registry.md`). Deny-only; MASKED out of `rx_info.flags`
 (`strategy_denials`) for the mask's own reason. `-fno-req-run` and
 `-fno-req-byte` remove the run itself, so nothing is pinned under either.
+
+**The pin is a fact about EXACT positions** (it always was: it needs one byte
+at every offset it pins; stated since §2.39). On a masked run it pins the
+maximal stretch of exact positions around the window's rarest exact byte
+(`--emit-facts`' `run_pin` reads `o:at+len` for such a stretch, `o` for a
+whole-window pin, the text before §2.39), and the run rows' term and scan are
+that stretch's, compared exactly — no masked run enters `<PREFIX>_DFA_PREFILTER`'s
+table. `-fno-req-run-fold` reaches the pin the way `-fno-req-byte` does: it
+narrows the run, and the pin reads the narrowed run.
 
 ### 2.31 `-fno-lit-run` — `PCREC_NO_LIT_RUN` (bit 33)
 
@@ -3210,10 +3268,11 @@ remains (§2.19's elision cannot apply, since the start state accepts only at
 on both engines. Deny-only, MASKED out of `rx_info.flags`
 (`strategy_denials`) for the mask's own reason; the deny is the
 literal-compare kit's row flag (D122 addendum 2 (4)). `<PREFIX>_RUN_WORDS`
-(`match_api.md` §6.3) counts the compares the `overlap` row writes, `0` on
-every artifact that writes none and on every artifact under the flag.
-Denied, every run compare is the `memcmp` this compiler emitted before
-`abi` 58, byte for byte apart from that stamp line.
+(`match_api.md` §6.3) counts the compares the `words` and `overlap` rows
+write, `0` on every artifact that writes none and on every artifact under the
+flag. Denied, every EXACT run compare is the `memcmp` this compiler emitted
+before `abi` 58, byte for byte apart from that stamp line, and every MASKED
+one (§2.39, `abi` 59) takes the `bytes` row.
 
 **What it is.** Every literal-run compare in emitted C — the offset-skip
 block's run term (§2.30, which is also the run pre-check's compare, §2.28)
@@ -3224,8 +3283,16 @@ live off the table):
 
 | row | applies | emits |
 |---|---|---|
+| `words` | a MASKED run (some position a two-member cube, §2.39) of length 2 or more | the run's natural-width words, the last at offset `L - W`, each `(w(base + o) & w("<K>")) == w("<T>")` with the mask a string literal too, joined by `&&` in offset order; a word whose mask is all `0xff` compares unmasked, one whose mask is all `0x00` is not loaded |
 | `overlap` | an exact run of length 3, 5, 6, 7 or 9-15 | two overlapping natural-width words (2, 4 or 8 bytes), the last at offset `L - W`, joined by `&&` in offset order |
-| `memcmp` | always (the fallback) | `!memcmp(base, "<run>", L)` |
+| `bytes` | a masked run (the masked domain's fallback) | `((base)[i] & K) == T` per position, joined by `&&`; `K` `0xff` elides the `&` |
+| `memcmp` | an exact run (the exact domain's fallback) | `!memcmp(base, "<run>", L)` |
+
+```c
+/* L = 6, the masked necessary run (?i)select, row `words` */
+(rx_w4(subject + cand) & rx_w4("\337\337\337\337")) == rx_w4("SELE")
+    && (rx_w4(subject + cand + 2) & rx_w4("\337\337\337\337")) == rx_w4("LECT")
+```
 
 ```c
 /* L = 5, the run-pinned prefilter's run term for `/user` */
@@ -3261,6 +3328,85 @@ deny axis.
 
 **On the dial: every position, no trade** (§5.4): an `overlap` compare and
 the `memcmp` it replaces are within a word of each other in size.
+
+### 2.39 `-fno-req-run-fold` — `PCREC_NO_REQ_RUN_FOLD` (bit 44)
+
+**`[OPT-LITSCAN]` S4 C3, `abi` 59 (`docs/design/litscan_s4.md` §2.3).
+ANSWER-IDENTITY-preserving.** Denies the CASELESS NECESSARY RUN: the
+two-member cube positions of §2.28's run. Deny-only, MASKED out of
+`rx_info.flags` (`strategy_denials`) for the mask's own reason; its activity
+record is `<PREFIX>_REQ_RUN`'s `/mask` suffix, which only a masked run
+carries (`--list-axes` axis `req-run-fold`).
+
+**What it is.** A caseless literal is a two-member class at every letter
+(D23), so before this row a caseless word contributed NOTHING to the
+necessary run and `(?i)union.*?select.*?from` had no whole-window pre-check
+at all — pcrec-bench's one measured customer, at 0.718 ns/B against a
+two-stream hand twin's 0.439 (`docs/dev/optloop/waf_attribution.md`). A class
+whose byte set is one cube of at most `PCREC_MAX_REQ_RUN_POS_SET` (2, a
+`--list-limits` row) members is now a run POSITION (§2.28 "A run is a run of
+POSITIONS"). The mechanism is general rather than caseless: `[jk]` and an
+alternation's one-bit hull (`frank|fred` → `fr[ae]`) are positions too, and
+they are most of what moves.
+
+**What the pre-check emits on a masked run.** The run compare's `words` row
+(§2.38) verifies it masked. Where the scan member is an exact byte, the block
+is today's one-`memchr` loop; where it is a pair, the block scans BOTH
+members, two pending hits leapfrogged inside the block's one guarded loop
+(`while (pos + maxk < n)`, so no search is ever made on a window shorter than
+the run and `memchr(NULL, c, 0)` is closed, [K27]):
+
+```c
+static inline size_t rx_reqrun(const unsigned char *subject, size_t n, size_t pos)
+{
+    size_t ha = 0, hb = 0;
+    int fresh = 1;
+    while (pos + 5 < n) {
+        size_t cand;
+        if (fresh || ha < pos + 4) {
+            const void *q = memchr(subject + pos + 4, 67, n - pos - 4);
+            ha = q ? (size_t)((const unsigned char *)q - subject) : n;
+        }
+        if (fresh || hb < pos + 4) {
+            const void *q = memchr(subject + pos + 4, 99, n - pos - 4);
+            hb = q ? (size_t)((const unsigned char *)q - subject) : n;
+        }
+        fresh = 0;
+        cand = ha < hb ? ha : hb;
+        if (cand >= n) return n;
+        cand -= 4;
+        if (cand + 5 >= n) return n;
+        if (/* the masked run compare */) return cand;
+        pos = cand + 1;
+    }
+    return n;
+}
+```
+
+**What it changes for each consumer (D124 item 3).** On a DFA artifact and a
+VM hybrid, a pre-check that does not run, or a one-pass proof of absence: no
+answer moves. On a VM route with no DFA scan it can only turn a step give-up
+into NOMATCH, by running fewer attempts, never the reverse — §2.29's
+whole-set half keeps testing every set member the run does not prove (its
+EXACT positions only). `<PREFIX>_REQ_BYTE` is a set member or `"none"`
+(§2.27); `<PREFIX>_REQ_WHY "none"` now requires no run as well (§2.29); the
+pin stays a fact about exact positions (§2.30). Measured movers at landing,
+byte-diffed against `abi` 58 over every corpus pattern (auto and
+`--engine=vm`) and every pcrec-bench export (the four compile configs): 41
+artifacts on the auto route (23 that had no run, 18 whose exact run a more
+informative masked run outranks), every one of them an artifact whose
+`req_run` is masked and no other (`docs/dev/lanes/c3build_report.md`).
+
+**Facts narrowed, not emptied** (`--emit-facts`, `docs/spec/facts_listing.md`):
+`req_whole_run`, `req_run` (and through them `req_byte` and `run_pin`). A
+FACT-LEVEL deny (D126 Q3): the walk's position bound drops to one member, so
+the analysis is the pre-row one exactly — single bytes ranked by length, an
+alternation's affixes by byte equality — for every consumer at once, and each
+artifact is the `abi` 58 program apart from its abi digit.
+
+**On the dial: every position, no trade** (§5.4): a masked run compare is
+smaller than the per-position path it shortcuts, and a pre-check is a pass the
+dial does not price.
 
 ## 3. The DFA side's own stamps
 
@@ -3550,6 +3696,7 @@ not-a-tuning-axis list that follows.
 | `flags` bit `PCREC_NO_HYB_RESEED` | `-fno-hyb-reseed` | §2.35 |
 | `flags` bit `PCREC_NO_VIEW_EDGE` | `-fno-view-edge` | §2.37 |
 | `flags` bit `PCREC_NO_RUN_OVERLAP` | `-fno-run-overlap` | §2.38 |
+| `flags` bit `PCREC_NO_REQ_RUN_FOLD` | `-fno-req-run-fold` | §2.39 |
 | `unroll_k` (`PCREC_UNROLL_K_DEFAULT` = 0) | `--unroll=K` | §2.10 |
 | `vm_entry_shape` (`PCREC_VM_ENTRY_AUTO` = 0, `_PLAIN`, `_SHARED`, `_FORWARD`, `_INLINE`) | `--vm-entry-shape=N` | §2.21 |
 | `engine` (`PCREC_ENGINE_AUTO`/`_DFA`/`_VM`) | `--engine=E` | §2.11 |
@@ -3700,8 +3847,9 @@ the rule), and `tune` is precisely such a case, already covered.
 
 ### 5.4 The policy table
 
-**Twenty-eight rows: the 23 `tuning.md` §2 axes, `-fno-run-overlap` (§2.38,
-added at `abi` 58 with a cell at no position), λ, the `[ART-SIZE]`
+**Twenty-nine rows: the 23 `tuning.md` §2 axes, `-fno-run-overlap` (§2.38,
+added at `abi` 58 with a cell at no position), `-fno-req-run-fold` (§2.39,
+added at `abi` 59, likewise), λ, the `[ART-SIZE]`
 ladder's two parameters, and the emitted-size caps** (the last three are
 not §2 axes in their own right — the ladder's parameters are
 `-fno-size-term`'s sub-parameters, listed separately because the dial
@@ -3747,6 +3895,7 @@ lands.
 | `-futf-check` | — | — | — | — | — | §2.36; **GATE 1** — a contract, off by default; permanently flat |
 | `-fno-size-term` | — | — | — | — | — | §2.16; **NOT A RUNG** — it is the MECHANISM the two ladder rows parameterise |
 | `-fno-run-overlap` | — | — | — | — | — | §2.38; **NOT A RUNG** — the row and the `memcmp` it replaces are within a word in size, so no position trades on it; whether it ships at all is its own alpha (`litscan_s4.md` Q3), not a dial cell |
+| `-fno-req-run-fold` | — | — | — | — | — | §2.39; **NOT A RUNG** — a narrower or wider necessary fact, not a size/speed trade; whether it ships is its own alpha (the `union-select` cell), not a dial cell |
 | emitted-size caps | — | — | — | — | — | `limits.md` §8; **NOT A RUNG** — raise-only refusal boundaries; a dial that lowered one would manufacture refusals |
 
 **The seven reason codes**, one per flat row above:
