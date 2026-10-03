@@ -344,6 +344,13 @@
 #     prefix's spelling. Its own arm because a prefix-dependent SELECTION
 #     moves no answer, so `harness` is green on it by construction.
 #     Registered before S437.
+#   nomatchcaps — added 2026-09-30 (K78, lane k78); runs
+#     tests/codegen/run_nomatch_caps.sh: every entry that takes a caps array,
+#     on a sentinel-filled array, must leave it untouched on every
+#     non-success return and write all NCAPS pairs on a success, over
+#     dead-group DFA witnesses and a corpus slice on both routes. Its own arm
+#     because a caps write on a no-match moves no RETURN value, and the
+#     harness's driver never reads caps after a 0. Registered before S439.
 #
 # THE THREE NEWEST WORDS WERE REGISTERED FIRST, DELIBERATELY, which is the
 # lesson R31 C11 left one module earlier: this vocabulary is CLOSED, so a
@@ -2600,6 +2607,16 @@ run_one() {
                 p="$(grep -m1 '^checks passed:' "$work/prefixinv.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/prefixinv.log" | grep -oE '[0-9]+')"
                 score_arm "$work/prefixinv.log" "$f" "prefixinv:${f:-ERR}fail/${p:-?}pass"
+                ;;
+            nomatchcaps)
+                # K78 tests/codegen/run_nomatch_caps.sh — see the vocabulary
+                # entry above. Compiles with the sabotaged tree's own
+                # build/pcrec and reads the tree's own corpus slice.
+                PCREC="$pcrec" bash "$tree/tests/codegen/run_nomatch_caps.sh" \
+                    > "$work/nomatchcaps.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/nomatchcaps.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/nomatchcaps.log" | grep -oE '[0-9]+')"
+                score_arm "$work/nomatchcaps.log" "$f" "nomatchcaps:${f:-ERR}fail/${p:-?}pass"
                 ;;
             core)
                 # [REVW.U L5-R0/R2] tests/core/run_core_tests.sh — the unit

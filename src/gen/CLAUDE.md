@@ -2068,7 +2068,10 @@ on "a capture-bearing pattern forces the VM", which the dead-capture elision
 broke in the direction that matters: PCRE2 COUNTS a dead group and reports it
 UNSET (MEASURED, `(?(DEFINE)(?<g>a))(?&g)` has CAPTURECOUNT 1), so the artifact
 must still promise it. `dfa_artifact_ncaps` is the ONE place both emitters read,
-and `emit_search_head` fills groups 1..n with `PCREC_UNSET` once at entry —
+and `emit_dead_group_fill` fills groups 1..n with `PCREC_UNSET` on each
+SUCCESS path of `<prefix>_search`, beside the `caps[0]` write (K78, abi 55: it
+used to run once at the search entry, which wrote `caps` on a no-match against
+match_api.md §3.1; `tests/codegen/run_nomatch_caps.sh` is the check) —
 gated on `fit.chosen == ENGM_DFA`, because this emitter also writes the VM
 hybrid's internal DFA PREFILTER and the first version of that fill leaked into
 every capture-bearing VM artifact in the corpus (558 of 2442 call-free patterns

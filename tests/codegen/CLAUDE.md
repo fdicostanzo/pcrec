@@ -27,6 +27,22 @@ or it has no regression net at all.
   rewritten) after the real one, K80-b a pre-54 empty-guard header first,
   both must fail on the `#error`'s text; K80-c each rewritten header
   compiles alone. Sabotage S438.
+- **run_nomatch_caps.sh** + **nomatch_caps_driver.c** — K78 (lane k78,
+  2026-09-30, abi 55): match_api.md §3.1/§3.3's caps contract on every entry
+  that takes a caps array (`_search`, `_search_in`, `_match_caps`,
+  `_match_caps_in`; the `_in` spellings with NULL and, on a VM artifact, a
+  one-frame descriptor so FRAMES give-ups are scored). The driver fills a
+  sentinel one pair past RX_NCAPS and calls each entry at every startpos
+  0..n+1 of twenty subjects: a non-success must leave every pair, a success
+  must write pairs 0..NCAPS-1 and leave the guard pair. Population: eight
+  DEAD-GROUP witnesses (DFA, NCAPS >= 2; each asserted to reach its search
+  form: reverse-pass, pinned, attempt, empty) on four routes (auto, vm,
+  `-fno-anchored-dfa`, `-e utf8`), plus every 12th capture-bearing corpus
+  pattern on auto and vm. 406 artifacts, ~240k non-success calls, ~90 s at
+  8 procs; floors on artifacts, calls, dead-group artifacts and VM; a
+  refused or unbuildable artifact is counted, never scored. In
+  `make test-codegen`; mech arm `nomatchcaps`, sabotage S439. Red 4/7 on the
+  pre-fix compiler; `docs/dev/lanes/k78_report.md`.
 - **run_trie_identity.sh** — DIFFERENTIAL codegen check for the M2.8
   alternation trie (R3.3). Builds a reference compiler from the same sources
   with `-DPCREC_NO_TRIE` (which forces `elig[j] = false` in nfa.c's A_ALT path)
