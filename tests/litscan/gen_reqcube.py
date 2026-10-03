@@ -47,6 +47,8 @@ cases = [
  # ---- the general mechanism: lengths, mixed words, one stream vs two ----
  ("(?i)abc", ["abc", "ABC", "aBc", "ab", "xxAbCxx", "ab c"],
   "three caseless letters (21 bits) clear the 16-bit floor: the shortest masked run"),
+ ("(?i)sel(?:ab)*ect", ["select", "SELECT", "selabect", "SELABABECT", "selaect", "xxSeLeCtxx"],
+  "a min-0 repeat between two caseless runs: nothing joins across it (S446 joins the body and deletes 'select', the zero-iteration match)"),
  ("(?i)ab", ["ab", "AB", "a", "xaBx"],
   "two caseless letters (14 bits) do not: no run, the per-byte path"),
  ("(?i)foo-bar", ["foo-bar", "FOO-BAR", "fOo-BaR", "foo_bar", "x-y FOO-BAR", "foo-ba"],

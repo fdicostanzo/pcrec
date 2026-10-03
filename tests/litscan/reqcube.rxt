@@ -280,6 +280,25 @@ n "ab"
 m "xxAbCxx" 2 5
 n "ab c"
 
+# a min-0 repeat between two caseless runs: nothing joins across it (S446 joins the body and deletes 'select', the zero-iteration match)
+pattern (?i)sel(?:ab)*ect
+m "select" 0 6
+m "SELECT" 0 6
+m "selabect" 0 8
+m "SELABABECT" 0 10
+n "selaect"
+m "xxSeLeCtxx" 2 8
+
+# a min-0 repeat between two caseless runs: nothing joins across it (S446 joins the body and deletes 'select', the zero-iteration match) [engine vm]
+pattern (?i)sel(?:ab)*ect
+engine vm
+m "select" 0 6
+m "SELECT" 0 6
+m "selabect" 0 8
+m "SELABABECT" 0 10
+n "selaect"
+m "xxSeLeCtxx" 2 8
+
 # two caseless letters (14 bits) do not: no run, the per-byte path
 pattern (?i)ab
 m "ab" 0 2

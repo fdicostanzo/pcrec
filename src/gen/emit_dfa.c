@@ -6106,6 +6106,7 @@ static void ofs_test_emit_pair(Ctx *cx, StrBuf *c, const char *p,
     int a = t->scan_byte, b = a | (~t->run_mask[k - t->run_o] & 0xFF);
     const char *at = k ? dfa_fragf(cx, "pos + %d", k) : "pos";
     const char *len = k ? dfa_fragf(cx, "n - pos - %d", k) : "n - pos";
+    const char *lim = at;   /* the re-search bound: a hit below pos + k* is stale */
 
     pcrec_sb_puts(c, "    size_t ha = 0, hb = 0;\n"
                      "    int fresh = 1;\n");
@@ -6114,11 +6115,11 @@ static void ofs_test_emit_pair(Ctx *cx, StrBuf *c, const char *p,
     pcrec_sb_printf(c, "        if (fresh || ha < %s) {\n"
                        "            const void *q = memchr(subject + %s, %d, %s);\n"
                        "            ha = q ? (size_t)((const unsigned char *)q - subject) : n;\n"
-                       "        }\n", at, at, a, len);
+                       "        }\n", lim, at, a, len);
     pcrec_sb_printf(c, "        if (fresh || hb < %s) {\n"
                        "            const void *q = memchr(subject + %s, %d, %s);\n"
                        "            hb = q ? (size_t)((const unsigned char *)q - subject) : n;\n"
-                       "        }\n", at, at, b, len);
+                       "        }\n", lim, at, b, len);
     pcrec_sb_puts(c,   "        fresh = 0;\n"
                        "        cand = ha < hb ? ha : hb;\n"
                        "        if (cand >= n) return n;\n");
