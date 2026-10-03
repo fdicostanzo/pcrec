@@ -5,6 +5,11 @@ Round 1 of the [OPTLOOP] cycle under D144, third item (it replaces
 2f1d9120. Built under its own deny bit, `-fno-view-edge`
 (`PCREC_NO_VIEW_EDGE`, bit 42). abi 55 -> 56.
 
+**LANDING NOTE (lane r1land, 2026-10-03):** landed on `lane/r1land` after
+[OPT-HYB-RESEED-FORM] A1 took abi 56, so this change's abi is **57**
+(56 -> 57); bit 42 and S440 are unchanged. Every "abi 56" below is the
+branch-time number. See docs/dev/lanes/r1land_report.md.
+
 ## Summary (resume from here)
 
 - **STEP 1 confirmed the mechanism, but relaxing precondition (3) accounts for

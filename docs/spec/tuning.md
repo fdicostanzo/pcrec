@@ -3165,7 +3165,7 @@ acceptance is answer identity.
 
 ### 2.37 `-fno-view-edge` — `PCREC_NO_VIEW_EDGE` (bit 42)
 
-**[OPT-VEDGE], `abi` 56 (`docs/dev/lanes/vedge_report.md`;
+**[OPT-VEDGE], `abi` 57 (56 on lane/vedge, renumbered at the lane/r1land landing; `docs/dev/lanes/vedge_report.md`;
 `docs/design/opt5_step2_twopass.md` §2). ANSWER-IDENTITY-preserving.**
 Deny-only, MASKED out of `rx_info.flags` (`strategy_denials`). No stamp of
 its own: it widens which chains §2.18's scan edge takes, and
