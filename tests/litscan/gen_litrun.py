@@ -32,6 +32,22 @@ cases = [
  ("a[bc]de", ["abde","acde","ade","abdx"], "a class ends a run, so 'de' alone is one"),
  ("abc(?=def)", ["abcdef","abcde","abcxdef"], "a run before a lookahead"),
 ]
+# [OPT-LITSCAN] S4 C1 (litscan_s4.md §1.3, §6.2): THE L-SWEEP. The run
+# compare's `overlap` row writes two overlapping words at L in {3, 5-7, 9-15}
+# and `memcmp` everywhere else, so every length 3..20, 31 and 32 is a cell,
+# and every byte position is flipped once: a flip inside the overlap region
+# must fail BOTH words, a flip at the last byte only the second. A subject one
+# byte short at the end is P8's bound. Two shapes per length: the run alone
+# (the VM's literal run; on the DFA the prefilter's run term or pre-check) and
+# the run behind `[0-9]+` (a floating necessary run: the run pre-check).
+POOL = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+for L in list(range(3, 21)) + [31, 32]:
+    run = POOL[:L]
+    subs = [run, run[:-1], "zz" + run + "zz", run[1:]]
+    subs += [run[:i] + "#" + run[i + 1:] for i in range(L)]
+    cases.append((run, subs, "S4 L-sweep, L = %d: the run alone" % L))
+    cases.append(("[0-9]+" + run, ["7" + s for s in subs] + ["x" + run],
+                  "S4 L-sweep, L = %d: a floating necessary run" % L))
 out = ["# tests/litscan/litrun.rxt -- [OPT-LITSCAN] S2a: the VM's EXACT literal run",
 "# (docs/design/patfacts/design.md §8.2; pcrec_lit_run in src/core/cpset.c).",
 "#",

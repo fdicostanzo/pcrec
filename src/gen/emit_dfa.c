@@ -49,7 +49,7 @@
  * abi ritual fires next, bump this ONE constant; grep for its old value
  * finds both emission sites plus every out-of-tree reader the ritual's own
  * site list already enumerates. */
-#define PCREC_ARTIFACT_ABI 55
+#define PCREC_ARTIFACT_ABI 56
 
 /* Renders one byte of pattern-derived text safely into a C block comment, escaping whatever would close or falsely open the comment.
  *
@@ -933,14 +933,12 @@ void pcrec_emit_end_window_clamp(Ctx *cx, StrBuf *c, const char *indent,
  * no `>= 0` test at `i == 0` (the `-Wtype-limits` class edge1_report.md
  * recorded), because its scan-offset arm already omits the `+ 0`.
  *
- * `memcmp` WITH A LITERAL LENGTH, never `memmem` and never a hand-rolled
- * word load. `memmem` is a GNU extension and pcrec emits portable C; a
- * VARIABLE length defeats the lowering this form is chosen for (gcc turns a
- * constant-length `memcmp` into one word load and one compare with no call
- * out of line at L in {2,4,8}, measured on gcc-16 here and gcc-15.2 on the
- * reference box — reqpos_2b.md §3.2); and a `memcpy` into a `uint64_t` would
- * read bytes the run does not occupy, which is the over-read `[WORD-FOLD]`'s
- * own row already refuses because pcrec does not own the caller's buffer.
+ * THE COMPARE IS THE RUN COMPARE (`pcrec_emit_run_compare`, src/gen/
+ * runcmp.c, [OPT-LITSCAN] S4): a constant-length `memcmp` or, at the
+ * lengths gcc decomposes, two overlapping word loads — never `memmem` (a GNU
+ * extension; pcrec emits portable C) and never one wide load past the run,
+ * which is the over-read `[WORD-FOLD]`'s own row refuses because pcrec does
+ * not own the caller's buffer. Every word it loads lies inside the run.
  *
  * THE RUN IS PATTERN-DERIVED BYTES IN TWO FRAMES AT ONCE, and each gets its
  * own escape. In the COMMENT they go through `emit_comment_safe_byte` with
@@ -949,25 +947,6 @@ void pcrec_emit_end_window_clamp(Ctx *cx, StrBuf *c, const char *indent,
  * SLASH, which would close this very comment if spelled here. In the C
  * STRING LITERAL they go through `pcrec_sb_cstr`, whose octal numeric escape
  * is what keeps a non-printable byte from swallowing the byte after it. */
-/* [OPT-LITSCAN] P4, THE EXACT COMPARE (compare_stack.md §3): writes
- * `!memcmp(<base>, "<bytes>", n)`, true where the `n` bytes at `base` equal
- * `bytes`. The literal-compare kit's first primitive, and the ONE spelling of
- * a constant-length literal compare in emitted C, so every caller gets the
- * form gcc lowers to one word load and one compare (the reasons the run
- * pre-check below chose it are in its own header). `base` is an emitted C
- * pointer expression the caller has already bounds-checked; `bytes` go
- * through `pcrec_sb_cstr`, never raw. Callers: the offset-skip block's run
- * term, which since S1 step 6 is also the run pre-check's compare
- * (litscan_s1.md §1.6), and since S2a the VM's literal runs and island
- * single-child chains (`src/gen/emit_vm.c`, patfacts design §8.2). */
-void pcrec_emit_exact_compare(StrBuf *c, const char *base,
-                              const unsigned char *bytes, int n)
-{
-    pcrec_sb_printf(c, "!memcmp(%s, \"", base);
-    pcrec_sb_cstr(c, bytes, (size_t)n);
-    pcrec_sb_printf(c, "\", %d)", n);
-}
-
 /* Fills `*t` with the candidate test of a run floating in the window: the
  * `n` bytes `run`, scanned on `run[i]`, the run itself the one term at
  * offset 0. The block it drives returns where the run begins, or `n`. */
@@ -1023,6 +1002,8 @@ void pcrec_emit_req_run_blocks(Ctx *cx, StrBuf *c)
     OfsTest t[2];
     int n = req_run_tests(cx, t);
     for (int i = 0; i < n; i++) {
+        PcrecRun run = { t[i].run_bytes, t[i].run_len };
+        pcrec_runcmp_prepare(cx, c, &run);
         pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
         pcrec_sb_printf(c,
             "/* %s THE NECESSARY-RUN SEARCH: the first position >= `pos` at\n"
@@ -2763,6 +2744,13 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
                                            * `<PREFIX>_VM_LIT_RUNS` is where
                                            * what the emitter DID is recorded. */
                                           PCREC_NO_LIT_RUN |
+                                          /* [OPT-LITSCAN] S4 the run
+                                           * compare's overlap row: the same
+                                           * bytes read either way, masked
+                                           * for the same reason.
+                                           * `<PREFIX>_RUN_WORDS` records what
+                                           * the emitter did. */
+                                          PCREC_NO_RUN_OVERLAP |
                                           /* [EMIT-VERB] the emitted-comment
                                            * axis (D112), and it joins the
                                            * mask for the mask's own reason
@@ -5887,11 +5875,9 @@ static void ofsk_emit_verify(Ctx *cx, StrBuf *c, const char *p, const OfsTest *t
         pcrec_sb_puts(c, first ? "" : " &&\n            ");
         first = false;
         if (!k) {
-            /* THE RUN TERM, P4: the whole pinned run in one compare. */
-            pcrec_emit_exact_compare(c, t->run_o == 0
-                                  ? "subject + cand"
-                                  : dfa_fragf(cx, "subject + cand + %d", t->run_o),
-                               t->run_bytes, t->run_len);
+            /* THE RUN TERM: the whole pinned run in one run compare. */
+            PcrecRun run = { t->run_bytes, t->run_len };
+            pcrec_emit_run_compare(cx, c, "subject + cand", t->run_o, &run);
         } else if (k->count == 1) {
             if (k->k == 0) pcrec_sb_printf(c, "subject[cand] == %d", k->byte);
             else           pcrec_sb_printf(c, "subject[cand + %d] == %d", k->k, k->byte);
@@ -5932,6 +5918,10 @@ static void pf_block_ofs(StrBuf *c, const DfaForm *f)
     const OfsTest *t = &f->ofs;
     int maxk = t->maxk;
 
+    if (t->run_len > 0) {
+        PcrecRun run = { t->run_bytes, t->run_len };
+        pcrec_runcmp_prepare(f->cx, c, &run);
+    }
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
     pcrec_sb_puts(c,
         "/* ---- THE OFFSET-k CANDIDATE-START SKIP ---------------------------\n"
@@ -9181,6 +9171,11 @@ void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
     if (cx->opt->flags & PCREC_EMIT_MAIN)
         pcrec_sb_puts(c, "#include <stdio.h>\n#include <string.h>\n");
     pcrec_sb_puts(c, "\n");
+    /* [OPT-LITSCAN] S4 the word-load helpers a VM body's run compares use
+     * (the body is written before this prologue, so its widths are known);
+     * a DFA artifact's compares sit in file-scope blocks below, which declare
+     * their own through `pcrec_runcmp_prepare`. */
+    pcrec_emit_runcmp_helpers(cx, c);
     emit_orientation_block(cx, c, g);
 }
 
@@ -9592,6 +9587,7 @@ void pcrec_emit_dfa(Ctx *cx)
     pcrec_sb_puts(c, "\n");
     emit_in_entry_defs(c, g.searchfn, g.matchfn, g.matchcapsfn, cx->opt->prefix);
     pcrec_sb_puts(c, "\n");
+    pcrec_emit_runcmp_stamp(cx, c, g.upper);
     pcrec_emit_residual(cx);
     {
         /* The DFA artifact's stamp: it cannot backtrack, cut, or scan
