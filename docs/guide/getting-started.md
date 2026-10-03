@@ -34,7 +34,10 @@ gcc -O2 -o matcher matcher.c
 ```
 
 This prints `match 2 7` — the span of the leftmost match in the subject
-you gave on the command line. `--emit-main` is what makes the generated
+you gave on the command line. Build generated matchers at `-O2` or
+higher: the emitted code is written for an optimizing compiler, and at
+`-O0` or `-Os` it runs measurably slower (pcrec-bench's [B117] `-O`-level
+ledger has the figures). `--emit-main` is what makes the generated
 file directly runnable this way (it appends a small `main()`); it's the
 quickest way to try a pattern, but not how you'd use pcrec in a real
 program — see [building with make](building-with-make.md) and [using the

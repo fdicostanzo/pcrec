@@ -26211,3 +26211,25 @@ margin; bisect today's merges if slower). MAIN IS UNPUSHED (origin at 4a546fba-e
 **Bench:** I-126 (141b134): the box is handed over, [B117] keeps fc719ca4, O-78 is noted (filed under [OPT-LITSCAN] as a witness), and a K79 FYI.
 
 **Lesson:** a lane's light-target green, measured BEFORE a main merge, does not cover the merged tree. K79's render touched every emitted text path, and only the full suite reaches PC-4 and the IR listing.
+
+## 2026-10-03 — eighty-ninth session (Saturday; Frank present)
+
+Frank: "finish up open work/bench results/errors", Linux box free (bench manager asleep). The Friday checkpoint list from wake.md was done today.
+
+**Merged to main and pushed:**
+- **lane/k7980** (K79+K80, abi 54, D143). Triage lane k7980tri found ONE real regression, k7980's own (present pre-merge): the `--emit-ir` caps cell printed the escaped prefix placeholder (`\x01Q_NCAPS`), breaking 17 ir-listing BYTE-NEUTRALITY baselines (test-vm's group, not test-codegen). Fix a111a150 (the cell reads `cx->user_prefix`); leak sweep over 2,596 corpus patterns clean. The other 09-30 reds (vm_oracle 26, possdiff 1, PC-4 214-249, corpus 21) were 10 s wall-timeout kills at 32 kB RSS: box stalls, not code. Mac full make test 3698dae6: darwin nm only.
+- **lane/k78** (K78, abi 55), merged up to k7980's tip (lane k78merge; only conflict a lanes/CLAUDE.md index; FILEPIN re-pinned 1a9d4eed). Linux full make test 93490ae9: green except the W1.3 drift below; recursion identity 16/0.
+- **lane/w13fix**: test-rxtsource's W1.3 dogfood arm iterated the LIVE bench altwide dir and required 33 files; the bench grew to altwide@0.3 (39 files, bench 5c3b0ee), so Linux read "6 of 39 differ" while the Mac (stale 09-29 sibling) passed. Now iterates the fixture's 33 pinned names; missing file FAILs, extras NOTE. Sabotaged both ways.
+- **lane/benchnote**: bench O-79..O-82 read; summary docs/dev/summaries/2026-10-03-bench-o79-o82-notes.md; row annotations; [GUIDE-OPT-LEVEL] + [BENCH-ASKS-PENDING] filed.
+- **lane/rel02**: [REL-0.2], PCREC_VERSION 0.2.0-beta, CHANGELOG section, docs; not an abi event; FILEPIN 35a9e2b4. Mac full make test green (darwin nm), recid 16/0. **Tagged v0.2.0-beta** (Frank).
+- [GUIDE-OPT-LEVEL] written inline (one guide sentence).
+
+**Validation:** Linux full make test of d0487a97 (S2 confirmation): only the W1.3 drift red. Combined Linux run at ef97cd82: test-rxtsource green (W1.3 NOTE names the 6 extras); mech S437/S438/S439/S04 solo each COMPLETE with 0 unexpected/undetected/anomalies; test-axes in flight at time of writing.
+
+**Rulings (Frank, agreeing with the manager's recommendations):** XCALL not scheduled, to the stock-take as the strongest measured candidate (its D77 trigger is now met on the bench tier); [OPT-5] period-k target stays open; pcrec-vm-noisland control declined; the match-regime subject + density-controlled lka pair asked later in one inbox entry.
+
+**Lessons:**
+- (1) A check whose control is a LIVE sibling repo shares a moving source (learnings §3); pin the population to the fixture, report the rest.
+- (2) The `ubuntubudu` alias fails host-key verification from the Mac; `duxevents@100.69.121.107` works.
+- (3) Lanes repeatedly wrote throwaway files to /tmp despite the scratchpad rule (four lanes today, each self-reported and cleaned); BOILERPLATE should say it louder.
+- (4) A "wait for my run" lane is paid idle time; the manager stops it at launch and watches the log by script.
