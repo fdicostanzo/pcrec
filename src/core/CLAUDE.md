@@ -486,6 +486,23 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   `pcrec_lit_run`'s own floor is the whole fix. `-fno-lit-run` is
   unchanged; the floor is not a flag.
 
+- **cpset.c ([OPT-LITSCAN] S4 C0 addition, 2026-10-03, lane s4build)** —
+  THE BYTE CUBE, P2 of `docs/design/litscan_s4.md` §1.2 (D122 addendum 2
+  (2): the cube lives in `src/core/`). `pcrec_cube_of(iv, i, j, base, w,
+  care, val)` is ONE definition parameterized by the DOMAIN membership is
+  tested over: clskit's `cube_of` (src/gen/clskit.c) is now a one-line
+  caller passing a section's own span (offsets past it are don't-cares behind
+  the kit's dispatch), and `pcrec_cls_cube(cx, a, K, T)` is the byte-domain
+  reader the run facts will use (base 0, width 256: the cube must EQUAL the
+  set). Its exact domain loop is the one agreement control compare_stack D2
+  asked for. A caseless mask derives from `fold.c` through the SET
+  (`cls_casefold` -> `{S, s}` -> K 0xDF), never by reading the fold table
+  again (§1.2's hard requirement); `tests/backrefs/fold_agreement_check.c`'s
+  (b) arm ties the two over all 256 fold sets. Moved byte-neutrally: no
+  emitted byte changed (`scripts/emit_sweep.py` + `scripts/cls_identity.py`,
+  `docs/dev/lanes/s4build_report.md`). `pcrec_cls_single` is NOT replaced
+  (6+ readers, no customer). Sabotage rows S361 (re-aimed here, the section
+  form) and S440 (the absolute reader handed a section base).
 - **cpset.c ([CLS-TREE] S3 addition, 2026-09-29)** — the `A_WCLASS` kind
   (`internal.h`: a wide class, its code-point set in the distinct `u.wcls`,
   today's byte alternation as its child `l`) gets three things here and one

@@ -1055,6 +1055,10 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
   emitted form on every code point. **Open at S1**: the table's byte
   predicates read the DP's MODEL bytes, which run ~13% under the measured
   object for `K`; see docs/dev/lanes/clss1_report.md.
+  **[OPT-LITSCAN] S4 C0 (2026-10-03): `cube_of`'s body moved to
+  `src/core/cpset.c` as `pcrec_cube_of`** (one definition parameterized by
+  the domain; clskit's `cube_of` is a one-line caller over the section's own
+  span), byte-neutral. See src/core/CLAUDE.md's cpset.c S4 entry.
   **FIRST CALLER, [CLS-TREE] S4 (lane s4build, 2026-09-29, abi 48, one event with [OPT-CLSPACK]):**
   emit_vm.c's `vm_wcls` interns each distinct wide set and asks
   `pcrec_clskit_select` at `cx->opt->tune` (row denies unmapped, `deny` 0);

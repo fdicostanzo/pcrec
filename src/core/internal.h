@@ -1659,6 +1659,17 @@ void pcrec_cls_bits(Ctx *cx, const Ast *a, uint8_t out[32]);
 void pcrec_cls_bits_widen(Ctx *cx, const Ast *a, uint8_t out[32]);
 /* "Exactly one code point, and it is a byte?" — the code point, or -1. */
 int  pcrec_cls_single(Ctx *cx, const Ast *a);
+/* [OPT-LITSCAN] S4 P2 (litscan_s4.md §1.2): is `iv[i..j]` exactly ONE
+ * AND-mask cube over the domain [base, base+w)? On success
+ * `((x - base) & *care) == *val` is membership for every `x` in that domain.
+ * The ONE definition of the byte cube: clskit passes a section's own span,
+ * the run facts the absolute byte domain (`base` 0, `w` 256). */
+bool pcrec_cube_of(const PcrecCpRange *iv, int i, int j,
+                   unsigned base, unsigned w, unsigned *care, unsigned *val);
+/* The byte-domain reader: class `a`'s byte set as one cube (K, T) over all
+ * 256 bytes, false when it is not one; a singleton is K = 0xFF, a caseless
+ * letter K = 0xDF. */
+bool pcrec_cls_cube(Ctx *cx, const Ast *a, unsigned char *K, unsigned char *T);
 /* [CLS-TREE] S3: the three above refuse an `A_WCLASS` by `pcrec_ctx_fail`, a
  * KIND check and not a range check — see the kind's own comment. This is the
  * one spelling that reaches an `A_WCLASS`'s code-point set, and it refuses

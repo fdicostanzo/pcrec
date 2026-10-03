@@ -161,21 +161,6 @@ static unsigned bitlen(unsigned v)
     return b;
 }
 
-/* The AND of every integer in [a, b]: their common high prefix. */
-static unsigned range_and(unsigned a, unsigned b)
-{
-    unsigned sh = 0;
-    while (a != b) { a >>= 1; b >>= 1; sh++; }
-    return a << sh;
-}
-
-/* The OR of every integer in [a, b]. */
-static unsigned range_or(unsigned a, unsigned b)
-{
-    if (a == b) return a;
-    return (a | b) | ((1u << bitlen(a ^ b)) - 1u);
-}
-
 /* log2(k) in Q16, floored, for k >= 1: the binary-digit squaring method on
  * a Q30 mantissa. Integer arithmetic only, so every box computes the same
  * digits (the file header's first departure). */
@@ -194,38 +179,14 @@ static long long log2_q16(unsigned k)
 /* ---- CUBES, tier 1 ------------------------------------------------------ */
 
 /* Is section `i..j` exactly ONE don't-care cube over its base-relative
- * offsets? O(k) plus one pass over the span (<= 256). On success writes the
- * cube: `(x & care) == val` is membership for every `x` in the span.
- *
- * `val` is the AND of all members and `care` the bits every member agrees
- * on, both closed forms over intervals, so every member lies in the cube by
- * construction. What is left is that the cube must not SPILL onto a
- * non-member inside the span (offsets >= the span are unreachable behind
- * the dispatch, so they are don't-cares). The budget test is the study's
- * O(k) necessary condition; the loop after it is the exact check. */
+ * offsets? `pcrec_cube_of` (src/core/cpset.c, [OPT-LITSCAN] S4 P2) over the
+ * section's own span: offsets past the span are unreachable behind the
+ * dispatch, so they are don't-cares. On success `(x & care) == val` is
+ * membership for every base-relative `x` in the span. */
 static bool cube_of(const PcrecCpRange *iv, int i, int j,
                     unsigned *care, unsigned *val)
 {
-    unsigned base = iv[i].lo, w = iv[j].hi - base + 1;
-    unsigned nbits = w > 1 ? bitlen(w - 1) : 1;
-    unsigned full = (1u << nbits) - 1u, a_all = full, o_all = 0, nmem = 0;
-    uint64_t mem[4] = { 0, 0, 0, 0 };
-
-    for (int t = i; t <= j; t++) {
-        unsigned x0 = iv[t].lo - base, x1 = iv[t].hi - base;
-        a_all &= range_and(x0, x1);
-        o_all |= range_or(x0, x1);
-        nmem += x1 - x0 + 1;
-        for (unsigned x = x0; x <= x1; x++) mem[x >> 6] |= 1ULL << (x & 63);
-    }
-    unsigned c = full & ~(o_all & ~a_all), v = a_all;
-    unsigned csize = 1u << (nbits - (unsigned)__builtin_popcount(c));
-    if (csize - nmem > (1u << nbits) - w) return false;
-    for (unsigned x = 0; x < w; x++)
-        if ((x & c) == v && !((mem[x >> 6] >> (x & 63)) & 1)) return false;
-    *care = c;
-    *val = v;
-    return true;
+    return pcrec_cube_of(iv, i, j, iv[i].lo, iv[j].hi - iv[i].lo + 1, care, val);
 }
 
 /* ---- PAGE64's O(k) price ------------------------------------------------ */
