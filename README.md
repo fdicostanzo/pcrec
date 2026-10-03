@@ -21,7 +21,7 @@ anywhere you'd rather ship a small generated `.c`/`.h` pair than link a
 regex library. The matcher is a computed-goto DFA, falling back to a
 DFA-prefiltered VM only when a pattern needs captures or backtracking, with
 PCRE leftmost-first semantics. It is **not** a runtime regex library — and
-it's **not production yet**: 0.1.0-beta, pre-release.
+it's **not production yet**: 0.2.0-beta, pre-release.
 
 ## What it compiles
 

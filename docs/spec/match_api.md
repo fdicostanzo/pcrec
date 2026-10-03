@@ -2271,7 +2271,9 @@ against them:
   rider (D112 item 2) and the version by [REL-1.4]'s own rider, each
   riding the abi bump its own change already opened rather than taking a
   second one (D76/D94's addendum shape), so the line names pcrec, its
-  version AND the abi as the ruling always specified —
+  version AND the abi as the ruling always specified (the version moved
+  `0.1.0-beta` -> `0.2.0-beta` at [REL-0.2], 2026-10-03: the string alone
+  changed, not an abi event, same byte length) —
   on the `.c` and on the
   paired `.h`; and (2) the **shared `PCREC_RX_ABI_H` type block's
   doc-comments** — `rx_ctx`'s field notes, `rx_matchfn`'s return-space
