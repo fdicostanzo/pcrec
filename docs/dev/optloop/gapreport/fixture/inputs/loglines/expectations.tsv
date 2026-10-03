@@ -1,0 +1,7 @@
+pattern	subject	regime	nmatches
+l-ctx	s0	throughput	1
+l-ctx	s1	throughput	2
+l-ctx	s2	throughput	3
+l-inner	s0	throughput	1
+l-inner	s1	throughput	2
+l-inner	s2	throughput	3

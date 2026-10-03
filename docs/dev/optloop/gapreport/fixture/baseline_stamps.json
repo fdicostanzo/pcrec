@@ -1,0 +1,84 @@
+{
+"abi": 98,
+"label": "fixture-baseline",
+"pcrec": "fake",
+"stamps": {
+"capability": {
+"p-ci": {
+"ABI": "99",
+"RX_ENGINE": "dfa",
+"RX_PREFILTER": "memchr",
+"c_bytes": 94,
+"code_sha": "0000000000000000"
+},
+"p-first": {
+"ABI": "99",
+"RX_ENGINE": "dfa",
+"RX_PREFILTER": "memchr",
+"c_bytes": 92,
+"code_sha": "75a11da44c802486"
+},
+"p-lead": {
+"ABI": "99",
+"RX_ENGINE": "dfa",
+"RX_PREFILTER": "memchr",
+"c_bytes": 94,
+"code_sha": "75a11da44c802486"
+},
+"p-nopcrec": {
+"refused": "pcrec: REFUSE too large 99999 bytes"
+},
+"p-null": {
+"ABI": "99",
+"RX_ENGINE": "dfa",
+"RX_PREFILTER": "memchr",
+"c_bytes": 94,
+"code_sha": "75a11da44c802486"
+},
+"p-scan1": {
+"ABI": "99",
+"RX_ENGINE": "vm",
+"RX_PREFILTER": "hybrid",
+"c_bytes": 93,
+"code_sha": "75a11da44c802486"
+},
+"p-scan2": {
+"ABI": "99",
+"RX_ENGINE": "dfa",
+"RX_PREFILTER": "memchr",
+"c_bytes": 94,
+"code_sha": "75a11da44c802486"
+},
+"p-tierc": {
+"ABI": "99",
+"RX_ENGINE": "dfa",
+"RX_PREFILTER": "memchr",
+"c_bytes": 94,
+"code_sha": "75a11da44c802486"
+},
+"p-unassigned": {
+"ABI": "99",
+"RX_ENGINE": "dfa",
+"RX_PREFILTER": "memchr",
+"c_bytes": 94,
+"code_sha": "75a11da44c802486"
+}
+},
+"loglines": {
+"l-ctx": {
+"ABI": "99",
+"RX_ENGINE": "dfa",
+"RX_PREFILTER": "memchr",
+"c_bytes": 94,
+"code_sha": "75a11da44c802486"
+},
+"l-inner": {
+"ABI": "99",
+"RX_ENGINE": "dfa",
+"RX_PREFILTER": "memchr",
+"c_bytes": 94,
+"code_sha": "75a11da44c802486"
+}
+}
+}
+}

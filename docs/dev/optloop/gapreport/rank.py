@@ -23,13 +23,13 @@ import json
 import math
 import sys
 
-J = "libpcre2:jit-caps"
-# A peer (JIT) gap is ALGORITHMIC evidence only where a SCALAR engine -- no JIT
-# code generation, no SIMD-first design -- also beats auto on the cell
-# (cycle1_analysis.md §0 rules 1-4).  rust counts separately: its literal
-# prefilters are SIMD implementations of algorithmic mechanisms.
-SCALAR = ("libpcre2:interp-caps", "libpcre2:dfa-nocaps", "re2:default-caps",
-          "re2:longest-caps", "oniguruma:default-caps", "tre:default-caps")
+from gapconfig import EXCLUDED, PEER, SCALAR
+
+J = PEER
+# SCALAR (gapconfig.COMPARATORS role "scalar"): a peer (JIT) gap is ALGORITHMIC
+# evidence only where a SCALAR engine also beats auto on the cell.  rust counts
+# separately: its literal prefilters are SIMD implementations of algorithmic
+# mechanisms.
 rows = json.load(open(sys.argv[1]))
 causes = {}
 for line in open(sys.argv[2]):
@@ -57,7 +57,7 @@ for r in rows:
     peer_behind = j and j["verdict"] == "behind"
     ceil = None
     for t, c in r["cmp"].items():
-        if t == J or t.startswith("vectorscan") or c["verdict"] != "behind":
+        if t == J or t in EXCLUDED or c["verdict"] != "behind":
             continue
         if ceil is None or c["ratio"] > ceil[1]["ratio"]:
             ceil = (t, c)

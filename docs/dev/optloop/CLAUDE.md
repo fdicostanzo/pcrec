@@ -772,4 +772,6 @@ that cycle's analysis lands.
   - **Dispositions**: SCAN-SIMD and WIDE-ALT are SIMD-phase deferrals, and
     BACKTRACK is FUNDAMENTAL.
   - **Also carries**: a ≤4 round-2 slate and seven bench questions.
-- `gapreport/` — its instruments and data. See its own `CLAUDE.md`.
+- `gapreport/` — its instruments and data, and `gapreport.sh`, the one-command
+  repeatable run (`--group NAME|latest --out ...`, `--check` fixture self-test).
+  See its own `CLAUDE.md`.
