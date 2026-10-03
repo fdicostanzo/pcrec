@@ -152,6 +152,8 @@ PCREC_MIN_SCAN_CHAIN
 PCREC_STARTPOS_GUARD_TEXT_MAX
 PCREC_MAX_REQ_RUN_EMIT
 PCREC_MAX_REQ_RUN_SCAN
+PCREC_MIN_REQ_RUN_BITS
+PCREC_MAX_REQ_RUN_POS_SET
 PCREC_UCP_NARROW_MAX_INTERVALS
 PCREC_MAX_CTX_SETS
 PCREC_MAX_CTX_ATOMS
@@ -168,8 +170,8 @@ RXT_FROM_NEST_MAX
 EOF
 )"
 
-if [ "$n" -eq 70 ] && [ "$NAMES" = "$EXPECT_NAMES" ]; then
-    ok "[count] --list-limits reports all 70 named rows, exactly the manifest this script carries"
+if [ "$n" -eq 72 ] && [ "$NAMES" = "$EXPECT_NAMES" ]; then
+    ok "[count] --list-limits reports all 72 named rows, exactly the manifest this script carries"
 else
     bad "[count] --list-limits reports $n row(s); manifest mismatch — a row was added, removed or renamed. Diff:"
     diff <(printf '%s\n' "$EXPECT_NAMES") <(printf '%s\n' "$NAMES") >&2 || true

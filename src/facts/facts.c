@@ -71,17 +71,19 @@ static void pf_store_empty(PatFacts *pf, PfFactId f)
         break;
     case PF_REQ_WHOLE_RUN:
         memset(pf->req_run.whole, 0, sizeof pf->req_run.whole);
+        memset(pf->req_run.whole_mask, 0, sizeof pf->req_run.whole_mask);
         pf->req_run.whole_len = 0;
         break;
     case PF_REQ_RUN:
         memset(pf->req_run.bytes, 0, sizeof pf->req_run.bytes);
+        memset(pf->req_run.mask, 0, sizeof pf->req_run.mask);
         pf->req_run.len = 0;
         pf->req_run.idx = 0;
         pf->req_run.at = 0;
         break;
     case PF_REQ_BYTE:     pf->req_byte = -1; break;
     case PF_KSET_WALK:    memset(&pf->kset_walk, 0, sizeof pf->kset_walk); break;
-    case PF_RUN_PIN:      pf->run_pin = (RunPin){ false, 0 }; break;
+    case PF_RUN_PIN:      pf->run_pin = (RunPin){ false, 0, 0, 0, 0 }; break;
     case PF_NFACTS:       break;
     }
 }
@@ -154,15 +156,30 @@ static void pf_ask(Ctx *cx, PfFactId f, bool pass);
 
 /* The two CORE necessary-byte facts from their one walk. Each is stored only
  * if it is still unasked and not denied (`pf_enter` caches a denied one), so
- * the walk runs once per attempt whichever of the two is asked first. A run
- * shorter than two bytes is not a run fact: that is `[OPT-REQBYTE]`'s `L = 1`
- * case, carried by the set. */
+ * the walk runs once per attempt whichever of the two is asked first.
+ *
+ * THE RUN'S ADMISSION FLOOR IS IN BITS ([OPT-LITSCAN] S4 C3): a run ships
+ * only where its information, `Σ popcount(K)`, reaches
+ * `PCREC_MIN_REQ_RUN_BITS` (16). On an exact run that is "two bytes or more"
+ * exactly, today's floor, and a shorter run is `[OPT-REQBYTE]`'s `L = 1`
+ * case, carried by the set; three caseless letters (21) pass and two (14) do
+ * not. A run that passes has at least two positions, so every reader's
+ * `len >= 2` still means "a run shipped".
+ *
+ * `-fno-req-run-fold` IS READ HERE AND HANDED IN as the walk's position
+ * bound (1, the single byte), so the walk reads no option and the deny
+ * narrows the fact for every consumer at once (D126 Q3). */
 static void pf_derive_req_walk(Ctx *cx)
 {
     PatFacts *pf = &cx->job->pf;
     RbSet set;
     RbRun run;
-    pcrec_req_walk(cx, pf->root, &set, &run);
+    int bits = 0;
+    pcrec_req_walk(cx, pf->root,
+                   (cx->opt->flags & PCREC_NO_REQ_RUN_FOLD)
+                       ? 1 : PCREC_MAX_REQ_RUN_POS_SET,
+                   &set, &run);
+    for (int i = 0; i < run.n; i++) bits += __builtin_popcount(run.mask[i]);
     if (pf_enter(cx, PF_REQ_SET, false)) {
         memcpy(pf->req_set.bits, set.bits, sizeof set.bits);
         pf->req_set.rightmost = set.pick;
@@ -170,9 +187,11 @@ static void pf_derive_req_walk(Ctx *cx)
     }
     if (pf_enter(cx, PF_REQ_WHOLE_RUN, false)) {
         memset(pf->req_run.whole, 0, sizeof pf->req_run.whole);
+        memset(pf->req_run.whole_mask, 0, sizeof pf->req_run.whole_mask);
         pf->req_run.whole_len = 0;
-        if (run.n >= 2) {
+        if (bits >= PCREC_MIN_REQ_RUN_BITS) {
             memcpy(pf->req_run.whole, run.bytes, (size_t)run.n);
+            memcpy(pf->req_run.whole_mask, run.mask, (size_t)run.n);
             pf->req_run.whole_len = run.n;
         }
         pf_done(pf, PF_REQ_WHOLE_RUN);
@@ -223,7 +242,8 @@ static void pf_derive(Ctx *cx, PfFactId f)
     case PF_RUN_PIN:
         pf_ask(cx, PF_KSET_WALK, false);
         pf_ask(cx, PF_REQ_RUN, false);
-        pcrec_run_pin(&pf->kset_walk, &pf->req_run, &pf->run_pin);
+        pcrec_run_pin(&pf->kset_walk, &pf->req_run, pcrec_find_byte_rate(cx),
+                      &pf->run_pin);
         break;
     case PF_NFACTS:
         return;
@@ -377,16 +397,27 @@ void pcrec_facts_force_failed(Ctx *cx)
     }
 }
 
-/* `n` bytes as lowercase hex, then `@idx` when `idx >= 0`: the `REQ_RUN`
- * spelling (hex because a run is arbitrary bytes inside a `#define`'s string
- * body — one spelling for all 256 values), arena text. */
-static const char *pf_hex(Ctx *cx, const unsigned char *b, int n, int idx)
+/* `n` bytes as lowercase hex, then `@idx` when `idx >= 0`, then — only where
+ * some position of `mask` is not `0xFF` — `/` and the mask as hex: the
+ * `REQ_RUN` spelling (hex because a run is arbitrary bytes inside a
+ * `#define`'s string body — one spelling for all 256 values), arena text.
+ * An exact run's text is unchanged by the mask ([OPT-LITSCAN] S4 C3), so
+ * `"53454c454354@4/dfdfdfdfdfdf"` is a masked run and `"2e746172@0"` an
+ * exact one. */
+static const char *pf_hex(Ctx *cx, const unsigned char *b,
+                          const unsigned char *mask, int n, int idx)
 {
     StrBuf sb = { 0 };
     const char *t;
+    bool masked = false;
     sb.cx = cx;
     for (int k = 0; k < n; k++) pcrec_sb_printf(&sb, "%02x", b[k]);
     if (idx >= 0) pcrec_sb_printf(&sb, "@%d", idx);
+    for (int k = 0; k < n; k++) if (mask[k] != 0xFF) masked = true;
+    if (masked) {
+        pcrec_sb_putc(&sb, '/');
+        for (int k = 0; k < n; k++) pcrec_sb_printf(&sb, "%02x", mask[k]);
+    }
     t = pcrec_sb_fragf(&cx->arena, "%s", sb.p ? sb.p : "");
     pcrec_sb_free(&sb);
     return t;
@@ -441,10 +472,12 @@ const char *pcrec_fact_render(Ctx *cx, PfFactId f)
     }
     case PF_REQ_WHOLE_RUN:
         if (pf->req_run.whole_len < 2) return "none";
-        return pf_hex(cx, pf->req_run.whole, pf->req_run.whole_len, -1);
+        return pf_hex(cx, pf->req_run.whole, pf->req_run.whole_mask,
+                      pf->req_run.whole_len, -1);
     case PF_REQ_RUN:
         if (pf->req_run.len < 2) return "none";
-        return pf_hex(cx, pf->req_run.bytes, pf->req_run.len, pf->req_run.idx);
+        return pf_hex(cx, pf->req_run.bytes, pf->req_run.mask, pf->req_run.len,
+                      pf->req_run.idx);
     case PF_REQ_BYTE:
         if (pf->req_byte < 0) return "none";
         return pcrec_sb_fragf(&cx->arena, "%d", pf->req_byte);
@@ -464,8 +497,14 @@ const char *pcrec_fact_render(Ctx *cx, PfFactId f)
         return t;
     }
     case PF_RUN_PIN:
+        /* `o` for a pin on the whole window (every exact run: the text
+         * before [OPT-LITSCAN] S4 C3); `o:at+len` for a pin on an exact
+         * stretch inside a masked window. */
         if (!pf->run_pin.pinned) return "none";
-        return pcrec_sb_fragf(&cx->arena, "%d", pf->run_pin.o);
+        if (pf->run_pin.at == 0 && pf->run_pin.len == pf->req_run.len)
+            return pcrec_sb_fragf(&cx->arena, "%d", pf->run_pin.o);
+        return pcrec_sb_fragf(&cx->arena, "%d:%d+%d", pf->run_pin.o,
+                              pf->run_pin.at, pf->run_pin.len);
     case PF_NFACTS:
         break;
     }

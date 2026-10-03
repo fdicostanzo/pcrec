@@ -234,18 +234,44 @@ void pcrec_kset_walk(Ctx *cx, const Nfa *nfa, KsetWalk *o)
 }
 
 /* Fills `*pin` from the walk `o` and the run window `r`: the SMALLEST offset
- * at which the walk's singletons spell the run. Any satisfying offset is a
- * true statement; the smallest is deterministic, and a later one would only
- * ever be a lost opportunity for the run rows, never a wrong answer. */
-void pcrec_run_pin(const KsetWalk *o, const ReqRun *r, RunPin *pin)
+ * at which the walk's singletons spell an EXACT STRETCH of the run. Any
+ * satisfying offset is a true statement; the smallest is deterministic, and
+ * a later one would only ever be a lost opportunity for the run rows, never
+ * a wrong answer.
+ *
+ * [OPT-LITSCAN] S4 C3 WHICH STRETCH (litscan_s4.md §2.3.5, r2 R2-C3). A pin
+ * is a fact about EXACT positions: a cube position has two members and the
+ * walk's `count == 1` test could never claim it anyway. So PICK — the one
+ * PICK primitive, byte candidates — over the window's exact positions in
+ * REVERSE order (ties and the NONE answer to the rightmost, the run scan
+ * index's own rule), and the stretch is the maximal run of exact positions
+ * around the picked one, when it has at least two (the floor's 16 bits). On
+ * an exact run the exact positions are the whole window, so the pick is the
+ * window's own `idx` (the same primitive over the same candidates), the
+ * stretch is the window and the pin is the pre-row one exactly. A masked
+ * position makes no pin claim; a shorter stretch is a lost opportunity,
+ * never an unsound one. */
+void pcrec_run_pin(const KsetWalk *o, const ReqRun *r, const uint32_t *rate,
+                   RunPin *pin)
 {
-    pin->pinned = false;
-    pin->o = 0;
-    for (int ro = 0; r->len >= 2 && !pin->pinned && ro + r->len <= o->nwalk; ro++) {
+    unsigned char cand[PCREC_MAX_REQ_RUN_EMIT];
+    int pos[PCREC_MAX_REQ_RUN_EMIT], nc = 0, x, s0, e0, l;
+
+    *pin = (RunPin){ false, 0, 0, 0, 0 };
+    if (r->len < 2) return;
+    for (int i = r->len - 1; i >= 0; i--)
+        if (r->mask[i] == 0xFF) { cand[nc] = r->bytes[i]; pos[nc] = i; nc++; }
+    if (nc == 0) return;
+    x = pos[pcrec_find_pick(rate, cand, NULL, nc, 0)];
+    for (s0 = x; s0 > 0 && r->mask[s0 - 1] == 0xFF; s0--) {}
+    for (e0 = x + 1; e0 < r->len && r->mask[e0] == 0xFF; e0++) {}
+    l = e0 - s0;
+    if (l < 2) return;
+    for (int ro = 0; !pin->pinned && ro + l <= o->nwalk; ro++) {
         int i = 0;
-        while (i < r->len && o->k[ro + i].count == 1 &&
-               o->k[ro + i].byte == r->bytes[i])
+        while (i < l && o->k[ro + i].count == 1 &&
+               o->k[ro + i].byte == r->bytes[s0 + i])
             i++;
-        if (i == r->len) { pin->pinned = true; pin->o = ro; }
+        if (i == l) *pin = (RunPin){ true, ro, s0, l, x - s0 };
     }
 }

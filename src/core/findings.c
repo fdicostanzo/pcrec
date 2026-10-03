@@ -410,13 +410,30 @@ static uint32_t uniform_mass(int k)
     return (uint32_t)((unsigned long long)k * 1000000u / 256u);
 }
 
-int pcrec_find_pick(const uint32_t *rate, const unsigned char *cand, int n,
-                    int rightmost)
+/* The rate summed over the members of the cube (t, k): every byte t | f for
+ * f a submask of the free bits ~k. A byte (k == 0xFF) is rate[t]. */
+static uint32_t cube_mass(const uint32_t *rate, int t, int k)
+{
+    unsigned long long m = 0;
+    int f = ~k & 0xFF;
+    for (int b = f;; b = (b - 1) & f) {
+        m += rate[t | b];
+        if (!b) break;
+    }
+    return (uint32_t)m;
+}
+
+int pcrec_find_pick(const uint32_t *rate, const unsigned char *cand,
+                    const unsigned char *care, int n, int rightmost)
 {
     int i, best = 0;
+    uint32_t lo;
     if (!rate) return rightmost;
-    for (i = 1; i < n; i++)
-        if (rate[cand[i]] < rate[cand[best]]) best = i;
+    lo = cube_mass(rate, cand[0], care ? care[0] : 0xFF);
+    for (i = 1; i < n; i++) {
+        uint32_t m = cube_mass(rate, cand[i], care ? care[i] : 0xFF);
+        if (m < lo) { lo = m; best = i; }
+    }
     return best;
 }
 
@@ -461,7 +478,7 @@ int pcrec_find_set_pick(const uint32_t *rate, const unsigned char bits[32],
     for (int b = 255; b >= 0; b--)
         if (b != rightmost && (bits[b >> 3] & (unsigned char)(1u << (b & 7))))
             cand[n++] = (unsigned char)b;
-    return cand[pcrec_find_pick(rate, cand, n, 0)];
+    return cand[pcrec_find_pick(rate, cand, NULL, n, 0)];
 }
 
 /* Which member of the RUN the emitted `memchr` tests: PICK over the run in
@@ -498,7 +515,7 @@ int pcrec_find_set_pick(const uint32_t *rate, const unsigned char bits[32],
  * found in ZERO of 912 real `-e utf8` runs, so the rightmost rule closes it
  * with no byte-range logic (D77). */
 int pcrec_find_run_scan_index(const uint32_t *rate, const unsigned char *bytes,
-                              int n)
+                              const unsigned char *mask, int n)
 {
     /* `bytes[0..n)`, n <= PCREC_MAX_REQ_RUN_SCAN by its one caller's own
      * bound (RbRun/ReqRun's `whole` array, src/facts/facts_derive.h,
@@ -510,21 +527,31 @@ int pcrec_find_run_scan_index(const uint32_t *rate, const unsigned char *bytes,
      * no-error-channel sites do — coding_guide.md's fail-loudly rule, never
      * silent truncation). */
     if (n > PCREC_MAX_REQ_RUN_SCAN) abort();
-    unsigned char cand[PCREC_MAX_REQ_RUN_SCAN];
+    unsigned char cand[PCREC_MAX_REQ_RUN_SCAN], care[PCREC_MAX_REQ_RUN_SCAN];
     int i;
-    for (i = 0; i < n; i++) cand[i] = bytes[n - 1 - i];
-    return n - 1 - pcrec_find_pick(rate, cand, n, 0);
+    for (i = 0; i < n; i++) {
+        cand[i] = bytes[n - 1 - i];
+        care[i] = mask[n - 1 - i];
+    }
+    return n - 1 - pcrec_find_pick(rate, cand, care, n, 0);
 }
 
 /* Where a run longer than `PCREC_MAX_REQ_RUN_EMIT` is TRUNCATED to: the start
  * of the window of that length containing `idx` with the lowest mass, ties
- * to the leftmost by the strict `<` — so under NONE, where every window's
- * mass is equal, the leftmost.
+ * to the leftmost by the strict `<` — so on an exact run under NONE, where
+ * every window's mass is equal, the leftmost.
+ *
+ * [OPT-LITSCAN] S4 C3: a window's mass is its MEMBERS' — T for an exact
+ * position, every byte of the cube for a masked one (T and T | ~K for a
+ * pair) — listed and handed to one SEQUENCE
+ * MASS call, so MASS's own NONE answer (cardinality) applies with no branch
+ * here: a window with more exact positions has fewer members and wins.
  *
  * The scan member is in every candidate window by construction, so its own
  * rate is a constant of the comparison and no term has to be excluded. */
 int pcrec_find_run_window_start(const uint32_t *rate,
-                                const unsigned char *bytes, int n, int idx)
+                                const unsigned char *bytes,
+                                const unsigned char *mask, int n, int idx)
 {
     int lo_s = idx - (PCREC_MAX_REQ_RUN_EMIT - 1), hi_s = idx;
     int s, best;
@@ -533,7 +560,16 @@ int pcrec_find_run_window_start(const uint32_t *rate,
     if (hi_s > n - PCREC_MAX_REQ_RUN_EMIT) hi_s = n - PCREC_MAX_REQ_RUN_EMIT;
     best = lo_s;
     for (s = lo_s; s <= hi_s; s++) {
-        uint32_t t = pcrec_find_seq_mass(rate, bytes + s, PCREC_MAX_REQ_RUN_EMIT);
+        unsigned char mem[256 * PCREC_MAX_REQ_RUN_EMIT];
+        int nm = 0;
+        for (int j = s; j < s + PCREC_MAX_REQ_RUN_EMIT; j++) {
+            int f = ~mask[j] & 0xFF;
+            for (int b = f;; b = (b - 1) & f) {   /* every member of the cube */
+                mem[nm++] = (unsigned char)(bytes[j] | b);
+                if (!b) break;
+            }
+        }
+        uint32_t t = pcrec_find_seq_mass(rate, mem, nm);
         if (s == lo_s || t < lo) { lo = t; best = s; }
     }
     return best;

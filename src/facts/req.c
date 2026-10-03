@@ -52,8 +52,9 @@
  *
  * THE SAFE DIRECTION IS THE EMPTY SET AND THE EMPTY RUN, which DISABLE the
  * check. Every arm that cannot decide takes it: a class with more than one
- * member (which is every caselessly-folded literal, since D23 folds `(?i)a`
- * to `[aA]` at parse time), a quantifier that admits zero iterations, a
+ * member for the SET (which is every caselessly-folded literal, since D23
+ * folds `(?i)a` to `[aA]` at parse time) and for the RUN a class that is not
+ * one small cube (below), a quantifier that admits zero iterations, a
  * backreference, a linked call and every assertion. A lookaround's body is
  * deliberately not descended into: a LOOKBEHIND's bytes sit BEFORE the
  * match's start and can therefore be outside `[search_from, subject_length)`
@@ -65,9 +66,30 @@
  * NOT survive the repeat, so nothing is ever joined across an iteration
  * boundary; an alternation contributes only its branches' longest COMMON
  * prefix and common suffix, so `(?:xabcy|zabcw)` reports no run where `abc`
- * is one; and every caselessly folded literal contributes nothing, which is
- * the largest decline by population and whose remedy is `[WORD-FOLD]`'s
- * masked compare, a separate row.
+ * is one.
+ *
+ * [OPT-LITSCAN] S4 C3 A RUN IS A RUN OF POSITIONS, NOT OF BYTES
+ * (docs/design/litscan_s4.md §2.3.1). A position is a byte or a CUBE of at
+ * most `pos_set` members (`PCREC_MAX_REQ_RUN_POS_SET` = 2: a caseless letter
+ * `[Ss]`, `[jk]`), stored as `(T, K)` with `(x & K) == T` its membership
+ * test, so a caseless word is a run where it used to contribute nothing.
+ * Three rules make that one mechanism rather than a second one beside the
+ * byte run:
+ *   - ONE RANKING: a run's worth is its INFORMATION, `Σ popcount(K)` over
+ *     its positions (8 for a byte, 7 for a pair), so among exact runs the
+ *     order and the tie are exactly length's (`rn_better`);
+ *   - ONE CONSTRUCTOR, `rn_put`, refuses a non-canonical position (`T & ~K`
+ *     must be 0: T is the LOWER member, which the pair scan and the masked
+ *     compare both read) as an internal error rather than normalizing it;
+ *   - an alternation's common head and tail are the CUBE HULL of the two
+ *     branches' positions, `K' = Ka & Kb & ~(Ta ^ Tb)`, `T' = Ta & K'`,
+ *     symmetric in the branches and stopping at the first position whose
+ *     hull leaves the domain — so `frank|fred` reports `fr[ae]` and
+ *     `(?:S(?i:ab)|(?i:sab))` reports `[Ss][Aa][Bb]`, never the left
+ *     branch's exact `S`.
+ * Under `-fno-req-run-fold` `pos_set` is 1, the domain is the single byte,
+ * the hull is byte equality and the walk is the pre-row one exactly. The SET
+ * is unchanged by all of this: only an exact position is a set member.
  *
  * THE WALK IS OVER THE LOWERED TREE, which is what makes the answer a BYTE
  * rather than a code point: after `pcrec_lower_enc` every `A_CLASS` is a byte
@@ -172,20 +194,60 @@ static RbSet rb_intersect(RbSet l, RbSet r)
  * a run, and WHICH member of it the scan tests is decided once, by the
  * derived `req_run` fact below, through `src/core/findings.c`. */
 
+/* What every run operation needs besides its operands: the compile (for the
+ * position constructor's refusal) and the largest member set one position
+ * may have, handed in by `pcrec_req_walk`'s caller. */
+typedef struct { Ctx *cx; int pos_set; } RbWalk;
+
+/* How many bytes the cube with mask `k` holds: two to the free bits. */
+static int rn_members(int k)
+{
+    return 1 << (8 - __builtin_popcount((unsigned)k & 0xFFu));
+}
+
+/* A position's INFORMATION, the ranking's unit: popcount of its mask. */
+static int rn_info(const RbRun *r)
+{
+    int t = 0;
+    for (int i = 0; i < r->n; i++) t += __builtin_popcount(r->mask[i]);
+    return t;
+}
+
 static RbRun rn_none(void)
 {
     RbRun r;
     memset(r.bytes, 0, sizeof r.bytes);
+    memset(r.mask, 0, sizeof r.mask);
     r.n = 0;
     r.trunc = false;
     return r;
 }
 
-static RbRun rn_byte(int b)
+/* THE ONE CONSTRUCTOR of a run position: appends the cube `(t, k)` to `o`
+ * (whose room the caller has checked). A NON-CANONICAL pair — a free bit set
+ * in `t` — is refused as an internal error, never silently masked: the pair
+ * scan's second stream is `t | ~k` and the masked compare tests
+ * `(s & k) == t`, so an upper-member `t` would scan one member twice and
+ * compare against a value no masked byte can have, DELETING matches. Every
+ * producer is canonical by construction (`pcrec_cls_cube` returns the AND of
+ * the members, the hull `Ta & K'`), so this fires only on a producer's bug,
+ * and loudly, as `ofsk_emit_verify` refuses an empty chain. */
+static void rn_put(const RbWalk *w, RbRun *o, int t, int k)
+{
+    if (t & ~k & 0xFF)
+        pcrec_ctx_fail(w->cx, 0, "internal error: a necessary-run position "
+                       "0x%02x/0x%02x carries a free bit in its member (T & ~K "
+                       "must be 0)", t, k);
+    o->bytes[o->n] = (unsigned char)t;
+    o->mask[o->n] = (unsigned char)k;
+    o->n++;
+}
+
+/* The run of the one position `(t, k)`. */
+static RbRun rn_pos(const RbWalk *w, int t, int k)
 {
     RbRun r = rn_none();
-    r.bytes[0] = (unsigned char)b;
-    r.n = 1;
+    rn_put(w, &r, t, k);
     return r;
 }
 
@@ -199,8 +261,10 @@ static RbRun rn_app(RbRun a, RbRun b)
 {
     RbRun o = a;
     int i;
-    for (i = 0; i < b.n && o.n < PCREC_MAX_REQ_RUN_SCAN; i++)
+    for (i = 0; i < b.n && o.n < PCREC_MAX_REQ_RUN_SCAN; i++) {
+        o.mask[o.n] = b.mask[i];
         o.bytes[o.n++] = b.bytes[i];
+    }
     if (i < b.n || b.trunc) o.trunc = true;
     return o;
 }
@@ -215,42 +279,64 @@ static RbRun rn_pre(RbRun a, RbRun b)
     RbRun o = rn_none();
     int tot = a.n + b.n, drop, i;
     drop = tot > PCREC_MAX_REQ_RUN_SCAN ? tot - PCREC_MAX_REQ_RUN_SCAN : 0;
-    for (i = drop; i < tot; i++)
+    for (i = drop; i < tot; i++) {
+        o.mask[o.n] = i < a.n ? a.mask[i] : b.mask[i - a.n];
         o.bytes[o.n++] = i < a.n ? a.bytes[i] : b.bytes[i - a.n];
+    }
     o.trunc = a.trunc || b.trunc || drop > 0;
     return o;
 }
 
-/* The longer of two runs, `a` on a tie — so a left-to-right walk's earlier
- * candidate survives and the answer does not depend on traversal order. */
-static RbRun rn_longer(RbRun a, RbRun b)
+/* The more INFORMATIVE of two runs (`rn_info`), `a` on a tie — so a
+ * left-to-right walk's earlier candidate survives and the answer does not
+ * depend on traversal order. An exact run's information is 8 x its length,
+ * so among exact runs this is "the longer", with the same tie. */
+static RbRun rn_better(RbRun a, RbRun b)
 {
-    return b.n > a.n ? b : a;
+    return rn_info(&b) > rn_info(&a) ? b : a;
 }
 
-/* The two branches' longest COMMON PREFIX, claimed conservatively: only the
- * bytes both actually store. A longer real common prefix is a missed
- * opportunity, never an unsound claim, and the result is marked untruncated
- * because it IS the whole of what is claimed. */
-static RbRun rn_common_head(RbRun a, RbRun b)
+/* The CUBE HULL's mask at one position pair: the bits both positions care
+ * about AND agree on. `cube(Ta & K', K')` is the smallest cube holding both
+ * positions' member sets, and the formula is symmetric in the two. */
+static int rn_hull_mask(int ta, int ka, int tb, int kb)
+{
+    return ka & kb & ~(ta ^ tb) & 0xFF;
+}
+
+/* The two branches' longest COMMON PREFIX, position by position their cube
+ * HULL, claimed conservatively: only positions both actually store, and only
+ * while the hull stays inside the position domain (`pos_set`). A longer real
+ * common prefix is a missed opportunity, never an unsound claim — every byte
+ * either branch can put at position `i` lies in the hull — and the result is
+ * marked untruncated because it IS the whole of what is claimed. */
+static RbRun rn_common_head(const RbWalk *w, RbRun a, RbRun b)
 {
     RbRun o = rn_none();
-    while (o.n < a.n && o.n < b.n && a.bytes[o.n] == b.bytes[o.n]) {
-        o.bytes[o.n] = a.bytes[o.n];
-        o.n++;
+    while (o.n < a.n && o.n < b.n) {
+        int k = rn_hull_mask(a.bytes[o.n], a.mask[o.n], b.bytes[o.n], b.mask[o.n]);
+        if (rn_members(k) > w->pos_set) break;
+        rn_put(w, &o, a.bytes[o.n] & k, k);
     }
     return o;
 }
 
-/* The two branches' longest COMMON SUFFIX, compared from the back for the
- * same reason and with the same conservatism. */
-static RbRun rn_common_tail(RbRun a, RbRun b)
+/* The two branches' longest COMMON SUFFIX, hulled from the back for the same
+ * reason and with the same conservatism. */
+static RbRun rn_common_tail(const RbWalk *w, RbRun a, RbRun b)
 {
     RbRun o = rn_none();
     int k = 0;
-    while (k < a.n && k < b.n && a.bytes[a.n - 1 - k] == b.bytes[b.n - 1 - k]) k++;
-    for (int i = 0; i < k; i++) o.bytes[i] = a.bytes[a.n - k + i];
-    o.n = k;
+    while (k < a.n && k < b.n &&
+           rn_members(rn_hull_mask(a.bytes[a.n - 1 - k], a.mask[a.n - 1 - k],
+                                   b.bytes[b.n - 1 - k], b.mask[b.n - 1 - k]))
+               <= w->pos_set)
+        k++;
+    for (int i = 0; i < k; i++) {
+        int ia = a.n - k + i, ib = b.n - k + i;
+        int m = rn_hull_mask(a.bytes[ia], a.mask[ia], b.bytes[ib], b.mask[ib]);
+        rn_put(w, &o, a.bytes[ia] & m, m);
+    }
     return o;
 }
 
@@ -274,11 +360,11 @@ static RbRuns rr_none(void)
     return r;
 }
 
-/* A subtree that matches exactly the one byte `b`. */
-static RbRuns rr_byte(int b)
+/* A subtree that matches exactly the members of the one position `(t, k)`. */
+static RbRuns rr_pos(const RbWalk *w, int t, int k)
 {
     RbRuns r;
-    r.best = r.head = r.tail = rn_byte(b);
+    r.best = r.head = r.tail = rn_pos(w, t, k);
     r.all = true;
     return r;
 }
@@ -297,8 +383,8 @@ static RbRuns rr_cat(RbRuns l, RbRuns r)
     o.head = l.all ? rn_app(l.head, r.head) : l.head;
     o.tail = r.all ? rn_pre(l.tail, r.tail) : r.tail;
     o.all  = l.all && r.all && !o.head.trunc;
-    o.best = rn_longer(rn_longer(l.best, r.best), rn_app(l.tail, r.head));
-    o.best = rn_longer(rn_longer(o.best, o.head), o.tail);
+    o.best = rn_better(rn_better(l.best, r.best), rn_app(l.tail, r.head));
+    o.best = rn_better(rn_better(o.best, o.head), o.tail);
     return o;
 }
 
@@ -308,12 +394,12 @@ static RbRuns rr_cat(RbRuns l, RbRuns r)
  * the general fact an alternation licenses is "these bytes are common", and a
  * same-literal special case would buy a population this analysis has never
  * measured (D77). */
-static RbRuns rr_alt(RbRuns l, RbRuns r)
+static RbRuns rr_alt(const RbWalk *w, RbRuns l, RbRuns r)
 {
     RbRuns o;
-    o.head = rn_common_head(l.head, r.head);
-    o.tail = rn_common_tail(l.tail, r.tail);
-    o.best = rn_longer(o.head, o.tail);
+    o.head = rn_common_head(w, l.head, r.head);
+    o.tail = rn_common_tail(w, l.tail, r.tail);
+    o.best = rn_better(o.head, o.tail);
     o.all  = false;
     return o;
 }
@@ -332,7 +418,7 @@ static RbRuns rr_alt(RbRuns l, RbRuns r)
  * is what keeps the rightmost pick correct across an arbitrarily long spine
  * without a second pass — and, for the runs, what makes each step an ordinary
  * concatenation with the accumulated right-hand side. */
-static RbVal rb_walk(Ctx *cx, const Ast *a)
+static RbVal rb_walk(const RbWalk *w, const Ast *a)
 {
     RbVal acc;
     acc.set  = rb_empty();
@@ -344,7 +430,7 @@ static RbVal rb_walk(Ctx *cx, const Ast *a)
             /* `a->r` is to the RIGHT of everything still to be walked and to
              * the LEFT of everything in `acc`, which is why the union and the
              * concatenation are spelled in this order and not the other. */
-            RbVal r = rb_walk(cx, a->r);
+            RbVal r = rb_walk(w, a->r);
             acc.set  = rb_union(r.set, acc.set);
             acc.runs = rr_cat(r.runs, acc.runs);
             a = a->l;
@@ -363,16 +449,16 @@ static RbVal rb_walk(Ctx *cx, const Ast *a)
             continue;
         case A_ALT: {
             const Ast *t = a->l;
-            RbVal r = rb_walk(cx, a->r), b;
+            RbVal r = rb_walk(w, a->r), b;
             while (t->k == A_ALT) {
-                b = rb_walk(cx, t->r);
+                b = rb_walk(w, t->r);
                 r.set  = rb_intersect(b.set, r.set);
-                r.runs = rr_alt(b.runs, r.runs);
+                r.runs = rr_alt(w, b.runs, r.runs);
                 t = t->l;
             }
-            b = rb_walk(cx, t);
+            b = rb_walk(w, t);
             r.set  = rb_intersect(b.set, r.set);
-            r.runs = rr_alt(b.runs, r.runs);
+            r.runs = rr_alt(w, b.runs, r.runs);
             acc.set  = rb_union(r.set, acc.set);
             acc.runs = rr_cat(r.runs, acc.runs);
             return acc;
@@ -390,7 +476,7 @@ static RbVal rb_walk(Ctx *cx, const Ast *a)
              * before, and its run contribution is taken here rather than by
              * falling through. */
             if (a->u.rep.rmin >= 1) {
-                RbVal b = rb_walk(cx, a->l);
+                RbVal b = rb_walk(w, a->l);
                 RbRuns rep = rr_none();
                 rep.best = b.runs.best;
                 acc.set  = rb_union(b.set, acc.set);
@@ -410,16 +496,21 @@ static RbVal rb_walk(Ctx *cx, const Ast *a)
             acc.runs = rr_cat(rr_none(), acc.runs);
             return acc;
         case A_CLASS: {
-            int b = pcrec_cls_single(cx, a);
-            if (b < 0) {
-                /* A class of more than one member contributes no byte and no
-                 * run, and it also BREAKS contiguity for everything around
-                 * it — which `rr_none`'s cleared `all` is exactly what says. */
+            int b = pcrec_cls_single(w->cx, a);
+            unsigned char k = 0xFF, t = (unsigned char)b;
+            if (b < 0 && (!pcrec_cls_cube(w->cx, a, &k, &t) ||
+                          rn_members(k) > w->pos_set)) {
+                /* A class that is not one cube of at most `pos_set` members
+                 * contributes no byte and no run, and it also BREAKS
+                 * contiguity for everything around it — which `rr_none`'s
+                 * cleared `all` is exactly what says. */
                 acc.runs = rr_cat(rr_none(), acc.runs);
                 return acc;
             }
-            acc.set  = rb_union(rb_single(b), acc.set);
-            acc.runs = rr_cat(rr_byte(b), acc.runs);
+            /* Only a single byte is a member of the necessary SET; a cube
+             * position is one the RUN carries (litscan_s4.md §2.3.1). */
+            if (b >= 0) acc.set = rb_union(rb_single(b), acc.set);
+            acc.runs = rr_cat(rr_pos(w, t, k), acc.runs);
             return acc;
         }
         /* Consumes nothing, so it can make no byte necessary. `A_LOOK`'s body
@@ -456,13 +547,17 @@ static RbVal rb_walk(Ctx *cx, const Ast *a)
 }
 
 /* THE CORE FACTS, from ONE walk: the whole necessary SET (with its threaded
- * rightmost member, `RbSet.pick`) and the longest guaranteed contiguous RUN
- * (`RbRun`, at most `PCREC_MAX_REQ_RUN_SCAN` bytes stored). Both are the
- * EMPTY answer where nothing is necessary, which disables every check built
- * on them and is always sound. Reads no prior and no option. */
-void pcrec_req_walk(Ctx *cx, const Ast *root, RbSet *set, RbRun *run)
+ * rightmost member, `RbSet.pick`) and the most informative guaranteed
+ * contiguous RUN (`RbRun`, at most `PCREC_MAX_REQ_RUN_SCAN` positions
+ * stored), its positions single bytes or cubes of at most `pos_set` members.
+ * Both are the EMPTY answer where nothing is necessary, which disables every
+ * check built on them and is always sound. Reads no prior and no option:
+ * `pos_set` is its caller's reading of the fact-level deny. */
+void pcrec_req_walk(Ctx *cx, const Ast *root, int pos_set, RbSet *set,
+                    RbRun *run)
 {
-    RbVal v = rb_walk(cx, root);
+    RbWalk w = { cx, pos_set };
+    RbVal v = rb_walk(&w, root);
     *set = v.set;
     *run = v.runs.best;
 }
@@ -492,6 +587,7 @@ void pcrec_req_window(Ctx *cx, ReqRun *run, PfWhyCode *why)
     int n = run->whole_len;
 
     memset(run->bytes, 0, sizeof run->bytes);
+    memset(run->mask, 0, sizeof run->mask);
     run->len = 0;
     run->idx = 0;
     run->at = 0;
@@ -499,12 +595,14 @@ void pcrec_req_window(Ctx *cx, ReqRun *run, PfWhyCode *why)
     if (n < 2) return;
     *why = req_rate_why(cx);
     {
-        int i = pcrec_find_run_scan_index(rate, run->whole, n);
+        int i = pcrec_find_run_scan_index(rate, run->whole, run->whole_mask, n);
         int s = n > PCREC_MAX_REQ_RUN_EMIT
-              ? pcrec_find_run_window_start(rate, run->whole, n, i) : 0;
+              ? pcrec_find_run_window_start(rate, run->whole, run->whole_mask,
+                                            n, i) : 0;
         int len = n - s;
         if (len > PCREC_MAX_REQ_RUN_EMIT) len = PCREC_MAX_REQ_RUN_EMIT;
         memcpy(run->bytes, run->whole + s, (size_t)len);
+        memcpy(run->mask, run->whole_mask + s, (size_t)len);
         run->len = len;
         run->idx = i - s;
         run->at = s;
@@ -512,16 +610,22 @@ void pcrec_req_window(Ctx *cx, ReqRun *run, PfWhyCode *why)
 }
 
 /* THE BYTE the emitted `memchr` tests — the `req_byte` fact — at ONE return:
- * the run's own scan member where a run window shipped (there is one emitted
- * `memchr`, and `<PREFIX>_REQ_BYTE` reports what it tests), and otherwise the
- * set's pick (`src/core/findings.c`). -1 exactly when the set is empty. The
- * byte-rate is asked first, as the window's is. */
+ * the run's own scan member where a run window shipped and that member is
+ * one EXACT byte (there is one emitted `memchr`, and `<PREFIX>_REQ_BYTE`
+ * reports what it tests), and otherwise the set's pick
+ * (`src/core/findings.c`). -1 exactly when the set is empty.
+ *
+ * [OPT-LITSCAN] S4 C3 A PAIR SCAN MEMBER IS NOT A BYTE ANY MATCH MUST
+ * CONTAIN: at a cube position `bytes[idx]` is T, and a match may carry the
+ * other member there, so it falls to the set's pick (litscan_s4.md §2.3.3
+ * case (ii)) and every value here stays a member of `req_set`. The byte-rate
+ * is asked first, as the window's is. */
 int pcrec_req_pick(Ctx *cx, const ReqSet *set, const ReqRun *run,
                    PfWhyCode *why)
 {
     const uint32_t *rate = pcrec_find_byte_rate(cx);
     *why = req_rate_why(cx);
-    if (run->len >= 2) return run->bytes[run->idx];
+    if (run->len >= 2 && run->mask[run->idx] == 0xFF) return run->bytes[run->idx];
     if (set->rightmost < 0) *why = PF_WHY_NONE;
     return pcrec_find_set_pick(rate, set->bits, set->rightmost);
 }

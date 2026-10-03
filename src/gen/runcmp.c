@@ -8,10 +8,23 @@
  * same change). "One emitter" means one FUNCTION with a first-match row
  * table, not one emitted spelling (§0 item 1):
  *
+ *   words    masked (some position's K is not 0xFF), L >= 2: the words of
+ *            D(L), each `(w(base + o) & w("<K>")) == w("<T>")`, joined by
+ *            `&&` in offset order; a word whose K is all 0xFF compares
+ *            unmasked and one whose K is all 0x00 is not loaded. Deny
+ *            `-fno-run-overlap`.
  *   overlap  exact, L in {3, 5-7, 9-15}: two overlapping natural-width words
  *            compared by `&&` in offset order. Deny `-fno-run-overlap`.
- *   memcmp   exact, the total fallback: `!memcmp(base, "<t>", L)`, P4's text
- *            byte for byte.
+ *   bytes    masked, the masked domain's total fallback: `(base[i] & K) == T`
+ *            per position, `&&`; K 0xFF elides the `&`, K 0x00 the position.
+ *   memcmp   exact, the exact domain's total fallback: `!memcmp(base, "<t>",
+ *            L)`, P4's text byte for byte.
+ *
+ * TWO TOTAL FALLBACKS, ONE PER DOMAIN, are what keep the deny honest: with
+ * `-fno-run-overlap` every exact compare is P4's `memcmp` and a masked one
+ * (which P4 never had) still compiles, by `bytes`, so the form deny and the
+ * caseless run's fact deny (`-fno-req-run-fold`) are orthogonal and each
+ * flag's triage reads one mechanism (litscan_s4.md §1.3).
  *
  * WHY THOSE LENGTHS. gcc lowers a constant `memcmp` at L in {1, 2, 4, 8} to
  * one load and one compare, and at L >= 16 to a vector compare; at the other
@@ -21,10 +34,10 @@
  * question (§1.6 measured it slower in one loop shape on the M1), which is
  * why the row has its own deny bit and ships default-on behind it.
  *
- * THE MASKED ROWS (`words`, `bytes`) ARE NOT BUILT YET. Their first caller is
- * the caseless necessary run (C3); the VM masked run (C2) is held under D77.
- * A row with no caller is code no corpus cell can reach, so they land with
- * C3, and the `PcrecRun` record gains its K column then.
+ * THE MASKED ROWS (`words`, `bytes`) landed with their first caller, the
+ * caseless necessary run (C3: the run pre-check's verify, both blocks); the
+ * VM masked run (C2) is held under D77, so every VM caller passes `k ==
+ * NULL` and takes the exact rows as before.
  *
  * THE CONSTANT IS THE SAME LOAD APPLIED TO A STRING LITERAL (§1.4):
  * `<p>_w4(subject + o) == <p>_w4("/use")`. gcc and clang fold it to an
@@ -40,14 +53,23 @@
 #include "core/internal.h"
 
 /* The predicate tags the row walk evaluates (one exhaustive switch). */
-enum { RC_P_OVERLAP, RC_P_TRUE };
+enum { RC_P_MASKED_WORDS, RC_P_OVERLAP, RC_P_MASKED, RC_P_EXACT };
 /* The emitted forms. */
-enum { RC_F_WORDS, RC_F_MEMCMP };
+enum { RC_F_WORDS, RC_F_BYTES, RC_F_MEMCMP };
 
 /* THE ROWS, first-match. The walk skips a row whose deny bit is set or whose
- * predicate fails; the last row is undeniable and always holds, so an exact
- * compare under `-fno-run-overlap` is P4's text. */
+ * predicate fails; each domain's last row is undeniable and always holds in
+ * its domain, so an exact compare under `-fno-run-overlap` is P4's text and
+ * a masked one the per-byte chain. */
 const PcrecRunRow pcrec_runcmp_rows[] = {
+    { "words", PCREC_NO_RUN_OVERLAP,
+      "per MASKED literal-run compare (some position a two-member cube, e.g. "
+      "a caseless letter) of length 2 or more: the natural-width words of the "
+      "run, the last at offset L - W, each loaded by memcpy, ANDed with the "
+      "same load of the mask's string literal and compared against the same "
+      "load of T's, joined by && in offset order; an all-0xFF word compares "
+      "unmasked",
+      RC_P_MASKED_WORDS, RC_F_WORDS },
     { "overlap", PCREC_NO_RUN_OVERLAP,
       "per exact literal-run compare of length 3, 5-7 or 9-15 (where gcc's "
       "constant memcmp decomposes into 2-4 non-overlapping pieces): two "
@@ -55,10 +77,15 @@ const PcrecRunRow pcrec_runcmp_rows[] = {
       "by memcpy and compared against the same load of a string literal, "
       "joined by && in offset order",
       RC_P_OVERLAP, RC_F_WORDS },
+    { "bytes", 0,
+      "per masked compare (fallback): one (byte & K) == T test per position, "
+      "joined by &&",
+      RC_P_MASKED, RC_F_BYTES },
     { "memcmp", 0,
-      "always (fallback): one constant-length !memcmp, which gcc lowers to one "
-      "load at L in {1, 2, 4, 8} and to a vector compare at L >= 16",
-      RC_P_TRUE, RC_F_MEMCMP },
+      "per exact compare (fallback): one constant-length !memcmp, which gcc "
+      "lowers to one load at L in {1, 2, 4, 8} and to a vector compare at "
+      "L >= 16",
+      RC_P_EXACT, RC_F_MEMCMP },
 };
 const int pcrec_runcmp_nrows =
     (int)(sizeof pcrec_runcmp_rows / sizeof pcrec_runcmp_rows[0]);
@@ -70,15 +97,29 @@ static int rc_width(int len)
     return len >= 8 ? 8 : len >= 4 ? 4 : 2;
 }
 
+/* Is some position of run `r` not one exact byte? */
+static bool rc_masked(const PcrecRun *r)
+{
+    if (!r->k) return false;
+    for (int i = 0; i < r->len; i++)
+        if (r->k[i] != 0xFF) return true;
+    return false;
+}
+
 /* Does row predicate `pred` hold for run `r`? */
 static bool rc_holds(int pred, const PcrecRun *r)
 {
     switch (pred) {
+    case RC_P_MASKED_WORDS:
+        return rc_masked(r) && r->len >= 2;
     case RC_P_OVERLAP:
-        return r->len == 3 || (r->len >= 5 && r->len <= 7) ||
-               (r->len >= 9 && r->len <= 15);
-    case RC_P_TRUE:
-        return true;
+        return !rc_masked(r) &&
+               (r->len == 3 || (r->len >= 5 && r->len <= 7) ||
+                (r->len >= 9 && r->len <= 15));
+    case RC_P_MASKED:
+        return rc_masked(r);
+    case RC_P_EXACT:
+        return !rc_masked(r);
     }
     return false;
 }
@@ -90,25 +131,63 @@ static void rc_base(StrBuf *c, const char *base, int o)
     else   pcrec_sb_puts(c, base);
 }
 
+/* Is every K byte of `k[at .. at+w)` equal to `v`? (NULL `k` is all 0xFF.) */
+static bool rc_kword_is(const PcrecRun *r, int at, int w, int v)
+{
+    for (int i = 0; i < w; i++)
+        if ((r->k ? r->k[at + i] : 0xFF) != v) return false;
+    return true;
+}
+
 /* The words form: `<p>_w<W>(base + o) == <p>_w<W>("<t[o..o+W)>")` for each
  * window of D(L) (offsets 0, W, 2W, ... while a whole word fits, then the
- * last word moved back to end exactly at L), joined by `&&`. */
+ * last word moved back to end exactly at L), joined by `&&`. A word with a
+ * mask is `(<p>_w<W>(base + o) & <p>_w<W>("<k>")) == <p>_w<W>("<t>")`; one
+ * whose K is all 0xFF is the unmasked text, and one whose K is all 0x00 is
+ * not loaded at all (pay for what you use, at word grain). */
 static void rc_emit_words(Ctx *cx, StrBuf *c, const char *base, int off,
                           const PcrecRun *r)
 {
     const char *p = cx->opt->prefix;
-    int w = rc_width(r->len);
+    int w = rc_width(r->len), nw = 0;
     for (int o = 0; o < r->len; o += w) {
         int at = o + w <= r->len ? o : r->len - w;   /* the last word ends at L */
-        if (o) pcrec_sb_puts(c, " && ");
-        pcrec_sb_printf(c, "%s_w%d(", p, w);
-        rc_base(c, base, off + at);
-        pcrec_sb_printf(c, ") == %s_w%d(\"", p, w);
+        bool exact = rc_kword_is(r, at, w, 0xFF);
+        if (!exact && rc_kword_is(r, at, w, 0x00)) continue;
+        if (nw++) pcrec_sb_puts(c, " && ");
+        if (exact) {
+            pcrec_sb_printf(c, "%s_w%d(", p, w);
+            rc_base(c, base, off + at);
+            pcrec_sb_printf(c, ") == %s_w%d(\"", p, w);
+        } else {
+            pcrec_sb_printf(c, "(%s_w%d(", p, w);
+            rc_base(c, base, off + at);
+            pcrec_sb_printf(c, ") & %s_w%d(\"", p, w);
+            pcrec_sb_cstr(c, r->k + at, (size_t)w);
+            pcrec_sb_printf(c, "\")) == %s_w%d(\"", p, w);
+        }
         pcrec_sb_cstr(c, r->t + at, (size_t)w);
         pcrec_sb_puts(c, "\")");
     }
+    if (nw == 0) pcrec_sb_puts(c, "1");   /* every position a don't-care */
     cx->job->rc_wused |= (unsigned)w;
     cx->job->rc_words++;
+}
+
+/* The bytes form: `(base)[off + i] == T` or `((base)[off + i] & K) == T` per
+ * position, joined by `&&`; a K-0x00 position is a don't-care, not loaded. */
+static void rc_emit_bytes(StrBuf *c, const char *base, int off,
+                          const PcrecRun *r)
+{
+    int nb = 0;
+    for (int i = 0; i < r->len; i++) {
+        int k = r->k ? r->k[i] : 0xFF;
+        if (k == 0x00) continue;
+        if (nb++) pcrec_sb_puts(c, " && ");
+        if (k == 0xFF) pcrec_sb_printf(c, "(%s)[%d] == %d", base, off + i, r->t[i]);
+        else pcrec_sb_printf(c, "((%s)[%d] & %d) == %d", base, off + i, k, r->t[i]);
+    }
+    if (nb == 0) pcrec_sb_puts(c, "1");
 }
 
 /* The first row of `pcrec_runcmp_rows` that applies to run `r` and is not
@@ -124,9 +203,9 @@ static const PcrecRunRow *rc_row_of(Ctx *cx, const PcrecRun *r)
     pcrec_ctx_fail(cx, 0, "internal error: no run-compare row applies");
 }
 
-/* Writes a C boolean expression, true iff the `r->len` bytes at
- * `base + off` equal `r->t`, through `rc_row_of`'s row, and returns that
- * row's name. Reads EXACTLY those bytes: the caller has emitted the guard
+/* Writes a C boolean expression, true iff each of the `r->len` bytes at
+ * `base + off`, masked by `r->k` where it is given, equals `r->t`, through
+ * `rc_row_of`'s row, and returns that row's name. Reads EXACTLY those bytes: the caller has emitted the guard
  * for them (P8). The expression is a `&&` chain or a unary `!memcmp`, so a
  * caller may only conjoin it. A file-scope caller asks
  * `pcrec_runcmp_prepare` first, so the helper it loads through is declared
@@ -138,6 +217,9 @@ const char *pcrec_emit_run_compare(Ctx *cx, StrBuf *c, const char *base,
     switch (row->form) {
     case RC_F_WORDS:
         rc_emit_words(cx, c, base, off, r);
+        break;
+    case RC_F_BYTES:
+        rc_emit_bytes(c, base, off, r);
         break;
     case RC_F_MEMCMP:
         pcrec_sb_puts(c, "!memcmp(");

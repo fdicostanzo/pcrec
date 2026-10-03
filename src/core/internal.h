@@ -5990,9 +5990,13 @@ void pcrec_emit_req_run_blocks(Ctx *cx, StrBuf *c);
 /* [OPT-LITSCAN] S4 THE RUN COMPARE (src/gen/runcmp.c, litscan_s4.md §1.3):
  * the ONE emitter of a literal-run compare in emitted C, both engines. It
  * took P4's place (`pcrec_emit_exact_compare`, retired). A run is `len`
- * exact bytes; the masked K column lands with its first caller (C3). */
+ * positions, position `i` the bytes `x` with `(x & k[i]) == t[i]`; `k ==
+ * NULL` is every position exact, and `t` is already masked
+ * (`(t[i] & k[i]) == t[i]`). The masked K column's first caller is the
+ * caseless necessary run (C3). */
 typedef struct {
-    const unsigned char *t;   /* the bytes */
+    const unsigned char *t;   /* T, the bytes (each position's lower member) */
+    const unsigned char *k;   /* K per position, or NULL = every position exact */
     int len;                  /* >= 1 */
 } PcrecRun;
 /* The first-match rows as DATA, walked live by `--list-axes` (axis
@@ -6007,9 +6011,10 @@ typedef struct {
 } PcrecRunRow;
 extern const PcrecRunRow pcrec_runcmp_rows[];
 extern const int pcrec_runcmp_nrows;
-/* Writes a C boolean expression, true iff the `r->len` bytes at `base + off`
- * equal `r->t`, through the first row that applies and is not denied, and
- * returns the row's name. The caller has bounds-checked those bytes. */
+/* Writes a C boolean expression, true iff `(base[off + i] & k[i]) == t[i]`
+ * for every i < `r->len` (equality where `k` is NULL), through the first row
+ * that applies and is not denied, and returns the row's name. The caller has
+ * bounds-checked those bytes. */
 const char *pcrec_emit_run_compare(Ctx *cx, StrBuf *c, const char *base,
                                    int off, const PcrecRun *r);
 /* The word-load helpers used and not yet declared, at file scope (idempotent

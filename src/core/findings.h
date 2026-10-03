@@ -215,12 +215,19 @@ uint64_t pcrec_find_rows_digest(const PcrecFindTblBlock *blocks, size_t n);
  * once per attempt and memoized in `Job.find`; the call records the ask. */
 const uint32_t *pcrec_find_byte_rate(Ctx *cx);
 
-/* PICK: the INDEX of the argmin of rate[cand[i]] over i < n, ties to the
- * EARLIEST candidate. NONE: `rightmost`, the index of the reader's positional
- * rightmost candidate (PCRE2's LASTCODEUNIT rule). The reader chooses only
- * the candidate ORDER, which is its tie rule. n >= 1, 0 <= rightmost < n. */
-int pcrec_find_pick(const uint32_t *rate, const unsigned char *cand, int n,
-                    int rightmost);
+/* PICK: which of n candidates to scan. Candidate i is the CUBE
+ * (cand[i], care[i]): its members are the bytes b with (b & care[i]) ==
+ * cand[i] (cand[i] & ~care[i] == 0). care == NULL means every care[i] is
+ * 0xFF, i.e. every candidate is the one byte cand[i]. Cost of a candidate:
+ * the rate summed over its members (MASS's own definition, so a byte costs
+ * rate[cand[i]]). Returns the INDEX of the argmin, ties to the EARLIEST
+ * candidate. NONE: `rightmost`, the index of the reader's positional
+ * rightmost candidate (PCRE2's LASTCODEUNIT rule), whatever the candidates'
+ * sizes. The reader chooses only the candidate ORDER, which is its tie rule.
+ * n >= 1, 0 <= rightmost < n. ([OPT-LITSCAN] S4 C3 extended the candidates
+ * from bytes to cubes, litscan_s4.md §2.3.3: one PICK kind, one NONE.) */
+int pcrec_find_pick(const uint32_t *rate, const unsigned char *cand,
+                    const unsigned char *care, int n, int rightmost);
 
 /* COMPARE: is `p` no commoner than `q` (rate[p] <= rate[q])? NONE: false —
  * unknown, so no density claim. Identity (p == q) is not a density fact and
@@ -250,19 +257,24 @@ uint32_t pcrec_find_seq_mass(const uint32_t *rate, const unsigned char *bytes,
 int pcrec_find_set_pick(const uint32_t *rate, const unsigned char bits[32],
                         int rightmost);
 
-/* Which member of a necessary RUN (`bytes[0..n)`, n >= 2,
- * n <= PCREC_MAX_REQ_RUN_SCAN) the emitted `memchr` tests. PICK over
- * `[n-1, n-2, ..., 0]` (`pcrec_find_set_pick`'s own `[rightmost, ...]`
- * shape): the rarest, ties to the RIGHTMOST — its own positional rightmost
- * member, which is also the NONE answer [FIND-TIE]. */
+/* Which position of a necessary RUN (`bytes[0..n)` with per-position masks
+ * `mask[0..n)`, each position the cube (bytes[i], mask[i]); n >= 2,
+ * n <= PCREC_MAX_REQ_RUN_SCAN) the emitted scan tests. PICK over the
+ * positions as cubes in the order `[n-1, n-2, ..., 0]`
+ * (`pcrec_find_set_pick`'s own `[rightmost, ...]` shape): the cheapest by
+ * member-set mass, ties to the RIGHTMOST — its own positional rightmost
+ * position, which is also the NONE answer [FIND-TIE]. */
 int pcrec_find_run_scan_index(const uint32_t *rate, const unsigned char *bytes,
-                              int n);
+                              const unsigned char *mask, int n);
 
-/* Where a run longer than `PCREC_MAX_REQ_RUN_EMIT` is truncated to. MASS over
- * each window of that length containing `idx`: the lowest, ties to the
- * leftmost — so under NONE, where every window ties, the leftmost. */
+/* Where a run longer than `PCREC_MAX_REQ_RUN_EMIT` positions is truncated to.
+ * MASS over each window of that many positions containing `idx`, a window's
+ * mass being that of its MEMBERS (T for an exact position, T and T | ~K for
+ * a pair): the lowest, ties to the leftmost — so on an exact run under NONE,
+ * where every window ties, the leftmost. */
 int pcrec_find_run_window_start(const uint32_t *rate,
-                                const unsigned char *bytes, int n, int idx);
+                                const unsigned char *bytes,
+                                const unsigned char *mask, int n, int idx);
 
 /* The offset-k selection's per-set cost input (src/opt/prefix_k.c): MASS
  * over `set` (`set[b]` nonzero for a member), in ppm, capped at 1,000,000. */
