@@ -103,23 +103,36 @@ Governing rulings:
    It is built because it is the same emitter with the mask on (one
    primitive, D122), and it shrinks the program. This is recorded honestly
    as a D77 gap, not hidden (Q9).
-7. **S4(a) can stay out of `dfa_pfs[]` entirely (§2.3.5).**
-   - `prefix_k.c` publishes a run PIN only for an exact run. So no prefilter
-     row ever sees a masked run.
-   - The table's shape, its predicates and every existing selection are
-     unchanged.
-   - The one shared decision that does change is `req_admit` (P7). It learns
-     that a masked run is something to admit (Q4).
-8. **The NONE answer for the caseless run pick is the cardinality model, and
-   it picks `select`, not `from` (§2.3.3).**
-   - For a cube, `popcount(K)` is exactly `log2(256/|set|)`. So "bits of
-     information" `Σ popcount(K_i)` is `findings/design.md` §6.2's
-     per-position cardinality NONE answer, spelled once (D126 Q4).
-   - It ranks `select` (42) > `union` (35) > `from` (28).
-   - The bench would prefer `from` (0.3441 against `select`'s 0.4389), and
-     deployment traffic is wrong for `from` (WAF §3.2). The rule that is
-     deployment-sane wins (Q6).
+7. **[r1 S3/C2, revised] S4(a) leaves `dfa_pfs[]`'s SHAPE alone. It does
+   not leave every selection alone (§2.3.5).**
+   - The pin is published by `pcrec_run_pin` (`src/facts/kset.c:240`), not
+     by `prefix_k.c`. It is exact-only by construction, plus one explicit
+     conjunct.
+   - The table's rows, predicates and emitters are unchanged.
+   - Under r1's single ranking a masked run can OUTRANK an exact pinned
+     run. 10 artifacts then lose their pin, and 2 (`a[bc]de`,
+     `(?i)x/1234`, corpus) change selection from `run-pinned` to the next
+     row (§2.3.7).
+   - The one shared decision that changes is still `req_admit` (P7). It
+     learns that "nothing necessary" means no byte AND no run (Q4).
+
+8. **[r1 C1/C4, revised] One ranking, information, over exact and cube runs
+   alike. The scan member comes from the EXISTING readers, generalized
+   (§2.3.1, §2.3.3).**
+   - A run position is a byte (`K = 0xFF`) or a two-member cube. The walk
+     ranks every run by `Σ popcount(K_i)`, which is `8 × len` for an exact
+     run, so exact runs keep today's order.
+   - One floor, `PCREC_MIN_REQ_RUN_BITS` = 16 (two exact bytes), replaces
+     both round 0's exact floor of 2 and its cube floor of 3.
+   - The run pick ranks `select` (42) > `union` (35) > `from` (28). The bench
+     would prefer `from` (0.3441 against `select`'s 0.4389), and deployment
+     traffic is wrong for `from` (WAF §3.2). The deployment-sane rule wins
+     (Q6).
+   - The scan member is `pcrec_find_run_scan_index` over (T, K): cost is the
+     position's member-set MASS, ties go to the rightmost, and the NONE
+     answer is the rightmost. There is no masked-only rule.
    - `[FINDINGS.B4]`'s `run-rarity` replaces it as the C6 reader (Q7).
+
 9. **The hard requirement is met through the SET, not by reading the fold
    table at emission (§1.2).**
    - The mask is `cube_of` of the byte set. For a caseless letter, that set
@@ -941,13 +954,13 @@ Q11).
 |---|---|---|---|---|
 | 42 | `-fno-run-overlap` | `PCREC_NO_RUN_OVERLAP` | rows `words` and `overlap`. Exact compares are abi 55's `memcmp`; masked compares take `bytes` | `<PREFIX>_RUN_WORDS` (compares written by rows 1-2, both engines) |
 | 43 | `-fno-lit-run-fold` | `PCREC_NO_LIT_RUN_FOLD` | cube positions in the VM run fact (§2.2). Runs are singleton-only, as at abi 55 | `<PREFIX>_VM_LIT_MASKED` |
-| 44 | `-fno-req-run-fold` | `PCREC_NO_REQ_RUN_FOLD` | the cube run in the necessary-run fact (§2.3). A fact-level deny (D126 Q3): `req_run` has nothing masked to find, for every consumer | `<PREFIX>_REQ_RUN`'s `/mask` suffix |
+| 44 | `-fno-req-run-fold` | `PCREC_NO_REQ_RUN_FOLD` | [r1] cube positions in the necessary-run walk (§2.3.1): the position bound drops from `PCREC_MAX_REQ_RUN_POS_SET` to 1, so the walk, its hull and its ranking are exactly abi 55's (byte equality, `8 × len`). A fact-level deny (D126 Q3): `req_run`/`req_whole_run` have nothing masked to find, for every consumer, and the pin, G1 and the 2 moved selections (§2.3.5) revert with it | `<PREFIX>_REQ_RUN`'s `/mask` suffix |
 
 **Why three bits and not one (Q2).** D144 item 4 has batch-gate triage flip
 flags rather than bisect. The three mechanisms have disjoint witness cells:
 - bit 42: slack `://`, router `/user`, litrun;
 - bit 43: forced-VM WAF;
-- bit 44: `union-select` auto.
+- bit 44: `union-select` auto (and, under r1's single ranking, `slack-webhook-url`, whose `://` run becomes masked: §6.2).
 
 One bit would make a regression on any of them a revert of all three.
 
@@ -1013,15 +1026,67 @@ do not grep them:
 - `make test-axes AXES="-fno-run-overlap -fno-lit-run-fold -fno-req-run-fold"`.
 - The size log's tripwire, if a pinned witness moves.
 
-**Spec hunks (D80), in the commit that changes the behaviour:**
-- `tuning.md` §2.37-2.39, plus §2.31's lit-run text ("single-cube byte
+**Spec hunks (D80), in the commit that changes the behaviour (C1/C2):**
+- `tuning.md` §2.37-2.38, plus §2.31's lit-run text ("single-cube byte
   classes");
 - `limits.md` §3.1's charge sentence;
-- `match_api.md` §6.3's stamp catalogue (`RUN_WORDS`, `VM_LIT_MASKED`, and
-  `REQ_RUN`'s suffix grammar);
+- `match_api.md` §6.3's stamp catalogue (`RUN_WORDS`, `VM_LIT_MASKED`);
 - `ir_listing.md` (the masked `compare` op);
-- `table_contract.md`, if `--emit-facts`' `req_run` row's columns change;
 - `compare_stack.md` §2/§5 (the D122 keep-it-true rule).
+
+**[r1 C3] C3's readers of the necessary-run family, BY GREP (D94).** The
+recipe is to run it on the landing tree. The list below is the floor it
+printed at `92b8bbf0`:
+
+```sh
+grep -rnE 'pcrec_fact_req_run|pcrec_fact_req_whole_run|pcrec_fact_req_byte|pcrec_fact_run_pin|req_run\.|->whole\b|->whole_len|pcrec_req_window|pcrec_req_pick|pcrec_run_pin|pcrec_find_run_scan_index|pcrec_find_run_window_start|pcrec_emit_req_(byte_check|run_blocks)|req_admit\b' src cli lib
+grep -rnE 'REQ_(BYTE|RUN|WHY)|req_(whole_)?run|req_byte' docs/spec tests
+```
+
+| # | reader | what it reads | C3 change |
+|---|---|---|---|
+| 1 | `src/facts/req.c` `rb_walk` and the `rn_*`/`rr_*` helpers | the run triple | (T, K) positions, hull, `rn_better` (§2.3.1) |
+| 2 | `src/facts/facts.c:170-177` `pf_derive_req_walk` | `run.n >= 2` (THE FLOOR) | `info >= PCREC_MIN_REQ_RUN_BITS`; copies `whole_mask` |
+| 3 | `facts.c:73-80` (the fact deny's empty value) | clears `whole`/`bytes` | clears both masks too |
+| 4 | `facts.c:443-447` `pcrec_fact_render` (`req_whole_run`, `req_run`) → `--emit-facts` AND the `REQ_RUN` stamp (`emit_dfa.c:9129`, `pcrec_fact_stamp`) | hex + `@idx` | `/mask` suffix when masked (one renderer, D126 Q9) |
+| 5 | `req.c:489` `pcrec_req_window` | `whole` | passes (T, K), copies `mask` (§2.3.3) |
+| 6 | `req.c:519` `pcrec_req_pick` → `req_byte` → `REQ_BYTE` | `bytes[idx]` when a run shipped | only when `mask[idx] == 0xFF` [S2a] |
+| 7 | `src/core/findings.c:500/526` the two run readers | byte arrays | (T, K) arrays; MASS per position [C1] |
+| 8 | `src/facts/kset.c:240` `pcrec_run_pin` | `bytes` vs walk singletons | `pcrec_req_run_masked` → unpinned [S3] |
+| 9 | `emit_dfa.c:997` `req_run_tests` | `req_byte < 0` gate; two `ofs_test_run` sites | gate deleted; both sites masked [S4] |
+| 10 | `emit_dfa.c:1055` `emit_req_run_check` | run bytes into the comment | a masked run's comment names its masked positions (emitted text: inside C3's abi event) |
+| 11 | `emit_dfa.c:1123` `emit_req_set_rest` | `done[]` over the whole run | exact positions only [S2b] |
+| 12 | `emit_dfa.c:1193/1208` `pcrec_emit_req_byte_check` | `b < 0` early return; run branch | `b < 0 && no run` |
+| 13 | `emit_dfa.c:5683/5689` `us_run_pin`, `pf_run_applies_common` | pin, `bytes[idx]` | none (no pin on a masked run) |
+| 14 | `emit_dfa.c:5741` `ofs_test_of` | pin, `bytes` | none (reached through a pin only; never sets `run_mask`) |
+| 15 | `emit_dfa.c:5812` `ofs_test_verifies_run` | pin, `bytes[i]` | none (false without a pin) |
+| 16 | `emit_dfa.c:6352` `req_byte_dominated_by` | `len >= 2` | none (masked → `run_verified` false) |
+| 17 | `emit_dfa.c:6374` `req_admit` | `req_byte < 0` → NONE | AND no run (§2.3.5) |
+| 18 | `emit_dfa.c:8969` `<string.h>` decision | `req_admit` | none (reads the one derivation) |
+| 19 | `emit_vm.c:13089/13156` the VM entry's two calls | — | none |
+| 20 | `src/dump/axes_dump.c:695/709` `--list-axes` rows `req-byte`/`req-run` | stamp names, descriptions | `req-run`'s description ("contiguous literal bytes") gains masked positions; a new `req-run-fold` row |
+| 21 | `ofs_test_emit_fn` (`emit_dfa.c:5981`) | `scan_byte >= 0` | the pair arm (§2.3.4) |
+
+The test and spec readers that grep prints are in §5.4 (the stamp
+cross-checks) and in the hunks below. `tests/codegen/run_prechecks.sh` is
+one: its `REQ_BYTE`/`REQ_RUN` agreement check reads "`REQ_BYTE ==
+bytes[idx]`", and r1 makes that conditional on the mask.
+
+**[r1 C6] C3's spec hunks, each named:**
+
+| file | hunk |
+|---|---|
+| `tuning.md` §2.27 | `REQ_BYTE`: "where §2.28's run shipped, the run's own scan member" becomes "where the run's scan member is EXACT"; the third "names the analysis" case (§2.3.3 (ii)). Facts emptied: unchanged |
+| `tuning.md` §2.28 | the run is a run of POSITIONS (a byte or a two-member cube); the information ranking and `PCREC_MIN_REQ_RUN_BITS`; the hull; the stamp grammar `hex@idx[/mask]`; "`REQ_BYTE` is exactly `bytes[idx]`" made conditional on `mask[idx] == ff` |
+| `tuning.md` §2.29 | the admission's first conjunct (no byte AND no run); the `"none"` iff sentence; K65's "what counts as already tested" = the run's EXACT positions; K66's whole run compared masked |
+| `tuning.md` §2.30 | the pin is exact-only, stated (it was implicit); `-fno-req-run-fold` reaches the pin the way `-fno-req-byte` does |
+| `tuning.md` §2.39 (new) | `-fno-req-run-fold`, bit 44: facts narrowed (not emptied) — `req_whole_run`/`req_run` lose their masked form; consumers listed per D126 Q3 |
+| `match_api.md` §6.3 | the `REQ_BYTE`, `REQ_RUN` (suffix grammar, example) and `REQ_WHY` (`"none"` iff) entries |
+| `findings.md` §4 (line 128's table) | the scan-member row: PICK over POSITIONS in reverse, cost = the position's member-set mass; the window row: MASS over positions. The rightmost-first rule is restated, not changed. "Every member is necessary" is restated for a pair: the run is compared whole at each hit of either member |
+| `facts_listing.md` §`facts`, `value` column (line 95) | "a run as lowercase hex (with `@idx` …)" gains "and `/` + the per-position mask in hex where any position is not exact" |
+| `limits.md` §3 | two new rows (`PCREC_MIN_REQ_RUN_BITS`, `PCREC_MAX_REQ_RUN_POS_SET`), the new unit token `bits`, `PCREC_MAX_REQ_RUN_EMIT`'s unit `positions` |
+| `table_contract.md` | **no hunk, with the reason.** The `--emit-facts` header and its column set do not change: the mask rides inside the existing `value` cell, by the one renderer the stamp shares (D126 Q9). A new column would be a second spelling of one value. The contract's HEADER TRUTHFULNESS check sees an unchanged header. The panel asked for "mask/pair columns". Round 0's stored `pair` field is dropped (§2.3.2), so there is no pair column to publish |
+| `compare_stack.md` §5 | the pre-check's run compare is masked (C1's row table), now with two arms (one stream, the pair) |
 
 ---
 
