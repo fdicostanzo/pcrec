@@ -613,17 +613,21 @@ fi
 # clss2fix, D139): `scan-body` reads its run tests off the class-form table,
 # whose `fold` row carries `-fno-cls-fold` (bit 24), one more triple.
 # Measured on the clss2fix tree: 171 PASS, 0 failed.
+# 171 -> 174 at [OPT-LITSCAN] S4 C1 (lane s4build, 2026-10-03):
+# `-fno-run-overlap` (`PCREC_NO_RUN_OVERLAP`, bit 42) on the `run-overlap`
+# axis's `overlap` row, one single-bit (macro, bit, flag) triple, `lit-run`'s
+# shape. Measured: 174 PASS, 0 failed.
 axesn="$(grep -c '^PASS: ' "$AXESOUT" || true)"
-if [ "$axesn" -ne 171 ]; then
+if [ "$axesn" -ne 174 ]; then
     if grep -q "^checks failed: 0" "$AXESOUT"; then
-        echo "registry: axes_registry_check COVERAGE CHANGED — $axesn passing checks, expected 171." >&2
+        echo "registry: axes_registry_check COVERAGE CHANGED — $axesn passing checks, expected 174." >&2
         echo "registry:   if you added or removed axes/checks on purpose, update this number" >&2
         echo "registry:   in the same commit; if not, coverage was removed" >&2
     else
         axesnf="$(sed -n 's/^checks failed: //p' "$AXESOUT" | tail -1)"
-        echo "registry: axes_registry_check shows $axesn passing checks (171 expected; ${axesnf:-?} failed," >&2
+        echo "registry: axes_registry_check shows $axesn passing checks (174 expected; ${axesnf:-?} failed," >&2
         echo "registry:   so a lower count is expected here). Fix the failures first; then this" >&2
-        echo "registry:   number must return to 171 — if it does not, coverage was removed too" >&2
+        echo "registry:   number must return to 174 — if it does not, coverage was removed too" >&2
     fi
     rc=1
 fi
