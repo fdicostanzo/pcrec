@@ -3969,24 +3969,53 @@ fi
 # the only arm that can catch the fixture drifting away from the set it
 # claims to be a copy of -- a provenance header is a claim, and a claim
 # nothing checks is a comment.
+#
+# THE POPULATION IS THE FIXTURE'S, NOT THE BENCH DIR'S. The fixture is frozen
+# at altwide@0.2 (33 files); the live sibling moves (altwide@0.3 has 39), so
+# iterating the live dir made the control share a moving source with what it
+# controls (learnings.md section 3). Each pinned name must exist in the live
+# dir and be byte-identical to the fixture block; a pinned file the bench
+# removed or renamed is a FAIL. Files the fixture does not pin are only
+# reported (NOTE), never judged.
 BENCH_PAT="${PCREC_BENCH_PATTERNS:-/home/duxevents/pcrec-bench/bench/altwide/patterns}"
 if [ -d "$BENCH_PAT" ]; then
-    aw_bad=0 aw_seen=0
-    for bf in "$BENCH_PAT"/*.rx; do
-        bn=$(basename "$bf" .rx)
+    aw_bad=0 aw_seen=0 aw_missing=""
+    aw_names=$(awk '/^name / { print $2 }' "$AW")
+    for bn in $aw_names; do
         aw_seen=$((aw_seen + 1))
+        bf="$BENCH_PAT/$bn.rx"
+        if [ ! -f "$bf" ]; then
+            aw_bad=$((aw_bad + 1))
+            aw_missing="$aw_missing $bn"
+            continue
+        fi
         want=$(cat "$bf")
         got=$(awk -v want="$bn" '
             /^pattern / { p = substr($0, 9); next }
             /^name /    { if ($2 == want) { print p; exit } }' "$AW")
         [ "$got" = "$want" ] || aw_bad=$((aw_bad + 1))
     done
+    aw_extra=""
+    aw_live=0
+    for bf in "$BENCH_PAT"/*.rx; do
+        [ -f "$bf" ] || continue
+        aw_live=$((aw_live + 1))
+        bn=$(basename "$bf" .rx)
+        case " $(echo $aw_names) " in
+            *" $bn "*) ;;
+            *) aw_extra="$aw_extra $bn" ;;
+        esac
+    done
+    if [ -n "$aw_extra" ]; then
+        echo "NOTE: W1.3 dogfood: bench altwide has $aw_live patterns; fixture pins $aw_seen of altwide@0.2; extra:$aw_extra"
+    fi
     if [ "$aw_seen" = "33" ] && [ "$aw_bad" = "0" ]; then
-        pass "W1.3 dogfood: all 33 patterns are byte-for-byte the bench own .rx files (the .rxt round trip is the identity)"
+        pass "W1.3 dogfood: all 33 pinned patterns are byte-for-byte the bench own .rx files (the .rxt round trip is the identity)"
     else
-        fail "W1.3 dogfood: $aw_bad of $aw_seen patterns differ from the bench own files.
+        fail "W1.3 dogfood: $aw_bad of $aw_seen pinned patterns differ from or are missing in the bench own files.${aw_missing:+
+  missing from the bench dir:$aw_missing}
   The fixture provenance header claims it is a verbatim copy; either it drifted
-  or the bench set moved. Regenerate it or update the header."
+  or the bench removed/renamed/changed a pinned pattern. Regenerate it or update the header."
     fi
 else
     echo "SKIP: W1.3 dogfood byte-for-byte arm: $BENCH_PAT not present (pcrec-bench is a sibling repo, not a dependency)"
