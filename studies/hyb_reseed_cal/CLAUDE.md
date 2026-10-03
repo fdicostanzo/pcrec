@@ -28,6 +28,9 @@ and `docs/dev/reseed/clamped.md`.
   short-search/match/find-all driver, counting driver, the F1/F2/F3 emitted-
   form rewriters, bench-subject regeneration. Backs `docs/design/xcall.md`.
   See its own CLAUDE.md.
+- `bakeoff/` — lane rsform's [OPT-HYB-RESEED-FORM] A2 form bake-off
+  (2026-10-03): the pack builder, the six-form rewriter and the Linux-side
+  gcc+clang timing script the manager runs. See its own CLAUDE.md.
 - `results/` — the raw outputs this lane's re-runs produced
   (`crossover_2026-09-30.txt`, `timing_2026-09-30.md`,
   `clamped_2026-09-30.md`), each with its date, box and load.

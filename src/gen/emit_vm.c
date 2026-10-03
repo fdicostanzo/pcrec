@@ -10970,7 +10970,7 @@ static void vm_plan_entry(Vm *v, const VmPlan *pl, VmEntry *en)
  *
  * The predicates are a CLOSED tag set evaluated by one exhaustive switch
  * (`vm_reseed_holds`), clskit's `ROWS` shape; the actions likewise. */
-enum { VRS_P_EXACT, VRS_P_CLAMPED, VRS_P_DENSE, VRS_P_TRUE };
+enum { VRS_P_EXACT, VRS_P_CLAMPED, VRS_P_ANCHORED, VRS_P_DENSE, VRS_P_TRUE };
 enum { VRS_A_FIXED, VRS_A_ADAPT };
 enum { VRS_S_NONE, VRS_S_FIRST, VRS_S_CAP };
 
@@ -10983,7 +10983,13 @@ enum { VRS_S_NONE, VRS_S_FIRST, VRS_S_CAP };
  * attempts today's retry runs, so a give-up can become an answer and never
  * the reverse; on a clamped hybrid today's retry already re-seeds after
  * every failure, a step block would ADD attempts, and the measured gain was
- * mixed (r1 panel sem F1, docs/dev/reseed/clamped.md). The two adaptive rows run ONE
+ * mixed (r1 panel sem F1, docs/dev/reseed/clamped.md). `anchored` is
+ * undeniable for `exact`'s reason, the choice does not exist: under a
+ * `start_anchor` fact the attempt loop's bound (`attempt_max`,
+ * [OPT-ANCHOR-VM]) returns after the first failed attempt, so the retry is
+ * never reached and an adaptive tail would be dead text that gcc cannot
+ * prove dead — the seed comes from the prefilter ([OPT-HYB-RESEED-FORM]
+ * A1, docs/design/xcall.md §4). The two adaptive rows run ONE
  * machine and differ only in the starting state their last two columns
  * name: `adaptive-dense` starts inside a capped step block that is armed,
  * `adaptive` starts with the class's `first` probation, unarmed. */
@@ -10998,6 +11004,11 @@ const PcrecReseedRow pcrec_reseed_rows[] = {
       "failed attempt: kept, because a step block would add attempts it "
       "skips (an answer could become a give-up) for a gain measured mixed",
       VRS_P_CLAMPED, VRS_A_FIXED, VRS_S_NONE, false },
+    { "anchored", 0,
+      "every match begins at one position (`^`, `\\A`, `\\G` — the start_anchor "
+      "fact), so the attempt loop stops after its first attempt and no "
+      "retry runs: today's retry, whose text is never reached",
+      VRS_P_ANCHORED, VRS_A_FIXED, VRS_S_NONE, false },
     { "adaptive-dense", PCREC_NO_HYB_RESEED,
       "the compile's byte-rate prior (the built-in default under -e byte, "
       "cardinality where the prior is NONE) puts the candidate scan's byte "
@@ -11059,6 +11070,10 @@ static bool vm_reseed_holds(const Vm *v, const VmReseed *rs, unsigned char p)
     switch (p) {
     case VRS_P_EXACT: return v->mrl_win;
     case VRS_P_CLAMPED: return v->nclamp > 0;
+    /* The fact `att_max` reads, so the row and the bound it relies on are
+     * one derivation; `-fno-vm-anchor-bound` empties both together. */
+    case VRS_P_ANCHORED:
+        return pcrec_fact_start_anchor(v->cx) != PCREC_SANCH_NONE;
     case VRS_P_DENSE:
         return (unsigned long long)pcrec_dfa_cand_ppm(v->cx) * rs->cal.gap > 1000000ull;
     case VRS_P_TRUE:  return true;

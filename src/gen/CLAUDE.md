@@ -3372,7 +3372,8 @@ lookaround or a cut erased, or the count collapse) therefore stepped every
 character to the subject end once one prefilter answer failed.
 
 - **`pcrec_reseed_rows` is ONE first-match table, rows as data** —
-  `exact` / `clamped` / `adaptive-dense` / `adaptive` / `fixed`. Its
+  `exact` / `clamped` / `anchored` / `adaptive-dense` / `adaptive` /
+  `fixed`. Its
   predicates are a closed tag set evaluated by one switch,
   `vm_reseed_holds` (clskit's `ROWS` shape), and an adaptive row's
   STARTING STATE is two columns (`start`, the calibration column a call's
@@ -3427,6 +3428,18 @@ character to the subject end once one prefilter answer failed.
   second block never ends, visible to the budget arm only), S371 (adaptive
   text dropped under an adaptive stamp) and S372 (the two calibration rows
   swapped, visible to the calibration check only).
+- **`anchored` (abi 56, [OPT-HYB-RESEED-FORM] A1, lane rsform,
+  2026-10-03; `docs/design/xcall.md` §4) keeps a start-anchored hybrid on
+  the FIXED retry.** Its predicate is `pcrec_fact_start_anchor != NONE`,
+  the fact `att_max` reads for [OPT-ANCHOR-VM]'s `attempt_max =
+  search_from` bound — one derivation, so `-fno-vm-anchor-bound` empties
+  the bound and the row together. Under the bound the loop returns after
+  its first failed attempt and no retry runs; gcc cannot prove that (the
+  seed comes from the prefilter), so an adaptive tail there was dead text
+  on 48 byte-corpus artifacts (79% of `adaptive-dense`). Undeniable for
+  `exact`'s reason, and above the two rows the deny reaches, so an
+  `anchored` artifact equals its `-fno-hyb-reseed` artifact byte for byte
+  (the codegen block's check (5); sabotage S441 makes the predicate false).
 
 ## [UTF-VALID] THE SUBJECT CHECK AND THE START ALIGNMENT (abi 49 -> 50, D133)
 

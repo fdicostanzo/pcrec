@@ -1,0 +1,24 @@
+# A2 bake-off cells (docs/design/xcall.md §6): id, pattern, pcrec flags ("-" for none),
+# role (improve | keep | a1), sdrv mode (s short search | f find-all), subject globs
+# relative to the pack. a1 = [OPT-HYB-RESEED-FORM] A1's own cell: `a` is main's
+# artifact, `d` the branch's (equal to its deny); it gets no form variants.
+possq	a?+a	-	improve	s	subj/*.bin
+possq	a?+a	-	improve	f	thr/*.bin
+lkapos	item(?= done)	-	improve	s	subj/*.bin
+lkapos	item(?= done)	-	keep	f	thr/*.bin
+lkaverb	item(*pla: done)	-	improve	s	subj/*.bin
+lkaverb	item(*pla: done)	-	keep	f	thr/*.bin
+lkaneg	item(?! done)	-	improve	s	subj/*.bin
+lkanon	(?*item)item	-	improve	s	subj/*.bin
+atalt	(?>a|ab)c	-	improve	s	subj/*.bin
+atalt	(?>a|ab)c	-	improve	f	thr/*.bin
+lbvar	(?<=a|é)x	-e utf8	improve	f	cal/synth-dense.bin
+lbvar	(?<=a|é)x	-e utf8	keep	f	cal/synth-1m.bin
+lbvar	(?<=a|é)x	-e utf8	keep	f	cal/gap64.bin
+lbvar	(?<=a|é)x	-e utf8	keep	f	cal/bursty.bin
+lbfix	(?<=é)x	-e utf8	improve	f	cal/synth-1m.bin
+lbfix	(?<=é)x	-e utf8	improve	f	cal/synth-64k-asc.bin
+lbfix	(?<=é)x	-e utf8	keep	f	cal/gap64.bin
+lbfix	(?<=é)x	-e utf8	keep	f	cal/bursty.bin
+lbneg	(?<!日)本	-e utf8	keep	f	cal/synth-1m.bin
+lpatom	^(?>(?:kern|user|mail|daemon|auth|syslog|cron)\.(?:emerg|alert|crit|err|warning|notice|info|debug)): (.*)$	-	a1	s	cap/*.bin

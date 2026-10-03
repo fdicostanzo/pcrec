@@ -298,11 +298,11 @@ noted under group 2, which are `PCREC_*`-named yet per-artifact):
    refused.** The block opens
 
    ```c
-   #if defined(PCREC_RX_ABI_H) && (PCREC_RX_ABI_H + 0) != 55
-   #error "pcrec: this artifact (abi 55) shares a translation unit with an artifact of a different abi; regenerate both with one pcrec"
+   #if defined(PCREC_RX_ABI_H) && (PCREC_RX_ABI_H + 0) != 56
+   #error "pcrec: this artifact (abi 56) shares a translation unit with an artifact of a different abi; regenerate both with one pcrec"
    #endif
    #ifndef PCREC_RX_ABI_H
-   #define PCREC_RX_ABI_H 55
+   #define PCREC_RX_ABI_H 56
    ```
 
    so artifacts of one abi still share the first block, and an artifact of
@@ -2296,7 +2296,22 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `55` on every artifact today (lane k78 bumped it from
+- **`rx_info.abi` is `56` on every artifact today (lane rsform bumped it
+  from 55, 2026-10-03: [OPT-HYB-RESEED-FORM] A1 — A START-ANCHORED HYBRID
+  STOPS CARRYING AN UNREACHABLE ADAPTIVE RETRY).** `<PREFIX>_VM_RESEED`
+  gains the value `"anchored"` (§6.3, `tuning.md` §2.35): a hybrid whose
+  `<PREFIX>_VM_START` is not `"unanchored"`, and whose retry was adaptive
+  through `abi` 55, now takes the pre-`abi`-49 retry. Its attempt loop
+  already stopped after the first attempt ([OPT-ANCHOR-VM]), so the
+  adaptive tail and its two per-call locals were text no call could reach;
+  they are no longer emitted, and the artifact's C equals its
+  `-fno-hyb-reseed` artifact's byte for byte. Only those artifacts move
+  (48 in the byte corpus under `--features all`, all formerly
+  `"adaptive-dense"`); every other artifact differs from `abi` 55 in its abi
+  digits alone. No struct offset moves, no `rx_info` member is added or
+  changed, and no answer moves, give-ups included: the attempt set is the
+  one attempt it always was.
+- **`rx_info.abi` was `55` (lane k78 bumped it from
   54, 2026-09-30: K78 — A DFA ARTIFACT'S DEAD-GROUP FILL MOVES FROM THE
   SEARCH ENTRY TO ITS SUCCESS PATHS).** A DFA artifact whose
   `<PREFIX>_NCAPS` is 2 or more promises groups that no match can set
@@ -3459,6 +3474,7 @@ engine-scoped.**
   |---|---|
   | `"exact"` | the prefilter answers for the pattern's own language, so a failed attempt cannot follow one of its answers; the retry is the one this compiler emitted before abi 49 |
   | `"clamped"` | over-approximating prefilter on an artifact with an MRL clamp: the pre-abi-49 retry, which already re-seeds after every failed attempt |
+  | `"anchored"` | over-approximating clamp-free prefilter on a start-anchored pattern (`_VM_START` not `"unanchored"`): the attempt loop stops after its first attempt, so no retry runs and the pre-abi-49 retry's text is emitted (abi 56) |
   | `"adaptive-dense"` | over-approximating clamp-free prefilter, and the compile's byte-rate prior predicts dense candidates: the retry steps or re-seeds per call, starting in step mode |
   | `"adaptive"` | over-approximating clamp-free prefilter: the retry steps or re-seeds per call, starting with a short step budget |
   | `"fixed"` | `-fno-hyb-reseed` on an over-approximating clamp-free prefilter: the pre-abi-49 retry |

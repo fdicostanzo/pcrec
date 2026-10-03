@@ -3069,9 +3069,10 @@ choice is now a first-match table (`pcrec --list-axes`, axis
 |---|---|---|---|---|
 | 1 | `exact` | — | the prefilter's language is the pattern's own (no cut, no lookaround, no collapse) | the pre-`abi`-49 retry: re-seed where an MRL clamp exists, else step. A failed attempt at an answer does not arise, and a clamped artifact's window must be recomputed |
 | 2 | `clamped` | — | an MRL clamp exists | the pre-`abi`-49 retry, which already re-seeds after every failed attempt. A step block would ADD attempts that retry skips, so an answer could become a give-up, and the measured gain was mixed (×2.2 faster to ×0.46 slower, `docs/dev/reseed/clamped.md`) |
-| 3 | `adaptive-dense` | `-fno-hyb-reseed` | the compile's byte-rate PRIOR (`docs/spec/findings.md`) puts the candidate scan's byte set at a mean gap under the crossover below. Under `-e byte` with no `--analysis` the prior is the built-in `default` analysis (English-like letter frequencies), so a single common byte such as a space qualifies. Where the prior is NONE (`-e utf8` with no analysis naming a utf8 block) the rate is the set's CARDINALITY, so a single byte never qualifies and a wide class can | ADAPTIVE, starting inside an armed step block |
-| 4 | `adaptive` | `-fno-hyb-reseed` | always | ADAPTIVE, starting with a short step budget |
-| 5 | `fixed` | — | always | the pre-`abi`-49 retry |
+| 3 | `anchored` | — | the pattern is start-anchored (`^`, `\A` or `\G` begins every match; the `start_anchor` fact `<PREFIX>_VM_START` reports, §2.25) | the pre-`abi`-49 retry. The attempt loop's bound returns after the first failed attempt, so no retry runs, and the adaptive text would be unreachable. Added at `abi` 56 ([OPT-HYB-RESEED-FORM] A1); `-fno-vm-anchor-bound` empties the fact and the row together |
+| 4 | `adaptive-dense` | `-fno-hyb-reseed` | the compile's byte-rate PRIOR (`docs/spec/findings.md`) puts the candidate scan's byte set at a mean gap under the crossover below. Under `-e byte` with no `--analysis` the prior is the built-in `default` analysis (English-like letter frequencies), so a single common byte such as a space qualifies. Where the prior is NONE (`-e utf8` with no analysis naming a utf8 block) the rate is the set's CARDINALITY, so a single byte never qualifies and a wide class can | ADAPTIVE, starting inside an armed step block |
+| 5 | `adaptive` | `-fno-hyb-reseed` | always | ADAPTIVE, starting with a short step budget |
+| 6 | `fixed` | — | always | the pre-`abi`-49 retry |
 
 **ADAPTIVE** is decided per CALL, from two locals of the search function.
 No global and no `rx_ctx` field is involved, so a matcher stays reentrant
@@ -3110,8 +3111,10 @@ A call that gave up can therefore now answer; a call that answered still
 answers the same. (Row 2 exists to keep that true: on a clamped artifact a
 step block would run attempts the old retry skipped.) Denied, an adaptive
 hybrid's program is the pre-`abi`-49 one apart from its
-`<PREFIX>_VM_RESEED` line. The flag is swept by `make test-axes` like every
-deny axis.
+`<PREFIX>_VM_RESEED` line. Row 3 is the other way round: an `anchored`
+artifact's C is the same with and without the flag, stamp included, since
+the row is undeniable and sits above the two the flag denies. The flag is
+swept by `make test-axes` like every deny axis.
 
 ### 2.36 `-futf-check` — `PCREC_FORCE_UTF_CHECK` (bit 39)
 

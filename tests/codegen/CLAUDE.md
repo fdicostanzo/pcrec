@@ -3579,6 +3579,16 @@ The budget arm is the only detector of S370, whose plant keeps every string
 the structural checks read, and the calibration check the only detector of
 S372. S371 trips both kinds of check.
 
+**[OPT-HYB-RESEED-FORM] A1 (2026-10-03, lane rsform, abi 56)** adds three
+witness rows and one check (the block reads 20 checks): `anchored`
+(`^(?>a|ab): (.*)$`) and `gstart` (`\G(?>a|ab)c`) stamp row `anchored` with
+ONE prefilter call site, and each artifact must EQUAL its `-fno-hyb-reseed`
+artifact byte for byte; `unbound` is the same `^` pattern under
+`-fno-vm-anchor-bound`, the control that the pattern otherwise takes
+`adaptive-dense` with the framed calibration. Sabotage S441 (the row's
+predicate answers false) is detected by the stamp, call-site and equality
+checks together.
+
 ## [silentred] 2026-09-30 — `run_recursion_identity.sh` comparison (A)'s sixth exception, module `ctx-node`
 
 [UCP] U2 moves every one-character lookaround / `\b` off the VM (the
