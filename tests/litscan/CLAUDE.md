@@ -34,5 +34,21 @@ candidate, so the S4 L-sweep carries a forced-VM copy of each run.)
   fail both words. Detector of S443/S444/S445.
 - **gen_litrun.py** — writes `litrun.rxt`; every expectation comes from
   python3 `re`, never by hand. Edit the case list there, not the `.rxt`.
+- **reqcube.rxt** — [OPT-LITSCAN] S4 C3 (lane c3build, 2026-10-03, abi 59;
+  `docs/design/litscan_s4.md` §5.1): THE CASELESS NECESSARY RUN's answers,
+  every block on the default route AND under `engine vm`. The design's
+  planned cells: the alternation cube hull in both branch orders, head and
+  tail; the exact-branch hull (`frank|fred`, `a[bc]de`); the kept
+  exact-stretch pins; REQ_BYTE's exact-member rule (`(?i:select)\d+x`); the
+  pair arm's re-search bound, its dispatch (LOWERCASE subjects — an
+  uppercase one cannot see a scan of T alone) and its guard (subjects of
+  length 0..7); the K66 site's whole run; a min-0 repeat between two caseless
+  runs; and the S2b give-up witness (`budget steps=10000`, encoding byte and
+  utf8, its `gu steps` controls). One `# pcre2-only` block: the review's
+  exact L = 30 S2b witness, a python TIME exclusion, its 10.46 probe recorded
+  in the header (NOMATCH at L 16/18, MATCHLIMIT at 30; pcrec NOMATCH by K65).
+  Detector of S446-S452, S454, S456.
+- **gen_reqcube.py** — writes `reqcube.rxt` from python3 `re`; edit the case
+  list there.
 
 Maintenance: update this file when files are added/removed or change roles.

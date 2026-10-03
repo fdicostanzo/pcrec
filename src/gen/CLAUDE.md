@@ -1064,6 +1064,32 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
   `tests/litscan/litrun.rxt` L-sweep (answers, both routes). Sabotage rows
   S267 (the `memcmp` row's sense), S443/S444 (the last word's offset), S445
   (the overlap row's sense).
+  **[OPT-LITSCAN] S4 C3 (lane c3build, 2026-10-03, abi 59) BUILT THE MASKED
+  ROWS** with their first caller, the caseless necessary run: `PcrecRun`
+  gained `k` (per-position K, NULL = exact; every VM caller passes NULL, C2
+  being held), and the table is four rows — `words` (masked, L >= 2: each
+  word `(w(b + o) & w("<K>")) == w("<T>")`, an all-`0xFF` word unmasked, an
+  all-`0x00` word not loaded; deny bit 43), `overlap`, `bytes` (the masked
+  fallback, `((b)[i] & K) == T`), `memcmp` (the exact fallback, now keyed
+  on an exact run). `<PREFIX>_RUN_WORDS` counts both word rows. The words
+  emitter keeps S445's anchor line at its column on purpose (coding_guide
+  §3.4).
+- **emit_dfa.c — the run pre-check's PAIR ARM** ([OPT-LITSCAN] S4 C3, lane
+  c3build, 2026-10-03, abi 59; `docs/design/litscan_s4.md` §2.3.4):
+  `OfsTest` gained `run_mask` (the run pre-check's tests only; a prefilter
+  row's run term is a PIN, exact by definition), `ofs_test_run` takes the
+  array's mask (`run_mask_or_null`), and `ofs_test_emit_fn` dispatches the
+  PAIR arm FIRST (`run_mask[scan_k - run_o] != 0xFF`) because `scan_byte` is
+  set for every run. `ofs_test_emit_pair` writes the two-stream leapfrog with
+  EVERY search inside the `while (pos + maxk < n)` guard (a `fresh` flag
+  makes the first iteration search both) and re-searches a stream iff its hit
+  is `< pos + k*` (`lim`). Also: `req_run_tests` lost its `req_byte < 0` gate
+  and builds both tests masked; `emit_req_set_rest`'s `done[]` marks EXACT
+  whole-run positions only; `req_admit` answers NONE only for no byte AND no
+  run; the run rows read the PIN's exact stretch (`pin.at`/`pin.len`/
+  `pin.idx`), and `ofs_test_verifies_run` asks G1's question over cubes.
+  Checks: `tests/codegen/reqcube_check.py`, `tests/litscan/reqcube.rxt`, the
+  `[K27 pair arm]` NULL driver. Sabotage rows S447-S450, S452, S454, S455.
 - **clskit.c / clskit.h** — [CLS-TREE] S1 (lane clss1, 2026-09-29;
   docs/design/cls_tree_design.md §1, §6; D129, D131): THE CLASS-MATCHER KIT.
   Given a code-point set and nothing else (Constitutional Constraint 1, no

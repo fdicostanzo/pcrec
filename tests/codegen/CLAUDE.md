@@ -28,6 +28,27 @@ or it has no regression net at all.
   `foo\b`, `[ab]/user`), the run pre-check with escape-bearing runs (`a"b`,
   `*/x`), the island's chains and the VM literal run at every overlap length.
   Failing direction measured at landing: S443 and S444 each 17 red, S445 72.
+- **reqcube_check.py** — [OPT-LITSCAN] S4 C3 (lane c3build, 2026-10-03, abi
+  59): THE CASELESS NECESSARY RUN's structural checks
+  (`docs/design/litscan_s4.md` §5.4), run by `run_codegen_tests.sh`'s
+  `[OPT-LITSCAN S4 C3]` block (PASS/FAIL forwarded; 86 checks at landing).
+  Every expectation is read from the witness's `--emit-facts` listing (the
+  facts' one renderer, which the stamps share) and from the PATTERN TEXT,
+  never from the emitted C it checks: the masked verify's words spell the
+  fact's T and K (inside the run, last at L - W, string-literal constants);
+  a pair scan position is two memchr streams on A and A | ~K, each
+  re-searched iff `< pos + k*`, an exact one a single memchr; no memchr
+  above the block's `while (pos + ` guard; `REQ_RUN` equals the fact,
+  `REQ_BYTE` is a `req_set` member and `bytes[idx]` only at an exact scan
+  member, `REQ_WHY "none"` iff byte AND run are none; K65's `rq_set` on the
+  no-DFA-scan route; the kept exact-stretch pins (`a[bc]de` 2:2+2,
+  `(?i)x/1234` 1:1+5) with a prefilter block byte-identical to
+  `-fno-req-run-fold`'s; the deny leaving no masked compare; exact-only
+  controls byte-identical with and without the flag; the CANONICAL FORM
+  (`T & ~K == 0`, popcount 7 or 8) over every corpus pattern's masked rows,
+  floored at 46 (half the 92 measured). Plus, in `run_codegen_tests.sh`
+  itself, the `[K27 pair arm]` NULL-subject driver on `(?i)select` and the
+  K66 witness. Failing direction: sabotage rows S447-S450, S452-S455.
 - **run_prefix_invariance.sh** — K79 (lane k7980, 2026-09-30, abi 54): no
   SELECTION reads the prefix. In `make test-codegen` (~20 s) and on the mech
   arm `prefixinv` (S437). PART 1 compiles the K79 witnesses plus every 40th
