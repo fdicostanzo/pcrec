@@ -230,7 +230,7 @@ time_cells() {
       med() { tr ' ' '\n' <<<"$1" | grep . | sort -g | awk '{a[NR]=$1} END{print a[int((NR+1)/2)]}'; }
       b=$(med "${M[base]}"); n=$(med "${M[new]}"); d=$(med "${M[deny]}")
       ref=$b; [ "$kind" = P ] && ref=$n   # P: bit 45 does not reach it, DENY == NEW
-      dl=$(awk "BEGIN{printf \"%+.5f\", $n-$b}"); fl=$(awk "BEGIN{x=$d-$ref; printf \"%.5f\", x<0?-x:x}")
+      dl=$(awk "BEGIN{printf \"%+.5f\", $n-$b}"); fl=$(awk "BEGIN{x=$d-$ref; printf \"%.5f\", (x<0?-x:x)}")   # parenthesized: BSD awk refuses a bare ?: argument
       v=$(awk "BEGIN{x=$n-$b; a=x<0?-x:x; print (a<=$fl)?\"NULL\":(x<0?\"WIN\":\"REGRESSION\")}")
       printf '%-15s %-22s %-6s %10s %10s %10s  %10s %10s  %s\n' "$name" "$s" "$unit" "$b" "$n" "$d" "$dl" "$fl" "$v"
       unset M
