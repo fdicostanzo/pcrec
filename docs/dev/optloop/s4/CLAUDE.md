@@ -100,3 +100,13 @@ in the design note with its section.
   - `c3_census.tsv` — that raw output (4,663 rows at r2).
   - `c3_report.py` / `c3_summary.txt` — applies the one floor (16 bits) and
     classifies A0/A0b/A1/B/B!/C. The summary is the numbers the note cites.
+- `k82diag/` — **K82's diagnosis instruments** (lane `k82diag`, 2026-10-04;
+  `docs/dev/lanes/k82diag_report.md`): `gen.py` (alpha_c3.sh's subject
+  generator, verbatim), `cnt_pre.h` + `mk.sh` (gate-counting twin of an
+  emitted artifact: `memchr` calls/bytes, compares, gate pass/fail),
+  `tm.sh` (3-launch median timer), `pc.sh` + `corr.py` (union-srch per-call
+  table joined to Linux `c3.out`), `census.py` (rate-priced run information
+  and set-pick-vs-scan-member census over the bench exports; `PCREC`,
+  `BENCH` from the environment). Transcripts: `pc_mac.out`,
+  `lx_union_srch.txt`, `census.out`. Scripts assume a scratch dir with
+  `art/<cell>/<arm>/art.c` and `subj/`; never commit their output trees.
