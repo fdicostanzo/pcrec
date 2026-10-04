@@ -2617,6 +2617,30 @@ append-only or historical records.
   the exact arm's measured 5.6-7.6%, so that row ships only if its alpha
   shows it. §10 holds eleven questions for the manager.
 
+- `litscan_k82b.md` — **K82 cause (B): an expected-cost admission for the
+  run pre-check, as `[FINDINGS.B4]`'s first reader. PROPOSED, design only**
+  (lane `k82cost`, 2026-10-04; instruments in
+  `../dev/optloop/s4/k82cost/`). Per Frank's ruling it uses no compile-time
+  cutoff. Its parts:
+  - **§1 the model.** A discard gate pays only by rejecting. Its expected
+    cost is priced from bundle rates (run-rarity, byte-rate) and measured
+    machine terms (memchr entry, ns/B, ns/stop, the engine's E). The guards
+    are argmin'd: none / byte / run / byte-then-run.
+  - **The rule is right when the rates are**: with the subject as the
+    exemplar it gets every K82 cell correct.
+  - **With no exemplar it declines none of the five movers.** Run-rarity's
+    NONE is cardinality, so `(?i)cat` reads 21 bits against an actual 7.4.
+  - **The call span W is decisive.** On a log line every gate pays, at
+    64 KiB the dense ones lose. The declined 16-bit knee was W in disguise.
+  - **The cure that removes W is an emission.** Twin T3 hands the gate's
+    candidate to the engine. It recovers `mod-i`/`cls-*`, beats DENY on
+    `ci-strasse` and keeps `ci-ascii-ctl`'s win.
+  - **The cost terms are ratio-invariant** (0/44 flips under uniform 2x
+    scaling). E is the weak term.
+  - **§4** is the landing shape: what of `lane/findb4` lands as-is, row 4
+    `run-cost` in k82fix's `req_admits[]`, deny, abi, sabotage.
+  - **§5** holds seven questions; Q1 is to build the handoff first.
+
 **[VAR] THE MVP's PATTERN HALF LANDED 2026-09-23** (lane varmvp, M1-M8 +
 M10; M9 stays gated on `[M4-SUBST]`). The four notes stand as written except
 where the build met them and lost, and those places were first recorded in

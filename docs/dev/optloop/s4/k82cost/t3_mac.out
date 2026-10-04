@@ -1,0 +1,13 @@
+# T3 handoff twins, Mac M1 gcc-16 -O2, drv_findall.c, median of 5 >=50ms loops, ns/B (DIRECTIONAL). worktree build 940fa06e
+mod-i          t-64k  deny:matches=400 median=0.7625 new:matches=400 median=1.3938 t3:matches=400 median=0.8081
+mod-i          t-256k deny:matches=1632 median=0.8388 new:matches=1632 median=1.6876 t3:matches=1632 median=1.0213
+mod-i          t-1m   deny:matches=6030 median=0.8576 new:matches=6030 median=1.7027 t3:matches=6030 median=1.0002
+cls-fold-pair  t-64k  deny:matches=377 median=0.5485 new:matches=377 median=0.9893 t3:matches=377 median=0.5537
+cls-fold-pair  t-256k deny:matches=1557 median=0.7705 new:matches=1557 median=1.3643 t3:matches=1557 median=0.7690
+cls-fold-pair  t-1m   deny:matches=5694 median=0.8008 new:matches=5694 median=1.3772 t3:matches=5694 median=0.8068
+ci-strasse     t-64k  deny:matches=11 median=0.5287 new:matches=11 median=0.6503 t3:matches=11 median=0.4910
+ci-strasse     t-256k deny:matches=50 median=0.6060 new:matches=50 median=0.7402 t3:matches=50 median=0.5651
+ci-strasse     t-1m   deny:matches=190 median=0.6380 new:matches=190 median=0.8126 t3:matches=190 median=0.6109
+ci-ascii-ctl   t-64k  deny:matches=0 median=0.5211 new:matches=0 median=0.2090 t3:matches=0 median=0.2076
+ci-ascii-ctl   t-256k deny:matches=0 median=0.6077 new:matches=0 median=0.3002 t3:matches=0 median=0.2942
+ci-ascii-ctl   t-1m   deny:matches=0 median=0.6375 new:matches=0 median=0.3417 t3:matches=0 median=0.3405

@@ -110,3 +110,9 @@ in the design note with its section.
   `BENCH` from the environment). Transcripts: `pc_mac.out`,
   `lx_union_srch.txt`, `census.out`. Scripts assume a scratch dir with
   `art/<cell>/<arm>/art.c` and `subj/`; never commit their output trees.
+- `k82cost/` — **K82 cause (B)'s expected-cost admission instruments** (lane
+  `k82cost`, 2026-10-04; `docs/design/litscan_k82b.md`): the cost model over
+  the K82 cells × four rate sources (`k82b_model.py`), its 2x sensitivity
+  sweep, the bench break-even census under builtin/`weblog`/`log` rates and
+  three W values, the `memchr` calibration probe, and twin T3 (the gate's
+  candidate handed to the DFA as its scan start). See its own `CLAUDE.md`.
