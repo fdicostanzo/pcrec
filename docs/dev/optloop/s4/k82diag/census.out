@@ -1,0 +1,57 @@
+exact-NONE 23
+exact-NONE kept 23
+exact-rated 75
+exact-rated DECLINED 26
+exact-rated kept 49
+masked-NONE 3
+masked-NONE kept 3
+masked-rated 8
+masked-rated DECLINED 4
+masked-rated kept 4
+norun 236
+sfx-256.rx altwide exact-rated 24 15.1 696e67 103 True
+sfx-512.rx altwide exact-rated 24 15.1 696e67 103 True
+sfx-64.rx altwide exact-rated 24 15.1 696e67 103 True
+keyword-prefix-order.rx capability exact-rated 16 8.9 696e 110 True
+logparse-atomic-removed.rx capability exact-rated 16 10.2 3a20 58 True
+logparse-atomic.rx capability exact-rated 16 10.2 3a20 58 True
+wild-secrets-slack-webhook-url.rx capability masked-rated 100 72.7 434f4d2f53455256494345532f54/dfdfdfffdfdfdfdfdfdfdfdfffdf 47 False
+wild-secrets-username-password-pair.rx capability masked-rated 28 18.0 55534552/dfdfdfdf 61 False
+wild-semdiv-altorder-foo-foobar-rustregex.rx capability exact-rated 24 14.7 666f6f 102 True
+wild-waf-crs-942270-union-select.rx capability masked-rated 42 25.9 53454c454354/dfdfdfdfdfdf none False
+alt-foo-tails.rx litrun exact-rated 24 14.7 666f6f 102 True
+lit-l2.rx litrun exact-rated 16 10.9 6162 98 True
+http-5xx.rx loglines masked-rated 95 81.3 20485454502f312e30222035/fffffffffffffffffeffffff 80 False
+stack-frame.rx loglines exact-rated 24 11.3 617420 97 True
+asr-nwb.rx syntax exact-rated 24 14.0 636174 99 True
+asr-wb.rx syntax exact-rated 24 14.0 636174 99 True
+cls-fold-pair.rx syntax masked-rated 23 13.9 634174/ffdfff 99 True
+cls-n-uc.rx syntax exact-rated 16 8.5 6974 105 True
+cls-pair-ctl.rx syntax masked-rated 23 13.6 636174/fffdff 99 True
+cls-s-lc.rx syntax exact-rated 24 12.8 736174 115 True
+esc-hex.rx syntax exact-rated 24 14.0 636174 99 True
+grp-cap.rx syntax exact-rated 24 14.0 636174 99 True
+grp-named-quote.rx syntax exact-rated 24 14.0 636174 99 True
+grp-named.rx syntax exact-rated 24 14.0 636174 99 True
+grp-noncap.rx syntax exact-rated 16 10.9 6162 98 True
+lit-cat.rx syntax exact-rated 24 14.0 636174 99 True
+mod-i.rx syntax masked-rated 21 13.6 434154/dfdfdf none True
+mod-n.rx syntax exact-rated 24 14.0 636174 99 True
+mod-r.rx syntax masked-rated 21 13.6 434154/dfdfdf none True
+mod-reset.rx syntax exact-rated 16 8.3 6174 97 True
+mod-unset.rx syntax exact-rated 16 8.3 6174 97 True
+mod-x.rx syntax exact-rated 24 14.0 636174 99 True
+qnt-plus-ctl.rx syntax exact-rated 16 10.9 6162 98 True
+qnt-poss-plus.rx syntax exact-rated 16 10.9 6162 98 True
+alt-shared-char.rx utf8 masked-NONE 31 74.7 e697a5e4/fffffffd 230 False
+ci-ascii-control.rx utf8 masked-NONE 21 16.2 414243/dfdfdf none False
+ci-strasse.rx utf8 masked-NONE 21 12.5 545241/dfdfdf none False
+---- row-5 census: set pick rarer than the run's scan member
+wild-secrets-username-password-pair.rx capability masked rated emitted scan=0.0202 setpick=61 0.00332
+stack-frame.rx loglines exact rated emitted scan=0.0542 setpick=40 0.00166
+cls-h.rx syntax exact rated emitted scan=0.0065 setpick=61 0.00332
+cls-n-uc.rx syntax exact rated emitted scan=0.0461 setpick=109 0.01595
+cls-s-lc.rx syntax exact rated emitted scan=0.0420 setpick=99 0.01844
+cls-v.rx syntax exact rated emitted scan=0.0282 setpick=109 0.01595
+mod-s.rx syntax exact rated emitted scan=0.0282 setpick=109 0.01595
+alt-shared-char.rx utf8 masked NONE emitted scan=0.0078 setpick=151 0.00391
