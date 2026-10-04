@@ -12,10 +12,13 @@
  *              (NEON on aarch64, SSE2 on x86-64)
  *   vec_ov     vec, but the tail is ONE overlapped final block ending at n
  *              (n >= 16); n < 16 is the byte loop
+ *   vec_sm     vec_ov plus a loop-free short path for n < 16 (overlapping
+ *              SWAR words / three probes): the "no call, no loop" floor
  *   *_ool      the same body behind __attribute__((noinline)): the call
  *              cost of OUR code, separated from libc's body
  *   pair_libc  two memchr calls, min of the hits (K82's pair arm)
- *   pair_vec   inline 16-byte two-byte search, overlapped final block
+ *   pair_vec   inline 16-byte two-byte search, overlapped final block,
+ *              two overlapping SWAR words for 8..15, byte loop below 8
  *
  * Each span is the MISS case (the needle is absent, the whole span is read:
  * the gate that rejects), plus a hit-at-0 row for the pure entry cost.
@@ -159,9 +162,62 @@ INL const uint8_t *k_vec_ov(const uint8_t *s, uint8_t c, size_t n)
     return NULL;
 }
 
+/* exact zero-byte mask of a word: bit 7 of byte k set iff byte k of w is 0 */
+INL uint64_t zbytes64(uint64_t w)
+{
+    const uint64_t highs = 0x8080808080808080ull;
+    return ~(((w & ~highs) + ~highs) | w) & highs;
+}
+
+/* vec_ov plus a LOOP-FREE short path below 16: two overlapping 8-byte SWAR
+ * words for 8..15, two overlapping 4-byte words for 4..7, and three probes
+ * s[0], s[n>>1], s[n-1] for 1..3 (which cover every position, in order).
+ * Every load stays inside s[0..n). */
+INL const uint8_t *k_vec_sm(const uint8_t *s, uint8_t c, size_t n)
+{
+    if (n >= 16)
+        return k_vec_ov(s, c, n);
+    const uint64_t vc = 0x0101010101010101ull * c;
+    if (n >= 8) {
+        uint64_t a, b;
+        memcpy(&a, s, 8);
+        memcpy(&b, s + n - 8, 8);
+        uint64_t za = zbytes64(a ^ vc), zb = zbytes64(b ^ vc);
+        if (za) return s + (__builtin_ctzll(za) >> 3);
+        if (zb) return s + n - 8 + (__builtin_ctzll(zb) >> 3);
+        return NULL;
+    }
+    if (n >= 4) {
+        uint32_t a, b;
+        memcpy(&a, s, 4);
+        memcpy(&b, s + n - 4, 4);
+        uint64_t za = zbytes64((uint64_t)(a ^ (uint32_t)vc) | 0xFFFFFFFF00000000ull);
+        uint64_t zb = zbytes64((uint64_t)(b ^ (uint32_t)vc) | 0xFFFFFFFF00000000ull);
+        if (za) return s + (__builtin_ctzll(za) >> 3);
+        if (zb) return s + n - 4 + (__builtin_ctzll(zb) >> 3);
+        return NULL;
+    }
+    if (n == 0) return NULL;
+    if (s[0] == c) return s;
+    if (s[n >> 1] == c) return s + (n >> 1);
+    if (s[n - 1] == c) return s + n - 1;
+    return NULL;
+}
+
 INL const uint8_t *k_pair_vec(const uint8_t *s, uint8_t a, uint8_t b, size_t n)
 {
-    if (n < 16) {
+    if (n < 16) { /* vec_sm's loop-free short path, two needles */
+        const uint64_t va = 0x0101010101010101ull * a, vb = 0x0101010101010101ull * b;
+        if (n >= 8) {
+            uint64_t x, y;
+            memcpy(&x, s, 8);
+            memcpy(&y, s + n - 8, 8);
+            uint64_t zx = zbytes64(x ^ va) | zbytes64(x ^ vb);
+            uint64_t zy = zbytes64(y ^ va) | zbytes64(y ^ vb);
+            if (zx) return s + (__builtin_ctzll(zx) >> 3);
+            if (zy) return s + n - 8 + (__builtin_ctzll(zy) >> 3);
+            return NULL;
+        }
         for (size_t i = 0; i < n; i++)
             if (s[i] == a || s[i] == b)
                 return s + i;
@@ -190,15 +246,15 @@ INL const uint8_t *k_pair_libc(const uint8_t *s, uint8_t a, uint8_t b, size_t n)
 }
 
 OOL const uint8_t *k_scalar_ool(const uint8_t *s, uint8_t c, size_t n) { return k_scalar(s, c, n); }
-OOL const uint8_t *k_vec_ool(const uint8_t *s, uint8_t c, size_t n) { return k_vec_ov(s, c, n); }
+OOL const uint8_t *k_vec_ool(const uint8_t *s, uint8_t c, size_t n) { return k_vec_sm(s, c, n); }
 
 /* ---- the variant table ------------------------------------------------ */
 
-enum { V_LOOP, V_LIBC, V_SCALAR, V_SWAR, V_VEC, V_VEC_OV, V_SCALAR_OOL,
-       V_VEC_OOL, V_PAIR_LIBC, V_PAIR_VEC, NV };
+enum { V_LOOP, V_LIBC, V_SCALAR, V_SWAR, V_VEC, V_VEC_OV, V_VEC_SM,
+       V_SCALAR_OOL, V_VEC_OOL, V_PAIR_LIBC, V_PAIR_VEC, NV };
 static const char *const vname[NV] = {
-    "loop", "libc", "scalar", "swar", VEC_NAME, VEC_NAME "_ov",
-    "scalar_ool", VEC_NAME "_ov_ool", "pair_libc", ("pair_" VEC_NAME),
+    "loop", "libc", "scalar", "swar", VEC_NAME, VEC_NAME "_ov", VEC_NAME "_sm",
+    "scalar_ool", VEC_NAME "_sm_ool", "pair_libc", ("pair_" VEC_NAME),
 };
 
 /* One call of variant v. A switch on a loop-invariant v: gcc/clang unswitch
@@ -212,6 +268,7 @@ INL const uint8_t *call(int v, const uint8_t *s, size_t n)
     case V_SWAR:       return k_swar(s, 'Z', n);
     case V_VEC:        return k_vec(s, 'Z', n);
     case V_VEC_OV:     return k_vec_ov(s, 'Z', n);
+    case V_VEC_SM:     return k_vec_sm(s, 'Z', n);
     case V_SCALAR_OOL: return k_scalar_ool(s, 'Z', n);
     case V_VEC_OOL:    return k_vec_ool(s, 'Z', n);
     case V_PAIR_LIBC:  return k_pair_libc(s, 'Z', 'z', n);
@@ -255,9 +312,10 @@ static double now_ns(void)
         return now_ns() - t0;                                                 \
     }
 TIMER(0) TIMER(1) TIMER(2) TIMER(3) TIMER(4) TIMER(5) TIMER(6) TIMER(7) TIMER(8) TIMER(9)
+TIMER(10)
 typedef double (*runner)(const uint8_t *, size_t, const uint8_t *, long, int);
 static const runner runners[NV] = { run_0, run_1, run_2, run_3, run_4,
-                                    run_5, run_6, run_7, run_8, run_9 };
+                                    run_5, run_6, run_7, run_8, run_9, run_10 };
 
 #define MIN_LOOP_NS 50e6 /* D144 addendum 1: >= ~50 ms per timed loop */
 #define REPEATS 3
