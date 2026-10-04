@@ -5,6 +5,20 @@ Q4) by timing hand-rewritten artifacts on the bench's two compilers, x86
 gcc AND clang, BEFORE any emitter text is written. The Mac cannot pick it:
 F2, semantically identical to F1, read x1.742 there.
 
+## Round 1 and round 2
+
+**Round 1** (Linux, 2026-10-03, pack from `bea57c8c`) is in
+`results/round1_2026-10-03/` with its provenance. It timed 20 of its 40
+rows: the pack carried an uncommitted `bakeoff.sh` whose label line failed
+under `set -e` on the first single-subject row (lbvar), so the utf8 cells
+and A1's `lpatom` cell were never timed. No form cleared both compilers
+(`docs/dev/lanes/a2build_report.md`).
+
+**Round 2** (lane a2build) re-runs every row with the fixed kit, adds the
+`f1i` form and the `aL` variant (the keep rows' layout floor), and drops f2
+and f4 from the default `FORMS` (each lost to f1 or f3 on the rows that
+decide round 1). Its pack is built by step 1 below from a committed kit.
+
 ## Manager: three steps
 
 1. **Build the pack (Mac, ~1 min).** From a tree at the lane tip, with main's
@@ -39,12 +53,22 @@ F2, semantically identical to F1, read x1.742 there.
 ## Reading the table
 
 One row per (cell, regime, compiler): the deny's ns, then each variant's
-median over the launches divided by the deny's, `floor` (the larger of
-`d2/d` and `dL/d`: the same program re-launched, and re-linked in the other
-order), and `ans` (every variant's answer hash equals the deny's). The
-footer gives, per compiler and form, the geometric mean and the worst
-form/d over the IMPROVE rows and the worst KEEP-row loss against the shipped
-`a` beyond the floor.
+median over the launches divided by the deny's, two floors, and `ans`
+(every variant's answer hash equals the deny's). `launch` is `|d2/d-1|`, the
+same binary relaunched. `layout` is the larger of `|dL/d-1|` and `|aL/a-1|`,
+the same source re-linked in the other order. They are reported apart
+because round 1 showed they differ in kind: clang lkapos/f read launch 0.0%
+and layout 31.5%, every launch of each binary within 0.5%, which is a
+deterministic layout effect and not noise. A row whose layout floor exceeds
+10% is marked UNMEASURED and left out of the footer. The footer gives, per
+compiler and form, the geometric mean and the largest form/d over the
+IMPROVE rows, and the worst KEEP-row loss against the shipped `a` beyond
+`a`'s own floor (`max(launch, |aL/a-1|)`). The table ends with
+`timed rows: N of M` and a `NOT TIMED:` list; a run that stops early still
+renders (the EXIT trap). `table.py RAW cells.tsv "FORMS"` re-renders any raw
+file; `deltas.py RAW "FORMS"` prints the same rows as ABSOLUTE deltas (ns per
+call on short-search rows, us per pass on find-all rows), which is how D144
+addendum 1 reads the ns-scale short-search rows.
 
 The xcall.md §6 acceptance, applied to the chosen form: answers same on
 every row; every improve row at or under 1 + floor on BOTH compilers; no
