@@ -41,6 +41,38 @@ in the design note with its section.
   addendum 1 it reports ABSOLUTE ns/B deltas beside the floor |DENY - BASE|,
   never a ratio, and a delta inside the floor reads NULL). Its `build`/`check` steps were smoke-tested on the Mac with
   the lane's own binaries; `time` is Linux-only.
+- `c3_movers.py` / `c3_movers.log` — **C3's mover manifest and deny arm**
+  (lane `c3build`, 2026-10-03; design §5.1 item 1): the census's own
+  populations (corpus via `--list-source` with flags/encoding x {auto, vm};
+  every pcrec-bench export x {auto, vm} x {caps, --no-captures}), compiled by
+  the abi-58 and abi-59 compilers and by abi 59 under `-fno-req-run-fold`.
+  Asserts the BICONDITIONAL (moved, byte for byte after the abi digit, <=>
+  NEW's `REQ_RUN` carries `/mask`) and that the deny restores the abi-58
+  artifact whole; lists every mover's REQ_RUN/REQ_WHY/prefilter/pin move.
+  Landing: 41 auto movers = the census's 41 (corpus 15 A1 + 15 C, bench 8 A1
+  + 3 C), 0 off-diagonal, deny arm identical on all 7,802 compiled
+  artifact-configs. `BASE`/`NEW`/`SCR`/`BENCH` from the environment.
+- `c3_answers.py` / `c3_answers.log` / `c3_answers_san.log` — **C3's answer
+  differential** (design §5.1 item 2, §5.2): every mover BASE vs NEW through
+  `tests/possessify/possdiff_driver.c` at every startpos over
+  `tests/findings/b1_mover_answers.py`'s subject sweep (PREFIXES=1) plus
+  subjects of length 0..7, classified by the design's table (give-up ->
+  NOMATCH allowed; NOMATCH -> give-up, give-up -> match and any span change
+  a DEFECT). `_san` is the same run built `-fsanitize=address,undefined
+  -fno-builtin-memcmp -DDIFF_EXACT_SUBJECT`. Landing: 104/104 identical,
+  125,328 cells, both builds.
+- `alpha_c3.sh` — **C3's Linux alpha block** for the manager's executor run
+  (design §6.1-§6.2's C3 table; D144 addendum 1): `build` (BASE = abi 58,
+  NEW = C3, DENY = NEW `-fno-req-run-fold`; every bench set's throughput
+  subjects regenerated under `$S4A` by importing its own generator with its
+  output paths repointed, sha256-checked against the committed manifests),
+  `check` (DENY == BASE modulo the abi digit alone; witnesses moved with a
+  masked REQ_RUN, controls not; answers identical), `time` (taskset, load1 <
+  0.5, launches round-robin, >= 50 ms calibrated loops; ABSOLUTE deltas
+  beside the |DENY - BASE| floor, ns/B for throughput cells and ns/CALL for
+  `union-srch`, union-select's search_short subjects). Cells: union-select
+  nocaps/caps, the census's bench movers, slack and http-5xx (class C),
+  A0/B controls.
 - `hot.c` — a darwin SCRATCH-tier find-all loop over 1 MiB (random text, and
   a near-miss band): today's per-byte fold chain, masked words `&&`/`|`, and
   exact `memcmp`/`overlap`/`|` at L = 7. `gcc-16 -O2 -o hot hot.c && ./hot 0`

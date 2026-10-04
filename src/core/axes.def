@@ -197,6 +197,10 @@ PCREC_AXIS(PCREC_NO_REQ_BYTE, "-fno-req-byte", 0, "", PCREC_AXIS_DEFAULT_ON)
  * is a row of its own rather than a value under the byte check above
  * (reqpos_2b.md §5.3). Denying `-fno-req-byte` denies this with it. */
 PCREC_AXIS(PCREC_NO_REQ_RUN, "-fno-req-run", 0, "", PCREC_AXIS_DEFAULT_ON)
+/* [OPT-LITSCAN] S4 C3: the necessary run's two-member cube positions (the
+ * caseless run, src/facts/req.c). A fact-level deny: the walk takes single
+ * bytes only, as before the row. */
+PCREC_AXIS(PCREC_NO_REQ_RUN_FOLD, "-fno-req-run-fold", 0, "", PCREC_AXIS_DEFAULT_ON)
 
 /* ---- the emitted artifact's human commentary ([EMIT-VERB], D112) -------
  * The first row whose axis is not an OPTIMIZATION at all: it changes no

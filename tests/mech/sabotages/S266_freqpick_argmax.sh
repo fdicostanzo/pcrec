@@ -47,5 +47,5 @@ SAB_DOC_FIGURE="tests/codegen/run_prechecks.sh §3.7 is the whole detector: the 
 SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "[0-9]+x[0-9]+e[0-9]+" && grep -q "^#define RX_REQ_BYTE \"120\"" "$REACH_TMP/o.c" && grep -q "^#define RX_REQ_RUN \"none\"" "$REACH_TMP/o.c" && echo REACH-FREQPICK-SET-ARGMIN'
 SAB_REACH_EXPECT="REACH-FREQPICK-SET-ARGMIN"
 SAB_COUNT=1
-SAB_BEFORE='        if (rate[cand[i]] < rate[cand[best]]) best = i;'
-SAB_AFTER='        if (rate[cand[i]] > rate[cand[best]]) best = i;   /* SABOTAGE S266: the argmin inverted */'
+SAB_BEFORE='        if (m < lo) { lo = m; best = i; }'
+SAB_AFTER='        if (m > lo) { lo = m; best = i; }   /* SABOTAGE S266: the argmin inverted */'

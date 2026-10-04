@@ -194,6 +194,17 @@ defect traced to that edge (design §4.2.1, §10).
   Its header carries the whole analysis account (why the whole window, why a
   SET and a RUN, the declines, why a lookaround's body is a correctness
   decline). Sabotage S268 (`rr_alt`'s common head) is anchored here.
+  **[OPT-LITSCAN] S4 C3 (lane c3build, 2026-10-03, abi 59): A RUN OF
+  POSITIONS.** `RbRun`/`ReqRun` carry a per-position mask K beside the bytes
+  T; a position is a byte or a cube of at most `pos_set` members
+  (`PCREC_MAX_REQ_RUN_POS_SET` = 2, handed in by `facts.c`, 1 under
+  `-fno-req-run-fold`, so the walk reads no option); `rn_better` ranks by
+  information (`Σ popcount(K)`); the alternation's common head/tail are the
+  CUBE HULL; `rn_put` is the one position constructor and refuses a
+  non-canonical pair (`T & ~K != 0`) as an internal error. The floor is in
+  bits (`PCREC_MIN_REQ_RUN_BITS` = 16) at `pf_derive_req_walk`. `req_pick`
+  returns the run's scan member only where it is exact (else the set's
+  pick). `docs/design/litscan_s4.md` §2.3; sabotage S446, S451, S453, S456.
 
 - **kset.c** — [OPT-K] + [OPT-LITSCAN] S1, [PATFACTS] step 3.4: THE K-SET
   WALK (`pcrec_kset_walk`, fact `kset_walk`, E3 core) and THE RUN PIN
@@ -219,6 +230,12 @@ defect traced to that edge (design §4.2.1, §10).
   it is true on some of those (`\zabc`), and EVERY READER OWES THE KIND
   GATE — `src/gen/emit_dfa.c` reads it only through `us_run_pin`.
   Sabotage S280 (the pin ignores the run's bytes) is anchored here.
+  **[OPT-LITSCAN] S4 C3 (abi 59): the pin is the EXACT STRETCH** — PICK
+  (byte candidates, reversed) over the window's exact positions, then the
+  maximal exact stretch around the pick, when it has two or more positions;
+  `RunPin` gained `at`/`len`/`idx` and the derivation takes the byte-rate. On
+  an exact run it is the pre-row pin exactly (the C3 manifest's 0
+  off-diagonal); `--emit-facts` renders `o` or `o:at+len`.
 
 ## What the check cannot catch
 

@@ -22,6 +22,6 @@ SAB_REACH_EXPECT="REACH-FINDINGS-K65-WHOLE-SET-UNDER-BUNDLE"
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='    if (pcrec_artifact_has_dfa_scan(cx)) return;
-    if (r->len >= 2) for (k = 0; k < r->whole_len; k++) done[r->whole[k]] = true;'
+    /* [OPT-LITSCAN] S4 C3: only an EXACT position of the whole run is a byte'
 SAB_AFTER='    return;   /* SABOTAGE S316: the K65 whole-set half never emitted */
-    if (r->len >= 2) for (k = 0; k < r->whole_len; k++) done[r->whole[k]] = true;'
+    /* [OPT-LITSCAN] S4 C3: only an EXACT position of the whole run is a byte'

@@ -1,0 +1,112 @@
+jobs: 8638
+== bench: 1348 distinct artifact-configs (1380 rows)
+  ids: {'moved': 44, 'identical': 1211, 'refused': 93}
+  moved & masked      44   moved & exact       0
+  ident & masked       0   ident & exact    1211
+  auto: movers 11 distinct (11 rows): A1 8 (8 rows), C 3 (3 rows)
+  vm: movers 11 distinct (11 rows): A1 8 (8 rows), C 3 (3 rows)
+  auto-nocaps: movers 11 distinct (11 rows): A1 8 (8 rows), C 3 (3 rows)
+  vm-nocaps: movers 11 distinct (11 rows): A1 8 (8 rows), C 3 (3 rows)
+  deny arm: 1255 identical to BASE, 0 not
+  stamps moved on movers: {'RX_REQ_RUN': 44, 'RX_RUN_WORDS': 38, 'RX_REQ_WHY': 24, 'RX_REQ_BYTE': 4}
+   MOVER auto        '"(?:GET|POST|PUT|PATCH|DELETE|HEAD) [^ "]+ HTTP/1\\.[01]" 5[0'  run "20485454502f312e@4"->"5454502f312e3022@2/fffffffffffffeff" why "emitted"->"emitted" pf "memchr-bounded"->"memchr-bounded" pin none->none [RX_RUN_WORDS]
+   MOVER vm          '"(?:GET|POST|PUT|PATCH|DELETE|HEAD) [^ "]+ HTTP/1\\.[01]" 5[0' --engine=vm run "20485454502f312e@4"->"5454502f312e3022@2/fffffffffffffeff" why "emitted"->"emitted" pf None->None [RX_RUN_WORDS]
+   MOVER auto-nocaps '"(?:GET|POST|PUT|PATCH|DELETE|HEAD) [^ "]+ HTTP/1\\.[01]" 5[0' --no-captures run "20485454502f312e@4"->"5454502f312e3022@2/fffffffffffffeff" why "emitted"->"emitted" pf "memchr-bounded"->"memchr-bounded" [RX_RUN_WORDS]
+   MOVER vm-nocaps   '"(?:GET|POST|PUT|PATCH|DELETE|HEAD) [^ "]+ HTTP/1\\.[01]" 5[0' --engine=vm --no-captures run "20485454502f312e@4"->"5454502f312e3022@2/fffffffffffffeff" why "emitted"->"emitted" pf None->None [RX_RUN_WORDS]
+   MOVER auto        '(?:username|USERNAME|user|USER)[ \\t]*=[ \\t]*["\']([a-zA-Z0-9.'  run "none"->"55534552@0/dfdfdfdf" why "emitted"->"emitted" pf "byte-class"->"byte-class" pin none->none [RX_RUN_WORDS]
+   MOVER vm          '(?:username|USERNAME|user|USER)[ \\t]*=[ \\t]*["\']([a-zA-Z0-9.' --engine=vm run "none"->"55534552@0/dfdfdfdf" why "emitted"->"emitted" pf None->None [RX_RUN_WORDS]
+   MOVER auto-nocaps '(?:username|USERNAME|user|USER)[ \\t]*=[ \\t]*["\']([a-zA-Z0-9.' --no-captures run "none"->"55534552@0/dfdfdfdf" why "emitted"->"emitted" pf "byte-class"->"byte-class" [RX_RUN_WORDS]
+   MOVER vm-nocaps   '(?:username|USERNAME|user|USER)[ \\t]*=[ \\t]*["\']([a-zA-Z0-9.' --engine=vm --no-captures run "none"->"55534552@0/dfdfdfdf" why "emitted"->"emitted" pf None->None [RX_RUN_WORDS]
+   MOVER auto        '(?i)abc' -e utf8 run "none"->"414243@2/dfdfdf" why "none"->"emitted" pf "byte-class"->"byte-class" pin none->none [RX_REQ_WHY,RX_RUN_WORDS]
+   MOVER vm          '(?i)abc' -e utf8 --engine=vm run "none"->"414243@2/dfdfdf" why "none"->"emitted" pf None->None [RX_REQ_WHY,RX_RUN_WORDS]
+   MOVER auto-nocaps '(?i)abc' -e utf8 --no-captures run "none"->"414243@2/dfdfdf" why "none"->"emitted" pf "byte-class"->"byte-class" [RX_REQ_WHY,RX_RUN_WORDS]
+   MOVER vm-nocaps   '(?i)abc' -e utf8 --engine=vm --no-captures run "none"->"414243@2/dfdfdf" why "none"->"emitted" pf None->None [RX_REQ_WHY,RX_RUN_WORDS]
+   MOVER auto        '(?i)cat'  run "none"->"434154@0/dfdfdf" why "none"->"emitted" pf "byte-class"->"byte-class" pin none->none [RX_REQ_WHY,RX_RUN_WORDS]
+   MOVER vm          '(?i)cat' --engine=vm run "none"->"434154@0/dfdfdf" why "none"->"emitted" pf None->None [RX_REQ_WHY,RX_RUN_WORDS]
+   MOVER auto-nocaps '(?i)cat' --no-captures run "none"->"434154@0/dfdfdf" why "none"->"emitted" pf "byte-class"->"byte-class" [RX_REQ_WHY,RX_RUN_WORDS]
+   MOVER vm-nocaps   '(?i)cat' --engine=vm --no-captures run "none"->"434154@0/dfdfdf" why "none"->"emitted" pf None->None [RX_REQ_WHY,RX_RUN_WORDS]
+   MOVER auto        '(?i)https://hooks.slack.com/services/(T[a-z0-9_]{8}/B[a-z0-9'  run "3a2f2f@2"->"5256494345532f54@6/dfdfdfdfdfdfffdf" why "emitted"->"emitted" pf "offset-set"->"offset-set" pin 5->none
+   MOVER vm          '(?i)https://hooks.slack.com/services/(T[a-z0-9_]{8}/B[a-z0-9' --engine=vm run "3a2f2f@2"->"5256494345532f54@6/dfdfdfdfdfdfffdf" why "emitted"->"emitted" pf None->None [RX_RUN_WORDS]
+   MOVER vm-nocaps   '(?i)https://hooks.slack.com/services/(T[a-z0-9_]{8}/B[a-z0-9' --engine=vm --no-captures run "3a2f2f@2"->"5256494345532f54@6/dfdfdfdfdfdfffdf" why "emitted"->"emitted" pf None->None [RX_RUN_WORDS]
+   MOVER auto        '(?i)straÃ\x9fe' -e utf8 run "none"->"545241@2/dfdfdf" why "none"->"emitted" pf "byte-class"->"byte-class" pin none->none [RX_REQ_WHY,RX_RUN_WORDS]
+   MOVER vm          '(?i)straÃ\x9fe' -e utf8 --engine=vm run "none"->"545241@2/dfdfdf" why "none"->"emitted" pf None->None [RX_REQ_WHY,RX_RUN_WORDS]
+   MOVER auto-nocaps '(?i)straÃ\x9fe' -e utf8 --no-captures run "none"->"545241@2/dfdfdf" why "none"->"emitted" pf "byte-class"->"byte-class" [RX_REQ_WHY,RX_RUN_WORDS]
+   MOVER vm-nocaps   '(?i)straÃ\x9fe' -e utf8 --engine=vm --no-captures run "none"->"545241@2/dfdfdf" why "none"->"emitted" pf None->None [RX_REQ_WHY,RX_RUN_WORDS]
+   MOVER auto        '(?i)union.*?select.*?from'  run "none"->"53454c454354@4/dfdfdfdfdfdf" why "none"->"emitted" pf "byte-class"->"byte-class" pin none->none [RX_REQ_WHY,RX_RUN_WORDS]
+   MOVER vm          '(?i)union.*?select.*?from' --engine=vm run "none"->"53454c454354@4/dfdfdfdfdfdf" why "none"->"emitted" pf None->None [RX_REQ_WHY,RX_RUN_WORDS]
+   MOVER auto-nocaps '(?i)union.*?select.*?from' --no-captures run "none"->"53454c454354@4/dfdfdfdfdfdf" why "none"->"emitted" pf "byte-class"->"byte-class" [RX_REQ_WHY,RX_RUN_WORDS]
+   MOVER vm-nocaps   '(?i)union.*?select.*?from' --engine=vm --no-captures run "none"->"53454c454354@4/dfdfdfdfdfdf" why "none"->"emitted" pf None->None [RX_REQ_WHY,RX_RUN_WORDS]
+   MOVER auto        '(?ir)cat'  run "none"->"434154@0/dfdfdf" why "none"->"emitted" pf "byte-class"->"byte-class" pin none->none [RX_REQ_WHY,RX_RUN_WORDS]
+   MOVER vm          '(?ir)cat' --engine=vm run "none"->"434154@0/dfdfdf" why "none"->"emitted" pf None->None [RX_REQ_WHY,RX_RUN_WORDS]
+   MOVER auto-nocaps '(?ir)cat' --no-captures run "none"->"434154@0/dfdfdf" why "none"->"emitted" pf "byte-class"->"byte-class" [RX_REQ_WHY,RX_RUN_WORDS]
+   MOVER vm-nocaps   '(?ir)cat' --engine=vm --no-captures run "none"->"434154@0/dfdfdf" why "none"->"emitted" pf None->None [RX_REQ_WHY,RX_RUN_WORDS]
+   MOVER auto        'c[aA]t'  run "none"->"634174@0/ffdfff" why "dominated"->"emitted" pf "memchr"->"memchr" pin none->none [RX_REQ_WHY,RX_RUN_WORDS]
+   MOVER vm          'c[aA]t' --engine=vm run "none"->"634174@0/ffdfff" why "emitted"->"emitted" pf None->None [RX_RUN_WORDS]
+   MOVER auto-nocaps 'c[aA]t' --no-captures run "none"->"634174@0/ffdfff" why "dominated"->"emitted" pf "memchr"->"memchr" [RX_REQ_WHY,RX_RUN_WORDS]
+   MOVER vm-nocaps   'c[aA]t' --engine=vm --no-captures run "none"->"634174@0/ffdfff" why "emitted"->"emitted" pf None->None [RX_RUN_WORDS]
+   MOVER auto        'c[ac]t'  run "none"->"636174@0/fffdff" why "dominated"->"emitted" pf "memchr"->"memchr" pin none->none [RX_REQ_WHY,RX_RUN_WORDS]
+   MOVER vm          'c[ac]t' --engine=vm run "none"->"636174@0/fffdff" why "emitted"->"emitted" pf None->None [RX_RUN_WORDS]
+   MOVER auto-nocaps 'c[ac]t' --no-captures run "none"->"636174@0/fffdff" why "dominated"->"emitted" pf "memchr"->"memchr" [RX_REQ_WHY,RX_RUN_WORDS]
+   MOVER vm-nocaps   'c[ac]t' --engine=vm --no-captures run "none"->"636174@0/fffdff" why "emitted"->"emitted" pf None->None [RX_RUN_WORDS]
+   MOVER auto        'æ\x97¥æ\x9c¬|æ\x97¥æ\x9b\x9c|æ\x97¥ä»\x98' -e utf8 run "e697a5@2"->"e697a5e4@3/fffffffd" why "emitted"->"emitted" pf "offset-set"->"offset-set" pin 0->0:0+3 [RX_REQ_BYTE]
+   MOVER vm          'æ\x97¥æ\x9c¬|æ\x97¥æ\x9b\x9c|æ\x97¥ä»\x98' -e utf8 --engine=vm run "e697a5@2"->"e697a5e4@3/fffffffd" why "emitted"->"emitted" pf None->None [RX_REQ_BYTE]
+   MOVER auto-nocaps 'æ\x97¥æ\x9c¬|æ\x97¥æ\x9b\x9c|æ\x97¥ä»\x98' -e utf8 --no-captures run "e697a5@2"->"e697a5e4@3/fffffffd" why "emitted"->"emitted" pf "offset-set"->"offset-set" [RX_REQ_BYTE]
+   MOVER vm-nocaps   'æ\x97¥æ\x9c¬|æ\x97¥æ\x9b\x9c|æ\x97¥ä»\x98' -e utf8 --engine=vm --no-captures run "e697a5@2"->"e697a5e4@3/fffffffd" why "emitted"->"emitted" pf None->None [RX_REQ_BYTE]
+== corpus: 7290 distinct artifact-configs (8790 rows)
+  ids: {'identical': 6487, 'refused': 743, 'moved': 60}
+  moved & masked      60   moved & exact       0
+  ident & masked       0   ident & exact    6487
+  auto: movers 30 distinct (30 rows): A1 15 (15 rows), C 15 (15 rows)
+  vm: movers 30 distinct (30 rows): A1 15 (15 rows), C 15 (15 rows)
+  deny arm: 6547 identical to BASE, 0 not
+  stamps moved on movers: {'RX_REQ_RUN': 60, 'RX_REQ_WHY': 27, 'RX_RUN_WORDS': 35}
+   MOVER auto        '((?i:abc))'  run "none"->"414243@1/dfdfdf" why "none"->"emitted" pf "byte-class"->"byte-class" pin none->none [RX_REQ_WHY,RX_RUN_WORDS]
+   MOVER vm          '((?i:abc))' --engine=vm run "none"->"414243@1/dfdfdf" why "none"->"emitted" pf None->None [RX_REQ_WHY,RX_RUN_WORDS]
+   MOVER auto        '(?:ð\x9f\x98\x80|ð\x9f\x98\x81)' -e byte run "f09f98@2"->"f09f9880@2/fffffffe" why "emitted"->"emitted" pf "memchr"->"memchr" pin 0->0:0+3
+   MOVER auto        '(?:ð\x9f\x98\x80|ð\x9f\x98\x81)' -e utf8 run "f09f98@2"->"f09f9880@3/fffffffe" why "emitted"->"emitted" pf "offset-set"->"offset-set" pin 0->0:0+3
+   MOVER auto        '(?i)(?>abc)'  run "none"->"414243@1/dfdfdf" why "none"->"emitted" pf "byte-class"->"byte-class" pin none->none [RX_REQ_WHY,RX_RUN_WORDS]
+   MOVER vm          '(?i)(?>abc)' --engine=vm run "none"->"414243@1/dfdfdf" why "none"->"emitted" pf None->None [RX_REQ_WHY,RX_RUN_WORDS]
+   MOVER auto        '(?i)\\QABC\\E'  run "none"->"414243@1/dfdfdf" why "none"->"emitted" pf "byte-class"->"byte-class" pin none->none [RX_REQ_WHY,RX_RUN_WORDS]
+   MOVER vm          '(?i)\\QABC\\E' --engine=vm run "none"->"414243@1/dfdfdf" why "none"->"emitted" pf None->None [RX_REQ_WHY,RX_RUN_WORDS]
+   MOVER auto        '(?i)\\bcat\\b'  run "none"->"434154@0/dfdfdf" why "none"->"emitted" pf "byte-class-bounded"->"byte-class-bounded" pin none->none [RX_REQ_WHY,RX_RUN_WORDS]
+   MOVER vm          '(?i)\\bcat\\b' --engine=vm run "none"->"434154@0/dfdfdf" why "none"->"emitted" pf None->None [RX_REQ_WHY,RX_RUN_WORDS]
+   MOVER auto        '(?i)abc'  run "none"->"414243@1/dfdfdf" why "none"->"emitted" pf "byte-class"->"byte-class" pin none->none [RX_REQ_WHY,RX_RUN_WORDS]
+   MOVER vm          '(?i)abc' --engine=vm run "none"->"414243@1/dfdfdf" why "none"->"emitted" pf None->None [RX_REQ_WHY,RX_RUN_WORDS]
+   MOVER auto        '(?i)x/1234'  run "2f31323334@0"->"582f31323334@0/dfffffffffff" why "dominated"->"dominated" pf "run-pinned"->"run-pinned" pin 1->1:1+5
+   MOVER auto        '(ABC)' -i run "none"->"414243@1/dfdfdf" why "none"->"emitted" pf "byte-class"->"byte-class" pin none->none [RX_REQ_WHY,RX_RUN_WORDS]
+   MOVER vm          '(ABC)' -i --engine=vm run "none"->"414243@1/dfdfdf" why "none"->"emitted" pf None->None [RX_REQ_WHY,RX_RUN_WORDS]
+   MOVER auto        '([Aa])([ac])d'  run "none"->"416164@2/dffdff" why "dominated"->"emitted" pf "offset-set"->"offset-set" pin none->none [RX_REQ_WHY,RX_RUN_WORDS]
+   MOVER vm          '([Aa])([ac])d' --engine=vm run "none"->"416164@2/dffdff" why "emitted"->"emitted" pf None->None [RX_RUN_WORDS]
+   MOVER auto        '(a(b|c)(d|e))'  run "none"->"616264@1/fffefe" why "dominated"->"emitted" pf "memchr"->"memchr" pin none->none [RX_REQ_WHY,RX_RUN_WORDS]
+   MOVER vm          '(a(b|c)(d|e))' --engine=vm run "none"->"616264@1/fffefe" why "emitted"->"emitted" pf None->None [RX_RUN_WORDS]
+   MOVER auto        '(a[bc]d)'  run "none"->"616264@2/fffeff" why "dominated"->"emitted" pf "offset-set"->"offset-set" pin none->none [RX_REQ_WHY,RX_RUN_WORDS]
+   MOVER vm          '(a[bc]d)' --engine=vm run "none"->"616264@2/fffeff" why "emitted"->"emitted" pf None->None [RX_RUN_WORDS]
+   MOVER auto        '(frank)|fred'  run "6672@0"->"667261@0/fffffb" why "emitted"->"emitted" pf "offset-set"->"offset-set" pin 0->0:0+2 [RX_RUN_WORDS]
+   MOVER vm          '(frank)|fred' --engine=vm run "6672@0"->"667261@0/fffffb" why "emitted"->"emitted" pf None->None [RX_RUN_WORDS]
+   MOVER auto        '/abcd[xy]/user'  run "2f75736572@0"->"2f61626364782f75@6/fffffffffffeffff" why "emitted"->"emitted" pf "memchr"->"memchr" pin 6->6:6+2
+   MOVER vm          '/abcd[xy]/user' --engine=vm run "2f75736572@0"->"2f61626364782f75@6/fffffffffffeffff" why "emitted"->"emitted" pf None->None [RX_RUN_WORDS]
+   MOVER auto        '[ð\x9f\x98\x80ð\x9f\x98\x81]' -e utf8 run "f09f98@2"->"f09f9880@3/fffffffe" why "emitted"->"emitted" pf "offset-set"->"offset-set" pin 0->0:0+3
+   MOVER auto        '\\QABC\\E' -i run "none"->"414243@1/dfdfdf" why "none"->"emitted" pf "byte-class"->"byte-class" pin none->none [RX_REQ_WHY,RX_RUN_WORDS]
+   MOVER vm          '\\QABC\\E' -i --engine=vm run "none"->"414243@1/dfdfdf" why "none"->"emitted" pf None->None [RX_REQ_WHY,RX_RUN_WORDS]
+   MOVER auto        '^(?+10)(a)(b)(c)(d)(e)(f)(g)(h)(i)(j|k)$'  run "6263646566676869@0"->"636465666768696a@7/fffffffffffffffe" why "one-attempt"->"one-attempt" pf "none"->"none" pin ->
+   MOVER auto        '^(a)(b)(c)(d)(e)(f)(g)(h)(i)(j|k)(?-1)$'  run "6263646566676869@0"->"636465666768696a@7/fffffffffffffffe" why "one-attempt"->"one-attempt" pf "none"->"none" pin ->
+   MOVER auto        '^(a)(b)(c)(d)(e)(f)(g)(h)(i)(j|k)(?-10)$'  run "6263646566676869@0"->"636465666768696a@7/fffffffffffffffe" why "one-attempt"->"one-attempt" pf "none"->"none" pin ->
+   MOVER auto        '^(a)(b)(c)(d)(e)(f)(g)(h)(i)(j|k)(?10)$'  run "6263646566676869@0"->"636465666768696a@7/fffffffffffffffe" why "one-attempt"->"one-attempt" pf "none"->"none" pin ->
+   MOVER auto        "^(a)(b)(c)(d)(e)(f)(g)(h)(i)(j|k)\\g'10'$"  run "6263646566676869@0"->"636465666768696a@7/fffffffffffffffe" why "one-attempt"->"one-attempt" pf "none"->"none" pin ->
+   MOVER auto        '^(a)(b)(c)(d)(e)(f)(g)(h)(i)(j|k)\\g<10>$'  run "6263646566676869@0"->"636465666768696a@7/fffffffffffffffe" why "one-attempt"->"one-attempt" pf "none"->"none" pin ->
+   MOVER auto        '^err' -i run "none"->"455252@2/dfdfdf" why "none"->"one-attempt" pf "none"->"none" pin -> [RX_REQ_WHY]
+   MOVER vm          '^err' -i --engine=vm run "none"->"455252@2/dfdfdf" why "none"->"one-attempt" pf None->None [RX_REQ_WHY]
+   MOVER auto        'a-z' -i -e utf8 run "none"->"412d5a@2/dfffdf" why "dominated"->"emitted" pf "offset-set"->"offset-set" pin none->none [RX_REQ_WHY,RX_RUN_WORDS]
+   MOVER vm          'a-z' -i -e utf8 --engine=vm run "none"->"412d5a@2/dfffdf" why "emitted"->"emitted" pf None->None [RX_RUN_WORDS]
+   MOVER auto        'aBc' -i run "none"->"414243@1/dfdfdf" why "none"->"emitted" pf "byte-class"->"byte-class" pin none->none [RX_REQ_WHY,RX_RUN_WORDS]
+   MOVER vm          'aBc' -i --engine=vm run "none"->"414243@1/dfdfdf" why "none"->"emitted" pf None->None [RX_REQ_WHY,RX_RUN_WORDS]
+   MOVER auto        'a[bc]de'  run "6465@0"->"61626465@2/fffeffff" why "dominated"->"emitted" pf "run-pinned"->"run-pinned" pin 2->2:2+2 [RX_REQ_WHY,RX_RUN_WORDS]
+   MOVER vm          'a[bc]de' --engine=vm run "6465@0"->"61626465@2/fffeffff" why "emitted"->"emitted" pf None->None [RX_RUN_WORDS]
+   MOVER auto        'abc' -i run "none"->"414243@1/dfdfdf" why "none"->"emitted" pf "byte-class"->"byte-class" pin none->none [RX_REQ_WHY,RX_RUN_WORDS]
+   MOVER vm          'abc' -i --engine=vm run "none"->"414243@1/dfdfdf" why "none"->"emitted" pf None->None [RX_REQ_WHY,RX_RUN_WORDS]
+   MOVER auto        'foo(?:username|password|passphrase)bar'  run "626172@0"->"64626172@1/feffffff" why "emitted"->"emitted" pf "memchr"->"memchr" pin none->none
+   MOVER auto        'frank|fred'  run "6672@0"->"667261@0/fffffb" why "emitted"->"emitted" pf "offset-set"->"offset-set" pin 0->0:0+2 [RX_RUN_WORDS]
+   MOVER vm          'frank|fred' --engine=vm run "6672@0"->"667261@0/fffffb" why "emitted"->"emitted" pf None->None [RX_RUN_WORDS]
+   MOVER auto        'log$' -i run "none"->"4c4f47@2/dfdfdf" why "none"->"emitted" pf "byte-class-bounded"->"byte-class-bounded" pin none->none [RX_REQ_WHY,RX_RUN_WORDS]
+   MOVER vm          'log$' -i --engine=vm run "none"->"4c4f47@2/dfdfdf" why "none"->"emitted" pf None->None [RX_REQ_WHY,RX_RUN_WORDS]
+c3_movers: PASS (0 off-diagonal, deny or refusal failures)

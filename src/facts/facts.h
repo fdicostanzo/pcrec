@@ -68,7 +68,23 @@ typedef struct {
     unsigned char whole[PCREC_MAX_REQ_RUN_SCAN];
     int whole_len;   /* 0 exactly when `len` is; otherwise len..SCAN */
     int at;          /* where the window starts inside `whole` */
+    /* [OPT-LITSCAN] S4 C3 THE MASKS, each position's K: `(x & mask[i]) ==
+     * bytes[i]` is the position's membership test, `0xFF` an exact byte, one
+     * clear bit a two-member cube (litscan_s4.md §2.3.2). `mask` is exactly
+     * `whole_mask + at`, as `bytes` is `whole + at`. All `0xFF` on an exact
+     * run, so a reader of `bytes`/`len` alone stays correct on every exact
+     * run; `pcrec_req_run_masked` is the one spelling of "is it masked". */
+    unsigned char mask[PCREC_MAX_REQ_RUN_EMIT];
+    unsigned char whole_mask[PCREC_MAX_REQ_RUN_SCAN];
 } ReqRun;
+
+/* Does the run's WINDOW carry a position that is not one exact byte? */
+static inline bool pcrec_req_run_masked(const ReqRun *r)
+{
+    for (int i = 0; i < r->len; i++)
+        if (r->mask[i] != 0xFF) return true;
+    return false;
+}
 
 /* [K65] THE WHOLE NECESSARY SET, as a 256-bit membership table: every byte
  * every match of the pattern must contain, of which the `req_byte` fact is the
@@ -123,16 +139,23 @@ typedef struct {
     PrefixK  k[PCREC_PREFIX_K_MAX];
 } KsetWalk;
 
-/* [OPT-LITSCAN] S1 THE RUN PIN (fact `run_pin`, E3 derived): the necessary
- * run's window (`req_run`'s `bytes`) sits at offset `o` of EVERY match — the
- * walk's `k[o + i]` is the singleton `bytes[i]` for every i. A pure
- * NFA+window fact: it may be true where the forward scan carries no offset-0
- * prefilter, so EVERY READER OWES THE KIND GATE (design §4.5) — read it only
- * where the prefilter kind is not `DFA_PF_NONE`. `pinned == false` is the
- * empty value (no run, a denied run, no pin, an unsealed route). */
+/* [OPT-LITSCAN] S1 THE RUN PIN (fact `run_pin`, E3 derived): an EXACT
+ * stretch of the necessary run's window (`req_run`'s `bytes[at .. at+len)`)
+ * sits at offset `o` of EVERY match — the walk's `k[o + i]` is the singleton
+ * `bytes[at + i]` for every i < len. On an exact run the stretch is the whole
+ * window (`at == 0`, `len == req_run.len`, `idx == req_run.idx`); on a
+ * masked one ([OPT-LITSCAN] S4 C3, litscan_s4.md §2.3.5) it is the maximal
+ * exact stretch around the window's rarest exact position `at + idx`, so a
+ * pin is a fact about EXACT positions only. A pure NFA+window fact: it may
+ * be true where the forward scan carries no offset-0 prefilter, so EVERY
+ * READER OWES THE KIND GATE (design §4.5) — read it only where the
+ * prefilter kind is not `DFA_PF_NONE`. `pinned == false` is the empty value
+ * (no run, a denied run, no pin, an unsealed route). */
 typedef struct {
     bool     pinned;
-    int      o;          /* meaningful only when pinned */
+    int      o;          /* meaningful only when pinned, as are the three below */
+    int      at, len;    /* the stretch inside the window */
+    int      idx;        /* the scanned position inside the stretch */
 } RunPin;
 
 /* THE KIND MASK's bits (fact `kinds`, E1): which construct kinds the pattern

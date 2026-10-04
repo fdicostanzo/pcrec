@@ -94,6 +94,22 @@ reqrun_fn() { sed -n "/^static inline size_t rx_reqrun${2:+_$2}(/,/^}\$/p" "$1";
 PRECHK_RE='memchr(subject + search_from,\|rx_reqrun(subject, subject_length, search_from)'
 # reqrun_scans FILE BYTE: the window block's memchr is for BYTE
 reqrun_scans() { reqrun_fn "$1" | grep -q "memchr(subject + pos[ +0-9]*, $2, n - pos"; }
+# [OPT-LITSCAN] S4 C3: a REQ_RUN stamp `hex@idx[/mask]`'s scan position as
+# its member bytes -- `T[idx]` alone for an exact position, `T[idx]` and
+# `T[idx] | ~K[idx]` for a pair (the block's two streams).
+run_scan_members() {
+    local hex="${1%%@*}" rest="${1#*@}" idx t k=255
+    idx="${rest%%/*}"
+    t=$((16#${hex:$((idx * 2)):2}))
+    [ "$rest" != "${rest#*/}" ] && { local m="${rest#*/}"; k=$((16#${m:$((idx * 2)):2})); }
+    if [ "$k" -eq 255 ]; then echo "$t"; else echo "$t $(( t | (~k & 255) ))"; fi
+}
+# reqrun_scans_run FILE RUNSTAMP: the window block scans every member of the
+# run's scan position, and a pair's two streams are both there.
+reqrun_scans_run() {
+    local b
+    for b in $(run_scan_members "$2"); do reqrun_scans "$1" "$b" || return 1; done
+}
 
 # =========================================================================
 # SECTION 1 — [OPT-ANCHOR-VM]: <PREFIX>_VM_START and the bound it names
@@ -378,12 +394,15 @@ while IFS='%' read -r pat _sep want wantrun; do
     # The cross-check is asserted on EVERY row rather than only on the
     # declining ones — otherwise a compiler that stamped `"none"` in both
     # places together would pass it.
+    # [OPT-LITSCAN] S4 C3 (abi 59): "nothing necessary" is no byte AND no
+    # run, so `RX_REQ_WHY "none"` iff both stamps read "none" — a masked run
+    # over an empty set (`(?i)abc`) has no byte and a pre-check.
     gotwhy="$(stamp "$a" REQ_WHY)"
-    if { [ "$got" = "none" ] && [ "$gotwhy" = "none" ]; } \
-       || { [ "$got" != "none" ] && [ "$gotwhy" != "none" ]; }; then
-        ok "[3.1w] $pat: RX_REQ_BYTE \"$got\" and RX_REQ_WHY \"$gotwhy\" agree about whether a byte was derived"
+    if { [ "$got" = "none" ] && [ "$gotrun" = "none" ] && [ "$gotwhy" = "none" ]; } \
+       || { { [ "$got" != "none" ] || [ "$gotrun" != "none" ]; } && [ "$gotwhy" != "none" ]; }; then
+        ok "[3.1w] $pat: RX_REQ_BYTE \"$got\", RX_REQ_RUN \"$gotrun\" and RX_REQ_WHY \"$gotwhy\" agree about whether anything necessary was derived"
     else
-        bad "[3.1w] $pat: RX_REQ_BYTE \"$got\" and RX_REQ_WHY \"$gotwhy\" disagree about whether a byte was derived"
+        bad "[3.1w] $pat: RX_REQ_BYTE \"$got\", RX_REQ_RUN \"$gotrun\" and RX_REQ_WHY \"$gotwhy\" disagree about whether anything necessary was derived"
     fi
     if [ "$gotwhy" != "emitted" ]; then
         grep -q "$PRECHK_RE" "$a" \
@@ -393,9 +412,18 @@ while IFS='%' read -r pat _sep want wantrun; do
         # The RUN form scans a moving position, so its memchr's second
         # argument is where the stamped byte appears; §4 asserts the loop's
         # own shape and the compare.
-        reqrun_scans "$a" "$got" \
-            && ok "[3.1b] $pat: the run scan's memchr carries the stamped byte $got" \
-            || bad "[3.1b] $pat: stamps \"$got\" with run \"$gotrun\" but no run-scan memchr for that byte is emitted"
+        # [OPT-LITSCAN] S4 C3: an exact scan position is the stamped byte
+        # (REQ_BYTE == bytes[idx]); a pair is scanned as both members and
+        # REQ_BYTE names the set's pick instead (tuning.md §2.27).
+        if [ "$(run_scan_members "$gotrun" | wc -w)" -eq 1 ]; then
+            reqrun_scans "$a" "$got" \
+                && ok "[3.1b] $pat: the run scan's memchr carries the stamped byte $got" \
+                || bad "[3.1b] $pat: stamps \"$got\" with run \"$gotrun\" but no run-scan memchr for that byte is emitted"
+        else
+            reqrun_scans_run "$a" "$gotrun" \
+                && ok "[3.1b] $pat: the run's pair position is scanned on both members ($(run_scan_members "$gotrun"))" \
+                || bad "[3.1b] $pat: run \"$gotrun\" has a pair scan position but the block does not scan both members"
+        fi
     else
         grep -q "memchr(subject + search_from, ${got}, subject_length - search_from)" "$a" \
             && ok "[3.1b] $pat: the memchr carries the stamped byte $got" \
@@ -419,7 +447,7 @@ x(?:yz)+%%122%797a@1
 a{2,4}b%%98%none
 (a)\1?b%%98%none
 foo|bar%%none%none
-(?i)abc%%none%none
+(?i)abc%%none%414243@1/dfdfdf
 a*%%none%none
 (?:ab)*c%%99%none
 (?<=xyz)ab%%98%6162@1
@@ -573,9 +601,15 @@ while IFS='%' read -r pat _sep want wantrun; do
             && bad "[3.6b] -e utf8: $pat: RX_REQ_WHY \"$gotwhy\" and still emits a required-byte memchr" \
             || ok "[3.6b] -e utf8: $pat: RX_REQ_WHY \"$gotwhy\" — no pre-check emitted"
     elif [ "$gotrun" != "none" ]; then
-        reqrun_scans "$a" "$got" \
-            && ok "[3.6b] -e utf8: $pat: the run scan's memchr carries the stamped byte $got" \
-            || bad "[3.6b] -e utf8: $pat: stamps \"$got\" but no run-scan memchr for that byte is emitted"
+        if [ "$(run_scan_members "$gotrun" | wc -w)" -eq 1 ]; then
+            reqrun_scans "$a" "$got" \
+                && ok "[3.6b] -e utf8: $pat: the run scan's memchr carries the stamped byte $got" \
+                || bad "[3.6b] -e utf8: $pat: stamps \"$got\" but no run-scan memchr for that byte is emitted"
+        else
+            reqrun_scans_run "$a" "$gotrun" \
+                && ok "[3.6b] -e utf8: $pat: the run's pair position is scanned on both members" \
+                || bad "[3.6b] -e utf8: $pat: run \"$gotrun\" has a pair scan position the block does not scan on both members"
+        fi
     else
         grep -q "memchr(subject + search_from, ${got}, subject_length - search_from)" "$a" \
             && ok "[3.6b] -e utf8: $pat: the memchr carries the stamped byte $got" \
@@ -584,7 +618,7 @@ while IFS='%' read -r pat _sep want wantrun; do
 done <<'ROWS'
 é%%169%c3a9@1
 (?i)é%%195%none
-x(é|è)y%%195%78c3@1
+x(é|è)y%%121%78c3a879@3/fffffeff
 a\x{1F600}b%%98%61f09f988062@5
 (?i)k%%none%none
 é@%%64%c3a940@2
@@ -857,8 +891,8 @@ while IFS='%' read -r pat _sep why; do
     fi
 done <<'ROWS'
 a{2,4}b%%nothing is joined across a repeat's iterations, so no aa
-(?:xabcy|zabcw)q%%an alternation contributes only its common affixes, so abc is not claimed
-a(?i)bc%%d%%a caselessly folded literal is two-member classes, so bc contributes nothing
+(?:xabcy|wabcv)q%%an alternation contributes only its common affixes, so abc is not claimed (x/w and y/v differ in more than one bit, so not even their cube hull is a position: S4 C3)
+a(?i)bc%%d%%the inline option breaks contiguity with the a, and two caseless letters are 14 bits, under the 16-bit floor (S4 C3)
 (?:ab)*c%%a min-0 repeat breaks contiguity in the one direction that would delete a match
 a[0-9]b[0-9]=%%a multi-member class breaks contiguity around it
 ROWS

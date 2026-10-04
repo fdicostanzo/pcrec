@@ -1060,6 +1060,20 @@ enum {
  * `<PREFIX>_RUN_WORDS` counts what the emitter did. Deny-only (D122 addendum
  * 2 (4)). A `#define` for bit 32's reason. */
 #define PCREC_NO_RUN_OVERLAP PCREC_BIT(43)
+/* [OPT-LITSCAN] S4 C3 `-fno-req-run-fold` — deny the CASELESS NECESSARY RUN
+ * (docs/spec/tuning.md §2.39, docs/design/litscan_s4.md §2.3). The
+ * necessary-run analysis admits, beside a single byte, a position whose byte
+ * set is one two-member cube (a caseless letter `[Ss]`, `[jk]`, an
+ * alternation's one-bit hull), ranks every run by the information its
+ * positions carry, and the run pre-check compares such a run masked, scanning
+ * a two-member position as two streams. Denied, the analysis is the pre-row
+ * one: single bytes only, ranked by length, byte for byte the facts and
+ * program this compiler emitted before abi 59 apart from the stamp lines. A
+ * FACT-LEVEL deny (D126 Q3): `req_whole_run`/`req_run` lose their masked
+ * form for every consumer. It changes no answer either way, so it is masked
+ * out of `rx_info.flags`; `<PREFIX>_REQ_RUN`'s `/mask` suffix records what
+ * the analysis found. A `#define` for bit 32's reason. */
+#define PCREC_NO_REQ_RUN_FOLD PCREC_BIT(44)
 
 /* [ENG-BREP] the counter rung's UNROLL FACTOR, K (counterk_design.md §4.1;
  * eng_brep_design.md §4.5's "K must not become a per-pattern heuristic in v1",

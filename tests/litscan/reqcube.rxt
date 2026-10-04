@@ -1,0 +1,484 @@
+# tests/litscan/reqcube.rxt -- [OPT-LITSCAN] S4 C3: THE CASELESS NECESSARY RUN
+# (docs/design/litscan_s4.md §2.3; src/facts/req.c, src/gen/emit_dfa.c's pair arm,
+# src/gen/runcmp.c's masked rows; docs/spec/tuning.md §2.28, §2.39).
+#
+# Written by gen_reqcube.py; every m/n/ms/ns expectation was produced by python3
+# `re` from the pattern text, never by hand. Every block appears twice, on the
+# default route and under `engine vm`, because the run pre-check is emitted into
+# both engines' search entries. The cells are the design's planned witnesses
+# (§5.1's table): the alternation cube hull in both branch orders, head and tail;
+# the kept exact-stretch pins; REQ_BYTE from an exact member only; the pair arm's
+# re-search bound, its dispatch (LOWERCASE subjects: an uppercase subject cannot
+# see a scan of T alone) and its guard (subjects of length 0..7); the whole run
+# at the K66 site; and the S2b give-up witness, where NOMATCH -> give-up is the
+# defect direction. The `gu` cells are budget CONTROLS: with every necessary
+# byte and the run present no pre-check can help, so they prove the `n` cells
+# pass because of the pre-check rather than because 10000 steps sufficed.
+#
+# THE ONE `# pcre2-only` BLOCK is the review's exact S2b witness at L = 30
+# (`"a" x 30 + "1select"`): python `re` backtracks exponentially there, a
+# TIME exclusion, not a semantic divergence (its L = 16..18 twins above are
+# python-verified). Its `n` follows from absence alone (`S` is necessary and
+# absent). libpcre2 10.46, probed once on the reference box over the tailnet
+# (lane c3build, 2026-10-03): L = 16 and 18 answer NOMATCH (-1), L = 30 answers
+# PCRE2_ERROR_MATCHLIMIT (-47) -- its own required code unit is the caseless
+# `t`, which is present, so it backtracks too; `abcS1SeLeCt` matches (0, 11).
+# pcrec answers NOMATCH at every length, by K65's memchr('S').
+
+# S1 head, branch order A: the common head is the CUBE HULL [Ss][Aa][Bb], never the left branch's exact S (S450 keeps the left mask and deletes 'sab')
+pattern (?:S(?i:ab)|(?i:sab))
+m "sab" 0 3
+m "SAB" 0 3
+m "Sab" 0 3
+m "xsAbx" 1 4
+n "ab"
+n "zab"
+
+# S1 head, branch order A: the common head is the CUBE HULL [Ss][Aa][Bb], never the left branch's exact S (S450 keeps the left mask and deletes 'sab') [engine vm]
+pattern (?:S(?i:ab)|(?i:sab))
+engine vm
+m "sab" 0 3
+m "SAB" 0 3
+m "Sab" 0 3
+m "xsAbx" 1 4
+n "ab"
+n "zab"
+
+# S1 head, branch order B: the hull is symmetric, so the order cannot change the answer
+pattern (?:(?i:sab)|S(?i:ab))
+m "sab" 0 3
+m "SAB" 0 3
+m "Sab" 0 3
+m "xsAbx" 1 4
+n "ab"
+n "zab"
+
+# S1 head, branch order B: the hull is symmetric, so the order cannot change the answer [engine vm]
+pattern (?:(?i:sab)|S(?i:ab))
+engine vm
+m "sab" 0 3
+m "SAB" 0 3
+m "Sab" 0 3
+m "xsAbx" 1 4
+n "ab"
+n "zab"
+
+# S1 tail, branch order A
+pattern (?:(?i:ab)S|(?i:abs))
+m "abs" 0 3
+m "ABS" 0 3
+m "abS" 0 3
+m "xaBsx" 1 4
+n "ab"
+n "abz"
+
+# S1 tail, branch order A [engine vm]
+pattern (?:(?i:ab)S|(?i:abs))
+engine vm
+m "abs" 0 3
+m "ABS" 0 3
+m "abS" 0 3
+m "xaBsx" 1 4
+n "ab"
+n "abz"
+
+# S1 tail, branch order B
+pattern (?:(?i:abs)|(?i:ab)S)
+m "abs" 0 3
+m "ABS" 0 3
+m "abS" 0 3
+m "xaBsx" 1 4
+n "ab"
+n "abz"
+
+# S1 tail, branch order B [engine vm]
+pattern (?:(?i:abs)|(?i:ab)S)
+engine vm
+m "abs" 0 3
+m "ABS" 0 3
+m "abS" 0 3
+m "xaBsx" 1 4
+n "ab"
+n "abz"
+
+# the exact-branch hull: frank|fred reports the masked run fr[ae] (class C of the census)
+pattern frank|fred
+m "fred" 0 4
+m "frank" 0 5
+n "frx"
+n "fre"
+m "xxfrankxx" 2 7
+n "FRED"
+
+# the exact-branch hull: frank|fred reports the masked run fr[ae] (class C of the census) [engine vm]
+pattern frank|fred
+engine vm
+m "fred" 0 4
+m "frank" 0 5
+n "frx"
+n "fre"
+m "xxfrankxx" 2 7
+n "FRED"
+
+# a[bc]de: the run is a[bc]de, the pin the exact stretch 'de' (run_pin 2:2+2); S447 compares the whole window exactly at the pin and deletes 'acde'
+pattern a[bc]de
+m "abde" 0 4
+m "acde" 0 4
+n "ade"
+n "adde"
+n "abd"
+m "zzacdezz" 2 6
+n "aXde"
+
+# a[bc]de: the run is a[bc]de, the pin the exact stretch 'de' (run_pin 2:2+2); S447 compares the whole window exactly at the pin and deletes 'acde' [engine vm]
+pattern a[bc]de
+engine vm
+m "abde" 0 4
+m "acde" 0 4
+n "ade"
+n "adde"
+n "abd"
+m "zzacdezz" 2 6
+n "aXde"
+
+# (?i)x/1234: the run X/1234 masked at x, the pin the exact stretch '/1234' (run_pin 1:1+5), G1 dominated
+pattern (?i)x/1234
+m "x/1234" 0 6
+m "X/1234" 0 6
+n "y/1234"
+n "x/123"
+m "--X/1234--" 2 8
+m "x/1234x/1234" 0 6
+
+# (?i)x/1234: the run X/1234 masked at x, the pin the exact stretch '/1234' (run_pin 1:1+5), G1 dominated [engine vm]
+pattern (?i)x/1234
+engine vm
+m "x/1234" 0 6
+m "X/1234" 0 6
+n "y/1234"
+n "x/123"
+m "--X/1234--" 2 8
+m "x/1234x/1234" 0 6
+
+# S2a: the masked run's scan member is a pair, so REQ_BYTE is the set's pick (x, 120), never T
+pattern (?i:select)\d+x
+m "SELECT12x" 0 9
+n "select12"
+m "sElEcT1x" 0 8
+n "select1y"
+m "xx SeLeCt999x" 3 13
+
+# S2a: the masked run's scan member is a pair, so REQ_BYTE is the set's pick (x, 120), never T [engine vm]
+pattern (?i:select)\d+x
+engine vm
+m "SELECT12x" 0 9
+n "select12"
+m "sElEcT1x" 0 8
+n "select1y"
+m "xx SeLeCt999x" 3 13
+
+# S4 re-search: each first scan hit fails its verify, so the next candidate must come from a stream re-searched past it (S449's `< pos` bound hangs; the watchdog is the detector)
+pattern (?i)select
+m "selecX select" 7 13
+m "SELECXSELECT" 6 12
+m "xSelEcT" 1 7
+m "C c xc seleCt" 7 13
+m "sel ect SELECT" 8 14
+
+# S4 re-search: each first scan hit fails its verify, so the next candidate must come from a stream re-searched past it (S449's `< pos` bound hangs; the watchdog is the detector) [engine vm]
+pattern (?i)select
+engine vm
+m "selecX select" 7 13
+m "SELECXSELECT" 6 12
+m "xSelEcT" 1 7
+m "C c xc seleCt" 7 13
+m "sel ect SELECT" 8 14
+
+# the dispatch, LOWERCASE subjects: a masked scan position is scanned on BOTH its members (S453 scans T alone and deletes every lowercase match)
+pattern (?i)select
+m "select" 0 6
+m "xselectx" 1 7
+m "seLecT" 0 6
+m "selectselect" 0 6
+ms 3 "selectselect" 6 12
+ns 1 "select"
+ms 6 "SELECTselect" 6 12
+
+# the dispatch, LOWERCASE subjects: a masked scan position is scanned on BOTH its members (S453 scans T alone and deletes every lowercase match) [engine vm]
+pattern (?i)select
+engine vm
+m "select" 0 6
+m "xselectx" 1 7
+m "seLecT" 0 6
+m "selectselect" 0 6
+ms 3 "selectselect" 6 12
+ns 1 "select"
+ms 6 "SELECTselect" 6 12
+
+# empty and short subjects (n = 0..7; n = 6 = MAXK + 1 is the first length that enters the loop): every search sits inside the guarded loop (S454 hoists one above it)
+pattern (?i)select
+n ""
+n "s"
+n "abc"
+n "selec"
+n "ELECT"
+m "select" 0 6
+m "selectx" 0 6
+m "XSELECT" 1 7
+
+# empty and short subjects (n = 0..7; n = 6 = MAXK + 1 is the first length that enters the loop): every search sits inside the guarded loop (S454 hoists one above it) [engine vm]
+pattern (?i)select
+engine vm
+n ""
+n "s"
+n "abc"
+n "selec"
+n "ELECT"
+m "select" 0 6
+m "selectx" 0 6
+m "XSELECT" 1 7
+
+# the K66 site: a VM route with no DFA scan and a 12-position run, so the whole run is its own block; S448 compares it unmasked and deletes the lowercase and mixed matches
+pattern (x?)(?i:abcdefghijkl)\1
+features backrefs,modifiers
+m "abcdefghijkl" 0 12
+m "ABCDEFGHIJKL" 0 12
+m "zaBcDeFgHiJkLz" 1 13
+n ""
+n "abcdefghijk"
+m "abcdefghijkL" 0 12
+m "xabcdefghijklx" 0 14
+
+# the K66 site: a VM route with no DFA scan and a 12-position run, so the whole run is its own block; S448 compares it unmasked and deletes the lowercase and mixed matches [engine vm]
+pattern (x?)(?i:abcdefghijkl)\1
+features backrefs,modifiers
+engine vm
+m "abcdefghijkl" 0 12
+m "ABCDEFGHIJKL" 0 12
+m "zaBcDeFgHiJkLz" 1 13
+n ""
+n "abcdefghijk"
+m "abcdefghijkL" 0 12
+m "xabcdefghijklx" 0 14
+
+# three caseless letters (21 bits) clear the 16-bit floor: the shortest masked run
+pattern (?i)abc
+m "abc" 0 3
+m "ABC" 0 3
+m "aBc" 0 3
+n "ab"
+m "xxAbCxx" 2 5
+n "ab c"
+
+# three caseless letters (21 bits) clear the 16-bit floor: the shortest masked run [engine vm]
+pattern (?i)abc
+engine vm
+m "abc" 0 3
+m "ABC" 0 3
+m "aBc" 0 3
+n "ab"
+m "xxAbCxx" 2 5
+n "ab c"
+
+# a min-0 repeat between two caseless runs: nothing joins across it (S446 joins the body and deletes 'select', the zero-iteration match)
+pattern (?i)sel(?:ab)*ect
+m "select" 0 6
+m "SELECT" 0 6
+m "selabect" 0 8
+m "SELABABECT" 0 10
+n "selaect"
+m "xxSeLeCtxx" 2 8
+
+# a min-0 repeat between two caseless runs: nothing joins across it (S446 joins the body and deletes 'select', the zero-iteration match) [engine vm]
+pattern (?i)sel(?:ab)*ect
+engine vm
+m "select" 0 6
+m "SELECT" 0 6
+m "selabect" 0 8
+m "SELABABECT" 0 10
+n "selaect"
+m "xxSeLeCtxx" 2 8
+
+# two caseless letters (14 bits) do not: no run, the per-byte path
+pattern (?i)ab
+m "ab" 0 2
+m "AB" 0 2
+n "a"
+m "xaBx" 1 3
+
+# two caseless letters (14 bits) do not: no run, the per-byte path [engine vm]
+pattern (?i)ab
+engine vm
+m "ab" 0 2
+m "AB" 0 2
+n "a"
+m "xaBx" 1 3
+
+# an exact member in the run: under the default rate the scan is the exact '-', one stream, with a masked verify
+pattern (?i)foo-bar
+m "foo-bar" 0 7
+m "FOO-BAR" 0 7
+m "fOo-BaR" 0 7
+n "foo_bar"
+m "x-y FOO-BAR" 4 11
+n "foo-ba"
+
+# an exact member in the run: under the default rate the scan is the exact '-', one stream, with a masked verify [engine vm]
+pattern (?i)foo-bar
+engine vm
+m "foo-bar" 0 7
+m "FOO-BAR" 0 7
+m "fOo-BaR" 0 7
+n "foo_bar"
+m "x-y FOO-BAR" 4 11
+n "foo-ba"
+
+# all letters: the scan is a pair, two streams
+pattern (?i)foobar
+m "foobar" 0 6
+m "FOOBAR" 0 6
+m "FoObAr" 0 6
+n "fooba"
+m "xx fOOBAr" 3 9
+n "foo bar"
+
+# all letters: the scan is a pair, two streams [engine vm]
+pattern (?i)foobar
+engine vm
+m "foobar" 0 6
+m "FOOBAR" 0 6
+m "FoObAr" 0 6
+n "fooba"
+m "xx fOOBAr" 3 9
+n "foo bar"
+
+# a 12-position run with an exact '_' inside a masked word (its mask byte is 0xFF)
+pattern (?i)group_concat
+m "group_concat" 0 12
+m "GROUP_CONCAT" 0 12
+m "Group_Concat" 0 12
+n "group-concat"
+n "groupconcat"
+m "xxGROUP_concatxx" 2 14
+n "group_conca"
+
+# a 12-position run with an exact '_' inside a masked word (its mask byte is 0xFF) [engine vm]
+pattern (?i)group_concat
+engine vm
+m "group_concat" 0 12
+m "GROUP_CONCAT" 0 12
+m "Group_Concat" 0 12
+n "group-concat"
+n "groupconcat"
+m "xxGROUP_concatxx" 2 14
+n "group_conca"
+
+# a 20-position run, windowed to 8 positions; the window is compared masked
+pattern (?i)information_schema
+m "information_schema" 0 18
+m "INFORMATION_SCHEMA" 0 18
+m "Information_Schema" 0 18
+n "information-schema"
+n "information_schem"
+m "x.INFORMATION_schema.y" 2 20
+
+# a 20-position run, windowed to 8 positions; the window is compared masked [engine vm]
+pattern (?i)information_schema
+engine vm
+m "information_schema" 0 18
+m "INFORMATION_SCHEMA" 0 18
+m "Information_Schema" 0 18
+n "information-schema"
+n "information_schem"
+m "x.INFORMATION_schema.y" 2 20
+
+# union-select, the one measured customer: the run SELECT (42 bits) outranks UNION (35) and FROM (28); REQ_BYTE none, REQ_WHY emitted
+pattern (?i)union.*?select.*?from
+m "union select a from b" 0 19
+m "UNION SELECT A FROM B" 0 19
+m "uNiOn x SeLeCt y FrOm" 0 21
+n "union select"
+n "select from union"
+m "xx union/**/select/**/from" 3 26
+
+# union-select, the one measured customer: the run SELECT (42 bits) outranks UNION (35) and FROM (28); REQ_BYTE none, REQ_WHY emitted [engine vm]
+pattern (?i)union.*?select.*?from
+engine vm
+m "union select a from b" 0 19
+m "UNION SELECT A FROM B" 0 19
+m "uNiOn x SeLeCt y FrOm" 0 21
+n "union select"
+n "select from union"
+m "xx union/**/select/**/from" 3 26
+
+# a caseless run starting at startpos, its context inside a lookbehind's span
+pattern (?<=ab)(?i:cdef)
+features lookaround,modifiers
+ms 2 "abcdef" 2 6
+ms 2 "abCDEF" 2 6
+ns 2 "xxcdef"
+m "abcdef" 2 6
+m "zzabCdEfzz" 4 8
+
+# a caseless run starting at startpos, its context inside a lookbehind's span [engine vm]
+pattern (?<=ab)(?i:cdef)
+features lookaround,modifiers
+engine vm
+ms 2 "abcdef" 2 6
+ms 2 "abCDEF" 2 6
+ns 2 "xxcdef"
+m "abcdef" 2 6
+m "zzabCdEfzz" 4 8
+
+# S2b: K65's second half must still memchr every set member the run does not prove; select's first position's T is 'S', the set's one member, so marking T done (S451) turns these n cells into step give-ups [encoding byte]
+pattern (x?)([a-z]+)+S\d(?i:select)\1
+features backrefs,classes,modifiers
+encoding byte
+budget steps=10000
+n "aaaaaaaaaaaaaaaa1select"
+n "aaaaaaaaaaaaaaaaa1select"
+n "aaaaaaaaaaaaaaaaaa1select"
+m "abcS1SeLeCt" 0 11
+gu steps "aaaaaaaaaaaaaaaaaaSx1select"
+
+# S2b: K65's second half must still memchr every set member the run does not prove; select's first position's T is 'S', the set's one member, so marking T done (S451) turns these n cells into step give-ups [encoding byte, engine vm]
+pattern (x?)([a-z]+)+S\d(?i:select)\1
+features backrefs,classes,modifiers
+encoding byte
+engine vm
+budget steps=10000
+n "aaaaaaaaaaaaaaaa1select"
+n "aaaaaaaaaaaaaaaaa1select"
+n "aaaaaaaaaaaaaaaaaa1select"
+m "abcS1SeLeCt" 0 11
+gu steps "aaaaaaaaaaaaaaaaaaSx1select"
+
+# S2b: K65's second half must still memchr every set member the run does not prove; select's first position's T is 'S', the set's one member, so marking T done (S451) turns these n cells into step give-ups [encoding utf8]
+pattern (x?)([a-z]+)+S\d(?i:select)\1
+features backrefs,classes,modifiers
+encoding utf8
+budget steps=10000
+n "aaaaaaaaaaaaaaaa1select"
+n "aaaaaaaaaaaaaaaaa1select"
+n "aaaaaaaaaaaaaaaaaa1select"
+m "abcS1SeLeCt" 0 11
+gu steps "aaaaaaaaaaaaaaaaaaSx1select"
+
+# S2b: K65's second half must still memchr every set member the run does not prove; select's first position's T is 'S', the set's one member, so marking T done (S451) turns these n cells into step give-ups [encoding utf8, engine vm]
+pattern (x?)([a-z]+)+S\d(?i:select)\1
+features backrefs,classes,modifiers
+encoding utf8
+engine vm
+budget steps=10000
+n "aaaaaaaaaaaaaaaa1select"
+n "aaaaaaaaaaaaaaaaa1select"
+n "aaaaaaaaaaaaaaaaaa1select"
+m "abcS1SeLeCt" 0 11
+gu steps "aaaaaaaaaaaaaaaaaaSx1select"
+
+# S2b, the review's exact witness at L = 30 (see the header: a python TIME
+# exclusion; libpcre2 10.46 answers MATCHLIMIT, pcrec NOMATCH by K65's memchr).
+# pcre2-only
+pattern (x?)([a-z]+)+S\d(?i:select)\1
+features backrefs,classes,modifiers
+n "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1select"

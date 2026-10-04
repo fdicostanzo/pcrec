@@ -58,6 +58,19 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   fallback `[OPT-REQRUN-ENC]` already fixed. `abi` 43 -> 44. Sabotage S329
   (structural-only, S294's own precedent one tie-rule over).
 
+  **[OPT-LITSCAN] S4 C3 (lane c3build, 2026-10-03, abi 59): PICK takes CUBE
+  candidates.** `pcrec_find_pick(rate, cand, care, n, rightmost)`: candidate
+  i is the cube `(cand[i], care[i])` (care NULL = bytes), its cost the rate
+  summed over its members (`cube_mass`), the NONE answer still `rightmost`
+  inside the primitive — one PICK kind extended, not a second
+  (`docs/design/findings/design.md` §6.1/§6.2). `pcrec_find_set_pick` passes
+  NULL; `pcrec_find_run_scan_index` takes the run's masks; and
+  `pcrec_find_run_window_start` lists each window's MEMBERS (every byte of
+  each position's cube) into one sequence-MASS call, so MASS's own NONE
+  (cardinality) applies with no reader branch. Byte-identical on every exact
+  candidate list (the C3 mover manifest's 0 off-diagonal). Sabotage S266/S329
+  re-aimed to the new spellings.
+
 - **varexp.c** — [VAR] M1 (2026-09-23): THE EXPANSION GRAMMAR,
   `${ [!] selector [operator word] }`, parsed ONCE and shared by both
   consumers — a variable inside a PATTERN (module `vars`,

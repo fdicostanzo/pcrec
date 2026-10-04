@@ -4479,7 +4479,7 @@ static void vm_isl_emit(Vm *v, VmIsl *t, int entry, int next)
             }
             pcrec_sb_printf(b, "    if (scan_position + %d <= subject_length && ",
                             n->depth + len);
-            PcrecRun rr = { run, len };
+            PcrecRun rr = { run, NULL, len };
             pcrec_emit_run_compare(v->cx, b, "subject + scan_position", n->depth, &rr);
             v->nlitrun++;
             pcrec_sb_printf(b, ") goto %s_L%d;\n", v->p, t->nd[c].lbl);
@@ -8624,7 +8624,7 @@ static void vm_lit(Vm *v, int entry, const unsigned char *run, int len, int next
     vm_lbl(v, entry, NULL);
     vm_ev(v, VE_LIT, len, next, vm_lit_describe(v, run, len));
     pcrec_sb_printf(v->b, "    if (scan_position + %d <= subject_length && ", len);
-    PcrecRun rr = { run, len };
+    PcrecRun rr = { run, NULL, len };
     pcrec_emit_run_compare(v->cx, v->b, "subject + scan_position", 0, &rr);
     v->nlitrun++;
     pcrec_sb_printf(v->b, ") { scan_position += %d; goto %s_L%d; }\n",

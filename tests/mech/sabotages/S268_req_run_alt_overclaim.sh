@@ -42,5 +42,5 @@ SAB_DOC_FIGURE="tests/harness/run.sh over the full .rxt corpus is the primary de
 SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "(?:/user|/users)" && grep -q "^#define RX_REQ_RUN \"2f75736572@0\"" "$REACH_TMP/o.c" && "$PCREC" --features all -p rx -o "$REACH_TMP/p.c" --pattern "(?:xabcy|zabcw)q" && grep -q "^#define RX_REQ_RUN \"none\"" "$REACH_TMP/p.c" && echo REACH-REQ-RUN-ALT-COMMON-PREFIX'
 SAB_REACH_EXPECT="REACH-REQ-RUN-ALT-COMMON-PREFIX"
 SAB_COUNT=1
-SAB_BEFORE='    o.head = rn_common_head(l.head, r.head);'
-SAB_AFTER='    o.head = rn_longer(l.head, r.head);   /* SABOTAGE S268: one branch is not both */'
+SAB_BEFORE='    o.head = rn_common_head(w, l.head, r.head);'
+SAB_AFTER='    o.head = rn_better(l.head, r.head);   /* SABOTAGE S268: one branch is not both */'

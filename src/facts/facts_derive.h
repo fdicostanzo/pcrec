@@ -56,8 +56,17 @@ long long pcrec_end_window(const PcrecEnc *e, const Ast *root, PfWhyCode *why);
  * is not — an invariant every operation below restores rather than assumes. */
 typedef struct { unsigned char bits[32]; int pick; } RbSet;
 
-/* A necessary CONTIGUOUS run, bounded so the walk's per-frame state cannot
- * grow with the pattern (`PCREC_MAX_REQ_RUN_SCAN`'s limits.def row says why).
+/* A necessary CONTIGUOUS run of POSITIONS, bounded so the walk's per-frame
+ * state cannot grow with the pattern (`PCREC_MAX_REQ_RUN_SCAN`'s limits.def
+ * row says why).
+ *
+ * [OPT-LITSCAN] S4 C3: a position is the CUBE `(bytes[i], mask[i])` — the
+ * bytes `x` with `(x & mask[i]) == bytes[i]` — and every match carries a
+ * member of it there. An exact byte is `mask[i] == 0xFF`; a two-member cube
+ * (a caseless letter) has one free bit. CANONICAL: `bytes[i] & ~mask[i] == 0`
+ * at every position, i.e. `bytes` holds the LOWER member, the one with every
+ * free bit clear (src/facts/req.c's one position constructor refuses any
+ * other pair).
  *
  * `trunc` means the real run is LONGER than the `n` bytes stored, and every
  * truncation is sound in the only direction that matters: a contiguous
@@ -67,7 +76,12 @@ typedef struct { unsigned char bits[32]; int pick; } RbSet;
  * bytes (so its first byte is still the match's first), a TAIL keeps its last
  * (so its last byte is still the match's last), and `best` keeps whichever
  * the operation that built it produced. */
-typedef struct { unsigned char bytes[PCREC_MAX_REQ_RUN_SCAN]; int n; bool trunc; } RbRun;
+typedef struct {
+    unsigned char bytes[PCREC_MAX_REQ_RUN_SCAN];   /* T: each position's lower member */
+    unsigned char mask[PCREC_MAX_REQ_RUN_SCAN];    /* K: 0xFF where exact */
+    int n;
+    bool trunc;
+} RbRun;
 
 static inline bool rb_has(const RbSet *s, int b)
 {
@@ -75,11 +89,15 @@ static inline bool rb_has(const RbSet *s, int b)
 }
 
 /* THE CORE FACTS from ONE walk of the lowered tree: the whole necessary set
- * (with its threaded rightmost member) and the longest guaranteed contiguous
- * run. src/facts/req.c's header carries the whole account: why the whole
- * window and not PCRE2's "other than at its start", why a SET and a RUN, and
- * why a lookaround's body is a correctness decline. */
-void pcrec_req_walk(Ctx *cx, const Ast *root, RbSet *set, RbRun *run);
+ * (with its threaded rightmost member) and the most informative guaranteed
+ * contiguous run. `pos_set` is the largest member set a run position may
+ * have (`PCREC_MAX_REQ_RUN_POS_SET`, or 1 under `-fno-req-run-fold`), handed
+ * in so the walk itself reads no option. src/facts/req.c's header carries
+ * the whole account: why the whole window and not PCRE2's "other than at its
+ * start", why a SET and a RUN, and why a lookaround's body is a correctness
+ * decline. */
+void pcrec_req_walk(Ctx *cx, const Ast *root, int pos_set, RbSet *set,
+                    RbRun *run);
                                                         /* src/facts/req.c */
 
 /* THE DERIVED FACTS, speed choices over the core ones, composed in
@@ -105,10 +123,14 @@ void pcrec_kset_walk(Ctx *cx, const Nfa *nfa, KsetWalk *o);
                                                         /* src/facts/kset.c */
 
 /* [OPT-LITSCAN] S1 THE RUN PIN: the smallest offset at which the walk's
- * singletons spell the run's WINDOW `r->bytes` byte for byte (the SAME bytes
- * the run pre-check compares, litscan_s1.md R3-2). Reads the two facts it is
- * handed and nothing else. */
-void pcrec_run_pin(const KsetWalk *o, const ReqRun *r, RunPin *pin);
+ * singletons spell an EXACT stretch of the run's WINDOW `r->bytes` byte for
+ * byte (the SAME bytes the run pre-check compares, litscan_s1.md R3-2) —
+ * on an exact run the whole window, and on a masked one ([OPT-LITSCAN] S4
+ * C3) the maximal exact stretch around its rarest exact position under
+ * `rate` (the byte-rate, NULL for its NONE answer). Reads the two facts it is
+ * handed and the rate, and nothing else. */
+void pcrec_run_pin(const KsetWalk *o, const ReqRun *r, const uint32_t *rate,
+                   RunPin *pin);
                                                         /* src/facts/kset.c */
 
 #endif /* PCREC_FACTS_DERIVE_H */
