@@ -20,7 +20,12 @@ int main(int argc, char **argv)
         FILE *f = fopen(argv[4 + i], "rb"); fseek(f, 0, SEEK_END); n[i] = (size_t)ftell(f); fseek(f, 0, SEEK_SET);
         b[i] = malloc(n[i] + 1); if (fread(b[i], 1, n[i], f) != n[i]) return 2; fclose(f);
     }
-    double t[64]; uint64_t h = 1469598103934665603ull; ptrdiff_t caps[1][2];
+    double t[64]; uint64_t h = 1469598103934665603ull;
+    /* room for every capture group: a matching subject of a pattern with
+     * groups writes caps[1..], and a caps[1][2] here smashed the stack
+     * (tot read 0.0, so bakeoff.sh calibrated 50,000,000 iterations on
+     * a2_bakeoff_r2's lpatom row; lane a2fix) */
+    ptrdiff_t caps[64][2];
     for (int r = 0; r < reps; r++) {
         double tot = 0;
         for (int i = 0; i < ns; i++) {
