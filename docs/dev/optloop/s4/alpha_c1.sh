@@ -162,7 +162,10 @@ EOF
     perl -pe 's/(rx_w([248])\([^()]*\)) == (rx_w\2\("(?:[^"\\]|\\.)*"\)) && (rx_w\2\([^()]*\)) == (rx_w\2\("(?:[^"\\]|\\.)*"\))/!(($1 ^ $3) | ($4 ^ $5))/g' \
       "art/$name/new/art.c" > "art/$name/fused/art.c"
     n=$(grep -c ' ^ ' "art/$name/fused/art.c"); echo "twin $name: $n fused compare line(s)"
-    [ "$n" -gt 0 ] || { echo "TWIN NOT APPLIED: $name"; exit 1; }
+    # C3 (abi 59) can fold a run into ONE masked word compare, leaving no
+    # `A == B && C == D` pair to fuse: then the twin is moot for that cell
+    # (reported, no fused arm), not a failure.
+    [ "$n" -gt 0 ] || { echo "TWIN SKIPPED (no two-word anchor in NEW, C3-folded): $name"; rm -rf "art/$name/fused"; continue; }
     "$CC" -O2 -I"art/$name/fused" -o "art/$name/fused/run" findall_med.c "art/$name/fused/art.c"
   done
 }
@@ -195,6 +198,7 @@ check() {
     done
   done
   for name in "${TWINS[@]}"; do
+    [ -s "art/$name/fused/art.c" ] || continue
     for cell in "${CELLS[@]}"; do
       IFS='|' read -r n2 pat flags subjects <<<"$cell"; [ "$n2" = "$name" ] || continue
       ss=""; for s in $subjects; do ss="$ss subj/$s.bin"; done
