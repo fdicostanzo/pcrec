@@ -135,8 +135,8 @@ in the utf8 `$_span_match_caseless` residual.
 | `emit_vm.c:4157` `vm_isl_emit`, single-child arm (:4220) | compile time | VM (alternation island) | a per-node `scan_position+d < n && s[pos+d]==b` goto chain. The trie's non-branching chains are straight runs that are not path-compressed |
 | `emit_vm.c:4386` `vm_cursor_rep` (:4442-4450) | compile time | VM (fixed-length rep body) | one `&&` chain over `subject[span_cursor+i]` |
 | `emit_vm.c:5008` `vm_rev_emit` | compile time | VM, BACKWARD | per-byte L1 test with `cur--` |
-| `emit_dfa.c` `emit_req_run_check` / `emit_req_run_rest` via `emit_run_scan_loop` (verify half) | compile time | both (shared text) | **P4 (`emit_exact_compare`, [OPT-LITSCAN] S1)**: `!memcmp(s+c-i, "run", L)` with a constant L. The one site gcc fuses |
-| `emit_dfa.c` `ofsk_emit_verify` | compile time | DFA / hybrid prefilter | a `&&` chain of `s[cand+k]==b` or `ofs_k<k>[s[cand+k]]` over `OfsTest`'s terms; **on a run-pinned row the run is ONE P4 term** (S1) |
+| `emit_dfa.c` `emit_req_run_check` / `emit_req_run_rest` via `emit_run_scan_loop` (verify half) | compile time | both (shared text) | **P4 (`emit_exact_compare`, [OPT-LITSCAN] S1)**: `!memcmp(s+c-i, "run", L)` with a constant L. The one site gcc fuses. **[S4 C1, abi 58] now the run compare** (`pcrec_emit_run_compare`, `src/gen/runcmp.c`): two overlapping `memcpy`-loaded words at L in {3, 5-7, 9-15}, the `memcmp` elsewhere |
+| `emit_dfa.c` `ofsk_emit_verify` | compile time | DFA / hybrid prefilter | a `&&` chain of `s[cand+k]==b` or `ofs_k<k>[s[cand+k]]` over `OfsTest`'s terms; **on a run-pinned row the run is ONE P4 term** (S1); since S4 C1 that term is the run compare |
 | `enc_byte.c:153/184` `$_span_match[_caseless]` ← `emit_vm.c:8116` `vm_bref` (:8209), `:8281` `vm_var` (:8297) | **run time** | VM | a byte loop that returns a prefix count. The caseless form uses the arithmetic fold |
 | `enc_utf8.c:115/148` | run time | VM, utf8 | decode + fold. Stays its own |
 
@@ -187,9 +187,9 @@ in the utf8 `$_span_match_caseless` residual.
 | primitive | single source of truth | the agreement check that must guard it | produced by | consumed by |
 |---|---|---|---|---|
 | P1 fold relation | `src/core/fold.c` (+ `utf8_fold_pairs.inc`, generated from `third_party/ucd-16.0.0`) | `fold_agreement_check.c` (S116), `fold_agreement_utf8_check.c` (A/B/C). **The kit joins as the third consumer** | L0 | `cls_casefold`, the span residuals, kit masks, the cls-fold recognizer (to be) |
-| P2 byte cube `(K,T)` | **to be created** in `src/core/` (next to `cpset.c`). Absolute byte domain, from an interval list | the exact 256-point membership check (wf's), run over every class the corpus produces; the fold pairs must come out K=0xDF (a P1 tie) | `[WORD-FOLD]`/kit or `[CLS-TREE]`, whichever lands first | L1 (cls-fold, the CLS-TREE sections), L2 lanes, L3 cube scan |
+| P2 byte cube `(K,T)` | **CREATED at S4 C0 (2026-10-03)**: `pcrec_cube_of` (one definition parameterized by the domain) + `pcrec_cls_cube` (the absolute byte-domain reader) in `src/core/cpset.c`; clskit's `cube_of` is a caller over a section's span. Previously "to be created" in `src/core/` (next to `cpset.c`). Absolute byte domain, from an interval list | the exact 256-point membership check (wf's), run over every class the corpus produces; the fold pairs must come out K=0xDF (a P1 tie) | `[WORD-FOLD]`/kit or `[CLS-TREE]`, whichever lands first | L1 (cls-fold, the CLS-TREE sections), L2 lanes, L3 cube scan |
 | P3 literal run fact (bytes, or cubes per position, plus offset from the candidate start) | today split: `Job.req_run` (necessary, anywhere); `PrefixKSets` (per offset, sets); the VM chain (implicit in the AST) | the REQ_RUN stamps + `run_prechecks.sh` §4/§5; identity gates | `reqbyte.c`, `prefix_k.c`, (future) an emitter-level maximal-run recognizer | L2/L3 sites. **A `[PATFACTS]` customer: one record, not three walks** |
-| P4 the compare (L2) | today the only fused form is `emit_req_run_check`'s constant-length `memcmp`. The kit's compare generalizes it: exact → memcmp, cube positions → `(w&K)==T` | answer-identity (test-axes) per deny flag; UBSan/ASan both axes for the subject-end guard | `[OPT-LITSCAN]` | VM chain (`[OPT-VMLIT]`), island chain, cursor chain, ofsskip verify, REQ_RUN verify, span_match (run-time K/T, on need) |
+| P4 the compare (L2) | **since S4 C1 (abi 58) `pcrec_emit_run_compare` (`src/gen/runcmp.c`), a first-match row table: `overlap` (exact, L in {3, 5-7, 9-15}, two overlapping words, deny `-fno-run-overlap`) then `memcmp` (P4's text, the exact fallback); the masked rows (`words`, `bytes`, cube positions → `(w&K)==T`) land with their first caller, S4 C3.** Before S4 the only fused form was `emit_req_run_check`'s constant-length `memcmp` | answer-identity (test-axes) per deny flag; UBSan/ASan both axes for the subject-end guard | `[OPT-LITSCAN]` | VM chain (`[OPT-VMLIT]`), island chain, cursor chain, ofsskip verify, REQ_RUN verify, span_match (run-time K/T, on need) |
 | P5 the search (L3) | today `memchr` spelled at four sites. The kit's search is operand (byte, or cube via SWAR) + offset + FORM chosen from the prior | the `RX_DFA_PREFILTER`/`RX_REQ_*` stamps each derive from the SAME selection object as the text (the existing discipline) | `[OPT-LITSCAN]`, `[OPT-A]` (pair / skip / Teddy leads) | DFA prefilter, ofsskip, pre-check, emit_attempt |
 | P6 frequency prior | `prefix_k.c:89` table + the `pcrec_byte_freq_ppm` accessor; the ENCODING KEY belongs WITH the value (`reqbyte_freq_pick.md` §3.3) | sum check; the utf8 zero-movers control. **Owed: one gate at the accessor, not per reader** | static today; `[ENG-PGO]` `freq` block later | offset-k model, rb_pick/run window, G1 dominance, the kit's FORM choice |
 | P7 admission | `req_admit` | `run_prechecks.sh` §5, S269/S270 | `[OPT-PRECHECK-ADMIT]` | every pre-check emission + the three stamps. The router/keyword elision is a G1 widening INSIDE it, never a second predicate |
@@ -225,6 +225,13 @@ record):**
 - `emit_attempt`'s `\n` memchr and `DFA_PF_MEMCHR`: one byte with no verify.
   They are already P5's degenerate arm and need no change unless a verify
   appears. **Status: provisional. A site that joins later updates this line.**
+- [S4 C1, 2026-10-03] the cursor rung's fixed-length `&&` chain
+  (`vm_cursor_rep`) and the backward walk (`vm_rev_emit`): S2a left both exact
+  sites alone and S4 keeps parity (`litscan_s4.md` §2.4). Moving them is the
+  same emitter plus a cursor base; the trigger is a census of cursor/backward
+  bodies of length >= 3 plus a cell. Every OTHER exact literal-run compare
+  (ofsskip run term, run pre-check, VM literal run, island single-child
+  chains) is the run compare's caller since S4 C1.
 
 ---
 

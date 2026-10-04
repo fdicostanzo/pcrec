@@ -178,6 +178,15 @@ comment and the row's header.
   `rx_span_match_caseless` — compiled out of an artifact pcrec actually
   emitted — against `pcrec_ascii_fold`, which `cls_casefold` derives from.
   Neither side can be edited into agreement with the other.
+  **[OPT-LITSCAN] S4 C0 (2026-10-03) adds its (b) arm, the fold's THIRD
+  consumer**: `pcrec_cls_cube` (src/core/cpset.c) of every fold set
+  {c, pcrec_ascii_fold[c]} must be K = 0xDF on the 52 letters and K = 0xFF on
+  the other 204 bytes, T = c & K, plus two negative cells ({a,b}, {a,b,c}) and
+  one non-caseless cube ([0-7], K = 0xF8) so the reader cannot pass by calling
+  everything a cube. The caseless run mask (litscan_s4.md §1.2) is this cube,
+  so the arm ties P2 to P1. Sabotage S442 (a section-relative base) reads red
+  here. The design's (c) arm (an EMITTED 256-position masked run) belongs to
+  C2, which is HELD.
 - **fold_agreement_utf8_check.c** — the same obligation for the `utf8`
   encoding ([M5.0] stage 4, `utf8_design.md` §4.6), run as
   `run_backref_diff.sh` §9b. **A SECOND FILE rather than a wider sweep in the

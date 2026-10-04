@@ -10,6 +10,24 @@ or it has no regression net at all.
 
 ## Files
 
+- **runcmp_check.py** — [OPT-LITSCAN] S4 C1 (lane s4build, 2026-10-03, abi
+  56): the RUN COMPARE's structural checks (`src/gen/runcmp.c`,
+  `docs/design/litscan_s4.md` §5.4), run by `run_codegen_tests.sh`'s
+  `[OPT-LITSCAN S4]` block (PASS/FAIL lines forwarded; ~99 checks). Every
+  `rx_w<W>(base + o) == rx_w<W>("...")` chain in each witness artifact is
+  decoded back to (offset, bytes) words and held to the run the witness
+  names from its PATTERN text (never from the compiler): every word inside
+  the run, the first at 0, the last at exactly L - W, no byte uncovered, the
+  words spelling the run byte for byte, no integer-literal constant; per
+  artifact, helpers declared for exactly the widths used and ahead of use,
+  `RX_RUN_WORDS` equal to the word compares in the text, the artifact
+  compiling under `-Wall -Wextra -Werror`, and under `-fno-run-overlap` no
+  word compare or helper left, `RX_RUN_WORDS 0`, each word compare restored
+  to exactly one `memcmp`; and the pay-for-what-you-use lengths (L 4, 8, 16
+  stay one `memcmp`). Witnesses cover the DFA run term (`/user|/users`,
+  `foo\b`, `[ab]/user`), the run pre-check with escape-bearing runs (`a"b`,
+  `*/x`), the island's chains and the VM literal run at every overlap length.
+  Failing direction measured at landing: S443 and S444 each 17 red, S445 72.
 - **run_prefix_invariance.sh** — K79 (lane k7980, 2026-09-30, abi 54): no
   SELECTION reads the prefix. In `make test-codegen` (~20 s) and on the mech
   arm `prefixinv` (S437). PART 1 compiles the K79 witnesses plus every 40th
@@ -3176,6 +3194,15 @@ written from the measured artifact rather than harvested at run time, plus a
 STALENESS arm (a listed pattern that is no longer a `pattern` line under
 `tests/` fails) and a non-vacuity floor.
 
+**[OPT-VEDGE] (lane vedge, 2026-10-03)** moved two manifest rows
+(`\b\w+\b\z` forward 1 -> 2, `\b\w+\z` 1 -> 3) and added SECTION (6): three
+patterns' forward/reverse/anchored edge counts under the view-tolerant edge
+(`(?:[a-z]{0,4})\z` the END-view chain and the reverse TRIM, `[0-9]{3}\z` the
+anchored machine, `a{0,4}$` the EOL-view refusal beside the trim), each
+required to read 0 0 0 under `-fno-view-edge`. Its direction half has no
+structural witness; tests/assertions/view_edge.rxt's answers are that
+detector (row S440).
+
 Two things it asserts and one it deliberately does not.
 
 - **The edge count per MACHINE**, read off the artifact's own `[OPT-5] SCAN
@@ -3578,6 +3605,16 @@ recompute, the budget arm's control and its two subjects). It covers:
 The budget arm is the only detector of S370, whose plant keeps every string
 the structural checks read, and the calibration check the only detector of
 S372. S371 trips both kinds of check.
+
+**[OPT-HYB-RESEED-FORM] A1 (2026-10-03, lane rsform, abi 56)** adds three
+witness rows and one check (the block reads 20 checks): `anchored`
+(`^(?>a|ab): (.*)$`) and `gstart` (`\G(?>a|ab)c`) stamp row `anchored` with
+ONE prefilter call site, and each artifact must EQUAL its `-fno-hyb-reseed`
+artifact byte for byte; `unbound` is the same `^` pattern under
+`-fno-vm-anchor-bound`, the control that the pattern otherwise takes
+`adaptive-dense` with the framed calibration. Sabotage S441 (the row's
+predicate answers false) is detected by the stamp, call-site and equality
+checks together.
 
 ## [silentred] 2026-09-30 — `run_recursion_identity.sh` comparison (A)'s sixth exception, module `ctx-node`
 

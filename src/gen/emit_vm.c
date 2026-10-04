@@ -285,7 +285,7 @@ typedef enum {
     VE_CALL,     /* a: the callee region's entry label id,
                   *    b: the return label id                       */
     VE_RETURN,   /* a: the callee region's entry label id           */
-    /* [OPT-LITSCAN] S2a one P4 compare consuming a literal run: a: its
+    /* [OPT-LITSCAN] S2a one run compare consuming a literal run: a: its
      * length, b: next label, text: the run's bytes as the listing shows them */
     VE_LIT,
     /* [CLS-TREE] S4 one decode + kit test consuming ONE CHARACTER of a wide
@@ -4458,11 +4458,12 @@ static void vm_isl_emit(Vm *v, VmIsl *t, int entry, int next)
                : NULL);
 
         if (n->nkids == 1 && inrun[n->child]) {
-            /* [OPT-LITSCAN] S2a THE ISLAND'S OWN RECOGNIZER, sharing only P4
-             * (patfacts design §8.2 item 3): the trie's single-child chain
-             * from here to the first node that branches or accepts is one
-             * literal run, compared at this node's depth in one bounds check
-             * and one constant-length `memcmp`. Its nodes charge the node
+            /* [OPT-LITSCAN] S2a THE ISLAND'S OWN RECOGNIZER, sharing only the
+             * run compare (patfacts design §8.2 item 3; S4's
+             * `pcrec_emit_run_compare`): the trie's single-child chain from
+             * here to the first node that branches or accepts is one literal
+             * run, compared at this node's depth in one bounds check and one
+             * run compare. Its nodes charge the node
              * budget each, as the per-node compares did. A mismatch dies at
              * THIS node, which charges the work budget this node's depth:
              * the run is one compare, charged as one (docs/spec/limits.md
@@ -4478,10 +4479,8 @@ static void vm_isl_emit(Vm *v, VmIsl *t, int entry, int next)
             }
             pcrec_sb_printf(b, "    if (scan_position + %d <= subject_length && ",
                             n->depth + len);
-            pcrec_emit_exact_compare(b, n->depth
-                                        ? pcrec_sb_fragf(&v->cx->arena, "subject + scan_position + %d", n->depth)
-                                        : "subject + scan_position",
-                                     run, len);
+            PcrecRun rr = { run, len };
+            pcrec_emit_run_compare(v->cx, b, "subject + scan_position", n->depth, &rr);
             v->nlitrun++;
             pcrec_sb_printf(b, ") goto %s_L%d;\n", v->p, t->nd[c].lbl);
             vm_ev(v, VE_GOTO, t->nd[c].lbl, 0,
@@ -8607,10 +8606,11 @@ static const char *vm_lit_describe(Vm *v, const unsigned char *run, int len)
     return vm_rolef(v, "'%s' (%d bytes)", q, len);
 }
 
-/* Emits a literal run at label `entry` as ONE P4 exact compare, continuing at
- * `next`: `pos + len <= n`, then a constant-length `memcmp`, so the run reads
- * exactly its own bytes and never past the subject's end (P8, compare_stack.md
- * §4). [OPT-LITSCAN] S2a, patfacts design §8.2; the bytes come from
+/* Emits a literal run at label `entry` as ONE run compare, continuing at
+ * `next`: `pos + len <= n`, then `pcrec_emit_run_compare` (a constant-length
+ * `memcmp`, or two overlapping words at the lengths gcc decomposes), so the
+ * run reads exactly its own bytes and never past the subject's end (P8,
+ * compare_stack.md §4). [OPT-LITSCAN] S2a, patfacts design §8.2; the bytes come from
  * `pcrec_lit_run`, the fact `vm_cost_cat` and `vm_count_slots` read too.
  *
  * WHAT IT CHARGES IS WHAT THE PER-BYTE CHAIN CHARGED. The node budget pays
@@ -8624,7 +8624,8 @@ static void vm_lit(Vm *v, int entry, const unsigned char *run, int len, int next
     vm_lbl(v, entry, NULL);
     vm_ev(v, VE_LIT, len, next, vm_lit_describe(v, run, len));
     pcrec_sb_printf(v->b, "    if (scan_position + %d <= subject_length && ", len);
-    pcrec_emit_exact_compare(v->b, "subject + scan_position", run, len);
+    PcrecRun rr = { run, len };
+    pcrec_emit_run_compare(v->cx, v->b, "subject + scan_position", 0, &rr);
     v->nlitrun++;
     pcrec_sb_printf(v->b, ") { scan_position += %d; goto %s_L%d; }\n",
                     len, v->p, next);
@@ -10970,7 +10971,7 @@ static void vm_plan_entry(Vm *v, const VmPlan *pl, VmEntry *en)
  *
  * The predicates are a CLOSED tag set evaluated by one exhaustive switch
  * (`vm_reseed_holds`), clskit's `ROWS` shape; the actions likewise. */
-enum { VRS_P_EXACT, VRS_P_CLAMPED, VRS_P_DENSE, VRS_P_TRUE };
+enum { VRS_P_EXACT, VRS_P_CLAMPED, VRS_P_ANCHORED, VRS_P_DENSE, VRS_P_TRUE };
 enum { VRS_A_FIXED, VRS_A_ADAPT };
 enum { VRS_S_NONE, VRS_S_FIRST, VRS_S_CAP };
 
@@ -10983,7 +10984,13 @@ enum { VRS_S_NONE, VRS_S_FIRST, VRS_S_CAP };
  * attempts today's retry runs, so a give-up can become an answer and never
  * the reverse; on a clamped hybrid today's retry already re-seeds after
  * every failure, a step block would ADD attempts, and the measured gain was
- * mixed (r1 panel sem F1, docs/dev/reseed/clamped.md). The two adaptive rows run ONE
+ * mixed (r1 panel sem F1, docs/dev/reseed/clamped.md). `anchored` is
+ * undeniable for `exact`'s reason, the choice does not exist: under a
+ * `start_anchor` fact the attempt loop's bound (`attempt_max`,
+ * [OPT-ANCHOR-VM]) returns after the first failed attempt, so the retry is
+ * never reached and an adaptive tail would be dead text that gcc cannot
+ * prove dead — the seed comes from the prefilter ([OPT-HYB-RESEED-FORM]
+ * A1, docs/design/xcall.md §4). The two adaptive rows run ONE
  * machine and differ only in the starting state their last two columns
  * name: `adaptive-dense` starts inside a capped step block that is armed,
  * `adaptive` starts with the class's `first` probation, unarmed. */
@@ -10998,6 +11005,11 @@ const PcrecReseedRow pcrec_reseed_rows[] = {
       "failed attempt: kept, because a step block would add attempts it "
       "skips (an answer could become a give-up) for a gain measured mixed",
       VRS_P_CLAMPED, VRS_A_FIXED, VRS_S_NONE, false },
+    { "anchored", 0,
+      "every match begins at one position (`^`, `\\A`, `\\G` — the start_anchor "
+      "fact), so the attempt loop stops after its first attempt and no "
+      "retry runs: today's retry, whose text is never reached",
+      VRS_P_ANCHORED, VRS_A_FIXED, VRS_S_NONE, false },
     { "adaptive-dense", PCREC_NO_HYB_RESEED,
       "the compile's byte-rate prior (the built-in default under -e byte, "
       "cardinality where the prior is NONE) puts the candidate scan's byte "
@@ -11059,6 +11071,10 @@ static bool vm_reseed_holds(const Vm *v, const VmReseed *rs, unsigned char p)
     switch (p) {
     case VRS_P_EXACT: return v->mrl_win;
     case VRS_P_CLAMPED: return v->nclamp > 0;
+    /* The fact `att_max` reads, so the row and the bound it relies on are
+     * one derivation; `-fno-vm-anchor-bound` empties both together. */
+    case VRS_P_ANCHORED:
+        return pcrec_fact_start_anchor(v->cx) != PCREC_SANCH_NONE;
     case VRS_P_DENSE:
         return (unsigned long long)pcrec_dfa_cand_ppm(v->cx) * rs->cal.gap > 1000000ull;
     case VRS_P_TRUE:  return true;
@@ -13828,6 +13844,7 @@ static void vm_emit_epilogue(Vm *v, const GenNames *g, const VmPlan *pl)
     const long long work_budget = pl->caps.work_budget;
     const bool      has_budget  = pl->caps.has_budget;
 
+    pcrec_emit_runcmp_stamp(cx, &job->csb, g->upper);
     pcrec_emit_residual(cx);
 
     pcrec_emit_info(cx, g, 2, job->fit.why,

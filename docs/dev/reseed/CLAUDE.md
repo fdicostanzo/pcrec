@@ -35,6 +35,14 @@ session scratchpad, never from a checkout.
   1 MiB (find-all plus seeded startpos) and 4 KB at every startpos, and a
   BUDGET arm under `--step-budget`/`--work-budget` that checks the
   one-direction give-up claim (base answered => new answers identically).
+- `anchored_sweep.py` — lane rsform's ([OPT-HYB-RESEED-FORM] A1,
+  2026-10-03) byte-identity sweep of the `anchored` row, branch point
+  (abi 55) against the change (abi 56), default and `-fno-hyb-reseed`, with
+  an `--extra` engine arm (`--engine=vm -fprefilter`). It asserts base-deny
+  == new-deny everywhere; base == new except on the movers (new stamps
+  `anchored`, base stamped `adaptive*`); a mover's diff is exactly the
+  adaptive text REMOVED; and an `anchored` artifact equals its own deny
+  byte for byte. Its TSV feeds `answer_diff.py` unchanged.
 - `clamped.md` — r1 sem F1's measurement: do the CLAMPED
   over-approximating hybrids gain from the adaptive retry? Mixed, and the
   contract cost is answer -> give-up, so they take the `clamped` row.

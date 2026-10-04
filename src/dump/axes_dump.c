@@ -636,9 +636,20 @@ static void emit_predicate_axes(StrBuf *sb)
         PredAxis p = { "lit-run", NULL, "RX_VM_LIT_RUNS", "", 0, NULL, 0, NULL, NULL, NULL };
         emit_pred_row(sb, &p, 1, "run", "",
                      PCREC_NO_LIT_RUN, 0, "",
-                     "per VM literal run: three or more consecutive one-byte literals on one concatenation (pcrec_lit_run; a two-byte pair keeps its own byte chain), or an island's single-child trie chain, compared as one bounds check and one constant-length memcmp");
+                     "per VM literal run: three or more consecutive one-byte literals on one concatenation (pcrec_lit_run; a two-byte pair keeps its own byte chain), or an island's single-child trie chain, compared as one bounds check and one run compare (run-overlap's rows)");
         emit_pred_row(sb, &p, 2, "denied", "",
                      0, 0, "", "always (fallback) — one per-byte compare per literal");
+    }
+    /* [OPT-LITSCAN] S4 run-overlap — §2.38, the run compare's rows WALKED
+     * LIVE off `pcrec_runcmp_rows` (src/gen/runcmp.c), so this surface
+     * cannot state a predicate the emitter does not ask. RX_RUN_WORDS is an
+     * ACTIVITY COUNT, stamp_value empty for alt-island's reason. */
+    {
+        PredAxis p = { "run-overlap", NULL, "RX_RUN_WORDS", "", 0, NULL, 0, NULL, NULL, NULL };
+        for (int i = 0; i < pcrec_runcmp_nrows; i++)
+            emit_pred_row(sb, &p, i + 1, pcrec_runcmp_rows[i].name, "",
+                         pcrec_runcmp_rows[i].deny, 0, "",
+                         pcrec_runcmp_rows[i].applies_desc);
     }
     /* [OPT-ANCHOR-VM] vm-anchor-bound — §2.25. The VM's attempt-loop start
      * bound, from the `start_anchor` fact's one AST-level derivation. Its stamp is
@@ -835,6 +846,18 @@ static void emit_predicate_axes(StrBuf *sb)
                      "the stamped default resume/trail storage does not fit one 4KB page (docs/spec/match_api.md §10.9)");
         emit_pred_row(sb, &p, 2, "single-tier", "",
                      0, 0, "", "always (fallback) — FAST_FRAMES==RESUME_FRAMES, FAST_TRAIL==TRAIL_FRAMES");
+    }
+    /* [OPT-VEDGE] view-edge — §2.37, the view-tolerant half of the scan
+     * edge (src/opt/scanedge.c). It widens which chains `scan-edge` row 1
+     * takes and adds no stamp value: RX_DFA_SCAN_EDGE leaving "none" on a
+     * `(?:[a-z]{0,n})\z`-shaped artifact is its observable consequence. */
+    {
+        PredAxis p = { "view-edge", NULL, "RX_DFA_SCAN_EDGE", "", 0, NULL, 0, NULL, NULL, NULL };
+        emit_pred_row(sb, &p, 1, "view-tolerant", "",
+                     PCREC_NO_VIEW_EDGE, 0, "",
+                     "per CHAIN: on a machine whose walk ends at the subject's end, a member may carry an END (\\z) view the scan's pos == n exit evaluates; and on any machine a chain whose head is another state's view target starts one link later instead of being refused");
+        emit_pred_row(sb, &p, 2, "view-free", "",
+                     0, 0, "", "always (fallback) -- a chain touching a position view is refused, as before [OPT-VEDGE]; changes no answer");
     }
     /* engine — §2.11, the coarsest-grained member; RX_ENGINE's own values.
      * `--engine=` is DO-OR-DIE (never a bit in pcrec_options.flags), so

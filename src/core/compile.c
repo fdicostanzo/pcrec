@@ -375,9 +375,11 @@ static void build_anchored_dfa(Ctx *cx)
      * with `kind = DFA_PF_NONE` unconditionally, because a prefilter CHOOSES
      * WHERE THE SCAN BEGINS and that is wrong for a match-here — so nothing
      * can reseed its state variable and precondition (8) has no hazard to
-     * guard. The predicate answers that through the same axis-B walk. */
+     * guard. The predicate answers that through the same axis-B walk. A
+     * match-here walks forward and stops at `n`, so its END view is an exit
+     * ([OPT-VEDGE]'s `end_is_exit`). */
     pcrec_scanedge_dfa(cx, &cx->job->adfa,
-                       pcrec_dfa_scan_state_written(cx, &cx->job->adfa));
+                       pcrec_dfa_scan_state_written(cx, &cx->job->adfa), true);
     cx->job->anchored_ok = true;
 }
 
@@ -1900,10 +1902,13 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
                  * carries no prefilter — every axis-B candidate requires
                  * `s->forward` — so it answers false through the axis rather
                  * than through a constant written here. */
+                /* [OPT-VEDGE] the last argument is each walk's direction:
+                 * the forward scan ends at `n`, the reverse one starts
+                 * there (src/opt/scanedge.c, precondition (3)). */
                 pcrec_scanedge_dfa(&cx, &cx.job->dfa,
-                                   pcrec_dfa_scan_state_written(&cx, &cx.job->dfa));
+                                   pcrec_dfa_scan_state_written(&cx, &cx.job->dfa), true);
                 pcrec_scanedge_dfa(&cx, &cx.job->rdfa,
-                                   pcrec_dfa_scan_state_written(&cx, &cx.job->rdfa));
+                                   pcrec_dfa_scan_state_written(&cx, &cx.job->rdfa), false);
                 build_anchored_dfa(&cx);
             } else {
                 cx.job->engine = PCREC_ENG_ATTEMPT;

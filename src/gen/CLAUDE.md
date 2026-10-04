@@ -1031,6 +1031,39 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
 
 ## Files
 
+- **runcmp.c** — [OPT-LITSCAN] S4 C1 (lane s4build, 2026-10-03, abi 58;
+  `docs/design/litscan_s4.md` §1.3-§1.5, `docs/spec/tuning.md` §2.38): THE RUN
+  COMPARE. `pcrec_emit_run_compare(cx, c, base, off, run)` is the ONE emitter
+  of a literal-run compare in emitted C, both engines, through a first-match
+  row table `pcrec_runcmp_rows` (declared in `core/internal.h` beside
+  `PcrecRun`, walked live by `--list-axes` as axis `run-overlap`): `overlap`
+  (an exact run of length 3, 5-7 or 9-15: two overlapping natural-width
+  words, the last at offset L - W, `&&` in offset order; deny
+  `-fno-run-overlap`, bit 43) then `memcmp` (P4's text byte for byte, the
+  total fallback). It took P4's place: `pcrec_emit_exact_compare` is
+  RETIRED, and its three callers (`ofsk_emit_verify`'s run term, which is
+  also the run pre-check's compare; `vm_lit`; `vm_isl_emit`'s single-child
+  chains) call this. The BASE/OFFSET split is so the `memcmp` row keeps the
+  old `base + off` text exactly. Each word is a `static inline
+  uint<8W>_t <p>_w<W>(const void *)` `memcpy` load and its constant is the
+  same load of a string literal (endian-neutral; gcc folds it to an
+  immediate). **Helpers are declared per width, once, ahead of first use**:
+  `Job.rc_wused`/`rc_wemitted` are per-attempt bitmasks;
+  `pcrec_emit_runcmp_helpers` runs at the end of `pcrec_emit_prologue` (a VM
+  body is written before the prologue, so its widths are known) and
+  `pcrec_runcmp_prepare` is what a file-scope block (`pf_block_ofs`, the run
+  pre-check blocks) calls before its own text, because its compare sits
+  inside its function. `<PREFIX>_RUN_WORDS` (`pcrec_emit_runcmp_stamp`,
+  `Job.rc_words`) is emitted after the engine body by both emitters, beside
+  `rx_info`, because a DFA artifact's compares are written in file-scope
+  blocks after the prologue. **The masked rows (`words`, `bytes`) are NOT
+  built**: their first caller is C3 (the caseless necessary run, pending its
+  panel) and C2 (the VM masked run) is HELD under D77, so a row with no
+  caller would be code no cell reaches; `PcrecRun` gains its K column with
+  them. Checks: `tests/codegen/runcmp_check.py` (structural), the
+  `tests/litscan/litrun.rxt` L-sweep (answers, both routes). Sabotage rows
+  S267 (the `memcmp` row's sense), S443/S444 (the last word's offset), S445
+  (the overlap row's sense).
 - **clskit.c / clskit.h** — [CLS-TREE] S1 (lane clss1, 2026-09-29;
   docs/design/cls_tree_design.md §1, §6; D129, D131): THE CLASS-MATCHER KIT.
   Given a code-point set and nothing else (Constitutional Constraint 1, no
@@ -1055,6 +1088,10 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
   emitted form on every code point. **Open at S1**: the table's byte
   predicates read the DP's MODEL bytes, which run ~13% under the measured
   object for `K`; see docs/dev/lanes/clss1_report.md.
+  **[OPT-LITSCAN] S4 C0 (2026-10-03): `cube_of`'s body moved to
+  `src/core/cpset.c` as `pcrec_cube_of`** (one definition parameterized by
+  the domain; clskit's `cube_of` is a one-line caller over the section's own
+  span), byte-neutral. See src/core/CLAUDE.md's cpset.c S4 entry.
   **FIRST CALLER, [CLS-TREE] S4 (lane s4build, 2026-09-29, abi 48, one event with [OPT-CLSPACK]):**
   emit_vm.c's `vm_wcls` interns each distinct wide set and asks
   `pcrec_clskit_select` at `cx->opt->tune` (row denies unmapped, `deny` 0);
@@ -3327,8 +3364,9 @@ that was already cheaper, or on top of a pass the artifact was already running.
   P4 term, `maxk`, `noffsets`); the block, its verify chain, tables, params,
   comment, the OFFSETS stamp and G1 all read it, and it holds no `Dfa` so a
   later non-DFA consumer can fill one ([OPT-VMSEED]). `emit_exact_compare`
-  is P4, the one spelling of a constant-length literal compare, shared by
-  the run pre-check's loop and the run term. **[OPT-LITSCAN] S2a
+  was P4, the one spelling of a constant-length literal compare, shared by
+  the run pre-check's loop and the run term (retired at [OPT-LITSCAN] S4 C1
+  for `pcrec_emit_run_compare`, `runcmp.c` above). **[OPT-LITSCAN] S2a
   (2026-09-27, abi 41) made it extern as `pcrec_emit_exact_compare`**: the
   VM's second caller. In `emit_vm.c`, `vm_cat` emits a literal run
   (`pcrec_lit_run`, `src/core/cpset.c`, through the VM wrapper `vm_lit_run`
@@ -3372,7 +3410,8 @@ lookaround or a cut erased, or the count collapse) therefore stepped every
 character to the subject end once one prefilter answer failed.
 
 - **`pcrec_reseed_rows` is ONE first-match table, rows as data** —
-  `exact` / `clamped` / `adaptive-dense` / `adaptive` / `fixed`. Its
+  `exact` / `clamped` / `anchored` / `adaptive-dense` / `adaptive` /
+  `fixed`. Its
   predicates are a closed tag set evaluated by one switch,
   `vm_reseed_holds` (clskit's `ROWS` shape), and an adaptive row's
   STARTING STATE is two columns (`start`, the calibration column a call's
@@ -3427,6 +3466,18 @@ character to the subject end once one prefilter answer failed.
   second block never ends, visible to the budget arm only), S371 (adaptive
   text dropped under an adaptive stamp) and S372 (the two calibration rows
   swapped, visible to the calibration check only).
+- **`anchored` (abi 56, [OPT-HYB-RESEED-FORM] A1, lane rsform,
+  2026-10-03; `docs/design/xcall.md` §4) keeps a start-anchored hybrid on
+  the FIXED retry.** Its predicate is `pcrec_fact_start_anchor != NONE`,
+  the fact `att_max` reads for [OPT-ANCHOR-VM]'s `attempt_max =
+  search_from` bound — one derivation, so `-fno-vm-anchor-bound` empties
+  the bound and the row together. Under the bound the loop returns after
+  its first failed attempt and no retry runs; gcc cannot prove that (the
+  seed comes from the prefilter), so an adaptive tail there was dead text
+  on 48 byte-corpus artifacts (79% of `adaptive-dense`). Undeniable for
+  `exact`'s reason, and above the two rows the deny reaches, so an
+  `anchored` artifact equals its `-fno-hyb-reseed` artifact byte for byte
+  (the codegen block's check (5); sabotage S441 makes the predicate false).
 
 ## [UTF-VALID] THE SUBJECT CHECK AND THE START ALIGNMENT (abi 49 -> 50, D133)
 

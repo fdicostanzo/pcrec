@@ -1659,6 +1659,17 @@ void pcrec_cls_bits(Ctx *cx, const Ast *a, uint8_t out[32]);
 void pcrec_cls_bits_widen(Ctx *cx, const Ast *a, uint8_t out[32]);
 /* "Exactly one code point, and it is a byte?" — the code point, or -1. */
 int  pcrec_cls_single(Ctx *cx, const Ast *a);
+/* [OPT-LITSCAN] S4 P2 (litscan_s4.md §1.2): is `iv[i..j]` exactly ONE
+ * AND-mask cube over the domain [base, base+w)? On success
+ * `((x - base) & *care) == *val` is membership for every `x` in that domain.
+ * The ONE definition of the byte cube: clskit passes a section's own span,
+ * the run facts the absolute byte domain (`base` 0, `w` 256). */
+bool pcrec_cube_of(const PcrecCpRange *iv, int i, int j,
+                   unsigned base, unsigned w, unsigned *care, unsigned *val);
+/* The byte-domain reader: class `a`'s byte set as one cube (K, T) over all
+ * 256 bytes, false when it is not one; a singleton is K = 0xFF, a caseless
+ * letter K = 0xDF. */
+bool pcrec_cls_cube(Ctx *cx, const Ast *a, unsigned char *K, unsigned char *T);
 /* [CLS-TREE] S3: the three above refuse an `A_WCLASS` by `pcrec_ctx_fail`, a
  * KIND check and not a range check — see the kind's own comment. This is the
  * one spelling that reaches an `A_WCLASS`'s code-point set, and it refuses
@@ -2639,6 +2650,12 @@ typedef struct {
      * (src/core/findings.h; design §6.4). Per ATTEMPT, like every field
      * here, so the stamp reports what the final attempt asked. */
     PcrecFindRec find;
+    /* [OPT-LITSCAN] S4 the run compare's per-attempt record (src/gen/
+     * runcmp.c): compares written by the words form (the `<PREFIX>_RUN_WORDS`
+     * stamp), and the word widths used and declared (bit W for width W), so
+     * a helper is emitted once, before its first use. */
+    long long rc_words;
+    unsigned rc_wused, rc_wemitted;
 } Job;
 
 /* [M6.3] module `named-groups` — see Ctx.named_groups below for the full
@@ -5970,12 +5987,38 @@ void pcrec_emit_req_byte_check(Ctx *cx, StrBuf *c, const char *indent,
  * search-entry emitter that calls `pcrec_emit_req_byte_check` calls this at
  * file scope above the entry; it emits nothing where no run pre-check is. */
 void pcrec_emit_req_run_blocks(Ctx *cx, StrBuf *c);
-/* [OPT-LITSCAN] P4, the exact compare: writes `!memcmp(<base>, "<bytes>", n)`
- * with a literal `n`, the ONE emitted spelling of a constant-length literal
- * compare (src/gen/emit_dfa.c). `base` is already bounds-checked by the
- * caller for `n` bytes. */
-void pcrec_emit_exact_compare(StrBuf *c, const char *base,
-                              const unsigned char *bytes, int n);
+/* [OPT-LITSCAN] S4 THE RUN COMPARE (src/gen/runcmp.c, litscan_s4.md §1.3):
+ * the ONE emitter of a literal-run compare in emitted C, both engines. It
+ * took P4's place (`pcrec_emit_exact_compare`, retired). A run is `len`
+ * exact bytes; the masked K column lands with its first caller (C3). */
+typedef struct {
+    const unsigned char *t;   /* the bytes */
+    int len;                  /* >= 1 */
+} PcrecRun;
+/* The first-match rows as DATA, walked live by `--list-axes` (axis
+ * `run-overlap`): a name, the deny flag, a one-line predicate, and the
+ * closed predicate/form tags runcmp.c's walk reads. */
+typedef struct {
+    const char   *name;
+    uint64_t      deny;
+    const char   *applies_desc;
+    unsigned char pred;
+    unsigned char form;
+} PcrecRunRow;
+extern const PcrecRunRow pcrec_runcmp_rows[];
+extern const int pcrec_runcmp_nrows;
+/* Writes a C boolean expression, true iff the `r->len` bytes at `base + off`
+ * equal `r->t`, through the first row that applies and is not denied, and
+ * returns the row's name. The caller has bounds-checked those bytes. */
+const char *pcrec_emit_run_compare(Ctx *cx, StrBuf *c, const char *base,
+                                   int off, const PcrecRun *r);
+/* The word-load helpers used and not yet declared, at file scope (idempotent
+ * per attempt); and the `<PREFIX>_RUN_WORDS` stamp, after the engine body. */
+void pcrec_emit_runcmp_helpers(Ctx *cx, StrBuf *c);
+/* A file-scope block's call before its own text: declares the helper run
+ * `r`'s compare will load through, if it takes a word row. */
+void pcrec_runcmp_prepare(Ctx *cx, StrBuf *c, const PcrecRun *r);
+void pcrec_emit_runcmp_stamp(Ctx *cx, StrBuf *c, const char *upper);
 /* [K50]/[UTF-VALID] The caller-startpos entry prologue: the startpos-guard
  * axis's value (refuse / nothing / align) and then the `-futf-check`
  * precheck, at the four sites that take a caller's position. `anchored`
@@ -6176,8 +6219,13 @@ void pcrec_dfa_memo_free(DfaMemo *m);
  * it is a parameter rather than something the pass derives because the answer
  * belongs to the EMITTER: it is axis B's own selection for this machine, asked
  * through `pcrec_dfa_scan_state_written` below. Every caller states it, and
- * the two that pass a constant say why at the call. */
-void pcrec_scanedge_dfa(Ctx *cx, Dfa *dfa, bool prefilter_reseeds);
+ * the two that pass a constant say why at the call.
+ *
+ * [OPT-VEDGE] `end_is_exit` is the machine's DIRECTION fact the pass needs:
+ * true where the walk ends at `pos == n` and never steps from an END view
+ * (the forward search and anchored match-here machines), false for the
+ * reverse walk, which starts there and steps from the view. */
+void pcrec_scanedge_dfa(Ctx *cx, Dfa *dfa, bool prefilter_reseeds, bool end_is_exit);
 
 /* [OPT-5 STEP 2] IS THIS STATE'S ACCEPT INDEPENDENT OF POSITION AND OF THE
  * UPCOMING BYTE? — scan-edge preconditions (2) and (3), and the start-pinned

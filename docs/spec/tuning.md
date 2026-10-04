@@ -1437,7 +1437,10 @@ one such run of 16,384 states plus the state that has counted them all;
 `[a-z]*` and `[a-z]+` are the unbounded one-state form; `[0-9]{16}` is a run
 of sixteen. The pass is `src/opt/scanedge.c` and its header carries the exact
 criterion and its preconditions — five in the header, three more stated at
-their own sites: (6) a head may not be another state's position-VIEW target,
+their own sites: (6) a head may not be another state's position-VIEW target
+(since [OPT-VEDGE], §2.37, such a chain is trimmed to start one state later
+rather than refused, and precondition (3) admits an END-view-only member on
+the forward and anchored machines),
 (7) two chains that link must have their heads in ascending order, and
 (8) ([OPT-EDGE] STEP 1, narrowed at STEP 1.1) a head may not be a state any
 SEED family names **on a machine whose candidate-start prefilter writes the
@@ -2841,8 +2844,11 @@ check and one constant-length compare:
 under ONE label where the per-byte chain wrote `L`. In an alternation island
 (§2.20) a trie node's single-child chain, down to the first node that
 branches or where an alternative ends, is the same compare at that node's
-depth. The compare is the literal-compare kit's one emitter (P4), the same
-text the run-pinned prefilter rows (§2.30) and the run pre-check use; gcc
+depth. The compare is the literal-compare kit's one emitter (the run
+compare, §2.38, since `abi` 58; P4 before it), the same function the
+run-pinned prefilter rows (§2.30) and the run pre-check use, so at the
+lengths §2.38's `overlap` row takes it is two overlapping word compares
+rather than a `memcmp`; gcc
 lowers a constant-length `memcmp` to word loads with no call, and it does not
 fuse a per-byte chain on its own (`docs/dev/optloop/vmlit_trigger_read.md`
 §1). The artifact gains `#include <string.h>` if nothing else in it needed
@@ -3069,9 +3075,10 @@ choice is now a first-match table (`pcrec --list-axes`, axis
 |---|---|---|---|---|
 | 1 | `exact` | — | the prefilter's language is the pattern's own (no cut, no lookaround, no collapse) | the pre-`abi`-49 retry: re-seed where an MRL clamp exists, else step. A failed attempt at an answer does not arise, and a clamped artifact's window must be recomputed |
 | 2 | `clamped` | — | an MRL clamp exists | the pre-`abi`-49 retry, which already re-seeds after every failed attempt. A step block would ADD attempts that retry skips, so an answer could become a give-up, and the measured gain was mixed (×2.2 faster to ×0.46 slower, `docs/dev/reseed/clamped.md`) |
-| 3 | `adaptive-dense` | `-fno-hyb-reseed` | the compile's byte-rate PRIOR (`docs/spec/findings.md`) puts the candidate scan's byte set at a mean gap under the crossover below. Under `-e byte` with no `--analysis` the prior is the built-in `default` analysis (English-like letter frequencies), so a single common byte such as a space qualifies. Where the prior is NONE (`-e utf8` with no analysis naming a utf8 block) the rate is the set's CARDINALITY, so a single byte never qualifies and a wide class can | ADAPTIVE, starting inside an armed step block |
-| 4 | `adaptive` | `-fno-hyb-reseed` | always | ADAPTIVE, starting with a short step budget |
-| 5 | `fixed` | — | always | the pre-`abi`-49 retry |
+| 3 | `anchored` | — | the pattern is start-anchored (`^`, `\A` or `\G` begins every match; the `start_anchor` fact `<PREFIX>_VM_START` reports, §2.25) | the pre-`abi`-49 retry. The attempt loop's bound returns after the first failed attempt, so no retry runs, and the adaptive text would be unreachable. Added at `abi` 56 ([OPT-HYB-RESEED-FORM] A1); `-fno-vm-anchor-bound` empties the fact and the row together |
+| 4 | `adaptive-dense` | `-fno-hyb-reseed` | the compile's byte-rate PRIOR (`docs/spec/findings.md`) puts the candidate scan's byte set at a mean gap under the crossover below. Under `-e byte` with no `--analysis` the prior is the built-in `default` analysis (English-like letter frequencies), so a single common byte such as a space qualifies. Where the prior is NONE (`-e utf8` with no analysis naming a utf8 block) the rate is the set's CARDINALITY, so a single byte never qualifies and a wide class can | ADAPTIVE, starting inside an armed step block |
+| 5 | `adaptive` | `-fno-hyb-reseed` | always | ADAPTIVE, starting with a short step budget |
+| 6 | `fixed` | — | always | the pre-`abi`-49 retry |
 
 **ADAPTIVE** is decided per CALL, from two locals of the search function.
 No global and no `rx_ctx` field is involved, so a matcher stays reentrant
@@ -3110,8 +3117,10 @@ A call that gave up can therefore now answer; a call that answered still
 answers the same. (Row 2 exists to keep that true: on a clamped artifact a
 step block would run attempts the old retry skipped.) Denied, an adaptive
 hybrid's program is the pre-`abi`-49 one apart from its
-`<PREFIX>_VM_RESEED` line. The flag is swept by `make test-axes` like every
-deny axis.
+`<PREFIX>_VM_RESEED` line. Row 3 is the other way round: an `anchored`
+artifact's C is the same with and without the flag, stamp included, since
+the row is undeniable and sits above the two the flag denies. The flag is
+swept by `make test-axes` like every deny axis.
 
 ### 2.36 `-futf-check` — `PCREC_FORCE_UTF_CHECK` (bit 39)
 
@@ -3156,6 +3165,102 @@ identity.
 **NOT ON THE DIAL — GATE 1**, §2.23's reason: its builds disagree about
 answers on purpose, so no measurement can admit it to a mechanism whose
 acceptance is answer identity.
+
+### 2.37 `-fno-view-edge` — `PCREC_NO_VIEW_EDGE` (bit 42)
+
+**[OPT-VEDGE], `abi` 57 (56 on lane/vedge, renumbered at the lane/r1land landing; `docs/dev/lanes/vedge_report.md`;
+`docs/design/opt5_step2_twopass.md` §2). ANSWER-IDENTITY-preserving.**
+Deny-only, MASKED out of `rx_info.flags` (`strategy_denials`). No stamp of
+its own: it widens which chains §2.18's scan edge takes, and
+`<PREFIX>_DFA_SCAN_EDGE` leaving `"none"` is what it changes. `pcrec
+--list-axes` lists it as axis `view-edge`.
+
+**What it is.** §2.18's pass refused any chain that touched a `$`/`\Z`/`\z`
+position view. That left the whole-subject form `(?:[a-z]{0,n})\z`
+(`match_api.md` §3.6's idiom) walking its transition table once per byte, on
+both the forward pass and the reverse one. Two refusals are lifted:
+
+1. **A member may carry an END view** (`\z`, and no EOL view), on a machine
+   whose walk ENDS at the subject's end: the forward search machine and the
+   anchored match-here machine. There the END view is consulted at one
+   position, `n`, where the loop selects it, reads its accept bit and stops.
+   A scan that runs to `n` leaves the state at the chain's head, so every
+   member's END view must carry the same accept bit. A member whose own bit
+   is set while its END view's is clear is refused, because the scan records
+   its own bit at `n` too. The reverse machine steps from its END view (its
+   walk starts at `n`), so this half never applies to it.
+2. **A chain whose head is another state's view target is trimmed, not
+   refused**, on any machine. Precondition (6) refuses such a head: the view-
+   selected step into it would read the transition cell the edge deletes.
+   The chain now starts at the head's class successor, if that state's only
+   way in is the head. `(?:[a-z]{0,n})\z`'s reverse machine is the case: its
+   start state reaches the counting chain only through its END view.
+
+**What it buys (Mac scratch, `percall.c`, ns per whole-subject call).**
+`(?:[a-z]{0,4096})\z`: 40 letters 152 -> 46, 4,096 letters 16,774 -> 3,835,
+64 KiB of words 9,911 -> 2,864; the artifact drops from 465,741 to 247,889
+bytes. The forced VM is 20 / 1,915 / 14,177 on the same subjects, so a
+whole-subject DFA call is still about twice the VM's: the reverse pass
+remains (§2.19's elision cannot apply, since the start state accepts only at
+`n`). Denied, the pass is the one before this row, byte for byte.
+### 2.38 `-fno-run-overlap` — `PCREC_NO_RUN_OVERLAP` (bit 43)
+
+**`[OPT-LITSCAN]` S4 C1, `abi` 58 (`docs/design/litscan_s4.md` §1.3-§1.5,
+§2.1). ANSWER-IDENTITY-preserving.** How a literal-run compare is spelled,
+on both engines. Deny-only, MASKED out of `rx_info.flags`
+(`strategy_denials`) for the mask's own reason; the deny is the
+literal-compare kit's row flag (D122 addendum 2 (4)). `<PREFIX>_RUN_WORDS`
+(`match_api.md` §6.3) counts the compares the `overlap` row writes, `0` on
+every artifact that writes none and on every artifact under the flag.
+Denied, every run compare is the `memcmp` this compiler emitted before
+`abi` 58, byte for byte apart from that stamp line.
+
+**What it is.** Every literal-run compare in emitted C — the offset-skip
+block's run term (§2.30, which is also the run pre-check's compare, §2.28)
+and the VM's literal run and island single-child chains (§2.31) — is
+written by ONE emitter, `pcrec_emit_run_compare` (`src/gen/runcmp.c`),
+through a first-match row table (`--list-axes` axis `run-overlap`, walked
+live off the table):
+
+| row | applies | emits |
+|---|---|---|
+| `overlap` | an exact run of length 3, 5, 6, 7 or 9-15 | two overlapping natural-width words (2, 4 or 8 bytes), the last at offset `L - W`, joined by `&&` in offset order |
+| `memcmp` | always (the fallback) | `!memcmp(base, "<run>", L)` |
+
+```c
+/* L = 5, the run-pinned prefilter's run term for `/user` */
+rx_w4(subject + cand) == rx_w4("/use") && rx_w4(subject + cand + 1) == rx_w4("user")
+```
+
+Each word is loaded by a `static inline uint<8W>_t <prefix>_w<W>(const void *)`
+helper that is one `memcpy`, and its constant is the SAME helper applied to a
+string literal: gcc and clang fold that to an immediate, and no integer
+literal of the target's byte order appears in the text, so the compare is
+endian-neutral by construction. The helpers are emitted only where the
+artifact writes an `overlap` compare, once each, at file scope ahead of
+their first use.
+
+**Why those lengths.** gcc lowers a constant-length `memcmp` to ONE load and
+one compare at L in {1, 2, 4, 8} and to a vector compare at L >= 16; at the
+other lengths it decomposes into a greedy non-overlapping chain of 2-4
+pieces, each its own branch (`docs/dev/memcmp_lowering_study.md` §3). Two
+overlapping words cover the same bytes in two loads. Whether that is faster
+is MEASURED per cell, not assumed — a darwin scratch probe measured the
+`memcmp` faster in one loop shape (`litscan_s4.md` §1.6) — which is why the
+row has its own deny and ships only if its alpha shows a win beyond the
+noise floor (the design's Q3; the base/deny pair is the noise floor, §6.1).
+
+**What it costs, and what it does not move.** No answer and no give-up
+moves: the words read exactly the run's `L` bytes (every word lies inside
+the run, `o + W <= L`), behind the bounds guard each site already writes,
+and the step, work and node budgets charge the run compare exactly as they
+charged the `memcmp` (`limits.md` §3.1). AddressSanitizer instruments each
+word load (an inlined constant `memcmp` is invisible to it unless built
+`-fno-builtin-memcmp`). The flag is swept by `make test-axes` like every
+deny axis.
+
+**On the dial: every position, no trade** (§5.4): an `overlap` compare and
+the `memcmp` it replaces are within a word of each other in size.
 
 ## 3. The DFA side's own stamps
 
@@ -3443,6 +3548,8 @@ not-a-tuning-axis list that follows.
 | `flags` bit `PCREC_NO_CLS_KIT` | `-fno-cls-kit` | §2.33 |
 | `flags` bit `PCREC_NO_CLS_PACK` | `-fno-cls-pack` | §2.34 |
 | `flags` bit `PCREC_NO_HYB_RESEED` | `-fno-hyb-reseed` | §2.35 |
+| `flags` bit `PCREC_NO_VIEW_EDGE` | `-fno-view-edge` | §2.37 |
+| `flags` bit `PCREC_NO_RUN_OVERLAP` | `-fno-run-overlap` | §2.38 |
 | `unroll_k` (`PCREC_UNROLL_K_DEFAULT` = 0) | `--unroll=K` | §2.10 |
 | `vm_entry_shape` (`PCREC_VM_ENTRY_AUTO` = 0, `_PLAIN`, `_SHARED`, `_FORWARD`, `_INLINE`) | `--vm-entry-shape=N` | §2.21 |
 | `engine` (`PCREC_ENGINE_AUTO`/`_DFA`/`_VM`) | `--engine=E` | §2.11 |
@@ -3593,7 +3700,8 @@ the rule), and `tune` is precisely such a case, already covered.
 
 ### 5.4 The policy table
 
-**Twenty-seven rows: the 23 `tuning.md` §2 axes, λ, the `[ART-SIZE]`
+**Twenty-eight rows: the 23 `tuning.md` §2 axes, `-fno-run-overlap` (§2.38,
+added at `abi` 58 with a cell at no position), λ, the `[ART-SIZE]`
 ladder's two parameters, and the emitted-size caps** (the last three are
 not §2 axes in their own right — the ladder's parameters are
 `-fno-size-term`'s sub-parameters, listed separately because the dial
@@ -3638,6 +3746,7 @@ lands.
 | `-fno-startpos-guard` / `-fstartpos-guard=align` | — | — | — | — | — | §2.23; **GATE 1** — the three values disagree about answers on purpose; permanently flat |
 | `-futf-check` | — | — | — | — | — | §2.36; **GATE 1** — a contract, off by default; permanently flat |
 | `-fno-size-term` | — | — | — | — | — | §2.16; **NOT A RUNG** — it is the MECHANISM the two ladder rows parameterise |
+| `-fno-run-overlap` | — | — | — | — | — | §2.38; **NOT A RUNG** — the row and the `memcmp` it replaces are within a word in size, so no position trades on it; whether it ships at all is its own alpha (`litscan_s4.md` Q3), not a dial cell |
 | emitted-size caps | — | — | — | — | — | `limits.md` §8; **NOT A RUNG** — raise-only refusal boundaries; a dial that lowered one would manufacture refusals |
 
 **The seven reason codes**, one per flat row above:
@@ -3654,8 +3763,8 @@ lands.
 
 **Four rows carry a ratified cell at the first build**: the `[ART-SIZE]`
 ladder's bar and threshold (both size-side), `-fno-premul-table`'s `−2`
-denial, and the entry-chain term's `+1`/`+2` raise. **Twenty-three rows
-carry none** — twenty of them permanently or by gate (one of the seven
+denial, and the entry-chain term's `+1`/`+2` raise. **Twenty-four rows
+carry none** — twenty-one of them permanently or by gate (one of the seven
 codes above), and three (`-fno-anchored-dfa`, `-fno-tiered-entry`, λ)
 CONTINGENTLY, pending an unmeasured quantity named in their own row. That
 is the difference between an allowlist and a list of things nobody got

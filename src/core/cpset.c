@@ -349,6 +349,90 @@ int pcrec_cls_single(Ctx *cx, const Ast *a)
     return (int)a->u.cls.iv[0].lo;
 }
 
+/* ---- THE BYTE CUBE ([OPT-LITSCAN] S4 P2, litscan_s4.md §1.2) ------------ */
+
+/* The number of significant bits in `v` (0 for 0). */
+static unsigned cube_bitlen(unsigned v)
+{
+    unsigned b = 0;
+    while (v) { v >>= 1; b++; }
+    return b;
+}
+
+/* The AND of every integer in [a, b]: their common high prefix. */
+static unsigned range_and(unsigned a, unsigned b)
+{
+    unsigned sh = 0;
+    while (a != b) { a >>= 1; b >>= 1; sh++; }
+    return a << sh;
+}
+
+/* The OR of every integer in [a, b]. */
+static unsigned range_or(unsigned a, unsigned b)
+{
+    if (a == b) return a;
+    return (a | b) | ((1u << cube_bitlen(a ^ b)) - 1u);
+}
+
+/* Is `iv[i..j]` exactly ONE AND-mask cube over the domain [base, base+w)?
+ * O(k) plus one pass over the domain (w <= 256). On success writes the cube
+ * in domain-relative offsets: `((x - base) & *care) == *val` is membership
+ * for every `x` in the domain. Every member must lie in the domain.
+ *
+ * ONE DEFINITION, PARAMETERIZED BY THE DOMAIN. clskit's sections pass
+ * `base = iv[i].lo`, `w` = the section's span, where offsets past the span
+ * are unreachable behind the kit's dispatch and so are don't-cares; the run
+ * facts pass `base = 0`, `w = 256`, the absolute byte cube, where nothing is
+ * a don't-care and the cube must equal the set.
+ *
+ * `val` is the AND of all members and `care` the bits every member agrees
+ * on, both closed forms over intervals, so every member lies in the cube by
+ * construction. What is left is that the cube must not SPILL onto a
+ * non-member inside the domain. The budget test is the study's O(k)
+ * necessary condition; the loop after it is the exact check, and it is the
+ * one agreement control this definition carries (compare_stack.md D2). */
+bool pcrec_cube_of(const PcrecCpRange *iv, int i, int j,
+                   unsigned base, unsigned w, unsigned *care, unsigned *val)
+{
+    unsigned nbits = w > 1 ? cube_bitlen(w - 1) : 1;
+    unsigned full = (1u << nbits) - 1u, a_all = full, o_all = 0, nmem = 0;
+    uint64_t mem[4] = { 0, 0, 0, 0 };
+
+    for (int t = i; t <= j; t++) {
+        unsigned x0 = iv[t].lo - base, x1 = iv[t].hi - base;
+        a_all &= range_and(x0, x1);
+        o_all |= range_or(x0, x1);
+        nmem += x1 - x0 + 1;
+        for (unsigned x = x0; x <= x1; x++) mem[x >> 6] |= 1ULL << (x & 63);
+    }
+    unsigned c = full & ~(o_all & ~a_all), v = a_all;
+    unsigned csize = 1u << (nbits - (unsigned)__builtin_popcount(c));
+    if (csize - nmem > (1u << nbits) - w) return false;
+    for (unsigned x = 0; x < w; x++)
+        if ((x & c) == v && !((mem[x >> 6] >> (x & 63)) & 1)) return false;
+    *care = c;
+    *val = v;
+    return true;
+}
+
+/* The byte set of class `a` as ONE cube over all 256 bytes: `(x & *K) == *T`
+ * is membership for every byte `x`. False where a member is above 0xFF or
+ * the set is not one cube. A singleton is `K = 0xFF`; a caseless letter
+ * (`cls_casefold`'s `{S, s}`, from `pcrec_ascii_fold`) is `K = 0xDF`, so every
+ * caseless mask is a pure function of a set `fold.c` produced and nothing
+ * reads the fold table again (litscan_s4.md §1.2's hard requirement). */
+bool pcrec_cls_cube(Ctx *cx, const Ast *a, unsigned char *K, unsigned char *T)
+{
+    unsigned care, val;
+    cls_kind_guard(cx, a, "pcrec_cls_cube");
+    if (a->u.cls.n < 1 || a->u.cls.iv[a->u.cls.n - 1].hi > 0xFF) return false;
+    if (!pcrec_cube_of(a->u.cls.iv, 0, a->u.cls.n - 1, 0, 256, &care, &val))
+        return false;
+    *K = (unsigned char)care;
+    *T = (unsigned char)val;
+    return true;
+}
+
 /* The one-byte literal at spine element `a`: its byte, or -1 where `a` is not
  * an `A_CLASS` or not a singleton byte. The kind guard is part of the fact,
  * because `pcrec_cls_single` reads `a->u.cls` unconditionally and that is a

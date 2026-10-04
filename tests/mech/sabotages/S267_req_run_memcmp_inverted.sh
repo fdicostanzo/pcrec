@@ -28,14 +28,21 @@
 # OFFSET would be a different row. This one isolates the SENSE, which is the
 # half tests/codegen/run_prechecks.sh §4.1b asserts separately from the run's
 # own bytes and from the offset.
+# RE-AIMED 2026-10-03 ([OPT-LITSCAN] S4 C1, lane s4build): P4
+# (`pcrec_emit_exact_compare`) is retired and the `!memcmp` is the run
+# compare's `memcmp` row (src/gen/runcmp.c). The witness `a=b` is L = 3, an
+# `overlap` length, so the reach builds it under `-fno-run-overlap`; the
+# harness still sees the inversion through every run at a `memcmp` length
+# (L 4, 8, 16+, and the island's two-byte chains), and run_prechecks.sh §4.1b
+# reads it under the same flag. The `overlap` row's own sense is S445.
 SAB_ID="S267-req-run-memcmp-inverted"
-SAB_FILE="src/gen/emit_dfa.c"
+SAB_FILE="src/gen/runcmp.c"
 SAB_SUITES="harness prechecks"
 SAB_DESC="the necessary-RUN whole-window pre-check emits 'memcmp(...)' where it should emit '!memcmp(...)', so both engines' search entries accept a scan hit exactly when the run every match must contain is ABSENT there and keep scanning when it is present — an inversion that turns every matching subject of every run-bearing pattern into a no-match, and unlike its two batch-2 siblings it has an ordinary answer-level detector for exactly that reason"
 SAB_DOC_FIGURE="tests/harness/run.sh over the full .rxt corpus is the primary detector: every 'm' case of every pattern carrying a necessary run reports nomatch, so 'cases failed' moves from 0 to a large count (the run population is 406 of 2,814 corpus patterns that compile at default axes, measured 2026-09-22 by the lane's own base-vs-tip mover census). tests/codegen/run_prechecks.sh §4.1b is the structural detector and names the sense directly ('the compare's sense is not !memcmp(...) — it may be inverted') on each of the seven §4.1 witnesses. Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S267."
 # [MECH-REACH] THE PROBE says the SITE still answers: on the clean tree `a=b`
 # stamps a three-byte run and emits the negated memcmp this row inverts.
-SAB_REACH='"$PCREC" --features all -p rx -fno-offset-skip -o "$REACH_TMP/o.c" --pattern "a=b" && grep -q "^#define RX_REQ_RUN \"613d62@1\"" "$REACH_TMP/o.c" && grep -qF "rx_reqrun(subject, subject_length, search_from)" "$REACH_TMP/o.c" && grep -qF "if (!memcmp(subject + cand, \"a=b\", 3)) return cand;" "$REACH_TMP/o.c" && echo REACH-REQ-RUN-COMPARE-EMITTED'
+SAB_REACH='"$PCREC" --features all -p rx -fno-offset-skip -fno-run-overlap -o "$REACH_TMP/o.c" --pattern "a=b" && grep -q "^#define RX_REQ_RUN \"613d62@1\"" "$REACH_TMP/o.c" && grep -qF "rx_reqrun(subject, subject_length, search_from)" "$REACH_TMP/o.c" && grep -qF "if (!memcmp(subject + cand, \"a=b\", 3)) return cand;" "$REACH_TMP/o.c" && echo REACH-REQ-RUN-COMPARE-EMITTED'
 SAB_REACH_EXPECT="REACH-REQ-RUN-COMPARE-EMITTED"
 # [OPT-LITSCAN] S1 step 6 (lane s1step6, 2026-09-26): the run pre-check is now
 # a call of a file-scope `rx_reqrun` block written by the offset-skip block's
@@ -56,5 +63,5 @@ SAB_REACH_EXPECT="REACH-REQ-RUN-COMPARE-EMITTED"
 # primitive also writes the `<p>_ofsskip` run term, which this plant inverts
 # too; that widens what the row deletes and does not change what it isolates.
 SAB_COUNT=1
-SAB_BEFORE='    pcrec_sb_printf(c, "!memcmp(%s, \"", base);'
-SAB_AFTER='    pcrec_sb_printf(c, "memcmp(%s, \"", base);   /* SABOTAGE S267 */'
+SAB_BEFORE='        pcrec_sb_puts(c, "!memcmp(");'
+SAB_AFTER='        pcrec_sb_puts(c, "memcmp(");   /* SABOTAGE S267 */'

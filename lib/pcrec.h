@@ -1036,6 +1036,30 @@ enum {
  * or without it, so it is masked out of `rx_info.flags`. A `#define` for
  * bit 32's reason. */
 #define PCREC_FAST_OR_FAIL PCREC_BIT(41)
+/* [OPT-VEDGE] `-fno-view-edge` — deny the VIEW-TOLERANT SCAN EDGE
+ * (src/opt/scanedge.c; docs/spec/tuning.md §2.37). The scan edge
+ * (`PCREC_NO_SCAN_EDGE`) refused any counted chain that touched a `\z`
+ * position view, so the `(?:[a-z]{0,n})\z` whole-subject form kept one
+ * table step per byte on both of its passes. This axis admits two such
+ * chains: on a machine whose walk ENDS at the subject's end (the forward
+ * search and the anchored match-here machine), a member carrying only an
+ * END view, whose accept the scan's own `pos == n` exit evaluates; and on
+ * any machine, a chain whose HEAD is another state's view target, which is
+ * trimmed to start one link later instead of being refused. Denied, the
+ * pass is the pre-row one, byte for byte. It changes no answer either way,
+ * so it is masked out of `rx_info.flags`. A `#define` for bit 32's reason. */
+#define PCREC_NO_VIEW_EDGE PCREC_BIT(42)
+/* [OPT-LITSCAN] S4 the run compare's OVERLAP row (docs/spec/tuning.md §2.38,
+ * docs/design/litscan_s4.md §1.3). An exact literal-run compare of length 3,
+ * 5-7 or 9-15 — where gcc's constant `memcmp` decomposes into 2-4
+ * non-overlapping pieces — is written as two overlapping natural-width word
+ * compares. Denied, every run compare is the constant-length `memcmp` this
+ * compiler emitted before abi 58, byte for byte apart from the
+ * `<PREFIX>_RUN_WORDS` stamp line. It reads exactly the same bytes either way,
+ * so it changes no answer and is masked out of `rx_info.flags`;
+ * `<PREFIX>_RUN_WORDS` counts what the emitter did. Deny-only (D122 addendum
+ * 2 (4)). A `#define` for bit 32's reason. */
+#define PCREC_NO_RUN_OVERLAP PCREC_BIT(43)
 
 /* [ENG-BREP] the counter rung's UNROLL FACTOR, K (counterk_design.md §4.1;
  * eng_brep_design.md §4.5's "K must not become a per-pattern heuristic in v1",

@@ -715,6 +715,19 @@ fi
 # shared block's three prelude lines (`#if defined(PCREC_RX_ABI_H) && …`,
 # the `#error`, `#endif`) and the guard's ` 54` value, nothing else. The
 # prefix render moves no byte at `-p rx`.
+#
+# RE-RECORDED 2026-10-03 at [OPT-LITSCAN] S4 C1 (abi 57 -> 58, lane s4build):
+# all twelve `EMITTED_BYTES` rows move, nine by exactly +23 (the
+# unconditional `#define RX_RUN_WORDS 0` line, every artifact of both
+# engines) and three by more: `abc` and `(a)(b)(c)` +159 (the run pre-check's
+# `abc`, L = 3, takes the run compare's `overlap` row: the `rx_w2` helper
+# line plus a blank, the two word compares in place of the `memcmp`, and
+# `RX_RUN_WORDS 1`) and `(?<=foo)bar` +271 (three overlap compares: the
+# prefilter's `bar` and the VM's `foo` and `bar` runs, `RX_RUN_WORDS 3`, and
+# `RX_VM_PROGRAM_BYTES` 1700 -> 1812). VERIFIED BY DIFFING `abc` and
+# `(?<=foo)bar` against the lane's C0 compiler (byte-identical to main) at
+# `-o -`: the abi digits, the helper, the compares and the stamps, nothing
+# else.
 MANIFEST="$ROOT_DIR/tests/codegen/manifests/m5_stage1_stamps.tsv"
 if [ -d "$(dirname "$MANIFEST")" ]; then
     if [ -f "$MANIFEST" ]; then

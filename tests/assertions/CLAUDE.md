@@ -90,6 +90,13 @@ every oracle exclusion has an entry there.
   flag-reader sabotage) belong to WAVE C**, where the flag can actually be
   true and those rows can actually go red; writing them now would be a check
   with no failing direction.
+- **view_edge.rxt** — [OPT-VEDGE] (lane vedge, 2026-10-03): counted
+  single-class chains under `\z`/`\Z`/`$`, every start position searched,
+  subjects straddling the count bound — the view-tolerant scan edge's answer
+  witnesses (src/opt/scanedge.c). `[a-z]{2,4}(?:\z|[a-z])` is the direction
+  witness: its reverse start state is a scan-shaped END-viewed member, which
+  only the forward/anchored machines may admit (mech row S440's detector).
+  Expectations python3-`re`-verified (generator in the lane report).
 - **wordb_basic.rxt, wordb_empty_compose.rxt, wordb_engattempt.rxt,
   wordb_vm.rxt** — [M6.2] WAVE B: `\b` and `\B`, in four shards. **Split
   2026-08-21** ([M6.2.2] plan row) along the corpus's own section

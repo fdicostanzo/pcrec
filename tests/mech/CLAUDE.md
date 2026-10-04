@@ -420,6 +420,17 @@ is EXPECTED to time out"*, and neither would a separate arm.
   write on a no-match moves no return value and the harness driver never
   reads caps after a 0, so `harness` is green on it by construction. Row S439
   (the dead-group fill planted back at the search entry).
+- (no new arm) [OPT-VEDGE] row S440 (lane vedge, 2026-10-03) is on
+  `harness`, scoped to `tests/assertions`: the reverse machine handed
+  `end_is_exit = true` loses matches on view_edge.rxt's direction witness.
+- (no new arm) [OPT-HYB-RESEED-FORM] A1 row S441 (lane rsform, 2026-10-03)
+  is on `codegen`: row `anchored`'s predicate answering false sends a
+  start-anchored hybrid back to `adaptive-dense`. [OPT-LITSCAN] S4 C0/C1 rows
+  (lane s4build, 2026-10-03; numbered S440-S443 on its branch, S442-S445 at
+  the lane/r1land landing): S442 on `brefdiff` (`pcrec_cls_cube` handed a
+  section-relative base), S443/S444 on `codegen harness` (the run compare's
+  last word one byte past / short of `L - W`), S445 on `harness` (the overlap
+  row's `==` inverted); harness rows scoped to `tests/litscan/litrun.rxt`.
 - `tunedial` → `tests/codegen/run_tune_dial.sh` ([OPT-DIAL] design §6.1a's
   MECHANISM-STATE CROSS-CHECK), **NOT YET REGISTERED IN THIS DRIVER'S
   DISPATCH as of 2026-09-17** — a sibling lane is building the script

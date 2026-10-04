@@ -1125,6 +1125,20 @@ construction (src/ir) and emission (src/gen).
   sabotage rows S213 (the criterion's exit-uniformity clause) and S214 (the
   emitted loop's count bound), with DISJOINT detectors.
 
+  **[OPT-VEDGE] (2026-10-03, lane vedge) RELAXES (3) AND (6) UNDER ITS OWN
+  DENY BIT, `-fno-view-edge` (`PCREC_NO_VIEW_EDGE`, bit 42).** (3): on a
+  machine whose walk ENDS at `n` — the new `end_is_exit` parameter, true for
+  the forward and anchored machines and false for the reverse one, which
+  starts at `n` and steps from its view — a member may carry an END view
+  and no EOL view; `end_acc_of` joins chain compatibility (`same_shape`)
+  beside the plain bit, and a member whose plain bit is set over a clear END
+  bit is refused. (6): a head that is a view target is TRIMMED (the chain
+  starts at its class successor, if that state's only way in is the head)
+  instead of refusing the chain. Customer: `(?:[a-z]{0,n})\z`, both passes
+  (docs/dev/lanes/vedge_report.md). Tests: tests/assertions/view_edge.rxt,
+  tests/codegen/run_scan_edge_census.sh section (6); sabotage S440 (the
+  reverse machine handed `end_is_exit = true`).
+
   **[OPT-EDGE] STEP 1 (2026-09-03) MADE THIS PASS RENUMBER, and the
   renumbering is folded into the compaction it already did.** The emitted
   loop used to pay ONE COMPARE PER EDGE on its generic path — `if (state ==

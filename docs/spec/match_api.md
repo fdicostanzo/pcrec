@@ -298,11 +298,11 @@ noted under group 2, which are `PCREC_*`-named yet per-artifact):
    refused.** The block opens
 
    ```c
-   #if defined(PCREC_RX_ABI_H) && (PCREC_RX_ABI_H + 0) != 55
-   #error "pcrec: this artifact (abi 55) shares a translation unit with an artifact of a different abi; regenerate both with one pcrec"
+   #if defined(PCREC_RX_ABI_H) && (PCREC_RX_ABI_H + 0) != 58
+   #error "pcrec: this artifact (abi 58) shares a translation unit with an artifact of a different abi; regenerate both with one pcrec"
    #endif
    #ifndef PCREC_RX_ABI_H
-   #define PCREC_RX_ABI_H 55
+   #define PCREC_RX_ABI_H 58
    ```
 
    so artifacts of one abi still share the first block, and an artifact of
@@ -2296,7 +2296,63 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `55` on every artifact today (lane k78 bumped it from
+- **`rx_info.abi` is `58` on every artifact today (lane s4build bumped it
+  from 57 at the lane/r1land landing (its own branch took 56 from 55), 2026-10-03: `[OPT-LITSCAN]` S4 C1 — THE RUN COMPARE,
+  `docs/design/litscan_s4.md` §1.3).** Every literal-run compare in emitted
+  C (the offset-skip block's run term, which is also the run pre-check's
+  compare, the VM's literal run and the island's single-child chains) is now
+  written by ONE emitter function with a first-match row table
+  (`src/gen/runcmp.c`, `docs/spec/tuning.md` §2.38). An EXACT run of length
+  3, 5-7 or 9-15 — where gcc's constant `memcmp` decomposes into 2-4
+  non-overlapping pieces — takes the `overlap` row: two overlapping
+  natural-width words, the last at offset `L - W`, each loaded by a
+  `static inline uint<8W>_t <prefix>_w<W>(const void *)` `memcpy` helper and
+  compared against the same load of a string literal, joined by `&&` in
+  offset order (`<prefix>_w4(subject + cand) == <prefix>_w4("/use") &&
+  <prefix>_w4(subject + cand + 1) == <prefix>_w4("user")`). Every other
+  length keeps the constant-length `memcmp` byte for byte. The helpers are
+  emitted only where an artifact writes a word row, once each, ahead of
+  their first use. Every artifact of both engines gains one stamp line,
+  `<PREFIX>_RUN_WORDS` (§6.3, a count of the compares the overlap row
+  wrote), emitted after the engine body. **Movers:** an artifact's program
+  moves if and only if it writes a run compare at an overlap length; every
+  other artifact differs from `abi` 55 in its abi digits and the
+  `RUN_WORDS 0` line alone. `-fno-run-overlap` (bit 43, masked out of
+  `rx_info.flags`) restores the `abi`-55 program apart from those two.
+  **Invariants:** every word lies inside the run (`o + W <= L`), each
+  word's constant is a string literal (never an integer literal of the
+  target's byte order), and the compare reads exactly the bytes the caller's
+  existing bounds guard covers. No struct offset moves, no `rx_info` member
+  is added or changed, and no answer moves.
+- **`rx_info.abi` was `57` (lane vedge bumped it from
+  56 at the lane/r1land landing (its own branch took 56), 2026-10-03: [OPT-VEDGE] — THE VIEW-TOLERANT SCAN EDGE).** The scan
+  edge (`docs/spec/tuning.md` §2.18) refused every counted chain that
+  touched a position view, so the `(?:[a-z]{0,n})\z` whole-subject form
+  walked its table once per byte on both passes. It now takes the edge in
+  two more cases (§2.37, `-fno-view-edge`): on the forward and anchored
+  machines, a chain whose members carry only an END (`\z`) view, which the
+  scan's own stop at `n` evaluates; and on any machine, a chain whose head
+  is another state's view target, which now starts one state later instead
+  of being refused. Artifacts whose `<PREFIX>_DFA_SCAN_EDGE` value or edge
+  set changes move (the scan-edge loop text, smaller tables); every other
+  artifact differs from `abi` 56 in its abi digits alone. No struct offset
+  moves, no `rx_info` member is added or changed, and no answer moves.
+- **`rx_info.abi` was `56` (lane rsform bumped it
+  from 55, 2026-10-03: [OPT-HYB-RESEED-FORM] A1 — A START-ANCHORED HYBRID
+  STOPS CARRYING AN UNREACHABLE ADAPTIVE RETRY).** `<PREFIX>_VM_RESEED`
+  gains the value `"anchored"` (§6.3, `tuning.md` §2.35): a hybrid whose
+  `<PREFIX>_VM_START` is not `"unanchored"`, and whose retry was adaptive
+  through `abi` 55, now takes the pre-`abi`-49 retry. Its attempt loop
+  already stopped after the first attempt ([OPT-ANCHOR-VM]), so the
+  adaptive tail and its two per-call locals were text no call could reach;
+  they are no longer emitted, and the artifact's C equals its
+  `-fno-hyb-reseed` artifact's byte for byte. Only those artifacts move
+  (48 in the byte corpus under `--features all`, all formerly
+  `"adaptive-dense"`); every other artifact differs from `abi` 55 in its abi
+  digits alone. No struct offset moves, no `rx_info` member is added or
+  changed, and no answer moves, give-ups included: the attempt set is the
+  one attempt it always was.
+- **`rx_info.abi` was `55` (lane k78 bumped it from
   54, 2026-09-30: K78 — A DFA ARTIFACT'S DEAD-GROUP FILL MOVES FROM THE
   SEARCH ENTRY TO ITS SUCCESS PATHS).** A DFA artifact whose
   `<PREFIX>_NCAPS` is 2 or more promises groups that no match can set
@@ -3459,6 +3515,7 @@ engine-scoped.**
   |---|---|
   | `"exact"` | the prefilter answers for the pattern's own language, so a failed attempt cannot follow one of its answers; the retry is the one this compiler emitted before abi 49 |
   | `"clamped"` | over-approximating prefilter on an artifact with an MRL clamp: the pre-abi-49 retry, which already re-seeds after every failed attempt |
+  | `"anchored"` | over-approximating clamp-free prefilter on a start-anchored pattern (`_VM_START` not `"unanchored"`): the attempt loop stops after its first attempt, so no retry runs and the pre-abi-49 retry's text is emitted (abi 56) |
   | `"adaptive-dense"` | over-approximating clamp-free prefilter, and the compile's byte-rate prior predicts dense candidates: the retry steps or re-seeds per call, starting in step mode |
   | `"adaptive"` | over-approximating clamp-free prefilter: the retry steps or re-seeds per call, starting with a short step budget |
   | `"fixed"` | `-fno-hyb-reseed` on an over-approximating clamp-free prefilter: the pre-abi-49 retry |
@@ -3716,6 +3773,28 @@ engine-scoped.**
   plain text in the artifact**: a binary built under a user's analysis
   discloses its name.
 
+  **[OPT-LITSCAN] S4 C1, 2026-10-03 (`abi` 58): `<PREFIX>_RUN_WORDS` — HOW
+  MANY RUN COMPARES THE OVERLAP ROW WROTE.** On EVERY artifact, both engines.
+  An ACTIVITY count, which (b) below keeps VM-only, and it is here instead
+  because the mechanism it counts is both engines': the run compare
+  (`src/gen/runcmp.c`, `docs/spec/tuning.md` §2.38) writes the DFA scan's run
+  term and run pre-check as well as the VM's literal runs and island chains.
+
+  ```c
+  #define RX_RUN_WORDS 1   /* or 0, or any count */
+  ```
+
+  **The IFF: it is the number of literal-run compares this artifact writes as
+  two overlapping word compares** (the `overlap` row: an exact run of length
+  3, 5-7 or 9-15), counting each compare once whatever engine wrote it; a run
+  compare at any other length is a `memcmp` and is not counted. `0` on every
+  artifact that writes none and under `-fno-run-overlap`. It is written after
+  the engine body — beside the `rx_info` definition, `<PREFIX>_FINDINGS`'
+  placement — because a DFA artifact's compares sit in file-scope blocks
+  emitted after the prologue. A COUNT, `_VM_LIT_RUNS`' reason. What a
+  consumer may NOT conclude: anything about the answers, which are identical
+  either way. No `rx_info` mirror (D77).
+
 - **(b) CAPACITY and ACTIVITY macros stay VM-only**, exactly as this
   section already said: `<PREFIX>_VM_RUNGS`, `_VM_STRATS`, `_VM_PRUNES`,
   `_VM_PRUNE_CEILING`, `_VM_CALL_SPLICED`/`_LINKED`, `_VM_ROOT_MINW`,
@@ -3946,7 +4025,9 @@ concatenation ([OPT-LITSCAN] F5, `abi` 43, D127, narrowed from two: a
 two-byte run reads cheaper as its own two-node byte chain, `tuning.md`
 §2.31), and an alternation island's single-child trie chain (unaffected by
 F5's floor, its own mechanism), each compared as one bounds check and one
-constant-length `memcmp` (`docs/spec/tuning.md` §2.31). UNCONDITIONAL on
+run compare (`docs/spec/tuning.md` §2.31, §2.38: since `abi` 58 a
+constant-length `memcmp` or, at the lengths gcc decomposes, two overlapping
+word compares). UNCONDITIONAL on
 every VM artifact, hybrids included, never defined on a pure-DFA artifact,
 `0` under `-fno-lit-run`. A COUNT for the two entries above' reason. What a
 consumer may NOT conclude: anything about the answers, which are identical
