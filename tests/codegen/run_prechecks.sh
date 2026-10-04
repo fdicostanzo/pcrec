@@ -1376,7 +1376,8 @@ while IFS='%' read -r pat flags want why; do
 done <<'ROWS'
 (x?)([a-z]+)+Z.@\1%-e byte%64%K65's witness under byte: the prior picks Z (90), so @ (64) is the rest
 (x?)([a-z]+)+Z.@\1%-e utf8%90%the same under utf8: the rightmost fallback picks @ (64), so Z (90) is the rest
-(x?)([a-z]+)+Z.@#\1%-e byte%90%the RUN form: the run @# (64 35) is tested whole, so Z (90) alone is the rest
+(x?)([a-z]+)+Z.@#\1%-e byte%none%the RUN form: the run @# (64 35) is tested whole and Z (90), rarer than its scan byte, LEADS it ([K82] set-leads, §5.11), so no member is left
+(x?)([a-z]+)+Z.@#\1%-e byte -fno-req-set-lead%90%the same with the lead denied: Z (90) alone is the rest
 [a-z]+Z.@%--engine=vm -e byte%64%a FRAMELESS unanchored forced-VM program: linear per attempt but retried at every start, so its give-up (work, on ~200 KB) followed the pick too
 (Z)\1%-e byte%none%a one-member set: the pick IS the set, nothing is left to emit
 (x?)([a-z]+)+Z.@%-e byte%none%no backreference: an exact hybrid DFA scans in front, so the pick alone suffices
@@ -1428,7 +1429,8 @@ while IFS='%' read -r pat flags want wantrq why; do
 done <<'ROWS'
 (x?)([a-z]+)+eeeeeeee~#~#~#~#\1%-e byte%eeeeeeee~#~#~#~# 16%none%K66's witness under byte: the window is ~#~#~#~#, the run is 16 bytes, and every set byte is in it
 (x?)([a-z]+)+eeeeeeee~#~#~#~#\1%-e utf8%eeeeeeee~#~#~#~# 16%none%the same under utf8, whose window is eeeeeeee: both encodings now compare the same run
-(x?)([a-z]+)+Q.abcdefghij\1%-e byte%abcdefghij 10%81%a 10-byte run beside a set member outside it: the rest is Q (81) alone, never the two run bytes outside the window
+(x?)([a-z]+)+Q.abcdefghij\1%-e byte%abcdefghij 10%none%a 10-byte run beside a set member outside it: Q (81) is rarer than the run's scan byte, so it LEADS ([K82] set-leads) and nothing is left; never the two run bytes outside the window
+(x?)([a-z]+)+Q.abcdefghij\1%-e byte -fno-req-set-lead%abcdefghij 10%81%the same with the lead denied: the rest is Q (81) alone
 (x?)([a-z]+)+abcdefgh\1%-e byte%none%none%a run of exactly 8: the window IS the run, nothing more is emitted
 (x?)([a-z]+)+eeeeeeee~#~#~#~#%-e byte%none%none%no backreference: an exact hybrid DFA scans in front, so the window alone suffices
 (x?)([a-z]+)+eeeeeeee~#~#~#~#\1%-e byte -fno-req-run%none%35, 101%-fno-req-run: no run at all, so the one-byte pick (126) and the K65 rest (# and e) stand
@@ -1492,6 +1494,51 @@ q[a-z]*qu%%memchr%none%emitted%class D: memchr on q IS the pick, but the run flo
 /abcd[xy]/user%%memchr%none%emitted%class C0: the run is pinned at 6 but the memchr scans / at 0, so no run row (sabotage row g's witness: the pin must match BYTES)
 (x?)([a-z]+)+Z.@\1%-e byte%-%-%emitted%K65's witness: no DFA scan of any kind, so G1 has no p and the pre-check stays (litscan_s1.md R3-1)
 (x?)([a-z]+)+Z.@\1%-e utf8%-%-%emitted%the same under utf8
+ROWS
+
+# =========================================================================
+# SECTION 5.11 — [K82]: THE ADMISSION TABLE'S `set-leads` ROW, AND PICK'S
+# NONE ANSWER (tuning.md §2.29/§2.40, findings.md §4)
+# =========================================================================
+#
+# (A) Where a run pre-check is admitted and the necessary SET's pick is
+# strictly rarer than the run's scan member, the set pick's one-byte check is
+# emitted BEFORE the run search. The column `lead` is that byte, derived by
+# hand from the pattern and `--list-analysis default`'s ppm (or "-": no
+# one-byte check precedes the run call). Read off the TEXT: the first
+# `!memchr(…, B, …)` line above the first `rx_reqrun(` call. (C) Under NONE
+# PICK takes the candidate with the fewest members, ties to the rightmost, so
+# a NONE run scans an exact position before a pair: the `run` column is
+# `<PREFIX>_REQ_RUN` as it must read ("*" = not asserted).
+lead_of() {
+    awk '/rx_reqrun\(subject/ && /return 0;/ { exit }
+         match($0, /!memchr\([a-z_]+ \+ [a-z_]+, [0-9]+,/) {
+             t = substr($0, RSTART, RLENGTH); sub(/,$/, "", t); sub(/.*, /, "", t); print t; exit }' "$1"
+}
+while IFS='%' read -r pat flags wantlead wantrun why; do
+    [ -n "$pat" ] || continue
+    a="$WORKDIR/s511_$RANDOM$RANDOM.c"
+    # shellcheck disable=SC2086  # $flags is a word list on purpose
+    if ! emit "$a" "$pat" $flags; then bad "[5.11] $pat [$flags]: refused"; continue; fi
+    glead="$(lead_of "$a")"; glead="${glead:--}"
+    grun="$(stamp "$a" REQ_RUN)"
+    gwhy="$(stamp "$a" REQ_WHY)"
+    { [ "$wantrun" = "*" ] || [ "$grun" = "$wantrun" ]; } && [ "$glead" = "$wantlead" ] \
+        && [ "$gwhy" = "emitted" ] \
+        && ok "[5.11] $pat [$flags] -> lead $glead, REQ_RUN \"$grun\" ($why)" \
+        || bad "[5.11] $pat [$flags]: lead $glead, REQ_RUN \"$grun\", REQ_WHY \"$gwhy\"; expected lead $wantlead, REQ_RUN \"$wantrun\", \"emitted\" ($why)"
+done <<'ROWS'
+(?:user|USER)[ \t]*=%%61%55534552@0/dfdfdfdf%userpass's shape: '=' (3323 ppm) is rarer than the scan pair u/U, so it leads (k82diag twin T1)
+(?:user|USER)[ \t]*=%--engine=vm%61%55534552@0/dfdfdfdf%the same on the VM route
+(?:user|USER)[ \t]*=%-fno-req-set-lead%-%55534552@0/dfdfdfdf%the deny: the run search alone, the abi-59 program
+cat\s+sat%%99%736174@0%an EXACT run under the byte-rate: c (18442) is rarer than the scan byte s (42034), so the row is not caseless-only
+(?i:xqz)\d+e%%-%58515a@2/dfdfdf%the rate decides, not the shape: e (84235) is commoner than the z/Z pair (548), so the run stays alone
+(?i)union.*?select%%-%*%an empty necessary set: nothing can lead (union-select keeps its win)
+(?i:elect)\d+=%-e utf8%61%454c454354@4/dfdfdfdfdf%NONE: a byte against a two-member pair, so the byte leads (S is not a pair under utf8: it folds with U+017F too)
+é@%-e utf8%-%c3a940@2%NONE: a byte against an exact byte ties, and a tie keeps the run alone
+日本|日曜|日付%-e utf8%-%e697a5e4@2/fffffffd%(C) alt-shared: NONE scans the exact continuation byte 0xA5, not the lead-byte pair {E4,E6} at 3
+x(?i:elect)%-e utf8%-%78454c454354@0/ffdfdfdfdfdf%(C) NONE: the one exact position wins over the five pairs to its right, and the set pick IS that byte
+(?i:elect)%-e utf8%-%454c454354@4/dfdfdfdfdf%(C) all pairs tie, so the rightmost, as before
 ROWS
 
 # =========================================================================

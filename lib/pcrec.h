@@ -1074,6 +1074,15 @@ enum {
  * out of `rx_info.flags`; `<PREFIX>_REQ_RUN`'s `/mask` suffix records what
  * the analysis found. A `#define` for bit 32's reason. */
 #define PCREC_NO_REQ_RUN_FOLD PCREC_BIT(44)
+/* [K82] `-fno-req-set-lead` — deny the pre-check admission's `set-leads` row
+ * (docs/spec/tuning.md §2.40). Where a necessary run's pre-check is emitted
+ * and a byte of the necessary SET is rarer than the run's scan member under
+ * the active byte-rate (under none, a byte against a two-member pair), the
+ * artifact tests that byte's `memchr` first and the run after it. Denied, the
+ * run pre-check alone, the abi-59 program. It changes no answer either way,
+ * so it is masked out of `rx_info.flags`; `<PREFIX>_REQ_WHY` reads `emitted`
+ * under both. A `#define` for bit 32's reason. */
+#define PCREC_NO_REQ_SET_LEAD PCREC_BIT(45)
 
 /* [ENG-BREP] the counter rung's UNROLL FACTOR, K (counterk_design.md §4.1;
  * eng_brep_design.md §4.5's "K must not become a per-pattern heuristic in v1",

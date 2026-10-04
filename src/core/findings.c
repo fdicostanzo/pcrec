@@ -27,8 +27,9 @@
  * rightmost rule as the TIEBREAK.
  *
  * THE NONE ANSWER IS SPELLED ONCE PER QUESTION KIND [D126 Q4], inside the
- * primitive that answers it: PICK -> the reader's positional rightmost,
- * COMPARE -> false, MASS -> the uniform rate's mass (cardinality). A reader
+ * primitive that answers it: PICK -> the argmin of the uniform mass, ties to
+ * the reader's positional rightmost ([K82] (C)), COMPARE -> false, MASS ->
+ * the uniform rate's mass (cardinality). A reader
  * hands the accessor's result to a primitive and never tests it, which is
  * what stops two readers of one question spelling two NONE answers (R13:
  * rightmost against leftmost).
@@ -399,10 +400,13 @@ const uint32_t *pcrec_find_byte_rate(Ctx *cx)
 /* ---- THE PRIMITIVES: one per rate QUESTION KIND, its NONE answer inside ----
  *
  * [D126 Q4] A uniform table substituted for NONE would be right for MASS
- * only: for PICK it answers `cand[0]`, which is the set pick's rightmost but
- * the run's LEFTMOST (R13's defect again), and for COMPARE it answers `true`
- * for every pair, a density claim no data supports. So each kind states its
- * own, once, here (design §6.1). */
+ * only: for COMPARE it answers `true` for every pair, a density claim no
+ * data supports. So each kind states its own, once, here (design §6.1).
+ * PICK's NONE answer is MASS's own (cardinality) since [K82] (C): its one
+ * objection to a uniform table was the tie (`cand[0]`, the run's LEFTMOST,
+ * R13's defect), and PICK ties to the reader's `rightmost` under both arms,
+ * so a uniform cost answers `rightmost` wherever every candidate is one
+ * byte, exactly as before. */
 
 /* The uniform rate's mass for `k` bytes: floor(k * 10^6 / 256). */
 static uint32_t uniform_mass(int k)
@@ -411,11 +415,14 @@ static uint32_t uniform_mass(int k)
 }
 
 /* The rate summed over the members of the cube (t, k): every byte t | f for
- * f a submask of the free bits ~k. A byte (k == 0xFF) is rate[t]. */
+ * f a submask of the free bits ~k. A byte (k == 0xFF) is rate[t]. NONE:
+ * MASS's own answer, the uniform mass of the cube's 2^popcount(~k) members
+ * (cardinality). */
 static uint32_t cube_mass(const uint32_t *rate, int t, int k)
 {
     unsigned long long m = 0;
     int f = ~k & 0xFF;
+    if (!rate) return uniform_mass(1 << __builtin_popcount((unsigned)f));
     for (int b = f;; b = (b - 1) & f) {
         m += rate[t | b];
         if (!b) break;
@@ -426,11 +433,9 @@ static uint32_t cube_mass(const uint32_t *rate, int t, int k)
 int pcrec_find_pick(const uint32_t *rate, const unsigned char *cand,
                     const unsigned char *care, int n, int rightmost)
 {
-    int i, best = 0;
-    uint32_t lo;
-    if (!rate) return rightmost;
-    lo = cube_mass(rate, cand[0], care ? care[0] : 0xFF);
-    for (i = 1; i < n; i++) {
+    int i, best = rightmost;
+    uint32_t lo = cube_mass(rate, cand[best], care ? care[best] : 0xFF);
+    for (i = 0; i < n; i++) {
         uint32_t m = cube_mass(rate, cand[i], care ? care[i] : 0xFF);
         if (m < lo) { lo = m; best = i; }
     }

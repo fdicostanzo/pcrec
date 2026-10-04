@@ -220,12 +220,15 @@ const uint32_t *pcrec_find_byte_rate(Ctx *cx);
  * cand[i] (cand[i] & ~care[i] == 0). care == NULL means every care[i] is
  * 0xFF, i.e. every candidate is the one byte cand[i]. Cost of a candidate:
  * the rate summed over its members (MASS's own definition, so a byte costs
- * rate[cand[i]]). Returns the INDEX of the argmin, ties to the EARLIEST
- * candidate. NONE: `rightmost`, the index of the reader's positional
- * rightmost candidate (PCRE2's LASTCODEUNIT rule), whatever the candidates'
- * sizes. The reader chooses only the candidate ORDER, which is its tie rule.
- * n >= 1, 0 <= rightmost < n. ([OPT-LITSCAN] S4 C3 extended the candidates
- * from bytes to cubes, litscan_s4.md §2.3.3: one PICK kind, one NONE.) */
+ * rate[cand[i]]). Returns the INDEX of the argmin, ties to `rightmost` (the
+ * index of the reader's positional rightmost candidate, PCRE2's LASTCODEUNIT
+ * rule) when it is among the minima and to the EARLIEST candidate otherwise.
+ * NONE: the same argmin over MASS's NONE answer, the UNIFORM mass
+ * (cardinality), so a byte beats a pair and a list of bytes alone answers
+ * `rightmost` ([K82] (C), abi 60). The reader chooses only the candidate
+ * ORDER, which is its tie rule. n >= 1, 0 <= rightmost < n. ([OPT-LITSCAN]
+ * S4 C3 extended the candidates from bytes to cubes, litscan_s4.md §2.3.3:
+ * one PICK kind, one NONE.) */
 int pcrec_find_pick(const uint32_t *rate, const unsigned char *cand,
                     const unsigned char *care, int n, int rightmost);
 

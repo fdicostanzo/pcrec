@@ -49,7 +49,7 @@
  * abi ritual fires next, bump this ONE constant; grep for its old value
  * finds both emission sites plus every out-of-tree reader the ritual's own
  * site list already enumerates. */
-#define PCREC_ARTIFACT_ABI 59
+#define PCREC_ARTIFACT_ABI 60
 
 /* Renders one byte of pattern-derived text safely into a C block comment, escaping whatever would close or falsely open the comment.
  *
@@ -294,7 +294,7 @@ static const char *dfa_search_start_name(Ctx *cx);
 static bool dfa_search_is_pinned(Ctx *cx);
 
 /* [OPT-PRECHECK-ADMIT] WHY THIS ARTIFACT DOES OR DOES NOT CARRY A
- * WHOLE-WINDOW PRE-CHECK — the four-token answer, derived once and read by
+ * WHOLE-WINDOW PRE-CHECK, and in which shape — derived once and read by
  * three sites that must not disagree: `pcrec_emit_req_byte_check` (whether to
  * write the text), `pcrec_emit_prologue`'s `<PREFIX>_REQ_BYTE`/
  * `<PREFIX>_REQ_RUN`/`<PREFIX>_REQ_WHY` stamps (what to say about it), and
@@ -305,9 +305,20 @@ typedef enum {
     REQ_ADMIT_EMITTED = 0,  /* a pre-check is emitted, on the `req_byte` fact */
     REQ_ADMIT_NONE,         /* there is no necessary byte to check */
     REQ_ADMIT_ONE_ATTEMPT,  /* G2: the route answers in ONE attempt */
-    REQ_ADMIT_DOMINATED     /* G1: an equally rare byte is already scanned */
+    REQ_ADMIT_DOMINATED,    /* G1: an equally rare byte is already scanned */
+    REQ_ADMIT_SET_LEADS     /* [K82] emitted, the set pick's memchr first */
 } ReqAdmit;
 static ReqAdmit req_admit(Ctx *cx);
+static const char *req_why_name(ReqAdmit a);
+/* Does verdict `a` emit a pre-check? The one spelling of "emitted" for the
+ * readers above, so a shape row cannot be read as a decline. */
+static bool req_admit_emits(ReqAdmit a)
+{
+    return a == REQ_ADMIT_EMITTED || a == REQ_ADMIT_SET_LEADS;
+}
+/* The necessary-set byte [K82]'s `set-leads` row tests in front of the run,
+ * or -1 where the admission chose another row. Defined beside it. */
+static int req_lead_byte(Ctx *cx);
 
 /* This file's arena-owned fragment formatter, defined below with its reason;
  * declared here because the run pre-check's emitter precedes it. */
@@ -999,7 +1010,7 @@ static int req_run_tests(Ctx *cx, OfsTest t[2])
      * exact window), and a whole run built without its mask would be an
      * exact compare of T, deleting every match not in upper case on the one
      * route where this is the only proof (litscan_s4.md §2.3.4, S4). */
-    if (r->len < 2 || req_admit(cx) != REQ_ADMIT_EMITTED)
+    if (r->len < 2 || !req_admit_emits(req_admit(cx)))
         return 0;
     ofs_test_run(&t[0], r->bytes, r->mask, r->len, r->idx);
     r = pcrec_fact_req_whole_run(cx);   /* the same struct's core half */
@@ -1184,6 +1195,8 @@ static void emit_req_set_rest(Ctx *cx, StrBuf *c, const char *indent,
         for (k = 0; k < r->whole_len; k++)
             if (r->whole_mask[k] == 0xFF) done[r->whole[k]] = true;
     } else done[pcrec_fact_req_byte(cx)] = true;
+    /* [K82] a leading set pick was tested by the first half too. */
+    if (req_lead_byte(cx) >= 0) done[req_lead_byte(cx)] = true;
     /* Asked only on the one route that reads it, so `--emit-facts` can say
      * which artifacts consumed the whole set. */
     set = pcrec_fact_req_set(cx);
@@ -1211,6 +1224,30 @@ static void emit_req_set_rest(Ctx *cx, StrBuf *c, const char *indent,
         indent,
         indent, subjvar, posvar, lenvar, posvar,
         indent,
+        indent);
+}
+
+/* Writes the one-byte pre-check for necessary byte `b`: NOMATCH on an empty
+ * window or a window without `b`. The whole-window argument and the `<=`
+ * arm's two obligations are `pcrec_emit_req_byte_check`'s, below; it is the
+ * shape of both the one-byte form and [K82]'s leading set pick, so the two
+ * cannot test a byte in two shapes. Sabotage row S265's anchor is in it. */
+static void emit_req_one_byte(StrBuf *c, const char *indent,
+                              const char *posvar, const char *subjvar,
+                              const char *lenvar, int b)
+{
+    pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
+    pcrec_sb_printf(c,
+        "%s/* [OPT-REQBYTE] every match of this pattern contains the byte\n"
+        "%s * %d, so a window without it holds no match at all. */\n",
+        indent, indent, b);
+    pcrec_sb_cmt_close(c);
+    pcrec_sb_printf(c,
+        "%sif (%s <= %s ||\n"
+        "%s    !memchr(%s + %s, %d, %s - %s))\n"
+        "%s    return 0;\n",
+        indent, lenvar, posvar,
+        indent, subjvar, posvar, b, lenvar, posvar,
         indent);
 }
 
@@ -1257,32 +1294,25 @@ void pcrec_emit_req_byte_check(Ctx *cx, StrBuf *c, const char *indent,
      * condition spelled at the site is a condition that drifts from the stamp
      * that describes it. `req_admit` is the one derivation; the prologue's
      * three stamps and its `<string.h>` decision read the same call. */
-    if (req_admit(cx) != REQ_ADMIT_EMITTED) return;
+    if (!req_admit_emits(req_admit(cx))) return;
     /* [OPT-REQPOS] tier 2b: the RUN is the same fact at word grain and its
-     * check subsumes this one, so where a run shipped it is the only
-     * pre-check emitted — and the `req_byte` fact is then the run's own scan
-     * member, chosen with the run at one site (src/facts/req.c's single
-     * return) so the stamp and the emitted `memchr` cannot disagree. The
-     * one-byte text below is left at its own indent, un-nested, because
-     * sabotage row S265's anchor is in it. */
+     * check subsumes this one, so where a run shipped it is the pre-check
+     * emitted — and the `req_byte` fact is then the run's own scan member,
+     * chosen with the run at one site (src/facts/req.c's single return) so
+     * the stamp and the emitted `memchr` cannot disagree. [K82] The one
+     * exception is the admission's `set-leads` row: a necessary-set byte
+     * RARER than the run's scan member is tested first, by the same
+     * one-byte text, so a window lacking it costs one `memchr` and never
+     * the run search. */
     if (pcrec_fact_req_run(cx)->len >= 2) {
+        if (req_lead_byte(cx) >= 0)
+            emit_req_one_byte(c, indent, posvar, subjvar, lenvar,
+                              req_lead_byte(cx));
         emit_req_run_check(cx, c, indent, posvar, subjvar, lenvar);
         emit_req_set_rest(cx, c, indent, posvar, subjvar, lenvar);
         return;
     }
-    pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
-    pcrec_sb_printf(c,
-        "%s/* [OPT-REQBYTE] every match of this pattern contains the byte\n"
-        "%s * %d, so a window without it holds no match at all. */\n",
-        indent, indent, b);
-    pcrec_sb_cmt_close(c);
-    pcrec_sb_printf(c,
-        "%sif (%s <= %s ||\n"
-        "%s    !memchr(%s + %s, %d, %s - %s))\n"
-        "%s    return 0;\n",
-        indent, lenvar, posvar,
-        indent, subjvar, posvar, b, lenvar, posvar,
-        indent);
+    emit_req_one_byte(c, indent, posvar, subjvar, lenvar, b);
     emit_req_set_rest(cx, c, indent, posvar, subjvar, lenvar);
 }
 
@@ -2878,6 +2908,13 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
                                            * moves no answer, masked for the
                                            * same reason. */
                                           PCREC_NO_REQ_RUN_FOLD |
+                                          /* [K82] the admission's
+                                           * `set-leads` row: one more
+                                           * necessary byte tested first,
+                                           * which proves absence and moves
+                                           * no answer, masked for the same
+                                           * reason. */
+                                          PCREC_NO_REQ_SET_LEAD |
                                           /* [UCP] U2 T3's `ctx-node` row
                                            * ([UCP] ucp_design.md §2.2). An
                                            * answer-identity axis: denied, a
@@ -6531,36 +6568,111 @@ static bool req_byte_dominated_by(Ctx *cx, const CandScan *cs, int q)
     return pcrec_find_no_commoner(pcrec_find_byte_rate(cx), p, q);
 }
 
-/* Decides whether this artifact emits a whole-window pre-check at all, and
- * names the reason when it does not — [OPT-PRECHECK-ADMIT]'s one derivation,
- * declared far above beside the readers that must agree with it.
+/* The necessary SET's own pick (`pcrec_find_set_pick`, the reader
+ * src/facts/req.c's `req_byte` answers through where no exact run member
+ * is scanned), or -1 for an empty set. */
+static int req_set_pick(Ctx *cx)
+{
+    const ReqSet *set = pcrec_fact_req_set(cx);
+    return pcrec_find_set_pick(pcrec_find_byte_rate(cx), set->bits, set->rightmost);
+}
+
+/* The admission's rows, each a predicate over the compile alone (`s->cx`;
+ * the machine fields of the `DfaSel` are unused). */
+static bool req_none_applies(const DfaSel *s)
+{
+    return pcrec_fact_req_byte(s->cx) < 0 && pcrec_fact_req_run(s->cx)->len < 2;
+}
+static bool req_one_attempt_applies(const DfaSel *s)
+{
+    return req_route_one_attempt(s->cx);
+}
+static bool req_dominated_applies(const DfaSel *s)
+{
+    CandScan cs;
+    dfa_cand_scan(s->cx, &cs);
+    return req_byte_dominated_by(s->cx, &cs, pcrec_fact_req_byte(s->cx));
+}
+/* [K82] (A) Is the necessary set's pick RARER than the run's scan member?
+ * One PICK over the two guards, the run's scan cube first, so a tie (and an
+ * exact scan member under NONE, a byte against a byte) keeps the run alone:
+ * the set pick leads only where it is strictly rarer under the active rate,
+ * or, under NONE, a byte against the run's two-member pair. */
+static bool req_set_leads_applies(const DfaSel *s)
+{
+    const ReqRun *r = pcrec_fact_req_run(s->cx);
+    unsigned char cand[2], care[2];
+    int q;
+    if (r->len < 2) return false;
+    if ((q = req_set_pick(s->cx)) < 0) return false;
+    cand[0] = r->bytes[r->idx];
+    care[0] = r->mask[r->idx];
+    cand[1] = (unsigned char)q;
+    care[1] = 0xFF;
+    return pcrec_find_pick(pcrec_find_byte_rate(s->cx), cand, care, 2, 0) == 1;
+}
+
+/* [OPT-PRECHECK-ADMIT] THE ADMISSION TABLE: whether this artifact emits a
+ * whole-window pre-check, in which shape, and why not when it does not.
+ * First applying, non-denied row wins (`DFA_SELECT`).
  *
  * ORDER IS PART OF THE ANSWER. "Nothing necessary" comes first because the
- * other two are claims ABOUT what is necessary; it is no byte AND no run
+ * other rows are claims ABOUT what is necessary; it is no byte AND no run
  * ([OPT-LITSCAN] S4 C3: the two spellings agreed while every run byte was a
  * set member, and differ exactly on a masked run over an empty set, the
  * population the caseless run exists for); G2 comes before G1 because it is a
  * property of the route and holds whatever the artifact scans, while G1 has to
- * ask what that is. A declined artifact keeps the `req_byte` fact and its
- * `<PREFIX>_REQ_BYTE`/`<PREFIX>_REQ_RUN` stamps unchanged — the analysis ran
- * and its answer is still true of the pattern — so this enum is a statement
- * about EMISSION alone, and it is the only thing that moves. */
+ * ask what that is. `set-leads` ([K82] (A), docs/dev/lanes/k82fix_report.md)
+ * is a SHAPE of an admitted run pre-check, so it follows every decline: a
+ * pre-check that is not emitted has no first byte. Denied
+ * (`-fno-req-set-lead`), the run pre-check is the abi-59 one. A declined
+ * artifact keeps the `req_byte` fact and its `<PREFIX>_REQ_BYTE`/
+ * `<PREFIX>_REQ_RUN` stamps unchanged — the analysis ran and its answer is
+ * still true of the pattern — so this table is a statement about EMISSION
+ * alone, and it is the only thing that moves. */
+typedef struct ReqAdmitRow {
+    DfaCand     c;
+    ReqAdmit    verdict;
+    const char *desc;      /* the predicate, for `--list-axes` */
+} ReqAdmitRow;
+static const ReqAdmitRow req_admits[] = {
+    { { "none",        0,                      req_none_applies        }, REQ_ADMIT_NONE,
+      "no necessary byte and no necessary run: nothing to pre-check" },
+    { { "one-attempt", 0,                      req_one_attempt_applies }, REQ_ADMIT_ONE_ATTEMPT,
+      "G2: the route tries exactly one start position, and on the VM that one attempt is linear (an exact hybrid DFA in front, or a frameless program), so the check would scan the window the attempt reads anyway" },
+    { { "dominated",   0,                      req_dominated_applies   }, REQ_ADMIT_DOMINATED,
+      "G1: the candidate-start scan already tests the same byte (and, for a run, verifies the run), or under a byte-rate a one-byte memchr scan of a byte no commoner than the necessary byte" },
+    { { "set-leads",   PCREC_NO_REQ_SET_LEAD,  req_set_leads_applies   }, REQ_ADMIT_SET_LEADS,
+      "a run pre-check is admitted and the necessary set's pick is strictly rarer than the run's scan member (one PICK over the two guards, the run first, so a tie keeps the run alone; under no byte-rate a byte against a two-member pair): the set pick's memchr first, then the run search" },
+    { { "emitted",     0,                      cand_always             }, REQ_ADMIT_EMITTED,
+      "always (fallback): the pre-check on the req_byte fact, or the run search where a run shipped" },
+};
+const int pcrec_req_admit_nrows = (int)(sizeof req_admits / sizeof req_admits[0]);
+
+void pcrec_req_admit_row(int i, PcrecReqAdmitDesc *out)
+{
+    out->name = req_admits[i].c.name;
+    out->deny = req_admits[i].c.deny;
+    out->why  = req_why_name(req_admits[i].verdict);
+    out->desc = req_admits[i].desc;
+}
+
 static ReqAdmit req_admit(Ctx *cx)
 {
-    CandScan cs;
-    if (pcrec_fact_req_byte(cx) < 0 && pcrec_fact_req_run(cx)->len < 2)
-        return REQ_ADMIT_NONE;
-    if (req_route_one_attempt(cx)) return REQ_ADMIT_ONE_ATTEMPT;
-    dfa_cand_scan(cx, &cs);
-    if (req_byte_dominated_by(cx, &cs, pcrec_fact_req_byte(cx)))
-        return REQ_ADMIT_DOMINATED;
-    return REQ_ADMIT_EMITTED;
+    DfaSel s = { cx, NULL, NULL, true, -1 };
+    return DFA_SELECT(ReqAdmitRow, req_admits, &s, cx->opt->flags)->verdict;
+}
+
+static int req_lead_byte(Ctx *cx)
+{
+    return req_admit(cx) == REQ_ADMIT_SET_LEADS ? req_set_pick(cx) : -1;
 }
 
 /* Renders an admission verdict as the token `<PREFIX>_REQ_WHY` carries: a
  * CLOSED FOUR-TOKEN SET, `<PREFIX>_ENGINE_WHY`'s shape. A consumer buckets on a value; prose with a byte number in it would
  * be neither greppable nor stable, and the byte is already the business of
- * `<PREFIX>_REQ_BYTE` and `<PREFIX>_DFA_PREFILTER`. */
+ * `<PREFIX>_REQ_BYTE` and `<PREFIX>_DFA_PREFILTER`. The token answers WHETHER
+ * a pre-check is emitted, so [K82]'s `set-leads` shape reads `emitted`. */
 static const char *req_why_name(ReqAdmit a)
 {
     switch (a) {
@@ -6568,6 +6680,7 @@ static const char *req_why_name(ReqAdmit a)
     case REQ_ADMIT_NONE:        return "none";
     case REQ_ADMIT_ONE_ATTEMPT: return "one-attempt";
     case REQ_ADMIT_DOMINATED:   return "dominated";
+    case REQ_ADMIT_SET_LEADS:   return "emitted";
     }
     return "none";
 }
@@ -9142,7 +9255,7 @@ void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
      * artifact whose pre-check was admitted out and whose body then calls no
      * `memchr` at all. */
     ReqAdmit admit = req_admit(cx);
-    if (admit == REQ_ADMIT_EMITTED) need_string_h = true;
+    if (req_admit_emits(admit)) need_string_h = true;
     /* [VAR] A THIRD CUSTOMER: `<prefix>_vars_resolve` matches the caller's
      * variable NAMES against this artifact's own with a length check and a
      * `memcmp`, once per entry call. `strcmp` would read past a caller's

@@ -739,6 +739,19 @@ static void emit_predicate_axes(StrBuf *sb)
                      0, 0, "",
                      "always (fallback) — single bytes only, the pre-row walk, ranked by length; the deny flag");
     }
+    /* [OPT-PRECHECK-ADMIT] [K82] req-admit — §2.29/§2.40. The whole-window
+     * pre-check's admission table, WALKED LIVE off `pcrec_req_admit_row`
+     * (src/gen/emit_dfa.c), so this surface cannot state a predicate the
+     * emitter does not ask. Its stamp is `RX_REQ_WHY`; `set-leads` is a
+     * SHAPE of an emitted pre-check, so it stamps `emitted` too. */
+    {
+        PredAxis p = { "req-admit", NULL, "RX_REQ_WHY", "", 0, NULL, 0, NULL, NULL, NULL };
+        for (int i = 0; i < pcrec_req_admit_nrows; i++) {
+            PcrecReqAdmitDesc r;
+            pcrec_req_admit_row(i, &r);
+            emit_pred_row(sb, &p, i + 1, r.name, r.why, r.deny, 0, "", r.desc);
+        }
+    }
     /* [K50] startpos-guard — §2.23. A CONTRACT AXIS, NOT ANSWER-IDENTICAL:
      * each row describes a real semantics for a mid-character caller
      * startpos, and which one an artifact carries is a contract fact rather

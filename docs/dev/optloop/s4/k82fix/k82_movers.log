@@ -1,0 +1,59 @@
+== bench: 1348 distinct artifact-configs (1380 rows)
+  ids: {'identical': 1223, 'refused': 93, 'moved': 32}
+  identical pred=-     1223
+  moved     pred=A       28
+  moved     pred=C        4
+  deny arm: 1255 identical-or-(C), 0 not
+   MOVER A  auto '(?:username|USERNAME|user|USER)[ \\t]*=[ \\t]*["\']([a-zA-Z0-9.'  run "55534552@0/dfdfdfdf"->"55534552@0/dfdfdfdf" byte "61"->"61" why "emitted" []
+   MOVER A  vm   '(?:username|USERNAME|user|USER)[ \\t]*=[ \\t]*["\']([a-zA-Z0-9.' --engine=vm run "55534552@0/dfdfdfdf"->"55534552@0/dfdfdfdf" byte "61"->"61" why "emitted" []
+   MOVER A  auto '(?s)item.done'  run "646f6e65@0"->"646f6e65@0" byte "100"->"100" why "emitted" []
+   MOVER A  vm   '(?s)item.done' --engine=vm run "646f6e65@0"->"646f6e65@0" byte "100"->"100" why "emitted" []
+   MOVER A  auto '\\bat (?:[A-Za-z_$][A-Za-z0-9_$]*\\.){2,}[A-Za-z_$][A-Za-z0-9_'  run "617420@0"->"617420@0" byte "97"->"97" why "emitted" []
+   MOVER A  vm   '\\bat (?:[A-Za-z_$][A-Za-z0-9_$]*\\.){2,}[A-Za-z_$][A-Za-z0-9_' --engine=vm run "617420@0"->"617420@0" byte "97"->"97" why "emitted" []
+   MOVER A  auto 'cat\\s+sat'  run "736174@0"->"736174@0" byte "115"->"115" why "emitted" []
+   MOVER A  vm   'cat\\s+sat' --engine=vm run "736174@0"->"736174@0" byte "115"->"115" why "emitted" []
+   MOVER A  auto 'it\\Nm'  run "6974@0"->"6974@0" byte "105"->"105" why "emitted" []
+   MOVER A  vm   'it\\Nm' --engine=vm run "6974@0"->"6974@0" byte "105"->"105" why "emitted" []
+   MOVER A  auto 'item\\v+done'  run "646f6e65@0"->"646f6e65@0" byte "100"->"100" why "emitted" []
+   MOVER A  vm   'item\\v+done' --engine=vm run "646f6e65@0"->"646f6e65@0" byte "100"->"100" why "emitted" []
+   MOVER A  auto 'key\\h*=\\h*value'  run "76616c7565@0"->"76616c7565@0" byte "118"->"118" why "emitted" []
+   MOVER A  vm   'key\\h*=\\h*value' --engine=vm run "76616c7565@0"->"76616c7565@0" byte "118"->"118" why "emitted" []
+   MOVER C  auto 'æ\x97¥æ\x9c¬|æ\x97¥æ\x9b\x9c|æ\x97¥ä»\x98' -e utf8 run "e697a5e4@3/fffffffd"->"e697a5e4@2/fffffffd" byte "230"->"165" why "emitted" [RX_REQ_BYTE,RX_REQ_RUN]
+   MOVER C  vm   'æ\x97¥æ\x9c¬|æ\x97¥æ\x9b\x9c|æ\x97¥ä»\x98' -e utf8 --engine=vm run "e697a5e4@3/fffffffd"->"e697a5e4@2/fffffffd" byte "230"->"165" why "emitted" [RX_REQ_BYTE,RX_REQ_RUN]
+== corpus: 7324 distinct artifact-configs (8884 rows)
+  ids: {'identical': 6551, 'refused': 743, 'moved': 30}
+  identical pred=-     6551
+  moved     pred=A       24
+  moved     pred=C        6
+  deny arm: 6581 identical-or-(C), 0 not
+   MOVER A  vm   '(?:alpha|alps|alp)x' --engine=vm run "616c70@2"->"616c70@2" byte "112"->"112" why "emitted" []
+   MOVER C  auto '(?:ð\x9f\x98\x80|ð\x9f\x98\x81)' -e utf8 run "f09f9880@3/fffffffe"->"f09f9880@2/fffffffe" byte "152"->"152" why "emitted" [RX_REQ_RUN]
+   MOVER C  vm   '(?:ð\x9f\x98\x80|ð\x9f\x98\x81)' -e utf8 --engine=vm run "f09f9880@3/fffffffe"->"f09f9880@2/fffffffe" byte "152"->"152" why "emitted" [RX_REQ_RUN]
+   MOVER A  auto '(?i:select)\\d+x'  run "53454c454354@4/dfdfdfdfdfdf"->"53454c454354@4/dfdfdfdfdfdf" byte "120"->"120" why "emitted" []
+   MOVER A  vm   '(?i:select)\\d+x' --engine=vm run "53454c454354@4/dfdfdfdfdfdf"->"53454c454354@4/dfdfdfdfdfdf" byte "120"->"120" why "emitted" []
+   MOVER A  auto '(a)y(?!\\1)z'  run "6179@1"->"6179@1" byte "121"->"121" why "emitted" []
+   MOVER A  vm   '(a)y(?!\\1)z' --engine=vm run "6179@1"->"6179@1" byte "121"->"121" why "emitted" []
+   MOVER A  auto '(a)y(?*\\1)z'  run "6179@1"->"6179@1" byte "121"->"121" why "emitted" []
+   MOVER A  vm   '(a)y(?*\\1)z' --engine=vm run "6179@1"->"6179@1" byte "121"->"121" why "emitted" []
+   MOVER A  auto '(a)y(?=\\1)z'  run "6179@1"->"6179@1" byte "121"->"121" why "emitted" []
+   MOVER A  vm   '(a)y(?=\\1)z' --engine=vm run "6179@1"->"6179@1" byte "121"->"121" why "emitted" []
+   MOVER A  auto '(abc){2}x'  run "616263@1"->"616263@1" byte "98"->"98" why "emitted" []
+   MOVER A  vm   '(abc){2}x' --engine=vm run "616263@1"->"616263@1" byte "98"->"98" why "emitted" []
+   MOVER A  auto '(x?)([a-z]+)+S\\d(?i:select)\\1'  run "53454c454354@4/dfdfdfdfdfdf"->"53454c454354@4/dfdfdfdfdfdf" byte "83"->"83" why "emitted" []
+   MOVER A  vm   '(x?)([a-z]+)+S\\d(?i:select)\\1' --engine=vm run "53454c454354@4/dfdfdfdfdfdf"->"53454c454354@4/dfdfdfdfdfdf" byte "83"->"83" why "emitted" []
+   MOVER A  auto '(x?)([a-z]+)+S\\d(?i:select)\\1' -e byte run "53454c454354@4/dfdfdfdfdfdf"->"53454c454354@4/dfdfdfdfdfdf" byte "83"->"83" why "emitted" []
+   MOVER A  vm   '(x?)([a-z]+)+S\\d(?i:select)\\1' -e byte --engine=vm run "53454c454354@4/dfdfdfdfdfdf"->"53454c454354@4/dfdfdfdfdfdf" byte "83"->"83" why "emitted" []
+   MOVER A  auto '(x?)([a-z]+)+S\\d(?i:select)\\1' -e utf8 run "454c454354@4/dfdfdfdfdf"->"454c454354@4/dfdfdfdfdf" byte "83"->"83" why "emitted" []
+   MOVER A  vm   '(x?)([a-z]+)+S\\d(?i:select)\\1' -e utf8 --engine=vm run "454c454354@4/dfdfdfdfdf"->"454c454354@4/dfdfdfdfdf" byte "83"->"83" why "emitted" []
+   MOVER A  auto '(x?)([a-z]+)+Z.@#\\1' -e byte run "4023@1"->"4023@1" byte "35"->"35" why "emitted" []
+   MOVER A  vm   '(x?)([a-z]+)+Z.@#\\1' -e byte --engine=vm run "4023@1"->"4023@1" byte "35"->"35" why "emitted" []
+   MOVER C  auto '[ð\x9f\x98\x80ð\x9f\x98\x81]' -e utf8 run "f09f9880@3/fffffffe"->"f09f9880@2/fffffffe" byte "152"->"152" why "emitted" [RX_REQ_RUN]
+   MOVER C  vm   '[ð\x9f\x98\x80ð\x9f\x98\x81]' -e utf8 --engine=vm run "f09f9880@3/fffffffe"->"f09f9880@2/fffffffe" byte "152"->"152" why "emitted" [RX_REQ_RUN]
+   MOVER A  vm   '^((?:foo|fob))(?1)x$' --engine=vm run "666f@0"->"666f@0" byte "102"->"102" why "emitted" []
+   MOVER C  auto 'a-z' -i -e utf8 run "412d5a@2/dfffdf"->"412d5a@1/dfffdf" byte "45"->"45" why "emitted" [RX_REQ_RUN]
+   MOVER C  vm   'a-z' -i -e utf8 --engine=vm run "412d5a@2/dfffdf"->"412d5a@1/dfffdf" byte "45"->"45" why "emitted" [RX_REQ_RUN]
+   MOVER A  auto 'z(?:ab){3,}?'  run "6162@1"->"6162@1" byte "98"->"98" why "emitted" []
+   MOVER A  vm   'z(?:ab){3,}?' --engine=vm run "6162@1"->"6162@1" byte "98"->"98" why "emitted" []
+   MOVER A  auto 'z(?:ab){3,}?c?'  run "6162@1"->"6162@1" byte "98"->"98" why "emitted" []
+   MOVER A  vm   'z(?:ab){3,}?c?' --engine=vm run "6162@1"->"6162@1" byte "98"->"98" why "emitted" []
+k82_movers: PASS (0 off-diagonal, deny or refusal failures)
