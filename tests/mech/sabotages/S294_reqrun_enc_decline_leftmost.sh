@@ -1,7 +1,12 @@
 # S294 — [OPT-REQRUN-ENC] THE PICK KIND'S NONE ANSWER REVERTS TO LEFTMOST
-# (src/core/findings.c, `pcrec_find_pick`'s `!rate` return — re-anchored at
-# [FINDINGS] B1 from `rn_scan_index`'s own `!bytekey` line, a per-reader NONE
-# rule D126 Q4 deleted): under any encoding the byte-rate answers NONE for
+# (src/core/findings.c, `pcrec_find_pick`'s tie — re-anchored at [FINDINGS]
+# B1 from `rn_scan_index`'s own `!bytekey` line, a per-reader NONE rule D126
+# Q4 deleted; RE-ANCHORED 2026-10-04 by lane k82fix from the `!rate` return
+# [K82] (C) deleted: PICK's NONE answer is now the argmin of the uniform mass,
+# so the rightmost rule lives in the TIE, and this plant sends a tie to the
+# LAST candidate, the run's leftmost position. Unlike the old `!rate` line it
+# reaches the byte-rate arm's data ties too, so §4.9c may go red beside the
+# arms named below): under any encoding the byte-rate answers NONE for
 # (today, `-e utf8` under the default analysis), the necessary-run scan
 # member goes back to the run's LEFTMOST byte instead of its RIGHTMOST — the
 # pre-2026-09-26 rule, `rb_pick`'s own `!bytekey` fallback un-matched again.
@@ -32,7 +37,7 @@
 SAB_ID="S294-reqrun-enc-decline-leftmost"
 SAB_FILE="src/core/findings.c"
 SAB_SUITES="prechecks harness"
-SAB_DESC="the PICK kind's NONE answer (pcrec_find_pick with no rate) reverts to the leftmost candidate instead of the reader's positional rightmost, which reaches both PICK readers through one site and moves the necessary run's scan member to its leftmost, so under -e utf8 the emitted memchr/memcmp targets a UTF-8 lead byte on a mid-character run — a pure cost regression with NO answer-level detector anywhere in this tree, since every member of a run is a byte every match must contain, which is why this is a STRUCTURAL row and why a green corpus arm beside a red prechecks arm is the row working"
+SAB_DESC="the PICK kind's tie (and so its NONE answer over one-byte candidates, pcrec_find_pick with no rate) goes to the last candidate, the leftmost, instead of the reader's positional rightmost, which reaches both PICK readers through one site and moves the necessary run's scan member to its leftmost, so under -e utf8 the emitted memchr/memcmp targets a UTF-8 lead byte on a mid-character run — a pure cost regression with NO answer-level detector anywhere in this tree, since every member of a run is a byte every match must contain, which is why this is a STRUCTURAL row and why a green corpus arm beside a red prechecks arm is the row working"
 SAB_DOC_FIGURE="tests/codegen/run_prechecks.sh is the whole detector: §3.6/§3.6r's four utf8 witnesses and §4.9/§4.9b (é@ -> RX_REQ_BYTE \"64\"; Москва outside 0xC2-0xF4) all report the reverted leftmost value. Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S294."
 # [MECH-REACH] THE PROBE says the SITE still answers: on the clean tree
 # é@ under -e utf8 stamps RX_REQ_BYTE "64" (the rightmost member, '@'), not
@@ -40,5 +45,5 @@ SAB_DOC_FIGURE="tests/codegen/run_prechecks.sh is the whole detector: §3.6/§3.
 SAB_REACH='"$PCREC" --features all -p rx -e utf8 -o "$REACH_TMP/o.c" --pattern "é@" && grep -q "^#define RX_REQ_BYTE \"64\"" "$REACH_TMP/o.c" && grep -q "^#define RX_REQ_RUN \"c3a940@2\"" "$REACH_TMP/o.c" && echo REACH-REQRUN-ENC-RIGHTMOST'
 SAB_REACH_EXPECT="REACH-REQRUN-ENC-RIGHTMOST"
 SAB_COUNT=1
-SAB_BEFORE='    if (!rate) return rightmost;'
-SAB_AFTER='    if (!rate) return 0;   /* SABOTAGE S294: the PICK kind NONE answer reverted to leftmost */'
+SAB_BEFORE='        if (m < lo) { lo = m; best = i; }'
+SAB_AFTER='        if (m <= lo) { lo = m; best = i; }   /* SABOTAGE S294: ties to the LAST candidate, the leftmost */'

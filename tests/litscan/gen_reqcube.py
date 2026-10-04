@@ -73,6 +73,17 @@ S2B_WHY = ("S2b: K65's second half must still memchr every set member the run do
            "turns these n cells into step give-ups")
 S2B_CELLS = ["a" * 16 + "1select", "a" * 17 + "1select", "a" * 18 + "1select", "abcS1SeLeCt"]
 S2B_GU = "a" * 18 + "Sx1select"
+# [K82] S2b's 'S' now LEADS the run (it is rarer than the scan pair), so the
+# set-leads row tests it whatever K65's rest does. S2c keeps the defect
+# reachable: its run [sS]qz scans the exact 'z' (498 ppm) and 'S' (4203) is
+# commoner, so 'S' leads nothing and only K65's rest memchrs it -- the pair
+# position's T that S451/S452 would mark done.
+S2C = "(x?)([a-z]+)+S\\d(?i:s)qz\\1"
+S2C_WHY = ("S2c ([K82]): S2b's shape with 'S' commoner than the run's exact scan byte 'z', "
+           "so no set-leads row fires and K65's rest alone memchrs 'S', the T of the run's "
+           "pair position; marking T done (S452) turns these n cells into step give-ups")
+S2C_CELLS = ["a" * 16 + "1sqz", "a" * 17 + "1sqz", "a" * 18 + "1sqz", "abcS1Sqz", "abcS1sqz"]
+S2C_GU = "a" * 18 + "Sx1sqz"
 
 
 def esc(b):
@@ -144,6 +155,19 @@ for enc in ("byte", "utf8"):
         out.extend(cell(rx, c) for c in S2B_CELLS)
         out.append('gu steps "%s"' % esc(S2B_GU.encode("latin-1")))
         out.append("")
+
+rx = re.compile(S2C.encode("latin-1"))
+for route in ("auto", "vm"):
+    out.append("# " + S2C_WHY + " [encoding byte%s]" % ("" if route == "auto" else ", engine vm"))
+    out.append("pattern " + S2C)
+    out.append("features backrefs,classes,modifiers")
+    out.append("encoding byte")
+    if route == "vm":
+        out.append("engine vm")
+    out.append("budget steps=10000")
+    out.extend(cell(rx, c) for c in S2C_CELLS)
+    out.append('gu steps "%s"' % esc(S2C_GU.encode("latin-1")))
+    out.append("")
 
 out.append("# S2b, the review's exact witness at L = 30 (see the header: a python TIME")
 out.append("# exclusion; libpcre2 10.46 answers MATCHLIMIT, pcrec NOMATCH by K65's memchr).")
