@@ -193,8 +193,8 @@ and stay. Identity-gate re-pins: §6.
 | S460 | the lead emitted after the run call | prechecks §5.11 | DETECTED, reach ok, prechecks 4 fail |
 | S461 | PICK NONE prices every cube as one member (the abi-59 answer) | prechecks §5.11 (C) rows | DETECTED, reach ok, prechecks 3 fail |
 | S462 | `set-leads`'s deny bit dropped | prechecks §5.11 deny row | DETECTED, reach ok, prechecks 3 fail |
-| S294 (re-anchored) | PICK's tie to the LAST candidate (the leftmost); its old anchor `if (!rate) return rightmost;` is gone | prechecks §3.6/§4.9 | OWED-FILL |
-| S452 (re-aimed) | K65's rest marks a pair T proved; S2b's 'S' now leads, so the witness moved to S2c | harness reqcube.rxt S2c, reqcube_check | OWED-FILL |
+| S294 (re-anchored) | PICK's tie to the LAST candidate (the leftmost); its old anchor `if (!rate) return rightmost;` is gone | prechecks §3.6/§4.9 | DETECTED, reach ok, prechecks 29 fail, corpus 0 fail (structural, as before) |
+| S452 (re-aimed) | K65's rest marks a pair T proved; S2b's 'S' now leads, so the witness moved to S2c | harness reqcube.rxt S2c, reqcube_check | DETECTED, reach ok, corpus 6 fail, codegen 2 fail |
 
 S462 was first written with the registry suite as a second detector; the
 plant ran registry 0 fail (the `--list-axes` deny column walks the same row,
@@ -202,11 +202,60 @@ a control sharing its source), so the row names prechecks alone.
 
 ## 6. Validation
 
-OWED-FILL (suites, make strict, make test, test-axes).
+Done on the Mac (TMPDIR in the scratchpad; each the named target):
+
+| target | result |
+|---|---|
+| `make strict CC=gcc-16` | clean |
+| `make test-registry` | rc 0 (axes check 186 PASS, pin 183 -> 186) |
+| `make test-codegen` | the only red is the accepted darwin `nm arm_a.o` line; `run_prechecks.sh` 317/0 inside it, `reqcube_check.py` 94/0 |
+| `make test-rxtsource` | 271/0 after the census/C3 re-pin (+2 blocks, +12 lines; C3 PASS +10 and giveup +2 measured on python 3.9, the 3.14 PASS pin INFERRED 15329 + 10) |
+| `make test-recursion-identity` | green after (B) -> `bdb6d556` (2,839 call-free patterns identical against the pin; (A) program regions unchanged in kind) |
+| `make test-entry-shape-identity`, `test-cpset-structure`, `test-encoding-checks`, `test-findings` | rc 0 |
+| `tests/harness/run.sh tests/litscan/reqcube.rxt` | 287/0 |
+| mover census | PASS, §3 |
+| sabotage S457-S462, S294, S452 | all DETECTED solo, §5 |
+
+Red and NOT this lane's: `test-atomic-identity`, `test-backrefs-identity`,
+`test-lookaround-identity` (each prints its own RETIRED message about
+[DD-14] wave A; none is in `TEST_SECTIONS`); `test-spec` (`pcre2.h` not
+found on this box; not in `TEST_SECTIONS`). The first `test-rxtsource`
+re-run read 2 `serves-collision` reds that were an artifact of a TMPDIR
+spelled with `..`; the clean-path run above is green.
+
+**OWED (the last act, detached; see §10):** the Mac `make test` and
+`make test-axes AXES="-fno-req-run-fold -fno-req-set-lead"`.
 
 ## 7. Directional Mac timing
 
-OWED-FILL.
+`alpha_k82.sh` with `DARWIN=1 LAUNCHES=3 PASSES=5`, on a loaded M1 (load1
+8.45 at start: other lanes' suites were running), gcc-16 -O2. DIRECTIONAL
+ONLY (D144 addendum 1). Transcript: `docs/dev/optloop/s4/k82fix/mac_time.txt`.
+The CONTROLS' own |new - base| (byte-identical programs) reach 0.020 ns/B
+(`levelctx-ctl`), which is the real floor on this box today.
+
+| cell | kind | new - base, ns/B (64k / 256k / 1m) | read |
+|---|---|---|---|
+| userpass | A | -0.624 / -0.729 / -0.744 | the K82 headline cured: 0.65-0.77 -> 0.021-0.024, = k82diag twin T1 |
+| alt-shared | P | -0.071 / -0.107 / -0.128 | cause C cured, = twin T2 |
+| stack-frame (log fail/hit) | A | -0.010 / -0.008 / -0.006 / +0.014 | inside the control spread |
+| cls-h | A | +0.001 / -0.033 / -0.014 | inside / a small win |
+| cls-n-uc | A | +0.019 / +0.029 / +0.030 | at the edge of the control spread: a possible small cost of the extra `memchr`; the Linux alpha decides |
+| cls-s-lc | A | +0.016 / +0.006 / -0.009 | inside |
+| cls-v | A | +0.000 / +0.019 / +0.003 | inside |
+| mod-s | A | +0.009 / +0.035 / +0.004 | inside / edge |
+| union-select (nocaps, caps) | C | -0.009..+0.000 | unchanged program, customer win kept |
+| ci-ascii-ctl | C | +0.001 / +0.001 / +0.002 | unchanged program |
+| mod-i, cls-fold-pair, ci-strasse (cause B) | C | -0.013..+0.018 | unchanged program, still the K82 (B) movers |
+| union-srch (75 short subjects, ns/call) | C | 36 NULL / 14 WIN / 25 REG, sum +1.08 ns | unchanged program: the noise of the instrument |
+
+So the two big cells move by the predicted amounts, and the exact-run row-4
+movers (whose set pick is a byte in front of an already-cheap exact run)
+read inside or at the edge of this box's floor. Note the `cls-n-uc`/`mod-s`
+`+0.03` as the one thing to watch on Linux. Linux alpha: run
+`docs/dev/optloop/s4/alpha_k82.sh` (BASE_REV=940fa06e, NEW_REV the tip);
+it checks cell kinds (A: DENY == BASE; P: DENY == NEW; C: all three equal)
+and answer identity before timing — that `check` step is green on the Mac.
 
 ## 8. C3's alpha control
 
@@ -231,4 +280,20 @@ DENY `-fno-req-set-lead`; cell kinds A / P / C, §0 of the script).
 
 ## 10. Resume notes
 
-OWED-FILL.
+- Branch `lane/k82fix`; the code is complete. Last `src/` commit `bdb6d556`
+  (the recursion-identity pin). The mover census ran on a pre-bump build
+  (`bin/pcrec-new0` in the scratchpad); re-run it post-bump with
+  `ABI_FROM=59 ABI_TO=60` if wanted.
+- OWED chain, detached, one heavy suite, suite lock
+  `worktrees/.mac-suite.lock`: `make test` (log
+  `worktrees/k82fix-scratch/make_test.log`, verdict = make's
+  `*** [test-X] Error` lines; accepted darwin red = `test-codegen`'s `nm
+  arm_a.o` only), then `make test-axes AXES="-fno-req-run-fold
+  -fno-req-set-lead"` (log `worktrees/k82fix-scratch/test_axes.log`); the
+  chain writes `CHAIN-DONE make_test=<rc> axes=<rc>` to
+  `worktrees/k82fix-scratch/chain.log`. If `-fno-req-set-lead` reports
+  give-ups, they populate `run_axes.sh` GROUP F3 (predicted empty).
+- For the manager: the Linux alpha (`alpha_k82.sh`), the pcrec-bench inbox
+  note (abi 60; `REQ_WHY` vocabulary unchanged; new bit 45 in
+  `--list-axes` / `list_axes.tsv` and a new axis `req-admit`), and the K82
+  disposition (B stays open).
