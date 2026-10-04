@@ -1,5 +1,10 @@
 # LANE BOILERPLATE — read this FIRST, follow all of it
 
+**NEVER write outside your worktree + session scratchpad — `/tmp`,
+`~/.claude`, `$HOME` and the main tree included. `mktemp` must be given the
+scratchpad dir (e.g. `mktemp -p "$SCRATCH"`); compilers/scripts that default
+to `/tmp` need `TMPDIR` pointed at the scratchpad.**
+
 Standing rules for every pcrec subagent lane. Your brief names your task,
 model tier, and deliverable; everything below applies without restatement.
 (Ruled by Frank 2026-09-06 to cut brief size and lane startup cost.)
