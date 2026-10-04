@@ -39,6 +39,8 @@ and, on union-srch's 75 short subjects, regressions past the floor on about 35 c
 
 **Interim:** `-fno-req-run-fold` (bit 44) restores the pre-C3 program.
 
+**RULED (Frank, 2026-10-04, ninetieth session):** C3 STAYS DEFAULT-ON; the fix is [OPTLOOP] round 2's FIRST item (D144: a regression without a wrong answer is an issue row, not a revert). Diagnosis lane k82diag (docs/dev/lanes/k82diag_report.md) feeds the fix design.
+
 **Disposition:** filed per D144. ROUND-2 FIRST candidate. PENDING FRANK'S RULING: keep C3 default-on until the pick is fixed (D144's rule; a measured win on the target customers) or flip the default off until then (seven movers lose by 0.08-0.95 ns/B, one of them ~57x). Not ruled.
 
 ---
