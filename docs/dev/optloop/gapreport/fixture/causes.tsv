@@ -1,0 +1,17 @@
+# fixture causes: the judgement layer for the check
+#group	START-SET	first-byte start skip (merged FS-DFA + FS-VM)
+#group	FS-DFA	first-byte start skip, DFA hat
+#group	FS-VM	first-byte start skip, VM hat
+#group	SCAN-SIMD	sparse scan where only vector search wins
+#group	CI	caseless literal
+#group	CTX	two keywords within N
+#group	INNER-LIT	inner literal behind a leading boundary
+#group	CALL-FLOOR	per-call floor, ns-scale only
+set	pattern	group
+capability	p-first	FS-DFA
+capability	p-scan1	SCAN-SIMD
+capability	p-scan2	SCAN-SIMD
+capability	p-ci	CI
+capability	p-tierc	CALL-FLOOR
+loglines	l-ctx	CTX
+loglines	l-inner	INNER-LIT

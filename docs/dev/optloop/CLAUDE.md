@@ -751,3 +751,27 @@ that cycle's analysis lands.
 - `s4/` — the bench census, the emitted-spelling probes (`spell.c`), the
   ASan-visibility pair (`one.c`/`two.c`) and a scratch hot loop (`hot.c`)
   behind `docs/design/litscan_s4.md`. See its own `CLAUDE.md`.
+
+## [OPT-GAPREPORT]: the repeatable gap report (D144 addendum 2)
+
+- `gapreport_2026-10-03.md` — **the FIRST instance** (lane `gaprep`,
+  2026-10-03). It is the pre-round-2 bench outlier read that D144 item 6
+  asks for, on the seven `b120b121-fc719ca4` report groups.
+  - **Scope**: pcrec `auto` against pcre2-jit, the primary peer, plus the
+    reference ceilings, each semantically flagged.
+  - **Rules**: like-for-like cells only, cross-window null bands, and ns
+    cells as absolute deltas.
+  - **Grouping**: cause groups taken from the D81 stamps, with a D119
+    algorithmic-evidence column (does a SCALAR engine also win?).
+  - **Census**: pcrec leads 501, ties 15 and trails 87 of 603 cells. On
+    80 of the 87, pcre2-interp is slower than pcrec.
+  - **Top groups**: START-SET ([OPT-FIRSTSET] + [OPT-VMSEED], aws x44,
+    quoted-delim x21.7), CTX (level-context x3.8), NULLABLE-ANCH (NEW,
+    x1081 behind re2), U8-PICK (NEW: every `-e utf8` literal scans at
+    `offset-set "0,1*"`, x15.6 behind re2) and CI (round 1).
+  - **Dispositions**: SCAN-SIMD and WIDE-ALT are SIMD-phase deferrals, and
+    BACKTRACK is FUNDAMENTAL.
+  - **Also carries**: a ≤4 round-2 slate and seven bench questions.
+- `gapreport/` — its instruments and data, and `gapreport.sh`, the one-command
+  repeatable run (`--group NAME|latest --out ...`, `--check` fixture self-test).
+  See its own `CLAUDE.md`.

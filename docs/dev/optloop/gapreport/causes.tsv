@@ -1,0 +1,151 @@
+# [OPT-GAPREPORT] 2026-10-03: the JUDGMENT layer -- each losing (set, pattern) assigned to one cause group by
+# reading its D81 stamps (stamps_main.json), its pattern text, its forced/interp/ceiling columns and the
+# compiler's own --emit-ir prefilter reason. gap.py/rank.py compute; this file decides. Group ids are
+# defined in ../gapreport_2026-10-03.md §2.
+# group descriptions (rendered by gapreport.py; one "#group<TAB>ID<TAB>text" line per id):
+#group	START-SET	START-SET = FS-DFA + FS-VM: where can a match start (D124: one question, two consumers; GROUP_MERGE)
+#group	FS-DFA	START-SET, DFA hat: a leading \b/\B defeats the first-byte skip
+#group	FS-VM	START-SET, VM hat: backreference/recursion routes have no candidate scan
+#group	CTX	two keywords within N (\bA\b.{0,N}?\bB\b): DFA overflow, count-collapsed hybrid
+#group	NULLABLE-ANCH	anchored nullable capture-forced VM with no DFA gate
+#group	U8-PICK	under -e utf8 literals scan at byte offset 1; run-pinned/memchr forms never appear
+#group	CI	caseless literal scans as a byte class
+#group	SCAN-SIMD	sparse literal/class scans where only vector search wins
+#group	WIDE-ALT	wide literal alternations (rust's Teddy)
+#group	DENSE	match-dense find-all, per-match cost
+#group	LKA	lookaround: literal scan plus the hybrid hand-off
+#group	INNER-LIT	necessary inner literal at a bounded offset behind a leading \b
+#group	BACKTRACK	backtracking against a JIT (D119 FUNDAMENTAL)
+#group	CARET	non-top-level ^ (ATTEMPT-SPLIT / ABS-CARET)
+#group	BCLS	bounded-class runs (.{80,}, pw-8-64, cls-*)
+#group	CALL-FLOOR	per-call floor, ns-scale only
+#group	ENDWIN-ENC	end-window encoding, ns-scale only
+set	pattern	group
+capability	wild-secrets-aws-access-key-id	FS-DFA
+capability	wild-codegrammar-json-constant	FS-DFA
+capability	wild-secrets-github-pat	FS-DFA
+loglines	stack-frame	FS-DFA
+loglines	bignum	FS-DFA
+syntax	asr-wb	FS-DFA
+syntax	asr-nwb	FS-DFA
+utf8	asr-b-ascii	FS-DFA
+capability	quoted-delim-match	FS-VM
+capability	balanced-parens-rec	FS-VM
+syntax	bak-k-named	FS-VM
+loglines	level-context	CTX
+bounded	ctx-lazy-64	CTX
+bounded	ctx-lazy-256	CTX
+bounded	ctx-lazy-1024	CTX
+bounded	ctx-greedy-256	CTX
+syntax	mod-i	CI
+syntax	mod-r	CI
+capability	wild-waf-crs-942270-union-select	CI
+capability	wild-waf-crs-942160-sleep-benchmark	CI
+utf8	ci-ascii-control	CI
+utf8	ci-sigma	CI
+utf8	ci-strasse	CI
+utf8	ci-moskva	CI
+syntax	esc-octal-0	SCAN-SIMD
+syntax	esc-nl	SCAN-SIMD
+syntax	mod-s	SCAN-SIMD
+syntax	cls-v	SCAN-SIMD
+syntax	cls-h	SCAN-SIMD
+syntax	cls-s-lc	SCAN-SIMD
+syntax	esc-quote	SCAN-SIMD
+syntax	anc-m-caret	SCAN-SIMD
+syntax	anc-m-dollar	SCAN-SIMD
+syntax	cls-n-uc	SCAN-SIMD
+syntax	qnt-quest	SCAN-SIMD
+capability	file-ext-order	SCAN-SIMD
+capability	wild-semdiv-altorder-foo-foobar-rustregex	SCAN-SIMD
+capability	router-prefix-order	SCAN-SIMD
+syntax	lka-pos	LKA
+syntax	lka-verb	LKA
+syntax	lkb-pos	LKA
+syntax	lkb-neg	LKA
+syntax	lka-neg	LKA
+syntax	lka-nonatomic	LKA
+syntax	grp-atomic-alt	LKA
+syntax	qnt-poss-quest	LKA
+capability	pwd-strength-chain	LKA
+syntax	lit-cat	DENSE
+syntax	esc-hex	DENSE
+syntax	mod-x	DENSE
+syntax	mod-n	DENSE
+syntax	mod-reset	DENSE
+syntax	mod-unset	DENSE
+syntax	cls-dot	DENSE
+syntax	cls-fold-pair	DENSE
+syntax	alt-two	DENSE
+syntax	alt-nested	DENSE
+syntax	grp-noncap	DENSE
+syntax	grp-cap	DENSE
+syntax	grp-named	DENSE
+syntax	grp-named-quote	DENSE
+capability	keyword-prefix-order	DENSE
+capability	doubled-word	BACKTRACK
+capability	phone-palindrome-6	BACKTRACK
+syntax	bak-1	BACKTRACK
+syntax	bak-2	BACKTRACK
+syntax	bak-g-rel	BACKTRACK
+syntax	bak-py	BACKTRACK
+syntax	mod-j-uc	BACKTRACK
+capability	evil-alt-nested	NULLABLE-ANCH
+capability	trim-nested-star	NULLABLE-ANCH
+bounded	line-80	BCLS
+bounded	pw-8-64	BCLS
+bounded	cls-atleast-4096	BCLS
+bounded	nest3-16	BCLS
+capability	high-byte-run	BCLS
+utf8	lit-sharp-s	U8-PICK
+utf8	lit-nfc-pair	U8-PICK
+utf8	lit-offset-at-head	U8-PICK
+utf8	lit-1ch-4b	U8-PICK
+utf8	lit-1ch-3b	U8-PICK
+utf8	qnt-bounded-4b	U8-PICK
+utf8	qnt-counted-3b	U8-PICK
+loglines	kv-quoted	INNER-LIT
+capability	wild-waf-crs-942360-concat-sqli	CARET
+altwide	w-8	WIDE-ALT
+altwide	sfx-64	WIDE-ALT
+altwide	nar4-64	WIDE-ALT
+utf8	alt-distinct-lead	WIDE-ALT
+utf8	cls-dot-rep	ENDWIN-ENC
+capability	wild-secrets-slack-webhook-url	CI
+syntax	cls-i-class	CI
+utf8	ci-kelvin	CI
+utf8	ci-turkish-i	CI
+capability	wild-waf-crs-942140-dbnames	FS-DFA
+loglines	hex32-id	FS-DFA
+loglines	iso-ts	SCAN-SIMD
+loglines	ipv6	SCAN-SIMD
+syntax	cls-pair-ctl	SCAN-SIMD
+syntax	esc-tab	SCAN-SIMD
+utf8	alt-nearmiss	U8-PICK
+utf8	lit-cyr-run	U8-PICK
+utf8	lit-mixed-ascii	U8-PICK
+bounded	cls-upto-2048	BCLS
+bounded	cls-upto-4096	BCLS
+altwide	clsa-64	WIDE-ALT
+altwide	clsa-256	WIDE-ALT
+altwide	clsd-64	WIDE-ALT
+altwide	clsd-256	WIDE-ALT
+altwide	cnt-64	WIDE-ALT
+altwide	pfx3-512	WIDE-ALT
+altwide	s-256	WIDE-ALT
+altwide	s-2048	WIDE-ALT
+altwide	sfx-256	WIDE-ALT
+altwide	srt-256	WIDE-ALT
+altwide	srt-512	WIDE-ALT
+altwide	w-64	WIDE-ALT
+altwide	w-96	WIDE-ALT
+altwide	w-128	WIDE-ALT
+altwide	w-192	WIDE-ALT
+altwide	w-256	WIDE-ALT
+altwide	w-384	WIDE-ALT
+altwide	w-512	WIDE-ALT
+altwide	wb-256	WIDE-ALT
+altwide	wb-512	WIDE-ALT
+altwide	floor	CALL-FLOOR
+bounded	floor	CALL-FLOOR
+syntax	floor	CALL-FLOOR

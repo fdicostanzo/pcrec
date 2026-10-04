@@ -2,17 +2,19 @@
 # tests/lookaround/run_expansion_diff.sh — [M6.6.2] wave E2: THE SUBSTITUTION
 # DRIVER (design `lookaround_design.md` §6.3, §11 wave E2).
 #
-# WHAT IT IS. `tests/assertions/` is 482 blocks and 10,202 behavioural cells,
+# WHAT IT IS. `tests/assertions/` is 499 blocks and 12,905 behavioural cells,
 # every expectation produced by libpcre2 rather than written by hand, for a
 # module that already ships. Every assertion in it has a LOOKAROUND DEFINITION
 # (§6.1). Textually replacing each assertion by its definition therefore turns
-# that corpus into a LOOKAROUND corpus for free — 277 blocks and 8,342 cells of
+# that corpus into a LOOKAROUND corpus for free — 294 blocks and 11,045 cells of
 # it, whose expectations are not this module's guesses. (Design §6.3 measured
 # 468/10,120 and 263/8,260; the +1 block / +16 cells is [OPT-5] STEP 2's
 # seeded control, DELTA 1 at the population pin below. DELTA 2, same place:
 # [OPTLOOP.1.impl] batch 1's `tests/assertions/end_window.rxt` (13
 # `\z`-bearing blocks / 66 cells) is a plain qualifying addition to this
-# corpus, +13 blocks / +66 cells on both the total and qualifying counts.)
+# corpus, +13 blocks / +66 cells on both the total and qualifying counts.
+# DELTA 3, same place: [OPT-VEDGE]'s `tests/assertions/view_edge.rxt` (17
+# blocks / 2,703 cells, all qualifying) likewise.)
 #
 # **IT IS A CORPUS GENERATOR, NOT A PRODUCT MECHANISM** (Frank, 2026-08-23;
 # design §6.4). It emits PATTERN TEXT that the compiler sees as an ordinary
@@ -75,8 +77,8 @@
 # ---------------------------------------------------------------------------
 # THE POPULATION, AND WHY THE COUNTS ARE ASSERTED AND NOT PRINTED
 # ---------------------------------------------------------------------------
-# §6.3 measured 263 qualifying blocks / 8,260 cells (277 / 8,342 on HEAD —
-# see the population pin's own DELTA 1 and DELTA 2 notes) with a per-rule
+# §6.3 measured 263 qualifying blocks / 8,260 cells (294 / 11,045 on HEAD —
+# see the population pin's own DELTA 1..3 notes) with a per-rule
 # disqualification table, and those numbers are guards here, not decoration: a
 # qualification rule that quietly stopped firing would SHRINK this population,
 # and a smaller population is the one failure mode a green run cannot show.
@@ -545,13 +547,30 @@ cnt() { awk -F'\t' -v k="$1" '$1 == k {print $2}' "$PLAN/counts.tsv"; }
 #            p1_patterns 264 -> 277     p2_patterns 362 -> 377
 #            p1_identity  56 -> 58      p2_identity  84 -> 86
 #            p1_lookaround 200 -> 211   p2_lookaround 249 -> 261
-exp_pop="tot_blocks=482 tot_beh=10202 tot_g=67 \
-qual_blocks=277 qual_beh=8342 qual_g=13 \
+#
+# DELTA 3 (r1tri, the round-1 stack lane/r1land's landing of [OPT-VEDGE]):
+# `tests/assertions/view_edge.rxt` adds 17 blocks / 2,703 behavioural cells
+# (counted against the file itself: 17 `pattern` lines, 2,703 m/n/ms/ns
+# lines), every one qualifying — single-class chains under a `\z`/`\Z`/`$`
+# view, no `\G`/`\K`, constant modifier state, no capture-slot cells (tot_g
+# and qual_g unchanged). All six Q1-Q6 pairs re-verified UNCHANGED against
+# the run that went red (Linux r1_d832fc2a.log). Each block carries exactly
+# one substitutable occurrence, so P1 and P2 each gain 17 patterns: 14 are
+# `\z` (the PRIMITIVE identity rows: occ `\z` 49 -> 63, identity +14 on
+# both policies) and 3 insert a lookaround (`\Z` once, `$` twice).
+#
+#            tot_blocks 482 -> 499      tot_beh 10202 -> 12905
+#            qual_blocks 277 -> 294     qual_beh 8342 -> 11045
+#            p1_patterns 277 -> 294     p2_patterns 377 -> 394
+#            p1_identity  58 -> 72      p2_identity  86 -> 100
+#            p1_lookaround 211 -> 214   p2_lookaround 261 -> 264
+exp_pop="tot_blocks=499 tot_beh=12905 tot_g=67 \
+qual_blocks=294 qual_beh=11045 qual_g=13 \
 q1_blocks=87 q1_cells=0 q2_blocks=87 q2_cells=754 \
 q3_blocks=0 q3_cells=0 q4_blocks=31 q4_cells=1106 \
 q5_blocks=0 q5_cells=0 q6_blocks=0 q6_cells=0 \
-p1_patterns=277 p2_patterns=377 \
-p1_identity=58 p2_identity=86 p1_lookaround=211 p2_lookaround=261"
+p1_patterns=294 p2_patterns=394 \
+p1_identity=72 p2_identity=100 p1_lookaround=214 p2_lookaround=264"
 pop_bad=0
 for kv in $exp_pop; do
     k="${kv%%=*}"; want="${kv#*=}"; got="$(cnt "$k")"
@@ -561,7 +580,7 @@ for kv in $exp_pop; do
     fi
 done
 if [ "$pop_bad" -eq 0 ]; then
-    ok "§1 the population: 482 blocks / 10,202 behavioural cells re-counted on HEAD, 277 blocks / 8,342 cells QUALIFYING, and the six per-rule disqualification counts (Q1 87/0, Q2 87/754, Q3 0/0, Q4 31/1106, Q5 0/0, Q6 0/0) EXACT against design §6.3. No delta"
+    ok "§1 the population: 499 blocks / 12,905 behavioural cells re-counted on HEAD, 294 blocks / 11,045 cells QUALIFYING, and the six per-rule disqualification counts (Q1 87/0, Q2 87/754, Q3 0/0, Q4 31/1106, Q5 0/0, Q6 0/0) EXACT against design §6.3. No delta"
 fi
 # THE IDENTITY ROWS, asserted rather than tolerated. `\A` and `\z` are
 # PRIMITIVES in §6.1, so an occurrence-level substitution of one of them is
@@ -729,12 +748,12 @@ report_policy() {
     esac
 }
 case "$POLICY" in
-    all)  report_policy P1 277 58 211
-          report_policy P2 377 86 261
-          report_policy NONE 277 277 0 ;;
-    P1)   report_policy P1 277 58 211 ;;
-    P2)   report_policy P2 377 86 261 ;;
-    none) report_policy NONE 277 277 0 ;;
+    all)  report_policy P1 294 72 214
+          report_policy P2 394 100 264
+          report_policy NONE 294 294 0 ;;
+    P1)   report_policy P1 294 72 214 ;;
+    P2)   report_policy P2 394 100 264 ;;
+    none) report_policy NONE 294 294 0 ;;
 esac
 
 # ---- the headline, stated once ------------------------------------------
