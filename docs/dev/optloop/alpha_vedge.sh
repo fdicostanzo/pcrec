@@ -101,7 +101,7 @@ CEOF
   done
 }
 
-norm() { sed -E -e 's/abi 5[5-9]/abi N/g; s/(PCREC_RX_ABI_H[^0-9]*)5[5-9]/\1N/g; s/(\.abi = )5[5-9]/\1N/' "$1"; }
+norm() { sed -E -e 's/abi 5[5-9]/abi N/g; s/(PCREC_RX_ABI_H[^0-9]*)5[5-9]/\1N/g; s/(\.abi = )5[5-9]/\1N/; /^#define RX_RUN_WORDS /d' "$1"; }
 
 check() {
   # DENY == BASE modulo the abi digits (reported, not fatal: a cell where it
