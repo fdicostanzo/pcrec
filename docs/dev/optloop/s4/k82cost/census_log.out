@@ -1,0 +1,59 @@
+# rates: log
+# 57 run-bearing emitted pre-checks on proof-free routes; E* ns/B, name, set, kind, engine, prefilter, run bits, stop rate, E_form, verdict
+   0.021  wild-waf-crs-942500-comment-obfuscation      capability exact  dfa  offset-set                  20.9 0.0003 0.24 keep
+   0.032  wild-secrets-github-pat                      capability exact  vm   hybrid:offset-set-bounded   54.5 0.0016 0.35 keep
+   0.032  wild-secrets-github-pat                      litrun     exact  vm   hybrid:offset-set-bounded   54.5 0.0016 0.35 keep
+   0.034  qnt-plus-ctl                                 syntax     exact  dfa  offset-set                  20.0 0.0016 0.24 keep
+   0.034  qnt-poss-plus                                syntax     exact  vm   hybrid:offset-set           20.0 0.0016 0.24 keep
+   0.066  anc-m-caret                                  syntax     exact  dfa  memchr                      26.4 0.0057 0.59 keep
+   0.077  ci-ascii-control                             utf8       masked dfa  byte-class                  28.3 0.0046 0.75 keep
+   0.117  qnt-quest                                    syntax     exact  dfa  offset-set                  29.1 0.0122 0.24 keep
+   0.130  cls-s-lc                                     syntax     exact  dfa  memchr                      21.5 0.0136 0.59 keep
+   0.142  wild-waf-crs-942270-union-select             capability masked dfa  byte-class                  29.5 0.0126 0.75 keep
+   0.142  cls-v                                        syntax     exact  dfa  offset-set                  31.2 0.0153 0.24 keep
+   0.142  mod-s                                        syntax     exact  dfa  offset-set                  31.2 0.0153 0.24 keep
+   0.142  anc-dollar                                   syntax     exact  dfa  offset-set-bounded          31.2 0.0153 0.35 keep
+   0.142  anc-m-dollar                                 syntax     exact  dfa  offset-set-bounded          31.2 0.0153 0.35 keep
+   0.142  anc-z-lc                                     syntax     exact  dfa  offset-set-bounded          31.2 0.0153 0.35 keep
+   0.142  anc-z-uc                                     syntax     exact  dfa  offset-set-bounded          31.2 0.0153 0.35 keep
+   0.142  lkb-neg                                      syntax     exact  vm   hybrid:offset-set           31.2 0.0153 0.24 keep
+   0.142  lkb-pos                                      syntax     exact  vm   hybrid:offset-set           31.2 0.0153 0.24 keep
+   0.154  wild-secrets-slack-webhook-url               capability masked vm   hybrid:offset-set           50.4 0.0142 0.24 keep
+   0.195  ci-strasse                                   utf8       masked dfa  byte-class                  22.3 0.0192 0.75 keep
+  22.272  cls-n-uc                                     syntax     exact  dfa  offset-set                  13.3 0.0225 0.24 DECLINE
+  37.296  cls-pair-ctl                                 syntax     masked dfa  memchr                      13.1 0.0225 0.59 DECLINE
+17253.621  mod-i                                        syntax     masked dfa  byte-class                  12.2 0.0192 0.75 DECLINE
+17253.621  mod-r                                        syntax     masked dfa  byte-class                  12.2 0.0192 0.75 DECLINE
+17558.694  cls-fold-pair                                syntax     masked dfa  memchr                      12.2 0.0192 0.59 DECLINE
+3026184.371  asr-b-ascii                                  utf8       exact  dfa  offset-set-bounded          11.7 0.0136 0.35 DECLINE
+3026184.371  asr-nwb                                      syntax     exact  dfa  offset-set-bounded          11.7 0.0136 0.35 DECLINE
+3026184.371  asr-wb                                       syntax     exact  dfa  offset-set-bounded          11.7 0.0136 0.35 DECLINE
+338354593856745232028412630435500113191239680.000  sfx-256                                      altwide    exact  dfa  byte-class                   9.2 0.0079 0.75 DECLINE
+338354593856745232028412630435500113191239680.000  sfx-512                                      altwide    exact  dfa  byte-class                   9.2 0.0079 0.75 DECLINE
+338354593856745232028412630435500113191239680.000  sfx-64                                       altwide    exact  dfa  byte-class                   9.2 0.0079 0.75 DECLINE
+     inf  alt-nearmiss                                 utf8       exact  dfa  offset-set                  59.9 0.0000 0.24 DECLINE
+     inf  alt-shared-char                              utf8       masked dfa  offset-set                  42.9 0.0000 0.24 DECLINE
+     inf  asr-b-cyr                                    utf8       exact  dfa  offset-set-bounded          75.9 0.0000 0.35 DECLINE
+     inf  asr-caret-ml                                 utf8       exact  dfa  memchr                      35.9 0.0000 0.59 DECLINE
+     inf  asr-dollar-ml                                utf8       exact  dfa  offset-set-bounded          35.9 0.0000 0.35 DECLINE
+     inf  asr-lb-neg                                   utf8       exact  vm   hybrid:offset-set           35.9 0.0000 0.24 DECLINE
+     inf  cls-h                                        syntax     exact  dfa  memchr                      46.8 0.0122 0.59 DECLINE
+     inf  esc-quote                                    syntax     exact  dfa  offset-set                  37.3 0.0000 0.24 DECLINE
+     inf  http-5xx                                     loglines   masked dfa  memchr-bounded              69.9 0.0000 0.05 DECLINE
+     inf  kv-quoted                                    loglines   exact  dfa  byte-class-bounded          27.9 0.0000 0.75 DECLINE
+     inf  lit-1ch-3b                                   utf8       exact  dfa  offset-set                  35.9 0.0000 0.24 DECLINE
+     inf  lit-1ch-4b                                   utf8       exact  dfa  offset-set                  43.9 0.0000 0.24 DECLINE
+     inf  lit-cyr-run                                  utf8       exact  dfa  offset-set                  75.9 0.0000 0.24 DECLINE
+     inf  lit-l31                                      litrun     exact  dfa  offset-set                  89.3 0.0003 0.24 DECLINE
+     inf  lit-l40                                      litrun     exact  dfa  offset-set                  83.7 0.0000 0.24 DECLINE
+     inf  lit-mixed-ascii                              utf8       exact  dfa  offset-set                  67.9 0.0000 0.24 DECLINE
+     inf  lit-nearmiss-run                             utf8       exact  dfa  offset-set                  75.9 0.0000 0.24 DECLINE
+     inf  lit-nfc-pair                                 utf8       exact  dfa  offset-set                  44.8 0.0000 0.24 DECLINE
+     inf  lit-offset-at-head                           utf8       exact  dfa  offset-set                  35.9 0.0000 0.24 DECLINE
+     inf  lit-offset-at-tail                           utf8       exact  dfa  offset-set                  35.9 0.0000 0.24 DECLINE
+     inf  lit-run-3                                    utf8       exact  dfa  offset-set                  75.9 0.0000 0.24 DECLINE
+     inf  lit-sharp-s                                  utf8       exact  dfa  offset-set                  56.6 0.0000 0.24 DECLINE
+     inf  qnt-bounded-4b                               utf8       exact  dfa  offset-set                  43.9 0.0000 0.24 DECLINE
+     inf  qnt-counted-3b                               utf8       exact  dfa  offset-set                  59.9 0.0000 0.24 DECLINE
+     inf  stack-frame                                  loglines   exact  dfa  offset-set-bounded          13.4 0.0136 0.35 DECLINE
+     inf  wild-secrets-username-password-pair          capability masked vm   hybrid:byte-class           18.9 0.0140 0.75 DECLINE

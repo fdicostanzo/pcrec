@@ -1,0 +1,13 @@
+memchr d=     0      3.72 ns/call
+memchr d=    16      2.26 ns/call
+memchr d=    64      3.72 ns/call
+memchr d=   256      7.45 ns/call
+memchr d=  1024     22.34 ns/call
+memchr d=  4096    102.20 ns/call
+memchr d= 16384    341.81 ns/call
+memchr d= 65536   1293.17 ns/call
+CAL f=3.72 ns/call  beta=0.0196 ns/B (fit intercept 9.08)
+stop D=   8    8.20 ns/stop (incl. 8 B memchr) -> s=8.04
+stop D=  32    8.08 ns/stop (incl. 32 B memchr) -> s=7.45
+stop D= 128   10.03 ns/stop (incl. 128 B memchr) -> s=7.52
+stop D= 512   21.62 ns/stop (incl. 512 B memchr) -> s=11.56

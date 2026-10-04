@@ -1,0 +1,69 @@
+# costs: mac {'f': 3.7, 'beta': 0.02, 's': 7.5}
+# per source: run bits (markov1), picked scan idx, stream rates; the W window on which
+# the RUN guard pays (M=0); delta ns/B at W=64K for M=0 and M=occ (all guards); argmin
+
+== mod-i (syn/t-64k, -e byte, 434154/dfdfdf, set -) n=65536; on the subject: 400 run occurrences (7.4 bits); Linux measured delta +0.650 ns/B
+  none    21.0 bits @0 0.0018+0.0184 run pays W 16B..4M     | M=0: run-0.537 -> run      | M=occ: run-0.417 -> run
+  weblog  13.5 bits @0 0.0025+0.0184 run pays W 16B..22K    | M=0: run+0.032 -> none     | M=occ: run+0.295 -> none
+  log     12.2 bits @1 0.0056+0.0136 run pays W 16B..9K     | M=0: run+0.013 -> none     | M=occ: run+0.260 -> none
+  subj     9.4 bits @0 0.0021+0.0320 run pays W 19B..861B   | M=0: run+0.003 -> none     | M=occ: run+0.403 -> none
+
+== cls-fold-pair (syn/t-64k, -e byte, 634174/ffdfff, set 99,116) n=65536; on the subject: 377 run occurrences (7.4 bits); Linux measured delta +0.370 ns/B
+  none    23.0 bits @0 0.0184        run pays W 9B..16M     | M=0: run-0.418 byte+0.000 byte+run-0.418 -> run      | M=occ: run-0.396 byte+0.180 byte+run-0.216 -> run
+  weblog  13.6 bits @0 0.0184        run pays W 9B..22K     | M=0: run+0.027 byte+0.000 byte+run+0.027 -> none     | M=occ: run+0.176 byte+0.179 byte+run+0.355 -> none
+  log     12.2 bits @1 0.0056+0.0136 run pays W 22B..8K     | M=0: run+0.013 byte+0.000 byte+run+0.013 -> none     | M=occ: run+0.255 byte+0.210 byte+run+0.465 -> none
+  subj     9.4 bits @0 0.0320        run pays W 13B..861B   | M=0: run+0.003 byte+0.000 byte+run+0.003 -> none     | M=occ: run+0.281 byte+0.281 byte+run+0.562 -> none
+
+== cls-pair-ctl (syn/t-64k, -e byte, 636174/fffdff, set 99,116) n=65536; on the subject: 377 run occurrences (7.4 bits); Linux measured delta +0.370 ns/B
+  none    23.0 bits @0 0.0184        run pays W 9B..16M     | M=0: run-0.418 byte+0.000 byte+run-0.418 -> run      | M=occ: run-0.396 byte+0.180 byte+run-0.216 -> run
+  weblog  13.8 bits @0 0.0184        run pays W 9B..26K     | M=0: run+0.028 byte+0.000 byte+run+0.028 -> none     | M=occ: run+0.174 byte+0.179 byte+run+0.353 -> none
+  log     13.1 bits @2 0.0225        run pays W 9B..16K     | M=0: run+0.026 byte+0.000 byte+run+0.026 -> none     | M=occ: run+0.210 byte+0.210 byte+run+0.419 -> none
+  subj     9.8 bits @0 0.0320        run pays W 13B..1K     | M=0: run+0.003 byte+0.000 byte+run+0.004 -> none     | M=occ: run+0.281 byte+0.281 byte+run+0.562 -> none
+
+== ci-strasse (u8/t-64k, -e utf8, 545241/dfdfdf, set -) n=65536; on the subject: 32 run occurrences (11.0 bits); Linux measured delta +0.090 ns/B
+  none    21.0 bits @2 0.0039+0.0039 run pays W 19B..4M     | M=0: run-0.416 -> run      | M=occ: run-0.406 -> run
+  weblog  17.2 bits @1 0.0006+0.0180 run pays W 26B..256K   | M=0: run-0.200 -> run      | M=occ: run-0.146 -> run
+  log     22.3 bits @2 0.0056+0.0136 run pays W 26B..8M     | M=0: run-0.341 -> run      | M=occ: run-0.333 -> run
+  subj    13.5 bits @0 0.0007+0.0252 run pays W 32B..13K    | M=0: run+0.040 -> none     | M=occ: run+0.250 -> none
+
+== alt-shared(C fixed) (u8/t-64k, -e utf8, e697a5e4/fffffffd, set 151,165,230) n=65536; on the subject: 35 run occurrences (10.9 bits)
+  none    31.0 bits @2 0.0039        run pays W 181B..inf   | M=0: run-0.021 byte+0.000 byte+run-0.020 -> run      | M=occ: run-0.019 byte+0.051 byte+run+0.033 -> run
+  weblog  42.9 bits @3 0.0000+0.0000 run pays W 256B..inf   | M=0: run-0.030 byte-0.050 byte+run-0.050 -> byte     | M=occ: run-0.026 byte-0.048 byte+run-0.048 -> byte
+  log     42.9 bits @3 0.0000+0.0000 run pays W 256B..inf   | M=0: run-0.030 byte-0.050 byte+run-0.050 -> byte     | M=occ: run-0.026 byte-0.048 byte+run-0.048 -> byte
+  subj    14.9 bits @1 0.0035        run pays W 181B..19K   | M=0: run+0.011 byte+0.000 byte+run+0.011 -> none     | M=occ: run+0.041 byte+0.049 byte+run+0.089 -> none
+
+== userpass (cap/t-64k, -e byte, 55534552/dfdfdfdf, set 61) n=65536; on the subject: 212 run occurrences (8.3 bits); Linux measured delta +0.930 ns/B
+  none    28.0 bits @0 0.0018+0.0184 run pays W 22B..512M   | M=0: run-0.428 byte+0.000 byte+run-0.428 -> run      | M=occ: run-0.365 byte+0.057 byte+run-0.308 -> run
+  weblog  17.6 bits @0 0.0012+0.0054 run pays W 16B..512K   | M=0: run-0.368 byte+0.000 byte+run-0.368 -> run      | M=occ: run-0.264 byte+0.051 byte+run-0.213 -> run
+  log     18.9 bits @0 0.0000+0.0140 run pays W 19B..1M     | M=0: run-0.407 byte-0.600 byte+run-0.600 -> byte     | M=occ: run-0.370 byte-0.588 byte+run-0.588 -> byte
+  subj    12.0 bits @0 0.0033+0.0286 run pays W 26B..4K     | M=0: run+0.017 byte-0.600 byte+run-0.600 -> byte     | M=occ: run+0.325 byte-0.588 byte+run-0.588 -> byte
+
+== union-select (cap/t-64k, -e byte, 53454c454354/dfdfdfdfdfdf, set -) n=65536; on the subject: 0 run occurrences (17.0 bits); Linux measured delta -0.500 ns/B
+  none    42.0 bits @4 0.0018+0.0184 run pays W 22B..inf    | M=0: run-0.368 -> run      | M=occ: run-0.368 -> run
+  weblog  23.6 bits @4 0.0025+0.0184 run pays W 26B..19M    | M=0: run-0.361 -> run      | M=occ: run-0.361 -> run
+  log     29.5 bits @2 0.0005+0.0122 run pays W 22B..inf    | M=0: run-0.424 -> run      | M=occ: run-0.424 -> run
+  subj    27.1 bits @4 0.0008+0.0211 run pays W 26B..215M   | M=0: run-0.356 -> run      | M=occ: run-0.356 -> run
+
+== ci-ascii-ctl (u8/t-64k, -e utf8, 414243/dfdfdf, set -) n=65536; on the subject: 0 run occurrences (17.0 bits); Linux measured delta -0.500 ns/B
+  none    21.0 bits @2 0.0039+0.0039 run pays W 19B..4M     | M=0: run-0.416 -> run      | M=occ: run-0.416 -> run
+  weblog  23.1 bits @1 0.0007+0.0085 run pays W 22B..19M    | M=0: run-0.417 -> run      | M=occ: run-0.417 -> run
+  log     28.3 bits @1 0.0030+0.0016 run pays W 19B..861M   | M=0: run-0.455 -> run      | M=occ: run-0.455 -> run
+  subj    17.8 bits @1 0.0003+0.0052 run pays W 19B..608K   | M=0: run-0.325 -> run      | M=occ: run-0.325 -> run
+
+== slack (cap/t-64k, -e byte, 5256494345532f54/dfdfdfdfdfdfffdf, set 47,58) n=65536; on the subject: 0 run occurrences (17.0 bits); Linux measured delta -0.003 ns/B
+  none    57.0 bits @6 0.0042        run pays W 19B..inf    | M=0: run-0.189 byte+0.000 byte+run-0.189 -> run      | M=occ: run-0.189 byte+0.000 byte+run-0.189 -> run
+  weblog  32.7 bits @1 0.0005+0.0040 run pays W 64B..inf    | M=0: run-0.166 byte+0.000 byte+run-0.165 -> run      | M=occ: run-0.166 byte+0.000 byte+run-0.165 -> run
+  log     50.4 bits @1 0.0004+0.0138 run pays W 128B..inf   | M=0: run-0.092 byte+0.000 byte+run-0.092 -> run      | M=occ: run-0.092 byte+0.000 byte+run-0.092 -> run
+  subj    52.7 bits @1 0.0002+0.0113 run pays W 107B..inf   | M=0: run-0.112 byte+0.000 byte+run-0.112 -> run      | M=occ: run-0.112 byte+0.000 byte+run-0.112 -> run
+
+== http-5xx (log/t-064k-fail, -e byte, 5454502f312e3022/fffffffffffffeff, set 32,34,46,47,49,53,72,80,84) n=65593; on the subject: 0 run occurrences (17.0 bits); Linux measured delta -0.001 ns/B
+  none    63.0 bits @2 0.0013        run pays W 181B..512B  | M=0: run+0.008 byte+0.000 byte+run+0.008 -> none     | M=occ: run+0.008 byte+0.000 byte+run+0.008 -> none
+  weblog  21.8 bits @2 0.0054        run pays W never       | M=0: run+0.039 byte+0.000 byte+run+0.039 -> none     | M=occ: run+0.039 byte+0.000 byte+run+0.039 -> none
+  log     69.9 bits @7 0.0000        run pays W 181B..inf   | M=0: run+0.015 byte-0.002 byte+run-0.002 -> byte     | M=occ: run+0.015 byte-0.002 byte+run-0.002 -> byte
+  subj    56.1 bits @2 0.0005        run pays W never       | M=0: run+0.002 byte+0.005 byte+run+0.007 -> none     | M=occ: run+0.002 byte+0.005 byte+run+0.007 -> none
+
+== stack-frame (log/t-064k-fail, -e byte, 617420/ffffff, set 32,40,41,46,97,116) n=65593; on the subject: 0 run occurrences (17.0 bits)
+  none    24.0 bits @0 0.0542        run pays W never       | M=0: run+0.077 byte+0.000 byte+run+0.077 -> none     | M=occ: run+0.077 byte+0.000 byte+run+0.077 -> none
+  weblog  15.1 bits @0 0.0269        run pays W 32B..26K    | M=0: run+0.046 byte+0.000 byte+run+0.046 -> none     | M=occ: run+0.046 byte+0.000 byte+run+0.046 -> none
+  log     13.4 bits @0 0.0136        run pays W 19B..16K    | M=0: run+0.019 byte-0.330 byte+run-0.330 -> byte     | M=occ: run+0.019 byte-0.330 byte+run-0.330 -> byte
+  subj    13.6 bits @1 0.0261        run pays W 32B..9K     | M=0: run+0.039 byte+0.000 byte+run+0.040 -> none     | M=occ: run+0.039 byte+0.000 byte+run+0.040 -> none

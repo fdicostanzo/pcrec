@@ -1,0 +1,17 @@
+base decisions: 44
+f x0.5 s x0.5 beta x0.5 E x0.5 flips  0 
+f x0.5 s x0.5 beta x0.5 E x2   flips  6 alt-shared(C/subj:none->run http-5xx/none:none->run http-5xx/weblog:none->run http-5xx/subj:none->run stack-frame/none:none->run stack-frame/weblog:none->run
+f x0.5 s x0.5 beta x2   E x0.5 flips  4 alt-shared(C/none:run->none slack/log:run->none slack/subj:run->none http-5xx/log:byte->none
+f x0.5 s x0.5 beta x2   E x2   flips  3 http-5xx/subj:none->run stack-frame/none:none->run stack-frame/weblog:none->run
+f x0.5 s x2   beta x0.5 E x0.5 flips  6 cls-fold-pair/none:run->none cls-pair-ctl/none:run->none ci-strasse/weblog:run->none alt-shared(C/none:run->none slack/log:run->none slack/subj:run->none
+f x0.5 s x2   beta x0.5 E x2   flips  2 http-5xx/none:none->run http-5xx/subj:none->run
+f x0.5 s x2   beta x2   E x0.5 flips 12 cls-fold-pair/none:run->none cls-pair-ctl/none:run->none ci-strasse/weblog:run->none ci-strasse/log:run->none alt-shared(C/none:run->none union-select/none:run->none union-select/weblog:run->none union-select/subj:run->none slack/weblog:run->none slack/log:run->none slack/subj:run->none http-5xx/log:byte->none
+f x0.5 s x2   beta x2   E x2   flips  0 
+f x2   s x0.5 beta x0.5 E x0.5 flips  0 
+f x2   s x0.5 beta x0.5 E x2   flips  6 alt-shared(C/subj:none->run http-5xx/none:none->run http-5xx/weblog:none->run http-5xx/subj:none->run stack-frame/none:none->run stack-frame/weblog:none->run
+f x2   s x0.5 beta x2   E x0.5 flips  4 alt-shared(C/none:run->none slack/log:run->none slack/subj:run->none http-5xx/log:byte->none
+f x2   s x0.5 beta x2   E x2   flips  3 http-5xx/subj:none->run stack-frame/none:none->run stack-frame/weblog:none->run
+f x2   s x2   beta x0.5 E x0.5 flips  6 cls-fold-pair/none:run->none cls-pair-ctl/none:run->none ci-strasse/weblog:run->none alt-shared(C/none:run->none slack/log:run->none slack/subj:run->none
+f x2   s x2   beta x0.5 E x2   flips  2 http-5xx/none:none->run http-5xx/subj:none->run
+f x2   s x2   beta x2   E x0.5 flips 12 cls-fold-pair/none:run->none cls-pair-ctl/none:run->none ci-strasse/weblog:run->none ci-strasse/log:run->none alt-shared(C/none:run->none union-select/none:run->none union-select/weblog:run->none union-select/subj:run->none slack/weblog:run->none slack/log:run->none slack/subj:run->none http-5xx/log:byte->none
+f x2   s x2   beta x2   E x2   flips  0 
