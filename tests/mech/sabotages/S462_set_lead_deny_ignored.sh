@@ -5,11 +5,12 @@
 # set-leads row's: denied, the run pre-check is the abi-59 program. This
 # plant drops the row's deny bit, so the flag is accepted and does nothing.
 # Detector: run_prechecks.sh §5.11's `-fno-req-set-lead` row (lead "-" reads
-# "61") and §5.8/§5.9's deny rows; the registry's axes check reads the
-# `--list-axes` deny column and goes red too.
+# "61") and §5.8/§5.9's deny rows. The registry's axes check does NOT see it
+# (measured: registry 0 fail): `--list-axes` walks the same row, so its deny
+# column empties with the plant -- a control sharing its source.
 SAB_ID="S462-set-lead-deny-ignored"
 SAB_FILE="src/gen/emit_dfa.c"
-SAB_SUITES="prechecks registry"
+SAB_SUITES="prechecks"
 SAB_DESC="the set-leads row's deny bit is dropped from its table row, so -fno-req-set-lead is accepted and changes nothing"
 SAB_DOC_FIGURE="Validated by plant at landing (docs/dev/lanes/k82fix_report.md); read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S462."
 SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "(?:user|USER)[ \\t]*=" && grep -q "^#define RX_REQ_RUN \"55534552@0/dfdfdfdf\"" "$REACH_TMP/o.c" && grep -q "!memchr(subject + search_from, 61," "$REACH_TMP/o.c" && echo REACH-SET-LEADS'

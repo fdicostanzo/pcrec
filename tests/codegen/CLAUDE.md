@@ -41,7 +41,8 @@ or it has no regression net at all.
   above the block's `while (pos + ` guard; `REQ_RUN` equals the fact,
   `REQ_BYTE` is a `req_set` member and `bytes[idx]` only at an exact scan
   member, `REQ_WHY "none"` iff byte AND run are none; K65's `rq_set` on the
-  no-DFA-scan route; the kept exact-stretch pins (`a[bc]de` 2:2+2,
+  no-DFA-scan route (since [K82] read together with the `set-leads` lead:
+  `s2b`'s 'S' is in the lead, `s2c`'s in `rq_set`); the kept exact-stretch pins (`a[bc]de` 2:2+2,
   `(?i)x/1234` 1:1+5) with a prefilter block byte-identical to
   `-fno-req-run-fold`'s; the deny leaving no masked compare; exact-only
   controls byte-identical with and without the flag; the CANONICAL FORM
@@ -1123,6 +1124,16 @@ decides whether to perform it — and then run the row through
     reached by the known-fail ratchet rather than by this section, because
     its current answer is the give-up itself and a section asserting the
     CORRECT answer here would be red on the clean tree.
+  - §5.11 ([K82], lane k82fix, 2026-10-04, abi 60) — the admission
+    table's `set-leads` row and PICK's NONE answer, read off the TEXT: the
+    lead is the first `!memchr(…, B, …)` above the first `rx_reqrun(` call,
+    each row's expected byte derived by hand from the pattern and
+    `--list-analysis default`'s ppm, both directions (a rarer byte leads; a
+    commoner one, a tie under NONE and an empty set do not), an exact run
+    under the byte-rate, the deny, and the (C) NONE rows' `REQ_RUN` index.
+    §5.8/§5.9's K65/K66 rows carry the lead's consequence (the rest skips
+    the byte the lead tested) plus a `-fno-req-set-lead` row each.
+    Detector of S457-S462.
 
 - **run_vm_frameless.sh** — [OPT-VMFL] STEP 0 (2026-09-02) `<PREFIX>_VM_
   FRAMELESS`, held to the VM PROGRAM'S OWN `goto *` COUNT rather than to the
