@@ -26,6 +26,11 @@ PCREC_REPO=${PCREC_REPO:-/home/duxevents/pcrec}
 BENCH=${BENCH:-/home/duxevents/pcrec-bench}
 BASE_REV=${BASE_REV:?set BASE_REV to the C0 commit}
 NEW_REV=${NEW_REV:?set NEW_REV to the C1 commit}
+# DENY's flags. NEW here may be a later tip than C1's own commit (r1alpha ran
+# it at 8562ff3a, abi 59, which also carries C3), so DENY switches off C3's
+# -fno-req-run-fold as well: then DENY == BASE and BASE/DENY is still the
+# same program twice. (For NEW = the abi-58 C1 tip, DENYFLAGS=-fno-run-overlap.)
+DENYFLAGS=${DENYFLAGS:--fno-run-overlap -fno-req-run-fold}
 CC=${CC:-gcc}
 CPU=${CPU:-2}
 LAUNCHES=${LAUNCHES:-5}
@@ -141,7 +146,7 @@ EOF
     for side in base new deny; do
       bin=base; extra=""
       [ "$side" != base ] && bin=new
-      [ "$side" = deny ] && extra=-fno-run-overlap
+      [ "$side" = deny ] && extra=$DENYFLAGS
       mkdir -p "art/$name/$side"
       # shellcheck disable=SC2086
       "$S4A/$bin/build/pcrec" --features all -p rx $flags $extra \
@@ -174,7 +179,7 @@ check() {
       [ -s "art/$name/$side/art.c" ] && [ -x "art/$name/$side/run" ] \
         || { echo "NOT BUILT: art/$name/$side (run 'build' first)"; return 1; }
     done
-    norm() { sed -E -e 's/abi 5[5-8]/abi N/g; s/(PCREC_RX_ABI_H[^0-9]*)5[5-8]/\1N/g; s/(\.abi = )5[5-8]/\1N/; /^#define RX_RUN_WORDS /d' "$1"; }
+    norm() { sed -E -e 's/abi 5[5-9]/abi N/g; s/(PCREC_RX_ABI_H[^0-9]*)5[5-9]/\1N/g; s/(\.abi = )5[5-9]/\1N/; /^#define RX_RUN_WORDS /d' "$1"; }
     if cmp -s <(norm "art/$name/base/art.c") <(norm "art/$name/deny/art.c"); then
       echo "DENY==BASE  $name"; else echo "DENY!=BASE  $name  (the floor is not the same program: STOP)"; rc=1; fi
     w=$(sed -n 's/^#define RX_RUN_WORDS //p' "art/$name/new/art.c")
