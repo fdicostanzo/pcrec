@@ -26,6 +26,11 @@ PCREC_REPO=${PCREC_REPO:-/home/duxevents/pcrec}
 BENCH=${BENCH:-/home/duxevents/pcrec-bench}
 BASE_REV=${BASE_REV:?set BASE_REV to the C0 commit}
 NEW_REV=${NEW_REV:?set NEW_REV to the C1 commit}
+# DENY's flags. NEW here may be a later tip than C1's own commit (r1alpha ran
+# it at 8562ff3a, abi 59, which also carries C3), so DENY switches off C3's
+# -fno-req-run-fold as well: then DENY == BASE and BASE/DENY is still the
+# same program twice. (For NEW = the abi-58 C1 tip, DENYFLAGS=-fno-run-overlap.)
+DENYFLAGS=${DENYFLAGS:--fno-run-overlap -fno-req-run-fold}
 CC=${CC:-gcc}
 CPU=${CPU:-2}
 LAUNCHES=${LAUNCHES:-5}
@@ -141,7 +146,7 @@ EOF
     for side in base new deny; do
       bin=base; extra=""
       [ "$side" != base ] && bin=new
-      [ "$side" = deny ] && extra=-fno-run-overlap
+      [ "$side" = deny ] && extra=$DENYFLAGS
       mkdir -p "art/$name/$side"
       # shellcheck disable=SC2086
       "$S4A/$bin/build/pcrec" --features all -p rx $flags $extra \
@@ -157,7 +162,10 @@ EOF
     perl -pe 's/(rx_w([248])\([^()]*\)) == (rx_w\2\("(?:[^"\\]|\\.)*"\)) && (rx_w\2\([^()]*\)) == (rx_w\2\("(?:[^"\\]|\\.)*"\))/!(($1 ^ $3) | ($4 ^ $5))/g' \
       "art/$name/new/art.c" > "art/$name/fused/art.c"
     n=$(grep -c ' ^ ' "art/$name/fused/art.c"); echo "twin $name: $n fused compare line(s)"
-    [ "$n" -gt 0 ] || { echo "TWIN NOT APPLIED: $name"; exit 1; }
+    # C3 (abi 59) can fold a run into ONE masked word compare, leaving no
+    # `A == B && C == D` pair to fuse: then the twin is moot for that cell
+    # (reported, no fused arm), not a failure.
+    [ "$n" -gt 0 ] || { echo "TWIN SKIPPED (no two-word anchor in NEW, C3-folded): $name"; rm -rf "art/$name/fused"; continue; }
     "$CC" -O2 -I"art/$name/fused" -o "art/$name/fused/run" findall_med.c "art/$name/fused/art.c"
   done
 }
@@ -174,7 +182,7 @@ check() {
       [ -s "art/$name/$side/art.c" ] && [ -x "art/$name/$side/run" ] \
         || { echo "NOT BUILT: art/$name/$side (run 'build' first)"; return 1; }
     done
-    norm() { sed -E -e 's/abi 5[5-8]/abi N/g; s/(PCREC_RX_ABI_H[^0-9]*)5[5-8]/\1N/g; s/(\.abi = )5[5-8]/\1N/; /^#define RX_RUN_WORDS /d' "$1"; }
+    norm() { sed -E -e 's/abi 5[5-9]/abi N/g; s/(PCREC_RX_ABI_H[^0-9]*)5[5-9]/\1N/g; s/(\.abi = )5[5-9]/\1N/; /^#define RX_RUN_WORDS /d' "$1"; }
     if cmp -s <(norm "art/$name/base/art.c") <(norm "art/$name/deny/art.c"); then
       echo "DENY==BASE  $name"; else echo "DENY!=BASE  $name  (the floor is not the same program: STOP)"; rc=1; fi
     w=$(sed -n 's/^#define RX_RUN_WORDS //p' "art/$name/new/art.c")
@@ -190,6 +198,7 @@ check() {
     done
   done
   for name in "${TWINS[@]}"; do
+    [ -s "art/$name/fused/art.c" ] || continue
     for cell in "${CELLS[@]}"; do
       IFS='|' read -r n2 pat flags subjects <<<"$cell"; [ "$n2" = "$name" ] || continue
       ss=""; for s in $subjects; do ss="$ss subj/$s.bin"; done
