@@ -11,6 +11,59 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 ---
 
+## K83 — OPEN, deferred (2026-10-04, found by lane a2build's round-1 bake-off, read by lane r1alpha) — [OPT-HYB-RESEED-FORM] A1's `anchored` reseed row LOSES on clang by about 24 ns per pass, past the 2.5% floor
+
+**Witness:** the bake-off's `lpatom` cell (`s:br-doubled-word+74`, A1's own cell, the one pattern of the 19 with a capture group; a = main, d = the A1 branch, ns per set pass): gcc a/d = 1.089 (775 vs 712 ns, floor 0.1%), so A1 WINS about 63 ns/pass on gcc; clang a/d = 0.965 (a is 24 ns faster, floor 2.5%), so A1 LOSES beyond the floor on clang. Evidence: docs/dev/lanes/r1read_report.md §4, docs/dev/lanes/a2build_report.md; raw rows under studies/hyb_reseed_cal/bakeoff/results/.
+
+**Status:** not diagnosed (no emitted-text reading of the clang loss). A1 is the UNDENIABLE `anchored` row of `pcrec_reseed_rows` (an anchored hybrid's C equals its `-fno-hyb-reseed` C byte for byte), so it has NO deny flag of its own: the only way to restore the pre-A1 text on an anchored hybrid is `-fno-hyb-reseed`, which also denies every other row. A side finding of the A2 decision, not part of it. One cell is one pattern: the size of the clang population is unmeasured.
+
+**Disposition:** filed per D144 (a regression is an issue row unless it is a wrong answer or a tripwire blowup). Round-2 candidate; the first step is the clang disassembly of `lpatom` at a and d, then one more anchored hybrid on clang to size the population.
+
+---
+
+## K82 — OPEN, deferred (2026-10-04, found by lane r1alpha's Linux alpha of [OPT-LITSCAN] S4 C3, abi 59, bit 44) — the caseless necessary run REGRESSES seven mover witnesses by up to ~57x, and about 35 short per-call cells by a fixed entry term
+
+**Witness:** docs/dev/lanes/r1read_report.md §3 (Linux, gcc 15.2, `taskset -c 2`, BASE a588c668, NEW 8562ff3a, DENY = NEW + `-fno-req-run-fold`; DENY == BASE on all 19 cells, so the deny restores the pre-C3 program). ns/B:
+
+| cell | base | new | delta |
+|---|---|---|---|
+| `userpass` (cap x3) | 0.0168 | 0.94-0.97 | +0.92..+0.95 (~57x; floor 0.0000) |
+| `mod-i` / `mod-r` (syn x3) | 0.94-0.99 | 1.57-1.67 | +0.59..+0.70 |
+| `cls-fold-pair` / `cls-pair-ctl` (syn x3) | 0.57-0.61 | 0.89-1.03 | +0.32..+0.41 |
+| `ci-strasse` (u8 x3) | 0.666-0.694 | 0.757-0.797 | +0.080..+0.103 |
+| `alt-shared` (u8 x3) | 0.066-0.115 | 0.145-0.226 | +0.079..+0.112 |
+
+and, on union-srch's 75 short subjects, regressions past the floor on about 35 cells (mostly +2.4..+4.4 ns on 6-10 ns calls, base 6.5-7.7 -> 10.06 ns; worst +11.0 waf-dbnames, +8.7 waf-union, +7.9 rec-tag-depth3, +7.6 waf-comment-obfuscation) against about 40 wins. The predicted customers WIN (union-select -0.40..-0.52 ns/B against the ~0.43 prediction; ci-ascii-ctl -0.45..-0.50).
+
+**Suspected cause (the lane's emitted-text reading of the `userpass` artifact; NOT measured as a mechanism, and the other six movers are not diagnosed):** BASE rejects with `memchr('=')` (`REQ_BYTE 61`, absent from the text); NEW's `REQ_RUN` `55534552@0/dfdfdfdf` (`USER`, caseless) replaces that rare-byte guard with a two-stream `memchr(U,u)` plus a masked compare, and `u`/`U` are common in the text, so the guard now costs a hit per `u`. If so this is a SELECTION defect, not an emission one: the single information ranking (`PCREC_MIN_REQ_RUN_BITS` 16, litscan_s4.md §2.3) prefers a four-byte caseless run over a rare exact byte without pricing the scan byte's own frequency (compare [OPT-REQPOS] tier 2b's per-occurrence `memchr` call cost, b2ledger_report.md). The short-call entry term is the per-call-constant risk the design named.
+
+**Interim:** `-fno-req-run-fold` (bit 44) restores the pre-C3 program.
+
+**Disposition:** filed per D144. ROUND-2 FIRST candidate. PENDING FRANK'S RULING: keep C3 default-on until the pick is fixed (D144's rule; a measured win on the target customers) or flip the default off until then (seven movers lose by 0.08-0.95 ns/B, one of them ~57x). Not ruled.
+
+---
+
+## K81 — OPEN, deferred (2026-10-04, found by lane r1alpha's Linux alpha of [OPT-VEDGE], abi 57, bit 42) — the view-tolerant scan edge REGRESSES mixed-run subjects at real scale and adds a short-call entry term past the floor
+
+**Witness:** docs/dev/lanes/r1read_report.md §1 (Linux, gcc 15.2, BASE 74017b71, NEW 8562ff3a, DENY = NEW + the three deny flags; DENY == BASE on all 14 cells). Not predicted at this size (ns/call):
+
+| cell / subject | base -> new | delta | floor |
+|---|---|---|---|
+| `base10num-grok` mix4k | 6031 -> 10233 | +4202 | 40 |
+| `base10num-grok` hex4k | 7702 -> 14265 | +6563 | 1.3 |
+| `upto-1024` mix4k / hex4k | 1507 -> 2044 / 1591 -> 1790 | +537 / +199 | 2.1 / 0.5 |
+| `upto-256` mix4k | 332 -> 410 | +78 | 0.9 |
+
+The Mac scratch read had `base10num-grok` mix4k at +27% and did not list hex4k. Also the predicted fixed entry term on short non-matching subjects, confirmed past the floor (0.00-0.25 ns) and above the Mac's +0.7..+4 ns at its worst: `floor` +1.75, `year4` +3.6, `dig-exact-16` +3.4, `hex32` short +8.7 / l4k +3.1 / prose +7.0 (the +8.7 is above the predicted band). The predicted win holds beside it (`cls-upto-4096\z` l4k 15110 -> 4865 ns/call).
+
+**Hypothesis only (not diagnosed):** the mix/hex subjects interleave short runs with breaks, so the edge path is re-entered per run and pays its entry term each time.
+
+**Interim:** `-fno-view-edge` (bit 42).
+
+**Disposition:** filed per D144; [OPT-VEDGE] is completed with these as its issue rows. Round-2 candidate. The size half's second mechanism, [OPT-ENDTERM], is a separate filed row.
+
+---
+
 ## K78 — FIXED 2026-09-30 (lane k78, abi 55) (found by lane uvbuild) — a DFA artifact with DEAD groups writes `caps[1]` on a NO-MATCH, against match_api.md §3.1
 
 **Witness:** `(?(DEFINE)(?<x>\b))b(?&x)` under `-e byte` (reproduces on base d8d40397, before [UTF-VALID]). The [DD-14 wave G] entry fill writes the dead group's slot even when the call returns no match. Reproducer and trace: docs/dev/lanes/uvbuild_report.md §5. Pre-existing; independent of UTF-VALID.
