@@ -1451,121 +1451,221 @@ It shows three rules meeting:
 
 ## 5. Existing users, migration, and questions
 
-### 5.1 What changes for an existing user: nothing, by default
+### 5.1 What changes for an existing user
 
-| surface | after the build |
+| surface | after the first build |
 |---|---|
 | every `-f`/`-fno-` flag, its bit, its effect | unchanged |
+| a three-valued `-f` axis across sources (union, then refuse) | unchanged; set cells join the same rule (R1) |
 | `--tune=`, its aliases, `tune` config lines, the file-wins report | unchanged |
 | `RX_TUNE` | unchanged, still unconditional |
-| `--features`, `std1`, `all`, `none` | unchanged |
-| D93's file-wins, the `--engine` exception, `--analysis` fill-only | unchanged |
+| `--features`, `std1`, `all`, `none`, its whole-list cross-source rule | unchanged (R5); a dropped CLI list is now REPORTED (R4) |
+| D93's file-wins, the `--engine` exception, `--analysis` fill-only | unchanged for the typed spellings |
+| **[r1 OS-M2] a config's RAW `pcrec --engine=` against a CLI `--engine=`** | **CHANGES** under R2: the CLI's explicit engine wins, reported, as the typed line already does (cell D3 flips). The one change of outcome |
+| **[r1 OS-n13] stderr on a silent cross-source loss** (raw `--tune=`, `encoding`, budgets, value options, `features`) | **NEW**: one non-fatal report line (R4). No artifact byte moves |
 | the three "source contradicts itself" behaviours (pair refusal, value later-wins, comments deny-wins) | unchanged (§0 item 5) |
-| every emitted byte, at every dial position, with no set named | unchanged **except one new line, `RX_SETS`** |
+| every emitted byte, at every dial position, with or without a set named | **[r1 S3]** unchanged: no stamp is built (§3.4) |
 
-The new surfaces are `--set=`, `--list-sets`, the `set` config line,
-`pcrec_options.sets`, and the `RX_SETS` stamp. Only the stamp reaches an
-existing user, and it is the build's one `abi` event (§3.4).
+The new surfaces are `--set=`, `--list-sets`, the `set` config line and
+`pcrec_options.sets`. A user who names no set sees R2's flip (only if
+their config spells `--engine=` on a `pcrec` line and they also type a
+different engine) and R4's reports. Both are rulings, not side effects.
 
 ### 5.2 Migration inside the tree (implement-then-replace, byte-identical)
 
-1. **The registry gains its class column and its unspelled axes.** This
-   is the `kind` column `[AXES-DENY-MASK]` wants. If that row lands first,
-   the set build reads its column. If not, the set build adds it, and
-   `[AXES-DENY-MASK]` becomes a reader of it. Either order is one column.
+The FIRST build (§6.1):
+
+1. **The registry gains its class column, its `dominates` column (§2.7a)
+   and its unspelled axes.** The class column is the `kind` column
+   `[AXES-DENY-MASK]` wants. If that row lands first, the set build reads
+   its column. If not, the set build adds it, and `[AXES-DENY-MASK]`
+   becomes a reader of it. Either order is one column.
 2. **A set table**, `src/core/sets.def`, an X-macro in `axes.def`'s and
    `limits.def`'s shape: one row per (set, axis, value), plus family rows
    (name, default, required class, order). The derived sets' predicates
-   are evaluated by the generator that materializes them. `--list-sets`
-   dumps it.
-3. **The dial moves onto it.** `TUNE_TABLE` is deleted, the accessors read
-   the set table, and clskit reads `cls-matcher`. Identity gate 1.
-4. **The scattered pair refusals and inert rules move into the constraint
-   table.** The diagnostics are unchanged.
-5. **Provenance per axis** replaces the ad-hoc "was `--engine` typed"
-   tracking. The `--engine=auto` residual (`tuning.md` §4) becomes
-   expressible, though its RULE does not change.
-6. **The first consumer's family** (`vector` or `isa`, §6) lands in the
-   same change, with `RX_SETS`. That is the one `abi` event.
+   are evaluated by the generator that materializes them. **[r1 S16]** The
+   `tune` family's rows are not copied in. They are read through
+   `TUNE_TABLE`'s accessors (§4.1). The build-time checks run over it:
+   the cross-family disagreement check (§2.4), the meta-set prohibition
+   (§2.6), the `explicit-only` tag (§2.8) and the class-tag check.
+   `--list-sets` dumps it.
+3. **The scattered pair refusals and inert rules move into the constraint
+   table**, with the three pair rows as one `both-values` row over the
+   three-valued kind (§2.7). The diagnostics are unchanged.
+4. **Provenance per axis** replaces the ad-hoc "was `--engine` typed"
+   tracking, for every spelling (R2), and feeds the reports (R4). The
+   `--engine=auto` residual (`tuning.md` §4) becomes expressible, though
+   its RULE does not change.
+5. **The first consumer's family** (`vector`, §6.1) lands in the same
+   change, with its rows' own `abi` event (R4c's `SCAN_ROWS` work carries
+   one already). The set layer adds no emitted byte of its own.
+
+The dial re-expression is NOT in this list (§6.2).
+
+### 5.2a [r1 S5] The byte-count reader class
+
+A set stamp is no longer proposed, so the first build moves no emitted
+byte and owes this class nothing. The class is recorded because anything
+later that adds prologue text owes it: §3.4's conditional stamp, §6.2's
+re-expression if it moves a byte, or a digest. Revision 1 named only the
+`abi` readers. The readers of a BYTE COUNT are a separate and larger
+class, because a stamp that changes length changes every count, even
+where no reader cites the abi number.
+
+Found by grep, at `9fd125cb`:
+
+    grep -rlE "emit_bytes|EMIT_BYTES|code_bytes|CODE_BYTES|size_count|SIZELOG|artifact_size_log|wc -c|PROGRAM_BYTES|st_size" src cli lib tests scripts
+
+That command lists 75 files. By role:
+
+- **selections inside the compiler that read emitted length**: the two
+  emitted-size caps and the `[ART-SIZE]` ladder (`emit_size_measure` over
+  `.c` + `.h`, `src/core/compile.c` ~:2010), the VM entry shape
+  (`vm_plan_entry` over the program buffer, `src/gen/emit_vm.c`), and the
+  `--warn-emit-bytes` advisory. These are why §3.4 requires placeholder
+  rendering: K79's class.
+- **stamps that count bytes**: `<PREFIX>_VM_PROGRAM_BYTES`.
+- **pinned counts in the suites**: `tests/lib/size_count.sh` and the
+  harness's `SIZELOG` pass, `tests/size/`'s tripwire against
+  `docs/dev/artifact_size_log.tsv`, `scripts/size_diff`, and the codegen
+  checks that compare sizes (`run_size_term.sh`, `run_comments_axis.sh`,
+  `run_tune_dial.sh`, `run_prefix_invariance.sh`). Then the CLI's
+  near-cap fixture, `tests/bench/run_bench.sh`, `tests/fuzz/fuzz.py`'s
+  size-refusal bucket, `tests/axes/run_axes.sh`, and the mech rows that
+  name size sites (S192, S193, S237, S405, S437).
+
+The D94 addendum applies unchanged. The lane that adds prologue text
+greps this class, moves every pin it touches, and then RUNS the suites
+that count (registry, codegen, rxtsource, size), because a reader that
+never names the number still moves with it.
 
 ### 5.3 The spec plan (D80), for the build lane
 
 - `docs/spec/tuning.md` gains a "§6 Option sets" section: the model in a
-  page, the family table, every set's bundle as a CONTRACT table (the
-  dial's §5.4 table becomes the `tune` family's rows there, or stays where
-  it is and §6 points at it), the constraint table, and the class table.
-  The identity gates' expectation side reads THIS.
-- `docs/spec/cli.md` gains `--set=`, `--list-sets`, and one sentence in
-  the file-wins section: a set named in a file makes the file speak about
-  its axes (§2.5 row 3).
+  page, the FAMILY TABLE with each family's member count (§3.5's
+  independent floor), every PINNED set's bundle as a CONTRACT table, every
+  DERIVED set's predicate, the constraint table, the class table, and
+  §2.5a's per-kind cross-source table as the stated rule. The dial's §5.4
+  table stays where it is, and §6 points at it until §6.2 moves it. The
+  identity gates' expectation side reads THIS.
+- `docs/spec/cli.md` gains `--set=`, `--list-sets`, the R2/R4 sentences in
+  the file-wins section, and one sentence saying a set named in a file
+  makes the file speak about its axes (§2.5 row 5). **[r1 OS-M2]** The same
+  hunk corrects §2.5a finding 1 (`flags` and raw `-f` bits UNION across
+  sources).
 - `docs/spec/rxt_format.md` gains the `set` config line.
-- `docs/spec/match_api.md` §8.2 gains `pcrec_options.sets` and its NULL
-  rule, plus the `RX_SETS` stamp in the stamp list.
+- `docs/spec/match_api.md` §8.2 gains `pcrec_options.sets`, its NULL rule
+  and its refusal channel (§3.3). **[r1 S3]** No stamp-list entry.
 - `docs/spec/table_contract.md` lists `--list-sets` as a producer.
 
 ### 5.4 Questions for Frank
 
-Each has a recommendation. None blocks the others.
+Each has a recommendation. None blocks the others. Q1-Q12 are revision
+1's, re-derived. R1-R6 are the rulings §2.5a and §3.5a require, because
+each would change something a caller sees today or leaves a member
+unowned. R7 is the comments pair, Q7 under its own number.
 
 1. **Q1, the definition.** A set is a named BUNDLE of axis assignments,
    pinned or derived, combined by compatible union. A predicate is allowed
    only to COMPUTE a derived bundle when pcrec is built, and an order only
-   as a family's poset for constraints and sweeps (§2.2).
-   **Recommendation: yes.**
-2. **Q2, explicit over set, regardless of argv order** (§2.5). This
-   generalizes the 2026-09-16 dial ruling and departs from gcc's
-   positional `-ffast-math` rule. **Recommendation: yes.** Order-free is
-   the predictable reading, and it is the one the dial already ships.
+   as a family's poset for constraints and sweeps (§2.2). A deny/force
+   pair is one three-valued axis (§2.4a). **Recommendation: yes.**
+2. **Q2, explicit over set, regardless of argv order, on non-family
+   axes, within one source** (§2.5). This generalizes the 2026-09-16 dial
+   ruling and departs from gcc's positional `-ffast-math` rule. Family
+   axes stay later-wins among their own spellings (§2.3).
+   **Recommendation: yes.** Order-free is the predictable reading, and
+   it is the one the dial already ships.
 3. **Q3, conflicts.** Sets in DIFFERENT families that disagree on an axis
-   are refused by name. Members of ONE family replace each other by the
-   family axis's own rule (later-wins on the command line, file-wins
-   across sources). No max/min merging on ordered domains.
-   **Recommendation: yes.**
+   are refused by name within one source. Members of ONE family replace
+   each other. No max/min merging on ordered domains. The runtime refusal
+   is built at its first witness, with a build-time check standing in
+   until then (§2.4, §6.1 trigger 2). **Recommendation: yes.**
 4. **Q4, the `vector` family**: `auto` (default, empty) / `simd` (pins
    the vector rows) / `no-simd` (denies them, SWAR kept) / `scalar` (also
-   denies SWAR), all derived from a registry tag (§4.2).
-   **Recommendation: yes.** It follows D122 addendum 3's line, and the
-   `simd` pin is what makes "they overlap" refusable rather than silently
-   overruled.
-5. **Q5, the stamp.** `RX_SETS` is unconditional, prints only non-default
-   members, and carries a `;` override tail. `RX_TUNE` is kept. No
-   `rx_info` mirror and no configuration digest until a consumer asks
-   (§3.4). **Recommendation: yes.** The tail is the part worth a ruling:
-   it lengthens a stamp the bench may parse (bench question (ii), §3.5).
+   denies SWAR), all derived from a registry tag and checked against
+   independent counts (§4.2, §3.5). **Recommendation: yes.** It follows
+   D122 addendum 3's line, and the `simd` pin is what makes "they overlap"
+   refusable rather than silently overruled.
+5. **Q5, the stamp.** **[r1 S1-S4]** No set stamp in the first build.
+   `RX_TUNE` is kept. No `rx_info` mirror and no digest. If a consumer
+   asks, §3.4's conditional stamp: emitted only when a set is named,
+   valued from the resolved configuration, `tune`/`isa` excluded,
+   rendered after every size decision, with a set-invariance check.
+   **Recommendation: no stamp until the bench answers (i)/(iii) or
+   `[ART-MGR]` asks, and prefer the digest if the bench's answer is
+   "stamps".** Revision 1 recommended an unconditional stamp. That is
+   reversed.
 6. **Q6, provenance.** Build per-axis provenance (default / CLI set / CLI
    explicit / file set / file explicit) WITH the set mechanism, as
-   `opt_dial_design.md` §1.3's deferred general form. The set mechanism is
-   its named third consumer (§2.5). **Recommendation: yes.** No per-family
-   bit.
-7. **Q7, the comments pair.** `-fcomments -fno-comments` is the tree's
-   one SILENT resolution of a self-contradiction (deny wins, documented).
-   **Recommendation: leave it**, as a documented row of the constraint
-   table (row 5). It is an output-only axis with no answer or byte of
-   object code at stake, and changing a shipped, documented behaviour
-   needs a reason this note does not have. Align it to refusal if it is
-   ever touched for another reason.
+   `opt_dial_design.md` §1.3's deferred general form. Its consumers are the
+   R2/R4 reports and the unordered-source refusal (§2.5).
+   **Recommendation: yes.** No per-family bit.
+7. **Q7 (= R7), the comments pair.** `-fcomments -fno-comments` is the
+   tree's one SILENT resolution of a self-contradiction (deny wins,
+   documented), within one source and across two (A6, A7, A10). It is
+   GRANDFATHERED-ASSIGN, a fourth verdict with one row (§2.7).
+   **Recommendation: leave it.** It is an output-only axis with no answer
+   or byte of object code at stake, and changing a shipped, documented
+   behaviour needs a reason this note does not have. Align it to refusal
+   if it is ever touched for another reason.
 8. **Q8, the sweep's shape** (§3.5). A set is a job, with no products
-   except a declared, reasoned `pairs` list (first entry: `vector` ×
-   `isa`), ISA members run at or below the box's level and skip loudly
-   above it, and vacuous members still run. **Recommendation: yes.**
+   except a declared, reasoned `pairs` list, floored at 3 × 2 per box
+   rather than the 32-job product. ISA members run at or below the box's
+   level and skip loudly above it, and vacuous members still run. The job
+   list is checked against the spec's member counts. **Recommendation:
+   yes.**
 9. **Q9, the spelling.** `--set=NAME[,…]` on the command line, `set
-   <names>` in a config, `pcrec_options.sets` in the API.
-   **Recommendation: `--set=`.** `--profile=` reads as one choice where
-   several compose, and `-fset=` would hide a user feature in the testing
-   family D47.3 keeps out of `--help`.
+   <names>` in a config (and `--set` refused on a `pcrec` line),
+   `pcrec_options.sets` in the API. **Recommendation: `--set=`.**
+   `--profile=` reads as one choice where several compose, and `-fset=`
+   would hide a user feature in the testing family D47.3 keeps out of
+   `--help`.
 10. **Q10, user-defined sets.** None. A `.rxt` config is the user's set,
     and it may name pcrec's sets (§2.6). **Recommendation: yes.** Two
     user-bundle kinds would be the parallel mechanism.
-11. **Q11, meta-sets** (a set assigning another family's member). The
-    model admits them. **Recommendation: do not build one until a consumer
-    names one** (D77).
-12. **Q12, the dial at the first build.** Re-express the dial on the set
-    table IN THE SAME CHANGE that lands the first consumer family, even
-    though the dial works today without it. **Recommendation: yes.**
-    Building the set table beside `TUNE_TABLE` would leave two mechanisms
-    for one fact, which is the case
-    `pcrec-general-mechanisms-not-special-cases` names. Implement-then-
-    replace makes the move byte-identical apart from the stamp.
+11. **Q11, meta-sets.** **[r1 OS-m7]** Forbidden by a build-time check,
+    because revision 1's resolution order was circular. A fixpoint is
+    designed when a consumer names a meta-set. **Recommendation: yes.**
+12. **Q12, the dial.** **[r1 S16]** Revision 1 recommended re-expressing
+    the dial in the first build. Reversed: at the first build the set
+    layer READS `TUNE_TABLE` through its accessors, a second reader of one
+    table, not a second table (§4.1). The re-expression (clskit's
+    `cls-matcher`, `TUNE_TABLE` deleted) is §6.2's own step with its own
+    trigger. **Recommendation: yes, as its own step.**
+13. **R1, set cells on a three-valued axis across sources.** A file set's
+    `deny` with a CLI explicit `force` is refused (union-then-refuse, the
+    measured rule for explicit bits), not file-wins (§2.4a).
+    **Recommendation: yes.** No shipped invocation changes.
+14. **R2, one axis, one rule, whatever the spelling.** A config's raw
+    `pcrec --engine=`/`--tune=`/`-e`/budget values are the same axes as
+    the typed rows. Cell D3 flips (the CLI's explicit `--engine=dfa` wins,
+    reported), and E2 gains E1's report. **Recommendation: yes.** D93 and
+    its addendum are rulings about axes. Today a spelling decides
+    precedence, and nothing ruled that.
+15. **R3, a cross-source disagreement involving a set, on a value axis.**
+    File wins and REPORTED, D93's shape, not refused (§2.5 row 5).
+    **Recommendation: yes.** Refusing it would make a file's set
+    un-overridable and un-buildable together with any CLI flag on any of
+    its axes, a stricter rule than D93 applies to explicit lines.
+16. **R4, the report generalizes** to every axis the file wins on against
+    an explicit CLI value, including a dropped `--features` list. Stderr
+    only. **Recommendation: yes.** It closes S7's "silently lost" case and
+    fixes §2.5a finding 3's misattribution by construction.
+17. **R5, `features` keeps its whole-list cross-source rule.** The
+    per-element join is a within-source peer rule only (§2.4, §4.5).
+    **Recommendation: yes** (no outcome changes; R4 adds the report).
+18. **R6, the UNOWNED ISA members** (`x86-64-v4`, `armv8-a+sve`, `+sve2`,
+    §3.5a). (a) Ship them compile-only-verified, the runtime arm skipping
+    them loudly. (b) Add an emulator runtime arm (Intel SDE, `qemu-user`).
+    (c) Hold the members until a box exists. **Recommendation: (a) now,
+    and file (b) as its own row, triggered when one of those members
+    becomes a requested testee.**
+
+**For the manager, not Frank**: §2.5a's three findings (the `cli.md`
+sentence, the spelling-dependent exception, the misattributed report)
+are facts about today's tree. They stand whether or not any of the above
+is ruled.
 
 ---
 
@@ -1575,39 +1675,72 @@ Each has a recommendation. None blocks the others.
 together under ONE NAME.** The dial does not qualify: it already ships its
 own table, and moving it alone would be a refactor with no measured need.
 
-The trigger is the FIRST of:
+### 6.1 The first build's triggers [r1 S16]
 
-1. **`[MEMFN]` R4c lands its first vector row** (`vec-verify` at site
-   OFS, `-fno-vec-scan`) AND a second vector-family deny exists or is
-   landing (R4d/R4e's `-fno-vec-skip`). That is the point where "SIMD off"
-   stops being one flag and becomes a set. A single vector bit is still
-   just an axis, and R4c′'s SWAR row alone does not trigger it either: it
-   is one bit, and `scalar` would be a name for `-fno-swar-scan`.
-2. **`[MEMFN]` R4g lands `--isa=L`.** A declared level is at least
-   `isa` + `isa-route` + the `cpu_ok()` emission, a bundle by
-   construction, and its members need the poset for `test-axes` on day
-   one.
-3. **pcrec-bench asks for a named SIMD-off or ISA testee** that a single
-   flag cannot express. This is relayed through pcrecdev2 (bench question
-   (i)-(iii), §3.5).
+Revision 1's first two triggers were row LANDINGS. "R4c lands and a second
+deny is landing" fires on a schedule, not on a need. "R4g lands `--isa`"
+is not a need at all, because a family is an axis and `--isa=L` ships as
+an ordinary value option without this mechanism. The revision's triggers
+are each a REQUEST or a WITNESS, and each is independent of the others:
 
-When it fires, the build is one lane, one `abi` event, in the order of
-§5.2: registry class column, set table, dial re-expression, constraint
-table, provenance, the triggering family, `RX_SETS`, and the spec hunks of
-§5.3. Until then the plan row stays design-only. Its next step is the
-light panel the plan row names.
+1. **A named consumer asks for one name over vector-family bits that are
+   already on main.** Precondition: at least two `vec-` deny rows are on
+   main (counted by §3.5's name scan, not the tag). Request: a `test-axes`
+   job, a bench testee or a user needs them off together, and spelling
+   them out is the documented burden. Two bits on main with nobody asking
+   is not a trigger.
+2. **The set table's first cross-family DISAGREEMENT.** The build-time
+   check (§2.4) fails pcrec's own build when a change makes two sets in
+   different families disagree on an axis: integration.md Q16's
+   `min-size`-denies-`vec-scan` is the predicted first case. That change
+   then carries the runtime refusal, its diagnostic, its `tests/cli` case
+   and its sabotage row, with itself as the witness. This trigger applies
+   only once the set layer exists. Before that, the same change is
+   §6.2's trigger, because two families' tables then have to agree.
+3. **pcrec-bench asks, through pcrecdev2, for a named SIMD-off or ISA
+   testee**, or answers §3.5's question (i)/(iii) in a way that needs a
+   set's name in the artifact. This also fires §3.4's conditional stamp.
 
-**Where a panel should attack first:**
+When one fires, the build is one lane, in §5.2's order: registry columns,
+set table with `tune` read through `TUNE_TABLE`, constraint table,
+provenance with the R2/R4 reports, the triggering family, and §5.3's spec
+hunks. It adds no emitted byte of its own. Until then the plan row stays
+design-only.
 
-- §2.5 row 3, the one new cross-source reading (a set named in a file
-  covers its axes). Is there a target whose behaviour changes because of
-  it, compared with today, where the dial is the only set?
-- §2.4's claim that order-free composition loses nothing a caller could
-  want from gcc-style positional overrides.
-- §3.4's override tail. Is "which cells were overridden" the right
-  granularity, or does the bench need the values?
-- §2.8's class lattice. Is "weakest member" the right class for a set
-  that mixes engine-selecting and identity axes, and does the `tune`
-  family's static check really catch what D125 catches today?
-- §4.2's `simd` pin. A caller who never names `simd` is never refused.
-  Is that the right asymmetry?
+### 6.2 The dial re-expression: its own step, its own trigger [r1 S16]
+
+Moving the dial onto the set table moves a working, pinned mechanism.
+That needs a measured need of its own (D77), and the first build does not
+supply one, because §4.1's accessor read already gives the set layer
+everything it needs. The re-expression fires on the FIRST of:
+
+1. **A ruled D103 cell diff needs an axis `TUNE_TABLE` has no column
+   for** (for example a `vec-*` deny, integration.md Q16, or a force twin
+   from `opt_dial_design.md` §7.2a). Widening `TUNE_TABLE` would then
+   duplicate the set table's row shape, which is the parallel mechanism
+   `pcrec-general-mechanisms-not-special-cases` names. Moving the dial
+   costs no more than the widening would.
+2. **A second reader of the λ position appears** outside clskit, so that
+   the position mask (`TPOS`) would be copied rather than read.
+
+When it fires, it is its own change: `cls-matcher` becomes an axis,
+clskit reads it, the value cells' source of truth moves, `TUNE_TABLE` is
+deleted, and identity gate 1 (§3.5) proves the five positions
+byte-identical over the corpus. It carries the D103 ritual's new step
+(§4.1).
+
+**Where a panel should attack first** (revision 2):
+
+- §2.5a's cell set. Is there an axis KIND with a cross-source rule that
+  none of the 42 cells exercises (the `--fast-or-fail`/cap family, the
+  `--max-emit-*` overrides, `--warn-emit-bytes`)?
+- R2's flip of cell D3. Is there a shipped `.rxt` source in the tree, or
+  in pcrec-bench's tree, whose config spells `pcrec --engine=` and relies
+  on beating the command line?
+- §3.4's conditional stamp: is the presence asymmetry (`--set=readable`
+  against `-fcomments`) acceptable to a consumer, or is the digest the
+  only honest stamp?
+- §3.5's pairs floor (6 per box). Does `SCAN_ROWS` have a third predicate
+  regime between `BASE` and the top `DECLARED` level that the floor skips?
+- §2.7's REFUSE-first rule. Is there a shipped REFUSE whose diagnostic
+  today depends on an INERT row having run first?
