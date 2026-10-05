@@ -1027,79 +1027,156 @@ one finding.
 
 ### 3.5 How the checks treat a set
 
+**[r1 S10/S11/S12] Every check below names its EXPECTATION SOURCE, and
+none of them is the set table it checks.** Revision 1 derived the job list
+from `--list-sets`, the derived-set check from the `vector` tag and gate 3
+from a spec that cannot list a derived set's members. Each is fixed below
+(`learnings.md` §3: a control that shares a source with its subject).
+
 **`make test-axes`: a set is an axis.** The sweep already treats the
 dial's four non-default positions as "a fifth kind of axis" on the same
 RXTFLAGS/RXTDUMP mechanism (`tests/axes/run_axes.sh`, the header's
 `[OPT-DIAL]` paragraph). The general form:
 
 - **The job list** = every bit axis alone (today) ∪ every NON-DEFAULT
-  member of every family ∪ every standalone set. The list is derived from
-  `--list-sets`, never hand-copied. That is the script's own "the registry
-  is derived, never hand-copied" rule, and it costs one more dump reader.
-- **The class decides the comparison** (§2.8): an identity-class set
-  fails on MISMATCH, LOST or GAINED. An engine-selecting one prints LOST.
-  Contract, semantic, policy and instrument sets are not swept, and the
-  run says so with the reason, as it does for `--ucp` today. DIAL-S3's
-  keyed refusal-set comparison generalizes from the `tune` family to every
-  family whose required class is refusal-preserving.
+  member of every family ∪ every standalone set. The list is read from
+  `--list-sets`, never hand-copied, which is the script's own rule.
+  **[r1 S12] It is checked against an INDEPENDENT floor**: the spec's
+  family table (`tuning.md` §6, written and ruled by hand, §5.3) states
+  each family's member count. The runner prints both counts per family
+  and fails if `--list-sets` yields fewer jobs than the spec names. A
+  member deleted from the set table cannot silently delete its own job.
+- **The class decides the comparison**, by §2.8's first-match table.
+  DIAL-S3's keyed refusal-set comparison generalizes from `tune` to every
+  family whose required class is identity, and it is the measured control
+  §2.8 names. A member's dominated cells (§2.7a) are printed as not
+  exercised.
 - **Combinatorics: no products by default.** A set alone against the
   default is the unit, as a bit axis alone is. A PAIR job exists only as a
   row of a declared `pairs` list, each row naming its reason: two families
   whose members feed the SAME table's predicates. The first such pair is
-  `vector` × `isa`, both read by `SCAN_ROWS` (integration.md §2.1). A pair
-  sweeps the members' product. Today's job count grows by the members,
-  not by their product. At the first build that is four (`tune`) plus
-  three (`vector`), plus the ISA members the box can run.
-- **The `isa` family is swept per box.** A declared-ISA artifact compiles
-  anywhere but RUNS only on a CPU at or above its level. So the job list
-  runs the members at or below the box's level in the poset (§2.2), and
-  SKIPS the rest LOUDLY with a count, PC-3's absent-library shape. This is
-  the order's first real consumer. On the Mac that means `portable`,
-  `armv8-a` and nothing above it natively. x86 correctness under
-  Rosetta 2 (survey.md §1.2) is a separate opt-in arm.
+  `vector` × `isa`, both read by `SCAN_ROWS` (integration.md §2.1).
+  **[r1 S14] Its size.** The full product is 4 `vector` members × 8 `isa`
+  members = 32 jobs, each one a full corpus run (20-30 minutes on darwin
+  for the `.rxt` section alone, BOILERPLATE), so 11 to 16 hours per box,
+  and no box can run every `isa` member (§3.5a). So the pairs rows are
+  floored, not producted. Per box they are each non-default `vector`
+  member × {`portable`, the box's TOP runnable declared level}: 3 × 2 = 6
+  jobs, about 2 to 3 hours on darwin. Those are the two `SCAN_ROWS`
+  predicate regimes, `BASE` and `DECLARED`. The run prints the product
+  size it did NOT run. The floor (6 per box) is computed from the spec's
+  family table and the box's level, never from `--list-sets`.
 - **Vacuous members still run** (S219's precedent, already followed for
   `max-speed`). `simd`/`no-simd`/`scalar` are vacuous until vector rows
   exist. The run prints that their resolved assignment is empty, rather
   than skipping them. A check that skips its vacuous members is the one
   that fails to fire the day they stop being vacuous.
 
-**The identity gates.** Three, all built with the mechanism, each with an
-expectation side that does NOT share a source with the set table
+**[r1 S10] The derived-set population is counted independently of the
+tag.** `no-simd` is "every axis tagged `vector`", so "every axis tagged
+`vector` is denied by `no-simd`" checks the tag against itself. A vector
+row added WITHOUT the tag escapes both. The check counts the population
+twice, from two sources that are not the tag:
+
+1. **by NAME**: `axes.def` rows whose registry name matches `^vec-`
+   (integration.md Q15's naming: `vec-scan`, `vec-skip`, `vec-run`),
+   counted by plain-text scan, `[AXES-DENY-MASK]`'s gate shape;
+2. **by EMIT SITE**: the distinct `PCREC_NO_VEC_*` deny bits read in the
+   `SCAN_ROWS` emitters, counted by grep of `src/gen/`.
+
+Both counts must equal the materialized `no-simd` bundle's size, and all
+three are printed. An untagged vector row moves count 1 or 2 and fails.
+`SAB_REACH_POP` floors on count 1 (≥ 2 at the build, §6.1 trigger 1).
+
+**The identity gates.** Each is built with what it checks, and each has
+an expectation side that does NOT share a source with the set table
 (`learnings.md` §3):
 
-1. **Re-expression identity**: the dial moved onto the set table emits,
-   at all five positions over the whole corpus, bytes identical to the
-   shipped `TUNE_TABLE` build, except for the `RX_SETS` line itself.
-   `tests/codegen/run_tune_dial.sh` already reads its expectations from
-   `tuning.md` §5.4, not from `src/core/tune.c`. It keeps doing so, and
-   reads the set table only as the thing under test.
+1. **Re-expression identity** (built at §6.2, NOT at the first build,
+   [r1 S16]): the dial moved onto the set table emits, at all five
+   positions over the whole corpus, bytes identical to the shipped
+   `TUNE_TABLE` build. `tests/codegen/run_tune_dial.sh` already reads its
+   expectations from `tuning.md` §5.4, not from `src/core/tune.c`. It
+   keeps doing so, and reads the set table only as the thing under test.
 2. **No-request identity**: with no set named anywhere, every artifact is
-   byte-identical to the pre-mechanism build, apart from `RX_SETS ""`.
-   This is the abi event's own (B) pin.
-3. **Listing against spec**: `--list-sets` rows checked against the
-   spec's set table (`tuning.md` gains it, §5.3), as §5.4's table is the
-   contract for the dial today. The check reads the spec.
+   byte-identical to the pre-mechanism build. **[r1 S3]** With no stamp
+   there is no exception line at all, and even with §3.4's conditional
+   stamp there is none, because the line exists only when a set is named.
+3. **[r1 S11] Listing against an independent source, split by kind.** A
+   PINNED set's `--list-sets` rows are checked against the spec's set table
+   (`tuning.md` §6), which states a pinned bundle in full, as §5.4 does for
+   the dial today. A DERIVED set's spec entry states its PREDICATE, not
+   its members, so the spec cannot be its expectation. Its rows are
+   checked against the independent counts above.
 
 **mech (sabotage).** Rows are numbered from main's highest S-id at the
-build, not here. The rows the mechanism owes, with their detectors:
+build, not here. **[r1 S8] Each row states whether its witness is
+reachable at the first build** (the `vector` trigger, §6.1). An
+unreachable row is not omitted. It declares `SAB_EXPECT=UNREACHED` with
+its `SAB_EXPECT_REASON` and a `SAB_REACH` probe, so that mech reports
+`NOW REACHED` the day its witness appears (`tests/mech/CLAUDE.md`, the
+reach mechanism). That is the runner check the panel asked for, and it
+exists already.
 
-| sabotage | detector |
-|---|---|
-| a pinned member's cell is dropped from its bundle | gate 1 (reads the spec) |
-| the join stops detecting conflicts (returns the left operand) | a `tests/cli` case naming two REAL overlapping sets; see the witness note below |
-| explicit loses to a set (the overlay's operands swapped) | a `tests/cli` case: an explicit flag against a set cell, asserting the artifact's outcome stamp |
-| family members conflict instead of replacing | `--tune=min-size --tune=speed` must still compile, `RX_TUNE "speed"` (today's pinned behaviour) |
-| the stamp's override tail is omitted | the explicit-beats-set case, asserting `RX_SETS`'s tail |
-| a derived set's predicate misses a new row | a registry check: every axis tagged `vector` is denied by `no-simd`, counted from the axes file by plain-text scan (`[AXES-DENY-MASK]`'s own gate shape) |
-| the constraint table's rows 4 and 9 swap | `-futf-check=extent` under `-e byte` must still refuse as reserved (a `tests/cli` case, if the shipped pin does not already run it under `byte`) |
+| sabotage | detector | witness at the first build |
+|---|---|---|
+| a PINNED member's cell is dropped from its bundle | gate 3 (reads the spec) | **UNREACHED** for a `vector`-only build: every `vector` member is DERIVED. It is reached by the first pinned non-`tune` member (`isa`, or a standalone set). `SAB_REACH` = `--list-sets` shows a pinned row outside `tune` |
+| the cross-family OVERLAP check stops firing (§2.4) | the checker run over a fixture TABLE FILE holding one overlap must fail. The fixture is an input to the checker, not a set in pcrec's vocabulary | reached (the fixture) |
+| explicit loses to a set (the overlay's operands swapped) | a `tests/cli` case, `--set=simd -fno-vec-scan`, asserting that the scan-site outcome stamp shows the row denied | reached at trigger 1: `simd` pins `vec-scan`, and the explicit deny disagrees with it |
+| family members conflict instead of replacing | `--tune=min-size --tune=speed` must still compile, `RX_TUNE "speed"` (cell E4, today's pinned behaviour); `--set=min-size,speed` likewise | reached today |
+| family order is lost (`--set=` joins one family's members) **[r1 OS-m6]** | `--set=speed,min-size` must stamp `RX_TUNE "min-size"` | reached today |
+| a derived set's predicate misses a new row | the S10 counts above | reached at trigger 1 (≥ 2 `vec-` rows) |
+| a REFUSE row is evaluated after an INERT one **[r1 OS-M3]** | `-futf-check=extent` must still refuse as reserved under `byte` (cell M3b) | reached today |
+| the table reverts to first-match **[r1 OS-M3]** | `-futf-check -fstartpos-guard=align` under `byte` must stamp BOTH `RX_UTF_CHECK "inert"` and `RX_STARTPOS_GUARD "permissive"` (cell M3) | reached today |
+| a three-valued axis composes file-wins instead of union-then-refuse **[r1 OS-M1]** | the `.rxt` cell A1 (file `-fno-prefilter`, CLI `-fprefilter`) must still refuse | reached today |
 
-**Witness note.** The conflict row needs two real sets in DIFFERENT
-families that assign one axis different values. Until vector rows exist,
-none does. The dial's members only deny, and no other family exists. If
-that is still true at build time, the row ships UNREACHED with its
-derivation, as S219 did. It does not get a test-only set: a set that
-exists only to be refused is a fixture the vocabulary must then carry
-forever.
+Revision 1's "the stamp's override tail is omitted" row is withdrawn with
+the tail. If §3.4's conditional stamp is ever built, its set-invariance
+check is its detector and it brings its own row.
+
+**[r1 S9] The witness note, replaced.** Revision 1 said the conflict row
+"ships UNREACHED". The conflict PATH is no longer built ahead of its
+witness (§2.4): the build-time overlap check stands in for it, and the
+overlap check's own sabotage row is reached through a fixture table file.
+The runtime refusal, its diagnostic and its sabotage row arrive with the
+change that creates the first cross-family overlap, and that change is
+the witness. Revision 1's refusal to use a test-only SET stands: a set in
+the vocabulary that exists only to be refused would ship forever. A
+fixture table read only by the checker is not in the vocabulary.
+
+### 3.5a [r1 S13] Who runs each ISA member
+
+A declared-ISA artifact compiles on a box whose gcc targets its
+architecture, and it RUNS only on a CPU at or above its level. No house
+box covers every member. ubuntubudu is Zen 1 (AVX2, no AVX-512). The Mac
+is an M1 (NEON, no SVE). CI runs no `test-axes` (`docs/testing.md` "CI").
+The Mac's `gcc-16` targets aarch64 only, so no box cross-compiles the
+other architecture's chain. So the sweep has two arms per box:
+
+- **compile-only, every member of the box's own architecture's chain**:
+  `gcc -march=<level> -c` on every artifact the population emits. It
+  proves the target-attributed code is well-formed and the route-M
+  `#error` floor fires where it should. It proves no answers.
+- **runtime, every member at or below the box's level**, skipping the
+  rest LOUDLY with a count, PC-3's absent-library shape.
+
+| member | compile-only arm | runtime owner |
+|---|---|---|
+| `portable` | every box | every box |
+| `x86-64-v1`, `-v2`, `-v3` | ubuntubudu | ubuntubudu |
+| `x86-64-v4` | ubuntubudu | **UNOWNED**: no house box has AVX-512 |
+| `armv8-a` | Mac | Mac |
+| `armv8-a+sve`, `+sve2` | Mac (`-march=armv8-a+sve`/`+sve2`) | **UNOWNED**: the M1 has no SVE |
+
+x86 under Rosetta 2 on the Mac (survey.md §1.2) stays a separate opt-in
+correctness arm, and its own x86 level is a fact to measure, not to
+assume. The two UNOWNED rows are ruling R6 (§5.4). The recommendation is
+to ship those members compile-only-verified, with the runtime arm
+skipping them loudly, and to file an emulator arm (Intel SDE for AVX-512,
+`qemu-user` with SVE) as its own row, triggered when one of those members
+becomes a requested testee. `[MEMFN]` R4g's own trigger is a measured
+level gain ON ubuntubudu (integration.md §6), so `x86-64-v3` is the
+likely first member, and it is owned.
 
 **The bench.** `pcrec-bench/APPROACH.md` §2 item 4 already defines a
 testee as "(engine, version, build/run configuration)" and anticipates
@@ -1107,8 +1184,10 @@ testee as "(engine, version, build/run configuration)" and anticipates
 names deny testees (`-fno-lit-run`, `-fno-altcls-factor`). A set gives
 such a testee a NAME the artifact itself carries:
 
-- A testee is spelled `--set=no-simd` and labelled from `RX_SETS`.
-  `RX_TUNE` keeps working for the dial.
+- A testee is spelled `--set=no-simd`. **[r1 S3]** With no set stamp
+  (§3.4), the bench labels it from its own invocation, which is how its
+  deny testees (`-fno-lit-run`) are labelled today. `RX_TUNE` keeps
+  working for the dial.
 - A **pinned** set names the same configuration across releases (D103),
   so `pcrec[speed]` is comparable across versions in the sense the bench
   already restricts comparisons to. A **derived** set (`no-simd`) names
@@ -1119,8 +1198,12 @@ such a testee a NAME the artifact itself carries:
 - **Bench-only questions, for relay to pcrecdev2 rather than for this lane
   to answer** (memory `pcrec-ask-bench-dev`): (i) does the adapter key a
   pcrec testee on the INVOCATION it ran or on the artifact's STAMPS?
-  (ii) would an `RX_SETS` value with a `;` tail break its stamp parser?
-  (iii) does it want a configuration digest (§3.4) as testee identity?
+  (ii) **[r1 S1]** (withdrawn: the `;` tail is dropped; if a stamp is ever
+  built, the question becomes whether an OPTIONAL `RX_SETS` line, present
+  only on set-named artifacts, breaks its parser) (iii) does it want a
+  configuration digest (§3.4) as testee identity? A yes to (i)-as-stamps
+  or to (iii) is a consumer, and it fires §6.1 trigger 3 and §3.4's
+  conditional design.
 
 ---
 
