@@ -79,6 +79,9 @@ ruling's text or basis; it is not applied, only proposed (§9b).
    narrowed-with-re-seed **0**. The hybrid's inlined prefilter IS the DFA
    unanchored scan (`pcrec_emit_dfa_engine`), so `pf_emit_ofs_reseed`'s
    argument applies unchanged (§4.1, `startset/twin/hybtwin_out.txt`).
+   [rev 2, sound-F1: true for the set measured here, where `S ⊆ E`. With
+   r3's `T = S ∩ E` and `S \ E ≠ ∅`, the re-seed does NOT repair the scan.
+   `lookbehind.rxt:212` is a hybrid that loses 11,772 cells (§4.1a).]
 3. **The DFA hat reaches the CTX group as well.** Its movers (seeded machine,
    byte-class skip, `T ⊊ E`) are **18 bench / 38 corpus** artifacts
    (9+9 / 31+7 DFA+hybrid) under rev 2's set (§4.1a). [rev 2, sound-F1: r3
@@ -1014,14 +1017,26 @@ Each row's `SAB_REACH` is born with it (opt5 §5's discipline).
 
 **Per change** (each stage below is its own commit and its own alpha):
 - `make test`;
-- test-axes over its own flag (`AXES="-fno-start-set"`), both engines;
+- test-axes over its own flag (`AXES="-fno-start-set"`), PLUS the new
+  PRODUCT ARM (`--engine=vm` against `-fno-start-set --engine=vm`, with its
+  own baseline and a mover floor). `run_axes.sh` sweeps axes at auto only
+  today (`:50-52`), so "both engines" needs that arm (rev 2, checks-F3). The
+  engine axis also runs under `-fno-start-set` (sound-F8). The every-startpos
+  differential runs plain and under ASan/UBSan (§6.2);
 - its own mech rows;
 - **an ASan/UBSan pass over its own movers**, because both hats change how
   emitted code reads memory. The VM hat adds a subject scan. The DFA hat adds
-  the re-seed's `subject[q−1]` read, which is guarded by `q > entry`;
+  the re-seed's `subject[q−1]` read. That read is safe at any `q > 0`: the
+  emitted guard is `pos ? seed[…] : s0` (`emit_dfa.c:6373`), and the new
+  rows' conditional form adds `q > entry` (§4.1 step 4). r3 attributed the
+  safety to `q > entry` alone (checks-F11);
 - the targeted Linux timing: `taskset`-pinned, via the executor channel, with
   base against deny as the noise floor (D144 addendum 1). Short-call cells are
-  absolute deltas against that floor.
+  absolute deltas against that floor;
+- **every reading records the libc** (glibc version on Linux) and reports
+  BOTH layers (D147, rev 2 cost-F7). `first-memchr`'s dispatch is a libc
+  layer. After the VMSTART/T1 PF migration, the cells are re-read with
+  `-fmemfn-simd` on and off.
 
 **Landing bar: IMPROVE** (D119's measured-gap bar on each named cell):
 
@@ -1030,21 +1045,72 @@ Each row's `SAB_REACH` is born with it (opt5 §5's discipline).
 | DFA | capability aws thr; litrun aws thr; json-constant thr; dbnames thr; loglines bignum thr; hex32-id thr |
 | DFA, secondary (the CTX group) | level-context thr + short; ctx-lazy-64/256/1024 and ctx-greedy-256 thr |
 | VM (auto) | quoted-delim thr (+ short, tier C absolute); balanced-parens-rec thr; bak-k-named thr |
-| VM (`--engine=vm`, the pcrec-vm testee) | mod-i, mod-r, cls-fold-pair, cls-pair-ctl, ci-strasse thr (K82's forced-VM losses, +0.64..+2.02 ns/B); aws forced-VM (Mac scratch ×12.2) |
+| VM (`--engine=vm`, the pcrec-vm testee) | mod-i, mod-r, cls-fold-pair, cls-pair-ctl, ci-strasse thr (K82's forced-VM losses, +0.64..+2.02 ns/B); aws forced-VM (Mac scratch ×12.2, against forced-VM walking every position. **Not an auto cell** (rev 2, cost-F2): at auto, aws is a hybrid and takes the DFA hat) |
+
+**Per VM improve cell (rev 2, cost-F3)**, besides its throughput cell:
+- a MATCH-DENSE subject (JSON strings for quoted-delim, tag-dense for the
+  tag cells, paren-dense for balanced-parens). capability `t-1m` has `"` at
+  0.57% and `(` at 0.58%, so every r3 improve cell sat on the sparsest
+  subject;
+- a SHORT-CALL cell: absolute ns against the base/deny floor, the K88
+  shape. The per-call entry is what a match-dense find-all pays.
+- **bak-k-named has no measurement at all.** Mac read ×1.0, and the syntax
+  subject is not local. Its first reading is a bench request (relayed, never
+  reverse-engineered from the bench's ledgers).
+- **A forced-VM cost read on a SECOND subject class** (rev 2, cost-F8): one
+  log-shaped and one JSON-shaped subject over the pcrec-vm testee's movers.
+  This rides Q-R2's recommendation: no early gate, but a stage-2 read
+  beyond capability `t-1m`.
 
 **DO NOT REGRESS**:
 - **Non-movers** (program-identical, the null band): floor-byte thr/srch,
   high-byte-run thr, uuid-near-miss srch, union-select, ci-ascii-control.
+  **The null band is per CONFIGURATION** (rev 2, cost-F6). These are
+  non-movers at auto only. The census shows them DFA-route at auto, and
+  under `--engine=vm` (the table the forced-VM improve cells come from)
+  they are VM-hat MOVERS. So at `--engine=vm` they are guard cells, not
+  null cells.
 - **Movers expected flat-to-better**: wild-logparse-quotedstring-grok thr (it
   moves: 4 → 3 bytes), kv-quoted, wb-256/512 (d 56-57%).
+  **[rev 2, cost-F5] Each cell states its expected sign**:
+  - kv-quoted, wb-256/512: sign `0` (flat). Above d ≈ 20% the narrowing's
+    gain vanishes (§4.4) while `r` is paid, so a loss up to the floor is
+    possible. Each is read against the deny floor.
+  - hex32-id (32%), dbnames (22%), bignum (12%): sign `0` or `+`. Under
+    D144 addendum 1 they may read NULL against an IMPROVE bar. Their row
+    in the IMPROVE table stays, labelled "may read null".
+  - grok (4 → 3, d 0.57%) and float-literal-bound (11 → 10): ONE-BYTE
+    narrowings with expected effect ≈0. They are NULL cells with a deny
+    floor: re-seed fixed-cost cells, not null controls.
 - **Dense-`S` VM guard cells**: doubled-word, bak-1 (`|S|` = 63); one
   dense SINGLE-byte VM-none cell (constructed, e.g. `e(\w)\1` on prose) for
   the per-attempt `memchr` entry (§4.4).
+  **[rev 2, cost-F1/F3]**
+  - The `e(\w)\1`-on-prose cell has d = 8.5%, where the sweep shows almost
+    no loss. It is kept, and joined by the measured loss regime itself:
+    `a(\w)\1` at d = 33% and d = 80% on a match-dense subject. Those read
+    ×0.9 table and ×0.6 memchr on the Mac.
+  - A `|S| ≥ 128` cell (`.`-led, `|S|` = 255).
+  - An S == REQ_BYTE hit-dense cell (cost-F4: the pre-check and the seek
+    scan the same byte, §4.2). This cell is the trigger of the filed VM-hat
+    dominance/handoff row.
 - **A pre-check-dominated VM mover**: nested-comment-rec, where FREQPICK's
   absent `*` answers first, so a null result is expected.
 
 **Mac scratch, directional only** (`startset/twin/tdrv.c`, find-all on
-capability `t-1m`, M1, gcc-16 -O2, best of 5, answers checked equal):
+capability `t-1m`, M1, gcc-16 -O2, best of 5, answers checked equal).
+[rev 2, cost-F2]
+- **Every number below is the TABLE form.** `vmtwin.py` always emits the
+  256-entry table loop, even at `|S| = 1`. The `first-memchr` form was never
+  timed by the r3 lane. The critic timed it on libSystem: balanced-parens
+  ×7.9-8.5. glibc's call term (~3.4 ns, k82cost Q7) is unmeasured for the
+  VM hat, and its Linux timing is OWED in the stage-2 alpha.
+- **There was no deny-style null control.** The twin is a separate TU with
+  a different prefix, so layout was argued away by magnitude only, which
+  works for ×6 and not for ×1.0 rows. Cold start is excluded.
+- **Against the gap report**: ×6 on quoted-delim still leaves ≈×3.6 against
+  the JIT (auto 7.214 ns/B, JIT 0.336). ×3.4 on balanced-parens leaves
+  ≈×2.7. That passes an IMPROVE bar and does not close the gap.
 
 | pattern | base | VM-hat twin | |
 |---|---|---|---|
@@ -1055,8 +1121,14 @@ capability `t-1m`, M1, gcc-16 -O2, best of 5, answers checked equal):
 
 **Owed measurements**:
 - **F3** (the re-seed's cost). It is folded into the DFA hat's alpha: deny
-  against base on json-constant and aws.
+  against base on json-constant and aws, and (rev 2, cost-F5) on the DENSE
+  movers too: kv-quoted, wb-256/512, hex32-id. That is where `r` is least
+  amortized.
 - **F4** (firstset §7). This is the VM hat's alpha above.
+- **The `first-memchr` form at Linux/glibc** (cost-F2). It is moot at stage
+  2 if Q-R5 (a) is ruled; then it moves to the kit's migration.
+- **The count-collapsed hybrid FAILING witness** (sound-F5 (d), §4.1),
+  stage 3.
 
 ---
 
@@ -1064,11 +1136,11 @@ capability `t-1m`, M1, gcc-16 -O2, best of 5, answers checked equal):
 
 | stage | content | movers / abi |
 |---|---|---|
-| 0 | K84's fix: the row's `scan` field, both readers re-pointed | none (byte-identity gates) |
-| 1 | the `start_set` core fact (`src/facts/startset.c`, `--emit-facts` row, C-SS as a check in `tests/`); `DfaSel`/`DfaPf` gain `route`, the `StartSet` pointer and the VM hook slot (NULL); the shared FIND-loop emitter extracted from `pf_emit_bcls`/`pf_emit_memchr` | none (the identity gates; `--emit-facts` is a debug listing, `docs/spec/facts_listing.md` gains its row) |
-| 2 | **VM hat**: rows `first-memchr`/`first-class` with V and the VM hook; `-fno-start-set` (bit 47); `<PREFIX>_VM_START_SCAN`; VMSTART manifest row; S478, S481-S484; fixtures; the give-up spec sentence | auto 17 bench / 59 corpus, forced 273 / 2,263; **abi event** (next number) |
-| 3 | **DFA hat**: F on the four rows, `-bounded` twins, the `pf_emit_ofs_reseed` call sites; S479, S480, S485; F3 | 18 bench / 58 corpus, plus the scan-edge, G1 and re-seed-row classes (§4.3); **abi event** |
-| 4 (filed, TRIGGERED) | VM run seed: `req_uses[]`'s `handoff` (a) widened to the no-DFA VM entry, plus a `run-seed` row for retries (a cached `q`, `lo = max(p, q − K)`); [OPT-REQPOS] tier 2's VM instance, k82h Q7 | **trigger**: stage 2's alpha leaves any K82 forced-VM cell past the floor above its pre-C3 level. The census shows it never applies without stage 2's row already applying |
+| 0 | K84's fix: the row's `scan` field, both readers re-pointed. **+ (rev 2, checks-F10) a structural check that no `strcmp` on a `dfa_pfs[]` row name remains** (S495 only becomes reachable at stage 3) | none. **Gate (checks-F10):** `scripts/emit_sweep.py --ref <branch point>` over its five streams, REACH figure reported; plus the identity gates |
+| 1 | the `start_set` core fact (`src/facts/startset.c`, `--emit-facts` row); **C-SS\* as a check in `tests/`** (rev 2: every machine, seeded included; walk plants as its failing direction; pinned to read the shipped fact row, never a probe), **the `NULLABLE ⇒ start_set.nullable` check**, the flagged (`-i`, `--ucp`) witnesses; `DfaSel`/`DfaPf` gain `route` (designated initializers + the structural check, checks-F6), the route mask, the `StartSet` pointer and the VM hook slot (NULL); the shared FIND-loop emitter extracted (`pcrec_`-prefixed); **the census re-run with per-block options** (sound-F4) and the stage-2/3 mover MANIFESTS generated from it | none. **Gate:** `emit_sweep.py` (REACH reported) + the identity gates. `--emit-facts` is a debug listing; `docs/spec/facts_listing.md` gains its row |
+| 2 | **VM hat**: row `first-class` (and `first-memchr` only if Q-R5 keeps it) with V and the VM hook; `-fno-start-set` (bit 47); `<PREFIX>_VM_START_SCAN` on EVERY artifact (checks-F1); VMSTART manifest row (budget 2); S478, S479, S491-S494, S496-S500 (§6.3); fixtures; the give-up spec sentence (with capacity, Q-R3); the run_axes PRODUCT ARM and the every-startpos differential (checks-F3); the VM-hat start-byte oracle as a standing check | auto 17 bench / 59 corpus, forced 273 / 2,263 (the census's; the manifest pins the build's own); **abi event** (next number) |
+| 3 | **DFA hat**: F (rev 2: `T = S ∩ E*` admitted iff `T ⊊ E`, scan-kind conjunct, Q-R1) on the four rows, `-bounded` twins, the CONDITIONAL re-seed through wrapper emitters; S480-S490, S495, S501-S502; F3 at the dense movers; the count-collapsed failing witness | **18 bench / 38 corpus** (rev 2, §4.1a; r3 read 18 / 58), plus the scan-edge, G1 and re-seed-row classes (§4.3); **abi event** |
+| 4 (filed, TRIGGERED) | VM run seed: `req_uses[]`'s `handoff` (a) widened to the no-DFA VM entry, plus a `run-seed` row for retries (a cached `q`, `lo = max(p, q − K)`); [OPT-REQPOS] tier 2's VM instance, k82h Q7 | **trigger (as ruled, D148 Q9)**: stage 2's alpha leaves any K82 forced-VM cell past the floor above its pre-C3 level. The census shows it never applies without stage 2's row already applying. **[rev 2, cost-F9; Q-R4 OPEN]** After k82halpha (abi 61, accepted 2026-10-05), mod-i/mod-r, cls-fold-pair and ci-strasse already sit at or below pre-C3, so as ruled this fires only if stage 2 itself REGRESSES them: a regression guard, not a need. **Proposed trigger**: a VM-hat mover where handing the pre-check's candidate to the seek (`lo = c − K`) saves more than the floor, measured on the 4 bench `run_present_unbounded` cells. The regression guard stays as a do-not-regress row in stage 2's alpha |
 | 5 (filed) | offset-k sets from the AST (the VM's `offset-set` analogue, no NFA); `[ENG-TACTICS]` (b)/(c); the pair filter | each D77, no customer measured |
 
 Stages 2 and 3 can swap: either is a complete hat on its own. The recommendation
@@ -1085,7 +1157,23 @@ has no reseed hazard. The DFA hat follows with F3 measured in its own alpha.
     the change log);
   - the identity gate's (B) pin;
   - the byte-count reader class (size tripwire pins, `run_cpset_structure.sh`
-    re-records).
+    re-records). With the every-artifact stamp (§6.1) this class grows:
+    `m5_stage1_stamps.tsv`, the resource pin, `artifact_size_log.tsv`, and
+    the recursion-identity sweep;
+  - **[rev 2, checks-F7] also, when the AXIS lands**:
+    - the registry axes pin `run_registry_tests.sh:633-645` (189, +3 per
+      axis);
+    - `registry.md`'s row and axis counts, and `cli.md`'s deny list;
+    - the `lib/pcrec.h` bit and the `axes.def` row;
+    - `run_axes.sh`'s `tuning.md` "(bit N)" cross-check;
+  - **and, when the stamp or the abi moves**:
+    - the abi mentions in `tests/codegen/CLAUDE.md` and `docs/testing.md`;
+    - the `rx_info.prefilter` runtime mirror of the `DFA_PREFILTER`
+      values (`emit_dfa.c:3141`), which gains the four new values.
+  - This list stays a GREP RECIPE (D94): grep the tree for the current abi
+    number, the bit number and each new stamp/value name at landing. The
+    enumeration above is what the grep found today, not a substitute for
+    it.
 - Then `make test-codegen`, then the suites that count (registry, codegen,
   rxtsource).
 
@@ -1098,6 +1186,13 @@ has no reseed hazard. The DFA hat follows with F3 measured in its own alpha.
     start-set or necessary-literal proof excludes consume no budget; a search
     that gives up with `-fno-start-set` may return the answer an unbounded
     budget returns").
+    **[rev 2, sound-F3; Q-R3 OPEN: this EXTENDS ruled Q6's sentence]**
+    Proposed: "positions a start-set or necessary-literal proof excludes
+    consume no budget and no capacity. A search that gives up with
+    `-fno-start-set`, whether on steps, work, backtrack frames, trail, or a
+    caller-provided buffer's capacity (the `_in` entries), may return the
+    answer an unbounded budget and capacity return. It never does the
+    reverse."
 - `facts_listing.md` gains the row.
 
 ---
@@ -1128,7 +1223,10 @@ has no reseed hazard. The DFA hat follows with F3 measured in its own alpha.
 - **Q7. An early batch gate?** D144 addendum 3 allows one for "a
   shared-mechanism change with a large cross-engine mover population".
   **Recommend NO.** The `auto` population is small (76 + 117 artifacts across
-  both hats). The large population is `--engine=vm` (2,263 corpus), which the
+  both hats). [rev 2, cost-F8: "76 + 117" does not add up. VM hat 17 + 59 =
+  76, DFA hat 18 + 38 = 56 under rev 2 (r3: 18 + 58 = 76), and 117 is
+  59 + 58, corpus only. The basis this answer gave for the large population
+  is refuted by checks-F3; see Q-R2.] The large population is `--engine=vm` (2,263 corpus), which the
   per-change test-axes sweep of `-fno-start-set` × `--engine=vm` covers.
 - **Q8. Re-bucket the six non-start-set cells** (asr-wb, asr-nwb, asr-b-ascii,
   stack-frame ×2, github-pat) out of START-SET in the next gap report's
@@ -1138,6 +1236,80 @@ has no reseed hazard. The DFA hat follows with F3 measured in its own alpha.
 - **Q9. Stage 4's trigger** as stated (a K82 forced-VM cell still past the floor
   after stage 2)? **Recommend YES.**
 
+## 9b. Questions for Frank, revision 2 (each changes a D148 ruling's text or basis)
+
+None of these is applied in rev 2's text without its marker. The panel
+record is `../dev/reviews/2026-10-05-r4-startset.md`.
+
+- **Q-R1 (sound-F1, the BLOCKER; changes D148 Q1's DFA-hat formula).**
+  What does the DFA hat scan?
+  - (a) `T = S ∩ E*`, `E*` = the union of every seed state's escape set
+    and s0's;
+  - (b) `T = S`;
+  - (c) keep r3's `S ∩ E`, but decline when `S ⊄ E`.
+
+  **Measured (§4.1a)**:
+  - `E*` is all 256 on every seeded machine (structural; 94/94 rows), so
+    (a) ≡ (b).
+  - (a)/(b) give 0 diffs over 13,583,325 cells and pass the static
+    (`Tdfa ⊆ T`) and start-byte-oracle checks. r3's set gives 322,771
+    diffs and fails both on 21 rows.
+  - Under the admission `T ⊊ E`, (a), (b) and (c) emit identical tables on
+    identical movers: 18 bench / 38 corpus.
+  - Admitting on `|T| < |E|` instead adds 15 corpus-only rows whose scan
+    set SWAPS members, with no cost argument and no bench customer.
+
+  **Recommend (a)**, `T = S ∩ E*`, admitted iff `T ⊊ E`, with a build
+  assertion that `T == S` on every mover. It is the manager's preferred
+  option, shown sound, and mover-identical to the fallback (c).
+- **Q-R2 (checks-F3, cost-F8, sound-F8; changes D148 Q7's BASIS, not
+  necessarily its answer).** Q7 was ruled "no early gate" BECAUSE "the
+  per-change test-axes sweep of `-fno-start-set` × `--engine=vm` covers"
+  the forced-VM population. That sweep does not exist: `run_axes.sh` sweeps
+  axes at auto only. Options:
+  - (i) keep NO early gate, and make the `run_axes.sh` product arm and the
+    every-startpos differential named, floored stage-2 deliverables (§6.2,
+    §7), plus a forced-VM cost read on a second subject class;
+  - (ii) adopt an early batch gate after stage 2 (D144 addendum 3);
+  - (iii) (i) plus a bench pcrec-vm read requested after stage 2.
+
+  **Recommend (i)**: it restores the ruled answer's premise by building
+  it. (iii) is the escalation if the second-subject-class read shows a
+  sign flip.
+- **Q-R3 (sound-F3; EXTENDS ruled Q6's spec sentence).** The give-up
+  allowance must name CAPACITY give-ups (`PCREC_ERR_FRAMES`, trail, the
+  caller-buffer `_in` entries) as well as meters. The witness is
+  `(?=(?:a|b|x)*c)x` at `--backtrack-frames=8`: base returns −3, the hat
+  returns a match. The direction is unchanged. **Recommend YES**, with the
+  sentence in §8.
+- **Q-R4 (cost-F9; changes D148 Q9's trigger).** As ruled, stage 4's
+  trigger can only fire on a stage-2 REGRESSION, because k82halpha already
+  brought the K82 forced-VM cells to or below pre-C3. **Recommend
+  replacing it** with a NEED trigger: a VM-hat mover where handing the
+  pre-check's candidate to the seek saves more than the floor, measured on
+  the 4 bench `run_present_unbounded` cells. The regression guard stays as
+  a do-not-regress row in stage 2's alpha.
+- **Q-R5 (cost-F1, cost-F10; changes D148 Q1's VM `first-memchr` cell).**
+  A dense single-byte `S` loses on the VM hat: memchr ×0.6 at d 80%, table
+  ×0.9 at d ≥ 33% on match-dense find-all (Mac, directional). Options:
+  - (a) at stage 2 the VM hat emits the TABLE form only; `first-memchr`'s
+    VM column reads "never" until the kit owns the form (D146); dense guard
+    cells in the alpha; MASS admission (the existing
+    `pcrec_find_set_ppm`) FILED with those cells as its trigger;
+  - (b) keep `first-memchr` on the VM, and add MASS admission now. Its
+    threshold is a new constant that must be measured first (D149);
+  - (c) as ruled, with the guard cells only.
+
+  **Recommend (a)**. It removes the measured ×0.6 without a new constant.
+  It costs the sparse single-byte cells little: memchr ×1.2 against table
+  ×1.1 at d 5%. And it leaves the form to the kit, where D146 puts it.
+- **Q-R6 (checks-F1; applies Frank's K82 Q3 ruling, asks only the
+  family).** `<PREFIX>_VM_START_SCAN` goes on every artifact, `"none"`
+  where unapplied. **Recommend the family "both engines"**, as
+  `<PREFIX>_REQ_HANDOFF` was built (`k82hbuild_report.md`), rather than
+  "VM artifacts only". A DFA artifact then reads `"none"`, consistent with
+  the handoff stamp's precedent.
+
 ---
 
 ## 10. The standing questions (docs/design/CLAUDE.md)
@@ -1145,11 +1317,20 @@ has no reseed hazard. The DFA hat follows with F3 measured in its own alpha.
 **1. Measurement regime: RELEVANT.**
 - **Census counts**: compile-only, darwin, abi 61, regime-free.
 - **Densities**: one subject (capability `t-1m`, throughput regime, prose-like
-  text). A log or JSON subject moves `d`, not the sign.
+  text). ~~A log or JSON subject moves `d`, not the sign.~~ [rev 2, cost-F3:
+  WITHDRAWN. On the VM hat, d ≥ 33% on a match-dense subject flips the
+  sign (§4.4); §7 adds match-dense and short-call cells per VM improve
+  cell.]
 - **The cost model's `a`/`b`**: Linux Ryzen, gcc-15, I-85, throughput,
   dependent calls.
 - **The Mac twins**: find-all, M1, gcc-16 -O2, darwin libc `memchr`,
-  directional only (D144 addendum 1).
+  directional only (D144 addendum 1). [rev 2, cost-F2: the TABLE form
+  only. The memchr form and glibc's call term are owed at Linux.]
+- **The rev-2 soundness instruments** (`startset/rev2/`) are answer-only
+  and regime-free. Their oracle arm is LOCAL libpcre2 10.48, not the 10.46
+  reference. It disagreed with base only on U1/U9 rows, which the corpus
+  already marks.
+- **The unmeasured constants** are labelled in §4.4's D149 table.
 - **The gap cells**: the bench's Linux pin `c4c70f2c`, abi 60.
 - **What could flip a decision**:
   - the dense single-byte VM regime (per-attempt `memchr` entry; a guard
@@ -1158,11 +1339,22 @@ has no reseed hazard. The DFA hat follows with F3 measured in its own alpha.
     absolute delta against the floor, never a ratio.
 
 **2. Independent control: RELEVANT.** §6.2:
-- **C-SS** is the fact's control. It shares no code with the walk, and it
-  already caught a real defect.
+- **C-SS\*** (rev 2) is the fact's control. It runs on every machine,
+  seeded included, against the emitted `Tdfa`, and its failing direction is
+  planted in the WALK (four plants, each firing). r3's C-SS reached no
+  mover and had a tautological twin (sound-F2, checks-F2).
+- **The start-byte oracle** takes its expectation from matches (base and
+  libpcre2), outside both the walk and the machine. It reaches the VM-only
+  arms.
+- **The cost side's only independent control is the Linux deny floor**
+  (rev 2, cost-N1), by design: there is no second cost model to check the
+  first against.
 - **The deny arm** is the answer control.
 - **K35 / mover populations**: the census counts both hats' movers by
   predicate, and the build counts them by emitted text (the biconditional).
+  [rev 2, checks-F5: the count is now a COMMITTED MANIFEST by ID per hat
+  per stage, checked at build (0 off-diagonal, deny-identical). It is
+  generated from the stage-1 census re-run with per-block options.]
 - **Reach**: every sabotage witness is a named fixture, because the bench
   subjects are blind to S479. S483 is declared UNREACHED with an assertion.
   [rev 2: the numbering is §6.3's (re-seed rows S481-S484, utf8 assertion
@@ -1178,7 +1370,11 @@ has no reseed hazard. The DFA hat follows with F3 measured in its own alpha.
     today and is not new in kind. It is an abi event only if a bundled default
     table changes (the existing rule);
   - **the census TSV here** is read by no check. Re-running `census.py` at a
-    later pin moves nothing.
+    later pin moves nothing. **[rev 2, checks-F5: from stage 1 on, the
+    MOVER MANIFESTS generated from the census ARE read by a check.
+    Regenerating them moves that check's expectation, and they are
+    regenerated only in a change that states why the population moved.]**
+    `startset/rev2/out/` is read by no check.
 - Each mover stage is an abi event (§8) with spec hunks (D80).
 
 ---
@@ -1189,6 +1385,6 @@ has no reseed hazard. The DFA hat follows with F3 measured in its own alpha.
 |---|---|
 | specific vs general | GENERAL: one fact (the first-byte set of the zero-width-erased language), one table, rows by the information they use. No pattern is named |
 | core vs derived | `start_set` is CORE (an AST walk). Both hats are DERIVED consumers. The re-seed is an existing primitive |
-| applicable vs assumption-changing | APPLICABLE. The one assumption it leans on (the idle state is a function of the previous byte's class) is the entry seed's own, and it is tested at every startpos today |
+| applicable vs assumption-changing | APPLICABLE. The one assumption it leans on (the idle state is a function of the previous byte's class) is the entry seed's own, and it is tested at every startpos today. [rev 2, sound-F1: r3 applied the assumption at the landing but reasoned about the SKIPPED positions as if they were all read in s0. Rev 2's set takes every seed context into account (§4.1 step 2)] |
 | fits-arch vs refactor | FITS: rows on `dfa_pfs[]` (D122 addendum 4), a hook slot, one fact. The rename is deferred (Q2) |
 | D124: a question both emissions share? | YES. That is the design. The engine appears only in F/V and in the emit hook |
