@@ -2835,7 +2835,7 @@ typedef enum { MF_REQUIRED, MF_OPTIONAL } mf_need;   /* [rev4] r3 F7 */
 /*   uint64_t  denies;         MF_D_* in-emitter denies (§14.10)              */
 ```
 
-The hooks gain six members and lose none:
+The hooks gain these members and lose none:
 
 ```c
 /* mf_hooks, [rev4] additions */
@@ -2849,6 +2849,10 @@ The hooks gain six members and lose none:
     const char *floor;       /* the LOWER read limit (§14.7); "0" when NULL       */
     const char *(*fn_name)(void *u, uint32_t fn_ref);       /* FUNC: its name     */
     void (*note)(void *u, mf_sink *c, uint32_t part);       /* §14.2              */
+    /* UNTIL M1b (§16): pcrec's run compare for RUN term `term`, as an EXPR at
+       `base + off` (rule 6's twin for whole runs: one spelling, pcrec's, while
+       runcmp.c has callers the kit does not own); NULL after M1b             */
+    void (*run_cmp)(void *u, mf_sink *c, const char *base, int32_t off, uint32_t term);
 ```
 
 And the per-artifact state replaces rev 3's single `mf_emit_site` call:
@@ -3188,3 +3192,265 @@ table at build time:
 
 So a regression in one kit form is triaged by flipping one named switch,
 D144's purpose, without pcrec learning what the form is.
+
+---
+
+## 15. M1's site shapes, each reproduced byte for byte `[rev4]`
+
+For each shape in M1 (§16), this section gives:
+
+- TODAY's emitted text, with comments off (D112's default) and the
+  prefix rendered as `rx`;
+- the `mf_site` and hooks pcrec builds;
+- the line in the baseline arm that writes each piece.
+
+The values are concrete: run `user`, scan byte `r` (114) at index 3,
+necessary byte `@` (64), and so on. Every piece of text below comes from
+a format string in a cited emitter, and "byte for byte" means the
+baseline arm's format strings are those strings, moved. The I1 shadow
+comparator (§9.3) proves it over every compile the suite makes. These
+examples show only that the CONTRACT can say it, which revision 3's
+could not (r3 F1).
+
+### 15.1 FUNC / FIND / RETURN: the offset-skip block (`ofs_test_emit_fn`, `emit_dfa.c:6189`)
+
+Today, the run pre-check's window block for an exact 4-byte run (via
+`pcrec_emit_req_run_blocks`, `:1035`):
+
+```c
+static inline size_t rx_reqrun(const unsigned char *subject, size_t n, size_t pos)
+{
+    while (pos + 3 < n) {
+        size_t cand;
+        const void *q = memchr(subject + pos + 3, 114, n - pos - 3);
+        if (!q) return n;
+        cand = (size_t)((const unsigned char *)q - subject) - 3;
+        if (cand + 3 >= n) return n;
+        if (!memcmp(subject + cand, "user", 4)) return cand;
+        pos = cand + 1;
+    }
+    return n;
+}
+
+```
+
+| field / hook | value | why |
+|---|---|---|
+| `op`, `form`, `handoff` | FIND, FUNC, RETURN | a file-scope function returning a position or `n` |
+| `pred` | one RUN term, `offset` 0, `run` `user`, `mask` NULL, REQUIRED; `plan_hint` 0, `plan_pos` 3; `fn_ref` → `rx_reqrun` | the `req_run` fact's window; `r->idx` is the scanned position |
+| `empty`, `end_back` | MISS, 0 | the loop guard fails → `return n` |
+| `use`, `consumer` | DISCARD (or POSITION under the handoff, §15.5), ENGINE | the call site compares with `n`, or reads the position |
+| `s`, `n`, `lo`, `miss` | `subject`, `n`, `pos`, `n` | inside a definition, the hooks are the function's own parameter names, which are the baseline's (manifest locals: `subject`, `n`, `pos`, `cand`, `q`) |
+| `run_cmp` (until M1b) | pcrec's `pcrec_emit_run_compare(cx, c, "subject + cand", 0, &run)` | writes `!memcmp(subject + cand, "user", 4)` |
+
+The baseline arm's lines are `ofs_test_emit_fn`'s format strings moved
+whole:
+
+- the signature, from `fn_name` plus the parameter list. A SET term with
+  `table_ref` and more than one member adds `, const unsigned char
+  *<table_name>` in term order: `ofsk_emit_params`'s rule;
+- `while (pos + %d < n)`, with maxk = the largest term reach − 1;
+- the `memchr` arm at `plan_pos` (offset form when > 0);
+- `if (cand + %d >= n) return n;`;
+- the verify chain in ASCENDING offset order. A singleton SET term is
+  `subject[cand + k] == b`, a multi-member SET term is
+  `<table>[subject[cand + k]]` through `table_name` (rule 7, pcrec's
+  table), and the RUN term is `run_cmp`;
+- `) return cand;`, `pos = cand + 1;`, `return n;\n}\n\n`.
+
+Where the run's scanned position is a two-member cube (a mask byte other
+than `0xFF` at `plan_pos`), the baseline arm takes the PAIR leapfrog
+(`ofs_test_emit_pair`, `:6158`) first. That is the same arm order
+`ofs_test_emit_fn` has (`:6196`). The prefilter row's block
+(`pf_block_ofs`, `:6077`) is the same site with SET terms from the
+k-set, `fn_ref` → `rx_ofsskip`, and `plan_hint` naming the scanned term.
+
+**The block's comment** (`pf_block_ofs`'s offset legend, or the run
+blocks' "THE NECESSARY-RUN SEARCH" paragraph) describes the FORM ("one
+memchr for its byte 114 at offset 3"). So it is the baseline arm's own
+frozen text, rendered from the site's values. It goes through the
+sink's `legend_byte` and `comment_byte` escapers (§14.2), with
+`-fno-offset-skip`/`-fno-run-prefilter`/`-fno-req-run` spelled as
+frozen literals.
+
+**Helpers.** If `run_cmp` needs a word load (the `words`/`overlap`
+rows), pcrec's `pcrec_runcmp_prepare` writes it before the comment,
+exactly where it does today. That holds until M1b moves the helpers to
+`mf_emit`'s "before the definition" (§14.8).
+
+### 15.2 EXPR / FIND / RETURN: the block's CALLS (`pf_emit_ofs`, `emit_req_run_check`)
+
+Today:
+
+```c
+            size_t cand = rx_ofsskip(subject, subject_length, scan_position, rx_ofs_k1);
+```
+```c
+    if (rx_reqrun(subject, subject_length, search_from) >= subject_length) return 0;
+```
+
+pcrec's text is `"%s    size_t cand = "` … `");\n"` (`:6290-6293`)
+and `"%sif ("` … `" >= %s) return 0;\n"` (`:1146`). The kit writes only
+the call, through `mf_call(handle, hooks)` with `s` = `subject`, `n` =
+`subject_length`, `lo` = `scan_position` or `search_from`. The arguments
+after `lo` are the same table names, in the same order, as the
+definition's parameters. The miss test, the reseed (`:6297`) and the
+`return 0` stay pcrec's: §14.1, a miss is a value pcrec tests.
+
+### 15.3 STMT / FIND / ON_MISS: the one-byte pre-check (`emit_req_one_byte`, `:1237`)
+
+Today, indent four spaces:
+
+```c
+    if (subject_length <= search_from ||
+        !memchr(subject + search_from, 64, subject_length - search_from))
+        return 0;
+```
+
+| field / hook | value |
+|---|---|
+| `op`, `form`, `handoff` | FIND, STMT, ON_MISS |
+| `pred` | one SET term `{64}`, `offset` 0, REQUIRED (OPTIONAL when it is `set-leads`' lead, §15.5) |
+| `empty`, `end_back` | MISS, 0 (the `<=` arm, K27: an empty window cannot hold the byte) |
+| `s`, `n`, `lo`, `indent`, `on_miss` | `subject`, `subject_length`, `search_from`, `"    "`, `"return 0;"` |
+| `note(0)` | pcrec writes `/* [OPT-REQBYTE] every match of this pattern contains the byte\n * 64, so a window without it holds no match at all. */` |
+
+The baseline arm writes `note(0)`, then `"%sif (%s <= %s ||\n%s
+!memchr(%s + %s, %d, %s - %s))\n%s    %s\n"`, with the empty test
+fused into the condition and `on_miss` at indent plus four spaces.
+
+### 15.4 STMT / ALL_PRESENT / ON_MISS: N4's set rest (`emit_req_set_rest`, `:1180`)
+
+Today (two remaining members, 65 and 66):
+
+```c
+    {
+        static const unsigned char rq_set[] = { 65, 66 };
+        for (size_t rq_i = 0; rq_i < sizeof rq_set; rq_i++)
+            if (!memchr(subject + search_from, rq_set[rq_i], subject_length - search_from))
+                return 0;
+    }
+```
+
+| field / hook | value |
+|---|---|
+| `op`, `form`, `handoff` | ALL_PRESENT, STMT, ON_MISS; `ret_pred` 0xFF |
+| `preds` | one singleton SET predicate per remaining member, ascending byte order, ALL REQUIRED (K65: the call's only linear no-match proof) |
+| `empty` | EXCLUDED (the first half has already returned on an empty window) |
+| `s`, `n`, `lo`, `indent`, `on_miss` | as §15.3 |
+| `note(3)` | pcrec's `[K65]` comment |
+
+The baseline arm's locals `rq_set` and `rq_i` are in the manifest. Its
+`static const` table is the kit's own block-scoped datum, not one of
+pcrec's 256-byte tables (rule 7 concerns those). A predicate set of size
+zero emits nothing, as today (`:1199`). That is a site pcrec does not
+build, so `npred = 0` never reaches the kit.
+
+### 15.5 The K82 gate, ONE composite site (r3 F6; `lane/k82hbuild`, abi 61)
+
+On the DFA route with `set-leads` and the handoff (comments off), the
+text is:
+
+```c
+    if (subject_length <= search_from ||
+        !memchr(subject + search_from, 109, subject_length - search_from))
+        return 0;
+    size_t handoff_position = rx_reqrun(subject, subject_length, search_from);
+    if (handoff_position >= subject_length) return 0;
+    if (handoff_position - search_from > 3) {
+        handoff_position -= 3;
+    } else
+        handoff_position = search_from;
+```
+
+On the no-DFA route (no handoff; [K66]'s whole run longer than the
+window), it is:
+
+```c
+    if (rx_reqrun(subject, subject_length, search_from) >= subject_length) return 0;
+    if (rx_reqrun_whole(subject, subject_length, search_from) >= subject_length) return 0;
+    {
+        static const unsigned char rq_set[] = { … };
+        …
+    }
+```
+
+**One site.** `op` ALL_PRESENT, `form` STMT, with the predicates in
+pcrec's order. The definitions of `rx_reqrun` and `rx_reqrun_whole` are
+this site's FUNC parts, emitted earlier into `file_scope` at the point
+`pcrec_emit_req_run_blocks` occupies (`:8113`, `:8406`, `emit_vm.c:13105`).
+
+| part | predicate | need | rendered by the baseline as |
+|---|---|---|---|
+| 0 | `{lead byte}` | OPTIONAL | §15.3's text (present only where `set-leads` applies and bit 45 is clear) |
+| 1 | the window RUN | REQUIRED | handoff (`ret_pred = 1`, ASSIGN): `"%s%s%s = "` CALL `";\n%sif (%s >= %s) %s\n"`, with `result_decl` `"size_t "`, `result` `handoff_position`, `on_miss` `"return 0;"`. No handoff (`ret_pred = 0xFF`, ON_MISS): `"%sif ("` CALL `" >= %s) %s\n"` |
+| 2 | the whole RUN | REQUIRED | as part 1's ON_MISS line, with `rx_reqrun_whole` (present only on the no-DFA route, `req_run_tests`, `:1016`) |
+| 3 | the set rest | REQUIRED | §15.4's block (present only on the no-DFA route) |
+
+pcrec writes everything after the site: the `[K82]` comment, the K
+subtraction and the utf8 round-up (`emit_req_handoff`). That is rule 8,
+unchanged. The handoff's soundness reads only part 1's promise (§14.5).
+The notes are pcrec's per part: `[OPT-REQBYTE]`, `[OPT-REQPOS]`,
+`[K66]`, `[K65]`.
+
+**Why ONE site and not four.** Today the order (lead first, then run) is
+a rarity choice pcrec makes (`req_set_leads_applies`, `:6618`), and K85
+shows it can lose on match-dense text. As one site, the order is a hint
+the baseline honours and a non-baseline arm may revise (lead and window
+fused into one pass is twins.md T-B's shape). That is K85's general
+answer under D146. Bit 45 still removes part 0.
+
+### 15.6 EXPR / VERIFY / BOOL: the run compare (`pcrec_emit_run_compare`) — M1b, shown for the contract
+
+Today, in the VM literal run (`vm_lit`, `emit_vm.c:8626-8630`), run
+`abc` (the `overlap` row):
+
+```c
+    if (scan_position + 3 <= subject_length && rx_w2(subject + scan_position) == rx_w2("ab") && rx_w2(subject + scan_position + 1) == rx_w2("bc")) { scan_position += 3; goto rx_L7; }
+```
+
+| field / hook | value |
+|---|---|
+| `op`, `form`, `handoff` | VERIFY, EXPR, BOOL |
+| `pred` | one RUN term `abc`, `offset` 0 (the island: `offset` = the node's depth, `:4483`), REQUIRED |
+| `guard_by_caller` | 1: pcrec's `scan_position + 3 <= subject_length &&` precedes it |
+| `s`, `lo` | `subject`, `scan_position`; the baseline's `base` is `<s> + <lo>`, and `rc_base` appends ` + <off>` when `off ≠ 0` |
+| `denies` | `MF_D_RUN_OVERLAP` iff bit 43 is set |
+| `policy` | `MF_P_INLOOP` (D91 budget 2; VMRUN's row) |
+
+The baseline arm is `runcmp.c`'s row table and three form writers,
+moved whole. Each helper (`rx_w2`) is RECORDED in `mf_art`, and pcrec's
+prologue calls `mf_flush_helpers` where it calls
+`pcrec_emit_runcmp_helpers` today (`emit_dfa.c:9476`). The `words` tally
+becomes the kit's `RUN_WORDS` stamp, written by `mf_stamps` where
+`pcrec_emit_runcmp_stamp` is called (`emit_dfa.c:9888`,
+`emit_vm.c:13847`). pcrec's own count of its literal-run SITES
+(`VM_LIT_RUNS`, `emit_vm.c:11484`) stays pcrec's, because it counts
+sites, not forms. The prologue's `<string.h>` for a VM body with literal
+runs (`v.nlitrun > 0`, `:13981`) is predicted exactly by every baseline
+form. `bytes` is the only form without `memcmp`/`memcpy`, and the VM
+never takes it (it passes no mask).
+
+### 15.7 The shapes M1 does not move, sketched so the contract is shown complete
+
+- **The PF `memchr` form** (M2, `:5664`) is STMT/FIND/ASSIGN with
+  `empty` MISS, `on_miss` `"return 0;"` (both the empty test and the
+  NULL result run it), `result` `scan_position`, and the `pf_open` brace
+  and its closing `}` as pcrec's text. **`memchr-bounded`** is the same
+  with `end_back` 1, `empty` NOP and `miss` `subject_length - 1` written
+  only inside the kit's non-wrapping guard (§14.4).
+- **The STAY skip** (M3, `:6740`) is STMT/SKIP/ADVANCE. pcrec writes
+  `kw (state == K) {` and the accept store. The kit writes the one
+  `while` line, with `end_back` 1 under views, `table_ref` `stay<K>`, and
+  `peek` `subject[scan_position]`. Reversed, it is `floor`
+  `search_from`, `peek` `subject[rewind_position - 1]`, and `reverse` 1.
+- **The scan edge's loop** (M3, `:7578-7594`) is STMT/SKIP/ADVANCE with
+  `count` `scan_run_length`, `count_start` 1, `span_hi` the edge's span,
+  and `member` = `scan_test`'s T4 spelling over `peek`. pcrec's guard,
+  the `scan_run_length == 16UL` test (the cap-reached contract, §14.3)
+  and the accept stores stay pcrec's.
+- **`(?m)^`'s skip** (M4, not taken, `:8762`) is STMT/FIND/ASSIGN with
+  `on_miss` `"break;"`, a term at a NEGATIVE offset (`subject[start −
+  offset] != b` guards entry), `floor` `search_from` or `0`, and a
+  RESULT TRANSFORM (`+ offset`) that is the term's offset applied back.
+  The contract can say it. Q42 still says not to move it.
