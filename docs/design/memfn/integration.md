@@ -4896,6 +4896,155 @@ landed) from its TRIGGER (a measured cell or a ruling). Nothing that
 moves a DEFAULT emitted byte opens before its trigger (D77), and native
 text stays opt-in until R4f.
 
+> **`[rev4.3]` THE BUILD ORDER, REVISION 4.3** (supersedes the `[rev4.2]`
+> block and the rev 4 list below wherever they differ). It folds in D147
+> addenda 1-7.
+>
+> - **Triggers come in two kinds.** A MIGRATION step (zero movers) is
+>   triggered by COMPLETENESS (Q42 reversed: its prerequisites landed,
+>   no performance cell). A MOVER step keeps a measured trigger and G1's
+>   alpha at both layers (D77, D144).
+> - **The switch** is `memfn-simd`, default OFF (§R4.3.1).
+> - **Status** is at main 7f94b0cd.
+>
+> - **R3, rulings.**
+>   - RULED: Q35-Q42 and Q50.
+>   - REJECTED: Q51 and Q52.
+>   - Open: Q43-Q49, plus Q53-Q55 (new).
+> - **R4a, the kit's code skeleton** (`memfn/`, whose non-code half is
+>   set up):
+>   - `memfn.h` (`MF_SITE_ABI` 2, `MF_VOCAB` 2, `MF_NS`);
+>   - `mf_art`/`mf_emit`/`mf_call`/`mf_flush_helpers`/`mf_includes`/
+>     `mf_stamps`;
+>   - the generic scalar row with G2's generated-space tests;
+>   - K1 reference functions and `PROVENANCE.md`;
+>   - the Makefile wiring, with C15/C16 born;
+>   - **the site manifest `tests/memfn/site_manifest.tsv` and C17 born,
+>     every row `pending`** (§R4.3.4).
+>
+>   pcrec links the kit and calls nothing, and no byte moves.
+>   **Prerequisite:** none. **Trigger:** MET (Q35/Q36).
+> - **R4a′, the stamp event** (§R4.3.3, §18.3): `<PREFIX>_MEMFN_FORMS
+>   "none"` and `<PREFIX>_MEMFN_LIBC` on every artifact.
+>   - The LIBC value comes from the pending sites, via
+>     `mf_art_note_libc`. That makes it non-`none` today on every
+>     artifact that names `memchr`.
+>   - abi → the next number at landing (62 if nothing lands first),
+>     with §18.3's readers found by grep;
+>   - the spec hunk (both grammars) and a bench inbox note.
+>
+>   **Prerequisite:** R4a. **Trigger:** MET (Q39 ruled; Q53 confirms
+>   the libc line's spelling before the build).
+> - **R4b, the first customer's measurement** (R-1 in
+>   `memfn/docs/requests.md`; probe only).
+>   - SIMD-off: the SWAR fused form against `emit`.
+>   - SIMD-on: the vector fused form against the SWAR form.
+>   - Both regimes, on the post-handoff build.
+>
+>   It now feeds R4d's trigger only, not M1's. **Prerequisite:** none.
+>   **Trigger:** `lane/k82hbuild` merged (MET, f116cff5) and
+>   alpha-accepted (Linux alpha OWED).
+> - **R4c, M1** (composite PRE site + the offset-skip trio, zero
+>   movers; Q41).
+>   - Implement, then replace. `DELEG_SITES` gets its `use` column.
+>   - The `memfn-simd` pair joins `strategy_denials`. Inert until R4e′:
+>     both readings render the same text and are reported as
+>     "identical (no SIMD form)".
+>   - `arms.tsv` is recorded.
+>   - Checks: C4, C5, C10, C11, C12 (9 → 3), C13, C14, and C17 (its
+>     rows flip to `delegated`). I2 runs over every axis and both
+>     comment tiers.
+>   - Afterwards, edits to the migrated emitters are kit work.
+>
+>   **Prerequisites:** R4a′; `lane/k82hbuild` merged (MET); K85
+>   re-measured on the post-handoff build (OWED). **Trigger:**
+>   completeness.
+> - **R4d, the first movers:** the kit's SWAR fused composite, a
+>   SCALAR-layer change.
+>   - It gets its own `--memfn-deny=NAME`, is accepted on SIMD-off, and
+>     reports SIMD-on (identical until R4e′).
+>   - The stamp stays `none` (it is SIMD-off text). Any `MEMFN_LIBC`
+>     change is recorded.
+>   - The spec hunk carries §10.6's limits.
+>
+>   **Prerequisite:** R4c. **Trigger:** R4b's cell.
+> - **M1b, runcmp migrates** (zero movers). Bit 43 crosses (§14.10), and
+>   `RUN_WORDS` becomes the kit's stamp. **Prerequisite:** R4c.
+>   **Trigger:** completeness.
+> - **R4g, M2: PF migrates** (zero movers). K84's `strcmp` readers are
+>   fixed (§19 row 7), and §19 row 6's rarity half becomes the kit's,
+>   byte-identical at migration. C12: 3 → 1. **Prerequisite:** R4c.
+>   **Trigger:** completeness. **PF movers** follow, triggered by U-2
+>   AND a Linux cell whose time is in `pf_emit_bcls`.
+> - **R4h, M3: STAY, the scan edge's loop and VMSPAN at stride 1**
+>   (zero movers; ADVANCE with `count`/`peek`/`floor`). **Prerequisite:**
+>   R4c. **Trigger:** completeness. **In-loop movers** follow, triggered
+>   by U-3 AND a Linux cell dominated by class runs.
+> - **M4, MLINE** (`(?m)^`'s `memchr('\n')`, §15.7's shape; zero
+>   movers). C12: 1 → **0**. **Prerequisite:** R4c. **Trigger:**
+>   completeness (Q42 reversed).
+> - **R4j, M5: the planner moves LIVE** (§R4.3.5). It is byte-identical
+>   by M5's own comparator; the frozen copy is that comparator only, and
+>   pcrec stops computing `plan_hint`. **Prerequisites:** R4c, R4g.
+>   **Trigger:** completeness.
+> - **M5′, the ruled adoption event** (Q40). It is an abi event:
+>   - pcrec keeps one semantic row, and the kit plans;
+>   - the reseed is unconditional;
+>   - `DFA_PREFILTER` reports pcrec's row;
+>   - it carries a movers census, the spec hunk (`REQ_BYTE`'s meaning)
+>     and a bench inbox note;
+>   - acceptance is G1's alpha at both layers.
+>
+>   **Prerequisite:** M5. **Trigger:** RULED (Q40), accepted by its
+>   alpha.
+> - **M6, the remaining VM searches:** N6 (`vm_rev_emit`'s backward
+>   walk) and the VM span at stride > 1. Zero movers, and an `MF_VOCAB`
+>   bump for the backward walk with captures in flight and the strided
+>   SKIP. **Prerequisite:** R4h. **Trigger:** completeness.
+> - **M7, N7** (the encoding seam's span compare). Zero movers.
+>   **Prerequisite:** M1b. **Trigger:** completeness, once Q54 rules
+>   its seam.
+>
+>   **End state: C17 reads 0 pending, and C12 reads 0 in every class
+>   outside the kit.**
+> - **R4e, ON_CAND's first customer.** Filed until a measured cell
+>   (twins.md T-A's iterate-in-place lever on a real site). C13 goes live
+>   then.
+> - **R4e′, SIMD forms behind `-fmemfn-simd`** (default OFF).
+>   - The kit's SIMD forms for the migrated sites, including any
+>     cascade (§R4.3.2, K-6). Each must beat the CURRENT scalar layer at
+>     its sites, and a cascade must also beat the single-level form.
+>   - C9 at `-fmemfn-simd`, with its floor born.
+>   - `test-axes` and I2 arms for the opt-in.
+>   - No DEFAULT byte moves (Q49). `MEMFN_FORMS` carries ids on
+>     `-fmemfn-simd` artifacts.
+>   - The spec hunk states the no-portability-promise meaning.
+>   - The bench `pcrec[simd]` testee is requested (D78).
+>
+>   **Prerequisites:** R4c (sites migrated); R4d where its sites are
+>   concerned (SIMD is measured against the current scalar).
+>   **Trigger:** `[OPT-SIMD]` opened (D119: SIMD last).
+> - **R4f, the SIMD default flip** (`memfn-simd` `default_state` OFF →
+>   ON). Its OWN ruled abi event (addendum 7, D112 shape). After it, the
+>   DEFAULT artifact no longer promises to run on any target, and the
+>   bench testee becomes `pcrec[no-simd]`. **Prerequisites:** R4e′; the
+>   SIMD hold (D91/D119) lifted. **Trigger:** Frank's ruling. Its
+>   evidence is a Linux alpha in which SIMD-on beats the current scalar
+>   layer past the floor on mover cells, in both regimes.
+> - **R4i, declared tokens (`--isa=`): WITHDRAWN as a pcrec axis**
+>   (addendum 6). A target level is a kit form question. Re-opened only
+>   by a ruling.
+> - **Filed, not scheduled:**
+>   - the deferred include anchor (§14.8);
+>   - OPTIONAL SITES (Q48);
+>   - a fused N4 arm;
+>   - FIND_SEQ and F8 `mismatch` by request;
+>   - extraction, which waits for Q36's ruled trigger (a stable API
+>     across several migration steps AND a real second consumer), with
+>     §20.1's files moving unchanged.
+>
+>   M4 and N6 leave this list: they are scheduled (M4, M6).
+
 > **`[rev4.2]`** (D147; Q35/Q36 RULED 2026-10-05, §23) Prerequisites and
 > triggers stand; the steps read:
 > - **R3**: Q35 and Q36 RULED yes; Q37-Q49 and Q50-Q52 open.
