@@ -80,4 +80,7 @@ in-tree-subtree precedent.
 
 ## Validation
 
-`make strict` on the lane branch: see the handback (no source changed).
+`make -j4 CC=gcc-16` and `make strict CC=gcc-16` are clean on the lane
+branch ("whole tree compiles clean with -Werror -Wshadow"). No source
+changed, nothing under `memfn/` is built, and no suite run applies.
+Validation is COMPLETE; nothing is owed.
