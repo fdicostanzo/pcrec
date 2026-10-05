@@ -11,6 +11,12 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 ---
 
+## K89 — OPEN, latent (2026-10-05, found by lane ssbuild01 while fixing K84) — axis C picks the view tables by `strcmp` on a row NAME, K84's shape
+
+**Where:** `emit_machine_tables` selects the view tables by `strcmp(f->view->c.name, "end")` / `"eol"` (src/gen/, axis C).
+**Hazard:** as in K84, a new view row silently escapes the selection because the reader tests a name, not a row property. There is no wrong answer today, because no such row exists.
+**Fix shape:** K84's: the view row carries the property as a field, the reader tests the field, and `run_cand_rows.sh`'s no-name-strcmp check widens to the view table. It lands with the first new view row at the latest, or earlier as a no-mover refactor (general mechanism, not a special case).
+
 ## K88 — OPEN (2026-10-05, found by lane k82halpha's read of the K82 (B) handoff Linux alpha, abi 61, bit 46) — the handoff costs a few ns per search call on a match-dense literal where it cannot skip: `lit-l31` `mat-l31` +0.149 ns/B (~+3.3%, ~+4.6 ns per match)
 
 **Witness:** docs/dev/lanes/k82halpha_report.md §2 (BASE cdc50d5b abi 60, NEW 3481682b, DENY = NEW `-fno-req-handoff`, DENY == BASE; floor 0.011, control spread <= 0.004). Matches are 31 B apart so `handoff_position == search_from` on every call and the rewrite is pure added work; the same pattern's no-match subject (`fbf-l31`) moves +0.0005. **Second witness (per-call, one subject):** `modi-srch` `v-us-zip-plus4` +0.877 ns (11.547 -> 12.424, floor 0.009, DENY back at 11.538): the pre-check passes and the handoff adds its compare, ~3 cycles; the other 16 `modi-srch` REG labels are <= +0.092, inside the control's 0.45 ns spread, so they are not witnesses.
