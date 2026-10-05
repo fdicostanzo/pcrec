@@ -1,5 +1,16 @@
 # memory-functions: R1d, THE INTEGRATION MAP AND THE COMPOSITION MODEL
 
+**REVISION 4.2 (lane `memfnsetup`, 2026-10-05, from main 06ec65c8,
+design only): D147 APPLIED — the scalar algorithm stays live and
+improvable forever, SIMD is a layer, each layer must be the best it can
+be on its own, and every acceptance reading reports SIMD-off and
+SIMD-on.** Read §L first: it defines the two layers over this design,
+demotes the frozen baseline to a per-step comparator, gives every kit
+change its own deny as its OFF arm, and lists every passage that
+conflicted. Changed passages carry `[rev4.2]` in place. Frank's Q35 and
+Q36 rulings are recorded in §23. The kit's in-tree home is now set up
+(`memfn/`, lane memfnsetup).
+
 **REVISION 4 (lane `memfndel4`, 2026-10-05, from main 1c2ba975, design
 only): THE CONTRACT REWORKED FROM THE EMITTERS' ACTUAL SHAPES, per the
 r3 light panel (`../../dev/reviews/2026-10-05-r3-memfn-delegation.md`,
@@ -52,6 +63,187 @@ addenda 2-3 (every form choice a `DFA_SELECT`-style row; SIMD later = one
 row; SWAR admitted now), D139 (one class-form table, sites as bits), D144
 item 4 (every optimization its own deny), D145 (generated-output licence
 exception), and the tables themselves (§1).
+
+---
+
+## L. Revision 4.2: D147's layers `[rev4.2]`
+
+**What D147 rules** (Frank, 2026-10-05). pcrec continues scalar
+ALGORITHMIC improvement indefinitely. SIMD is a LAYER on top of the
+scalar algorithm, never a substitute for it. The scalar layer must be
+the best it can be with SIMD off, and its improvements are accepted on
+SIMD-off measurements. The SIMD layer must beat the CURRENT best scalar
+layer, never an old or frozen one. Every acceptance reading for a change
+that touches searching reports both layers. For this design: the kit's
+scalar arms ARE the scalar layer, live and improvable; the frozen
+pre-migration baseline exists only as a per-migration-step byte-identity
+COMPARATOR; the SIMD-off profile runs the CURRENT scalar layer; kit work
+and pcrec scalar work proceed in parallel.
+
+Revision 4 had built the opposite in one place: a `baseline` PROFILE,
+frozen forever, selected by `-fno-memfn-scan`/`-fno-memfn-loop`, serving
+as G1's OFF arm, C5's pin, the stamp's reference and the bench's
+`pcrec[memfn-off]` testee (Q38: "keep the baseline forever"). Revision
+4.2 removes that role and re-founds each dependent on D147.
+
+### L.1 The two layers, over this design
+
+| layer | what it is here | how a build selects it | the reading |
+|---|---|---|---|
+| **scalar** | pcrec's algorithm (which facts form the predicate, the plan while pcrec holds it, handoffs, fusion requests) plus every kit arm rendered when `memfn-native` is NOT taken: scalar, SWAR, libc calls, loop-free short-span forms (§8.5 row 2, `portable`) | `-fno-memfn-native` (family `memfn`'s `no-simd`), which is also the DEFAULT until R4f | **SIMD-off** |
+| **SIMD** | the kit's native arms (ISA text: §8.5 row 3, `native`) on top of the same algorithm | `-fmemfn-native` (`simd`); the default after R4f | **SIMD-on** |
+
+- The layer line is §8.5's existing policy line: "no text that names an
+  ISA". SWAR is in the scalar layer (D122 addendum 3). A libc call is in
+  the scalar layer even though glibc's `memchr` is itself vectorized;
+  whether that is the line D147 means is asked as **Q50**.
+- Before R4e′ there is no native arm, so the SIMD-on reading renders
+  the same text as SIMD-off. It is still REPORTED, as "identical (no
+  native arm)", so that every reading has both columns from the first.
+
+### L.2 The baseline becomes a per-step comparator
+
+What a migration step keeps, unchanged: the IMPLEMENT/REPLACE pair
+(§9.1); I1, the shadow comparator against pcrec's own emitter; I2,
+movers by ID against the step's parent; I3, the standing identity gates
+with no re-pin; `tests/memfn/pins/arms.tsv` RECORDED at the step from
+pcrec's pre-migration emitter (§17.4). Together these prove that the
+kit's arm, at birth, is pcrec's text byte for byte.
+
+What goes:
+
+- **The `baseline` PROFILE** (§8.5 row 1) as a permanent, selectable
+  arm. After the REPLACE commit, the as-born arm IS the site's scalar
+  arm: live kit code, edited by kit lanes, improved on SIMD-off
+  acceptance, with the abi ritual when it moves a byte (§10.3). The
+  pre-migration text is reachable afterwards only in history.
+- **"FROZEN"** (§9.2), "changed only by a ruled abi event" (§16 item 3,
+  Q27, Q38) and "keep the baseline forever" (Q27/Q38's recommendation).
+- **`arms.tsv` as a freeze.** It stays as a CHANGE DETECTOR: it pins
+  the CURRENT scalar arms' digests over their fixtures. Every kit change
+  that moves an arm's text re-pins its rows in the same commit as its
+  abi event, so it is one of that event's readers (D94's grep must find
+  it). The sabotage row "one arm edited by one byte, no re-pin" still
+  turns it red (§17.6).
+
+Terminology: in §9-§18, "the baseline arm" now reads "the scalar arm
+as born at its migration step". Where those sections reproduce bytes
+(§15), they describe the step's comparator, which is unchanged.
+
+### L.3 The OFF arm is each change's own deny
+
+With no permanent baseline, `-fno-memfn-scan` and `-fno-memfn-loop`
+have nothing to select that is not already the scalar layer or a
+change's own deny. **They are withdrawn (Q51), and with them family
+`memfn`'s `memfn-off` set, `tests/memfn/pins/off.tsv`, and the bench's
+`pcrec[memfn-off]` testee.**
+
+- **Every kit change that moves a byte carries its own deny** (D144
+  item 4): a switch published by `mf_switches()` and reached as
+  `--memfn-deny=NAME` (Q47, §14.10). That deny renders the site as it
+  was before the change. This is how every pcrec optimization is
+  already controlled; the kit gets no special mechanism.
+- **The per-change comparator.** At the change's own commit, the corpus
+  and bench patterns compiled with that deny are byte-identical, by ID,
+  to the parent commit's default (§9.3 I2's tool, applied to the
+  change). It is checked at that commit and never pinned afterwards: it
+  is what makes "default vs deny" a parent-vs-change timing, which is
+  D147's comparator generalised from migration steps to every change.
+- `DELEG_SITES` keeps its budget column (it sets `MF_P_INLOOP`, C10)
+  and loses its deny-bit column. §8.5's profile table is two rows:
+  `portable` when `memfn-native` is not taken, `native` when it is.
+  pcrec's own shipped denies on migrating sites (§14.10: bits 16, 30-33,
+  43-46, `-fno-offset-skip` …) are unaffected.
+
+### L.4 G1 under D147: both layers, against the current state
+
+- **ON** is the default; **OFF** is the change's own deny (L.3). The
+  population is the pcrec-side diff of those two compiles (still never
+  the kit's `moved`, r3 G-F5). Regimes, the floor, pooled bins with
+  their floor of 8, the cadence (every memfn abi event) and the armv8
+  statement are §17.2's and §21.1's, unchanged.
+- **Both layers, every time.** The ON/OFF pair is timed at SIMD-off
+  (`-fno-memfn-native` on both arms) AND at SIMD-on (`-fmemfn-native` on
+  both arms). Each is reported.
+- **Which reading accepts what.**
+  - A SCALAR-LAYER change (a scalar or SWAR arm, a plan, a fused scalar
+    composite, or a pcrec algorithmic change to a delegated site's
+    description) is accepted on its SIMD-off reading. Its SIMD-on
+    reading is reported, and it re-opens every native arm on its
+    movers (next bullet).
+  - A SIMD-LAYER change (a native arm) is accepted on SIMD-on against
+    the CURRENT scalar layer of the same build: its movers timed at
+    `-fmemfn-native` against `-fno-memfn-native`. Beating the arm it
+    replaced is not enough.
+  - **After any scalar-layer change**, the native arms on its movers
+    are re-read against the improved scalar (D147 consequence 3). A
+    native arm that no longer beats it past the floor is a `D-n`
+    defect (§20.1). The kit's interim answer is its own deny for that
+    arm, or a selection row that stops choosing it.
+- **D146's revisit-when** ("a delegated site's kit code is measured
+  worse than pcrec's pre-migration form") is read per D147 as: worse
+  than the scalar layer it replaced, i.e. its own deny, in either
+  layer's reading.
+- **The bench's batch-gate testees** become the two layers:
+  `pcrec[simd]` beside the default from R4e′ (when the default is
+  SIMD-off), and `pcrec[no-simd]` after R4f's flip. Each is requested
+  through the bench inbox (D78) when it first has movers.
+
+### L.5 The stamp reports the SIMD layer (Q39, re-derived as Q52)
+
+Revision 4's `<PREFIX>_MEMFN_FORMS` was `none` iff the artifact equalled
+its own `memfn-off` compile. That reference is gone. Revision 4.2
+re-points it at the layer line, the fact D147 makes every reading
+report:
+
+- **`none` iff the artifact is byte-identical to its own
+  `-fno-memfn-native` compile** of the same build (no native arm was
+  rendered); otherwise the comma-joined NATIVE form ids, in site order.
+  Every artifact carries it (Frank's Q3, D81), and it is born in its own
+  abi event R4a′ exactly as §18.3 says.
+- **C11's reference compile** becomes `-fno-memfn-native`: a pcrec-side
+  diff of two CURRENT compiles, sharing no source with the kit's
+  `moved`. Its assertions are §18.2's with `memfn-off` read as
+  `-fno-memfn-native`.
+- **Consequence:** M1 and every scalar-layer change leave the stamp
+  `none`, so M1 stays zero-mover. Before R4f every default artifact
+  reads `none`; after it, the stamp says which artifacts ran SIMD.
+- **Cost, stated:** scalar-layer kit forms are not bucketed by the
+  stamp. They are attributed by their abi event's movers census and
+  their switch names, and a bench triage flips `--memfn-deny=NAME`. A
+  scalar-form id list is not built until a bench consumer asks for it
+  (D77).
+
+### L.6 Every other place D147 touches
+
+| section | revision 4 said | revision 4.2 |
+|---|---|---|
+| §8.5 profile table, row 1 | `baseline` under the budget deny bits, the guard's off arm | withdrawn (L.2, L.3); two rows remain |
+| §8.6 K-5 | the kit's timed control against the scalar byte loop and the baseline arm | against the scalar byte loop and the CURRENT scalar arm; a native arm is selected only past the floor over it |
+| §9.2 | "pcrec's last spelling, frozen" | the as-born scalar arm; frozen only as the step's comparator (L.2) |
+| §9.5 | "the baseline profile holds everything pcrec used to spell, frozen" | the scalar layer holds it, live |
+| §10.1, §17.2 G1 | ON vs `memfn-off` | ON vs the change's own deny, both layers (L.4) |
+| §10.5 C5 | `memfn-off` byte-identical to the baseline pin | that half is replaced by the per-change comparator (L.3); the `-fno-memfn-native` vocabulary half stays |
+| §10.5 C11, §18 | `none` against `memfn-off` | `none` against `-fno-memfn-native` (L.5) |
+| §10.6 | "the baseline is pcrec's pre-migration text" | the spec states the two layers and the per-change denies |
+| §14.6 | a new shape's `baseline` is the generic row; G1 UNREACHED for it | a new shape's change carries its deny like any other, which renders what the site had before; G1 reaches it |
+| §14.9, R4j, Q40 | the model moves as "the baseline's frozen planner" | the model moves as the SCALAR LAYER's planner: byte-identical at M5 by the comparator, live after it |
+| §16 item 2 | waiting so K85's text does not become the guard's OFF arm | the wait stands for byte identity (nobody edits the text under comparison; R4b is measured post-handoff); K85's cure is a scalar-layer change accepted on its own, before or after M1 |
+| §16 item 3 | "a baseline change is a ruled abi event" | every scalar-arm change is an ordinary kit change: SIMD-off acceptance, the abi ritual when it moves a byte |
+| §17.4 | `arms.tsv` frozen; `off.tsv` | `arms.tsv` a change detector re-pinned by each arm change; `off.tsv` withdrawn |
+| §20.1 | `inbox_from_pcrec.md` / `outbox_to_pcrec.md` | as built: `memfn/docs/requests.md` (manager only, `[requests]` commits) and `memfn/docs/responses.md` (kit only, `[responses]` commits); roles unchanged |
+| §20.2, option_sets.md | three axes; family `memfn` = auto / simd / no-simd / memfn-off | one deny/force pair `memfn-native` (default OFF) plus the kit's generated `--memfn-deny=` rows; family `memfn` = auto / simd / no-simd |
+| §21.2, §21.3 | the G1 OFF arm is `memfn-off`; the baseline arms change only by ruling | rows rewritten in place (`[rev4.2]`) |
+| §22 | R4b/R4c/R4d/R4j as written | annotated in place: R4b reports both layers, R4c lands one axis, R4d's testee is `pcrec[simd]`'s precursor, R4j moves the scalar planner |
+| §23 Q38 | keep the baseline forever | revised: a per-step comparator only |
+
+### L.7 What D147 does not change
+
+The delegation contract (§8, §14), the site shapes (§15), M1's scope
+and sequence (§16), the symbol policy and provenance (§20.3), the
+measurement protocol (§21.1) and the build order's prerequisites and
+triggers (§22) stand. Three questions are new (Q50-Q52); Q35 and Q36
+are ruled (§23).
 
 ---
 
@@ -2148,6 +2340,13 @@ idiom, memory `pcrec-decisions-as-first-match-tables`):
 | 2 | `portable` | `-fno-memfn-native` is set. **DEFAULT ON during the SIMD hold** (D91, D119, D122 addendum 3; §12.2 R4f, Q28). **`[rev4]`** Now: axis `memfn-native` is NOT forced (default OFF; enabled by `-fmemfn-native`, D112's shape; §20.2) | `MF_P_PORTABLE_ONLY` | its best text with no architecture-specific code: scalar, SWAR, libc, short-span loop-free forms |
 | 3 | `native` | always (**`[rev4]`**: `-fmemfn-native` given, or after R4f's flip) | — | its best text, ISA arms included (a gcc-time `#if` ladder under the fixed default token, or one spelling under a declared token, HELD) |
 
+> **`[rev4.2]`** Row 1 is WITHDRAWN (D147, §L.2-§L.3): there is no
+> permanent `baseline` profile and no `-fno-memfn-scan`/`-fno-memfn-loop`.
+> Two rows remain: `portable` (the SCALAR layer, the SIMD-off reading)
+> and `native` (the SIMD layer). `DELEG_SITES` keeps its budget column
+> for `MF_P_INLOOP` and loses its deny-bit column. A kit change's OFF arm
+> is its own `--memfn-deny=NAME`.
+
 `MF_P_INLOOP` is set from the site row's budget (D91 budget 2), never
 from a per-call decision. `MF_P_SIZE_LEANING` is set at `--tune` -2/-1,
 so D139 item 1's "only if smaller" becomes the kit's rule under that bit
@@ -2192,7 +2391,10 @@ obligations, carried into the kit's own design note at R4a:
 - **K-5, the kit's own timed control.** The kit's selection among its
   arms is checked by its own timed suite against the scalar byte loop
   and the baseline arm, at its cadence. It is not pcrec's guard, which
-  is §10.1 and shares no source with it.
+  is §10.1 and shares no source with it. **`[rev4.2]`** Against the
+  CURRENT scalar arm, not a baseline (D147): a native arm is selected
+  only where it beats the current scalar arm past the floor, and is
+  re-checked whenever that scalar arm improves.
 
 None of this reaches pcrec. pcrec's view of all of it is: the code came
 back, and its identity gates and bench say what changed.
@@ -2233,6 +2435,16 @@ answered UNPRICED (r2 C-e), here every delegated site's code really comes
 from `mf_emit_site` from the first replace commit on.
 
 ### 9.2 The baseline profile: pcrec's last spelling, frozen
+
+> **`[rev4.2]`** Not frozen, and not a profile (D147, §L.2). The arms
+> described here are the kit's SCALAR ARMS AS BORN at the step: the
+> manifest, the transcription and the pins prove them byte-identical to
+> pcrec's pre-migration text AT THAT STEP (the comparator role, kept).
+> From the REPLACE commit on they are the live scalar layer, improved by
+> kit lanes on SIMD-off acceptance. The "FROZEN" bullet below and the
+> "off arm" reading are withdrawn; the pin-not-source independence
+> argument now applies per step, and per change through each change's
+> own deny (§L.3).
 
 The baseline arms are the kit's record of pcrec's pre-migration text,
 one per migrated (emitter, op, handoff) shape. `memfn/baseline/
@@ -2325,6 +2537,12 @@ leapfrog and no masked word compare for a delegated site. The
 everything pcrec used to spell, frozen. The `-fno-memfn-*` bits reach it
 from every site.
 
+> **`[rev4.2]`** The end state per D147: the kit's scalar arms hold
+> everything pcrec used to spell, as LIVE code that keeps improving; the
+> native arms are a layer on top. No frozen profile exists, and the only
+> `memfn` axis is `memfn-native` plus the kit's per-change
+> `--memfn-deny=` rows (§L.3).
+
 ---
 
 ## 10. GUARDS `[rev3]`
@@ -2340,6 +2558,11 @@ sabotage rows (r2 C-d).
 > with a declared regime, pooled bins, and a cadence of every memfn abi
 > event (§17.2, r3 G-F5/G-F6). armv8 has NO verdict-grade guard (§17.2,
 > G-F4).
+>
+> **`[rev4.2]`** The OFF arm is no longer the baseline profile: it is
+> each change's own deny, and every reading is taken in BOTH layers,
+> SIMD-off and SIMD-on (D147, §L.4). The bench testee is
+> `pcrec[simd]`/`pcrec[no-simd]`, not `pcrec[memfn-off]`.
 
 - **The two arms.** ON is the default profile (`portable` during the
   SIMD hold, `native` after R4f). OFF is `-fno-memfn-scan
@@ -2500,6 +2723,14 @@ makes that a red test, with the r2 panel's rebuild:
 > a header shim, a native-enabled configuration and a K35 floor (§17.3,
 > G-F3). C11 checks the stamp's VALUE on every artifact (§18). C13 (on_cand
 > duplicability) and C14 (shape bounds) are new (§14.6, §14.7).
+>
+> **`[rev4.2]`** C5's first half (`memfn-off` identical to the baseline
+> pin) is replaced by the PER-CHANGE COMPARATOR: at a kit change's own
+> commit, the corpus at that change's `--memfn-deny=NAME` is identical
+> by ID to the parent's default (§L.3). C5's second half (no ISA
+> vocabulary at `-fno-memfn-native`) stays. C11's reference compile is
+> `-fno-memfn-native` (§L.5). C6's arms are `memfn-native`'s two
+> spellings plus the kit's published switches.
 
 | # | check | what it proves | shares a source with the kit? |
 |---|---|---|---|
@@ -2520,6 +2751,11 @@ target compiler; another compiler gets correct code whose speed was not
 the one measured (r2 K2). (2) Where the kit calls libc, its choice was
 measured against glibc and libSystem; musl inherits it (rev 2's Q22, now
 Q33). (3) Injected intrinsics headers are compiler-provided (r2 L1).
+
+> **`[rev4.2]`** The profile semantics the spec states are D147's two
+> layers (`-fno-memfn-native`: the scalar layer, no ISA text;
+> `-fmemfn-native`: the SIMD layer on top) and the per-change
+> `--memfn-deny=` switches, not a baseline.
 
 ### 10.7 Sabotage rows (deterministic detectors only; ids at build, highest S on main + 1)
 
@@ -2569,7 +2805,9 @@ Q33). (3) Injected intrinsics headers are compiler-provided (r2 L1).
      step.
 - **Extraction** to its own repository `pcrec-memory-functions` happens
   when a second consumer appears (a K3 CLI user, another project) or
-  Frank rules it. It needs a SCOPE-MANDATE EXTENSION: the root
+  Frank rules it. **`[rev4.2]`** Q36 RULED a narrower, MEASURED
+  trigger: a stable API across several migration steps AND a real
+  second consumer (§23). It needs a SCOPE-MANDATE EXTENSION: the root
   CLAUDE.md's MANDATE names exactly two repositories, and pcrec-bench
   joined it by Frank's ruling (2026-08-17). After extraction pcrec reads
   a pinned vendored copy, `third_party/pcrec-memory-functions-<ver>/`,
@@ -2637,6 +2875,11 @@ bench does), its stand-alone K3 product second.
 ---
 
 ## 12. option_sets.md, the build order, and the plan-row text `[rev3]`
+
+> **`[rev4.2]`** §12.1's three deny bits and the `memfn-off` set are
+> withdrawn (D147, §L.3, §20.2's annotation): family `memfn` is `auto` /
+> `simd` / `no-simd`, and §6.1's first trigger is the bench's
+> `pcrec[simd]` testee at R4e′, not a kit-off testee.
 
 ### 12.1 What rev 3 changes in option_sets.md
 
@@ -2711,7 +2954,9 @@ recommendation.
     text, held by the kit and FROZEN, changed only by a ruled abi event.
     **Recommendation:** yes, and keep the baseline forever: it is D146's
     guard's off arm and the revisit-when witness, and it costs only the
-    text it already is.
+    text it already is. **`[rev4.2]`** Superseded twice: by Q38, and
+    then by D147, under which the baseline is a per-step comparator
+    only (§L.2).
 28. **Q28, the default during the SIMD hold.** `-fno-memfn-native` is ON
     by default, so the default profile is `portable` (scalar, SWAR, libc,
     loop-free short paths: D122 addendum 3's line). The flip to `native`
@@ -3093,6 +3338,10 @@ as a position is a `POSITION` row.
   pre-migration form)`, counted. For that site, memfn-off is not D146's
   control: the revisit-when clause compares against "pcrec's
   pre-migration form", and there is none.
+  **`[rev4.2]`** Dissolved by D147 (§L.3-§L.4): a new shape lands as a
+  kit change with its own deny, which renders whatever the site had
+  before it. G1 reaches it like any other change, and the revisit-when
+  reading is "worse than the scalar layer it replaced".
 - **Shape bounds are checked where they are born, not discovered at
   emission.**
   - `_Static_assert(MF_MAX_TERM >= PCREC_OFSK_MAX_SET + 1)`: 4 offsets
@@ -3199,6 +3448,11 @@ D146) nor a re-pin:
    `mf_pred` in an `MF_SITE_ABI` bump. Its OUTPUT is unchanged, so no pin
    moves and no abi event fires. The baseline is still "pcrec's last
    spelling", now including pcrec's last PLAN.
+   **`[rev4.2]`** Per D147 the model moves as the SCALAR LAYER's
+   planner, not the baseline's frozen one: byte-identical at M5 (the
+   shadow comparator is that step's comparator), then live code a kit
+   lane may improve on SIMD-off acceptance, each improvement with its
+   own deny and abi event.
 3. **What M5 cannot move without a ruling** is ADOPTION: whether the
    offset-set row applies at all depends on the model
    (`pf_ofs_applies` reads `UnanchStart.ofsk`). That decides
@@ -3595,6 +3849,17 @@ that should be frozen, and nobody may be editing it.
    skill names the migrated emitters; §22 R4c's delivery adds them to
    `src/gen/CLAUDE.md` as "migrated: edit in `memfn/`".
 
+> **`[rev4.2]`** (D147, §L.6) "Freeze" in this section means the step's
+> byte-identity COMPARATOR, nothing longer. Both waits stand, for byte
+> identity (nobody may edit the text under comparison) and because R4b
+> is measured on the post-handoff build. Item 2's "K85's text becomes
+> the guard's OFF arm" no longer applies: there is no permanent OFF
+> arm, and K85's cure is a scalar-layer change accepted on its own SIMD-
+> off reading, before or after M1. Item 3's "a baseline change is a
+> ruled abi event" becomes: every scalar-arm change is an ordinary kit
+> change (own deny, SIMD-off acceptance, the abi ritual when it moves a
+> byte).
+
 ---
 
 ## 17. Guards, revision 4 `[rev4]`
@@ -3621,6 +3886,12 @@ executor channel. On the Mac, a lane sweeps only its own axes plus the
 comment tiers (BOILERPLATE's darwin timeouts).
 
 ### 17.2 G1, re-founded (r3 G-F4, G-F5, G-F6)
+
+> **`[rev4.2]`** The pcrec-side population diff below now compares the
+> default against the CHANGE's own deny (`--memfn-deny=NAME`), not
+> against `memfn-off`, and every reading is taken at SIMD-off and at
+> SIMD-on (D147, §L.4). Pooling, the floor of 8, the declared regime,
+> the per-event cadence and the armv8 statement are unchanged.
 
 - **The population comes from pcrec, not from the kit (G-F5).** The
   movers are the artifacts whose DEFAULT compile differs byte for byte
@@ -3692,6 +3963,11 @@ comment tiers (BOILERPLATE's darwin timeouts).
   sha256 of each manifest pattern's artifact at `memfn-off`, recorded at
   the same commit. It is re-pinned only by an abi event that touches
   scaffolding (D94's grep finds it: it is a byte-count-class reader).
+- **`[rev4.2]`** (D147, §L.2-§L.3) `arms.tsv` is a CHANGE DETECTOR, not
+  a freeze: recorded at the migration step from pcrec's emitter, then
+  re-pinned by every kit change that moves an arm's text, in that
+  change's own abi event (D94's grep must find it). `off.tsv` is
+  WITHDRAWN with `memfn-off`.
 - **Both are in-tree and need no history,** so a `git archive` (mech's
   tree) checks them. Revision 3's "the bytes pcrec emitted at the step's
   parent commit" needed a checkout of the parent, which mech cannot do.
@@ -3734,15 +4010,29 @@ S462, `lane/k82hbuild` reaches S477).
 | a replaced `memchr(` text re-added to an emitter | C12 | — (static) |
 | an `on_cand` producer with a `return` | C13 | a producer exists (R4e onward; UNREACHED before, declared) |
 | `MF_MAX_TERM` lowered below `PCREC_OFSK_MAX_SET + 1` | C14 | — (compile-time) |
+| **`[rev4.2]`** a kit change's `--memfn-deny=NAME` that no longer reproduces its parent | the per-change comparator at that commit (§L.3) | the change has ≥ 1 mover |
 | a profile bit left out of `strategy_denials` | I2's deny arm (rx_info moves) | the corpus has a delegated site |
 | a `-fmemfn-native` arm emitting one intrinsic under default | C5's portable clause | a native arm exists (R4e′ onward) |
 | the kit's guard one byte short | G2's guard-page test (the kit's mech row) | the fixture places the page |
+
+> **`[rev4.2]`** Row 2's `off.tsv` is withdrawn (§L.3); its detector is
+> the standing identity gates alone. Row 1 reads "one scalar arm edited
+> by one byte without its `arms.tsv` re-pin". The per-change comparator
+> row is the sabotage line added above.
 
 ---
 
 ## 18. The stamp, per Frank's Q3 (r3 G-F1) `[rev4]`
 
 ### 18.1 The rule
+
+> **`[rev4.2]`** The stamp's VALUE is re-derived under D147 (§L.5, Q52):
+> `none` iff the artifact is byte-identical to its own
+> `-fno-memfn-native` compile, else the NATIVE form ids. Wherever §18
+> below reads "`memfn-off`", read `-fno-memfn-native`, and "baseline
+> arm" as "scalar-layer arm". The every-artifact rule, the kit as
+> writer, "no kit version", and the R4a′ birth event are unchanged.
+> `off.tsv` leaves §18.3's reader list.
 
 Revision 3 put `<PREFIX>_MEMFN` and `<PREFIX>_MEMFN_FORMS` on movers
 only, citing k82hrev's Q3 recommendation. Frank REVERSED that
@@ -3882,6 +4172,16 @@ Row 12 is a vocabulary bound. The C4 allowlist's code hit
 
 ### 20.1 Two files from day one (r3 G-F13; D78)
 
+> **`[rev4.2]`** AS BUILT (lane memfnsetup, the manager's naming): the
+> pair is `memfn/docs/requests.md` (manager → kit; the ONLY writer is
+> the pcrec manager, single-file `[requests]` commits on main) and
+> `memfn/docs/responses.md` (kit → manager; the ONLY writer is the kit
+> session, single-file `[responses]` commits on its branch, merged by
+> the manager). Roles are exactly as below; read `inbox_from_pcrec.md`
+> as `requests.md` and `outbox_to_pcrec.md` as `responses.md`. R-1 (the
+> R4b measurement) is the first entry. Every `done:` reports both layers
+> (D147).
+
 Revision 3 used ONE ledger in-tree, to be split at extraction. One file
 written by both sides breaks D78's single-writer rule. It also repeats
 the rulings-file-in-worktree failure (memory
@@ -3909,6 +4209,14 @@ so a file both sides edit on different branches diverges silently. So:
   in role. That is exactly the pcrec-bench pair.
 
 ### 20.2 The profile axis's polarity (r3 G-F12)
+
+> **`[rev4.2]`** (D147, §L.3, Q51) The two `PCREC_NO_MEMFN_SCAN`/
+> `PCREC_NO_MEMFN_LOOP` rows below are WITHDRAWN; only the
+> `memfn-native` deny/force pair remains, plus the kit's generated
+> `--memfn-deny=NAME` rows (Q47). Family `memfn` is `auto` / `simd` /
+> `no-simd`; `memfn-off` dissolves. `no-simd` is the SIMD-off READING
+> of D147 and `simd` the SIMD-on one; both run the CURRENT scalar layer
+> underneath. option_sets.md's cross-note is updated in this delivery.
 
 Revision 3 had `-fno-memfn-native` ON by default, so the default build
 carried a set DENY bit. The house convention for an opt-in behaviour is
@@ -4005,6 +4313,11 @@ kit's own data is the kit's (K-1..K-5).
   A fused arm that wins only per-call is reported as such, and R4c's
   trigger requires the win in the cell's own regime with no loss past
   the floor in the other.
+- **`[rev4.2]` Both layers, in every regime (D147).** Each reading
+  above is reported at SIMD-off and at SIMD-on. R4b's SIMD-off reading
+  is the portable (SWAR) fused form against `emit`; its SIMD-on reading
+  is the vector fused form against the SWAR form, the current best
+  scalar, not against `emit` (R-1 in `memfn/docs/requests.md`).
 - **pcrec's remaining terms (§19).**
   - Rows 1-4 were measured on one box: miss-heavy `memchr` throughput,
     glibc AVX2. offset_k_skip.md §4.3 records that `C_ENTER` flips 11
@@ -4028,6 +4341,16 @@ kit's own data is the kit's (K-1..K-5).
 | G2 kit tests | the SCALAR BYTE LOOP, plus the generic row over a GENERATED predicate space (§14.6) | never another output of the kit's generator (§4.5) | lengths, alignments and hit offsets enumerated, printed | the guard-page fixture |
 | `DELEG_SITES` op column | `mf_vocab_has` | a build-time check of a table against the kit's vocabulary: shared by design (it checks agreement, not truth) | rows counted | static |
 
+> **`[rev4.2]`** (D147, §L.3-§L.5) Rows rewritten: **G1 OFF arm** — the
+> change's own `--memfn-deny=NAME`, whose text is proved equal to the
+> parent commit's default by the per-change comparator at that commit
+> (a different commit's output, the I2 tool); the timing is pcrec's
+> instrument; read in both layers. **C5** — the per-change comparator
+> plus the `-fno-memfn-native` vocabulary scan; the baseline pin is
+> gone. **C11** — the `-fno-memfn-native` compile of the same build.
+> The SIMD layer's control is the CURRENT scalar layer of the same
+> build, never a frozen one.
+
 The one place a control still shares a source with what it controls is
 the `DELEG_SITES`/`mf_vocab_has` agreement. It is an agreement check
 and claims nothing more. Rev 3's C11 shared the kit's `moved`; that is
@@ -4046,6 +4369,14 @@ removed.
 | `vm_reseed_cal` | a re-calibration | the hybrid's retry constants | the hybrid movers | yes | no |
 | the kit's switch table (`mf_switches()`) | a kit row added or removed | none by itself | `--list-axes`' row count, `registry.md`'s axes sentence, `test-axes` arms | no bytes; the registry counts are re-pinned in the same change | yes (`--list-axes` output is caller-visible) |
 
+> **`[rev4.2]`** (D147, §L.2-§L.3) Row 2 now reads: **the scalar arms and
+> `arms.tsv`** — changed by ANY kit scalar-layer change (no ruling
+> needed); moves the default text on its movers; re-pins its
+> `arms.tsv` rows; yes, an abi event; a spec change only where a stated
+> limit moves. The `memfn-off` text and `off.tsv` no longer exist (row
+> 3 is withdrawn). The stamp row's movers are NATIVE-form changes only
+> (§L.5).
+
 ---
 
 ## 22. The build order, revision 4, and the plan-row text `[rev4]`
@@ -4054,6 +4385,27 @@ As before, each step separates its PREREQUISITE (a step that must have
 landed) from its TRIGGER (a measured cell or a ruling). Nothing that
 moves a DEFAULT emitted byte opens before its trigger (D77), and native
 text stays opt-in until R4f.
+
+> **`[rev4.2]`** (D147; Q35/Q36 RULED 2026-10-05, §23) Prerequisites and
+> triggers stand; the steps read:
+> - **R3**: Q35 and Q36 RULED yes; Q37-Q49 and Q50-Q52 open.
+> - **R4a**: its trigger is MET. The subtree's non-code half is set up
+>   (`memfn/`: CLAUDE.md, README, LICENSE, the ledger pair, journal,
+>   wake template; lane memfnsetup). R4a's own delivery is the CODE
+>   (`memfn.h`, the generic scalar row with G2, K1, PROVENANCE.md, the
+>   Makefile wiring, C15/C16).
+> - **R4b**: filed as R-1 in `memfn/docs/requests.md`; reports SIMD-off
+>   (SWAR fused vs `emit`) and SIMD-on (vector fused vs SWAR fused).
+> - **R4c**: lands ONE axis pair (`memfn-native`), not three; records
+>   `arms.tsv` only (no `off.tsv`); C5 is the vocabulary half plus the
+>   per-change comparator from the first kit change on.
+> - **R4d**: the fused arm is a SCALAR-layer change: its own
+>   `--memfn-deny=NAME`, accepted on SIMD-off; SIMD-on reported. The
+>   bench testee is `pcrec[simd]`, requested when R4e′ gives it movers.
+> - **R4e′/R4f**: the native arm is measured against the CURRENT scalar
+>   layer (already R4f's wording); after every later scalar-layer
+>   change the native arms on its movers are re-read (§L.4).
+> - **R4j**: the model moves as the SCALAR layer's planner (§14.9).
 
 > **R1d REVISION 4 DELIVERED 2026-10-05 (lane memfndel4): `docs/design/memfn/integration.md` rev 4** — the r3 panel's 27 findings applied; the contract rebuilt from the emitters' actual shapes (three site forms EXPR/STMT/FUNC; ASSIGN and ON_MISS handoffs with pcrec's `on_miss`; indent, notes, pcrec's escapers through the sink; ADVANCE's counter and `peek`; `n − end_back` ranges with declared EMPTY outcomes; negative offsets under a `floor`; REQUIRED/OPTIONAL terms; ALL_PRESENT with a RETURNED predicate; per-artifact `mf_art` with helpers before first use and kit-written stamps), with every M1 site shape reproduced byte for byte (§15). Shipped denies' fates (§14.10); the D146 pricing list (§19); the stamp per Q3 on every artifact, its own abi event (§18); M1 narrowed (runcmp via a hook; M1b separate) and sequenced after the handoff and K85's re-measure (§16); G1 re-founded on a pcrec-side diff with a declared regime (§17.2); C9 with a header shim and floor; per-arm pins under tests/; two inbox files; `memfn-native` default OFF via `-fmemfn-native`; symbol policy and per-file provenance. Q35-Q49.
 > - **R3** (rulings): Q35-Q49.
@@ -4079,6 +4431,23 @@ text stays opt-in until R4f.
 Renumbered from Q35. Revision 3's Q24-Q34 were never ruled, and each is
 re-derived below against the panel's findings rather than carried. §23.1
 maps them. Each question has a recommendation.
+
+> **`[rev4.2]` RULINGS (Frank, 2026-10-05, recorded with D147):**
+> - **Q35 RULED YES.** §8 as extended by §14 is the design of record,
+>   revised by panels as migration finds gaps.
+> - **Q36 RULED YES.** The kit lives IN-TREE as its own subtree
+>   `memfn/`: own CLAUDE.md, journal, two-file request ledger,
+>   `pcrec_mf_*` symbols, 0BSD. A dedicated long-lived session may work
+>   it in its own worktree. Extraction to a separate repository waits
+>   for a MEASURED trigger: a stable API across several migration steps
+>   AND a real second consumer (narrower than §11.1's "a second consumer
+>   or a ruling"). Frank's reason: the contract is pcrec's own emitted
+>   text and every kit byte move is a pcrec abi event, so the projects
+>   are synchronous and tightly coupled, unlike the asynchronous bench.
+>   Set up by lane memfnsetup (`memfn/`).
+> - **Q38 is REVISED** below by D147, and **Q39 is re-derived as Q52**.
+>   Q50-Q52 are new. Q37 and Q40-Q49 stand open as written, with Q40's
+>   "baseline's frozen planner" read as the scalar layer's planner.
 
 35. **Q35, the contract (re-derives Q24).** Adopt §8 as extended by §14
     as the design of record:
@@ -4114,7 +4483,21 @@ maps them. Each question has a recommendation.
     
     **Recommendation:** yes, and keep the baseline forever. It is D146's
     OFF arm and the revisit-when witness.
-39. **Q39, the stamp (G-F1).** `<PREFIX>_MEMFN_FORMS` on every artifact,
+
+    **`[rev4.2]` REVISED by D147.** The recommendation above is
+    WITHDRAWN. The baseline is a per-migration-step byte-identity
+    comparator only (§L.2): it is not kept as an arm, not the SIMD-off
+    arm, and never pins the scalar layer. The revised question:
+    - `memfn-native` is a deny/force pair, default OFF, enabled by
+      `-fmemfn-native`, in `strategy_denials` (unchanged);
+    - `-fno-memfn-scan`/`-fno-memfn-loop` are withdrawn (Q51);
+    - the OFF arm of every kit change is its own published deny, and
+      D146's revisit-when compares against the scalar layer the change
+      replaced (§L.4).
+
+    **Recommendation:** yes.
+39. **Q39, the stamp (G-F1).** **`[rev4.2]`** Re-derived as Q52 (its
+    reference compile, `memfn-off`, no longer exists). `<PREFIX>_MEMFN_FORMS` on every artifact,
     valued `none` iff the artifact is byte-identical to its `memfn-off`
     compile, else opaque form ids. It carries no kit version and no
     vocabulary number, is written by the kit, and is checked by C11
@@ -4182,6 +4565,40 @@ maps them. Each question has a recommendation.
     arm and C9's floor are born in that commit, and its `docs/spec/`
     hunk lands there (D80): `-fmemfn-native`'s output is
     caller-observable. The R4f flip is the abi event.
+50. **`[rev4.2]` Q50, where the scalar layer ends (D147, §L.1).** The
+    layer line is §8.5's policy line, "no text that names an ISA". So
+    SWAR is scalar, and a libc call is scalar even though glibc's
+    `memchr` is vectorized internally; the SIMD layer is the kit's
+    native arms. The alternative is a stricter SIMD-off that also
+    excludes libc's vectorized calls. It would spell every emitted
+    `memchr(` call (§9.3 I5's ratchet) as a byte loop, and it would
+    measure a scalar layer that no shipped pcrec has ever been.
+    **Recommendation:** the policy line as stated. libc is the
+    platform's scalar contract, and pcrec's pre-migration forms already
+    call it. D91's concern (a SIMD crutch hiding an algorithmic
+    inefficiency) is met because every native arm must beat this layer,
+    and this layer's own improvements are algorithmic.
+51. **`[rev4.2]` Q51, withdraw the `memfn-off` bits (D147, §L.3).**
+    Drop `-fno-memfn-scan`/`-fno-memfn-loop`, family `memfn`'s
+    `memfn-off`, `off.tsv` and the `pcrec[memfn-off]` bench testee. Each
+    kit change's own deny (D144 item 4) is its OFF arm, checked at its
+    commit against the parent. The alternative is to keep the bits as
+    "deny every kit switch on that budget". That would keep migration-
+    born forms reachable forever with no acceptance role, because D147
+    forbids measuring SIMD against an old scalar and scalar changes are
+    measured against their parent. **Recommendation:** withdraw (D77).
+    A coarse kit-off switch can be built from the switch table if a
+    triage need is ever measured.
+52. **`[rev4.2]` Q52, the stamp re-derived (replaces Q39; §L.5).**
+    `<PREFIX>_MEMFN_FORMS` on every artifact. It is `none` iff the
+    artifact is byte-identical to its own `-fno-memfn-native` compile;
+    otherwise it lists the native form ids. Written by the kit, checked
+    by C11 against that pcrec-side diff, born in its own abi event R4a′.
+    It carries no kit version. **Recommendation:** yes. It reports the
+    layer fact D147 makes every reading carry, and it keeps M1 and every
+    scalar-layer change zero-stamp-mover. The stated cost: scalar-layer
+    forms are attributed by movers census and switch name, not by the
+    stamp, until a bench consumer asks for more (D77).
 
 ### 23.1 Revision 3's questions, mapped
 
