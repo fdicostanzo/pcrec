@@ -279,6 +279,10 @@ sound, and the argument is short:
 - The prefilter may now ADMIT a start at `lo` through a `\G` branch that
   the VM, still anchored at `f`, rejects. That widens a superset filter,
   which the VM's verify absorbs (D51 ruling 2's direction).
+- This is not a new exposure. The VM's RETRIES already call the prefilter
+  at `attempt_position` (§1.1's list), so the prefilter's `\G` has read
+  `search_from` on the first call only, ever. The handoff makes the first
+  call read the way every retry already reads.
 - The one read that is not a filter is `window_end` on the clamped arm
   (H8): it is set from the prefilter's first ANSWER. A spurious `\G` answer
   at `lo` could end earlier than the true match. The build therefore
@@ -290,8 +294,10 @@ sound, and the argument is short:
 
 Critic 1 measured the unguarded form at 0 diffs over 7 `\G` hybrid shapes
 (~280k cells). `handoff.rxt` gains a `\G`-hybrid prefilter-window row on a
-constructed witness, `(?:\G|x)(cat)dog` (VM hybrid, exact prefilter, K =
-1 on the prototype), and S469's plant and §5.12's "no `\G` reader" check
+constructed witness, `(?:\Gab|x)(cat)dog` (VM hybrid, `exact` prefilter,
+K = 2 on the prototype; on `zzabcatdog` from 0, `lo` = 2 and the true
+answer is NOMATCH, while a `\G` anchored at `lo` would match `(2,10)`),
+and S469's plant and §5.12's "no `\G` reader" check
 extend to the prefilter's third argument (§4.4).
 
 **Claim 3 (the body is correct at `lo`).** The emitted body's answer at a
@@ -434,7 +440,7 @@ The table is asked only where the admission emitted a run pre-check:
     linear no-match proof, and skipping its attempts (sound by Claim 1)
     has no measured customer: 0 movers in the forced-VM census.
   - A VM `attempt_position` advance would also need K49's
-    encoding-advance discipline. It is filed, not built (§5 Q7).
+    encoding-advance discipline. It is filed, not built (§Q Q7).
   - The build asserts the correspondence at the hybrid site: on a hybrid
     with no `prefn`, the predicate is a `pcrec_ctx_fail`.
 - **(b) A bound: `req_run.maxoff < PCREC_W_UNBOUNDED`.** A saturated finite
@@ -699,8 +705,23 @@ flagged row) was 183 → 186, +3; the panel estimated +2.
 - `docs/spec/match_api.md`: §6.3 the stamp, its presence rule and
   value; §6 the abi 61 change-log entry; :2299's "abi is 60" sentence;
   :3813's `REQ_WHY` table, whose `"emitted"` row gains "since `abi` 61
-  possibly handed off (`REQ_HANDOFF`)"; §3.1's sentence (§4.2a gives its
-  revised text).
+  possibly handed off (`REQ_HANDOFF`)"; and §3.1's sentence, revised by
+  [r1 C-C8] because revision 1's "unobservable by the contract" is false
+  for the give-up surface (a deny flag that moves `PCREC_ERR_STEPS` versus
+  a result is exactly K65/K66's invariant):
+
+  > A search may begin its internal scan after `startpos` where a
+  > necessary literal proves that no match begins earlier; its answer is
+  > the one a scan from `startpos` gives. The step budget meters only the
+  > work the matcher performs, so positions it proves cannot begin a match
+  > consume none. Where an artifact's VM prefilter is count-collapsed
+  > (`RX_VM_PREFILTER_LANG "count-collapsed"`), a search that returns
+  > `PCREC_ERR_STEPS` when built with `-fno-req-handoff` may therefore
+  > return a match without it, and that match is the one an unbounded
+  > budget returns.
+
+  The last sentence ships only if Q10 keeps the allowance; under Q10's
+  recommended decline it is dropped and the first three stand alone.
 - `docs/spec/tuning.md`: a new §2.41 for `-fno-req-handoff`; the
   flags→flag table at :3738 gains the bit-46 row beside bit 45's; §2.29's
   `REQ_WHY` paragraph gains a cross-reference.
@@ -796,8 +817,10 @@ What it says:
   or be constructed (§4.4 constructs them).
 - **`\G` hybrids: none.** No mover on any route carries a `\G` start
   family, which is why S469's witness is constructed:
-  `(?:\G|x)(cat)dog` is a VM hybrid, `exact` prefilter, K = 1 on the
-  prototype.
+  `(?:\Gab|x)(cat)dog` is a VM hybrid, `exact` prefilter, K = 2 on the
+  prototype. (`(?:\G|x)(cat)dog`, K = 1, is a hybrid too but cannot
+  discriminate: its `\G` branch consumes nothing before the window, so a
+  `\G` moved to `lo = c − 1` would need a second, earlier occurrence.)
 
 ### 3.2 The K82 cells and C3's customers
 
@@ -852,19 +875,27 @@ round's batch gate, not to this row.
 ### 4.1 The mover manifest and the deny arm (compile-only, `k82_movers.py`'s shape)
 
 - **Arms.** BASE = abi 60 (k82fix's tip), NEW, and DENY = NEW +
-  `-fno-req-handoff`. The abi digit is normalized at its sites.
+  `-fno-req-handoff`. The abi digit is normalized at its sites (§2.3a).
 - **NEW vs BASE: the PROGRAM moved iff predicted.** The prediction is
   recomputed in Python from NEW's `--emit-facts`: `REQ_WHY` "emitted", a
-  run, a DFA-scan route from the stamps, and `req_run_maxoff` finite.
-  - On a predicted mover, `REQ_HANDOFF` equals that K.
-  - On every other artifact, the only difference is the stamp line
-    `"none"`.
+  run, a DFA-scan route from the stamps, `req_run_maxoff` finite, and no
+  §1.4 (d′)/(g) decline.
+  - On a predicted mover, `REQ_HANDOFF` is present and equals that K.
+  - [r1 C-C1] On every other artifact there is NO difference beyond the
+    abi digit: no stamp line, under the movers-only rule.
   - Off-diagonal cells are failures.
-- **DENY vs BASE:** identical on every artifact, modulo the one stamp line.
+- **DENY vs BASE:** identical on every artifact modulo the abi digit
+  ALONE ([r1 C-C3]: bit 46 is in `strategy_denials`, and DENY emits no
+  stamp).
 - **The fact's own check.** NEW's `req_whole_run` equals BASE's on every
   artifact: the offset is an annotation and must not move the choice.
-- **Populations:** the §3.1 table's, reconciled count for count (K35: an
-  empty or shrunken population is a failure).
+- **Populations:** §3.1's and §3.1a's tables, reconciled count for count
+  (K35: an empty or shrunken population is a failure), including the
+  `--no-captures` and forced-hybrid corpus arms ([r1 C-C9]).
+- **[r1 C-C4] What this manifest is NOT.** It predicts movers and K from
+  `--emit-facts`, which reads the same `rb_walk` the build emits from. So
+  it checks the plumbing (fact → selection → text), never the fact. A
+  wrong K is invisible to it by construction. The fact's checks are §4.2a.
 
 ### 4.2 Answer identity
 
@@ -872,11 +903,41 @@ round's batch gate, not to this row.
    mover with BASE := DENY. The driver is `possdiff_driver.c`: span, every
    capture slot and the failure surface, at EVERY start position. The
    subjects are `b1_mover_answers.py`'s sweep plus `PREFIXES=1`.
-   - **Allowed changes:** `give-up → NOMATCH`, and `give-up → match` where
-     the match equals DENY's at an unbounded step budget. The hybrid
-     skips failing attempts before `lo`, so it can no longer exhaust a
-     budget there.
-   - **Every other change is a DEFECT.**
+   - **[r1 S-F9] Per route.** The movers are run and COUNTED per admitted
+     route (DFA unanchored, DFA attempt, VM hybrid), with the forced-hybrid
+     corpus arm included so the hybrid route has 160 movers rather than 33
+     (§3.1a). A route with zero swept movers is a failure.
+   - **[r1 S-F5, C-C7] Ill-formed utf8.** The utf8 movers' subject sweep
+     includes ill-formed and truncated subjects: runs of 1-6 stray
+     continuation bytes placed before, inside and after `[c − K, c)`, a
+     truncated lead at the subject's end, and an overlong lead. The K73/K75
+     rules decide the expected answer; DENY is the reference arm, so the
+     differential needs no oracle for them.
+   - **[r1 S-F2] The allowance is EMPTY except on count-collapsed
+     prefilters.** Revision 1 allowed `give-up → NOMATCH` and
+     `give-up → match` on every hybrid. That was too wide. A hybrid's VM
+     attempts start only where its prefilter answers, or after a failed
+     attempt that began there. K bounds the prefilter's own language
+     whenever that language is the exact one or an erasure of zero-width
+     nodes (lookarounds, `\b`): the run is still necessary in it, at the
+     same offsets. So no attempt is ever made below `c − K`, with or
+     without the handoff, and the VM's work is identical. The one
+     prefilter language K does not bound is [OPT-4]'s COUNT-COLLAPSED one
+     (`X{m,n}` widened to `X{min(m,1),}`, `RX_VM_PREFILTER_LANG
+     "count-collapsed"`): its answers can sit below `c − K`. There, and
+     only there, `give-up → NOMATCH` and `give-up → match` (the match
+     DENY returns at an unbounded budget) are allowed. **Every other
+     change, on every route, is a DEFECT.**
+   - **The measured allowance population is zero**: every hybrid mover
+     in every config, corpus and bench, reads `exact` (§3.1a). The
+     count-collapsed prefilter is a fallback-only ladder rung (ruling B,
+     `prefilter_count_independence.md` §10a). So the build constructs one
+     count-collapsed hybrid mover (a pattern whose exact prefilter
+     overflows the state cap, with a run after the counted repeat) and
+     runs it as the allowance's witness; if none can be constructed, the
+     allowance is deleted rather than kept untested. §Q Q10 recommends
+     the simpler finish: decline the handoff on count-collapsed
+     prefilters, which empties the allowance by construction.
 2. **The handoff witnesses**, a new `tests/litscan/handoff.rxt`. It is
    generated by a `gen_handoff.py` with python3 `re` expectations; utf8
    rows are `re` over `str`, and the K73 continuation-byte rule is checked
@@ -884,46 +945,174 @@ round's batch gate, not to this row.
    under every engine row the harness runs (auto, vm, the `-fno-*` axes),
    at every startpos.
    - **The maximum-offset case.** The match begins exactly K bytes before
-     its window: `x{2,5}(?i)cat` on `xxxxxCaT`, and `(?:a|bb)?catdog` on
-     `bbcatdog`.
+     its window: `x{2,5}(?i)cat` on `xxxxxCaT` (K = 5), and
+     `(?:a|bb)?catdog` on `bbcatdog` (K = 2).
+   - **[r1 S-F1] Two occurrences.** The first occurrence is the match's
+     own window and a second follows it: `(?i)cat` on `CAT CAT`, and
+     `x{2,5}(?i)cat` on `xxxxxcat xcat`. S464's witness.
    - **Decoys.** A false run occurrence within K bytes BEFORE a real match:
      `a{3}(?i)cat` on `cat aaacat`, where lo lands inside the decoy's
      span.
    - **Near the startpos.** The run within K of a non-zero startpos: the
-     underflow clamp, startpos = 1..K.
+     underflow clamp, `x{2,5}(?i)cat` on `xxxxxCaT` at startpos = 1..5.
+     S470's witness: at startpos 3 the answer is `(3,8)`, and a missing
+     clamp reports `(0,8)`, below the startpos.
    - **Multibyte width.** `(?i)straße` on `ſtraße`, `éſtraße` and
      `xſTRASSE`. Here lo = c − 2 lands on a continuation byte, which tests
      the rounding. Also `.{3}cat` and `é{2}cat` under utf8 with 2/3/4-byte
      characters in the prefix.
+   - **[r1 C-C7] Ill-formed text.** The same patterns with 4, 5 and 6 stray
+     continuation bytes immediately before the window, so the round-up
+     takes more than 3 steps ([r1 S-F5]'s counterexample to "≤ 3").
    - **Seeded starts.** `\bcat\b` and `(?<![a-z])cat` with a word
      character at lo − 1 and lo − 2 (on the DFA route, and on the hybrid
-     for the lookbehind).
+     for the lookbehind). S468's witness is `\bcat\b` on `zcat cat` from
+     0: the true first match is `(5,8)`, and a seed read from
+     `search_from` instead of `lo` reports `(1,4)`.
    - **The attempt route.** `(?m)^item` (ENG_ATTEMPT), and `(?:\G|x)cat`
      and `\Gx|yx`-shaped `\G` rows on whichever route the selector gives
      them (Claim 2′).
+   - **[r1 S-F3] The `\G` hybrid.** `(?:\Gab|x)(cat)dog` (VM hybrid,
+     `exact`, K = 2) on `zzabcatdog`, `abcatdog`, `zxcatdog` and
+     `zzabcatdogxcatdog` from every startpos. S469's witness: from 0 on
+     `zzabcatdog` the answer is NOMATCH, and a `\G` anchored at `lo`
+     reports `(2,10)`.
    - **`\K`.** A row on the route that carries it: offsets are from the
      attempt start.
    - **Find-all.** Dense matches (`(?i)cat` over `cAtCaTcat…`) and
      overlapping run occurrences (`aa(?i)a` style).
    - **A run that begins on a continuation byte:** `(?:éx|ʩx)`.
-   - **Controls.** `a.*?(?i)select` (unbounded, must not move) and the
-     forced-VM rows (must not move).
+   - **Controls.** `a.*?(?i)select` and `ab.*xyzw` (unbounded, must not
+     move) and the forced-VM rows (must not move).
 3. **The corpus and identity gates.**
    - `make test`: the `.rxt` corpus on every engine row, every identity
      gate after its re-pin, and the codegen structural checks.
-   - `make test-axes AXES="-fno-req-handoff -fno-req-set-lead
-     -fno-req-run-fold"`. That is the new flag plus its two neighbours,
-     because the deny of each must compose. The full `test-axes` is the
-     batch gate's (D144 item 2).
-4. **Structural checks** (`tests/codegen/run_prechecks.sh`, a new §5.12),
-   read off the TEXT:
-   - `handoff_position` is declared iff `REQ_HANDOFF` is a number;
-   - its subtraction constant equals the stamp;
-   - exactly one start site reads it per body (the DFA initializer and
-     `scan_position`, the attempt loop, or the hybrid's first call);
-   - no `\G` reference reads it;
-   - the utf8 rounding is present iff the encoding is multibyte;
-   - the deny row reads `"none"` and the abi-60 gate line.
+   - [r1 C-C9] `make test-axes AXES="-fno-req-handoff -fno-req-set-lead
+     -fno-req-run-fold -fno-offset-skip -fno-run-prefilter -fno-scan-edge
+     -fno-hyb-reseed -fprefilter"`. That is the new flag, its two admission
+     neighbours, and the scan-form flags that change which of the three
+     bodies (and which in-loop form) the handoff lands in, because the deny
+     of each must compose with the handoff on. `tests/axes/run_axes.sh`
+     gains GROUP F4 for bit 46: its budget-bound population is §4.2 item
+     1's count-collapsed movers (measured empty), stated so on the F3
+     precedent. The full `test-axes` is the batch gate's (D144 item 2).
+4. **Structural checks** (`tests/codegen/run_prechecks.sh`, a new
+   §5.12; k82fix's file ends at §5.6, so the build takes the next free
+   number and keeps this name in its header), read off the TEXT. [r1 C-C5]
+   Every detector the sabotage table names is HERE, in the suite. Revision
+   1 placed S464/S465/S466/S472's detectors (old numbering) in the
+   manifest under `docs/dev/optloop/`, which mech never runs, so they
+   read UNDETECTED; and S466 (an unbounded run handed off) is
+   answer-equivalent, so no `.rxt` row can see it.
+   - **The hand K pin table** ([r1 C-C4] (a), [r1 C-C11]): §4.2a's table,
+     each pattern compiled and its `REQ_HANDOFF` compared to the hand
+     value. Detects S465 and S466.
+   - **Presence:** `handoff_position` is declared iff `REQ_HANDOFF` is
+     present, and the subtraction constant equals the stamp.
+   - **Bounded:** no artifact whose `--emit-facts` `req_run_maxoff` reads
+     `unbounded` carries a handoff; named witnesses `a.*?(?i)select` and
+     `ab.*xyzw`, plus the corpus population (floor: the 37 unbounded
+     DFA-scan artifacts of §3.1, set at 80% of the measured count). Detects
+     S467.
+   - **The run choice:** a `req_whole_run` pin table on patterns where a
+     bounded and a more informative unbounded run compete (`ab.*xyzw` →
+     `78797a77`, the unbounded `xyzw`). Detects S474.
+   - **[r1 C-C10] The cross-table check:** a handoff only where `REQ_WHY`
+     reads `"emitted"` and `REQ_RUN` is not `"none"`.
+   - **One start site per body:** the DFA initializer and `scan_position`,
+     the attempt loop, or the hybrid's first `prefn` call.
+   - **`\G` readers** ([r1 S-F3]): ENG_ATTEMPT's `start == search_from`
+     and the VM's own `search_from` never read `handoff_position`; the
+     hybrid prefilter's third argument reads it at the FIRST call only.
+     Detects S469.
+   - **The round-up** ([r1 S-F5], [r1 S-F6]): present iff the encoding is
+     multibyte, INSIDE the `> K` branch only, with `< subject_length` in
+     its condition and no step cap. Detects S471 and S472.
+   - **The (d′) decline:** no handoff on a hybrid whose text carries both
+     a `\G` start family and the prefilter-window ceiling. Detects S476.
+   - **The deny row:** `-fno-req-handoff` emits no stamp, no
+     `handoff_position`, and abi 60's gate line. Detects S473.
+   - Each check carries its population floor and a named witness (K35).
+
+### 4.2a [r1 C-C4] The fact's own checks, which share no source with the walk
+
+The manifest (§4.1) and the stamp (§2.2) both come from `rb_walk`. A K the
+walk gets wrong is a K both agree on. Three checks that do not:
+
+**(a) The hand K pin table** (in-suite, §5.12). Each K is derived by hand
+from §1.3's width rules on the pattern TEXT, not by running the walk:
+
+| pattern | `-e` | hand K | derivation |
+|---|---|---|---|
+| `(?i)cat` | byte | 0 | the run is the whole match's head |
+| `(?i)straße` | utf8 | 2 | the run `TRA` follows `(?i)s`, which matches `s`, `S` or `ſ` (U+017F, 2 bytes) [r1 C-C11] |
+| `x{2,5}(?i)cat` | utf8 | 5 | five `x` bytes at most before the run |
+| `.{3}cat` | utf8 | 12 | three characters of up to 4 bytes |
+| `é{2}cat` | utf8 | 4 | two 2-byte characters |
+| `ab(?:cdef\|xyzdef)g` | utf8 | 5 | the run `defg` after `ab` + `xyz` (5 bytes) |
+| `(?:a\|bb)?catdog` | byte | 2 | the wider branch `bb` |
+| `(?:ab\|c)(?i)select` | utf8 | 4 | `ab` (2), then `(?i)s`, which is not a cube under utf8 (`ſ` is 2 bytes), so the run `ELECT` sits up to 2 + 2 bytes in |
+| `(?:\Gab\|x)(cat)dog` | byte | 2 | `\G` is zero-width, `ab` is 2 |
+| `a.*?(?i)select`, `ab.*xyzw` | byte | none (unbounded) | `.*` |
+
+The prototype agrees on every row it was run on (§1.3's table; the last
+three were run for this revision). If the walk and the hand derivation
+ever disagree, the build stops and the panel's question is which is wrong.
+
+**(b) An independent invariant-F oracle.** Invariant F (§1.2) is a claim
+about the PATTERN's language, so it can be checked against a reference
+matcher with no pcrec code in the loop. For every mover (corpus and bench,
+every config of §3.1a) and every subject of §4.2 item 1's sweep:
+- for every position `p`, ask libpcre2 (the local 10.48 adapter,
+  `tests/oracle/`; python `re` as the cross-check where it compiles the
+  pattern) for an ANCHORED match at `p` (`PCRE2_ANCHORED`, startoffset
+  `p`);
+- where one exists, assert a masked occurrence of the window (`REQ_RUN`'s
+  bytes and mask, read off the stamp) in `[p, p + K]`.
+
+The anchored match at `p` makes `\G` true at `p`, so it tests a SUPERSET
+of the real successes; F must hold on it too, because the walk counts
+`\G` as zero-width. The check shares the window with the walk (it reads
+the stamp) and nothing else: K is the one input under test, and the
+oracle decides where matches begin. It reports cells checked and
+violations, per population (K35); 0 violations is the bar, and a
+violation is a K that deletes matches.
+
+**(c) The K−1 plant over the whole mover population.** S463 (K − 1) is
+planted once, and the §4.2 item 1 differential is run over EVERY K > 0
+mover, not only `handoff.rxt`. The report states detections over
+population: a K > 0 mover where K − 1 changes no answer on the sweep is a
+mover whose sweep never places a match at exactly `c − K`, which is a
+coverage gap in the sweep, and is listed. (Critic 1's plant over its own
+shapes detected on 98.) The K > 0 population is THIN: 27 corpus movers and
+14 bench movers (§3.1a). This revision says so rather than letting the 160
+stand in for it, and the constructed rows of §4.2 item 2 exist because of
+it.
+
+### 4.2b [r1 C-C2] DD12a(i): the encoding pair check
+
+`tests/codegen/run_encoding_checks.sh`'s DD12a(i) compiles each pattern
+under `byte` and `utf8` and requires the hot loop's control flow to be
+identical after normalizing the stamps that legitimately differ
+(`REQWHY_STAMP_RE` at `:590`; the `[silentred]` excision of `rx_reqrun`
+when `REQ_WHY` differs, `:886-905`). The handoff differs by encoding by
+design: K can differ (`(?i)straße` is 2 under utf8 and smaller under
+byte, where `ſ` is not a member), and the round-up exists only under
+utf8. Unhandled, DD12a(i) goes red on the movers. The build adds:
+- **A named region.** The handoff block (the `if (handoff_position -
+  search_from > K) { … } else …` of §1.1) is excised from BOTH sides as
+  `/* [K82-handoff] handoff block excised for comparison */`, anchored on
+  its opening and closing lines, the `[silentred]` shape.
+- **A `REQ_HANDOFF` normalizer** beside `REQWHY_STAMP_RE`, rewriting the
+  value to `N`. Presence must match on both sides unless `REQ_WHY` or
+  `REQ_RUN` differs by encoding (the handoff then legitimately applies
+  under one encoding only); an unexplained presence asymmetry is a failure.
+- **A floor.** The number of pairs excised on both sides is reported and
+  floored at 80% of its landing count (K35), and each side's excised
+  region is at most 8 lines, so an over-broad excision cannot silently
+  hide the rest of the function.
+- **A sabotage row.** S477 (§4.4) widens the excision's end anchor to the
+  function's closing brace; the 8-line ceiling detects it.
 
 ### 4.3 ASan/UBSan
 
@@ -933,25 +1122,46 @@ round's batch gate, not to this row.
   block of exactly its length). This is `c3_answers_san.log`'s run.
 - **Edge subjects.** `n = 0` with a NULL subject; a startpos at `n` and at
   `n − 1`; a match at offset 0 with K > 0 (the clamp); utf8 subjects that
-  END in a truncated sequence after the run (the rounding's bound).
-- **The control.** A planted out-of-bounds read in the rounding loop
-  (`< n` dropped) must be caught: `S455`'s precedent, a sanitizer control
-  that is itself sabotaged once.
+  END in a truncated sequence after the run; [r1 S-F5] utf8 subjects that
+  END in four or more stray continuation bytes, with `c − K` among them.
+- **The control.** S472 (the round-up's `< subject_length` dropped) is
+  planted once under the san axis, on `S455`'s precedent: a sanitizer
+  control that is itself sabotaged. Its reaching witness needs a subject
+  with no character start in `[c − K, n)`, which a window that contains an
+  ASCII byte never allows; if the build cannot construct one, the row's
+  in-suite detector is the structural one (§5.12, "the round-up"), and the
+  ASan arm is recorded as unreached rather than claimed.
 
-### 4.4 Sabotage rows (numbered from S463; check main's highest at landing)
+### 4.4 Sabotage rows: S463-S477, fifteen rows (check main's highest at landing)
 
-| row | plant | detector |
-|---|---|---|
-| S463 | the subtraction uses K − 1 (lo one byte too late) | `handoff.rxt` maximum-offset rows (the match at exactly c − K is lost) |
-| S464 | the walk's width counts a `A_WCLASS` / multi-byte class as 1 byte (the `cwmax` mistake) | `handoff.rxt` `ſtraße` / `.{3}cat` utf8 rows; the manifest (`ci-strasse` K 2 → 1) |
-| S465 | `A_ALT`'s width takes the LEFT branch, not the max | `(?:a\|bb)?catdog` on `bbcatdog`; the manifest's K column |
-| S466 | the `bounded` conjunct dropped (an unbounded run handed off at K = 0) | `a.*?(?i)select` and `union-select` rows; the manifest (unbounded artifacts move) |
-| S467 | the seeded initializer keeps reading `search_from` while `scan_position = handoff_position` | `\bcat\b` with a word character at lo − 1 (a match reported or lost on the wrong context) |
-| S468 | the hybrid passes `handoff_position` into `search_from` (the `\G` anchor moved) | the `\G` hybrid row; `run_prechecks.sh` §5.12's "no `\G` reader" check |
-| S469 | the underflow-safe form replaced by `c - K` with no clamp | the startpos 1..K rows (size_t wrap → NOMATCH where a match exists) |
-| S470 | the utf8 rounding dropped | the `éſtraße` / `(?:éx\|ʩx)` rows IF a wrong answer results, else the structural "rounding present" check alone. The panel's answer to Q2 decides which (H6) |
-| S471 | `-fno-req-handoff`'s deny bit dropped from the row | `run_prechecks.sh` §5.12 deny row. NOT the registry suite: `--list-axes` walks the same row, a control sharing its source (k82fix's S462 lesson) |
-| S472 | the run choice moved: `rn_better` prefers a bounded run | the manifest's `req_whole_run` equality check (§4.1) |
+Highest S-id on main `b1869be1`: S456; on `lane/k82fix`: S462 (S457-S462
+are k82fix's). So the handoff's rows start at S463 if k82fix lands first.
+[r1 C-C6] Every row names its constructed reaching witness (`SAB_REACH`)
+and the population that witness stands for (`SAB_REACH_POP`), and every
+detector is in the suite ([r1 C-C5]).
+
+| row | plant | `SAB_REACH` (witness) | `SAB_REACH_POP` | in-suite detector |
+|---|---|---|---|---|
+| S463 | the subtraction uses K − 1 (lo one byte too late) | `x{2,5}(?i)cat` on `xxxxxCaT`: `(0,8)` becomes `(1,8)` | the K > 0 movers (27 corpus, 14 bench) | `handoff.rxt` maximum-offset rows; §4.2a (c) reports the whole-population count |
+| S464 | [r1 S-F1] the gate returns a LATER occurrence (the pair arm returns the stream it advanced last, not the lesser) | `(?i)cat` on `CAT CAT`: the first match is lost | every mover on the pair arm, and every mover for the single-stream spelling | `handoff.rxt` two-occurrence and dense find-all rows |
+| S465 | the walk's width counts an `A_WCLASS` / multi-byte class as 1 byte (the `cwmax` mistake) | `(?i)straße` `-e utf8` on `ſtraße`: K 2 → 1 | utf8 movers whose K counts a multibyte member | §5.12 hand K pin (`ci-strasse`'s pattern, K = 2); `handoff.rxt` `ſtraße` rows |
+| S466 | `A_ALT`'s width takes the LEFT branch, not the max | `(?:a\|bb)?catdog` on `bbcatdog`: K 2 → 1, the span moves | movers with unequal-width alternation before the window | §5.12 hand K pin; `handoff.rxt` |
+| S467 | the `bounded` conjunct dropped (an unbounded run handed off at the saturated K: answer-equivalent) | `a.*?(?i)select`, `ab.*xyzw` | the 37 corpus / 8 bench unbounded DFA-scan artifacts | §5.12 "bounded" check (structural; no answer can see it) |
+| S468 | the seeded initializer keeps reading `search_from` while `scan_position = handoff_position` | `\bcat\b` on `zcat cat`: `(5,8)` becomes `(1,4)` | seeded DFA movers (`\b`, lookbehind) | `handoff.rxt` seeded rows |
+| S469 | the hybrid passes `handoff_position` into the VM's `search_from` (the `\G` anchor moved) | `(?:\Gab\|x)(cat)dog` on `zzabcatdog`: NOMATCH becomes `(2,10)` | `\G` hybrid movers: 0 measured, 1 constructed | `handoff.rxt` `\G`-hybrid row; §5.12 "`\G` readers" |
+| S470 | the underflow-safe form replaced by `c − K` with no clamp | `x{2,5}(?i)cat` on `xxxxxCaT` at startpos 3: `(3,8)` becomes `(0,8)` | the K > 0 movers | `handoff.rxt` startpos 1..K rows |
+| S471 | the utf8 round-up dropped | `(?i)straße` `-e utf8`, text only (answers unreached: 0 diffs over 13 shapes, [r1 S-F5]) | utf8 movers | §5.12 "the round-up" (structural) |
+| S472 | the round-up's `< subject_length` dropped | the ASan edge row if constructible (§4.3) | utf8 movers | §5.12 "the round-up"; the san axis where reached |
+| S473 | `-fno-req-handoff`'s deny bit dropped from the row | `(?i)cat` `-fno-req-handoff` | every mover | §5.12 deny row. NOT the registry suite: `--list-axes` walks the same row, a control sharing its source (k82fix's S462 lesson) |
+| S474 | the run choice moved: `rn_better` prefers a bounded run | `ab.*xyzw`: `req_whole_run` `78797a77` → `6162` | patterns with a bounded and a more informative unbounded run | §5.12 `req_whole_run` pin table |
+| S475 | [r1 S-F4] the verb/callout conjunct dropped | none: verbs and callouts are refused before the predicate is asked | 0 | declared UNREACHED with that reason, plus the compile-time assertion (§1.4 (g)) |
+| S476 | [r1 S-F3] the (d′) decline dropped | a constructed `\G` hybrid with the prefilter-window ceiling, or UNREACHED if the build cannot construct one | 0 measured | §5.12 "the (d′) decline" |
+| S477 | [r1 C-C2] DD12a(i)'s handoff excision widened to the function's closing brace | any utf8/byte pair with a handoff on both sides | the both-sides-excised pairs | DD12a(i)'s 8-line ceiling (§4.2b) |
+
+Revision 1's rows map as: S463 → S463, S464 → S465, S465 → S466, S466 →
+S467, S467 → S468, S468 → S469, S469 → S470, S470 → S471, S471 → S473,
+S472 → S474. New: S464, S472 (was §4.3's unnumbered control), S475, S476,
+S477.
 
 Every row is checked single-row for [MECH-REACH]: the witness must reach
 its site on the plant's tree. Anchors are copied from
@@ -964,7 +1174,8 @@ and deny as the floor, absolute deltas for per-call cells (D144
 addendum 1). The arms are:
 - BASE = abi 60;
 - NEW;
-- DENY = NEW + `-fno-req-handoff`, where DENY == BASE in program text.
+- DENY = NEW + `-fno-req-handoff`, where DENY == BASE modulo the abi digit
+  ([r1 C-C3]).
 
 The cells:
 - **The five cause-(B) cells** at 64 KiB and 1 MiB: `mod-i`, `mod-r`,
@@ -1004,6 +1215,10 @@ break, with the witness that would break it):
     scope, refused by `mod_verbs.c`); the VM's step budget (§4.2: a budget
     is the one place a skipped attempt is observable, and only toward an
     answer).
+  - [r1 S-F4] Verbs and callouts are refused today, and §1.4 (g) declines
+    them structurally for the day they are not. [r1 S-F2] The step budget
+    is observable only on a count-collapsed prefilter (§4.2). [r1 S-F3]
+    The hybrid's prefilter reads its third argument as `\G` (Claim 2′).
 - **H2 — Bytes, not characters.** Is every width arm of §1.3 a byte count
   on the LOWERED tree? `A_WCLASS` must descend, and `A_CALL` stays
   unbounded. The prototype's `ci-strasse` K = 2 says yes on one cell. A
@@ -1027,6 +1242,10 @@ break, with the witness that would break it):
   first consumed byte is matched by a lowered class, which never admits a
   lone continuation byte. Is the rounding then unnecessary, and is that
   provable rather than merely likely? Q2 asks Frank.
+  - [r1 S-F5] Measured by critic 1: removing the round-up entirely gave 0
+    diffs over 13 shapes. Not a proof; S471 keeps a STRUCTURAL detector
+    because it reads unreached on answers. The round-up that stays is
+    uncapped and taken only when `lo > f` ([r1 S-F6]).
 - **H7 — One writer of the state.** The initializer reads the moved start,
   and nothing else writes the state at entry. Does any `seedhead`
   (`goto … seeded straight onto a scan-edge head`) or view-selection
@@ -1035,6 +1254,10 @@ break, with the witness that would break it):
   sound as its retries at `attempt_position` (D51 ruling 2)? And is
   `window_end`, set from its first answer on the clamped arm, still a
   bound on the match's end?
+  - [r1 S-F3] Answered for the filter, held for `window_end`: the
+    retries already read `attempt_position` as `\G`, so the first call at
+    `lo` is a retry's shape; but `window_end` on a clamped `\G` hybrid is
+    declined by (d′) until the build reads its writer (Q9).
 - **H9 — Pinned and empty forms.** Is the pinned form unreachable? The
   argument is that a nullable pattern has no run. The empty engine emits
   no gate.
@@ -1045,56 +1268,118 @@ break, with the witness that would break it):
     anyway.
   - On the hybrid, the first prefilter answer at `lo` may come later than
     at `search_from` but never earlier, and the VM attempts fewer.
+  - **[r1 S-F2] Corrected.** "The VM attempts fewer" was wrong. Wherever
+    K bounds the prefilter's language (the exact language, or an erasure
+    of zero-width nodes), the prefilter never answers below `c − K` (§4.2
+    item 1), so the VM attempts EXACTLY the same positions with or
+    without the handoff. The saving on the hybrid is the prefilter's scan
+    of `[f, lo)` and nothing else. Only a count-collapsed prefilter can
+    answer below `c − K`, and there the VM does attempt fewer; that is the
+    one population where the give-up surface can move, and it is measured
+    empty.
 - **H11 — The pair arm's per-call overshoot** (`mod-i`'s residual). It is
   not addressed, and it is not this row: no cross-call state exists to
   carry a stream's lookahead. Its general answer is the pair arm's
   emission, or [MEMFN]'s binding-form criterion (k82cost's Q7).
 - **H12 — Stamp population.** Every artifact gains a line. Is that the
   right trade against "only movers carry it"? (Q3.)
+  - [r1 C-C1] Answered no: §2.3a enumerates what every-artifact moves, and
+    the revised Q3 recommends movers-only.
+- **H13 — [r1 S-F1] The gate's return value.** The gate must return the
+  LEFTMOST occurrence at or after `search_from` (§1.1a). Today nothing
+  checks it. S464 does.
+- **H14 — [r1 S-F9] Latent body bugs.** A body bug at a non-zero startpos
+  is now reached on calls from 0 (Claim 3's note); the per-route
+  every-startpos sweep is the check.
 
-**Open questions for Frank**, each with a recommendation:
+**Open questions for Frank** moved to §Q below, revised by the r1 panel.
+
+## §Q. Questions for Frank (revision 2)
+
+Revision 1 asked Q1-Q8 here. The revised set follows; each carries a
+recommendation. Q3 is reversed by [r1 C-C1]; Q9 and Q10 are new.
 
 - **Q1. A new axis (`req-use`, a two-row table) rather than a property of
   `req_admits[]` or `dfa_pfs[]`?**
-  **Recommendation: yes** (§2.1). The handoff answers its own question,
-  and it composes with both tables.
-- **Q2. The utf8 rounding: keep it, or drop it on a proof (H6)?**
-  **Recommendation: keep it in the first build.**
-  - It makes the soundness argument a pure reduction to the startpos
-    contract.
-  - It costs at most 3 byte tests per passing call, on utf8 movers only.
-  - If the panel proves the DFA and hybrid never begin a match on a
-    continuation byte for a run-bearing pattern, it can come out in a
-    later abi event with S470 as its detector.
-- **Q3. `REQ_HANDOFF` on every artifact ("none") or only on movers?**
-  **Recommendation: every artifact**, the `REQ_WHY` presence rule. Every
-  artifact moves at the abi digit anyway, and a stamp whose absence means
-  something is a reader's trap.
-- **Q4. The L = 1 case.** A one-byte pre-check's `memchr` hit could be
-  handed off by the same rule if the walk tracked per-member offsets for
-  the SET. The set is intersected at `A_ALT`, so that needs offsets per
-  byte, `reqpos_probe.c`'s `pmax[256]`.
-  **Recommendation: file it, don't build it (D77).** Cause (B) is runs
-  only. The trigger is a measured byte-only pre-check mover on
-  match-dense text. The table already has the row. Only the fact would
-  widen.
+  **Recommendation: yes** (§2.1). The handoff answers its own question
+  and composes with both tables. [r1 C-C10] Row 1 CALLS `req_admit()`
+  rather than restating it, and §5.12 checks the two tables agree.
+- **Q2. The utf8 round-up: keep it, or drop it on a proof (H6)?**
+  **Recommendation: keep it in the first build**, in its revised form:
+  uncapped (`< subject_length` its only bound, [r1 S-F5]) and taken only
+  when `lo > f` ([r1 S-F6]). It keeps the soundness argument a pure
+  reduction to the startpos contract. Critic 1's 0 diffs over 13 shapes
+  with it removed is evidence, not a proof; if a proof arrives, it comes
+  out in a later abi event with S471's structural detector inverted.
+- **Q3. `REQ_HANDOFF` on every artifact, only where the handoff applies,
+  or in `--emit-facts` only?** [r1 C-C1] REVERSED.
+  **Recommendation: stamp only on artifacts where the handoff applies
+  (option b); facts-only (option c) is acceptable.** The blast radius of
+  each, from §2.3a's grep:
+  - **(a) every artifact (`"none"` elsewhere).** Every byte-count reader
+    moves though no program does: all 12 `EMITTED_BYTES` rows of
+    `m5_stage1_stamps.tsv`, the resource suite's 762,574-byte pin, every
+    row of `artifact_size_log.tsv`, every artifact of the recursion
+    identity gate's whole-file sweep, and the findings mover manifests
+    must be re-derived to show no false mover. The deny arm weakens to
+    "DENY == BASE modulo one line". Revision 1 chose this for the
+    `REQ_WHY` presence rule; the grep says it is the expensive spelling.
+  - **(b) movers only.** Byte movement is confined to the program movers:
+    2 of the 12 `EMITTED_BYTES` rows (`\bword\b`, `(?i)HeLLo`), the
+    resource pin unmoved, the size log's mover rows only. DENY == BASE
+    modulo the abi digit alone. D46's observability holds: the stamp is
+    present exactly where the program differs, and `--emit-facts` states
+    the `req-use` decision on every artifact.
+  - **(c) facts-only.** The same byte movement as (b) minus one line per
+    mover. Observability rests on `--emit-facts` and on the
+    `handoff_position` text; §5.12's presence check compares the facts row
+    with the text (still two sources). It departs from the house idiom
+    that a selection which changes the program is stamped in the
+    artifact, which is why it is the second choice.
+- **Q4. The L = 1 case** (a one-byte pre-check's `memchr` hit handed off,
+  needing per-byte offsets for the SET).
+  **Recommendation: file it, don't build it (D77).** Unchanged: cause (B)
+  is runs only, and the trigger is a measured byte-only pre-check mover on
+  match-dense text.
 - **Q5. A cap on K?**
-  **Recommendation: none.** Any finite K is sound, and a large K degrades
-  to `lo = search_from`, which is today's work plus one compare. The
-  census's largest bench K is 32.
+  **Recommendation: none.** Unchanged: any finite K is sound, and a large K
+  degrades to `lo = search_from`.
 - **Q6. Tighten the DFA reverse pass's lower bound to `lo`?**
-  **Recommendation: no.** It moves emitted text on every DFA mover for no
-  measured gain (§1.2's note), and it would make the reverse pass a
-  fourth consumer.
-- **Q7. The VM with no DFA scan.** Its attempts could start at `lo` too,
-  which is sound by Claim 1.
-  **Recommendation: file it, don't build it.** There are 0 forced-VM
-  movers with a measured loss, the pre-check there is K65/K66's no-match
-  proof, and an advance there must take K49's encoding-advance discipline.
+  **Recommendation: no.** Unchanged: it moves text on every DFA mover for
+  no measured gain.
+- **Q7. The VM with no DFA scan** (attempts from `lo`, sound by Claim 1).
+  **Recommendation: file it, don't build it.** Unchanged: 0 forced-VM
+  movers with a measured loss; K49's encoding-advance discipline needed.
 - **Q8. Sequencing.**
-  **Recommendation:** build this on `lane/k82fix` after it lands, as its
-  own commit and abi event, with the light panel on THIS note first (the
-  ruling). The cost model stays parked behind §3.3's 8-cell measurement.
+  **Recommendation:** build on `lane/k82fix` after it lands, as its own
+  commit and abi event; the light panel (r1) is done and this revision
+  applies it. The build lane's brief names §1.1a's gate contract, and so
+  does the next [MEMFN] build brief ([r1 S-F1]). The cost model stays
+  parked behind §3.3's 8-cell measurement.
+- **Q9. [r1 S-F3] Drop the (d′) decline (`\G` + clamped window on the
+  hybrid) later?**
+  **Recommendation: keep it in the first build.** Its measured population
+  is zero, so it costs nothing, and it removes the one read (`window_end`)
+  the soundness argument does not cover. The build lane reports whether
+  `window_end` is re-derived from every prefilter answer or only the
+  first; if every, (d′) comes out in a later abi event with S476 inverted.
+- **Q10. [r1 S-F2, C-C8] The count-collapsed give-up allowance: keep it,
+  or decline the handoff on count-collapsed prefilters?** §4.2 narrows the
+  allowance to count-collapsed hybrids, the one place the VM's attempts
+  change. Two ways to finish it:
+  - keep it: the handoff skips provably failing attempts there too, a
+    budget-limited search can then answer where `-fno-req-handoff`'s gives
+    up, and the spec says so (§2.3a's last sentence); the build must
+    construct a witness, because the measured population is empty;
+  - decline: add a conjunct (no handoff when `RX_VM_PREFILTER_LANG` is
+    `count-collapsed`), and then `-fno-req-handoff` never moves the
+    give-up surface, with no exception and no spec sentence.
+  **Recommendation: decline.** The population is measured empty on corpus
+  and bench, the count-collapsed rung is a fallback-only ladder attempt
+  (ruling B), and the decline keeps K65/K66's invariant (a deny flag does
+  not move `PCREC_ERR_STEPS` against a result) exceptionless. If a
+  count-collapsed mover with a measured give-up ever appears, the
+  allowance is the D77 follow-on.
 
 ## 6. The lenses (memory: design evaluation lenses)
 
@@ -1111,3 +1396,34 @@ break, with the witness that would break it):
 - **Shared question / engine hat (D124).** "Where may this call's scan
   begin?" is one question. Three bodies wear the hat through one returned
   expression (§2.1).
+
+## §R. Revision 2: the r1 panel's findings and where each is answered
+
+Panel record: `../dev/reviews/2026-10-04-r1-k82-handoff.md` (critics
+k82hcrit1, opus, measuring; k82hcrit2, sonnet, reading). All 17 findings
+ACCEPTED by the manager; this table maps each to the text that now answers
+it. Every change is marked `[r1 <id>]` in place.
+
+| id | sev | finding (short) | answered in |
+|---|---|---|---|
+| S-F1 | MAJOR | the gate's return value is load-bearing (leftmost, ≥ `search_from`) | §0 item 6; §1.1a (the contract in `ofs_test_emit_fn`, the pair arm, [MEMFN]/S4 bound by it); §4.2 item 2 two-occurrence rows; S464; H13; Q8 |
+| S-F2 | MINOR | the give-up→match allowance is too wide; H10 wrong | §4.2 item 1 (allowance only on count-collapsed prefilters, measured population 0); §3.1a (every hybrid mover `exact`); H10 corrected; Q10 |
+| S-F3 | MINOR | the hybrid's prefilter is a third `\G` reader | §1.1's table; Claim 2′ (the third reader, the retry precedent, `window_end`); §1.4 (d′); §4.2 item 2 `\G`-hybrid row on `(?:\Gab\|x)(cat)dog`; §5.12 "`\G` readers"; S469, S476; H1, H8; Q9 |
+| S-F4 | MINOR | nothing excludes verbs/callouts | §1.4 (g) (reads [OPT-HYB-RESEED]'s fact; unreachable today, measured); S475; H1 |
+| S-F5 | MINOR | "≤ 3 tests" round-up is false on ill-formed input | §0 item 4; §1.1 (uncapped loop); §1.4 (e); §4.2 item 1 ill-formed sweep and item 2 rows; §4.3 edge rows; S471 structural, S472; H6; Q2 |
+| S-F6 | NOTE | rounding when `lo == f` changes `-fno-startpos-guard` behaviour | §1.1 (round-up inside the `> K` branch); Theorem; §1.4 (e); §5.12 "the round-up" |
+| S-F9 | NOTE | every-startpos correctness becomes load-bearing | Claim 3's note (incl. the [UCP] U3/U4 cross-note); §4.2 item 1 per-route sweep; H14 |
+| C-C1 | MAJOR | §2.3's reader list misses the byte-count readers | §2.3a (grep commands on main and `lane/k82fix`, both reader classes, per-option movement); §2.2 movers-only stamp; §3.1; Q3 reversed with the blast radius of (a)/(b)/(c) |
+| C-C2 | MAJOR | DD12a(i) goes red on the movers | §4.2b (named region, `REQ_HANDOFF` normalizer, floor, 8-line ceiling); S477 |
+| C-C3 | MAJOR | bit 46's membership in `strategy_denials` | §2.3 (joins the mask, why, and why it is not the wave-G exception); §4.1 deny arm |
+| C-C4 | MAJOR | the manifest's controls share `rb_walk` with the build | §4.1 "what this manifest is NOT"; §4.2a (a) hand K pin table, (b) independent invariant-F oracle against libpcre2/python `re`, (c) K−1 over the whole mover population with the count; the thin K > 0 population stated (27 corpus, 14 bench) in §3.1a and §4.2a |
+| C-C5 | MAJOR | S464/S465/S466/S472 (old numbering) had detectors outside the suite | §4.2 item 4 (§5.12 carries every detector); §4.4's detector column |
+| C-C6 | MAJOR | [MECH-REACH]: witnesses that do not reach | §4.4's `SAB_REACH`/`SAB_REACH_POP` columns with constructed witnesses; §3.1a (no `\G` hybrid mover, so S469's is constructed) |
+| C-C7 | MAJOR | the utf8 population lacks ill-formed/truncated subjects | §4.2 item 1 and item 2 ill-formed rows; §4.3 |
+| C-C8 | MAJOR | "unobservable by the contract" is false for give-up | §3.1a (35 budget/`gu` blocks, 0 movers); §2.3a's revised spec sentence; §4.2 item 1; Q10 |
+| C-C9 | MINOR | census misses `--no-captures` corpus and forced hybrids; test-axes subset too narrow | §3.1a (`k82h_census_r2.out`); §4.1 populations; §4.2 item 3 (eight flags, GROUP F4) |
+| C-C10 | MINOR | `req_uses[]` should call `req_admit()`; row 2's "discard" text | §2.1 (row 1 calls it, row 2 renamed `scan-from-startpos`, the cross-table check); §4.2 item 4; Q1 |
+| C-C11 | NOTE | "declared iff numeric" is self-agreement; pin `ci-strasse` K = 2 | §4.2a (a)'s hand table, first utf8 row |
+
+**Sabotage rows**: S463-S477, fifteen, contiguous (§4.4, with revision
+1's mapping). **Frank questions**: Q1-Q10 (§Q).
