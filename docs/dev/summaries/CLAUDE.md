@@ -139,3 +139,19 @@ Maintenance: update this file when files are added or removed.
   the rows annotated and filed (`[GUIDE-OPT-LEVEL]`, `[BENCH-ASKS-PENDING]`).
   Cites the bench ledgers `2026-10-01-b117-olevel-fc719ca4.md` and
   `2026-10-02-b120-b121-fc719ca4.md`.
+- `2026-10-05-bench-o83-round1.md` — pcrec's reading of pcrec-bench outbox
+  O-83 (I-127): [OPTLOOP] round 1 on the wide bench at pin `c4c70f2c` (abi
+  59), lane o83read. Per change and per regime, in absolute ns/B or ns per
+  subject:
+  - C3/K82: every alpha magnitude reproduced, plus the regime split the
+    bench asked about;
+  - C1: the widest mover, net positive;
+  - VEDGE/K81: the entry term IS on the bench's `floor` whole-subject
+    cells; the named real-scale cells are alpha-only programs;
+  - the flagless [CLS-TREE] S2 range respelling (D139's one spelling):
+    throughput slower and short search faster, consistently; not a D144
+    item-4 violation, but a gap in D139's "measured" clause.
+
+  Also attributes the "new" utf8 movers, and says what moved since the
+  first gap report. Cites the bench ledger
+  `2026-10-05-b122-round1-wide-c4c70f2c.md` and its sweep.
