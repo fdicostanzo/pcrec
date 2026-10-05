@@ -134,8 +134,11 @@ typedef struct {                    /* one position term, relative to cand    */
     uint32_t       table_ref;       /* MF_T_SET: pcrec's table-name hook id, or 0 */
     const uint8_t *run, *mask;      /* MF_T_RUN: (s[cand+offset+j] & mask[j])
                                        == run[j]; mask NULL = exact. A run[j]
-                                       with a bit mask[j] clears is refused
-                                       (RULED Q-G2-13: it could never hold)   */
+                                       with a bit mask[j] clears is IN the
+                                       vocabulary: under this literal formula
+                                       it never holds, and the kit may render
+                                       it constant false; it never normalises
+                                       the byte (RULED Q-G2-13)               */
     uint32_t       run_len;         /* >= 1 (0 refused, Q-G2-11); no cap (§14.6) */
     uint32_t       ppm_lo, ppm_hi;  /* density hint: matches per 1e6 subject
                                        bytes; 0..MF_PPM_FULL when unknown     */
@@ -281,7 +284,10 @@ typedef struct mf_art mf_art;   /* one per Job ATTEMPT (the size ladder re-emits
 
 /* The kit's entry points. Every int-returning call returns 0, or nonzero on
  * a LOUD internal error whose text mf_art_error() returns (pcrec raises it
- * through pcrec_ctx_fail's internal-error tier; §8.2 "Totality"). */
+ * through pcrec_ctx_fail's internal-error tier; §8.2 "Totality"). The
+ * error is STICKY: the first one is kept, and every later call on that
+ * mf_art fails with it, as pcrec's compile fails. A caller that wants to
+ * try a site without poisoning its artifact renders it in a scratch art. */
 #define mf_art_begin      MF_NS(art_begin)
 #define mf_art_end        MF_NS(art_end)
 #define mf_art_error      MF_NS(art_error)

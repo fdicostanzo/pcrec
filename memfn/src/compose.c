@@ -127,14 +127,6 @@ static int pred_kinds(const mf_pred *p, uint32_t *kinds, const char **why)
         } else if (tm->kind == MF_T_RUN) {
             if (tm->run_len == 0) { *why = "RUN term of length 0"; return 0; }
             if (!tm->run) { *why = "RUN term without bytes"; return 0; }
-            /* a run byte with a bit its mask clears can never hold; the
-             * literal formula would render a test that is always false */
-            if (tm->mask)
-                for (uint32_t j = 0; j < tm->run_len; j++)
-                    if (tm->run[j] & (uint8_t)~tm->mask[j]) {
-                        *why = "RUN byte has bits outside its mask";
-                        return 0;
-                    }
             *kinds |= MF_TK_RUN;
         } else {
             *why = "unknown term kind";
