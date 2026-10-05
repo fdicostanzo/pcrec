@@ -1,5 +1,15 @@
 # memory-functions: R1d, THE INTEGRATION MAP AND THE COMPOSITION MODEL
 
+**REVISION 4 (lane `memfndel4`, 2026-10-05, from main 1c2ba975, design
+only): THE CONTRACT REWORKED FROM THE EMITTERS' ACTUAL SHAPES, per the
+r3 light panel (`../../dev/reviews/2026-10-05-r3-memfn-delegation.md`,
+F1-F13 and G-F1..G-F14, every finding ACCEPTED). Read §R4 first: it
+names the seven standing rulings this revision honours and maps every
+finding to its section. The new material is §14-§23. Revision 3's §8-§13
+stand where §R4 does not override them; the overridden passages carry a
+`[rev4]` annotation in place.** D146 is unchanged: pcrec describes a
+search site and the kit returns its code.
+
 **REVISION 3 (lane `memfndel`, 2026-10-05, from main 90d396fd, design
 only): THE DELEGATION MODEL, per D146 (Frank, 2026-10-05). Read §R3
 first. Every changed passage is marked `[rev3]`, and the new material is
@@ -42,6 +52,91 @@ addenda 2-3 (every form choice a `DFA_SELECT`-style row; SIMD later = one
 row; SWAR admitted now), D139 (one class-form table, sites as bits), D144
 item 4 (every optimization its own deny), D145 (generated-output licence
 exception), and the tables themselves (§1).
+
+---
+
+## R4. Revision 4: the contract from the emitters' actual shapes `[rev4]`
+
+**What the r3 panel found.** The delegation architecture held, and no
+finding is a blocker. But byte-identical, zero-mover migration was not
+reachable through rev 3's hooks. Those hooks were written from ideal
+sites, and today's sites have shapes the contract could not express. A
+site returns on a miss, breaks, or is a whole function. It is an
+expression inside pcrec's own `if (guard && EXPR) goto`. It reads a run
+counter after the loop, emits helpers lazily, or is tallied into a
+stamp. Two errors also repeated earlier ones: the stamp rule
+contradicted Frank's Q3, and the shipped deny flags on the migrating
+sites were not named. Revision 4 rebuilds the contract by reading each
+M1 emitter at main `1c2ba975` (and the handoff on `lane/k82hbuild`,
+`9bb97c7c`, abi 61). For every M1 site shape, §15 shows the `mf_site`
+and hooks that reproduce today's text byte for byte.
+
+### R4.0 The standing rulings this revision honours
+
+| # | ruling | where it binds here |
+|---|---|---|
+| 1 | Frank's **Q3** on `litscan_k82h.md`: a stamp goes on EVERY artifact of its family, `none` where it does not apply. Presence never varies within a family (D81) | §18. The stamp is born with its own every-artifact abi event, BEFORE M1's replace commit. It carries no kit version. C11 checks the value, not presence |
+| 2 | **D144 item 4**: every optimization keeps its own deny, and every shipped deny on a migrating site keeps working and is swept by the byte-identity gate | §14.10 gives each shipped deny's fate (bits 16, 30, 31, 32, 33, 43, 44, 45, 46, `-fno-offset-skip` …). The kit's per-form switches become real axes. I2 sweeps every `axes.def` axis and every comment tier (§17.1) |
+| 3 | **D146**: pcrec carries no arch knowledge and does no cost comparison | §19 lists every remaining place pcrec prices kit-owned search code, with its fate |
+| 4 | **D76/D94**: abi changes follow the ritual. Readers are found by grep, including the byte-count reader class | §18.3 (the stamp's own event), §17.4 (per-arm pins, not whole-artifact pins) |
+| 5 | Measured terms are OK; tuned cutoffs are not | §19 classifies every pcrec number on a delegated site as a measured term, a ruled semantic bound or a tuned cutoff. Only measured terms and ruled bounds survive in pcrec |
+| 6 | **D145**: injected text must carry 0BSD, CC0, Unlicense, or a licence with its own output exception | §20.3: per-file provenance, the translated Rust `memchr` under its Unlicense arm, the kit under 0BSD |
+| 7 | **D78**: single writer each way | §20.1: two files from day one. The manager is the sole writer of requests |
+
+### R4.1 Every finding, and where it is answered
+
+| id | finding (short) | disposition in rev 4 | section |
+|---|---|---|---|
+| F1 | hooks only write values; real sites return/break on a miss, are whole functions, or are expressions inside pcrec's `if` | Three site FORMS (expression, statement, function). An `on_miss` statement hook, an `indent` hook, the opening-keyword hook, and a function name plus parameter list | §14.1, §14.2 |
+| F2 | ADVANCE returns only the cursor; the scan edge's post-loop reads the kit's run counter; `scan_test` reads through `dir->peek` | ADVANCE gains a `count` lvalue with a declared start, a bound-reached contract, and a `peek` hook | §14.3 |
+| F3 | in-emitter denies (`-fno-run-overlap`) have no channel to the kit; I2 cannot see them silently die | `mf_site.denies` carries every in-emitter deny. I2 sweeps every `axes.def` axis and every comment tier | §14.10, §17.1 |
+| F4 | pcrec tallies emitted forms (`RUN_WORDS`, lazy helpers, the row name returned); helper placement moves | A plan/render split: `mf_plan` reports form tallies, helpers and includes before any text is written. Helpers go "before first use" at the two points pcrec uses today | §14.8, §15.6 |
+| F5 | empty and wrapped ranges undefined | `hi` is spelled `n − end_back`, never as a wrapping expression. Every site declares its EMPTY outcome: MISS, NOP or EXCLUDED | §14.4 |
+| F6 | the K82 gate is ONE site (lead byte + run + whole run + rest of set); ALL_PRESENT has no position; set-leads' order is pcrec's rarity choice; ON_CAND has no order | ALL_PRESENT gains `ret_pred`, the predicate whose leftmost position it RETURNS. ON_CAND visits in ascending order (descending if reversed). `DELEG_SITES` marks the sites whose result is used as a POSITION | §14.3, §14.5, §15.5 |
+| F7 | rule 3 (every term holds) contradicts `consumer` and M5 (dropping terms) | REQUIRED vs OPTIONAL terms. RETURN promises `c` ≤ the true leftmost, with every REQUIRED term holding at `c` | §14.5 |
+| F8 | totality needs a generic scalar row; a new shape has no baseline; shape bounds unchecked | Every kit table ends in a generic scalar row, tested over a generated predicate space. A new shape's baseline is the portable scalar arm, declared, and is UNREACHED for G1. Shape bounds are `_Static_assert`ed against pcrec's own derivation caps | §14.6 |
+| F9 | `plan_hint` "transitional", but the frozen baseline needs it forever | `plan_hint` is permanent while pcrec computes it. At M5 the MODEL itself moves into the kit as the baseline's frozen planner (implement-then-replace, byte-identical), and only then does pcrec stop computing it | §14.9 |
+| F10 | `on_cand` text may be copied; labels, statics or control flow out of the loop break that | `on_cand` must be duplicable. A structural check C13 holds it | §14.7 |
+| F11 | no lower read guard (N3 reads `s[start−k]`, the reseed reads `s[from−1]`) | Negative term offsets with a `floor` hook. The kit never reads below `floor` | §14.7 |
+| F12 | the whole-artifact baseline pin forces re-pins on unrelated abi changes; baseline arms duplicate pcrec helpers | C5 checks a per-ARM digest pinned under `tests/`. The sink adapter exposes pcrec's escapers, so the kit never copies them | §17.4, §14.2 |
+| F13 | pcrec still prices kit-owned search code | The list, each with its fate | §19 |
+| G-F1 | the movers-only stamp contradicts Q3 | Stamp every artifact. No kit version; form ids or `MF_VOCAB` only. Its own every-artifact abi event, before M1's replace. C11 checks the value | §18 |
+| G-F2 | the shipped denies on the migrating sites are unnamed and unswept; per-form switches are not axes | The fate table, I2 over every axis, and per-form switches as `axes.def` rows | §14.10, §17.1 |
+| G-F3 | C9 fails on the Mac and is vacuous under `portable` | A header shim, a native-enabled config, and a K35 floor on arms compiled | §17.3 |
+| G-F4 | armv8 has no verdict-grade guard | Stated plainly, in the spec too | §17.2 |
+| G-F5 | G1's population came from the kit's own `moved`; thin bins; undeclared regime | Movers come from a pcrec-side default-vs-`memfn-off` artifact diff. The regime is declared, and bins are pooled with a floor | §17.2, §21.1 |
+| G-F6 | G1's cadence misses kit re-tunes | G1 runs on the movers of EVERY memfn abi event | §17.2 |
+| G-F7 | C4's held-out plant is overclaimed and box-dependent | Its scope is stated honestly, the plant count is printed per box, and matching is case-insensitive | §17.5 |
+| G-F8 | sabotage rows may not be mech-runnable; the baseline digest lives in the kit | Per-pattern and per-arm pin digests under `tests/memfn/pins/`, an in-tree C11 census, and `SAB_REACH` on every row | §17.4, §17.6 |
+| G-F9 | the standing design questions are unanswered | Three sections | §21 |
+| G-F10 | freezing the baseline now would freeze K85's open regression and collide with live edits; the handoff is unmerged | M1 is sequenced after `lane/k82hbuild` merges and after K85's re-measure. After migration, edits to delegated emitters are kit-lane work | §16 |
+| G-F11 | M1's scope exceeds its trigger; R4a/R4f are circular | M1 is narrowed to the triggering site class's closure under "all callers". R4f's circularity is broken by the opt-in `-fmemfn-native` | §16, §22 |
+| G-F12 | `-fno-memfn-native` polarity inverted against house convention | Axis `memfn-native`, default OFF, enabled by `-fmemfn-native` (D112's shape). R4f is the flip | §20.2, §22 |
+| G-F13 | one shared request file breaks D78 | Two files from day one | §20.1 |
+| G-F14 | analyze/ is the inverse precedent; `mf_*` exported unprefixed from libpcrec; Rust memchr provenance | A symbol policy (`pcrec_mf_*` at link, hidden visibility), and per-file Unlicense provenance | §20.3 |
+
+**Count:** 27 findings. 26 have a design answer here. F9 has one
+alternative to Frank's two options, and one sub-question goes to Frank
+(Q38).
+
+### R4.2 What revision 4 overrides in revision 3
+
+- §8.2's `mf_site`/`mf_result` and §8.3's hooks are EXTENDED, not
+  replaced (§14). Rule 2 gains a caller-guard declaration for
+  expression-form VERIFY sites (§14.7). Rule 3 is restated over
+  REQUIRED and OPTIONAL terms (§14.5).
+- §8.5's profile table: `-fno-memfn-native` "DEFAULT ON" becomes axis
+  `memfn-native`, default OFF, enabled by `-fmemfn-native` (§20.2).
+  Rows 1-3 are otherwise unchanged.
+- §9.4's M1 is narrowed and re-sequenced (§16). M5 now carries the model
+  (§14.9).
+- §10.1's population and cadence (§17.2). §10.3's stamp (§18). §10.4's
+  plant claim (§17.5). §10.5's C5 and C9 (§17.3, §17.4). §10.7's rows
+  (§17.6).
+- §11.3's single ledger becomes two files (§20.1). §11.1 gains the
+  symbol policy (§20.3).
+- §12.2's R4a-R4j are replaced by §22. §13's questions are superseded by
+  §23 (Q35-Q44). Q24-Q34 are re-derived there, not merely renumbered.
 
 ---
 
@@ -1870,6 +1965,13 @@ int mf_vocab_has(mf_op op, mf_handoff h, uint32_t term_kinds); /* compile-time c
 const char *mf_kit_version(void);                       /* "pcrec-memory-functions X.Y.Z" */
 ```
 
+> **`[rev4]`** These shapes are EXTENDED by §14.0 (r3 F1-F11): three
+> site forms, `end_back`/`empty`, `floor`, REQUIRED/OPTIONAL terms,
+> ALL_PRESENT's `ret_pred`, `denies`, and a plan/render split whose
+> `mf_plan` reports form tallies, helpers and includes. `plan_hint` is NOT
+> transitional (§14.9). `mf_result.form_id` is no longer stamped with a
+> kit version (§18).
+
 **Size (K3).** An `mf_site` is about 0.6 KB at `MF_MAX_TERM` 8 (32-byte
 sets dominate). `preds` and runs are pointers into pcrec's arena. The kit
 allocates nothing on the caller's stack beyond its frame and takes
@@ -1949,6 +2051,10 @@ typedef struct {
    written gate contract ("leftmost occurrence ≥ `search_from`") made
    the kit's, so the K82 handoff's soundness argument (`lo = max(f,
    c − K)`, that note's §1.2) reads the kit's result unchanged.
+   > **`[rev4]`** Restated over REQUIRED and OPTIONAL terms (§14.5,
+   > r3 F7): `c` is at most the true leftmost, and every REQUIRED term
+   > holds at `c`. Rule 2 gains the expression-form caller guard and the
+   > lower `floor` (§14.7).
 4. **ON_CAND.** `on_cand`'s text ends in exactly one of two kit-rendered
    tokens, `\x01mfA` (accept) or `\x01mfR` (reject). Accept writes `cand`
    as the result. Reject resumes the search at `cand + 1` (`cand − 1`
@@ -2038,8 +2144,8 @@ idiom, memory `pcrec-decisions-as-first-match-tables`):
 | # | profile | applies when | policy bits sent | what the kit does |
 |---|---|---|---|---|
 | 1 | `baseline` | the site's budget deny bit is set: `-fno-memfn-scan` (budget 1: PF, PRE, OFS, SETREST, VERIFY, MLINE) or `-fno-memfn-loop` (budget 2: STAY, EDGE, VMSPAN, VMRUN) | `MF_P_BASELINE` | emits the site's FROZEN pre-migration text: pcrec's own last spelling of this search, byte for byte (§9.2). The guard's "off" arm |
-| 2 | `portable` | `-fno-memfn-native` is set. **DEFAULT ON during the SIMD hold** (D91, D119, D122 addendum 3; §12.2 R4f, Q28) | `MF_P_PORTABLE_ONLY` | its best text with no architecture-specific code: scalar, SWAR, libc, short-span loop-free forms |
-| 3 | `native` | always | — | its best text, ISA arms included (a gcc-time `#if` ladder under the fixed default token, or one spelling under a declared token, HELD) |
+| 2 | `portable` | `-fno-memfn-native` is set. **DEFAULT ON during the SIMD hold** (D91, D119, D122 addendum 3; §12.2 R4f, Q28). **`[rev4]`** Now: axis `memfn-native` is NOT forced (default OFF; enabled by `-fmemfn-native`, D112's shape; §20.2) | `MF_P_PORTABLE_ONLY` | its best text with no architecture-specific code: scalar, SWAR, libc, short-span loop-free forms |
+| 3 | `native` | always (**`[rev4]`**: `-fmemfn-native` given, or after R4f's flip) | — | its best text, ISA arms included (a gcc-time `#if` ladder under the fixed default token, or one spelling under a declared token, HELD) |
 
 `MF_P_INLOOP` is set from the site row's budget (D91 budget 2), never
 from a per-call decision. `MF_P_SIZE_LEANING` is set at `--tune` -2/-1,
@@ -2158,6 +2264,10 @@ over a fixed request fixture.
 
 ### 9.4 The order: customer first (D77), and what each step moves
 
+> **`[rev4]`** M1 is NARROWED to the closure of its triggering site
+> class and SEQUENCED after `lane/k82hbuild` merges and K85's re-measure
+> (§16, r3 G-F10/G-F11). M5 moves the MODEL, not a hint (§14.9).
+
 A step is taken when a CUSTOMER needs its sites in the kit (the
 customer's trigger is in §12.2), never as a stand-alone refactor. That is
 revision 1's Q17 rule, kept.
@@ -2223,6 +2333,12 @@ kit's. G3-G7 are pcrec's deterministic checks, and only they carry
 sabotage rows (r2 C-d).
 
 ### 10.1 G1, D146's guard: pcrec's timing with the kit on vs off
+
+> **`[rev4]`** The population below came from the kit's own `moved`.
+> It is replaced by a pcrec-side default-vs-`memfn-off` artifact diff,
+> with a declared regime, pooled bins, and a cadence of every memfn abi
+> event (§17.2, r3 G-F5/G-F6). armv8 has NO verdict-grade guard (§17.2,
+> G-F4).
 
 - **The two arms.** ON is the default profile (`portable` during the
   SIMD hold, `native` after R4f). OFF is `-fno-memfn-scan
@@ -2306,6 +2422,10 @@ batch gate.
   compare pcrec's output against pinned bytes, so a kit edit that moves
   pcrec bytes with no bump turns them red. The kit's version string is
   not what is checked; the bytes are.
+- **`[rev4]` WITHDRAWN, the next bullet.** It contradicts Frank's Q3
+  ruling on `litscan_k82h.md` and D81 (r3 G-F1). The stamp now goes on
+  EVERY artifact, `none` where no site is delegated, and carries no kit
+  version. It is born in its own abi event (§18).
 - **The stamp, on movers only** (k82hrev Q3's precedent): an artifact
   with at least one site whose `mf_result.moved == 1` carries
   `<PREFIX>_MEMFN "<kit version>"` and `<PREFIX>_MEMFN_FORMS
@@ -2318,6 +2438,9 @@ batch gate.
   the struct (D77).
 
 ### 10.4 G4, the arch-blindness detector, rebuilt (C4; r2 B1)
+
+> **`[rev4]`** The plant's "held out" claim is narrowed to what it can
+> support, and matching is case-insensitive (§17.5, r3 G-F7).
 
 pcrec carries no architecture knowledge (Q12's refinement, D146). C4
 makes that a red test, with the r2 panel's rebuild:
@@ -2365,6 +2488,12 @@ makes that a red test, with the r2 panel's rebuild:
 
 ### 10.5 G5-G7, pcrec's other deterministic checks
 
+> **`[rev4]`** C5 pins per-ARM digests under `tests/memfn/pins/`
+> instead of whole artifacts at the parent (§17.4, r3 F12/G-F8). C9 gains
+> a header shim, a native-enabled configuration and a K35 floor (§17.3,
+> G-F3). C11 checks the stamp's VALUE on every artifact (§18). C13 (on_cand
+> duplicability) and C14 (shape bounds) are new (§14.6, §14.7).
+
 | # | check | what it proves | shares a source with the kit? |
 |---|---|---|---|
 | C5 | **profile identity**: the corpus at `-fno-memfn-scan -fno-memfn-loop` is byte-identical to the BASELINE pin (the step parent's output); at `-fno-memfn-native` it carries no text the C4 classes 1-4 match (a scan of the EMITTED artifacts, the one place pcrec may grep generated code for vocabulary, because it is checking the kit's promise, not branching on it) | the off arm is what G1 says it is; `portable` is portable | no |
@@ -2387,6 +2516,10 @@ Q33). (3) Injected intrinsics headers are compiler-provided (r2 L1).
 
 ### 10.7 Sabotage rows (deterministic detectors only; ids at build, highest S on main + 1)
 
+> **`[rev4]`** Replaced by §17.6. Every row is mech-runnable from a
+> `git archive` (no history), its detector reads pins under `tests/`, and
+> each carries `SAB_REACH` (r3 G-F8).
+
 | sabotage | detector |
 |---|---|
 | one baseline arm edited by one byte | I3 / C5 (the baseline pin) |
@@ -2405,6 +2538,11 @@ Q33). (3) Injected intrinsics headers are compiler-provided (r2 L1).
 ## 11. COUPLING LIKE THE BENCH: home, licence, requests, name `[rev3]`
 
 ### 11.1 Where the code lives first: in-tree `memfn/` (recommended, Q25)
+
+> **`[rev4]`** `analyze/` is the INVERSE precedent (a leaf binary that
+> links nothing). The kit links INTO libpcrec, so its symbols ship in
+> `libpcrec.a`. §20.3 adds the symbol policy and per-file provenance
+> (r3 G-F14).
 
 - **A top-level, zero-dependency subtree, on `analyze/`'s precedent**:
   `memfn/` with its own Makefile, tests, CLAUDE.md, LICENSE and README.
@@ -2444,6 +2582,10 @@ intrinsics headers are #included by injected text, never copied into it,
 and the spec says so (§10.6).
 
 ### 11.3 How pcrec asks for new kit work (Q34)
+
+> **`[rev4]`** One shared file breaks D78's single-writer rule (r3
+> G-F13). Two files from day one, with the manager the sole writer of
+> requests (§20.1).
 
 **Now (in-tree): a request LEDGER, `memfn/docs/requests.md`.** Numbered
 items, never deleted, on D78's shape:
@@ -2507,6 +2649,10 @@ delivery to point here.
 
 ### 12.2 The build order, revision 3
 
+> **`[rev4]` SUPERSEDED by §22** (r3 G-F10/G-F11/G-F12): R4a-R4j are
+> re-derived with the stamp's own event, M1 narrowed and sequenced, and
+> R4f's circularity broken.
+
 It replaces rev 2's R4a-R4h. Each step names its PREREQUISITE (a step
 that must have landed) separately from its TRIGGER (a measured cell or a
 ruling, never a step's mere completion; r2 R3). Nothing that moves an
@@ -2530,6 +2676,9 @@ the SIMD hold until R4f (D91, D119).
 ---
 
 ## 13. Questions for Frank `[rev3]`
+
+> **`[rev4]` SUPERSEDED by §23** (Q35-Q44). Q24-Q34 are re-derived
+> there; §23.1 maps each.
 
 Renumbered from Q24 (rev 2 ended at Q23; the unmerged price-model draft
 `memfnk0r3`'s Q24-Q30 were never delivered and are void). Each has a
