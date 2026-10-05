@@ -11,6 +11,12 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 ---
 
+## K85 — OPEN, deferred (2026-10-05, found by lane lxread's read of the K82 (A)+(C) Linux alpha, abi 60, bit 45) — the set-leads pre-check costs a fresh `memchr` per search call on match-dense text where its lead byte is never absent: `cls-n-uc` +0.025..+0.031 ns/B (~5%)
+
+**Witness:** docs/dev/lanes/k82alpha_report.md §2 (BASE c4c70f2c abi 59, NEW eb6fe6139, DENY = NEW `-fno-req-set-lead`, DENY == BASE; floors ≤ 0.0009, control spread ≤ 0.004).
+**Suspected cause:** `req_admits[]`'s `set-leads` row admits on "set pick strictly rarer than the run's scan member" (2.2% `m` vs 3.0% `i`), which says nothing about whether the one-shot check can REJECT. Cost is ~11.5 ns/call at one match per ~380 B, of which a fresh glibc `memchr` (3.5-5 ns on this box) is ~40%.
+**Interim:** `-fno-req-set-lead` (bit 45). **Disposition (D144):** an issue row, not a revert; the same row cures `userpass` by 0.93 ns/B. Same family as K82 cause (B) and the short-call term: a gate that never rejects on dense text. Its general answers are the handoff (litscan_k82h.md; a passing gate's work is reused, not discarded), [REQ-HANDOFF-L1] (the one-byte gate's hit handed off), and [MEMFN]'s fused scan+verify (twins.md T-B). Re-measure after the handoff lands before designing anything specific.
+
 ## K84 — OPEN, latent (2026-10-04, found by lane memfnmap's [MEMFN] R1d table inventory, docs/design/memfn/integration.md §1) — two readers classify the DFA prefilter by `strcmp` on dfa_pfs[] ROW NAMES
 
 **Where:** `src/gen/emit_dfa.c:6417` (`dfa_cand_scan`: `!strcmp(pf->c.name, "memchr") || !strcmp(pf->c.name, "memchr-bounded")`) and `:6450` (`pcrec_dfa_cand_ppm`: `strcmp(pf->c.name, "byte-class") && strcmp(pf->c.name, "byte-class-bounded")`).

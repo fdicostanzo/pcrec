@@ -67,6 +67,16 @@ Nothing here touches pcrec's emission (D91).
   one header kernel vs the hand kernel (disassembly diff). Absolute ns
   tables (Mac, directional), a verdict per T, the Linux queue. Evidence in
   `probes/twins/` and `probes/out/twins/`.
+- `linux_results.md` — the Linux x86 RESULTS (lane lxread, 2026-10-05,
+  read-only): lane lxrun's quiet-box run on ubuntubudu read against every
+  owed Linux question — callcost (U-1), isacost (U-8..U-10, U-12), isanote
+  (U-11), isa_evaluation.md's L-2 and L-4, the twins on SSE2/SSSE3/AVX2 and
+  the survey's x86 timings + PCRE2-JIT 10.46 — each beside its Mac number,
+  with a <=12-line decision-inputs summary for Q2/Q4-Q17 at the top, the
+  per-question answers (§8) and the corrections owed to the earlier notes
+  (§9). Headline: glibc's F is 3.24 ns, fusion inverts above ~512 B at SSE2
+  width, no level customer yet (L-2), and ld.so enforces the ISA marker for
+  dynamic executables and `dlopen` only.
 - `probes/` — R1's measured probe: `callcost.c` (libc `memchr` against
   inline scalar/SWAR/NEON-or-SSE2 forms, by span length, plus the fused
   two-needle pass against two libc calls) and `probes.mk` (build, the
@@ -81,5 +91,8 @@ Nothing here touches pcrec's emission (D91).
   only (D144 addendum 1); the Linux run is owed (requirements.md §2.6,
   isa_selection.md §4).
   R2's `survey_*.txt` (correctness incl. Rosetta 2 x86, timing, PCRE2-JIT).
+  `probes/out/linux/` holds the Linux run's transcripts (2026-10-05) and
+  `probes/lxrun/` the hand-off scripts that run used beyond `linux_run.sh`
+  (L-2, L-4, the x86 survey); both read in `linux_results.md`.
 
 Maintenance: update this file when files are added/removed or change roles.

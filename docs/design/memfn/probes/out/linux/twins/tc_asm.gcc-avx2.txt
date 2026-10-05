@@ -1,0 +1,717 @@
+# ARCHIVED 2026-10-05 by lane lxread from duxevents@ubuntubudu:/home/duxevents/pcrec/scratch_lx/wt_main/build/memfn_twins/20261005T131006Z/tc_asm.gcc-avx2.txt
+# run: lane lxrun serial driver scratch_lx/run_lx1005.sh (quiet box; main clone c4c70f2c, probe tree wt_main = eb6fe6139);
+# read in docs/design/memfn/linux_results.md. Content below is verbatim.
+# tc_asm: gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0, flags: -O2 -march=x86-64-v3
+# diff = differing lines in order; bag = differing lines of the register- and branch-target-renamed,
+# sorted instruction multiset (0 = the same instructions, scheduled/allocated
+# differently); ICF = the compiler folded desc_X onto hand_X (one symbol)
+# set  hand-insns  desc-insns  desc-diff  desc-bag    mut-insns  mut-diff  mut-bag
+q2           131         131         36         4           851       902      750
+d            131         128         15         5           851       892      764
+ss           123         119         36         4           851       892      768
+ab           135         131         36         4           851       908      764
+sp           129         131        100        18           851       896      744
+w            179         180        131        29           851       962      712
+
+## diff hand_ab desc_ab (in order)
+4c4
+< ja     <+0x50>
+---
+> ja     <+0x40>
+6c6
+< jne    <+0x3d>
+---
+> jne    <+0x2d>
+8,9c8
+< nopl   0x0(%rax,%rax,1)
+< data16 cs nopw 0x0(%rax,%rax,1)
+---
+> nopl   (%rax)
+13c12
+< je     <+0x1d8>
+---
+> je     <+0x1c8>
+17c16
+< jne    <+0x30>
+---
+> jne    <+0x20>
+27c26
+< jmp    <+0xc9>
+---
+> jmp    <+0xb9>
+46c45
+< jne    <+0x1b0>
+---
+> jne    <+0x1a0>
+50c49
+< jae    <+0x78>
+---
+> jae    <+0x68>
+58c57
+< jmp    <+0x14a>
+---
+> jmp    <+0x13a>
+69c68
+< jne    <+0x1f0>
+---
+> jne    <+0x1d8>
+73c72
+< jae    <+0x130>
+---
+> jae    <+0x120>
+76c75
+< jae    <+0x221>
+---
+> jae    <+0x201>
+98c97
+< jne    <+0x1e0>
+---
+> jne    <+0x1c9>
+101c100
+< jne    <+0x200>
+---
+> jne    <+0x1e3>
+104c103
+< je     <+0x210>
+---
+> je     <+0x1f0>
+111d109
+< nopl   0x0(%rax)
+116c114
+< nopl   0x0(%rax,%rax,1)
+---
+> nopl   0x0(%rax)
+121d118
+< nopl   0x0(%rax,%rax,1)
+126d122
+< nopl   (%rax)
+## bag diff hand_ab desc_ab
+18d17
+< data16 cs nopw 0x0(REG,REG,1)
+53,55d51
+< nopl   0x0(REG,REG,1)
+< nopl   0x0(REG,REG,1)
+< nopl   0x0(REG,REG,1)
+
+## diff hand_d desc_d (in order)
+66c66
+< jne    <+0x1c8>
+---
+> jne    <+0x1c0>
+73c73
+< jae    <+0x1f9>
+---
+> jae    <+0x1e9>
+94c94
+< jne    <+0x1b8>
+---
+> jne    <+0x1b1>
+97c97
+< jne    <+0x1d8>
+---
+> jne    <+0x1cb>
+100c100
+< je     <+0x1e8>
+---
+> je     <+0x1d8>
+107d106
+< nopl   0x0(%rax)
+112c111
+< nopl   0x0(%rax,%rax,1)
+---
+> nopl   0x0(%rax)
+117d115
+< nopl   0x0(%rax,%rax,1)
+122d119
+< nopl   (%rax)
+## bag diff hand_d desc_d
+34d33
+< lea    0x20(REG,REG,1),REG
+35a35
+> lea    0x20(REG,REG,1),REG
+52,54d51
+< nopl   0x0(REG,REG,1)
+< nopl   0x0(REG,REG,1)
+< nopl   (REG)
+
+## diff hand_q2 desc_q2 (in order)
+4c4
+< ja     <+0x40>
+---
+> ja     <+0x38>
+6,7c6
+< je     <+0x1d9>
+< data16 cs nopw 0x0(%rax,%rax,1)
+---
+> je     <+0x1e9>
+10c9
+< je     <+0x3b>
+---
+> je     <+0x30>
+12c11
+< je     <+0x3b>
+---
+> je     <+0x30>
+15c14
+< jne    <+0x20>
+---
+> jne    <+0x15>
+27c26
+< xchg   %ax,%ax
+---
+> cs nopw 0x0(%rax,%rax,1)
+36a36
+> vpor   %ymm4,%ymm3,%ymm7
+44,45c44
+< vpor   %ymm4,%ymm3,%ymm6
+< vpor   %ymm0,%ymm5,%ymm7
+---
+> vpor   %ymm0,%ymm5,%ymm6
+49c48
+< jne    <+0x170>
+---
+> jne    <+0x180>
+60,61c59,61
+< jmp    <+0x10e>
+< nopl   (%rax)
+---
+> jmp    <+0x11e>
+> nopl   0x0(%rax,%rax,1)
+> data16 cs nopw 0x0(%rax,%rax,1)
+68c68
+< jne    <+0x1a8>
+---
+> jne    <+0x1b8>
+72c72
+< jae    <+0xf0>
+---
+> jae    <+0x100>
+75c75
+< jae    <+0x38>
+---
+> jae    <+0x2d>
+97c97
+< jne    <+0x198>
+---
+> jne    <+0x1a8>
+100c100
+< jne    <+0x1b8>
+---
+> jne    <+0x1c8>
+103c103
+< je     <+0x1c8>
+---
+> je     <+0x1d8>
+## bag diff hand_q2 desc_q2
+12a13
+> cs nopw 0x0(REG,REG,1)
+50c51
+< nopl   (REG)
+---
+> nopl   0x0(REG,REG,1)
+129d129
+< xchg   %ax,%ax
+
+## diff hand_sp desc_sp (in order)
+2,3d1
+< cmp    $0x1f,%rsi
+< ja     <+0x40>
+4a3,4
+> cmp    $0x1f,%rsi
+> ja     <+0x50>
+7c7
+< jne    <+0x2d>
+---
+> jne    <+0x3d>
+9c9,11
+< nopl   0x0(%rax)
+---
+> nop
+> data16 cs nopw 0x0(%rax,%rax,1)
+> data16 cs nopw 0x0(%rax,%rax,1)
+12c14
+< je     <+0x1a0>
+---
+> je     <+0x1b8>
+16,17c18,19
+< cmp    (%r8,%rcx,1),%dl
+< jne    <+0x20>
+---
+> cmp    0x6(%r8,%rcx,1),%dl
+> jne    <+0x30>
+19,20c21,22
+< xchg   %ax,%ax
+< vmovdqa SYM(%rip),%xmm2
+---
+> nop
+> vmovdqa SYM(%rip),%xmm4
+22d23
+< xor    %eax,%eax
+24c25
+< vinserti128 $0x1,%xmm2,%ymm2,%ymm2
+---
+> vinserti128 $0x1,%xmm4,%ymm4,%ymm4
+26c27,28
+< jmp    <+0xc4>
+---
+> jmp    <+0xd4>
+> xchg   %ax,%ax
+29c31
+< vpshufb %ymm1,%ymm2,%ymm1
+---
+> vpshufb %ymm1,%ymm4,%ymm1
+32,37c34,39
+< vpand  %ymm5,%ymm1,%ymm3
+< vpshufb %ymm3,%ymm2,%ymm3
+< vpcmpeqb %ymm3,%ymm1,%ymm1
+< vmovdqu -0x40(%rdi,%rax,1),%ymm3
+< vpand  %ymm5,%ymm3,%ymm4
+< vpshufb %ymm4,%ymm2,%ymm4
+---
+> vpand  %ymm5,%ymm1,%ymm2
+> vpshufb %ymm2,%ymm4,%ymm2
+> vpcmpeqb %ymm2,%ymm1,%ymm1
+> vmovdqu -0x40(%rdi,%rax,1),%ymm2
+> vpand  %ymm5,%ymm2,%ymm3
+> vpshufb %ymm3,%ymm4,%ymm3
+39,44c41,46
+< vpcmpeqb %ymm4,%ymm3,%ymm3
+< vmovdqu -0x20(%rdi,%rax,1),%ymm4
+< vpand  %ymm5,%ymm4,%ymm6
+< vpshufb %ymm6,%ymm2,%ymm6
+< vpcmpeqb %ymm6,%ymm4,%ymm4
+< vpor   %ymm4,%ymm3,%ymm6
+---
+> vpcmpeqb %ymm3,%ymm2,%ymm2
+> vmovdqu -0x20(%rdi,%rax,1),%ymm3
+> vpand  %ymm5,%ymm3,%ymm6
+> vpshufb %ymm6,%ymm4,%ymm6
+> vpcmpeqb %ymm6,%ymm3,%ymm3
+> vpor   %ymm3,%ymm2,%ymm6
+48c50
+< jne    <+0x178>
+---
+> jne    <+0x190>
+52c54,55
+< jae    <+0x60>
+---
+> jae    <+0x70>
+> vmovdqa SYM(%rip),%xmm2
+54a58
+> vinserti128 $0x1,%xmm2,%ymm2,%ymm2
+56c60
+< jmp    <+0x11f>
+---
+> jmp    <+0x12f>
+59d62
+< data16 cs nopw 0x0(%rax,%rax,1)
+66c69
+< jne    <+0x1b8>
+---
+> jne    <+0x1c8>
+70c73
+< jae    <+0x100>
+---
+> jae    <+0x110>
+73c76
+< jae    <+0x1e9>
+---
+> jae    <+0x1f1>
+75c78,79
+< vmovdqu -0x20(%rdi,%rsi,1),%ymm1
+---
+> vmovdqu -0x20(%rdi,%rsi,1),%ymm2
+> vmovdqa SYM(%rip),%xmm0
+77,82c81,87
+< vmovd  %edx,%xmm0
+< vpbroadcastd %xmm0,%ymm0
+< vpand  %ymm0,%ymm1,%ymm0
+< vpshufb %ymm0,%ymm2,%ymm2
+< vpcmpeqb %ymm2,%ymm1,%ymm1
+< vpmovmskb %ymm1,%edx
+---
+> vmovd  %edx,%xmm1
+> vpbroadcastd %xmm1,%ymm1
+> vinserti128 $0x1,%xmm0,%ymm0,%ymm0
+> vpand  %ymm1,%ymm2,%ymm1
+> vpshufb %ymm1,%ymm0,%ymm0
+> vpcmpeqb %ymm0,%ymm2,%ymm2
+> vpmovmskb %ymm2,%edx
+89c94
+< nopl   0x0(%rax)
+---
+> nop
+92c97
+< jne    <+0x1a8>
+---
+> jne    <+0x1b9>
+95,96c100,101
+< jne    <+0x1c8>
+< vpmovmskb %ymm3,%eax
+---
+> jne    <+0x1d3>
+> vpmovmskb %ymm2,%eax
+98c103
+< je     <+0x1d8>
+---
+> je     <+0x1e0>
+105d109
+< nopl   0x0(%rax)
+110c114
+< nopl   0x0(%rax,%rax,1)
+---
+> nopl   0x0(%rax)
+115d118
+< nopl   0x0(%rax,%rax,1)
+120,121c123
+< nopl   (%rax)
+< vpmovmskb %ymm4,%eax
+---
+> vpmovmskb %ymm3,%eax
+## bag diff hand_sp desc_sp
+7a8
+> cmp    0x6(REG,REG,1),REG
+12c13
+< cmp    (REG,REG,1),REG
+---
+> data16 cs nopw 0x0(REG,REG,1)
+32d32
+< lea    -0x20(REG,REG,1),REG
+33a34
+> lea    -0x20(REG,REG,1),REG
+45a47,49
+> nop
+> nop
+> nop
+48,52d51
+< nopl   0x0(REG)
+< nopl   0x0(REG)
+< nopl   0x0(REG,REG,1)
+< nopl   0x0(REG,REG,1)
+< nopl   (REG)
+77a77,80
+> vinserti128 $0x1,REG,REG,REG
+> vinserti128 $0x1,REG,REG,REG
+> vmovdqa SYM(REG),REG
+> vmovdqa SYM(REG),REG
+127d129
+< xor    REG,REG
+
+## diff hand_ss desc_ss (in order)
+4c4
+< ja     <+0x50>
+---
+> ja     <+0x40>
+6c6
+< jne    <+0x3d>
+---
+> jne    <+0x2d>
+8,9c8
+< nopl   0x0(%rax,%rax,1)
+< data16 cs nopw 0x0(%rax,%rax,1)
+---
+> nopl   (%rax)
+13c12
+< je     <+0x188>
+---
+> je     <+0x178>
+17c16
+< jne    <+0x30>
+---
+> jne    <+0x20>
+26c25
+< jmp    <+0xb0>
+---
+> jmp    <+0xa0>
+41c40
+< jne    <+0x160>
+---
+> jne    <+0x150>
+45c44
+< jae    <+0x70>
+---
+> jae    <+0x60>
+52c51
+< jmp    <+0x106>
+---
+> jmp    <+0xf6>
+59c58
+< jne    <+0x1a0>
+---
+> jne    <+0x188>
+63c62
+< jae    <+0xf0>
+---
+> jae    <+0xe0>
+66c65
+< jae    <+0x1d1>
+---
+> jae    <+0x1b1>
+86c85
+< jne    <+0x190>
+---
+> jne    <+0x179>
+89c88
+< jne    <+0x1b0>
+---
+> jne    <+0x193>
+92c91
+< je     <+0x1c0>
+---
+> je     <+0x1a0>
+99d97
+< nopl   0x0(%rax)
+104c102
+< nopl   0x0(%rax,%rax,1)
+---
+> nopl   0x0(%rax)
+109d106
+< nopl   0x0(%rax,%rax,1)
+114d110
+< nopl   (%rax)
+## bag diff hand_ss desc_ss
+15d14
+< data16 cs nopw 0x0(REG,REG,1)
+49,51d47
+< nopl   0x0(REG,REG,1)
+< nopl   0x0(REG,REG,1)
+< nopl   0x0(REG,REG,1)
+
+## diff hand_w desc_w (in order)
+1a2
+> mov    %rsi,%r8
+5,7c6,7
+< lea    SYM(%rip),%r9
+< lea    SYM(%rip),%r8
+< test   %rsi,%rsi
+---
+> lea    SYM(%rip),%rsi
+> test   %r8,%r8
+11c11
+< nop
+---
+> nopl   0x0(%rax,%rax,1)
+17,18c17,18
+< cmp    %rdx,%rsi
+< je     <+0x1f>
+---
+> cmp    %rdx,%r8
+> je     <+0x1b>
+24,25c24,25
+< movzbl (%r9,%rcx,1),%ecx
+< and    (%r8,%rax,1),%cl
+---
+> movzbl 0x6(%rsi,%rcx,1),%ecx
+> and    0x16(%rsi,%rax,1),%cl
+34d33
+< vmovdqa SYM(%rip),%xmm5
+35a35
+> vmovdqa SYM(%rip),%xmm5
+38d37
+< vinserti128 $0x1,%xmm5,%ymm5,%ymm5
+39a39
+> vinserti128 $0x1,%xmm5,%ymm5,%ymm5
+80,81c80,81
+< jne    <+0x278>
+< mov    %rax,%rcx
+---
+> jne    <+0x290>
+> mov    %rax,%rsi
+83c83
+< cmp    %rax,%rsi
+---
+> cmp    %rax,%r8
+84a85,88
+> vmovdqa SYM(%rip),%xmm4
+> vmovdqa SYM(%rip),%xmm3
+> vpxor  %xmm6,%xmm6,%xmm6
+> vpcmpeqd %ymm5,%ymm5,%ymm5
+86,87d89
+< vpxor  %xmm4,%xmm4,%xmm4
+< vpcmpeqd %ymm3,%ymm3,%ymm3
+88a91,92
+> vinserti128 $0x1,%xmm4,%ymm4,%ymm4
+> vinserti128 $0x1,%xmm3,%ymm3,%ymm3
+91,94c95
+< nopl   0x0(%rax)
+< data16 cs nopw 0x0(%rax,%rax,1)
+< data16 cs nopw 0x0(%rax,%rax,1)
+< data16 cs nopw 0x0(%rax,%rax,1)
+---
+> nopw   0x0(%rax,%rax,1)
+96c97
+< vmovdqu -0x20(%rdi,%rcx,1),%ymm0
+---
+> vmovdqu -0x20(%rdi,%rsi,1),%ymm0
+100,101c101,102
+< vpshufb %ymm0,%ymm5,%ymm0
+< vpshufb %ymm1,%ymm6,%ymm1
+---
+> vpshufb %ymm0,%ymm3,%ymm0
+> vpshufb %ymm1,%ymm4,%ymm1
+103,110c104,111
+< vpcmpeqb %ymm4,%ymm0,%ymm0
+< vpxor  %ymm3,%ymm0,%ymm0
+< vpmovmskb %ymm0,%edx
+< test   %edx,%edx
+< jne    <+0x2c0>
+< mov    %rcx,%rax
+< add    $0x20,%rcx
+< cmp    %rcx,%rsi
+---
+> vpcmpeqb %ymm6,%ymm0,%ymm0
+> vpxor  %ymm5,%ymm0,%ymm0
+> vpmovmskb %ymm0,%eax
+> test   %eax,%eax
+> jne    <+0x2d8>
+> mov    %rsi,%rcx
+> add    $0x20,%rsi
+> cmp    %rsi,%r8
+112,115c113,116
+< mov    %rsi,%rdx
+< cmp    %rsi,%rax
+< jae    <+0x301>
+< vmovdqu -0x20(%rdi,%rsi,1),%ymm0
+---
+> mov    %r8,%rdx
+> cmp    %r8,%rcx
+> jae    <+0x311>
+> vmovdqu -0x20(%rdi,%r8,1),%ymm2
+116a118
+> vmovdqa SYM(%rip),%xmm0
+118,121c120,129
+< vmovd  %eax,%xmm1
+< vpbroadcastd %xmm1,%ymm1
+< vpsrlw $0x4,%ymm0,%ymm2
+< vpand  %ymm1,%ymm2,%ymm2
+---
+> vmovd  %eax,%xmm3
+> vpbroadcastd %xmm3,%ymm3
+> vpsrlw $0x4,%ymm2,%ymm1
+> vinserti128 $0x1,%xmm0,%ymm0,%ymm0
+> vpand  %ymm3,%ymm1,%ymm1
+> vpand  %ymm3,%ymm2,%ymm2
+> vpshufb %ymm1,%ymm0,%ymm1
+> vmovdqa SYM(%rip),%xmm0
+> vinserti128 $0x1,%xmm0,%ymm0,%ymm0
+> vpshufb %ymm2,%ymm0,%ymm0
+124,126d131
+< vpshufb %ymm2,%ymm6,%ymm6
+< vpshufb %ymm0,%ymm5,%ymm0
+< vpand  %ymm6,%ymm0,%ymm0
+132c137
+< lea    -0x20(%rsi,%rcx,1),%rcx
+---
+> lea    -0x20(%r8,%rcx,1),%rcx
+135,136c140
+< jmp    <+0x1f>
+< nopl   0x0(%rax,%rax,1)
+---
+> jmp    <+0x1b>
+138,140c142,144
+< vpmovmskb %ymm0,%edx
+< test   %edx,%edx
+< jne    <+0x2b0>
+---
+> vpmovmskb %ymm0,%eax
+> test   %eax,%eax
+> jne    <+0x2c5>
+144c148
+< jne    <+0x2d0>
+---
+> jne    <+0x2e7>
+148c152,156
+< je     <+0x2e8>
+---
+> je     <+0x2f8>
+> tzcnt  %eax,%eax
+> lea    0x40(%rsi,%rax,1),%rdx
+> vzeroupper
+> jmp    <+0x1b>
+150c158
+< lea    0x40(%rcx,%rax,1),%rdx
+---
+> lea    (%rax,%rsi,1),%rdx
+152c160
+< jmp    <+0x1f>
+---
+> jmp    <+0x1b>
+154,155c162,163
+< tzcnt  %edx,%edx
+< add    %rcx,%rdx
+---
+> tzcnt  %eax,%eax
+> lea    (%rax,%rcx,1),%rdx
+157,160d164
+< jmp    <+0x1f>
+< nop
+< tzcnt  %edx,%edx
+< add    %rax,%rdx
+162d165
+< vzeroupper
+164d166
+< xchg   %ax,%ax
+166c168
+< lea    0x20(%rcx,%rax,1),%rdx
+---
+> lea    0x20(%rsi,%rax,1),%rdx
+168,169c170
+< jmp    <+0x1f>
+< nopl   0x0(%rax)
+---
+> jmp    <+0x1b>
+173c174
+< lea    0x60(%rcx,%rax,1),%rdx
+---
+> lea    0x60(%rsi,%rax,1),%rdx
+175c176
+< jmp    <+0x1f>
+---
+> jmp    <+0x1b>
+177c178
+< jmp    <+0x1f>
+---
+> jmp    <+0x1b>
+## bag diff hand_w desc_w
+3,4d2
+< add    REG,REG
+< add    REG,REG
+7c5
+< and    (REG,REG,1),REG
+---
+> and    0x16(REG,REG,1),REG
+19,21d16
+< data16 cs nopw 0x0(REG,REG,1)
+< data16 cs nopw 0x0(REG,REG,1)
+< data16 cs nopw 0x0(REG,REG,1)
+45d39
+< lea    -0x20(REG,REG,1),REG
+46a41
+> lea    -0x20(REG,REG,1),REG
+50c45,46
+< lea    SYM(REG),REG
+---
+> lea    (REG,REG,1),REG
+> lea    (REG,REG,1),REG
+61a58,59
+> mov    REG,REG
+> movzbl 0x6(REG,REG,1),REG
+63,67d60
+< movzbl (REG,REG,1),REG
+< nop
+< nop
+< nopl   0x0(REG)
+< nopl   0x0(REG)
+71a65
+> nopw   0x0(REG,REG,1)
+91a86,93
+> vinserti128 $0x1,REG,REG,REG
+> vinserti128 $0x1,REG,REG,REG
+> vinserti128 $0x1,REG,REG,REG
+> vinserti128 $0x1,REG,REG,REG
+> vmovdqa SYM(REG),REG
+> vmovdqa SYM(REG),REG
+> vmovdqa SYM(REG),REG
+> vmovdqa SYM(REG),REG
+176d177
+< xchg   %ax,%ax

@@ -1,0 +1,595 @@
+# ARCHIVED 2026-10-05 by lane lxread from duxevents@ubuntubudu:/home/duxevents/pcrec/scratch_lx/wt_main/build/memfn_twins/20261005T131006Z/tc_asm.gcc-ssse3.txt
+# run: lane lxrun serial driver scratch_lx/run_lx1005.sh (quiet box; main clone c4c70f2c, probe tree wt_main = eb6fe6139);
+# read in docs/design/memfn/linux_results.md. Content below is verbatim.
+# tc_asm: gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0, flags: -O2 -march=x86-64 -mssse3
+# diff = differing lines in order; bag = differing lines of the register- and branch-target-renamed,
+# sorted instruction multiset (0 = the same instructions, scheduled/allocated
+# differently); ICF = the compiler folded desc_X onto hand_X (one symbol)
+# set  hand-insns  desc-insns  desc-diff  desc-bag    mut-insns  mut-diff  mut-bag
+q2           131         128         57         9           951      1012      856
+d            131         129         10         2           951      1010      868
+ss           124         122         34         6           951      1007      867
+ab           129         128         35         3           951      1014      868
+sp           130         130         40        10           951      1019      843
+w            190         183        105        21           951      1087      801
+
+## diff hand_ab desc_ab (in order)
+4c4
+< ja     <+0x40>
+---
+> ja     <+0x50>
+6c6
+< jne    <+0x29>
+---
+> jne    <+0x39>
+8c8,9
+< nopl   (%rax)
+---
+> nopl   0x0(%rax,%rax,1)
+> data16 cs nopw 0x0(%rax,%rax,1)
+12c13
+< je     <+0x38>
+---
+> je     <+0x48>
+16c17
+< jne    <+0x20>
+---
+> jne    <+0x30>
+26c27
+< jmp    <+0xd3>
+---
+> jmp    <+0xe3>
+51c52
+< jne    <+0x1a0>
+---
+> jne    <+0x1b0>
+55c56
+< jae    <+0x68>
+---
+> jae    <+0x78>
+63c64
+< jmp    <+0x13e>
+---
+> jmp    <+0x14e>
+73c74
+< jne    <+0x1d0>
+---
+> jne    <+0x1e0>
+77c78
+< jae    <+0x120>
+---
+> jae    <+0x130>
+80c81
+< jae    <+0x38>
+---
+> jae    <+0x48>
+102c103
+< jne    <+0x1c8>
+---
+> jne    <+0x1d2>
+105c106
+< jne    <+0x1e0>
+---
+> jne    <+0x1e8>
+108c109
+< je     <+0x1f0>
+---
+> je     <+0x1f2>
+112d112
+< nopw   0x0(%rax,%rax,1)
+115a116
+> nopw   0x0(%rax,%rax,1)
+119d119
+< nopl   0x0(%rax,%rax,1)
+123d122
+< nopw   0x0(%rax,%rax,1)
+## bag diff hand_ab desc_ab
+14a15
+> data16 cs nopw 0x0(REG,REG,1)
+63,64d63
+< nopl   (REG)
+< nopw   0x0(REG,REG,1)
+
+## diff hand_d desc_d (in order)
+104c104
+< jne    <+0x1c8>
+---
+> jne    <+0x1c2>
+107c107
+< jne    <+0x1e0>
+---
+> jne    <+0x1d8>
+110c110
+< je     <+0x1f0>
+---
+> je     <+0x1e2>
+114d113
+< nopw   0x0(%rax,%rax,1)
+117a117
+> nopw   0x0(%rax,%rax,1)
+121d120
+< nopl   0x0(%rax,%rax,1)
+125d123
+< nopw   0x0(%rax,%rax,1)
+## bag diff hand_d desc_d
+69d68
+< nopl   0x0(REG,REG,1)
+71d69
+< nopw   0x0(REG,REG,1)
+
+## diff hand_q2 desc_q2 (in order)
+4c4
+< ja     <+0x40>
+---
+> ja     <+0x30>
+6,7c6
+< je     <+0x1fe>
+< data16 cs nopw 0x0(%rax,%rax,1)
+---
+> je     <+0x1de>
+10c9
+< je     <+0x37>
+---
+> je     <+0x2c>
+12c11
+< je     <+0x37>
+---
+> je     <+0x2c>
+15c14
+< jne    <+0x20>
+---
+> jne    <+0x15>
+17c16
+< nopl   0x0(%rax,%rax,1)
+---
+> nopl   (%rax)
+24c23
+< jmp    <+0xd8>
+---
+> jmp    <+0xc8>
+31a31
+> movdqa %xmm3,%xmm7
+36a37
+> por    %xmm4,%xmm7
+42d42
+< movdqa %xmm5,%xmm7
+47,49c47,48
+< movdqa %xmm3,%xmm6
+< por    %xmm4,%xmm6
+< por    %xmm0,%xmm7
+---
+> movdqa %xmm5,%xmm6
+> por    %xmm0,%xmm6
+53c52
+< jne    <+0x1a0>
+---
+> jne    <+0x180>
+57c56
+< jae    <+0x60>
+---
+> jae    <+0x50>
+64,67c63,64
+< jmp    <+0x142>
+< nopl   0x0(%rax)
+< data16 cs nopw 0x0(%rax,%rax,1)
+< data16 cs nopw 0x0(%rax,%rax,1)
+---
+> jmp    <+0x122>
+> cs nopw 0x0(%rax,%rax,1)
+75c72
+< jne    <+0x1d0>
+---
+> jne    <+0x1b0>
+79c76
+< jae    <+0x120>
+---
+> jae    <+0x100>
+82,83c79
+< jae    <+0x37>
+< mov    $0x22222222,%ecx
+---
+> jae    <+0x2c>
+85,87c81,85
+< movd   %ecx,%xmm0
+< mov    $0x27272727,%ecx
+< movd   %ecx,%xmm2
+---
+> mov    $0x22222222,%esi
+> xor    %ecx,%ecx
+> movd   %esi,%xmm0
+> mov    $0x27272727,%esi
+> movd   %esi,%xmm2
+90d87
+< xor    %ecx,%ecx
+97c94
+< lea    -0x10(%rsi,%rcx,1),%rcx
+---
+> lea    -0x10(%rax,%rcx,1),%rcx
+103c100
+< jne    <+0x1c8>
+---
+> jne    <+0x1a8>
+106c103
+< jne    <+0x1e0>
+---
+> jne    <+0x1c0>
+109c106
+< je     <+0x1f0>
+---
+> je     <+0x1d0>
+## bag diff hand_q2 desc_q2
+13,15c13
+< data16 cs nopw 0x0(REG,REG,1)
+< data16 cs nopw 0x0(REG,REG,1)
+< data16 cs nopw 0x0(REG,REG,1)
+---
+> cs nopw 0x0(REG,REG,1)
+34d31
+< lea    -0x10(REG,REG,1),REG
+35a33
+> lea    -0x10(REG,REG,1),REG
+68,69d65
+< nopl   0x0(REG)
+< nopl   0x0(REG,REG,1)
+70a67
+> nopl   (REG)
+
+## diff hand_sp desc_sp (in order)
+4c4
+< ja     <+0x40>
+---
+> ja     <+0x50>
+7c7
+< jne    <+0x29>
+---
+> jne    <+0x39>
+9c9,11
+< nopl   0x0(%rax)
+---
+> nop
+> data16 cs nopw 0x0(%rax,%rax,1)
+> data16 cs nopw 0x0(%rax,%rax,1)
+12c14
+< je     <+0x39>
+---
+> je     <+0x4a>
+16,17c18,19
+< cmp    (%r8,%rcx,1),%dl
+< jne    <+0x20>
+---
+> cmp    0x6(%r8,%rcx,1),%dl
+> jne    <+0x30>
+19c21
+< nopw   0x0(%rax,%rax,1)
+---
+> nopl   0x0(%rax,%rax,1)
+24c26
+< jmp    <+0xf0>
+---
+> jmp    <+0x100>
+58c60
+< jne    <+0x1a0>
+---
+> jne    <+0x1b0>
+62c64
+< jae    <+0x60>
+---
+> jae    <+0x70>
+67c69
+< jmp    <+0x147>
+---
+> jmp    <+0x157>
+77c79
+< jne    <+0x1d0>
+---
+> jne    <+0x1e0>
+81c83
+< jae    <+0x120>
+---
+> jae    <+0x130>
+84c86
+< jae    <+0x39>
+---
+> jae    <+0x4a>
+103c105
+< jne    <+0x1c8>
+---
+> jne    <+0x1d2>
+106c108
+< jne    <+0x1e0>
+---
+> jne    <+0x1e8>
+109c111
+< je     <+0x1f0>
+---
+> je     <+0x1f2>
+113d114
+< nopw   0x0(%rax,%rax,1)
+116a118
+> nopw   0x0(%rax,%rax,1)
+120d121
+< nopl   0x0(%rax,%rax,1)
+124d124
+< nopw   0x0(%rax,%rax,1)
+## bag diff hand_sp desc_sp
+7a8
+> cmp    0x6(REG,REG,1),REG
+12c13,14
+< cmp    (REG,REG,1),REG
+---
+> data16 cs nopw 0x0(REG,REG,1)
+> data16 cs nopw 0x0(REG,REG,1)
+30d31
+< lea    -0x10(REG,REG,1),REG
+31a33
+> lea    -0x10(REG,REG,1),REG
+69c71
+< nopl   0x0(REG)
+---
+> nop
+73,74d74
+< nopw   0x0(REG,REG,1)
+< nopw   0x0(REG,REG,1)
+
+## diff hand_ss desc_ss (in order)
+4c4
+< ja     <+0x40>
+---
+> ja     <+0x50>
+6c6
+< jne    <+0x29>
+---
+> jne    <+0x39>
+8c8,9
+< nopl   (%rax)
+---
+> nopl   0x0(%rax,%rax,1)
+> data16 cs nopw 0x0(%rax,%rax,1)
+12c13
+< je     <+0x35>
+---
+> je     <+0x45>
+16c17
+< jne    <+0x20>
+---
+> jne    <+0x30>
+25c26
+< jmp    <+0xb8>
+---
+> jmp    <+0xc8>
+46c47
+< jne    <+0x198>
+---
+> jne    <+0x1a8>
+50c51
+< jae    <+0x60>
+---
+> jae    <+0x70>
+57c58
+< jmp    <+0x13a>
+---
+> jmp    <+0x14a>
+69c70
+< jne    <+0x1d0>
+---
+> jne    <+0x1d8>
+73c74
+< jae    <+0x120>
+---
+> jae    <+0x130>
+76c77
+< jae    <+0x35>
+---
+> jae    <+0x45>
+96c97
+< jne    <+0x1c0>
+---
+> jne    <+0x1ca>
+102c103
+< je     <+0x1f0>
+---
+> je     <+0x1ea>
+106d106
+< nopw   0x0(%rax,%rax,1)
+110c110
+< nopl   0x0(%rax,%rax,1)
+---
+> nopw   0x0(%rax,%rax,1)
+114d113
+< nopl   0x0(%rax,%rax,1)
+118d116
+< nopw   0x0(%rax,%rax,1)
+## bag diff hand_ss desc_ss
+19a20
+> data16 cs nopw 0x0(REG,REG,1)
+37d37
+< lea    0x10(REG,REG,1),REG
+38a39
+> lea    0x10(REG,REG,1),REG
+68,70d68
+< nopl   0x0(REG,REG,1)
+< nopl   (REG)
+< nopw   0x0(REG,REG,1)
+
+## diff hand_w desc_w (in order)
+1a2
+> mov    %rsi,%r8
+3c4
+< ja     <+0x90>
+---
+> ja     <+0x60>
+5,8c6,8
+< lea    SYM(%rip),%r9
+< lea    SYM(%rip),%r8
+< test   %rsi,%rsi
+< jne    <+0x69>
+---
+> lea    SYM(%rip),%rsi
+> test   %r8,%r8
+> jne    <+0x39>
+11,15c11
+< xchg   %ax,%ax
+< data16 cs nopw 0x0(%rax,%rax,1)
+< data16 cs nopw 0x0(%rax,%rax,1)
+< data16 cs nopw 0x0(%rax,%rax,1)
+< data16 cs nopw 0x0(%rax,%rax,1)
+---
+> nopw   0x0(%rax,%rax,1)
+18,19c14,15
+< cmp    %rdx,%rsi
+< je     <+0x23>
+---
+> cmp    %rdx,%r8
+> je     <+0x1b>
+25,27c21,23
+< movzbl (%r9,%rcx,1),%ecx
+< and    (%r8,%rax,1),%cl
+< je     <+0x60>
+---
+> movzbl 0x6(%rsi,%rcx,1),%ecx
+> and    0x16(%rsi,%rax,1),%cl
+> je     <+0x30>
+39c35
+< jmp    <+0x1b6>
+---
+> jmp    <+0x186>
+94,95c90,91
+< jne    <+0x2c0>
+< mov    %rax,%rcx
+---
+> jne    <+0x290>
+> mov    %rax,%rsi
+97,98c93,94
+< cmp    %rax,%rsi
+< jae    <+0xc0>
+---
+> cmp    %rax,%r8
+> jae    <+0x90>
+106c102
+< jmp    <+0x235>
+---
+> jmp    <+0x205>
+108c104
+< movdqu -0x10(%rdi,%rcx,1),%xmm0
+---
+> movdqu -0x10(%rdi,%rsi,1),%xmm0
+121,131c117,127
+< pmovmskb %xmm0,%edx
+< test   %edx,%edx
+< jne    <+0x308>
+< mov    %rcx,%rax
+< add    $0x10,%rcx
+< cmp    %rcx,%rsi
+< jae    <+0x1f0>
+< mov    %rsi,%rdx
+< cmp    %rsi,%rax
+< jae    <+0x23>
+< movdqu -0x10(%rdi,%rsi,1),%xmm0
+---
+> pmovmskb %xmm0,%eax
+> test   %eax,%eax
+> jne    <+0x2d8>
+> mov    %rsi,%rcx
+> add    $0x10,%rsi
+> cmp    %rsi,%r8
+> jae    <+0x1c0>
+> mov    %r8,%rdx
+> cmp    %r8,%rcx
+> jae    <+0x1b>
+> movdqu -0x10(%rdi,%r8,1),%xmm0
+151c147
+< lea    -0x10(%rsi,%rcx,1),%rcx
+---
+> lea    -0x10(%r8,%rcx,1),%rcx
+153,154c149,150
+< jmp    <+0x23>
+< nopw   0x0(%rax,%rax,1)
+---
+> jmp    <+0x1b>
+> nopl   0x0(%rax,%rax,1)
+156,158c152,154
+< pmovmskb %xmm1,%edx
+< test   %edx,%edx
+< jne    <+0x2f8>
+---
+> pmovmskb %xmm1,%eax
+> test   %eax,%eax
+> jne    <+0x2c5>
+162c158
+< jne    <+0x318>
+---
+> jne    <+0x2e4>
+166c162,165
+< je     <+0x330>
+---
+> je     <+0x2f2>
+> tzcnt  %eax,%eax
+> lea    0x20(%rsi,%rax,1),%rdx
+> jmp    <+0x1b>
+168,176c167,171
+< lea    0x20(%rcx,%rax,1),%rdx
+< jmp    <+0x23>
+< nopl   (%rax)
+< tzcnt  %edx,%edx
+< add    %rcx,%rdx
+< jmp    <+0x23>
+< nopl   0x0(%rax)
+< tzcnt  %edx,%edx
+< add    %rax,%rdx
+---
+> lea    (%rax,%rsi,1),%rdx
+> jmp    <+0x1b>
+> nopw   0x0(%rax,%rax,1)
+> tzcnt  %eax,%eax
+> lea    (%rax,%rcx,1),%rdx
+179d173
+< nopl   0x0(%rax,%rax,1)
+181,183c175,176
+< lea    0x10(%rcx,%rax,1),%rdx
+< jmp    <+0x23>
+< cs nopw 0x0(%rax,%rax,1)
+---
+> lea    0x10(%rsi,%rax,1),%rdx
+> jmp    <+0x1b>
+187,188c180,181
+< lea    0x30(%rcx,%rax,1),%rdx
+< jmp    <+0x23>
+---
+> lea    0x30(%rsi,%rax,1),%rdx
+> jmp    <+0x1b>
+## bag diff hand_w desc_w
+3,4d2
+< add    REG,REG
+< add    REG,REG
+7c5
+< and    (REG,REG,1),REG
+---
+> and    0x16(REG,REG,1),REG
+14,18d11
+< cs nopw 0x0(REG,REG,1)
+< data16 cs nopw 0x0(REG,REG,1)
+< data16 cs nopw 0x0(REG,REG,1)
+< data16 cs nopw 0x0(REG,REG,1)
+< data16 cs nopw 0x0(REG,REG,1)
+42d34
+< lea    0x10(REG,REG,1),REG
+43a36
+> lea    0x10(REG,REG,1),REG
+47c40,41
+< lea    SYM(REG),REG
+---
+> lea    (REG,REG,1),REG
+> lea    (REG,REG,1),REG
+94c88,89
+< movzbl (REG,REG,1),REG
+---
+> mov    REG,REG
+> movzbl 0x6(REG,REG,1),REG
+97d91
+< nopl   0x0(REG)
+100c94
+< nopl   (REG)
+---
+> nopw   0x0(REG,REG,1)
+185d178
+< xchg   %ax,%ax

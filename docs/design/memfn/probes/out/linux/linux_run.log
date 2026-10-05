@@ -1,0 +1,46 @@
+# ARCHIVED 2026-10-05 by lane lxread from duxevents@ubuntubudu:/home/duxevents/pcrec/scratch_lx/wt_main/build/memfn_linux/20261005T130303Z/run.log
+# run: lane lxrun serial driver scratch_lx/run_lx1005.sh (quiet box; main clone c4c70f2c, probe tree wt_main = eb6fe6139);
+# read in docs/design/memfn/linux_results.md. Content below is verbatim.
+# box: ubuntubudu, Linux 7.0.0-29-generic, AMD Ryzen 5 1600 Six-Core Processor
+# cpu flags: sse4_2 avx avx2 bmi2 
+# pinned: taskset -c 2; governor schedutil; load at start: 0.46 0.45 0.55
+# commit: eb6fe6139; date 2026-10-05T13:03Z
+# glibc: ldd (Ubuntu GLIBC 2.43-2ubuntu2.4) 2.43
+# gcc: gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0
+# clang: Ubuntu clang version 21.1.8 (6ubuntu1)
+## build
+ok   build gcc
+ok   build gcc -mavx2 callcost
+ok   build clang
+## correctness (exhaustive vs the scalar reference)
+check: 7272160 cases, 0 bad
+ok   callcost.gcc --check
+check: 34906368 cases, 0 bad (sel=base and sel=wide)
+ok   isacost.gcc --check
+check: 7272160 cases, 0 bad
+ok   callcost.clang --check
+check: 34906368 cases, 0 bad (sel=base and sel=wide)
+ok   isacost.clang --check
+check: 34906368 cases, 0 bad (sel=base and sel=wide)
+ok   isacost-v3.gcc --check
+## R1 callcost (requirements.md §2.6)
+ok   build/memfn_linux/20261005T130303Z/callcost.linux.gcc.txt
+ok   build/memfn_linux/20261005T130303Z/callcost.linux.clang.txt
+ok   build/memfn_linux/20261005T130303Z/callcost.linux.gcc-avx2.txt
+## R1b isacost (isa_selection.md §5)
+ok   build/memfn_linux/20261005T130303Z/isacost.linux.gcc.report.txt
+ok   build/memfn_linux/20261005T130303Z/isacost.linux.gcc.sel-base.txt
+ok   build/memfn_linux/20261005T130303Z/isacost.linux.gcc.sel-wide.txt
+ok   build/memfn_linux/20261005T130303Z/isacost.linux.gcc-v3.report.txt
+ok   build/memfn_linux/20261005T130303Z/isacost.linux.gcc-v3.sel-wide.txt
+ok   build/memfn_linux/20261005T130303Z/isacost.linux.clang.report.txt
+ok   build/memfn_linux/20261005T130303Z/isacost.linux.clang.sel-base.txt
+ok   build/memfn_linux/20261005T130303Z/isacost.linux.clang.sel-wide.txt
+ok   build/memfn_linux/20261005T130303Z/isacost.linux.clang-v3.report.txt
+ok   build/memfn_linux/20261005T130303Z/isacost.linux.clang-v3.sel-wide.txt
+## R1b evidence: the detection path is VEX-free in the v3 TU; ifunc relocations
+ok   build/memfn_linux/20261005T130303Z/isacost.evidence.txt
+## R1b isanote (isa_selection.md §1.3)
+ok   build/memfn_linux/20261005T130303Z/isanote.linux.txt
+# load at end: 1.00 0.88 0.73
+MEMFN-LINUX-RUN COMPLETE build/memfn_linux/20261005T130303Z fails=0

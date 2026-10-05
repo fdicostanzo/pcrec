@@ -1,0 +1,195 @@
+# ARCHIVED 2026-10-05 by lane lxread from duxevents@ubuntubudu:/home/duxevents/pcrec/scratch_lx/wt_main/build/memfn_twins/20261005T131006Z/run.log
+# run: lane lxrun serial driver scratch_lx/run_lx1005.sh (quiet box; main clone c4c70f2c, probe tree wt_main = eb6fe6139);
+# read in docs/design/memfn/linux_results.md. Content below is verbatim.
+# box: ubuntubudu, Linux 7.0.0-29-generic, AMD Ryzen 5 1600 Six-Core Processor
+# pinned: taskset -c 2; governor schedutil
+# load at start: 1.00, 0.88, 0.73
+# commit: eb6fe6139; date 2026-10-05T13:10Z
+# gcc: gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0
+# clang: Ubuntu clang version 21.1.8 (6ubuntu1)
+## subjects
+subjects: -> build/memfn_twins/20261005T131006Z/subj, sha256 mismatches 0
+ok   subjects.py
+## build + check
+ok   build ta_set.gcc-sse2
+check (sse2): 16 kernels + 6 iter, 28568009 cases, 0 bad, 0 faults
+ok   ta_set.gcc-sse2 --check
+ok   build tb_run.gcc-sse2
+check (sse2): 12 kernels, 24494669 calls, 0 bad, 0 faults
+ok   tb_run.gcc-sse2 --check
+ok   build tc_desc.gcc-sse2
+check (sse2): 4 sets x 5 forms, 21155840 cases, 0 bad
+ok   tc_desc.gcc-sse2 --check
+ok   build ta_set.gcc-ssse3
+check (ssse3): 26 kernels + 8 iter, 46384815 cases, 0 bad, 0 faults
+ok   ta_set.gcc-ssse3 --check
+ok   build tb_run.gcc-ssse3
+check (ssse3): 12 kernels, 24494669 calls, 0 bad, 0 faults
+ok   tb_run.gcc-ssse3 --check
+ok   build tc_desc.gcc-ssse3
+check (ssse3): 6 sets x 5 forms, 31733760 cases, 0 bad
+ok   tc_desc.gcc-ssse3 --check
+ok   build ta_set.gcc-avx2
+check (avx2): 26 kernels + 8 iter, 46384815 cases, 0 bad, 0 faults
+ok   ta_set.gcc-avx2 --check
+ok   build tb_run.gcc-avx2
+check (avx2): 12 kernels, 24494669 calls, 0 bad, 0 faults
+ok   tb_run.gcc-avx2 --check
+ok   build tc_desc.gcc-avx2
+check (avx2): 6 sets x 5 forms, 31733760 cases, 0 bad
+ok   tc_desc.gcc-avx2 --check
+ok   build ta_set.clang-sse2
+check (sse2): 16 kernels + 6 iter, 28568009 cases, 0 bad, 0 faults
+ok   ta_set.clang-sse2 --check
+ok   build tb_run.clang-sse2
+check (sse2): 12 kernels, 24494367 calls, 0 bad, 0 faults
+ok   tb_run.clang-sse2 --check
+ok   build tc_desc.clang-sse2
+check (sse2): 4 sets x 5 forms, 21155840 cases, 0 bad
+ok   tc_desc.clang-sse2 --check
+ok   build ta_set.clang-ssse3
+check (ssse3): 26 kernels + 8 iter, 46384815 cases, 0 bad, 0 faults
+ok   ta_set.clang-ssse3 --check
+ok   build tb_run.clang-ssse3
+check (ssse3): 12 kernels, 24494367 calls, 0 bad, 0 faults
+ok   tb_run.clang-ssse3 --check
+ok   build tc_desc.clang-ssse3
+check (ssse3): 6 sets x 5 forms, 31733760 cases, 0 bad
+ok   tc_desc.clang-ssse3 --check
+ok   build ta_set.clang-avx2
+check (avx2): 26 kernels + 8 iter, 46384815 cases, 0 bad, 0 faults
+ok   ta_set.clang-avx2 --check
+ok   build tb_run.clang-avx2
+check (avx2): 12 kernels, 24494367 calls, 0 bad, 0 faults
+ok   tb_run.clang-avx2 --check
+ok   build tc_desc.clang-avx2
+check (avx2): 6 sets x 5 forms, 31733760 cases, 0 bad
+ok   tc_desc.clang-avx2 --check
+ok   build ta_set.asan
+check (avx2): 26 kernels + 8 iter, 46384815 cases, 0 bad, 0 faults
+ok   ta_set.asan --check
+ok   build tb_run.asan
+check (avx2): 12 kernels, 24494367 calls, 0 bad, 0 faults
+ok   tb_run.asan --check
+ok   build tc_desc.asan
+check (avx2): 6 sets x 5 forms, 31733760 cases, 0 bad
+ok   tc_desc.asan --check
+## T-C disassembly (hand vs constant descriptor)
+diff: build/memfn_twins/20261005T131006Z/asm.gcc-sse2/tc_asm.gcc.d/desc_sp.s: No such file or directory
+Can't open build/memfn_twins/20261005T131006Z/asm.gcc-sse2/tc_asm.gcc.d/desc_sp.s: No such file or directory.
+diff: build/memfn_twins/20261005T131006Z/asm.gcc-sse2/tc_asm.gcc.d/desc_w.s: No such file or directory
+Can't open build/memfn_twins/20261005T131006Z/asm.gcc-sse2/tc_asm.gcc.d/desc_w.s: No such file or directory.
+# tc_asm: gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0, flags: -O2 -march=x86-64
+# diff = differing lines in order; bag = differing lines of the register- and branch-target-renamed,
+# sorted instruction multiset (0 = the same instructions, scheduled/allocated
+# differently); ICF = the compiler folded desc_X onto hand_X (one symbol)
+# set  hand-insns  desc-insns  desc-diff  desc-bag    mut-insns  mut-diff  mut-bag
+q2           131         127         58        10           388       457      307
+d            130         128         10         2           384       448      324
+ss           123         121         34         4           384       451      329
+ab           128         127         35         3           384       448      330
+
+## diff hand_ab desc_ab (in order)
+4c4
+< ja     <+0x40>
+---
+ok   tc_asm gcc-sse2
+# tc_asm: gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0, flags: -O2 -march=x86-64 -mssse3
+# diff = differing lines in order; bag = differing lines of the register- and branch-target-renamed,
+# sorted instruction multiset (0 = the same instructions, scheduled/allocated
+# differently); ICF = the compiler folded desc_X onto hand_X (one symbol)
+# set  hand-insns  desc-insns  desc-diff  desc-bag    mut-insns  mut-diff  mut-bag
+q2           131         128         57         9           951      1012      856
+d            131         129         10         2           951      1010      868
+ss           124         122         34         6           951      1007      867
+ab           129         128         35         3           951      1014      868
+sp           130         130         40        10           951      1019      843
+w            190         183        105        21           951      1087      801
+
+## diff hand_ab desc_ab (in order)
+4c4
+ok   tc_asm gcc-ssse3
+# tc_asm: gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0, flags: -O2 -march=x86-64-v3
+# diff = differing lines in order; bag = differing lines of the register- and branch-target-renamed,
+# sorted instruction multiset (0 = the same instructions, scheduled/allocated
+# differently); ICF = the compiler folded desc_X onto hand_X (one symbol)
+# set  hand-insns  desc-insns  desc-diff  desc-bag    mut-insns  mut-diff  mut-bag
+q2           131         131         36         4           851       902      750
+d            131         128         15         5           851       892      764
+ss           123         119         36         4           851       892      768
+ab           135         131         36         4           851       908      764
+sp           129         131        100        18           851       896      744
+w            179         180        131        29           851       962      712
+
+## diff hand_ab desc_ab (in order)
+4c4
+ok   tc_asm gcc-avx2
+diff: build/memfn_twins/20261005T131006Z/asm.clang-sse2/tc_asm.clang.d/desc_sp.s: No such file or directory
+Can't open build/memfn_twins/20261005T131006Z/asm.clang-sse2/tc_asm.clang.d/desc_sp.s: No such file or directory.
+diff: build/memfn_twins/20261005T131006Z/asm.clang-sse2/tc_asm.clang.d/desc_w.s: No such file or directory
+Can't open build/memfn_twins/20261005T131006Z/asm.clang-sse2/tc_asm.clang.d/desc_w.s: No such file or directory.
+# tc_asm: Ubuntu clang version 21.1.8 (6ubuntu1), flags: -O2 -march=x86-64
+# diff = differing lines in order; bag = differing lines of the register- and branch-target-renamed,
+# sorted instruction multiset (0 = the same instructions, scheduled/allocated
+# differently); ICF = the compiler folded desc_X onto hand_X (one symbol)
+# set  hand-insns  desc-insns  desc-diff  desc-bag    mut-insns  mut-diff  mut-bag
+q2           108         108          0         0           281       343      195
+d            118         118          6         6           281       349      211
+ss           101         101          0         0           281       334      208
+ab           112         112          0         0           281       345      205
+
+## diff hand_ab desc_ab (in order)
+## bag diff hand_ab desc_ab
+
+## diff hand_d desc_d (in order)
+ok   tc_asm clang-sse2
+# tc_asm: Ubuntu clang version 21.1.8 (6ubuntu1), flags: -O2 -march=x86-64 -mssse3
+# diff = differing lines in order; bag = differing lines of the register- and branch-target-renamed,
+# sorted instruction multiset (0 = the same instructions, scheduled/allocated
+# differently); ICF = the compiler folded desc_X onto hand_X (one symbol)
+# set  hand-insns  desc-insns  desc-diff  desc-bag    mut-insns  mut-diff  mut-bag
+q2           108         108          0         0           386       456      300
+d            118         118          6         6           386       460      318
+ss           101         101          0         0           386       449      313
+ab           112         112          0         0           386       452      304
+sp           114         114         14         2           386       460      286
+w            153         153         18        10           386       479      263
+
+## diff hand_ab desc_ab (in order)
+## bag diff hand_ab desc_ab
+ok   tc_asm clang-ssse3
+# tc_asm: Ubuntu clang version 21.1.8 (6ubuntu1), flags: -O2 -march=x86-64-v3
+# diff = differing lines in order; bag = differing lines of the register- and branch-target-renamed,
+# sorted instruction multiset (0 = the same instructions, scheduled/allocated
+# differently); ICF = the compiler folded desc_X onto hand_X (one symbol)
+# set  hand-insns  desc-insns  desc-diff  desc-bag    mut-insns  mut-diff  mut-bag
+q2           109         109          0         0           336       395      253
+d            105         105          6         6           336       391      275
+ss           101         101          0         0           336       385      267
+ab           113         113          0         0           336       393      253
+sp           110         110         14         2           336       394      238
+w            141         141         18        10           336       423      221
+
+## diff hand_ab desc_ab (in order)
+## bag diff hand_ab desc_ab
+ok   tc_asm clang-avx2
+## timing
+ok   build/memfn_twins/20261005T131006Z/tb.gcc-sse2.txt
+ok   build/memfn_twins/20261005T131006Z/tc.gcc-sse2.txt
+ok   build/memfn_twins/20261005T131006Z/tb.gcc-ssse3.txt
+ok   build/memfn_twins/20261005T131006Z/tc.gcc-ssse3.txt
+ok   build/memfn_twins/20261005T131006Z/tb.gcc-avx2.txt
+ok   build/memfn_twins/20261005T131006Z/tc.gcc-avx2.txt
+ok   build/memfn_twins/20261005T131006Z/tb.clang-sse2.txt
+ok   build/memfn_twins/20261005T131006Z/tc.clang-sse2.txt
+ok   build/memfn_twins/20261005T131006Z/tb.clang-ssse3.txt
+ok   build/memfn_twins/20261005T131006Z/tc.clang-ssse3.txt
+ok   build/memfn_twins/20261005T131006Z/tb.clang-avx2.txt
+ok   build/memfn_twins/20261005T131006Z/tc.clang-avx2.txt
+ok   build/memfn_twins/20261005T131006Z/ta.gcc-sse2.txt
+ok   build/memfn_twins/20261005T131006Z/ta.gcc-ssse3.txt
+ok   build/memfn_twins/20261005T131006Z/ta.gcc-avx2.txt
+ok   build/memfn_twins/20261005T131006Z/ta.clang-ssse3.txt
+ok   build/memfn_twins/20261005T131006Z/ta.clang-avx2.txt
+# load at end: 1.02, 1.02, 1.00
+MEMFN-TWINS-RUN COMPLETE build/memfn_twins/20261005T131006Z fails=0

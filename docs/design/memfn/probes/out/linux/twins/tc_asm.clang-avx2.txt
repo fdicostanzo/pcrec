@@ -1,0 +1,126 @@
+# ARCHIVED 2026-10-05 by lane lxread from duxevents@ubuntubudu:/home/duxevents/pcrec/scratch_lx/wt_main/build/memfn_twins/20261005T131006Z/tc_asm.clang-avx2.txt
+# run: lane lxrun serial driver scratch_lx/run_lx1005.sh (quiet box; main clone c4c70f2c, probe tree wt_main = eb6fe6139);
+# read in docs/design/memfn/linux_results.md. Content below is verbatim.
+# tc_asm: Ubuntu clang version 21.1.8 (6ubuntu1), flags: -O2 -march=x86-64-v3
+# diff = differing lines in order; bag = differing lines of the register- and branch-target-renamed,
+# sorted instruction multiset (0 = the same instructions, scheduled/allocated
+# differently); ICF = the compiler folded desc_X onto hand_X (one symbol)
+# set  hand-insns  desc-insns  desc-diff  desc-bag    mut-insns  mut-diff  mut-bag
+q2           109         109          0         0           336       395      253
+d            105         105          6         6           336       391      275
+ss           101         101          0         0           336       385      267
+ab           113         113          0         0           336       393      253
+sp           110         110         14         2           336       394      238
+w            141         141         18        10           336       423      221
+
+## diff hand_ab desc_ab (in order)
+## bag diff hand_ab desc_ab
+
+## diff hand_d desc_d (in order)
+63,65c63,65
+< add    $0xd0,%cl
+< cmp    $0xa,%cl
+< jb     <+0xe3>
+---
+> add    $0xc6,%cl
+> cmp    $0xf5,%cl
+> ja     <+0xe3>
+## bag diff hand_d desc_d
+1c1
+< add    $0xd0,REG
+---
+> add    $0xc6,REG
+15c15
+< cmp    $0xa,REG
+---
+> cmp    $0xf5,REG
+21a22
+> ja     <T>
+23d23
+< jb     <T>
+
+## diff hand_q2 desc_q2 (in order)
+## bag diff hand_q2 desc_q2
+
+## diff hand_sp desc_sp (in order)
+35c35
+< je     <+0x151>
+---
+> je     <+0x152>
+49c49
+< jne    <+0x140>
+---
+> jne    <+0x141>
+54c54
+< jae    <+0x139>
+---
+> jae    <+0x13a>
+61c61
+< je     <+0x139>
+---
+> je     <+0x13a>
+75c75
+< cmp    %dl,(%r8,%rcx,1)
+---
+> cmp    %dl,0x6(%r8,%rcx,1)
+91c91
+< je     <+0x168>
+---
+> je     <+0x169>
+99c99
+< je     <+0x17f>
+---
+> je     <+0x180>
+## bag diff hand_sp desc_sp
+14a15
+> cmp    REG,0x6(REG,REG,1)
+19d19
+< cmp    REG,(REG,REG,1)
+
+## diff hand_ss desc_ss (in order)
+## bag diff hand_ss desc_ss
+
+## diff hand_w desc_w (in order)
+10c10
+< ja     <+0x14c>
+---
+> ja     <+0x14b>
+59,66c59,65
+< lea    SYM(%rip),%rdx
+< nopw   0x0(%rax,%rax,1)
+< movzbl (%rdi,%rax,1),%r8d
+< mov    %r8d,%r9d
+< and    $0xf,%r9d
+< shr    $0x4,%r8d
+< movzbl (%r8,%rdx,1),%r8d
+< test   %r8b,(%r9,%rcx,1)
+---
+> data16 data16 data16 cs nopw 0x0(%rax,%rax,1)
+> movzbl (%rdi,%rax,1),%edx
+> mov    %edx,%r8d
+> and    $0xf,%r8d
+> shr    $0x4,%edx
+> movzbl 0x16(%rdx,%rcx,1),%edx
+> test   %dl,0x6(%r8,%rcx,1)
+72a72
+> nop
+## bag diff hand_w desc_w
+18a19
+> data16 data16 data16 cs nopw 0x0(REG,REG,1)
+37d37
+< lea    SYM(REG),REG
+41a42
+> movzbl 0x16(REG,REG,1),REG
+43,44c44
+< movzbl (REG,REG,1),REG
+< nopw   0x0(REG,REG,1)
+---
+> nop
+53a54
+> test   REG,0x6(REG,REG,1)
+58d58
+< test   REG,(REG,REG,1)
+67d66
+< vmovdqu 0x20(REG,REG,1),REG
+68a68
+> vmovdqu 0x20(REG,REG,1),REG

@@ -1,0 +1,35 @@
+# ARCHIVED 2026-10-05 by lane lxread from duxevents@ubuntubudu:/home/duxevents/pcrec/scratch_lx/wt_main/build/memfn_linux/20261005T130303Z/isacost.linux.clang.sel-base.txt
+# run: lane lxrun serial driver scratch_lx/run_lx1005.sh (quiet box; main clone c4c70f2c, probe tree wt_main = eb6fe6139);
+# read in docs/design/memfn/linux_results.md. Content below is verbatim.
+# box: ubuntubudu, Linux 7.0.0-29-generic, AMD Ryzen 5 1600 Six-Core Processor
+# cpu flags: sse4_2 avx avx2 bmi2 
+# pinned: taskset -c 2; governor schedutil; load at start: 0.46 0.45 0.55
+# commit: eb6fe6139; date 2026-10-05T13:03Z
+# glibc: ldd (Ubuntu GLIBC 2.43-2ubuntu2.4) 2.43
+# gcc: gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0
+# clang: Ubuntu clang version 21.1.8 (6ubuntu1)
+# run: build/memfn_linux/20261005T130303Z/bin/isacost.clang --sel=base
+# memfn isacost probe, arch=x86-64 base=sse2 wide=avx2, ns/call min..max of 3 loops >= 50 ms
+# compiled-for x86-64-v1; cpu level x86-64-v3; cpu_has_wide=1
+# --sel=base: flag/fnptr arms select base; cpusup()=1 query()=1 (per-call variants follow these)
+# have: cpusup=1 ifunc=1 fmv=1
+
+## mode=ind case=miss (whole span read)
+n                        1             8            16            32            64           256          1024          4096
+loop           0.30..0.30     0.30..0.30     0.30..0.30     0.30..0.30     0.30..0.30     0.30..0.30     0.30..0.30     0.30..0.30  
+base_inl       1.48..1.48     1.39..1.39     1.96..2.00     2.66..2.66     3.54..3.54    10.62..10.63   44.53..44.55  157.55..157.67
+base_ool       3.54..3.54     2.66..2.66     3.25..3.25     4.49..4.51     5.89..5.90    13.52..13.76   55.90..55.96  169.11..169.15
+wide_ool       2.36..2.36     3.84..3.85     3.84..3.84     3.84..3.84     4.24..4.27     9.35..9.40    22.82..23.00   92.96..93.36 
+wide_inl       1.48..1.49     1.49..1.49     1.77..1.77     1.48..1.48     2.10..2.12     5.49..5.55    16.36..16.45   68.92..69.90 
+flag_hyb       1.77..1.77     1.77..1.78     2.51..2.53     3.25..3.25     4.13..4.13    11.21..11.22   45.63..45.65  158.78..158.83
+flag_ool       3.84..3.84     3.25..3.25     3.54..3.54     4.80..4.85     6.19..6.20    14.87..15.68   56.06..56.08  169.38..169.41
+fnptr          3.54..3.54     3.54..3.54     3.74..3.78     4.29..4.35     6.14..6.18    13.61..15.27   55.78..55.82  169.06..169.12
+fnptr_lazy     3.54..3.56     2.95..2.95     3.44..3.49     4.47..4.48     6.13..6.15    14.65..15.74   55.82..55.85  169.12..169.24
+cpusup_hyb     3.25..3.25     4.72..4.72     5.02..5.02     4.72..4.72     5.47..5.51     9.68..9.79    23.42..23.82   93.83..93.90 
+query_hyb    412.61..412.93 413.67..413.71 413.60..413.72 413.68..413.83 413.58..414.73 417.95..418.02 439.20..439.45 511.68..512.28
+ifunc          2.95..2.95     4.13..4.13     4.13..4.13     4.13..4.13     4.91..4.92     9.56..9.71    23.33..23.45   93.57..93.59 
+fmv            3.25..3.25     3.84..3.84     4.72..4.72     4.72..4.72     5.61..5.62    16.14..16.19   63.05..63.33  256.72..256.87
+
+## detection only (ns per detection, no search)
+det_query    413.59..413.72
+det_cpusup     0.44..0.44  
