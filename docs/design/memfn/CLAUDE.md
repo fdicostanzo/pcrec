@@ -47,6 +47,19 @@ Nothing here touches pcrec's emission (D91).
   `-march=x86-64-v3`, not in `linux_run.sh`), Q7-Q11, and an `[ART-MGR]`
   cross-note. Verdict: one mechanism (declared-ISA artifact, selection
   hoisted above it), three pick sites. Design only.
+- `integration.md` — R1d (lane memfnmap, 2026-10-04), Frank's "we need to
+  integrate; SIMD variants might slot into the decision tables" ask: the
+  inventory of every pcrec first-match table that selects a scan / verify /
+  classify form (T1-T9, file:line, rows, predicates, denies, emitted text)
+  and the seven table-less scan sites (N1-N7); where SIMD joins as ROWS (one
+  new nested scan-form table `SCAN_ROWS` with sites, D139's shape; T6's
+  `vec-masked`), the sites that do not slot cleanly as built and their
+  implement-then-replace fixes; the boundary (option (c): kit K1 per-ISA
+  primitives + K2 composition generator with hooks + K3 CLI/reference
+  functions; pcrec keeps selection, operands, fusion text, injection); the
+  composition model (primitive families, the C1 classifier and C2 shape
+  tables, the fixed library as generic-parameter outputs); Q12-Q17; the
+  R1d -> R4 plan-row text. Design only.
 - `probes/` — R1's measured probe: `callcost.c` (libc `memchr` against
   inline scalar/SWAR/NEON-or-SSE2 forms, by span length, plus the fused
   two-needle pass against two libc calls) and `probes.mk` (build, the
