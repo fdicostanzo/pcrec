@@ -37,6 +37,34 @@ deleted; a superseded item says so in place.
   script handed to main's executor channel in a slot main names. No
   kit code, no pcrec byte moves.
 
+- done: 2026-10-05 — MEASUREMENT ONLY: no kit code, no pcrec byte moved,
+  no abi event, MF_VOCAB unchanged. Branch `lane/memfn-r4b`; the probe
+  was merged from lane memfnr4b (7549a3b8) and its harness leak fixed
+  (4ecea50b). Report: `docs/dev/lanes/memfnr4b_report.md` (§9 is the
+  Linux read). Validation: `memfn_r4b.sh` on ubuntubudu via main's
+  executor, `R4B-DONE status=0` (gcc 15.2, taskset, 3 launches, floor =
+  max|emit−emit2|). Correctness 0 wrong and 10/10 planted defects caught
+  in 5 builds, LSan included. Transcripts:
+  `docs/design/memfn/probes/out/twins/r4b/linux/`.
+  - **SIMD-off (`swar` vs `emit`): R4d's trigger is MET on union-select.**
+    It wins every row in both regimes: throughput 1.4-2.0x, per-call
+    1.4-2.0x. mod-i wins every row but one (an early-hit single gate
+    call, +2.4 ns). userpass: run-first loses because the `=` lead
+    rejects first; lead-first (`swlf`) is null there. The lead ORDER is
+    part of the form.
+  - **SIMD-on (`ffl` vs `swar`):** `ffl` wins every row at SSE2 and AVX2,
+    except two 16 B rows at AVX2 (+0.36/+0.64 ns, a short-path detail for
+    R4e′).
+  - **K85 cls-n-uc:** the fused forms remove the dense-text loss in
+    find-all and beat the no-gate floor. 1m sweep: emit 437,242, nosl
+    403,594, `swlf` 242,662, `ffl` AVX2 97,527 ns. Single gate calls on
+    dense text still lose at SIMD-off (64k/256k).
+  - **For §15.5 (a kit design revision, after main's review):** the lead
+    order is the kit's per-site choice, lead-first by default when a lead
+    is present. A "lead can reject" density fact would decide it.
+  - **Caveat:** `swar`'s raw rate (~0.18 ns/B) depends on unmeasured
+    choices (2x unroll, exact zbytes); N-1 applies at R4d.
+
 ## N-1 (2026-10-05, kit session) — Frank's direction given to the kit directly: tuning constants are suspect
 
 Frank, to the kit session: the R-1 `swar` probe's 16-byte (2x) hot loop
