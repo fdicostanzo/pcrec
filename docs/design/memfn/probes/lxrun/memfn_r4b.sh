@@ -17,7 +17,7 @@
 # ASANFL and QUICK=1 (5 ms loops) let the script run on another box; with no
 # taskset or /proc/loadavg it warns and runs unpinned.
 #
-# Steps, each under gnutimeout; a failure in 1-5 ABORTS (no timing counts
+# Steps, each under gnutimeout; a failure in 1-4 ABORTS (no timing counts
 # without them):
 #   1 subjects    twins/subjects_r4b.py: alpha_k82.sh's resolution, sha256
 #                 against the bench's committed manifests
@@ -29,14 +29,13 @@
 #                 gcc ASan+UBSan at v3
 #   4 correctness every build's --check --subjects: every variant == ref() on
 #                 the generated set + every subject, the planted defects caught
-#   5 (none)      -- the run aborts here on any check failure
-#   6 timing      LAUNCHES launches round-robin over gcc-sse2 / gcc-avx2,
+#   5 timing      LAUNCHES launches round-robin over gcc-sse2 / gcc-avx2,
 #                 `taskset -c $CPU`, load1 < 0.5 waited for (at most LOADWAIT
 #                 s, then logged and run anyway); each launch times every
 #                 variant at >= 50 ms calibrated loops, min of 3 (vec.h);
 #                 the floor is emit vs emit2 measured the same way, in the
 #                 same binary. clang: one launch each, directional.
-#   7 readings    twins/tb_r4b_table.py: per cell x regime x subject, emit,
+#   6 readings    twins/tb_r4b_table.py: per cell x regime x subject, emit,
 #                 floor, swar (SIMD-off reading: swar - emit), ffl-SSE2 and
 #                 ffl-AVX2 (SIMD-on reading: ffl - swar of the SSE2 build),
 #                 swlf/ffllf (lead first), cls-n-uc's nosl columns (K85)
@@ -50,7 +49,7 @@ set -u
 O=${1:?usage: memfn_r4b.sh OUTDIR}
 CPU=${CPU:-2}
 CC=${CC:-gcc}
-CLANG=${CLANG:-clang}
+CLANG=${CLANG-clang}
 LAUNCHES=${LAUNCHES:-3}
 LOADWAIT=${LOADWAIT:-600}
 PIN=${PIN:-d4d9ed90}
@@ -102,7 +101,7 @@ log "## 2 the pin: pcrec $PIN, gates_sync"
 if [ ! -x "$O/pcrec/build/pcrec" ]; then
     rm -rf "$O/pcrec" && mkdir -p "$O/pcrec"
     git -C "$PCREC_REPO" archive "$PIN" | tar -x -C "$O/pcrec" || { log "FAIL git archive $PIN from $PCREC_REPO"; done_ 2; }
-    step "make pcrec@$PIN" 30m make -C "$O/pcrec" -j4 || done_ 2
+    step "make pcrec@$PIN (log: pcrec.build.log)" 30m sh -c "make -C '$O/pcrec' -j4 > '$O/pcrec.build.log' 2>&1" || done_ 2
 fi
 step "gates_sync.sh" 5m sh "$TW/gates_sync.sh" "$O/pcrec/build/pcrec" "$BENCH" "$O/sync" || done_ 2
 
@@ -131,7 +130,7 @@ for tag in $(for b in $BUILDS; do echo "${b%%:*}"; done) gcc-asan; do
     fi
 done
 
-log "## 6 timing"
+log "## 5 timing"
 loadwait() {
     w=0
     while :; do
@@ -154,17 +153,16 @@ timed() { # timed <tag> <launch>
         FAILS=$((FAILS + 1)); log "FAIL timed $1 launch $2"
     fi
 }
-for i in $(seq 1 "$LAUNCHES"); do
-    timed gcc-sse2 "$i"
-    timed gcc-avx2 "$i"
+TAGS=$(for b in $BUILDS; do echo "${b%%:*}"; done)
+for i in $(seq 1 "$LAUNCHES"); do   # the verdict builds, round-robin
+    for tag in $TAGS; do case $tag in gcc-*) timed "$tag" "$i" ;; esac; done
 done
-if [ -n "$CLANG" ]; then
-    timed clang-sse2 1
-    timed clang-avx2 1
-fi
+for tag in $TAGS; do case $tag in clang-*) timed "$tag" 1 ;; esac; done   # directional
 
-log "## 7 readings"
+log "## 6 readings"
 files() { ls "$O"/tb."$1".*.txt | tr '\n' ',' | sed 's/,$//'; }
-step "readings.gcc.md" 2m sh -c "python3 '$TW/tb_r4b_table.py' sse2=$(files gcc-sse2) avx2=$(files gcc-avx2) > '$O/readings.gcc.md'"
-[ -n "$CLANG" ] && step "readings.clang.md" 2m sh -c "python3 '$TW/tb_r4b_table.py' sse2=$(files clang-sse2) avx2=$(files clang-avx2) > '$O/readings.clang.md'"
+for cc in gcc clang; do
+    ls "$O"/tb."$cc"-sse2.*.txt "$O"/tb."$cc"-avx2.*.txt >/dev/null 2>&1 || continue
+    step "readings.$cc.md" 2m sh -c "python3 '$TW/tb_r4b_table.py' sse2=$(files $cc-sse2) avx2=$(files $cc-avx2) > '$O/readings.$cc.md'"
+done
 done_ "$FAILS"

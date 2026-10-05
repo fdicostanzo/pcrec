@@ -78,7 +78,8 @@ def main():
     base_label, (bv, bf, bh) = groups[0]
     print("ns (median of %s launches); floor = max |emit - emit2|; "
           "SIMD-off = swar - emit (%s); SIMD-on = ffl - swar(%s)\n"
-          % ("/".join(str(len(next(iter(g[1][0].values())))) for g in groups), base_label, base_label))
+          % ("/".join(str(max((len(v) for v in g[1][0].values()), default=0)) for g in groups),
+             base_label, base_label))
     keys = sorted({(c, r, s) for (c, _v, r, s) in bv}, key=lambda k: (k[0], ORDER.index(k[1]), k[2]))
     for cell, title in CELLS:
         rows = [k for k in keys if k[0] == cell]
