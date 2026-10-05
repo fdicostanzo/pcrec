@@ -40,6 +40,11 @@ going down is the module landing.
   `(?=(a|ab))\1$`, and the CAPTURE-FREE `(?=a)b` cell sabotage row S126
   needs — capture-free on purpose, because `(a)(?=b)c` keeps the VM whatever
   the row's `engines` mask says and would mask it.
+  Also carries S220's two ANSWER cells (2026-10-05, lane r1gclose): `(?!a)` and
+  `x*(?!a)` on subject "a", where the answer is the empty match at 1 — the
+  start-pinned predicate's P2 is the only guard for a one-character lookahead
+  machine, so a plant dropping it answers (0,1) here. Generator-derived like
+  every cell in the file; python `re` and libpcre2 agree on all eight.
 - **captures.rxt** — the four polarity/outcome combinations with `g` lines:
   retention inside a positive assertion, the undo when a positive one fails,
   the discard inside a negative one, and the trailing-unset control

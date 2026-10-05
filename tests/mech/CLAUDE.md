@@ -2417,6 +2417,15 @@ patterns, `\B`/`\B\B`/`\Bx*` — thinned to nothing underneath it. New file
 name; `SAB_REACH_POP` now floors against it at 3 (its own full measured
 size), and the solo run above reads the pop line exactly at 3/3.
 
+*2026-10-05 addendum (lane r1gclose): that population is now SEVEN, not three
+(`\B`, `\B\B`, `\Bx*`, `\Bx?`, and three P2-sole-guard one-character-
+lookahead machines `(?![^a])`, `(?!a)`, `x*(?!a)`) — re-swept under [UCP]
+U2's context atoms; the manifest header carries the method. S220's selector is
+now `^[^#]` floored at 7 and lookahead.rxt carries `(?!a)`/`x*(?!a)` as answer
+cells, so the row is detected at answer level as well as structurally. The
+re-sweep also found `(?<!.)`, a seed-needing machine that PASSES P1 and P2 and
+is declined by P3 (S219's header's "P3 never declines" is a 2026-09 claim).*
+
 **S223 is the reverse tripwire `[MECH-REACH]`'s own doctrine asks for on a
 witness-less assertion.** `start_pinned_assert_routing`'s seed-liveness
 half has no sabotage witness of its own (S219's own header says so), so

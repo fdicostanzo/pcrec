@@ -192,6 +192,30 @@ ms 1 "ab" 1 2
 m "ab" 1 2
 m "b" 0 1
 
+# S220's ANSWER CELL ([OPT-5] STEP 2): a bare NULLABLE one-character negative
+# lookahead as the WHOLE pattern. On "a" the assertion fails at 0 and the
+# first match is the empty one at 1 -- (1,1), not (0,1). A one-character
+# lookahead reads only the FOLLOWING byte, so its seeds intern to one state,
+# no seed is needed and the start-pinned predicate's P2 is the only guard;
+# with P2 dropped the DFA elides the reverse pass and reports the span as
+# starting at the search origin.
+pattern (?!a)
+features lookaround
+m "a" 1 1
+m "b" 0 0
+m "ab" 1 1
+m "" 0 0
+
+# S220's second answer cell: a nullable run before the same assertion. On "a"
+# the empty match at 0 is refused (next byte is `a`), so the answer is again
+# the empty match at 1.
+pattern x*(?!a)
+features lookaround
+m "a" 1 1
+m "xa" 0 0
+m "xxb" 0 2
+m "" 0 0
+
 # The body reaches PAST what the pattern consumes -- the assertion inspects
 # bytes the match never claims.
 pattern (?=abc)ab
