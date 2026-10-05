@@ -33,7 +33,8 @@ route with zero swept movers is a failure ([r1 S-F9], K35). With
 ONLY_K_POS=1 only the K > 0 movers are run, and the run reports how many
 of them the NEW binary DETECTS (any divergence) -- the K-1 plant's coverage
 report (§4.2a (c)), where NEW is a compiler built with sabotage S463.
-CFLAGS replaces the driver build's flags (the ASan/UBSan arm:
+SHARD=i/n runs every n-th mover from the i-th (the per-route floor is then
+checked by the caller over the shards' union). CFLAGS replaces the driver build's flags (the ASan/UBSan arm:
 `-O1 -g -fsanitize=address,undefined -fno-builtin-memcmp
 -DDIFF_EXACT_SUBJECT`).
 """
@@ -104,6 +105,9 @@ def main():
                      for r in rows if r.get("id") == "moved"})
     if ONLY_K_POS:
         movers = [m for m in movers if m[5]]
+    if os.environ.get("SHARD"):   # "i/n": this process runs every n-th mover from i
+        i, n = map(int, os.environ["SHARD"].split("/"))
+        movers = movers[i::n]
     own = b1.corpus_subjects()
     tally = collections.Counter()
     per_route = collections.Counter()
