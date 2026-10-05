@@ -108,7 +108,31 @@ Each is marked `CHOSEN` in `memfn.h` where it is a header spelling.
 
 ## 3. Zero movers — the proof
 
-OWED (filled below when the run completes).
+**Method:** the committed byte-neutrality instrument, `scripts/emit_sweep.py`
+([BSWEEP]): `python3 scripts/emit_sweep.py --ref eb327ff5 --bin build/pcrec
+--out build-emitsweep` (CC=gcc-16, Mac), reference = the branch point
+`eb327ff5` (lane/memfn-r4a) built from `git archive`, working side = this
+branch's `build/pcrec` at `5b9a2f4e`'s source (the only later commit is this
+report). Self-check first (two independent builds of the ref): PASSED,
+all-identical at full reach. Log: `build/scratch/emit_sweep.log` (worktree,
+gitignored).
+
+| stream | population | both compile (reach) | both refuse | **movers** | asymmetric |
+|---|---|---|---|---|---|
+| 1 `.c`, default engine, `--features all` | 4,512 | 4,065 | 447 | **0** | 0 |
+| 2 `.c`, `--engine=vm` | 4,512 | 4,066 | 446 | **0** | 0 |
+| 3 `--emit-ir --engine=vm` | 4,512 | 4,066 | 446 | **0** | 0 |
+| 4 composition (`--source`, 360 files) | 360 | 35 files / 102 artifacts | 325 | **0** | 0 |
+| 5 registry dumps (7 surfaces) | 7 | 7 | 0 | 1 (`--list-axes`) | 0 |
+
+**Every emitted artifact byte-identical: 0 movers over 4,065 + 4,066 C
+artifacts, 4,066 IR listings and 102 composition artifacts.** Stream 5's one
+mover is the intended, spec'd `--list-axes` change, and it is APPEND-ONLY:
+`diff` of base vs tip shows `151a152,159` — 8 lines added after the last axis
+row (`#section memfn`, 6 comment lines, the header), 0 lines removed or
+changed; the main table's 126 data rows are untouched. Generated code
+never includes the kit, so no artifact can change by construction; the
+sweep is the measured confirmation.
 
 ## 4. The checks and their witnesses
 
@@ -174,9 +198,22 @@ No emitted artifact text, stamp, flag, limit or diagnostic changed. The
 `--memfn=` CLI option is NOT added (not part of R4a's charter; pcrec holds
 no string yet).
 
-## 6. Validation
+## 6. Validation (Mac, gcc-16, all at the branch tip's source)
 
-OWED (filled below).
+| command | result |
+|---|---|
+| `make -j4 CC=gcc-16` | clean, no warnings |
+| `make strict CC=gcc-16` | "whole tree compiles clean with -Werror -Wshadow" (kit included) |
+| `make test-codegen` | 13/14 scripts pass; the one red is `run_inline_capability.sh` "nm could not read arm_a.o (no rx_search symbol)" — **PRE-EXISTING darwin red**: the same script with the BASE binary (`PCREC=build/scratch/pcrec.base`) gives the identical FAIL (Mach-O `_` decoration in its own nm parse; it never touches libpcrec). Every other script, incl. the six from-source reference builds moved onto `lib_srcs.sh` (trie, n1_budget, size_term, …), passed. |
+| `make test-registry` | rc 0; axes 190 PASS (re-pinned from 189); PC-3 213 pass / 0 fail; PC-4 0 disagreements |
+| `make test-cli` | 284 passed, 0 failed |
+| `make test-rxtsource` | 278 passed, 0 failed |
+| `make test-memfn-link` | 8 PASS / 0 FAIL (C15 + C16 + their two built-in witnesses) |
+| C15/C16 real-tree sabotage, section-arm witnesses | all fire (§4) |
+| identity proof | 0 movers (§3) |
+| NOT run (charter: kit session's slot) | full `make test`, `make test-axes`, mech; the moved scripts outside test-codegen (`run_resource_tests.sh`, `run_thread_tests.sh`, `run_cpset_structure.sh`, `run_anchored_match.sh`, the identity gates under their own targets, `run_recursion_identity.sh`) were syntax-checked (`bash -n`) but their suites not run here |
+
+Logs: `worktrees/memfnskel/build/scratch/{test-codegen,test-registry,test-cli,test-rxtsource,test-memfn-link,emit_sweep}.log`.
 
 ## 7. Charter vs committed
 
@@ -194,4 +231,27 @@ OWED (filled below).
 
 ## 8. For the kit session to decide
 
-See §8 below the validation numbers.
+1. **Merge collision with the C17 lane:** both lanes create
+   `tests/memfn/CLAUDE.md` and both may add a `tests/memfn/` section to
+   `TEST_SECTIONS` (mine is `test-memfn-link`). Trivially resolvable;
+   merge the entries.
+2. **pcrec-bench's `list_axes.tsv` adapter** (`testees/pcrec/adapter.py`,
+   read-only look) reads `--list-axes`. The new section is append-only and
+   empty, so its data rows are unchanged, but a "last `#` line is the
+   header" or "every non-`#` line" reader will see the `memfn` header as
+   the file's last `#` line. The bench should select the main table
+   (table_contract.md consumer rule 5). An inbox note is the pcrec
+   manager's to write.
+3. **The run_inline_capability darwin red** is pre-existing (A/B above);
+   Linux is the verdict box.
+4. **Contract choices §2** — in particular `mf_art_end`/`mf_art_error`
+   (additions), FUNC parameter passing (incl. `miss`), the member-hook term
+   id, and NOP restrictions — are the kit's to confirm or revise before M1
+   builds a caller on them.
+5. **Archived-pin reference builds** (`run_{lookaround,atomic,backref}_identity`,
+   recursion's REFCOMMIT) still archive `src lib cli` only: correct for
+   their pre-kit pins; a future re-pin past R4a must add `memfn` (as
+   FILEPIN now does automatically).
+6. No mech sabotage rows were added for C15/C16; the witnesses run inside
+   the check every time. File mech rows if the house wants them in the
+   matrix.
