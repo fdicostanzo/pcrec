@@ -131,7 +131,8 @@ def main():
             if ABI_FROM != ABI_TO:
                 for f in ("pa.c", "pa.h"):
                     p = f"{d}/{f}"
-                    open(p, "wb").write(norm_abi(open(p, "rb").read()))
+                    t = norm_abi(open(p, "rb").read())   # read BEFORE the "wb" truncates
+                    open(p, "wb").write(t)
             cc = subprocess.run([CC] + CFLAGS + ["-I", d, '-DDIFF_A_LABEL="base"',
                                  '-DDIFF_B_LABEL="new"', "-o", f"{d}/t", DRIVER,
                                  f"{d}/pa.c", f"{d}/pb.c"], capture_output=True, timeout=600)

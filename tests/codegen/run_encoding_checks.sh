@@ -638,6 +638,67 @@ def prior_form(tb, tu, moved):
     return bool((PF_BYTE_RE.match(pb) and PF_UTF8_RE.match(pu)) or
                 (PF_UTF8_RE.match(pb) and RUNPIN_RE.match(pu)))
 REQRUN_BLOCK_RE = re.compile(r'^\s*if \(rx_reqrun(?:_whole)?\(subject, subject_length, search_from\) >= subject_length\) return 0;$', re.M)
+#
+# (v) [K82] (B) THE HANDOFF (abi 61, docs/design/litscan_k82h.md §4.2b): the run
+# pre-check's candidate is KEPT and the body's scan begins `K` bytes before
+# it, K the window's maximum BYTE offset from the attempt start. K differs by
+# encoding by design (`(?i)stra\u00dfe` is 2 under utf8, where `(?i)s` matches
+# U+017F) and the round-up to a character start exists only under utf8, so
+# the handoff is an ENCODING-OWNED REGION: its block (`if (handoff_position -
+# search_from > K) { ... } else handoff_position = search_from;`) is excised
+# from BOTH sides as `/* [K82-handoff] handoff block excised for comparison
+# */`, anchored on its opening and closing lines and at most
+# HANDOFF_MAX_LINES long (an over-broad excision cannot hide the rest of the
+# function: S477); the kept-candidate gate is rewritten to the discard gate's
+# own text and the one start site's `handoff_position` to `search_from`, so
+# the rest of the function compares token for token; `<PREFIX>_REQ_HANDOFF`
+# is normalized to `N`. Each side is held to its own stamp (a handoff gate
+# iff the stamp is not "none"), and the two sides' PRESENCE must match unless
+# `REQ_WHY` or `REQ_RUN` differs by encoding. The both-sides population is
+# counted and FLOORED (K35).
+HANDOFF_DECL_RE = re.compile(r'^(\s*)size_t handoff_position = rx_reqrun\(subject, subject_length, search_from\);$')
+HANDOFF_RET_RE = re.compile(r'^\s*if \(handoff_position >= subject_length\) return 0;$')
+HANDOFF_OPEN_RE = re.compile(r'^\s*if \(handoff_position - search_from > \d+\) \{$')
+HANDOFF_CLOSE_RE = re.compile(r'^\s*handoff_position = search_from;$')
+HANDOFF_STAMP_RE = re.compile(r'^(#define RX_REQ_HANDOFF ")[^"]*(")$')
+HANDOFF_STAMP_VAL_RE = re.compile(r'^#define RX_REQ_HANDOFF "([^"]*)"$', re.M)
+HANDOFF_GATE_RE = re.compile(r'^\s*size_t handoff_position = rx_reqrun\(subject, subject_length, search_from\);$', re.M)
+HANDOFF_MAX_LINES = 8
+
+
+def excise_handoff(text, counts):
+    """(v)'s pre-pass: the handoff's gate rewritten to the discard gate, its
+    block excised, its start site renamed and its stamp normalized."""
+    lines = text.splitlines(keepends=True)
+    out = []
+    i, n = 0, len(lines)
+    while i < n:
+        ln = lines[i].rstrip('\n')
+        md = HANDOFF_DECL_RE.match(ln)
+        if md and i + 1 < n and HANDOFF_RET_RE.match(lines[i + 1].rstrip('\n')):
+            out.append(md.group(1) + "if (rx_reqrun(subject, subject_length, search_from) >= subject_length) return 0;\n")
+            counts['handoff_gate'] += 1
+            i += 2
+            continue
+        if HANDOFF_OPEN_RE.match(ln):
+            j = i
+            while j < n and not HANDOFF_CLOSE_RE.match(lines[j].rstrip('\n')):
+                j += 1
+            if j - i + 1 > HANDOFF_MAX_LINES:
+                counts['handoff_overlong'] += 1
+            out.append("/* [K82-handoff] handoff block excised for comparison */\n")
+            counts['handoff_block'] += 1
+            i = j + 1
+            continue
+        ms = HANDOFF_STAMP_RE.match(ln)
+        if ms:
+            out.append(ms.group(1) + "N" + ms.group(2) + "\n")
+            counts['handoff_stamp'] += 1
+            i += 1
+            continue
+        out.append(lines[i].replace('handoff_position', 'search_from'))
+        i += 1
+    return ''.join(out)
 ENDWIN_STAMP_VAL_RE = re.compile(r'^#define RX_END_WINDOW "([^"]*)"$', re.M)
 REQRUN_STAMP_VAL_RE = re.compile(r'^#define RX_REQ_RUN "([^"]*)"$', re.M)
 
@@ -877,7 +938,10 @@ def excise(text, label, drop_run=False):
               'startpos_attempt': 0, 'end_window': 0, 'end_window_stamp': 0,
               'req_run_offset0': 0, 'req_check': 0, 'req_why_stamp': 0,
               'var_valid_call': 0, 'span_ci_helper': 0, 'req_pick': 0,
-              'start_zero': 0, 'findings_stamp': 0, 'req_run_asym': 0}
+              'start_zero': 0, 'findings_stamp': 0, 'req_run_asym': 0,
+              'handoff_gate': 0, 'handoff_block': 0, 'handoff_stamp': 0,
+              'handoff_overlong': 0}
+    text = excise_handoff(text, counts)
     out = []
     i, n = 0, len(lines)
     in_reqrun = False
@@ -1181,8 +1245,11 @@ def main():
            'startpos_attempt': 0, 'end_window': 0, 'end_window_stamp': 0,
            'req_run_offset0': 0, 'req_check': 0, 'req_why_stamp': 0,
            'var_valid_call': 0, 'span_ci_helper': 0, 'req_pick': 0,
-           'start_zero': 0, 'findings_stamp': 0, 'req_run_asym': 0}
+           'start_zero': 0, 'findings_stamp': 0, 'req_run_asym': 0,
+           'handoff_gate': 0, 'handoff_block': 0, 'handoff_stamp': 0,
+           'handoff_overlong': 0}
     nselect_bad = 0
+    nhandoff_both = 0
     npairs = nstrict = nwidens = 0
     ndiverge_strict = ndiverge_widens = nbyteonly = nnextpos_bad = 0
     findings = []
@@ -1298,7 +1365,8 @@ def main():
             for side, text, cnt in (('byte', tb, cb), ('utf8', tu, cu)):
                 m = REQWHY_STAMP_VAL_RE.search(text)
                 why[side] = m.group(1) if m else None
-                pre = cnt['req_check'] + len(REQRUN_BLOCK_RE.findall(text))
+                pre = cnt['req_check'] + len(REQRUN_BLOCK_RE.findall(text)) + \
+                    len(HANDOFF_GATE_RE.findall(text))
                 if why[side] is None or cnt['req_why_stamp'] != 1:
                     bad_sel.append("%s REQ_WHY stamp not exactly 1" % side)
                 elif (pre > 0) != (why[side] == 'emitted'):
@@ -1327,6 +1395,29 @@ def main():
             elif wb != wu and (wb, wu) != ('dominated', 'emitted'):
                 bad_sel.append("REQ_WHY byte \"%s\" vs utf8 \"%s\" -- not the byte-keyed dominance rule"
                                % (wb, wu))
+            # [K82] (v): each side's REQ_HANDOFF held to its own gate, the
+            # block within its ceiling, and the presence symmetric unless the
+            # run or the admission differs by encoding.
+            hv = {}
+            for side, text, cnt in (('byte', tb, cb), ('utf8', tu, cu)):
+                m = HANDOFF_STAMP_VAL_RE.search(text)
+                hv[side] = m.group(1) if m else None
+                if hv[side] is None or cnt['handoff_stamp'] != 1:
+                    bad_sel.append("%s REQ_HANDOFF stamp not exactly 1" % side)
+                elif (cnt['handoff_gate'] > 0) != (hv[side] != 'none'):
+                    bad_sel.append("%s REQ_HANDOFF \"%s\" but %d handoff gate(s)"
+                                   % (side, hv[side], cnt['handoff_gate']))
+                if cnt['handoff_overlong']:
+                    bad_sel.append("%s a handoff block excision spans more than %d lines (S477)"
+                                   % (side, HANDOFF_MAX_LINES))
+            if hv.get('byte') and hv.get('utf8'):
+                rb2, ru2 = REQRUN_STAMP_VAL_RE.search(tb), REQRUN_STAMP_VAL_RE.search(tu)
+                same_run = bool(rb2 and ru2 and rb2.group(1).split('@')[0] == ru2.group(1).split('@')[0])
+                if (hv['byte'] != 'none') != (hv['utf8'] != 'none') and wb == wu and same_run:
+                    bad_sel.append("REQ_HANDOFF byte \"%s\" vs utf8 \"%s\" with the same REQ_WHY and run -- an unexplained presence asymmetry"
+                                   % (hv['byte'], hv['utf8']))
+                if hv['byte'] != 'none' and hv['utf8'] != 'none' and cb['handoff_block'] and cu['handoff_block']:
+                    nhandoff_both += 1
             fb, fu = FINDINGS_STAMP_VAL_RE.search(tb), FINDINGS_STAMP_VAL_RE.search(tu)
             if not fb or not fu or tb.count('.findings = "') != 1 or tu.count('.findings = "') != 1:
                 bad_sel.append("FINDINGS stamp/rx_info.findings not exactly 1 per side")
@@ -1401,8 +1492,10 @@ def main():
               'startpos_guard', 'startpos_stamp', 'startpos_attempt',
               'end_window', 'end_window_stamp', 'req_run_offset0',
               'req_check', 'req_why_stamp', 'var_valid_call', 'span_ci_helper',
-              'req_pick', 'start_zero', 'findings_stamp', 'req_run_asym'):
+              'req_pick', 'start_zero', 'findings_stamp', 'req_run_asym',
+              'handoff_gate', 'handoff_block', 'handoff_stamp', 'handoff_overlong'):
         print("EXCISED %s=%d" % (k, agg[k]))
+    print("HANDOFF_BOTH=%d" % nhandoff_both)
     for p in gate_pats:
         print("GATEPAT %s" % p)
     for p in gateform_pats:
@@ -1455,13 +1548,23 @@ else
         fi
         # (a) non-vacuity: every named region reached at least once.
         vac=0
-        for k in next_pos valid_upto utf_check_stamp back_step span_match span_match_caseless advance encoding startpos_guard startpos_stamp startpos_attempt end_window end_window_stamp req_run_offset0 req_check req_why_stamp var_valid_call span_ci_helper req_pick start_zero findings_stamp req_run_asym; do
+        for k in next_pos valid_upto utf_check_stamp back_step span_match span_match_caseless advance encoding startpos_guard startpos_stamp startpos_attempt end_window end_window_stamp req_run_offset0 req_check req_why_stamp var_valid_call span_ci_helper req_pick start_zero findings_stamp req_run_asym handoff_gate handoff_block handoff_stamp; do
             v="$(grep "^EXCISED $k=" "$WORKDIR/dd12ai.out" | grep -oE '[0-9]+$')"
             if [ "${v:-0}" -eq 0 ]; then
                 bad "DD12a(i) region '$k' was never excised across the whole run — dead code, certifying nothing about it"
                 vac=1
             fi
         done
+        # [K82] (v) THE HANDOFF'S BOTH-SIDES POPULATION (K35): pairs whose byte
+        # AND utf8 artifacts both hand off, so both blocks were excised.
+        # Floored at 80% of the landing count (lane k82hbuild, 2026-10-05,
+        # default ENC_MAX_BLOCKS: HANDOFF_BOTH_LANDING below).
+        HANDOFF_BOTH_LANDING=0
+        hboth="$(grep -oE '^HANDOFF_BOTH=[0-9]+' "$WORKDIR/dd12ai.out" | cut -d= -f2)"
+        echo "  DD12a(i) handoff pairs excised on both sides: ${hboth:-?} (landing $HANDOFF_BOTH_LANDING)"
+        if [ "${hboth:-0}" -lt $(( HANDOFF_BOTH_LANDING * 8 / 10 )) ] || [ "${hboth:-0}" -eq 0 ]; then
+            bad "DD12a(i) only ${hboth:-0} pair(s) hand off under both encodings, floor $(( HANDOFF_BOTH_LANDING * 8 / 10 )) — the handoff region's comparison may be vacuous"
+        fi
         # ---- [K50] THE GATE-REFINEMENT CLASS, and its guards ----------------
         # The named, dated exclusion class: an unanchored utf8 machine carries
         # K50's boundary gate, so `eqclasses` refines the byte-equivalence
