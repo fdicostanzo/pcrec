@@ -1440,3 +1440,5 @@ it. Every change is marked `[r1 <id>]` in place.
 - **Q4 FILE, DON'T BUILD:** the one-byte pre-check handoff (L = 1) is filed as a row; D77 trigger = a bench cell where a one-byte `memchr` pre-check pays the rescan.
 - **Q5 NO CAP on K:** the handoff limits itself (a large K degenerates to today's start). K is guarded by the independent pin table, oracle and K−1 plant, not by a threshold.
 - **Q6 NO:** the reverse pass keeps its `search_from` lower bound (sound, tested incl. `\K`). Revisit only on a measured cell where it walks below lo.
+- **Q6 NOTE (Frank, 2026-10-05):** tightening the reverse pass's bound to lo should give the SAME answer by construction, which makes it a candidate TEST CASE: a variant with the bound at lo, diffed against the shipped one, is a free equivalence check on K and the proof. Noted; no action yet.
+- **Q7 FILE, DON'T BUILD:** the no-DFA-scan VM handoff is [OPT-VMSEED]'s territory (cross-noted there); its trigger is a VM-route cell that measurably pays the rescan.
