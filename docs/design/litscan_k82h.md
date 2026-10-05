@@ -1438,3 +1438,4 @@ it. Every change is marked `[r1 <id>]` in place.
 - **Q2 KEEP:** the utf8 round-up, in its revised form (uncapped `< n` loop, only when lo > f).
 - **Q3 (a), REVERSING the note's own recommendation:** `<PREFIX>_REQ_HANDOFF` goes on EVERY artifact of the family, `none` where the handoff does not apply. House convention: stamps vary only by engine family, never by presence within a family, and "does not apply" is a value. The byte-count readers §2.3a lists are re-pinned in the build's own change (the abi ritual).
 - **Q4 FILE, DON'T BUILD:** the one-byte pre-check handoff (L = 1) is filed as a row; D77 trigger = a bench cell where a one-byte `memchr` pre-check pays the rescan.
+- **Q5 NO CAP on K:** the handoff limits itself (a large K degenerates to today's start). K is guarded by the independent pin table, oracle and K−1 plant, not by a threshold.
