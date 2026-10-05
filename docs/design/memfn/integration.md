@@ -835,3 +835,559 @@ D119/D91), except the SWAR row (D122 addendum 3).
 > - **R4f, T6 `vec-masked`:** **Trigger:** a census of masked runs with L ≥ 16 at verify sites, plus a cell.
 > - **R4g, declared-ISA rows (`DECLARED(L)`):** wide tiers at prefilter sites. **Trigger:** isa_evaluation.md §3.3 L-1/L-2 (a measured level gain on ubuntubudu) and Q4's ruling.
 > - **Filed, not scheduled:** the stay set through T4 (a `[CLS-TREE]` follow-up, §2.4 b, D139's argument); N4 ALL-PRESENT (trigger: a cell on the K65 no-DFA-scan route whose time is in `emit_req_set_rest`).
+
+---
+
+## 7. K0, THE CAPABILITY-AND-PRICE QUERY `[rev2]`
+
+### 7.1 The principle: one fact crosses the boundary, and it is a price
+
+Revision 1's boundary already kept classifiers, unrolling and the short
+path inside the kit (§3.4). But it left pcrec reading three facts that only
+an architecture can answer:
+
+- whether a vector form exists here (`BASE`/`DECLARED`);
+- how wide a vector is (`V`, in row 1's predicate);
+- whether the vector form is worth it. This was left to "OWED placements"
+  in pcrec's row order, which would have become measured thresholds in
+  pcrec's tables.
+
+K0 replaces all three with one question and one answer:
+
+| pcrec knows | the kit knows |
+|---|---|
+| WHAT is scanned (S as a 256-bit set, a pinned pair, a run) and WHERE (the site, its budget, its handoff) | which kernels exist for a token, and for which set shapes |
+| the proven span interval and, if any, a density interval | what each kernel costs, per call, per byte and per hit, on the token's calibration box |
+| the cost SHAPE of its own scalar rows (one `memchr` stream, two leapfrogged streams, a table walk), as formulas | the measured value of every generic machine term those formulas read (a libc `memchr` call, a table-walk byte step, a restart) |
+| the hook text (verify, fallback, bound, prefix) | the target-attribute, route, CPU-check and loader-marker text for a token |
+| the decision: one comparison in one unit | nothing about pcrec's sites |
+
+The kit never learns a pcrec site name (§3.4's rule, kept). pcrec never
+learns an ISA name. The row that compares them is arch-blind by
+construction, because both sides of the comparison come back from the kit
+in the same unit.
+
+### 7.2 The token
+
+- **The grammar is the kit's.** pcrec's `--isa=TOKEN` (the `.rxt` `isa`
+  config line; `pcrec_options.isa`, a string) is handed to
+  `mf_token_parse`. An unknown token is refused with the kit's reason and
+  its list (`pcrec --list-isas` prints `mf_tokens()`). pcrec holds the
+  result as `const mf_token *`, an incomplete type whose only accessor
+  pcrec may call is `mf_token_name()` (for the stamp). It cannot compare
+  tokens, and the compiler enforces that.
+- **The default is `portable`, fixed, never detected** (§R2 finding 3,
+  Q18). `portable` is a COMPOSITE token. Its price list has one ARM per
+  owned baseline: `x86-64-v1` (ubuntubudu) and `armv8-a` (the Mac). Its
+  kernel text is the kit's gcc-time ladder over those arms. Its `#else`
+  is pcrec's next row (§2.5, unchanged in substance). An unknown
+  architecture compiles the `#else` and costs exactly the next row.
+- **A declared token** (`x86-64-v3`, `armv8-a`, …) has one arm. Its
+  kernels are one spelling inside a target-attributed matcher. Revision
+  1's ROUTE (target attribute A, or the consumer's `-march` with an
+  `#error` floor M, isa_selection.md §1.2.2) is folded into the token:
+  `x86-64-v3` is route A, and `x86-64-v3+cc` (spelling Q21's) is route M.
+  The kit owns the route's text. pcrec's designed `--isa-route` axis is
+  withdrawn.
+- **What pcrec does with the token, completely:**
+  1. it passes the token to `mf_price` and `mf_emit` (§7.3);
+  2. it stamps `<PREFIX>_ISA "<name>"` when the token is not the default
+     (D46's "what was asked"; a default artifact is byte-identical);
+  3. it injects the kit's opaque per-token text at four fixed places: the
+     matcher's attribute (`mf_text_attr`), the `<prefix>_cpu_ok()` body
+     (`mf_text_cpu_ok`), the level stamp ladder (`mf_text_level_stamp`)
+     and, under `--isa-marker`, the loader note (`mf_text_marker`, or the
+     kit's refusal). Each is a byte string pcrec does not parse.
+
+  pcrec never branches on the token. §7.8 C4 checks that.
+
+### 7.3 The API
+
+`memfn/k0.h` (the kit's in-tree header, Q13). The shapes below are the
+contract to build at R4a′. The field lists are complete for the
+operations of §2.2. Names are PROPOSED.
+
+```c
+#define MF_K0_ABI 1                 /* bumped on any layout change below */
+
+typedef struct mf_token mf_token;   /* opaque; pcrec cannot see inside */
+
+/* -- tokens --------------------------------------------------------- */
+int          mf_token_parse(const char *spelling, const mf_token **out,
+                            char *why, size_t whylen);   /* 0 or MF_ERR_TOKEN */
+const char  *mf_token_name(const mf_token *t);           /* stamp text only  */
+size_t       mf_tokens(const char **names, size_t cap);  /* --list-isas      */
+const mf_token *mf_token_default(void);                  /* "portable"       */
+
+/* -- the question (architecture-neutral) ---------------------------- */
+typedef enum {
+    MF_OP_FIND_IN,      /* first i in [lo,hi) with s[i] in S                     */
+    MF_OP_SKIP_IN,      /* first i in [lo,hi) with s[i] NOT in S                 */
+    MF_OP_FIND_PAIR,    /* first i: s[i] in S1 and s[i+delta] in S2              */
+    MF_OP_VERIFY_RUN,   /* (s[i+j] & mask[j]) == run[j] for j < len, one place   */
+    MF_OP_ALL_PRESENT   /* every one of k sets has a member in [lo,hi)           */
+} mf_op;
+
+typedef enum {
+    MF_H_RETURN,        /* stop at the first hit; return its index (or the bound) */
+    MF_H_VERIFY_NEXT,   /* run the caller's verify per hit; continue on failure   */
+    MF_H_ADVANCE,       /* write the cursor in place (skip forms)                 */
+    MF_H_ALL_PRESENT    /* OR-accumulate seen sets; stop when all are seen        */
+} mf_handoff;
+
+#define MF_SPAN_UNBOUNDED UINT64_MAX
+#define MF_PPM_FULL       1000000u   /* density interval default: [0, 1e6] */
+
+typedef struct {
+    uint32_t       abi;             /* MF_K0_ABI                                   */
+    mf_op          op;
+    mf_handoff     handoff;
+    uint8_t        reverse;
+    uint8_t        set[32];         /* S (FIND_IN/SKIP_IN/FIND_PAIR's S1)          */
+    uint8_t        set2[32];        /* FIND_PAIR's S2                               */
+    int32_t        delta;           /* FIND_PAIR: S2's offset from S1               */
+    const uint8_t *run, *mask;      /* VERIFY_RUN                                   */
+    uint32_t       run_len;
+    const uint8_t (*sets)[32];      /* ALL_PRESENT: k sets                          */
+    uint32_t       nsets;
+    uint64_t       span_lo, span_hi;/* PROVEN bytes the operation may read;        */
+                                    /*   span_hi = MF_SPAN_UNBOUNDED if none       */
+    uint32_t       dens_lo, dens_hi;/* candidates per 1e6 bytes; default 0..FULL   */
+    uint32_t       flags;           /* MF_Q_INLOOP (D91 budget 2);                  */
+                                    /* MF_Q_PORTABLE_ONLY (no native kernels:      */
+                                    /*   D122 add. 3's line, -fno-kit-native)      */
+    const char    *deny;            /* --kit-deny's list, passed through unparsed  */
+} mf_query;
+
+/* -- the answer: a price list ---------------------------------------- */
+typedef struct { int64_t lo, hi; } mf_ps;   /* picoseconds: min and median of N loops */
+
+typedef struct {                    /* cost on r in [r0, r1): F + B*(r - r0) + base  */
+    uint64_t r0, r1;                /* r1 = MF_SPAN_UNBOUNDED on the last segment   */
+    mf_ps    at_r0;                 /* total per-call cost at r = r0                */
+    mf_ps    per_byte;              /* slope on the segment, ps per byte (x1000)   */
+} mf_seg;
+
+#define MF_MAX_SEG 16
+typedef struct {
+    mf_ps    per_hit;               /* ps per candidate handled (VERIFY_NEXT only)  */
+    uint32_t nseg;
+    mf_seg   seg[MF_MAX_SEG];
+} mf_curve;
+
+typedef struct {
+    char     kernel_id[48];         /* opaque; stamped; passed back to mf_emit      */
+    mf_curve cost;
+    uint32_t code_bytes;            /* exact source bytes of the injected call site */
+    uint32_t helper_bytes;          /* shared text emitted once per artifact        */
+    uint32_t needs;                 /* MF_NEED_BOUND_EXPR, MF_NEED_SCRATCH_LOCAL,   */
+                                    /* MF_NEED_HELPER_ONCE: arch-neutral site       */
+                                    /* obligations pcrec must be able to meet       */
+} mf_quote;
+
+#define MF_MAX_QUOTE 8
+typedef struct {                    /* one architecture arm of the token           */
+    char     arm_id[24];            /* opaque (e.g. a digest); never a branch input */
+    int      status;                /* MF_PRICED / MF_UNPRICED / MF_STALE           */
+    uint32_t nquote;
+    mf_quote quote[MF_MAX_QUOTE];   /* in the KIT's preference order (C1 x C2)      */
+    const struct mf_refterms *ref;  /* this arm's generic terms (§7.5)             */
+    char     cal_id[24];            /* digest of the calibration rows read          */
+} mf_arm;
+
+#define MF_MAX_ARM 4
+typedef struct {
+    uint32_t abi;
+    int      status;                /* MF_PRICED if any arm is; else MF_UNPRICED   */
+    uint32_t narm;
+    mf_arm   arm[MF_MAX_ARM];
+    char     kit_version[16];
+} mf_pricelist;
+
+int mf_price(const mf_token *t, const mf_query *q, mf_pricelist *out);
+
+/* the generic terms pcrec's own rows are priced from (§7.5) */
+typedef enum {
+    MF_REF_LIBC_MEMCHR,   /* one libc memchr call reading r bytes                 */
+    MF_REF_LIBC_PAIR,     /* two leapfrogged libc memchr streams (today's pair arm)*/
+    MF_REF_LIBC_RESTART,  /* re-entering memchr after a discarded hit             */
+    MF_REF_LOOP_TABLE,    /* a byte loop testing a 256-entry table per byte       */
+    MF_REF_LOOP_EQ,       /* a byte loop testing == per byte                      */
+    MF_REF_CMP_WORD8,     /* one 8-byte masked word compare (runcmp's `words`)     */
+    MF_REF_NTERMS
+} mf_refterm;
+const mf_curve *mf_ref(const struct mf_refterms *r, mf_refterm which);
+
+/* -- generation (K2, unchanged in substance from §3.3) ---------------- */
+typedef struct {
+    void (*on_hit)(void *u, mf_sink *c, const char *cand_expr);
+    void (*fallback)(void *u, mf_sink *c);   /* the next row's text: every #else */
+    const char *bound_expr;
+    const char *prefix;                      /* pcrec's D143 placeholder          */
+    void *u;
+} mf_hooks;
+
+int mf_emit(const mf_token *t, const mf_query *q,
+            const char *const *kernel_per_arm,   /* NULL entry = fallback on that arm */
+            const mf_hooks *h, mf_sink *out, char *names, size_t nameslen);
+
+/* -- per-token opaque text (§7.2 item 3) ----------------------------- */
+int mf_text_attr(const mf_token *t, mf_sink *out);
+int mf_text_cpu_ok(const mf_token *t, const char *prefix, mf_sink *out);
+int mf_text_level_stamp(const mf_token *t, const char *prefix, mf_sink *out);
+int mf_text_marker(const mf_token *t, mf_sink *out, char *why, size_t whylen);
+```
+
+**Versioning.**
+
+- `MF_K0_ABI` covers the structs' layout and the meaning of every field.
+  Every struct carries it first. pcrec checks it at build time
+  (`_Static_assert(MF_K0_ABI == PCREC_K0_ABI_EXPECTED)`), because the kit
+  is in-tree (Q13). After extraction to a vendored copy, the same assert
+  pins the vendored version.
+- `kit_version` names the kit's text. Any change to kernel text moves
+  emitted bytes, so it is a pcrec `abi` event (D76/D94, unchanged from
+  revision 1).
+- `cal_id` names the calibration rows an arm's prices came from. A
+  recalibration moves no kit text and no layout, but it can move
+  SELECTIONS. Its governance is Q20.
+- **Staleness is impossible by construction, not by discipline.** Every
+  calibration row records the digest of the kernel TEXT it timed. When
+  the kit's current text for a kernel differs from that digest, `mf_price`
+  marks the arm `MF_STALE` and returns no quote for that kernel. A
+  stale arm behaves like an UNPRICED one (§7.6), and C2 (§7.8) counts the
+  stale kernels, which must be 0 at a release.
+
+### 7.4 The common unit, and the shape of a price
+
+- **The unit is integer picoseconds per call on the arm's calibration
+  box.** It is the unit `litscan_k82b.md` §1.3 proposed for its cost
+  terms (`limits.def` rows in `ps`), for the same reasons: integer and
+  bit-exact. Revision 1 had no unit at all, because it had no comparison.
+- **The variable is `r`, the bytes the operation reads before it hands
+  off.** For RETURN, `r` is the distance to the first hit, capped at the
+  bound. For ADVANCE it is the run length. For VERIFY_NEXT it is the whole
+  bound, and the hits along it cost `per_hit` each. For ALL_PRESENT it is
+  the distance to the last first-occurrence. Both sides of a comparison
+  read the same `r`, because both implement the same search with the same
+  semantics.
+- **The curve is piecewise affine with MEASURED breakpoints.** The
+  calibration measures each kernel at a fixed ladder of read lengths:
+  every length 1 to 64, then 128, 256, 512, 1 KiB, 4 KiB, 64 KiB and
+  1 MiB. Between two measured lengths the price is linear interpolation.
+  Beyond the largest, the slope is the one measured between 64 KiB and
+  1 MiB. There are no fitted parameters and no smoothing. The dense
+  1-64 ladder is there because block quantization makes the cost
+  non-affine below twice any vector width (§7.11 item 2). Its breakpoints
+  are merged into at most `MF_MAX_SEG` segments by dropping a point only
+  when interpolating across it stays inside both neighbours' spreads.
+- **Every value is a pair (lo, hi) = (min, median) of N ≥ 5 loops**, each
+  loop ≥ 50 ms. That is D144 addendum 1's protocol and the bench's
+  Contract 3 reporting. The harness's own loop cost (callcost's `loop`
+  row, 0.30 ns on Linux) is measured in the same run and subtracted.
+- **`code_bytes` is exact, not modelled.** The kit dry-runs K2 for the
+  query and counts the source bytes it would inject (D84's unit). So a
+  ladder's bytes, revision 1's Q16 worry, are inside the quote.
+- **`needs` is arch-neutral.** It says what the site must provide: a
+  bound expression, a scratch local, a once-per-artifact helper. pcrec
+  drops any quote whose needs the site cannot meet, without knowing why
+  the kernel needs them.
+
+### 7.5 The arch-blind row, and how pcrec prices its own rows
+
+**pcrec's own rows carry PRICE FORMULAS over generic terms.** A row knows
+the shape of the text it emits, which is pcrec knowledge, arch-neutral.
+It reads the VALUES of the generic machine terms from the same arm's
+calibration (`mf_ref`), so both sides of every comparison were measured in
+one run on one box.
+
+| `SCAN_ROWS` row (§2.2 `[rev2]`) | handoff | price formula (curves add pointwise) |
+|---|---|---|
+| `libc-memchr` | RETURN | `LIBC_MEMCHR(r)` |
+| `libc-memchr` | VERIFY_NEXT | `LIBC_MEMCHR(W)`, plus `LIBC_RESTART` per hit |
+| `leapfrog` | RETURN / VERIFY_NEXT | `LIBC_PAIR(r)`, plus `LIBC_RESTART` per hit (the measured two-stream form, overshoot included: it is what `pair_libc` timed) |
+| `table-walk` | RETURN / ADVANCE | `LOOP_TABLE(r)` |
+| `table-walk`, T4 spelled `==` or a range | RETURN / ADVANCE | `LOOP_EQ(r)` |
+| T6 `words` | (a verify) | `ceil(L/8) * CMP_WORD8` |
+
+A structural check makes the price formula a required FIELD of every row
+that can sit below `kit`. This follows `DfaPf.reseeds`' precedent ("so a
+seventh form cannot be added without answering it"). A row with no
+formula cannot be the comparison's other side, and the build fails rather
+than the row being silently skipped.
+
+**The row** (`SCAN_ROWS` row 1, and T6's row before `words`):
+
+```c
+/* pcrec side. Reads no ISA fact: every number comes back from the kit. */
+static bool kit_applies(const ScanSel *s, KitPick *pick)
+{
+    const ScanRow *next = scan_next_applicable(s, &ROW_KIT); /* structural walk */
+    mf_query q;  scan_query_of(s, &q);       /* operands + proven facts, §7.6    */
+    mf_pricelist pl;
+    if (mf_price(s->cx->isa, &q, &pl) != MF_PRICED) return false;
+
+    bool any_win = false;
+    for (uint32_t a = 0; a < pl.narm; a++) {
+        pick->kernel[a] = NULL;                       /* NULL: this arm falls back */
+        if (pl.arm[a].status != MF_PRICED) continue;  /* fallback = a tie          */
+        mf_curve mine;  next->price(s, pl.arm[a].ref, &mine);
+        for (uint32_t k = 0; k < pl.arm[a].nquote; k++) {   /* the KIT's order     */
+            const mf_quote *qt = &pl.arm[a].quote[k];
+            if (!site_meets(s, qt->needs)) continue;
+            if (!mf_dominates(&qt->cost, &mine, &q)) continue;
+            pick->kernel[a] = qt->kernel_id;  any_win = true;  break;
+        }
+    }
+    if (!any_win) return false;
+    if (tune_size_leaning(s->cx) && kit_bytes(pick) > next->bytes(s))
+        return false;                       /* D139 item 1: only if smaller */
+    return true;
+}
+```
+
+**Dominance, exactly.** `mf_dominates(K, N, q)` holds iff three things
+are true:
+
+1. **(i)** `K.hi(r, d) <= N.lo(r, d)` at every corner. The corners are the
+   points `(r, d)` with `r` in the union of both curves' breakpoints
+   inside `[span_lo, span_hi]` plus the two ends, and `d` in
+   `{dens_lo, dens_hi}`.
+2. **(ii)** If `span_hi` is unbounded, the same inequality also holds for
+   the last segment's slope plus `d · per_hit`, at both values of `d`.
+3. **(iii)** At least one corner is strict.
+
+The `per_hit` term counts only under VERIFY_NEXT. With
+`hits = d · r / 10^6`, the difference `K − N` on any segment has the form
+`a + b·r + c·d·r`. That is bilinear, so its maximum over a rectangle is
+at a corner, and the corner check is a PROOF over the whole box, not a
+sample. The arithmetic is in `__int128`, exact. Test vectors ship with the
+function, as `L(x)`'s do (findb4).
+
+**Why this is not a tuned cutoff (D119, D144, the K82 ruling).**
+
+- There is no threshold anywhere in pcrec. Every number is a measured
+  machine quantity, regenerated by a pattern-blind, bench-blind probe.
+- The verdict reads only the SIGN of a difference, so uniform scaling of
+  an arm's prices moves nothing. §7.8 C7 tests that.
+- The only modelled step is interpolation between measured lengths, and
+  C2 checks it.
+
+**The worked example (Linux, `linux_results.md` §1).** Take the K82 pair
+arm (`leapfrog`, RETURN) against a fused two-needle kernel on the
+`x86-64-v1` arm. The kernel reads 1.48-3.29 ns up to 64 B. `LIBC_PAIR`
+reads 7.08-8.26 ns there. At 4 KiB the kernel reads 157.8 ns and
+`LIBC_PAIR` 110.2.
+
+- At an OFS site whose run window proves a span of 64 B or less, the
+  kernel dominates and is selected.
+- At a rest-of-subject site, (ii) fails on the last segment's slope, so
+  the row does not apply and `leapfrog` stays.
+- At the same site under a declared `x86-64-v3` token, a quote for an
+  AVX2 unrolled body (RB-7) would be priced separately. It wins iff its
+  own measured slope beats `LIBC_PAIR`'s.
+
+pcrec reads none of those facts. The crossover revision 1 would have
+encoded as "OWED placement" (§2.2 row 4) is a consequence of two price
+lists.
+
+### 7.6 The defaults: unpriced tokens, unproven spans, unknown density
+
+| situation | the kit's answer | what pcrec does |
+|---|---|---|
+| the token's only arm is unowned (`x86-64-v4`, `armv8-a+sve`, `+sve2`) | `MF_UNPRICED`, no quotes | the row does not apply. The artifact is byte-identical to its `-fno-kit-*` twin except the `<PREFIX>_ISA` stamp. An unpriced token is never selected, by construction |
+| a composite token with one arm unpriced (e.g. `portable` before Q19's armv8-a ruling) | that arm `MF_UNPRICED`; the others priced | the unpriced arm falls back (its `#else` is the next row, a tie). The row can still apply on the priced arms' wins |
+| a kit kernel's text changed since calibration | that arm `MF_STALE` for that kernel | as UNPRICED for that kernel |
+| no kit in the tree yet (before R4a′), or a stub K0 | `MF_UNPRICED` for every token | the row never applies, so zero movers. The stub is R4c's implement-then-replace starting point |
+| an arm has quotes but none dominates | `MF_PRICED`, quotes returned | that arm falls back. The row applies only if some other arm wins strictly |
+| no proven upper bound on the span (rest of subject) | — | `span_hi = MF_SPAN_UNBOUNDED`; dominance must hold on the last segment's slope (§7.5 (ii)) |
+| a proven bound (`maxw`, a counted edge's span, the D11 `n − 1` view, a run window) | — | `span_hi` = that bound. A loop-free kernel the kit quotes only when `span_hi` fits it, so pcrec never sees `V` |
+| density unknown (the default) | — | `[dens_lo, dens_hi] = [0, MF_PPM_FULL]`. Only VERIFY_NEXT and ALL_PRESENT read it; RETURN and ADVANCE compare on `r` alone (§R2 finding 2) |
+| density known from a findings bundle | — | the interval narrows to the bundle's rate bounds. Never required; K82's parked expected-cost model is not a dependency (Q23) |
+| an in-loop site (D91 budget 2) | quotes priced from the IN-LOOP calibration (`MF_Q_INLOOP`): the kernel entered hot, back to back, at the site's re-entry pattern | deny bit `-fno-kit-loop`. Until U-3 measures a real emitted in-loop site, the in-loop calibration is unbuilt, so in-loop queries answer UNPRICED |
+
+So the kit's default is **no assumption**: the full density interval, an
+unbounded span when nothing is proven, and no price where no house box
+measured one.
+
+### 7.7 The calibration data: provenance, format, regeneration, ownership
+
+**Layout** (in-tree under the kit, Q13; `third_party/`'s shape applied to
+data derived by MEASURING, as `oracle_store/` applies it to data derived
+by RUNNING a library):
+
+```
+memfn/cal/
+  CLAUDE.md
+  calibrate.c          the probe: times K2-EMITTED kernel text and the
+                       generic reference forms, per arm, on the box it runs on
+  run_calibrate.sh     pinning (taskset on Linux), quiet-box checks (load1
+                       before/after, recorded), N >= 5 loops >= 50 ms each
+  <arm>/               one directory per ARM (x86-64-v1, x86-64-v3, armv8-a)
+    PROVENANCE.md      box, CPU, OS, libc, compiler + flags, governor, date,
+                       commit, probe digest, and WHAT DERIVES FROM IT
+    raw/<run-id>.txt   the probe transcript, verbatim, with its header
+    generate.py        raw -> prices.tsv; interpolation and segment merge only
+    prices.tsv         the derived table (table-contract TSV)
+  prices.inc           every arm's prices.tsv as C data; generated, committed
+```
+
+**`prices.tsv`** has three `#section` blocks (`docs/spec/table_contract.md`):
+
+- `arm`: one row per arm. The columns are `arm  owner_box  status
+  cal_id  run_id`, where status is `PRICED`, or `UNPRICED` with a reason.
+- `kernels`: one row per (kernel, query class, segment). The columns are
+  `kernel_id  text_digest  op  handoff  shape  inloop  r0  r1
+  at_r0_lo  at_r0_hi  per_byte_lo  per_byte_hi  per_hit_lo  per_hit_hi`.
+  The `shape` column holds the kit's C1 row name. That keeps it opaque to
+  pcrec, and it is how the kit maps a query's set onto its rows.
+- `reference`: one row per (term, segment), with the same cost columns.
+
+**Regeneration.** `make -C memfn gen-cal` iterates `cal/*/generate.py`
+and names no arm (`make gen-tables`' general rule). `generate.py --check`
+regenerates into memory and fails on any difference. It runs in the
+kit's own `make test`, so a hand-edited `prices.tsv` goes red. The raw
+transcript is the only measured artifact. Everything downstream is
+derived and checked.
+
+**Ownership** (option_sets.md §3.5a's table, now a CALIBRATION table):
+
+| arm | owner box | runs the calibration | status |
+|---|---|---|---|
+| `x86-64-v1`, `-v2`, `-v3` | ubuntubudu (Zen 1, glibc 2.43) | the manager, through pcrecdev2's executor channel (heavy Linux runs), on a quiet box | PRICED once measured |
+| `x86-64-v4` | none (no AVX-512 box) | — | **UNPRICED** |
+| `armv8-a` | the Mac (M1 Max, libSystem) | a lane, in a quiet Mac window | PRICED on Q19's ruling, else UNPRICED |
+| `armv8-a+sve`, `+sve2` | none | — | **UNPRICED** |
+| `portable` | composite: `x86-64-v1` + `armv8-a` | — | priced per arm |
+
+An emulator (Intel SDE, `qemu-user`) can prove CORRECTNESS for an
+unowned arm (option_sets.md R6). It can never price one: emulated time
+is not the target's time. So v4/SVE stay UNPRICED until a real box
+exists, and an unpriced arm can never select a kernel. That is the safe
+direction.
+
+**Relation to D141 ([EST-REGISTRY]).** The kit's `prices.tsv` is an
+estimates registry for one domain, built in the shape D141 asks for (a
+value, a unit, a kind that is FITTED, and provenance). pcrec gains NO
+estimation constant from K0: its side of the comparison is formulas over
+kit-supplied terms. D141's census, when scheduled, finds nothing new in
+`src/` for this mechanism.
+
+### 7.8 Testability
+
+| # | check | what it proves | shares a source with the calibration? |
+|---|---|---|---|
+| C1 | every kit kernel against the SCALAR BYTE LOOP, exhaustive per length × alignment × position, guard pages, ASan/UBSan (§4.5, N-6) | answers | no |
+| C2 | **price against measurement**: `memfn/cal/verify` times the kernels with its OWN driver, at read lengths the calibration ladder did NOT use (midpoints of every segment). Each measured value must lie inside the quote's (lo, hi), widened by the verifier's own measured spread. It also counts `MF_STALE` kernels (must be 0 at a release) | the interpolation rule and the data's currency | partly: it shares the kernel text and the box, but not the driver, the lengths or the loop code. It is the kit's own check, not the control |
+| C3 | **THE CONTROL: decision order end to end.** On the owner box, over the population of every corpus site where `kit` is selected, plus every site where an arm was priced and lost, build each artifact default and with `-fno-kit-*`, and time both with the harness's find-all driver on corpus subjects (D144 add. 1 loops; the floor is base vs base). Where the prices predict a win beyond both spreads, the measured kit arm must not be slower than the deny arm past the floor. Where they predict a loss, the forced arm (`kit-scan=force`, below) must not be faster past the floor | that pcrec selects only where it wins, which is the claim the row makes | **no**: the subjects are different (corpus text, not synthetic spans), the driver is different (generated artifacts through the shipped API, not `calibrate.c`), and so are the code paths (the kernel inside a real matcher with pcrec's hooks, not isolated). It shares only the box, which is unavoidable and named |
+| C4 | **arch-blindness detector**: `src/`, `cli/`, `lib/` contain no ISA vocabulary (`sse`, `ssse3`, `avx*`, `neon`, `sve*`, `x86-64-v*`, `armv8`, `aarch64`, `__x86_64__`, `__ARM_NEON`, `__AVX2__`, `pshufb`, …) outside a committed allowlist counted at birth (D107's shape), and no `strcmp`/`==` on `mf_token_name(`. A new hit fails | Frank's "as much as possible" as a red test | n/a |
+| C5 | **unpriced never selects**: the corpus compiled at `--isa=x86-64-v4` and `--isa=armv8-a+sve` carries no `kit` selection, and is byte-identical to `-fno-kit-scan -fno-kit-loop` except the `<PREFIX>_ISA` stamp | §7.6's first row | no |
+| C6 | answer identity per deny, per box: `make test-axes` arms for the three bits; option_sets.md §3.5a's compile-only arms per token | correctness under every selection | no |
+| C7 | **ratio invariance**: scaling every price in one arm by 2, or by 1/2, flips 0 selections over the corpus census (k82b §1.4's shape) | the decision depends on signs only, and catches unit slips (`per_byte` ×1000, ps vs ns) | n/a |
+| C8 | the dominance unit test, on the committed Linux numbers as a fixture: the fused pair kernel against `LIBC_PAIR` SELECTS at `span_hi = 64` and does NOT select at `MF_SPAN_UNBOUNDED`. Plus a crossing pair that differs only at an interior breakpoint, which a two-endpoint check would pass | the corner proof, including the interior breakpoints and the slope arm | uses calibration numbers as fixtures by design |
+
+**Forcing (D46's controllability half).** `kit-scan` and `kit-loop` are
+three-valued axes (option_sets.md §2.4a): deny, auto and force. Under
+force, the row takes the kit's first quote whose `needs` the site meets,
+regardless of price. If the kit returns no quote (an UNPRICED token, or
+an unsupported shape), the force cannot be honoured. The compile is then
+refused, with the kit's reason. That refusal replaces option_sets.md's
+constraint row 8 (`forced-row-below-level`) and is arch-blind: pcrec
+refuses because the answer was empty, not because it knows a level.
+`--kit-force=KERNEL_ID` (opaque, kit-validated) pins one kernel for C3's
+loss arm and for the kit's bench.
+
+**Sabotage rows** (ids taken at build, highest S on main + 1):
+
+- one kernel's prices ×0.1 in `prices.inc` (C3 fires; C2 fires);
+- an ISA word added to `src/gen/emit_dfa.c` (C4);
+- `mf_price` returning PRICED for an unowned arm (C5);
+- a kernel's text edited without recalibration, with the staleness
+  digest check removed (C2's stale count);
+- `mf_dominates` checking only the two ends of the span interval (C8's
+  interior-crossing vector);
+- one arm's `per_byte` read as ns instead of ps (C7).
+
+### 7.9 What K0 removes
+
+**From §2 (pcrec's per-site vector rows):**
+
+| revision 1 | revision 2 |
+|---|---|
+| `SCAN_ROWS` rows 1-3 (`loopfree`, `vec-verify`, `vec`) and row 6 (`swar`) | ONE row, `kit`. The short path, the verify fusion, the vector scan and SWAR are all kit kernels. SWAR is a kernel of the PORTABLE class (`-fno-kit-native` keeps it) |
+| row 1's predicate on `V`, the kit's short-path width | gone. The kit quotes a loop-free kernel only when `span_hi` fits it |
+| row 4's OWED placement of `libc-memchr` against `vec` | gone. It is a price comparison, decided by data (§7.5's example) |
+| the `BASE`/`DECLARED(L)` predicate vocabulary (§2.1) | gone. The token is passed, never read |
+| the §2.5 ladder as a pcrec emission | kit text. The `fallback` hook (pcrec's next row) is unchanged |
+| T6's `vec-masked` with an `rc_holds(cx, …)` ISA predicate | T6 gains the same `kit` row with `MF_OP_VERIFY_RUN`. `rc_holds` still needs `cx`, for the token and the prices, not for an ISA |
+| `<PREFIX>_SCAN_FORM` = a C1/C2 row-name pair | `<PREFIX>_SCAN_FORM` = the kit's opaque `kernel_id` per arm, emitted only where `kit` was selected (movers only, k82hrev Q3's precedent) |
+
+**From [OPT-SETS] (`docs/design/option_sets.md`)**: the "arch
+sub-panels".
+
+| option_sets.md item | revision 2 |
+|---|---|
+| §1.2 vector-row denies: `-fno-vec-scan`, `-fno-vec-skip`, `-fno-vec-run`, `-fno-swar-scan` (four bits) | three bits: `-fno-kit-scan` (D91 budget-1 sites, T6 included where it is a prefilter verify), `-fno-kit-loop` (budget-2 sites), `-fno-kit-native` (portable-class kernels only: D122 addendum 3's line, the bench's SIMD-off testee). They are named for budgets and kernel class, never for an ISA |
+| §1.2 `--memfn-deny=cube,unrolled,…` | `--kit-deny=`, the same list, passed through UNPARSED (`mf_query.deny`). pcrec cannot spell a classifier |
+| §1.2 / §4.3 the `isa` family: an 8-member POSET pcrec holds | one opaque value axis whose domain is `mf_tokens()`. The order, the chains and the members live in the kit. `--list-sets` lists `isa` members from the kit |
+| §1.2 `isa-route` (`--isa-route=macro`) | withdrawn; folded into the token (Q21) |
+| §1.2 `-fisa-check=entry`, `-fisa-dispatch=cpu-supports` | the CPU-check text is `mf_text_cpu_ok`. A dispatched kernel (isa_selection.md row 5, H2) is a kit kernel quoted with its measured dispatch term inside its price, under a token that names it. It stays HELD (Q11) |
+| §1.2 `--isa-marker` | stays a pcrec boolean (explicit-only, §2.8). Its validity is the kit's answer (`mf_text_marker` refuses with a reason) |
+| §2.7 constraint row 6 `isa-route-orphan` | removed (no route axis) |
+| §2.7 constraint row 7 `isa-marker-orphan` ("not on the x86 chain") | removed. The kit's refusal replaces it, and pcrec no longer knows what an x86 chain is |
+| §2.7 constraint row 8 `forced-row-below-level` | removed. The arch-blind "force with an empty quote list" refusal (§7.8) covers it, for every token |
+| §4.2 the `vector` family's four members over four bits | `auto`; `no-simd` = `-fno-kit-native`; `scalar` = `-fno-kit-scan -fno-kit-loop`. A two-bit set at most. option_sets.md §0 item 8's "first consumer is [MEMFN] R4's vector rows" mostly evaporates: trigger 1 (one name over two or more vector-family bits) is met only by `scalar` |
+| §4.2's `vector` × `isa` interaction table | gone. Both axes are inputs to one kit query, and the kit's answer is the whole table |
+| §3.5's `vector` × `isa` sweep (4 × 8 = 32 corpus runs, floored) | three deny arms × each box's own priced tokens. The compile-only arms per token stay (§3.5a) |
+| §3.5a ISA ownership | unchanged in substance, now the calibration ownership table (§7.7) |
+
+**From isa_selection.md §2's first-match table** (pcrec-side ISA
+selection): rows 1 (below the knee: baseline), 4 (in-loop: baseline only)
+and 6 become price OUTCOMES. A wide kernel that cannot pay on the site's
+span loses dominance. Row 3 (declared) is the token. Row 5 (H2 dispatch)
+is a kit kernel. Row 2 (libc) is the reference terms. The table moves
+into K0 entire. pcrec keeps no ISA selection table.
+
+### 7.10 How pcrec's existing tables change
+
+| table | change under revision 2 |
+|---|---|
+| T1 `dfa_pfs[]` | none of its own (as revision 1). Its emitters ask `SCAN_ROWS` at PF/OFS. §2.4(e) is still owed: G1's `memchr_form` premise becomes a property of the chosen `SCAN_ROWS` row, and that row may now be `kit` |
+| T2 `req_admits[]` | none. G1's density clause must read the SCAN form's per-hit price class, not `strcmp` on a name (§2.4 e) |
+| T3 `dfa_edges[]` | none. The edge's loop asks `SCAN_ROWS` at EDGE; ADVANCE handoff, budget 2 |
+| T4 `ROWS` | none. The scalar spelling feeds `table-walk` and `LOOP_EQ`/`LOOP_TABLE`'s choice of formula, and S becomes `mf_query.set` |
+| T5 `TAB_ROWS` | none |
+| T6 `pcrec_runcmp_rows` | gains `kit` (op VERIFY_RUN) before `words`. Its next row's formula is `ceil(L/8)·CMP_WORD8`. Exact runs still get no row (gcc's `memcmp`, revision 1's reason) |
+| T7 `pcrec_find_pick` | none. It may supply the density interval, optionally |
+| T8, T9 | excluded (as revision 1) |
+| `SCAN_ROWS` (new, §2.2) | four rows instead of seven: `kit`, `libc-memchr`, `leapfrog`, `table-walk`. Each non-`kit` row carries a price formula field |
+| N1-N7 | as revision 1's §2.3/§2.4, with `kit` in place of rows 1-3 and 6 |
+| the dial (`src/core/tune.c`) | two new axes join the pinned table: `kit-scan` and `kit-loop`, `auto` at every position. The size-leaning positions get D139's "only if smaller" through the row's own bytes clause (§7.5), not through a cell |
+| `limits.def` | none from K0. If [K82]'s parked model is ever built, its `ps` terms would read `mf_ref` rather than adding rows (Q23) |
+
+### 7.11 What is honestly uncertain
+
+1. **Microbenchmark prices against in-situ cost.** A kernel inside a
+   matcher pays alignment, register pressure and the hook's verify. The
+   calibration times K2-emitted text inside a generated function, which
+   is closer than K1 primitives, but it is not the matcher. C3 is what
+   would show a systematic in-situ penalty. If it does, the remedy is an
+   in-situ calibration column, never a correction factor.
+2. **Interpolation below twice the vector width.** Block quantization
+   makes cost a step function there. Hence the dense 1-64 B ladder and
+   C2's midpoint samples. A kernel whose curve steps between ladder
+   points would fail C2 rather than mis-select silently.
+3. **The libc is the calibration box's.** `LIBC_*` prices glibc 2.43 on
+   ubuntubudu and libSystem on the Mac. A consumer on musl inherits
+   those decisions (Q22).
+4. **`portable`'s conjunction.** A composite token needs a win on at
+   least one arm, and the losing arms fall back. That is safe, but it
+   doubles calibration and makes the ladder's bytes count against every
+   arm's size gate.
+5. **Compile-time cost.** One `mf_price` per candidate site is table
+   lookups plus a dry-run K2 for `code_bytes`. That is unmeasured: R4c
+   measures it under D45 before the row ships.
+6. **The K82 ruling's spirit.** Frank parked K82's expected-cost model
+   for simplicity. K0 is a cost comparison too. It differs in needing no
+   rates (no W, no density prior, no bundle), only proven bounds. That
+   is argued in §R2 and is Q23's to confirm.
