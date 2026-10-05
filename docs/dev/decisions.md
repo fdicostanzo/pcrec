@@ -8960,3 +8960,19 @@ The FIRST instance is the pre-round-2 bench outlier read Frank asked for (D144 i
 **Why:** the r2 panel showed the cross-project price layer recreates the measurement-regime, shared-source and recalibration problems at the project boundary. Delegation keeps those concerns inside the kit, where its own exhaustive tests and timed control live.
 **Guard:** pcrec's own bench/alpha timings with the kit on vs off. That control does not share a source with the kit.
 **Revisit-when:** a delegated site's kit code is measured worse than pcrec's pre-migration form and the kit cannot fix it.
+
+## D147 — Layers: the scalar algorithm stays live and improvable forever; SIMD is a layer; each layer must be the best it can be on its own (Frank, 2026-10-05, ninetieth session)
+
+**Decision:** pcrec continues scalar ALGORITHMIC improvement indefinitely. SIMD is a LAYER on top of the scalar algorithm and never a substitute for it. Each layer is measured, accepted and improved on its own:
+- **The scalar layer** (the algorithm: what is searched, the plan, handoffs, fused predicates, the scalar kernels) must be the best it can be with SIMD OFF. Its improvements land and are accepted on SIMD-off measurements.
+- **The SIMD layer** must beat the CURRENT best scalar layer on its own merits (never an old or frozen scalar).
+- Every acceptance reading for a change that touches searching reports BOTH layers (SIMD-off and SIMD-on).
+
+This generalizes D91 (scalar-first, "the SIMD crutch must not hide inefficiencies") from an ordering into a permanent structure.
+
+**Consequences for [MEMFN] (D146):**
+1. The kit's scalar arms ARE the scalar layer. They stay live, improvable code, not frozen text. integration.md's "frozen pre-migration baseline" exists only as a per-migration-step byte-identity COMPARATOR. It is not the permanent SIMD-off arm and never pins the scalar layer.
+2. The SIMD-off profile/axis runs the CURRENT scalar layer.
+3. Kit work and pcrec scalar work proceed in parallel. A scalar improvement is accepted on its own; a SIMD form is re-measured against the improved scalar.
+
+**Rulings recorded with this:** [MEMFN] Q35 YES (the integration.md §8+§14 contract is the design of record, revised by panels as migration finds gaps). Q36 YES: the kit lives IN-TREE as its own subtree `memfn/` (own CLAUDE.md, journal section, two-file request ledger, `pcrec_mf_*` symbols, 0BSD). A dedicated long-lived session may work it in its own worktree. Extraction to a separate repo waits for a measured trigger: a stable API across several migration steps AND a real second consumer. Frank's reason for not extracting now: the contract is pcrec's own emitted text and every kit byte move is a pcrec abi event, so the projects are synchronous and tightly coupled, unlike the asynchronous bench.
