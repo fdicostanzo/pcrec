@@ -714,7 +714,7 @@ switch name. **Q55** asks whether that suffices.
 | §10.6 | the two layers as profile semantics | adds: a SIMD-on artifact carries no portability promise; the libc record |
 | §14.10 | profile row `memfn-native` | the `memfn-simd` pair, both bits in `strategy_denials` |
 | §15.7 | "Q42 still says not to move it" | M4 migrates (§R4.3.4) |
-| §16 | trigger: R4b's cell | prerequisites only (completeness); `lane/k82hbuild` is merged (f116cff5); K85's re-measure is owed |
+| §16 | trigger: R4b's cell | prerequisites only (completeness); `lane/k82hbuild` is merged (f116cff5); K85's re-measure is owed (`[rev4.5]`: it exists, `k82halpha_report.md` §3; see §16's note) |
 | §17.2/§17.3 | native over portable; C9 at `-fmemfn-native` | SIMD form over the scalar form; C9 at `-fmemfn-simd` |
 | §17.6 | sabotage rows | three rows added (C17's two halves, the libc record) |
 | §18 | value re-derived per §L.5 | §R4.3.3 |
@@ -5326,6 +5326,12 @@ removed.
 
 ## 22. The build order, revision 4, and the plan-row text `[rev4]`
 
+> **`[rev4.5]`** R4b is DONE and R4d's trigger is MET at SIMD-off
+> (§R4.5.1). Every older block in this section that describes R4b as
+> pending, R4d's trigger as unmet, or the abi as "the next number (61 at
+> ...)" is history. The `[rev4.3]` block's rows carry the `[rev4.5]`
+> marks that bring them current. The older blocks are not rewritten.
+
 As before, each step separates its PREREQUISITE (a step that must have
 landed) from its TRIGGER (a measured cell or a ruling). Nothing that
 moves a DEFAULT emitted byte opens before its trigger (D77), and native
@@ -5358,7 +5364,7 @@ text stays opt-in until R4f.
 >   no performance cell). A MOVER step keeps a measured trigger and G1's
 >   alpha at both layers (D77, D144).
 > - **The switch** is `memfn-simd`, default OFF (§R4.3.1).
-> - **Status** is at main 7f94b0cd.
+> - **Status** is at main 7f94b0cd. `[rev4.5]`: abi and R4b/R4d statuses are current as of main 08caf4a3, per the marks below.
 >
 > - **R3, rulings.**
 >   - RULED: Q35-Q42 and Q50.
@@ -5383,7 +5389,9 @@ text stays opt-in until R4f.
 >     `mf_art_note_libc`. That makes it non-`none` today on every
 >     artifact that names `memchr`.
 >   - abi → the next number at landing (62 if nothing lands first),
->     with §18.3's readers found by grep;
+>     with §18.3's readers found by grep (`[rev4.5]`: 62 is current as
+>     of main 08caf4a3, abi 61 being the handoff's, f116cff5; never a
+>     literal);
 >   - the spec hunk (both grammars) and a bench inbox note.
 >
 >   **Prerequisite:** R4a. **Trigger:** MET (Q39 ruled; Q53 confirms
@@ -5397,6 +5405,14 @@ text stays opt-in until R4f.
 >   It now feeds R4d's trigger only, not M1's. **Prerequisite:** none.
 >   **Trigger:** `lane/k82hbuild` merged (MET, f116cff5) and
 >   alpha-accepted (Linux alpha OWED).
+>
+>   **`[rev4.5]` DONE** (R-1: main 08caf4a3, merge 348c0a49; Linux
+>   `R4B-DONE status=0`; `memfnr4b_report.md` §9). Results: R4d's
+>   trigger is MET on union-select (below); the lead order is part of
+>   the composite site's form (§15.5); K85's dense-text find-all loss is
+>   removed by the fused forms, and single gate calls on dense text
+>   still lose at SIMD-off. The "Linux alpha OWED" above is read
+>   through §16's `[rev4.5]` note.
 > - **R4c, M1** (composite PRE site + the offset-skip trio, zero
 >   movers; Q41).
 >   - Implement, then replace. `DELEG_SITES` gets its `use` column.
@@ -5419,8 +5435,18 @@ text stays opt-in until R4f.
 >   - The stamp stays `none` (it is SIMD-off text). Any `MEMFN_LIBC`
 >     change is recorded.
 >   - The spec hunk carries §10.6's limits.
+>   - **`[rev4.5]`** The form carries the LEAD ORDER (§15.5): lead first
+>     when a lead is present. Run-first needs a pcrec fact that does
+>     not exist (filed below). The form is not selected for early-hit
+>     single gate calls on dense text.
+>   - **`[rev4.5]`** D149 (§8.6 K-7): the form starts from the plain
+>     loop. Its unroll is measured or compiler-chosen. R-1's `swar` 2x
+>     unroll is the first labelled unmeasured default
+>     (`probes/twins/tb_r4b.c`).
 >
->   **Prerequisite:** R4c. **Trigger:** R4b's cell.
+>   **Prerequisite:** R4c. **Trigger:** R4b's cell. **`[rev4.5]` MET at
+>   SIMD-off on union-select:** `swar` beats `emit` past the floor in
+>   both regimes, 1.4-2.0x (§R4.5.1 item 4).
 > - **M1b, runcmp migrates** (zero movers). Bit 43 crosses (§14.10), and
 >   `RUN_WORDS` becomes the kit's stamp. **Prerequisite:** R4c.
 >   **Trigger:** completeness.
@@ -5473,6 +5499,11 @@ text stays opt-in until R4f.
 >     `-fmemfn-simd` artifacts.
 >   - The spec hunk states the no-portability-promise meaning.
 >   - The bench `pcrec[simd]` testee is requested (D78).
+>   - **`[rev4.5]` The 16 B short-path note** (R-1 §9). At AVX2, `ffl`
+>     loses to `swar` by +0.64 ns (userpass pc16) and +0.36 ns
+>     (cls-n-uc pc16). Short spans belong to the scalar form, inside
+>     the SIMD-on cascade or short path (K-6). Everywhere else `ffl`
+>     wins, at SSE2 and AVX2.
 >
 >   **Prerequisites:** R4c (sites migrated); R4d where its sites are
 >   concerned (SIMD is measured against the current scalar).
@@ -5490,6 +5521,8 @@ text stays opt-in until R4f.
 > - **Filed, not scheduled:**
 >   - the deferred include anchor (§14.8);
 >   - OPTIONAL SITES (Q48);
+>   - `[rev4.5]` a pcrec "lead can reject" density fact (§15.5 item 2).
+>     Trigger: a measured cell where run-first beats lead-first;
 >   - a fused N4 arm;
 >   - FIND_SEQ and F8 `mismatch` by request;
 >   - extraction, which waits for Q36's ruled trigger (a stable API
@@ -5526,7 +5559,7 @@ text stays opt-in until R4f.
 > - **R4a′, the stamp's own event** (§18): `<PREFIX>_MEMFN_FORMS "none"` on every artifact via `mf_stamps`; abi N → N+1 with §18.3's readers; the spec hunk; the bench inbox note. **Prerequisite:** R4a. **Trigger:** Frank's Q39 ruling (it lands before R4c so that M1 stays zero-mover).
 > - **R4b, the first customer's measurement** (probe only): twins.md T-B on Linux ON THE POST-HANDOFF BUILD, both regimes (§21.1), a PORTABLE (SWAR) fused composite variant beside `emit` and the vector `ffl`, on the K82 cells and on K85's `cls-n-uc`. **Prerequisite:** none. **Trigger:** `lane/k82hbuild` merged and alpha-accepted.
 > - **R4c, M1: the composite PRE site and the offset-skip trio migrate, zero movers** (§16): implement (baseline arms, shadow comparator) then replace; `DELEG_SITES` with its `use` column; the three profile axes (§20.2) in `strategy_denials`; `tests/memfn/pins/{arms,off}.tsv` recorded; C4, C5, C10, C11, C12 (9 → 3), C13, C14; I2 over every axis and both comment tiers. **Prerequisites:** R4a′; `lane/k82hbuild` merged; K85 re-measured on the post-handoff build. **Trigger:** R4b shows the PORTABLE fused form beating `emit` past the floor on at least one K82 cell in its own regime, with no loss past the floor in the other.
-> - **R4d, the first movers: the kit's portable fused composite arm** (lead + window in one pass; K85's general answer): abi event, stamp values on movers, the spec hunk with §10.6's four limits, G1 alpha (both regimes) on the pcrec-side movers, the bench `pcrec[memfn-off]` testee requested through the inbox (D78). **Prerequisite:** R4c. **Trigger:** R4b's cell.
+> - **R4d, the first movers: the kit's portable fused composite arm** (lead + window in one pass; K85's general answer): abi event, stamp values on movers, the spec hunk with §10.6's four limits, G1 alpha (both regimes) on the pcrec-side movers, the bench `pcrec[memfn-off]` testee requested through the inbox (D78). **Prerequisite:** R4c. **Trigger:** R4b's cell. **`[rev4.5]` History: "lead + window in one pass" is not K85's general answer; the fused run filter with the lead first is (§15.5).**
 > - **R4e, ON_CAND's first customer.** Filed until a measured cell (twins.md T-A's iterate-in-place lever on a real site); C13 goes live then.
 > - **R4e′, native arms behind `-fmemfn-native`** (default OFF): the kit's ISA arms for the M1 sites; C9 at `-fmemfn-native` with its floor born; `test-axes` and I2 arms for the opt-in; no DEFAULT byte moves (Q49). **Prerequisite:** R4d. **Trigger:** `[OPT-SIMD]` opened (D119: SIMD last).
 > - **R4f, the native default flip** (`memfn-native` default ON): its own ruled abi event. **Prerequisite:** R4e′. **Trigger:** a Linux alpha in which the native arm beats the portable arm past the floor on a mover cell, in both regimes. This is measurable BEFORE the flip, because R4e′ exists: rev 3's circularity, where only the flip could produce the flip's evidence, is gone (r3 G-F11).

@@ -143,6 +143,11 @@ its DESIGN record.**
   - the open questions are Q53-Q55 only.
 
   Read §R4.4 first: its §R4.4.0 maps each ruling to where it now lives.
+  **REVISION 4.5 (lane memfnr45, 2026-10-05), R-1's Linux verdict and
+  D149 folded; rules nothing (Q53-Q55 stay open)**: the lead order is
+  part of the composite site's form (§15.5); R4b DONE, R4d's trigger
+  MET at SIMD-off on union-select (§22); kit forms obey D149 (§8.6
+  K-7). Read §R4.5 first.
 - `twins.md` — R1d (lane memftwin, 2026-10-04), the D77 measurement "does a
   kernel TAILORED to the pattern beat a fixed generic one": T-A set
   classifier per shape vs the generic nibble lookup, T-B a fused scan+verify
