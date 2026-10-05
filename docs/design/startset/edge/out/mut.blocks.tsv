@@ -1,0 +1,81 @@
+id	pat	edge	status	cases	hat	route	dfapf	S	nullable	E	Estar	Tdfa	nseeds	base_disagrees	base_first
+bounds.rxt:8	\b(?:ab|cd)\b	BD	ok	32	dfa	dfa	byte-class-bounded	2	0	63	256	2	2	0	
+bounds.rxt:45	(?:(?<=a)z|w)	BD	ok	14	none	dfa	byte-class-bounded	2	0	2	256	2	2	0	
+bounds.rxt:64	\G(?:ab|cd)\b	BG	ok	19	none	dfa	none	2	0					0	
+bounds.rxt:88	(?:\Gx|\b)(?:ab|cd)\b	BG	ok	21	none	dfa	none	3	0					0	
+bounds.rxt:114	\b(?:ab|cd)\b	SF	ok	20	dfa	dfa	byte-class-bounded	2	0	63	256	2	2	0	
+giveup.rxt:9	(?=(?:a|b|x)*c)x	GU	ok	42	vm	vm		1	0					0	
+hybrid.rxt:16	\b(ab|cd)\b	HY	ok	33	dfa	hybrid	byte-class-bounded	2	0	63	256	2	2	0	
+hybrid.rxt:77	\B(ab|cd)\B	HY	ok	18	dfa	hybrid	byte-class-bounded	2	0	63	256	2	2	0	
+hybrid.rxt:109	\b(ab|cd)\b.{0,2}\b(ab|c)\b	HYC	ok	32	dfa	hybrid	byte-class-bounded	2	0	63	256	2	2	0	
+hybrid.rxt:175	\B(ab|cd){2,3}\B	HYC	ok	33	dfa	hybrid	byte-class-bounded	2	0	63	256	2	2	0	
+hybrid.rxt:225	\B(a|b){1,3}	HYC	ok	27	dfa	hybrid	byte-class-bounded	2	0	63	256	2	2	0	
+hybrid.rxt:274	\B(x|ab){1,2}\b	HYC	ok	25	dfa	hybrid	byte-class-bounded	2	0	63	256	2	2	0	
+lookbehind.rxt:8	\b(?:(?<=bc)d|w)	LB2	ok	36	dfa	hybrid	byte-class-bounded	2	0	63	256	2	2	0	
+lookbehind.rxt:49	(?<=ab)z|\bw	LB2	ok	39	dfa	hybrid	byte-class-bounded	2	0	63	256	2	2	0	
+lookbehind.rxt:93	\b(?<=bc)d	LB2	ok	38	dfa	hybrid	byte-class-bounded	1	0	63	256	1	2	0	
+lookbehind.rxt:136	(?<=abc)d|\bx	LB3	ok	35	dfa	hybrid	byte-class-bounded	2	0	63	256	2	2	0	
+lookbehind.rxt:176	(?:(?<=b(?<=ab)c)d|\bw)	LBN	ok	33	dfa	hybrid	byte-class-bounded	2	0	63	256	2	2	0	
+lookbehind.rxt:214	(?:(?<=b(?<=ab)c)d|(?<=a)z)	LBN	ok	24	none	hybrid	byte-class-bounded	2	0	2	256	2	2	0	
+lookbehind.rxt:243	(?:(?<!a)z|w)	LBNEG	ok	29	dfa	dfa	byte-class-bounded	2	0	3	256	2	2	0	
+lookbehind.rxt:277	(?:(?<![ab])z|w)	LBNEG	ok	26	dfa	dfa	byte-class-bounded	2	0	4	256	2	2	0	
+lookbehind.rxt:308	(?:(?<=a)z|(?<=b)y|w)	LBK	ok	29	none	dfa	byte-class-bounded	3	0	3	256	3	3	0	
+lookbehind.rxt:342	(?:(?<=a)z|w)	LBK	ok	31	none	dfa	byte-class-bounded	2	0	2	256	2	2	0	
+lookbehind.rxt:378	\b(?:ab|cd)\b|(?<=x)z	LBK	ok	33	dfa	dfa	byte-class-bounded	3	0	63	256	3	3	0	
+multiline.rxt:8	(?m)(?:^|x)(?:ab|cd)	ML	ok	34	none	dfa	none	3	0					0	
+multiline.rxt:47	(?m)(?:ab|cd)$	ML	ok	27	none	dfa	byte-class-bounded	2	0	2	2	2	1	0	
+multiline.rxt:79	(?m)(?<=\n)a|b$	ML	ok	18	none	dfa	byte-class-bounded	2	0	2	256	2	2	0	
+multiline.rxt:102	(?:(?<=\r)a|w)	ML	ok	20	none	dfa	byte-class-bounded	2	0	2	256	2	2	0	
+multiline.rxt:127	(?m)\b(?:ab|cd)$	ML	ok	23	dfa	dfa	byte-class-bounded	2	0	63	256	2	2	0	
+reseed.rxt:8	(?:\b|xy)a	RS	ok	33	dfa	dfa	byte-class-bounded	2	0	63	256	2	2	0	
+reseed.rxt:46	(?:\b|z[xy])y	RS	ok	26	dfa	dfa	byte-class-bounded	2	0	63	256	2	2	0	
+reseed.rxt:77	(?:  |\b| xy)y	RS	ok	25	dfa	dfa	byte-class-bounded	2	0	64	256	2	2	0	
+reseed.rxt:107	(?:\b(?<!a)|xxy)a	RS	ok	29	dfa	dfa	byte-class-bounded	2	0	63	256	2	2	0	
+reseed.rxt:141	(?:abz|x(?<=[ab])|\bz)y	RS	ok	18	dfa	dfa	byte-class-bounded	3	0	63	256	2	2	0	
+reseed.rxt:164	(?:\b(?<!a)a|a[xy]a|\ba)z	RS	ok	34	dfa	dfa	byte-class-bounded	1	0	63	256	1	2	0	
+reseed.rxt:203	\B(?<!a)d	M1	ok	28	dfa	dfa	byte-class-bounded	1	0	62	256	1	2	0	
+reseed.rxt:236	\B(?<=bc)d	M1	ok	27	dfa	hybrid	byte-class-bounded	1	0	63	256	1	2	0	
+reseed.rxt:268	\Bd\B	M1	ok	18	dfa	dfa	byte-class-bounded	1	0	63	256	1	2	0	
+utf8.rxt:8	(?:(?<=é)a|\bw)	U8	ok	26	dfa	hybrid	byte-class-bounded	2	0	63	256	2	2	0	
+utf8.rxt:40	(?:(?<=a)z|w)	U8	ok	23	none	dfa	byte-class-bounded	2	0	2	256	2	2	0	
+utf8.rxt:69	\b(?:ab|cd)\b	U8	ok	30	dfa	dfa	byte-class-bounded	2	0	63	256	2	2	0	
+utf8.rxt:105	\b(?:ab|cd)\b	U8CI	ok	18	dfa	dfa	byte-class-bounded	4	0	63	256	4	2	0	
+utf8.rxt:130	\bk\w	U8CI	ok	19	none	dfa	byte-class-bounded	3	0	63	256	3	2	0	
+vmhat.rxt:8	\((?:[^()]|(?R))*\)	VMR	ok	33	vm	vm		1	0					0	
+vmhat.rxt:46	(ab)\1	VMB	ok	30	vm	vm		1	0					0	
+vmhat.rxt:89	()\1x	VMB	ok	9	none	vm		256	0					0	
+vmhat.rxt:108	(a|)\1b	VMB	ok	17	none	vm		256	0					0	
+vmhat.rxt:142	(?=ab)a(b)	VML	ok	15	vm	vm		1	0					0	
+vmhat.rxt:169	(?=.*z)(a)	VML	ok	17	none	hybrid	memchr	1	0	1	1	1	1	0	
+vmhat.rxt:196	(a*)\1	VMN	ok	14	none	vm		256	1					0	
+vmhat.rxt:229	(?:x|(a)\1)?b	VMN	ok	12	vm	vm		3	0					0	
+vmhat.rxt:254	(?i)(ca)t\1	VMI	ok	32	vm	vm		2	0					0	
+vmhat.rxt:298	(k)\1	VMU	ok	20	vm	vm		3	0					0	
+vmhat.rxt:333	(\w)\1x	VMB	ok	20	vm	vm		63	0					0	
+vmhat.rxt:363	\b(\w+)\s+\1\b	VMB	ok	30	vm	vm		63	0					0	
+vmhat.rxt:408	(?1)x(y)	VMC	ok	14	none	vm		256	0					0	
+vmhat.rxt:432	\Bcat\B	VMW	ok	27	vm	vm		1	0					0	
+vmhat.rxt:465	(?:\Ga|b)c	VMG	ok	14	vm	vm		2	0					0	
+vmhat.rxt:485	a\Kb	VMK	ok	11	vm	vm		1	0					0	
+vmhat.rxt:502	a*b?	VMN	ok	8	vm-nullable	vm		2	1					0	
+witnesses.rxt:8	(?:(?<=a)z|w)	W	ok	40	none	dfa	byte-class-bounded	2	0	2	256	2	2	0	
+witnesses.rxt:53	(?:(?<*a)z|w)	W	ok	18	none	dfa	byte-class-bounded	2	0	2	256	2	2	0	
+witnesses.rxt:76	(?:(?<=[ab])z|w)	W	ok	22	none	dfa	byte-class-bounded	2	0	3	256	2	2	0	
+witnesses.rxt:103	(?:(?<*[ab])z|w)	W	ok	14	none	dfa	byte-class-bounded	2	0	3	256	2	2	0	
+witnesses.rxt:122	(?<=a)b|(?<=bc)d	W	ok	38	none	hybrid	byte-class-bounded	2	0	2	256	2	2	0	
+witnesses.rxt:165	(?m)(?<=\n)a|b$	W	ok	30	none	dfa	byte-class-bounded	2	0	2	256	2	2	0	
+witnesses.rxt:200	(?:(?<=a)z|(?<=b)y|w)	W3	ok	28	none	dfa	byte-class-bounded	3	0	3	256	3	3	0	
+witnesses.rxt:233	(?:\b|x)y	W	ok	19	none	dfa	byte-class-bounded	2	0	62	256	1	2	0	
+witnesses.rxt:257	(?:\bab|x)	S0	ok	35	dfa	dfa	byte-class-bounded	2	0	63	256	2	2	0	
+witnesses.rxt:297	(?:\Bab|x)	S0	ok	24	dfa	dfa	byte-class-bounded	2	0	63	256	2	2	0	
+wordb.rxt:8	\b(?:ab|cd)\b	WB	ok	59	dfa	dfa	byte-class-bounded	2	0	63	256	2	2	0	
+wordb.rxt:72	\B(?:ab|cd)\B	WB	ok	35	dfa	dfa	byte-class-bounded	2	0	63	256	2	2	0	
+wordb.rxt:112	\b(?:ab|cd)\B	WB	ok	24	dfa	dfa	byte-class-bounded	2	0	63	256	2	2	0	
+wordb.rxt:141	\B(?:ab|cd)\b	WB	ok	21	dfa	dfa	byte-class-bounded	2	0	63	256	2	2	0	
+wordb.rxt:167	\b(?:ab|cd)\b	WBU	ok	30	dfa	dfa	byte-class-bounded	2	0	134	256	2	2	0	
+wordb.rxt:203	\B(?:ab|cd)\B	WBU	ok	18	dfa	dfa	byte-class-bounded	2	0	134	256	2	2	0	
+wordb.rxt:227	\b(?:ab|cd)\b	CI	ok	26	dfa	dfa	byte-class-bounded	4	0	63	256	4	2	0	
+wordb.rxt:259	(?i)\bcat\b	HO	ok	37	dfa	dfa	byte-class-bounded	2	0	63	256	2	2	0	
+wordb.rxt:301	\b[a-z_][a-z0-9_]{0,31}=\"(?:[^\"\\]|\\.)*\"	HO	ok	36	dfa	dfa	byte-class-bounded	27	0	63	256	27	2	0	
+utfcheck_cells.tsv:78	\b(?:ab|cd)\b		ok	25	dfa	dfa	byte-class-bounded	2	0	63	256	2	2	0	
+utfcheck_cells.tsv:79	(\w)\1x		ok	23	vm	vm		63	0					0	

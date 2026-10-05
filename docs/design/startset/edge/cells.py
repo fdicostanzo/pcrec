@@ -40,31 +40,32 @@ B("witnesses", r"(?:(?<=a)z|(?<=b)y|w)", ["az", "by", "xaz", "xby", "abyaz", "bz
 B("witnesses", r"(?:\b|x)y", ["xy", " xy", "zxy", "y", " y", "zy"], "W",
   "S\\E = {x} but Tdfa = {y}: x is a CONTEXT here (its own class), never a thread start; r3's set is "
   "UNSOUND only where an S\\E byte is in Tdfa, and this block is the control that it is not always"),
-B("witnesses", r"(?:\bab|x)", [" ab", "ab", "zab", "xab", " x", "abab", " ax ab"], "S0",
+B("witnesses", r"(?:\bab|x)", [" ab", "ab", "zab", "xab", " x", "abab", " ax ab", "babx"], "S0",
   "a 2-seed MOVER where E* WITHOUT s0 drops a: a begins a match only from the nonword context, so a set "
   "built from the word-context seed alone skips the start at 1 of ' ab'"),
-B("witnesses", r"(?:\Bab|x)", ["zab", "ab", " ab", "zzab", "x", "zx"], "S0", "the \\B polarity of the s0 omission"),
+B("witnesses", r"(?:\Bab|x)", ["zab", "ab", " ab", "zzab", "x", "zx", "xz"], "S0", "the \\B polarity of the s0 omission"),
 
 # ---------------------------------------------------------------- LB: lookbehind context across the skip
 B("lookbehind", r"\b(?:(?<=bc)d|w)", ["bcd", " bcd", "bc d", "abcd", "w", " w", "xw", "bcw", "d", " d"], "LB2",
   "a hybrid MOVER (T = {d,w}): the two-byte context bc spans the skipped bytes; the prefilter erases the "
   "lookbehind and the VM verifies"),
-B("lookbehind", r"(?<=ab)z|\bw", ["abz", "xabz", "ab z", "az", "bz", "w", " w", "abw", "zabz"], "LB2",
+B("lookbehind", r"(?<=ab)z|\bw", ["abz", "xabz", "ab z", "az", "bz", "w", " w", "abw", "zabz", "abza"], "LB2",
   "a hybrid mover; the two context bytes are both skipped (neither is in T = {z,w})"),
-B("lookbehind", r"\b(?<=bc)d", ["bcd", "bc d", "abcd", " bcd", "d"], "LB2", "|T| = 1 hybrid mover (the first-memchr form)"),
-B("lookbehind", r"(?<=abc)d|\bx", ["abcd", "xabcd", "abd", "bcd", "x", "abcx", " x"], "LB3", "three context bytes"),
-B("lookbehind", r"(?:(?<=b(?<=ab)c)d|\bw)", ["abcd", "xbcd", "bcd", "aabcd", "w", "abcw"], "LBN",
+B("lookbehind", r"\b(?<=bc)d", ["bcd", "bc d", "abcd", " bcd", "d", "xbcd", " d", "cd", "abcdd"], "LB2",
+  "|T| = 1 hybrid mover: the first-memchr-BOUNDED form, both landing paths (a hit, or clamped to n-1)"),
+B("lookbehind", r"(?<=abc)d|\bx", ["abcd", "xabcd", "abd", "bcd", "x", "abcx", " x", "abcda"], "LB3", "three context bytes"),
+B("lookbehind", r"(?:(?<=b(?<=ab)c)d|\bw)", ["abcd", "xbcd", "bcd", "aabcd", "w", "abcw", "abcda"], "LBN",
   "NESTED lookbehind: (?<=ab) inside (?<=b..c), context three bytes back"),
 B("lookbehind", r"(?:(?<=b(?<=ab)c)d|(?<=a)z)", ["abcd", "az", "xbcd", "aza", "abcdaz"], "LBN",
   "nested lookbehind beside a one-byte context: a seeded hybrid, S\\E = {z} (declined; r3 admits it)"),
-B("lookbehind", r"(?:(?<!a)z|w)", ["az", "z", "xz", "aw", "aaz", "zaz", "bz"], "LBNEG",
+B("lookbehind", r"(?:(?<!a)z|w)", ["az", "z", "xz", "aw", "aaz", "zaz", "bz", "azz", "wa"], "LBNEG",
   "a NEGATIVE one-byte lookbehind: a DFA mover; the skipped a must suppress z"),
-B("lookbehind", r"(?:(?<![ab])z|w)", ["az", "bz", "cz", "z", "abz", "cbz"], "LBNEG", "negative, class context"),
-B("lookbehind", r"(?:(?<=a)z|(?<=b)y|w)", ["xxaz", "bbby", "abaz", "bay", "aaaaz"], "LBK",
+B("lookbehind", r"(?:(?<![ab])z|w)", ["az", "bz", "cz", "z", "abz", "cbz", "azz", "za"], "LBNEG", "negative, class context"),
+B("lookbehind", r"(?:(?<=a)z|(?<=b)y|w)", ["xxaz", "bbby", "abaz", "bay", "aaaaz", "azx"], "LBK",
   "k context-changing bytes before the S\\E byte: only the LAST skipped byte's class reaches the re-seed"),
-B("lookbehind", r"(?:(?<=a)z|w)", ["bbbaz", "abbbz", "babaz", "aaaz", "baz"], "LBK",
+B("lookbehind", r"(?:(?<=a)z|w)", ["bbbaz", "abbbz", "babaz", "aaaz", "baz", "azb"], "LBK",
   "k skipped bytes: the context is set, reset, set again before z"),
-B("lookbehind", r"\b(?:ab|cd)\b|(?<=x)z", ["xz", "abxz", "ab xz", " xz", "cd", "xcd", "zxz"], "LBK",
+B("lookbehind", r"\b(?:ab|cd)\b|(?<=x)z", ["xz", "abxz", "ab xz", " xz", "cd", "xcd", "zxz", "xzx"], "LBK",
   "a 3-seed MOVER (nonword, word, x): the x context is a word byte too"),
 
 # ---------------------------------------------------------------- WB: \b / \B, both polarities, ASCII and --ucp
@@ -84,16 +85,37 @@ B("wordb", r"(?i)\bcat\b", ["ccat cat", "xcat", "cat", "acat CAT", "c cat", "Cat
 B("wordb", r"\b[a-z_][a-z0-9_]{0,31}=\"(?:[^\"\\]|\\.)*\"", ["x=\"a\"", " ab=\"\"", "9a=\"b\"", "a b=\"\"", "=\"\" a=\"\""], "HO",
   "kv-quoted (bench), REQ_HANDOFF 32"),
 
+# ---------------------------------------------------------------- RS: the re-seed's FORM (sound-F7 measured, not argued)
+# search_uncond.py found these DFA-hat MOVERS (84 random-family movers, 6 hits): state 0 is RE-ENTERED mid-scan
+# through a byte whose seed is NOT state 0 (here: after "xy", the machine is back in s0's class), so
+# pf_emit_ofs_reseed's UNCONDITIONAL `pos ? seed[..] : s0` overwrites a correct state 0 when the skip did not move.
+# The conditional form (re-seed only if the scan moved) is REQUIRED on ordinary seeded machines, not only on \G ones.
+B("reseed", r"(?:\b|xy)a", ["xya", "zxya", " xya", "a", "xa", "xyxya", "ax", "ya a"], "RS", "uncond re-seed loses (0,3) of 'xya'"),
+B("reseed", r"(?:\b|z[xy])y", ["zxy", "azxy", "zyy", " zxy", "yz", "xy y"], "RS", "uncond re-seed loses 'zxy'"),
+B("reseed", r"(?:  |\b| xy)y", [" xyy", "  y", "a xyy", "y", "y ", "xy y"], "RS", "uncond re-seed loses ' xyy'"),
+B("reseed", r"(?:\b(?<!a)|xxy)a", ["xxya", "axxya", "ba", "xxyxxya", "yaxxya"], "RS", "uncond re-seed loses 'xxya'"),
+B("reseed", r"(?:abz|x(?<=[ab])|\bz)y", ["abzy", "zabzy", "zy", " zy"], "RS",
+  "the UNCONDITIONAL re-seed loses where NO re-seed at all does not (sweep: uncond 19, none 0)"),
+B("reseed", r"(?:\b(?<!a)a|a[xy]a|\ba)z", ["axaz", "aaz", " az", "ayaz", "za z", "az", "xaz", "a z"], "RS",
+  "uncond 38, none 0; also |T| = 1 (the memchr-bounded landing paths)"),
+
+B("reseed", r"\B(?<!a)d", ["xd", "xdz", "ad", "zad", " d", "d", "xxd", "adxd"], "M1",
+  "|T| = 1 DFA mover under \\B: the stale s0 is RESTRICTIVE here, so a missing re-seed on EITHER landing path of "
+  "the first-memchr-bounded form loses: 'xd' (the d is the last byte: memchr over [0, n-1) misses, clamp path) and "
+  "'xdz' (hit path)"),
+B("reseed", r"\B(?<=bc)d", ["bcd", "xbcd", "bcdz", " bcd", "abcdbcd"], "M1", "|T| = 1 HYBRID mover under \\B: both landing paths"),
+B("reseed", r"\Bd\B", ["xdx", "xd", "dx", "zzdzz", "d"], "M1", "|T| = 1, \\B both sides"),
+
 # ---------------------------------------------------------------- ML: (?m) under the LF convention (the only one pcrec builds)
 B("multiline", "(?m)(?:^|x)(?:ab|cd)", ["ab", "\nab", "xab", "zab", "z\nab", "\rab", "\r\nab", "zxab"], "ML",
   "the line start as a skip context: \\r is NOT a newline (LF is pcrec's only convention, D64)"),
 B("multiline", "(?m)(?:ab|cd)$", ["ab", "ab\n", "abx", "ab\r\n", "ab\r", "xab\nab"], "ML", "(?m)$ before LF only"),
-B("multiline", "(?m)(?<=\\n)a|b$", ["\r\na", "\ra", "\n\na", "b\r"], "ML", "the witness at CR and CRLF bytes"),
-B("multiline", "(?:(?<=\\r)a|w)", ["\ra", "\r\na", "a", "\na", "x\ra"], "ML", "a CR context: an ordinary byte"),
+B("multiline", "(?m)(?<=\\n)a|b$", ["\r\na", "\ra", "\n\na", "b\r", "\na\r"], "ML", "the witness at CR and CRLF bytes"),
+B("multiline", "(?:(?<=\\r)a|w)", ["\ra", "\r\na", "a", "\na", "x\ra", "\ra\r"], "ML", "a CR context: an ordinary byte"),
 B("multiline", "(?m)\\b(?:ab|cd)$", ["ab", "x ab\n", "xab\nab", "ab\nab\n"], "ML", "\\b and (?m)$ together"),
 
 # ---------------------------------------------------------------- U8: utf8 contexts
-B("utf8", "(?:(?<=é)a|\\bw)", [U("éa"), U("xéa"), U("ea"), U("w"), U("éw"), b"\xa9a", U("ééa")], "U8",
+B("utf8", "(?:(?<=é)a|\\bw)", [U("éa"), U("xéa"), U("ea"), U("w"), U("éw"), b"\xa9a", U("ééa"), b"\xc3\xa9a\xc3"], "U8",
   "the context character é is TWO bytes C3 A9: the byte before the start is a CONTINUATION byte", enc="utf8"),
 B("utf8", r"(?:(?<=a)z|w)", [U("az"), U("éaz"), U("aéz"), b"a\xffz", b"\xffaz", U("aza")], "U8",
   "the witness under utf8, with ill-formed bytes around the context", enc="utf8"),
@@ -105,9 +127,9 @@ B("utf8", r"\bk\w", [U("Kx"), U("xKx"), U("kx"), U(" Kx"), U("x kx")], "U8CI
   "a caseless start set holding a UTF-8 LEAD byte (E2 for U+212A)", enc="utf8", flags="i"),
 
 # ---------------------------------------------------------------- BD: subject start/end/empty, search_from > 0, \G
-B("bounds", r"\b(?:ab|cd)\b", ["", "a", "ab", "b", "xab", "abx", "x ab", "ab "], "BD",
+B("bounds", r"\b(?:ab|cd)\b", ["", "a", "ab", "b", "xab", "abx", "x ab", "ab ", "bab ab"], "BD",
   "match at subject start and end, the empty subject; the bounded skip's n-1 stop"),
-B("bounds", r"(?:(?<=a)z|w)", ["", "z", "w", "a", "az"], "BD", "the witness at the subject edges"),
+B("bounds", r"(?:(?<=a)z|w)", ["", "z", "w", "a", "az", "azz"], "BD", "the witness at the subject edges"),
 B("bounds", r"\G(?:ab|cd)\b", ["ab", "xab", "abab", "ab ab", ""], "BG",
   "\\G: an ATTEMPT-scan machine (no DFA-hat skip site); the unconditional re-seed's only hazard is a \\G "
   "start state, and \\G never reaches the unanchored scan"),
@@ -124,6 +146,12 @@ B("hybrid", r"\b(ab|cd)\b.{0,2}\b(ab|c)\b", ["ab c", "xab c ab c", "ab  ab", "ba
 B("hybrid", r"\B(ab|cd){2,3}\B", ["xababx", "xabx xababx", "ababab", "xabcdx"], "HYC",
   "count-collapsed \\B: the collapse widens {2,3} to {1,}", xflags=["-fprefilter-collapse"], name="coll-2"),
 
+B("hybrid", r"\B(a|b){1,3}", ["xa", "xab", "za b", "xaaab", "a", "ab", "xbx"], "HYC",
+  "a count-collapsed hybrid whose NO-RE-SEED twin LOSES (search_uncond.py FAMILY=collapsed: 36 of 97 collapsed "
+  "movers lose without the re-seed, 0 with it): sound-F5(d)'s failing witness", xflags=["-fprefilter-collapse"], name="coll-3"),
+B("hybrid", r"\B(x|ab){1,2}\b", ["zab", "zx", "zab x", "zxab", "ab", "zx "], "HYC", "collapsed, \\B then \\b",
+  xflags=["-fprefilter-collapse"], name="coll-4"),
+
 # ---------------------------------------------------------------- VM: the VM hat
 B("vmhat", r"\((?:[^()]|(?R))*\)", ["(a)", "x(a)", "((a)", "(()", "a(b(c)d)", ")(", "(a"], "VMR", "recursion"),
 B("vmhat", r"(ab)\1", ["abab", "aabab", "ababab", "abaab", "xabab"], "VMB",
@@ -135,18 +163,18 @@ B("vmhat", r"(?=.*z)(a)", ["az", "ba z", "a", "za", "aaz"], "VML", "a lookahead-
 B("vmhat", r"(a*)\1", ["", "b", "aa", "baa", "aaa"], "VMN", "NULLABLE: V declines; seeking would lose the empty match at 0"),
 B("vmhat", r"(?:x|(a)\1)?b", ["b", "xb", "aab", "ab"], "VMN", "nullable start set (b reached through an optional prefix) — non-nullable pattern"),
 B("vmhat", r"(?i)(ca)t\1", ["catca", "CatCA", "xcatca", "ccatca", "cATca"], "VMI", "caseless: S = {c, C}"),
-B("vmhat", r"(k)\1", [U("kk"), U("Kk"), U("kK"), U("xKK"), U("Kk")], "VMU",
+B("vmhat", r"(k)\1", [U("kk"), U("Kk"), U("kK"), U("xKK"), U("Kk"), b"\xe2kk"], "VMU",
   "utf8 caseless: S holds the LEAD byte E2 of U+212A", enc="utf8", flags="i"),
 B("vmhat", r"(\w)\1x", ["aax", "abbx", "aaax", "xx", "ab"], "VMB", "a class-led backreference (|S| = 63)"),
 B("vmhat", r"\b(\w+)\s+\1\b", ["ab ab", "xab ab", "a a", "ab abx ab ab"], "VMB", "the bench's dup-word shape"),
 B("vmhat", r"(?1)x(y)", ["yxy", "ayxy", "yxyx"], "VMC", "a subroutine call ahead of its group", engine="vm"),
-B("vmhat", r"\Bcat\B", ["xcatx", "cat", "acatb", "cats"], "VMW", "context assertions under the forced VM", engine="vm"),
+B("vmhat", r"\Bcat\B", ["xcatx", "cat", "acatb", "cats", "ccatx"], "VMW", "context assertions under the forced VM", engine="vm"),
 B("vmhat", r"(?:\Ga|b)c", ["ac", "bc", "xac", "abc"], "VMG", "\\G under the forced VM: the seek must not move the \\G attempt", engine="vm"),
 B("vmhat", r"a\Kb", ["ab", "aab", "xab"], "VMK", "\\K under the forced VM", engine="vm"),
 B("vmhat", r"a*b?", ["", "zz", "a", "b"], "VMN", "NULLABLE under the forced VM (S491's witness)", engine="vm"),
 
 # ---------------------------------------------------------------- GU: the capacity give-ups of Q-R3
-B("giveup", r"(?=(?:a|b|x)*c)x", ["ababababababababababababxc", "xc", "abxc"], "GU",
+B("giveup", r"(?=(?:a|b|x)*c)x", ["ababababababababababababxc", "xc", "abxc", "aaaaax"], "GU",
   "frames=8: the attempt at 0 exhausts frames inside the lookahead; the hat skips it (a in not S = {x})",
   engine="vm", frames=8),
 ]
@@ -156,7 +184,7 @@ UTFCHECK = [
 B("utfcheck", r"\b(?:ab|cd)\b", [b"\xff", b"ab\xff", b"\xffab", b"x\xff", b"", b"ab", b"\xc3", b"zz\xffzz"], "UC",
   "a DFA-hat mover under -futf-check: a subject with an ill-formed byte and NO T byte must refuse (-9), not "
   "return 0 from an early no-candidate exit", enc="utf8", xflags=["-futf-check"]),
-B("utfcheck", r"(\w)\1x", [b"\xff", b"aax\xff", b"\xffaax", b"zz", b"\xc3", b""], "UC",
+B("utfcheck", r"(\w)\1x", [b"\xff", b"aax\xff", b"\xffaax", b"zz", b"\xc3", b"", b"aaax"], "UC",
   "a VM-hat artifact under -futf-check: the seek's no-candidate return must sit AFTER rx_valid_upto",
   enc="utf8", xflags=["-futf-check"]),
 ]

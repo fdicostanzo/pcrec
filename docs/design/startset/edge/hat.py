@@ -94,7 +94,7 @@ def classify(b, d):
     S, nullable = fsp_set(b)
     o = {"status": "ok", "path": path, "engine": st.get("ENGINE"), "vmpf": st.get("VM_PREFILTER", ""),
          "dfapf": st.get("DFA_PREFILTER", ""), "scan": st.get("DFA_SCAN", ""), "vmstart": st.get("VM_START", ""),
-         "handoff": st.get("REQ_HANDOFF", ""), "utfcheck": st.get("UTF_CHECK", ""), "S": S, "nullable": nullable}
+         "handoff": st.get("REQ_HANDOFF", ""), "lang": st.get("VM_PREFILTER_LANG", ""), "utfcheck": st.get("UTF_CHECK", ""), "S": S, "nullable": nullable}
     m = machine(src, "rx")
     o["m"] = m
     hat = "none"
@@ -127,6 +127,25 @@ def dfa_twin(src, p, T, reseed="cond"):
     else:
         rs = ""
     new = "%ssize_t entry_position = scan_position; (void)entry_position;\n" % ind + k.group(0) + rs
+    return src[:k.start()] + new + src[k.end():]
+
+
+def dfa_twin_memchr_bounded(src, p, T, found=True, clamp=True):
+    """The `first-memchr-bounded` form (|T| = 1): pf_emit_memchr_bounded's two landing
+    paths -- a hit at q, or no hit in [pos, n-1) clamped to n-1 -- each with its own
+    (conditional) re-seed; `found`/`clamp` False deletes that path's re-seed (S483/S484)."""
+    assert len(T) == 1
+    (byte,) = tuple(T)
+    ms = list(re.finditer(SKIP_RE % p, src)); assert len(ms) == 1 and ms[0].group(2), "needs the bounded skip"
+    k = ms[0]; ind = k.group(1)
+    seed = "%s_forward_seed_state[%s_forward_byte_class[subject[scan_position - 1]]]" % (p, p)
+    rs = lambda on: ("if (scan_position > entry_position) forward_state = %s;" % seed) if on else "/* re-seed deleted */"
+    new = ("%ssize_t entry_position = scan_position;\n"
+           "%sif (scan_position + 1 < subject_length) {\n"
+           "%s    const void *q = memchr(subject + scan_position, %d, subject_length - 1 - scan_position);\n"
+           "%s    if (q) { scan_position = (size_t)((const unsigned char *)q - subject); %s }\n"
+           "%s    else   { scan_position = subject_length - 1; %s }\n"
+           "%s}\n") % (ind, ind, ind, byte, ind, rs(found), ind, rs(clamp), ind)
     return src[:k.start()] + new + src[k.end():]
 
 

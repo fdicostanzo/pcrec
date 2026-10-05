@@ -1,0 +1,542 @@
+id	pat	hat	variant	note	status	cells_detecting	sweep_cases	sweep_diffs	sweep_witness	first_cell
+bounds.rxt:8	\b(?:ab|cd)\b	dfa	D0-ok		built	0	36409	0		
+bounds.rxt:8	\b(?:ab|cd)\b	dfa	D1-r3-SnE	identical table (T = D0's)	identical					
+bounds.rxt:8	\b(?:ab|cd)\b	dfa	DX-Tdfa	identical table (T = D0's)	identical					
+bounds.rxt:8	\b(?:ab|cd)\b	dfa	D2-omit-seed	identical table (E* without seed 6 is still 63 bytes)	identical					
+bounds.rxt:8	\b(?:ab|cd)\b	dfa	D3-omit-s0	declined	declined					
+bounds.rxt:8	\b(?:ab|cd)\b	dfa	D4-no-reseed		built	1	36409	2	0 "bab ab"	p=0 "bab ab" expect ('m', [(4, 6)]) got (0,)
+bounds.rxt:8	\b(?:ab|cd)\b	dfa	D5-uncond-reseed		built	0	36409	0		
+bounds.rxt:8	\b(?:ab|cd)\b	dfa	D9-drop-member	drop 0x61	built	10	36409	645	0 "ab"	p=0 "ab" expect ('m', [(0, 2)]) got (0,)
+bounds.rxt:8	\b(?:ab|cd)\b	dfa	D9-drop-member	drop 0x63	built	0	36409	0		
+bounds.rxt:45	(?:(?<=a)z|w)	none	D0-ok	declined	declined					
+bounds.rxt:45	(?:(?<=a)z|w)	none	D1-r3-SnE	T=1	built	1	7108	552	0 "azz"	p=0 "azz" expect ('m', [(1, 2)]) got (0,)
+bounds.rxt:45	(?:(?<=a)z|w)	none	DX-Tdfa	declined	declined					
+bounds.rxt:45	(?:(?<=a)z|w)	none	D2-omit-seed	seed 4: |E*_k|=2 |T|=1	built	1	7108	552	0 "azz"	p=0 "azz" expect ('m', [(1, 2)]) got (0,)
+bounds.rxt:45	(?:(?<=a)z|w)	none	D3-omit-s0	identical table (|E*_s0|=255)	identical					
+bounds.rxt:114	\b(?:ab|cd)\b	dfa	D0-ok		built	0	36409	0		
+bounds.rxt:114	\b(?:ab|cd)\b	dfa	D1-r3-SnE	identical table (T = D0's)	identical					
+bounds.rxt:114	\b(?:ab|cd)\b	dfa	DX-Tdfa	identical table (T = D0's)	identical					
+bounds.rxt:114	\b(?:ab|cd)\b	dfa	D2-omit-seed	identical table (E* without seed 6 is still 63 bytes)	identical					
+bounds.rxt:114	\b(?:ab|cd)\b	dfa	D3-omit-s0	declined	declined					
+bounds.rxt:114	\b(?:ab|cd)\b	dfa	D4-no-reseed		built	2	36409	2	0 "zab ab"	p=0 "zab ab" expect ('m', [(4, 6)]) got (0,)
+bounds.rxt:114	\b(?:ab|cd)\b	dfa	D5-uncond-reseed		built	0	36409	0		
+bounds.rxt:114	\b(?:ab|cd)\b	dfa	D9-drop-member	drop 0x61	built	14	36409	645	0 "ab"	p=0 "zab ab" expect ('m', [(4, 6)]) got (0,)
+bounds.rxt:114	\b(?:ab|cd)\b	dfa	D9-drop-member	drop 0x63	built	0	36409	0		
+giveup.rxt:9	(?=(?:a|b|x)*c)x	vm	V0-ok		built	0	36409	0		
+giveup.rxt:9	(?=(?:a|b|x)*c)x	vm	V1-late		built	3	36409	3313	0 "xc"	p=24 "ababababababababababababxc" expect ('m', [(24, 25)]) got (0,)
+giveup.rxt:9	(?=(?:a|b|x)*c)x	vm	V2-drop-member	drop 0x78 (begins a match in the cells)	built	29	36409	6147	0 "xc"	p=0 "ababababababababababababxc" expect ('m', [(24, 25)]) got (0,)
+giveup.rxt:9	(?=(?:a|b|x)*c)x	vm	V4-retry-skip		built	0	36409	0		
+hybrid.rxt:16	\b(ab|cd)\b	dfa	D0-ok		built	0	22461	0		
+hybrid.rxt:16	\b(ab|cd)\b	dfa	D1-r3-SnE	identical table (T = D0's)	identical					
+hybrid.rxt:16	\b(ab|cd)\b	dfa	DX-Tdfa	identical table (T = D0's)	identical					
+hybrid.rxt:16	\b(ab|cd)\b	dfa	D2-omit-seed	identical table (E* without seed 6 is still 63 bytes)	identical					
+hybrid.rxt:16	\b(ab|cd)\b	dfa	D3-omit-s0	declined	declined					
+hybrid.rxt:16	\b(ab|cd)\b	dfa	D4-no-reseed		built	3	22461	0		p=0 "bab ab" expect ('m', [(4, 6), (4, 6)]) got (0,)
+hybrid.rxt:16	\b(ab|cd)\b	dfa	D5-uncond-reseed		built	0	22461	0		
+hybrid.rxt:16	\b(ab|cd)\b	dfa	D9-drop-member	drop 0x61	built	18	22461	175	0 "ab"	p=0 "bab ab" expect ('m', [(4, 6), (4, 6)]) got (0,)
+hybrid.rxt:16	\b(ab|cd)\b	dfa	D9-drop-member	drop 0x63	built	5	22461	0		p=0 "xab cd" expect ('m', [(4, 6), (4, 6)]) got (0,)
+hybrid.rxt:77	\B(ab|cd)\B	dfa	D0-ok		built	0	36409	0		
+hybrid.rxt:77	\B(ab|cd)\B	dfa	D1-r3-SnE	identical table (T = D0's)	identical					
+hybrid.rxt:77	\B(ab|cd)\B	dfa	DX-Tdfa	identical table (T = D0's)	identical					
+hybrid.rxt:77	\B(ab|cd)\B	dfa	D2-omit-seed	identical table (E* without seed 6 is still 63 bytes)	identical					
+hybrid.rxt:77	\B(ab|cd)\B	dfa	D3-omit-s0	identical table (|E*_s0|=195)	identical					
+hybrid.rxt:77	\B(ab|cd)\B	dfa	D4-no-reseed		built	7	36409	366	0 "xabx"	p=0 "xabx" expect ('m', [(1, 3), (1, 3)]) got (0,)
+hybrid.rxt:77	\B(ab|cd)\B	dfa	D5-uncond-reseed		built	0	36409	0		
+hybrid.rxt:77	\B(ab|cd)\B	dfa	D9-drop-member	drop 0x61	built	7	36409	648	0 "xabx"	p=0 "xabx" expect ('m', [(1, 3), (1, 3)]) got (0,)
+hybrid.rxt:77	\B(ab|cd)\B	dfa	D9-drop-member	drop 0x63	built	0	36409	0		
+hybrid.rxt:109	\b(ab|cd)\b.{0,2}\b(ab|c)\b	dfa	D0-ok		built	0	22461	0		
+hybrid.rxt:109	\b(ab|cd)\b.{0,2}\b(ab|c)\b	dfa	D1-r3-SnE	identical table (T = D0's)	identical					
+hybrid.rxt:109	\b(ab|cd)\b.{0,2}\b(ab|c)\b	dfa	DX-Tdfa	identical table (T = D0's)	identical					
+hybrid.rxt:109	\b(ab|cd)\b.{0,2}\b(ab|c)\b	dfa	D2-omit-seed	identical table (E* without seed 7 is still 63 bytes)	identical					
+hybrid.rxt:109	\b(ab|cd)\b.{0,2}\b(ab|c)\b	dfa	D3-omit-s0	declined	declined					
+hybrid.rxt:109	\b(ab|cd)\b.{0,2}\b(ab|c)\b	dfa	D4-no-reseed		built	0	22461	0		
+hybrid.rxt:109	\b(ab|cd)\b.{0,2}\b(ab|c)\b	dfa	D5-uncond-reseed		built	0	22461	0		
+hybrid.rxt:109	\b(ab|cd)\b.{0,2}\b(ab|c)\b	dfa	D9-drop-member	drop 0x61	built	14	22461	6	0 "ab c"	p=0 "ab c" expect ('m', [(0, 4), (0, 2), (3, 4)]) got (0,)
+hybrid.rxt:109	\b(ab|cd)\b.{0,2}\b(ab|c)\b	dfa	D9-drop-member	drop 0x63	built	0	22461	0		
+hybrid.rxt:175	\B(ab|cd){2,3}\B	dfa	D0-ok		built	0	22461	0		
+hybrid.rxt:175	\B(ab|cd){2,3}\B	dfa	D1-r3-SnE	identical table (T = D0's)	identical					
+hybrid.rxt:175	\B(ab|cd){2,3}\B	dfa	DX-Tdfa	identical table (T = D0's)	identical					
+hybrid.rxt:175	\B(ab|cd){2,3}\B	dfa	D2-omit-seed	identical table (E* without seed 6 is still 63 bytes)	identical					
+hybrid.rxt:175	\B(ab|cd){2,3}\B	dfa	D3-omit-s0	identical table (|E*_s0|=195)	identical					
+hybrid.rxt:175	\B(ab|cd){2,3}\B	dfa	D4-no-reseed		built	0	22461	0		
+hybrid.rxt:175	\B(ab|cd){2,3}\B	dfa	D5-uncond-reseed		built	0	22461	0		
+hybrid.rxt:175	\B(ab|cd){2,3}\B	dfa	D9-drop-member	drop 0x61	built	7	22461	0		p=0 "xababx" expect ('m', [(1, 5), (3, 5)]) got (0,)
+hybrid.rxt:175	\B(ab|cd){2,3}\B	dfa	D9-drop-member	drop 0x63	built	0	22461	0		
+hybrid.rxt:225	\B(a|b){1,3}	dfa	D0-ok		built	0	22461	0		
+hybrid.rxt:225	\B(a|b){1,3}	dfa	D1-r3-SnE	identical table (T = D0's)	identical					
+hybrid.rxt:225	\B(a|b){1,3}	dfa	DX-Tdfa	identical table (T = D0's)	identical					
+hybrid.rxt:225	\B(a|b){1,3}	dfa	D2-omit-seed	identical table (E* without seed 3 is still 63 bytes)	identical					
+hybrid.rxt:225	\B(a|b){1,3}	dfa	D3-omit-s0	identical table (|E*_s0|=195)	identical					
+hybrid.rxt:225	\B(a|b){1,3}	dfa	D4-no-reseed		built	3	22461	1568	0 "xa"	p=0 "xa" expect ('m', [(1, 2), (1, 2)]) got (0,)
+hybrid.rxt:225	\B(a|b){1,3}	dfa	D5-uncond-reseed		built	0	22461	0		
+hybrid.rxt:225	\B(a|b){1,3}	dfa	D9-drop-member	drop 0x61	built	1	22461	801	0 "xax"	p=0 "za b" expect ('m', [(1, 2), (1, 2)]) got (0,)
+hybrid.rxt:225	\B(a|b){1,3}	dfa	D9-drop-member	drop 0x62	built	1	22461	801	0 "xbx"	p=0 "xbx" expect ('m', [(1, 2), (1, 2)]) got (0,)
+hybrid.rxt:274	\B(x|ab){1,2}\b	dfa	D0-ok		built	0	22461	0		
+hybrid.rxt:274	\B(x|ab){1,2}\b	dfa	D1-r3-SnE	identical table (T = D0's)	identical					
+hybrid.rxt:274	\B(x|ab){1,2}\b	dfa	DX-Tdfa	identical table (T = D0's)	identical					
+hybrid.rxt:274	\B(x|ab){1,2}\b	dfa	D2-omit-seed	identical table (E* without seed 5 is still 63 bytes)	identical					
+hybrid.rxt:274	\B(x|ab){1,2}\b	dfa	D3-omit-s0	identical table (|E*_s0|=195)	identical					
+hybrid.rxt:274	\B(x|ab){1,2}\b	dfa	D4-no-reseed		built	4	22461	564	0 "zx"	p=0 "zab" expect ('m', [(1, 3), (1, 3)]) got (0,)
+hybrid.rxt:274	\B(x|ab){1,2}\b	dfa	D5-uncond-reseed		built	0	22461	0		
+hybrid.rxt:274	\B(x|ab){1,2}\b	dfa	D9-drop-member	drop 0x61	built	2	22461	141	0 "zab"	p=0 "zab" expect ('m', [(1, 3), (1, 3)]) got (0,)
+hybrid.rxt:274	\B(x|ab){1,2}\b	dfa	D9-drop-member	drop 0x78	built	1	22461	273	0 "zx "	p=0 "zx " expect ('m', [(1, 2), (1, 2)]) got (0,)
+lookbehind.rxt:8	\b(?:(?<=bc)d|w)	dfa	D0-ok		built	0	22461	0		
+lookbehind.rxt:8	\b(?:(?<=bc)d|w)	dfa	D1-r3-SnE	identical table (T = D0's)	identical					
+lookbehind.rxt:8	\b(?:(?<=bc)d|w)	dfa	DX-Tdfa	identical table (T = D0's)	identical					
+lookbehind.rxt:8	\b(?:(?<=bc)d|w)	dfa	D2-omit-seed	identical table (E* without seed 4 is still 63 bytes)	identical					
+lookbehind.rxt:8	\b(?:(?<=bc)d|w)	dfa	D3-omit-s0	declined	declined					
+lookbehind.rxt:8	\b(?:(?<=bc)d|w)	dfa	D4-no-reseed		built	0	22461	0		
+lookbehind.rxt:8	\b(?:(?<=bc)d|w)	dfa	D5-uncond-reseed		built	0	22461	0		
+lookbehind.rxt:8	\b(?:(?<=bc)d|w)	dfa	D9-drop-member	drop 0x64	built	0	22461	0		
+lookbehind.rxt:8	\b(?:(?<=bc)d|w)	dfa	D9-drop-member	drop 0x77	built	0	22461	0		
+lookbehind.rxt:49	(?<=ab)z|\bw	dfa	D0-ok		built	0	22461	0		
+lookbehind.rxt:49	(?<=ab)z|\bw	dfa	D1-r3-SnE	identical table (T = D0's)	identical					
+lookbehind.rxt:49	(?<=ab)z|\bw	dfa	DX-Tdfa	identical table (T = D0's)	identical					
+lookbehind.rxt:49	(?<=ab)z|\bw	dfa	D2-omit-seed	identical table (E* without seed 4 is still 63 bytes)	identical					
+lookbehind.rxt:49	(?<=ab)z|\bw	dfa	D3-omit-s0	|E* w/o s0|=194 |T|=1	built	0	22461	0		
+lookbehind.rxt:49	(?<=ab)z|\bw	dfa	D4-no-reseed		built	0	22461	0		
+lookbehind.rxt:49	(?<=ab)z|\bw	dfa	D5-uncond-reseed		built	0	22461	0		
+lookbehind.rxt:49	(?<=ab)z|\bw	dfa	D9-drop-member	drop 0x77	built	0	22461	0		
+lookbehind.rxt:49	(?<=ab)z|\bw	dfa	D9-drop-member	drop 0x7a	built	1	22461	60	0 "abza"	p=0 "abza" expect ('m', [(2, 3)]) got (0,)
+lookbehind.rxt:93	\b(?<=bc)d	dfa	D0-ok		built	0	22461	0		
+lookbehind.rxt:93	\b(?<=bc)d	dfa	D1-r3-SnE	identical table (T = D0's)	identical					
+lookbehind.rxt:93	\b(?<=bc)d	dfa	DX-Tdfa	identical table (T = D0's)	identical					
+lookbehind.rxt:93	\b(?<=bc)d	dfa	D2-omit-seed	identical table (E* without seed 3 is still 63 bytes)	identical					
+lookbehind.rxt:93	\b(?<=bc)d	dfa	D3-omit-s0	declined	declined					
+lookbehind.rxt:93	\b(?<=bc)d	dfa	D4-no-reseed		built	0	22461	0		
+lookbehind.rxt:93	\b(?<=bc)d	dfa	D5-uncond-reseed		built	0	22461	0		
+lookbehind.rxt:93	\b(?<=bc)d	dfa	D0m-ok-memchr-bounded		built	0	22461	0		
+lookbehind.rxt:93	\b(?<=bc)d	dfa	D10-memchr-found-path-no-reseed		built	0	22461	0		
+lookbehind.rxt:93	\b(?<=bc)d	dfa	D11-memchr-clamp-path-no-reseed		built	0	22461	0		
+lookbehind.rxt:136	(?<=abc)d|\bx	dfa	D0-ok		built	0	22461	0		
+lookbehind.rxt:136	(?<=abc)d|\bx	dfa	D1-r3-SnE	identical table (T = D0's)	identical					
+lookbehind.rxt:136	(?<=abc)d|\bx	dfa	DX-Tdfa	identical table (T = D0's)	identical					
+lookbehind.rxt:136	(?<=abc)d|\bx	dfa	D2-omit-seed	identical table (E* without seed 4 is still 63 bytes)	identical					
+lookbehind.rxt:136	(?<=abc)d|\bx	dfa	D3-omit-s0	|E* w/o s0|=194 |T|=1	built	1	22461	780	0 "xa"	p=0 "xabcd" expect ('m', [(0, 1)]) got (1, 4, 5)
+lookbehind.rxt:136	(?<=abc)d|\bx	dfa	D4-no-reseed		built	0	22461	0		
+lookbehind.rxt:136	(?<=abc)d|\bx	dfa	D5-uncond-reseed		built	0	22461	0		
+lookbehind.rxt:136	(?<=abc)d|\bx	dfa	D9-drop-member	drop 0x64	built	1	22461	5	0 "abcda"	p=0 "abcda" expect ('m', [(3, 4)]) got (0,)
+lookbehind.rxt:136	(?<=abc)d|\bx	dfa	D9-drop-member	drop 0x78	built	1	22461	780	0 "xa"	p=0 "xabcd" expect ('m', [(0, 1)]) got (1, 4, 5)
+lookbehind.rxt:176	(?:(?<=b(?<=ab)c)d|\bw)	dfa	D0-ok		built	0	22461	0		
+lookbehind.rxt:176	(?:(?<=b(?<=ab)c)d|\bw)	dfa	D1-r3-SnE	identical table (T = D0's)	identical					
+lookbehind.rxt:176	(?:(?<=b(?<=ab)c)d|\bw)	dfa	DX-Tdfa	identical table (T = D0's)	identical					
+lookbehind.rxt:176	(?:(?<=b(?<=ab)c)d|\bw)	dfa	D2-omit-seed	identical table (E* without seed 4 is still 63 bytes)	identical					
+lookbehind.rxt:176	(?:(?<=b(?<=ab)c)d|\bw)	dfa	D3-omit-s0	|E* w/o s0|=194 |T|=1	built	0	22461	0		
+lookbehind.rxt:176	(?:(?<=b(?<=ab)c)d|\bw)	dfa	D4-no-reseed		built	0	22461	0		
+lookbehind.rxt:176	(?:(?<=b(?<=ab)c)d|\bw)	dfa	D5-uncond-reseed		built	0	22461	0		
+lookbehind.rxt:176	(?:(?<=b(?<=ab)c)d|\bw)	dfa	D9-drop-member	drop 0x64	built	1	22461	5	0 "abcda"	p=0 "abcda" expect ('m', [(3, 4)]) got (0,)
+lookbehind.rxt:176	(?:(?<=b(?<=ab)c)d|\bw)	dfa	D9-drop-member	drop 0x77	built	0	22461	0		
+lookbehind.rxt:214	(?:(?<=b(?<=ab)c)d|(?<=a)z)	none	D0-ok	declined	declined					
+lookbehind.rxt:214	(?:(?<=b(?<=ab)c)d|(?<=a)z)	none	D1-r3-SnE	T=1	built	1	22461	660	0 "aza"	p=0 "aza" expect ('m', [(1, 2)]) got (0,)
+lookbehind.rxt:214	(?:(?<=b(?<=ab)c)d|(?<=a)z)	none	DX-Tdfa	declined	declined					
+lookbehind.rxt:214	(?:(?<=b(?<=ab)c)d|(?<=a)z)	none	D2-omit-seed	seed 4: |E*_k|=2 |T|=1	built	1	22461	660	0 "aza"	p=0 "aza" expect ('m', [(1, 2)]) got (0,)
+lookbehind.rxt:214	(?:(?<=b(?<=ab)c)d|(?<=a)z)	none	D3-omit-s0	identical table (|E*_s0|=255)	identical					
+lookbehind.rxt:243	(?:(?<!a)z|w)	dfa	D0-ok		built	0	22461	0		
+lookbehind.rxt:243	(?:(?<!a)z|w)	dfa	D1-r3-SnE	identical table (T = D0's)	identical					
+lookbehind.rxt:243	(?:(?<!a)z|w)	dfa	DX-Tdfa	identical table (T = D0's)	identical					
+lookbehind.rxt:243	(?:(?<!a)z|w)	dfa	D2-omit-seed	identical table (E* without seed 4 is still 3 bytes)	identical					
+lookbehind.rxt:243	(?:(?<!a)z|w)	dfa	D3-omit-s0	identical table (|E*_s0|=255)	identical					
+lookbehind.rxt:243	(?:(?<!a)z|w)	dfa	D4-no-reseed		built	1	22461	316	0 "azz"	p=0 "azz" expect ('m', [(2, 3)]) got (0,)
+lookbehind.rxt:243	(?:(?<!a)z|w)	dfa	D5-uncond-reseed		built	0	22461	0		
+lookbehind.rxt:243	(?:(?<!a)z|w)	dfa	D9-drop-member	drop 0x77	built	1	22461	4515	0 "wa"	p=0 "wa" expect ('m', [(0, 1)]) got (0,)
+lookbehind.rxt:243	(?:(?<!a)z|w)	dfa	D9-drop-member	drop 0x7a	built	1	22461	3925	0 "za"	p=0 "zaz" expect ('m', [(0, 1)]) got (0,)
+lookbehind.rxt:277	(?:(?<![ab])z|w)	dfa	D0-ok		built	0	36409	0		
+lookbehind.rxt:277	(?:(?<![ab])z|w)	dfa	D1-r3-SnE	identical table (T = D0's)	identical					
+lookbehind.rxt:277	(?:(?<![ab])z|w)	dfa	DX-Tdfa	identical table (T = D0's)	identical					
+lookbehind.rxt:277	(?:(?<![ab])z|w)	dfa	D2-omit-seed	identical table (E* without seed 4 is still 4 bytes)	identical					
+lookbehind.rxt:277	(?:(?<![ab])z|w)	dfa	D3-omit-s0	identical table (|E*_s0|=254)	identical					
+lookbehind.rxt:277	(?:(?<![ab])z|w)	dfa	D4-no-reseed		built	1	36409	1204	0 "azz"	p=0 "azz" expect ('m', [(2, 3)]) got (0,)
+lookbehind.rxt:277	(?:(?<![ab])z|w)	dfa	D5-uncond-reseed		built	0	36409	0		
+lookbehind.rxt:277	(?:(?<![ab])z|w)	dfa	D9-drop-member	drop 0x77	built	0	36409	0		
+lookbehind.rxt:277	(?:(?<![ab])z|w)	dfa	D9-drop-member	drop 0x7a	built	1	36409	7684	0 "za"	p=0 "za" expect ('m', [(0, 1)]) got (0,)
+lookbehind.rxt:308	(?:(?<=a)z|(?<=b)y|w)	none	D0-ok	declined	declined					
+lookbehind.rxt:308	(?:(?<=a)z|(?<=b)y|w)	none	D1-r3-SnE	T=1	built	1	22461	1360	0 "azx"	p=0 "azx" expect ('m', [(1, 2)]) got (0,)
+lookbehind.rxt:308	(?:(?<=a)z|(?<=b)y|w)	none	DX-Tdfa	declined	declined					
+lookbehind.rxt:308	(?:(?<=a)z|(?<=b)y|w)	none	D2-omit-seed	identical table (E* without seed 6 is still 256 bytes)	identical					
+lookbehind.rxt:308	(?:(?<=a)z|(?<=b)y|w)	none	D2-omit-seed	identical table (E* without seed 12 is still 256 bytes)	identical					
+lookbehind.rxt:308	(?:(?<=a)z|(?<=b)y|w)	none	D3-omit-s0	identical table (|E*_s0|=256)	identical					
+lookbehind.rxt:342	(?:(?<=a)z|w)	none	D0-ok	declined	declined					
+lookbehind.rxt:342	(?:(?<=a)z|w)	none	D1-r3-SnE	T=1	built	1	7108	807	0 "azb"	p=0 "azb" expect ('m', [(1, 2)]) got (0,)
+lookbehind.rxt:342	(?:(?<=a)z|w)	none	DX-Tdfa	declined	declined					
+lookbehind.rxt:342	(?:(?<=a)z|w)	none	D2-omit-seed	seed 4: |E*_k|=2 |T|=1	built	1	7108	807	0 "azb"	p=0 "azb" expect ('m', [(1, 2)]) got (0,)
+lookbehind.rxt:342	(?:(?<=a)z|w)	none	D3-omit-s0	identical table (|E*_s0|=255)	identical					
+lookbehind.rxt:378	\b(?:ab|cd)\b|(?<=x)z	dfa	D0-ok		built	0	22461	0		
+lookbehind.rxt:378	\b(?:ab|cd)\b|(?<=x)z	dfa	D1-r3-SnE	identical table (T = D0's)	identical					
+lookbehind.rxt:378	\b(?:ab|cd)\b|(?<=x)z	dfa	DX-Tdfa	identical table (T = D0's)	identical					
+lookbehind.rxt:378	\b(?:ab|cd)\b|(?<=x)z	dfa	D2-omit-seed	identical table (E* without seed 8 is still 256 bytes)	identical					
+lookbehind.rxt:378	\b(?:ab|cd)\b|(?<=x)z	dfa	D2-omit-seed	identical table (E* without seed 16 is still 256 bytes)	identical					
+lookbehind.rxt:378	\b(?:ab|cd)\b|(?<=x)z	dfa	D3-omit-s0	identical table (|E*_s0|=256)	identical					
+lookbehind.rxt:378	\b(?:ab|cd)\b|(?<=x)z	dfa	D4-no-reseed		built	7	22461	561	0 "xz"	p=0 "xz" expect ('m', [(1, 2)]) got (0,)
+lookbehind.rxt:378	\b(?:ab|cd)\b|(?<=x)z	dfa	D5-uncond-reseed		built	0	22461	0		
+lookbehind.rxt:378	\b(?:ab|cd)\b|(?<=x)z	dfa	D9-drop-member	drop 0x61	built	1	22461	173	0 "ab"	p=0 "ab xz" expect ('m', [(0, 2)]) got (1, 4, 5)
+lookbehind.rxt:378	\b(?:ab|cd)\b|(?<=x)z	dfa	D9-drop-member	drop 0x63	built	1	22461	0		p=0 "cd" expect ('m', [(0, 2)]) got (0,)
+lookbehind.rxt:378	\b(?:ab|cd)\b|(?<=x)z	dfa	D9-drop-member	drop 0x7a	built	1	22461	450	0 "xzx"	p=0 "xzx" expect ('m', [(1, 2)]) got (0,)
+multiline.rxt:47	(?m)(?:ab|cd)$	none	D0-ok	declined	declined					
+multiline.rxt:47	(?m)(?:ab|cd)$	none	D1-r3-SnE	declined	declined					
+multiline.rxt:47	(?m)(?:ab|cd)$	none	DX-Tdfa	declined	declined					
+multiline.rxt:47	(?m)(?:ab|cd)$	none	D3-omit-s0	declined	declined					
+multiline.rxt:79	(?m)(?<=\n)a|b$	none	D0-ok	declined	declined					
+multiline.rxt:79	(?m)(?<=\n)a|b$	none	D1-r3-SnE	T=1	built	1	36409	2120	0 "\na\r"	p=0 "\na\r" expect ('m', [(1, 2)]) got (0,)
+multiline.rxt:79	(?m)(?<=\n)a|b$	none	DX-Tdfa	declined	declined					
+multiline.rxt:79	(?m)(?<=\n)a|b$	none	D2-omit-seed	seed 4: |E*_k|=2 |T|=1	built	1	36409	2120	0 "\na\r"	p=0 "\na\r" expect ('m', [(1, 2)]) got (0,)
+multiline.rxt:79	(?m)(?<=\n)a|b$	none	D3-omit-s0	identical table (|E*_s0|=255)	identical					
+multiline.rxt:102	(?:(?<=\r)a|w)	none	D0-ok	declined	declined					
+multiline.rxt:102	(?:(?<=\r)a|w)	none	D1-r3-SnE	T=1	built	1	36409	2608	0 "\ra\r"	p=0 "\ra\r" expect ('m', [(1, 2)]) got (0,)
+multiline.rxt:102	(?:(?<=\r)a|w)	none	DX-Tdfa	declined	declined					
+multiline.rxt:102	(?:(?<=\r)a|w)	none	D2-omit-seed	seed 4: |E*_k|=2 |T|=1	built	1	36409	2608	0 "\ra\r"	p=0 "\ra\r" expect ('m', [(1, 2)]) got (0,)
+multiline.rxt:102	(?:(?<=\r)a|w)	none	D3-omit-s0	identical table (|E*_s0|=255)	identical					
+multiline.rxt:127	(?m)\b(?:ab|cd)$	dfa	D0-ok		built	0	22461	0		
+multiline.rxt:127	(?m)\b(?:ab|cd)$	dfa	D1-r3-SnE	identical table (T = D0's)	identical					
+multiline.rxt:127	(?m)\b(?:ab|cd)$	dfa	DX-Tdfa	identical table (T = D0's)	identical					
+multiline.rxt:127	(?m)\b(?:ab|cd)$	dfa	D2-omit-seed	identical table (E* without seed 7 is still 63 bytes)	identical					
+multiline.rxt:127	(?m)\b(?:ab|cd)$	dfa	D3-omit-s0	declined	declined					
+multiline.rxt:127	(?m)\b(?:ab|cd)$	dfa	D4-no-reseed		built	1	22461	0		p=0 "xab\nab" expect ('m', [(4, 6)]) got (0,)
+multiline.rxt:127	(?m)\b(?:ab|cd)$	dfa	D5-uncond-reseed		built	0	22461	0		
+multiline.rxt:127	(?m)\b(?:ab|cd)$	dfa	D9-drop-member	drop 0x61	built	13	22461	319	0 "ab"	p=0 "ab" expect ('m', [(0, 2)]) got (0,)
+multiline.rxt:127	(?m)\b(?:ab|cd)$	dfa	D9-drop-member	drop 0x63	built	0	22461	0		
+reseed.rxt:8	(?:\b|xy)a	dfa	D0-ok		built	0	22461	0		
+reseed.rxt:8	(?:\b|xy)a	dfa	D1-r3-SnE	identical table (T = D0's)	identical					
+reseed.rxt:8	(?:\b|xy)a	dfa	DX-Tdfa	identical table (T = D0's)	identical					
+reseed.rxt:8	(?:\b|xy)a	dfa	D2-omit-seed	identical table (E* without seed 5 is still 63 bytes)	identical					
+reseed.rxt:8	(?:\b|xy)a	dfa	D3-omit-s0	|E* w/o s0|=194 |T|=1	built	1	22461	2050	0 "ax"	p=0 "ax" expect ('m', [(0, 1)]) got (0,)
+reseed.rxt:8	(?:\b|xy)a	dfa	D4-no-reseed		built	1	22461	32	0 "ya a"	p=0 "ya a" expect ('m', [(3, 4)]) got (0,)
+reseed.rxt:8	(?:\b|xy)a	dfa	D5-uncond-reseed		built	8	22461	153	0 "xya"	p=0 "xya" expect ('m', [(0, 3)]) got (0,)
+reseed.rxt:8	(?:\b|xy)a	dfa	D9-drop-member	drop 0x61	built	1	22461	2050	0 "ax"	p=0 "ax" expect ('m', [(0, 1)]) got (0,)
+reseed.rxt:8	(?:\b|xy)a	dfa	D9-drop-member	drop 0x78	built	5	22461	90	0 "xya"	p=0 "xya" expect ('m', [(0, 3)]) got (0,)
+reseed.rxt:46	(?:\b|z[xy])y	dfa	D0-ok		built	0	22461	0		
+reseed.rxt:46	(?:\b|z[xy])y	dfa	D1-r3-SnE	identical table (T = D0's)	identical					
+reseed.rxt:46	(?:\b|z[xy])y	dfa	DX-Tdfa	identical table (T = D0's)	identical					
+reseed.rxt:46	(?:\b|z[xy])y	dfa	D2-omit-seed	identical table (E* without seed 5 is still 63 bytes)	identical					
+reseed.rxt:46	(?:\b|z[xy])y	dfa	D3-omit-s0	|E* w/o s0|=194 |T|=1	built	1	22461	2125	0 "yz"	p=0 "yz" expect ('m', [(0, 1)]) got (0,)
+reseed.rxt:46	(?:\b|z[xy])y	dfa	D4-no-reseed		built	1	22461	34	0 "xy y"	p=0 "xy y" expect ('m', [(3, 4)]) got (0,)
+reseed.rxt:46	(?:\b|z[xy])y	dfa	D5-uncond-reseed		built	6	22461	306	0 "zxy"	p=0 "zxy" expect ('m', [(0, 3)]) got (0,)
+reseed.rxt:46	(?:\b|z[xy])y	dfa	D9-drop-member	drop 0x79	built	1	22461	2125	0 "yz"	p=0 "yz" expect ('m', [(0, 1)]) got (0,)
+reseed.rxt:46	(?:\b|z[xy])y	dfa	D9-drop-member	drop 0x7a	built	5	22461	180	0 "zxy"	p=0 "zxy" expect ('m', [(0, 3)]) got (0,)
+reseed.rxt:77	(?:  |\b| xy)y	dfa	D0-ok		built	0	36409	0		
+reseed.rxt:77	(?:  |\b| xy)y	dfa	D1-r3-SnE	identical table (T = D0's)	identical					
+reseed.rxt:77	(?:  |\b| xy)y	dfa	DX-Tdfa	identical table (T = D0's)	identical					
+reseed.rxt:77	(?:  |\b| xy)y	dfa	D2-omit-seed	identical table (E* without seed 5 is still 64 bytes)	identical					
+reseed.rxt:77	(?:  |\b| xy)y	dfa	D3-omit-s0	|E* w/o s0|=193 |T|=1	built	1	36409	2664	0 "y "	p=0 "y " expect ('m', [(0, 1)]) got (0,)
+reseed.rxt:77	(?:  |\b| xy)y	dfa	D4-no-reseed		built	1	36409	188	0 "xy y"	p=0 "xy y" expect ('m', [(3, 4)]) got (0,)
+reseed.rxt:77	(?:  |\b| xy)y	dfa	D5-uncond-reseed		built	3	36409	98	0 " xyy"	p=0 " xyy" expect ('m', [(0, 4)]) got (0,)
+reseed.rxt:77	(?:  |\b| xy)y	dfa	D9-drop-member	drop 0x20	built	2	36409	57	0 " xyy"	p=0 " xyy" expect ('m', [(0, 4)]) got (0,)
+reseed.rxt:77	(?:  |\b| xy)y	dfa	D9-drop-member	drop 0x79	built	1	36409	2664	0 "y "	p=0 "y " expect ('m', [(0, 1)]) got (0,)
+reseed.rxt:107	(?:\b(?<!a)|xxy)a	dfa	D0-ok		built	0	36409	0		
+reseed.rxt:107	(?:\b(?<!a)|xxy)a	dfa	D1-r3-SnE	identical table (T = D0's)	identical					
+reseed.rxt:107	(?:\b(?<!a)|xxy)a	dfa	DX-Tdfa	identical table (T = D0's)	identical					
+reseed.rxt:107	(?:\b(?<!a)|xxy)a	dfa	D2-omit-seed	identical table (E* without seed 5 is still 63 bytes)	identical					
+reseed.rxt:107	(?:\b(?<!a)|xxy)a	dfa	D3-omit-s0	|E* w/o s0|=194 |T|=1	built	1	36409	1412	0 "ax"	p=0 "axxya" expect ('m', [(0, 1)]) got (1, 1, 5)
+reseed.rxt:107	(?:\b(?<!a)|xxy)a	dfa	D4-no-reseed		built	1	36409	2	0 "yaxxya"	p=0 "yaxxya" expect ('m', [(2, 6)]) got (0,)
+reseed.rxt:107	(?:\b(?<!a)|xxy)a	dfa	D5-uncond-reseed		built	9	36409	100	0 "xxya"	p=0 "xxya" expect ('m', [(0, 4)]) got (0,)
+reseed.rxt:107	(?:\b(?<!a)|xxy)a	dfa	D9-drop-member	drop 0x61	built	1	36409	1412	0 "ax"	p=0 "axxya" expect ('m', [(0, 1)]) got (1, 1, 5)
+reseed.rxt:107	(?:\b(?<!a)|xxy)a	dfa	D9-drop-member	drop 0x78	built	2	36409	45	0 "xxya"	p=0 "xxya" expect ('m', [(0, 4)]) got (0,)
+reseed.rxt:141	(?:abz|x(?<=[ab])|\bz)y	dfa	D0-ok		built	0	22461	0		
+reseed.rxt:141	(?:abz|x(?<=[ab])|\bz)y	dfa	D1-r3-SnE	identical table (T = D0's)	identical					
+reseed.rxt:141	(?:abz|x(?<=[ab])|\bz)y	dfa	DX-Tdfa	T=Tdfa (rev 2 §4.1a: 'would also be sound'), |T|=2	built	0	22461	0		
+reseed.rxt:141	(?:abz|x(?<=[ab])|\bz)y	dfa	D2-omit-seed	identical table (E* without seed 7 is still 63 bytes)	identical					
+reseed.rxt:141	(?:abz|x(?<=[ab])|\bz)y	dfa	D3-omit-s0	|E* w/o s0|=194 |T|=1	built	6	22461	423	0 "zy"	p=0 "abzy" expect ('m', [(0, 4)]) got (0,)
+reseed.rxt:141	(?:abz|x(?<=[ab])|\bz)y	dfa	D4-no-reseed		built	0	22461	0		
+reseed.rxt:141	(?:abz|x(?<=[ab])|\bz)y	dfa	D5-uncond-reseed		built	3	22461	16	0 "abzy"	p=0 "abzy" expect ('m', [(0, 4)]) got (0,)
+reseed.rxt:141	(?:abz|x(?<=[ab])|\bz)y	dfa	D9-drop-member	drop 0x61	built	1	22461	11	0 "abzy"	p=0 "abzy" expect ('m', [(0, 4)]) got (0,)
+reseed.rxt:141	(?:abz|x(?<=[ab])|\bz)y	dfa	D9-drop-member	drop 0x78	built	0	22461	0		
+reseed.rxt:141	(?:abz|x(?<=[ab])|\bz)y	dfa	D9-drop-member	drop 0x7a	built	6	22461	423	0 "zy"	p=0 "abzy" expect ('m', [(0, 4)]) got (0,)
+reseed.rxt:164	(?:\b(?<!a)a|a[xy]a|\ba)z	dfa	D0-ok		built	0	22461	0		
+reseed.rxt:164	(?:\b(?<!a)a|a[xy]a|\ba)z	dfa	D1-r3-SnE	identical table (T = D0's)	identical					
+reseed.rxt:164	(?:\b(?<!a)a|a[xy]a|\ba)z	dfa	DX-Tdfa	identical table (T = D0's)	identical					
+reseed.rxt:164	(?:\b(?<!a)a|a[xy]a|\ba)z	dfa	D2-omit-seed	identical table (E* without seed 5 is still 63 bytes)	identical					
+reseed.rxt:164	(?:\b(?<!a)a|a[xy]a|\ba)z	dfa	D3-omit-s0	identical table (|E*_s0|=194)	identical					
+reseed.rxt:164	(?:\b(?<!a)a|a[xy]a|\ba)z	dfa	D4-no-reseed		built	0	22461	0		
+reseed.rxt:164	(?:\b(?<!a)a|a[xy]a|\ba)z	dfa	D5-uncond-reseed		built	2	22461	32	0 "axaz"	p=0 "axaz" expect ('m', [(0, 4)]) got (0,)
+reseed.rxt:164	(?:\b(?<!a)a|a[xy]a|\ba)z	dfa	D7-seek-from-startpos		built	0	22461	0		
+reseed.rxt:164	(?:\b(?<!a)a|a[xy]a|\ba)z	dfa	D0m-ok-memchr-bounded		built	0	22461	0		
+reseed.rxt:164	(?:\b(?<!a)a|a[xy]a|\ba)z	dfa	D10-memchr-found-path-no-reseed		built	0	22461	0		
+reseed.rxt:164	(?:\b(?<!a)a|a[xy]a|\ba)z	dfa	D11-memchr-clamp-path-no-reseed		built	0	22461	0		
+reseed.rxt:203	\B(?<!a)d	dfa	D0-ok		built	0	22461	0		
+reseed.rxt:203	\B(?<!a)d	dfa	D1-r3-SnE	identical table (T = D0's)	identical					
+reseed.rxt:203	\B(?<!a)d	dfa	DX-Tdfa	identical table (T = D0's)	identical					
+reseed.rxt:203	\B(?<!a)d	dfa	D2-omit-seed	identical table (E* without seed 4 is still 62 bytes)	identical					
+reseed.rxt:203	\B(?<!a)d	dfa	D3-omit-s0	identical table (|E*_s0|=195)	identical					
+reseed.rxt:203	\B(?<!a)d	dfa	D4-no-reseed		built	3	22461	1732	0 "xd"	p=0 "xd" expect ('m', [(1, 2)]) got (0,)
+reseed.rxt:203	\B(?<!a)d	dfa	D5-uncond-reseed		built	0	22461	0		
+reseed.rxt:203	\B(?<!a)d	dfa	D0m-ok-memchr-bounded		built	0	22461	0		
+reseed.rxt:203	\B(?<!a)d	dfa	D10-memchr-found-path-no-reseed		built	1	22461	1090	0 "xdx"	p=0 "xdz" expect ('m', [(1, 2)]) got (0,)
+reseed.rxt:203	\B(?<!a)d	dfa	D11-memchr-clamp-path-no-reseed		built	2	22461	642	0 "xd"	p=0 "xd" expect ('m', [(1, 2)]) got (0,)
+reseed.rxt:236	\B(?<=bc)d	dfa	D0-ok		built	0	22461	0		
+reseed.rxt:236	\B(?<=bc)d	dfa	D1-r3-SnE	identical table (T = D0's)	identical					
+reseed.rxt:236	\B(?<=bc)d	dfa	DX-Tdfa	identical table (T = D0's)	identical					
+reseed.rxt:236	\B(?<=bc)d	dfa	D2-omit-seed	identical table (E* without seed 3 is still 63 bytes)	identical					
+reseed.rxt:236	\B(?<=bc)d	dfa	D3-omit-s0	identical table (|E*_s0|=194)	identical					
+reseed.rxt:236	\B(?<=bc)d	dfa	D4-no-reseed		built	6	22461	71	0 "bcd"	p=0 "bcd" expect ('m', [(2, 3)]) got (0,)
+reseed.rxt:236	\B(?<=bc)d	dfa	D5-uncond-reseed		built	0	22461	0		
+reseed.rxt:236	\B(?<=bc)d	dfa	D0m-ok-memchr-bounded		built	0	22461	0		
+reseed.rxt:236	\B(?<=bc)d	dfa	D10-memchr-found-path-no-reseed		built	2	22461	50	0 "bcdb"	p=0 "bcdz" expect ('m', [(2, 3)]) got (0,)
+reseed.rxt:236	\B(?<=bc)d	dfa	D11-memchr-clamp-path-no-reseed		built	4	22461	21	0 "bcd"	p=0 "bcd" expect ('m', [(2, 3)]) got (0,)
+reseed.rxt:268	\Bd\B	dfa	D0-ok		built	0	7108	0		
+reseed.rxt:268	\Bd\B	dfa	D1-r3-SnE	identical table (T = D0's)	identical					
+reseed.rxt:268	\Bd\B	dfa	DX-Tdfa	identical table (T = D0's)	identical					
+reseed.rxt:268	\Bd\B	dfa	D2-omit-seed	identical table (E* without seed 3 is still 63 bytes)	identical					
+reseed.rxt:268	\Bd\B	dfa	D3-omit-s0	identical table (|E*_s0|=194)	identical					
+reseed.rxt:268	\Bd\B	dfa	D4-no-reseed		built	2	7108	540	0 "xdx"	p=0 "xdx" expect ('m', [(1, 2)]) got (0,)
+reseed.rxt:268	\Bd\B	dfa	D5-uncond-reseed		built	0	7108	0		
+reseed.rxt:268	\Bd\B	dfa	D0m-ok-memchr-bounded		built	0	7108	0		
+reseed.rxt:268	\Bd\B	dfa	D10-memchr-found-path-no-reseed		built	2	7108	540	0 "xdx"	p=0 "xdx" expect ('m', [(1, 2)]) got (0,)
+reseed.rxt:268	\Bd\B	dfa	D11-memchr-clamp-path-no-reseed		built	0	7108	0		
+utf8.rxt:8	(?:(?<=é)a|\bw)	dfa	D0-ok		built	0	19531	0		
+utf8.rxt:8	(?:(?<=é)a|\bw)	dfa	D1-r3-SnE	identical table (T = D0's)	identical					
+utf8.rxt:8	(?:(?<=é)a|\bw)	dfa	DX-Tdfa	identical table (T = D0's)	identical					
+utf8.rxt:8	(?:(?<=é)a|\bw)	dfa	D2-omit-seed	identical table (E* without seed 4 is still 63 bytes)	identical					
+utf8.rxt:8	(?:(?<=é)a|\bw)	dfa	D3-omit-s0	|E* w/o s0|=194 |T|=1	built	0	19531	0		
+utf8.rxt:8	(?:(?<=é)a|\bw)	dfa	D4-no-reseed		built	0	19531	0		
+utf8.rxt:8	(?:(?<=é)a|\bw)	dfa	D5-uncond-reseed		built	0	19531	0		
+utf8.rxt:8	(?:(?<=é)a|\bw)	dfa	D9-drop-member	drop 0x61	built	2	19531	135	0 "\xc3\xa9a\xc3"	p=0 "\xc3\xa9a\xc3" expect ('m', [(2, 3)]) got (0,)
+utf8.rxt:8	(?:(?<=é)a|\bw)	dfa	D9-drop-member	drop 0x77	built	0	19531	0		
+utf8.rxt:40	(?:(?<=a)z|w)	none	D0-ok	declined	declined					
+utf8.rxt:40	(?:(?<=a)z|w)	none	D1-r3-SnE	T=1	built	1	19531	735	0 "aza"	p=0 "aza" expect ('m', [(1, 2)]) got (0,)
+utf8.rxt:40	(?:(?<=a)z|w)	none	DX-Tdfa	declined	declined					
+utf8.rxt:40	(?:(?<=a)z|w)	none	D2-omit-seed	seed 4: |E*_k|=2 |T|=1	built	1	19531	735	0 "aza"	p=0 "aza" expect ('m', [(1, 2)]) got (0,)
+utf8.rxt:40	(?:(?<=a)z|w)	none	D3-omit-s0	identical table (|E*_s0|=255)	identical					
+utf8.rxt:69	\b(?:ab|cd)\b	dfa	D0-ok		built	0	19531	0		
+utf8.rxt:69	\b(?:ab|cd)\b	dfa	D1-r3-SnE	identical table (T = D0's)	identical					
+utf8.rxt:69	\b(?:ab|cd)\b	dfa	DX-Tdfa	identical table (T = D0's)	identical					
+utf8.rxt:69	\b(?:ab|cd)\b	dfa	D2-omit-seed	identical table (E* without seed 6 is still 63 bytes)	identical					
+utf8.rxt:69	\b(?:ab|cd)\b	dfa	D3-omit-s0	declined	declined					
+utf8.rxt:69	\b(?:ab|cd)\b	dfa	D4-no-reseed		built	0	19531	0		
+utf8.rxt:69	\b(?:ab|cd)\b	dfa	D5-uncond-reseed		built	0	19531	0		
+utf8.rxt:69	\b(?:ab|cd)\b	dfa	D9-drop-member	drop 0x61	built	18	19531	625	0 "ab"	p=0 "\xc3\xa9ab ab" expect ('m', [(2, 4)]) got (0,)
+utf8.rxt:69	\b(?:ab|cd)\b	dfa	D9-drop-member	drop 0x63	built	0	19531	0		
+utf8.rxt:105	\b(?:ab|cd)\b	dfa	D0-ok		built	0	16601	0		
+utf8.rxt:105	\b(?:ab|cd)\b	dfa	D1-r3-SnE	identical table (T = D0's)	identical					
+utf8.rxt:105	\b(?:ab|cd)\b	dfa	DX-Tdfa	identical table (T = D0's)	identical					
+utf8.rxt:105	\b(?:ab|cd)\b	dfa	D2-omit-seed	identical table (E* without seed 6 is still 63 bytes)	identical					
+utf8.rxt:105	\b(?:ab|cd)\b	dfa	D3-omit-s0	declined	declined					
+utf8.rxt:105	\b(?:ab|cd)\b	dfa	D4-no-reseed		built	1	16601	0		p=0 "kAB ab" expect ('m', [(4, 6)]) got (0,)
+utf8.rxt:105	\b(?:ab|cd)\b	dfa	D5-uncond-reseed		built	0	16601	0		
+utf8.rxt:105	\b(?:ab|cd)\b	dfa	D9-drop-member	drop 0x41	built	0	16601	0		
+utf8.rxt:105	\b(?:ab|cd)\b	dfa	D9-drop-member	drop 0x43	built	0	16601	0		
+utf8.rxt:105	\b(?:ab|cd)\b	dfa	D9-drop-member	drop 0x61	built	10	16601	565	0 "ab"	p=0 "\xe2\x84\xaaab ab" expect ('m', [(3, 5)]) got (0,)
+utf8.rxt:105	\b(?:ab|cd)\b	dfa	D9-drop-member	drop 0x63	built	0	16601	0		
+utf8.rxt:130	\bk\w	none	D0-ok	declined	declined					
+utf8.rxt:130	\bk\w	none	D1-r3-SnE	T=2	built	1	16601	2	0 "x\xe2\x84\xaax"	p=0 "x\xe2\x84\xaax" expect ('m', [(1, 5)]) got (0,)
+utf8.rxt:130	\bk\w	none	DX-Tdfa	declined	declined					
+utf8.rxt:130	\bk\w	none	D2-omit-seed	seed 7: |E*_k|=63 |T|=2	built	1	16601	2	0 "x\xe2\x84\xaax"	p=0 "x\xe2\x84\xaax" expect ('m', [(1, 5)]) got (0,)
+utf8.rxt:130	\bk\w	none	D3-omit-s0	declined	declined					
+vmhat.rxt:8	\((?:[^()]|(?R))*\)	vm	V0-ok		built	0	22461	0		
+vmhat.rxt:8	\((?:[^()]|(?R))*\)	vm	V1-late		built	6	22461	1074	0 "()"	p=0 "(a)" expect ('m', [(0, 3)]) got (0,)
+vmhat.rxt:8	\((?:[^()]|(?R))*\)	vm	V2-drop-member	drop 0x28 (begins a match in the cells)	built	11	22461	2058	0 "()"	p=0 "(a)" expect ('m', [(0, 3)]) got (0,)
+vmhat.rxt:8	\((?:[^()]|(?R))*\)	vm	V4-retry-skip		built	2	22461	184	0 "(()"	p=0 "((a)" expect ('m', [(1, 4)]) got (0,)
+vmhat.rxt:46	(ab)\1	vm	V0-ok		built	0	7108	0		
+vmhat.rxt:46	(ab)\1	vm	V1-late		built	5	7108	37	0 "abab"	p=0 "abab" expect ('m', [(0, 4), (0, 2)]) got (0,)
+vmhat.rxt:46	(ab)\1	vm	V2-drop-member	drop 0x61 (begins a match in the cells)	built	8	7108	63	0 "abab"	p=0 "abab" expect ('m', [(0, 4), (0, 2)]) got (0,)
+vmhat.rxt:46	(ab)\1	vm	V4-retry-skip		built	1	7108	9	0 "aabab"	p=0 "aabab" expect ('m', [(1, 5), (1, 3)]) got (0,)
+vmhat.rxt:142	(?=ab)a(b)	vm	V0-ok		built	0	7108	0		
+vmhat.rxt:142	(?=ab)a(b)	vm	V1-late		built	4	7108	700	0 "ab"	p=0 "ab" expect ('m', [(0, 2), (1, 2)]) got (0,)
+vmhat.rxt:142	(?=ab)a(b)	vm	V2-drop-member	drop 0x61 (begins a match in the cells)	built	6	7108	1447	0 "ab"	p=0 "ab" expect ('m', [(0, 2), (1, 2)]) got (0,)
+vmhat.rxt:142	(?=ab)a(b)	vm	V4-retry-skip		built	1	7108	267	0 "aab"	p=0 "aab" expect ('m', [(1, 3), (2, 3)]) got (0,)
+vmhat.rxt:229	(?:x|(a)\1)?b	vm	V0-ok		built	0	7108	0		
+vmhat.rxt:229	(?:x|(a)\1)?b	vm	V1-late		built	6	7108	3044	0 "b"	p=0 "b" expect ('m', [(0, 1), None]) got (0,)
+vmhat.rxt:229	(?:x|(a)\1)?b	vm	V2-drop-member	drop 0x61 (begins a match in the cells)	built	1	7108	246	0 "aab"	p=0 "aab" expect ('m', [(0, 3), (0, 1)]) got (1, 2, 3, -1, -1)
+vmhat.rxt:229	(?:x|(a)\1)?b	vm	V2-drop-member	drop 0x62 (begins a match in the cells)	built	6	7108	2798	0 "b"	p=0 "b" expect ('m', [(0, 1), None]) got (0,)
+vmhat.rxt:229	(?:x|(a)\1)?b	vm	V2-drop-member	drop 0x78 (begins a match in the cells)	built	1	7108	1039	0 "xb"	p=0 "xb" expect ('m', [(0, 2), None]) got (1, 1, 2, -1, -1)
+vmhat.rxt:229	(?:x|(a)\1)?b	vm	V4-retry-skip		built	2	7108	1039	0 "ab"	p=1 "aab" expect ('m', [(2, 3), None]) got (0,)
+vmhat.rxt:254	(?i)(ca)t\1	vm	V0-ok		built	0	22461	0		
+vmhat.rxt:254	(?i)(ca)t\1	vm	V1-late		built	5	22461	16	0 "catca"	p=0 "catca" expect ('m', [(0, 5), (0, 2)]) got (0,)
+vmhat.rxt:254	(?i)(ca)t\1	vm	V2-drop-member	drop 0x43 (begins a match in the cells)	built	1	22461	8	0 "Catca"	p=0 "CatCA" expect ('m', [(0, 5), (0, 2)]) got (0,)
+vmhat.rxt:254	(?i)(ca)t\1	vm	V2-drop-member	drop 0x63 (begins a match in the cells)	built	6	22461	8	0 "catca"	p=0 "catca" expect ('m', [(0, 5), (0, 2)]) got (0,)
+vmhat.rxt:254	(?i)(ca)t\1	vm	V4-retry-skip		built	1	22461	0		p=0 "ccatca" expect ('m', [(1, 6), (1, 3)]) got (0,)
+vmhat.rxt:298	(k)\1	vm	V0-ok		built	0	16601	0		
+vmhat.rxt:298	(k)\1	vm	V1-late		built	6	16601	686	0 "kk"	p=0 "kk" expect ('m', [(0, 2), (0, 1)]) got (0,)
+vmhat.rxt:298	(k)\1	vm	V2-drop-member	drop 0x4b (begins a match in the cells)	built	1	16601	0		p=0 "Kk" expect ('m', [(0, 2), (0, 1)]) got (0,)
+vmhat.rxt:298	(k)\1	vm	V2-drop-member	drop 0x6b (begins a match in the cells)	built	4	16601	1110	0 "kk"	p=0 "kk" expect ('m', [(0, 2), (0, 1)]) got (0,)
+vmhat.rxt:298	(k)\1	vm	V2-drop-member	drop 0xe2 (begins a match in the cells)	built	3	16601	15	0 "\xe2\x84\xaak"	p=0 "\xe2\x84\xaak" expect ('m', [(0, 4), (0, 3)]) got (0,)
+vmhat.rxt:298	(k)\1	vm	V4-retry-skip		built	1	16601	188	0 "\xe2kk"	p=0 "\xe2kk" expect ('m', [(1, 3), (1, 2)]) got (0,)
+vmhat.rxt:333	(\w)\1x	vm	V0-ok		built	0	7108	0		
+vmhat.rxt:333	(\w)\1x	vm	V1-late		built	3	7108	580	0 "aax"	p=0 "aax" expect ('m', [(0, 3), (0, 1)]) got (0,)
+vmhat.rxt:333	(\w)\1x	vm	V2-drop-member	drop 0x61 (begins a match in the cells)	built	3	7108	331	0 "aax"	p=0 "aax" expect ('m', [(0, 3), (0, 1)]) got (0,)
+vmhat.rxt:333	(\w)\1x	vm	V2-drop-member	drop 0x62 (begins a match in the cells)	built	2	7108	331	0 "bbx"	p=0 "abbx" expect ('m', [(1, 4), (1, 2)]) got (0,)
+vmhat.rxt:333	(\w)\1x	vm	V2-drop-member	drop 0x30 (begins no match in the cells)	built	0	7108	0		
+vmhat.rxt:333	(\w)\1x	vm	V4-retry-skip		built	2	7108	332	0 "aaax"	p=0 "abbx" expect ('m', [(1, 4), (1, 2)]) got (0,)
+vmhat.rxt:363	\b(\w+)\s+\1\b	vm	V0-ok		built	0	36409	0		
+vmhat.rxt:363	\b(\w+)\s+\1\b	vm	V1-late		built	3	36409	240	0 "a a"	p=0 "ab ab" expect ('m', [(0, 5), (0, 2)]) got (0,)
+vmhat.rxt:363	\b(\w+)\s+\1\b	vm	V2-drop-member	drop 0x61 (begins a match in the cells)	built	10	36409	158	0 "a a"	p=0 "ab ab" expect ('m', [(0, 5), (0, 2)]) got (0,)
+vmhat.rxt:363	\b(\w+)\s+\1\b	vm	V2-drop-member	drop 0x30 (begins no match in the cells)	built	0	36409	0		
+vmhat.rxt:363	\b(\w+)\s+\1\b	vm	V4-retry-skip		built	0	36409	0		
+vmhat.rxt:432	\Bcat\B	vm	V0-ok		built	0	22461	0		
+vmhat.rxt:432	\Bcat\B	vm	V1-late		built	3	22461	25	1 "xcatx"	p=1 "xcatx" expect ('m', [(1, 4)]) got (0,)
+vmhat.rxt:432	\Bcat\B	vm	V2-drop-member	drop 0x63 (begins a match in the cells)	built	6	22461	50	0 "xcatx"	p=0 "xcatx" expect ('m', [(1, 4)]) got (0,)
+vmhat.rxt:432	\Bcat\B	vm	V4-retry-skip		built	1	22461	5	0 "ccatx"	p=0 "ccatx" expect ('m', [(1, 4)]) got (0,)
+vmhat.rxt:465	(?:\Ga|b)c	vm	V0-ok		built	0	36409	0		
+vmhat.rxt:465	(?:\Ga|b)c	vm	V1-late		built	4	36409	3830	0 "ac"	p=0 "ac" expect ('m', [(0, 2)]) got (0,)
+vmhat.rxt:465	(?:\Ga|b)c	vm	V2-drop-member	drop 0x61 (begins a match in the cells)	built	2	36409	1593	0 "ac"	p=0 "ac" expect ('m', [(0, 2)]) got (0,)
+vmhat.rxt:465	(?:\Ga|b)c	vm	V2-drop-member	drop 0x62 (begins a match in the cells)	built	3	36409	4305	0 "bc"	p=0 "bc" expect ('m', [(0, 2)]) got (0,)
+vmhat.rxt:465	(?:\Ga|b)c	vm	V4-retry-skip		built	1	36409	1098	0 "abc"	p=0 "abc" expect ('m', [(1, 3)]) got (0,)
+vmhat.rxt:485	a\Kb	vm	V0-ok		built	0	7108	0		
+vmhat.rxt:485	a\Kb	vm	V1-late		built	3	7108	700	0 "ab"	p=0 "ab" expect ('m', [(1, 2)]) got (0,)
+vmhat.rxt:485	a\Kb	vm	V2-drop-member	drop 0x61 (begins no match in the cells)	built	5	7108	1447	0 "ab"	p=0 "ab" expect ('m', [(1, 2)]) got (0,)
+vmhat.rxt:485	a\Kb	vm	V4-retry-skip		built	1	7108	267	0 "aab"	p=0 "aab" expect ('m', [(2, 3)]) got (0,)
+vmhat.rxt:502	a*b?	vm-nullable	V3-nullable-as-nonnullable		built	6	7108	3098	0 ""	p=0 "" expect ('m', [(0, 0)]) got (0,)
+witnesses.rxt:8	(?:(?<=a)z|w)	none	D0-ok	declined	declined					
+witnesses.rxt:8	(?:(?<=a)z|w)	none	D1-r3-SnE	T=1	built	2	36409	1992	0 "aza"	p=0 "aza" expect ('m', [(1, 2)]) got (0,)
+witnesses.rxt:8	(?:(?<=a)z|w)	none	DX-Tdfa	declined	declined					
+witnesses.rxt:8	(?:(?<=a)z|w)	none	D2-omit-seed	seed 4: |E*_k|=2 |T|=1	built	2	36409	1992	0 "aza"	p=0 "aza" expect ('m', [(1, 2)]) got (0,)
+witnesses.rxt:8	(?:(?<=a)z|w)	none	D3-omit-s0	identical table (|E*_s0|=255)	identical					
+witnesses.rxt:53	(?:(?<*a)z|w)	none	D0-ok	declined	declined					
+witnesses.rxt:53	(?:(?<*a)z|w)	none	D1-r3-SnE	T=1	built	1	36409	1992	0 "aza"	p=0 "aza" expect ('m', [(1, 2)]) got (0,)
+witnesses.rxt:53	(?:(?<*a)z|w)	none	DX-Tdfa	declined	declined					
+witnesses.rxt:53	(?:(?<*a)z|w)	none	D2-omit-seed	seed 4: |E*_k|=2 |T|=1	built	1	36409	1992	0 "aza"	p=0 "aza" expect ('m', [(1, 2)]) got (0,)
+witnesses.rxt:53	(?:(?<*a)z|w)	none	D3-omit-s0	identical table (|E*_s0|=255)	identical					
+witnesses.rxt:76	(?:(?<=[ab])z|w)	none	D0-ok	declined	declined					
+witnesses.rxt:76	(?:(?<=[ab])z|w)	none	D1-r3-SnE	T=1	built	2	36409	4248	0 "aza"	p=0 "aza" expect ('m', [(1, 2)]) got (0,)
+witnesses.rxt:76	(?:(?<=[ab])z|w)	none	DX-Tdfa	declined	declined					
+witnesses.rxt:76	(?:(?<=[ab])z|w)	none	D2-omit-seed	seed 4: |E*_k|=3 |T|=1	built	2	36409	4248	0 "aza"	p=0 "aza" expect ('m', [(1, 2)]) got (0,)
+witnesses.rxt:76	(?:(?<=[ab])z|w)	none	D3-omit-s0	identical table (|E*_s0|=254)	identical					
+witnesses.rxt:103	(?:(?<*[ab])z|w)	none	D0-ok	declined	declined					
+witnesses.rxt:103	(?:(?<*[ab])z|w)	none	D1-r3-SnE	T=1	built	1	36409	4248	0 "aza"	p=0 "aza" expect ('m', [(1, 2)]) got (0,)
+witnesses.rxt:103	(?:(?<*[ab])z|w)	none	DX-Tdfa	declined	declined					
+witnesses.rxt:103	(?:(?<*[ab])z|w)	none	D2-omit-seed	seed 4: |E*_k|=3 |T|=1	built	1	36409	4248	0 "aza"	p=0 "aza" expect ('m', [(1, 2)]) got (0,)
+witnesses.rxt:103	(?:(?<*[ab])z|w)	none	D3-omit-s0	identical table (|E*_s0|=254)	identical					
+witnesses.rxt:122	(?<=a)b|(?<=bc)d	none	D0-ok	declined	declined					
+witnesses.rxt:122	(?<=a)b|(?<=bc)d	none	D1-r3-SnE	T=1	built	2	22461	660	0 "aba"	p=0 "aba" expect ('m', [(1, 2)]) got (0,)
+witnesses.rxt:122	(?<=a)b|(?<=bc)d	none	DX-Tdfa	declined	declined					
+witnesses.rxt:122	(?<=a)b|(?<=bc)d	none	D2-omit-seed	seed 4: |E*_k|=2 |T|=1	built	2	22461	660	0 "aba"	p=0 "aba" expect ('m', [(1, 2)]) got (0,)
+witnesses.rxt:122	(?<=a)b|(?<=bc)d	none	D3-omit-s0	identical table (|E*_s0|=255)	identical					
+witnesses.rxt:165	(?m)(?<=\n)a|b$	none	D0-ok	declined	declined					
+witnesses.rxt:165	(?m)(?<=\n)a|b$	none	D1-r3-SnE	T=1	built	2	36409	2120	0 "\na\n"	p=0 "\naa" expect ('m', [(1, 2)]) got (0,)
+witnesses.rxt:165	(?m)(?<=\n)a|b$	none	DX-Tdfa	declined	declined					
+witnesses.rxt:165	(?m)(?<=\n)a|b$	none	D2-omit-seed	seed 4: |E*_k|=2 |T|=1	built	2	36409	2120	0 "\na\n"	p=0 "\naa" expect ('m', [(1, 2)]) got (0,)
+witnesses.rxt:165	(?m)(?<=\n)a|b$	none	D3-omit-s0	identical table (|E*_s0|=255)	identical					
+witnesses.rxt:200	(?:(?<=a)z|(?<=b)y|w)	none	D0-ok	declined	declined					
+witnesses.rxt:200	(?:(?<=a)z|(?<=b)y|w)	none	D1-r3-SnE	T=1	built	1	22461	1360	0 "aza"	p=0 "abyaz" expect ('m', [(2, 3)]) got (1, 4, 5)
+witnesses.rxt:200	(?:(?<=a)z|(?<=b)y|w)	none	DX-Tdfa	declined	declined					
+witnesses.rxt:200	(?:(?<=a)z|(?<=b)y|w)	none	D2-omit-seed	identical table (E* without seed 6 is still 256 bytes)	identical					
+witnesses.rxt:200	(?:(?<=a)z|(?<=b)y|w)	none	D2-omit-seed	identical table (E* without seed 12 is still 256 bytes)	identical					
+witnesses.rxt:200	(?:(?<=a)z|(?<=b)y|w)	none	D3-omit-s0	identical table (|E*_s0|=256)	identical					
+witnesses.rxt:233	(?:\b|x)y	none	D0-ok	declined	declined					
+witnesses.rxt:233	(?:\b|x)y	none	D1-r3-SnE	T=1	built	4	36409	2347	0 "xy"	p=0 "xy" expect ('m', [(0, 2)]) got (0,)
+witnesses.rxt:233	(?:\b|x)y	none	DX-Tdfa	T=Tdfa (rev 2 §4.1a: 'would also be sound'), |T|=1	built	4	36409	2347	0 "xy"	p=0 "xy" expect ('m', [(0, 2)]) got (0,)
+witnesses.rxt:233	(?:\b|x)y	none	D2-omit-seed	seed 4: |E*_k|=62 |T|=1	built	4	36409	2347	0 "xy"	p=0 "xy" expect ('m', [(0, 2)]) got (0,)
+witnesses.rxt:233	(?:\b|x)y	none	D3-omit-s0	declined	declined					
+witnesses.rxt:257	(?:\bab|x)	dfa	D0-ok		built	0	22461	0		
+witnesses.rxt:257	(?:\bab|x)	dfa	D1-r3-SnE	identical table (T = D0's)	identical					
+witnesses.rxt:257	(?:\bab|x)	dfa	DX-Tdfa	identical table (T = D0's)	identical					
+witnesses.rxt:257	(?:\bab|x)	dfa	D2-omit-seed	identical table (E* without seed 5 is still 63 bytes)	identical					
+witnesses.rxt:257	(?:\bab|x)	dfa	D3-omit-s0	|E* w/o s0|=194 |T|=1	built	6	22461	387	0 "ab"	p=0 " ab" expect ('m', [(1, 3)]) got (0,)
+witnesses.rxt:257	(?:\bab|x)	dfa	D4-no-reseed		built	1	22461	28	0 "babx"	p=0 "babx" expect ('m', [(3, 4)]) got (0,)
+witnesses.rxt:257	(?:\bab|x)	dfa	D5-uncond-reseed		built	0	22461	0		
+witnesses.rxt:257	(?:\bab|x)	dfa	D9-drop-member	drop 0x61	built	6	22461	387	0 "ab"	p=0 " ab" expect ('m', [(1, 3)]) got (0,)
+witnesses.rxt:257	(?:\bab|x)	dfa	D9-drop-member	drop 0x78	built	1	22461	2705	0 "x "	p=0 "xab" expect ('m', [(0, 1)]) got (0,)
+witnesses.rxt:297	(?:\Bab|x)	dfa	D0-ok		built	0	22461	0		
+witnesses.rxt:297	(?:\Bab|x)	dfa	D1-r3-SnE	identical table (T = D0's)	identical					
+witnesses.rxt:297	(?:\Bab|x)	dfa	DX-Tdfa	identical table (T = D0's)	identical					
+witnesses.rxt:297	(?:\Bab|x)	dfa	D2-omit-seed	identical table (E* without seed 5 is still 63 bytes)	identical					
+witnesses.rxt:297	(?:\Bab|x)	dfa	D3-omit-s0	identical table (|E*_s0|=195)	identical					
+witnesses.rxt:297	(?:\Bab|x)	dfa	D4-no-reseed		built	2	22461	154	0 "zab"	p=0 "zab" expect ('m', [(1, 3)]) got (0,)
+witnesses.rxt:297	(?:\Bab|x)	dfa	D5-uncond-reseed		built	0	22461	0		
+witnesses.rxt:297	(?:\Bab|x)	dfa	D9-drop-member	drop 0x61	built	2	22461	267	0 "zab"	p=0 "zab" expect ('m', [(1, 3)]) got (0,)
+witnesses.rxt:297	(?:\Bab|x)	dfa	D9-drop-member	drop 0x78	built	1	22461	2710	0 "xz"	p=0 "xz" expect ('m', [(0, 1)]) got (0,)
+wordb.rxt:8	\b(?:ab|cd)\b	dfa	D0-ok		built	0	22461	0		
+wordb.rxt:8	\b(?:ab|cd)\b	dfa	D1-r3-SnE	identical table (T = D0's)	identical					
+wordb.rxt:8	\b(?:ab|cd)\b	dfa	DX-Tdfa	identical table (T = D0's)	identical					
+wordb.rxt:8	\b(?:ab|cd)\b	dfa	D2-omit-seed	identical table (E* without seed 6 is still 63 bytes)	identical					
+wordb.rxt:8	\b(?:ab|cd)\b	dfa	D3-omit-s0	declined	declined					
+wordb.rxt:8	\b(?:ab|cd)\b	dfa	D4-no-reseed		built	4	22461	0		p=0 "bab ab" expect ('m', [(4, 6)]) got (0,)
+wordb.rxt:8	\b(?:ab|cd)\b	dfa	D5-uncond-reseed		built	0	22461	0		
+wordb.rxt:8	\b(?:ab|cd)\b	dfa	D9-drop-member	drop 0x61	built	33	22461	175	0 "ab"	p=0 "bab ab" expect ('m', [(4, 6)]) got (0,)
+wordb.rxt:8	\b(?:ab|cd)\b	dfa	D9-drop-member	drop 0x63	built	1	22461	0		p=0 "cd!" expect ('m', [(0, 2)]) got (0,)
+wordb.rxt:72	\B(?:ab|cd)\B	dfa	D0-ok		built	0	22461	0		
+wordb.rxt:72	\B(?:ab|cd)\B	dfa	D1-r3-SnE	identical table (T = D0's)	identical					
+wordb.rxt:72	\B(?:ab|cd)\B	dfa	DX-Tdfa	identical table (T = D0's)	identical					
+wordb.rxt:72	\B(?:ab|cd)\B	dfa	D2-omit-seed	identical table (E* without seed 6 is still 63 bytes)	identical					
+wordb.rxt:72	\B(?:ab|cd)\B	dfa	D3-omit-s0	identical table (|E*_s0|=195)	identical					
+wordb.rxt:72	\B(?:ab|cd)\B	dfa	D4-no-reseed		built	3	22461	132	0 "xabx"	p=0 "xabx" expect ('m', [(1, 3)]) got (0,)
+wordb.rxt:72	\B(?:ab|cd)\B	dfa	D5-uncond-reseed		built	0	22461	0		
+wordb.rxt:72	\B(?:ab|cd)\B	dfa	D9-drop-member	drop 0x61	built	3	22461	192	0 "xabx"	p=0 "xabx" expect ('m', [(1, 3)]) got (0,)
+wordb.rxt:72	\B(?:ab|cd)\B	dfa	D9-drop-member	drop 0x63	built	0	22461	0		
+wordb.rxt:112	\b(?:ab|cd)\B	dfa	D0-ok		built	0	36409	0		
+wordb.rxt:112	\b(?:ab|cd)\B	dfa	D1-r3-SnE	identical table (T = D0's)	identical					
+wordb.rxt:112	\b(?:ab|cd)\B	dfa	DX-Tdfa	identical table (T = D0's)	identical					
+wordb.rxt:112	\b(?:ab|cd)\B	dfa	D2-omit-seed	identical table (E* without seed 6 is still 63 bytes)	identical					
+wordb.rxt:112	\b(?:ab|cd)\B	dfa	D3-omit-s0	declined	declined					
+wordb.rxt:112	\b(?:ab|cd)\B	dfa	D4-no-reseed		built	0	36409	0		
+wordb.rxt:112	\b(?:ab|cd)\B	dfa	D5-uncond-reseed		built	0	36409	0		
+wordb.rxt:112	\b(?:ab|cd)\B	dfa	D9-drop-member	drop 0x61	built	7	36409	753	0 "aba"	p=0 "abx" expect ('m', [(0, 2)]) got (0,)
+wordb.rxt:112	\b(?:ab|cd)\B	dfa	D9-drop-member	drop 0x63	built	0	36409	0		
+wordb.rxt:141	\B(?:ab|cd)\b	dfa	D0-ok		built	0	36409	0		
+wordb.rxt:141	\B(?:ab|cd)\b	dfa	D1-r3-SnE	identical table (T = D0's)	identical					
+wordb.rxt:141	\B(?:ab|cd)\b	dfa	DX-Tdfa	identical table (T = D0's)	identical					
+wordb.rxt:141	\B(?:ab|cd)\b	dfa	D2-omit-seed	identical table (E* without seed 6 is still 63 bytes)	identical					
+wordb.rxt:141	\B(?:ab|cd)\b	dfa	D3-omit-s0	identical table (|E*_s0|=195)	identical					
+wordb.rxt:141	\B(?:ab|cd)\b	dfa	D4-no-reseed		built	3	36409	380	0 "xab"	p=0 "xab" expect ('m', [(1, 3)]) got (0,)
+wordb.rxt:141	\B(?:ab|cd)\b	dfa	D5-uncond-reseed		built	0	36409	0		
+wordb.rxt:141	\B(?:ab|cd)\b	dfa	D9-drop-member	drop 0x61	built	3	36409	753	0 "xab"	p=0 "xab" expect ('m', [(1, 3)]) got (0,)
+wordb.rxt:141	\B(?:ab|cd)\b	dfa	D9-drop-member	drop 0x63	built	0	36409	0		
+wordb.rxt:167	\b(?:ab|cd)\b	dfa	D0-ok		built	0	22461	0		
+wordb.rxt:167	\b(?:ab|cd)\b	dfa	D1-r3-SnE	identical table (T = D0's)	identical					
+wordb.rxt:167	\b(?:ab|cd)\b	dfa	DX-Tdfa	identical table (T = D0's)	identical					
+wordb.rxt:167	\b(?:ab|cd)\b	dfa	D2-omit-seed	identical table (E* without seed 6 is still 134 bytes)	identical					
+wordb.rxt:167	\b(?:ab|cd)\b	dfa	D3-omit-s0	declined	declined					
+wordb.rxt:167	\b(?:ab|cd)\b	dfa	D4-no-reseed		built	2	22461	0		p=0 "\xe9ab ab" expect ('m', [(4, 6)]) got (0,)
+wordb.rxt:167	\b(?:ab|cd)\b	dfa	D5-uncond-reseed		built	0	22461	0		
+wordb.rxt:167	\b(?:ab|cd)\b	dfa	D9-drop-member	drop 0x61	built	16	22461	175	0 "ab"	p=0 "\xe9ab ab" expect ('m', [(4, 6)]) got (0,)
+wordb.rxt:167	\b(?:ab|cd)\b	dfa	D9-drop-member	drop 0x63	built	0	22461	0		
+wordb.rxt:203	\B(?:ab|cd)\B	dfa	D0-ok		built	0	36409	0		
+wordb.rxt:203	\B(?:ab|cd)\B	dfa	D1-r3-SnE	identical table (T = D0's)	identical					
+wordb.rxt:203	\B(?:ab|cd)\B	dfa	DX-Tdfa	identical table (T = D0's)	identical					
+wordb.rxt:203	\B(?:ab|cd)\B	dfa	D2-omit-seed	identical table (E* without seed 6 is still 134 bytes)	identical					
+wordb.rxt:203	\B(?:ab|cd)\B	dfa	D3-omit-s0	identical table (|E*_s0|=124)	identical					
+wordb.rxt:203	\B(?:ab|cd)\B	dfa	D4-no-reseed		built	1	36409	366	0 "\xe9ab\xe9"	p=0 "\xe9ab\xe9" expect ('m', [(1, 3)]) got (0,)
+wordb.rxt:203	\B(?:ab|cd)\B	dfa	D5-uncond-reseed		built	0	36409	0		
+wordb.rxt:203	\B(?:ab|cd)\B	dfa	D9-drop-member	drop 0x61	built	1	36409	648	0 "\xe9ab\xe9"	p=0 "\xe9ab\xe9" expect ('m', [(1, 3)]) got (0,)
+wordb.rxt:203	\B(?:ab|cd)\B	dfa	D9-drop-member	drop 0x63	built	0	36409	0		
+wordb.rxt:227	\b(?:ab|cd)\b	dfa	D0-ok		built	0	22461	0		
+wordb.rxt:227	\b(?:ab|cd)\b	dfa	D1-r3-SnE	identical table (T = D0's)	identical					
+wordb.rxt:227	\b(?:ab|cd)\b	dfa	DX-Tdfa	identical table (T = D0's)	identical					
+wordb.rxt:227	\b(?:ab|cd)\b	dfa	D2-omit-seed	identical table (E* without seed 6 is still 63 bytes)	identical					
+wordb.rxt:227	\b(?:ab|cd)\b	dfa	D3-omit-s0	declined	declined					
+wordb.rxt:227	\b(?:ab|cd)\b	dfa	D4-no-reseed		built	2	22461	0		p=0 "bAB AB" expect ('m', [(4, 6)]) got (0,)
+wordb.rxt:227	\b(?:ab|cd)\b	dfa	D5-uncond-reseed		built	0	22461	0		
+wordb.rxt:227	\b(?:ab|cd)\b	dfa	D9-drop-member	drop 0x41	built	11	22461	348	0 "Ab"	p=0 "bAB AB" expect ('m', [(4, 6)]) got (0,)
+wordb.rxt:227	\b(?:ab|cd)\b	dfa	D9-drop-member	drop 0x43	built	1	22461	0		p=0 "CD" expect ('m', [(0, 2)]) got (0,)
+wordb.rxt:227	\b(?:ab|cd)\b	dfa	D9-drop-member	drop 0x61	built	4	22461	0		p=0 "aB ab" expect ('m', [(0, 2)]) got (0,)
+wordb.rxt:227	\b(?:ab|cd)\b	dfa	D9-drop-member	drop 0x63	built	0	22461	0		
+wordb.rxt:259	(?i)\bcat\b	dfa	D0-ok		built	0	22461	0		
+wordb.rxt:259	(?i)\bcat\b	dfa	D1-r3-SnE	identical table (T = D0's)	identical					
+wordb.rxt:259	(?i)\bcat\b	dfa	DX-Tdfa	identical table (T = D0's)	identical					
+wordb.rxt:259	(?i)\bcat\b	dfa	D2-omit-seed	identical table (E* without seed 5 is still 63 bytes)	identical					
+wordb.rxt:259	(?i)\bcat\b	dfa	D3-omit-s0	declined	declined					
+wordb.rxt:259	(?i)\bcat\b	dfa	D4-no-reseed		built	0	22461	0		
+wordb.rxt:259	(?i)\bcat\b	dfa	D5-uncond-reseed		built	0	22461	0		
+wordb.rxt:259	(?i)\bcat\b	dfa	D7-seek-from-startpos		built	0	22461	0		
+wordb.rxt:259	(?i)\bcat\b	dfa	D9-drop-member	drop 0x43	built	7	22461	0		p=0 "acat CAT" expect ('m', [(5, 8)]) got (0,)
+wordb.rxt:259	(?i)\bcat\b	dfa	D9-drop-member	drop 0x63	built	10	22461	26	0 "cat"	p=0 "ccat cat" expect ('m', [(5, 8)]) got (0,)
+wordb.rxt:301	\b[a-z_][a-z0-9_]{0,31}=\"(?:[^\"\\]|\\.)*\"	dfa	D0-ok		built	0	22461	0		
+wordb.rxt:301	\b[a-z_][a-z0-9_]{0,31}=\"(?:[^\"\\]|\\.)*\"	dfa	D1-r3-SnE	identical table (T = D0's)	identical					
+wordb.rxt:301	\b[a-z_][a-z0-9_]{0,31}=\"(?:[^\"\\]|\\.)*\"	dfa	DX-Tdfa	identical table (T = D0's)	identical					
+wordb.rxt:301	\b[a-z_][a-z0-9_]{0,31}=\"(?:[^\"\\]|\\.)*\"	dfa	D2-omit-seed	identical table (E* without seed 8 is still 63 bytes)	identical					
+wordb.rxt:301	\b[a-z_][a-z0-9_]{0,31}=\"(?:[^\"\\]|\\.)*\"	dfa	D3-omit-s0	declined	declined					
+wordb.rxt:301	\b[a-z_][a-z0-9_]{0,31}=\"(?:[^\"\\]|\\.)*\"	dfa	D4-no-reseed		built	0	22461	0		
+wordb.rxt:301	\b[a-z_][a-z0-9_]{0,31}=\"(?:[^\"\\]|\\.)*\"	dfa	D5-uncond-reseed		built	0	22461	0		
+wordb.rxt:301	\b[a-z_][a-z0-9_]{0,31}=\"(?:[^\"\\]|\\.)*\"	dfa	D7-seek-from-startpos		built	0	22461	0		
+wordb.rxt:301	\b[a-z_][a-z0-9_]{0,31}=\"(?:[^\"\\]|\\.)*\"	dfa	D9-drop-member	drop 0x5f	built	0	22461	0		
+wordb.rxt:301	\b[a-z_][a-z0-9_]{0,31}=\"(?:[^\"\\]|\\.)*\"	dfa	D9-drop-member	drop 0x61	built	7	22461	18	0 "a="""	p=0 " ab=""" expect ('m', [(1, 6)]) got (0,)
+wordb.rxt:301	\b[a-z_][a-z0-9_]{0,31}=\"(?:[^\"\\]|\\.)*\"	dfa	D9-drop-member	drop 0x62	built	3	22461	0		p=0 "a b=""" expect ('m', [(2, 6)]) got (0,)
+wordb.rxt:301	\b[a-z_][a-z0-9_]{0,31}=\"(?:[^\"\\]|\\.)*\"	dfa	D9-drop-member	drop 0x63	built	0	22461	0		
+wordb.rxt:301	\b[a-z_][a-z0-9_]{0,31}=\"(?:[^\"\\]|\\.)*\"	dfa	D9-drop-member	drop 0x64	built	0	22461	0		
+wordb.rxt:301	\b[a-z_][a-z0-9_]{0,31}=\"(?:[^\"\\]|\\.)*\"	dfa	D9-drop-member	drop 0x65	built	0	22461	0		
+wordb.rxt:301	\b[a-z_][a-z0-9_]{0,31}=\"(?:[^\"\\]|\\.)*\"	dfa	D9-drop-member	drop 0x66	built	0	22461	0		
+wordb.rxt:301	\b[a-z_][a-z0-9_]{0,31}=\"(?:[^\"\\]|\\.)*\"	dfa	D9-drop-member	drop 0x67	built	0	22461	0		
+utfcheck_cells.tsv:78	\b(?:ab|cd)\b	dfa	D0-ok		built	0	22461	0		
+utfcheck_cells.tsv:78	\b(?:ab|cd)\b	dfa	D1-r3-SnE	identical table (T = D0's)	identical					
+utfcheck_cells.tsv:78	\b(?:ab|cd)\b	dfa	DX-Tdfa	identical table (T = D0's)	identical					
+utfcheck_cells.tsv:78	\b(?:ab|cd)\b	dfa	D2-omit-seed	identical table (E* without seed 6 is still 63 bytes)	identical					
+utfcheck_cells.tsv:78	\b(?:ab|cd)\b	dfa	D3-omit-s0	declined	declined					
+utfcheck_cells.tsv:78	\b(?:ab|cd)\b	dfa	D4-no-reseed		built	0	22461	0		
+utfcheck_cells.tsv:78	\b(?:ab|cd)\b	dfa	D5-uncond-reseed		built	0	22461	0		
+utfcheck_cells.tsv:78	\b(?:ab|cd)\b	dfa	D6-seek-before-utfcheck		built	14	22461	10164	0 "\xff"	p=0 "\xff" expect ('utf',) got (0,)
+utfcheck_cells.tsv:78	\b(?:ab|cd)\b	dfa	D9-drop-member	drop 0x61	built	1	22461	1	0 "ab"	p=0 "ab" expect ('m', [(0, 2)]) got (0,)
+utfcheck_cells.tsv:78	\b(?:ab|cd)\b	dfa	D9-drop-member	drop 0x63	built	0	22461	0		
+utfcheck_cells.tsv:79	(\w)\1x	vm	V0-ok		built	0	22461	0		
+utfcheck_cells.tsv:79	(\w)\1x	vm	V1-late		built	2	22461	196	0 "aax"	p=1 "\xffaax" expect ('m', [(1, 4)]) got (0,)
+utfcheck_cells.tsv:79	(\w)\1x	vm	V2-drop-member	drop 0x61 (begins a match in the cells)	built	3	22461	94	0 "aax"	p=1 "\xffaax" expect ('m', [(1, 4)]) got (0,)
+utfcheck_cells.tsv:79	(\w)\1x	vm	V2-drop-member	drop 0x30 (begins no match in the cells)	built	0	22461	0		
+utfcheck_cells.tsv:79	(\w)\1x	vm	V4-retry-skip		built	1	22461	72	0 "aaax"	p=0 "aaax" expect ('m', [(1, 4)]) got (0,)
+utfcheck_cells.tsv:79	(\w)\1x	vm	V5-seek-before-utfcheck		built	3	22461	2562	0 "\xff"	p=0 "\xff" expect ('utf',) got (0,)

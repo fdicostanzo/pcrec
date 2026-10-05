@@ -1,0 +1,94 @@
+bench	float-literal-bound	mover	route=dfa	|S|=10	|E|=11	cases=167481	cond=0	none=0	uncond=0	
+bench	wild-codegrammar-json-constant	mover	route=dfa	|S|=3	|E|=63	cases=114381	cond=0	none=0	uncond=0	
+bench	wild-logparse-base10num-grok	not-a-mover:none
+bench	wild-logparse-base10num-noatomic	not-a-mover:none
+bench	wild-logparse-quotedstring-grok	mover	route=hybrid	|S|=3	|E|=4	cases=380713	cond=0	none=1425	uncond=0	
+bench	wild-logparse-quotedstring-noatomic	mover	route=dfa	|S|=3	|E|=4	cases=380713	cond=0	none=1425	uncond=0	
+bench	wild-logparse-syslogbase-expanded	mover	route=hybrid	|S|=16	|E|=63	cases=114381	cond=0	none=0	uncond=0	
+bench	wild-secrets-aws-access-key-id	mover	route=hybrid	|S|=1	|E|=63	cases=114381	cond=0	none=0	uncond=0	
+bench	wild-waf-crs-942140-dbnames	mover	route=dfa	|S|=14	|E|=63	cases=114381	cond=0	none=0	uncond=0	
+bench	bignum	mover	route=dfa	|S|=10	|E|=63	cases=380713	cond=0	none=0	uncond=0	
+bench	hex32-id	mover	route=dfa	|S|=16	|E|=63	cases=114381	cond=0	none=0	uncond=0	
+bench	kv-quoted	mover	route=dfa	|S|=27	|E|=63	cases=114381	cond=0	none=0	uncond=0	
+bench	level-context	mover	route=hybrid	|S|=3	|E|=63	cases=114381	cond=0	none=0	uncond=0	
+bench	ctx-greedy-256	mover	route=hybrid	|S|=3	|E|=63	cases=114381	cond=0	none=0	uncond=0	
+bench	ctx-lazy-1024	mover	route=hybrid	|S|=3	|E|=63	cases=114381	cond=0	none=0	uncond=0	
+bench	ctx-lazy-256	mover	route=hybrid	|S|=3	|E|=63	cases=114381	cond=0	none=0	uncond=0	
+bench	ctx-lazy-64	mover	route=hybrid	|S|=3	|E|=63	cases=114381	cond=0	none=0	uncond=0	
+bench	wb-256	mover	route=dfa	|S|=26	|E|=63	cases=114381	cond=0	none=0	uncond=0	
+bench	wb-512	mover	route=dfa	|S|=26	|E|=63	cases=114381	cond=0	none=0	uncond=0	
+bench	wild-secrets-aws-access-key-id	mover	route=hybrid	|S|=1	|E|=63	cases=114381	cond=0	none=0	uncond=0	
+corpus	tests/assertions/d27/composition.rxt:45	mover	route=dfa	|S|=2	|E|=63	cases=114381	cond=0	none=0	uncond=0	
+corpus	tests/assertions/d27/gating.rxt:42	mover	route=dfa	|S|=1	|E|=63	cases=167481	cond=0	none=1578	uncond=0	
+corpus	tests/assertions/d27/gating.rxt:47	mover	route=dfa	|S|=1	|E|=63	cases=167481	cond=0	none=21794	uncond=0	
+corpus	tests/assertions/d27/kreset.rxt:58	not-a-mover:none
+corpus	tests/assertions/d27/word_boundary.rxt:45	not-a-mover:none
+corpus	tests/assertions/d27/word_boundary.rxt:51	mover	route=hybrid	|S|=2	|E|=63	cases=114381	cond=0	none=0	uncond=0	
+corpus	tests/assertions/d27/word_boundary.rxt:91	mover	route=dfa	|S|=2	|E|=63	cases=114381	cond=0	none=0	uncond=0	
+corpus	tests/assertions/wordb_basic.rxt:750	not-a-mover:none
+corpus	tests/assertions/wordb_basic.rxt:825	not-a-mover:none
+corpus	tests/assertions/wordb_basic.rxt:900	not-a-mover:none
+corpus	tests/assertions/wordb_basic.rxt:975	not-a-mover:none
+corpus	tests/assertions/wordb_empty_compose.rxt:1092	not-a-mover:none
+corpus	tests/assertions/wordb_empty_compose.rxt:1168	mover	route=dfa	|S|=1	|E|=63	cases=131836	cond=0	none=2229	uncond=0	
+corpus	tests/assertions/wordb_empty_compose.rxt:1243	not-a-mover:none
+corpus	tests/assertions/wordb_empty_compose.rxt:1393	not-a-mover:none
+corpus	tests/assertions/wordb_vm.rxt:339	not-a-mover:none
+corpus	tests/assertions/wordb_vm.rxt:414	mover	route=hybrid	|S|=1	|E|=63	cases=167481	cond=0	none=1578	uncond=0	
+corpus	tests/assertions/wordb_vm.rxt:714	not-a-mover:none
+corpus	tests/base/clspack_atoms.rxt:53	mover	route=hybrid	|S|=5	|E|=63	cases=114381	cond=0	none=0	uncond=0	
+corpus	tests/lookaround/alpha_spellings.rxt:129	mover	route=dfa	|S|=1	|E|=2	cases=131836	cond=0	none=1730	uncond=0	
+corpus	tests/lookaround/alpha_spellings.rxt:144	mover	route=dfa	|S|=1	|E|=2	cases=114381	cond=0	none=404	uncond=0	
+corpus	tests/lookaround/alpha_spellings.rxt:346	not-a-mover:none
+corpus	tests/lookaround/alpha_spellings.rxt:356	not-a-mover:none
+corpus	tests/lookaround/d27/matrix.rxt:1064	not-a-mover:none
+corpus	tests/lookaround/d27/matrix.rxt:1100	not-a-mover:none
+corpus	tests/lookaround/d27/matrix.rxt:1122	not-a-mover:none
+corpus	tests/lookaround/d27/matrix.rxt:1138	not-a-mover:none
+corpus	tests/lookaround/d27/matrix.rxt:1150	not-a-mover:none
+corpus	tests/lookaround/d27/matrix.rxt:1524	mover	route=dfa	|S|=1	|E|=2	cases=24604	cond=0	none=1339	uncond=0	
+corpus	tests/lookaround/d27/matrix.rxt:1548	mover	route=dfa	|S|=2	|E|=3	cases=167481	cond=0	none=6536	uncond=0	
+corpus	tests/lookaround/d27/matrix.rxt:1564	mover	route=hybrid	|S|=1	|E|=2	cases=24604	cond=0	none=1339	uncond=0	
+corpus	tests/lookaround/d27/matrix.rxt:1576	mover	route=hybrid	|S|=1	|E|=2	cases=24604	cond=0	none=1339	uncond=0	
+corpus	tests/lookaround/d27/matrix.rxt:1584	mover	route=dfa	|S|=1	|E|=3	cases=167481	cond=0	none=7454	uncond=0	
+corpus	tests/lookaround/d27/matrix.rxt:1608	mover	route=dfa	|S|=2	|E|=4	cases=131836	cond=0	none=4440	uncond=0	
+corpus	tests/lookaround/d27/matrix.rxt:1624	mover	route=hybrid	|S|=1	|E|=3	cases=167481	cond=0	none=7454	uncond=0	
+corpus	tests/lookaround/d27/matrix.rxt:1636	mover	route=hybrid	|S|=1	|E|=3	cases=167481	cond=0	none=7454	uncond=0	
+corpus	tests/lookaround/d27/matrix.rxt:2597	not-a-mover:none
+corpus	tests/lookaround/d27/matrix.rxt:2637	not-a-mover:none
+corpus	tests/lookaround/d27/matrix.rxt:2662	not-a-mover:none
+corpus	tests/lookaround/d27/matrix.rxt:2680	not-a-mover:none
+corpus	tests/lookaround/d27/matrix.rxt:2693	not-a-mover:none
+corpus	tests/lookaround/d27/spellings.rxt:88	mover	route=dfa	|S|=1	|E|=2	cases=24604	cond=0	none=1339	uncond=0	
+corpus	tests/lookaround/d27/spellings.rxt:97	mover	route=dfa	|S|=1	|E|=2	cases=380713	cond=0	none=3182	uncond=0	
+corpus	tests/lookaround/d27/spellings.rxt:106	mover	route=dfa	|S|=1	|E|=2	cases=114381	cond=0	none=404	uncond=0	
+corpus	tests/lookaround/lookbehind.rxt:107	mover	route=dfa	|S|=1	|E|=2	cases=24604	cond=0	none=1339	uncond=0	
+corpus	tests/lookaround/lookbehind.rxt:212	not-a-mover:none
+corpus	tests/lookaround/lookbehind.rxt:273	mover	route=dfa	|S|=1	|E|=63	cases=167481	cond=0	none=21794	uncond=0	
+corpus	tests/lookaround/lookbehind.rxt:281	mover	route=dfa	|S|=1	|E|=63	cases=167481	cond=0	none=1578	uncond=0	
+corpus	tests/lookaround/lookbehind.rxt:295	mover	route=dfa	|S|=1	|E|=255	cases=24604	cond=0	none=2902	uncond=0	
+corpus	tests/offsetskip/offset_skip.rxt:255	mover	route=dfa	|S|=16	|E|=63	cases=114381	cond=0	none=0	uncond=0	
+corpus	tests/ucp/ctxnode.rxt:41	not-a-mover:none
+corpus	tests/ucp/ctxnode.rxt:57	not-a-mover:none
+corpus	tests/ucp/ctxnode.rxt:72	not-a-mover:none
+corpus	tests/ucp/ctxnode.rxt:138	not-a-mover:none
+corpus	tests/ucp/ctxnode.rxt:146	not-a-mover:none
+corpus	tests/ucp/ctxnode.rxt:162	mover	route=dfa	|S|=10	|E|=13	cases=131836	cond=0	none=2796	uncond=0	
+corpus	tests/ucp/ctxnode.rxt:238	not-a-mover:none
+corpus	tests/ucp/ctxnode.rxt:329	not-a-mover:none
+corpus	tests/ucp/ctxnode.rxt:336	not-a-mover:none
+corpus	tests/ucp/ctxnode.rxt:367	mover	route=dfa	|S|=1	|E|=134	cases=114381	cond=0	none=8555	uncond=0	
+corpus	tests/ucp/ctxnode.rxt:400	not-a-mover:none
+corpus	tests/utf8/axis08_lookbehind_varwidth.rxt:75	mover	route=dfa	|S|=1	|E|=255	cases=24604	cond=0	none=2902	uncond=0	
+corpus	tests/utf8/axis08_lookbehind_varwidth.rxt:86	mover	route=dfa	|S|=1	|E|=255	cases=24604	cond=0	none=349	uncond=0	
+corpus	tests/utf8/axis08_lookbehind_varwidth.rxt:108	mover	route=dfa	|S|=1	|E|=255	cases=24604	cond=0	none=2902	uncond=0	
+corpus	tests/utf8/axis08_lookbehind_varwidth.rxt:119	mover	route=dfa	|S|=1	|E|=255	cases=24604	cond=0	none=349	uncond=0	
+corpus	tests/utf8/axis08_lookbehind_varwidth.rxt:181	mover	route=dfa	|S|=1	|E|=117	cases=131836	cond=0	none=13986	uncond=0	
+corpus	tests/utf8/axis08_lookbehind_varwidth.rxt:190	mover	route=dfa	|S|=1	|E|=117	cases=131836	cond=0	none=507	uncond=0	
+corpus	tests/utf8/axis08_lookbehind_varwidth.rxt:233	not-a-mover:none
+corpus	tests/utf8/axis08_lookbehind_varwidth.rxt:242	mover	route=dfa	|S|=1	|E|=3	cases=131836	cond=0	none=2796	uncond=0	
+corpus	tests/utf8/axis08_lookbehind_varwidth.rxt:262	mover	route=dfa	|S|=1	|E|=52	cases=380713	cond=0	none=36708	uncond=0	
+corpus	tests/utf8/axis08_lookbehind_varwidth.rxt:275	mover	route=dfa	|S|=1	|E|=52	cases=380713	cond=0	none=956	uncond=0	
+corpus	tests/utf8/axis13_ctx_illformed.rxt:21	not-a-mover:none
+corpus	tests/utf8/axis13_ctx_illformed.rxt:51	mover	route=dfa	|S|=1	|E|=2	cases=24604	cond=0	none=1339	uncond=0	
+corpus	tests/utf8/axis13_ctx_illformed.rxt:87	not-a-mover:none

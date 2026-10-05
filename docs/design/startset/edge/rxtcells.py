@@ -43,16 +43,20 @@ def read_rxt(path):
             cur = {"id": "%s:%d" % (os.path.basename(path), ln), "pat": rest, "flags": "", "enc": "byte",
                    "engine": None, "frames": None, "xflags": [], "tags": {}, "cases": [], "desc": ""}
             blocks.append(cur); continue
-        assert cur is not None, "%s:%d: line before any pattern" % (path, ln)
+        if cur is None:     # the HEAD: config/target/its indented body (the collapse targets)
+            assert kw in ("config", "target", "") or line.startswith(" "), "%s:%d: unsupported head line" % (path, ln)
+            continue
         if kw == "flags": cur["flags"] = rest
         elif kw == "encoding": cur["enc"] = rest.strip()
         elif kw == "engine": assert rest.strip() == "vm"; cur["engine"] = "vm"
         elif kw == "budget":
             k, v = rest.strip().split("="); assert k == "frames"; cur["frames"] = int(v)
         elif kw == "description": cur["desc"] = rest
+        elif kw == "name": cur["name"] = rest.strip()
         elif kw == "tag":
             for it in rest.split(","):
                 k, _, v = it.strip().partition("="); cur["tags"][k] = v or True
+                if k == "xflags": cur["xflags"] = v.split("|")
         elif kw in ("ms", "ns", "m", "n"):
             if kw in ("ms", "ns"): p, rest = rest.split(" ", 1); p = int(p)
             else: p = 0
