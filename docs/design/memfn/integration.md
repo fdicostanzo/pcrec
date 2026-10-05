@@ -1743,3 +1743,323 @@ into K0 entire. pcrec keeps no ISA selection table.
    for simplicity. K0 is a cost comparison too. It differs in needing no
    rates (no W, no density prior, no bundle), only proven bounds. That
    is argued in §R2 and is Q23's to confirm.
+
+---
+
+## 8. THE DELEGATION CONTRACT `[rev3]`
+
+### 8.1 The principle: a site crosses the boundary, and code comes back
+
+| pcrec knows, and says | the kit knows, and decides |
+|---|---|
+| WHAT is searched: a predicate over positions (byte sets and masked runs at offsets from a candidate), from pcrec's single sources (P2 cube, T4 sets, P3 runs, the k-set derivation) | HOW: which term to scan and which to verify, the classifier per set shape, unrolling, the loop-free short path, a libc call vs inline vs injected text, the ISA ladder, SWAR vs vector, the always-present scalar arm |
+| WHERE and under what PROOF: the site's D91 budget, its bound expressions, its proven span `[span_lo, span_hi]`, anchoring, the read limit | what those proofs buy: a span short enough for a loop-free path, an anchored site needing no loop at all |
+| a density HINT per term and per predicate (pcrec's prior, encoding-gated) | what density does to its choice (iterate in place vs restart per hit, unroll factor) |
+| the HANDOFF: what happens at a result (return it, advance a cursor in place, run pcrec's verify per candidate and continue on failure, or answer a presence boolean) | how the handoff is fused into its loop |
+| the PROFILE asked for (§8.5): `baseline`, `portable` or `native`, and the opaque pass-throughs (`--memfn-deny=`, `--isa=`) | what each profile means in code, and every measurement behind its choices |
+
+Neither side crosses into the other's column. The kit never learns a
+pcrec site name or engine (§3.4's rule, kept). pcrec never learns an ISA,
+never reads a cost, and never inspects the code it gets back: the text
+goes from the kit's sink into pcrec's artifact unread.
+
+### 8.2 The site description (C shapes, versioning)
+
+`memfn/include/memfn.h`, the kit's ONLY public header (§11.1). Names
+are PROPOSED; the shapes are the contract R4a builds. Every field is
+architecture-neutral.
+
+```c
+#define MF_SITE_ABI 1   /* layout and meaning of every struct below           */
+#define MF_VOCAB    1   /* the operation vocabulary: op x handoff x term kinds */
+
+typedef enum {
+    MF_OP_FIND,         /* first cand in [lo,hi) satisfying the predicate (last, if reverse)  */
+    MF_OP_SKIP,         /* first cand in [lo,hi) whose byte is NOT in the one SET term       */
+    MF_OP_VERIFY,       /* does the predicate hold at cand == lo (an anchored site)          */
+    MF_OP_ALL_PRESENT   /* does EVERY one of npred predicates hold somewhere in [lo,hi)      */
+} mf_op;
+
+typedef enum {
+    MF_H_RETURN,        /* write the result (or the miss value) to `result`                  */
+    MF_H_ADVANCE,       /* move `cursor` in place with pcrec's own step text (skip forms)    */
+    MF_H_ON_CAND,       /* per candidate, run pcrec's verify; continue on reject             */
+    MF_H_BOOL           /* write 1/0 to `result` (VERIFY, ALL_PRESENT)                       */
+} mf_handoff;
+
+typedef enum { MF_T_SET, MF_T_RUN } mf_term_kind;
+
+typedef struct {                    /* one position term, relative to cand          */
+    mf_term_kind   kind;
+    int32_t        offset;          /* bytes from cand; the term reads s[cand+offset..] */
+    uint8_t        set[32];         /* MF_T_SET: 256-bit membership                    */
+    uint32_t       table_ref;       /* MF_T_SET: pcrec's table-name hook id, or 0 (§8.3) */
+    const uint8_t *run, *mask;      /* MF_T_RUN: (s[cand+offset+j] & mask[j]) == run[j] */
+    uint32_t       run_len;
+    uint32_t       ppm_lo, ppm_hi;  /* density hint: matches per 1e6 subject bytes;
+                                       0..MF_PPM_FULL when unknown (the default)   */
+} mf_term;
+
+#define MF_MAX_TERM 8
+typedef struct mf_pred {            /* a CONJUNCTION of terms                        */
+    uint8_t  nterm;
+    mf_term  term[MF_MAX_TERM];
+    uint8_t  plan_hint;             /* TRANSITIONAL (§9.4): the term pcrec's model
+                                       scans today; 0xFF = none                     */
+} mf_pred;
+
+typedef struct {
+    uint32_t        abi;            /* MF_SITE_ABI                                   */
+    mf_op           op;
+    mf_handoff      handoff;
+    uint8_t         reverse;
+    mf_pred         pred;           /* FIND / SKIP / VERIFY                           */
+    uint8_t         npred;          /* ALL_PRESENT                                    */
+    const mf_pred  *preds;
+    /* pcrec's proven facts */
+    uint64_t        span_lo, span_hi;   /* proven bytes in [lo,hi); MF_SPAN_UNBOUNDED  */
+    uint32_t        cand_ppm_lo, cand_ppm_hi;  /* the whole predicate's hint           */
+    uint8_t         consumer;       /* MF_C_RESULT / MF_C_ENGINE: is a false candidate
+                                       handed to a matcher that then rejects it?
+                                       named, never priced (§9.4)                     */
+    /* policy (§8.5): every bit arch-neutral */
+    uint32_t        policy;         /* MF_P_BASELINE | MF_P_PORTABLE_ONLY |
+                                       MF_P_INLOOP | MF_P_SIZE_LEANING               */
+    const char     *deny;           /* --memfn-deny=, passed through unparsed        */
+    const char     *token;          /* --isa=, passed through unparsed; NULL = the
+                                       fixed default (§R2 finding 3), HELD (R4h)     */
+} mf_site;
+
+typedef struct {
+    char     form_id[48];           /* opaque; stamped on movers only (§10.3)         */
+    uint32_t helpers;               /* once-per-artifact helpers the text names        */
+    uint8_t  moved;                 /* 1 iff the text differs from this site's
+                                       BASELINE text (computed by the kit; §10.5 C11) */
+} mf_result;
+
+int mf_emit_site(const mf_site *s, const mf_hooks *h, mf_sink *out,
+                 mf_result *res, mf_arena *a);          /* 0, or a LOUD internal error */
+int mf_emit_helpers(uint32_t helpers, const char *prefix, mf_sink *out);
+int mf_vocab_has(mf_op op, mf_handoff h, uint32_t term_kinds); /* compile-time constant */
+const char *mf_kit_version(void);                       /* "pcrec-memory-functions X.Y.Z" */
+```
+
+**Size (K3).** An `mf_site` is about 0.6 KB at `MF_MAX_TERM` 8 (32-byte
+sets dominate). `preds` and runs are pointers into pcrec's arena. The kit
+allocates nothing on the caller's stack beyond its frame and takes
+scratch from `mf_arena`, which pcrec backs with its own arena. C10
+(§10.5) forbids an `mf_site` or `mf_result` as an automatic variable
+under `src/`.
+
+**Versioning.** Three numbers, three meanings:
+
+- `MF_SITE_ABI` covers layout and field meaning. pcrec asserts it at
+  build (`_Static_assert(MF_SITE_ABI == PCREC_MF_SITE_ABI)`). In-tree
+  (§11.1) the assert can only fail inside one commit.
+- `MF_VOCAB` grows when an operation, handoff or term kind is ADDED
+  (§8.4's request path). pcrec's delegation table (§8.5) is checked
+  against `mf_vocab_has` at build: a site whose op the kit's vocabulary
+  lacks is a build failure, never a silent pcrec fallback.
+- `mf_kit_version()` names the kit's TEXT. A kit change that moves any
+  byte pcrec emits is a pcrec `abi` event (§10.3). A kit change that
+  moves no pcrec byte (a new op nobody requests yet, a K3 CLI feature, a
+  test) is not.
+
+**Totality.** For every request inside its vocabulary, the kit MUST
+return code. A decline is a kit defect and pcrec fails loudly
+(`pcrec_ctx_fail`, the house's internal-error tier). There is no "kit
+declined, pcrec spells it itself" path: after a site's migration step
+pcrec HAS no spelling of its own (§9), and keeping one would be the
+second scalar spelling D122 forbids.
+
+### 8.3 The hook contract
+
+pcrec owns the names, the bounds and the code AROUND a site. It passes
+them as TEXT, never as callbacks into the generated program. The kit
+renders them into the site's code.
+
+```c
+typedef struct {
+    /* the subject and its bounds: side-effect-free C expressions */
+    const char *s;          /* the subject pointer                                    */
+    const char *n;          /* the READ LIMIT: no byte at or past it is ever read        */
+    const char *lo, *hi;    /* search start, exclusive end (D11's n-1 views pass here)   */
+    /* RETURN / BOOL */
+    const char *result;     /* the lvalue written                                       */
+    const char *miss;       /* the value written when no cand exists (each site's own:
+                               n, hi, -1 …; baseline arms need it byte for byte)         */
+    /* ADVANCE */
+    const char *cursor;     /* the cursor lvalue                                        */
+    const char *step;       /* pcrec's step statement (`pos++`, `pos--`, …)              */
+    const char *more;       /* pcrec's continue condition (its direction's scan_more)    */
+    /* ON_CAND: pcrec's per-candidate verify */
+    void (*on_cand)(void *u, mf_sink *c, const char *cand);
+    uint32_t on_cand_reach; /* bytes on_cand reads at or after cand                      */
+    /* one-position membership: T4 stays pcrec's */
+    const char *(*member)(void *u, uint32_t term, const char *byte_expr);
+    const char *(*table_name)(void *u, uint32_t table_ref);
+    /* rendering */
+    const char *prefix;     /* pcrec's D143 placeholder, rendered after emission         */
+    int comment_tier;       /* PCREC_CMT_* passes through                                */
+    void *u;
+} mf_hooks;
+```
+
+**The rules, each with the check that holds it** (§10):
+
+1. **Expressions are pure.** `s`, `n`, `lo`, `hi`, `more` and the member
+   text may be evaluated any number of times, in any order. Only `step`
+   has an effect. A kit arm that hoists `n` into a local is legal; a pcrec
+   hook with a side effect in `hi` is a pcrec defect.
+2. **The read guard is the kit's.** The kit never reads `s[k]` for
+   `k >= n` or `k < 0`, for any term offset, any vector width, any tail
+   (P8's rule, S-2: no aligned-down over-read). When `on_cand` runs, the
+   kit has ALREADY established `cand + on_cand_reach <= n`. Held by the
+   kit's guard-page tests (§10.2) with synthetic hooks that read exactly
+   `on_cand_reach` bytes.
+3. **The RETURN contract.** `result` = the LEFTMOST `cand` in `[lo, hi)`
+   (the rightmost, if `reverse`) at which every term holds and every term
+   read is below `n`, else `miss`. This is litscan_k82h.md §1.1a's
+   written gate contract ("leftmost occurrence ≥ `search_from`") made
+   the kit's, so the K82 handoff's soundness argument (`lo = max(f,
+   c − K)`, that note's §1.2) reads the kit's result unchanged.
+4. **ON_CAND.** `on_cand`'s text ends in exactly one of two kit-rendered
+   tokens, `\x01mfA` (accept) or `\x01mfR` (reject). Accept writes `cand`
+   as the result. Reject resumes the search at `cand + 1` (`cand − 1`
+   reversed): no candidate is skipped and none is revisited. The hook may
+   name only `cand`, the hook expressions above, and pcrec's own locals
+   declared OUTSIDE the site. The kit's own locals are block-scoped and
+   carry the prefix placeholder, except inside BASELINE arms, which
+   reproduce pcrec's pre-migration names exactly and declare them in the
+   kit's baseline manifest (§9.2).
+5. **ADVANCE.** The kit's loop is `while (more && member(byte at cursor))
+   step;` in meaning. The text may differ (a vector body, a counted span),
+   but the cursor ends at the first non-member position, or where `more`
+   fails, and every `step` effect is the one pcrec gave. A counted span
+   (the scan edge's `{0,n}`) is a proven `span_hi`, not a hook.
+6. **Membership has ONE owner per granularity.** A ONE-POSITION test of a
+   set is T4's (`member`), unchanged: the kit's scalar loop arms call
+   back for it, so a set has one scalar spelling in the artifact. A
+   MANY-LANE classifier of the same set is the kit's own (§4.3's C1).
+   The `set[32]` bits are the truth both must agree with (§10.2's
+   agreement check).
+7. **Tables stay pcrec's.** A SET term may carry `table_ref`, naming a
+   256-byte table pcrec already emits (`can_begin_match`, `stay<K>`,
+   `scan<N>`). Baseline arms read it by name. Other arms may ignore it.
+   The kit never emits a second copy of a table pcrec emits.
+8. **The handoff into the DFA is pcrec's text AFTER the site.** The kit
+   returns `c`; pcrec writes `lo = max(search_from, c − K)` and enters
+   the engine. Nothing in the kit knows an engine exists. `consumer`
+   tells the kit only whether a false candidate costs a later matcher
+   anything, so it can weigh verifying harder (§9.4).
+
+**What dissolves.** Revision 1's `fallback` hook (§2.5): the `#else` of
+any ladder is the kit's own portable arm, and pcrec, after migration,
+has no scalar text to offer. Revision 1's risk item 1 (§3.3, "the hook
+contract is the riskiest surface") stands, now with rules 1-5 and their
+checks. The first mover (§12.2 R4d) uses only RETURN, so ON_CAND's first
+customer is a later step.
+
+### 8.4 Compound work: "this check followed by this check"
+
+D146: when pcrec needs compound work, the kit provides it. Rev 3 gives
+compound work three spellings, all inside one request, and one way to
+add a fourth.
+
+| pcrec's need | spelled as | what the kit may do with it (its choice) | today's site |
+|---|---|---|---|
+| **a scan fused with a verify** ("find `c`/`C` at 4 where `SELECT` folds at 0") | ONE `MF_OP_FIND` whose predicate is a conjunction: a SET term and a RUN term at their offsets | scan the rarest term, filter on a second, verify the run from the mask bits, unroll: twins.md T-B's `ffl`, ~7x on the K82 gate | the ofsskip block (`ofs_test_emit_fn`: scan arm + `ofsk_emit_verify` chain + run term), the `<p>_reqrun[_whole]` blocks |
+| **a check followed by a check** (presence, in any order) | `MF_OP_ALL_PRESENT` over predicates, in pcrec's ORDER as a hint | run them in order, reorder by density, or one fused pass with a per-predicate "seen" mask (F-ALL-PRESENT, §4.2 P-F) | the REQ_BYTE pre-check then `set-leads`; `emit_req_set_rest`'s k `memchr` passes (N4) |
+| **a scan whose candidate pcrec must judge** (a verify the predicate cannot say) | `MF_H_ON_CAND` with pcrec's text | iterate the hit mask in place; never restart a call per hit | none today. It is the shape twins.md T-A's "iterate in place" lever names |
+| **a scan handed to the engine** | RETURN, then pcrec's text (rule 8) | — | the K82 handoff |
+| **a new composition** (an ORDERED pair: find P1, then P2 at or after P1's result + d; a COUNT; a mismatch over two streams, F8) | a REQUEST through §11.3's ledger, then an `MF_VOCAB` bump | the kit designs, builds and tests it in its own lane; pcrec's site joins the delegation table in the same change as its first use | none: filed when a customer has a measured cell (D77) |
+
+So "this check followed by this check" is never pcrec emitting two kit
+calls and gluing them. One site, one request, and the kit owns the
+sequencing. It may emit two calls, if that is what wins.
+
+### 8.5 What pcrec still decides, and the two tables it decides with
+
+**Delegability is by SEMANTIC OPERATION, never by cost.** A site is
+delegated when its operation is one of the kit's vocabulary and its
+migration step has landed (§9). It is never delegated because something
+measured faster. Some sites are NEVER delegated, each for a semantic
+reason:
+
+| site | delegated? | why |
+|---|---|---|
+| T1 PF (`memchr`, `byte-class`, `offset-set`, `run-pinned` and their `-bounded` twins) | yes | FIND over a predicate (one byte, a set, or the k-set conjunction) |
+| T2 PRE (the REQ_BYTE / REQ_RUN pre-check blocks, `set-leads`) | yes | FIND / ALL_PRESENT |
+| OFS (the ofsskip block, N5; shared by T1's offset/run rows and T2's run blocks) | yes | FIND over a conjunction |
+| SETREST (N4) | yes | ALL_PRESENT |
+| VERIFY (T6 `pcrec_runcmp_rows`: `words`, `overlap`, `bytes`, `memcmp`) | yes | VERIFY of one RUN term at a known position |
+| STAY (N1), EDGE's loop (T3), VMSPAN (N2 at stride 1) | yes, at D91 budget 2 | SKIP with ADVANCE. Only the LOOP; the scan edge's peeled guard, its accept stores and state writes stay pcrec's (§9.3) |
+| MLINE (N3, `(?m)^`'s `memchr('\n')`) | yes, last | FIND of one byte. No customer, so it migrates only for uniformity, and only if Q30 says so |
+| N6 (`vm_rev_emit`'s backward walk) | not now | a per-byte L1 test with captures in flight; compare_stack.md §5 keeps its form. Filed |
+| N7 (`$_span_match[_caseless]`) | no | the encoding seam's residual entry; the encoding owns it (D23). F8 `mismatch` is a later vocabulary item if S6's cell exists |
+| VM span at stride > 1 | no | not a byte-set search (§2.4 d) |
+| T4 one-position membership | never | one position, not a search; it is the `member` hook's source (§8.3 rule 6) |
+| T8 DFA tables, T9 VM context tests, any DFA or VM step | never | the engine, not a memory function |
+
+This is a static table in pcrec (`DELEG_SITES`, sites as bits on D139's
+shape), one row per site with its op, handoff, D91 budget and deny bit.
+Its op column is checked against `mf_vocab_has` at build (§8.2), and its
+budget column against D91's site classification (C10).
+
+**The profile, per site: pcrec's ONE first-match selection** (the house
+idiom, memory `pcrec-decisions-as-first-match-tables`):
+
+| # | profile | applies when | policy bits sent | what the kit does |
+|---|---|---|---|---|
+| 1 | `baseline` | the site's budget deny bit is set: `-fno-memfn-scan` (budget 1: PF, PRE, OFS, SETREST, VERIFY, MLINE) or `-fno-memfn-loop` (budget 2: STAY, EDGE, VMSPAN) | `MF_P_BASELINE` | emits the site's FROZEN pre-migration text: pcrec's own last spelling of this search, byte for byte (§9.2). The guard's "off" arm |
+| 2 | `portable` | `-fno-memfn-native` is set. **DEFAULT ON during the SIMD hold** (D91, D119, D122 addendum 3; §12.2 R4f, Q28) | `MF_P_PORTABLE_ONLY` | its best text with no architecture-specific code: scalar, SWAR, libc, short-span loop-free forms |
+| 3 | `native` | always | — | its best text, ISA arms included (a gcc-time `#if` ladder under the fixed default token, or one spelling under a declared token, HELD) |
+
+`MF_P_INLOOP` is set from the site row's budget (D91 budget 2), never
+from a per-call decision. `MF_P_SIZE_LEANING` is set at `--tune` -2/-1,
+so D139 item 1's "only if smaller" becomes the kit's rule under that bit
+(adding it to the dial is a D103 ruled diff at the first mover, Q32).
+
+The profile names a POLICY CLASS, not an architecture: `portable` means
+"no text that names an ISA", which is D122 addendum 3's line ("SWAR is
+fine"). pcrec cannot tell what the `native` profile emits on any machine,
+and does not need to.
+
+### 8.6 What the kit decides, and how (its internal concern, with its own tests)
+
+The kit's choices are first-match tables of its own (§4.3's C1
+classifier and C2 shape tables, requirements.md §2.3's binding-form
+table, isa_selection.md §2's ISA table, a plan table over a
+predicate's terms), each row with a name and a deny that `--memfn-deny=`
+reaches. Where its rows are ordered by MEASUREMENT, the measurement is
+the kit's data, generated from transcripts by a `generate.py` beside it
+(`third_party/`'s rule, applied inside the kit), with its own `--check`.
+
+The r2 panel's measurement findings are now the kit's charter
+obligations, carried into the kit's own design note at R4a:
+
+- **K-1, regime and model.** Every measured comparison names its regime
+  (chained vs isolated, hit vs miss, density), and a decision must hold
+  in every regime its site can be in (P1, P4). Where a choice rests on a
+  model (corner dominance, interpolation), the kit's note names it as one
+  and tests it with a fixture that would fail if it were wrong (P3).
+- **K-2, protocol constants.** The statistic, the length ladder, segment
+  caps and extrapolation are constants in a kit decision record. A
+  generator FAILS on capacity overflow and never truncates. A verifier
+  samples at alignments and hit offsets the calibration held fixed (P2,
+  P7, C-c, C-e).
+- **K-3, provenance per arm.** Each measured arm names its box, libc,
+  compiler class and flags. The kit's data may be keyed by compiler
+  class, and its text may ladder on compiler macros (K2, P6/B4).
+- **K-4, verdict-grade boxes.** A native arm whose architecture has no
+  verdict-grade timing box (D144 addendum 1: Linux, `taskset`, quiet) is
+  not SELECTED over the portable arm on that architecture until one
+  exists or Frank admits the Mac (Q31). This is the kit's own rule, so
+  pcrec still learns no arch fact.
+- **K-5, the kit's own timed control.** The kit's selection among its
+  arms is checked by its own timed suite against the scalar byte loop
+  and the baseline arm, at its cadence. It is not pcrec's guard, which
+  is §10.1 and shares no source with it.
+
+None of this reaches pcrec. pcrec's view of all of it is: the code came
+back, and its identity gates and bench say what changed.
