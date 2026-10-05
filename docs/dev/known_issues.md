@@ -15,7 +15,7 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 its b122sweep) — [CLS-TREE] S2's unified scan-edge RANGE spelling
 (D139 item 2, abi 53) moves default DFA timing with a consistent regime
 split: plain throughput slower on every bounded/loglines row, plain
-short-search faster on every row.**
+short-search faster on every row.
 
 Witness: bench ledger `2026-10-05-b122-round1-wide-c4c70f2c.md` §7.3,
 65 real rows (30 improve / 35 regress) against the identical-program D119
