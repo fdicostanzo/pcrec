@@ -2674,7 +2674,10 @@ and the presence or absence of a `memchr` in the artifact. Since `abi` 60
 (G1), `set-leads` (§2.40) and `emitted`. The first row whose predicate holds
 decides; only `set-leads` has a deny bit (`-fno-req-set-lead`, bit 45), and
 the declines carry none, as before: removing one is never a speed choice a
-caller needs.
+caller needs. Since `abi` 61 ([K82] (B)) a second table, `req-use` (§2.41),
+decides what the body does with an EMITTED run pre-check's answer — discard
+it, or begin the scan there (`<PREFIX>_REQ_HANDOFF`); it calls this table and
+never restates it.
 
 **Why it exists.** A whole-window pre-check is a pass over the subject. Batch 1
 emitted one wherever the analysis found a byte, and the bench's after-measurement
@@ -3446,6 +3449,56 @@ tested first and the call returns after one `memchr`.
 **Denied:** the run pre-check alone, the `abi` 59 program apart from the abi
 digits.
 
+### 2.41 `-fno-req-handoff` — `PCREC_NO_REQ_HANDOFF` (bit 46)
+
+**[K82] (B), `abi` 61 (`docs/design/litscan_k82h.md`, revision 2 and Frank's
+rulings of 2026-10-05; `docs/dev/lanes/k82hbuild_report.md`).
+ANSWER-IDENTITY-preserving, and GIVE-UP-preserving.** Denies the `handoff`
+row of the pre-check's USE table, axis `req-use` (`--list-axes`): the second
+table beside §2.29's admission, deciding what a search body does with an
+emitted run pre-check's answer. Deny-only, MASKED out of `rx_info.flags`
+(`strategy_denials`) for the mask's own reason; the activity record is
+`<PREFIX>_REQ_HANDOFF` (`match_api.md` §6.3), the `K` or `"none"`, on every
+artifact.
+
+**What it is.** A run pre-check (§2.28) finds the first position `c >=
+startpos` at which the run's window occurs, and before `abi` 61 every body
+threw `c` away and scanned again from `startpos`. Every match begins at most
+`K` bytes before an occurrence of the window, where `K` is the window's
+maximum BYTE offset from the attempt start — a core fact on the
+necessary-run walk, listed by `--emit-facts` as `req_run_maxoff`
+(`facts_listing.md`), counted in bytes on the encoding-lowered pattern
+(`(?i)straße` under `-e utf8` is `K = 2`: `(?i)s` matches U+017F, two
+bytes). So no match begins in `[startpos, c − K)`, and the body may begin its
+scan at `max(startpos, c − K)` and answer exactly what it answers from
+`startpos`. The pre-check's search block returns the LEAST such `c`, a
+contract the handoff relies on. The row applies, in order, where:
+
+- the admission (§2.29) emitted a run pre-check — the row CALLS the
+  admission, so `req-admit`'s verdict reaches it unchanged;
+- a DFA scan is in front of the body: a DFA artifact (its unanchored scan,
+  whose forward seed reads the byte before the moved start, or its attempt
+  loop's first start), or a VM hybrid, whose FIRST prefilter call starts there
+  — a VM artifact with no DFA scan never takes it;
+- `K` is finite (`req_run_maxoff` is not `unbounded`);
+- the hybrid's prefilter is not COUNT-COLLAPSED (Frank's Q10 ruling: its
+  answers may sit below `c − K`, so there the handoff could move a
+  budget-limited search from a give-up to a match; declined, this flag never
+  moves the give-up surface);
+- and not a VM hybrid whose program has a `\G` start family and whose
+  prefilter span end is its match ceiling (`RX_VM_PRUNE_CEILING`'s
+  `prefilter-window` language, Q9).
+
+Under a multibyte encoding a moved start is rounded UP to the next character
+start, through the encoding backend's own start predicate and bounded only by
+the subject's end (ill-formed text may hold any number of stray continuation
+bytes); a start that did not move is used as the caller gave it, so
+`-fno-startpos-guard`'s semantics are unchanged. `\G` keeps asserting at
+`startpos`. The DFA's reverse pass keeps `startpos` as its lower bound.
+
+**Denied:** the pre-check only discards, the `abi` 60 program apart from the
+abi digits and `<PREFIX>_REQ_HANDOFF "none"`.
+
 ## 3. The DFA side's own stamps
 
 **CLOSED 2026-08-25 by plan row `[DD-13]`; this section stated the gap while
@@ -3736,6 +3789,7 @@ not-a-tuning-axis list that follows.
 | `flags` bit `PCREC_NO_RUN_OVERLAP` | `-fno-run-overlap` | §2.38 |
 | `flags` bit `PCREC_NO_REQ_RUN_FOLD` | `-fno-req-run-fold` | §2.39 |
 | `flags` bit `PCREC_NO_REQ_SET_LEAD` | `-fno-req-set-lead` | §2.40 |
+| `flags` bit `PCREC_NO_REQ_HANDOFF` | `-fno-req-handoff` | §2.41 |
 | `unroll_k` (`PCREC_UNROLL_K_DEFAULT` = 0) | `--unroll=K` | §2.10 |
 | `vm_entry_shape` (`PCREC_VM_ENTRY_AUTO` = 0, `_PLAIN`, `_SHARED`, `_FORWARD`, `_INLINE`) | `--vm-entry-shape=N` | §2.21 |
 | `engine` (`PCREC_ENGINE_AUTO`/`_DFA`/`_VM`) | `--engine=E` | §2.11 |
@@ -3886,10 +3940,10 @@ the rule), and `tune` is precisely such a case, already covered.
 
 ### 5.4 The policy table
 
-**Thirty rows: the 23 `tuning.md` §2 axes, `-fno-run-overlap` (§2.38,
+**Thirty-one rows: the 23 `tuning.md` §2 axes, `-fno-run-overlap` (§2.38,
 added at `abi` 58 with a cell at no position), `-fno-req-run-fold` (§2.39,
 added at `abi` 59, likewise), `-fno-req-set-lead` (§2.40, added at `abi` 60,
-likewise), λ, the `[ART-SIZE]`
+likewise), `-fno-req-handoff` (§2.41, added at `abi` 61, likewise), λ, the `[ART-SIZE]`
 ladder's two parameters, and the emitted-size caps** (the last three are
 not §2 axes in their own right — the ladder's parameters are
 `-fno-size-term`'s sub-parameters, listed separately because the dial
@@ -3936,6 +3990,7 @@ lands.
 | `-fno-size-term` | — | — | — | — | — | §2.16; **NOT A RUNG** — it is the MECHANISM the two ladder rows parameterise |
 | `-fno-run-overlap` | — | — | — | — | — | §2.38; **NOT A RUNG** — the row and the `memcmp` it replaces are within a word in size, so no position trades on it; whether it ships at all is its own alpha (`litscan_s4.md` Q3), not a dial cell |
 | `-fno-req-set-lead` | — | — | — | — | — | §2.40; **NOT A RUNG** — one more one-byte `memchr`, not a size/speed trade the dial prices |
+| `-fno-req-handoff` | — | — | — | — | — | §2.41; **NOT A RUNG** — a subtraction and a compare, not a size/speed trade the dial prices; it removes a rescan |
 | `-fno-req-run-fold` | — | — | — | — | — | §2.39; **NOT A RUNG** — a narrower or wider necessary fact, not a size/speed trade; whether it ships is its own alpha (the `union-select` cell), not a dial cell |
 | emitted-size caps | — | — | — | — | — | `limits.md` §8; **NOT A RUNG** — raise-only refusal boundaries; a dial that lowered one would manufacture refusals |
 

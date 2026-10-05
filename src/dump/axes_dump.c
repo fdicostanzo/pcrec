@@ -752,6 +752,18 @@ static void emit_predicate_axes(StrBuf *sb)
             emit_pred_row(sb, &p, i + 1, r.name, r.why, r.deny, 0, "", r.desc);
         }
     }
+    /* [K82] (B) req-use — §2.41. What the body does with an emitted run
+     * pre-check's answer, WALKED LIVE off `pcrec_req_use_row` for the
+     * admission's reason. Its stamp is `RX_REQ_HANDOFF`, whose value on the
+     * `handoff` row is the artifact's own K, so no row names a fixed value. */
+    {
+        PredAxis p = { "req-use", NULL, "RX_REQ_HANDOFF", "", 0, NULL, 0, NULL, NULL, NULL };
+        for (int i = 0; i < pcrec_req_use_nrows; i++) {
+            PcrecReqUseDesc r;
+            pcrec_req_use_row(i, &r);
+            emit_pred_row(sb, &p, i + 1, r.name, r.stamp, r.deny, 0, "", r.desc);
+        }
+    }
     /* [K50] startpos-guard — §2.23. A CONTRACT AXIS, NOT ANSWER-IDENTICAL:
      * each row describes a real semantics for a mid-character caller
      * startpos, and which one an artifact carries is a contract fact rather

@@ -1084,6 +1084,17 @@ enum {
  * under both. A `#define` for bit 32's reason. */
 #define PCREC_NO_REQ_SET_LEAD PCREC_BIT(45)
 
+/* [K82] (B) the run pre-check's HANDOFF (docs/spec/tuning.md §2.41). Where a
+ * necessary run's pre-check is emitted in front of a DFA scan (a DFA body, or
+ * the VM hybrid's first prefilter call) and the run sits at most K bytes
+ * after any match's start, the body begins its scan at the pre-check's first
+ * hit minus K instead of at the startpos, where no match can begin earlier.
+ * Denied, the pre-check only discards (the abi-60 program). It changes no
+ * answer and no give-up either way, so it is masked out of `rx_info.flags`;
+ * `<PREFIX>_REQ_HANDOFF` records K, or "none". A `#define` for bit 32's
+ * reason. */
+#define PCREC_NO_REQ_HANDOFF PCREC_BIT(46)
+
 /* [ENG-BREP] the counter rung's UNROLL FACTOR, K (counterk_design.md §4.1;
  * eng_brep_design.md §4.5's "K must not become a per-pattern heuristic in v1",
  * held strictly by D47's ADDENDUM). ONE per-artifact constant: every

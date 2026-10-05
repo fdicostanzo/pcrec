@@ -299,7 +299,7 @@ noted under group 2, which are `PCREC_*`-named yet per-artifact):
 
    ```c
    #if defined(PCREC_RX_ABI_H) && (PCREC_RX_ABI_H + 0) != 60
-   #error "pcrec: this artifact (abi 60) shares a translation unit with an artifact of a different abi; regenerate both with one pcrec"
+   #error "pcrec: this artifact (abi 61) shares a translation unit with an artifact of a different abi; regenerate both with one pcrec"
    #endif
    #ifndef PCREC_RX_ABI_H
    #define PCREC_RX_ABI_H 60
@@ -581,6 +581,15 @@ only, never on a no-match (K78, `abi` 55;
 did exactly this, and the signature costs them nothing new).
 `startpos > n` returns `0`. `^` anchors to absolute offset `0` regardless
 of `startpos`. `s` may be `NULL` only when `n == 0`.
+
+A search may begin its internal scan after `startpos` where a necessary
+literal proves that no match begins earlier; its answer is the one a scan
+from `startpos` gives ([K82], `abi` 61, `<PREFIX>_REQ_HANDOFF` §6.3). The
+step budget meters only the work the matcher performs, so positions it
+proves cannot begin a match consume none — and no artifact begins a scan
+later where that could change whether a budget-limited search answers or
+gives up (`tuning.md` §2.41: a count-collapsed prefilter declines). `\G`
+keeps asserting at `startpos` itself.
 
 **`startpos` MUST BE A CHARACTER BOUNDARY OF THE ARTIFACT'S ENCODING, AND BY
 DEFAULT THE ARTIFACT ENFORCES IT** ([K50]; the axis is
@@ -2296,7 +2305,26 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `60` on every artifact today (lane k82fix bumped it
+- **`rx_info.abi` is `61` on every artifact today (lane k82hbuild bumped it
+  from 60, 2026-10-05: [K82] (B) — THE HANDOFF, `docs/design/litscan_k82h.md`
+  revision 2 and its rulings).** A new two-row first-match table, axis
+  `req-use` (`tuning.md` §2.41, listed live by `--list-axes`), decides what a
+  search body does with an emitted run pre-check's answer. Its `handoff` row
+  keeps the pre-check's first window hit `c` (the LEFTMOST occurrence at or
+  after `startpos`, now a written contract of the search block) and begins
+  the body's scan at `max(startpos, c − K)`, `K` the window's maximum BYTE
+  offset from the attempt start — a new core fact on the necessary-run walk,
+  `req_run_maxoff` in `--emit-facts` — rounded up to a character start under
+  a multibyte encoding, only when it moved. The three bodies with a DFA scan
+  read it at their one start site (the DFA unanchored scan and its seed, the
+  DFA attempt loop's first start, the VM hybrid's first prefilter call); `\G`
+  keeps reading `startpos`. Every artifact of both engines gains one stamp
+  line, `<PREFIX>_REQ_HANDOFF` (`"<K>"` or `"none"`, §6.3).
+  `-fno-req-handoff` (bit 46, masked out of `rx_info.flags`) restores the
+  `abi`-60 program apart from the abi digits and that stamp's `"none"`. No
+  struct offset moves, no `rx_info` member is added or changed, and no answer
+  or give-up moves.
+- **`rx_info.abi` was `60` (lane k82fix bumped it
   from 59, 2026-10-04: [K82] (A)+(C) — THE RARER GUARD LEADS, AND PICK'S
   NONE ANSWER PRICES SIZE, `docs/dev/lanes/k82fix_report.md`).** (A) The
   whole-window pre-check's admission (`tuning.md` §2.29) is a first-match
@@ -3810,7 +3838,7 @@ engine-scoped.**
 
   | value | what it says |
   |---|---|
-  | `"emitted"` | the artifact emits a pre-check, on the byte or run its two siblings name — since `abi` 60 possibly LED by a rarer necessary-set byte's one-byte check (`tuning.md` §2.40; the stamp says whether, not in which shape) |
+  | `"emitted"` | the artifact emits a pre-check, on the byte or run its two siblings name — since `abi` 60 possibly LED by a rarer necessary-set byte's one-byte check (`tuning.md` §2.40; the stamp says whether, not in which shape), and since `abi` 61 possibly HANDED OFF (`<PREFIX>_REQ_HANDOFF`, below) |
   | `"none"` | nothing is necessary — no byte and no run (the analysis found neither, or `-fno-req-byte` denied them) |
   | `"one-attempt"` | declined: the search route tries ONE start position, so a whole-window pass in front of it can only add work |
   | `"dominated"` | declined: the artifact's own candidate-start `memchr` already scans a byte at least as rare |
@@ -3823,6 +3851,36 @@ engine-scoped.**
   a subject in one pass" reads THIS stamp and then its siblings for the value,
   never the siblings alone. `tuning.md` §2.29 carries both rules and their
   measured populations. No `rx_info` mirror, its siblings' reason.
+
+  **[K82] (B), `abi` 61: `<PREFIX>_REQ_HANDOFF` — WHERE THE SEARCH BODY'S
+  SCAN BEGINS.** Family (a): on EVERY artifact pcrec emits, both engines
+  (Frank's ruling, 2026-10-05: a stamp varies by engine family, never by
+  presence within one; "does not apply" is a value).
+
+  ```c
+  #define RX_REQ_HANDOFF "2"     /* the scan begins 2 bytes before the run
+                                    pre-check's first window hit */
+  #define RX_REQ_HANDOFF "none"  /* the scan begins at startpos */
+  ```
+
+  A decimal `K` where the `req-use` table's `handoff` row applies
+  (`tuning.md` §2.41): an emitted run pre-check (`<PREFIX>_REQ_WHY`
+  `"emitted"` with a `<PREFIX>_REQ_RUN`), a DFA scan in front of the body
+  (a DFA artifact, or a VM hybrid's prefilter), a finite `K`, a prefilter
+  that is not count-collapsed, and not a VM hybrid with a `\G` start family
+  whose prefilter window is its match ceiling. Then every match begins at
+  most `K` bytes before an occurrence of the run's window, the pre-check's
+  search block returns the LEAST position `>= startpos` at which the whole
+  window occurs (or `n` when none does — a caller of that block may use the
+  position, not only its comparison with `n`), and the body begins its scan
+  at `max(startpos, that − K)`, rounded up to a character start under a
+  multibyte encoding when it moved. `"none"` everywhere else, including
+  every artifact built `-fno-req-handoff`. `K` is the `req_run_maxoff` fact
+  `--emit-facts` lists (`facts_listing.md`), in BYTES: `(?i)straße` under
+  `-e utf8` reads `"2"`, because `(?i)s` matches U+017F, two bytes, before
+  the window `TRA`. A non-`"none"` value never changes an answer or a
+  give-up; it says the artifact skips positions a necessary literal proved
+  cannot begin a match. No `rx_info` mirror, its siblings' reason.
 
   **[FINDINGS] B1, 2026-09-27: `<PREFIX>_FINDINGS` — WHICH FINDINGS THIS
   ARTIFACT WAS BUILT FROM.** Family (a): on EVERY artifact, both engines.

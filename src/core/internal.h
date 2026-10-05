@@ -5978,10 +5978,21 @@ void pcrec_emit_end_window_clamp(Ctx *cx, StrBuf *c, const char *indent,
 /* [OPT-REQBYTE] Answers NOMATCH when `[posvar, lenvar)` does not contain the
  * byte the analysis proved every match must carry; emits nothing where it
  * found none. ONE text for both engines' search entries — src/gen/emit_dfa.c
- * carries the NULL-subject obligation and the soundness sentence. */
-void pcrec_emit_req_byte_check(Ctx *cx, StrBuf *c, const char *indent,
-                               const char *posvar, const char *subjvar,
-                               const char *lenvar);
+ * carries the NULL-subject obligation and the soundness sentence.
+ *
+ * [K82] RETURNS THE EXPRESSION the body's ONE start site reads: `posvar`, or
+ * `"handoff_position"` where the `req-use` table's `handoff` row applies and
+ * the pre-check's candidate was kept as the scan start
+ * (docs/design/litscan_k82h.md §2.1). Every caller passes it to that site
+ * and to nothing else: a `\G` keeps reading `posvar`. */
+const char *pcrec_emit_req_byte_check(Ctx *cx, StrBuf *c, const char *indent,
+                                      const char *posvar, const char *subjvar,
+                                      const char *lenvar);
+/* [K82] Is the VM hybrid's prefilter span END a bound on the match's end
+ * (`Vm.mrl_win`, the `prefilter-window` ceiling)? ONE derivation, read by the
+ * VM emitter's ceiling and by the handoff's (d') decline
+ * (src/gen/emit_vm.c). */
+bool pcrec_vm_prefilter_window(Ctx *cx);
 /* [OPT-LITSCAN] S1 step 6: the file-scope search blocks the run form of that
  * pre-check calls (`<prefix>_reqrun`, [K66] `<prefix>_reqrun_whole`). Every
  * search-entry emitter that calls `pcrec_emit_req_byte_check` calls this at
@@ -6040,7 +6051,13 @@ bool pcrec_utf_check_on(Ctx *cx);
 typedef enum {
     PCREC_START0_SEEK,
     PCREC_START0_NOMATCH,
-    PCREC_START0_SKIP
+    PCREC_START0_SKIP,
+    /* [K82] the SIBLING MODE: the same predicate advancing `posvar` to the
+     * next character start from wherever it is, not only from offset 0, and
+     * for every pattern, nullable or not (the handoff's round-up,
+     * docs/design/litscan_k82h.md §1.4 (e)). Bounded by the predicate's own
+     * `>= len` clause and by nothing else. */
+    PCREC_START0_ROUNDUP
 } PcrecStart0;
 /* [K73] The offset-0 start rule, emitted by src/gen/emit_dfa.c and called
  * from BOTH emitters — one derivation over the backend's start predicate.
@@ -6700,6 +6717,20 @@ typedef struct {
 } PcrecReqAdmitDesc;
 extern const int pcrec_req_admit_nrows;
 void pcrec_req_admit_row(int i, PcrecReqAdmitDesc *out);
+
+/* [K82] the pre-check's USE table (src/gen/emit_dfa.c, `req_uses[]`, axis
+ * `req-use`), row `i` as DATA for `--list-axes`: the row's name, its deny
+ * bit, the `<PREFIX>_REQ_HANDOFF` value it stamps ("" where that value is the
+ * artifact's own K) and its predicate in one line.
+ * 0 <= i < pcrec_req_use_nrows. */
+typedef struct {
+    const char *name;
+    uint64_t    deny;
+    const char *stamp;
+    const char *desc;
+} PcrecReqUseDesc;
+extern const int pcrec_req_use_nrows;
+void pcrec_req_use_row(int i, PcrecReqUseDesc *out);
 
 void pcrec_emit_c_string_literal(StrBuf *sb, const char *s, size_t len);
 
