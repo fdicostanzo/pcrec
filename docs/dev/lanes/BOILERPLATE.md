@@ -132,3 +132,6 @@ ever; heavy Linux runs go through the manager (pcrecdev2's executor
 channel — never run one yourself over ssh, and never assume the box is
 free). The Mac session is closed mornings; a lane needing a ruling
 mid-morning parks and polls its rulings file.
+
+## Design lanes
+A design note answers the three STANDING QUESTIONS in docs/design/CLAUDE.md (measurement regime; independent control; what moves when data is regenerated). For each one, first state whether it is relevant to this design.
