@@ -1,0 +1,6 @@
+# hybtwin.py + drv_hyb.c at abi 61, darwin, gcc-16 -O1: the VM HYBRID's inlined DFA prefilter
+# (RX_VM_PREFILTER "hybrid", RX_DFA_PREFILTER "byte-class-bounded"), captures ON, every subject over
+# the alphabet up to length 8, every startpos. tw = narrowed to S, no re-seed; rs = narrowed + re-seed.
+\b(true|false|null)\b  alphabet 'atrue '  cases=17736745 twin_diffs=0   reseed_diffs=0   (reach limit: minimal witness is 10 bytes)
+\b(ab|cd)\b            alphabet 'abcdx '  cases=17736745 twin_diffs=768 reseed_diffs=0
+  sample lost matches (narrowed, no re-seed): [bab ab]@0 base=(4,6) tw=nomatch ; [bcd cd]@0 base=(4,6) tw=nomatch

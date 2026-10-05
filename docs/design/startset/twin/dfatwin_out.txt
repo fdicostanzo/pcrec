@@ -1,0 +1,8 @@
+\b(?:ab|cd)\b                  dfa/byte-class-bounded             |E|=63 |T|=2 cases=17736745 matches=202856 narrowed_no_reseed_diffs=768 narrowed_reseed_diffs=0
+\b(?:ab|cd)\b                  dfa/byte-class-bounded             |E|=63 |T|=2 cases=17736745 matches=202856 narrowed_no_reseed_diffs=768 narrowed_reseed_diffs=0
+NOT-IN-REACH \Bcat\B (dfa/offset-set-bounded): AssertionError: no can_begin_match
+\b[0-9]{2,3}\b                 dfa/byte-class-bounded             |E|=63 |T|=10 cases=757305 matches=88312 narrowed_no_reseed_diffs=1024 narrowed_reseed_diffs=0
+NOT-IN-REACH (?m)^ab (dfa/memchr): AssertionError: no can_begin_match
+\b(?:true|false|null)\b        dfa/byte-class-bounded             |E|=63 |T|=3 cases=17736745 matches=1860 narrowed_no_reseed_diffs=0 narrowed_reseed_diffs=0
+NOT-IN-REACH (?i)\bdb_name (dfa/offset-set-bounded): AssertionError: no can_begin_match
+NOT-IN-REACH \bcat\b (dfa/offset-set-bounded): AssertionError: no can_begin_match

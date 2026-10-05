@@ -2683,6 +2683,15 @@ Four light panels in two days (the K82 handoff, [OPT-SETS], [MEMFN] K0 r1/r2) fo
   lane k82hbuild** (abi 61, `../dev/lanes/k82hbuild_report.md`, pending
   merge); its §9 lists where the build departs from the note.
 
+- `startset.md` — **START-SET, PROPOSED, design only** (lane `startset`, 2026-10-05, from main `a4c752a2`, abi 61; round 2 of `[OPTLOOP]`, D144 addendum 3). `[OPT-FIRSTSET]` and `[OPT-VMSEED]` as ONE mechanism organized by the question "where can a match begin?" (D124): `dfa_pfs[]` made engine-neutral (D122 addendum 4), a new core fact `start_set` (the first-byte set of the zero-width-erased language, on the lowered tree, owner `src/facts/startset.c`), four new rows (`first-memchr[-bounded]`, `first-class[-bounded]`) with a DFA hat (`T = S ∩ E`, re-seeded through `pf_emit_ofs_reseed`) and a VM hat (the prefilter-less attempt loop seeks the next byte in `S`), one deny `-fno-start-set` (bit 47), and a new movers-only stamp `<PREFIX>_VM_START_SCAN`.
+  - **The D77 census**: the VM half is a first-byte question, not a run-offset one. At `auto`, a narrowing start set reaches 17 bench / 59 corpus prefilter-less VM artifacts, while a bounded run reaches 0 / 10. Under `--engine=vm` every bounded-run artifact also has a narrowing set. So the run seed is a TRIGGERED stage 4.
+  - **The re-seed is sound on the hybrid**: measured 768 lost matches without it and 0 with it, over 17.7M cells.
+  - **The DFA hat also reaches the CTX group's hybrids.**
+  - **Six of the gap report's START-SET cells are already offset-set scans** and are not start-set cells.
+  - **The independent control** (`E ⊆ S` on unseeded machines; 685 artifacts, 0 violations) caught the census's own argv-encoding defect.
+  - Nine questions for Frank; a FULL D6 panel is required before build. Instruments: `startset/` (own CLAUDE.md).
+- `startset/` — that note's census, first-set probe, hand twins and transcripts (own CLAUDE.md).
+
 **[VAR] THE MVP's PATTERN HALF LANDED 2026-09-23** (lane varmvp, M1-M8 +
 M10; M9 stays gated on `[M4-SUBST]`). The four notes stand as written except
 where the build met them and lost, and those places were first recorded in
