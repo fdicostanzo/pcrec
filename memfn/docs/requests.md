@@ -36,7 +36,7 @@ acceptance before briefing the lane.
 predicate — a lead byte, a caseless masked RUN at its offset, and the
 set rest — returning the leftmost candidate position, with the run
 verified in the same pass ("lead + window in one pass"; integration.md
-§15.5's composite site). The decision it feeds is R4c's trigger: does a
+§15.5's composite site). The decision it feeds is R4d's trigger: does a
 PORTABLE fused form beat the emitted gate?
 
 **Variants (each computing the emitted gate's function exactly):**
@@ -75,7 +75,7 @@ channel; one heavy suite at a time); the Mac run is directional.
 `docs/design/memfn/probes/`):**
 
 - per cell × regime: `emit`, `swar`, `ffl`-SSE2, `ffl`-AVX2, the floor;
-- **SIMD-off reading:** `swar` vs `emit` (R4c's trigger: `swar` beats
+- **SIMD-off reading:** `swar` vs `emit` (R4d's trigger: `swar` beats
   `emit` past the floor on at least one K82 cell in its own regime,
   with no loss past the floor in the other);
 - **SIMD-on reading:** `ffl` vs `swar` — the SIMD layer against the
