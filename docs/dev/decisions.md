@@ -9055,3 +9055,12 @@ Frank agreed with all nine recommendations of startset.md §9:
 - **Q7 NO early batch gate.** The per-change test-axes sweep of `-fno-start-set` × `--engine=vm` covers the large `--engine=vm` population.
 - **Q8 YES:** the six cells already served by offset-set rows (asr-wb, asr-nwb, asr-b-ascii, stack-frame ×2, github-pat) are re-bucketed out of START-SET in the next gap report, after the bench re-measures at abi ≥ 61.
 - **Q9 YES:** stage 4 (the run-offset seed, [OPT-REQPOS] tier 2's VM instance) is built only if a K82 forced-VM cell is still past the floor after stage 2.
+
+## D149 — Tuning constants are suspect: measured, derived, or left to the compiler; never adopted silently (Frank, 2026-10-05, ninetieth session)
+
+Frank gave this direction to the kit session (memfn `responses.md` N-1, on the R-1 `swar` probe's 16-byte, 2x hot loop, an unmeasured default inherited from `ffl`'s 2xVW shape). It also reached the pcrec manager the same day. It binds pcrec AND the kit, not only [MEMFN]:
+- **Covered constants:** every unroll width, block size, short-span cut-over, density or size threshold, and similar hand-picked number in a kit form, a pcrec emitter, a selection predicate or a cost model.
+- **Each one is one of three things:** MEASURED (with its regime named, per the standing design question 1), DERIVED (from a stated quantity), or LEFT TO THE COMPILER (a shape where the compiler picks, e.g. the unroll).
+- **No silent adoption:** a constant that is none of these yet is LABELLED in place as an unmeasured default. That is a comment where it lives, plus a line in its design note.
+- **Reviews and panels flag every unlabelled one.** Panel r4 on START-SET (ssc-cost F10) is the first application.
+- **No retroactive sweep.** Nothing changes early. Existing constants are labelled when their code is next touched, and the label is a measurement's trigger, not a build order (D77).
