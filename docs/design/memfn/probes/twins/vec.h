@@ -160,7 +160,7 @@ static void g_onfault(int sig) { (void)sig; g_faults++; siglongjmp(g_jb, 1); }
 static uint8_t *g_area;
 static size_t g_page, g_cap;
 
-static void guard_init(size_t cap)
+__attribute__((unused)) static void guard_init(size_t cap)
 {
     g_page = (size_t)sysconf(_SC_PAGESIZE);
     g_cap = (cap + g_page - 1) / g_page * g_page;
@@ -176,12 +176,12 @@ static void guard_init(size_t cap)
     sigaction(SIGSEGV, &sa, NULL);
     sigaction(SIGBUS, &sa, NULL);
 }
-static uint8_t *gstart(size_t off) { return g_area + g_page + off; }      /* s[-1] faults */
-static uint8_t *gend(size_t n) { return g_area + g_page + g_cap - n; }    /* s[n] faults */
+__attribute__((unused)) static uint8_t *gstart(size_t off) { return g_area + g_page + off; }      /* s[-1] faults */
+__attribute__((unused)) static uint8_t *gend(size_t n) { return g_area + g_page + g_cap - n; }    /* s[n] faults */
 
 /* deterministic generator for the fuzz passes */
 static uint64_t rng_state = 0x9E3779B97F4A7C15ull;
-static uint64_t rng(void)
+__attribute__((unused)) static uint64_t rng(void)
 {
     uint64_t x = rng_state;
     x ^= x >> 12, x ^= x << 25, x ^= x >> 27;
@@ -189,7 +189,7 @@ static uint64_t rng(void)
     return x * 0x2545F4914F6CDD1Dull;
 }
 
-static uint8_t *slurp(const char *path, size_t *n)
+__attribute__((unused)) static uint8_t *slurp(const char *path, size_t *n)
 {
     FILE *f = fopen(path, "rb");
     if (!f) { perror(path); exit(2); }
