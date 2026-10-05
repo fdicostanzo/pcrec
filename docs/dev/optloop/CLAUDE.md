@@ -788,3 +788,11 @@ that cycle's analysis lands.
 - `judgement_gapreport_2026-10-05.md` — that instance's hand-kept judgement.
   The script copies it verbatim into the report; a re-run never overwrites
   it.
+- `sellit_read.md` — **SEL-LIT desk read** (lane `sellit`, 2026-10-05,
+  read-only, no build). Every cell of the round-1 pin (`c4c70f2c`) where
+  `pcrec-vm` clearly beats `pcrec-auto` on a literal-led DFA artifact, across
+  the five suites that carry a vm arm, with the prefilter row and K82
+  handoff exposure. Verdict: SYNTHETIC ONLY (throughput 11 of 12 wins are
+  litrun; short-search wins outside litrun sit at the CALL-FLOOR scale;
+  auto wins 67/100 and 43/100). Names the sparse-text control the bench
+  would need and the [SEL-COST] predicate if it ever turned.
