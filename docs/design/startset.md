@@ -12,7 +12,7 @@ needs a FULL D6 panel with distinct lenses (answer soundness, selection/axis
 semantics, the hybrid/VM consumer contract) before a line is built.
 
 Ids used here: sabotage S478-S502 (rev 2, §6.3; r3 used S478-S485), no K-row filed, D148 RULED
-(§9), rev-2 questions Q-R1..Q-R6 OPEN (§9b).
+(§9), rev-2 questions Q-R1..Q-R6 RULED 2026-10-05 as recommended (D148 addendum 2; Q-R4 with Frank's caution: stage 4 demoted to filed-not-planned).
 
 **REVISION 2 (lane `ssrev`, 2026-10-05, from main `08caf4a3`, abi 61)
 applies the FULL D6 panel r4** (`../dev/reviews/2026-10-05-r4-startset.md`:
