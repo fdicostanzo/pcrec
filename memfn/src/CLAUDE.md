@@ -1,33 +1,43 @@
-# memfn/src/ — the kit's sources (planned; empty today)
+# memfn/src/ — the kit's sources
 
-Nothing here yet. The first files land with R4a (integration.md §22);
-none before it (D77). Planned contents:
+Built into `libpcrec.a` by pcrec's Makefile (`KITSRCS`, compiled with
+`KITFLAGS`: no `-Ilib`/`-Isrc`, so nothing here can include pcrec). Every
+file includes its headers by relative path. At R4a pcrec CALLS NOTHING here
+except `mf_options()` (the `--list-axes` `memfn` section): the code links,
+and no emitter renders through it.
 
-- **K1, the primitives** — the reference functions (requirements.md's
-  F menu: find_byte, find_any2/3, find_in_set, skip_in_set, anchored
-  find_literal, run verify), each with a plain scalar form; ISA forms
-  are a later layer (D147).
-- **K2, the composer** — `mf_emit`/`mf_call` over an `mf_site`
-  (integration.md §8.2/§14.0): the kit's first-match selection tables
-  (§8.6), every table ending in the GENERIC scalar row (§14.6), and the
-  per-artifact `mf_art` (helpers before first use, `mf_flush_helpers`,
-  `mf_includes`, `mf_stamps`).
-- **The scalar arms — the live scalar layer (D147).** pcrec's migrated
-  scalar forms arrive here at each migration step byte-identical to
-  pcrec's pre-migration text (proved by that step's comparator), and
-  from then on are ordinary, improvable kit code. They are not frozen.
-- **SIMD forms — the SIMD layer**, rendered only when the switch is on
-  (`-fmemfn-simd`, default OFF; R4e′), each required to beat the current
-  scalar arm. Their contents are this kit's per-site choice: forms, ISA
-  levels, cascades (K-6) and the fallback. A SIMD-on artifact may not
-  run on another CPU (D147 addendum 6).
-- **`options.def`** — the kit's option registry (D147 addendum 9): an
-  X-macro `MF_OPT(name, kind, budget, layer, doc)` behind
-  `--memfn=<opt>[,…]`, `mf_options()` and `mf_opts_check()`. Born EMPTY
-  at R4a; each byte-moving kit change adds its own deny row. See
+- **kit.h** — the INTERNAL header: `kb` (growable text over the caller's
+  `mf_arena`), the `mf_art` struct and its per-site records, and the arm
+  interface K2 selects over. Never included outside this directory.
+- **compose.c** — K2, the composer: `mf_art`, the define/use split
+  (`mf_define`/`mf_use`/`mf_emit`/`mf_call`; handles checked at use and at
+  `mf_art_end`), the vocabulary rules every site must pass (`site_check`)
+  and their table (`mf_vocab_has`), the FIRST-MATCH arm table (one row at
+  R4a: the generic row), and the artifact queries (`mf_flush_helpers`,
+  `mf_includes`, `mf_stamps`: nothing to flush, include or stamp yet; the
+  stamps are born at R4a′).
+- **generic.c** — THE GENERIC SCALAR ROW (integration.md §14.6): the last
+  row of every selection table, rendering every site the vocabulary
+  describes as a plain byte loop (GNU C statement expressions for EXPR; a
+  `static inline` definition plus calls for FUNC; STMT ASSIGN, ON_MISS,
+  ON_CAND and ADVANCE). It tests every term, honours `floor`, `n`,
+  `end_back` and the empty outcome, and uses pcrec's `member` hook for a
+  set when one is given. No tuning constant (D149).
+- **k1_ref.c** — K1's REFERENCE functions (`mf_ref_*`): one obviously-
+  correct byte loop per primitive (F1 find_byte, F2 find_any2/3, F4
+  find_in_set, F5 skip_in_set, F9 find_literal, F7 run_verify). G2's
+  oracle side; never artifact text.
+- **options.def** — the kit's option registry, an X-macro
+  `MF_OPT(name, kind, budget, layer, doc)` (D147 addendum 9). BORN EMPTY:
+  each byte-moving kit change adds its own deny row (`--memfn=no-NAME`) in
+  the same commit and raises the floor in `docs/spec/registry.md` §6. See
   `../CLAUDE.md` "The kit's option namespace".
-- **K3 support** for the stand-alone CLI (planned with K3).
+- **options.c** — `mf_options()` and `mf_opts_check()` over options.def:
+  what `--list-axes` prints and what `--memfn=` accepts are one table.
 
-Rules: external symbols through `MF_NS` (`pcrec_mf_*`), everything else
-`static`; an SPDX line and a provenance header on every file whose text
-can reach an artifact; nothing included from pcrec's `src/`/`cli/`/`lib/`.
+Planned, not here yet: the scalar arms migrated from pcrec (M1 on; the live
+scalar layer, D147), SIMD forms (R4e′, rendered only under
+`-fmemfn-simd`), K3 support. Rules: external symbols through `MF_NS`
+(`pcrec_mf_*`; C15), everything else `static`; an SPDX line and a
+provenance header on every file, with its row in `../PROVENANCE.md` (C16);
+nothing included from pcrec's `src/`/`cli/`/`lib/`.

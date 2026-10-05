@@ -21,7 +21,7 @@ Every pcrec command whose output is a DATA TABLE:
 | `--list-verbs` | the (*VERB) name table | conforming producer today |
 | `--list-definitions` | the replacement/definition table (D85/[DD-11.2]) | conforming producer today |
 | `--list-families` | the construct-family index (D71 item 3) | conforming producer today |
-| `--list-axes` | the optimization-axis registry ([CHK-2] piece 1) | conforming producer today |
+| `--list-axes` | the optimization-axis registry ([CHK-2] piece 1) | conforming producer today; gained ONE named section after its anonymous main table at [MEMFN] R4a (`memfn`, the kit's option registry, `registry.md` §6) — `--list-source`'s shape |
 | `--list-limits` | the numeric-limits table (D90/[LIM-1]) | conforming producer today |
 | `--list-source` | the `.rxt` SOURCE file, as written ([DD-13b.W1.1], `docs/spec/rxt_format.md`) | conforming producer today; gained the Sections mechanism at [DD-13b.W23.4] (`provenance`/`variants`/`cases`/`aux`, emitted unconditionally when non-empty, always after the main table) |
 | `--list-schema` | the `.rxt` FORMAT's own schema ([DD-13b.W23.1], `docs/spec/rxt_format.md`) | conforming producer today, and the FIRST to use the Sections mechanism below |
@@ -97,6 +97,15 @@ mechanism rather than forcing one flat schema.
    rather than silently parse rows across section boundaries (rows from
    a section whose header it never read are not data, they are someone
    else's data).
+5. The LEADING ANONYMOUS TABLE of a stream whose main table stays
+   unnamed while named sections follow it (`--list-source`, `--list-axes`)
+   is selected as every line BEFORE the first `#section` line; the result
+   is a sectionless table read under rule 2. A consumer of such a stream
+   that reads "every non-`#` line" without that cut is reading the
+   sections' rows as the main table's. The shell implementation is
+   `tests/lib/table.sh`'s `table_main` ([MEMFN] R4a, when `--list-axes`
+   became the second producer of this shape and its consumers had to
+   select).
 
 `--emit-ir` ADOPTED, 2026-09-19 ([DD-8]); an enriched [V-H] trace table
 would adopt the same way. The mechanism was ruled three steps ahead of its

@@ -45,6 +45,29 @@ land here too.
   that adds a manifest row raises it in the same commit. The check is
   static: no build and no binary, and it takes about a second.
 
+### C15 and C16 (lane memfnskel)
+
+- **run_link_checks.sh** — [MEMFN] R4a: `make test-memfn-link`, a `make
+  test` section. Two checks born with the kit's link into libpcrec:
+  - **C15**: every global defined symbol of `build/libpcrec.a` (`LIB=`
+    overrides) begins `pcrec_` — the kit's are `pcrec_mf_*` through
+    `MF_NS` — save `c15_allowlist.txt`. Controls: a probe archive compiled
+    in the run with one planted unprefixed symbol must yield exactly it
+    (and teaches the run the platform's `_` decoration); a population
+    floor (200; 457 measured at R4a); reach (`pcrec_mf_options` present);
+    every allowlist entry still exported.
+  - **C16**: every file under `memfn/include` and `memfn/src` (`KITDIR=`
+    overrides; a CLAUDE.md excepted) carries an `SPDX-License-Identifier`
+    from D145's list (0BSD, Unlicense, CC0-1.0, spelled in the script) in
+    its first 5 lines and a `Provenance:` line in its first 10, and
+    `memfn/PROVENANCE.md` has exactly one row per file with the same
+    licence. Control: a synthetic kit with six planted defects must be
+    flagged for exactly those.
+  The header names what neither sees. Sabotage runs against the real tree
+  are recorded in `docs/dev/lanes/memfnskel_report.md`.
+- **c15_allowlist.txt** — C15's exceptions, one undecorated symbol per
+  line, each with its reason. Born EMPTY at R4a (0 measured).
+
 ## Sabotage rows
 
 - S478: a `memchr(` text planted in an unlisted function trips rule 1.

@@ -254,6 +254,18 @@ section targets depend on.
   filename-derived guess blanked the UNBATCHED stamp too). Sourced by
   `tests/harness/run.sh` only — no other suite needs an artifact's byte
   count today.
+- **lib_srcs.sh** — [MEMFN] R4a: `pcrec_lib_srcs ROOT`, THE ONE LIST of
+  libpcrec's C sources for a test script that builds a compiler (or a TSan
+  library) from source instead of linking `build/libpcrec.a`: every `.c`
+  under `ROOT/src` and, when present, `ROOT/memfn/src` (the kit libpcrec
+  links since R4a), `LC_ALL=C` sorted; fails naming ROOT when `src/` holds
+  none. Replaced eleven hand-spelled `find "$ROOT_DIR/src" -name '*.c'`
+  lines (the run_*_identity reference builds, run_anchored_match,
+  run_n1_budget, run_size_term, run_cpset_structure's scratch witness,
+  run_resource_tests' REFCAP, run_thread_tests' TSan library, and
+  run_recursion_identity's moving FILEPIN reference). The archived-PIN
+  references of pre-module commits keep their own `find` over the archive:
+  those trees predate the kit.
 - **table.sh** — [SR-11]'s ONE implementation of docs/spec/table_contract.md
   (the RULED contract for tabular `pcrec` command output — `#` comments,
   header-names-columns, append-only, optional `#section NAME` blocks), the
@@ -278,7 +290,13 @@ section targets depend on.
   final form of the old case10 `NF != 16` pin. Sections
   (`#section NAME`) are supported per the contract: reading a
   multi-section file with no `section` argument fails LOUDLY rather than
-  silently parsing whichever header came last. **[DD-8], 2026-09-19: the
+  silently parsing whichever header came last. **[MEMFN] R4a:
+  `table_main FILE` ("-" = stdin)** selects the LEADING ANONYMOUS TABLE of
+  a stream whose main table stays unnamed while named sections follow it
+  (every line before the first `#section`; table_contract.md consumer rule
+  5): `--list-axes` gained the kit's `memfn` section, and its consumers
+  (axes_registry_check.sh, tests/axes/run_axes.sh, run_comments_axis.sh)
+  read pcrec's table through it. **[DD-8], 2026-09-19: the
   file gained its ROW-reading half** — `table_section_rows FILE SECTION`
   (a section's data rows, never another section's: consumer rule 4),
   `table_field FILE SECTION COL` (one column of every row, resolved by
@@ -306,7 +324,7 @@ section targets depend on.
   says. Also runnable as a command for a sabotage control or a non-shell
   caller: `bash tests/lib/table.sh table-col-index FILE COL [SECTION]`
   (and `table-header-ncols`/`table-awk-map`/`table-check`/
-  `table-section-rows`/`table-field`/`table-lookup`), same coda shape
+  `table-section-rows`/`table-field`/`table-lookup`/`table-main`), same coda shape
   as `gen_timeout.sh`'s `secs`/`runsecs`/`cpusecs`, `table-`-prefixed
   because this file is SOURCED by scripts whose own `$1` is often a short
   word ("check") a collision with an unprefixed command name would

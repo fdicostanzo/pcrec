@@ -38,6 +38,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
 . "${ROOT_DIR}/tests/lib/gen_timeout.sh"  # [K37] pcrec_run
+. "$ROOT_DIR/tests/lib/lib_srcs.sh"   # [MEMFN] R4a: the library's source list (src/ + memfn/src/)
 . "$ROOT_DIR/tests/lib/cc_resolve.sh"   # [MACPORT] resolves a real GNU gcc when bare gcc is Apple clang
 N="${TRIE_N:-500}"
 SEED="${TRIE_SEED:-20260809}"
@@ -89,7 +90,7 @@ gen_b() { "$REF"   -p rx "${FLAGS[@]+"${FLAGS[@]}"}" -o - --pattern "$1" 2>/dev/
 # encoded an assumption about the tree's shape, and the tree's shape has now
 # changed twice.
 REF="$WORKDIR/pcrec_notrie"
-REF_SRCS="$(find "$ROOT_DIR/src" -name '*.c' | LC_ALL=C sort)"
+REF_SRCS="$(pcrec_lib_srcs "$ROOT_DIR")"
 if [ -z "$REF_SRCS" ]; then
     echo "FAIL: found no compiler sources under $ROOT_DIR/src for the reference build" >&2
     exit 1

@@ -71,10 +71,16 @@
  * line before data is the header, columns append-only). */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "core/internal.h"
 #include "pcrec.h"
+/* The kit's one public header, by its path from here: pcrec's sources reach
+ * pcrec-memory-functions through this file and nothing else (memfn/CLAUDE.md),
+ * and a relative spelling needs no -I that every from-source reference build
+ * would then have to carry. */
+#include "../../memfn/include/memfn.h"
 
 /* ---- hand-authored one-line descriptions for the "list"/"both" rows ---- */
 
@@ -976,6 +982,73 @@ static void emit_predicate_axes(StrBuf *sb)
     }
 }
 
+/* ---- the kit's section ---------------------------------------------------- */
+
+/* The kit enum spellings the `memfn` section prints. Exhaustive switches,
+ * no default (coding_guide.md §1.3): a kit enum that grows a value breaks
+ * this build rather than printing a stale word. */
+static const char *mf_kind_word(mf_opt_kind k)
+{
+    switch (k) {
+    case MF_OPT_DENY: return "deny";
+    case MF_OPT_PAIR: return "pair";
+    }
+    return "?";
+}
+
+static const char *mf_budget_word(mf_budget b)
+{
+    switch (b) {
+    case MF_B_SCAN: return "scan";
+    case MF_B_LOOP: return "loop";
+    case MF_B_ANY:  return "any";
+    }
+    return "?";
+}
+
+static const char *mf_layer_word(mf_layer l)
+{
+    switch (l) {
+    case MF_L_SCALAR: return "scalar";
+    case MF_L_SIMD:   return "simd";
+    }
+    return "?";
+}
+
+/* [MEMFN] R4a: the kit's option registry as the `memfn` section
+ * (docs/design/memfn/integration.md §R4.4.1; table_contract.md §Sections),
+ * one row per mf_options() entry, after the anonymous main table. pcrec
+ * names no row: the rows are whatever the kit's options.def holds (none at
+ * R4a). Nothing follows the section's header line, so an empty registry is
+ * an empty section, never a comment read as its header (table_contract.md
+ * rule 3; the --emit-ir precedent). */
+static void emit_memfn_section(StrBuf *sb)
+{
+    size_t n;
+    const mf_option *o = mf_options(&n);
+
+    pcrec_sb_puts(sb,
+        "#section memfn\n"
+        "# pcrec-memory-functions' own option registry (memfn/src/options.def;\n"
+        "# docs/spec/registry.md §6). NOT pcrec axes: each row is reached as\n"
+        "# --memfn=no-NAME (a `pair` row also as --memfn=NAME), a string pcrec\n"
+        "# passes to the kit uninterpreted. budget: D91's scan/loop/any; layer:\n"
+        "# the acceptance reading that owns the row (a simd row is inert at\n"
+        "# -fno-memfn-simd).\n"
+        "#name\tkind\tbudget\tlayer\tspelling\tdoc\n");
+    for (size_t i = 0; i < n; i++) {
+        StrBuf sp = {0};
+        pcrec_sb_printf(&sp, "--memfn=no-%s", o[i].name);
+        if (o[i].kind == MF_OPT_PAIR) pcrec_sb_printf(&sp, "|--memfn=%s", o[i].name);
+        char *spell = pcrec_sb_take(&sp);
+        const char *cells[] = { o[i].name, mf_kind_word(o[i].kind),
+                                mf_budget_word(o[i].budget),
+                                mf_layer_word(o[i].layer), spell, o[i].doc };
+        pcrec_sb_row(sb, cells, sizeof cells / sizeof cells[0]);
+        free(spell);
+    }
+}
+
 /* ---- the whole dump ------------------------------------------------------ */
 
 /* The `--list-axes` TSV, the fourth registry surface (docs/spec/registry.md,
@@ -1041,6 +1114,7 @@ char *pcrec_axes_tsv(void)
     emit_dfa_list_axis(&sb, "search-start", "list", pcrec_dfa_axis_searchstart_cands);
 
     emit_predicate_axes(&sb);
+    emit_memfn_section(&sb);
 
     return pcrec_sb_take(&sb);
 }

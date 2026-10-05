@@ -125,8 +125,15 @@ WORKDIR="$(mktemp -d "${TMPDIR:-/tmp}/pcrec-axesreg.XXXXXX")"
 cleanup() { [ "$KEEP" = "1" ] || rm -rf "$WORKDIR"; }
 trap cleanup EXIT
 
+# [MEMFN] R4a: `--list-axes` is a MULTI-SECTION stream — pcrec's anonymous
+# axis table, then the kit's `memfn` section (docs/spec/registry.md §6). Every
+# check below reads pcrec's table, SELECTED as the leading anonymous table
+# (table_main; table_contract.md consumer rule 5), so a kit row can never be
+# read as a pcrec axis; the `memfn` section is read by name in its own block.
+RAW="$WORKDIR/axes.raw.tsv"
 TSV="$WORKDIR/axes.tsv"
-"$TIMEOUT_BIN" 60 "$PCREC" --list-axes > "$TSV" || { echo "axes_registry: FATAL: $PCREC --list-axes failed" >&2; exit 1; }   # [K37] bounded, tests/reject/run_reject_tests.sh's own --list-syntax precedent
+"$TIMEOUT_BIN" 60 "$PCREC" --list-axes > "$RAW" || { echo "axes_registry: FATAL: $PCREC --list-axes failed" >&2; exit 1; }   # [K37] bounded, tests/reject/run_reject_tests.sh's own --list-syntax precedent
+table_main "$RAW" > "$TSV" || { echo "axes_registry: FATAL: could not select --list-axes' main table" >&2; exit 1; }
 
 npass=0
 nfail=0
@@ -156,6 +163,38 @@ if [ "$nrows" -lt 1 ]; then
     exit 1
 fi
 ok "non-vacuity: --list-axes produced $nrows data row(s)"
+
+# ============================================================================
+# [MEMFN] R4a: THE KIT'S `memfn` SECTION (integration.md §R4.4.1). Its rows
+# are the kit's option registry (memfn/src/options.def, through
+# mf_options()); pcrec names none. Present, header-truthful, its columns
+# resolvable by name. Its INDEPENDENT control is a member-count FLOOR pinned
+# as a literal in docs/spec/registry.md §6 ("memfn section floor: N"), which
+# shares no source with options.def: born with the first row (R4d). Until
+# then the registry is empty and the floor arm is UNREACHED (K35) — printed
+# as such, never counted as a pass. A row that lands WITHOUT its floor fails.
+# ============================================================================
+REGMD="$ROOT_DIR/docs/spec/registry.md"
+if ! grep -q '^#section memfn$' "$RAW"; then
+    bad "[memfn] --list-axes has no '#section memfn' (the kit's option registry is not listed)"
+elif ! table_check_truthfulness "$RAW" memfn >"$WORKDIR/mferr" 2>&1; then
+    bad "[memfn] header truthfulness: $(cat "$WORKDIR/mferr")"
+elif ! table_awk_map -s memfn "$RAW" name kind budget layer spelling doc >/dev/null 2>"$WORKDIR/mferr"; then
+    bad "[memfn] the section's columns do not resolve by name: $(cat "$WORKDIR/mferr")"
+else
+    ok "[memfn] --list-axes carries the kit's section, header-truthful, columns name/kind/budget/layer/spelling/doc"
+    mfrows="$(table_section_rows "$RAW" memfn | grep -c . || true)"
+    mffloor="$(sed -n 's/.*`memfn` section floor: \([0-9][0-9]*\).*/\1/p' "$REGMD" | head -1)"
+    if [ -z "$mffloor" ] && [ "$mfrows" -eq 0 ]; then
+        echo "UNREACHED: [memfn floor] the kit's registry is empty ($mfrows rows) and no floor is pinned in docs/spec/registry.md §6 -- the floor is born with the first row ([MEMFN] R4d); nothing to check until then (K35)"
+    elif [ -z "$mffloor" ]; then
+        bad "[memfn floor] the section has $mfrows row(s) but docs/spec/registry.md §6 pins no '\`memfn\` section floor: N' -- a kit row landed without raising its floor (integration.md §R4.4.1)"
+    elif [ "$mfrows" -lt "$mffloor" ]; then
+        bad "[memfn floor] the section has $mfrows row(s), under the floor $mffloor pinned in docs/spec/registry.md §6 -- a stale or truncated kit registry"
+    else
+        ok "[memfn floor] $mfrows row(s), floor $mffloor (docs/spec/registry.md §6)"
+    fi
+fi
 
 # ============================================================================
 # lib/pcrec.h's OWN registry, derived the same proven way run_axes.sh

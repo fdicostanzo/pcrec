@@ -921,6 +921,14 @@ description. Reports what THIS BUILD thinks its own tuning machinery is
 independent-side check. Takes no `--flavour` (the same reason
 `--list-families` doesn't: it is not a claim about PCRE2 syntax).
 
+Since [MEMFN] R4a the stream has TWO tables: pcrec's axis table, which
+stays the leading ANONYMOUS table, and after it a `#section memfn` — the
+option registry of pcrec-memory-functions, the in-tree search-code kit
+(`memfn/src/options.def`), one row per kit option reachable as
+`--memfn=no-NAME`. Those rows are not pcrec axes and carry no flag bit. A
+consumer selects the table it reads (`docs/spec/table_contract.md`
+Sections, consumer rule 5); `registry.md` §6 has the section's columns.
+
 ### `--list-definitions`
 
 The replacement/definition table ([DD-11.2], D85, `docs/spec/registry.md`

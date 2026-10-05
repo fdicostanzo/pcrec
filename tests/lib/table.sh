@@ -220,6 +220,25 @@ table_lookup() {
     return 1
 }
 
+# table_main FILE — the LEADING ANONYMOUS TABLE of FILE ("-" reads stdin):
+# every line before the first `#section` line, comments and header included,
+# so the result is itself a sectionless table every function above reads
+# with no SECTION argument. The selector for a producer whose main table
+# stays anonymous while named sections follow it (`--list-source`,
+# `--list-axes` since [MEMFN] R4a's `memfn` section; table_contract.md
+# Sections, consumer rule 5). A file with no `#section` line is returned
+# whole. Fails loudly when the main table holds no data row: a consumer that
+# selected an empty main table is reading the wrong stream.
+table_main() {
+    local file="$1" out
+    out="$(awk '/^#section / { exit } { print }' "$file")"
+    if ! printf '%s\n' "$out" | grep -q '^[^#]'; then
+        echo "table: '$file' has no data row before its first #section line" >&2
+        return 1
+    fi
+    printf '%s\n' "$out"
+}
+
 # table_check_truthfulness FILE [SECTION] — HEADER TRUTHFULNESS
 # (table_contract.md, "The checks"): every data row's field count equals the
 # header's declared count. This is the correct final form of the old
@@ -272,6 +291,7 @@ table_check_truthfulness() {
 #   bash tests/lib/table.sh table-section-rows FILE SECTION
 #   bash tests/lib/table.sh table-field FILE SECTION COL
 #   bash tests/lib/table.sh table-lookup FILE SECTION KEYCOL KEY VALCOL
+#   bash tests/lib/table.sh table-main FILE
 case "${1:-}" in
     table-header-ncols) shift; table_header_ncols "$@" ;;
     table-col-index)    shift; table_col_index "$@" ;;
@@ -280,4 +300,5 @@ case "${1:-}" in
     table-section-rows) shift; table_section_rows "$@" ;;
     table-field)        shift; table_field "$@" ;;
     table-lookup)       shift; table_lookup "$@" ;;
+    table-main)         shift; table_main "$@" ;;
 esac
