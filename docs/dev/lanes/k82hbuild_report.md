@@ -174,7 +174,7 @@ allowance (Q10).
 | plain `-O1` | 574 (346 / 17 / 211) | 4,407,656 | 0 |
 | `-fsanitize=address,undefined -fno-builtin-memcmp -DDIFF_EXACT_SUBJECT` | 574 (346 / 17 / 211) | 4,407,656 | 0 |
 
-`tests/litscan/handoff.rxt` (§4.2 item 2): 66 blocks, 1,980 cases, green
+`tests/litscan/handoff.rxt` (§4.2 item 2): 66 blocks, 2,136 cases, green
 under NEW and under BASE (the expectations are oracle-made, so BASE passing
 is the check that they are not the handoff's own opinion).
 
@@ -245,7 +245,7 @@ with `tests/mech/run_sabotage_matrix.sh S<id>` on this branch:
 | S474 | the run choice prefers a bounded run | DETECTED | prechecks 18 |
 | S475 | the verb/callout decline | UNREACHED (EXPECTED) | reach probe refused by construction |
 | S476 | the (d') decline dropped | DETECTED | prechecks 2 |
-| S477 | DD12a(i)'s excision widened | TBD-S477 | encoding |
+| S477 | DD12a(i)'s excision widened | DETECTED | encoding 3 fail over a 0-fail clean baseline |
 
 S468's corpus arm reads 0: on the unanchored route a seed read from the
 startpos instead of the handoff is re-checked by the reverse pass (bounded by
@@ -265,8 +265,8 @@ green on its first run, the two reds this lane's own (five sabotage anchors
 moved by its edits, and `run_prechecks.sh`'s new `sort -u` outside
 `LC_ALL=C`), both fixed and re-checked (`m6read_check_sab_anchors.py` 429
 rows, all resolve; `run_prechecks.sh` 345/0), the third the standing darwin
-`nm arm_a.o` probe; `run_rxtsource_tests.sh` 271/0 (the branch point reads 271/0 too); `make test-registry`
-TBD-REG; `run_encoding_checks.sh` 11/0; `run_cpset_structure.sh` 28/0;
+`nm arm_a.o` probe; `run_rxtsource_tests.sh` 271/0 (the branch point reads 271/0 too); `make test-registry` rc 0 (every sub-check 0 failed);
+`run_encoding_checks.sh` 11/0; `run_cpset_structure.sh` 28/0;
 `tests/resource/run_resource_tests.sh`'s pin re-measured by diff (§4);
 `tests/harness/run.sh tests/litscan/handoff.rxt` 2,136/0 under NEW and green
 under BASE.
