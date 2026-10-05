@@ -3454,3 +3454,198 @@ never takes it (it passes no mask).
   offset] != b` guards entry), `floor` `search_from` or `0`, and a
   RESULT TRANSFORM (`+ offset`) that is the term's offset applied back.
   The contract can say it. Q42 still says not to move it.
+
+---
+
+## 16. M1, narrowed and sequenced (r3 G-F10, G-F11) `[rev4]`
+
+**The trigger's site class.** M1 exists for K82 cause (B): the
+DFA-route run pre-check gate on `union-select`, `userpass` and `mod-i`.
+Its fused scan+verify (twins.md T-B) is the measured customer, so the
+triggering site is §15.5's composite PRE site. M1 is the CLOSURE of that
+site under §9.1's rule: an emitter migrates with every caller, and a
+search keeps one spelling.
+
+| unit | why it is in M1 | why it is not wider |
+|---|---|---|
+| `pcrec_emit_req_byte_check` with `emit_req_one_byte`, `emit_req_run_check`, `emit_req_set_rest`, `pcrec_emit_req_run_blocks`, `req_run_tests` (all three search entries' callers, `emit_dfa.c:8113/8132`, `:8406/8417`, `emit_vm.c:13105/13172`) | the trigger site itself. The one-byte gate and the set rest are in it because the lead byte (part 0) and the set rest (part 3) share their spellings with the non-run path, and two spellings of one presence gate is D122's violation | — |
+| `ofs_test_emit_fn`, `ofs_test_emit_pair`, `ofsk_emit_verify`, `ofsk_emit_params` with BOTH callers (`pcrec_emit_req_run_blocks` and `pf_block_ofs`, T1's offset/run rows) | the run gate's definition is this emitter, and the emitter has a second caller | the T1 CALL sites (`pf_emit_ofs[_bounded]`) stay pcrec's text around an EXPR (§15.2) |
+| **NOT `runcmp.c`** | the run term's compare is reached through the `run_cmp` hook (§14.0), pcrec's spelling, exactly as T4's `member`. M1 needs no VM site | runcmp has two VM callers (`vm_lit`, the island) that the trigger does not touch. Moving them is **M1b**, filed with its own trigger (§22) |
+
+So, against revision 3's M1, M1 sheds VERIFY/VMRUN (runcmp and its
+three callers) and bit 43's crossing. The `memchr(` ratchet after M1
+reads 9 → 4: the five sites in the pre-check and the offset-skip trio
+(`:1221`, `:1247`, `:6153`, `:6157`, `:6216`/`:6218` counted as the
+block's two arms), leaving PF's two and N3's (`:5679`, `:5703`, `:8762`).
+C12's ceiling is re-counted at the build commit, and the list above is a
+floor.
+
+**Sequencing (G-F10).** M1's IMPLEMENT commit freezes pcrec's
+pre-migration text as the baseline (§9.2). That text must be the text
+that should be frozen, and nobody may be editing it.
+
+1. **After `lane/k82hbuild` merges** (abi 61, the handoff). The handoff
+   changes `pcrec_emit_req_byte_check`'s signature and adds the
+   ASSIGN-shaped part 1. Freezing first would freeze the pre-handoff
+   text, and the K82 cells' twin (R4b) must be measured against what
+   remains after the handoff (r2 R2).
+2. **After K85's re-measure** on the post-handoff build. K85 (set-leads
+   loses ~5% on `cls-n-uc`) is an OPEN regression on the very site M1
+   freezes. Its disposition says "re-measure after the handoff lands
+   before designing anything specific". Freezing before that re-measure
+   would make K85's text the guard's OFF arm. If the re-measure closes
+   K85, M1 freezes the post-handoff text. If K85 stays open, M1 still
+   freezes it: the baseline is "pcrec's last spelling", regressions
+   included, and K85's cure becomes the composite site's non-baseline
+   arm (§15.5). The point of waiting is that the ruling is made with the
+   number in hand.
+3. **After migration, an edit to a delegated emitter is KIT-LANE work.**
+   Any lane that would have changed `emit_req_*`/`ofs_test_*` text after
+   M1's replace commit changes a kit arm instead. A non-baseline change
+   is a kit change, with the abi ritual if it moves a byte (G3). A
+   baseline change is a ruled abi event (Q27/Q38). The lane-briefing
+   skill names the migrated emitters; §22 R4c's delivery adds them to
+   `src/gen/CLAUDE.md` as "migrated: edit in `memfn/`".
+
+---
+
+## 17. Guards, revision 4 `[rev4]`
+
+### 17.1 I2 sweeps every axis and every comment tier (r3 F3, G-F2)
+
+Revision 3's I2 swept "the default, each `-fno-memfn-*` deny, every
+`--tune` position, and `-e utf8`". That cannot see a SHIPPED deny on a
+migrating site silently stop working. I2 now runs the movers-by-ID diff
+(parent against step) at:
+
+- **every `axes.def` axis**, one arm each (both polarities for a pair);
+- **every comment tier**: the default (comments off) and `-fcomments`
+  (the notes and the frozen form comments of §14.2 are reached only
+  there);
+- every `--tune` position and both encodings;
+- the kit's published switches (§14.10), once they have movers.
+
+The arm count is printed, and a K35 floor holds it: born at the number
+of `axes.def` rows + 2 comment tiers + 5 tune positions + 1 encoding, so
+an axis that silently stops being enumerated is a red check. This is
+the multi-hour `test-axes` shape. It runs on Linux through the
+executor channel. On the Mac, a lane sweeps only its own axes plus the
+comment tiers (BOILERPLATE's darwin timeouts).
+
+### 17.2 G1, re-founded (r3 G-F4, G-F5, G-F6)
+
+- **The population comes from pcrec, not from the kit (G-F5).** The
+  movers are the artifacts whose DEFAULT compile differs byte for byte
+  from their `memfn-off` compile (`-fno-memfn-scan -fno-memfn-loop`),
+  over the corpus and the bench's patterns. A pcrec-side script diffs
+  the two compiles, so the population shares no source with the kit;
+  `mf_result.moved` plays no part. The manifest is written by the
+  compile pass, never filtered by an outcome, and printed with its
+  count.
+- **Pooled bins with a floor.** Rev 3 binned by (step, op, length
+  decade), most bins thin. G1 bins by (op, length decade) across steps,
+  with a floor of 8 movers per bin. A thinner bin prints
+  `UNREACHED (n < 8)`, counted, and its movers are reported unverified.
+- **The regime is declared** (§21.1): two regimes, both measured, and a
+  mover regressing past the floor in EITHER is a D146 revisit event.
+- **Cadence: every memfn abi event (G-F6).** Every kit commit that moves
+  a pcrec byte runs G1's alpha on its own movers as part of its
+  delivery: a new arm, a re-tune of the kit's data, a vocabulary
+  addition with a customer, a baseline change. That is D144 item 1
+  applied to each event, not only to the "mover steps" R4d/R4f/R4g/
+  R4h/R4j. A kit re-tune is exactly the event a step list misses.
+- **armv8: there is NO verdict-grade guard (G-F4), and the spec says
+  so.** The house has no quiet aarch64 Linux box. Mac timings are
+  directional (D144 addendum 1), and Rosetta 2 runs x86 code, not arm
+  code. So:
+  - the kit does not select a native arm over its portable arm on
+    aarch64 (K-4);
+  - the Mac run of G1 is a regression check of the PORTABLE text, never
+    a verdict;
+  - `docs/spec/` states that the kit's choices on aarch64 are unmeasured
+    at verdict grade (§10.6 gains a fourth limit).
+
+### 17.3 C9, cross-target syntax, made to run and made non-vacuous (r3 G-F3)
+
+- **The Mac failure.** `clang --target=x86_64-linux-gnu -fsyntax-only`
+  stops at `string.h: file not found`, because there is no x86 Linux
+  sysroot. The fix is a HEADER SHIM, `tests/memfn/shim/`: minimal
+  `<string.h>`, `<stddef.h>`, `<stdint.h>` and `<stdlib.h>` declaring
+  only what generated artifacts use (`memchr`, `memcmp`, `memcpy`,
+  `size_t`, the fixed-width types). C9 compiles with `-nostdinc -isystem
+  $(clang -print-resource-dir)/include -isystem tests/memfn/shim`. The
+  compiler's own resource directory carries BOTH architectures'
+  intrinsic headers whatever the host, so only libc needs shimming. The
+  shim is deliberately not a sysroot: it type-checks calls, links
+  nothing, and runs nothing.
+- **Vacuity under `portable`.** In the default profile there are no
+  `#if` arch arms to compile, so C9 passed by having nothing to check.
+  It now runs at `-fmemfn-native` (§20.2) over the movers' patterns, and
+  separately at the default.
+- **A K35 floor on arms compiled.** The arm count per artifact is
+  printed and summed. The total must be at least a COMMITTED floor
+  (`tests/memfn/pins/c9_floor`), born at the first native arm's landing.
+  Zero arms is a FAIL, not a pass. The kit-reported count (rev 3's
+  comparison) is kept as a second reading, but it shares a source with
+  the subject, so the floor is the independent half.
+
+### 17.4 Pins live under `tests/`, per arm (r3 F12, G-F8)
+
+- **C5's baseline pin is per ARM, not per artifact.** It lives at
+  `tests/memfn/pins/arms.tsv`, one row per baseline arm × fixture
+  request, holding the sha256 of the arm's rendered text. The fixtures
+  are a fixed set of `mf_site`s per (emitter, op, form) shape, written in
+  the same commit. The rows are RECORDED at M1's implement commit from
+  pcrec's own pre-migration emitter, the side the shadow comparator
+  proves equal, so their provenance is pcrec's old output. An unrelated
+  abi change (a scaffolding line elsewhere) moves no arm digest and
+  forces no re-pin (F12).
+- **Per-pattern memfn-off pins.** `tests/memfn/pins/off.tsv` holds the
+  sha256 of each manifest pattern's artifact at `memfn-off`, recorded at
+  the same commit. It is re-pinned only by an abi event that touches
+  scaffolding (D94's grep finds it: it is a byte-count-class reader).
+- **Both are in-tree and need no history,** so a `git archive` (mech's
+  tree) checks them. Revision 3's "the bytes pcrec emitted at the step's
+  parent commit" needed a checkout of the parent, which mech cannot do.
+
+### 17.5 C4's plant, stated honestly (r3 G-F7)
+
+The plant vocabulary is derived at check time from the compilers
+installed on the box (`cc -dM -E` per owned target, intrinsic names
+scraped from the resource directory's headers). That makes it held out
+from the REGEX AUTHOR. It does not make it complete or box-independent:
+gcc-16 on the Mac and gcc-15.2 on ubuntubudu declare different macro
+sets, and a target whose headers are absent contributes nothing. So:
+
+- the claim is narrowed to "the plant is not chosen by the person who
+  wrote the regex";
+- the plant's size per class is printed per box, with a floor per class
+  (at least one plant), so an empty class is red;
+- matching is CASE-INSENSITIVE (`AVX2` in a comment and `avx2` in a
+  string are one hit);
+- a box-dependent plant is acceptable because C4 runs on both boxes in
+  the batch gate.
+
+### 17.6 Sabotage rows, mech-runnable (r3 G-F8)
+
+Every row names a `SAB_FILE` inside the tree, a detector that reads only
+in-tree pins, and `SAB_REACH`/`SAB_REACH_POP` (birth-time reachability,
+[MECH-REACH]). Ids are taken at build (highest S on main + 1; main is at
+S462, `lane/k82hbuild` reaches S477).
+
+| sabotage | detector | `SAB_REACH` |
+|---|---|---|
+| one baseline arm edited by one byte | C5 (`arms.tsv`) | the arm's fixture renders |
+| a kit text change that moves a pcrec byte, no abi bump | the standing identity gates + `off.tsv` | a manifest pattern's site renders it |
+| one ISA word per C4 class into `src/gen/emit_dfa.c` | C4 | the plant count for that class is ≥ 1 |
+| `#include "memfn/src/…"` in `src/` | C4 class 9 | — (static) |
+| `strcmp` on `form_id` in `src/` | C4 class 7 | — (static) |
+| a site's `MF_P_INLOOP` dropped from `DELEG_SITES` | C10 | the site's row exists |
+| a `POSITION` site's row marked `DISCARD` | C10 (§14.5) | the PF/handoff rows exist |
+| the stamp's value forced to `none` on a mover | C11 (§18.2) | the pcrec-side diff names ≥ 1 mover |
+| a replaced `memchr(` text re-added to an emitter | C12 | — (static) |
+| an `on_cand` producer with a `return` | C13 | a producer exists (R4e onward; UNREACHED before, declared) |
+| `MF_MAX_TERM` lowered below `PCREC_OFSK_MAX_SET + 1` | C14 | — (compile-time) |
+| a profile bit left out of `strategy_denials` | I2's deny arm (rx_info moves) | the corpus has a delegated site |
+| a `-fmemfn-native` arm emitting one intrinsic under default | C5's portable clause | a native arm exists (R4e′ onward) |
+| the kit's guard one byte short | G2's guard-page test (the kit's mech row) | the fixture places the page |
