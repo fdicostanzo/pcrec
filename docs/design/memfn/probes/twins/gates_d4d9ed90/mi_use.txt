@@ -1,0 +1,2 @@
+    size_t handoff_position = rx_reqrun(subject, subject_length, search_from);
+    if (handoff_position >= subject_length) return 0;
