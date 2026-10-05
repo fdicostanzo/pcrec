@@ -115,9 +115,10 @@ and hooks that reproduce today's text byte for byte.
 | G-F13 | one shared request file breaks D78 | Two files from day one | §20.1 |
 | G-F14 | analyze/ is the inverse precedent; `mf_*` exported unprefixed from libpcrec; Rust memchr provenance | A symbol policy (`pcrec_mf_*` at link, hidden visibility), and per-file Unlicense provenance | §20.3 |
 
-**Count:** 27 findings. 26 have a design answer here. F9 has one
-alternative to Frank's two options, and one sub-question goes to Frank
-(Q38).
+**Count:** 27 findings (F1-F13, G-F1..G-F14), all answered. One answer
+departs from the options the panel offered: for F9 the MODEL migrates at
+M5, so neither a permanent pcrec cost model nor a baseline re-pin is
+needed (§14.9). Its open sub-question, adoption, goes to Frank as Q40.
 
 ### R4.2 What revision 4 overrides in revision 3
 
@@ -136,7 +137,7 @@ alternative to Frank's two options, and one sub-question goes to Frank
 - §11.3's single ledger becomes two files (§20.1). §11.1 gains the
   symbol policy (§20.3).
 - §12.2's R4a-R4j are replaced by §22. §13's questions are superseded by
-  §23 (Q35-Q44). Q24-Q34 are re-derived there, not merely renumbered.
+  §23 (Q35-Q49). Q24-Q34 are re-derived there, not merely renumbered.
 
 ---
 
@@ -2677,7 +2678,7 @@ the SIMD hold until R4f (D91, D119).
 
 ## 13. Questions for Frank `[rev3]`
 
-> **`[rev4]` SUPERSEDED by §23** (Q35-Q44). Q24-Q34 are re-derived
+> **`[rev4]` SUPERSEDED by §23** (Q35-Q49). Q24-Q34 are re-derived
 > there; §23.1 maps each.
 
 Renumbered from Q24 (rev 2 ended at Q23; the unmerged price-model draft
