@@ -206,7 +206,7 @@ At every other cell, at SSE2 and AVX2, `ffl` wins.
 | title block | rev 4.4 current; open Q53-Q55 | rev 4.5 current; Q53-Q55 still open; rules nothing |
 | §8.6 | K-1..K-6 | K-7 added: D149 |
 | §15.5, "Why ONE site" | the order is a hint a non-baseline arm may revise; fusing lead and window is K85's general answer | annotated; replaced by "The lead order and the regime boundary" subsection |
-| §16 item 2 and the `[rev4.3]` status | K85's re-measure OWED | annotated: measured, `k82halpha_report.md` §3 (K85 persists at +0.023..+0.036 ns/B); R-1 measured the fused forms. Whether wait 2 is MET is not ruled here |
+| §16 item 2 and the `[rev4.3]` status | K85's re-measure OWED | annotated: measured, `k82halpha_report.md` §3 (K85 persists at +0.023..+0.036 ns/B); R-1 measured the fused forms. Wait 2 is MET (§R4.5.5 item 1) |
 | §19 row 5 | the composite site's order | annotated: lead order is the kit's per-site choice |
 | §21.1 R4b bullet | R4b measured on the post-handoff build, as a plan | marked measured, with the report pointer and the regime verdicts |
 | §R4.3.3 "Its event" | abi "the next number at landing (61 at main 7f94b0cd)" | annotated: main is at abi 61 (the handoff, f116cff5), so 62 if nothing lands first; never a literal |
@@ -232,8 +232,9 @@ annotated and not rewritten.
 2. The unmeasured-default label is the text `UNMEASURED DEFAULT:` at the
    constant, as in `tb_r4b.c`. Panels grep for it.
 3. The lead order is spelled "lead first" / "run first". It has no
-   option name yet. A registry row is born with R4d's first byte move
-   if the order is a separate form (`--memfn=no-NAME`, §R4.4.1).
+   option name of its own: it is part of R4d's one form and rides R4d's
+   one registry row (§R4.5.5 item 3). Run-first, when its fact exists,
+   gets its own row.
 4. The future density fact is spelled "lead can reject". It carries no
    `MF_P_*` name and no shape. It is filed, not designed.
 
@@ -251,6 +252,36 @@ annotated and not rewritten.
    kit's own deny, population from a pcrec-side artifact diff (§17.2).
 3. **What moves when data is regenerated: NOT RELEVANT.** This revision
    adds no data file and moves no emitted byte.
+
+### R4.5.5 The kit session's answers to the fold's open points
+
+The fold (lane memfnr45) left four points open. They are the kit
+session's to settle (D146: the form is the kit's; the status of pcrec's
+waits is a fact, read from merged reports). None is a pcrec ruling.
+
+1. **Wait 2 and the handoff's Linux alpha are MET.** The pcrec manager
+   accepted the handoff's alpha (`requests.md` R-1, "Confirmed
+   2026-10-05": cause (B) cured, DENY==BASE on every cell), and K85 was
+   re-measured on the post-handoff build (`k82halpha_report.md` §3,
+   `docs/dev/optloop/s4/k85alpha_lx.txt`, merged ad16111b). R4c's
+   prerequisite "K85 re-measured (OWED)" is therefore MET. R4c's
+   remaining prerequisite is R4a′.
+2. **The early-hit single gate call is a CANDIDATE for Q48's cell, not
+   yet its trigger.** Q48's trigger is "a K85-shaped cell that the R4d
+   fused arm does not already cure". The R4d arm does not exist yet.
+   R-1's `swar`/`swlf` are probes of it. The cell (cls-n-uc gate at
+   64k/256k; mod-i gate at 1m) is judged at R4d's G1 alpha, against
+   R4d's own deny row, at both layers. If it still loses past the floor
+   there, Q48's trigger is met and the optional site is filed as a
+   request.
+3. **The lead order is part of R4d's ONE form**, not a separate kit
+   form. R4d ships lead-first wherever a lead is present (the only
+   order R-1 supports without a density fact), under R4d's single
+   `--memfn=no-NAME` row. Run-first enters only with the "lead can
+   reject" fact, as its own change, with its own trigger and its own
+   registry row (D144 item 4). §R4.5.3 item 3 reads accordingly.
+4. **The older §22/§23 blocks stay as history** under §22's head note.
+   They are not rewritten (the R4.4/R4.3 convention).
 
 ---
 
@@ -4694,7 +4725,8 @@ that should be frozen, and nobody may be editing it.
 > Status at main 7f94b0cd:
 > - wait 1 is MET (`lane/k82hbuild` merged at f116cff5, abi 61);
 > - wait 2, K85's re-measure on the post-handoff build, is OWED, and
->   so is the handoff's Linux alpha.
+>   so is the handoff's Linux alpha. (`[rev4.5]`: both MET, §R4.5.5
+>   item 1.)
 >
 > **`[rev4.5]`** Both reads exist since this block was written:
 > `docs/dev/lanes/k82halpha_report.md` is the handoff's Linux alpha and
@@ -5429,6 +5461,9 @@ text stays opt-in until R4f.
 >   **Prerequisites:** R4a′; `lane/k82hbuild` merged (MET); K85
 >   re-measured on the post-handoff build (OWED). **Trigger:**
 >   completeness.
+>
+>   **`[rev4.5]`** K85's re-measure is MET (§R4.5.5 item 1); R4a′ is
+>   the remaining prerequisite.
 > - **R4d, the first movers:** the kit's SWAR fused composite, a
 >   SCALAR-layer change.
 >   - It gets its own `--memfn=no-NAME` row (`[rev4.4]`), is accepted on
