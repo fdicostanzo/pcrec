@@ -2187,3 +2187,189 @@ leapfrog and no masked word compare for a delegated site. The
 `memchr(` ratchet reads 1 (N3) or 0. The baseline profile holds
 everything pcrec used to spell, frozen. The `-fno-memfn-*` bits reach it
 from every site.
+
+---
+
+## 10. GUARDS `[rev3]`
+
+Seven guards. G1 is D146's own, independent of the kit. G2 is the
+kit's. G3-G7 are pcrec's deterministic checks, and only they carry
+sabotage rows (r2 C-d).
+
+### 10.1 G1, D146's guard: pcrec's timing with the kit on vs off
+
+- **The two arms.** ON is the default profile (`portable` during the
+  SIMD hold, `native` after R4f). OFF is `-fno-memfn-scan
+  -fno-memfn-loop`, the BASELINE profile: pcrec's own pre-migration
+  text, pinned byte for byte (§9.2). Neither arm is computed from the
+  kit's data, and the timing is pcrec's own instrument. This is the
+  control that shares no source with the kit (D146 "Guard").
+- **Alpha, per mover step (D144 item 1).** Every step that adds
+  movers (R4d, R4f, R4g, R4h, M5) times its witness cells ON vs OFF on
+  ubuntubudu: `taskset`-pinned, calibrated loops of at least ~50 ms,
+  absolute deltas against a base-vs-base floor measured the same way
+  (D144 addendum 1). The floor is ON vs ON and OFF vs OFF. A delta inside
+  it is NULL.
+- **Long subjects and a population (r2 P9, C-a, C-b).** The population
+  is EVERY corpus and bench site where `mf_result.moved == 1`, written as
+  a manifest by a compile pass and never filtered by an outcome. Its
+  subjects are the bench's throughput subjects (at least 1 MiB,
+  read-only from pcrec-bench, sha-verified), cut at 16 B, 64 B, 256 B,
+  1 KiB, 64 KiB and 1 MiB so the short/long crossover linux_results.md
+  found (fusion wins at 64 B and below and loses from about 512 B at
+  SSE2 width) is crossed on both sides. Each bin (step, op, length
+  decade) that holds a mover needs at least 8 sites, or it prints
+  UNREACHED (K35: counted and printed). A mover in an UNREACHED bin is
+  reported unverified.
+- **Its home.** Alpha: `tests/memfn/guard/run_guard.sh` (opt-in, heavy,
+  never in `make test`, run through pcrecdev2's executor channel per
+  memory `pcrec-cross-platform-verification`). Batch gate: a pcrec-bench
+  TESTEE `pcrec[memfn-off]` beside the default, requested through the
+  inbox (D78) at R4d. That request is also option_sets.md §6.1 trigger 3
+  (§12.1).
+- **The aarch64 arm.** The Mac runs the same script, directional only
+  (D144 addendum 1). Since the kit does not select a native arm on an
+  architecture without a verdict-grade box (§8.6 K-4), aarch64's ON arm
+  under `native` is the portable text until Q31 is ruled. The Mac run is
+  then a check that it did not regress, not a verdict that native wins.
+- **The verdict.** A mover whose ON arm is slower than OFF past the
+  floor is a D146 revisit-when event. It is filed to the kit's request
+  ledger (§11.3) as a defect against the kit's choice. While it is open
+  the kit's own deny for that arm (`--memfn-deny=`), or pcrec's budget
+  bit, is the interim kill switch (D144 item 4).
+
+### 10.2 G2, the kit's own tests (the kit's business; pcrec only requires that they exist and gate the kit)
+
+- **Exhaustive answers per arm** against the SCALAR BYTE LOOP (never
+  against another output of the kit's own generator, §4.5): every
+  length 0..256 plus the ladder to 1 MiB, every alignment mod 64, the hit
+  at every offset in a block and at none, guard pages on both sides, ASan
+  and UBSan. Both architectures: natively, Rosetta 2 for x86 correctness
+  on the Mac, and ubuntubudu.
+- **The baseline arms** against their manifest digests (§9.2), plus a
+  `moved` property test: `moved == 0` iff the rendered text equals the
+  baseline arm's for the same request (C11 relies on it).
+- **The hook contract** (§8.3): synthetic hooks that read exactly
+  `on_cand_reach` bytes at a guard page; impure-expression detection by
+  rendering each hook expression as a counter-increment macro and
+  asserting nothing depends on its evaluation count.
+- **The agreement check** (§3.4, kept): the kit's own set-shape analysis
+  against `pcrec_cls_cube`'s over every class the corpus produces, by the
+  256-point exact membership check, and against T4's `member` spelling
+  per set.
+- **Cross-target syntax of every arm it can emit** (r2 B5, kit side):
+  each arm compiled `-fsyntax-only` per target it names (gcc and clang
+  natively, clang `--target=` for the other architecture with its own
+  headers).
+- **The kit's timed suite** (§8.6 K-5) and its data's `--check` (K-2), at
+  the kit's cadence.
+
+`make test` runs the kit's QUICK tier (correctness, a bounded length
+range); the exhaustive tier is `make -C memfn test-full`, part of the
+batch gate.
+
+### 10.3 G3, the abi ritual for kit versions (r2 K1/D1, carried)
+
+- **Any kit change that moves ANY byte pcrec emits is a pcrec `abi`
+  event in the SAME commit**: `PCREC_ARTIFACT_ABI` bumped, every reader
+  found by D94's grep, the identity gates re-pinned, a `docs/spec/`
+  hunk (D80), and the movers-by-ID census (§9.3 I2's tool) attached.
+  In-tree (§11.1) this is one commit by construction. After an
+  extraction it is the vendor-bump commit.
+- **Detected without trusting the kit**: the standing identity gates
+  compare pcrec's output against pinned bytes, so a kit edit that moves
+  pcrec bytes with no bump turns them red. The kit's version string is
+  not what is checked; the bytes are.
+- **The stamp, on movers only** (k82hrev Q3's precedent): an artifact
+  with at least one site whose `mf_result.moved == 1` carries
+  `<PREFIX>_MEMFN "<kit version>"` and `<PREFIX>_MEMFN_FORMS
+  "<form_id>,…"` in site order. An artifact with none carries neither, so
+  the zero-mover migration adds no byte. Re-measuring or re-tuning
+  inside the kit that moves a selection moves text, so it is covered by
+  the same rule. There is no separate "recalibration" event (rev 2's
+  Q20 dissolves).
+- **`rx_info` is unchanged** until a consumer asks for the kit version in
+  the struct (D77).
+
+### 10.4 G4, the arch-blindness detector, rebuilt (C4; r2 B1)
+
+pcrec carries no architecture knowledge (Q12's refinement, D146). C4
+makes that a red test, with the r2 panel's rebuild:
+
+- **Seven vocabulary classes, one pattern each, with explicit
+  boundaries** (`\b` fails between `_` and a letter, so `MF_VEC_SSE2`
+  slipped past rev 2's regex): (1) ISA names and levels; (2) predefined
+  arch macros (`__SSE*__`, `__AVX*__`, `__aarch64__`, `__ARM_NEON*`,
+  `__ARM_FEATURE_*`, `__x86_64__`, `_M_X64` …); (3) intrinsics and
+  vector types (`_mm*_`, `__m128*`, `vld1q_*`, `vqtbl*`,
+  `__builtin_ia32_*` …); (4) intrinsic headers (`*intrin.h`,
+  `arm_neon.h`, `arm_sve.h`, `cpuid.h`); (5) targeting (`target("…")`,
+  `-march=`, `__builtin_cpu_supports`, `getauxval`, `HWCAP`,
+  `hw.optional`, `cpuid`); (6) arch nouns (`x86_64`, `amd64`,
+  `aarch64`, `arm64`, `pshufb`, `movemask`, microarchitecture names);
+  (7) kit-identity compares: `strcmp`/`strncmp`/`memcmp`/`==` with an
+  operand naming `form_id`, `mf_kit_version(` or the `--isa=` token.
+- **Two delegation classes, new in rev 3.** (8) pcrec reading kit
+  OUTPUT: any `mf_sink` read-back, or a string search over a buffer the
+  kit wrote, under `src/`. (9) the include graph: `src/`, `cli/` and
+  `lib/` include only `memfn/include/memfn.h` from the kit, never an
+  internal kit header (the precedent is `analyze/`'s link-nothing rule,
+  inverted).
+- **Positive controls, one per class**, planted in a scratch copy and
+  required to hit. The plant vocabulary is HELD OUT from the regex's
+  source: derived at check time from the compiler's own installation
+  (`cc -dM -E` under each owned target, intrinsic names scraped from its
+  headers). That list was never chosen by the regex's author
+  (learnings.md §3, R8's lesson).
+- **A negative control** for the one known false-positive class: hex
+  escapes (`\x86` in `.rxt` subjects), excluded by rule.
+- **Scopes**: the code of `src/`, `cli/` and `lib/` (allowlist counted at
+  birth, D107's shape); the CLAUDE.md files inside them (allowlisted
+  rows); `tests/` (its own allowlist, so a NEW test that branches on an
+  architecture is visible). `memfn/` is EXEMPT: it is where architecture
+  knowledge is supposed to live.
+- **Born counts.** An unmerged and superseded lane (`memfnk0r3`)
+  measured these classes at b7542fbe: code 1 hit (`src/opt/prefix_k.c:45`,
+  "AVX2" in a measurement comment), `src/` docs 1 (`src/gen/CLAUDE.md`,
+  "an x86 slot", in the sentence stating the ISA-neutral rule), `tests/`
+  15 hits in 10 files (box descriptions, the `R_X86_64_*` relocation
+  names `tests/codegen/run_scan_edge_dispatch.sh` parses, a Linux library
+  path). C4's build lane re-takes the census and commits it as the
+  allowlist; M5 removes the code hit.
+
+### 10.5 G5-G7, pcrec's other deterministic checks
+
+| # | check | what it proves | shares a source with the kit? |
+|---|---|---|---|
+| C5 | **profile identity**: the corpus at `-fno-memfn-scan -fno-memfn-loop` is byte-identical to the BASELINE pin (the step parent's output); at `-fno-memfn-native` it carries no text the C4 classes 1-4 match (a scan of the EMITTED artifacts, the one place pcrec may grep generated code for vocabulary, because it is checking the kit's promise, not branching on it) | the off arm is what G1 says it is; `portable` is portable | no |
+| C6 | answer identity per deny, per box: `make test-axes` arms for the three bits, plus option_sets.md §3.5a's compile-only arms per declared token when R4i builds tokens | correctness under every profile | no |
+| C9 | **cross-target syntax, pcrec side** (r2 B5): every corpus artifact with at least one mover, each `#if` arm compiled `-fsyntax-only` per the arm's target (Mac: gcc-16 natively, clang `--target=x86_64-linux-gnu`; ubuntubudu: gcc and clang natively, clang `--target=aarch64-linux-gnu`). The number of arms compiled per artifact is printed and must equal the count the kit reports in `mf_result` (K35). A Rosetta 2 run executes the x86 arm under C6 | the arms no box compiles natively at least parse and type-check, inside real artifacts | no |
+| C10 | **site table and stack**: `DELEG_SITES`' budget column matches D91's classification (budget 1: PF, PRE, OFS, SETREST, VERIFY, MLINE; budget 2: STAY, EDGE, VMSPAN); `MF_P_INLOOP` is set only from that column; its op column passes `mf_vocab_has`; no `mf_site`, `mf_pred` or `mf_result` is an automatic variable under `src/` (r2 K3) | an in-loop site cannot ask for an out-of-loop arm; no large request on an emitter stack | n/a (structural) |
+| C11 | **stamp census**: the artifacts carrying `<PREFIX>_MEMFN_FORMS` are exactly the movers by ID (§9.3 I2's tool), and every form id is one the kit's `moved` reported | the stamp is on movers and only on movers | partly: `moved` is the kit's, so G2's `moved` property test is the other half |
+| C12 | **the emitted-form ratchet** (§9.3 I5): emitted-text `memchr(` calls, table-walk loop texts and runcmp row texts in pcrec's emitters, counted against a committed ceiling that only descends | no replaced form comes back as a second spelling | no |
+
+### 10.6 The spec states the limits (D80)
+
+At R4d's mover, `docs/spec/` gains the kit's contract as a caller sees
+it: the `-fno-memfn-*` bits and `--memfn-deny=`, the stamps, the
+profile semantics (the baseline is pcrec's pre-migration text), and
+three limits. (1) The kit's choices are measured under gcc, pcrec's
+target compiler; another compiler gets correct code whose speed was not
+the one measured (r2 K2). (2) Where the kit calls libc, its choice was
+measured against glibc and libSystem; musl inherits it (rev 2's Q22, now
+Q33). (3) Injected intrinsics headers are compiler-provided (r2 L1).
+
+### 10.7 Sabotage rows (deterministic detectors only; ids at build, highest S on main + 1)
+
+| sabotage | detector |
+|---|---|
+| one baseline arm edited by one byte | I3 / C5 (the baseline pin) |
+| a kit text change that moves a pcrec byte, with no abi bump | the standing identity gates (G3) |
+| an ISA word added to `src/gen/emit_dfa.c`, one row per C4 class, drawn from the held-out list | C4 |
+| `#include "memfn/src/…"` (an internal kit header) in `src/` | C4 class 9 |
+| a `strcmp` on `form_id` in `src/` | C4 class 7 |
+| a site's INLOOP bit dropped from `DELEG_SITES` | C10 |
+| `moved` forced to 0 on a mover | C11 (the stamp census disagrees with the byte census) |
+| a replaced `memchr(` text re-added to an emitter | C12 |
+| the kit's guard established one byte short (`cand + reach < n` off by one) | G2's guard-page hook test (the kit's own mech row) |
+| a `-fno-memfn-native` arm emitting one intrinsic | C5 |
