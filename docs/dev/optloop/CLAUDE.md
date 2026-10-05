@@ -796,3 +796,4 @@ that cycle's analysis lands.
   litrun; short-search wins outside litrun sit at the CALL-FLOOR scale;
   auto wins 67/100 and 43/100). Names the sparse-text control the bench
   would need and the [SEL-COST] predicate if it ever turned.
+- `k87twin_report.md`, `k87twin.sh`, `k87twin_sum.py`, `k87twin_align.sh`, `k87twin/` — [K87] pcrec-side Linux twin of the scan-edge range spelling (`(unsigned)(b-lo) <= spanu` vs `(unsigned char)(b-lo) <= span`) with an 8-offset alignment control + base-vs-base floor, gcc and clang; verdict layout-only. Transcripts and per-pad tables in `k87twin/`.

@@ -1,0 +1,20 @@
+cls text=869
+cls_old text=869
+== cls gcc asm diff (excluding .file)
+      4 > 	cmpb	$25, %dl
+      4 < 	cmpl	$25, %edx
+      2 > 	cmpb	$25, %al
+      2 < 	cmpl	$25, %eax
+      1 > 	movzbl	(%r8,%rdi), %eax
+      1 > 	leal	-97(%rax), %edx
+      1 < 	subl	$97, %edx
+      1 < 	movzbl	(%r8,%rdi), %edx
+nest text=2869
+nest_old text=2869
+== nest gcc asm diff (excluding .file)
+      3 > 	cmpb	$25, %al
+      3 < 	cmpl	$25, %eax
+      2 > 	cmpb	$25, %dl
+      2 < 	cmpl	$25, %edx
+      1 > 	cmpb	$25, %cl
+      1 < 	cmpl	$25, %ecx
