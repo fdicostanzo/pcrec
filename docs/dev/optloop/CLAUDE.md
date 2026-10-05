@@ -775,3 +775,16 @@ that cycle's analysis lands.
 - `gapreport/` — its instruments and data, and `gapreport.sh`, the one-command
   repeatable run (`--group NAME|latest --out ...`, `--check` fixture self-test).
   See its own `CLAUDE.md`.
+- `gapreport_2026-10-05.md` — **the SECOND instance** (lane `o83read`,
+  2026-10-05), on the eight `round1-c4c70f2c` report groups (bench O-83).
+  It is rendered by `gapreport.sh` and carries its judgement in the MANAGER
+  JUDGEMENT section.
+  - **Instrument fix**: the run found and fixed one defect. `extract.py`
+    collapsed a cross-pin report's two pcrec pins last-row-wins; it now
+    keeps the newest pin, named by the header's `null_band`.
+  - **New set**: litrun joins the set list.
+  - **New groups**: SEL-LIT (auto's DFA loses to pcrec's own forced VM on
+    long literals) and K82-AT-PIN (userpass, cured at abi 60).
+- `judgement_gapreport_2026-10-05.md` — that instance's hand-kept judgement.
+  The script copies it verbatim into the report; a re-run never overwrites
+  it.

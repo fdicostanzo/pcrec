@@ -81,7 +81,11 @@ intended change to the renderer or the criteria, `--check --bless` rewrites
 
 - `extract.py` — reads the report `.tsv` (the `rank` section) into
   `cells.json`: per (set, pattern, regime, form, fact), each testee's
-  median/min/max and status. `cells.json` is not committed; it regenerates
+  median/min/max and status. A CROSS-PIN report (a re-pin window) carries
+  pcrec at two pins, and both map to the same short name. Only the NEWEST
+  pin is kept, named by the header's `null_band: pcrec OLD -> NEW`; a
+  second pin without that line is an error. Before 2026-10-05 the last
+  row won, cell by cell (lane o83read). `cells.json` is not committed; it regenerates
   from the bench's committed reports.
 - `stamps.py` — compiles each `bench/<set>/patterns/*.rx` with the bench's
   `pcrec-auto` flags (`--features all`, plus `-e utf8` on utf8) and reads
@@ -106,7 +110,8 @@ intended change to the renderer or the criteria, `--check --bless` rewrites
 - `nmatch.py` → `nmatch.json` — the throughput regime's total subject bytes
   and oracle match count per (set, pattern), from the bench's own manifests
   and expectations.
-- `causes.tsv` — **the judgement layer**: each losing (set, pattern) gets
+- `causes.tsv` — **the judgement layer** (the 2026-10-05 instance added
+  SEL-LIT and K82-AT-PIN, and litrun's cells): each losing (set, pattern) gets
   one cause group. The groups are defined in `../gapreport_2026-10-03.md`
   §2. `rank.py` reports any losing cell without a group as `unassigned`,
   and this instance has 0.
