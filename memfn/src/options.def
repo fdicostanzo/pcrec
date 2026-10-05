@@ -1,0 +1,26 @@
+/* SPDX-License-Identifier: 0BSD
+ * Provenance: original pcrec-memory-functions text; no third-party source
+ *   (memfn/PROVENANCE.md).
+ *
+ * memfn/src/options.def — THE KIT'S OPTION REGISTRY (D147 addendum 9;
+ * integration.md §R4.4.1). An X-macro in axes.def's and limits.def's idiom,
+ * but the kit's own: pcrec's build never reads it and pcrec's sources never
+ * include it. options.c includes it for the table behind mf_options() and
+ * for the parser behind mf_opts_check(), so what `--list-axes`' `memfn`
+ * section prints and what `--memfn=` accepts are one table.
+ *
+ * MF_OPT(name, kind, budget, layer, doc)
+ *   name    kit-owned id, [a-z0-9-], arch-blind (C4)
+ *   kind    MF_OPT_DENY | MF_OPT_PAIR    which --memfn= spellings it takes:
+ *           `no-NAME` always; a bare `NAME` (force) only for MF_OPT_PAIR
+ *   budget  MF_B_SCAN | MF_B_LOOP | MF_B_ANY       D91, as §8.5's INLOOP
+ *   layer   MF_L_SCALAR | MF_L_SIMD      which acceptance reading owns it
+ *           (§L.4); an MF_L_SIMD row is inert at -fno-memfn-simd
+ *   doc     one line
+ *
+ * A kit change that moves an emitted byte adds its row HERE in the same
+ * commit (D144 item 4): the row is that change's OFF arm, `--memfn=no-NAME`,
+ * and the change raises the `memfn` section's floor in docs/spec/registry.md
+ * §6. BORN EMPTY at R4a: no kit form moves a byte yet, so there is no row,
+ * and the floor check is UNREACHED until the first row (R4d).
+ */
