@@ -116,3 +116,19 @@ in the design note with its section.
   sweep, the bench break-even census under builtin/`weblog`/`log` rates and
   three W values, the `memchr` calibration probe, and twin T3 (the gate's
   candidate handed to the DFA as its scan start). See its own `CLAUDE.md`.
+- `k82fix/` — **K82's fix instruments** (lane `k82fix`, 2026-10-04;
+  `docs/dev/lanes/k82fix_report.md`): `k82_movers.py` (the mover manifest and
+  deny arm over `c3_movers.py`'s populations, imported: moved <=> (A) or (C)
+  as PREDICTED in Python from `--emit-facts` and `--list-analysis default`'s
+  ppm, never from the C; `-fno-req-set-lead` identical to BASE on every
+  non-(C) artifact) and its landing transcript `k82_movers.log`. `BASE`/`NEW`/
+  `SCR`/`BENCH`, `ABI_FROM`/`ABI_TO` from the environment.
+- `alpha_k82.sh` — **K82's Linux alpha block** for the manager's executor
+  run: alpha_c3.sh's protocol with BASE = abi 59, NEW = the fix, DENY = NEW
+  `-fno-req-set-lead`, and three cell kinds (`A` set-leads movers with
+  DENY == BASE, `P` the PICK NONE mover with DENY == NEW, `C` unchanged:
+  C3's customers, cause (B)'s left movers, controls). `DARWIN=1` is the
+  Mac's directional run (no taskset, no load wait).
+
+`alpha_c3.sh`'s loglines A0 control is `level-context` since [K82]:
+`stack-frame`, the old control, moves at abi 60 (a set-leads mover).

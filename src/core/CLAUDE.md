@@ -71,6 +71,19 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   candidate list (the C3 mover manifest's 0 off-diagonal). Sabotage S266/S329
   re-aimed to the new spellings.
 
+  **[K82] (C) (lane k82fix, 2026-10-04, abi 60): PICK's NONE answer prices
+  SIZE.** With no rate, `cube_mass` returns MASS's own NONE answer (the
+  uniform mass of the cube's `2^popcount(~K)` members, `uniform_mass`), and
+  `pcrec_find_pick` runs the same argmin under both arms, ties to the reader's
+  `rightmost` when it is among the minima, else the earliest. Every list of
+  one-byte candidates therefore still answers `rightmost` under NONE; a
+  masked run scans an exact position before a pair (`alt-shared`: 0xA5 at
+  2, not the lead-byte pair {E4, E6} at 3). The old `if (!rate) return
+  rightmost;` line is gone, so S294 re-anchored to the tie and S461 plants
+  the size-blind NONE answer. A second PICK reader in `src/gen/emit_dfa.c`
+  (`req_set_leads_applies`, the admission's `set-leads` row) asks it over
+  `[the run's scan cube, the set's pick]`.
+
 - **varexp.c** — [VAR] M1 (2026-09-23): THE EXPANSION GRAMMAR,
   `${ [!] selector [operator word] }`, parsed ONCE and shared by both
   consumers — a variable inside a PATTERN (module `vars`,

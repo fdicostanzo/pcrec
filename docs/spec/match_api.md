@@ -298,11 +298,11 @@ noted under group 2, which are `PCREC_*`-named yet per-artifact):
    refused.** The block opens
 
    ```c
-   #if defined(PCREC_RX_ABI_H) && (PCREC_RX_ABI_H + 0) != 59
-   #error "pcrec: this artifact (abi 59) shares a translation unit with an artifact of a different abi; regenerate both with one pcrec"
+   #if defined(PCREC_RX_ABI_H) && (PCREC_RX_ABI_H + 0) != 60
+   #error "pcrec: this artifact (abi 60) shares a translation unit with an artifact of a different abi; regenerate both with one pcrec"
    #endif
    #ifndef PCREC_RX_ABI_H
-   #define PCREC_RX_ABI_H 59
+   #define PCREC_RX_ABI_H 60
    ```
 
    so artifacts of one abi still share the first block, and an artifact of
@@ -2296,7 +2296,36 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `59` on every artifact today (lane c3build bumped it
+- **`rx_info.abi` is `60` on every artifact today (lane k82fix bumped it
+  from 59, 2026-10-04: [K82] (A)+(C) — THE RARER GUARD LEADS, AND PICK'S
+  NONE ANSWER PRICES SIZE, `docs/dev/lanes/k82fix_report.md`).** (A) The
+  whole-window pre-check's admission (`tuning.md` §2.29) is a first-match
+  row table, `none` / `one-attempt` / `dominated` / `set-leads` / `emitted`,
+  listed live by `--list-axes` as axis `req-admit`; its new `set-leads` row
+  (§2.40) emits the necessary SET's pick's one-byte check in FRONT of the run
+  search where that byte is strictly rarer than the run's scan member (one
+  PICK over the two guards, the run first, so a tie keeps the run alone), and
+  on the no-DFA-scan VM route the K65 whole-set half then skips that byte.
+  `-fno-req-set-lead` (bit 45, masked out of `rx_info.flags`) restores the
+  `abi`-59 program apart from the abi digits. (C) `pcrec_find_pick`'s NONE
+  answer is the argmin of MASS's uniform mass (cardinality), ties to the
+  reader's rightmost (`findings.md` §4): under NONE (every `-e utf8`
+  artifact under the default analysis) a masked run scans an EXACT position
+  before a two-member pair, which moves `<PREFIX>_REQ_RUN`'s `@idx` (and
+  where the scan member becomes exact, `<PREFIX>_REQ_BYTE`) on exactly those
+  runs; every candidate list of bytes alone is unchanged. `<PREFIX>_REQ_WHY`
+  keeps its four tokens (a `set-leads` artifact reads `"emitted"`).
+  **Movers**, byte-diffed against `abi` 59 before the bump over every corpus
+  pattern (auto and `--engine=vm`) and every pcrec-bench export (four compile
+  configs), against a prediction recomputed from `--emit-facts` and the
+  shipped ppm (`docs/dev/optloop/s4/k82fix/k82_movers.py`): (A) 7 bench
+  patterns (`wild-secrets-username-password-pair`, `stack-frame`, `cls-h`,
+  `cls-n-uc`, `cls-s-lc`, `cls-v`, `mod-s`, 28 artifact-configs) and 13
+  corpus (pattern, flags) pairs (24 artifact-configs); (C) `alt-shared-char`
+  (4) and 3 corpus patterns (6); 0 off the diagonal; `-fno-req-set-lead`
+  identical to `abi` 59 on every non-(C) artifact. No struct offset moves,
+  no `rx_info` member is added or changed, and no answer moves.
+- **`rx_info.abi` was `59` (lane c3build bumped it
   from 58, 2026-10-03: `[OPT-LITSCAN]` S4 C3 — THE CASELESS NECESSARY RUN,
   `docs/design/litscan_s4.md` §2.3).** The necessary-run analysis
   (`src/facts/req.c`) admits, beside a single byte, a POSITION whose byte set
@@ -3781,7 +3810,7 @@ engine-scoped.**
 
   | value | what it says |
   |---|---|
-  | `"emitted"` | the artifact emits a pre-check, on the byte or run its two siblings name |
+  | `"emitted"` | the artifact emits a pre-check, on the byte or run its two siblings name — since `abi` 60 possibly LED by a rarer necessary-set byte's one-byte check (`tuning.md` §2.40; the stamp says whether, not in which shape) |
   | `"none"` | nothing is necessary — no byte and no run (the analysis found neither, or `-fno-req-byte` denied them) |
   | `"one-attempt"` | declined: the search route tries ONE start position, so a whole-window pass in front of it can only add work |
   | `"dominated"` | declined: the artifact's own candidate-start `memchr` already scans a byte at least as rare |

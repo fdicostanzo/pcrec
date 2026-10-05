@@ -809,6 +809,9 @@ const uint32_t *pcrec_find_byte_rate(Ctx *cx);
  * candidate; returns the INDEX. NONE: `rightmost`, the index of the
  * reader's positional rightmost candidate, whatever the candidates' sizes.
  * n >= 1, 0 <= rightmost < n.
+ * [[K82] (C), abi 60: the tie goes to `rightmost` when it is among the
+ * minima under both arms, and NONE is the same argmin over the UNIFORM
+ * mass (cardinality) -- see src/core/findings.h for the current text.]
  * [`[OPT-LITSCAN]` S4 C3, abi 59, litscan_s4.md §2.3.3 r2 R2-C1: the
  * candidates were bytes until the caseless necessary run; a kind row
  * EXTENDED, not added — one PICK kind, one NONE answer.] */
@@ -901,7 +904,7 @@ answer once per kind and each reader's kind (R24 as amended, §14).
 
 | kind | primitive | NONE answer, spelled once | readers |
 |---|---|---|---|
-| PICK | `pcrec_find_pick` | `cand[rightmost]`, the reader's positional rightmost candidate (a candidate is a cube, a byte the cube with care `0xFF`; S4 C3) | C1, C2a, C8 |
+| PICK | `pcrec_find_pick` | `cand[rightmost]`, the reader's positional rightmost candidate (a candidate is a cube, a byte the cube with care `0xFF`; S4 C3) — since [K82] (C), abi 60, the argmin of MASS's uniform mass, ties to `rightmost`, which is `cand[rightmost]` on every list of one-byte candidates and an exact position before a pair otherwise (`docs/dev/lanes/k82fix_report.md`) | C1, C2a, C8, and the admission's `set-leads` row (K82 (A)) |
 | COMPARE | `pcrec_find_no_commoner` | `false` | C3 |
 | MASS | `pcrec_find_set_mass`, `pcrec_find_seq_mass` | the uniform-rate mass `⌊k·10^6/256⌋` (cardinality, §0.8) | C2b, C4, C5 (hit rate), C7, C9 |
 | (`run-rarity`) | `pcrec_find_run_rarity` | spelled in the primitive at B4 (§6.1) | C5 (restart arm), C6 |

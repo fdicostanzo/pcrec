@@ -44,7 +44,11 @@ candidate, so the S4 L-sweep carries a forced-VM copy of each run.)
   uppercase one cannot see a scan of T alone) and its guard (subjects of
   length 0..7); the K66 site's whole run; a min-0 repeat between two caseless
   runs; and the S2b give-up witness (`budget steps=10000`, encoding byte and
-  utf8, its `gu steps` controls). One `# pcre2-only` block: the review's
+  utf8, its `gu steps` controls); and ([K82], lane k82fix, 2026-10-04) the
+  S2c witness `(x?)([a-z]+)+S\d(?i:s)qz\1`, S2b's shape with 'S' commoner
+  than the run's exact scan byte so no `set-leads` lead tests it and K65's
+  rest alone does (S2b's 'S' now LEADS its run, so S452 re-aimed here). One
+  `# pcre2-only` block: the review's
   exact L = 30 S2b witness, a python TIME exclusion, its 10.46 probe recorded
   in the header (NOMATCH at L 16/18, MATCHLIMIT at 30; pcrec NOMATCH by K65).
   Detector of S446-S452, S454, S456.

@@ -926,6 +926,14 @@ declare -A GIVEUP1_ALLOWANCE=(
 # them, so the proof the masked run adds is never the only one left on the
 # corpus's hostile cells (the S2b witness's `S` is exactly such a member).
 # The full-corpus axes run at landing confirms or populates this group.
+# GROUP F3 — bit 45, `-fno-req-set-lead` (PCREC_NO_REQ_SET_LEAD, [K82] (A),
+# tuning.md §2.40): EMPTY by structure, not yet by measurement. The denied
+# row removes a leading one-byte memchr of a NECESSARY-SET member; on a
+# DFA-scan route the scan bounds the call either way, and on the no-DFA-scan
+# VM route K65's whole-set half memchrs that same member when the lead is
+# denied (run_prechecks.sh §5.8/§5.9's deny rows), so no no-match proof is
+# lost. Lane k82fix's AXES="-fno-req-run-fold -fno-req-set-lead" run
+# (docs/dev/lanes/k82fix_report.md §6) confirms or populates this group.
 # GROUP G — §2.11 `--engine=vm`, 10 cases, TWO mechanisms.
 #
 # G1 (2 cases) — tests/base/d27_k23_ambiguous_decomposition.rxt:90,98, the

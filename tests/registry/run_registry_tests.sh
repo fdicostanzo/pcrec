@@ -626,17 +626,21 @@ fi
 # `req-run-fold`'s `fold` row (`PCREC_NO_REQ_RUN_FOLD`, bit 44) and the
 # `run-overlap` axis's new `words` row (bit 43, beside `overlap`).
 # Measured: 183 PASS, 0 failed.
+# 183 -> 186 at [K82] (lane k82fix, 2026-10-04): the new axis `req-admit`
+# (the pre-check admission table, walked live) carries one single-bit
+# (macro, bit, flag) triple on its `set-leads` row (`PCREC_NO_REQ_SET_LEAD`,
+# bit 45), 3 lines as above. Measured: 186 PASS, 0 failed.
 axesn="$(grep -c '^PASS: ' "$AXESOUT" || true)"
-if [ "$axesn" -ne 183 ]; then
+if [ "$axesn" -ne 186 ]; then
     if grep -q "^checks failed: 0" "$AXESOUT"; then
-        echo "registry: axes_registry_check COVERAGE CHANGED — $axesn passing checks, expected 183." >&2
+        echo "registry: axes_registry_check COVERAGE CHANGED — $axesn passing checks, expected 186." >&2
         echo "registry:   if you added or removed axes/checks on purpose, update this number" >&2
         echo "registry:   in the same commit; if not, coverage was removed" >&2
     else
         axesnf="$(sed -n 's/^checks failed: //p' "$AXESOUT" | tail -1)"
-        echo "registry: axes_registry_check shows $axesn passing checks (183 expected; ${axesnf:-?} failed," >&2
+        echo "registry: axes_registry_check shows $axesn passing checks (186 expected; ${axesnf:-?} failed," >&2
         echo "registry:   so a lower count is expected here). Fix the failures first; then this" >&2
-        echo "registry:   number must return to 183 — if it does not, coverage was removed too" >&2
+        echo "registry:   number must return to 186 — if it does not, coverage was removed too" >&2
     fi
     rc=1
 fi

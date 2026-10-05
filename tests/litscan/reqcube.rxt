@@ -476,6 +476,31 @@ n "aaaaaaaaaaaaaaaaaa1select"
 m "abcS1SeLeCt" 0 11
 gu steps "aaaaaaaaaaaaaaaaaaSx1select"
 
+# S2c ([K82]): S2b's shape with 'S' commoner than the run's exact scan byte 'z', so no set-leads row fires and K65's rest alone memchrs 'S', the T of the run's pair position; marking T done (S452) turns these n cells into step give-ups [encoding byte]
+pattern (x?)([a-z]+)+S\d(?i:s)qz\1
+features backrefs,classes,modifiers
+encoding byte
+budget steps=10000
+n "aaaaaaaaaaaaaaaa1sqz"
+n "aaaaaaaaaaaaaaaaa1sqz"
+n "aaaaaaaaaaaaaaaaaa1sqz"
+m "abcS1Sqz" 0 8
+m "abcS1sqz" 0 8
+gu steps "aaaaaaaaaaaaaaaaaaSx1sqz"
+
+# S2c ([K82]): S2b's shape with 'S' commoner than the run's exact scan byte 'z', so no set-leads row fires and K65's rest alone memchrs 'S', the T of the run's pair position; marking T done (S452) turns these n cells into step give-ups [encoding byte, engine vm]
+pattern (x?)([a-z]+)+S\d(?i:s)qz\1
+features backrefs,classes,modifiers
+encoding byte
+engine vm
+budget steps=10000
+n "aaaaaaaaaaaaaaaa1sqz"
+n "aaaaaaaaaaaaaaaaa1sqz"
+n "aaaaaaaaaaaaaaaaaa1sqz"
+m "abcS1Sqz" 0 8
+m "abcS1sqz" 0 8
+gu steps "aaaaaaaaaaaaaaaaaaSx1sqz"
+
 # S2b, the review's exact witness at L = 30 (see the header: a python TIME
 # exclusion; libpcre2 10.46 answers MATCHLIMIT, pcrec NOMATCH by K65's memchr).
 # pcre2-only

@@ -700,6 +700,11 @@ int pcrec_find_pick(const uint32_t *rate, const unsigned char *cand,
   outcome. A one-stream preference under NONE would be a reader-side NONE
   rule, which D126 Q4 forbids; its trigger is a measured utf8 cell where the
   pair scan loses to an adjacent exact byte.
+  **[K82] (C), TRIGGERED AND BUILT (lane k82fix, 2026-10-04, abi 60):**
+  `alt-shared` is that cell (k82diag_report.md §1.C). The fix is not a
+  reader-side rule: the PICK primitive's NONE answer became MASS's own
+  (cardinality), ties to `rightmost`, so `bar(?i:x)` under `-e utf8` now
+  scans `r`.
 
 - **One tie rule.** Round 0's "ties go to an exact member" is not a rule
   any more. Under a rate it falls out of the cost: one stream's mass against
@@ -758,6 +763,11 @@ int pcrec_find_pick(const uint32_t *rate, const unsigned char *cand,
   block on DFA routes.** It would make case (ii) emit what `REQ_BYTE`
   names on every route. No cell asks for it (D77). Its trigger is a DFA-route
   pair-scan mover whose set pick is rare and absent on a measured subject.
+  **[K82] (A), TRIGGERED AND BUILT (lane k82fix, 2026-10-04, abi 60):**
+  `userpass` is that mover (k82diag_report.md §1.A); the general form is
+  the admission table's `set-leads` row (`tuning.md` §2.40), on every route
+  and for exact runs too, wherever the set pick is strictly rarer than the
+  run's scan member.
 
 #### 2.3.4 The scan: the pair arm in the one block emitter
 

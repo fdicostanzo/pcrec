@@ -3309,6 +3309,24 @@ that was already cheaper, or on top of a pass the artifact was already running.
   it), and `pcrec_emit_prologue`'s `#include <string.h>` decision — which
   reads the ADMISSION and not `Job.req_byte`, because an admitted-out artifact
   may call no `memchr` at all.
+- **[K82] (abi 59 -> 60) IT IS A FIRST-MATCH ROW TABLE**, `req_admits[]`
+  walked by `DFA_SELECT` (`dfa_pfs[]`'s idiom): `none`, `one-attempt` (G2),
+  `dominated` (G1), `set-leads`, `emitted`. Each row is a `DfaCand` (name,
+  deny bit, predicate over `s->cx` alone), its `ReqAdmit` verdict and a
+  one-line description; `pcrec_req_admit_row` hands the rows to `--list-axes`
+  (axis `req-admit`, src/dump/axes_dump.c), so the listing walks the table
+  itself. `set-leads` (`-fno-req-set-lead`, bit 45, `tuning.md` §2.40) is a
+  SHAPE of an emitted run pre-check, after every decline: where the necessary
+  set's pick is strictly rarer than the run's scan member — one
+  `pcrec_find_pick` over `[run scan cube, set pick]`, the run first, so a tie
+  keeps the run — `pcrec_emit_req_byte_check` writes the set pick's one-byte
+  check (`emit_req_one_byte`, the one text both one-byte forms share; S265's
+  anchor) BEFORE the run call, and `emit_req_set_rest` marks that byte
+  tested. `req_admit_emits` is the one spelling of "a pre-check is emitted"
+  for the three readers; `<PREFIX>_REQ_WHY` stamps `"emitted"` for both
+  emitting rows (the token answers whether, not which shape). Cause (B) of
+  K82 (low-information runs on match-dense text) is NOT a row here: it waits
+  for [FINDINGS.B4]'s run-rarity cost-model reader (`known_issues.md` K82).
 - **G2 inherits `attempt_cand`'s rule rather than restating it.** That
   function's own header already declines the candidate-start prefilter on a
   fully-anchored machine ("`start_max` is the literal 0, so there is nothing

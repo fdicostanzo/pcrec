@@ -1,38 +1,27 @@
-#!/bin/bash
-# docs/dev/optloop/s4/alpha_c3.sh -- [OPT-LITSCAN] S4 C3's ALPHA BLOCK, the
-# caseless necessary run (litscan_s4.md §6.1-§6.2's C3 table; D144 item 1 and
-# addendum 1), for the manager to run on the Linux box (ubuntubudu, Ryzen,
-# gcc 15.2) through the executor channel. NOT for the Mac: no darwin clock is
-# citable. Nothing here writes inside either repo: the bench's subject
-# generators are imported with their output paths pointed under $S4A, and
-# every regenerated subject is sha256-checked against the bench's COMMITTED
-# manifest (a mismatch means off-pin: STOP).
+#!/usr/bin/env bash
+# [K82] (A)+(C) -- THE LINUX ALPHA BLOCK for lane k82fix's fix
+# (docs/dev/lanes/k82fix_report.md; D144 item 1 and addendum 1), alpha_c3.sh's
+# protocol with K82's arms:
 #
-#   PCREC_REPO=/home/duxevents/pcrec  BENCH=/home/duxevents/pcrec-bench \
-#   BASE_REV=<abi-58 commit>  NEW_REV=<C3 commit>  bash alpha_c3.sh [build|check|time|all]
+#   BASE = abi 59 (main 940fa06e, C3 default-on), NEW = the K82 fix (abi 60),
+#   DENY = NEW with -fno-req-set-lead (bit 45, the set-leads row's deny).
 #
-# BASE is the commit before C3 (lane/r1land's tip, abi 58); NEW is C3 (abi 59);
-# DENY is NEW with -fno-req-run-fold. C3's deny is FACT-LEVEL and masked out of
-# rx_info.flags, so DENY's artifact must equal BASE's apart from the abi digit
-# alone -- checked by `check` before anything is timed -- which makes BASE/DENY
-# the noise floor of each cell (the same program twice).
-#
-# THE CELLS: the one measured customer (union-select, nocaps and caps), the
-# census's bench movers (litscan_s4.md §2.3.7: 11 on the auto route), the
-# class-C movers the single ranking adds (slack, http-5xx), byte-identical
-# controls of both census classes (A0: no run before or after; B: the same
-# exact run), and union-select's per-CALL cell on its short search subjects
-# (the F1/F6 per-call-constant risk). Per D144 addendum 1 every TIMED LOOP is
-# calibrated to >= 50 ms (the find-all, or the per-call search, repeated R
-# times), and the report is ABSOLUTE deltas beside the floor |DENY - BASE|,
-# ns per subject byte for throughput cells and ns per CALL for per-call cells,
-# never a ratio; a delta inside the floor reads NULL.
+# THE CELLS have three kinds. `A`: a set-leads mover (k82diag_report.md §4.3
+# row 4, confirmed by k82_movers.log): NEW != BASE, and DENY == BASE apart
+# from the abi digits, so |DENY - BASE| is the floor. `P`: the PICK NONE mover
+# (alt-shared): bit 45 does not reach it, so DENY == NEW and the floor is
+# |DENY - NEW|. `C`: unchanged by both halves -- C3's customers (union-select,
+# ci-ascii-ctl), cause (B)'s movers that this fix deliberately leaves
+# (mod-i, cls-fold-pair, ci-strasse: [FINDINGS.B4]'s later design), and
+# byte-identical controls -- NEW == BASE == DENY. union-srch is the per-CALL
+# cell (union-select's short search subjects), a control. ABSOLUTE deltas
+# beside the floor, never a ratio; inside the floor reads NULL.
 set -u
-S4A=${S4A:-/tmp/s4alpha_c3}
+S4A=${S4A:-/tmp/s4alpha_k82}
 PCREC_REPO=${PCREC_REPO:-/home/duxevents/pcrec}
 BENCH=${BENCH:-/home/duxevents/pcrec-bench}
-BASE_REV=${BASE_REV:?set BASE_REV to the abi-58 commit (lane/r1land tip)}
-NEW_REV=${NEW_REV:?set NEW_REV to the C3 commit}
+BASE_REV=${BASE_REV:?set BASE_REV to the abi-59 commit (main 940fa06e)}
+NEW_REV=${NEW_REV:?set NEW_REV to the K82 fix commit (lane/k82fix tip)}
 CC=${CC:-gcc}
 CPU=${CPU:-2}
 LAUNCHES=${LAUNCHES:-5}
@@ -47,33 +36,25 @@ U8="u8:t-64k u8:t-256k u8:t-1m"
 LOG="log:t-064k-fail log:t-256k-fail log:t-1024k-fail log:t-1024k-hit"
 # name|kind (W witness / C control)|bench pattern|flags|subjects
 CELLS=(
-  "union-nocaps|W|capability/patterns/wild-waf-crs-942270-union-select.rx|--no-captures|$CAP"
-  "union-caps|W|capability/patterns/wild-waf-crs-942270-union-select.rx||$CAP"
-  "slack-nocaps|W|capability/patterns/wild-secrets-slack-webhook-url.rx|--no-captures|$CAP"
-  "slack-caps|W|capability/patterns/wild-secrets-slack-webhook-url.rx||$CAP"
-  "userpass|W|capability/patterns/wild-secrets-username-password-pair.rx||$CAP"
-  "http-5xx|W|loglines/patterns/http-5xx.rx||$LOG"
-  "mod-i|W|syntax/patterns/mod-i.rx||$SYN"
-  "mod-r|W|syntax/patterns/mod-r.rx||$SYN"
-  "cls-fold-pair|W|syntax/patterns/cls-fold-pair.rx||$SYN"
-  "cls-pair-ctl|W|syntax/patterns/cls-pair-ctl.rx||$SYN"
-  "ci-ascii-ctl|W|utf8/patterns/ci-ascii-control.rx|-e utf8|$U8"
-  "ci-strasse|W|utf8/patterns/ci-strasse.rx|-e utf8|$U8"
-  "alt-shared|W|utf8/patterns/alt-shared-char.rx|-e utf8|$U8"
-  "sleep-ctl|C|capability/patterns/wild-waf-crs-942160-sleep-benchmark.rx||$CAP"
-  "dbnames-ctl|C|capability/patterns/wild-waf-crs-942140-dbnames.rx||$CAP"
-  "concat-ctl|C|capability/patterns/wild-waf-crs-942360-concat-sqli.rx||$CAP"
-  # [K82] (lane k82fix, 2026-10-04): stack-frame WAS this control and it
-  # moves at abi 60 (the admission's set-leads row: '(' is rarer than the
-  # run's scan byte 'a'), so it is a K82 witness now (alpha_k82.sh) and no
-  # longer the same program on both sides of a later pin. level-context has
-  # no necessary run at abi 58, 59 or 60 (REQ_RUN "none", REQ_BYTE 101), so
-  # no C3 or K82 row can reach it: the loglines A0 control.
-  "levelctx-ctl|C|loglines/patterns/level-context.rx||$LOG"
+  "userpass|A|capability/patterns/wild-secrets-username-password-pair.rx||$CAP"
+  "stack-frame|A|loglines/patterns/stack-frame.rx||$LOG"
+  "cls-h|A|syntax/patterns/cls-h.rx||$SYN"
+  "cls-n-uc|A|syntax/patterns/cls-n-uc.rx||$SYN"
+  "cls-s-lc|A|syntax/patterns/cls-s-lc.rx||$SYN"
+  "cls-v|A|syntax/patterns/cls-v.rx||$SYN"
+  "mod-s|A|syntax/patterns/mod-s.rx||$SYN"
+  "alt-shared|P|utf8/patterns/alt-shared-char.rx|-e utf8|$U8"
+  "union-nocaps|C|capability/patterns/wild-waf-crs-942270-union-select.rx|--no-captures|$CAP"
+  "union-caps|C|capability/patterns/wild-waf-crs-942270-union-select.rx||$CAP"
+  "ci-ascii-ctl|C|utf8/patterns/ci-ascii-control.rx|-e utf8|$U8"
+  "mod-i|C|syntax/patterns/mod-i.rx||$SYN"
+  "cls-fold-pair|C|syntax/patterns/cls-fold-pair.rx||$SYN"
+  "ci-strasse|C|utf8/patterns/ci-strasse.rx|-e utf8|$U8"
   "kvquoted-ctl|C|loglines/patterns/kv-quoted.rx||$LOG"
+  "levelctx-ctl|C|loglines/patterns/level-context.rx||$LOG"
 )
 # the per-call cell: union-select's own search_short subjects
-PERCALL="union-srch|W|capability/patterns/wild-waf-crs-942270-union-select.rx||short"
+PERCALL="union-srch|C|capability/patterns/wild-waf-crs-942270-union-select.rx||short"
 
 build() {
   for side in base new; do
@@ -174,7 +155,7 @@ EOF
     for side in base new deny; do
       bin=base; extra=""
       [ "$side" != base ] && bin=new
-      [ "$side" = deny ] && extra=-fno-req-run-fold
+      [ "$side" = deny ] && extra=-fno-req-set-lead
       mkdir -p "art/$name/$side"
       # shellcheck disable=SC2086
       "$S4A/$bin/build/pcrec" --features all -p rx $flags $extra \
@@ -185,7 +166,7 @@ EOF
 }
 
 # no \b: BSD sed silently no-ops it, and this runs on both boxes
-norm() { sed -E -e 's/\(abi 5[89]\)/(abi N)/g; s/(PCREC_RX_ABI_H[^0-9]*)5[89]/\1N/g; s/(\.abi = )5[89],/\1N,/' "$1"; }
+norm() { sed -E -e 's/\(abi (59|60)\)/(abi N)/g; s/(PCREC_RX_ABI_H[^0-9]*)(59|60)/\1N/g; s/(\.abi = )(59|60),/\1N,/' "$1"; }
 
 check() {
   # (1) DENY == BASE modulo the abi digit ALONE (the fact deny restores the
@@ -199,13 +180,14 @@ check() {
       [ -s "art/$name/$side/art.c" ] && [ -x "art/$name/$side/run" ] \
         || { echo "NOT BUILT: art/$name/$side (run 'build' first)"; return 1; }
     done
-    if cmp -s <(norm "art/$name/base/art.c") <(norm "art/$name/deny/art.c"); then
-      echo "DENY==BASE  $name"; else echo "DENY!=BASE  $name  (the floor is not the same program: STOP)"; rc=1; fi
-    run=$(sed -n 's/^#define RX_REQ_RUN "\(.*\)"$/\1/p' "art/$name/new/art.c")
-    same=0; cmp -s <(norm "art/$name/base/art.c") <(norm "art/$name/new/art.c") && same=1
+    same() { cmp -s <(norm "art/$name/$1/art.c") <(norm "art/$name/$2/art.c"); }
     case "$kind" in
-      C) { [ $same = 1 ] && [ "${run#*/}" = "$run" ]; } || { echo "CONTROL MOVED $name REQ_RUN=$run"; rc=1; } ;;
-      *) { [ $same = 0 ] && [ "${run#*/}" != "$run" ]; } || { echo "WITNESS NOT REACHED $name REQ_RUN=$run"; rc=1; } ;;
+      A) { ! same base new && same base deny; } \
+           || { echo "A-CELL WRONG $name: want NEW != BASE, DENY == BASE"; rc=1; } ;;
+      P) { ! same base new && same new deny; } \
+           || { echo "P-CELL WRONG $name: want NEW != BASE, DENY == NEW"; rc=1; } ;;
+      C) { same base new && same base deny; } \
+           || { echo "CONTROL MOVED $name"; rc=1; } ;;
     esac
     if [ "$name" = union-srch ]; then subjects=$(cd subj/short && ls *.bin | sed 's/\.bin$//; s/^/short:/'); fi
     for s in $subjects; do
@@ -224,7 +206,11 @@ time_cells() {
   # protocol §6.1: taskset -c $CPU, load1 < 0.5 before each cell, LAUNCHES
   # launches round-robin across the three arms, PASSES timed loops each; a
   # cell is the median of the per-launch medians.
-  echo "# $(date -u) $(uname -n) load1=$(cut -d' ' -f1 /proc/loadavg) gov=$(cat /sys/devices/system/cpu/cpu$CPU/cpufreq/scaling_governor 2>/dev/null) boost=$(cat /sys/devices/system/cpu/cpufreq/boost 2>/dev/null)"
+  # DARWIN=1: the Mac's DIRECTIONAL run (D144 addendum 1: never a verdict) --
+  # no taskset, no load wait, load1 from sysctl.
+  local pin="taskset -c $CPU"
+  if [ "${DARWIN:-0}" = 1 ]; then pin=""; fi
+  echo "# $(date -u) $(uname -n) load1=$( [ "${DARWIN:-0}" = 1 ] && sysctl -n vm.loadavg | cut -d' ' -f2 || cut -d' ' -f1 /proc/loadavg) gov=$(cat /sys/devices/system/cpu/cpu$CPU/cpufreq/scaling_governor 2>/dev/null) boost=$(cat /sys/devices/system/cpu/cpufreq/boost 2>/dev/null)"
   printf '%-15s %-22s %-6s %10s %10s %10s  %10s %10s  %s\n' cell subject unit base new deny new-base floor verdict
   for cell in "${CELLS[@]}" "$PERCALL"; do
     IFS='|' read -r name kind pat flags subjects <<<"$cell"
@@ -232,17 +218,19 @@ time_cells() {
     if [ "$name" = union-srch ]; then mode=c; unit=ns/call; subjects=$(cd subj/short && ls *.bin | sed 's/\.bin$//; s/^/short:/'); fi
     for s in $subjects; do
       f="subj/${s%%:*}/${s#*:}.bin"
-      while :; do l=$(cut -d' ' -f1 /proc/loadavg); awk "BEGIN{exit !($l < 0.5)}" && break; sleep 20; done
+      while [ "${DARWIN:-0}" != 1 ]; do l=$(cut -d' ' -f1 /proc/loadavg); awk "BEGIN{exit !($l < 0.5)}" && break; sleep 20; done
       declare -A M=()
       for i in $(seq 1 "$LAUNCHES"); do
         for side in base new deny; do
-          v=$(taskset -c "$CPU" "art/$name/$side/run" $mode "$f" "$PASSES" | sed -n 's/.*median=\([0-9.]*\).*/\1/p')
+          # shellcheck disable=SC2086  # $pin is empty or a word list on purpose
+          v=$($pin "art/$name/$side/run" $mode "$f" "$PASSES" | sed -n 's/.*median=\([0-9.]*\).*/\1/p')
           M[$side]="${M[$side]:-} $v"
         done
       done
       med() { tr ' ' '\n' <<<"$1" | grep . | sort -g | awk '{a[NR]=$1} END{print a[int((NR+1)/2)]}'; }
       b=$(med "${M[base]}"); n=$(med "${M[new]}"); d=$(med "${M[deny]}")
-      dl=$(awk "BEGIN{printf \"%+.5f\", $n-$b}"); fl=$(awk "BEGIN{x=$d-$b; printf \"%.5f\", x<0?-x:x}")
+      ref=$b; [ "$kind" = P ] && ref=$n   # P: bit 45 does not reach it, DENY == NEW
+      dl=$(awk "BEGIN{printf \"%+.5f\", $n-$b}"); fl=$(awk "BEGIN{x=$d-$ref; printf \"%.5f\", (x<0?-x:x)}")   # parenthesized: BSD awk refuses a bare ?: argument
       v=$(awk "BEGIN{x=$n-$b; a=x<0?-x:x; print (a<=$fl)?\"NULL\":(x<0?\"WIN\":\"REGRESSION\")}")
       printf '%-15s %-22s %-6s %10s %10s %10s  %10s %10s  %s\n' "$name" "$s" "$unit" "$b" "$n" "$d" "$dl" "$fl" "$v"
       unset M

@@ -207,6 +207,7 @@ WIT = [
     ("union", "(?i)union.*?select.*?from", ()),
     ("k66", r"(x?)(?i:abcdefghijkl)\1", ()),
     ("s2b", r"(x?)([a-z]+)+S\d(?i:select)\1", ()),
+    ("s2c", r"(x?)([a-z]+)+S\d(?i:s)qz\1", ()),
     ("s2a", r"(?i:select)\d+x", ()),
     ("mixed", "[0-9]+(?i:a)bcdefg", ()),
     ("abcde", "a[bc]de", ()),
@@ -258,15 +259,27 @@ for tag, pat, flags in WIT:
         if tag == "k66" and (b1 is None or "&" not in b1):
             bad(f"{lbl}: the K66 site's whole-run block is missing or compares unmasked (S448)")
     # 5. K65's rest on the no-DFA-scan route
-    if tag == "s2b":
+    # [K82] a member tested by the set-leads row's one-byte check (the first
+    # `!memchr(..., B, ...)` above the run call) is tested too, and K65's
+    # rest skips it. s2b's 'S' (4203 ppm) is rarer than its run's scan pair,
+    # so it LEADS; s2c's 'S' is commoner than its exact scan byte 'z' (498),
+    # so it stays in rq_set -- the witness where a pair position's T marked
+    # done (S452) still drops it.
+    if tag in ("s2b", "s2c"):
         m = re.search(r"rq_set\[\] = \{([^}]*)\}", text)
         got_set = {int(x) for x in m.group(1).split(",")} if m else set()
+        call = text.find("rx_reqrun(subject")
+        lm = re.search(r"!memchr\([a-z_]+ \+ [a-z_]+, (\d+),", text[:call]) if call >= 0 else None
+        lead = {int(lm.group(1))} if lm else set()
         exact = {whole[0][i] for i in range(len(whole[0])) if whole[1][i] == 0xFF} if whole else set()
         want = rset - exact
-        if want <= got_set and 83 in got_set:
-            ok(f"{lbl}: K65's rq_set {sorted(got_set)} holds every set member no exact whole-run position proves (83, 'S')")
+        where = {"s2b": lead, "s2c": got_set}[tag]
+        if want <= got_set | lead and 83 in where:
+            ok(f"{lbl}: every set member no exact whole-run position proves is tested (lead {sorted(lead)}, "
+               f"K65's rq_set {sorted(got_set)}; 83, 'S', in the {'lead' if tag == 's2b' else 'rq_set'})")
         else:
-            bad(f"{lbl}: K65's rq_set {sorted(got_set)} lacks {sorted(want - got_set)} -- a masked position marked done (S451)")
+            bad(f"{lbl}: lead {sorted(lead)} / K65's rq_set {sorted(got_set)} lack {sorted(want - got_set - lead)} "
+                f"or 'S' (83) is not where it belongs -- a masked position marked done (S451/S452) or the lead lost")
     if tag == "s2a" and rb != "120":
         bad(f"{lbl}: RX_REQ_BYTE reads {rb}, want 120 ('x', the set's pick; the run's scan member is a pair)")
     if tag == "union" and not (rb == "none" and why == "emitted" and fx.get("run_pin") == "none"):

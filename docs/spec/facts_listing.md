@@ -127,7 +127,9 @@ exists, they cannot change a byte of it.
 - `rate:<source>` — for a fact CHOSEN by a byte-rate rule, which rule
   answered: `rate:builtin-prior` (the shipped byte-frequency prior) or
   `rate:none(<encoding>)->rightmost` (the prior does not apply to this
-  encoding, and its no-rate answer — the rightmost member — decided).
+  encoding, and its no-rate answer decided: the candidate with the fewest
+  members, ties to the rightmost — so the rightmost member wherever every
+  candidate is one byte, `findings.md` §4).
 
 Which `-fno-` flag empties which fact is stated, flag by flag, in
 `docs/spec/tuning.md`'s "Facts emptied" line for that flag, and the listing

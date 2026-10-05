@@ -6688,6 +6688,19 @@ typedef struct {
 extern const PcrecReseedRow pcrec_reseed_rows[];
 extern const int pcrec_reseed_nrows;
 
+/* [OPT-PRECHECK-ADMIT] [K82] the whole-window pre-check's admission table
+ * (src/gen/emit_dfa.c, `req_admits[]`), row `i` as DATA for `--list-axes`:
+ * the row's name, its deny bit, the `<PREFIX>_REQ_WHY` token it stamps and
+ * its predicate in one line. 0 <= i < pcrec_req_admit_nrows. */
+typedef struct {
+    const char *name;
+    uint64_t    deny;
+    const char *why;
+    const char *desc;
+} PcrecReqAdmitDesc;
+extern const int pcrec_req_admit_nrows;
+void pcrec_req_admit_row(int i, PcrecReqAdmitDesc *out);
+
 void pcrec_emit_c_string_literal(StrBuf *sb, const char *s, size_t len);
 
 /* [DD-14.FB] (D71 item 2, docs/spec/match_api.md §10.4) THE CALLER-BUFFER

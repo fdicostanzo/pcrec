@@ -118,7 +118,7 @@ candidates, which is its tie rule, and never tests the rate itself (D126 Q4).
 
 | kind | question | NONE answer |
 |---|---|---|
-| PICK | which of `n` candidates is rarest (argmin, ties to the EARLIEST candidate); a candidate is a byte or, since `abi` 59, a CUBE `(T, K)` whose cost is the rate summed over its members (a byte is the cube with `K = ff`) | the reader's positional rightmost candidate (PCRE2's LASTCODEUNIT rule), whatever the candidates' sizes |
+| PICK | which of `n` candidates is rarest (argmin, ties to the reader's positional rightmost candidate when it is among the minima, else to the EARLIEST); a candidate is a byte or, since `abi` 59, a CUBE `(T, K)` whose cost is the rate summed over its members (a byte is the cube with `K = ff`) | the same argmin over MASS's NONE answer, the uniform mass (cardinality): the candidate with the fewest members, ties to the rightmost — so PCRE2's LASTCODEUNIT rule wherever every candidate is one byte, and an exact position before a pair (since `abi` 60, [K82]; before it the rightmost whatever the candidates' sizes) |
 | COMPARE | is `p` no commoner than `q` | false: no density claim |
 | MASS | the rate summed over a set or a sequence | the uniform rate's mass, `⌊k·10^6/256⌋` for `k` members or bytes — CARDINALITY |
 
@@ -129,9 +129,10 @@ candidates, which is its tie rule, and never tests the rate itself (D126 Q4).
 | the necessary run's window | MASS over the MEMBERS of each 8-position window (a pair position contributes both members; ties leftmost) | which window of a longer run is emitted | any window is necessary; on a VM route with no DFA in front the whole run is also compared (K66) |
 | the run pin's scan (`run_pin`'s stretch) | PICK over the window's EXACT positions in reverse order | which exact byte of a masked run the run-pinned prefilter scans | the pin claims only exact positions, each necessary at its offset |
 | G1, the pre-check's domination rule (`<PREFIX>_REQ_WHY`) | COMPARE | whether a pre-check dominated by the candidate scan is elided | only in front of a linear DFA scan whose language already requires the byte |
+| the pre-check's lead (`set-leads`, `tuning.md` §2.40) | PICK over `[the run's scan cube, the necessary set's pick]`, the run first | whether the set pick's one-byte `memchr` is tested before the run search | both are necessary, so either's absence proves NOMATCH; on a VM route with no DFA in front every set member is tested anyway (K65) |
 | the offset-k selection (`<PREFIX>_DFA_PREFILTER_OFFSETS`) | MASS over each offset's byte set | which necessary offset sets the skip scans and verifies | every tested (offset, set) is necessary for every match |
 
-`tuning.md` §2.27–§2.30 carry each mechanism; `docs/design/findings/design.md`
+`tuning.md` §2.27–§2.30 and §2.40 carry each mechanism; `docs/design/findings/design.md`
 §6.2a carries the arguments.
 
 ## 5. The stamp: `<PREFIX>_FINDINGS` and `rx_info.findings`

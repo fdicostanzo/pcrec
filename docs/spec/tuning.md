@@ -2662,14 +2662,19 @@ and `<PREFIX>_REQ_RUN`, the no-DFA-scan route's whole-run compare, G1's run
 conjuncts, and the run PIN §2.30's run-pinned prefilter rows read. The
 necessary SET and the one-byte pick are untouched.
 
-### 2.29 The pre-checks' ADMISSION — `<PREFIX>_REQ_WHY`, and no axis bit
+### 2.29 The pre-checks' ADMISSION — `<PREFIX>_REQ_WHY`, the `req-admit` table
 
 **[OPT-PRECHECK-ADMIT], `[OPTLOOP.1]` ledger reading §6, ratified 2026-09-23
-(G1 + G2; G3 dropped on measurement).** NOT an axis: there is no flag here and
-no bit. It is the rule that decides whether §2.27's and §2.28's pre-check is
-emitted at all, and it is stated in this document because its outcome is
-caller-observable — one stamp, and the presence or absence of a `memchr` in
-the artifact.
+(G1 + G2; G3 dropped on measurement).** It is the rule that decides whether
+§2.27's and §2.28's pre-check is emitted at all, and in which shape, and it is
+stated in this document because its outcome is caller-observable — one stamp,
+and the presence or absence of a `memchr` in the artifact. Since `abi` 60
+([K82]) it is a first-match table of five rows, in this order, listed live by
+`--list-axes` as axis `req-admit`: `none`, `one-attempt` (G2), `dominated`
+(G1), `set-leads` (§2.40) and `emitted`. The first row whose predicate holds
+decides; only `set-leads` has a deny bit (`-fno-req-set-lead`, bit 45), and
+the declines carry none, as before: removing one is never a speed choice a
+caller needs.
 
 **Why it exists.** A whole-window pre-check is a pass over the subject. Batch 1
 emitted one wherever the analysis found a byte, and the bench's after-measurement
@@ -2802,11 +2807,12 @@ Removing the WHOLE-RUN compare there is answer-detectable too, and S278 is
 that row, detected by `tests/base/k66_precheck_whole_run.rxt`.
 
 **The stamp.** `<PREFIX>_REQ_WHY`, on EVERY artifact of both engines, a CLOSED
-FOUR-TOKEN set:
+FOUR-TOKEN set. It answers WHETHER a pre-check is emitted; the `set-leads`
+row is a shape of an emitted one and stamps `"emitted"`:
 
 | value | meaning |
 |---|---|
-| `"emitted"` | the artifact emits a pre-check, on the byte or run its siblings name |
+| `"emitted"` | the artifact emits a pre-check, on the byte or run its siblings name (and, under `set-leads`, §2.40, on a rarer necessary-set byte first) |
 | `"none"` | nothing is necessary — no necessary byte AND no necessary run (the analysis found neither, or `-fno-req-byte` denied them) |
 | `"one-attempt"` | G2 declined: the route tries one start position, linearly (a DFA, an exact hybrid, or a frameless VM program) |
 | `"dominated"` | G1 declined: an equally rare byte is already scanned (for a run, by a candidate test that also verifies the run) |
@@ -3408,6 +3414,38 @@ artifact is the `abi` 58 program apart from its abi digit.
 smaller than the per-position path it shortcuts, and a pre-check is a pass the
 dial does not price.
 
+### 2.40 `-fno-req-set-lead` — `PCREC_NO_REQ_SET_LEAD` (bit 45)
+
+**[K82] (A), `abi` 60 (`docs/dev/lanes/k82fix_report.md`).
+ANSWER-IDENTITY-preserving.** Denies the `set-leads` row of §2.29's admission
+table. Deny-only, MASKED out of `rx_info.flags` (`strategy_denials`) for the
+mask's own reason; `<PREFIX>_REQ_WHY` reads `"emitted"` either way, so the
+activity record is the emitted text itself (`--list-axes` axis `req-admit`,
+row `set-leads`).
+
+**What it is.** A run pre-check (§2.28) rejects a window that lacks the run,
+and its cost per call is its scan member's occurrences. Where a byte of the
+necessary SET is rarer than that scan member, a window lacking that byte holds
+no match either, and one `memchr` finds out. So where the run pre-check is
+admitted (no earlier row of §2.29 applies) and the set's pick (§2.27) is
+STRICTLY rarer than the run's scan member, the artifact emits the set pick's
+one-byte check FIRST and the run search after it. Rarer is one PICK
+(`docs/spec/findings.md` §4) over the two guards, the run's scan cube first,
+so a tie keeps the run alone: under the byte-rate, the set pick's rate against
+the scan cube's summed rate; under none, MASS's uniform answer, so a byte
+leads a two-member pair and never an exact byte. On the no-DFA-scan VM route,
+§2.29's whole-set half then skips the byte the lead already tested.
+
+The witness is `wild-secrets-username-password-pair`
+(`(?:username|USERNAME|user|USER)[ \t]*=…`): its masked run `USER` replaced
+abi 58's `memchr('=')`, a byte absent from the bench's subjects, and passed on
+every call after ~900 bytes, so the hybrid's prefilter scanned the whole
+subject (`docs/dev/lanes/k82diag_report.md` §1.A). With the lead, `=` is
+tested first and the call returns after one `memchr`.
+
+**Denied:** the run pre-check alone, the `abi` 59 program apart from the abi
+digits.
+
 ## 3. The DFA side's own stamps
 
 **CLOSED 2026-08-25 by plan row `[DD-13]`; this section stated the gap while
@@ -3697,6 +3735,7 @@ not-a-tuning-axis list that follows.
 | `flags` bit `PCREC_NO_VIEW_EDGE` | `-fno-view-edge` | §2.37 |
 | `flags` bit `PCREC_NO_RUN_OVERLAP` | `-fno-run-overlap` | §2.38 |
 | `flags` bit `PCREC_NO_REQ_RUN_FOLD` | `-fno-req-run-fold` | §2.39 |
+| `flags` bit `PCREC_NO_REQ_SET_LEAD` | `-fno-req-set-lead` | §2.40 |
 | `unroll_k` (`PCREC_UNROLL_K_DEFAULT` = 0) | `--unroll=K` | §2.10 |
 | `vm_entry_shape` (`PCREC_VM_ENTRY_AUTO` = 0, `_PLAIN`, `_SHARED`, `_FORWARD`, `_INLINE`) | `--vm-entry-shape=N` | §2.21 |
 | `engine` (`PCREC_ENGINE_AUTO`/`_DFA`/`_VM`) | `--engine=E` | §2.11 |
@@ -3847,9 +3886,10 @@ the rule), and `tune` is precisely such a case, already covered.
 
 ### 5.4 The policy table
 
-**Twenty-nine rows: the 23 `tuning.md` §2 axes, `-fno-run-overlap` (§2.38,
+**Thirty rows: the 23 `tuning.md` §2 axes, `-fno-run-overlap` (§2.38,
 added at `abi` 58 with a cell at no position), `-fno-req-run-fold` (§2.39,
-added at `abi` 59, likewise), λ, the `[ART-SIZE]`
+added at `abi` 59, likewise), `-fno-req-set-lead` (§2.40, added at `abi` 60,
+likewise), λ, the `[ART-SIZE]`
 ladder's two parameters, and the emitted-size caps** (the last three are
 not §2 axes in their own right — the ladder's parameters are
 `-fno-size-term`'s sub-parameters, listed separately because the dial
@@ -3895,6 +3935,7 @@ lands.
 | `-futf-check` | — | — | — | — | — | §2.36; **GATE 1** — a contract, off by default; permanently flat |
 | `-fno-size-term` | — | — | — | — | — | §2.16; **NOT A RUNG** — it is the MECHANISM the two ladder rows parameterise |
 | `-fno-run-overlap` | — | — | — | — | — | §2.38; **NOT A RUNG** — the row and the `memcmp` it replaces are within a word in size, so no position trades on it; whether it ships at all is its own alpha (`litscan_s4.md` Q3), not a dial cell |
+| `-fno-req-set-lead` | — | — | — | — | — | §2.40; **NOT A RUNG** — one more one-byte `memchr`, not a size/speed trade the dial prices |
 | `-fno-req-run-fold` | — | — | — | — | — | §2.39; **NOT A RUNG** — a narrower or wider necessary fact, not a size/speed trade; whether it ships is its own alpha (the `union-select` cell), not a dial cell |
 | emitted-size caps | — | — | — | — | — | `limits.md` §8; **NOT A RUNG** — raise-only refusal boundaries; a dial that lowered one would manufacture refusals |
 
