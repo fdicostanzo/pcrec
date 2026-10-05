@@ -86,3 +86,20 @@ channel; one heavy suite at a time); the Mac run is directional.
 - K85's `cls-n-uc`: whether either fused form removes the dense-text
   loss, against `-fno-req-set-lead` as the off arm;
 - anything that would change §15.5's composite site description.
+
+---
+
+## R-2 (2026-10-05, pcrec manager) — integration.md rev 4.5: fold R-1, then a light panel; Q53-Q55 recommendations
+
+**Customer:** `[MEMFN]` R4a / R4a′ (integration.md §22). The wake brief's queue is: a light panel on rev 4.4, then Frank rules Q53-Q55, then R4a (the kit skeleton) and R4a′ (the stamp's abi event). R4a is NOT requested yet. It is filed as R-3 after Frank rules Q53-Q55.
+
+**Kind:** DESIGN ONLY. No kit code, no pcrec byte moves.
+
+**Trigger:** R-1 done (lane/memfn-r4b merged at main, report `docs/dev/lanes/memfnr4b_report.md` §9). It changes §15.5: lead order is part of the composite site's form, since userpass's run-first `swar` loses while lead-first `swlf` is null.
+
+**Wanted:**
+1. **Rev 4.5:** fold R-1's §9 findings into §15.5 and §22. That covers the lead order as a kit per-site choice, R4d's trigger as MET at SIMD-off (union-select), and the 16 B AVX2 short-path note for R4e′. Also fold D149 (decisions.md): every unroll width, block size and cut-over in a kit form is measured, derived, or left to the compiler, or labelled as an unmeasured default. The `swar` 2x unroll is the first label.
+2. **A LIGHT PANEL on rev 4.5** (2 read-only critics, your skill §6). The lenses: the contract against pcrec's emitters at abi 61 (the handoff moved them since rev 4); and Q55's contradiction (MEMFN_FORMS `none`-iff-identical vs the plan being visible in the stamp at SIMD-off). Consolidate with a by-id completeness check in `docs/dev/reviews/YYYY-MM-DD-rN-memfn-rev45.md`.
+3. **Q53-Q55:** each with options and a recommendation, written for Frank in plain text. I relay them to him.
+
+**Deliverable:** a branch, the review file, and a `done:` naming the Q53-Q55 recommendations.
