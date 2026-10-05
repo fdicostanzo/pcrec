@@ -165,3 +165,32 @@ pointer when a kit change merges to main.
   pcrec manager. The kit's next free id is S513, and its block ends at
   S529; ask main for the next block. Never take "main's highest + 1"
   again; a reservation in a design doc does not show in the highest id.
+
+## 2026-10-05 — R4a: G2 (blinded) found three kit defects; fix lane memfnfix
+
+- G2 (lane memfng2, opus, D27 cell) rendered 4,011 generated sites and ran
+  ~137M checks against its own byte-loop reference, compiled with gcc,
+  clang and ASan. It found three defects the skeleton's own smoke test
+  missed:
+  - F1: VERIFY ignored its empty range. That is an answer defect, and an
+    over-read at lo > n.
+  - F2: ON_CAND+NOP was refused (totality).
+  - F3: out-of-enum `empty`/`need` were rendered instead of refused.
+  No pcrec customer reaches them today (the kit is not called), but a
+  later VERIFY site with end_back or a negative offset would hit F1.
+- Kit contract rulings on Q-G2-1..17 (the kit's, under D146), recorded in
+  the memfnfix brief. They go into integration.md §R4.7.
+  - Refused outright: NOP on value forms, MISS on ADVANCE, SKIP sets at
+    offset ≠ 0, empty conjunctions, zero-length runs, reverse
+    ALL_PRESENT, run bytes outside their mask, and `guard_by_caller`
+    beyond EXPR VERIFY at offsets ≥ 0.
+  - Q-G2-5 (reverse ADVANCE) stays open until M3.
+- G2 merged as the blinded author's commit. The fix lane may not edit
+  g2/ (it is the control); it only adds `--quick` for the `make test`
+  section.
+- OWED: G2 coverage of the newly refused shapes, from a blinded author
+  later. The cell worktree under worktrees/memfn/worktrees/memfng2 and
+  the cell copy are left in place; removal needs a worktree rm.
+- Lesson: the blinded author found in one pass what the implementing
+  lane's 480k-check smoke test missed. That smoke test was written by
+  the implementer, so it shared the implementer's reading of "range".
