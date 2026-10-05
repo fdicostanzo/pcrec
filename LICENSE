@@ -19,3 +19,11 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+Generated-output exception
+
+The C source text that pcrec generates (the output of the pcrec compiler or
+library, including any portions of pcrec's own source that are copied into
+that output) is not subject to the notice requirement above. You may use,
+modify and distribute generated output under terms of your choice. This
+exception applies only to generated output, not to pcrec itself.

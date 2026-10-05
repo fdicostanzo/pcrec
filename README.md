@@ -67,4 +67,4 @@ feature set; after that, development turns to bench-driven optimization.
 [docs/testing.md](docs/testing.md) ·
 [docs/dev/decisions.md](docs/dev/decisions.md) ·
 [CONTRIBUTING.md](CONTRIBUTING.md) ·
-[LICENSE](LICENSE) (MIT)
+[LICENSE](LICENSE) (MIT, with a generated-output exception: the C pcrec emits is yours, under terms of your choice)

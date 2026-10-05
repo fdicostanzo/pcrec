@@ -8946,3 +8946,10 @@ Purpose: development velocity against a long test tail. Lifts D125's hold on ope
 5. **Each cause group** names its existing plan row (or "NEW — file it"), the cells, the measured gap, the best estimate of attainable upside with its basis, and what measurement would settle it.
 6. **The report also lists where pcrec LEADS** (a sanity check on the comparison) and the gaps it could NOT judge (missing arms, inconclusive cells, semantic mismatches): an honest denominator.
 The FIRST instance is the pre-round-2 bench outlier read Frank asked for (D144 item 6).
+
+## D145 — Generated-output licence exception (Frank, 2026-10-04, ninetieth session)
+
+**Decision:** LICENSE gains a generated-output exception under the MIT text: the C source pcrec emits (including pcrec source text copied into it) carries no notice obligation; users choose its terms. pcrec itself stays MIT.
+**Why:** [MEMFN] R1 (docs/design/memfn/requirements.md §7 Q1) found the MIT licence silent on emitted artifacts; injected kernel text would land in users' programs. Models: Bison's and GCC's runtime exceptions.
+**Consequence:** third-party kernel TEXT may be injected into generated output only under terms compatible with this exception (0BSD, CC0, Unlicense, or a licence carrying its own output exception); MIT/BSD/Apache text is ideas-only unless a later ruling says otherwise. The emitted text itself is NOT changed (that would be an abi event); the exception lives in LICENSE.
+**Revisit-when:** a kernel source we want to inject carries a licence outside that list.
