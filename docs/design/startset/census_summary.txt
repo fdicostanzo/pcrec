@@ -1,3 +1,4 @@
+CONTROL E <= S on unseeded machines: 685 artifacts, 0 violations; dropping one member of S fires on 685
 {
  "bench": {
   "auto_routes": {
@@ -37,20 +38,26 @@
   },
   "forced_vm_vmnone": {
    "FS": 273,
-   "FS_and_RUN": 96,
-   "FS_only": 177,
+   "FS_and_RUN": 89,
+   "FS_only": 184,
    "FS_pop_le_1": 131,
    "FS_pop_le_16": 209,
    "FS_pop_le_3": 160,
-   "RUN": 96,
+   "RUN": 89,
    "RUN_only": 0,
    "anchored": 25,
    "neither": 21,
-   "run_present_unbounded": 13,
+   "run_present_unbounded": 12,
    "total": 319,
    "unanchored": 294
   },
   "rows": 345
+ },
+ "control_E_subset_S": {
+  "failing_direction_fires": 685,
+  "unseeded_artifacts": 685,
+  "violating": [],
+  "violations": 0
  },
  "corpus": {
   "auto_routes": {
@@ -89,12 +96,12 @@
   },
   "forced_vm_vmnone": {
    "FS": 2263,
-   "FS_and_RUN": 367,
-   "FS_only": 1896,
+   "FS_and_RUN": 363,
+   "FS_only": 1900,
    "FS_pop_le_1": 1390,
    "FS_pop_le_16": 1995,
    "FS_pop_le_3": 1873,
-   "RUN": 367,
+   "RUN": 363,
    "RUN_only": 0,
    "anchored": 487,
    "neither": 397,

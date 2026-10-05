@@ -120,7 +120,12 @@ def cbm(pat, extra):
 
 def one(row):
     kind, sb, name, pat, extra = row
-    p = pat.decode("latin-1")
+    # BYTES, never `pat.decode("latin-1")`: subprocess re-encodes a str argv
+    # as UTF-8, so every non-ASCII pattern would compile as a DIFFERENT
+    # pattern (`[\xce\xb1]` -> `[\xc3\x8e\xc2\xb1]`). The first run of this
+    # census did exactly that; the E-subset-of-S control (summarize.py)
+    # caught it on 33 rows, all non-ASCII.
+    p = pat
     rec = {"kind": kind, "set": sb, "name": name}
     a = facts(p, extra)
     if a is None:

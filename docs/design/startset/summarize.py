@@ -110,6 +110,27 @@ for kind in ("bench", "corpus"):
         detail.append({"kind": kind, "set": r["set"], "name": r["name"], "auto": route(r),
                        "forced": route(r, True), **{k: v for k, v in c.items()}})
 
+# THE INDEPENDENT CONTROL (startset.md §6.2): on an UNSEEDED DFA machine the
+# emitted escape set E (subset construction over the NFA) must be a subset of
+# the AST start set S (fs_probe's walk) -- every byte leaving the context-free
+# start state begins a live prefix, and every live prefix extends to a match.
+# The two share no code. A violation means S UNDER-approximates: the unsound
+# direction. Its failing-direction twin drops one member of S per row.
+ctl_n = ctl_v = ctl_fire = 0
+ctl_ex = []
+for r in ok:
+    if not r["cbm_set"] or r["seeded"] != "0" or r["fs_nullable"] != "0": continue
+    E, S = bits(r["cbm_set"]), bits(r["fs_set"])
+    ctl_n += 1
+    if not E <= S:
+        ctl_v += 1; ctl_ex.append(r["name"])
+    if E and E <= S and not E <= (S - {min(E)}): ctl_fire += 1
+summary["control_E_subset_S"] = {"unseeded_artifacts": ctl_n, "violations": ctl_v,
+                                 "violating": ctl_ex[:20],
+                                 "failing_direction_fires": ctl_fire}
+print("CONTROL E <= S on unseeded machines: %d artifacts, %d violations; "
+      "dropping one member of S fires on %d" % (ctl_n, ctl_v, ctl_fire))
+
 json.dump({"summary": summary, "detail": [d for d in detail if d["kind"] == "bench"]},
           open(OUT, "w"), indent=1, sort_keys=True)
 print(json.dumps(summary, indent=1, sort_keys=True))
