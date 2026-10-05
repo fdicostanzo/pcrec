@@ -9005,3 +9005,10 @@ This generalizes D91 (scalar-first, "the SIMD crutch must not hide inefficiencie
 
   This is a ruled exception to D77's measured-need trigger: the trigger is completeness. Each step stays byte-identical (zero movers), so the risk is mechanical.
 - **Required with it:** a CHECKED SITE MANIFEST. Every emitted search site is listed as kit-delegated or pending, and a check fails on any unlisted site, so nobody has to remember. The memchr ratchet's end state is 0 outside the kit.
+
+**D147 addendum 6 (Frank, 2026-10-05): [MEMFN] Q50 YES, and THE MEANING OF THE SIMD SWITCH.**
+- **SIMD OFF:** the artifact is PORTABLE C. It contains the scalar layer: plain C, SWAR on ordinary integers, and libc calls (libc does its own dispatch). It compiles and runs on any target.
+- **SIMD ON:** the artifact as compiled is optimized via hardware to a specific CPU architecture and MAY OR MAY NOT EXECUTE ELSEWHERE.
+- **What sits inside SIMD-on is the kit's choice, per site:** which forms, which levels, any cascade (addendum 2), any fallback arm. No portability promise is made for it.
+- **The stamp records when a libc call is used,** so a reader knows the SIMD-off artifact delegates to libc's own dispatch.
+- **This replaces the three-profile wording of addendum 2 (off / portable / native) with ONE switch and a meaning.** Whether a narrower "baseline-ISA" SIMD-on form exists is a kit form question, not a pcrec profile.
