@@ -101,7 +101,7 @@ static Ast *parse_lower(const char *pat, Ctx *cx, pcrec_options *defo, int enc)
 int main(int argc, char **argv)
 {
     char err[256];
-    int enc = PCREC_ENC_BYTE;
+    volatile int enc = PCREC_ENC_BYTE;   /* live across the setjmp in parse_lower */
     if (argc > 2 && !strcmp(argv[1], "-e") && !strcmp(argv[2], "utf8")) enc = PCREC_ENC_UTF8;
     if (pcrec_enabled_set_spec("all", err, sizeof err) != 0) { fprintf(stderr, "features: %s\n", err); return 2; }
     printf("id\tstatus\tnullable\tpopcount\tset_hex\tcont_bytes\n");
