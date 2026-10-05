@@ -1,0 +1,50 @@
+== C-C9: corpus distinct (pattern, args): 3663
+  auto    ids {'ok': 3291, 'refused': 372} | run pre-check emitted 219 | DFA-scan route 197 -> bounded (MOVER) 160, unbounded 37 | no DFA scan 22
+      K histogram (64 = >=64): {0: 133, 1: 5, 2: 4, 3: 2, 4: 1, 5: 4, 6: 1, 9: 5, 10: 1, 12: 1, 18: 2, 24: 1}
+      mover routes: {'vm/hybrid': 33, 'dfa/unanchored': 121, 'dfa/attempt': 6}
+      hybrid movers by RX_VM_PREFILTER_LANG: {'exact': 33}
+  nocaps  ids {'ok': 3291, 'refused': 372} | run pre-check emitted 219 | DFA-scan route 197 -> bounded (MOVER) 160, unbounded 37 | no DFA scan 22
+      K histogram (64 = >=64): {0: 133, 1: 5, 2: 4, 3: 2, 4: 1, 5: 4, 6: 1, 9: 5, 10: 1, 12: 1, 18: 2, 24: 1}
+      mover routes: {'dfa/unanchored': 144, 'dfa/attempt': 7, 'vm/hybrid': 9}
+      hybrid movers by RX_VM_PREFILTER_LANG: {'exact': 9}
+  vm-pf   ids {'ok': 3021, 'refused': 642} | run pre-check emitted 197 | DFA-scan route 197 -> bounded (MOVER) 160, unbounded 37 | no DFA scan 0
+      K histogram (64 = >=64): {0: 133, 1: 5, 2: 4, 3: 2, 4: 1, 5: 4, 6: 1, 9: 5, 10: 1, 12: 1, 18: 2, 24: 1}
+      mover routes: {'vm/hybrid': 160}
+      hybrid movers by RX_VM_PREFILTER_LANG: {'exact': 160}
+== C-C8: budget / gu blocks: 35
+  tests/base/k64_precheck_forced_vm.rxt:31       gu=1 budget=10000/    vm/none         why=emitted K=None -
+  tests/base/k64_precheck_forced_vm.rxt:41       gu=0 budget=10000/    vm/none         why=one-attempt K=None -
+  tests/base/k65_precheck_whole_set.rxt:31       gu=1 budget=10000/    vm/none         why=emitted K=None -
+  tests/base/k65_precheck_whole_set.rxt:44       gu=1 budget=10000/    vm/none         why=emitted K=None -
+  tests/base/k65_precheck_whole_set.rxt:57       gu=1 budget=10000/    vm/none         why=emitted K=None -
+  tests/base/k66_precheck_whole_run.rxt:34       gu=1 budget=10000/    vm/none         why=emitted K=None -
+  tests/base/k66_precheck_whole_run.rxt:47       gu=1 budget=10000/    vm/none         why=emitted K=None -
+  tests/harness/giveup.rxt:48                    gu=1 budget=50/4096   vm/none         why=none K=None -
+  tests/harness/giveup.rxt:54                    gu=1 budget=/4        vm/none         why=none K=None -
+  tests/litscan/reqcube.rxt:434                  gu=1 budget=10000/    vm/none         why=emitted K=None -
+  tests/litscan/reqcube.rxt:445                  gu=1 budget=10000/    vm/none         why=emitted K=None -
+  tests/litscan/reqcube.rxt:457                  gu=1 budget=10000/    vm/none         why=emitted K=None -
+  tests/litscan/reqcube.rxt:468                  gu=1 budget=10000/    vm/none         why=emitted K=None -
+  tests/litscan/reqcube.rxt:480                  gu=1 budget=10000/    vm/none         why=emitted K=None -
+  tests/litscan/reqcube.rxt:492                  gu=1 budget=10000/    vm/none         why=emitted K=None -
+  tests/recursion/d27/sr_depth.rxt:37            gu=1 budget=/         vm/none         why=emitted K=None -
+  tests/recursion/d27/sr_depth.rxt:60            gu=1 budget=/         vm/none         why=emitted K=None -
+  tests/recursion/d27/sr_depth.rxt:92            gu=1 budget=/         vm/none         why=emitted K=None -
+  tests/recursion/d27/sr_depth.rxt:106           gu=1 budget=/         vm/none         why=emitted K=None -
+  tests/recursion/d27/sr_depth.rxt:189           gu=1 budget=/         vm/none         why=none K=None -
+  tests/recursion/d27/sr_depth.rxt:198           gu=1 budget=/         vm/none         why=none K=None -
+  tests/recursion/d27/sr_depth.rxt:207           gu=1 budget=/         vm/none         why=none K=None -
+  tests/recursion/d27/sr_depth.rxt:216           gu=1 budget=/         vm/none         why=none K=None -
+  tests/recursion/framebuffer.rxt:24             gu=1 budget=/         vm/none         why=emitted K=None -
+  tests/recursion/quantified.rxt:198             gu=1 budget=/         vm/none         why=none K=None -
+  tests/vars/basic.rxt:93                        gu=1 budget=/         vm/none         why=one-attempt K=None -
+  tests/vars/caseless.rxt:108                    gu=1 budget=/         vm/none         why=none K=None -
+  tests/vars/caseless.rxt:115                    gu=1 budget=/         vm/none         why=none K=None -
+  tests/vars/caseless.rxt:123                    gu=1 budget=/         vm/none         why=none K=None -
+  tests/vars/caseless.rxt:152                    gu=1 budget=/         vm/none         why=none K=None -
+  tests/vars/unset.rxt:25                        gu=1 budget=/         vm/none         why=one-attempt K=None -
+  tests/vars/unset.rxt:34                        gu=1 budget=/         vm/none         why=one-attempt K=None -
+  tests/vars/unset.rxt:155                       gu=1 budget=/         vm/none         why=none K=None -
+  tests/vars/unset.rxt:162                       gu=1 budget=/         vm/none         why=none K=None -
+  tests/vars/unset.rxt:193                       gu=1 budget=/         vm/none         why=none K=None -
+  totals: {'not-mover': 35}

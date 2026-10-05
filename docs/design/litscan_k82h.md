@@ -9,10 +9,28 @@ no threshold. The expected-cost model and its [FINDINGS.B4] reader are parked
 behind a census of unbounded-offset runs that still lose after this lands
 (§3.3 gives that population).
 
+**REVISION 2 (lane `k82hrev`, 2026-10-04): the light D6 panel r1
+(`../dev/reviews/2026-10-04-r1-k82-handoff.md`, two critics, 17 findings,
+all ACCEPTED by the manager) is applied in place.** Each change is marked
+`[r1 <id>]` where it lands; §R maps every finding to the section that now
+answers it. The mechanism survived measurement (~60 shapes, 0 diffs at
+every startpos against today's artifact and libpcre2). What moved is the
+contract the mechanism leans on and the checks: the gate's RETURN VALUE is
+now load-bearing (§1.1a), the give-up allowance narrows to count-collapsed
+prefilters (§4.2), the hybrid's prefilter is a third `\G` reader (Claim 2′),
+verbs and callouts decline (§1.4 (g)), the utf8 round-up is an uncapped
+loop taken only when `lo > f` (§1.4 (e)), the abi and byte-count readers are
+enumerated by grep (§2.3a), and every sabotage row has an in-suite detector
+and a constructed reaching witness (§4.4). The Frank questions are revised
+(§Q); Q3's recommendation is reversed.
+
 Instruments: `../dev/optloop/s4/k82hand/` (its own `CLAUDE.md`):
 - `proto_maxoff.diff`: a prototype of the §1.3 offset derivation, used only
   to count;
 - `k82h_census.py` / `k82h_census.out`: the predicted-mover census.
+- `k82h_census_r2.py` / `k82h_census_r2.out` ([r1 C-C8], [r1 C-C9]): the
+  same classifier over two more corpus configs and over the corpus's
+  budget/give-up blocks.
 
 Timings quoted are k82cost's twin T3 on the Mac (`../dev/optloop/s4/
 k82cost/t3_mac.out`). They are DIRECTIONAL (D144 addendum 1). Linux figures
@@ -56,7 +74,9 @@ are r1alpha's (`../dev/lanes/r1read_report.md` §3).
    - The engine's scan starts at `lo ≥ search_from` and not at
      `search_from`.
    - The only added work is one subtraction and compare per PASSING call,
-     plus, under `-e utf8`, a bounded boundary rounding (≤ 3 byte tests).
+     plus, under `-e utf8` and only when `lo > f`, a boundary round-up. It
+     is ≤ 3 byte tests on well-formed text and unbounded only by `n` on
+     ill-formed text ([r1 S-F5], §1.4 (e)).
 
    So against abi 60 no measured cell can regress past the floor except
    through code placement. Against DENY (abi 58, no run gate) the residual is
@@ -73,7 +93,15 @@ are r1alpha's (`../dev/lanes/r1read_report.md` §3).
    - It composes with every row of both, and three bodies read it.
    - Deny `-fno-req-handoff` (bit 46, the next free bit after k82fix's 45).
    - It is an abi event, 60 → 61, with a new `<PREFIX>_REQ_HANDOFF` stamp
-     (§2).
+     (§2). [r1 C-C1] The stamp is proposed ONLY on artifacts where the
+     handoff applies, which confines byte movement to the program movers
+     (§2.2, §2.3a, Q3).
+6. **[r1 S-F1] The handoff makes the gate's RETURN VALUE load-bearing.**
+   Today only "found / not found" matters, so a gate that returns a LATER
+   occurrence is invisible. Under the handoff it deletes matches: critic 1
+   sabotaged it and got 6,549 of 18,052 cells wrong. The gate's contract
+   (leftmost masked occurrence ≥ `search_from`) is now written down (§1.1a)
+   and has its own sabotage row (S464).
 
 ## 1. The mechanism
 
@@ -96,14 +124,67 @@ The candidate is thrown away. The handoff keeps it:
     size_t handoff_position = rx_reqrun(subject, subject_length, search_from);
     if (handoff_position >= subject_length) return 0;
     /* [K82] every match begins at most K bytes before its run window ... */
-    handoff_position = handoff_position - search_from > K ? handoff_position - K : search_from;
-    /* utf8 only: round UP to a character start (§1.4 (e)) */
+    if (handoff_position - search_from > K) {
+        handoff_position -= K;
+        /* utf8 only: round UP to a character start (§1.4 (e)) */
+        while (handoff_position < subject_length && !(START(handoff_position))) handoff_position++;
+    } else
+        handoff_position = search_from;
 ```
 
 The subtraction is written so it cannot underflow: `c ≥ search_from` always
 holds, and `search_from + K` would overflow near `SIZE_MAX`. At K = 0 the
-middle line is not emitted. The local's name carries no prefix (K79: the
-emitters never see the caller's prefix).
+`-= K` line is not emitted, and the test reads `> 0`. The local's name
+carries no prefix (K79: the emitters never see the caller's prefix).
+
+[r1 S-F6] The round-up sits INSIDE the `lo > f` branch. When the handoff
+leaves `lo == f`, `lo` is the caller's own startpos and is used unrounded,
+exactly as today. Rounding there would change behaviour under
+`-fno-startpos-guard`, where a mid-character startpos is the caller's
+declared choice and today's artifact scans from it as given.
+
+[r1 S-F5] The loop is UNCAPPED, bounded only by `< subject_length`. That is
+the SEEK primitive's own shape (§1.4 (e)). Revision 1 said "≤ 3 tests",
+which holds only on well-formed text: a subject with four or more stray
+continuation bytes in a row needs more, and a capped loop would hand the
+body a non-start. `START(p)` here stands for the encoding backend's start
+predicate (§1.4 (e)), never a spelled test.
+
+### 1.1a [r1 S-F1] The gate's contract: the LEFTMOST occurrence at or after `search_from`
+
+Claim 1 (§1.2) reads `c` as the LEAST `q ≥ search_from` with a masked
+occurrence of `W`. Today nothing checks that, because the discard program
+uses only `c < n`. A gate that returns a LATER occurrence, or an occurrence
+before `search_from`, answers today's question correctly and silently
+deletes matches under the handoff. Critic 1 planted "the gate returns the
+second occurrence" and measured 6,549 wrong cells of 18,052.
+
+So the build writes the contract into `ofs_test_emit_fn`'s header comment,
+and the one search block it renders owns it:
+
+> `rx_reqrun(s, n, from)` returns the least `q ≥ from` at which every
+> position of the window passes its masked compare, or `n` when there is
+> none. A caller may use the returned position, not only its comparison
+> with `n`.
+
+What this binds:
+- **The pair arm.** It leapfrogs two `memchr` streams and verifies each
+  hit. It must return the LESSER verified candidate, never the one from
+  the stream it advanced last. The `fresh = 1` re-search per call (H11)
+  is what makes the lesser one the least `≥ from`: no stale stream
+  position from a previous call can sit below `from`.
+- **Future arms.** Any later run-compare arm that renders through
+  `ofs_test_emit_fn` is bound by it: [MEMFN]'s fused scan+verify twins
+  (R1d), and S4's `pcrec_emit_run_compare` rows when they render a search
+  rather than a compare. A twin that returns "some occurrence" is a
+  correct discard gate and an incorrect handoff gate. The [MEMFN] build
+  lane's brief must name this contract.
+- **The check.** Sabotage S464 (§4.4) plants the later-occurrence gate.
+  `handoff.rxt`'s dense find-all rows and a new two-occurrence row detect
+  it: there the first occurrence is the match's own window and a second
+  occurrence follows it, so a later-occurrence gate starts the scan past
+  the match. (The decoy rows cannot detect it. Their first occurrence is
+  the decoy, and the later one is the match's.)
 
 The three consumers each read `handoff_position` in place of
 `search_from` at exactly ONE site:
@@ -112,7 +193,7 @@ The three consumers each read `handoff_position` in place of
 |---|---|---|
 | DFA unanchored (`emit_unanchored`, caller-facing entry; `emit_dfa.c:8144` + the forward seed) | `size_t scan_position = search_from;` and the seeded initializer `search_from ? seed[class[subject[search_from - 1]]] : s0` | `scan_position = handoff_position;` and the initializer reads `handoff_position` (§1.4 (c)) |
 | DFA attempt (`emit_attempt`, `emit_dfa.c:8638`) | `for (start = search_from; start <= start_max; start++)` | `for (start = handoff_position; …)`. The `\G` dispatch `start == search_from` is UNCHANGED |
-| VM hybrid (`emit_vm.c:13398`, the FIRST prefilter call) | `if (prefn(subject, subject_length, search_from, window) != 1) return 0;` | `prefn(subject, subject_length, handoff_position, window)`. The VM's `search_from`, which `\G` reads, is unchanged |
+| VM hybrid (`emit_vm.c:13398`, the FIRST prefilter call) | `if (prefn(subject, subject_length, search_from, window) != 1) return 0;` | `prefn(subject, subject_length, handoff_position, window)`. The VM's `search_from`, which `\G` reads, is unchanged. [r1 S-F3] The prefilter's own `\G` reads its THIRD argument, so inside this one call it reads `lo` (Claim 2′) |
 
 Everything else in each body still reads `search_from`:
 - the K73/K50 start guards (they already ran, above the gate);
@@ -187,6 +268,32 @@ premise `start_pinned_assert_routing` (`emit_dfa.c:7119`) asserts for the
 pinned form. The build asserts the same premise for every handoff body
 (§1.4 (d)).
 
+**[r1 S-F3] The THIRD `\G` reader: the hybrid's static prefilter.** It is
+an ENG_ATTEMPT-shaped DFA function, and its `\G` dispatch is `start ==`
+its third argument. The hybrid's first call passes `lo` there, so for that
+call the prefilter's `\G` tests `start == lo`, not `start == f`. That is
+sound, and the argument is short:
+- When `lo == f` nothing changed.
+- When `lo > f`, a `\G` branch can succeed only at `p = f`, and Claim 1
+  rules out every success below `lo`. So no true match is lost.
+- The prefilter may now ADMIT a start at `lo` through a `\G` branch that
+  the VM, still anchored at `f`, rejects. That widens a superset filter,
+  which the VM's verify absorbs (D51 ruling 2's direction).
+- The one read that is not a filter is `window_end` on the clamped arm
+  (H8): it is set from the prefilter's first ANSWER. A spurious `\G` answer
+  at `lo` could end earlier than the true match. The build therefore
+  DECLINES the handoff on a hybrid that has both a `\G` start family and
+  the clamped window arm (`mrl_win`), by conjunct (d′) in §1.4. Its
+  measured population is zero: no census hybrid mover carries `\G` (§3.1a).
+  Q9 asks whether the decline can drop once the build reads whether
+  `window_end` is re-derived per prefilter answer.
+
+Critic 1 measured the unguarded form at 0 diffs over 7 `\G` hybrid shapes
+(~280k cells). `handoff.rxt` gains a `\G`-hybrid prefilter-window row on a
+constructed witness, `(?:\G|x)(cat)dog` (VM hybrid, exact prefilter, K =
+1 on the prototype), and S469's plant and §5.12's "no `\G` reader" check
+extend to the prefilter's third argument (§4.4).
+
 **Claim 3 (the body is correct at `lo`).** The emitted body's answer at a
 legal startpos is the PCRE2 answer. That is the artifact contract,
 `match_api.md` §3.1. `tests/utf8/run_startbnd_diff.sh` and the identity
@@ -198,9 +305,25 @@ gates sweep it at every startpos.
   continuation byte is never a match start (`match_api.md` §3.1, K73/K75),
   and it makes `lo` a startpos the contract covers.
 
-**Theorem.** With `lo = round_up(max(f, c − K))`, the handoff body's answer
-equals today's. By Claim 1, `p* ≥ c − K`. Also `p* ≥ f`, and `p*` is a
-character start, so `p* ≥ lo`. Claims 2/2′ then give answer(f) =
+[r1 S-F9] **Claim 3 turns every-startpos correctness from a contract into a
+load-bearing path.** Today a body bug that shows only at startpos `x > 0`
+is reached only by a caller who passes `x`. Under the handoff it is reached
+whenever `c − K = x`, on an ordinary call from 0. So every route the
+predicate admits (DFA unanchored, DFA attempt, VM hybrid) must pass the
+every-startpos sweep over its movers, not only the identity gates' corpus:
+§4.2 item 1's differential runs every mover at EVERY start position, per
+route, and reports the per-route counts (a route with zero swept movers is a
+failure, K35). Cross-note for [UCP] U3/U4: their seeded context reads the
+previous CHARACTER, which is multibyte under utf8. Because `lo` is always a
+character start (or `f` itself, S-F6), the context at `lo` is the one a
+caller's startpos `lo` gets. So U3/U4 inherit the handoff for free if they
+are correct at caller startposes, and their own every-startpos sweep must
+include the handoff movers.
+
+**Theorem.** With `lo = f` when `c − f ≤ K` and `lo = round_up(c − K)`
+otherwise ([r1 S-F6]), the handoff body's answer equals today's. By Claim
+1, `p* ≥ c − K`. Also `p* ≥ f`, and `p*` is a character start, so
+`p* ≥ lo` in both cases. Claims 2/2′ then give answer(f) =
 answer(lo), and Claim 3 says the body computes answer(lo).
 
 **One emitted detail the theorem does not cover by itself.** The DFA
@@ -333,6 +456,10 @@ The table is asked only where the admission emitted a run pre-check:
   build asserts that an unanchored machine carrying a handoff has no `\G`
   start family. That is the same premise asked of a second body shape, and
   it is a loud internal error if it ever moves.
+- **(d′) [r1 S-F3] Hybrid, `\G` and the clamped window.** On the VM hybrid,
+  decline when the program has a `\G` start family AND the prefilter's
+  window arm is clamped (`mrl_win`). Claim 2′ gives the reason. Measured
+  population: 0 movers.
 - **(e) Encoding.**
   - Under `byte`: nothing.
   - Under a multibyte encoding: `lo` is advanced to the next character
@@ -343,13 +470,32 @@ The table is asked only where the admission emitted a run pre-check:
     that one primitive over its position variable or adds a sibling mode
     to it. It never spells a second predicate. DD-12 (7) applies: no
     encoding test in shared emitter code.
-  - The advance never passes `c`'s own character start: if `c` is a
-    character start, `lo ≤ c` stays `≤ c`.
-  - It is bounded by the encoding's maximum sequence length minus 1 (3
-    bytes under utf8).
+  - The advance never passes `p*`: `p* ≥ c − K` is a character start, so
+    the first start at or after `c − K` is at most `p*`. (Revision 1 said
+    "never passes `c`'s own character start", which is false when the run
+    begins on a continuation byte, `(?:éx|ʩx)`; `p*` is the bound that
+    holds.)
+  - [r1 S-F5] It is NOT bounded by the encoding's maximum sequence length.
+    On well-formed text it takes at most 3 steps; on ill-formed text (a run
+    of four or more stray continuation bytes, the K75 "stray" kind) it
+    takes as many as there are. The loop is uncapped, `< subject_length`
+    being its only bound, which is the SEEK primitive's shape.
+  - [r1 S-F6] It runs only when `lo > f`.
 
   This conjunct is not a refusal. It is the one encoding-dependent line of
-  the emission (§5 Q2 asks whether it can be dropped).
+  the emission (§Q Q2 asks whether it can be dropped).
+- **(g) [r1 S-F4] No verb and no callout.** A backtracking verb in a FAILED
+  attempt below `lo` can end the whole search under PCRE2 (`(*COMMIT)`:
+  the attempt fails and no later start is tried). Skipping that attempt
+  would then turn a NOMATCH into a match. So the predicate declines on any
+  verb or callout node in the pattern. It reads the same fact
+  [OPT-HYB-RESEED]'s callouts/verbs decline reads (`hyb_reseed.md` §6,
+  lane reseedfix), never a second spelling of it. Today the conjunct is
+  structurally unreachable: `(*COMMIT)` is refused ("outside pcrec's
+  scope") and `(?C1)` is refused by module `callouts` ("not implemented
+  yet"), both measured on the prototype. So its sabotage row ships
+  declared UNREACHED (S475, §4.4), and the build adds a compile-time
+  assertion beside it, on S219's precedent.
 - **(f) Not denied:** `-fno-req-handoff`.
 
 **Not conjuncts, and why.**
@@ -370,8 +516,25 @@ The table is asked only where the admission emitted a run pre-check:
 
 | # | row | deny | predicate | emitted |
 |---|---|---|---|---|
-| 1 | `handoff` | `PCREC_NO_REQ_HANDOFF` (`-fno-req-handoff`, bit 46) | §1.4 (a)-(c), (e) | the gate's candidate kept, `handoff_position` declared, the body's one start site reads it |
-| 2 | `discard` | — | always (fallback) | today's `if (rx_reqrun(...) >= n) return 0;` |
+| 1 | `handoff` | `PCREC_NO_REQ_HANDOFF` (`-fno-req-handoff`, bit 46) | `req_admit()` returns `EMITTED` or `SET_LEADS` with a run, AND §1.4 (a)-(g) | the gate's candidate kept, `handoff_position` declared, the body's one start site reads it |
+| 2 | `scan-from-startpos` | — | always (fallback) | the body's start site reads `search_from`, as today. Where a run pre-check is emitted, that is today's `if (rx_reqrun(...) >= n) return 0;`; where none is, nothing is emitted for this table at all |
+
+[r1 C-C10] Three corrections to revision 1's table:
+- **Row 1 CALLS `req_admit()`.** Revision 1 restated the admission's
+  verdict ("asked only where the admission emitted a run pre-check") in
+  prose beside the table. A separate table is defensible only if it reads
+  the admission's answer and never re-derives it, so the predicate's first
+  conjunct is the call itself. A change to `req_admits[]` then reaches
+  `req_uses[]` with no edit.
+- **Row 2 is not "discard".** Where no pre-check is emitted there is
+  nothing to discard. The row's name says what it does on every artifact
+  it serves: the scan starts at the startpos. (The `--list-axes` row label
+  is `scan-from-startpos`.)
+- **The cross-table check.** §5.12 (§4.2 item 4) asserts, over the
+  corpus, that `REQ_HANDOFF` is present only where `REQ_WHY` reads
+  `"emitted"` (the `set-leads` row stamps `"emitted"` too) and
+  `REQ_RUN` is not `"none"`. A handoff on any other admission verdict is
+  a failure, which is the one way the two tables could disagree.
 
 `DFA_SELECT(ReqUseRow, req_uses, …)`, the `dfa_pfs[]`/`req_admits[]`
 idiom (D122 addendum 4's table discipline; memory: decisions as first-match
