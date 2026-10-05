@@ -651,6 +651,8 @@ has no reseed hazard. The DFA hat follows with F3 measured in its own alpha.
 
 ## 9. Questions for Frank (with recommendations)
 
+**RULED 2026-10-05 (Frank): all nine as recommended — D148** (docs/dev/decisions.md). The D6 panel (review r4) runs before stage 0 and may revise this note.
+
 - **Q1. Rule the shape as D148?** The shape: one candidate-finding table, a
   start-set fact, two hats, one deny. **Recommend YES**, then a FULL D6 panel
   (D122 addendum 4 item 3) before stage 0.

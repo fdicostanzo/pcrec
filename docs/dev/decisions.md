@@ -9040,3 +9040,18 @@ This generalizes D91 (scalar-first, "the SIMD crutch must not hide inefficiencie
 - **Core:** finish K82 (the handoff's Linux alpha, then K85's re-measure) and START-SET ([OPT-FIRSTSET] + [OPT-VMSEED], D124 shape), the main new algorithmic work.
 - **Cheap side items:** the SEL-LIT desk read (VM-beats-auto across every set's existing VM column, under [SEL-COST]) and K87's pcrec-side twin.
 - **Housekeeping:** file NULLABLE-ANCH and U8-PICK as rows (unscheduled), and mark [OPT-VMSEED] a round-2 candidate.
+
+## D148 — START-SET: "where can a match begin?" is ONE candidate-finding table with a start-set fact, two engine hats and one deny (Frank, 2026-10-05, ninetieth session)
+
+Design of record: `docs/design/startset.md` (lane startset, merged 46b059b1; census and differentials in `docs/design/startset/`, report `docs/dev/lanes/startset_report.md`). It joins [OPT-FIRSTSET] and [OPT-VMSEED] under D124 (one question, the engine a row predicate and a consumer hat) and D122 addendum 4 (the seed is rows on `dfa_pfs[]` made engine-neutral, never a VM-local table).
+
+Frank agreed with all nine recommendations of startset.md §9:
+- **Q1 YES:** the shape is ruled as D148. The new core fact is `start_set`: the AST first-byte set with zero-width nodes erased, on the lowered tree. It feeds four new rows (`first-memchr[-bounded]` and `first-class[-bounded]`). The DFA hat scans T = S∩E and re-seeds through `pf_emit_ofs_reseed`. The VM hat seeks the next byte in S at the attempt-loop entry and at each retry. A FULL D6 panel precedes stage 0. It was launched the same day, as review r4 (critics ssc-sound, ssc-checks, ssc-cost), and its findings revise the note before build.
+- **Q2 YES:** rename `dfa_pfs[]` → `cand_rows[]` (`DfaPf` → `CandRow`, `DfaSel` → `CandSel`) as its own no-mover commit AFTER stage 3, never mid-build.
+- **Q3 NO force flag:** deny only (`-fno-start-set`, bit 47). This deliberately departs from the "deny AND force" default, on the `-fno-run-prefilter`/`-fno-req-handoff` precedent.
+- **Q4 NO unification** with `possessify.c`'s `first_of`. They work at different tree levels and with different zero-width policies. PATFACTS' inventory records them as two facts that answer two questions.
+- **Q5 YES:** the VM hat is built before the DFA hat.
+- **Q6 YES:** the give-up allowance becomes a spec sentence: a give-up may turn into the unbounded answer, never the reverse (measured population: 11 corpus blocks).
+- **Q7 NO early batch gate.** The per-change test-axes sweep of `-fno-start-set` × `--engine=vm` covers the large `--engine=vm` population.
+- **Q8 YES:** the six cells already served by offset-set rows (asr-wb, asr-nwb, asr-b-ascii, stack-frame ×2, github-pat) are re-bucketed out of START-SET in the next gap report, after the bench re-measures at abi ≥ 61.
+- **Q9 YES:** stage 4 (the run-offset seed, [OPT-REQPOS] tier 2's VM instance) is built only if a K82 forced-VM cell is still past the floor after stage 2.
