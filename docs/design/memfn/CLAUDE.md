@@ -110,6 +110,23 @@ its DESIGN record.**
   withdrawn; each kit change's own `--memfn-deny=` is its OFF arm; the
   stamp reports the SIMD layer. Q35/Q36 ruled (§23), Q50-Q52 new. Read
   §L first. The kit itself now lives in-tree at `../../../memfn/`.
+  **REVISION 4.3 (lane memfnr43, 2026-10-05), Frank's rulings folded
+  (D147 addenda 1-7)**:
+  - Q35-Q42 and Q50 RULED; Q51/Q52 REJECTED;
+  - ONE SIMD switch, `-fno-memfn-simd` / `-fmemfn-simd`, OFF by default
+    until the SIMD hold lifts:
+    - OFF = portable C (plain C, SWAR, libc);
+    - ON = optimized for a specific CPU, may not run elsewhere;
+    - the contents of ON are the kit's per-site choice, cascades
+      included (K-6);
+  - EVERY search site migrates (Q42 reversed), under a checked site
+    manifest (C17). The memchr ratchet ends at 0;
+  - the planner moves live at M5, with M5′ as the adoption event;
+  - stamps: `MEMFN_FORMS` per Q39 plus a `MEMFN_LIBC` record;
+  - §22's build order and §23's list rebuilt; Q53-Q55 new.
+
+  Read §R4.3 first: its §R4.3.0 maps each ruling to where it now
+  lives.
 - `twins.md` — R1d (lane memftwin, 2026-10-04), the D77 measurement "does a
   kernel TAILORED to the pattern beat a fixed generic one": T-A set
   classifier per shape vs the generic nibble lookup, T-B a fused scan+verify
