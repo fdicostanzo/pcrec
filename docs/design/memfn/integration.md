@@ -552,7 +552,11 @@ ONE arch-blind row. The table becomes:
 | 4 | `table-walk` | PF, STAY, EDGE, VMSPAN | always | none | today's loop. Price: `LOOP_TABLE` or `LOOP_EQ` by T4's spelling |
 
 Revision 1's `loopfree`, `vec-verify`, `vec` and `swar` all survive as KIT
-KERNELS. pcrec cannot tell them apart and does not need to. Row 4's "OWED
+KERNELS. pcrec cannot tell them apart and does not need to. **[rev3]** The
+`kit` row's price predicate is withdrawn. Under delegation pcrec keeps
+no form ROWS for a delegated site at all: rows 2-4 (`libc-memchr`,
+`leapfrog`, `table-walk`) migrate into the kit as its BASELINE arms
+(§9), and pcrec's only per-site selection is the profile (§8.5). Row 4's "OWED
 placement" against `vec` is gone, because it is a price comparison now.
 SWAR's early admission (D122 addendum 3) survives as kernel CLASS: under
 the SIMD hold, pcrec's query carries `MF_Q_PORTABLE_ONLY`, a policy flag
@@ -625,6 +629,11 @@ states is kept, and it is now enforced at the API: the only scalar text
 inside a kit emission is the `fallback` hook's, which is pcrec's next row.
 An arm the kit cannot price is a fallback arm, so a ladder never gains a
 scalar spelling of the kit's own.
+
+**[rev3]** The `fallback` hook is withdrawn. After a site's migration
+step pcrec has no scalar text to offer, so every `#else` is the kit's own
+portable arm, and the invariant (one scalar spelling per search) holds
+because the kit holds the only one (§8.3, §9).
 
 ### 2.6 Why this is rows, not a parallel mechanism
 
@@ -708,7 +717,9 @@ it lives in (Q13).
   their site obligations. It also returns the generic reference terms
   pcrec prices its own rows from, and the per-token opaque texts
   (attribute, CPU check, level stamp, loader marker). Its data is the
-  calibration tables (§7.7). The full design is §7.
+  calibration tables (§7.7). The full design is §7. **[rev3] Withdrawn by
+  D146.** The kit's entry is `mf_emit_site` (§8.2); its measurements are
+  internal (§8.6).
 - **K1, the primitive layer.** Injectable C text, `static inline
   __attribute__((always_inline))`, every name behind the prefix macro
   (RB-2). It is selected per ISA by predefined macros (RB-3), with every
@@ -980,6 +991,9 @@ same generator) would let a K2 defect in `cube` pass both
 
 ## 5. Questions for Frank
 
+**[rev3]** The open questions are now §13 (Q24-Q34); §13.1 maps every
+question below to its rev 3 status.
+
 Numbering continues from isa_evaluation.md's Q7-Q11.
 
 12. **Q12, the boundary.** Should §3.3's split be the design of record?
@@ -1149,6 +1163,9 @@ Numbering continues from isa_evaluation.md's Q7-Q11.
 
 ## 6. Plan-row text for the manager (`[MEMFN]` R1d → R4)
 
+**[rev3]** Both build orders below are superseded by §12.2 (R4a-R4j),
+whose plan-row text replaces them.
+
 Paste under `[MEMFN]`. Each step carries its D77 trigger. Steps that touch
 pcrec's emission open only under `[OPT-SIMD]`'s sequencing (SIMD last,
 D119/D91), except the SWAR row (D122 addendum 3).
@@ -1187,6 +1204,15 @@ row per table.
 ---
 
 ## 7. K0, THE CAPABILITY-AND-PRICE QUERY `[rev2]`
+
+**[rev3] SUPERSEDED ENTIRE by D146 (§R3, §8).** No price, token-priced
+quote, dominance test or reference term crosses the boundary any more,
+and pcrec does no cost comparison. The section is kept as the record of
+the design the r2 panel reviewed. What survives of it: the opacity
+principle (§7.1's last paragraph: the kit never learns a site name,
+pcrec never an ISA name), the fixed `portable` default (§7.2, HELD with
+R4i), the UNOWNED-arm rule as the kit's K-4 (§8.6), and checks C1, C4,
+C5 and C6, rebuilt in §10.
 
 ### 7.1 The principle: one fact crosses the boundary, and it is a price
 
