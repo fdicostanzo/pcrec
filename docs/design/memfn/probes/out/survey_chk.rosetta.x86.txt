@@ -1,0 +1,19 @@
+# box: Apple M1 Max, macOS 26.6.2, 2026-10-04; chk.x86: clang -target x86_64 -msse4.2 -mavx2 -mbmi -mlzcnt -O2, run under Rosetta 2 (correctness only, no timing)
+# sources: StringZilla 50c0d717c13b (v5.2.0), ARM optimized-routines 503fafe311c1, musl 9b2d8a164639; libc = libSystem
+libc memchr                cases   2318001  bad      0  
+libc memmem                cases    409360  bad      0  
+sz find_byte serial        cases   2318001  bad      0  
+sz rfind_byte serial       cases   2318001  bad      0  
+sz find_byteset serial     cases   6954003  bad      0  
+sz rfind_byteset serial    cases   6954003  bad      0  
+sz not_from serial         cases   6954003  bad      0  
+sz find serial             cases    409360  bad      0  
+sz find_byte westmere      cases   2318001  bad      0  
+sz rfind_byte westmere     cases   2318001  bad      0  
+sz find westmere           cases    409360  bad      0  
+sz find_byte haswell       cases   2318001  bad      0  
+sz rfind_byte haswell      cases   2318001  bad      0  
+sz find_byteset haswell    cases   6954003  bad      0  
+sz rfind_byteset haswell   cases   6954003  bad      0  
+sz not_from haswell        cases   6954003  bad      0  
+sz find haswell            cases    409360  bad      0  

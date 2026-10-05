@@ -1,0 +1,19 @@
+# box: Apple M1 Max, macOS 26.6.2, 2026-10-04; chk.x86asan: as chk.x86 plus -fsanitize=address, exact-size malloc, Rosetta 2
+# sources: StringZilla 50c0d717c13b (v5.2.0), ARM optimized-routines 503fafe311c1, musl 9b2d8a164639; libc = libSystem
+libc memchr                cases    136353  bad      0  
+libc memmem                cases     24080  bad      0  
+sz find_byte serial        cases    136353  bad      0  
+sz rfind_byte serial       cases    136353  bad      0  
+sz find_byteset serial     cases    409059  bad      0  
+sz rfind_byteset serial    cases    409059  bad      0  
+sz not_from serial         cases    409059  bad      0  
+sz find serial             cases     24080  bad      0  
+sz find_byte westmere      cases    136353  bad      0  
+sz rfind_byte westmere     cases    136353  bad      0  
+sz find westmere           cases     24080  bad      0  
+sz find_byte haswell       cases    136353  bad      0  
+sz rfind_byte haswell      cases    136353  bad      0  
+sz find_byteset haswell    cases    409059  bad      0  
+sz rfind_byteset haswell   cases    409059  bad      0  
+sz not_from haswell        cases    409059  bad      0  
+sz find haswell            cases     24080  bad      0  
