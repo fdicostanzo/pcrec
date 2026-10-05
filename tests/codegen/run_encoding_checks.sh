@@ -1560,7 +1560,7 @@ else
         # each side's block, where it has one, excised).
         # Floored at 80% of the landing count (lane k82hbuild, 2026-10-05,
         # default ENC_MAX_BLOCKS: HANDOFF_BOTH_LANDING below).
-        HANDOFF_BOTH_LANDING=0
+        HANDOFF_BOTH_LANDING=13
         hboth="$(grep -oE '^HANDOFF_BOTH=[0-9]+' "$WORKDIR/dd12ai.out" | cut -d= -f2)"
         echo "  DD12a(i) handoff pairs excised on both sides: ${hboth:-?} (landing $HANDOFF_BOTH_LANDING)"
         if [ "${hboth:-0}" -lt $(( HANDOFF_BOTH_LANDING * 8 / 10 )) ] || [ "${hboth:-0}" -eq 0 ]; then
