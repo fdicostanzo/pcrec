@@ -77,3 +77,14 @@ the compiler, and is never adopted silently. Proposed for main to file
 (a D-entry or a D147 addendum, main's call). Recorded in
 `memfn/docs/journal.md` and as a comment at the loop in
 `docs/design/memfn/probes/twins/tb_r4b.c`.
+
+## R-2 — integration.md rev 4.5, light panel, Q53-Q55 recommendations
+
+- ack: 2026-10-05 — branch `lane/memfn-r45` cut from main 08caf4a3. Plan:
+  (1) lane memfnr45 (sonnet) folds R-1 §9 and D149 into rev 4.5 (§15.5
+  lead order, §22 R4d trigger MET, R4e′ 16 B short path, D149 labels);
+  (2) a light panel of 2 read-only critics on rev 4.5: A (opus) the
+  contract vs the emitters at abi 61, B (sonnet) Q55's contradiction plus
+  stamp/docs staleness; (3) the kit session consolidates
+  `docs/dev/reviews/2026-10-05-r4-memfn-rev45.md` with a by-id
+  completeness check and writes the Q53-Q55 recommendations itself.
