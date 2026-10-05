@@ -63,3 +63,30 @@ pointer when a kit change merges to main.
     on the section's member count is the independent control, born with
     the first row (R4d).
 - Open questions: Q53-Q55 only.
+
+## 2026-10-05 — first kit session (pcrecdev3): R-1 acked, probe built (lane memfnr4b)
+
+- Branch `lane/memfn-r4b` cut from main d4d9ed90; R-1 acked (766d08eb).
+  Main's answers: pin d4d9ed90 (abi 61, post-handoff text); K85's off
+  arm is `-fno-req-set-lead` alone (never with `-fno-req-handoff`); the
+  Linux verdict runs through main's executor at the first quiet slot.
+- Lane memfnr4b (opus) delivered, reviewed and merged:
+  - `emit` copied byte-exact from d4d9ed90 (gates_sync.sh re-checks it);
+  - new portable `swar` fused pair-filter, with a written in-bounds argument;
+  - lead-first variants `swlf`/`ffllf`;
+  - correctness: 0 wrong, 10/10 planted defects caught, over 6 builds.
+- Mac readings (DIRECTIONAL ONLY):
+  - SIMD-off: `swar` beats `emit` far past the floor on union-select
+    and mod-i. On userpass `swar` loses per call, because the new
+    memchr('=') lead rejects first there; lead-first `swlf` is null or
+    a win.
+  - SIMD-on: `ffl` wins or ties against `swar` except on userpass's
+    lead-absent rows.
+  - K85 cls-n-uc: the fused forms remove the dense-text loss (swlf 175k
+    vs nosl 565k ns per 1m sweep).
+- §15.5 proposal (report §6): the lead order is a kit per-site choice,
+  lead-first by default; a "lead can reject" density fact would decide
+  it. To fold into integration.md after the Linux read.
+- OWED: the Linux verdict, `docs/design/memfn/probes/lxrun/memfn_r4b.sh`
+  (~20-25 min, cap 120, last line `R4B-DONE status=<n> dir=<OUTDIR>`),
+  run by main's executor. Then R-1's `done:`.
