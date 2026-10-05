@@ -154,6 +154,14 @@ its DESIGN record.**
   routes (K65); `use` is a per-instance fact; the composite's `empty` is
   MISS; one predicate numbering; line citations in §14-§16 replaced by
   function names. Read §R4.6, then §R4.5, first.
+  **REVISION 4.7 (lane memfnfix, 2026-10-05), the kit's contract after
+  G2, and D147 addendum 10 folded**: the kit session's rulings on G2's
+  F1-F3 and Q-G2-1..17 as a by-id table (§R4.7.0). VERIFY honours its
+  range, `lo > n` is EMPTY, ON_CAND renders NOP, out-of-enum fields
+  and eight shapes are refused, and five caller obligations are stated.
+  Q-G2-5 is OPEN. Q53-Q55 are RULED: the libc record's refined form
+  and N7's scope are the design of record, and no question for Frank
+  is open. Read §R4.7, then §R4.6, first.
 - `twins.md` — R1d (lane memftwin, 2026-10-04), the D77 measurement "does a
   kernel TAILORED to the pattern beat a fixed generic one": T-A set
   classifier per shape vs the generic nibble lookup, T-B a fused scan+verify

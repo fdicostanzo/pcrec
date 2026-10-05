@@ -1,5 +1,24 @@
 # memory-functions: R1d, THE INTEGRATION MAP AND THE COMPOSITION MODEL
 
+**REVISION 4.7 (lane `memfnfix`, 2026-10-05, from kit branch
+`lane/memfn-r4a` at 99130d75): THE KIT'S CONTRACT AFTER G2, AND D147
+ADDENDUM 10 FOLDED. They override anything below that conflicts.** Read
+§R4.7 first. G2, the blinded kit tests, found three defects (F1-F3) and
+asked seventeen contract questions (Q-G2-1..17). The kit session ruled
+each one under D146, and §R4.7.0 maps every ruling to where it lives.
+In short:
+- VERIFY honours its range `[lo, n − end_back)`;
+- `lo > n` is a legal EMPTY range;
+- ON_CAND renders `empty = NOP`;
+- out-of-enum fields and eight shapes outside the vocabulary are REFUSED
+  loudly;
+- five caller obligations are stated.
+
+Q-G2-5 stays OPEN. **Q53-Q55 are RULED** (D147 addendum 10): the libc
+record's refined form (§R4.3.3) and N7's scope (§R4.3.4) are now the
+design of record, no longer proposals. **No open question for Frank
+remains in §23.** Changed passages carry `[rev4.7]` in place.
+
 **REVISION 4.6 (lane `memfnr46`, 2026-10-05, from kit branch
 `lane/memfn-r45` at df041954, design only): THE r5 PANEL'S 23 FINDINGS
 APPLIED (`../../dev/reviews/2026-10-05-r5-memfn-rev45.md`, A1-A12 and
@@ -11,6 +30,7 @@ is part of K65's no-match proof (§14.5). `use` is a per-instance fact
 has one dense numbering (§15.5). Line citations in §14-§16 are now
 function names. **This revision rules nothing: Q53-Q55 stay open, with
 refined text (§23).** Changed passages carry `[rev4.6]` in place.
+**`[rev4.7]` Q53-Q55 are now RULED (D147 addendum 10; §R4.7).**
 
 **REVISION 4.5 (lane `memfnr45`, 2026-10-05, from kit branch
 `lane/memfn-r45` at main 08caf4a3, design only): R-1'S LINUX VERDICT AND
@@ -120,6 +140,137 @@ exception), and the tables themselves (§1).
 
 ---
 
+## R4.7. Revision 4.7: the kit's contract after G2 `[rev4.7]`
+
+(Top-level, like §R4.6. It sits first because it rules on §14.3's
+operations, §14.4's empty range, §14.6's shape bounds and §14.7's caller
+guard, and because it closes Q53-Q55.)
+
+**The inputs.**
+- G2, the kit's own tests, written D27-blinded by lane memfng2
+  (`docs/dev/lanes/memfng2_report.md`: §4.3 has the findings, §7 the
+  questions). It found:
+  - **F1**, an answer defect: VERIFY ignored its empty range, and at
+    `lo > n` it read past `n`;
+  - **F2**, a totality gap: ON_CAND refused `empty = NOP`;
+  - **F3**, a loudness gap: an out-of-enum `empty` or `need` rendered
+    code.
+- The kit session's rulings on F1-F3 and Q-G2-1..17. They are kit
+  contract decisions under D146: the kit owns its own vocabulary.
+- D147 addendum 10 (`docs/dev/decisions.md`): Frank ruled Q53-Q55 as
+  the kit recommended.
+
+**What was built** (lane memfnfix, `docs/dev/lanes/memfnfix_report.md`):
+- the three fixes;
+- the refusals, in `memfn/src/compose.c` (`site_check`, `pred_kinds`);
+- every RULED statement, in `memfn/include/memfn.h`;
+- `make test-memfn-g2`, G2's quick tier as a `make test` section;
+- `make test-memfn-g2-full`, opt-in.
+
+No emitter calls the kit, so no artifact byte moved (the identity proof
+is in the report).
+
+### R4.7.0 Each ruling, and where it now lives
+
+| id | what G2 found or asked | ruling | where it lives |
+|---|---|---|---|
+| F1 | VERIFY never tested its range. At `end_back = 1, lo = n − 1`, or `lo ≥ n` with negative offsets, it answered "holds". At `lo > n` it read past `n` | **FIX.** VERIFY honours `[lo, n − end_back)`. An empty range gives the site's `empty` outcome, and the text never reads outside `[floor, n)`. The exception is `guard_by_caller`, where the caller asserts the range | §14.3, §14.4 `[rev4.7]`; `generic.c` `core` (VERIFY); `memfn.h` `MF_OP_VERIFY` |
+| F2 | ON_CAND with `empty = NOP` refused | **FIX.** It renders, with no visit on an empty range. Totality | §14.4 `[rev4.7]`; `generic.c` `stmt_on_cand`; `site_check` (refusal deleted) |
+| F3 | `empty = 9` and `need = 5` rendered code | **FIX.** Refused loudly, like every other out-of-enum field. The same check now covers `form`, `use`, `consumer` and a predicate's `need` | §14.6 `[rev4.7]`; `site_check`, `pred_kinds` |
+| Q-G2-1 | may `lo` exceed `n`? | **Yes.** It is legal and means EMPTY | §14.4 `[rev4.7]`; `memfn.h` `lo` |
+| Q-G2-2 | ON_CAND with NOP: in the vocabulary? | **Yes** (= F2) | as F2 |
+| Q-G2-3 | EXPR/FUNC with `empty = NOP` | **REFUSED** (already refused at R4a) | §14.4 `[rev4.7]`; `site_check` |
+| Q-G2-4 | ADVANCE with `empty = MISS` | **REFUSED** | §14.4 `[rev4.7]`; `site_check` |
+| Q-G2-5 | reverse ADVANCE at `lo == n`: the hooks or §14.4's empty rule? | **OPEN.** No customer before M3. No code change | §14.4 `[rev4.7]`; `memfn.h` ADVANCE hooks |
+| Q-G2-6 | `on_cand` below `floor` when `floor > lo` | **`floor <= lo` is the CALLER's precondition** | §14.7 `[rev4.7]`; `memfn.h` `floor` |
+| Q-G2-7 | the lifetime of hook-returned strings | **They live until `mf_art_end`** | §14.2 `[rev4.7]`; `memfn.h` `mf_hooks` |
+| Q-G2-8 | a conditional `on_cand` token that falls through | **It REJECTS, and scanning continues** (the R4a text already did this) | §14.7 `[rev4.7]`; `memfn.h` `on_cand`; `stmt_on_cand` comment |
+| Q-G2-9 | SKIP with a SET term at offset ≠ 0 | **REFUSED** | §14.3 `[rev4.7]`; `site_check` |
+| Q-G2-10 | `nterm = 0` | **REFUSED** | §14.6 `[rev4.7]`; `pred_kinds` |
+| Q-G2-11 | RUN with `run_len = 0` | **REFUSED** | §14.6 `[rev4.7]`; `pred_kinds` |
+| Q-G2-12 | ALL_PRESENT with `reverse = 1` | **REFUSED** | §14.3 `[rev4.7]`; `site_check` |
+| Q-G2-13 | a run byte with bits outside its mask | **REFUSED.** Loud, never wrong code. G2's generated space contains such runs, see §R4.7.2 | §14.6 `[rev4.7]`; `pred_kinds` |
+| Q-G2-14 | a NULL `cursor` on ADVANCE | **Accepted.** Only `more`, `peek` and `step` are used | §14.3 `[rev4.7]`; `memfn.h` ADVANCE hooks |
+| Q-G2-15 | `guard_by_caller` with negative offsets, or off EXPR VERIFY | **REFUSED** unless EXPR VERIFY with every offset ≥ 0 | §14.7 `[rev4.7]`; `site_check` |
+| Q-G2-16 | does `cmt_open` write the comment opener? | **Yes.** The sink's `cmt_open` writes the opener and the sink writes the closer | §14.2 `[rev4.7]`; `memfn.h` `mf_sink` |
+| Q-G2-17 | does `[lo, n − end_back)` apply to VERIFY? | **Yes** (= F1) | as F1 |
+| Q53 | the libc record | **RULED YES** (addendum 10). The refined form is the design of record | §R4.3.3 `[rev4.7]`; §23 Q53 |
+| Q54 | N7 under completeness | **RULED YES** (addendum 10), with the three corrections | §R4.3.4 `[rev4.7]`; §22 M7; §23 Q54 |
+| Q55 | the kit's plan at SIMD-off | **ACCEPTED** (addendum 10). `<PREFIX>_MEMFN_OPTS` is FILED, not built | §23 Q55 |
+
+F1-F3 and Q-G2-1..17 are 20 rows, all placed. Q53-Q55 are 3 of 3.
+
+### R4.7.1 What changed in the design
+
+1. **The range is the site's, on every op (F1, Q-G2-1, Q-G2-17).** The
+   range is empty iff `lo + end_back >= n`, and `lo > n` is included.
+   VERIFY was the one op whose text did not test it. Now every op
+   reads nothing on an empty range and gives the site's `empty`
+   outcome. `guard_by_caller` is the one place the CALLER asserts the
+   range instead.
+2. **Totality reaches ON_CAND's NOP (F2).** On an empty range the whole
+   ON_CAND statement is skipped: no result write, no visit, no
+   `on_miss`.
+3. **The vocabulary's edge is loud (F3, Q-G2-3/4/9-13/15).** Each shape
+   below is now refused by `mf_define`, where R4a rendered or misread
+   it:
+   - out-of-enum fields;
+   - empty conjunctions;
+   - zero-length runs;
+   - unsatisfiable run bytes;
+   - an offset SKIP;
+   - a reversed ALL_PRESENT;
+   - an ADVANCE that misses;
+   - a widened caller guard.
+4. **The caller's obligations are written down (Q-G2-6/7/8/14/16).**
+   None of them changes code.
+5. **Q-G2-5 is recorded OPEN.**
+6. **Q53-Q55 are RULED.** §R4.3.3's refined libc record and §R4.3.4's
+   N7 scope are promoted from "proposal" to the design of record.
+
+`MF_SITE_ABI` and `MF_VOCAB` do not move. No caller exists yet, the
+(op, handoff, term kinds) table is unchanged, and every newly refused
+shape was either never sent or never meaningful.
+
+### R4.7.2 A ruling G2's generated space contradicts (Q-G2-13)
+
+G2 generates unsatisfiable runs on purpose: a run byte with one bit
+its mask clears. The generator (`g2_gen.c`, `unsat` in the RUN term
+cells) does this for 36 sites: offsets −3..8 × lengths 5, 16 and 27 ×
+one free bit. G2 expects them to render under the literal formula.
+Under Q-G2-13 the kit now refuses them, and G2 is not edited (it is the
+control). Every G2 run therefore reports:
+- 36 "kit refused a contract site" generator failures;
+- 17 RUN coverage cells missing (1,627/1,644);
+- the RUN-cell floor line.
+
+Every other G2 count is clean. Reconciling the two is the kit session's:
+either a blinded G2 follow-up stops generating the shape and counts its
+refusal, or the ruling is revisited. The lane report has the numbers.
+
+### R4.7.3 The three standing design questions, for this revision
+
+1. **Measurement regime: NOT RELEVANT.** No timing is read or produced.
+   No emitter calls the kit, so the fixes move no artifact byte, and the
+   identity proof shows 0 movers.
+2. **Independent control: RELEVANT.**
+   - G2 is the control, and it was not edited.
+   - `run_g2.sh --quick` changes only the population and the schedule:
+     - the gcc answer run keeps every site at the quick subject tier;
+     - ASan and the witnesses run on every third batch, concurrently;
+     - every judgement is the full run's own code;
+     - the floors that scale are new literals (`QUICK_*`).
+   - G2 generates none of these refused shapes: `nterm` 0, `run_len` 0,
+     ALL_PRESENT `reverse`, an offset SKIP, ADVANCE MISS, and a
+     `guard_by_caller` outside EXPR VERIFY or at a negative offset. Its
+     refusal table does not cover them either, so they are UNTESTED by
+     G2. A blinded author owes those cases, and the kit session files
+     that (lane report §3).
+3. **What moves when data is regenerated: NOT RELEVANT.** No data file,
+   pin or emitted byte moves.
+
+---
+
 ## R4.6. Revision 4.6: the r5 panel applied `[rev4.6]`
 
 (Top-level, like §R4.5. It sits first because it overrides §14.5's
@@ -199,9 +350,12 @@ all four R-1 cells are DFA-route sites.
    form (whole artifact, source-level inventory, idiom loads excluded,
    names from the compile) is PROPOSED as Q53's recommendation. R4a′'s
    trigger is MET for the stamp only. No abi literal is written.
+   **`[rev4.7]`** Q53 RULED: the refined form is the design of record
+   (§R4.3.3).
 9. **N7 (B6).** The owner is D58/DD-12. The site definition is "search
    or span-compare". C17's static scope gains `src/enc/` and M7 an
-   `MF_VOCAB` bump, should Q54 rule yes.
+   `MF_VOCAB` bump, should Q54 rule yes. **`[rev4.7]`** Q54 RULED YES
+   (§R4.3.4).
 10. **Text only (A8, A9, A11, A12, B9, B10).** Function names for line
     numbers, the pair arm's locals and frozen literals, the stateful
     escaper, the byte-class sketch, one owner for the waits' status, and
@@ -770,6 +924,18 @@ artifact.**
 **`[rev4.6]` The libc record's refined form (r5 B4, B5; Q53, still
 OPEN).** The record above has two defects. This is the form proposed to
 Frank as Q53's recommendation (§23). It is not ruled.
+
+> **`[rev4.7]` RULED (D147 addendum 10, Q53 YES).** The refined form
+> below is the DESIGN OF RECORD, no longer a proposal. Where the rev 4.3
+> bullets above it conflict ("search code" scope, a text scan for the
+> C9 shim's names as the control, idiom `memcpy` recorded), this form
+> wins:
+> - a separate `<PREFIX>_MEMFN_LIBC` line;
+> - a source-level inventory of the WHOLE artifact's libc calls,
+>   excluding constant-size idiom `memcpy` loads;
+> - its control: names from the compile (`nm -u` of an
+>   `-O0 -fno-builtin` object), sharing no source with the line;
+> - born in R4a′.
 - **Its scope does not match its control (B4).** The record says
   "search code", but no pcrec-side check can delimit search code. The
   control scans for the shim's three names, yet `memcpy` appears
@@ -841,6 +1007,16 @@ static scan, and it is a hand-written `for` loop. So, should Q54 rule
 yes: C17's static scope adds `src/enc/`, with a vocabulary line for the
 `s[at + i] != ref[i]` loop, and M7 carries an `MF_VOCAB` bump for a
 run-time-operand `mismatch` with a prefix-count return.
+
+> **`[rev4.7]` RULED (D147 addendum 10, Q54 YES).** N7 is listed
+> `pending` in the site manifest, and B6's three corrections are the
+> design of record:
+> - the cite is D58/DD-12;
+> - the definition is "search or span-compare site";
+> - C17 scans `src/enc/`.
+>
+> M7 bumps `MF_VOCAB`. Every "should Q54 rule yes" / "if Q54 rules yes"
+> in this revision now reads as ruled.
 
 These are NOT search sites, and are not listed:
 
@@ -4277,6 +4453,14 @@ forms, `MF_EMPTY_NOP`).
   M1 no kit-written comment calls it; only pcrec's notes do. When a kit
   comment first needs it, the sink op carries the `prev` state and the
   predicate.
+  **`[rev4.7]`** Two rulings (§R4.7.0):
+  - **Q-G2-16.** When `cmt_open(tier)` returns open, the SINK has
+    already written the comment opener, and `cmt_close` writes the
+    closer. The kit writes only the body between them.
+  - **Q-G2-7.** Every string a hook RETURNS (`member`, `table_name`,
+    `fn_name`, `note_tag`) must stay valid until `mf_art_end`. The kit
+    may hold one past later hook calls, for example a FUNC's name kept
+    for `mf_call`.
 
 ### 14.3 Operations: what each returns (r3 F2, F6)
 
@@ -4320,6 +4504,19 @@ forms, `MF_EMPTY_NOP`).
   how the cursor reads (`subject[scan_position]` forward,
   `subject[rewind_position - 1]` reversed, `struct DfaDir`'s `peek`). A vector
   arm may read the bytes ahead itself, within rule 2 and `floor`.
+- **`[rev4.7]` The operations' edges (§R4.7.0):**
+  - **VERIFY (F1, Q-G2-17).** VERIFY answers at `cand == lo`, and
+    `lo` must lie in `[lo, n − end_back)`. On an empty range it gives
+    the site's `empty` outcome and reads nothing. A MISS site's text
+    tests `lo + end_back < n` ahead of every term. A NOP site's
+    statement already tests it. An EXCLUDED site, or a `guard_by_caller`
+    one, tests nothing: pcrec's text has established the range.
+  - **SKIP (Q-G2-9).** "Whose byte" is the candidate's own byte, so the
+    SET term sits at offset 0. Any other offset is refused.
+  - **ALL_PRESENT (Q-G2-12).** It has no reverse reading, and
+    `reverse = 1` is refused.
+  - **ADVANCE (Q-G2-14).** It requires `more`, `peek` and `step`. A
+    NULL `cursor` is accepted.
 
 ### 14.4 Ranges: empty, bounded, never wrapped (r3 F5)
 
@@ -4351,6 +4548,23 @@ forms, `MF_EMPTY_NOP`).
   re-derive EXCLUDED and write the empty test itself.
 - **No write on an empty range** other than what `MISS` says. ADVANCE
   leaves the cursor and `count` at their start values.
+- **`[rev4.7]` The empty range, ruled (§R4.7.0):**
+  - **When it is empty (Q-G2-1).** The range is empty iff
+    `lo + end_back >= n`. `lo > n` is a LEGAL input and is empty. On an
+    empty range the kit's text reads no byte at all, on every op,
+    VERIFY included (F1).
+  - **Which outcomes a site may declare.**
+    - `NOP` is a STMT outcome. EXPR/FUNC with NOP is refused (Q-G2-3):
+      a value form must yield something.
+    - ON_CAND with NOP renders (F2). On an empty range the whole
+      statement is skipped: no result write, no visit, no `on_miss`. A
+      NOP ON_CAND, like a NOP ASSIGN, may not declare its result.
+    - ADVANCE has no miss, so ADVANCE with MISS is refused (Q-G2-4).
+      Its outcomes are NOP and EXCLUDED.
+  - **OPEN (Q-G2-5).** A reverse ADVANCE at `lo == n`: pcrec's hooks
+    (`more` as `cur > floor`) would move the cursor, while the rule
+    above says an empty range leaves it. Unruled; no customer before
+    M3.
 
 ### 14.5 REQUIRED and OPTIONAL terms; the result's promise (r3 F7)
 
@@ -4484,6 +4698,15 @@ as a position is a `POSITION` row.
   pcrec's site builder asserts every bound and fails with
   `pcrec_ctx_fail`'s internal-error tier. A new check, C14, compiles the
   asserts against `limits.def`'s current values.
+- **`[rev4.7]` What the kit refuses (§R4.7.0).** `mf_define` refuses
+  each of these as outside the vocabulary: a loud error, never code.
+  - **Out-of-enum fields (F3).** `form`, `empty`, `use`, `consumer`,
+    and a term's or predicate's `need`, as already for `op`, `handoff`
+    and the term kind.
+  - **`nterm = 0` (Q-G2-10).** An empty conjunction is no search.
+  - **A RUN term with `run_len = 0` (Q-G2-11).**
+  - **A run byte with a bit its mask clears (Q-G2-13).** The literal
+    formula never holds there, and normalising the byte would be wrong.
 
 ### 14.7 `on_cand`, the caller guard, and the lower read limit (r3 F10, F11)
 
@@ -4516,6 +4739,17 @@ as a position is a `POSITION` row.
   The offset-skip RESEED reads `subject[cand − 1]`, but it is pcrec's
   text after the site (`pf_emit_ofs_reseed`), so it needs no floor; that
   read was always pcrec's.
+- **`[rev4.7]` The caller's side of these rules (§R4.7.0):**
+  - **Q-G2-15.** `guard_by_caller` is accepted only on an EXPR VERIFY
+    whose every term offset is ≥ 0, which is today's run compare.
+    Anything else is refused. The kit then tests neither the range nor
+    the reads.
+  - **Q-G2-6.** `floor <= lo` is the CALLER's precondition. The kit
+    bounds every TERM read by `floor`. It does not bound a candidate,
+    or the bytes `on_cand` reads, by `floor`.
+  - **Q-G2-8.** An `on_cand` text whose token is conditional
+    (`if (x) <token>`) and falls through REJECTS. Scanning continues at
+    the next candidate.
 
 ### 14.8 Form tallies, helpers, includes (r3 F4)
 
@@ -5888,6 +6122,8 @@ text stays opt-in until R4f.
 >   **Prerequisite:** R4a. **Trigger:** MET (Q39 ruled; Q53 confirms
 >   the libc line's spelling before the build). **`[rev4.6]`** (r5 B7)
 >   Read: MET for the stamp; the libc line's spelling is gated on Q53.
+>   **`[rev4.7]`** Q53 RULED YES (D147 addendum 10): the trigger is MET
+>   for both lines, in §R4.3.3's refined form.
 > - **R4b, the first customer's measurement** (R-1 in
 >   `memfn/docs/requests.md`; probe only).
 >   - SIMD-off: the SWAR fused form against `emit`.
@@ -6003,7 +6239,7 @@ text stays opt-in until R4f.
 >   SKIP. **Prerequisite:** R4h. **Trigger:** completeness.
 > - **M7, N7** (the encoding seam's span compare). Zero movers.
 >   **Prerequisite:** M1b. **Trigger:** completeness, once Q54 rules
->   its seam. **`[rev4.6]`** (r5 B6) It carries an `MF_VOCAB` bump (a
+>   its seam (**`[rev4.7]`** ruled YES, D147 addendum 10). **`[rev4.6]`** (r5 B6) It carries an `MF_VOCAB` bump (a
 >   run-time-operand `mismatch` with a prefix-count return), and C17's
 >   static scope gains `src/enc/` (§R4.3.4).
 >
@@ -6120,6 +6356,19 @@ maps them. Each question has a recommendation.
 > - **Q38 is REVISED** below by D147, and **Q39 is re-derived as Q52**.
 >   Q50-Q52 are new. Q37 and Q40-Q49 stand open as written, with Q40's
 >   "baseline's frozen planner" read as the scalar layer's planner.
+
+> **`[rev4.7]` Q53-Q55 RULED (D147 addendum 10, Frank, 2026-10-05), as
+> recommended.** No question for Frank is open in this section.
+>
+> | Q | state | where |
+> |---|---|---|
+> | Q53 | RULED YES: a separate `<PREFIX>_MEMFN_LIBC` line in the refined form | §R4.3.3 |
+> | Q54 | RULED YES: N7 `pending`, B6's three corrections, M7 bumps `MF_VOCAB` | §R4.3.4, §22 M7 |
+> | Q55 | ACCEPTED: `MEMFN_FORMS` constant `none` until R4f, attributed outside the artifact; `<PREFIX>_MEMFN_OPTS` FILED, not built | below |
+>
+> The kit's own contract questions from G2 (Q-G2-1..17) were the kit
+> session's to rule, not Frank's (D146). They are in §R4.7.0, and
+> Q-G2-5 is the one left open.
 
 > **`[rev4.6]`** Q53-Q55 are still the only open questions. Their text
 > below is REFINED from the r5 panel (`2026-10-05-r5-memfn-rev45.md`,
@@ -6373,7 +6622,8 @@ maps them. Each question has a recommendation.
     **`[rev4.3]` REJECTED** (D147 addendum 7): Q39 as ruled stands
     (§R4.3.3).
 53. **Q53, the libc record (addendum 6, §R4.3.3).** **`[rev4.6]`
-    Refined (r5 B4, B5); OPEN.** Should the stamp record the libc
+    Refined (r5 B4, B5); OPEN.** **`[rev4.7]` RULED YES, option (a) as
+    refined (D147 addendum 10).** Should the stamp record the libc
     functions the artifact's code calls, and in what form?
     - **(a) A second every-artifact line, `<PREFIX>_MEMFN_LIBC`.**
       **RECOMMENDED**, refined:
@@ -6402,7 +6652,8 @@ maps them. Each question has a recommendation.
     > definition (B4) and that recording idiom `memcpy` loads misleads
     > (B5). Options (c) and (d) name those two choices.
 54. **Q54, N7 under completeness (§R4.3.4).** **`[rev4.6]` Refined (r5
-    B6); OPEN.** Is the encoding seam's span compare
+    B6); OPEN.** **`[rev4.7]` RULED YES, with B6's corrections (D147
+    addendum 10).** Is the encoding seam's span compare
     (`$_span_match[_caseless]`) a site in the migration's sense?
     **Recommendation: yes**, listed `pending`, with B6's corrections:
     - the seam's owner is D58/DD-12, not D23;
@@ -6421,7 +6672,9 @@ maps them. Each question has a recommendation.
     > spans". It did not widen the definition, add `src/enc/` to C17,
     > or give M7 a vocabulary bump (B6).
 55. **Q55, the kit's plan at SIMD-off (§R4.3.5).** **`[rev4.6]` Refined
-    (r5 B1, B2, B3, A3, B11); OPEN.** Addenda 3 and 4 together mean
+    (r5 B1, B2, B3, A3, B11); OPEN.** **`[rev4.7]` ACCEPTED as
+    recommended (D147 addendum 10); (b) `<PREFIX>_MEMFN_OPTS` is FILED,
+    not built.** Addenda 3 and 4 together mean
     `MEMFN_FORMS` is constant `none` on every default artifact until
     R4f (B1). **Recommendation: accept that**, written down:
     - At the default build, a scalar-layer change (R4d, M5′, any

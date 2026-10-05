@@ -21,6 +21,19 @@ kit session moves it).
   only when M is 0, every floor holds and every witness fired. Work files
   go under `$TMPDIR`; `--keep` keeps them; `--seed N` changes the
   generated space. Every step runs under GNU timeout.
+  **`--quick`** (lane memfnfix) is `make test-memfn-g2`, a `make test`
+  section, at about 52 s wall on the Mac. It runs the same checks,
+  judged by the same code, on a smaller population:
+  - one compiler (gcc), every generated site, the quick subject tier;
+  - ASan+UBSan and the witnesses W1-W3 on every `QUICK_STRIDE`-th
+    (3rd) batch, through a runner-written `g2_all.c` that lists only
+    those batches, all launched concurrently and judged afterwards;
+  - the floors that scale are the `QUICK_*` literals beside the others.
+    The alignment axis, which the quick subject tier samples 4 of 16,
+    is the one coverage cell it does not require.
+  The whole run, gcc + clang at full subjects with every witness on
+  every batch (about 25 min on the Mac), is `make test-memfn-g2-full`,
+  OPT-IN and never part of `make test`.
 - **g2/g2.h** — G2's own site description (`g2_site`, `g2_pred`,
   `g2_term`), the per-call outcome (`g2_out`), the miss values, and the
   helpers the wrapped text calls (`g2_touch`/`g2_acc` for `on_cand`,

@@ -15,7 +15,10 @@
   functions (`mf_ref_*`). Every entry-point name is a `#define` onto its
   `MF_NS` symbol, so callers write `mf_emit`. Where the design left a
   spelling open the header says CHOSEN, and
-  `docs/dev/lanes/memfnskel_report.md` lists each choice.
+  `docs/dev/lanes/memfnskel_report.md` lists each choice. Where the kit
+  session ruled one of G2's contract questions, the header says RULED
+  Q-G2-n (integration.md §R4.7.0 is the table); OPEN Q-G2-5 is marked
+  at the ADVANCE hooks.
 
 No ISA names appear in it: pcrec must learn no architecture fact from the
 header (C4). An `MF_SITE_ABI` change is a layout or meaning change of a
