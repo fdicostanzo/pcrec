@@ -88,3 +88,105 @@ from linux_results.md, twins.md, `src/opt/prefix_k.c` or the r2 panel.
   regenerated") is answered structurally: no regime at the boundary,
   G1's off arm pinned by pcrec's own gates, and every kit byte move an
   abi event.
+
+---
+
+# Revision 4 (lane memfndel4, 2026-10-05, opus, design only)
+
+Branch `lane/memfndel4`, cut from main `1c2ba975`. Deliverable: integration.md
+REVISION 4, applying the r3 light panel
+(`docs/dev/reviews/2026-10-05-r3-memfn-delegation.md`). That panel found no
+blocker and 27 findings, all accepted. Changed passages in §8-§13 are marked
+`[rev4]`, and the new material is §R4 and §14-§23.
+
+Nothing under `src/`, `cli/`, `lib/` or `tests/` changed, no emitted byte
+moved, there is no abi event, and no validation run applies (docs only). Every
+line cite was re-checked by grep at `1c2ba975`. The handoff was read on
+`lane/k82hbuild` `9bb97c7c` (abi 61). `docs/design/option_sets.md`'s
+cross-note and both CLAUDE.md indexes are updated.
+
+## Summary (resume from here)
+
+1. **§R4** names the seven standing rulings honoured (Q3's every-artifact
+   stamp, D144 item 4's denies, D146 no arch/no pricing, the abi ritual,
+   measured-not-tuned, D145, D78) and maps all 27 findings to sections.
+2. **§14, the contract from the emitters' shapes.**
+   - Three site FORMS: EXPR inside pcrec's `if (guard && …)`, STMT at
+     `indent`, and FUNC (a file-scope definition plus `mf_call`).
+   - ASSIGN and ON_MISS handoffs, with pcrec's `on_miss` statement
+     (`return 0;`, `break;`). A miss is a value or pcrec's statement, never
+     the kit's control flow.
+   - Notes (pcrec's fact comments) and pcrec's escapers through the sink.
+   - ADVANCE's counter with a cap-reached contract, plus `peek`.
+   - Ranges `[lo, n − end_back)` that never wrap, with EMPTY declared as
+     MISS, NOP or EXCLUDED.
+   - Negative offsets under a `floor`.
+   - REQUIRED/OPTIONAL terms: `c` is at most the true leftmost, and every
+     REQUIRED term holds at `c`. The K82 soundness argument survives this.
+   - ALL_PRESENT with `ret_pred`.
+   - A `use` column (DISCARD/POSITION).
+   - Totality through a generic scalar row tested over a generated space;
+     a new shape's baseline is that row, and is UNREACHED for G1.
+   - Shape bounds are `_Static_assert`ed against `limits.def`.
+   - `on_cand` must be duplicable (C13).
+   - Per-artifact `mf_art`: helpers before first use (DFA before the block,
+     VM via the prologue flush), the includes subset assert, and
+     `RUN_WORDS` written by the kit through the sink.
+   - `plan_hint` is permanent until M5 moves prefix_k's MODEL into the kit
+     as the baseline's frozen planner.
+   - The fate of every shipped deny (only bit 43 crosses, and at M1b). The
+     three profile bits join `strategy_denials`. The kit's switches become
+     generated axes.
+3. **§15** reproduces every M1 site shape byte for byte from the emitters'
+   format strings: the offset-skip FUNC, its calls, the one-byte gate, N4's
+   block, the K82 composite gate, and the run compare (M1b, shown for the
+   contract). It sketches PF, STAY, the scan edge and `(?m)^` (§15.7).
+4. **§16, M1 narrowed** to the composite PRE site plus the offset-skip trio.
+   runcmp is reached through a `run_cmp` hook and becomes M1b. M1 is
+   sequenced after `lane/k82hbuild` merges and after K85's re-measure.
+   After migration, edits to those emitters are kit-lane work.
+5. **§17 guards.**
+   - I2 runs over every `axes.def` axis and both comment tiers, with a floor
+     on the number of arms.
+   - G1's population comes from a pcrec-side default-vs-`memfn-off` diff,
+     with pooled bins (floor 8), a declared regime and a cadence of every
+     memfn abi event. armv8 is stated to have no verdict guard.
+   - C9 gets a header shim, runs at `-fmemfn-native`, and has a committed
+     arm floor.
+   - Per-arm and per-pattern pins live under `tests/memfn/pins/`.
+   - C4's plant claim is narrowed.
+   - 14 mech-runnable sabotage rows, each with `SAB_REACH`.
+6. **§18, the stamp.** `<PREFIX>_MEMFN_FORMS` goes on every artifact,
+   `none` iff the artifact is byte-identical to its memfn-off compile, with
+   no kit version. C11 checks it against a pcrec-side diff. It is born in
+   its own abi event R4a′, before M1's replace, with k82h §2.3a's reader
+   classes.
+7. **§19** lists 12 pricing sites with fates: the prefix_k model and the
+   window/byte/position picks (M5); set-leads (now composite order);
+   dominated-by's rarity half (M2); runcmp's lengths (M1b); k82b
+   (withdrawn). The reseed calibration, the cand ppm and the admission floor
+   stay as facts, engine choices or ruled bounds.
+8. **§20.** Two inbox files from day one. `memfn-native` is a deny/force
+   pair, default OFF. `MF_NS` gives `pcrec_mf_*` symbols, checked by C15.
+   Per-file SPDX and provenance, checked by C16.
+9. **§21** answers the three standing questions (all relevant): the declared
+   two-regime pair, a control table, and a regeneration table.
+10. **§22** gives the build order: R4a, R4a′ (stamp), R4b-R4d, R4e/R4e′
+    (native behind the opt-in, which breaks R4f's circularity), R4f, M1b,
+    R4g-R4j, plus the plan-row paste text. **§23** holds Q35-Q49, mapped
+    from Q24-Q34.
+
+## Notes for the manager
+
+- `docs/dev/plan.md`'s [MEMFN] row is not edited. §22's quoted block is the
+  paste text.
+- One answer departs from the panel's offered options. For F9, neither
+  "pcrec computes `plan_hint` forever" nor "M5 re-pins the baseline": the
+  MODEL moves into the kit as the baseline's planner, byte-identical. Q40
+  asks the open part (adoption, and `RX_DFA_PREFILTER`'s meaning).
+- M1 now excludes runcmp (G-F11's narrowing), so bit 43's crossing and the
+  VM callers wait for M1b's own trigger. If you prefer rev 3's wider M1,
+  §16's table says exactly what re-joins.
+- Not done, by design: a panel on rev 4. §15's byte-for-byte claims are
+  read off format strings. The build's I1 shadow comparator is what proves
+  them over the corpus.
