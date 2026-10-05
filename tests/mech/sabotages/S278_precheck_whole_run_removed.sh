@@ -21,7 +21,11 @@ SAB_DOC_FIGURE="tests/base/k66_precheck_whole_run.rxt is the answer-level detect
 # [MECH-REACH] THE PROBE says the SITE still answers: on the clean tree the
 # K66 witness is an unguarded VM artifact whose REQ_RUN names an 8-byte window
 # and which emits the 16-byte whole-run compare.
-SAB_REACH='"$PCREC" --features all -e byte -p rx -o "$REACH_TMP/o.c" --pattern "(x?)([a-z]+)+eeeeeeee~#~#~#~#\\1" && grep -q "^#define RX_VM_PREFILTER \"none\"" "$REACH_TMP/o.c" && grep -q "^#define RX_REQ_RUN \"7e237e237e237e23@0\"" "$REACH_TMP/o.c" && grep -qF "if (!memcmp(subject + cand, \"eeeeeeee~#~#~#~#\", 16)) return cand;" "$REACH_TMP/o.c" && grep -qF "rx_reqrun_whole(subject, subject_length, search_from)" "$REACH_TMP/o.c" && echo REACH-K66-WHOLE-RUN-EMITTED'
+# RE-PINNED 2026-10-05 (lane r1mtriage): the window's scan member moved
+# @0 -> @6 at [FIND-TIE] (72e3ae41, 2026-09-28: a run-scan data tie follows
+# NONE order, the rightmost); the window, the whole-run block and its call
+# are unchanged. The probe read MISSING from then until this re-pin.
+SAB_REACH='"$PCREC" --features all -e byte -p rx -o "$REACH_TMP/o.c" --pattern "(x?)([a-z]+)+eeeeeeee~#~#~#~#\\1" && grep -q "^#define RX_VM_PREFILTER \"none\"" "$REACH_TMP/o.c" && grep -q "^#define RX_REQ_RUN \"7e237e237e237e23@6\"" "$REACH_TMP/o.c" && grep -qF "if (!memcmp(subject + cand, \"eeeeeeee~#~#~#~#\", 16)) return cand;" "$REACH_TMP/o.c" && grep -qF "rx_reqrun_whole(subject, subject_length, search_from)" "$REACH_TMP/o.c" && echo REACH-K66-WHOLE-RUN-EMITTED'
 SAB_REACH_EXPECT="REACH-K66-WHOLE-RUN-EMITTED"
 # [OPT-LITSCAN] S1 step 6 re-anchor (lane s1step6, 2026-09-26): the whole
 # run is now the second test of `req_run_tests`, the one derivation both the

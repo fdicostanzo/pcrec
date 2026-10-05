@@ -29,7 +29,12 @@ SAB_SUITES="irlisting"
 SAB_DESC="vm_count_slots skips the spine element after every literal run, so the slot/resume-point pre-pass under-counts what vm_cat emits after a run: xyz(a|ab)c's pre-pass counts 0 resume points against 1 emitted RX_PUSH"
 SAB_DOC_FIGURE="PREDICTED (lane s2a, 2026-09-27): DETECTED by run_ir_listing.sh's resume-points under-count check on xy(a|ab)c. MEASURED 2026-09-27 (lane s2a, single-row mech at b04e7ab3): DETECTED -- reach:ok(1/1), irlist:2fail/153pass (the resume-points under-count on xy(a|ab)c). RE-ANCHORED 2026-09-28 (lane litf5, [OPT-LITSCAN] F5/D127): witness widened xy(a|ab)c -> xyz(a|ab)c; re-run owed at merge. Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S305."
 # [MECH-REACH] the witness takes the run arm and pushes after it.
-SAB_REACH='"$PCREC" --engine=vm -p rx -o "$REACH_TMP/o.c" --pattern "xyz(a|ab)c" && grep -qF "!memcmp(subject + scan_position, \"xyz\", 3)" "$REACH_TMP/o.c" && grep -q "RX_PUSH(" "$REACH_TMP/o.c" && echo REACH-RUN-THEN-PUSH'
+# RE-POINTED 2026-10-05 (lane r1mtriage): the run arm's COMPARE is no longer
+# spelled memcmp since [OPT-HYB-RESEED-FORM] A1 (rsform, abi 56: overlapping
+# rx_w2 word compares), so the probe read MISSING. It now greps the run arm's
+# ADVANCE (one `scan_position += 3` jump), which no compare respelling moves
+# and which the per-byte arm never emits. Intent unchanged.
+SAB_REACH='"$PCREC" --engine=vm -p rx -o "$REACH_TMP/o.c" --pattern "xyz(a|ab)c" && grep -qF "{ scan_position += 3; goto rx_L" "$REACH_TMP/o.c" && grep -q "RX_PUSH(" "$REACH_TMP/o.c" && echo REACH-RUN-THEN-PUSH'
 SAB_REACH_EXPECT="REACH-RUN-THEN-PUSH"
 SAB_EXPECT=DETECTED
 SAB_COUNT=1

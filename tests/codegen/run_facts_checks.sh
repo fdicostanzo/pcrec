@@ -159,7 +159,10 @@ else
     done < "$WORKDIR/owners"
     LC_ALL=C sort -u "$WORKDIR/defined" | LC_ALL=C comm -23 - "$WORKDIR/public" > "$WORKDIR/private"
     nsym="$(wc -l < "$WORKDIR/private" | tr -d ' ')"
-    nobj=0; leaks=""
+    # The owner-defined symbols facts.h DOES declare: the accessors every
+    # consumer legitimately calls. The control below joins against them.
+    LC_ALL=C sort -u "$WORKDIR/defined" | LC_ALL=C comm -12 - "$WORKDIR/public" > "$WORKDIR/accessors"
+    nobj=0; leaks=""; nacc=0
     while read -r o; do
         rel="src/${o#"$OBJ_DIR"/}"; rel="${rel%.o}.c"
         # A STALE object (its source moved or was deleted since the build
@@ -168,13 +171,24 @@ else
         [ -f "$TREE/$rel" ] || continue
         grep -qxF "$rel" "$WORKDIR/owners" && continue
         nobj=$((nobj + 1))
-        hit="$(nm -u "$o" 2>/dev/null | sed "s/^$under//" | LC_ALL=C sort -u |
-               LC_ALL=C comm -12 - "$WORKDIR/private" | tr '\n' ' ')"
+        # The NAME is the LAST field: Mach-O `nm -u` prints the bare name,
+        # GNU nm prints `U name` behind an indent. Reading the whole line
+        # joined nothing on ELF, so this assertion was vacuous on Linux
+        # until lane r1mtriage (2026-10-05, S297 UNDETECTED there only).
+        nm -u "$o" 2>/dev/null | awk '{ print $NF }' | sed "s/^$under//" |
+            LC_ALL=C sort -u > "$WORKDIR/undef"
+        hit="$(LC_ALL=C comm -12 "$WORKDIR/undef" "$WORKDIR/private" | tr '\n' ' ')"
         [ -n "$hit" ] && leaks="$leaks $rel: $hit;"
+        nacc=$((nacc + $(LC_ALL=C comm -12 "$WORKDIR/undef" "$WORKDIR/accessors" | wc -l)))
     done < <(find "$OBJ_DIR" -name '*.o' | LC_ALL=C sort)
-    echo "REACH: $nsym facts-private symbol(s) defined by the owners; $nobj non-owner object(s) scanned"
+    echo "REACH: $nsym facts-private symbol(s) defined by the owners; $nobj non-owner object(s) scanned; $nacc accessor reference(s) joined"
     if [ "$nsym" -eq 0 ] || [ "$nobj" -eq 0 ]; then
         bad "[facts-link] no private derivation symbol or no non-owner object — the link assertion is vacuous"
+    elif [ "$nacc" -eq 0 ]; then
+        # THE PARSE'S OWN CONTROL: the same `nm -u` read that would find a
+        # leak must find the consumers' LEGITIMATE accessor calls. Zero means
+        # the read joins nothing, and a zero-leak PASS would be vacuous.
+        bad "[facts-link] no non-owner object references any facts.h accessor — the nm -u parse joins nothing, so the link assertion is vacuous"
     elif [ -n "$leaks" ]; then
         bad "[facts-link] a non-owner object references a facts-private derivation symbol (a hand extern bypassing facts.h):$leaks"
     else
