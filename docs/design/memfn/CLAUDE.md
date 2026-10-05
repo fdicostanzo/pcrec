@@ -70,6 +70,20 @@ Nothing here touches pcrec's emission (D91).
   v4/SVE are UNPRICED. Revision 1's vector rows, BASE/DECLARED and
   [OPT-SETS]'s ISA sub-panels are removed. Q18-Q23 are new, and the
   R4 order is revised. Read §R2 first.
+  **REVISION 3 (lane memfndel, 2026-10-05), on D146 (DELEGATION; the
+  project is named pcrec-memory-functions)**: K0 is superseded. pcrec
+  hands the kit a SITE (`mf_site`: an op over a conjunctive predicate of
+  byte-set and masked-run terms, proven span, anchoring, density hints,
+  a policy word) and gets code back through text hooks (§8). pcrec
+  decides only which sites are delegated (by op type) and which profile
+  each gets (`baseline` = its own frozen pre-migration text, `portable`,
+  `native`). Its scalar forms migrate into the kit as baseline arms,
+  customer-ordered, implement-then-replace at zero movers (§9). Guards:
+  kit on/off timing, the kit's tests, the abi ritual for kit byte moves,
+  C4 rebuilt, cross-target syntax (§10). In-tree `memfn/` first (§11);
+  option_sets.md's family and the R4a-R4j order (§12); Q24-Q34 (§13).
+  Read §R3 first: its table maps every r2 panel finding to carried /
+  moved inside the kit / dissolved.
 - `twins.md` — R1d (lane memftwin, 2026-10-04), the D77 measurement "does a
   kernel TAILORED to the pattern beat a fixed generic one": T-A set
   classifier per shape vs the generic nibble lookup, T-B a fused scan+verify

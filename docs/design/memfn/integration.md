@@ -2231,7 +2231,7 @@ sabotage rows (r2 C-d).
   kit's data, and the timing is pcrec's own instrument. This is the
   control that shares no source with the kit (D146 "Guard").
 - **Alpha, per mover step (D144 item 1).** Every step that adds
-  movers (R4d, R4f, R4g, R4h, M5) times its witness cells ON vs OFF on
+  movers (R4d, R4f, R4g, R4h, R4j) times its witness cells ON vs OFF on
   ubuntubudu: `taskset`-pinned, calibrated loops of at least ~50 ms,
   absolute deltas against a base-vs-base floor measured the same way
   (D144 addendum 1). The floor is ON vs ON and OFF vs OFF. A delta inside
