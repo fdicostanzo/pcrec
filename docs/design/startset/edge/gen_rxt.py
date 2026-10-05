@@ -1,0 +1,121 @@
+#!/usr/bin/env python3
+"""[START-SET] edge lane: write the DRAFT edge cells from cells.py + the oracle.
+
+    gen_rxt.py questions            > out/questions.tsv     (the oracle's input)
+    gen_rxt.py write ORACLE_TSV [REF_TSV]                    (writes *.rxt, utfcheck_cells.tsv)
+
+`questions` lists every (block, subject, startpos) as one oracle line; the
+startposes are every CHARACTER BOUNDARY of the subject (pcrec's K50 rule under
+utf8: a position whose byte is not 10xxxxxx, or 0, or n).  `write` reads the
+oracle's transcript (`oracle.c` against local libpcre2) and, when given, a
+second transcript (the 10.46 reference) which must agree line for line; it
+refuses to write a cell the two disagree on.  It needs RX_NCAPS per block, so
+it compiles each block with pcrec (env PCREC, W) — the answer is never read
+from pcrec.
+"""
+import os, re, subprocess, sys
+HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
+from cells import CELLS, UTFCHECK
+import hat
+
+def opts(b):
+    o = ""
+    if "i" in b["flags"]: o += "i"
+    if "u" in b["flags"]: o += "u"
+    if b["enc"] == "utf8": o += "C" if "-futf-check" in b["xflags"] else "U"
+    return o or "-"
+
+def starts(b, s):
+    if b["enc"] != "utf8": return list(range(len(s) + 1))
+    return [p for p in range(len(s) + 1) if p == 0 or p == len(s) or (s[p] & 0xC0) != 0x80]
+
+def questions():
+    for bi, b in enumerate(CELLS + UTFCHECK):
+        for si, s in enumerate(b["subj"]):
+            for p in starts(b, s):
+                print("%d.%d.%d\t%s\t%s\t%s\t%d" % (bi, si, p, opts(b), b["pat"].encode().hex(), s.hex(), p))
+
+def esc(s):
+    out = []
+    for c in s:
+        if c == 0x22: out.append('\\"')
+        elif c == 0x5c: out.append("\\\\")
+        elif c == 0x0a: out.append("\\n")
+        elif c == 0x0d: out.append("\\r")
+        elif c == 0x09: out.append("\\t")
+        elif 0x20 <= c < 0x7f: out.append(chr(c))
+        else: out.append("\\x%02x" % c)
+    return "".join(out)
+
+def read_tsv(p):
+    d = {}; ver = None
+    for l in open(p):
+        if l.startswith("# pcre2"): ver = l.split()[2]; continue
+        k, _, v = l.rstrip("\n").partition("\t"); d[k] = v
+    return d, ver
+
+def ncaps(b):
+    path, err = hat.compile_block(b, os.path.join(os.environ["W"], "gen"), "rx")
+    if not path: return None
+    return int(re.search(r"#define RX_NCAPS (\d+)", open(path[:-2] + ".h").read()).group(1))
+
+def write(orc, ref=None):
+    A, ver = read_tsv(orc)
+    R, rver = read_tsv(ref) if ref else ({}, None)
+    files = {}; utf = []; disagree = []; n = 0
+    for bi, b in enumerate(CELLS + UTFCHECK):
+        nc = ncaps(b)
+        lines = []
+        for si, s in enumerate(b["subj"]):
+            for p in starts(b, s):
+                key = "%d.%d.%d" % (bi, si, p); a = A[key]
+                if ref and R.get(key) != a: disagree.append((b["pat"], s, p, a, R.get(key))); continue
+                f = a.split()
+                n += 1
+                if bi >= len(CELLS):
+                    exp = "utf" if f[0] == "utf" else "n" if f[0] == "0" else "m %s %s" % (f[1], f[2])
+                    utf.append("%d\t%s\t%s\t%s\t%s\t%d\t%s" % (bi, b["pat"].encode().hex(), b["flags"] or "-", b["engine"] or "-", s.hex(), p, exp))
+                    continue
+                if f[0] == "0": lines.append("ns %d \"%s\"" % (p, esc(s)))
+                elif f[0] == "1":
+                    lines.append("ms %d \"%s\" %s %s" % (p, esc(s), f[1], f[2]))
+                    for g in range(1, nc or 1):
+                        lines.append("g %d %s %s" % (g, f[1 + 2 * g], f[2 + 2 * g]))
+                else: raise SystemExit("unexpected oracle answer %r for %r" % (a, (b["pat"], s, p)))
+        if bi >= len(CELLS): continue
+        blk = ["# edge %s: %s" % (b["edge"], b["why"])]
+        if b["frames"]:
+            blk.append("# Q-R3 GIVE-UP ALLOWANCE: the cases below are the HAT's answer (libpcre2's, unbounded). The deny arm "
+                       "(-fno-start-set, i.e. today's emitter) gives up (gu frames) where its attempt at a non-S byte exhausts "
+                       "the frames; a give-up may become this answer, never the reverse.")
+        blk += ["# pcre2-only", "pattern " + b["pat"]]
+        if b.get("name"): blk.append("name " + b["name"])
+        if b["flags"]: blk.append("flags " + b["flags"])
+        if b["enc"] != "byte": blk.append("encoding " + b["enc"])
+        if b["engine"]: blk.append("engine vm")
+        if b["frames"]: blk.append("budget frames=%d" % b["frames"])
+        tags = ["edge=" + b["edge"]] + (["xflags=" + "|".join(b["xflags"])] if b["xflags"] else []) + (["giveup_allowance"] if b["frames"] else [])
+        blk.append("tag " + ", ".join(tags))
+        files.setdefault(b["file"], []).append("\n".join(blk + lines))
+    for fn, blocks in files.items():
+        head = ["# docs/design/startset/edge/%s.rxt -- DRAFT START-SET edge cells (lane ssedge, startset.md §6.4)." % fn,
+                "# GENERATED by gen_rxt.py from cells.py; every answer is libpcre2's (local %s%s)," % (ver, ", agreeing with the %s reference on every cell" % rver if ref else ""),
+                "# at every startpos that is a character boundary. Not run by make: these move into tests/ at build",
+                "# stage 1/2 (startset.md §6.4 maps each block to its home). Do not edit by hand.", ""]
+        if ref: head += ["oracle pcre2/%s" % rver, ""]
+        coll = [b for b in CELLS if b["file"] == fn and b.get("name")]
+        if coll:
+            head += ["config collapse", "    pcrec -fprefilter-collapse", ""]
+            head += ["target %s = %s with collapse" % (b["name"].replace("-", "_"), b["name"]) for b in coll] + [""]
+        open(os.path.join(HERE, fn + ".rxt"), "w").write("\n".join(head) + "\n" + "\n\n".join(blocks) + "\n")
+    with open(os.path.join(HERE, "utfcheck_cells.tsv"), "w") as f:
+        f.write("# docs/design/startset/edge/utfcheck_cells.tsv -- DRAFT -futf-check edge cells (gen_rxt.py; libpcre2 %s, PCRE2_UTF checking ON).\n" % ver)
+        f.write("# block\tpattern_hex\tflags\tengine\tsubject_hex\tstartpos\texpect (utf = PCREC_ERR_UTF / n / m s e)\n")
+        f.write("\n".join(utf) + "\n")
+    print("cells written: %d (+ give-up comments); oracle %s%s; disagreements %d" % (n, ver, (" vs reference %s" % rver) if ref else "", len(disagree)))
+    for d in disagree: print("  DISAGREE", d)
+
+if __name__ == "__main__":
+    if sys.argv[1] == "questions": questions()
+    else: write(*sys.argv[2:4])

@@ -50,3 +50,8 @@ written.
   sweep of the DFA-hat set options (a)/(b)/(c), the start-byte oracle on
   both hats, and C-SS\* with planted walk defects; `out/` has the
   transcripts. Own CLAUDE.md.
+- `edge/` — §6.4's instruments (lane `ssedge`): the DRAFT edge cells (80
+  blocks, 2,070 cells, every answer libpcre2's, 10.48 == 10.46), the
+  option-aware start-set probe, the hand twins of the correct hats and of
+  every wrong variant D148 addendum 1 lists, the mutation run, the re-seed
+  form searches and their transcripts. Own CLAUDE.md.

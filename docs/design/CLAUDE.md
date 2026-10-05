@@ -2697,6 +2697,7 @@ Four light panels in two days (the K82 handoff, [OPT-SETS], [MEMFN] K0 r1/r2) fo
     - **Also**: the stamp goes on every artifact; the `run_axes` product arm and the every-startpos differential become stage-2 deliverables; the sabotage table is rebuilt (S478-S502); the VM-hat entry order is stated; capacity give-ups are named; every unmeasured constant is labelled (D149).
     - **Six questions** (Q-R1..Q-R6, §9b) go back to Frank. They change D148 Q1/Q6/Q7/Q9's text or basis.
     - Instruments: `startset/rev2/` (own CLAUDE.md).
+  - **§6.4 (lane `ssedge`, same day) is D148 addendum 1's edge evidence**: 80 draft edge blocks / 2,070 libpcre2-generated cells (10.48 and 10.46 agree on all), and a mutation run in which every listed wrong variant is detected at answer level except two equivalent ones. It refutes two of the note's claims: the unconditional re-seed is unsound on ordinary seeded movers, not only `\G`, and `Tdfa` is not a sound floor. It also finds the DFA hat `-bounded`-only and flags the weak §6.3 rows. Instruments: `startset/edge/`.
 - `startset/` — that note's census, first-set probe, hand twins and transcripts (own CLAUDE.md).
 
 **[VAR] THE MVP's PATTERN HALF LANDED 2026-09-23** (lane varmvp, M1-M8 +

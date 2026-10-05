@@ -3667,3 +3667,7 @@ never edited afterwards.
   - **The BLOCKER is measured**: the DFA hat's `T = S ∩ E` loses 11,040-60,430 cells on 6 corpus movers. (a) `S ∩ E*` ≡ (b) `S` (E* = 256 on every seeded machine): 0 diffs over 13.58M cells. Under the `T ⊊ E` admission they are mover-identical to (c): 18/38.
   - **Controls built**: C-SS\* with walk plants, and the start-byte oracle (0 violations over 202.7M VM-hat cells).
   - **Six questions for Frank**: Q-R1..Q-R6. Instruments: `docs/design/startset/rev2/`.
+
+- `ssedge_report.md` — START-SET edge cases + mutation detection (2026-10-05, lane ssedge, opus; design + probes + DRAFT cells only), D148 addendum 1. startset.md §6.4; instruments + 80 draft blocks / 2,070 libpcre2-generated cells (10.48 == 10.46 on all) in `docs/design/startset/edge/`.
+  - **Every listed mutant is detected at answer level** except two equivalent ones (argued, with their checks).
+  - **Two of the note's claims refuted**: the unconditional re-seed loses on ordinary seeded movers (`(?:\b|xy)a`/`xya`), and `Tdfa` is not a sound floor (`(?:\b|x)y`/`xy`). The DFA hat is `-bounded`-only; the collapsed failing witness exists. S481/S482 are unreachable, S480/S483-S485 weak, S503/S504 proposed.

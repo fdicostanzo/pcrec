@@ -1,0 +1,1 @@
+rows 94, movers 56, cond>0 0, none>0 35, uncond>0 0
