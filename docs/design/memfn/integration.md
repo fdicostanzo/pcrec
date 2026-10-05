@@ -576,6 +576,8 @@ artifact.**
 **Its event.** Both lines are born together in R4a′ (§18.3's event and
 reader list, plus the second line). The abi digit is "the next number
 at landing" (61 at main 7f94b0cd), never a literal.
+**`[rev4.5]`** Main is now at abi 61 (the handoff, f116cff5), so the
+next number is 62 if nothing lands first. It is still never a literal.
 
 ### R4.3.4 Completeness: every search site migrates, under a checked manifest (Q42 reversed)
 
@@ -3106,6 +3108,18 @@ obligations, carried into the kit's own design note at R4a:
   first home is budget-1 prefilter sites, x86 first. The carried levels
   appear in the stamp (§R4.3.3).
 
+- **K-7, tuning constants `[rev4.5]`** (D149, §R4.5.1 item 5). Every
+  unroll width, block size, short-span cut-over and density or size
+  threshold in a kit form is MEASURED (its regime named, K-1), DERIVED
+  (from a stated quantity), or LEFT TO THE COMPILER. One that is none
+  of these is labelled in place as an unmeasured default (the text
+  `UNMEASURED DEFAULT:` at the constant, plus a line in the design
+  note). A form that needs a width starts from the plain loop. The
+  first label is R-1's `swar` 2x (16-byte) unroll, inherited from
+  `ffl`'s 2xVW shape and not measured against 1x or 4x
+  (`probes/twins/tb_r4b.c`). A label is a measurement's trigger, not a
+  build order (D77).
+
 None of this reaches pcrec. pcrec's view of all of it is: the code came
 back, and its identity gates and bench say what changed.
 
@@ -4503,6 +4517,45 @@ the baseline honours and a non-baseline arm may revise (lead and window
 fused into one pass is twins.md T-B's shape). That is K85's general
 answer under D146. Bit 45 still removes part 0.
 
+> **`[rev4.5]`** R-1's Linux verdict (`memfnr4b_report.md` §9) corrects
+> the last two sentences above: fusing the lead into the run pass is
+> NOT K85's general answer. K85's cure is the fused RUN filter. The
+> order is read through the subsection below.
+
+**`[rev4.5]` The lead order and the regime boundary (R-1 §9, §6).**
+
+1. **The lead order is part of the site's form.** It is the kit's
+   per-site choice, with two values: lead first (the lead is one call,
+   and the fused run pass follows it) and run first (the lead folded
+   into the run's pass). **The default is lead first whenever a lead is
+   present.** The evidence, at SIMD-off, gcc SSE2, Linux:
+   - userpass: the lead rejects first (`=` is absent from the
+     capability text). Run-first `swar` LOSES everywhere (gate 64k
+     +35.6 ns, pc1024 +86). Lead-first `swlf` is null on gate and
+     sweep, except sweep 1m, which loses by +3.07 ns (floor 2.53).
+   - cls-n-uc (K85): the lead never rejects. Lead-first `swlf` wins
+     the sweeps and the per-call rows. The cure comes from the fused
+     run filter, not from fusing the lead.
+2. **A possible future fact, NOT built (D77).** A pcrec "lead can
+   reject on this site's text class" density fact would let the kit
+   choose run-first where the lead is dense, with no cost model. Its
+   trigger is a measured cell where run-first beats lead-first. Until
+   then the default stands, and no field, hint or name is added to
+   `mf_site`. It is filed in §22.
+3. **The portable fused form has a regime boundary.** It scans at about
+   0.18 ns/B (union-select 1m, no stops). glibc's AVX2 `memchr` has a
+   faster raw rate. The form wins where the emitted gate pays per-stop
+   costs (union-select's 1,431 `c` stops per 64 KiB; mod-i's and K85's
+   find-all sweeps). It loses on early-hit single gate calls on dense
+   text: mod-i gate 1m (+2.41 ns, floor 0.52) and cls-n-uc gate
+   64k/256k. The SIMD-off form is not selected for such a call without
+   the fact in item 2. This is a boundary of the portable form, not a
+   defect.
+4. **The handoff contract is unchanged.** Every fused variant returns
+   the exact leftmost run position (ASSIGN, `ret_pred = 1`), and the
+   probe's check proves equality with the emitted gate's value.
+5. **D149.** The fused form's unroll and block size follow K-7 (§8.6).
+
 ### 15.6 EXPR / VERIFY / BOOL: the run compare (`pcrec_emit_run_compare`) — M1b, shown for the contract
 
 Today, in the VM literal run (`vm_lit`, `emit_vm.c:8626-8630`), run
@@ -4641,6 +4694,13 @@ that should be frozen, and nobody may be editing it.
 > - wait 1 is MET (`lane/k82hbuild` merged at f116cff5, abi 61);
 > - wait 2, K85's re-measure on the post-handoff build, is OWED, and
 >   so is the handoff's Linux alpha.
+>
+> **`[rev4.5]`** Both reads exist since this block was written:
+> `docs/dev/lanes/k82halpha_report.md` is the handoff's Linux alpha and
+> the K85 re-measure (§3: K85 PERSISTS, +0.023..+0.036 ns/B on
+> `cls-n-uc`, new vs deny). R-1 then measured the fused forms on the
+> same cell (§15.5). Whether the two waits are MET is the manager's
+> reading of those reports, not this revision's (§R4.5.2).
 >
 > M1's REPLACE commit flips its rows in the site manifest (C17) from
 > `pending` to `delegated`.
@@ -4979,7 +5039,7 @@ and fate.
 | 2 | `limits.def` `PCREC_MAX_REQ_RUN_EMIT` 8 | the longest run window the gate compares ("where gcc lowers a constant memcmp to ONE word load") | a COMPILER cost fact about a kit form | stays at M1 (byte identity: the window travels as the RUN term pcrec cut). **M5**: pcrec passes the whole run (≤ `PCREC_MAX_REQ_RUN_SCAN` 32) with per-position density hints, and the kit cuts. The limit's text then states a semantic bound only |
 | 3 | `pcrec_find_run_window_start` / `pcrec_find_run_scan_index` (`src/core/findings.c`) | which window of the run, and which position, to scan: a rarity argmin over the prior | measured prior + argmin | stays at M1 as `plan_pos` and the cut window. **M5**: the kit's planner, reading the per-position hints |
 | 4 | the `req_byte` pick (`reqbyte_freq_pick.md`, argmin over byte frequency) | which necessary byte the one-byte gate scans | measured prior + argmin | stays at M1 (it is the SET term pcrec passes, and `<PREFIX>_REQ_BYTE` reports it). **M5**: pcrec passes the necessary SET as REQUIRED-of-one ("some member of this set"), with per-member hints, and the kit picks. `REQ_BYTE`'s meaning would then need a ruling (Q40) |
-| 5 | `req_set_leads_applies` (`emit_dfa.c:6601`, `pcrec_find_pick`) | whether the set's pick LEADS the run (order, and adding a predicate) | rarity comparison | becomes the composite site's predicate ORDER plus an OPTIONAL lead (§15.5). The baseline honours pcrec's order, and a non-baseline arm may revise it. K85 (this choice losing on dense text) is the arm's to fix. Bit 45 keeps omitting the lead |
+| 5 | `req_set_leads_applies` (`emit_dfa.c:6601`, `pcrec_find_pick`) | whether the set's pick LEADS the run (order, and adding a predicate) | rarity comparison | becomes the composite site's predicate ORDER plus an OPTIONAL lead (§15.5). The baseline honours pcrec's order, and a non-baseline arm may revise it. K85 (this choice losing on dense text) is the arm's to fix. Bit 45 keeps omitting the lead. **`[rev4.5]`** The lead order is the kit's per-site choice, default lead first (§15.5) |
 | 6 | `req_byte_dominated_by` (`emit_dfa.c:6560`) → `pcrec_find_no_commoner` | G1's elision of the pre-check when the prefilter's scan byte is no commoner than the necessary byte | rarity comparison between two kit-owned searches | the SEMANTIC half (same byte, or the run verified by the prefilter, which makes it a REQUIRED term, §14.5) stays pcrec's: it is an implication between facts. The RARITY half moves at **M2**: the necessary byte is passed as an OPTIONAL term of the PF site, and the kit decides whether testing it pays |
 | 7 | `dfa_cand_scan`/`pcrec_dfa_cand_ppm` (`emit_dfa.c:6429`/`:6472`; K84's `strcmp` on row names) | the candidate scan's density, read by the reseed table | a DENSITY (the prior's mass), not a price | stays pcrec's as a fact. K84's `strcmp` readers are fixed at **M2** (a `DfaPf` field), as rev 3 §9.4 had it |
 | 8 | `vm_reseed_cal` (`emit_vm.c:11055`): `gap` 16/4, `block`, `cap`, `first` | the VM hybrid's retry: step the VM, or re-seed through the prefilter | measured crossovers, per program class | stays pcrec's. It prices the ENGINE's retry, not a memory function. **Coupling:** a re-seed's cost includes the PF search, so after M2 a kit change to PF text can move the crossover. Fate: the reseed witness cells (xcall/hyb, `hyb_reseed.md` §5) join G1 for every PF mover, and a re-calibration stays pcrec's measured decision |
@@ -5168,6 +5228,11 @@ kit's own data is the kit's (K-1..K-5).
   A fused arm that wins only per-call is reported as such, and R4c's
   trigger requires the win in the cell's own regime with no loss past
   the floor in the other.
+  **`[rev4.5]`** R4b is MEASURED (R-1, Linux, `R4B-DONE status=0`;
+  `memfnr4b_report.md` §9). union-select wins both regimes at SIMD-off.
+  The regime flips verdicts here exactly as this section warns:
+  mod-i's gate 1m loses by 2.41 ns while its sweeps win, and userpass
+  flips on the lead order. A pointer to the regime boundary is §15.5.
 - **`[rev4.2]` Both layers, in every regime (D147).** Each reading
   above is reported at SIMD-off and at SIMD-on. R4b's SIMD-off reading
   is the portable (SWAR) fused form against `emit`; its SIMD-on reading
