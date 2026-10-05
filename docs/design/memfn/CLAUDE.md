@@ -84,6 +84,20 @@ Nothing here touches pcrec's emission (D91).
   option_sets.md's family and the R4a-R4j order (§12); Q24-Q34 (§13).
   Read §R3 first: its table maps every r2 panel finding to carried /
   moved inside the kit / dissolved.
+  **REVISION 4 (lane memfndel4, 2026-10-05), on the r3 light panel
+  (`../../dev/reviews/2026-10-05-r3-memfn-delegation.md`, 27 findings)**:
+  the contract is rebuilt from the emitters' actual shapes (§14: EXPR /
+  STMT / FUNC site forms, ASSIGN and ON_MISS handoffs, indent and notes,
+  ADVANCE's counter and `peek`, non-wrapping ranges with declared EMPTY
+  outcomes, a lower `floor`, REQUIRED/OPTIONAL terms, ALL_PRESENT with a
+  returned predicate, per-artifact `mf_art` with helpers before first
+  use). §15 reproduces every M1 site shape byte for byte. The shipped
+  denies' fates (§14.10); the stamp on every artifact per Frank's Q3
+  (§18); every remaining pcrec pricing of kit search code with its fate
+  (§19); M1 narrowed and sequenced (§16); G1 on a pcrec-side diff (§17);
+  two inbox files, `-fmemfn-native` default OFF, symbol policy (§20);
+  the three standing questions (§21); build order (§22); Q35-Q49 (§23).
+  Read §R4 first.
 - `twins.md` — R1d (lane memftwin, 2026-10-04), the D77 measurement "does a
   kernel TAILORED to the pattern beat a fixed generic one": T-A set
   classifier per shape vs the generic nibble lookup, T-B a fused scan+verify
