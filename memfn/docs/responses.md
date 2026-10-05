@@ -116,3 +116,24 @@ the compiler, and is never adopted silently. Proposed for main to file
       artifact now, it rides R4a′ cheaply) and a plan line.
   - **Left as is:** line citations outside §14-§16 (history and §19).
     They are converted when next touched.
+
+## R-3 — R4a (the kit skeleton), then R4a′ (the stamps' abi event)
+
+- ack: 2026-10-05 — branch `lane/memfn-r4a`, which carries main with
+  R-3. R4a goes first and lands on its own branch tip with its own
+  `done:`. Plan, three lanes:
+  - (1) `memfnskel` (opus): `memfn.h` (MF_SITE_ABI 2, MF_VOCAB 2, MF_NS),
+    the `mf_*` entry points, the generic scalar row, K1 reference
+    functions, `src/options.def` born empty with
+    `mf_options()`/`mf_opts_check()`, the `--list-axes` `memfn` section
+    header (with its spec hunk if caller-observable), the Makefile
+    wiring, C15/C16, `PROVENANCE.md`;
+  - (2) `memfnmanifest` (opus), in parallel:
+    `tests/memfn/site_manifest.tsv` (every site `pending`, N7 included)
+    and C17. The static half is live over `src/gen/` + `src/enc/`; the
+    dynamic half is declared UNREACHED until a site calls `mf_emit_site`;
+  - (3) after (1): G2's first tests from a D27-blinded author in a cell,
+    written from the contract and `memfn.h` alone.
+  Landing bar: identity gate 0 movers, `make strict`, Mac `make test`
+  in a slot main names. R4a′ follows on its own branch, and its abi
+  number is agreed with main before it lands (START-SET's events).
