@@ -320,7 +320,7 @@ TEST_SECTIONS := test-corpus test-cli test-reject test-registry test-parse \
       test-prefilter-collapse test-rxtsource test-definitions \
       test-entry-shape-identity test-cpset-structure test-startbnd \
       test-uprops test-core test-vars test-examples test-findings test-ucp \
-      test-clskit test-encoding-checks test-utfcheck
+      test-clskit test-encoding-checks test-utfcheck test-memfn-link
 
 # [CHK-2 trailer] `test:` STOPPED being purely prerequisite-based here
 # (2026-08-26, manager finding, journal part 7): under `make -j12 test`,
@@ -1187,6 +1187,14 @@ test-utfcheck: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-utfcheck.ran"; fi
 	bash tests/utfcheck/run_utfcheck.sh
 
+# [MEMFN] R4a: C15 (libpcrec.a exports only pcrec_ names, the kit's
+# included) and C16 (every kit source file carries a D145 SPDX id and its
+# provenance, agreeing with memfn/PROVENANCE.md), each with its planted
+# witness run every time. Seconds; reads build/libpcrec.a and memfn/ only.
+test-memfn-link: all
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-memfn-link.ran"; fi
+	bash tests/memfn/run_link_checks.sh
+
 # [REVW.U L5-R0] tests/core/ — the unit tier's home for a check on a helper
 # that belongs to no single feature (today: the saturating-arithmetic
 # agreement, mrl.c/emit_vm.c/callgraph.c). One gcc invocation and one process
@@ -1715,6 +1723,6 @@ clean:
         test-prechecks \
         test-prefilter-collapse test-rxtsource test-definitions \
       test-entry-shape-identity test-cpset-structure \
-        test-encoding-checks test-startbnd test-utfcheck test-core test-examples test-clskit \
+        test-encoding-checks test-startbnd test-utfcheck test-memfn-link test-core test-examples test-clskit \
         smoke hooks strict testscripts ubsan asan san lint alloc mech bench \
         fuzz clean

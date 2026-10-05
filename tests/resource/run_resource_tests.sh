@@ -74,6 +74,7 @@ CC="${CC:-cc}"   # [CC-DIFF] STEP 1 -- the [OPT-4.1] lowered-cap reference build
 # compiler; every other outcome (0, 1, 122, 134, 137) is unaffected by load
 # and stays a real PASS/FAIL exactly as before.
 . "$ROOT_DIR/tests/lib/timeout_bin.sh"   # [TT-6]/[K37] $TIMEOUT_BIN for the exec'd bound below
+. "$ROOT_DIR/tests/lib/lib_srcs.sh"   # [MEMFN] R4a: the library's source list (src/ + memfn/src/)
 . "$ROOT_DIR/tests/lib/load_guard.sh"
 
 # The ceiling. 512m matches tests/lib/gen_timeout.sh's GENRUNMEM default, and
@@ -1013,7 +1014,7 @@ rm -f "$WORKDIR/o.c"
 FPPAT='(a|b){0,12000}'
 REFCAP="$WORKDIR/pcrec_lowcap"
 REFCAP_CAP=100000
-REFCAP_SRCS="$(find "$ROOT_DIR/src" -name '*.c' | LC_ALL=C sort)"
+REFCAP_SRCS="$(pcrec_lib_srcs "$ROOT_DIR")"
 # shellcheck disable=SC2086
 if [ -z "$REFCAP_SRCS" ]; then
     bad "[OPT-4.1] found no compiler sources under $ROOT_DIR/src for the lowered-cap reference build"
