@@ -214,6 +214,7 @@ At every other cell, at SSE2 and AVX2, `ffl` wins.
 | §22 R4b | probe only, trigger MET, Linux alpha OWED | DONE (R-1) |
 | §22 R4d | trigger: R4b's cell | trigger MET at SIMD-off on union-select; form carries the lead order; D149 |
 | §22 R4e′ | the kit's SIMD forms, any cascade | plus the 16 B short-path note |
+| §R4.4.0 Q48 row | the trigger is a K85-shaped cell the fused arm does not cure | annotated: R-1 found the single early-hit gate call on dense text still loses |
 | §22 "Filed, not scheduled" | (no entry) | the pcrec "lead can reject" density fact, filed |
 | §22 older blocks (rev 3, rev 4 lists, rev 4.2 block), §23 | R4b pending | history, annotated once at §22's head; not rewritten |
 | `memfn/CLAUDE.md` | no D149 line | "kit forms obey D149" under "The layers" |
@@ -273,7 +274,7 @@ Q53-Q55 only.
 | Q45 | RULED YES. The spec states whose libc was measured (glibc and libSystem; musl inherits), as §10.6's second limit, at R4d | §10.6; §22 R4d; §23 |
 | Q46 | RULED YES. Two single-writer files. As built: `memfn/docs/requests.md` (manager only) and `memfn/docs/responses.md` (kit only) | §20.1; `memfn/CLAUDE.md`; §23 |
 | Q47 | REFINED (addendum 9): the kit's OWN option namespace, `--memfn=`, from a kit-owned registry, listed by `--list-axes` as a `memfn` section | §R4.4.1; §14.10, §17.1 rewritten |
-| Q48 | RULED YES. Optional sites: file, don't build. The D77 trigger is a K85-shaped cell that the R4d fused arm does not already cure | §19 row 11; §22 "Filed, not scheduled"; §23 |
+| Q48 | RULED YES. Optional sites: file, don't build. The D77 trigger is a K85-shaped cell that the R4d fused arm does not already cure (`[rev4.5]`: R-1 found one class, the single early-hit gate call on dense text at SIMD-off, which the fused form still loses; whether that is the Q48 cell is the kit session's call) | §19 row 11; §22 "Filed, not scheduled"; §23 |
 | Q49 | RULED YES. An opt-in-only kit arm (R4e′, `-fmemfn-simd`) needs no abi bump at landing. Its pins, its `test-axes` arm and C9's floor are born in that commit, and its spec hunk lands there. The R4f flip is the abi event | §22 R4e′; §23 |
 | D144 item 4 | met inside the kit's namespace: each kit change's own deny is a registry row | §R4.4.1; §L.3 |
 
