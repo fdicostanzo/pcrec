@@ -1,5 +1,17 @@
 # memory-functions: R1d, THE INTEGRATION MAP AND THE COMPOSITION MODEL
 
+**REVISION 4.6 (lane `memfnr46`, 2026-10-05, from kit branch
+`lane/memfn-r45` at df041954, design only): THE r5 PANEL'S 23 FINDINGS
+APPLIED (`../../dev/reviews/2026-10-05-r5-memfn-rev45.md`, A1-A12 and
+B1-B11, all ACCEPTED by the kit session). They override anything below
+that conflicts.** Read §R4.6 first. The blocker (A1): `set-leads`' lead
+is OPTIONAL on DFA-scan routes and REQUIRED on no-DFA routes, where it
+is part of K65's no-match proof (§14.5). `use` is a per-instance fact
+(§14.5), the composite site's `empty` is MISS (§14.4), and `preds[]`
+has one dense numbering (§15.5). Line citations in §14-§16 are now
+function names. **This revision rules nothing: Q53-Q55 stay open, with
+refined text (§23).** Changed passages carry `[rev4.6]` in place.
+
 **REVISION 4.5 (lane `memfnr45`, 2026-10-05, from kit branch
 `lane/memfn-r45` at main 08caf4a3, design only): R-1'S LINUX VERDICT AND
 D149 FOLDED. They override anything below that conflicts.** Read §R4.5
@@ -105,6 +117,134 @@ addenda 2-3 (every form choice a `DFA_SELECT`-style row; SIMD later = one
 row; SWAR admitted now), D139 (one class-form table, sites as bits), D144
 item 4 (every optimization its own deny), D145 (generated-output licence
 exception), and the tables themselves (§1).
+
+---
+
+## R4.6. Revision 4.6: the r5 panel applied `[rev4.6]`
+
+(Top-level, like §R4.5. It sits first because it overrides §14.5's
+OPTIONAL lead, §14.0's static `use` column and §15.5's part numbering.)
+
+**The input.** Request R-2 (`memfn/docs/requests.md`), after its panel:
+the light D6 panel on rev 4.5
+(`docs/dev/reviews/2026-10-05-r5-memfn-rev45.md`, with the critics' full
+texts beside it). Critic A read the contract against pcrec's emitters at
+abi 61 (the handoff, f116cff5). Critic B read the stamps, Q53-Q55 and
+the docs' staleness. One BLOCKER, nine MAJOR. All 23 findings were
+ACCEPTED by the kit session, and its disposition column is this
+revision's instruction list. **This revision rules nothing.** No
+emitted byte moves and nothing is built. R-1's verdicts are unaffected:
+all four R-1 cells are DFA-route sites.
+
+### R4.6.0 Each finding, and where it now lives
+
+| id | sev | finding (short) | where it now lives |
+|---|---|---|---|
+| A1 | BLOCKER | `set-leads`' lead called OPTIONAL everywhere. On the no-DFA route `emit_req_set_rest` leaves the lead's byte out of the set rest, so the lead is part of K65's proof | §14.5 (new "per route" block; "lead excepted" deleted); §14.0 `need` comment; §14.3; §14.10 bit 45; §15.3; §15.5 part 0, `[rev4.6]` note on bit 45, item 6; §19 row 5; §R4.5.1 item 1; §R4.5.5 item 3; §22 R4d; probes `gates_sync.sh`, `tb_r4b.c` (comments only) |
+| A2 | MAJOR | `use` cannot be a static `DELEG_SITES` column | §14.0 `use` comment; §14.5 `[rev4.6]` block; §17.6 row reworded; §22 R4c |
+| A3 | MAJOR | `REQ_RUN`'s `@idx`, the run-route `REQ_BYTE` and the `[OPT-REQPOS]` note describe the scan form | §14.9 item 1; §19 row 3; §22 R4d; §R4.3.5; Q55 |
+| A4 | MAJOR | ~28 mech rows anchored in M1 emitters; `emit_req_handoff` split | §16 item 4 (new); §22 R4c |
+| A5 | MAJOR | no site-level `empty` for the composite; a reorder breaks EXCLUDED | §14.3; §14.4 `[rev4.6]` block; §15.4 `empty` row; §15.5 numbering block |
+| A6 | MINOR | two part numberings; `ret_pred = 1` wrong without a lead; ASSIGN/ON_MISS rule unstated | §14.0 `ret_pred` comment; §14.2 note; §15.4 `note` row; §15.5 numbering block and item 4 |
+| A7 | MINOR | the VM hybrid handoff route is not listed | §15.5 (third listing, witness OWED at R4c); §22 R4c |
+| A8 | MINOR | line citations in §14-§16 are pre-handoff | §14 head (note) and every former line citation in §14-§16, now a function name; the 9 → 3 count kept (§16) |
+| A9 | MINOR | pair arm's locals and the comment's deny literals incomplete | §15.1 (two `[rev4.6]` notes) |
+| A10 | MINOR | `run_prechecks.sh` §5.11 and S460 pin lead-first in pcrec's suite | §15.5 item 7; §22 R4d |
+| A11 | NOTE | the comment escaper is stateful | §14.2 sink bullet |
+| A12 | NOTE | §15.7 omits PF byte-class | §15.7 (new bullet) |
+| B1 | MAJOR | `MEMFN_FORMS` is constant `none` on every default artifact until R4f | §R4.3.5 `[rev4.6]` note; Q55 |
+| B2 | MAJOR | nothing tells same-abi artifacts apart by `--memfn=` | §R4.4.1 (new block); §R4.3.5; §22 R4a′ and "Filed"; Q55 |
+| B3 | MAJOR | C11's FORMS half vacuous until a SIMD-on form; its sabotage row unreachable | §10.5 `[rev4.6]` note; §17.6; §18.2; §21.2 C11 row; §22 R4d; Q55 |
+| B4 | MAJOR | Q53's control list does not match the record's definition | §R4.3.3 (refined form, proposed); §10.5; §17.6 (`memcmp`, `memcpy` rows); §21.2 libc row; Q53 |
+| B5 | MAJOR | recording idiom `memcpy` makes the line mislead | §R4.3.3; §22 R4a′; Q53 |
+| B6 | MAJOR | Q54's cite (D23) and scope wrong; N7 outside C17's scan; M7 lacks `MF_VOCAB` bump | §R4.3.4 (definition, cite, C17 item 1); §8.5 N7 row; §22 M7; Q54 |
+| B7 | MINOR | R4a′ "Trigger: MET" though the libc line waits on Q53 | §22 R4a′ |
+| B8 | MINOR | a literal abi number beside "never a literal" | §R4.3.3 "Its event"; §22 R4a′ |
+| B9 | MINOR | wait 2's status had two owners | §16 `[rev4.5]` note (points to §R4.5.5 item 1) |
+| B10 | MINOR | stale rev lines | `memfn/CLAUDE.md`; `docs/design/memfn/CLAUDE.md`. (`memfn/docs/wake.md` is the kit session's, at its pause) |
+| B11 | NOTE | M5′'s offsets show in `<PREFIX>_DFA_PREFILTER_OFFSETS` | §R4.3.5; Q55 |
+
+23 findings, 23 placed. A1-A12: 12 of 12. B1-B11: 11 of 11.
+
+### R4.6.1 What changed in the design
+
+1. **The lead's need is per route (A1, the blocker).** OPTIONAL iff
+   `pcrec_artifact_has_dfa_scan`, else REQUIRED. On a no-DFA route the
+   lead is the only test of a necessary-set member, because
+   `emit_req_set_rest` marks its byte done. Bit 45 removes part 0 on
+   DFA-scan routes and moves the byte into part 3 on no-DFA routes. A
+   run-first arm that folds the lead must still decide it over the
+   whole window before any miss, and never return a hit with a
+   REQUIRED lead untested. Verified by this lane at abi 61:
+   `(x?)([a-z]+)+Z.user\1` is VM with no prefilter, emits the lead and
+   no `rq_set`, and under `-fno-req-set-lead` emits `rq_set[] = { 90 }`.
+2. **`use` is per instance (A2).** It comes from `req_use(cx)`, the same
+   call that sets `ret_pred`. `DELEG_SITES` holds at most a ceiling,
+   and C10 checks per instance.
+3. **The composite's `empty` is MISS (A5).** EXCLUDED belongs to a
+   predicate in its place after a guard, and the kit re-derives it on
+   any reorder.
+4. **One numbering (A6).** `preds[]` is dense; `ret_pred` is the
+   window's index (0 or 1); `note`/`note_tag` share the index; the
+   handoff is ASSIGN iff `ret_pred != 0xFF`.
+5. **The VM hybrid handoff route is listed (A7).** Its witness is OWED
+   at R4c.
+6. **pcrec's form-describing stamps are named for R4d's spec hunk
+   (A3), and pcrec's lead-first pins are named for R4d's design (A10).**
+7. **The REPLACE commit re-points the mech rows (A4).** S464 goes
+   kit-side; S463, S470, S471 and S472 stay pcrec-side.
+8. **The stamps (B1-B5, B7, B8, B11).** C11's FORMS half is UNREACHED
+   until R4e′. The bench attributes kit state by its recorded build
+   recipe, and `<PREFIX>_MEMFN_OPTS` is filed. The libc record's refined
+   form (whole artifact, source-level inventory, idiom loads excluded,
+   names from the compile) is PROPOSED as Q53's recommendation. R4a′'s
+   trigger is MET for the stamp only. No abi literal is written.
+9. **N7 (B6).** The owner is D58/DD-12. The site definition is "search
+   or span-compare". C17's static scope gains `src/enc/` and M7 an
+   `MF_VOCAB` bump, should Q54 rule yes.
+10. **Text only (A8, A9, A11, A12, B9, B10).** Function names for line
+    numbers, the pair arm's locals and frozen literals, the stateful
+    escaper, the byte-class sketch, one owner for the waits' status, and
+    current rev lines.
+
+### R4.6.2 Spellings this revision chose
+
+1. The route test is spelled by its function,
+   `pcrec_artifact_has_dfa_scan`: "DFA-scan route" when it is true (the
+   DFA routes and the VM hybrid), "no-DFA route" when it is false.
+2. `ret_pred` and `note(i)`/`note_tag(i)` index the dense `preds[]`.
+   The `[K65]` note sits on the first set-rest predicate's index.
+3. The bench-attribution line is `<PREFIX>_MEMFN_OPTS`, filed only.
+4. The libc control's compile is `-O0 -fno-builtin -c` and `nm -u`, and
+   "constant-size idiom load" is a `memcpy` of a constant 1-8 bytes.
+5. Citations name the function, or the struct or table for a non-code
+   anchor (`struct DfaDir`'s `peek`, `CandScan.run_verified`,
+   `runcmp.c`'s header comment).
+
+### R4.6.3 The three standing design questions, for this revision
+
+1. **Measurement regime: NOT RELEVANT.** This revision reads and
+   produces no measured number. R-1's numbers stand as §R4.5.4 states
+   them. Its cells are DFA-route sites, so A1 does not touch them.
+2. **Independent control: RELEVANT.** Three controls change.
+   - C10 checks `use` per instance against the emitter's own use of the
+     result (`pcrec_emit_req_byte_check`'s return), a structural fact of
+     pcrec's text (A2).
+   - C11's FORMS half is declared UNREACHED (K35) until a SIMD-on form
+     exists, rather than counted as a pass (B3).
+   - The libc record's proposed control takes names from the compile's
+     symbol table, which shares no source with the kit's list, pcrec's
+     list or the shim (B4). Its sabotage rows reach `memcmp` and
+     `memcpy` (the second declared UNREACHED if the corpus has no
+     non-constant `memcpy`).
+   - The VM hybrid route's witness is OWED at R4c ([MECH-REACH]), and
+     the mech rows anchored in M1 emitters are re-pointed at REPLACE
+     (A4).
+3. **What moves when data is regenerated: NOT RELEVANT.** No data file,
+   pin or emitted byte moves. The design moves three future readers:
+   R4d's spec hunk (A3), R4a′'s spec hunk and inbox note (B2, B5), and
+   the REPLACE commit's mech re-pointing (A4). Each is named at its
+   step.
 
 ---
 
@@ -4147,7 +4287,8 @@ forms, `MF_EMPTY_NOP`).
   Predicates are tested in `preds` order in a baseline arm. Any other arm
   may reorder them, unless a predicate's position is RETURNED: that one is
   found by the FIND contract wherever in the order it runs. This is the
-  K82 handoff gate as ONE site: lead byte (OPTIONAL), window run
+  K82 handoff gate as ONE site: lead byte (OPTIONAL on a DFA-scan route,
+  REQUIRED on a no-DFA route, `[rev4.6]`), window run
   (REQUIRED, `ret_pred`), whole run and set rest (REQUIRED, the no-DFA
   route's proof). §15.5 renders it.
   **`[rev4.6]`** (r5 A1, A5) Two corrections. (1) The lead is OPTIONAL
