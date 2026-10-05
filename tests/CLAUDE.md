@@ -687,6 +687,12 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
   under `build/oracle_cache/`. See its own CLAUDE.md; other suites do not
   read this store yet (wiring it in as an existing check's oracle is a
   separate, un-scheduled migration step).
+- **memfn/** — [MEMFN] pcrec's checks on the search-code kit. Today: C17,
+  the CHECKED SITE MANIFEST (`site_manifest.tsv`, every search or
+  span-compare site `pending` or `delegated`, integration.md §R4.3.4) and
+  the search-form vocabulary C12 will share (`search_vocab.tsv`);
+  `make test-memfn-manifest`, in TEST_SECTIONS, static. See its own
+  CLAUDE.md.
 - **utfcheck/** — [UTF-VALID] (D133): `make test-utfcheck`, the
   `-futf-check` / `-fstartpos-guard=align` differential against libpcre2
   10.46's COMMITTED answers (`cases_10.46.tsv`, from `probe_pcre2.c` run
