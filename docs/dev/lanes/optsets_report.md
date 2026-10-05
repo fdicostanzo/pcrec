@@ -189,5 +189,6 @@ written to `/tmp` or `$TMPDIR`.
 ### Next
 
 Frank's rulings on §5.4. The manager also owes a disposition of §2.5a's
-three findings (a D80 `cli.md` correction, and whether R2's flip of D3
-needs a survey of `.rxt` sources that spell `pcrec --engine=`).
+three findings (a D80 `cli.md` correction among them). R2's `.rxt` survey
+is done: one fixture spells `pcrec --engine=`, no caller relies on it,
+and no `.rxt` in pcrec-bench spells it.

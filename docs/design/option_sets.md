@@ -1644,7 +1644,10 @@ unowned. R7 is the comments pair, Q7 under its own number.
     the typed rows. Cell D3 flips (the CLI's explicit `--engine=dfa` wins,
     reported), and E2 gains E1's report. **Recommendation: yes.** D93 and
     its addendum are rulings about axes. Today a spelling decides
-    precedence, and nothing ruled that.
+    precedence, and nothing ruled that. Surveyed: in this tree one fixture spells it
+    (`tests/rxtsource/fixtures/three_configs.rxtin:37`, `pcrec
+    --engine=dfa`), and its test passes no CLI engine, so R2 moves
+    nothing there. No `.rxt` in pcrec-bench's tree spells it.
 15. **R3, a cross-source disagreement involving a set, on a value axis.**
     File wins and REPORTED, D93's shape, not refused (§2.5 row 5).
     **Recommendation: yes.** Refusing it would make a file's set
@@ -1736,9 +1739,10 @@ byte-identical over the corpus. It carries the D103 ritual's new step
 - §2.5a's cell set. Is there an axis KIND with a cross-source rule that
   none of the 42 cells exercises (the `--fast-or-fail`/cap family, the
   `--max-emit-*` overrides, `--warn-emit-bytes`)?
-- R2's flip of cell D3. Is there a shipped `.rxt` source in the tree, or
-  in pcrec-bench's tree, whose config spells `pcrec --engine=` and relies
-  on beating the command line?
+- R2's flip of cell D3. The `.rxt` survey (R2) found one fixture and no
+  caller relying on it. Is there a non-`.rxt` driver (a bench adapter, a
+  Makefile recipe) that passes `--engine=` against a config that also
+  sets it?
 - §3.4's conditional stamp: is the presence asymmetry (`--set=readable`
   against `-fcomments`) acceptable to a consumer, or is the digest the
   only honest stamp?
