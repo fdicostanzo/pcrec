@@ -9014,3 +9014,5 @@ This generalizes D91 (scalar-first, "the SIMD crutch must not hide inefficiencie
 - **This replaces the three-profile wording of addendum 2 (off / portable / native) with ONE switch and a meaning.** Whether a narrower "baseline-ISA" SIMD-on form exists is a kit form question, not a pcrec profile.
 
 **D147 addendum 7 (Frank, 2026-10-05):** SIMD is OFF BY DEFAULT until the SIMD hold (D91/D119) lifts. Turning it on by default is its own ruled event (D112 shape). Callers opt in with the switch. Superseded proposals: Q51 (withdraw the SIMD-off arm) and Q52 (stamp keyed on the native flag) are REJECTED; D147's both-layers reading and Q39's stamp stand.
+
+**D147 addendum 8 (Frank, 2026-10-05):** [MEMFN] Q43 YES. SIMD-on forms tuned for aarch64 are not ACCEPTED until Frank admits Mac measurements as verdict-grade for those cells, or an aarch64 Linux box exists. x86 Linux gives the verdicts. The SIMD-off (portable) layer is unaffected.
