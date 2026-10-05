@@ -447,8 +447,10 @@ only deny, no other family exists, and the first vector and ISA members
 assign disjoint axes (§4.2, §4.3). A join with no possible conflict is a
 plain union. So the first build ships the union, plus a BUILD-TIME check
 over the set table: if any two sets in different families assign one
-axis, pcrec's build fails, naming the pair and saying the conflict path
-now has its first witness. That failure is §6.1's trigger 2. The runtime
+axis DIFFERENT values, pcrec's build fails, naming the pair and saying the
+conflict path now has its first witness. Sets that agree on a shared axis
+(`readable` and `trace` on `comments`, §4.4) join silently and do not
+trip it. That failure is §6.1's trigger 2. The runtime
 refusal, its diagnostic and its sabotage row land with the change that
 creates the overlap, which also supplies their witness. There is no
 UNREACHED refusal code in the meantime, and no test-only fixture set.
@@ -1221,46 +1223,72 @@ position read an axis:
 
 | unspelled axis | domain | default | today it is… |
 |---|---|---|---|
-| `size-term-bar` | a ratio | 0.75 | a constant beside `size_term_choose`, overridden by `pcrec_tune_size_term_bar` |
+| `size-term-bar` | a ratio, stored as integer percent **[r1 OS-n12]** | 75 | a constant beside `size_term_choose` in `src/core/compile.c` (~:530), read through `pcrec_tune_size_term_bar` at `compile.c:955` |
 | `size-term-threshold` | bytes | 120,000 | `limits.def`'s `PCREC_SIZE_TERM_THRESHOLD` (`BUILD_D`), overridden by `pcrec_tune_size_term_threshold` |
 | `vm-entry-term` | bytes | 4,096 | the entry chain's size term, overridden by `pcrec_tune_vm_inline_chain_max` |
-| `cls-matcher` | `size` / `balanced` / `max-speed` | `balanced` | **not an axis today**: `src/gen/clskit.c`'s first-match table reads the dial POSITION directly |
+| `cls-matcher` | `size` / `balanced` / `max-speed` | `balanced` | **not an axis today**: `src/gen/clskit.c`'s first-match table carries a per-row POSITION MASK (`TPOS`, `:524-526`), tested at `:697` and `:781` **[r1 OS-n12]** |
 
 The five members, read straight off `src/core/tune.c`'s `TUNE_TABLE` and
 `tuning.md` §5.4:
 
 | member | bundle |
 |---|---|
-| `min-size` (−2) | `size-term-bar := 0.95`, `size-term-threshold := 40,000`, `premul-table := deny`, `cls-matcher := size` |
-| `size` (−1) | `size-term-bar := 0.85`, `size-term-threshold := 80,000`, `cls-matcher := size` |
+| `min-size` (−2) | `size-term-bar := 95`, `size-term-threshold := 40,000`, `premul-table := deny`, `cls-matcher := size` |
+| `size` (−1) | `size-term-bar := 85`, `size-term-threshold := 80,000`, `cls-matcher := size` |
 | `balanced` (0, default) | ∅ |
 | `speed` (+1) | `vm-entry-term := 8,192` |
 | `max-speed` (+2) | `vm-entry-term := 8,192`, `cls-matcher := max-speed` |
 
 - **The family's required class is identity and refusal-preserving.**
-  Every axis in every bundle above is identity-class, which the static
-  check proves when pcrec is built. A future cell proposing a contract or
-  engine-selecting axis fails that check, rather than being caught by a
-  reviewer remembering D125.
+  Every axis in every bundle above is identity-class, with §2.8's give-up
+  carve-out (the ladder cells move K, so they move the minimum budgets).
+  **[r1 OS-m9]** The static check catches a cell proposed with a
+  contract-class or engine-selecting TAG. DIAL-S3 is the control that
+  catches a wrong tag, because it measures refusals instead of reading the
+  tag.
 - **Today's behaviour is preserved exactly.** The deny mask is OR'd today
   (`compile.c:806`). In the model, a member's `deny` joins an unassigned
   axis, and an explicit `-fno-tiered-entry` at `min-size` overlays an
-  axis `min-size` does not assign. A FUTURE `-fpremul-table` at `min-size`
-  would beat the cell (explicit over set) and stamp
-  `RX_SETS "min-size;premul-table"`. That is the ruled "explicit beats the
-  dial, where a spelling exists", now with the artifact recording that it
-  happened.
-- **The one code change the re-expression needs**: clskit reads
-  `cls-matcher` instead of the position. Each position maps to exactly the
-  rule it selects today, so the change is byte-identical (identity gate 1,
-  §3.5). The three value cells' readers already go through accessors, so
-  only their source of truth moves, from `TUNE_TABLE` to the set table.
-  `TUNE_TABLE` is then deleted, not kept beside it (the general-mechanisms
-  rule: one mechanism, not a dial table and a set table).
+  axis `min-size` does not assign (cell T1: both apply). **[r1 OS-M1]** A
+  FUTURE `-fpremul-table` at `min-size` on the SAME command line would
+  beat the cell (explicit over set, within one source). That is the ruled
+  "explicit beats the dial, where a spelling exists". The same force on
+  the command line against a FILE's `tune min-size` is three-valued
+  union-then-refuse, so it is REFUSED (§2.4a, R1). Revision 1 said "the
+  file wins and the stamp records it". No stamp is built (§3.4), and the
+  outcome stamp `RX_DFA_TABLE` records what was done, as it does today.
+- **[r1 S16] At the FIRST build, the dial does not move.** The set layer
+  reads the `tune` family's bundles THROUGH `TUNE_TABLE`'s existing
+  accessors (`pcrec_tune_deny_flags`, `pcrec_tune_size_term_bar`, …). That
+  is one table with a second reader, not a second table. The set layer
+  needs those bundles for two things only: the cross-family overlap check
+  (§2.4) and `--list-sets`. No emitted byte moves, and the
+  general-mechanisms rule is kept, because the dial's cells are written in
+  exactly one place.
+- **The re-expression is its OWN step (§6.2), with its own trigger.** When
+  it fires, the one code change it needs is that clskit reads
+  `cls-matcher` instead of its per-row position mask. Each position maps to
+  exactly the rule it selects today, so the change is byte-identical
+  (identity gate 1, §3.5). The three value cells' readers already go
+  through accessors, so only their source of truth moves, from
+  `TUNE_TABLE` to the set table. `TUNE_TABLE` is then deleted, not kept
+  beside it. The K59 drop rung (`compile.c:1406-1425`) keeps ORing the
+  `PCREC_NO_PREMUL_TABLE` bit, because it reads the axis, not the member
+  (§1.3).
 - **D103 is unchanged**: the members are PINNED, a cell changes only by a
   ruled diff to `tuning.md` §5.4, and the rubric stays advice. The set
   table is where the ruled cells live in `src/`, exactly as `TUNE_TABLE`
   is today.
+- **[r1 OS-n14] The D103 ritual gains one step.** A cell diff can CREATE a
+  cross-family overlap. integration.md Q16's case is the example: a
+  `min-size` cell denying `vec-scan` overlaps `simd`'s pin, so `--set=
+  simd,min-size`, accepted the day before, would be refused the day after.
+  So every ruled cell diff runs the overlap check over the whole set table
+  and lists, in the diff Frank rules on, every set pair that comes to
+  DISAGREE on an axis and so becomes refused. Until §6.1 trigger 2 has built the
+  runtime refusal, the overlap check fails the build instead, and the
+  diff cannot land without that trigger's change. Either way the new
+  refusal is ruled, not discovered.
 
 ### 4.2 `simd` / `no-simd`: family `vector`, four members
 
@@ -1286,12 +1314,17 @@ them unreachable.
   denies `vec-scan` (integration.md Q16 raises exactly that for un-declared
   builds, since the `#if` ladder costs bytes), then `--set=simd,min-size`
   is a CONFLICT and is refused by name. This is Frank's "they overlap"
-  made concrete. `--set=min-size` alone (vector family at `auto`) lets the
+  made concrete. **[r1 S9/OS-n14]** That cell diff is also the first
+  cross-family overlap, so it is §6.1 trigger 2: the runtime refusal is
+  built in the same change, and its own refused pair is its witness. The
+  D103 diff lists the newly refused pair (§4.1). `--set=min-size` alone (vector family at `auto`) lets the
   dial deny without complaint. Without the pin, `simd` would be a name for
   "nothing", and the caller's request would be silently overruled.
-- **`no-simd` and `scalar` overlap and agree**, so `--set=no-simd` with a
-  meta-set that implies `scalar` is no conflict. They are also one family,
-  so `--set=no-simd --set=scalar` is later-wins: `scalar`.
+- **`no-simd` and `scalar` overlap and agree.** They are one family, so
+  they never meet in a join: `--set=no-simd --set=scalar` is later-wins,
+  `scalar`, and so is `--set=no-simd,scalar` (§2.3). **[r1 OS-m7]**
+  Revision 1's example of a meta-set implying `scalar` is withdrawn,
+  because meta-sets are forbidden (§2.6).
 - **The interaction with ISA is not composition.** `SCAN_ROWS`' rows read
   both axes as predicate inputs (integration.md §2.1):
 
@@ -1344,7 +1377,12 @@ them unreachable.
 - Both assign `comments := force` and agree, so `--set=readable,trace`
   composes silently.
 - `--set=trace -fno-comments` is explicit over a set: the trace build
-  without commentary, stamped `RX_SETS "trace;comments"`.
+  without commentary. **[r1 S1/OS-M1]** Revision 1 stamped it
+  `RX_SETS "trace;comments"`. There is no stamp now, and under §3.4's
+  conditional stamp it would have no line, exactly like `--trace
+  -fno-comments` (S1's witness pair). `comments` is three-valued, so the
+  same flags across sources (a file's `set trace`, a CLI `-fno-comments`)
+  meet row 5's grandfathered deny-wins, not a refusal (cells A6/A7).
 - Neither is swept by `test-axes` (instrument class). `--trace` has its
   own design home (`[V-H]`), and comments are already checked for object
   identity (`cli.md`, `-fcomments`).
@@ -1368,24 +1406,43 @@ do NOT move `--features` onto `--set`.** Its vocabulary is modules, not
 options, it works, and moving it moves no measurement (D77). It is listed
 here because a model that could not express it would be the wrong model.
 
+**[r1 OS-M2] The model check holds at the FILE tier only.** Config and
+block UNION per module, which is the elementwise join (cell C8). Across
+sources `--features` is one whole-list axis, file-wins and silent (C5,
+C6), which is NOT the elementwise join. Revision 1 claimed the model
+check without that qualifier, and it fails across sources. The model
+keeps today's cross-source rule as row 4 of §2.5's table (R5), with R4's
+report added.
+
+**[r1 OS-M5] The migration trigger.** `--features` moves onto the set
+mechanism only when a SET must assign a MODULE: a set whose meaning
+includes "and these constructs compile", such as a `pcre2-compat` set
+enabling modules beside its options. Until then the module gate's own
+named sets (`std1`, `all`, `none`) are the simpler mechanism for a
+simpler vocabulary. If that set is never asked for, `--features` never
+moves, and §0 item 1's count stays four plus one.
+
 **`pcre2-utf`, a contract-class standalone set** (illustrative, no
 consumer today):
 
 | set | class | bundle |
 |---|---|---|
-| `pcre2-utf` | contract | `encoding := utf8`, `utf-check := on` (PCRE2_UTF without `PCRE2_NO_UTF_CHECK`: an ill-formed subject is refused, `PCREC_ERR_UTF`) |
+| `pcre2-utf` | {semantic, contract} **[r1 OS-m9]** | `encoding := utf8`, `utf-check := on` (PCRE2_UTF without `PCRE2_NO_UTF_CHECK`: an ill-formed subject is refused, `PCREC_ERR_UTF`) |
 
 It shows three rules meeting:
 
 - A config naming it, on a target whose BLOCK says `encoding byte`: the
   block's explicit line wins (more-specific, explicit tier), so `encoding`
   is overridden. Constraint row 9 then marks `utf-check` INERT. The
-  artifact stamps `RX_SETS "pcre2-utf;encoding"` and `RX_UTF_CHECK
-  "inert"`. Nothing is silent: the stamp says the set was not honoured, and
-  on which axis.
-- It is contract-class, so it may not be a `tune` member, `test-axes`
-  does not identity-sweep it, and the H11 harness control must compare a
-  target built under it against its declared behaviour (§3.2).
+  artifact stamps `RX_UTF_CHECK "inert"` and `rx_info.encoding = 0`.
+  **[r1 S1/S3]** Revision 1 also stamped `RX_SETS "pcre2-utf;encoding"`.
+  With no set stamp, the OUTCOME stamps say what was done, and the set's
+  name is not recorded. Under §3.4's conditional stamp the line would be
+  absent, because the resolved assignment does not satisfy the bundle.
+- Its class set holds `contract`, so by §2.8's tables it may not be a
+  `tune` member, `test-axes` does not sweep it (row (d): `semantic` is in
+  the set), and the H11 harness control compares a target built under it
+  against its declared behaviour (§3.2).
 - It assigns a SEMANTIC axis (`encoding`). The model permits that: a set
   is a bundle of any compile options. The class is what stops it from
   going anywhere answer-identity is promised.
