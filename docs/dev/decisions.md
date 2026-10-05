@@ -8976,3 +8976,5 @@ This generalizes D91 (scalar-first, "the SIMD crutch must not hide inefficiencie
 3. Kit work and pcrec scalar work proceed in parallel. A scalar improvement is accepted on its own; a SIMD form is re-measured against the improved scalar.
 
 **Rulings recorded with this:** [MEMFN] Q35 YES (the integration.md §8+§14 contract is the design of record, revised by panels as migration finds gaps). Q36 YES: the kit lives IN-TREE as its own subtree `memfn/` (own CLAUDE.md, journal section, two-file request ledger, `pcrec_mf_*` symbols, 0BSD). A dedicated long-lived session may work it in its own worktree. Extraction to a separate repo waits for a measured trigger: a stable API across several migration steps AND a real second consumer. Frank's reason for not extracting now: the contract is pcrec's own emitted text and every kit byte move is a pcrec abi event, so the projects are synchronous and tightly coupled, unlike the asynchronous bench.
+
+**D147 addendum (Frank, 2026-10-05):** [MEMFN] Q37 YES — the kit's own text is 0BSD. Translated Rust `memchr` (Unlicense) files carry per-file provenance.
