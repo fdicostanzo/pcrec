@@ -1,0 +1,6 @@
+# memfn R4b Linux verdict run (memfn_r4b.sh): probe checkout 4ecea50b2, pin d4d9ed90 (abi 61)
+# box: ubuntubudu, Linux 7.0.0-29-generic, AMD Ryzen 5 1600 Six-Core Processor
+# pinned: taskset -c 2; governor schedutil; boost 1
+# load at start: 2.12; date 2026-10-05T20:23Z
+# gcc: gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0
+# clang: Ubuntu clang version 21.1.8 (6ubuntu1) (directional only)

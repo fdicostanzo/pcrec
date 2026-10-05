@@ -18,5 +18,12 @@ run by pcrec's make; each writes only under its OUTDIR argument.
   glibc, musl at the pins in its header) and `../survey_pcrejit.c` against
   the system libpcre2 (10.46).
 
+- `memfn_r4b.sh` — R4b's (lane memfnr4b, memfn R-1) Linux VERDICT run:
+  subjects, pcrec at d4d9ed90 + `../twins/gates_sync.sh`, tb_r4b builds
+  (gcc SSE2/AVX2, clang directional, gcc ASan), `--check` (aborts on any
+  failure), pinned launches, `../twins/tb_r4b_table.py` readings. Run from
+  a checkout carrying it, with an OUTDIR; ~20-25 min; last line
+  `R4B-DONE status=<n> dir=<OUTDIR>`.
+
 Transcripts: `../out/linux/`. Maintenance: update this file when files are
 added/removed or change roles.

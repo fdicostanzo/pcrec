@@ -63,3 +63,59 @@ pointer when a kit change merges to main.
     on the section's member count is the independent control, born with
     the first row (R4d).
 - Open questions: Q53-Q55 only.
+
+## 2026-10-05 — first kit session (pcrecdev3): R-1 acked, probe built (lane memfnr4b)
+
+- Branch `lane/memfn-r4b` cut from main d4d9ed90; R-1 acked (766d08eb).
+  Main's answers: pin d4d9ed90 (abi 61, post-handoff text); K85's off
+  arm is `-fno-req-set-lead` alone (never with `-fno-req-handoff`); the
+  Linux verdict runs through main's executor at the first quiet slot.
+- Lane memfnr4b (opus) delivered, reviewed and merged:
+  - `emit` copied byte-exact from d4d9ed90 (gates_sync.sh re-checks it);
+  - new portable `swar` fused pair-filter, with a written in-bounds argument;
+  - lead-first variants `swlf`/`ffllf`;
+  - correctness: 0 wrong, 10/10 planted defects caught, over 6 builds.
+- Mac readings (DIRECTIONAL ONLY):
+  - SIMD-off: `swar` beats `emit` far past the floor on union-select
+    and mod-i. On userpass `swar` loses per call, because the new
+    memchr('=') lead rejects first there; lead-first `swlf` is null or
+    a win.
+  - SIMD-on: `ffl` wins or ties against `swar` except on userpass's
+    lead-absent rows.
+  - K85 cls-n-uc: the fused forms remove the dense-text loss (swlf 175k
+    vs nosl 565k ns per 1m sweep).
+- §15.5 proposal (report §6): the lead order is a kit per-site choice,
+  lead-first by default; a "lead can reject" density fact would decide
+  it. To fold into integration.md after the Linux read.
+- OWED: the Linux verdict, `docs/design/memfn/probes/lxrun/memfn_r4b.sh`
+  (~20-25 min, cap 120, last line `R4B-DONE status=<n> dir=<OUTDIR>`),
+  run by main's executor. Then R-1's `done:`.
+
+## 2026-10-05 — Frank (direct): be suspicious of tuning constants
+
+- Asked why `swar`'s hot loop is 16 bytes (2x) and not 32. Answer: an
+  UNMEASURED default, inherited from `ffl`'s 2xVW shape; the lane
+  measured no unroll ladder.
+- Frank's direction (nothing to do now, this early): note it as an
+  unmeasured default; he dislikes hand-tuned numbers like that. Prefer a
+  formulation where the compiler picks the unroll (e.g. a simple loop
+  gcc unrolls and schedules itself) over a fixed constant. In general,
+  every such constant in kit forms (unroll widths, block sizes, short-span
+  cut-overs, thresholds) is suspect: it is either measured, with its
+  regime named, or derived, or left to the compiler. Never adopted
+  silently.
+- Recorded: comment at the loop in tb_r4b.c; responses.md N-1 for main.
+
+## 2026-10-05 — R-1 done: Linux verdict read
+
+- First Linux attempt aborted at step 4: a LeakSanitizer finding in the
+  harness. Fixed in 4ecea50b; the re-run was green (R4B-DONE status=0,
+  main's executor, OUTDIR scratch_lx/r4b2). Transcripts are archived
+  under probes/out/twins/r4b/linux/; report §9 has the read.
+- R4d's trigger is MET on union-select: `swar` beats `emit` in both
+  regimes, 1.4-2.0x. userpass needs lead-first. K85's find-all loss is
+  cured by the fused forms. SIMD-on: `ffl` beats `swar` except at 16 B
+  on AVX2.
+- `done:` posted. Next: main reviews the branch. R4a (code skeleton)
+  needs a request from main before it starts. The §15.5 revision (lead
+  order as a kit choice) is a design deliverable after the review.

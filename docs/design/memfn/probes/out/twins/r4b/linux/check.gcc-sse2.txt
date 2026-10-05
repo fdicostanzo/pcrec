@@ -1,0 +1,79 @@
+# memfn R4b Linux verdict run (memfn_r4b.sh): probe checkout 4ecea50b2, pin d4d9ed90 (abi 61)
+# box: ubuntubudu, Linux 7.0.0-29-generic, AMD Ryzen 5 1600 Six-Core Processor
+# pinned: taskset -c 2; governor schedutil; boost 1
+# load at start: 2.12; date 2026-10-05T20:23Z
+# gcc: gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0
+# clang: Ubuntu clang version 21.1.8 (6ubuntu1) (directional only)
+check: real subjects (the cell's throughput texts + 75 short), calls / ref hits / bad
+  us emit           81       4     0
+  us emit2          81       4     0
+  us swar           81       4     0
+  us ffl            81       4     0
+  us byte           81       4     0
+  up emit           78       1     0
+  up emit2          78       1     0
+  up swar           78       1     0
+  up ffl            78       1     0
+  up byte           78       1     0
+  up swlf           78       1     0
+  up ffllf          78       1     0
+  mi emit         6510    6433     0
+  mi emit2        6510    6433     0
+  mi swar         6510    6433     0
+  mi ffl          6510    6433     0
+  mi byte         6510    6433     0
+  cn emit         5580    5502     0
+  cn emit2        5580    5502     0
+  cn nosl         5582    5504     0
+  cn swar         5580    5502     0
+  cn ffl          5580    5502     0
+  cn byte         5580    5502     0
+  cn swlf         5580    5502     0
+  cn ffllf        5580    5502     0
+  us Ptail          81       4     0
+  up Ptail          78       1     0
+  mi Ptail        6510    6433     0
+  cn Ptail        5580    5502     0
+  up Plead          78       1     0
+  cn Plead        5580    5502     0
+  us Pffltail       81       4     0
+  up Pffltail       78       1     0
+  mi Pffltail     6510    6433     0
+  cn Pffltail     5580    5502     0
+check (sse2): variant, calls, ref hits, bad, faults
+  us emit         403551   194424       0   0  ok
+  us emit2        403551   194424       0   0  ok
+  us swar         403551   194424       0   0  ok
+  us ffl          403551   194424       0   0  ok
+  us byte         403551   194424       0   0  ok
+  up emit        1160726   333449       0   0  ok
+  up emit2       1160726   333449       0   0  ok
+  up swar        1160726   333449       0   0  ok
+  up ffl         1160726   333449       0   0  ok
+  up byte        1160726   333449       0   0  ok
+  up swlf        1160726   333449       0   0  ok
+  up ffllf       1160726   333449       0   0  ok
+  mi emit         507754   298627       0   0  ok
+  mi emit2        507754   298627       0   0  ok
+  mi swar         507754   298627       0   0  ok
+  mi ffl          507754   298627       0   0  ok
+  mi byte         507754   298627       0   0  ok
+  cn emit        2122845  1295567       0   0  ok
+  cn emit2       2122845  1295567       0   0  ok
+  cn nosl        4076122  3248844       0   0  ok
+  cn swar        2122845  1295567       0   0  ok
+  cn ffl         2122845  1295567       0   0  ok
+  cn byte        2122845  1295567       0   0  ok
+  cn swlf        2122845  1295567       0   0  ok
+  cn ffllf       2122845  1295567       0   0  ok
+  us Ptail        402937   194424     614   0  PLANTED, CAUGHT
+  up Ptail       1160217   333449     509   0  PLANTED, CAUGHT
+  mi Ptail        506991   298627     763   0  PLANTED, CAUGHT
+  cn Ptail       2122491  1295567     354   0  PLANTED, CAUGHT
+  up Plead        966169   327822  188930   0  PLANTED, CAUGHT
+  cn Plead       1315635   693092  204735   0  PLANTED, CAUGHT
+  us Pffltail     403269   194424     282   0  PLANTED, CAUGHT
+  up Pffltail    1160485   333449     241   0  PLANTED, CAUGHT
+  mi Pffltail     507415   298627     339   0  PLANTED, CAUGHT
+  cn Pffltail    2122682  1295567     163   0  PLANTED, CAUGHT
+check (sse2): real variants wrong: 0; planted 10, missed 0; real subjects included
