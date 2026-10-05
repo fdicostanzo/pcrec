@@ -365,3 +365,74 @@ should settle any lone verdict that sits near the floor.
 - `docs/design/memfn/probes/CLAUDE.md`.
 - Scratch, not committed: `build/r4b/` in the worktree (subjects, binaries,
   the smoke run's OUTDIR `build/r4b/lxsmoke/out`).
+
+## 9. The Linux verdict (added by the kit session after main's executor run)
+
+**Run.** `memfn_r4b.sh` at probe 4ecea50b (the first attempt, at
+7549a3b8, aborted at step 4 on a LeakSanitizer finding in the harness:
+the `short.bin` load buffer was never freed; fixed in 4ecea50b — macOS
+ASan has no LSan, so the Mac checks could not see it). ubuntubudu, AMD
+Ryzen 5 1600, gcc 15.2.0, `taskset -c 2`, governor schedutil, boost on,
+load 2.12 at start (the script waits for load1 < 0.5 before each timed
+launch), 0.78 at end; 16:23→16:41 EDT. `R4B-DONE status=0`. Steps 1-4
+green: subjects sha256 0 mismatches, pcrec@d4d9ed90 built, GATES-SYNC ok,
+5 builds; correctness 0 wrong / 10 of 10 planted caught in gcc-sse2,
+gcc-avx2, clang-sse2, clang-avx2 and gcc ASan+UBSan+LSan. Timing: 3
+launches per gcc build (median), floor = max |emit − emit2|. Transcripts:
+`docs/design/memfn/probes/out/twins/r4b/linux/`; the table is
+`readings.gcc.md` there.
+
+**SIMD-off reading (`swar` vs `emit`, gcc SSE2; ns, delta, floor):**
+
+| cell | throughput (gate / sweep, 64k and 1m) | per-call (short75, pc16..pc1024) |
+|---|---|---|
+| union-select | WIN everywhere: gate 1m 364,078 → 187,022; sweep 64k 16,580 → 11,422 | WIN everywhere: short 11.50 → 5.83; pc1024 272 → 195 |
+| mod-i | sweep WIN (1m 724,503 → 267,480; 64k 34,851 → 15,546); gate 64k WIN (46.2 → 20.3); gate 1m LOSS +2.41 (floor 0.52; first hit at 404) | WIN everywhere (short 13.54 → 6.05) |
+| userpass | `swar` LOSS everywhere (gate 64k +35.6, pc1024 +86); lead-first `swlf`: NULL on gate/sweep except sweep 1m LOSS +3.07 (floor 2.53) | `swar` LOSS; `swlf` NULL or WIN (short 6.00 → 5.25) |
+| cls-n-uc (K85) | sweeps WIN (1m 437,242 → `swar` 286,914, `swlf` 242,662, nosl 403,594); gate 64k/256k LOSS (`swar` 147 vs 76.5 at 256k; `swlf` 108) | `swlf` WIN at pc16..pc1024, short +0.04 = floor (LOSS by the rule) |
+
+**R4d's trigger** ("`swar` beats `emit` past the floor on at least one K82
+cell in its own regime, with no loss past the floor in the other"): **MET
+on union-select.** It wins every row in both regimes, by 1.4-2.0x on
+throughput and 1.4-2.0x per call. mod-i nearly meets it too: one
+throughput row loses by 2.4 ns on a single early-hit gate call. userpass
+shows that the ORDER is part of the form. Run-first loses wherever the
+lead rejects first (`=` is absent from the capability text); lead-first
+is null there.
+
+**SIMD-on reading (`ffl` vs `swar`):** `ffl` wins every row on every
+cell, at both SSE2 and AVX2, with two exceptions at 16 B: userpass pc16
+and cls-n-uc pc16 at AVX2 (+0.64 and +0.36 ns). Short vector spans
+belong to the scalar form; that is a cascade/short-path detail for
+R4e′, not a verdict against the layer.
+
+**What the numbers say about the scalar form itself:**
+- `swar`'s raw scan rate is ~0.18 ns/B (union-select 1m, no stops), and
+  `ffl`'s is ~0.04. glibc's AVX2 `memchr` scans faster still, so `swar`
+  wins only where `emit` pays per-stop costs (union-select's 1,431 `c`
+  stops per 64 KiB; mod-i's and K85's find-all sweeps).
+- It loses where a short distance to the first hit gives `emit` few
+  stops: mod-i gate 1m, cls-n-uc gates at 64k/256k. That is a regime
+  boundary of the portable form, not a defect.
+- The raw rate is set by the unmeasured choices: the 2x unroll and the
+  exact `zbytes`. Frank, 2026-10-05: tuning constants are suspect, so
+  measure them or leave them to the compiler. R4d's form starts from
+  the plain loop, under measurement.
+
+**K85:** both fused forms remove the dense-text loss in the find-all
+regime and beat the no-gate floor (nosl). At 1m: `swlf` −160,932 ns vs
+nosl, `ffl` AVX2 −306,068. The single-call gate on dense text still
+loses at SIMD-off. The fused RUN filter with the lead first is the
+general answer, as §6 proposed; the lead order is a kit per-site choice.
+
+**§15.5 consequence (for the integration.md revision, a kit design
+deliverable after main's review):** the composite site's form takes
+the lead order as a kit choice. Lead-first is the default when a lead is
+present (userpass, K85), and the fused run filter follows it. A "lead
+can reject" density fact from pcrec would let the kit choose run-first
+where the lead is dense. The SIMD-off form must not be selected for
+early-hit single gate calls on dense text without that fact. Both are
+noted for R4d's design, not built now (D77).
+
+**Charter vs committed, updated:** the Linux verdict, OWED in §7, is
+DONE: `docs/design/memfn/probes/out/twins/r4b/linux/`, read above.

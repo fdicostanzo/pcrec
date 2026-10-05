@@ -1,0 +1,46 @@
+# memfn R4b Linux verdict run (memfn_r4b.sh): probe checkout 4ecea50b2, pin d4d9ed90 (abi 61)
+# box: ubuntubudu, Linux 7.0.0-29-generic, AMD Ryzen 5 1600 Six-Core Processor
+# pinned: taskset -c 2; governor schedutil; boost 1
+# load at start: 2.12; date 2026-10-05T20:23Z
+# gcc: gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0
+# clang: Ubuntu clang version 21.1.8 (6ubuntu1) (directional only)
+## 1 subjects
+cap:t-64k OK
+cap:t-256k OK
+cap:t-1m OK
+syn:t-64k OK
+syn:t-256k OK
+syn:t-1m OK
+short: 75 subjects, 1..93 B
+subjects: -> /home/duxevents/pcrec/scratch_lx/r4b2/subj, sha256 mismatches 0
+ok   subjects_r4b.py
+## 2 the pin: pcrec d4d9ed90, gates_sync
+ok   make pcrec@d4d9ed90 (log: pcrec.build.log)
+GATES-SYNC ok
+ok   gates_sync.sh
+## 3 builds
+ok   build gcc-sse2
+ok   build gcc-avx2
+ok   build clang-sse2
+ok   build clang-avx2
+ok   build gcc-asan
+## 4 correctness (abort on any mismatch or a missed planted defect)
+ok   check gcc-sse2: check (sse2): real variants wrong: 0; planted 10, missed 0; real subjects included
+ok   check gcc-avx2: check (avx2): real variants wrong: 0; planted 10, missed 0; real subjects included
+ok   check clang-sse2: check (sse2): real variants wrong: 0; planted 10, missed 0; real subjects included
+ok   check clang-avx2: check (avx2): real variants wrong: 0; planted 10, missed 0; real subjects included
+ok   check gcc-asan: check (avx2): real variants wrong: 0; planted 10, missed 0; real subjects included
+## 5 timing
+ok   timed gcc-sse2 launch 1
+ok   timed gcc-avx2 launch 1
+ok   timed gcc-sse2 launch 2
+ok   timed gcc-avx2 launch 2
+ok   timed gcc-sse2 launch 3
+ok   timed gcc-avx2 launch 3
+ok   timed clang-sse2 launch 1
+ok   timed clang-avx2 launch 1
+## 6 readings
+ok   readings.gcc.md
+ok   readings.clang.md
+# load at end: 0.78
+R4B-DONE status=0 dir=/home/duxevents/pcrec/scratch_lx/r4b2

@@ -27,8 +27,13 @@ only). The Linux run lands in `build/memfn_twins/<stamp>/`.
 a provenance header) and its rendering `tb_r4b.mac.gcc.table.md`
 (`tb_r4b_table.py`); `check.{gcc,clang,asan}.txt` (NEON) and
 `check.x86.{x86-64,x86-64-v3,asan}.txt` (clang `-arch x86_64` under
-Rosetta 2, correctness only). The Linux verdict lands in the OUTDIR of
-`../lxrun/memfn_r4b.sh`.
+Rosetta 2, correctness only). `twins/r4b/linux/` is the Linux VERDICT run
+of `../lxrun/memfn_r4b.sh` (ubuntubudu, gcc 15.2, probe 4ecea50b, pin
+d4d9ed90, R4B-DONE status=0, 2026-10-05), copied back from its OUTDIR
+(`scratch_lx/r4b2`): `run.log`, `header.txt`, `check.*.txt`, `tb.*.txt`
+(raw rows per build x launch), `readings.{gcc,clang}.md` (gcc is the
+verdict; clang directional), `pcrec.build.log`. Read in
+docs/dev/lanes/memfnr4b_report.md §9.
 
 `linux/` — the 2026-10-05 Linux x86 run (linux_run.sh + twins_run.sh +
 lane lxrun's L-2/L-4/survey scripts), archived by lane lxread with
