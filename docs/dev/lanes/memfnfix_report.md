@@ -157,7 +157,67 @@ plus G2's `abi-mismatch` case, which reads the macro.
 
 ## 4. G2 full run (`memfn/tests/run_g2.sh --keep`)
 
-FULL_RUN_SECTION
+The run: seed 20261005, gcc-16 + clang, plus ASan+UBSan (clang) and
+every witness on every batch. Wall time was **538 s** on the Mac
+(memfng2 estimated about 25 min). The log is
+`build/scratch/g2full.log`, with the per-part logs in
+`build/scratch/g2full-work/` (worktree, gitignored). It was run in the
+background under `caffeinate`, with `timeout 5400`.
+
+| part | passed | failed | before (memfng2 §4.1) |
+|---|---|---|---|
+| generator: render | 4,008 rendered | **36** refused (Q-G2-13, §7) | 4,011 ok, 33 refused (F2) |
+| generator: refusal table + API | 256 cases, all PASS | **0** | 2 FAIL (F3) |
+| generator: vocab | 4,044 | 0 | same |
+| K1 plain / ASan | 377,000 / 377,000 | 0 / 0 | same |
+| gcc-16, 4,008 sites | **60,330,708** | **0**; faults 0 | 60,301,488 passed, 8,190 failed (F1) |
+| clang, 4,008 sites | **60,330,708** | **0**; faults 0 | the same 8,190 (F1) |
+| ASan+UBSan, quick tier | **15,433,672** | **0**; no sanitizer report | 679 failed (F1) |
+| coverage, per compiler | lengths 130/130, hit offsets 129/129, alignments 16/16, SET offsets 17/17, widths 8/8 | **17** RUN cells missing (1,627/1,644) + the RUN-cell floor line | 1 cell missing (F2's) |
+
+**Totals:** checks passed **136,857,396**; checks failed **72**.
+- The 72 are exactly 36 generator failures plus (17 cells + 1 floor
+  line) × 2 compilers.
+- Every one of the 36 reads "RUN byte has bits outside its mask"
+  (`grep -vc` of the other FAILs is 0).
+- Every missing cell is a RUN cell at length 5, 16 or 27 with one free
+  mask bit: the `unsat` cells. `grep -vc` of every other MISSING line
+  is 0 on both compilers.
+- F1's checks (16,380 + 679), F2's 33 sites and cell, and F3's 2
+  refusal cases are all gone.
+
+Two side effects:
+- The compiler-diagnostic count fell from 36 lines per compiler to
+  **0**. The `-Wtautological-compare` lines of memfng2 §4.5 came from
+  the very sites now refused.
+- "Sites with no positive outcome" fell from 204 to 169. The
+  never-holding class fell from 53 to 17, because the unsatisfiable
+  runs no longer render.
+
+**Witnesses (all fire):**
+
+| witness | result |
+|---|---|
+| W1 ref-defect 1 / 2 / 3 | 83,704 / 981,079 / 140,318 failed (each must be > 0) |
+| W3 over / under / clean | 17,550 faults / 2,851 faults / 0 failed |
+| W2 1 (`<`→`<=`) | mutated 3,696, killed 482 (≥ 1) |
+| W2 2 (`>=`→`>`) | mutated 3,618, killed 2,414 |
+| W2 3 (`+ 1`→`+ 2`) | mutated 3,817, killed 1,728 |
+| W2 4 (`==`→`!=`) | mutated 3,635, killed 3,437 |
+| W2 5 (hook `lo + 1`) | 3,714 / 4,008 = 92.7% (floor 65%) |
+| W2 6 (hook `n + 1`) | 3,646 / 4,008 = 91.0%, 1,245,881 faults |
+| W2 7 (hook `fl − 1`) | 2,433 / 3,361 = 72.4%, 373,350 faults |
+
+Every floor other than RUN cells holds:
+- sites 4,008 ≥ 3,900;
+- checks 60.3 M ≥ 55 M per compiler;
+- ASan 15.4 M ≥ 1.5 M;
+- refusals 256 ≥ 60;
+- combinations 20;
+- K1 377,000 ≥ 370,000.
+
+The runner exits 1 on the Q-G2-13 class, as it must while G2 and the
+ruling disagree.
 
 ## 5. `--quick`: `make test-memfn-g2`
 
@@ -201,7 +261,37 @@ The design (runner only; G2's sources are untouched):
 
 ## 6. The identity proof: zero movers
 
-IDENTITY_SECTION
+The method is memfnskel's: the committed instrument, `scripts/emit_sweep.py`
+([BSWEEP]).
+
+    python3 scripts/emit_sweep.py --ref 99130d75 --bin build/pcrec --out build-emitsweep
+
+- **Reference:** the branch point `99130d75`, built from `git archive`.
+- **Working side:** this branch's `build/pcrec`, built by
+  `make CC=gcc-16`. Its kit sources are the delivered ones; every later
+  commit touched only docs, the Makefile and `run_g2.sh`.
+- **Mac, wall 228 s.** The log is `build/scratch/emit_sweep.log`
+  (worktree, gitignored).
+- **Self-check** (two independent builds of the ref): PASSED,
+  all-identical at full reach.
+
+| stream | population | both compile (reach) | both refuse | **movers** | asymmetric |
+|---|---|---|---|---|---|
+| 1 `.c`, default engine, `--features all` | 4,512 | 4,065 | 447 | **0** | 0 |
+| 2 `.c`, `--engine=vm` | 4,512 | 4,066 | 446 | **0** | 0 |
+| 3 `--emit-ir --engine=vm` | 4,512 | 4,066 | 446 | **0** | 0 |
+| 4 composition (`--source`, 360 files) | 360 | 35 files / 102 artifacts | 325 | **0** | 0 |
+| 5 registry dumps (7 surfaces) | 7 | 7 | 0 | **0** | 0 |
+
+**0 movers on every stream:**
+- the C artifacts: 4,065 + 4,066;
+- 4,066 IR listings;
+- 102 composition artifacts;
+- all 7 registry dumps (`--list-axes` unchanged: the option registry is
+  still empty).
+
+The DELIVER witness is OK. As at R4a, no emitter calls the kit, so this
+is the measured confirmation of a by-construction fact.
 
 ## 7. Open items
 
