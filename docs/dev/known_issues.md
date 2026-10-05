@@ -11,6 +11,11 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 ---
 
+## K86 — OPEN, deferred (2026-10-05, found by lane optsrev's cross-source measurement, docs/design/option_sets_measurements/out/cross_source.txt) — cross-source precedence and its report depend on the SPELLING of an option, not on the option
+
+**Witnesses:** (D3) a `.rxt` config's raw `pcrec --engine=vm` line SILENTLY beats a CLI `--engine=dfa`, while the typed `engine` line follows the documented CLI-wins-with-report exception. (E3) the tune file-wins report labels a config's raw `--tune=` as "CLI". cli.md §1.1 also misstates how `flags` letters and raw `-f` bits compose: they UNION across sources.
+**Disposition:** the spec sentences are a D80 docs fix (owed now, small). The behavioural change (D3) is [OPT-SETS] revision 2's ruling R2, for Frank. The .rxt survey found one fixture and no caller relying on today's behaviour.
+
 ## K85 — OPEN, deferred (2026-10-05, found by lane lxread's read of the K82 (A)+(C) Linux alpha, abi 60, bit 45) — the set-leads pre-check costs a fresh `memchr` per search call on match-dense text where its lead byte is never absent: `cls-n-uc` +0.025..+0.031 ns/B (~5%)
 
 **Witness:** docs/dev/lanes/k82alpha_report.md §2 (BASE c4c70f2c abi 59, NEW eb6fe6139, DENY = NEW `-fno-req-set-lead`, DENY == BASE; floors ≤ 0.0009, control spread ≤ 0.004).
