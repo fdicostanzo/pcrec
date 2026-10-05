@@ -80,10 +80,12 @@ Every claim about today's tree was checked at `main` = `6f24e187`
 8. **The first consumer is `[MEMFN]` R4's vector rows and `--isa=L`.**
    Until a vector row or a declared ISA exists, `simd`, `no-simd` and every
    ISA member are vacuous. The dial alone does not need this mechanism; it
-   ships without it. The build trigger (§6) is therefore R4c′ or R4c (the
-   first `SCAN_ROWS` non-scalar row) or R4g (`--isa`), whichever lands
-   first. The mechanism then lands WITH that row, and the dial is re-expressed
-   on it in the same change, byte-identically.
+   ships without it. The build trigger (§6) is the first of three: R4c's
+   vector row together with a second vector-family deny, R4g's `--isa`, or
+   a bench request for a named SIMD-off or ISA testee. R4c′'s lone SWAR bit
+   does not trigger it. The mechanism then lands WITH the triggering row,
+   and the dial is re-expressed on it in the same change, byte-identically
+   apart from the new stamp.
 
 ---
 
@@ -97,7 +99,7 @@ at `6f24e187`.
 
 | family | what it controls | CLI | `.rxt` | API (`pcrec_options`) | stamped as | swept by | kind today |
 |---|---|---|---|---|---|---|---|
-| deny bits (`-fno-X`) | one optimization each; 38 deny macros | `-fno-X`, hidden from `--help` (D47.3) | a config's `pcrec <raw>` line | `flags` bits 4-45 | per-mechanism OUTCOME stamps (D46: `RX_DFA_TABLE`, `RX_VM_PREFILTER`, …). `rx_info.flags` records each bit unless it is in `emit_info_def`'s hand-kept `strategy_denials` mask (`src/gen/emit_dfa.c` ~:2728; `[AXES-DENY-MASK]` would derive it) | `make test-axes`, one job per bit (`tests/axes/run_axes.sh`) | boolean; OR'd; idempotent |
+| deny bits (`-fno-X`) | one optimization each; 35 deny bits (bits 4-45 less the five force bits, `--ucp` (34) and `--fast-or-fail` (41)) | `-fno-X`, hidden from `--help` (D47.3) | a config's `pcrec <raw>` line | `flags` bits 4-45 | per-mechanism OUTCOME stamps (D46: `RX_DFA_TABLE`, `RX_VM_PREFILTER`, …). `rx_info.flags` records each bit unless it is in `emit_info_def`'s hand-kept `strategy_denials` mask (`src/gen/emit_dfa.c` ~:2728; `[AXES-DENY-MASK]` would derive it) | `make test-axes`, one job per bit (`tests/axes/run_axes.sh`) | boolean; OR'd; idempotent |
 | force bits (`-fX`) | the force twin of a deny | `-fprefilter`, `-fprefilter-collapse`, `-fstartpos-guard=align`, `-futf-check`, `-fcomments` | `pcrec <raw>` | `flags` bits 9, 20, 27, 39, 40 | as above | as above (force arms) | a deny/force PAIR on one axis is REFUSED when both are requested, except comments (deny wins) |
 | contract axes | which ANSWER a call gives (§2.23, §2.36) | `-fno-startpos-guard`, `-fstartpos-guard=align`, `-futf-check` | `pcrec <raw>` | `flags` 25, 40, 39 | `RX_STARTPOS_GUARD`, `RX_UTF_CHECK`; kept in `rx_info.flags` | swept against their documented behaviour, not identity | boolean / three-valued |
 | semantic bits | what the pattern MEANS | `-i`, `--ucp`, `--no-captures` | `flags` letters; `pcrec <raw>` | `flags` 0, 34, 2 | `rx_info.flags` unmasked | not swept (structurally ineligible, D125) | boolean |
@@ -463,9 +465,11 @@ implement-then-replace and byte-identical: the same diagnostics, the same
 inert stamps. That is the D46 controllability half applied to the option
 layer itself. A row added later is one table row, not a new `if`.
 
-Rows 9-10 must precede any row that would REFUSE the same parties, and the
-table's order says so. That is the reason this is a first-match table and
-not an unordered rule set.
+The order is load-bearing where two rows share parties. Row 4 must precede
+row 9: `-futf-check=extent` under `-e byte` is REFUSED as reserved today
+(verified live, byte is the default encoding), not marked inert, and the
+reverse order would quietly accept a spelling that is not built. That is
+the reason this is a first-match table and not an unordered rule set.
 
 ### 2.8 A set's class, and what the class decides
 
@@ -663,7 +667,7 @@ build, not here. The rows the mechanism owes, with their detectors:
 | family members conflict instead of replacing | `--tune=min-size --tune=speed` must still compile, `RX_TUNE "speed"` (today's pinned behaviour) |
 | the stamp's override tail is omitted | the explicit-beats-set case, asserting `RX_SETS`'s tail |
 | a derived set's predicate misses a new row | a registry check: every axis tagged `vector` is denied by `no-simd`, counted from the axes file by plain-text scan (`[AXES-DENY-MASK]`'s own gate shape) |
-| the constraint table's order inverts rows 9 and 1-3 | the shipped pair refusals and inert stamps, already pinned in `tests/cli` |
+| the constraint table's rows 4 and 9 swap | `-futf-check=extent` under `-e byte` must still refuse as reserved (a `tests/cli` case, if the shipped pin does not already run it under `byte`) |
 
 **Witness note.** The conflict row needs two real sets in DIFFERENT
 families that assign one axis different values. Until vector rows exist,
