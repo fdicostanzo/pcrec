@@ -46,3 +46,17 @@ Verdict: NO BLOCKER. The delegation architecture holds. But byte-identical zero-
 ## Reflection
 
 The first revision with no blocker. The remaining gap is concrete, not conceptual: a contract written from the design's ideal sites rather than from the emitters' actual shapes. The critic who read the emitters line by line found every missing hook. Two items repeat because the lane was not given the rulings they contradict (Q3; the shipped denies). A design brief should name the standing rulings it must honour.
+
+## Addendum: focused re-check of revision 4 (del4check, sonnet, 2026-10-05)
+
+No blocker. CHECK 1: every §15 example reproduces the emitter format strings byte for byte (all cites verified, including the K82 gate on lane/k82hbuild 9bb97c7c and the memchr ratchet, 9 now and 3 after M1). CHECK 2: all 27 findings and all 7 rulings are mapped. CHECK 3: the stamp honours Q3 (a).
+
+Residuals, all ACCEPTED to a small text fix:
+- **C1-1 MED:** the K82 composite is written at two points in the buffer (file-scope FUNC parts, then the STMT at entry). Specify a define/use split and show it in §15.5.
+- **C1-2:** a note tag hook for the block-indexed run comment.
+- **C1-3:** the scan edge's peeled first ADVANCE (M3).
+- **C2-1/C2-2:** stale row text (`mf_plan`, the "opening-keyword hook").
+- **C3-1:** stale "movers only" text and MF_VOCAB wording.
+- **C3-2:** weaken assertion 3 to `none` ⇒ identical, plus non-`none` ⇒ a non-baseline arm rendered, with a G2 fixture property.
+- **C3-3:** add tests/litscan/reqcube.rxt to §18.3.
+- **Notes:** C2-3, C2-4.
