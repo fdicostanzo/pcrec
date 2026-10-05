@@ -1,0 +1,24 @@
+136c136
+<         if (forward_state == 4 && scan_position < subject_length && (unsigned)(subject[scan_position] - 97) <= 25u) {
+---
+>         if (forward_state == 4 && scan_position < subject_length && (unsigned char)(subject[scan_position] - 97) <= 25) {
+140c140
+<                    && (unsigned)(subject[scan_position] - 97) <= 25u) { scan_position++; scan_run_length++; }
+---
+>                    && (unsigned char)(subject[scan_position] - 97) <= 25) { scan_position++; scan_run_length++; }
+164c164
+<             if (reverse_state == 4 && rewind_position > search_from && (unsigned)(subject[rewind_position - 1] - 97) <= 25u) {
+---
+>             if (reverse_state == 4 && rewind_position > search_from && (unsigned char)(subject[rewind_position - 1] - 97) <= 25) {
+168c168
+<                        && (unsigned)(subject[rewind_position - 1] - 97) <= 25u) { rewind_position--; scan_run_length++; }
+---
+>                        && (unsigned char)(subject[rewind_position - 1] - 97) <= 25) { rewind_position--; scan_run_length++; }
+233c233
+<         if (anchored_state == 4 && scan_position < subject_length && (unsigned)(subject[scan_position] - 97) <= 25u) {
+---
+>         if (anchored_state == 4 && scan_position < subject_length && (unsigned char)(subject[scan_position] - 97) <= 25) {
+237c237
+<                    && (unsigned)(subject[scan_position] - 97) <= 25u) { scan_position++; scan_run_length++; }
+---
+>                    && (unsigned char)(subject[scan_position] - 97) <= 25) { scan_position++; scan_run_length++; }
