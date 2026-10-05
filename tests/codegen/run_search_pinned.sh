@@ -200,10 +200,19 @@ witness "non-null counted"   '[a-z]{4096,}'      reverse-pass y
 witness "eol view (P1/P2)"   '$'                 reverse-pass y
 witness "multiline eol"      '(?m)a*$'           reverse-pass y
 witness "class context"      '\bx*'              reverse-pass y
+# P2 ALONE. `\bx*` above is also declined by P3 (a `\b` machine needs seeding
+# and its seeds fail P1/P2 again), so it cannot tell P2 from P3. A
+# one-character LOOKAHEAD reads only the FOLLOWING byte: its seeds intern to
+# one state, `dfa_needs_seed` is false, P3 never runs, and P2's start-state
+# check is the only guard. Without it these stamp "pinned" and answer
+# `(?!a)` on "a" as 0..1 where the answer is the empty match at 1 (lane
+# r1mtriage, 2026-10-05: S220's witness, which no .rxt cell supplies).
+witness "lookahead view (P2)" '(?!a)'            reverse-pass y
+witness "lookahead after star" 'x*(?!a)'         reverse-pass y
 witness "whole form \\z"     '(?:[a-z]{0,64})\z' reverse-pass y
 witness "attempt engine"     '^a*'               reverse-pass n
 witness "deny flag"          'a*'                reverse-pass y -fno-start-pinned
-[ "$fail" -eq 0 ] && ok "§1 fifteen named witnesses stamp the documented value, mirror it in rx_info, and carry (or do not carry) the reverse machine accordingly"
+[ "$fail" -eq 0 ] && ok "§1 seventeen named witnesses stamp the documented value, mirror it in rx_info, and carry (or do not carry) the reverse machine accordingly"
 
 # `^a*` is the ENG_ATTEMPT row and it is the one witness above whose "no
 # reverse machine" is NOT the elision: that emitter never had one. Asserted
@@ -215,7 +224,7 @@ emit "$WORKDIR/att.c" '^a*' \
 
 # THE NEGATIVE CONTROL FOR THE WHOLE FILE. Without it every row above would
 # pass just as well on a compiler in which `pinned` is never selected —
-# `reverse-pass` is a legitimate value and eight of the fifteen rows expect
+# `reverse-pass` is a legitimate value and ten of the seventeen rows expect
 # it. The deny-flag row and this one differ in exactly one flag, so a build in
 # which the form is dead makes them EQUAL and this goes red.
 emit "$WORKDIR/on.c"  'a*'

@@ -128,11 +128,34 @@
 # field is removed rather than merely reworded, per this directory's own
 # rule that a stale expectation is never left standing), and
 # `SAB_DOC_FIGURE` below carries the exact re-measurement.
+# ============ 2026-10-05 (lane r1mtriage): THE 2026-09-29 "NOW DETECTED" WAS
+# ============ A CLEAN-TREE RED; THE MECHANISM tri220 REASONED IS REAL, AND
+# ============ ITS WITNESS IS NOW NAMED.
+#
+# The round-1 battery (Linux, c4c70f2c) read this row UNDETECTED (searchpinned
+# 0fail/17pass, corpus 0fail/36600pass), and so did a solo run on a4c752a2's
+# successor. Re-building tri220's tree (61cbc894) WITHOUT the plant:
+# run_search_pinned.sh is red there too -- the same single failure, §9's
+# "only 14 artifacts are PINNED on the -fprefilter force axis, below the 20
+# floor". That one failure WAS the 1fail/15pass tri220 scored as detection;
+# the plant moved nothing the suite read (the checks-sharing-a-source shape:
+# a sabotaged red never A/B'd against its clean tree).
+#
+# tri220's reasoned mechanism holds nonetheless, MEASURED here: a one-character
+# LOOKAHEAD reads only the following byte, so its seeds intern to one state,
+# `dfa_needs_seed` is false and P3 never runs. Under this plant `(?!a)` and
+# `x*(?!a)` flip reverse-pass -> pinned and answer "a" as 0..1 (python re and
+# the clean tree: the empty match at 1). No .rxt cell carries that subject on a
+# bare nullable negative lookahead, so run_search_pinned.sh §1 gained both as
+# named witnesses (stamp + mechanism, the "class context" row's shape), and
+# the reach probe now also requires `(?!a)` declined on the clean tree.
+# SAB_EXPECT stays DETECTED, now on a witness rather than on a floor.
+#
 SAB_ID="S220-pinned-view-clause-dropped"
 SAB_FILE="src/gen/emit_dfa.c"
 SAB_SUITES="searchpinned harness"
 SAB_DESC="The start-pinned predicate's P2 stops asking whether the start state's accept is invariant in position and in class context, so a state that accepts only at some positions is treated as accepting at all of them. The elision then fires on a machine that has no match at every search_from and writes caps[0][0] = search_from where the true match begins later -- a span too wide at the front, with the verdict and the match end both still right"
-SAB_DOC_FIGURE="MEASURED UNDETECTED by the lane 2026-09-02: with this plant applied and the tree rebuilt, the corpus produces the SAME 224 pinned artifacts as the clean tree and tests/codegen/run_search_pinned.sh is 17 passed / 0 failed. See the header for the derivation and for the two-hunk row (S218) that IS detected, at 243 pinned with 19 artifacts flipping and the check red in three places. RE-MEASURED 2026-09-03 (r51fix item 2, solo mech run against the re-derived SAB_REACH_POP manifest, tree 26644f50edcafbceb056616650f6cca2f80f4d89): UNDETECTED (EXPECTED), unexpected: 0 -- pop:tests/codegen/manifests/s220_view_decliners.txt:/^\\B/=3(want>=3), reach:ok(1/1), searchpinned:0fail/17pass, corpus:0fail/26883pass. The manifest's population reads exactly 3, its own full measured population, confirming the floor is not decorative. FLIPPED TO DETECTED 2026-09-29 (lane tri220, triage of the [UCP] U2 merge battery's mech chain): solo re-run at 61cbc894fadbe808a081e4b98b2357b1ed79f09a read NOW DETECTED -- pop:tests/codegen/manifests/s220_view_decliners.txt:/^\\B/=3(want>=3), reach:ok(1/1), searchpinned:1fail/15pass, corpus:0fail/31197pass -- unexpected: 1, undetected: 0, unreached: 0, anomalies: 0. The manifest and reach probe are UNCHANGED (still exactly the three \\B-shaped patterns, still reached the same way), so the three original witnesses and their P3 rescue are not what moved; a DIFFERENT construct now reaches the sabotaged clause with no P3 backstop. See the header's new paragraph for the mechanism; the exact witness inside run_search_pinned.sh was not hand-identified (a compiler build to isolate it was declined by the box's one-heavy-suite-at-a-time concurrency guard while the U2 chain and this lane ran, and is OWED to a build-capable follow-up)."
+SAB_DOC_FIGURE="MEASURED UNDETECTED by the lane 2026-09-02: with this plant applied and the tree rebuilt, the corpus produces the SAME 224 pinned artifacts as the clean tree and tests/codegen/run_search_pinned.sh is 17 passed / 0 failed. See the header for the derivation and for the two-hunk row (S218) that IS detected, at 243 pinned with 19 artifacts flipping and the check red in three places. RE-MEASURED 2026-09-03 (r51fix item 2, solo mech run against the re-derived SAB_REACH_POP manifest, tree 26644f50edcafbceb056616650f6cca2f80f4d89): UNDETECTED (EXPECTED), unexpected: 0 -- pop:tests/codegen/manifests/s220_view_decliners.txt:/^\\B/=3(want>=3), reach:ok(1/1), searchpinned:0fail/17pass, corpus:0fail/26883pass. The manifest's population reads exactly 3, its own full measured population, confirming the floor is not decorative. FLIPPED TO DETECTED 2026-09-29 (lane tri220, triage of the [UCP] U2 merge battery's mech chain): solo re-run at 61cbc894fadbe808a081e4b98b2357b1ed79f09a read NOW DETECTED -- pop:tests/codegen/manifests/s220_view_decliners.txt:/^\\B/=3(want>=3), reach:ok(1/1), searchpinned:1fail/15pass, corpus:0fail/31197pass -- unexpected: 1, undetected: 0, unreached: 0, anomalies: 0. The manifest and reach probe are UNCHANGED (still exactly the three \\B-shaped patterns, still reached the same way), so the three original witnesses and their P3 rescue are not what moved; a DIFFERENT construct now reaches the sabotaged clause with no P3 backstop. See the header's new paragraph for the mechanism; the exact witness inside run_search_pinned.sh was not hand-identified (a compiler build to isolate it was declined by the box's one-heavy-suite-at-a-time concurrency guard while the U2 chain and this lane ran, and is OWED to a build-capable follow-up). RE-MEASURED 2026-10-05 (lane r1mtriage): the 2026-09-29 flip was a clean-tree red (61cbc894 clean: searchpinned 1fail/15pass, the same §9 floor); at c4c70f2c and 4688b81f the row is UNDETECTED on Linux (searchpinned:0fail/17pass, corpus:0fail/38748pass). With run_search_pinned.sh §1 now naming (?!a) and x*(?!a): clean 17pass/0fail, plant 15pass/6fail (both witnesses stamp pinned and lose the reverse machine), darwin."
 # [MECH-REACH] THE PROBE says the SITE still answers: on the clean tree `\bx*`
 # is DECLINED, and it is declined at P2 rather than P1 (its start state DOES
 # accept under the plain view — a bare `x*` is nullable — so P1 passes).
@@ -154,7 +177,7 @@ SAB_DOC_FIGURE="MEASURED UNDETECTED by the lane 2026-09-02: with this plant appl
 # P2 and by no other clause. Floored at its full measured population (3),
 # not a decorative round number: if this manifest ever needs a fourth
 # member, the floor moves with it in the same change.
-SAB_REACH='"$PCREC" --features all -p rx --no-captures -o "$REACH_TMP/o.c" --pattern "\bx*" && grep -q "RX_DFA_START \"reverse-pass\"" "$REACH_TMP/o.c" && "$PCREC" --features all -p rx --no-captures -o "$REACH_TMP/p.c" --pattern "x*" && grep -q "RX_DFA_START \"pinned\"" "$REACH_TMP/p.c" && echo REACH-CLASSCTX-DECLINED-BY-P2'
+SAB_REACH='"$PCREC" --features all -p rx --no-captures -o "$REACH_TMP/o.c" --pattern "\bx*" && grep -q "RX_DFA_START \"reverse-pass\"" "$REACH_TMP/o.c" && "$PCREC" --features all -p rx --no-captures -o "$REACH_TMP/p.c" --pattern "x*" && grep -q "RX_DFA_START \"pinned\"" "$REACH_TMP/p.c" && "$PCREC" --features all -p rx --no-captures -o "$REACH_TMP/q.c" --pattern "(?!a)" && grep -q "RX_DFA_START \"reverse-pass\"" "$REACH_TMP/q.c" && echo REACH-CLASSCTX-DECLINED-BY-P2'
 SAB_REACH_EXPECT="REACH-CLASSCTX-DECLINED-BY-P2"
 SAB_REACH_POP="tests/codegen/manifests/s220_view_decliners.txt|^\\\\B|3"
 SAB_COUNT=1
