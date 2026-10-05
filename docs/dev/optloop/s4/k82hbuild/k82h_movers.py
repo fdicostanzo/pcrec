@@ -60,9 +60,20 @@ def norm_base(t):
     return re.sub(r'(\.abi *= *)%s\b' % ABI_FROM, r'\g<1>' + ABI_TO, t)
 
 
+SIZEWHY_RE = re.compile(r'^(#define RX_\w+_WHY "size cap retry, [^"]*?)(\d+)( > \d+")$', re.M)
+
+
 def strip_handoff(t):
+    """NEW's text with its REQ_HANDOFF line removed, the stamp's value, and
+    -- the one other place the line shows -- each size-cap retry reason's
+    emitted-byte count lowered by the line's own length (a `_WHY` stamp
+    that quotes the attempted artifact's size counts that line too)."""
     m = HANDOFF_RE.search(t)
-    return (HANDOFF_RE.sub("", t, count=1), m.group(1) if m else None)
+    if not m:
+        return t, None
+    n = len(m.group(0))
+    t = SIZEWHY_RE.sub(lambda w: w.group(1) + str(int(w.group(2)) - n) + w.group(3), t)
+    return HANDOFF_RE.sub("", t, count=1), m.group(1)
 
 
 def facts(binp, pat, args):
@@ -185,7 +196,7 @@ def main():
             unb = [r for r in ok if r["cfg"] == cfg and r["maxoff"] == "unbounded"]
             print(f"  {cfg}: movers {len(mv)} distinct ({sum(r['w'] for r in mv)} rows); "
                   f"K>0 {sum(1 for r in mv if r['k'])}; routes {dict(rt)}; "
-                  f"unbounded-run artifacts {len(unb)}; K histogram {dict(sorted(ks.items()))}")
+                  f"unbounded-run artifacts {len(unb)}; K histogram {dict(sorted(ks.items(), key=lambda kv: str(kv[0])))}")
             langs = collections.Counter(r["lang"] for r in mv if r["route"] == "hybrid")
             if langs:
                 print(f"    hybrid movers' RX_VM_PREFILTER_LANG {dict(langs)}")
