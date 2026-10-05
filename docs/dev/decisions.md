@@ -9012,3 +9012,5 @@ This generalizes D91 (scalar-first, "the SIMD crutch must not hide inefficiencie
 - **What sits inside SIMD-on is the kit's choice, per site:** which forms, which levels, any cascade (addendum 2), any fallback arm. No portability promise is made for it.
 - **The stamp records when a libc call is used,** so a reader knows the SIMD-off artifact delegates to libc's own dispatch.
 - **This replaces the three-profile wording of addendum 2 (off / portable / native) with ONE switch and a meaning.** Whether a narrower "baseline-ISA" SIMD-on form exists is a kit form question, not a pcrec profile.
+
+**D147 addendum 7 (Frank, 2026-10-05):** SIMD is OFF BY DEFAULT until the SIMD hold (D91/D119) lifts. Turning it on by default is its own ruled event (D112 shape). Callers opt in with the switch. Superseded proposals: Q51 (withdraw the SIMD-off arm) and Q52 (stamp keyed on the native flag) are REJECTED; D147's both-layers reading and Q39's stamp stand.
