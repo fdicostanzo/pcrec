@@ -144,3 +144,13 @@ pointer when a kit change merges to main.
 - Lesson: two critics' final messages truncated mid-finding. Brief
   critics to write their findings to a scratchpad file and reply with
   the path.
+
+## 2026-10-05 — R-3 taken (R4a lanes memfnskel, memfnmanifest)
+
+- Frank ruled Q53-Q55 as recommended (D147 addendum 10). R-3 filed: R4a
+  (zero movers), then R4a′ (the stamps' abi event; its number is agreed
+  with main first because of START-SET's events).
+- OWED (design text): integration.md still writes B4/B5 (the libc
+  record) and B6 (N7's scope) as Q53/Q54 PROPOSALS, with Q53-Q55 open.
+  Mark them RULED (addendum 10) and promote them to the design of
+  record. This rides R4a′'s branch, which builds the libc line.
