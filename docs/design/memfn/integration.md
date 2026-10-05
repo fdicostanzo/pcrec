@@ -1,5 +1,14 @@
 # memory-functions: R1d, THE INTEGRATION MAP AND THE COMPOSITION MODEL
 
+**REVISION 3 (lane `memfndel`, 2026-10-05, from main 90d396fd, design
+only): THE DELEGATION MODEL, per D146 (Frank, 2026-10-05). Read §R3
+first. Every changed passage is marked `[rev3]`, and the new material is
+§8-§13. Revision 2's K0 capability-and-price query (§7) is SUPERSEDED:
+no price crosses the boundary, and pcrec does no cost comparison.** The
+project is named **pcrec-memory-functions** ("the kit" below, as
+before). Revisions 1 and 2 are kept below and annotated where rev 3
+overrides them (house style: refutations inline, not edited away).
+
 **REVISION 2 (lane `memfnk0`, 2026-10-05, from main 68acba37, design
 only): the K0 capability-and-price query layer, per Frank's ruling on
 Q12. Read §R2 first; every changed passage is marked `[rev2]`, and the
@@ -33,6 +42,137 @@ addenda 2-3 (every form choice a `DFA_SELECT`-style row; SIMD later = one
 row; SWAR admitted now), D139 (one class-form table, sites as bits), D144
 item 4 (every optimization its own deny), D145 (generated-output licence
 exception), and the tables themselves (§1).
+
+---
+
+## R3. Revision 3: delegation, not a price market `[rev3]`
+
+**The ruling (D146, Frank, 2026-10-05).** pcrec hands a search SITE to
+the kit as a description: the operation, its operands, pcrec's proven
+facts (span bounds, anchoring, a density hint) and fusion hooks. The kit
+returns the code for that site and owns every choice inside it: SIMD
+forms compiled per ISA, the always-present scalar fallback, short-span
+loop-free paths, libc calls. pcrec does no cost comparison and carries no
+architecture knowledge. pcrec's existing scalar forms for delegated sites
+migrate into the kit as its scalar arms, implement-then-replace,
+byte-identical first. The two projects are tightly coupled, like
+pcrec-bench: when pcrec needs compound work ("this check followed by
+this check", a scan fused with a verify or a handoff), the kit provides
+it. The guard is pcrec's own bench/alpha timing with the kit on vs off.
+Revisit when a delegated site's kit code is measured worse than pcrec's
+pre-migration form and the kit cannot fix it.
+
+**Why it replaces rev 2.** The r2 panel
+(`../../dev/reviews/2026-10-05-r2-memfn-k0.md`) found that the
+architecture held and the price layer did not: the regime flips verdicts,
+"corners prove dominance" is a model, pcrec's rows were priced from the
+kit's own loops, and a recalibration moves bytes with no abi event. Every
+one of those is a property of putting MEASURED NUMBERS ON THE BOUNDARY.
+Delegation takes the numbers off it. The kit may still measure and
+compare, but behind its own tests, and pcrec never reads the result
+except as code.
+
+**What rev 3 is, in one paragraph.** pcrec describes a site as an
+`mf_site` (§8.2): an operation over a PREDICATE (a conjunction of
+position terms: byte sets and masked runs at offsets from the candidate),
+the proven span, anchoring, density hints, a policy word and a handoff.
+The kit writes the site's code into pcrec's sink through text hooks
+(§8.3): subject, read limit, bounds, result variable, cursor, and an
+optional per-candidate verify. Compound work is the predicate algebra
+plus a vocabulary pcrec extends by request (§8.4). pcrec's only
+decisions are WHICH SITES ARE DELEGATED, by operation type, and which
+PROFILE each asks for: `baseline` (pcrec's frozen pre-migration text,
+the guard's "off" arm), `portable`, or `native` (§8.5). The kit decides
+everything else with its own first-match tables and its own measured
+data and tests (§8.6). pcrec's scalar forms migrate in customer order,
+each byte-identical under the identity gates (§9). The guards are the
+kit-on/kit-off timing, the kit's exhaustive tests, the abi ritual for
+any kit change that moves a byte, the arch-blindness detector and a
+cross-target syntax check (§10). The kit lives in-tree first as
+`memfn/`, with a request ledger on D78's shape (§11). option_sets.md's
+`vector` family becomes a `memfn` family of three deny bits, and the
+first mover is K82's fused scan+verify after the handoff lands (§12).
+Questions Q24-Q33 (§13).
+
+### R3.1 What survives from revisions 1 and 2
+
+- **The table inventory** (§1: T1-T9, N1-N7) and the seven sites that do
+  not slot cleanly as built (§2.4). They are now the migration's work
+  list (§9).
+- **`SCAN_ROWS`' site set** (PF, PRE, OFS, STAY, EDGE, VMSPAN, SETREST),
+  D139's sites-as-bits shape. The sites stay; the per-site ROWS do not
+  (§8.5).
+- **The hook idea** (§3.3), narrowed to text hooks with a written
+  contract (§8.3). The `fallback` hook dissolves: the scalar fallback is
+  the kit's.
+- **K1/K2/K3** (§3.3) as the kit's INTERNAL layering: primitives,
+  composition generator, stand-alone CLI and reference functions. pcrec
+  calls only K2's site entry. K0 is withdrawn.
+- **The composition model** (§4: primitive families, C1 classifier and
+  C2 shape tables, the fixed library as generic-parameter outputs, the
+  scalar byte loop as the only test reference). It is wholly the kit's.
+- **The zero-mover stub idea** (rev 2 R4c). It becomes stronger: the
+  first migration step routes real sites through the kit at ZERO movers,
+  so the delegation path is live code from its first commit (§9.1), not a
+  stub.
+- **The fixed `portable` default** for `--isa` (§R2 finding 3, Q18):
+  never detected from the build box. It is carried as an opaque
+  pass-through (§8.2), and it stays HELD with R4h.
+- **The deny-bit budget argument** (Q15): bits per BUDGET and kernel
+  CLASS, never per ISA (§8.5).
+
+### R3.2 The r2 panel's findings under delegation
+
+Each finding is **carried** (still binds pcrec, answered in the section
+named), **moved inside the kit** (still binds, but as an obligation of
+the kit's own design and tests, listed in §8.6), or **dissolved** (its
+premise was the price boundary, which no longer exists).
+
+| id | sev | finding (short) | disposition | where, and why |
+|---|---|---|---|---|
+| P1 | HIGH | the price regime is unspecified and flips verdicts | moved inside the kit | the kit's choices among its arms still face chained vs isolated, hit vs miss. pcrec reads no price, so a regime error can no longer flip a pcrec selection. §8.6 obligation K-1 |
+| P2 | MED | the crossover depends on min/median as lo/hi | moved inside the kit | a statistic of the kit's protocol (§8.6 K-2) |
+| P3 | HIGH | bilinear corner dominance is a model | dissolved | pcrec has no dominance test. If the kit uses one, it is the kit's model with its own tests (K-1) |
+| P4 | MED | "compare on r alone" is false for FIND_PAIR / ALL_PRESENT | moved inside the kit | K-1 |
+| P5 / B3 | HIGH | pcrec's rows priced from the kit's own loops (shared source) | dissolved | pcrec's rows are not priced. The guard's "off" arm is pcrec's pre-migration text, pinned byte for byte by pcrec's identity gates (§10.1), and the timing is pcrec's own bench. Neither is computed by the kit |
+| B2 | HIGH | `prefix_k.c:65-68` already holds measured machine constants | carried, staged | those constants choose WHICH term the offset-k skip scans and whether to adopt it: a scan PLAN, which D146 puts in the kit. §9.4 stages the move (pcrec's pick travels as a plan hint first), Q29 |
+| P6 / B4 | MED | "every arm" vs `any_win`; arm provenance; three more contradictions | dissolved (pcrec) / moved (provenance) | pcrec has no arm notion. Which libc and compiler the kit's data came from is the kit's provenance (K-3) |
+| K2 | HIGH | costs depend on the compiler (×2.4, gcc vs clang) | moved inside the kit, plus one spec sentence | the kit keys its data by compiler class and may ladder on compiler macros (K-3). pcrec's spec states that the kit's choices are measured under gcc, pcrec's target compiler (D2), §10.6 |
+| P7 / K4 | MED | knobs in disguise: statistic, segment cap, extrapolation, ladder | moved inside the kit | K-2: protocol constants with a decision record in the kit, and a generator that fails rather than truncates |
+| P8 | MED | per_hit unpriced; shape-inherited prices; unflagged in-loop sites; STALE granularity | moved inside the kit, plus one pcrec check | the in-loop half binds pcrec: a site's D91 budget is a FIELD of pcrec's delegation table and the request's `MF_P_INLOOP` bit comes only from it (§10.5 C10). The rest is K-1/K-2 |
+| K1 / D1 | HIGH | new data moves emitted bytes with no abi event; no stamp | carried | ANY kit change that moves any byte pcrec emits is a pcrec abi event in the same commit, found by D94's grep, with the movers-by-ID census and a stamp on movers (§10.3). In-tree, the kit change and the bump are one commit (§11.1) |
+| P9 / C-a / C-b | HIGH | the timed control has no home, no long subjects, no armv8 arm | carried | it is now D146's guard: alpha per mover step on Linux, the batch gate's `memfn-off` bench testee, long subjects, a mover population with a floor, and a directional Mac arm (§10.1, Q31) |
+| B1 | HIGH | the arch-blindness regex misses most vocabulary; weak plant | carried | rebuilt: seven vocabulary classes, one positive control each, a plant held out from the regex's source, wider scopes, plus two delegation classes (§10.4 C4) |
+| B5 | MED | the other architecture's `#if` arms are never compiled | carried, on both sides | the kit cross-compiles every arm it can emit; pcrec runs `-fsyntax-only` per arm over its own artifacts, with an arm count (§10.5 C9) |
+| K3 | MED | `mf_pricelist` ~28 KB on emitter stacks | carried, smaller | the request and result are small (§8.2) and come from pcrec's arena. C10 forbids `mf_*` request/result structs as automatics under `src/` |
+| K5 / L1 | MED/LOW | kit text reaches artifacts against `third_party/`'s rule; licence; intrinsic headers | carried | §11.2 and Q26: 0BSD for the whole kit, the `third_party/` sentence updated at extraction, compiler-provided headers named in the spec |
+| C-c | MED | the price verifier's midpoints were empty below 64 B | moved inside the kit | K-2 |
+| C-d | MED | sabotage rows named timed detectors mech cannot run | carried | deterministic detectors only (§10.7) |
+| C-e | MED | no `--check` for the price table; the R4c stub made the row's logic dead code | dissolved (pcrec) / moved (`--check`) | the migration routes real sites through the kit at zero movers, so pcrec's delegation code is never dead (§9.1). The kit's own data needs its own `--check` (K-2) |
+| R1 | MED | the native default flip had no ruling designed | carried | `-fno-memfn-native` is ON by default during the SIMD hold, and the flip is its own ruled event (§12.2 R4f, Q28) |
+| R2 | MED | R4c′'s trigger vs the handoff's likely removal of those cells | carried | the first mover's trigger is restated after the handoff lands and is measured on the post-handoff build (§12.2 R4d) |
+| R3 | LOW | circular R4b/R4c triggers | carried | every step separates its PREREQUISITE (a step) from its TRIGGER (a measured cell or a ruling) (§12.2) |
+| P10 / P11 | LOW | published spreads were min..max of 3; "a slow box moves nothing" | dissolved | no spread or scaling claim crosses the boundary |
+
+**Count:** of 23 rows, 11 are carried (B2 staged), 7 move inside the
+kit (P8 keeps one pcrec-side check), 3 dissolve outright, and 2 split
+(dissolved for pcrec, moved for the kit: P6/B4 and C-e). Every HIGH that
+was about MEASUREMENT (P1, P3, P5) leaves pcrec. Every HIGH that was
+about the ARTIFACT or the CHECK (K1, P9, B1) stays.
+
+### R3.3 What rev 3 removes from revisions 1 and 2
+
+- §7 entire: the token-priced K0 query, `mf_pricelist`, `mf_dominates`,
+  the reference terms `LIBC_*`/`LOOP_*`/`CMP_WORD8`, `memfn/cal/` as
+  pcrec-visible data, and checks C2, C3, C7 and C8 as pcrec checks. C1,
+  C4, C5 (reshaped) and C6 survive in §10.
+- The `kit` ROW with a price predicate (§2.2 rev 2, §7.5), and pcrec's
+  per-row price-formula fields.
+- §2.5's `fallback` hook and its invariant's reason. The invariant
+  itself (one scalar spelling per search) now holds because pcrec has
+  NO scalar spelling of a delegated search after its migration step.
+- Questions Q16, Q20 and Q23 (dissolved), Q12 (ruled, then superseded
+  by D146), and Q19 (replaced by Q31). §13.1 maps every old question.
 
 ---
 
