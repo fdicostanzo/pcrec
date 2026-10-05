@@ -166,3 +166,322 @@ the set boundary at that line.
 `RX_NCAPS 1`. The behaviour is reasonable (an explicit engine beats an
 implied one, which is §2.5's own rule). The spec sentence overstates it,
 and it is a one-sentence D80 fix whenever `cli.md` is next touched.
+
+---
+
+## 2. The model
+
+### 2.1 Terms
+
+- An **axis** is one row of the option registry: a name, a DOMAIN of
+  values, a DEFAULT, a CLASS (§2.8) and zero or more SPELLINGS (CLI, `.rxt`,
+  API). Today's axes are `src/core/axes.def`'s rows (D111), the value
+  options of §1.1, and the four UNSPELLED axes the dial already sets
+  (§0 item 6). An axis needs a registry row. It does not need a spelling.
+- An **assignment** is a PARTIAL function from axes to values. An axis it
+  does not mention is unassigned, which is different from an axis assigned
+  its default value. A **pin** is an axis assigned its default value. A pin
+  changes nothing on its own; it is how a set says "this axis must stay as
+  it is" (§4.2).
+- A **set** is a named assignment, together with the class it inherits from
+  its members (§2.8).
+- A **family** is a named group of sets, with one DEFAULT member, of which
+  exactly one member is in force. A family is itself an axis: its domain is
+  its members. A set that belongs to no family is a **standalone** set. The
+  model treats a standalone set S as the two-member family {S, absent},
+  where "absent" is the empty default, so "every set has exactly one family"
+  holds without a special case.
+- A **source** is one place assignments come from: the command line, a
+  target's composed `.rxt` config, the API struct, and the built-in
+  defaults. A source is ORDERED if its assignments come in a sequence
+  (argv) and UNORDERED if they do not (a struct's fields).
+
+### 2.2 What a set IS: three candidates, and the choice
+
+| candidate | a set is… | membership | overlap | composition | verdict |
+|---|---|---|---|---|---|
+| **(A) bundle** | a named assignment, `{axis := value, …}` | an axis is in S iff S assigns it | two sets assign one axis | union, defined iff they agree (§2.4) | **CHOSEN** |
+| (B) predicate | a constraint over the option space, `C(ω)` ("no vector row is allowed") | a configuration is in S iff it satisfies C | the intersection of two regions | conjunction; a conflict is an empty intersection | **admitted only to COMPUTE a bundle** (a derived set, §2.3) |
+| (C) lattice | a level in an ordered chain (v1 ⊂ v3 ⊂ v4) | a level and every level below it | a lower and a higher level overlap by inclusion | join = max | **admitted only as an ORDER on one family's members**, read by constraints (§2.7) |
+
+Why (A):
+
+1. **It is predictable in Frank's D103 sense.** The resolved configuration
+   is a function of the NAMES given, computed by a fold with no search. A
+   predicate names a REGION. Turning a region into the one configuration an
+   artifact is built with is a choice, and a choice the compiler makes on
+   its own is exactly the "too unpredictable" objection D103 answered for
+   the dial.
+2. **An artifact can say how it was built.** A bundle's name plus the
+   explicit flags reproduce the configuration. A predicate's name does not,
+   because many configurations satisfy it.
+3. **A conflict is decidable by inspection.** Two bundles conflict iff
+   they assign one axis two different values. There is no satisfiability
+   question to answer, and the diagnostic can name the axis.
+4. **All four precedents in the tree are already bundles** (§1.3). (B) and
+   (C) have no instance in the tree as a composition rule.
+5. **It fits the house's table idiom.** A set table is rows of data, and
+   it is listable (`[LIST-TABLES]`).
+
+Why (B) and (C) are still needed, in their narrow roles:
+
+- **(B) as a DERIVED set.** `--features all` must mean "every module this
+  build has". `no-simd` must mean "every vector row", including rows added
+  after the set was written, or a new vector row would escape it. So a set
+  may be written as a predicate over registry ROWS ("every axis tagged
+  `vector`"). The predicate is evaluated when pcrec is BUILT and
+  materialized into a bundle. The compiler never solves it, and
+  `--list-sets` shows the materialized bundle. A **pinned** set's bundle is
+  written out and frozen by ruling: the dial (D103) and `std1` ("never
+  change after it ships"). The two kinds behave differently across
+  releases, and the set table says which each set is.
+- **(C) as an ORDER.** The ISA members form a poset: two chains,
+  `portable < x86-64-v1 < x86-64-v2 < x86-64-v3 < x86-64-v4` and
+  `portable < armv8-a < armv8-a+sve < armv8-a+sve2`, with x86 and Arm
+  members incomparable. The order is read by the constraint table ("a row
+  declared at v4, forced, needs isa ≥ v4", §2.7), by `test-axes` (run only
+  the members at or below the box, §3.5), and by `[ART-MGR]`'s catalog
+  ("runs on"). **It is never used to COMBINE**: joining `x86-64-v3` and
+  `x86-64-v4` by taking the max would silently pick one of two things a
+  caller asked for. Both are members of one family, so the later one
+  replaces the earlier (§2.3), or the conflict is refused.
+
+### 2.3 Families: exclusive groups, and why they replace rather than conflict
+
+The dial's positions, the ISA levels and the vector widths are
+**alternatives**. "Min-size and speed" is not a configuration, and neither
+is "v3 and armv8". A family makes that a property of the data, not of
+anyone's judgment:
+
+- **A family is an axis.** `--tune=speed` and `--set=speed` both assign
+  the `tune` axis the value `speed`. Every rule that applies to an axis
+  then applies to it unchanged: later-wins on the ordered command line
+  (today's `--tune=min-size --tune=speed` → `speed`, verified live), and
+  file-wins across sources (today's D93 addendum for `tune`).
+- **Members of one family therefore never conflict.** They replace each
+  other by the axis's own rule. Only sets in DIFFERENT families can
+  conflict, and a standalone set is its own family.
+- **A family declares a required CLASS for its members** (§2.8), checked
+  statically against every member's bundle when pcrec is built. The `tune`
+  family requires identity-class, refusal-preserving members. That is
+  `tuning.md` §5.5's acceptance and D125's structurally-ineligible bucket,
+  stated once as data rather than re-argued per cell.
+- **A family's default member is normally EMPTY** (`balanced`,
+  `portable`, `auto`). Naming the default is then the same as naming
+  nothing, which is why `--tune=balanced` and no flag are byte-identical
+  today, and why `tuning.md` §4's explicit-set residual costs nothing for
+  `tune`.
+
+### 2.4 Composition: the compatible union
+
+Write `dom(S)` for the axes S assigns. The **join** of two assignments is
+
+```
+S ⊔ T  =  S ∪ T                         if S(a) = T(a) for every a ∈ dom(S) ∩ dom(T)
+       =  undefined (a CONFLICT)        otherwise
+```
+
+It is commutative, associative and idempotent, so **the order in which
+sets are named never matters** and naming a set twice is harmless. This is
+D123's lesson applied: one composition rule with no precedence list among
+sets. Two sets that agree on a shared axis (`no-simd` and a dial position
+that also denies vector rows) compose silently, because there is nothing to
+resolve.
+
+**A conflict is refused, by name, before anything is compiled**:
+
+```
+pcrec: set 'simd' and set 'min-size' disagree on axis 'vec-scan'
+(simd: allow, min-size: deny); name one of them, or set the axis
+explicitly (-fvec-scan / -fno-vec-scan)
+```
+
+D26 applies: the code and the named parties are exact, the wording is
+not. The remedy the message names is always available, because explicit
+beats a set (§2.5).
+
+**List- and set-valued options decompose into one axis per element.**
+`--features` is one boolean-ish axis per module, `--memfn-deny=` one
+deny/default axis per kit row, and the join is taken element by element.
+Union composition then falls out with no special rule (`on ⊔ on = on`; an
+unmentioned module is unassigned). `features only` is an assignment of
+every element, and conflict checking is per element, so `simd`'s "keep row
+X" and a list denying row X is a conflict on X alone.
+
+**Numeric axes are equal-or-conflict.** Two sets setting the entry-chain
+term to 8,192 and 4,096 conflict. Neither max nor min is taken, for the
+same reason the ISA order is not used to merge.
+
+### 2.5 Precedence: explicit over set, per source; D93 across sources
+
+Composition (⊔) combines PEERS. Precedence combines TIERS, through a
+right-biased override `S ◁ E` (E's value where E assigns one, S's
+elsewhere).
+
+**Within one source, two tiers:**
+
+```
+resolved(source) = ( ⊔ of the sets that source names ) ◁ explicit(source)
+```
+
+- **Explicit beats a set, regardless of order.** This is Frank's
+  2026-09-16 dial ruling ("explicit per-switch flags beat the dial"),
+  generalized from one family to all of them. `--set=min-size
+  -fpremul-table` and `-fpremul-table --set=min-size` mean the same thing.
+  That is a deliberate departure from gcc, where `-ffast-math
+  -fmath-errno` and `-fmath-errno -ffast-math` differ. Position-dependence
+  is a precedence list in disguise, and D123 ruled against having two
+  composition mechanisms.
+- **On an ORDERED source, a repeated explicit axis is later-wins**, which
+  is what every value option does on pcrec's command line today. On an
+  UNORDERED source (the API struct), two fields that assign one axis
+  different values are REFUSED, because there is no order to break the tie
+  (§3.3: `tune = speed` with `sets = "min-size"`).
+- **Pinned deny/force pairs keep today's refusal.** `-fprefilter
+  -fno-prefilter` is not one axis assigned twice. It is two bits under a
+  constraint row (§2.7, row 1), and it stays refused.
+
+**Across sources, today's per-axis rule, unchanged** (D93 and its
+addendum, `cli.md` §1.1), as a first-match table over each axis:
+
+| # | predicate on axis `a` | `a`'s value comes from | reported? |
+|---|---|---|---|
+| 1 | `a` is `engine` and the CLI assigned it explicitly, not `auto` | the CLI | yes, if the file disagrees (today's text) |
+| 2 | `a` is `analysis` | the file if it names one, else the CLI (fill-only) | yes, if both name one (today's text) |
+| 3 | the target's resolved file assignment covers `a`, explicitly OR through a set the file names | the file | yes, if the CLI assigned `a` explicitly or through a set and the values differ (generalizes today's `tune`/`engine`/`analysis` reports) |
+| 4 | the CLI's resolved assignment covers `a` | the CLI | — |
+| 5 | otherwise | the default | — |
+
+Row 3's "through a set the file names" is the one new reading. **A set
+named in a file makes the file speak about every axis in that set**,
+because the file's author chose the set and everything in it. A CLI
+`-fno-tiered-entry` survives a file's `tune min-size`, because `min-size`
+does not assign `tiered-entry`. A CLI force on premultiplication would
+not survive it, and would be reported. That is exactly today's behaviour,
+because today the dial's cells are the only set-assigned axes.
+
+**The resolution order, start to finish.** This is a fold, not a
+selection, so it is written as numbered steps rather than as a table. The
+two DECISIONS in it (who writes an axis, and the constraint verdict) are
+first-match tables.
+
+1. Per source, resolve each FAMILY axis: its explicit spelling, or a
+   `--set=` naming a member, later-wins on an ordered source.
+2. Across sources, resolve each family axis by the table above.
+3. Expand each in-force member into its bundle, tagged with the source
+   that selected it.
+4. Per source, join that source's bundles. A conflict is refused here.
+5. Per source, overlay that source's explicit assignments (◁).
+6. Across sources, resolve each ordinary axis by the table above. Record
+   each axis's PROVENANCE (default / CLI set / CLI explicit / file set /
+   file explicit).
+7. Walk the constraint table (§2.7) over the result. A REFUSE row stops
+   the compile.
+8. Complete every unassigned axis with its default.
+9. Stamp (§3.4).
+
+Step 6's provenance record IS the general mechanism `opt_dial_design.md`
+§1.3 recommended and deferred: "explicit-set PROVENANCE for every
+D93-composed axis … deferred to its own measured trigger (D77): the
+trigger is the THIRD axis that needs the distinction". The set mechanism is
+that third consumer, twice over: the override tail of the stamp (§3.4) and
+the attribution in row 3's report both need to know which tier wrote an
+axis. So this design builds provenance as the general form, and adds no
+per-family bit (§5 Q6).
+
+### 2.6 User-defined sets are configs; there is no second kind
+
+A `.rxt` `config` is already a user-named bundle, with its own ruled
+composition (`from` materialized once, `with` flat later-wins). A config
+may NAME sets (§3.2), and a set may not name a config. Why the two are not
+merged:
+
+- A config is FILE-scoped and may carry non-option content (`analysis`,
+  `budget`). Its later-wins composition is a ruled, shipping contract
+  (`cli.md` §1.1, D93), and its author wrote the order.
+- A set is PCREC-scoped. It is pinned or derived by ruling, listed by
+  `--list-sets`, stamped, and conflict-checked.
+
+So sets are pcrec's VOCABULARY and configs are the user's SENTENCES. Inside
+one target, two sets named by any of its configs are peers of the FILE
+source and are joined, so a conflict between them is refused. The configs'
+own typed lines keep later-wins at the explicit tier, unchanged.
+
+**A meta-set** (a set whose bundle assigns another family's axis, e.g. a
+hypothetical `tiny` = `tune := min-size` + `vector := scalar`) is admitted by
+the model. Family axes resolve first (§2.5 steps 1-2), and a static check
+when pcrec is built rejects a cycle. It has no consumer, so it is not built
+(D77, §5 Q11).
+
+### 2.7 Constraints and implications: one first-match table
+
+Some relations are not compositions. They are facts about the RESULT: two
+values that cannot coexist, or a value that is meaningless without another.
+They are rows of one first-match table, walked once over the resolved
+assignment (§2.5 step 7). The first row whose predicate holds decides. A
+REFUSE row names itself in its diagnostic. Rows are data and listable.
+
+Three verdicts exist:
+
+- **REFUSE**: the compile stops, naming the row's parties.
+- **INERT**: the axis is kept and stamped as having no effect
+  (`RX_UTF_CHECK "inert"` is the shipped precedent).
+- **DERIVE**: a documented, pre-existing implication that ENABLES something
+  on another axis without changing any accepted pattern's answer.
+
+**A new rule may refuse or mark inert. It may not silently assign.**
+"SIMD requires an ISA level" is therefore NOT an implication: a vector row
+that needs a declared level simply does not apply below it. That is the
+`SCAN_ROWS` row's own PREDICATE (integration.md §2.1, `BASE`/`DECLARED`).
+Only a FORCE that cannot be honoured needs a row here.
+
+| # | row | predicate | verdict | status |
+|---|---|---|---|---|
+| 1 | `prefilter-pair` | `-fprefilter` ∧ `-fno-prefilter` | REFUSE | shipped (verified live) |
+| 2 | `collapse-pair` | `-fprefilter-collapse` ∧ `-fno-prefilter-collapse` | REFUSE | shipped (verified live) |
+| 3 | `startpos-pair` | `-fstartpos-guard=align` ∧ `-fno-startpos-guard` | REFUSE | shipped (verified live) |
+| 4 | `utf-check-extent` | `-futf-check=extent` | REFUSE (reserved) | shipped |
+| 5 | `comments-pair` | `-fcomments` ∧ `-fno-comments` | DENY WINS | shipped; the one silent resolution (§5 Q7) |
+| 6 | `isa-route-orphan` | `isa-route = macro` ∧ `isa = portable` | REFUSE | designed (isa_selection.md §1.2.3) |
+| 7 | `isa-marker-orphan` | `isa-marker` ∧ `isa` not on the x86 chain | REFUSE | designed (isa_selection.md Q6) |
+| 8 | `forced-row-below-level` | a row declared at level L is FORCED ∧ ¬(isa ≥ L) in the poset (incomparable counts as below) | REFUSE | designed here |
+| 9 | `utf-check-byte` | `-futf-check` ∧ `encoding = byte` | INERT | shipped |
+| 10 | `startpos-align-byte` | `-fstartpos-guard=align` ∧ `encoding = byte` | INERT | shipped |
+| 11 | `utf8-enables-modules` | `encoding = utf8` | DERIVE `unicode-props`, `ucp` enabled (the stamp keeps the REQUESTED set) | shipped |
+| 12 | `vm-drops-dfa-prefilter` | `engine = vm` | DERIVE no DFA prefilter (R21 E-6) | shipped |
+| 13 | otherwise | — | proceed | — |
+
+Rows 1-5 and 9-12 already exist, scattered (the pair refusals are
+diagnosed at compile and carry a pattern offset). Collecting them is
+implement-then-replace and byte-identical: the same diagnostics, the same
+inert stamps. That is the D46 controllability half applied to the option
+layer itself. A row added later is one table row, not a new `if`.
+
+Rows 9-10 must precede any row that would REFUSE the same parties, and the
+table's order says so. That is the reason this is a first-match table and
+not an unordered rule set.
+
+### 2.8 A set's class, and what the class decides
+
+Every axis already has a class in the tree's own vocabulary (`tuning.md`
+§1, §4; D125). A set's class is the WEAKEST of its members', in this order:
+
+| class | members are… | swept by `test-axes` as | may be in `tune`? |
+|---|---|---|---|
+| identity | answer-preserving, refusal-preserving | identity; LOST fails | yes |
+| engine-selecting | answer-preserving but may move the engine or refuse under `--engine=dfa` (`-fno-splice-calls`, `-fno-atomic-discharge`, `-fno-ctx-node`) | identity, with LOST printed where documented | no |
+| policy | changes WHETHER an artifact is produced, never its answers (`--fast-or-fail`, the caps) | not swept | no |
+| contract | changes which ANSWER a call gives, on purpose (`-futf-check`, `-fstartpos-guard=align`) | against its documented behaviour | no |
+| semantic | changes what the pattern MEANS (`-i`, `--ucp`, `--no-captures`, `encoding`) | not swept | no |
+| instrument | changes what the artifact DOES besides matching (`--trace`) or CONTAINS (`-fcomments`, object-identical) | not swept (own suites) | no |
+
+The class column is the `kind` column `[AXES-DENY-MASK]` already wants in
+the axes registry, to derive `rx_info.flags`' `strategy_denials` mask
+instead of hand-keeping it. Both readers need the same column, so it
+should be one column, built once (§5.2).
+
+**`explicit-only` axes.** A few options must never be implied by any set:
+`--isa-marker` (isa_selection.md Q6, "never implied by `--isa`") and the
+held `-fisa-dispatch=cpu-supports`. The registry tags them, and the static
+check rejects any set whose bundle assigns one. "Never implied" becomes a
+property of the data rather than a promise in a design note.
