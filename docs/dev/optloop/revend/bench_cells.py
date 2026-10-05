@@ -37,7 +37,7 @@ for tsv in sorted(glob.glob(os.path.join(REPORTS, "2026-10-05-*-round1-c4c70f2c.
     seen = {}
     for ln in open(tsv, encoding="utf8", errors="replace"):
         f = ln.rstrip("\n").split("\t")
-        if len(f) < 13 or not f[0].startswith("rank_") or f[10] != "median_ns":
+        if len(f) < 13 or not (f[0] == "rank" or f[0].startswith("rank_")) or f[10] != "median_ns":
             continue
         pid = f"{sb}/{f[1]}"
         if pid not in want or not any(f[6].startswith(k) for k in KEEP):

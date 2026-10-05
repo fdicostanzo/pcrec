@@ -1,0 +1,18 @@
+\d+$                                  nomatch        END_WINDOW="none" ENGINE="dfa" DFA_PREFILTER="byte-class-bounded" DFA_START="reverse-pass"  | rc=0 span=-1,-1 n=1048517 min_ns=910183 ns_per_B=0.8681
+\d+$                                  match_digits   END_WINDOW="none" ENGINE="dfa" DFA_PREFILTER="byte-class-bounded" DFA_START="reverse-pass"  | rc=1 span=1048513,1048517 n=1048517 min_ns=905402 ns_per_B=0.8635
+\w+$                                  nomatch        END_WINDOW="none" ENGINE="dfa" DFA_PREFILTER="byte-class-bounded" DFA_START="reverse-pass"  | rc=0 span=-1,-1 n=1048517 min_ns=3303461 ns_per_B=3.1506
+\w+$                                  match_word     END_WINDOW="none" ENGINE="dfa" DFA_PREFILTER="byte-class-bounded" DFA_START="reverse-pass"  | rc=1 span=1048513,1048517 n=1048517 min_ns=3300911 ns_per_B=3.1482
+\s+$                                  nomatch        END_WINDOW="none" ENGINE="dfa" DFA_PREFILTER="byte-class-bounded" DFA_START="reverse-pass"  | rc=0 span=-1,-1 n=1048517 min_ns=3227000 ns_per_B=3.0777
+\s+$                                  match_ws       END_WINDOW="none" ENGINE="dfa" DFA_PREFILTER="byte-class-bounded" DFA_START="reverse-pass"  | rc=1 span=1048517,1048520 n=1048520 min_ns=2651259 ns_per_B=2.5286
+.*\.txt$                              nomatch        END_WINDOW="none" ENGINE="dfa" DFA_PREFILTER="memchr-bounded" DFA_START="reverse-pass"  | rc=0 span=-1,-1 n=1048517 min_ns=604012 ns_per_B=0.5761
+.*\.txt$                              match_txt      END_WINDOW="none" ENGINE="dfa" DFA_PREFILTER="memchr-bounded" DFA_START="reverse-pass"  | rc=1 span=1048500,1048524 n=1048524 min_ns=241111 ns_per_B=0.2300
+[a-z]+\.txt$                          nomatch        END_WINDOW="none" ENGINE="dfa" DFA_PREFILTER="byte-class-bounded" DFA_START="reverse-pass"  | rc=0 span=-1,-1 n=1048517 min_ns=3342090 ns_per_B=3.1874
+[a-z]+\.txt$                          match_txt      END_WINDOW="none" ENGINE="dfa" DFA_PREFILTER="byte-class-bounded" DFA_START="reverse-pass"  | rc=1 span=1048517,1048524 n=1048524 min_ns=3415991 ns_per_B=3.2579
+\s*$                                  nomatch        END_WINDOW="none" ENGINE="dfa" DFA_PREFILTER="none" DFA_START="reverse-pass"  | rc=1 span=1048517,1048517 n=1048517 min_ns=1891866 ns_per_B=1.8043
+\s*$                                  match_ws       END_WINDOW="none" ENGINE="dfa" DFA_PREFILTER="none" DFA_START="reverse-pass"  | rc=1 span=1048517,1048520 n=1048520 min_ns=1890616 ns_per_B=1.8031
+\.txt$                                nomatch        END_WINDOW="5" ENGINE="dfa" DFA_PREFILTER="run-pinned-bounded" DFA_START="reverse-pass"  | rc=0 span=-1,-1 n=1048517 min_ns=80 ns_per_B=0.0001
+\.txt$                                match_txt      END_WINDOW="5" ENGINE="dfa" DFA_PREFILTER="run-pinned-bounded" DFA_START="reverse-pass"  | rc=1 span=1048520,1048524 n=1048524 min_ns=160 ns_per_B=0.0002
+\.txt$             -fno-end-window    nomatch        END_WINDOW="none" ENGINE="dfa" DFA_PREFILTER="run-pinned-bounded" DFA_START="reverse-pass"  | rc=0 span=-1,-1 n=1048517 min_ns=467881 ns_per_B=0.4462
+\.txt$             -fno-end-window    match_txt      END_WINDOW="none" ENGINE="dfa" DFA_PREFILTER="run-pinned-bounded" DFA_START="reverse-pass"  | rc=1 span=1048520,1048524 n=1048524 min_ns=465962 ns_per_B=0.4444
+abc$                                  nomatch        END_WINDOW="4" ENGINE="dfa" DFA_PREFILTER="run-pinned-bounded" DFA_START="reverse-pass"  | rc=0 span=-1,-1 n=1048517 min_ns=40 ns_per_B=0.0000
+abc$               -fno-end-window    nomatch        END_WINDOW="none" ENGINE="dfa" DFA_PREFILTER="run-pinned-bounded" DFA_START="reverse-pass"  | rc=0 span=-1,-1 n=1048517 min_ns=174461 ns_per_B=0.1664

@@ -1,0 +1,278 @@
+id	view	regime	testee	median_ns	n_subjects	throughput_bytes	ns_per_B
+capability/base10num-near-miss	1	large-subject-throughput	libpcre2_10.46_interp-caps-simdna	92.609130	3	1376256	0.00007
+capability/base10num-near-miss	1	large-subject-throughput	libpcre2_10.46_jit-caps-simdna	118.887249	3	1376256	0.00009
+capability/base10num-near-miss	1	large-subject-throughput	pcrec_c4c70f2c_auto-caps-simdna	16.176616	3	1376256	0.00001
+capability/base10num-near-miss	1	large-subject-throughput	pcrec_c4c70f2c_auto-nocaps-simdna	16.147039	3	1376256	0.00001
+capability/base10num-near-miss	1	large-subject-throughput	rust_1.13.1_default-caps-simdna	90.947162	3	1376256	0.00007
+capability/base10num-near-miss	1	short-subject-search	libpcre2_10.46_interp-caps-simdna	4536.733472	75		
+capability/base10num-near-miss	1	short-subject-search	libpcre2_10.46_jit-caps-simdna	3177.430867	75		
+capability/base10num-near-miss	1	short-subject-search	pcrec_c4c70f2c_auto-caps-simdna	506.316902	75		
+capability/base10num-near-miss	1	short-subject-search	pcrec_c4c70f2c_auto-nocaps-simdna	507.133701	75		
+capability/base10num-near-miss	1	short-subject-search	rust_1.13.1_default-caps-simdna	2222.910886	75		
+capability/bracket-array-define	1	large-subject-throughput	libpcre2_10.46_interp-caps-simdna	331.436820	3	1376256	0.00024
+capability/bracket-array-define	1	large-subject-throughput	libpcre2_10.46_jit-caps-simdna	128.326735	3	1376256	0.00009
+capability/bracket-array-define	1	large-subject-throughput	pcrec_c4c70f2c_auto-caps-simdna	71.972383	3	1376256	0.00005
+capability/bracket-array-define	1	large-subject-throughput	pcrec_c4c70f2c_auto-nocaps-simdna	71.850253	3	1376256	0.00005
+capability/bracket-array-define	1	short-subject-search	libpcre2_10.46_interp-caps-simdna	8824.664144	75		
+capability/bracket-array-define	1	short-subject-search	libpcre2_10.46_jit-caps-simdna	3233.591465	75		
+capability/bracket-array-define	1	short-subject-search	pcrec_c4c70f2c_auto-caps-simdna	1877.229059	75		
+capability/bracket-array-define	1	short-subject-search	pcrec_c4c70f2c_auto-nocaps-simdna	1879.570667	75		
+capability/date-nested-plus	1	large-subject-throughput	libpcre2_10.46_interp-caps-simdna	97.810374	3	1376256	0.00007
+capability/date-nested-plus	1	large-subject-throughput	libpcre2_10.46_jit-caps-simdna	140.499951	3	1376256	0.00010
+capability/date-nested-plus	1	large-subject-throughput	pcrec_c4c70f2c_auto-caps-simdna	29.625885	3	1376256	0.00002
+capability/date-nested-plus	1	large-subject-throughput	pcrec_c4c70f2c_auto-nocaps-simdna	16.950438	3	1376256	0.00001
+capability/date-nested-plus	1	large-subject-throughput	rust_1.13.1_default-caps-simdna	77.052516	3	1376256	0.00006
+capability/date-nested-plus	1	short-subject-search	libpcre2_10.46_interp-caps-simdna	4336.796036	75		
+capability/date-nested-plus	1	short-subject-search	libpcre2_10.46_jit-caps-simdna	3371.873267	75		
+capability/date-nested-plus	1	short-subject-search	pcrec_c4c70f2c_auto-caps-simdna	832.024354	75		
+capability/date-nested-plus	1	short-subject-search	pcrec_c4c70f2c_auto-nocaps-simdna	492.384759	75		
+capability/date-nested-plus	1	short-subject-search	rust_1.13.1_default-caps-simdna	1762.380452	75		
+capability/evil-alt-nested	1	large-subject-throughput	libpcre2_10.46_interp-caps-simdna	21266.434450	3	1376256	0.01545
+capability/evil-alt-nested	1	large-subject-throughput	libpcre2_10.46_jit-caps-simdna	1948.723128	3	1376256	0.00142
+capability/evil-alt-nested	1	large-subject-throughput	pcrec_c4c70f2c_auto-caps-simdna	11656.127456	3	1376256	0.00847
+capability/evil-alt-nested	1	large-subject-throughput	pcrec_c4c70f2c_auto-nocaps-simdna	24.501115	3	1376256	0.00002
+capability/evil-alt-nested	1	large-subject-throughput	rust_1.13.1_default-caps-simdna	87.682536	3	1376256	0.00006
+capability/ipv4-near-miss	1	large-subject-throughput	libpcre2_10.46_interp-caps-simdna	92.381570	3	1376256	0.00007
+capability/ipv4-near-miss	1	large-subject-throughput	libpcre2_10.46_jit-caps-simdna	143.982820	3	1376256	0.00010
+capability/ipv4-near-miss	1	large-subject-throughput	pcrec_c4c70f2c_auto-caps-simdna	13.357365	3	1376256	0.00001
+capability/ipv4-near-miss	1	large-subject-throughput	pcrec_c4c70f2c_auto-nocaps-simdna	13.357252	3	1376256	0.00001
+capability/ipv4-near-miss	1	large-subject-throughput	rust_1.13.1_default-caps-simdna	17.943907	3	1376256	0.00001
+capability/ipv4-near-miss	1	short-subject-search	libpcre2_10.46_interp-caps-simdna	2964.600743	75		
+capability/ipv4-near-miss	1	short-subject-search	libpcre2_10.46_jit-caps-simdna	3016.115086	75		
+capability/ipv4-near-miss	1	short-subject-search	pcrec_c4c70f2c_auto-caps-simdna	407.360469	75		
+capability/ipv4-near-miss	1	short-subject-search	pcrec_c4c70f2c_auto-nocaps-simdna	407.252976	75		
+capability/ipv4-near-miss	1	short-subject-search	rust_1.13.1_default-caps-simdna	1451.046731	75		
+capability/logparse-atomic	1	large-subject-throughput	libpcre2_10.46_interp-caps-simdna	261.418748	3	1376256	0.00019
+capability/logparse-atomic	1	large-subject-throughput	libpcre2_10.46_jit-caps-simdna	128.925210	3	1376256	0.00009
+capability/logparse-atomic	1	large-subject-throughput	pcrec_c4c70f2c_auto-caps-simdna	33.170893	3	1376256	0.00002
+capability/logparse-atomic	1	large-subject-throughput	pcrec_c4c70f2c_auto-nocaps-simdna	30.477016	3	1376256	0.00002
+capability/logparse-atomic	1	short-subject-search	libpcre2_10.46_interp-caps-simdna	4958.967534	75		
+capability/logparse-atomic	1	short-subject-search	libpcre2_10.46_jit-caps-simdna	3219.142930	75		
+capability/logparse-atomic	1	short-subject-search	pcrec_c4c70f2c_auto-caps-simdna	864.164230	75		
+capability/logparse-atomic	1	short-subject-search	pcrec_c4c70f2c_auto-nocaps-simdna	788.312664	75		
+capability/logparse-atomic-removed	1	large-subject-throughput	libpcre2_10.46_interp-caps-simdna	251.041811	3	1376256	0.00018
+capability/logparse-atomic-removed	1	large-subject-throughput	libpcre2_10.46_jit-caps-simdna	128.949506	3	1376256	0.00009
+capability/logparse-atomic-removed	1	large-subject-throughput	pcrec_c4c70f2c_auto-caps-simdna	30.958884	3	1376256	0.00002
+capability/logparse-atomic-removed	1	large-subject-throughput	pcrec_c4c70f2c_auto-nocaps-simdna	19.042136	3	1376256	0.00001
+capability/logparse-atomic-removed	1	large-subject-throughput	rust_1.13.1_default-caps-simdna	88.246557	3	1376256	0.00006
+capability/logparse-atomic-removed	1	short-subject-search	libpcre2_10.46_interp-caps-simdna	4833.833571	75		
+capability/logparse-atomic-removed	1	short-subject-search	libpcre2_10.46_jit-caps-simdna	3218.794374	75		
+capability/logparse-atomic-removed	1	short-subject-search	pcrec_c4c70f2c_auto-caps-simdna	799.016316	75		
+capability/logparse-atomic-removed	1	short-subject-search	pcrec_c4c70f2c_auto-nocaps-simdna	488.245936	75		
+capability/logparse-atomic-removed	1	short-subject-search	rust_1.13.1_default-caps-simdna	1583.891590	75		
+capability/numeric-id-nested-plus	1	large-subject-throughput	libpcre2_10.46_interp-caps-simdna	94.205801	3	1376256	0.00007
+capability/numeric-id-nested-plus	1	large-subject-throughput	libpcre2_10.46_jit-caps-simdna	124.050803	3	1376256	0.00009
+capability/numeric-id-nested-plus	1	large-subject-throughput	pcrec_c4c70f2c_auto-caps-simdna	28.563634	3	1376256	0.00002
+capability/numeric-id-nested-plus	1	large-subject-throughput	pcrec_c4c70f2c_auto-nocaps-simdna	14.323541	3	1376256	0.00001
+capability/numeric-id-nested-plus	1	large-subject-throughput	rust_1.13.1_default-caps-simdna	85.316129	3	1376256	0.00006
+capability/numeric-id-nested-plus	1	short-subject-search	libpcre2_10.46_interp-caps-simdna	34025624.061538	75		
+capability/numeric-id-nested-plus	1	short-subject-search	libpcre2_10.46_jit-caps-simdna	3113242.657334	75		
+capability/numeric-id-nested-plus	1	short-subject-search	pcrec_c4c70f2c_auto-caps-simdna	834.167656	75		
+capability/numeric-id-nested-plus	1	short-subject-search	pcrec_c4c70f2c_auto-nocaps-simdna	426.596091	75		
+capability/numeric-id-nested-plus	1	short-subject-search	rust_1.13.1_default-caps-simdna	2665.588712	75		
+capability/phone-list-nested-plus	1	large-subject-throughput	libpcre2_10.46_interp-caps-simdna	94.169401	3	1376256	0.00007
+capability/phone-list-nested-plus	1	large-subject-throughput	libpcre2_10.46_jit-caps-simdna	124.179674	3	1376256	0.00009
+capability/phone-list-nested-plus	1	large-subject-throughput	pcrec_c4c70f2c_auto-caps-simdna	30.293601	3	1376256	0.00002
+capability/phone-list-nested-plus	1	large-subject-throughput	pcrec_c4c70f2c_auto-nocaps-simdna	14.309840	3	1376256	0.00001
+capability/phone-list-nested-plus	1	large-subject-throughput	rust_1.13.1_default-caps-simdna	87.701991	3	1376256	0.00006
+capability/phone-list-nested-plus	1	short-subject-search	libpcre2_10.46_interp-caps-simdna	39975369.440644	75		
+capability/phone-list-nested-plus	1	short-subject-search	libpcre2_10.46_jit-caps-simdna	3895514.629067	75		
+capability/phone-list-nested-plus	1	short-subject-search	pcrec_c4c70f2c_auto-caps-simdna	901.586867	75		
+capability/phone-list-nested-plus	1	short-subject-search	pcrec_c4c70f2c_auto-nocaps-simdna	435.822303	75		
+capability/phone-list-nested-plus	1	short-subject-search	rust_1.13.1_default-caps-simdna	2960.353883	75		
+capability/pwd-strength-chain	1	large-subject-throughput	libpcre2_10.46_interp-caps-simdna	5172.084425	3	1376256	0.00376
+capability/pwd-strength-chain	1	large-subject-throughput	libpcre2_10.46_jit-caps-simdna	1131.992702	3	1376256	0.00082
+capability/pwd-strength-chain	1	large-subject-throughput	pcrec_c4c70f2c_auto-caps-simdna	221.338363	3	1376256	0.00016
+capability/pwd-strength-chain	1	large-subject-throughput	pcrec_c4c70f2c_auto-nocaps-simdna	222.028096	3	1376256	0.00016
+capability/pwd-strength-chain	1	short-subject-search	libpcre2_10.46_interp-caps-simdna	36106.963009	75		
+capability/pwd-strength-chain	1	short-subject-search	libpcre2_10.46_jit-caps-simdna	8323.193791	75		
+capability/pwd-strength-chain	1	short-subject-search	pcrec_c4c70f2c_auto-caps-simdna	12092.594801	75		
+capability/pwd-strength-chain	1	short-subject-search	pcrec_c4c70f2c_auto-nocaps-simdna	12094.207393	75		
+capability/trim-nested-star	1	large-subject-throughput	libpcre2_10.46_interp-caps-simdna	356.117031	3	1376256	0.00026
+capability/trim-nested-star	1	large-subject-throughput	libpcre2_10.46_jit-caps-simdna	126.803125	3	1376256	0.00009
+capability/trim-nested-star	1	large-subject-throughput	pcrec_c4c70f2c_auto-caps-simdna	47.368414	3	1376256	0.00003
+capability/trim-nested-star	1	large-subject-throughput	pcrec_c4c70f2c_auto-nocaps-simdna	14.408748	3	1376256	0.00001
+capability/trim-nested-star	1	large-subject-throughput	rust_1.13.1_default-caps-simdna	82.907171	3	1376256	0.00006
+capability/trim-nested-star	1	short-subject-search	libpcre2_10.46_interp-caps-simdna	33894166.357627	75		
+capability/trim-nested-star	1	short-subject-search	libpcre2_10.46_jit-caps-simdna	3390462.639828	75		
+capability/trim-nested-star	1	short-subject-search	pcrec_c4c70f2c_auto-caps-simdna	10184248.884243	75		
+capability/trim-nested-star	1	short-subject-search	pcrec_c4c70f2c_auto-nocaps-simdna	382.326275	75		
+capability/trim-nested-star	1	short-subject-search	rust_1.13.1_default-caps-simdna	1989.899211	75		
+capability/uuid-near-miss	1	large-subject-throughput	libpcre2_10.46_interp-caps-simdna	154.746737	3	1376256	0.00011
+capability/uuid-near-miss	1	large-subject-throughput	libpcre2_10.46_jit-caps-simdna	117.291642	3	1376256	0.00009
+capability/uuid-near-miss	1	large-subject-throughput	pcrec_c4c70f2c_auto-caps-simdna	14.254730	3	1376256	0.00001
+capability/uuid-near-miss	1	large-subject-throughput	pcrec_c4c70f2c_auto-nocaps-simdna	14.245487	3	1376256	0.00001
+capability/uuid-near-miss	1	large-subject-throughput	rust_1.13.1_default-caps-simdna	18.319155	3	1376256	0.00001
+capability/uuid-near-miss	1	short-subject-search	libpcre2_10.46_interp-caps-simdna	2830.171575	75		
+capability/uuid-near-miss	1	short-subject-search	libpcre2_10.46_jit-caps-simdna	2809.228135	75		
+capability/uuid-near-miss	1	short-subject-search	pcrec_c4c70f2c_auto-caps-simdna	525.502568	75		
+capability/uuid-near-miss	1	short-subject-search	pcrec_c4c70f2c_auto-nocaps-simdna	521.300275	75		
+capability/uuid-near-miss	1	short-subject-search	rust_1.13.1_default-caps-simdna	696.240415	75		
+capability/wild-datetime-moment-iso8601	1	large-subject-throughput	libpcre2_10.46_interp-caps-simdna	97.744857	3	1376256	0.00007
+capability/wild-datetime-moment-iso8601	1	large-subject-throughput	libpcre2_10.46_jit-caps-simdna	174.850816	3	1376256	0.00013
+capability/wild-datetime-moment-iso8601	1	large-subject-throughput	pcrec_c4c70f2c_auto-caps-simdna	33.443739	3	1376256	0.00002
+capability/wild-datetime-moment-iso8601	1	large-subject-throughput	pcrec_c4c70f2c_auto-nocaps-simdna	19.649716	3	1376256	0.00001
+capability/wild-datetime-moment-iso8601	1	large-subject-throughput	rust_1.13.1_default-caps-simdna	300.487143	3	1376256	0.00022
+capability/wild-datetime-moment-iso8601	1	short-subject-search	libpcre2_10.46_interp-caps-simdna	3535.630950	75		
+capability/wild-datetime-moment-iso8601	1	short-subject-search	libpcre2_10.46_jit-caps-simdna	3263.790709	75		
+capability/wild-datetime-moment-iso8601	1	short-subject-search	pcrec_c4c70f2c_auto-caps-simdna	952.065803	75		
+capability/wild-datetime-moment-iso8601	1	short-subject-search	pcrec_c4c70f2c_auto-nocaps-simdna	572.564832	75		
+capability/wild-datetime-moment-iso8601	1	short-subject-search	rust_1.13.1_default-caps-simdna	2056.296438	75		
+capability/wild-semdiv-dollar-trailing-newline-pcre2	1	large-subject-throughput	libpcre2_10.46_interp-caps-simdna	2722879.378947	3	1376256	1.97847
+capability/wild-semdiv-dollar-trailing-newline-pcre2	1	large-subject-throughput	libpcre2_10.46_jit-caps-simdna	51579.844143	3	1376256	0.03748
+capability/wild-semdiv-dollar-trailing-newline-pcre2	1	large-subject-throughput	pcrec_c4c70f2c_auto-caps-simdna	42.292255	3	1376256	0.00003
+capability/wild-semdiv-dollar-trailing-newline-pcre2	1	large-subject-throughput	pcrec_c4c70f2c_auto-nocaps-simdna	42.397562	3	1376256	0.00003
+capability/wild-semdiv-dollar-trailing-newline-pcre2	1	large-subject-throughput	rust_1.13.1_default-caps-simdna	80.816214	3	1376256	0.00006
+capability/wild-semdiv-dollar-trailing-newline-pcre2	1	short-subject-search	libpcre2_10.46_interp-caps-simdna	3765.512550	75		
+capability/wild-semdiv-dollar-trailing-newline-pcre2	1	short-subject-search	libpcre2_10.46_jit-caps-simdna	2929.946818	75		
+capability/wild-semdiv-dollar-trailing-newline-pcre2	1	short-subject-search	pcrec_c4c70f2c_auto-caps-simdna	983.823406	75		
+capability/wild-semdiv-dollar-trailing-newline-pcre2	1	short-subject-search	pcrec_c4c70f2c_auto-nocaps-simdna	975.862501	75		
+capability/wild-semdiv-dollar-trailing-newline-pcre2	1	short-subject-search	rust_1.13.1_default-caps-simdna	1596.218216	75		
+capability/wild-validator-email-owasp	1	large-subject-throughput	libpcre2_10.46_interp-caps-simdna	507.905362	3	1376256	0.00037
+capability/wild-validator-email-owasp	1	large-subject-throughput	libpcre2_10.46_jit-caps-simdna	164.449471	3	1376256	0.00012
+capability/wild-validator-email-owasp	1	large-subject-throughput	pcrec_c4c70f2c_auto-caps-simdna	36.212779	3	1376256	0.00003
+capability/wild-validator-email-owasp	1	large-subject-throughput	pcrec_c4c70f2c_auto-nocaps-simdna	36.498668	3	1376256	0.00003
+capability/wild-validator-email-owasp	1	large-subject-throughput	rust_1.13.1_default-caps-simdna	108.661520	3	1376256	0.00008
+capability/wild-validator-email-owasp	1	short-subject-search	libpcre2_10.46_interp-caps-simdna	6031.985446	75		
+capability/wild-validator-email-owasp	1	short-subject-search	libpcre2_10.46_jit-caps-simdna	3273.142524	75		
+capability/wild-validator-email-owasp	1	short-subject-search	pcrec_c4c70f2c_auto-caps-simdna	1030.601256	75		
+capability/wild-validator-email-owasp	1	short-subject-search	pcrec_c4c70f2c_auto-nocaps-simdna	1032.246885	75		
+capability/wild-validator-email-owasp	1	short-subject-search	rust_1.13.1_default-caps-simdna	2566.832636	75		
+capability/wild-validator-ipv4-owasp	1	large-subject-throughput	libpcre2_10.46_interp-caps-simdna	97.830820	3	1376256	0.00007
+capability/wild-validator-ipv4-owasp	1	large-subject-throughput	libpcre2_10.46_jit-caps-simdna	146.279858	3	1376256	0.00011
+capability/wild-validator-ipv4-owasp	1	large-subject-throughput	pcrec_c4c70f2c_auto-caps-simdna	26.992913	3	1376256	0.00002
+capability/wild-validator-ipv4-owasp	1	large-subject-throughput	pcrec_c4c70f2c_auto-nocaps-simdna	13.343059	3	1376256	0.00001
+capability/wild-validator-ipv4-owasp	1	large-subject-throughput	rust_1.13.1_default-caps-simdna	18.186880	3	1376256	0.00001
+capability/wild-validator-ipv4-owasp	1	short-subject-search	libpcre2_10.46_interp-caps-simdna	3196.016201	75		
+capability/wild-validator-ipv4-owasp	1	short-subject-search	libpcre2_10.46_jit-caps-simdna	3318.417726	75		
+capability/wild-validator-ipv4-owasp	1	short-subject-search	pcrec_c4c70f2c_auto-caps-simdna	804.052439	75		
+capability/wild-validator-ipv4-owasp	1	short-subject-search	pcrec_c4c70f2c_auto-nocaps-simdna	614.501224	75		
+capability/wild-validator-ipv4-owasp	1	short-subject-search	rust_1.13.1_default-caps-simdna	1258.476059	75		
+capability/wild-validator-us-zip-owasp	1	large-subject-throughput	libpcre2_10.46_interp-caps-simdna	94.060192	3	1376256	0.00007
+capability/wild-validator-us-zip-owasp	1	large-subject-throughput	libpcre2_10.46_jit-caps-simdna	122.590972	3	1376256	0.00009
+capability/wild-validator-us-zip-owasp	1	large-subject-throughput	pcrec_c4c70f2c_auto-caps-simdna	25.761210	3	1376256	0.00002
+capability/wild-validator-us-zip-owasp	1	large-subject-throughput	pcrec_c4c70f2c_auto-nocaps-simdna	13.399607	3	1376256	0.00001
+capability/wild-validator-us-zip-owasp	1	large-subject-throughput	rust_1.13.1_default-caps-simdna	18.216140	3	1376256	0.00001
+capability/wild-validator-us-zip-owasp	1	short-subject-search	libpcre2_10.46_interp-caps-simdna	3177.751795	75		
+capability/wild-validator-us-zip-owasp	1	short-subject-search	libpcre2_10.46_jit-caps-simdna	3079.354102	75		
+capability/wild-validator-us-zip-owasp	1	short-subject-search	pcrec_c4c70f2c_auto-caps-simdna	732.099275	75		
+capability/wild-validator-us-zip-owasp	1	short-subject-search	pcrec_c4c70f2c_auto-nocaps-simdna	396.305741	75		
+capability/wild-validator-us-zip-owasp	1	short-subject-search	rust_1.13.1_default-caps-simdna	1661.746100	75		
+capability/winpath-near-miss	1	large-subject-throughput	libpcre2_10.46_interp-caps-simdna	268.018962	3	1376256	0.00019
+capability/winpath-near-miss	1	large-subject-throughput	libpcre2_10.46_jit-caps-simdna	119.784876	3	1376256	0.00009
+capability/winpath-near-miss	1	large-subject-throughput	pcrec_c4c70f2c_auto-caps-simdna	19.160248	3	1376256	0.00001
+capability/winpath-near-miss	1	large-subject-throughput	pcrec_c4c70f2c_auto-nocaps-simdna	17.784330	3	1376256	0.00001
+capability/winpath-near-miss	1	large-subject-throughput	rust_1.13.1_default-caps-simdna	90.264604	3	1376256	0.00007
+capability/winpath-near-miss	1	short-subject-search	libpcre2_10.46_interp-caps-simdna	4634.259818	75		
+capability/winpath-near-miss	1	short-subject-search	libpcre2_10.46_jit-caps-simdna	2847.978526	75		
+capability/winpath-near-miss	1	short-subject-search	pcrec_c4c70f2c_auto-caps-simdna	433.008329	75		
+capability/winpath-near-miss	1	short-subject-search	pcrec_c4c70f2c_auto-nocaps-simdna	433.661400	75		
+capability/winpath-near-miss	1	short-subject-search	rust_1.13.1_default-caps-simdna	1796.564314	75		
+litrun/ctrl-abc-dollar	1	large-subject-throughput	libpcre2_10.46_jit-caps-simdna	1218418.777566	27	1769391	0.68861
+litrun/ctrl-abc-dollar	1	large-subject-throughput	pcrec_c4c70f2c_auto-caps-simdna	454.378893	27	1769391	0.00026
+litrun/ctrl-abc-dollar	1	match-compliance	libpcre2_10.46_jit-caps-simdna	1585.150340	27		
+litrun/ctrl-abc-dollar	1	match-compliance	pcrec_c4c70f2c_auto-caps-simdna	311.092184	27		
+litrun/ctrl-abc-dollar	1	short-subject-search	libpcre2_10.46_jit-caps-simdna	1178.420562	27		
+litrun/ctrl-abc-dollar	1	short-subject-search	pcrec_c4c70f2c_auto-caps-simdna	409.783052	27		
+syntax/anc-dollar	1	large-subject-throughput	libpcre2_10.46_interp-caps-simdna	2966606.460674	3	1376256	2.15556
+syntax/anc-dollar	1	large-subject-throughput	libpcre2_10.46_jit-caps-simdna	212010.989960	3	1376256	0.15405
+syntax/anc-dollar	1	large-subject-throughput	pcrec_c4c70f2c_auto-caps-simdna	24.243366	3	1376256	0.00002
+syntax/anc-dollar	1	large-subject-throughput	pcrec_c4c70f2c_auto-nocaps-simdna	24.167904	3	1376256	0.00002
+syntax/anc-dollar	1	large-subject-throughput	rust_1.13.1_default-caps-simdna	80.831573	3	1376256	0.00006
+syntax/anc-dollar	1	match-compliance	libpcre2_10.46_interp-caps-simdna	1362.075402	42		
+syntax/anc-dollar	1	match-compliance	libpcre2_10.46_jit-caps-simdna	1321.712749	42		
+syntax/anc-dollar	1	match-compliance	pcrec_c4c70f2c_auto-caps-simdna	458.962479	42		
+syntax/anc-dollar	1	match-compliance	pcrec_c4c70f2c_auto-nocaps-simdna	456.182047	42		
+syntax/anc-dollar	1	match-compliance	rust_1.13.1_default-caps-simdna	460.695816	42		
+syntax/anc-dollar	1	short-subject-search	libpcre2_10.46_interp-caps-simdna	3228.348327	42		
+syntax/anc-dollar	1	short-subject-search	libpcre2_10.46_jit-caps-simdna	1635.064699	42		
+syntax/anc-dollar	1	short-subject-search	pcrec_c4c70f2c_auto-caps-simdna	472.804574	42		
+syntax/anc-dollar	1	short-subject-search	pcrec_c4c70f2c_auto-nocaps-simdna	473.016679	42		
+syntax/anc-m-dollar	3	large-subject-throughput	libpcre2_10.46_interp-caps-simdna	2978262.955556	3	1376256	2.16403
+syntax/anc-m-dollar	3	large-subject-throughput	libpcre2_10.46_jit-caps-simdna	220209.803462	3	1376256	0.16001
+syntax/anc-m-dollar	3	large-subject-throughput	pcrec_c4c70f2c_auto-caps-simdna	555876.805556	3	1376256	0.40391
+syntax/anc-m-dollar	3	large-subject-throughput	pcrec_c4c70f2c_auto-nocaps-simdna	556072.878924	3	1376256	0.40405
+syntax/anc-m-dollar	3	large-subject-throughput	rust_1.13.1_default-caps-simdna	237373.551771	3	1376256	0.17248
+syntax/anc-m-dollar	3	match-compliance	libpcre2_10.46_interp-caps-simdna	1344.461747	42		
+syntax/anc-m-dollar	3	match-compliance	libpcre2_10.46_jit-caps-simdna	1326.493558	42		
+syntax/anc-m-dollar	3	match-compliance	pcrec_c4c70f2c_auto-caps-simdna	454.182224	42		
+syntax/anc-m-dollar	3	match-compliance	pcrec_c4c70f2c_auto-nocaps-simdna	457.255435	42		
+syntax/anc-m-dollar	3	match-compliance	rust_1.13.1_default-caps-simdna	461.079539	42		
+syntax/anc-m-dollar	3	short-subject-search	libpcre2_10.46_interp-caps-simdna	3210.536033	42		
+syntax/anc-m-dollar	3	short-subject-search	libpcre2_10.46_jit-caps-simdna	1643.781813	42		
+syntax/anc-m-dollar	3	short-subject-search	pcrec_c4c70f2c_auto-caps-simdna	604.133286	42		
+syntax/anc-m-dollar	3	short-subject-search	pcrec_c4c70f2c_auto-nocaps-simdna	604.344486	42		
+syntax/anc-m-dollar	3	short-subject-search	rust_1.13.1_default-caps-simdna	2372.515371	42		
+syntax/anc-z-lc	2	large-subject-throughput	libpcre2_10.46_interp-caps-simdna	2947488.943820	3	1376256	2.14167
+syntax/anc-z-lc	2	large-subject-throughput	libpcre2_10.46_jit-caps-simdna	212948.487830	3	1376256	0.15473
+syntax/anc-z-lc	2	large-subject-throughput	pcrec_c4c70f2c_auto-caps-simdna	24.994209	3	1376256	0.00002
+syntax/anc-z-lc	2	large-subject-throughput	pcrec_c4c70f2c_auto-nocaps-simdna	24.875145	3	1376256	0.00002
+syntax/anc-z-lc	2	large-subject-throughput	rust_1.13.1_default-caps-simdna	79.878756	3	1376256	0.00006
+syntax/anc-z-lc	2	match-compliance	libpcre2_10.46_interp-caps-simdna	1345.569547	42		
+syntax/anc-z-lc	2	match-compliance	libpcre2_10.46_jit-caps-simdna	1320.406081	42		
+syntax/anc-z-lc	2	match-compliance	pcrec_c4c70f2c_auto-caps-simdna	452.396104	42		
+syntax/anc-z-lc	2	match-compliance	pcrec_c4c70f2c_auto-nocaps-simdna	460.777871	42		
+syntax/anc-z-lc	2	match-compliance	rust_1.13.1_default-caps-simdna	460.453053	42		
+syntax/anc-z-lc	2	short-subject-search	libpcre2_10.46_interp-caps-simdna	3167.892311	42		
+syntax/anc-z-lc	2	short-subject-search	libpcre2_10.46_jit-caps-simdna	1757.867118	42		
+syntax/anc-z-lc	2	short-subject-search	pcrec_c4c70f2c_auto-caps-simdna	412.699160	42		
+syntax/anc-z-lc	2	short-subject-search	pcrec_c4c70f2c_auto-nocaps-simdna	412.017407	42		
+syntax/anc-z-lc	2	short-subject-search	rust_1.13.1_default-caps-simdna	1210.198100	42		
+syntax/anc-z-uc	1	large-subject-throughput	libpcre2_10.46_interp-caps-simdna	2963019.522727	3	1376256	2.15296
+syntax/anc-z-uc	1	large-subject-throughput	libpcre2_10.46_jit-caps-simdna	211505.913741	3	1376256	0.15368
+syntax/anc-z-uc	1	large-subject-throughput	pcrec_c4c70f2c_auto-caps-simdna	24.303634	3	1376256	0.00002
+syntax/anc-z-uc	1	large-subject-throughput	pcrec_c4c70f2c_auto-nocaps-simdna	24.265072	3	1376256	0.00002
+syntax/anc-z-uc	1	match-compliance	libpcre2_10.46_interp-caps-simdna	1344.703195	42		
+syntax/anc-z-uc	1	match-compliance	libpcre2_10.46_jit-caps-simdna	1325.052102	42		
+syntax/anc-z-uc	1	match-compliance	pcrec_c4c70f2c_auto-caps-simdna	451.562587	42		
+syntax/anc-z-uc	1	match-compliance	pcrec_c4c70f2c_auto-nocaps-simdna	455.010876	42		
+syntax/anc-z-uc	1	short-subject-search	libpcre2_10.46_interp-caps-simdna	3225.573614	42		
+syntax/anc-z-uc	1	short-subject-search	libpcre2_10.46_jit-caps-simdna	1631.917510	42		
+syntax/anc-z-uc	1	short-subject-search	pcrec_c4c70f2c_auto-caps-simdna	472.119662	42		
+syntax/anc-z-uc	1	short-subject-search	pcrec_c4c70f2c_auto-nocaps-simdna	473.961476	42		
+utf8/asr-a-z	2	large-subject-throughput	libpcre2_10.46_interp-caps-simdna_utf8	2361015.869835	7	1638400	1.44105
+utf8/asr-a-z	2	large-subject-throughput	libpcre2_10.46_jit-caps-simdna_utf8	2360565.409382	7	1638400	1.44077
+utf8/asr-a-z	2	large-subject-throughput	pcrec_c4c70f2c_auto-caps-simdna_utf8	40.235369	7	1638400	0.00002
+utf8/asr-a-z	2	large-subject-throughput	pcrec_c4c70f2c_auto-nocaps-simdna_utf8	40.320955	7	1638400	0.00002
+utf8/asr-a-z	2	large-subject-throughput	rust_1.13.1_default-caps-simdna	42.179581	7	1638400	0.00003
+utf8/asr-a-z	2	short-subject-search	libpcre2_10.46_interp-caps-simdna_utf8	5356.180238	91		
+utf8/asr-a-z	2	short-subject-search	libpcre2_10.46_jit-caps-simdna_utf8	4353.452315	91		
+utf8/asr-a-z	2	short-subject-search	pcrec_c4c70f2c_auto-caps-simdna_utf8	580.218572	91		
+utf8/asr-a-z	2	short-subject-search	pcrec_c4c70f2c_auto-nocaps-simdna_utf8	581.318706	91		
+utf8/asr-a-z	2	short-subject-search	rust_1.13.1_default-caps-simdna	1170.565456	91		
+utf8/asr-dollar-ml	3	large-subject-throughput	libpcre2_10.46_interp-caps-simdna_utf8	2995321.564644	7	1638400	1.82820
+utf8/asr-dollar-ml	3	large-subject-throughput	libpcre2_10.46_jit-caps-simdna_utf8	2422813.843348	7	1638400	1.47877
+utf8/asr-dollar-ml	3	large-subject-throughput	pcrec_c4c70f2c_auto-caps-simdna_utf8	40733.903671	7	1638400	0.02486
+utf8/asr-dollar-ml	3	large-subject-throughput	pcrec_c4c70f2c_auto-nocaps-simdna_utf8	40723.618649	7	1638400	0.02486
+utf8/asr-dollar-ml	3	large-subject-throughput	rust_1.13.1_default-caps-simdna	49863.768628	7	1638400	0.03043
+utf8/asr-dollar-ml	3	short-subject-search	libpcre2_10.46_interp-caps-simdna_utf8	6748.708192	91		
+utf8/asr-dollar-ml	3	short-subject-search	libpcre2_10.46_jit-caps-simdna_utf8	4492.975424	91		
+utf8/asr-dollar-ml	3	short-subject-search	pcrec_c4c70f2c_auto-caps-simdna_utf8	970.073250	91		
+utf8/asr-dollar-ml	3	short-subject-search	pcrec_c4c70f2c_auto-nocaps-simdna_utf8	971.118431	91		
+utf8/asr-dollar-ml	3	short-subject-search	rust_1.13.1_default-caps-simdna	4082.311943	91		
+utf8/cls-dot-rep	1	large-subject-throughput	libpcre2_10.46_interp-caps-simdna_utf8	2361420.276688	7	1638400	1.44130
+utf8/cls-dot-rep	1	large-subject-throughput	libpcre2_10.46_jit-caps-simdna_utf8	2360545.389610	7	1638400	1.44076
+utf8/cls-dot-rep	1	large-subject-throughput	pcrec_c4c70f2c_auto-caps-simdna_utf8	88.644288	7	1638400	0.00005
+utf8/cls-dot-rep	1	large-subject-throughput	pcrec_c4c70f2c_auto-nocaps-simdna_utf8	88.923486	7	1638400	0.00005
+utf8/cls-dot-rep	1	large-subject-throughput	rust_1.13.1_default-caps-simdna	42.016779	7	1638400	0.00003
+utf8/cls-dot-rep	1	short-subject-search	libpcre2_10.46_interp-caps-simdna_utf8	8934.835472	91		
+utf8/cls-dot-rep	1	short-subject-search	libpcre2_10.46_jit-caps-simdna_utf8	4435.831000	91		
+utf8/cls-dot-rep	1	short-subject-search	pcrec_c4c70f2c_auto-caps-simdna_utf8	951.715468	91		
+utf8/cls-dot-rep	1	short-subject-search	pcrec_c4c70f2c_auto-nocaps-simdna_utf8	959.781695	91		
+utf8/cls-dot-rep	1	short-subject-search	rust_1.13.1_default-caps-simdna	2683.332970	91		
+utf8/lit-anchored-run	1	large-subject-throughput	libpcre2_10.46_interp-caps-simdna_utf8	2361021.630081	7	1638400	1.44105
+utf8/lit-anchored-run	1	large-subject-throughput	libpcre2_10.46_jit-caps-simdna_utf8	2360769.041485	7	1638400	1.44090
+utf8/lit-anchored-run	1	large-subject-throughput	pcrec_c4c70f2c_auto-caps-simdna_utf8	42.996294	7	1638400	0.00003
+utf8/lit-anchored-run	1	large-subject-throughput	pcrec_c4c70f2c_auto-nocaps-simdna_utf8	65.414610	7	1638400	0.00004
+utf8/lit-anchored-run	1	large-subject-throughput	rust_1.13.1_default-caps-simdna	42.043006	7	1638400	0.00003
+utf8/lit-anchored-run	1	short-subject-search	libpcre2_10.46_interp-caps-simdna_utf8	5633.724538	91		
+utf8/lit-anchored-run	1	short-subject-search	libpcre2_10.46_jit-caps-simdna_utf8	4370.850215	91		
+utf8/lit-anchored-run	1	short-subject-search	pcrec_c4c70f2c_auto-caps-simdna_utf8	597.787051	91		
+utf8/lit-anchored-run	1	short-subject-search	pcrec_c4c70f2c_auto-nocaps-simdna_utf8	899.586551	91		
+utf8/lit-anchored-run	1	short-subject-search	rust_1.13.1_default-caps-simdna	1170.837888	91		
+utf8/prp-l-anchored	1	large-subject-throughput	libpcre2_10.46_interp-caps-simdna_utf8	2361434.593333	7	1638400	1.44131
+utf8/prp-l-anchored	1	large-subject-throughput	libpcre2_10.46_jit-caps-simdna_utf8	2361228.167770	7	1638400	1.44118
+utf8/prp-l-anchored	1	large-subject-throughput	rust_1.13.1_default-caps-simdna	42.273344	7	1638400	0.00003
+utf8/prp-l-anchored	1	short-subject-search	libpcre2_10.46_interp-caps-simdna_utf8	8959.798513	91		
+utf8/prp-l-anchored	1	short-subject-search	libpcre2_10.46_jit-caps-simdna_utf8	4949.406888	91		
+utf8/prp-l-anchored	1	short-subject-search	rust_1.13.1_default-caps-simdna	2831.781703	91		
