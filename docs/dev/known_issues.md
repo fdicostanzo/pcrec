@@ -16,7 +16,16 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 **Witness:** docs/dev/lanes/k82halpha_report.md §2 (BASE cdc50d5b abi 60, NEW 3481682b, DENY = NEW `-fno-req-handoff`, DENY == BASE; floor 0.011, control spread <= 0.004). Matches are 31 B apart so `handoff_position == search_from` on every call and the rewrite is pure added work; the same pattern's no-match subject (`fbf-l31`) moves +0.0005. **Second witness (per-call, one subject):** `modi-srch` `v-us-zip-plus4` +0.877 ns (11.547 -> 12.424, floor 0.009, DENY back at 11.538): the pre-check passes and the handoff adds its compare, ~3 cycles; the other 16 `modi-srch` REG labels are <= +0.092, inside the control's 0.45 ns spread, so they are not witnesses.
 **Interim:** `-fno-req-handoff` (bit 46). **Disposition (D144):** an issue row, not a revert (the same row cures cause (B) by 0.35..0.86 ns/B, halves `stack-frame`'s dense hit, and takes `kv-quoted`'s hit by -3.4 ns/B). The mechanism is not measured (candidates: the extra live `size_t` across the `rx_reqrun` call, the dependent subtract-compare-select on its return path); re-measure with a `cnt_pre.h`-style twin before designing anything; cross-ref [MEMFN]'s fused kernel. Plan row [K88-HANDOFF-DENSE].
 
-## K87 — OPEN (2026-10-05, found by lane o83read's read of bench O-83 /
+## K87 — CLOSED, NOT A DEFECT (layout; 2026-10-05, lane k87twin, docs/dev/optloop/k87twin_report.md) — originally: OPEN (2026-10-05, found by lane o83read's read of bench O-83 /
+
+**CLOSED 2026-10-05 (lane k87twin, the pcrec-side Linux twin this entry asked for).** The split is code layout, not the spelling.
+- **Method:** gcc 15.2 + clang 21.1, an 8-offset code-layout alignment control, a base-vs-base floor, taskset, an idle box.
+- **Same loop:** both spellings give the same hot loop; only the compare width differs (`cmpl` vs `cmpb`, the latter 1 B shorter on `%al`, which shifts the loop 1 B inside the function). clang emits byte-identical code.
+- **cls-upto-1024 (gcc):** swings 0.607..0.893 ns/B with offset alone, and NEW == OLD within 0.002 at every offset.
+- **nest2-letters-6 (gcc):** swings 1.41..2.19 ns/B, 5x the bench's delta. NEW lands in the slow layout at 6/8 offsets against OLD's 4/8. With `-falign-loops` pinned, the residual is +0.005..0.03 ns/B.
+- **Short search:** no effect attributable to the spelling.
+- **Disposition:** keep D139 item 2's spelling; no revert, no flag.
+- **Side observation (FILED, NOT PLANNED, D77):** default gcc -O2 scan loops sit on a 0.29-0.76 ns/B loop-alignment cliff. Loop alignment is the lever if a measured need ever appears.
 its b122sweep) — [CLS-TREE] S2's unified scan-edge RANGE spelling
 (D139 item 2, abi 53) moves default DFA timing with a consistent regime
 split: plain throughput slower on every bounded/loglines row, plain
