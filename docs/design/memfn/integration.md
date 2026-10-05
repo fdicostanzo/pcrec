@@ -5108,6 +5108,25 @@ maps them. Each question has a recommendation.
 >   Q50-Q52 are new. Q37 and Q40-Q49 stand open as written, with Q40's
 >   "baseline's frozen planner" read as the scalar layer's planner.
 
+> **`[rev4.3]` THE QUESTION LIST AFTER FRANK'S 2026-10-05 RULINGS (D147
+> addenda 1-7).** No ruled question is renumbered.
+>
+> | Q | state | where |
+> |---|---|---|
+> | Q35 | RULED yes (D147) | §8 + §14 |
+> | Q36 | RULED yes (D147) | `memfn/` |
+> | Q37 | RULED yes (addendum 1) | §20.3 |
+> | Q38 | RULED (addendum 2), then REPLACED by addendum 6 (one switch) and addendum 7 (default OFF) | §R4.3.1 |
+> | Q39 | RULED yes (addendum 3), with addendum 6's libc record | §R4.3.3 |
+> | Q40 | RULED yes, as revised by D147 (addendum 4) | §R4.3.5 |
+> | Q41 | RULED yes (addendum 5) | §16 |
+> | Q42 | RULED REVERSED: migrate every site, under a checked manifest (addendum 5) | §R4.3.4 |
+> | Q43-Q49 | OPEN, as written (spellings per §R4.3.1) | below |
+> | Q50 | RULED yes (addendum 6) | §R4.3.1 |
+> | Q51 | REJECTED (addendum 7) | §R4.3.6 |
+> | Q52 | REJECTED (addendum 7) | §R4.3.6 |
+> | Q53-Q55 | NEW, open | below |
+
 35. **Q35, the contract (re-derives Q24).** Adopt §8 as extended by §14
     as the design of record:
     - the three forms, and the six handoffs with pcrec's `on_miss`;
@@ -5132,6 +5151,8 @@ maps them. Each question has a recommendation.
     Translated Rust `memchr` files take its Unlicense arm, with an SPDX
     tag and provenance per file and C16 holding the set to D145's list.
     **Recommendation:** yes.
+    **`[rev4.3]` RULED YES** (D147 addendum 1): 0BSD for the kit's own
+    text, with per-file Unlicense provenance for translated Rust `memchr`.
 38. **Q38, the profile axes, polarity, and the baseline's permanence
     (re-derives Q27/Q28).**
     - `-fno-memfn-scan` and `-fno-memfn-loop` are deny axes, default ON.
@@ -5155,6 +5176,13 @@ maps them. Each question has a recommendation.
       replaced (§L.4).
 
     **Recommendation:** yes.
+
+    **`[rev4.3]` RULED, then REPLACED.** Addendum 2 ruled this question
+    with three profiles (`-fno-memfn-simd` / portable / `-fmemfn-native`).
+    Addendum 6 replaced them with ONE switch and its meaning, and addendum
+    7 made it OFF by default. The axis is `memfn-simd`, a deny/force pair
+    (`-fno-memfn-simd` / `-fmemfn-simd`) in `strategy_denials` (§R4.3.1).
+    The frozen pre-migration text is a per-step comparator only.
 39. **Q39, the stamp (G-F1).** **`[rev4.2]`** Re-derived as Q52 (its
     reference compile, `memfn-off`, no longer exists). `<PREFIX>_MEMFN_FORMS` on every artifact,
     valued `none` iff the artifact is byte-identical to its `memfn-off`
@@ -5162,6 +5190,9 @@ maps them. Each question has a recommendation.
     vocabulary number, is written by the kit, and is checked by C11
     against a pcrec-side diff. It is born in its own abi event (R4a′)
     before M1's replace. **Recommendation:** yes.
+    **`[rev4.3]` RULED YES** (D147 addendum 3), with addendum 6's libc
+    record. Q52's re-derivation is REJECTED (addendum 7). The value rule,
+    the carried levels and the `<PREFIX>_MEMFN_LIBC` line are §R4.3.3.
 40. **Q40, the scan plan and ADOPTION (re-derives Q29; r3 F9).** The
     plan (which term and position to scan, which to verify, the window
     cut, the byte pick) moves at M5 by moving prefix_k's MODEL into the
@@ -5178,6 +5209,10 @@ maps them. Each question has a recommendation.
     with a movers census and a bench inbox note. The alternative is to
     keep adoption in pcrec forever, which keeps `C_ENTER` and the 2×
     bar in `src/`, contra D146.
+    **`[rev4.3]` RULED YES, as revised by D147** (addendum 4). The model
+    moves LIVE at M5 (a frozen copy is M5's comparator only), and M5′ is
+    the adoption event (§R4.3.5, §22). Q55 asks about the plan's
+    visibility at SIMD-off.
 41. **Q41, M1's scope and sequence (G-F10/G-F11).**
     - M1 is the composite PRE site plus the offset-skip trio. runcmp is
       reached through a `run_cmp` hook and becomes M1b, with its own
@@ -5187,14 +5222,27 @@ maps them. Each question has a recommendation.
     - After M1, edits to the migrated emitters are kit-lane work.
     
     **Recommendation:** yes.
+    **`[rev4.3]` RULED YES** (D147 addendum 5). The trigger becomes
+    completeness (Q42 reversed); the waits stand (§16).
 42. **Q42, migrate without a customer (re-derives Q30).** M4, the
     `(?m)^` `memchr('\n')`. **Recommendation:** no, unchanged. The
     contract can express it (§15.7), and the ratchet keeps it at one.
+    **`[rev4.3]` RULED, REVERSED** (D147 addendum 5): migrate EVERY
+    search site, M4 included, with no performance customer. This is a
+    ruled D77 exception whose trigger is completeness, and each step is
+    zero-mover. It comes with a CHECKED SITE MANIFEST (C17: every
+    emitted search site is `delegated` or `pending`, and any unlisted
+    site fails the check). The `memchr(` ratchet's end state is 0
+    outside the kit (§R4.3.4).
 43. **Q43, aarch64 (re-derives Q31; G-F4).** There is no verdict-grade
     armv8 guard. The kit never default-selects a native arm on aarch64,
     and the spec states that aarch64 choices are unmeasured at verdict
     grade. **Recommendation:** yes, until you admit the Mac per cell
     (D144's loop protocol) or a quiet Linux aarch64 box exists.
+    **`[rev4.3]`** OPEN. Read "native arm" as "SIMD-on form": the kit
+    never default-selects a SIMD-on form over the scalar form on
+    aarch64. Before R4f the default is SIMD off everywhere, so this
+    question binds only `-fmemfn-simd` builds and the flip.
 44. **Q44, the dial (re-derives Q32).** `--tune` -2/-1 send
     `MF_P_SIZE_LEANING`. **Recommendation:** rule it at R4d as a D103
     diff, with the movers census at those positions. Unchanged.
@@ -5205,6 +5253,10 @@ maps them. Each question has a recommendation.
     from day one: `inbox_from_pcrec.md` written only by the manager on
     main, and `outbox_to_pcrec.md` written only by kit lanes. A request
     is on main before its lane is briefed. **Recommendation:** yes.
+    **`[rev4.3]`** OPEN. As built (lane memfnsetup), the files are
+    `memfn/docs/requests.md` and `memfn/docs/responses.md`, with
+    `[requests]` and `[responses]` commits; the roles are as stated
+    above.
 47. **Q47, the kit's switches as axes (G-F2).** Each kit row with a
     deny is published by `mf_switches()` and becomes a generated axis
     row (`--memfn-deny=NAME`), listed, swept by `test-axes` and by I2.
@@ -5224,6 +5276,9 @@ maps them. Each question has a recommendation.
     arm and C9's floor are born in that commit, and its `docs/spec/`
     hunk lands there (D80): `-fmemfn-native`'s output is
     caller-observable. The R4f flip is the abi event.
+    **`[rev4.3]`** OPEN, with the switch spelled `-fmemfn-simd`. The
+    R4f flip is now a ruled event (addendum 7), not a measurement's
+    consequence.
 50. **`[rev4.2]` Q50, where the scalar layer ends (D147, §L.1).** The
     layer line is §8.5's policy line, "no text that names an ISA". So
     SWAR is scalar, and a libc call is scalar even though glibc's
@@ -5237,6 +5292,9 @@ maps them. Each question has a recommendation.
     call it. D91's concern (a SIMD crutch hiding an algorithmic
     inefficiency) is met because every native arm must beat this layer,
     and this layer's own improvements are algorithmic.
+    **`[rev4.3]` RULED YES** (D147 addendum 6): SWAR and libc are scalar
+    layer. The switch's meaning is §R4.3.1, and a libc call is recorded
+    by `<PREFIX>_MEMFN_LIBC` (§R4.3.3).
 51. **`[rev4.2]` Q51, withdraw the `memfn-off` bits (D147, §L.3).**
     Drop `-fno-memfn-scan`/`-fno-memfn-loop`, family `memfn`'s
     `memfn-off`, `off.tsv` and the `pcrec[memfn-off]` bench testee. Each
@@ -5248,6 +5306,10 @@ maps them. Each question has a recommendation.
     measured against their parent. **Recommendation:** withdraw (D77).
     A coarse kit-off switch can be built from the switch table if a
     triage need is ever measured.
+    **`[rev4.3]` REJECTED** (D147 addendum 7): the SIMD-off arm is not
+    withdrawn, and D147's both-layers reading stands. The frozen-baseline
+    bits stay withdrawn by D147 consequence 1. That reading is stated
+    for checking in §R4.3.6.
 52. **`[rev4.2]` Q52, the stamp re-derived (replaces Q39; §L.5).**
     `<PREFIX>_MEMFN_FORMS` on every artifact. It is `none` iff the
     artifact is byte-identical to its own `-fno-memfn-native` compile;
@@ -5258,6 +5320,39 @@ maps them. Each question has a recommendation.
     scalar-layer change zero-stamp-mover. The stated cost: scalar-layer
     forms are attributed by movers census and switch name, not by the
     stamp, until a bench consumer asks for more (D77).
+    **`[rev4.3]` REJECTED** (D147 addendum 7): Q39 as ruled stands
+    (§R4.3.3).
+53. **`[rev4.3]` Q53, the libc record's spelling (addendum 6, §R4.3.3).**
+    Addendum 6 rules that "the stamp records when a libc call is used".
+    The proposal is to record it in a SECOND every-artifact line,
+    `<PREFIX>_MEMFN_LIBC` (`none`, or the sorted libc function names the
+    search code calls), rather than a field inside `MEMFN_FORMS`. It is
+    born with `MEMFN_FORMS` in R4a′. It covers pending sites as well as
+    delegated ones, through `mf_art_note_libc`, so it is true from its
+    birth. C11 checks it against a pcrec-side text scan. **Recommendation:**
+    yes. A field inside `MEMFN_FORMS` would break the ruled
+    `none`-iff-identical-to-SIMD-off rule on every SIMD-off artifact
+    that calls `memchr`, which today is every PF `memchr` artifact.
+54. **`[rev4.3]` Q54, N7 under completeness (§R4.3.4).** The encoding
+    seam's span compare (`$_span_match[_caseless]`) is a VERIFY over
+    two spans, and D23 makes it the encoding's. Is it a search site in
+    Q42's sense? **Recommendation:** yes, listed `pending`. At M7 its
+    byte-compare core is delegated through the seam. The fold and the
+    encoding semantics stay the encoding's: the seam entry builds the
+    `mf_site`, as a pcrec emitter does. The alternative, a third
+    manifest state such as "owned elsewhere", is the half-migrated
+    bookkeeping addendum 5 rules out.
+55. **`[rev4.3]` Q55, the kit's plan in the stamp at SIMD-off (§R4.3.5).**
+    Addendum 4 says `MEMFN_FORMS` shows the kit's plan. Addendum 3 makes
+    the stamp `none` on every artifact identical to its SIMD-off
+    compile, so a SCALAR plan change (M5′ and every later re-plan)
+    reads `none` on the default build. **Recommendation:** accept
+    that. At SIMD-off, a plan change is attributed by its abi event's
+    movers census and its `--memfn-deny=` switch name. The stamp shows
+    the plan where the artifact is SIMD-on. A per-artifact plan record
+    at SIMD-off is built only when a bench consumer asks (D77). The
+    alternative is a third every-artifact line naming the plan, with
+    its own abi event.
 
 ### 23.1 Revision 3's questions, mapped
 
@@ -5275,3 +5370,7 @@ maps them. Each question has a recommendation.
 | Q33 libc | Q45 (unchanged) |
 | Q34 request channel | Q46 (two files now) |
 | — | Q39 stamp, Q41 M1 scope, Q47 switches, Q48 optional sites (new) |
+
+**`[rev4.3]`** Rev 4.2 added Q50-Q52. Rev 4.3 adds Q53 (the libc
+record's spelling), Q54 (N7 under completeness) and Q55 (the plan's
+stamp visibility at SIMD-off). Nothing ruled is renumbered.
