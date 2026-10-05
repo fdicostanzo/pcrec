@@ -1,0 +1,563 @@
+# pcrec pcrec 0.2.0-beta; tree 9fd125cb
+=== A1  rc=1  cli: -fprefilter
+  cfg| pcrec -fno-prefilter
+  err| pcrec: A1.rxt:5: target 'rx': -fprefilter and -fno-prefilter cannot both be requested (pattern offset 1)
+=== A2  rc=1  cli: -fno-prefilter
+  cfg| pcrec -fprefilter
+  err| pcrec: A2.rxt:5: target 'rx': -fprefilter and -fno-prefilter cannot both be requested (pattern offset 1)
+=== A3  rc=0  cli: -fno-prefilter
+  stamp| #define PCREC_FEATURE_MODULES "classes,modifiers"
+  stamp| #define RX_STARTPOS_GUARD "permissive"
+  stamp| #define RX_UTF_CHECK "inert"
+  stamp| #define RX_REQ_WHY "emitted"
+  stamp| #define RX_TUNE "balanced"
+  stamp| #define RX_ENGINE "vm"
+  stamp| #define RX_VM_PREFILTER "none"
+  stamp| #define RX_UNROLL_K 8
+  stamp| #define RX_STEP_BUDGET 500000000LL
+  stamp| #define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+  info| .flags = 0ULL,
+  info| .encoding = 0,
+  comment-lines| 5
+=== A4  rc=0  cli: -fno-req-byte
+  cfg| pcrec -fno-premul-table
+  stamp| #define PCREC_FEATURE_MODULES "classes,modifiers"
+  stamp| #define RX_STARTPOS_GUARD "permissive"
+  stamp| #define RX_UTF_CHECK "inert"
+  stamp| #define RX_REQ_WHY "none"
+  stamp| #define RX_TUNE "balanced"
+  stamp| #define RX_ENGINE "dfa"
+  stamp| #define RX_DFA_TABLE "indexed"
+  stamp| #define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+  info| .flags = 0ULL,
+  info| .encoding = 0,
+  comment-lines| 2
+=== A5  rc=1  cli: -fstartpos-guard=align
+  cfg| pcrec -fno-startpos-guard
+  err| pcrec: A5.rxt:5: target 'rx': -fstartpos-guard=align and -fno-startpos-guard cannot both be requested (pattern offset 0)
+=== A6  rc=0  cli: -fno-comments
+  cfg| pcrec -fcomments
+  stamp| #define PCREC_FEATURE_MODULES "classes,modifiers"
+  stamp| #define RX_STARTPOS_GUARD "permissive"
+  stamp| #define RX_UTF_CHECK "inert"
+  stamp| #define RX_REQ_WHY "dominated"
+  stamp| #define RX_TUNE "balanced"
+  stamp| #define RX_ENGINE "vm"
+  stamp| #define RX_VM_PREFILTER "hybrid"
+  stamp| #define RX_DFA_TABLE "premultiplied"
+  stamp| #define RX_UNROLL_K 8
+  stamp| #define RX_STEP_BUDGET 500000000LL
+  stamp| #define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+  info| .flags = 0ULL,
+  info| .encoding = 0,
+  comment-lines| 5
+=== A7  rc=0  cli: -fcomments
+  cfg| pcrec -fno-comments
+  stamp| #define PCREC_FEATURE_MODULES "classes,modifiers"
+  stamp| #define RX_STARTPOS_GUARD "permissive"
+  stamp| #define RX_UTF_CHECK "inert"
+  stamp| #define RX_REQ_WHY "dominated"
+  stamp| #define RX_TUNE "balanced"
+  stamp| #define RX_ENGINE "vm"
+  stamp| #define RX_VM_PREFILTER "hybrid"
+  stamp| #define RX_DFA_TABLE "premultiplied"
+  stamp| #define RX_UNROLL_K 8
+  stamp| #define RX_STEP_BUDGET 500000000LL
+  stamp| #define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+  info| .flags = 0ULL,
+  info| .encoding = 0,
+  comment-lines| 5
+=== A8  rc=0  cli: -fcomments
+  stamp| #define PCREC_FEATURE_MODULES "classes,modifiers"
+  stamp| #define RX_STARTPOS_GUARD "permissive"
+  stamp| #define RX_UTF_CHECK "inert"
+  stamp| #define RX_REQ_WHY "dominated"
+  stamp| #define RX_TUNE "balanced"
+  stamp| #define RX_ENGINE "vm"
+  stamp| #define RX_VM_PREFILTER "hybrid"
+  stamp| #define RX_DFA_TABLE "premultiplied"
+  stamp| #define RX_UNROLL_K 8
+  stamp| #define RX_STEP_BUDGET 500000000LL
+  stamp| #define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+  info| .flags = 0ULL,
+  info| .encoding = 0,
+  comment-lines| 65
+=== A9  rc=1  cli: 
+  cfg| pcrec -fprefilter
+  cfg| pcrec -fno-prefilter
+  err| pcrec: A9.rxt:6: target 'rx': -fprefilter and -fno-prefilter cannot both be requested (pattern offset 1)
+=== A10  rc=0  cli: 
+  cfg| pcrec -fcomments
+  cfg| pcrec -fno-comments
+  stamp| #define PCREC_FEATURE_MODULES "classes,modifiers"
+  stamp| #define RX_STARTPOS_GUARD "permissive"
+  stamp| #define RX_UTF_CHECK "inert"
+  stamp| #define RX_REQ_WHY "dominated"
+  stamp| #define RX_TUNE "balanced"
+  stamp| #define RX_ENGINE "vm"
+  stamp| #define RX_VM_PREFILTER "hybrid"
+  stamp| #define RX_DFA_TABLE "premultiplied"
+  stamp| #define RX_UNROLL_K 8
+  stamp| #define RX_STEP_BUDGET 500000000LL
+  stamp| #define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+  info| .flags = 0ULL,
+  info| .encoding = 0,
+  comment-lines| 5
+=== B1  rc=0  cli: -i
+  cfg| features ucp
+  blk| flags u
+  stamp| #define PCREC_FEATURE_MODULES "ucp"
+  stamp| #define RX_STARTPOS_GUARD "permissive"
+  stamp| #define RX_UTF_CHECK "inert"
+  stamp| #define RX_REQ_WHY "none"
+  stamp| #define RX_TUNE "balanced"
+  stamp| #define RX_ENGINE "vm"
+  stamp| #define RX_VM_PREFILTER "hybrid"
+  stamp| #define RX_DFA_TABLE "premultiplied"
+  stamp| #define RX_UNROLL_K 8
+  stamp| #define RX_STEP_BUDGET 500000000LL
+  stamp| #define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+  info| .flags = 17179869185ULL,
+  info| .encoding = 0,
+  comment-lines| 5
+=== B2  rc=0  cli: -i
+  cfg| flags u
+  cfg| features ucp
+  stamp| #define PCREC_FEATURE_MODULES "ucp"
+  stamp| #define RX_STARTPOS_GUARD "permissive"
+  stamp| #define RX_UTF_CHECK "inert"
+  stamp| #define RX_REQ_WHY "none"
+  stamp| #define RX_TUNE "balanced"
+  stamp| #define RX_ENGINE "vm"
+  stamp| #define RX_VM_PREFILTER "hybrid"
+  stamp| #define RX_DFA_TABLE "premultiplied"
+  stamp| #define RX_UNROLL_K 8
+  stamp| #define RX_STEP_BUDGET 500000000LL
+  stamp| #define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+  info| .flags = 17179869185ULL,
+  info| .encoding = 0,
+  comment-lines| 5
+=== B3  rc=0  cli: -i
+  cfg| pcrec --ucp
+  cfg| features ucp
+  stamp| #define PCREC_FEATURE_MODULES "ucp"
+  stamp| #define RX_STARTPOS_GUARD "permissive"
+  stamp| #define RX_UTF_CHECK "inert"
+  stamp| #define RX_REQ_WHY "none"
+  stamp| #define RX_TUNE "balanced"
+  stamp| #define RX_ENGINE "vm"
+  stamp| #define RX_VM_PREFILTER "hybrid"
+  stamp| #define RX_DFA_TABLE "premultiplied"
+  stamp| #define RX_UNROLL_K 8
+  stamp| #define RX_STEP_BUDGET 500000000LL
+  stamp| #define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+  info| .flags = 17179869185ULL,
+  info| .encoding = 0,
+  comment-lines| 5
+=== B4  rc=0  cli: --no-captures
+  cfg| flags i
+  stamp| #define PCREC_FEATURE_MODULES "classes,modifiers"
+  stamp| #define RX_STARTPOS_GUARD "permissive"
+  stamp| #define RX_UTF_CHECK "inert"
+  stamp| #define RX_REQ_WHY "none"
+  stamp| #define RX_TUNE "balanced"
+  stamp| #define RX_ENGINE "dfa"
+  stamp| #define RX_DFA_TABLE "premultiplied"
+  stamp| #define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+  info| .flags = 5ULL,
+  info| .encoding = 0,
+  comment-lines| 2
+=== B7  rc=0  cli: 
+  cfg| pcrec -i
+  blk| flags u
+  blk| features ucp
+  stamp| #define PCREC_FEATURE_MODULES "ucp"
+  stamp| #define RX_STARTPOS_GUARD "permissive"
+  stamp| #define RX_UTF_CHECK "inert"
+  stamp| #define RX_REQ_WHY "none"
+  stamp| #define RX_TUNE "balanced"
+  stamp| #define RX_ENGINE "vm"
+  stamp| #define RX_VM_PREFILTER "hybrid"
+  stamp| #define RX_DFA_TABLE "premultiplied"
+  stamp| #define RX_UNROLL_K 8
+  stamp| #define RX_STEP_BUDGET 500000000LL
+  stamp| #define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+  info| .flags = 17179869185ULL,
+  info| .encoding = 0,
+  comment-lines| 5
+=== B8  rc=0  cli: 
+  cfg| flags i
+  cfg| features ucp
+  blk| flags u
+  stamp| #define PCREC_FEATURE_MODULES "ucp"
+  stamp| #define RX_STARTPOS_GUARD "permissive"
+  stamp| #define RX_UTF_CHECK "inert"
+  stamp| #define RX_REQ_WHY "dominated"
+  stamp| #define RX_TUNE "balanced"
+  stamp| #define RX_ENGINE "vm"
+  stamp| #define RX_VM_PREFILTER "hybrid"
+  stamp| #define RX_DFA_TABLE "premultiplied"
+  stamp| #define RX_UNROLL_K 8
+  stamp| #define RX_STEP_BUDGET 500000000LL
+  stamp| #define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+  info| .flags = 17179869184ULL,
+  info| .encoding = 0,
+  comment-lines| 5
+=== C1  rc=1  cli: --features atomic-groups
+  cfg| features std1
+  err| pcrec: C1.rxt:5: target 'rx': (?>...) requires module 'atomic-groups' (pattern offset 0)
+=== C2  rc=0  cli: --features atomic-groups
+  stamp| #define PCREC_FEATURE_MODULES "atomic-groups"
+  stamp| #define RX_STARTPOS_GUARD "permissive"
+  stamp| #define RX_UTF_CHECK "inert"
+  stamp| #define RX_REQ_WHY "dominated"
+  stamp| #define RX_TUNE "balanced"
+  stamp| #define RX_ENGINE "vm"
+  stamp| #define RX_VM_PREFILTER "hybrid"
+  stamp| #define RX_DFA_TABLE "premultiplied"
+  stamp| #define RX_UNROLL_K 8
+  stamp| #define RX_STEP_BUDGET 500000000LL
+  stamp| #define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+  info| .flags = 0ULL,
+  info| .encoding = 0,
+  comment-lines| 5
+=== C3  rc=1  cli: --features atomic-groups
+  cfg| pcrec --features std1
+  err| pcrec: C3.rxt:3: `pcrec` line: compile options only, not output/pattern/prefix/query/source: '--features std1'
+=== C5  rc=0  cli: --features lookaround
+  cfg| features atomic-groups
+  stamp| #define PCREC_FEATURE_MODULES "atomic-groups"
+  stamp| #define RX_STARTPOS_GUARD "permissive"
+  stamp| #define RX_UTF_CHECK "inert"
+  stamp| #define RX_REQ_WHY "dominated"
+  stamp| #define RX_TUNE "balanced"
+  stamp| #define RX_ENGINE "vm"
+  stamp| #define RX_VM_PREFILTER "hybrid"
+  stamp| #define RX_DFA_TABLE "premultiplied"
+  stamp| #define RX_UNROLL_K 8
+  stamp| #define RX_STEP_BUDGET 500000000LL
+  stamp| #define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+  info| .flags = 0ULL,
+  info| .encoding = 0,
+  comment-lines| 5
+=== C6  rc=1  cli: --features lookaround
+  cfg| features atomic-groups
+  err| pcrec: C6.rxt:5: target 'rx': (?=...) requires module 'lookaround' (pattern offset 5)
+=== C8  rc=0  cli: 
+  cfg| features atomic-groups
+  blk| features lookaround
+  stamp| #define PCREC_FEATURE_MODULES "lookaround,atomic-groups"
+  stamp| #define RX_STARTPOS_GUARD "permissive"
+  stamp| #define RX_UTF_CHECK "inert"
+  stamp| #define RX_REQ_WHY "dominated"
+  stamp| #define RX_TUNE "balanced"
+  stamp| #define RX_ENGINE "vm"
+  stamp| #define RX_VM_PREFILTER "hybrid"
+  stamp| #define RX_DFA_TABLE "premultiplied"
+  stamp| #define RX_UNROLL_K 8
+  stamp| #define RX_STEP_BUDGET 500000000LL
+  stamp| #define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+  info| .flags = 0ULL,
+  info| .encoding = 0,
+  comment-lines| 5
+=== D1  rc=0  cli: --engine=dfa
+  cfg| engine vm
+  err| pcrec: D1.rxt:5: target 'rx': CLI --engine=dfa and this file's `engine vm` disagree; using the CLI's explicit choice
+  stamp| #define PCREC_FEATURE_MODULES "classes,modifiers"
+  stamp| #define RX_STARTPOS_GUARD "permissive"
+  stamp| #define RX_UTF_CHECK "inert"
+  stamp| #define RX_REQ_WHY "emitted"
+  stamp| #define RX_TUNE "balanced"
+  stamp| #define RX_ENGINE "dfa"
+  stamp| #define RX_DFA_TABLE "premultiplied"
+  stamp| #define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+  info| .flags = 0ULL,
+  info| .encoding = 0,
+  comment-lines| 2
+=== D2  rc=0  cli: --engine=auto
+  cfg| engine vm
+  stamp| #define PCREC_FEATURE_MODULES "classes,modifiers"
+  stamp| #define RX_STARTPOS_GUARD "permissive"
+  stamp| #define RX_UTF_CHECK "inert"
+  stamp| #define RX_REQ_WHY "emitted"
+  stamp| #define RX_TUNE "balanced"
+  stamp| #define RX_ENGINE "vm"
+  stamp| #define RX_VM_PREFILTER "none"
+  stamp| #define RX_UNROLL_K 8
+  stamp| #define RX_STEP_BUDGET 500000000LL
+  stamp| #define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+  info| .flags = 0ULL,
+  info| .encoding = 0,
+  comment-lines| 5
+=== D3  rc=0  cli: --engine=dfa
+  cfg| pcrec --engine=vm
+  stamp| #define PCREC_FEATURE_MODULES "classes,modifiers"
+  stamp| #define RX_STARTPOS_GUARD "permissive"
+  stamp| #define RX_UTF_CHECK "inert"
+  stamp| #define RX_REQ_WHY "emitted"
+  stamp| #define RX_TUNE "balanced"
+  stamp| #define RX_ENGINE "vm"
+  stamp| #define RX_VM_PREFILTER "none"
+  stamp| #define RX_UNROLL_K 8
+  stamp| #define RX_STEP_BUDGET 500000000LL
+  stamp| #define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+  info| .flags = 0ULL,
+  info| .encoding = 0,
+  comment-lines| 5
+=== E1  rc=0  cli: --tune=min-size
+  cfg| tune speed
+  err| pcrec: E1.rxt:5: target 'rx': CLI --tune=min-size and this file's `tune speed` disagree; using the file's value (--tune is not the --engine exception)
+  stamp| #define PCREC_FEATURE_MODULES "classes,modifiers"
+  stamp| #define RX_STARTPOS_GUARD "permissive"
+  stamp| #define RX_UTF_CHECK "inert"
+  stamp| #define RX_REQ_WHY "dominated"
+  stamp| #define RX_TUNE "speed"
+  stamp| #define RX_ENGINE "vm"
+  stamp| #define RX_VM_PREFILTER "hybrid"
+  stamp| #define RX_DFA_TABLE "premultiplied"
+  stamp| #define RX_UNROLL_K 8
+  stamp| #define RX_STEP_BUDGET 500000000LL
+  stamp| #define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+  info| .flags = 0ULL,
+  info| .encoding = 0,
+  comment-lines| 5
+=== E2  rc=0  cli: --tune=min-size
+  cfg| pcrec --tune=speed
+  stamp| #define PCREC_FEATURE_MODULES "classes,modifiers"
+  stamp| #define RX_STARTPOS_GUARD "permissive"
+  stamp| #define RX_UTF_CHECK "inert"
+  stamp| #define RX_REQ_WHY "dominated"
+  stamp| #define RX_TUNE "speed"
+  stamp| #define RX_ENGINE "vm"
+  stamp| #define RX_VM_PREFILTER "hybrid"
+  stamp| #define RX_DFA_TABLE "premultiplied"
+  stamp| #define RX_UNROLL_K 8
+  stamp| #define RX_STEP_BUDGET 500000000LL
+  stamp| #define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+  info| .flags = 0ULL,
+  info| .encoding = 0,
+  comment-lines| 5
+=== E3  rc=0  cli: 
+  cfg| pcrec --tune=min-size
+  cfg| tune speed
+  err| pcrec: E3.rxt:6: target 'rx': CLI --tune=min-size and this file's `tune speed` disagree; using the file's value (--tune is not the --engine exception)
+  stamp| #define PCREC_FEATURE_MODULES "classes,modifiers"
+  stamp| #define RX_STARTPOS_GUARD "permissive"
+  stamp| #define RX_UTF_CHECK "inert"
+  stamp| #define RX_REQ_WHY "dominated"
+  stamp| #define RX_TUNE "speed"
+  stamp| #define RX_ENGINE "vm"
+  stamp| #define RX_VM_PREFILTER "hybrid"
+  stamp| #define RX_DFA_TABLE "premultiplied"
+  stamp| #define RX_UNROLL_K 8
+  stamp| #define RX_STEP_BUDGET 500000000LL
+  stamp| #define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+  info| .flags = 0ULL,
+  info| .encoding = 0,
+  comment-lines| 5
+=== E4  rc=0  cli: --tune=min-size --tune=speed
+  stamp| #define PCREC_FEATURE_MODULES "classes,modifiers"
+  stamp| #define RX_STARTPOS_GUARD "permissive"
+  stamp| #define RX_UTF_CHECK "inert"
+  stamp| #define RX_REQ_WHY "dominated"
+  stamp| #define RX_TUNE "speed"
+  stamp| #define RX_ENGINE "vm"
+  stamp| #define RX_VM_PREFILTER "hybrid"
+  stamp| #define RX_DFA_TABLE "premultiplied"
+  stamp| #define RX_UNROLL_K 8
+  stamp| #define RX_STEP_BUDGET 500000000LL
+  stamp| #define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+  info| .flags = 0ULL,
+  info| .encoding = 0,
+  comment-lines| 5
+=== T1  rc=0  cli: -fno-tiered-entry
+  cfg| tune min-size
+  stamp| #define PCREC_FEATURE_MODULES "classes,modifiers"
+  stamp| #define RX_STARTPOS_GUARD "permissive"
+  stamp| #define RX_UTF_CHECK "inert"
+  stamp| #define RX_REQ_WHY "dominated"
+  stamp| #define RX_TUNE "min-size"
+  stamp| #define RX_ENGINE "vm"
+  stamp| #define RX_VM_PREFILTER "hybrid"
+  stamp| #define RX_DFA_TABLE "indexed"
+  stamp| #define RX_UNROLL_K 8
+  stamp| #define RX_STEP_BUDGET 500000000LL
+  stamp| #define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+  info| .flags = 0ULL,
+  info| .encoding = 0,
+  comment-lines| 5
+=== T2  rc=0  cli: --tune=speed
+  cfg| pcrec -fno-premul-table
+  stamp| #define PCREC_FEATURE_MODULES "classes,modifiers"
+  stamp| #define RX_STARTPOS_GUARD "permissive"
+  stamp| #define RX_UTF_CHECK "inert"
+  stamp| #define RX_REQ_WHY "emitted"
+  stamp| #define RX_TUNE "speed"
+  stamp| #define RX_ENGINE "dfa"
+  stamp| #define RX_DFA_TABLE "indexed"
+  stamp| #define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+  info| .flags = 0ULL,
+  info| .encoding = 0,
+  comment-lines| 2
+=== F1  rc=0  cli: --analysis weblog
+  cfg| analysis log
+  err| pcrec: F1.rxt:1: target 'rx': CLI --analysis weblog and this file's analysis log disagree; using the file's value (--analysis is fill-only)
+  stamp| #define PCREC_FEATURE_MODULES "classes,modifiers"
+  stamp| #define RX_STARTPOS_GUARD "permissive"
+  stamp| #define RX_UTF_CHECK "inert"
+  stamp| #define RX_REQ_WHY "dominated"
+  stamp| #define RX_TUNE "balanced"
+  stamp| #define RX_ENGINE "vm"
+  stamp| #define RX_VM_PREFILTER "hybrid"
+  stamp| #define RX_DFA_TABLE "premultiplied"
+  stamp| #define RX_UNROLL_K 8
+  stamp| #define RX_STEP_BUDGET 500000000LL
+  stamp| #define RX_FINDINGS "byte-rate=log:13f250046ebde555"
+  info| .flags = 0ULL,
+  info| .encoding = 0,
+  comment-lines| 5
+=== F2  rc=0  cli: --analysis weblog
+  cfg| tune balanced
+  stamp| #define PCREC_FEATURE_MODULES "classes,modifiers"
+  stamp| #define RX_STARTPOS_GUARD "permissive"
+  stamp| #define RX_UTF_CHECK "inert"
+  stamp| #define RX_REQ_WHY "dominated"
+  stamp| #define RX_TUNE "balanced"
+  stamp| #define RX_ENGINE "vm"
+  stamp| #define RX_VM_PREFILTER "hybrid"
+  stamp| #define RX_DFA_TABLE "premultiplied"
+  stamp| #define RX_UNROLL_K 8
+  stamp| #define RX_STEP_BUDGET 500000000LL
+  stamp| #define RX_FINDINGS "byte-rate=weblog:6b85ed6b33993164"
+  info| .flags = 0ULL,
+  info| .encoding = 0,
+  comment-lines| 5
+=== G1  rc=0  cli: -e byte
+  cfg| encoding utf8
+  stamp| #define PCREC_FEATURE_MODULES "classes,modifiers"
+  stamp| #define RX_STARTPOS_GUARD "guarded"
+  stamp| #define RX_UTF_CHECK "off"
+  stamp| #define RX_REQ_WHY "emitted"
+  stamp| #define RX_TUNE "balanced"
+  stamp| #define RX_ENGINE "vm"
+  stamp| #define RX_VM_PREFILTER "hybrid"
+  stamp| #define RX_DFA_TABLE "premultiplied"
+  stamp| #define RX_UNROLL_K 8
+  stamp| #define RX_STEP_BUDGET 500000000LL
+  stamp| #define RX_FINDINGS "byte-rate=none"
+  info| .flags = 0ULL,
+  info| .encoding = 1,
+  comment-lines| 11
+=== G2  rc=0  cli: -e byte
+  cfg| pcrec -e utf8
+  stamp| #define PCREC_FEATURE_MODULES "classes,modifiers"
+  stamp| #define RX_STARTPOS_GUARD "guarded"
+  stamp| #define RX_UTF_CHECK "off"
+  stamp| #define RX_REQ_WHY "emitted"
+  stamp| #define RX_TUNE "balanced"
+  stamp| #define RX_ENGINE "vm"
+  stamp| #define RX_VM_PREFILTER "hybrid"
+  stamp| #define RX_DFA_TABLE "premultiplied"
+  stamp| #define RX_UNROLL_K 8
+  stamp| #define RX_STEP_BUDGET 500000000LL
+  stamp| #define RX_FINDINGS "byte-rate=none"
+  info| .flags = 0ULL,
+  info| .encoding = 1,
+  comment-lines| 11
+=== G4  rc=0  cli: 
+  cfg| encoding utf8
+  blk| encoding byte
+  stamp| #define PCREC_FEATURE_MODULES "classes,modifiers"
+  stamp| #define RX_STARTPOS_GUARD "permissive"
+  stamp| #define RX_UTF_CHECK "inert"
+  stamp| #define RX_REQ_WHY "dominated"
+  stamp| #define RX_TUNE "balanced"
+  stamp| #define RX_ENGINE "vm"
+  stamp| #define RX_VM_PREFILTER "hybrid"
+  stamp| #define RX_DFA_TABLE "premultiplied"
+  stamp| #define RX_UNROLL_K 8
+  stamp| #define RX_STEP_BUDGET 500000000LL
+  stamp| #define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+  info| .flags = 0ULL,
+  info| .encoding = 0,
+  comment-lines| 5
+=== H1  rc=0  cli: --unroll=2
+  cfg| pcrec --unroll=4
+  stamp| #define PCREC_FEATURE_MODULES "classes,modifiers"
+  stamp| #define RX_STARTPOS_GUARD "permissive"
+  stamp| #define RX_UTF_CHECK "inert"
+  stamp| #define RX_REQ_WHY "dominated"
+  stamp| #define RX_TUNE "balanced"
+  stamp| #define RX_ENGINE "vm"
+  stamp| #define RX_VM_PREFILTER "hybrid"
+  stamp| #define RX_DFA_TABLE "premultiplied"
+  stamp| #define RX_UNROLL_K 4
+  stamp| #define RX_STEP_BUDGET 500000000LL
+  stamp| #define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+  info| .flags = 0ULL,
+  info| .encoding = 0,
+  comment-lines| 5
+=== H3  rc=0  cli: --step-budget=2000
+  cfg| budget steps=1000
+  stamp| #define PCREC_FEATURE_MODULES "classes,modifiers"
+  stamp| #define RX_STARTPOS_GUARD "permissive"
+  stamp| #define RX_UTF_CHECK "inert"
+  stamp| #define RX_REQ_WHY "dominated"
+  stamp| #define RX_TUNE "balanced"
+  stamp| #define RX_ENGINE "vm"
+  stamp| #define RX_VM_PREFILTER "hybrid"
+  stamp| #define RX_DFA_TABLE "premultiplied"
+  stamp| #define RX_UNROLL_K 8
+  stamp| #define RX_STEP_BUDGET 1000LL
+  stamp| #define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+  info| .flags = 0ULL,
+  info| .encoding = 0,
+  comment-lines| 5
+=== H4  rc=0  cli: --step-budget=2000
+  cfg| pcrec --step-budget=1000
+  stamp| #define PCREC_FEATURE_MODULES "classes,modifiers"
+  stamp| #define RX_STARTPOS_GUARD "permissive"
+  stamp| #define RX_UTF_CHECK "inert"
+  stamp| #define RX_REQ_WHY "dominated"
+  stamp| #define RX_TUNE "balanced"
+  stamp| #define RX_ENGINE "vm"
+  stamp| #define RX_VM_PREFILTER "hybrid"
+  stamp| #define RX_DFA_TABLE "premultiplied"
+  stamp| #define RX_UNROLL_K 8
+  stamp| #define RX_STEP_BUDGET 1000LL
+  stamp| #define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+  info| .flags = 0ULL,
+  info| .encoding = 0,
+  comment-lines| 5
+=== H6  rc=0  cli: --step-budget=2000
+  stamp| #define PCREC_FEATURE_MODULES "classes,modifiers"
+  stamp| #define RX_STARTPOS_GUARD "permissive"
+  stamp| #define RX_UTF_CHECK "inert"
+  stamp| #define RX_REQ_WHY "dominated"
+  stamp| #define RX_TUNE "balanced"
+  stamp| #define RX_ENGINE "vm"
+  stamp| #define RX_VM_PREFILTER "hybrid"
+  stamp| #define RX_DFA_TABLE "premultiplied"
+  stamp| #define RX_UNROLL_K 8
+  stamp| #define RX_STEP_BUDGET 2000LL
+  stamp| #define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+  info| .flags = 0ULL,
+  info| .encoding = 0,
+  comment-lines| 5
+=== M3  rc=0  cli: -futf-check -fstartpos-guard=align
+  stamp| #define PCREC_FEATURE_MODULES "classes,modifiers"
+  stamp| #define RX_STARTPOS_GUARD "permissive"
+  stamp| #define RX_UTF_CHECK "inert"
+  stamp| #define RX_REQ_WHY "dominated"
+  stamp| #define RX_TUNE "balanced"
+  stamp| #define RX_ENGINE "vm"
+  stamp| #define RX_VM_PREFILTER "hybrid"
+  stamp| #define RX_DFA_TABLE "premultiplied"
+  stamp| #define RX_UNROLL_K 8
+  stamp| #define RX_STEP_BUDGET 500000000LL
+  stamp| #define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+  info| .flags = 0ULL,
+  info| .encoding = 0,
+  comment-lines| 5
+=== M3b  rc=1  cli: -futf-check=extent
+  err| pcrec: -futf-check=extent is reserved and not built: the 'check as you move forward' contract (docs/design/utf_valid_design.md section 2.2) waits for a measured need; -futf-check is the whole-subject check
