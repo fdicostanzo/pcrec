@@ -105,3 +105,17 @@ pointer when a kit change merges to main.
   regime named, or derived, or left to the compiler. Never adopted
   silently.
 - Recorded: comment at the loop in tb_r4b.c; responses.md N-1 for main.
+
+## 2026-10-05 — R-1 done: Linux verdict read
+
+- First Linux attempt aborted at step 4: a LeakSanitizer finding in the
+  harness. Fixed in 4ecea50b; the re-run was green (R4B-DONE status=0,
+  main's executor, OUTDIR scratch_lx/r4b2). Transcripts are archived
+  under probes/out/twins/r4b/linux/; report §9 has the read.
+- R4d's trigger is MET on union-select: `swar` beats `emit` in both
+  regimes, 1.4-2.0x. userpass needs lead-first. K85's find-all loss is
+  cured by the fused forms. SIMD-on: `ffl` beats `swar` except at 16 B
+  on AVX2.
+- `done:` posted. Next: main reviews the branch. R4a (code skeleton)
+  needs a request from main before it starts. The §15.5 revision (lead
+  order as a kit choice) is a design deliverable after the review.
