@@ -113,7 +113,7 @@ TBD-MANIFEST
 - The digit: `src/gen/emit_dfa.c` `PCREC_ARTIFACT_ABI`; `match_api.md` the
   K80 `#error` text, §6's log entry ("is `61`"), §6.3's new stamp and the
   `REQ_WHY` `"emitted"` row; `run_codegen_tests.sh` `ABI_EXPECT=61` and its
-  narrative; `run_recursion_identity.sh` FILEPIN self-pinned to `0f11cc3e`.
+  narrative; `run_recursion_identity.sh` FILEPIN self-pinned to `b55d5554`.
 - The byte counts (the stamp line is 30 bytes at `-p rx`):
   `m5_stage1_stamps.tsv` all 12 `EMITTED_BYTES` rows re-recorded (+30 on
   ten, `\bword\b` +90 and `(?i)HeLLo` +80, the two §2.3a predicted program
