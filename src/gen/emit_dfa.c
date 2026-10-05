@@ -4857,6 +4857,16 @@ typedef struct DfaDir DfaDir;
  * `-bounded` half of `<PREFIX>_DFA_PREFILTER`'s value is a DIFFERENT EMITTED
  * LOOP (the skip stops at n-1 and loses its `return 0` early-out), so it is a
  * different form, and making it one is what turns the stamp into `c.name`. */
+/* [K84] AXIS B's SCAN KINDS: what a prefilter form's skip tests a candidate
+ * position on. The set or byte itself is the artifact's (`UnanchStart.cand`,
+ * or the `OfsTest` a `PF_SCAN_OFS` row derives); the kind is the row's. */
+typedef enum {
+    PF_SCAN_NONE = 0,   /* no skip: every position is a candidate */
+    PF_SCAN_OFS,        /* `<p>_ofsskip`: the scan byte is its `OfsTest`'s */
+    PF_SCAN_BYTE,       /* one candidate byte, `memchr`'d */
+    PF_SCAN_SET         /* a `can_begin_match` membership table */
+} PfScan;
+
 typedef struct DfaPf {
     DfaCand c;
     /* [OPT-K] `bool table` became a METHOD when the offset-k forms landed, and
@@ -4903,6 +4913,15 @@ typedef struct DfaPf {
      * own reason: it is a property of the form, declared beside its emitter,
      * and `ofs_test_of` reads it rather than comparing names. */
     bool   run_term;
+    /* [K84] WHAT THIS FORM'S SKIP SCANS FOR, the property the candidate
+     * readers need (`dfa_cand_scan` for G1's single-byte dominance,
+     * `pcrec_dfa_cand_ppm` for `[OPT-HYB-RESEED]`'s density). A field for
+     * `reseeds`' own reason: those readers used to `strcmp` the row NAME, so
+     * a new form with another name escaped both silently. Declared beside the
+     * emitter, so a new row cannot be added without answering it; the
+     * structural check `tests/codegen/run_cand_rows.sh` fails on any `strcmp`
+     * on a row name. */
+    PfScan scan;
 } DfaPf;
 
 /* AXIS C — VIEW HANDLING. `emit_view_select`'s three branches, plus the
@@ -6442,7 +6461,10 @@ static void pf_emit_ofs_bounded(StrBuf *c, const DfaForm *f)
     pcrec_sb_printf(c, "%s    }\n%s}\n", ind, ind);
 }
 
-/* The trailing pair is `reseeds`, `run_term` — see the fields' own notes.
+/* Designated initializers ([K84], stage 0 of docs/design/startset.md §8): a
+ * field a row omits is its zero value — no table, no block, no re-seed, no
+ * run term — and `scan` is named on every row, so a reader of the property
+ * never has to fall back to the NAME. See the fields' own notes.
  *
  * [OPT-LITSCAN] S1 THE RUN-PINNED PAIR IS AT THE HEAD, bounded before
  * unbounded, and the head is the one position that serves both of its
@@ -6454,19 +6476,27 @@ static void pf_emit_ofs_bounded(StrBuf *c, const DfaForm *f)
  * emitters ARE `pf_emit_ofs[_bounded]`. Either deny bit removes the pair
  * (lib/pcrec.h, `PCREC_NO_RUN_PREFILTER`). */
 static const DfaPf dfa_pfs[] = {
-    { { "run-pinned-bounded",  PCREC_NO_OFFSET_SKIP | PCREC_NO_RUN_PREFILTER, pf_run_bounded_applies },
-      pf_tables_ofs,  pf_block_ofs, pf_emit_ofs_bounded,    true,  true  },
-    { { "run-pinned",          PCREC_NO_OFFSET_SKIP | PCREC_NO_RUN_PREFILTER, pf_run_applies         },
-      pf_tables_ofs,  pf_block_ofs, pf_emit_ofs,            true,  true  },
-    { { "offset-set-bounded",  PCREC_NO_OFFSET_SKIP, pf_ofs_bounded_applies },
-      pf_tables_ofs,  pf_block_ofs, pf_emit_ofs_bounded,    true,  false },
-    { { "offset-set",          PCREC_NO_OFFSET_SKIP, pf_ofs_applies         },
-      pf_tables_ofs,  pf_block_ofs, pf_emit_ofs,            true,  false },
-    { { "memchr-bounded",     0, pf_memchr_bounded_applies }, NULL, NULL, pf_emit_memchr_bounded, false, false },
-    { { "memchr",             0, pf_memchr_applies         }, NULL, NULL, pf_emit_memchr,         false, false },
-    { { "byte-class-bounded", 0, pf_bcls_bounded_applies   }, pf_tables_bcls, NULL, pf_emit_bcls_bounded, false, false },
-    { { "byte-class",         0, pf_bcls_applies           }, pf_tables_bcls, NULL, pf_emit_bcls,         false, false },
-    { { "none",               0, cand_always               }, NULL, NULL, NULL,                   false, false },
+    { .c = { "run-pinned-bounded",  PCREC_NO_OFFSET_SKIP | PCREC_NO_RUN_PREFILTER, pf_run_bounded_applies },
+      .emit_tables = pf_tables_ofs,  .emit_block = pf_block_ofs, .emit = pf_emit_ofs_bounded,
+      .reseeds = true,  .run_term = true,  .scan = PF_SCAN_OFS  },
+    { .c = { "run-pinned",          PCREC_NO_OFFSET_SKIP | PCREC_NO_RUN_PREFILTER, pf_run_applies         },
+      .emit_tables = pf_tables_ofs,  .emit_block = pf_block_ofs, .emit = pf_emit_ofs,
+      .reseeds = true,  .run_term = true,  .scan = PF_SCAN_OFS  },
+    { .c = { "offset-set-bounded",  PCREC_NO_OFFSET_SKIP, pf_ofs_bounded_applies },
+      .emit_tables = pf_tables_ofs,  .emit_block = pf_block_ofs, .emit = pf_emit_ofs_bounded,
+      .reseeds = true,  .run_term = false, .scan = PF_SCAN_OFS  },
+    { .c = { "offset-set",          PCREC_NO_OFFSET_SKIP, pf_ofs_applies         },
+      .emit_tables = pf_tables_ofs,  .emit_block = pf_block_ofs, .emit = pf_emit_ofs,
+      .reseeds = true,  .run_term = false, .scan = PF_SCAN_OFS  },
+    { .c = { "memchr-bounded",     0, pf_memchr_bounded_applies },
+      .emit = pf_emit_memchr_bounded, .scan = PF_SCAN_BYTE },
+    { .c = { "memchr",             0, pf_memchr_applies         },
+      .emit = pf_emit_memchr,         .scan = PF_SCAN_BYTE },
+    { .c = { "byte-class-bounded", 0, pf_bcls_bounded_applies   },
+      .emit_tables = pf_tables_bcls, .emit = pf_emit_bcls_bounded, .scan = PF_SCAN_SET },
+    { .c = { "byte-class",         0, pf_bcls_applies           },
+      .emit_tables = pf_tables_bcls, .emit = pf_emit_bcls,         .scan = PF_SCAN_SET },
+    { .c = { "none",               0, cand_always               }, .scan = PF_SCAN_NONE },
 };
 
 /* AXIS B's selection for the artifact's FORWARD machine, for the callers that
@@ -6566,7 +6596,7 @@ static void dfa_cand_scan(Ctx *cx, CandScan *cs)
         if (ofs_test_of(cx, &us, pf, &t)) {
             cs->byte = t.scan_byte;
             cs->run_verified = ofs_test_verifies_run(cx, &t, &us);
-        } else if (!strcmp(pf->c.name, "memchr") || !strcmp(pf->c.name, "memchr-bounded")) {
+        } else if (pf->scan == PF_SCAN_BYTE) {
             cs->memchr_form = true;
             cs->byte = us.cand.byte;
         }
@@ -6599,7 +6629,7 @@ unsigned pcrec_dfa_cand_ppm(Ctx *cx)
             return 1000000u;
         unanch_start(cx, &us);
         pf = dfa_pf_of(cx, &us);
-        if (strcmp(pf->c.name, "byte-class") && strcmp(pf->c.name, "byte-class-bounded"))
+        if (pf->scan != PF_SCAN_SET)
             return 1000000u;
         memcpy(set, us.cand.set, sizeof set);
     }

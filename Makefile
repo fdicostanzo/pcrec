@@ -488,6 +488,9 @@ test-examples: all
 # [PATFACTS] run_facts_checks.sh joins at step 3.0 (design §4.2.3): an
 # include scan and an `nm` join over the built objects, well under a second --
 # the pattern-facts record's structural check, born with the record.
+# [START-SET] run_cand_rows.sh joins at stage 0 (D148, K84): a text scan of
+# src/ cli/ lib/ for a comparison reading a dfa_pfs[] row name, well under a
+# second.
 test-codegen: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-codegen.ran"; fi
 	GROUP_PROCS=$${PROCS:-$$(bash tests/lib/procs_default.sh)} bash tests/lib/run_group.sh \
@@ -503,6 +506,7 @@ test-codegen: all
 	    'bash tests/codegen/run_comments_axis.sh' \
 	    'bash tests/codegen/run_cls_fold_agreement.sh' \
 	    'bash tests/codegen/run_facts_checks.sh' \
+	    'bash tests/codegen/run_cand_rows.sh' \
 	    'bash tests/codegen/run_prefix_invariance.sh' \
 	    'bash tests/codegen/run_nomatch_caps.sh'
 
