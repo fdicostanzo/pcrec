@@ -1,0 +1,76 @@
+# box: Franks-MacBook-Pro.local, Darwin 25.6.0, Apple M1 Max
+# load at start: 6.20 5.09 5.23
+# commit: e4dfe3ca; date 2026-10-05T01:36Z
+# gcc: gcc-16 (Homebrew GCC 16.2.0) 16.2.0
+# clang: Apple clang version 21.0.0 (clang-2100.1.1.101)
+## subjects
+subjects: -> build/memfn_twins/20261005T013618Z/subj, sha256 mismatches 0
+ok   subjects.py
+## build + check
+ok   build ta_set.gcc
+check (neon): 26 kernels + 8 iter, 46384815 cases, 0 bad, 0 faults
+ok   ta_set.gcc --check
+ok   build tb_run.gcc
+check (neon): 12 kernels, 24494367 calls, 0 bad, 0 faults
+ok   tb_run.gcc --check
+ok   build tc_desc.gcc
+check (neon): 6 sets x 5 forms, 31733760 cases, 0 bad
+ok   tc_desc.gcc --check
+ok   build ta_set.clang
+check (neon): 26 kernels + 8 iter, 46384815 cases, 0 bad, 0 faults
+ok   ta_set.clang --check
+ok   build tb_run.clang
+check (neon): 12 kernels, 24494367 calls, 0 bad, 0 faults
+ok   tb_run.clang --check
+ok   build tc_desc.clang
+check (neon): 6 sets x 5 forms, 31733760 cases, 0 bad
+ok   tc_desc.clang --check
+ok   build ta_set.asan
+check (neon): 26 kernels + 8 iter, 46384815 cases, 0 bad, 0 faults
+ok   ta_set.asan --check
+ok   build tb_run.asan
+check (neon): 12 kernels, 24494367 calls, 0 bad, 0 faults
+ok   tb_run.asan --check
+ok   build tc_desc.asan
+check (neon): 6 sets x 5 forms, 31733760 cases, 0 bad
+ok   tc_desc.asan --check
+## T-C disassembly (hand vs constant descriptor)
+# tc_asm: gcc-16 (Homebrew GCC 16.2.0) 16.2.0, flags: -O2 
+# diff = differing lines in order; bag = differing lines of the register- and branch-target-renamed,
+# sorted instruction multiset (0 = the same instructions, scheduled/allocated
+# differently); ICF = the compiler folded desc_X onto hand_X (one symbol)
+# set  hand-insns  desc-insns  desc-diff  desc-bag    mut-insns  mut-diff  mut-bag
+q2           107         112         47        13           321       364      228
+d            101         103         30         2           321       362      246
+ss           103         103         28         0           321       358      228
+ab           107         107         30         0           324       365      243
+sp           112         113         73         3           320       366      220
+w            135         135         88        10           321       394      216
+
+## diff hand_ab desc_ab (in order)
+22,23c22,23
+ok   tc_asm gcc
+# tc_asm: Apple clang version 21.0.0 (clang-2100.1.1.101), flags: -O2 
+# diff = differing lines in order; bag = differing lines of the register- and branch-target-renamed,
+# sorted instruction multiset (0 = the same instructions, scheduled/allocated
+# differently); ICF = the compiler folded desc_X onto hand_X (one symbol)
+# set  hand-insns  desc-insns  desc-diff  desc-bag    mut-insns  mut-diff  mut-bag
+q2           106         106          0         0           330       404      230
+d             99          99          4         4           330       399      263
+ss            99          99          0         0           330       395      237
+ab           106         106          0         0           330       402      244
+sp           108         109         27         3           330       394      226
+w            131         130         41         9           330       401      209
+
+## diff hand_ab desc_ab (in order)
+## bag diff hand_ab desc_ab
+ok   tc_asm clang
+## timing
+ok   build/memfn_twins/20261005T013618Z/tb.gcc.txt
+ok   build/memfn_twins/20261005T013618Z/tc.gcc.txt
+ok   build/memfn_twins/20261005T013618Z/tb.clang.txt
+ok   build/memfn_twins/20261005T013618Z/tc.clang.txt
+ok   build/memfn_twins/20261005T013618Z/ta.gcc.txt
+ok   build/memfn_twins/20261005T013618Z/ta.clang.txt
+# load at end: 5.95 5.56 5.38
+MEMFN-TWINS-RUN COMPLETE build/memfn_twins/20261005T013618Z fails=0

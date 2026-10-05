@@ -51,7 +51,7 @@ verdicts the Mac cannot give are queued for Linux (§5).
      spread: NULL.
    - **On dense text the classifier does not matter; the restart does.**
      At one hit per 13 B every vector find-first costs ~7.5 ns per hit
-     (~38,000-41,000 ns per 64 KiB, all classifiers within ~3,000 ns of
+     (~36,000-44,000 ns per 64 KiB, all classifiers within ~4,000 ns of
      each other) and LOSES to the scalar table loop (~26,000 ns). The
      `iter` control (the same classifier, the block mask kept across hits)
      removes the restart (§2.3). The API shape (find-first vs iterate) is
@@ -202,11 +202,130 @@ patterns). It needs a byte shuffle: NEON `tbl`, SSSE3/AVX2 `pshufb`.
 
 ### 2.2 Results (gcc-16, NEON; ns per find-all over the span)
 
-TABLES_TA
+**none**
+
+| set | shape | variant | 16 B | 256 B | 4096 B | 65536 B | shape - nib2 (ns) |
+|---|---|---|---|---|---|---|---|
+| q2 | eq2 | scalar | 6.8 | 105.8 | 1795 | 29923 |  |
+| q2 | eq2 | nib2 | 2.0 | 8.7 | 132.5 | 2114 |  |
+| q2 | eq2 | shape | 1.9 | 6.1 | 90.5 | 1434 | -680 |
+| q2 | eq2 | libc | 3.6 | 16.1 | 210.3 | 2757 |  |
+| q2 | eq2 | iter | 1.6 | 12.0 | 179.1 | 2707 |  |
+| h3 | eq3 | scalar | 6.9 | 101.6 | 1758 | 29263 |  |
+| h3 | eq3 | nib2 | 2.0 | 8.6 | 128.7 | 2112 |  |
+| h3 | eq3 | shape | 2.0 | 8.5 | 128.1 | 2114 | +2 |
+| h3 | eq3 | libc | 5.5 | 22.9 | 315.4 | 4139 |  |
+| h3 | eq3 | iter | 1.9 | 12.6 | 187.4 | 2882 |  |
+| d | range | scalar | 6.9 | 100.7 | 1773 | 29748 |  |
+| d | range | nib2 | 2.0 | 8.7 | 131.4 | 2097 |  |
+| d | range | shape | 2.0 | 5.0 | 67.2 | 1070 | -1027 |
+| d | range | iter | 1.6 | 11.7 | 171.2 | 2623 |  |
+| ss | cube1 | scalar | 6.7 | 98.5 | 1772 | 29040 |  |
+| ss | cube1 | nib2 | 1.9 | 8.5 | 128.8 | 2059 |  |
+| ss | cube1 | shape | 1.9 | 4.8 | 72.6 | 1062 | -997 |
+| ss | cube1 | iter | 1.6 | 11.8 | 175.9 | 2594 |  |
+| ab | cube2 | scalar | 6.9 | 99.4 | 1785 | 29406 |  |
+| ab | cube2 | nib2 | 1.9 | 8.6 | 130.8 | 2079 |  |
+| ab | cube2 | shape | 1.9 | 6.2 | 88.7 | 1412 | -667 |
+| ab | cube2 | iter | 1.6 | 11.8 | 173.3 | 2619 |  |
+| sp | nib1 | scalar | 6.6 | 96.0 | 1730 | 28627 |  |
+| sp | nib1 | nib2 | 1.9 | 8.6 | 129.3 | 2054 |  |
+| sp | nib1 | shape | 1.9 | 5.8 | 87.6 | 1398 | -655 |
+| sp | nib1 | iter | 1.6 | 11.7 | 174.3 | 2556 |  |
+| dm | nib1 | scalar | 6.6 | 95.7 | 1714 | 28731 |  |
+| dm | nib1 | nib2 | 1.9 | 8.5 | 128.4 | 2053 |  |
+| dm | nib1 | shape | 1.9 | 5.8 | 92.8 | 1399 | -655 |
+| dm | nib1 | iter | 1.6 | 11.5 | 172.6 | 2561 |  |
+| w | rangesor | scalar | 6.7 | 99.0 | 1777 | 29277 |  |
+| w | rangesor | nib2 | 1.9 | 8.5 | 128.7 | 2055 |  |
+| w | rangesor | shape | 2.2 | 12.0 | 184.3 | 2990 | +935 |
+| w | rangesor | iter | 2.3 | 13.5 | 213.7 | 3229 |  |
+
+
+**dense**
+
+| set | shape | variant | 16 B | 256 B | 4096 B | 65536 B | shape - nib2 (ns) |
+|---|---|---|---|---|---|---|---|
+| q2 | eq2 | scalar | 7.7 | 109.8 | 1671 | 26574 |  |
+| q2 | eq2 | nib2 | 5.0 | 125.6 | 2563 | 41156 |  |
+| q2 | eq2 | shape | 4.9 | 105.1 | 2326 | 37555 | -3601 |
+| q2 | eq2 | libc | 9.1 | 174.6 | 3185 | 50829 |  |
+| q2 | eq2 | iter | 1.6 | 23.3 | 389.2 | 6149 |  |
+| h3 | eq3 | scalar | 7.9 | 109.1 | 1644 | 26718 |  |
+| h3 | eq3 | nib2 | 4.9 | 125.6 | 2564 | 41007 |  |
+| h3 | eq3 | shape | 4.9 | 118.2 | 2510 | 40743 | -264 |
+| h3 | eq3 | libc | 11.5 | 226.1 | 4083 | 65995 |  |
+| h3 | eq3 | iter | 2.0 | 24.0 | 387.2 | 6292 |  |
+| d | range | scalar | 7.6 | 103.4 | 1573 | 25294 |  |
+| d | range | nib2 | 4.9 | 122.8 | 2513 | 40149 |  |
+| d | range | shape | 4.8 | 100.9 | 2238 | 36262 | -3886 |
+| d | range | iter | 1.6 | 22.5 | 372.4 | 5911 |  |
+| ss | cube1 | scalar | 7.6 | 104.7 | 1679 | 25395 |  |
+| ss | cube1 | nib2 | 4.8 | 122.8 | 2508 | 40069 |  |
+| ss | cube1 | shape | 4.8 | 100.9 | 2245 | 36202 | -3867 |
+| ss | cube1 | iter | 1.6 | 23.2 | 372.0 | 6008 |  |
+| ab | cube2 | scalar | 7.5 | 104.7 | 1617 | 25647 |  |
+| ab | cube2 | nib2 | 4.8 | 123.1 | 2516 | 40307 |  |
+| ab | cube2 | shape | 4.8 | 103.8 | 2445 | 39445 | -862 |
+| ab | cube2 | iter | 1.6 | 22.7 | 380.3 | 6002 |  |
+| sp | nib1 | scalar | 7.7 | 106.2 | 1602 | 25418 |  |
+| sp | nib1 | nib2 | 4.8 | 122.8 | 2502 | 40339 |  |
+| sp | nib1 | shape | 4.7 | 103.0 | 2386 | 38392 | -1947 |
+| sp | nib1 | iter | 1.6 | 23.0 | 380.6 | 6051 |  |
+| dm | nib1 | scalar | 7.7 | 106.2 | 1617 | 25818 |  |
+| dm | nib1 | nib2 | 4.7 | 119.3 | 2483 | 40252 |  |
+| dm | nib1 | shape | 4.8 | 103.3 | 2374 | 38159 | -2093 |
+| dm | nib1 | iter | 1.6 | 23.0 | 381.9 | 6040 |  |
+| w | rangesor | scalar | 7.7 | 106.2 | 1621 | 25798 |  |
+| w | rangesor | nib2 | 4.7 | 128.9 | 2582 | 41315 |  |
+| w | rangesor | shape | 4.8 | 145.6 | 2726 | 43803 | +2488 |
+| w | rangesor | iter | 2.3 | 24.2 | 403.6 | 6373 |  |
+
+
+**real**
+
+| set | shape | variant | 16 B | 256 B | 4096 B | 65536 B | shape - nib2 (ns) |
+|---|---|---|---|---|---|---|---|
+| q2 | eq2 | scalar | 6.9 | 101.6 | 1665 | 27894 |  |
+| q2 | eq2 | nib2 | 2.0 | 8.7 | 253.2 | 5110 |  |
+| q2 | eq2 | shape | 2.0 | 6.1 | 201.9 | 4178 | -932 |
+| q2 | eq2 | libc | 3.6 | 16.0 | 568.4 | 11340 |  |
+| q2 | eq2 | iter | 1.6 | 12.0 | 209.9 | 3989 |  |
+| h3 | eq3 | scalar | 9.8 | 124.7 | 2009 | 79381 |  |
+| h3 | eq3 | nib2 | 10.1 | 297.4 | 5213 | 82918 |  |
+| h3 | eq3 | shape | 10.0 | 302.4 | 5115 | 81993 | -925 |
+| h3 | eq3 | libc | 28.4 | 520.8 | 53065 | 7131000 |  |
+| h3 | eq3 | iter | 3.3 | 39.9 | 641.0 | 10322 |  |
+| d | range | scalar | 6.7 | 116.5 | 1826 | 32249 |  |
+| d | range | nib2 | 1.9 | 155.3 | 2210 | 41988 |  |
+| d | range | shape | 1.9 | 130.8 | 1969 | 38969 | -3020 |
+| d | range | iter | 1.6 | 27.8 | 314.6 | 6036 |  |
+| ss | cube1 | scalar | 7.6 | 89.4 | 1764 | 35304 |  |
+| ss | cube1 | nib2 | 12.3 | 37.7 | 1044 | 15026 |  |
+| ss | cube1 | shape | 8.7 | 31.0 | 903.7 | 13090 | -1936 |
+| ss | cube1 | iter | 1.6 | 18.0 | 253.8 | 3826 |  |
+| ab | cube2 | scalar | 6.7 | 98.7 | 1600 | 51223 |  |
+| ab | cube2 | nib2 | 1.9 | 121.6 | 2452 | 48448 |  |
+| ab | cube2 | shape | 1.9 | 99.6 | 2396 | 46935 | -1514 |
+| ab | cube2 | iter | 1.6 | 24.4 | 412.3 | 6817 |  |
+| sp | nib1 | scalar | 9.3 | 123.5 | 2050 | 77213 |  |
+| sp | nib1 | nib2 | 9.9 | 320.9 | 5533 | 88097 |  |
+| sp | nib1 | shape | 9.9 | 307.0 | 5567 | 88221 | +124 |
+| sp | nib1 | iter | 2.9 | 42.0 | 696.4 | 10964 |  |
+| dm | nib1 | scalar | 6.5 | 114.7 | 1785 | 31131 |  |
+| dm | nib1 | nib2 | 1.9 | 170.8 | 2397 | 45643 |  |
+| dm | nib1 | shape | 1.9 | 154.1 | 2322 | 45175 | -467 |
+| dm | nib1 | iter | 1.6 | 29.1 | 338.7 | 6428 |  |
+| w | rangesor | scalar | 14.5 | 184.9 | 3137 | 96200 |  |
+| w | rangesor | nib2 | 23.9 | 1603 | 25984 | 406966 |  |
+| w | rangesor | shape | 17.8 | 1674 | 27524 | 437045 | +30079 |
+| w | rangesor | iter | 10.3 | 187.9 | 3602 | 70401 |  |
+
+`sparse` (one member per 1,009 B) tracks `none` plus ~300-450 ns at 64 KiB for every row; it is in the transcript.
 
 clang-21 gives the same picture within ~200 ns at 64 KiB
 (`probes/out/twins/ta.clang.txt`); its `\h` row is the one exception, with
-the shape form ~300 ns ahead of the nibble lookup where gcc ties them.
+the shape form ~360 ns ahead of the nibble lookup where gcc ties them.
 
 ### 2.3 What the tables say
 
@@ -221,14 +340,19 @@ the shape form ~300 ns ahead of the nibble lookup where gcc ties them.
   scalar loop is 7 ns at 16 B and 23 ns at 64 B.
 - **Dense**: the find-first restart costs ~7.5 ns a hit in every vector
   form against ~5.2 ns in the scalar loop, so the scalar loop WINS, and the
-  classifier rows are within ~3,000 ns of each other at 64 KiB. The `iter`
+  classifier rows are within ~4,000 ns of each other at 64 KiB. The `iter`
   rows (the same classifier, one pass, the mask's bits consumed in place)
-  are the control: see the `iter` rows of the dense and real tables.
+  are the control: ~5,900-6,400 ns per 64 KiB at 5,041 hits, ~1.2 ns a hit,
+  against ~36,000-44,000 for every find-first form and ~26,500 for the
+  scalar loop. On a miss `iter` is slower than the shape kernel (~2,600
+  against ~1,100-1,400 ns) because it has no 4×VW unroll; the two are the
+  find-first and find-all halves of one kernel, not rivals.
 - **Real text** follows each class's own density: `[0-9]`/`[\d-]`/`{A,B,a,b}`
   are moderately dense in the syntax text (4,500-5,100 members per 64 KiB)
   and behave like `dense`; `["']` and `{S,s}` are sparse (390 and 1,729)
   and keep the miss ordering; `\s`, `\h` and `\w` are dense and every
-  find-first form loses to the scalar loop.
+  find-first form loses to the scalar loop; `iter` does not (`\w`:
+  70,401 ns against 95,000 scalar and 437,045 shape find-first).
 - **libc** (one `memchr` per member, fresh each call) is behind every
   inline form at every span and density, and on `real` `\h` (9,765 hits)
   it reaches 7.2 ms per 64 KiB: each hit restarts all three streams, the
