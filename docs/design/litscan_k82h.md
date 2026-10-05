@@ -582,62 +582,142 @@ tables). `--list-axes` reads its rows through a
 
 ### 2.2 Stamps, `REQ_WHY`, `--emit-facts`
 
-- **`<PREFIX>_REQ_HANDOFF`** (NEW). Its value is `"none"`, or the decimal
-  K that the emitted subtraction carries (`"0"`, `"26"`).
-  - It is present on every artifact, beside `<PREFIX>_REQ_WHY`, whose
-    presence rule it copies. That is the house shape: every artifact
-    already carries `REQ_BYTE`/`REQ_RUN`/`REQ_WHY`.
-  - `"none"` holds iff no handoff is emitted. That is (no run pre-check)
-    OR (row 2). An artifact reads a number iff its body declares
-    `handoff_position`. That biconditional is the census's check (§4.1).
+- **`<PREFIX>_REQ_HANDOFF`** (NEW). Its value is the decimal K that the
+  emitted subtraction carries (`"0"`, `"26"`).
+  - **[r1 C-C1] It is emitted ONLY on artifacts where the handoff applies**
+    (row 1 selected). Revision 1 put `"none"` on every artifact, on the
+    `REQ_WHY` presence rule. The panel's grep (§2.3a) showed what that
+    costs: every byte-count reader of every artifact moves, though none of
+    those artifacts changes its program. Movers-only confines the byte
+    movement to the program movers. This is Q3's revised recommendation;
+    the facts-only alternative and the every-artifact option are priced
+    there.
+  - Presence is the biconditional: an artifact carries the stamp iff its
+    body declares `handoff_position`. §4.1's manifest and §5.12's
+    structural check both test it, from different sources (§4.1 from
+    Python's recomputation over `--emit-facts`, §5.12 from the emitted
+    text).
+  - Absence is not ambiguous, because `--emit-facts` always lists the
+    decision: the `req-use` row in the decisions section reads `handoff`
+    or `scan-from-startpos` on every artifact, and `req_run_maxoff` reads
+    `<K>`, `unbounded` or `none`. A reader who wants the "no handoff"
+    answer stated has it there, where the other non-program facts already
+    live.
 - **`<PREFIX>_REQ_WHY`**: unchanged, closed set unchanged.
-- **`--emit-facts`**: the `req_run_maxoff` row (§1.3), and the stamp in the
-  decisions section.
+- **`--emit-facts`**: the `req_run_maxoff` row (§1.3), and the `req-use`
+  decision on every artifact.
 
 ### 2.3 abi event (D76/D94) and spec hunks (D80)
 
 **abi.** abi 60 → 61, or k82fix's number + 1 at landing.
-- The emitted text moves on every program mover: the gate line becomes three
-  lines, and the start site reads `handoff_position`.
-- Every artifact gains the stamp line.
-- The site list is EVERY READER, FOUND BY GREP at the build commit:
-  - `abi 60`;
-  - `ABI_EXPECT`;
-  - `PCREC_RX_ABI_H`;
-  - `.abi =`;
-  - `PCREC_ARTIFACT_ABI`.
-- k82fix's set at abi 60 was:
-  - `src/gen/emit_dfa.c:52`;
-  - `docs/spec/match_api.md`'s K80 block (two digits) and §6's change log;
-  - `tests/codegen/run_codegen_tests.sh`'s `ABI_EXPECT` and its message.
-- Then re-pin the identity gates (`test-recursion-identity`'s pin, the
-  entry-shape and cpset gates, and every pin a digest of emitted text
-  reaches), run `make test-codegen` before delivery, and THEN run the
-  suites that count (registry, codegen, rxtsource), per D94's addendum.
+- The emitted text moves on every program mover: the gate line becomes the
+  `if` block of §1.1, the start site reads `handoff_position`, and the
+  stamp line is added.
+- Every other artifact moves only in the abi digit (`60` → `61`, the same
+  byte count) under the movers-only stamp. Under the every-artifact
+  option it would also gain a line; §2.3a counts what that moves.
+- Re-pin the identity gates (`test-recursion-identity`'s FILEPIN and its
+  `ABI_SUBJ` read, the entry-shape and cpset gates, and every pin a digest
+  of emitted text reaches), run `make test-codegen` before delivery, and
+  THEN run the suites that count (registry, codegen, rxtsource), per D94's
+  addendum.
 
-**Spec (D80), in the SAME change.**
-- **`docs/spec/match_api.md`.**
-  - §6.3: `<PREFIX>_REQ_HANDOFF`, its values and its iff.
-  - §6: the abi 61 change-log entry, naming the movers' text and the stamp.
-  - §3.1: one sentence. A search may begin its internal scan after the
-    startpos where a necessary run proves no earlier match. That is
-    unobservable by the contract, and it is stated so a reader of a
-    trace is not surprised.
-- **`docs/spec/tuning.md`.**
-  - A new §2.41 for `-fno-req-handoff` (bit 46): what it denies, what the
-    deny restores (abi 60's program, plus `REQ_HANDOFF "none"`), and the
-    stamp.
-  - §2.29's `REQ_WHY` paragraph gains a cross-reference.
-- **`docs/spec/registry.md` / `cli.md`:** the `req-use` axis and the
-  flag.
-- **`docs/spec/facts_listing.md`:** the `req_run_maxoff` row.
+**[r1 C-C3] Bit 46 joins `strategy_denials`.** `emit_info_def`'s
+`strategy_denials` mask (`src/gen/emit_dfa.c:2728` on `lane/k82fix`) is
+what makes `-fno-req-handoff`'s artifact byte-identical to BASE: without
+it, passing the flag moves `rx_info.flags` on EVERY artifact, including
+the ones the flag cannot act on (the [OPT-4] comment in the mask records
+exactly this defect, measured, for `-fno-prefilter-collapse`). Bit 45
+(`PCREC_NO_REQ_SET_LEAD`) is a member; bit 46 joins on the same ground:
+the mask holds knobs with no observable effect, and the handoff changes no
+answer (Theorem; the narrowed give-up allowance of §4.2 is on a population
+measured empty) and records what the emitter did in its own stamp. It is
+NOT the [DD-14 wave G] exception (`lib/CLAUDE.md:218`): that flag selects
+an engine, this one does not. So DENY == BASE holds modulo the abi digit
+alone, and §4.1's deny arm checks it on every artifact. A forgotten mask
+entry is caught there by construction (every artifact differs by 5 bytes),
+and by S473's plant if the deny bit is dropped from the row.
 
-**Pins the build moves.**
-- `tests/registry`: axes count +2 (k82fix: 186), the derived bit table
-  (bit 46), and the `--list-axes` pin.
-- `lib/pcrec.h`: the flag, beside `PCREC_NO_REQ_SET_LEAD`.
-- `src/core/axes.def`: the row.
-- The owning directories' `CLAUDE.md` where a file's role changes.
+### 2.3a [r1 C-C1] The readers, found by grep
+
+Revision 1 listed the abi readers from k82fix's own event and missed the
+second reader class: pins of BYTE COUNTS and digests that never cite the
+digit (D94's addendum). Both classes are enumerated here by grep, on main
+(`b1869be1`, abi 59) and on `lane/k82fix` (`f0d0b206`, abi 60). The build
+lane re-runs these commands at its own commit and diffs the output against
+this list; the list is a floor, not the inventory.
+
+**The abi digit.**
+
+    git grep -nE 'PCREC_ARTIFACT_ABI [0-9]|ABI_EXPECT=|\(abi 60\)|abi 60\b|PCREC_RX_ABI_H[^0-9]*60\b|\.abi = 60|ABI_SUBJ|FILEPIN' \
+        lane/k82fix -- src cli lib tests docs/spec Makefile
+
+| reader (lane/k82fix) | what it pins |
+|---|---|
+| `src/gen/emit_dfa.c:52` | `#define PCREC_ARTIFACT_ABI 60` |
+| `docs/spec/match_api.md:302` | the K80 `#error` text, `(abi 60)` |
+| `docs/spec/match_api.md:2299` | "`rx_info.abi` is `60` on every artifact today", plus §6's change log |
+| `tests/codegen/run_codegen_tests.sh:3021` | `ABI_EXPECT=60` and its bump-ledger message |
+| `tests/codegen/run_recursion_identity.sh:1160` | `FILEPIN` (`bdb6d556`), the (B) whole-file reference |
+| `tests/codegen/run_recursion_identity.sh:1252-1261` | `ABI_SUBJ` vs `ABI_PIN`: the "bump abi and re-pin (B)" tripwire |
+
+Main's set is the same at abi 59, plus six comment-only citations that
+do not move (`src/facts/CLAUDE.md:233`, `run_encoding_checks.sh:616,1216,
+1255`, `run_facts_checks.sh:395`, `run_prechecks.sh:397`, all "(abi 59)"
+provenance notes). The four instrument normalizers that rewrite the digit
+(`docs/dev/optloop/alpha_vedge.sh:104`, `s4/alpha_c1.sh:185`,
+`s4/alpha_c3.sh:188`, and k82fix's `s4/alpha_k82.sh:169`) match `5[5-9]`,
+`5[89]` or `(59|60)`,
+so a reuse of any of them against abi 61 must widen its pattern; the build's
+own alpha script inherits `alpha_k82.sh`'s `norm()` and must read
+`(60|61)`.
+
+**The byte counts and digests.**
+
+    git grep -nE 'EMITTED_BYTES|762574' lane/k82fix -- tests docs/spec lib src Makefile
+    git grep -nw -e 186 lane/k82fix -- tests/registry
+    git grep -nlE 'reqcube|emit_sweep' lane/k82fix -- tests src
+    git ls-tree -r --name-only lane/k82fix -- tests | grep -iE 'manifest|\.tsv$'
+    git grep -nE '124 rows|42 axes' lane/k82fix -- docs/spec/registry.md
+
+| reader | moves under every-artifact | moves under movers-only |
+|---|---|---|
+| `tests/codegen/manifests/m5_stage1_stamps.tsv` (12 `EMITTED_BYTES` rows, read by `run_cpset_structure.sh:518-547`) | all 12 | 2: `\bword\b`, `(?i)HeLLo` (the prototype's predicate on each pinned pattern; the other 10 are `dominated`, `one-attempt`, `none` or no run) |
+| `tests/resource/run_resource_tests.sh:682-698` (`a{5,25000}` rescued at 762,574 bytes) | yes | no (`dominated`, no run) |
+| `tests/size/check_size_tripwire.sh` + `docs/dev/artifact_size_log.tsv` (`run_size_log.sh`) | every row, by the line's bytes; the tripwire's 1,400,000-byte max is not near | the program movers' rows only |
+| `tests/codegen/reqcube_check.py`, `runcmp_check.py`, `tests/litscan/reqcube.rxt` (`gen_reqcube.py`) | the text they excise or pin around the run pre-check: re-read | the movers among their witnesses: re-read |
+| `tests/lib/c_artifact_cmp.sh`'s `emit_sweep` (the recursion identity gate's whole-file sweep) | every artifact: a FILEPIN re-pin | the digit only: the same re-pin, fewer differing lines |
+| `tests/findings/manifests/*.txt` (b1/ship mover lists) | re-derive: a stamp line on both arms must not create a mover | re-derive: the handoff is findings-independent (K is a walk fact), so the lists should not move; the build confirms |
+| `tests/registry/run_registry_tests.sh:629-643` (`axesn == 186`) | +k | +k |
+| `docs/spec/registry.md:192` ("124 rows / 42 axes") | +2 rows, +1 axis | same |
+| `tests/axes/run_axes.sh` groups (F3 is bit 45's) | a new GROUP F4 for bit 46 | same |
+
+`k` is measured at the build: k82fix's analogous event (one axis, one
+flagged row) was 183 → 186, +3; the panel estimated +2.
+
+**The contract readers (D80), which move under either option.**
+- `docs/spec/match_api.md`: §6.3 the stamp, its presence rule and
+  value; §6 the abi 61 change-log entry; :2299's "abi is 60" sentence;
+  :3813's `REQ_WHY` table, whose `"emitted"` row gains "since `abi` 61
+  possibly handed off (`REQ_HANDOFF`)"; §3.1's sentence (§4.2a gives its
+  revised text).
+- `docs/spec/tuning.md`: a new §2.41 for `-fno-req-handoff`; the
+  flags→flag table at :3738 gains the bit-46 row beside bit 45's; §2.29's
+  `REQ_WHY` paragraph gains a cross-reference.
+- `docs/spec/registry.md` / `cli.md:582`: the `req-use` axis and the flag
+  in the deny-flag list.
+- `docs/spec/facts_listing.md`: the `req_run_maxoff` row and the `req-use`
+  decision.
+- `docs/spec/findings.md:128`: the run's scan-member PICK row. The handoff
+  reads the window the PICK chose, never re-picks, so the row gains one
+  sentence that the window's K is a walk fact independent of the PICK, or
+  is left unchanged if the build finds no reader there.
+- `lib/CLAUDE.md:218`: the `strategy_denials` discussion gains bit 46 as
+  an ordinary member (C-C3 above), so a reader does not take it for the
+  wave-G exception.
+- `lib/pcrec.h`: the flag, beside `PCREC_NO_REQ_SET_LEAD`;
+  `src/core/axes.def`: the row; the owning directories' `CLAUDE.md` where
+  a file's role changes.
 
 ## 3. Predicted movers and their timing
 
@@ -674,8 +754,50 @@ The corpus auto movers are 121 / 6 / 33.
 `offset-set[-bounded]` and `byte-class-bounded` all occur. The handoff
 composes with each, which is §2.1's argument made concrete.
 
-**Stamp-only movers:** every artifact (`REQ_HANDOFF "none"`). That is the
-identity gates' re-pin, by name.
+**Stamp-only movers:** none under the movers-only stamp ([r1 C-C1]): a
+non-mover moves only in its abi digit. (Revision 1's every-artifact
+`"none"` line made every artifact a stamp mover; §2.3a counts the cost.)
+
+### 3.1a [r1 C-C9, C-C8] The populations revision 1 did not count (`k82h_census_r2.out`)
+
+Same prototype, same classifier (`k82h_census.py`'s `one()`, imported).
+
+| corpus config (3,663 distinct pattern/args) | compiled | run pre-check | DFA-scan route | **mover** | unbounded | routes of the movers | hybrid movers' `RX_VM_PREFILTER_LANG` |
+|---|---|---|---|---|---|---|---|
+| `auto` (cross-check of §3.1) | 3,291 | 219 | 197 | **160** | 37 | 121 DFA unanchored / 6 attempt / 33 hybrid | 33 `exact` |
+| `--no-captures` | 3,291 | 219 | 197 | **160** | 37 | 144 / 7 / 9 | 9 `exact` |
+| `--engine=vm -fprefilter` | 3,021 (642 refused: `-fprefilter` is do-or-die) | 197 | 197 | **160** | 37 | 160 hybrid | 160 `exact` |
+
+What it says:
+- **[r1 C-C9] No new mover kinds.** The no-captures corpus moves the same
+  number of artifacts with the same K histogram; 24 of auto's hybrid
+  movers become DFA movers there, because without captures the selector
+  takes the DFA. The forced hybrid reaches all 160 as hybrids. So the
+  hybrid route's population for the differential is 160, not 33, if the
+  differential runs the forced arm, and §4.2 item 1 does run it.
+- **Every hybrid mover's prefilter is `exact`**, in every config, and the
+  six bench hybrid movers read `exact` too (checked one by one:
+  `wild-secrets-username-password-pair`, `-slack-webhook-url`,
+  `-github-pat`, `syntax/lkb-neg`, `lkb-pos`, `utf8/asr-lb-neg`). That
+  empties §4.2's narrowed give-up allowance on every measured
+  population ([r1 S-F2]).
+- **[r1 C-C8] The budget and give-up cells are disjoint from the movers.**
+  The corpus has 35 pattern blocks carrying a step/frame budget or a `gu`
+  case (`tests/base/k64_*`, `k65_*`, `k66_*`, `tests/harness/giveup.rxt`,
+  `tests/litscan/reqcube.rxt:434-492`, `tests/recursion/*`,
+  `tests/vars/*`). Compiled as the harness compiles them (their own
+  `engine` column honoured, which `c3_movers.py`'s population ignores),
+  all 35 are on the VM with no DFA scan: 0 movers. So no shipped give-up
+  expectation can move under the handoff.
+- **The K > 0 population is THIN.** 27 corpus movers (133 of 160 are
+  K = 0) and 14 bench movers (33 of 47). K = 0 is the population where
+  K−1 and the clamp are untestable (there is no K−1, and `c − 0` cannot
+  underflow), so S463 and S470's witnesses must come from these 27 + 14
+  or be constructed (§4.4 constructs them).
+- **`\G` hybrids: none.** No mover on any route carries a `\G` start
+  family, which is why S469's witness is constructed:
+  `(?:\G|x)(cat)dog` is a VM hybrid, `exact` prefilter, K = 1 on the
+  prototype.
 
 ### 3.2 The K82 cells and C3's customers
 
@@ -689,7 +811,7 @@ These are the auto configs. The forced-VM arms are not movers.
 | `userpass` (A) | hybrid | 0 | k82fix's `set-leads` restored BASE (the `=` lead rejects) | null. The run search never runs on its subject, so the handoff is never consulted |
 | `alt-shared-char` (C) | DFA, `offset-set` | 0 | k82fix's argmin restored the one-stream scan | null to small win: the engine's scan starts at the window instead of re-finding it |
 | `ci-ascii-control` (customer) | DFA, `byte-class` | 0 | −0.45..−0.50 (the win) | null: the run is absent, the gate rejects, and T3 measured 0.208 against 0.209 |
-| `union-select` (customer) | DFA | **unbounded** (`.*?`) | −0.40..−0.52 (the win) | NOT a mover. Discard gate unchanged, byte-identical apart from abi and stamp |
+| `union-select` (customer) | DFA | **unbounded** (`.*?`) | −0.40..−0.52 (the win) | NOT a mover. Discard gate unchanged, byte-identical apart from the abi digit (no stamp under movers-only, [r1 C-C1]) |
 | `slack` | hybrid | 26 | null stakes | null: the run is absent |
 | `stack-frame` (control) | DFA, `offset-set-bounded` | 0 | k82diag: deleting the gate WINS, 0.347 → 0.252 | predicted toward 0.252. This is the one cell where the gate PASSES densely on real text with an exact run, and an alpha cell |
 | `http-5xx` | DFA | unbounded | null | not a mover |
