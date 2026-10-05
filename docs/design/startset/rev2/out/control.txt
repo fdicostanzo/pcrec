@@ -1,0 +1,7 @@
+# [START-SET] rev 2 control.py output, lane/ssrev from main 08caf4a3 (abi 61), darwin; census.tsv populations at its own options (sound-F4's caveat applies). Final estar.py (initializer parse incl. the K82 handoff form).
+plant=none rows_checked=835 violations=0 (seeded 0, unseeded 0) reach=0 detected_in_reach=0
+plant=cat-null rows_checked=838 violations=367 (seeded 154, unseeded 213) reach=367 detected_in_reach=367
+plant=alt-right rows_checked=835 violations=185 (seeded 24, unseeded 161) reach=185 detected_in_reach=185
+plant=look-eats rows_checked=850 violations=118 (seeded 74, unseeded 44) reach=201 detected_in_reach=118
+plant=rep-min0 rows_checked=853 violations=23 (seeded 2, unseeded 21) reach=37 detected_in_reach=23
+population: 864 dfa/hybrid artifacts read; seeded 170; unread 1721 (no emitted table, or a seeded table that is not s0's escape set): codegrammar-flat, codegrammar-xflag, file-ext-order, floor-byte, keyword-prefix-order, mojibake-curly-quote, router-prefix-order, wild-codegrammar-json-array-begin, wild-codegrammar-json-object-begin, wild-codegrammar-json-stringcontent-escape, wild-secrets-slack-webhook-url, wild-semdiv-altorder-foo-foobar-rustregex ...

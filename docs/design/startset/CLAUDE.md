@@ -22,17 +22,31 @@ written.
 - `summarize.py` — classifies `census.tsv` into the populations in the note's
   §1. It runs THE INDEPENDENT CONTROL: `E ⊆ S` on every unseeded machine, plus
   a drop-one-member failing-direction twin. It checks capability `t-1m`'s
-  sha256 against the bench manifest before reading densities.
+  sha256 against the bench manifest before reading densities. [Rev 2,
+  review r4 sound-F2/checks-F2: the drop-one twin is a tautology, since
+  `min(E) ∈ E`. The population has no seeded machine, so it cannot reach
+  either hat's movers. Superseded as a control by `rev2/control.py`. Its
+  DFA_NARROW count also included 14 rows where `S ∩ E = ∅`.]
 - `census.tsv`, `census_summary.json`, `census_summary.txt` — its output at
   `a4c752a2` (abi 61). No check reads these.
 - `twin/` — the hand twins, all answer-checked every-startpos differentials:
   - `hybtwin.py` + `drv_hyb.c` → `hybtwin_out.txt`: the VM hybrid's inlined
     prefilter, narrowed with and without the re-seed;
   - `dfatwin.py` + `drv3.c` + `run_dfatwin.sh` → `dfatwin_out.txt`: the DFA
-    hat (narrowed to `T = S ∩ E`, with and without the re-seed);
+    hat (narrowed to `T = S ∩ E`, with and without the re-seed). [Rev 2:
+    every pattern here has `S ⊆ E`, and the script computes `T` by the
+    formula under test, so it could not see sound-F1. See `rev2/`.]
   - `vmtwin.py` + `drv2.c` + `run_vmtwin.sh` → `vmtwin_out.txt`: the VM hat's
     entry/retry seek. It is encoding-agnostic: it inserts the seek after the
     backend's own advance. It carries the drop-one-member CONTROLS;
   - `tdrv.c`: the find-all scratch timer, base against twin, best of R.
 
   Env for the `run_*.sh` scripts: `PCREC PROBE W` (a scratch dir) `[CC]`.
+  [Rev 2, sound-F5: `vmtwin_out.txt`'s `(?i)stra\x{df}e` CONTROL line reads
+  `diffs=0` but re-runs as 1. The `(a+)x\1catdog` row is vacuous at maxlen
+  6. Every driver here reads subjects with `fgets`, so no newline is
+  reached.]
+- `rev2/` — revision 2's instruments (lane `ssrev`): the seeded-machine
+  sweep of the DFA-hat set options (a)/(b)/(c), the start-byte oracle on
+  both hats, and C-SS\* with planted walk defects; `out/` has the
+  transcripts. Own CLAUDE.md.

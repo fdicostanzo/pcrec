@@ -1,0 +1,1 @@
+route=vm rows=2536 ok=2470 skipped={'skip-K': 66} cells=194302213 matches=50325304 rows_reaching_a_match=1875 start_byte_violations(base)=0 (pcre2)=0 pcre2_vs_base_rows=3

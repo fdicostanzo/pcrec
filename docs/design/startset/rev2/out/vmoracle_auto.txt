@@ -1,0 +1,1 @@
+route=auto rows=76 ok=76 skipped={} cells=8372295 matches=767881 rows_reaching_a_match=41 start_byte_violations(base)=0 (pcre2)=0 pcre2_vs_base_rows=0
