@@ -9064,3 +9064,16 @@ Frank gave this direction to the kit session (memfn `responses.md` N-1, on the R
 - **No silent adoption:** a constant that is none of these yet is LABELLED in place as an unmeasured default. That is a comment where it lives, plus a line in its design note.
 - **Reviews and panels flag every unlabelled one.** Panel r4 on START-SET (ssc-cost F10) is the first application.
 - **No retroactive sweep.** Nothing changes early. Existing constants are labelled when their code is next touched, and the label is a measurement's trigger, not a build order (D77).
+
+**D148 addendum 1 (Frank, 2026-10-05): the DFA hat's set is T = S ∩ E\*.**
+- **The bug.** D6 panel r4 (critic ssc-sound F1) found the rev-1 rule T = S ∩ E UNSOUND, a BLOCKER. When S\E is non-empty on a seeded machine, it deletes matches even with the re-seed: a skipped byte in E\S changes the context, and a later start whose byte is in S\E is never stopped at. There are 6 corpus witnesses, e.g. `(?:(?<=a)z|w)` on "aza".
+- **Ruled: option (a), T = S ∩ E\*,** where E\* = s0's escape set plus the union over every seed state. Option (c), declining the row when S ⊄ E, is the fallback if measurement shows (a) unsound anywhere.
+- **Frank's direction: the set argument is not a proof, so the EDGES carry the evidence.** The revision (lane ssrev, rev 2) must show by MUTATION that the planned tests SEE each wrong variant at answer level, not only structurally:
+  - the old S∩E;
+  - E\* missing any one seed state;
+  - E\* missing s0;
+  - the re-seed removed;
+  - an unconditional re-seed on \G;
+  - the seek placed before UTF validation.
+
+  It must also carry an oracle-verified edge-case list: multi-byte and nested lookbehind context across the skip; \b/\B in both polarities; (?m) under each newline convention; UTF-8 continuation-byte context; caseless; search_from > 0; subject start, end and empty subjects; \G; hybrid and count-collapsed machines.
