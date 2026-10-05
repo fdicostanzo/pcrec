@@ -103,18 +103,38 @@ static const arm *select_arm(const mf_site *s)
  * passes, the generic row included (§8.2 "Totality"). (op, handoff, term
  * kinds) is mf_vocab_has's table; the form follows from the handoff. */
 
+/* 1 iff `v` names a member of an enum whose members run 0..last: a field
+ * outside its enum is refused like any other shape outside the vocabulary,
+ * never given some reading (F3). */
+static int in_enum(unsigned v, unsigned last)
+{
+    return v <= last;
+}
+
 /* Adds the term kinds one predicate uses to *kinds (MF_TK_* bits); 0 if a
  * term is malformed (sets *why). */
 static int pred_kinds(const mf_pred *p, uint32_t *kinds, const char **why)
 {
+    if (p->nterm == 0) { *why = "a predicate with no terms (nterm 0)"; return 0; }
     if (p->nterm > MF_MAX_TERM) { *why = "nterm > MF_MAX_TERM"; return 0; }
+    if (!in_enum(p->need, MF_OPTIONAL)) { *why = "predicate need outside mf_need"; return 0; }
     for (unsigned t = 0; t < p->nterm; t++) {
         const mf_term *tm = &p->term[t];
         if (tm->offset < -MF_MAX_BACK) { *why = "term offset < -MF_MAX_BACK"; return 0; }
+        if (!in_enum(tm->need, MF_OPTIONAL)) { *why = "term need outside mf_need"; return 0; }
         if (tm->kind == MF_T_SET) {
             *kinds |= MF_TK_SET;
         } else if (tm->kind == MF_T_RUN) {
-            if (tm->run_len && !tm->run) { *why = "RUN term without bytes"; return 0; }
+            if (tm->run_len == 0) { *why = "RUN term of length 0"; return 0; }
+            if (!tm->run) { *why = "RUN term without bytes"; return 0; }
+            /* a run byte with a bit its mask clears can never hold; the
+             * literal formula would render a test that is always false */
+            if (tm->mask)
+                for (uint32_t j = 0; j < tm->run_len; j++)
+                    if (tm->run[j] & (uint8_t)~tm->mask[j]) {
+                        *why = "RUN byte has bits outside its mask";
+                        return 0;
+                    }
             *kinds |= MF_TK_RUN;
         } else {
             *why = "unknown term kind";
@@ -128,6 +148,10 @@ static const char *site_check(const mf_site *s)
 {
     const char *why = NULL;
     uint32_t kinds = 0;
+    if (!in_enum(s->form, MF_FORM_FUNC)) return "form outside mf_form";
+    if (!in_enum(s->empty, MF_EMPTY_EXCLUDED)) return "empty outside mf_empty";
+    if (!in_enum(s->use, MF_USE_DISCARD)) return "use outside mf_use_kind";
+    if (!in_enum(s->consumer, MF_C_ENGINE)) return "consumer outside mf_consumer";
     if (s->end_back > 1) return "end_back is not 0 or 1";
     if (s->op == MF_OP_ALL_PRESENT) {
         if (s->npred && !s->preds) return "ALL_PRESENT without preds";
@@ -139,11 +163,14 @@ static const char *site_check(const mf_site *s)
         int valued = s->handoff == MF_H_RETURN || s->handoff == MF_H_ASSIGN;
         if (valued != (s->ret_pred != MF_NO_PRED))
             return "ret_pred must be set exactly for RETURN/ASSIGN";
+        if (s->reverse) return "ALL_PRESENT has no reverse reading";
     } else if (!pred_kinds(&s->pred, &kinds, &why)) {
         return why;
     }
     if (s->op == MF_OP_SKIP && (s->pred.nterm != 1 || s->pred.term[0].kind != MF_T_SET))
         return "SKIP takes exactly one SET term";
+    if (s->op == MF_OP_SKIP && s->pred.term[0].offset != 0)
+        return "SKIP's SET term is at offset 0 (the candidate's own byte)";
     if (!mf_vocab_has(s->op, s->handoff, kinds))
         return "(op, handoff, term kinds) is not in the vocabulary";
 
@@ -153,10 +180,15 @@ static const char *site_check(const mf_site *s)
         return stmt ? "this handoff is a STMT form" : "this handoff is an EXPR or FUNC form";
     if (s->empty == MF_EMPTY_NOP && s->form != MF_FORM_STMT)
         return "an EXPR or FUNC site cannot write nothing on an empty range";
-    if (s->empty == MF_EMPTY_NOP && s->handoff == MF_H_ON_CAND)
-        return "ON_CAND has no NOP empty outcome";
-    if (s->guard_by_caller && !(s->op == MF_OP_VERIFY && s->form == MF_FORM_EXPR))
-        return "guard_by_caller is for an EXPR VERIFY only";
+    if (s->empty == MF_EMPTY_MISS && s->handoff == MF_H_ADVANCE)
+        return "ADVANCE has no miss to give an empty range";
+    if (s->guard_by_caller) {
+        if (!(s->op == MF_OP_VERIFY && s->form == MF_FORM_EXPR))
+            return "guard_by_caller is for an EXPR VERIFY only";
+        for (unsigned t = 0; t < s->pred.nterm; t++)
+            if (s->pred.term[t].offset < 0)
+                return "guard_by_caller needs every term offset >= 0";
+    }
     return NULL;
 }
 

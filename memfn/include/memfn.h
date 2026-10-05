@@ -9,9 +9,11 @@
  * and masked-run terms at offsets, its proven facts and the text hooks around
  * it); the kit returns the C TEXT for that site (D146). The kit owns every
  * choice inside the site. The shapes below are the contract of record,
- * docs/design/memfn/integration.md §8.2/§8.3 as extended by §14.0 (rev 4.6);
+ * docs/design/memfn/integration.md §8.2/§8.3 as extended by §14.0 (rev 4.7);
  * where this header had to choose a spelling the design left open, the
  * choice is marked CHOSEN and listed in docs/dev/lanes/memfnskel_report.md.
+ * The kit session's rulings on G2's contract questions (Q-G2-n, §R4.7) are
+ * marked RULED where they fall.
  *
  * No ISA, vector width or CPU name appears here: pcrec must learn no
  * architecture fact from this header (C4). Generated artifacts never include
@@ -62,10 +64,14 @@ typedef enum {
     MF_OP_FIND,             /* first cand in [lo,hi) satisfying the predicate
                                (last, if reverse)                             */
     MF_OP_SKIP,             /* first cand in [lo,hi) whose byte is NOT in the
-                               one SET term                                   */
-    MF_OP_VERIFY,           /* does the predicate hold at cand == lo          */
+                               one SET term, which sits at offset 0 (RULED
+                               Q-G2-9: any other offset is refused)          */
+    MF_OP_VERIFY,           /* does the predicate hold at cand == lo; lo must
+                               lie in [lo,hi), so an empty range takes the
+                               site's `empty` outcome (RULED Q-G2-17, F1)     */
     MF_OP_ALL_PRESENT       /* does EVERY one of npred predicates hold
-                               somewhere in [lo,hi)                           */
+                               somewhere in [lo,hi); `reverse` is refused
+                               (RULED Q-G2-12)                                */
 } mf_op;
 
 typedef enum {
@@ -79,14 +85,21 @@ typedef enum {
     MF_H_BOOL               /* EXPR / FUNC call: true iff the predicate holds */
 } mf_handoff;
 
-typedef enum {              /* an EMPTY range's outcome (§14.4)               */
-    MF_EMPTY_MISS,          /* as a miss: `miss` written / `on_miss` run      */
-    MF_EMPTY_NOP,           /* nothing written, nothing run                   */
+typedef enum {              /* an EMPTY range's outcome (§14.4). The range is
+                               empty iff lo + end_back >= n, lo > n included
+                               (RULED Q-G2-1): the text then reads nothing.
+                               A value outside the enum is refused (F3)      */
+    MF_EMPTY_MISS,          /* as a miss: `miss` written / `on_miss` run.
+                               Refused on ADVANCE, which has no miss (Q-G2-4) */
+    MF_EMPTY_NOP,           /* nothing written, nothing run (no ON_CAND visit).
+                               STMT forms only: refused on EXPR/FUNC, whose
+                               value must be something (Q-G2-3)               */
     MF_EMPTY_EXCLUDED       /* pcrec's text has already proven lo < hi; the
                                kit emits no empty test                        */
 } mf_empty;
 
-typedef enum { MF_REQUIRED, MF_OPTIONAL } mf_need;      /* §14.5 */
+typedef enum { MF_REQUIRED, MF_OPTIONAL } mf_need;      /* §14.5; any other
+                                                           value refused (F3) */
 
 typedef enum { MF_T_SET, MF_T_RUN } mf_term_kind;
 
@@ -120,14 +133,16 @@ typedef struct {                    /* one position term, relative to cand    */
                                        byte b>>3 is (b & 7)                   */
     uint32_t       table_ref;       /* MF_T_SET: pcrec's table-name hook id, or 0 */
     const uint8_t *run, *mask;      /* MF_T_RUN: (s[cand+offset+j] & mask[j])
-                                       == run[j]; mask NULL = exact           */
-    uint32_t       run_len;         /* no cap (§14.6)                         */
+                                       == run[j]; mask NULL = exact. A run[j]
+                                       with a bit mask[j] clears is refused
+                                       (RULED Q-G2-13: it could never hold)   */
+    uint32_t       run_len;         /* >= 1 (0 refused, Q-G2-11); no cap (§14.6) */
     uint32_t       ppm_lo, ppm_hi;  /* density hint: matches per 1e6 subject
                                        bytes; 0..MF_PPM_FULL when unknown     */
 } mf_term;
 
 typedef struct mf_pred {            /* a CONJUNCTION of terms                 */
-    uint8_t  nterm;
+    uint8_t  nterm;                 /* 1..MF_MAX_TERM: 0 is refused (Q-G2-10) */
     mf_term  term[MF_MAX_TERM];
     mf_need  need;                  /* a whole predicate may be OPTIONAL
                                        (set-leads' lead on a DFA-scan route)  */
@@ -150,8 +165,10 @@ typedef struct {
     const mf_pred  *preds;          /* ALL_PRESENT, DENSE (§15.5)              */
     uint8_t         ret_pred;       /* ALL_PRESENT: RETURN/ASSIGN the leftmost
                                        hit of preds[ret_pred]; MF_NO_PRED = none */
-    uint8_t         guard_by_caller;/* EXPR VERIFY only: pcrec's text has
-                                       established the term's reads in range  */
+    uint8_t         guard_by_caller;/* EXPR VERIFY with every term offset >= 0
+                                       only (else refused, Q-G2-15): pcrec's
+                                       text has established the range and the
+                                       term's reads; the kit tests neither    */
     uint8_t         use;            /* mf_use_kind, PER INSTANCE (§14.5)       */
     /* pcrec's proven facts */
     uint64_t        span_lo, span_hi;          /* proven bytes; MF_SPAN_UNBOUNDED */
@@ -170,7 +187,9 @@ typedef struct {
  * pcrec's buffer, so comment gating and prefix rendering stay pcrec's.
  * CHOSEN: printf is a va_list op (`vprintf`); cmt_open returns nonzero iff
  * the comment gate is open for `tier` (the kit writes the comment body only
- * then); a NULL op is "not offered" and the kit must not need it. */
+ * then); a NULL op is "not offered" and the kit must not need it.
+ * RULED Q-G2-16: an open cmt_open writes the comment OPENER itself, and
+ * cmt_close writes the closer; the kit writes only the body between. */
 typedef struct mf_sink {
     void *u;
     void (*puts)(void *u, const char *s);
@@ -193,19 +212,29 @@ typedef struct mf_arena {
     void *(*alloc)(void *u, size_t n);
 } mf_arena;
 
+/* RULED Q-G2-7: every string a hook RETURNS (member, table_name, fn_name,
+ * note_tag) must stay valid until mf_art_end: the kit may hold it past
+ * later hook calls. */
 typedef struct {
     /* the subject and its bounds: side-effect-free C expressions (rule 1) */
     const char *s;          /* the subject pointer                              */
     const char *n;          /* the READ LIMIT: no byte at or past it is read    */
-    const char *lo;         /* search start; the range is [lo, n - end_back)    */
-    const char *floor;      /* the LOWER read limit (§14.7); "0" when NULL      */
+    const char *lo;         /* search start; the range is [lo, n - end_back).
+                               lo > n is legal and means EMPTY (Q-G2-1)        */
+    const char *floor;      /* the LOWER read limit (§14.7); "0" when NULL.
+                               floor <= lo is the CALLER's precondition
+                               (RULED Q-G2-6): the kit bounds term reads by
+                               floor, never a candidate or on_cand's reads    */
     /* RETURN / ASSIGN / ON_CAND */
     const char *result;     /* the lvalue written                               */
     const char *result_decl;/* ASSIGN: a declaration prefix ("size_t ") or NULL */
     const char *miss;       /* the value written when no cand exists; a value no
                                hit can take (outside [lo, n - end_back))         */
     const char *on_miss;    /* ON_MISS, ASSIGN, MISS-empty: pcrec's STATEMENT   */
-    /* ADVANCE */
+    /* ADVANCE. RULED Q-G2-14: only `more`, `peek` and `step` are required;
+       a NULL `cursor` is accepted. OPEN Q-G2-5: a reverse ADVANCE at lo == n
+       (pcrec's `more` would move; §14.4 says an empty range leaves the
+       cursor) is unruled; no customer before M3                              */
     const char *cursor;     /* the cursor lvalue                                */
     const char *step;       /* pcrec's step statement (`pos++;`, `pos--;`, …)   */
     const char *more;       /* pcrec's continue condition                       */
@@ -213,7 +242,9 @@ typedef struct {
     const char *count;      /* the run counter's name, or NULL (§14.3)          */
     long        count_start;/* its value at the kit's first statement           */
     /* ON_CAND: pcrec's per-candidate verify, ending in exactly one of the two
-       kit tokens MF_TOK_ACCEPT / MF_TOK_REJECT (rule 4, §14.7)                 */
+       kit tokens MF_TOK_ACCEPT / MF_TOK_REJECT (rule 4, §14.7). RULED Q-G2-8:
+       a verify whose token is conditional (`if (x) <token>`) and falls
+       through REJECTS, and scanning continues at the next candidate          */
     void (*on_cand)(void *u, mf_sink *c, const char *cand);
     uint32_t on_cand_reach; /* bytes on_cand reads at or after cand             */
     /* one-position membership: T4 stays pcrec's (rule 6). CHOSEN: `term` is
