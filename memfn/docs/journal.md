@@ -90,3 +90,18 @@ pointer when a kit change merges to main.
 - OWED: the Linux verdict, `docs/design/memfn/probes/lxrun/memfn_r4b.sh`
   (~20-25 min, cap 120, last line `R4B-DONE status=<n> dir=<OUTDIR>`),
   run by main's executor. Then R-1's `done:`.
+
+## 2026-10-05 — Frank (direct): be suspicious of tuning constants
+
+- Asked why `swar`'s hot loop is 16 bytes (2x) and not 32. Answer: an
+  UNMEASURED default, inherited from `ffl`'s 2xVW shape; the lane
+  measured no unroll ladder.
+- Frank's direction (nothing to do now, this early): note it as an
+  unmeasured default; he dislikes hand-tuned numbers like that. Prefer a
+  formulation where the compiler picks the unroll (e.g. a simple loop
+  gcc unrolls and schedules itself) over a fixed constant. In general,
+  every such constant in kit forms (unroll widths, block sizes, short-span
+  cut-overs, thresholds) is suspect: it is either measured, with its
+  regime named, or derived, or left to the compiler. Never adopted
+  silently.
+- Recorded: comment at the loop in tb_r4b.c; responses.md N-1 for main.

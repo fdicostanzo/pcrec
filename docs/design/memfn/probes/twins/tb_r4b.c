@@ -269,6 +269,10 @@ INL size_t f_swar(const uint8_t *s, size_t n, size_t pos, int L, const char *V,
         }                                                                             \
     } while (0)
     size_t i = pos;
+    /* UNMEASURED DEFAULT: the 2x (16-byte) unroll was inherited from ffl's
+     * 2xVW shape, not measured against 1x/4x. Before any kit form fixes an
+     * unroll width, prefer a shape the compiler unrolls itself; a hand
+     * constant needs a measurement (Frank, 2026-10-05; journal). */
     for (; i + 16 + T <= n; i += 16) {
         uint64_t m0 = CAND(s + i), m1 = CAND(s + i + 8);
         seen |= LEADZ(s + i) | LEADZ(s + i + 8);
