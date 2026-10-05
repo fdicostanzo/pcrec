@@ -1,0 +1,64 @@
+== the six sound-F1 witnesses (critic's alphabets, maxlen 7) ==
+pattern	route	cells	matches	pcre2_vs_base	|E|	|S|	|T| cur/a/b	diffs cur/a/b/dfa	Tdfa<=T cur/a/b	oracle cur/a/b
+lookaround/d27/matrix.rxt:1064	dfa	167481	104529	0	2	2	1/2/2	11040/0/0/0	0/1/1	0/1/1
+lookaround/d27/matrix.rxt:2597	dfa	167481	104529	0	2	2	1/2/2	11040/0/0/0	0/1/1	0/1/1
+lookaround/d27/matrix.rxt:1122	dfa	756836	452432	0	3	2	1/2/2	60430/0/0/0	0/1/1	0/1/1
+lookaround/d27/matrix.rxt:2662	dfa	756836	452432	0	3	2	1/2/2	60430/0/0/0	0/1/1	0/1/1
+lookaround/lookbehind.rxt:212	hybrid	167481	37723	0	2	2	1/2/2	11772/0/0/0	0/1/1	0/1/1
+ucp/ctxnode.rxt:400	dfa	167481	76249	0	2	2	1/2/2	12264/0/0/0	0/1/1	0/1/1
+
+== the sweep: every seeded byte-class DFA/hybrid census row with a necessary S ==
+rows 94 (not ok: []); cells 13583325; matches 3688128; rows reaching >= 1 match 78; libpcre2-vs-base diffs 0
+rows with |E*| == 256: 94 of 94;  rows with T_a == S: 94;  rows with Tdfa == S: 94
+T=cur  rows_with_diffs  20  total_diffs  322771  static(Tdfa<=T)_fail  21  oracle_fail  21
+T=a    rows_with_diffs   0  total_diffs       0  static(Tdfa<=T)_fail   0  oracle_fail   0
+T=b    rows_with_diffs   0  total_diffs       0  static(Tdfa<=T)_fail   0  oracle_fail   0
+T=dfa  rows_with_diffs   0  total_diffs       0  static(Tdfa<=T)_fail   0  oracle_fail   0
+
+== movers (admission) ==
+mover_cur      r3 F: T=S&E nonempty, T < E                total  62  bench 18 (dfa 9, hybrid 9)  corpus 44 (dfa 36, hybrid 8)
+mover_a_sub    (a) T=S&E*, admitted iff T < E             total  56  bench 18 (dfa 9, hybrid 9)  corpus 38 (dfa 31, hybrid 7)
+mover_a_card   (a) admitted iff |T| < |E|                 total  71  bench 18 (dfa 9, hybrid 9)  corpus 53 (dfa 42, hybrid 11)
+mover_b_sub    (b) T=S, admitted iff S < E                total  56  bench 18 (dfa 9, hybrid 9)  corpus 38 (dfa 31, hybrid 7)
+mover_b_card   (b) admitted iff |S| < |E|                 total  71  bench 18 (dfa 9, hybrid 9)  corpus 53 (dfa 42, hybrid 11)
+mover_c        (c) T=S&E, declined when S not<= E         total  56  bench 18 (dfa 9, hybrid 9)  corpus 38 (dfa 31, hybrid 7)
+
+r3 movers that are UNSOUND (mover_cur with diffs or a failed check):
+   tests/lookaround/d27/matrix.rxt:1064 diffs 11040
+   tests/lookaround/d27/matrix.rxt:1122 diffs 8780
+   tests/lookaround/d27/matrix.rxt:2597 diffs 11040
+   tests/lookaround/d27/matrix.rxt:2662 diffs 8780
+   tests/lookaround/lookbehind.rxt:212 diffs 5285
+   tests/ucp/ctxnode.rxt:400 diffs 11760
+rows the cardinality admission adds over the subset admission:
+   corpus tests/lookaround/d27/matrix.rxt:1100 dfa |E| 2 |S| 1
+   corpus tests/lookaround/d27/matrix.rxt:1122 dfa |E| 3 |S| 2
+   corpus tests/lookaround/d27/matrix.rxt:1138 hybrid |E| 2 |S| 1
+   corpus tests/lookaround/d27/matrix.rxt:1150 hybrid |E| 2 |S| 1
+   corpus tests/lookaround/d27/matrix.rxt:2637 dfa |E| 2 |S| 1
+   corpus tests/lookaround/d27/matrix.rxt:2662 dfa |E| 3 |S| 2
+   corpus tests/lookaround/d27/matrix.rxt:2680 hybrid |E| 2 |S| 1
+   corpus tests/lookaround/d27/matrix.rxt:2693 hybrid |E| 2 |S| 1
+   corpus tests/ucp/ctxnode.rxt:41 dfa |E| 5 |S| 1
+   corpus tests/ucp/ctxnode.rxt:57 dfa |E| 16 |S| 1
+   corpus tests/ucp/ctxnode.rxt:138 dfa |E| 2 |S| 1
+   corpus tests/ucp/ctxnode.rxt:146 dfa |E| 2 |S| 1
+   corpus tests/utf8/axis08_lookbehind_varwidth.rxt:233 dfa |E| 2 |S| 1
+   corpus tests/utf8/axis13_ctx_illformed.rxt:21 dfa |E| 255 |S| 1
+   corpus tests/utf8/axis13_ctx_illformed.rxt:87 dfa |E| 26 |S| 1
+rows where S \ E != {} but the r3 F declines (T empty or not narrower) -- the r3 census counted the T-empty ones as movers:
+   tests/assertions/wordb_basic.rxt:900 |E| 63 |T_cur| 63
+   tests/lookaround/d27/matrix.rxt:1100 |E| 2 |T_cur| 0
+   tests/lookaround/d27/matrix.rxt:1138 |E| 2 |T_cur| 0
+   tests/lookaround/d27/matrix.rxt:1150 |E| 2 |T_cur| 0
+   tests/lookaround/d27/matrix.rxt:2637 |E| 2 |T_cur| 0
+   tests/lookaround/d27/matrix.rxt:2680 |E| 2 |T_cur| 0
+   tests/lookaround/d27/matrix.rxt:2693 |E| 2 |T_cur| 0
+   tests/ucp/ctxnode.rxt:41 |E| 5 |T_cur| 0
+   tests/ucp/ctxnode.rxt:57 |E| 16 |T_cur| 0
+   tests/ucp/ctxnode.rxt:138 |E| 2 |T_cur| 0
+   tests/ucp/ctxnode.rxt:146 |E| 2 |T_cur| 0
+   tests/ucp/ctxnode.rxt:238 |E| 2 |T_cur| 0
+   tests/utf8/axis08_lookbehind_varwidth.rxt:233 |E| 2 |T_cur| 0
+   tests/utf8/axis13_ctx_illformed.rxt:21 |E| 255 |T_cur| 0
+   tests/utf8/axis13_ctx_illformed.rxt:87 |E| 26 |T_cur| 0

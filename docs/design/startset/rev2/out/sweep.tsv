@@ -1,0 +1,96 @@
+# [START-SET] rev 2 seeded-machine sweep (sweep.py), worktree lane/ssrev from main 08caf4a3, abi 61, darwin gcc-16, local libpcre2 10.48 arm. wb-512 re-run after estar.py learned the signed/strided table form.
+kind	name	route	status	alpha	L	cases	matches	pcre2_vs_base	E	S	Estar	Tdfa	S_minus_E	obs	witness	T_cur	diffs_cur	static_ok_cur	oracle_ok_cur	T_a	diffs_a	static_ok_a	oracle_ok_a	T_b	diffs_b	static_ok_b	oracle_ok_b	T_dfa	diffs_dfa	static_ok_dfa	oracle_ok_dfa	mover_cur	mover_a_sub	mover_a_card	mover_b_sub	mover_b_card	mover_c
+bench	float-literal-bound	dfa	ok	30,21,2e,64	7	167481	2377	0	11	10	256	10	0	1		10	0	1	1	10	0	1	1	10	0	1	1	10	0	1	1	1	1	1	1	1	1
+bench	wild-codegrammar-json-constant	dfa	ok	66,6e,74,21,30,61,65	5	114381	0	0	63	3	256	3	0	0		3	0	1	1	3	0	1	1	3	0	1	1	3	0	1	1	1	1	1	1	1	1
+bench	wild-logparse-base10num-grok	hybrid	ok	2b,2e,30,21,39	6	131836	42568	0	13	13	256	13	0	4		13	0	1	1	13	0	1	1	13	0	1	1	13	0	1	1	0	0	0	0	0	0
+bench	wild-logparse-base10num-noatomic	dfa	ok	2b,2e,30,21,39	6	131836	42568	0	13	13	256	13	0	4		13	0	1	1	13	0	1	1	13	0	1	1	13	0	1	1	0	0	0	0	0	0
+bench	wild-logparse-quotedstring-grok	hybrid	ok	22,27,60,21,5c,0a	6	380713	77301	0	4	3	256	3	0	3		3	0	1	1	3	0	1	1	3	0	1	1	3	0	1	1	1	1	1	1	1	1
+bench	wild-logparse-quotedstring-noatomic	dfa	ok	22,27,60,21,5c,0a	6	380713	77301	0	4	3	256	3	0	3		3	0	1	1	3	0	1	1	3	0	1	1	3	0	1	1	1	1	1	1	1	1
+bench	wild-logparse-syslogbase-expanded	hybrid	ok	41,44,46,4a,4d,4e,4f	5	114381	0	0	63	16	256	16	0	0		16	0	1	1	16	0	1	1	16	0	1	1	16	0	1	1	1	1	1	1	1	1
+bench	wild-secrets-aws-access-key-id	hybrid	ok	41,21,30,33,44,47,49	5	114381	0	0	63	1	256	1	0	0		1	0	1	1	1	0	1	1	1	0	1	1	1	0	1	1	1	1	1	1	1	1
+bench	wild-waf-crs-942140-dbnames	dfa	ok	44,49,4d,4e,50,53,54	5	114381	0	0	63	14	256	14	0	0		14	0	1	1	14	0	1	1	14	0	1	1	14	0	1	1	1	1	1	1	1	1
+bench	bignum	dfa	ok	30,21,41,62,39,31	6	380713	0	0	63	10	256	10	0	0		10	0	1	1	10	0	1	1	10	0	1	1	10	0	1	1	1	1	1	1	1	1
+bench	hex32-id	dfa	ok	30,21,41,62,39,61,66	5	114381	0	0	63	16	256	16	0	0		16	0	1	1	16	0	1	1	16	0	1	1	16	0	1	1	1	1	1	1	1	1
+bench	kv-quoted	dfa	ok	5f,21,22,30,3d,41,5c	5	114381	23	0	63	27	256	27	0	1		27	0	1	1	27	0	1	1	27	0	1	1	27	0	1	1	1	1	1	1	1	1
+bench	level-context	hybrid	ok	43,45,46,21,30,41,49	5	114381	0	0	63	3	256	3	0	0		3	0	1	1	3	0	1	1	3	0	1	1	3	0	1	1	1	1	1	1	1	1
+bench	ctx-greedy-256	hybrid	ok	61,66,70,21,30,62,63	5	114381	0	0	63	3	256	3	0	0		3	0	1	1	3	0	1	1	3	0	1	1	3	0	1	1	1	1	1	1	1	1
+bench	ctx-lazy-1024	hybrid	ok	61,66,70,21,30,62,63	5	114381	0	0	63	3	256	3	0	0		3	0	1	1	3	0	1	1	3	0	1	1	3	0	1	1	1	1	1	1	1	1
+bench	ctx-lazy-256	hybrid	ok	61,66,70,21,30,62,63	5	114381	0	0	63	3	256	3	0	0		3	0	1	1	3	0	1	1	3	0	1	1	3	0	1	1	1	1	1	1	1	1
+bench	ctx-lazy-64	hybrid	ok	61,66,70,21,30,62,63	5	114381	0	0	63	3	256	3	0	0		3	0	1	1	3	0	1	1	3	0	1	1	3	0	1	1	1	1	1	1	1	1
+bench	wb-256	dfa	ok	61,62,63,64,65,66,67	5	114381	0	0	63	26	256	26	0	0		26	0	1	1	26	0	1	1	26	0	1	1	26	0	1	1	1	1	1	1	1	1
+bench	wb-512	dfa	ok	61,62,63,64,65,66,67	5	114381	0	0	63	26	256	26	0	0		26	0	1	1	26	0	1	1	26	0	1	1	26	0	1	1	1	1	1	1	1	1
+bench	wild-secrets-aws-access-key-id	hybrid	ok	41,21,30,33,44,47,49	5	114381	0	0	63	1	256	1	0	0		1	0	1	1	1	0	1	1	1	0	1	1	1	0	1	1	1	1	1	1	1	1
+corpus	tests/assertions/d27/composition.rxt:45	dfa	ok	63,64,21,30,61,67,6f	5	114381	60	0	63	2	256	2	0	1		2	0	1	1	2	0	1	1	2	0	1	1	2	0	1	1	1	1	1	1	1	1
+corpus	tests/assertions/d27/gating.rxt:42	dfa	ok	78,21,30,62	7	167481	35638	0	63	1	256	1	0	1		1	0	1	1	1	0	1	1	1	0	1	1	1	0	1	1	1	1	1	1	1	1
+corpus	tests/assertions/d27/gating.rxt:47	dfa	ok	78,21,30,42	7	167481	71112	0	63	1	256	1	0	1		1	0	1	1	1	0	1	1	1	0	1	1	1	0	1	1	1	1	1	1	1	1
+corpus	tests/assertions/d27/kreset.rxt:58	hybrid	ok	30,21,62,4b,77	6	131836	58416	0	63	63	256	63	0	4		63	0	1	1	63	0	1	1	63	0	1	1	63	0	1	1	0	0	0	0	0	0
+corpus	tests/assertions/d27/word_boundary.rxt:45	dfa	ok	30,21,62,77	7	167481	87570	0	63	63	256	63	0	3		63	0	1	1	63	0	1	1	63	0	1	1	63	0	1	1	0	0	0	0	0	0
+corpus	tests/assertions/d27/word_boundary.rxt:51	hybrid	ok	63,64,21,30,61,67,6f	5	114381	34	0	63	2	256	2	0	1		2	0	1	1	2	0	1	1	2	0	1	1	2	0	1	1	1	1	1	1	1	1
+corpus	tests/assertions/d27/word_boundary.rxt:91	dfa	ok	43,21,30,41,54,69,62	5	114381	34	0	63	2	256	2	0	1		2	0	1	1	2	0	1	1	2	0	1	1	2	0	1	1	1	1	1	1	1	1
+corpus	tests/assertions/wordb_basic.rxt:750	dfa	ok	30,21,42,77	7	167481	79434	0	63	63	256	63	0	3		63	0	1	1	63	0	1	1	63	0	1	1	63	0	1	1	0	0	0	0	0	0
+corpus	tests/assertions/wordb_basic.rxt:825	dfa	ok	30,21,62,77	7	167481	42030	0	63	63	256	63	0	3		63	0	1	1	63	0	1	1	63	0	1	1	63	0	1	1	0	0	0	0	0	0
+corpus	tests/assertions/wordb_basic.rxt:900	dfa	ok	21,22,30,0a,62	6	131836	56848	0	63	255	256	255	192	4		63	0	0	0	255	0	1	1	255	0	1	1	255	0	1	1	0	0	0	0	0	0
+corpus	tests/assertions/wordb_basic.rxt:975	dfa	ok	21,30,0a,42	7	167481	62747	0	255	255	256	255	0	3		255	0	1	1	255	0	1	1	255	0	1	1	255	0	1	1	0	0	0	0	0	0
+corpus	tests/assertions/wordb_empty_compose.rxt:1092	dfa	ok	30,21,62,77,7a	6	131836	49188	0	63	63	256	63	0	4		63	0	1	1	63	0	1	1	63	0	1	1	63	0	1	1	0	0	0	0	0	0
+corpus	tests/assertions/wordb_empty_compose.rxt:1168	dfa	ok	6f,21,30,42,5a	6	131836	17968	0	63	1	256	1	0	1		1	0	1	1	1	0	1	1	1	0	1	1	1	0	1	1	1	1	1	1	1	1
+corpus	tests/assertions/wordb_empty_compose.rxt:1243	dfa	ok	30,21,62,77	7	167481	69915	0	63	63	256	63	0	3		63	0	1	1	63	0	1	1	63	0	1	1	63	0	1	1	0	0	0	0	0	0
+corpus	tests/assertions/wordb_empty_compose.rxt:1393	dfa	ok	30,21,62,77,7a	6	131836	49188	0	63	63	256	63	0	4		63	0	1	1	63	0	1	1	63	0	1	1	63	0	1	1	0	0	0	0	0	0
+corpus	tests/assertions/wordb_vm.rxt:339	hybrid	ok	30,21,62,77	7	167481	87570	0	63	63	256	63	0	3		63	0	1	1	63	0	1	1	63	0	1	1	63	0	1	1	0	0	0	0	0	0
+corpus	tests/assertions/wordb_vm.rxt:414	hybrid	ok	78,21,30,62	7	167481	35638	0	63	1	256	1	0	1		1	0	1	1	1	0	1	1	1	0	1	1	1	0	1	1	1	1	1	1	1	1
+corpus	tests/assertions/wordb_vm.rxt:714	hybrid	ok	30,21,42,77	7	167481	121680	0	63	63	256	63	0	3		63	0	1	1	63	0	1	1	63	0	1	1	63	0	1	1	0	0	0	0	0	0
+corpus	tests/base/clspack_atoms.rxt:53	hybrid	ok	61,21,30,31,41,42,48	5	114381	0	0	63	5	256	5	0	0		5	0	1	1	5	0	1	1	5	0	1	1	5	0	1	1	1	1	1	1	1	1
+corpus	tests/lookaround/alpha_spellings.rxt:129	dfa	ok	62,21,61,6e,6c	6	131836	46823	0	2	1	256	1	0	1		1	0	1	1	1	0	1	1	1	0	1	1	1	0	1	1	1	1	1	1	1	1
+corpus	tests/lookaround/alpha_spellings.rxt:144	dfa	ok	62,21,61,6e,65,67,74	5	114381	29007	0	2	1	256	1	0	1		1	0	1	1	1	0	1	1	1	0	1	1	1	0	1	1	1	1	1	1	1	1
+corpus	tests/lookaround/alpha_spellings.rxt:346	dfa	ok	61,62,21,6e,6c	6	131836	80310	0	2	2	256	2	0	2		2	0	1	1	2	0	1	1	2	0	1	1	2	0	1	1	0	0	0	0	0	0
+corpus	tests/lookaround/alpha_spellings.rxt:356	dfa	ok	61,62,21,6e,65,67,74	5	114381	53226	0	2	2	256	2	0	2		2	0	1	1	2	0	1	1	2	0	1	1	2	0	1	1	0	0	0	0	0	0
+corpus	tests/lookaround/d27/matrix.rxt:1064	dfa	ok	7a,77,21,61	7	167481	104529	0	2	2	256	2	1	2	cur [azz]@0 base=1(1,2) twin=0(-1,-1) | cur [azw]@0 base=1(1,2) twin=1(2,3)	1	11040	0	0	2	0	1	1	2	0	1	1	2	0	1	1	1	0	0	0	0	0
+corpus	tests/lookaround/d27/matrix.rxt:1100	dfa	ok	7a,21,61,62	7	167481	59140	0	2	1	256	1	1	1	cur [azz]@0 base=1(1,2) twin=0(-1,-1) | cur [az!]@0 base=1(1,2) twin=0(-1,-1)	0	24664	0	0	1	0	1	1	1	0	1	1	1	0	1	1	0	0	1	0	1	0
+corpus	tests/lookaround/d27/matrix.rxt:1122	dfa	ok	7a,77,21,61,62	6	131836	72485	0	3	2	256	2	1	2	cur [azz]@0 base=1(1,2) twin=0(-1,-1) | cur [azw]@0 base=1(1,2) twin=1(2,3)	1	8780	0	0	2	0	1	1	2	0	1	1	2	0	1	1	1	0	1	0	1	0
+corpus	tests/lookaround/d27/matrix.rxt:1138	hybrid	ok	7a,21,61,62	7	167481	59140	0	2	1	256	1	1	1	cur [azz]@0 base=1(1,2) twin=0(-1,-1) | cur [az!]@0 base=1(1,2) twin=0(-1,-1)	0	24664	0	0	1	0	1	1	1	0	1	1	1	0	1	1	0	0	1	0	1	0
+corpus	tests/lookaround/d27/matrix.rxt:1150	hybrid	ok	7a,21,61,62	7	167481	59140	0	2	1	256	1	1	1	cur [azz]@0 base=1(1,2) twin=0(-1,-1) | cur [az!]@0 base=1(1,2) twin=0(-1,-1)	0	24664	0	0	1	0	1	1	1	0	1	1	1	0	1	1	0	0	1	0	1	0
+corpus	tests/lookaround/d27/matrix.rxt:1524	dfa	ok	7a,21,61	7	24604	11564	0	2	1	256	1	0	1		1	0	1	1	1	0	1	1	1	0	1	1	1	0	1	1	1	1	1	1	1	1
+corpus	tests/lookaround/d27/matrix.rxt:1548	dfa	ok	77,7a,21,61	7	167481	115670	0	3	2	256	2	0	2		2	0	1	1	2	0	1	1	2	0	1	1	2	0	1	1	1	1	1	1	1	1
+corpus	tests/lookaround/d27/matrix.rxt:1564	hybrid	ok	7a,21,61	7	24604	11564	0	2	1	256	1	0	1		1	0	1	1	1	0	1	1	1	0	1	1	1	0	1	1	1	1	1	1	1	1
+corpus	tests/lookaround/d27/matrix.rxt:1576	hybrid	ok	7a,21,61	7	24604	11564	0	2	1	256	1	0	1		1	0	1	1	1	0	1	1	1	0	1	1	1	0	1	1	1	1	1	1	1	1
+corpus	tests/lookaround/d27/matrix.rxt:1584	dfa	ok	7a,21,61,62	7	167481	52971	0	3	1	256	1	0	1		1	0	1	1	1	0	1	1	1	0	1	1	1	0	1	1	1	1	1	1	1	1
+corpus	tests/lookaround/d27/matrix.rxt:1608	dfa	ok	77,7a,21,61,62	6	131836	72944	0	4	2	256	2	0	2		2	0	1	1	2	0	1	1	2	0	1	1	2	0	1	1	1	1	1	1	1	1
+corpus	tests/lookaround/d27/matrix.rxt:1624	hybrid	ok	7a,21,61,62	7	167481	52971	0	3	1	256	1	0	1		1	0	1	1	1	0	1	1	1	0	1	1	1	0	1	1	1	1	1	1	1	1
+corpus	tests/lookaround/d27/matrix.rxt:1636	hybrid	ok	7a,21,61,62	7	167481	52971	0	3	1	256	1	0	1		1	0	1	1	1	0	1	1	1	0	1	1	1	0	1	1	1	1	1	1	1	1
+corpus	tests/lookaround/d27/matrix.rxt:2597	dfa	ok	7a,77,21,61	7	167481	104529	0	2	2	256	2	1	2	cur [azz]@0 base=1(1,2) twin=0(-1,-1) | cur [azw]@0 base=1(1,2) twin=1(2,3)	1	11040	0	0	2	0	1	1	2	0	1	1	2	0	1	1	1	0	0	0	0	0
+corpus	tests/lookaround/d27/matrix.rxt:2637	dfa	ok	7a,21,61,62	7	167481	59140	0	2	1	256	1	1	1	cur [azz]@0 base=1(1,2) twin=0(-1,-1) | cur [az!]@0 base=1(1,2) twin=0(-1,-1)	0	24664	0	0	1	0	1	1	1	0	1	1	1	0	1	1	0	0	1	0	1	0
+corpus	tests/lookaround/d27/matrix.rxt:2662	dfa	ok	7a,77,21,61,62	6	131836	72485	0	3	2	256	2	1	2	cur [azz]@0 base=1(1,2) twin=0(-1,-1) | cur [azw]@0 base=1(1,2) twin=1(2,3)	1	8780	0	0	2	0	1	1	2	0	1	1	2	0	1	1	1	0	1	0	1	0
+corpus	tests/lookaround/d27/matrix.rxt:2680	hybrid	ok	7a,21,61,62	7	167481	59140	0	2	1	256	1	1	1	cur [azz]@0 base=1(1,2) twin=0(-1,-1) | cur [az!]@0 base=1(1,2) twin=0(-1,-1)	0	24664	0	0	1	0	1	1	1	0	1	1	1	0	1	1	0	0	1	0	1	0
+corpus	tests/lookaround/d27/matrix.rxt:2693	hybrid	ok	7a,21,61,62	7	167481	59140	0	2	1	256	1	1	1	cur [azz]@0 base=1(1,2) twin=0(-1,-1) | cur [az!]@0 base=1(1,2) twin=0(-1,-1)	0	24664	0	0	1	0	1	1	1	0	1	1	1	0	1	1	0	0	1	0	1	0
+corpus	tests/lookaround/d27/spellings.rxt:88	dfa	ok	63,21,61	7	24604	11564	0	2	1	256	1	0	1		1	0	1	1	1	0	1	1	1	0	1	1	1	0	1	1	1	1	1	1	1	1
+corpus	tests/lookaround/d27/spellings.rxt:97	dfa	ok	63,21,61,6e,6c,62	6	380713	122538	0	2	1	256	1	0	1		1	0	1	1	1	0	1	1	1	0	1	1	1	0	1	1	1	1	1	1	1	1
+corpus	tests/lookaround/d27/spellings.rxt:106	dfa	ok	63,21,61,6e,65,67,74	5	114381	29007	0	2	1	256	1	0	1		1	0	1	1	1	0	1	1	1	0	1	1	1	0	1	1	1	1	1	1	1	1
+corpus	tests/lookaround/lookbehind.rxt:107	dfa	ok	62,21,61	7	24604	11564	0	2	1	256	1	0	1		1	0	1	1	1	0	1	1	1	0	1	1	1	0	1	1	1	1	1	1	1	1
+corpus	tests/lookaround/lookbehind.rxt:212	hybrid	ok	62,64,21,61,63	6	131836	16314	0	2	2	256	2	1	2	cur [abb]@0 base=1(1,2) twin=0(-1,-1) | cur [abd]@0 base=1(1,2) twin=0(-1,-1)	1	5285	0	0	2	0	1	1	2	0	1	1	2	0	1	1	1	0	0	0	0	0
+corpus	tests/lookaround/lookbehind.rxt:273	dfa	ok	78,21,30,77	7	167481	71112	0	63	1	256	1	0	1		1	0	1	1	1	0	1	1	1	0	1	1	1	0	1	1	1	1	1	1	1	1
+corpus	tests/lookaround/lookbehind.rxt:281	dfa	ok	78,21,30,77	7	167481	35638	0	63	1	256	1	0	1		1	0	1	1	1	0	1	1	1	0	1	1	1	0	1	1	1	1	1	1	1	1
+corpus	tests/lookaround/lookbehind.rxt:295	dfa	ok	62,21,61	7	24604	11276	0	255	1	256	1	0	1		1	0	1	1	1	0	1	1	1	0	1	1	1	0	1	1	1	1	1	1	1	1
+corpus	tests/offsetskip/offset_skip.rxt:255	dfa	ok	30,21,41,62,39,61,66	5	114381	0	0	63	16	256	16	0	0		16	0	1	1	16	0	1	1	16	0	1	1	16	0	1	1	1	1	1	1	1	1
+corpus	tests/ucp/ctxnode.rxt:41	dfa	ok	78,21,30,61,65,69,6f	5	114381	9616	0	5	1	256	1	1	1	cur [ax!]@0 base=1(1,2) twin=0(-1,-1) | cur [ex!]@0 base=1(1,2) twin=0(-1,-1)	0	944	0	0	1	0	1	1	1	0	1	1	1	0	1	1	0	0	1	0	1	0
+corpus	tests/ucp/ctxnode.rxt:57	dfa	ok	78,21,30,5f,61,39,66	5	114381	7584	0	16	1	256	1	1	1	cur [0xx]@0 base=1(1,2) twin=0(-1,-1) | cur [0x_]@0 base=1(1,2) twin=0(-1,-1)	0	3744	0	0	1	0	1	1	1	0	1	1	1	0	1	1	0	0	1	0	1	0
+corpus	tests/ucp/ctxnode.rxt:72	dfa	ok	30,61,21,62,65,69,6f	5	114381	26160	0	63	63	256	63	0	6		63	0	1	1	63	0	1	1	63	0	1	1	63	0	1	1	0	0	0	0	0	0
+corpus	tests/ucp/ctxnode.rxt:138	dfa	ok	78,21,61,62	7	167481	59140	0	2	1	256	1	1	1	cur [axx]@0 base=1(1,2) twin=0(-1,-1) | cur [ax!]@0 base=1(1,2) twin=0(-1,-1)	0	24664	0	0	1	0	1	1	1	0	1	1	1	0	1	1	0	0	1	0	1	0
+corpus	tests/ucp/ctxnode.rxt:146	dfa	ok	78,21,61,62	7	167481	59140	0	2	1	256	1	1	1	cur [axx]@0 base=1(1,2) twin=0(-1,-1) | cur [ax!]@0 base=1(1,2) twin=0(-1,-1)	0	24664	0	0	1	0	1	1	1	0	1	1	1	0	1	1	0	0	1	0	1	0
+corpus	tests/ucp/ctxnode.rxt:162	dfa	ok	30,21,61,63,64	6	131836	36957	0	13	10	256	10	0	1		10	0	1	1	10	0	1	1	10	0	1	1	10	0	1	1	1	1	1	1	1	1
+corpus	tests/ucp/ctxnode.rxt:238	dfa	ok	42,62,21,41,69,61	6	380713	107408	0	2	2	256	2	2	2	cur [ABB]@0 base=1(1,2) twin=0(-1,-1) | cur [ABb]@0 base=1(1,2) twin=0(-1,-1)	0	46008	0	0	2	0	1	1	2	0	1	1	2	0	1	1	0	0	0	0	0	0
+corpus	tests/ucp/ctxnode.rxt:329	dfa	ok	30,21,62,77	7	167481	87570	0	63	63	256	63	0	3		63	0	1	1	63	0	1	1	63	0	1	1	63	0	1	1	0	0	0	0	0	0
+corpus	tests/ucp/ctxnode.rxt:336	dfa	ok	30,21,55,43,50,62,77	5	114381	41034	0	134	134	256	134	0	6		134	0	1	1	134	0	1	1	134	0	1	1	134	0	1	1	0	0	0	0	0	0
+corpus	tests/ucp/ctxnode.rxt:367	dfa	ok	78,21,30,55,43,50,77	5	114381	27330	0	134	1	256	1	0	1		1	0	1	1	1	0	1	1	1	0	1	1	1	0	1	1	1	1	1	1	1	1
+corpus	tests/ucp/ctxnode.rxt:400	dfa	ok	61,62,21,0a,6d,6e	6	380713	95574	0	2	2	256	2	1	2	cur [\x0aaa]@0 base=1(1,2) twin=0(-1,-1) | cur [\x0aab]@0 base=1(1,2) twin=1(2,3)	1	11760	0	0	2	0	1	1	2	0	1	1	2	0	1	1	1	0	0	0	0	0
+corpus	tests/utf8/axis08_lookbehind_varwidth.rxt:75	dfa	ok	78,21,0a	7	24604	11276	0	255	1	256	1	0	1		1	0	1	1	1	0	1	1	1	0	1	1	1	0	1	1	1	1	1	1	1	1
+corpus	tests/utf8/axis08_lookbehind_varwidth.rxt:86	dfa	ok	78,21,0a	7	24604	8318	0	255	1	256	1	0	1		1	0	1	1	1	0	1	1	1	0	1	1	1	0	1	1	1	1	1	1	1	1
+corpus	tests/utf8/axis08_lookbehind_varwidth.rxt:108	dfa	ok	78,21,61	7	24604	11276	0	255	1	256	1	0	1		1	0	1	1	1	0	1	1	1	0	1	1	1	0	1	1	1	1	1	1	1	1
+corpus	tests/utf8/axis08_lookbehind_varwidth.rxt:119	dfa	ok	78,21,61	7	24604	8318	0	255	1	256	1	0	1		1	0	1	1	1	0	1	1	1	0	1	1	1	0	1	1	1	1	1	1	1	1
+corpus	tests/utf8/axis08_lookbehind_varwidth.rxt:181	dfa	ok	78,21,41,70,4c	6	131836	45132	0	117	1	256	1	0	1		1	0	1	1	1	0	1	1	1	0	1	1	1	0	1	1	1	1	1	1	1	1
+corpus	tests/utf8/axis08_lookbehind_varwidth.rxt:190	dfa	ok	78,21,41,70,4c	6	131836	17403	0	117	1	256	1	0	1		1	0	1	1	1	0	1	1	1	0	1	1	1	0	1	1	1	1	1	1	1	1
+corpus	tests/utf8/axis08_lookbehind_varwidth.rxt:233	dfa	ok	78,21,53,69,73	6	131836	27272	0	2	1	256	1	1	1	cur [Sxx]@0 base=1(1,2) twin=0(-1,-1) | cur [Sx!]@0 base=1(1,2) twin=0(-1,-1)	0	11180	0	0	1	0	1	1	1	0	1	1	1	0	1	1	0	0	1	0	1	0
+corpus	tests/utf8/axis08_lookbehind_varwidth.rxt:242	dfa	ok	78,21,53,69,73	6	131836	36957	0	3	1	256	1	0	1		1	0	1	1	1	0	1	1	1	0	1	1	1	0	1	1	1	1	1	1	1	1
+corpus	tests/utf8/axis08_lookbehind_varwidth.rxt:262	dfa	ok	78,21,41,69,61,7a	6	380713	118030	0	52	1	256	1	0	1		1	0	1	1	1	0	1	1	1	0	1	1	1	0	1	1	1	1	1	1	1	1
+corpus	tests/utf8/axis08_lookbehind_varwidth.rxt:275	dfa	ok	78,21,41,69,61,7a	6	380713	37047	0	52	1	256	1	0	1		1	0	1	1	1	0	1	1	1	0	1	1	1	0	1	1	1	1	1	1	1	1
+corpus	tests/utf8/axis13_ctx_illformed.rxt:21	dfa	ok	61,21	7	1793	1044	0	255	1	256	1	1	1	cur [!aa]@0 base=1(1,2) twin=0(-1,-1) | cur [!a!]@0 base=1(1,2) twin=0(-1,-1)	0	402	0	0	1	0	1	1	1	0	1	1	1	0	1	1	0	0	1	0	1	0
+corpus	tests/utf8/axis13_ctx_illformed.rxt:51	dfa	ok	62,21,61	7	24604	11564	0	2	1	256	1	0	1		1	0	1	1	1	0	1	1	1	0	1	1	1	0	1	1	1	1	1	1	1	1
+corpus	tests/utf8/axis13_ctx_illformed.rxt:87	dfa	ok	e9,21,61,7a,78,65,39	5	114381	20304	0	26	1	256	1	1	1	cur [a\xe9\xe9]@0 base=1(1,2) twin=0(-1,-1) | cur [a\xe9!]@0 base=1(1,2) twin=0(-1,-1)	0	6496	0	0	1	0	1	1	1	0	1	1	1	0	1	1	0	0	1	0	1	0
