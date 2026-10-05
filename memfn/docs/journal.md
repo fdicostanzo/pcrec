@@ -119,3 +119,28 @@ pointer when a kit change merges to main.
 - `done:` posted. Next: main reviews the branch. R4a (code skeleton)
   needs a request from main before it starts. The §15.5 revision (lead
   order as a kit choice) is a design deliverable after the review.
+
+## 2026-10-05 — R-1 merged (main 08caf4a3); R-2 taken
+
+- Main merged lane/memfn-r4b and filed N-1 as D149 (applies to pcrec and
+  the kit). Landing note from main: a lane's report must be added to
+  docs/dev/lanes/CLAUDE.md in the same change. Every kit lane brief now
+  says so.
+- R-2 acked on lane/memfn-r45: rev 4.5, a light panel, Q53-Q55.
+
+## 2026-10-05 — R-2 done: rev 4.5, panel r5, rev 4.6
+
+- Rev 4.5 (lane memfnr45) folded R-1 and D149. The kit session answered
+  the fold's four open points (§R4.5.5): wait 2 MET; the early-hit gate
+  call is a Q48 candidate, judged at R4d's G1; the lead order is part of
+  R4d's one form; old blocks stay history.
+- Panel r5 (critic A opus, contract vs emitters; critic B sonnet, stamps
+  and Q55) found 1 BLOCKER and 9 MAJOR; 23 of 23 were accepted.
+  - The blocker sat in rev 4's contract: on no-DFA routes the set-leads
+    lead is REQUIRED (K65), so a kit arm that dropped it would turn
+    NOMATCH into a step give-up. R-1's cells are all DFA-route.
+- Rev 4.6 (lane memfnr46, opus) applied all 23.
+- Q53-Q55 recommendations posted in responses.md (R-2 done:).
+- Lesson: two critics' final messages truncated mid-finding. Brief
+  critics to write their findings to a scratchpad file and reply with
+  the path.
