@@ -681,48 +681,91 @@ source and are joined, so a conflict between them is refused. The configs'
 own typed lines keep later-wins at the explicit tier, unchanged.
 
 **A meta-set** (a set whose bundle assigns another family's axis, e.g. a
-hypothetical `tiny` = `tune := min-size` + `vector := scalar`) is admitted by
-the model. Family axes resolve first (§2.5 steps 1-2), and a static check
-when pcrec is built rejects a cycle. It has no consumer, so it is not built
-(D77, §5 Q11).
+hypothetical `tiny` = `tune := min-size` + `vector := scalar`) is
+**[r1 OS-m7] FORBIDDEN, by a check when pcrec is built.** Revision 1
+admitted it with "family axes resolve first", but that order is circular.
+A meta-set's family selection is only known after its bundle is
+expanded (step 3), and step 3 runs after the family axes are resolved
+(steps 1-2). The two ways out are a fixpoint over steps 1-3, or the
+prohibition. A fixpoint is machinery with no consumer (D77), so the
+static check rejects any bundle that assigns a family axis. When a
+consumer names a meta-set, the fixpoint is designed then, with that
+consumer's case as its witness (§5 Q11).
 
-### 2.7 Constraints and implications: one first-match table
+### 2.7 Constraints and implications: one table, every row applies
 
 Some relations are not compositions. They are facts about the RESULT: two
 values that cannot coexist, or a value that is meaningless without another.
-They are rows of one first-match table, walked once over the resolved
-assignment (§2.5 step 7). The first row whose predicate holds decides. A
-REFUSE row names itself in its diagnostic. Rows are data and listable.
+They are rows of one table, applied once to the resolved assignment (§2.5
+step 7). A REFUSE row names itself in its diagnostic. Rows are data and
+listable.
 
-Three verdicts exist:
+**[r1 OS-M3] It is NOT a first-match table, because rows co-fire today.**
+Cell M3 (`-futf-check -fstartpos-guard=align`, encoding `byte`) applies
+TWO rows on one compile: `RX_UTF_CHECK "inert"` and `RX_STARTPOS_GUARD
+"permissive"`, the byte encoding's only value. A first-match walk would
+apply one and silently drop the other. The rule is:
+
+1. **Every row whose predicate holds applies.**
+2. **REFUSE rows are evaluated first.** If any holds, the compile stops.
+   The diagnostic names the first such row in table order, so the message
+   is deterministic, and no other verdict is applied.
+3. **First-match holds only among rows that share a PARTY (an axis)**,
+   which is the case revision 1's order argument was really about. Row 4
+   (`-futf-check=extent`, REFUSE) and row 9 (`-futf-check` under `byte`,
+   INERT) share `utf-check`. Rule 2 already puts the refusal first, which
+   is today's measured answer (M3b: refused as reserved under the default
+   `byte` encoding). Among non-REFUSE rows, no two shipped or designed
+   rows share a party with overlapping predicates today (rows 9 and 11
+   have disjoint encodings). A future pair that did would be ordered
+   within its party, and the table check rejects two such rows that are
+   unordered.
+
+Four verdicts exist:
 
 - **REFUSE**: the compile stops, naming the row's parties.
-- **INERT**: the axis is kept and stamped as having no effect
-  (`RX_UTF_CHECK "inert"` is the shipped precedent).
-- **DERIVE**: a documented, pre-existing implication that ENABLES something
-  on another axis without changing any accepted pattern's answer.
+- **INERT**: the axis is kept and its own stamp says it had no effect. The
+  stamp is in the axis's own vocabulary. `RX_UTF_CHECK "inert"` says it
+  in words, and `-fstartpos-guard=align` under `byte` stamps
+  `"permissive"`, the only value that axis has there (M3).
+- **DERIVE** **[r1 OS-m10]**: a documented, pre-existing implication that
+  ENABLES or DISABLES something on another axis, without changing any
+  accepted pattern's answer. Row 11 enables, and row 12 disables
+  (`engine = vm` drops the DFA prefilter). Revision 1 said "enables" only,
+  which row 12 contradicted.
+- **GRANDFATHERED-ASSIGN** **[r1 OS-m10]**: the comments pair's deny-wins
+  (row 5). It resolves a self-contradiction by choosing a value, which no
+  other verdict does. It is a fourth verdict with exactly one row, kept
+  because it is shipped and documented (Q7). No new row may use it.
 
 **A new rule may refuse or mark inert. It may not silently assign.**
 "SIMD requires an ISA level" is therefore NOT an implication: a vector row
 that needs a declared level simply does not apply below it. That is the
 `SCAN_ROWS` row's own PREDICATE (integration.md §2.1, `BASE`/`DECLARED`).
-Only a FORCE that cannot be honoured needs a row here.
+Only a FORCE that cannot be honoured would need a row here (row 8).
 
 | # | row | predicate | verdict | status |
 |---|---|---|---|---|
-| 1 | `prefilter-pair` | `-fprefilter` ∧ `-fno-prefilter` | REFUSE | shipped (verified live) |
-| 2 | `collapse-pair` | `-fprefilter-collapse` ∧ `-fno-prefilter-collapse` | REFUSE | shipped (verified live) |
-| 3 | `startpos-pair` | `-fstartpos-guard=align` ∧ `-fno-startpos-guard` | REFUSE | shipped (verified live) |
-| 4 | `utf-check-extent` | `-futf-check=extent` | REFUSE (reserved) | shipped |
-| 5 | `comments-pair` | `-fcomments` ∧ `-fno-comments` | DENY WINS | shipped; the one silent resolution (§5 Q7) |
+| 1-3 | `both-values` **[r1 OS-M1]** | any three-valued axis assigned `deny` and `force` (today `prefilter`, `prefilter-collapse`, `startpos-guard`; the union over sources, §2.4a) | REFUSE | shipped (A1, A2, A5, A9). Revision 1's three pair rows are ONE row over the axis kind |
+| 4 | `utf-check-extent` | `-futf-check=extent` | REFUSE (reserved) | shipped (M3b) |
+| 5 | `comments-pair` | `comments` assigned `deny` and `force` | GRANDFATHERED-ASSIGN: deny | shipped; the one silent resolution (A6, A7, A10; §5 Q7) |
 | 6 | `isa-route-orphan` | `isa-route = macro` ∧ `isa = portable` | REFUSE | designed (isa_selection.md §1.2.3) |
 | 7 | `isa-marker-orphan` | `isa-marker` ∧ `isa` not on the x86 chain | REFUSE | designed (isa_selection.md Q6) |
-| 8 | `forced-row-below-level` | a row declared at level L is FORCED ∧ ¬(isa ≥ L) in the poset (incomparable counts as below) | REFUSE | designed here |
-| 9 | `utf-check-byte` | `-futf-check` ∧ `encoding = byte` | INERT | shipped |
-| 10 | `startpos-align-byte` | `-fstartpos-guard=align` ∧ `encoding = byte` | INERT | shipped |
-| 11 | `utf8-enables-modules` | `encoding = utf8` | DERIVE `unicode-props`, `ucp` enabled (the stamp keeps the REQUESTED set) | shipped |
-| 12 | `vm-drops-dfa-prefilter` | `engine = vm` | DERIVE no DFA prefilter (R21 E-6) | shipped |
-| 13 | otherwise | — | proceed | — |
+| 8 | `forced-row-below-level` **[r1 OS-m11]** | a row declared at level L is FORCED ∧ `isa` is NOT ≥ L in the poset (below it, or incomparable) | REFUSE | **NOT in the first build** (below) |
+| 9 | `utf-check-byte` | `-futf-check` ∧ `encoding = byte` | INERT | shipped (M3) |
+| 10 | `startpos-align-byte` | `-fstartpos-guard=align` ∧ `encoding = byte` | INERT | shipped (M3) |
+| 11 | `utf8-enables-modules` | `encoding = utf8` | DERIVE: `unicode-props`, `ucp` enabled (the stamp keeps the REQUESTED set) | shipped |
+| 12 | `vm-drops-dfa-prefilter` | `engine = vm` | DERIVE: no DFA prefilter (R21 E-6) | shipped |
+
+**[r1 OS-m11] Row 8 is designed and NOT built.** Its predicate needs a
+FORCE on a vector row, and this mechanism never invents a force
+(§2.4). `[MEMFN]` R4 proposes vector rows with DENY spellings only
+(`-fno-vec-scan`, …, integration.md Q15). So no invocation can satisfy
+the predicate, and a row with an empty predicate population would ship a
+sabotage row nobody can reach. The row lands in the change that adds a
+vector FORCE twin, which also supplies its witness. Its wording is "isa
+is NOT ≥ L", not "isa < L": in a poset an incomparable level (`armv8-a`
+against an x86 row) is neither below nor at-or-above, and it must refuse.
 
 Rows 1-5 and 9-12 already exist, scattered (the pair refusals are
 diagnosed at compile and carry a pattern offset). Collecting them is
@@ -730,25 +773,76 @@ implement-then-replace and byte-identical: the same diagnostics, the same
 inert stamps. That is the D46 controllability half applied to the option
 layer itself. A row added later is one table row, not a new `if`.
 
-The order is load-bearing where two rows share parties. Row 4 must precede
-row 9: `-futf-check=extent` under `-e byte` is REFUSED as reserved today
-(verified live, byte is the default encoding), not marked inert, and the
-reverse order would quietly accept a spelling that is not built. That is
-the reason this is a first-match table and not an unordered rule set.
+### 2.7a [r1 OS-m8] Dominance: a cell can be inert without a row
+
+A cell can also be made inert by ANOTHER AXIS's value, with no constraint
+row involved. Measured: `--tune=min-size -fno-size-term` against
+`--tune=min-size` on `x(ab|cd)+y` differs in exactly two places,
+`RX_UNROLL_K_WHY` (`"denied"` against `"default"`) and `rx_info.flags`
+(bit 18). No code byte moves. `min-size`'s two ladder cells
+(`size-term-bar`, `size-term-threshold`) are read only when the size term
+runs, and the deny turns the size term off. The deny DOMINATES them.
+
+Revision 1's "the stamp's tail shows every overridden cell" missed this
+case, because provenance records who WROTE an axis, not whether its value
+MATTERED. The tail is gone (§3.4), but two readers still need the
+relation:
+
+- `test-axes`' vacuity print (§3.5) must not count a dominated cell as
+  exercised;
+- `--list-sets` notes a member cell's dominators, so a reader of the set
+  table can see it.
+
+So the registry gains a `dominates` column: (axis, value) → the axes
+whose values are not read under it. Today it has one row, `size-term :=
+deny` → {`size-term-bar`, `size-term-threshold`}. It is data, read by
+those two places, and it never changes a value. The note claims nothing
+broader. A dominance the column does not list is a documentation gap, not
+a miscompile, because nothing the column says changes code.
 
 ### 2.8 A set's class, and what the class decides
 
 Every axis already has a class in the tree's own vocabulary (`tuning.md`
-§1, §4; D125). A set's class is the WEAKEST of its members', in this order:
+§1, §4; D125):
 
-| class | members are… | swept by `test-axes` as | may be in `tune`? |
-|---|---|---|---|
-| identity | answer-preserving, refusal-preserving | identity; LOST fails | yes |
-| engine-selecting | answer-preserving but may move the engine or refuse under `--engine=dfa` (`-fno-splice-calls`, `-fno-atomic-discharge`, `-fno-ctx-node`) | identity, with LOST printed where documented | no |
-| policy | changes WHETHER an artifact is produced, never its answers (`--fast-or-fail`, the caps) | not swept | no |
-| contract | changes which ANSWER a call gives, on purpose (`-futf-check`, `-fstartpos-guard=align`) | against its documented behaviour | no |
-| semantic | changes what the pattern MEANS (`-i`, `--ucp`, `--no-captures`, `encoding`) | not swept | no |
-| instrument | changes what the artifact DOES besides matching (`--trace`) or CONTAINS (`-fcomments`, object-identical) | not swept (own suites) | no |
+| class | members are… |
+|---|---|
+| identity | answer-preserving, refusal-preserving (with the give-up carve-out below) |
+| engine-selecting | answer-preserving but may move the engine or refuse under `--engine=dfa` (`-fno-splice-calls`, `-fno-atomic-discharge`, `-fno-ctx-node`) |
+| policy | changes WHETHER an artifact is produced, never its answers (`--fast-or-fail`, the caps) |
+| contract | changes which ANSWER a call gives, on purpose (`-futf-check`, `-fstartpos-guard=align`) |
+| semantic | changes what the pattern MEANS (`-i`, `--ucp`, `--no-captures`, `encoding`) |
+| instrument | changes what the artifact DOES besides matching (`--trace`) or CONTAINS (`-fcomments`, object-identical) |
+
+**[r1 OS-m9] A set's class is the SET of its members' classes, and each
+decision reads it by an explicit rule.** Revision 1 called it "the
+WEAKEST, in this order" and listed the classes as a chain. They are not a
+chain. Contract and instrument are incomparable, and revision 1's own
+example (`trace`, instrument, assigning `comments`, instrument) never
+tested the order. The rules, as one first-match table per decision:
+
+| decision | first-match rows over the set's class set C |
+|---|---|
+| may be a `tune` member | (a) C = {identity} → yes. (b) otherwise → no |
+| `test-axes` comparison | (a) C = {identity} → identity; LOST, GAINED or MISMATCH fails. (b) C ⊆ {identity, engine-selecting} → identity, with LOST printed where documented. (c) C ⊆ {identity, contract} → against the declared behaviour, the way the axes sweep treats a contract axis. (d) otherwise → not swept, and the run prints the reason |
+| the H11 harness control (§3.2) | (a) contract ∈ C → compare against the declared behaviour. (b) otherwise → answer identity with the block's own compile |
+
+**The give-up carve-out.** "Identity" means match results and captures
+are identical. It does not mean the give-up surface is: the dial's
+ladder cells change the unroll K, and `artifact_size_term.md` §2.0 (3)
+measured that K moves the minimum step budget and the minimum backtrack
+frames. A `tune` member is identity-class on that reading, which is the
+reading `[ART-SIZE]`'s own K sweep uses when it excludes `budget`/`gu`
+cells. The set sweep inherits the exclusion and says so.
+
+**The class check reads a hand tag, so it is a typo guard, not the
+control.** The static check compares member axes' class tags with the
+family's required class, and both are hand-entered. It catches a cell
+proposed in the wrong family. It cannot catch a tag that is wrong. **The
+real control is DIAL-S3**: `test-axes`' keyed refusal-set comparison per
+`tune` position, which MEASURES refusal preservation over the corpus,
+together with the identity sweep that measures answers. It generalizes to
+every family whose required class is identity (§3.5).
 
 The class column is the `kind` column `[AXES-DENY-MASK]` already wants in
 the axes registry, to derive `rx_info.flags`' `strategy_denials` mask
@@ -773,7 +867,10 @@ Everything in this section is DESIGNED, and none of it is built (§6).
   joined, §2.4). A member of a family assigns that family's axis, so
   `--set=speed` ≡ `--tune=speed`. An unknown name is refused, listing the
   vocabulary, in `--features`' shape. **`--set` is a user feature**, so
-  unlike the `-f` family (D47.3) it appears in `--help`.
+  unlike the `-f` family (D47.3) it appears in `--help`. **[r1 OS-m6]**
+  The names are JOINED only across families. Two members of one family in
+  one list or across repeats are later-wins in argv order, together with
+  that family's sugar flag (§2.3).
 - **Family sugar keeps its own spelling.** `--tune=` stays exactly as
   shipped (aliases, the `=`-form rule for negatives, out-of-range
   refusal). `--isa=L` (designed) is the `isa` family's spelling. A new
@@ -789,6 +886,12 @@ Everything in this section is DESIGNED, and none of it is built (§6).
   line may carry (`cli.md` §1.1: compile options only), plus the
   unspelled registry axes. Modes, listings, output routing, `-p`,
   `--pattern` and file operands are excluded on that line's own grounds.
+- **[r1 S7] `--set=` is REFUSED on a config's `pcrec` line.** A config
+  names sets with its own `set` line (§3.2), which is how `--features`
+  (cell C3) and `--analysis` are treated on that line today. One spelling
+  per surface means the raw line and the typed line cannot disagree about
+  which sets a file named, which is the spelling dependence §2.5a finding 2
+  measured for `engine` and `tune`.
 
 ### 3.2 `.rxt`
 
@@ -800,9 +903,12 @@ Everything in this section is DESIGNED, and none of it is built (§6).
   configuration, and the block is the definition.
 - **`tune <pos>` stays** as the `tune` family's sugar.
 - **Inside one target**, every set named by any of its configs is a peer
-  of the FILE source (§2.6). Sets are joined and their conflicts refused.
-  The configs' typed lines keep later-wins, and the block's own directives
-  keep more-specific-wins, both at the explicit tier.
+  of the FILE source (§2.6). Sets are joined. **[r1 S9]** Until §6.1
+  trigger 2 there is nothing to refuse (§2.4). The configs' typed lines
+  keep later-wins, and the block's own directives keep more-specific-wins,
+  both at the explicit tier. **[r1 OS-M2]** That includes `flags`' measured
+  quirk (a typed config line replaced whole by the block's, B8), which is
+  the config contract's own rule and unchanged.
 - **H11 holds by construction for identity-class sets**: a target built
   under one must answer exactly as the block's own compile, which the
   harness already checks for every target. A target naming a
@@ -823,36 +929,87 @@ Everything in this section is DESIGNED, and none of it is built (§6).
   balanced` together with a `sets` string naming a different `tune` member
   is REFUSED (§2.5). The same holds for every family sugar field (`isa`
   when it exists).
+- **[r1 S7] Its refusals travel the channel `features` uses.** An unknown
+  set name, a family-sugar disagreement on this unordered source, and a
+  both-values refusal (§2.4a) all fail `pcrec_compile` through
+  `pcrec_error`, with the wording the CLI's stderr line quotes. That is
+  exactly how `features`' unknown-name refusal is surfaced today
+  (`match_api.md` §8.2), with `input = PCREC_ERR_INPUT_PATTERN` and `pos =
+  0`. No new `pcrec_err_input` tag is proposed. An OPTIONS input tag is
+  the general fix for every option refusal, `features` included, and it
+  is a separate row if a caller ever needs to tell the two apart (D77).
+  The §8.2 hunk states this in the build's change (§5.3).
 - The resolved per-axis PROVENANCE (§2.5 step 6) is internal. Nothing in
   the API exposes it until a consumer asks (D77).
 
 ### 3.4 The stamp, and `rx_info`
 
-**`<PREFIX>_SETS`**, a string emitted UNCONDITIONALLY on every artifact of
-both engines, in the shared prologue beside `<PREFIX>_TUNE`:
+**[r1 S3] Recommendation: build NO set stamp until a consumer asks.**
+Revision 1 proposed `<PREFIX>_SETS` on every artifact of both engines.
+The panel found four defects in that proposal (S1-S4), and each is
+answered below. One fact decides it: no consumer exists. The bench has
+not answered §3.5's question (i), whether it keys a testee on the
+invocation or on the stamps. `[ART-MGR]`'s catalog needs the `isa`
+OUTCOME fields, not a set name. A set changes nothing at run time. The
+outcome stamps (D46: `RX_DFA_TABLE`, `RX_VM_PREFILTER`, …) already
+record what every set DID. So D77 applies: the first build emits no set
+stamp, moves no artifact byte, and carries no `abi` event of its own
+(§5 Q5). `RX_TUNE` stays as shipped.
 
-```c
-#define RX_SETS ""                              /* every family at its default */
-#define RX_SETS "min-size,no-simd"              /* two non-default members */
-#define RX_SETS "min-size;premul-table"         /* a member cell overridden */
-```
+**If a consumer asks, this is the stamp to build.** Each property answers
+one finding.
 
-- **Grammar: `member{,member}[;axis{,axis}]`.** The members are the
-  NON-DEFAULT members in force, one per family, in registry order. The
-  part after `;` names, by registry name, every axis a set in force
-  assigned whose final value came from a HIGHER tier: an explicit flag, or
-  the file over a CLI set (§2.5 row 3). A consumer buckets on the part
-  before `;`. The tail exists so that an artifact never claims a set
-  unqualified when one of its cells was overridden. The CLOSED-token
-  discipline of `RX_TUNE` holds per token.
-- **Only non-default members are printed**, so adding a FAMILY later moves
-  no existing artifact's stamp (its default member prints nothing). The
-  stamp's BIRTH is one `abi` event (D76/D94: every artifact gains a
-  line). After that, a new family is not an abi event by itself. A new
-  member's bundle is, if it moves emitted bytes, as any new axis is.
-- **`<PREFIX>_TUNE` stays, unchanged.** It becomes the `tune` family's
-  member, printed by the same token table (`pcrec_tune_token`). pcrec-bench
-  buckets on it, and it is printed even at `balanced`.
+- **[r1 S3] Emitted ONLY when a set is NAMED**, by any source, from a
+  family that has no stamp of its own. An artifact naming no set has no
+  line, so every existing artifact stays byte-identical, and the
+  no-request identity gate's (B) pin does not move. The stamp's birth is
+  still an `abi` event by D76's rule, because it adds scaffolding
+  vocabulary, but its re-pin set is only the readers of the number.
+- **[r1 S2] Families that own a stamp are excluded.** `tune` has
+  `RX_TUNE`, printed even at `balanced`, and the bench buckets on it.
+  `isa` will have `<PREFIX>_ISA_LEVEL` (isa_selection.md §1.2.3).
+  Printing either again would be two stamps for one fact, with different
+  default rules.
+- **[r1 S1] The VALUE is a function of the RESOLVED configuration, not of
+  the spelling.** It lists, in registry order, every member of a
+  stampless family whose bundle the final resolved assignment SATISFIES IN
+  FULL, whether or not that member was named. A named member that an
+  explicit flag partly overrode is not printed. If nothing qualifies, there
+  is no line. Revision 1's `;axis` override tail is DROPPED: it recorded
+  provenance, which is a fact about the spelling. S1's witness pair,
+  `--set=trace -fno-comments` against `--trace -fno-comments`, resolves
+  to one configuration that does not satisfy `trace`'s bundle, so neither
+  artifact has a line, and they are byte-identical. What remains
+  spelling-dependent is the line's PRESENCE, which records that a set was
+  named. `--set=readable` and `-fcomments` resolve identically, and only
+  the first has the line, with the value `readable`. That asymmetry is the
+  price of S3's no-bytes-without-a-request rule, and it is stated here
+  rather than hidden.
+- **[r1 S6] The vocabulary is MEMBER names only.** With the tail gone,
+  no axis registry name reaches emitted text. Renaming a member is an
+  `abi` event, and for a pinned member it is also a ruled diff (D103).
+  The CLOSED-token discipline of `RX_TUNE` holds per token.
+- **[r1 S4] Size-neutral rendering.** The stamp's length depends on the
+  request, and today's size-predicated selections read emitted text that
+  includes the prologue. The emitted-size caps and the `[ART-SIZE]`
+  ladder measure the whole `.c` plus `.h` (`emit_size_measure`,
+  `src/core/compile.c` ~:2010), and the near-cap corpus artifact sits 75
+  bytes under `PCREC_MAX_EMIT_BYTES` (`opt_dial_design.md` §6.2a). A
+  20-byte set list could therefore move a cap verdict or a ladder rung.
+  K79 fixed the same defect for the prefix (`docs/dev/known_issues.md`
+  K79). The emitters write a fixed placeholder, and
+  `pcrec_sb_render_prefix` spells the real value after every decision.
+  The set stamp uses that mechanism: the emitter writes a fixed-length
+  placeholder, and the post-decision render spells the value. Every size
+  decision then sees one canonical length, whatever was named.
+- **[r1 S4] Its check is `run_prefix_invariance.sh`'s shape.** For every
+  listed member whose bundle has a spelling for every axis, compile the
+  check's population twice: once with `--set=M`, once with M's bundle
+  spelled as explicit flags. The two artifacts must be byte-identical
+  except for the `<PREFIX>_SETS` line. Members with an unspelled axis are
+  counted and printed as skipped, never silently dropped. The near-cap
+  artifact (`tests/utf8/axis12_scripts.rxt:296`) is in the population as
+  the control a purely synthetic family would not have.
 - **No `rx_info.sets` mirror.** Nothing at run time behaves differently
   because of a set's NAME. This is `tuning.md` §5.3's reasoning for
   `tune`, unchanged (D77: build the mirror when a consumer asks). The
@@ -864,7 +1021,9 @@ both engines, in the shared prologue beside `<PREFIX>_TUNE`:
   assignment (the `RX_FINDINGS` digest's shape) would let two artifacts be
   compared as "built identically" without reading every outcome stamp. Its
   consumer would be the bench's testee identity. It is not built until
-  that consumer asks (§5 Q5).
+  that consumer asks (§5 Q5). If the bench asks, a digest of the resolved
+  assignment answers S1 completely, presence asymmetry included, and is
+  the better stamp. That is the bench's question (iii).
 
 ### 3.5 How the checks treat a set
 
