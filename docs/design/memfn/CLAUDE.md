@@ -28,6 +28,18 @@ Nothing here touches pcrec's emission (D91).
   query is about 930 ns, `__builtin_cpu_supports` answers 0 for everything
   on Darwin, and Apple clang has a dyld-resolved multiversioning table on
   Mach-O.
+- `isa_evaluation.md` — R1c (lane memfneval, 2026-10-04), Frank's "best
+  approach to arch selection crossed with the use case" ask: a matrix of six
+  approaches (baseline; per-call test; library dispatch-once; declared-ISA
+  artifact; hybrid; (d) multi-artifact selection) against six use cases
+  (library call; prefilter and in-loop kernels; unknown CPUs; known box;
+  many artifacts; `.so` plugin), the (d) design (variant groups picked by
+  the `[ART-MGR]` L1 catalog or L2 loader, the caller holding the result;
+  the ISA-marker static-link hazard), a deployment-level first-match table,
+  the Linux measurements that could change it (L-2: today's artifacts at
+  `-march=x86-64-v3`, not in `linux_run.sh`), Q7-Q11, and an `[ART-MGR]`
+  cross-note. Verdict: one mechanism (declared-ISA artifact, selection
+  hoisted above it), three pick sites. Design only.
 - `probes/` — R1's measured probe: `callcost.c` (libc `memchr` against
   inline scalar/SWAR/NEON-or-SSE2 forms, by span length, plus the fused
   two-needle pass against two libc calls) and `probes.mk` (build, the
