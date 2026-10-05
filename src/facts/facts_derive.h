@@ -81,6 +81,13 @@ typedef struct {
     unsigned char mask[PCREC_MAX_REQ_RUN_SCAN];    /* K: 0xFF where exact */
     int n;
     bool trunc;
+    /* [K82] the run's MAXIMUM BYTE OFFSET from the start of the subtree that
+     * produced it, `PCREC_W_UNBOUNDED` where no static bound exists. Read on
+     * the walk's answer (`best`) alone; a head's is 0 and a tail's is its
+     * subtree's maximum width minus `n` by construction, so the walk sets
+     * both where it builds them rather than carrying them as state. BYTES on
+     * the LOWERED tree, never characters (docs/design/litscan_k82h.md §1.3). */
+    long long off;
 } RbRun;
 
 static inline bool rb_has(const RbSet *s, int b)
