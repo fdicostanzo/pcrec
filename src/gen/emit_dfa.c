@@ -6277,6 +6277,17 @@ static void ofs_test_emit_pair(Ctx *cx, StrBuf *c, const char *p,
 /* Writes `static inline size_t <name>(subject, n, pos[, tables])`, the one
  * search block every candidate test `t` is emitted through: the first
  * position >= `pos` that passes every test of `t`, or `n` when none does.
+ *
+ * [K82] (B) THAT IS A CONTRACT ON THE RETURNED POSITION, not only on its
+ * comparison with `n` (docs/design/litscan_k82h.md §1.1a): `<p>_reqrun(s, n,
+ * from)` returns the LEAST `q >= from` at which every position of the window
+ * passes its masked compare, or `n` when there is none, and a caller may use
+ * the position itself — the handoff does (`emit_req_handoff`). A block that
+ * returns "some occurrence" is a correct discard gate and an incorrect
+ * handoff gate. The pair arm keeps it by taking the LESSER verified stream
+ * hit and re-searching both streams fresh per call, so no stale position can
+ * sit below `from`; any later arm rendered through here (a fused scan+verify
+ * twin, a run-compare search row) inherits it. S464 is its sabotage.
  * It reads no `Dfa` and no `DfaForm` (litscan_s1.md §1.3's narrowing), so a
  * caller without a DFA -- the run pre-check on a VM route -- emits its own
  * test through it; `p` names the verify tables, which only a model term
