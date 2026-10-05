@@ -46,6 +46,13 @@
 # untouched and no answer moves. Check §2 (stamp == body) is what distinguishes
 # them — it is the row that fires here and cannot fire for S218, whose stamp
 # and body still agree with each other while both being wrong.
+# RE-AIMED 2026-10-05 (lane r1mtriage): [UCP] U2 (601f2e5e) replaced the
+# fixed UPC partition with per-machine context atoms (`natoms`), deleted
+# `upc_emit_live`/`UPC_N` and gave `state_acc_any` the machine as its first
+# argument, so the AFTER text stopped compiling and the row read ANOMALY
+# (BUILD-FAILED) from then until this re-aim. The fork now walks
+# `u < fd->natoms`, as the selection's own P3 loop does; intent unchanged
+# (widened read, invariance clause dropped).
 SAB_ID="S222-start-stamp-forked-from-selection"
 SAB_FILE="src/gen/emit_dfa.c"
 SAB_SUITES="searchpinned"
@@ -72,13 +79,12 @@ static const char *dfa_search_start_name(Ctx *cx)
     const Dfa *fd = &cx->job->dfa;
     int fs = fd->s0;
     if (fs < 0 || fs >= fd->n) return "reverse-pass";
-    if (!state_acc_any(&fd->st[fs])) return "reverse-pass";
+    if (!state_acc_any(fd, &fd->st[fs])) return "reverse-pass";
     if (dfa_needs_seed(fd)) {
-        for (int u = 0; u < UPC_N; u++) {
-            if (!upc_emit_live(u)) continue;
+        for (int u = 0; u < fd->natoms; u++) {
             int su = fd->s1u[u];
             if (su < 0 || su >= fd->n) return "reverse-pass";
-            if (!state_acc_any(&fd->st[su])) return "reverse-pass";
+            if (!state_acc_any(fd, &fd->st[su])) return "reverse-pass";
         }
     }
     return "pinned";

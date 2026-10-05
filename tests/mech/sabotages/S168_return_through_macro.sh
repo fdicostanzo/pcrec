@@ -39,6 +39,10 @@
 # uses, so the artifact's count would be `1 + (has_calls ? 1 : 0)` and the
 # relation would be unstateable. The design's own invariant is only checkable
 # because the emission is per region.
+# RE-AIMED 2026-10-05 (lane r1mtriage): the BEFORE2 site moved into
+# vm_emit_search_body (lane/tour1, 672b4cdd), where `v` is a POINTER, so the
+# AFTER2 text's `v.` spellings stopped compiling and the row read ANOMALY
+# (BUILD-FAILED) from then until this re-aim. `v.` -> `v->`; intent unchanged.
 SAB_ID="S168-return-through-macro"
 SAB_FILE="src/gen/emit_vm.c"
 SAB_SUITES="codegen recursion"
@@ -59,7 +63,7 @@ SAB_FILE2="src/gen/emit_vm.c"
 SAB_COUNT2=1
 SAB_BEFORE2='    /* The per-search reset (§2.4): slot_values is initialised to UNSET ONCE per
      * SEARCH call, not per start position.'
-SAB_AFTER2='    if (v.has_calls)
+SAB_AFTER2='    if (v->has_calls)
         pcrec_sb_printf(c,
             "#define %s_RETURN do {                                       \\\n"
             "        const unsigned %s_call_frame = run->call_top;        \\\n"
@@ -67,6 +71,6 @@ SAB_AFTER2='    if (v.has_calls)
             "        run->call_top = run->resume_stack[%s_call_frame].call_top;   \\\n"
             "        goto *run->resume_stack[%s_call_frame].call_ret;     \\\n"
             "    } while (0)\n\n",
-            v.up, v.p, v.p, v.up, v.up, v.p, v.p);   /* SABOTAGE S168 */
+            v->up, v->p, v->p, v->up, v->up, v->p, v->p);   /* SABOTAGE S168 */
     /* The per-search reset (§2.4): slot_values is initialised to UNSET ONCE per
      * SEARCH call, not per start position.'
