@@ -1,5 +1,10 @@
 # K82 cause (B): the HANDOFF — the run pre-check's candidate becomes the scan start
 
+**BUILT 2026-10-05 on `lane/k82hbuild` (abi 60 -> 61; `../dev/lanes/k82hbuild_report.md`,
+pending merge), to this revision and the rulings at its end (Q9: keep (d');
+Q10: decline on count-collapsed prefilters). Where the build departs from the
+text below, the report's §9 says so; this note is not edited past this line.**
+
 **Status: PROPOSED (design only, lane `k82hand`, 2026-10-04, from
 `lane/k82fix` `f0d0b206`, abi 60).** Nothing under `src/`, `tests/` or
 `docs/spec/` moves here. Frank's ruling (`known_issues.md` K82, "REVISED
