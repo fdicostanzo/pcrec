@@ -133,6 +133,8 @@ def facts(r):
             d["ew_status"], d["ew_value"], d["ew_why"] = f[4], f[6], f[7]
         elif sect == "facts" and len(f) >= 7 and f[1] == "nullable":
             d["nullable"] = f[6]
+        elif sect == "facts" and len(f) >= 7 and f[1] == "start_anchor":
+            d["start_anchor"] = f[6]
         elif sect == "decisions" and len(f) >= 3:
             d[f[1].replace("RX_", "")] = f[2].strip('"')
     return d
@@ -156,7 +158,7 @@ def main():
     with open(os.path.join(OUT, "census_rows.tsv"), "w") as fh:
         keys = ["pop", "id", "suite", "enc", "icase", "status", "view", "cwmax", "minw",
                 "lead_unb", "gstart", "look_tail", "ew_status", "ew_why", "ew_value",
-                "nullable", "ENGINE", "DFA_SCAN", "DFA_PREFILTER", "DFA_START",
+                "nullable", "start_anchor", "ENGINE", "DFA_SCAN", "DFA_PREFILTER", "DFA_START",
                 "DFA_MATCH", "DFA_SCAN_EDGE", "REQ_BYTE", "REQ_RUN", "REQ_WHY",
                 "VM_PREFILTER", "pattern_hex"]
         fh.write("\t".join(keys) + "\n")
