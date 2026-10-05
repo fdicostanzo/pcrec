@@ -5,7 +5,10 @@ project of byte search/compare kernels that pcrec could later EMIT into its
 self-contained generated C. Steps: R1 requirements (here), R2 survey of
 existing projects against them, R3 findings to Frank, who decides adopt /
 fork / a new separate repo. Deliverables live here until that ruling.
-Nothing here touches pcrec's emission (D91).
+Nothing here touches pcrec's emission (D91). **Ruled 2026-10-05 (D146,
+D147, Q35/Q36): the kit is pcrec-memory-functions, in-tree at `memfn/`
+(its own CLAUDE.md, journal and request ledger); this directory stays
+its DESIGN record.**
 
 ## Files
 
@@ -98,6 +101,15 @@ Nothing here touches pcrec's emission (D91).
   two inbox files, `-fmemfn-native` default OFF, symbol policy (§20);
   the three standing questions (§21); build order (§22); Q35-Q49 (§23).
   Read §R4 first.
+  **REVISION 4.2 (lane memfnsetup, 2026-10-05), on D147 (layers) and
+  Frank's Q35/Q36 rulings**: the kit's scalar arms ARE the scalar layer,
+  live and improvable; SIMD (native arms) is a layer that must beat the
+  CURRENT scalar; every reading reports SIMD-off and SIMD-on. The frozen
+  `baseline` profile becomes a per-migration-step comparator only; the
+  `memfn-off` bits, `off.tsv` and the `pcrec[memfn-off]` testee are
+  withdrawn; each kit change's own `--memfn-deny=` is its OFF arm; the
+  stamp reports the SIMD layer. Q35/Q36 ruled (§23), Q50-Q52 new. Read
+  §L first. The kit itself now lives in-tree at `../../../memfn/`.
 - `twins.md` — R1d (lane memftwin, 2026-10-04), the D77 measurement "does a
   kernel TAILORED to the pattern beat a fixed generic one": T-A set
   classifier per shape vs the generic nibble lookup, T-B a fused scan+verify
