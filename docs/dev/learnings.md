@@ -382,6 +382,37 @@ distilled forms:
   counted the whole population in the first place, while this triage had
   the whole population on disk and read the truncated printout instead.
 
+### 3.ab (2026-10-05, lane r1mtriage, closed by r1gclose) — a check that is never run to completion rots silently; the batch gate's full mech is what caught five weeks of drift
+
+- **The evidence** (`docs/dev/lanes/r1mtriage_report.md`): round 1's full
+  mech run (Linux, c4c70f2c, 408 rows) read unexpected 7 / undetected 14 /
+  unreached 5 / anomalies 3. **Seven of the ten flagged rows were
+  already bad BEFORE round 1 landed — S168, S185, S222, S220, S278, S294
+  stale since 2026-09-20..09-29, and S297's detector vacuous on ELF from the
+  day it was written —** because no full mech run had completed since the
+  2026-08-30 battery (269 rows, unexpected 0); only S268/S280/S305 went
+  stale at round 1 itself. Every cause was check-side (AFTER text that no
+  longer matched after a refactor, a reach probe grepping text a later
+  change respelled, an `nm -u` join that was empty on ELF, a "DETECTED" that
+  was a clean-tree red) and the compiler had no regression.
+- **Why nothing caught it for five weeks**: the matrix is ~6 h on Linux, so
+  rows get re-aimed, flipped or solo-run INSIDE the lane that moves their
+  site, and nothing re-checks the rest. A row's verdict is a claim about the
+  tree at the moment it was last measured; each unrelated refactor ages it.
+  A solo run proves the row against that lane's tree and says nothing about
+  the 400 other rows, and one flip (S220) was never A/B'd against its own
+  clean tree (3.y's "a sabotaged red never compared with its clean red").
+- **The transferable form**: *a check that is never run to completion is
+  not a check, it is a record of the last time someone did.* The remedy is
+  not discipline but a scheduled full run whose verdicts are READ: the
+  round's batch gate (D144) is that run, and its full mech is the only
+  instrument that finds this class. Corollaries: (a) the driver's wall cap
+  must fit the matrix (the first gate attempt hit a 180-min cap at row 231
+  and prints verdicts only at the end, so a partial run yields nothing);
+  (b) a row's flip to DETECTED is accepted only with the clean-tree control
+  beside it; (c) a detector must be shown to FIRE on the platform that
+  gates (S297's `[facts-link]` was only ever measured on darwin).
+
 ## 4. Testing strategy
 
 - **Behavior-preserving change is the perennial blind spot** — three
