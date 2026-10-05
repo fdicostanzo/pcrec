@@ -1,5 +1,22 @@
 # memory-functions: R1d, THE INTEGRATION MAP AND THE COMPOSITION MODEL
 
+**REVISION 4.3 (lane `memfnr43`, 2026-10-05, from main 7f94b0cd, design
+only): FRANK'S 2026-10-05 RULINGS FOLDED — D146, D147 and D147 addenda
+1-7. They override anything below that conflicts.** Read §R4.3 first.
+Its table (§R4.3.0) maps each ruling to where it now lives. The
+three-profile wording (`baseline` / `portable` / `native`) and the
+`memfn-native` axis are replaced by ONE SIMD switch, spelled
+`-fmemfn-simd` / `-fno-memfn-simd` and OFF by default (§R4.3.1).
+Cascading ISA levels are a kit form (§R4.3.2). The stamp is Q39 as
+ruled, plus addendum 6's libc record (§R4.3.3). EVERY search site
+migrates, under a checked site manifest (§R4.3.4). The planner moves
+live at M5 (§R4.3.5). Q51 and Q52 are rejected (§R4.3.6). §22's build
+order and §23's question list are rebuilt. Changed passages carry
+`[rev4.3]` in place. Where an earlier passage that carries no
+`[rev4.3]` mark still says `memfn-native`, `-fmemfn-native`,
+`-fno-memfn-native`, `portable` (as a profile) or `native` (as a
+profile), read it through §R4.3.1's spelling table.
+
 **REVISION 4.2 (lane `memfnsetup`, 2026-10-05, from main 06ec65c8,
 design only): D147 APPLIED — the scalar algorithm stays live and
 improvable forever, SIMD is a layer, each layer must be the best it can
@@ -63,6 +80,331 @@ addenda 2-3 (every form choice a `DFA_SELECT`-style row; SIMD later = one
 row; SWAR admitted now), D139 (one class-form table, sites as bits), D144
 item 4 (every optimization its own deny), D145 (generated-output licence
 exception), and the tables themselves (§1).
+
+---
+
+## R4.3. Revision 4.3: Frank's 2026-10-05 rulings folded `[rev4.3]`
+
+(This is a top-level section, not a fourth subsection of §R4. §R4's
+subsections end at R4.2.)
+
+**The rulings.** D146 (delegation) and D147 (layers) stand as §R3 and
+§L apply them. Frank ruled every remaining revision-4 question the same
+day, in D147's seven addenda (`docs/dev/decisions.md`). Two of those
+addenda REPLACE earlier rulings: addendum 6 replaces addendum 2's three
+profiles with one switch, and addendum 5 reverses Q42. Addendum 7 makes
+the switch OFF by default and rejects Q51 and Q52. Revision 4.3 adds
+no mechanism the rulings do not require. Where a ruling left a spelling
+or a seam open, this section picks one and says so, and the three
+genuinely new choices go to Frank as Q53-Q55 (§23).
+
+### R4.3.0 Each ruling, and where it now lives
+
+| ruling | source | what it rules | where it lives now |
+|---|---|---|---|
+| D146 | decisions.md | the kit is a DELEGATE: pcrec describes a site, the kit returns its code; no price crosses | §R3, §8, §14 (unchanged) |
+| D147 | decisions.md | the scalar algorithm stays live forever; SIMD is a layer that must beat the CURRENT scalar; every reading reports both layers | §L (spelling updated by §R4.3.1) |
+| Q35 contract YES | D147 | §8 as extended by §14 is the design of record, revised by panels as migration finds gaps | §8, §14; §23 Q35 RULED |
+| Q36 in-tree YES | D147 | the kit is `memfn/`, `pcrec_mf_*`, two-file ledger; extraction waits for a stable API across several steps AND a real second consumer | `memfn/`, `memfn/CLAUDE.md`; §20; §23 Q36 RULED |
+| Q37 0BSD YES | addendum 1 | the kit's own text is 0BSD; translated Rust `memchr` files carry per-file Unlicense provenance | §20.3; `memfn/LICENSE`; §23 Q37 RULED |
+| Q38 | addendum 2, REPLACED by addendum 6 | addendum 2's off / portable / native profiles are replaced by ONE switch with a meaning | §R4.3.1; §8.5, §14.10, §20.2 annotated; §23 Q38 RULED |
+| the switch's meaning | addendum 6 | OFF = portable C (plain C, SWAR, libc; runs anywhere). ON = hardware-optimized for a specific CPU, may or may not execute elsewhere. What sits inside ON is the kit's per-site choice | §R4.3.1; §8.5; §10.6 |
+| default OFF | addendum 7 | SIMD is off by default until the SIMD hold (D91/D119) lifts; turning it on is its own ruled event (D112 shape) | §R4.3.1; §22 R4f |
+| Q39 stamp YES | addendum 3 (+ addendum 6) | `<PREFIX>_MEMFN_FORMS` on every artifact; `none` iff identical to the SIMD-off compile; carried levels if a site cascades; no kit version; its own abi event R4a′; libc-call use recorded | §R4.3.3; §18 annotated; §22 R4a′; §23 Q39 RULED |
+| Q40 YES | addendum 4 | at M5 the planner moves LIVE into the kit; pcrec keeps one semantic row; the reseed becomes unconditional; an abi event | §R4.3.5; §14.9, §19 annotated; §22 R4j/M5′; §23 Q40 RULED |
+| Q41 YES | addendum 5 | M1 = the composite PRE site + the offset-skip trio; runcmp is M1b; M1 after the handoff merge and K85's re-measure; afterwards the migrated emitters are kit work | §16 (unchanged); §22 R4c; §23 Q41 RULED |
+| Q42 REVERSED | addendum 5 | migrate EVERY search site, M4 included, with no performance customer (a ruled exception to D77: the trigger is completeness); a CHECKED SITE MANIFEST; the `memchr` ratchet ends at 0 outside the kit | §R4.3.4; §9.4, §9.5, §15.7 annotated; §22; §23 Q42 RULED |
+| cascading capabilities | addendum 2 | one artifact MAY carry several ISA levels with a run-time pick, case by case, decided and measured by the kit; the cascade must beat the single-level form | §R4.3.2; §8.6 K-6; §R4.3.3's grammar |
+| Q50 YES | addendum 6 | SWAR and libc calls are in the scalar layer | §R4.3.1; §L.1 annotated; §23 Q50 RULED |
+| Q51 REJECTED | addendum 7 | the SIMD-off arm is not withdrawn; D147's both-layers reading stands | §R4.3.6; §23 Q51 |
+| Q52 REJECTED | addendum 7 | the stamp is not re-keyed; Q39 as ruled stands | §R4.3.3, §R4.3.6; §23 Q52 |
+
+### R4.3.1 The one SIMD switch (addenda 6 and 7; Q38, Q50)
+
+**What it means.**
+
+- **SIMD OFF.** The artifact is PORTABLE C. Its search code is the
+  scalar layer: plain C, SWAR on ordinary integers, libc calls (libc does
+  its own dispatch), and loop-free short-span forms. It compiles and runs
+  on any target. Q50 is ruled: SWAR and libc are scalar layer.
+- **SIMD ON.** The artifact, as compiled, is optimized through hardware
+  for a specific CPU architecture. It MAY OR MAY NOT EXECUTE ELSEWHERE.
+  pcrec makes no portability promise for it, and the spec says so (§10.6).
+- **What sits inside ON is the kit's choice, per site:** which forms,
+  which ISA levels, any cascade (§R4.3.2), and any fallback arm.
+  Whether a narrower "baseline-ISA" SIMD-on form exists (for example,
+  SSE2-only on x86-64) is a kit FORM question, not a pcrec profile.
+  pcrec has exactly one bit of SIMD policy: the switch.
+- **Default OFF** until the SIMD hold (D91, D119) lifts. Callers opt in
+  with the switch. Turning it on by default is its own ruled abi event
+  (R4f, D112 shape). After the flip, the DEFAULT artifact no longer
+  promises portability, which is why the flip is Frank's ruling rather
+  than a measurement's side effect.
+
+**The spelling.** House convention for a capability that ships OFF is
+a deny/force PAIR, OFF by default, enabled by its `-fX` spelling.
+`-fcomments` (D112, `axes.def:216-217`) and `-futf-check` (`:183`) are
+the precedents, and r3 G-F12 already applied that rule to this axis.
+The axis is named for what addendum 6 rules (THE SIMD switch).
+Addendum 2 had already spelled its off side `-fno-memfn-simd`, while
+"native" named a profile that addendum 6 dissolves. So:
+
+```
+PCREC_AXIS(PCREC_NO_MEMFN_SIMD, "-fno-memfn-simd",
+           PCREC_FORCE_MEMFN_SIMD, "-fmemfn-simd", PCREC_AXIS_DEFAULT_OFF)
+```
+
+- Both spellings exist from birth (R4c). R4f changes ONLY
+  `default_state`.
+- Both bits join `strategy_denials` (§14.10), so the switch never moves
+  `rx_info.flags` on an artifact it cannot act on.
+- **The policy bit the kit receives** is the existing
+  `MF_P_PORTABLE_ONLY`, set when the switch is not forced. Its name
+  already states addendum 6's meaning, so it is kept.
+
+| earlier spelling | read as (rev 4.3) |
+|---|---|
+| axis `memfn-native` | axis `memfn-simd` |
+| `-fmemfn-native`; profile `native`; "native arm(s)" | `-fmemfn-simd`; SIMD ON; "SIMD form(s)" (the kit's forms rendered only when the switch is on) |
+| `-fno-memfn-native`; profile `portable`; "portable arm" | `-fno-memfn-simd` (or the switch not forced); SIMD OFF; "the scalar layer's form" |
+| `PCREC_NO_MEMFN_NATIVE` / `PCREC_FORCE_MEMFN_NATIVE` | `PCREC_NO_MEMFN_SIMD` / `PCREC_FORCE_MEMFN_SIMD` |
+| profile `baseline`; `-fno-memfn-scan`; `-fno-memfn-loop`; set `memfn-off` | withdrawn (§L.2-§L.3; D147 consequence 1); see §R4.3.6 |
+| "the native default flip" (R4f) | "the SIMD default flip" (R4f) |
+| option_sets.md family `memfn` | `auto` (∅), `simd` (`memfn-simd := force`), `no-simd` (`memfn-simd := deny`). Until R4f, `auto` and `no-simd` render the same text |
+| R4i, declared tokens (`--isa=`) | NOT a pcrec axis. A target level is a kit form question (addendum 6). Re-opened only by a ruling |
+
+**The layers over this switch (D147).** The scalar layer is everything
+rendered with the switch off. The SIMD layer is whatever the kit adds
+when it is on. G1's two readings are `-fno-memfn-simd` and
+`-fmemfn-simd` on both arms (§L.4). The bench testee is `pcrec[simd]`
+beside the default from R4e′. After R4f it becomes `pcrec[no-simd]`.
+
+### R4.3.2 Cascading capabilities (addendum 2)
+
+One artifact MAY carry several ISA levels, with a run-time pick between
+them. This is decided CASE BY CASE, where the dispatch is cheap enough
+for the site.
+
+- **SIMD ON only.** A run-time pick among ISA levels is ISA text, and
+  the SIMD-off artifact is portable C with none. libc's own internal
+  dispatch is libc's, not the artifact's.
+- **The facts on file.**
+  - Linux x86: `__builtin_cpu_supports` costs 0.4-0.6 ns per call
+    (`linux_results.md`). A cached word is free, but it is illegal as an
+    artifact static (`match_api.md` §5.3; `isa_selection.md` §2).
+  - Darwin: `__builtin_cpu_supports` answers 0 for every feature, so a
+    cascade keyed on it silently runs its lowest level there.
+  - aarch64: NEON is always present. SVE needs `getauxval`.
+- **Likely first home:** D91 budget-1 sites (prefilters), where the
+  dispatch is noise beside the scan. x86 first.
+- **The kit decides and measures it as one of its own forms** (K-6,
+  §8.6), under the layer rule:
+  - the cascade must beat the single-level form at that site;
+  - as a SIMD-layer form, it must also beat the CURRENT scalar layer
+    (§L.4).
+- pcrec stays arch-blind. No level name reaches `src/` (C4), and the
+  only place a level is visible is the stamp's carried levels (§R4.3.3).
+
+### R4.3.3 The stamp: Q39 as ruled, plus the libc record (addenda 3 and 6)
+
+**`<PREFIX>_MEMFN_FORMS`, on every artifact of both engines.**
+
+- Its value is `"none"` iff the artifact is byte-identical, with the
+  stamp lines normalised out, to its own SIMD-off compile
+  (`-fno-memfn-simd`) of the same build.
+- Otherwise the value is the forms the artifact uses (addendum 3's
+  words): every delegated site's form id, comma-joined, in site order.
+  A cascading site's entry carries its levels in pick order, as
+  `ID@LEVEL+LEVEL`.
+- Form ids and level names are opaque. Consumers bucket on
+  `none`/not-`none` and never parse an id. The spec says so.
+- No kit version and no `MF_VOCAB` (§18.1, unchanged).
+- Because SIMD is off by default, every DEFAULT artifact reads `none`
+  until R4f. Only `-fmemfn-simd` artifacts carry ids. M1 and every
+  migration step remain zero stamp movers, as §18.3 intended.
+
+**`<PREFIX>_MEMFN_LIBC`, the libc record (addendum 6), on every
+artifact.**
+
+- Its value is `"none"`, or the sorted, comma-joined names of the libc
+  functions the artifact's search code calls (`memchr`, `memcmp`,
+  `memmem`, …). The names are recorded as written in the text, whether
+  or not gcc later inlines a constant-length call. The spec says so.
+- It is what tells a reader that a SIMD-off artifact delegates to
+  libc's own dispatch.
+- **Why a second line rather than a field in `MEMFN_FORMS`:** a SIMD-off
+  artifact that calls `memchr` must still read `MEMFN_FORMS "none"`.
+  Folding the libc record into that value would break the ruled
+  `none`-iff-identical rule. It would also make one check (C11)
+  compare one value against two different references. **Q53** asks
+  Frank to confirm this spelling.
+- **Coverage.** The record covers ALL search code, so it is true from
+  its birth. A delegated site's libc use is recorded by the kit through
+  `mf_art`. A site the manifest still lists as PENDING (§R4.3.4)
+  records its libc names into the same `mf_art` through one pcrec-side
+  call, `mf_art_note_libc`. That call is deleted when the manifest's
+  pending count reaches 0.
+- **C11 gains a second assertion.** The value equals a pcrec-side scan
+  of the artifact's text for calls to the functions the C9 header shim
+  declares (§17.3). That list shares no source with the kit.
+
+**Its event.** Both lines are born together in R4a′ (§18.3's event and
+reader list, plus the second line). The abi digit is "the next number
+at landing" (61 at main 7f94b0cd), never a literal.
+
+### R4.3.4 Completeness: every search site migrates, under a checked manifest (Q42 reversed)
+
+**The ruling.** Every emitted search site migrates into the kit, the
+`(?m)^` newline `memchr` (M4) included, without waiting for a
+performance customer. Frank's reasons:
+
+1. A half-migrated tree makes everyone remember which sites are which.
+2. Having every search in one place exposes cross-site (set)
+   opportunities that a scattered tree hides.
+
+This is a ruled exception to D77's measured-need trigger. **The
+exception covers MIGRATION only**, where each step stays byte-identical
+(zero movers). A kit change that MOVES bytes still needs its measured
+trigger and its G1 alpha (D77, D144). So in §22 every migration step's
+trigger is "completeness: its prerequisites landed", and every mover
+step keeps a measured cell.
+
+**The search sites.** These are §8.5's rows whose operation is a
+search over a byte span:
+
+- PF, PRE, OFS and SETREST;
+- VERIFY and VMRUN;
+- STAY, the scan edge's loop, and VMSPAN at stride 1;
+- MLINE (N3);
+- `vm_rev_emit`'s backward walk (N6);
+- the VM span at stride > 1;
+- the encoding seam's span compare (N7).
+
+The last three were "not now"/"no" under the customer rule (§8.5). They
+are now pending, with steps M6 and M7 (§22). They need vocabulary (a
+backward walk with captures in flight, a strided SKIP). N7's place
+under D23 is asked as **Q54**.
+
+These are NOT search sites, and are not listed:
+
+- T4 one-position membership (one position, the `member` hook's
+  source);
+- any DFA or VM step, and T8/T9 (the engine).
+
+**The CHECKED SITE MANIFEST.** `tests/memfn/site_manifest.tsv` has one
+row per search site: site id, emitter function(s), op/handoff, D91
+budget, migration step, and status, which is exactly one of
+`delegated` or `pending` (the ruled vocabulary, with no third state).
+A new check, **C17**, fails on any of the following:
+
+1. **An unlisted site, static half.** An emitter under `src/gen/`
+   spells a C12-vocabulary search form (emitted-text libc search calls,
+   table-walk loop texts, runcmp row texts) in a function no `pending`
+   row names.
+2. **An unlisted site, dynamic half.** A site reaches `mf_emit_site`
+   with no `delegated` row for it. The site id comes from the call,
+   counted over the corpus compile pass.
+3. **A delegated row whose emitter still spells a form.** This is two
+   spellings of one search, D122.
+4. **A pending row whose emitter spells nothing.** The row is stale and
+   must move to `delegated` in its step's REPLACE commit.
+
+- **Counts.** It prints its row counts (delegated / pending, with a K35
+  floor equal to the committed row count) and the dynamic half's
+  site-call count.
+- **Born at R4a with every row `pending`.** Each migration step's
+  REPLACE commit flips its rows.
+- **Its stated limit:** the static half finds what C12's vocabulary can
+  see. A new search spelled in an unrecognised way, such as a hand-written
+  byte loop, escapes it until the vocabulary learns the shape. A
+  sabotage row plants one recognised form in an unlisted function
+  (§17.6).
+
+**The ratchet's end state.** C12's `memchr(` count outside the kit is
+9 at 90d396fd. It reads 3 after M1, 1 after M2 and **0** after M4.
+Every other C12 vocabulary class likewise ends at 0 in `src/gen/`.
+The end state of §9.5 is "pcrec spells no search", not "one
+`memchr('\n')` remains".
+
+### R4.3.5 The planner moves live at M5 (Q40, addendum 4)
+
+- At M5, prefix_k's scan model moves into the kit as LIVE scalar-layer
+  code. A frozen copy serves only as M5's byte-identity comparator.
+- pcrec keeps one SEMANTIC row: a necessary byte set exists beyond
+  offset 0.
+- The kit plans the scan, and the reseed becomes unconditional on that
+  row.
+- `<PREFIX>_DFA_PREFILTER` reports pcrec's row. `MEMFN_FORMS` shows the
+  kit's plan.
+- It is an abi event with a movers census and a bench inbox note.
+
+§22 splits this into **M5** (the model migrates, zero movers, by the
+comparator) and **M5′** (the ruled adoption event: one semantic row,
+the kit's plan, the unconditional reseed). M5′'s acceptance is G1's
+alpha at both layers.
+
+**One tension, stated.** "`MEMFN_FORMS` shows the kit's plan" (addendum
+4) meets "`none` iff identical to the SIMD-off compile" (addendum 3).
+At SIMD-off, which is the default, a scalar-layer plan change reads
+`none`. So the plan is visible in the stamp only on `-fmemfn-simd`
+artifacts. At SIMD-off it is attributed by M5′'s movers census and its
+switch name. **Q55** asks whether that suffices.
+
+### R4.3.6 Q51 and Q52 rejected: what stands (addendum 7)
+
+- **Q51 REJECTED.** The SIMD-off arm is NOT withdrawn. It is the
+  switch's OFF state (`-fno-memfn-simd`): permanent, selectable, and the
+  reading every scalar-layer change is accepted on. D147's both-layers
+  reading stands: every acceptance reading for a change that touches
+  searching reports SIMD-off and SIMD-on.
+
+  **Reading, stated for checking.** Rev 4.2's Q51 bundled a second
+  thing: the `-fno-memfn-scan`/`-fno-memfn-loop` bits, the `memfn-off`
+  set, `off.tsv` and the `pcrec[memfn-off]` testee. Those selected the
+  FROZEN baseline. D147 consequence 1 retires a frozen baseline
+  independently of Q51, so they stay withdrawn. Their one role, an OFF
+  arm for G1, is D144 item 4's per-change deny (`--memfn-deny=NAME`),
+  which is ruled on its own (Q47 rules only its spelling as generated
+  axis rows). If the rejection was meant to bring those bits back, the
+  change is this paragraph plus §20.2's two rows.
+- **Q52 REJECTED.** The stamp is not re-derived. Q39 as ruled
+  (§R4.3.3) stands: the reference is the SIMD-off compile, and the
+  value is never keyed on a flag. §L.5 is superseded by §R4.3.3.
+
+### R4.3.7 Every other place the rulings touch
+
+| section | revision 4.2 said | revision 4.3 |
+|---|---|---|
+| §L.1 | `-fno-memfn-native` / `-fmemfn-native`; libc's place asked as Q50 | `-fno-memfn-simd` / `-fmemfn-simd`; Q50 RULED (SWAR and libc are scalar) |
+| §L.3 | the `memfn-off` bits withdrawn (Q51) | they stay withdrawn, by D147 consequence 1; Q51 itself is rejected (§R4.3.6) |
+| §L.4 | both layers at `-fno-memfn-native` / `-fmemfn-native` | the same, with the switch spelled `memfn-simd` |
+| §L.5 | the stamp re-derived as Q52 | superseded by §R4.3.3 |
+| §8.5 profile table | two rows, `portable` / `native` | the SIMD switch: off (`MF_P_PORTABLE_ONLY`) or on |
+| §8.6 | K-1..K-5 | K-6 added: cascades (§R4.3.2) |
+| §9.4 | customer first (D77) | migration by completeness; customers trigger MOVERS only (§R4.3.4) |
+| §9.5 | ratchet reads 1 (N3) or 0 | 0, every class (§R4.3.4) |
+| §10.5 | C5's vocabulary half at `-fno-memfn-native`; C9 at `-fmemfn-native`; C11 one line | `-fno-memfn-simd`; `-fmemfn-simd`; C11 checks both lines; C17 new |
+| §10.6 | the two layers as profile semantics | adds: a SIMD-on artifact carries no portability promise; the libc record |
+| §14.10 | profile row `memfn-native` | the `memfn-simd` pair, both bits in `strategy_denials` |
+| §15.7 | "Q42 still says not to move it" | M4 migrates (§R4.3.4) |
+| §16 | trigger: R4b's cell | prerequisites only (completeness); `lane/k82hbuild` is merged (f116cff5); K85's re-measure is owed |
+| §17.2/§17.3 | native over portable; C9 at `-fmemfn-native` | SIMD form over the scalar form; C9 at `-fmemfn-simd` |
+| §17.6 | sabotage rows | three rows added (C17's two halves, the libc record) |
+| §18 | value re-derived per §L.5 | §R4.3.3 |
+| §19 rows 1, 4 | adoption asked as Q40 | Q40 RULED (§R4.3.5) |
+| §20.2 | one pair, `memfn-native` | one pair, `memfn-simd` (§R4.3.1) |
+| §21.3 | the stamp row | plus the `MEMFN_LIBC` line |
+| §22 | rev 4 / rev 4.2 order | rebuilt (`[rev4.3]` block at its head) |
+| §23 | Q35/Q36 ruled; Q37-Q52 open | Q35-Q42 and Q50 RULED; Q51/Q52 REJECTED; Q43-Q49 open; Q53-Q55 new |
+| `option_sets.md` | family `memfn` over `memfn-native` | over `memfn-simd`; cross-note added |
+
+**What the rulings do not change:**
+
+- the contract (§8, §14) and the site shapes (§15);
+- M1's scope and sequence (§16);
+- the per-change deny as G1's OFF arm (§L.3);
+- the symbol and provenance policy (§20.3);
+- the measurement protocol (§21.1).
 
 ---
 
