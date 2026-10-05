@@ -194,7 +194,7 @@ the lane's scratchpad (`sweep1.log`, `strict.log`, `sections.log`):
 | `make test-rxtsource` | 278/0 when re-run with the default `TMPDIR`; the chain's run (TMPDIR = the lane's long scratchpad path) read 2 FAILs (`compose_dup_definition`, `prose-dedent-K57`) — the known path-length artifact class (1fc69edf), not this change (no rxt parser file touched) |
 | `make test-startset` | 3/0 (§2.4's numbers) |
 | mech solo | S495 DETECTED (`candrows:1fail/0pass`), S501 DETECTED (`startset:2fail/1pass`), S502 DETECTED (`startset:2fail/1pass`), S68 re-anchored DETECTED (`codegen:1fail/328pass, corpus:0fail/56pass`) |
-| anchor tripwire | 433 rows, all anchors resolve |
+| anchor tripwire | 432 rows / 448 anchor sites, all resolve |
 
 The identity gates proper (vm/trie/endvar/wordctx/mlinectx/gstart/
 recursion identity) ride the full `make test` below; `emit_sweep` already
