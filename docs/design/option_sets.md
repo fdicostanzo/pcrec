@@ -1,5 +1,7 @@
 # [OPT-SETS] — named option sets and how they interact (design note 1)
 
+**CROSS-NOTE 2026-10-05 (manager; Frank's ruling on [MEMFN] Q12): pcrec carries NO architecture knowledge in its decision tables.** It passes an OPAQUE token to the [MEMFN] kit's K0 price query, and the kit chooses ISA forms internally (docs/design/memfn/integration.md revision 2, §7). Consequences for this note: the `isa` family reduces to ONE opaque token axis (no ISA poset, no isa-route, constraint rows 6-8 removed); the `vector` family reduces to the kit's three deny flags (`-fno-kit-scan/-loop/-native`). §4's ISA/vector worked examples are superseded where they conflict; the next revision folds this in.
+
 **Status: DESIGN ONLY** (lane optsets, 2026-10-05; plan row `[OPT-SETS]`,
 opened by Frank the same day: "for simd and arch there will be sets of
 choices that should be toggled together — `simd`, `no-simd` and the
