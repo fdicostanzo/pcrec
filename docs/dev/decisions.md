@@ -9025,3 +9025,18 @@ This generalizes D91 (scalar-first, "the SIMD crutch must not hide inefficiencie
   - `--list-axes` prints pcrec's axes and then a `memfn` section read from the kit registry. That is ONE enumeration point for test-axes, the identity gates and the registry check.
   - A spec-pinned floor on the kit section's member count is the independent control against a stale kit registry.
 - **D144 item 4 (every optimization its own deny) is met inside the kit's namespace.**
+
+**D144 addendum 3 (Frank, 2026-10-05): one batch gate may cover TWO rounds.**
+- **The gate:** the full Linux `make test`, the test-axes sweep over every flag, full mech, `make san`, and the wide bench night. It runs once per two rounds (rounds 2+3 share the next gate; round 1's gate finishes 2026-10-05 night).
+- **The per-change alpha tier is strengthened to compensate.** Each change still gets its own `make test`, its targeted Linux timing, a test-axes sweep of its own flags and its own mech rows. It also gets a NEW ASan/UBSan pass over its own movers whenever it changes how emitted code reads memory.
+- **An EARLY full gate is forced by:**
+  - a wrong answer anywhere;
+  - a tripwire or sanitizer report;
+  - a shared-mechanism change with a large cross-engine mover population, where Frank rules an early gate worthwhile;
+  - a bench request.
+- **Cost accepted:** a gate finding spans two rounds. The per-change alphas and their own deny flags keep it bisectable.
+
+**Round 2 SELECTED (Frank, same day):**
+- **Core:** finish K82 (the handoff's Linux alpha, then K85's re-measure) and START-SET ([OPT-FIRSTSET] + [OPT-VMSEED], D124 shape), the main new algorithmic work.
+- **Cheap side items:** the SEL-LIT desk read (VM-beats-auto across every set's existing VM column, under [SEL-COST]) and K87's pcrec-side twin.
+- **Housekeeping:** file NULLABLE-ANCH and U8-PICK as rows (unscheduled), and mark [OPT-VMSEED] a round-2 candidate.
