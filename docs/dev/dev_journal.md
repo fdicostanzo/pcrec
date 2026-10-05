@@ -26267,3 +26267,37 @@ Frank: "finish up open work/bench results/errors", Linux box free (bench manager
 **Owed after the gate:** one pinned Linux run — memfn linux_run.sh + isa_evaluation L-2 (bench artifacts at -march=x86-64-v3) + L-4 (marker on a plain -march object) + survey timings + PCRE2-JIT class rows + memftwin's x86 twins; then k82fix merge + its Linux alpha (alpha_k82.sh); then the wide bench via the bench's night window.
 
 **Lessons:** (1) a lane's sub-agents hand back to the MANAGER, not to the lane that spawned them — the lane sat "waiting for delivery" until told the output-file paths; brief lanes that spawn helpers to read the helpers' output files themselves. (2) A brief widened by SendMessage mid-run can be missed entirely (memfnisa delivered without Frank's added matrix); a fresh lane is the reliable carrier of a scope change. (3) The ">2 load" abort rule was wrong for a 12-core box; load_guard's own threshold is load/nproc > 2.
+
+### 2026-10-05 — ninetieth session, part 2: round-1 gate, K82 handoff landed, [MEMFN] designed through rev 4.4, [OPT-SETS] rev 2
+
+**Round 1 (D144):** Linux gate at c4c70f2c: build, make test, test-axes (three round-1 flags) and make san all GREEN. Full mech hit an undersized 180-min cap (it prints verdicts only at the end) and is re-running in lx1005 (8 h cap) tonight. Wide bench [B122]/O-83: 16/16 cells, 0 new wrong answers, 234 movers attributed (run-overlap 96, S2 range respelling 65 → K87, req-run-fold 32, view-edge 28); K82 confirmed (userpass ×55.66); K81 not confirmed; K83 unscored. Gap report re-run (docs/dev/optloop/gapreport_2026-10-05.md + judgement; extract.py two-pin bug fixed): START-SET #1, CTX #2, new SEL-LIT group (auto's DFA ×1.4-4.7 slower than pcrec's own VM on litrun).
+
+**K82:**
+- (A)+(C) merged c13a1a2c (abi 60). Its Linux alpha: userpass cured (0.0168 ns/B); alt-shared ~80% recovered; cls-n-uc +5% → K85.
+- (B) HANDOFF: designed (litscan_k82h.md, with two LINEAGE paragraphs: Frank's 2026-09-22 [OPT-REQPOS] tier-2 idea and D122(3) carried facts), light panel r1 (17 findings), revision 2, Q1-Q10 ruled (Q3 REVERSED to a stamp on every artifact, `none` where n/a), BUILT (lane k82hbuild) and MERGED f116cff5 (abi 61).
+- Handoff validation: movers = census, 0 answer defects over 4.41M every-startpos cells (plain + sanitizers), invariant-F oracle 0 violations.
+- One rxtsource red was a 256-byte Diag.msg truncation under a long TMPDIR (needles fixed 1fc69edf).
+- Its Linux alpha + K85's re-measure are QUEUED behind mech (scratch_lx/run_lx1006.sh).
+
+**K86** (spelling-dependent cross-source precedence) fixed on lane/k86fix; its Mac make test is finishing.
+
+**[MEMFN]:**
+- Linux results read (glibc call 3.24 ns; fusion wins <64 B, loses from ~512 B at SSE2 vs glibc AVX2; T-B fused scan+verify holds; L-2 no level customer; ld.so enforces the ISA marker for dynamic executables and dlopen, not static).
+- Design path: K0 price query (rev 2, panel r2) → D146 DELEGATION (rev 3, panel r3) → rev 4/4.1 (contract rebuilt from the emitters, re-checked byte for byte) → D147 LAYERS (the scalar algorithm is live and improvable forever; SIMD is a layer; each layer is best on its own; both layers read) → rev 4.2-4.4.
+- D147 addenda 1-9 rule Q35-Q50: in-tree memfn/ (set up, 0BSD, request ledger with R-1 queued); ONE SIMD switch, `-fmemfn-simd`, DEFAULT OFF (off = portable C incl. SWAR + libc; on = hardware-specific, may not run elsewhere); cascading levels case by case; every search site migrates under a checked site manifest; the planner moves live at M5; the kit's OWN option namespace `--memfn=`.
+- Open: Q53-Q55, after a light panel on rev 4.4.
+
+**[OPT-SETS]:** note 1 → panel r1 (deny/force is ONE axis; six measured cross-source rules) → revision 2; Q1-Q12 + R1-R6 open.
+
+**Other rulings:**
+- D145 LICENSE generated-output exception.
+- D144 addendum 3: one batch gate per TWO rounds (alpha + per-change sanitizer pass), round 2 SELECTED.
+- Standing design-note questions added (measurement regime / independent control / what moves on regeneration; relevance stated first).
+- Merge permission: routine merges are the manager's.
+
+**Lessons:**
+1. Four design panels in two days found the same three gaps (an unstated measurement regime; a control sharing its source; regenerated data moving bytes without the abi ritual). Now the standing questions.
+2. Design briefs must list the standing rulings the design must honour: two r3 findings came from my brief, not the lane.
+3. Sub-agents hand back to the manager, not to the lane that spawned them; a lane waits for nothing unless told the output paths.
+4. Mid-run SendMessage scope changes were missed by busy lanes twice. Fresh lanes carry ruling changes reliably.
+5. Lanes still write outside scope occasionally (tmp files, a $HOME .c), always self-reported.
