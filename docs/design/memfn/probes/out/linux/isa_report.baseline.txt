@@ -1,0 +1,7 @@
+# ARCHIVED 2026-10-05 by lane lxread from duxevents@ubuntubudu:/home/duxevents/pcrec/scratch_lx/wt_main/build/memfn_linux/20261005T130303Z/isa_report.baseline.txt
+# run: lane lxrun serial driver scratch_lx/run_lx1005.sh (quiet box; main clone c4c70f2c, probe tree wt_main = eb6fe6139);
+# read in docs/design/memfn/linux_results.md. Content below is verbatim.
+compiled-for: x86-64-v1 (from predefined macros)
+running CPU : x86-64-v3 (from cpuid/xgetbv)
+cpusup(wide)=1024 query(wide)=1
+verdict     : OK

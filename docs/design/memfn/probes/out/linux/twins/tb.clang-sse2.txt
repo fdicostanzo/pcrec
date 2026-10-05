@@ -1,0 +1,37 @@
+# ARCHIVED 2026-10-05 by lane lxread from duxevents@ubuntubudu:/home/duxevents/pcrec/scratch_lx/wt_main/build/memfn_twins/20261005T131006Z/tb.clang-sse2.txt
+# run: lane lxrun serial driver scratch_lx/run_lx1005.sh (quiet box; main clone c4c70f2c, probe tree wt_main = eb6fe6139);
+# read in docs/design/memfn/linux_results.md. Content below is verbatim.
+# box: ubuntubudu, Linux 7.0.0-29-generic, AMD Ryzen 5 1600 Six-Core Processor
+# pinned: taskset -c 2; governor schedutil
+# load at start: 1.00, 0.88, 0.73
+# commit: eb6fe6139; date 2026-10-05T13:10Z
+# gcc: gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0
+# clang: Ubuntu clang version 21.1.8 (6ubuntu1)
+# run: build/memfn_twins/20261005T131006Z/bin/tb_run.clang-sse2 --subjects=build/memfn_twins/20261005T131006Z/subj
+# memfn twins T-B (fused scan+verify vs the emitted run gate), vec=sse2 VW=16
+# ns: min of 3 loops >= 50 ms, (+spread%); short = ns per subject over 75
+
+## cell us
+var    gate:cap-t-64k           gate:cap-t-1m            sweep:cap-t-64k          sweep:cap-t-1m           short
+emit       17026.6(+ 1)@65536      363856.1(+ 0)@1048576       17021(+ 0)#0           363784(+ 0)#0         12.63(+ 2)#4
+m2v        11629.7(+ 0)@65536      345579.2(+ 0)@1048576       11909(+ 0)#0           347319(+ 0)#0          5.58(+ 1)#4
+ffl         3235.8(+ 0)@65536       51804.9(+ 0)@1048576        3035(+ 0)#0            48578(+ 0)#0          4.44(+ 2)#4
+fall        8070.2(+ 0)@65536      129641.1(+ 0)@1048576        7867(+ 0)#0           126358(+ 0)#0          5.06(+ 1)#4
+
+## cell up
+var    gate:cap-t-64k           gate:cap-t-1m            sweep:cap-t-64k          sweep:cap-t-1m           short
+emit          25.2(+ 0)@113            39.4(+ 0)@92            25230(+ 0)#212         568963(+ 0)#3290      11.62(+ 1)#7
+m2v            9.2(+ 0)@113            29.1(+ 0)@92            17044(+ 0)#212         439765(+ 0)#3290       5.16(+ 2)#7
+ffl            7.7(+ 0)@113             5.9(+ 0)@92             5162(+ 0)#212         108148(+ 0)#3290       4.59(+ 1)#7
+fall          12.1(+ 0)@113             9.4(+ 0)@92             7345(+ 0)#212         135264(+ 0)#3290       4.80(+ 1)#7
+
+## cell mi
+var    gate:syn-t-64k           gate:syn-t-1m            sweep:syn-t-64k          sweep:syn-t-1m           short
+emit          42.0(+ 0)@90             67.2(+ 0)@404           32728(+ 0)#400         705303(+ 0)#6030      12.63(+ 0)#3
+m2v           24.3(+ 0)@90             54.7(+ 1)@404           18411(+ 0)#400         519928(+ 0)#6030       8.08(+ 1)#3
+ffl            6.2(+ 0)@90             22.1(+ 0)@404            6123(+ 0)#400         140753(+ 0)#6030       5.66(+ 1)#3
+fall           7.7(+ 0)@90             29.2(+ 0)@404            7272(+ 0)#400         159385(+ 0)#6030       5.49(+ 0)#3
+
+# gate: ns per call from 0, @ = returned position (n = absent)
+# sweep: ns per sweep to the end, # = gate hits
+# short: ns per short subject, # = subjects whose gate passed

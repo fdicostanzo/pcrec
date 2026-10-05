@@ -1,0 +1,30 @@
+# ARCHIVED 2026-10-05 by lane lxread from duxevents@ubuntubudu:/home/duxevents/pcrec/scratch_lx/lx1005/memfn_l4.log
+# run: lane lxrun serial driver scratch_lx/run_lx1005.sh (quiet box; main clone c4c70f2c, probe tree wt_main = eb6fe6139);
+# read in docs/design/memfn/linux_results.md. Content below is verbatim.
+# box: ubuntubudu, Linux 7.0.0-29-generic; 2026-10-05T13:36Z
+# gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0
+# GNU ld (GNU Binutils for Ubuntu) 2.46
+# gcc configured with: --enable-cet 
+# -mneeded default under -march=x86-64-v3:  -mneeded 		[disabled]
+## readelf -n, ISA properties
+object -O2                    Properties: x86 feature: IBT, SHSTK;
+object -O2 -march=v3          Properties: x86 feature: IBT, SHSTK;
+shared -O2                    Properties: x86 feature: IBT, SHSTK;
+shared -O2 -march=v3          Properties: x86 feature: IBT, SHSTK;
+exe -O2                       Properties: x86 feature: IBT, SHSTK;	x86 ISA needed: x86-64-baseline;
+exe -O2 -march=v3             Properties: x86 feature: IBT, SHSTK;	x86 ISA needed: x86-64-baseline;
+## does the v3 exe run here (x86-64-v3 CPU, so it should either way)
+6048
+rc=0
+## a pcrec artifact (/home/duxevents/pcrec/scratch_lx/s4alpha_k82/art/union-caps/new/art.c) compiled -O2 -march=x86-64-v3 -c
+pcrec artifact -march=v3      Properties: x86 feature: IBT, SHSTK;
+## the same with -mneeded (the ASKED form, for contrast)
+pcrec artifact -march=v3 -mneeded  Properties: x86 feature: IBT, SHSTK; Properties: x86 ISA needed: x86-64-baseline, x86-64-v2, x86-64-v3;
+## full readelf -n of the plain v3 object
+
+Displaying notes found in: .note.gnu.property
+  Owner                Data size 	Description
+  GNU                  0x00000010	NT_GNU_PROPERTY_TYPE_0
+      Properties: x86 feature: IBT, SHSTK
+MEMFN-L4 COMPLETE marked=no/no/no
+L4 rc=0

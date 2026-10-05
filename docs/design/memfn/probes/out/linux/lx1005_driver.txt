@@ -1,0 +1,48 @@
+# ARCHIVED 2026-10-05 by lane lxread from duxevents@ubuntubudu:/home/duxevents/pcrec/scratch_lx/lx1005.log + run_lx1005.sh
+# run: lane lxrun serial driver scratch_lx/run_lx1005.sh (quiet box; main clone c4c70f2c, probe tree wt_main = eb6fe6139);
+# read in docs/design/memfn/linux_results.md. Content below is verbatim.
+START Mon Oct  5 12:53:10 PM UTC 2026 main=c4c70f2c6 wt_main=eb6fe6139 load=0.19 0.27 0.58
+ALPHA_RC=0 13:03Z load=0.46 0.45 0.55
+MEMFN_RC=0 13:36Z load=1.02 1.02 1.00
+L4L2_RC=0 13:39Z load=0.36 0.71 0.88
+SURVEY_RC=0 13:41Z load=0.91 0.81 0.91
+## run_lx1005.sh
+#!/bin/bash
+# lxrun (2026-10-05): quiet-box Linux run, SERIAL, each item under its own
+# GNU-timeout wall cap; a failing item never stops the chain. Per-item logs
+# in scratch_lx/lx1005/<item>.log, "<ITEM>_RC=<n>" lines in scratch_lx/
+# lx1005.log, last line ALL_DONE. Main clone HEAD stays c4c70f2c.
+R=/home/duxevents/pcrec
+X=$R/scratch_lx
+WT=$X/wt_main
+L=$X/lx1005.log
+D=$X/lx1005
+S4A=$X/s4alpha_k82
+mkdir -p "$D" "$X/tmp"
+export TMPDIR=$X/tmp
+rc() { echo "$1_RC=$2 $(date -u +%H:%MZ) load=$(cut -d' ' -f1-3 /proc/loadavg)" >> "$L"; }
+echo "START $(date -u) main=$(git -C $R rev-parse --short HEAD) wt_main=$(git -C $WT rev-parse --short HEAD) load=$(cut -d' ' -f1-3 /proc/loadavg)" >> "$L"
+
+# 1. K82 alpha: BASE c4c70f2c (abi 59; src identical to 940fa06e), NEW eb6fe6139 (main, abi 60)
+( cd "$WT" && S4A=$S4A PCREC_REPO=$R BENCH=/home/duxevents/pcrec-bench BASE_REV=c4c70f2c NEW_REV=eb6fe6139 CC=gcc CPU=2 \
+    gnutimeout 90m bash docs/dev/optloop/s4/alpha_k82.sh all ) > "$D/alpha_k82.log" 2>&1
+rc ALPHA $?
+
+# 2. [MEMFN] linux_run.sh (+ appended twins_run.sh), from the wt_main root
+( cd "$WT" && BENCH=/home/duxevents/pcrec-bench CPU=2 gnutimeout 150m sh docs/design/memfn/probes/linux_run.sh ) > "$D/memfn_linux.log" 2>&1
+rc MEMFN $?
+
+# 3. [MEMFN] isa_evaluation.md §3.3 L-4 then L-2 (one 60-min cap)
+( gnutimeout 5m bash "$X/memfn_l4.sh" "$D/l4" "$S4A/art/union-caps/new/art.c" > "$D/memfn_l4.log" 2>&1; echo "L4 rc=$?" >> "$D/memfn_l4.log"
+  S4A=$S4A CPU=2 gnutimeout 55m bash "$X/memfn_l2.sh" "$D/l2" > "$D/memfn_l2.log" 2>&1; exit $? )
+rc L4L2 $?
+
+# 4. [MEMFN] survey.md §10.1 OWED timings
+gnutimeout 60m bash "$X/memfn_survey_lx.sh" "$X/memfn_src" "$D/survey" > "$D/memfn_survey.log" 2>&1
+rc SURVEY $?
+
+# 5. FULL MECH at c4c70f2c in the main clone (prints verdicts only at the end)
+( cd "$R" && gnutimeout 20m make > "$D/mech_build.log" 2>&1; gnutimeout 480m make mech ) > "$D/mech.log" 2>&1
+rc MECH $?
+git -C "$R" restore docs/dev/artifact_size_log.tsv 2>/dev/null
+echo "ALL_DONE $(date -u) main=$(git -C $R rev-parse --short HEAD) status=[$(git -C $R status --short | tr '\n' ' ')]" >> "$L"

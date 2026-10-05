@@ -1,0 +1,10 @@
+# ARCHIVED 2026-10-05 by lane lxread from duxevents@ubuntubudu:/home/duxevents/pcrec/scratch_lx/wt_main/build/memfn_linux/20261005T130303Z/header.txt
+# run: lane lxrun serial driver scratch_lx/run_lx1005.sh (quiet box; main clone c4c70f2c, probe tree wt_main = eb6fe6139);
+# read in docs/design/memfn/linux_results.md. Content below is verbatim.
+# box: ubuntubudu, Linux 7.0.0-29-generic, AMD Ryzen 5 1600 Six-Core Processor
+# cpu flags: sse4_2 avx avx2 bmi2 
+# pinned: taskset -c 2; governor schedutil; load at start: 0.46 0.45 0.55
+# commit: eb6fe6139; date 2026-10-05T13:03Z
+# glibc: ldd (Ubuntu GLIBC 2.43-2ubuntu2.4) 2.43
+# gcc: gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0
+# clang: Ubuntu clang version 21.1.8 (6ubuntu1)

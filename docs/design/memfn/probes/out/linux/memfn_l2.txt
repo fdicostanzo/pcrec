@@ -1,0 +1,95 @@
+# ARCHIVED 2026-10-05 by lane lxread from duxevents@ubuntubudu:/home/duxevents/pcrec/scratch_lx/lx1005/memfn_l2.log
+# run: lane lxrun serial driver scratch_lx/run_lx1005.sh (quiet box; main clone c4c70f2c, probe tree wt_main = eb6fe6139);
+# read in docs/design/memfn/linux_results.md. Content below is verbatim.
+# NOTE (lxread): the build section's 'line 62: $2: unbound variable' is a script defect (ev() called with one argument under set -u), so its ymm/bmi counts are missing; recounted by lxread from the same binaries: see linux_results.md section L-2.
+# box: ubuntubudu AMD Ryzen 5 1600 Six-Core Processor; gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0
+# pcrec: /home/duxevents/pcrec/scratch_lx/s4alpha_k82/new/build/pcrec (pcrec 0.2.0-beta); taskset -c 2; gov=schedutil boost=1; 2026-10-05T13:36Z
+## build: per pattern one emit, two compiles (driver + artifact, same flags)
+/home/duxevents/pcrec/scratch_lx/memfn_l2.sh: line 62: $2: unbound variable
+/home/duxevents/pcrec/scratch_lx/memfn_l2.sh: line 62: $2: unbound variable
+aws-key: base[ text=5384] v3[ text=5352]
+/home/duxevents/pcrec/scratch_lx/memfn_l2.sh: line 62: $2: unbound variable
+/home/duxevents/pcrec/scratch_lx/memfn_l2.sh: line 62: $2: unbound variable
+ipv4-owasp: base[ text=8360] v3[ text=8376]
+/home/duxevents/pcrec/scratch_lx/memfn_l2.sh: line 62: $2: unbound variable
+/home/duxevents/pcrec/scratch_lx/memfn_l2.sh: line 62: $2: unbound variable
+union-select: base[ text=2936] v3[ text=2904]
+/home/duxevents/pcrec/scratch_lx/memfn_l2.sh: line 62: $2: unbound variable
+/home/duxevents/pcrec/scratch_lx/memfn_l2.sh: line 62: $2: unbound variable
+quoted-grok: base[ text=10424] v3[ text=10312]
+/home/duxevents/pcrec/scratch_lx/memfn_l2.sh: line 62: $2: unbound variable
+/home/duxevents/pcrec/scratch_lx/memfn_l2.sh: line 62: $2: unbound variable
+iso8601: base[ text=9464] v3[ text=9464]
+/home/duxevents/pcrec/scratch_lx/memfn_l2.sh: line 62: $2: unbound variable
+/home/duxevents/pcrec/scratch_lx/memfn_l2.sh: line 62: $2: unbound variable
+uuid-grok: base[ text=4312] v3[ text=4248]
+/home/duxevents/pcrec/scratch_lx/memfn_l2.sh: line 62: $2: unbound variable
+/home/duxevents/pcrec/scratch_lx/memfn_l2.sh: line 62: $2: unbound variable
+paren-rec: base[ text=4744] v3[ text=4712]
+/home/duxevents/pcrec/scratch_lx/memfn_l2.sh: line 62: $2: unbound variable
+/home/duxevents/pcrec/scratch_lx/memfn_l2.sh: line 62: $2: unbound variable
+cls-w: base[ text=2728] v3[ text=2696]
+/home/duxevents/pcrec/scratch_lx/memfn_l2.sh: line 62: $2: unbound variable
+/home/duxevents/pcrec/scratch_lx/memfn_l2.sh: line 62: $2: unbound variable
+cls-d: base[ text=2696] v3[ text=2664]
+/home/duxevents/pcrec/scratch_lx/memfn_l2.sh: line 62: $2: unbound variable
+/home/duxevents/pcrec/scratch_lx/memfn_l2.sh: line 62: $2: unbound variable
+alt-nested: base[ text=2360] v3[ text=2296]
+/home/duxevents/pcrec/scratch_lx/memfn_l2.sh: line 62: $2: unbound variable
+/home/duxevents/pcrec/scratch_lx/memfn_l2.sh: line 62: $2: unbound variable
+bak-1: base[ text=5028] v3[ text=4964]
+/home/duxevents/pcrec/scratch_lx/memfn_l2.sh: line 62: $2: unbound variable
+/home/duxevents/pcrec/scratch_lx/memfn_l2.sh: line 62: $2: unbound variable
+mod-i: base[ text=2552] v3[ text=2488]
+## answer identity (matches= equal between arms on every subject)
+same aws-key cap:t-64k matches=0
+same aws-key cap:t-1m matches=0
+same ipv4-owasp cap:t-64k matches=0
+same ipv4-owasp cap:t-1m matches=0
+same union-select cap:t-64k matches=0
+same union-select cap:t-1m matches=0
+same quoted-grok cap:t-64k matches=178
+same quoted-grok cap:t-1m matches=2975
+same iso8601 cap:t-64k matches=0
+same iso8601 cap:t-1m matches=0
+same uuid-grok cap:t-64k matches=0
+same uuid-grok cap:t-1m matches=0
+same paren-rec cap:t-64k matches=343
+same paren-rec cap:t-1m matches=6061
+same cls-w syn:t-64k matches=12992
+same cls-w syn:t-1m matches=208594
+same cls-d syn:t-64k matches=1962
+same cls-d syn:t-1m matches=30307
+same alt-nested syn:t-64k matches=521
+same alt-nested syn:t-1m matches=8611
+same bak-1 syn:t-64k matches=377
+same bak-1 syn:t-1m matches=6138
+same mod-i syn:t-64k matches=400
+same mod-i syn:t-1m matches=6030
+## timing: ns/byte, median of 5 launch-medians (each launch = median of 5 >= 50 ms loops)
+cell          subject          base          v3     v3-base      pct       floor  verdict
+aws-key       cap:t-64k    2.881672    2.790856   -0.090816    -3.2%    0.005338  V3-WIN
+aws-key       cap:t-1m     2.922866    2.829108   -0.093758    -3.2%    0.002718  V3-WIN
+ipv4-owasp    cap:t-64k    0.000309    0.000319   +0.000010    +3.2%    0.000003  V3-LOSS
+ipv4-owasp    cap:t-1m     0.000019    0.000020   +0.000001    +5.3%    0.000000  V3-LOSS
+union-select  cap:t-64k    0.257679    0.260880   +0.003201    +1.2%    0.003267  NULL
+union-select  cap:t-1m     0.347901    0.346247   -0.001654    -0.5%    0.000592  V3-WIN
+quoted-grok   cap:t-64k    0.710854    0.713340   +0.002486    +0.3%    0.004575  NULL
+quoted-grok   cap:t-1m     0.725439    0.731442   +0.006003    +0.8%    0.006676  NULL
+iso8601       cap:t-64k    0.000170    0.000172   +0.000002    +1.2%    0.000211  NULL
+iso8601       cap:t-1m     0.000023    0.000024   +0.000001    +4.3%    0.000011  NULL
+uuid-grok     cap:t-64k    0.036568    0.036989   +0.000421    +1.2%    0.003517  NULL
+uuid-grok     cap:t-1m     0.064908    0.064461   -0.000447    -0.7%    0.000560  NULL
+paren-rec     cap:t-64k    3.695102    4.970583   +1.275481   +34.5%    0.018278  V3-LOSS
+paren-rec     cap:t-1m     3.728359    5.014612   +1.286253   +34.5%    0.015131  V3-LOSS
+cls-w         syn:t-64k    4.762344    4.540055   -0.222289    -4.7%    0.083954  V3-WIN
+cls-w         syn:t-1m     4.706420    4.459010   -0.247410    -5.3%    0.010005  V3-WIN
+cls-d         syn:t-64k    1.036627    0.977671   -0.058956    -5.7%    0.008080  V3-WIN
+cls-d         syn:t-1m     1.014619    0.958896   -0.055723    -5.5%    0.027350  V3-WIN
+alt-nested    syn:t-64k    1.516564    1.554749   +0.038185    +2.5%    0.050850  NULL
+alt-nested    syn:t-1m     1.560224    1.567381   +0.007157    +0.5%    0.009812  NULL
+bak-1         syn:t-64k   10.545297   10.324229   -0.221068    -2.1%    0.038368  V3-WIN
+bak-1         syn:t-1m    10.829706   10.719739   -0.109967    -1.0%    0.450496  NULL
+mod-i         syn:t-64k    1.564236    1.574951   +0.010715    +0.7%    0.011650  NULL
+mod-i         syn:t-1m     1.636310    1.630693   -0.005617    -0.3%    0.004362  V3-WIN
+MEMFN-L2 COMPLETE cells=24 fails=0

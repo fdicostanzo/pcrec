@@ -1,0 +1,43 @@
+# ARCHIVED 2026-10-05 by lane lxread from duxevents@ubuntubudu:/home/duxevents/pcrec/scratch_lx/wt_main/build/memfn_twins/20261005T131006Z/tc.clang-ssse3.txt
+# run: lane lxrun serial driver scratch_lx/run_lx1005.sh (quiet box; main clone c4c70f2c, probe tree wt_main = eb6fe6139);
+# read in docs/design/memfn/linux_results.md. Content below is verbatim.
+# box: ubuntubudu, Linux 7.0.0-29-generic, AMD Ryzen 5 1600 Six-Core Processor
+# pinned: taskset -c 2; governor schedutil
+# load at start: 1.00, 0.88, 0.73
+# commit: eb6fe6139; date 2026-10-05T13:10Z
+# gcc: gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0
+# clang: Ubuntu clang version 21.1.8 (6ubuntu1)
+# run: build/memfn_twins/20261005T131006Z/bin/tc_desc.clang-ssse3
+# memfn twins T-C (constant descriptor vs hand kernel), vec=ssse3 VW=16
+# ns per call (noinline, miss: the whole span read), min of 3 loops >= 50 ms
+set  form           16         64        256       1024       4096      65536
+q2   hand         3.54       4.43      10.62      35.41     140.47    2125.58
+q2   desc         3.50       4.43      10.62      35.41     140.45    2125.56
+q2   mut          5.74       5.90      12.98      41.31     160.52    2428.63
+q2   hoist        4.13       5.31      11.51      36.29     141.38    2128.22
+q2   rt           5.02       5.90      13.57      45.44     179.21    2731.12
+d    hand         2.95       4.43      10.33      33.34     131.39    1975.47
+d    desc         3.25       4.43      10.33      33.35     131.37    1975.34
+d    mut          5.81       5.90      12.99      41.32     161.09    2429.98
+d    hoist        4.13       5.61      11.80      36.59     141.62    2130.53
+d    rt           5.63       5.90      13.87      45.75     179.14    2732.17
+ss   hand         2.95       4.13       9.15      28.62     112.43    1673.46
+ss   desc         3.84       4.13       9.15      28.62     112.46    1673.60
+ss   mut          4.87       5.31      10.62      31.87     123.04    1826.46
+ss   hoist        5.31       5.02       9.44      27.15     103.86    1525.12
+ss   rt           5.02       5.31      11.51      36.30     141.74    2129.37
+ab   hand         3.47       4.72      10.62      33.64     132.47    1976.61
+ab   desc         3.61       4.72      10.62      33.64     131.31    1975.46
+ab   mut          5.50       6.11      12.33      36.98     142.37    2129.09
+ab   hoist        4.13       5.61      11.21      34.23     132.03    1976.39
+ab   rt           5.31       5.61      12.69      41.01     160.56    2432.74
+sp   hand         2.95       4.72      11.80      40.13     159.69    2426.62
+sp   desc         2.95       4.72      11.80      40.13     159.66    2426.64
+sp   mut          5.54       6.51      14.75      52.97     180.27    2731.47
+sp   hoist       10.62      12.26      16.09      42.15     161.69    2439.37
+sp   rt           5.97       5.90      13.87      45.75     179.80    2730.94
+w    hand         4.13       6.49      17.70      61.96     245.20    3788.48
+w    desc         3.84       6.49      17.71      61.98     245.23    3787.65
+w    mut          5.17       7.97      21.25      74.36     293.03    4543.35
+w    hoist       11.41      13.35      20.44      63.45     245.83    3796.22
+w    rt           5.02       7.67      21.25      75.54     298.96    4644.93
