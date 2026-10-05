@@ -357,7 +357,7 @@
 #     own arm because a search form spelled outside the manifest, or a stale
 #     manifest row, moves no answer and no artifact byte, so every other arm
 #     is green on it by construction. Static: reads the sabotaged tree's src/
-#     and tests/memfn/, runs no binary. Registered before S478-S480.
+#     and tests/memfn/, runs no binary. Registered before S510-S512.
 #
 # THE THREE NEWEST WORDS WERE REGISTERED FIRST, DELIBERATELY, which is the
 # lesson R31 C11 left one module earlier: this vocabulary is CLOSED, so a

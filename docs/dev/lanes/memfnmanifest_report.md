@@ -1,5 +1,12 @@
 # memfnmanifest — R-3 part 1 (R4a): the checked site manifest and C17
 
+> **RENUMBERED (kit session, 2026-10-05):** S478-S480 collided with
+> START-SET's reserved block S478-S504 (D148, startset.md §6.3/§6.4). The
+> rows are now **S510, S511, S512** (same order), from the kit's block
+> S510-S529, which the pcrec manager assigns. The transcripts below keep
+> the ids they were run under; the solo re-run under the new ids is in
+> the kit journal.
+
 Lane `memfnmanifest`, kit session, 2026-10-05. Branch `lane/memfnmanifest`,
 cut from `lane/memfn-r4a` at eb327ff5. It serves `memfn/docs/requests.md`
 R-3 item 1, the site-manifest bullet. Design: integration.md rev 4.6,

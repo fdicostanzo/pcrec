@@ -424,9 +424,9 @@ is EXPECTED to time out"*, and neither would a separate arm.
   memfnmanifest, 2026-10-05): C17, the checked site manifest. Static (reads
   the sabotaged tree's src/ and tests/memfn/, runs no binary). A search form
   outside the manifest or a stale row moves no answer and no byte, so every
-  other arm is green on it by construction. Rows S478 (rule 1, a `memchr(`
-  planted in an unlisted function), S479 (rule 4, a stale pending row),
-  S480 (the K35 row floor).
+  other arm is green on it by construction. Rows S510 (rule 1, a `memchr(`
+  planted in an unlisted function), S511 (rule 4, a stale pending row),
+  S512 (the K35 row floor).
 - (no new arm) [OPT-VEDGE] row S440 (lane vedge, 2026-10-03) is on
   `harness`, scoped to `tests/assertions`: the reverse machine handed
   `end_is_exit = true` loses matches on view_edge.rxt's direction witness.

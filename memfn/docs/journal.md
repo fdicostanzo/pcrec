@@ -154,3 +154,14 @@ pointer when a kit change merges to main.
   record) and B6 (N7's scope) as Q53/Q54 PROPOSALS, with Q53-Q55 open.
   Mark them RULED (addendum 10) and promote them to the design of
   record. This rides R4a′'s branch, which builds the libc line.
+
+## 2026-10-05 — R4a: sabotage ids renumbered (S478-S480 → S510-S512)
+
+- START-SET (D148) reserved S478-S504, and the manifest lane had taken
+  S478-S480 off main's highest. Renumbered to S510-S512 from the kit's
+  block S510-S529, which main assigned. Solo mech re-runs: all three
+  DETECTED, reach ok, 0 anomalies.
+- RULE from main: sabotage ids AND abi numbers serialize through the
+  pcrec manager. The kit's next free id is S513, and its block ends at
+  S529; ask main for the next block. Never take "main's highest + 1"
+  again; a reservation in a design doc does not show in the highest id.

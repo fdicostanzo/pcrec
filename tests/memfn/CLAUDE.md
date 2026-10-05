@@ -70,9 +70,9 @@ land here too.
 
 ## Sabotage rows
 
-- S478: a `memchr(` text planted in an unlisted function trips rule 1.
-- S479: the PRE row goes stale and trips rule 4.
-- S480: deleting a row trips the floor.
+- S510: a `memchr(` text planted in an unlisted function trips rule 1.
+- S511: the PRE row goes stale and trips rule 4.
+- S512: deleting a row trips the floor.
 
 All three are on arm `memfnmanifest`. See
 `docs/dev/lanes/memfnmanifest_report.md` §4 for the transcripts.
