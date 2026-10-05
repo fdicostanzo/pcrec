@@ -848,6 +848,14 @@ Numbering continues from isa_evaluation.md's Q7-Q11.
     stands on its own as BOTH a library and a "bespoke functions"
     generator, pcrec's output stays self-contained and specialized, and
     no search gets a second scalar spelling.
+
+    **[rev2] RULED (Frank, 2026-10-05): yes, with K0.** The kit owns
+    K0-K3. pcrec owns selection through ONE arch-blind row per table,
+    plus operands, hook text, its own rows' price formulas and the opaque
+    token. Linux confirmed the K2 premise (linux_results.md §6.3: T-C's
+    descriptor kernel is the hand kernel on x86 under gcc and clang).
+    **Recommendation for what remains:** adopt §7 as the design of record
+    for K0.
 13. **Q13, where the kit lives first.** **Recommendation:** in-tree, as a
     zero-dependency top-level subtree (`memfn/`, on `analyze/`'s
     precedent: it links nothing from `src/`, and `src/` reads it only
@@ -857,11 +865,20 @@ Numbering continues from isa_evaluation.md's Q7-Q11.
     unextended until then. pcrec's emitter then reads the in-tree copy.
     After extraction it reads a pinned vendor copy under `third_party/`,
     with PROVENANCE naming the derived artifacts.
+
+    **[rev2]** Unchanged, plus the calibration data: `memfn/cal/` in-tree
+    (§7.7). After extraction, the vendored copy carries `prices.inc` and
+    each arm's PROVENANCE.md. A recalibration then arrives as a vendor
+    bump (Q20).
 14. **Q14, the kit's licence.** **Recommendation:** K1's injectable text
     under 0BSD, and K2/K3 under MIT with D145's generated-output exception
     (or all of it 0BSD). Either way its text and its output reach users'
     artifacts with no notice, under D145's list. A translated memchr is
     Unlicense-derived and compatible with both.
+
+    **[rev2]** Unchanged. The calibration data never reaches an artifact.
+    Only the chosen kernel's text and its opaque `kernel_id` stamp do. So
+    the data takes the kit's own licence and needs no output exception.
 15. **Q15, the deny-bit budget.** 45 of 64 bits are taken. **Recommendation:**
     - one pcrec bit per FAMILY: `-fno-vec-scan` (`SCAN_ROWS` rows 1-3 at
       PF/PRE/OFS/SETREST), `-fno-vec-skip` (the same rows at the in-loop
@@ -875,6 +892,22 @@ Numbering continues from isa_evaluation.md's Q7-Q11.
     D144 item 4 ("every optimization its own deny") is met at the
     granularity the batch-gate triage uses: a family flips, then the
     value option bisects within it.
+
+    **[rev2] Revised: three bits, named for budgets and kernel class,
+    never for an ISA.**
+    - `-fno-kit-scan` covers the `kit` row at budget-1 sites (PF, PRE,
+      OFS, SETREST, and T6 where it verifies for a prefilter).
+    - `-fno-kit-loop` covers the `kit` row at budget-2 sites (STAY, EDGE,
+      VMSPAN, and T6 inside the match).
+    - `-fno-kit-native` limits quotes to portable-class kernels. That is
+      SWAR's D122 addendum 3 line and the bench's SIMD-off testee.
+
+    The first two are three-valued (deny/auto/force, option_sets.md
+    §2.4a), which gives D46's forceable half. `--kit-deny=` (rev 1's
+    `--memfn-deny=`) and `--kit-force=` pass kernel IDs through unparsed.
+    `--isa=TOKEN` is the one value axis. Bits used: 46 of 64 at this pin
+    (0-45), with k82hand's design taking 46. **Recommendation:** the three
+    bits.
 16. **Q16, ladders in un-declared builds.** Without `--isa`, a vector row
     emits a two-arm `#if` (vector / pcrec's next scalar row). That adds
     source bytes under D84's caps and the dial's size term. **Recommendation:**
@@ -884,6 +917,15 @@ Numbering continues from isa_evaluation.md's Q7-Q11.
     already exists, `[ART-SIZE.1b]`), and make "vector rows only under a
     declared `--isa`" a row predicate if the cost proves material. The
     rows absorb either answer.
+
+    **[rev2] Dissolved.** A ladder's bytes are in the quote's exact
+    `code_bytes` (§7.4). So D84's caps, the dial's size-leaning positions
+    (the row's bytes clause, §7.5) and the size log all see them with no
+    pcrec rule and no `--isa`-only predicate. Linux's one finding for
+    this question (an AVX2 row must keep the SSE2 16-B tier, else 8-16 ns
+    against 2-4 ns at 16 B) is a K2 composition rule, and it shows up in
+    the AVX2 quote's own price. **Recommendation:** close Q16. The
+    corpus-bytes measurement at R4c stays, as a census.
 17. **Q17, promoting the seven non-table sites (§2.4).** **Recommendation:**
     each site is promoted to ask `SCAN_ROWS` only when its first
     non-scalar row lands, byte-identically (implement-then-replace), never
@@ -894,6 +936,69 @@ Numbering continues from isa_evaluation.md's Q7-Q11.
     - §2.4(b)'s first half, the stay set through T4, is D139's own
       argument one site over. Recommend filing it as a `[CLS-TREE]`
       follow-up row.
+
+    **[rev2]** Unchanged. One addition: §2.4(e)'s fix should read the
+    chosen `SCAN_ROWS` row's price CLASS (does a hit restart a call?),
+    not its name. The `kit` row's per-hit price makes that class a
+    property of the quote.
+
+18. **[rev2] Q18, the default token.** Should the default be `portable`,
+    fixed, never detected from the build box? Its answer is one quote
+    block per owned baseline arm (x86-64-v1, armv8-a), and the kit text
+    is a ladder whose `#else` is pcrec's next row. **Recommendation:**
+    yes. Detection would make the emitted program depend on the machine
+    that ran `make`. [XARCH] measured 0 movers over 2,925 rows on two
+    boxes, and `litscan_k82b.md` §1.3 already declined build-time
+    calibration on the same ground.
+19. **[rev2] Q19, the Mac as the armv8-a calibration box.** D144
+    addendum 1 calls Mac timings directional. **Recommendation:** admit
+    the Mac as armv8-a's calibration box, under three conditions:
+    - calibration's own protocol: N ≥ 5 loops of ≥ 50 ms, min and
+      median, the harness's loop subtracted, in a quiet window;
+    - pcrec reads only the pessimistic ends of the spreads (kit median
+      against reference min), so noise makes the row decline, never
+      wrongly select;
+    - C7's ratio-invariance check passes on that arm.
+
+    The verdict-making timings of D144 addendum 1 stay Linux-only. A
+    calibration is not a verdict: C3 on the Mac would be. Without this
+    ruling, armv8-a is UNPRICED and `portable` prices its x86 arm alone.
+20. **[rev2] Q20, recalibration governance.** A new calibration run
+    moves no kit text and no layout, so it is not an `abi` event. It can
+    still move selections. **Recommendation:** a recalibration lands as
+    one change containing:
+    - the raw transcript;
+    - the regenerated `prices.tsv`/`prices.inc` (`generate.py --check`
+      green);
+    - a SELECTION-DIFF census: every corpus and bench site whose chosen
+      row or kernel moves, by ID (the movers-by-ID discipline every
+      recent abi landing used);
+    - C3 on the movers.
+
+    It is accepted like an alpha (D144). Prices are never hand-edited.
+    D103's ruled-diff governance does not apply: it governs a pinned
+    policy table, and these are measurements.
+21. **[rev2] Q21, the route folded into the token.** **Recommendation:**
+    yes, and withdraw the designed `--isa-route` axis. The kit's token
+    grammar spells both routes (`x86-64-v3` for route A, `x86-64-v3+cc`
+    for route M with the `#error` floor; the spelling is the kit's). This
+    removes option_sets.md constraint row 6 with it.
+22. **[rev2] Q22, whose libc prices pcrec's libc rows.** `LIBC_*` is the
+    calibration box's libc (glibc 2.43 for x86 arms; libSystem for
+    armv8-a). A consumer on musl inherits decisions priced on glibc.
+    **Recommendation:** accept and document it in `docs/spec/` at R4c. A
+    platform-qualified token (`x86-64-v1/musl`) is the general form, to be
+    built only for a measured customer (D77).
+23. **[rev2] Q23, K0 against the K82 ruling.** Frank parked K82's
+    expected-cost model for simplicity. K0 is also a cost comparison, but
+    it needs no rates: no call span W, no density prior and no bundle.
+    It needs only proven bounds and measured machine terms. The dominance
+    rule reads the sign over the whole box, so it can only decline where
+    a modelled expectation might have admitted. **Recommendation:** K0
+    never requires a findings bundle. A bundle may only NARROW the
+    density interval. If K82's model is ever unparked, its `ps` terms
+    read `mf_ref` instead of adding `limits.def` rows, so the house
+    keeps one calibration source.
 
 ---
 
