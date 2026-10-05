@@ -31,7 +31,8 @@ current state, never a history (the history is `journal.md`).
    for licences, D76/D94 for the abi ritual, D80 for the spec).
 3. `memfn/docs/requests.md` (open items without a `done:` in
    `responses.md`), then the tail of `memfn/docs/journal.md`.
-4. `docs/design/memfn/integration.md` — §R4.2 first, then the sections
+4. `docs/design/memfn/integration.md` — §R4.3 first (the rulings), then §L
+   (the layers), then the sections
    your request names (§14 the contract, §15 the site shapes, §22 the
    build order).
 5. `docs/dev/lanes/BOILERPLATE.md` — box facts, process rules,

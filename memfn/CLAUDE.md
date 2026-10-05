@@ -1,10 +1,17 @@
 # memfn/ — pcrec-memory-functions, the in-tree kit
 
-`[MEMFN]` (docs/dev/plan.md). Frank's rulings 2026-10-05: D146 (the kit
-is a DELEGATE, not a price market), D147 (layers), Q35/Q36 (the
-integration.md §8+§14 contract is the design of record; the kit lives
-IN-TREE here). The design of record is `docs/design/memfn/integration.md`
-(rev 4.2); this file is the working agreement for the subtree.
+`[MEMFN]` (docs/dev/plan.md). Frank's rulings 2026-10-05:
+- D146: the kit is a DELEGATE, not a price market;
+- D147: layers;
+- D147 addenda 1-7:
+  - Q35-Q42 and Q50 ruled;
+  - ONE SIMD switch, OFF by default;
+  - every search site migrates, under a checked manifest;
+  - Q51/Q52 rejected.
+
+The design of record is `docs/design/memfn/integration.md` (rev 4.3;
+read its §R4.3 first). This file is the working agreement for the
+subtree.
 
 **Status: no code yet.** This directory is the skeleton set up by lane
 memfnsetup. Nothing here is built, linked or tested by pcrec's `make`.
@@ -29,15 +36,30 @@ first; K3 second.
 
 ## The layers (D147) — binding on every kit change
 
+- **ONE SIMD switch** (D147 addenda 6-7): `-fno-memfn-simd` /
+  `-fmemfn-simd`, axis `memfn-simd`, OFF BY DEFAULT until the SIMD hold
+  (D91/D119) lifts. Turning it on by default is its own ruled event.
+  - **OFF:** the artifact is PORTABLE C (plain C, SWAR on ordinary
+    integers, libc calls, loop-free forms) and runs on any target.
+  - **ON:** the artifact is hardware-optimized for a specific CPU and
+    MAY NOT EXECUTE ELSEWHERE.
+  - What sits inside ON is THIS KIT's per-site choice: forms, ISA
+    levels, a run-time CASCADE between levels (K-6: only where it beats
+    the single-level form, and named with its dispatch cost:
+    `__builtin_cpu_supports` is 0.4-0.6 ns on Linux x86 and wrong on
+    Darwin), and the fallback.
+  - pcrec sends one bit (`MF_P_PORTABLE_ONLY` when the switch is off)
+    and nothing else. There is no `portable`/`native`/`baseline`
+    profile and no `--isa=` axis.
 - **The scalar layer** is pcrec's algorithm (what is searched, the plan,
   handoffs, fused predicates) plus the kit's SCALAR ARMS: every form the
-  kit renders when `memfn-native` is not taken (portable text: scalar,
-  SWAR, libc, loop-free). The scalar arms are LIVE, improvable code,
-  forever. A scalar-layer change is accepted on SIMD-OFF measurements.
-- **The SIMD layer** is the kit's native (ISA) arms. It must beat the
-  CURRENT best scalar layer on its own merits — never an old or frozen
-  scalar. A scalar improvement re-opens the comparison: the SIMD form is
-  re-measured against it.
+  kit renders with the switch OFF. SWAR and libc calls are scalar layer
+  (Q50). The scalar arms are LIVE, improvable code, forever. A
+  scalar-layer change is accepted on SIMD-OFF measurements.
+- **The SIMD layer** is what the kit adds with the switch ON. It must
+  beat the CURRENT best scalar layer on its own merits, never an old
+  or frozen scalar. A scalar improvement re-opens the comparison: the
+  SIMD form is re-measured against it.
 - **Every acceptance reading** for a change that touches searching
   reports BOTH layers: SIMD-off and SIMD-on.
 - **No frozen baseline.** pcrec's pre-migration text is a per-migration-
@@ -55,7 +77,8 @@ first; K3 second.
 |---|---|
 | WHICH sites are delegated (`DELEG_SITES`, by semantic operation, never by cost) | the code for each delegated site |
 | the predicate's facts (PATFACTS' territory: offsets, byte sets, runs, spans, anchoring) and density hints | the plan over those facts (from M5), the form, the fallback |
-| the profile request (`memfn-native` taken or not) | what `portable` and `native` mean in code |
+| the SIMD switch's state (`-fmemfn-simd` or not) | what SIMD-on means in code: forms, levels, cascades, fallback |
+| the CHECKED SITE MANIFEST (`tests/memfn/site_manifest.tsv`, C17): every emitted search site `delegated` or `pending` | the delegated sites' code; the `MEMFN_FORMS`/`MEMFN_LIBC` stamp values for them |
 | the hooks' text (subject, bounds, `on_miss`, escapers, table names) | everything between the hooks |
 | the guard: pcrec's own timing, kit change on vs its deny, both layers | its own exhaustive tests (G2) and its own timed control (K-5) |
 
@@ -63,6 +86,20 @@ pcrec's sources reach the kit only through `memfn/include/memfn.h`. The
 kit links nothing from `src/`, `cli/` or `lib/`. Generated artifacts
 never depend on the kit: what reaches them is TEXT, so self-containment
 holds.
+
+**Every search site migrates here** (Q42 reversed: completeness, a
+ruled D77 exception). Each step is zero-mover. The memchr ratchet
+(C12) ends at 0 outside the kit, and C17 at 0 pending. A kit change
+that MOVES bytes still needs its measured trigger and G1 alpha at both
+layers.
+
+**The stamps** (Q39, addenda 3 and 6). Both go on every artifact:
+- `<PREFIX>_MEMFN_FORMS` is `none` iff the artifact is identical to its
+  SIMD-off compile, else the forms used, with carried levels;
+- `<PREFIX>_MEMFN_LIBC` lists the libc functions the search code calls
+  (spelling: Q53).
+
+Neither carries a kit version. Both are born in R4a′.
 
 **A kit byte move is a pcrec abi event, in the SAME commit.** A kit
 change that moves any byte pcrec emits lands with pcrec's abi bump, its
@@ -123,6 +160,7 @@ pcrec emitter are kit work here, not edits under `src/gen/`.
 - `LICENSE` — 0BSD.
 - `docs/` — the ledger pair, the journal, the session wake template
   (its own CLAUDE.md).
-- `include/` — `memfn.h`, the one header pcrec includes (planned, R4a).
+- `include/` — `memfn.h`, the one header pcrec includes (planned, R4a,
+  born with the site manifest and C17, every row `pending`).
 - `src/` — K1 primitives, K2 composer, the scalar arms (planned).
 - `tests/` — G2, the kit's own tests (planned).

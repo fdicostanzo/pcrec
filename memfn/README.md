@@ -17,6 +17,11 @@ answers exactly that question, in one pass where one pass is possible.
 - **Every answer has a portable scalar form**, always present, kept as
   good as it can be on its own. Vector (ISA) forms are a layer on top
   that must beat the current scalar form to be chosen.
+- **One switch.** With SIMD off (the default today), the output is
+  portable C: plain C, SWAR and libc calls, and it runs anywhere. With
+  SIMD on, the output is tuned to a specific CPU and may not run
+  elsewhere. Which forms, which ISA levels and any run-time pick between
+  levels are this project's choice per site.
 - **Text, not a runtime.** The output is self-contained C; the code that
   uses it does not link this project.
 - **Measured, not assumed.** Every choice between forms rests on a
@@ -31,7 +36,7 @@ alone CLI and reference functions are planned for other callers.
 ## Status
 
 **No code yet.** The design of record is
-`docs/design/memfn/integration.md` in the pcrec tree. The first code
+`docs/design/memfn/integration.md` (revision 4.3) in the pcrec tree. The first code
 lands with that design's step R4a.
 
 ## Licence

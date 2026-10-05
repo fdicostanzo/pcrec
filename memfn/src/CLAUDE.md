@@ -16,8 +16,11 @@ none before it (D77). Planned contents:
   scalar forms arrive here at each migration step byte-identical to
   pcrec's pre-migration text (proved by that step's comparator), and
   from then on are ordinary, improvable kit code. They are not frozen.
-- **Native arms — the SIMD layer**, behind `-fmemfn-native` (R4e′), each
-  required to beat the current scalar arm.
+- **SIMD forms — the SIMD layer**, rendered only when the switch is on
+  (`-fmemfn-simd`, default OFF; R4e′), each required to beat the current
+  scalar arm. Their contents are this kit's per-site choice: forms, ISA
+  levels, cascades (K-6) and the fallback. A SIMD-on artifact may not
+  run on another CPU (D147 addendum 6).
 - **K3 support** for the stand-alone CLI (planned with K3).
 
 Rules: external symbols through `MF_NS` (`pcrec_mf_*`), everything else
