@@ -1279,6 +1279,24 @@ static int apply_target(const CliState *cli, const RxtTarget *t,
                     src_path, t->line, t->pcrec_raw);
             return 1;
         }
+        /* [K86] A raw `--engine=` is the SAME axis as the typed `engine`
+         * row, so the explicit CLI value wins over it, reported, whatever
+         * the spelling (option_sets.md R2). The reparse above started from
+         * the CLI's options and let the raw line overwrite them; restore the
+         * CLI's choice here. A typed `engine` row, if present, reports its
+         * own conflict below against the restored value, so this reports
+         * only when no typed row will. */
+        if (cli->opt.engine != PCREC_ENGINE_AUTO &&
+            ts.opt.engine != cli->opt.engine) {
+            if (ts.opt.engine != PCREC_ENGINE_AUTO && !t->engine)
+                cli_err("%s:%zu: target '%s': CLI --engine=%s and this "
+                        "file's `pcrec` line --engine=%s disagree; using "
+                        "the CLI's explicit choice",
+                        src_path, t->line, t->prefix,
+                        engine_name(cli->opt.engine),
+                        engine_name(ts.opt.engine));
+            ts.opt.engine = cli->opt.engine;
+        }
     }
 
     /* [DD-13b.W1.3] ONE HOME for the letter -> bit mapping
@@ -1374,11 +1392,16 @@ static int apply_target(const CliState *cli, const RxtTarget *t,
                     src_path, t->block_line, t->tune);
             return 1;
         }
+        /* [K86] Name the SOURCE of the losing value: it is the command
+         * line's only if the config's raw `pcrec` line left it as the CLI
+         * had it (a raw `--tune=` reparsed above overwrote it otherwise). */
         if (ts.opt.tune != PCREC_TUNE_BALANCED && ts.opt.tune != want)
-            cli_err("%s:%zu: target '%s': CLI --tune=%s and this "
+            cli_err("%s:%zu: target '%s': %s --tune=%s and this "
                     "file's `tune %s` disagree; using the file's value "
                     "(--tune is not the --engine exception)",
                     src_path, t->block_line, t->prefix,
+                    ts.opt.tune == cli->opt.tune ? "CLI"
+                                                 : "this file's `pcrec` line",
                     pcrec_tune_token(ts.opt.tune), t->tune);
         ts.opt.tune = want;
     }

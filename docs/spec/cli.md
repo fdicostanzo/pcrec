@@ -250,7 +250,7 @@ SEMANTIC axis, not a tuning one (`docs/spec/tuning.md` §4).
 
 **[DD-13b.W23.3]** Takes the `--pattern` VALUE as double-quoted, escaped
 text and decodes it before compiling. The vocabulary is the `.rxt`
-format's own subject vocabulary and no other — `\"` `\\` `\n` `\t` `\r`
+format's own subject vocabulary and no other — `\"` `\` `\n` `\t` `\r`
 `\f` `\v` `\xHH` — decoded by the very function that decodes a
 `pattern-esc` block, so this flag, a file operand and `--list-source`
 cannot drift into three tables that only agree today.
@@ -774,9 +774,25 @@ applies, silently) rather than a stated boundary case. No tracking
 machinery exists to tell the two apart, on the ruling's own terms: the
 substance is that an explicit NON-DEFAULT CLI choice is never silently
 overridden, and `auto` is the default. This exception applies to `engine`
-alone; every other axis `target`/`config` can set (`flags`, `encoding`,
-`budget`, `tune`, `analysis`) still follows the file-wins rule stated above
-unchanged.
+alone; the other axes `target`/`config` can set (`encoding`, `budget`,
+`tune`, `analysis`) follow the file-wins rule stated above, and `flags` is
+not file-wins at all (next paragraph).
+
+**The exception does not depend on the spelling** ([K86], option_sets.md
+R2). A config's RAW `pcrec --engine=vm` line is the same axis as the typed
+`engine vm` row: an explicit CLI `--engine=` wins over it and the conflict
+is reported ("CLI --engine=dfa and this file's `pcrec` line --engine=vm
+disagree; using the CLI's explicit choice"), exactly as for the typed row.
+Within a target the typed row still overrides the raw line.
+
+**`flags` letters and raw `-f` bits UNION across sources; they are not
+file-wins.** A `.rxt` `flags` line (or a `pcrec -f...`/`-i` raw line) adds
+its bits to the command line's; nothing a flag set on the other side is
+discarded (measured: option_sets_measurements/out/cross_source.txt, B1-B4,
+A3-A8). Bits that contradict each other — an explicit `-fprefilter` on one
+side and `-fno-prefilter` on the other — are refused (A1, A2), never
+resolved by precedence. (Between a config and the pattern BLOCK's own
+`flags`, the block still replaces: more-specific-wins, as above.)
 
 **`tune` IS NOT A SECOND EXCEPTION** (D93 addendum, Frank's ruling
 2026-09-16 — `docs/spec/tuning.md` §5.1 states the option in full). The
@@ -797,6 +813,11 @@ pcrec: FILE:LINE: target 'PREFIX': CLI --tune=min-size and this file's
 `tune speed` disagree; using the file's value (--tune is not the
 --engine exception)
 ```
+
+The first words name the SOURCE of the losing value: `CLI` when it was
+typed on the command line, "this file's `pcrec` line" when a config's raw
+`--tune=` supplied it ([K86]; before it, a raw line was reported as
+`CLI`).
 
 **There is no `--force-tune`.** A diagnostic advertising a flag no
 section of this document defines would be worse than one naming no
