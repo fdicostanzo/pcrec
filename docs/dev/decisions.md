@@ -9086,3 +9086,10 @@ Frank gave this direction to the kit session (memfn `responses.md` N-1, on the R
 - **Q-R5:** the VM hat ships the table-scan form only at stage 2; the memchr form measured ×0.6 at 80% density. A MASS-based admission is filed behind the dense guard cells.
 - **Q-R6:** `<PREFIX>_VM_START_SCAN` goes on EVERY artifact of both engine families, `none` where n/a, per the K82 Q3 precedent.
 - **Still owed before stage 0:** lane ssedge's edge-case cells and mutation-detection table (addendum 1).
+
+**D147 addendum 10 (Frank, 2026-10-05): [MEMFN] Q53-Q55 are ruled as the kit recommended** (integration.md rev 4.6 §23; light panel r5, `docs/dev/reviews/2026-10-05-r5-memfn-rev45.md`):
+- **Q53 YES:** a separate `<PREFIX>_MEMFN_LIBC` line. It is a source-level inventory of the whole artifact's libc calls, excluding fixed-size idiom `memcpy` loads. Its control derives the names from the compile (`nm -u` of an `-O0 -fno-builtin` object) and shares no source with the line. It is born in R4a′.
+- **Q54 YES:** N7 is listed `pending` in the site manifest, with three corrections: the cite is D58/DD-12, not D23; the definition widens to "search or span-compare site"; C17 scans `src/enc/`. M7 bumps MF_VOCAB.
+- **Q55 ACCEPTED:** `<PREFIX>_MEMFN_FORMS` is constant `none` on every default artifact until R4f. Attribution is written down outside the artifact: the bench's recorded build recipe; C11's FORMS half UNREACHED until the first SIMD-on form; R4d's D80 spec hunk (panel item A3); DFA_PREFILTER_OFFSETS already shows M5′'s offsets. An always-present `<PREFIX>_MEMFN_OPTS` line is FILED, not built.
+- **Panel r5's blocker is fixed in rev 4.6:** on no-DFA routes the set-leads lead is REQUIRED, being K65's only test of that member; it is OPTIONAL iff `pcrec_artifact_has_dfa_scan`.
+- **Next:** R-3 (R4a, then R4a′) is filed to the kit.
