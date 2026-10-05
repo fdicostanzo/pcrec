@@ -53,10 +53,10 @@ main clone. Every run listed below ended `unexpected: 0, anomalies: 0`.
 | S305 | A | The probe grepped `!memcmp(subject + scan_position, "xyz", 3)`. rsform A1 (abi 56) respells the run compare as overlapping `rx_w2` words. The probe now greps the run arm's ADVANCE, `{ scan_position += 3; goto rx_L`, which no compare respelling moves and the per-byte arm never emits. | 4688b81f | Linux: DETECTED — reach ok, irlist 2fail/153pass |
 | S294 | B | At c4c70f2c the anchor `if (!rate) return rightmost;` was DEAD. With the plant on c4c70f2c and on 9f13b8d6, `é@`/`Москва` under utf8 stamp identically to clean. Bisected: the plant went dead at [FIND-TIE] 72e3ae41. k82fix re-anchored the row on main to PICK's tie (2026-10-04, after the pin), so main needed no edit. | none (main already fixed) | Linux @4688b81f: DETECTED — reach ok, prechecks 29fail/316pass, corpus 0/38748 (structural row, as designed) |
 | S297 | C | `[facts-link]` joined `nm -u` WHOLE LINES. GNU nm prints `                 U name`, and Mach-O prints a bare `_name`. On ELF the join was always empty, so the assertion passed vacuously on Linux; it was only ever measured on darwin. At c4c70f2c on the Mac the same plant IS detected (1fail/7pass). Fix in `tests/codegen/run_facts_checks.sh`: read the last field, plus a new control (see below). | 4688b81f, 71bb1f4a (figure) | Linux @4688b81f: DETECTED — facts 1fail/7pass. Mac @a4c752a2 (fixed script): DETECTED 1fail/7pass. Clean tree: 8pass/0fail, "27 accessor reference(s) joined" |
-| S220 | D | UNDETECTED on Linux at c4c70f2c and 4688b81f (searchpinned 0fail/17pass, corpus 0/38748). The 2026-09-29 tri220 flip to DETECTED was a CLEAN-TREE RED. Rebuilt 61cbc894 WITHOUT the plant: run_search_pinned.sh is 1fail/15pass, the same §9 "-fprefilter force axis pinned population 14 < 20 floor" failure that was scored as detection. tri220's reasoned mechanism is nonetheless real, and is now MEASURED: a one-character lookahead never needs seeding, so P3 never runs and P2 is the only guard. Under the plant, `(?!a)` and `x*(?!a)` stamp pinned and answer "a" as `0 1`; python re and the clean tree give `1 1`. No .rxt cell has that shape. Fix: both patterns are added as run_search_pinned.sh §1 named witnesses (stamp + mechanism), and the reach probe also requires `(?!a)` declined. SAB_EXPECT stays DETECTED, now on a witness. | 85b9108e | Mac @85b9108e: run_search_pinned.sh clean 17pass/0fail, plant 15pass/6fail (both witnesses). Linux solo @85b9108e: **OWED**, see below |
-| S168 | E | AFTER2 used `v.`. The site moved into `vm_emit_search_body`, where `v` is a pointer: lane/tour1 672b4cdd, 2026-09-20 (bisected). Fixed to `v->`. | 46391ae1 | Mac @46391ae1: DETECTED — codegen 10fail/320pass, recdiff 0/10. Linux: OWED |
-| S185 | E | AFTER called `ofsk_scan(f)->k`. [OPT-LITSCAN] S1 0bb87eda (2026-09-26) moved the resume line into the OfsTest emitter, where the offset is `t->scan_k`. Fixed. | 46391ae1 | Mac @71bb1f4a: DETECTED — corpus 1fail/97pass, offsetskip 7fail/23pass. Linux: OWED |
-| S222 | E | AFTER used `state_acc_any(st)`, `UPC_N` and `upc_emit_live`. [UCP] U2 601f2e5e (2026-09-29) moved to per-machine `natoms` and a 2-argument `state_acc_any`. The fork now walks `u < fd->natoms`, like P3's own loop. Intent unchanged. | 46391ae1 | Mac @71bb1f4a: DETECTED — pop 16 (want ≥ 12), reach ok, searchpinned 5fail/10pass. Linux: OWED |
+| S220 | D | UNDETECTED on Linux at c4c70f2c and 4688b81f (searchpinned 0fail/17pass, corpus 0/38748). The 2026-09-29 tri220 flip to DETECTED was a CLEAN-TREE RED. Rebuilt 61cbc894 WITHOUT the plant: run_search_pinned.sh is 1fail/15pass, the same §9 "-fprefilter force axis pinned population 14 < 20 floor" failure that was scored as detection. tri220's reasoned mechanism is nonetheless real, and is now MEASURED: a one-character lookahead never needs seeding, so P3 never runs and P2 is the only guard. Under the plant, `(?!a)` and `x*(?!a)` stamp pinned and answer "a" as `0 1`; python re and the clean tree give `1 1`. No .rxt cell has that shape. Fix: both patterns are added as run_search_pinned.sh §1 named witnesses (stamp + mechanism), and the reach probe also requires `(?!a)` declined. SAB_EXPECT stays DETECTED, now on a witness. | 85b9108e | Mac @85b9108e: run_search_pinned.sh clean 17pass/0fail, plant 15pass/6fail (both witnesses). Linux solo @85b9108e: DETECTED, searchpinned 6fail/15pass |
+| S168 | E | AFTER2 used `v.`. The site moved into `vm_emit_search_body`, where `v` is a pointer: lane/tour1 672b4cdd, 2026-09-20 (bisected). Fixed to `v->`. | 46391ae1 | Mac @46391ae1: DETECTED — codegen 10fail/320pass, recdiff 0/10. Linux @71bb1f4a: DETECTED, same figures |
+| S185 | E | AFTER called `ofsk_scan(f)->k`. [OPT-LITSCAN] S1 0bb87eda (2026-09-26) moved the resume line into the OfsTest emitter, where the offset is `t->scan_k`. Fixed. | 46391ae1 | Mac @71bb1f4a: DETECTED — corpus 1fail/97pass, offsetskip 7fail/23pass. Linux @71bb1f4a: DETECTED, same figures |
+| S222 | E | AFTER used `state_acc_any(st)`, `UPC_N` and `upc_emit_live`. [UCP] U2 601f2e5e (2026-09-29) moved to per-machine `natoms` and a 2-argument `state_acc_any`. The fork now walks `u < fd->natoms`, like P3's own loop. Intent unchanged. | 46391ae1 | Mac @71bb1f4a: DETECTED — pop 16 (want ≥ 12), reach ok, searchpinned 5fail/10pass. Linux @71bb1f4a: DETECTED, same figures |
 | S150 S151 S152 S153 S160 S178 S219 S284 S287 S-U6 S-U9 | F | Each row's own `SAB_EXPECT=UNDETECTED` with a SAB_DOC_FIGURE naming what would close it. The 08-30 battery's 10 standing rows are the subset S150-S153, S160, S178, …; the rest were declared at their own landings. | — | not re-run (expected) |
 | S121 | F | Declared UNREACHED (EXPECTED): the hazard is structurally unreachable (M5.0 stage 3 re-measure). | — | not re-run (expected) |
 
@@ -96,21 +96,30 @@ The lesson matches learnings §3: rows re-aimed or flipped by solo runs inside
 other lanes were never re-checked by a full run for five weeks, and one
 "detection" was never A/B'd against its own clean tree.
 
-## Owed (validation in flight on Linux, detached)
+## Linux validation (COMPLETE, 2026-10-05 20:23Z)
 
-- `scratch_lx/r1mtriage/chain2.log`, solo S168, S185 and S222 at 71bb1f4a.
-  It was running at handback. Each line reads `<ID>_RC=<n> … == mech run
-  COMPLETE …`, then `ALL_DONE`.
-- `scratch_lx/r1mtriage_lxq3.sh` starts after chain2's ALL_DONE. It moves the
-  clone to 85b9108e and builds it. It then writes
-  `scratch_lx/r1mtriage/facts_control.log`:
-  - the fixed `run_facts_checks.sh` (expect `[facts-link]` PASS with
-    "N accessor reference(s) joined", N > 0);
-  - the OLD whole-line parse (expect FAIL "the nm -u parse joins nothing").
+All runs used the standalone clone `scratch_lx/r1mtriage_wt`. The logs are
+in `scratch_lx/r1mtriage/`: `chain.log`, `chain2.log`, `chain3.log`,
+`mech_<ID>.log` and `facts_control.log`. Every run below completed with
+`unexpected: 0, anomalies: 0`.
 
-  Finally it writes `chain3.log` with solo S220 and S297 at 85b9108e (expect
-  DETECTED, unexpected 0), then `ALL_DONE`.
-- Per-row logs: `scratch_lx/r1mtriage/mech_<ID>.log`.
+| row | commit | result |
+|---|---|---|
+| S168 | 71bb1f4a | DETECTED (codegen 10fail/320pass) |
+| S185 | 71bb1f4a | DETECTED (corpus 1fail/97pass, offsetskip 7fail/23pass) |
+| S222 | 71bb1f4a | DETECTED (pop 16 ≥ 12, reach ok, searchpinned 5fail/10pass) |
+| S220 | 85b9108e | DETECTED (pop 3 ≥ 3, reach ok, searchpinned 6fail/15pass, corpus 0/38748) |
+| S297 | 85b9108e | DETECTED (facts 1fail/7pass) |
+
+The `[facts-link]` control was checked on Linux against the clone's own
+build at 85b9108e, in both directions:
+
+- **Fixed script:** PASS, "27 accessor reference(s) joined", 8 checks
+  passed, 0 failed.
+- **Old whole-line parse** (one `sed` removing the `awk '{ print $NF }'`
+  stage): FAIL "the nm -u parse joins nothing, so the link assertion is
+  vacuous", 7 passed, 1 failed. The control fires on exactly the defect it
+  guards.
 
 ## Needs a ruling / follow-ups
 
