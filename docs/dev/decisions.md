@@ -8989,3 +8989,10 @@ This generalizes D91 (scalar-first, "the SIMD crutch must not hide inefficiencie
 - Folds into integration.md at its next revision.
 
 **D147 addendum 3 (Frank, 2026-10-05):** [MEMFN] Q39 YES. `<PREFIX>_MEMFN_FORMS` goes on every artifact: the forms used, or `none` when the artifact matches its SIMD-off compile, plus the carried levels if a site cascades. No kit version in it. It lands as its own abi event (R4a′) before M1's replace, with the byte-count re-pins.
+
+**D147 addendum 4 (Frank, 2026-10-05):** [MEMFN] Q40 YES, as revised by D147.
+- At M5 the scan planner (prefix_k's model) moves into the kit as LIVE scalar-layer code. A frozen copy serves only as M5's byte-identity comparator.
+- pcrec keeps one semantic row: a necessary byte set exists beyond offset 0.
+- The kit plans the scan, and the reseed becomes unconditional.
+- `<PREFIX>_DFA_PREFILTER` reports pcrec's row; `MEMFN_FORMS` shows the kit's plan.
+- An abi event, with a movers census and a bench note.
