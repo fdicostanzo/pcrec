@@ -106,7 +106,31 @@ BASE `25319ae6` (abi 60) vs NEW (abi 61) vs DENY = NEW `-fno-req-handoff`,
 with BASE's abi digit and NEW's `RX_REQ_HANDOFF` line normalized (and the
 size-cap retry reasons, which quote a byte count that includes that line).
 
-TBD-MANIFEST
+Two runs (`docs/dev/optloop/s4/k82hbuild/k82h_movers.log`). Run 1 is the
+design's own population (the corpus before this lane's `handoff.rxt`); run 2
+is the abi-61 binary over the corpus WITH it.
+
+| population (run 1) | artifact-configs | moved = predicted | off-diagonal | K > 0 | routes (unanch / attempt / hybrid) | deny identical to BASE |
+|---|---|---|---|---|---|---|
+| bench auto | 47 (49 rows) | 47 | 0 | 14 | 39 / 2 / 6 | yes |
+| bench auto-nocaps | 47 | 47 | 0 | 14 | 42 / 2 / 3 | yes |
+| bench vm, vm-nocaps | 0 | 0 | 0 | — | — | yes |
+| corpus auto | 160 (209 rows) | 160 | 0 | 27 | 121 / 6 / 33 | yes |
+| corpus `--no-captures` | 160 | 160 | 0 | 27 | 144 / 7 / 9 | yes |
+| corpus `--engine=vm -fprefilter` | 160 | 160 | 0 | 27 | 0 / 0 / 160 | yes |
+| corpus vm | 0 | 0 | 0 | — | — | yes |
+
+Every number is the design's §3.1/§3.1a census, reproduced on the built
+compiler. Every hybrid mover reads `RX_VM_PREFILTER_LANG "exact"`, so Q10's
+decline and the allowance it removes are both measured empty. The deny arm is
+identical to BASE on all 1,255 bench and 12,895 corpus artifact-configs that
+compile, and `req_whole_run` never moves. Run 2 adds `handoff.rxt`'s own
+movers (corpus auto 182, 44 K > 0) and is otherwise the same: 0
+off-diagonal, deny 13,007/13,007.
+
+The bench K histogram (auto): 0 ×33, 1, 2, 3 ×2, 4 ×2, 5, 9 ×3, 23, 26, 31,
+32. The five cause-(B) cells: `mod-i`, `mod-r`, `cls-fold-pair`,
+`cls-pair-ctl` K = 0, `ci-strasse` K = 2.
 
 ## 4. abi 60 -> 61 and the readers (D76/D94, §2.3a by grep)
 
