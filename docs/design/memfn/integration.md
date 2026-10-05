@@ -1,5 +1,16 @@
 # memory-functions: R1d, THE INTEGRATION MAP AND THE COMPOSITION MODEL
 
+**REVISION 4.5 (lane `memfnr45`, 2026-10-05, from kit branch
+`lane/memfn-r45` at main 08caf4a3, design only): R-1'S LINUX VERDICT AND
+D149 FOLDED. They override anything below that conflicts.** Read §R4.5
+first. R4b is DONE and R4d's trigger is MET at SIMD-off on union-select
+(§22). The LEAD ORDER is part of the composite site's form, a kit
+per-site choice that defaults to lead first (§15.5). D149 binds every
+kit form: each unroll width, block size and cut-over is measured,
+derived or left to the compiler, or labelled in place as an unmeasured
+default (§8.6 K-7). **This revision rules nothing: the open questions are
+still Q53-Q55 only.** Changed passages carry `[rev4.5]` in place.
+
 **REVISION 4.4 (lane `memfnr44`, 2026-10-05, from main 3b04f1ef, design
 only): D147 ADDENDA 8-9 FOLDED. They override anything below that
 conflicts.** Read §R4.4 first. Q43 is ruled (aarch64 SIMD-on forms wait
@@ -97,6 +108,152 @@ exception), and the tables themselves (§1).
 
 ---
 
+## R4.5. Revision 4.5: R-1's Linux verdict and D149 folded `[rev4.5]`
+
+(Top-level, like §R4.4. It sits first because it overrides §15.5's
+description of the composite site's order and §22's R4b and R4d rows.)
+
+**The inputs.** Request R-2 item 1 (`memfn/docs/requests.md`). Three:
+R-1's findings (`docs/dev/lanes/memfnr4b_report.md` §9, the Linux
+verdict, and §6, the §15.5 proposal), D149 (`docs/dev/decisions.md`),
+and the stale facts rev 4.4 left (the abi number, wait 2's status).
+**This revision rules nothing.** Q53-Q55 stay open. Where the report
+says "must" or "default" about a kit form, it is the kit's own choice
+under D146, recorded here, not a pcrec ruling.
+
+### R4.5.0 Each input, and where it now lives
+
+| input | what it says | where it now lives |
+|---|---|---|
+| R-1 §9, lead order | The lead order (lead first, or run first) is part of the composite site's form. userpass: run-first `swar` LOSES everywhere (the lead rejects first), lead-first `swlf` is null | §15.5 (new subsection, the closing paragraph rewritten); §R4.5.1 |
+| R-1 §9, a future fact | A pcrec "lead can reject" density fact would let the kit choose run-first. Not built | §15.5; §R4.5.1; §22 "Filed, not scheduled" |
+| R-1 §9, regime boundary | The portable fused form scans at ~0.18 ns/B and loses where `emit` pays few stops: mod-i gate 1m (+2.41 ns, floor 0.52), cls-n-uc gate 64k/256k | §15.5 (new subsection); §R4.5.1 |
+| R-1 §9, R4b | DONE. Main 08caf4a3, merge 348c0a49, Linux `R4B-DONE status=0` | §22 R4b (both blocks), §21.1, §16 |
+| R-1 §9, R4d's trigger | MET at SIMD-off on union-select: `swar` beats `emit` past the floor in both regimes, 1.4-2.0x | §22 R4d (both blocks); §R4.5.2 |
+| R-1 §9, R4e′ | At AVX2, `ffl` loses to `swar` by +0.36/+0.64 ns at 16 B (userpass pc16, cls-n-uc pc16). Short spans belong to the scalar form inside the SIMD-on cascade or short path | §22 R4e′; §8.6 K-6 |
+| R-1 §9, K85 | The fused forms remove the find-all dense-text loss and beat the `-fno-req-set-lead` floor (1m: `swlf` -160,932 ns, `ffl` AVX2 -306,068 ns, against nosl). Single gate calls on dense text still lose at SIMD-off | §15.5; §16 item 2; §19 row 5; §21.1; §22 R4d; §R4.5.1 |
+| D149 | Every unroll width, block size, cut-over and threshold in a kit form is MEASURED, DERIVED or LEFT TO THE COMPILER, or labelled in place as an unmeasured default | §8.6 (K-7); §22 R4d; `memfn/CLAUDE.md` "The layers"; §R4.5.3 |
+| stale abi | "the next number at landing (61 at main 7f94b0cd)" | §R4.3.3 and §22 R4a′ (annotated); §R4.5.2 |
+
+### R4.5.1 What changed in the design
+
+**1. The lead order is part of the composite site's form (§15.5).**
+- The order was a hint pcrec's baseline honours and a non-baseline arm
+  "may revise (lead and window fused into one pass)". That sentence
+  made fusing the lead into the run pass sound like K85's general
+  answer. R-1 measured otherwise.
+- Where the lead rejects first (userpass: `=` is absent from the
+  capability text), the run-first fused form loses at every length.
+  Lead-first is null there.
+- Where the lead never rejects (cls-n-uc on dense text), the cure for
+  K85 comes from the fused RUN filter, not from fusing the lead.
+- So the kit's per-site choice has two parts: the form of the run pass,
+  and the lead order. The default is lead first when a lead is present.
+  Run-first is chosen only on evidence the site carries.
+- The evidence would be a pcrec "lead can reject" density fact (K85's
+  suspected cause, `memfnr4b_report.md` §6 item 2). It is a possible
+  future fact. It is NOT built (D77). Its trigger is a measured cell
+  where run-first wins and lead-first does not.
+- Bit 45 still removes part 0, so a site with no lead has no order.
+
+**2. The portable fused form has a regime boundary (§15.5).**
+- Its raw scan rate is ~0.18 ns/B (union-select 1m, no stops).
+  `ffl`'s is ~0.04. glibc AVX2 `memchr` scans faster than `swar`.
+- It wins where the emitted gate pays per-stop costs: union-select's
+  1,431 `c` stops per 64 KiB, and the find-all sweeps of mod-i and K85.
+- It loses where a short distance to the first hit gives `emit` few
+  stops: mod-i gate 1m (+2.41 ns against a 0.52 floor, first hit at
+  404) and cls-n-uc gate 64k/256k (`swar` 147 ns vs 76.5 at 256k;
+  `swlf` 108).
+- That is the portable form's regime boundary, not a defect. The SIMD-off
+  form must not be selected for early-hit single gate calls on dense
+  text without the future fact above. R4d's design carries the boundary.
+
+**3. K85 (R-1 §9).** Both fused forms remove the find-all dense-text
+loss and beat the no-gate floor. The single-call gate on dense text
+still loses at SIMD-off. The general answer is the fused RUN filter with
+the lead tested first.
+
+**4. R4b is measured; R4d's trigger is MET at SIMD-off (§22).** One
+cell meets it: union-select wins every row in both regimes (gate 1m
+364,078 -> 187,022 ns; sweep 64k 16,580 -> 11,422; short 11.50 -> 5.83;
+pc1024 272 -> 195). mod-i misses it by one throughput row (gate 1m).
+R4d's form carries the lead order (item 1) and starts from the plain
+loop (item 5).
+
+**5. D149 binds every kit form (§8.6 K-7).** Every unroll width, block
+size, short-span cut-over and density or size threshold in a kit form
+is measured (its regime named), derived (from a stated quantity), or
+left to the compiler. Otherwise it is labelled in place as an
+unmeasured default: a comment where it lives, plus a line in the
+design note. The first label is R-1's `swar` 2x (16-byte) unroll
+(`docs/design/memfn/probes/twins/tb_r4b.c`, inherited from `ffl`'s 2xVW
+shape and not measured against 1x or 4x). R4d's form therefore starts
+from the plain loop, and its unroll is measured or compiler-chosen. No
+retroactive sweep: a label is a measurement's trigger, not a build
+order (D77).
+
+**6. The 16 B note for R4e′ (§22).** At AVX2, `ffl` loses to `swar`
+at 16 B by +0.64 ns (userpass pc16) and +0.36 ns (cls-n-uc pc16). Short
+spans belong to the scalar form, inside the SIMD-on cascade or short
+path (K-6). It is a form detail, not a verdict against the SIMD layer.
+At every other cell, at SSE2 and AVX2, `ffl` wins.
+
+### R4.5.2 Every passage this revision changed
+
+| section | revision 4.4 said | revision 4.5 |
+|---|---|---|
+| title block | rev 4.4 current; open Q53-Q55 | rev 4.5 current; Q53-Q55 still open; rules nothing |
+| §8.6 | K-1..K-6 | K-7 added: D149 |
+| §15.5, "Why ONE site" | the order is a hint a non-baseline arm may revise; fusing lead and window is K85's general answer | annotated; replaced by "The lead order and the regime boundary" subsection |
+| §16 item 2 and the `[rev4.3]` status | K85's re-measure OWED | annotated: measured, `k82halpha_report.md` §3 (K85 persists at +0.023..+0.036 ns/B); R-1 measured the fused forms. Whether wait 2 is MET is not ruled here |
+| §19 row 5 | the composite site's order | annotated: lead order is the kit's per-site choice |
+| §21.1 R4b bullet | R4b measured on the post-handoff build, as a plan | marked measured, with the report pointer and the regime verdicts |
+| §R4.3.3 "Its event" | abi "the next number at landing (61 at main 7f94b0cd)" | annotated: main is at abi 61 (the handoff, f116cff5), so 62 if nothing lands first; never a literal |
+| §22 (rev 4.3 block) R4a′ | "62 if nothing lands first" | marked `[rev4.5]`: current as of main 08caf4a3; never a literal |
+| §22 R4b | probe only, trigger MET, Linux alpha OWED | DONE (R-1) |
+| §22 R4d | trigger: R4b's cell | trigger MET at SIMD-off on union-select; form carries the lead order; D149 |
+| §22 R4e′ | the kit's SIMD forms, any cascade | plus the 16 B short-path note |
+| §R4.4.0 Q48 row | the trigger is a K85-shaped cell the fused arm does not cure | annotated: R-1 found the single early-hit gate call on dense text still loses |
+| §22 "Filed, not scheduled" | (no entry) | the pcrec "lead can reject" density fact, filed |
+| §22 older blocks (rev 3, rev 4 lists, rev 4.2 block), §23 | R4b pending | history, annotated once at §22's head; not rewritten |
+| `memfn/CLAUDE.md` | no D149 line | "kit forms obey D149" under "The layers" |
+| `docs/design/memfn/CLAUDE.md` | integration.md at rev 4.4 | rev 4.5, one line |
+| `docs/dev/lanes/CLAUDE.md` | no `memfnr45_report.md` | entry added |
+
+Passages with a `[rev4.5]` mark are changed in place. Earlier text that
+says R4b is owed, R4d's trigger is unmet, or K85 is open is history,
+annotated and not rewritten.
+
+### R4.5.3 Spellings this revision chose
+
+1. The D149 rule is **K-7** in §8.6, after K-6. It is the kit's rule
+   and applies to pcrec's emitters through D149 itself.
+2. The unmeasured-default label is the text `UNMEASURED DEFAULT:` at the
+   constant, as in `tb_r4b.c`. Panels grep for it.
+3. The lead order is spelled "lead first" / "run first". It has no
+   option name yet. A registry row is born with R4d's first byte move
+   if the order is a separate form (`--memfn=no-NAME`, §R4.4.1).
+4. The future density fact is spelled "lead can reject". It carries no
+   `MF_P_*` name and no shape. It is filed, not designed.
+
+### R4.5.4 The three standing design questions, for this revision
+
+1. **Measurement regime: RELEVANT.** Every number above is R-1's: Linux
+   (ubuntubudu, gcc 15.2, AMD Ryzen 5 1600, `taskset -c 2`), 3
+   launches, floor = max |emit - emit2|, throughput and per-call
+   regimes, SIMD-off and SIMD-on both reported. clang and the Mac form
+   no verdict. The lead-order result holds in the capability-text and
+   dense-text regimes R-1 measured and no other.
+2. **Independent control: RELEVANT.** The verdict's control is R-1's
+   correctness run (0 wrong, 10 of 10 planted caught, five builds) and
+   its emit-vs-emit floor. R4d's G1 stays pcrec's timing against the
+   kit's own deny, population from a pcrec-side artifact diff (§17.2).
+3. **What moves when data is regenerated: NOT RELEVANT.** This revision
+   adds no data file and moves no emitted byte.
+
+---
+
 ## R4.4. Revision 4.4: D147 addenda 8-9 folded `[rev4.4]`
 
 (Top-level, like §R4.3. It sits first because it overrides §R4.3 in one
@@ -117,7 +274,7 @@ Q53-Q55 only.
 | Q45 | RULED YES. The spec states whose libc was measured (glibc and libSystem; musl inherits), as §10.6's second limit, at R4d | §10.6; §22 R4d; §23 |
 | Q46 | RULED YES. Two single-writer files. As built: `memfn/docs/requests.md` (manager only) and `memfn/docs/responses.md` (kit only) | §20.1; `memfn/CLAUDE.md`; §23 |
 | Q47 | REFINED (addendum 9): the kit's OWN option namespace, `--memfn=`, from a kit-owned registry, listed by `--list-axes` as a `memfn` section | §R4.4.1; §14.10, §17.1 rewritten |
-| Q48 | RULED YES. Optional sites: file, don't build. The D77 trigger is a K85-shaped cell that the R4d fused arm does not already cure | §19 row 11; §22 "Filed, not scheduled"; §23 |
+| Q48 | RULED YES. Optional sites: file, don't build. The D77 trigger is a K85-shaped cell that the R4d fused arm does not already cure (`[rev4.5]`: R-1 found one class, the single early-hit gate call on dense text at SIMD-off, which the fused form still loses; whether that is the Q48 cell is the kit session's call) | §19 row 11; §22 "Filed, not scheduled"; §23 |
 | Q49 | RULED YES. An opt-in-only kit arm (R4e′, `-fmemfn-simd`) needs no abi bump at landing. Its pins, its `test-axes` arm and C9's floor are born in that commit, and its spec hunk lands there. The R4f flip is the abi event | §22 R4e′; §23 |
 | D144 item 4 | met inside the kit's namespace: each kit change's own deny is a registry row | §R4.4.1; §L.3 |
 
@@ -420,6 +577,8 @@ artifact.**
 **Its event.** Both lines are born together in R4a′ (§18.3's event and
 reader list, plus the second line). The abi digit is "the next number
 at landing" (61 at main 7f94b0cd), never a literal.
+**`[rev4.5]`** Main is now at abi 61 (the handoff, f116cff5), so the
+next number is 62 if nothing lands first. It is still never a literal.
 
 ### R4.3.4 Completeness: every search site migrates, under a checked manifest (Q42 reversed)
 
@@ -556,7 +715,7 @@ switch name. **Q55** asks whether that suffices.
 | §10.6 | the two layers as profile semantics | adds: a SIMD-on artifact carries no portability promise; the libc record |
 | §14.10 | profile row `memfn-native` | the `memfn-simd` pair, both bits in `strategy_denials` |
 | §15.7 | "Q42 still says not to move it" | M4 migrates (§R4.3.4) |
-| §16 | trigger: R4b's cell | prerequisites only (completeness); `lane/k82hbuild` is merged (f116cff5); K85's re-measure is owed |
+| §16 | trigger: R4b's cell | prerequisites only (completeness); `lane/k82hbuild` is merged (f116cff5); K85's re-measure is owed (`[rev4.5]`: it exists, `k82halpha_report.md` §3; see §16's note) |
 | §17.2/§17.3 | native over portable; C9 at `-fmemfn-native` | SIMD form over the scalar form; C9 at `-fmemfn-simd` |
 | §17.6 | sabotage rows | three rows added (C17's two halves, the libc record) |
 | §18 | value re-derived per §L.5 | §R4.3.3 |
@@ -2950,6 +3109,18 @@ obligations, carried into the kit's own design note at R4a:
   first home is budget-1 prefilter sites, x86 first. The carried levels
   appear in the stamp (§R4.3.3).
 
+- **K-7, tuning constants `[rev4.5]`** (D149, §R4.5.1 item 5). Every
+  unroll width, block size, short-span cut-over and density or size
+  threshold in a kit form is MEASURED (its regime named, K-1), DERIVED
+  (from a stated quantity), or LEFT TO THE COMPILER. One that is none
+  of these is labelled in place as an unmeasured default (the text
+  `UNMEASURED DEFAULT:` at the constant, plus a line in the design
+  note). A form that needs a width starts from the plain loop. The
+  first label is R-1's `swar` 2x (16-byte) unroll, inherited from
+  `ffl`'s 2xVW shape and not measured against 1x or 4x
+  (`probes/twins/tb_r4b.c`). A label is a measurement's trigger, not a
+  build order (D77).
+
 None of this reaches pcrec. pcrec's view of all of it is: the code came
 back, and its identity gates and bench say what changed.
 
@@ -4347,6 +4518,45 @@ the baseline honours and a non-baseline arm may revise (lead and window
 fused into one pass is twins.md T-B's shape). That is K85's general
 answer under D146. Bit 45 still removes part 0.
 
+> **`[rev4.5]`** R-1's Linux verdict (`memfnr4b_report.md` §9) corrects
+> the last two sentences above: fusing the lead into the run pass is
+> NOT K85's general answer. K85's cure is the fused RUN filter. The
+> order is read through the subsection below.
+
+**`[rev4.5]` The lead order and the regime boundary (R-1 §9, §6).**
+
+1. **The lead order is part of the site's form.** It is the kit's
+   per-site choice, with two values: lead first (the lead is one call,
+   and the fused run pass follows it) and run first (the lead folded
+   into the run's pass). **The default is lead first whenever a lead is
+   present.** The evidence, at SIMD-off, gcc SSE2, Linux:
+   - userpass: the lead rejects first (`=` is absent from the
+     capability text). Run-first `swar` LOSES everywhere (gate 64k
+     +35.6 ns, pc1024 +86). Lead-first `swlf` is null on gate and
+     sweep, except sweep 1m, which loses by +3.07 ns (floor 2.53).
+   - cls-n-uc (K85): the lead never rejects. Lead-first `swlf` wins
+     the sweeps and the per-call rows. The cure comes from the fused
+     run filter, not from fusing the lead.
+2. **A possible future fact, NOT built (D77).** A pcrec "lead can
+   reject on this site's text class" density fact would let the kit
+   choose run-first where the lead is dense, with no cost model. Its
+   trigger is a measured cell where run-first beats lead-first. Until
+   then the default stands, and no field, hint or name is added to
+   `mf_site`. It is filed in §22.
+3. **The portable fused form has a regime boundary.** It scans at about
+   0.18 ns/B (union-select 1m, no stops). glibc's AVX2 `memchr` has a
+   faster raw rate. The form wins where the emitted gate pays per-stop
+   costs (union-select's 1,431 `c` stops per 64 KiB; mod-i's and K85's
+   find-all sweeps). It loses on early-hit single gate calls on dense
+   text: mod-i gate 1m (+2.41 ns, floor 0.52) and cls-n-uc gate
+   64k/256k. The SIMD-off form is not selected for such a call without
+   the fact in item 2. This is a boundary of the portable form, not a
+   defect.
+4. **The handoff contract is unchanged.** Every fused variant returns
+   the exact leftmost run position (ASSIGN, `ret_pred = 1`), and the
+   probe's check proves equality with the emitted gate's value.
+5. **D149.** The fused form's unroll and block size follow K-7 (§8.6).
+
 ### 15.6 EXPR / VERIFY / BOOL: the run compare (`pcrec_emit_run_compare`) — M1b, shown for the contract
 
 Today, in the VM literal run (`vm_lit`, `emit_vm.c:8626-8630`), run
@@ -4485,6 +4695,13 @@ that should be frozen, and nobody may be editing it.
 > - wait 1 is MET (`lane/k82hbuild` merged at f116cff5, abi 61);
 > - wait 2, K85's re-measure on the post-handoff build, is OWED, and
 >   so is the handoff's Linux alpha.
+>
+> **`[rev4.5]`** Both reads exist since this block was written:
+> `docs/dev/lanes/k82halpha_report.md` is the handoff's Linux alpha and
+> the K85 re-measure (§3: K85 PERSISTS, +0.023..+0.036 ns/B on
+> `cls-n-uc`, new vs deny). R-1 then measured the fused forms on the
+> same cell (§15.5). Whether the two waits are MET is the manager's
+> reading of those reports, not this revision's (§R4.5.2).
 >
 > M1's REPLACE commit flips its rows in the site manifest (C17) from
 > `pending` to `delegated`.
@@ -4823,7 +5040,7 @@ and fate.
 | 2 | `limits.def` `PCREC_MAX_REQ_RUN_EMIT` 8 | the longest run window the gate compares ("where gcc lowers a constant memcmp to ONE word load") | a COMPILER cost fact about a kit form | stays at M1 (byte identity: the window travels as the RUN term pcrec cut). **M5**: pcrec passes the whole run (≤ `PCREC_MAX_REQ_RUN_SCAN` 32) with per-position density hints, and the kit cuts. The limit's text then states a semantic bound only |
 | 3 | `pcrec_find_run_window_start` / `pcrec_find_run_scan_index` (`src/core/findings.c`) | which window of the run, and which position, to scan: a rarity argmin over the prior | measured prior + argmin | stays at M1 as `plan_pos` and the cut window. **M5**: the kit's planner, reading the per-position hints |
 | 4 | the `req_byte` pick (`reqbyte_freq_pick.md`, argmin over byte frequency) | which necessary byte the one-byte gate scans | measured prior + argmin | stays at M1 (it is the SET term pcrec passes, and `<PREFIX>_REQ_BYTE` reports it). **M5**: pcrec passes the necessary SET as REQUIRED-of-one ("some member of this set"), with per-member hints, and the kit picks. `REQ_BYTE`'s meaning would then need a ruling (Q40) |
-| 5 | `req_set_leads_applies` (`emit_dfa.c:6601`, `pcrec_find_pick`) | whether the set's pick LEADS the run (order, and adding a predicate) | rarity comparison | becomes the composite site's predicate ORDER plus an OPTIONAL lead (§15.5). The baseline honours pcrec's order, and a non-baseline arm may revise it. K85 (this choice losing on dense text) is the arm's to fix. Bit 45 keeps omitting the lead |
+| 5 | `req_set_leads_applies` (`emit_dfa.c:6601`, `pcrec_find_pick`) | whether the set's pick LEADS the run (order, and adding a predicate) | rarity comparison | becomes the composite site's predicate ORDER plus an OPTIONAL lead (§15.5). The baseline honours pcrec's order, and a non-baseline arm may revise it. K85 (this choice losing on dense text) is the arm's to fix. Bit 45 keeps omitting the lead. **`[rev4.5]`** The lead order is the kit's per-site choice, default lead first (§15.5) |
 | 6 | `req_byte_dominated_by` (`emit_dfa.c:6560`) → `pcrec_find_no_commoner` | G1's elision of the pre-check when the prefilter's scan byte is no commoner than the necessary byte | rarity comparison between two kit-owned searches | the SEMANTIC half (same byte, or the run verified by the prefilter, which makes it a REQUIRED term, §14.5) stays pcrec's: it is an implication between facts. The RARITY half moves at **M2**: the necessary byte is passed as an OPTIONAL term of the PF site, and the kit decides whether testing it pays |
 | 7 | `dfa_cand_scan`/`pcrec_dfa_cand_ppm` (`emit_dfa.c:6429`/`:6472`; K84's `strcmp` on row names) | the candidate scan's density, read by the reseed table | a DENSITY (the prior's mass), not a price | stays pcrec's as a fact. K84's `strcmp` readers are fixed at **M2** (a `DfaPf` field), as rev 3 §9.4 had it |
 | 8 | `vm_reseed_cal` (`emit_vm.c:11055`): `gap` 16/4, `block`, `cap`, `first` | the VM hybrid's retry: step the VM, or re-seed through the prefilter | measured crossovers, per program class | stays pcrec's. It prices the ENGINE's retry, not a memory function. **Coupling:** a re-seed's cost includes the PF search, so after M2 a kit change to PF text can move the crossover. Fate: the reseed witness cells (xcall/hyb, `hyb_reseed.md` §5) join G1 for every PF mover, and a re-calibration stays pcrec's measured decision |
@@ -5012,6 +5229,11 @@ kit's own data is the kit's (K-1..K-5).
   A fused arm that wins only per-call is reported as such, and R4c's
   trigger requires the win in the cell's own regime with no loss past
   the floor in the other.
+  **`[rev4.5]`** R4b is MEASURED (R-1, Linux, `R4B-DONE status=0`;
+  `memfnr4b_report.md` §9). union-select wins both regimes at SIMD-off.
+  The regime flips verdicts here exactly as this section warns:
+  mod-i's gate 1m loses by 2.41 ns while its sweeps win, and userpass
+  flips on the lead order. A pointer to the regime boundary is §15.5.
 - **`[rev4.2]` Both layers, in every regime (D147).** Each reading
   above is reported at SIMD-off and at SIMD-on. R4b's SIMD-off reading
   is the portable (SWAR) fused form against `emit`; its SIMD-on reading
@@ -5105,6 +5327,12 @@ removed.
 
 ## 22. The build order, revision 4, and the plan-row text `[rev4]`
 
+> **`[rev4.5]`** R4b is DONE and R4d's trigger is MET at SIMD-off
+> (§R4.5.1). Every older block in this section that describes R4b as
+> pending, R4d's trigger as unmet, or the abi as "the next number (61 at
+> ...)" is history. The `[rev4.3]` block's rows carry the `[rev4.5]`
+> marks that bring them current. The older blocks are not rewritten.
+
 As before, each step separates its PREREQUISITE (a step that must have
 landed) from its TRIGGER (a measured cell or a ruling). Nothing that
 moves a DEFAULT emitted byte opens before its trigger (D77), and native
@@ -5137,7 +5365,7 @@ text stays opt-in until R4f.
 >   no performance cell). A MOVER step keeps a measured trigger and G1's
 >   alpha at both layers (D77, D144).
 > - **The switch** is `memfn-simd`, default OFF (§R4.3.1).
-> - **Status** is at main 7f94b0cd.
+> - **Status** is at main 7f94b0cd. `[rev4.5]`: abi and R4b/R4d statuses are current as of main 08caf4a3, per the marks below.
 >
 > - **R3, rulings.**
 >   - RULED: Q35-Q42 and Q50.
@@ -5162,7 +5390,9 @@ text stays opt-in until R4f.
 >     `mf_art_note_libc`. That makes it non-`none` today on every
 >     artifact that names `memchr`.
 >   - abi → the next number at landing (62 if nothing lands first),
->     with §18.3's readers found by grep;
+>     with §18.3's readers found by grep (`[rev4.5]`: 62 is current as
+>     of main 08caf4a3, abi 61 being the handoff's, f116cff5; never a
+>     literal);
 >   - the spec hunk (both grammars) and a bench inbox note.
 >
 >   **Prerequisite:** R4a. **Trigger:** MET (Q39 ruled; Q53 confirms
@@ -5176,6 +5406,14 @@ text stays opt-in until R4f.
 >   It now feeds R4d's trigger only, not M1's. **Prerequisite:** none.
 >   **Trigger:** `lane/k82hbuild` merged (MET, f116cff5) and
 >   alpha-accepted (Linux alpha OWED).
+>
+>   **`[rev4.5]` DONE** (R-1: main 08caf4a3, merge 348c0a49; Linux
+>   `R4B-DONE status=0`; `memfnr4b_report.md` §9). Results: R4d's
+>   trigger is MET on union-select (below); the lead order is part of
+>   the composite site's form (§15.5); K85's dense-text find-all loss is
+>   removed by the fused forms, and single gate calls on dense text
+>   still lose at SIMD-off. The "Linux alpha OWED" above is read
+>   through §16's `[rev4.5]` note.
 > - **R4c, M1** (composite PRE site + the offset-skip trio, zero
 >   movers; Q41).
 >   - Implement, then replace. `DELEG_SITES` gets its `use` column.
@@ -5198,8 +5436,18 @@ text stays opt-in until R4f.
 >   - The stamp stays `none` (it is SIMD-off text). Any `MEMFN_LIBC`
 >     change is recorded.
 >   - The spec hunk carries §10.6's limits.
+>   - **`[rev4.5]`** The form carries the LEAD ORDER (§15.5): lead first
+>     when a lead is present. Run-first needs a pcrec fact that does
+>     not exist (filed below). The form is not selected for early-hit
+>     single gate calls on dense text.
+>   - **`[rev4.5]`** D149 (§8.6 K-7): the form starts from the plain
+>     loop. Its unroll is measured or compiler-chosen. R-1's `swar` 2x
+>     unroll is the first labelled unmeasured default
+>     (`probes/twins/tb_r4b.c`).
 >
->   **Prerequisite:** R4c. **Trigger:** R4b's cell.
+>   **Prerequisite:** R4c. **Trigger:** R4b's cell. **`[rev4.5]` MET at
+>   SIMD-off on union-select:** `swar` beats `emit` past the floor in
+>   both regimes, 1.4-2.0x (§R4.5.1 item 4).
 > - **M1b, runcmp migrates** (zero movers). Bit 43 crosses (§14.10), and
 >   `RUN_WORDS` becomes the kit's stamp. **Prerequisite:** R4c.
 >   **Trigger:** completeness.
@@ -5252,6 +5500,11 @@ text stays opt-in until R4f.
 >     `-fmemfn-simd` artifacts.
 >   - The spec hunk states the no-portability-promise meaning.
 >   - The bench `pcrec[simd]` testee is requested (D78).
+>   - **`[rev4.5]` The 16 B short-path note** (R-1 §9). At AVX2, `ffl`
+>     loses to `swar` by +0.64 ns (userpass pc16) and +0.36 ns
+>     (cls-n-uc pc16). Short spans belong to the scalar form, inside
+>     the SIMD-on cascade or short path (K-6). Everywhere else `ffl`
+>     wins, at SSE2 and AVX2.
 >
 >   **Prerequisites:** R4c (sites migrated); R4d where its sites are
 >   concerned (SIMD is measured against the current scalar).
@@ -5269,6 +5522,8 @@ text stays opt-in until R4f.
 > - **Filed, not scheduled:**
 >   - the deferred include anchor (§14.8);
 >   - OPTIONAL SITES (Q48);
+>   - `[rev4.5]` a pcrec "lead can reject" density fact (§15.5 item 2).
+>     Trigger: a measured cell where run-first beats lead-first;
 >   - a fused N4 arm;
 >   - FIND_SEQ and F8 `mismatch` by request;
 >   - extraction, which waits for Q36's ruled trigger (a stable API
@@ -5305,7 +5560,7 @@ text stays opt-in until R4f.
 > - **R4a′, the stamp's own event** (§18): `<PREFIX>_MEMFN_FORMS "none"` on every artifact via `mf_stamps`; abi N → N+1 with §18.3's readers; the spec hunk; the bench inbox note. **Prerequisite:** R4a. **Trigger:** Frank's Q39 ruling (it lands before R4c so that M1 stays zero-mover).
 > - **R4b, the first customer's measurement** (probe only): twins.md T-B on Linux ON THE POST-HANDOFF BUILD, both regimes (§21.1), a PORTABLE (SWAR) fused composite variant beside `emit` and the vector `ffl`, on the K82 cells and on K85's `cls-n-uc`. **Prerequisite:** none. **Trigger:** `lane/k82hbuild` merged and alpha-accepted.
 > - **R4c, M1: the composite PRE site and the offset-skip trio migrate, zero movers** (§16): implement (baseline arms, shadow comparator) then replace; `DELEG_SITES` with its `use` column; the three profile axes (§20.2) in `strategy_denials`; `tests/memfn/pins/{arms,off}.tsv` recorded; C4, C5, C10, C11, C12 (9 → 3), C13, C14; I2 over every axis and both comment tiers. **Prerequisites:** R4a′; `lane/k82hbuild` merged; K85 re-measured on the post-handoff build. **Trigger:** R4b shows the PORTABLE fused form beating `emit` past the floor on at least one K82 cell in its own regime, with no loss past the floor in the other.
-> - **R4d, the first movers: the kit's portable fused composite arm** (lead + window in one pass; K85's general answer): abi event, stamp values on movers, the spec hunk with §10.6's four limits, G1 alpha (both regimes) on the pcrec-side movers, the bench `pcrec[memfn-off]` testee requested through the inbox (D78). **Prerequisite:** R4c. **Trigger:** R4b's cell.
+> - **R4d, the first movers: the kit's portable fused composite arm** (lead + window in one pass; K85's general answer): abi event, stamp values on movers, the spec hunk with §10.6's four limits, G1 alpha (both regimes) on the pcrec-side movers, the bench `pcrec[memfn-off]` testee requested through the inbox (D78). **Prerequisite:** R4c. **Trigger:** R4b's cell. **`[rev4.5]` History: "lead + window in one pass" is not K85's general answer; the fused run filter with the lead first is (§15.5).**
 > - **R4e, ON_CAND's first customer.** Filed until a measured cell (twins.md T-A's iterate-in-place lever on a real site); C13 goes live then.
 > - **R4e′, native arms behind `-fmemfn-native`** (default OFF): the kit's ISA arms for the M1 sites; C9 at `-fmemfn-native` with its floor born; `test-axes` and I2 arms for the opt-in; no DEFAULT byte moves (Q49). **Prerequisite:** R4d. **Trigger:** `[OPT-SIMD]` opened (D119: SIMD last).
 > - **R4f, the native default flip** (`memfn-native` default ON): its own ruled abi event. **Prerequisite:** R4e′. **Trigger:** a Linux alpha in which the native arm beats the portable arm past the floor on a mover cell, in both regimes. This is measurable BEFORE the flip, because R4e′ exists: rev 3's circularity, where only the flip could produce the flip's evidence, is gone (r3 G-F11).
