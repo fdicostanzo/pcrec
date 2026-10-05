@@ -144,7 +144,12 @@ def main():
     for i, r in enumerate(rows):
         r.update(pr.get(i, dict(status="noprobe", view=0, cwmax=-1, minw=0,
                                 lead_unb=0, gstart=0, look_tail=0)))
-    anch = [r for r in rows if r["status"] == "ok" and r["view"] in (1, 2, 3)]
+    # FACTS_ALL=1 also asks the shipped fact about the probe's view-0 rows:
+    # the converse of the cross-check (probe says "not anchored", fact says
+    # anchored) -- a drifted ew_walk copy would hide there.
+    sel = (lambda r: r["status"] == "ok") if E.get("FACTS_ALL") == "1" else \
+          (lambda r: r["status"] == "ok" and r["view"] in (1, 2, 3))
+    anch = [r for r in rows if sel(r)]
     with cf.ThreadPoolExecutor(max_workers=int(E.get("JOBS", "2"))) as ex:
         for r, d in zip(anch, ex.map(facts, anch)):
             r["facts"] = d
