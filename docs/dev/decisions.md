@@ -9077,3 +9077,19 @@ Frank gave this direction to the kit session (memfn `responses.md` N-1, on the R
   - the seek placed before UTF validation.
 
   It must also carry an oracle-verified edge-case list: multi-byte and nested lookbehind context across the skip; \b/\B in both polarities; (?m) under each newline convention; UTF-8 continuation-byte context; caseless; search_from > 0; subject start, end and empty subjects; \G; hybrid and count-collapsed machines.
+
+**D148 addendum 2 (Frank, 2026-10-05): startset.md rev 2's questions Q-R1..Q-R6 are ruled as recommended** (`docs/design/startset.md` §9b; panel r4 consolidated in `docs/dev/reviews/2026-10-05-r4-startset.md`):
+- **Q-R1:** the DFA hat scans T = S ∩ E\* (addendum 1), admitted iff T ⊊ E, with a build assertion that T == S. Measured E\* = all 256 bytes on every seeded machine, so the scanned set is S.
+- **Q-R2:** no early batch gate, on a corrected basis. Stage 2 delivers, as named and floored artifacts, the `run_axes.sh` product arm (`--engine=vm` vs `-fno-start-set --engine=vm`), the every-startpos differential, and a forced-VM read on a second subject class.
+- **Q-R3:** the give-up spec sentence (Q6) names CAPACITY give-ups (FRAMES, trail, the caller `_in` buffers) as well as step and work meters.
+- **Q-R4:** stage 4's trigger becomes a NEED trigger. Build it only if handing the pre-check candidate to the seek saves more than the floor on the bench's 4 `run_present_unbounded` cells. **Frank's caution, recorded as the expectation:** he doubts this is ever worth it for a single byte, and the mechanism may cost more in selection complexity ("the compiler trying to figure out how to profit from this single byte") than it gains. So stage 4 is DEMOTED to FILED, NOT PLANNED. Its trigger is a measurement only, and a fired trigger comes back to Frank with that cost stated, never straight to a build.
+- **Q-R5:** the VM hat ships the table-scan form only at stage 2; the memchr form measured ×0.6 at 80% density. A MASS-based admission is filed behind the dense guard cells.
+- **Q-R6:** `<PREFIX>_VM_START_SCAN` goes on EVERY artifact of both engine families, `none` where n/a, per the K82 Q3 precedent.
+- **Still owed before stage 0:** lane ssedge's edge-case cells and mutation-detection table (addendum 1).
+
+**D147 addendum 10 (Frank, 2026-10-05): [MEMFN] Q53-Q55 are ruled as the kit recommended** (integration.md rev 4.6 §23; light panel r5, `docs/dev/reviews/2026-10-05-r5-memfn-rev45.md`):
+- **Q53 YES:** a separate `<PREFIX>_MEMFN_LIBC` line. It is a source-level inventory of the whole artifact's libc calls, excluding fixed-size idiom `memcpy` loads. Its control derives the names from the compile (`nm -u` of an `-O0 -fno-builtin` object) and shares no source with the line. It is born in R4a′.
+- **Q54 YES:** N7 is listed `pending` in the site manifest, with three corrections: the cite is D58/DD-12, not D23; the definition widens to "search or span-compare site"; C17 scans `src/enc/`. M7 bumps MF_VOCAB.
+- **Q55 ACCEPTED:** `<PREFIX>_MEMFN_FORMS` is constant `none` on every default artifact until R4f. Attribution is written down outside the artifact: the bench's recorded build recipe; C11's FORMS half UNREACHED until the first SIMD-on form; R4d's D80 spec hunk (panel item A3); DFA_PREFILTER_OFFSETS already shows M5′'s offsets. An always-present `<PREFIX>_MEMFN_OPTS` line is FILED, not built.
+- **Panel r5's blocker is fixed in rev 4.6:** on no-DFA routes the set-leads lead is REQUIRED, being K65's only test of that member; it is OPTIONAL iff `pcrec_artifact_has_dfa_scan`.
+- **Next:** R-3 (R4a, then R4a′) is filed to the kit.

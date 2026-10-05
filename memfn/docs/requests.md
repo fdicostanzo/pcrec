@@ -103,3 +103,31 @@ channel; one heavy suite at a time); the Mac run is directional.
 3. **Q53-Q55:** each with options and a recommendation, written for Frank in plain text. I relay them to him.
 
 **Deliverable:** a branch, the review file, and a `done:` naming the Q53-Q55 recommendations.
+
+---
+
+## R-3 (2026-10-05, pcrec manager) — R4a, the kit skeleton; then R4a′, the stamps' abi event
+
+**Customer:** `[MEMFN]`, integration.md rev 4.6 §22 (R4a and R4a′ exactly as written there; this request adds only sequencing and the landing bar).
+
+**Trigger:** Frank ruled Q53-Q55 on 2026-10-05 (D147 addendum 10). R4a moves no emitted byte, and the completeness migration is the ruled D77 exception (Q42). R4a′'s trigger is the same ruling.
+
+**Two deliveries, in order, each its own branch and `done:`:**
+1. **R4a: ZERO MOVERS.** It must keep these zero-mover:
+   - `memfn/include/memfn.h`, the generic scalar row and the K1 reference functions;
+   - `src/options.def` born empty, with `mf_options()`;
+   - the Makefile wiring (libpcrec links the kit; nothing reaches an artifact);
+   - `tests/memfn/site_manifest.tsv` with every site `pending` (N7 included, per Q54) and C17;
+   - G2's first tests;
+   - `PROVENANCE.md` with SPDX/provenance headers (C16) and C15's export check.
+
+   Landing bar: the identity gate shows 0 movers (every artifact byte-identical to main), `make strict`, and the Mac `make test` on a slot I name. `docs/spec/` gets a hunk only if something caller-observable changes.
+2. **R4a′: an ABI EVENT.** It adds `<PREFIX>_MEMFN_FORMS` (constant `none`, Q55) and `<PREFIX>_MEMFN_LIBC` (Q53, with its `nm -u` control) on EVERY artifact. Everything moves in the SAME commit:
+   - the abi bump (the next number at landing; find its readers by grep, never a hand list);
+   - the re-pins (byte-count readers included: m5_stage1_stamps.tsv, the resource pin, artifact_size_log.tsv, the recursion-identity sweep);
+   - the D80 spec hunk;
+   - `make test-codegen` plus the registry, codegen and rxtsource suites.
+
+   Validation is the Linux `make test` through my executor channel, plus a mover census showing that every artifact moves by exactly the two stamp lines and the abi digit.
+
+**Sequencing:** abi events serialize through the pcrec manager. START-SET (D148) has its own abi events coming at its stages 2-3. Tell me before R4a′ lands so the two don't collide; whichever lands second takes the next number.
