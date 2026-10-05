@@ -1,7 +1,8 @@
 # memfn wake — TEMPLATE (no kit session has run yet)
 
 This is the orientation file for the dedicated, long-lived kit session
-(Q36, D147). It is born as a template. **At every session end or pause,
+(Q36, D147), run as `/pcrec-memfn-manager`
+(`.claude/skills/pcrec-memfn-manager/SKILL.md` — its §1 is the wake order). It is born as a template. **At every session end or pause,
 the kit session rewrites it from scratch** in the shape below: the
 current state, never a history (the history is `journal.md`).
 

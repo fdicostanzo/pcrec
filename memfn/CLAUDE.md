@@ -162,7 +162,9 @@ pcrec emitter are kit work here, not edits under `src/gen/`.
   pcrec's `docs/dev/dev_journal.md` gets a line when a kit change merges.
 - **Session:** a dedicated long-lived kit session may work this subtree,
   in its OWN worktree under `worktrees/`, never merging to main itself
-  (`docs/wake.md` is its orientation file).
+  (`docs/wake.md` is its orientation file). It runs as
+  `/pcrec-memfn-manager` (`.claude/skills/pcrec-memfn-manager/SKILL.md`):
+  the kit's manager, directing its own lanes off its own branch.
 - Kit lanes are ordinary pcrec lanes: `docs/dev/lanes/BOILERPLATE.md`,
   the box rules, one heavy suite at a time, Linux verdicts only (D144
   addendum 1; the Mac is directional).
