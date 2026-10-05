@@ -1442,3 +1442,6 @@ it. Every change is marked `[r1 <id>]` in place.
 - **Q6 NO:** the reverse pass keeps its `search_from` lower bound (sound, tested incl. `\K`). Revisit only on a measured cell where it walks below lo.
 - **Q6 NOTE (Frank, 2026-10-05):** tightening the reverse pass's bound to lo should give the SAME answer by construction, which makes it a candidate TEST CASE: a variant with the bound at lo, diffed against the shipped one, is a free equivalence check on K and the proof. Noted; no action yet.
 - **Q7 FILE, DON'T BUILD:** the no-DFA-scan VM handoff is [OPT-VMSEED]'s territory (cross-noted there); its trigger is a VM-route cell that measurably pays the rescan.
+- **Q8 BUILD NOW** on main as its own abi event (60 -> 61): lane k82hbuild, Mac validation first, Linux alpha (alpha_k82h.sh) in the next daytime slot.
+- **Q9 KEEP** the (d′) decline (`\G` with the clamped prefilter window); population 0, closes the one unproven case.
+- **Q10 DECLINE** the handoff on count-collapsed prefilters (no give-up→match allowance anywhere); population 0 on corpus and bench.
