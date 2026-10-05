@@ -174,12 +174,15 @@ SAB_DOC_FIGURE="MEASURED UNDETECTED by the lane 2026-09-02: with this plant appl
 # The floor now points at a NAMED MANIFEST holding exactly that population —
 # `\B`, `\B\B`, `\Bx*`, the three patterns this row's own header (MEASURED
 # 2026-09-02, an instrumented sweep of the full corpus) found are refused by
-# P2 and by no other clause. Floored at its full measured population (3),
-# not a decorative round number: if this manifest ever needs a fourth
-# member, the floor moves with it in the same change.
+# P2 and by no other clause. Floored at its full measured population, not a
+# decorative round number: if this manifest ever needs another member, the
+# floor moves with it in the same change. RE-SWEPT 2026-10-05 (lane r1gclose)
+# under [UCP] U2's context atoms: the population is SEVEN, the manifest's
+# header carries the method and the split (four seed-needing, three
+# P2-sole-guard), and the selector is `^[^#]` (every non-comment line).
 SAB_REACH='"$PCREC" --features all -p rx --no-captures -o "$REACH_TMP/o.c" --pattern "\bx*" && grep -q "RX_DFA_START \"reverse-pass\"" "$REACH_TMP/o.c" && "$PCREC" --features all -p rx --no-captures -o "$REACH_TMP/p.c" --pattern "x*" && grep -q "RX_DFA_START \"pinned\"" "$REACH_TMP/p.c" && "$PCREC" --features all -p rx --no-captures -o "$REACH_TMP/q.c" --pattern "(?!a)" && grep -q "RX_DFA_START \"reverse-pass\"" "$REACH_TMP/q.c" && echo REACH-CLASSCTX-DECLINED-BY-P2'
 SAB_REACH_EXPECT="REACH-CLASSCTX-DECLINED-BY-P2"
-SAB_REACH_POP="tests/codegen/manifests/s220_view_decliners.txt|^\\\\B|3"
+SAB_REACH_POP="tests/codegen/manifests/s220_view_decliners.txt|^[^#]|7"
 SAB_COUNT=1
 SAB_BEFORE='    /* P2 — one derivation, shared with the scan-edge pass. */
     if (!pcrec_state_view_invariant(fd, &fd->st[fs])) return false;'

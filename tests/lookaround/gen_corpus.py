@@ -121,6 +121,18 @@ LOOKAHEAD = [
       "the assertion is evaluated at `startpos` and not at 0."),
  cell("(?!a)b", LA, [("ab", 1), ("ab", 0), ("b", 0)],
       "The negative form under startpos, same axis."),
+ cell("(?!a)", LA, [("a", 0), ("b", 0), ("ab", 0), ("", 0)],
+      "S220's ANSWER CELL ([OPT-5] STEP 2): a bare NULLABLE one-character "
+      "negative lookahead as the WHOLE pattern. On \"a\" the assertion fails "
+      "at 0 and the first match is the empty one at 1 -- (1,1), not (0,1). "
+      "A one-character lookahead reads only the FOLLOWING byte, so its seeds "
+      "intern to one state, no seed is needed and the start-pinned "
+      "predicate's P2 is the only guard; with P2 dropped the DFA elides the "
+      "reverse pass and reports the span as starting at the search origin."),
+ cell("x*(?!a)", LA, [("a", 0), ("xa", 0), ("xxb", 0), ("", 0)],
+      "S220's second answer cell: a nullable run before the same assertion. "
+      "On \"a\" the empty match at 0 is refused (next byte is `a`), so the "
+      "answer is again the empty match at 1."),
  cell("(?=abc)ab", LA, [("abc", 0), ("abd", 0)],
       "The body reaches PAST what the pattern consumes -- the assertion "
       "inspects bytes the match never claims."),
