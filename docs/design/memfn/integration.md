@@ -87,10 +87,10 @@ and hooks that reproduce today's text byte for byte.
 
 | id | finding (short) | disposition in rev 4 | section |
 |---|---|---|---|
-| F1 | hooks only write values; real sites return/break on a miss, are whole functions, or are expressions inside pcrec's `if` | Three site FORMS (expression, statement, function). An `on_miss` statement hook, an `indent` hook, the opening-keyword hook, and a function name plus parameter list | §14.1, §14.2 |
+| F1 | hooks only write values; real sites return/break on a miss, are whole functions, or are expressions inside pcrec's `if` | Three site FORMS (expression, statement, function). An `on_miss` statement hook, an `indent` hook, and a `fn_name` hook plus the parameter list. **`[rev4.1]`** There is no opening-keyword hook: pcrec writes `kw (state == K) {` and its braces itself (§15.7) | §14.1, §14.2 |
 | F2 | ADVANCE returns only the cursor; the scan edge's post-loop reads the kit's run counter; `scan_test` reads through `dir->peek` | ADVANCE gains a `count` lvalue with a declared start, a bound-reached contract, and a `peek` hook | §14.3 |
 | F3 | in-emitter denies (`-fno-run-overlap`) have no channel to the kit; I2 cannot see them silently die | `mf_site.denies` carries every in-emitter deny. I2 sweeps every `axes.def` axis and every comment tier | §14.10, §17.1 |
-| F4 | pcrec tallies emitted forms (`RUN_WORDS`, lazy helpers, the row name returned); helper placement moves | A plan/render split: `mf_plan` reports form tallies, helpers and includes before any text is written. Helpers go "before first use" at the two points pcrec uses today | §14.8, §15.6 |
+| F4 | pcrec tallies emitted forms (`RUN_WORDS`, lazy helpers, the row name returned); helper placement moves | **`[rev4.1]`** A per-artifact `mf_art` (no `mf_plan`): `mf_stamps` writes the tallies through the sink, sites record helper needs and `mf_flush_helpers` writes them, `mf_includes` reports the headers. Helpers go "before first use" at the two points pcrec uses today | §14.8, §15.6 |
 | F5 | empty and wrapped ranges undefined | `hi` is spelled `n − end_back`, never as a wrapping expression. Every site declares its EMPTY outcome: MISS, NOP or EXCLUDED | §14.4 |
 | F6 | the K82 gate is ONE site (lead byte + run + whole run + rest of set); ALL_PRESENT has no position; set-leads' order is pcrec's rarity choice; ON_CAND has no order | ALL_PRESENT gains `ret_pred`, the predicate whose leftmost position it RETURNS. ON_CAND visits in ascending order (descending if reversed). `DELEG_SITES` marks the sites whose result is used as a POSITION | §14.3, §14.5, §15.5 |
 | F7 | rule 3 (every term holds) contradicts `consumer` and M5 (dropping terms) | REQUIRED vs OPTIONAL terms. RETURN promises `c` ≤ the true leftmost, with every REQUIRED term holding at `c` | §14.5 |
@@ -100,7 +100,7 @@ and hooks that reproduce today's text byte for byte.
 | F11 | no lower read guard (N3 reads `s[start−k]`, the reseed reads `s[from−1]`) | Negative term offsets with a `floor` hook. The kit never reads below `floor` | §14.7 |
 | F12 | the whole-artifact baseline pin forces re-pins on unrelated abi changes; baseline arms duplicate pcrec helpers | C5 checks a per-ARM digest pinned under `tests/`. The sink adapter exposes pcrec's escapers, so the kit never copies them | §17.4, §14.2 |
 | F13 | pcrec still prices kit-owned search code | The list, each with its fate | §19 |
-| G-F1 | the movers-only stamp contradicts Q3 | Stamp every artifact. No kit version; form ids or `MF_VOCAB` only. Its own every-artifact abi event, before M1's replace. C11 checks the value | §18 |
+| G-F1 | the movers-only stamp contradicts Q3 | Stamp every artifact. **`[rev4.1]`** No kit version and no `MF_VOCAB` in the stamp; its value is `none` or opaque form ids. Its own every-artifact abi event, before M1's replace. C11 checks the value | §18 |
 | G-F2 | the shipped denies on the migrating sites are unnamed and unswept; per-form switches are not axes | The fate table, I2 over every axis, and per-form switches as `axes.def` rows | §14.10, §17.1 |
 | G-F3 | C9 fails on the Mac and is vacuous under `portable` | A header shim, a native-enabled config, and a K35 floor on arms compiled | §17.3 |
 | G-F4 | armv8 has no verdict-grade guard | Stated plainly, in the spec too | §17.2 |
@@ -236,7 +236,7 @@ premise was the price boundary, which no longer exists).
 | K2 | HIGH | costs depend on the compiler (×2.4, gcc vs clang) | moved inside the kit, plus one spec sentence | the kit keys its data by compiler class and may ladder on compiler macros (K-3). pcrec's spec states that the kit's choices are measured under gcc, pcrec's target compiler (D2), §10.6 |
 | P7 / K4 | MED | knobs in disguise: statistic, segment cap, extrapolation, ladder | moved inside the kit | K-2: protocol constants with a decision record in the kit, and a generator that fails rather than truncates |
 | P8 | MED | per_hit unpriced; shape-inherited prices; unflagged in-loop sites; STALE granularity | moved inside the kit, plus one pcrec check | the in-loop half binds pcrec: a site's D91 budget is a FIELD of pcrec's delegation table and the request's `MF_P_INLOOP` bit comes only from it (§10.5 C10). The rest is K-1/K-2 |
-| K1 / D1 | HIGH | new data moves emitted bytes with no abi event; no stamp | carried | ANY kit change that moves any byte pcrec emits is a pcrec abi event in the same commit, found by D94's grep, with the movers-by-ID census and a stamp on movers (§10.3). In-tree, the kit change and the bump are one commit (§11.1) |
+| K1 / D1 | HIGH | new data moves emitted bytes with no abi event; no stamp | carried | ANY kit change that moves any byte pcrec emits is a pcrec abi event in the same commit, found by D94's grep, with the movers-by-ID census and the every-artifact stamp (§10.3; **`[rev4.1]`** §18, not movers only). In-tree, the kit change and the bump are one commit (§11.1) |
 | P9 / C-a / C-b | HIGH | the timed control has no home, no long subjects, no armv8 arm | carried | it is now D146's guard: alpha per mover step on Linux, the batch gate's `memfn-off` bench testee, long subjects, a mover population with a floor, and a directional Mac arm (§10.1, Q31) |
 | B1 | HIGH | the arch-blindness regex misses most vocabulary; weak plant | carried | rebuilt: seven vocabulary classes, one positive control each, a plant held out from the regex's source, wider scopes, plus two delegation classes (§10.4 C4) |
 | B5 | MED | the other architecture's `#if` arms are never compiled | carried, on both sides | the kit cross-compiles every arm it can emit; pcrec runs `-fsyntax-only` per arm over its own artifacts, with an arm count (§10.5 C9) |
@@ -1794,7 +1794,7 @@ loss arm and for the kit's bench.
 | the `BASE`/`DECLARED(L)` predicate vocabulary (§2.1) | gone. The token is passed, never read |
 | the §2.5 ladder as a pcrec emission | kit text. The `fallback` hook (pcrec's next row) is unchanged |
 | T6's `vec-masked` with an `rc_holds(cx, …)` ISA predicate | T6 gains the same `kit` row with `MF_OP_VERIFY_RUN`. `rc_holds` still needs `cx`, for the token and the prices, not for an ISA |
-| `<PREFIX>_SCAN_FORM` = a C1/C2 row-name pair | `<PREFIX>_SCAN_FORM` = the kit's opaque `kernel_id` per arm, emitted only where `kit` was selected (movers only, k82hrev Q3's precedent) |
+| `<PREFIX>_SCAN_FORM` = a C1/C2 row-name pair | `<PREFIX>_SCAN_FORM` = the kit's opaque `kernel_id` per arm, emitted only where `kit` was selected (**`[rev4.1]`** on every artifact, `none` where no `kit` arm was selected: §18, Frank's Q3 (a)) |
 
 **From [OPT-SETS] (`docs/design/option_sets.md`)**: the "arch
 sub-panels".
@@ -1953,7 +1953,7 @@ typedef struct {
 } mf_site;
 
 typedef struct {
-    char     form_id[48];           /* opaque; stamped on movers only (§10.3)         */
+    char     form_id[48];           /* opaque; stamped on every artifact (§18)         */
     uint32_t helpers;               /* once-per-artifact helpers the text names        */
     uint8_t  moved;                 /* 1 iff the text differs from this site's
                                        BASELINE text (computed by the kit; §10.5 C11) */
@@ -1969,7 +1969,7 @@ const char *mf_kit_version(void);                       /* "pcrec-memory-functio
 > **`[rev4]`** These shapes are EXTENDED by §14.0 (r3 F1-F11): three
 > site forms, `end_back`/`empty`, `floor`, REQUIRED/OPTIONAL terms,
 > ALL_PRESENT's `ret_pred`, `denies`, and a plan/render split whose
-> `mf_plan` reports form tallies, helpers and includes. `plan_hint` is NOT
+> `mf_art` carries form tallies, helpers and includes (`mf_plan` was never built; §14.8). `plan_hint` is NOT
 > transitional (§14.9). `mf_result.form_id` is no longer stamped with a
 > kit version (§18).
 
@@ -2411,6 +2411,12 @@ sabotage rows (r2 C-d).
 range); the exhaustive tier is `make -C memfn test-full`, part of the
 batch gate.
 
+- **`[rev4.1]` Arm-differs property** (r3 addendum C3-2). For every
+  non-baseline arm, on its own fixture sites, the arm's rendered text
+  differs from the baseline arm's. It is what lets §18.2 assert only
+  `none` ⇒ identical and still trust a non-`none` stamp as naming a
+  rendered non-baseline arm.
+
 ### 10.3 G3, the abi ritual for kit versions (r2 K1/D1, carried)
 
 - **Any kit change that moves ANY byte pcrec emits is a pcrec `abi`
@@ -2501,7 +2507,7 @@ makes that a red test, with the r2 panel's rebuild:
 | C6 | answer identity per deny, per box: `make test-axes` arms for the three bits, plus option_sets.md §3.5a's compile-only arms per declared token when R4i builds tokens | correctness under every profile | no |
 | C9 | **cross-target syntax, pcrec side** (r2 B5): every corpus artifact with at least one mover, each `#if` arm compiled `-fsyntax-only` per the arm's target (Mac: gcc-16 natively, clang `--target=x86_64-linux-gnu`; ubuntubudu: gcc and clang natively, clang `--target=aarch64-linux-gnu`). The number of arms compiled per artifact is printed and must equal the count the kit reports in `mf_result` (K35). A Rosetta 2 run executes the x86 arm under C6 | the arms no box compiles natively at least parse and type-check, inside real artifacts | no |
 | C10 | **site table and stack**: `DELEG_SITES`' budget column matches D91's classification (budget 1: PF, PRE, OFS, SETREST, VERIFY, MLINE; budget 2: STAY, EDGE, VMSPAN, VMRUN); `MF_P_INLOOP` is set only from that column; its op column passes `mf_vocab_has`; no `mf_site`, `mf_pred` or `mf_result` is an automatic variable under `src/` (r2 K3) | an in-loop site cannot ask for an out-of-loop arm; no large request on an emitter stack | n/a (structural) |
-| C11 | **stamp census**: the artifacts carrying `<PREFIX>_MEMFN_FORMS` are exactly the movers by ID (§9.3 I2's tool), and every form id is one the kit's `moved` reported | the stamp is on movers and only on movers | partly: `moved` is the kit's, so G2's `moved` property test is the other half |
+| C11 | **stamp census** `[rev4.1]`: every artifact carries `<PREFIX>_MEMFN_FORMS`; `none` implies identical to `memfn-off` (§18.2), the movers by ID (§9.3 I2's tool) are non-`none`, and every form id is one the kit's `moved` reported | **`[rev4.1]`** a `none` on a mover, or a non-`none` id naming no rendered non-baseline arm (§18.2) | partly: `moved` is the kit's, so G2's `moved` property test is the other half |
 | C12 | **the emitted-form ratchet** (§9.3 I5): emitted-text `memchr(` calls, table-walk loop texts and runcmp row texts in pcrec's emitters, counted against a committed ceiling that only descends | no replaced form comes back as a second spelling | no |
 
 ### 10.6 The spec states the limits (D80)
@@ -2850,6 +2856,7 @@ The hooks gain these members and lose none:
     const char *floor;       /* the LOWER read limit (§14.7); "0" when NULL       */
     const char *(*fn_name)(void *u, uint32_t fn_ref);       /* FUNC: its name     */
     void (*note)(void *u, mf_sink *c, uint32_t part);       /* §14.2              */
+    const char *(*note_tag)(void *u, uint32_t part);        /* [rev4.1] §14.2: pcrec's provenance tag, e.g. "[K66]" */
     /* UNTIL M1b (§16): pcrec's run compare for RUN term `term`, as an EXPR at
        `base + off` (rule 6's twin for whole runs: one spelling, pcrec's, while
        runcmp.c has callers the kit does not own); NULL after M1b             */
@@ -2872,6 +2879,44 @@ int      mf_stamps(const mf_art *, mf_sink *); /* the kit's stamps, via sink->st
 `mf_result` keeps `form_id` and gains `handle` (a FUNC site's id for
 `mf_call`). It keeps `moved` only for G2's property test. `moved` is no
 longer an input to any pcrec guard (§17.2, §18).
+
+**`[rev4.1]` The define/use split, part of `mf_emit`'s contract (r3
+addendum C1-1).** A composite site has FUNC parts that belong at file
+scope and STMT parts that belong in an entry's body, and pcrec writes the
+two at different points of one buffer (§15.5). So `mf_emit` is two calls
+that share one site:
+
+```c
+int mf_define(mf_art *, const mf_site *, const mf_hooks *def,
+              mf_sink *file_scope, uint32_t *handle);      /* FUNC parts, once   */
+int mf_use   (mf_art *, uint32_t handle, const mf_hooks *use,
+              mf_sink *body, mf_result *res);              /* STMT/EXPR parts    */
+/* mf_emit(art, site, hooks, body, file_scope, res) = mf_define + mf_use in one
+   call: the form for a site whose parts all sit at ONE point               */
+```
+
+1. **Order.** pcrec calls `mf_define` at the file-scope point and
+   `mf_use` at the entry, and the define point precedes the use point in
+   the buffer on every route (§15.5's table). The kit asserts a defined
+   handle at `mf_use` and an unused handle at artifact end (an internal
+   error, so a condition that differs between the two points cannot
+   drift).
+2. **One description.** The site (`mf_site`) is passed ONCE, at define.
+   `def` carries only what file-scope text needs (`fn_name`, `note`,
+   `note_tag`, `run_cmp`, `legend_byte`). `use` carries what the entry
+   text needs (`indent`, `on_miss`, `result_decl`, `result`, the subject
+   and bound names). A hook is read at the call that writes the part it
+   serves, never earlier.
+3. **Names cross by the handle.** The STMT refers to the FUNC's name and
+   parameter list through the handle, so the CALL's arguments are the
+   definition's parameters, in the same order (§15.2).
+4. **The kit alone chooses the arm**, once, at `mf_define`. The use call
+   renders that arm's entry part, so a non-baseline arm that fuses lead
+   and window into one function (§15.5) leaves no orphan lead-byte
+   statement.
+5. **Baseline identity.** The two calls' output, concatenated in buffer
+   order, is the composite's baseline text. I1 compares each call's own
+   span against pcrec's matching pre-migration span.
 
 ### 14.1 The three forms (r3 F1)
 
@@ -2907,6 +2952,15 @@ forms, `MF_EMPTY_NOP`).
   baseline arm carries pcrec's frozen sentence verbatim (it describes the
   baseline form, which is what it was written about). A non-baseline arm
   writes its own. Both are NONESSENTIAL (D112), and the sink gates them.
+- **`note_tag(u, part)`** `[rev4.1]` (r3 addendum C1-2). A form-describing
+  comment is the arm's, but its leading provenance tag is pcrec's, and it
+  varies by block: the run blocks' comment reads `[OPT-REQPOS]` on the
+  window block (index 0) and `[K66]` on the whole-run block (index 1)
+  (`emit_dfa.c:1043-1068`, `i ? "[K66]" : "[OPT-REQPOS]"`). pcrec returns
+  the tag for part `part` through this hook, and every arm that writes a
+  form comment starts it with the tag, so the kit never learns what the
+  block index means. Like `note`, it is read only where the sink's comment
+  gate is open.
 - **The sink is pcrec's, behind an adapter.** `mf_sink` is a table of
   operations over pcrec's `StrBuf`: `puts`, `printf`, `cmt_open(tier)`,
   `cmt_close`, `stamp(name, value)`, and pcrec's three escapers:
@@ -3388,6 +3442,30 @@ this site's FUNC parts, emitted earlier into `file_scope` at the point
 | 2 | the whole RUN | REQUIRED | as part 1's ON_MISS line, with `rx_reqrun_whole` (present only on the no-DFA route, `req_run_tests`, `:1017`) |
 | 3 | the set rest | REQUIRED | §15.4's block (present only on the no-DFA route) |
 
+**`[rev4.1]` Define and use (§14.0's split).** The FUNC parts (the window
+and whole-run definitions) are written at one point and the STMT at
+another, so the composite is TWO calls. The define point is where
+`pcrec_emit_req_run_blocks` writes today, under `fit.chosen == ENGM_DFA`
+on the DFA routes and unconditionally in the VM search emitter. The use
+point is the entry's pre-check, which follows `emit_search_head`, the
+offset-0 start rule and the end-window clamp:
+
+| route | `mf_define` (file scope) | `mf_use` (entry body) |
+|---|---|---|
+| DFA, unanchored (`emit_unanchored`) | `emit_dfa.c:8113` | `:8132`, after the clamp (`:8128`) |
+| DFA, anchored (`emit_attempt`) | `:8406` | `:8417`, after the clamp (`:8416`) |
+| VM search entry | `emit_vm.c:13105` | `:13172`, after the clamp (`:13157`) |
+
+Both points of a route test the same engine condition (`fit.chosen ==
+ENGM_DFA`, or none on the VM), so a site defined is a site used (§14.0,
+rule 1). `use`'s hooks carry the entry's names (`subject`,
+`subject_length`, `search_from`) and `return 0;`. `def`'s carry `fn_name`
+for `rx_reqrun`/`rx_reqrun_whole` and the block comment's `note_tag`.
+Parts 1 and 2 above are the FUNC parts; parts 0 and 3 and the call lines
+are the STMT. The baseline arm's define output is `ofs_test_emit_fn`'s
+text unchanged, and its use output is the listing at the top of this
+section.
+
 pcrec writes everything after the site: the `[K82]` comment, the K
 subtraction and the utf8 round-up (`emit_req_handoff`). That is rule 8,
 unchanged. The handoff's soundness reads only part 1's promise (§14.5).
@@ -3449,7 +3527,16 @@ never takes it (it passes no mask).
   `count` `scan_run_length`, `count_start` 1, `span_hi` the edge's span,
   and `member` = `scan_test`'s T4 spelling over `peek`. pcrec's guard,
   the `scan_run_length == 16UL` test (the cap-reached contract, §14.3)
-  and the accept stores stay pcrec's.
+  and the accept stores stay pcrec's. **`[rev4.1]`** (r3 addendum C1-3)
+  The PEELED first step stays pcrec's too: `unsigned long
+  scan_run_length = 1;` and `<advance>;` (`:7587`-`:7589`), written
+  before the kit's `while` line, whose body is `{ <advance>;
+  scan_run_length++; }`. That is why `count_start` is 1. Recommendation:
+  leave it in pcrec's text. The kit's loop is complete without it, byte
+  identity holds with no added vocabulary, and a `peeled` flag would be
+  a new `MF_VOCAB` item for one site (D77). If a later arm wants the
+  first step inside its own unrolling, it is a request (§11.3) and an
+  `MF_VOCAB` bump then.
 - **`(?m)^`'s skip** (M4, not taken, `:8762`) is STMT/FIND/ASSIGN with
   `on_miss` `"break;"`, a term at a NEGATIVE offset (`subject[start −
   offset] != b` guards entry), `floor` `search_from` or `0`, and a
@@ -3695,11 +3782,21 @@ normalised out. Its assertions:
 1. Every artifact carries the stamp, at both compiles. This is the
    presence half, counted.
 2. The `memfn-off` value is always `none`.
-3. The default value is `none` IFF the two artifacts are identical.
+3. **`[rev4.1]`** (r3 addendum C3-2) The default value is `none` ONLY IF
+   the two artifacts are identical (`none` implies identical). The
+   converse is NOT asserted: a non-baseline arm may render text equal to
+   the baseline's on a given site. A non-`none` value must instead name
+   a non-baseline arm that was RENDERED, and a G2 fixture property
+   (§10.2) holds that: for every non-baseline arm, on its own fixture
+   sites, the arm's text differs from the baseline arm's. So a form id
+   never stamps a no-op, and the census claims no iff it cannot see. The
+   count of non-`none` artifacts that are nevertheless byte-identical is
+   printed (K35) and expected 0.
 
 The comparison shares no source with the kit: the diff is pcrec's, and
 the kit's `moved` is not read (r3 G-F5). The counts of `none` and
-not-`none` are printed (K35), and the movers list it produces IS G1's
+not-`none` are printed (K35), and the movers list it produces (the
+differing artifacts, a subset of the non-`none` ones) IS G1's
 population (§17.2).
 
 ### 18.3 Its own abi event, before M1's replace
@@ -3728,6 +3825,7 @@ everywhere is still `none`). The ritual follows `litscan_k82h.md`
   - every row of the size log, re-baselined, against the tripwire's max
     (not near);
   - `reqcube_check.py`/`runcmp_check.py`, re-read;
+  - `tests/litscan/reqcube.rxt` `[rev4.1]` (r3 addendum C3-3), beside `litrun.rxt`, re-read for any cell that pins an emitted byte count or the stamp block;
   - `c_artifact_cmp.sh`'s `emit_sweep` (a `FILEPIN` re-pin);
   - `tests/findings/manifests/*`, re-derived;
   - the new `tests/memfn/pins/off.tsv` (§17.4), born in R4c, so not yet
