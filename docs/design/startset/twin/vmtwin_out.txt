@@ -1,3 +1,4 @@
+# run_vmtwin.sh at abi 61 (worktree lane/startset off a4c752a2), darwin, gcc-16 -O1. ANSWERS ONLY.
 \((?:[^()]|(?R))*\)                  vm/none    |S|=1   cases=280483 matches=116648 diffs=0
 (["'])(?:(?!\1)[^\\]|\\.)*\1         vm/none    |S|=2   cases=757305 matches=301954 diffs=0
 <(?<t>\w+)>[^<]*</\k<t>>             vm/none    |S|=1   cases=14913081 matches=1236 diffs=0
@@ -11,8 +12,8 @@ a\Kb                                 vm/none    |S|=1   cases=20481 matches=1238
 (a+)x\1catdog                        vm/none    |S|=1   cases=2054353 matches=0 diffs=0
 (?<=a)b(c)                           vm/none    |S|=1   cases=83653 matches=8490 diffs=0
 (?i)caf\x{e9}                        vm/none    |S|=2   cases=1166686 matches=1236 diffs=0
-(?i)stra\x{df}e                      vm/none    |S|=3   cases=462243 matches=0 diffs=0
+(?i)stra\x{df}e                      vm/none    |S|=3   cases=4890918 matches=3 diffs=0   [re-run at maxlen 6; maxlen 5 cannot hold the 7-byte word: 0 matches]
 == failing-direction CONTROLS (a twin missing one start byte MUST disagree)
 (["'])(?:(?!\1)[^\\]|\\.)*\1         vm/none    |S|=2   cases=757305 matches=301954 diffs=150977
 (?i)cat                              vm/none    |S|=2   cases=131836 matches=5648 diffs=2824
-(?i)stra\x{df}e                      vm/none    |S|=3   cases=462243 matches=0 diffs=0
+(?i)stra\x{df}e                      vm/none    |S|=3   cases=4890918 matches=3 diffs=0   [re-run at maxlen 6; maxlen 5 cannot hold the 7-byte word: 0 matches]
