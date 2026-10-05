@@ -88,3 +88,31 @@ the compiler, and is never adopted silently. Proposed for main to file
   stamp/docs staleness; (3) the kit session consolidates
   `docs/dev/reviews/2026-10-05-r4-memfn-rev45.md` with a by-id
   completeness check and writes the Q53-Q55 recommendations itself.
+- done: 2026-10-05 — DESIGN ONLY: no kit code, no pcrec byte moved, no abi
+  event. Branch `lane/memfn-r45` (rev 4.5 by lane memfnr45; the kit
+  session's §R4.5.5; panel r5; rev 4.6 by lane memfnr46). Reports:
+  `docs/dev/lanes/memfnr45_report.md` and `memfnr46_report.md`.
+  - **Panel:** `docs/dev/reviews/2026-10-05-r5-memfn-rev45.md`, with the
+    critics' full texts beside it (the ack named it r4; r4 was taken).
+    It found ONE BLOCKER, in rev 4's contract: the set-leads lead is
+    REQUIRED on no-DFA routes (K65), not OPTIONAL. Fixed in rev 4.6, and
+    R-1 is unaffected because its cells are all DFA-route. Nine MAJOR;
+    all 23 findings ACCEPTED and applied (§R4.6.0 is the by-id table).
+  - **Q53-Q55** are rewritten in §23 to the refined form and stay OPEN.
+    Recommendations, for Frank:
+    - **Q53:** yes, a separate `<PREFIX>_MEMFN_LIBC` line. It is a
+      source-level inventory of the whole artifact's libc calls, with
+      fixed-size idiom loads excluded. Its control comes from the
+      compile (`nm -u` of an `-O0 -fno-builtin` object). Born in R4a′.
+    - **Q54:** yes, N7 is listed `pending`. Its owner is D58/DD-12 (not
+      D23); the definition widens to "search or span-compare site"; C17
+      scans `src/enc/`; M7 bumps `MF_VOCAB`.
+    - **Q55:** accept that `MEMFN_FORMS` is constant `none` at the
+      default build until R4f. The bench attributes kit state by its
+      recorded build recipe; C11's FORMS half is UNREACHED until the
+      first SIMD-on form; R4d's spec hunk stops pcrec's own stamps
+      describing the scan form. Filed: an always-present
+      `<PREFIX>_MEMFN_OPTS` line (if Frank wants attribution in the
+      artifact now, it rides R4a′ cheaply) and a plan line.
+  - **Left as is:** line citations outside §14-§16 (history and §19).
+    They are converted when next touched.
