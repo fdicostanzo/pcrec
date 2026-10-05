@@ -11,7 +11,7 @@ SHAPE of `dfa_pfs[]` (it becomes engine-neutral and gains a VM consumer), so it
 needs a FULL D6 panel with distinct lenses (answer soundness, selection/axis
 semantics, the hybrid/VM consumer contract) before a line is built.
 
-Ids used here: sabotage S478-S502 (rev 2, §6.3; r3 used S478-S485), no K-row filed, D148 RULED
+Ids used here: sabotage S478-S502 (rev 2, §6.3; r3 used S478-S485; §6.4 proposes S503-S504), no K-row filed, D148 RULED
 (§9), rev-2 questions Q-R1..Q-R6 OPEN (§9b).
 
 **REVISION 2 (lane `ssrev`, 2026-10-05, from main `08caf4a3`, abi 61)
@@ -22,6 +22,18 @@ the DFA hat's `T = S ∩ E` deletes matches on 6 corpus movers. Revision 2
 replaces it with a measured-sound set (§4.1a). Six questions go back to
 Frank (§9b). Nothing under `src/`, `cli/`, `lib/` or `tests/` changed. The
 rev-2 instruments and transcripts are in `startset/rev2/`.
+
+**§6.4 (lane `ssedge`, 2026-10-05, from main `e6ceeefa`) answers D148
+addendum 1's direction: edge cases, and whether the tests SEE each wrong
+variant.** 80 draft edge blocks / 2,070 cells, every answer libpcre2's
+(10.48 and the 10.46 reference agree on all of them), and a mutation run in
+which every listed wrong variant is detected at answer level, except two
+that are equivalent on every buildable machine (argued, with the check that
+sees each). It also refutes two claims of this note: the unconditional
+re-seed loses matches on ordinary seeded movers, not only on `\G` (§6.4.3
+item 1), and `Tdfa` is not a sound floor (item 2; the ruled `T = S` is
+unaffected). It flags S481/S482 as unreachable and S483-S485/S480 as weak,
+and proposes S503/S504. Instruments: `startset/edge/`.
 
 ---
 
@@ -1010,6 +1022,268 @@ arithmetic. And the forced-VM sweep it leaned on did not exist.
 | S502 | — | walk: `A_CAT` drops the `null(l) ? F(r)` term | C-SS* (measured: `cat-null` 367 violations) + answer identity | `(?<=a)z` **under `--engine=vm`** on `az` → (1,2): the plant gives a non-nullable `S = ∅`, so the seek finds no candidate and the call returns 0 (verify) |
 
 Each row's `SAB_REACH` is born with it (opt5 §5's discipline).
+
+### 6.4 Edge cases and detection (lane `ssedge`, D148 addendum 1)
+
+Frank's direction (D148 addendum 1): the set argument is an argument, not a
+proof, so the EDGES carry the evidence, and the planned tests must be shown
+to SEE each wrong variant at ANSWER level. This section is that evidence.
+Instruments and verbatim transcripts: `startset/edge/` (own CLAUDE.md;
+`run.sh` reproduces everything).
+
+**What exists.**
+- **80 edge blocks, 2,070 cells**, as DRAFT `.rxt` in the house format
+  (10 files, 2,022 cells) plus `utfcheck_cells.tsv` (48 `-futf-check`
+  cells, which no `.rxt` directive can compile). Every cell is asked at
+  EVERY startpos that is a character boundary of its subject.
+- **Every answer is libpcre2's.** The cells are generated from `cells.py`
+  (pattern, options, subjects, edge key, reason) by `gen_rxt.py`; no answer
+  is typed by hand.
+  - Local 10.48 and the 10.46 reference (ubuntubudu, one compile + 2,070
+    matches, `out/oracle_ref_10.46.host`) agree on **2,070 of 2,070**
+    cells. The writer refuses any cell on which they disagree.
+  - Today's emitter (the `-fno-start-set` arm) agrees with **every** cell:
+    0 base disagreements over the 80 blocks. So the cells are true of the
+    pre-change program, and any red on the build is the hat's.
+- **The mutation run** (`edge/mut.py`) reads the drafts BACK (the cells as
+  written, not their source). For every block it builds the base, the
+  CORRECT hat twin, and every mutant whose shape applies. DETECTED means
+  some cell's answer differs from the cell's expectation. A sweep arm
+  (twin vs base over every subject on the block's alphabet up to length
+  6, every startpos) says whether a mutant the cells miss is observable on
+  that machine at all.
+- **Iterated to closure.** Every mutant the sweep saw and no cell saw got
+  its sweep witness added as a subject, and the run was repeated, until no
+  block had a MISSED variant (four rounds; the witnesses are the subjects
+  `azz`, `babx`, `xz`, `abza`, `xzx`, … in the drafts).
+
+#### 6.4.1 Coverage of the edge list
+
+| D148 addendum 1 / brief item | blocks (edge key) | hat reached |
+|---|---|---|
+| the six sound-F1 corpus witnesses | `witnesses.rxt` (W): `matrix.rxt:1064/1122/2597/2662`, `lookbehind.rxt:212`, `ucp/ctxnode.rxt:400` | none: all six are DECLINED by the ruled admission (`S ⊄ E`); r3's set ADMITS them. They are where the set bug is seen |
+| lookbehind context across the skip, 1..k bytes, multi-byte, nested | LB2, LB3, LBN, LBNEG: `\b(?:(?<=bc)d\|w)`, `(?<=ab)z\|\bw`, `(?<=abc)d\|\bx`, `(?:(?<=b(?<=ab)c)d\|\bw)`, `(?:(?<!a)z\|w)` | DFA hat on hybrids and DFA. A multi-byte lookbehind ALONE (`(?<=bc)d`) is a `memchr` hybrid, not a mover: the prefilter erases it, so it needs a one-byte context (`\b`) beside it to be seeded |
+| an `S \ E` byte startable only after k context-changing skipped bytes | LBK, W3 | the seed is the class of the LAST skipped byte, so k bytes are the 1-byte case repeated: `bbbaz`, `abbbz`, `babaz` |
+| `\b` / `\B`, both polarities, ASCII and `--ucp` | WB, WBU (0xE9/0xAA are word bytes under `--ucp`) | DFA hat. **`-e utf8 --ucp \b` is refused today** ("UCP `\b` is not built yet under encoding utf8"), so the utf8 half has no cell to write |
+| `(?m)` under every newline convention | ML | pcrec builds LF ONLY (`DEF_NEWLINE_CONV` has no producer, D64; `(*CR)`/`(*CRLF)`/`(*ANYCRLF)`/`(*ANY)`/`(*NUL)` are refused, `tests/reject/run_reject_tests.sh:1650`). The cells pin `\r` and `\r\n` as ORDINARY bytes in context and before `$` |
+| utf8: a continuation byte as the context; ill-formed bytes; `-futf-check` | U8, UC | `(?:(?<=é)a\|\bw)` (the context's last byte is A9), lone C3/80/FF around contexts; DFA- and VM-hat `-futf-check` blocks |
+| caseless | CI, U8CI, VMI, VMU | case twins in `T`; KELVIN SIGN (E2 84 AA) as a context and as a start-set LEAD byte |
+| `search_from > 0`, context from the byte before it | every block (every startpos) + SF | — |
+| subject start, end, empty | BD | the bounded skip's `n − 1` stop |
+| `\G` | BG, VMG | **no `\G` machine reaches the DFA hat by construction**: `N_GSTART` ⇒ `pcrec_nfa_has_bot` (`src/ir/nfa.c:1221`) ⇒ `PCREC_ENG_ATTEMPT` (`src/core/compile.c:1873`) ⇒ F's scan-kind conjunct declines. The BG blocks are non-mover controls |
+| hybrid; count-collapsed hybrid, with a witness that FAILS without the re-seed | HY, HYC | **found** (sound-F5(d)): see §6.4.3 item 4 |
+| the capacity give-ups of Q-R3 | GU | `(?=(?:a\|b\|x)*c)x`, `budget frames=8`: the deny arm gives up at 0 and the correct VM hat answers (24,25), as Q-R3 says. Trail and caller-buffer `_in` capacities have NO cell (the drafts' reader routes `_search` only), OWED at stage 2 |
+| VM hat: backrefs to empty groups, recursion, lookahead-first, nullable decline | VMB, VMR, VML, VMN, plus VMC (`(?1)`), VMW, VMK (`\K`) | VM hat |
+| the re-seed's FORM, and the `first-memchr-bounded` landing paths | RS, M1 | added by this lane (§6.4.3 items 1 and 3) |
+
+#### 6.4.2 The mutation table
+
+Per mutant: the blocks it was BUILT on (others decline it, or it builds a
+table identical to the correct one), how many of those a CELL detects, and
+the first detecting cell. "MISSED" (sweep sees it, no cell does) is 0 for
+every row after closure. `out/mut_summary.txt`, `out/mut.variants.tsv`.
+
+| mutant | built on | detected by cells | first detecting cell | verdict |
+|---|---|---|---|---|
+| **correct DFA hat** (D0: `T = S ∩ E*`, `T ⊊ E`, conditional re-seed) | 41 movers | 0 (sweep: 0 diffs on all 41) | — | the control: the cells pass the correct build |
+| `T = S ∩ E` (r3, the sound-F1 bug) | 16 (all non-movers) | **16** | `witnesses.rxt` `(?:(?<=a)z\|w)` `ms 0 "aza"` → (1,2), twin 0 | DETECTED. On every MOVER it is the identical table (`S ⊆ E`), so S480 reaches only non-movers, by construction |
+| E\* missing one seed state (each `k ≠ s0`) | 14 | **14** | as above | DETECTED where the machine has exactly 2 seed states (it then IS r3's set). On the other 46 blocks it declines or builds the IDENTICAL table (with 3+ seed states E\* is still 256): an equivalent mutant, §6.4.3 item 6 |
+| E\* missing s0 | 10 | **7** | `witnesses.rxt` `(?:\bab\|x)` `ms 0 " ab"` → (1,3), twin 0 | DETECTED: on a `\b`-machine the word-context seed alone does not escape on `a` |
+| re-seed removed | 41 | **26** | `wordb.rxt` `\b(?:ab\|cd)\b` `ms 0 "bab ab"` → (4,6), twin 0 | DETECTED (15 blocks where the stale s0 is harmless) |
+| re-seed UNCONDITIONAL (`pos ? seed[..] : s0`) | 41 | **6** | `reseed.rxt` `(?:\b\|xy)a` `ms 0 "xya"` → (0,3), twin 0 | DETECTED — on ordinary seeded movers, not on `\G` (§6.4.3 item 1) |
+| seek before `rx_valid_upto` (DFA hat) | 1 | **1** | `utfcheck_cells.tsv` `\b(?:ab\|cd)\b` -futf-check on `\xff` → −9, twin 0 | DETECTED |
+| seek from `search_from` instead of `max(search_from, lo)` (DFA hat, handoff movers) | 3 | 0 (sweep 0) | — | UNOBSERVABLE: an equivalent mutant (§6.4.3 item 7) |
+| `first-memchr-bounded`, hit-path re-seed deleted (S483/S484) | 5 | **3** | `reseed.rxt` `\B(?<!a)d` `ms 0 "xdz"` → (1,2) | DETECTED, only under a RESTRICTIVE context (§6.4.3 item 3) |
+| `first-memchr-bounded`, clamp-path (`n − 1`) re-seed deleted | 5 | **2** | `reseed.rxt` `\B(?<!a)d` `ms 0 "xd"` → (1,2) | DETECTED, same |
+| `T` missing one member (DFA) | 84 drops | 54 | `wordb.rxt` `\b(?:ab\|cd)\b` drop `a`: `ms 0 "ab"` | DETECTED per member the cells start a match with |
+| `T = Tdfa` (§4.1a's "would also be sound") | 2 | **1** | `witnesses.rxt` `(?:\b\|x)y` `ms 0 "xy"` → (0,2), twin 0 | **the claim is FALSE** (§6.4.3 item 2) |
+| **correct VM hat** (V0) | 13 | 0 (sweep 0) | — | the control |
+| seek one byte late (S479) | 13 | **13** | `vmhat.rxt` `\((?:[^()]\|(?R))*\)` `ms 0 "(a)"` → (0,3) | DETECTED on every VM block |
+| `S` missing its first byte | — | yes | `vmhat.rxt` `(ab)\1` drop `a`: `ms 0 "abab"` | DETECTED |
+| `S` missing a caseless twin | — | yes | `vmhat.rxt` `(?i)(ca)t\1` drop `C`: `ms 0 "Catca"` | DETECTED (1 cell; the sweep's own reach is 8 cells) |
+| `S` missing a utf8 LEAD byte | — | yes | `vmhat.rxt` `(k)\1` `-i -e utf8` drop E2: `ms 0 "\xe2\x84\xaak"` | DETECTED |
+| (all VM `S`-member drops) | 23 | 20 | — | the 3 undetected drop a member no cell starts a match with (`0` from `\w`): §6.4.3 item 8 |
+| nullable treated as non-nullable | 1 | **1** | `vmhat.rxt` `a*b?` (forced VM) `ms 0 ""` → (0,0), twin 0 | DETECTED |
+| retry seek skips a valid later start | 13 | **11** | `vmhat.rxt` `(ab)\1` `ms 0 "aabab"` → (1,5) | DETECTED (2 blocks with no failing-then-valid adjacent pair) |
+| seek before `rx_valid_upto` (VM hat) | 1 | **1** | `utfcheck_cells.tsv` `(\w)\1x` -futf-check on `\xff` → −9, twin 0 | DETECTED |
+| seek from `search_from` instead of `max(search_from, lo)` (VM hat) | 0 | — | — | NOT BUILDABLE: no VM-hat artifact carries a handoff (item 7) |
+
+**Every mutant the brief lists is DETECTED at answer level by a draft cell,
+except two that are EQUIVALENT on every machine pcrec can build** (the
+seek-start mutant on both hats, and E\* without one seed on 3+-seed
+machines). §6.4.3 items 6-7 give the argument and name the check that sees
+each.
+
+#### 6.4.3 Findings
+
+1. **The unconditional re-seed loses matches on ORDINARY seeded movers,
+   not only on `\G`** (sound-F7 and S485 are wrong about where the hazard
+   lives).
+   - **Witness**: `(?:\b|xy)a` on `xya` → (0,3); the unconditional twin
+     returns 0. Mechanism: after `xy` the forward machine is back in state 0
+     (s0's future: `a` now matches), but `seed[class(y)]` is the
+     word-context seed. When the skip does not move at `q == entry`, the
+     unconditional form overwrites a CORRECT state 0 with that seed.
+   - **Measured** (`search_uncond.py`, a random 2-3-branch family over
+     `\b \B (?<=a) (?<!a) x y ab …`): 6 of 84 DFA-hat movers differ under the
+     unconditional form; 0 of 84 under the conditional one. Two of the six
+     lose where NO re-seed at all does not (`(?:abz|x(?<=[ab])|\bz)y`,
+     `(?:\b(?<!a)a|a[xy]a|\ba)z`). On the 56 census movers at rev 2's
+     alphabets: 0 (`census_reseed.py`), so no shipped mover reaches it today.
+   - **Consequence**: the conditional form is a SOUNDNESS requirement. S485
+     keeps its structural check and gains answer witnesses (`reseed.rxt`,
+     edge RS); its "answer-invisible on F's population" is withdrawn.
+2. **`Tdfa` is not a sound floor; §4.1 step 2's stated condition and
+   §4.1a's "Tdfa alone would also be sound" are refuted.** The ruled rule is
+   unaffected.
+   - **Witness**: `(?:\b|x)y` on `xy` → (0,2). Here `δ(s0, x) = s0` and
+     `δ(word, x) = s0` (after `x`, a `y` matches, exactly as at a nonword
+     context), so `x` never leaves the seed set and `x ∉ Tdfa = {y}`. But
+     `seed[class(x)]` is the WORD seed. Skipping `x` and re-seeding lands in
+     the wrong state, and `T = Tdfa` loses the match. (The block is a
+     non-mover — `x ∈ S \ E` — so only a `T = Tdfa` build would reach it.)
+   - **The corrected argument** (it replaces §4.1 steps 1-3's wording): a
+     skipped byte `b ∉ S` begins no match in ANY context. So the state after
+     it has exactly the future of the startpos state with context `b`, i.e.
+     `seed[class(b)]` — equality of minimized states is equality of future
+     languages. By induction over the skipped run, the re-seed is exact iff
+     every skipped byte is outside `S`, i.e. iff `T ⊇ S`. `E` plays no part
+     in soundness (only in admission and cost), and "state 0 means no live
+     thread" (step 1) is not true of a minimized machine (state 0 is
+     RE-ENTERED with in-flight threads, item 1), and is not needed.
+   - **For the checks**: C-SS\* (`Tdfa ⊆ S`) still holds and stays a valid
+     WALK check, but it cannot certify a `T`: only the start-byte oracle
+     (every byte that begins a match is in `T`) and the answer cells see a
+     too-small `T`. A `T` derived from the machine instead of from `S` would
+     pass C-SS\* and lose matches.
+3. **The DFA hat has no unbounded population; only the `-bounded` rows are
+   reachable.** A machine whose start depends on a context byte carries a
+   class context (`clsctx`), and `wctx ⇒ views` (`emit_dfa.c:4184-4189`),
+   so its skip is the `-bounded` form. The build should ASSERT "seeded ⇒
+   views" rather than rely on this reading. Measured: 170 of 170 seeded census artifacts carry a
+   `-bounded` prefilter or none (`byte-class-bounded` 94, `offset-set-bounded`
+   35, `memchr-bounded` 26, none 15). So the DFA-hat columns of
+   `first-class` and `first-memchr` are UNREACHABLE by construction.
+   - **The bounded landing paths are answer-visible only under a
+     RESTRICTIVE context.** With `\b`-only movers the stale s0 is
+     permissive (it can only add a candidate the reverse pass or the VM
+     rejects), so deleting either path's re-seed was unobservable on 2 of
+     the 5 `|T| = 1` movers. Under `\B` or a negative lookbehind the stale
+     s0 forbids a real start: `\B(?<!a)d` on `xd` (the `d` is the last byte,
+     so `memchr` over `[0, n−1)` misses and the clamp path lands) and on
+     `xdz` (the hit path).
+4. **The count-collapsed obligation has its FAILING witness** (sound-F5(d)).
+   `search_uncond.py FAMILY=collapsed` (`X{m,n}` cores, `-fprefilter-collapse`):
+   **36 of 97 collapsed hybrid movers lose without the re-seed, 0 with it.**
+   The critic's two patterns read 0 because their collapsed core repeats,
+   so the reverse pass recovers the earlier start (§4.1's own "start below
+   q" reading). The witness needs a core whose first copy is the only
+   copy: `\B(a|b){1,3}` on `xa` → (1,2); `\B(x|ab){1,2}\b` on `zx`
+   (`hybrid.rxt`, edge HYC, built through a `-fprefilter-collapse`
+   target).
+5. **Re-seed REMOVED is answer-visible on 26 of 41 movers**; on the other
+   15 the stale s0 is permissive (item 3's reason), which is why S481/S483
+   need `\b` fixtures with a FOLLOWING real match (`bab ab`, `babx`) and
+   `\B` fixtures (`xabx`).
+6. **E\* without one seed state is an EQUIVALENT mutant on every mover.**
+   - With 3+ seed states, E\* is still all 256 without any one of them (a
+     byte that begins no thread moves every OTHER seed to `seed[class(b)]`),
+     so the emitted table is identical.
+   - With 2 seed states, dropping the non-s0 seed gives r3's `S ∩ E`, which
+     equals `S` on every mover. It is visible only on the six non-mover
+     witnesses, which the mutant ADMITS.
+   - **What sees it**: no answer and no check on the artifact can, because
+     the artifact is unchanged. The §4.1a build assertion "`T == S` on every
+     mover" (equivalently `|E*| == 256` on every seeded machine) is the
+     guard. It fires at compile time for every non-equivalent E\* defect.
+7. **The seek-start mutant (`search_from` instead of `max(search_from,
+   lo)`) is equivalent on both hats.**
+   - **VM hat**: no VM-hat artifact has a handoff. `req_handoff_applies`'s
+     premise (a) requires a DFA scan, and `emit_vm.c:13411` fails the
+     compile if the handoff reaches a VM-none artifact. So
+     `max(search_from, lo)` is `search_from`.
+   - **DFA hat** (built: the scan starts at `search_from` with the state the
+     handoff seeded for `lo`): every match contains the run within K of its
+     start. So no match, and no false accept under the wrong context, can
+     start in `[search_from, lo)`. Measured: 0 diffs on the 3 handoff movers.
+   - **What sees it**: a structural check, "no artifact with
+     `_VM_START_SCAN != "none"` has `REQ_HANDOFF != "none"`", and a cost
+     read. No answer can.
+8. **Per-member `S`/`T` drops are seen only for the members the cells start
+   a match with.** `(\w)\1x` without `0` is undetected by every cell and by
+   the sweep. Full membership is a POPULATION question, and the start-byte
+   oracle (§6.2) is its detector. The cells pin the ROLES (first byte,
+   caseless twin, utf8 lead) and the oracle pins the rest.
+
+#### 6.4.4 Homes in `tests/` and the sabotage rows they pin
+
+The drafts become HAND files under `tests/startset/` at the build stage of
+their hat, keeping `cells.py` + `gen_rxt.py` as their generator (the
+`tests/utfcheck/` shape: the authored half and a committed 10.46
+transcript). The sweep arm becomes the stage-2 every-startpos differential
+of §6.2 (GENERATED, `run_startbnd_diff.sh`'s shape) over these blocks'
+alphabets.
+
+| edge keys | draft | home | stage | pins (§6.3) |
+|---|---|---|---|---|
+| W, W3 | `witnesses.rxt` | `tests/startset/dfahat.rxt` | 3 | **S480** (its ONLY reach, by construction: item 6), S501 (`(?:(?<=a)z\|w)`), C-SS\*, the start-byte oracle |
+| S0, LBK | `witnesses.rxt`, `lookbehind.rxt` | `tests/startset/dfahat.rxt` | 3 | the §4.1a `T == S` assertion's answer witness (E\* without s0); S480 |
+| LB2, LB3, LBN, LBNEG | `lookbehind.rxt` | `tests/startset/dfahat.rxt` (+ hybrid) | 3 | S481/S483 (re-seed deleted, bounded), S493 on the hybrids |
+| WB, WBU, CI, SF, BD | `wordb.rxt`, `bounds.rxt` | `tests/startset/dfahat.rxt` | 3 | S481/S483, S486 (WBU/CI with the options read, sound-F4) |
+| HO | `wordb.rxt` | `tests/startset/dfahat.rxt` | 3 | the handoff composition (item 7's structural check) |
+| RS, M1 | `reseed.rxt` | `tests/startset/reseed.rxt` | 3 | **S485** (answer witnesses), **S483/S484** (the two landing paths) |
+| ML | `multiline.rxt` | `tests/startset/dfahat.rxt` | 3 | S480 (`ctxnode.rxt:400`), S490 (the `(?m)^` attempt scan) |
+| U8, U8CI | `utf8.rxt` | `tests/startset/dfahat.rxt` (`encoding utf8` blocks) | 3 | S497's guard order (sound-F4), S486 |
+| BG, VMG | `bounds.rxt`, `vmhat.rxt` | `dfahat.rxt` / `vmhat.rxt` | 2/3 | S490 (scan kind), S485's `\G` argument |
+| HY, HYC | `hybrid.rxt` (head: the collapse targets) | `tests/startset/hybrid.rxt` | 3 | S481/S483 on the hybrid, S493, the sound-F5(d) obligation |
+| VMR, VMB, VML, VMC, VMW, VMK | `vmhat.rxt` | `tests/startset/vmhat.rxt` | 2 | S478, S479, S498 (`(?1)x(y)`), S499, the V2/V4 mutants |
+| VMN | `vmhat.rxt` | `tests/startset/vmhat.rxt` | 2 | **S491** (`a*b?` forced VM), S488 |
+| VMI, VMU | `vmhat.rxt` | `tests/startset/vmhat.rxt` | 2 | S478 (caseless twin, utf8 lead) |
+| GU | `giveup.rxt` | `tests/startset/giveup.rxt` | 2 | the Q-R3 allowance (§6.2's give-up row) |
+| UC | `utfcheck_cells.tsv` | rows of `tests/utfcheck/gen_cases.py` + its 10.46 transcript | 2/3 | NO §6.3 row: **proposed S503/S504** (the no-candidate return hoisted above `rx_valid_upto`, VM / DFA) |
+
+**§6.3 rows the mutation run shows WEAK or mis-aimed.**
+- **S482** (`first-memchr`, re-seed deleted): its witness `\bab\b` is not
+  a mover at all (`offset-set-bounded` wins first), and the unbounded
+  DFA-hat form has no population (item 3). Declare it UNREACHED by
+  construction, with an assertion (seeded ⇒ views ⇒ `-bounded`), or
+  retarget it at `first-memchr-bounded` with `\B(?<!a)d`.
+- **S481** (`first-class`, re-seed deleted): the same. Its witness
+  `\b(?:ab|cd)\b` is a `first-class-BOUNDED` artifact, so S481 and S483
+  plant the same row. Fold S481 into S483, or declare it UNREACHED.
+- **S483/S484** ("verify"): measured witnesses now exist, and they must be
+  RESTRICTIVE-context movers (item 3). `\b`-only fixtures read 0.
+- **S485**: no longer structural-only (item 1). Its answer witnesses are
+  `reseed.rxt`'s RS blocks. Its population on the corpus is 0 of 56, so the
+  fixtures are its only reach.
+- **S480**: sound, but its reach is ONLY the six non-mover fixtures (the
+  plant equals the correct table on every mover). The plant must also
+  carry r3's ADMISSION (`S ∩ E ⊊ E`), or it is the identical program and
+  reads UNREACHED.
+- **C-SS\***: right as a walk check, but item 2 means it cannot stand in for
+  the start-byte oracle as the check on `T`. §6.2's table should say that the
+  oracle, not C-SS\*, is the detector for a too-small `T`.
+- **No row** covers the seek placed before `rx_valid_upto` (D148 addendum 1
+  lists it). Proposed S503 (VM hat) and S504 (DFA hat), with the UC cells as
+  witnesses.
+
+#### 6.4.5 What is owed, and the standing questions
+
+- **Owed**: trail and caller-buffer (`frames-buffer=`) give-up cells (GU
+  covers frames only); `-e utf8 --ucp` word-boundary cells once [UCP] U3/U4
+  builds it; the drafts' move into `tests/` (§6.4.4) at each hat's stage.
+- **Q1, the measurement regime**: answers only. No clock is read. The
+  oracle is two libpcre2 builds (10.48 Mac, 10.46 Linux), and they agree on
+  every cell.
+- **Q2, the independent control**: each cell's expectation comes from
+  libpcre2, never from pcrec, and the twins share no code with the oracle.
+  The run's own controls are the correct twins (0 diffs on all 54 hat
+  blocks) and the base (0 disagreements). The sweep is a second detector,
+  and it is what found every cell added in closure.
+- **Q3, what moves when regenerated**: `gen_rxt.py write` rewrites the
+  drafts from the oracle transcripts. A changed answer is a changed oracle,
+  and with REF given the writer refuses it. Nothing emitted moves; no abi
+  event.
 
 ---
 
