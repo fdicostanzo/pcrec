@@ -36,3 +36,16 @@ deleted; a superseded item says so in place.
   taskset, ≥50 ms loops, base-vs-base floor, both layers) is ONE
   script handed to main's executor channel in a slot main names. No
   kit code, no pcrec byte moves.
+
+## N-1 (2026-10-05, kit session) — Frank's direction given to the kit directly: tuning constants are suspect
+
+Frank, to the kit session: the R-1 `swar` probe's 16-byte (2x) hot loop
+is an UNMEASURED default (inherited from `ffl`'s 2xVW shape) and is to be
+noted as such. He dislikes hand-tuned numbers like that and prefers a
+shape where the compiler picks the unroll. No action now. Standing
+consequence for kit forms: every unroll width, block size, short-span
+cut-over or threshold is measured (regime named), derived, or left to
+the compiler, and is never adopted silently. Proposed for main to file
+(a D-entry or a D147 addendum, main's call). Recorded in
+`memfn/docs/journal.md` and as a comment at the loop in
+`docs/design/memfn/probes/twins/tb_r4b.c`.
