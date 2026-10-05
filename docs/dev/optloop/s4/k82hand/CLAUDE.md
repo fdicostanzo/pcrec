@@ -19,3 +19,10 @@ a clock.
   pre-check emitted, is a DFA scan in front, and is the window's offset
   bounded. `PROTO` (the prototype binary), `SCR`, `BENCH`, `PROCS` from the
   environment.
+- `k82h_census_r2.py` / `k82h_census_r2.out` — **revision 2's census**
+  (lane `k82hrev`, 2026-10-04; r1 panel findings C-C8/C-C9): the same
+  classifier (`k82h_census.py`'s `one()`, imported) over every corpus
+  pattern under `auto`, `--no-captures` and `--engine=vm -fprefilter`,
+  with the hybrid movers' `RX_VM_PREFILTER_LANG`; and over the corpus's
+  35 budget/`gu` pattern blocks compiled with their own `engine` column.
+  Same environment as `k82h_census.py`. Design note §3.1a.

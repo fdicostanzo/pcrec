@@ -2634,7 +2634,17 @@ append-only or historical records.
   cell among them, `union-select` unbounded and unmoved. §4 is the
   validation plan, with sabotage S463-S472 and the alpha cells. §5 lists
   12 hazards for the panel and 8 questions. Instruments:
-  `../dev/optloop/s4/k82hand/`.
+  `../dev/optloop/s4/k82hand/`. **REVISION 2 (lane `k82hrev`, same day)
+  applies the light D6 panel r1 (`../dev/reviews/2026-10-04-r1-k82-handoff.md`,
+  17 findings, all accepted); read its §R first.** The gate's return value
+  becomes a written contract (leftmost occurrence ≥ `search_from`, §1.1a);
+  the give-up allowance narrows to count-collapsed prefilters (measured
+  empty); the hybrid's prefilter is a third `\G` reader; verbs/callouts
+  decline; the utf8 round-up is uncapped and taken only when `lo > f`; the
+  stamp goes on movers only (Q3 reversed), with the abi and byte-count
+  readers enumerated by grep (§2.3a); the fact gets checks that share no
+  source with the walk (§4.2a); sabotage S463-S477 with in-suite
+  detectors and constructed witnesses; Q1-Q10 in §Q.
 
 **[VAR] THE MVP's PATTERN HALF LANDED 2026-09-23** (lane varmvp, M1-M8 +
 M10; M9 stays gated on `[M4-SUBST]`). The four notes stand as written except
