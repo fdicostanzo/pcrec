@@ -1,7 +1,8 @@
 # src/facts/ — the pattern-facts ANALYSIS LAYER ([PATFACTS], D120/D126)
 
 ONE organized record of what a pattern HAS — its kind mask and
-nullability (E1, step 3.2), its necessary bytes and run, its start anchor,
+nullability (E1, step 3.2), its necessary bytes and run, its start anchor
+and start set,
 its end window, and (E3, step 3.4) the k-set walk and the necessary run's
 pin on it — computed once per compile attempt,
 behind one accessor per fact, sealed by epoch, with the fact-level `-fno-`
@@ -136,6 +137,19 @@ defect traced to that edge (design §4.2.1, §10).
   Tests: `tests/codegen/run_prechecks.sh` §1 (the stamp held to the emitted
   bound, in both directions, with a population floor); failing-direction
   control `tests/mech/sabotages/S263`.
+
+- **startset.c** — [START-SET] stage 1 (D148, lane ssbuild01, 2026-10-05;
+  `docs/design/startset.md` §3): THE START SET (`pcrec_start_set`, fact
+  `start_set`, E2 core, no deny). A SUPERSET of the bytes the first consumed
+  byte of a non-empty match can be, on the LOWERED tree (so it reads the
+  compile's own `-i`/`--ucp`/encoding by construction, sound-F4), with every
+  zero-width node erased (∅, nullable) and `A_BREF`/`A_CALL`/`A_VAR` read as
+  all 256 bytes, nullable. Its `nullable` is the ERASED language's (sound-F9):
+  `nullable` ⇒ `start_set.nullable`, pinned by `tests/startset/` [ss-null].
+  Spines iterative, no `default:`, `Ast.u.call.body` not followed. No pass
+  reads it at stage 1; stage 2's VM hat and stage 3's DFA hat will. Checks:
+  `tests/startset/` (C-SS\*, [ss-null], [ss-flag]); sabotage S501 (a
+  lookaround read as consuming) and S502 (`A_CAT` drops `null(l) ? F(r)`).
 
 - **endwin.c** — [OPT-ENDWIN], `[OPTLOOP.1]` batch 1 (D119): THE END-ANCHOR
   START WINDOW. `pcrec_end_window` answers *how far from the subject's END
