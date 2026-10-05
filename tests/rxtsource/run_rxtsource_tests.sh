@@ -5043,7 +5043,7 @@ fb0_case serves-query-twice schema-constraint "duplicate 'serves'"    "$fb0_hd$f
 # its one reachable input. [FINDINGS] B5 admits `cpfreq`, and the two-block
 # case B0 owed is `serves-collision-2` below: a `freq` and a `cpfreq` block
 # of one bundle both serving (byte-rate, utf8).
-fb0_case serves-collision schema-constraint 'at most one block'       "$fb0_hd$fb0_enc        serves byte-rate when byte,byte via unigram\n$fb0_pv"
+fb0_case serves-collision schema-constraint 'is already served by line' "$fb0_hd$fb0_enc        serves byte-rate when byte,byte via unigram\n$fb0_pv"
 # [FINDINGS] B5: `cpfreq` — its `U+HHHH` key grammar, the scalar-value rule,
 # its derivations' kind, the row limit's name is PCREC_MAX_FIND_CPFREQ_ROWS
 # (not driven: 65,537 lines), and a derived count over PCREC_MAX_FIND_COUNT
@@ -5051,7 +5051,7 @@ fb0_case serves-collision schema-constraint 'at most one block'       "$fb0_hd$f
 # so 2^40 + 1 lands on it under encode-utf8 though no ROW exceeds 2^40.
 fb0_cp='analysis w\n    cpfreq\n        question q\n        reader r\n        analyzer a\n'
 fb0_cpsrv='        serves byte-rate when utf8 via encode-utf8\n'
-fb0_case serves-collision-2 schema-constraint 'at most one block'     "analysis w\n    freq\n        question q\n        reader r\n        analyzer a\n$fb0_enc        serves byte-rate when byte,utf8 via unigram\n$fb0_pv    cpfreq\n        question q\n        reader r\n        analyzer a\n$fb0_enc$fb0_cpsrv$fb0_pv"
+fb0_case serves-collision-2 schema-constraint 'is already served by line' "analysis w\n    freq\n        question q\n        reader r\n        analyzer a\n$fb0_enc        serves byte-rate when byte,utf8 via unigram\n$fb0_pv    cpfreq\n        question q\n        reader r\n        analyzer a\n$fb0_enc$fb0_cpsrv$fb0_pv"
 fb0_case cp-key-lower    value-shape       "'U+00e9' is not a code point" "$fb0_cp$fb0_enc$fb0_cpsrv        row U+00e9 3\n$fb0_pv"
 fb0_case cp-key-short    value-shape       "'U+E9' is not a code point"   "$fb0_cp$fb0_enc$fb0_cpsrv        row U+E9 3\n$fb0_pv"
 fb0_case cp-key-lead0    value-shape       "'U+0E9E9' is not a code point" "$fb0_cp$fb0_enc$fb0_cpsrv        row U+0E9E9 3\n$fb0_pv"
