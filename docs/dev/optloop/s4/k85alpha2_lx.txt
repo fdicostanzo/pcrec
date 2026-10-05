@@ -1,0 +1,9 @@
+# k85alpha2: alpha_k85.sh all (fixed DENY + NSL arm), ubuntubudu (gcc 15.2, taskset -c 2), 2026-10-05, lane k82close.
+# BASE_REV=c4c70f2c NEW_REV=3481682b; cmd: env S4A=.../scratch_lx/k82close/w BASE_REV=c4c70f2c NEW_REV=3481682b gnutimeout 3000 bash alpha_k85.sh all. Below: the log verbatim except the 100 subject-sha "OK" lines (0 SHA-MISMATCH), elided; the trailing 100 is their count.
+check: rc=0
+# Mon Oct  5 07:34:22 PM UTC 2026 ubuntubudu load1=0.60 gov=schedutil boost=1
+cell            subject                unit         base        new       deny        nsl    new-base      floor    new-nsl  verdict
+cls-n-uc        syn:t-64k              ns/B     0.514909   0.387743   0.514933   0.365150    -0.12717    0.00002   +0.02259  WIN
+cls-n-uc        syn:t-256k             ns/B     0.576929   0.435623   0.575459   0.401582    -0.14131    0.00147   +0.03404  WIN
+cls-n-uc        syn:t-1m               ns/B     0.641564   0.477154   0.641976   0.441126    -0.16441    0.00041   +0.03603  WIN
+100

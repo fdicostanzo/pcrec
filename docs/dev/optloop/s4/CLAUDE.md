@@ -156,6 +156,12 @@ in the design note with its section.
 - `k85alpha_lx.txt` — the cls-n-uc K85 re-measure at abi 61 (`lx1006_alpha_k85.sh`) plus the
   lx1006 driver log, verbatim; its `check` is red by the script's own deny choice (section 3 of
   the same report).
+- `alpha_k85.sh` — K85's re-measure at abi 61 (cls-n-uc only): BASE abi 59, NEW the
+  abi-61 build, DENY = NEW `-fno-req-set-lead -fno-req-handoff` (== BASE, the floor pair), NSL = NEW
+  `-fno-req-set-lead` (the K85 quantity is NEW - NSL). Fixes lx1006's script, whose DENY lacked
+  `-fno-req-handoff` (its `check` was rc=1 and its floor the handoff's own effect).
+- `k85alpha2_lx.txt` — `alpha_k85.sh all`'s Linux transcript (ubuntubudu, 2026-10-05, lane
+  k82close; `check: rc=0`; NEW - NSL +0.023..+0.036 ns/B); read in known_issues K85.
 
 `alpha_c3.sh`'s loglines A0 control is `level-context` since [K82]:
 `stack-frame`, the old control, moves at abi 60 (a set-leads mover).
