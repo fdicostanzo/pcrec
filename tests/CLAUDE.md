@@ -687,6 +687,12 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
   under `build/oracle_cache/`. See its own CLAUDE.md; other suites do not
   read this store yet (wiring it in as an existing check's oracle is a
   separate, un-scheduled migration step).
+- **memfn/** — [MEMFN]: pcrec-side checks of the in-tree kit (`memfn/`).
+  At R4a: `run_link_checks.sh` (`make test-memfn-link`, a `make test`
+  section) — C15 (libpcrec.a exports only `pcrec_` names, the kit's
+  `pcrec_mf_*` included) and C16 (every kit source file carries a D145
+  SPDX id and a provenance header, agreeing with `memfn/PROVENANCE.md`),
+  each with a planted witness run every time. See its own CLAUDE.md.
 - **utfcheck/** — [UTF-VALID] (D133): `make test-utfcheck`, the
   `-futf-check` / `-fstartpos-guard=align` differential against libpcre2
   10.46's COMMITTED answers (`cases_10.46.tsv`, from `probe_pcre2.c` run
