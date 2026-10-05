@@ -3474,9 +3474,9 @@ search keeps one spelling.
 
 So, against revision 3's M1, M1 sheds VERIFY/VMRUN (runcmp and its
 three callers) and bit 43's crossing. The `memchr(` ratchet after M1
-reads 9 → 4: the five sites in the pre-check and the offset-skip trio
-(`:1221`, `:1247`, `:6153`, `:6157`, `:6216`/`:6218` counted as the
-block's two arms), leaving PF's two and N3's (`:5679`, `:5703`, `:8762`).
+reads 9 → 3, as in revision 3: the six texts in the pre-check and the
+offset-skip trio (`:1221`, `:1247`, `:6153`, `:6157`, `:6216`, `:6218`)
+leave, and PF's two and N3's (`:5679`, `:5703`, `:8762`) remain.
 C12's ceiling is re-counted at the build commit, and the list above is a
 floor.
 
