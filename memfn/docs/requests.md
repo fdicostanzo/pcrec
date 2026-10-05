@@ -31,6 +31,9 @@ The probe code lives beside the original twin,
 **Prerequisite / trigger:** `lane/k82hbuild` merged (main f116cff5, abi
 61, the T3 handoff) — met. The manager confirms the handoff's alpha
 acceptance before briefing the lane.
+**Confirmed 2026-10-05 (pcrec manager):** the handoff's Linux alpha is
+accepted (docs/dev/lanes/k82halpha_report.md, merged ad16111b): cause (B)
+cured, DENY==BASE on every cell, answers identical. R-1 is clear to serve.
 
 **The operation wanted (semantic):** FIND over the composite pre-check
 predicate — a lead byte, a caseless masked RUN at its offset, and the
