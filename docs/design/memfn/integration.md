@@ -962,11 +962,11 @@ typedef struct {
 /* -- the answer: a price list ---------------------------------------- */
 typedef struct { int64_t lo, hi; } mf_ps;   /* picoseconds: min and median of N loops */
 
-typedef struct {                    /* cost on r in [r0, r1): F + B*(r - r0) + base  */
-    uint64_t r0, r1;                /* r1 = MF_SPAN_UNBOUNDED on the last segment   */
-    mf_ps    at_r0;                 /* total per-call cost at r = r0                */
-    mf_ps    per_byte;              /* slope on the segment, ps per byte (x1000)   */
-} mf_seg;
+typedef struct {                    /* cost(r) = at_r0 + per_byte*(r - r0)/1000,    */
+    uint64_t r0, r1;                /*   for r in [r0, r1); r1 = MF_SPAN_UNBOUNDED  */
+    mf_ps    at_r0;                 /*   on the last segment. at_r0: ps per call    */
+    mf_ps    per_byte;              /*   per_byte: fs per byte (ps x 1000), so a    */
+} mf_seg;                           /*   0.020 ns/B slope is 20,000, not 20         */
 
 #define MF_MAX_SEG 16
 typedef struct {
@@ -1063,7 +1063,9 @@ int mf_text_marker(const mf_token *t, mf_sink *out, char *why, size_t whylen);
 - **The unit is integer picoseconds per call on the arm's calibration
   box.** It is the unit `litscan_k82b.md` §1.3 proposed for its cost
   terms (`limits.def` rows in `ps`), for the same reasons: integer and
-  bit-exact. Revision 1 had no unit at all, because it had no comparison.
+  bit-exact. Revision 1 had no unit at all, because it had no comparison. Slopes are
+  carried in femtoseconds per byte, so that `memchr`'s 0.020 ns/B is 20,000
+  rather than a rounded 20.
 - **The variable is `r`, the bytes the operation reads before it hands
   off.** For RETURN, `r` is the distance to the first hit, capped at the
   bound. For ADVANCE it is the run length. For VERIFY_NEXT it is the whole
@@ -1283,7 +1285,7 @@ kit-supplied terms. D141's census, when scheduled, finds nothing new in
 | C4 | **arch-blindness detector**: `src/`, `cli/`, `lib/` contain no ISA vocabulary (`sse`, `ssse3`, `avx*`, `neon`, `sve*`, `x86-64-v*`, `armv8`, `aarch64`, `__x86_64__`, `__ARM_NEON`, `__AVX2__`, `pshufb`, …) outside a committed allowlist counted at birth (D107's shape), and no `strcmp`/`==` on `mf_token_name(`. A new hit fails | Frank's "as much as possible" as a red test | n/a |
 | C5 | **unpriced never selects**: the corpus compiled at `--isa=x86-64-v4` and `--isa=armv8-a+sve` carries no `kit` selection, and is byte-identical to `-fno-kit-scan -fno-kit-loop` except the `<PREFIX>_ISA` stamp | §7.6's first row | no |
 | C6 | answer identity per deny, per box: `make test-axes` arms for the three bits; option_sets.md §3.5a's compile-only arms per token | correctness under every selection | no |
-| C7 | **ratio invariance**: scaling every price in one arm by 2, or by 1/2, flips 0 selections over the corpus census (k82b §1.4's shape) | the decision depends on signs only, and catches unit slips (`per_byte` ×1000, ps vs ns) | n/a |
+| C7 | **ratio invariance**: scaling every price in one arm by 2, or by 1/2, flips 0 selections over the corpus census (k82b §1.4's shape) | the decision depends on the SIGN of a difference only, so a uniformly mis-scaled arm (a whole box running slow) moves nothing. A NON-uniform slip (one term in the wrong unit) is not this check's: C2 and C8 catch it, because their measured and fixture numbers stay in the true unit | n/a |
 | C8 | the dominance unit test, on the committed Linux numbers as a fixture: the fused pair kernel against `LIBC_PAIR` SELECTS at `span_hi = 64` and does NOT select at `MF_SPAN_UNBOUNDED`. Plus a crossing pair that differs only at an interior breakpoint, which a two-endpoint check would pass | the corner proof, including the interior breakpoints and the slope arm | uses calibration numbers as fixtures by design |
 
 **Forcing (D46's controllability half).** `kit-scan` and `kit-loop` are
@@ -1306,7 +1308,9 @@ loss arm and for the kit's bench.
   digest check removed (C2's stale count);
 - `mf_dominates` checking only the two ends of the span interval (C8's
   interior-crossing vector);
-- one arm's `per_byte` read as ns instead of ps (C7).
+- one arm's `per_byte` read as ps instead of fs (C2: the verifier's
+  measured midpoints leave the quote; C8: the committed fixture's
+  selection flips at `span_hi = 64`).
 
 ### 7.9 What K0 removes
 
