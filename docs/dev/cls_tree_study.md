@@ -269,7 +269,7 @@ of those eight are case-fold pairs:
 | `bc035` | `{B,b}` | `(c \| 0x20) == 'b'` | **sees it** |
 | `bc018` | `{a,c}` | `(c & ~0x02) == 'a'` | **blind** — xor is 0x02, not 0x20 |
 | `bc032` | `{g,k}` | `(c & ~0x04) == 'g'` | **blind** — xor is 0x04 |
-| `bc019` | `{A,B,a,b}` | `(c & ~0x21) == 'A'` | **blind** — not a pair at all; two free bits |
+| `bc019` | `{A,B,a,b}` | `(c & ~0x21) == 'A'` | **blind** — not a pair at all; two free bits | **ERRATUM 2026-10-04 (lane memftwin, docs/design/memfn/twins.md): this absolute-form test is WRONG — the correct cube test is `((c - 'A') & 0xDE) == 0`; exhaustive check caught it.**
 | `bc024` | (2 sections) | `ALL` + one cube | **blind** |
 
 The four "blind" rows are emitted today as 32-byte bitmap tables plus a

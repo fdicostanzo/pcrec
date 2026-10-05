@@ -1,0 +1,183 @@
+# tc_asm: Apple clang version 21.0.0 (clang-2100.1.1.101), flags: -O2 
+# diff = differing lines in order; bag = differing lines of the register- and branch-target-renamed,
+# sorted instruction multiset (0 = the same instructions, scheduled/allocated
+# differently); ICF = the compiler folded desc_X onto hand_X (one symbol)
+# set  hand-insns  desc-insns  desc-diff  desc-bag    mut-insns  mut-diff  mut-bag
+q2           106         106          0         0           330       404      230
+d             99          99          4         4           330       399      263
+ss            99          99          0         0           330       395      237
+ab           106         106          0         0           330       402      244
+sp           108         109         27         3           330       394      226
+w            131         130         41         9           330       401      209
+
+## diff hand_ab desc_ab (in order)
+## bag diff hand_ab desc_ab
+
+## diff hand_d desc_d (in order)
+40,41c40,41
+< cmp	w9,
+< b.lo	<+0x130>
+---
+> cmn	w9,
+> b.hi	<+0x130>
+## bag diff hand_d desc_d
+22a23
+> b.hi	<T>
+25d25
+< b.lo	<T>
+44a45
+> cmn	REG,
+46d46
+< cmp	REG,
+
+## diff hand_q2 desc_q2 (in order)
+## bag diff hand_q2 desc_q2
+
+## diff hand_sp desc_sp (in order)
+10c10
+< b.hi	<+0xd4>
+---
+> b.hi	<+0xd8>
+35c35
+< cbz	x9, <+0x164>
+---
+> cbz	x9, <+0x168>
+42c42
+< cbz	x1, <+0x15c>
+---
+> cbz	x1, <+0x160>
+47c47,48
+< ldrb	w11, [x9, x11]
+---
+> add	x11, x9, x11
+> ldrb	w11, [x11,
+49c50
+< b.eq	<+0x15c>
+---
+> b.eq	<+0x160>
+53c54
+< b	<+0x158>
+---
+> b	<+0x15c>
+57c58
+< b.hi	<+0x118>
+---
+> b.hi	<+0x11c>
+65c66
+< cbz	x9, <+0xd8>
+---
+> cbz	x9, <+0xdc>
+72c73
+< b.hs	<+0x158>
+---
+> b.hs	<+0x15c>
+81c82
+< cbz	x8, <+0x158>
+---
+> cbz	x8, <+0x15c>
+92c93
+< cbz	x9, <+0x184>
+---
+> cbz	x9, <+0x188>
+100c101
+< cbz	x9, <+0x1a4>
+---
+> cbz	x9, <+0x1a8>
+108c109
+< b	<+0x104>
+---
+> b	<+0x108>
+## bag diff hand_sp desc_sp
+7a8
+> add	REG, REG, REG
+64a66
+> ldrb	REG, [REG,
+66d67
+< ldrb	REG, [REG, REG]
+
+## diff hand_ss desc_ss (in order)
+## bag diff hand_ss desc_ss
+
+## diff hand_w desc_w (in order)
+12c12
+< b.hi	<+0x114>
+---
+> b.hi	<+0x110>
+47c47
+< cbz	x9, <+0x1b4>
+---
+> cbz	x9, <+0x1b0>
+54c54
+< cbz	x1, <+0x1ac>
+---
+> cbz	x1, <+0x1a8>
+57,65c57,64
+< adrp	x10, SYM
+< add	x10, x10,
+< ldrb	w11, [x0, x8]
+< and	x12, x11,
+< ldrb	w12, [x9, x12]
+< lsr	x11, x11,
+< ldrb	w11, [x10, x11]
+< tst	w11, w12
+< b.ne	<+0x1ac>
+---
+> ldrb	w10, [x0, x8]
+> and	x11, x10,
+> add	x11, x9, x11
+> ldrb	w11, [x11,
+> add	x10, x9, x10, lsr
+> ldrb	w10, [x10,
+> tst	w10, w11
+> b.ne	<+0x1a8>
+68,69c67,68
+< b.ne	<+0xe8>
+< b	<+0x1a8>
+---
+> b.ne	<+0xe0>
+> b	<+0x1a4>
+73c72
+< b.hi	<+0x160>
+---
+> b.hi	<+0x15c>
+83c82
+< cbz	x9, <+0x118>
+---
+> cbz	x9, <+0x114>
+90c89
+< b.hs	<+0x1a8>
+---
+> b.hs	<+0x1a4>
+101c100
+< cbz	x8, <+0x1a8>
+---
+> cbz	x8, <+0x1a4>
+113c112
+< cbz	x9, <+0x1d8>
+---
+> cbz	x9, <+0x1d4>
+122c121
+< cbz	x9, <+0x1fc>
+---
+> cbz	x9, <+0x1f8>
+131c130
+< b	<+0x14c>
+---
+> b	<+0x148>
+## bag diff hand_w desc_w
+6d5
+< add	REG, REG,
+8a8
+> add	REG, REG, REG
+13a14
+> add	REG, REG, REG, lsr
+17d17
+< adrp	REG, SYM
+72a73,74
+> ldrb	REG, [REG,
+> ldrb	REG, [REG,
+74,75d75
+< ldrb	REG, [REG, REG]
+< ldrb	REG, [REG, REG]
+77d76
+< lsr	REG, REG,

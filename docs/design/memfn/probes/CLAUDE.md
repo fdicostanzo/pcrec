@@ -17,12 +17,20 @@
 - `linux_run.sh` — the ONE owed Linux x86 run: `callcost` (R1 §2.6) and all
   of R1b, pinned (`taskset`), bounded (`gnutimeout`), into
   `build/memfn_linux/<stamp>/`; last log line `MEMFN-LINUX-RUN COMPLETE`.
+  R1d appended one call: `twins/twins_run.sh`, whose own trailer
+  `MEMFN-TWINS-RUN COMPLETE` then ends the whole run.
 - `survey_chk.c`, `survey_tim.c`, `survey_pcrejit.c`, `survey_build.sh` —
   R2's (lane memfnsurvey) measured evidence for `../survey.md`: an
   exhaustive + guard-page (+ ASan exact-allocation) correctness check of
   third-party kernels, a timing harness on the R1 method, and PCRE2-JIT's
   own miss-scan cost. Third-party sources are NEVER vendored: the build
   script takes a scratch directory of pinned clones (commits in its header).
+- `twins/` — R1d's (lane memftwin) hand twins for `../twins.md`: T-A set
+  classifier per shape, T-B fused run scan+verify, T-C constant-descriptor
+  specialization, their run script (`twins_run.sh`, appended to
+  `linux_run.sh`) and subject materializer. See its own CLAUDE.md.
+  `probes.mk` gains `twins-check`, `twins-check-asan`, `twins-check-x86`,
+  `twins-asm`, `twins-run`.
 - `out/` — archived transcripts; see `../CLAUDE.md`.
 
 Maintenance: update this file when files are added/removed or change roles.

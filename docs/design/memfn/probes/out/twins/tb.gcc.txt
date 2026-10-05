@@ -1,0 +1,33 @@
+# box: Franks-MacBook-Pro.local, Darwin 25.6.0, Apple M1 Max
+# load at start: 6.20 5.09 5.23
+# commit: e4dfe3ca; date 2026-10-05T01:36Z
+# gcc: gcc-16 (Homebrew GCC 16.2.0) 16.2.0
+# clang: Apple clang version 21.0.0 (clang-2100.1.1.101)
+# run: build/memfn_twins/20261005T013618Z/bin/tb_run.gcc --subjects=build/memfn_twins/20261005T013618Z/subj
+# memfn twins T-B (fused scan+verify vs the emitted run gate), vec=neon VW=16
+# ns: min of 3 loops >= 50 ms, (+spread%); short = ns per subject over 75
+
+## cell us
+var    gate:cap-t-64k           gate:cap-t-1m            sweep:cap-t-64k          sweep:cap-t-1m           short
+emit       16828.8(+ 9)@65536      478401.6(+ 2)@1048576       17616(+ 9)#0           464200(+ 1)#0          5.66(+ 4)#4
+m2v        13397.0(+ 3)@65536      397578.6(+ 2)@1048576       13349(+ 2)#0           396816(+ 2)#0          4.43(+ 2)#4
+ffl         2408.4(+ 3)@65536       38963.6(+ 2)@1048576        2420(+ 1)#0            38853(+ 4)#0          3.66(+ 0)#4
+fall       10201.9(+ 1)@65536      163586.1(+ 1)@1048576       10051(+ 3)#0           163228(+ 2)#0          7.25(+ 4)#4
+
+## cell up
+var    gate:cap-t-64k           gate:cap-t-1m            sweep:cap-t-64k          sweep:cap-t-1m           short
+emit          32.5(+ 1)@113            47.2(+ 1)@92            27912(+ 8)#212         718476(+ 2)#3290       5.47(+ 1)#7
+m2v            8.6(+ 0)@113            19.3(+ 1)@92            18365(+ 2)#212         498477(+ 1)#3290       4.33(+ 1)#7
+ffl            5.1(+ 1)@113             4.1(+ 0)@92             3907(+ 4)#212          84974(+ 6)#3290       3.61(+ 3)#7
+fall          15.3(+ 3)@113            11.8(+ 2)@92             9792(+ 1)#212         172094(+ 1)#3290       4.82(+ 2)#7
+
+## cell mi
+var    gate:syn-t-64k           gate:syn-t-1m            sweep:syn-t-64k          sweep:syn-t-1m           short
+emit          54.2(+ 0)@90             91.4(+ 2)@404           40594(+ 4)#400         865757(+ 2)#6030       6.77(+ 1)#3
+m2v           17.0(+ 1)@90             44.5(+ 1)@404           21151(+ 3)#400         557045(+ 1)#6030       5.55(+ 2)#3
+ffl            4.4(+ 4)@90             15.9(+ 1)@404            5331(+ 2)#400         137243(+ 6)#6030       3.62(+ 1)#3
+fall           5.3(+ 2)@90             21.8(+ 0)@404            6721(+ 1)#400         148921(+ 3)#6030       3.76(+ 2)#3
+
+# gate: ns per call from 0, @ = returned position (n = absent)
+# sweep: ns per sweep to the end, # = gate hits
+# short: ns per short subject, # = subjects whose gate passed

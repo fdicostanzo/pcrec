@@ -1,0 +1,5 @@
+# box: Franks-MacBook-Pro.local, Darwin 25.6.0, Apple M1 Max
+# load at start: 6.20 5.09 5.23
+# commit: e4dfe3ca; date 2026-10-05T01:36Z
+# gcc: gcc-16 (Homebrew GCC 16.2.0) 16.2.0
+# clang: Apple clang version 21.0.0 (clang-2100.1.1.101)

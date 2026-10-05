@@ -135,3 +135,8 @@ if [ "$rc" != 0 ]; then FAILS=$((FAILS + 1)); log "FAIL isanote rc=$rc"; else lo
 
 log "# load at end: $(cut -d' ' -f1-3 /proc/loadavg)"
 log "MEMFN-LINUX-RUN COMPLETE $D fails=$FAILS"
+
+# R1d (lane memftwin, docs/design/memfn/twins.md), appended: the hand twins,
+# after the run above, into their own build/memfn_twins/<stamp>/; their own
+# trailer "MEMFN-TWINS-RUN COMPLETE <dir> fails=<n>" ends the whole run.
+sh docs/design/memfn/probes/twins/twins_run.sh "${BENCH:-../pcrec-bench}"
