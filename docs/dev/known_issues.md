@@ -43,10 +43,10 @@ pcrec-side Linux twin of the two spellings with an alignment control, on
 cell. That decides which spelling the shared emitter keeps, or whether
 the regime split is layout. Rides the next scratch_lx batch.
 
-## K86 — OPEN, deferred (2026-10-05, found by lane optsrev's cross-source measurement, docs/design/option_sets_measurements/out/cross_source.txt) — cross-source precedence and its report depend on the SPELLING of an option, not on the option
+## K86 — FIXED (2026-10-05, 9fedfb6d on lane/k86fix; found by lane optsrev's cross-source measurement, docs/design/option_sets_measurements/out/cross_source.txt) — cross-source precedence and its report depended on the SPELLING of an option, not on the option
 
-**Witnesses:** (D3) a `.rxt` config's raw `pcrec --engine=vm` line SILENTLY beats a CLI `--engine=dfa`, while the typed `engine` line follows the documented CLI-wins-with-report exception. (E3) the tune file-wins report labels a config's raw `--tune=` as "CLI". cli.md §1.1 also misstates how `flags` letters and raw `-f` bits compose: they UNION across sources.
-**Disposition:** the spec sentences are a D80 docs fix (owed now, small). The behavioural change (D3) is [OPT-SETS] revision 2's ruling R2, for Frank. The .rxt survey found one fixture and no caller relying on today's behaviour.
+**Witnesses:** (D3) a `.rxt` config's raw `pcrec --engine=vm` line silently beat a CLI `--engine=dfa`, while the typed `engine` line followed the CLI-wins-with-report exception. (E3) the tune file-wins report labelled a config's raw `--tune=` as "CLI". cli.md §1.1 also misstated how `flags` letters and raw `-f` bits compose: they UNION across sources.
+**Fix (Frank's ruling R2, option_sets.md rev 2, 2026-10-05):** `cli/main.c` `apply_target` restores the CLI's explicit engine after the raw reparse and reports; the tune report names its source. cli.md §1.1 corrected (D80). Pinned both directions, both spellings, in `tests/rxtsource/run_rxtsource_tests.sh` (`[K86]` block). Not an abi event (no emitted scaffolding change). Left as they were, same family but not the same defect: raw `--tune=`/`--unroll=`/`--step-budget=`/`-e` in a config beating an explicit CLI value WITHOUT a report (E2, H1, H4, G2) — option_sets.md R4's generalized report, not built here. Report: docs/dev/lanes/k86fix_report.md.
 
 ## K85 — OPEN, deferred (2026-10-05, found by lane lxread's read of the K82 (A)+(C) Linux alpha, abi 60, bit 45) — the set-leads pre-check costs a fresh `memchr` per search call on match-dense text where its lead byte is never absent: `cls-n-uc` +0.025..+0.031 ns/B (~5%)
 

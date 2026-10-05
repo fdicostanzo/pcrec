@@ -3705,6 +3705,68 @@ else
 $(cat "$W12/ep_agree.err")"
 fi
 
+# --- [K86] precedence and its report do not depend on the SPELLING ----
+#
+# A config's RAW `pcrec --engine=` line is the same axis as the typed
+# `engine` row (option_sets.md R2): an explicit CLI --engine= wins over it,
+# reported, exactly as the typed row's direction 2 above. And the `tune`
+# report names the SOURCE of the losing value: a raw `--tune=` in a config
+# is "this file's `pcrec` line", not "CLI". Each cell runs both spellings.
+# `ab+cd` is DFA-eligible, so RX_ENGINE "dfa" is a live outcome.
+k86_cell() {   # k86_cell LABEL CONFIGBODY CLIARGS... -> $W12/LABEL.{c,err}
+    local lbl=$1 cfg=$2; shift 2
+    { echo "config c"; printf '%b\n' "$cfg" | sed 's/^/  /'
+      echo "target rx = p with c"; echo; echo "pattern ab+cd"; echo "name p"
+    } > "$W12/$lbl.rxt"
+    "$TIMEOUT_BIN" 60 "$PCREC" "$@" "$W12/$lbl.rxt" -o "$W12/$lbl.c" \
+        2>"$W12/$lbl.err"
+}
+for sp in typed raw; do
+    if [ "$sp" = typed ]; then cfg='engine vm'; else cfg='pcrec --engine=vm'; fi
+    if k86_cell "k86_eng_$sp" "$cfg" --engine=dfa && \
+       grep -q '^#define RX_ENGINE "dfa"' "$W12/k86_eng_$sp.c" && \
+       grep -q -- 'CLI --engine=dfa and this' "$W12/k86_eng_$sp.err" && \
+       grep -q 'disagree; using the CLI' "$W12/k86_eng_$sp.err"; then
+        pass "K86 D3 ($sp spelling): explicit CLI --engine=dfa wins over the config's engine vm, reported"
+    else
+        fail "K86 D3 ($sp spelling): CLI --engine=dfa did not win with a report:
+  RX_ENGINE: $(grep '^#define RX_ENGINE' "$W12/k86_eng_$sp.c" 2>/dev/null)
+  stderr: $(cat "$W12/k86_eng_$sp.err")"
+    fi
+    # CLI silent: the config's vm applies, no report
+    if k86_cell "k86_engq_$sp" "$cfg" && \
+       grep -q '^#define RX_ENGINE "vm"' "$W12/k86_engq_$sp.c" && \
+       [ ! -s "$W12/k86_engq_$sp.err" ]; then
+        pass "K86 D3 ($sp spelling): CLI silent -> the config's engine vm applies, silently"
+    else
+        fail "K86 D3 ($sp spelling): CLI-silent build wrong: $(cat "$W12/k86_engq_$sp.err")"
+    fi
+done
+# the converse: CLI vm over a config's raw dfa
+if k86_cell k86_eng_rawdfa 'pcrec --engine=dfa' --engine=vm && \
+   grep -q '^#define RX_ENGINE "vm"' "$W12/k86_eng_rawdfa.c" && \
+   [ -s "$W12/k86_eng_rawdfa.err" ]; then
+    pass "K86 D3: explicit CLI --engine=vm wins over a config's raw --engine=dfa, reported"
+else
+    fail "K86 D3: CLI --engine=vm over raw --engine=dfa: $(cat "$W12/k86_eng_rawdfa.err")"
+fi
+# E3: the tune report's source label, typed-file-vs-CLI and typed-file-vs-raw
+if k86_cell k86_tune_cli 'tune speed' --tune=min-size && \
+   grep -q '^#define RX_TUNE "speed"' "$W12/k86_tune_cli.c" && \
+   grep -q 'CLI --tune=min-size and this file' "$W12/k86_tune_cli.err"; then
+    pass "K86 E3: a CLI --tune losing to the file's tune is labelled CLI"
+else
+    fail "K86 E3: CLI-sourced tune report wrong: $(cat "$W12/k86_tune_cli.err")"
+fi
+if k86_cell k86_tune_raw 'pcrec --tune=min-size\ntune speed' && \
+   grep -q '^#define RX_TUNE "speed"' "$W12/k86_tune_raw.c" && \
+   ! grep -q 'CLI' "$W12/k86_tune_raw.err" && \
+   grep -q '`pcrec` line --tune=min-size and this file' "$W12/k86_tune_raw.err"; then
+    pass "K86 E3: a config's raw --tune losing to its typed tune is labelled the \`pcrec\` line, not CLI"
+else
+    fail "K86 E3: raw-sourced tune report mislabelled: $(cat "$W12/k86_tune_raw.err")"
+fi
+
 # =====================================================================
 # [DD-13b.W1.3] COMPOSITION, THE NAME GRAMMAR, AND THE DOGFOOD
 # =====================================================================

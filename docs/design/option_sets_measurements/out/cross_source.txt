@@ -1,4 +1,4 @@
-# pcrec pcrec 0.2.0-beta; tree 9fd125cb
+# pcrec pcrec 0.2.0-beta; tree 4d86bbf2
 === A1  rc=1  cli: -fprefilter
   cfg| pcrec -fno-prefilter
   err| pcrec: A1.rxt:5: target 'rx': -fprefilter and -fno-prefilter cannot both be requested (pattern offset 1)
@@ -291,19 +291,18 @@
   comment-lines| 5
 === D3  rc=0  cli: --engine=dfa
   cfg| pcrec --engine=vm
+  err| pcrec: D3.rxt:3: target 'rx': CLI --engine=dfa and this file's `pcrec` line --engine=vm disagree; using the CLI's explicit choice
   stamp| #define PCREC_FEATURE_MODULES "classes,modifiers"
   stamp| #define RX_STARTPOS_GUARD "permissive"
   stamp| #define RX_UTF_CHECK "inert"
   stamp| #define RX_REQ_WHY "emitted"
   stamp| #define RX_TUNE "balanced"
-  stamp| #define RX_ENGINE "vm"
-  stamp| #define RX_VM_PREFILTER "none"
-  stamp| #define RX_UNROLL_K 8
-  stamp| #define RX_STEP_BUDGET 500000000LL
+  stamp| #define RX_ENGINE "dfa"
+  stamp| #define RX_DFA_TABLE "premultiplied"
   stamp| #define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
   info| .flags = 0ULL,
   info| .encoding = 0,
-  comment-lines| 5
+  comment-lines| 2
 === E1  rc=0  cli: --tune=min-size
   cfg| tune speed
   err| pcrec: E1.rxt:5: target 'rx': CLI --tune=min-size and this file's `tune speed` disagree; using the file's value (--tune is not the --engine exception)
@@ -340,7 +339,7 @@
 === E3  rc=0  cli: 
   cfg| pcrec --tune=min-size
   cfg| tune speed
-  err| pcrec: E3.rxt:6: target 'rx': CLI --tune=min-size and this file's `tune speed` disagree; using the file's value (--tune is not the --engine exception)
+  err| pcrec: E3.rxt:6: target 'rx': this file's `pcrec` line --tune=min-size and this file's `tune speed` disagree; using the file's value (--tune is not the --engine exception)
   stamp| #define PCREC_FEATURE_MODULES "classes,modifiers"
   stamp| #define RX_STARTPOS_GUARD "permissive"
   stamp| #define RX_UTF_CHECK "inert"
