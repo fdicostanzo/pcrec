@@ -2,7 +2,7 @@
 """[START-SET] rev 2: the DFA hat's candidate sets, read off an EMITTED artifact
 (docs/design/startset.md rev 2 §4.1, review r4 sound-F1).  For prefix PFX:
 
-  s0     the start state (forward_state's initializer; 0 on a seeded machine)
+  s0     the start state (forward_state's initializer: `search_from ? seed[..] : s0`, or the K82 handoff's `handoff_position ? seed[..] : s0`)
   E      s0's escape set {b : delta(s0,b) != s0}, checked equal to the
          emitted can_begin_match where the row emits one
   Estar  the union over every seed state sigma (each forward_seed_state[c],
@@ -31,7 +31,7 @@ def sets(path, pfx, s_hex):
     seed = table(src, pfx + "_forward_seed_state")
     cbm = table(src, pfx + "_can_begin_match")
     if None in (cls, nxt): return {"status": "no-table"}
-    im = re.search(r"%s_forward_state forward_state = (?:search_from \? %s_forward_seed_state\[.*?\] : )?(\d+);" % (re.escape(pfx), re.escape(pfx)), src)
+    im = re.search(r"%s_forward_state forward_state = (?:\w+ \? %s_forward_seed_state\[.*?\] : )?(\d+);" % (re.escape(pfx), re.escape(pfx)), src)
     if not im: return {"status": "no-init"}
     s0 = int(im.group(1))                # the start state (0 on a seeded machine; any id on an unseeded one)
     if seed is None: seed = [s0]         # an UNSEEDED machine: s0 is the only start context

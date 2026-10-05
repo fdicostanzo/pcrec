@@ -2690,6 +2690,13 @@ Four light panels in two days (the K82 handoff, [OPT-SETS], [MEMFN] K0 r1/r2) fo
   - **Six of the gap report's START-SET cells are already offset-set scans** and are not start-set cells.
   - **The independent control** (`E ⊆ S` on unseeded machines; 685 artifacts, 0 violations) caught the census's own argv-encoding defect.
   - Nine questions for Frank; a FULL D6 panel is required before build. Instruments: `startset/` (own CLAUDE.md).
+  - **RULED as D148 (2026-10-05, all nine as recommended). REVISION 2 (lane `ssrev`, same day) applies the FULL D6 panel r4** (`../dev/reviews/2026-10-05-r4-startset.md`: 34 finding ids, all dispositioned). Read its §R2 first.
+    - **The BLOCKER (sound-F1).** The DFA hat's `T = S ∩ E` deletes matches when `S \ E ≠ ∅` on a seeded machine: 6 corpus movers lose 11,040-60,430 cells each. A byte skipped in `E \ S` changes the context, and the re-seed cannot recover a start the scan ran past.
+    - **The fix, measured (§4.1a).** On every seeded machine `E*` is all 256 bytes, so (a) `T = S ∩ E*` is (b) `T = S`. Both give 0 diffs over 13,583,325 cells, against 322,771 for r3's set. With the admission `T ⊊ E` they are mover-identical to (c) "decline when `S ⊄ E`": 18 bench / 38 corpus, where r3 read 18 / 58.
+    - **The control is rebuilt (C-SS\*).** `Tdfa ⊆ S` is checked on every machine, seeded included, and four planted WALK defects each fire. A start-byte oracle is added: 0 violations over 202.7M VM-hat cells.
+    - **Also**: the stamp goes on every artifact; the `run_axes` product arm and the every-startpos differential become stage-2 deliverables; the sabotage table is rebuilt (S478-S502); the VM-hat entry order is stated; capacity give-ups are named; every unmeasured constant is labelled (D149).
+    - **Six questions** (Q-R1..Q-R6, §9b) go back to Frank. They change D148 Q1/Q6/Q7/Q9's text or basis.
+    - Instruments: `startset/rev2/` (own CLAUDE.md).
 - `startset/` — that note's census, first-set probe, hand twins and transcripts (own CLAUDE.md).
 
 **[VAR] THE MVP's PATTERN HALF LANDED 2026-09-23** (lane varmvp, M1-M8 +

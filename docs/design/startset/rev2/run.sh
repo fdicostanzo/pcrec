@@ -21,3 +21,6 @@ mkdir -p "$W/sweep"; W="$W/sweep" python3 "$R/sweep.py" "$C" "$R/out/sweep.tsv"
 python3 "$R/summarize.py" "$R/out/witnesses.tsv" "$R/out/sweep.tsv" > "$R/out/sweep_summary.txt"
 # 3. the fact's control on every machine, with planted WALK defects
 mkdir -p "$W/ctl"; FSPLANT="$W/fs_plant" W="$W/ctl" python3 "$R/control.py" "$C" "$R/out/control.txt"
+# 4. the start-byte oracle on the VM hat (auto, then --engine=vm; the second is ~15 min on the M1)
+mkdir -p "$W/vmo"; W="$W/vmo" python3 "$R/vmoracle.py" "$C" "$R/out/vmoracle_auto.tsv" auto | tee "$R/out/vmoracle_auto.txt"
+mkdir -p "$W/vmo2"; W="$W/vmo2" python3 "$R/vmoracle.py" "$C" "$R/out/vmoracle_vm.tsv" vm | tee "$R/out/vmoracle_vm.txt"
