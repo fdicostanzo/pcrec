@@ -1,5 +1,19 @@
 # memory-functions: R1d, THE INTEGRATION MAP AND THE COMPOSITION MODEL
 
+**REVISION 4.4 (lane `memfnr44`, 2026-10-05, from main 3b04f1ef, design
+only): D147 ADDENDA 8-9 FOLDED. They override anything below that
+conflicts.** Read §R4.4 first. Q43 is ruled (aarch64 SIMD-on forms wait
+for a verdict-grade box). Q44, Q45, Q46, Q48 and Q49 are ruled as
+recommended. **Q47 is refined: pcrec keeps ONE axis, `-fmemfn-simd`. The
+kit's per-form switches live in the kit's OWN option namespace,
+`--memfn=<opt>[,<opt>…]`, defined by a registry inside `memfn/` and
+passed through uninterpreted. `--list-axes` prints a `memfn` section
+from that registry, and a spec-pinned floor on the section's member
+count is the independent control.** Everywhere an earlier passage spelled
+a kit switch as an `axes.def` row, a generated axis, `mf_switches()` or
+`--memfn-deny=`, read it through §R4.4.1. Changed passages carry
+`[rev4.4]` in place. The open questions are now Q53-Q55 only.
+
 **REVISION 4.3 (lane `memfnr43`, 2026-10-05, from main 7f94b0cd, design
 only): FRANK'S 2026-10-05 RULINGS FOLDED — D146, D147 and D147 addenda
 1-7. They override anything below that conflicts.** Read §R4.3 first.
@@ -80,6 +94,161 @@ addenda 2-3 (every form choice a `DFA_SELECT`-style row; SIMD later = one
 row; SWAR admitted now), D139 (one class-form table, sites as bits), D144
 item 4 (every optimization its own deny), D145 (generated-output licence
 exception), and the tables themselves (§1).
+
+---
+
+## R4.4. Revision 4.4: D147 addenda 8-9 folded `[rev4.4]`
+
+(Top-level, like §R4.3. It sits first because it overrides §R4.3 in one
+place: the kit's per-form switches.)
+
+**The rulings.** D147 addendum 8 rules Q43. Addendum 9 rules Q44, Q45,
+Q46, Q48 and Q49 as recommended and REFINES Q47. Revision 4.4 adds
+nothing the rulings do not require. The few spellings the rulings left
+open are listed in §R4.4.3. After this revision the open questions are
+Q53-Q55 only.
+
+### R4.4.0 Each ruling, and where it now lives
+
+| Q | ruling | where it now lives |
+|---|---|---|
+| Q43 | RULED YES (addendum 8). SIMD-on forms tuned for aarch64 are not ACCEPTED until Frank admits Mac measurements as verdict-grade for those cells, or an aarch64 Linux box exists. x86 Linux gives the verdicts. The SIMD-off (portable) layer is unaffected | §17.2 and §10.1 annotated; §23 |
+| Q44 | RULED YES (addendum 9). The dial interaction is ruled at R4d as a D103 diff: `--tune` -2/-1 send `MF_P_SIZE_LEANING`, with the movers census at those positions | §22 R4d; §23 |
+| Q45 | RULED YES. The spec states whose libc was measured (glibc and libSystem; musl inherits), as §10.6's second limit, at R4d | §10.6; §22 R4d; §23 |
+| Q46 | RULED YES. Two single-writer files. As built: `memfn/docs/requests.md` (manager only) and `memfn/docs/responses.md` (kit only) | §20.1; `memfn/CLAUDE.md`; §23 |
+| Q47 | REFINED (addendum 9): the kit's OWN option namespace, `--memfn=`, from a kit-owned registry, listed by `--list-axes` as a `memfn` section | §R4.4.1; §14.10, §17.1 rewritten |
+| Q48 | RULED YES. Optional sites: file, don't build. The D77 trigger is a K85-shaped cell that the R4d fused arm does not already cure | §19 row 11; §22 "Filed, not scheduled"; §23 |
+| Q49 | RULED YES. An opt-in-only kit arm (R4e′, `-fmemfn-simd`) needs no abi bump at landing. Its pins, its `test-axes` arm and C9's floor are born in that commit, and its spec hunk lands there. The R4f flip is the abi event | §22 R4e′; §23 |
+| D144 item 4 | met inside the kit's namespace: each kit change's own deny is a registry row | §R4.4.1; §L.3 |
+
+### R4.4.1 The kit's own option space (Q47 refined)
+
+**What pcrec keeps.** Exactly ONE axis for this: the layer switch
+`-fno-memfn-simd` / `-fmemfn-simd` (§R4.3.1). `axes.def` gets no row for
+a kit form, `flags` gets no bit for one, and `strategy_denials` has no
+entry for one. A kit option is not a flag bit, so it cannot move
+`rx_info.flags` (reqpos's 5-byte finding does not arise), and it spends
+none of the 64 bits (Q15's budget).
+
+**What the kit owns.** `--memfn=<opt>[,<opt>…]`:
+- pcrec carries the value as ONE opaque string (CLI, config, library
+  field) and hands it to the kit in `mf_site.opts` (the field §8.2 called
+  `deny`). It never splits, sorts or looks up an option.
+- Validation is the kit's. pcrec calls `mf_opts_check(str, err, n)` once
+  per compile and shows the kit's refusal text unchanged (D26: the
+  wording is the kit's).
+- Spelling: `no-NAME` denies row NAME; a bare `NAME` forces it, accepted
+  only for a row declared `MF_OPT_PAIR`.
+
+**The registry: `memfn/src/options.def`.** An X-macro in `axes.def`'s and
+`limits.def`'s idiom (D111), but the file is the kit's. pcrec's build
+never reads it, and pcrec's sources never include it.
+
+```
+/* MF_OPT(name, kind, budget, layer, doc)
+ *   name    kit-owned id, [a-z0-9-], arch-blind (C4)
+ *   kind    MF_OPT_DENY | MF_OPT_PAIR    which --memfn= spellings it takes
+ *   budget  MF_B_SCAN | MF_B_LOOP | MF_B_ANY       D91, as §8.5's INLOOP
+ *   layer   MF_L_SCALAR | MF_L_SIMD      which acceptance reading owns it
+ *           (§L.4); an MF_L_SIMD row is inert at -fno-memfn-simd
+ *   doc     one line                                                      */
+MF_OPT("cube",     MF_OPT_DENY, MF_B_SCAN, MF_L_SCALAR, "the cube set classifier (C1)")
+MF_OPT("unrolled", MF_OPT_DENY, MF_B_LOOP, MF_L_SCALAR, "the unrolled scan loop (C2)")
+```
+
+- The kit includes it three times: the table, the accessor
+  `mf_options(size_t *n)` (which replaces `mf_switches()`), and the
+  parser behind `mf_opts_check`. What is printed and what is parsed are
+  one table.
+- A kit change that moves a byte adds its row in the same commit
+  (D144 item 4). The row IS the change's OFF arm (§L.3), reached as
+  `--memfn=no-NAME`.
+
+**One enumeration point.** `--list-axes` prints pcrec's axis table and
+then a `memfn` section (`#section memfn`, `table_contract.md`
+§Sections), one row per `mf_options()` entry: `name`, `kind`, `budget`,
+`layer`, the accepted spelling(s) and `doc`. pcrec's dump code prints
+what the accessor returns and names no row. `test-axes`, the identity
+gates (I2, G1's movers) and the registry check each read THIS section
+and keep no name list of their own. `test-axes` sweeps each row's
+spelling for answer identity, and I2 sweeps it for byte identity against
+its pin once it has movers.
+
+**The independent control: a spec-pinned floor.** The `memfn` section's
+member count has a floor, a hand-written literal in `docs/spec/`
+(`registry.md`, beside §6's axes pin). The registry check compares the
+section's row count to it. The floor shares no source with
+`options.def`, `mf_options()` or the section, so a stale or truncated
+kit registry cannot also lower its own bar. It is raised only in the
+change that adds a row. It is BORN at the first landing that adds a row
+(R4d, the first mover, with its own deny). Before that the section is
+empty, and the check is declared UNREACHED (K35), not set to 0.
+
+**Consequences, each a reader to find BY GREP at the landing** (D76/D94
+shape):
+- `--list-axes` gains a section, so by `table_contract.md` rule 4 every
+  consumer of the stream must select its section: `tests/axes/`,
+  `tests/registry/`, anything that parses `--list-axes`. If rule 2 does
+  not already say how a consumer selects the leading anonymous table,
+  the landing carries that hunk to `table_contract.md`.
+- `registry.md` §6's "N rows / M axes" pin counts the main table only
+  (above the section line). The kit section has its own count and
+  floor.
+- `--memfn-deny=`, `mf_switches()` and "pcrec generates axis rows from
+  the kit's table at build time" (§14.10) are withdrawn. C4's class 7
+  (pcrec never spells a kit row name in `src/`) holds structurally,
+  because pcrec holds a string.
+- option_sets.md treats `--memfn=` as one opaque value (D93 precedence as
+  for any value option). It does not decompose into per-element axes,
+  and no set carries a kit option. If a set ever needs one, that is a
+  new ruling (D77).
+
+**The three standing questions** (`docs/design/CLAUDE.md`):
+1. Measurement regime: not relevant. The registry changes no emitted
+   byte by itself. The regime of a row's own effect is its change's G1
+   (§17.2).
+2. Independent control: relevant. The spec-pinned floor, above.
+3. What moves when data is regenerated: relevant. A row added or
+   removed moves the `--list-axes` section, the floor and the arm counts
+   (§21.3's last row).
+
+### R4.4.2 Every other place the rulings touch
+
+| section | revision 4.3 said | revision 4.4 |
+|---|---|---|
+| §8.2 `mf_site.deny` | `--memfn-deny=`, passed through unparsed | `opts`, the `--memfn=` string, passed through unparsed |
+| §8.6, §9.5, §10.1, §10.5, §L.3, §L.5, §L.6 | a kit change's OFF arm is `--memfn-deny=NAME` | `--memfn=no-NAME`, a registry row |
+| §10.6 | the `-fno-memfn-*` bits and `--memfn-deny=` | `-fno-memfn-simd`/`-fmemfn-simd` and `--memfn=` |
+| §11.4, §12.1 | option family `memfn`: three bits and `--memfn-deny=` | one axis, plus `--memfn=` |
+| §14.10 | generated axis rows from `mf_switches()` | the kit's registry and `--list-axes`' `memfn` section (§R4.4.1) |
+| §17.1 | arms over `axes.def` rows, the kit's published switches "once they have movers" | plus one arm per `memfn` section row; the arm-count floor adds the section's floor |
+| §17.2, §10.1 | no verdict-grade armv8 guard, K-4 | plus Q43's acceptance rule |
+| §17.6 | row: a change's `--memfn-deny=NAME` no longer reproduces its parent | `--memfn=no-NAME` |
+| §20.2 | the kit's generated `--memfn-deny=NAME` rows | the kit's `--memfn=` registry |
+| §21.3 | the kit's switch table (`mf_switches()`) | the kit's registry (`options.def`) and the spec floor |
+| §22 R4d | its own `--memfn-deny=NAME` | its own `--memfn=no-NAME` row; Q44 and Q45 ruled here |
+| §23 | Q43-Q49 open | Q43-Q49 RULED; Q47 REFINED; Q53-Q55 are the only open questions |
+| `option_sets.md` | `--memfn-deny=` a list option decomposing into axes | cross-note added: one opaque value (§R4.4.1) |
+| `memfn/CLAUDE.md`, `memfn/include/`, `memfn/src/` | `mf_switches()`, `--memfn-deny=NAME` | `mf_options()`, `--memfn=`, `src/options.def` |
+
+Passages that carry a `[rev4.4]` mark are changed in place. Revisions 1-3
+passages that still say `--memfn-deny=`, `--kit-deny=` or `mf_switches()`
+(Q15, §R2's table, §12.1's rev 3 table, R4.1's G-F2 row) are history,
+annotated and not rewritten.
+
+### R4.4.3 Spellings this revision chose (the rulings left them open)
+
+1. `--memfn=` tokens are `no-NAME` / `NAME`, and rows carry a `kind`.
+2. The registry file is `memfn/src/options.def`, with the five columns
+   above.
+3. The accessor is `mf_options()` and the check is `mf_opts_check()`.
+4. The `--list-axes` section's columns, and the main-table-only pin in
+   `registry.md`.
+5. The floor is born at the first row (R4d); UNREACHED before.
+6. `--memfn=` is one opaque value in option_sets.md.
+7. Q43 is stated as ruled (an acceptance rule). §17.2's "the kit does
+   not select a SIMD-on form on aarch64" is kept as its consequence, not
+   as the ruling.
 
 ---
 
@@ -363,9 +532,9 @@ switch name. **Q55** asks whether that suffices.
   set, `off.tsv` and the `pcrec[memfn-off]` testee. Those selected the
   FROZEN baseline. D147 consequence 1 retires a frozen baseline
   independently of Q51, so they stay withdrawn. Their one role, an OFF
-  arm for G1, is D144 item 4's per-change deny (`--memfn-deny=NAME`),
-  which is ruled on its own (Q47 rules only its spelling as generated
-  axis rows). If the rejection was meant to bring those bits back, the
+  arm for G1, is D144 item 4's per-change deny (`--memfn-deny=NAME`;
+  **`[rev4.4]`** now `--memfn=no-NAME`, a kit registry row, §R4.4.1),
+  which is ruled on its own (Q47). If the rejection was meant to bring those bits back, the
   change is this paragraph plus §20.2's two rows.
 - **Q52 REJECTED.** The stamp is not re-derived. Q39 as ruled
   (§R4.3.3) stands: the reference is the SIMD-off compile, and the
@@ -489,8 +658,9 @@ change's own deny. **They are withdrawn (Q51), and with them family
 `pcrec[memfn-off]` testee.**
 
 - **Every kit change that moves a byte carries its own deny** (D144
-  item 4): a switch published by `mf_switches()` and reached as
-  `--memfn-deny=NAME` (Q47, §14.10). That deny renders the site as it
+  item 4): **`[rev4.4]`** a row of the kit's own option registry
+  (`memfn/src/options.def`), reached as `--memfn=no-NAME` (Q47 refined,
+  §R4.4.1). That deny renders the site as it
   was before the change. This is how every pcrec optimization is
   already controlled; the kit gets no special mechanism.
 - **The per-change comparator.** At the change's own commit, the corpus
@@ -567,7 +737,8 @@ report:
   reads `none`; after it, the stamp says which artifacts ran SIMD.
 - **Cost, stated:** scalar-layer kit forms are not bucketed by the
   stamp. They are attributed by their abi event's movers census and
-  their switch names, and a bench triage flips `--memfn-deny=NAME`. A
+  their switch names, and a bench triage flips `--memfn=no-NAME`
+  (`[rev4.4]`; was `--memfn-deny=NAME`). A
   scalar-form id list is not built until a bench consumer asks for it
   (D77).
 
@@ -589,7 +760,7 @@ report:
 | §16 item 3 | "a baseline change is a ruled abi event" | every scalar-arm change is an ordinary kit change: SIMD-off acceptance, the abi ritual when it moves a byte |
 | §17.4 | `arms.tsv` frozen; `off.tsv` | `arms.tsv` a change detector re-pinned by each arm change; `off.tsv` withdrawn |
 | §20.1 | `inbox_from_pcrec.md` / `outbox_to_pcrec.md` | as built: `memfn/docs/requests.md` (manager only, `[requests]` commits) and `memfn/docs/responses.md` (kit only, `[responses]` commits); roles unchanged |
-| §20.2, option_sets.md | three axes; family `memfn` = auto / simd / no-simd / memfn-off | one deny/force pair `memfn-native` (default OFF) plus the kit's generated `--memfn-deny=` rows; family `memfn` = auto / simd / no-simd |
+| §20.2, option_sets.md | three axes; family `memfn` = auto / simd / no-simd / memfn-off | one deny/force pair `memfn-native` (default OFF) plus the kit's generated `--memfn-deny=` rows (**`[rev4.4]`** not axes: the kit's own `--memfn=` registry, §R4.4.1); family `memfn` = auto / simd / no-simd |
 | §21.2, §21.3 | the G1 OFF arm is `memfn-off`; the baseline arms change only by ruling | rows rewritten in place (`[rev4.2]`) |
 | §22 | R4b/R4c/R4d/R4j as written | annotated in place: R4b reports both layers, R4c lands one axis, R4d's testee is `pcrec[simd]`'s precursor, R4j moves the scalar planner |
 | §23 Q38 | keep the baseline forever | revised: a per-step comparator only |
@@ -625,7 +796,7 @@ and hooks that reproduce today's text byte for byte.
 | # | ruling | where it binds here |
 |---|---|---|
 | 1 | Frank's **Q3** on `litscan_k82h.md`: a stamp goes on EVERY artifact of its family, `none` where it does not apply. Presence never varies within a family (D81) | §18. The stamp is born with its own every-artifact abi event, BEFORE M1's replace commit. It carries no kit version. C11 checks the value, not presence |
-| 2 | **D144 item 4**: every optimization keeps its own deny, and every shipped deny on a migrating site keeps working and is swept by the byte-identity gate | §14.10 gives each shipped deny's fate (bits 16, 30, 31, 32, 33, 43, 44, 45, 46, `-fno-offset-skip` …). The kit's per-form switches become real axes. I2 sweeps every `axes.def` axis and every comment tier (§17.1) |
+| 2 | **D144 item 4**: every optimization keeps its own deny, and every shipped deny on a migrating site keeps working and is swept by the byte-identity gate | §14.10 gives each shipped deny's fate (bits 16, 30, 31, 32, 33, 43, 44, 45, 46, `-fno-offset-skip` …). The kit's per-form switches become real axes (**`[rev4.4]`** refined: rows of the kit's own registry, listed by `--list-axes`' `memfn` section, §R4.4.1). I2 sweeps every `axes.def` axis and every comment tier (§17.1) |
 | 3 | **D146**: pcrec carries no arch knowledge and does no cost comparison | §19 lists every remaining place pcrec prices kit-owned search code, with its fate |
 | 4 | **D76/D94**: abi changes follow the ritual. Readers are found by grep, including the byte-count reader class | §18.3 (the stamp's own event), §17.4 (per-arm pins, not whole-artifact pins) |
 | 5 | Measured terms are OK; tuned cutoffs are not | §19 classifies every pcrec number on a delegated site as a measured term, a ruled semantic bound or a tuned cutoff. Only measured terms and ruled bounds survive in pcrec |
@@ -650,7 +821,7 @@ and hooks that reproduce today's text byte for byte.
 | F12 | the whole-artifact baseline pin forces re-pins on unrelated abi changes; baseline arms duplicate pcrec helpers | C5 checks a per-ARM digest pinned under `tests/`. The sink adapter exposes pcrec's escapers, so the kit never copies them | §17.4, §14.2 |
 | F13 | pcrec still prices kit-owned search code | The list, each with its fate | §19 |
 | G-F1 | the movers-only stamp contradicts Q3 | Stamp every artifact. **`[rev4.1]`** No kit version and no `MF_VOCAB` in the stamp; its value is `none` or opaque form ids. Its own every-artifact abi event, before M1's replace. C11 checks the value | §18 |
-| G-F2 | the shipped denies on the migrating sites are unnamed and unswept; per-form switches are not axes | The fate table, I2 over every axis, and per-form switches as `axes.def` rows | §14.10, §17.1 |
+| G-F2 | the shipped denies on the migrating sites are unnamed and unswept; per-form switches are not axes | The fate table, I2 over every axis, and per-form switches as `axes.def` rows (**`[rev4.4]`** superseded: the kit's own registry, §R4.4.1) | §14.10, §17.1 |
 | G-F3 | C9 fails on the Mac and is vacuous under `portable` | A header shim, a native-enabled config, and a K35 floor on arms compiled | §17.3 |
 | G-F4 | armv8 has no verdict-grade guard | Stated plainly, in the spec too | §17.2 |
 | G-F5 | G1's population came from the kit's own `moved`; thin bins; undeclared regime | Movers come from a pcrec-side default-vs-`memfn-off` artifact diff. The regime is declared, and bins are pooled with a floor | §17.2, §21.1 |
@@ -1712,6 +1883,10 @@ Numbering continues from isa_evaluation.md's Q7-Q11.
     `--isa=TOKEN` is the one value axis. Bits used: 46 of 64 at this pin
     (0-45), with k82hand's design taking 46. **Recommendation:** the three
     bits.
+> **`[rev4.4]`** Q15's `--memfn-deny=` / `--kit-deny=` spellings are
+> history. The kit's per-form denies are `--memfn=no-NAME`, rows of the
+> kit's own registry (§R4.4.1), and spend no pcrec flag bit.
+
 16. **Q16, ladders in un-declared builds.** Without `--isa`, a vector row
     emits a two-arm `#if` (vector / pcrec's next scalar row). That adds
     source bytes under D84's caps and the dial's size term. **Recommendation:**
@@ -2427,7 +2602,7 @@ into K0 entire. pcrec keeps no ISA selection table.
 | WHERE and under what PROOF: the site's D91 budget, its bound expressions, its proven span `[span_lo, span_hi]`, anchoring, the read limit | what those proofs buy: a span short enough for a loop-free path, an anchored site needing no loop at all |
 | a density HINT per term and per predicate (pcrec's prior, encoding-gated) | what density does to its choice (iterate in place vs restart per hit, unroll factor) |
 | the HANDOFF: what happens at a result (return it, advance a cursor in place, run pcrec's verify per candidate and continue on failure, or answer a presence boolean) | how the handoff is fused into its loop |
-| the PROFILE asked for (§8.5): `baseline`, `portable` or `native`, and the opaque pass-throughs (`--memfn-deny=`, `--isa=`) | what each profile means in code, and every measurement behind its choices |
+| the PROFILE asked for (§8.5): `baseline`, `portable` or `native`, and the opaque pass-throughs (`--memfn=` **`[rev4.4]`**; `--isa=` is withdrawn, §R4.3.1) | what each profile means in code, and every measurement behind its choices |
 
 Neither side crosses into the other's column. The kit never learns a
 pcrec site name or engine (§3.4's rule, kept). pcrec never learns an ISA,
@@ -2496,7 +2671,7 @@ typedef struct {
     /* policy (§8.5): every bit arch-neutral */
     uint32_t        policy;         /* MF_P_BASELINE | MF_P_PORTABLE_ONLY |
                                        MF_P_INLOOP | MF_P_SIZE_LEANING               */
-    const char     *deny;           /* --memfn-deny=, passed through unparsed        */
+    const char     *opts;           /* [rev4.4] --memfn=, passed through unparsed    */
     const char     *token;          /* --isa=, passed through unparsed; NULL = the
                                        fixed default (§R2 finding 3), HELD (R4h)     */
 } mf_site;
@@ -2702,7 +2877,7 @@ idiom, memory `pcrec-decisions-as-first-match-tables`):
 > Two rows remain: `portable` (the SCALAR layer, the SIMD-off reading)
 > and `native` (the SIMD layer). `DELEG_SITES` keeps its budget column
 > for `MF_P_INLOOP` and loses its deny-bit column. A kit change's OFF arm
-> is its own `--memfn-deny=NAME`.
+> is its own `--memfn-deny=NAME` (**`[rev4.4]`** now `--memfn=no-NAME`).
 
 > **`[rev4.3]`** (addenda 6-7, §R4.3.1) The profile is ONE switch, and
 > the table is now:
@@ -2730,8 +2905,9 @@ and does not need to.
 The kit's choices are first-match tables of its own (§4.3's C1
 classifier and C2 shape tables, requirements.md §2.3's binding-form
 table, isa_selection.md §2's ISA table, a plan table over a
-predicate's terms), each row with a name and a deny that `--memfn-deny=`
-reaches. Where its rows are ordered by MEASUREMENT, the measurement is
+predicate's terms), each row with a name and a deny that `--memfn=`
+reaches (**`[rev4.4]`**: a row of `memfn/src/options.def`, §R4.4.1).
+Where its rows are ordered by MEASUREMENT, the measurement is
 the kit's data, generated from transcripts by a `generate.py` beside it
 (`third_party/`'s rule, applied inside the kit), with its own `--check`.
 
@@ -2928,7 +3104,8 @@ from every site.
 > everything pcrec used to spell, as LIVE code that keeps improving; the
 > native arms are a layer on top. No frozen profile exists, and the only
 > `memfn` axis is `memfn-native` plus the kit's per-change
-> `--memfn-deny=` rows (§L.3).
+> `--memfn-deny=` rows (§L.3). **`[rev4.4]`** Read: `--memfn=no-NAME`
+> registry rows (§R4.4.1).
 
 > **`[rev4.3]`** After M1-M7 (and M5/M5′), pcrec spells NO search: C12
 > reads 0 in every vocabulary class outside the kit, `(?m)^`'s
@@ -2990,10 +3167,14 @@ sabotage rows (r2 C-d).
   architecture without a verdict-grade box (§8.6 K-4), aarch64's ON arm
   under `native` is the portable text until Q31 is ruled. The Mac run is
   then a check that it did not regress, not a verdict that native wins.
+  **`[rev4.4]`** Q43 is ruled (D147 addendum 8): SIMD-on forms tuned for
+  aarch64 are not ACCEPTED until Frank admits Mac measurements as
+  verdict-grade for those cells, or an aarch64 Linux box exists. x86
+  Linux gives the verdicts, and the SIMD-off layer is unaffected.
 - **The verdict.** A mover whose ON arm is slower than OFF past the
   floor is a D146 revisit-when event. It is filed to the kit's request
   ledger (§11.3) as a defect against the kit's choice. While it is open
-  the kit's own deny for that arm (`--memfn-deny=`), or pcrec's budget
+  the kit's own deny for that arm (`--memfn=no-NAME`, `[rev4.4]`), or pcrec's budget
   bit, is the interim kill switch (D144 item 4).
 
 ### 10.2 G2, the kit's own tests (the kit's business; pcrec only requires that they exist and gate the kit)
@@ -3118,7 +3299,7 @@ makes that a red test, with the r2 panel's rebuild:
 >
 > **`[rev4.2]`** C5's first half (`memfn-off` identical to the baseline
 > pin) is replaced by the PER-CHANGE COMPARATOR: at a kit change's own
-> commit, the corpus at that change's `--memfn-deny=NAME` is identical
+> commit, the corpus at that change's `--memfn=no-NAME` (`[rev4.4]`) is identical
 > by ID to the parent's default (§L.3). C5's second half (no ISA
 > vocabulary at `-fno-memfn-native`) stays. C11's reference compile is
 > `-fno-memfn-native` (§L.5). C6's arms are `memfn-native`'s two
@@ -3171,6 +3352,16 @@ Q33). (3) Injected intrinsics headers are compiler-provided (r2 L1).
 > It also states both stamp lines' grammar, including `MEMFN_LIBC` as
 > the record of libc's own dispatch. The SIMD-on half lands at R4e′
 > (D80), the stamp half at R4a′.
+
+> **`[rev4.4]`** (addenda 8-9) The spec also states:
+> - the kit's option namespace: `--memfn=` is passed through
+>   uninterpreted, the kit validates it, and `--list-axes` lists its rows
+>   as the `memfn` section, whose member-count floor the spec pins
+>   (§R4.4.1);
+> - Q45's second limit, in the spec as ruled: the kit's libc choices
+>   were measured against glibc and libSystem, and musl inherits them;
+> - Q43: SIMD-on forms tuned for aarch64 are unmeasured at verdict
+>   grade and not accepted (§17.2).
 
 ### 10.7 Sabotage rows (deterministic detectors only; ids at build, highest S on main + 1)
 
@@ -3287,6 +3478,10 @@ bench does), its stand-alone K3 product second.
   because "kit" also names D122's compare-stack kit and clskit.
 - In prose, "the kit" stays.
 
+> **`[rev4.4]`** The option family is ONE pcrec axis, `-fmemfn-simd`,
+> plus the kit's own `--memfn=` (§R4.4.1). The three bits named above
+> are history (§R4.3.1, §R4.3.6).
+
 ---
 
 ## 12. option_sets.md, the build order, and the plan-row text `[rev3]`
@@ -3301,7 +3496,7 @@ bench does), its stand-alone K3 product second.
 | option_sets.md item | revision 3 |
 |---|---|
 | §1.2 vector-row denies (`-fno-vec-scan`, `-fno-vec-skip`, `-fno-vec-run`, `-fno-swar-scan`); rev 2's `-fno-kit-scan/-loop/-native` | **three bits**: `-fno-memfn-scan` (budget-1 sites to the baseline profile), `-fno-memfn-loop` (budget-2 sites to baseline), `-fno-memfn-native` (the portable profile; DEFAULT ON during the SIMD hold). Named for D91's budgets and a policy class, never an ISA. Bit numbers are taken at landing (the next free; 47-49 if k82hand's bit 46 has landed) |
-| §1.2 `--memfn-deny=` | kept, passed through UNPARSED: pcrec cannot spell a kit row |
+| §1.2 `--memfn-deny=` | kept, passed through UNPARSED: pcrec cannot spell a kit row (**`[rev4.4]`** now `--memfn=`, the kit's own registry, §R4.4.1) |
 | §1.2/§4.3 the `isa` family (poset), `isa-route`, `-fisa-check`, `-fisa-dispatch`, `--isa-marker` | as rev 2's cross-note: ONE opaque value axis (`--isa=`, passed through), the route folded into the token, constraint rows 6-8 removed. All of it HELD with R4i |
 | §4.2 the `vector` family (`auto` / `simd` / `no-simd` / `scalar`) | **family `memfn`**: `auto` (∅: the defaults), `simd` (`memfn-native := allow`: a caller's opt-in to native arms before the R4f flip; a conflict with a set that denies it is refused by name, as before), `no-simd` (`-fno-memfn-native`), `memfn-off` (`-fno-memfn-scan -fno-memfn-loop`: the D146 guard's off arm and the bench's off testee). `scalar` dissolves: "one byte at a time" is not a profile any more; the nearest thing is `memfn-off`, pcrec's old forms, which already include libc `memchr` |
 | §4.2's `vector` × `isa` interaction table | gone: both are inputs of one kit request, and the kit's code is the whole answer |
@@ -3904,19 +4099,22 @@ baseline included, honours it.
 | new | `-fno-memfn-scan`, `-fno-memfn-loop`, `memfn-native` | profile | every delegated site | §20.2. All three join `strategy_denials` (`emit_dfa.c:2728`), so a profile deny never moves `rx_info.flags`. Without this, I2's deny arm reads 5 bytes of `rx_info` moved on every artifact (reqpos's finding, `optimpl2_report.md`) |
 | new **`[rev4.3]`** | `-fno-memfn-simd` / `-fmemfn-simd` (§R4.3.1) | the SIMD switch | every delegated site | replaces the row above: one pair, default OFF, both bits in `strategy_denials`. `-fno-memfn-scan`/`-loop` stay withdrawn (§R4.3.6) |
 
-**The kit's per-form switches become real axes (G-F2).** Each kit row
-with a deny is published in the kit's own switch table: `mf_switches()`,
-giving a name, a description and its budget class. pcrec never spells
-those names in `src/` (C4 class 7). It generates the axis rows from the
-table at build time:
+**The kit's per-form switches (G-F2).** **`[rev4.4]`** Revision 4
+generated them as `axes.def` rows from `mf_switches()`. Q47 is refined
+(D147 addendum 9): they are rows of the KIT'S OWN option registry,
+`memfn/src/options.def`, spelled `--memfn=no-NAME`, and pcrec holds only
+the opaque string (§R4.4.1). So:
 
-- `--list-axes` lists each one as `--memfn-deny=NAME`;
+- `--list-axes` lists each one in its `memfn` section, read from the
+  kit's `mf_options()`;
 - `test-axes` sweeps each for answer identity;
 - I2 sweeps each for byte identity against its own pin once it has
-  movers.
+  movers;
+- none of them is a pcrec flag bit, so none needs a `strategy_denials`
+  entry.
 
-So a regression in one kit form is triaged by flipping one named switch,
-D144's purpose, without pcrec learning what the form is.
+A regression in one kit form is still triaged by flipping one named
+switch, D144's purpose, without pcrec learning what the form is.
 
 ---
 
@@ -4307,10 +4505,12 @@ migrating site silently stop working. I2 now runs the movers-by-ID diff
   (the notes and the frozen form comments of §14.2 are reached only
   there);
 - every `--tune` position and both encodings;
-- the kit's published switches (§14.10), once they have movers.
+- **`[rev4.4]`** one arm per row of `--list-axes`' `memfn` section
+  (§R4.4.1), swept for byte identity once the row has movers.
 
 The arm count is printed, and a K35 floor holds it: born at the number
-of `axes.def` rows + 2 comment tiers + 5 tune positions + 1 encoding, so
+of `axes.def` rows + 2 comment tiers + 5 tune positions + 1 encoding
+(+ the `memfn` section's spec-pinned floor, `[rev4.4]`, §R4.4.1), so
 an axis that silently stops being enumerated is a red check. This is
 the multi-hour `test-axes` shape. It runs on Linux through the
 executor channel. On the Mac, a lane sweeps only its own axes plus the
@@ -4319,7 +4519,8 @@ comment tiers (BOILERPLATE's darwin timeouts).
 ### 17.2 G1, re-founded (r3 G-F4, G-F5, G-F6)
 
 > **`[rev4.2]`** The pcrec-side population diff below now compares the
-> default against the CHANGE's own deny (`--memfn-deny=NAME`), not
+> default against the CHANGE's own deny (`--memfn-deny=NAME`,
+> `[rev4.4]` now `--memfn=no-NAME`), not
 > against `memfn-off`, and every reading is taken at SIMD-off and at
 > SIMD-on (D147, §L.4). Pooling, the floor of 8, the declared regime,
 > the per-event cadence and the armv8 statement are unchanged.
@@ -4359,6 +4560,12 @@ comment tiers (BOILERPLATE's darwin timeouts).
 > SIMD-on form over the scalar layer's form", and the Mac run checks
 > the SIMD-OFF text. The two readings are `-fno-memfn-simd` and
 > `-fmemfn-simd`.
+
+> **`[rev4.4]`** Q43 is ruled (D147 addendum 8): a SIMD-on form tuned
+> for aarch64 is not ACCEPTED until Frank admits Mac measurements as
+> verdict-grade for those cells, or an aarch64 Linux box exists. x86
+> Linux gives the verdicts. K-4's "no SIMD-on form is selected on
+> aarch64" is the consequence, and the SIMD-off layer is unaffected.
 
 ### 17.3 C9, cross-target syntax, made to run and made non-vacuous (r3 G-F3)
 
@@ -4451,7 +4658,8 @@ S462, `lane/k82hbuild` reaches S477).
 | a replaced `memchr(` text re-added to an emitter | C12 | — (static) |
 | an `on_cand` producer with a `return` | C13 | a producer exists (R4e onward; UNREACHED before, declared) |
 | `MF_MAX_TERM` lowered below `PCREC_OFSK_MAX_SET + 1` | C14 | — (compile-time) |
-| **`[rev4.2]`** a kit change's `--memfn-deny=NAME` that no longer reproduces its parent | the per-change comparator at that commit (§L.3) | the change has ≥ 1 mover |
+| **`[rev4.2]`** a kit change's `--memfn-deny=NAME` (`[rev4.4]`: `--memfn=no-NAME`) that no longer reproduces its parent | the per-change comparator at that commit (§L.3) | the change has ≥ 1 mover |
+| **`[rev4.4]`** the `memfn` section's member count dropped below the spec floor, or the section not printed | the registry check against the spec-pinned floor (§R4.4.1) | a registry row exists (R4d onward; UNREACHED before, declared) |
 | a profile bit left out of `strategy_denials` | I2's deny arm (rx_info moves) | the corpus has a delegated site |
 | a `-fmemfn-native` arm emitting one intrinsic under default | C5's portable clause | a native arm exists (R4e′ onward) |
 | the kit's guard one byte short | G2's guard-page test (the kit's mech row) | the fixture places the page |
@@ -4702,6 +4910,12 @@ so a file both sides edit on different branches diverges silently. So:
 > force`) / `no-simd` (`memfn-simd := deny`). option_sets.md's
 > cross-note is updated in this delivery. The `memfn-off` line below
 > stays withdrawn (§R4.3.6).
+>
+> **`[rev4.4]`** (addendum 9) The kit's per-form rows are NOT `axes.def`
+> rows and not generated axes: `--memfn=<opt>[,…]` is the kit's own
+> namespace, from `memfn/src/options.def`, passed through uninterpreted
+> and listed by `--list-axes`' `memfn` section (§R4.4.1). The `memfn-simd`
+> pair is pcrec's only axis for this.
 
 Revision 3 had `-fno-memfn-native` ON by default, so the default build
 carried a set DENY bit. The house convention for an opt-in behaviour is
@@ -4827,7 +5041,7 @@ kit's own data is the kit's (K-1..K-5).
 | `DELEG_SITES` op column | `mf_vocab_has` | a build-time check of a table against the kit's vocabulary: shared by design (it checks agreement, not truth) | rows counted | static |
 
 > **`[rev4.2]`** (D147, §L.3-§L.5) Rows rewritten: **G1 OFF arm** — the
-> change's own `--memfn-deny=NAME`, whose text is proved equal to the
+> change's own `--memfn-deny=NAME` (`[rev4.4]`: `--memfn=no-NAME`), whose text is proved equal to the
 > parent commit's default by the per-change comparator at that commit
 > (a different commit's output, the I2 tool); the timing is pcrec's
 > instrument; read in both layers. **C5** — the per-change comparator
@@ -4860,7 +5074,7 @@ removed.
 | pcrec's prior (`src/findings/default.rxt`, the byte-rate) | a findings re-measure | (a) pcrec's own picks before M5 (§19 rows 3-5), today's abi events; (b) the density HINTS the kit reads, which may move kit choices | the movers of either | yes, as today: a prior regeneration is already an abi event when it moves a pick | no |
 | `prefix_k.c`'s constants (until M5) | a re-measure | the k-set plans | the OFS/PF movers | yes | no |
 | `vm_reseed_cal` | a re-calibration | the hybrid's retry constants | the hybrid movers | yes | no |
-| the kit's switch table (`mf_switches()`) | a kit row added or removed | none by itself | `--list-axes`' row count, `registry.md`'s axes sentence, `test-axes` arms | no bytes; the registry counts are re-pinned in the same change | yes (`--list-axes` output is caller-visible) |
+| the kit's option registry (`memfn/src/options.def`; **`[rev4.4]`** replaces `mf_switches()`) | a kit row added or removed | none by itself | the `--list-axes` `memfn` section's rows, its spec-pinned floor (raised in the same change), `test-axes` and I2 arms. `registry.md`'s main-table pin does not move | no bytes; the floor is re-pinned in the same change | yes (`--list-axes` output is caller-visible) |
 
 > **`[rev4.2]`** (D147, §L.2-§L.3) Row 2 now reads: **the scalar arms and
 > `arms.tsv`** — changed by ANY kit scalar-layer change (no ruling
@@ -4896,6 +5110,24 @@ landed) from its TRIGGER (a measured cell or a ruling). Nothing that
 moves a DEFAULT emitted byte opens before its trigger (D77), and native
 text stays opt-in until R4f.
 
+> **`[rev4.4]`** Applied to the block below (D147 addenda 8-9):
+> - **R3:** Q43-Q49 are RULED; the open questions are Q53-Q55 only.
+> - **R4a:** `memfn/src/options.def` (the kit's option registry, with
+>   `mf_options()` and `mf_opts_check()`) is born EMPTY with the
+>   skeleton, and `--list-axes`' `memfn` section prints its header with
+>   no rows. The floor check is declared UNREACHED until R4d (§R4.4.1).
+> - **R4d:** its own `--memfn=no-NAME` row is the first registry row, so
+>   the spec floor is born here. Q44 (the dial: `--tune` -2/-1 send
+>   `MF_P_SIZE_LEANING`, ruled as a D103 diff with the movers census at
+>   those positions) and Q45 (the spec's second limit names whose libc
+>   was measured) are discharged in this step's spec hunk.
+> - **R4e′:** Q49 applies as written. There is no abi bump at landing,
+>   and its pins, its `test-axes` arm and C9's floor are born in that
+>   commit. Q43: aarch64 forms are not accepted (§17.2).
+> - **Filed, not scheduled:** OPTIONAL SITES (Q48), as ruled.
+> - Wherever the block below says `--memfn-deny=NAME`, read
+>   `--memfn=no-NAME`.
+
 > **`[rev4.3]` THE BUILD ORDER, REVISION 4.3** (supersedes the `[rev4.2]`
 > block and the rev 4 list below wherever they differ). It folds in D147
 > addenda 1-7.
@@ -4910,7 +5142,7 @@ text stays opt-in until R4f.
 > - **R3, rulings.**
 >   - RULED: Q35-Q42 and Q50.
 >   - REJECTED: Q51 and Q52.
->   - Open: Q43-Q49, plus Q53-Q55 (new).
+>   - Open: Q53-Q55 only (`[rev4.4]`: Q43-Q49 RULED, addenda 8-9).
 > - **R4a, the kit's code skeleton** (`memfn/`, whose non-code half is
 >   set up):
 >   - `memfn.h` (`MF_SITE_ABI` 2, `MF_VOCAB` 2, `MF_NS`);
@@ -4961,8 +5193,8 @@ text stays opt-in until R4f.
 >   completeness.
 > - **R4d, the first movers:** the kit's SWAR fused composite, a
 >   SCALAR-layer change.
->   - It gets its own `--memfn-deny=NAME`, is accepted on SIMD-off, and
->     reports SIMD-on (identical until R4e′).
+>   - It gets its own `--memfn=no-NAME` row (`[rev4.4]`), is accepted on
+>     SIMD-off, and reports SIMD-on (identical until R4e′).
 >   - The stamp stays `none` (it is SIMD-off text). Any `MEMFN_LIBC`
 >     change is recorded.
 >   - The spec hunk carries §10.6's limits.
@@ -5059,7 +5291,8 @@ text stays opt-in until R4f.
 >   `arms.tsv` only (no `off.tsv`); C5 is the vocabulary half plus the
 >   per-change comparator from the first kit change on.
 > - **R4d**: the fused arm is a SCALAR-layer change: its own
->   `--memfn-deny=NAME`, accepted on SIMD-off; SIMD-on reported. The
+>   `--memfn-deny=NAME` (`[rev4.4]`: `--memfn=no-NAME`), accepted on
+>   SIMD-off; SIMD-on reported. The
 >   bench testee is `pcrec[simd]`, requested when R4e′ gives it movers.
 > - **R4e′/R4f**: the native arm is measured against the CURRENT scalar
 >   layer (already R4f's wording); after every later scalar-layer
@@ -5108,6 +5341,21 @@ maps them. Each question has a recommendation.
 >   Q50-Q52 are new. Q37 and Q40-Q49 stand open as written, with Q40's
 >   "baseline's frozen planner" read as the scalar layer's planner.
 
+> **`[rev4.4]` THE QUESTION LIST AFTER ADDENDA 8-9.** Q43-Q49 are RULED,
+> and the only open questions are Q53-Q55. The table below is the rev 4.3
+> list. Read its row `Q43-Q49` through this one. Each ruled question
+> below carries its mark in place.
+>
+> | Q | state | where |
+> |---|---|---|
+> | Q43 | RULED YES (addendum 8) | §17.2 |
+> | Q44 | RULED YES (addendum 9) | §22 R4d |
+> | Q45 | RULED YES | §10.6 |
+> | Q46 | RULED YES | §20.1 |
+> | Q47 | RULED, REFINED: the kit's own `--memfn=` namespace | §R4.4.1 |
+> | Q48 | RULED YES: file, don't build | §19 row 11 |
+> | Q49 | RULED YES | §22 R4e′ |
+
 > **`[rev4.3]` THE QUESTION LIST AFTER FRANK'S 2026-10-05 RULINGS (D147
 > addenda 1-7).** No ruled question is renumbered.
 >
@@ -5121,7 +5369,7 @@ maps them. Each question has a recommendation.
 > | Q40 | RULED yes, as revised by D147 (addendum 4) | §R4.3.5 |
 > | Q41 | RULED yes (addendum 5) | §16 |
 > | Q42 | RULED REVERSED: migrate every site, under a checked manifest (addendum 5) | §R4.3.4 |
-> | Q43-Q49 | OPEN, as written (spellings per §R4.3.1) | below |
+> | Q43-Q49 | OPEN, as written (spellings per §R4.3.1); **`[rev4.4]` RULED, see above** | below |
 > | Q50 | RULED yes (addendum 6) | §R4.3.1 |
 > | Q51 | REJECTED (addendum 7) | §R4.3.6 |
 > | Q52 | REJECTED (addendum 7) | §R4.3.6 |
@@ -5243,12 +5491,19 @@ maps them. Each question has a recommendation.
     never default-selects a SIMD-on form over the scalar form on
     aarch64. Before R4f the default is SIMD off everywhere, so this
     question binds only `-fmemfn-simd` builds and the flip.
+    **`[rev4.4]` RULED YES** (D147 addendum 8): SIMD-on forms tuned for
+    aarch64 are not ACCEPTED until Frank admits Mac measurements as
+    verdict-grade for those cells, or an aarch64 Linux box exists. x86
+    Linux gives the verdicts. The SIMD-off (portable) layer is
+    unaffected.
 44. **Q44, the dial (re-derives Q32).** `--tune` -2/-1 send
     `MF_P_SIZE_LEANING`. **Recommendation:** rule it at R4d as a D103
     diff, with the movers census at those positions. Unchanged.
+    **`[rev4.4]` RULED YES** (D147 addendum 9), as recommended.
 45. **Q45, whose libc (re-derives Q33).** The kit measured glibc and
     libSystem, and musl inherits the result. **Recommendation:** state
     it in `docs/spec/` at R4d, as §10.6's second limit. Unchanged.
+    **`[rev4.4]` RULED YES** (D147 addendum 9), as recommended.
 46. **Q46, the request channel (re-derives Q34; G-F13).** Two files
     from day one: `inbox_from_pcrec.md` written only by the manager on
     main, and `outbox_to_pcrec.md` written only by kit lanes. A request
@@ -5256,12 +5511,21 @@ maps them. Each question has a recommendation.
     **`[rev4.3]`** OPEN. As built (lane memfnsetup), the files are
     `memfn/docs/requests.md` and `memfn/docs/responses.md`, with
     `[requests]` and `[responses]` commits; the roles are as stated
-    above.
+    above. **`[rev4.4]` RULED YES** (D147 addendum 9), as recommended.
 47. **Q47, the kit's switches as axes (G-F2).** Each kit row with a
     deny is published by `mf_switches()` and becomes a generated axis
     row (`--memfn-deny=NAME`), listed, swept by `test-axes` and by I2.
     pcrec never spells the names. **Recommendation:** yes. It is D144
     item 4 for kit forms, without arch knowledge in `src/`.
+    **`[rev4.4]` RULED, REFINED** (D147 addendum 9). pcrec keeps exactly
+    ONE axis, `-fmemfn-simd`. The kit's per-form switches live in the
+    kit's OWN option namespace, `--memfn=<opt>[,<opt>…]`, defined by a
+    registry inside `memfn/` (not `axes.def`) and passed through
+    uninterpreted. `--list-axes` prints a `memfn` section read from that
+    registry: one enumeration point for `test-axes`, the identity gates
+    and the registry check. A spec-pinned floor on the section's member
+    count is the independent control. D144 item 4 is met inside the
+    kit's namespace. §R4.4.1 is the design.
 48. **Q48, OPTIONAL SITES (new, §19 row 11).** On a DFA route a run or
     byte pre-check is speed-only. Should such a site be marked OPTIONAL,
     so the kit may render NOTHING for it when it judges the gate useless
@@ -5269,7 +5533,8 @@ maps them. Each question has a recommendation.
     exists" out of pcrec. **Recommendation:** file it, don't build it.
     Its D77 trigger is a K85-shaped cell that the R4d fused arm does not
     already cure. On no-DFA routes the gate is a proof and is never
-    optional.
+    optional. **`[rev4.4]` RULED YES** (D147 addendum 9): file it, don't
+    build it.
 49. **Q49, an opt-in-only kit arm (R4e′).** Native arms land behind
     `-fmemfn-native` (default OFF), so no DEFAULT byte moves.
     **Recommendation:** no abi bump at R4e′. Its pins, its `test-axes`
@@ -5278,7 +5543,8 @@ maps them. Each question has a recommendation.
     caller-observable. The R4f flip is the abi event.
     **`[rev4.3]`** OPEN, with the switch spelled `-fmemfn-simd`. The
     R4f flip is now a ruled event (addendum 7), not a measurement's
-    consequence.
+    consequence. **`[rev4.4]` RULED YES** (D147 addendum 9), as
+    recommended: no abi bump at landing; its own pins and axes.
 50. **`[rev4.2]` Q50, where the scalar layer ends (D147, §L.1).** The
     layer line is §8.5's policy line, "no text that names an ISA". So
     SWAR is scalar, and a libc call is scalar even though glibc's
@@ -5304,7 +5570,7 @@ maps them. Each question has a recommendation.
     born forms reachable forever with no acceptance role, because D147
     forbids measuring SIMD against an old scalar and scalar changes are
     measured against their parent. **Recommendation:** withdraw (D77).
-    A coarse kit-off switch can be built from the switch table if a
+    A coarse kit-off switch can be built from the kit's option registry if a
     triage need is ever measured.
     **`[rev4.3]` REJECTED** (D147 addendum 7): the SIMD-off arm is not
     withdrawn, and D147's both-layers reading stands. The frozen-baseline
@@ -5348,7 +5614,7 @@ maps them. Each question has a recommendation.
     compile, so a SCALAR plan change (M5′ and every later re-plan)
     reads `none` on the default build. **Recommendation:** accept
     that. At SIMD-off, a plan change is attributed by its abi event's
-    movers census and its `--memfn-deny=` switch name. The stamp shows
+    movers census and its `--memfn=no-NAME` switch name (`[rev4.4]`). The stamp shows
     the plan where the artifact is SIMD-on. A per-artifact plan record
     at SIMD-off is built only when a bench consumer asks (D77). The
     alternative is a third every-artifact line naming the plan, with
