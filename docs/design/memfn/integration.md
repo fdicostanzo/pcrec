@@ -3762,9 +3762,9 @@ and fate.
 | 3 | `pcrec_find_run_window_start` / `pcrec_find_run_scan_index` (`src/core/findings.c`) | which window of the run, and which position, to scan: a rarity argmin over the prior | measured prior + argmin | stays at M1 as `plan_pos` and the cut window. **M5**: the kit's planner, reading the per-position hints |
 | 4 | the `req_byte` pick (`reqbyte_freq_pick.md`, argmin over byte frequency) | which necessary byte the one-byte gate scans | measured prior + argmin | stays at M1 (it is the SET term pcrec passes, and `<PREFIX>_REQ_BYTE` reports it). **M5**: pcrec passes the necessary SET as REQUIRED-of-one ("some member of this set"), with per-member hints, and the kit picks. `REQ_BYTE`'s meaning would then need a ruling (Q40) |
 | 5 | `req_set_leads_applies` (`emit_dfa.c:6601`, `pcrec_find_pick`) | whether the set's pick LEADS the run (order, and adding a predicate) | rarity comparison | becomes the composite site's predicate ORDER plus an OPTIONAL lead (§15.5). The baseline honours pcrec's order, and a non-baseline arm may revise it. K85 (this choice losing on dense text) is the arm's to fix. Bit 45 keeps omitting the lead |
-| 6 | `req_byte_dominated_by` (`emit_dfa.c:6563`) → `pcrec_find_no_commoner` | G1's elision of the pre-check when the prefilter's scan byte is no commoner than the necessary byte | rarity comparison between two kit-owned searches | the SEMANTIC half (same byte, or the run verified by the prefilter, which makes it a REQUIRED term, §14.5) stays pcrec's: it is an implication between facts. The RARITY half moves at **M2**: the necessary byte is passed as an OPTIONAL term of the PF site, and the kit decides whether testing it pays |
+| 6 | `req_byte_dominated_by` (`emit_dfa.c:6560`) → `pcrec_find_no_commoner` | G1's elision of the pre-check when the prefilter's scan byte is no commoner than the necessary byte | rarity comparison between two kit-owned searches | the SEMANTIC half (same byte, or the run verified by the prefilter, which makes it a REQUIRED term, §14.5) stays pcrec's: it is an implication between facts. The RARITY half moves at **M2**: the necessary byte is passed as an OPTIONAL term of the PF site, and the kit decides whether testing it pays |
 | 7 | `dfa_cand_scan`/`pcrec_dfa_cand_ppm` (`emit_dfa.c:6429`/`:6472`; K84's `strcmp` on row names) | the candidate scan's density, read by the reseed table | a DENSITY (the prior's mass), not a price | stays pcrec's as a fact. K84's `strcmp` readers are fixed at **M2** (a `DfaPf` field), as rev 3 §9.4 had it |
-| 8 | `vm_reseed_cal` (`emit_vm.c:11053`): `gap` 16/4, `block`, `cap`, `first` | the VM hybrid's retry: step the VM, or re-seed through the prefilter | measured crossovers, per program class | stays pcrec's. It prices the ENGINE's retry, not a memory function. **Coupling:** a re-seed's cost includes the PF search, so after M2 a kit change to PF text can move the crossover. Fate: the reseed witness cells (xcall/hyb, `hyb_reseed.md` §5) join G1 for every PF mover, and a re-calibration stays pcrec's measured decision |
+| 8 | `vm_reseed_cal` (`emit_vm.c:11055`): `gap` 16/4, `block`, `cap`, `first` | the VM hybrid's retry: step the VM, or re-seed through the prefilter | measured crossovers, per program class | stays pcrec's. It prices the ENGINE's retry, not a memory function. **Coupling:** a re-seed's cost includes the PF search, so after M2 a kit change to PF text can move the crossover. Fate: the reseed witness cells (xcall/hyb, `hyb_reseed.md` §5) join G1 for every PF mover, and a re-calibration stays pcrec's measured decision |
 | 9 | `litscan_k82b.md` (PROPOSED, parked): an expected-cost admission for the run gate | whether a gate pays, from rates and machine terms | a cost model over kit-owned search | **WITHDRAWN under D146.** The handoff removed its motivating rescan, and whether a speed-only gate pays is the kit's question (row 11) |
 | 10 | `runcmp.c`'s `overlap` lengths {3, 5-7, 9-15} and the `words` row | gcc's lowering of a constant `memcmp` | a compiler cost fact | moves into the kit with runcmp at **M1b**, as the kit's own rows. Bit 43 travels (§14.10) |
 | 11 | `PCREC_MIN_REQ_RUN_BITS` 16 (the run's admission floor) and `req_admits[]`' existence test | WHETHER a speed-only pre-check exists at all | a RULED floor ("not fitted"), but an admission decision about a speed-only search | stays pcrec's at M1. It is ruled, and on no-DFA routes the gate is a proof, not a speed choice. Filed as a design question (Q48): an OPTIONAL SITE the kit may render empty, for speed-only gates on DFA routes |
@@ -3776,3 +3776,327 @@ at M1 and M1b. Row 9 is withdrawn. Rows 7, 8 and 11 stay, each a
 FACT, an ENGINE choice or a ruled admission, not a price of kit code.
 Row 12 is a vocabulary bound. The C4 allowlist's code hit
 (`prefix_k.c:45`) leaves with row 1.
+
+---
+
+## 20. Coupling, revision 4: the request channel, the profile axis, symbols, provenance `[rev4]`
+
+### 20.1 Two files from day one (r3 G-F13; D78)
+
+Revision 3 used ONE ledger in-tree, to be split at extraction. One file
+written by both sides breaks D78's single-writer rule. It also repeats
+the rulings-file-in-worktree failure (memory
+`pcrec-rulings-file-in-worktree`): a lane reads its OWN worktree's copy,
+so a file both sides edit on different branches diverges silently. So:
+
+- **`memfn/docs/inbox_from_pcrec.md`**: requests `R-n` and defects
+  `D-n`. The ONLY writer is the pcrec MANAGER, as a single-file `[inbox]`
+  commit on main. A pcrec lane that needs kit work says so in its report,
+  and the manager files it. Each entry carries:
+  - the customer row;
+  - the measured cell that is the D77 trigger;
+  - the SEMANTIC operation wanted, never an ISA or a kernel.
+- **`memfn/docs/outbox_to_pcrec.md`**: `ack:` (plan) and `done:`
+  (`MF_VOCAB`, kit commit) per item, plus the kit's own durable notices
+  (a re-tune that will move bytes, a switch added). The ONLY writer is
+  the kit side, as a single-file `[outbox]` commit on the kit lane's
+  branch, merged by the manager.
+- **The request reaches the lane by being on main before the lane is
+  briefed.** The manager commits the inbox entry first. The brief names
+  the `R-n`, and the lane's worktree is cut from a main that contains it.
+  A mid-flight ruling to a kit lane travels in the lane's own
+  `NAME_rulings.md` in its worktree, as for any lane.
+- At extraction, the two files move into the kit's repository UNCHANGED
+  in role. That is exactly the pcrec-bench pair.
+
+### 20.2 The profile axis's polarity (r3 G-F12)
+
+Revision 3 had `-fno-memfn-native` ON by default, so the default build
+carried a set DENY bit. The house convention for an opt-in behaviour is
+the opposite: the axis is OFF by default and its FORCE spelling turns it
+on. `-fcomments` (D112, `axes.def:216-217`) and `-futf-check` (`:183`)
+are the precedents. So:
+
+```
+PCREC_AXIS(PCREC_NO_MEMFN_SCAN,   "-fno-memfn-scan",   0, "", PCREC_AXIS_DEFAULT_ON)
+PCREC_AXIS(PCREC_NO_MEMFN_LOOP,   "-fno-memfn-loop",   0, "", PCREC_AXIS_DEFAULT_ON)
+PCREC_AXIS(PCREC_NO_MEMFN_NATIVE, "-fno-memfn-native",
+           PCREC_FORCE_MEMFN_NATIVE, "-fmemfn-native", PCREC_AXIS_DEFAULT_OFF)
+```
+
+- The axis is born as a deny/force PAIR, as `comments` was, so both
+  spellings exist from birth. R4f, the native flip, changes ONLY
+  `default_state`, which is D112's two-event shape in reverse.
+- §8.5's profile table reads: row 2 `portable` applies when
+  `memfn-native` is not taken (the default, or `-fno-memfn-native`).
+  Row 3 `native` applies when it is (`-fmemfn-native`, or after R4f).
+- `option_sets.md`'s family `memfn` (§12.1) becomes:
+  - `auto`, the empty set;
+  - `simd`, which is `memfn-native := force`, i.e. `-fmemfn-native`;
+  - `no-simd`, which is `memfn-native := deny`;
+  - `memfn-off`, which is `-fno-memfn-scan -fno-memfn-loop`.
+  
+  The cross-note there is updated in this delivery.
+- All three bits join `strategy_denials` (§14.10).
+
+### 20.3 Symbols, provenance, and why `analyze/` is the inverse precedent (r3 G-F14)
+
+- **`analyze/` links NOTHING** from `src/`; it is a leaf binary. The kit
+  is the opposite: libpcrec links IT, so its symbols ship inside
+  `libpcrec.a` into every program that links pcrec. An unprefixed
+  `mf_emit` there is a symbol a user's program may already define.
+- **Symbol policy.** Every external kit symbol is spelled through one
+  macro in `memfn.h`: `MF_NS(name)`. It expands to `pcrec_mf_##name`
+  in-tree and to `mf_##name` in an extracted stand-alone build. So
+  `libpcrec.a` exports only `pcrec_`-prefixed names, and the kit's
+  sources and pcrec's callers both write `MF_NS(emit)` once, or a
+  `#define mf_emit MF_NS(emit)` shim in the header. Internal kit
+  functions are `static`. A new check, C15, scans `nm -g --defined-only
+  libpcrec.a`: every global defined symbol begins with `pcrec_`. It is
+  born with an allowlist at whatever count today's archive measures,
+  taken at the build commit.
+- **Provenance per file (D145).** Every kit source file whose text can
+  reach an artifact carries an SPDX line and a provenance header.
+  - The kit's own text is `0BSD`.
+  - A file translated from Rust `memchr` names the crate version and the
+    source file, and states that it takes the crate's `Unlicense` arm of
+    `Unlicense OR MIT`. That arm is on D145's list; MIT text would be
+    ideas-only.
+  - `memfn/PROVENANCE.md` tabulates file → source → licence → what
+    derives from it (every delegated site of every artifact). That is
+    `third_party/`'s shape, applied inside the kit.
+  
+  A new check, C16, requires each such file's SPDX tag to be in D145's
+  set.
+
+---
+
+## 21. The three standing design questions (docs/design/CLAUDE.md) `[rev4]`
+
+### 21.1 The measurement regime: RELEVANT
+
+This design reads and produces measured numbers in four places: G1's
+timing, R4b's twin measurement, K85's re-measure, and the pcrec terms
+§19 keeps. No measured number crosses the pcrec-kit boundary. The
+kit's own data is the kit's (K-1..K-5).
+
+- **G1** measures one regime pair, each declared:
+  - **THROUGHPUT**: find-all over subjects of at least 1 MiB, chained
+    calls as the bench driver issues them, with hit-dense and hit-sparse
+    subjects (the bench's own subject classes);
+  - **PER-CALL**: one search per short subject (16 B to 1 KiB),
+    isolated.
+  
+  Both run on ubuntubudu: x86_64, gcc 15.2 (the bench's compiler,
+  pcrec's target compiler class, D2), glibc, `taskset`-pinned, quiet
+  box, calibrated loops of at least ~50 ms, absolute deltas against a
+  base-vs-base floor (D144 addendum 1).
+  
+  **A different regime CAN flip a verdict.** linux_results.md measured
+  fusion winning at 64 B and below and losing from about 512 B at SSE2
+  width, which is why both regimes are measured and a mover regressing
+  past the floor in EITHER is a revisit event. The same holds for
+  hit-dense against hit-sparse: K85 is a gate that never rejects on
+  dense text.
+  
+  The compiler: clang numbers never form verdicts. K83 is the standing
+  example of clang flipping a gcc result. The Mac is directional, and
+  armv8 has no verdict box (§17.2).
+- **R4b** is measured in both regimes on the POST-handoff build (§16).
+  A fused arm that wins only per-call is reported as such, and R4c's
+  trigger requires the win in the cell's own regime with no loss past
+  the floor in the other.
+- **pcrec's remaining terms (§19).**
+  - Rows 1-4 were measured on one box: miss-heavy `memchr` throughput,
+    glibc AVX2. offset_k_skip.md §4.3 records that `C_ENTER` flips 11
+    of 1,352 selections between 12 and 20 cycles. They leave at M5.
+  - Row 8 (reseed) is measured per program class, and its regime is
+    `hyb_reseed.md` §3's.
+  - Row 2 is a gcc-16/gcc-15.2 lowering fact, valid for gcc only.
+
+### 21.2 The independent control: RELEVANT
+
+| check or selection | checked against | independent of the subject because | who counts the population (K35) | witness reaches its site ([MECH-REACH]) |
+|---|---|---|---|---|
+| I1 shadow comparator | pcrec's own pre-migration emitter, run in the same compile | the other side is pcrec's code, not the kit's | every compile of `make test`; the count of sites compared is printed | n/a (every compile) |
+| I2 movers by ID | pcrec's parent-commit compile | a different commit's output | per axis arm, the mover count by ID; the arm count has a floor (§17.1) | the axes registry's own count |
+| C5 per-arm pins | `tests/memfn/pins/arms.tsv`, recorded from pcrec's pre-migration output | recorded once from pcrec, committed under `tests/` | rows per arm, printed | `SAB_REACH`: the fixture renders |
+| G1 OFF arm | the `memfn-off` text, which is pcrec's pre-migration text pinned by C5 | not computed by the kit's data; the timing is pcrec's instrument | movers from the pcrec-side diff (§17.2); pooled bins with a floor of 8, and UNREACHED printed | the manifest is produced by a compile pass, not by outcome |
+| C11 stamp value | the pcrec-side default-vs-off diff (§18.2) | the kit's `moved` is not read | `none` and not-`none` counts printed | ≥ 1 mover named |
+| C4 arch vocabulary | a plant from the compiler's installation | not chosen by the regex author (and no more than that, §17.5) | plant count per class per box, floor 1 | the plant per class |
+| C9 cross-target syntax | the committed arm floor | the kit's own arm count is a SECOND reading, sharing its source; the floor is the independent half | arms compiled, summed, against the floor | a native arm exists (R4e′ onward) |
+| C10 site table | D91's classification, and the emitter's own use of each result (§14.5) | a structural fact of pcrec's text | rows counted | static |
+| G2 kit tests | the SCALAR BYTE LOOP, plus the generic row over a GENERATED predicate space (§14.6) | never another output of the kit's generator (§4.5) | lengths, alignments and hit offsets enumerated, printed | the guard-page fixture |
+| `DELEG_SITES` op column | `mf_vocab_has` | a build-time check of a table against the kit's vocabulary: shared by design (it checks agreement, not truth) | rows counted | static |
+
+The one place a control still shares a source with what it controls is
+the `DELEG_SITES`/`mf_vocab_has` agreement. It is an agreement check
+and claims nothing more. Rev 3's C11 shared the kit's `moved`; that is
+removed.
+
+### 21.3 What moves when data is regenerated: RELEVANT
+
+| data | regenerated by | emitted bytes that move | pins / selections that move | abi event? (D76/D94) | spec change? (D80) |
+|---|---|---|---|---|---|
+| the kit's measured data (`memfn/data/*`, its `generate.py`) | a kit lane | the movers' text, where a kit selection changes | the stamp's VALUE on those movers; G1 runs on them (§17.2) | **yes**, in the same commit: digit readers and the byte-count readers by grep (§18.3's list) | no, unless a stated limit changes (§10.6). Form ids are opaque |
+| the baseline arms and `tests/memfn/pins/arms.tsv` | only a RULED baseline change (Q38) | the `memfn-off` text, hence every `memfn-off` pin | `arms.tsv`, `off.tsv` | yes | yes (the guard's OFF arm is caller-visible under the deny) |
+| `tests/memfn/pins/off.tsv` | any scaffolding abi event | none (it is a reader) | itself, re-pinned in that event | it IS a byte-count reader of every event; D94's grep must find it (named in §18.3) | no |
+| the stamp `<PREFIX>_MEMFN_FORMS` | any kit change that moves a form | one line per mover | C11's census, the bench's bucketing | yes (it is emitted text) | its GRAMMAR is spec; its values are not |
+| pcrec's prior (`src/findings/default.rxt`, the byte-rate) | a findings re-measure | (a) pcrec's own picks before M5 (§19 rows 3-5), today's abi events; (b) the density HINTS the kit reads, which may move kit choices | the movers of either | yes, as today: a prior regeneration is already an abi event when it moves a pick | no |
+| `prefix_k.c`'s constants (until M5) | a re-measure | the k-set plans | the OFS/PF movers | yes | no |
+| `vm_reseed_cal` | a re-calibration | the hybrid's retry constants | the hybrid movers | yes | no |
+| the kit's switch table (`mf_switches()`) | a kit row added or removed | none by itself | `--list-axes`' row count, `registry.md`'s axes sentence, `test-axes` arms | no bytes; the registry counts are re-pinned in the same change | yes (`--list-axes` output is caller-visible) |
+
+---
+
+## 22. The build order, revision 4, and the plan-row text `[rev4]`
+
+As before, each step separates its PREREQUISITE (a step that must have
+landed) from its TRIGGER (a measured cell or a ruling). Nothing that
+moves a DEFAULT emitted byte opens before its trigger (D77), and native
+text stays opt-in until R4f.
+
+> **R1d REVISION 4 DELIVERED 2026-10-05 (lane memfndel4): `docs/design/memfn/integration.md` rev 4** — the r3 panel's 27 findings applied; the contract rebuilt from the emitters' actual shapes (three site forms EXPR/STMT/FUNC; ASSIGN and ON_MISS handoffs with pcrec's `on_miss`; indent, notes, pcrec's escapers through the sink; ADVANCE's counter and `peek`; `n − end_back` ranges with declared EMPTY outcomes; negative offsets under a `floor`; REQUIRED/OPTIONAL terms; ALL_PRESENT with a RETURNED predicate; per-artifact `mf_art` with helpers before first use and kit-written stamps), with every M1 site shape reproduced byte for byte (§15). Shipped denies' fates (§14.10); the D146 pricing list (§19); the stamp per Q3 on every artifact, its own abi event (§18); M1 narrowed (runcmp via a hook; M1b separate) and sequenced after the handoff and K85's re-measure (§16); G1 re-founded on a pcrec-side diff with a declared regime (§17.2); C9 with a header shim and floor; per-arm pins under tests/; two inbox files; `memfn-native` default OFF via `-fmemfn-native`; symbol policy and per-file provenance. Q35-Q49.
+> - **R3** (rulings): Q35-Q49.
+> - **R4a, the kit's skeleton in-tree** (`memfn/`): `memfn.h` (`MF_SITE_ABI` 2, `MF_VOCAB` 2, `MF_NS`), `mf_art`/`mf_emit`/`mf_call`/`mf_flush_helpers`/`mf_includes`/`mf_stamps`, the GENERIC scalar row with G2's generated-space tests (§14.6), K1 reference functions, LICENSE (0BSD), PROVENANCE.md, CLAUDE.md, the two docs files (§20.1). pcrec links it and calls nothing. No byte moves. C15 and C16 born. **Prerequisite:** none. **Trigger:** Frank's Q35/Q36 ruling.
+> - **R4a′, the stamp's own event** (§18): `<PREFIX>_MEMFN_FORMS "none"` on every artifact via `mf_stamps`; abi N → N+1 with §18.3's readers; the spec hunk; the bench inbox note. **Prerequisite:** R4a. **Trigger:** Frank's Q39 ruling (it lands before R4c so that M1 stays zero-mover).
+> - **R4b, the first customer's measurement** (probe only): twins.md T-B on Linux ON THE POST-HANDOFF BUILD, both regimes (§21.1), a PORTABLE (SWAR) fused composite variant beside `emit` and the vector `ffl`, on the K82 cells and on K85's `cls-n-uc`. **Prerequisite:** none. **Trigger:** `lane/k82hbuild` merged and alpha-accepted.
+> - **R4c, M1: the composite PRE site and the offset-skip trio migrate, zero movers** (§16): implement (baseline arms, shadow comparator) then replace; `DELEG_SITES` with its `use` column; the three profile axes (§20.2) in `strategy_denials`; `tests/memfn/pins/{arms,off}.tsv` recorded; C4, C5, C10, C11, C12 (9 → 3), C13, C14; I2 over every axis and both comment tiers. **Prerequisites:** R4a′; `lane/k82hbuild` merged; K85 re-measured on the post-handoff build. **Trigger:** R4b shows the PORTABLE fused form beating `emit` past the floor on at least one K82 cell in its own regime, with no loss past the floor in the other.
+> - **R4d, the first movers: the kit's portable fused composite arm** (lead + window in one pass; K85's general answer): abi event, stamp values on movers, the spec hunk with §10.6's four limits, G1 alpha (both regimes) on the pcrec-side movers, the bench `pcrec[memfn-off]` testee requested through the inbox (D78). **Prerequisite:** R4c. **Trigger:** R4b's cell.
+> - **R4e, ON_CAND's first customer.** Filed until a measured cell (twins.md T-A's iterate-in-place lever on a real site); C13 goes live then.
+> - **R4e′, native arms behind `-fmemfn-native`** (default OFF): the kit's ISA arms for the M1 sites; C9 at `-fmemfn-native` with its floor born; `test-axes` and I2 arms for the opt-in; no DEFAULT byte moves (Q49). **Prerequisite:** R4d. **Trigger:** `[OPT-SIMD]` opened (D119: SIMD last).
+> - **R4f, the native default flip** (`memfn-native` default ON): its own ruled abi event. **Prerequisite:** R4e′. **Trigger:** a Linux alpha in which the native arm beats the portable arm past the floor on a mover cell, in both regimes. This is measurable BEFORE the flip, because R4e′ exists: rev 3's circularity, where only the flip could produce the flip's evidence, is gone (r3 G-F11).
+> - **M1b, runcmp migrates** (`pcrec_emit_run_compare` with its three callers; bit 43 crosses, §14.10; `RUN_WORDS` becomes the kit's stamp). **Prerequisite:** R4c. **Trigger:** a measured cell whose time is in a VM literal-run compare or a masked run compare that a kit form would change, or any kit arm that needs to fuse the run verify itself rather than through `run_cmp`.
+> - **R4g, M2: PF migrates, then PF movers** (with K84's `strcmp` readers fixed, §19 row 7, and row 6's rarity half). **Prerequisite:** R4c. **Trigger:** U-2 AND a Linux cell whose time is in `pf_emit_bcls`.
+> - **R4h, M3: STAY, the scan edge's loop and VMSPAN at stride 1** (ADVANCE with `count`/`peek`/`floor`, §14.3). **Prerequisite:** R4c. **Trigger:** U-3 AND a Linux cell dominated by class runs.
+> - **R4i, declared tokens (`--isa=`):** HELD (linux_results.md §5).
+> - **R4j, M5: the MODEL moves as the baseline's planner** (§14.9), byte-identical; then any non-baseline plan with its movers. **Prerequisites:** R4c, R4g. **Trigger:** a mover whose kit plan differs from pcrec's and whose G1 alpha beats it past the floor (Q40 rules adoption first).
+> - **Filed, not scheduled:** the deferred include anchor (the first arm needing a header pcrec's predicate does not predict, §14.8); OPTIONAL SITES (Q48); M4 MLINE (Q42); a fused N4 arm; FIND_SEQ and F8 `mismatch` by request; N6; extraction (§11.1, with §20.1's files moving unchanged).
+
+---
+
+## 23. Questions for Frank, revision 4 `[rev4]`
+
+Renumbered from Q35. Revision 3's Q24-Q34 were never ruled, and each is
+re-derived below against the panel's findings rather than carried. §23.1
+maps them. Each question has a recommendation.
+
+35. **Q35, the contract (re-derives Q24).** Adopt §8 as extended by §14
+    as the design of record:
+    - the three forms, and the six handoffs with pcrec's `on_miss`;
+    - REQUIRED/OPTIONAL terms with §14.5's promise;
+    - ALL_PRESENT's `ret_pred`;
+    - `n − end_back` ranges with a declared EMPTY outcome, and `floor`;
+    - `mf_art` with helpers before first use and kit-written stamps;
+    - totality through a generic scalar row;
+    - pcrec's two tables (`DELEG_SITES` with its `use` column, and the
+      profile first-match).
+    
+    **Recommendation:** yes. §15 shows that every M1 shape is
+    expressible byte for byte, which is the property revision 3 lacked.
+36. **Q36, where the kit lives (re-derives Q25), and its symbols.**
+    In-tree `memfn/`, with external symbols `pcrec_mf_*` through
+    `MF_NS`, C15 over `libpcrec.a`, and extraction on a second consumer
+    or your ruling. **Recommendation:** yes. Atomicity (a kit change
+    and its abi bump in one commit) is still the decisive reason, and
+    the symbol policy is what makes "links into libpcrec" safe for
+    users.
+37. **Q37, the licence (re-derives Q26).** 0BSD for the kit's own text.
+    Translated Rust `memchr` files take its Unlicense arm, with an SPDX
+    tag and provenance per file and C16 holding the set to D145's list.
+    **Recommendation:** yes.
+38. **Q38, the profile axes, polarity, and the baseline's permanence
+    (re-derives Q27/Q28).**
+    - `-fno-memfn-scan` and `-fno-memfn-loop` are deny axes, default ON.
+    - `memfn-native` is a deny/force pair, default OFF, enabled by
+      `-fmemfn-native`.
+    - All three are in `strategy_denials`.
+    - The baseline is frozen and changed only by a ruled abi event.
+    
+    **Recommendation:** yes, and keep the baseline forever. It is D146's
+    OFF arm and the revisit-when witness.
+39. **Q39, the stamp (G-F1).** `<PREFIX>_MEMFN_FORMS` on every artifact,
+    valued `none` iff the artifact is byte-identical to its `memfn-off`
+    compile, else opaque form ids. It carries no kit version and no
+    vocabulary number, is written by the kit, and is checked by C11
+    against a pcrec-side diff. It is born in its own abi event (R4a′)
+    before M1's replace. **Recommendation:** yes.
+40. **Q40, the scan plan and ADOPTION (re-derives Q29; r3 F9).** The
+    plan (which term and position to scan, which to verify, the window
+    cut, the byte pick) moves at M5 by moving prefix_k's MODEL into the
+    kit as the baseline's frozen planner. That is byte-identical, and
+    pcrec stops computing `plan_hint` only then. The open part is
+    ADOPTION: whether an offset-set prefilter applies at all, which
+    today decides `<PREFIX>_DFA_PREFILTER`'s value and whether the
+    landing reseeds.
+    **Recommendation:** at M5, T1 keeps one semantic row ("a necessary
+    k-set beyond offset 0 exists") and `<PREFIX>_DFA_PREFILTER` keeps
+    reporting pcrec's ROW, never the kit's plan. The kit's plan is
+    visible through `MEMFN_FORMS`, and the reseed becomes unconditional
+    on that row (it is sound for any landing). That is an abi event
+    with a movers census and a bench inbox note. The alternative is to
+    keep adoption in pcrec forever, which keeps `C_ENTER` and the 2×
+    bar in `src/`, contra D146.
+41. **Q41, M1's scope and sequence (G-F10/G-F11).**
+    - M1 is the composite PRE site plus the offset-skip trio. runcmp is
+      reached through a `run_cmp` hook and becomes M1b, with its own
+      trigger.
+    - M1 runs after `lane/k82hbuild` merges and after K85's re-measure
+      on that build.
+    - After M1, edits to the migrated emitters are kit-lane work.
+    
+    **Recommendation:** yes.
+42. **Q42, migrate without a customer (re-derives Q30).** M4, the
+    `(?m)^` `memchr('\n')`. **Recommendation:** no, unchanged. The
+    contract can express it (§15.7), and the ratchet keeps it at one.
+43. **Q43, aarch64 (re-derives Q31; G-F4).** There is no verdict-grade
+    armv8 guard. The kit never default-selects a native arm on aarch64,
+    and the spec states that aarch64 choices are unmeasured at verdict
+    grade. **Recommendation:** yes, until you admit the Mac per cell
+    (D144's loop protocol) or a quiet Linux aarch64 box exists.
+44. **Q44, the dial (re-derives Q32).** `--tune` -2/-1 send
+    `MF_P_SIZE_LEANING`. **Recommendation:** rule it at R4d as a D103
+    diff, with the movers census at those positions. Unchanged.
+45. **Q45, whose libc (re-derives Q33).** The kit measured glibc and
+    libSystem, and musl inherits the result. **Recommendation:** state
+    it in `docs/spec/` at R4d, as §10.6's second limit. Unchanged.
+46. **Q46, the request channel (re-derives Q34; G-F13).** Two files
+    from day one: `inbox_from_pcrec.md` written only by the manager on
+    main, and `outbox_to_pcrec.md` written only by kit lanes. A request
+    is on main before its lane is briefed. **Recommendation:** yes.
+47. **Q47, the kit's switches as axes (G-F2).** Each kit row with a
+    deny is published by `mf_switches()` and becomes a generated axis
+    row (`--memfn-deny=NAME`), listed, swept by `test-axes` and by I2.
+    pcrec never spells the names. **Recommendation:** yes. It is D144
+    item 4 for kit forms, without arch knowledge in `src/`.
+48. **Q48, OPTIONAL SITES (new, §19 row 11).** On a DFA route a run or
+    byte pre-check is speed-only. Should such a site be marked OPTIONAL,
+    so the kit may render NOTHING for it when it judges the gate useless
+    (K85's dense-text case)? This would move "whether a speed-only gate
+    exists" out of pcrec. **Recommendation:** file it, don't build it.
+    Its D77 trigger is a K85-shaped cell that the R4d fused arm does not
+    already cure. On no-DFA routes the gate is a proof and is never
+    optional.
+49. **Q49, an opt-in-only kit arm (R4e′).** Native arms land behind
+    `-fmemfn-native` (default OFF), so no DEFAULT byte moves.
+    **Recommendation:** no abi bump at R4e′. Its pins, its `test-axes`
+    arm and C9's floor are born in that commit, and its `docs/spec/`
+    hunk lands there (D80): `-fmemfn-native`'s output is
+    caller-observable. The R4f flip is the abi event.
+
+### 23.1 Revision 3's questions, mapped
+
+| rev 3 | rev 4 |
+|---|---|
+| Q24 the contract | Q35 (extended by §14) |
+| Q25 home | Q36 (+ symbol policy) |
+| Q26 licence | Q37 (+ per-file provenance) |
+| Q27 deny bits / baseline | Q38 (+ polarity, `strategy_denials`) |
+| Q28 the default during the SIMD hold | Q38 (the default is now "axis not taken", not "deny set") and Q49 |
+| Q29 prefix_k's constants | Q40 (the model moves; adoption asked) |
+| Q30 MLINE | Q42 (unchanged) |
+| Q31 aarch64 | Q43 (+ stated in the spec) |
+| Q32 dial | Q44 (unchanged) |
+| Q33 libc | Q45 (unchanged) |
+| Q34 request channel | Q46 (two files now) |
+| — | Q39 stamp, Q41 M1 scope, Q47 switches, Q48 optional sites (new) |
