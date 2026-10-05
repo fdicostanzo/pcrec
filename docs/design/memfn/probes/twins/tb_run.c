@@ -180,16 +180,6 @@ INL size_t f_m2v(const uint8_t *s, size_t n, size_t pos, int L, const char *V, i
 }
 
 /* fused: candidates from masked compares at offsets in the vector loop */
-#if VMASK_SHIFT
-#define VMASK_ONE 0x8888888888888888ull /* one bit per 4-bit lane */
-#else
-#define VMASK_ONE (~0ull)
-#endif
-INL uint64_t lane_from(size_t k) /* mask of lanes >= k (k < VW) */
-{
-    return ~0ull << (k << VMASK_SHIFT);
-}
-
 INL size_t f_fused(const uint8_t *s, size_t n, size_t pos, int L, const char *V,
                    int KA, int KB, int ALL)
 {
@@ -459,8 +449,8 @@ int main(int argc, char **argv)
                                             { "cap-t-64k", "cap-t-1m" },
                                             { "syn-t-64k", "syn-t-1m" } };
     for (int ci = 0; ci < 3; ci++) {
-        printf("\n## cell %s\n%-6s %-24s %-24s %-24s %-24s %-24s\n", cells[ci], "var",
-               subj[ci][0], subj[ci][1], "sweep " , "sweep ", "short");
+        printf("\n## cell %s\n%-6s gate:%-19s gate:%-19s sweep:%-18s sweep:%-18s %s\n",
+               cells[ci], "var", subj[ci][0], subj[ci][1], subj[ci][0], subj[ci][1], "short");
         uint8_t *tb[2];
         size_t tn[2];
         for (int q = 0; q < 2; q++) {

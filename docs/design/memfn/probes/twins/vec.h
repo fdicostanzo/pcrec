@@ -239,4 +239,36 @@ __attribute__((unused)) static uint8_t *slurp(const char *path, size_t *n)
         if (PRED(s[i])) return i;                                             \
     return n;
 
+/* lanes of a vmask() result: VMASK_ONE keeps one bit per lane (NEON's shrn
+ * mask has four), so m &= m - 1 steps one lane; lane_from(k) is the mask of
+ * lanes >= k (k < VW) */
+#if VMASK_SHIFT
+#define VMASK_ONE 0x8888888888888888ull
+#else
+#define VMASK_ONE (~0ull)
+#endif
+INL uint64_t lane_from(size_t k) { return ~0ull << (k << VMASK_SHIFT); }
+
+/* ITER_BODY(CLS, PRED): every i in [0, n) whose byte is in the set, written
+ * to pos[] in order (at most cap; returns the count), the block mask kept
+ * across hits instead of a find-first restart per hit. VW blocks, then the
+ * overlapped final block with its already-done lanes masked off. */
+#define ITER_BODY(CLS, PRED)                                                  \
+    long cnt = 0;                                                             \
+    size_t i = 0;                                                             \
+    if (n >= VW) {                                                            \
+        for (; i + VW <= n; i += VW) {                                        \
+            uint64_t m = vmask(CLS(vload(s + i))) & VMASK_ONE;                \
+            for (; m && cnt < cap; m &= m - 1) pos[cnt++] = i + vfirst(m);    \
+        }                                                                     \
+        if (i < n) {                                                          \
+            uint64_t m = vmask(CLS(vload(s + n - VW))) & VMASK_ONE & lane_from(i - (n - VW)); \
+            for (; m && cnt < cap; m &= m - 1) pos[cnt++] = n - VW + vfirst(m); \
+        }                                                                     \
+        return cnt;                                                           \
+    }                                                                         \
+    for (; i < n; i++)                                                        \
+        if (PRED(s[i]) && cnt < cap) pos[cnt++] = i;                          \
+    return cnt;
+
 #endif

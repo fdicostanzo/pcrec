@@ -20,6 +20,10 @@
  *            nib1 (<= 16 members, low nibbles unique: T[c & 15] == c, one
  *            shuffle), rangesor (\w as three range/eq tests)
  *   libc     (eq2/eq3 only) one memchr per member, min of the hits
+ *   iter     the shape classifier as a FIND-ALL that keeps the block mask
+ *            across hits (shapes.h ITER_BODY) instead of one find-first
+ *            call per hit: the control that separates the classifier's
+ *            cost from the per-hit restart's
  *
  * Sets (members exact; provenance in the set table): ["'] the userpass
  * bench cell's quote class; \h (bc024); [0-9]; {S,s} (bc011) and {A,B,a,b}
@@ -163,6 +167,16 @@ GEN_NIB2(ab, S_AB) GEN_NIB2(sp, S_SP) GEN_NIB2(dm, S_DM) GEN_NIB2(w, S_W)
     X(dm, scalar, S_DM) TBLX(X, dm, S_DM) NIB1X(X, dm, S_DM)                   \
     X(w, scalar, S_W) TBLX(X, w, S_W) X(w, shape, S_W)
 
+/* the find-all-with-kept-mask control: one per shape kernel */
+#define ITERS(X)                                                              \
+    X(q2, S_Q2) X(h3, S_H3) X(d, S_D) X(ss, S_SS) X(ab, S_AB) NIB1I(X, sp, S_SP) \
+    NIB1I(X, dm, S_DM) X(w, S_W)
+#if VHAVE_TBL
+#define NIB1I(X, S, I) X(S, I)
+#else
+#define NIB1I(X, S, I)
+#endif
+
 struct tctx { const uint8_t *s; size_t n; long hits; };
 
 /* one noinline find-all body per kernel: the kernel is inlined into it */
@@ -188,6 +202,28 @@ struct tctx { const uint8_t *s; size_t n; long hits; };
         return now_ns() - t0;                                                 \
     }
 KERNELS(TIMER)
+
+#define ITIMER(S, I)                                                          \
+    OOL static double ti_##S(const void *ctx, long reps)                      \
+    {                                                                         \
+        struct tctx *c = (struct tctx *)ctx;                                  \
+        static size_t pos[65536];                                             \
+        long tot = 0;                                                         \
+        double t0 = now_ns();                                                 \
+        for (long r = 0; r < reps; r++) {                                     \
+            const uint8_t *s = c->s;                                          \
+            __asm__ volatile("" : "+r"(s));                                   \
+            tot += k_##S##_iter(s, c->n, pos, 65536);                         \
+            __asm__ volatile("" : : "r"(pos) : "memory");                     \
+        }                                                                     \
+        c->hits = tot / reps;                                                 \
+        return now_ns() - t0;                                                 \
+    }
+ITERS(ITIMER)
+struct ikern { int si; long (*fn)(const uint8_t *, size_t, size_t *, long); tbody tm; };
+#define IROW(S, I) { I, k_##S##_iter, ti_##S },
+static const struct ikern ikerns[] = { ITERS(IROW) };
+#define NIK (int)(sizeof ikerns / sizeof ikerns[0])
 
 struct kern { const char *set, *var; int si; size_t (*fn)(const uint8_t *, size_t); tbody tm; };
 #define ROW(S, V, I) { #S, #V, I, k_##S##_##V, t_##S##_##V },
@@ -300,8 +336,32 @@ static int check(void)
             free(s);
         }
     }
-    printf("check (" VISA "): %d kernels, %ld cases, %ld bad, %ld faults\n", NK, g_cases,
-           g_bad, (long)g_faults);
+    /* the iter kernels: their whole position list against the reference's
+     * find-all, exact-allocation spans and fuzz */
+    for (int x = 0; x < NIK; x++) {
+        const struct set *d = &sets[ikerns[x].si];
+        size_t *got = malloc(401 * sizeof *got);
+        for (int t = 0; t < 20000; t++) {
+            size_t n = t < 301 * 8 ? (size_t)(t / 8) : (size_t)(rng() % 400), al = (size_t)t % 32;
+            uint8_t *blk = malloc(al + n + 1), *s = blk + al;
+            for (size_t i = 0; i < n; i++) {
+                uint64_t r = rng();
+                s[i] = (r & 7) == 0 ? (uint8_t)(r >> 8)
+                                    : (r & 7) < 3 ? (uint8_t)d->members[(r >> 16) % d->k] : filler(d, i);
+            }
+            long c = ikerns[x].fn(s, n, got, 401), w = 0;
+            int ok = 1;
+            for (size_t i = 0; i < n; i++)
+                if (d->mem[s[i]]) { if (w >= c || got[w] != i) ok = 0; w++; }
+            g_cases++;
+            if ((!ok || w != c) && g_bad++ < 20)
+                printf("BAD %s/iter n=%zu al=%zu got %ld hits want %ld\n", d->id, n, al, c, w);
+            free(blk);
+        }
+        free(got);
+    }
+    printf("check (" VISA "): %d kernels + %d iter, %ld cases, %ld bad, %ld faults\n", NK, NIK,
+           g_cases, g_bad, (long)g_faults);
     return g_bad != 0;
 }
 
@@ -360,6 +420,18 @@ int main(int argc, char **argv)
                     struct tctx c = { buf, spans[j], 0 };
                     double lo, hi;
                     tmeasure(kerns[q].tm, &c, &lo, &hi);
+                    printf(" %9.2f(+%2.0f)", lo, 100 * (hi / lo - 1));
+                    fflush(stdout);
+                }
+                printf("\n");
+            }
+            for (int q = 0; q < NIK; q++) {
+                if (ikerns[q].si != x) continue;
+                printf("%-7s %-7s", dname[dn], "iter");
+                for (size_t j = 0; j < NSPAN; j++) {
+                    struct tctx c = { buf, spans[j], 0 };
+                    double lo, hi;
+                    tmeasure(ikerns[q].tm, &c, &lo, &hi);
                     printf(" %9.2f(+%2.0f)", lo, 100 * (hi / lo - 1));
                     fflush(stdout);
                 }

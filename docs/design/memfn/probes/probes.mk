@@ -80,3 +80,36 @@ fmvdarwin: | $(OUT)
 isanote: $(NSRC) | $(OUT)
 	sh docs/design/memfn/probes/isanote.sh $(OUT) $(CC_GCC)
 .PHONY: check check-asan run asm check-isa check-asan-isa run-isa asm-isa compile-x86 isanote fmvdarwin
+
+# ---- R1d (lane memftwin): the hand twins, twins/ (twins.md) ----
+#   ... probes.mk twins-check twins-check-asan   # exhaustive + guard pages, NEON or SSE2+
+#   ... probes.mk twins-check-x86   # Mac only: the x86 builds (SSE2/SSSE3/AVX2) under Rosetta 2
+#   ... probes.mk twins-asm         # T-C: hand vs constant-descriptor disassembly diff
+#   ... probes.mk twins-run         # build + check + time everything (twins_run.sh)
+TW       := docs/design/memfn/probes/twins
+TWINS    := ta_set tb_run tc_desc
+TWDEPS   := $(TW)/vec.h $(TW)/shapes.h
+$(OUT)/twins:
+	mkdir -p $@
+$(OUT)/twins/%.gcc: $(TW)/%.c $(TWDEPS) | $(OUT)/twins
+	$(CC_GCC) $(CFLAGS) -o $@ $<
+$(OUT)/twins/%.clang: $(TW)/%.c $(TWDEPS) | $(OUT)/twins
+	$(CC_CLANG) $(CFLAGS) -o $@ $<
+$(OUT)/twins/%.asan: $(TW)/%.c $(TWDEPS) | $(OUT)/twins
+	$(CC_CLANG) -O1 -g -std=gnu11 -fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer -o $@ $<
+twins-check: $(foreach t,$(TWINS),$(OUT)/twins/$(t).gcc $(OUT)/twins/$(t).clang)
+	for b in $^; do $$b --check || exit 1; done
+twins-check-asan: $(foreach t,$(TWINS),$(OUT)/twins/$(t).asan)
+	for b in $^; do $$b --check || exit 1; done
+twins-check-x86: $(foreach t,$(TWINS),$(TW)/$(t).c) $(TWDEPS) | $(OUT)/twins
+	for t in $(TWINS); do for m in x86-64 x86-64-v2 x86-64-v3; do \
+	  $(CC_CLANG) -arch x86_64 -march=$$m $(CFLAGS) -o $(OUT)/twins/$$t.x86.$$m $(TW)/$$t.c || exit 1; \
+	  $(OUT)/twins/$$t.x86.$$m --check || exit 1; done; \
+	  $(CC_CLANG) -arch x86_64 -march=x86-64-v3 -O1 -g -std=gnu11 -fsanitize=address,undefined -fno-sanitize-recover=all \
+	    -o $(OUT)/twins/$$t.x86.asan $(TW)/$$t.c && $(OUT)/twins/$$t.x86.asan --check || exit 1; done
+twins-asm:
+	sh $(TW)/tc_asm.sh $(OUT)/twins/asm $(CC_GCC)
+	sh $(TW)/tc_asm.sh $(OUT)/twins/asm $(CC_CLANG)
+twins-run:
+	sh $(TW)/twins_run.sh
+.PHONY: twins-check twins-check-asan twins-check-x86 twins-asm twins-run
