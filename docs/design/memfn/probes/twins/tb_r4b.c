@@ -19,7 +19,8 @@
  * the set-leads `memchr('=')` pre-check (K82 (A), abi 60).
  *
  * The function every variant computes is the composite site's (one site,
- * §15.5: an optional LEAD byte, then the window RUN):
+ * §15.5: an optional LEAD byte, then the window RUN; the lead is OPTIONAL
+ * on these DFA-route cells, REQUIRED on a no-DFA route, rev 4.6 A1):
  *
  *   gate(s, n, pos) = n                    if LEAD and no s[j] == LEAD, pos <= j < n
  *                   = the first c >= pos with c + L <= n and
@@ -27,7 +28,7 @@
  *                   else n
  *
  * Cells (bench pattern; run, scan offset KA, second filter offset KB, lead):
- *   us  union-select  (?i)union.*?select.*?from  SELECT@4 C/c, T@5   none (no-DFA route)
+ *   us  union-select  (?i)union.*?select.*?from  SELECT@4 C/c, T@5   none (no handoff)
  *   up  userpass      (?:username|USERNAME|...)  USER@0  U/u, R@3    '=' (set-leads)
  *   mi  mod-i         (?i)cat                    CAT@0   C/c, T@2    none (handoff)
  *   cn  cls-n-uc      it\Nm                      it@0    i,   t@1    'm' (set-leads, K85)
@@ -128,7 +129,8 @@ INL size_t emit_cn(const unsigned char *subject, size_t subject_length, size_t s
     if (handoff_position >= subject_length) return subject_length;
     return handoff_position;
 }
-/* -fno-req-set-lead: the same artifact without the three memchr lines */
+/* -fno-req-set-lead: the same artifact without the three memchr lines (a
+ * DFA-route fact: on a no-DFA route the byte would join the K65 set rest) */
 INL size_t nosl_cn(const unsigned char *subject, size_t subject_length, size_t search_from)
 {
     size_t handoff_position = cn_rx_reqrun(subject, subject_length, search_from);

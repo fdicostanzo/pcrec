@@ -148,6 +148,12 @@ its DESIGN record.**
   part of the composite site's form (§15.5); R4b DONE, R4d's trigger
   MET at SIMD-off on union-select (§22); kit forms obey D149 (§8.6
   K-7). Read §R4.5 first.
+  **REVISION 4.6 (lane memfnr46, 2026-10-05), the r5 panel's 23
+  findings applied; rules nothing (Q53-Q55 stay open, refined)**: the
+  set-leads lead is OPTIONAL on DFA-scan routes and REQUIRED on no-DFA
+  routes (K65); `use` is a per-instance fact; the composite's `empty` is
+  MISS; one predicate numbering; line citations in §14-§16 replaced by
+  function names. Read §R4.6, then §R4.5, first.
 - `twins.md` — R1d (lane memftwin, 2026-10-04), the D77 measurement "does a
   kernel TAILORED to the pattern beat a fixed generic one": T-A set
   classifier per shape vs the generic nibble lookup, T-B a fused scan+verify
