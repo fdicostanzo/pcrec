@@ -11,6 +11,12 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 ---
 
+## K84 — OPEN, latent (2026-10-04, found by lane memfnmap's [MEMFN] R1d table inventory, docs/design/memfn/integration.md §1) — two readers classify the DFA prefilter by `strcmp` on dfa_pfs[] ROW NAMES
+
+**Where:** `src/gen/emit_dfa.c:6417` (`dfa_cand_scan`: `!strcmp(pf->c.name, "memchr") || !strcmp(pf->c.name, "memchr-bounded")`) and `:6450` (`pcrec_dfa_cand_ppm`: `strcmp(pf->c.name, "byte-class") && strcmp(pf->c.name, "byte-class-bounded")`).
+**Hazard:** a new dfa_pfs[] row (any future form, SIMD included) silently escapes the G1 dominance elision and the reseed price, because the readers test names rather than a row property. No wrong answer today (no such row exists); a performance/selection defect on the first new row.
+**Fix shape:** the row carries the property the readers need (its scan-byte kind) as a field; the readers test the field. Lands with the first new dfa_pfs[] row at the latest ([MEMFN] R4, integration.md §2), or earlier as a no-mover refactor.
+
 ## K83 — OPEN, deferred (2026-10-04, found by lane a2build's round-1 bake-off, read by lane r1alpha) — [OPT-HYB-RESEED-FORM] A1's `anchored` reseed row LOSES on clang by about 24 ns per pass, past the 2.5% floor
 
 **Witness:** the bake-off's `lpatom` cell (`s:br-doubled-word+74`, A1's own cell, the one pattern of the 19 with a capture group; a = main, d = the A1 branch, ns per set pass): gcc a/d = 1.089 (775 vs 712 ns, floor 0.1%), so A1 WINS about 63 ns/pass on gcc; clang a/d = 0.965 (a is 24 ns faster, floor 2.5%), so A1 LOSES beyond the floor on clang. Evidence: docs/dev/lanes/r1read_report.md §4, docs/dev/lanes/a2build_report.md; raw rows under studies/hyb_reseed_cal/bakeoff/results/.
