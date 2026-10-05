@@ -150,6 +150,12 @@ in the design note with its section.
 - `k82alpha_lx.txt` — `alpha_k82.sh all`'s Linux transcript (ubuntubudu, gcc 15.2,
   2026-10-05, lane lxrun's driver lx1005), verbatim under a provenance header;
   read in `docs/dev/lanes/k82alpha_report.md`.
+- `k82halpha_lx.txt` — `alpha_k82h.sh all`'s Linux transcript (ubuntubudu, gcc 15.2,
+  2026-10-05, lx1006), verbatim under a provenance header; read in
+  `docs/dev/lanes/k82halpha_report.md`.
+- `k85alpha_lx.txt` — the cls-n-uc K85 re-measure at abi 61 (`lx1006_alpha_k85.sh`) plus the
+  lx1006 driver log, verbatim; its `check` is red by the script's own deny choice (section 3 of
+  the same report).
 
 `alpha_c3.sh`'s loglines A0 control is `level-context` since [K82]:
 `stack-frame`, the old control, moves at abi 60 (a set-leads mover).
