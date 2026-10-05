@@ -9016,3 +9016,12 @@ This generalizes D91 (scalar-first, "the SIMD crutch must not hide inefficiencie
 **D147 addendum 7 (Frank, 2026-10-05):** SIMD is OFF BY DEFAULT until the SIMD hold (D91/D119) lifts. Turning it on by default is its own ruled event (D112 shape). Callers opt in with the switch. Superseded proposals: Q51 (withdraw the SIMD-off arm) and Q52 (stamp keyed on the native flag) are REJECTED; D147's both-layers reading and Q39's stamp stand.
 
 **D147 addendum 8 (Frank, 2026-10-05):** [MEMFN] Q43 YES. SIMD-on forms tuned for aarch64 are not ACCEPTED until Frank admits Mac measurements as verdict-grade for those cells, or an aarch64 Linux box exists. x86 Linux gives the verdicts. The SIMD-off (portable) layer is unaffected.
+
+**D147 addendum 9 (Frank, 2026-10-05):**
+- **Rulings:** [MEMFN] Q44 (the dial interaction is ruled at R4d as a D103 diff), Q45 (state in the spec whose libc is measured), Q46 (two single-writer files), Q48 (optional sites: file, don't build) and Q49 (opt-in-only kit arms need no abi bump at landing; own pins and axes) are all YES as recommended.
+- **Q47 REFINED, the KIT'S OWN OPTION SPACE:**
+  - pcrec keeps exactly ONE axis for this: the layer switch `-fmemfn-simd`.
+  - The kit's per-form switches live in a KIT-OWNED option namespace, `--memfn=<opt>[,<opt>…]`, defined by a registry inside memfn/ (not pcrec's axes.def). pcrec passes the string through uninterpreted, so pcrec proper is not muddied.
+  - `--list-axes` prints pcrec's axes and then a `memfn` section read from the kit registry. That is ONE enumeration point for test-axes, the identity gates and the registry check.
+  - A spec-pinned floor on the kit section's member count is the independent control against a stale kit registry.
+- **D144 item 4 (every optimization its own deny) is met inside the kit's namespace.**
