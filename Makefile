@@ -296,7 +296,8 @@ TEST_SECTIONS := test-corpus test-cli test-reject test-registry test-parse \
       test-prefilter-collapse test-rxtsource test-definitions \
       test-entry-shape-identity test-cpset-structure test-startbnd \
       test-uprops test-core test-vars test-examples test-findings test-ucp \
-      test-clskit test-encoding-checks test-utfcheck
+      test-clskit test-encoding-checks test-utfcheck \
+      test-memfn-manifest
 
 # [CHK-2 trailer] `test:` STOPPED being purely prerequisite-based here
 # (2026-08-26, manager finding, journal part 7): under `make -j12 test`,
@@ -1163,6 +1164,15 @@ test-utfcheck: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-utfcheck.ran"; fi
 	bash tests/utfcheck/run_utfcheck.sh
 
+# [MEMFN] C17, the checked site manifest (integration.md §R4.3.4): every
+# search or span-compare site pcrec emits is a row of
+# tests/memfn/site_manifest.tsv, `pending` or `delegated`, checked against
+# what src/gen/ and src/enc/ actually spell (tests/memfn/search_vocab.tsv).
+# Static (reads src/, runs no binary), about a second. See tests/memfn/CLAUDE.md.
+test-memfn-manifest:
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-memfn-manifest.ran"; fi
+	bash tests/memfn/run_site_manifest.sh
+
 # [REVW.U L5-R0] tests/core/ — the unit tier's home for a check on a helper
 # that belongs to no single feature (today: the saturating-arithmetic
 # agreement, mrl.c/emit_vm.c/callgraph.c). One gcc invocation and one process
@@ -1686,5 +1696,6 @@ clean:
         test-prefilter-collapse test-rxtsource test-definitions \
       test-entry-shape-identity test-cpset-structure \
         test-encoding-checks test-startbnd test-utfcheck test-core test-examples test-clskit \
+        test-memfn-manifest \
         smoke hooks strict testscripts ubsan asan san lint alloc mech bench \
         fuzz clean
