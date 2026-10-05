@@ -44,7 +44,7 @@ def read_rxt(path):
                    "engine": None, "frames": None, "xflags": [], "tags": {}, "cases": [], "desc": ""}
             blocks.append(cur); continue
         if cur is None:     # the HEAD: config/target/its indented body (the collapse targets)
-            assert kw in ("config", "target", "") or line.startswith(" "), "%s:%d: unsupported head line" % (path, ln)
+            assert kw in ("config", "target", "oracle", "") or line.startswith(" "), "%s:%d: unsupported head line" % (path, ln)
             continue
         if kw == "flags": cur["flags"] = rest
         elif kw == "encoding": cur["enc"] = rest.strip()
