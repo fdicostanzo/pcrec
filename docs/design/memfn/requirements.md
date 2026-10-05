@@ -4,6 +4,12 @@ Owner row: `[MEMFN]` (docs/dev/plan.md), step R1. Lane `memfnreq`,
 2026-10-04, written from main at cdd12942. Docs and one small probe only;
 nothing under `src/`, `cli/`, `lib/` or `tests/` changes.
 
+**R1b, ISA selection and checking, is `isa_selection.md`** (lane memfnisa,
+2026-10-04): the dynamic, declared-ISA and hybrid options with Mac
+per-call costs, a first-match selection table, RB-10..RB-13, N-12..N-14,
+rubric rows H-14..H-16, and one Linux script (`probes/linux_run.sh`) that
+also runs §2.6's owed probe.
+
 **What this is:** the requirements an implementation of byte search and
 compare kernels ("memory-functions") must meet so that pcrec can later
 EMIT its kernels into self-contained generated C, written so that EXISTING
@@ -66,7 +72,10 @@ object or any non-reentrant or allocating libc symbol).
    through the CONSUMER's compile flags (`-march`), which pcrec does not
    control (K24's lesson: "pcrec cannot dictate its users' CFLAGS"). Runtime
    dispatch is therefore a property of the library's own out-of-line form
-   only (§2.5 RB-3, RB-8).
+   only (§2.5 RB-3, RB-8). *Narrowed by isa_selection.md §0 item 4:
+   Apple clang now lowers multiversioning to a dyld-resolved
+   `__func_variants` table on Mach-O, so the reason is "toolchain-
+   dependent", not "unavailable". The conclusion stands.*
 6. **Licence is a gate, not a score.** Text that pcrec injects lands in
    every user's generated artifact. A licence that requires its notice in
    "all copies or substantial portions" (MIT, BSD, Apache-2.0's NOTICE)
@@ -353,7 +362,8 @@ Readings, each directional:
 - **RB-8 The library's own out-of-line form may dispatch at run time.**
   ifunc on ELF, a constructor-resolved pointer elsewhere. Every ISA
   variant must also have its own directly callable name, so a static,
-  dispatch-free use is always possible.
+  dispatch-free use is always possible. *Sharpened as RB-13 in
+  isa_selection.md §5.*
 - **RB-9 Measurable size.** The per-kernel, per-ISA code size must be
   reportable (an object build per kernel is enough), because B3's per-site
   bytes are the dial's size term (`[OPT-DIAL]`).
@@ -377,6 +387,9 @@ run on x86.
     make -f docs/design/memfn/probes/probes.mk CC_GCC=gcc CFLAGS='-O2 -std=gnu11 -mavx2' OUT=build/memfn_probe_avx2 build/memfn_probe_avx2/callcost.gcc
     taskset -c 2 build/memfn_probe_avx2/callcost.gcc > callcost.linux.gcc-avx2.txt
 
+**One script now runs all of it:** `probes/linux_run.sh` runs these commands
+pinned and bounded, plus R1b's probes (isa_selection.md §4).
+
 The questions it answers: glibc's `F` (predicted about 3.4 ns, against
 the Mac's 1.3), `n*` against glibc's AVX2 body, and whether fusion's
 advantage holds on x86. An AVX2 arm of the kernels themselves is a later
@@ -391,7 +404,7 @@ probe. It belongs to the survey or the build, not to R1.
 | **N-1 ISAs** | x86-64: SSE2 baseline (no dispatch), AVX2 tier (by `-march` in inline forms, optionally by run-time dispatch in B1), AVX-512 optional. AArch64: ASIMD/NEON baseline, SVE/SVE2 optional. Both architectures are first-class: neither is primary ([OPT-SIMD], Frank 2026-08-31) |
 | **N-2 Scalar fallback** | portable C (SWAR permitted) for any other target. Correct on big-endian as well as little-endian: the SWAR `ctz` lane trick assumes little-endian, so a big-endian path, or a `__BYTE_ORDER__` guard that selects the byte form, is required |
 | **N-3 Compilers** | gcc (pcrec's target compiler; the floor version is the oldest gcc pcrec supports) and clang (the macOS toolchain, `[CC-CLANG]`). Both at `-O1`..`-O3` and `-Os` (memcmp_lowering_study measured `-Os` behaving differently) |
-| **N-4 Dependencies** | the inline forms need only `<stddef.h>`, `<stdint.h>`, compiler intrinsics headers, and builtins (`__builtin_ctz*`, `memcpy` for unaligned loads, which both compilers lower to a load). No libc calls, no libgcc or compiler-rt runtime functions, no `__builtin_cpu_supports` (it reads libgcc's `__cpu_model`) |
+| **N-4 Dependencies** | the inline forms need only `<stddef.h>`, `<stdint.h>`, compiler intrinsics headers, and builtins (`__builtin_ctz*`, `memcpy` for unaligned loads, which both compilers lower to a load). No libc calls, no libgcc or compiler-rt runtime functions, no `__builtin_cpu_supports` (it reads libgcc's `__cpu_model`; on Darwin it answers 0 for every feature, and an opt-in Linux exception is isa_selection.md Q5) |
 | **N-5 Licence** | §0 item 6 and §7 Q1. Disqualifying: GPL and LGPL for any text that is injected or inlined (glibc's string routines are LGPL-2.1+: ideas only). Acceptable for ideas in every case. For TEXT, a licence pcrec can carry into generated output under the answer to Q1: MIT, BSD-2/3, ISC, zlib, 0BSD, Unlicense or CC0, Apache-2.0 (with its NOTICE implication), or Apache-2.0 WITH LLVM-exception |
 | **N-6 Correctness method** | exhaustive testing against a scalar reference over every length 0..≥ 2×(widest vector + unroll), every hit position (and none), every alignment 0..(vector width − 1), and spans ending exactly at an allocation's end (the probe's `--check` shape), under ASan + UBSan, on BOTH architectures. Guard pages at both ends (studies/simd1's harness: a `PROT_NONE` page flush against the span end and another before its start). Plus random fuzzing against the reference, and for F4/F5 every 256-bit set shape the corpus and the uprops census produce |
 | **N-7 Benchmark method** | span lengths 1..64 KiB on a log scale (short spans weighted: the bench's per-call cells are 6-11 B), hit densities from none to dense, hit position (first, middle, last), independent and dependent call chains (throughput and latency), calibrated loops of 50 ms or more, absolute ns with the min..max spread, `taskset` pinning on Linux, Mac numbers marked directional (D144 addendum 1). Many distinct small buffers rather than one hot one (studies/simd1 §13's honesty note) |
@@ -454,7 +467,8 @@ source. It may still be scored as an IDEAS source (§5.4).
 | H-12 | small per-kernel code size (N-11) | 1 |
 | H-13 | tier C coverage (F11, F12, F13) | 1 |
 
-Score = the weighted sum of the 0-3 marks (maximum 69). A score is
+Score = the weighted sum of the 0-3 marks (maximum 69; 81 with
+isa_selection.md §6's H-14..H-16). A score is
 reported with its EVIDENCE (a test run, a disassembly, a timing), never
 from documentation alone. That is pcrec's measured-not-read rule.
 
@@ -495,7 +509,7 @@ text.
 | U-5 | the latency cost (§2.4 `dep`) in real verify-and-resume loops, where hit positions vary and branches mispredict | a later probe on bench subjects |
 | U-6 | span distributions per site (what `W` really is per call) | [FINDINGS.B4] / k82cost's model; the bench's per-call cells |
 | U-7 | whether gcc's and clang's branch shapes for a short path can be pinned without inline asm | the build, with N-8's disassembly check |
-| U-8 | the AVX2 tier's value over SSE2 for short spans: wider vectors raise the short-path threshold | the Linux probe's AVX2 arm, then the build |
+| U-8 | the AVX2 tier's value over SSE2 for short spans: wider vectors raise the short-path threshold | the Linux probe's AVX2 arm (`isacost`, isa_selection.md §4), then the build. U-9..U-14 continue in isa_selection.md §7 |
 
 ---
 

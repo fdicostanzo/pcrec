@@ -7,6 +7,7 @@
 #   ... probes.mk check-isa check-asan-isa run-isa     # as above, isacost.c
 #   ... probes.mk compile-x86    # Mac only: compile-check the x86 ELF/Mach-O paths
 #   ... probes.mk isanote        # Linux x86 only: the loader ISA-marker probe
+#   ... probes.mk fmvdarwin      # Mac only: cpu_supports + FMV lowering on Mach-O
 # Output tree: build/memfn_probe/ (gitignored). On the Linux box use
 # CC_GCC=gcc CC_CLANG=clang and run under `taskset -c 2` (D144 addendum 1).
 SRC      := docs/design/memfn/probes/callcost.c
@@ -72,7 +73,10 @@ compile-x86: $(ISRC) | $(OUT)
 	done
 	$(CC_CLANG) -target x86_64-linux-gnu $(CFLAGS) -isystem $(SDK)/usr/include -c -o $(OUT)/isanote.elf.o $(NSRC)
 	@echo "compile-x86: isacost.c x86-64/v3/v4 ELF+Mach-O and isanote.c ELF compile clean"
+# Mac only: __builtin_cpu_supports and FMV lowering on Mach-O.
+fmvdarwin: | $(OUT)
+	sh docs/design/memfn/probes/fmvdarwin.sh $(OUT)
 # Linux x86 only: what the loader enforces about an x86 ISA-level marker.
 isanote: $(NSRC) | $(OUT)
 	sh docs/design/memfn/probes/isanote.sh $(OUT) $(CC_GCC)
-.PHONY: check check-asan run asm check-isa check-asan-isa run-isa asm-isa compile-x86 isanote
+.PHONY: check check-asan run asm check-isa check-asan-isa run-isa asm-isa compile-x86 isanote fmvdarwin

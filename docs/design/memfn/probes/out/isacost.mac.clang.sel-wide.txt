@@ -1,0 +1,31 @@
+# box: Apple M1 Max, macOS 26.6.2; date 2026-10-05T00:24Z; probe commit: 5119427b
+# compiler: Apple clang version 21.0.0 (clang-2100.1.1.101), -O2 -std=gnu11 -Wall -Wextra
+# NOT pinned, box shared with other lanes (load avg { 5.47 7.21 7.20 } at launch): DIRECTIONAL ONLY (D144 addendum 1)
+compiled-for: aarch64-tier1 (from predefined macros)
+running CPU : aarch64-tier1 (armv8-a: NEON is the baseline; SVE is not probed by this build)
+cpusup(wide)=0 query(wide)=1
+verdict     : OK
+# memfn isacost probe, arch=aarch64 base=neon wide=neon64, ns/call min..max of 3 loops >= 50 ms
+# compiled-for aarch64-tier1; cpu level aarch64-tier1; cpu_has_wide=1
+# --sel=wide: flag/fnptr arms select wide; cpusup()=0 query()=1 (per-call variants follow these)
+# have: cpusup=1 ifunc=0 fmv=1
+
+## mode=ind case=miss (whole span read)
+n                        1             8            16            32            64           256          1024          4096
+loop           0.33..0.33     0.34..0.34     0.32..0.34     0.32..0.33     0.33..0.33     0.33..0.33     0.33..0.33     0.33..0.33  
+base_inl       1.32..1.33     1.77..1.79     1.31..1.33     2.31..2.32     2.94..2.98     6.94..7.00    24.20..24.55  112.35..113.78
+base_ool       1.96..1.98     2.07..2.09     2.31..2.32     3.29..3.31     3.94..3.96     7.87..8.01    25.31..25.52  112.17..112.98
+wide_ool       1.96..1.99     2.10..2.14     2.28..2.32     3.26..3.32     2.96..2.97     6.91..7.00    14.86..15.04   51.57..52.19 
+wide_inl       1.49..1.50     1.85..1.89     1.32..1.33     2.31..2.32     1.97..1.98     5.89..5.98    13.77..13.88   53.81..54.06 
+flag_hyb       1.96..2.00     2.42..2.45     2.27..2.31     3.24..3.31     2.96..3.02     6.94..7.00    14.75..15.02   52.02..52.91 
+flag_ool       1.96..1.97     2.15..2.20     2.33..2.34     3.31..3.31     2.95..2.97     6.84..6.88    14.86..15.02   52.21..52.71 
+fnptr          1.95..1.99     2.10..2.14     2.29..2.32     3.24..3.29     2.95..3.00     6.86..6.98    14.66..14.88   51.36..52.33 
+fnptr_lazy     1.96..1.98     2.12..2.14     2.30..2.32     3.26..3.28     2.93..3.00     6.87..6.99    14.71..14.85   52.09..52.70 
+cpusup_hyb     1.33..1.34     1.93..1.95     1.64..1.65     2.63..2.66     3.29..3.30     7.24..7.32    24.50..24.84  112.03..112.41
+query_hyb    933.18..944.25 923.27..936.55 929.48..934.61 923.55..937.06 923.68..936.71 937.49..942.35 950.64..969.48 985.47..988.99
+ifunc                  n/a           n/a           n/a           n/a           n/a           n/a           n/a           n/a
+fmv            2.27..2.28     2.25..2.29     2.63..2.64     3.61..3.63     3.29..3.32     7.27..7.27    14.81..15.25   56.39..57.05 
+
+## detection only (ns per detection, no search)
+det_query    932.24..941.40
+det_cpusup     0.33..0.33  

@@ -1,0 +1,31 @@
+# box: Apple M1 Max, macOS 26.6.2; date 2026-10-05T00:23Z; probe commit: 5119427b
+# compiler: gcc-16 (Homebrew GCC 16.2.0) 16.2.0, -O2 -std=gnu11 -Wall -Wextra
+# NOT pinned, box shared with other lanes (load avg { 4.82 7.50 7.30 } at launch): DIRECTIONAL ONLY (D144 addendum 1)
+compiled-for: aarch64-tier1 (from predefined macros)
+running CPU : aarch64-tier1 (armv8-a: NEON is the baseline; SVE is not probed by this build)
+cpusup(wide)=0 query(wide)=1
+verdict     : OK
+# memfn isacost probe, arch=aarch64 base=neon wide=neon64, ns/call min..max of 3 loops >= 50 ms
+# compiled-for aarch64-tier1; cpu level aarch64-tier1; cpu_has_wide=1
+# --sel=base: flag/fnptr arms select base; cpusup()=0 query()=1 (per-call variants follow these)
+# have: cpusup=0 ifunc=0 fmv=0
+
+## mode=ind case=miss (whole span read)
+n                        1             8            16            32            64           256          1024          4096
+loop           0.33..0.33     0.32..0.33     0.33..0.34     0.32..0.33     0.32..0.33     0.32..0.33     0.33..0.33     0.33..0.33  
+base_inl       1.30..1.32     0.98..1.00     1.63..1.65     1.96..1.99     3.25..3.32     7.20..7.26    23.82..24.38  107.43..108.55
+base_ool       1.95..1.97     2.28..2.31     1.64..1.64     1.97..2.03     3.26..3.31     7.16..7.24    24.20..24.56  108.48..109.42
+wide_ool       2.29..2.31     2.25..2.31     1.96..1.97     2.30..2.31     2.28..2.31     4.90..4.99    13.94..14.22   53.37..53.85 
+wide_inl       1.63..1.64     1.35..1.36     0.97..0.98     1.30..1.32     2.27..2.30     4.84..5.08    13.83..14.19   53.16..53.81 
+flag_hyb       1.30..1.31     1.50..1.54     0.98..0.99     1.30..1.31     2.59..2.63     6.55..6.59    23.87..24.32  106.74..109.01
+flag_ool       1.95..1.98     2.28..2.31     1.63..1.66     1.94..1.97     3.26..3.29     7.15..7.27    23.97..24.24  108.26..108.70
+fnptr          1.98..1.99     2.31..2.34     1.65..1.66     1.96..1.97     3.21..3.33     7.24..7.31    24.78..24.95  107.44..110.02
+fnptr_lazy     1.95..1.97     2.29..2.32     1.66..1.68     1.97..1.99     3.27..3.34     7.25..7.26    24.59..24.86  107.13..109.34
+cpusup_hyb             n/a           n/a           n/a           n/a           n/a           n/a           n/a           n/a
+query_hyb    935.87..960.56 939.64..952.90 942.59..958.00 928.06..940.01 934.35..949.35 944.03..950.99 955.40..972.25 978.97..1004.25
+ifunc                  n/a           n/a           n/a           n/a           n/a           n/a           n/a           n/a
+fmv                    n/a           n/a           n/a           n/a           n/a           n/a           n/a           n/a
+
+## detection only (ns per detection, no search)
+det_query    952.99..955.44
+det_cpusup   n/a
