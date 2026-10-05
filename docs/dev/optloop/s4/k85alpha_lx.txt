@@ -1,0 +1,119 @@
+# lx1006_alpha_k85.sh (cls-n-uc only) transcript then the lx1006 driver log. ubuntubudu, 2026-10-05 19:26-19:28Z,
+# scratch_lx/lx1006/k85.log + scratch_lx/lx1006.log, verbatim below. BASE c4c70f2c (abi 59), NEW 3481682b (abi 61),
+# DENY = NEW -fno-req-set-lead ONLY (keeps the handoff, so DENY != BASE and the script check rc=1 is the script's defect).
+# Read in docs/dev/lanes/k82halpha_report.md section 3.
+cap:t-64k OK
+cap:t-256k OK
+cap:t-1m OK
+syn:t-64k OK
+syn:t-256k OK
+syn:t-1m OK
+u8:t-64k OK
+u8:t-256k OK
+u8:t-1m OK
+u8:t-64k-lat OK
+u8:t-64k-cyr OK
+u8:t-64k-cjk OK
+u8:t-64k-asc OK
+log:t-016k-fail OK
+log:t-016k-syslog OK
+log:t-016k-hit OK
+log:t-064k-fail OK
+log:t-064k-syslog OK
+log:t-064k-hit OK
+log:t-256k-fail OK
+log:t-256k-syslog OK
+log:t-256k-hit OK
+log:t-1024k-fail OK
+log:t-1024k-syslog OK
+log:t-1024k-hit OK
+short:v-email OK
+short:v-ipv4 OK
+short:v-ipv4-oor OK
+short:v-us-zip OK
+short:v-us-zip-plus4 OK
+short:v-uuid-valid OK
+short:v-uuid-badnibble OK
+short:lp-num-neg-dec OK
+short:lp-num-leadzero OK
+short:lp-quoted OK
+short:lp-quoted-escaped OK
+short:lp-winpath OK
+short:lp-winpath-reserved OK
+short:lp-syslog OK
+short:lp-atomic-hit OK
+short:lp-atomic-nonmatch OK
+short:waf-dbnames OK
+short:waf-sleep OK
+short:waf-union OK
+short:waf-concat OK
+short:waf-comment-obfuscation OK
+short:waf-benign OK
+short:sec-aws-key OK
+short:sec-github-pat OK
+short:sec-slack-webhook OK
+short:sec-userpass OK
+short:dt-iso8601 OK
+short:dt-prose-month OK
+short:cg-array-begin OK
+short:cg-constant OK
+short:cg-object-begin OK
+short:cg-number OK
+short:cg-string-escape OK
+short:cg-key-colon OK
+short:br-doubled-word OK
+short:br-tag-pair OK
+short:br-tag-mismatch OK
+short:br-palindrome OK
+short:br-quoted-delim OK
+short:br-dup-param OK
+short:la-pwd-strong OK
+short:la-pwd-weak OK
+short:la-float-bound OK
+short:la-float-dotted OK
+short:la-email-nodup OK
+short:la-email-dotdot OK
+short:la-currency OK
+short:la-negation-hit OK
+short:la-negation-miss OK
+short:rec-parens-balanced OK
+short:rec-parens-unbalanced OK
+short:rec-array-define OK
+short:rec-comment-nested OK
+short:rec-tag-depth3 OK
+short:rd-email-hit OK
+short:rd-email-near-miss OK
+short:rd-trim-hit OK
+short:rd-trim-near-miss OK
+short:rd-evil-alt-hit OK
+short:rd-evil-alt-near-miss OK
+short:rd-numeric-id-hit OK
+short:rd-numeric-id-near-miss OK
+short:rd-phone-list-hit OK
+short:rd-date-hit OK
+short:sd-router-short OK
+short:sd-fileext-short OK
+short:sd-keyword-short OK
+short:sd-empty-alt-hit OK
+short:sd-empty-alt-miss OK
+short:sd-dollar-nl OK
+short:nu-high-byte OK
+short:nu-mojibake OK
+short:nu-lead-no-cont OK
+short:nu-lead-with-cont OK
+short:floor-hit OK
+A-CELL WRONG cls-n-uc: want NEW != BASE, DENY == BASE
+check: rc=1
+# Mon Oct  5 07:26:12 PM UTC 2026 ubuntubudu load1=1.01 gov=schedutil boost=1
+cell            subject                unit         base        new       deny    new-base      floor  verdict
+cls-n-uc        syn:t-64k              ns/B     0.514616   0.387952   0.364896    -0.12666    0.14972  NULL
+cls-n-uc        syn:t-256k             ns/B     0.577877   0.436252   0.402056    -0.14163    0.17582  NULL
+cls-n-uc        syn:t-1m               ns/B     0.642366   0.477204   0.441176    -0.16516    0.20119  NULL
+===
+START Mon Oct  5 07:09:12 PM UTC 2026 queued-behind=lx1005 wt_main=3481682bb load=8.67 7.85 7.73
+WAIT_OK Mon Oct  5 07:15:13 PM UTC 2026 lx1005 done: ALL_DONE Mon Oct  5 07:13:33 PM UTC 2026 main=c4c70f2c6 status=[?? .final_lx_kee
+LOAD_OK Mon Oct  5 07:15:13 PM UTC 2026 load=0.45 3.63 5.98
+WTBUILD_RC=0 19:15Z load=0.73 3.64 5.97
+ALPHA_K82H_RC=0 19:25Z load=0.47 0.84 3.25
+K85_RC=0 19:28Z load=0.56 0.78 2.90
+ALL_DONE Mon Oct  5 07:28:02 PM UTC 2026 wt_main=3481682bbcaaf12bcce1ff587787f0ec4027dac1
