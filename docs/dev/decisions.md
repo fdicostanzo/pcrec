@@ -8996,3 +8996,12 @@ This generalizes D91 (scalar-first, "the SIMD crutch must not hide inefficiencie
 - The kit plans the scan, and the reseed becomes unconditional.
 - `<PREFIX>_DFA_PREFILTER` reports pcrec's row; `MEMFN_FORMS` shows the kit's plan.
 - An abi event, with a movers census and a bench note.
+
+**D147 addendum 5 (Frank, 2026-10-05):**
+- **[MEMFN] Q41 YES.** M1 is the composite PRE site plus the offset-skip trio. runcmp becomes M1b. M1 runs after the handoff merge and K85's re-measure. After M1, the migrated emitters are kit work.
+- **Q42 REVERSED: migrate EVERY search site, the newline `memchr` (M4) included, without waiting for a performance customer.** Frank's reasons:
+  1. a half-migrated tree makes everyone remember which sites are which;
+  2. having every search in one place exposes cross-site (set) opportunities that a scattered tree hides.
+
+  This is a ruled exception to D77's measured-need trigger: the trigger is completeness. Each step stays byte-identical (zero movers), so the risk is mechanical.
+- **Required with it:** a CHECKED SITE MANIFEST. Every emitted search site is listed as kit-delegated or pending, and a check fails on any unlisted site, so nobody has to remember. The memchr ratchet's end state is 0 outside the kit.
