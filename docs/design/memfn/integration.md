@@ -86,8 +86,9 @@ then."*
 - the vector width `V` that leaked into row 1's predicate;
 - the `#if` ladder as a pcrec decision (§2.5). The ladder becomes kit
   text, and the fallback hook stays pcrec's;
-- [OPT-SETS]'s `isa` poset, the `isa-route` axis, constraint rows 6-8,
-  and three of the `vector` family's four bits. The "arch sub-panels"
+- [OPT-SETS]'s `isa` poset, the `isa-route` axis and constraint rows 6-8.
+  The `vector` family's four ISA-shaped bits are replaced by three bits
+  named for D91's budgets and the kernel class. The "arch sub-panels"
   Frank named are those, and they go.
 
 **What it adds:**
@@ -98,7 +99,11 @@ then."*
 - one pass-through list option (`--kit-deny=`);
 - the arch-blindness detector (§7.8 C4). This is a check that `src/`,
   `cli/` and `lib/` name no ISA, which turns Frank's "as much as possible"
-  into a red test.
+  into a red test. Measured at this pin, the tree is ALREADY arch-blind:
+  the C4 regex finds exactly ONE hit in `src/`, `cli/` and `lib/`, a
+  comment at `src/opt/prefix_k.c:45` citing a glibc AVX2 measurement. So
+  the allowlist is born with one entry. K0 is what keeps that number at
+  one while kernels arrive.
 
 **What did NOT change.** The table inventory (§1) and the seven sites that
 do not slot cleanly (§2.4) still hold. So do the boundary's K1/K2/K3 split
@@ -1485,7 +1490,7 @@ kit-supplied terms. D141's census, when scheduled, finds nothing new in
 | C1 | every kit kernel against the SCALAR BYTE LOOP, exhaustive per length × alignment × position, guard pages, ASan/UBSan (§4.5, N-6) | answers | no |
 | C2 | **price against measurement**: `memfn/cal/verify` times the kernels with its OWN driver, at read lengths the calibration ladder did NOT use (midpoints of every segment). Each measured value must lie inside the quote's (lo, hi), widened by the verifier's own measured spread. It also counts `MF_STALE` kernels (must be 0 at a release) | the interpolation rule and the data's currency | partly: it shares the kernel text and the box, but not the driver, the lengths or the loop code. It is the kit's own check, not the control |
 | C3 | **THE CONTROL: decision order end to end.** On the owner box, over the population of every corpus site where `kit` is selected, plus every site where an arm was priced and lost, build each artifact default and with `-fno-kit-*`, and time both with the harness's find-all driver on corpus subjects (D144 add. 1 loops; the floor is base vs base). Where the prices predict a win beyond both spreads, the measured kit arm must not be slower than the deny arm past the floor. Where they predict a loss, the forced arm (`kit-scan=force`, below) must not be faster past the floor | that pcrec selects only where it wins, which is the claim the row makes | **no**: the subjects are different (corpus text, not synthetic spans), the driver is different (generated artifacts through the shipped API, not `calibrate.c`), and so are the code paths (the kernel inside a real matcher with pcrec's hooks, not isolated). It shares only the box, which is unavoidable and named |
-| C4 | **arch-blindness detector**: `src/`, `cli/`, `lib/` contain no ISA vocabulary (`sse`, `ssse3`, `avx*`, `neon`, `sve*`, `x86-64-v*`, `armv8`, `aarch64`, `__x86_64__`, `__ARM_NEON`, `__AVX2__`, `pshufb`, …) outside a committed allowlist counted at birth (D107's shape), and no `strcmp`/`==` on `mf_token_name(`. A new hit fails | Frank's "as much as possible" as a red test | n/a |
+| C4 | **arch-blindness detector**: `src/`, `cli/`, `lib/` contain no ISA vocabulary outside a committed allowlist counted at birth (D107's shape), and no `strcmp`/`==` on `mf_token_name(`. A new hit fails. The vocabulary is `grep -rniE '\b(sse[0-9.]*\|ssse3\|avx[0-9a-z]*\|neon\|sve2?\|x86-64-v[1-4]\|armv8[a-z.+-]*\|aarch64\|__x86_64__\|__arm_neon\|__avx2__\|pshufb\|x86_64\|arm64)\b'`. At 68acba37 it finds ONE hit (`src/opt/prefix_k.c:45`, a comment citing glibc's AVX2 `memchr` measurement), so the allowlist is born with one row | Frank's "as much as possible" as a red test | n/a |
 | C5 | **unpriced never selects**: the corpus compiled at `--isa=x86-64-v4` and `--isa=armv8-a+sve` carries no `kit` selection, and is byte-identical to `-fno-kit-scan -fno-kit-loop` except the `<PREFIX>_ISA` stamp | §7.6's first row | no |
 | C6 | answer identity per deny, per box: `make test-axes` arms for the three bits; option_sets.md §3.5a's compile-only arms per token | correctness under every selection | no |
 | C7 | **ratio invariance**: scaling every price in one arm by 2, or by 1/2, flips 0 selections over the corpus census (k82b §1.4's shape) | the decision depends on the SIGN of a difference only, so a uniformly mis-scaled arm (a whole box running slow) moves nothing. A NON-uniform slip (one term in the wrong unit) is not this check's: C2 and C8 catch it, because their measured and fixture numbers stay in the true unit | n/a |

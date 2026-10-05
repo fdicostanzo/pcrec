@@ -60,6 +60,16 @@ Nothing here touches pcrec's emission (D91).
   composition model (primitive families, the C1 classifier and C2 shape
   tables, the fixed library as generic-parameter outputs); Q12-Q17; the
   R1d -> R4 plan-row text. Design only.
+  **REVISION 2 (lane memfnk0, 2026-10-05), on Frank's Q12 ruling**:
+  the kit gains K0, the CAPABILITY-AND-PRICE QUERY (§7). pcrec holds an
+  opaque ISA token (default `portable`, fixed), asks an arch-neutral
+  query, and gets measured prices back. ONE arch-blind `kit` row per
+  table selects a kernel only where its price DOMINATES the next row's
+  over the site's proven span × density box. The calibration data is
+  `memfn/cal/<arm>/` (raw transcript -> generate.py -> prices.tsv), and
+  v4/SVE are UNPRICED. Revision 1's vector rows, BASE/DECLARED and
+  [OPT-SETS]'s ISA sub-panels are removed. Q18-Q23 are new, and the
+  R4 order is revised. Read §R2 first.
 - `twins.md` — R1d (lane memftwin, 2026-10-04), the D77 measurement "does a
   kernel TAILORED to the pattern beat a fixed generic one": T-A set
   classifier per shape vs the generic nibble lookup, T-B a fused scan+verify
