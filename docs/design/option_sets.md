@@ -13,6 +13,67 @@ proposes is an `abi` event when built (D76/D94) and carries its
 Every claim about today's tree was checked at `main` = `6f24e187`
 (`abi` 60). The commands are given where a reader can redo them.
 
+**REVISION 2** (lane optsrev, 2026-10-05, from main `9fd125cb`, still
+`abi` 60). It applies the light D6 panel r1
+(`docs/dev/reviews/2026-10-05-r1-option-sets.md`, two critics, eighteen
+findings, all ACCEPTED by the manager). **Read §R first.** Each change is
+marked `[r1 <id>]` where it is made. The idea held: a set is a partial
+assignment, a family is an exclusive axis, and the dial's five positions
+are pinned members. What moved:
+
+- Today's cross-source composition is now MEASURED per axis kind (§2.5a,
+  42 cells, `option_sets_measurements/`). It is six different rules, not
+  "D93 file-wins per axis". The model is restated against that table, and
+  every place it would change today's behaviour is a numbered ruling for
+  Frank (§5.4, R1-R7).
+- A deny/force pair is ONE three-valued axis (§2.4a).
+- The constraint table applies every row, REFUSE rows first (§2.7).
+- `RX_SETS` is recommended NOT built until a consumer asks (§3.4). Its
+  conditional design is stated in case one does.
+- Every check's expectation side is re-sourced (§3.5).
+- The triggers are tightened, and the dial re-expression is its own step
+  with its own trigger (§6).
+
+The revision-1 text survives where it was not refuted. Superseded
+sentences are replaced, not struck through, and the `[r1 …]` mark says
+which finding moved them.
+
+---
+
+## R. Revision 2 — every r1 finding and where it is answered
+
+| id | sev | finding (short) | answered in |
+|---|---|---|---|
+| OS-M1 | BLOCKER | deny/force pairs are one registry row; cross-source they union then refuse, they are not file-wins | §2.4a (one three-valued axis); §2.5a rows A1-A10 (measured); §2.5 cross-source table row 1; §4.1/§4.4 examples fixed; R1 |
+| OS-M2 | MAJOR | raw bits UNION and `features` is WHOLE-LIST file-wins; "D93 per axis, unchanged" is false | §2.5a (one row per axis kind, 42 cells); §2.5's cross-source table rewritten against it; §4.5 restricted to the file tier; R2, R4, R5 |
+| OS-M3 | MAJOR | constraint rows co-fire, so the table is not first-match | §2.7 rewritten: every row applies, REFUSE rows first, first-match only within one party's rows; cell M3 measured |
+| OS-M4 | MAJOR | "conflicts refused" and "explicit beats set" hold only within one source | §0 item 4, §2.5 "Across sources": refuse on three-valued `-f` axes, report-not-refuse (D93) on value axes; R3 |
+| OS-M5 | MAJOR | not "a fifth beside them" | §0 item 1 reworded ("a fifth that absorbs the dial, at its own step"); §4.5 names the `features` migration trigger |
+| OS-m6 | MINOR | order matters on family axes | §2.3, §2.5: family axes are ONE ordered CLI tier; explicit-over-set covers non-family axes only |
+| OS-m7 | MINOR | meta-set resolution is circular | §2.6: meta-sets FORBIDDEN by a build-time check until a consumer names one (Q11) |
+| OS-m8 | MINOR | cells made inert by a DOMINATING axis | §2.7a: a `dominates` relation, measured witness (`--tune=min-size -fno-size-term`) |
+| OS-m9 | MINOR | "weakest member" order is incoherent; ladder cells move the give-up surface; class check reads a hand tag | §2.8: an explicit rule table, not an order; the give-up carve-out; DIAL-S3 named as the real control |
+| OS-m10 | MINOR | row 5 deny-wins is a fourth verdict; DERIVE also disables | §2.7: verdict GRANDFATHERED-ASSIGN; DERIVE defined as enable OR disable |
+| OS-m11 | MINOR | row 8 needs a FORCE the mechanism never invents | §2.7 row 8 ships UNREACHED with its derivation; "not ≥" wording |
+| OS-n12 | NOTE | dial byte-identity sound, code locations need correcting | §1.3, §4.1 corrected (`compile.c:955`, `clskit.c:524-526/:697/:781`, the K59 drop rung at `compile.c:1406-1425`) |
+| OS-n13 | NOTE | raw `--tune` in a config wins silently today, so row 3 adds a report | §2.5a cell E2; R4 lists the stderr change |
+| OS-n14 | NOTE | a D103 diff adding a vector deny to a pinned member turns an accepted pair into a refusal | §4.1 "the D103 ritual gains one step"; §6.2 |
+| S1 | high | the tail stamps the SPELLING | §3.4: tail DROPPED; the conditional stamp is computed from the resolved configuration |
+| S2 | high | two stamps for one fact | §3.4: families that own a stamp (`tune`, `isa`) are excluded |
+| S3 | high | no consumer, always emitted (D77) | §3.4: recommend NO stamp until a consumer asks; if built, emitted only when a set is NAMED. Q5 |
+| S4 | high | request-dependent stamp length feeds size selection | §3.4: placeholder rendering after every decision (K79's mechanism) + a set-invariance check; §5.2 |
+| S5 | med | the byte-count reader class is understated | §5.2a: the reader class, found by grep, with the D94-addendum suites |
+| S6 | med | registry names become stamp vocabulary | §3.4: with the tail dropped only MEMBER names are vocabulary; a member rename is an abi event |
+| S7 | med | config surface overlap; silent CLI loss; API error code | §3.1/§3.2: `--set` refused on a `pcrec` line; §3.3: refused through `pcrec_error` as `features` is; R4's report covers the silent loss |
+| S8 | high | three of seven sabotage rows unreachable today | §3.5 sabotage table: a reach column; every unreachable row declares `SAB_EXPECT=UNREACHED` + reason + a `SAB_REACH` probe, so `NOW REACHED` fires |
+| S9 | med | the conflict path may stay unreached after the trigger | §2.4 + §6: the join-conflict machinery is DEFERRED; a build-time table check refuses the first cross-family overlap, which is the trigger to build it |
+| S10 | high | the derived-set check shares its source with its subject | §3.5: the population is counted from `axes.def` by NAME PATTERN and from `SCAN_ROWS`' emit sites, never from the `vector` tag |
+| S11 | med | gate 3 cannot read a spec for DERIVED sets | §3.5 gate 3: pinned sets against the spec table; derived sets against S10's independent count |
+| S12 | high | the test-axes job list derives from `--list-sets` | §3.5: an independent member-count floor from the spec's family table |
+| S13 | high | v4/SVE/SVE2 never run on a house box | §3.5a: a compile-only arm per architecture; a runtime owner per ISA member, two members UNOWNED; R6 |
+| S14 | med | vector × isa is 32 corpus runs | §3.5: the size stated; the pairs rows floored at 3 × 2 per box |
+| S16 | high | triggers 1 and 2 are not real triggers; Q12 moves a working mechanism | §6 rewritten (three independent triggers, each a request or a witness, not a landing); the dial re-expression is §6.2's own step with its own D77 trigger; Q12 |
+
 ---
 
 ## 0. Findings first
@@ -22,9 +83,15 @@ Every claim about today's tree was checked at `main` = `6f24e187`
    into `flags`), the module gate (`--features std1`/`all`/`none`, frozen
    and derived named sets of modules), the `.rxt` `config` (a user-named
    bundle, `from`/`with` later-wins), and the findings bundle (`include`
-   inside the bundle, D123). The general mechanism this note proposes is
-   the one these four already approximate. It is not a fifth beside them
-   (§1.3).
+   inside the bundle, D123). **[r1 OS-M5] The mechanism this note proposes
+   is a FIFTH, and it absorbs exactly one of the four: the dial, at its own
+   later step (§6.2).** The other three stay separate on purpose. A config
+   is the user's sentence and a set is pcrec's word (§2.6). A findings
+   bundle is subject data that speed decisions read, composed inside
+   itself (D123). `--features` gates SYNTAX in a vocabulary of modules.
+   Its migration trigger is the first set that must assign a module
+   (§4.5), and no set does today. Until then the count is four plus one,
+   and after §6.2 it is four.
 2. **One definition fits every case in the tree: a set is a NAMED BUNDLE
    of axis assignments.** Formally it is a partial function from axes to
    values. Sets combine by COMPATIBLE UNION, the join of partial
@@ -35,34 +102,55 @@ Every claim about today's tree was checked at `main` = `6f24e187`
    registry when pcrec is built (a DERIVED set, like `--features all`). It
    is never a constraint the compiler solves. A lattice of levels (the ISA
    chain) is an ORDER on one family's members, and the constraint table
-   reads it. It is not a way to merge sets (§2).
+   reads it. It is not a way to merge sets (§2). **[r1 OS-M1] A deny/force
+   pair (`-fno-X`/`-fX`) is ONE axis with three values** (default, deny,
+   force), because it is one `axes.def` row. It is not two booleans under a
+   constraint (§2.4a).
 3. **A FAMILY is an exclusive group of sets, and it is an axis.** The
    dial's five positions are one family (`tune`). The ISA levels are
    another (`isa`). `scalar`/`no-simd`/`simd` are a third (`vector`).
    Exactly one member of a family is in force. Naming a member is
-   assigning that family's axis, so it follows every rule an axis follows
-   (later-wins on an ordered command line, file-wins across sources). Two
+   assigning that family's axis, so it follows the rule its axis KIND
+   follows (§2.5a): later-wins on the ordered command line, and file-wins
+   with a report across sources, which is what `tune` does today. Two
    members of one family therefore REPLACE each other, the way
    `--tune=min-size --tune=speed` does today. They never conflict. Only
-   sets from DIFFERENT families (or standalone sets) can conflict.
-4. **Precedence is a separate operator from composition, and it has only
-   two tiers per source.** Within one source: the joined sets, then the
-   source's own explicit per-axis flags on top. Explicit beats a set
-   (Frank's 2026-09-16 dial ruling, generalized), REGARDLESS OF ORDER on
-   the command line. That is the one place this design deliberately departs
-   from gcc's `-ffast-math -fmath-errno` positional convention. Across
-   sources, today's D93 per-axis table is unchanged: the file wins, with
-   `--engine` the one exception and `--analysis` fill-only. A set named in
-   a file makes the file speak about every axis in that set (§2.5).
+   sets from DIFFERENT families (or standalone sets) can conflict. **[r1
+   OS-m6] So ORDER matters on a family axis**: `--set=min-size,speed` is
+   `speed`, its reverse is `min-size`, and `--tune=` and `--set=` naming
+   members of one family are one ordered tier, later-wins between them.
+4. **Precedence is a separate operator from composition.** Within one
+   source there are two tiers: the joined sets, then the source's own
+   explicit per-axis flags on top. On NON-family axes, explicit beats a set
+   REGARDLESS OF ORDER on the command line (Frank's 2026-09-16 dial
+   ruling, generalized). That is the one place this design deliberately
+   departs from gcc's `-ffast-math -fmath-errno` positional convention.
+   **[r1 OS-M2/OS-M4] Across sources there is no single rule today.** It
+   was measured per axis kind (§2.5a), and there are six rules: union then
+   the pair rule for `-f` bits, union for `flags` letters, whole-list
+   file-wins for `features`, the CLI-wins exception for a typed `engine`
+   line, fill-only for `analysis`, and silent file-wins for everything
+   else (`encoding`, budgets, value options, any raw-line spelling). The
+   model KEEPS each kind's rule. A set named in a source contributes at
+   that source's set tier. **"Conflicts are refused" therefore holds in
+   two places only**: between sets of different families within one
+   source, and on a three-valued `-f` axis across sources (today's
+   union-then-refuse, §2.4a). On a value axis a cross-source disagreement
+   involving a set is file-wins and REPORTED, D93's own shape (§2.5, R3).
+   "Explicit beats a set" likewise holds within one source. Across sources,
+   a file's set beats a CLI explicit on a value axis, and it is reported.
 5. **Today's tree already has three DIFFERENT answers to "one source
    contradicts itself".** A deny/force pair is REFUSED
    (`-fprefilter -fno-prefilter`, `-fstartpos-guard=align
    -fno-startpos-guard`, verified live). A repeated value option is
    LATER-WINS (`--tune`, `--engine`, `--features`, verified live). The
    comments pair is DENY-WINS (`-fcomments -fno-comments`, documented in
-   `cli.md`). This note does not change any of them (§5.1). It states the
-   rule they are cases of, and it names the comments pair as the one that
-   does not fit (§5 Q7).
+   `cli.md`). **[r1 OS-M1] The first and third hold ACROSS sources too.** A
+   file's `pcrec -fno-prefilter` with a CLI `-fprefilter` is refused, in
+   either direction, and a file's `-fcomments` with a CLI `-fno-comments`
+   is deny-wins in either direction (cells A1/A2/A5/A6/A7). This note does
+   not change any of the three (§5.1). It states the rule they are cases
+   of, and it names the comments pair as the one that does not fit (§5 Q7).
 6. **The dial cannot become five sets in its current shape without four
    UNSPELLED axes.** Two of its cells already have no CLI spelling: the
    `[ART-SIZE]` ladder's bar and threshold. The entry-chain term is a
@@ -71,21 +159,29 @@ Every claim about today's tree was checked at `main` = `6f24e187`
    axis that has no CLI spelling; the model needs no spelling, only a
    registry row. But λ's direct read must first become a read of a
    `cls-matcher` axis, and that change is byte-identical
-   (implement-then-replace, §4.1).
+   (implement-then-replace, §4.1). **[r1 S16] That re-expression is its
+   own step with its own trigger (§6.2).** It does not ride the first
+   build.
 7. **Nothing changes for an existing user by default (§5).** `RX_TUNE`
    stays, because pcrec-bench buckets on it. `--tune=` stays as the
-   `tune` family's own spelling. The stamp this design adds,
-   `<PREFIX>_SETS`, is new text on every artifact, so it IS an `abi` bump
-   when built. That is the whole of its cost to a caller.
+   `tune` family's own spelling. **[r1 S3] The recommended first build
+   adds NO stamp.** No emitted byte moves because of the set layer, so it
+   carries no `abi` event of its own (§3.4). If a consumer asks for a set
+   stamp, it is emitted only on artifacts that NAME a set. The caller-
+   visible changes are new stderr reports where a cross-source
+   disagreement is silent today (R4). Each is listed as a ruling.
 8. **The first consumer is `[MEMFN]` R4's vector rows and `--isa=L`.**
    Until a vector row or a declared ISA exists, `simd`, `no-simd` and every
    ISA member are vacuous. The dial alone does not need this mechanism; it
-   ships without it. The build trigger (§6) is the first of three: R4c's
-   vector row together with a second vector-family deny, R4g's `--isa`, or
-   a bench request for a named SIMD-off or ISA testee. R4c′'s lone SWAR bit
-   does not trigger it. The mechanism then lands WITH the triggering row,
-   and the dial is re-expressed on it in the same change, byte-identically
-   apart from the new stamp.
+   ships without it. **[r1 S16] The build trigger (§6.1) is the first of
+   three, and each is a REQUEST or a WITNESS, not a row landing:** a named
+   consumer asks for one name over two or more vector-family bits that are
+   already on main; the first cross-family overlap appears in the set
+   table (the conflict path's first witness); or the bench asks, through
+   pcrecdev2, for a named SIMD-off or ISA testee. R4g's `--isa=L` alone
+   is NOT a trigger: a family is an axis, so `--isa` ships as an ordinary
+   value option without this mechanism. R4c′'s lone SWAR bit is not one
+   either.
 
 ---
 
@@ -99,18 +195,18 @@ at `6f24e187`.
 
 | family | what it controls | CLI | `.rxt` | API (`pcrec_options`) | stamped as | swept by | kind today |
 |---|---|---|---|---|---|---|---|
-| deny bits (`-fno-X`) | one optimization each; 35 deny bits (bits 4-45 less the five force bits, `--ucp` (34) and `--fast-or-fail` (41)) | `-fno-X`, hidden from `--help` (D47.3) | a config's `pcrec <raw>` line | `flags` bits 4-45 | per-mechanism OUTCOME stamps (D46: `RX_DFA_TABLE`, `RX_VM_PREFILTER`, …). `rx_info.flags` records each bit unless it is in `emit_info_def`'s hand-kept `strategy_denials` mask (`src/gen/emit_dfa.c` ~:2728; `[AXES-DENY-MASK]` would derive it) | `make test-axes`, one job per bit (`tests/axes/run_axes.sh`) | boolean; OR'd; idempotent |
-| force bits (`-fX`) | the force twin of a deny | `-fprefilter`, `-fprefilter-collapse`, `-fstartpos-guard=align`, `-futf-check`, `-fcomments` | `pcrec <raw>` | `flags` bits 9, 20, 27, 39, 40 | as above | as above (force arms) | a deny/force PAIR on one axis is REFUSED when both are requested, except comments (deny wins) |
+| deny bits (`-fno-X`) | one optimization each; 35 deny bits (bits 4-45 less the five force bits, `--ucp` (34) and `--fast-or-fail` (41)) | `-fno-X`, hidden from `--help` (D47.3) | a config's `pcrec <raw>` line | `flags` bits 4-45 | per-mechanism OUTCOME stamps (D46: `RX_DFA_TABLE`, `RX_VM_PREFILTER`, …). `rx_info.flags` records each bit unless it is in `emit_info_def`'s hand-kept `strategy_denials` mask (`src/gen/emit_dfa.c` ~:2728; `[AXES-DENY-MASK]` would derive it) | `make test-axes`, one job per bit (`tests/axes/run_axes.sh`) | boolean; OR'd; idempotent. **[r1 OS-M2] Across sources: UNION** (cell A4: a file's `-fno-premul-table` and a CLI `-fno-req-byte` both apply) |
+| force bits (`-fX`) | the force twin of a deny | `-fprefilter`, `-fprefilter-collapse`, `-fstartpos-guard=align`, `-futf-check`, `-fcomments` | `pcrec <raw>` | `flags` bits 9, 20, 27, 39, 40 | as above | as above (force arms) | **[r1 OS-M1] with its deny, ONE three-valued axis per `axes.def` row.** Both values requested, from ONE source or from TWO, is REFUSED (cells A1, A2, A5, A9). The exception is comments, where deny wins in either direction (A6, A7, A10) |
 | contract axes | which ANSWER a call gives (§2.23, §2.36) | `-fno-startpos-guard`, `-fstartpos-guard=align`, `-futf-check` | `pcrec <raw>` | `flags` 25, 40, 39 | `RX_STARTPOS_GUARD`, `RX_UTF_CHECK`; kept in `rx_info.flags` | swept against their documented behaviour, not identity | boolean / three-valued |
-| semantic bits | what the pattern MEANS | `-i`, `--ucp`, `--no-captures` | `flags` letters; `pcrec <raw>` | `flags` 0, 34, 2 | `rx_info.flags` unmasked | not swept (structurally ineligible, D125) | boolean |
+| semantic bits | what the pattern MEANS | `-i`, `--ucp`, `--no-captures` | `flags` letters; `pcrec <raw>` | `flags` 0, 34, 2 | `rx_info.flags` unmasked | not swept (structurally ineligible, D125) | boolean. **[r1 OS-M2] Across sources, the letters UNION** with the CLI's `-i`/`--ucp`/`--no-captures` (cells B1-B4). Within the file, a typed config `flags` line is REPLACED whole by the block's (B8), while a raw `pcrec -i` line unions with the block (B7) |
 | output/instrument | what the artifact CONTAINS or DOES besides matching | `--emit-main`, `--trace`, `-fcomments`/`-fno-comments` | `pcrec <raw>` | `flags` 1, 3, 26/27 | `--trace`: the instrumented artifact itself; comments: none (object byte-identical) | not swept | boolean |
-| engine | coarsest selection; do-or-die for `dfa`/`vm` | `--engine=E` | `engine vm` | `engine` | `RX_ENGINE`, `RX_ENGINE_SEL`, `RX_ENGINE_WHY`, `rx_info.engine` | `make test-axes` (`dfa`, `vm`) | value; later-wins on the CLI; the one CLI-wins exception to D93 |
-| ordinal value axes | a rung or a parameter | `--unroll=K`, `--vm-entry-shape=N` | `pcrec <raw>` | `unroll_k`, `vm_entry_shape` | `RX_UNROLL_K_WHY`, `RX_VM_ENTRY_SHAPE` | `--vm-entry-shape` rungs (tiered, `AXES_FULL=1`) | value; later-wins |
-| the dial | a GROUP of axes from a pinned table | `--tune=N` / alias | `tune <pos>` | `tune` | `RX_TUNE` (unconditional; no `rx_info` mirror by design) | four `--tune` jobs + DIAL-S3 refusal-set check | **a set family**: five exclusive pinned bundles; deny cells OR'd, value cells read at their site (`src/core/compile.c:806`, `src/core/tune.c`) |
-| encoding | the subject's character model | `-e`/`--encoding` | `encoding` | `encoding` | `rx_info.encoding` | per-encoding corpora | value; **IMPLIES** modules `unicode-props`+`ucp` under `utf8` (an enabling implication; the stamp keeps the REQUESTED features) |
-| module gate | which constructs compile | `--features LIST` | `features` (UNION with configs unless `features only`) | `features` (spec string; NULL = no request) | `PCREC_FEATURE_SET`, `PCREC_FEATURE_MODULES` | not an axis (refusals change by design) | **a set mechanism**: `std1` is a FROZEN named set, `all` a DERIVED one, `none` the empty one |
-| findings | which subject statistics speed reads | `--analysis NAME` | `analysis <name>` | `analysis` | `RX_FINDINGS` (`kind=source:digest`), `rx_info.findings` | not an identity axis (speed only) | **a bundle**, composed INSIDE itself by `include` (D123); config later-wins; CLI fill-only |
-| resource bounds | budgets, capacities, caps | `--step-budget=`, `--work-budget=`, `--backtrack-frames=`, `--max-emit-*`, `--warn-emit-bytes=` | `budget` | the budget/cap fields | `RX_FAST_FRAMES` etc. | `limits.md`'s own checks | value; raise-only for the caps |
+| engine | coarsest selection; do-or-die for `dfa`/`vm` | `--engine=E` | `engine vm` | `engine` | `RX_ENGINE`, `RX_ENGINE_SEL`, `RX_ENGINE_WHY`, `rx_info.engine` | `make test-axes` (`dfa`, `vm`) | value; later-wins on the CLI; the one CLI-wins exception to D93. **[r1 OS-M2] The exception is SPELLING-dependent**: it holds for the typed `engine vm` line (D1, reported), but a config's raw `pcrec --engine=vm` beats a CLI `--engine=dfa` SILENTLY (D3) |
+| ordinal value axes | a rung or a parameter | `--unroll=K`, `--vm-entry-shape=N` | `pcrec <raw>` | `unroll_k`, `vm_entry_shape` | `RX_UNROLL_K_WHY`, `RX_VM_ENTRY_SHAPE` | `--vm-entry-shape` rungs (tiered, `AXES_FULL=1`) | value; later-wins. **[r1 OS-M2] Across sources: file-wins, SILENT** (H1) |
+| the dial | a GROUP of axes from a pinned table | `--tune=N` / alias | `tune <pos>` | `tune` | `RX_TUNE` (unconditional; no `rx_info` mirror by design) | four `--tune` jobs + DIAL-S3 refusal-set check | **a set family**: five exclusive pinned bundles; deny cells OR'd, value cells read at their site (`src/core/compile.c:806`, `src/core/tune.c`). **[r1 OS-M2/OS-n13] Across sources**: a typed `tune` line wins, REPORTED (E1); a raw `pcrec --tune=` wins SILENTLY (E2); a config carrying both resolves typed-over-raw and its report names the config's raw value as "CLI --tune=…" (E3, a misattribution) |
+| encoding | the subject's character model | `-e`/`--encoding` | `encoding` | `encoding` | `rx_info.encoding` | per-encoding corpora | value; **IMPLIES** modules `unicode-props`+`ucp` under `utf8` (an enabling implication; the stamp keeps the REQUESTED features). **[r1 OS-M2] Across sources: file-wins, SILENT**, by either spelling (G1, G2); block over config (G4) |
+| module gate | which constructs compile | `--features LIST` | `features` (UNION with configs unless `features only`) | `features` (spec string; NULL = no request) | `PCREC_FEATURE_SET`, `PCREC_FEATURE_MODULES` | not an axis (refusals change by design) | **a set mechanism**: `std1` is a FROZEN named set, `all` a DERIVED one, `none` the empty one. **[r1 OS-M2] Across sources it is ONE WHOLE-LIST axis, file-wins, SILENT**: a CLI `--features lookaround` is dropped under a file `features atomic-groups` (C5, C6). Within the file, config and block UNION (C8). `--features` on a `pcrec` line is refused (C3) |
+| findings | which subject statistics speed reads | `--analysis NAME` | `analysis <name>` | `analysis` | `RX_FINDINGS` (`kind=source:digest`), `rx_info.findings` | not an identity axis (speed only) | **a bundle**, composed INSIDE itself by `include` (D123); config later-wins; CLI fill-only, REPORTED when both name one (F1, F2) |
+| resource bounds | budgets, capacities, caps | `--step-budget=`, `--work-budget=`, `--backtrack-frames=`, `--max-emit-*`, `--warn-emit-bytes=` | `budget` | the budget/cap fields | `RX_FAST_FRAMES` etc. | `limits.md`'s own checks | value; raise-only for the caps. **[r1 OS-M2] Across sources: file-wins, SILENT**, by either spelling (H3, H4) |
 | size policy | refuse vs degrade | `--fast-or-fail` | `pcrec <raw>` | `flags` 41 | masked out of `rx_info.flags` | not swept | boolean |
 | unspelled constants | dial cells with no flag | none (the ladder's bar is a constant beside `size_term_choose`; the threshold is `limits.def`'s `PCREC_SIZE_TERM_THRESHOLD`, kind `BUILD_D`; the entry-chain term; λ's rule) | none | none | through outcome stamps | through the dial's jobs | set only by the dial |
 
@@ -142,6 +238,16 @@ the set boundary at that line.
   (`pcrec_tune_size_term_bar`, `_threshold`, `_vm_inline_chain_max`). λ is
   read off the position by clskit. `balanced` is all-sentinel, so it
   assigns nothing. That is why it is byte-for-byte today's default.
+  **[r1 OS-n12] The code locations, corrected.** `TUNE_TABLE` is at
+  `src/core/tune.c:61`. Its bar cells are integer PERCENT (95, 85), and
+  the default bar is the constant beside `size_term_choose` in
+  `src/core/compile.c` (~:530), read through `pcrec_tune_size_term_bar` at
+  `compile.c:955`. λ is not a single read of the position. clskit's
+  first-match table carries a per-row POSITION MASK column (`TPOS`,
+  `src/gen/clskit.c:524-526`), tested at `:697` and `:781`. The deny cell
+  has a second reader: the K59 drop ladder's `FIT_DROP_PREMUL` rung
+  (`compile.c:1406-1425`) ORs the same `PCREC_NO_PREMUL_TABLE` bit, and it
+  must keep reading the BIT, not a set cell.
 - **`std1` is a PINNED set and `all` is a DERIVED one.** "The frozen set's
   contents never change after it ships" (`cli.md`, `--features`). That is
   the same guarantee D103 gives the dial table, made earlier for modules.
@@ -268,6 +374,15 @@ anyone's judgment:
   family requires identity-class, refusal-preserving members. That is
   `tuning.md` §5.5's acceptance and D125's structurally-ineligible bucket,
   stated once as data rather than re-argued per cell.
+- **[r1 OS-m6] Family axes are ONE ordered tier on the command line.**
+  `--tune=`, `--isa=` and `--set=` naming a member of the same family all
+  assign that family's axis, so they are later-wins among THEMSELVES, in
+  argv order, and within one `--set=` list in list order:
+  `--set=min-size,speed` is `speed` and `--set=speed --tune=min-size` is
+  `min-size`. The "explicit beats a set regardless of order" rule (§2.5)
+  covers NON-family axes only. A family axis has no set tier above or
+  below its own spellings: every spelling of it IS an explicit
+  assignment of it.
 - **A family's default member is normally EMPTY** (`balanced`,
   `portable`, `auto`). Naming the default is then the same as naming
   nothing, which is why `--tune=balanced` and no flag are byte-identical
@@ -314,13 +429,61 @@ deny/default axis per kit row, and the join is taken element by element.
 Union composition then falls out with no special rule (`on ⊔ on = on`; an
 unmentioned module is unassigned). `features only` is an assignment of
 every element, and conflict checking is per element, so `simd`'s "keep row
-X" and a list denying row X is a conflict on X alone.
+X" and a list denying row X is a conflict on X alone. **[r1 OS-M2] This
+per-element reading is the JOIN's, among PEERS of one source. It is not
+the cross-source rule.** Across sources, `--features` is one whole-list
+axis today and the file's list replaces the CLI's silently (§2.5a C5/C6).
+The per-element reading stays out of the cross-source tier. Moving
+`--features` there would make a pattern refused today compile, and that
+is ruling R5, recommended against.
 
 **Numeric axes are equal-or-conflict.** Two sets setting the entry-chain
 term to 8,192 and 4,096 conflict. Neither max nor min is taken, for the
 same reason the ISA order is not used to merge.
 
-### 2.5 Precedence: explicit over set, per source; D93 across sources
+**[r1 S9] The conflict path is BUILT only when it has a witness.** Today
+no two sets in different families assign one axis. The dial's members
+only deny, no other family exists, and the first vector and ISA members
+assign disjoint axes (§4.2, §4.3). A join with no possible conflict is a
+plain union. So the first build ships the union, plus a BUILD-TIME check
+over the set table: if any two sets in different families assign one
+axis, pcrec's build fails, naming the pair and saying the conflict path
+now has its first witness. That failure is §6.1's trigger 2. The runtime
+refusal, its diagnostic and its sabotage row land with the change that
+creates the overlap, which also supplies their witness. There is no
+UNREACHED refusal code in the meantime, and no test-only fixture set.
+
+### 2.4a [r1 OS-M1] A deny/force pair is ONE three-valued axis
+
+`src/core/axes.def` has one row per optimization axis, and a row with a
+force twin is still ONE row. Revision 1 modelled `-fprefilter` and
+`-fno-prefilter` as two booleans under a constraint row. The revision
+models them as one axis `prefilter` with domain {default, deny, force}.
+Four consequences follow.
+
+1. **Self-contradiction refuses uniformly, at every tier.** A source, or a
+   union of sources, that assigns one three-valued axis both `deny` and
+   `force` is refused, naming the axis and where each value came from.
+   This is today's behaviour, measured within one source and across two
+   (§2.5a A1, A2, A5, A9). The model states it once, not as three
+   constraint rows. The comments axis is the one grandfathered exception
+   (deny wins, A6/A7/A10; §2.7 row 5, Q7).
+2. **A three-valued axis composes across sources by UNION, then the
+   refusal.** The file does NOT win on an `-f` axis today. A CLI
+   `-fprefilter` is not discarded by a file's `-fno-prefilter`; the
+   compile is refused. The model keeps that, so §2.5's file-wins row is
+   not applied to three-valued axes.
+3. **A set's cell on such an axis is a value, not a bit.** `min-size`
+   assigns `premul-table := deny`. A future `-fpremul-table` (force) on
+   the same command line beats it (explicit over set, within one source).
+   Across sources it is UNION-then-refuse, by item 2: a file's `tune
+   min-size` together with a CLI `-fpremul-table` would be REFUSED, where
+   revision 1 said "the file wins, reported". No force twin exists for any
+   dial cell today, so no shipped invocation changes. The rule is R1.
+4. **Deny-only axes are three-valued with an unspelled `force`.** That is
+   why §2.4's remedy message offers only the spellings that exist.
+
+### 2.5 Precedence: explicit over set, per source; each kind's own rule across sources
 
 Composition (⊔) combines PEERS. Precedence combines TIERS, through a
 right-biased override `S ◁ E` (E's value where E assigns one, S's
@@ -332,70 +495,172 @@ elsewhere).
 resolved(source) = ( ⊔ of the sets that source names ) ◁ explicit(source)
 ```
 
-- **Explicit beats a set, regardless of order.** This is Frank's
-  2026-09-16 dial ruling ("explicit per-switch flags beat the dial"),
-  generalized from one family to all of them. `--set=min-size
+- **Explicit beats a set, regardless of order, on a NON-family axis.**
+  This is Frank's 2026-09-16 dial ruling ("explicit per-switch flags beat
+  the dial"), generalized from one family to all of them. `--set=min-size
   -fpremul-table` and `-fpremul-table --set=min-size` mean the same thing.
   That is a deliberate departure from gcc, where `-ffast-math
   -fmath-errno` and `-fmath-errno -ffast-math` differ. Position-dependence
   is a precedence list in disguise, and D123 ruled against having two
-  composition mechanisms.
+  composition mechanisms. **[r1 OS-m6]** A FAMILY axis is different: every
+  spelling of it (`--tune=`, `--isa=`, `--set=` naming a member) is an
+  explicit assignment of it, and they are later-wins among themselves in
+  argv order (§2.3).
 - **On an ORDERED source, a repeated explicit axis is later-wins**, which
-  is what every value option does on pcrec's command line today. On an
-  UNORDERED source (the API struct), two fields that assign one axis
-  different values are REFUSED, because there is no order to break the tie
-  (§3.3: `tune = speed` with `sets = "min-size"`).
-- **Pinned deny/force pairs keep today's refusal.** `-fprefilter
-  -fno-prefilter` is not one axis assigned twice. It is two bits under a
-  constraint row (§2.7, row 1), and it stays refused.
+  is what every value option does on pcrec's command line today (§2.5a
+  E4). On an UNORDERED source (the API struct), two fields that assign one
+  axis different values are REFUSED, because there is no order to break
+  the tie (§3.3: `tune = speed` with `sets = "min-size"`).
+- **[r1 OS-M1] A three-valued `-f` axis assigned both `deny` and `force`
+  is refused** (§2.4a). It is one axis assigned two values, refused
+  because both were asked for, not later-wins. Comments is the
+  grandfathered exception (§2.7 row 5).
 
-**Across sources, today's per-axis rule, unchanged** (D93 and its
-addendum, `cli.md` §1.1), as a first-match table over each axis:
+### 2.5a [r1 OS-M1/OS-M2] Today's cross-source composition, MEASURED per axis kind
+
+Revision 1 said "D93 per axis, unchanged: the file wins". The panel
+measured that this is false for raw bits and for `features`. This
+revision re-measured every axis KIND on `build/pcrec` (main `9fd125cb`,
+`abi` 60). Each cell is a scratch `.rxt` with a `config` and a `target`,
+compiled with CLI flags, and its stamps and stderr read. The 42 cells,
+their script and transcript are `option_sets_measurements/`
+(`cases.sh`, `out/cross_source.txt`). "Within the file" is config
+against block.
+
+| kind | spelling in the file | across sources (file vs CLI) | within the file | reported on stderr? | cells |
+|---|---|---|---|---|---|
+| three-valued `-f` axis (deny/force pair) | raw `pcrec -fX` / `-fno-X` | **UNION, then refuse** if both values are present, in either direction. Distinct axes all apply | raw lines accumulate under the same rule | the refusal names the pair | A1, A2, A3, A4, A5, A9 |
+| the comments pair | raw `pcrec -fcomments` / `-fno-comments` | UNION, then **deny wins**, in either direction | same | no | A6, A7, A8, A10 |
+| `flags` letters (`i`, `u`) and the raw `-i` / `--ucp` / `--no-captures` | typed `flags` or raw | **UNION** with the CLI's bits | a typed config `flags` is REPLACED whole by the block's; a raw `pcrec -i` UNIONS with the block's | no | B1, B2, B3, B4, B7, B8 |
+| `features` | typed only (`--features` on a `pcrec` line is refused, C3) | **WHOLE LIST, file wins**: the CLI's list is dropped | config ∪ block | **no: silent** | C1, C2, C5, C6, C8 |
+| `engine` | typed `engine vm` | CLI wins if it typed a non-`auto` engine (the D93 exception) | — | yes | D1, D2 |
+| `engine` | raw `pcrec --engine=vm` | **file wins** | — | **no: silent** | D3 |
+| `tune` | typed `tune <pos>` | file wins | typed beats raw | yes, **but a config's raw `--tune=` value is named "CLI --tune=…"** | E1, E3 |
+| `tune` | raw `pcrec --tune=` | file wins | — | **no: silent** | E2 |
+| `analysis` | typed `analysis` | file if it names one, else CLI (fill-only) | — | yes | F1, F2 |
+| `encoding` | typed or raw | file wins | block beats config | **no: silent** | G1, G2, G4 |
+| value options and budgets | raw `--unroll=`, `--step-budget=`; typed `budget steps=` | file wins | — | **no: silent** | H1, H3, H4 (H6 the control) |
+| any value option, CLI only | — | later-wins in argv order | — | — | E4 |
+
+There are six rules, not one. Union, then the pair rule, holds for `-f`
+axes. Union holds for flag letters. Whole-list file-wins holds for
+`features`. The typed `engine` line has the CLI exception. `analysis` is
+fill-only. Silent file-wins holds for everything else.
+
+**Three findings for the manager, outside this note's model** (each is a
+fact about today's tree, true whether or not sets are built):
+
+1. **`cli.md` §1.1 misstates two kinds.** It says `flags` is
+   more-specific-wins against the config and file-wins against the
+   command line ("every other axis … (`flags`, `encoding`, `budget`,
+   `tune`, `analysis`) still follows the file-wins rule"). Against the
+   command line `flags` UNIONS (B1-B4), and so do raw `-f` bits, which
+   then refuse if they contradict (A1/A2). This needs a D80 sentence
+   correction whenever `cli.md` is next touched.
+2. **The `--engine` exception and the `tune` report depend on the
+   SPELLING.** A config's raw `pcrec --engine=vm` beats a CLI
+   `--engine=dfa` silently (D3), and the typed `engine vm` line does not
+   (D1). A raw `--tune=` wins silently (E2), and the typed line reports
+   (E1). D93 and its addendum are stated per AXIS, so the spelling should
+   not decide. Ruling R2 makes them agree.
+3. **The `tune` report misattributes.** With a config carrying both
+   `pcrec --tune=min-size` and `tune speed` and NO CLI flag at all, pcrec
+   prints "CLI --tune=min-size and this file's `tune speed` disagree"
+   (E3). The raw config line is reported as the command line. Per-axis
+   provenance (step 6 below) fixes this by construction.
+
+**What the model keeps, and what it would change.** It keeps every row
+above as a kind's rule, with two exceptions, and it adds reports. Every
+change is a ruling for Frank (§5.4):
+
+- **R1, set cells on a three-valued axis join the union-then-refuse
+  rule.** A file set's `deny` with a CLI explicit `force` is refused, not
+  file-wins (§2.4a item 3). No shipped invocation changes, because no
+  dial cell has a force twin.
+- **R2, one axis, one rule, whatever the spelling.** A raw `pcrec` line's
+  `--engine=`/`--tune=`/`-e`/budget values are the SAME axes as the typed
+  rows. D3 then flips: the CLI's explicit `--engine=dfa` wins, reported,
+  as D1 already does. E2 gains the report E1 already prints. This is the
+  one CHANGE OF OUTCOME in the list.
+- **R3, a cross-source disagreement involving a set is file-wins and
+  REPORTED on a value axis**, D93's shape, not a refusal. On a
+  three-valued axis it is refused (R1).
+- **R4, the report generalizes.** Every axis where the CLI explicitly
+  assigned a value, the file's value differs, and the file wins gets one
+  non-fatal stderr line naming both sources and values: `encoding`,
+  budgets, value options, the raw spellings, and a dropped CLI
+  `--features` list. Stderr only. No artifact byte moves. This also
+  answers S7: a CLI flag lost to a file set no longer leaves no trace.
+- **R5, `features` stays a whole-list axis across sources.** The
+  per-element join is a peer rule within one source (§2.4). Applying it
+  across sources would make C6's refused pattern compile. Recommend: keep
+  the rule, and let R4 report the drop.
+
+Flag letters need no exception. A letter is a boolean axis that every
+source can assign only `on`, because there is no spelling for "not
+caseless". So "file-wins where the file assigns, else the CLI" gives
+exactly the measured union. Within the file, the typed config line's
+whole-value replacement by the block's (B8) is the config contract's own
+more-specific-wins rule (§2.6), unchanged.
+
+**Across sources, the model's rule**, as a first-match table over each
+axis `a`. It reproduces §2.5a row for row, plus R1-R5:
 
 | # | predicate on axis `a` | `a`'s value comes from | reported? |
 |---|---|---|---|
-| 1 | `a` is `engine` and the CLI assigned it explicitly, not `auto` | the CLI | yes, if the file disagrees (today's text) |
-| 2 | `a` is `analysis` | the file if it names one, else the CLI (fill-only) | yes, if both name one (today's text) |
-| 3 | the target's resolved file assignment covers `a`, explicitly OR through a set the file names | the file | yes, if the CLI assigned `a` explicitly or through a set and the values differ (generalizes today's `tune`/`engine`/`analysis` reports) |
-| 4 | the CLI's resolved assignment covers `a` | the CLI | — |
-| 5 | otherwise | the default | — |
+| 1 | `a` is a three-valued `-f` axis | the UNION of every source's resolved value. Both `deny` and `force` present: REFUSE, naming both sources. For comments, `deny` | the refusal |
+| 2 | `a` is `engine` and the CLI assigned it explicitly, not `auto`, by any spelling (R2) | the CLI | yes, if the file disagrees |
+| 3 | `a` is `analysis` | the file if it names one, else the CLI (fill-only) | yes, if both name one |
+| 4 | `a` is `features` | the file's list if the file names one, else the CLI's (R5) | yes, if the CLI named one (R4) |
+| 5 | the target's resolved file assignment covers `a`, explicitly OR through a set the file names | the file | yes, if the CLI assigned `a` explicitly or through a set and the values differ (R3, R4) |
+| 6 | the CLI's resolved assignment covers `a` | the CLI | — |
+| 7 | otherwise | the default | — |
 
-Row 3's "through a set the file names" is the one new reading. **A set
+Row 5's "through a set the file names" is the one new reading. **A set
 named in a file makes the file speak about every axis in that set**,
 because the file's author chose the set and everything in it. A CLI
 `-fno-tiered-entry` survives a file's `tune min-size`, because `min-size`
-does not assign `tiered-entry`. A CLI force on premultiplication would
-not survive it, and would be reported. That is exactly today's behaviour,
-because today the dial's cells are the only set-assigned axes.
+does not assign `tiered-entry` (cell T1: both apply). **[r1 OS-M1]** A
+future CLI `-fpremul-table` against that file line is three-valued, so
+row 1 decides it and it is REFUSED (R1). Revision 1 said "would not
+survive it, and would be reported", which was row 5's answer applied to
+an axis row 5 does not own.
 
 **The resolution order, start to finish.** This is a fold, not a
 selection, so it is written as numbered steps rather than as a table. The
-two DECISIONS in it (who writes an axis, and the constraint verdict) are
-first-match tables.
+two DECISIONS in it (who writes an axis, and the constraint verdicts) are
+tables.
 
-1. Per source, resolve each FAMILY axis: its explicit spelling, or a
-   `--set=` naming a member, later-wins on an ordered source.
-2. Across sources, resolve each family axis by the table above.
+1. Per source, resolve each FAMILY axis from its spellings, later-wins on
+   an ordered source (§2.3).
+2. Across sources, resolve each family axis by the table above (row 5 or
+   6: file-wins, reported).
 3. Expand each in-force member into its bundle, tagged with the source
-   that selected it.
-4. Per source, join that source's bundles. A conflict is refused here.
+   that selected it. **[r1 OS-m7]** A bundle may not assign a family axis
+   (§2.6), so this step never feeds back into step 1.
+4. Per source, join that source's bundles. **[r1 S9]** Until §6.1 trigger 2
+   fires, the build-time check guarantees the join is a plain union.
 5. Per source, overlay that source's explicit assignments (◁).
 6. Across sources, resolve each ordinary axis by the table above. Record
    each axis's PROVENANCE (default / CLI set / CLI explicit / file set /
    file explicit).
-7. Walk the constraint table (§2.7) over the result. A REFUSE row stops
-   the compile.
+7. **[r1 OS-M3]** Apply the constraint table (§2.7). Every row whose
+   predicate holds applies, REFUSE rows first. Any REFUSE stops the
+   compile.
 8. Complete every unassigned axis with its default.
-9. Stamp (§3.4).
+
+(Revision 1's step 9, "stamp", is gone with the stamp, §3.4.)
 
 Step 6's provenance record IS the general mechanism `opt_dial_design.md`
 §1.3 recommended and deferred: "explicit-set PROVENANCE for every
 D93-composed axis … deferred to its own measured trigger (D77): the
-trigger is the THIRD axis that needs the distinction". The set mechanism is
-that third consumer, twice over: the override tail of the stamp (§3.4) and
-the attribution in row 3's report both need to know which tier wrote an
-axis. So this design builds provenance as the general form, and adds no
-per-family bit (§5 Q6).
+trigger is the THIRD axis that needs the distinction". **[r1 S1/OS-M2]**
+Its consumers are now named without the dropped stamp tail. The reports
+of rows 2-5 need to know which source and tier wrote an axis, for every
+kind R4 covers, and so does the unordered-source refusal of §3.3. Getting
+provenance right is also what fixes finding 3's misattribution. So this
+design builds provenance as the general form, and adds no per-family bit
+(§5 Q6).
 
 ### 2.6 User-defined sets are configs; there is no second kind
 
