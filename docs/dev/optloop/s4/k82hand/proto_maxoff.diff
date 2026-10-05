@@ -1,0 +1,173 @@
+--- a/src/facts/facts_derive.h
++++ b/src/facts/facts_derive.h
+@@ -81,6 +81,7 @@
+     unsigned char mask[PCREC_MAX_REQ_RUN_SCAN];    /* K: 0xFF where exact */
+     int n;
+     bool trunc;
++    long long off;  /* K82H: max byte offset of bytes[0] from the subtree start */
+ } RbRun;
+ 
+ static inline bool rb_has(const RbSet *s, int b)
+--- a/src/facts/req.c
++++ b/src/facts/req.c
+@@ -122,6 +122,8 @@
+  * after `pcrec_lower_enc`; both facts come off one call. */
+ 
+ #include <string.h>
++#include <stdio.h>
++#include <stdlib.h>
+ 
+ #include "core/internal.h"
+ #include "core/findings.h"
+@@ -137,7 +139,9 @@
+  * to the right, and it is FALSE the moment a run truncates — otherwise a
+  * 20,000-byte literal would report its stored first bytes as adjacent to
+  * whatever follows the literal, which is 19,968 bytes of a lie. */
+-typedef struct { RbRun best, head, tail; bool all; } RbRuns;
++typedef struct { RbRun best, head, tail; bool all; long long maxw; } RbRuns;
++static long long k_add(long long a, long long b){return pcrec_sat_add(a,b,PCREC_MINW_MAX);}
++static long long k_tail(long long w, int n){return w>=PCREC_W_UNBOUNDED?PCREC_W_UNBOUNDED:(w-n<0?0:w-n);}
+ 
+ /* The two facts, threaded together because they come off one walk. */
+ typedef struct { RbSet set; RbRuns runs; } RbVal;
+@@ -220,6 +224,7 @@
+     memset(r.mask, 0, sizeof r.mask);
+     r.n = 0;
+     r.trunc = false;
++    r.off = 0;
+     return r;
+ }
+ 
+@@ -348,6 +353,7 @@
+     RbRuns r;
+     r.best = r.head = r.tail = rn_none();
+     r.all = true;
++    r.maxw = 0;
+     return r;
+ }
+ 
+@@ -359,6 +365,12 @@
+     r.all = false;
+     return r;
+ }
++static RbRuns rr_none_w(long long w)
++{
++    RbRuns r = rr_none();
++    r.maxw = w;
++    return r;
++}
+ 
+ /* A subtree that matches exactly the members of the one position `(t, k)`. */
+ static RbRuns rr_pos(const RbWalk *w, int t, int k)
+@@ -366,6 +378,7 @@
+     RbRuns r;
+     r.best = r.head = r.tail = rn_pos(w, t, k);
+     r.all = true;
++    r.maxw = 1;
+     return r;
+ }
+ 
+@@ -380,10 +393,17 @@
+ static RbRuns rr_cat(RbRuns l, RbRuns r)
+ {
+     RbRuns o;
++    RbRun rb = r.best, jn;
++    o.maxw = k_add(l.maxw, r.maxw);
+     o.head = l.all ? rn_app(l.head, r.head) : l.head;
++    o.head.off = 0;
+     o.tail = r.all ? rn_pre(l.tail, r.tail) : r.tail;
++    o.tail.off = k_tail(o.maxw, o.tail.n);
+     o.all  = l.all && r.all && !o.head.trunc;
+-    o.best = rn_better(rn_better(l.best, r.best), rn_app(l.tail, r.head));
++    rb.off = k_add(l.maxw, r.best.off);
++    jn = rn_app(l.tail, r.head);
++    jn.off = l.tail.off;
++    o.best = rn_better(rn_better(l.best, rb), jn);
+     o.best = rn_better(rn_better(o.best, o.head), o.tail);
+     return o;
+ }
+@@ -397,8 +417,11 @@
+ static RbRuns rr_alt(const RbWalk *w, RbRuns l, RbRuns r)
+ {
+     RbRuns o;
++    o.maxw = l.maxw > r.maxw ? l.maxw : r.maxw;
+     o.head = rn_common_head(w, l.head, r.head);
++    o.head.off = 0;
+     o.tail = rn_common_tail(w, l.tail, r.tail);
++    o.tail.off = k_tail(o.maxw, o.tail.n);
+     o.best = rn_better(o.head, o.tail);
+     o.all  = false;
+     return o;
+@@ -477,7 +500,7 @@
+              * falling through. */
+             if (a->u.rep.rmin >= 1) {
+                 RbVal b = rb_walk(w, a->l);
+-                RbRuns rep = rr_none();
++                RbRuns rep = rr_none_w(pcrec_sat_mul(a->u.rep.rmax < 0 ? PCREC_W_UNBOUNDED : (long long)a->u.rep.rmax, b.runs.maxw, PCREC_MINW_MAX));
+                 rep.best = b.runs.best;
+                 acc.set  = rb_union(b.set, acc.set);
+                 acc.runs = rr_cat(rep, acc.runs);
+@@ -493,7 +516,8 @@
+              * iterations, false of every match where it takes one, and a run
+              * must hold on EVERY match. So a min-0 repeat is `rr_none`,
+              * exactly as a multi-member class is. */
+-            acc.runs = rr_cat(rr_none(), acc.runs);
++            { RbVal b0 = rb_walk(w, a->l);
++              acc.runs = rr_cat(rr_none_w(pcrec_sat_mul(a->u.rep.rmax < 0 ? PCREC_W_UNBOUNDED : (long long)a->u.rep.rmax, b0.runs.maxw, PCREC_MINW_MAX)), acc.runs); }
+             return acc;
+         case A_CLASS: {
+             int b = pcrec_cls_single(w->cx, a);
+@@ -504,7 +528,7 @@
+                  * contributes no byte and no run, and it also BREAKS
+                  * contiguity for everything around it — which `rr_none`'s
+                  * cleared `all` is exactly what says. */
+-                acc.runs = rr_cat(rr_none(), acc.runs);
++                acc.runs = rr_cat(rr_none_w(1), acc.runs);
+                 return acc;
+             }
+             /* Only a single byte is a member of the necessary SET; a cube
+@@ -533,6 +557,8 @@
+         case A_GSTART:
+         case A_KRESET:
+         case A_LOOK:
++            acc.runs = rr_cat(rr_none_w(0), acc.runs);
++            return acc;
+         /* The two deliberate declines, `src/facts/startanch.c`'s for the same
+          * reasons: a backreference's bytes are the subject's business and a
+          * linked call's body is `callgraph.c`'s cycle problem. Both are the
+@@ -540,7 +566,7 @@
+         case A_BREF:
+         case A_VAR:
+         case A_CALL:
+-            acc.runs = rr_cat(rr_none(), acc.runs);
++            acc.runs = rr_cat(rr_none_w(PCREC_W_UNBOUNDED), acc.runs);
+             return acc;
+         }
+     }
+@@ -606,6 +632,7 @@
+         run->len = len;
+         run->idx = i - s;
+         run->at = s;
++        if (getenv("K82H")) fprintf(stderr, "K82H at=%d\n", s);
+     }
+ }
+ 
+--- a/src/facts/facts.c
++++ b/src/facts/facts.c
+@@ -33,6 +33,8 @@
+  * the one path along the DEPENDS-ON edges `facts.def` declares. */
+ 
+ #include <string.h>
++#include <stdlib.h>
++#include <stdio.h>
+ 
+ #include "core/internal.h"
+ #include "enc/enc.h"
+@@ -193,6 +195,7 @@
+             memcpy(pf->req_run.whole, run.bytes, (size_t)run.n);
+             memcpy(pf->req_run.whole_mask, run.mask, (size_t)run.n);
+             pf->req_run.whole_len = run.n;
++            if (getenv("K82H")) fprintf(stderr, "K82H off=%lld n=%d\n", run.off >= PCREC_W_UNBOUNDED ? -1LL : run.off, run.n);
+         }
+         pf_done(pf, PF_REQ_WHOLE_RUN);
+     }
