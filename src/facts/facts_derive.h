@@ -30,6 +30,8 @@ bool     pcrec_pattern_nullable(const Ast *root);    /* src/facts/widths.c */
  * `PCREC_SANCH_*` and the renderer `pcrec_start_anchor_name` stay with the
  * consumers in `core/internal.h`. */
 int pcrec_start_anchor(const Ast *root);             /* src/facts/startanch.c */
+/* [START-SET] the lowered tree's start set (src/facts/startset.c). */
+void pcrec_start_set(Ctx *cx, const Ast *root, StartSet *out);
 
 /* [OPT-ENDWIN] THE END-ANCHOR START WINDOW — a match may begin only in the
  * last `W` bytes of the subject, or `-1` where the analysis declines (the

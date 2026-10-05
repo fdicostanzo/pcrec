@@ -26,6 +26,19 @@ the one candidate-finding table; D148).
     (coding_guide §5 item 4); the literal half is keyed on the table's own
     contents, so a new row's name joins it with no edit here.
 
+[cand-route-init] (stage 1, review r4 checks-F6)
+    Every `DfaSel NAME = { ... };` initializer under src/ names `.route`.
+    The selection value gained a route whose zero value is the legacy DFA
+    route; an initializer that omits it compiles silently (a designated
+    initializer zero-fills), so the omission is caught here instead. The
+    population is counted and must be non-empty (K35). WHAT IT CANNOT SEE: a
+    `DfaSel` built by assignment after declaration, or copied from another.
+
+[cand-route-walk] (stage 1, checks-F6)
+    `dfa_select`'s body asks `cand_routed(` BEFORE `->applies(`: the route
+    mask is data the walk tests, so a VM-route selection never reaches a
+    predicate that reads a machine.
+
 The row-name population is read off the table's text and must be non-empty
 (K35): an empty population would make (a) pass vacuously.
 
@@ -150,7 +163,40 @@ def main():
         ok("[cand-no-name-strcmp] no comparison call reads any of the %d dfa_pfs[] row names" % len(names))
 
 
+def route_checks():
+    files = []
+    for root in ("src", "cli", "lib"):
+        for d, _sub, fs in os.walk(os.path.join(TREE, root)):
+            files += [os.path.join(d, f) for f in sorted(fs) if f.endswith((".c", ".h"))]
+    n, missing = 0, []
+    for path in files:
+        text = strip_comments(open(path, errors="replace").read())
+        for m in re.finditer(r"\bDfaSel\s+\w+\s*=\s*\{", text):
+            n += 1
+            body = text[m.end():text.find("};", m.end())]
+            if not re.search(r"\.route\s*=", body):
+                missing.append("%s:%d" % (os.path.relpath(path, TREE), text.count("\n", 0, m.start()) + 1))
+    print("REACH: %d DfaSel initializer(s) under src/ cli/ lib/" % n)
+    if n == 0:
+        bad("[cand-route-init] no DfaSel initializer found -- the check reads nothing")
+    elif missing:
+        bad("[cand-route-init] a DfaSel initializer omits .route: " + ", ".join(missing))
+    else:
+        ok("[cand-route-init] all %d DfaSel initializers name .route" % n)
+    src = strip_comments(open(EMIT).read())
+    m = re.search(r"static const void \*dfa_select\(", src)
+    body = src[m.end():src.find("\n}", m.end())] if m else ""
+    r, a = body.find("cand_routed("), body.find("->applies(")
+    if not body or a < 0:
+        bad("[cand-route-walk] dfa_select's body or its applies call not found in %s" % EMIT)
+    elif r < 0 or r > a:
+        bad("[cand-route-walk] dfa_select does not test the route mask (cand_routed) before applies")
+    else:
+        ok("[cand-route-walk] dfa_select tests the row's route mask before its applies")
+
+
 main()
+route_checks()
 print("checks passed: %d" % passed)
 print("checks failed: %d" % failed)
 sys.exit(1 if failed else 0)

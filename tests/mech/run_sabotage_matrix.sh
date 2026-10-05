@@ -2507,6 +2507,19 @@ run_one() {
                 f="$(grep -m1 '^checks failed:' "$work/limits.log" | grep -oE '[0-9]+')"
                 score_arm "$work/limits.log" "$f" "limits:${f:-ERR}fail/${p:-?}pass"
                 ;;
+            startset)
+                # [START-SET] stage 1 (D148) tests/startset/run_startset_checks.sh —
+                # the `start_set` fact's C-SS* (every forward DFA's emitted start
+                # bytes a subset of the fact), NULLABLE => start_set.nullable and
+                # the option witnesses. A planted WALK defect moves no answer
+                # until a hat reads the fact (stage 2/3), so this arm is a walk
+                # row's stage-1 detector. Registered before S501/S502.
+                PCREC="$pcrec" bash "$tree/tests/startset/run_startset_checks.sh" \
+                    > "$work/startset.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/startset.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/startset.log" | grep -oE '[0-9]+')"
+                score_arm "$work/startset.log" "$f" "startset:${f:-ERR}fail/${p:-?}pass"
+                ;;
             candrows)
                 # [START-SET] (D148) tests/codegen/run_cand_rows.sh — the
                 # candidate table's structural checks: no comparison reads a
