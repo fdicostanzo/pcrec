@@ -3630,3 +3630,4 @@ never edited afterwards.
   - **Twin T3** (the gate's candidate handed to the engine) recovers the movers W-free, Mac.
   - **Recommendation:** handoff row first, then the cost row + B4 once a per-form E probe exists.
 
+- `memfnreq_report.md` — [MEMFN] R1 REQUIREMENTS (2026-10-04, lane memfnreq, opus, docs + one probe): `docs/design/memfn/requirements.md`, with the menu F1-F13, the binding-form first-match table and RB/N requirements, the survey rubric, the unknowns and three Frank questions (Q1, the licence of generated output, comes first). The Mac probe (`docs/design/memfn/probes/`) found three things. memchr's call term is ~0.3-1 ns, not glibc's ~3.4. The K82 pair arm's cost is two calls and two passes, which only a fused kernel removes. And an inline byte loop loses to memchr from 2-4 B, so a short span needs a loop-free path. The same probe, pinned on ubuntubudu, is OWED.
