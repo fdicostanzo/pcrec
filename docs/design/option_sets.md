@@ -292,13 +292,19 @@ resolve.
 
 ```
 pcrec: set 'simd' and set 'min-size' disagree on axis 'vec-scan'
-(simd: allow, min-size: deny); name one of them, or set the axis
-explicitly (-fvec-scan / -fno-vec-scan)
+(simd: allow, min-size: deny); name only one of them, or set the
+axis explicitly (-fno-vec-scan)
 ```
 
 D26 applies: the code and the named parties are exact, the wording is
-not. The remedy the message names is always available, because explicit
-beats a set (§2.5).
+not. **Explicit beats a set (§2.5), so an explicit spelling always
+resolves a conflict, but only in the directions that HAVE a spelling.** A
+deny-only axis can be explicitly denied and cannot be explicitly allowed.
+For that half the remedy is "name only one set". The message offers only
+spellings that exist. This is `tuning.md` §1's "where a spelling exists"
+narrowing, met again one level up. A force or allow twin stays an
+on-demand addition (`opt_dial_design.md` §7.2a option 1), never something
+this mechanism invents.
 
 **List- and set-valued options decompose into one axis per element.**
 `--features` is one boolean-ish axis per module, `--memfn-deny=` one
@@ -485,3 +491,205 @@ should be one column, built once (§5.2).
 held `-fisa-dispatch=cpu-supports`. The registry tags them, and the static
 check rejects any set whose bundle assigns one. "Never implied" becomes a
 property of the data rather than a promise in a design note.
+
+---
+
+## 3. Surfaces
+
+Everything in this section is DESIGNED, and none of it is built (§6).
+
+### 3.1 The command line
+
+- **`--set=NAME[,NAME…]`**, repeatable, accumulating (the names are
+  joined, §2.4). A member of a family assigns that family's axis, so
+  `--set=speed` ≡ `--tune=speed`. An unknown name is refused, listing the
+  vocabulary, in `--features`' shape. **`--set` is a user feature**, so
+  unlike the `-f` family (D47.3) it appears in `--help`.
+- **Family sugar keeps its own spelling.** `--tune=` stays exactly as
+  shipped (aliases, the `=`-form rule for negatives, out-of-range
+  refusal). `--isa=L` (designed) is the `isa` family's spelling. A new
+  family gets a sugar flag only when it has a reason the generic `--set=`
+  lacks: an ordinal spelling, as `tune` has, or a vocabulary already
+  established outside pcrec, as `-march`-style level names are.
+- **`--list-sets`**: a table-contract listing (`docs/spec/
+  table_contract.md`), one row per (set, axis, value), with the family,
+  pinned/derived, the class and the member's order position. It is a
+  `[LIST-TABLES]` producer at birth. A derived set lists its bundle as
+  materialized in THIS build.
+- **What may be a set member** is exactly what a config's `pcrec <raw>`
+  line may carry (`cli.md` §1.1: compile options only), plus the
+  unspelled registry axes. Modes, listings, output routing, `-p`,
+  `--pattern` and file operands are excluded on that line's own grounds.
+
+### 3.2 `.rxt`
+
+- **A config body gains `set <name>{, <name>}`.** It is one schema row
+  (`rxt_schema.def`), config-scoped like `tune`, and the names are
+  resolved and refused-if-unknown when the file is read. `--list-source`
+  carries it AS WRITTEN (its `tune` column's rule). A block may not name
+  sets, for the reason a block may not name `tune`: a set is a build
+  configuration, and the block is the definition.
+- **`tune <pos>` stays** as the `tune` family's sugar.
+- **Inside one target**, every set named by any of its configs is a peer
+  of the FILE source (§2.6). Sets are joined and their conflicts refused.
+  The configs' typed lines keep later-wins, and the block's own directives
+  keep more-specific-wins, both at the explicit tier.
+- **H11 holds by construction for identity-class sets**: a target built
+  under one must answer exactly as the block's own compile, which the
+  harness already checks for every target. A target naming a
+  contract-class set (§4.5's `pcre2-utf`) changes answers on purpose. The
+  harness's H11 control must therefore read the target's set class, and
+  compare such a target against its declared behaviour, the way the axes
+  sweep treats a contract axis. This is a build-time obligation, named
+  here so it is not discovered late.
+
+### 3.3 The library API
+
+- **`pcrec_options.sets`, a `const char *`** in `--set=`'s vocabulary,
+  NULL meaning "no request". This is `features`' own shape and its own
+  NULL rule (REL-1.11, `match_api.md` §8.2). It is resolved once in
+  `pcrec_compile`, at the altitude where `tune` is validated today
+  (`src/core/compile.c:800`, before any pass).
+- **`tune` stays.** The struct is an UNORDERED source, so `tune ≠
+  balanced` together with a `sets` string naming a different `tune` member
+  is REFUSED (§2.5). The same holds for every family sugar field (`isa`
+  when it exists).
+- The resolved per-axis PROVENANCE (§2.5 step 6) is internal. Nothing in
+  the API exposes it until a consumer asks (D77).
+
+### 3.4 The stamp, and `rx_info`
+
+**`<PREFIX>_SETS`**, a string emitted UNCONDITIONALLY on every artifact of
+both engines, in the shared prologue beside `<PREFIX>_TUNE`:
+
+```c
+#define RX_SETS ""                              /* every family at its default */
+#define RX_SETS "min-size,no-simd"              /* two non-default members */
+#define RX_SETS "min-size;premul-table"         /* a member cell overridden */
+```
+
+- **Grammar: `member{,member}[;axis{,axis}]`.** The members are the
+  NON-DEFAULT members in force, one per family, in registry order. The
+  part after `;` names, by registry name, every axis a set in force
+  assigned whose final value came from a HIGHER tier: an explicit flag, or
+  the file over a CLI set (§2.5 row 3). A consumer buckets on the part
+  before `;`. The tail exists so that an artifact never claims a set
+  unqualified when one of its cells was overridden. The CLOSED-token
+  discipline of `RX_TUNE` holds per token.
+- **Only non-default members are printed**, so adding a FAMILY later moves
+  no existing artifact's stamp (its default member prints nothing). The
+  stamp's BIRTH is one `abi` event (D76/D94: every artifact gains a
+  line). After that, a new family is not an abi event by itself. A new
+  member's bundle is, if it moves emitted bytes, as any new axis is.
+- **`<PREFIX>_TUNE` stays, unchanged.** It becomes the `tune` family's
+  member, printed by the same token table (`pcrec_tune_token`). pcrec-bench
+  buckets on it, and it is printed even at `balanced`.
+- **No `rx_info.sets` mirror.** Nothing at run time behaves differently
+  because of a set's NAME. This is `tuning.md` §5.3's reasoning for
+  `tune`, unchanged (D77: build the mirror when a consumer asks). The
+  first candidate consumer is `[ART-MGR]`'s catalog picking a variant, and
+  what it needs is `rx_info.isa`/`isa_family` (isa_selection.md §1.2.3),
+  which are OUTCOME fields of the `isa` axis, not a mirror of the set
+  string.
+- **No digest yet.** A digest over the full resolved non-default
+  assignment (the `RX_FINDINGS` digest's shape) would let two artifacts be
+  compared as "built identically" without reading every outcome stamp. Its
+  consumer would be the bench's testee identity. It is not built until
+  that consumer asks (§5 Q5).
+
+### 3.5 How the checks treat a set
+
+**`make test-axes`: a set is an axis.** The sweep already treats the
+dial's four non-default positions as "a fifth kind of axis" on the same
+RXTFLAGS/RXTDUMP mechanism (`tests/axes/run_axes.sh`, the header's
+`[OPT-DIAL]` paragraph). The general form:
+
+- **The job list** = every bit axis alone (today) ∪ every NON-DEFAULT
+  member of every family ∪ every standalone set. The list is derived from
+  `--list-sets`, never hand-copied. That is the script's own "the registry
+  is derived, never hand-copied" rule, and it costs one more dump reader.
+- **The class decides the comparison** (§2.8): an identity-class set
+  fails on MISMATCH, LOST or GAINED. An engine-selecting one prints LOST.
+  Contract, semantic, policy and instrument sets are not swept, and the
+  run says so with the reason, as it does for `--ucp` today. DIAL-S3's
+  keyed refusal-set comparison generalizes from the `tune` family to every
+  family whose required class is refusal-preserving.
+- **Combinatorics: no products by default.** A set alone against the
+  default is the unit, as a bit axis alone is. A PAIR job exists only as a
+  row of a declared `pairs` list, each row naming its reason: two families
+  whose members feed the SAME table's predicates. The first such pair is
+  `vector` × `isa`, both read by `SCAN_ROWS` (integration.md §2.1). A pair
+  sweeps the members' product. Today's job count grows by the members,
+  not by their product. At the first build that is four (`tune`) plus
+  three (`vector`), plus the ISA members the box can run.
+- **The `isa` family is swept per box.** A declared-ISA artifact compiles
+  anywhere but RUNS only on a CPU at or above its level. So the job list
+  runs the members at or below the box's level in the poset (§2.2), and
+  SKIPS the rest LOUDLY with a count, PC-3's absent-library shape. This is
+  the order's first real consumer. On the Mac that means `portable`,
+  `armv8-a` and nothing above it natively. x86 correctness under
+  Rosetta 2 (survey.md §1.2) is a separate opt-in arm.
+- **Vacuous members still run** (S219's precedent, already followed for
+  `max-speed`). `simd`/`no-simd`/`scalar` are vacuous until vector rows
+  exist. The run prints that their resolved assignment is empty, rather
+  than skipping them. A check that skips its vacuous members is the one
+  that fails to fire the day they stop being vacuous.
+
+**The identity gates.** Three, all built with the mechanism, each with an
+expectation side that does NOT share a source with the set table
+(`learnings.md` §3):
+
+1. **Re-expression identity**: the dial moved onto the set table emits,
+   at all five positions over the whole corpus, bytes identical to the
+   shipped `TUNE_TABLE` build, except for the `RX_SETS` line itself.
+   `tests/codegen/run_tune_dial.sh` already reads its expectations from
+   `tuning.md` §5.4, not from `src/core/tune.c`. It keeps doing so, and
+   reads the set table only as the thing under test.
+2. **No-request identity**: with no set named anywhere, every artifact is
+   byte-identical to the pre-mechanism build, apart from `RX_SETS ""`.
+   This is the abi event's own (B) pin.
+3. **Listing against spec**: `--list-sets` rows checked against the
+   spec's set table (`tuning.md` gains it, §5.3), as §5.4's table is the
+   contract for the dial today. The check reads the spec.
+
+**mech (sabotage).** Rows are numbered from main's highest S-id at the
+build, not here. The rows the mechanism owes, with their detectors:
+
+| sabotage | detector |
+|---|---|
+| a pinned member's cell is dropped from its bundle | gate 1 (reads the spec) |
+| the join stops detecting conflicts (returns the left operand) | a `tests/cli` case naming two REAL overlapping sets; see the witness note below |
+| explicit loses to a set (the overlay's operands swapped) | a `tests/cli` case: an explicit flag against a set cell, asserting the artifact's outcome stamp |
+| family members conflict instead of replacing | `--tune=min-size --tune=speed` must still compile, `RX_TUNE "speed"` (today's pinned behaviour) |
+| the stamp's override tail is omitted | the explicit-beats-set case, asserting `RX_SETS`'s tail |
+| a derived set's predicate misses a new row | a registry check: every axis tagged `vector` is denied by `no-simd`, counted from the axes file by plain-text scan (`[AXES-DENY-MASK]`'s own gate shape) |
+| the constraint table's order inverts rows 9 and 1-3 | the shipped pair refusals and inert stamps, already pinned in `tests/cli` |
+
+**Witness note.** The conflict row needs two real sets in DIFFERENT
+families that assign one axis different values. Until vector rows exist,
+none does. The dial's members only deny, and no other family exists. If
+that is still true at build time, the row ships UNREACHED with its
+derivation, as S219 did. It does not get a test-only set: a set that
+exists only to be refused is a fixture the vocabulary must then carry
+forever.
+
+**The bench.** `pcrec-bench/APPROACH.md` §2 item 4 already defines a
+testee as "(engine, version, build/run configuration)" and anticipates
+"later SIMD on/off" as a first-class axis. Its litrun subbench already
+names deny testees (`-fno-lit-run`, `-fno-altcls-factor`). A set gives
+such a testee a NAME the artifact itself carries:
+
+- A testee is spelled `--set=no-simd` and labelled from `RX_SETS`.
+  `RX_TUNE` keeps working for the dial.
+- A **pinned** set names the same configuration across releases (D103),
+  so `pcrec[speed]` is comparable across versions in the sense the bench
+  already restricts comparisons to. A **derived** set (`no-simd`) names
+  "this release's vector rows, off", which is what a SIMD-off testee
+  means.
+- The bench chooses its testees explicitly. Nothing here asks it to sweep
+  a product.
+- **Bench-only questions, for relay to pcrecdev2 rather than for this lane
+  to answer** (memory `pcrec-ask-bench-dev`): (i) does the adapter key a
+  pcrec testee on the INVOCATION it ran or on the artifact's STAMPS?
+  (ii) would an `RX_SETS` value with a `;` tail break its stamp parser?
+  (iii) does it want a configuration digest (§3.4) as testee identity?
