@@ -27,7 +27,7 @@ SAB_ID="S305-lit-run-slot-walk-overskips"
 SAB_FILE="src/gen/emit_vm.c"
 SAB_SUITES="irlisting"
 SAB_DESC="vm_count_slots skips the spine element after every literal run, so the slot/resume-point pre-pass under-counts what vm_cat emits after a run: xyz(a|ab)c's pre-pass counts 0 resume points against 1 emitted RX_PUSH"
-SAB_DOC_FIGURE="PREDICTED (lane s2a, 2026-09-27): DETECTED by run_ir_listing.sh's resume-points under-count check on xy(a|ab)c. MEASURED 2026-09-27 (lane s2a, single-row mech at b04e7ab3): DETECTED -- reach:ok(1/1), irlist:2fail/153pass (the resume-points under-count on xy(a|ab)c). RE-ANCHORED 2026-09-28 (lane litf5, [OPT-LITSCAN] F5/D127): witness widened xy(a|ab)c -> xyz(a|ab)c; re-run owed at merge. Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S305."
+SAB_DOC_FIGURE="PREDICTED (lane s2a, 2026-09-27): DETECTED by run_ir_listing.sh's resume-points under-count check on xy(a|ab)c. MEASURED 2026-09-27 (lane s2a, single-row mech at b04e7ab3): DETECTED -- reach:ok(1/1), irlist:2fail/153pass (the resume-points under-count on xy(a|ab)c). RE-ANCHORED 2026-09-28 (lane litf5, [OPT-LITSCAN] F5/D127): witness widened xy(a|ab)c -> xyz(a|ab)c; re-run owed at merge. RE-MEASURED 2026-10-05 (lane r1mtriage, Linux solo at 4688b81f after the reach re-point): DETECTED -- reach:ok(1/1), irlist:2fail/153pass. Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S305."
 # [MECH-REACH] the witness takes the run arm and pushes after it.
 # RE-POINTED 2026-10-05 (lane r1mtriage): the run arm's COMPARE is no longer
 # spelled memcmp since [OPT-HYB-RESEED-FORM] A1 (rsform, abi 56: overlapping
