@@ -46,3 +46,20 @@ pointer when a kit change merges to main.
   (the plan's stamp visibility at SIMD-off).
 - R-1's "R4c's trigger" now reads "R4d's trigger": M1 (R4c) is triggered
   by completeness. `requests.md` is the manager's to amend.
+
+## 2026-10-05 — integration.md revision 4.4: addenda 8-9 folded (lane memfnr44)
+
+- Q43 ruled: SIMD-on forms tuned for aarch64 are not ACCEPTED until Frank
+  admits Mac measurements as verdict-grade for those cells, or an aarch64
+  Linux box exists. x86 Linux gives the verdicts.
+- Q44, Q45, Q46, Q48 and Q49 ruled as recommended.
+- Q47 refined: the kit's OWN option namespace.
+  - pcrec keeps one axis, `-fmemfn-simd`. Kit per-form switches are
+    `--memfn=<opt>[,<opt>…]`, passed through uninterpreted.
+  - The registry is `memfn/src/options.def` (born empty at R4a), with
+    `mf_options()` and `mf_opts_check()`. It replaces `mf_switches()`
+    and the generated-axis-rows idea.
+  - `--list-axes` prints a `memfn` section from it. A spec-pinned floor
+    on the section's member count is the independent control, born with
+    the first row (R4d).
+- Open questions: Q53-Q55 only.

@@ -36,7 +36,7 @@ alone CLI and reference functions are planned for other callers.
 ## Status
 
 **No code yet.** The design of record is
-`docs/design/memfn/integration.md` (revision 4.3) in the pcrec tree. The first code
+`docs/design/memfn/integration.md` (revision 4.4) in the pcrec tree. The first code
 lands with that design's step R4a.
 
 ## Licence

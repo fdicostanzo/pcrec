@@ -21,6 +21,11 @@ none before it (D77). Planned contents:
   scalar arm. Their contents are this kit's per-site choice: forms, ISA
   levels, cascades (K-6) and the fallback. A SIMD-on artifact may not
   run on another CPU (D147 addendum 6).
+- **`options.def`** — the kit's option registry (D147 addendum 9): an
+  X-macro `MF_OPT(name, kind, budget, layer, doc)` behind
+  `--memfn=<opt>[,…]`, `mf_options()` and `mf_opts_check()`. Born EMPTY
+  at R4a; each byte-moving kit change adds its own deny row. See
+  `../CLAUDE.md` "The kit's option namespace".
 - **K3 support** for the stand-alone CLI (planned with K3).
 
 Rules: external symbols through `MF_NS` (`pcrec_mf_*`), everything else

@@ -127,6 +127,22 @@ its DESIGN record.**
 
   Read §R4.3 first: its §R4.3.0 maps each ruling to where it now
   lives.
+  **REVISION 4.4 (lane memfnr44, 2026-10-05), D147 addenda 8-9 folded**:
+  - Q43 RULED: aarch64 SIMD-on forms are not accepted until Mac
+    measurements are admitted as verdict-grade or an aarch64 Linux box
+    exists;
+  - Q44, Q45, Q46, Q48, Q49 RULED as recommended;
+  - Q47 REFINED: pcrec keeps ONE axis (`-fmemfn-simd`) and the kit's
+    per-form switches are its OWN option namespace, `--memfn=<opt>[,…]`,
+    from a kit-owned registry (`memfn/src/options.def`), passed through
+    uninterpreted. `--list-axes` prints a `memfn` section from it, one
+    enumeration point for `test-axes`, the identity gates and the
+    registry check, with a spec-pinned member-count floor as the
+    independent control. The generated-axis-rows design and
+    `--memfn-deny=` are withdrawn;
+  - the open questions are Q53-Q55 only.
+
+  Read §R4.4 first: its §R4.4.0 maps each ruling to where it now lives.
 - `twins.md` — R1d (lane memftwin, 2026-10-04), the D77 measurement "does a
   kernel TAILORED to the pattern beat a fixed generic one": T-A set
   classifier per shape vs the generic nibble lookup, T-B a fused scan+verify

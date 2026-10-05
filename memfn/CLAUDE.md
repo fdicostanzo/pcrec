@@ -3,14 +3,16 @@
 `[MEMFN]` (docs/dev/plan.md). Frank's rulings 2026-10-05:
 - D146: the kit is a DELEGATE, not a price market;
 - D147: layers;
-- D147 addenda 1-7:
+- D147 addenda 1-9:
   - Q35-Q42 and Q50 ruled;
   - ONE SIMD switch, OFF by default;
   - every search site migrates, under a checked manifest;
-  - Q51/Q52 rejected.
+  - Q51/Q52 rejected;
+  - Q43-Q46, Q48 and Q49 ruled; Q47 refined: the kit's own option
+    namespace (below).
 
-The design of record is `docs/design/memfn/integration.md` (rev 4.3;
-read its §R4.3 first). This file is the working agreement for the
+The design of record is `docs/design/memfn/integration.md` (rev 4.4;
+read its §R4.4, then §R4.3, first). This file is the working agreement for the
 subtree.
 
 **Status: no code yet.** This directory is the skeleton set up by lane
@@ -67,9 +69,36 @@ first; K3 second.
   movers-by-ID gate at that step). It is not a permanent arm, not the
   SIMD-off arm, and it never pins the scalar layer.
 - **Every kit change that moves bytes carries its own deny** (D144 item
-  4), published by the kit's switch table as `--memfn-deny=NAME`; that
-  deny is the change's alpha OFF arm.
+  4): a row of the kit's OWN option registry, `src/options.def`, reached
+  as `--memfn=no-NAME`; that deny is the change's alpha OFF arm. See
+  "The kit's option namespace" below.
 - Kit work and pcrec scalar work proceed in parallel.
+
+## The kit's option namespace (D147 addendum 9, Q47 refined)
+
+- pcrec has exactly ONE axis for the kit: `-fno-memfn-simd` /
+  `-fmemfn-simd`. Every per-form switch is the KIT'S: `--memfn=<opt>
+  [,<opt>…]`, a string pcrec carries and passes through UNINTERPRETED
+  (`mf_site.opts`). `no-NAME` denies row NAME; a bare `NAME` forces it,
+  for rows declared `MF_OPT_PAIR`. The kit validates the string
+  (`mf_opts_check`) and its refusal text is shown unchanged.
+- The registry is `src/options.def`, an X-macro: `MF_OPT(name, kind,
+  budget, layer, doc)`. `name` is kit-owned and arch-blind; `kind` is
+  `MF_OPT_DENY` or `MF_OPT_PAIR`; `budget` is `MF_B_SCAN`/`MF_B_LOOP`/
+  `MF_B_ANY` (D91); `layer` is `MF_L_SCALAR` or `MF_L_SIMD` (which
+  acceptance reading owns the row; a SIMD row is inert at
+  `-fno-memfn-simd`). The accessor is `mf_options(size_t *n)`. What is
+  printed and what is parsed are one table.
+- **A kit change that moves a byte adds its row in the same commit.**
+  The row is that change's OFF arm.
+- `pcrec --list-axes` prints pcrec's axes, then a `memfn` section
+  (`table_contract.md` §Sections) read from `mf_options()`. It is the
+  ONE enumeration point for `test-axes`, the identity gates and the
+  registry check.
+- **The independent control** is a floor on that section's member count,
+  pinned as a literal in `docs/spec/` (it shares no source with
+  `options.def`). Raise it in the change that adds a row. It is born
+  with the first row (R4d), so the check is UNREACHED until then.
 
 ## The boundary with pcrec
 
@@ -162,5 +191,6 @@ pcrec emitter are kit work here, not edits under `src/gen/`.
   (its own CLAUDE.md).
 - `include/` — `memfn.h`, the one header pcrec includes (planned, R4a,
   born with the site manifest and C17, every row `pending`).
-- `src/` — K1 primitives, K2 composer, the scalar arms (planned).
+- `src/` — K1 primitives, K2 composer, the scalar arms, and
+  `options.def`, the option registry (born empty at R4a; planned).
 - `tests/` — G2, the kit's own tests (planned).
