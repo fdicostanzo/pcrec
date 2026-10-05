@@ -17,11 +17,15 @@ SAB_FILE="src/gen/emit_dfa.c"
 SAB_SUITES="prechecks harness"
 SAB_HARNESS_TARGET="tests/base/k66_precheck_whole_run.rxt"
 SAB_DESC="the [K66] whole-run compare of the necessary-run pre-check is never emitted, so a VM artifact with no DFA scan compares only the 8-byte window the prior cut from a longer run and a subject holding that window but not the whole run gives up on the step budget where the answer is NOMATCH — the window-dependent give-up K66 recorded"
-SAB_DOC_FIGURE="tests/base/k66_precheck_whole_run.rxt is the answer-level detector: the two e...~#~#~#~# n cells and the two ...eeeeeeee!~#~#~#~# n cells of block 1 (byte) and the two ...eeeeeeee~# and two ...eeeeeeee!~#~#~#~# n cells of block 2 (utf8) fail as a steps give-up — corpus:8fail/8pass, the same 8 the pre-fix compiler (bbbf58e5) fails. tests/codegen/run_prechecks.sh section 5.9 reports the three rows expecting a whole-run compare finding none — prechecks:3fail/275pass (re-measured at landing on lane k66fix's rebase onto main, 2026-09-25). Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S278."
+SAB_DOC_FIGURE="tests/base/k66_precheck_whole_run.rxt is the answer-level detector: the two e...~#~#~#~# n cells and the two ...eeeeeeee!~#~#~#~# n cells of block 1 (byte) and the two ...eeeeeeee~# and two ...eeeeeeee!~#~#~#~# n cells of block 2 (utf8) fail as a steps give-up — corpus:8fail/8pass, the same 8 the pre-fix compiler (bbbf58e5) fails. tests/codegen/run_prechecks.sh section 5.9 reports the three rows expecting a whole-run compare finding none — prechecks:3fail/275pass (re-measured at landing on lane k66fix's rebase onto main, 2026-09-25). RE-MEASURED 2026-10-05 (lane r1mtriage, Linux solo at 4688b81f after the reach re-pin): DETECTED -- reach:ok(1/1), prechecks:4fail/341pass, corpus:8fail/8pass. Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S278."
 # [MECH-REACH] THE PROBE says the SITE still answers: on the clean tree the
 # K66 witness is an unguarded VM artifact whose REQ_RUN names an 8-byte window
 # and which emits the 16-byte whole-run compare.
-SAB_REACH='"$PCREC" --features all -e byte -p rx -o "$REACH_TMP/o.c" --pattern "(x?)([a-z]+)+eeeeeeee~#~#~#~#\\1" && grep -q "^#define RX_VM_PREFILTER \"none\"" "$REACH_TMP/o.c" && grep -q "^#define RX_REQ_RUN \"7e237e237e237e23@0\"" "$REACH_TMP/o.c" && grep -qF "if (!memcmp(subject + cand, \"eeeeeeee~#~#~#~#\", 16)) return cand;" "$REACH_TMP/o.c" && grep -qF "rx_reqrun_whole(subject, subject_length, search_from)" "$REACH_TMP/o.c" && echo REACH-K66-WHOLE-RUN-EMITTED'
+# RE-PINNED 2026-10-05 (lane r1mtriage): the window's scan member moved
+# @0 -> @6 at [FIND-TIE] (72e3ae41, 2026-09-28: a run-scan data tie follows
+# NONE order, the rightmost); the window, the whole-run block and its call
+# are unchanged. The probe read MISSING from then until this re-pin.
+SAB_REACH='"$PCREC" --features all -e byte -p rx -o "$REACH_TMP/o.c" --pattern "(x?)([a-z]+)+eeeeeeee~#~#~#~#\\1" && grep -q "^#define RX_VM_PREFILTER \"none\"" "$REACH_TMP/o.c" && grep -q "^#define RX_REQ_RUN \"7e237e237e237e23@6\"" "$REACH_TMP/o.c" && grep -qF "if (!memcmp(subject + cand, \"eeeeeeee~#~#~#~#\", 16)) return cand;" "$REACH_TMP/o.c" && grep -qF "rx_reqrun_whole(subject, subject_length, search_from)" "$REACH_TMP/o.c" && echo REACH-K66-WHOLE-RUN-EMITTED'
 SAB_REACH_EXPECT="REACH-K66-WHOLE-RUN-EMITTED"
 # [OPT-LITSCAN] S1 step 6 re-anchor (lane s1step6, 2026-09-26): the whole
 # run is now the second test of `req_run_tests`, the one derivation both the

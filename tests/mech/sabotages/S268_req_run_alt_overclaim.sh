@@ -35,11 +35,17 @@ SAB_ID="S268-req-run-alt-overclaim"
 SAB_FILE="src/facts/req.c"
 SAB_SUITES="harness prechecks altdiff"
 SAB_DESC="the necessary-run analysis takes an alternation's head run to be the LONGER of its branches' heads instead of their longest COMMON prefix, so the emitted whole-window pre-check demands a contiguous run that only one alternative contains — a run longer than the analysis can prove, which deletes every match of every other branch; the general form of reqpos_2b.md §5.4's proposed plant, chosen because the shipped corpus reaches it while a one-byte-longer literal would have needed a bespoke witness this corpus does not supply"
-SAB_DOC_FIGURE="tests/harness/run.sh over the full .rxt corpus is the primary detector: every 'm' case whose match takes a branch other than the one whose prefix was claimed reports nomatch. tests/codegen/run_prechecks.sh §4.7 is the structural detector and names the claim rather than the symptom — its (?:xabcy|zabcw)q row reports 'run \"7861626379@0\" / byte \"113\" — expected a declined run and a live byte (an alternation contributes only its common affixes, so abc is not claimed)'. §4.1's (?:/user|/users) row stays GREEN under this plant by construction, since there the left branch's head IS the common prefix. Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S268."
+SAB_DOC_FIGURE="tests/harness/run.sh over the full .rxt corpus is the primary detector: every 'm' case whose match takes a branch other than the one whose prefix was claimed reports nomatch. tests/codegen/run_prechecks.sh §4.7 is the structural detector and names the claim rather than the symptom — its (?:xabcy|wabcv)q row (zabcw before S4 C3) reports 'run \"7861626379@0\" / byte \"113\" — expected a declined run and a live byte (an alternation contributes only its common affixes, so abc is not claimed)'. §4.1's (?:/user|/users) row stays GREEN under this plant by construction, since there the left branch's head IS the common prefix. Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S268."
 # [MECH-REACH] THE PROBE says the SITE still answers: on the clean tree an
 # alternation with a real common prefix produces a run from THIS arm, and one
 # with no common affix produces none.
-SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "(?:/user|/users)" && grep -q "^#define RX_REQ_RUN \"2f75736572@0\"" "$REACH_TMP/o.c" && "$PCREC" --features all -p rx -o "$REACH_TMP/p.c" --pattern "(?:xabcy|zabcw)q" && grep -q "^#define RX_REQ_RUN \"none\"" "$REACH_TMP/p.c" && echo REACH-REQ-RUN-ALT-COMMON-PREFIX'
+# RE-POINTED 2026-10-05 (lane r1mtriage): the no-common-affix half moved
+# (?:xabcy|zabcw)q -> (?:xabcy|wabcv)q, as run_prechecks.sh §4.7 already did
+# at S4 C3 ([OPT-RUNFOLD] req-run-fold, abi 59): x/z differ in one bit, so
+# C3's cube hull now claims a MASKED run (x|z)abc@0 there and the old probe
+# read MISSING. x/w and y/v differ in more than one bit, so no hull is a
+# position. Intent unchanged.
+SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "(?:/user|/users)" && grep -q "^#define RX_REQ_RUN \"2f75736572@0\"" "$REACH_TMP/o.c" && "$PCREC" --features all -p rx -o "$REACH_TMP/p.c" --pattern "(?:xabcy|wabcv)q" && grep -q "^#define RX_REQ_RUN \"none\"" "$REACH_TMP/p.c" && echo REACH-REQ-RUN-ALT-COMMON-PREFIX'
 SAB_REACH_EXPECT="REACH-REQ-RUN-ALT-COMMON-PREFIX"
 SAB_COUNT=1
 SAB_BEFORE='    o.head = rn_common_head(w, l.head, r.head);'
