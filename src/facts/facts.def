@@ -45,6 +45,7 @@ PF_FACT(END_WINDOW,    "end_window",    2, PF_CORE,    PCREC_NO_END_WINDOW,     
 PF_FACT(REQ_SET,       "req_set",       2, PF_CORE,    PCREC_NO_REQ_BYTE,                   "src/facts/req.c",     "")
 PF_FACT(REQ_WHOLE_RUN, "req_whole_run", 2, PF_CORE,    PCREC_NO_REQ_BYTE | PCREC_NO_REQ_RUN, "src/facts/req.c",     "")
 PF_FACT(REQ_RUN,       "req_run",       2, PF_DERIVED, PCREC_NO_REQ_BYTE | PCREC_NO_REQ_RUN, "src/facts/req.c",     "req_whole_run")
+PF_FACT(REQ_RUN_MAXOFF, "req_run_maxoff", 2, PF_DERIVED, 0,                                  "src/facts/req.c",     "req_run")
 PF_FACT(REQ_BYTE,      "req_byte",      2, PF_DERIVED, PCREC_NO_REQ_BYTE,                   "src/facts/req.c",     "req_set req_run")
 PF_FACT(KSET_WALK,     "kset_walk",     3, PF_CORE,    0,                                   "src/facts/kset.c",    "")
 PF_FACT(RUN_PIN,       "run_pin",       3, PF_DERIVED, 0,                                   "src/facts/kset.c",    "kset_walk req_run")

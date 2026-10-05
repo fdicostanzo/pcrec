@@ -2679,7 +2679,9 @@ Four light panels in two days (the K82 handoff, [OPT-SETS], [MEMFN] K0 r1/r2) fo
   stamp goes on movers only (Q3 reversed), with the abi and byte-count
   readers enumerated by grep (§2.3a); the fact gets checks that share no
   source with the walk (§4.2a); sabotage S463-S477 with in-suite
-  detectors and constructed witnesses; Q1-Q10 in §Q.
+  detectors and constructed witnesses; Q1-Q10 in §Q. **BUILT 2026-10-05 by
+  lane k82hbuild** (abi 61, `../dev/lanes/k82hbuild_report.md`, pending
+  merge); its §9 lists where the build departs from the note.
 
 **[VAR] THE MVP's PATTERN HALF LANDED 2026-09-23** (lane varmvp, M1-M8 +
 M10; M9 stays gated on `[M4-SUBST]`). The four notes stand as written except

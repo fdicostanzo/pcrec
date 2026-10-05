@@ -26,9 +26,13 @@ SAB_COUNT=1
 # REACH: a nullable pattern under -e utf8 must carry the rule at all.
 SAB_REACH='"$PCREC" -p rx -e utf8 -o - --pattern "x*" | grep -c "search_from == 0 && !(" | head -1'
 SAB_REACH_EXPECT='2'
-SAB_BEFORE='    if (!pcrec_startgate_needed(cx)) return;
+SAB_BEFORE='    if (act != PCREC_START0_ROUNDUP && !pcrec_startgate_needed(cx)) return;
     if (!pcrec_enc_start_guard(pcrec_enc_by_id(cx->opt->encoding),
                                g, sizeof g, posvar, subjvar, lenvar, &trunc)) {'
-SAB_AFTER='    if (1) return;   /* SABOTAGE S367 */
+SAB_AFTER='    if (act != PCREC_START0_ROUNDUP) return;   /* SABOTAGE S367 */
     if (!pcrec_enc_start_guard(pcrec_enc_by_id(cx->opt->encoding),
                                g, sizeof g, posvar, subjvar, lenvar, &trunc)) {'
+# RE-ANCHORED 2026-10-05 ([K82] (B), lane k82hbuild), INTENT RE-VERIFIED: the
+# function gained a SIBLING MODE, the handoff's round-up, which is not gated on
+# nullability; the plant still suppresses the offset-0 rule at every site and
+# leaves the round-up alone (which S471/S472 own).

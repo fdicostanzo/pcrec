@@ -1,0 +1,2548 @@
+# tests/litscan/handoff.rxt -- [K82] (B), THE HANDOFF: the run pre-check's first
+# window hit c, less K, becomes the search body's scan start
+# (docs/design/litscan_k82h.md §4.2 item 2; docs/spec/tuning.md §2.41).
+#
+# Written by gen_handoff.py; every expectation is an oracle's: a `byte` block's
+# from python3 `re` AND libpcre2 (which must agree), a `utf8` block's from
+# libpcre2 under PCRE2_UTF | PCRE2_MATCH_INVALID_UTF alone (so `# pcre2-only`:
+# the harness's python tier reads subjects as latin-1), as is a byte block
+# python cannot compile (\G, \K). Cells sit at EVERY
+# character-boundary start position, because the handoff moves where a scan
+# begins. Each block is written on the default route and under `engine vm`,
+# the forced VM with no DFA scan, which never hands off: the same cells, the
+# control route. The rows are the design's witnesses: the maximum offset on
+# all three routes (the unanchored scan's reverse pass is bounded by
+# search_from, so a K one byte short only shows on the attempt and hybrid
+# routes), two occurrences (the gate's leftmost contract), a decoy, multibyte
+# width, ill-formed text before the window, seeded starts, \G on the attempt
+# route and on the hybrid (whose prefilter reads its third argument as \G),
+# \K, find-all subjects (dense and overlapping) and two unbounded controls.
+
+# K = 5, unanchored DFA: the match begins K bytes before the window; startpos 1..5 cross the clamp (S470)
+pattern x{2,5}(?i:cat)
+features all
+encoding byte
+ms 0 "xxxxxCaT" 0 8
+ms 1 "xxxxxCaT" 1 8
+ms 2 "xxxxxCaT" 2 8
+ms 3 "xxxxxCaT" 3 8
+ns 4 "xxxxxCaT"
+ns 5 "xxxxxCaT"
+ns 6 "xxxxxCaT"
+ns 7 "xxxxxCaT"
+ns 8 "xxxxxCaT"
+ms 0 "xxxxxcat" 0 8
+ms 1 "xxxxxcat" 1 8
+ms 2 "xxxxxcat" 2 8
+ms 3 "xxxxxcat" 3 8
+ns 4 "xxxxxcat"
+ns 5 "xxxxxcat"
+ns 6 "xxxxxcat"
+ns 7 "xxxxxcat"
+ns 8 "xxxxxcat"
+ms 0 "zxxxxxcat" 1 9
+ms 1 "zxxxxxcat" 1 9
+ms 2 "zxxxxxcat" 2 9
+ms 3 "zxxxxxcat" 3 9
+ms 4 "zxxxxxcat" 4 9
+ns 5 "zxxxxxcat"
+ns 6 "zxxxxxcat"
+ns 7 "zxxxxxcat"
+ns 8 "zxxxxxcat"
+ns 9 "zxxxxxcat"
+ms 0 "xxcat" 0 5
+ns 1 "xxcat"
+ns 2 "xxcat"
+ns 3 "xxcat"
+ns 4 "xxcat"
+ns 5 "xxcat"
+ms 0 "xxxxxxcat" 1 9
+ms 1 "xxxxxxcat" 1 9
+ms 2 "xxxxxxcat" 2 9
+ms 3 "xxxxxxcat" 3 9
+ms 4 "xxxxxxcat" 4 9
+ns 5 "xxxxxxcat"
+ns 6 "xxxxxxcat"
+ns 7 "xxxxxxcat"
+ns 8 "xxxxxxcat"
+ns 9 "xxxxxxcat"
+ms 0 "\x0axxxxxcat" 1 9
+ms 1 "\x0axxxxxcat" 1 9
+ms 2 "\x0axxxxxcat" 2 9
+ms 3 "\x0axxxxxcat" 3 9
+ms 4 "\x0axxxxxcat" 4 9
+ns 5 "\x0axxxxxcat"
+ns 6 "\x0axxxxxcat"
+ns 7 "\x0axxxxxcat"
+ns 8 "\x0axxxxxcat"
+ns 9 "\x0axxxxxcat"
+
+# K = 5, unanchored DFA: the match begins K bytes before the window; startpos 1..5 cross the clamp (S470) [engine vm]
+pattern x{2,5}(?i:cat)
+features all
+encoding byte
+engine vm
+ms 0 "xxxxxCaT" 0 8
+ms 1 "xxxxxCaT" 1 8
+ms 2 "xxxxxCaT" 2 8
+ms 3 "xxxxxCaT" 3 8
+ns 4 "xxxxxCaT"
+ns 5 "xxxxxCaT"
+ns 6 "xxxxxCaT"
+ns 7 "xxxxxCaT"
+ns 8 "xxxxxCaT"
+ms 0 "xxxxxcat" 0 8
+ms 1 "xxxxxcat" 1 8
+ms 2 "xxxxxcat" 2 8
+ms 3 "xxxxxcat" 3 8
+ns 4 "xxxxxcat"
+ns 5 "xxxxxcat"
+ns 6 "xxxxxcat"
+ns 7 "xxxxxcat"
+ns 8 "xxxxxcat"
+ms 0 "zxxxxxcat" 1 9
+ms 1 "zxxxxxcat" 1 9
+ms 2 "zxxxxxcat" 2 9
+ms 3 "zxxxxxcat" 3 9
+ms 4 "zxxxxxcat" 4 9
+ns 5 "zxxxxxcat"
+ns 6 "zxxxxxcat"
+ns 7 "zxxxxxcat"
+ns 8 "zxxxxxcat"
+ns 9 "zxxxxxcat"
+ms 0 "xxcat" 0 5
+ns 1 "xxcat"
+ns 2 "xxcat"
+ns 3 "xxcat"
+ns 4 "xxcat"
+ns 5 "xxcat"
+ms 0 "xxxxxxcat" 1 9
+ms 1 "xxxxxxcat" 1 9
+ms 2 "xxxxxxcat" 2 9
+ms 3 "xxxxxxcat" 3 9
+ms 4 "xxxxxxcat" 4 9
+ns 5 "xxxxxxcat"
+ns 6 "xxxxxxcat"
+ns 7 "xxxxxxcat"
+ns 8 "xxxxxxcat"
+ns 9 "xxxxxxcat"
+ms 0 "\x0axxxxxcat" 1 9
+ms 1 "\x0axxxxxcat" 1 9
+ms 2 "\x0axxxxxcat" 2 9
+ms 3 "\x0axxxxxcat" 3 9
+ms 4 "\x0axxxxxcat" 4 9
+ns 5 "\x0axxxxxcat"
+ns 6 "\x0axxxxxcat"
+ns 7 "\x0axxxxxcat"
+ns 8 "\x0axxxxxcat"
+ns 9 "\x0axxxxxcat"
+
+# pcre2-only
+# K = 5 under utf8: the same, with a multibyte character before it
+pattern x{2,5}(?i:cat)
+features all
+encoding utf8
+ms 0 "xxxxxCaT" 0 8
+ms 1 "xxxxxCaT" 1 8
+ms 2 "xxxxxCaT" 2 8
+ms 3 "xxxxxCaT" 3 8
+ns 4 "xxxxxCaT"
+ns 5 "xxxxxCaT"
+ns 6 "xxxxxCaT"
+ns 7 "xxxxxCaT"
+ns 8 "xxxxxCaT"
+ms 0 "xxxxxcat" 0 8
+ms 1 "xxxxxcat" 1 8
+ms 2 "xxxxxcat" 2 8
+ms 3 "xxxxxcat" 3 8
+ns 4 "xxxxxcat"
+ns 5 "xxxxxcat"
+ns 6 "xxxxxcat"
+ns 7 "xxxxxcat"
+ns 8 "xxxxxcat"
+ms 0 "zxxxxxcat" 1 9
+ms 1 "zxxxxxcat" 1 9
+ms 2 "zxxxxxcat" 2 9
+ms 3 "zxxxxxcat" 3 9
+ms 4 "zxxxxxcat" 4 9
+ns 5 "zxxxxxcat"
+ns 6 "zxxxxxcat"
+ns 7 "zxxxxxcat"
+ns 8 "zxxxxxcat"
+ns 9 "zxxxxxcat"
+ms 0 "xxcat" 0 5
+ns 1 "xxcat"
+ns 2 "xxcat"
+ns 3 "xxcat"
+ns 4 "xxcat"
+ns 5 "xxcat"
+ms 0 "\xc3\xa9xxxxxcat" 2 10
+ms 2 "\xc3\xa9xxxxxcat" 2 10
+ms 3 "\xc3\xa9xxxxxcat" 3 10
+ms 4 "\xc3\xa9xxxxxcat" 4 10
+ms 5 "\xc3\xa9xxxxxcat" 5 10
+ns 6 "\xc3\xa9xxxxxcat"
+ns 7 "\xc3\xa9xxxxxcat"
+ns 8 "\xc3\xa9xxxxxcat"
+ns 9 "\xc3\xa9xxxxxcat"
+ns 10 "\xc3\xa9xxxxxcat"
+
+# pcre2-only
+# K = 5 under utf8: the same, with a multibyte character before it [engine vm]
+pattern x{2,5}(?i:cat)
+features all
+encoding utf8
+engine vm
+ms 0 "xxxxxCaT" 0 8
+ms 1 "xxxxxCaT" 1 8
+ms 2 "xxxxxCaT" 2 8
+ms 3 "xxxxxCaT" 3 8
+ns 4 "xxxxxCaT"
+ns 5 "xxxxxCaT"
+ns 6 "xxxxxCaT"
+ns 7 "xxxxxCaT"
+ns 8 "xxxxxCaT"
+ms 0 "xxxxxcat" 0 8
+ms 1 "xxxxxcat" 1 8
+ms 2 "xxxxxcat" 2 8
+ms 3 "xxxxxcat" 3 8
+ns 4 "xxxxxcat"
+ns 5 "xxxxxcat"
+ns 6 "xxxxxcat"
+ns 7 "xxxxxcat"
+ns 8 "xxxxxcat"
+ms 0 "zxxxxxcat" 1 9
+ms 1 "zxxxxxcat" 1 9
+ms 2 "zxxxxxcat" 2 9
+ms 3 "zxxxxxcat" 3 9
+ms 4 "zxxxxxcat" 4 9
+ns 5 "zxxxxxcat"
+ns 6 "zxxxxxcat"
+ns 7 "zxxxxxcat"
+ns 8 "zxxxxxcat"
+ns 9 "zxxxxxcat"
+ms 0 "xxcat" 0 5
+ns 1 "xxcat"
+ns 2 "xxcat"
+ns 3 "xxcat"
+ns 4 "xxcat"
+ns 5 "xxcat"
+ms 0 "\xc3\xa9xxxxxcat" 2 10
+ms 2 "\xc3\xa9xxxxxcat" 2 10
+ms 3 "\xc3\xa9xxxxxcat" 3 10
+ms 4 "\xc3\xa9xxxxxcat" 4 10
+ms 5 "\xc3\xa9xxxxxcat" 5 10
+ns 6 "\xc3\xa9xxxxxcat"
+ns 7 "\xc3\xa9xxxxxcat"
+ns 8 "\xc3\xa9xxxxxcat"
+ns 9 "\xc3\xa9xxxxxcat"
+ns 10 "\xc3\xa9xxxxxcat"
+
+# K = 2 from the WIDER alternation branch (S466 takes the left branch's width)
+pattern (?:a|bb)?catdog
+features all
+encoding byte
+ms 0 "bbcatdog" 0 8
+ms 1 "bbcatdog" 2 8
+ms 2 "bbcatdog" 2 8
+ns 3 "bbcatdog"
+ns 4 "bbcatdog"
+ns 5 "bbcatdog"
+ns 6 "bbcatdog"
+ns 7 "bbcatdog"
+ns 8 "bbcatdog"
+ms 0 "acatdog" 0 7
+ms 1 "acatdog" 1 7
+ns 2 "acatdog"
+ns 3 "acatdog"
+ns 4 "acatdog"
+ns 5 "acatdog"
+ns 6 "acatdog"
+ns 7 "acatdog"
+ms 0 "catdog" 0 6
+ns 1 "catdog"
+ns 2 "catdog"
+ns 3 "catdog"
+ns 4 "catdog"
+ns 5 "catdog"
+ns 6 "catdog"
+ms 0 "zbbcatdog" 1 9
+ms 1 "zbbcatdog" 1 9
+ms 2 "zbbcatdog" 3 9
+ms 3 "zbbcatdog" 3 9
+ns 4 "zbbcatdog"
+ns 5 "zbbcatdog"
+ns 6 "zbbcatdog"
+ns 7 "zbbcatdog"
+ns 8 "zbbcatdog"
+ns 9 "zbbcatdog"
+ns 0 "bbcatdo"
+ns 1 "bbcatdo"
+ns 2 "bbcatdo"
+ns 3 "bbcatdo"
+ns 4 "bbcatdo"
+ns 5 "bbcatdo"
+ns 6 "bbcatdo"
+ns 7 "bbcatdo"
+ms 0 "bcatdog" 1 7
+ms 1 "bcatdog" 1 7
+ns 2 "bcatdog"
+ns 3 "bcatdog"
+ns 4 "bcatdog"
+ns 5 "bcatdog"
+ns 6 "bcatdog"
+ns 7 "bcatdog"
+
+# K = 2 from the WIDER alternation branch (S466 takes the left branch's width) [engine vm]
+pattern (?:a|bb)?catdog
+features all
+encoding byte
+engine vm
+ms 0 "bbcatdog" 0 8
+ms 1 "bbcatdog" 2 8
+ms 2 "bbcatdog" 2 8
+ns 3 "bbcatdog"
+ns 4 "bbcatdog"
+ns 5 "bbcatdog"
+ns 6 "bbcatdog"
+ns 7 "bbcatdog"
+ns 8 "bbcatdog"
+ms 0 "acatdog" 0 7
+ms 1 "acatdog" 1 7
+ns 2 "acatdog"
+ns 3 "acatdog"
+ns 4 "acatdog"
+ns 5 "acatdog"
+ns 6 "acatdog"
+ns 7 "acatdog"
+ms 0 "catdog" 0 6
+ns 1 "catdog"
+ns 2 "catdog"
+ns 3 "catdog"
+ns 4 "catdog"
+ns 5 "catdog"
+ns 6 "catdog"
+ms 0 "zbbcatdog" 1 9
+ms 1 "zbbcatdog" 1 9
+ms 2 "zbbcatdog" 3 9
+ms 3 "zbbcatdog" 3 9
+ns 4 "zbbcatdog"
+ns 5 "zbbcatdog"
+ns 6 "zbbcatdog"
+ns 7 "zbbcatdog"
+ns 8 "zbbcatdog"
+ns 9 "zbbcatdog"
+ns 0 "bbcatdo"
+ns 1 "bbcatdo"
+ns 2 "bbcatdo"
+ns 3 "bbcatdo"
+ns 4 "bbcatdo"
+ns 5 "bbcatdo"
+ns 6 "bbcatdo"
+ns 7 "bbcatdo"
+ms 0 "bcatdog" 1 7
+ms 1 "bcatdog" 1 7
+ns 2 "bcatdog"
+ns 3 "bcatdog"
+ns 4 "bcatdog"
+ns 5 "bcatdog"
+ns 6 "bcatdog"
+ns 7 "bcatdog"
+
+# the ATTEMPT route (ENG_ATTEMPT): the first attempt starts at the handoff; a K one byte short (S463) or no clamp (S470) moves the answer here, where the unanchored scan's reverse pass hides both
+pattern (?m)^x{2,5}(?i:cat)
+features all
+encoding byte
+ms 0 "xxxxxCaT" 0 8
+ns 1 "xxxxxCaT"
+ns 2 "xxxxxCaT"
+ns 3 "xxxxxCaT"
+ns 4 "xxxxxCaT"
+ns 5 "xxxxxCaT"
+ns 6 "xxxxxCaT"
+ns 7 "xxxxxCaT"
+ns 8 "xxxxxCaT"
+ms 0 "xxxxxcat" 0 8
+ns 1 "xxxxxcat"
+ns 2 "xxxxxcat"
+ns 3 "xxxxxcat"
+ns 4 "xxxxxcat"
+ns 5 "xxxxxcat"
+ns 6 "xxxxxcat"
+ns 7 "xxxxxcat"
+ns 8 "xxxxxcat"
+ns 0 "zxxxxxcat"
+ns 1 "zxxxxxcat"
+ns 2 "zxxxxxcat"
+ns 3 "zxxxxxcat"
+ns 4 "zxxxxxcat"
+ns 5 "zxxxxxcat"
+ns 6 "zxxxxxcat"
+ns 7 "zxxxxxcat"
+ns 8 "zxxxxxcat"
+ns 9 "zxxxxxcat"
+ms 0 "\x0axxxxxcat" 1 9
+ms 1 "\x0axxxxxcat" 1 9
+ns 2 "\x0axxxxxcat"
+ns 3 "\x0axxxxxcat"
+ns 4 "\x0axxxxxcat"
+ns 5 "\x0axxxxxcat"
+ns 6 "\x0axxxxxcat"
+ns 7 "\x0axxxxxcat"
+ns 8 "\x0axxxxxcat"
+ns 9 "\x0axxxxxcat"
+ms 0 "ab\x0axxcat\x0axxxxxcat" 3 8
+ms 1 "ab\x0axxcat\x0axxxxxcat" 3 8
+ms 2 "ab\x0axxcat\x0axxxxxcat" 3 8
+ms 3 "ab\x0axxcat\x0axxxxxcat" 3 8
+ms 4 "ab\x0axxcat\x0axxxxxcat" 9 17
+ms 5 "ab\x0axxcat\x0axxxxxcat" 9 17
+ms 6 "ab\x0axxcat\x0axxxxxcat" 9 17
+ms 7 "ab\x0axxcat\x0axxxxxcat" 9 17
+ms 8 "ab\x0axxcat\x0axxxxxcat" 9 17
+ms 9 "ab\x0axxcat\x0axxxxxcat" 9 17
+ns 10 "ab\x0axxcat\x0axxxxxcat"
+ns 11 "ab\x0axxcat\x0axxxxxcat"
+ns 12 "ab\x0axxcat\x0axxxxxcat"
+ns 13 "ab\x0axxcat\x0axxxxxcat"
+ns 14 "ab\x0axxcat\x0axxxxxcat"
+ns 15 "ab\x0axxcat\x0axxxxxcat"
+ns 16 "ab\x0axxcat\x0axxxxxcat"
+ns 17 "ab\x0axxcat\x0axxxxxcat"
+
+# the ATTEMPT route (ENG_ATTEMPT): the first attempt starts at the handoff; a K one byte short (S463) or no clamp (S470) moves the answer here, where the unanchored scan's reverse pass hides both [engine vm]
+pattern (?m)^x{2,5}(?i:cat)
+features all
+encoding byte
+engine vm
+ms 0 "xxxxxCaT" 0 8
+ns 1 "xxxxxCaT"
+ns 2 "xxxxxCaT"
+ns 3 "xxxxxCaT"
+ns 4 "xxxxxCaT"
+ns 5 "xxxxxCaT"
+ns 6 "xxxxxCaT"
+ns 7 "xxxxxCaT"
+ns 8 "xxxxxCaT"
+ms 0 "xxxxxcat" 0 8
+ns 1 "xxxxxcat"
+ns 2 "xxxxxcat"
+ns 3 "xxxxxcat"
+ns 4 "xxxxxcat"
+ns 5 "xxxxxcat"
+ns 6 "xxxxxcat"
+ns 7 "xxxxxcat"
+ns 8 "xxxxxcat"
+ns 0 "zxxxxxcat"
+ns 1 "zxxxxxcat"
+ns 2 "zxxxxxcat"
+ns 3 "zxxxxxcat"
+ns 4 "zxxxxxcat"
+ns 5 "zxxxxxcat"
+ns 6 "zxxxxxcat"
+ns 7 "zxxxxxcat"
+ns 8 "zxxxxxcat"
+ns 9 "zxxxxxcat"
+ms 0 "\x0axxxxxcat" 1 9
+ms 1 "\x0axxxxxcat" 1 9
+ns 2 "\x0axxxxxcat"
+ns 3 "\x0axxxxxcat"
+ns 4 "\x0axxxxxcat"
+ns 5 "\x0axxxxxcat"
+ns 6 "\x0axxxxxcat"
+ns 7 "\x0axxxxxcat"
+ns 8 "\x0axxxxxcat"
+ns 9 "\x0axxxxxcat"
+ms 0 "ab\x0axxcat\x0axxxxxcat" 3 8
+ms 1 "ab\x0axxcat\x0axxxxxcat" 3 8
+ms 2 "ab\x0axxcat\x0axxxxxcat" 3 8
+ms 3 "ab\x0axxcat\x0axxxxxcat" 3 8
+ms 4 "ab\x0axxcat\x0axxxxxcat" 9 17
+ms 5 "ab\x0axxcat\x0axxxxxcat" 9 17
+ms 6 "ab\x0axxcat\x0axxxxxcat" 9 17
+ms 7 "ab\x0axxcat\x0axxxxxcat" 9 17
+ms 8 "ab\x0axxcat\x0axxxxxcat" 9 17
+ms 9 "ab\x0axxcat\x0axxxxxcat" 9 17
+ns 10 "ab\x0axxcat\x0axxxxxcat"
+ns 11 "ab\x0axxcat\x0axxxxxcat"
+ns 12 "ab\x0axxcat\x0axxxxxcat"
+ns 13 "ab\x0axxcat\x0axxxxxcat"
+ns 14 "ab\x0axxcat\x0axxxxxcat"
+ns 15 "ab\x0axxcat\x0axxxxxcat"
+ns 16 "ab\x0axxcat\x0axxxxxcat"
+ns 17 "ab\x0axxcat\x0axxxxxcat"
+
+# the attempt route, K = 2 from the wider branch (S463, S466)
+pattern (?m)^(?:a|bb)?catdog
+features all
+encoding byte
+ms 0 "bbcatdog" 0 8
+ns 1 "bbcatdog"
+ns 2 "bbcatdog"
+ns 3 "bbcatdog"
+ns 4 "bbcatdog"
+ns 5 "bbcatdog"
+ns 6 "bbcatdog"
+ns 7 "bbcatdog"
+ns 8 "bbcatdog"
+ms 0 "\x0abbcatdog" 1 9
+ms 1 "\x0abbcatdog" 1 9
+ns 2 "\x0abbcatdog"
+ns 3 "\x0abbcatdog"
+ns 4 "\x0abbcatdog"
+ns 5 "\x0abbcatdog"
+ns 6 "\x0abbcatdog"
+ns 7 "\x0abbcatdog"
+ns 8 "\x0abbcatdog"
+ns 9 "\x0abbcatdog"
+ms 0 "x\x0aacatdog" 2 9
+ms 1 "x\x0aacatdog" 2 9
+ms 2 "x\x0aacatdog" 2 9
+ns 3 "x\x0aacatdog"
+ns 4 "x\x0aacatdog"
+ns 5 "x\x0aacatdog"
+ns 6 "x\x0aacatdog"
+ns 7 "x\x0aacatdog"
+ns 8 "x\x0aacatdog"
+ns 9 "x\x0aacatdog"
+ns 0 "zbbcatdog"
+ns 1 "zbbcatdog"
+ns 2 "zbbcatdog"
+ns 3 "zbbcatdog"
+ns 4 "zbbcatdog"
+ns 5 "zbbcatdog"
+ns 6 "zbbcatdog"
+ns 7 "zbbcatdog"
+ns 8 "zbbcatdog"
+ns 9 "zbbcatdog"
+
+# the attempt route, K = 2 from the wider branch (S463, S466) [engine vm]
+pattern (?m)^(?:a|bb)?catdog
+features all
+encoding byte
+engine vm
+ms 0 "bbcatdog" 0 8
+ns 1 "bbcatdog"
+ns 2 "bbcatdog"
+ns 3 "bbcatdog"
+ns 4 "bbcatdog"
+ns 5 "bbcatdog"
+ns 6 "bbcatdog"
+ns 7 "bbcatdog"
+ns 8 "bbcatdog"
+ms 0 "\x0abbcatdog" 1 9
+ms 1 "\x0abbcatdog" 1 9
+ns 2 "\x0abbcatdog"
+ns 3 "\x0abbcatdog"
+ns 4 "\x0abbcatdog"
+ns 5 "\x0abbcatdog"
+ns 6 "\x0abbcatdog"
+ns 7 "\x0abbcatdog"
+ns 8 "\x0abbcatdog"
+ns 9 "\x0abbcatdog"
+ms 0 "x\x0aacatdog" 2 9
+ms 1 "x\x0aacatdog" 2 9
+ms 2 "x\x0aacatdog" 2 9
+ns 3 "x\x0aacatdog"
+ns 4 "x\x0aacatdog"
+ns 5 "x\x0aacatdog"
+ns 6 "x\x0aacatdog"
+ns 7 "x\x0aacatdog"
+ns 8 "x\x0aacatdog"
+ns 9 "x\x0aacatdog"
+ns 0 "zbbcatdog"
+ns 1 "zbbcatdog"
+ns 2 "zbbcatdog"
+ns 3 "zbbcatdog"
+ns 4 "zbbcatdog"
+ns 5 "zbbcatdog"
+ns 6 "zbbcatdog"
+ns 7 "zbbcatdog"
+ns 8 "zbbcatdog"
+ns 9 "zbbcatdog"
+
+# the VM HYBRID: the first prefilter call starts at the handoff; its own reverse pass is bounded there, so a short K (S463) or a missing clamp (S470) moves the answer
+pattern x{2,5}((?i:cat))
+features all
+encoding byte
+ms 0 "xxxxxCaT" 0 8
+ms 1 "xxxxxCaT" 1 8
+ms 2 "xxxxxCaT" 2 8
+ms 3 "xxxxxCaT" 3 8
+ns 4 "xxxxxCaT"
+ns 5 "xxxxxCaT"
+ns 6 "xxxxxCaT"
+ns 7 "xxxxxCaT"
+ns 8 "xxxxxCaT"
+ms 0 "xxxxxcat" 0 8
+ms 1 "xxxxxcat" 1 8
+ms 2 "xxxxxcat" 2 8
+ms 3 "xxxxxcat" 3 8
+ns 4 "xxxxxcat"
+ns 5 "xxxxxcat"
+ns 6 "xxxxxcat"
+ns 7 "xxxxxcat"
+ns 8 "xxxxxcat"
+ms 0 "zxxxxxcat" 1 9
+ms 1 "zxxxxxcat" 1 9
+ms 2 "zxxxxxcat" 2 9
+ms 3 "zxxxxxcat" 3 9
+ms 4 "zxxxxxcat" 4 9
+ns 5 "zxxxxxcat"
+ns 6 "zxxxxxcat"
+ns 7 "zxxxxxcat"
+ns 8 "zxxxxxcat"
+ns 9 "zxxxxxcat"
+ms 0 "xxcat" 0 5
+ns 1 "xxcat"
+ns 2 "xxcat"
+ns 3 "xxcat"
+ns 4 "xxcat"
+ns 5 "xxcat"
+
+# the VM HYBRID: the first prefilter call starts at the handoff; its own reverse pass is bounded there, so a short K (S463) or a missing clamp (S470) moves the answer [engine vm]
+pattern x{2,5}((?i:cat))
+features all
+encoding byte
+engine vm
+ms 0 "xxxxxCaT" 0 8
+ms 1 "xxxxxCaT" 1 8
+ms 2 "xxxxxCaT" 2 8
+ms 3 "xxxxxCaT" 3 8
+ns 4 "xxxxxCaT"
+ns 5 "xxxxxCaT"
+ns 6 "xxxxxCaT"
+ns 7 "xxxxxCaT"
+ns 8 "xxxxxCaT"
+ms 0 "xxxxxcat" 0 8
+ms 1 "xxxxxcat" 1 8
+ms 2 "xxxxxcat" 2 8
+ms 3 "xxxxxcat" 3 8
+ns 4 "xxxxxcat"
+ns 5 "xxxxxcat"
+ns 6 "xxxxxcat"
+ns 7 "xxxxxcat"
+ns 8 "xxxxxcat"
+ms 0 "zxxxxxcat" 1 9
+ms 1 "zxxxxxcat" 1 9
+ms 2 "zxxxxxcat" 2 9
+ms 3 "zxxxxxcat" 3 9
+ms 4 "zxxxxxcat" 4 9
+ns 5 "zxxxxxcat"
+ns 6 "zxxxxxcat"
+ns 7 "zxxxxxcat"
+ns 8 "zxxxxxcat"
+ns 9 "zxxxxxcat"
+ms 0 "xxcat" 0 5
+ns 1 "xxcat"
+ns 2 "xxcat"
+ns 3 "xxcat"
+ns 4 "xxcat"
+ns 5 "xxcat"
+
+# the hybrid, K = 2 from the wider branch (S466)
+pattern (?:a|bb)?(cat)dog
+features all
+encoding byte
+ms 0 "bbcatdog" 0 8
+ms 1 "bbcatdog" 2 8
+ms 2 "bbcatdog" 2 8
+ns 3 "bbcatdog"
+ns 4 "bbcatdog"
+ns 5 "bbcatdog"
+ns 6 "bbcatdog"
+ns 7 "bbcatdog"
+ns 8 "bbcatdog"
+ms 0 "acatdog" 0 7
+ms 1 "acatdog" 1 7
+ns 2 "acatdog"
+ns 3 "acatdog"
+ns 4 "acatdog"
+ns 5 "acatdog"
+ns 6 "acatdog"
+ns 7 "acatdog"
+ms 0 "zbbcatdog" 1 9
+ms 1 "zbbcatdog" 1 9
+ms 2 "zbbcatdog" 3 9
+ms 3 "zbbcatdog" 3 9
+ns 4 "zbbcatdog"
+ns 5 "zbbcatdog"
+ns 6 "zbbcatdog"
+ns 7 "zbbcatdog"
+ns 8 "zbbcatdog"
+ns 9 "zbbcatdog"
+
+# the hybrid, K = 2 from the wider branch (S466) [engine vm]
+pattern (?:a|bb)?(cat)dog
+features all
+encoding byte
+engine vm
+ms 0 "bbcatdog" 0 8
+ms 1 "bbcatdog" 2 8
+ms 2 "bbcatdog" 2 8
+ns 3 "bbcatdog"
+ns 4 "bbcatdog"
+ns 5 "bbcatdog"
+ns 6 "bbcatdog"
+ns 7 "bbcatdog"
+ns 8 "bbcatdog"
+ms 0 "acatdog" 0 7
+ms 1 "acatdog" 1 7
+ns 2 "acatdog"
+ns 3 "acatdog"
+ns 4 "acatdog"
+ns 5 "acatdog"
+ns 6 "acatdog"
+ns 7 "acatdog"
+ms 0 "zbbcatdog" 1 9
+ms 1 "zbbcatdog" 1 9
+ms 2 "zbbcatdog" 3 9
+ms 3 "zbbcatdog" 3 9
+ns 4 "zbbcatdog"
+ns 5 "zbbcatdog"
+ns 6 "zbbcatdog"
+ns 7 "zbbcatdog"
+ns 8 "zbbcatdog"
+ns 9 "zbbcatdog"
+
+# two occurrences: the first is the match's own window and a second follows it, so a gate returning a later occurrence starts past the match (S464)
+pattern (?i)cat
+features all
+encoding byte
+ms 0 "CAT CAT" 0 3
+ms 1 "CAT CAT" 4 7
+ms 2 "CAT CAT" 4 7
+ms 3 "CAT CAT" 4 7
+ms 4 "CAT CAT" 4 7
+ns 5 "CAT CAT"
+ns 6 "CAT CAT"
+ns 7 "CAT CAT"
+ms 0 "cat cat cat" 0 3
+ms 1 "cat cat cat" 4 7
+ms 2 "cat cat cat" 4 7
+ms 3 "cat cat cat" 4 7
+ms 4 "cat cat cat" 4 7
+ms 5 "cat cat cat" 8 11
+ms 6 "cat cat cat" 8 11
+ms 7 "cat cat cat" 8 11
+ms 8 "cat cat cat" 8 11
+ns 9 "cat cat cat"
+ns 10 "cat cat cat"
+ns 11 "cat cat cat"
+ms 0 "cAtCaTcat" 0 3
+ms 1 "cAtCaTcat" 3 6
+ms 2 "cAtCaTcat" 3 6
+ms 3 "cAtCaTcat" 3 6
+ms 4 "cAtCaTcat" 6 9
+ms 5 "cAtCaTcat" 6 9
+ms 6 "cAtCaTcat" 6 9
+ns 7 "cAtCaTcat"
+ns 8 "cAtCaTcat"
+ns 9 "cAtCaTcat"
+ms 0 "xcatxcat" 1 4
+ms 1 "xcatxcat" 1 4
+ms 2 "xcatxcat" 5 8
+ms 3 "xcatxcat" 5 8
+ms 4 "xcatxcat" 5 8
+ms 5 "xcatxcat" 5 8
+ns 6 "xcatxcat"
+ns 7 "xcatxcat"
+ns 8 "xcatxcat"
+
+# two occurrences: the first is the match's own window and a second follows it, so a gate returning a later occurrence starts past the match (S464) [engine vm]
+pattern (?i)cat
+features all
+encoding byte
+engine vm
+ms 0 "CAT CAT" 0 3
+ms 1 "CAT CAT" 4 7
+ms 2 "CAT CAT" 4 7
+ms 3 "CAT CAT" 4 7
+ms 4 "CAT CAT" 4 7
+ns 5 "CAT CAT"
+ns 6 "CAT CAT"
+ns 7 "CAT CAT"
+ms 0 "cat cat cat" 0 3
+ms 1 "cat cat cat" 4 7
+ms 2 "cat cat cat" 4 7
+ms 3 "cat cat cat" 4 7
+ms 4 "cat cat cat" 4 7
+ms 5 "cat cat cat" 8 11
+ms 6 "cat cat cat" 8 11
+ms 7 "cat cat cat" 8 11
+ms 8 "cat cat cat" 8 11
+ns 9 "cat cat cat"
+ns 10 "cat cat cat"
+ns 11 "cat cat cat"
+ms 0 "cAtCaTcat" 0 3
+ms 1 "cAtCaTcat" 3 6
+ms 2 "cAtCaTcat" 3 6
+ms 3 "cAtCaTcat" 3 6
+ms 4 "cAtCaTcat" 6 9
+ms 5 "cAtCaTcat" 6 9
+ms 6 "cAtCaTcat" 6 9
+ns 7 "cAtCaTcat"
+ns 8 "cAtCaTcat"
+ns 9 "cAtCaTcat"
+ms 0 "xcatxcat" 1 4
+ms 1 "xcatxcat" 1 4
+ms 2 "xcatxcat" 5 8
+ms 3 "xcatxcat" 5 8
+ms 4 "xcatxcat" 5 8
+ms 5 "xcatxcat" 5 8
+ns 6 "xcatxcat"
+ns 7 "xcatxcat"
+ns 8 "xcatxcat"
+
+# two occurrences at K = 5 (S464)
+pattern x{2,5}(?i:cat)
+features all
+encoding byte
+ms 0 "xxxxxcat xcat" 0 8
+ms 1 "xxxxxcat xcat" 1 8
+ms 2 "xxxxxcat xcat" 2 8
+ms 3 "xxxxxcat xcat" 3 8
+ns 4 "xxxxxcat xcat"
+ns 5 "xxxxxcat xcat"
+ns 6 "xxxxxcat xcat"
+ns 7 "xxxxxcat xcat"
+ns 8 "xxxxxcat xcat"
+ns 9 "xxxxxcat xcat"
+ns 10 "xxxxxcat xcat"
+ns 11 "xxxxxcat xcat"
+ns 12 "xxxxxcat xcat"
+ns 13 "xxxxxcat xcat"
+ms 0 "xxcat xxcat" 0 5
+ms 1 "xxcat xxcat" 6 11
+ms 2 "xxcat xxcat" 6 11
+ms 3 "xxcat xxcat" 6 11
+ms 4 "xxcat xxcat" 6 11
+ms 5 "xxcat xxcat" 6 11
+ms 6 "xxcat xxcat" 6 11
+ns 7 "xxcat xxcat"
+ns 8 "xxcat xxcat"
+ns 9 "xxcat xxcat"
+ns 10 "xxcat xxcat"
+ns 11 "xxcat xxcat"
+ms 0 "xxcatxxxxxcat" 0 5
+ms 1 "xxcatxxxxxcat" 5 13
+ms 2 "xxcatxxxxxcat" 5 13
+ms 3 "xxcatxxxxxcat" 5 13
+ms 4 "xxcatxxxxxcat" 5 13
+ms 5 "xxcatxxxxxcat" 5 13
+ms 6 "xxcatxxxxxcat" 6 13
+ms 7 "xxcatxxxxxcat" 7 13
+ms 8 "xxcatxxxxxcat" 8 13
+ns 9 "xxcatxxxxxcat"
+ns 10 "xxcatxxxxxcat"
+ns 11 "xxcatxxxxxcat"
+ns 12 "xxcatxxxxxcat"
+ns 13 "xxcatxxxxxcat"
+
+# two occurrences at K = 5 (S464) [engine vm]
+pattern x{2,5}(?i:cat)
+features all
+encoding byte
+engine vm
+ms 0 "xxxxxcat xcat" 0 8
+ms 1 "xxxxxcat xcat" 1 8
+ms 2 "xxxxxcat xcat" 2 8
+ms 3 "xxxxxcat xcat" 3 8
+ns 4 "xxxxxcat xcat"
+ns 5 "xxxxxcat xcat"
+ns 6 "xxxxxcat xcat"
+ns 7 "xxxxxcat xcat"
+ns 8 "xxxxxcat xcat"
+ns 9 "xxxxxcat xcat"
+ns 10 "xxxxxcat xcat"
+ns 11 "xxxxxcat xcat"
+ns 12 "xxxxxcat xcat"
+ns 13 "xxxxxcat xcat"
+ms 0 "xxcat xxcat" 0 5
+ms 1 "xxcat xxcat" 6 11
+ms 2 "xxcat xxcat" 6 11
+ms 3 "xxcat xxcat" 6 11
+ms 4 "xxcat xxcat" 6 11
+ms 5 "xxcat xxcat" 6 11
+ms 6 "xxcat xxcat" 6 11
+ns 7 "xxcat xxcat"
+ns 8 "xxcat xxcat"
+ns 9 "xxcat xxcat"
+ns 10 "xxcat xxcat"
+ns 11 "xxcat xxcat"
+ms 0 "xxcatxxxxxcat" 0 5
+ms 1 "xxcatxxxxxcat" 5 13
+ms 2 "xxcatxxxxxcat" 5 13
+ms 3 "xxcatxxxxxcat" 5 13
+ms 4 "xxcatxxxxxcat" 5 13
+ms 5 "xxcatxxxxxcat" 5 13
+ms 6 "xxcatxxxxxcat" 6 13
+ms 7 "xxcatxxxxxcat" 7 13
+ms 8 "xxcatxxxxxcat" 8 13
+ns 9 "xxcatxxxxxcat"
+ns 10 "xxcatxxxxxcat"
+ns 11 "xxcatxxxxxcat"
+ns 12 "xxcatxxxxxcat"
+ns 13 "xxcatxxxxxcat"
+
+# pcre2-only
+# two occurrences under utf8 (S464)
+pattern (?i)cat
+features all
+encoding utf8
+ms 0 "CAT CAT" 0 3
+ms 1 "CAT CAT" 4 7
+ms 2 "CAT CAT" 4 7
+ms 3 "CAT CAT" 4 7
+ms 4 "CAT CAT" 4 7
+ns 5 "CAT CAT"
+ns 6 "CAT CAT"
+ns 7 "CAT CAT"
+ms 0 "\xc3\xa9cat\xc3\xa9cat" 2 5
+ms 2 "\xc3\xa9cat\xc3\xa9cat" 2 5
+ms 3 "\xc3\xa9cat\xc3\xa9cat" 7 10
+ms 4 "\xc3\xa9cat\xc3\xa9cat" 7 10
+ms 5 "\xc3\xa9cat\xc3\xa9cat" 7 10
+ms 7 "\xc3\xa9cat\xc3\xa9cat" 7 10
+ns 8 "\xc3\xa9cat\xc3\xa9cat"
+ns 9 "\xc3\xa9cat\xc3\xa9cat"
+ns 10 "\xc3\xa9cat\xc3\xa9cat"
+
+# pcre2-only
+# two occurrences under utf8 (S464) [engine vm]
+pattern (?i)cat
+features all
+encoding utf8
+engine vm
+ms 0 "CAT CAT" 0 3
+ms 1 "CAT CAT" 4 7
+ms 2 "CAT CAT" 4 7
+ms 3 "CAT CAT" 4 7
+ms 4 "CAT CAT" 4 7
+ns 5 "CAT CAT"
+ns 6 "CAT CAT"
+ns 7 "CAT CAT"
+ms 0 "\xc3\xa9cat\xc3\xa9cat" 2 5
+ms 2 "\xc3\xa9cat\xc3\xa9cat" 2 5
+ms 3 "\xc3\xa9cat\xc3\xa9cat" 7 10
+ms 4 "\xc3\xa9cat\xc3\xa9cat" 7 10
+ms 5 "\xc3\xa9cat\xc3\xa9cat" 7 10
+ms 7 "\xc3\xa9cat\xc3\xa9cat" 7 10
+ns 8 "\xc3\xa9cat\xc3\xa9cat"
+ns 9 "\xc3\xa9cat\xc3\xa9cat"
+ns 10 "\xc3\xa9cat\xc3\xa9cat"
+
+# a decoy: a run occurrence the match does not use sits within K before the real one
+pattern a{3}(?i:cat)
+features all
+encoding byte
+ms 0 "cat aaacat" 4 10
+ms 1 "cat aaacat" 4 10
+ms 2 "cat aaacat" 4 10
+ms 3 "cat aaacat" 4 10
+ms 4 "cat aaacat" 4 10
+ns 5 "cat aaacat"
+ns 6 "cat aaacat"
+ns 7 "cat aaacat"
+ns 8 "cat aaacat"
+ns 9 "cat aaacat"
+ns 10 "cat aaacat"
+ms 0 "acat aaacat" 5 11
+ms 1 "acat aaacat" 5 11
+ms 2 "acat aaacat" 5 11
+ms 3 "acat aaacat" 5 11
+ms 4 "acat aaacat" 5 11
+ms 5 "acat aaacat" 5 11
+ns 6 "acat aaacat"
+ns 7 "acat aaacat"
+ns 8 "acat aaacat"
+ns 9 "acat aaacat"
+ns 10 "acat aaacat"
+ns 11 "acat aaacat"
+ms 0 "aaacat" 0 6
+ns 1 "aaacat"
+ns 2 "aaacat"
+ns 3 "aaacat"
+ns 4 "aaacat"
+ns 5 "aaacat"
+ns 6 "aaacat"
+
+# a decoy: a run occurrence the match does not use sits within K before the real one [engine vm]
+pattern a{3}(?i:cat)
+features all
+encoding byte
+engine vm
+ms 0 "cat aaacat" 4 10
+ms 1 "cat aaacat" 4 10
+ms 2 "cat aaacat" 4 10
+ms 3 "cat aaacat" 4 10
+ms 4 "cat aaacat" 4 10
+ns 5 "cat aaacat"
+ns 6 "cat aaacat"
+ns 7 "cat aaacat"
+ns 8 "cat aaacat"
+ns 9 "cat aaacat"
+ns 10 "cat aaacat"
+ms 0 "acat aaacat" 5 11
+ms 1 "acat aaacat" 5 11
+ms 2 "acat aaacat" 5 11
+ms 3 "acat aaacat" 5 11
+ms 4 "acat aaacat" 5 11
+ms 5 "acat aaacat" 5 11
+ns 6 "acat aaacat"
+ns 7 "acat aaacat"
+ns 8 "acat aaacat"
+ns 9 "acat aaacat"
+ns 10 "acat aaacat"
+ns 11 "acat aaacat"
+ms 0 "aaacat" 0 6
+ns 1 "aaacat"
+ns 2 "aaacat"
+ns 3 "aaacat"
+ns 4 "aaacat"
+ns 5 "aaacat"
+ns 6 "aaacat"
+
+# pcre2-only
+# K = 2: (?i)s matches U+017F, two bytes, before the window TRA; a character count (S465) says 1 and lo lands inside the match
+pattern (?i)straße
+features all
+encoding utf8
+ms 0 "\xc5\xbftra\xc3\x9fe" 0 8
+ns 2 "\xc5\xbftra\xc3\x9fe"
+ns 3 "\xc5\xbftra\xc3\x9fe"
+ns 4 "\xc5\xbftra\xc3\x9fe"
+ns 5 "\xc5\xbftra\xc3\x9fe"
+ns 7 "\xc5\xbftra\xc3\x9fe"
+ns 8 "\xc5\xbftra\xc3\x9fe"
+ms 0 "\xc3\xa9\xc5\xbftra\xc3\x9fe" 2 10
+ms 2 "\xc3\xa9\xc5\xbftra\xc3\x9fe" 2 10
+ns 4 "\xc3\xa9\xc5\xbftra\xc3\x9fe"
+ns 5 "\xc3\xa9\xc5\xbftra\xc3\x9fe"
+ns 6 "\xc3\xa9\xc5\xbftra\xc3\x9fe"
+ns 7 "\xc3\xa9\xc5\xbftra\xc3\x9fe"
+ns 9 "\xc3\xa9\xc5\xbftra\xc3\x9fe"
+ns 10 "\xc3\xa9\xc5\xbftra\xc3\x9fe"
+ms 0 "x\xc5\xbfTRA\xc3\x9fE" 1 9
+ms 1 "x\xc5\xbfTRA\xc3\x9fE" 1 9
+ns 3 "x\xc5\xbfTRA\xc3\x9fE"
+ns 4 "x\xc5\xbfTRA\xc3\x9fE"
+ns 5 "x\xc5\xbfTRA\xc3\x9fE"
+ns 6 "x\xc5\xbfTRA\xc3\x9fE"
+ns 8 "x\xc5\xbfTRA\xc3\x9fE"
+ns 9 "x\xc5\xbfTRA\xc3\x9fE"
+ms 0 "stra\xc3\x9fe" 0 7
+ns 1 "stra\xc3\x9fe"
+ns 2 "stra\xc3\x9fe"
+ns 3 "stra\xc3\x9fe"
+ns 4 "stra\xc3\x9fe"
+ns 6 "stra\xc3\x9fe"
+ns 7 "stra\xc3\x9fe"
+ms 0 "\xc5\xbf\xc5\xbftra\xc3\x9fe" 2 10
+ms 2 "\xc5\xbf\xc5\xbftra\xc3\x9fe" 2 10
+ns 4 "\xc5\xbf\xc5\xbftra\xc3\x9fe"
+ns 5 "\xc5\xbf\xc5\xbftra\xc3\x9fe"
+ns 6 "\xc5\xbf\xc5\xbftra\xc3\x9fe"
+ns 7 "\xc5\xbf\xc5\xbftra\xc3\x9fe"
+ns 9 "\xc5\xbf\xc5\xbftra\xc3\x9fe"
+ns 10 "\xc5\xbf\xc5\xbftra\xc3\x9fe"
+
+# pcre2-only
+# K = 2: (?i)s matches U+017F, two bytes, before the window TRA; a character count (S465) says 1 and lo lands inside the match [engine vm]
+pattern (?i)straße
+features all
+encoding utf8
+engine vm
+ms 0 "\xc5\xbftra\xc3\x9fe" 0 8
+ns 2 "\xc5\xbftra\xc3\x9fe"
+ns 3 "\xc5\xbftra\xc3\x9fe"
+ns 4 "\xc5\xbftra\xc3\x9fe"
+ns 5 "\xc5\xbftra\xc3\x9fe"
+ns 7 "\xc5\xbftra\xc3\x9fe"
+ns 8 "\xc5\xbftra\xc3\x9fe"
+ms 0 "\xc3\xa9\xc5\xbftra\xc3\x9fe" 2 10
+ms 2 "\xc3\xa9\xc5\xbftra\xc3\x9fe" 2 10
+ns 4 "\xc3\xa9\xc5\xbftra\xc3\x9fe"
+ns 5 "\xc3\xa9\xc5\xbftra\xc3\x9fe"
+ns 6 "\xc3\xa9\xc5\xbftra\xc3\x9fe"
+ns 7 "\xc3\xa9\xc5\xbftra\xc3\x9fe"
+ns 9 "\xc3\xa9\xc5\xbftra\xc3\x9fe"
+ns 10 "\xc3\xa9\xc5\xbftra\xc3\x9fe"
+ms 0 "x\xc5\xbfTRA\xc3\x9fE" 1 9
+ms 1 "x\xc5\xbfTRA\xc3\x9fE" 1 9
+ns 3 "x\xc5\xbfTRA\xc3\x9fE"
+ns 4 "x\xc5\xbfTRA\xc3\x9fE"
+ns 5 "x\xc5\xbfTRA\xc3\x9fE"
+ns 6 "x\xc5\xbfTRA\xc3\x9fE"
+ns 8 "x\xc5\xbfTRA\xc3\x9fE"
+ns 9 "x\xc5\xbfTRA\xc3\x9fE"
+ms 0 "stra\xc3\x9fe" 0 7
+ns 1 "stra\xc3\x9fe"
+ns 2 "stra\xc3\x9fe"
+ns 3 "stra\xc3\x9fe"
+ns 4 "stra\xc3\x9fe"
+ns 6 "stra\xc3\x9fe"
+ns 7 "stra\xc3\x9fe"
+ms 0 "\xc5\xbf\xc5\xbftra\xc3\x9fe" 2 10
+ms 2 "\xc5\xbf\xc5\xbftra\xc3\x9fe" 2 10
+ns 4 "\xc5\xbf\xc5\xbftra\xc3\x9fe"
+ns 5 "\xc5\xbf\xc5\xbftra\xc3\x9fe"
+ns 6 "\xc5\xbf\xc5\xbftra\xc3\x9fe"
+ns 7 "\xc5\xbf\xc5\xbftra\xc3\x9fe"
+ns 9 "\xc5\xbf\xc5\xbftra\xc3\x9fe"
+ns 10 "\xc5\xbf\xc5\xbftra\xc3\x9fe"
+
+# pcre2-only
+# K = 2 on the hybrid, where the answer moves (S465)
+pattern (?i)stra(ße)
+features all
+encoding utf8
+ms 0 "\xc5\xbftra\xc3\x9fe" 0 8
+ns 2 "\xc5\xbftra\xc3\x9fe"
+ns 3 "\xc5\xbftra\xc3\x9fe"
+ns 4 "\xc5\xbftra\xc3\x9fe"
+ns 5 "\xc5\xbftra\xc3\x9fe"
+ns 7 "\xc5\xbftra\xc3\x9fe"
+ns 8 "\xc5\xbftra\xc3\x9fe"
+ms 0 "\xc3\xa9\xc5\xbftra\xc3\x9fe" 2 10
+ms 2 "\xc3\xa9\xc5\xbftra\xc3\x9fe" 2 10
+ns 4 "\xc3\xa9\xc5\xbftra\xc3\x9fe"
+ns 5 "\xc3\xa9\xc5\xbftra\xc3\x9fe"
+ns 6 "\xc3\xa9\xc5\xbftra\xc3\x9fe"
+ns 7 "\xc3\xa9\xc5\xbftra\xc3\x9fe"
+ns 9 "\xc3\xa9\xc5\xbftra\xc3\x9fe"
+ns 10 "\xc3\xa9\xc5\xbftra\xc3\x9fe"
+ms 0 "\xc5\xbf\xc5\xbftra\xc3\x9fe" 2 10
+ms 2 "\xc5\xbf\xc5\xbftra\xc3\x9fe" 2 10
+ns 4 "\xc5\xbf\xc5\xbftra\xc3\x9fe"
+ns 5 "\xc5\xbf\xc5\xbftra\xc3\x9fe"
+ns 6 "\xc5\xbf\xc5\xbftra\xc3\x9fe"
+ns 7 "\xc5\xbf\xc5\xbftra\xc3\x9fe"
+ns 9 "\xc5\xbf\xc5\xbftra\xc3\x9fe"
+ns 10 "\xc5\xbf\xc5\xbftra\xc3\x9fe"
+
+# pcre2-only
+# K = 2 on the hybrid, where the answer moves (S465) [engine vm]
+pattern (?i)stra(ße)
+features all
+encoding utf8
+engine vm
+ms 0 "\xc5\xbftra\xc3\x9fe" 0 8
+ns 2 "\xc5\xbftra\xc3\x9fe"
+ns 3 "\xc5\xbftra\xc3\x9fe"
+ns 4 "\xc5\xbftra\xc3\x9fe"
+ns 5 "\xc5\xbftra\xc3\x9fe"
+ns 7 "\xc5\xbftra\xc3\x9fe"
+ns 8 "\xc5\xbftra\xc3\x9fe"
+ms 0 "\xc3\xa9\xc5\xbftra\xc3\x9fe" 2 10
+ms 2 "\xc3\xa9\xc5\xbftra\xc3\x9fe" 2 10
+ns 4 "\xc3\xa9\xc5\xbftra\xc3\x9fe"
+ns 5 "\xc3\xa9\xc5\xbftra\xc3\x9fe"
+ns 6 "\xc3\xa9\xc5\xbftra\xc3\x9fe"
+ns 7 "\xc3\xa9\xc5\xbftra\xc3\x9fe"
+ns 9 "\xc3\xa9\xc5\xbftra\xc3\x9fe"
+ns 10 "\xc3\xa9\xc5\xbftra\xc3\x9fe"
+ms 0 "\xc5\xbf\xc5\xbftra\xc3\x9fe" 2 10
+ms 2 "\xc5\xbf\xc5\xbftra\xc3\x9fe" 2 10
+ns 4 "\xc5\xbf\xc5\xbftra\xc3\x9fe"
+ns 5 "\xc5\xbf\xc5\xbftra\xc3\x9fe"
+ns 6 "\xc5\xbf\xc5\xbftra\xc3\x9fe"
+ns 7 "\xc5\xbf\xc5\xbftra\xc3\x9fe"
+ns 9 "\xc5\xbf\xc5\xbftra\xc3\x9fe"
+ns 10 "\xc5\xbf\xc5\xbftra\xc3\x9fe"
+
+# pcre2-only
+# K = 12: three characters of up to four bytes
+pattern .{3}cat
+features all
+encoding utf8
+ms 0 "\xf0\x9f\x98\x80\xf0\x9f\x98\x80\xf0\x9f\x98\x80cat" 0 15
+ns 4 "\xf0\x9f\x98\x80\xf0\x9f\x98\x80\xf0\x9f\x98\x80cat"
+ns 8 "\xf0\x9f\x98\x80\xf0\x9f\x98\x80\xf0\x9f\x98\x80cat"
+ns 12 "\xf0\x9f\x98\x80\xf0\x9f\x98\x80\xf0\x9f\x98\x80cat"
+ns 13 "\xf0\x9f\x98\x80\xf0\x9f\x98\x80\xf0\x9f\x98\x80cat"
+ns 14 "\xf0\x9f\x98\x80\xf0\x9f\x98\x80\xf0\x9f\x98\x80cat"
+ns 15 "\xf0\x9f\x98\x80\xf0\x9f\x98\x80\xf0\x9f\x98\x80cat"
+ms 0 "\xe2\x82\xac\xe2\x82\xac\xe2\x82\xaccat" 0 12
+ns 3 "\xe2\x82\xac\xe2\x82\xac\xe2\x82\xaccat"
+ns 6 "\xe2\x82\xac\xe2\x82\xac\xe2\x82\xaccat"
+ns 9 "\xe2\x82\xac\xe2\x82\xac\xe2\x82\xaccat"
+ns 10 "\xe2\x82\xac\xe2\x82\xac\xe2\x82\xaccat"
+ns 11 "\xe2\x82\xac\xe2\x82\xac\xe2\x82\xaccat"
+ns 12 "\xe2\x82\xac\xe2\x82\xac\xe2\x82\xaccat"
+ms 0 "\xc3\xa9\xc3\xa9\xc3\xa9cat" 0 9
+ns 2 "\xc3\xa9\xc3\xa9\xc3\xa9cat"
+ns 4 "\xc3\xa9\xc3\xa9\xc3\xa9cat"
+ns 6 "\xc3\xa9\xc3\xa9\xc3\xa9cat"
+ns 7 "\xc3\xa9\xc3\xa9\xc3\xa9cat"
+ns 8 "\xc3\xa9\xc3\xa9\xc3\xa9cat"
+ns 9 "\xc3\xa9\xc3\xa9\xc3\xa9cat"
+ms 0 "a\xf0\x9f\x98\x80\xf0\x9f\x98\x80\xf0\x9f\x98\x80cat" 1 16
+ms 1 "a\xf0\x9f\x98\x80\xf0\x9f\x98\x80\xf0\x9f\x98\x80cat" 1 16
+ns 5 "a\xf0\x9f\x98\x80\xf0\x9f\x98\x80\xf0\x9f\x98\x80cat"
+ns 9 "a\xf0\x9f\x98\x80\xf0\x9f\x98\x80\xf0\x9f\x98\x80cat"
+ns 13 "a\xf0\x9f\x98\x80\xf0\x9f\x98\x80\xf0\x9f\x98\x80cat"
+ns 14 "a\xf0\x9f\x98\x80\xf0\x9f\x98\x80\xf0\x9f\x98\x80cat"
+ns 15 "a\xf0\x9f\x98\x80\xf0\x9f\x98\x80\xf0\x9f\x98\x80cat"
+ns 16 "a\xf0\x9f\x98\x80\xf0\x9f\x98\x80\xf0\x9f\x98\x80cat"
+ns 0 "\xf0\x9f\x98\x80cat"
+ns 4 "\xf0\x9f\x98\x80cat"
+ns 5 "\xf0\x9f\x98\x80cat"
+ns 6 "\xf0\x9f\x98\x80cat"
+ns 7 "\xf0\x9f\x98\x80cat"
+
+# pcre2-only
+# K = 12: three characters of up to four bytes [engine vm]
+pattern .{3}cat
+features all
+encoding utf8
+engine vm
+ms 0 "\xf0\x9f\x98\x80\xf0\x9f\x98\x80\xf0\x9f\x98\x80cat" 0 15
+ns 4 "\xf0\x9f\x98\x80\xf0\x9f\x98\x80\xf0\x9f\x98\x80cat"
+ns 8 "\xf0\x9f\x98\x80\xf0\x9f\x98\x80\xf0\x9f\x98\x80cat"
+ns 12 "\xf0\x9f\x98\x80\xf0\x9f\x98\x80\xf0\x9f\x98\x80cat"
+ns 13 "\xf0\x9f\x98\x80\xf0\x9f\x98\x80\xf0\x9f\x98\x80cat"
+ns 14 "\xf0\x9f\x98\x80\xf0\x9f\x98\x80\xf0\x9f\x98\x80cat"
+ns 15 "\xf0\x9f\x98\x80\xf0\x9f\x98\x80\xf0\x9f\x98\x80cat"
+ms 0 "\xe2\x82\xac\xe2\x82\xac\xe2\x82\xaccat" 0 12
+ns 3 "\xe2\x82\xac\xe2\x82\xac\xe2\x82\xaccat"
+ns 6 "\xe2\x82\xac\xe2\x82\xac\xe2\x82\xaccat"
+ns 9 "\xe2\x82\xac\xe2\x82\xac\xe2\x82\xaccat"
+ns 10 "\xe2\x82\xac\xe2\x82\xac\xe2\x82\xaccat"
+ns 11 "\xe2\x82\xac\xe2\x82\xac\xe2\x82\xaccat"
+ns 12 "\xe2\x82\xac\xe2\x82\xac\xe2\x82\xaccat"
+ms 0 "\xc3\xa9\xc3\xa9\xc3\xa9cat" 0 9
+ns 2 "\xc3\xa9\xc3\xa9\xc3\xa9cat"
+ns 4 "\xc3\xa9\xc3\xa9\xc3\xa9cat"
+ns 6 "\xc3\xa9\xc3\xa9\xc3\xa9cat"
+ns 7 "\xc3\xa9\xc3\xa9\xc3\xa9cat"
+ns 8 "\xc3\xa9\xc3\xa9\xc3\xa9cat"
+ns 9 "\xc3\xa9\xc3\xa9\xc3\xa9cat"
+ms 0 "a\xf0\x9f\x98\x80\xf0\x9f\x98\x80\xf0\x9f\x98\x80cat" 1 16
+ms 1 "a\xf0\x9f\x98\x80\xf0\x9f\x98\x80\xf0\x9f\x98\x80cat" 1 16
+ns 5 "a\xf0\x9f\x98\x80\xf0\x9f\x98\x80\xf0\x9f\x98\x80cat"
+ns 9 "a\xf0\x9f\x98\x80\xf0\x9f\x98\x80\xf0\x9f\x98\x80cat"
+ns 13 "a\xf0\x9f\x98\x80\xf0\x9f\x98\x80\xf0\x9f\x98\x80cat"
+ns 14 "a\xf0\x9f\x98\x80\xf0\x9f\x98\x80\xf0\x9f\x98\x80cat"
+ns 15 "a\xf0\x9f\x98\x80\xf0\x9f\x98\x80\xf0\x9f\x98\x80cat"
+ns 16 "a\xf0\x9f\x98\x80\xf0\x9f\x98\x80\xf0\x9f\x98\x80cat"
+ns 0 "\xf0\x9f\x98\x80cat"
+ns 4 "\xf0\x9f\x98\x80cat"
+ns 5 "\xf0\x9f\x98\x80cat"
+ns 6 "\xf0\x9f\x98\x80cat"
+ns 7 "\xf0\x9f\x98\x80cat"
+
+# pcre2-only
+# K = 12 on the hybrid
+pattern (.{3})cat
+features all
+encoding utf8
+ms 0 "\xf0\x9f\x98\x80\xf0\x9f\x98\x80\xf0\x9f\x98\x80cat" 0 15
+ns 4 "\xf0\x9f\x98\x80\xf0\x9f\x98\x80\xf0\x9f\x98\x80cat"
+ns 8 "\xf0\x9f\x98\x80\xf0\x9f\x98\x80\xf0\x9f\x98\x80cat"
+ns 12 "\xf0\x9f\x98\x80\xf0\x9f\x98\x80\xf0\x9f\x98\x80cat"
+ns 13 "\xf0\x9f\x98\x80\xf0\x9f\x98\x80\xf0\x9f\x98\x80cat"
+ns 14 "\xf0\x9f\x98\x80\xf0\x9f\x98\x80\xf0\x9f\x98\x80cat"
+ns 15 "\xf0\x9f\x98\x80\xf0\x9f\x98\x80\xf0\x9f\x98\x80cat"
+ms 0 "a\xf0\x9f\x98\x80\xf0\x9f\x98\x80\xf0\x9f\x98\x80cat" 1 16
+ms 1 "a\xf0\x9f\x98\x80\xf0\x9f\x98\x80\xf0\x9f\x98\x80cat" 1 16
+ns 5 "a\xf0\x9f\x98\x80\xf0\x9f\x98\x80\xf0\x9f\x98\x80cat"
+ns 9 "a\xf0\x9f\x98\x80\xf0\x9f\x98\x80\xf0\x9f\x98\x80cat"
+ns 13 "a\xf0\x9f\x98\x80\xf0\x9f\x98\x80\xf0\x9f\x98\x80cat"
+ns 14 "a\xf0\x9f\x98\x80\xf0\x9f\x98\x80\xf0\x9f\x98\x80cat"
+ns 15 "a\xf0\x9f\x98\x80\xf0\x9f\x98\x80\xf0\x9f\x98\x80cat"
+ns 16 "a\xf0\x9f\x98\x80\xf0\x9f\x98\x80\xf0\x9f\x98\x80cat"
+ms 0 "\xe2\x82\xac\xf0\x9f\x98\x80\xc3\xa9cat" 0 12
+ns 3 "\xe2\x82\xac\xf0\x9f\x98\x80\xc3\xa9cat"
+ns 7 "\xe2\x82\xac\xf0\x9f\x98\x80\xc3\xa9cat"
+ns 9 "\xe2\x82\xac\xf0\x9f\x98\x80\xc3\xa9cat"
+ns 10 "\xe2\x82\xac\xf0\x9f\x98\x80\xc3\xa9cat"
+ns 11 "\xe2\x82\xac\xf0\x9f\x98\x80\xc3\xa9cat"
+ns 12 "\xe2\x82\xac\xf0\x9f\x98\x80\xc3\xa9cat"
+
+# pcre2-only
+# K = 12 on the hybrid [engine vm]
+pattern (.{3})cat
+features all
+encoding utf8
+engine vm
+ms 0 "\xf0\x9f\x98\x80\xf0\x9f\x98\x80\xf0\x9f\x98\x80cat" 0 15
+ns 4 "\xf0\x9f\x98\x80\xf0\x9f\x98\x80\xf0\x9f\x98\x80cat"
+ns 8 "\xf0\x9f\x98\x80\xf0\x9f\x98\x80\xf0\x9f\x98\x80cat"
+ns 12 "\xf0\x9f\x98\x80\xf0\x9f\x98\x80\xf0\x9f\x98\x80cat"
+ns 13 "\xf0\x9f\x98\x80\xf0\x9f\x98\x80\xf0\x9f\x98\x80cat"
+ns 14 "\xf0\x9f\x98\x80\xf0\x9f\x98\x80\xf0\x9f\x98\x80cat"
+ns 15 "\xf0\x9f\x98\x80\xf0\x9f\x98\x80\xf0\x9f\x98\x80cat"
+ms 0 "a\xf0\x9f\x98\x80\xf0\x9f\x98\x80\xf0\x9f\x98\x80cat" 1 16
+ms 1 "a\xf0\x9f\x98\x80\xf0\x9f\x98\x80\xf0\x9f\x98\x80cat" 1 16
+ns 5 "a\xf0\x9f\x98\x80\xf0\x9f\x98\x80\xf0\x9f\x98\x80cat"
+ns 9 "a\xf0\x9f\x98\x80\xf0\x9f\x98\x80\xf0\x9f\x98\x80cat"
+ns 13 "a\xf0\x9f\x98\x80\xf0\x9f\x98\x80\xf0\x9f\x98\x80cat"
+ns 14 "a\xf0\x9f\x98\x80\xf0\x9f\x98\x80\xf0\x9f\x98\x80cat"
+ns 15 "a\xf0\x9f\x98\x80\xf0\x9f\x98\x80\xf0\x9f\x98\x80cat"
+ns 16 "a\xf0\x9f\x98\x80\xf0\x9f\x98\x80\xf0\x9f\x98\x80cat"
+ms 0 "\xe2\x82\xac\xf0\x9f\x98\x80\xc3\xa9cat" 0 12
+ns 3 "\xe2\x82\xac\xf0\x9f\x98\x80\xc3\xa9cat"
+ns 7 "\xe2\x82\xac\xf0\x9f\x98\x80\xc3\xa9cat"
+ns 9 "\xe2\x82\xac\xf0\x9f\x98\x80\xc3\xa9cat"
+ns 10 "\xe2\x82\xac\xf0\x9f\x98\x80\xc3\xa9cat"
+ns 11 "\xe2\x82\xac\xf0\x9f\x98\x80\xc3\xa9cat"
+ns 12 "\xe2\x82\xac\xf0\x9f\x98\x80\xc3\xa9cat"
+
+# pcre2-only
+# K = 4: two two-byte characters
+pattern é{2}cat
+features all
+encoding utf8
+ms 0 "\xc3\xa9\xc3\xa9cat" 0 7
+ns 2 "\xc3\xa9\xc3\xa9cat"
+ns 4 "\xc3\xa9\xc3\xa9cat"
+ns 5 "\xc3\xa9\xc3\xa9cat"
+ns 6 "\xc3\xa9\xc3\xa9cat"
+ns 7 "\xc3\xa9\xc3\xa9cat"
+ms 0 "x\xc3\xa9\xc3\xa9cat" 1 8
+ms 1 "x\xc3\xa9\xc3\xa9cat" 1 8
+ns 3 "x\xc3\xa9\xc3\xa9cat"
+ns 5 "x\xc3\xa9\xc3\xa9cat"
+ns 6 "x\xc3\xa9\xc3\xa9cat"
+ns 7 "x\xc3\xa9\xc3\xa9cat"
+ns 8 "x\xc3\xa9\xc3\xa9cat"
+ns 0 "\xc3\xa9cat"
+ns 2 "\xc3\xa9cat"
+ns 3 "\xc3\xa9cat"
+ns 4 "\xc3\xa9cat"
+ns 5 "\xc3\xa9cat"
+
+# pcre2-only
+# K = 4: two two-byte characters [engine vm]
+pattern é{2}cat
+features all
+encoding utf8
+engine vm
+ms 0 "\xc3\xa9\xc3\xa9cat" 0 7
+ns 2 "\xc3\xa9\xc3\xa9cat"
+ns 4 "\xc3\xa9\xc3\xa9cat"
+ns 5 "\xc3\xa9\xc3\xa9cat"
+ns 6 "\xc3\xa9\xc3\xa9cat"
+ns 7 "\xc3\xa9\xc3\xa9cat"
+ms 0 "x\xc3\xa9\xc3\xa9cat" 1 8
+ms 1 "x\xc3\xa9\xc3\xa9cat" 1 8
+ns 3 "x\xc3\xa9\xc3\xa9cat"
+ns 5 "x\xc3\xa9\xc3\xa9cat"
+ns 6 "x\xc3\xa9\xc3\xa9cat"
+ns 7 "x\xc3\xa9\xc3\xa9cat"
+ns 8 "x\xc3\xa9\xc3\xa9cat"
+ns 0 "\xc3\xa9cat"
+ns 2 "\xc3\xa9cat"
+ns 3 "\xc3\xa9cat"
+ns 4 "\xc3\xa9cat"
+ns 5 "\xc3\xa9cat"
+
+# pcre2-only
+# a run that begins on a continuation byte (K = 1)
+pattern (?:éx|ʩx)
+features all
+encoding utf8
+ms 0 "\xc3\xa9x" 0 3
+ns 2 "\xc3\xa9x"
+ns 3 "\xc3\xa9x"
+ms 0 "\xca\xa9x" 0 3
+ns 2 "\xca\xa9x"
+ns 3 "\xca\xa9x"
+ms 0 "z\xc3\xa9x" 1 4
+ms 1 "z\xc3\xa9x" 1 4
+ns 3 "z\xc3\xa9x"
+ns 4 "z\xc3\xa9x"
+ms 0 "\xca\xa9\xca\xa9x" 2 5
+ms 2 "\xca\xa9\xca\xa9x" 2 5
+ns 4 "\xca\xa9\xca\xa9x"
+ns 5 "\xca\xa9\xca\xa9x"
+ns 0 "x"
+ns 1 "x"
+
+# pcre2-only
+# a run that begins on a continuation byte (K = 1) [engine vm]
+pattern (?:éx|ʩx)
+features all
+encoding utf8
+engine vm
+ms 0 "\xc3\xa9x" 0 3
+ns 2 "\xc3\xa9x"
+ns 3 "\xc3\xa9x"
+ms 0 "\xca\xa9x" 0 3
+ns 2 "\xca\xa9x"
+ns 3 "\xca\xa9x"
+ms 0 "z\xc3\xa9x" 1 4
+ms 1 "z\xc3\xa9x" 1 4
+ns 3 "z\xc3\xa9x"
+ns 4 "z\xc3\xa9x"
+ms 0 "\xca\xa9\xca\xa9x" 2 5
+ms 2 "\xca\xa9\xca\xa9x" 2 5
+ns 4 "\xca\xa9\xca\xa9x"
+ns 5 "\xca\xa9\xca\xa9x"
+ns 0 "x"
+ns 1 "x"
+
+# pcre2-only
+# 4-6 stray continuation bytes immediately before the window: c - K lands among them and the round-up walks them all
+pattern x{2,5}(?i:cat)
+features all
+encoding utf8
+ms 4 "\x80\x80\x80\x80xxcat" 4 9
+ns 5 "\x80\x80\x80\x80xxcat"
+ns 6 "\x80\x80\x80\x80xxcat"
+ns 7 "\x80\x80\x80\x80xxcat"
+ns 8 "\x80\x80\x80\x80xxcat"
+ns 9 "\x80\x80\x80\x80xxcat"
+ms 5 "\x80\x80\x80\x80\x80xxxxxcat" 5 13
+ms 6 "\x80\x80\x80\x80\x80xxxxxcat" 6 13
+ms 7 "\x80\x80\x80\x80\x80xxxxxcat" 7 13
+ms 8 "\x80\x80\x80\x80\x80xxxxxcat" 8 13
+ns 9 "\x80\x80\x80\x80\x80xxxxxcat"
+ns 10 "\x80\x80\x80\x80\x80xxxxxcat"
+ns 11 "\x80\x80\x80\x80\x80xxxxxcat"
+ns 12 "\x80\x80\x80\x80\x80xxxxxcat"
+ns 13 "\x80\x80\x80\x80\x80xxxxxcat"
+ms 0 "xx\x80\x80\x80\x80\x80\x80xxcat" 8 13
+ms 1 "xx\x80\x80\x80\x80\x80\x80xxcat" 8 13
+ms 8 "xx\x80\x80\x80\x80\x80\x80xxcat" 8 13
+ns 9 "xx\x80\x80\x80\x80\x80\x80xxcat"
+ns 10 "xx\x80\x80\x80\x80\x80\x80xxcat"
+ns 11 "xx\x80\x80\x80\x80\x80\x80xxcat"
+ns 12 "xx\x80\x80\x80\x80\x80\x80xxcat"
+ns 13 "xx\x80\x80\x80\x80\x80\x80xxcat"
+ns 6 "\x80\x80\x80\x80\x80\x80cat"
+ns 7 "\x80\x80\x80\x80\x80\x80cat"
+ns 8 "\x80\x80\x80\x80\x80\x80cat"
+ns 9 "\x80\x80\x80\x80\x80\x80cat"
+ms 0 "xxxxxcat\x80\x80\x80\x80" 0 8
+ms 1 "xxxxxcat\x80\x80\x80\x80" 1 8
+ms 2 "xxxxxcat\x80\x80\x80\x80" 2 8
+ms 3 "xxxxxcat\x80\x80\x80\x80" 3 8
+ns 4 "xxxxxcat\x80\x80\x80\x80"
+ns 5 "xxxxxcat\x80\x80\x80\x80"
+ns 6 "xxxxxcat\x80\x80\x80\x80"
+ns 7 "xxxxxcat\x80\x80\x80\x80"
+ns 12 "xxxxxcat\x80\x80\x80\x80"
+
+# pcre2-only
+# 4-6 stray continuation bytes immediately before the window: c - K lands among them and the round-up walks them all [engine vm]
+pattern x{2,5}(?i:cat)
+features all
+encoding utf8
+engine vm
+ms 4 "\x80\x80\x80\x80xxcat" 4 9
+ns 5 "\x80\x80\x80\x80xxcat"
+ns 6 "\x80\x80\x80\x80xxcat"
+ns 7 "\x80\x80\x80\x80xxcat"
+ns 8 "\x80\x80\x80\x80xxcat"
+ns 9 "\x80\x80\x80\x80xxcat"
+ms 5 "\x80\x80\x80\x80\x80xxxxxcat" 5 13
+ms 6 "\x80\x80\x80\x80\x80xxxxxcat" 6 13
+ms 7 "\x80\x80\x80\x80\x80xxxxxcat" 7 13
+ms 8 "\x80\x80\x80\x80\x80xxxxxcat" 8 13
+ns 9 "\x80\x80\x80\x80\x80xxxxxcat"
+ns 10 "\x80\x80\x80\x80\x80xxxxxcat"
+ns 11 "\x80\x80\x80\x80\x80xxxxxcat"
+ns 12 "\x80\x80\x80\x80\x80xxxxxcat"
+ns 13 "\x80\x80\x80\x80\x80xxxxxcat"
+ms 0 "xx\x80\x80\x80\x80\x80\x80xxcat" 8 13
+ms 1 "xx\x80\x80\x80\x80\x80\x80xxcat" 8 13
+ms 8 "xx\x80\x80\x80\x80\x80\x80xxcat" 8 13
+ns 9 "xx\x80\x80\x80\x80\x80\x80xxcat"
+ns 10 "xx\x80\x80\x80\x80\x80\x80xxcat"
+ns 11 "xx\x80\x80\x80\x80\x80\x80xxcat"
+ns 12 "xx\x80\x80\x80\x80\x80\x80xxcat"
+ns 13 "xx\x80\x80\x80\x80\x80\x80xxcat"
+ns 6 "\x80\x80\x80\x80\x80\x80cat"
+ns 7 "\x80\x80\x80\x80\x80\x80cat"
+ns 8 "\x80\x80\x80\x80\x80\x80cat"
+ns 9 "\x80\x80\x80\x80\x80\x80cat"
+ms 0 "xxxxxcat\x80\x80\x80\x80" 0 8
+ms 1 "xxxxxcat\x80\x80\x80\x80" 1 8
+ms 2 "xxxxxcat\x80\x80\x80\x80" 2 8
+ms 3 "xxxxxcat\x80\x80\x80\x80" 3 8
+ns 4 "xxxxxcat\x80\x80\x80\x80"
+ns 5 "xxxxxcat\x80\x80\x80\x80"
+ns 6 "xxxxxcat\x80\x80\x80\x80"
+ns 7 "xxxxxcat\x80\x80\x80\x80"
+ns 12 "xxxxxcat\x80\x80\x80\x80"
+
+# pcre2-only
+# ill-formed text before a two-byte fold
+pattern (?i)straße
+features all
+encoding utf8
+ms 4 "\x80\x80\x80\x80\xc5\xbftra\xc3\x9fe" 4 12
+ns 6 "\x80\x80\x80\x80\xc5\xbftra\xc3\x9fe"
+ns 7 "\x80\x80\x80\x80\xc5\xbftra\xc3\x9fe"
+ns 8 "\x80\x80\x80\x80\xc5\xbftra\xc3\x9fe"
+ns 9 "\x80\x80\x80\x80\xc5\xbftra\xc3\x9fe"
+ns 11 "\x80\x80\x80\x80\xc5\xbftra\xc3\x9fe"
+ns 12 "\x80\x80\x80\x80\xc5\xbftra\xc3\x9fe"
+ns 5 "\x80\x80\x80\x80\x80tra\xc3\x9fe"
+ns 6 "\x80\x80\x80\x80\x80tra\xc3\x9fe"
+ns 7 "\x80\x80\x80\x80\x80tra\xc3\x9fe"
+ns 8 "\x80\x80\x80\x80\x80tra\xc3\x9fe"
+ns 10 "\x80\x80\x80\x80\x80tra\xc3\x9fe"
+ns 11 "\x80\x80\x80\x80\x80tra\xc3\x9fe"
+ns 0 "\xc5\xbf\x80\x80tra\xc3\x9fe"
+ns 4 "\xc5\xbf\x80\x80tra\xc3\x9fe"
+ns 5 "\xc5\xbf\x80\x80tra\xc3\x9fe"
+ns 6 "\xc5\xbf\x80\x80tra\xc3\x9fe"
+ns 7 "\xc5\xbf\x80\x80tra\xc3\x9fe"
+ns 9 "\xc5\xbf\x80\x80tra\xc3\x9fe"
+ns 10 "\xc5\xbf\x80\x80tra\xc3\x9fe"
+
+# pcre2-only
+# ill-formed text before a two-byte fold [engine vm]
+pattern (?i)straße
+features all
+encoding utf8
+engine vm
+ms 4 "\x80\x80\x80\x80\xc5\xbftra\xc3\x9fe" 4 12
+ns 6 "\x80\x80\x80\x80\xc5\xbftra\xc3\x9fe"
+ns 7 "\x80\x80\x80\x80\xc5\xbftra\xc3\x9fe"
+ns 8 "\x80\x80\x80\x80\xc5\xbftra\xc3\x9fe"
+ns 9 "\x80\x80\x80\x80\xc5\xbftra\xc3\x9fe"
+ns 11 "\x80\x80\x80\x80\xc5\xbftra\xc3\x9fe"
+ns 12 "\x80\x80\x80\x80\xc5\xbftra\xc3\x9fe"
+ns 5 "\x80\x80\x80\x80\x80tra\xc3\x9fe"
+ns 6 "\x80\x80\x80\x80\x80tra\xc3\x9fe"
+ns 7 "\x80\x80\x80\x80\x80tra\xc3\x9fe"
+ns 8 "\x80\x80\x80\x80\x80tra\xc3\x9fe"
+ns 10 "\x80\x80\x80\x80\x80tra\xc3\x9fe"
+ns 11 "\x80\x80\x80\x80\x80tra\xc3\x9fe"
+ns 0 "\xc5\xbf\x80\x80tra\xc3\x9fe"
+ns 4 "\xc5\xbf\x80\x80tra\xc3\x9fe"
+ns 5 "\xc5\xbf\x80\x80tra\xc3\x9fe"
+ns 6 "\xc5\xbf\x80\x80tra\xc3\x9fe"
+ns 7 "\xc5\xbf\x80\x80tra\xc3\x9fe"
+ns 9 "\xc5\xbf\x80\x80tra\xc3\x9fe"
+ns 10 "\xc5\xbf\x80\x80tra\xc3\x9fe"
+
+# \b, seeded DFA: the first true match is (5,8); a seed read from search_from instead of the handoff reports (1,4) (S468)
+pattern \bcat\b
+features all
+encoding byte
+ms 0 "zcat cat" 5 8
+ms 1 "zcat cat" 5 8
+ms 2 "zcat cat" 5 8
+ms 3 "zcat cat" 5 8
+ms 4 "zcat cat" 5 8
+ms 5 "zcat cat" 5 8
+ns 6 "zcat cat"
+ns 7 "zcat cat"
+ns 8 "zcat cat"
+ms 0 "zzcat cat" 6 9
+ms 1 "zzcat cat" 6 9
+ms 2 "zzcat cat" 6 9
+ms 3 "zzcat cat" 6 9
+ms 4 "zzcat cat" 6 9
+ms 5 "zzcat cat" 6 9
+ms 6 "zzcat cat" 6 9
+ns 7 "zzcat cat"
+ns 8 "zzcat cat"
+ns 9 "zzcat cat"
+ms 0 "cat" 0 3
+ns 1 "cat"
+ns 2 "cat"
+ns 3 "cat"
+ms 0 "acatb cat" 6 9
+ms 1 "acatb cat" 6 9
+ms 2 "acatb cat" 6 9
+ms 3 "acatb cat" 6 9
+ms 4 "acatb cat" 6 9
+ms 5 "acatb cat" 6 9
+ms 6 "acatb cat" 6 9
+ns 7 "acatb cat"
+ns 8 "acatb cat"
+ns 9 "acatb cat"
+ms 0 "z cat" 2 5
+ms 1 "z cat" 2 5
+ms 2 "z cat" 2 5
+ns 3 "z cat"
+ns 4 "z cat"
+ns 5 "z cat"
+
+# \b, seeded DFA: the first true match is (5,8); a seed read from search_from instead of the handoff reports (1,4) (S468) [engine vm]
+pattern \bcat\b
+features all
+encoding byte
+engine vm
+ms 0 "zcat cat" 5 8
+ms 1 "zcat cat" 5 8
+ms 2 "zcat cat" 5 8
+ms 3 "zcat cat" 5 8
+ms 4 "zcat cat" 5 8
+ms 5 "zcat cat" 5 8
+ns 6 "zcat cat"
+ns 7 "zcat cat"
+ns 8 "zcat cat"
+ms 0 "zzcat cat" 6 9
+ms 1 "zzcat cat" 6 9
+ms 2 "zzcat cat" 6 9
+ms 3 "zzcat cat" 6 9
+ms 4 "zzcat cat" 6 9
+ms 5 "zzcat cat" 6 9
+ms 6 "zzcat cat" 6 9
+ns 7 "zzcat cat"
+ns 8 "zzcat cat"
+ns 9 "zzcat cat"
+ms 0 "cat" 0 3
+ns 1 "cat"
+ns 2 "cat"
+ns 3 "cat"
+ms 0 "acatb cat" 6 9
+ms 1 "acatb cat" 6 9
+ms 2 "acatb cat" 6 9
+ms 3 "acatb cat" 6 9
+ms 4 "acatb cat" 6 9
+ms 5 "acatb cat" 6 9
+ms 6 "acatb cat" 6 9
+ns 7 "acatb cat"
+ns 8 "acatb cat"
+ns 9 "acatb cat"
+ms 0 "z cat" 2 5
+ms 1 "z cat" 2 5
+ms 2 "z cat" 2 5
+ns 3 "z cat"
+ns 4 "z cat"
+ns 5 "z cat"
+
+# a one-character lookbehind (a context node on the DFA)
+pattern (?<![a-z])cat
+features all
+encoding byte
+ms 0 "zcat cat" 5 8
+ms 1 "zcat cat" 5 8
+ms 2 "zcat cat" 5 8
+ms 3 "zcat cat" 5 8
+ms 4 "zcat cat" 5 8
+ms 5 "zcat cat" 5 8
+ns 6 "zcat cat"
+ns 7 "zcat cat"
+ns 8 "zcat cat"
+ms 0 "zcat-cat" 5 8
+ms 1 "zcat-cat" 5 8
+ms 2 "zcat-cat" 5 8
+ms 3 "zcat-cat" 5 8
+ms 4 "zcat-cat" 5 8
+ms 5 "zcat-cat" 5 8
+ns 6 "zcat-cat"
+ns 7 "zcat-cat"
+ns 8 "zcat-cat"
+ms 0 "cat" 0 3
+ns 1 "cat"
+ns 2 "cat"
+ns 3 "cat"
+
+# a one-character lookbehind (a context node on the DFA) [engine vm]
+pattern (?<![a-z])cat
+features all
+encoding byte
+engine vm
+ms 0 "zcat cat" 5 8
+ms 1 "zcat cat" 5 8
+ms 2 "zcat cat" 5 8
+ms 3 "zcat cat" 5 8
+ms 4 "zcat cat" 5 8
+ms 5 "zcat cat" 5 8
+ns 6 "zcat cat"
+ns 7 "zcat cat"
+ns 8 "zcat cat"
+ms 0 "zcat-cat" 5 8
+ms 1 "zcat-cat" 5 8
+ms 2 "zcat-cat" 5 8
+ms 3 "zcat-cat" 5 8
+ms 4 "zcat-cat" 5 8
+ms 5 "zcat-cat" 5 8
+ns 6 "zcat-cat"
+ns 7 "zcat-cat"
+ns 8 "zcat-cat"
+ms 0 "cat" 0 3
+ns 1 "cat"
+ns 2 "cat"
+ns 3 "cat"
+
+# a two-character lookbehind (the hybrid)
+pattern (?<![a-z]{2})cat
+features all
+encoding byte
+ms 0 "zzcat cat" 6 9
+ms 1 "zzcat cat" 6 9
+ms 2 "zzcat cat" 6 9
+ms 3 "zzcat cat" 6 9
+ms 4 "zzcat cat" 6 9
+ms 5 "zzcat cat" 6 9
+ms 6 "zzcat cat" 6 9
+ns 7 "zzcat cat"
+ns 8 "zzcat cat"
+ns 9 "zzcat cat"
+ms 0 "zcat zzcat" 1 4
+ms 1 "zcat zzcat" 1 4
+ns 2 "zcat zzcat"
+ns 3 "zcat zzcat"
+ns 4 "zcat zzcat"
+ns 5 "zcat zzcat"
+ns 6 "zcat zzcat"
+ns 7 "zcat zzcat"
+ns 8 "zcat zzcat"
+ns 9 "zcat zzcat"
+ns 10 "zcat zzcat"
+ms 0 "cat" 0 3
+ns 1 "cat"
+ns 2 "cat"
+ns 3 "cat"
+
+# a two-character lookbehind (the hybrid) [engine vm]
+pattern (?<![a-z]{2})cat
+features all
+encoding byte
+engine vm
+ms 0 "zzcat cat" 6 9
+ms 1 "zzcat cat" 6 9
+ms 2 "zzcat cat" 6 9
+ms 3 "zzcat cat" 6 9
+ms 4 "zzcat cat" 6 9
+ms 5 "zzcat cat" 6 9
+ms 6 "zzcat cat" 6 9
+ns 7 "zzcat cat"
+ns 8 "zzcat cat"
+ns 9 "zzcat cat"
+ms 0 "zcat zzcat" 1 4
+ms 1 "zcat zzcat" 1 4
+ns 2 "zcat zzcat"
+ns 3 "zcat zzcat"
+ns 4 "zcat zzcat"
+ns 5 "zcat zzcat"
+ns 6 "zcat zzcat"
+ns 7 "zcat zzcat"
+ns 8 "zcat zzcat"
+ns 9 "zcat zzcat"
+ns 10 "zcat zzcat"
+ms 0 "cat" 0 3
+ns 1 "cat"
+ns 2 "cat"
+ns 3 "cat"
+
+# (?m)^ (ENG_ATTEMPT): a first start at the handoff
+pattern (?m)^item
+features all
+encoding byte
+ms 0 "item" 0 4
+ns 1 "item"
+ns 2 "item"
+ns 3 "item"
+ns 4 "item"
+ms 0 "x\x0aitem" 2 6
+ms 1 "x\x0aitem" 2 6
+ms 2 "x\x0aitem" 2 6
+ns 3 "x\x0aitem"
+ns 4 "x\x0aitem"
+ns 5 "x\x0aitem"
+ns 6 "x\x0aitem"
+ms 0 "xitem\x0aitem" 6 10
+ms 1 "xitem\x0aitem" 6 10
+ms 2 "xitem\x0aitem" 6 10
+ms 3 "xitem\x0aitem" 6 10
+ms 4 "xitem\x0aitem" 6 10
+ms 5 "xitem\x0aitem" 6 10
+ms 6 "xitem\x0aitem" 6 10
+ns 7 "xitem\x0aitem"
+ns 8 "xitem\x0aitem"
+ns 9 "xitem\x0aitem"
+ns 10 "xitem\x0aitem"
+ms 0 "\x0a\x0aitem" 2 6
+ms 1 "\x0a\x0aitem" 2 6
+ms 2 "\x0a\x0aitem" 2 6
+ns 3 "\x0a\x0aitem"
+ns 4 "\x0a\x0aitem"
+ns 5 "\x0a\x0aitem"
+ns 6 "\x0a\x0aitem"
+
+# (?m)^ (ENG_ATTEMPT): a first start at the handoff [engine vm]
+pattern (?m)^item
+features all
+encoding byte
+engine vm
+ms 0 "item" 0 4
+ns 1 "item"
+ns 2 "item"
+ns 3 "item"
+ns 4 "item"
+ms 0 "x\x0aitem" 2 6
+ms 1 "x\x0aitem" 2 6
+ms 2 "x\x0aitem" 2 6
+ns 3 "x\x0aitem"
+ns 4 "x\x0aitem"
+ns 5 "x\x0aitem"
+ns 6 "x\x0aitem"
+ms 0 "xitem\x0aitem" 6 10
+ms 1 "xitem\x0aitem" 6 10
+ms 2 "xitem\x0aitem" 6 10
+ms 3 "xitem\x0aitem" 6 10
+ms 4 "xitem\x0aitem" 6 10
+ms 5 "xitem\x0aitem" 6 10
+ms 6 "xitem\x0aitem" 6 10
+ns 7 "xitem\x0aitem"
+ns 8 "xitem\x0aitem"
+ns 9 "xitem\x0aitem"
+ns 10 "xitem\x0aitem"
+ms 0 "\x0a\x0aitem" 2 6
+ms 1 "\x0a\x0aitem" 2 6
+ms 2 "\x0a\x0aitem" 2 6
+ns 3 "\x0a\x0aitem"
+ns 4 "\x0a\x0aitem"
+ns 5 "\x0a\x0aitem"
+ns 6 "\x0a\x0aitem"
+
+# pcre2-only
+# \G reads search_from, never the handoff
+pattern (?:\G|x)cat
+features all
+encoding byte
+ms 0 "cat" 0 3
+ns 1 "cat"
+ns 2 "cat"
+ns 3 "cat"
+ms 0 "xcat" 0 4
+ms 1 "xcat" 1 4
+ns 2 "xcat"
+ns 3 "xcat"
+ns 4 "xcat"
+ns 0 "zcat"
+ms 1 "zcat" 1 4
+ns 2 "zcat"
+ns 3 "zcat"
+ns 4 "zcat"
+ms 0 "zxcat" 1 5
+ms 1 "zxcat" 1 5
+ms 2 "zxcat" 2 5
+ns 3 "zxcat"
+ns 4 "zxcat"
+ns 5 "zxcat"
+ms 0 "catxcat" 0 3
+ms 1 "catxcat" 3 7
+ms 2 "catxcat" 3 7
+ms 3 "catxcat" 3 7
+ms 4 "catxcat" 4 7
+ns 5 "catxcat"
+ns 6 "catxcat"
+ns 7 "catxcat"
+
+# pcre2-only
+# \G reads search_from, never the handoff [engine vm]
+pattern (?:\G|x)cat
+features all
+encoding byte
+engine vm
+ms 0 "cat" 0 3
+ns 1 "cat"
+ns 2 "cat"
+ns 3 "cat"
+ms 0 "xcat" 0 4
+ms 1 "xcat" 1 4
+ns 2 "xcat"
+ns 3 "xcat"
+ns 4 "xcat"
+ns 0 "zcat"
+ms 1 "zcat" 1 4
+ns 2 "zcat"
+ns 3 "zcat"
+ns 4 "zcat"
+ms 0 "zxcat" 1 5
+ms 1 "zxcat" 1 5
+ms 2 "zxcat" 2 5
+ns 3 "zxcat"
+ns 4 "zxcat"
+ns 5 "zxcat"
+ms 0 "catxcat" 0 3
+ms 1 "catxcat" 3 7
+ms 2 "catxcat" 3 7
+ms 3 "catxcat" 3 7
+ms 4 "catxcat" 4 7
+ns 5 "catxcat"
+ns 6 "catxcat"
+ns 7 "catxcat"
+
+# pcre2-only
+# \G reads search_from (the attempt route)
+pattern \Gx|yx
+features all
+encoding byte
+ms 0 "xyx" 0 1
+ms 1 "xyx" 1 3
+ms 2 "xyx" 2 3
+ns 3 "xyx"
+ms 0 "yx" 0 2
+ms 1 "yx" 1 2
+ns 2 "yx"
+ms 0 "zyx" 1 3
+ms 1 "zyx" 1 3
+ms 2 "zyx" 2 3
+ns 3 "zyx"
+ms 0 "x" 0 1
+ns 1 "x"
+
+# pcre2-only
+# \G reads search_from (the attempt route) [engine vm]
+pattern \Gx|yx
+features all
+encoding byte
+engine vm
+ms 0 "xyx" 0 1
+ms 1 "xyx" 1 3
+ms 2 "xyx" 2 3
+ns 3 "xyx"
+ms 0 "yx" 0 2
+ms 1 "yx" 1 2
+ns 2 "yx"
+ms 0 "zyx" 1 3
+ms 1 "zyx" 1 3
+ms 2 "zyx" 2 3
+ns 3 "zyx"
+ms 0 "x" 0 1
+ns 1 "x"
+
+# pcre2-only
+# a \G hybrid WITH the handoff (no prefilter-window ceiling: the lookahead erases it): from 0 on zzabcatdog the answer is NOMATCH, and a VM \G moved to the handoff reports (2,7) (S469)
+pattern (?:\Gab|x)(cat)(?=dog)
+features all
+encoding byte
+ns 0 "zzabcatdog"
+ns 1 "zzabcatdog"
+ms 2 "zzabcatdog" 2 7
+ns 3 "zzabcatdog"
+ns 4 "zzabcatdog"
+ns 5 "zzabcatdog"
+ns 6 "zzabcatdog"
+ns 7 "zzabcatdog"
+ns 8 "zzabcatdog"
+ns 9 "zzabcatdog"
+ns 10 "zzabcatdog"
+ms 0 "abcatdog" 0 5
+ns 1 "abcatdog"
+ns 2 "abcatdog"
+ns 3 "abcatdog"
+ns 4 "abcatdog"
+ns 5 "abcatdog"
+ns 6 "abcatdog"
+ns 7 "abcatdog"
+ns 8 "abcatdog"
+ms 0 "zxcatdog" 1 5
+ms 1 "zxcatdog" 1 5
+ns 2 "zxcatdog"
+ns 3 "zxcatdog"
+ns 4 "zxcatdog"
+ns 5 "zxcatdog"
+ns 6 "zxcatdog"
+ns 7 "zxcatdog"
+ns 8 "zxcatdog"
+ms 0 "zzabcatdogxcatdog" 10 14
+ms 1 "zzabcatdogxcatdog" 10 14
+ms 2 "zzabcatdogxcatdog" 2 7
+ms 3 "zzabcatdogxcatdog" 10 14
+ms 4 "zzabcatdogxcatdog" 10 14
+ms 5 "zzabcatdogxcatdog" 10 14
+ms 6 "zzabcatdogxcatdog" 10 14
+ms 7 "zzabcatdogxcatdog" 10 14
+ms 8 "zzabcatdogxcatdog" 10 14
+ms 9 "zzabcatdogxcatdog" 10 14
+ms 10 "zzabcatdogxcatdog" 10 14
+ns 11 "zzabcatdogxcatdog"
+ns 12 "zzabcatdogxcatdog"
+ns 13 "zzabcatdogxcatdog"
+ns 14 "zzabcatdogxcatdog"
+ns 15 "zzabcatdogxcatdog"
+ns 16 "zzabcatdogxcatdog"
+ns 17 "zzabcatdogxcatdog"
+
+# pcre2-only
+# a \G hybrid WITH the handoff (no prefilter-window ceiling: the lookahead erases it): from 0 on zzabcatdog the answer is NOMATCH, and a VM \G moved to the handoff reports (2,7) (S469) [engine vm]
+pattern (?:\Gab|x)(cat)(?=dog)
+features all
+encoding byte
+engine vm
+ns 0 "zzabcatdog"
+ns 1 "zzabcatdog"
+ms 2 "zzabcatdog" 2 7
+ns 3 "zzabcatdog"
+ns 4 "zzabcatdog"
+ns 5 "zzabcatdog"
+ns 6 "zzabcatdog"
+ns 7 "zzabcatdog"
+ns 8 "zzabcatdog"
+ns 9 "zzabcatdog"
+ns 10 "zzabcatdog"
+ms 0 "abcatdog" 0 5
+ns 1 "abcatdog"
+ns 2 "abcatdog"
+ns 3 "abcatdog"
+ns 4 "abcatdog"
+ns 5 "abcatdog"
+ns 6 "abcatdog"
+ns 7 "abcatdog"
+ns 8 "abcatdog"
+ms 0 "zxcatdog" 1 5
+ms 1 "zxcatdog" 1 5
+ns 2 "zxcatdog"
+ns 3 "zxcatdog"
+ns 4 "zxcatdog"
+ns 5 "zxcatdog"
+ns 6 "zxcatdog"
+ns 7 "zxcatdog"
+ns 8 "zxcatdog"
+ms 0 "zzabcatdogxcatdog" 10 14
+ms 1 "zzabcatdogxcatdog" 10 14
+ms 2 "zzabcatdogxcatdog" 2 7
+ms 3 "zzabcatdogxcatdog" 10 14
+ms 4 "zzabcatdogxcatdog" 10 14
+ms 5 "zzabcatdogxcatdog" 10 14
+ms 6 "zzabcatdogxcatdog" 10 14
+ms 7 "zzabcatdogxcatdog" 10 14
+ms 8 "zzabcatdogxcatdog" 10 14
+ms 9 "zzabcatdogxcatdog" 10 14
+ms 10 "zzabcatdogxcatdog" 10 14
+ns 11 "zzabcatdogxcatdog"
+ns 12 "zzabcatdogxcatdog"
+ns 13 "zzabcatdogxcatdog"
+ns 14 "zzabcatdogxcatdog"
+ns 15 "zzabcatdogxcatdog"
+ns 16 "zzabcatdogxcatdog"
+ns 17 "zzabcatdogxcatdog"
+
+# pcre2-only
+# a \G hybrid whose prefilter window is its ceiling: the (d') decline keeps the scan at the startpos (S476's control)
+pattern (?:\Gab|x)(cat)dog
+features all
+encoding byte
+ns 0 "zzabcatdog"
+ns 1 "zzabcatdog"
+ms 2 "zzabcatdog" 2 10
+ns 3 "zzabcatdog"
+ns 4 "zzabcatdog"
+ns 5 "zzabcatdog"
+ns 6 "zzabcatdog"
+ns 7 "zzabcatdog"
+ns 8 "zzabcatdog"
+ns 9 "zzabcatdog"
+ns 10 "zzabcatdog"
+ms 0 "abcatdog" 0 8
+ns 1 "abcatdog"
+ns 2 "abcatdog"
+ns 3 "abcatdog"
+ns 4 "abcatdog"
+ns 5 "abcatdog"
+ns 6 "abcatdog"
+ns 7 "abcatdog"
+ns 8 "abcatdog"
+ms 0 "zxcatdog" 1 8
+ms 1 "zxcatdog" 1 8
+ns 2 "zxcatdog"
+ns 3 "zxcatdog"
+ns 4 "zxcatdog"
+ns 5 "zxcatdog"
+ns 6 "zxcatdog"
+ns 7 "zxcatdog"
+ns 8 "zxcatdog"
+ms 0 "zzabcatdogxcatdog" 10 17
+ms 1 "zzabcatdogxcatdog" 10 17
+ms 2 "zzabcatdogxcatdog" 2 10
+ms 3 "zzabcatdogxcatdog" 10 17
+ms 4 "zzabcatdogxcatdog" 10 17
+ms 5 "zzabcatdogxcatdog" 10 17
+ms 6 "zzabcatdogxcatdog" 10 17
+ms 7 "zzabcatdogxcatdog" 10 17
+ms 8 "zzabcatdogxcatdog" 10 17
+ms 9 "zzabcatdogxcatdog" 10 17
+ms 10 "zzabcatdogxcatdog" 10 17
+ns 11 "zzabcatdogxcatdog"
+ns 12 "zzabcatdogxcatdog"
+ns 13 "zzabcatdogxcatdog"
+ns 14 "zzabcatdogxcatdog"
+ns 15 "zzabcatdogxcatdog"
+ns 16 "zzabcatdogxcatdog"
+ns 17 "zzabcatdogxcatdog"
+
+# pcre2-only
+# a \G hybrid whose prefilter window is its ceiling: the (d') decline keeps the scan at the startpos (S476's control) [engine vm]
+pattern (?:\Gab|x)(cat)dog
+features all
+encoding byte
+engine vm
+ns 0 "zzabcatdog"
+ns 1 "zzabcatdog"
+ms 2 "zzabcatdog" 2 10
+ns 3 "zzabcatdog"
+ns 4 "zzabcatdog"
+ns 5 "zzabcatdog"
+ns 6 "zzabcatdog"
+ns 7 "zzabcatdog"
+ns 8 "zzabcatdog"
+ns 9 "zzabcatdog"
+ns 10 "zzabcatdog"
+ms 0 "abcatdog" 0 8
+ns 1 "abcatdog"
+ns 2 "abcatdog"
+ns 3 "abcatdog"
+ns 4 "abcatdog"
+ns 5 "abcatdog"
+ns 6 "abcatdog"
+ns 7 "abcatdog"
+ns 8 "abcatdog"
+ms 0 "zxcatdog" 1 8
+ms 1 "zxcatdog" 1 8
+ns 2 "zxcatdog"
+ns 3 "zxcatdog"
+ns 4 "zxcatdog"
+ns 5 "zxcatdog"
+ns 6 "zxcatdog"
+ns 7 "zxcatdog"
+ns 8 "zxcatdog"
+ms 0 "zzabcatdogxcatdog" 10 17
+ms 1 "zzabcatdogxcatdog" 10 17
+ms 2 "zzabcatdogxcatdog" 2 10
+ms 3 "zzabcatdogxcatdog" 10 17
+ms 4 "zzabcatdogxcatdog" 10 17
+ms 5 "zzabcatdogxcatdog" 10 17
+ms 6 "zzabcatdogxcatdog" 10 17
+ms 7 "zzabcatdogxcatdog" 10 17
+ms 8 "zzabcatdogxcatdog" 10 17
+ms 9 "zzabcatdogxcatdog" 10 17
+ms 10 "zzabcatdogxcatdog" 10 17
+ns 11 "zzabcatdogxcatdog"
+ns 12 "zzabcatdogxcatdog"
+ns 13 "zzabcatdogxcatdog"
+ns 14 "zzabcatdogxcatdog"
+ns 15 "zzabcatdogxcatdog"
+ns 16 "zzabcatdogxcatdog"
+ns 17 "zzabcatdogxcatdog"
+
+# pcre2-only
+# \K: K is measured from the attempt start, not the reported one
+pattern x{2,5}\K(?i:cat)
+features all
+encoding byte
+ms 0 "xxxxxcat" 5 8
+ms 1 "xxxxxcat" 5 8
+ms 2 "xxxxxcat" 5 8
+ms 3 "xxxxxcat" 5 8
+ns 4 "xxxxxcat"
+ns 5 "xxxxxcat"
+ns 6 "xxxxxcat"
+ns 7 "xxxxxcat"
+ns 8 "xxxxxcat"
+ms 0 "zxxxxxcat" 6 9
+ms 1 "zxxxxxcat" 6 9
+ms 2 "zxxxxxcat" 6 9
+ms 3 "zxxxxxcat" 6 9
+ms 4 "zxxxxxcat" 6 9
+ns 5 "zxxxxxcat"
+ns 6 "zxxxxxcat"
+ns 7 "zxxxxxcat"
+ns 8 "zxxxxxcat"
+ns 9 "zxxxxxcat"
+ms 0 "xxcat" 2 5
+ns 1 "xxcat"
+ns 2 "xxcat"
+ns 3 "xxcat"
+ns 4 "xxcat"
+ns 5 "xxcat"
+
+# pcre2-only
+# \K: K is measured from the attempt start, not the reported one [engine vm]
+pattern x{2,5}\K(?i:cat)
+features all
+encoding byte
+engine vm
+ms 0 "xxxxxcat" 5 8
+ms 1 "xxxxxcat" 5 8
+ms 2 "xxxxxcat" 5 8
+ms 3 "xxxxxcat" 5 8
+ns 4 "xxxxxcat"
+ns 5 "xxxxxcat"
+ns 6 "xxxxxcat"
+ns 7 "xxxxxcat"
+ns 8 "xxxxxcat"
+ms 0 "zxxxxxcat" 6 9
+ms 1 "zxxxxxcat" 6 9
+ms 2 "zxxxxxcat" 6 9
+ms 3 "zxxxxxcat" 6 9
+ms 4 "zxxxxxcat" 6 9
+ns 5 "zxxxxxcat"
+ns 6 "zxxxxxcat"
+ns 7 "zxxxxxcat"
+ns 8 "zxxxxxcat"
+ns 9 "zxxxxxcat"
+ms 0 "xxcat" 2 5
+ns 1 "xxcat"
+ns 2 "xxcat"
+ns 3 "xxcat"
+ns 4 "xxcat"
+ns 5 "xxcat"
+
+# find-all, dense: each call hands off its own candidate (no cross-call state)
+pattern (?i)cat
+features all
+encoding byte
+ms 0 "cAtCaTcat" 0 3
+ms 1 "cAtCaTcat" 3 6
+ms 2 "cAtCaTcat" 3 6
+ms 3 "cAtCaTcat" 3 6
+ms 4 "cAtCaTcat" 6 9
+ms 5 "cAtCaTcat" 6 9
+ms 6 "cAtCaTcat" 6 9
+ns 7 "cAtCaTcat"
+ns 8 "cAtCaTcat"
+ns 9 "cAtCaTcat"
+ms 0 "cat cat cat" 0 3
+ms 1 "cat cat cat" 4 7
+ms 2 "cat cat cat" 4 7
+ms 3 "cat cat cat" 4 7
+ms 4 "cat cat cat" 4 7
+ms 5 "cat cat cat" 8 11
+ms 6 "cat cat cat" 8 11
+ms 7 "cat cat cat" 8 11
+ms 8 "cat cat cat" 8 11
+ns 9 "cat cat cat"
+ns 10 "cat cat cat"
+ns 11 "cat cat cat"
+ms 0 "ccatt" 1 4
+ms 1 "ccatt" 1 4
+ns 2 "ccatt"
+ns 3 "ccatt"
+ns 4 "ccatt"
+ns 5 "ccatt"
+
+# find-all, dense: each call hands off its own candidate (no cross-call state) [engine vm]
+pattern (?i)cat
+features all
+encoding byte
+engine vm
+ms 0 "cAtCaTcat" 0 3
+ms 1 "cAtCaTcat" 3 6
+ms 2 "cAtCaTcat" 3 6
+ms 3 "cAtCaTcat" 3 6
+ms 4 "cAtCaTcat" 6 9
+ms 5 "cAtCaTcat" 6 9
+ms 6 "cAtCaTcat" 6 9
+ns 7 "cAtCaTcat"
+ns 8 "cAtCaTcat"
+ns 9 "cAtCaTcat"
+ms 0 "cat cat cat" 0 3
+ms 1 "cat cat cat" 4 7
+ms 2 "cat cat cat" 4 7
+ms 3 "cat cat cat" 4 7
+ms 4 "cat cat cat" 4 7
+ms 5 "cat cat cat" 8 11
+ms 6 "cat cat cat" 8 11
+ms 7 "cat cat cat" 8 11
+ms 8 "cat cat cat" 8 11
+ns 9 "cat cat cat"
+ns 10 "cat cat cat"
+ns 11 "cat cat cat"
+ms 0 "ccatt" 1 4
+ms 1 "ccatt" 1 4
+ns 2 "ccatt"
+ns 3 "ccatt"
+ns 4 "ccatt"
+ns 5 "ccatt"
+
+# find-all, overlapping run occurrences
+pattern aa(?i:a)
+features all
+encoding byte
+ms 0 "aaaaaaa" 0 3
+ms 1 "aaaaaaa" 1 4
+ms 2 "aaaaaaa" 2 5
+ms 3 "aaaaaaa" 3 6
+ms 4 "aaaaaaa" 4 7
+ns 5 "aaaaaaa"
+ns 6 "aaaaaaa"
+ns 7 "aaaaaaa"
+ms 0 "aaAaaA" 0 3
+ms 1 "aaAaaA" 3 6
+ms 2 "aaAaaA" 3 6
+ms 3 "aaAaaA" 3 6
+ns 4 "aaAaaA"
+ns 5 "aaAaaA"
+ns 6 "aaAaaA"
+ms 0 "aAa aaa" 4 7
+ms 1 "aAa aaa" 4 7
+ms 2 "aAa aaa" 4 7
+ms 3 "aAa aaa" 4 7
+ms 4 "aAa aaa" 4 7
+ns 5 "aAa aaa"
+ns 6 "aAa aaa"
+ns 7 "aAa aaa"
+
+# find-all, overlapping run occurrences [engine vm]
+pattern aa(?i:a)
+features all
+encoding byte
+engine vm
+ms 0 "aaaaaaa" 0 3
+ms 1 "aaaaaaa" 1 4
+ms 2 "aaaaaaa" 2 5
+ms 3 "aaaaaaa" 3 6
+ms 4 "aaaaaaa" 4 7
+ns 5 "aaaaaaa"
+ns 6 "aaaaaaa"
+ns 7 "aaaaaaa"
+ms 0 "aaAaaA" 0 3
+ms 1 "aaAaaA" 3 6
+ms 2 "aaAaaA" 3 6
+ms 3 "aaAaaA" 3 6
+ns 4 "aaAaaA"
+ns 5 "aaAaaA"
+ns 6 "aaAaaA"
+ms 0 "aAa aaa" 4 7
+ms 1 "aAa aaa" 4 7
+ms 2 "aAa aaa" 4 7
+ms 3 "aAa aaa" 4 7
+ms 4 "aAa aaa" 4 7
+ns 5 "aAa aaa"
+ns 6 "aAa aaa"
+ns 7 "aAa aaa"
+
+# find-all at K = 5: a later match's window within K of an earlier match's end
+pattern x{2,5}(?i:cat)
+features all
+encoding byte
+ms 0 "xxcatxxxcatxxxxxcat" 0 5
+ms 1 "xxcatxxxcatxxxxxcat" 5 11
+ms 2 "xxcatxxxcatxxxxxcat" 5 11
+ms 3 "xxcatxxxcatxxxxxcat" 5 11
+ms 4 "xxcatxxxcatxxxxxcat" 5 11
+ms 5 "xxcatxxxcatxxxxxcat" 5 11
+ms 6 "xxcatxxxcatxxxxxcat" 6 11
+ms 7 "xxcatxxxcatxxxxxcat" 11 19
+ms 8 "xxcatxxxcatxxxxxcat" 11 19
+ms 9 "xxcatxxxcatxxxxxcat" 11 19
+ms 10 "xxcatxxxcatxxxxxcat" 11 19
+ms 11 "xxcatxxxcatxxxxxcat" 11 19
+ms 12 "xxcatxxxcatxxxxxcat" 12 19
+ms 13 "xxcatxxxcatxxxxxcat" 13 19
+ms 14 "xxcatxxxcatxxxxxcat" 14 19
+ns 15 "xxcatxxxcatxxxxxcat"
+ns 16 "xxcatxxxcatxxxxxcat"
+ns 17 "xxcatxxxcatxxxxxcat"
+ns 18 "xxcatxxxcatxxxxxcat"
+ns 19 "xxcatxxxcatxxxxxcat"
+ms 0 "xxxxxxxcatxcat" 2 10
+ms 1 "xxxxxxxcatxcat" 2 10
+ms 2 "xxxxxxxcatxcat" 2 10
+ms 3 "xxxxxxxcatxcat" 3 10
+ms 4 "xxxxxxxcatxcat" 4 10
+ms 5 "xxxxxxxcatxcat" 5 10
+ns 6 "xxxxxxxcatxcat"
+ns 7 "xxxxxxxcatxcat"
+ns 8 "xxxxxxxcatxcat"
+ns 9 "xxxxxxxcatxcat"
+ns 10 "xxxxxxxcatxcat"
+ns 11 "xxxxxxxcatxcat"
+ns 12 "xxxxxxxcatxcat"
+ns 13 "xxxxxxxcatxcat"
+ns 14 "xxxxxxxcatxcat"
+
+# find-all at K = 5: a later match's window within K of an earlier match's end [engine vm]
+pattern x{2,5}(?i:cat)
+features all
+encoding byte
+engine vm
+ms 0 "xxcatxxxcatxxxxxcat" 0 5
+ms 1 "xxcatxxxcatxxxxxcat" 5 11
+ms 2 "xxcatxxxcatxxxxxcat" 5 11
+ms 3 "xxcatxxxcatxxxxxcat" 5 11
+ms 4 "xxcatxxxcatxxxxxcat" 5 11
+ms 5 "xxcatxxxcatxxxxxcat" 5 11
+ms 6 "xxcatxxxcatxxxxxcat" 6 11
+ms 7 "xxcatxxxcatxxxxxcat" 11 19
+ms 8 "xxcatxxxcatxxxxxcat" 11 19
+ms 9 "xxcatxxxcatxxxxxcat" 11 19
+ms 10 "xxcatxxxcatxxxxxcat" 11 19
+ms 11 "xxcatxxxcatxxxxxcat" 11 19
+ms 12 "xxcatxxxcatxxxxxcat" 12 19
+ms 13 "xxcatxxxcatxxxxxcat" 13 19
+ms 14 "xxcatxxxcatxxxxxcat" 14 19
+ns 15 "xxcatxxxcatxxxxxcat"
+ns 16 "xxcatxxxcatxxxxxcat"
+ns 17 "xxcatxxxcatxxxxxcat"
+ns 18 "xxcatxxxcatxxxxxcat"
+ns 19 "xxcatxxxcatxxxxxcat"
+ms 0 "xxxxxxxcatxcat" 2 10
+ms 1 "xxxxxxxcatxcat" 2 10
+ms 2 "xxxxxxxcatxcat" 2 10
+ms 3 "xxxxxxxcatxcat" 3 10
+ms 4 "xxxxxxxcatxcat" 4 10
+ms 5 "xxxxxxxcatxcat" 5 10
+ns 6 "xxxxxxxcatxcat"
+ns 7 "xxxxxxxcatxcat"
+ns 8 "xxxxxxxcatxcat"
+ns 9 "xxxxxxxcatxcat"
+ns 10 "xxxxxxxcatxcat"
+ns 11 "xxxxxxxcatxcat"
+ns 12 "xxxxxxxcatxcat"
+ns 13 "xxxxxxxcatxcat"
+ns 14 "xxxxxxxcatxcat"
+
+# control: an unbounded offset (.*?) carries no handoff (S467)
+pattern a.*?(?i:select)
+features all
+encoding byte
+ms 0 "a select" 0 8
+ns 1 "a select"
+ns 2 "a select"
+ns 3 "a select"
+ns 4 "a select"
+ns 5 "a select"
+ns 6 "a select"
+ns 7 "a select"
+ns 8 "a select"
+ms 0 "aaselect" 0 8
+ms 1 "aaselect" 1 8
+ns 2 "aaselect"
+ns 3 "aaselect"
+ns 4 "aaselect"
+ns 5 "aaselect"
+ns 6 "aaselect"
+ns 7 "aaselect"
+ns 8 "aaselect"
+ns 0 "select"
+ns 1 "select"
+ns 2 "select"
+ns 3 "select"
+ns 4 "select"
+ns 5 "select"
+ns 6 "select"
+ms 0 "xa..SeLeCt" 1 10
+ms 1 "xa..SeLeCt" 1 10
+ns 2 "xa..SeLeCt"
+ns 3 "xa..SeLeCt"
+ns 4 "xa..SeLeCt"
+ns 5 "xa..SeLeCt"
+ns 6 "xa..SeLeCt"
+ns 7 "xa..SeLeCt"
+ns 8 "xa..SeLeCt"
+ns 9 "xa..SeLeCt"
+ns 10 "xa..SeLeCt"
+
+# control: an unbounded offset (.*?) carries no handoff (S467) [engine vm]
+pattern a.*?(?i:select)
+features all
+encoding byte
+engine vm
+ms 0 "a select" 0 8
+ns 1 "a select"
+ns 2 "a select"
+ns 3 "a select"
+ns 4 "a select"
+ns 5 "a select"
+ns 6 "a select"
+ns 7 "a select"
+ns 8 "a select"
+ms 0 "aaselect" 0 8
+ms 1 "aaselect" 1 8
+ns 2 "aaselect"
+ns 3 "aaselect"
+ns 4 "aaselect"
+ns 5 "aaselect"
+ns 6 "aaselect"
+ns 7 "aaselect"
+ns 8 "aaselect"
+ns 0 "select"
+ns 1 "select"
+ns 2 "select"
+ns 3 "select"
+ns 4 "select"
+ns 5 "select"
+ns 6 "select"
+ms 0 "xa..SeLeCt" 1 10
+ms 1 "xa..SeLeCt" 1 10
+ns 2 "xa..SeLeCt"
+ns 3 "xa..SeLeCt"
+ns 4 "xa..SeLeCt"
+ns 5 "xa..SeLeCt"
+ns 6 "xa..SeLeCt"
+ns 7 "xa..SeLeCt"
+ns 8 "xa..SeLeCt"
+ns 9 "xa..SeLeCt"
+ns 10 "xa..SeLeCt"
+
+# control: an unbounded offset; the run choice keeps the more informative unbounded xyzw (S474)
+pattern ab.*xyzw
+features all
+encoding byte
+ms 0 "abxyzw" 0 6
+ns 1 "abxyzw"
+ns 2 "abxyzw"
+ns 3 "abxyzw"
+ns 4 "abxyzw"
+ns 5 "abxyzw"
+ns 6 "abxyzw"
+ms 0 "ab..xyzw" 0 8
+ns 1 "ab..xyzw"
+ns 2 "ab..xyzw"
+ns 3 "ab..xyzw"
+ns 4 "ab..xyzw"
+ns 5 "ab..xyzw"
+ns 6 "ab..xyzw"
+ns 7 "ab..xyzw"
+ns 8 "ab..xyzw"
+ns 0 "xyzw"
+ns 1 "xyzw"
+ns 2 "xyzw"
+ns 3 "xyzw"
+ns 4 "xyzw"
+ms 0 "zzab-xyzwab" 2 9
+ms 1 "zzab-xyzwab" 2 9
+ms 2 "zzab-xyzwab" 2 9
+ns 3 "zzab-xyzwab"
+ns 4 "zzab-xyzwab"
+ns 5 "zzab-xyzwab"
+ns 6 "zzab-xyzwab"
+ns 7 "zzab-xyzwab"
+ns 8 "zzab-xyzwab"
+ns 9 "zzab-xyzwab"
+ns 10 "zzab-xyzwab"
+ns 11 "zzab-xyzwab"
+
+# control: an unbounded offset; the run choice keeps the more informative unbounded xyzw (S474) [engine vm]
+pattern ab.*xyzw
+features all
+encoding byte
+engine vm
+ms 0 "abxyzw" 0 6
+ns 1 "abxyzw"
+ns 2 "abxyzw"
+ns 3 "abxyzw"
+ns 4 "abxyzw"
+ns 5 "abxyzw"
+ns 6 "abxyzw"
+ms 0 "ab..xyzw" 0 8
+ns 1 "ab..xyzw"
+ns 2 "ab..xyzw"
+ns 3 "ab..xyzw"
+ns 4 "ab..xyzw"
+ns 5 "ab..xyzw"
+ns 6 "ab..xyzw"
+ns 7 "ab..xyzw"
+ns 8 "ab..xyzw"
+ns 0 "xyzw"
+ns 1 "xyzw"
+ns 2 "xyzw"
+ns 3 "xyzw"
+ns 4 "xyzw"
+ms 0 "zzab-xyzwab" 2 9
+ms 1 "zzab-xyzwab" 2 9
+ms 2 "zzab-xyzwab" 2 9
+ns 3 "zzab-xyzwab"
+ns 4 "zzab-xyzwab"
+ns 5 "zzab-xyzwab"
+ns 6 "zzab-xyzwab"
+ns 7 "zzab-xyzwab"
+ns 8 "zzab-xyzwab"
+ns 9 "zzab-xyzwab"
+ns 10 "zzab-xyzwab"
+ns 11 "zzab-xyzwab"

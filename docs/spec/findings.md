@@ -132,6 +132,10 @@ candidates, which is its tie rule, and never tests the rate itself (D126 Q4).
 | the pre-check's lead (`set-leads`, `tuning.md` §2.40) | PICK over `[the run's scan cube, the necessary set's pick]`, the run first | whether the set pick's one-byte `memchr` is tested before the run search | both are necessary, so either's absence proves NOMATCH; on a VM route with no DFA in front every set member is tested anyway (K65) |
 | the offset-k selection (`<PREFIX>_DFA_PREFILTER_OFFSETS`) | MASS over each offset's byte set | which necessary offset sets the skip scans and verifies | every tested (offset, set) is necessary for every match |
 
+The handoff (`tuning.md` §2.41) reads the window these rows chose and never
+re-picks: its `K` is a walk fact about the whole run (`req_run_maxoff`) plus
+the window's start inside it, independent of any rate.
+
 `tuning.md` §2.27–§2.30 and §2.40 carry each mechanism; `docs/design/findings/design.md`
 §6.2a carries the arguments.
 

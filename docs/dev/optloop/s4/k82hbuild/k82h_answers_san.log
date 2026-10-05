@@ -1,0 +1,19 @@
+# k82h_answers.py, ASan/UBSan arm: CFLAGS='-O1 -g -std=gnu11 -w -fsanitize=address,undefined -fno-builtin-memcmp -DDIFF_EXACT_SUBJECT', PREFIXES=1, 6 shards; NEW = abi 61.
+## shard 0/6
+movers 96 (per route {'hybrid': 6, 'unanchored': 85, 'attempt': 5}): identical 96, DEFECT 0, skipped 0; cells compared 452070
+k82h_answers: PASS
+## shard 1/6
+movers 96 (per route {'unanchored': 75, 'hybrid': 19, 'attempt': 2}): identical 96, DEFECT 0, skipped 0; cells compared 883496
+k82h_answers: PASS
+## shard 2/6
+movers 96 (per route {'unanchored': 12, 'hybrid': 83, 'attempt': 1}): identical 96, DEFECT 0, skipped 0; cells compared 1041511
+k82h_answers: PASS
+## shard 3/6
+movers 96 (per route {'unanchored': 87, 'hybrid': 6, 'attempt': 3}): identical 96, DEFECT 0, skipped 0; cells compared 1041511
+k82h_answers: PASS
+## shard 4/6
+movers 95 (per route {'unanchored': 74, 'hybrid': 16, 'attempt': 5}): identical 95, DEFECT 0, skipped 0; cells compared 494539
+k82h_answers: PASS
+## shard 5/6
+movers 95 (per route {'unanchored': 13, 'hybrid': 81, 'attempt': 1}): identical 95, DEFECT 0, skipped 0; cells compared 494539
+k82h_answers: PASS

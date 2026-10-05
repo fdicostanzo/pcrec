@@ -738,6 +738,18 @@ fi
 # `RX_REQ_WHY` ("none" -> "emitted"), the `rx_w4` helper, the `rx_reqrun`
 # pair-arm block (two memchr streams for L/l, the masked `words` compare),
 # its call at the search entry, and `RX_RUN_WORDS` 0 -> 1, nothing else.
+#
+# RE-RECORDED 2026-10-05 at [K82] (B), THE HANDOFF (abi 60 -> 61, lane
+# k82hbuild): all twelve `EMITTED_BYTES` rows move. Ten by exactly +30, the
+# unconditional `#define RX_REQ_HANDOFF "none"` line (Frank's Q3 ruling: the
+# stamp is on every artifact, "none" where the handoff does not apply), and
+# the two the design's §2.3a predicted as program movers by more: `\bword\b`
+# +90 and `(?i)HeLLo` +80 — the stamp reads "0" (27 bytes), the gate keeps
+# its candidate (`size_t handoff_position = rx_reqrun(...);` plus its own
+# `>= subject_length` test in place of the one-line discard), and the
+# forward scan's position (and, for the seeded `\bword\b`, its seed) reads
+# `handoff_position`. VERIFIED BY DIFFING both against the abi-60 compiler at
+# `-o -`: the abi digits, the stamp, the gate, the start site, nothing else.
 MANIFEST="$ROOT_DIR/tests/codegen/manifests/m5_stage1_stamps.tsv"
 if [ -d "$(dirname "$MANIFEST")" ]; then
     if [ -f "$MANIFEST" ]; then

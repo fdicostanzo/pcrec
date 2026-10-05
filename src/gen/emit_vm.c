@@ -3623,6 +3623,21 @@ static void vm_rung_mark(Vm *v, int lblid, VmRungKind k, bool possessive,
  * branches on `a->u.rep.greedy` for CORRECTNESS — only for which of the two forms
  * the emitted shape wants. */
 
+/* [M4.6d]/[K82] IS THE HYBRID PREFILTER'S SPAN END A BOUND ON THE MATCH'S
+ * END — the `prefilter-window` ceiling, `Vm.mrl_win`? A prefilter exists, and
+ * its language is not widened past the pattern's by a cut it cannot express
+ * (atomic), an assertion it erases (lookaround) or a count it collapses. The
+ * three conjuncts' reasons are at `Vm.mrl_win`'s one assignment in
+ * `pcrec_emit_vm`; this is its ONE derivation, which the handoff's (d')
+ * decline (src/gen/emit_dfa.c, `req_handoff_applies`) reads too, so the two
+ * cannot disagree about which artifacts carry the ceiling. */
+bool pcrec_vm_prefilter_window(Ctx *cx)
+{
+    return cx->job->fit.prefilter && !(pcrec_fact_kinds(cx) & PF_KIND_ATOMIC)
+                                  && !(pcrec_fact_kinds(cx) & PF_KIND_LOOK)
+                                  && !cx->job->fit.prefilter_collapsed;
+}
+
 /* The saturating add the follow-min accumulator needs. pcrec_minw saturates
  * its own arithmetic at PCREC_MINW_MAX; the accumulator has to hold the same
  * ceiling or a long enough concatenation of saturated subtrees could still
@@ -10371,9 +10386,7 @@ static void vm_init(Vm *v, Ctx *cx, Ast *root, GenNames *g)
      * because either alone is satisfiable by a half-done edit; S-LA13 is the
      * row, and it sabotages the two BUILDERS while leaving the stamp reading
      * the flag. */
-    v->mrl_win = job->fit.prefilter && !(pcrec_fact_kinds(cx) & PF_KIND_ATOMIC)
-                                   && !(pcrec_fact_kinds(cx) & PF_KIND_LOOK)
-                                   && !job->fit.prefilter_collapsed;
+    v->mrl_win = pcrec_vm_prefilter_window(cx);
     v->fmin    = 0;   /* nothing follows the whole pattern */
 
     pcrec_gen_names(cx, g);
@@ -13169,8 +13182,12 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
      * backreference or a linked call — so this is the only whole-window fact
      * such an artifact can act on, and three of `cycle1_analysis.md` M1's
      * five target rows are exactly those declines. */
-    pcrec_emit_req_byte_check(v->cx, c, "    ", "search_from", "subject",
-                              "subject_length");
+    /* [K82] (B) where the pre-check's candidate is handed off, the FIRST
+     * prefilter call starts at it; the VM's own `search_from`, which `\G`
+     * reads, does not move, and every retry already calls the prefilter at
+     * `attempt_position` (litscan_k82h.md Claim 2'). */
+    const char *first = pcrec_emit_req_byte_check(v->cx, c, "    ", "search_from",
+                                                  "subject", "subject_length");
 
     /* [DD-14.EMPTY] THE ROOT MINIMUM-WIDTH CHECK: the search entry answers
      * NOMATCH BEFORE ANY FRAME IS PUSHED when the whole pattern's minimum
@@ -13391,15 +13408,20 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
      *     where it costs no emitted bytes: `--emit-ir`'s PRUNING line and the
      *     `mrl_win` field comment at the top of this file.
      */
+    /* [K82] the handoff's premise (a): it applies only where a DFA scan is in
+     * front, and on this engine that scan is `prefn`. */
+    if (!prefn && strcmp(first, "search_from") != 0)
+        pcrec_ctx_fail(v->cx, 0, "internal error: the [K82] handoff reached a VM "
+                       "route with no prefilter to start");
     if (prefn) {
         pcrec_sb_printf(c,
             "    {\n"
             "        ptrdiff_t window[1][2];\n"
-            "        if (%s(subject, subject_length, search_from, window) != 1) return 0;\n"
+            "        if (%s(subject, subject_length, %s, window) != 1) return 0;\n"
             "        attempt_position = (size_t)window[0][0];\n"
             "%s"
             "    }\n",
-            prefn,
+            prefn, first,
             v->nclamp == 0 ? ""
               /* H3 site 1 of 3 (the search ENTRY). */
               : v->mrl_win

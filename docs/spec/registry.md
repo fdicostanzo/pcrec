@@ -189,7 +189,10 @@ another's, `main`'s `--list-families` block states it in its own comment).
 
 ## 6. `--list-axes` — the optimization-axis registry (the FOURTH surface, [CHK-2])
 
-`build/pcrec --list-axes | grep -vc '^#'` — **124 rows / 42 axes**, re-derived
+`build/pcrec --list-axes | grep -vc '^#'` — **126 rows / 43 axes**, re-derived
+live 2026-10-05 by lane k82hbuild ([K82] (B): +2 rows and +1 axis,
+`req-use`, the pre-check's use table walked live, whose `handoff` row
+carries `-fno-req-handoff`). Was 124/42, re-derived
 live 2026-10-04 by lane k82fix ([K82]: +5 rows and +1 axis, `req-admit`, the
 whole-window pre-check's admission table walked live, whose `set-leads` row
 carries `-fno-req-set-lead`). Was 119/41, re-derived

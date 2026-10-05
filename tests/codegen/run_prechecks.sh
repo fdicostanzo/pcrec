@@ -1511,7 +1511,7 @@ ROWS
 # a NONE run scans an exact position before a pair: the `run` column is
 # `<PREFIX>_REQ_RUN` as it must read ("*" = not asserted).
 lead_of() {
-    awk '/rx_reqrun\(subject/ && /return 0;/ { exit }
+    awk '/rx_reqrun\(subject/ { exit }
          match($0, /!memchr\([a-z_]+ \+ [a-z_]+, [0-9]+,/) {
              t = substr($0, RSTART, RLENGTH); sub(/,$/, "", t); sub(/.*, /, "", t); print t; exit }' "$1"
 }
@@ -1540,6 +1540,225 @@ cat\s+sat%%99%736174@0%an EXACT run under the byte-rate: c (18442) is rarer than
 x(?i:elect)%-e utf8%-%78454c454354@0/ffdfdfdfdfdf%(C) NONE: the one exact position wins over the five pairs to its right, and the set pick IS that byte
 (?i:elect)%-e utf8%-%454c454354@4/dfdfdfdfdf%(C) all pairs tie, so the rightmost, as before
 ROWS
+
+# =========================================================================
+# SECTION 5.12 — [K82] (B): THE HANDOFF (tuning.md §2.41; the `req-use`
+# table; docs/design/litscan_k82h.md §4.2 item 4, §4.2a (a))
+# =========================================================================
+#
+# Where the `req-use` table's `handoff` row applies, the run pre-check's first
+# window hit `c` is KEPT and the body's scan begins at `max(search_from,
+# c - K)`, K the `req_run_maxoff` fact; `<PREFIX>_REQ_HANDOFF` carries K or
+# "none" on every artifact. Every assertion below reads the EMITTED TEXT and
+# holds it to the stamp or to a HAND value, never to the walk that computed K:
+# the manifest (docs/dev/optloop/s4/k82hbuild/k82h_movers.py) predicts K from
+# `--emit-facts`, which reads the same walk, so a wrong K is invisible to it by
+# construction (r1 C-C4). Answers are `tests/litscan/handoff.rxt`'s.
+#
+#   (a) THE HAND K PIN TABLE: K derived BY HAND from the pattern TEXT (the
+#       bytes each construct may consume before the window) against the
+#       `req_run_maxoff` fact and the stamp. Detects S465 (a multibyte class
+#       counted as one byte, `(?i)straße`'s U+017F) and S466 (an alternation
+#       taking its left branch's width).
+#   (b) PRESENCE: `handoff_position` is declared iff the stamp is not "none",
+#       and the subtraction and the comparison carry the stamp's K.
+#   (c) BOUNDED: no artifact whose `req_run_maxoff` reads `unbounded` hands
+#       off (S467: answer-equivalent, so only this can see it), on the
+#       witnesses and on a corpus population with a floor (K35).
+#   (d) THE RUN CHOICE: `req_whole_run` is the walk's MOST INFORMATIVE run,
+#       never the bounded one (S474).
+#   (e) THE CROSS-TABLE CHECK (r1 C-C10): a handoff only where `REQ_WHY`
+#       reads "emitted" and `REQ_RUN` is not "none".
+#   (f) ONE START SITE PER BODY: the unanchored scan's position and its seed,
+#       the attempt loop's first start, the hybrid's FIRST prefilter call.
+#   (g) THE `\G` READERS (r1 S-F3): ENG_ATTEMPT's `start == search_from` and
+#       the VM's own `search_from` never read the handoff (S469).
+#   (h) THE ROUND-UP (r1 S-F5/S-F6): present iff the encoding restricts a
+#       position, inside the moving branch only, bounded by the subject's end
+#       and by no step count (S471, S472).
+#   (i) THE (d') DECLINE: a hybrid with a `\G` start family whose prefilter
+#       window is its ceiling keeps "none" (S476).
+#   (j) THE DENY: `-fno-req-handoff` emits "none", no `handoff_position` and
+#       the abi-60 gate line (S473 — NOT the registry suite's `--list-axes`
+#       walk, which reads the same row: a control sharing its source).
+#   (k) Q10: a COUNT-COLLAPSED prefilter declines.
+fact() {   # fact NAME PATTERN [args...]: the --emit-facts value of NAME
+    local f="$1" pat="$2"; shift 2
+    pcrec_run "$PCREC" --features all "$@" --emit-facts --pattern "$pat" 2>/dev/null \
+        | awk -F'\t' -v f="$f" '$2 == f { print $7; exit }'
+}
+# handoff_block FILE: the gate and the block that moves the start, as emitted
+handoff_block() {
+    awk '/size_t handoff_position = rx_reqrun\(/ { on = 1 }
+         on { print }
+         on && /^ *handoff_position = search_from;$/ { exit }
+         on && /static const|scan_position|for \(start|_prefilter\(/ { exit }' "$1"
+}
+# s512_presence FILE LABEL: (b)'s biconditional and constants on one artifact
+s512_presence() {
+    local a="$1" lbl="$2" st nd
+    st="$(stamp "$a" REQ_HANDOFF)"
+    nd="$(grep -c 'size_t handoff_position = rx_reqrun(subject, subject_length, search_from);' "$a")"
+    if [ -z "$st" ]; then bad "[5.12b] $lbl: no RX_REQ_HANDOFF stamp at all (it is on every artifact)"; return; fi
+    if [ "$st" = "none" ]; then
+        [ "$nd" -eq 0 ] && ! grep -q 'handoff_position' "$a" \
+            || bad "[5.12b] $lbl: REQ_HANDOFF \"none\" but the text declares handoff_position"
+        return
+    fi
+    if [ "$nd" -ne 1 ]; then bad "[5.12b] $lbl: REQ_HANDOFF \"$st\" but $nd handoff declarations"; return; fi
+    if [ "$st" -gt 0 ]; then
+        handoff_block "$a" | grep -qx " *handoff_position -= $st;" \
+            && handoff_block "$a" | grep -qx " *if (handoff_position - search_from > $st) {" \
+            || bad "[5.12b] $lbl: REQ_HANDOFF \"$st\" but the block does not subtract and compare $st"
+    else
+        handoff_block "$a" | grep -q 'handoff_position -= ' \
+            && bad "[5.12b] $lbl: REQ_HANDOFF \"0\" but the block subtracts"
+    fi
+    return 0
+}
+s512_n=0
+while IFS='%' read -r pat flags handk wantst why; do
+    [ -n "$pat" ] || continue
+    a="$WORKDIR/s512_$RANDOM$RANDOM.c"
+    # shellcheck disable=SC2086  # $flags is a word list on purpose
+    if ! emit "$a" "$pat" $flags; then bad "[5.12a] $pat [$flags]: refused"; continue; fi
+    # shellcheck disable=SC2086
+    gk="$(fact req_run_maxoff "$pat" $flags)"
+    gst="$(stamp "$a" REQ_HANDOFF)"
+    [ "$gk" = "$handk" ] && [ "$gst" = "$wantst" ] \
+        && ok "[5.12a] $pat [$flags] -> req_run_maxoff $gk, REQ_HANDOFF \"$gst\" ($why)" \
+        || bad "[5.12a] $pat [$flags]: req_run_maxoff $gk, REQ_HANDOFF \"$gst\"; the hand derivation says $handk / \"$wantst\" ($why)"
+    s512_presence "$a" "$pat [$flags]"
+    s512_n=$((s512_n + 1))
+done <<'ROWS'
+(?i)cat%-e byte%0%0%the run is the whole match's head
+(?i)straße%-e utf8%2%2%the run TRA follows (?i)s, which matches s, S or U+017F (TWO bytes) (r1 C-C11; ci-strasse)
+x{2,5}(?i)cat%-e utf8%5%5%five x bytes at most before the run
+.{3}cat%-e utf8%12%12%three characters of up to four bytes
+é{2}cat%-e utf8%4%4%two two-byte characters
+ab(?:cdef|xyzdef)g%-e utf8%5%5%the run defg after ab and the wider branch's xyz
+(?:a|bb)?catdog%-e byte%2%2%the WIDER branch bb (S466 takes a's width)
+(?:ab|c)(?i)select%-e utf8%4%4%ab (2), then (?i)s (U+017F under utf8, 2 bytes): the run is ELECT
+(?:\Gab|x)(cat)(?=dog)%-e byte%2%2%\G is zero-width, ab is 2 (a \G hybrid with no prefilter-window ceiling)
+(?:\G|x)cat%-e byte%1%1%the attempt route: \G consumes nothing, x one byte
+(?:\Gab|x)(cat)dog%-e byte%2%none%the same K, declined: the hybrid's prefilter window is its ceiling ((d'), Q9)
+a.*?(?i)select%-e byte%unbounded%none%.*? (S467)
+ab.*xyzw%-e byte%unbounded%none%.* (S467)
+ROWS
+[ "$s512_n" -ge 13 ] \
+    && ok "[5.12a] the hand pin table's $s512_n rows all compiled" \
+    || bad "[5.12a] only $s512_n hand pin rows compiled"
+
+# (d) THE RUN CHOICE: the more informative unbounded run beats the bounded one
+wr="$(fact req_whole_run 'ab.*xyzw')"
+[ "$wr" = "78797a77" ] \
+    && ok "[5.12d] ab.*xyzw: req_whole_run \"$wr\" — the more informative unbounded xyzw, not the bounded ab (the offset is an annotation)" \
+    || bad "[5.12d] ab.*xyzw: req_whole_run \"$wr\", expected 78797a77: the run CHOICE moved with its offset (S474)"
+
+# (f) ONE START SITE PER BODY, and (g) THE \G READERS
+a="$WORKDIR/s512_f1.c"; emit "$a" 'x{2,5}(?i)cat' -e byte
+grep -qx '    size_t scan_position = handoff_position;' "$a" \
+    && [ "$(grep -c 'search_from' "$a" | tr -d ' ')" -gt 0 ] \
+    && ok "[5.12f] unanchored: the forward scan starts at handoff_position" \
+    || bad "[5.12f] unanchored: the forward scan does not start at handoff_position"
+a="$WORKDIR/s512_f2.c"; emit "$a" '\bcat\b' -e byte
+grep -q 'forward_state = handoff_position ? rx_forward_seed_state\[rx_forward_byte_class\[subject\[handoff_position - 1\]\]\]' "$a" \
+    && ! grep -q 'forward_state = search_from ?' "$a" \
+    && ok "[5.12f] seeded: the forward seed reads the byte before handoff_position, and nothing seeds from search_from (S468)" \
+    || bad "[5.12f] seeded: the forward seed does not read subject[handoff_position - 1], or a second initializer reads search_from (S468)"
+a="$WORKDIR/s512_f3.c"; emit "$a" '(?m)^x{2,5}(?i:cat)' -e byte
+grep -q '    for (start = handoff_position; start <= start_max; start++) {' "$a" \
+    && ok "[5.12f] attempt: the loop's first start is handoff_position" \
+    || bad "[5.12f] attempt: the loop does not start at handoff_position"
+a="$WORKDIR/s512_f4.c"; emit "$a" 'x{2,5}((?i:cat))' -e byte
+[ "$(grep -c 'rx_prefilter(subject, subject_length, handoff_position, window)' "$a")" -eq 1 ] \
+    && [ "$(grep -c 'rx_prefilter(subject, subject_length, search_from, window)' "$a")" -eq 0 ] \
+    && ok "[5.12f] hybrid: the FIRST prefilter call starts at handoff_position, once; the retries read attempt_position" \
+    || bad "[5.12f] hybrid: the first prefilter call does not read handoff_position exactly once"
+a="$WORKDIR/s512_g1.c"; emit "$a" '(?:\G|x)cat' -e byte
+grep -q '(start == search_from) ?' "$a" && ! grep -q 'start == handoff_position' "$a" \
+    && grep -q 'for (start = handoff_position;' "$a" \
+    && ok "[5.12g] attempt route with \\G: the dispatch still compares start with search_from" \
+    || bad "[5.12g] attempt route with \\G: the \\G dispatch reads the handoff, or the loop does not start there"
+a="$WORKDIR/s512_g2.c"; emit "$a" '(?:\Gab|x)(cat)(?=dog)' -e byte
+grep -q '_match_anchored(&ctx, run, search_from)' "$a" \
+    && [ "$(grep -c 'rx_prefilter(subject, subject_length, handoff_position, window)' "$a")" -eq 1 ] \
+    && ok "[5.12g] the \\G hybrid: the VM's \\G reads search_from; only the FIRST prefilter call reads the handoff (S469)" \
+    || bad "[5.12g] the \\G hybrid: the VM's \\G anchor moved, or the prefilter's first call does not read the handoff (S469)"
+
+# (h) THE ROUND-UP
+a="$WORKDIR/s512_h1.c"; emit "$a" '(?i)straße' -e utf8
+hb="$(handoff_block "$a")"
+printf '%s\n' "$hb" | awk '/> 2\) \{$/ { inb = 1; next } /^ *\} else$/ { inb = 0 }
+        /while \(!\(handoff_position >= subject_length \|\| \(subject\[handoff_position\] & 0xC0\) != 0x80\)\) handoff_position\+\+;/ { if (inb) good++; else badw++ }
+        /while|for \(/ { loops++ }
+        END { exit !(good == 1 && badw == 0 && loops == 1) }' \
+    && ! printf '%s\n' "$hb" | grep -qE '[<>]=? *[0-9]+ *&&|steps|_cap' \
+    && ok "[5.12h] utf8: one round-up, inside the moving branch, bounded by the subject's end and nothing else (S471, S472)" \
+    || bad "[5.12h] utf8: the round-up is missing, outside the moving branch, unbounded by the subject's end, or capped (S471/S472):
+$hb"
+a="$WORKDIR/s512_h2.c"; emit "$a" '(?i)straße' -e byte
+! handoff_block "$a" | grep -q 'while' \
+    && ok "[5.12h] byte: no round-up (every position is a character start)" \
+    || bad "[5.12h] byte: a round-up under an encoding that restricts no position"
+
+# (i) THE (d') DECLINE, on the witness whose prefilter window IS its ceiling
+a="$WORKDIR/s512_i.c"; emit "$a" '(?:\Gab|x)(cat)\w{0,3}dog' -e byte
+[ "$(stamp "$a" VM_PRUNE_CEILING)" = "prefilter-window" ] && grep -q '(start == search_from) ?' "$a" \
+    && [ "$(stamp "$a" REQ_HANDOFF)" = "none" ] && ! grep -q handoff_position "$a" \
+    && ok "[5.12i] (d'): a \\G hybrid with a prefilter-window ceiling keeps the scan at the startpos (S476)" \
+    || bad "[5.12i] (d'): the \\G hybrid with a prefilter-window ceiling hands off, or the witness lost its ceiling or its \\G (S476)"
+
+# (j) THE DENY
+a="$WORKDIR/s512_j.c"; emit "$a" '(?i)cat' -fno-req-handoff
+[ "$(stamp "$a" REQ_HANDOFF)" = "none" ] && ! grep -q handoff_position "$a" \
+    && grep -qx '    if (rx_reqrun(subject, subject_length, search_from) >= subject_length) return 0;' "$a" \
+    && ok "[5.12j] -fno-req-handoff: \"none\", no handoff_position, the abi-60 gate (S473)" \
+    || bad "[5.12j] -fno-req-handoff still hands off (S473)"
+
+# (k) Q10: a count-collapsed prefilter declines
+a="$WORKDIR/s512_k.c"; emit "$a" 'x{2,5}((?i:cat))' -fprefilter-collapse
+[ "$(stamp "$a" VM_PREFILTER_LANG)" = "count-collapsed" ] && [ "$(stamp "$a" REQ_HANDOFF)" = "none" ] \
+    && ok "[5.12k] Q10: a count-collapsed prefilter keeps the scan at the startpos, so the deny never moves a give-up" \
+    || bad "[5.12k] Q10: a count-collapsed prefilter hands off (or the witness lost its collapse)"
+
+# (b) (c) (e) THE POPULATION (K35): every pattern of the files the handoff's
+# witnesses live in, plus four base files. Floors at 80% of the counts
+# measured at the landing (2026-10-05, 154 distinct patterns): 52 movers (26
+# with K > 0), 27 unbounded-run artifacts with an emitted run pre-check.
+S512_MOV_FLOOR=41; S512_KPOS_FLOOR=20; S512_UNB_FLOOR=21
+s512_tot=0; s512_mov=0; s512_kpos=0; s512_unb=0
+while IFS= read -r pat; do
+    [ -n "$pat" ] || continue
+    s512_tot=$((s512_tot + 1))
+    a="$WORKDIR/s512_p.c"
+    emit "$a" "$pat" || continue
+    st="$(stamp "$a" REQ_HANDOFF)"; k="$(fact req_run_maxoff "$pat")"
+    s512_presence "$a" "$pat"
+    if [ "$st" != "none" ]; then
+        s512_mov=$((s512_mov + 1)); [ "$st" -gt 0 ] && s512_kpos=$((s512_kpos + 1))
+        { [ "$(stamp "$a" REQ_WHY)" = "emitted" ] && [ "$(stamp "$a" REQ_RUN)" != "none" ]; } \
+            || bad "[5.12e] $pat: REQ_HANDOFF \"$st\" with REQ_WHY \"$(stamp "$a" REQ_WHY)\" / REQ_RUN \"$(stamp "$a" REQ_RUN)\" — the two tables disagree"
+        [ "$k" = "$st" ] || bad "[5.12b] $pat: REQ_HANDOFF \"$st\" but req_run_maxoff $k"
+    fi
+    if [ "$k" = "unbounded" ] && [ "$(stamp "$a" REQ_WHY)" = "emitted" ]; then
+        s512_unb=$((s512_unb + 1))
+        [ "$st" = "none" ] || bad "[5.12c] $pat: req_run_maxoff unbounded but REQ_HANDOFF \"$st\" (S467)"
+    fi
+done < <(sed -n 's/^pattern //p' "$ROOT_DIR/tests/litscan/handoff.rxt" \
+                                 "$ROOT_DIR/tests/litscan/reqcube.rxt" \
+                                 "$ROOT_DIR/tests/litscan/litrun.rxt" \
+                                 "$ROOT_DIR/tests/base/literals.rxt" \
+                                 "$ROOT_DIR/tests/base/alternation.rxt" \
+                                 "$ROOT_DIR/tests/base/anchors.rxt" \
+                                 "$ROOT_DIR/tests/base/classes.rxt" 2>/dev/null | LC_ALL=C sort -u)
+echo "INFO: [5.12] population $s512_tot patterns: movers $s512_mov (K > 0: $s512_kpos), unbounded with an emitted pre-check $s512_unb"
+[ "$s512_mov" -ge "$S512_MOV_FLOOR" ] && [ "$s512_kpos" -ge "$S512_KPOS_FLOOR" ] \
+    && ok "[5.12b] $s512_mov movers ($s512_kpos with K > 0) hold the presence biconditional and the cross-table check (floors $S512_MOV_FLOOR/$S512_KPOS_FLOOR)" \
+    || bad "[5.12b] only $s512_mov movers ($s512_kpos with K > 0), floors $S512_MOV_FLOOR/$S512_KPOS_FLOOR — the presence and cross-table checks may be vacuous"
+[ "$s512_unb" -ge "$S512_UNB_FLOOR" ] \
+    && ok "[5.12c] $s512_unb unbounded-run artifacts with an emitted pre-check, none handed off (floor $S512_UNB_FLOOR)" \
+    || bad "[5.12c] only $s512_unb unbounded-run artifacts, floor $S512_UNB_FLOOR — the bounded check may be vacuous (S467)"
 
 # =========================================================================
 # SECTION 6 — [K68]: rx_info.flags IS BYTE-IDENTICAL TO BASELINE UNDER EACH

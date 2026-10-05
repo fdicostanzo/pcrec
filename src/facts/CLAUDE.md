@@ -194,6 +194,18 @@ defect traced to that edge (design §4.2.1, §10).
   Its header carries the whole analysis account (why the whole window, why a
   SET and a RUN, the declines, why a lookaround's body is a correctness
   decline). Sabotage S268 (`rr_alt`'s common head) is anchored here.
+  **[K82] (B) (lane k82hbuild, 2026-10-05, abi 61): THE RUN'S MAXIMUM BYTE
+  OFFSET.** The walk also carries each subtree's maximum width in BYTES
+  (`RbRuns.maxw`, saturating at `PCREC_W_UNBOUNDED`) and its run's maximum
+  offset from the subtree's start (`RbRun.off`): a head at 0, a tail at
+  `maxw - n`, a right factor's run `maxw(left)` further in, a repeat's run in
+  its first iteration; an annotation only (`rn_better` is unchanged). The
+  core half is `ReqRun.whole_maxoff`; `pcrec_req_window` derives the window's
+  `maxoff` (`+ at`), published as the new derived row `req_run_maxoff`
+  (`facts.def`, `pcrec_fact_req_run_maxoff`). Its consumer is the handoff
+  (src/gen/emit_dfa.c `req_uses[]`, `tuning.md` §2.41). Sabotage S465 (a wide
+  class counted as one byte) and S466 (an alternation's left width) and S474
+  (the choice preferring a bounded run) are anchored here.
   **[OPT-LITSCAN] S4 C3 (lane c3build, 2026-10-03, abi 59): A RUN OF
   POSITIONS.** `RbRun`/`ReqRun` carry a per-position mask K beside the bytes
   T; a position is a byte or a cube of at most `pos_set` members

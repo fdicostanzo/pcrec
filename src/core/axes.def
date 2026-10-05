@@ -204,6 +204,9 @@ PCREC_AXIS(PCREC_NO_REQ_RUN_FOLD, "-fno-req-run-fold", 0, "", PCREC_AXIS_DEFAULT
 /* [K82] the pre-check admission's `set-leads` row (src/gen/emit_dfa.c,
  * `req_admits[]`): a rarer necessary-set byte tested before the run. */
 PCREC_AXIS(PCREC_NO_REQ_SET_LEAD, "-fno-req-set-lead", 0, "", PCREC_AXIS_DEFAULT_ON)
+/* [K82] (B) the pre-check use table's `handoff` row (src/gen/emit_dfa.c,
+ * `req_uses[]`): the gate's first window hit, less K, as the scan start. */
+PCREC_AXIS(PCREC_NO_REQ_HANDOFF, "-fno-req-handoff", 0, "", PCREC_AXIS_DEFAULT_ON)
 
 /* ---- the emitted artifact's human commentary ([EMIT-VERB], D112) -------
  * The first row whose axis is not an OPTIMIZATION at all: it changes no

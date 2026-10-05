@@ -216,7 +216,10 @@ they read while writing it.
 Deny the SPLICE linkage at every call site, forcing the CALL linkage everywhere.
 
 **IT IS NOT IN `emit_info_def`'s `strategy_denials` MASK, AND THAT IS THE
-DECISION WORTH KNOWING.** Every other member of that mask is a knob with NO
+DECISION WORTH KNOWING.** Every other member of that mask (bit 46,
+`PCREC_NO_REQ_HANDOFF`, [K82] (B), joined it at `abi` 61 as an ordinary
+member: it moves where a scan begins, never an answer, a give-up or an
+engine) is a knob with NO
 OBSERVABLE EFFECT — the mask exists so two artifacts that behave identically do
 not differ in their reflection surface. This flag SELECTS AN ENGINE: a spliced
 call has an exact finite lowering, a linked one does not, so denying the splice

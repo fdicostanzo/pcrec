@@ -1,0 +1,31 @@
+# k82h_oracle.py (invariant F vs libpcre2 10.48 anchored attempts), 4 shards over mv1's movers, NEW = abi 61.
+## shard 0/4
+k82h_oracle: K>0 patterns 10, cells 256675, patterns 52, pcre2 matches 5922, pcre2 moved past an ill-formed start 357, python matches 3181
+k82h_oracle: PASS
+## shard 1/4
+k82h_oracle: K>0 patterns 10, cells 151402, patterns 52, pcre2 matches 4847, pcre2 moved past an ill-formed start 67, python matches 4450
+k82h_oracle: PASS
+## shard 2/4
+k82h_oracle: K>0 patterns 11, cells 377190, patterns 52, pcre2 matches 9099, pcre2 moved past an ill-formed start 218, python disagrees with pcre2 7, python matches 5430
+k82h_oracle: PASS
+## shard 3/4
+k82h_oracle: K>0 patterns 10, cells 268940, patterns 51, pcre2 matches 6572, pcre2 moved past an ill-formed start 250, python disagrees with pcre2 1271, python matches 5332
+k82h_oracle: PASS
+
+# KDELTA=-1 (the failing-direction control; python scored as a second language in this run, before the cross-check rule)
+## control shard 0/4
+k82h_oracle: K>0 patterns 10, VIOLATIONS 1484, cells 246855, patterns 52, pcre2 matches 5799, pcre2 moved past an ill-formed start 357, python VIOLATIONS 1438, python matches 3064
+k82h_oracle: FAIL
+printed VIOLATION lines: 20
+## control shard 1/4
+k82h_oracle: K>0 patterns 8, VIOLATIONS 759, cells 144309, patterns 52, pcre2 matches 4604, pcre2 moved past an ill-formed start 67, python VIOLATIONS 759, python matches 4207
+k82h_oracle: FAIL
+printed VIOLATION lines: 20
+## control shard 2/4
+k82h_oracle: K>0 patterns 9, VIOLATIONS 2482, cells 358758, patterns 52, pcre2 matches 8580, pcre2 moved past an ill-formed start 218, python VIOLATIONS 2142, python matches 5073
+k82h_oracle: FAIL
+printed VIOLATION lines: 20
+## control shard 3/4
+k82h_oracle: K>0 patterns 8, VIOLATIONS 794, cells 257645, patterns 51, pcre2 matches 6377, pcre2 moved past an ill-formed start 234, python VIOLATIONS 1641, python matches 6465
+k82h_oracle: FAIL
+printed VIOLATION lines: 20

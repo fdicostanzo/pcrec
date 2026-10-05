@@ -91,6 +91,19 @@
  * the hull is byte equality and the walk is the pre-row one exactly. The SET
  * is unchanged by all of this: only an exact position is a set member.
  *
+ * [K82] THE RUN CARRIES ITS MAXIMUM BYTE OFFSET FROM THE ATTEMPT START
+ * (`RbRun.off`, docs/design/litscan_k82h.md §1.3), and only this walk can
+ * compute it, because only the walk knows WHICH occurrence its run came from
+ * (a left factor, a right factor or a join). Each subtree also carries its
+ * maximum width in BYTES (`RbRuns.maxw`, saturating at `PCREC_W_UNBOUNDED`
+ * through `pcrec_sat_add`/`pcrec_sat_mul`): a head sits at 0 in every match,
+ * a tail at `maxw - n` or earlier, a right factor's run `maxw(left)` further
+ * in, and a repeat's run in its FIRST iteration. The offset is an
+ * ANNOTATION: `rn_better` ranks by information alone, so no run is chosen
+ * for being bounded. It is NOT `pcrec_cwmax`, which counts characters: on
+ * the lowered tree a `(?i)s` under utf8 is up to two bytes (U+017F), and a
+ * character count there under-states the offset, which DELETES matches.
+ *
  * THE WALK IS OVER THE LOWERED TREE, which is what makes the answer a BYTE
  * rather than a code point: after `pcrec_lower_enc` every `A_CLASS` is a byte
  * class, so a singleton is exactly one `memchr` argument. `pcrec_cls_single`
@@ -137,7 +150,7 @@
  * to the right, and it is FALSE the moment a run truncates — otherwise a
  * 20,000-byte literal would report its stored first bytes as adjacent to
  * whatever follows the literal, which is 19,968 bytes of a lie. */
-typedef struct { RbRun best, head, tail; bool all; } RbRuns;
+typedef struct { RbRun best, head, tail; bool all; long long maxw; } RbRuns;
 
 /* The two facts, threaded together because they come off one walk. */
 typedef struct { RbSet set; RbRuns runs; } RbVal;
@@ -220,6 +233,7 @@ static RbRun rn_none(void)
     memset(r.mask, 0, sizeof r.mask);
     r.n = 0;
     r.trunc = false;
+    r.off = 0;
     return r;
 }
 
@@ -348,25 +362,47 @@ static RbRuns rr_unit(void)
     RbRuns r;
     r.best = r.head = r.tail = rn_none();
     r.all = true;
+    r.maxw = 0;
     return r;
 }
 
 /* Everything declined: no run, and no permission to join across this
- * subtree. */
-static RbRuns rr_none(void)
+ * subtree, whose matches are at most `maxw` bytes wide. */
+static RbRuns rr_none(long long maxw)
 {
     RbRuns r = rr_unit();
     r.all = false;
+    r.maxw = maxw;
     return r;
 }
 
-/* A subtree that matches exactly the members of the one position `(t, k)`. */
+/* A subtree that matches exactly the members of the one position `(t, k)`:
+ * one byte wide. */
 static RbRuns rr_pos(const RbWalk *w, int t, int k)
 {
     RbRuns r;
     r.best = r.head = r.tail = rn_pos(w, t, k);
     r.all = true;
+    r.maxw = 1;
     return r;
+}
+
+/* [K82] Where a tail of `n` stored bytes may begin inside a subtree at most
+ * `maxw` bytes wide: a guaranteed SUFFIX ends at the match's end, so it
+ * starts at `len - n <= maxw - n` — after `rn_pre`'s truncation too, which
+ * keeps the LAST bytes. */
+static long long rn_tail_off(long long maxw, int n)
+{
+    return maxw >= PCREC_W_UNBOUNDED ? PCREC_W_UNBOUNDED : maxw - n;
+}
+
+/* [K82] A repeat's maximum width: `rmax` copies of its body (`rmax < 0`
+ * unbounded), saturating, so an unbounded repeat of a zero-width body is 0
+ * and of anything wider is `PCREC_W_UNBOUNDED`. */
+static long long rr_rep_w(int rmax, long long body)
+{
+    return pcrec_sat_mul(rmax < 0 ? PCREC_W_UNBOUNDED : (long long)rmax, body,
+                         PCREC_W_UNBOUNDED);
 }
 
 /* CONCATENATION of runs: `l` is to the LEFT of `r` in subject order.
@@ -380,10 +416,19 @@ static RbRuns rr_pos(const RbWalk *w, int t, int k)
 static RbRuns rr_cat(RbRuns l, RbRuns r)
 {
     RbRuns o;
+    RbRun rb = r.best, join = rn_app(l.tail, r.head);
+    o.maxw = pcrec_sat_add(l.maxw, r.maxw, PCREC_W_UNBOUNDED);
     o.head = l.all ? rn_app(l.head, r.head) : l.head;
+    o.head.off = 0;
     o.tail = r.all ? rn_pre(l.tail, r.tail) : r.tail;
+    o.tail.off = rn_tail_off(o.maxw, o.tail.n);
     o.all  = l.all && r.all && !o.head.trunc;
-    o.best = rn_better(rn_better(l.best, r.best), rn_app(l.tail, r.head));
+    /* [K82] `l`'s own best keeps its offset (`l` begins where `o` does);
+     * `r`'s sits at most `maxw(l)` further in; the join begins where `l`'s
+     * tail does. */
+    rb.off = pcrec_sat_add(l.maxw, r.best.off, PCREC_W_UNBOUNDED);
+    join.off = rn_tail_off(l.maxw, l.tail.n);
+    o.best = rn_better(rn_better(l.best, rb), join);
     o.best = rn_better(rn_better(o.best, o.head), o.tail);
     return o;
 }
@@ -397,8 +442,11 @@ static RbRuns rr_cat(RbRuns l, RbRuns r)
 static RbRuns rr_alt(const RbWalk *w, RbRuns l, RbRuns r)
 {
     RbRuns o;
+    o.maxw = l.maxw > r.maxw ? l.maxw : r.maxw;
     o.head = rn_common_head(w, l.head, r.head);
+    o.head.off = 0;
     o.tail = rn_common_tail(w, l.tail, r.tail);
+    o.tail.off = rn_tail_off(o.maxw, o.tail.n);
     o.best = rn_better(o.head, o.tail);
     o.all  = false;
     return o;
@@ -477,7 +525,9 @@ static RbVal rb_walk(const RbWalk *w, const Ast *a)
              * falling through. */
             if (a->u.rep.rmin >= 1) {
                 RbVal b = rb_walk(w, a->l);
-                RbRuns rep = rr_none();
+                RbRuns rep = rr_none(rr_rep_w(a->u.rep.rmax, b.runs.maxw));
+                /* [K82] the body's run at its own offset: the FIRST
+                 * iteration begins where the repeat does. */
                 rep.best = b.runs.best;
                 acc.set  = rb_union(b.set, acc.set);
                 acc.runs = rr_cat(rep, acc.runs);
@@ -492,8 +542,14 @@ static RbVal rb_walk(const RbWalk *w, const Ast *a)
              * abutting: true of the match where the repeat takes zero
              * iterations, false of every match where it takes one, and a run
              * must hold on EVERY match. So a min-0 repeat is `rr_none`,
-             * exactly as a multi-member class is. */
-            acc.runs = rr_cat(rr_none(), acc.runs);
+             * exactly as a multi-member class is.
+             *
+             * [K82] The body is still walked, for its WIDTH alone: a min-0
+             * repeat contributes no byte and no run, but it does move every
+             * run to its right. */
+            acc.runs = rr_cat(rr_none(rr_rep_w(a->u.rep.rmax,
+                                               rb_walk(w, a->l).runs.maxw)),
+                              acc.runs);
             return acc;
         case A_CLASS: {
             int b = pcrec_cls_single(w->cx, a);
@@ -503,8 +559,9 @@ static RbVal rb_walk(const RbWalk *w, const Ast *a)
                 /* A class that is not one cube of at most `pos_set` members
                  * contributes no byte and no run, and it also BREAKS
                  * contiguity for everything around it — which `rr_none`'s
-                 * cleared `all` is exactly what says. */
-                acc.runs = rr_cat(rr_none(), acc.runs);
+                 * cleared `all` is exactly what says. One byte wide: the
+                 * tree is lowered. */
+                acc.runs = rr_cat(rr_none(1), acc.runs);
                 return acc;
             }
             /* Only a single byte is a member of the necessary SET; a cube
@@ -533,6 +590,8 @@ static RbVal rb_walk(const RbWalk *w, const Ast *a)
         case A_GSTART:
         case A_KRESET:
         case A_LOOK:
+            acc.runs = rr_cat(rr_none(0), acc.runs);
+            return acc;
         /* The two deliberate declines, `src/facts/startanch.c`'s for the same
          * reasons: a backreference's bytes are the subject's business and a
          * linked call's body is `callgraph.c`'s cycle problem. Both are the
@@ -540,7 +599,7 @@ static RbVal rb_walk(const RbWalk *w, const Ast *a)
         case A_BREF:
         case A_VAR:
         case A_CALL:
-            acc.runs = rr_cat(rr_none(), acc.runs);
+            acc.runs = rr_cat(rr_none(PCREC_W_UNBOUNDED), acc.runs);
             return acc;
         }
     }
@@ -576,7 +635,8 @@ static PfWhyCode req_rate_why(Ctx *cx)
  * the run the emitted `memchr` scans for (`idx`), and where a run longer than
  * `PCREC_MAX_REQ_RUN_EMIT` is truncated to (`at`, with `bytes` exactly
  * `whole + at` for `len` bytes). A whole run shorter than two bytes has no
- * window (`len == 0`). The two choices are the rate readers'
+ * window (`len == 0`). [K82] It also derives the window's `maxoff`, the
+ * whole run's walk bound plus `at`. The two choices are the rate readers'
  * (`src/core/findings.c`); this composes them into the fact.
  *
  * The byte-rate is asked FIRST, before any branch, so whether the compile
@@ -591,6 +651,7 @@ void pcrec_req_window(Ctx *cx, ReqRun *run, PfWhyCode *why)
     run->len = 0;
     run->idx = 0;
     run->at = 0;
+    run->maxoff = 0;
     *why = PF_WHY_NONE;
     if (n < 2) return;
     *why = req_rate_why(cx);
@@ -606,6 +667,8 @@ void pcrec_req_window(Ctx *cx, ReqRun *run, PfWhyCode *why)
         run->len = len;
         run->idx = i - s;
         run->at = s;
+        /* [K82] the window begins `at` bytes into the whole run. */
+        run->maxoff = pcrec_sat_add(run->whole_maxoff, s, PCREC_W_UNBOUNDED);
     }
 }
 

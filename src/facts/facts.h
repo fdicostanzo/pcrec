@@ -76,6 +76,17 @@ typedef struct {
      * run; `pcrec_req_run_masked` is the one spelling of "is it masked". */
     unsigned char mask[PCREC_MAX_REQ_RUN_EMIT];
     unsigned char whole_mask[PCREC_MAX_REQ_RUN_SCAN];
+    /* [K82] THE RUN'S MAXIMUM BYTE OFFSET FROM THE ATTEMPT START, in its two
+     * halves, as `whole`/`bytes` are: `whole_maxoff` the core walk's bound on
+     * where `whole` begins inside any match (`req_whole_run`), and `maxoff`
+     * the window's, `whole_maxoff + at` (`req_run_maxoff`). Either is
+     * `PCREC_W_UNBOUNDED` where no static bound exists; meaningful only where
+     * the run itself is (`whole_len`/`len` >= 2). docs/design/litscan_k82h.md
+     * §1.3: every successful attempt at `p` holds the window at some `q` in
+     * `[p, p + maxoff]` (invariant F), which is what lets a search begin its
+     * scan `maxoff` bytes before the pre-check's first hit. */
+    long long whole_maxoff;
+    long long maxoff;
 } ReqRun;
 
 /* Does the run's WINDOW carry a position that is not one exact byte? */
@@ -317,6 +328,9 @@ const ReqSet  *pcrec_fact_req_set(Ctx *cx);
  * window its derived half, and each accessor answers for its own. */
 const ReqRun  *pcrec_fact_req_whole_run(Ctx *cx);
 const ReqRun  *pcrec_fact_req_run(Ctx *cx);
+/* E2 derived: the window's `maxoff` where a run shipped, -1 where none
+ * did ([K82]). `PCREC_W_UNBOUNDED` reads as "no bound". */
+long long      pcrec_fact_req_run_maxoff(Ctx *cx);
 int            pcrec_fact_req_byte(Ctx *cx);
 const KsetWalk *pcrec_fact_kset_walk(Ctx *cx);   /* E3 */
 const RunPin   *pcrec_fact_run_pin(Ctx *cx);     /* E3; its reader owes the kind gate */

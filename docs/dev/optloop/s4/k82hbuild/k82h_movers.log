@@ -1,0 +1,56 @@
+# k82h_movers.py transcripts (lane k82hbuild, 2026-10-05). BASE = 25319ae6 (abi 60).
+# Run 1 (mv1): NEW = the handoff before the abi bump (ABI_FROM=ABI_TO=60), corpus WITHOUT tests/litscan/handoff.rxt -- the design's own populations.
+
+jobs: 16000
+== bench: 1348 distinct artifact-configs (1380 rows)
+  ids: {'identical': 1161, 'refused': 93, 'moved': 94}
+  moved & predicted     94   moved & not      0
+  ident & predicted      0   ident & not   1161
+  auto: movers 47 distinct (49 rows); K>0 14; routes {'hybrid': 6, 'unanchored': 39, 'attempt': 2}; unbounded-run artifacts 12; K histogram {0: 33, 1: 1, 2: 1, 23: 1, 26: 1, 3: 2, 31: 1, 32: 1, 4: 2, 5: 1, 9: 3}
+    hybrid movers' RX_VM_PREFILTER_LANG {'exact': 6}
+  vm: movers 0 distinct (0 rows); K>0 0; routes {}; unbounded-run artifacts 12; K histogram {}
+  auto-nocaps: movers 47 distinct (49 rows); K>0 14; routes {'unanchored': 42, 'hybrid': 3, 'attempt': 2}; unbounded-run artifacts 12; K histogram {0: 33, 1: 1, 2: 1, 23: 1, 26: 1, 3: 2, 31: 1, 32: 1, 4: 2, 5: 1, 9: 3}
+    hybrid movers' RX_VM_PREFILTER_LANG {'exact': 3}
+  vm-nocaps: movers 0 distinct (0 rows); K>0 0; routes {}; unbounded-run artifacts 12; K histogram {}
+  deny arm: 1255 identical to BASE, 0 not
+== corpus: 14652 distinct artifact-configs (17776 rows)
+  ids: {'identical': 12415, 'refused': 1757, 'moved': 480}
+  moved & predicted    480   moved & not      0
+  ident & predicted      0   ident & not  12415
+  auto: movers 160 distinct (209 rows); K>0 27; routes {'hybrid': 33, 'unanchored': 121, 'attempt': 6}; unbounded-run artifacts 63; K histogram {0: 133, 1: 5, 10: 1, 12: 1, 18: 2, 2: 4, 24: 1, 3: 2, 4: 1, 5: 4, 6: 1, 9: 5}
+    hybrid movers' RX_VM_PREFILTER_LANG {'exact': 33}
+  vm: movers 0 distinct (0 rows); K>0 0; routes {}; unbounded-run artifacts 63; K histogram {}
+  nocaps: movers 160 distinct (209 rows); K>0 27; routes {'unanchored': 144, 'attempt': 7, 'hybrid': 9}; unbounded-run artifacts 63; K histogram {0: 133, 1: 5, 10: 1, 12: 1, 18: 2, 2: 4, 24: 1, 3: 2, 4: 1, 5: 4, 6: 1, 9: 5}
+    hybrid movers' RX_VM_PREFILTER_LANG {'exact': 9}
+  vm-pf: movers 160 distinct (209 rows); K>0 27; routes {'hybrid': 160}; unbounded-run artifacts 52; K histogram {0: 133, 1: 5, 10: 1, 12: 1, 18: 2, 2: 4, 24: 1, 3: 2, 4: 1, 5: 4, 6: 1, 9: 5}
+    hybrid movers' RX_VM_PREFILTER_LANG {'exact': 160}
+  deny arm: 12895 identical to BASE, 0 not
+k82h_movers: PASS (0 off-diagonal, stamp, run-choice, deny or refusal failures)
+
+# Run 2 (mv2): NEW = the abi-61 binary (ABI_FROM=60 ABI_TO=61), corpus WITH handoff.rxt (its own +22 auto movers).
+
+jobs: 16112
+== bench: 1348 distinct artifact-configs (1380 rows)
+  ids: {'identical': 1161, 'refused': 93, 'moved': 94}
+  moved & predicted     94   moved & not      0
+  ident & predicted      0   ident & not   1161
+  auto: movers 47 distinct (49 rows); K>0 14; routes {'hybrid': 6, 'unanchored': 39, 'attempt': 2}; unbounded-run artifacts 12; K histogram {0: 33, 1: 1, 2: 1, 23: 1, 26: 1, 3: 2, 31: 1, 32: 1, 4: 2, 5: 1, 9: 3}
+    hybrid movers' RX_VM_PREFILTER_LANG {'exact': 6}
+  vm: movers 0 distinct (0 rows); K>0 0; routes {}; unbounded-run artifacts 12; K histogram {}
+  auto-nocaps: movers 47 distinct (49 rows); K>0 14; routes {'unanchored': 42, 'hybrid': 3, 'attempt': 2}; unbounded-run artifacts 12; K histogram {0: 33, 1: 1, 2: 1, 23: 1, 26: 1, 3: 2, 31: 1, 32: 1, 4: 2, 5: 1, 9: 3}
+    hybrid movers' RX_VM_PREFILTER_LANG {'exact': 3}
+  vm-nocaps: movers 0 distinct (0 rows); K>0 0; routes {}; unbounded-run artifacts 12; K histogram {}
+  deny arm: 1255 identical to BASE, 0 not
+== corpus: 14764 distinct artifact-configs (18040 rows)
+  ids: {'identical': 12461, 'refused': 1757, 'moved': 546}
+  moved & predicted    546   moved & not      0
+  ident & predicted      0   ident & not  12461
+  auto: movers 182 distinct (263 rows); K>0 44; routes {'hybrid': 39, 'unanchored': 133, 'attempt': 10}; unbounded-run artifacts 65; K histogram {0: 138, 1: 7, 10: 1, 12: 3, 18: 2, 2: 10, 24: 1, 3: 3, 4: 2, 5: 9, 6: 1, 9: 5}
+    hybrid movers' RX_VM_PREFILTER_LANG {'exact': 39}
+  vm: movers 0 distinct (0 rows); K>0 0; routes {}; unbounded-run artifacts 65; K histogram {}
+  nocaps: movers 183 distinct (265 rows); K>0 45; routes {'unanchored': 160, 'hybrid': 11, 'attempt': 12}; unbounded-run artifacts 65; K histogram {0: 138, 1: 7, 10: 1, 12: 3, 18: 2, 2: 11, 24: 1, 3: 3, 4: 2, 5: 9, 6: 1, 9: 5}
+    hybrid movers' RX_VM_PREFILTER_LANG {'exact': 11}
+  vm-pf: movers 181 distinct (261 rows); K>0 43; routes {'hybrid': 181}; unbounded-run artifacts 54; K histogram {0: 138, 1: 6, 10: 1, 12: 3, 18: 2, 2: 10, 24: 1, 3: 3, 4: 2, 5: 9, 6: 1, 9: 5}
+    hybrid movers' RX_VM_PREFILTER_LANG {'exact': 181}
+  deny arm: 13007 identical to BASE, 0 not
+k82h_movers: PASS (0 off-diagonal, stamp, run-choice, deny or refusal failures)

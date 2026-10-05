@@ -1,0 +1,29 @@
+# k82h_answers.py ONLY_K_POS=1 with NEW = a compiler carrying S463's plant (K - 1), 3 shards over mv1's K > 0 movers.
+## shard 0/3
+movers 37 (per route {'unanchored': 31, 'hybrid': 6}): identical 7, DEFECT 30, skipped 0; cells compared 166669
+K>0 plant coverage: 30 of 37 detected (per route {'unanchored': 28, 'hybrid': 2}); undetected:
+   UNDETECTED corpus nocaps K=10 '(?:a\\K){0,10}ab'
+   UNDETECTED corpus nocaps K=6 '(?:aa|a){1,3}+ab'
+   UNDETECTED corpus nocaps K=24 '(?:aa|a){8,12}+ab'
+   UNDETECTED corpus nocaps K=1 '(?:z|)(?:ab){3,}?'
+   UNDETECTED corpus nocaps K=1 '(?:z|)(?:ab){3,}?c?'
+   UNDETECTED corpus nocaps K=2 '(?>a|ab)bc'
+   UNDETECTED corpus nocaps K=3 '(foo)?bar'
+## shard 1/3
+movers 36 (per route {'unanchored': 31, 'hybrid': 5}): identical 7, DEFECT 29, skipped 0; cells compared 102133
+K>0 plant coverage: 29 of 36 detected (per route {'unanchored': 28, 'hybrid': 1}); undetected:
+   UNDETECTED bench auto K=4 '\\bÐ\x9cÐ¾Ñ\x81ÐºÐ²Ð°\\b'
+   UNDETECTED corpus auto K=10 '(?:a\\K){0,10}ab'
+   UNDETECTED corpus auto K=6 '(?:aa|a){1,3}+ab'
+   UNDETECTED corpus auto K=24 '(?:aa|a){8,12}+ab'
+   UNDETECTED corpus auto K=1 '(?:z|)(?:ab){3,}?'
+   UNDETECTED corpus auto K=1 '(?:z|)(?:ab){3,}?c?'
+   UNDETECTED corpus auto K=2 '(?>a|ab)bc'
+## shard 2/3
+movers 36 (per route {'unanchored': 9, 'hybrid': 27}): identical 5, DEFECT 31, skipped 0; cells compared 140105
+K>0 plant coverage: 31 of 36 detected (per route {'unanchored': 8, 'hybrid': 23}); undetected:
+   UNDETECTED bench auto-nocaps K=4 '\\bÐ\x9cÐ¾Ñ\x81ÐºÐ²Ð°\\b'
+   UNDETECTED corpus vm-pf K=10 '(?:a\\K){0,10}ab'
+   UNDETECTED corpus vm-pf K=6 '(?:aa|a){1,3}+ab'
+   UNDETECTED corpus vm-pf K=24 '(?:aa|a){8,12}+ab'
+   UNDETECTED corpus vm-pf K=2 '(?>a|ab)bc'

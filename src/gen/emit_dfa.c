@@ -49,7 +49,7 @@
  * abi ritual fires next, bump this ONE constant; grep for its old value
  * finds both emission sites plus every out-of-tree reader the ritual's own
  * site list already enumerates. */
-#define PCREC_ARTIFACT_ABI 60
+#define PCREC_ARTIFACT_ABI 61
 
 /* Renders one byte of pattern-derived text safely into a C block comment, escaping whatever would close or falsely open the comment.
  *
@@ -319,6 +319,17 @@ static bool req_admit_emits(ReqAdmit a)
 /* The necessary-set byte [K82]'s `set-leads` row tests in front of the run,
  * or -1 where the admission chose another row. Defined beside it. */
 static int req_lead_byte(Ctx *cx);
+/* [K82] (B) WHAT THE BODY DOES WITH AN EMITTED RUN PRE-CHECK'S ANSWER — the
+ * `req-use` table, defined beside the admission it reads: keep its candidate
+ * as the scan start (the HANDOFF), or start at the startpos. Read by the gate
+ * (`emit_req_run_check`), by the three bodies through the expression
+ * `pcrec_emit_req_byte_check` returns, and by `<PREFIX>_REQ_HANDOFF`. */
+typedef enum {
+    REQ_USE_HANDOFF = 0,
+    REQ_USE_FROM_STARTPOS
+} ReqUse;
+static ReqUse req_use(Ctx *cx);
+static const char *req_handoff_stamp(Ctx *cx);
 
 /* This file's arena-owned fragment formatter, defined below with its reason;
  * declared here because the run pre-check's emitter precedes it. */
@@ -856,7 +867,10 @@ void pcrec_emit_start_zero(Ctx *cx, StrBuf *c, const char *indent,
     char g[256];
     bool trunc;
 
-    if (!pcrec_startgate_needed(cx)) return;
+    /* [K82] the round-up is not gated on nullability: it makes the handoff's
+     * scan start a legal startpos for every pattern (Claim 3), where the
+     * offset-0 rule below is redundant with the machine's own first byte. */
+    if (act != PCREC_START0_ROUNDUP && !pcrec_startgate_needed(cx)) return;
     if (!pcrec_enc_start_guard(pcrec_enc_by_id(cx->opt->encoding),
                                g, sizeof g, posvar, subjvar, lenvar, &trunc)) {
         if (trunc)
@@ -864,6 +878,13 @@ void pcrec_emit_start_zero(Ctx *cx, StrBuf *c, const char *indent,
                      "internal error: this encoding's character-start guard "
                      "does not fit the emitter's buffer");
         return;   /* this encoding places no restriction: emit nothing */
+    }
+    if (act == PCREC_START0_ROUNDUP) {
+        /* UNCAPPED: on ill-formed text the next start may be any number of
+         * stray continuation bytes away, and the predicate's own `>= len`
+         * clause is what stops it (litscan_k82h.md §1.4 (e), [r1 S-F5]). */
+        pcrec_sb_printf(c, "%swhile (!(%s)) %s++;\n", indent, g, posvar);
+        return;
     }
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
     pcrec_sb_printf(c,
@@ -883,6 +904,8 @@ void pcrec_emit_start_zero(Ctx *cx, StrBuf *c, const char *indent,
         case PCREC_START0_SKIP:
             pcrec_sb_printf(c, "%sif (%s == 0 && !(%s)) continue;\n",
                             indent, posvar, g);
+            break;
+        case PCREC_START0_ROUNDUP:   /* written above, before the comment */
             break;
     }
 }
@@ -1072,6 +1095,56 @@ void pcrec_emit_req_run_blocks(Ctx *cx, StrBuf *c)
     }
 }
 
+/* [K82] (B) THE HANDOFF: writes the window's gate as a KEPT candidate. The
+ * search block returns `c`, the LEFTMOST position >= `posvar` where the
+ * window occurs (`ofs_test_emit_fn`'s contract), or the subject's length;
+ * every match begins at most K bytes before its window (invariant F,
+ * litscan_k82h.md §1.2), so no attempt below `c - K` can succeed and the body
+ * may begin its scan at `max(posvar, c - K)` and answer exactly what it
+ * answers at `posvar` (the startpos contract, Claims 1-3).
+ *
+ * THE SUBTRACTION CANNOT UNDERFLOW: `c >= posvar` always, so it compares the
+ * DISTANCE `c - posvar` with K rather than computing `c - K`, and never forms
+ * `posvar + K`, which could overflow near `SIZE_MAX`. At K = 0 there is no
+ * subtraction. Under a multibyte encoding the moved start is rounded UP to a
+ * character start (`PCREC_START0_ROUNDUP`, the backend's own predicate), so
+ * it is a startpos the contract covers; only when it moved — `posvar` itself
+ * is the caller's choice and stays exactly what it was ([r1 S-F6]). The
+ * block exists only where its moving branch has a statement in it. The local
+ * carries no prefix (K79: the emitters never see the caller's). */
+static void emit_req_handoff(Ctx *cx, StrBuf *c, const char *indent,
+                             const char *posvar, const char *subjvar,
+                             const char *lenvar)
+{
+    long long k = pcrec_fact_req_run_maxoff(cx);
+    StrBuf round = { 0 };
+    round.cx = cx;
+    pcrec_emit_start_zero(cx, &round, dfa_fragf(cx, "%s    ", indent),
+                          "handoff_position", subjvar, lenvar,
+                          PCREC_START0_ROUNDUP);
+    pcrec_sb_printf(c, "%ssize_t handoff_position = %s(%s, %s, %s);\n"
+                       "%sif (handoff_position >= %s) return 0;\n",
+                    indent, req_run_fn_name(cx, 0), subjvar, lenvar, posvar,
+                    indent, lenvar);
+    if (k > 0 || round.len > 0) {
+        pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
+        pcrec_sb_printf(c,
+            "%s/* [K82] every match begins at most %lld bytes before its run\n"
+            "%s * window, so no match begins before this. */\n",
+            indent, k, indent);
+        pcrec_sb_cmt_close(c);
+        pcrec_sb_printf(c, "%sif (handoff_position - %s > %lld) {\n",
+                        indent, posvar, k);
+        if (k > 0)
+            pcrec_sb_printf(c, "%s    handoff_position -= %lld;\n", indent, k);
+        if (round.len > 0) pcrec_sb_puts(c, round.p);
+        pcrec_sb_printf(c, "%s} else\n"
+                           "%s    handoff_position = %s;\n",
+                        indent, indent, posvar);
+    }
+    pcrec_sb_free(&round);
+}
+
 /* Writes the run pre-check at the search entry: a call of each block
  * `pcrec_emit_req_run_blocks` wrote, NOMATCH when one finds no run. [K66]
  * The window is cut from the run by the byte-rate (`pcrec_find_run_window_start`), so
@@ -1142,6 +1215,10 @@ static void emit_req_run_check(Ctx *cx, StrBuf *c, const char *indent,
                 indent, indent);
         }
         pcrec_sb_cmt_close(c);
+        if (i == 0 && req_use(cx) == REQ_USE_HANDOFF) {
+            emit_req_handoff(cx, c, indent, posvar, subjvar, lenvar);
+            continue;
+        }
         pcrec_sb_printf(c, "%sif (%s(%s, %s, %s) >= %s) return 0;\n",
                         indent, req_run_fn_name(cx, i), subjvar, lenvar, posvar,
                         lenvar);
@@ -1281,20 +1358,20 @@ static void emit_req_one_byte(StrBuf *c, const char *indent,
  * no-match proof there does not rest on the pick. [K66] A run longer than its
  * window is compared whole there first, `emit_req_run_check`, so it does not
  * rest on the window pick either. */
-void pcrec_emit_req_byte_check(Ctx *cx, StrBuf *c, const char *indent,
-                               const char *posvar, const char *subjvar,
-                               const char *lenvar)
+const char *pcrec_emit_req_byte_check(Ctx *cx, StrBuf *c, const char *indent,
+                                      const char *posvar, const char *subjvar,
+                                      const char *lenvar)
 {
     int b = pcrec_fact_req_byte(cx);
     /* "Nothing necessary" is no byte AND no run: a masked run over an empty
      * set ([OPT-LITSCAN] S4 C3) has no byte and still a pre-check. */
-    if (b < 0 && pcrec_fact_req_run(cx)->len < 2) return;
+    if (b < 0 && pcrec_fact_req_run(cx)->len < 2) return posvar;
     /* [OPT-PRECHECK-ADMIT] THE ADMISSION, and it is asked HERE rather than at
      * the three call sites for the reason this file states everywhere else: a
      * condition spelled at the site is a condition that drifts from the stamp
      * that describes it. `req_admit` is the one derivation; the prologue's
      * three stamps and its `<string.h>` decision read the same call. */
-    if (!req_admit_emits(req_admit(cx))) return;
+    if (!req_admit_emits(req_admit(cx))) return posvar;
     /* [OPT-REQPOS] tier 2b: the RUN is the same fact at word grain and its
      * check subsumes this one, so where a run shipped it is the pre-check
      * emitted — and the `req_byte` fact is then the run's own scan member,
@@ -1310,10 +1387,12 @@ void pcrec_emit_req_byte_check(Ctx *cx, StrBuf *c, const char *indent,
                               req_lead_byte(cx));
         emit_req_run_check(cx, c, indent, posvar, subjvar, lenvar);
         emit_req_set_rest(cx, c, indent, posvar, subjvar, lenvar);
-        return;
+        /* [K82] the body's start site reads what the gate kept. */
+        return req_use(cx) == REQ_USE_HANDOFF ? "handoff_position" : posvar;
     }
     emit_req_one_byte(c, indent, posvar, subjvar, lenvar, b);
     emit_req_set_rest(cx, c, indent, posvar, subjvar, lenvar);
+    return posvar;
 }
 
 /* Writes the dead groups' PCREC_UNSET fill into a DFA search entry's SUCCESS
@@ -2915,6 +2994,17 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
                                            * no answer, masked for the same
                                            * reason. */
                                           PCREC_NO_REQ_SET_LEAD |
+                                          /* [K82] (B) the `req-use`
+                                           * table's `handoff` row: the
+                                           * body's scan begins where no
+                                           * match can begin earlier, which
+                                           * moves no answer and no give-up
+                                           * (the count-collapsed prefilter
+                                           * declines it), masked for the
+                                           * same reason. Not the wave-G
+                                           * exception: it selects no
+                                           * engine. */
+                                          PCREC_NO_REQ_HANDOFF |
                                           /* [UCP] U2 T3's `ctx-node` row
                                            * ([UCP] ucp_design.md §2.2). An
                                            * answer-identity axis: denied, a
@@ -4885,8 +4975,13 @@ struct DfaDir {
      * at an end the forward pass accepted, and that acceptance read the same
      * right-hand context the reverse seed reads. */
     const char *dead_entry;
-    const char *seed_cond;    /* "a context byte exists" */
-    const char *seed_byte;    /* that byte */
+    /* "a context byte exists" and that byte — or NULL for both where the
+     * context byte is the one BEFORE the walk's start, `subject[from - 1]`
+     * when `from > 0`, read off the form's `from` ([K82]: the forward
+     * search's start may be the handoff's, and its seed must read the byte
+     * before THAT, the one writer of the state at entry). */
+    const char *seed_cond;
+    const char *seed_byte;
     const char *at_bound;     /* "there is no byte left to consume" */
     const char *peek;         /* the byte to consume, WITHOUT consuming it */
     const char *consume;      /* the byte to consume, consuming it */
@@ -4928,6 +5023,12 @@ struct DfaForm {
     const DfaView *view;
     const DfaSeed *seed;
     const DfaAcc  *acc;
+    /* [K82] the expression the walk STARTS at, which its seed reads the byte
+     * before: `search_from`, or `handoff_position` where the run pre-check's
+     * candidate became the forward search's scan start
+     * (`pcrec_emit_req_byte_check`'s return); NULL on the reverse walk, whose
+     * start is the forward walk's end. */
+    const char    *from;
     bool           views;          /* the D11 bound: a skip may pass a
                                     * position whose accept was not evaluated */
     bool           viewsel;        /* the position-view indirection exists */
@@ -5482,8 +5583,11 @@ static void seed_emit_seeded(StrBuf *c, const DfaForm *f)
     pcrec_sb_printf(c, "%s%s_%s_state %s = %s ? %s_%s_seed_state[%s_%s_byte_class[%s]]"
                  " : %d;\n",
               f->dir->ind, f->p, f->dir->c.name, f->dir->statev,
-              f->dir->seed_cond, f->p, f->dir->c.name, f->p, f->dir->c.name,
-              f->dir->seed_byte, dfa_s0_cell(f));
+              f->dir->seed_cond ? f->dir->seed_cond : f->from,
+              f->p, f->dir->c.name, f->p, f->dir->c.name,
+              f->dir->seed_byte ? f->dir->seed_byte
+                                : dfa_fragf(f->cx, "subject[%s - 1]", f->from),
+              dfa_s0_cell(f));
 }
 
 /* AXIS D, `constant`: one start state, so the local is initialised to it and
@@ -6173,6 +6277,17 @@ static void ofs_test_emit_pair(Ctx *cx, StrBuf *c, const char *p,
 /* Writes `static inline size_t <name>(subject, n, pos[, tables])`, the one
  * search block every candidate test `t` is emitted through: the first
  * position >= `pos` that passes every test of `t`, or `n` when none does.
+ *
+ * [K82] (B) THAT IS A CONTRACT ON THE RETURNED POSITION, not only on its
+ * comparison with `n` (docs/design/litscan_k82h.md §1.1a): `<p>_reqrun(s, n,
+ * from)` returns the LEAST `q >= from` at which every position of the window
+ * passes its masked compare, or `n` when there is none, and a caller may use
+ * the position itself — the handoff does (`emit_req_handoff`). A block that
+ * returns "some occurrence" is a correct discard gate and an incorrect
+ * handoff gate. The pair arm keeps it by taking the LESSER verified stream
+ * hit and re-searching both streams fresh per call, so no stale position can
+ * sit below `from`; any later arm rendered through here (a fused scan+verify
+ * twin, a run-compare search row) inherits it. S464 is its sabotage.
  * It reads no `Dfa` and no `DfaForm` (litscan_s1.md §1.3's narrowing), so a
  * caller without a DFA -- the run pre-check on a VM route -- emits its own
  * test through it; `p` names the verify tables, which only a model term
@@ -6685,6 +6800,100 @@ static const char *req_why_name(ReqAdmit a)
     return "none";
 }
 
+/* [K82] (B) THE HANDOFF ROW's predicate (docs/design/litscan_k82h.md §1.4):
+ * the pre-check's candidate `c` can become the body's scan start
+ * `max(search_from, c - K)`, with K the window's maximum byte offset from the
+ * attempt start (the `req_run_maxoff` fact). Each conjunct with its reason:
+ *
+ *   - THE ADMISSION'S OWN VERDICT, CALLED rather than restated, so a change
+ *     to `req_admits[]` reaches this table with no edit here (§2.1, [r1
+ *     C-C10]): a run pre-check is emitted (`emitted` or `set-leads`).
+ *   - (a) A SCAN TO MOVE: `pcrec_artifact_has_dfa_scan`, G1's own premise,
+ *     and a machine that is not the empty one (whose body returns before any
+ *     start site exists). A VM with no DFA scan is [OPT-VMSEED]'s.
+ *   - (b) A BOUND: K finite. A saturated K reads as unbounded, which is the
+ *     safe direction.
+ *   - Q10 (Frank, 2026-10-05): not on a COUNT-COLLAPSED prefilter. Its
+ *     answers may sit below `c - K`, so there the handoff would skip VM
+ *     attempts and could turn a step give-up into a match; declined, the deny
+ *     flag never moves the give-up surface (K65/K66's invariant, no
+ *     exception).
+ *   - (d') On the VM hybrid, not where the program has a `\G` start family
+ *     AND the prefilter's span end is the match ceiling
+ *     (`pcrec_vm_prefilter_window`): the prefilter's `\G` reads its third
+ *     argument, and `window_end` is set from its first answer (Claim 2', Q9).
+ *   - (g) NO VERB AND NO CALLOUT: a `(*COMMIT)` in a failed attempt below the
+ *     scan start can end the whole search. STRUCTURALLY ABSENT today — the
+ *     AST has no node kind for either (`(*COMMIT)` and `(?C)` are refused
+ *     before a tree exists), so there is nothing to read; the kind that adds
+ *     one must add a `PF_KIND_*` bit (src/facts/kinds.c's exhaustive switch
+ *     is its alarm) and decline here. Sabotage row S475 ships UNREACHED.
+ *
+ * (c) (the pinned form) and (d) (`\G` on the unanchored body) are NOT
+ * conjuncts: both are unreachable, and `req_handoff_assert_body` makes them
+ * loud internal errors at the body that would read them. */
+static bool req_handoff_applies(const DfaSel *s)
+{
+    Ctx *cx = s->cx;
+    long long k;
+    if (!req_admit_emits(req_admit(cx)) || pcrec_fact_req_run(cx)->len < 2)
+        return false;
+    if (!pcrec_artifact_has_dfa_scan(cx) || dfa_engine_is_empty(cx))
+        return false;
+    k = pcrec_fact_req_run_maxoff(cx);
+    if (k < 0 || k >= PCREC_W_UNBOUNDED) return false;
+    if (cx->job->fit.prefilter_collapsed) return false;
+    if (cx->job->fit.chosen == ENGM_VM && dfa_needs_gseed(&cx->job->dfa) &&
+        pcrec_vm_prefilter_window(cx))
+        return false;
+    return true;
+}
+
+/* [K82] THE PRE-CHECK'S USE TABLE (axis `req-use`): what the search body does
+ * with the run pre-check's answer. First applying, non-denied row wins
+ * (`DFA_SELECT`). It answers a question neither neighbour asks:
+ * `req_admits[]` decides WHETHER and in WHICH SHAPE a pre-check is emitted,
+ * `dfa_pfs[]` how the forward machine finds its next candidate INSIDE its
+ * loop; this decides where the body's scan BEGINS. It composes with every row
+ * of both (litscan_k82h.md §2.1), and three bodies read it through the one
+ * expression `pcrec_emit_req_byte_check` returns. `scan-from-startpos` is the
+ * total fallback: where a run pre-check is emitted it is the discard gate,
+ * and where none is there is nothing to use. */
+typedef struct ReqUseRow {
+    DfaCand     c;
+    ReqUse      use;
+    const char *desc;      /* the predicate, for `--list-axes` */
+} ReqUseRow;
+static const ReqUseRow req_uses[] = {
+    { { "handoff",            PCREC_NO_REQ_HANDOFF, req_handoff_applies }, REQ_USE_HANDOFF,
+      "a run pre-check is emitted (req-admit `emitted` or `set-leads`), the artifact has a DFA scan to move (a DFA body or the VM hybrid's prefilter, not the empty machine), the window's maximum byte offset K from the attempt start is finite, the prefilter is not count-collapsed, and no VM hybrid with a \\G start family reads its prefilter-window ceiling: the gate's first window hit c becomes the scan start max(startpos, c - K), rounded up to a character start under a multibyte encoding" },
+    { { "scan-from-startpos", 0,                    cand_always         }, REQ_USE_FROM_STARTPOS,
+      "always (fallback): the scan starts at the startpos; a run pre-check, where one is emitted, only discards" },
+};
+const int pcrec_req_use_nrows = (int)(sizeof req_uses / sizeof req_uses[0]);
+
+void pcrec_req_use_row(int i, PcrecReqUseDesc *out)
+{
+    out->name  = req_uses[i].c.name;
+    out->deny  = req_uses[i].c.deny;
+    out->stamp = req_uses[i].use == REQ_USE_HANDOFF ? "" : "none";
+    out->desc  = req_uses[i].desc;
+}
+
+static ReqUse req_use(Ctx *cx)
+{
+    DfaSel s = { cx, NULL, NULL, true, -1 };
+    return DFA_SELECT(ReqUseRow, req_uses, &s, cx->opt->flags)->use;
+}
+
+/* [K82] `<PREFIX>_REQ_HANDOFF`'s value: the decimal K the emitted
+ * subtraction carries, or "none" where the scan starts at the startpos. */
+static const char *req_handoff_stamp(Ctx *cx)
+{
+    if (req_use(cx) != REQ_USE_HANDOFF) return "none";
+    return dfa_fragf(cx, "%lld", pcrec_fact_req_run_maxoff(cx));
+}
+
 /* [OPT-EDGE] STEP 1.1 — WILL THIS MACHINE'S EMITTED SCAN LOOP WRITE THE STATE
  * VARIABLE FROM ANYWHERE BUT THE STEP AND THE ENTRY SEED?
  *
@@ -6856,7 +7065,7 @@ static const DfaDir dfa_dir_forward = {
     "     *\n",
     "a match may end",
     "    if (search_from > subject_length) return 0;\n", "return 0;",
-    "search_from", "subject[search_from - 1]",
+    NULL, NULL,
     "scan_position >= subject_length",
     "subject[scan_position]", "subject[scan_position++]", "scan_position++",
     dir_fwd_skip, dir_fwd_bound_accept,
@@ -6928,7 +7137,7 @@ static const DfaDir dfa_dir_anchored = {
     "     *\n",
     "a match beginning at ctx->pos may end",
     "    if (search_from > subject_length) return -1;\n", "return -1;",
-    "search_from", "subject[search_from - 1]",
+    NULL, NULL,
     "scan_position >= subject_length",
     "subject[scan_position]", "subject[scan_position++]", "scan_position++",
     dir_fwd_skip, dir_fwd_bound_accept,
@@ -7646,6 +7855,7 @@ static void dfa_form_derive(Ctx *cx, const Dfa *d, const UnanchStart *us,
     f->d       = d;
     f->p       = cx->opt->prefix;
     f->dir     = dir;
+    f->from    = dir->reverse ? NULL : "search_from";
     f->repr    = DFA_SELECT(DfaRepr, dfa_reprs, &s, flags);
     f->view    = DFA_SELECT(DfaView, dfa_views, &s, flags);
     f->seed    = DFA_SELECT(DfaSeed, dfa_seeds, &s, flags);
@@ -8041,6 +8251,26 @@ static void emit_scan_loop(StrBuf *c, const DfaForm *f)
 
 /* ---- ENG_UNANCH: the assembly ------------------------------------------- */
 
+/* [K82] THE HANDOFF'S TWO BODY PREMISES, as loud internal errors at the one
+ * body that would read them wrongly (litscan_k82h.md §1.4 (c) and (d)). (c):
+ * the start-PINNED search answers "the match began at `search_from`" by
+ * construction, so moving its start would move its answer; a pinned machine's
+ * start state accepts unconditionally, the pattern is nullable and has no
+ * necessary run, so the handoff cannot reach it. (d): this body runs no `\G`
+ * test and reads the startpos only as a lower bound (Claim 2); ENG_UNANCH
+ * implies no `\G` start family, the premise `start_pinned_assert_routing`
+ * asserts for the pinned form, asked here of the second body shape. */
+static void req_handoff_assert_body(Ctx *cx, const Dfa *fd, bool pinned)
+{
+    if (pinned)
+        pcrec_ctx_fail(cx, 0, "internal error: the [K82] handoff reached the "
+                       "start-pinned search, whose answer is its start");
+    if (dfa_needs_gseed(fd))
+        pcrec_ctx_fail(cx, 0, "internal error: the [K82] handoff reached an "
+                       "unanchored machine with a \\G start family, which "
+                       "would read the moved start as the caller's");
+}
+
 /* THE ENG_UNANCH ARTIFACT'S WHOLE BODY: the start analysis, both machines'
  * forms, their file-scope accessor blocks, the search entry, the tables, the
  * forward scan that finds where a match ENDS and the reverse scan that finds
@@ -8128,9 +8358,14 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
         pcrec_emit_end_window_clamp(cx, c, "    ", "search_from", "subject_length");
         /* AFTER the clamp, deliberately: the clamp can only narrow the
          * window, so scanning the narrowed one is both cheaper and still
-         * sound — every match lies inside it. */
-        pcrec_emit_req_byte_check(cx, c, "    ", "search_from", "subject",
-                                  "subject_length");
+         * sound — every match lies inside it. [K82] Where its candidate is
+         * handed off, the forward walk starts there: its position and its
+         * seed both read `fwd.from`, and nothing else does (the reverse
+         * pass keeps `search_from` as its lower bound, Q6). */
+        fwd.from = pcrec_emit_req_byte_check(cx, c, "    ", "search_from",
+                                             "subject", "subject_length");
+        if (req_use(cx) == REQ_USE_HANDOFF)
+            req_handoff_assert_body(cx, &job->dfa, pinned);
     }
     emit_machine_tables(c, &fwd);
     if (!pinned) emit_machine_tables(c, &rev);
@@ -8141,8 +8376,8 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
                "    // position rather than stopping at the first, so the longest\n"
                "    // match wins.\n");
     pcrec_sb_cmt_close(c);
-    pcrec_sb_puts(c, "    size_t scan_position = search_from;\n"
-               "    size_t last_accept_position = (size_t)-1;\n");
+    pcrec_sb_printf(c, "    size_t scan_position = %s;\n"
+               "    size_t last_accept_position = (size_t)-1;\n", fwd.from);
     emit_scan_loop(c, &fwd);
     if (pinned) {
         /* THE GATE IS LOAD-BEARING AND THE EMITTED COMMENT SAYS SO, which is
@@ -8412,10 +8647,14 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
      * `^`-anchored pattern whose window starts past 0 is the correct answer
      * (no match can satisfy both), reached by arithmetic rather than by a
      * third rule about their interaction. */
+    /* [K82] The attempt loop's first start: `search_from`, or the handoff's
+     * kept candidate. The `\G` dispatch below keeps comparing `start` with
+     * `search_from` itself (Claim 2'). */
+    const char *first = "search_from";
     if (cx->job->fit.chosen == ENGM_DFA) {
         pcrec_emit_end_window_clamp(cx, c, "    ", "search_from", "subject_length");
-        pcrec_emit_req_byte_check(cx, c, "    ", "search_from", "subject",
-                                  "subject_length");
+        first = pcrec_emit_req_byte_check(cx, c, "    ", "search_from",
+                                          "subject", "subject_length");
     }
 
     /* [DD-13c] THE EMPTY ENGINE, through the SHARED derivation. The condition
@@ -8635,7 +8874,7 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
                  "    const size_t start_max = %s;\n",
               anchored ? "0 /* fully ^-anchored */"
                        : a_bot ? "search_from /* fully \\G-anchored */" : "subject_length");
-    pcrec_sb_puts(c, "    for (start = search_from; start <= start_max; start++) {\n");
+    pcrec_sb_printf(c, "    for (start = %s; start <= start_max; start++) {\n", first);
 
     /* [K50] SITE 2 OF THE THREE "TRY THE NEXT START" MECHANISMS. K49 fixed the
      * VM's retry, K50's IR gate fixed the DFA self-loop, and this loop is the
@@ -9442,6 +9681,15 @@ void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
      * second, undeclared claim. The axis's own denial is visible in
      * `rx_info.flags`, which is where a reader asks that question. */
     pcrec_sb_stamp_str(c, g->upper, "REQ_WHY", req_why_name(admit));
+    /* [K82] (B) `<PREFIX>_REQ_HANDOFF` — WHERE THE BODY'S SCAN BEGINS: the
+     * decimal K the handoff's subtraction carries, or `"none"` where the
+     * `req-use` table chose `scan-from-startpos`. Unconditional on every
+     * artifact of both engines, beside the stamps it qualifies, for their
+     * reason (Frank's Q3 ruling, 2026-10-05: a stamp varies by engine family,
+     * never by presence within one, and "does not apply" is a value). It
+     * names what the EMITTER did; `req_run_maxoff` in `--emit-facts` names
+     * what the analysis found, which a declined artifact still has. */
+    pcrec_sb_stamp_str(c, g->upper, "REQ_HANDOFF", req_handoff_stamp(cx));
     pcrec_sb_stamp_str(c, g->upper, "TUNE", pcrec_tune_token(cx->opt->tune));
     if (cx->opt->header_name) {
         pcrec_sb_printf(c, "#include \"%s\"\n", cx->opt->header_name);

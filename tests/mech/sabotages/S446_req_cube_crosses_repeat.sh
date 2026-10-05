@@ -20,7 +20,12 @@ SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "(?i)sel(
 SAB_REACH_EXPECT="REACH-MIN0-SPLIT"
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='             * exactly as a multi-member class is. */
-            acc.runs = rr_cat(rr_none(), acc.runs);'
-SAB_AFTER='             * exactly as a multi-member class is. */
+SAB_BEFORE='             * run to its right. */
+            acc.runs = rr_cat(rr_none(rr_rep_w(a->u.rep.rmax,
+                                               rb_walk(w, a->l).runs.maxw)),
+                              acc.runs);'
+SAB_AFTER='             * run to its right. */
             acc.runs = rr_cat(rb_walk(w, a->l).runs, acc.runs);   /* SABOTAGE S446 */'
+# RE-ANCHORED 2026-10-05 ([K82] (B), lane k82hbuild), INTENT RE-VERIFIED: the
+# min-0 repeat's `rr_none` now carries the body's WIDTH (the run offset walk);
+# the plant still joins the body's runs across the zero-iteration repeat.
