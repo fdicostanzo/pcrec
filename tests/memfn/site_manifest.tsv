@@ -1,0 +1,55 @@
+# tests/memfn/site_manifest.tsv -- THE CHECKED SITE MANIFEST ([MEMFN], D147
+# addendum 5 (Q42 reversed), integration.md §R4.3.4). Checked by C17
+# (tests/memfn/run_site_manifest.sh, `make test-memfn-manifest`).
+#
+# SOURCE OF TRUTH: integration.md §R4.3.4's list of search sites ("a search or
+# span-compare site", rev 4.6, D147 addendum 10's Q54) with §8.5's rows, §16
+# (M1's units) and §22 (the migration steps). One row per SITE. The emitters
+# are found by function in src/gen/ and src/enc/ (rev 4.6 names functions,
+# never lines); docs/dev/lanes/memfnmanifest_report.md says how each was
+# located.
+#
+# STATUS is exactly one of two words, the ruled vocabulary with no third
+# state:
+#   pending    pcrec still spells this site's search; the kit does not.
+#   delegated  the site reaches mf_emit_site; pcrec spells no form for it.
+# Born at R4a with every row `pending`. Each migration step's REPLACE commit
+# flips its rows to `delegated`; C17 then fails on any form its emitters
+# still spell (rule 3).
+#
+# Columns (tab-separated):
+#   site        the site's id (§8.5 / §R4.3.4).
+#   emitters    comma-separated FUNCTIONS (or, in src/enc/, the text
+#               constants) whose text SPELLS the site's form. C17 reads
+#               exactly these: each must exist and, while the row is
+#               `pending`, must spell at least one search-vocabulary form
+#               (rule 4); a form spelled in a function no `pending` row names
+#               here fails (rule 1).
+#   op          the operation and handoff, in integration.md §14's rev 4
+#               names (MF_OP_* / MF_H_*), or the vocabulary item it waits on.
+#   budget      D91's budget: `scan` (1) or `loop` (2).
+#   step        the migration step that flips the row (§22).
+#   status      pending | delegated.
+#   companions  comma-separated functions that move with the site but spell
+#               no form (callers, the spliced predicate, the verify chain).
+#               C17 checks only that each still exists, so a rename is seen.
+#   ref         where the design states the site.
+#
+# The row count is pinned, independently of this file, as C17_ROW_FLOOR in
+# tests/memfn/run_site_manifest.sh (K35): a change that adds a row raises
+# that literal in the same commit.
+#
+# site	emitters	op	budget	step	status	companions	ref
+PF	pf_emit_memchr,pf_emit_memchr_bounded,pf_emit_bcls,pf_emit_bcls_bounded	FIND/ASSIGN	scan	M2 (R4g)	pending	pf_comment_memchr,pf_emit_ofs,pf_emit_ofs_bounded,pf_block_ofs	§8.5 T1; §15.7; §16 (the offset/run rows' CALLS stay pcrec's text around an EXPR)
+PRE	emit_req_one_byte	FIND/ON_MISS	scan	M1 (R4c)	pending	pcrec_emit_req_byte_check,emit_req_run_check,emit_req_handoff,pcrec_emit_req_run_blocks,req_run_tests	§8.5 T2; §15.3; §15.5 (one composite site with SETREST); §16
+OFS	ofs_test_emit_fn,ofs_test_emit_pair	FIND/RETURN	scan	M1 (R4c)	pending	ofsk_emit_verify,ofsk_emit_params	§8.5 OFS (N5); §15.1; §16
+SETREST	emit_req_set_rest	ALL_PRESENT/ON_MISS	scan	M1 (R4c)	pending	pcrec_emit_req_byte_check	§8.5 SETREST (N4); §15.4; §15.5
+VERIFY	pcrec_emit_run_compare,rc_emit_words,rc_emit_bytes,pcrec_emit_runcmp_helpers	VERIFY/BOOL	scan	M1b	pending	ofsk_emit_verify,pcrec_runcmp_prepare	§8.5 VERIFY (T6 at budget 1); §15.6; §22 M1b
+VMRUN	pcrec_emit_run_compare,rc_emit_words,rc_emit_bytes,pcrec_emit_runcmp_helpers	VERIFY/BOOL	loop	M1b	pending	vm_lit,vm_isl_emit	§8.5 VMRUN (T6 at budget 2); §16 (runcmp's two VM callers); §22 M1b
+STAY	dir_fwd_skip,dir_rev_skip	SKIP/ADVANCE	loop	M3 (R4h)	pending		§8.5 STAY (N1); §15.7
+EDGE	emit_scan_edge	SKIP/ADVANCE	loop	M3 (R4h)	pending	scan_test	§8.5 EDGE (T3); §15.7
+VMSPAN	vm_emit_span_scan	SKIP/ADVANCE	loop	M3 (R4h)	pending	vm_cursor_rep	§8.5 VMSPAN (N2 at stride 1)
+MLINE	emit_attempt	FIND/ASSIGN	scan	M4	pending		§8.5 MLINE (N3); §15.7
+N6	vm_rev_emit	MF_VOCAB bump (backward walk, captures in flight)	loop	M6	pending	vm_revdet_rep	§8.5 N6; §R4.3.4; §22 M6
+VMSTRIDE	vm_emit_span_scan	MF_VOCAB bump (strided SKIP)	loop	M6	pending	vm_cursor_rep	§8.5 VM span at stride > 1; §R4.3.4; §22 M6
+N7	defs_bref,defs_bref_ci,u8_defs_bref,u8_defs_bref_ci	MF_VOCAB bump (run-time-operand mismatch, prefix-count return)	loop	M7	pending		§8.5 N7 (D58/DD-12); §R4.3.4; D147 addendum 10 (Q54)
