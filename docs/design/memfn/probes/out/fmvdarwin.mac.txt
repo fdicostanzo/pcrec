@@ -1,0 +1,21 @@
+# date 2026-10-05T00:23Z; probe commit: 5119427b + fmvdarwin.{c,sh} (committed with this file)
+# fmvdarwin: __builtin_cpu_supports and FMV lowering on Mach-O
+# box: Apple M1 Max, macOS 26.6.2
+# sysctl: hw.optional.arm.FEAT_DotProd=1 FEAT_SVE=sysctl: unknown oid 'hw.optional.arm.FEAT_SVE'
+# gcc-16: error: implicit declaration of function '__builtin_cpu_supports'
+## Apple clang version 21.0.0 (clang-2100.1.1.101) 
+before f(): cpu_supports dotprod=0 simd=0 fp=0
+f()=1; after f(): cpu_supports dotprod=0 simd=0
+lowering: __LD,__func_variants 
+## Apple clang version 21.0.0 (clang-2100.1.1.101) -mmacosx-version-min=13.0
+before f(): cpu_supports dotprod=0 simd=0 fp=0
+f()=1; after f(): cpu_supports dotprod=0 simd=0
+lowering: __LD,__func_variants 
+## Homebrew clang version 23.1.0 
+before f(): cpu_supports dotprod=0 simd=0 fp=0
+f()=1; after f(): cpu_supports dotprod=0 simd=0
+lowering: __DATA,__data _f.resolver: init_cpu_features_resolver 
+## Homebrew clang version 23.1.0 -mmacosx-version-min=13.0
+before f(): cpu_supports dotprod=0 simd=0 fp=0
+f()=1; after f(): cpu_supports dotprod=0 simd=0
+lowering: __DATA,__data _f.resolver: init_cpu_features_resolver 
