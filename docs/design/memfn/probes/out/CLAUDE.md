@@ -9,5 +9,10 @@ R1b (isa_selection.md): `isacost.mac.{gcc,clang}.sel-{base,wide}.txt`
 `fmvdarwin.mac.txt` (§0 items 3-4's evidence). The Linux transcripts land
 in `build/memfn_linux/<stamp>/` from `../linux_run.sh` and are archived
 here by whoever reads them.
+`survey_*.txt` (R2, lane memfnsurvey): `survey_chk.{mac.arm,mac.arm-asan,
+rosetta.x86,rosetta.x86-asan}.txt` (correctness; Rosetta 2 runs x86 SSE4.2/
+AVX2 code for correctness only, never timing), `survey_tim.mac.{gcc,clang}.txt`
+and `survey_pcrejit.mac.txt` (timing, directional). Each carries its own
+box/compiler/source-commit header.
 
 Maintenance: update this file when files are added/removed or change roles.

@@ -1,0 +1,21 @@
+# box: Apple M1 Max, macOS 26.6.2, 2026-10-04; chk.arm: clang 21.0.0 (clang-2100.1.1.101) -O2, aarch64 NEON, guard pages
+# sources: StringZilla 50c0d717c13b (v5.2.0), ARM optimized-routines 503fafe311c1, musl 9b2d8a164639; libc = libSystem
+libc memchr                cases   2318001  bad      0  
+libc memmem                cases    409360  bad      0  
+musl memchr                cases   2318001  bad      0  
+musl memmem                cases    409360  bad      0  
+arm-or memchr              cases   2318001  bad      0  
+arm-or memchr-mte          cases   2318001  bad      0  
+arm-or memrchr             cases   2318001  bad      0  
+sz find_byte serial        cases   2318001  bad      0  
+sz rfind_byte serial       cases   2318001  bad      0  
+sz find_byteset serial     cases   6954003  bad      0  
+sz rfind_byteset serial    cases   6954003  bad      0  
+sz not_from serial         cases   6954003  bad      0  
+sz find serial             cases    409360  bad      0  
+sz find_byte neon          cases   2318001  bad      0  
+sz rfind_byte neon         cases   2318001  bad      0  
+sz find_byteset neon       cases   6954003  bad      0  
+sz rfind_byteset neon      cases   6954003  bad      0  
+sz not_from neon           cases   6954003  bad      0  
+sz find neon               cases    409360  bad      0  

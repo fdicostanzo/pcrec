@@ -330,6 +330,16 @@ URL: <https://intel.github.io/hyperscan/dev-reference/serialization.html>.
 Accessed 2026-09-30.
 Cited by: `docs/design/artifact_manager.md` §8.
 
+### [KL21] Keiser, J. & Lemire, D. (2021)
+
+John Keiser, Daniel Lemire — "Validating UTF-8 In Less Than One Instruction
+Per Byte", *Software: Practice and Experience* 51(5) (2021).
+DOI: <https://doi.org/10.1002/spe.2940>; preprint arXiv:2010.03090.
+`(unverified: volume/issue and DOI from memory, not re-fetched by the citing
+lane; the algorithm itself was read in simdutf/simdjson's
+utf8_lookup4_algorithm.h)`. Accessed 2026-10-04.
+Cited by: `docs/design/memfn/survey.md` §4.9, §7, §8 (F11).
+
 ### [Lau00] Laurikari, V. (2000)
 
 Ville Laurikari — "NFAs with Tagged Transitions, their Conversion to
@@ -651,7 +661,8 @@ lane m5paper); `docs/dev/optloop/captures_via_dfa_survey.md` §2.8, §2.11;
 also referenced informally by name ("Hyperscan") in
 `docs/dev/decisions.md`, `docs/dev/plan.md` and `docs/dev/dev_journal.md`
 without a specific-paper citation — see "To retrofit" below;
-`docs/design/artifact_manager.md` §8.
+`docs/design/artifact_manager.md` §8; `docs/design/memfn/survey.md` §4.4
+(Teddy, shufti, truffle as the published design of the kernels surveyed).
 
 ### [Wat01] Watson, B. W. (2001)
 
