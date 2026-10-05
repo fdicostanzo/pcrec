@@ -182,12 +182,33 @@ tests: `tests/codegen/cand_rows_check.py` + `run_cand_rows.sh` (new),
 
 ## 4. Validation (stage 1)
 
-VALIDATION_PLACEHOLDER
+All on the Mac (darwin, gcc-16), against branch point `35c8ed45`, logs in
+the lane's scratchpad (`sweep1.log`, `strict.log`, `sections.log`):
+
+| gate | result |
+|---|---|
+| `scripts/emit_sweep.py --ref 35c8ed45` (stage 1 tree) | self-check PASSED; **0 movers, 0 asymmetric on all five streams** — c-default 4,065 / c-vm 4,066 / emit-ir-vm 4,066 of 4,512 argv rows, composition 35 producing of 360, dumps 7/7; 208 s |
+| `make strict` | clean (`-Werror -Wshadow`) |
+| `make test-codegen` | 14/15 scripts; the one red is the accepted darwin `nm could not read arm_a.o` (`run_inline_capability.sh`). `run_cand_rows.sh` 3/0, `run_facts_checks.sh` green (completeness picks up the new row: one per `facts.def` row per encoding) |
+| `make test-registry` | green |
+| `make test-rxtsource` | 278/0 when re-run with the default `TMPDIR`; the chain's run (TMPDIR = the lane's long scratchpad path) read 2 FAILs (`compose_dup_definition`, `prose-dedent-K57`) — the known path-length artifact class (1fc69edf), not this change (no rxt parser file touched) |
+| `make test-startset` | 3/0 (§2.4's numbers) |
+| mech solo | S495 DETECTED (`candrows:1fail/0pass`), S501 DETECTED (`startset:2fail/1pass`), S502 DETECTED (`startset:2fail/1pass`), S68 re-anchored DETECTED (`codegen:1fail/328pass, corpus:0fail/56pass`) |
+| anchor tripwire | 433 rows, all anchors resolve |
+
+The identity gates proper (vm/trie/endvar/wordctx/mlinectx/gstart/
+recursion identity) ride the full `make test` below; `emit_sweep` already
+shows every artifact byte-identical to the branch point.
 
 ## 5. Owed
 
-- **Full Mac `make test`** — armed detached as this lane's last act;
-  OWED_PLACEHOLDER
+- **Full Mac `make test`** — armed detached as this lane's last act
+  (caffeinate, nohup), log
+  `/private/tmp/claude-501/-Users-fdicostanzo-pcrec/ssbuild01/scratchpad/maketest_full.log`;
+  completion line `== FULL MAKE TEST DONE rc=<N> <date>` (make's own
+  `sections ran: N/M` trailer precedes it; read the verdict from `*** [test-X]
+  Error` lines — darwin's accepted red is test-codegen's `nm arm_a.o` only).
+  The chain releases `worktrees/.mac-suite.lock` when it ends.
 - Stage 2 (the VM hat) is next; its manifest is `manifest_s2_vm_*.tsv`.
 
 ## 6. For the manager
