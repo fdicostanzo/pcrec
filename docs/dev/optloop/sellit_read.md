@@ -192,3 +192,10 @@ rows, first passing non-denied row executes), one row above the DFA rows:
    literal-led cells (median 4.4 ns/call)? Unscored tier C, so no pcrec work
    hangs on it; it only matters if the answer is "auto's whole-subject
    artifact carries a fixed entry term" (CALL-FLOOR).
+
+## Addendum 2026-10-05: the bench's answers (outbox O-84, pcrec-bench master 3de4605; from the store, no run)
+
+- **(a)** By design: the O-83 list re-measured only configs with an fc719ca4 BEFORE, and that pin ran auto only on bounded, loglines and email. At 751b9c6d, where both auto and vm were measured, vm LOSES search almost everywhere (loglines throughput 0/11, email 0/3, bounded 3/42). This confirms the verdict: **SEL-LIT closes as SYNTHETIC ONLY.** A current-pin vm arm is not needed.
+- **(c)** litrun's `floor` is dense by construction: `#` is the fbf/lbf guard byte, matched 65536/L times per subject. auto/vm is 1.65-1.76 at L=2 and flips to 0.37-0.41 at L=40. vm's per-match re-entry is about 6 ns cheaper when matches are ≤10 B apart; auto wins from 16 B. This is the same dense-text per-call family as K85/K88.
+- **(d)** Whole-subject match-compliance goes through the same harness path in both arms. The gap is ENGINE SELECTION: auto routes 12/14 litrun whole forms to the DFA reverse pass, and forced vm uses the forward entry. That costs about 4.7 ns/call on 1-100 B subjects, call-floor scale; altwide shows it on 27/32 cells and syntax on 68/80. **Noted as a [SEL-COST] observation (whole-subject match on short subjects: auto's reverse-pass selection vs the forward VM), not filed for build (D77):** the tier is unscored, and the trigger would be a scored per-call cell.
+- **(b)** No sparse long-literal control exists or is planned. The cheapest shape is noted in O-84 if ever wanted.
