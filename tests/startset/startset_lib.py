@@ -16,7 +16,8 @@
       sections, header-keyed (docs/spec/facts_listing.md).
   machine_sets(c_text, pfx)  the forward DFA's start-context sets read off
       an EMITTED artifact: E (s0's escape set), the emitted can_begin_match
-      table, the seed family, and Tdfa -- the bytes that begin a live thread
+      table, the seed family, E* (the union of every seed state's escape
+      set, D148 addendum 1), and Tdfa -- the bytes that begin a live thread
       from SOME seed state. Ported from docs/design/startset/rev2/estar.py
       (lane ssrev), which reads only the subset construction's tables and
       shares no code with the start-set walk; the port keeps its two
@@ -166,6 +167,7 @@ def machine_sets(src, pfx="rx"):
     seeds = set(seed) | {s0}
     E = {b for b in range(256) if d(s0, b) != s0}
     Ecbm = None if cbm is None else {b for b in range(256) if cbm[b]}
+    Es = {b for s in seeds for b in range(256) if d(s, b) != s}
     Td = {b for s in seeds for b in range(256) if d(s, b) not in seeds and not isdead(d(s, b))}
     return {"status": "ok", "nseeds": len(seeds), "E": E, "Ecbm": Ecbm,
-            "cbm_agrees": Ecbm is None or E == Ecbm, "Tdfa": Td}
+            "cbm_agrees": Ecbm is None or E == Ecbm, "Estar": Es, "Tdfa": Td}

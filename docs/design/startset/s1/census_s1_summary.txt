@@ -1,0 +1,22 @@
+[START-SET] stage-1 census, per-block options, the BUILT start_set fact.
+corpus enumeration: 258 .rxt files, 4512 pattern rows, 0 NUL-bearing out, 617 (text, options) duplicates
+count                                                         bench   corpus
+DFA scan, seeded                                                 30      144
+DFA scan, seeded, why T-not-proper                                3       69
+DFA scan, seeded, why admit                                      18       32
+DFA scan, seeded, why row:none                                    1       14
+DFA scan, seeded, why row:offset-set-bounded                      8       29
+F admitted (stage 3 movers)                                      18       32
+F admitted: T == S                                               18       32
+F-checked: |E*| == 256                                           21      101
+V at auto (stage 2 movers)                                       17      164
+V at auto: the block itself pins --engine                         0      100
+V under --engine=vm (stage 2 movers)                            274     2547
+auto refused                                                     24      442
+auto route dfa/attempt                                           14      222
+auto route dfa/empty                                              0       31
+auto route dfa/unanchored                                       236     1614
+auto route vm/hybrid                                             50     1119
+auto route vm/none                                               21      467
+population                                                      345     3895
+vm refused                                                       23      442

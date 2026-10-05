@@ -55,3 +55,6 @@ written.
   option-aware start-set probe, the hand twins of the correct hats and of
   every wrong variant D148 addendum 1 lists, the mutation run, the re-seed
   form searches and their transcripts. Own CLAUDE.md.
+- `s1/` — STAGE 1's census (lane `ssbuild01`): the D77 census re-run on the
+  BUILT `start_set` fact with per-block options, and the generator of the
+  stage-2/3 mover manifests (`tests/startset/manifests/`). Own CLAUDE.md.
