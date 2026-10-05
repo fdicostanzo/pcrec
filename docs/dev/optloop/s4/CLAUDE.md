@@ -134,6 +134,9 @@ in the design note with its section.
   DENY == BASE, `P` the PICK NONE mover with DENY == NEW, `C` unchanged:
   C3's customers, cause (B)'s left movers, controls). `DARWIN=1` is the
   Mac's directional run (no taskset, no load wait).
+- `k82alpha_lx.txt` — `alpha_k82.sh all`'s Linux transcript (ubuntubudu, gcc 15.2,
+  2026-10-05, lane lxrun's driver lx1005), verbatim under a provenance header;
+  read in `docs/dev/lanes/k82alpha_report.md`.
 
 `alpha_c3.sh`'s loglines A0 control is `level-context` since [K82]:
 `stack-frame`, the old control, moves at abi 60 (a set-leads mover).
