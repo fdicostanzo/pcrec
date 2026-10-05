@@ -47,6 +47,8 @@
  *   ffl    twins.md T-B's vector fused form (vec.h: SSE2, AVX2, NEON),
  *          carried with per-byte masks and the same lead accumulation
  *   byte   the scalar byte loop (timed for scale only)
+ *   swlf   lead cells only: the emitted lead pre-check first (pcrec's
+ *   ffllf  order), then swar / ffl over the run alone
  *
  * Regimes (ns, min of REPEATS loops >= 50 ms each, spread %):
  *   THROUGHPUT  gate:  one call from 0 on the whole subject
@@ -295,12 +297,15 @@ INL size_t f_swar(const uint8_t *s, size_t n, size_t pos, int L, const char *V,
  * tb_run.c's f_fused(ALL = 0) with per-byte masks and the lead accumulated
  * as in swar (a vector OR of the block's offset-0 compare, read only when a
  * candidate verifies). Loads reach VW + T past i; every load stays in
- * [pos, n) by the same argument as swar's with 8 -> VW. PLANT 1 as swar's. */
+ * [pos, n) by the same argument as swar's with 8 -> VW. PLANT 1 as swar's.
+ * One change from T-B besides those: a span shorter than VW + T takes
+ * f_swar, the current best scalar (T-B took a byte loop), so the SIMD
+ * layer is the scalar layer plus what it adds (D147). */
 INL size_t f_ffl(const uint8_t *s, size_t n, size_t pos, int L, const char *V,
                  const char *M, int KA, int KB, int LEAD, int PLANT)
 {
     const size_t T = (size_t)L - 1;
-    if (pos >= n || n - pos < VW + T) return f_byte(s, n, pos, L, V, M, KA, KB, LEAD);
+    if (pos >= n || n - pos < VW + T) return f_swar(s, n, pos, L, V, M, KA, KB, LEAD, 0);
     const vu8 MA = vdup((uint8_t)M[KA]), VA = vdup((uint8_t)V[KA]);
     const vu8 MB = vdup((uint8_t)M[KB]), VB = vdup((uint8_t)V[KB]);
     const vu8 VL = vdup((uint8_t)LEAD), Z = vdup(0);
@@ -344,6 +349,18 @@ INL size_t f_ffl(const uint8_t *s, size_t n, size_t pos, int L, const char *V,
 #undef TRY
 }
 
+/* ---- lead first: pcrec's order kept ------------------------------------------
+ * The emitted one-shot lead test (memchr, as the pre-check), then the fused
+ * run scan with no lead: the kit replacing rx_reqrun alone and honouring
+ * the site's order hint (§15.5), where swar/ffl revise it (run first, lead
+ * in the same pass). */
+INL size_t f_lf(const uint8_t *s, size_t n, size_t pos, int L, const char *V, const char *M,
+                int KA, int KB, int LEAD, int VEC)
+{
+    if (LEAD >= 0 && !lead_in(s, pos, n, LEAD)) return n;
+    return VEC ? f_ffl(s, n, pos, L, V, M, KA, KB, -1, 0) : f_swar(s, n, pos, L, V, M, KA, KB, -1, 0);
+}
+
 /* ---- the variant table ------------------------------------------------------ */
 
 #define GEN(C)                                                                             \
@@ -353,6 +370,8 @@ INL size_t f_ffl(const uint8_t *s, size_t n, size_t pos, int L, const char *V,
     INL size_t k_##C##_ffl(const uint8_t *s, size_t n, size_t p) { return f_ffl(s, n, p, CELL_##C, 0); } \
     INL size_t k_##C##_byte(const uint8_t *s, size_t n, size_t p) { return f_byte(s, n, p, CELL_##C); } \
     INL size_t k_##C##_Ptail(const uint8_t *s, size_t n, size_t p) { return f_swar(s, n, p, CELL_##C, 1); } \
+    __attribute__((unused)) INL size_t k_##C##_swlf(const uint8_t *s, size_t n, size_t p) { return f_lf(s, n, p, CELL_##C, 0); } \
+    __attribute__((unused)) INL size_t k_##C##_ffllf(const uint8_t *s, size_t n, size_t p) { return f_lf(s, n, p, CELL_##C, 1); } \
     __attribute__((unused)) INL size_t k_##C##_Plead(const uint8_t *s, size_t n, size_t p) { return f_swar(s, n, p, CELL_##C, 2); } \
     INL size_t k_##C##_Pffltail(const uint8_t *s, size_t n, size_t p) { return f_ffl(s, n, p, CELL_##C, 1); }
 GEN(us) GEN(up) GEN(mi) GEN(cn)
@@ -363,9 +382,9 @@ INL size_t k_cn_nosl(const uint8_t *s, size_t n, size_t p) { return nosl_cn(s, n
  * timed, must FAIL). Plead only where there is a lead to plant against. */
 #define KERNELS(X)                                                            \
     X(us, emit, 0) X(us, emit2, 0) X(us, swar, 0) X(us, ffl, 0) X(us, byte, 0) \
-    X(up, emit, 0) X(up, emit2, 0) X(up, swar, 0) X(up, ffl, 0) X(up, byte, 0) \
+    X(up, emit, 0) X(up, emit2, 0) X(up, swar, 0) X(up, ffl, 0) X(up, byte, 0) X(up, swlf, 0) X(up, ffllf, 0) \
     X(mi, emit, 0) X(mi, emit2, 0) X(mi, swar, 0) X(mi, ffl, 0) X(mi, byte, 0) \
-    X(cn, emit, 0) X(cn, emit2, 0) X(cn, nosl, 1) X(cn, swar, 0) X(cn, ffl, 0) X(cn, byte, 0) \
+    X(cn, emit, 0) X(cn, emit2, 0) X(cn, nosl, 1) X(cn, swar, 0) X(cn, ffl, 0) X(cn, byte, 0) X(cn, swlf, 0) X(cn, ffllf, 0) \
     X(us, Ptail, 2) X(up, Ptail, 2) X(mi, Ptail, 2) X(cn, Ptail, 2)          \
     X(up, Plead, 2) X(cn, Plead, 2)                                           \
     X(us, Pffltail, 2) X(up, Pffltail, 2) X(mi, Pffltail, 2) X(cn, Pffltail, 2)
@@ -467,6 +486,7 @@ static size_t ref(const struct cellc *cc, int uselead, const uint8_t *s, size_t 
 
 struct tally { long calls, hits, bad, faults; };
 static struct tally g_t[64];
+_Static_assert(sizeof kerns / sizeof kerns[0] <= 64, "g_t too small");
 static int g_print = 20;
 
 static void sweep_check(int x, const uint8_t *s, size_t n, size_t pos0, const char *what,

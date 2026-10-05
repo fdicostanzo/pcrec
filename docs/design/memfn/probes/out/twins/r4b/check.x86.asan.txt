@@ -1,0 +1,74 @@
+# tb_r4b --check --subjects=<subjects_r4b.py out>, build x86.asan, Franks-MacBook-Pro.local 2026-10-05T19:51Z, commit e799360c + working tree; x86.* = clang -arch x86_64 under Rosetta 2
+check: real subjects (the cell's throughput texts + 75 short), calls / ref hits / bad
+  us emit           81       4     0
+  us emit2          81       4     0
+  us swar           81       4     0
+  us ffl            81       4     0
+  us byte           81       4     0
+  up emit           78       1     0
+  up emit2          78       1     0
+  up swar           78       1     0
+  up ffl            78       1     0
+  up byte           78       1     0
+  up swlf           78       1     0
+  up ffllf          78       1     0
+  mi emit         6510    6433     0
+  mi emit2        6510    6433     0
+  mi swar         6510    6433     0
+  mi ffl          6510    6433     0
+  mi byte         6510    6433     0
+  cn emit         5580    5502     0
+  cn emit2        5580    5502     0
+  cn nosl         5582    5504     0
+  cn swar         5580    5502     0
+  cn ffl          5580    5502     0
+  cn byte         5580    5502     0
+  cn swlf         5580    5502     0
+  cn ffllf        5580    5502     0
+  us Ptail          81       4     0
+  up Ptail          78       1     0
+  mi Ptail        6510    6433     0
+  cn Ptail        5580    5502     0
+  up Plead          78       1     0
+  cn Plead        5580    5502     0
+  us Pffltail       81       4     0
+  up Pffltail       78       1     0
+  mi Pffltail     6510    6433     0
+  cn Pffltail     5580    5502     0
+check (avx2): variant, calls, ref hits, bad, faults
+  us emit         403516   194389       0   0  ok
+  us emit2        403516   194389       0   0  ok
+  us swar         403516   194389       0   0  ok
+  us ffl          403516   194389       0   0  ok
+  us byte         403516   194389       0   0  ok
+  up emit        1160734   333457       0   0  ok
+  up emit2       1160734   333457       0   0  ok
+  up swar        1160734   333457       0   0  ok
+  up ffl         1160734   333457       0   0  ok
+  up byte        1160734   333457       0   0  ok
+  up swlf        1160734   333457       0   0  ok
+  up ffllf       1160734   333457       0   0  ok
+  mi emit         507809   298682       0   0  ok
+  mi emit2        507809   298682       0   0  ok
+  mi swar         507809   298682       0   0  ok
+  mi ffl          507809   298682       0   0  ok
+  mi byte         507809   298682       0   0  ok
+  cn emit        2122832  1295554       0   0  ok
+  cn emit2       2122832  1295554       0   0  ok
+  cn nosl        4076099  3248821       0   0  ok
+  cn swar        2122832  1295554       0   0  ok
+  cn ffl         2122832  1295554       0   0  ok
+  cn byte        2122832  1295554       0   0  ok
+  cn swlf        2122832  1295554       0   0  ok
+  cn ffllf       2122832  1295554       0   0  ok
+  us Ptail        402904   194389     612   0  PLANTED, CAUGHT
+  up Ptail       1160225   333457     509   0  PLANTED, CAUGHT
+  mi Ptail        507047   298682     762   0  PLANTED, CAUGHT
+  cn Ptail       2122476  1295554     356   0  PLANTED, CAUGHT
+  up Plead        966178   327836  188935   0  PLANTED, CAUGHT
+  cn Plead       1315610   693069  204737   0  PLANTED, CAUGHT
+  us Pffltail     403400   194389     116   0  PLANTED, CAUGHT
+  up Pffltail    1160631   333457     103   0  PLANTED, CAUGHT
+  mi Pffltail     507663   298682     146   0  PLANTED, CAUGHT
+  cn Pffltail    2122770  1295554      62   0  PLANTED, CAUGHT
+check (avx2): real variants wrong: 0; planted 10, missed 0; real subjects included
