@@ -3649,3 +3649,130 @@ S462, `lane/k82hbuild` reaches S477).
 | a profile bit left out of `strategy_denials` | I2's deny arm (rx_info moves) | the corpus has a delegated site |
 | a `-fmemfn-native` arm emitting one intrinsic under default | C5's portable clause | a native arm exists (R4e′ onward) |
 | the kit's guard one byte short | G2's guard-page test (the kit's mech row) | the fixture places the page |
+
+---
+
+## 18. The stamp, per Frank's Q3 (r3 G-F1) `[rev4]`
+
+### 18.1 The rule
+
+Revision 3 put `<PREFIX>_MEMFN` and `<PREFIX>_MEMFN_FORMS` on movers
+only, citing k82hrev's Q3 recommendation. Frank REVERSED that
+recommendation the same day (`litscan_k82h.md`, Rulings, Q3 (a)): "goes
+on EVERY artifact of the family, `none` where the handoff does not
+apply. House convention: stamps vary only by engine family, never by
+presence within a family, and 'does not apply' is a value." D81 is the
+same rule: a conditional stamp makes a consumer's `#if` unsafe, and
+the ABSENCE of a stamp is never a discriminator. So:
+
+- **One stamp, `<PREFIX>_MEMFN_FORMS`, on EVERY artifact of both
+  engines.** Both engine families have delegable sites (the pre-check is
+  in all three search entries), so "the family" is every artifact.
+- **Its value is `"none"`** where the artifact is byte-identical to its
+  own `memfn-off` compile, because every delegated site rendered its
+  baseline arm or none was delegated. Otherwise it is the comma-joined
+  list of the NON-baseline form ids, in site order. Form ids are opaque
+  to pcrec and to consumers, and the spec says so.
+- **No kit version, and no `MF_VOCAB`.** `mf_kit_version()` names the
+  kit's TEXT and would move every artifact on every kit release,
+  including releases that move no byte. That is an abi event for
+  nothing, and it is exactly what the panel flagged. A form id changes
+  when, and only when, a form an artifact uses changes. A vocabulary
+  addition with no customer moves nothing. Rev 3's `<PREFIX>_MEMFN
+  "<kit version>"` is withdrawn.
+- **The kit writes it**, through `mf_stamps` and the sink's `stamp` op,
+  at the stamp block where pcrec calls `pcrec_emit_runcmp_stamp` today.
+  pcrec never reads the value.
+- `rx_info` is unchanged (D77: no consumer has asked).
+
+### 18.2 C11 checks the value, against a pcrec-side diff
+
+`tests/memfn/run_stamp_census.sh` compiles every manifest pattern at the
+default and at `memfn-off` and diffs the two with the stamp line
+normalised out. Its assertions:
+
+1. Every artifact carries the stamp, at both compiles. This is the
+   presence half, counted.
+2. The `memfn-off` value is always `none`.
+3. The default value is `none` IFF the two artifacts are identical.
+
+The comparison shares no source with the kit: the diff is pcrec's, and
+the kit's `moved` is not read (r3 G-F5). The counts of `none` and
+not-`none` are printed (K35), and the movers list it produces IS G1's
+population (§17.2).
+
+### 18.3 Its own abi event, before M1's replace
+
+The stamp's birth adds a line to every artifact, so it is an every-artifact
+abi event of its own. It lands as R4a′ (§22), BEFORE M1's replace
+commit, so that M1 itself stays a zero-mover migration (its value
+everywhere is still `none`). The ritual follows `litscan_k82h.md`
+§2.3a's commands, re-run at the build commit with the digit then current
+(61 if `lane/k82hbuild` has merged). That list is a floor:
+
+- **the digit's readers**:
+  - `src/gen/emit_dfa.c:52`;
+  - `docs/spec/match_api.md`'s K80 `#error` text, §6's "abi is N"
+    sentence and its change log;
+  - `tests/codegen/run_codegen_tests.sh`'s `ABI_EXPECT`;
+  - `tests/codegen/run_recursion_identity.sh`'s `FILEPIN` and its
+    `ABI_SUBJ`/`ABI_PIN` tripwire;
+  - the `(abi N)` provenance comments, which do not move;
+  - the alpha scripts' `norm()` patterns, which must widen;
+- **the byte-count readers**, every one of which moves under
+  every-artifact:
+  - all 12 `EMITTED_BYTES` rows of
+    `tests/codegen/manifests/m5_stage1_stamps.tsv`;
+  - `tests/resource/run_resource_tests.sh`'s `a{5,25000}` byte count;
+  - every row of the size log, re-baselined, against the tripwire's max
+    (not near);
+  - `reqcube_check.py`/`runcmp_check.py`, re-read;
+  - `c_artifact_cmp.sh`'s `emit_sweep` (a `FILEPIN` re-pin);
+  - `tests/findings/manifests/*`, re-derived;
+  - the new `tests/memfn/pins/off.tsv` (§17.4), born in R4c, so not yet
+    a reader;
+- **the contract** (D80): `match_api.md` §6.3 gains the stamp, its
+  presence rule (every artifact), its value grammar (`none`, or opaque
+  ids), and the sentence "bucket on `none`/not-`none`; never parse an
+  id";
+- **the bench** (D78): an inbox note, since the bench adapter reads the
+  stamp block.
+
+`axes.def` gains no row at this event. The three profile axes land with
+R4c, in their own registry re-count (`axesn`, `registry.md`'s row/axis
+sentence).
+
+---
+
+## 19. D146's "no cost comparison": every remaining pcrec pricing of kit-owned search code, and its fate (r3 F13) `[rev4]`
+
+The standing rule (D146) is that pcrec carries no arch knowledge and
+does no cost comparison over code the kit owns. The house refinement
+(ruling 5 of §R4.0) is that MEASURED terms are acceptable and TUNED
+cutoffs are not. This is every place, at main `1c2ba975` plus
+`lane/k82hbuild`, where pcrec's choice among SEARCH forms or plans
+depends on a cost, a rate or a compiler fact. The search is search
+code the kit owns, or will own after its step. Each row gives its kind
+and fate.
+
+| # | where | what it prices | kind | fate |
+|---|---|---|---|---|
+| 1 | `src/opt/prefix_k.c:65-100`: `C_MEMCHR` 6, `C_BITMAP` 116, `C_VERIFY` 250, `C_ENTER` 2000, `C_MISPRED` 1500, `MATERIAL` 2×, `verify_cost` | which k-set term to scan, which to verify, and whether the skip is ADOPTED over the offset-0 filter | measured terms (one box, glibc AVX2, the C4 allowlist's code hit at `:45`) plus a ruled bar | **M5 (R4j)**: the model moves into the kit as the baseline's frozen planner (§14.9). Adoption is Q40 |
+| 2 | `limits.def` `PCREC_MAX_REQ_RUN_EMIT` 8 | the longest run window the gate compares ("where gcc lowers a constant memcmp to ONE word load") | a COMPILER cost fact about a kit form | stays at M1 (byte identity: the window travels as the RUN term pcrec cut). **M5**: pcrec passes the whole run (≤ `PCREC_MAX_REQ_RUN_SCAN` 32) with per-position density hints, and the kit cuts. The limit's text then states a semantic bound only |
+| 3 | `pcrec_find_run_window_start` / `pcrec_find_run_scan_index` (`src/core/findings.c`) | which window of the run, and which position, to scan: a rarity argmin over the prior | measured prior + argmin | stays at M1 as `plan_pos` and the cut window. **M5**: the kit's planner, reading the per-position hints |
+| 4 | the `req_byte` pick (`reqbyte_freq_pick.md`, argmin over byte frequency) | which necessary byte the one-byte gate scans | measured prior + argmin | stays at M1 (it is the SET term pcrec passes, and `<PREFIX>_REQ_BYTE` reports it). **M5**: pcrec passes the necessary SET as REQUIRED-of-one ("some member of this set"), with per-member hints, and the kit picks. `REQ_BYTE`'s meaning would then need a ruling (Q40) |
+| 5 | `req_set_leads_applies` (`emit_dfa.c:6601`, `pcrec_find_pick`) | whether the set's pick LEADS the run (order, and adding a predicate) | rarity comparison | becomes the composite site's predicate ORDER plus an OPTIONAL lead (§15.5). The baseline honours pcrec's order, and a non-baseline arm may revise it. K85 (this choice losing on dense text) is the arm's to fix. Bit 45 keeps omitting the lead |
+| 6 | `req_byte_dominated_by` (`emit_dfa.c:6563`) → `pcrec_find_no_commoner` | G1's elision of the pre-check when the prefilter's scan byte is no commoner than the necessary byte | rarity comparison between two kit-owned searches | the SEMANTIC half (same byte, or the run verified by the prefilter, which makes it a REQUIRED term, §14.5) stays pcrec's: it is an implication between facts. The RARITY half moves at **M2**: the necessary byte is passed as an OPTIONAL term of the PF site, and the kit decides whether testing it pays |
+| 7 | `dfa_cand_scan`/`pcrec_dfa_cand_ppm` (`emit_dfa.c:6429`/`:6472`; K84's `strcmp` on row names) | the candidate scan's density, read by the reseed table | a DENSITY (the prior's mass), not a price | stays pcrec's as a fact. K84's `strcmp` readers are fixed at **M2** (a `DfaPf` field), as rev 3 §9.4 had it |
+| 8 | `vm_reseed_cal` (`emit_vm.c:11053`): `gap` 16/4, `block`, `cap`, `first` | the VM hybrid's retry: step the VM, or re-seed through the prefilter | measured crossovers, per program class | stays pcrec's. It prices the ENGINE's retry, not a memory function. **Coupling:** a re-seed's cost includes the PF search, so after M2 a kit change to PF text can move the crossover. Fate: the reseed witness cells (xcall/hyb, `hyb_reseed.md` §5) join G1 for every PF mover, and a re-calibration stays pcrec's measured decision |
+| 9 | `litscan_k82b.md` (PROPOSED, parked): an expected-cost admission for the run gate | whether a gate pays, from rates and machine terms | a cost model over kit-owned search | **WITHDRAWN under D146.** The handoff removed its motivating rescan, and whether a speed-only gate pays is the kit's question (row 11) |
+| 10 | `runcmp.c`'s `overlap` lengths {3, 5-7, 9-15} and the `words` row | gcc's lowering of a constant `memcmp` | a compiler cost fact | moves into the kit with runcmp at **M1b**, as the kit's own rows. Bit 43 travels (§14.10) |
+| 11 | `PCREC_MIN_REQ_RUN_BITS` 16 (the run's admission floor) and `req_admits[]`' existence test | WHETHER a speed-only pre-check exists at all | a RULED floor ("not fitted"), but an admission decision about a speed-only search | stays pcrec's at M1. It is ruled, and on no-DFA routes the gate is a proof, not a speed choice. Filed as a design question (Q48): an OPTIONAL SITE the kit may render empty, for speed-only gates on DFA routes |
+| 12 | `PCREC_MAX_REQ_RUN_POS_SET` 2 ("the emitted scan has two arms") | the masked run's position width, bounded by a FORM count | a form-shaped fact cap | stays pcrec's at M1 (byte identity). After M1 it is re-justified as a vocabulary bound: the kit's FIND accepts sets of width ≤ k, by request (§20.1) |
+| — | not kit-owned, listed so the list is complete: `--tune`'s λ and `[CLS-TREE]`'s class-form choice (T4 one-position membership, never delegated); `scanedge.c`'s period/span analysis (a DFA transform); `select_engine.c` (engines) | — | — | unchanged; outside D146's scope |
+
+After R4j and M2, rows 1-4 and 6 have left pcrec. Rows 5 and 10 left
+at M1 and M1b. Row 9 is withdrawn. Rows 7, 8 and 11 stay, each a
+FACT, an ENGINE choice or a ruled admission, not a price of kit code.
+Row 12 is a vocabulary bound. The C4 allowlist's code hit
+(`prefix_k.c:45`) leaves with row 1.
