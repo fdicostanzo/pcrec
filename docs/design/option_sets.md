@@ -66,7 +66,7 @@ which finding moved them.
 | S6 | med | registry names become stamp vocabulary | §3.4: with the tail dropped only MEMBER names are vocabulary; a member rename is an abi event |
 | S7 | med | config surface overlap; silent CLI loss; API error code | §3.1/§3.2: `--set` refused on a `pcrec` line; §3.3: refused through `pcrec_error` as `features` is; R4's report covers the silent loss |
 | S8 | high | three of seven sabotage rows unreachable today | §3.5 sabotage table: a reach column; every unreachable row declares `SAB_EXPECT=UNREACHED` + reason + a `SAB_REACH` probe, so `NOW REACHED` fires |
-| S9 | med | the conflict path may stay unreached after the trigger | §2.4 + §6: the join-conflict machinery is DEFERRED; a build-time table check refuses the first cross-family overlap, which is the trigger to build it |
+| S9 | med | the conflict path may stay unreached after the trigger | §2.4 + §6.1: the join-conflict machinery is DEFERRED; a build-time table check refuses the first cross-family disagreement, which is the trigger to build it |
 | S10 | high | the derived-set check shares its source with its subject | §3.5: the population is counted from `axes.def` by NAME PATTERN and from `SCAN_ROWS`' emit sites, never from the `vector` tag |
 | S11 | med | gate 3 cannot read a spec for DERIVED sets | §3.5 gate 3: pinned sets against the spec table; derived sets against S10's independent count |
 | S12 | high | the test-axes job list derives from `--list-sets` | §3.5: an independent member-count floor from the spec's family table |
@@ -176,7 +176,7 @@ which finding moved them.
    ships without it. **[r1 S16] The build trigger (§6.1) is the first of
    three, and each is a REQUEST or a WITNESS, not a row landing:** a named
    consumer asks for one name over two or more vector-family bits that are
-   already on main; the first cross-family overlap appears in the set
+   already on main; the first cross-family DISAGREEMENT appears in the set
    table (the conflict path's first witness); or the bench asks, through
    pcrecdev2, for a named SIMD-off or ISA testee. R4g's `--isa=L` alone
    is NOT a trigger: a family is an axis, so `--isa` ships as an ordinary
@@ -347,8 +347,9 @@ Why (B) and (C) are still needed, in their narrow roles:
   `portable < x86-64-v1 < x86-64-v2 < x86-64-v3 < x86-64-v4` and
   `portable < armv8-a < armv8-a+sve < armv8-a+sve2`, with x86 and Arm
   members incomparable. The order is read by the constraint table ("a row
-  declared at v4, forced, needs isa ≥ v4", §2.7), by `test-axes` (run only
-  the members at or below the box, §3.5), and by `[ART-MGR]`'s catalog
+  declared at v4, forced, needs isa ≥ v4", §2.7 row 8, designed and not
+  built), by `test-axes` (run only the members at or below the box,
+  §3.5a), and by `[ART-MGR]`'s catalog
   ("runs on"). **It is never used to COMBINE**: joining `x86-64-v3` and
   `x86-64-v4` by taking the max would silently pick one of two things a
   caller asked for. Both are members of one family, so the later one
@@ -452,7 +453,7 @@ conflict path now has its first witness. Sets that agree on a shared axis
 (`readable` and `trace` on `comments`, §4.4) join silently and do not
 trip it. That failure is §6.1's trigger 2. The runtime
 refusal, its diagnostic and its sabotage row land with the change that
-creates the overlap, which also supplies their witness. There is no
+creates the disagreement, which also supplies their witness. There is no
 UNREACHED refusal code in the meantime, and no test-only fixture set.
 
 ### 2.4a [r1 OS-M1] A deny/force pair is ONE three-valued axis
@@ -1123,7 +1124,7 @@ exists already.
 | sabotage | detector | witness at the first build |
 |---|---|---|
 | a PINNED member's cell is dropped from its bundle | gate 3 (reads the spec) | **UNREACHED** for a `vector`-only build: every `vector` member is DERIVED. It is reached by the first pinned non-`tune` member (`isa`, or a standalone set). `SAB_REACH` = `--list-sets` shows a pinned row outside `tune` |
-| the cross-family OVERLAP check stops firing (§2.4) | the checker run over a fixture TABLE FILE holding one overlap must fail. The fixture is an input to the checker, not a set in pcrec's vocabulary | reached (the fixture) |
+| the cross-family DISAGREEMENT check stops firing (§2.4) | the checker run over a fixture TABLE FILE holding one disagreement must fail. The fixture is an input to the checker, not a set in pcrec's vocabulary | reached (the fixture) |
 | explicit loses to a set (the overlay's operands swapped) | a `tests/cli` case, `--set=simd -fno-vec-scan`, asserting that the scan-site outcome stamp shows the row denied | reached at trigger 1: `simd` pins `vec-scan`, and the explicit deny disagrees with it |
 | family members conflict instead of replacing | `--tune=min-size --tune=speed` must still compile, `RX_TUNE "speed"` (cell E4, today's pinned behaviour); `--set=min-size,speed` likewise | reached today |
 | family order is lost (`--set=` joins one family's members) **[r1 OS-m6]** | `--set=speed,min-size` must stamp `RX_TUNE "min-size"` | reached today |
@@ -1138,10 +1139,10 @@ check is its detector and it brings its own row.
 
 **[r1 S9] The witness note, replaced.** Revision 1 said the conflict row
 "ships UNREACHED". The conflict PATH is no longer built ahead of its
-witness (§2.4): the build-time overlap check stands in for it, and the
-overlap check's own sabotage row is reached through a fixture table file.
+witness (§2.4): the build-time disagreement check stands in for it, and
+that check's own sabotage row is reached through a fixture table file.
 The runtime refusal, its diagnostic and its sabotage row arrive with the
-change that creates the first cross-family overlap, and that change is
+change that creates the first cross-family disagreement, and that change is
 the witness. Revision 1's refusal to use a test-only SET stands: a set in
 the vocabulary that exists only to be refused would ship forever. A
 fixture table read only by the checker is not in the vocabulary.
@@ -1261,7 +1262,7 @@ The five members, read straight off `src/core/tune.c`'s `TUNE_TABLE` and
   reads the `tune` family's bundles THROUGH `TUNE_TABLE`'s existing
   accessors (`pcrec_tune_deny_flags`, `pcrec_tune_size_term_bar`, …). That
   is one table with a second reader, not a second table. The set layer
-  needs those bundles for two things only: the cross-family overlap check
+  needs those bundles for two things only: the cross-family disagreement check
   (§2.4) and `--list-sets`. No emitted byte moves, and the
   general-mechanisms rule is kept, because the dial's cells are written in
   exactly one place.
@@ -1280,13 +1281,13 @@ The five members, read straight off `src/core/tune.c`'s `TUNE_TABLE` and
   table is where the ruled cells live in `src/`, exactly as `TUNE_TABLE`
   is today.
 - **[r1 OS-n14] The D103 ritual gains one step.** A cell diff can CREATE a
-  cross-family overlap. integration.md Q16's case is the example: a
-  `min-size` cell denying `vec-scan` overlaps `simd`'s pin, so `--set=
+  cross-family disagreement. integration.md Q16's case is the example: a
+  `min-size` cell denying `vec-scan` disagrees with `simd`'s pin, so `--set=
   simd,min-size`, accepted the day before, would be refused the day after.
-  So every ruled cell diff runs the overlap check over the whole set table
+  So every ruled cell diff runs the disagreement check over the whole set table
   and lists, in the diff Frank rules on, every set pair that comes to
   DISAGREE on an axis and so becomes refused. Until §6.1 trigger 2 has built the
-  runtime refusal, the overlap check fails the build instead, and the
+  runtime refusal, the disagreement check fails the build instead, and the
   diff cannot land without that trigger's change. Either way the new
   refusal is ruled, not discovered.
 
@@ -1315,7 +1316,7 @@ them unreachable.
   builds, since the `#if` ladder costs bytes), then `--set=simd,min-size`
   is a CONFLICT and is refused by name. This is Frank's "they overlap"
   made concrete. **[r1 S9/OS-n14]** That cell diff is also the first
-  cross-family overlap, so it is §6.1 trigger 2: the runtime refusal is
+  cross-family disagreement, so it is §6.1 trigger 2: the runtime refusal is
   built in the same change, and its own refused pair is its witness. The
   D103 diff lists the newly refused pair (§4.1). `--set=min-size` alone (vector family at `auto`) lets the
   dial deny without complaint. Without the pin, `simd` would be a name for
@@ -1361,11 +1362,12 @@ them unreachable.
   not this note's.
 - `--isa-marker` is `explicit-only` (§2.8): no member's bundle may assign
   it, which is isa_selection.md Q6's "never implied by `--isa`" as data.
-- The stamps are two different things. `RX_SETS "x86-64-v3"` records the
-  REQUEST. isa_selection.md §1.2.3's `<PREFIX>_ISA_LEVEL` / `<PREFIX>_ISA`
-  and `rx_info.isa` record the OUTCOME, which under route M is a
-  preprocessor ladder that can differ from any request. D46's two halves:
-  what was asked, and what was done.
+- **[r1 S2] `isa` owns its stamps, so no set stamp repeats it.**
+  isa_selection.md §1.2.3's `<PREFIX>_ISA_LEVEL` / `<PREFIX>_ISA` and
+  `rx_info.isa` carry D46's two halves, what was asked and what was done.
+  Under route M the outcome is a preprocessor ladder that can differ from
+  any request. Revision 1 also printed the member in `RX_SETS`, a second
+  stamp for the request with a different default rule.
 
 ### 4.4 `readable` and `trace`: two standalone sets
 
