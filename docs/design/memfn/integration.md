@@ -2063,3 +2063,127 @@ obligations, carried into the kit's own design note at R4a:
 
 None of this reaches pcrec. pcrec's view of all of it is: the code came
 back, and its identity gates and bench say what changed.
+
+---
+
+## 9. THE MIGRATION: pcrec's scalar forms become the kit's scalar arms `[rev3]`
+
+### 9.1 The unit, the two commits, and why the kit is live from the first
+
+**The unit of migration is a pcrec EMITTER FUNCTION with every one of its
+callers.** No emitter is ever half-delegated, because a form spelled by
+the kit at one call site and by pcrec at another is two owners of one
+search (D122; memory `pcrec-general-mechanisms-not-special-cases`).
+`pcrec_emit_run_compare` has callers in both engines
+(`emit_dfa.c:6039`, `emit_vm.c:4483`, `emit_vm.c:8628`), so it moves
+with all three.
+
+**Each step is two commits, implement then replace:**
+
+1. **IMPLEMENT.** The kit gains the step's BASELINE arms: a transcription
+   of pcrec's text for those emitters, byte for byte, including pcrec's
+   local names (each declared in the baseline manifest, §9.2). In this
+   commit every PROFILE of those ops answers with the baseline arm,
+   because the kit adds no other arm in a migration step. pcrec's
+   emitters build the `mf_site` and hooks and call `mf_emit_site`, AND
+   still run their own text into a shadow buffer. A SHADOW COMPARATOR
+   (an internal check, compiled into this commit only) fails the compile
+   loudly if the two differ, on every compile the suite makes.
+2. **REPLACE.** pcrec's own text for those emitters and the shadow
+   comparator are deleted. pcrec now has no spelling of those searches.
+
+**Zero movers, by construction and by gate.** Because no non-baseline
+arm exists yet, the default build emits exactly what it did. That is
+what makes the delegation path LIVE at zero movers: unlike revision 2's
+R4c stub, whose `kit_applies` logic could never run while every token
+answered UNPRICED (r2 C-e), here every delegated site's code really comes
+from `mf_emit_site` from the first replace commit on.
+
+### 9.2 The baseline profile: pcrec's last spelling, frozen
+
+The baseline arms are the kit's record of pcrec's pre-migration text,
+one per migrated (emitter, op, handoff) shape. `memfn/baseline/
+MANIFEST.tsv` lists, per arm: the pcrec function it was transcribed
+from, the commit, the local names it declares (`scan_position`,
+`scan_run_length`, `rq_i`, `q` …) and the digest of its rendered text
+over a fixed request fixture.
+
+- **It is FROZEN.** A baseline arm changes only by a ruled pcrec abi
+  event (Q27). It is the guard's "off" arm (§10.1) and D146's
+  revisit-when witness ("measured worse than pcrec's pre-migration
+  form"), and both need the pre-migration form to stay reachable and
+  unchanged.
+- **Its independence is by PIN, not by source.** The baseline text
+  lives in the kit, but pcrec's identity gates pin it to the bytes pcrec
+  emitted at the step's parent commit (§9.3 I2/I3). A kit edit that moves
+  a baseline byte turns them red. So the "off" arm is not computed by the
+  thing it controls: it is pcrec's own old output, held in place by
+  pcrec's own pins.
+
+### 9.3 The identity gates every step passes
+
+| # | gate | what it proves | shares a source with the kit? |
+|---|---|---|---|
+| I1 | the SHADOW COMPARATOR (§9.1 commit 1), on every compile of `make test` | kit text == pcrec text for every site the suite reaches, every option, both encodings | no: pcrec's original emitter is the other side |
+| I2 | **movers by ID**: every corpus and bench pattern emitted at the step's parent and at the step, diffed byte for byte, at the default, at each `-fno-memfn-*` deny, at every `--tune` position and under `-e utf8`. ZERO movers, by ID (the census discipline every recent abi landing used) | the replace commit moved nothing, including on sites the suite's runs never execute | no |
+| I3 | the standing identity gates (the four `.c`-artifact gates, recursion's two-comparison gate, the IR-listing baseline) pass with NO re-pin | the same, through the gates mech already sabotages | no |
+| I4 | `PCREC_ARTIFACT_ABI` (`src/gen/emit_dfa.c:52`, 60 at 90d396fd) is unchanged in both commits | a migration is not an abi event; a commit that needs one is not a migration | n/a |
+| I5 | the EMITTED-FORM RATCHET (C12, §10.5): pcrec's emitters spell no form the delegation table says is delegated. Born counting the emitted-text `memchr(` calls in `emit_dfa.c`: **9** at 90d396fd (lines 1221, 1247, 5679, 5703, 6153, 6157, 6216, 6218, 8762; comment text excluded), 0 in `emit_vm.c` | a replaced emitter cannot quietly come back as a second spelling | no |
+
+### 9.4 The order: customer first (D77), and what each step moves
+
+A step is taken when a CUSTOMER needs its sites in the kit (the
+customer's trigger is in §12.2), never as a stand-alone refactor. That is
+revision 1's Q17 rule, kept.
+
+| step | pcrec emitters that move (all callers) | sites | ops / handoffs | §2.4 fix it carries | customer (trigger, §12.2) | `memchr(` ratchet after |
+|---|---|---|---|---|---|---|
+| **M1** | `ofs_test_emit_fn`, `ofs_test_emit_pair`, `ofsk_emit_verify` (the ofsskip blocks, T1's offset/run rows AND T2's `<p>_reqrun[_whole]`); `pcrec_emit_run_compare` and `pcrec_emit_runcmp_helpers` (runcmp.c entire: `words`, `overlap`, `bytes`, `memcmp`, all three callers); `pcrec_emit_req_byte_check` with `emit_req_set_rest` (REQ_BYTE, `set-leads`, N4) | OFS, PRE, SETREST, VERIFY | FIND over a conjunction (SET + RUN terms), RETURN; ALL_PRESENT, BOOL; VERIFY, BOOL | (a) the ofsskip `if` becomes the kit's plan (its load-bearing ORDER, r2 R2-S2, is the baseline arm's), (f) N4 | R4d: K82's fused scan+verify | 9 → 3 |
+| **M2** | `pf_emit_memchr`, `pf_emit_bcls` and their `-bounded` twins | PF | FIND (one byte; a SET with `table_ref` = `can_begin_match`), RETURN | (e) `dfa_cand_scan` (`emit_dfa.c:6454`) and `pcrec_dfa_cand_ppm` (`:6487`) stop classifying by `strcmp` on row names and read a `DfaPf` field. Owed by ANY new T1-adjacent change, so it rides M2 even if M2 were not a kit step | R4g: PF byte-class | 3 → 1 |
+| **M3** | `dir_fwd_skip`, `dir_rev_skip`; `emit_scan_edge`'s LOOP (the `while (more && TEST) advance;` and the counted `scan_run_length` loop; the peeled guard, the accept stores and the state writes stay pcrec's); `vm_emit_span_scan` at stride 1 | STAY, EDGE, VMSPAN (D91 budget 2) | SKIP, ADVANCE, with `member` = T4's spelling and `table_ref` = `stay<K>` / `scan<N>` | (b) and (c); (d) at stride 1 | R4h: in-loop | 1 |
+| **M4** | `emit_attempt`'s `(?m)^` skip (N3) | MLINE | FIND one byte, RETURN | — | none. Q30 recommends NOT migrating it until one exists: a lone `memchr('\n')` in pcrec is not architecture knowledge | 1 → 0 if taken |
+| **M5** | prefix_k's scan-PLAN selection (below) | OFS, PF | the plan moves; the predicate does not | — | the first mover whose best kit plan differs from `plan_hint` (measured) | — |
+
+**The scan edge ("scan-edge?").** Only its LOOP is a memory function.
+The peeled first iteration (the measured t-digits fix, `emit_dfa.c`'s
+comment at `emit_scan_edge`), the accept-recording stores and the
+fall-through state write are the DFA's own transition semantics. They
+stay pcrec's text around the kit's ADVANCE site. A counted span (`{0,n}`)
+is passed as a proven `span_hi`, not as a hook.
+
+**prefix_k's measured constants (r2 B2), staged as M5.** `src/opt/
+prefix_k.c` does two things:
+
+- it DERIVES the necessary `(offset, byte-set)` facts and the pinned run.
+  That is pcrec's semantic knowledge, and it stays (PATFACTS' territory);
+- it SELECTS among them, with a cost model over `C_MEMCHR` 6, `C_BITMAP`
+  116, `C_VERIFY` 250, `C_ENTER` 2000 (`:65-68`), `C_MISPRED` 1500 and
+  the 2x materiality bar: which offset to scan, which to verify, and
+  whether the skip is adopted over the offset-0 filter at all. Three of
+  those constants are box-measured machine terms (`C_MEMCHR` is glibc's
+  AVX2 `memchr`, the C4 allowlist's one code hit at `:45`). That is a
+  SCAN PLAN, which D146 puts in the kit.
+
+M1 and M2 move the TEXT only. The plan pcrec's model chose travels as
+`mf_pred.plan_hint` plus the conjunction it chose, and the baseline arm
+honours it byte for byte. M5, its own step with its own trigger, moves
+the PLAN: pcrec passes the FULL necessary conjunction (offset 0
+included) with per-term density hints and `consumer = MF_C_ENGINE`, and
+the kit's plan table chooses. The five constants and the materiality bar
+move into that table as the kit's measured data. `C_ENTER` (what a false
+candidate costs the engine) becomes the kit's per-`consumer` term,
+measured by the kit's timed suite over pcrec-emitted harness artifacts,
+which the tight coupling permits. T1's rows still choose WHAT (which
+facts form the predicate), so `RX_DFA_PREFILTER`'s closed value set
+(which the bench adapter enumerates) does not split. M5 moves selections,
+so it is an abi event with a movers census. At M5 the allowlist's last
+code hit leaves `src/` (Q29).
+
+### 9.5 The end state
+
+After M1-M3 (and M5), pcrec's emitters build predicates and hooks, and
+`src/gen/runcmp.c` is gone. pcrec spells no libc call, no table walk, no
+leapfrog and no masked word compare for a delegated site. The
+`memchr(` ratchet reads 1 (N3) or 0. The baseline profile holds
+everything pcrec used to spell, frozen. The `-fno-memfn-*` bits reach it
+from every site.
