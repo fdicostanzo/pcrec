@@ -340,6 +340,15 @@ predicate has exactly two readable values:
 Route M (a consumer `-march` that raises the predefined macros) needs no
 pcrec predicate. The kit's ladder sees the macros at gcc time.
 
+**[rev2] SUPERSEDED.** pcrec reads neither value. The "arch capability"
+in D122 addendum 2 item 4's sentence becomes a PRICED kit answer for an
+opaque token (§7.2, §7.5). `BASE` is the kit's own behaviour for the
+composite token `portable`. `DECLARED(L)` is its behaviour for a declared
+token. The rule above still holds word for word: a vector form is
+admissible only as a row, the fallback stays last, and no ISA fact
+branches an emitter. The difference is that the row's predicate now
+reads the kit's prices, not an ISA fact.
+
 ### 2.2 The new nested table: `SCAN_ROWS`, the scan-form table (P5's form slot)
 
 **The question it answers.** "Spell the search for the first position `i`
@@ -387,7 +396,24 @@ OWED are measured placements, not guesses (§6).
 | 6 | `swar` | all | S is one byte, a cube, or ≤ 3 bytes, with no vector row taken. Portable `uint64_t` SWAR (has-zero-byte), admitted NOW by D122 addendum 3 as an ordinary row (no ISA predicate) | `-fno-swar-scan` | pcrec- or kit-emitted SWAR, P8's subject-end guard (word loads only where `pos + 8 ≤ n`, memcpy loads, a short epilogue) |
 | 7 | `table-walk` | PF, STAY, EDGE, VMSPAN | always (the total fallback) | none | today's loop: `can_begin_match` / `stay<K>` / T4's scan test / T4's VM test, byte for byte |
 
-Two notes on the rows:
+**[rev2] The rows, revision 2.** Rows 1, 2, 3 and 6 above collapse into
+ONE arch-blind row. The table becomes:
+
+| # | row | sites | predicate | deny | emitter |
+|---|---|---|---|---|---|
+| 1 | `kit` | all | `kit_applies` (§7.5): the kit PRICES the query for the token, and its first quote (in the kit's order) whose obligations the site meets DOMINATES the next applicable row's price over the site's proven (span × density) box. It must do so on at least one arm, at the pessimistic end of both spreads. At the size-leaning `--tune` positions the kit's bytes must also not exceed the next row's | `-fno-kit-scan` (budget-1 sites: PF, PRE, OFS, SETREST) / `-fno-kit-loop` (budget-2 sites: STAY, EDGE, VMSPAN). `-fno-kit-native` restricts the quotes to portable-class kernels | `mf_emit` (§7.3) with pcrec's hooks: the verify text, the next row's text as every `#else`, the bound expression, the prefix |
+| 2 | `libc-memchr` | PF, PRE, OFS, SETREST | S is one byte AND the bound is rest-of-subject | none | today's text. Price: `LIBC_MEMCHR` (+ `LIBC_RESTART` per hit) |
+| 3 | `leapfrog` | OFS, PRE | S is a two-member cube | none | today's `ofs_test_emit_pair`. Price: `LIBC_PAIR` |
+| 4 | `table-walk` | PF, STAY, EDGE, VMSPAN | always | none | today's loop. Price: `LOOP_TABLE` or `LOOP_EQ` by T4's spelling |
+
+Revision 1's `loopfree`, `vec-verify`, `vec` and `swar` all survive as KIT
+KERNELS. pcrec cannot tell them apart and does not need to. Row 4's "OWED
+placement" against `vec` is gone, because it is a price comparison now.
+SWAR's early admission (D122 addendum 3) survives as kernel CLASS: under
+the SIMD hold, pcrec's query carries `MF_Q_PORTABLE_ONLY`, a policy flag
+that names no architecture (§7.9).
+
+Two notes on the rows (revision 1's numbering):
 
 - **Rows 4, 5 and 7 are today's text.** Promoting the seven sites to ask
   `SCAN_ROWS` moves no byte while rows 1-3 and 6 are denied or absent.
@@ -408,6 +434,7 @@ Two notes on the rows:
 | T4 `ROWS` | **none.** T4 is ONE-POSITION membership and stays scalar. The VECTOR classifier is a different question (16-64 lanes at once) asked of the same set. It belongs to the kit's composition table (§4.3), which T4's set feeds | — | — | — | — | **yes**, as an input. Its `ClsChoice` is the scalar `#else` spelling of a vector row, so one set has one scalar spelling |
 | T5 `TAB_ROWS` | none. A vector classifier's constants (nibble tables, range immediates) are the kit's own literals | — | — | — | — | **n/a** |
 | T6 `pcrec_runcmp_rows` | **`vec-masked`**: a masked run of L ∈ [16, 2V], one or two overlapping vector loads, `(v & K) == T` as a lane mask, all-ones test | before `words` | masked AND L ≥ 16 AND the kit composes a vector compare at `BASE`/`DECLARED` | `-fno-vec-run` | kit K1's load/and/cmpeq/all-lanes primitives. The caller's P8 guard for L bytes is already emitted | **yes, with a signature change:** `rc_holds(pred, r)` sees only the run. An ISA predicate needs `cx` (`rc_holds(cx, pred, r)`). Exact runs get NO vector row: gcc already lowers constant `memcmp` at L ≥ 16 to a vector compare (D122 addendum: pay for what you use; this record is the reason) |
+| T6, **[rev2]** | `vec-masked` is replaced by the arch-blind `kit` row (op VERIFY_RUN, §7.10). Its comparison side is `words`, priced as `ceil(L/8)·CMP_WORD8` | before `words` | `kit_applies` | the site's budget bit | `mf_emit` | **yes**: `rc_holds` still needs `cx`, now for the token and the prices, not for an ISA |
 | T7 `pcrec_find_pick` | none (a primitive). The packed-pair operand needs a SECOND pick (the rarest other position, with a distance rule): a new reader, `pcrec_find_pick2`, of the same MASS/PICK kinds | — | — | — | — | **yes** (a reader, not a mechanism; D126 Q4's NONE rule holds inside the primitive) |
 | T8, T9 | excluded (§1.2) | — | — | — | — | — |
 | N1-N4 | rows of `SCAN_ROWS` at sites `STAY`, `VMSPAN`, `PF`, `SETREST` | — | — | — | as T3's | **no, as built (b), (d), (f)**. N3 stays `libc-memchr` (row 4) with no change |
@@ -446,6 +473,14 @@ the kit's stand-alone users and its reference functions. Inside pcrec, the
 fallback is pcrec's next row. This requires K2's API to take the fallback
 TEXT as a hook (§3.3).
 
+**[rev2]** The ladder's macros, its arms and whether it exists at all are
+now the kit's: pcrec passes a token and a kernel per arm (§7.3 `mf_emit`,
+a NULL entry meaning "this arm falls back"). The invariant this section
+states is kept, and it is now enforced at the API: the only scalar text
+inside a kit emission is the `fallback` hook's, which is pcrec's next row.
+An arm the kit cannot price is a fallback arm, so a ladder never gains a
+scalar spelling of the kit's own.
+
 ### 2.6 Why this is rows, not a parallel mechanism
 
 - **One walk, one idiom:** `SCAN_ROWS` is a `DfaCand` list (or clskit's
@@ -467,6 +502,17 @@ TEXT as a hook (§3.3).
   existing closed `<PREFIX>_DFA_PREFILTER` value set (WHAT; pcrec-bench's
   adapter enumerates it) does not split. That is the k82fix precedent of
   keeping `<PREFIX>_REQ_WHY`'s four tokens.
+
+**[rev2]** Three of these four points hold unchanged. The changes:
+
+- The answer-identity sweep's per-architecture arms become three deny
+  arms per box (`-fno-kit-scan`, `-fno-kit-loop`, `-fno-kit-native`) over
+  that box's PRICED tokens, plus option_sets.md §3.5a's compile-only arms
+  per token.
+- `<PREFIX>_SCAN_FORM` carries the kit's opaque `kernel_id` per arm, and
+  it is emitted only where `kit` was selected.
+- A new check, C4 (§7.8), keeps the rows arch-blind: no ISA word may
+  appear in `src/`, `cli/` or `lib/`.
 
 ---
 
@@ -511,6 +557,13 @@ it lives in (Q13).
 
 **The kit** (one project; its home is Q13):
 
+- **[rev2] K0, the capability-and-price query.** It takes a token and an
+  arch-neutral query, and returns a price list: the kernels that exist
+  for the token, their measured costs in one unit, their code bytes and
+  their site obligations. It also returns the generic reference terms
+  pcrec prices its own rows from, and the per-token opaque texts
+  (attribute, CPU check, level stamp, loader marker). Its data is the
+  calibration tables (§7.7). The full design is §7.
 - **K1, the primitive layer.** Injectable C text, `static inline
   __attribute__((always_inline))`, every name behind the prefix macro
   (RB-2). It is selected per ISA by predefined macros (RB-3), with every
@@ -548,6 +601,14 @@ it lives in (Q13).
   stamps, the `--tune` positions (vector rows are denied at the
   size-leaning positions `-2`/`-1` unless measured smaller, D139 item 1's
   rule);
+  **[rev2]** narrowed to ONE arch-blind `kit` row per table. pcrec
+  decides WHETHER to ask the kit (the site, its operands, its proven
+  facts) and whether the kit's best quote beats pcrec's own next row in
+  the common unit. It never decides WHICH kernel or WHICH ISA. The
+  `--tune` rule becomes the row's own bytes clause (§7.5);
+- **[rev2]** the price FORMULAS of its own scalar rows, over generic
+  terms the kit measured (§7.5);
+- **[rev2]** the token, held opaque, passed and stamped (§7.2);
 - the operands, from the single sources:
   - P2 `pcrec_cls_cube` for cubes;
   - T4's set intervals;
@@ -592,6 +653,10 @@ on, and pcrec's composition would be untestable outside answer identity.
    the short-path threshold), more of the composition becomes per-tier
    text, and (c) drifts toward (a)'s N-tier output. The size cost of that
    is unmeasured (§5 Q16).
+   **[rev2]** This is now the KIT's uncertainty and is priced: a ladder
+   or per-tier text shows up as `code_bytes` in the quote (§7.4), and
+   linux_results.md Q16 (an AVX2 row keeps the SSE2 16-B tier) is a
+   kit-internal composition rule.
 3. **gcc-time capability macros are not pcrec-observable.** A stamp cannot
    say which arm compiled unless the artifact computes it from the same
    macros (`isa_selection.md`'s `<PREFIX>_ISA_LEVEL`, RB-12). The stamp
@@ -621,7 +686,10 @@ The rule that keeps them apart is written into the API: K2 receives
 FACTS, never site names, and returns a composition or NONE. pcrec never
 names a classifier. If pcrec ever wanted to override a classifier, the
 override would be a K2 deny bit passed through, never a pcrec-side
-re-derivation. clskit is the in-tree precedent: `TAB_ROWS` (artifact-level)
+re-derivation. **[rev2]** K0 makes this rule two-way. The kit receives
+facts and never site names. pcrec receives prices and kernel IDs, and
+never ISA names. The override path is `--kit-deny=` and `--kit-force=`,
+both opaque pass-throughs. clskit is the in-tree precedent: `TAB_ROWS` (artifact-level)
 and `ROWS` (per-set) are nested first-match tables answering different
 questions, and the scan edge's axis I asks `ROWS` rather than holding a
 mapping of its own (D139 item 2).
@@ -671,6 +739,17 @@ typedef struct {
 
 (A sketch. The real API's shape is R4b's to fix. `StrBuf` would be the
 kit's own sink type, not pcrec's.)
+
+**[rev2]** Superseded by §7.3. K0's `mf_query` is this descriptor, made
+arch-neutral:
+
+- `isa` leaves the struct and becomes the token argument;
+- `density_ppm` becomes an interval;
+- `maxw` becomes a proven `[span_lo, span_hi]`;
+- `run_p99` is dropped until a findings value exists to fill it (D77);
+- the hooks move to `mf_hooks`, which K2 receives together with the
+  kernel pcrec chose per arm. The price question and the generation call
+  share one query, so K2 generates exactly what K0 priced.
 
 ### 4.2 The primitive set (K1)
 
