@@ -6800,16 +6800,6 @@ static const char *req_why_name(ReqAdmit a)
     return "none";
 }
 
-/* [K82] Does pattern machine `d` carry a `\G` start family — a start state
- * an attempt at the caller's own startpos enters that no later attempt does?
- * `start_pinned_assert_routing`'s own test, as a question. */
-static bool dfa_has_gstart_family(const Dfa *d)
-{
-    for (int u = 0; u < d->natoms; u++)
-        if (d->s1g[u] != d->s1u[u]) return true;
-    return false;
-}
-
 /* [K82] (B) THE HANDOFF ROW's predicate (docs/design/litscan_k82h.md §1.4):
  * the pre-check's candidate `c` can become the body's scan start
  * `max(search_from, c - K)`, with K the window's maximum byte offset from the
@@ -6853,7 +6843,7 @@ static bool req_handoff_applies(const DfaSel *s)
     k = pcrec_fact_req_run_maxoff(cx);
     if (k < 0 || k >= PCREC_W_UNBOUNDED) return false;
     if (cx->job->fit.prefilter_collapsed) return false;
-    if (cx->job->fit.chosen == ENGM_VM && dfa_has_gstart_family(&cx->job->dfa) &&
+    if (cx->job->fit.chosen == ENGM_VM && dfa_needs_gseed(&cx->job->dfa) &&
         pcrec_vm_prefilter_window(cx))
         return false;
     return true;
@@ -8275,7 +8265,7 @@ static void req_handoff_assert_body(Ctx *cx, const Dfa *fd, bool pinned)
     if (pinned)
         pcrec_ctx_fail(cx, 0, "internal error: the [K82] handoff reached the "
                        "start-pinned search, whose answer is its start");
-    if (dfa_has_gstart_family(fd))
+    if (dfa_needs_gseed(fd))
         pcrec_ctx_fail(cx, 0, "internal error: the [K82] handoff reached an "
                        "unanchored machine with a \\G start family, which "
                        "would read the moved start as the caller's");

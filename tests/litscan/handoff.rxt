@@ -16,7 +16,7 @@
 # routes), two occurrences (the gate's leftmost contract), a decoy, multibyte
 # width, ill-formed text before the window, seeded starts, \G on the attempt
 # route and on the hybrid (whose prefilter reads its third argument as \G),
-# \K, find-all counts, and two unbounded controls.
+# \K, find-all subjects (dense and overlapping) and two unbounded controls.
 
 # K = 5, unanchored DFA: the match begins K bytes before the window; startpos 1..5 cross the clamp (S470)
 pattern x{2,5}(?i:cat)
@@ -2182,6 +2182,211 @@ ns 3 "xxcat"
 ns 4 "xxcat"
 ns 5 "xxcat"
 
+# find-all, dense: each call hands off its own candidate (no cross-call state)
+pattern (?i)cat
+features all
+encoding byte
+ms 0 "cAtCaTcat" 0 3
+ms 1 "cAtCaTcat" 3 6
+ms 2 "cAtCaTcat" 3 6
+ms 3 "cAtCaTcat" 3 6
+ms 4 "cAtCaTcat" 6 9
+ms 5 "cAtCaTcat" 6 9
+ms 6 "cAtCaTcat" 6 9
+ns 7 "cAtCaTcat"
+ns 8 "cAtCaTcat"
+ns 9 "cAtCaTcat"
+ms 0 "cat cat cat" 0 3
+ms 1 "cat cat cat" 4 7
+ms 2 "cat cat cat" 4 7
+ms 3 "cat cat cat" 4 7
+ms 4 "cat cat cat" 4 7
+ms 5 "cat cat cat" 8 11
+ms 6 "cat cat cat" 8 11
+ms 7 "cat cat cat" 8 11
+ms 8 "cat cat cat" 8 11
+ns 9 "cat cat cat"
+ns 10 "cat cat cat"
+ns 11 "cat cat cat"
+ms 0 "ccatt" 1 4
+ms 1 "ccatt" 1 4
+ns 2 "ccatt"
+ns 3 "ccatt"
+ns 4 "ccatt"
+ns 5 "ccatt"
+
+# find-all, dense: each call hands off its own candidate (no cross-call state) [engine vm]
+pattern (?i)cat
+features all
+encoding byte
+engine vm
+ms 0 "cAtCaTcat" 0 3
+ms 1 "cAtCaTcat" 3 6
+ms 2 "cAtCaTcat" 3 6
+ms 3 "cAtCaTcat" 3 6
+ms 4 "cAtCaTcat" 6 9
+ms 5 "cAtCaTcat" 6 9
+ms 6 "cAtCaTcat" 6 9
+ns 7 "cAtCaTcat"
+ns 8 "cAtCaTcat"
+ns 9 "cAtCaTcat"
+ms 0 "cat cat cat" 0 3
+ms 1 "cat cat cat" 4 7
+ms 2 "cat cat cat" 4 7
+ms 3 "cat cat cat" 4 7
+ms 4 "cat cat cat" 4 7
+ms 5 "cat cat cat" 8 11
+ms 6 "cat cat cat" 8 11
+ms 7 "cat cat cat" 8 11
+ms 8 "cat cat cat" 8 11
+ns 9 "cat cat cat"
+ns 10 "cat cat cat"
+ns 11 "cat cat cat"
+ms 0 "ccatt" 1 4
+ms 1 "ccatt" 1 4
+ns 2 "ccatt"
+ns 3 "ccatt"
+ns 4 "ccatt"
+ns 5 "ccatt"
+
+# find-all, overlapping run occurrences
+pattern aa(?i:a)
+features all
+encoding byte
+ms 0 "aaaaaaa" 0 3
+ms 1 "aaaaaaa" 1 4
+ms 2 "aaaaaaa" 2 5
+ms 3 "aaaaaaa" 3 6
+ms 4 "aaaaaaa" 4 7
+ns 5 "aaaaaaa"
+ns 6 "aaaaaaa"
+ns 7 "aaaaaaa"
+ms 0 "aaAaaA" 0 3
+ms 1 "aaAaaA" 3 6
+ms 2 "aaAaaA" 3 6
+ms 3 "aaAaaA" 3 6
+ns 4 "aaAaaA"
+ns 5 "aaAaaA"
+ns 6 "aaAaaA"
+ms 0 "aAa aaa" 4 7
+ms 1 "aAa aaa" 4 7
+ms 2 "aAa aaa" 4 7
+ms 3 "aAa aaa" 4 7
+ms 4 "aAa aaa" 4 7
+ns 5 "aAa aaa"
+ns 6 "aAa aaa"
+ns 7 "aAa aaa"
+
+# find-all, overlapping run occurrences [engine vm]
+pattern aa(?i:a)
+features all
+encoding byte
+engine vm
+ms 0 "aaaaaaa" 0 3
+ms 1 "aaaaaaa" 1 4
+ms 2 "aaaaaaa" 2 5
+ms 3 "aaaaaaa" 3 6
+ms 4 "aaaaaaa" 4 7
+ns 5 "aaaaaaa"
+ns 6 "aaaaaaa"
+ns 7 "aaaaaaa"
+ms 0 "aaAaaA" 0 3
+ms 1 "aaAaaA" 3 6
+ms 2 "aaAaaA" 3 6
+ms 3 "aaAaaA" 3 6
+ns 4 "aaAaaA"
+ns 5 "aaAaaA"
+ns 6 "aaAaaA"
+ms 0 "aAa aaa" 4 7
+ms 1 "aAa aaa" 4 7
+ms 2 "aAa aaa" 4 7
+ms 3 "aAa aaa" 4 7
+ms 4 "aAa aaa" 4 7
+ns 5 "aAa aaa"
+ns 6 "aAa aaa"
+ns 7 "aAa aaa"
+
+# find-all at K = 5: a later match's window within K of an earlier match's end
+pattern x{2,5}(?i:cat)
+features all
+encoding byte
+ms 0 "xxcatxxxcatxxxxxcat" 0 5
+ms 1 "xxcatxxxcatxxxxxcat" 5 11
+ms 2 "xxcatxxxcatxxxxxcat" 5 11
+ms 3 "xxcatxxxcatxxxxxcat" 5 11
+ms 4 "xxcatxxxcatxxxxxcat" 5 11
+ms 5 "xxcatxxxcatxxxxxcat" 5 11
+ms 6 "xxcatxxxcatxxxxxcat" 6 11
+ms 7 "xxcatxxxcatxxxxxcat" 11 19
+ms 8 "xxcatxxxcatxxxxxcat" 11 19
+ms 9 "xxcatxxxcatxxxxxcat" 11 19
+ms 10 "xxcatxxxcatxxxxxcat" 11 19
+ms 11 "xxcatxxxcatxxxxxcat" 11 19
+ms 12 "xxcatxxxcatxxxxxcat" 12 19
+ms 13 "xxcatxxxcatxxxxxcat" 13 19
+ms 14 "xxcatxxxcatxxxxxcat" 14 19
+ns 15 "xxcatxxxcatxxxxxcat"
+ns 16 "xxcatxxxcatxxxxxcat"
+ns 17 "xxcatxxxcatxxxxxcat"
+ns 18 "xxcatxxxcatxxxxxcat"
+ns 19 "xxcatxxxcatxxxxxcat"
+ms 0 "xxxxxxxcatxcat" 2 10
+ms 1 "xxxxxxxcatxcat" 2 10
+ms 2 "xxxxxxxcatxcat" 2 10
+ms 3 "xxxxxxxcatxcat" 3 10
+ms 4 "xxxxxxxcatxcat" 4 10
+ms 5 "xxxxxxxcatxcat" 5 10
+ns 6 "xxxxxxxcatxcat"
+ns 7 "xxxxxxxcatxcat"
+ns 8 "xxxxxxxcatxcat"
+ns 9 "xxxxxxxcatxcat"
+ns 10 "xxxxxxxcatxcat"
+ns 11 "xxxxxxxcatxcat"
+ns 12 "xxxxxxxcatxcat"
+ns 13 "xxxxxxxcatxcat"
+ns 14 "xxxxxxxcatxcat"
+
+# find-all at K = 5: a later match's window within K of an earlier match's end [engine vm]
+pattern x{2,5}(?i:cat)
+features all
+encoding byte
+engine vm
+ms 0 "xxcatxxxcatxxxxxcat" 0 5
+ms 1 "xxcatxxxcatxxxxxcat" 5 11
+ms 2 "xxcatxxxcatxxxxxcat" 5 11
+ms 3 "xxcatxxxcatxxxxxcat" 5 11
+ms 4 "xxcatxxxcatxxxxxcat" 5 11
+ms 5 "xxcatxxxcatxxxxxcat" 5 11
+ms 6 "xxcatxxxcatxxxxxcat" 6 11
+ms 7 "xxcatxxxcatxxxxxcat" 11 19
+ms 8 "xxcatxxxcatxxxxxcat" 11 19
+ms 9 "xxcatxxxcatxxxxxcat" 11 19
+ms 10 "xxcatxxxcatxxxxxcat" 11 19
+ms 11 "xxcatxxxcatxxxxxcat" 11 19
+ms 12 "xxcatxxxcatxxxxxcat" 12 19
+ms 13 "xxcatxxxcatxxxxxcat" 13 19
+ms 14 "xxcatxxxcatxxxxxcat" 14 19
+ns 15 "xxcatxxxcatxxxxxcat"
+ns 16 "xxcatxxxcatxxxxxcat"
+ns 17 "xxcatxxxcatxxxxxcat"
+ns 18 "xxcatxxxcatxxxxxcat"
+ns 19 "xxcatxxxcatxxxxxcat"
+ms 0 "xxxxxxxcatxcat" 2 10
+ms 1 "xxxxxxxcatxcat" 2 10
+ms 2 "xxxxxxxcatxcat" 2 10
+ms 3 "xxxxxxxcatxcat" 3 10
+ms 4 "xxxxxxxcatxcat" 4 10
+ms 5 "xxxxxxxcatxcat" 5 10
+ns 6 "xxxxxxxcatxcat"
+ns 7 "xxxxxxxcatxcat"
+ns 8 "xxxxxxxcatxcat"
+ns 9 "xxxxxxxcatxcat"
+ns 10 "xxxxxxxcatxcat"
+ns 11 "xxxxxxxcatxcat"
+ns 12 "xxxxxxxcatxcat"
+ns 13 "xxxxxxxcatxcat"
+ns 14 "xxxxxxxcatxcat"
+
 # control: an unbounded offset (.*?) carries no handoff (S467)
 pattern a.*?(?i:select)
 features all
@@ -2341,52 +2546,3 @@ ns 8 "zzab-xyzwab"
 ns 9 "zzab-xyzwab"
 ns 10 "zzab-xyzwab"
 ns 11 "zzab-xyzwab"
-
-# find-all: dense and overlapping run occurrences, each call hands off its own candidate
-pattern (?i)cat
-features all
-encoding byte
-mc "cAtCaTcat" 3
-mc "cat cat cat" 3
-mc "ccatt" 1
-
-# find-all: dense and overlapping run occurrences, each call hands off its own candidate [engine vm]
-pattern (?i)cat
-features all
-encoding byte
-engine vm
-mc "cAtCaTcat" 3
-mc "cat cat cat" 3
-mc "ccatt" 1
-
-# find-all: dense and overlapping run occurrences, each call hands off its own candidate
-pattern aa(?i)a
-features all
-encoding byte
-mc "aaaaaaa" 2
-mc "aaAaaA" 2
-mc "aAa aaa" 1
-
-# find-all: dense and overlapping run occurrences, each call hands off its own candidate [engine vm]
-pattern aa(?i)a
-features all
-encoding byte
-engine vm
-mc "aaaaaaa" 2
-mc "aaAaaA" 2
-mc "aAa aaa" 1
-
-# find-all: dense and overlapping run occurrences, each call hands off its own candidate
-pattern x{2,5}(?i:cat)
-features all
-encoding byte
-mc "xxcatxxxcatxxxxxcat" 3
-mc "xxxxxxxcatxcat" 1
-
-# find-all: dense and overlapping run occurrences, each call hands off its own candidate [engine vm]
-pattern x{2,5}(?i:cat)
-features all
-encoding byte
-engine vm
-mc "xxcatxxxcatxxxxxcat" 3
-mc "xxxxxxxcatxcat" 1

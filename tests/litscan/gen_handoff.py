@@ -103,15 +103,23 @@ CASES = [
  # ---- \\K: offsets are from the attempt start ----
  ("x{2,5}\\K(?i:cat)", "byte", ["xxxxxcat", "zxxxxxcat", "xxcat"],
   "\\K: K is measured from the attempt start, not the reported one"),
+ # ---- find-all: each call of the loop is a search from the previous end, so
+ # every-startpos cells on dense and overlapping subjects ARE its calls (an
+ # `mc` line would collide with tests/rxtsource's keyword census, where `mc`
+ # is still a protected word) ----
+ ("(?i)cat", "byte", ["cAtCaTcat", "cat cat cat", "ccatt"],
+  "find-all, dense: each call hands off its own candidate (no cross-call state)"),
+ ("aa(?i:a)", "byte", ["aaaaaaa", "aaAaaA", "aAa aaa"],
+  "find-all, overlapping run occurrences"),
+ ("x{2,5}(?i:cat)", "byte", ["xxcatxxxcatxxxxxcat", "xxxxxxxcatxcat"],
+  "find-all at K = 5: a later match's window within K of an earlier match's end"),
  # ---- controls: unbounded runs never move ----
  ("a.*?(?i:select)", "byte", ["a select", "aaselect", "select", "xa..SeLeCt"],
   "control: an unbounded offset (.*?) carries no handoff (S467)"),
  ("ab.*xyzw", "byte", ["abxyzw", "ab..xyzw", "xyzw", "zzab-xyzwab"],
   "control: an unbounded offset; the run choice keeps the more informative unbounded xyzw (S474)"),
 ]
-MC = [("(?i)cat", "byte", ["cAtCaTcat", "cat cat cat", "ccatt"]),
-      ("aa(?i)a", "byte", ["aaaaaaa", "aaAaaA", "aAa aaa"]),
-      ("x{2,5}(?i:cat)", "byte", ["xxcatxxxcatxxxxxcat", "xxxxxxxcatxcat"])]
+
 
 
 def esc(b):
@@ -157,20 +165,6 @@ def py_cells(pat, b):
     return out
 
 
-def findall(pat, enc, b):
-    opts = (UTF | INVALID_UTF) if enc == "utf8" else 0
-    cx = p2.compile(pat.encode("utf-8" if enc == "utf8" else "latin-1"), opts)
-    n, p = 0, 0
-    while p <= len(b):
-        r = cx.search(b, p)
-        if not r:
-            break
-        n += 1
-        s, e = r[0]
-        p = e if e > s else e + 1
-    return n
-
-
 def pcrec_cells(pcrec, pat, enc, b, d):
     """pcrec's own answers through --emit-main, at every boundary."""
     exe = os.path.join(d, "t")
@@ -208,7 +202,7 @@ def main():
         "# routes), two occurrences (the gate's leftmost contract), a decoy, multibyte",
         "# width, ill-formed text before the window, seeded starts, \\G on the attempt",
         "# route and on the hybrid (whose prefilter reads its third argument as \\G),",
-        "# \\K, find-all counts, and two unbounded controls.",
+        "# \\K, find-all subjects (dense and overlapping) and two unbounded controls.",
         ""]
     tmp = tempfile.mkdtemp(dir=os.environ.get("TMPDIR"))
     mismatches = 0
@@ -242,25 +236,12 @@ def main():
                     else:
                         out.append('ns %d "%s"' % (p, esc(b)))
             out.append("")
-    for pat, enc, subjects in MC:
-        for route in ("auto", "vm"):
-            out.append("# find-all: dense and overlapping run occurrences, each call hands off its own candidate" +
-                       ("" if route == "auto" else " [engine vm]"))
-            out.append("pattern " + pat)
-            out.append("features all")
-            out.append("encoding " + enc)
-            if route == "vm":
-                out.append("engine vm")
-            for s in subjects:
-                b = bsubj(s, enc)
-                out.append('mc "%s" %d' % (esc(b), findall(pat, enc, b)))
-            out.append("")
     text = "\n".join(out)
     if check:
         mismatches = check_with(check, text)
     open(os.path.join(HERE, "handoff.rxt"), "w", encoding="utf-8",
          errors="surrogateescape").write(text)
-    print(f"handoff.rxt: {len(CASES)} cases x 2 routes, {len(MC)} find-all cases x 2;"
+    print(f"handoff.rxt: {len(CASES)} cases x 2 routes;"
           f" pcrec check mismatches {mismatches if check else 'not run'}")
 
 

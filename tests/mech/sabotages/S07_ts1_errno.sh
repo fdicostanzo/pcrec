@@ -24,9 +24,13 @@ SAB_COUNT=1
 # spans the region's own closing call rather than being dedented onto the
 # declaration alone, where it would match TWICE and SAB_COUNT=1 would stop
 # resolving exactly as it did in 2026-08-29.
+# RE-ANCHORED 2026-10-05 ([K82] (B), lane k82hbuild), INTENT RE-VERIFIED: the
+# forward scan's position line is a `pcrec_sb_printf` of the start expression
+# (`fwd.from`, `search_from` or the handoff's `handoff_position`); the plant
+# still adds ONE `(void)errno;` to the SEARCH body's first scan line.
 SAB_BEFORE='               "    // match wins.\n");
     pcrec_sb_cmt_close(c);
-    pcrec_sb_puts(c, "    size_t scan_position = search_from;\n"'
+    pcrec_sb_printf(c, "    size_t scan_position = %s;\n"'
 SAB_AFTER='               "    // match wins.\n");
     pcrec_sb_cmt_close(c);
-    pcrec_sb_puts(c, "    size_t scan_position = search_from; (void)errno;\n"'
+    pcrec_sb_printf(c, "    size_t scan_position = %s; (void)errno;\n"'

@@ -1751,7 +1751,7 @@ done < <(sed -n 's/^pattern //p' "$ROOT_DIR/tests/litscan/handoff.rxt" \
                                  "$ROOT_DIR/tests/base/literals.rxt" \
                                  "$ROOT_DIR/tests/base/alternation.rxt" \
                                  "$ROOT_DIR/tests/base/anchors.rxt" \
-                                 "$ROOT_DIR/tests/base/classes.rxt" 2>/dev/null | sort -u)
+                                 "$ROOT_DIR/tests/base/classes.rxt" 2>/dev/null | LC_ALL=C sort -u)
 echo "INFO: [5.12] population $s512_tot patterns: movers $s512_mov (K > 0: $s512_kpos), unbounded with an emitted pre-check $s512_unb"
 [ "$s512_mov" -ge "$S512_MOV_FLOOR" ] && [ "$s512_kpos" -ge "$S512_KPOS_FLOOR" ] \
     && ok "[5.12b] $s512_mov movers ($s512_kpos with K > 0) hold the presence biconditional and the cross-table check (floors $S512_MOV_FLOOR/$S512_KPOS_FLOOR)" \

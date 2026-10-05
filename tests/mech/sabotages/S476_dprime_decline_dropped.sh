@@ -14,7 +14,7 @@ SAB_REACH_EXPECT='REACH-DPRIME'
 SAB_REACH_POP='tests/codegen/run_prechecks.sh|\(\?:\\Gab\|x\)\(cat\)\\w\{0,3\}dog|1'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    if (cx->job->fit.chosen == ENGM_VM && dfa_has_gstart_family(&cx->job->dfa) &&
+SAB_BEFORE='    if (cx->job->fit.chosen == ENGM_VM && dfa_needs_gseed(&cx->job->dfa) &&
         pcrec_vm_prefilter_window(cx))
         return false;'
 SAB_AFTER='    /* SABOTAGE S476: the (d'\'') decline is dropped */'
