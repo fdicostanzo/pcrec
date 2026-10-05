@@ -1431,3 +1431,9 @@ it. Every change is marked `[r1 <id>]` in place.
 
 **Sabotage rows**: S463-S477, fifteen, contiguous (§4.4, with revision
 1's mapping). **Frank questions**: Q1-Q10 (§Q).
+
+## Rulings (Frank, 2026-10-05)
+
+- **Q1 YES:** the separate two-row `req_uses[]` table (axis `req-use`, `-fno-req-handoff`, bit 46). Frank notes the behaviour itself was his earlier recommendation; see the two LINEAGE paragraphs at the top.
+- **Q2 KEEP:** the utf8 round-up, in its revised form (uncapped `< n` loop, only when lo > f).
+- **Q3 (a), REVERSING the note's own recommendation:** `<PREFIX>_REQ_HANDOFF` goes on EVERY artifact of the family, `none` where the handoff does not apply. House convention: stamps vary only by engine family, never by presence within a family, and "does not apply" is a value. The byte-count readers §2.3a lists are re-pinned in the build's own change (the abi ritual).
