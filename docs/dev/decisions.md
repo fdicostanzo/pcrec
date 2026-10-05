@@ -8987,3 +8987,5 @@ This generalizes D91 (scalar-first, "the SIMD crutch must not hide inefficiencie
 - So the likely first home is D91 budget 1 (prefilter sites, where the dispatch is noise beside the scan), x86 first.
 - The KIT decides and measures it as one of its own forms, under the layer rule: the cascade must beat the single-level form at that site. pcrec stays arch-blind.
 - Folds into integration.md at its next revision.
+
+**D147 addendum 3 (Frank, 2026-10-05):** [MEMFN] Q39 YES. `<PREFIX>_MEMFN_FORMS` goes on every artifact: the forms used, or `none` when the artifact matches its SIMD-off compile, plus the carried levels if a site cascades. No kit version in it. It lands as its own abi event (R4a′) before M1's replace, with the byte-count re-pins.
