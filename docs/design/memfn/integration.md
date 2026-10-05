@@ -2934,7 +2934,7 @@ forms, `MF_EMPTY_NOP`).
   rule 4).
 - **ADVANCE with `count` (F2).** The scan edge's bounded loop is pcrec's
   peeled guard, then the kit's loop, then pcrec's post-loop, which reads
-  the counter (`emit_dfa.c:7586-7594`: `if (scan_run_length == 16UL)`).
+  the counter (`emit_dfa.c:7587-7594`: `if (scan_run_length == 16UL)`).
   So, where `count` is non-NULL:
   - the kit DECLARES `unsigned long <count> = <count_start>;` as its
     first statement. Its type and name are the baseline's. `count_start`
@@ -3212,7 +3212,7 @@ comparator (§9.3) proves it over every compile the suite makes. These
 examples show only that the CONTRACT can say it, which revision 3's
 could not (r3 F1).
 
-### 15.1 FUNC / FIND / RETURN: the offset-skip block (`ofs_test_emit_fn`, `emit_dfa.c:6189`)
+### 15.1 FUNC / FIND / RETURN: the offset-skip block (`ofs_test_emit_fn`, `emit_dfa.c:6180`)
 
 Today, the run pre-check's window block for an exact 4-byte run (via
 `pcrec_emit_req_run_blocks`, `:1035`):
@@ -3260,9 +3260,9 @@ whole:
 
 Where the run's scanned position is a two-member cube (a mask byte other
 than `0xFF` at `plan_pos`), the baseline arm takes the PAIR leapfrog
-(`ofs_test_emit_pair`, `:6158`) first. That is the same arm order
-`ofs_test_emit_fn` has (`:6196`). The prefilter row's block
-(`pf_block_ofs`, `:6077`) is the same site with SET terms from the
+(`ofs_test_emit_pair`, `:6139`) first. That is the same arm order
+`ofs_test_emit_fn` has (`:6194`). The prefilter row's block
+(`pf_block_ofs`, `:6075`) is the same site with SET terms from the
 k-set, `fn_ref` → `rx_ofsskip`, and `plan_hint` naming the scanned term.
 
 **The block's comment** (`pf_block_ofs`'s offset legend, or the run
@@ -3289,15 +3289,15 @@ Today:
     if (rx_reqrun(subject, subject_length, search_from) >= subject_length) return 0;
 ```
 
-pcrec's text is `"%s    size_t cand = "` … `");\n"` (`:6290-6293`)
-and `"%sif ("` … `" >= %s) return 0;\n"` (`:1146`). The kit writes only
+pcrec's text is `"%s    size_t cand = "` … `");\n"` (`:6290-6292`)
+and `"%sif ("` … `" >= %s) return 0;\n"` (`:1145`). The kit writes only
 the call, through `mf_call(handle, hooks)` with `s` = `subject`, `n` =
 `subject_length`, `lo` = `scan_position` or `search_from`. The arguments
 after `lo` are the same table names, in the same order, as the
 definition's parameters. The miss test, the reseed (`:6297`) and the
 `return 0` stay pcrec's: §14.1, a miss is a value pcrec tests.
 
-### 15.3 STMT / FIND / ON_MISS: the one-byte pre-check (`emit_req_one_byte`, `:1237`)
+### 15.3 STMT / FIND / ON_MISS: the one-byte pre-check (`emit_req_one_byte`, `:1235`)
 
 Today, indent four spaces:
 
@@ -3319,7 +3319,7 @@ The baseline arm writes `note(0)`, then `"%sif (%s <= %s ||\n%s
 !memchr(%s + %s, %d, %s - %s))\n%s    %s\n"`, with the empty test
 fused into the condition and `on_miss` at indent plus four spaces.
 
-### 15.4 STMT / ALL_PRESENT / ON_MISS: N4's set rest (`emit_req_set_rest`, `:1180`)
+### 15.4 STMT / ALL_PRESENT / ON_MISS: N4's set rest (`emit_req_set_rest`, `:1181`)
 
 Today (two remaining members, 65 and 66):
 
@@ -3343,7 +3343,7 @@ Today (two remaining members, 65 and 66):
 The baseline arm's locals `rq_set` and `rq_i` are in the manifest. Its
 `static const` table is the kit's own block-scoped datum, not one of
 pcrec's 256-byte tables (rule 7 concerns those). A predicate set of size
-zero emits nothing, as today (`:1199`). That is a site pcrec does not
+zero emits nothing, as today (`:1205`). That is a site pcrec does not
 build, so `npred = 0` never reaches the kit.
 
 ### 15.5 The K82 gate, ONE composite site (r3 F6; `lane/k82hbuild`, abi 61)
@@ -3384,7 +3384,7 @@ this site's FUNC parts, emitted earlier into `file_scope` at the point
 |---|---|---|---|
 | 0 | `{lead byte}` | OPTIONAL | §15.3's text (present only where `set-leads` applies and bit 45 is clear) |
 | 1 | the window RUN | REQUIRED | handoff (`ret_pred = 1`, ASSIGN): `"%s%s%s = "` CALL `";\n%sif (%s >= %s) %s\n"`, with `result_decl` `"size_t "`, `result` `handoff_position`, `on_miss` `"return 0;"`. No handoff (`ret_pred = 0xFF`, ON_MISS): `"%sif ("` CALL `" >= %s) %s\n"` |
-| 2 | the whole RUN | REQUIRED | as part 1's ON_MISS line, with `rx_reqrun_whole` (present only on the no-DFA route, `req_run_tests`, `:1016`) |
+| 2 | the whole RUN | REQUIRED | as part 1's ON_MISS line, with `rx_reqrun_whole` (present only on the no-DFA route, `req_run_tests`, `:1017`) |
 | 3 | the set rest | REQUIRED | §15.4's block (present only on the no-DFA route) |
 
 pcrec writes everything after the site: the `[K82]` comment, the K
@@ -3394,7 +3394,7 @@ The notes are pcrec's per part: `[OPT-REQBYTE]`, `[OPT-REQPOS]`,
 `[K66]`, `[K65]`.
 
 **Why ONE site and not four.** Today the order (lead first, then run) is
-a rarity choice pcrec makes (`req_set_leads_applies`, `:6618`), and K85
+a rarity choice pcrec makes (`req_set_leads_applies`, `:6601`), and K85
 shows it can lose on match-dense text. As one site, the order is a hint
 the baseline honours and a non-baseline arm may revise (lead and window
 fused into one pass is twins.md T-B's shape). That is K85's general
@@ -3444,7 +3444,7 @@ never takes it (it passes no mask).
   `while` line, with `end_back` 1 under views, `table_ref` `stay<K>`, and
   `peek` `subject[scan_position]`. Reversed, it is `floor`
   `search_from`, `peek` `subject[rewind_position - 1]`, and `reverse` 1.
-- **The scan edge's loop** (M3, `:7578-7594`) is STMT/SKIP/ADVANCE with
+- **The scan edge's loop** (M3, `:7587-7594`) is STMT/SKIP/ADVANCE with
   `count` `scan_run_length`, `count_start` 1, `span_hi` the edge's span,
   and `member` = `scan_test`'s T4 spelling over `peek`. pcrec's guard,
   the `scan_run_length == 16UL` test (the cap-reached contract, §14.3)
