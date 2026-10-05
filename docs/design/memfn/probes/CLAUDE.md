@@ -30,9 +30,10 @@
   specialization, their run script (`twins_run.sh`, appended to
   `linux_run.sh`) and subject materializer. See its own CLAUDE.md.
   `probes.mk` gains `twins-check`, `twins-check-asan`, `twins-check-x86`,
-  `twins-asm`, `twins-run`.
+  `twins-asm`, `twins-run`. R4b (lane memfnr4b, memfn R-1) adds `tb_r4b.c`
+  and its helpers there (the post-handoff fused scan+verify).
 - `lxrun/` — lane lxrun's Linux hand-off scripts (2026-10-05): L-2, L-4 and
-  the x86 survey port; own CLAUDE.md.
+  the x86 survey port; R4b's `memfn_r4b.sh` verdict run; own CLAUDE.md.
 - `out/` — archived transcripts; see `../CLAUDE.md`. `out/linux/` is the
   2026-10-05 Linux run (own CLAUDE.md).
 

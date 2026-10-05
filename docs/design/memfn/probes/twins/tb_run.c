@@ -9,6 +9,9 @@
  * The function every variant computes is the emitted gate's, exactly:
  *   gate(s, n, pos) = the first c >= pos with c + L <= n and
  *                     (s[c+j] & m[j]) == v[j] for every j < L, else n
+ * STALE AS A COMPARATOR (R4b, 2026-10-05): the post-handoff gate (abi 61,
+ * d4d9ed90) is tb_r4b.c's `emit`; userpass's site gained the set-leads
+ * memchr('=') pre-check at abi 60, which the copy below does not have.
  * Cells (pcrec main 8a41efd2's own emitted rx_reqrun, `-p rx`):
  *   us  union-select  (?i)union.*?select.*?from   run SELECT, scan @4 C/c
  *   up  userpass      (?:username|USERNAME|user|USER)...  run USER, scan @0 U/u

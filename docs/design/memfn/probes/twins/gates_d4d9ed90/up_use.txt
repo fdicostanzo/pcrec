@@ -1,0 +1,5 @@
+    if (subject_length <= search_from ||
+        !memchr(subject + search_from, 61, subject_length - search_from))
+        return 0;
+    size_t handoff_position = rx_reqrun(subject, subject_length, search_from);
+    if (handoff_position >= subject_length) return 0;

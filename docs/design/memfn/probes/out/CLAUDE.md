@@ -22,6 +22,14 @@ diffs), each under the run's provenance header; plus `check.rosetta.txt`
 (the x86 SSE2/SSSE3/AVX2 builds' `--check` under Rosetta 2, correctness
 only). The Linux run lands in `build/memfn_twins/<stamp>/`.
 
+`twins/r4b/` (R4b, lane memfnr4b, memfn R-1): the Mac DIRECTIONAL run of
+`../twins/tb_r4b.c` — `tb_r4b.mac.gcc.txt` (gcc-16 NEON, raw `R` rows under
+a provenance header) and its rendering `tb_r4b.mac.gcc.table.md`
+(`tb_r4b_table.py`); `check.{gcc,clang,asan}.txt` (NEON) and
+`check.x86.{x86-64,x86-64-v3,asan}.txt` (clang `-arch x86_64` under
+Rosetta 2, correctness only). The Linux verdict lands in the OUTDIR of
+`../lxrun/memfn_r4b.sh`.
+
 `linux/` — the 2026-10-05 Linux x86 run (linux_run.sh + twins_run.sh +
 lane lxrun's L-2/L-4/survey scripts), archived by lane lxread with
 provenance headers; read in `../../linux_results.md`. Own CLAUDE.md.

@@ -20,7 +20,8 @@ pcrec's make, never touching `src/`. Built from the repo root through
   density, plus the `iter` control (find-all keeping the mask). `--check`,
   `--set=ID`, `--real=FILE` (the syntax t-64k text), `--quick` (smoke only).
 - `tb_run.c` — T-B: the K82 caseless-run gate (union-select, userpass,
-  mod-i): the emitted `rx_reqrun` VERBATIM vs a memchr2-style pass plus
+  mod-i) at 8a41efd2 (pre-handoff; STALE as a comparator since R4b, which
+  uses `tb_r4b.c`): the emitted `rx_reqrun` VERBATIM vs a memchr2-style pass plus
   verify vs two fused vector loops. `--check`, `--subjects=DIR`.
 - `tc_desc.c` — T-C: one always_inline kernel reading a `static const`
   descriptor vs the hand kernel, plus the writable-external control, the
@@ -33,6 +34,28 @@ pcrec's make, never touching `src/`. Built from the repo root through
 - `twins_run.sh` — build + check (incl. ASan) + asm + time, per box;
   appended to `../linux_run.sh` as the owed Linux run. Last log line
   `MEMFN-TWINS-RUN COMPLETE <dir> fails=<n>`.
+- `tb_r4b.c` — R4b (lane memfnr4b, memfn R-1): the fused scan+verify on
+  the POST-HANDOFF build. Cells us/up/mi + K85's cls-n-uc; variants `emit`
+  (the abi-61 gate VERBATIM, pin d4d9ed90, from `gates_d4d9ed90/`), `emit2`
+  (the floor twin), `nosl` (cls-n-uc's `-fno-req-set-lead`), `swar` (NEW:
+  portable 64-bit fused pair filter, its over-read argument in the source),
+  `ffl` (T-B's vector form, lead + per-byte masks), `swlf`/`ffllf` (lead
+  first), `byte`. `--check [--subjects=DIR]` (generated set + subjects +
+  planted defects that must be caught), `--subjects=DIR [--cell=C]
+  [--quick]` times gate/sweep/short/pc16..pc1024 as machine-read `R` rows.
+- `gates_d4d9ed90/` — the emitted gate text copied from the `-p rx`
+  artifacts at d4d9ed90 (abi 61): `<cell>_def.inc` (the rx_reqrun
+  definition, byte for byte, `#include`d by tb_r4b.c) and `<cell>_use.txt`
+  (the entry's pre-check lines).
+- `gates_sync.sh` — re-emits at a given pcrec binary and diffs both against
+  `gates_d4d9ed90/` (+ abi 61, + K85's `-fno-req-set-lead` is exactly three
+  lines). Last line `GATES-SYNC ok|FAIL <n>`.
+- `subjects_r4b.py` — tb_r4b's subjects, resolved as alpha_k82.sh does
+  (cap/syn t-64k/t-256k/t-1m via gen_throughput_subjects + the 75 short),
+  sha256-checked, bench read-only.
+- `tb_r4b_table.py` — renders tb_r4b transcripts (launches per build) as
+  the R-1 readings: SIMD-off (swar - emit), SIMD-on (ffl - swar), K85's
+  nosl columns, each delta against the emit/emit2 floor.
 - `twins_tables.py` — renders a T-A transcript as markdown tables
   (absolute ns, the shape − generic delta).
 
