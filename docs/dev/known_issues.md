@@ -11,6 +11,33 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 ---
 
+## K87 — OPEN (2026-10-05, found by lane o83read's read of bench O-83 /
+its b122sweep) — [CLS-TREE] S2's unified scan-edge RANGE spelling
+(D139 item 2, abi 53) moves default DFA timing with a consistent regime
+split: plain throughput slower on every bounded/loglines row, plain
+short-search faster on every row.**
+
+Witness: bench ledger `2026-10-05-b122-round1-wide-c4c70f2c.md` §7.3,
+65 real rows (30 improve / 35 regress) against the identical-program D119
+bar:
+- `nest2-letters-6` throughput 1.249 → 1.497 ns/B;
+- `cls-upto-1024` 1.290 → 1.343 ns/B;
+- the `cls-upto-*`/`dig-*` ladder +0.2..+8%;
+- short search −0.5..−2 ns per subject.
+
+The census attributes it to the respelling `(unsigned char)(b - lo) <=
+span` → `(unsigned)(b - lo) <= spanu`: −4 B per range test site, 56 DFA
+artifacts. `clss2_report.md` committed the change on its TEXT movers (79
+default artifacts), asserting that the two spellings "compile the same".
+
+No flag exists, by design: one emitter, one spelling (D139).
+
+Disposition (D144): an issue row, not a revert. The first step is a
+pcrec-side Linux twin of the two spellings with an alignment control, on
+`cls-upto-1024` and `nest2-letters-6` throughput and one short-search
+cell. That decides which spelling the shared emitter keeps, or whether
+the regime split is layout. Rides the next scratch_lx batch.
+
 ## K86 — OPEN, deferred (2026-10-05, found by lane optsrev's cross-source measurement, docs/design/option_sets_measurements/out/cross_source.txt) — cross-source precedence and its report depend on the SPELLING of an option, not on the option
 
 **Witnesses:** (D3) a `.rxt` config's raw `pcrec --engine=vm` line SILENTLY beats a CLI `--engine=dfa`, while the typed `engine` line follows the documented CLI-wins-with-report exception. (E3) the tune file-wins report labels a config's raw `--tune=` as "CLI". cli.md §1.1 also misstates how `flags` letters and raw `-f` bits compose: they UNION across sources.
