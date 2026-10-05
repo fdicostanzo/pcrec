@@ -298,6 +298,9 @@ def render(a, group, date, causes, judgement, baseline, provenance):
                    for t, v in c["t"].items() if t.startswith("pcrec:")})
     w("")
     w(f"- pcrec records measured at: {', '.join('`%s`' % p for p in pins)} (the pin).")
+    dropped = sorted({d for m in cells["meta"].values() for d in m.get("dropped_pins", [])})
+    if dropped:
+        w(f"- cross-pin reports: the older pcrec pin(s) {', '.join('`%s`' % d for d in dropped)} are dropped (extract keeps the newest).")
     w(f"- stamps compiled with: {provenance}; abi {sorted({v.get('ABI') for s in cur['stamps'].values() for v in s.values() if v.get('ABI')})}.")
     w(f"- stamp baseline: `{base.get('label')}` (abi {base.get('abi', '?')}).")
     w("- The metric, tiers and null bands are `gapconfig.TIERS`: " +

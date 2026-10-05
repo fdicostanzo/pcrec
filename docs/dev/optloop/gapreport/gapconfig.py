@@ -90,4 +90,4 @@ REMOTE_BENCH = "/home/duxevents/pcrec-bench"
 # the sets stamps.py compiles, with the extra compiler flags the bench's
 # pcrec-auto testee uses (pcrec-bench testees/pcrec/configs.toml)
 SETS = {"capability": [], "syntax": [], "utf8": ["-e", "utf8"],
-        "loglines": [], "bounded": [], "email": [], "altwide": []}
+        "loglines": [], "bounded": [], "email": [], "altwide": [], "litrun": []}

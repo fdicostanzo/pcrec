@@ -12,6 +12,11 @@ bench's raw ledgers or store (D144 addendum 2 item 1).
 A cell key is (subbench, pattern, regime, form, fact).  `n` is the number of
 subjects the set-grain median sums over (the bench's set-grain median is the
 SUM over the regime's subjects, cycle1_analysis.md §0).
+
+A CROSS-PIN report (a re-pin window) carries pcrec at two pins, and both map
+to the same short testee name; only the NEWEST pin is kept, named by the
+header's `null_band: pcrec OLD -> NEW`.  Two pins without that line is an
+error, never a silent last-row-wins.
 """
 import json
 import re
@@ -42,12 +47,23 @@ def main():
             floor = re.search(r"floor_pattern: ([^;]+)", head)
             meta[sb] = {"version": ver, "report": p.rsplit("/", 1)[-1],
                         "floor_pattern": floor.group(1).strip() if floor else None}
+            ppins = set(re.findall(r"testee=pcrec_([^_,;]+)_", head))
+            keep = None
+            if len(ppins) > 1:
+                nb = re.search(r"null_band: pcrec (\S+) -> (\S+?)[:;,\s]", head)
+                if not nb or nb.group(2) not in ppins:
+                    sys.exit(f"extract: {p}: pcrec at {sorted(ppins)} and no "
+                             "null_band naming the newest pin")
+                keep = nb.group(2)
+                meta[sb]["dropped_pins"] = sorted(ppins - {keep})
             fh.readline()
             for line in fh:
                 f = line.rstrip("\n").split("\t")
                 if len(f) < 13 or f[0] != "rank":
                     continue
                 pat, _subj, regime, form, fact, testee, status = f[1:8]
+                if keep and testee.startswith("pcrec_") and testee.split("_")[1] != keep:
+                    continue
                 metric, value, n = f[10], f[11], f[12]
                 if metric not in ("median_ns", "min_ns", "max_ns"):
                     continue

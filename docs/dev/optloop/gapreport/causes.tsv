@@ -20,6 +20,8 @@
 #group	BCLS	bounded-class runs (.{80,}, pw-8-64, cls-*)
 #group	CALL-FLOOR	per-call floor, ns-scale only
 #group	ENDWIN-ENC	end-window encoding, ns-scale only
+#group	SEL-LIT	(2026-10-05) long exact literals: auto's DFA (run-pinned/offset-set prefilter) loses to pcrec's OWN forced-VM literal-run scan (x1.4-x4.7 on litrun's synthetic densities)
+#group	K82-AT-PIN	(2026-10-05) a K82 cause-(A) regression present at the measured pin and cured on main (abi 60, docs/dev/lanes/k82alpha_report.md)
 set	pattern	group
 capability	wild-secrets-aws-access-key-id	FS-DFA
 capability	wild-codegrammar-json-constant	FS-DFA
@@ -149,3 +151,13 @@ altwide	wb-512	WIDE-ALT
 altwide	floor	CALL-FLOOR
 bounded	floor	CALL-FLOOR
 syntax	floor	CALL-FLOOR
+# 2026-10-05 (lane o83read, round1-c4c70f2c): litrun joins the report's set list; userpass is K82's (A) at c4c70f2c
+capability	wild-secrets-username-password-pair	K82-AT-PIN
+email-specimen	floor	CALL-FLOOR
+litrun	lit-l7	SEL-LIT
+litrun	lit-l8	SEL-LIT
+litrun	lit-l16	SEL-LIT
+litrun	lit-l31	SEL-LIT
+litrun	lit-l40	SEL-LIT
+litrun	alt-foo-tails	SCAN-SIMD
+litrun	wild-secrets-aws-access-key-id	FS-DFA
