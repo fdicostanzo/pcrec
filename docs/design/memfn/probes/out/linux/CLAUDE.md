@@ -20,7 +20,7 @@ no check reads these files.
 - `isanote.linux.txt` — what ld.so enforces about
   `GNU_PROPERTY_X86_ISA_1_NEEDED` (U-11). Its source-note rows demand ONE
   LEVEL MORE than their label (`isanote.sh`'s `(1 << (lv + 1)) - 1`);
-  `linux_results.md` §4 reads them corrected.
+  `linux_results.md` §3 reads them corrected.
 - `memfn_l4.txt` — isa_evaluation.md §3.3 L-4 (`../lxrun/memfn_l4.sh`).
 - `memfn_l2.txt` — L-2, today's artifacts at `-march=x86-64-v3`
   (`../lxrun/memfn_l2.sh`); its build section's ymm/BMI counts are lost to

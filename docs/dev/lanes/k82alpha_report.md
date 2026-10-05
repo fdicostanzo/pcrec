@@ -63,8 +63,11 @@ i.e. set-leads admits a one-shot `memchr('m')` in FRONT of the unchanged `rx_req
 rarer than the run's scan member" holds — but `m` is present in every remaining subject, so the
 check never rejects and is a pure added call per `rx_search`. The find-all makes one call per match,
 one match per ~380 B (179 / 681 / 2,733 matches on 64k / 256k / 1m, counted with python `re`); +0.03
-ns/B x 380 B = ~11 ns per call, the order of one fresh libc `memchr` call that stops ~45 B in (the
-[MEMFN] Linux callcost numbers in `docs/design/memfn/linux_results.md` are the comparison). The six
+ns/B x 380 B = ~11.5 ns per call. The same box's [MEMFN] callcost (`docs/design/memfn/linux_results.md`
+§1) prices one fresh glibc `memchr` at 3.54-4.13 ns up to 64 B (miss) and 4.13 / 4.97 ns for a hit at
+offset 0 (independent / dependent), so the added call explains roughly 4-5 ns of the ~11.5; the rest is
+NOT explained by this reading (candidates, unmeasured: the restart's lost overlap with the run
+search, or the extra branch's mispredicts). The six
 other row-4 movers carry the same three lines (`stack-frame` `)`, `mod-s`/`cls-v` `m`, `cls-s-lc`
 `c`, `cls-h` `=`); they are NULL because their matches are sparser on their subjects (fewer calls per
 byte), not because the check is cheaper. So the admission predicate prices RARITY (the byte rate)
@@ -79,7 +82,8 @@ its per-call cost — the same pricing gap K82's own (A) cause had, here on the 
 > (BASE c4c70f2c abi 59, NEW eb6fe6139, DENY = NEW `-fno-req-set-lead`, DENY == BASE; floors <=
 > 0.0009, control spread <= 0.004). Suspected cause: `req_admits[]`'s `set-leads` row admits on
 > "set pick strictly rarer than the run's scan member" (2.2% `m` vs 3.0% `i`), which says nothing
-> about whether the one-shot check can reject; ~11 ns/call at one match per ~380 B. Interim:
+> about whether the one-shot check can reject; ~11.5 ns/call at one match per ~380 B, of which a fresh glibc
+> `memchr` (3.5-5 ns on this box) is about 40%. Interim:
 > `-fno-req-set-lead` (bit 45). Cross-ref: K82 (B)'s handoff / expected-cost design
 > (`docs/design/litscan_k82h.md`, `litscan_k82b.md`) is where a rejection-probability term would
 > live; [MEMFN]'s binding-form criterion prices the call. Disposition per D144: an issue row, not a

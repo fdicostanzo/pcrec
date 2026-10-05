@@ -31,6 +31,9 @@
   `linux_run.sh`) and subject materializer. See its own CLAUDE.md.
   `probes.mk` gains `twins-check`, `twins-check-asan`, `twins-check-x86`,
   `twins-asm`, `twins-run`.
-- `out/` — archived transcripts; see `../CLAUDE.md`.
+- `lxrun/` — lane lxrun's Linux hand-off scripts (2026-10-05): L-2, L-4 and
+  the x86 survey port; own CLAUDE.md.
+- `out/` — archived transcripts; see `../CLAUDE.md`. `out/linux/` is the
+  2026-10-05 Linux run (own CLAUDE.md).
 
 Maintenance: update this file when files are added/removed or change roles.

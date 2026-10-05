@@ -22,4 +22,8 @@ diffs), each under the run's provenance header; plus `check.rosetta.txt`
 (the x86 SSE2/SSSE3/AVX2 builds' `--check` under Rosetta 2, correctness
 only). The Linux run lands in `build/memfn_twins/<stamp>/`.
 
+`linux/` — the 2026-10-05 Linux x86 run (linux_run.sh + twins_run.sh +
+lane lxrun's L-2/L-4/survey scripts), archived by lane lxread with
+provenance headers; read in `../../linux_results.md`. Own CLAUDE.md.
+
 Maintenance: update this file when files are added/removed or change roles.
