@@ -1134,6 +1134,17 @@ decides whether to perform it — and then run the row through
     §5.8/§5.9's K65/K66 rows carry the lead's consequence (the rest skips
     the byte the lead tested) plus a `-fno-req-set-lead` row each.
     Detector of S457-S462.
+  - §5.12 ([K82] (B), lane k82hbuild, 2026-10-05, abi 61) — THE HANDOFF,
+    read off the TEXT and held to HAND values, never to the walk that
+    computed K: the hand K pin table (`(?i)straße` K = 2 under utf8 among
+    13 rows, the fact AND the stamp), the presence biconditional and the
+    subtraction's constant, the bounded check, the run choice
+    (`ab.*xyzw` keeps `xyzw`), the cross-table check against `REQ_WHY`/
+    `REQ_RUN`, one start site per body, the `\G` readers, the round-up
+    (present iff multibyte, inside the moving branch, bounded by the
+    subject's end and nothing else), the (d') decline, the deny, Q10's
+    count-collapsed decline, and a population with floors (K35). Detector
+    of S465-S467, S469, S471-S474, S476.
 
 - **run_vm_frameless.sh** — [OPT-VMFL] STEP 0 (2026-09-02) `<PREFIX>_VM_
   FRAMELESS`, held to the VM PROGRAM'S OWN `goto *` COUNT rather than to the
@@ -3321,6 +3332,16 @@ rides a Linux slot), and `ENC_MAX_BLOCKS` (default 250, ~10 min) bounds it in
   lookbehind witnesses (`(?<=ab)` added, DD12a(ii)'s `sigpat` re-aimed).
   The K50 manifest was NOT touched; five of its reds were the FINDINGS stamp.
   docs/dev/lanes/silentred_report.md.
+  **[K82] (B) (lane k82hbuild, 2026-10-05, abi 61)**: THE HANDOFF is an
+  encoding-owned region (litscan_k82h.md §4.2b): K differs by encoding by
+  design and the round-up exists only under utf8, so a pre-pass
+  (`excise_handoff`) rewrites the kept gate to the discard gate's text,
+  excises the block (anchored on its opening `if (handoff_position -
+  search_from > K) {` and closing `handoff_position = search_from;` lines, at
+  most `HANDOFF_MAX_LINES` = 8, S477's detector), renames the one start site
+  and normalizes `<PREFIX>_REQ_HANDOFF`; each side is held to its stamp, the
+  presence must match unless `REQ_WHY`/`REQ_RUN` differ, and the both-sides
+  population is floored (landing 13 at the default `ENC_MAX_BLOCKS`).
   **[OPT-LITSCAN] S1 step 6 (abi 37)**: the run pre-check is a file-scope
   `rx_reqrun`/`rx_reqrun_whole` block, so the FREQPICK member-pick
   normalization reads its scan start and `cand = hit - K` INSIDE those blocks

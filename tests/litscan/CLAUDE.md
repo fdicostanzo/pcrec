@@ -52,6 +52,23 @@ candidate, so the S4 L-sweep carries a forced-VM copy of each run.)
   exact L = 30 S2b witness, a python TIME exclusion, its 10.46 probe recorded
   in the header (NOMATCH at L 16/18, MATCHLIMIT at 30; pcrec NOMATCH by K65).
   Detector of S446-S452, S454, S456.
+- **handoff.rxt** — [K82] (B), THE HANDOFF (lane k82hbuild, 2026-10-05, abi
+  61; `docs/design/litscan_k82h.md` §4.2 item 2, `docs/spec/tuning.md`
+  §2.41): cells at EVERY character-boundary start position, each block on the
+  default route and under `engine vm` (no DFA scan: the no-handoff control).
+  The maximum offset on all three routes (the unanchored scan's reverse pass
+  is bounded by `search_from`, so a short K or a missing clamp shows only on
+  the attempt and hybrid routes), two occurrences (the gate's
+  leftmost-occurrence contract), a decoy, multibyte width (`(?i)straße`'s
+  U+017F), ill-formed text before the window (4-6 stray continuation bytes),
+  seeded starts, `\G` on the attempt route and on the hybrid, `\K`, find-all
+  counts and two unbounded controls. Detector of S463, S464, S465, S466,
+  S468, S469, S470.
+- **gen_handoff.py** — writes `handoff.rxt`: a byte block's cells from
+  python3 `re` AND libpcre2 (the borrowed ctypes binding; the two must agree),
+  a utf8 block's (and a byte block python cannot compile) from libpcre2 under
+  PCRE2_UTF | PCRE2_MATCH_INVALID_UTF alone, written `# pcre2-only`.
+  `--check-pcrec BIN` runs the result through the harness with BIN.
 - **gen_reqcube.py** — writes `reqcube.rxt` from python3 `re`; edit the case
   list there.
 

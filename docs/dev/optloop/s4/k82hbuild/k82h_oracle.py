@@ -18,7 +18,9 @@ and mask, the ONE input shared with pcrec, read off the stamp -- must occur
 in `[p, p + K]`. An anchored match at `p` makes `\\G` true at `p`, so it tests
 a SUPERSET of the real successes; F must hold there too, because the walk
 counts `\\G` as zero-width. Where python `re` compiles a byte pattern it is
-asked the same question (`match(s, p)`) as a cross-check.
+asked the same question (`match(s, p)`) as a cross-check, scored only where
+its answer IS libpcre2's (a cell where the two oracles disagree is counted
+apart: python's language is not PCRE2's on the U-list's constructs).
 
 KDELTA=-1 is its failing-direction control (every K > 0 checked as K - 1).
 
@@ -154,7 +156,13 @@ def main():
                             viol.append(f"pcre2 {pop} {pat[:50]!r} {args} K={k} p={p} span={m[0]} subj={e[:60]}")
                 if py is not None:
                     pm = py.match(b.decode("latin-1"), p)
-                    if pm:
+                    # A CROSS-CHECK, not a second language: where python's
+                    # answer is not libpcre2's (a documented U-list divergence,
+                    # `a{,}` is a quantifier to python 3.9 and four literal
+                    # bytes to PCRE2) the cell is counted apart, never scored.
+                    if (pm.span() if pm else None) != (m[0] if m else None):
+                        tally["python disagrees with pcre2"] += 1
+                    elif pm:
                         tally["python matches"] += 1
                         if not occurs(b, t, km, p, p + k):
                             tally["python VIOLATIONS"] += 1

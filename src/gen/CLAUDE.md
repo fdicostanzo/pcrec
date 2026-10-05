@@ -3327,6 +3327,29 @@ that was already cheaper, or on top of a pass the artifact was already running.
   emitting rows (the token answers whether, not which shape). Cause (B) of
   K82 (low-information runs on match-dense text) is NOT a row here: it waits
   for [FINDINGS.B4]'s run-rarity cost-model reader (`known_issues.md` K82).
+- **[K82] (B) (abi 60 -> 61) THE USE TABLE, `req_uses[]`** (axis `req-use`,
+  `pcrec_req_use_row` for `--list-axes`): what a search body does with an
+  EMITTED run pre-check's answer. Row `handoff` (`-fno-req-handoff`, bit 46,
+  in `strategy_denials`) CALLS `req_admit` and asks a DFA scan in front
+  (`pcrec_artifact_has_dfa_scan`, not the empty machine), a finite
+  `req_run_maxoff` K, a prefilter that is not count-collapsed (Q10), and not
+  a `\G` hybrid whose prefilter window is its ceiling ((d'),
+  `pcrec_vm_prefilter_window`, the ONE derivation `Vm.mrl_win` also reads);
+  `scan-from-startpos` is the fallback. `emit_req_handoff` writes the kept
+  gate (`size_t handoff_position = <p>_reqrun(...)`), the clamp
+  (`handoff_position - search_from > K`, never `c - K` unguarded) and, under
+  a restricting encoding, the round-up (`pcrec_emit_start_zero`'s
+  `PCREC_START0_ROUNDUP` mode, the backend's own predicate, uncapped).
+  `pcrec_emit_req_byte_check` RETURNS the start expression, and each body
+  reads it at ONE site: `DfaForm.from` (the forward scan's position and its
+  seed, `seed_emit_seeded`), the attempt loop's first start, the hybrid's
+  first `prefn` call (emit_vm.c); `\G` keeps reading `search_from`
+  (`req_handoff_assert_body` makes the pinned and `\G`-family unanchored
+  premises loud internal errors). `<PREFIX>_REQ_HANDOFF` (K or "none") rides
+  the shared prologue on every artifact. The gate's return value is now a
+  CONTRACT of `ofs_test_emit_fn`'s blocks: the LEFTMOST occurrence >= `pos`
+  (S464). Sabotage rows S463/S464/S467/S468/S470-S473/S475/S476 are anchored
+  in this file, S469 in emit_vm.c.
 - **G2 inherits `attempt_cand`'s rule rather than restating it.** That
   function's own header already declines the candidate-start prefilter on a
   fully-anchored machine ("`start_max` is the literal 0, so there is nothing

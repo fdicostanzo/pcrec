@@ -128,6 +128,19 @@ in the design note with its section.
   derivation `proto_maxoff.diff` (not built by `make`; never applied to
   `src/`), the predicted-mover census `k82h_census.py` and its transcript
   `k82h_census.out`. See its own CLAUDE.md.
+- `k82hbuild/` — **K82 (B)'s HANDOFF build instruments** (lane `k82hbuild`,
+  2026-10-05; `docs/dev/lanes/k82hbuild_report.md`): the mover manifest and
+  deny arm `k82h_movers.py`, the every-startpos answer differential
+  `k82h_answers.py` (plain and ASan/UBSan arms; with `ONLY_K_POS=1` the K-1
+  plant's coverage report), the invariant-F oracle `k82h_oracle.py`
+  (libpcre2 anchored attempts, no pcrec code in the loop) and the
+  widest-member generator `k82h_gen.py`, with their transcripts. See its own
+  CLAUDE.md.
+- `alpha_k82h.sh` — **K82 (B)'s Linux alpha block** for the manager's
+  executor run: `alpha_k82.sh`'s protocol with BASE = main before the handoff
+  (abi 60), NEW = the handoff (abi 61), DENY = NEW `-fno-req-handoff`; the five
+  cause-(B) cells, C3's customers, the (A)/(C) re-reads, `stack-frame`, six
+  movers outside K82 and the union-srch short calls. `norm()` reads `(60|61)`.
 - `alpha_k82.sh` — **K82's Linux alpha block** for the manager's executor
   run: alpha_c3.sh's protocol with BASE = abi 59, NEW = the fix, DENY = NEW
   `-fno-req-set-lead`, and three cell kinds (`A` set-leads movers with
