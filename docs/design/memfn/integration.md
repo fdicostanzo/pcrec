@@ -330,3 +330,371 @@ TEXT as a hook (§3.3).
   existing closed `<PREFIX>_DFA_PREFILTER` value set (WHAT; pcrec-bench's
   adapter enumerates it) does not split. That is the k82fix precedent of
   keeping `<PREFIX>_REQ_WHY`'s four tokens.
+
+---
+
+## 3. The boundary: what is the kit's and what is pcrec's
+
+### 3.1 The candidates
+
+The word "kit" means the memory-functions project here, whatever repository
+it lives in (Q13).
+
+- **(a) A GENERATOR library.** pcrec calls it at emit time through a C API:
+  a descriptor goes in, emitted C text comes out, per ISA. The kit owns
+  primitives, composition and spelling. pcrec owns selection and operands.
+- **(b) Header-only `always_inline` primitives with CONSTANT descriptors.**
+  pcrec's emitted text calls them, for example
+  `mf_find_set(s, n, MF_SET_RANGES2('a','z','0','9'))`, and gcc's constant
+  propagation does the specialization. The kit is a header. pcrec emits
+  calls into it.
+- **(c) A split.** The per-ISA primitives are the kit's injectable text, and
+  composition is the kit's generator, each in its own layer. pcrec keeps
+  selection, operands and FUSION through hooks. The variant the brief names
+  ("primitives remote, composition/fusion local") is (c′), with pcrec
+  owning composition too.
+
+### 3.2 Evaluation
+
+| criterion | (a) generator | (b) header + constant descriptors | (c) split: K1 primitives + K2 generator in the kit; selection and fusion hooks in pcrec | (c′) primitives remote, composition local |
+|---|---|---|---|---|
+| **self-contained output** (CLAUDE.md, top) | yes: text is emitted | **only if pcrec INJECTS the header text.** A user `#include` breaks the rule. Injected, it is (a)'s text without (a)'s specialization guarantee | yes. K2's text, plus the K1 subset it uses, is emitted. The runcmp precedent: `<p>_w<W>` helpers are emitted on demand (`pcrec_emit_runcmp_helpers`, `runcmp.c:248`) | yes |
+| **D145 licence** | the kit's OUTPUT must carry no notice. The kit needs a generated-output exception of its own (Bison's shape), or a licence in D145's list | the header TEXT is copied into artifacts, so the header itself must be 0BSD / CC0 / Unlicense, or carry an exception | both (a) and (b) apply. Recommend 0BSD for K1 text and the same output exception for K2 (Q14). A memchr translation is Unlicense-derived and clean either way (survey.md §2) | as (c) for K1. Composition is pcrec's own text, already covered by D145 |
+| **specialization guarantee** | **guaranteed:** literals are written by the generator (simd1 §8's "fix 1, the plan of record") | **NOT guaranteed.** simd1 §8 measured gcc 15 failing const-prop through a pointer array (half the throughput). Holds only for flat scalar or array descriptors, verified per compiler by objdump (N-8; D82 bound 1) | guaranteed. K2 passes immediates to K1, never a descriptor struct | guaranteed |
+| **ISA resolution with no `--isa`** (§2.1) | the generator must emit a `#if` ladder per tier, or pcrec must call it once per tier and wrap the results | **natural:** the header's own `#if __SSE2__ / __ARM_NEON` selects at gcc time | natural. K1 resolves per-ISA spelling by predefined macros at gcc time. K2's composition is ISA-NEUTRAL except where the classifier RANKING differs per ISA (§4.3), and only there does it emit a two-arm ladder | as (c) |
+| **testability: exhaustive per primitive** (N-6) | per generated output: possible, over a descriptor population | per primitive: direct, the header is the unit | **per K1 primitive directly, plus per K2 composition** over a descriptor population | per K1. Composition is tested inside pcrec only (answer identity), so it loses the kit's exhaustive length × alignment × position sweep |
+| **testability: composition identity vs the reference** | generated vs the scalar byte loop (NOT the generic outputs; finding 4) | constant instantiations vs the scalar loop | as (a). Plus pcrec's answer identity per deny, per architecture (§2.6) | answer identity only. Weaker: the corpus never sweeps alignment or span end |
+| **stand-alone value** ("bespoke high-speed memory functions stands on its own") | **high:** a CLI front-end (`memfn-gen 'find any of [a-z0-9_] in span, n ≤ 64'`) emits a tailored header. Nobody has this (survey.md §9 gap 1) | high as a LIBRARY (a better StringZilla: SSE2 tier, fused F2, short path), but a fixed set: the "tailored" half is only as good as const-prop | **highest:** both the library (K1 + reference functions) and the generator (K2 + CLI) | low: the library is a primitives header; the tailoring that is the product's point lives in pcrec |
+| **what the bench / oracle can verify** | the oracle: answers only, unchanged (the rows are speed-only). The bench: pcrec cells, with stamps saying which composition ran. The kit needs its own bench (N-7) | same | same, plus the kit's own N-7 bench over its CLI-generated kernels, which is the stand-alone product's evidence | the bench sees pcrec only |
+| **churn into pcrec** | every kit release that moves output is a pcrec `abi` event (D76/D94) | every header text change is an `abi` event (injected) | same as (a). Pinned vendor copy (N-10); the bump is deliberate, a ritual and not avoided (memory `pcrec-abi-changes-pre-release`) | primitive changes are `abi` events; composition changes are pcrec's own |
+| **fusion with pcrec's verify / reseed / views** | needs hooks: K2 must accept caller text at the hit and the fallback | **hard.** A header function cannot contain the caller's verify unless it takes a callback (an indirect call per hit, or a macro-template, simd1 §8's risk again) | hooks (§3.3) | natural: pcrec writes the loop around primitives |
+| **"two implementations of the same search"** (D122) | avoided by §2.5's next-row fallback | **at risk:** the header's scalar fallback is a second scalar spelling inside every artifact | avoided by §2.5 | avoided |
+
+### 3.3 The recommendation: (c), with the hook contract as the uncertain part
+
+**The kit** (one project; its home is Q13):
+
+- **K1, the primitive layer.** Injectable C text, `static inline
+  __attribute__((always_inline))`, every name behind the prefix macro
+  (RB-2). It is selected per ISA by predefined macros (RB-3), with every
+  wide tier also target-attributed for baseline TUs (RB-10). It has
+  capability macros (`MF_VEC_BYTES`, `MF_HAS_LUT16`, `MF_HAS_MOVEMASK`)
+  that compositions branch on at gcc time. Its scalar/SWAR fallback is
+  for the kit's own users. K1 takes only scalar immediates and pointers,
+  never descriptor structs.
+- **K2, the composition generator.** A C library with no I/O. Descriptor
+  in (§4.1), text out, written against K1's names. It holds the
+  composition tables (§4.3-§4.4) as first-match row data with their own
+  deny mask, and returns the CHOSEN ROWS' NAMES so a caller can stamp them
+  (D46). Its hooks:
+  - `on_hit(cand_expr)`: caller text inside the hit iteration;
+  - `fallback()`: caller text for the `#else`;
+  - `bound`: an expression, not a constant, so pcrec's `lim_` / `n − 1` /
+    counted spans pass through;
+  - `prefix`: pcrec passes its D143 placeholder `\x01q`, so its
+    render-onto-finished-text step names everything.
+- **K3, the stand-alone product.** A CLI over K2 that writes a header of
+  named, tailored functions from a small spec. The FIXED REFERENCE
+  FUNCTIONS (F1-F6, F9, F13 at generic parameters, §4.5) are K3's
+  committed output, with direct per-tier names (RB-13) and optional
+  out-of-line dispatch (RB-8/A2; legal in the kit's own library, never in
+  pcrec's text).
+- **The kit's own tests:** N-6 exhaustive per K1 primitive and per K2
+  composition over a descriptor population, against the SCALAR BYTE LOOP;
+  guard pages; ASan/UBSan; both architectures (Rosetta for x86
+  correctness on the Mac, the Linux box for x86 timing). Its N-7 bench.
+  N-8 disassembly checks.
+
+**pcrec:**
+
+- the tables (§2): which site gets a vector form, the deny bits, the
+  stamps, the `--tune` positions (vector rows are denied at the
+  size-leaning positions `-2`/`-1` unless measured smaller, D139 item 1's
+  rule);
+- the operands, from the single sources:
+  - P2 `pcrec_cls_cube` for cubes;
+  - T4's set intervals;
+  - P3 for runs and pins;
+  - P6 / `pcrec_find_*` for density and the second anchor pick;
+  - minw/maxw and the edge span for bounds;
+- the hooks' text: `ofsk_emit_verify`, the reseed, view clamps, and the
+  next scalar row's text;
+- the injection: the K1 subset a K2 output names, emitted once per
+  artifact, as runcmp's helpers are;
+- the vendored copy: pinned, with PROVENANCE naming the derived artifacts.
+  This is the second instance of `third_party/`-derived text reaching an
+  artifact, after `utf8_fold_pairs.inc` (third_party/README.md), so the
+  README's "almost nothing reaches a generated artifact" sentence gains a
+  second row.
+
+**Why (c) and not (a).** They differ in one thing: whether K1 exists as a
+separately testable, separately usable layer. Folding it into the generator
+loses the kit's library product and its per-primitive exhaustive tests,
+and saves nothing, because the generator must still emit the same
+primitive text. **Why not (b) as pcrec's path:** specialization is not
+guaranteed (simd1 §8), fusion needs callbacks, and the header's scalar
+fallback is a second spelling of pcrec's searches. (b) survives as the
+kit's LIBRARY face (K1 plus the reference functions), which is where its
+stand-alone value is. **Why not (c′):** the composition (unroll, short
+path, classifier per set shape) is exactly the "bespoke" knowledge Frank
+says stands on its own. Leaving it in pcrec gives the kit nothing to stand
+on, and pcrec's composition would be untestable outside answer identity.
+
+**What is honestly uncertain:**
+
+1. **The hook contract is the design's riskiest surface.** Text holes in a
+   generator are easy to write and easy to misuse: hygiene of the names
+   the hook text may reference, and a hook that reads past the guard the
+   composition established. P8's subject-end rule must hold across the
+   hole. The first build (§6 R4c) is sized to find out on ONE site (OFS's
+   verify hook) before a second customer.
+2. **Whether ISA-neutral composition holds for F4/F5.** The classifier
+   RANKING differs by ISA (NEON `tbl` at baseline; x86 SSE2 has no
+   `pshufb`), so K2 emits a ladder for the classifier only. If unroll or
+   short-path choices also differ by ISA (U-8: AVX2's wider vector raises
+   the short-path threshold), more of the composition becomes per-tier
+   text, and (c) drifts toward (a)'s N-tier output. The size cost of that
+   is unmeasured (§5 Q16).
+3. **gcc-time capability macros are not pcrec-observable.** A stamp cannot
+   say which arm compiled unless the artifact computes it from the same
+   macros (`isa_selection.md`'s `<PREFIX>_ISA_LEVEL`, RB-12). The stamp
+   then names the ROW. The ARM is a preprocessor fact the caller reads
+   from the level macro. D46 is satisfied for selection. FORCING an arm is
+   the consumer's `-m` flags (route M), not a pcrec flag.
+4. **A second repository's churn pre-1.0.** Two-repo coordination costs
+   more than it saves until K1's API settles. That is why Q13 recommends
+   building the kit in-tree first, as a zero-dependency subtree like
+   `analyze/`, and extracting it at its own 0.1.
+
+### 3.4 Why the kit's tables are not a second selector
+
+pcrec's tables ask questions only pcrec can answer:
+
+- is this site worth a vector form at all;
+- what is S, from which analysis;
+- which budget, which bound, which handoff.
+
+The kit's tables ask questions only a set and an ISA can answer:
+
+- which classifier spells S;
+- how many vectors per iteration at this density hint;
+- loop-free or loop at this bound.
+
+The rule that keeps them apart is written into the API: K2 receives
+FACTS, never site names, and returns a composition or NONE. pcrec never
+names a classifier. If pcrec ever wanted to override a classifier, the
+override would be a K2 deny bit passed through, never a pcrec-side
+re-derivation. clskit is the in-tree precedent: `TAB_ROWS` (artifact-level)
+and `ROWS` (per-set) are nested first-match tables answering different
+questions, and the scan edge's axis I asks `ROWS` rather than holding a
+mapping of its own (D139 item 2).
+
+**One duplication risk this boundary creates, named with its control.**
+The kit must analyse a set's SHAPE for its own users: is it one cube, how
+many ranges, are its nibble buckets distinct. pcrec already owns P2
+(`pcrec_cube_of`, `src/core/cpset.c`). Two derivations of "is this set one
+cube" is compare_stack.md D2's class exactly. The control is an agreement
+check, D2's prescribed one: the 256-point exact membership check, run over
+every class the corpus produces, K2's verdict against `pcrec_cls_cube`'s.
+In pcrec's calls, K2 additionally RECEIVES the cube as a hint, and must
+refuse a hint its own analysis contradicts (a loud internal error, never
+a silent preference).
+
+---
+
+## 4. The composition model
+
+### 4.1 The descriptor (what K2 receives)
+
+```c
+typedef struct {
+    /* the operand S */
+    int            kind;        /* MF_S_BYTE, MF_S_CUBE, MF_S_SET, MF_S_PAIR */
+    unsigned char  byte, K, T;  /* MF_S_BYTE / MF_S_CUBE */
+    const uint64_t *set;        /* MF_S_SET: 256-bit membership; intervals beside it */
+    int            j1, j2;      /* MF_S_PAIR: two offsets (scan, filter), j2 - j1 = d */
+    unsigned char  b1, b2;      /*   and their bytes (or cubes) */
+    int            negate;      /* skip (find first NOT in S) */
+    int            reverse;
+    /* the span */
+    long           maxw;        /* -1 unbounded; else a proven bound on n */
+    const char    *bound_expr;  /* the caller's bound, text */
+    /* the priors */
+    unsigned       density_ppm; /* expected hits per million bytes (P6/MASS); 0 = unknown */
+    unsigned       run_p99;     /* skip: p99 run length if a findings value exists; 0 = unknown */
+    /* the ISA */
+    int            isa;         /* MF_ISA_BASE (ladder over every arch's baseline) or a declared level */
+    unsigned       deny;        /* the caller's K2 row denies */
+    /* hooks */
+    void (*on_hit)(void *u, StrBuf *c, const char *cand_expr);   /* NULL: return the index */
+    void (*fallback)(void *u, StrBuf *c);                        /* the #else arm's text */
+    void *u;
+} MfScanDesc;
+```
+
+(A sketch. The real API's shape is R4b's to fix. `StrBuf` would be the
+kit's own sink type, not pcrec's.)
+
+### 4.2 The primitive set (K1)
+
+| family | primitives | per-ISA notes (from survey.md §7) |
+|---|---|---|
+| **P-L load and safe tail** | `vload(p)` (unaligned, memcpy-based); `vload_last(s, n)` (the block ending exactly at `s + n`, overlapped); the sub-vector loads for `n < V`: two overlapping 8-byte words for 8..15, two 4-byte for 4..7, probes for 1..3 (RB-4); never a read outside `s[0..n)` (S-2; no aligned-down over-read, survey.md §0 item 4) | SSE2 `_mm_loadu_si128`; NEON `vld1q_u8`; SWAR `uint64_t` memcpy |
+| **P-C classifiers** (a block in, a lane mask vector out) | `eq1(b)`; `eqN(b1..bk)` (OR-chain, k ≤ 3 by default); `cube(K, T)` (`(x & K) == T`, which covers every ASCII case pair at K = 0xDF); `rangeR(lo1, hi1, …)` (R ≤ 4: SSE2 `paddb` + signed `pcmpgtb`, PCRE2's idiom; NEON `vcleq` after a subtract); `lut16(lo_tbl, hi_tbl)` (nibble shufti: NEON `tbl` baseline, x86 SSSE3+ `pshufb`); `bitset32(tbl)` (NEON two `tbl` + `vtst`; x86 truffle at SSSE3+); `not(m)`; `and(m1, m2)` / `or(m1, m2)` (the pinned pair: `cls1(vload(p + j1)) & cls2(vload(p + j2))`, Study A) | the RANKING differs by ISA. That is the one place a composition holds a ladder (§4.3) |
+| **P-M mask → position** | `any(m)` (NEON `umaxp` lane 0; x86 `movemask != 0`); `first(m)` (x86 `ctz(movemask)`; NEON `shrn #4` + `ctz >> 2`); `last(m)` (the `clz` forms, for F6); `count(m)` (popcount, F13); `next(m)` (clear lowest: bit iteration for VERIFY-THEN-CONTINUE) | `shrn #4` is settled practice (survey.md §9 item 8) |
+| **P-S skeletons** | forward / reverse; the overlapped first block, an aligned middle, the overlapped last block (memchr's shape, no scalar head or tail at n ≥ V); unroll ×U with one OR-reduce per U vectors (RB-7); a size-tiered entry (`n < V` short path, `V ≤ n < U·V` single-vector loop, else unrolled: studies/simd1 §13's haystack tiering per call) | ISA-neutral, written over P-L/P-C/P-M |
+| **P-SP loop-free short path** | for a PROVEN bound `maxw ≤ V`: no loop, no call. One or two overlapping loads, classify, mask, first. For a counted run (the scan edge's span): the mask clipped at the bound | the D91 corollary made vector-shaped; requirements.md §0 item 3 measured the scalar byte loop losing from 2-4 B |
+| **P-F fusion and handoff** | RETURN (index or `n`); VERIFY-THEN-CONTINUE (for each set bit in hit order: run the `on_hit` text; on its success return `cand`; on all failing continue the vector loop: no re-entry and no rescan); ADVANCE (the cursor variable written in place: skip forms); ALL-PRESENT (OR-accumulate a per-needle "seen" bitmask across blocks, exit when full: N4); COUNT | the hooks are the boundary (§3.3). P8 holds: the hook text sees only `cand` with `cand + maxk < n` already established by the skeleton |
+
+### 4.3 The composition tables (K2's, first match)
+
+**C1, the CLASSIFIER table** (keyed on set shape × ISA capability). The
+first applicable row whose capability holds on the arch wins. Under
+`MF_ISA_BASE` the composition emits `#if <cap>` / `#else` (next row) only
+where the arches' first rows differ.
+
+| # | row | applies | capability | notes |
+|---|---|---|---|---|
+| 1 | `eq1` | S is one byte | any vector | the F1 shape |
+| 2 | `cube` | S is one cube `(K, T)` with ≤ 4 members (a case pair; `[0-3]`-like) | any vector | one AND + one compare: F3; the K82 pair arm in ONE pass |
+| 3 | `eqN` | 2 ≤ \|S\| ≤ 3, not one cube | any vector | F2's fused `Two`/`Three` |
+| 4 | `range` | S is ≤ R intervals (R = 4 at SSE2 and NEON baseline; PCRE2's `X86_START_BITS_MAX_RANGES`) | any vector | the SSE2-baseline set form (survey.md §9 gap 2) |
+| 5 | `lut16` | S ⊆ ASCII, ≤ 8 nibble buckets (shufti) | `MF_HAS_LUT16` (NEON base; x86 SSSE3+) | where x86 SSE2 and NEON first DIFFER: the ladder site |
+| 6 | `bitset32` | any S | `MF_HAS_LUT16` | StringZilla's NEON form; truffle on x86 SSSE3+ |
+| 7 | NONE | otherwise | — | K2 declines; pcrec's row predicate fails; the scalar row runs (no vector form exists for S on this tier) |
+
+**C2, the SHAPE table** (keyed on span bound × density × handoff × ISA
+width V):
+
+| # | row | applies | composition |
+|---|---|---|---|
+| 1 | `short` | `0 ≤ maxw ≤ V` | P-SP: loop-free |
+| 2 | `one-block` | `V < maxw ≤ 2V` | first block + overlapped last block, no loop |
+| 3 | `iterate` | handoff is VERIFY-THEN-CONTINUE AND `density_ppm` is HIGH (≥ about one hit per V bytes; the threshold is owed, §6) | ×1 loop, bit-iterate every hit (dense: unrolling only delays the first hit) |
+| 4 | `skip-width` | `negate` (a skip) AND `run_p99` known | a vector width whose window covers p99 of runs (simd1 §15's measured rule: predictability first). ×1, no unroll |
+| 5 | `unrolled` | `density_ppm` LOW or unknown AND `maxw` unbounded or > 4V | the size-tiered entry: short / ×1 / ×4 OR-reduce (RB-7: matches libc's long-span `beta`) |
+| 6 | `loop` | always | ×1 loop with the overlapped last block |
+
+Every C1/C2 row has a K2 deny bit, and K2 reports `C1-row/C2-row` names
+(for example `cube/unrolled`) for pcrec's `<PREFIX>_SCAN_FORM` stamp.
+
+### 4.4 What "tailored" buys, case by case (the answer to Frank's earlier question)
+
+| need (a pcrec site) | the fixed-library answer | the tailored composition | why it wins (measured or cited) |
+|---|---|---|---|
+| K82 pair arm, `(?i)` scan member | two `memchr` streams, leapfrogged (two calls, two passes, overshoot) | `cube` × `iterate`/`unrolled` with the run verify as `on_hit` | requirements.md §0 item 2: fused 0.96-1.46 ns against 3.27 ns at n ≤ 16; 1.6-1.8× at 4 KiB; no per-hit re-entry |
+| `(?i)union…` byte-class prefilter over `{u, U}` | a 256-byte table walk, one load per byte | `cube` (K = 0xDF) × `unrolled` | survey.md §0 item 3: NEON `tbl` bitset 6.7-7.6× a table loop; a cube is cheaper still |
+| scan edge `[a-z]{0,8}` | a byte loop with the T4 test per byte | `range` × `short` (maxw 8 ≤ V): one load, one classify, `first(not(m))`, clipped at 8 | requirements.md §0 item 3: a short span's form is loop-free |
+| VM `[a-z.]+` before `@` (a class run) | the stride-1 span loop | `range`/`lut16` × `skip-width` | simd1 §15: classify + clz, 2-3× over a scalar table loop on mixed run lengths |
+| REQ_RUN `/user` in a 1 MiB subject | `memchr('/')` + `memcmp` per hit, restarting | `pair` (the two rarest positions by `pcrec_find_pick2`) × `iterate`, with the run compare as `on_hit` | Study A (simd1 §12): pinned rare-position filters, adopted. The ofsskip and pre-check share one block, so one composition serves both |
+| N4: three set members all present | three `memchr` passes | `eqN` × ALL-PRESENT, one pass | requirements.md §2.2 item 2 (k streams cost k F's and k passes) |
+
+### 4.5 The fixed library as the generic-parameter outputs
+
+The kit's reference functions are K2 at generic parameters: S a run-time
+operand (no constant folding of needles, so K1 takes a broadcast register),
+`maxw = -1`, `density_ppm = 0`, `isa = BASE`, `on_hit = NULL`.
+
+| function | the composition |
+|---|---|
+| F1 `find_byte` | `eq1` × `unrolled`, RETURN |
+| F2 `find_any2/3` | `eqN` × `unrolled`, RETURN |
+| F3 `find_cube` | `cube` × `unrolled`, RETURN |
+| F4 `find_in_set` | C1 rows 4-6 (a run-time set: `bitset32` on NEON; on SSE2 the scalar bitmap: C1 row 7 is honest here) × `unrolled` |
+| F5 `skip_in_set` | F4 with `negate` |
+| F6 `rfind_byte`, `rskip_in_set` | F1/F5 with `reverse`, P-M `last` |
+| F9 `find_literal`, anchored | `pair` × `iterate`, with the kit's own literal compare as `on_hit` |
+| F13 `count_byte` | `eq1` × COUNT (aligned 4× loop, scalar tail, never overlapped: an overlap double-counts) |
+| F7 run compare | not a scan: K1's vector compare (T6's `vec-masked` row) |
+| F8 `mismatch` | a two-operand variant (`cmpeq(a, b)` negated, `first`); a C1 row over two streams, not built until S6's cell |
+| F10 Teddy, F11 UTF-8, F12 find-all | not compositions of this model; their own kernels (survey.md §8) |
+
+**The reference for testing is never this table.** A specialization (say
+`cube/short` at maxw 8) is checked against the scalar byte loop, which
+shares no source with K2. Checking it against F3 (`cube/unrolled`, the
+same generator) would let a K2 defect in `cube` pass both
+(learnings.md §3). The generic outputs are the PRODUCT, not the control.
+
+---
+
+## 5. Questions for Frank
+
+Numbering continues from isa_evaluation.md's Q7-Q11.
+
+12. **Q12, the boundary.** Should §3.3's split be the design of record?
+    - The kit owns K1 (per-ISA primitives, injectable text), K2 (the
+      composition generator, with its own first-match tables and hooks)
+      and K3 (the CLI and fixed reference functions).
+    - pcrec owns selection (its tables, plus the new `SCAN_ROWS`),
+      operands, fusion text and injection.
+
+    **Recommendation:** yes. It is the only option under which the kit
+    stands on its own as BOTH a library and a "bespoke functions"
+    generator, pcrec's output stays self-contained and specialized, and
+    no search gets a second scalar spelling.
+13. **Q13, where the kit lives first.** **Recommendation:** in-tree, as a
+    zero-dependency top-level subtree (`memfn/`, on `analyze/`'s
+    precedent: it links nothing from `src/`, and `src/` reads it only
+    through its public header and API). Extract it to its own repository
+    at its 0.1, when K1's API has a second consumer. That respects "don't
+    get too caught up with separate project" and keeps the scope mandate
+    unextended until then. pcrec's emitter then reads the in-tree copy.
+    After extraction it reads a pinned vendor copy under `third_party/`,
+    with PROVENANCE naming the derived artifacts.
+14. **Q14, the kit's licence.** **Recommendation:** K1's injectable text
+    under 0BSD, and K2/K3 under MIT with D145's generated-output exception
+    (or all of it 0BSD). Either way its text and its output reach users'
+    artifacts with no notice, under D145's list. A translated memchr is
+    Unlicense-derived and compatible with both.
+15. **Q15, the deny-bit budget.** 45 of 64 bits are taken. **Recommendation:**
+    - one pcrec bit per FAMILY: `-fno-vec-scan` (`SCAN_ROWS` rows 1-3 at
+      PF/PRE/OFS/SETREST), `-fno-vec-skip` (the same rows at the in-loop
+      sites, so D91's budget 2 has its own kill switch), `-fno-vec-run`
+      (T6's `vec-masked`) and `-fno-swar-scan` (row 6): four bits;
+    - K2's internal rows (C1/C2) denied through ONE value option
+      (`--memfn-deny=cube,unrolled,…`), not flag bits;
+    - the ISA level as the value option `--isa=L` (route A; already
+      designed, isa_selection.md Q4).
+
+    D144 item 4 ("every optimization its own deny") is met at the
+    granularity the batch-gate triage uses: a family flips, then the
+    value option bisects within it.
+16. **Q16, ladders in un-declared builds.** Without `--isa`, a vector row
+    emits a two-arm `#if` (vector / pcrec's next scalar row). That adds
+    source bytes under D84's caps and the dial's size term. **Recommendation:**
+    accept it. The ladder covers only the classifier (C1 row 5's NEON/x86
+    split) and the outer vector-or-scalar choice, not whole loops.
+    Measure the added bytes over the corpus at R4c (the emitted-size log
+    already exists, `[ART-SIZE.1b]`), and make "vector rows only under a
+    declared `--isa`" a row predicate if the cost proves material. The
+    rows absorb either answer.
+17. **Q17, promoting the seven non-table sites (§2.4).** **Recommendation:**
+    each site is promoted to ask `SCAN_ROWS` only when its first
+    non-scalar row lands, byte-identically (implement-then-replace), never
+    as a standalone refactor (D77). Two exceptions, owed now regardless of
+    SIMD:
+    - §2.4(e), the `strcmp` name readers, is a latent defect against ANY
+      new T1 row. Recommend it rides the next T1 change of any kind.
+    - §2.4(b)'s first half, the stay set through T4, is D139's own
+      argument one site over. Recommend filing it as a `[CLS-TREE]`
+      follow-up row.
+
+---
+
+## 6. Plan-row text for the manager (`[MEMFN]` R1d → R4)
+
+Paste under `[MEMFN]`. Each step carries its D77 trigger. Steps that touch
+pcrec's emission open only under `[OPT-SIMD]`'s sequencing (SIMD last,
+D119/D91), except the SWAR row (D122 addendum 3).
+
+> **R1d DELIVERED 2026-10-04 (lane memfnmap): `docs/design/memfn/integration.md`** — the integration map. Nine first-match tables inventoried; SIMD joins as rows of ONE new nested scan-form table `SCAN_ROWS` (sites PF/PRE/OFS/STAY/EDGE/VMSPAN/SETREST, D139's shape) rather than as vector twins of every `dfa_pfs[]` row; T6 runcmp gains one `vec-masked` row; T4 ROWS stays scalar and feeds the kit's classifier table. Seven sites do not slot cleanly as built (the ofsskip scan arm's `if`, the stay skip, the scan-edge loop, the VM span scan, two `strcmp`-on-row-name readers, N4's k-memchr loop, and pcrec's architecture-blindness at emit time), each with its implement-then-replace fix. Boundary = (c): kit K1 per-ISA primitives (injectable text) + K2 composition generator (descriptor in, text out, hooks for pcrec's verify and fallback) + K3 CLI/reference functions; pcrec keeps selection, operands, fusion text, injection. Q12-Q17 open to Frank.
+> - **R3** (findings to Frank, rulings Q1-Q17): trigger = this delivery. Owed beside it: `probes/linux_run.sh` (U-1, U-8..U-12), the survey's Linux timing.
+> - **R4a, kit K1 + reference functions, in-tree `memfn/` (per Q13):** P-L, P-C (`eq1`, `eqN`, `cube`, `range`), P-M and P-S for SSE2 + NEON + scalar/SWAR; F1/F2/F3/F5/F6 as committed K3 output; N-6 exhaustive + guard pages + ASan/UBSan on both architectures (Rosetta for x86 correctness on the Mac); the N-7 bench. **Trigger:** Frank's R3 ruling (the kit stands on its own, so its own trigger is the charter; no pcrec cell is needed for code that changes no emitted byte).
+> - **R4b, K2 composition generator + K3 CLI:** C1/C2 tables with deny and row names; the four hooks; the descriptor; the agreement check of K2's cube analysis against `pcrec_cls_cube` (the 256-point exact check, every corpus class). **Trigger:** R4a green on both architectures, plus a named first pcrec customer (R4c).
+> - **R4c, the first pcrec row, at site OFS:** promote `ofs_test_emit_fn`'s scan arm to `SCAN_ROWS` (rows 4/5 = today's text, byte-identical, the identity gate), then add `vec-verify` (`cube` × `iterate`/`unrolled`, the run verify as `on_hit`) under `-fno-vec-scan`. Fix §2.4(e) in the same change. abi bump, `docs/spec/` hunk, `<PREFIX>_SCAN_FORM` stamp, sabotage rows (vector row reached; hook guard; fallback arm). **Trigger:** `[OPT-SIMD]` opened (D119 sequencing) AND the K82 pair-arm cells measured on Linux above the D144 addendum-1 noise floor AND U-1's fused-vs-two-call margin holding on x86.
+> - **R4c′, the SWAR row (`SCAN_ROWS` row 6), may precede R4c:** a portable SWAR `eq1`/`cube` scan at PF/OFS, admitted now by D122 addendum 3. **Trigger:** a measured cell whose time is in a one-byte or cube scan with short spans (the bench's per-call 6-11 B cells, k82diag §2), alpha-accepted per D144.
+> - **R4d, `vec` at site PF (the byte-class prefilter):** C1 rows 2-6 over `can_begin_match`'s set; promote `pf_emit_bcls[_bounded]` to `SCAN_ROWS` first. **Trigger:** the bench class-shape census (U-2, relayed to pcrecdev2) AND a Linux cell whose time is in `pf_emit_bcls` (the WAF `byte-class` cells, compare_stack.md §6.3).
+> - **R4e, in-loop skips (sites STAY, EDGE, VMSPAN):** promote the three loops (§2.4 b-d), then `vec`/`loopfree` at `BASE` only (isa_selection.md §2 row 4). **Trigger:** U-3 (an in-loop dispatch probe at a real emitted site, D91 budget 2 re-measured, never inherited) AND a Linux cell dominated by class runs (simd1 §15's shape; `t-digits`-type cells).
+> - **R4f, T6 `vec-masked`:** **Trigger:** a census of masked runs with L ≥ 16 at verify sites, plus a cell.
+> - **R4g, declared-ISA rows (`DECLARED(L)`):** wide tiers at prefilter sites. **Trigger:** isa_evaluation.md §3.3 L-1/L-2 (a measured level gain on ubuntubudu) and Q4's ruling.
+> - **Filed, not scheduled:** the stay set through T4 (a `[CLS-TREE]` follow-up, §2.4 b, D139's argument); N4 ALL-PRESENT (trigger: a cell on the K65 no-DFA-scan route whose time is in `emit_req_set_rest`).
