@@ -1,0 +1,125 @@
+{
+ "bench": {
+  "auto_routes": {
+   "dfa": 250,
+   "hybrid": 50,
+   "vm-none": 21
+  },
+  "auto_vmnone": {
+   "FS": 17,
+   "FS_and_RUN": 0,
+   "FS_only": 17,
+   "FS_pop_le_1": 8,
+   "FS_pop_le_16": 10,
+   "FS_pop_le_3": 9,
+   "RUN": 0,
+   "RUN_only": 0,
+   "anchored": 3,
+   "neither": 1,
+   "run_present_unbounded": 4,
+   "total": 21,
+   "unanchored": 18
+  },
+  "compiled": 321,
+  "dfa_hat": {
+   "dfa_or_hybrid": 300,
+   "fs_cont_bytes_nonzero": 14,
+   "narrow": 18,
+   "narrow_T_singleton": 2,
+   "narrow_dfa": 9,
+   "narrow_hybrid": 9,
+   "seeded": 30,
+   "seeded_with_skip": 20
+  },
+  "forced_vm_routes": {
+   "refused": 2,
+   "vm-none": 319
+  },
+  "forced_vm_vmnone": {
+   "FS": 273,
+   "FS_and_RUN": 96,
+   "FS_only": 177,
+   "FS_pop_le_1": 131,
+   "FS_pop_le_16": 209,
+   "FS_pop_le_3": 160,
+   "RUN": 96,
+   "RUN_only": 0,
+   "anchored": 25,
+   "neither": 21,
+   "run_present_unbounded": 13,
+   "total": 319,
+   "unanchored": 294
+  },
+  "rows": 345
+ },
+ "corpus": {
+  "auto_routes": {
+   "dfa": 1700,
+   "hybrid": 1106,
+   "vm-none": 341
+  },
+  "auto_vmnone": {
+   "FS": 59,
+   "FS_and_RUN": 10,
+   "FS_only": 49,
+   "FS_pop_le_1": 47,
+   "FS_pop_le_16": 52,
+   "FS_pop_le_3": 52,
+   "RUN": 10,
+   "RUN_only": 0,
+   "anchored": 175,
+   "neither": 107,
+   "run_present_unbounded": 7,
+   "total": 341,
+   "unanchored": 166
+  },
+  "compiled": 3147,
+  "dfa_hat": {
+   "dfa_or_hybrid": 2806,
+   "fs_cont_bytes_nonzero": 488,
+   "narrow": 58,
+   "narrow_T_singleton": 36,
+   "narrow_dfa": 46,
+   "narrow_hybrid": 12,
+   "seeded": 140,
+   "seeded_with_skip": 74
+  },
+  "forced_vm_routes": {
+   "vm-none": 3147
+  },
+  "forced_vm_vmnone": {
+   "FS": 2263,
+   "FS_and_RUN": 367,
+   "FS_only": 1896,
+   "FS_pop_le_1": 1390,
+   "FS_pop_le_16": 1995,
+   "FS_pop_le_3": 1873,
+   "RUN": 367,
+   "RUN_only": 0,
+   "anchored": 487,
+   "neither": 397,
+   "run_present_unbounded": 46,
+   "total": 3147,
+   "unanchored": 2660
+  },
+  "rows": 3521
+ },
+ "subject_bytes": 1048576,
+ "subject_sha256": "ccbdf7eb97f15776a68b8bbb9d6387870cd01d4796207fb20032958caf9754ee"
+}
+
+START-SET cells:
+capability  wild-secrets-aws-access-key-id     auto=hybrid  forced=vm-none FS=1 |S|=  1 |E|= 63 |T|=  1 narrow=1 RUN=0 d_S=0.0017 d_E=0.7721 d_T=0.0017
+capability  wild-codegrammar-json-constant     auto=dfa     forced=vm-none FS=1 |S|=  3 |E|= 63 |T|=  3 narrow=1 RUN=0 d_S=0.0789 d_E=0.7721 d_T=0.0789
+capability  wild-secrets-github-pat            auto=hybrid  forced=vm-none FS=1 |S|=  1 |E|= -1 |T|= -1 narrow=0 RUN=1 d_S=0.0122 d_E=- d_T=-
+loglines    stack-frame                        auto=dfa     forced=vm-none FS=1 |S|=  1 |E|= -1 |T|= -1 narrow=0 RUN=1 d_S=0.0367 d_E=- d_T=-
+loglines    bignum                             auto=dfa     forced=vm-none FS=1 |S|= 10 |E|= 63 |T|= 10 narrow=1 RUN=0 d_S=0.1244 d_E=0.7721 d_T=0.1244
+syntax      asr-wb                             auto=dfa     forced=vm-none FS=1 |S|=  1 |E|= -1 |T|= -1 narrow=0 RUN=1 d_S=0.0213 d_E=- d_T=-
+syntax      asr-nwb                            auto=dfa     forced=vm-none FS=1 |S|=  1 |E|= -1 |T|= -1 narrow=0 RUN=1 d_S=0.0213 d_E=- d_T=-
+utf8        asr-b-ascii                        auto=dfa     forced=vm-none FS=1 |S|=  1 |E|= -1 |T|= -1 narrow=0 RUN=1 d_S=0.0213 d_E=- d_T=-
+capability  quoted-delim-match                 auto=vm-none forced=vm-none FS=1 |S|=  2 |E|= -1 |T|= -1 narrow=0 RUN=0 d_S=0.0057 d_E=- d_T=-
+capability  balanced-parens-rec                auto=vm-none forced=vm-none FS=1 |S|=  1 |E|= -1 |T|= -1 narrow=0 RUN=0 d_S=0.0058 d_E=- d_T=-
+syntax      bak-k-named                        auto=vm-none forced=vm-none FS=1 |S|=  1 |E|= -1 |T|= -1 narrow=0 RUN=0 d_S=0.0000 d_E=- d_T=-
+capability  wild-waf-crs-942140-dbnames        auto=dfa     forced=vm-none FS=1 |S|= 14 |E|= 63 |T|= 14 narrow=1 RUN=0 d_S=0.2223 d_E=0.7721 d_T=0.2223
+loglines    hex32-id                           auto=dfa     forced=vm-none FS=1 |S|= 16 |E|= 63 |T|= 16 narrow=1 RUN=0 d_S=0.3168 d_E=0.7721 d_T=0.3168
+litrun      wild-secrets-aws-access-key-id     auto=hybrid  forced=vm-none FS=1 |S|=  1 |E|= 63 |T|=  1 narrow=1 RUN=0 d_S=0.0017 d_E=0.7721 d_T=0.0017
