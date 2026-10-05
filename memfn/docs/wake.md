@@ -1,70 +1,104 @@
-# memfn wake — TEMPLATE (no kit session has run yet)
+# memfn wake — kit session hand-off (rewritten 2026-10-05, end of the first kit session)
 
-This is the orientation file for the dedicated, long-lived kit session
-(Q36, D147), run as `/pcrec-memfn-manager`
-(`.claude/skills/pcrec-memfn-manager/SKILL.md` — its §1 is the wake order). It is born as a template. **At every session end or pause,
-the kit session rewrites it from scratch** in the shape below: the
-current state, never a history (the history is `journal.md`).
+This is the orientation file for the kit session, run as
+`/pcrec-memfn-manager` (`.claude/skills/pcrec-memfn-manager/SKILL.md`;
+its §1 is the wake order). It is rewritten from scratch at every pause:
+the current state, never a history (the history is `journal.md`).
 
 ---
 
 ## 1. Who you are and where you work
 
-- You are the pcrec-memory-functions session: the kit's owner, working
-  `memfn/` inside the pcrec repository. The pcrec manager ("main")
-  directs you; your durable channel to it is `responses.md`, its channel
-  to you is `requests.md` (read it; never edit it).
-- **You work in your OWN worktree** under `worktrees/` (e.g.
-  `worktrees/memfn`, branch `lane/memfn-<topic>`), cut from a main that
-  contains the request you are serving. FIRST command in it:
-  `git rev-parse --show-toplevel`. You NEVER merge to main; the manager
-  reviews and merges. You never `cd` into another worktree or the main
-  tree; use `git -C` and absolute paths.
-- Scope mandate: write only inside your worktree and the session
-  scratchpad (`docs/dev/lanes/BOILERPLATE.md`'s top line). Read-only
-  everywhere else in the repo; never write to pcrec-bench.
+- You are the pcrec-memory-functions session, the kit's manager, working
+  `memfn/` inside the pcrec repository. The pcrec manager ("main",
+  session pcrecdev1) files requests in `requests.md`. You answer in
+  `responses.md` (you are its only writer; never edit `requests.md`).
+- Your worktree: `worktrees/memfn`. One branch per delivered unit, cut
+  from a main that contains the request. The current branch is
+  `lane/memfn-r4a`, cut from main 2ed263a7 for R-3, which is not filed
+  yet. FIRST command: `git -C /Users/fdicostanzo/pcrec/worktrees/memfn
+  rev-parse --show-toplevel`. Never merge to main, never push, never
+  `cd` into another tree.
+- Scope mandate: write only inside your worktree, your lanes' worktrees
+  and the session scratchpad. pcrec-bench is read-only. Main owns
+  plan.md, decisions.md, known_issues.md, the site manifest and
+  `DELEG_SITES`.
 
 ## 2. Read, in this order
 
-1. `memfn/CLAUDE.md` — the layers (D147), the boundary, the
-   same-commit abi rule, symbols/licence.
-2. `docs/dev/decisions.md` D146, D147 (and D144 for acceptance, D145
-   for licences, D76/D94 for the abi ritual, D80 for the spec).
-3. `memfn/docs/requests.md` (open items without a `done:` in
-   `responses.md`), then the tail of `memfn/docs/journal.md`.
-4. `docs/design/memfn/integration.md` — §R4.4 and §R4.3 first (the rulings), then §L
-   (the layers), then the sections
-   your request names (§14 the contract, §15 the site shapes, §22 the
-   build order).
-5. `docs/dev/lanes/BOILERPLATE.md` — box facts, process rules,
-   DO-THEN-FINISH, the handback rule. They bind you as any lane.
-6. Before C: `docs/dev/coding_guide.md`. Before a check:
-   `docs/dev/learnings.md` §3.
+1. `memfn/CLAUDE.md`: the layers (D147), the option namespace, the
+   boundary, the same-commit abi rule, D149's line.
+2. `memfn/docs/requests.md`, then `responses.md` (open = no `done:`).
+3. The tail of `memfn/docs/journal.md`.
+4. `docs/design/memfn/integration.md`: §R4.6 first, then §R4.5, §R4.4,
+   §R4.3, §L. Then the sections the request names (§14 contract, §15
+   site shapes, §17 guards, §18 stamps, §22 build order, §23 Q53-Q55).
+5. `docs/dev/lanes/BOILERPLATE.md`; `docs/dev/coding_guide.md` before C;
+   `docs/dev/learnings.md` §3 before a check.
+6. Decisions on demand: D144, D145, D146, D147 (+ addenda 1-9), D149
+   (constants: measured, derived, compiler-chosen, or labelled
+   `UNMEASURED DEFAULT:`), D76/D94, D80.
 
 ## 3. Box and suite rules (summary; BOILERPLATE wins on conflict)
 
-- One heavy suite at a time on a box; coordinate through the manager.
-- Mac: directional timings only. Verdicts are Linux (ubuntubudu over the
-  tailnet), `taskset`-pinned, calibrated loops ≥ ~50 ms, absolute deltas
-  against a floor (D144 addendum 1). Heavy Linux runs go through the
-  manager's executor channel, never your own ssh.
-- Long runs: background, logged, detached (`nohup … & disown`, plus
-  `caffeinate` on the Mac); a run longer than ~4 min is the last thing
-  you launch before handing back.
+- One heavy suite per box across BOTH sessions; agree slots with main.
+  The Mac suite lock `worktrees/.mac-suite.lock` is main's lanes'. Do
+  not take it without main's agreement.
+- Verdicts are Linux (ubuntubudu), via MAIN's executor channel only:
+  commit a pinned script on your branch and send main the path, the
+  expected wall time and the completion line. Mac runs are directional.
+- macOS ASan has no LeakSanitizer. A probe that passes Mac ASan can
+  still fail Linux LSan (R-1's first run did).
 - Every acceptance reading reports SIMD-off AND SIMD-on (D147).
-- A change that moves a pcrec byte carries pcrec's abi bump, re-pins
-  (readers by grep), stamp values, spec hunk and G1 alpha in the SAME
-  commit.
+- A change that moves a pcrec byte carries the abi bump, re-pins found
+  by grep, the stamp values, the spec hunk and G1 at both layers, all in
+  the SAME commit.
 
-## 4. Current state (rewrite each session)
+## 4. Current state
 
-- Kit code: none yet. Next code step: R4a (integration.md §22).
-- Open requests: R-1 (R4b measurement).
-- Open defects: none.
-- Last journal entry: 2026-10-05 (subtree set up).
-- In flight / owed runs (log paths, completion lines): none.
+- **Kit code:** none. The next code step is R4a (the skeleton), to be
+  filed as R-3 after Frank rules Q53-Q55.
+- **Requests:** R-1 DONE (merged 348c0a49). R-2 DONE (merged 2ed263a7).
+  No open request.
+- **Open questions (Frank, relayed by main 2026-10-05):** Q53 (the libc
+  record), Q54 (N7 pending), Q55 (the plan at SIMD-off). The kit's
+  recommendations are in `docs/dev/reviews/2026-10-05-r5-memfn-rev45.md`
+  (last section) and in `responses.md` R-2 done:.
+- **Design of record:** integration.md rev 4.6.
+- **Measured facts to carry into R4d:**
+  - the R4d trigger is MET at SIMD-off on union-select;
+  - the lead order is part of R4d's one form, lead-first;
+  - `swar` scans at ~0.18 ns/B and loses on early-hit single gate calls
+    on dense text (a Q48 candidate, judged at R4d's G1);
+  - its 2x unroll is an `UNMEASURED DEFAULT:`.
+  Source: `docs/dev/lanes/memfnr4b_report.md` §9.
+- **For R4c/R4d (noted by main):**
+  - A4: ~28 mech rows anchored in M1 emitters are re-pointed in R4c's
+    REPLACE commit;
+  - A3: `@idx`/`REQ_BYTE`/[OPT-REQPOS] are re-specced as pcrec's pick
+    in R4d's D80 hunk;
+  - A1: the set-leads lead is REQUIRED on no-DFA routes.
+- **Defects:** none open.
+- **In flight:** nothing. No lane is running and no box run is owed.
+  Old lane worktrees (memfnr4b, memfnr45, memfnr46) remain under
+  `worktrees/`. Their branches are merged; removing them is main's
+  call (worktree rm is not covered by the merge permission).
 
-## 5. Next actions (rewrite each session)
+## 5. Next actions
 
-- (template) Serve the oldest open request the manager has briefed you
-  on; ack it in `responses.md` first.
+1. Wait for R-3 (R4a) in `requests.md`. Ack it, and re-cut the branch
+   if main has moved (or merge main into `lane/memfn-r4a` ALONE in its
+   own command, then `make strict`).
+2. R4a is the kit's first CODE: `memfn.h`, the `mf_*` entry points, the
+   generic scalar row with G2's generated-space tests, K1 reference
+   functions, `PROVENANCE.md`, the Makefile wiring (C15/C16), an EMPTY
+   `src/options.def` with `mf_options()`/`mf_opts_check()`, the
+   `--list-axes` `memfn` section header, and the site manifest with
+   C17 (every row `pending`). Zero byte moves. Plan the lanes:
+   - opus for `memfn.h` and the contract;
+   - a D27-blinded author for G2 (`scripts/mk_d27_cell.sh`);
+   - sonnet for the wiring and docs.
+   Read coding_guide.md first.
+3. Critic and lane briefs: findings go to a scratchpad file and the
+   reply gives the path (two critics' messages truncated). Each lane
+   adds its report to `docs/dev/lanes/CLAUDE.md` in the same change.
