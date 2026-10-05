@@ -497,7 +497,9 @@ static double now_ns(void)
         double t0 = now_ns();                                                 \
         for (long r = 0; r < reps; r++) {                                     \
             const uint8_t *q = buf;                                           \
-            __asm__ volatile("" : "+r"(q));                                   \
+            /* "memory": every iteration re-reads the dispatch state, as a */ \
+            /* real call sequence (which stores between calls) would      */ \
+            __asm__ volatile("" : "+r"(q) : : "memory");                      \
             const uint8_t *p = CALL;                                          \
             __asm__ volatile("" : : "r"(p));                                  \
         }                                                                     \
@@ -591,11 +593,11 @@ static int isa_report(void)
 {
     int need = ISA_COMPILED, have = cpu_level();
     printf("compiled-for: %s%d (from predefined macros)\n", ISA_FAMILY, need);
-    printf("running CPU : %s%d (from cpuid/xgetbv%s)\n", ISA_FAMILY, have,
+    printf("running CPU : %s%d (%s)\n", ISA_FAMILY, have,
 #if defined(__x86_64__)
-           ""
+           "from cpuid/xgetbv"
 #else
-           "; aarch64: NEON baseline only, SVE not probed by this build"
+           "armv8-a: NEON is the baseline; SVE is not probed by this build"
 #endif
     );
     printf("cpusup(wide)=%d query(wide)=%d\n", CPUSUP(), query_wide());
