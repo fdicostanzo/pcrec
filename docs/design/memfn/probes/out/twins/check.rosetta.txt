@@ -1,0 +1,25 @@
+# box: Franks-MacBook-Pro.local, Darwin 25.6.0, Apple M1 Max; Rosetta 2 for the x86 builds (correctness only)
+# source: commit 84ee2a30 (twins sources unchanged since, besides docs)
+# run: make -f docs/design/memfn/probes/probes.mk twins-check twins-check-asan twins-check-x86 (clang: Apple clang version 21.0.0 (clang-2100.1.1.101); gcc: gcc-16 (Homebrew GCC 16.2.0) 16.2.0)
+# lines in order: twins-check (gcc, clang x ta/tb/tc), twins-check-asan (NEON), twins-check-x86 (per twin: -march=x86-64 [SSE2], x86-64-v2 [SSSE3], x86-64-v3 [AVX2], then the v3 ASan+UBSan build)
+check (neon): 26 kernels + 8 iter, 46384815 cases, 0 bad, 0 faults
+check (neon): 26 kernels + 8 iter, 46384815 cases, 0 bad, 0 faults
+check (neon): 12 kernels, 24494367 calls, 0 bad, 0 faults
+check (neon): 12 kernels, 24494367 calls, 0 bad, 0 faults
+check (neon): 6 sets x 5 forms, 31733760 cases, 0 bad
+check (neon): 6 sets x 5 forms, 31733760 cases, 0 bad
+check (neon): 26 kernels + 8 iter, 46384815 cases, 0 bad, 0 faults
+check (neon): 12 kernels, 24494367 calls, 0 bad, 0 faults
+check (neon): 6 sets x 5 forms, 31733760 cases, 0 bad
+check (sse2): 16 kernels + 6 iter, 28568009 cases, 0 bad, 0 faults
+check (ssse3): 26 kernels + 8 iter, 46384815 cases, 0 bad, 0 faults
+check (avx2): 26 kernels + 8 iter, 46384815 cases, 0 bad, 0 faults
+check (avx2): 26 kernels + 8 iter, 46384815 cases, 0 bad, 0 faults
+check (sse2): 12 kernels, 24494367 calls, 0 bad, 0 faults
+check (ssse3): 12 kernels, 24494367 calls, 0 bad, 0 faults
+check (avx2): 12 kernels, 24494367 calls, 0 bad, 0 faults
+check (avx2): 12 kernels, 24494367 calls, 0 bad, 0 faults
+check (sse2): 4 sets x 5 forms, 21155840 cases, 0 bad
+check (ssse3): 6 sets x 5 forms, 31733760 cases, 0 bad
+check (avx2): 6 sets x 5 forms, 31733760 cases, 0 bad
+check (avx2): 6 sets x 5 forms, 31733760 cases, 0 bad

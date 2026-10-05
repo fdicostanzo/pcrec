@@ -15,4 +15,11 @@ AVX2 code for correctness only, never timing), `survey_tim.mac.{gcc,clang}.txt`
 and `survey_pcrejit.mac.txt` (timing, directional). Each carries its own
 box/compiler/source-commit header.
 
+`twins/` (R1d, lane memftwin): one Mac run of `../twins/twins_run.sh`
+verbatim — `run.log` (every build, `--check` and ASan line), `ta.*`,
+`tb.*`, `tc.*` (timing, directional) and `tc_asm.*` (the disassembly
+diffs), each under the run's provenance header; plus `check.rosetta.txt`
+(the x86 SSE2/SSSE3/AVX2 builds' `--check` under Rosetta 2, correctness
+only). The Linux run lands in `build/memfn_twins/<stamp>/`.
+
 Maintenance: update this file when files are added/removed or change roles.

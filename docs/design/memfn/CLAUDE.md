@@ -47,6 +47,13 @@ Nothing here touches pcrec's emission (D91).
   `-march=x86-64-v3`, not in `linux_run.sh`), Q7-Q11, and an `[ART-MGR]`
   cross-note. Verdict: one mechanism (declared-ISA artifact, selection
   hoisted above it), three pick sites. Design only.
+- `twins.md` — R1d (lane memftwin, 2026-10-04), the D77 measurement "does a
+  kernel TAILORED to the pattern beat a fixed generic one": T-A set
+  classifier per shape vs the generic nibble lookup, T-B a fused scan+verify
+  vs today's emitted K82 run gate, T-C a `static const` descriptor through
+  one header kernel vs the hand kernel (disassembly diff). Absolute ns
+  tables (Mac, directional), a verdict per T, the Linux queue. Evidence in
+  `probes/twins/` and `probes/out/twins/`.
 - `probes/` — R1's measured probe: `callcost.c` (libc `memchr` against
   inline scalar/SWAR/NEON-or-SSE2 forms, by span length, plus the fused
   two-needle pass against two libc calls) and `probes.mk` (build, the
