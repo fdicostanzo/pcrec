@@ -934,6 +934,18 @@ declare -A GIVEUP1_ALLOWANCE=(
 # denied (run_prechecks.sh §5.8/§5.9's deny rows), so no no-match proof is
 # lost. Lane k82fix's AXES="-fno-req-run-fold -fno-req-set-lead" run
 # (docs/dev/lanes/k82fix_report.md §6) confirms or populates this group.
+# GROUP F4 — bit 46, `-fno-req-handoff` (PCREC_NO_REQ_HANDOFF, [K82] (B),
+# tuning.md §2.41): EMPTY by construction, the design's §4.2 item 1 stated on
+# the F3 precedent. The handoff only moves where a scan BEGINS, past positions
+# a necessary run proves cannot begin a match; its budget-bound population is
+# the count-collapsed hybrid movers (the one prefilter language whose answers
+# can sit below c - K, so the VM's attempts could differ), and Frank's Q10
+# ruling DECLINES the handoff there, so the deny moves no give-up anywhere.
+# Measured: every hybrid mover of the corpus and the bench reads
+# RX_VM_PREFILTER_LANG "exact" (docs/dev/optloop/s4/k82hbuild/
+# k82h_movers.log), and the corpus's 35 budget/gu blocks are 0 movers
+# (litscan_k82h.md §3.1a). Lane k82hbuild's AXES run over the widened subset
+# (docs/dev/lanes/k82hbuild_report.md) confirms or populates this group.
 # GROUP G — §2.11 `--engine=vm`, 10 cases, TWO mechanisms.
 #
 # G1 (2 cases) — tests/base/d27_k23_ambiguous_decomposition.rxt:90,98, the

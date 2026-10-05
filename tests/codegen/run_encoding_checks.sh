@@ -931,7 +931,6 @@ def pick_form(text):
 
 
 def excise(text, label, drop_run=False):
-    lines = text.splitlines(keepends=True)
     counts = {'next_pos': 0, 'valid_upto': 0, 'utf_check_stamp': 0, 'back_step': 0, 'span_match': 0,
               'span_match_caseless': 0, 'var_valid': 0, 'advance': 0,
               'encoding': 0, 'startpos_guard': 0, 'startpos_stamp': 0,
@@ -942,6 +941,7 @@ def excise(text, label, drop_run=False):
               'handoff_gate': 0, 'handoff_block': 0, 'handoff_stamp': 0,
               'handoff_overlong': 0}
     text = excise_handoff(text, counts)
+    lines = text.splitlines(keepends=True)
     out = []
     i, n = 0, len(lines)
     in_reqrun = False
@@ -1416,7 +1416,7 @@ def main():
                 if (hv['byte'] != 'none') != (hv['utf8'] != 'none') and wb == wu and same_run:
                     bad_sel.append("REQ_HANDOFF byte \"%s\" vs utf8 \"%s\" with the same REQ_WHY and run -- an unexplained presence asymmetry"
                                    % (hv['byte'], hv['utf8']))
-                if hv['byte'] != 'none' and hv['utf8'] != 'none' and cb['handoff_block'] and cu['handoff_block']:
+                if hv['byte'] != 'none' and hv['utf8'] != 'none' and cb['handoff_gate'] and cu['handoff_gate']:
                     nhandoff_both += 1
             fb, fu = FINDINGS_STAMP_VAL_RE.search(tb), FINDINGS_STAMP_VAL_RE.search(tu)
             if not fb or not fu or tb.count('.findings = "') != 1 or tu.count('.findings = "') != 1:
@@ -1556,7 +1556,8 @@ else
             fi
         done
         # [K82] (v) THE HANDOFF'S BOTH-SIDES POPULATION (K35): pairs whose byte
-        # AND utf8 artifacts both hand off, so both blocks were excised.
+        # AND utf8 artifacts both hand off, so both gates were rewritten (and
+        # each side's block, where it has one, excised).
         # Floored at 80% of the landing count (lane k82hbuild, 2026-10-05,
         # default ENC_MAX_BLOCKS: HANDOFF_BOTH_LANDING below).
         HANDOFF_BOTH_LANDING=0
