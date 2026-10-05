@@ -2641,6 +2641,34 @@ append-only or historical records.
   - **§4** is the landing shape: what of `lane/findb4` lands as-is, row 4
     `run-cost` in k82fix's `req_admits[]`, deny, abi, sabotage.
   - **§5** holds seven questions; Q1 is to build the handoff first.
+- `litscan_k82h.md` — **K82 cause (B)'s HANDOFF, PROPOSED, design only**
+  (lane `k82hand`, 2026-10-04, from `lane/k82fix` abi 60; Frank's REVISED
+  ruling: handoff first, light panel first, cost model parked). The run
+  pre-check's candidate `c` becomes the scan start
+  `lo = max(search_from, c − K)`, where K is a new core fact: the run
+  window's maximum BYTE offset from the attempt start, carried on
+  `src/facts/req.c`'s one walk. §1.2 proves it a startpos advance. Claim 1
+  shows no early success; Claims 2/2′ cover `\G`, which keeps reading
+  `search_from`; Claim 3 is the every-startpos contract, which is why utf8
+  rounds `lo` up to a character start. §1.3 is the width table, in bytes on
+  the lowered tree, NOT `cwmax`: `(?i)straße` is K = 2 via `ſ`. §2 is a new
+  two-row first-match table (`req_uses[]`, axis `req-use`,
+  `-fno-req-handoff` bit 46, `<PREFIX>_REQ_HANDOFF`, abi 60 → 61). §3 is a
+  prototype census: 47 bench / 160 corpus program movers, every cause-(B)
+  cell among them, `union-select` unbounded and unmoved. §4 is the
+  validation plan, with sabotage S463-S472 and the alpha cells. §5 lists
+  12 hazards for the panel and 8 questions. Instruments:
+  `../dev/optloop/s4/k82hand/`. **REVISION 2 (lane `k82hrev`, same day)
+  applies the light D6 panel r1 (`../dev/reviews/2026-10-04-r1-k82-handoff.md`,
+  17 findings, all accepted); read its §R first.** The gate's return value
+  becomes a written contract (leftmost occurrence ≥ `search_from`, §1.1a);
+  the give-up allowance narrows to count-collapsed prefilters (measured
+  empty); the hybrid's prefilter is a third `\G` reader; verbs/callouts
+  decline; the utf8 round-up is uncapped and taken only when `lo > f`; the
+  stamp goes on movers only (Q3 reversed), with the abi and byte-count
+  readers enumerated by grep (§2.3a); the fact gets checks that share no
+  source with the walk (§4.2a); sabotage S463-S477 with in-suite
+  detectors and constructed witnesses; Q1-Q10 in §Q.
 
 **[VAR] THE MVP's PATTERN HALF LANDED 2026-09-23** (lane varmvp, M1-M8 +
 M10; M9 stays gated on `[M4-SUBST]`). The four notes stand as written except

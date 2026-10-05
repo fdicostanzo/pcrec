@@ -123,6 +123,11 @@ in the design note with its section.
   ppm, never from the C; `-fno-req-set-lead` identical to BASE on every
   non-(C) artifact) and its landing transcript `k82_movers.log`. `BASE`/`NEW`/
   `SCR`/`BENCH`, `ABI_FROM`/`ABI_TO` from the environment.
+- `k82hand/` — **K82 (B)'s HANDOFF design instruments** (lane `k82hand`,
+  2026-10-04; `docs/design/litscan_k82h.md`): the prototype offset
+  derivation `proto_maxoff.diff` (not built by `make`; never applied to
+  `src/`), the predicted-mover census `k82h_census.py` and its transcript
+  `k82h_census.out`. See its own CLAUDE.md.
 - `alpha_k82.sh` — **K82's Linux alpha block** for the manager's executor
   run: alpha_c3.sh's protocol with BASE = abi 59, NEW = the fix, DENY = NEW
   `-fno-req-set-lead`, and three cell kinds (`A` set-leads movers with

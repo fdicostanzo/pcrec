@@ -1,0 +1,130 @@
+== bench: 1348 distinct artifact-configs (1380 rows); ids {'ok': 1255, 'refused': 93}
+  auto         run pre-check emitted    59 | DFA-scan route    55 -> bounded (MOVER)    47 (49 rows), unbounded     8 | no DFA scan (VM, excluded)     4
+      K histogram (64 = >=64): {0: 33, 1: 1, 2: 1, 3: 2, 4: 2, 5: 1, 9: 3, 23: 1, 26: 1, 31: 1, 32: 1}
+      mover routes: {('vm', 'hybrid'): 6, ('dfa', 'unanchored'): 39, ('dfa', 'attempt'): 2}
+  auto-nocaps  run pre-check emitted    59 | DFA-scan route    55 -> bounded (MOVER)    47 (49 rows), unbounded     8 | no DFA scan (VM, excluded)     4
+      K histogram (64 = >=64): {0: 33, 1: 1, 2: 1, 3: 2, 4: 2, 5: 1, 9: 3, 23: 1, 26: 1, 31: 1, 32: 1}
+      mover routes: {('dfa', 'unanchored'): 42, ('vm', 'hybrid'): 3, ('dfa', 'attempt'): 2}
+  vm           run pre-check emitted    99 | DFA-scan route     0 -> bounded (MOVER)     0 (0 rows), unbounded     0 | no DFA scan (VM, excluded)    99
+      K histogram (64 = >=64): {}
+      mover routes: {}
+  vm-nocaps    run pre-check emitted    99 | DFA-scan route     0 -> bounded (MOVER)     0 (0 rows), unbounded     0 | no DFA scan (VM, excluded)    99
+      K histogram (64 = >=64): {}
+      mover routes: {}
+== corpus: 7326 distinct artifact-configs (8888 rows); ids {'ok': 6583, 'refused': 743}
+  auto         run pre-check emitted   219 | DFA-scan route   197 -> bounded (MOVER)   160 (209 rows), unbounded    37 | no DFA scan (VM, excluded)    22
+      K histogram (64 = >=64): {0: 133, 1: 5, 2: 4, 3: 2, 4: 1, 5: 4, 6: 1, 9: 5, 10: 1, 12: 1, 18: 2, 24: 1}
+      mover routes: {('vm', 'hybrid'): 33, ('dfa', 'unanchored'): 121, ('dfa', 'attempt'): 6}
+  vm           run pre-check emitted   447 | DFA-scan route     0 -> bounded (MOVER)     0 (0 rows), unbounded     0 | no DFA scan (VM, excluded)   447
+      K histogram (64 = >=64): {}
+      mover routes: {}
+== bench MOVERS (auto): export K route in-loop-prefilter REQ_RUN
+  altwide/sfx-256                                  K=  9 dfa/unanchored  pf=byte-class run=696e67@2
+  altwide/sfx-512                                  K=  9 dfa/unanchored  pf=byte-class run=696e67@2
+  altwide/sfx-64                                   K=  9 dfa/unanchored  pf=byte-class run=696e67@2
+  capability/wild-secrets-github-pat,litrun/wild-secrets-github-pat K=  3 vm/hybrid       pf=offset-set-bounded run=6875625f7061745f@7
+  capability/wild-secrets-slack-webhook-url        K= 26 vm/hybrid       pf=offset-set run=5256494345532f54@6/dfdfdfdfdfdfffdf
+  capability/wild-secrets-username-password-pair   K=  0 vm/hybrid       pf=byte-class run=55534552@0/dfdfdfdf
+  litrun/lit-l31                                   K= 23 dfa/unanchored  pf=offset-set run=78797a4142434445@2
+  litrun/lit-l40                                   K= 31 dfa/unanchored  pf=offset-set run=464748494a4b4c4d@4
+  loglines/kv-quoted                               K= 32 dfa/unanchored  pf=byte-class-bounded run=3d22@1
+  loglines/stack-frame                             K=  0 dfa/unanchored  pf=offset-set-bounded run=617420@0
+  syntax/anc-dollar                                K=  0 dfa/unanchored  pf=offset-set-bounded run=646f6e65@0
+  syntax/anc-m-caret                               K=  0 dfa/attempt     pf=memchr run=6974656d@3
+  syntax/anc-m-dollar                              K=  0 dfa/unanchored  pf=offset-set-bounded run=646f6e65@0
+  syntax/anc-z-lc                                  K=  0 dfa/unanchored  pf=offset-set-bounded run=646f6e65@0
+  syntax/anc-z-uc                                  K=  0 dfa/unanchored  pf=offset-set-bounded run=646f6e65@0
+  syntax/asr-nwb                                   K=  0 dfa/unanchored  pf=offset-set-bounded run=636174@0
+  syntax/asr-wb,utf8/asr-b-ascii                   K=  0 dfa/unanchored  pf=offset-set-bounded run=636174@0
+  syntax/asr-wb,utf8/asr-b-ascii                   K=  0 dfa/unanchored  pf=offset-set-bounded run=636174@2
+  syntax/cls-fold-pair                             K=  0 dfa/unanchored  pf=memchr run=634174@0/ffdfff
+  syntax/cls-n-uc                                  K=  0 dfa/unanchored  pf=offset-set run=6974@0
+  syntax/cls-pair-ctl                              K=  0 dfa/unanchored  pf=memchr run=636174@0/fffdff
+  syntax/esc-quote                                 K=  0 dfa/unanchored  pf=offset-set run=66287829@2
+  syntax/lkb-neg                                   K=  0 vm/hybrid       pf=offset-set run=646f6e65@0
+  syntax/lkb-pos                                   K=  0 vm/hybrid       pf=offset-set run=646f6e65@0
+  syntax/mod-i                                     K=  0 dfa/unanchored  pf=byte-class run=434154@0/dfdfdf
+  syntax/mod-r                                     K=  0 dfa/unanchored  pf=byte-class run=434154@0/dfdfdf
+  syntax/mod-s                                     K=  5 dfa/unanchored  pf=offset-set run=646f6e65@0
+  syntax/qnt-quest                                 K=  0 dfa/unanchored  pf=offset-set run=636f6c6f@0
+  utf8/alt-nearmiss                                K=  0 dfa/unanchored  pf=offset-set run=e697a5e69cac@5
+  utf8/alt-shared-char                             K=  0 dfa/unanchored  pf=offset-set run=e697a5e4@2/fffffffd
+  utf8/asr-b-cyr                                   K=  4 dfa/unanchored  pf=offset-set-bounded run=d181d0bad0b2d0b0@7
+  utf8/asr-caret-ml                                K=  0 dfa/attempt     pf=memchr run=e697a5@2
+  utf8/asr-dollar-ml                               K=  0 dfa/unanchored  pf=offset-set-bounded run=e8aa9e@2
+  utf8/asr-lb-neg                                  K=  0 vm/hybrid       pf=offset-set run=e69cac@2
+  utf8/ci-ascii-control                            K=  0 dfa/unanchored  pf=byte-class run=414243@2/dfdfdf
+  utf8/ci-strasse                                  K=  2 dfa/unanchored  pf=byte-class run=545241@2/dfdfdf
+  utf8/lit-1ch-3b                                  K=  0 dfa/unanchored  pf=offset-set run=e697a5@2
+  utf8/lit-1ch-4b                                  K=  0 dfa/unanchored  pf=offset-set run=f09f9880@3
+  utf8/lit-cyr-run                                 K=  4 dfa/unanchored  pf=offset-set run=d181d0bad0b2d0b0@7
+  utf8/lit-mixed-ascii                             K=  3 dfa/unanchored  pf=offset-set run=7240e4be8be38188@7
+  utf8/lit-nearmiss-run,utf8/lit-run-3             K=  1 dfa/unanchored  pf=offset-set run=97a5e69cace8aa9e@7
+  utf8/lit-nfc-pair                                K=  0 dfa/unanchored  pf=offset-set run=636166c3a9@4
+  utf8/lit-offset-at-head                          K=  0 dfa/unanchored  pf=offset-set run=40c3a9@2
+  utf8/lit-offset-at-tail                          K=  0 dfa/unanchored  pf=offset-set run=c3a940@2
+  utf8/lit-sharp-s                                 K=  0 dfa/unanchored  pf=offset-set run=53747261c39f65@6
+  utf8/qnt-bounded-4b                              K=  0 dfa/unanchored  pf=offset-set run=f09f9880@3
+  utf8/qnt-counted-3b                              K=  0 dfa/unanchored  pf=offset-set run=e697a5e69cac@5
+== bench UNBOUNDED run pre-checks on a DFA-scan route (auto): handoff-unreachable
+  capability/wild-waf-crs-942270-union-select      dfa/unanchored  run=53454c454354@4/dfdfdfdfdfdf
+  capability/wild-waf-crs-942500-comment-obfuscation dfa/unanchored  run=2a2f@0
+  loglines/http-5xx                                dfa/unanchored  run=5454502f312e3022@2/fffffffffffffeff
+  syntax/cls-h                                     dfa/unanchored  run=76616c7565@0
+  syntax/cls-s-lc                                  dfa/unanchored  run=736174@0
+  syntax/cls-v                                     dfa/unanchored  run=646f6e65@0
+  syntax/qnt-plus-ctl                              dfa/unanchored  run=6162@1
+  syntax/qnt-poss-plus                             vm/hybrid       run=6162@1
+== the K82 cells and C3's customers, every config
+  capability/wild-secrets-slack-webhook-url        auto         vm/hybrid       why=emitted K=26 mover=True
+  capability/wild-secrets-slack-webhook-url        auto-nocaps  dfa/unanchored  why=emitted K=26 mover=True
+  capability/wild-secrets-slack-webhook-url        vm           vm/none         why=emitted K=26 mover=False
+  capability/wild-secrets-slack-webhook-url        vm-nocaps    vm/none         why=emitted K=26 mover=False
+  capability/wild-secrets-username-password-pair   auto         vm/hybrid       why=emitted K=0 mover=True
+  capability/wild-secrets-username-password-pair   auto-nocaps  dfa/unanchored  why=emitted K=0 mover=True
+  capability/wild-secrets-username-password-pair   vm           vm/none         why=emitted K=0 mover=False
+  capability/wild-secrets-username-password-pair   vm-nocaps    vm/none         why=emitted K=0 mover=False
+  capability/wild-waf-crs-942270-union-select      auto         dfa/unanchored  why=emitted K=None mover=False
+  capability/wild-waf-crs-942270-union-select      auto-nocaps  dfa/unanchored  why=emitted K=None mover=False
+  capability/wild-waf-crs-942270-union-select      vm           vm/none         why=emitted K=None mover=False
+  capability/wild-waf-crs-942270-union-select      vm-nocaps    vm/none         why=emitted K=None mover=False
+  loglines/http-5xx                                auto         dfa/unanchored  why=emitted K=None mover=False
+  loglines/http-5xx                                auto-nocaps  dfa/unanchored  why=emitted K=None mover=False
+  loglines/http-5xx                                vm           vm/none         why=emitted K=None mover=False
+  loglines/http-5xx                                vm-nocaps    vm/none         why=emitted K=None mover=False
+  loglines/stack-frame                             auto         dfa/unanchored  why=emitted K=0 mover=True
+  loglines/stack-frame                             auto-nocaps  dfa/unanchored  why=emitted K=0 mover=True
+  loglines/stack-frame                             vm           vm/none         why=emitted K=0 mover=False
+  loglines/stack-frame                             vm-nocaps    vm/none         why=emitted K=0 mover=False
+  syntax/cls-fold-pair                             auto         dfa/unanchored  why=emitted K=0 mover=True
+  syntax/cls-fold-pair                             auto-nocaps  dfa/unanchored  why=emitted K=0 mover=True
+  syntax/cls-fold-pair                             vm           vm/none         why=emitted K=0 mover=False
+  syntax/cls-fold-pair                             vm-nocaps    vm/none         why=emitted K=0 mover=False
+  syntax/cls-pair-ctl                              auto         dfa/unanchored  why=emitted K=0 mover=True
+  syntax/cls-pair-ctl                              auto-nocaps  dfa/unanchored  why=emitted K=0 mover=True
+  syntax/cls-pair-ctl                              vm           vm/none         why=emitted K=0 mover=False
+  syntax/cls-pair-ctl                              vm-nocaps    vm/none         why=emitted K=0 mover=False
+  syntax/mod-i                                     auto         dfa/unanchored  why=emitted K=0 mover=True
+  syntax/mod-i                                     auto-nocaps  dfa/unanchored  why=emitted K=0 mover=True
+  syntax/mod-i                                     vm           vm/none         why=emitted K=0 mover=False
+  syntax/mod-i                                     vm-nocaps    vm/none         why=emitted K=0 mover=False
+  syntax/mod-r                                     auto         dfa/unanchored  why=emitted K=0 mover=True
+  syntax/mod-r                                     auto-nocaps  dfa/unanchored  why=emitted K=0 mover=True
+  syntax/mod-r                                     vm           vm/none         why=emitted K=0 mover=False
+  syntax/mod-r                                     vm-nocaps    vm/none         why=emitted K=0 mover=False
+  utf8/alt-shared-char                             auto         dfa/unanchored  why=emitted K=0 mover=True
+  utf8/alt-shared-char                             auto-nocaps  dfa/unanchored  why=emitted K=0 mover=True
+  utf8/alt-shared-char                             vm           vm/none         why=emitted K=0 mover=False
+  utf8/alt-shared-char                             vm-nocaps    vm/none         why=emitted K=0 mover=False
+  utf8/alt-shared-lead                             auto         dfa/unanchored  why=dominated K=None mover=False
+  utf8/alt-shared-lead                             auto-nocaps  dfa/unanchored  why=dominated K=None mover=False
+  utf8/alt-shared-lead                             vm           vm/none         why=emitted K=None mover=False
+  utf8/alt-shared-lead                             vm-nocaps    vm/none         why=emitted K=None mover=False
+  utf8/ci-ascii-control                            auto         dfa/unanchored  why=emitted K=0 mover=True
+  utf8/ci-ascii-control                            auto-nocaps  dfa/unanchored  why=emitted K=0 mover=True
+  utf8/ci-ascii-control                            vm           vm/none         why=emitted K=0 mover=False
+  utf8/ci-ascii-control                            vm-nocaps    vm/none         why=emitted K=0 mover=False
+  utf8/ci-strasse                                  auto         dfa/unanchored  why=emitted K=2 mover=True
+  utf8/ci-strasse                                  auto-nocaps  dfa/unanchored  why=emitted K=2 mover=True
+  utf8/ci-strasse                                  vm           vm/none         why=emitted K=2 mover=False
+  utf8/ci-strasse                                  vm-nocaps    vm/none         why=emitted K=2 mover=False
