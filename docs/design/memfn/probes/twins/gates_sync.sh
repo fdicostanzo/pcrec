@@ -14,7 +14,10 @@
 #   (3) its pre-check lines in the entry (the set-leads memchr test, the
 #       rx_reqrun call and the handoff test) equal <cell>_use.txt;
 #   (4) cls-n-uc's default and -fno-req-set-lead artifacts differ by
-#       exactly the three set-leads lines (K85's off arm).
+#       exactly the three set-leads lines (K85's off arm). This holds on
+#       DFA-scan routes only, where the lead is OPTIONAL; all four cells
+#       are DFA-route sites. On a no-DFA route the deny moves the lead
+#       byte into the K65 set rest instead (integration.md rev 4.6, A1).
 # Last line: "GATES-SYNC ok" or "GATES-SYNC FAIL <n>".
 set -u
 PCREC=${1:?usage: gates_sync.sh PCREC_BIN BENCH_ROOT OUTDIR}
@@ -61,6 +64,7 @@ for c in us up mi cn; do
 done
 
 # (4) K85's off arm: the same artifact minus the three set-leads lines
+# (a DFA-route fact; see (4) in the header)
 diff "$O/cn/art.c" "$O/cn.nosl/art.c" > "$O/cn.nosl.diff"
 if [ "$(grep -c '^<' "$O/cn.nosl.diff")" != 3 ] || grep -q '^>' "$O/cn.nosl.diff" \
     || ! grep -q '^< .*memchr(subject + search_from, 109' "$O/cn.nosl.diff"; then

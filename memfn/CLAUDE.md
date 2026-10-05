@@ -11,8 +11,8 @@
   - Q43-Q46, Q48 and Q49 ruled; Q47 refined: the kit's own option
     namespace (below).
 
-The design of record is `docs/design/memfn/integration.md` (rev 4.4;
-read its §R4.4, then §R4.3, first). This file is the working agreement for the
+The design of record is `docs/design/memfn/integration.md` (rev 4.6;
+read its §R4.6, then §R4.5, first). This file is the working agreement for the
 subtree.
 
 **Status: no code yet.** This directory is the skeleton set up by lane
