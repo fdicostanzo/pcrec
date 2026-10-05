@@ -650,6 +650,7 @@ static void load_subjects(const char *dir)
         g_ss[g_nshort] = cp, g_sn[g_nshort++] = len;
         o += 4 + len;
     }
+    free(sb); /* each subject was copied out above */
 }
 static const struct subj *subj_named(const char *name)
 {
