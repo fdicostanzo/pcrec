@@ -2617,6 +2617,25 @@ append-only or historical records.
   the exact arm's measured 5.6-7.6%, so that row ships only if its alpha
   shows it. §10 holds eleven questions for the manager.
 
+- `litscan_k82h.md` — **K82 cause (B)'s HANDOFF, PROPOSED, design only**
+  (lane `k82hand`, 2026-10-04, from `lane/k82fix` abi 60; Frank's REVISED
+  ruling: handoff first, light panel first, cost model parked). The run
+  pre-check's candidate `c` becomes the scan start
+  `lo = max(search_from, c − K)`, where K is a new core fact: the run
+  window's maximum BYTE offset from the attempt start, carried on
+  `src/facts/req.c`'s one walk. §1.2 proves it a startpos advance. Claim 1
+  shows no early success; Claims 2/2′ cover `\G`, which keeps reading
+  `search_from`; Claim 3 is the every-startpos contract, which is why utf8
+  rounds `lo` up to a character start. §1.3 is the width table, in bytes on
+  the lowered tree, NOT `cwmax`: `(?i)straße` is K = 2 via `ſ`. §2 is a new
+  two-row first-match table (`req_uses[]`, axis `req-use`,
+  `-fno-req-handoff` bit 46, `<PREFIX>_REQ_HANDOFF`, abi 60 → 61). §3 is a
+  prototype census: 47 bench / 160 corpus program movers, every cause-(B)
+  cell among them, `union-select` unbounded and unmoved. §4 is the
+  validation plan, with sabotage S463-S472 and the alpha cells. §5 lists
+  12 hazards for the panel and 8 questions. Instruments:
+  `../dev/optloop/s4/k82hand/`.
+
 **[VAR] THE MVP's PATTERN HALF LANDED 2026-09-23** (lane varmvp, M1-M8 +
 M10; M9 stays gated on `[M4-SUBST]`). The four notes stand as written except
 where the build met them and lost, and those places were first recorded in
