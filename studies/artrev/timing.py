@@ -130,6 +130,18 @@ def read_raw(path):
     return hdr, rows
 
 
+def add_cell_rows(rows, labels):
+    """Append the pseudo-subject CELL: per (arm, round) the median over the cell's subjects (the bench's
+    cell number is the median over its subjects, so the subject that sets the median sets the verdict)."""
+    by = {}
+    for r in rows:
+        if r["subject"] in labels:
+            by.setdefault((r["arm"], r["round"]), []).append(r["ns"])
+    out = [{"subject": "CELL", "arm": arm, "round": rnd, "ns": statistics.median(xs), "matches": "-",
+            "checksum": "-", "load": "-", "reps": "-"} for (arm, rnd), xs in sorted(by.items()) if len(xs) == len(labels)]
+    return rows + out
+
+
 def summarize(rows, arms):
     """-> {subject: {arm: dict(med,q1,q3,iqr,delta,thr,verdict)}, '_null_dev': ...}"""
     out = {}
@@ -425,6 +437,12 @@ def cmd_time(a):
             return 7
         if rc == 0:
             hdr, rrows = read_raw(rawp)
+            if a.cell:
+                labs = [x for x in a.cell.split(",") if x]
+                have = {r["subject"] for r in rrows}
+                if any(l not in have for l in labs):
+                    C.die("--cell names a subject label that was not timed: %s" % [l for l in labs if l not in have])
+                rrows = add_cell_rows(rrows, labs)
             summ = summarize(rrows, arms)
             if pad_list:
                 apply_layout(summ, arms)

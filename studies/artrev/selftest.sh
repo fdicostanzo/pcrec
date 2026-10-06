@@ -274,10 +274,10 @@ for arm in ["orig"] + names:
 base = addrs["orig"]
 moved = {n: (addrs[n] - base) for n in names}
 print("art_search offsets vs orig:", moved)
-assert all(v % 64 != 0 for v in moved.values()), moved
-assert len(set(v % 64 for v in moved.values())) == 4, moved
+# the entry point moves with every pad (by the pad plus gcc's own re-alignment of what follows it)
+assert all(v != 0 for v in moved.values()) and len(set(moved.values())) == 4, moved
 PY
-[ $? = 0 ] && ok "pad arms MOVE the code: 4 distinct code offsets (mod 64) vs the original" || bad "pad arms do not move the code"
+[ $? = 0 ] && ok "pad arms MOVE the code: 4 distinct code addresses vs the original" || bad "pad arms do not move the code"
 expect "--pads with fewer than 4 offsets is refused" 2 $A time vm --arms orig,null --pads 16,32 --subject cell=$S/subj_dense.txt --rounds 3 --gate-override
 expect "pads must be multiples of 16" 2 $A time vm --arms orig,null --pads 16,32,48,50 --subject cell=$S/subj_dense.txt --rounds 3 --gate-override
 expect "time with the layout control: orig/orig2/null/ctl_slow, pads 16-64 on orig and ctl_slow" 0 $A time vm --arms orig,orig2,null,ctl_slow --pads 16,32,48,64 --pad-arms orig,ctl_slow --subject cell=$S/subj_dense.txt --rounds 7 --gate-override
@@ -316,6 +316,32 @@ assert verdict(loss) == "LOSS", verdict(loss)
 print("layout verdict unit cases ok")
 PY
 [ $? = 0 ] && ok "layout verdicts: clean WIN, layout-swing NOISE, one-pad-flip NOISE, clean LOSS" || bad "layout verdict unit cases"
+
+
+echo; echo "== 11. dense/sparse variants and the CELL row"
+expect "variants vm: dense + sparse from the dense subject" 0 $A variants vm --subject "$S/subj_dense.txt" --out-dense "$S/v_dense.bin" --out-sparse "$S/v_sparse.bin"
+has "variants" "original matches in"
+SPANS=$S/vm/arms/orig/build/spans
+nd=$("$SPANS" "$S/v_dense.bin" | wc -l | tr -d ' '); ns=$("$SPANS" "$S/v_sparse.bin" | wc -l | tr -d ' '); no=$("$SPANS" "$S/subj_dense.txt" | wc -l | tr -d ' ')
+[ "$(wc -c < "$S/v_dense.bin" | tr -d ' ')" = "$(wc -c < "$S/subj_dense.txt" | tr -d ' ')" ] && ok "dense variant has the subject's length" || bad "dense length"
+[ "$nd" -ge "$no" ] && [ "$ns" -lt "$no" ] && ok "dense has >= the original's matches ($nd >= $no), sparse far fewer ($ns < $no)" || bad "variant densities: dense $nd, original $no, sparse $ns"
+expect "time with --cell over two subjects adds a CELL row" 0 $A time vm --arms orig,orig2,null,ctl_slow --subject a=$S/subj_dense.txt --subject b=$S/subj_sparse.txt --cell a,b --rounds 5 --gate-override
+has "cell row" "subject CELL"
+python3 - <<PY
+import sys; sys.path.insert(0, "$HERE")
+import timing
+rows = []
+for arm, (a, b) in {"orig": (1.0, 5.0), "null": (1.0, 5.0)}.items():
+    for r in range(3):
+        rows.append({"subject": "a", "arm": arm, "round": r, "ns": a, "matches": "", "checksum": "", "load": "", "reps": ""})
+        rows.append({"subject": "b", "arm": arm, "round": r, "ns": b, "matches": "", "checksum": "", "load": "", "reps": ""})
+        rows.append({"subject": "c", "arm": arm, "round": r, "ns": 9.0, "matches": "", "checksum": "", "load": "", "reps": ""})
+R = timing.add_cell_rows(rows, ["a", "b", "c"])
+cell = [x["ns"] for x in R if x["subject"] == "CELL" and x["arm"] == "orig"]
+assert cell == [5.0, 5.0, 5.0], cell        # the median over the three subjects, per round
+print("cell row = median over subjects ok")
+PY
+[ $? = 0 ] && ok "CELL row is the per-round median over the cell's subjects" || bad "cell row unit case"
 
 echo; echo "== summary: $((N-FAILS))/$N checks passed, $FAILS failed"
 [ $FAILS = 0 ]

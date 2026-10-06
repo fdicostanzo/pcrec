@@ -301,7 +301,16 @@ def main():
     tm.add_argument("--pads", default="", help="LAYOUT CONTROL: code-offset pads in bytes (>=4 multiples of 16, e.g. 16,32,48,64); "
                     "also times --pad-arms at each pad in the same interleaved rounds (timing.py docstring)")
     tm.add_argument("--pad-arms", default="", help="comma list of arms to pad (orig is always included); needs --pads")
+    tm.add_argument("--cell", default="", help="comma list of the subject LABELS that form the cell (the bench's cell number is the median over "
+                    "its subjects): adds a CELL row = per round, per arm, the median over those subjects; judged by the same rules")
     tm.add_argument("--tag", default="")
+    vr = sp.add_parser("variants", help="build a DENSE and a SPARSE variant of a cell subject (variants.py)")
+    vr.add_argument("name")
+    vr.add_argument("--subject", required=True)
+    vr.add_argument("--out-dense", required=True)
+    vr.add_argument("--out-sparse", required=True)
+    vr.add_argument("--ctx", type=int, default=32, help="bytes of surroundings kept around each match in the dense variant")
+    vr.add_argument("--keep", type=int, default=16, help="the sparse variant keeps every KEEP-th match intact")
     raw = sp.add_parser("_rawtime")
     raw.add_argument("name")
     raw.add_argument("--arms", required=True)
@@ -326,6 +335,9 @@ def main():
     elif a.cmd == "identity":
         import identity
         sys.exit(identity.cmd_identity(a))
+    elif a.cmd == "variants":
+        import variants
+        sys.exit(variants.cmd_variants(a))
     elif a.cmd == "time":
         import timing
         sys.exit(timing.cmd_time(a))
