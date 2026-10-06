@@ -194,3 +194,14 @@ pointer when a kit change merges to main.
 - Lesson: the blinded author found in one pass what the implementing
   lane's 480k-check smoke test missed. That smoke test was written by
   the implementer, so it shared the implementer's reading of "range".
+
+## 2026-10-05 — R4a delivered (zero movers; Mac make test green but for a pre-existing darwin red)
+
+- Merged memfnfix (G2 green), then main f3c726d7 (START-SET 0+1). C17
+  caught START-SET's FIND extraction on the merge: the PF row was
+  re-pointed to `pcrec_emit_find`, and the vocabulary learned the
+  format-hole walk (`walk-fmt`), which it could not see. That was the
+  check working on its first real refactor.
+- Landing run (Mac suite lock, detached): sweep 0 artifact movers vs
+  main; make test 52/52, red only on run_inline_capability (darwin nm,
+  pre-existing). R-3 R4a `done:` posted.
