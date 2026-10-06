@@ -322,12 +322,64 @@ uint32_t mf_includes(const mf_art *art)
     return art->includes;
 }
 
-/* The kit's stamps are born at R4a′ (`<PREFIX>_MEMFN_FORMS`/`_LIBC`); until
- * then the kit writes none. */
+static int is_ident(const char *s)
+{
+    if (!s || !*s || (*s >= '0' && *s <= '9')) return 0;
+    for (; *s; s++)
+        if (!(*s == '_' || (*s >= 'a' && *s <= 'z') || (*s >= 'A' && *s <= 'Z')
+              || (*s >= '0' && *s <= '9')))
+            return 0;
+    return 1;
+}
+
+/* §R4.3.3: sorted insertion, so mf_stamps writes the list as it stands. */
+int mf_art_note_libc(mf_art *art, const char *name)
+{
+    if (art->err[0]) return -1;
+    if (!is_ident(name))
+        return kit_fail(art, "mf_art_note_libc: not a C identifier");
+    uint32_t at = 0;
+    while (at < art->nlibc) {
+        int c = strcmp(art->libc[at], name);
+        if (c == 0) return 0;
+        if (c > 0) break;
+        at++;
+    }
+    if (art->nlibc == art->libc_cap) {
+        uint32_t cap = art->libc_cap ? art->libc_cap * 2 : 8;
+        const char **grown = art->a->alloc(art->a->u, cap * sizeof *grown);
+        if (!grown) return kit_fail(art, "mf_art_note_libc: out of memory");
+        if (art->nlibc) memcpy(grown, art->libc, art->nlibc * sizeof *grown);
+        art->libc = grown;
+        art->libc_cap = cap;
+    }
+    size_t len = strlen(name);
+    char *copy = art->a->alloc(art->a->u, len + 1);
+    if (!copy) return kit_fail(art, "mf_art_note_libc: out of memory");
+    memcpy(copy, name, len + 1);
+    memmove(art->libc + at + 1, art->libc + at,
+            (art->nlibc - at) * sizeof *art->libc);
+    art->libc[at] = copy;
+    art->nlibc++;
+    return 0;
+}
+
+/* MEMFN_FORMS is "none": no arm the table holds renders differently from its
+ * SIMD-off self (the table's only row is the generic scalar row), so every
+ * artifact equals its SIMD-off compile (Q55; the id list is R4f's). */
 int mf_stamps(const mf_art *art, mf_sink *out)
 {
-    (void)out;
-    return art->err[0] ? -1 : 0;
+    if (art->err[0]) return -1;
+    if (!out || !out->stamp)
+        return kit_fail((mf_art *)art, "mf_stamps: the sink offers no stamp op");
+    kb libc;
+    kb_init(&libc, art->a);
+    for (uint32_t i = 0; i < art->nlibc; i++)
+        kb_printf(&libc, "%s%s", i ? "," : "", art->libc[i]);
+    if (libc.oom) return kit_fail((mf_art *)art, "mf_stamps: out of memory");
+    out->stamp(out->u, "MEMFN_FORMS", "none");
+    out->stamp(out->u, "MEMFN_LIBC", art->nlibc ? libc.p : "none");
+    return 0;
 }
 
 /* ---- the vocabulary -------------------------------------------------------

@@ -751,6 +751,16 @@ fi
 # forward scan's position (and, for the seeded `\bword\b`, its seed) reads
 # `handoff_position`. VERIFIED BY DIFFING both against the abi-60 compiler at
 # `-o -`: the abi digits, the stamp, the gate, the start site, nothing else.
+#
+# RE-RECORDED 2026-10-05 at [MEMFN] R4a′ (lane memfnstamp; pre-bump, the abi
+# digit follows at the same width): all twelve `EMITTED_BYTES` rows move, each
+# by the kit's two every-artifact lines after `RX_RUN_WORDS`:
+# `#define RX_MEMFN_FORMS "none"` (+30) and `#define RX_MEMFN_LIBC "<v>"`,
+# +29 at "none" (`^foo$`, `cat|dog|cow|calf|camel`, `(\w+)\s+\1`: +59),
+# +31 at "memchr" (eight rows: +61) and +38 at "memchr,memcmp" (`\bword\b`:
+# +68). VERIFIED BY the R4a′ mover census (tests/memfn/stamp_mover_census.py
+# against the lane's base, lane/memfn-r4a2 090020a2): every artifact of the
+# corpus differs by exactly those two lines, nothing else.
 MANIFEST="$ROOT_DIR/tests/codegen/manifests/m5_stage1_stamps.tsv"
 if [ -d "$(dirname "$MANIFEST")" ]; then
     if [ -f "$MANIFEST" ]; then

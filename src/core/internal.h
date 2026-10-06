@@ -6055,6 +6055,13 @@ void pcrec_emit_runcmp_helpers(Ctx *cx, StrBuf *c);
  * `r`'s compare will load through, if it takes a word row. */
 void pcrec_runcmp_prepare(Ctx *cx, StrBuf *c, const PcrecRun *r);
 void pcrec_emit_runcmp_stamp(Ctx *cx, StrBuf *c, const char *upper);
+
+/* [MEMFN] R4a′ (src/gen/memfn_stamps.c): the mark both engines write where
+ * the kit's `<PREFIX>_MEMFN_FORMS`/`_MEMFN_LIBC` lines go, and the driver's
+ * finishing pass that renders them over it (once per attempt, after the
+ * engine emitter, before the size measurement). */
+void pcrec_emit_memfn_mark(StrBuf *c);
+void pcrec_memfn_stamps_render(Ctx *cx);
 /* [K50]/[UTF-VALID] The caller-startpos entry prologue: the startpos-guard
  * axis's value (refuse / nothing / align) and then the `-futf-check`
  * precheck, at the four sites that take a caller's position. `anchored`

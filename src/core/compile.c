@@ -2005,6 +2005,11 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
                                      "with no pcrec_sb_cmt_close)");
         }
 
+        /* [MEMFN] R4a′: the kit's stamps over the engines' mark, from the
+         * finished text (src/gen/memfn_stamps.c), so the size measured below
+         * is the artifact shipped. */
+        pcrec_memfn_stamps_render(&cx);
+
         /* [ART-SIZE] MEASURE, then let the phase machine decide (D84;
          * docs/design/artifact_size_term.md §3.3, §4.4). The measurement is
          * the same on every attempt; what differs is whether this attempt is

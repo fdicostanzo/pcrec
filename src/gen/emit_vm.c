@@ -13867,6 +13867,7 @@ static void vm_emit_epilogue(Vm *v, const GenNames *g, const VmPlan *pl)
     const bool      has_budget  = pl->caps.has_budget;
 
     pcrec_emit_runcmp_stamp(cx, &job->csb, g->upper);
+    pcrec_emit_memfn_mark(&job->csb);
     pcrec_emit_residual(cx);
 
     pcrec_emit_info(cx, g, 2, job->fit.why,

@@ -8,7 +8,7 @@
   arena (`mf_arena`) and the hooks (`mf_hooks`); the result and the
   per-artifact state (`mf_result`, `mf_art`) with the entry points
   `mf_art_begin`/`mf_art_end`/`mf_art_error`, `mf_define`/`mf_use`/
-  `mf_emit`/`mf_call`, `mf_flush_helpers`/`mf_includes`/`mf_stamps` and
+  `mf_emit`/`mf_call`, `mf_flush_helpers`/`mf_includes`/`mf_stamps`, `mf_art_note_libc` (R4a′, the libc record's writer) and
   `mf_vocab_has`; the option registry's view (`mf_option`, `mf_options()`,
   which `--list-axes` prints as its `memfn` section, and `mf_opts_check()`,
   which validates the opaque `--memfn=` string); and K1's reference
