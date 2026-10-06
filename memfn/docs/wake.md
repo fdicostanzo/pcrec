@@ -69,10 +69,13 @@ the current state, never a history (the history is `journal.md`).
   block is S510-S529; S510-S517 are used, so the next free is S518.
 - **Defects:** none open. **Owed:** G2 coverage of the newly refused
   shapes (blinded author); Q-G2-5 (M3); bench I-128/I-129 (main).
-- **Leftover worktrees** (merged): memfnr4b, memfnr45, memfnr46,
-  memfnskel, memfnmanifest, memfnfix, memfnstamp, and memfn/worktrees/
-  memfng2 + its cell. Remove them ONLY via `scripts/wtprune` (dry run,
-  then `--apply`), never a raw `git worktree remove`.
+- **Leftover worktrees:** main's 23:19 wtprune removed the merged kit
+  lanes. Kept: `memfnstamp`, prunable via `scripts/wtprune --apply
+  memfnstamp` once R4a′ is on main. `worktrees/memfn/worktrees/memfng2`
+  + `memfng2-cell` are NESTED, so wtprune refuses them and raw remove is
+  off-limits; main was asked to remove them or to extend wtprune. Lesson:
+  never run mk_d27_cell.sh from inside the kit worktree (it nests the
+  cell).
 
 ## 5. Next actions
 
