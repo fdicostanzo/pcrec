@@ -1806,6 +1806,69 @@ done <<'ROWS'
 abc$%%engages end-window (a finite-width $-anchored pattern)
 ROWS
 
+# =========================================================================
+# 6b. [FLAGBITS] THE MASK, OVER THE WHOLE AXIS REGISTRY
+# =========================================================================
+#
+# K68 above holds three bits to "rx_info.flags is unmoved by a denial"; bits
+# 18 (-fno-size-term) and 21 (-fno-scan-edge) leaked the same way for the
+# same reason (a hand-kept OR that forgot them) and no check read them.
+# emit_info_def's mask is now DERIVED from src/core/axes.def (masked unless
+# named kept), and this arm is its control: EVERY -f spelling the registry
+# (`--list-axes`, cli_flag column) carries, compiled on a witness the flag
+# cannot act on, must leave .flags at the baseline -- except the spellings
+# the contract keeps, which are listed HERE, independently of the emitter's
+# own `kept` list, from docs/spec/tuning.md (2.8/2.9 engine-selecting; 2.23/
+# 2.36 contract bits, kept except under `byte`).
+#
+# The population is counted from the registry, not typed (K35), with a floor,
+# and the KEPT set doubles as the positive control: each kept flag must MOVE
+# .flags where it is kept, so a comparison that could not see a move reads red
+# rather than green.
+REG_FLAGS="$(pcrec_run "$PCREC" --list-axes 2>/dev/null | grep -v '^#' | awk -F'\t' '$11 != "" {print $11}' \
+             | sed 's# / #\n#g; s#|#\n#g' | grep '^-f' | sort -u)"
+n_reg=$(printf '%s\n' "$REG_FLAGS" | grep -c .)
+[ "$n_reg" -ge 40 ] \
+    && ok "[6b] the registry names $n_reg -f spellings (floor 40)" \
+    || bad "[6b] the registry names only $n_reg -f spellings (floor 40) -- the population this arm sweeps has shrunk or its extraction broke"
+# kept regardless of encoding / kept only off `byte`
+KEPT_ALWAYS=" -fno-atomic-discharge -fno-splice-calls "
+KEPT_NONBYTE=" -fno-startpos-guard -fstartpos-guard=align -futf-check "
+# Two witnesses: `abc` (no flag can act on it) and a captured hybrid
+# `(a|b)*c(d)` where several can. `-fprefilter` is DO-OR-DIE (it refuses a
+# pattern the hybrid cannot serve, tuning.md 2.5), so its refusal on `abc` is
+# the documented answer and is skipped there, never read as a pass.
+for w in 'abc' '(a|b)*c(d)'; do
+for enc in byte utf8; do
+    base="$WORKDIR/s6b_base_$enc.c"
+    if ! emit "$base" "$w" -e "$enc"; then bad "[6b] $w -e $enc: baseline refused"; continue; fi
+    fb="$(flags_of "$base")"
+    moved=0; held=0; kept_seen=0
+    for f in $REG_FLAGS; do
+        d="$WORKDIR/s6b_deny_${enc}_$RANDOM.c"
+        if ! emit "$d" "$w" -e "$enc" "$f"; then
+            [ "$f" = -fprefilter ] && [ "$w" = abc ] && continue
+            bad "[6b] $w -e $enc $f: refused"; continue
+        fi
+        fd="$(flags_of "$d")"
+        want_move=0
+        case "$KEPT_ALWAYS" in *" $f "*) want_move=1;; esac
+        if [ "$enc" != byte ]; then case "$KEPT_NONBYTE" in *" $f "*) want_move=1;; esac; fi
+        if [ "$want_move" = 1 ]; then
+            kept_seen=$((kept_seen+1))
+            [ -n "$fb" ] && [ "$fd" != "$fb" ] \
+                && ok "[6b] $w -e $enc $f: .flags moves ($fb -> $fd), as the kept set says" \
+                || bad "[6b] $w -e $enc $f: .flags did NOT move ($fb -> ${fd:-<none>}), but it is a kept bit here -- the positive control reads blind"
+        else
+            [ -n "$fb" ] && [ "$fd" = "$fb" ] \
+                && held=$((held+1)) \
+                || { moved=$((moved+1)); bad "[6b] $w -e $enc $f: .flags = ${fd:-<none>}, expected baseline $fb -- an unmasked strategy deny bit ([FLAGBITS]: bits 18/21, K68, bit 19 were this)"; }
+        fi
+    done
+    [ "$moved" -eq 0 ] && ok "[6b] $w -e $enc: $held registry spellings leave .flags at baseline $fb ($kept_seen kept, each moved it)"
+done
+done
+
 echo "checks passed: $pass"
 echo "checks failed: $fail"
 [ "$fail" -eq 0 ] || exit 1
