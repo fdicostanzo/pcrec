@@ -43,8 +43,8 @@ addenda), `[OPT-K]` (`offset_k_skip.md`), `[OPT-REQPOS]`/`[OPT-REQBYTE]`/K82
    regular-faithful** (no backreference, no atomic group or possessive
    quantifier). Measured against libpcre2 10.48 on 9,822 generated `P·L·S`
    patterns: **0 mismatches over 329,771 single searches and 57,204 find-alls**
-   where the gate holds, and **every one of 10 planted wrong variants detected**
-   (§2.6). Without the gate the answer is wrong (19 + 1 witnesses), exactly the
+   where the gate holds; all 6 planted mutations are detected, and the ungated
+   and erased-atomic variants are shown wrong (§2.6). Without the gate the answer is wrong (19 + 1 witnesses), exactly the
    bug rust's `regex` shipped and fixed in July 2026 (§2.3).
 3. **Yes — and the prefilter form is where it matters most.** The reverse walk is
    a CANDIDATE GENERATOR: it hands exact candidate starts to any anchored engine.
@@ -643,7 +643,7 @@ admissions, never G1/G2's soundness.
 
 - The soundness model's ORACLE is libpcre2's own unanchored search; the model
   uses libpcre2 only as two components, so the tactic's start selection — the
-  thing under test — is the model's own code. Its teeth: 10 mutations, every one
+  thing under test — is the model's own code. Its teeth: 6 mutations, every one
   detected, and the ungated tactic shown wrong. Its blind spots: the alphabet
   (`{a, b, X, \n}`, + `é`); single-literal `L` only; subjects ≤ 9 characters;
   10.48 not 10.46 (U13: they are known to differ in places; none of the
