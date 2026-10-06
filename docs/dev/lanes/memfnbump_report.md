@@ -208,7 +208,7 @@ Logs: `build/scratch/` in the worktree (gitignored). `c1.*` = commit 1,
 | test-memfn-g2 | rc 0, 51 s | rc 0, 65 s |
 | test-memfn-stamps (C11) | rc 0, 30 s | rc 0, 37 s: 929 artifacts (dfa 353, vm 576), LIBC none 346, idiom 95, memchr 538, memcmp 50, strlen 49, printf 44, fprintf 96; 12/0 |
 | census | CLEAN (§2) | CLEAN (§2) |
-| test-recursion-identity | not run at commit 1. Its FILEPIN there is the merge, whose `src/` equals the tree's, so (B) is identical by construction | §7 |
+| test-recursion-identity | not run at commit 1. Its FILEPIN there is the merge, whose `src/` equals the tree's, so (B) is identical by construction | rc 0, 1,451 s, 16/0 (§7) |
 
 ## 6. The Linux run (the verdict): the command block for the pcrec manager
 
@@ -270,7 +270,15 @@ mech solos `bash tests/mech/run_sabotage_matrix.sh S51N` (logs
 `build/scratch/c2.test-recursion-identity.log`). The completion line in the
 summary is `CHAIN-DONE`.
 
-RESULTS: see the handback message (filled in below when the chain finished).
+RESULTS (complete):
+- The mech solos: §4, 5/5 DETECTED.
+- `make test-recursion-identity` at `a0670cba` (FILEPIN `b2e75d05`): rc 0,
+  1,451 s, no `*** [test-` line, checks passed 16, failed 0. In every
+  section, (B) WHOLE-FILE byte identity holds over ALL call-free corpus
+  patterns (2,883 / 2,884 / 2,883 / 2,883) against the bump commit's
+  compiler.
+
+Nothing is owed on the Mac. The Linux `make test` (§6) is the verdict.
 
 ## 8. Charter vs committed
 
@@ -287,8 +295,8 @@ RESULTS: see the handback message (filled in below when the chain finished).
 | census `--abi 62:63` | DONE: CLEAN |
 | make, make strict | DONE |
 | test-cli, resource, cpset-structure, memfn link/manifest/g2/stamps | DONE: green |
-| test-recursion-identity (~32 min, backgrounded) | §7 / handback |
-| mech S513-S517 after the bump | §7 / handback |
+| test-recursion-identity (~32 min, backgrounded) | DONE: green, 1,451 s |
+| mech S513-S517 after the bump | DONE: 5/5 DETECTED, reach ok |
 | Linux command block, completion line, verdict rule, wall time, census | DONE: §6 |
 | report + docs/dev/lanes/CLAUDE.md row | DONE |
 | the bump as the LAST commit | the bump `b2e75d05` comes after the re-pins. Two tests/docs-only commits follow it: the FILEPIN self-pin (§3.3) and this report |
