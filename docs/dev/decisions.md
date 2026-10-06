@@ -9158,6 +9158,8 @@ Also owed before any build: the soundness model re-run once against the 10.46 re
 
 **Revisit when.** The dup-param-detect twin reads (trigger met or not); the inner-landmark-split fact is designed (the census's stand-in reader parses 85% bench / 73% corpus).
 
+**D151 addendum 1 — fold FIRST (Frank, 2026-10-06, start_table.md Q1).** Revises item 5: the two tables (and every other start mechanism) fold into the ONE unified start table (`cand_rows[]`, docs/design/start_table.md) as a no-mover refactor BEFORE the `handoff-rev` reverse-walk row or any other new start row is built, so each new row is a one-row addition. GATED: the fold starts only after the note's revision 2 (lane starttabrev, per the light D6 panel docs/dev/reviews/2026-10-06-r-starttable-panel.md) clears a short focused re-check; then step C0 (the sweep extension), then C1-C7.
+
 ## D152 — Why pcrec uses first-match decision tables (the standing rationale; Frank asked for it so tables are built for a reason, not by fiat; 2026-10-06)
 
 A decision table is an ordered list of rows, each a predicate over facts plus an action; the first row whose predicate holds and is not denied executes; the last row is always sound. Its purpose is to make a choice the compiler makes ONE artifact that can be inspected, checked and extended, instead of logic dispersed through control flow.
