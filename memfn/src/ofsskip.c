@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: 0BSD
- * Provenance: pcrec 691a8b7c src/gen/emit_dfa.c (ofs_test_emit_fn,
- *   ofs_test_emit_pair, ofsk_emit_verify, ofsk_emit_params, pf_block_ofs's
- *   comment), transcribed (relicensed 0BSD by its author; ruling pending)
+ * Provenance: pcrec 691a8b7c (relicensed 0BSD by its author, D145 addendum 1):
+ *   src/gen/emit_dfa.c (ofs_test_emit_fn, ofs_test_emit_pair,
+ *   ofsk_emit_verify, ofsk_emit_params, pf_block_ofs's comment), transcribed
  *   (memfn/PROVENANCE.md).
  *
  * memfn/src/ofsskip.c — THE OFFSET-SKIP FUNCTION, a scalar arm born at R4c

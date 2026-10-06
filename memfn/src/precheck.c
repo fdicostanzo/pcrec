@@ -1,9 +1,8 @@
 /* SPDX-License-Identifier: 0BSD
- * Provenance: pcrec 691a8b7c src/gen/emit_dfa.c (emit_req_one_byte,
- *   emit_req_run_check's call lines, emit_req_handoff's declaration and miss
- *   test, emit_req_set_rest's block, pcrec_emit_req_run_blocks' comment),
- *   transcribed (relicensed 0BSD by its author; ruling pending)
- *   (memfn/PROVENANCE.md).
+ * Provenance: pcrec 691a8b7c (relicensed 0BSD by its author, D145 addendum 1):
+ *   src/gen/emit_dfa.c (emit_req_one_byte, emit_req_run_check's call lines,
+ *   emit_req_handoff's declaration and miss test, emit_req_set_rest's block,
+ *   pcrec_emit_req_run_blocks' comment), transcribed (memfn/PROVENANCE.md).
  *
  * memfn/src/precheck.c — THE PRE-CHECK COMPOSITE, a scalar arm born at R4c
  * (integration.md §15.3-§15.5): one ALL_PRESENT site whose predicates are,

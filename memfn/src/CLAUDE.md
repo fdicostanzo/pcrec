@@ -60,8 +60,8 @@ offset-skip block and the pre-check composite, by the scalar arms below.
 The scalar arms are the LIVE scalar layer (D147): improvable kit code, each
 change with its own `--memfn=no-NAME` row and, where it moves a byte,
 pcrec's abi event and `tests/memfn/pins/arms.tsv` re-pin in the same commit.
-Their provenance lines read `relicensed 0BSD by its author; ruling pending`
-(R-4 Q1, Frank's ruling owed). Planned, not here yet: the other migrated
+Their provenance lines read `pcrec <commit> (relicensed 0BSD by its author, D145 addendum 1)`
+(R-4 Q1, ruled by Frank 2026-10-06). Planned, not here yet: the other migrated
 sites' arms (M1b on), SIMD forms (R4e′, rendered only under
 `-fmemfn-simd`), K3 support. Rules: external symbols through `MF_NS`
 (`pcrec_mf_*`; C15), everything else `static`; an SPDX line and a
