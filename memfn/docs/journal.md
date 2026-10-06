@@ -205,3 +205,27 @@ pointer when a kit change merges to main.
 - Landing run (Mac suite lock, detached): sweep 0 artifact movers vs
   main; make test 52/52, red only on run_inline_capability (darwin nm,
   pre-existing). R-3 R4a `done:` posted.
+
+## 2026-10-05 — R4a′ built except the abi bump (lane memfnstamp, merged into lane/memfn-r4a2)
+
+- Both stamp lines are on every artifact, after `<PREFIX>_RUN_WORDS`.
+  pcrec's finishing pass (`src/gen/memfn_stamps.c`) inventories the
+  whole artifact's libc calls, and the kit renders the lines through
+  `mf_stamps`.
+- C11, `make test-memfn-stamps`: 918 artifacts, 0 failed, ~35 s. Its
+  control is `nm -u` of an `-O0 -fno-builtin` compile; the idiom
+  exclusion goes through a compiler prelude and shares no list with the
+  producer. The FORMS half is UNREACHED.
+- S513-S517 all DETECTED. Spec hunk: match_api §6.3.
+- Census vs 090020a2: every artifact moved by exactly the two lines,
+  with one reviewed extra. `RX_VM_PREFILTER_WHY` on
+  uprops/size_ladder_prefilter_drop quotes the measured size of the
+  discarded hybrid attempt, 1028494 → 1028553. No test pins it; the
+  classifier names it. Main must see it.
+- Re-pins: m5_stage1_stamps (12), the resource pin 762665, the
+  recursion-identity FILEPIN.
+- WAITING: START-SET stage 2 (abi 62) to merge to main. Then: merge main
+  ALONE, then the bump to 63 + grep-found re-pins as the LAST commit
+  (memfnstamp_report.md §8 is the procedure), the census with `--abi
+  62:63`, and the Linux make test via main's executor by day. Main reset
+  its context at 2026-10-05 ~23:00; its wake.md records this.
