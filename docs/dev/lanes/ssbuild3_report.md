@@ -26,7 +26,33 @@ see §1 for how the bump was drafted). A fresh agent resumes from §8.
 
 ## 1. The abi event (62 -> 64), readers found by grep
 
-PLACEHOLDER-ABI
+**Drafted 62 -> 64, and R4a′ had NOT landed.** At the merge of main
+`f69089bf` (merged ALONE, `eb4f07ba`; ARTREV docs only, no `src/`),
+`PCREC_ARTIFACT_ABI` still read 62 on main, so 63 (the memfn kit's R4a′)
+has no artifact yet. This lane bumps straight to 64 as briefed; whichever
+of the two lands second re-reads the other's ledger entry (§6's narrative
+and the codegen ledger name 63 as R4a′'s). `match_api.md` §6's 64
+entry names 63 as R4a′'s; if R4a′ is dropped, 63 is a gap and that
+sentence is what explains it.
+
+The readers, found by `grep -rn` for the old number (code, tests, spec):
+
+| reader | change |
+|---|---|
+| `src/gen/emit_dfa.c` `PCREC_ARTIFACT_ABI` (feeds both emission sites: the generated-by line and `rx_info.abi`) | 62 -> 64 (`b42dffa6`) |
+| `tests/codegen/run_codegen_tests.sh` `ABI_EXPECT` + its ledger message | 64, ledger gains the stage-3 clause (copied from §6) |
+| `docs/spec/match_api.md` §6 (the abi narrative) | new head entry for 64, the 62 entry demoted to "was" |
+| `docs/spec/match_api.md` K80 `#error` worked example | 62 -> 64 (both lines) |
+| `tests/codegen/run_recursion_identity.sh` (B) `FILEPIN` | self-pinned to `b42dffa6`, the lane's last `src/` commit |
+| `tests/codegen/CLAUDE.md` | the stage-3 bump paragraph |
+
+Readers that cite no abi digit but read bytes the bump could move (the
+D94 addendum's second class): the cpset `EMITTED_BYTES` manifest and the
+resource K59-PREMUL pin are unchanged, because 62 and 64 are one digit
+wide (both re-run green after the bump, §4). `tests/startset/
+CLAUDE.md`/`src/gen/CLAUDE.md` name the abi as history and were written
+at 64. `docs/spec/match_api.md` §6.3's two new `RX_DFA_PREFILTER` rows cite
+"abi 64".
 
 ## 2. What was built, and the four choices the design left open
 
@@ -105,6 +131,40 @@ xa  @2 deny=0(-1,-1) hat=0(-1,-1) hat-no-reseed=0(-1,-1)
 The obligation is met on the BUILT artifact. The differential's `collapse`
 config reaches every hybrid mover collapsed, and S481/S482 are red there.
 
+### 3.4 `scripts/emit_sweep.py` against main, and the MOVER TABLE
+
+`python3 scripts/emit_sweep.py --ref main` (main `f69089bf`, abi 62) against
+this lane's build (abi 64). The self-check (main against a second build of
+main) is all-identical at full reach. The real run:
+
+| stream | reach | movers | asymmetric |
+|---|---|---|---|
+| `.c` default engine (`--features all`) | 4,147 | 4,147 | 0 |
+| `.c` `--engine=vm` | 4,148 | 4,148 | 0 |
+| `--emit-ir --engine=vm` | 4,148 | 0 | 0 |
+| composition (38 producing files) | 108 artifacts | 108 | 0 |
+| registry dumps | 7 | 1 (`--list-axes`: the two new `prefilter` rows, re-ordered after `first-class`) | 0 |
+
+The sweep prints five movers per stream, so every `.c` mover was classified
+by a separate pass (scratch `mover_table.py`, the sweep's own corpus
+enumeration and compile line, the ref binary the sweep built). Each mover
+gets ONE class: **abi** (main's text with its four abi spellings rewritten 62
+-> 64 equals ours), **stamp** (every differing line a stamp line),
+**hat** (our artifact names a DFA-hat value AND our `-fno-start-set` build
+equals main's `-fno-start-set` build once its abi is rewritten), or
+**FINDING**.
+
+| stream | abi digit only | stamp lines | the DFA hat's table + seek | anything else (FINDING) |
+|---|---|---|---|---|
+| `.c` default | 4,059 | 0 | 88 | **0** |
+| `.c` `--engine=vm` | 4,148 | 0 | 0 | **0** |
+
+88 rather than §3.1's 71 because the sweep compiles every pattern line at
+`--features all` with no per-block options (the census reads each block's
+own). Forced `--engine=vm` has no DFA scan to put the hat on. The
+composition movers are the abi digit (all 108; the composed patterns carry
+no hat mover).
+
 ## 4. Gates (Mac, this lane)
 
 PLACEHOLDER-GATES
@@ -168,7 +228,55 @@ four (form x landing) cells have a detecting row.
 
 ## 6. Findings
 
-PLACEHOLDER-FINDINGS
+1. **`E*` without `s0` is an EQUIVALENT mutant in pcrec.** ssedge's twin
+   detected it (7 of 10) because it read the seed family off an emitted
+   table. In the compiler `s0` IS `s1u[UPC_PLAIN]` on every `ENG_UNANCH`
+   machine (`start_pinned_assert_routing` asserts it), so the union over the
+   live seeds already holds `s0`'s escapes: 3,528 of 3,528 artifacts
+   byte-identical under the mutant. `dfa_estar` keeps the `s0` term because it
+   costs nothing and does not lean on that identity.
+2. **A new table NAME keeps a reader's needle true, not its POPULATION.**
+   §2 item 1 chose `<p>_start_bytes` so the checks that read
+   `rx_can_begin_match` as `E` stay true, and their needles did. But
+   `run_offset_skip.sh` §2c builds `uuid` with `-fno-offset-skip` to obtain
+   `E`, and without the offset row `uuid` is a DFA-hat mover, so that build
+   now emits `start_bytes` and the guard read nothing (`test-codegen` red,
+   "could not read both offset-0 tables"). The guard's build now also denies
+   the hat. Two checks that enumerate the candidate-start MECHANISMS by needle
+   (`run_anchored_match.sh` §2, `run_mline_diff.sh`'s population) gained
+   `rx_start_bytes[` as a fourth, with a witness for the anchored one.
+3. **ssedge's `hybrid.rxt` draft carried HEAD declarations** (`config` +
+   four `target` lines for `-fprefilter-collapse`). A head makes a corpus
+   file unreadable to `verify_rxt.py` and the harness builds no target, so
+   the first import put 14 reds into `test-rxtsource` (legs B/C disagreeing,
+   the census, a `name` keyword collision). `edge_import.py` now drops head
+   `config`/`target` lines and comments their `name` lines (line numbers
+   hold); the collapsed compile is the differential's `collapse` config,
+   which is where S481/S482 are red.
+4. **S501/S502's REACH probes had been stale since stage 2.** Both pinned
+   the facts listing's `used` column at `no`; stage 2's every-artifact
+   `VM_START_SCAN` stamp asks the fact on every compile, so it reads `yes`.
+   Re-aimed to any value of the column, intent unchanged, with a comment.
+5. **S481/S482 were re-aimed** from the unbounded forms (no population,
+   §6.4.4) to the bounded forms' re-seed (whole / hit path), so each
+   (form x landing) cell has a row with S483/S484.
+6. **The manifest regeneration moved one stage-2 id**:
+   `tests/ucp/ctxnode.rxt:400`'s (text, options) twin in `dfahat.rxt` now
+   sorts first in the census dedup and takes its id; the row is the same
+   block (§3.1).
+7. **S488 is answer-equivalent** (a nullable `S` on a seeded machine scans
+   for a byte the empty match never needs, and the start state accepts
+   there), so it is detected structurally only (`[dfa-movers]`,
+   `[dfa-table]`), as its row header argues.
+8. **The hat moves two other rows' verdicts on its movers** (§3.2): G1
+   (28: a one-byte `T` IS the pre-check's byte, so the pre-check is
+   `dominated` and elided) and the hybrid re-seed density (7: the mass over
+   `T` falls below the dense row). Both are the intended reading of `T`
+   through `pf_scan_set_of`, not side effects; F3 (`alpha_s3.sh`) carries
+   cells for both.
+9. **The mech rows were scored at `8c69a359`**, before the spec, check,
+   `hybrid.rxt` and abi commits. None of those moves a plant's anchor
+   (`scripts/m6read_check_sab_anchors.py`, §4); the verdicts are not re-run.
 
 ## 7. OWED (exact commands)
 
