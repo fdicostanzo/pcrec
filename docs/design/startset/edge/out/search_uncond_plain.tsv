@@ -1,0 +1,85 @@
+pattern	route	S	E	nseeds	cond_diffs	uncond_diffs	noreseed_diffs	uncond_witness
+(?:xy|\byx)\b	dfa	2	63	2	0	0	0	
+(?:\B|z(?=x)(?<=a)| )z	dfa	2	64	2	0	0	3184	
+(?:\B|y [xy]|xab)z	dfa	3	63	2	0	0	1598	
+(?:\B|xy(?<=a)x|(?=x))z	dfa	2	63	2	0	0	2814	
+(?:x|y\w(?<=a)|\b(?<!a)ab)	dfa	3	63	2	0	0	34	
+(?:\By|[xy](?<!a)\w|\Bab)\b	dfa	3	63	2	0	0	696	
+(?:[xy](?=x)|x \w|\bx)z	dfa	2	63	2	0	0	0	
+(?:z\B[xy]|ab|\by)z	dfa	3	63	2	0	0	4	
+(?:\b[xy]z|(?<=a)| \b)y	dfa	3	64	3	0	0	647	
+(?:abz|x(?<=[ab])|\bz)y	dfa	3	63	2	0	19	0	(0, b'abzy')
+(?:(?<=[ab])|\B[xy]\B)a	dfa	3	63	3	0	0	1193	
+(?:\B(?<!a)|x)z	dfa	2	62	2	0	0	2442	
+(?:(?=x)(?<!a)a|\bab(?<=a)|\Bab)\b	dfa	1	63	2	0	0	248	
+(?:\b|(?=x))z	dfa	1	63	2	0	0	76	
+(?:\b\B|(?<=[ab]))a	dfa	1	2	2	0	0	1854	
+(?:(?<!a)xa|[xy])y	dfa	2	3	2	0	0	1	
+(?:(?<=[ab])y|\Bx)\b	dfa	2	63	3	0	0	1895	
+(?:(?<=[ab])|xyx)a	dfa	2	3	2	0	0	1583	
+(?:[xy](?<=[ab])(?<!a)|(?<!a)\ba)	dfa	3	63	2	0	0	34	
+(?:(?<=[ab])xy|x| [xy])\b	dfa	2	4	2	0	0	174	
+(?:(?<=[ab])|(?=x)(?=x)(?<!a))a	dfa	1	2	2	0	0	1854	
+(?:\b|az(?=x))z	dfa	2	63	2	0	0	54	
+(?:(?<=[ab])x(?<=a)|(?<!a)\bxy|y \b)	dfa	2	63	2	0	0	15	
+(?:(?<=[ab])|ax)a	dfa	1	2	2	0	0	1838	
+(?:(?<!a)(?=x)\b|(?<!a))y	dfa	1	2	2	0	0	287	
+(?:[xy](?=x)\w|\B|a\w)a	dfa	3	63	2	0	0	1598	
+(?:\B(?<!a)(?<!a)|yx\B)y	dfa	1	62	2	0	0	4206	
+(?:\B|(?<!a)(?<!a)x)y	dfa	2	63	2	0	0	2814	
+(?:(?<=a)axy|(?<=[ab])az)	dfa	1	2	3	0	0	187	
+(?:xy|zy|\b)z	dfa	2	63	2	0	0	60	
+(?:a|\byy|\b)z	dfa	3	63	2	0	0	68	
+(?:ab|(?=x)xyxy|\B)a	dfa	2	63	2	0	0	2778	
+(?:xyzy|(?<!a)\B|\Bxab)z	dfa	2	62	2	0	0	2442	
+(?:yxy|\Bxab| [xy] )\b	dfa	3	64	2	0	0	18	
+(?:y(?<=a)\B|(?<!a)\B)y	dfa	1	62	2	0	0	4206	
+(?:\B|(?<=a)|(?<=a))a	dfa	1	63	2	0	0	4452	
+(?:a|(?<!a)(?<=[ab])(?<!a))a	dfa	1	2	2	0	0	1792	
+(?:z[xy](?=x)|(?<!a)|[xy])z	dfa	3	4	2	0	0	241	
+(?:\B|yxyxy)z	dfa	2	63	2	0	0	2814	
+(?:(?<=[ab])|xy)a	dfa	2	3	2	0	0	1583	
+(?:(?<=[ab])|ab(?<!a)z)a	dfa	1	2	2	0	0	1853	
+(?:(?<=a)y|y(?<!a)z)a	dfa	1	2	2	0	0	200	
+(?:\bab(?<=[ab])|a(?<!a)xy)a	dfa	1	63	2	0	0	0	
+(?:\b[xy]|(?<=[ab])(?<=a)xy|z(?<=a)\w)a	dfa	3	63	3	0	0	11	
+(?:[xy](?=x)y|\b)y	dfa	2	63	2	0	0	54	
+(?:\B[xy]|xy(?=x)a)a	dfa	2	63	2	0	0	666	
+(?:\B|x(?<=a)[xy]|(?<=a)xy\w)a	dfa	2	63	3	0	0	2814	
+(?:x[xy]|\Ba)\b	dfa	2	63	2	0	0	1143	
+(?:\B |xy)	dfa	2	64	2	0	0	528	
+(?:\Bzx|[xy]|\b)y	dfa	3	63	2	0	0	70	
+(?:xy(?<!a)(?=x)|\bx| )\b	dfa	2	64	2	0	0	260	
+(?:(?<!a)a|zabx|\B)z	dfa	2	63	3	0	0	2814	
+(?:ab|y[xy]y|\Bz)z	dfa	3	63	2	0	0	194	
+(?:abyx|\B|(?=x)xa)y	dfa	3	63	2	0	0	1598	
+(?:(?<=a)y |\bz| \w )y	dfa	3	64	3	0	0	11	
+(?:(?<!a)xyxy|[xy]a)a	dfa	2	3	2	0	0	0	
+(?:\b(?<!a)a|a[xy]a|\ba)z	dfa	1	63	2	0	38	0	(0, b'axaz')
+(?:\b|xy)a	dfa	2	63	2	0	220	57	(0, b'xya')
+(?:\Ba|axy|(?=x)(?=x))z	dfa	2	63	2	0	0	333	
+(?:\b[xy]|x(?=x)|(?<=[ab]))a	dfa	3	63	3	0	0	851	
+(?:(?<!a)(?<!a)|(?<!a)|y xy)y	dfa	1	2	2	0	0	286	
+(?: aab|(?<!a)x|xx)a	dfa	2	3	2	0	0	0	
+(?:(?<=a)|y \w)y	dfa	1	2	2	0	0	1976	
+(?:\bab|xy\b|\Bab(?=x))\b	dfa	2	63	2	0	0	0	
+(?:(?<=[ab])|a(?<=[ab])|[xy])y	dfa	3	4	2	0	0	1348	
+(?:(?<!a)\B|\ba|\b)y	dfa	2	63	3	0	0	48	
+(?: xxy|z |(?<=a) y)\b	dfa	2	3	2	0	0	100	
+(?:  |\b| xy)y	dfa	2	64	2	0	18	72	(0, b' xyy')
+(?:\b|z[xy])y	dfa	2	63	2	0	440	60	(0, b'zxy')
+(?:(?=x)xy[xy]|\B(?=x)x|(?<=[ab])[xy]z)\b	dfa	2	63	3	0	0	1353	
+(?:\B|\ba)y	dfa	2	63	2	0	0	2814	
+(?:\bz|abab(?=x))a	dfa	2	63	2	0	0	0	
+(?:(?<=[ab])|[xy]x)a	dfa	3	4	2	0	0	1352	
+(?:\b|(?<!a))z	dfa	1	2	2	0	0	287	
+(?:(?=x)|[xy](?<=[ab])\B|\b)z	dfa	3	63	2	0	0	34	
+(?:xy(?<=[ab])|\Ba)a	dfa	2	63	2	0	0	333	
+(?:z|\B|(?<=[ab]))a	dfa	2	63	2	0	0	2814	
+(?:x\b\b|(?<=a)z\w|\B)y	dfa	3	63	3	0	0	1609	
+(?:\b(?<!a)|xxy)a	dfa	2	63	2	0	18	54	(0, b'xxya')
+(?:y|\B|xy\b)y	dfa	2	63	2	0	0	2481	
+(?:\B|(?=x))a	dfa	1	63	2	0	0	4452	
+(?:\b|a(?=x)|(?<=a))a	dfa	1	63	2	0	0	680	
+(?:x|\B(?<=[ab]))a	dfa	2	3	2	0	0	1600	
+(?:xy(?<=a)|\Ba(?<=[ab]))a	dfa	2	63	2	0	0	333	

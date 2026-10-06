@@ -83,6 +83,35 @@ steps_left / work_left`; `rx_match_impl` -> `rx_match_anchored`,
 `RX_BT_FRAMES` -> `RX_RESUME_FRAMES`, `RX_MRL_SHORT`/`RX_MRL_CAP` ->
 `RX_PRUNE_TOO_SHORT`/`RX_PRUNE_CLAMP_SPAN`.
 
+## [START-SET] stages 0-1 — `dfa_pfs[]` becomes the candidate table (2026-10-05, D148, lane ssbuild01; zero movers, no abi event)
+
+`docs/design/startset.md` §2/§8. Axis B's list is the one candidate-finding
+table both engines will read (the rename to `cand_rows[]` is its own later
+commit, D148 Q2). What stages 0-1 put in place, none of it moving a byte:
+
+- **`DfaPf.scan` (`PfScan`, K84's fix).** A row's scan kind (`OFS`/`BYTE`/
+  `SET`/`NONE`) is a FIELD declared beside its emitter, and the two candidate
+  readers (`dfa_cand_scan`, `pcrec_dfa_cand_ppm`) test it; neither compares a
+  row NAME any more. `dfa_pfs[]` uses designated initializers.
+  `tests/codegen/run_cand_rows.sh` [cand-no-name-strcmp] fails on a
+  comparison reading a row name (S495). The same shape survives on axis C
+  (`emit_machine_tables`' `strcmp(f->view->c.name, ...)`), out of K84's scope.
+- **THE ROUTE MASK (checks-F6).** `DfaSel` gained `route` (`CandRoute`,
+  `CAND_ROUTE_DFA` = 0) and a `const StartSet *ss`; every `DfaSel` initializer
+  is designated and names `.route` ([cand-route-init]). `DfaPf` gained
+  `routes` (a `CAND_ON` mask, 0 = the legacy DFA-only row) and `emit_vm` (the
+  VM hat's emitter slot, NULL on every row). `dfa_select` takes the mask's
+  offset and tests `cand_routed` BEFORE `applies` ([cand-route-walk]);
+  `DFA_SELECT_ROUTED` is the walk over `dfa_pfs[]`, `DFA_SELECT` every other
+  list (all DFA-only). No row serves the VM route until stage 2.
+- **THE FIND (`pcrec_emit_find`, core/internal.h `PcrecFind`).** The one
+  statement that moves a scan position to the next byte of a set — a
+  `memchr` for a BYTE row, a membership-table loop otherwise — extracted from
+  the four plain prefilter forms (`pf_emit_find` picks the form off
+  `DfaPf.scan`), so stage 2's VM seek calls it rather than spelling its own
+  loop (startset.md §5, "One spelling"). Cross-file, hence `pcrec_`. Sabotage
+  S68's anchor moved into it.
+
 ## [ENG-FORM] THE DFA EMITTER'S ORGANIZATION (2026-08-26, D82)
 
 `emit_dfa.c`'s ENG_UNANCH half is **two layers**, and reading it in the wrong

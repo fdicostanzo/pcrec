@@ -704,6 +704,10 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
   oracle, per config (auto engine, forced VM, VM hybrid, align, default,
   byte-inert), plus the LB fact per pattern. See its own CLAUDE.md,
   including the measured PCRE2_UTF lookbehind-clip class.
+- **startset/** — [START-SET] (D148): `make test-startset`, the
+  `start_set` fact's checks (C-SS\*, NULLABLE ⇒ start_set.nullable, the
+  option witnesses), and the stage-2/3 mover manifests. Fixtures join at
+  each hat's stage. See its own CLAUDE.md.
 - **utf8/** — the [M5.0] `utf8`-encoding corpus: D27-blinded (cell
   `utf8corpus`, authored against the pre-stage-2 tree) then PROMOTED (lane
   `utfprom`, 2026-09-05) against the merged stage-2 tree. 529 blocks / 14

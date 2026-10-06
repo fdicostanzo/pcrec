@@ -1,0 +1,7 @@
+FOUND ('(?:abz|x(?<=[ab])|\\bz)y', 'dfa', 3, 63, 2, 0, 19, 0, "(0, b'abzy')")
+FOUND ('(?:\\b(?<!a)a|a[xy]a|\\ba)z', 'dfa', 1, 63, 2, 0, 38, 0, "(0, b'axaz')")
+FOUND ('(?:\\b|xy)a', 'dfa', 2, 63, 2, 0, 220, 57, "(0, b'xya')")
+FOUND ('(?:  |\\b| xy)y', 'dfa', 2, 64, 2, 0, 18, 72, "(0, b' xyy')")
+FOUND ('(?:\\b|z[xy])y', 'dfa', 2, 63, 2, 0, 440, 60, "(0, b'zxy')")
+FOUND ('(?:\\b(?<!a)|xxy)a', 'dfa', 2, 63, 2, 0, 18, 54, "(0, b'xxya')")
+movers 84, cond-diffs>0 0, uncond-diffs>0 6, noreseed-diffs>0 75

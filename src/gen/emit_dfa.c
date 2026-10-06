@@ -33,6 +33,7 @@
  * discharges. */
 
 #include <ctype.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -3437,7 +3438,27 @@ typedef struct DfaSel {
      * fabricated state — `dfa_match_of`'s own reason for passing a NULL `d`
      * rather than a made-up one. */
     int         st;
+    /* [START-SET] (D148, review r4 checks-F6) THE ROUTE THIS SELECTION IS
+     * FOR: `CAND_ROUTE_DFA` (0, every selection this file made before the
+     * field existed) or `CAND_ROUTE_VM` (a prefilter-less VM attempt loop,
+     * which has no `d` and no `us`). The first-match walk tests a row's route
+     * mask BEFORE its `applies`, so a VM-route selection never reaches a
+     * predicate that reads a machine. Every initializer names it — the
+     * designated form makes a missing one visible, and
+     * `tests/codegen/run_cand_rows.sh` [cand-route-init] fails on one that
+     * omits it. */
+    int         route;
+    /* [START-SET] the `start_set` fact a start-set row reads, or NULL where
+     * the selection does not consult it. No row reads it at stage 1. */
+    const StartSet *ss;
 } DfaSel;
+
+/* [START-SET] THE ROUTES (`DfaSel.route`), and a row's ROUTE MASK: bit
+ * `CAND_ON(r)` set where the row serves route `r`. A mask of 0 is the legacy
+ * DFA-only row, so a row written before routes existed serves exactly the
+ * route it always did. */
+typedef enum { CAND_ROUTE_DFA = 0, CAND_ROUTE_VM } CandRoute;
+#define CAND_ON(r) (1u << (r))
 
 typedef struct DfaCand {
     const char *name;         /* the stamp value, where this axis has a stamp */
@@ -4857,6 +4878,16 @@ typedef struct DfaDir DfaDir;
  * `-bounded` half of `<PREFIX>_DFA_PREFILTER`'s value is a DIFFERENT EMITTED
  * LOOP (the skip stops at n-1 and loses its `return 0` early-out), so it is a
  * different form, and making it one is what turns the stamp into `c.name`. */
+/* [K84] AXIS B's SCAN KINDS: what a prefilter form's skip tests a candidate
+ * position on. The set or byte itself is the artifact's (`UnanchStart.cand`,
+ * or the `OfsTest` a `PF_SCAN_OFS` row derives); the kind is the row's. */
+typedef enum {
+    PF_SCAN_NONE = 0,   /* no skip: every position is a candidate */
+    PF_SCAN_OFS,        /* `<p>_ofsskip`: the scan byte is its `OfsTest`'s */
+    PF_SCAN_BYTE,       /* one candidate byte, `memchr`'d */
+    PF_SCAN_SET         /* a `can_begin_match` membership table */
+} PfScan;
+
 typedef struct DfaPf {
     DfaCand c;
     /* [OPT-K] `bool table` became a METHOD when the offset-k forms landed, and
@@ -4903,6 +4934,23 @@ typedef struct DfaPf {
      * own reason: it is a property of the form, declared beside its emitter,
      * and `ofs_test_of` reads it rather than comparing names. */
     bool   run_term;
+    /* [K84] WHAT THIS FORM'S SKIP SCANS FOR, the property the candidate
+     * readers need (`dfa_cand_scan` for G1's single-byte dominance,
+     * `pcrec_dfa_cand_ppm` for `[OPT-HYB-RESEED]`'s density). A field for
+     * `reseeds`' own reason: those readers used to `strcmp` the row NAME, so
+     * a new form with another name escaped both silently. Declared beside the
+     * emitter, so a new row cannot be added without answering it; the
+     * structural check `tests/codegen/run_cand_rows.sh` fails on any `strcmp`
+     * on a row name. */
+    PfScan scan;
+    /* [START-SET] (D148) THE ROUTES THIS ROW SERVES, `CAND_ON` bits; 0 is the
+     * legacy DFA-only row, so every row before stage 2 leaves it unset.
+     * `dfa_select` tests it before `applies`. */
+    unsigned routes;
+    /* [START-SET] THE VM HAT's emitter for a row whose mask includes
+     * `CAND_ROUTE_VM`; NULL on every row until stage 2 (no row serves the VM
+     * route yet). */
+    void  (*emit_vm)(StrBuf *c, const DfaSel *s);
 } DfaPf;
 
 /* AXIS C — VIEW HANDLING. `emit_view_select`'s three branches, plus the
@@ -5058,6 +5106,18 @@ struct DfaForm {
     OfsTest        ofs;
 };
 
+/* [START-SET] (D148, checks-F6) Does the row at `row` serve `route`? A list
+ * with no mask field (`routes_at == CAND_UNROUTED`) is DFA-only on every row;
+ * otherwise the row's mask is read at `routes_at`, 0 meaning DFA-only. The
+ * walk asks this BEFORE `applies`, so the table's "never" cells are data. */
+#define CAND_UNROUTED ((size_t)-1)
+static bool cand_routed(const char *row, size_t routes_at, int route)
+{
+    unsigned m = 0;
+    if (routes_at != CAND_UNROUTED) memcpy(&m, row + routes_at, sizeof m);
+    return ((m ? m : CAND_ON(CAND_ROUTE_DFA)) & CAND_ON(route)) != 0;
+}
+
 /* THE SELECTION WALK, written ONCE for all six axes. Every object struct
  * begins with a `DfaCand`, so the address of the i'th entry of any of the
  * lists is the address of a `DfaCand` — no punning, just the first member.
@@ -5068,19 +5128,25 @@ struct DfaForm {
  * removes. A missing fallback would crash here rather than emit a machine
  * with a hole in it. */
 static const void *dfa_select(const void *list, size_t n, size_t sz,
-                              const DfaSel *s, uint64_t flags)
+                              size_t routes_at, const DfaSel *s, uint64_t flags)
 {
     const char *base = (const char *)list;
     for (size_t i = 0; i < n; i++) {
         const DfaCand *cand = (const DfaCand *)(const void *)(base + i * sz);
         if (cand->deny & flags) continue;
+        if (!cand_routed(base + i * sz, routes_at, s->route)) continue;
         if (cand->applies(s)) return (const void *)(base + i * sz);
     }
     return NULL;
 }
 #define DFA_SELECT(T, list, sel, flags)                                       \
     ((const T *)dfa_select((list), sizeof(list) / sizeof((list)[0]),          \
-                           sizeof((list)[0]), (sel), (flags)))
+                           sizeof((list)[0]), CAND_UNROUTED, (sel), (flags)))
+/* [START-SET] the walk over a list whose rows carry a `routes` mask (today
+ * `dfa_pfs[]` alone). */
+#define DFA_SELECT_ROUTED(T, list, sel, flags)                                \
+    ((const T *)dfa_select((list), sizeof(list) / sizeof((list)[0]),          \
+                           sizeof((list)[0]), offsetof(T, routes), (sel), (flags)))
 
 /* The total fallback every candidate list ends with. `dfa_select` returning
  * NULL is unreachable BECAUSE of these: a list missing one would crash the
@@ -5418,7 +5484,8 @@ static const DfaRepr dfa_reprs[] = {
  * built `DfaForm` — the table stamp, and the uniform-fold count. */
 static const DfaRepr *dfa_repr_of(Ctx *cx, const Dfa *d)
 {
-    DfaSel s = { cx, d, NULL, true, -1 };
+    DfaSel s = { .cx = cx, .d = d, .us = NULL, .forward = true, .st = -1,
+                 .route = CAND_ROUTE_DFA };
     return DFA_SELECT(DfaRepr, dfa_reprs, &s, cx->opt->flags);
 }
 
@@ -5759,6 +5826,33 @@ static void pf_comment_bcls(StrBuf *c, const DfaForm *f)
     pcrec_sb_cmt_close(c);
 }
 
+/* THE FIND's one line (core/internal.h carries the contract). */
+void pcrec_emit_find(StrBuf *c, const char *ind, const PcrecFind *f)
+{
+    if (f->table)
+        pcrec_sb_printf(c, "%swhile (%s%s < %s &&"
+                     " !%s_%s[%s[%s]]) %s++;\n",
+                  ind, f->pos, f->holdback ? " + 1" : "", f->len,
+                  f->p, f->table, f->subject, f->pos, f->pos);
+    else
+        pcrec_sb_printf(c, "%sconst void *q = memchr(%s + %s, %d,"
+                     " %s%s - %s);\n",
+                  ind, f->subject, f->pos, f->byte,
+                  f->len, f->holdback ? " - 1" : "", f->pos);
+}
+
+/* The FIND over axis B's candidate set at indent `ind`, its form the ROW's
+ * (`DfaPf.scan`: a BYTE row memchr's, a SET row walks the table); the scan position
+ * and the subject are the DFA scan's own, `holdback` the D11 bound. */
+static void pf_emit_find(StrBuf *c, const DfaForm *f, const char *ind, int holdback)
+{
+    PcrecFind fd = { .p = f->p, .table = f->pf->scan == PF_SCAN_BYTE ? NULL : "can_begin_match",
+                     .byte = f->cand.byte, .pos = "scan_position",
+                     .subject = "subject", .len = "subject_length",
+                     .holdback = holdback };
+    pcrec_emit_find(c, ind, &fd);
+}
+
 /* AXIS B, `memchr`: while nothing has matched and the machine is still parked
  * in its start state, one `memchr` for the single candidate byte replaces the
  * stepped scan, and a miss ends the whole search. The `pos >= n` guard is the
@@ -5780,8 +5874,7 @@ static void pf_emit_memchr(StrBuf *c, const DfaForm *f)
      * later. The BOUNDED form below needs no such guard — its own
      * `pos + 1 < n` bound already implies n > 0, hence s != NULL. */
     pcrec_sb_printf(c, "%s    if (scan_position >= subject_length) return 0;\n", ind);
-    pcrec_sb_printf(c, "%s    const void *q = memchr(subject + scan_position, %d,"
-                 " subject_length - scan_position);\n", ind, f->cand.byte);
+    pf_emit_find(c, f, dfa_fragf(f->cx, "%s    ", ind), 0);
     pcrec_sb_printf(c, "%s    if (!q) return 0;\n"
                  "%s    scan_position = (size_t)((const unsigned char *)q - subject);\n",
               ind, ind);
@@ -5804,8 +5897,7 @@ static void pf_emit_memchr_bounded(StrBuf *c, const DfaForm *f)
      * tells a consumer, and it is why this is its own form rather than a
      * flag inside one. */
     pcrec_sb_printf(c, "%s    if (scan_position + 1 < subject_length) {\n", ind);
-    pcrec_sb_printf(c, "%s        const void *q = memchr(subject + scan_position, %d,"
-                 " subject_length - 1 - scan_position);\n", ind, f->cand.byte);
+    pf_emit_find(c, f, dfa_fragf(f->cx, "%s        ", ind), 1);
     pcrec_sb_printf(c, "%s        scan_position = q ? (size_t)((const unsigned char *)q - subject)\n"
                  "%s                          : subject_length - 1;\n", ind, ind);
     pcrec_sb_printf(c, "%s    }\n%s}\n", ind, ind);
@@ -5819,9 +5911,7 @@ static void pf_emit_bcls(StrBuf *c, const DfaForm *f)
     const char *ind = f->dir->bind;
     pf_comment_bcls(c, f);
     pf_open(c, f);
-    pcrec_sb_printf(c, "%s    while (scan_position < subject_length &&"
-                 " !%s_can_begin_match[subject[scan_position]]) scan_position++;\n",
-              ind, f->p);
+    pf_emit_find(c, f, dfa_fragf(f->cx, "%s    ", ind), 0);
     pcrec_sb_printf(c, "%s    if (scan_position >= subject_length) return 0;\n", ind);
     pcrec_sb_printf(c, "%s}\n", ind);
 }
@@ -5838,9 +5928,7 @@ static void pf_emit_bcls_bounded(StrBuf *c, const DfaForm *f)
     /* Every skip stops at n-1 so a state that accepts only under a view is
      * never skipped past; below n-1 the view is unreachable, which is also
      * why the view state cannot be stale after a skip (D11). */
-    pcrec_sb_printf(c, "%s    while (scan_position + 1 < subject_length &&"
-                 " !%s_can_begin_match[subject[scan_position]]) scan_position++;\n",
-              ind, f->p);
+    pf_emit_find(c, f, dfa_fragf(f->cx, "%s    ", ind), 1);
     pcrec_sb_printf(c, "%s}\n", ind);
 }
 
@@ -6442,7 +6530,10 @@ static void pf_emit_ofs_bounded(StrBuf *c, const DfaForm *f)
     pcrec_sb_printf(c, "%s    }\n%s}\n", ind, ind);
 }
 
-/* The trailing pair is `reseeds`, `run_term` — see the fields' own notes.
+/* Designated initializers ([K84], stage 0 of docs/design/startset.md §8): a
+ * field a row omits is its zero value — no table, no block, no re-seed, no
+ * run term — and `scan` is named on every row, so a reader of the property
+ * never has to fall back to the NAME. See the fields' own notes.
  *
  * [OPT-LITSCAN] S1 THE RUN-PINNED PAIR IS AT THE HEAD, bounded before
  * unbounded, and the head is the one position that serves both of its
@@ -6454,19 +6545,27 @@ static void pf_emit_ofs_bounded(StrBuf *c, const DfaForm *f)
  * emitters ARE `pf_emit_ofs[_bounded]`. Either deny bit removes the pair
  * (lib/pcrec.h, `PCREC_NO_RUN_PREFILTER`). */
 static const DfaPf dfa_pfs[] = {
-    { { "run-pinned-bounded",  PCREC_NO_OFFSET_SKIP | PCREC_NO_RUN_PREFILTER, pf_run_bounded_applies },
-      pf_tables_ofs,  pf_block_ofs, pf_emit_ofs_bounded,    true,  true  },
-    { { "run-pinned",          PCREC_NO_OFFSET_SKIP | PCREC_NO_RUN_PREFILTER, pf_run_applies         },
-      pf_tables_ofs,  pf_block_ofs, pf_emit_ofs,            true,  true  },
-    { { "offset-set-bounded",  PCREC_NO_OFFSET_SKIP, pf_ofs_bounded_applies },
-      pf_tables_ofs,  pf_block_ofs, pf_emit_ofs_bounded,    true,  false },
-    { { "offset-set",          PCREC_NO_OFFSET_SKIP, pf_ofs_applies         },
-      pf_tables_ofs,  pf_block_ofs, pf_emit_ofs,            true,  false },
-    { { "memchr-bounded",     0, pf_memchr_bounded_applies }, NULL, NULL, pf_emit_memchr_bounded, false, false },
-    { { "memchr",             0, pf_memchr_applies         }, NULL, NULL, pf_emit_memchr,         false, false },
-    { { "byte-class-bounded", 0, pf_bcls_bounded_applies   }, pf_tables_bcls, NULL, pf_emit_bcls_bounded, false, false },
-    { { "byte-class",         0, pf_bcls_applies           }, pf_tables_bcls, NULL, pf_emit_bcls,         false, false },
-    { { "none",               0, cand_always               }, NULL, NULL, NULL,                   false, false },
+    { .c = { "run-pinned-bounded",  PCREC_NO_OFFSET_SKIP | PCREC_NO_RUN_PREFILTER, pf_run_bounded_applies },
+      .emit_tables = pf_tables_ofs,  .emit_block = pf_block_ofs, .emit = pf_emit_ofs_bounded,
+      .reseeds = true,  .run_term = true,  .scan = PF_SCAN_OFS  },
+    { .c = { "run-pinned",          PCREC_NO_OFFSET_SKIP | PCREC_NO_RUN_PREFILTER, pf_run_applies         },
+      .emit_tables = pf_tables_ofs,  .emit_block = pf_block_ofs, .emit = pf_emit_ofs,
+      .reseeds = true,  .run_term = true,  .scan = PF_SCAN_OFS  },
+    { .c = { "offset-set-bounded",  PCREC_NO_OFFSET_SKIP, pf_ofs_bounded_applies },
+      .emit_tables = pf_tables_ofs,  .emit_block = pf_block_ofs, .emit = pf_emit_ofs_bounded,
+      .reseeds = true,  .run_term = false, .scan = PF_SCAN_OFS  },
+    { .c = { "offset-set",          PCREC_NO_OFFSET_SKIP, pf_ofs_applies         },
+      .emit_tables = pf_tables_ofs,  .emit_block = pf_block_ofs, .emit = pf_emit_ofs,
+      .reseeds = true,  .run_term = false, .scan = PF_SCAN_OFS  },
+    { .c = { "memchr-bounded",     0, pf_memchr_bounded_applies },
+      .emit = pf_emit_memchr_bounded, .scan = PF_SCAN_BYTE },
+    { .c = { "memchr",             0, pf_memchr_applies         },
+      .emit = pf_emit_memchr,         .scan = PF_SCAN_BYTE },
+    { .c = { "byte-class-bounded", 0, pf_bcls_bounded_applies   },
+      .emit_tables = pf_tables_bcls, .emit = pf_emit_bcls_bounded, .scan = PF_SCAN_SET },
+    { .c = { "byte-class",         0, pf_bcls_applies           },
+      .emit_tables = pf_tables_bcls, .emit = pf_emit_bcls,         .scan = PF_SCAN_SET },
+    { .c = { "none",               0, cand_always               }, .scan = PF_SCAN_NONE },
 };
 
 /* AXIS B's selection for the artifact's FORWARD machine, for the callers that
@@ -6474,8 +6573,9 @@ static const DfaPf dfa_pfs[] = {
  * reseed query `src/opt/scanedge.c` asks. */
 static const DfaPf *dfa_pf_of(Ctx *cx, const UnanchStart *us)
 {
-    DfaSel s = { cx, &cx->job->dfa, us, true, -1 };
-    return DFA_SELECT(DfaPf, dfa_pfs, &s, cx->opt->flags);
+    DfaSel s = { .cx = cx, .d = &cx->job->dfa, .us = us, .forward = true, .st = -1,
+                 .route = CAND_ROUTE_DFA };
+    return DFA_SELECT_ROUTED(DfaPf, dfa_pfs, &s, cx->opt->flags);
 }
 
 /* ---- [OPT-PRECHECK-ADMIT] ADMITTING THE WHOLE-WINDOW PRE-CHECK ----------
@@ -6566,7 +6666,7 @@ static void dfa_cand_scan(Ctx *cx, CandScan *cs)
         if (ofs_test_of(cx, &us, pf, &t)) {
             cs->byte = t.scan_byte;
             cs->run_verified = ofs_test_verifies_run(cx, &t, &us);
-        } else if (!strcmp(pf->c.name, "memchr") || !strcmp(pf->c.name, "memchr-bounded")) {
+        } else if (pf->scan == PF_SCAN_BYTE) {
             cs->memchr_form = true;
             cs->byte = us.cand.byte;
         }
@@ -6599,7 +6699,7 @@ unsigned pcrec_dfa_cand_ppm(Ctx *cx)
             return 1000000u;
         unanch_start(cx, &us);
         pf = dfa_pf_of(cx, &us);
-        if (strcmp(pf->c.name, "byte-class") && strcmp(pf->c.name, "byte-class-bounded"))
+        if (pf->scan != PF_SCAN_SET)
             return 1000000u;
         memcpy(set, us.cand.set, sizeof set);
     }
@@ -6774,7 +6874,8 @@ void pcrec_req_admit_row(int i, PcrecReqAdmitDesc *out)
 
 static ReqAdmit req_admit(Ctx *cx)
 {
-    DfaSel s = { cx, NULL, NULL, true, -1 };
+    DfaSel s = { .cx = cx, .d = NULL, .us = NULL, .forward = true, .st = -1,
+                 .route = CAND_ROUTE_DFA };
     return DFA_SELECT(ReqAdmitRow, req_admits, &s, cx->opt->flags)->verdict;
 }
 
@@ -6882,7 +6983,8 @@ void pcrec_req_use_row(int i, PcrecReqUseDesc *out)
 
 static ReqUse req_use(Ctx *cx)
 {
-    DfaSel s = { cx, NULL, NULL, true, -1 };
+    DfaSel s = { .cx = cx, .d = NULL, .us = NULL, .forward = true, .st = -1,
+                 .route = CAND_ROUTE_DFA };
     return DFA_SELECT(ReqUseRow, req_uses, &s, cx->opt->flags)->use;
 }
 
@@ -6932,8 +7034,9 @@ bool pcrec_dfa_scan_state_written(Ctx *cx, const Dfa *d)
     UnanchStart us;
     unanch_start(cx, &us);
     if (us.empty) return false;
-    DfaSel s = { cx, d, &us, d == &cx->job->dfa, -1 };
-    return DFA_SELECT(DfaPf, dfa_pfs, &s, cx->opt->flags)->reseeds;
+    DfaSel s = { .cx = cx, .d = d, .us = &us, .forward = d == &cx->job->dfa, .st = -1,
+                 .route = CAND_ROUTE_DFA };
+    return DFA_SELECT_ROUTED(DfaPf, dfa_pfs, &s, cx->opt->flags)->reseeds;
 }
 
 /* ---- AXIS F: the two directions ----------------------------------------- */
@@ -7186,7 +7289,8 @@ static const DfaMatch dfa_matches[] = {
  * fabricated `d` would invite a later candidate to read it. */
 static const DfaMatch *dfa_match_of(Ctx *cx)
 {
-    DfaSel s = { cx, NULL, NULL, false, -1 };
+    DfaSel s = { .cx = cx, .d = NULL, .us = NULL, .forward = false, .st = -1,
+                 .route = CAND_ROUTE_DFA };
     return DFA_SELECT(DfaMatch, dfa_matches, &s, cx->opt->flags);
 }
 
@@ -7401,7 +7505,8 @@ static const DfaSearchStart dfa_search_starts[] = {
  * forward machine, which is the machine this axis is about. */
 static const DfaSearchStart *dfa_search_start_of(Ctx *cx)
 {
-    DfaSel s = { cx, &cx->job->dfa, NULL, true, -1 };
+    DfaSel s = { .cx = cx, .d = &cx->job->dfa, .us = NULL, .forward = true, .st = -1,
+                 .route = CAND_ROUTE_DFA };
     return DFA_SELECT(DfaSearchStart, dfa_search_starts, &s, cx->opt->flags);
 }
 
@@ -7653,7 +7758,8 @@ static const char *dfa_scan_body_name(Ctx *cx, const Dfa *d, int st)
  * holds structurally rather than by convention. */
 static const DfaEdge *dfa_edge_of(Ctx *cx, const Dfa *d, int st)
 {
-    DfaSel s = { cx, d, NULL, true, st };
+    DfaSel s = { .cx = cx, .d = d, .us = NULL, .forward = true, .st = st,
+                 .route = CAND_ROUTE_DFA };
     return DFA_SELECT(DfaEdge, dfa_edges, &s, cx->opt->flags);
 }
 
@@ -7847,7 +7953,8 @@ static void emit_scan_edge(StrBuf *c, const DfaForm *f, int head)
 static void dfa_form_derive(Ctx *cx, const Dfa *d, const UnanchStart *us,
                             const DfaDir *dir, DfaForm *f)
 {
-    DfaSel s = { cx, d, us, !dir->reverse, -1 };
+    DfaSel s = { .cx = cx, .d = d, .us = us, .forward = !dir->reverse, .st = -1,
+                 .route = CAND_ROUTE_DFA };
     uint64_t flags = cx->opt->flags;
 
     memset(f, 0, sizeof *f);
@@ -7865,7 +7972,7 @@ static void dfa_form_derive(Ctx *cx, const Dfa *d, const UnanchStart *us,
      * walks a range the forward scan already proved contains a match, so
      * every real form declines and the list's total fallback `none` — a real
      * object with a NULL emitter — is what it selects. */
-    f->pf      = DFA_SELECT(DfaPf, dfa_pfs, &s, flags);
+    f->pf      = DFA_SELECT_ROUTED(DfaPf, dfa_pfs, &s, flags);
     f->views   = us->views;
     f->viewsel = us->viewsel;
     f->src     = us->viewsel ? dir->viewv : dir->statev;

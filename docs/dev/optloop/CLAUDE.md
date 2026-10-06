@@ -796,3 +796,21 @@ that cycle's analysis lands.
   litrun; short-search wins outside litrun sit at the CALL-FLOOR scale;
   auto wins 67/100 and 43/100). Names the sparse-text control the bench
   would need and the [SEL-COST] predicate if it ever turned.
+- `k87twin_report.md`, `k87twin.sh`, `k87twin_sum.py`, `k87twin_align.sh`, `k87twin/` — [K87] pcrec-side Linux twin of the scan-edge range spelling (`(unsigned)(b-lo) <= spanu` vs `(unsigned char)(b-lo) <= span`) with an 8-offset alignment control + base-vs-base floor, gcc and clang; verdict layout-only. Transcripts and per-pad tables in `k87twin/`.
+
+## `[OPT-REVEND]`'s D77 census (lane `revend`, 2026-10-05)
+
+- `revend_census.md` — **the census behind the filed (not scheduled) row
+  `[OPT-REVEND]`**, Frank's question whether the DFA could run in reverse
+  from the END of the subject. Mechanism and exactness argued from the
+  emitted two-pass `rx_search`; population 4,857 patterns: **the bench has
+  22 end-pinned byte patterns, 17 of them start-anchored `^...$` and 5
+  bounded-width (served by the shipped `[OPT-ENDWIN]` at 24-454 ns), and
+  ZERO unbounded start-unanchored ones; the corpus has 33 distinct, all
+  correctness witnesses.** Scratch-tier Linux timing prices today's linear
+  scan on the idiom at 0.2-3.3 ns/B (`\d+$`, `\w+$`, `\s+$`) against 40-160
+  ns when bounded and windowed. Recommendation: file, trigger on a bench
+  cell. Correctness edges listed (`$`'s two seeds, `search_from`, utf8,
+  captures over the found span).
+- `revend/` — its instruments and verbatim outputs. See its own `CLAUDE.md`.
+

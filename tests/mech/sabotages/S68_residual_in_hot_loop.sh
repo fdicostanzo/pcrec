@@ -39,11 +39,20 @@ SAB_COUNT=1
 # this row used to anchor on. The unbounded form is anchored here because it
 # is the one `tests/base/caseless.rxt`'s artifacts take; the bounded form's
 # own skip line is a distinct string and would need its own row.
-SAB_BEFORE='    pcrec_sb_printf(c, "%s    while (scan_position < subject_length &&"
-                 " !%s_can_begin_match[subject[scan_position]]) scan_position++;\n",
-              ind, f->p);'
-SAB_AFTER='    /* SABOTAGE S68: the hot loop advances through the encoding
-     * residual instead of one byte. */
-    pcrec_sb_printf(c, "%s    while (scan_position < subject_length &&"
-                 " !%s_can_begin_match[subject[scan_position]]) scan_position = %s_next_pos(subject, subject_length, scan_position);\n",
-              ind, f->p, f->p);'
+# RE-ANCHORED 2026-10-05 (lane ssbuild01, [START-SET] stage 1): the skip
+# loop's text moved into `pcrec_emit_find`, the ONE find statement both the
+# DFA prefilter forms and (from stage 2) the VM seek call. Intent re-verified:
+# the table loop advances via `<prefix>_next_pos` instead of `++`. The plant
+# now reaches BOTH byte-class forms (bounded and unbounded share the line);
+# `tests/base/caseless.rxt`'s unbounded artifacts still carry it.
+SAB_BEFORE='        pcrec_sb_printf(c, "%swhile (%s%s < %s &&"
+                     " !%s_%s[%s[%s]]) %s++;\n",
+                  ind, f->pos, f->holdback ? " + 1" : "", f->len,
+                  f->p, f->table, f->subject, f->pos, f->pos);'
+SAB_AFTER='        /* SABOTAGE S68: the hot loop advances through the encoding
+         * residual instead of one byte. */
+        pcrec_sb_printf(c, "%swhile (%s%s < %s &&"
+                     " !%s_%s[%s[%s]]) %s = %s_next_pos(%s, %s, %s);\n",
+                  ind, f->pos, f->holdback ? " + 1" : "", f->len,
+                  f->p, f->table, f->subject, f->pos, f->pos,
+                  f->p, f->subject, f->len, f->pos);'

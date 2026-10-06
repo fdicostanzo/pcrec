@@ -11,12 +11,27 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 ---
 
+## K89 — OPEN, latent (2026-10-05, found by lane ssbuild01 while fixing K84) — axis C picks the view tables by `strcmp` on a row NAME, K84's shape
+
+**Where:** `emit_machine_tables` selects the view tables by `strcmp(f->view->c.name, "end")` / `"eol"` (src/gen/, axis C).
+**Hazard:** as in K84, a new view row silently escapes the selection because the reader tests a name, not a row property. There is no wrong answer today, because no such row exists.
+**Fix shape:** K84's: the view row carries the property as a field, the reader tests the field, and `run_cand_rows.sh`'s no-name-strcmp check widens to the view table. It lands with the first new view row at the latest, or earlier as a no-mover refactor (general mechanism, not a special case).
+
 ## K88 — OPEN (2026-10-05, found by lane k82halpha's read of the K82 (B) handoff Linux alpha, abi 61, bit 46) — the handoff costs a few ns per search call on a match-dense literal where it cannot skip: `lit-l31` `mat-l31` +0.149 ns/B (~+3.3%, ~+4.6 ns per match)
 
 **Witness:** docs/dev/lanes/k82halpha_report.md §2 (BASE cdc50d5b abi 60, NEW 3481682b, DENY = NEW `-fno-req-handoff`, DENY == BASE; floor 0.011, control spread <= 0.004). Matches are 31 B apart so `handoff_position == search_from` on every call and the rewrite is pure added work; the same pattern's no-match subject (`fbf-l31`) moves +0.0005. **Second witness (per-call, one subject):** `modi-srch` `v-us-zip-plus4` +0.877 ns (11.547 -> 12.424, floor 0.009, DENY back at 11.538): the pre-check passes and the handoff adds its compare, ~3 cycles; the other 16 `modi-srch` REG labels are <= +0.092, inside the control's 0.45 ns spread, so they are not witnesses.
 **Interim:** `-fno-req-handoff` (bit 46). **Disposition (D144):** an issue row, not a revert (the same row cures cause (B) by 0.35..0.86 ns/B, halves `stack-frame`'s dense hit, and takes `kv-quoted`'s hit by -3.4 ns/B). The mechanism is not measured (candidates: the extra live `size_t` across the `rx_reqrun` call, the dependent subtract-compare-select on its return path); re-measure with a `cnt_pre.h`-style twin before designing anything; cross-ref [MEMFN]'s fused kernel. Plan row [K88-HANDOFF-DENSE].
 
-## K87 — OPEN (2026-10-05, found by lane o83read's read of bench O-83 /
+## K87 — CLOSED, NOT A DEFECT (layout; 2026-10-05, lane k87twin, docs/dev/optloop/k87twin_report.md) — originally: OPEN (2026-10-05, found by lane o83read's read of bench O-83 /
+
+**CLOSED 2026-10-05 (lane k87twin, the pcrec-side Linux twin this entry asked for).** The split is code layout, not the spelling.
+- **Method:** gcc 15.2 + clang 21.1, an 8-offset code-layout alignment control, a base-vs-base floor, taskset, an idle box.
+- **Same loop:** both spellings give the same hot loop; only the compare width differs (`cmpl` vs `cmpb`, the latter 1 B shorter on `%al`, which shifts the loop 1 B inside the function). clang emits byte-identical code.
+- **cls-upto-1024 (gcc):** swings 0.607..0.893 ns/B with offset alone, and NEW == OLD within 0.002 at every offset.
+- **nest2-letters-6 (gcc):** swings 1.41..2.19 ns/B, 5x the bench's delta. NEW lands in the slow layout at 6/8 offsets against OLD's 4/8. With `-falign-loops` pinned, the residual is +0.005..0.03 ns/B.
+- **Short search:** no effect attributable to the spelling.
+- **Disposition:** keep D139 item 2's spelling; no revert, no flag.
+- **Side observation (FILED, NOT PLANNED, D77):** default gcc -O2 scan loops sit on a 0.29-0.76 ns/B loop-alignment cliff. Loop alignment is the lever if a measured need ever appears.
 its b122sweep) — [CLS-TREE] S2's unified scan-edge RANGE spelling
 (D139 item 2, abi 53) moves default DFA timing with a consistent regime
 split: plain throughput slower on every bounded/loglines row, plain
@@ -55,11 +70,12 @@ the regime split is layout. Rides the next scratch_lx batch.
 **Interim:** `-fno-req-set-lead` (bit 45). **Disposition (D144):** an issue row, not a revert; the same row cures `userpass` by 0.93 ns/B. Same family as K82 cause (B) and the short-call term: a gate that never rejects on dense text. Its general answers are the handoff (litscan_k82h.md; a passing gate's work is reused, not discarded), [REQ-HANDOFF-L1] (the one-byte gate's hit handed off), and [MEMFN]'s fused scan+verify (twins.md T-B). Re-measure after the handoff lands before designing anything specific.
 **RE-MEASURED after the handoff (2026-10-05, lane k82halpha, abi 61, `docs/dev/lanes/k82halpha_report.md` §3; then re-run with a proper pair by lane k82close, `docs/dev/optloop/s4/k85alpha2_lx.txt`, `alpha_k85.sh`):** PERSISTS. The set-leads pre-check still costs +0.023..+0.036 ns/B on `cls-n-uc` against `-fno-req-set-lead` (NEW - NSL: +0.0226 / +0.0340 / +0.0360 at 64k / 256k / 1m; the arms differ by exactly the three `memchr('m')` lines), the same magnitude as before; the handoff does not remove it. The fixed script's own floor (DENY = NEW with both denies == BASE, `check` rc=0) is 0.00002 / 0.0015 / 0.0004, so the delta is >= 15x its floor. But `cls-n-uc` is now 0.127..0.164 ns/B FASTER than abi 59 (K = 0 handoff), so it is no longer a regression against abi 59. Still OPEN, deferred; next levers are [REQ-HANDOFF-L1] (the one-byte gate's hit handed off) and [MEMFN]'s fused scan+verify.
 
-## K84 — OPEN, latent (2026-10-04, found by lane memfnmap's [MEMFN] R1d table inventory, docs/design/memfn/integration.md §1) — two readers classify the DFA prefilter by `strcmp` on dfa_pfs[] ROW NAMES
+## K84 — FIXED 2026-10-05 (lane ssbuild01, START-SET stage 0; was OPEN, latent since 2026-10-04, found by lane memfnmap's [MEMFN] R1d table inventory, docs/design/memfn/integration.md §1) — two readers classify the DFA prefilter by `strcmp` on dfa_pfs[] ROW NAMES
 
 **Where:** `src/gen/emit_dfa.c:6417` (`dfa_cand_scan`: `!strcmp(pf->c.name, "memchr") || !strcmp(pf->c.name, "memchr-bounded")`) and `:6450` (`pcrec_dfa_cand_ppm`: `strcmp(pf->c.name, "byte-class") && strcmp(pf->c.name, "byte-class-bounded")`).
 **Hazard:** a new dfa_pfs[] row (any future form, SIMD included) silently escapes the G1 dominance elision and the reseed price, because the readers test names rather than a row property. No wrong answer today (no such row exists); a performance/selection defect on the first new row.
 **Fix shape:** the row carries the property the readers need (its scan-byte kind) as a field; the readers test the field. Lands with the first new dfa_pfs[] row at the latest ([MEMFN] R4, integration.md §2), or earlier as a no-mover refactor.
+**FIXED (lane ssbuild01, 2026-10-05, D148 stage 0, docs/design/startset.md §8; zero movers, no abi event):** `DfaPf` gained `scan` (`PfScan`: `PF_SCAN_NONE`/`_OFS`/`_BYTE`/`_SET`), every `dfa_pfs[]` row names it (the table took designated initializers), and both readers test the field (`dfa_cand_scan`: `pf->scan == PF_SCAN_BYTE`; `pcrec_dfa_cand_ppm`: `pf->scan != PF_SCAN_SET`). Regression net: `tests/codegen/run_cand_rows.sh` [cand-no-name-strcmp] (in `make test-codegen`), red on the branch point's four `strcmp` sites; sabotage S495 (mech arm `candrows`). Gate: `scripts/emit_sweep.py --ref 35c8ed45`, all five streams byte-identical (docs/dev/lanes/ssbuild01_report.md §1). **Not fixed, out of the ruled scope (dfa_pfs[] only):** the same shape on axis C, `emit_machine_tables` choosing the view tables by `strcmp(f->view->c.name, "end"/"eol")` (src/gen/emit_dfa.c); latent the same way (a new `dfa_views` row with another name would emit the wrong tables), recorded for the manager.
 
 ## K83 — OPEN, deferred (2026-10-04, found by lane a2build's round-1 bake-off, read by lane r1alpha) — [OPT-HYB-RESEED-FORM] A1's `anchored` reseed row LOSES on clang by about 24 ns per pass, past the 2.5% floor
 

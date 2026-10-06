@@ -64,6 +64,10 @@ static void pf_store_empty(PatFacts *pf, PfFactId f)
     case PF_KINDS:        pf->kinds = 0; break;
     case PF_NULLABLE:     pf->nullable = false; break;
     case PF_START_ANCHOR: pf->start_anchor = PCREC_SANCH_NONE; break;
+    case PF_START_SET:
+        memset(pf->start_set.bits, 0xFF, sizeof pf->start_set.bits);
+        pf->start_set.nullable = true;
+        break;
     case PF_END_WINDOW:   pf->end_window = -1; break;
     case PF_REQ_SET:
         memset(pf->req_set.bits, 0, sizeof pf->req_set.bits);
@@ -221,6 +225,9 @@ static void pf_derive(Ctx *cx, PfFactId f)
     case PF_START_ANCHOR:
         pf->start_anchor = pcrec_start_anchor(pf->root);
         break;
+    case PF_START_SET:
+        pcrec_start_set(cx, pf->root, &pf->start_set);
+        break;
     case PF_END_WINDOW:
         /* The descriptor is resolved HERE, once, and handed in: the
          * derivation's one encoding input is declared, never looked up
@@ -337,6 +344,12 @@ int pcrec_fact_start_anchor(Ctx *cx)
 {
     pf_ask(cx, PF_START_ANCHOR, true);
     return cx->job->pf.start_anchor;
+}
+
+const StartSet *pcrec_fact_start_set(Ctx *cx)
+{
+    pf_ask(cx, PF_START_SET, true);
+    return &cx->job->pf.start_set;
 }
 
 long long pcrec_fact_end_window(Ctx *cx)
@@ -474,6 +487,22 @@ const char *pcrec_fact_render(Ctx *cx, PfFactId f)
         return pf->nullable ? "yes" : "no";
     case PF_START_ANCHOR:
         return pcrec_start_anchor_name(pf->start_anchor);
+    case PF_START_SET: {
+        /* `nullable` where the erased language can match empty (no byte is
+         * necessary); otherwise the member count, `:`, and the 32 bytes in
+         * lowercase hex, byte 0 first, bit `b & 7` of byte `b >> 3`. */
+        StrBuf sb = { 0 };
+        const char *t;
+        int n = 0;
+        if (pf->start_set.nullable) return "nullable";
+        sb.cx = cx;
+        for (int b = 0; b < 256; b++) n += (pf->start_set.bits[b >> 3] >> (b & 7)) & 1;
+        pcrec_sb_printf(&sb, "%d:", n);
+        for (int i = 0; i < 32; i++) pcrec_sb_printf(&sb, "%02x", pf->start_set.bits[i]);
+        t = pcrec_sb_fragf(&cx->arena, "%s", sb.p);
+        pcrec_sb_free(&sb);
+        return t;
+    }
     case PF_END_WINDOW:
         if (pf->end_window < 0) return "none";
         return pcrec_sb_fragf(&cx->arena, "%lld", pf->end_window);
