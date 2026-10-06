@@ -1,0 +1,712 @@
+START A01 10:25:52
+016k-fail done (reps 400)
+016k-hit done (reps 400)
+016k-syslog done (reps 400)
+064k-fail done (reps 400)
+064k-hit done (reps 400)
+064k-syslog done (reps 400)
+1024k-fail done (reps 87)
+1024k-hit done (reps 53)
+1024k-syslog done (reps 400)
+256k-fail done (reps 308)
+256k-hit done (reps 235)
+256k-syslog done (reps 400)
+dense done (reps 12)
+sparse done (reps 73)
+#host	ubuntubudu	Linux-7.0.0-29-generic-x86_64-with-glibc2.43
+#cpu	AMD Ryzen 5 1600 Six-Core Processor
+#cc	gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0	-O2 -fPIC
+#date	2026-10-06 10:26:00
+#rounds	11	#load_max	2.00
+#artifact	loglines_stack_frame pin 57db5152 abi 62
+
+subject 016k-fail   null-twin deviation 0.0016 ns/B   (rule: WIN/LOSS only past max(null dev, IQR_arm, IQR_orig))
+  orig           median    0.5561  IQR  0.1329  vs orig  +0.0000 ( +0.00%)  threshold  0.1329  BASE
+  orig2          median    0.5583  IQR  0.0098  vs orig  -0.0022 ( -0.40%)  threshold  0.1329  NOISE
+      layout: no pad control for this arm (a verdict without it is not reportable)
+  null           median    0.5545  IQR  0.0504  vs orig  +0.0016 ( +0.29%)  threshold  0.1329  NOISE
+      layout: no pad control for this arm (a verdict without it is not reportable)
+  L1             median    0.0950  IQR  0.0042  vs orig  +0.4611 (+82.92%)  threshold  0.1329  WIN
+      layout: pad-median 0.0948  spread across pads 0.0059 (orig 0.0156)  pad-median delta +0.4579 vs threshold 0.1329  paired deltas +0.4644 +0.4531 +0.4600 +0.4524 +0.4460 +0.4557 +0.4571
+  L3             median    0.5582  IQR  0.0131  vs orig  -0.0021 ( -0.38%)  threshold  0.1329  NOISE
+      layout: pad-median 0.5517  spread across pads 0.0212 (orig 0.0156)  pad-median delta +0.0010 vs threshold 0.1329  paired deltas -0.0007 -0.0011 +0.0018 -0.0045 +0.0048 -0.0010 +0.0048
+
+subject 016k-hit   null-twin deviation 0.0015 ns/B   (rule: WIN/LOSS only past max(null dev, IQR_arm, IQR_orig))
+  orig           median    0.9241  IQR  0.2889  vs orig  +0.0000 ( +0.00%)  threshold  0.2889  BASE
+  orig2          median    0.9200  IQR  0.0149  vs orig  +0.0041 ( +0.45%)  threshold  0.2889  NOISE
+      layout: no pad control for this arm (a verdict without it is not reportable)
+  null           median    0.9226  IQR  0.4182  vs orig  +0.0015 ( +0.17%)  threshold  0.4182  NOISE
+      layout: no pad control for this arm (a verdict without it is not reportable)
+  L1             median    0.3466  IQR  0.0329  vs orig  +0.5775 (+62.50%)  threshold  0.2889  WIN
+      layout: pad-median 0.3462  spread across pads 0.0052 (orig 0.0195)  pad-median delta +0.5713 vs threshold 0.2889  paired deltas +0.5708 +0.5712 +0.5601 +0.5737 +0.5783 +0.5632 +0.5728
+  L3             median    0.8224  IQR  0.1802  vs orig  +0.1018 (+11.01%)  threshold  0.2889  NOISE
+      layout: pad-median 0.8225  spread across pads 0.0155 (orig 0.0195)  pad-median delta +0.0950 vs threshold 0.2889  paired deltas +0.0952 +0.0931 +0.0885 +0.1009 +0.0960 +0.0990 +0.0904
+
+subject 016k-syslog   null-twin deviation 0.0001 ns/B   (rule: WIN/LOSS only past max(null dev, IQR_arm, IQR_orig))
+  orig           median    0.0299  IQR  0.0023  vs orig  +0.0000 ( +0.00%)  threshold  0.0023  BASE
+  orig2          median    0.0303  IQR  0.0034  vs orig  -0.0004 ( -1.27%)  threshold  0.0034  NOISE
+      layout: no pad control for this arm (a verdict without it is not reportable)
+  null           median    0.0298  IQR  0.0096  vs orig  +0.0001 ( +0.23%)  threshold  0.0096  NOISE
+      layout: no pad control for this arm (a verdict without it is not reportable)
+  L1             median    0.0298  IQR  0.0124  vs orig  +0.0001 ( +0.20%)  threshold  0.0124  NOISE
+      layout: pad-median 0.0299  spread across pads 0.0028 (orig 0.0024)  pad-median delta +0.0000 vs threshold 0.0124  paired deltas +0.0000 -0.0001 +0.0000 +0.0005 -0.0000 +0.0001 -0.0022
+  L3             median    0.0299  IQR  0.0034  vs orig  +0.0000 ( +0.13%)  threshold  0.0034  NOISE
+      layout: pad-median 0.0299  spread across pads 0.0025 (orig 0.0024)  pad-median delta +0.0000 vs threshold 0.0034  paired deltas +0.0001 +0.0000 -0.0024 +0.0005 -0.0000 +0.0024 +0.0005
+
+subject 064k-fail   null-twin deviation 0.0680 ns/B   (rule: WIN/LOSS only past max(null dev, IQR_arm, IQR_orig))
+  orig           median    0.3724  IQR  0.4016  vs orig  +0.0000 ( +0.00%)  threshold  0.4016  BASE
+  orig2          median    0.4690  IQR  0.4000  vs orig  -0.0966 (-25.94%)  threshold  0.4016  NOISE
+      layout: no pad control for this arm (a verdict without it is not reportable)
+  null           median    0.3044  IQR  0.0598  vs orig  +0.0680 (+18.25%)  threshold  0.4016  NOISE
+      layout: no pad control for this arm (a verdict without it is not reportable)
+  L1             median    0.0587  IQR  0.0449  vs orig  +0.3137 (+84.22%)  threshold  0.4016  NOISE
+      layout: pad-median 0.0720  spread across pads 0.0836 (orig 0.0790)  pad-median delta +0.2993 vs threshold 0.4016  paired deltas +0.2390 +0.3113 +0.3070 +0.3101 +0.1609 +0.2770 +0.2396
+  L3             median    0.3050  IQR  0.0345  vs orig  +0.0674 (+18.09%)  threshold  0.4016  NOISE
+      layout: pad-median 0.3801  spread across pads 0.3210 (orig 0.0790)  pad-median delta -0.0088 vs threshold 0.4016  paired deltas +0.0009 -0.2101 +0.0006 +0.0129 -0.3231 -0.0511 +0.0007
+
+subject 064k-hit   null-twin deviation 0.1274 ns/B   (rule: WIN/LOSS only past max(null dev, IQR_arm, IQR_orig))
+  orig           median    0.6324  IQR  0.3551  vs orig  +0.0000 ( +0.00%)  threshold  0.3551  BASE
+  orig2          median    0.6317  IQR  0.3857  vs orig  +0.0007 ( +0.11%)  threshold  0.3857  NOISE
+      layout: no pad control for this arm (a verdict without it is not reportable)
+  null           median    0.5050  IQR  0.1516  vs orig  +0.1274 (+20.14%)  threshold  0.3551  NOISE
+      layout: no pad control for this arm (a verdict without it is not reportable)
+  L1             median    0.2248  IQR  0.2783  vs orig  +0.4076 (+64.45%)  threshold  0.3551  NOISE
+      layout: pad-median 0.2235  spread across pads 0.2750 (orig 0.2304)  pad-median delta +0.2858 vs threshold 0.3551  paired deltas +0.2842 +0.3189 +0.1367 +0.3269 +0.2779 +0.3211 +0.0498  [plain rule said WIN; the pad control downgrades it]
+  L3             median    0.4578  IQR  0.2952  vs orig  +0.1746 (+27.61%)  threshold  0.3551  NOISE
+      layout: pad-median 0.5757  spread across pads 0.3773 (orig 0.2304)  pad-median delta -0.0664 vs threshold 0.3773  paired deltas -0.0635 -0.3226 -0.2249 -0.0682 +0.1638 -0.3277 -0.0614
+
+subject 064k-syslog   null-twin deviation 0.0001 ns/B   (rule: WIN/LOSS only past max(null dev, IQR_arm, IQR_orig))
+  orig           median    0.0373  IQR  0.0004  vs orig  +0.0000 ( +0.00%)  threshold  0.0004  BASE
+  orig2          median    0.0372  IQR  0.0004  vs orig  +0.0001 ( +0.29%)  threshold  0.0004  NOISE
+      layout: no pad control for this arm (a verdict without it is not reportable)
+  null           median    0.0374  IQR  0.0004  vs orig  -0.0001 ( -0.16%)  threshold  0.0004  NOISE
+      layout: no pad control for this arm (a verdict without it is not reportable)
+  L1             median    0.0372  IQR  0.0004  vs orig  +0.0001 ( +0.24%)  threshold  0.0004  NOISE
+      layout: pad-median 0.0372  spread across pads 0.0003 (orig 0.0003)  pad-median delta +0.0001 vs threshold 0.0004  paired deltas +0.0000 -0.0001 +0.0001 +0.0001 +0.0001 +0.0001 +0.0001
+  L3             median    0.0372  IQR  0.0002  vs orig  +0.0002 ( +0.46%)  threshold  0.0004  NOISE
+      layout: pad-median 0.0372  spread across pads 0.0002 (orig 0.0003)  pad-median delta +0.0001 vs threshold 0.0004  paired deltas -0.0000 -0.0002 +0.0002 +0.0001 -0.0001 +0.0001 +0.0001
+
+subject 1024k-fail   null-twin deviation 0.0062 ns/B   (rule: WIN/LOSS only past max(null dev, IQR_arm, IQR_orig))
+  orig           median    0.4667  IQR  0.0308  vs orig  +0.0000 ( +0.00%)  threshold  0.0308  BASE
+  orig2          median    0.4561  IQR  0.0584  vs orig  +0.0106 ( +2.28%)  threshold  0.0584  NOISE
+      layout: no pad control for this arm (a verdict without it is not reportable)
+  null           median    0.4606  IQR  0.0539  vs orig  +0.0062 ( +1.33%)  threshold  0.0539  NOISE
+      layout: no pad control for this arm (a verdict without it is not reportable)
+  L1             median    0.1778  IQR  0.0208  vs orig  +0.2889 (+61.90%)  threshold  0.0308  WIN
+      layout: pad-median 0.1035  spread across pads 0.0945 (orig 0.0582)  pad-median delta +0.3475 vs threshold 0.0945  paired deltas +0.2633 +0.3105 +0.3013 +0.3852 +0.3767 +0.3108 +0.3132
+  L3             median    0.4691  IQR  0.0516  vs orig  -0.0024 ( -0.51%)  threshold  0.0516  NOISE
+      layout: pad-median 0.4636  spread across pads 0.0557 (orig 0.0582)  pad-median delta -0.0126 vs threshold 0.0582  paired deltas +0.0276 -0.0466 +0.0031 +0.0339 -0.0028 -0.0501 -0.0525
+
+subject 1024k-hit   null-twin deviation 0.0565 ns/B   (rule: WIN/LOSS only past max(null dev, IQR_arm, IQR_orig))
+  orig           median    0.6672  IQR  0.1079  vs orig  +0.0000 ( +0.00%)  threshold  0.1079  BASE
+  orig2          median    0.6911  IQR  0.1427  vs orig  -0.0239 ( -3.58%)  threshold  0.1427  NOISE
+      layout: no pad control for this arm (a verdict without it is not reportable)
+  null           median    0.6107  IQR  0.1103  vs orig  +0.0565 ( +8.47%)  threshold  0.1103  NOISE
+      layout: no pad control for this arm (a verdict without it is not reportable)
+  L1             median    0.3496  IQR  0.0601  vs orig  +0.3176 (+47.60%)  threshold  0.1079  WIN
+      layout: pad-median 0.3476  spread across pads 0.1138 (orig 0.0923)  pad-median delta +0.3310 vs threshold 0.1138  paired deltas +0.2658 +0.3491 +0.2947 +0.4664 +0.3600 +0.4475 +0.2979
+  L3             median    0.5680  IQR  0.0723  vs orig  +0.0992 (+14.87%)  threshold  0.1079  NOISE
+      layout: pad-median 0.6413  spread across pads 0.1459 (orig 0.0923)  pad-median delta +0.0372 vs threshold 0.1459  paired deltas -0.0447 +0.1837 -0.0178 +0.1866 +0.0581 +0.0322 +0.0004
+
+subject 1024k-syslog   null-twin deviation 0.0026 ns/B   (rule: WIN/LOSS only past max(null dev, IQR_arm, IQR_orig))
+  orig           median    0.0210  IQR  0.0200  vs orig  +0.0000 ( +0.00%)  threshold  0.0200  BASE
+  orig2          median    0.0210  IQR  0.0213  vs orig  +0.0000 ( +0.05%)  threshold  0.0213  NOISE
+      layout: no pad control for this arm (a verdict without it is not reportable)
+  null           median    0.0184  IQR  0.0128  vs orig  +0.0026 (+12.59%)  threshold  0.0200  NOISE
+      layout: no pad control for this arm (a verdict without it is not reportable)
+  L1             median    0.0204  IQR  0.0042  vs orig  +0.0006 ( +2.90%)  threshold  0.0200  NOISE
+      layout: pad-median 0.0210  spread across pads 0.0204 (orig 0.0222)  pad-median delta +0.0001 vs threshold 0.0222  paired deltas +0.0021 -0.0162 -0.0042 +0.0000 +0.0222 +0.0166 +0.0041
+  L3             median    0.0169  IQR  0.0038  vs orig  +0.0041 (+19.67%)  threshold  0.0200  NOISE
+      layout: pad-median 0.0190  spread across pads 0.0100 (orig 0.0222)  pad-median delta +0.0021 vs threshold 0.0222  paired deltas +0.0062 +0.0041 -0.0042 +0.0002 +0.0221 +0.0108 -0.0001
+
+subject 256k-fail   null-twin deviation 0.0149 ns/B   (rule: WIN/LOSS only past max(null dev, IQR_arm, IQR_orig))
+  orig           median    0.4432  IQR  0.0997  vs orig  +0.0000 ( +0.00%)  threshold  0.0997  BASE
+  orig2          median    0.3998  IQR  0.0845  vs orig  +0.0434 ( +9.80%)  threshold  0.0997  NOISE
+      layout: no pad control for this arm (a verdict without it is not reportable)
+  null           median    0.4283  IQR  0.0997  vs orig  +0.0149 ( +3.36%)  threshold  0.0997  NOISE
+      layout: no pad control for this arm (a verdict without it is not reportable)
+  L1             median    0.1769  IQR  0.1001  vs orig  +0.2663 (+60.08%)  threshold  0.1001  WIN
+      layout: pad-median 0.0896  spread across pads 0.0944 (orig 0.0820)  pad-median delta +0.3304 vs threshold 0.1001  paired deltas +0.3116 +0.3037 +0.3742 +0.2174 +0.3853 +0.3084 +0.2941
+  L3             median    0.3901  IQR  0.1157  vs orig  +0.0531 (+11.98%)  threshold  0.1157  NOISE
+      layout: pad-median 0.3974  spread across pads 0.1190 (orig 0.0820)  pad-median delta +0.0226 vs threshold 0.1190  paired deltas +0.0011 -0.0062 +0.0644 -0.0695 +0.1216 -0.0762 +0.0989
+
+subject 256k-hit   null-twin deviation 0.0982 ns/B   (rule: WIN/LOSS only past max(null dev, IQR_arm, IQR_orig))
+  orig           median    0.6890  IQR  0.1295  vs orig  +0.0000 ( +0.00%)  threshold  0.1295  BASE
+  orig2          median    0.7013  IQR  0.0641  vs orig  -0.0123 ( -1.78%)  threshold  0.1295  NOISE
+      layout: no pad control for this arm (a verdict without it is not reportable)
+  null           median    0.5909  IQR  0.1475  vs orig  +0.0982 (+14.25%)  threshold  0.1475  NOISE
+      layout: no pad control for this arm (a verdict without it is not reportable)
+  L1             median    0.2396  IQR  0.1108  vs orig  +0.4494 (+65.22%)  threshold  0.1295  WIN
+      layout: pad-median 0.2484  spread across pads 0.1095 (orig 0.1097)  pad-median delta +0.3687 vs threshold 0.1295  paired deltas +0.3114 +0.3505 +0.3530 +0.3523 +0.2484 +0.3468 +0.4559
+  L3             median    0.6533  IQR  0.0680  vs orig  +0.0358 ( +5.19%)  threshold  0.1295  NOISE
+      layout: pad-median 0.6010  spread across pads 0.1045 (orig 0.1097)  pad-median delta +0.0162 vs threshold 0.1295  paired deltas -0.0180 +0.0398 -0.0504 +0.0510 +0.0412 +0.0486 +0.1470
+
+subject 256k-syslog   null-twin deviation 0.0006 ns/B   (rule: WIN/LOSS only past max(null dev, IQR_arm, IQR_orig))
+  orig           median    0.0370  IQR  0.0003  vs orig  +0.0000 ( +0.00%)  threshold  0.0006  BASE
+  orig2          median    0.0370  IQR  0.0087  vs orig  -0.0001 ( -0.22%)  threshold  0.0087  NOISE
+      layout: no pad control for this arm (a verdict without it is not reportable)
+  null           median    0.0376  IQR  0.0049  vs orig  -0.0006 ( -1.73%)  threshold  0.0049  NOISE
+      layout: no pad control for this arm (a verdict without it is not reportable)
+  L1             median    0.0372  IQR  0.0009  vs orig  -0.0002 ( -0.51%)  threshold  0.0009  NOISE
+      layout: pad-median 0.0371  spread across pads 0.0003 (orig 0.0005)  pad-median delta -0.0001 vs threshold 0.0009  paired deltas -0.0001 -0.0002 +0.0001 +0.0001 +0.0003 -0.0003 -0.0001
+  L3             median    0.0371  IQR  0.0036  vs orig  -0.0001 ( -0.30%)  threshold  0.0036  NOISE
+      layout: pad-median 0.0370  spread across pads 0.0004 (orig 0.0005)  pad-median delta +0.0000 vs threshold 0.0036  paired deltas -0.0003 -0.0001 +0.0001 +0.0001 +0.0006 -0.0000 -0.0001
+
+subject dense   null-twin deviation 0.0714 ns/B   (rule: WIN/LOSS only past max(null dev, IQR_arm, IQR_orig))
+  orig           median    3.9408  IQR  0.2586  vs orig  +0.0000 ( +0.00%)  threshold  0.2586  BASE
+  orig2          median    3.9794  IQR  0.0635  vs orig  -0.0387 ( -0.98%)  threshold  0.2586  NOISE
+      layout: no pad control for this arm (a verdict without it is not reportable)
+  null           median    4.0122  IQR  0.1773  vs orig  -0.0714 ( -1.81%)  threshold  0.2586  NOISE
+      layout: no pad control for this arm (a verdict without it is not reportable)
+  L1             median    2.7330  IQR  0.3337  vs orig  +1.2078 (+30.65%)  threshold  0.3337  WIN
+      layout: pad-median 2.7664  spread across pads 0.4466 (orig 0.0981)  pad-median delta +1.2318 vs threshold 0.4466  paired deltas +1.1805 +1.5805 +1.2287 +1.4665 +1.2321 +1.2388 +1.2268
+  L3             median    2.8730  IQR  0.3691  vs orig  +1.0678 (+27.10%)  threshold  0.3691  WIN
+      layout: pad-median 3.0649  spread across pads 0.3075 (orig 0.0981)  pad-median delta +0.9334 vs threshold 0.3691  paired deltas +0.8717 +0.9226 +0.9685 +0.8742 +0.9670 +0.8261 +0.8284
+
+subject sparse   null-twin deviation 0.0211 ns/B   (rule: WIN/LOSS only past max(null dev, IQR_arm, IQR_orig))
+  orig           median    0.5334  IQR  0.0663  vs orig  +0.0000 ( +0.00%)  threshold  0.0663  BASE
+  orig2          median    0.5473  IQR  0.0933  vs orig  -0.0139 ( -2.61%)  threshold  0.0933  NOISE
+      layout: no pad control for this arm (a verdict without it is not reportable)
+  null           median    0.5545  IQR  0.0644  vs orig  -0.0211 ( -3.96%)  threshold  0.0663  NOISE
+      layout: no pad control for this arm (a verdict without it is not reportable)
+  L1             median    0.1133  IQR  0.0654  vs orig  +0.4201 (+78.75%)  threshold  0.0663  WIN
+      layout: pad-median 0.1840  spread across pads 0.1014 (orig 0.0319)  pad-median delta +0.3741 vs threshold 0.1014  paired deltas +0.4123 +0.3457 +0.3660 +0.3883 +0.3482 +0.3496 +0.4375
+  L3             median    0.4883  IQR  0.0892  vs orig  +0.0451 ( +8.45%)  threshold  0.0892  NOISE
+      layout: pad-median 0.5450  spread across pads 0.0823 (orig 0.0319)  pad-median delta +0.0131 vs threshold 0.0892  paired deltas +0.0034 +0.0023 +0.0053 +0.0665 +0.0195 +0.0779 -0.0087
+
+subject CELL   null-twin deviation 0.0385 ns/B   (rule: WIN/LOSS only past max(null dev, IQR_arm, IQR_orig))
+  orig           median    0.4550  IQR  0.0457  vs orig  +0.0000 ( +0.00%)  threshold  0.0457  BASE
+  orig2          median    0.4254  IQR  0.0757  vs orig  +0.0296 ( +6.51%)  threshold  0.0757  NOISE
+      layout: no pad control for this arm (a verdict without it is not reportable)
+  null           median    0.4164  IQR  0.0464  vs orig  +0.0385 ( +8.47%)  threshold  0.0464  NOISE
+      layout: no pad control for this arm (a verdict without it is not reportable)
+  L1             median    0.1264  IQR  0.0332  vs orig  +0.3286 (+72.22%)  threshold  0.0457  WIN
+      layout: pad-median 0.0970  spread across pads 0.0406 (orig 0.0556)  pad-median delta +0.3654 vs threshold 0.0556  paired deltas +0.3438 +0.3220 +0.3762 +0.3733 +0.3714 +0.3332 +0.3650
+  L3             median    0.4193  IQR  0.0713  vs orig  +0.0357 ( +7.84%)  threshold  0.0713  NOISE
+      layout: pad-median 0.4429  spread across pads 0.0672 (orig 0.0556)  pad-median delta +0.0195 vs threshold 0.0713  paired deltas +0.0266 -0.0432 +0.0245 +0.0333 +0.0401 -0.0431 +0.0127
+
+run dir: /Users/fdicostanzo/pcrec/worktrees/artconf/build-artrev/confirm/loglines_stack_frame/timing/002_pass2
+A01 rc=0 10:27:21
+START A09 10:27:21
+016k-fail done (reps 400)
+016k-hit done (reps 400)
+016k-syslog done (reps 400)
+064k-fail done (reps 191)
+064k-hit done (reps 182)
+064k-syslog done (reps 229)
+1024k-fail done (reps 11)
+1024k-hit done (reps 26)
+1024k-syslog done (reps 25)
+256k-fail done (reps 51)
+256k-hit done (reps 47)
+256k-syslog done (reps 56)
+dense done (reps 11)
+sparse done (reps 11)
+#host	ubuntubudu	Linux-7.0.0-29-generic-x86_64-with-glibc2.43
+#cpu	AMD Ryzen 5 1600 Six-Core Processor
+#cc	gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0	-O2 -fPIC
+#date	2026-10-06 10:27:42
+#rounds	11	#load_max	2.00
+#artifact	loglines_level_context pin 57db5152 abi 62
+
+subject 016k-fail   null-twin deviation 0.9783 ns/B   (rule: WIN/LOSS only past max(null dev, IQR_arm, IQR_orig))
+  orig           median    4.0042  IQR  0.5611  vs orig  +0.0000 ( +0.00%)  threshold  0.9783  BASE
+  orig2          median    3.9352  IQR  1.0448  vs orig  +0.0690 ( +1.72%)  threshold  1.0448  NOISE
+      layout: no pad control for this arm (a verdict without it is not reportable)
+  null           median    3.0259  IQR  1.2786  vs orig  +0.9783 (+24.43%)  threshold  1.2786  NOISE
+      layout: no pad control for this arm (a verdict without it is not reportable)
+  L1             median    0.0931  IQR  0.0577  vs orig  +3.9111 (+97.67%)  threshold  0.9783  WIN
+      layout: pad-median 0.0619  spread across pads 0.0570 (orig 1.0208)  pad-median delta +3.5225 vs threshold 1.0208  paired deltas +3.0614 +3.9731 +3.9772 +4.0829 +3.1194 +3.0681 +3.0726
+  L2             median    0.7258  IQR  0.7240  vs orig  +3.2785 (+81.88%)  threshold  0.9783  WIN
+      layout: pad-median 1.0575  spread across pads 0.6342 (orig 1.0208)  pad-median delta +2.5269 vs threshold 1.0208  paired deltas +2.5738 +2.9133 +3.0579 +3.5847 +1.9966 +2.0606 +2.0458
+  L3             median    2.7729  IQR  1.5305  vs orig  +1.2313 (+30.75%)  threshold  1.5305  NOISE
+      layout: pad-median 4.0653  spread across pads 1.9201 (orig 1.0208)  pad-median delta -0.4809 vs threshold 1.9201  paired deltas +0.4616 -0.0944 -0.1180 +0.5505 -0.9684 -0.8581 -1.4046
+  L4             median    4.9497  IQR  1.5093  vs orig  -0.9455 (-23.61%)  threshold  1.5093  NOISE
+      layout: pad-median 4.4013  spread across pads 0.9375 (orig 1.0208)  pad-median delta -0.8169 vs threshold 1.5093  paired deltas -1.0853 -0.1014 -0.4101 +0.0205 -1.1608 -1.8753 -1.8788
+  L5             median    4.0223  IQR  0.1843  vs orig  -0.0180 ( -0.45%)  threshold  0.9783  NOISE
+      layout: pad-median 3.3066  spread across pads 1.4281 (orig 1.0208)  pad-median delta +0.2778 vs threshold 1.4281  paired deltas +0.0654 +0.4854 +1.0464 +0.4954 -0.9293 +0.0794 +0.4957
+  L6             median    0.0956  IQR  0.0261  vs orig  +3.9086 (+97.61%)  threshold  0.9783  WIN
+      layout: pad-median 0.0437  spread across pads 0.0573 (orig 1.0208)  pad-median delta +3.5408 vs threshold 1.0208  paired deltas +3.0545 +3.9751 +4.0328 +4.0755 +3.1195 +3.1168 +3.1176
+
+subject 016k-hit   null-twin deviation 0.0730 ns/B   (rule: WIN/LOSS only past max(null dev, IQR_arm, IQR_orig))
+  orig           median    4.1978  IQR  1.3758  vs orig  +0.0000 ( +0.00%)  threshold  1.3758  BASE
+  orig2          median    4.1786  IQR  0.2592  vs orig  +0.0192 ( +0.46%)  threshold  1.3758  NOISE
+      layout: no pad control for this arm (a verdict without it is not reportable)
+  null           median    4.1248  IQR  1.0534  vs orig  +0.0730 ( +1.74%)  threshold  1.3758  NOISE
+      layout: no pad control for this arm (a verdict without it is not reportable)
+  L1             median    0.1998  IQR  0.1657  vs orig  +3.9980 (+95.24%)  threshold  1.3758  WIN
+      layout: pad-median 0.2232  spread across pads 0.2952 (orig 1.4533)  pad-median delta +3.5052 vs threshold 1.4533  paired deltas +2.4661 +4.0122 +4.0777 +3.0425 +2.9074 +4.0707 +2.7671
+  L2             median    1.4927  IQR  0.8973  vs orig  +2.7051 (+64.44%)  threshold  1.3758  WIN
+      layout: pad-median 1.4578  spread across pads 0.8905 (orig 1.4533)  pad-median delta +2.2705 vs threshold 1.4533  paired deltas +2.3486 +2.7557 +2.9349 +1.7818 +1.6791 +2.8152 +1.8471
+  L3             median    3.3868  IQR  1.5498  vs orig  +0.8110 (+19.32%)  threshold  1.5498  NOISE
+      layout: pad-median 4.4301  spread across pads 1.8162 (orig 1.4533)  pad-median delta -0.7018 vs threshold 1.8162  paired deltas -1.4450 -0.2556 -0.2158 +0.1101 -1.4522 +0.7453 -1.6901
+  L4             median    4.4256  IQR  1.4809  vs orig  -0.2278 ( -5.43%)  threshold  1.4809  NOISE
+      layout: pad-median 4.2145  spread across pads 1.4274 (orig 1.4533)  pad-median delta -0.4861 vs threshold 1.4809  paired deltas -1.1154 +0.4556 -0.7766 -0.9485 -1.4112 +0.4219 -0.9786
+  L5             median    4.1423  IQR  0.5650  vs orig  +0.0555 ( +1.32%)  threshold  1.3758  NOISE
+      layout: pad-median 4.1301  spread across pads 1.4906 (orig 1.4533)  pad-median delta -0.4018 vs threshold 1.4906  paired deltas -1.2156 +0.0909 +0.5648 -0.1665 -1.0680 +1.4821 -1.0193
+  L6             median    0.2562  IQR  0.1542  vs orig  +3.9416 (+93.90%)  threshold  1.3758  WIN
+      layout: pad-median 0.1302  spread across pads 0.1551 (orig 1.4533)  pad-median delta +3.5982 vs threshold 1.4533  paired deltas +2.8433 +4.0800 +4.1465 +3.1397 +3.0219 +4.1673 +3.0060
+
+subject 016k-syslog   null-twin deviation 0.9328 ns/B   (rule: WIN/LOSS only past max(null dev, IQR_arm, IQR_orig))
+  orig           median    3.0071  IQR  1.4006  vs orig  +0.0000 ( +0.00%)  threshold  1.4006  BASE
+  orig2          median    4.0379  IQR  1.4111  vs orig  -1.0309 (-34.28%)  threshold  1.4111  NOISE
+      layout: no pad control for this arm (a verdict without it is not reportable)
+  null           median    3.9398  IQR  0.5551  vs orig  -0.9328 (-31.02%)  threshold  1.4006  NOISE
+      layout: no pad control for this arm (a verdict without it is not reportable)
+  L1             median    0.0440  IQR  0.0334  vs orig  +2.9631 (+98.54%)  threshold  1.4006  WIN
+      layout: pad-median 0.0441  spread across pads 0.0037 (orig 1.5474)  pad-median delta +3.5564 vs threshold 1.5474  paired deltas +2.4077 +2.8862 +3.8945 +3.2966 +3.9560 +3.9337 +3.8155
+  L2             median    0.4623  IQR  0.5994  vs orig  +2.5448 (+84.63%)  threshold  1.4006  WIN
+      layout: pad-median 0.9428  spread across pads 0.5675 (orig 1.5474)  pad-median delta +2.6576 vs threshold 1.5474  paired deltas +1.9899 +1.9277 +2.9098 +2.3662 +3.0042 +3.4266 +2.9490
+  L3             median    2.3914  IQR  0.9408  vs orig  +0.6157 (+20.47%)  threshold  1.4006  NOISE
+      layout: pad-median 2.9392  spread across pads 1.4849 (orig 1.5474)  pad-median delta +0.6612 vs threshold 1.5474  paired deltas -0.4363 -0.9437 +0.9725 +0.4456 +1.0475 +1.0497 +0.6729
+  L4             median    3.6470  IQR  1.0403  vs orig  -0.6399 (-21.28%)  threshold  1.4006  NOISE
+      layout: pad-median 4.6176  spread across pads 1.4778 (orig 1.5474)  pad-median delta -1.0171 vs threshold 1.5474  paired deltas -2.3814 -1.1992 -1.1855 -1.4443 -0.4514 -0.9284 -0.0438
+  L5             median    2.5973  IQR  0.9055  vs orig  +0.4098 (+13.63%)  threshold  1.4006  NOISE
+      layout: pad-median 3.8106  spread across pads 1.3778 (orig 1.5474)  pad-median delta -0.2102 vs threshold 1.5474  paired deltas -0.5078 -0.8351 +1.0183 -0.5985 +0.0242 +0.1229 -0.0840
+  L6             median    0.0443  IQR  0.0662  vs orig  +2.9628 (+98.53%)  threshold  1.4006  WIN
+      layout: pad-median 0.0541  spread across pads 0.0660 (orig 1.5474)  pad-median delta +3.5463 vs threshold 1.5474  paired deltas +2.3985 +2.8884 +3.8299 +3.2330 +3.8901 +3.9331 +3.8059
+
+subject 064k-fail   null-twin deviation 0.6036 ns/B   (rule: WIN/LOSS only past max(null dev, IQR_arm, IQR_orig))
+  orig           median    2.7848  IQR  0.8163  vs orig  +0.0000 ( +0.00%)  threshold  0.8163  BASE
+  orig2          median    3.3796  IQR  0.3445  vs orig  -0.5948 (-21.36%)  threshold  0.8163  NOISE
+      layout: no pad control for this arm (a verdict without it is not reportable)
+  null           median    3.3884  IQR  0.6754  vs orig  -0.6036 (-21.68%)  threshold  0.8163  NOISE
+      layout: no pad control for this arm (a verdict without it is not reportable)
+  L1             median    0.1284  IQR  0.0412  vs orig  +2.6564 (+95.39%)  threshold  0.8163  WIN
+      layout: pad-median 0.0891  spread across pads 0.0771 (orig 0.7785)  pad-median delta +2.9294 vs threshold 0.8163  paired deltas +3.2875 +2.8318 +2.9030 +2.6939 +2.9410 +3.4386 +3.4103
+  L2             median    0.5023  IQR  0.6509  vs orig  +2.2824 (+81.96%)  threshold  0.8163  WIN
+      layout: pad-median 0.9881  spread across pads 0.6254 (orig 0.7785)  pad-median delta +2.0304 vs threshold 0.8163  paired deltas +2.4304 +2.3287 +2.4772 +1.6175 +1.9867 +2.4986 +2.4963
+  L3             median    3.4594  IQR  0.7685  vs orig  -0.6746 (-24.22%)  threshold  0.8163  NOISE
+      layout: pad-median 3.4430  spread across pads 0.3841 (orig 0.7785)  pad-median delta -0.4245 vs threshold 0.8163  paired deltas -0.0067 -0.5426 -0.5854 -0.7763 -0.6705 +0.1136 +0.2316
+  L4             median    4.2492  IQR  0.4415  vs orig  -1.4644 (-52.59%)  threshold  0.8163  LOSS
+      layout: pad-median 4.3714  spread across pads 1.0537 (orig 0.7785)  pad-median delta -1.3530 vs threshold 1.0537  paired deltas -0.9971 -0.9701 -1.6176 -1.5858 -1.9020 -0.5134 -0.9199
+  L5             median    3.3991  IQR  0.2757  vs orig  -0.6143 (-22.06%)  threshold  0.8163  NOISE
+      layout: pad-median 3.3845  spread across pads 0.5118 (orig 0.7785)  pad-median delta -0.3660 vs threshold 0.8163  paired deltas +0.0073 -0.4872 -0.4352 -0.2614 -0.3921 +0.5359 +0.5280
+  L6             median    0.1261  IQR  0.0769  vs orig  +2.6587 (+95.47%)  threshold  0.8163  WIN
+      layout: pad-median 0.1264  spread across pads 0.0774 (orig 0.7785)  pad-median delta +2.8921 vs threshold 0.8163  paired deltas +3.2880 +2.8202 +2.9019 +2.6932 +2.8776 +3.4386 +3.3961
+
+subject 064k-hit   null-twin deviation 0.0146 ns/B   (rule: WIN/LOSS only past max(null dev, IQR_arm, IQR_orig))
+  orig           median    3.5908  IQR  0.7032  vs orig  +0.0000 ( +0.00%)  threshold  0.7032  BASE
+  orig2          median    3.5351  IQR  0.1696  vs orig  +0.0558 ( +1.55%)  threshold  0.7032  NOISE
+      layout: no pad control for this arm (a verdict without it is not reportable)
+  null           median    3.6054  IQR  0.3098  vs orig  -0.0146 ( -0.41%)  threshold  0.7032  NOISE
+      layout: no pad control for this arm (a verdict without it is not reportable)
+  L1             median    0.5645  IQR  0.3210  vs orig  +3.0263 (+84.28%)  threshold  0.7032  WIN
+      layout: pad-median 0.5580  spread across pads 0.3398 (orig 0.7091)  pad-median delta +2.9898 vs threshold 0.7091  paired deltas +2.8294 +3.2986 +3.2538 +3.0154 +3.1608 +2.7770 +2.6976
+  L2             median    0.7453  IQR  0.8265  vs orig  +2.8455 (+79.24%)  threshold  0.8265  WIN
+      layout: pad-median 1.3094  spread across pads 0.6545 (orig 0.7091)  pad-median delta +2.2384 vs threshold 0.8265  paired deltas +1.7191 +2.1745 +3.0713 +2.2759 +2.3295 +2.0135 +2.5165
+  L3             median    3.6586  IQR  0.6023  vs orig  -0.0678 ( -1.89%)  threshold  0.7032  NOISE
+      layout: pad-median 3.8008  spread across pads 1.0030 (orig 0.7091)  pad-median delta -0.2529 vs threshold 1.0030  paired deltas -0.2171 +0.0022 -0.1307 -0.3516 -0.4085 -0.3416 -1.0676
+  L4             median    4.3166  IQR  0.5065  vs orig  -0.7258 (-20.21%)  threshold  0.7032  NOISE
+      layout: pad-median 4.3780  spread across pads 0.8503 (orig 0.7091)  pad-median delta -0.8302 vs threshold 0.8503  paired deltas -0.9002 -0.9161 -0.9357 -0.6948 -1.1305 -0.7730 -1.2197  [plain rule said LOSS; the pad control downgrades it]
+  L5             median    3.0364  IQR  0.6459  vs orig  +0.5545 (+15.44%)  threshold  0.7032  NOISE
+      layout: pad-median 3.3626  spread across pads 0.6907 (orig 0.7091)  pad-median delta +0.1852 vs threshold 0.7091  paired deltas -0.0064 -0.1111 +0.5604 -0.0797 -0.0041 +0.1727 -0.2183
+  L6             median    0.1547  IQR  0.1720  vs orig  +3.4362 (+95.69%)  threshold  0.7032  WIN
+      layout: pad-median 0.3103  spread across pads 0.1894 (orig 0.7091)  pad-median delta +3.2375 vs threshold 0.7091  paired deltas +2.7950 +3.3972 +3.4991 +3.2584 +3.4102 +3.0208 +3.1297
+
+subject 064k-syslog   null-twin deviation 0.0369 ns/B   (rule: WIN/LOSS only past max(null dev, IQR_arm, IQR_orig))
+  orig           median    3.0823  IQR  0.0381  vs orig  +0.0000 ( +0.00%)  threshold  0.0381  BASE
+  orig2          median    3.0409  IQR  0.0845  vs orig  +0.0413 ( +1.34%)  threshold  0.0845  NOISE
+      layout: no pad control for this arm (a verdict without it is not reportable)
+  null           median    3.0454  IQR  0.5409  vs orig  +0.0369 ( +1.20%)  threshold  0.5409  NOISE
+      layout: no pad control for this arm (a verdict without it is not reportable)
+  L1             median    0.0661  IQR  0.0820  vs orig  +3.0162 (+97.86%)  threshold  0.0820  WIN
+      layout: pad-median 0.1263  spread across pads 0.0806 (orig 0.6623)  pad-median delta +2.9527 vs threshold 0.6623  paired deltas +2.3320 +2.9772 +2.9819 +2.9665 +2.3614 +3.0213 +2.9963
+  L2             median    1.0610  IQR  0.6027  vs orig  +2.0213 (+65.58%)  threshold  0.6027  WIN
+      layout: pad-median 1.0394  spread across pads 0.1554 (orig 0.6623)  pad-median delta +2.0395 vs threshold 0.6623  paired deltas +1.4867 +1.9989 +2.0484 +2.0026 +1.5602 +2.0295 +2.2001
+  L3             median    2.5758  IQR  0.6270  vs orig  +0.5065 (+16.43%)  threshold  0.6270  NOISE
+      layout: pad-median 3.0214  spread across pads 0.5609 (orig 0.6623)  pad-median delta +0.0575 vs threshold 0.6623  paired deltas -0.5192 -0.0077 +0.1057 +0.0145 -0.6417 +0.0438 +0.2512
+  L4             median    3.3482  IQR  0.4173  vs orig  -0.2660 ( -8.63%)  threshold  0.4173  NOISE
+      layout: pad-median 3.9307  spread across pads 0.9695 (orig 0.6623)  pad-median delta -0.8518 vs threshold 0.9695  paired deltas -1.0227 -0.2309 -1.1155 -0.7816 -1.6426 -0.9856 -0.8645
+  L5             median    3.0381  IQR  0.5809  vs orig  +0.0442 ( +1.43%)  threshold  0.5809  NOISE
+      layout: pad-median 3.0493  spread across pads 0.6246 (orig 0.6623)  pad-median delta +0.0296 vs threshold 0.6623  paired deltas -0.6237 -0.0288 -0.0047 +0.4445 -0.0018 +0.0385 +0.0171
+  L6             median    0.1330  IQR  0.0736  vs orig  +2.9493 (+95.69%)  threshold  0.0736  WIN
+      layout: pad-median 0.1337  spread across pads 0.0035 (orig 0.6623)  pad-median delta +2.9452 vs threshold 0.6623  paired deltas +2.3327 +2.8970 +2.9810 +2.9504 +2.3616 +2.9418 +2.9961
+
+subject 1024k-fail   null-twin deviation 0.0465 ns/B   (rule: WIN/LOSS only past max(null dev, IQR_arm, IQR_orig))
+  orig           median    2.9505  IQR  0.4747  vs orig  +0.0000 ( +0.00%)  threshold  0.4747  BASE
+  orig2          median    3.0258  IQR  0.2306  vs orig  -0.0754 ( -2.55%)  threshold  0.4747  NOISE
+      layout: no pad control for this arm (a verdict without it is not reportable)
+  null           median    2.9039  IQR  0.3176  vs orig  +0.0465 ( +1.58%)  threshold  0.4747  NOISE
+      layout: no pad control for this arm (a verdict without it is not reportable)
+  L1             median    0.1650  IQR  0.0869  vs orig  +2.7855 (+94.41%)  threshold  0.4747  WIN
+      layout: pad-median 0.0832  spread across pads 0.0983 (orig 0.4697)  pad-median delta +2.9229 vs threshold 0.4747  paired deltas +2.6497 +3.0152 +3.1192 +2.9290 +2.7198 +2.9142 +2.9449
+  L2             median    0.4411  IQR  0.0143  vs orig  +2.5093 (+85.05%)  threshold  0.4747  WIN
+      layout: pad-median 0.7496  spread across pads 0.6491 (orig 0.4697)  pad-median delta +2.2565 vs threshold 0.6491  paired deltas +1.6467 +2.0008 +2.6718 +2.0527 +1.7127 +2.4711 +2.4884
+  L3             median    2.9624  IQR  0.4446  vs orig  -0.0120 ( -0.41%)  threshold  0.4747  NOISE
+      layout: pad-median 3.1055  spread across pads 0.6884 (orig 0.4697)  pad-median delta -0.0994 vs threshold 0.6884  paired deltas -0.2167 +0.1383 +0.0407 -0.1082 -0.4552 -0.0907 -0.6040
+  L4             median    3.7824  IQR  0.1134  vs orig  -0.8319 (-28.20%)  threshold  0.4747  LOSS
+      layout: pad-median 3.9852  spread across pads 0.6020 (orig 0.4697)  pad-median delta -0.9792 vs threshold 0.6020  paired deltas -1.2526 -0.7316 -1.0231 -0.8080 -1.5814 -1.0017 -0.9571
+  L5             median    3.0971  IQR  0.0851  vs orig  -0.1466 ( -4.97%)  threshold  0.4747  NOISE
+      layout: pad-median 3.0353  spread across pads 0.4236 (orig 0.4697)  pad-median delta -0.0292 vs threshold 0.4747  paired deltas -0.1403 +0.0044 -0.0055 +0.2279 -0.2101 -0.0071 -0.0295
+  L6             median    0.1661  IQR  0.0504  vs orig  +2.7844 (+94.37%)  threshold  0.4747  WIN
+      layout: pad-median 0.1645  spread across pads 0.0993 (orig 0.4697)  pad-median delta +2.8416 vs threshold 0.4747  paired deltas +2.5679 +3.0152 +3.0383 +2.8468 +2.6372 +2.9171 +2.8788
+
+subject 1024k-hit   null-twin deviation 0.0128 ns/B   (rule: WIN/LOSS only past max(null dev, IQR_arm, IQR_orig))
+  orig           median    2.9653  IQR  0.1585  vs orig  +0.0000 ( +0.00%)  threshold  0.1585  BASE
+  orig2          median    2.9993  IQR  0.0771  vs orig  -0.0340 ( -1.15%)  threshold  0.1585  NOISE
+      layout: no pad control for this arm (a verdict without it is not reportable)
+  null           median    2.9525  IQR  0.1186  vs orig  +0.0128 ( +0.43%)  threshold  0.1585  NOISE
+      layout: no pad control for this arm (a verdict without it is not reportable)
+  L1             median    0.5791  IQR  0.3203  vs orig  +2.3862 (+80.47%)  threshold  0.3203  WIN
+      layout: pad-median 0.3869  spread across pads 0.3079 (orig 0.2057)  pad-median delta +2.6947 vs threshold 0.3203  paired deltas +2.4451 +2.5341 +2.6903 +2.7855 +2.8321 +2.7786 +2.7414
+  L2             median    0.8797  IQR  0.1796  vs orig  +2.0856 (+70.33%)  threshold  0.1796  WIN
+      layout: pad-median 0.7565  spread across pads 0.2212 (orig 0.2057)  pad-median delta +2.3252 vs threshold 0.2212  paired deltas +2.1223 +2.4132 +2.2298 +2.4015 +2.3806 +2.3405 +2.3588
+  L3             median    3.1720  IQR  0.1037  vs orig  -0.2066 ( -6.97%)  threshold  0.1585  NOISE
+      layout: pad-median 3.2657  spread across pads 0.5501 (orig 0.2057)  pad-median delta -0.1840 vs threshold 0.5501  paired deltas -0.2066 -0.1087 -0.1711 -0.2004 -0.2927 -0.1848 -0.6532  [plain rule said LOSS; the pad control downgrades it]
+  L4             median    3.7142  IQR  0.0662  vs orig  -0.7489 (-25.26%)  threshold  0.1585  LOSS
+      layout: pad-median 3.8953  spread across pads 0.4893 (orig 0.2057)  pad-median delta -0.8137 vs threshold 0.4893  paired deltas -0.8243 -0.7953 -0.9769 -0.6346 -1.0326 -1.0292 -0.8321
+  L5             median    2.8541  IQR  0.1203  vs orig  +0.1112 ( +3.75%)  threshold  0.1585  NOISE
+      layout: pad-median 3.1163  spread across pads 0.3439 (orig 0.2057)  pad-median delta -0.0347 vs threshold 0.3439  paired deltas -0.0580 +0.0344 -0.0729 -0.0007 +0.0160 -0.0838 -0.0390
+  L6             median    0.4275  IQR  0.0416  vs orig  +2.5378 (+85.58%)  threshold  0.1585  WIN
+      layout: pad-median 0.4245  spread across pads 0.2229 (orig 0.2057)  pad-median delta +2.6571 vs threshold 0.2229  paired deltas +2.5971 +2.6728 +2.9082 +2.6938 +2.8052 +2.8405 +2.6362
+
+subject 1024k-syslog   null-twin deviation 0.0911 ns/B   (rule: WIN/LOSS only past max(null dev, IQR_arm, IQR_orig))
+  orig           median    2.4336  IQR  0.2128  vs orig  +0.0000 ( +0.00%)  threshold  0.2128  BASE
+  orig2          median    2.5833  IQR  0.1204  vs orig  -0.1497 ( -6.15%)  threshold  0.2128  NOISE
+      layout: no pad control for this arm (a verdict without it is not reportable)
+  null           median    2.5246  IQR  0.1513  vs orig  -0.0911 ( -3.74%)  threshold  0.2128  NOISE
+      layout: no pad control for this arm (a verdict without it is not reportable)
+  L1             median    0.1982  IQR  0.1129  vs orig  +2.2353 (+91.85%)  threshold  0.2128  WIN
+      layout: pad-median 0.1981  spread across pads 0.0993 (orig 0.2808)  pad-median delta +2.4540 vs threshold 0.2808  paired deltas +2.4319 +2.5265 +2.4773 +2.4828 +2.5156 +2.2898 +2.4865
+  L2             median    0.4283  IQR  0.1888  vs orig  +2.0053 (+82.40%)  threshold  0.2128  WIN
+      layout: pad-median 0.5257  spread across pads 0.3296 (orig 0.2808)  pad-median delta +2.1264 vs threshold 0.3296  paired deltas +1.8776 +1.8924 +2.0784 +2.2598 +2.1958 +1.9616 +2.1570
+  L3             median    2.5355  IQR  0.1948  vs orig  -0.1019 ( -4.19%)  threshold  0.2128  NOISE
+      layout: pad-median 2.5749  spread across pads 0.3392 (orig 0.2808)  pad-median delta +0.0773 vs threshold 0.3392  paired deltas +0.1390 +0.0247 +0.1036 +0.1344 +0.1163 -0.0895 -0.1475
+  L4             median    3.2702  IQR  0.0634  vs orig  -0.8367 (-34.38%)  threshold  0.2128  LOSS
+      layout: pad-median 3.4614  spread across pads 0.6398 (orig 0.2808)  pad-median delta -0.8092 vs threshold 0.6398  paired deltas -0.7750 -0.7300 -1.0559 -0.6755 -1.1956 -1.0794 -0.8371
+  L5             median    2.6135  IQR  0.0677  vs orig  -0.1800 ( -7.39%)  threshold  0.2128  NOISE
+      layout: pad-median 2.6458  spread across pads 0.1593 (orig 0.2808)  pad-median delta +0.0063 vs threshold 0.2808  paired deltas -0.0357 -0.0010 +0.0682 +0.0159 +0.1912 -0.1905 -0.0008
+  L6             median    0.1973  IQR  0.0027  vs orig  +2.2363 (+91.89%)  threshold  0.2128  WIN
+      layout: pad-median 0.1466  spread across pads 0.1203 (orig 0.2808)  pad-median delta +2.5056 vs threshold 0.2808  paired deltas +2.4298 +2.5461 +2.5792 +2.6016 +2.5175 +2.4095 +2.4830
+
+subject 256k-fail   null-twin deviation 0.3455 ns/B   (rule: WIN/LOSS only past max(null dev, IQR_arm, IQR_orig))
+  orig           median    3.2515  IQR  0.6723  vs orig  +0.0000 ( +0.00%)  threshold  0.6723  BASE
+  orig2          median    3.3203  IQR  0.0731  vs orig  -0.0688 ( -2.12%)  threshold  0.6723  NOISE
+      layout: no pad control for this arm (a verdict without it is not reportable)
+  null           median    2.9059  IQR  0.5687  vs orig  +0.3455 (+10.63%)  threshold  0.6723  NOISE
+      layout: no pad control for this arm (a verdict without it is not reportable)
+  L1             median    0.0602  IQR  0.0857  vs orig  +3.1912 (+98.15%)  threshold  0.6723  WIN
+      layout: pad-median 0.1439  spread across pads 0.0855 (orig 0.6147)  pad-median delta +3.1310 vs threshold 0.6723  paired deltas +3.2721 +3.1545 +2.9232 +2.6502 +3.2223 +2.6915 +3.2623
+  L2             median    0.9773  IQR  0.6473  vs orig  +2.2742 (+69.94%)  threshold  0.6723  WIN
+      layout: pad-median 0.5495  spread across pads 0.5520 (orig 0.6147)  pad-median delta +2.7254 vs threshold 0.6723  paired deltas +2.3886 +2.2103 +2.5121 +2.2521 +2.8313 +2.2929 +2.8707
+  L3             median    3.3465  IQR  0.5588  vs orig  -0.0951 ( -2.92%)  threshold  0.6723  NOISE
+      layout: pad-median 3.2729  spread across pads 0.6294 (orig 0.6147)  pad-median delta +0.0019 vs threshold 0.6723  paired deltas +0.4326 +0.1435 -0.0143 -0.6105 +0.1680 -0.5359 -0.1350
+  L4             median    4.1213  IQR  0.4075  vs orig  -0.8698 (-26.75%)  threshold  0.6723  LOSS
+      layout: pad-median 4.2334  spread across pads 0.4382 (orig 0.6147)  pad-median delta -0.9585 vs threshold 0.6723  paired deltas -0.8973 -0.9048 -1.1270 -1.4300 -1.1921 -1.5374 -0.9038
+  L5             median    3.2998  IQR  0.5434  vs orig  -0.0483 ( -1.49%)  threshold  0.6723  NOISE
+      layout: pad-median 3.2833  spread across pads 0.5877 (orig 0.6147)  pad-median delta -0.0084 vs threshold 0.6723  paired deltas -0.0133 +0.0315 +0.0052 -0.0638 -0.0471 -0.3947 -0.0368
+  L6             median    0.1451  IQR  0.0379  vs orig  +3.1064 (+95.54%)  threshold  0.6723  WIN
+      layout: pad-median 0.1451  spread across pads 0.0037 (orig 0.6147)  pad-median delta +3.1298 vs threshold 0.6723  paired deltas +3.2011 +3.1536 +2.9202 +2.6478 +3.2216 +2.6926 +3.2648
+
+subject 256k-hit   null-twin deviation 0.4442 ns/B   (rule: WIN/LOSS only past max(null dev, IQR_arm, IQR_orig))
+  orig           median    3.5591  IQR  0.5366  vs orig  +0.0000 ( +0.00%)  threshold  0.5366  BASE
+  orig2          median    3.5644  IQR  0.3384  vs orig  -0.0053 ( -0.15%)  threshold  0.5366  NOISE
+      layout: no pad control for this arm (a verdict without it is not reportable)
+  null           median    3.1149  IQR  0.4826  vs orig  +0.4442 (+12.48%)  threshold  0.5366  NOISE
+      layout: no pad control for this arm (a verdict without it is not reportable)
+  L1             median    0.6453  IQR  0.3482  vs orig  +2.9138 (+81.87%)  threshold  0.5366  WIN
+      layout: pad-median 0.6147  spread across pads 0.3181 (orig 0.4710)  pad-median delta +2.9833 vs threshold 0.5366  paired deltas +2.9906 +2.9090 +3.0620 +2.6728 +2.9997 +2.7180 +3.1427
+  L2             median    1.3753  IQR  0.7426  vs orig  +2.1838 (+61.36%)  threshold  0.7426  WIN
+      layout: pad-median 0.8969  spread across pads 0.6491 (orig 0.4710)  pad-median delta +2.7011 vs threshold 0.7426  paired deltas +2.3164 +2.1046 +2.9635 +2.5109 +2.9206 +2.2346 +2.9656
+  L3             median    3.6979  IQR  0.6033  vs orig  -0.1388 ( -3.90%)  threshold  0.6033  NOISE
+      layout: pad-median 3.6964  spread across pads 0.8844 (orig 0.4710)  pad-median delta -0.0983 vs threshold 0.8844  paired deltas +0.2741 -0.5467 +0.1465 -0.2008 -0.3138 -0.4134 -0.5385
+  L4             median    4.2754  IQR  0.1069  vs orig  -0.7163 (-20.13%)  threshold  0.5366  LOSS
+      layout: pad-median 4.4165  spread across pads 0.4619 (orig 0.4710)  pad-median delta -0.8185 vs threshold 0.5366  paired deltas -0.5049 -1.2313 -0.5477 -1.1082 -0.8202 -1.3223 -0.7689
+  L5             median    3.5325  IQR  0.4530  vs orig  +0.0266 ( +0.75%)  threshold  0.5366  NOISE
+      layout: pad-median 3.4556  spread across pads 0.5227 (orig 0.4710)  pad-median delta +0.1424 vs threshold 0.5366  paired deltas +0.4638 -0.1409 +0.3839 -0.4006 +0.0047 -0.4145 +0.4501
+  L6             median    0.3969  IQR  0.1232  vs orig  +3.1622 (+88.85%)  threshold  0.5366  WIN
+      layout: pad-median 0.1972  spread across pads 0.2373 (orig 0.4710)  pad-median delta +3.4008 vs threshold 0.5366  paired deltas +3.4518 +3.0783 +3.5151 +2.8640 +3.4453 +3.0885 +3.3162
+
+subject 256k-syslog   null-twin deviation 0.0654 ns/B   (rule: WIN/LOSS only past max(null dev, IQR_arm, IQR_orig))
+  orig           median    3.0674  IQR  0.1823  vs orig  +0.0000 ( +0.00%)  threshold  0.1823  BASE
+  orig2          median    3.0215  IQR  0.0549  vs orig  +0.0459 ( +1.50%)  threshold  0.1823  NOISE
+      layout: no pad control for this arm (a verdict without it is not reportable)
+  null           median    3.0020  IQR  0.4786  vs orig  +0.0654 ( +2.13%)  threshold  0.4786  NOISE
+      layout: no pad control for this arm (a verdict without it is not reportable)
+  L1             median    0.1703  IQR  0.0942  vs orig  +2.8971 (+94.45%)  threshold  0.1823  WIN
+      layout: pad-median 0.1587  spread across pads 0.1026 (orig 0.4341)  pad-median delta +2.8860 vs threshold 0.4341  paired deltas +2.8869 +2.9682 +2.9112 +2.9309 +2.9496 +2.5807 +2.5461
+  L2             median    0.4299  IQR  0.5384  vs orig  +2.6375 (+85.99%)  threshold  0.5384  WIN
+      layout: pad-median 0.5278  spread across pads 0.6167 (orig 0.4341)  pad-median delta +2.5168 vs threshold 0.6167  paired deltas +2.0994 +2.0726 +2.5626 +2.5267 +2.5611 +2.1610 +1.6692
+  L3             median    2.7752  IQR  0.5156  vs orig  +0.2922 ( +9.53%)  threshold  0.5156  NOISE
+      layout: pad-median 2.5993  spread across pads 0.4105 (orig 0.4341)  pad-median delta +0.4454 vs threshold 0.5156  paired deltas +0.6586 +0.4413 +0.6216 +0.3946 +0.6283 -0.1391 +0.0816
+  L4             median    3.7283  IQR  0.3070  vs orig  -0.6609 (-21.55%)  threshold  0.3070  NOISE
+      layout: pad-median 3.6895  spread across pads 0.7691 (orig 0.4341)  pad-median delta -0.6449 vs threshold 0.7691  paired deltas -0.4741 -0.3664 -1.0925 -0.7679 -1.0221 -0.9844 -0.8693  [plain rule said LOSS; the pad control downgrades it]
+  L5             median    2.9884  IQR  0.1164  vs orig  +0.0790 ( +2.57%)  threshold  0.1823  NOISE
+      layout: pad-median 2.8188  spread across pads 0.4057 (orig 0.4341)  pad-median delta +0.2259 vs threshold 0.4341  paired deltas +0.3575 +0.1077 +0.3696 -0.0654 +0.3963 -0.0026 -0.3589
+  L6             median    0.1653  IQR  0.0784  vs orig  +2.9021 (+94.61%)  threshold  0.1823  WIN
+      layout: pad-median 0.1662  spread across pads 0.1045 (orig 0.4341)  pad-median delta +2.8785 vs threshold 0.4341  paired deltas +2.8864 +2.9685 +2.9072 +2.9299 +2.9286 +2.5169 +2.5466
+
+subject dense   null-twin deviation 0.0197 ns/B   (rule: WIN/LOSS only past max(null dev, IQR_arm, IQR_orig))
+  orig           median    6.6458  IQR  0.1273  vs orig  +0.0000 ( +0.00%)  threshold  0.1273  BASE
+  orig2          median    6.5885  IQR  0.1790  vs orig  +0.0573 ( +0.86%)  threshold  0.1790  NOISE
+      layout: no pad control for this arm (a verdict without it is not reportable)
+  null           median    6.6655  IQR  0.0543  vs orig  -0.0197 ( -0.30%)  threshold  0.1273  NOISE
+      layout: no pad control for this arm (a verdict without it is not reportable)
+  L1             median    5.9155  IQR  0.1065  vs orig  +0.7303 (+10.99%)  threshold  0.1273  WIN
+      layout: pad-median 5.8605  spread across pads 0.1412 (orig 0.1158)  pad-median delta +0.7523 vs threshold 0.1412  paired deltas +0.6725 +0.7991 +0.7970 +0.7433 +0.6881 +0.7151 +0.7051
+  L2             median    5.8786  IQR  0.0974  vs orig  +0.7672 (+11.54%)  threshold  0.1273  WIN
+      layout: pad-median 5.8477  spread across pads 0.1918 (orig 0.1158)  pad-median delta +0.7651 vs threshold 0.1918  paired deltas +0.6709 +0.7204 +0.9129 +0.7718 +0.7963 +0.7225 +0.8747
+  L3             median    6.2490  IQR  0.1506  vs orig  +0.3968 ( +5.97%)  threshold  0.1506  WIN
+      layout: pad-median 6.2334  spread across pads 0.1759 (orig 0.1158)  pad-median delta +0.3794 vs threshold 0.1759  paired deltas +0.1874 +0.4240 +0.4457 +0.4179 +0.2849 +0.3125 +0.2968
+  L4             median    3.5120  IQR  0.1358  vs orig  +3.1338 (+47.15%)  threshold  0.1358  WIN
+      layout: pad-median 3.6055  spread across pads 0.3375 (orig 0.1158)  pad-median delta +3.0073 vs threshold 0.3375  paired deltas +2.9975 +2.9589 +2.9030 +3.0636 +2.8953 +2.7480 +3.1170
+  L5             median    5.2427  IQR  0.1182  vs orig  +1.4032 (+21.11%)  threshold  0.1273  WIN
+      layout: pad-median 5.2526  spread across pads 0.1938 (orig 0.1158)  pad-median delta +1.3602 vs threshold 0.1938  paired deltas +1.3450 +1.2724 +1.2460 +1.4076 +1.2922 +1.3082 +1.2990
+  L6             median    2.1060  IQR  0.2751  vs orig  +4.5398 (+68.31%)  threshold  0.2751  WIN
+      layout: pad-median 2.0284  spread across pads 0.5616 (orig 0.1158)  pad-median delta +4.5844 vs threshold 0.5616  paired deltas +4.4641 +4.5412 +4.8575 +4.6353 +4.8383 +4.4231 +5.0163
+
+subject sparse   null-twin deviation 0.1315 ns/B   (rule: WIN/LOSS only past max(null dev, IQR_arm, IQR_orig))
+  orig           median    3.1064  IQR  0.2956  vs orig  +0.0000 ( +0.00%)  threshold  0.2956  BASE
+  orig2          median    3.2753  IQR  0.0549  vs orig  -0.1688 ( -5.44%)  threshold  0.2956  NOISE
+      layout: no pad control for this arm (a verdict without it is not reportable)
+  null           median    3.2379  IQR  0.2667  vs orig  -0.1315 ( -4.23%)  threshold  0.2956  NOISE
+      layout: no pad control for this arm (a verdict without it is not reportable)
+  L1             median    0.6261  IQR  0.3605  vs orig  +2.4803 (+79.84%)  threshold  0.3605  WIN
+      layout: pad-median 0.4909  spread across pads 0.3762 (orig 0.4490)  pad-median delta +2.7910 vs threshold 0.4490  paired deltas +2.6076 +3.0031 +2.5413 +3.0011 +2.7083 +3.0472 +2.5143
+  L2             median    0.7419  IQR  0.6939  vs orig  +2.3645 (+76.12%)  threshold  0.6939  WIN
+      layout: pad-median 0.7567  spread across pads 0.6347 (orig 0.4490)  pad-median delta +2.5253 vs threshold 0.6939  paired deltas +2.2026 +2.5728 +2.4997 +2.0195 +2.6578 +2.5810 +1.8353
+  L3             median    3.4074  IQR  0.4343  vs orig  -0.3010 ( -9.69%)  threshold  0.4343  NOISE
+      layout: pad-median 3.4570  spread across pads 0.5269 (orig 0.4490)  pad-median delta -0.1750 vs threshold 0.5269  paired deltas -0.2761 +0.0255 -0.2708 -0.1764 -0.2837 +0.0426 -0.5576
+  L4             median    3.8144  IQR  0.1962  vs orig  -0.7080 (-22.79%)  threshold  0.2956  LOSS
+      layout: pad-median 4.0141  spread across pads 0.5003 (orig 0.4490)  pad-median delta -0.7322 vs threshold 0.5003  paired deltas -1.0207 -0.7268 -0.9746 -0.5447 -0.9051 -0.5930 -0.8327
+  L5             median    3.1143  IQR  0.2853  vs orig  -0.0079 ( -0.25%)  threshold  0.2956  NOISE
+      layout: pad-median 3.1780  spread across pads 0.4537 (orig 0.4490)  pad-median delta +0.1039 vs threshold 0.4537  paired deltas -0.1472 +0.3872 -0.1590 +0.2470 +0.1678 +0.0185 -0.1351
+  L6             median    0.4327  IQR  0.1092  vs orig  +2.6738 (+86.07%)  threshold  0.2956  WIN
+      layout: pad-median 0.4318  spread across pads 0.2182 (orig 0.4490)  pad-median delta +2.8501 vs threshold 0.4490  paired deltas +2.7405 +3.1094 +3.0184 +2.9214 +2.9787 +2.9623 +2.7718
+
+subject CELL   null-twin deviation 0.0191 ns/B   (rule: WIN/LOSS only past max(null dev, IQR_arm, IQR_orig))
+  orig           median    3.0600  IQR  0.0941  vs orig  +0.0000 ( +0.00%)  threshold  0.0941  BASE
+  orig2          median    3.0670  IQR  0.1452  vs orig  -0.0070 ( -0.23%)  threshold  0.1452  NOISE
+      layout: no pad control for this arm (a verdict without it is not reportable)
+  null           median    3.0409  IQR  0.1768  vs orig  +0.0191 ( +0.62%)  threshold  0.1768  NOISE
+      layout: no pad control for this arm (a verdict without it is not reportable)
+  L1             median    0.1571  IQR  0.0425  vs orig  +2.9030 (+94.87%)  threshold  0.0941  WIN
+      layout: pad-median 0.1511  spread across pads 0.0505 (orig 0.2105)  pad-median delta +2.9249 vs threshold 0.2105  paired deltas +2.7653 +2.9569 +2.9681 +2.9153 +2.9500 +2.9476 +2.9651
+  L2             median    0.7387  IQR  0.2311  vs orig  +2.3213 (+75.86%)  threshold  0.2311  WIN
+      layout: pad-median 0.8147  spread across pads 0.1151 (orig 0.2105)  pad-median delta +2.2613 vs threshold 0.2311  paired deltas +2.0783 +2.2177 +2.3083 +2.2927 +2.2504 +2.2834 +2.3075
+  L3             median    3.0011  IQR  0.1329  vs orig  +0.0589 ( +1.93%)  threshold  0.1329  NOISE
+      layout: pad-median 3.1699  spread across pads 0.5993 (orig 0.2105)  pad-median delta -0.0939 vs threshold 0.5993  paired deltas -0.1136 -0.0962 -0.0651 -0.0729 -0.1863 -0.0916 -0.4792
+  L4             median    3.7565  IQR  0.0939  vs orig  -0.6965 (-22.76%)  threshold  0.0941  LOSS
+      layout: pad-median 3.9708  spread across pads 0.6350 (orig 0.2105)  pad-median delta -0.8948 vs threshold 0.6350  paired deltas -1.0500 -0.7662 -1.1022 -0.8568 -1.2873 -0.9803 -0.8571
+  L5             median    3.0292  IQR  0.0827  vs orig  +0.0308 ( +1.01%)  threshold  0.0941  NOISE
+      layout: pad-median 3.0953  spread across pads 0.1125 (orig 0.2105)  pad-median delta -0.0193 vs threshold 0.2105  paired deltas -0.1392 -0.0159 -0.0178 -0.0403 -0.0239 -0.0035 +0.0129
+  L6             median    0.1397  IQR  0.0211  vs orig  +2.9204 (+95.44%)  threshold  0.0941  WIN
+      layout: pad-median 0.1358  spread across pads 0.0306 (orig 0.2105)  pad-median delta +2.9403 vs threshold 0.2105  paired deltas +2.7717 +2.9427 +2.9849 +2.9322 +2.9539 +2.9689 +2.9886
+
+run dir: /Users/fdicostanzo/pcrec/worktrees/artconf/build-artrev/confirm/loglines_level_context/timing/002_pass2
+A09 rc=0 10:33:00
+START A07 10:33:00
+t64k done (reps 32)
+t256k done (reps 14)
+t1m done (reps 4)
+dense done (reps 4)
+sparse done (reps 4)
+#host	ubuntubudu	Linux-7.0.0-29-generic-x86_64-with-glibc2.43
+#cpu	AMD Ryzen 5 1600 Six-Core Processor
+#cc	gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0	-O2 -fPIC
+#date	2026-10-06 10:33:33
+#rounds	11	#load_max	2.00
+#artifact	capability_doubled_word pin 57db5152 abi 62
+
+subject t64k   null-twin deviation 1.7677 ns/B   (rule: WIN/LOSS only past max(null dev, IQR_arm, IQR_orig))
+  orig           median   19.1435  IQR  3.5793  vs orig  +0.0000 ( +0.00%)  threshold  3.5793  BASE
+  orig2          median   17.2246  IQR  4.1959  vs orig  +1.9189 (+10.02%)  threshold  4.1959  NOISE
+      layout: no pad control for this arm (a verdict without it is not reportable)
+  null           median   20.9112  IQR  3.3504  vs orig  -1.7677 ( -9.23%)  threshold  3.5793  NOISE
+      layout: no pad control for this arm (a verdict without it is not reportable)
+  poss           median    6.9116  IQR  4.3661  vs orig +12.2319 (+63.90%)  threshold  4.3661  WIN
+      layout: pad-median 10.4539  spread across pads 4.5558 (orig 2.2765)  pad-median delta +8.3664 vs threshold 4.5558  paired deltas +7.1395 +8.3502 +8.0987 +10.3800 +7.3030 +7.2062 +12.6741
+  a_L1           median   16.1953  IQR  2.6343  vs orig  +2.9483 (+15.40%)  threshold  3.5793  NOISE
+      layout: pad-median 15.9027  spread across pads 2.8677 (orig 2.2765)  pad-median delta +2.9177 vs threshold 3.5793  paired deltas +3.2409 +4.1696 +2.0895 +1.7481 +3.1601 +4.1091 +2.6497
+  a_L2           median   12.6012  IQR  3.4369  vs orig  +6.5423 (+34.17%)  threshold  3.5793  WIN
+      layout: pad-median 12.7980  spread across pads 2.9353 (orig 2.2765)  pad-median delta +6.0224 vs threshold 3.5793  paired deltas +2.1737 +5.9444 +6.6043 +6.3489 +5.7655 +3.3612 +7.1336
+  a_L3           median   12.4848  IQR  0.1728  vs orig  +6.6588 (+34.78%)  threshold  3.5793  WIN
+      layout: pad-median 9.5715  spread across pads 4.5838 (orig 2.2765)  pad-median delta +9.2488 vs threshold 4.5838  paired deltas +8.0342 +7.1468 +9.2724 +10.9491 +9.7535 +9.0979 +12.0060
+  a_L4           median    6.5243  IQR  2.5645  vs orig +12.6192 (+65.92%)  threshold  3.5793  WIN
+      layout: pad-median 2.9609  spread across pads 3.9612 (orig 2.2765)  pad-median delta +15.8594 vs threshold 3.9612  paired deltas +14.8604 +16.1946 +16.1658 +16.2662 +12.4591 +16.0706 +13.3733
+  a_L5           median    2.8715  IQR  3.5230  vs orig +16.2720 (+85.00%)  threshold  3.5793  WIN
+      layout: pad-median 5.2056  spread across pads 3.3262 (orig 2.2765)  pad-median delta +13.6147 vs threshold 3.5793  paired deltas +14.5815 +13.0215 +14.1280 +13.7604 +13.3387 +12.4469 +14.6852
+  a_L6           median   20.8217  IQR  2.3093  vs orig  -1.6782 ( -8.77%)  threshold  3.5793  NOISE
+      layout: pad-median 20.7431  spread across pads 1.1132 (orig 2.2765)  pad-median delta -1.9227 vs threshold 3.5793  paired deltas -3.1453 -1.9434 -1.6438 -1.3924 -1.0899 -1.9775 -1.0664
+  b_L1           median   17.2257  IQR  0.8272  vs orig  +1.9178 (+10.02%)  threshold  3.5793  NOISE
+      layout: pad-median 16.9981  spread across pads 2.6575 (orig 2.2765)  pad-median delta +1.8223 vs threshold 3.5793  paired deltas +0.5646 +1.4901 +3.8322 +1.5913 +4.1487 +1.7144 +3.0342
+  b_L2           median   14.7886  IQR  3.5352  vs orig  +4.3549 (+22.75%)  threshold  3.5793  WIN
+      layout: pad-median 12.7532  spread across pads 3.1087 (orig 2.2765)  pad-median delta +6.0671 vs threshold 3.5793  paired deltas +4.8930 +6.1694 +3.8695 +6.2848 +3.5443 +6.3053 +7.1380
+  b_L3           median   14.3387  IQR  4.4210  vs orig  +4.8048 (+25.10%)  threshold  4.4210  WIN
+      layout: pad-median 14.2178  spread across pads 2.8313 (orig 2.2765)  pad-median delta +4.6026 vs threshold 4.4210  paired deltas +4.7594 +4.5688 +7.4925 +4.6331 +4.1140 +4.1204 +7.8417
+  b_L4           median    9.2145  IQR  4.6315  vs orig  +9.9290 (+51.87%)  threshold  4.6315  WIN
+      layout: pad-median 6.0074  spread across pads 4.3869 (orig 2.2765)  pad-median delta +12.8130 vs threshold 4.6315  paired deltas +10.1310 +12.8146 +14.4899 +13.9093 +12.7080 +12.4910 +14.0231
+  b_L5           median    8.3974  IQR  2.1742  vs orig +10.7461 (+56.13%)  threshold  3.5793  WIN
+      layout: pad-median 4.7565  spread across pads 4.5744 (orig 2.2765)  pad-median delta +14.0639 vs threshold 4.5744  paired deltas +12.8594 +14.7355 +14.5267 +10.4395 +14.0284 +14.7837 +16.0504
+  b_L6           median    4.9977  IQR  4.4026  vs orig +14.1458 (+73.89%)  threshold  4.4026  WIN
+      layout: pad-median 4.7999  spread across pads 4.6766 (orig 2.2765)  pad-median delta +14.0204 vs threshold 4.6766  paired deltas +13.6416 +13.9165 +14.5668 +14.6050 +10.1609 +14.7119 +15.0579
+
+subject t256k   null-twin deviation 0.1630 ns/B   (rule: WIN/LOSS only past max(null dev, IQR_arm, IQR_orig))
+  orig           median   17.8799  IQR  0.5082  vs orig  +0.0000 ( +0.00%)  threshold  0.5082  BASE
+  orig2          median   17.7405  IQR  0.6364  vs orig  +0.1393 ( +0.78%)  threshold  0.6364  NOISE
+      layout: no pad control for this arm (a verdict without it is not reportable)
+  null           median   18.0429  IQR  0.6313  vs orig  -0.1630 ( -0.91%)  threshold  0.6313  NOISE
+      layout: no pad control for this arm (a verdict without it is not reportable)
+  poss           median    8.8200  IQR  1.1668  vs orig  +9.0598 (+50.67%)  threshold  1.1668  WIN
+      layout: pad-median 7.8725  spread across pads 1.2364 (orig 0.3704)  pad-median delta +10.1303 vs threshold 1.2364  paired deltas +10.2816 +10.0077 +9.3705 +9.2102 +10.2948 +10.2944 +10.0081
+  a_L1           median   13.4121  IQR  0.7017  vs orig  +4.4678 (+24.99%)  threshold  0.7017  WIN
+      layout: pad-median 14.1543  spread across pads 0.8921 (orig 0.3704)  pad-median delta +3.8485 vs threshold 0.8921  paired deltas +4.2847 +3.5036 +3.8159 +3.9675 +4.4955 +3.7715 +3.7111
+  a_L2           median   11.8192  IQR  1.3735  vs orig  +6.0606 (+33.90%)  threshold  1.3735  WIN
+      layout: pad-median 12.5301  spread across pads 0.8054 (orig 0.3704)  pad-median delta +5.4728 vs threshold 1.3735  paired deltas +5.3477 +5.1252 +6.2067 +5.4902 +6.0920 +5.4749 +5.4267
+  a_L3           median    9.4982  IQR  0.9939  vs orig  +8.3816 (+46.88%)  threshold  0.9939  WIN
+      layout: pad-median 9.0415  spread across pads 1.0253 (orig 0.3704)  pad-median delta +8.9614 vs threshold 1.0253  paired deltas +9.1021 +7.9538 +8.9203 +9.1636 +9.1602 +9.2303 +8.3578
+  a_L4           median    3.2865  IQR  2.3127  vs orig +14.5934 (+81.62%)  threshold  2.3127  WIN
+      layout: pad-median 3.2446  spread across pads 2.0189 (orig 0.3704)  pad-median delta +14.7583 vs threshold 2.3127  paired deltas +13.1066 +14.5726 +14.8822 +14.7985 +15.2871 +14.7600 +14.6696
+  a_L5           median    4.5586  IQR  1.8652  vs orig +13.3213 (+74.50%)  threshold  1.8652  WIN
+      layout: pad-median 3.0232  spread across pads 2.5464 (orig 0.3704)  pad-median delta +14.9797 vs threshold 2.5464  paired deltas +15.4299 +14.6657 +15.7516 +15.1136 +13.1283 +13.1776 +15.0424
+  a_L6           median   17.5846  IQR  0.2795  vs orig  +0.2953 ( +1.65%)  threshold  0.5082  NOISE
+      layout: pad-median 17.5980  spread across pads 0.5080 (orig 0.3704)  pad-median delta +0.4048 vs threshold 0.5082  paired deltas +0.4404 -0.0644 +0.4118 +0.5702 +0.3906 +0.3896 +0.6985
+  b_L1           median   14.3288  IQR  0.8741  vs orig  +3.5511 (+19.86%)  threshold  0.8741  WIN
+      layout: pad-median 14.3709  spread across pads 0.3151 (orig 0.3704)  pad-median delta +3.6320 vs threshold 0.8741  paired deltas +3.4487 +3.5301 +3.8504 +3.6333 +3.6926 +3.4663 +3.6136
+  b_L2           median   12.4322  IQR  0.9709  vs orig  +5.4476 (+30.47%)  threshold  0.9709  WIN
+      layout: pad-median 12.4846  spread across pads 0.7708 (orig 0.3704)  pad-median delta +5.5183 vs threshold 0.9709  paired deltas +5.2083 +5.1788 +5.5833 +5.6465 +5.4527 +6.0984 +5.9620
+  b_L3           median   11.4872  IQR  0.9088  vs orig  +6.3927 (+35.75%)  threshold  0.9088  WIN
+      layout: pad-median 11.4523  spread across pads 1.0625 (orig 0.3704)  pad-median delta +6.5506 vs threshold 1.0625  paired deltas +6.7531 +6.3325 +6.2978 +7.1006 +6.0348 +6.4554 +7.0100
+  b_L4           median    6.4568  IQR  1.1808  vs orig +11.4230 (+63.89%)  threshold  1.1808  WIN
+      layout: pad-median 6.1103  spread across pads 1.3038 (orig 0.3704)  pad-median delta +11.8925 vs threshold 1.3038  paired deltas +11.3246 +10.7714 +12.4094 +12.2828 +12.2974 +10.9865 +12.2481
+  b_L5           median    5.9546  IQR  1.4176  vs orig +11.9253 (+66.70%)  threshold  1.4176  WIN
+      layout: pad-median 5.9837  spread across pads 1.6157 (orig 0.3704)  pad-median delta +12.0191 vs threshold 1.6157  paired deltas +11.8627 +11.7369 +13.4423 +13.5166 +13.3437 +11.8553 +11.9317
+  b_L6           median    4.6744  IQR  1.4068  vs orig +13.2054 (+73.86%)  threshold  1.4068  WIN
+      layout: pad-median 4.8811  spread across pads 2.3068 (orig 0.3704)  pad-median delta +13.1218 vs threshold 2.3068  paired deltas +11.6386 +13.8136 +12.1405 +13.1797 +11.8017 +13.2277 +13.1095
+
+subject t1m   null-twin deviation 0.0135 ns/B   (rule: WIN/LOSS only past max(null dev, IQR_arm, IQR_orig))
+  orig           median   17.3448  IQR  0.1751  vs orig  +0.0000 ( +0.00%)  threshold  0.1751  BASE
+  orig2          median   17.3193  IQR  0.0588  vs orig  +0.0256 ( +0.15%)  threshold  0.1751  NOISE
+      layout: no pad control for this arm (a verdict without it is not reportable)
+  null           median   17.3314  IQR  0.1140  vs orig  +0.0135 ( +0.08%)  threshold  0.1751  NOISE
+      layout: no pad control for this arm (a verdict without it is not reportable)
+  poss           median    6.9341  IQR  0.0306  vs orig +10.4108 (+60.02%)  threshold  0.1751  WIN
+      layout: pad-median 6.9624  spread across pads 0.3831 (orig 0.1329)  pad-median delta +10.4473 vs threshold 0.3831  paired deltas +10.5995 +10.5385 +10.3830 +10.3407 +10.5067 +10.4448 +10.1881
+  a_L1           median   13.1108  IQR  0.1909  vs orig  +4.2340 (+24.41%)  threshold  0.1909  WIN
+      layout: pad-median 13.2045  spread across pads 0.2921 (orig 0.1329)  pad-median delta +4.2052 vs threshold 0.2921  paired deltas +4.2787 +4.2027 +4.1204 +4.1040 +4.4515 +4.1874 +4.1120
+  a_L2           median   11.1563  IQR  0.1062  vs orig  +6.1886 (+35.68%)  threshold  0.1751  WIN
+      layout: pad-median 11.2414  spread across pads 0.1905 (orig 0.1329)  pad-median delta +6.1683 vs threshold 0.1905  paired deltas +6.1661 +6.1853 +6.1160 +6.1888 +6.1313 +6.2222 +6.1460
+  a_L3           median    7.9388  IQR  0.0506  vs orig  +9.4060 (+54.23%)  threshold  0.1751  WIN
+      layout: pad-median 7.9210  spread across pads 0.2001 (orig 0.1329)  pad-median delta +9.4887 vs threshold 0.2001  paired deltas +9.5648 +9.3351 +9.3275 +9.4510 +9.5661 +9.4235 +9.5371
+  a_L4           median    3.2622  IQR  0.9859  vs orig +14.0827 (+81.19%)  threshold  0.9859  WIN
+      layout: pad-median 3.4166  spread across pads 0.8508 (orig 0.1329)  pad-median delta +13.9931 vs threshold 0.9859  paired deltas +13.6615 +13.8209 +13.6867 +14.1519 +14.2767 +13.6263 +14.4839
+  a_L5           median    3.6494  IQR  0.7397  vs orig +13.6954 (+78.96%)  threshold  0.7397  WIN
+      layout: pad-median 2.9883  spread across pads 1.1700 (orig 0.1329)  pad-median delta +14.4214 vs threshold 1.1700  paired deltas +14.4097 +14.2475 +14.4431 +14.3858 +14.9899 +14.8680 +14.4145
+  a_L6           median   16.9896  IQR  0.2558  vs orig  +0.3553 ( +2.05%)  threshold  0.2558  WIN
+      layout: pad-median 17.0111  spread across pads 0.3274 (orig 0.1329)  pad-median delta +0.3986 vs threshold 0.3274  paired deltas +0.4325 +0.3474 +0.2100 +0.4614 +0.4184 +0.4041 +0.4176
+  b_L1           median   13.3503  IQR  0.0782  vs orig  +3.9946 (+23.03%)  threshold  0.1751  WIN
+      layout: pad-median 13.3529  spread across pads 0.1953 (orig 0.1329)  pad-median delta +4.0568 vs threshold 0.1953  paired deltas +4.1951 +4.0084 +3.9952 +4.1144 +4.1137 +4.0872 +4.0084
+  b_L2           median   11.1471  IQR  0.0896  vs orig  +6.1977 (+35.73%)  threshold  0.1751  WIN
+      layout: pad-median 11.2226  spread across pads 0.1683 (orig 0.1329)  pad-median delta +6.1872 vs threshold 0.1751  paired deltas +6.2287 +6.1685 +6.0992 +6.1721 +6.1779 +6.2414 +6.1065
+  b_L3           median   10.1238  IQR  0.0757  vs orig  +7.2210 (+41.63%)  threshold  0.1751  WIN
+      layout: pad-median 10.3474  spread across pads 0.3370 (orig 0.1329)  pad-median delta +7.0623 vs threshold 0.3370  paired deltas +7.0222 +7.0815 +7.0360 +7.1725 +7.0085 +7.0886 +7.0428
+  b_L4           median    5.1296  IQR  0.1159  vs orig +12.2152 (+70.43%)  threshold  0.1751  WIN
+      layout: pad-median 5.1789  spread across pads 0.3469 (orig 0.1329)  pad-median delta +12.2308 vs threshold 0.3469  paired deltas +12.4434 +12.3352 +12.1175 +11.9825 +12.2411 +12.1784 +12.2945
+  b_L5           median    4.6165  IQR  0.2157  vs orig +12.7283 (+73.38%)  threshold  0.2157  WIN
+      layout: pad-median 4.3341  spread across pads 0.6232 (orig 0.1329)  pad-median delta +13.0756 vs threshold 0.6232  paired deltas +13.2658 +13.0559 +12.9434 +13.0180 +13.0577 +13.0751 +13.4286
+  b_L6           median    4.5315  IQR  0.6011  vs orig +12.8133 (+73.87%)  threshold  0.6011  WIN
+      layout: pad-median 4.5389  spread across pads 0.7710 (orig 0.1329)  pad-median delta +12.8708 vs threshold 0.7710  paired deltas +12.9709 +13.4562 +12.8245 +12.8225 +12.8490 +12.8607 +12.7150
+
+subject dense   null-twin deviation 0.1311 ns/B   (rule: WIN/LOSS only past max(null dev, IQR_arm, IQR_orig))
+  orig           median   15.0834  IQR  0.0879  vs orig  +0.0000 ( +0.00%)  threshold  0.1311  BASE
+  orig2          median   15.2343  IQR  0.0775  vs orig  -0.1509 ( -1.00%)  threshold  0.1311  LOSS
+      layout: no pad control for this arm (a verdict without it is not reportable)
+  null           median   15.2144  IQR  0.1816  vs orig  -0.1311 ( -0.87%)  threshold  0.1816  NOISE
+      layout: no pad control for this arm (a verdict without it is not reportable)
+  poss           median    6.3440  IQR  0.0542  vs orig  +8.7393 (+57.94%)  threshold  0.1311  WIN
+      layout: pad-median 6.3936  spread across pads 0.2075 (orig 0.2166)  pad-median delta +8.8351 vs threshold 0.2166  paired deltas +8.8796 +8.8528 +8.7172 +8.6758 +8.8716 +8.9032 +8.6394
+  a_L1           median   11.8740  IQR  0.0468  vs orig  +3.2094 (+21.28%)  threshold  0.1311  WIN
+      layout: pad-median 11.9222  spread across pads 0.3586 (orig 0.2166)  pad-median delta +3.3066 vs threshold 0.3586  paired deltas +3.4274 +3.2238 +3.1524 +3.3575 +3.5345 +3.3295 +3.1046
+  a_L2           median    9.6403  IQR  0.0537  vs orig  +5.4431 (+36.09%)  threshold  0.1311  WIN
+      layout: pad-median 9.6822  spread across pads 0.1895 (orig 0.2166)  pad-median delta +5.5466 vs threshold 0.2166  paired deltas +5.5090 +5.5430 +5.4271 +5.4850 +5.5922 +5.6964 +5.4942
+  a_L3           median    7.2810  IQR  0.0544  vs orig  +7.8023 (+51.73%)  threshold  0.1311  WIN
+      layout: pad-median 7.2555  spread across pads 0.3449 (orig 0.2166)  pad-median delta +7.9733 vs threshold 0.3449  paired deltas +8.0657 +7.8676 +7.7115 +7.9476 +8.0322 +7.9718 +7.9651
+  a_L4           median    3.8897  IQR  0.4993  vs orig +11.1936 (+74.21%)  threshold  0.4993  WIN
+      layout: pad-median 3.7883  spread across pads 0.5176 (orig 0.2166)  pad-median delta +11.4405 vs threshold 0.5176  paired deltas +11.7147 +11.3094 +11.2937 +11.4246 +11.8519 +11.8387 +11.2642
+  a_L5           median    3.2212  IQR  0.9818  vs orig +11.8621 (+78.64%)  threshold  0.9818  WIN
+      layout: pad-median 3.2630  spread across pads 0.6608 (orig 0.2166)  pad-median delta +11.9658 vs threshold 0.9818  paired deltas +11.5396 +11.9619 +11.9849 +11.3877 +12.0087 +12.0274 +12.1279
+  a_L6           median   14.9263  IQR  0.2060  vs orig  +0.1570 ( +1.04%)  threshold  0.2060  WIN
+      layout: pad-median 14.9391  spread across pads 0.1968 (orig 0.2166)  pad-median delta +0.2897 vs threshold 0.2166  paired deltas +0.3841 +0.2673 +0.2685 +0.2008 +0.3696 +0.2416 +0.1702  [plain rule said NOISE; the pad control downgrades it]
+  b_L1           median   12.1566  IQR  0.1523  vs orig  +2.9268 (+19.40%)  threshold  0.1523  WIN
+      layout: pad-median 12.3176  spread across pads 0.1917 (orig 0.2166)  pad-median delta +2.9111 vs threshold 0.2166  paired deltas +2.8977 +2.9193 +2.8885 +2.9423 +2.9449 +2.9516 +2.8992
+  b_L2           median    9.6583  IQR  0.0613  vs orig  +5.4251 (+35.97%)  threshold  0.1311  WIN
+      layout: pad-median 9.6681  spread across pads 0.1745 (orig 0.2166)  pad-median delta +5.5607 vs threshold 0.2166  paired deltas +5.4947 +5.5430 +5.4223 +5.4880 +5.6064 +5.6637 +5.5129
+  b_L3           median    8.8231  IQR  0.0377  vs orig  +6.2603 (+41.50%)  threshold  0.1311  WIN
+      layout: pad-median 9.0131  spread across pads 0.2370 (orig 0.2166)  pad-median delta +6.2157 vs threshold 0.2370  paired deltas +6.1892 +6.2651 +6.1833 +6.2453 +6.2020 +6.3107 +6.1470
+  b_L4           median    5.0743  IQR  0.1481  vs orig +10.0090 (+66.36%)  threshold  0.1481  WIN
+      layout: pad-median 5.0655  spread across pads 0.4496 (orig 0.2166)  pad-median delta +10.1633 vs threshold 0.4496  paired deltas +10.1042 +10.3536 +10.1636 +9.9198 +10.4268 +10.0150 +10.1552
+  b_L5           median    4.0708  IQR  0.4755  vs orig +11.0126 (+73.01%)  threshold  0.4755  WIN
+      layout: pad-median 4.4685  spread across pads 0.5240 (orig 0.2166)  pad-median delta +10.7603 vs threshold 0.5240  paired deltas +10.8132 +10.7466 +10.7035 +10.6312 +10.6674 +10.8433 +10.7549
+  b_L6           median    4.3138  IQR  0.7468  vs orig +10.7696 (+71.40%)  threshold  0.7468  WIN
+      layout: pad-median 4.3925  spread across pads 0.2661 (orig 0.2166)  pad-median delta +10.8363 vs threshold 0.7468  paired deltas +10.8875 +10.9799 +10.7149 +10.6219 +10.8592 +10.9179 +10.6673
+
+subject sparse   null-twin deviation 0.0057 ns/B   (rule: WIN/LOSS only past max(null dev, IQR_arm, IQR_orig))
+  orig           median   17.6051  IQR  0.1632  vs orig  +0.0000 ( +0.00%)  threshold  0.1632  BASE
+  orig2          median   17.5889  IQR  0.1832  vs orig  +0.0162 ( +0.09%)  threshold  0.1832  NOISE
+      layout: no pad control for this arm (a verdict without it is not reportable)
+  null           median   17.6108  IQR  0.2285  vs orig  -0.0057 ( -0.03%)  threshold  0.2285  NOISE
+      layout: no pad control for this arm (a verdict without it is not reportable)
+  poss           median    6.9996  IQR  0.0645  vs orig +10.6055 (+60.24%)  threshold  0.1632  WIN
+      layout: pad-median 7.0297  spread across pads 0.4038 (orig 0.1168)  pad-median delta +10.6300 vs threshold 0.4038  paired deltas +10.8064 +10.6989 +10.5842 +10.5572 +10.7024 +10.5912 +10.3902
+  a_L1           median   13.2777  IQR  0.1615  vs orig  +4.3273 (+24.58%)  threshold  0.1632  WIN
+      layout: pad-median 13.3130  spread across pads 0.4120 (orig 0.1168)  pad-median delta +4.3468 vs threshold 0.4120  paired deltas +4.3969 +4.3279 +4.2386 +4.2567 +4.6597 +4.3743 +4.2305
+  a_L2           median   11.2998  IQR  0.0262  vs orig  +6.3053 (+35.82%)  threshold  0.1632  WIN
+      layout: pad-median 11.3963  spread across pads 0.1820 (orig 0.1168)  pad-median delta +6.2634 vs threshold 0.1820  paired deltas +6.2859 +6.2683 +6.2373 +6.3245 +6.2418 +6.2768 +6.2776
+  a_L3           median    8.0369  IQR  0.0464  vs orig  +9.5682 (+54.35%)  threshold  0.1632  WIN
+      layout: pad-median 8.0580  spread across pads 0.2305 (orig 0.1168)  pad-median delta +9.6017 vs threshold 0.2305  paired deltas +9.7649 +9.4660 +9.5330 +9.6855 +9.5577 +9.5520 +9.7120
+  a_L4           median    3.9068  IQR  0.1779  vs orig +13.6983 (+77.81%)  threshold  0.1779  WIN
+      layout: pad-median 3.5622  spread across pads 0.7221 (orig 0.1168)  pad-median delta +14.0975 vs threshold 0.7221  paired deltas +14.2292 +14.4489 +13.7856 +14.3566 +14.5184 +13.8276 +14.0683
+  a_L5           median    3.7178  IQR  0.9734  vs orig +13.8873 (+78.88%)  threshold  0.9734  WIN
+      layout: pad-median 3.3055  spread across pads 1.2649 (orig 0.1168)  pad-median delta +14.3542 vs threshold 1.2649  paired deltas +15.2641 +14.1776 +14.0724 +13.9926 +15.2527 +14.4763 +14.7500
+  a_L6           median   17.3492  IQR  0.3288  vs orig  +0.2559 ( +1.45%)  threshold  0.3288  WIN
+      layout: pad-median 17.3307  spread across pads 0.2419 (orig 0.1168)  pad-median delta +0.3290 vs threshold 0.3288  paired deltas +0.4977 +0.1775 +0.3603 +0.3472 +0.5077 +0.2953 +0.3147  [plain rule said NOISE; the pad control downgrades it]
+  b_L1           median   13.4893  IQR  0.0969  vs orig  +4.1158 (+23.38%)  threshold  0.1632  WIN
+      layout: pad-median 13.4542  spread across pads 0.2963 (orig 0.1168)  pad-median delta +4.2055 vs threshold 0.2963  paired deltas +4.3091 +4.3117 +4.1424 +4.3455 +4.3027 +4.0907 +4.1314
+  b_L2           median   11.2940  IQR  0.1064  vs orig  +6.3110 (+35.85%)  threshold  0.1632  WIN
+      layout: pad-median 11.4014  spread across pads 0.1665 (orig 0.1168)  pad-median delta +6.2583 vs threshold 0.1665  paired deltas +6.2768 +6.2590 +6.2577 +6.3029 +6.2614 +6.2919 +6.2673
+  b_L3           median   10.2520  IQR  0.0053  vs orig  +7.3531 (+41.77%)  threshold  0.1632  WIN
+      layout: pad-median 10.4727  spread across pads 0.3324 (orig 0.1168)  pad-median delta +7.1870 vs threshold 0.3324  paired deltas +7.1545 +7.1850 +7.1890 +7.3289 +7.1376 +7.1860 +7.2044
+  b_L4           median    4.9002  IQR  0.3161  vs orig +12.7048 (+72.17%)  threshold  0.3161  WIN
+      layout: pad-median 5.2251  spread across pads 0.5482 (orig 0.1168)  pad-median delta +12.4346 vs threshold 0.5482  paired deltas +12.5613 +12.7727 +12.4431 +12.2135 +12.5144 +12.2528 +12.4004
+  b_L5           median    4.4371  IQR  0.2508  vs orig +13.1680 (+74.80%)  threshold  0.2508  WIN
+      layout: pad-median 4.3845  spread across pads 0.6939 (orig 0.1168)  pad-median delta +13.2752 vs threshold 0.6939  paired deltas +13.5448 +13.2888 +13.3641 +13.1797 +13.8314 +13.0468 +13.2805
+  b_L6           median    4.7078  IQR  0.4401  vs orig +12.8973 (+73.26%)  threshold  0.4401  WIN
+      layout: pad-median 4.5224  spread across pads 0.7198 (orig 0.1168)  pad-median delta +13.1373 vs threshold 0.7198  paired deltas +13.2195 +13.1795 +13.1386 +12.9118 +13.6872 +13.6146 +12.9684
+
+subject CELL   null-twin deviation 0.3538 ns/B   (rule: WIN/LOSS only past max(null dev, IQR_arm, IQR_orig))
+  orig           median   17.4124  IQR  0.6420  vs orig  +0.0000 ( +0.00%)  threshold  0.6420  BASE
+  orig2          median   17.3224  IQR  0.1541  vs orig  +0.0900 ( +0.52%)  threshold  0.6420  NOISE
+      layout: no pad control for this arm (a verdict without it is not reportable)
+  null           median   17.7662  IQR  0.8722  vs orig  -0.3538 ( -2.03%)  threshold  0.8722  NOISE
+      layout: no pad control for this arm (a verdict without it is not reportable)
+  poss           median    7.3193  IQR  1.9015  vs orig +10.0931 (+57.97%)  threshold  1.9015  WIN
+      layout: pad-median 7.2758  spread across pads 1.6519 (orig 0.5912)  pad-median delta +10.2563 vs threshold 1.9015  paired deltas +10.2997 +10.8494 +9.4513 +10.9623 +9.8162 +10.1279 +10.2593
+  a_L1           median   13.4121  IQR  0.6556  vs orig  +4.0003 (+22.97%)  threshold  0.6556  WIN
+      layout: pad-median 13.7156  spread across pads 1.1216 (orig 0.5912)  pad-median delta +3.8165 vs threshold 1.1216  paired deltas +4.2759 +4.5095 +3.6994 +3.8890 +4.3820 +3.3477 +3.4802
+  a_L2           median   11.8192  IQR  1.2427  vs orig  +5.5932 (+32.12%)  threshold  1.2427  WIN
+      layout: pad-median 11.8106  spread across pads 1.1801 (orig 0.5912)  pad-median delta +5.7215 vs threshold 1.2427  paired deltas +5.4278 +5.2578 +6.6784 +6.1662 +5.8890 +4.9342 +5.9523
+  a_L3           median    9.4057  IQR  1.0252  vs orig  +8.0067 (+45.98%)  threshold  1.0252  WIN
+      layout: pad-median 8.1103  spread across pads 1.5047 (orig 0.5912)  pad-median delta +9.4219 vs threshold 1.5047  paired deltas +9.5819 +8.9020 +9.8823 +9.8689 +9.6278 +9.1188 +9.5984
+  a_L4           median    3.3203  IQR  0.5994  vs orig +14.0922 (+80.93%)  threshold  0.6420  WIN
+      layout: pad-median 3.2267  spread across pads 0.7939 (orig 0.5912)  pad-median delta +14.3055 vs threshold 0.7939  paired deltas +14.0733 +14.5739 +14.7656 +15.3357 +14.3698 +14.2241 +14.2488
+  a_L5           median    3.6494  IQR  0.7668  vs orig +13.7630 (+79.04%)  threshold  0.7668  WIN
+      layout: pad-median 3.3970  spread across pads 1.0753 (orig 0.5912)  pad-median delta +14.1351 vs threshold 1.0753  paired deltas +14.5118 +14.6052 +15.0672 +15.0175 +13.7685 +13.4278 +13.8120
+  a_L6           median   17.4696  IQR  0.4956  vs orig  -0.0572 ( -0.33%)  threshold  0.6420  NOISE
+      layout: pad-median 17.3359  spread across pads 0.6704 (orig 0.5912)  pad-median delta +0.1962 vs threshold 0.6704  paired deltas +0.4259 +0.0057 +0.6686 +0.5129 +0.2277 +0.2618 +0.2252
+  b_L1           median   14.3288  IQR  0.7981  vs orig  +3.0836 (+17.71%)  threshold  0.7981  WIN
+      layout: pad-median 14.1829  spread across pads 0.9242 (orig 0.5912)  pad-median delta +3.3492 vs threshold 0.9242  paired deltas +4.0575 +3.8859 +3.7674 +3.8385 +3.7774 +3.1022 +3.1331
+  b_L2           median   11.7749  IQR  1.3433  vs orig  +5.6375 (+32.38%)  threshold  1.3433  WIN
+      layout: pad-median 11.9120  spread across pads 1.2634 (orig 0.5912)  pad-median delta +5.6201 vs threshold 1.3433  paired deltas +5.5259 +5.8995 +6.6190 +5.7452 +4.9741 +6.1123 +5.5183
+  b_L3           median   10.2800  IQR  0.7339  vs orig  +7.1324 (+40.96%)  threshold  0.7339  WIN
+      layout: pad-median 10.8664  spread across pads 1.2656 (orig 0.5912)  pad-median delta +6.6657 vs threshold 1.2656  paired deltas +6.6469 +6.3325 +7.6205 +7.0880 +6.5691 +5.8939 +6.9626
+  b_L4           median    6.4568  IQR  1.6078  vs orig +10.9556 (+62.92%)  threshold  1.6078  WIN
+      layout: pad-median 5.3586  spread across pads 1.2287 (orig 0.5912)  pad-median delta +12.1735 vs threshold 1.6078  paired deltas +11.4291 +11.8600 +12.6766 +12.5881 +12.3365 +12.2108 +12.1621
+  b_L5           median    5.6701  IQR  1.3825  vs orig +11.7423 (+67.44%)  threshold  1.3825  WIN
+      layout: pad-median 4.6099  spread across pads 1.3658 (orig 0.5912)  pad-median delta +12.9222 vs threshold 1.3825  paired deltas +12.7285 +13.4136 +13.4197 +13.4381 +12.9055 +12.8035 +13.1951
+  b_L6           median    4.5315  IQR  0.6494  vs orig +12.8809 (+73.98%)  threshold  0.6494  WIN
+      layout: pad-median 4.5688  spread across pads 0.9153 (orig 0.5912)  pad-median delta +12.9633 vs threshold 0.9153  paired deltas +12.9084 +13.8099 +13.2529 +13.4355 +12.7094 +12.8931 +12.7925
+
+run dir: /Users/fdicostanzo/pcrec/worktrees/artconf/build-artrev/confirm/capability_doubled_word/timing/002_pass2
+A07 rc=0 10:38:41
+ALL_DONE

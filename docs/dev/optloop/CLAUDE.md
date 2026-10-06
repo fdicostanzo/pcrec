@@ -858,3 +858,5 @@ that cycle's analysis lands.
   corpus + bench (`gen/census.py`, controls in `gen/selftest.txt`), known-vs-new against plan rows,
   START-SET stage-3 interaction, give-up-surface tag, cost/class, a summary table with an EMPTY
   `confirmed` column for S4's join, and DRAFT filed-not-scheduled plan rows (plan.md not edited).
+
+- `artrev/confirm/` — [ARTREV] S4 results (lane artconf, 2026-10-06): `verdicts.md` (the reportable tables), `confirmed_A*.tsv`, `identity.tsv` + `idlogs/`, `raw/` (every timing run's raw.tsv/summary and the driver scripts). `artrev/<A>/confirmed.tsv` copies per artifact; `notebook/confirmed.md` holds the per-lead rows.

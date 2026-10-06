@@ -1,0 +1,114 @@
+#host	ubuntubudu	Linux-7.0.0-29-generic-x86_64-with-glibc2.43
+#cpu	AMD Ryzen 5 1600 Six-Core Processor
+#cc	gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0	-O2 -fPIC
+#date	2026-10-06 10:24:42
+#rounds	11	#load_max	2.00
+#artifact	capability_doubled_word pin 57db5152 abi 62
+
+subject t64k   null-twin deviation 2.5084 ns/B   (rule: WIN/LOSS only past max(null dev, IQR_arm, IQR_orig))
+  orig           median   18.6276  IQR  3.1493  vs orig  +0.0000 ( +0.00%)  threshold  3.1493  BASE
+  orig2          median   20.7485  IQR  3.1814  vs orig  -2.1209 (-11.39%)  threshold  3.1814  NOISE
+  null           median   21.1361  IQR  0.4184  vs orig  -2.5084 (-13.47%)  threshold  3.1493  NOISE
+  poss           median   10.0445  IQR  3.1659  vs orig  +8.5831 (+46.08%)  threshold  3.1659  WIN
+  a_L1           median   16.9384  IQR  1.8298  vs orig  +1.6892 ( +9.07%)  threshold  3.1493  NOISE
+  a_L2           median   15.3213  IQR  2.9694  vs orig  +3.3064 (+17.75%)  threshold  3.1493  WIN
+  a_L3           median    9.4794  IQR  4.5121  vs orig  +9.1482 (+49.11%)  threshold  4.5121  WIN
+  a_L4           median    3.1994  IQR  3.6579  vs orig +15.4283 (+82.82%)  threshold  3.6579  WIN
+  a_L5           median    2.9111  IQR  3.2538  vs orig +15.7165 (+84.37%)  threshold  3.2538  WIN
+  a_L6           median   20.8710  IQR  4.3098  vs orig  -2.2434 (-12.04%)  threshold  4.3098  NOISE
+  b_L1           median   17.2565  IQR  2.7021  vs orig  +1.3712 ( +7.36%)  threshold  3.1493  NOISE
+  b_L2           median   14.7847  IQR  2.5857  vs orig  +3.8429 (+20.63%)  threshold  3.1493  WIN
+  b_L3           median   13.9782  IQR  2.7159  vs orig  +4.6495 (+24.96%)  threshold  3.1493  WIN
+  b_L4           median    5.6119  IQR  4.1603  vs orig +13.0157 (+69.87%)  threshold  4.1603  WIN
+  b_L5           median    4.6733  IQR  4.1931  vs orig +13.9543 (+74.91%)  threshold  4.1931  WIN
+  b_L6           median    4.9243  IQR  1.4194  vs orig +13.7033 (+73.56%)  threshold  3.1493  WIN
+
+subject t256k   null-twin deviation 0.1300 ns/B   (rule: WIN/LOSS only past max(null dev, IQR_arm, IQR_orig))
+  orig           median   18.1183  IQR  0.2407  vs orig  +0.0000 ( +0.00%)  threshold  0.2407  BASE
+  orig2          median   18.1068  IQR  0.4200  vs orig  +0.0116 ( +0.06%)  threshold  0.4200  NOISE
+  null           median   17.9884  IQR  1.0766  vs orig  +0.1300 ( +0.72%)  threshold  1.0766  NOISE
+  poss           median    8.7978  IQR  1.0719  vs orig  +9.3206 (+51.44%)  threshold  1.0719  WIN
+  a_L1           median   14.0719  IQR  1.2238  vs orig  +4.0465 (+22.33%)  threshold  1.2238  WIN
+  a_L2           median   12.5196  IQR  1.5998  vs orig  +5.5987 (+30.90%)  threshold  1.5998  WIN
+  a_L3           median    9.7199  IQR  0.4672  vs orig  +8.3984 (+46.35%)  threshold  0.4672  WIN
+  a_L4           median    3.3298  IQR  1.5993  vs orig +14.7886 (+81.62%)  threshold  1.5993  WIN
+  a_L5           median    4.7659  IQR  2.2865  vs orig +13.3524 (+73.70%)  threshold  2.2865  WIN
+  a_L6           median   17.7453  IQR  0.3337  vs orig  +0.3730 ( +2.06%)  threshold  0.3337  WIN
+  b_L1           median   13.8974  IQR  1.1265  vs orig  +4.2209 (+23.30%)  threshold  1.1265  WIN
+  b_L2           median   12.5876  IQR  0.5083  vs orig  +5.5307 (+30.53%)  threshold  0.5083  WIN
+  b_L3           median   11.6544  IQR  1.0192  vs orig  +6.4640 (+35.68%)  threshold  1.0192  WIN
+  b_L4           median    6.8511  IQR  1.0736  vs orig +11.2673 (+62.19%)  threshold  1.0736  WIN
+  b_L5           median    5.7414  IQR  1.7046  vs orig +12.3770 (+68.31%)  threshold  1.7046  WIN
+  b_L6           median    4.8891  IQR  2.2839  vs orig +13.2293 (+73.02%)  threshold  2.2839  WIN
+
+subject t1m   null-twin deviation 0.0085 ns/B   (rule: WIN/LOSS only past max(null dev, IQR_arm, IQR_orig))
+  orig           median   17.3657  IQR  0.0513  vs orig  +0.0000 ( +0.00%)  threshold  0.0513  BASE
+  orig2          median   17.3475  IQR  0.0727  vs orig  +0.0182 ( +0.11%)  threshold  0.0727  NOISE
+  null           median   17.3742  IQR  0.1155  vs orig  -0.0085 ( -0.05%)  threshold  0.1155  NOISE
+  poss           median    6.9338  IQR  0.0084  vs orig +10.4320 (+60.07%)  threshold  0.0513  WIN
+  a_L1           median   13.1388  IQR  0.0398  vs orig  +4.2269 (+24.34%)  threshold  0.0513  WIN
+  a_L2           median   11.1646  IQR  0.0509  vs orig  +6.2012 (+35.71%)  threshold  0.0513  WIN
+  a_L3           median    7.9502  IQR  0.0442  vs orig  +9.4155 (+54.22%)  threshold  0.0513  WIN
+  a_L4           median    3.2426  IQR  1.1429  vs orig +14.1231 (+81.33%)  threshold  1.1429  WIN
+  a_L5           median    2.9045  IQR  1.1389  vs orig +14.4612 (+83.27%)  threshold  1.1389  WIN
+  a_L6           median   16.8884  IQR  0.0651  vs orig  +0.4773 ( +2.75%)  threshold  0.0651  WIN
+  b_L1           median   13.2288  IQR  0.2236  vs orig  +4.1370 (+23.82%)  threshold  0.2236  WIN
+  b_L2           median   11.1387  IQR  0.0702  vs orig  +6.2271 (+35.86%)  threshold  0.0702  WIN
+  b_L3           median   10.1253  IQR  0.0221  vs orig  +7.2405 (+41.69%)  threshold  0.0513  WIN
+  b_L4           median    5.0284  IQR  0.2323  vs orig +12.3373 (+71.04%)  threshold  0.2323  WIN
+  b_L5           median    4.5049  IQR  0.7167  vs orig +12.8608 (+74.06%)  threshold  0.7167  WIN
+  b_L6           median    4.6521  IQR  0.2111  vs orig +12.7136 (+73.21%)  threshold  0.2111  WIN
+
+subject dense   null-twin deviation 0.0270 ns/B   (rule: WIN/LOSS only past max(null dev, IQR_arm, IQR_orig))
+  orig           median   15.1943  IQR  0.0448  vs orig  +0.0000 ( +0.00%)  threshold  0.0448  BASE
+  orig2          median   15.1869  IQR  0.0373  vs orig  +0.0074 ( +0.05%)  threshold  0.0448  NOISE
+  null           median   15.2213  IQR  0.1530  vs orig  -0.0270 ( -0.18%)  threshold  0.1530  NOISE
+  poss           median    6.3697  IQR  0.0431  vs orig  +8.8245 (+58.08%)  threshold  0.0448  WIN
+  a_L1           median   11.8095  IQR  0.0845  vs orig  +3.3848 (+22.28%)  threshold  0.0845  WIN
+  a_L2           median    9.6333  IQR  0.0639  vs orig  +5.5610 (+36.60%)  threshold  0.0639  WIN
+  a_L3           median    7.2897  IQR  0.0497  vs orig  +7.9045 (+52.02%)  threshold  0.0497  WIN
+  a_L4           median    3.8978  IQR  0.8717  vs orig +11.2965 (+74.35%)  threshold  0.8717  WIN
+  a_L5           median    3.5844  IQR  1.1823  vs orig +11.6098 (+76.41%)  threshold  1.1823  WIN
+  a_L6           median   14.8532  IQR  0.2263  vs orig  +0.3410 ( +2.24%)  threshold  0.2263  WIN
+  b_L1           median   12.2260  IQR  0.1543  vs orig  +2.9682 (+19.54%)  threshold  0.1543  WIN
+  b_L2           median    9.6506  IQR  0.0173  vs orig  +5.5436 (+36.48%)  threshold  0.0448  WIN
+  b_L3           median    8.8176  IQR  0.0229  vs orig  +6.3767 (+41.97%)  threshold  0.0448  WIN
+  b_L4           median    4.7290  IQR  0.3417  vs orig +10.4652 (+68.88%)  threshold  0.3417  WIN
+  b_L5           median    4.5396  IQR  0.1916  vs orig +10.6546 (+70.12%)  threshold  0.1916  WIN
+  b_L6           median    4.1612  IQR  0.6785  vs orig +11.0330 (+72.61%)  threshold  0.6785  WIN
+
+subject sparse   null-twin deviation 0.0206 ns/B   (rule: WIN/LOSS only past max(null dev, IQR_arm, IQR_orig))
+  orig           median   17.6269  IQR  0.0700  vs orig  +0.0000 ( +0.00%)  threshold  0.0700  BASE
+  orig2          median   17.6064  IQR  0.1841  vs orig  +0.0205 ( +0.12%)  threshold  0.1841  NOISE
+  null           median   17.6476  IQR  0.0489  vs orig  -0.0206 ( -0.12%)  threshold  0.0700  NOISE
+  poss           median    6.9985  IQR  0.0214  vs orig +10.6284 (+60.30%)  threshold  0.0700  WIN
+  a_L1           median   13.2443  IQR  0.1978  vs orig  +4.3826 (+24.86%)  threshold  0.1978  WIN
+  a_L2           median   11.2954  IQR  0.0607  vs orig  +6.3315 (+35.92%)  threshold  0.0700  WIN
+  a_L3           median    8.0573  IQR  0.0602  vs orig  +9.5696 (+54.29%)  threshold  0.0700  WIN
+  a_L4           median    3.7909  IQR  0.6269  vs orig +13.8360 (+78.49%)  threshold  0.6269  WIN
+  a_L5           median    3.6119  IQR  0.7818  vs orig +14.0150 (+79.51%)  threshold  0.7818  WIN
+  a_L6           median   17.1222  IQR  0.1657  vs orig  +0.5047 ( +2.86%)  threshold  0.1657  WIN
+  b_L1           median   13.4824  IQR  0.1923  vs orig  +4.1445 (+23.51%)  threshold  0.1923  WIN
+  b_L2           median   11.3038  IQR  0.0955  vs orig  +6.3231 (+35.87%)  threshold  0.0955  WIN
+  b_L3           median   10.2508  IQR  0.0223  vs orig  +7.3761 (+41.85%)  threshold  0.0700  WIN
+  b_L4           median    5.0794  IQR  0.3509  vs orig +12.5475 (+71.18%)  threshold  0.3509  WIN
+  b_L5           median    4.2044  IQR  0.4986  vs orig +13.4225 (+76.15%)  threshold  0.4986  WIN
+  b_L6           median    4.5414  IQR  0.5597  vs orig +13.0855 (+74.24%)  threshold  0.5597  WIN
+
+subject CELL   null-twin deviation 0.0454 ns/B   (rule: WIN/LOSS only past max(null dev, IQR_arm, IQR_orig))
+  orig           median   18.0232  IQR  0.2367  vs orig  +0.0000 ( +0.00%)  threshold  0.2367  BASE
+  orig2          median   17.7871  IQR  0.7635  vs orig  +0.2361 ( +1.31%)  threshold  0.7635  NOISE
+  null           median   18.0685  IQR  1.1419  vs orig  -0.0454 ( -0.25%)  threshold  1.1419  NOISE
+  poss           median    8.3171  IQR  1.5353  vs orig  +9.7060 (+53.85%)  threshold  1.5353  WIN
+  a_L1           median   14.0719  IQR  1.1202  vs orig  +3.9513 (+21.92%)  threshold  1.1202  WIN
+  a_L2           median   12.5126  IQR  1.4728  vs orig  +5.5106 (+30.58%)  threshold  1.4728  WIN
+  a_L3           median    9.4694  IQR  1.7069  vs orig  +8.5538 (+47.46%)  threshold  1.7069  WIN
+  a_L4           median    3.5229  IQR  0.8395  vs orig +14.5003 (+80.45%)  threshold  0.8395  WIN
+  a_L5           median    2.9111  IQR  2.1666  vs orig +15.1121 (+83.85%)  threshold  2.1666  WIN
+  a_L6           median   17.1793  IQR  0.7940  vs orig  +0.8438 ( +4.68%)  threshold  0.7940  WIN
+  b_L1           median   13.6090  IQR  1.0293  vs orig  +4.4141 (+24.49%)  threshold  1.0293  WIN
+  b_L2           median   12.5577  IQR  1.4567  vs orig  +5.4654 (+30.32%)  threshold  1.4567  WIN
+  b_L3           median   11.6544  IQR  1.3282  vs orig  +6.3688 (+35.34%)  threshold  1.3282  WIN
+  b_L4           median    5.1933  IQR  1.4135  vs orig +12.8298 (+71.19%)  threshold  1.4135  WIN
+  b_L5           median    4.5992  IQR  0.9029  vs orig +13.4239 (+74.48%)  threshold  0.9029  WIN
+  b_L6           median    4.7032  IQR  0.3383  vs orig +13.3199 (+73.90%)  threshold  0.3383  WIN

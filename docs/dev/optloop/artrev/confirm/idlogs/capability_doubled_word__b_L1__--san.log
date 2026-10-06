@@ -1,0 +1,10 @@
+IDENTITY PASS  arm=b_L1 rev=1  (ASan+UBSan)
+subjects: 3 supplied, 0 corpus, 3000 battery; 14915 cases, 127004 transcript lines compared (shapes: S M C SI MI CI N V + find-all F/FC FSI; 14912 `_in` search lines driven); san=True
+search cases that MATCH in the original: 1372 of 14912
+libpcre2 10.48 (/opt/homebrew/include): OK, checked 1500, skipped 0, orig-vs-pcre2 disagreements 0, twin-only 0
+shrunken resources (0/1 frames x 0/1 trail, budgets 8:64,64:1024,2000:40000): 762381 transcript lines, original gives up on 294884, 0 give-up repair(s) of which 0 checked against libpcre2 (0 skipped)
+  steps=8 work=64        lines 253507, original gives up on 101265, repairs 0 (+0 walk lines), oracle-checked 0
+  steps=64 work=1024     lines 253513, original gives up on 96293, repairs 0 (+0 walk lines), oracle-checked 0
+  steps=2000 work=40000  lines 255361, original gives up on 97326, repairs 0 (+0 walk lines), oracle-checked 0
+window start: n/a (no internal rx_prefilter in this artifact)
+rc=0

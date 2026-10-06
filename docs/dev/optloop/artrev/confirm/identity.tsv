@@ -1,0 +1,63 @@
+artifact	arm	mode	result	cases	in_search_lines	giveup_repairs	repairs_oracle_checked	window_start	libpcre2_sample_checked
+capability_doubled_word	a_L1	--san	PASS	14915	14912	0	0	n/a (no internal rx_prefilter in this artifact)	1500
+capability_doubled_word	a_L1	plain	PASS	14915	14912	0	0	n/a (no internal rx_prefilter in this artifact)	1500
+capability_doubled_word	a_L2	--san	PASS	14915	14912	5380	20168	n/a (no internal rx_prefilter in this artifact)	1500
+capability_doubled_word	a_L2	plain	PASS	14915	14912	5380	20168	n/a (no internal rx_prefilter in this artifact)	1500
+capability_doubled_word	a_L2	strict	FAIL	14915	14912	5380	20168	SKIPPED (--skip-window)	1500
+capability_doubled_word	a_L3	--san	PASS	14915	14912	294884	339248	n/a (no internal rx_prefilter in this artifact)	1500
+capability_doubled_word	a_L3	plain	PASS	14915	14912	294884	339248	n/a (no internal rx_prefilter in this artifact)	1500
+capability_doubled_word	a_L3	strict	FAIL	14915	14912	294884	339248	SKIPPED (--skip-window)	1500
+capability_doubled_word	a_L4	--san	PASS	14915	14912	294884	336307	n/a (no internal rx_prefilter in this artifact)	1500
+capability_doubled_word	a_L4	plain	PASS	14915	14912	294884	339248	n/a (no internal rx_prefilter in this artifact)	1500
+capability_doubled_word	a_L4	strict	FAIL	14915	14912	294884	339248	SKIPPED (--skip-window)	1500
+capability_doubled_word	a_L5	--san	PASS	14915	14912	294884	339248	n/a (no internal rx_prefilter in this artifact)	1500
+capability_doubled_word	a_L5	plain	PASS	14915	14912	294884	338377	n/a (no internal rx_prefilter in this artifact)	1500
+capability_doubled_word	a_L5	strict	FAIL	14915	14912	294884	339248	SKIPPED (--skip-window)	1500
+capability_doubled_word	a_L6	--san	PASS	14915	14912	0	0	n/a (no internal rx_prefilter in this artifact)	1500
+capability_doubled_word	a_L6	plain	PASS	14915	14912	0	0	n/a (no internal rx_prefilter in this artifact)	1500
+capability_doubled_word	b_L1	--san	PASS	14915	14912	0	0	n/a (no internal rx_prefilter in this artifact)	1500
+capability_doubled_word	b_L1	plain	PASS	14915	14912	0	0	n/a (no internal rx_prefilter in this artifact)	1500
+capability_doubled_word	b_L2	--san	PASS	14915	14912	5380	20168	n/a (no internal rx_prefilter in this artifact)	1500
+capability_doubled_word	b_L2	plain	PASS	14915	14912	5380	20168	n/a (no internal rx_prefilter in this artifact)	1500
+capability_doubled_word	b_L2	strict	FAIL	14915	14912	5380	20168	SKIPPED (--skip-window)	1500
+capability_doubled_word	b_L3	--san	PASS	14915	14912	294884	331303	n/a (no internal rx_prefilter in this artifact)	1500
+capability_doubled_word	b_L3	plain	PASS	14915	14912	294884	339248	n/a (no internal rx_prefilter in this artifact)	1500
+capability_doubled_word	b_L3	strict	FAIL	14915	14912	294884	339248	SKIPPED (--skip-window)	1500
+capability_doubled_word	b_L4	--san	PASS	14915	14912	294884	331675	n/a (no internal rx_prefilter in this artifact)	1500
+capability_doubled_word	b_L4	plain	PASS	14915	14912	294884	339248	n/a (no internal rx_prefilter in this artifact)	1500
+capability_doubled_word	b_L4	strict	FAIL	14915	14912	294884	339248	SKIPPED (--skip-window)	1500
+capability_doubled_word	b_L5	--san	PASS	14915	14912	294884	339248	n/a (no internal rx_prefilter in this artifact)	1500
+capability_doubled_word	b_L5	plain	PASS	14915	14912	294884	339248	n/a (no internal rx_prefilter in this artifact)	1500
+capability_doubled_word	b_L5	strict	FAIL	14915	14912	294884	339248	SKIPPED (--skip-window)	1500
+capability_doubled_word	b_L6	--san	PASS	14915	14912	294884	339248	n/a (no internal rx_prefilter in this artifact)	1500
+capability_doubled_word	b_L6	plain	PASS	14915	14912	294884	339248	n/a (no internal rx_prefilter in this artifact)	1500
+capability_doubled_word	b_L6	strict	FAIL	14915	14912	294884	339248	SKIPPED (--skip-window)	1500
+capability_doubled_word	null	--san	PASS	14915	14912	0	0	n/a (no internal rx_prefilter in this artifact)	1500
+capability_doubled_word	null	plain	PASS	14915	14912	0	0	n/a (no internal rx_prefilter in this artifact)	1500
+capability_doubled_word	poss	--san	PASS	14915	14912	50168	54754	n/a (no internal rx_prefilter in this artifact)	1500
+capability_doubled_word	poss	plain	PASS	14915	14912	50168	54754	n/a (no internal rx_prefilter in this artifact)	1500
+capability_doubled_word	poss	strict	FAIL	14915	14912	50168	54754	SKIPPED (--skip-window)	1500
+loglines_level_context	L1	--san	PASS	16130	15717	0	0	342690 prefilter windows compared (original proposes a windo	1500
+loglines_level_context	L1	plain	PASS	16130	15717	0	0	342690 prefilter windows compared (original proposes a windo	1500
+loglines_level_context	L2	--san	PASS	16130	15717	0	0	342690 prefilter windows compared (original proposes a windo	1500
+loglines_level_context	L2	plain	PASS	16130	15717	0	0	342690 prefilter windows compared (original proposes a windo	1500
+loglines_level_context	L3	--san	PASS	16130	15717	0	0	342690 prefilter windows compared (original proposes a windo	1500
+loglines_level_context	L3	plain	PASS	16130	15717	0	0	342690 prefilter windows compared (original proposes a windo	1500
+loglines_level_context	L4	--san	PASS	16130	15717	0	0	342690 prefilter windows compared (original proposes a windo	1500
+loglines_level_context	L4	plain	PASS	16130	15717	0	0	342690 prefilter windows compared (original proposes a windo	1500
+loglines_level_context	L5	--san	PASS	16130	15717	0	0	342690 prefilter windows compared (original proposes a windo	1500
+loglines_level_context	L5	plain	PASS	16130	15717	0	0	342690 prefilter windows compared (original proposes a windo	1500
+loglines_level_context	L6	--san	PASS	16130	15717	0	0	342690 prefilter windows compared (original proposes a windo	1500
+loglines_level_context	L6	plain	PASS	16130	15717	0	0	342690 prefilter windows compared (original proposes a windo	1500
+loglines_level_context	null	--san	PASS	16130	15717	0	0	342690 prefilter windows compared (original proposes a windo	1500
+loglines_level_context	null	plain	PASS	16130	15717	0	0	342690 prefilter windows compared (original proposes a windo	1500
+loglines_stack_frame	L1	--san	PASS	15325	15176	0	0	n/a (no internal rx_prefilter in this artifact)	1500
+loglines_stack_frame	L1	plain	PASS	15325	15176	0	0	n/a (no internal rx_prefilter in this artifact)	1500
+loglines_stack_frame	L2	--san	PASS	15325	15176	0	0	n/a (no internal rx_prefilter in this artifact)	1500
+loglines_stack_frame	L2	plain	PASS	15325	15176	0	0	n/a (no internal rx_prefilter in this artifact)	1500
+loglines_stack_frame	L3	--san	PASS	15325	15176	0	0	n/a (no internal rx_prefilter in this artifact)	1500
+loglines_stack_frame	L3	plain	PASS	15325	15176	0	0	n/a (no internal rx_prefilter in this artifact)	1500
+loglines_stack_frame	L4	--san	PASS	15325	15176	0	0	n/a (no internal rx_prefilter in this artifact)	1500
+loglines_stack_frame	L4	plain	PASS	15325	15176	0	0	n/a (no internal rx_prefilter in this artifact)	1500
+loglines_stack_frame	null	--san	PASS	15325	15176	0	0	n/a (no internal rx_prefilter in this artifact)	1500
+loglines_stack_frame	null	plain	PASS	15325	15176	0	0	n/a (no internal rx_prefilter in this artifact)	1500
