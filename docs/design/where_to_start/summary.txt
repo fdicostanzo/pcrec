@@ -1,0 +1,50 @@
+# census.py output, 2026-10-06, lane startstudy. pcrec = lane/startstudy build at 2e5aae78 (src/ identical to main 6816f839); pcrec-bench read-only at eb634d9d. Corpus deduplicated on (pattern, encoding, icase). gcc never run.
+## bench: 345 patterns, 321 compiled, parsed 274 (85%); unanchored+parsed 250
+   unparsed by reason: escape 14, group-kind 11, unsupported-syntax 8, class-range 6, class-escape 6, scoped-flag 1, \K 1
+   compiled by route: dfa 250, hybrid 50, vm-only 21
+   parsed by route:   dfa 212, hybrid 44, vm-only 18
+   [dfa] unanchored 201: no-landmark 95, spine 94, top-alternation 12
+      best landmark by strength: start 77, fixed 5, bounded 2, exact-rev 4, presence 6
+      best NOT at start: 17 (byte 13 / run 4); of these >=2x rarer than today's key 12, >=8x 5
+      >=2x by strength: fixed 5, bounded 1, exact-rev 2, presence 4
+      of >=2x fixed/bounded, already on an offset-set/run-pinned row or the K82 handoff: 5 of 6
+      exact-rev >=2x: loglines/stack-frame, syntax/qnt-plus
+      presence >=2x: capability/float-literal-bound, syntax/cls-s-uc, syntax/grp-atomic-rep, syntax/qnt-poss-star
+   [hybrid] unanchored 33: no-landmark 15, spine 18
+      best landmark by strength: start 14, fixed 0, bounded 2, exact-rev 1, presence 1
+      best NOT at start: 4 (byte 3 / run 1); of these >=2x rarer than today's key 1, >=8x 0
+      >=2x by strength: fixed 0, bounded 1, exact-rev 0, presence 0
+      of >=2x fixed/bounded, already on an offset-set/run-pinned row or the K82 handoff: 0 of 1
+   [vm-only] unanchored 16: no-landmark 5, spine 11
+      best landmark by strength: start 8, fixed 0, bounded 0, exact-rev 3, presence 0
+      best NOT at start: 3 (byte 3 / run 0); of these >=2x rarer than today's key 3, >=8x 1
+      >=2x by strength: fixed 0, bounded 0, exact-rev 3, presence 0
+      of >=2x fixed/bounded, already on an offset-set/run-pinned row or the K82 handoff: 0 of 0
+      exact-rev >=2x: capability/dup-param-detect, syntax/bak-1, syntax/bak-g-rel
+      VM-only with NO candidate scan today (VM_START_SCAN none): 0 spine; a usable landmark (start/fixed/bounded/exact-rev): 0 (start 0, non-start 0)
+      VM-only WITH the start-set hat: 11 spine; a non-start usable landmark >=2x rarer than the hat's set: 3
+   C2 necessity vs pcrec req_set: 99 patterns checked, 331 bytes, 0 violations
+   C3 fixed offset vs pcrec kset_walk: agree 5, unreached 2
+## corpus: 3704 patterns, 3333 compiled, parsed 2448 (73%); unanchored+parsed 2096
+   unparsed by reason: group-kind 323, escape 145, unsupported-syntax 125, class-escape 102, \K 78, stray 59, scoped-flag 26, class-range 15, class 10, \g 1, posix 1
+   compiled by route: dfa 1836, hybrid 1133, vm-only 364
+   parsed by route:   dfa 1283, hybrid 891, vm-only 274
+   [dfa] unanchored 1172: no-landmark 517, spine 558, top-alternation 97
+      best landmark by strength: start 377, fixed 47, bounded 59, exact-rev 46, presence 29
+      best NOT at start: 181 (byte 145 / run 36); of these >=2x rarer than today's key 133, >=8x 40
+      >=2x by strength: fixed 41, bounded 47, exact-rev 21, presence 24
+      of >=2x fixed/bounded, already on an offset-set/run-pinned row or the K82 handoff: 36 of 88
+   [hybrid] unanchored 770: no-landmark 200, spine 549, top-alternation 21
+      best landmark by strength: start 289, fixed 61, bounded 113, exact-rev 26, presence 60
+      best NOT at start: 260 (byte 239 / run 21); of these >=2x rarer than today's key 203, >=8x 47
+      >=2x by strength: fixed 56, bounded 88, exact-rev 23, presence 36
+      of >=2x fixed/bounded, already on an offset-set/run-pinned row or the K82 handoff: 58 of 144
+   [vm-only] unanchored 154: no-landmark 90, spine 63, top-alternation 1
+      best landmark by strength: start 24, fixed 8, bounded 0, exact-rev 5, presence 26
+      best NOT at start: 39 (byte 36 / run 3); of these >=2x rarer than today's key 38, >=8x 30
+      >=2x by strength: fixed 8, bounded 0, exact-rev 4, presence 26
+      of >=2x fixed/bounded, already on an offset-set/run-pinned row or the K82 handoff: 0 of 8
+      VM-only with NO candidate scan today (VM_START_SCAN none): 18 spine; a usable landmark (start/fixed/bounded/exact-rev): 0 (start 0, non-start 0)
+      VM-only WITH the start-set hat: 45 spine; a non-start usable landmark >=2x rarer than the hat's set: 12
+   C2 necessity vs pcrec req_set: 1256 patterns checked, 2258 bytes, 0 violations
+   C3 fixed offset vs pcrec kset_walk: agree 92, unreached 20

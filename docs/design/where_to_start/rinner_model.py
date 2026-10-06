@@ -33,7 +33,7 @@ comparison to have teeth. `--selftest` asserts that.
 Env: PCRE2_LIB (default /opt/homebrew/lib/libpcre2-8.dylib). Deterministic
 (--seed). Usage: python3 rinner_model.py [--n 4000] [--seed 1] [--selftest]
 """
-import argparse, ctypes, os, random, sys, collections
+import argparse, ctypes, os, random, re, sys, collections
 
 LIB = ctypes.CDLL(os.environ.get("PCRE2_LIB", "/opt/homebrew/lib/libpcre2-8.dylib"))
 SZ = ctypes.c_size_t
@@ -185,8 +185,10 @@ def gen_case(rnd):
 def gate(c):
     """(applies, reason). rust's sufficient conditions + pcrec's."""
     pf = c["pf"]
-    if pf["atomic"]: return False, "P-atomic"
-    if pf["look"]: return False, "P-lookaround"
+    amb = c["pw"][0] != c["pw"][1] and set(c["L"]) <= c["palph"]
+    sfx = "+split-ambiguous" if amb else "+split-clean"
+    if pf["atomic"]: return False, "P-atomic" + sfx
+    if pf["look"]: return False, "P-lookaround" + sfx
     if c["pw"][0] == c["pw"][1]: return True, "P-fixed-width"
     if not set(c["L"]) <= c["palph"]: return True, "P-cannot-contain-L"
     return False, "split-ambiguous"
@@ -219,13 +221,21 @@ def tactic_first(c, subj, frm, mut, opts, stats):
         j = base.find(L, j)
         if j < 0:
             return None
-        st = [s for s in range(lo, j + 1) if p_ends_at(c["P"], opts, base, s, j)]
+        Pw = c["P"]
+        if "erase" in mut:              # the reverse machine a DFA builds: atomicity ERASED
+            Pw = re.sub(r"([*+?}])\+", r"\1", Pw.replace("(?>", "(?:"))
+        st = [s for s in range(lo, j + 1) if p_ends_at(Pw, opts, base, s, j)]
         walked += j - (min(st) if st else j)
         if "rust_guard" in mut and st and min(st) < min_match_start:
             # rust's try_search_half_rev_limited: the reverse walk would cross the previous
             # literal's end; RetryError::Quadratic, the core engine answers from the startpos.
             stats["rust_guard_fallback"] += 1
             return match(cR, base, frm)
+        if "fallback" in mut and st and min_match_start > 0:
+            # the candidate loop's GIVE-UP (rust's guard tripping, or a failed-verify budget):
+            # hand the CURRENT candidate's s* to the ordinary unanchored scan as its startpos.
+            # Exact iff s* is a lower bound on every remaining match start.
+            return match(cR, base, min(st))
         if "lowerbound" in mut and st:
             # the HANDOFF form: s* is a lower bound on every match start, so the ordinary
             # unanchored search from s* answers exactly (no candidate loop at all).
@@ -256,9 +266,10 @@ def find_all(fn, subj):
 
 
 VARIANTS = ["tactic", "gate_off", "lowerbound", "lowerbound_gate_off", "rust_guard", "rust_guard_gate_off",
+            "fallback", "fallback_gate_off", "erase_atomic",
             "max_start", "lo0", "slice", "noverify", "skipL", "restart_s1", "c_end", "c_end_gate_off"]
 # variants that are NOT mutations of a sound tactic (their mismatch count is a finding, not a teeth check)
-UNGATED = {"gate_off", "lowerbound_gate_off", "rust_guard_gate_off", "c_end_gate_off"}
+UNGATED = {"erase_atomic", "gate_off", "lowerbound_gate_off", "rust_guard_gate_off", "fallback_gate_off", "c_end_gate_off"}
 
 
 def run(n, seed, show):
@@ -307,7 +318,11 @@ def run(n, seed, show):
                             wit.setdefault(v, (c["R"], subj, frm, t[:2], e))
                     continue
                 key = v
-                if v in UNGATED:
+                if v == "erase_atomic":
+                    # an atomic/possessive P whose split is clean, walked by the ERASED language
+                    if why != "P-atomic+split-clean": continue
+                    mut = ("erase",)
+                elif v in UNGATED:
                     if ok: continue
                     mut = () if v == "gate_off" else (v[:-len("_gate_off")],)
                     key = "%s[%s]" % (v, why)
@@ -371,11 +386,11 @@ def main():
           % (stats["walk"], stats["rust_guard_fallback"]))
     if a.selftest:
         fails = []
-        for v in ("tactic", "lowerbound", "rust_guard", "c_end"):
+        for v in ("tactic", "lowerbound", "rust_guard", "fallback", "c_end"):
             if bad[v] or bad[v + "/findall"]:
                 fails.append("the gated %s disagrees with libpcre2" % v)
         for v in VARIANTS:
-            if v in UNGATED or v in ("tactic", "lowerbound", "rust_guard", "c_end"): continue
+            if v in UNGATED or v in ("tactic", "lowerbound", "rust_guard", "fallback", "c_end"): continue
             if bad[v] + bad[v + "/findall"] == 0:
                 fails.append("mutation %s NOT detected" % v)
         if sum(n for k, n in bad.items() if k.startswith("gate_off[")) == 0:

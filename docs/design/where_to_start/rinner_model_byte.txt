@@ -1,31 +1,57 @@
 # rinner_model.py: libpcre2 10.48 2026-08-31 (Homebrew, the Mac's local; NOT the 10.46 reference), seed 1, 6000 generated R = P.L.S
 cases compiled 5884 (uncompilable 116); gate applies 2769
-gate reasons: P-atomic 1298, P-cannot-contain-L 930, P-fixed-width 1839, P-lookaround 481, split-ambiguous 1336
+gate reasons: P-atomic+split-ambiguous 863, P-atomic+split-clean 435, P-cannot-contain-L 930, P-fixed-width 1839, P-lookaround+split-ambiguous 147, P-lookaround+split-clean 334, split-ambiguous 1336
 variant                    checks   mismatch  first witness (R, subject, startpos, truth, model)
 tactic                     192079          0  
 tactic/findall              33228          0  
-gate_off[P-atomic]          89522          5  ('(?:[ab]*a|[^X]{0,2}+)a(?:bb{0,2}+)', b'a\nabbaabb', 1, (2, 9), (3, 9))
-gate_off[P-atomic]/findall      15576          1  ('(?:[ab]b(b[ab][aX]*+|Xb??)|(b?X[^X]?|(\\BX){0,2}?X++){0,2})X(?:(?<=X))', b'bXaX\n', 0, [(0, 4, 18446744073709551615, 18446744073709551615, 0, 3)], [(1, 4, 18446744073709551615, 18446744073709551615, 1, 3)])
-gate_off[P-lookaround]      33543          0  
-gate_off[P-lookaround]/findall       5772          0  
+gate_off[P-atomic+split-ambiguous]      59710          5  ('(?:[ab]*a|[^X]{0,2}+)a(?:bb{0,2}+)', b'a\nabbaabb', 1, (2, 9), (3, 9))
+gate_off[P-atomic+split-ambiguous]/findall      10356          1  ('(?:[ab]b(b[ab][aX]*+|Xb??)|(b?X[^X]?|(\\BX){0,2}?X++){0,2})X(?:(?<=X))', b'bXaX\n', 0, [(0, 4, 18446744073709551615, 18446744073709551615, 0, 3)], [(1, 4, 18446744073709551615, 18446744073709551615, 1, 3)])
+gate_off[P-atomic+split-clean]      29812          0  
+gate_off[P-atomic+split-clean]/findall       5220          0  
+gate_off[P-lookaround+split-ambiguous]      10286          0  
+gate_off[P-lookaround+split-ambiguous]/findall       1764          0  
+gate_off[P-lookaround+split-clean]      23257          0  
+gate_off[P-lookaround+split-clean]/findall       4008          0  
 gate_off[split-ambiguous]      92510         19  ('(?:\\B(?:b*|aa+)|(X*[^X]{1,3}?))a(?:[ab]a)', b'Xaaaba', 0, (0, 6, 0, 3), (1, 4))
 gate_off[split-ambiguous]/findall      16032          6  ('(?:\\B(?:b*|aa+)|(X*[^X]{1,3}?))a(?:[ab]a)', b'Xaaaba', 0, [(0, 6, 0, 3)], [(1, 4)])
 lowerbound                 192079          0  
 lowerbound/findall          33228          0  
-lowerbound_gate_off[P-atomic]      89522          5  ('(?:[ab]*a|[^X]{0,2}+)a(?:bb{0,2}+)', b'a\nabbaabb', 1, (2, 9), (3, 9))
-lowerbound_gate_off[P-atomic]/findall      15576          1  ('(?:[ab]b(b[ab][aX]*+|Xb??)|(b?X[^X]?|(\\BX){0,2}?X++){0,2})X(?:(?<=X))', b'bXaX\n', 0, [(0, 4, 18446744073709551615, 18446744073709551615, 0, 3)], [(1, 4, 18446744073709551615, 18446744073709551615, 1, 3)])
-lowerbound_gate_off[P-lookaround]      33543          0  
-lowerbound_gate_off[P-lookaround]/findall       5772          0  
+lowerbound_gate_off[P-atomic+split-ambiguous]      59710          5  ('(?:[ab]*a|[^X]{0,2}+)a(?:bb{0,2}+)', b'a\nabbaabb', 1, (2, 9), (3, 9))
+lowerbound_gate_off[P-atomic+split-ambiguous]/findall      10356          1  ('(?:[ab]b(b[ab][aX]*+|Xb??)|(b?X[^X]?|(\\BX){0,2}?X++){0,2})X(?:(?<=X))', b'bXaX\n', 0, [(0, 4, 18446744073709551615, 18446744073709551615, 0, 3)], [(1, 4, 18446744073709551615, 18446744073709551615, 1, 3)])
+lowerbound_gate_off[P-atomic+split-clean]      29812          0  
+lowerbound_gate_off[P-atomic+split-clean]/findall       5220          0  
+lowerbound_gate_off[P-lookaround+split-ambiguous]      10286          0  
+lowerbound_gate_off[P-lookaround+split-ambiguous]/findall       1764          0  
+lowerbound_gate_off[P-lookaround+split-clean]      23257          0  
+lowerbound_gate_off[P-lookaround+split-clean]/findall       4008          0  
 lowerbound_gate_off[split-ambiguous]      92510         15  ('(?:\\B(?:b*|aa+)|(X*[^X]{1,3}?))a(?:[ab]a)', b'Xaaaba', 0, (0, 6, 0, 3), (1, 4))
 lowerbound_gate_off[split-ambiguous]/findall      16032          5  ('(?:\\B(?:b*|aa+)|(X*[^X]{1,3}?))a(?:[ab]a)', b'Xaaaba', 0, [(0, 6, 0, 3)], [(1, 4)])
 rust_guard                 192079          0  
 rust_guard/findall          33228          0  
-rust_guard_gate_off[P-atomic]      89522          5  ('(?:[ab]*a|[^X]{0,2}+)a(?:bb{0,2}+)', b'a\nabbaabb', 1, (2, 9), (3, 9))
-rust_guard_gate_off[P-atomic]/findall      15576          1  ('(?:[ab]b(b[ab][aX]*+|Xb??)|(b?X[^X]?|(\\BX){0,2}?X++){0,2})X(?:(?<=X))', b'bXaX\n', 0, [(0, 4, 18446744073709551615, 18446744073709551615, 0, 3)], [(1, 4, 18446744073709551615, 18446744073709551615, 1, 3)])
-rust_guard_gate_off[P-lookaround]      33543          0  
-rust_guard_gate_off[P-lookaround]/findall       5772          0  
+rust_guard_gate_off[P-atomic+split-ambiguous]      59710          5  ('(?:[ab]*a|[^X]{0,2}+)a(?:bb{0,2}+)', b'a\nabbaabb', 1, (2, 9), (3, 9))
+rust_guard_gate_off[P-atomic+split-ambiguous]/findall      10356          1  ('(?:[ab]b(b[ab][aX]*+|Xb??)|(b?X[^X]?|(\\BX){0,2}?X++){0,2})X(?:(?<=X))', b'bXaX\n', 0, [(0, 4, 18446744073709551615, 18446744073709551615, 0, 3)], [(1, 4, 18446744073709551615, 18446744073709551615, 1, 3)])
+rust_guard_gate_off[P-atomic+split-clean]      29812          0  
+rust_guard_gate_off[P-atomic+split-clean]/findall       5220          0  
+rust_guard_gate_off[P-lookaround+split-ambiguous]      10286          0  
+rust_guard_gate_off[P-lookaround+split-ambiguous]/findall       1764          0  
+rust_guard_gate_off[P-lookaround+split-clean]      23257          0  
+rust_guard_gate_off[P-lookaround+split-clean]/findall       4008          0  
 rust_guard_gate_off[split-ambiguous]      92510         17  ('(?:\\B(?:b*|aa+)|(X*[^X]{1,3}?))a(?:[ab]a)', b'Xaaaba', 0, (0, 6, 0, 3), (1, 4))
 rust_guard_gate_off[split-ambiguous]/findall      16032          5  ('(?:\\B(?:b*|aa+)|(X*[^X]{1,3}?))a(?:[ab]a)', b'Xaaaba', 0, [(0, 6, 0, 3)], [(1, 4)])
+fallback                   192079          0  
+fallback/findall            33228          0  
+fallback_gate_off[P-atomic+split-ambiguous]      59710          5  ('(?:[ab]*a|[^X]{0,2}+)a(?:bb{0,2}+)', b'a\nabbaabb', 1, (2, 9), (3, 9))
+fallback_gate_off[P-atomic+split-ambiguous]/findall      10356          1  ('(?:[ab]b(b[ab][aX]*+|Xb??)|(b?X[^X]?|(\\BX){0,2}?X++){0,2})X(?:(?<=X))', b'bXaX\n', 0, [(0, 4, 18446744073709551615, 18446744073709551615, 0, 3)], [(1, 4, 18446744073709551615, 18446744073709551615, 1, 3)])
+fallback_gate_off[P-atomic+split-clean]      29812          0  
+fallback_gate_off[P-atomic+split-clean]/findall       5220          0  
+fallback_gate_off[P-lookaround+split-ambiguous]      10286          0  
+fallback_gate_off[P-lookaround+split-ambiguous]/findall       1764          0  
+fallback_gate_off[P-lookaround+split-clean]      23257          0  
+fallback_gate_off[P-lookaround+split-clean]/findall       4008          0  
+fallback_gate_off[split-ambiguous]      92510         17  ('(?:\\B(?:b*|aa+)|(X*[^X]{1,3}?))a(?:[ab]a)', b'Xaaaba', 0, (0, 6, 0, 3), (1, 4))
+fallback_gate_off[split-ambiguous]/findall      16032          5  ('(?:\\B(?:b*|aa+)|(X*[^X]{1,3}?))a(?:[ab]a)', b'Xaaaba', 0, [(0, 6, 0, 3)], [(1, 4)])
+erase_atomic                29812         11  ('(?:(?>(?:\\b)$|X*?))bX(?:b*((?!b)|b))', b'a\nXXbX', 0, (4, 6, 6, 6), None)
+erase_atomic/findall         5220          4  ('(?:(?>(?:\\b)$|X*?))bX(?:b*((?!b)|b))', b'a\nXXbX', 0, [(4, 6, 6, 6)], [])
 max_start                  192079        636  ('(?:a|b{0,2})X(?:X++)', b'abbXXXXXa', 0, (1, 8), (3, 8))
 max_start/findall           33228        237  ('(?:a|b{0,2})X(?:X++)', b'abbXXXXXa', 0, [(1, 8)], [(3, 8)])
 lo0                        192079       1531  ('(?:a|b{0,2})X(?:X++)', b'abbXXXXXa', 2, (2, 8), (1, 8))
@@ -40,5 +66,5 @@ restart_s1                 192079          0
 restart_s1/findall          33228        329  ('(?:a|b{0,2})X(?:X++)', b'abbXXXXXa', 0, [(1, 8)], [(1, 8), (2, 8), (3, 8), (4, 8), (5, 8), (6, 8)])
 c_end                        5380          0  
 c_end_gate_off               7880        361  ('(?:.+)Xa(?:b*?[aX]{0,2})', b'aXaXXaa', 0, (0, 7), (3, 5))
-reverse-walk bytes over accepted candidates (tactic+mutants): 75174; rust-guard fallbacks: 9649
+reverse-walk bytes over accepted candidates (tactic+mutants): 84630; rust-guard fallbacks: 9649
 selftest: PASS

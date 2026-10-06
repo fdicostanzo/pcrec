@@ -1,0 +1,12 @@
+ok   abc                                want start            got start
+ok   \d{3}-\d{4}                        want fixed            got fixed
+ok   [a-z]{2,5}@x                       want bounded          got bounded
+ok   \w+@\w+\.com                       want exact-rev        got exact-rev
+ok   [a-z]+zq                           want presence         got presence
+ok   (a+)\1@                            want presence         got presence
+ok   (?>a+)@                            want presence         got presence
+ok   a|b                                want top-alternation  got top-alternation
+ok   \w+                                want no-landmark      got no-landmark
+ok   (?:\bat [A-Za-z0-9_$.]+)\(         want exact-rev        got exact-rev
+ok   [^)]*\)                            want exact-rev        got exact-rev
+selftest: 11 controls, 0 failed
