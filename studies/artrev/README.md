@@ -55,3 +55,9 @@ with the artifact #included; pcrec-bench `testees/pcrec/adapter.py` "COMPILE COS
 `-fsanitize=address,undefined -fno-sanitize-recover=all -g` and is never timed.
 
 Self-test: `bash studies/artrev/selftest.sh 2>&1 | tee studies/artrev/selftest.log`.
+
+Reviewer cell and leads (charter 3.2): the D27 cell allowlist for a reviewer is
+`docs/spec/`, `studies/artrev/`, its artifact directory AND
+`docs/dev/optloop/artrev/notebook/`. The harness does not define or validate
+`leads.tsv`; its schema is the charter's, with the added `origin` column
+(`fresh` or `notebook:<entry>`).
