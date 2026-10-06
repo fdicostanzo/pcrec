@@ -229,3 +229,11 @@ pointer when a kit change merges to main.
   (memfnstamp_report.md §8 is the procedure), the census with `--abi
   62:63`, and the Linux make test via main's executor by day. Main reset
   its context at 2026-10-05 ~23:00; its wake.md records this.
+
+## 2026-10-05 — worktree cleanup (Frank OK'd)
+
+- Main's wtprune (23:19) had already removed the merged kit lanes, so no
+  --apply was needed. memfnstamp waits for R4a′ on main. The nested G2
+  worktree + cell can't be managed by wtprune; that is with main.
+  Lesson: mk_d27_cell.sh run from inside worktrees/memfn nests the cell
+  there.
