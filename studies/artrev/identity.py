@@ -6,6 +6,22 @@ subject files, the corpus .rxt cases for the pattern, a generated battery --
 and the two arms' TRANSCRIPTS must be byte-identical (matches, spans and every
 capture slot, error codes included).  A libpcre2 sample check and an optional
 ASan+UBSan build ride along.  Zero differences = pass.
+
+Three further phases are part of identity by default (charter S1-S3 / S4):
+  shrunken resources  every `_in` shape is driven with {0,1} frames x {0,1} trail
+                      and the step/work budgets shrunk (compile time), and the
+                      two transcripts are compared under THE GIVE-UP RULE:
+                      original gives up + twin answers -> the twin's answer must
+                      equal libpcre2's (the repair direction), original answers +
+                      twin gives up or differs -> FAIL;
+  window start        for an artifact with an internal `<p>_prefilter` (the
+                      hybrids), the window the prefilter proposes at every
+                      search_from must be IDENTICAL, orig vs twin;
+  livelock bound      the twin's driver run gets a wall budget of a multiple of
+                      the original's, so a twin whose start moves early fails in
+                      seconds instead of by the 900 s timeout.
+--skip-shrunk / --skip-window exist for iteration speed; a run that skips either
+logs status PASS-PARTIAL, which `time` refuses (it wants PASS).
 """
 import glob
 import os
@@ -14,6 +30,7 @@ import re
 import struct
 import subprocess
 import sys
+import time
 
 import common as C
 
@@ -303,13 +320,14 @@ def froms_for(n):
     return sorted(s)
 
 
-def run_driver(exe, subj, cases, san=False, timeout=900):
+def run_driver(exe, subj, cases, san=False, timeout=900, extra=()):
     env = dict(os.environ)
     if san:
         env["ASAN_OPTIONS"] = "detect_leaks=0:abort_on_error=0:allocator_may_return_null=1"
         env["UBSAN_OPTIONS"] = "halt_on_error=1:print_stacktrace=1"
     try:
-        r = subprocess.run([exe, subj, cases], capture_output=True, timeout=timeout, env=env)
+        argv = [exe, subj] + ([cases] if cases else []) + list(extra)
+        r = subprocess.run(argv, capture_output=True, timeout=timeout, env=env)
     except subprocess.TimeoutExpired:
         return None, b"", "TIMEOUT after %ds" % timeout
     return r.returncode, r.stdout, r.stderr.decode("utf-8", "replace")[-1500:]
@@ -488,6 +506,250 @@ def pcre2_check(meta, subs, cases, wdir, orig_out, twin_out, nsample, rng):
     return res
 
 
+
+# ------------------------------------------------------------ the give-up rule
+GIVEUP = (-5, -4, -3, -2)           # PCREC_ERR_FLOOR .. PCREC_ERR_STEPS (artifact.h)
+S_SHAPES = ("S", "SI", "F", "FSI")   # rc 1 / 0 are answers
+M_SHAPES = ("M", "MI", "C", "CI", "FC")   # rc >= 0 (matched length) / -1 are answers
+DEFAULT_BUDGETS = "8:64,64:1024,2000:40000"
+
+
+def _family(shape):
+    return shape.split(".")[0]
+
+
+def _rc(t):
+    try:
+        return int(t[3])
+    except (IndexError, ValueError):
+        return None
+
+
+def _is_answer(fam, rc):
+    if rc is None:
+        return False
+    if fam in S_SHAPES:
+        return rc in (0, 1)
+    if fam in M_SHAPES:
+        return rc >= -1
+    return False
+
+
+def giveup_compare(otext, ttext):
+    """Compare two transcripts under THE GIVE-UP RULE.  Lines are keyed (shape, idx, from) --
+    a twin that answers where the original gave up may walk a find-all further, so line
+    positions are not stable.  Returns a dict: fails [(why, orig_line, twin_line)],
+    repairs [(shape, idx, from, twin_line)] (the oracle checks these), counters."""
+    def index(text):
+        d, order = {}, []
+        for ln in text.split(b"\n"):
+            if not ln:
+                continue
+            t = ln.split(b"\t")
+            k = (t[0].decode("latin-1"), t[1], t[2])
+            if k not in d:
+                order.append(k)
+            d.setdefault(k, []).append(ln)
+        return d, order
+    od, oord = index(otext)
+    td, tord = index(ttext)
+    res = {"fails": [], "repairs": [], "twin_only": [], "n_orig_giveup": 0, "n_both_giveup": 0,
+           "n_lines": sum(len(v) for v in od.values())}
+    repaired_walks = set()
+    for k in oord:
+        ov = od[k]
+        tv = td.get(k)
+        if tv is None:
+            res["fails"].append(("line missing from the twin transcript", ov[0], b"<missing>"))
+            continue
+        if len(ov) != len(tv):
+            res["fails"].append(("line count differs for one call", ov[0], tv[0]))
+            continue
+        for x, y in zip(ov, tv):
+            if x == y:
+                if _rc(x.split(b"\t")) in GIVEUP:
+                    res["n_orig_giveup"] += 1
+                    res["n_both_giveup"] += 1
+                continue
+            xt, yt = x.split(b"\t"), y.split(b"\t")
+            fam = _family(k[0])
+            ro, rt = _rc(xt), _rc(yt)
+            if fam not in S_SHAPES and fam not in M_SHAPES:
+                res["fails"].append(("N/V line differs", x, y))
+            elif ro in GIVEUP:
+                res["n_orig_giveup"] += 1
+                if rt in GIVEUP:
+                    res["n_both_giveup"] += 1          # a different give-up code: still a give-up
+                elif _is_answer(fam, rt):
+                    res["repairs"].append((k[0], int(k[1]), int(k[2]), y))
+                    if fam in ("F", "FSI", "FC"):
+                        repaired_walks.add(int(k[1]))
+                else:
+                    res["fails"].append(("twin returned a non-answer, non-give-up code where the original gave up", x, y))
+            elif rt in GIVEUP:
+                res["fails"].append(("twin GIVES UP where the original answers", x, y))
+            else:
+                res["fails"].append(("answers differ", x, y))
+    for k in tord:
+        if k in od:
+            continue
+        fam = _family(k[0])
+        if fam in ("F", "FSI", "FC") and int(k[1]) in repaired_walks:
+            for y in td[k]:
+                res["twin_only"].append((k[0], int(k[1]), int(k[2]), y))
+        else:
+            res["fails"].append(("line only in the twin transcript", b"<missing>", td[k][0]))
+    return res
+
+
+def oracle_check_repairs(meta, subs, repairs, wdir, rng_unused=None):
+    """Every (repair | twin-only line) must equal libpcre2's answer.  Returns
+    (checked, skipped, bad[list of messages], note|None)."""
+    if not repairs:
+        return 0, 0, [], None
+    exe, err = pcre2_ref_exe()
+    if not exe:
+        return 0, 0, ["no libpcre2 oracle available (%s) -- cannot verify %d give-up repair(s)" % (err, len(repairs))], None
+    _, enc = art_signature(meta)
+    utf8 = enc.lower() in ("utf8", "utf-8")
+    want = []
+    skipped = 0
+    for shape, idx, frm, line in repairs:
+        fam = _family(shape)
+        if utf8 and not utf8_ok(subs[idx], frm if fam in S_SHAPES + M_SHAPES else 0):
+            skipped += 1
+            continue
+        if frm > len(subs[idx]):
+            skipped += 1
+            continue
+        want.append((shape, idx, frm, line, "p" if fam in S_SHAPES else "a"))
+    sj, cs = os.path.join(wdir, "all.subj"), os.path.join(wdir, "rep.cases")
+    with open(cs, "w") as f:
+        for _, idx, frm, _, mode in want:
+            f.write("%d\t%d\t%s\n" % (idx, frm, mode))
+    flags = ("i" if "-i" in meta["pcrec_flags"] else "") + ("u" if utf8 else "") + \
+            ("c" if utf8 or "--ucp" in meta["pcrec_flags"] else "")
+    pf = os.path.join(wdir, "pattern.bin")
+    open(pf, "wb").write(bytes.fromhex(meta["pattern_hex"]))
+    r = subprocess.run([exe, sj, cs, str(meta["ncaps"]), pf, flags], capture_output=True, timeout=300)
+    if r.returncode != 0:
+        return 0, 0, ["pcre2_ref rc=%d: %s" % (r.returncode, r.stderr.decode("utf-8", "replace")[:200])], None
+    ref = {}
+    for ln in r.stdout.decode("latin-1").split("\n"):
+        t = ln.split("\t")
+        if len(t) >= 4 and t[0] in ("S", "A"):
+            ref[(t[0], int(t[1]), int(t[2]))] = (int(t[3]), tuple(int(x) for x in t[4:]))
+    nc = meta["ncaps"]
+    bad, checked = [], 0
+    for shape, idx, frm, line, mode in want:
+        rv = ref.get(("S" if mode == "p" else "A", idx, frm))
+        if rv is None or rv[0] < 0:
+            skipped += 1
+            continue
+        t = line.split(b"\t")
+        rc = int(t[3])
+        caps = tuple(int(x) for x in t[4:4 + 2 * nc]) if len(t) > 4 else ()
+        fam = _family(shape)
+        checked += 1
+        if fam in S_SHAPES:
+            ok = (rc == rv[0]) and (rv[0] == 0 or caps == rv[1][:2 * nc] or len(caps) == 0)
+        else:
+            if rv[0] == 0:
+                ok = rc == -1
+            else:
+                ok = rc == rv[1][1] - frm and (len(caps) == 0 or caps == rv[1][:2 * nc])
+        if not ok and len(bad) < 5:
+            bad.append("REPAIR DISAGREES with libpcre2 at %s idx %d from %d: twin %s  libpcre2 rc=%d %s" % (
+                shape, idx, frm, line.decode("latin-1").replace("\t", " "), rv[0], rv[1][:2 * nc]))
+        elif not ok:
+            bad.append("(more)")
+    return checked, skipped, [b for b in bad if b != "(more)"] + (["..."] if "(more)" in bad else []), None
+
+
+def shrunk_phase(a, meta, base, ad, od, sj, cs, subs, wdir):
+    """Returns (status, text).  status in PASS/FAIL/NA."""
+    budgets = []
+    for p in a.shrunk_budgets.split(","):
+        st, wk = p.split(":")
+        budgets.append((int(st), int(wk)))
+    has_b = C.has_budgets(od) and C.has_budgets(ad)
+    if not meta.get("have_in") and not has_b:
+        return "NA", "shrunken resources: n/a (no `_in` entries and no step/work budget stamps in this artifact)"
+    runs = budgets if has_b else [None]
+    lines, fails, tot_rep, tot_chk, tot_skip, tot_giveup, tot_lines = [], [], 0, 0, 0, 0, 0
+    for bud in runs:
+        if bud:
+            ex_o, ex_t = C.compile_shrunk(meta, od, bud[0], bud[1], a.san), C.compile_shrunk(meta, ad, bud[0], bud[1], a.san)
+            lab = "steps=%d work=%d" % bud
+        else:
+            ex_o, ex_t = C.compile_arm(meta, od, "id", a.san), C.compile_arm(meta, ad, "id", a.san)
+            lab = "default budgets"
+        t0 = time.monotonic()
+        rco, oo, eo = run_driver(ex_o, sj, cs, san=a.san, extra=["shrunk"])
+        el = time.monotonic() - t0
+        if rco != 0:
+            return "FAIL", "shrunken resources (%s): the ORIGINAL driver failed rc=%s: %s" % (lab, rco, eo)
+        rct, ot, et = run_driver(ex_t, sj, cs, san=a.san, extra=["shrunk"], timeout=min(900, max(30, 25 * el)))
+        if rct != 0:
+            return "FAIL", "shrunken resources (%s): the TWIN driver FAILED rc=%s%s: %s" % (
+                lab, rct, " (livelock bound: >25x the original's wall)" if rct is None else "", et)
+        g = giveup_compare(oo, ot)
+        chk, skp, bad, _ = oracle_check_repairs(meta, subs, g["repairs"] + g["twin_only"], wdir)
+        tot_rep += len(g["repairs"])
+        tot_chk += chk
+        tot_skip += skp
+        tot_giveup += g["n_orig_giveup"]
+        tot_lines += g["n_lines"]
+        lines.append("  %-22s lines %d, original gives up on %d, repairs %d (+%d walk lines), oracle-checked %d" % (
+            lab, g["n_lines"], g["n_orig_giveup"], len(g["repairs"]), len(g["twin_only"]), chk))
+        for why, x, y in g["fails"][:3]:
+            fails.append("[%s] %s:\n      orig: %s\n      twin: %s" % (lab, why, x.decode("latin-1").replace("\t", " "),
+                                                                       y.decode("latin-1").replace("\t", " ")))
+        if len(g["fails"]) > 3:
+            fails.append("[%s] ... %d give-up-rule violations in all" % (lab, len(g["fails"])))
+        for b in bad:
+            fails.append("[%s] %s" % (lab, b))
+    head = ("shrunken resources (0/1 frames x 0/1 trail%s): %d transcript lines, original gives up on %d, "
+            "%d give-up repair(s) of which %d checked against libpcre2 (%d skipped)" % (
+                ", budgets " + a.shrunk_budgets if has_b else "; no budget stamps, buffer axis only",
+                tot_lines, tot_giveup, tot_rep, tot_chk, tot_skip))
+    txt = head + "\n" + "\n".join(lines)
+    if fails:
+        return "FAIL", txt + "\nGIVE-UP RULE VIOLATED:\n  " + "\n  ".join(fails)
+    return "PASS", txt
+
+
+def window_phase(a, meta, base, ad, od, sj):
+    """The window-start differential.  Returns (status, text)."""
+    src = open(os.path.join(od, "artifact.c")).read()
+    if not re.search(r"\nstatic int %s_prefilter\(" % re.escape(meta["prefix"]), src):
+        return "NA", "window start: n/a (no internal %s_prefilter in this artifact)" % meta["prefix"]
+    ex_o, ex_t = C.compile_arm(meta, od, "pf", a.san), C.compile_arm(meta, ad, "pf", a.san)
+    t0 = time.monotonic()
+    rco, oo, eo = run_driver(ex_o, sj, None, san=a.san)
+    el = time.monotonic() - t0
+    if rco != 0:
+        return "FAIL", "window start: the ORIGINAL driver failed rc=%s: %s" % (rco, eo)
+    rct, ot, et = run_driver(ex_t, sj, None, san=a.san, timeout=min(900, max(30, 25 * el)))
+    if rct != 0:
+        return "FAIL", "window start: the TWIN driver FAILED rc=%s%s: %s" % (
+            rct, " (livelock bound: >25x the original's wall)" if rct is None else "", et)
+    ol, tl = oo.split(b"\n"), ot.split(b"\n")
+    nd, first = 0, None
+    for k in range(max(len(ol), len(tl))):
+        x = ol[k] if k < len(ol) else b"<missing>"
+        y = tl[k] if k < len(tl) else b"<missing>"
+        if x != y:
+            nd += 1
+            first = first or (x, y)
+    hits = sum(1 for x in ol if x.split(b"\t")[3:4] == [b"1"])
+    txt = "window start: %d prefilter windows compared (original proposes a window on %d), start differences %d" % (
+        len(ol) - 1, hits, nd)
+    if nd:
+        return "FAIL", txt + "\n  FIRST: orig %s\n         twin %s" % (first[0].decode("latin-1").replace("\t", " "),
+                                                                    first[1].decode("latin-1").replace("\t", " "))
+    return "PASS", txt
+
 # ----------------------------------------------------------------------------- main
 def cmd_identity(a):
     meta = C.load_meta(a.name)
@@ -533,11 +795,17 @@ def cmd_identity(a):
     write_cases(cs, cases)
     rcs = {}
     outs = {}
+    tmo = 900
     for label, exe in (("orig", orig_exe), ("twin", twin_exe)):
-        rc, out, err = run_driver(exe, sj, cs, san=a.san)
+        t0 = time.monotonic()
+        rc, out, err = run_driver(exe, sj, cs, san=a.san, timeout=tmo)
+        if label == "orig":
+            tmo = min(900, max(30, 25 * (time.monotonic() - t0)))   # the livelock bound for the twin
         rcs[label], outs[label] = rc, out
         if rc != 0:
-            msg = "%s arm driver FAILED (rc=%s)%s:\n%s" % (label, rc, " under ASan/UBSan" if a.san else "", err)
+            msg = "%s arm driver FAILED (rc=%s)%s%s:\n%s" % (label, rc, " under ASan/UBSan" if a.san else "",
+                                                          " -- LIVELOCK suspected (the twin ran >25x the original's wall)"
+                                                          if rc is None and label == "twin" else "", err)
             return finish(a, meta, ad, "FAIL", msg)
     ol, tl = outs["orig"].split(b"\n"), outs["twin"].split(b"\n")
     ndiff = 0
@@ -549,20 +817,48 @@ def cmd_identity(a):
             ndiff += 1
             if first is None:
                 first = (k, x, y)
+    repair_note = ""
+    if ndiff:
+        # a twin may ANSWER where the original gave up (THE GIVE-UP RULE); anything else stays a difference
+        g0 = giveup_compare(outs["orig"], outs["twin"])
+        if not g0["fails"]:
+            chk0, skp0, bad0, _ = oracle_check_repairs(meta, subs, g0["repairs"] + g0["twin_only"], wdir)
+            if not bad0:
+                repair_note = "\ndefault-buffer give-up repairs: %d (+%d walk lines), %d checked against libpcre2, all equal" % (
+                    len(g0["repairs"]), len(g0["twin_only"]), chk0)
+                ndiff = 0
     nS = sum(1 for x in ol if x.startswith(b"S\t"))
     nSm = sum(1 for x in ol if x.startswith(b"S\t") and x.split(b"\t")[3] == b"1")
     p2 = pcre2_check(meta, subs, cases, wdir, outs["orig"], outs["twin"], a.pcre2_sample, rng)
+    nSI = sum(1 for x in ol if x.startswith(b"SI\t"))
     summary = ("subjects: %d supplied, %d corpus, %d battery; %d cases, %d transcript lines compared "
-               "(shapes: S M C%s N V + find-all F/FC%s); san=%s\n"
+               "(shapes: S M C%s N V + find-all F/FC%s; %d `_in` search lines driven); san=%s\n"
                "search cases that MATCH in the original: %d of %d%s\n"
                "libpcre2 %s: %s, checked %d, skipped %d, orig-vs-pcre2 disagreements %d, twin-only %d" % (
                    len(a.subject), n_corpus, n_batt, len(cases), len(ol), " SI MI CI" if meta["have_in"] else "",
-                   " FSI" if meta["have_in"] else "", a.san, nSm, nS,
+                   " FSI" if meta["have_in"] else "", nSI, a.san, nSm, nS,
                    "   ** THIN: under 5% match -- pass --match-example STR (a string the pattern matches) or --subject **"
                    if nS and nSm * 20 < nS else "", pcre2_version(), p2["status"], p2["checked"], p2["skipped"],
                    p2["orig_disagree"], p2["twin_only"]))
     for n in p2["notes"]:
         summary += "\n  note: " + n
+    summary += repair_note
+    # ---- shrunken resources + window start (default parts of identity)
+    extra_status = []
+    if a.skip_shrunk:
+        summary += "\nshrunken resources: SKIPPED (--skip-shrunk)"
+        extra_status.append("PARTIAL")
+    else:
+        st, txt = shrunk_phase(a, meta, base, ad, od, sj, cs, subs, wdir)
+        summary += "\n" + txt
+        extra_status.append(st)
+    if a.skip_window:
+        summary += "\nwindow start: SKIPPED (--skip-window)"
+        extra_status.append("PARTIAL")
+    else:
+        st, txt = window_phase(a, meta, base, ad, od, sj)
+        summary += "\n" + txt
+        extra_status.append(st)
     if ndiff:
         k, x, y = first
         cidx = int(x.split(b"\t")[1]) if b"\t" in x and x.split(b"\t")[1].isdigit() else None
@@ -571,9 +867,9 @@ def cmd_identity(a):
                     "  subject #%s (%d bytes): %r" % (ndiff, k, x.decode("latin-1"), y.decode("latin-1"), cidx,
                                                   len(subj), subj[:160]))
         return finish(a, meta, ad, "FAIL", summary)
-    if p2["twin_only"]:
+    if p2["twin_only"] or "FAIL" in extra_status:
         return finish(a, meta, ad, "FAIL", summary)
-    return finish(a, meta, ad, "PASS", summary)
+    return finish(a, meta, ad, "PASS-PARTIAL" if "PARTIAL" in extra_status else "PASS", summary)
 
 
 def finish(a, meta, ad, status, summary):
@@ -583,4 +879,4 @@ def finish(a, meta, ad, status, summary):
     C.ledger_append(a.name, "identity", a.arm, rev, False, status, sha,
                     summary.split("\n")[0][:200] + (" [san]" if a.san else ""))
     print("IDENTITY %s  arm=%s rev=%d  %s\n%s" % (status, a.arm, rev, "(ASan+UBSan)" if a.san else "", summary))
-    return 0 if status == "PASS" else 1
+    return 0 if status in ("PASS", "PASS-PARTIAL") else 1

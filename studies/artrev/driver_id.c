@@ -11,6 +11,13 @@
  * visible to ASan, and a fresh caps array pre-set to -2 (so a twin that
  * touches slots the original leaves alone differs).  Two arms are
  * answer-identical iff their transcripts are byte-identical.
+ *
+ *   driver_id SUBJECTS.bin CASES.tsv shrunk
+ * SHRUNKEN-RESOURCE mode (charter 4, THE GIVE-UP RULE): every `_in` shape is
+ * driven under four caller-buffer configurations -- {0,1} frames x {0,1}
+ * trail -- and the shape tag carries the configuration (`SI.f0t1`).  The step
+ * and work budgets are shrunk at COMPILE time by identity.py; the transcripts
+ * are then compared with the give-up rule, not byte-for-byte.
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -22,6 +29,9 @@
 static unsigned char **subj;
 static uint32_t *slen;
 static int ncaps;
+static int shrunk;      /* argv[3] == "shrunk" */
+static const char *cfgtag[4] = { ".f0t0", ".f1t0", ".f0t1", ".f1t1" };
+static void setcfg(int k) { art_set_bufs(k & 1, (k >> 1) & 1); }
 
 static void pcaps(ptrdiff_t (*caps)[2], int show)
 {
@@ -53,12 +63,17 @@ static void point(uint32_t idx, size_t from)
     c = copy_of(idx); cp = newcaps(); rc = art_match_caps(c, n, from, cp);
     printf("C\t%u\t%zu\t%lld", idx, from, rc); pcaps(cp, 1); printf("\n"); free(cp); free(c);
     if (art_have_in()) {
-        c = copy_of(idx); cp = newcaps(); rc = art_search_in(c, n, from, cp);
-        printf("SI\t%u\t%zu\t%lld", idx, from, rc); pcaps(cp, 1); printf("\n"); free(cp); free(c);
-        c = copy_of(idx); rc = art_match_in(c, n, from);
-        printf("MI\t%u\t%zu\t%lld\n", idx, from, rc); free(c);
-        c = copy_of(idx); cp = newcaps(); rc = art_match_caps_in(c, n, from, cp);
-        printf("CI\t%u\t%zu\t%lld", idx, from, rc); pcaps(cp, 1); printf("\n"); free(cp); free(c);
+        for (int k = 0; k < (shrunk ? 4 : 1); k++) {
+            const char *t = shrunk ? cfgtag[k] : "";
+            if (shrunk) setcfg(k);
+            c = copy_of(idx); cp = newcaps(); rc = art_search_in(c, n, from, cp);
+            printf("SI%s\t%u\t%zu\t%lld", t, idx, from, rc); pcaps(cp, 1); printf("\n"); free(cp); free(c);
+            c = copy_of(idx); rc = art_match_in(c, n, from);
+            printf("MI%s\t%u\t%zu\t%lld\n", t, idx, from, rc); free(c);
+            c = copy_of(idx); cp = newcaps(); rc = art_match_caps_in(c, n, from, cp);
+            printf("CI%s\t%u\t%zu\t%lld", t, idx, from, rc); pcaps(cp, 1); printf("\n"); free(cp); free(c);
+        }
+        if (shrunk) art_set_bufs(-1, -1);
     }
     if (from <= n) {
         c = copy_of(idx);
@@ -84,9 +99,13 @@ static void findall(uint32_t idx)
         long long r2 = art_match_caps(c, n, (size_t)s0, cp);
         printf("FC\t%u\t%td\t%lld", idx, s0, r2); pcaps(cp, 1); printf("\n"); free(cp);
         if (art_have_in()) {
-            cp = newcaps();
-            int r3 = art_search_in(c, n, pos, cp);
-            printf("FSI\t%u\t%zu\t%d", idx, pos, r3); pcaps(cp, 1); printf("\n"); free(cp);
+            for (int k = 0; k < (shrunk ? 4 : 1); k++) {
+                if (shrunk) setcfg(k);
+                cp = newcaps();
+                int r3 = art_search_in(c, n, pos, cp);
+                printf("FSI%s\t%u\t%zu\t%d", shrunk ? cfgtag[k] : "", idx, pos, r3); pcaps(cp, 1); printf("\n"); free(cp);
+            }
+            if (shrunk) art_set_bufs(-1, -1);
         }
         pos = (size_t)e0;
         if (e0 == s0) pos = art_next_pos(c, n, pos);
@@ -110,6 +129,7 @@ int main(int argc, char **argv)
         if (slen[i] && fread(subj[i], 1, slen[i], f) != slen[i]) return 2;
     }
     fclose(f);
+    shrunk = argc > 3 && strcmp(argv[3], "shrunk") == 0;
     ncaps = art_ncaps();
     FILE *c = fopen(argv[2], "r");
     if (!c) { perror("cases"); return 2; }

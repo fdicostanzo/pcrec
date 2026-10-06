@@ -279,6 +279,10 @@ def main():
     i.add_argument("--pcre2-sample", type=int, default=1500, help="cases checked against libpcre2 (0 disables)")
     i.add_argument("--match-example", action="append", default=[], help="a string known to match (planted in the battery)")
     i.add_argument("--tests-dir")
+    i.add_argument("--shrunk-budgets", default="8:64,64:1024,2000:40000",
+                   help="STEPS:WORK pairs the shrunken-resource phase compiles both arms with (identity.DEFAULT_BUDGETS)")
+    i.add_argument("--skip-shrunk", action="store_true", help="iteration speed only: logs PASS-PARTIAL, which `time` refuses")
+    i.add_argument("--skip-window", action="store_true", help="iteration speed only: logs PASS-PARTIAL, which `time` refuses")
     tm = sp.add_parser("time")
     tm.add_argument("name")
     tm.add_argument("--arms", default="orig,orig2,null", help="comma list; orig is always included first")

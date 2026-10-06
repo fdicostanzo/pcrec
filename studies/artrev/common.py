@@ -107,14 +107,17 @@ def check_cc_is_gcc(cc):
     return v
 
 
-def arm_compile_cmd(meta, armdir, outobj_exe, san=False, extra_srcs=(), main_src=None, cc=None):
+def arm_compile_cmd(meta, armdir, outobj_exe, san=False, extra_srcs=(), main_src=None, cc=None, defs=()):
     """The full command compiling one arm's shim TU + a driver main into an exe.
     Returns argv.  The shim TU is compiled with the fixed flags."""
     cc = cc or os.environ.get("ARTREV_REMOTE_CC") or meta["cc"]
     flags = BASE_FLAGS + (SAN_FLAGS if san else [])
+    # -DARTREV_HAVE_IN=1 exactly as `gen` records it in the compile line: without it the shim
+    # exports stubs and NO `_in` shape is ever driven (found 2026-10-06 by lane artcollect: every
+    # pilot identity run before this fix compared S/M/C/N/V/F/FC only).
     cmd = [cc] + flags + ["-I" + armdir, "-DARTREV_PFX=%s" % meta["prefix"],
-                          "-DARTREV_PFXU=%s" % meta["prefix"].upper(),
-                          os.path.join(HERE, "shim.c")]
+                          "-DARTREV_PFXU=%s" % meta["prefix"].upper()] + \
+        (["-DARTREV_HAVE_IN=1"] if meta.get("have_in") else []) + list(defs) + [os.path.join(HERE, "shim.c")]
     if main_src:
         cmd.append(main_src)
     cmd += list(extra_srcs) + ["-o", outobj_exe]
@@ -124,7 +127,7 @@ def arm_compile_cmd(meta, armdir, outobj_exe, san=False, extra_srcs=(), main_src
 def compile_arm(meta, armdir, kind, san=False):
     """Build `kind` in {id, bench} for the arm; returns exe path (cached by
     mtime of artifact.c, shim.c and the driver)."""
-    drv = {"id": "driver_id.c", "bench": "bench_t.c"}[kind]
+    drv = {"id": "driver_id.c", "bench": "bench_t.c", "pf": "driver_pf.c"}[kind]
     bdir = os.path.join(armdir, "build")
     os.makedirs(bdir, exist_ok=True)
     exe = os.path.join(bdir, "%s%s" % (kind, "_san" if san else ""))
@@ -132,10 +135,40 @@ def compile_arm(meta, armdir, kind, san=False):
             os.path.join(HERE, "shim.c"), os.path.join(HERE, drv)]
     if os.path.exists(exe) and os.path.getmtime(exe) >= max(os.path.getmtime(s) for s in srcs):
         return exe
-    cmd = arm_compile_cmd(meta, armdir, exe, san=san, main_src=os.path.join(HERE, drv))
+    cmd = arm_compile_cmd(meta, armdir, exe, san=san, main_src=os.path.join(HERE, drv),
+                          defs=["-DARTREV_HAVE_PF=1"] if kind == "pf" else ())
     r = run(cmd, env=dict(os.environ, TMPDIR=os.environ.get("TMPDIR", "/tmp")))
     if r.returncode != 0:
         die("compile failed for %s:\n  %s\n%s" % (armdir, " ".join(cmd), (r.stderr or "")[-1500:]))
+    return exe
+
+
+BUDGET_RE = {"steps": re.compile(r"^#define RX_STEP_BUDGET .*$", re.M),
+             "work": re.compile(r"^#define RX_WORK_BUDGET .*$", re.M)}
+
+
+def has_budgets(armdir):
+    t = open(os.path.join(armdir, "artifact.c")).read()
+    return all(r.search(t) for r in BUDGET_RE.values())
+
+
+def compile_shrunk(meta, armdir, steps, work, san=False):
+    """The shrunken-resource build of an arm: the SAME artifact.c with RX_STEP_BUDGET /
+    RX_WORK_BUDGET rewritten, in a copy under build/ (the arm itself is never touched), compiled
+    with the ONE fixed line and the shrunk-mode driver.  Same limits for the original and every
+    twin, so a difference is the twin's."""
+    bdir = os.path.join(armdir, "build", "shr_%d_%d" % (steps, work))
+    os.makedirs(bdir, exist_ok=True)
+    t = open(os.path.join(armdir, "artifact.c")).read()
+    t = BUDGET_RE["steps"].sub("#define RX_STEP_BUDGET %dLL" % steps, t)
+    t = BUDGET_RE["work"].sub("#define RX_WORK_BUDGET %dLL" % work, t)
+    open(os.path.join(bdir, "artifact.c"), "w").write(t)
+    shutil.copy(os.path.join(armdir, "artifact.h"), os.path.join(bdir, "artifact.h"))
+    exe = os.path.join(bdir, "id%s" % ("_san" if san else ""))
+    cmd = arm_compile_cmd(meta, bdir, exe, san=san, main_src=os.path.join(HERE, "driver_id.c"))
+    r = run(cmd, env=dict(os.environ, TMPDIR=os.environ.get("TMPDIR", "/tmp")))
+    if r.returncode != 0:
+        die("shrunk compile failed for %s:\n  %s\n%s" % (armdir, " ".join(cmd), (r.stderr or "")[-1500:]))
     return exe
 
 
