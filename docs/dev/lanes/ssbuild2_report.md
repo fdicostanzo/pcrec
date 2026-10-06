@@ -214,3 +214,27 @@ out by `AXES=`, as for every single-flag run.
    pin (no SIMD axis exists yet — re-read with `EXTRA_NEW_FLAGS` when it does).
 4. **S503**: UTF-8 UC cells + a `-futf-check` config in `vmhat_diff.py`.
 5. **Linux `make test`** at the merged tip (the round's batch gate).
+
+## Landing (ssland, 2026-10-05/06)
+
+### Part 1 — triage of the two Mac rxtsource reds: BOTH the Diag.msg 256-byte truncation family, no stage-2 regression
+
+Both failures depend on path length and vanish under a short TMPDIR
+(`TMPDIR=<worktree>/tt`, 44 chars: `run_rxtsource_tests.sh` rc=0, 0 failed, INV-COMPAT 267 files / 4532 blocks / 39236 lines). The same run with a still-long
+TMPDIR (`.../scratchpad/ssl`, ~100 chars) reproduces both reds, with the message cut at a different byte — the signature of a length cut, not of changed wording.
+Stage 2's diff vs main touches no parser/diagnostic code (`git diff main --stat -- src cli lib`: emit_vm.c, emit_dfa.c and the generator side only), so no main A/B build was made.
+
+- `W1.3 refusal (one definition name declared in two files ...)`: the sentence names two ABSOLUTE fixture paths; under a long TMPDIR the second (`compose_dup_definition.rxt`) fell past byte 256. Fix: `w13_refuse` now runs from the fixture directory with the fixture named relatively (test-side only).
+- `head/prose-dedent-K57`: needle `delete content` is the sentence's tail, cut at "delete". Needle is now `dedenting would` (same intent: names the dedent consequence; test-side only).
+- After the fix the script is green under the ORIGINAL long TMPDIR (rc=0, same census). Commit "tests/rxtsource: W1.3 refusals run from the fixture dir ...".
+- Residual risk (not fixed, a diagnostic-buffer change is not mine to make): any further rxtsource needle at a message tail can fall prey under a long TMPDIR; the real cure is a larger Diag.msg.
+
+### Part 2
+
+a. `docs/dev/artifact_size_log.tsv` committed (full-corpus run at a54b9ea5). `scripts/size_diff` against the merge-base copy is NOT a uniform +32: 3564/3564 common rows moved, total +17.42%, and the movers fall in bands (dfa +663 x1114, +1899 x314; vm +742/+713/+1273/+2524 ...), 488 NEW / 31 VANISHED. The comparison is CONFOUNDED: the tracked log was last refreshed at tri86, long before the merge-base, so it carries every corpus/emitter change since (dfa rows move too, which a VM hat cannot explain). A clean attribution needs a log regenerated at the merge-base; not done here. Flagged for the manager.
+b. `git merge main`: 3 conflicts, resolved keeping both sides:
+   - `docs/dev/optloop/CLAUDE.md`: both entries kept (startset/ bullet, then main's [ARTREV] section).
+   - `docs/spec/registry.md` §6: main's `table.sh table-main` count command with this lane's 127 rows / 43 axes.
+   - `tests/registry/run_registry_tests.sh`: axes_registry_check floor chain 189 -> 190 (main, memfn section) -> 193 (this lane, +3 for the bit-47 triple); literal 193 in all three places. VERIFY against the run below.
+   `make strict`: clean ("whole tree compiles clean with -Werror -Wshadow"). No src/ conflicts.
+c. Manifest: `make test-memfn-manifest` did NOT flag the hat (22 PASS, 0 failed, row count 13 unchanged): the hat's seek is spelled through `pcrec_emit_find`'s table form, already row PF, and `pf_vm_emit_first_class` spells no vocabulary form itself, so a new row would fail rule 4. Recorded as a COMPANION of PF (companions are existence-checked only) and cited VMSTART in PF's ref column; no new row, no sabotage ids used (S505-S509 untouched).
