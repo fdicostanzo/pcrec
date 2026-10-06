@@ -24,6 +24,19 @@ run by pcrec's make; each writes only under its OUTDIR argument.
   failure), pinned launches, `../twins/tb_r4b_table.py` readings. Run from
   a checkout carrying it, with an OUTDIR; ~20-25 min; last line
   `R4B-DONE status=<n> dir=<OUTDIR>`.
+- `memfn_r4c.sh` — R4c's (memfn R-4, M1 migration) Linux VERDICT run, from
+  a worktree at the kit branch with the expected TIP as its argument:
+  build; the zero-mover gate vs REF (e6e6d6eb); make test; the 35 mech
+  rows, ONE id per matrix call; the memfn-simd axes pair; full C11; I2
+  (`--arms start`, every --list-axes flag and tune position x both comment
+  tiers, the M1 denies at utf8). Logs go to build/scratch/r4c_lx/; ~6-7 h;
+  last line `R4C-LX-DONE gate= test= reds= mech= axes= c11= i2= i2arms=
+  wall=`. PASS is every rc 0 and reds=0.
+- `memfn_r4c_gate.py` — judges an emit_sweep log for R4c: exit 0 iff the
+  self-check passed, streams 1-4 have 0 movers at their reach floors, and
+  the only dump mover is --list-axes adding exactly the two declared
+  memfn-simd rows. emit_sweep has no declared-mover input; this keeps an
+  accepted red out of the gate.
 
 Transcripts: `../out/linux/`. Maintenance: update this file when files are
 added/removed or change roles.
