@@ -33,7 +33,16 @@ In the `drop_run` branch of the extractor, `#define RX_MEMFN_LIBC "..."` is norm
 condition that excises the block); where stamps agree the line is still compared token for token.
 Caveat: on asymmetric pairs the LIBC stamp is no longer compared across encodings (C11 still
 holds each artifact's stamp to its own text). `req_run_asym` EXCISED count 20 -> 56 on r4a2.
-No `src/` change. Not run: a sabotage control for the new normalization.
+No `src/` change. Note `drop_run` also fires when the two sides' pick FORMS differ (not only REQ_WHY).
+
+## Sabotage control (failing direction)
+On a scratch Linux copy of eef95511 + fix (planted line not committed): for every pair with
+`drop_run` False, the utf8 text gets `RX_MEMFN_LIBC "zz,..."`. Result: section FAILS, 10 passed /
+4 failed, `218 of 245 strict-identity pairs differ OUTSIDE the named regions`, first FINDING's
+first diff `#define RX_MEMFN_LIBC "memchr"`. 218 = the 219 of an earlier (unfixed) sabotage run
+minus the one pair (`fra(n|m)k|frost`) the normalization legitimately covers, so the
+normalization masks only the drop_run pair. Same tree restored without the plant: 11 passed,
+0 failed. (A first sabotage attempt ran without the fix applied because of a bad patch; discarded.)
 
 ## Housekeeping
 Linux worktrees enctri_s2, enctri_pre, enctri_fix and helper files removed from the box.
