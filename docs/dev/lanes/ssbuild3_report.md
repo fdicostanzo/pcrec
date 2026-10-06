@@ -525,3 +525,123 @@ arm's 11,000 floor at whole-corpus scale.
   number re-read. No check enforces abi MONOTONICITY (`ABI_EXPECT` is an
   equality), so a "take theirs" on R4a′'s `62 -> 63` after this lands would
   go silent. Recommendation unchanged: land R4a′ first.
+
+## Landing re-pin (ssland3)
+
+Lane ssland3 (sonnet, 2026-10-06). Task: make lane/ssbuild3 land-ready on main
+at abi 63 (R4a′, `340d8fef`+). Frank's D148 addenda 3 and 4 hold: T = S, Q3
+accepted conditionally. The ref compiler for every comparison below is main
+`142dcd78` built from `git archive` (it has no `src/ lib/ cli/ memfn/` diff
+against the `eacde3dc` that was merged, so the merge and the ref agree on code).
+
+### L.1 The merge, file by file
+
+`git merge main` alone gave five conflicts, no others. abi is 64 everywhere
+(R4a′'s 63 is history).
+
+| file | resolution |
+|---|---|
+| `src/gen/emit_dfa.c` | `PCREC_ARTIFACT_ABI 64` (ours). The one constant; the generated-by line, `.abi`, and the K80 guard follow it. |
+| `docs/spec/match_api.md` (K80 example) | ours: `!= 64`, `(abi 64)`, `PCREC_RX_ABI_H 64`. |
+| `docs/spec/match_api.md` (§6 change log) | both entries kept, ours first (`abi` is `64`); main's R4a′ entry reworded from "is `63` on every artifact today" to "was `63`". |
+| `tests/codegen/run_codegen_tests.sh` | `ABI_EXPECT=64`; the cause list gains R4a′'s 62->63 clause (copied from §6) before stage 3's, and stage 3's clause now reads 63->64. |
+| `tests/codegen/run_recursion_identity.sh` | FILEPIN (see L.2). |
+| `docs/dev/lanes/CLAUDE.md` | both index lines kept (`ssbuild3_report`, `artgen_report`). |
+
+Merge commit `fcd1dd79`. `make strict` clean. An artifact compiled with
+`--features all` carries `(abi 64)`, `RX_VM_START_SCAN`, `RX_MEMFN_FORMS`,
+`RX_MEMFN_LIBC`, `.abi = 64`.
+
+### L.2 Re-pinned values, and how each was measured
+
+Nothing was taken from either side; each was run on the merged tree.
+
+| pin | result | how |
+|---|---|---|
+| `tests/codegen/manifests/m5_stage1_stamps.tsv` (12 `EMITTED_BYTES` rows) | UNCHANGED (main's values hold) | `run_cpset_structure.sh` on the merged build: 28/0, CHECK 3 "matches this run exactly". Stage 3 moves none of the 12 sample artifacts' bytes, and 63->64 keeps the digit width. |
+| resource pin `a{5,25000}` rescue | UNCHANGED, 762697 | `run_resource_tests.sh` rc 0, the pin line PASS at 762697. |
+| `run_size_term.sh` cap-rescue cap | UNCHANGED, 32,300 | run on the merged tree, 32/0 (K=4 taken). Not moved, so no bisect was needed. |
+| `RECURSION_IDENTITY_FILEPIN` | `b42dffa6` -> `fcd1dd79` | the merge commit, the combined tree's last `src/` commit (the K78 merge-pin precedent); commit `1a896356`. The comment keeps the R4a′ pins (`b2e75d05`, `f09b4a32`) as history. |
+| `docs/dev/artifact_size_log.tsv` | REGENERATED, not resolved | written by the full run's `test-corpus` (header `rows=4126`, `commit=1a896356`); commit `042e9d3c`. |
+
+No `src/` commit follows the merge, so the abi bump and the pins are the last
+code state: only tests/docs commits sit after `fcd1dd79`.
+
+### L.3 Full Mac `make -k -j4 test CC=gcc-16`
+
+Detached under `caffeinate -s`, holding `worktrees/.mac-suite.lock` (owner
+`ssland3`, released at the end). Log `build/scratch/fulltest.log`
+(`FULL_DONE rc=2`), `sections ran: 53/53`.
+
+Error lines (`grep -E '\*\*\* \[(Makefile:[0-9]+: )?test-'`): TWO.
+
+1. `test-codegen`: the darwin `nm could not read arm_a.o`, the one accepted red
+   (`run_group: 14/15`).
+2. **`test-startset`: NEW, classified CHECK-SIDE, fixed.** `[dfa-deny]`
+   reported 28 violations, every one in class `G1:emitted->dominated`. Cause:
+   R4a′'s `RX_MEMFN_LIBC` is the inventory of libc calls in the artifact's
+   text, and a `first-memchr-bounded` hat artifact calls `memchr` where its
+   deny arm's table walk calls nothing, so the stamp reads `"memchr"` vs
+   `"none"`. Reproduced alone: `\bx` at `--features assertions` with the
+   class denies on both arms differs only in the hat's own prefilter/table
+   lines and that one stamp. The compiler did not change behaviour; the
+   stamp follows the hat's text exactly as `RX_DFA_PREFILTER` does.
+   Fix (`c4b9a91f`): `normalize()` in `tests/startset/dfahat_checks.py`
+   neutralizes `RX_MEMFN_LIBC` beside `RX_DFA_PREFILTER`. The stamp's own
+   correctness stays with C11 (`make test-memfn-stamps`, green in the run).
+   `make test-startset` now rc 0 (dfa 35/0 in its group; start_set, vmhat
+   22/0).
+
+### L.4 `scripts/emit_sweep.py`, ref = main
+
+`--ref-bin` main `142dcd78`, `--bin` this build. Self-check all-identical at
+full reach. Real run (rc 1 = movers, as expected):
+
+| stream | reach | movers | asymmetric |
+|---|---|---|---|
+| `.c` default engine | 4,159 | 4,159 | 0 |
+| `.c` `--engine=vm` | 4,160 | 4,160 | 0 |
+| `--emit-ir --engine=vm` | 4,160 | 0 | 0 |
+| composition (38 producing files) | 108 artifacts | 108 | 0 |
+| registry dumps | 7 | 1 (`--list-axes`, the two DFA-hat `prefilter` rows) | 0 |
+
+Mover table (`build/scratch/mover_table.py`, ssfix3's classifier with the
+abi rewrite changed to 63 -> 64; main's text rewritten and compared, or the
+`-fno-start-set` arm compared where the hat stamp is named):
+
+| stream | abi digit only | stamp lines | the DFA hat's table + seek | **FINDING** |
+|---|---|---|---|---|
+| `.c` default | 4,071 | 0 | 88 | **0** |
+| `.c` `--engine=vm` | 4,160 | 0 | 0 | **0** |
+
+The same 88 hat movers as before the merge, so R4a′'s stamps (present in
+main's text too) add nothing to the movers.
+
+### L.5 START-SET mech solos (S478-S502, S504), at the final tip
+
+`bash tests/mech/run_sabotage_matrix.sh <id>` one row per run, two chains
+with separate `MECH_SCRATCH`, tip `042e9d3c` (the printed commit). 26 rows,
+**0 unexpected, 0 anomalies**.
+
+| rows | verdict |
+|---|---|
+| S478, S480-S486, S488, S491-S495, S498-S502, S504 (20) | DETECTED |
+| S487, S489, S490 | UNDETECTED, expected (equivalent mutants) |
+| S479, S496, S497 | UNREACHED, expected (Q-R5, no verb/callout AST kind, no utf8 continuation start set) |
+
+Figures: S478 vmhat 375fail/18pass; S480 dfahat 2/1; S481 70/0; S482 57/0;
+S483 12/0; S484 19/0; S485 14/0; S486 dfahatstruct 4/28; S488 2/30; S491 5/17;
+S492 5/17; S493 4/18; S494 540/13; S495 candrows 1/2 + dfahatstruct 1/31;
+S498/S499 3/19; S500 vars 1/1; S501 startset 2/1, vmhat 17/18, dfahat 23/0;
+S502 startset 2/1, vmhat 57/18, dfahat 30/0; S504 dfahat 6/2. These equal the
+pre-merge F.3 table.
+
+### L.6 Final state
+
+Commits after the merge `fcd1dd79`: `1a896356` (FILEPIN), `c4b9a91f`
+(startset normalize), `042e9d3c` (size log), plus this report commit. Not
+merged to main. Note for the manager: main has since landed `53560dd2`
+(`run_inline_capability` strips Mach-O's leading underscore), which retires
+the darwin `nm` red; it is not in this branch, so a merge will pick it up
+and `test-codegen` should read fully green after it. OWED unchanged: the
+Linux alpha `alpha_s3.sh` and the whole-corpus `make test-axes`.
