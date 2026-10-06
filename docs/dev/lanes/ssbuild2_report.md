@@ -238,3 +238,26 @@ b. `git merge main`: 3 conflicts, resolved keeping both sides:
    - `tests/registry/run_registry_tests.sh`: axes_registry_check floor chain 189 -> 190 (main, memfn section) -> 193 (this lane, +3 for the bit-47 triple); literal 193 in all three places. VERIFY against the run below.
    `make strict`: clean ("whole tree compiles clean with -Werror -Wshadow"). No src/ conflicts.
 c. Manifest: `make test-memfn-manifest` did NOT flag the hat (22 PASS, 0 failed, row count 13 unchanged): the hat's seek is spelled through `pcrec_emit_find`'s table form, already row PF, and `pf_vm_emit_first_class` spells no vocabulary form itself, so a new row would fail rule 4. Recorded as a COMPANION of PF (companions are existence-checked only) and cited VMSTART in PF's ref column; no new row, no sabotage ids used (S505-S509 untouched).
+
+d. Re-runs on the merged tree (log `scratchpad/land_chain.log`; verdict = make's own error lines):
+   - `make test-codegen`: `*** [test-codegen] Error 1` (line 827), the ONLY make error in the chain. The log's sole `FAIL:` line is line 482, `FAIL: nm could not read arm_a.o (no rx_search symbol) — no verdict is evidence here`, the accepted darwin red.
+   - `test-registry` rc 0 (axes floor 193 confirmed: the COVERAGE-CHANGED tripwire did not fire), `test-rxtsource` rc 0, `test-startset` rc 0, `test-memfn-manifest` rc 0, `test-memfn-link` rc 0, `test-memfn-g2` rc 0. No pin needed re-pinning beyond the registry floor.
+e. Suite lock `worktrees/.mac-suite.lock` released at the end.
+
+### Emitter mover table (`scripts/emit_sweep.py --ref main`, WORKING = this branch's merged build/pcrec; --no-self-check)
+
+rc=1 is EXPECTED: the instrument demands identity, and an abi bump (61 -> 62) moves every artifact. I classified every mover from the artifacts themselves (the sweep prints only first-5 hunks): each differing line set was reduced to a signature (digits -> N, prefix stripped).
+
+| stream | population | both ok | movers | (a)+(b) abi digit + `RX_VM_START_SCAN "none"` stamp only | (c) hat fires: `"first-class"` stamp + 256-entry `_start_set` table + seek/guard lines | (d) other |
+|---|---|---|---|---|---|---|
+| 1 corpus .c, default engine | 4532 | 4085 | 4085 | 3998 | 87 | 0 |
+| 2 corpus .c, --engine=vm | 4532 | 4086 | 4086 | 2911 | 1175 | 0 |
+| 3 --emit-ir, --engine=vm | 4532 | 4086 | 0 | - | - | 0 |
+| 4 composition (--source) | 364 files / 38 producing | 38 | 108 files (54 artifacts, .c + .h) | all but the hat-fired ones | the hat-fired artifacts (table lines) | 0 |
+| 5 registry dumps | 7 | 7 | 1 (`--list-axes`) | - | - | 0 (explained below) |
+
+asymmetric (one side refuses) = 0 in every stream; the DELIVER witness holds. (a) lines are `.abi`, `PCREC_RX_ABI_H`, the abi guard and the generated-by line; (b) is the new `RX_VM_START_SCAN` stamp every artifact now carries (`"none"` where the hat does not fire). Stream 1/2 each show exactly TWO diff signatures, nothing else. Stream 3 (IR listings) is byte-identical, as the hat is pure emission.
+
+`--list-axes` mover: the new `prefilter` row `first-class` (`RX_VM_START_SCAN`, `PCREC_NO_START_SET`, bit 47, `-fno-start-set`) is inserted at ordinal 5, which renumbers the following rows 5..9 -> 6..10 (+1 row, no other change). Expected from stage 2.
+
+Conclusion: (d) is EMPTY. The size log's +17% total is therefore not an unexplained emitter movement from this lane; it is explained by the stale tri86 baseline plus the stage-2 stamp/abi lines (on the 87/1175 hat-fired artifacts the 256-byte table and seek lines, the observed +663..+2524 bands) — not independently re-attributed row by row.
