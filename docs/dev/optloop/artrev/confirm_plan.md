@@ -11,8 +11,7 @@ through `artrev.py time --remote ubuntubudu`.
 
 1. Ask the manager for a bench slot: the harness checks only the HOUR (08:00-19:00 local), never a
    declared bench window (memory `pcrec-bench-status`, window handshake). Read
-   `/home/duxevents/pcrec-bench/docs/dev/outbox_to_pcrec.md`-equivalent on the Mac
-   (`/Users/fdicostanzo/pcrec-bench/docs/dev/outbox_to_pcrec.md`) for a declared window; no write there.
+   `/Users/fdicostanzo/pcrec-bench/docs/dev/outbox_to_pcrec.md` (read-only) for a declared window.
 2. Light, read-only probe (one ssh, tailnet address only): 
    `ssh -o BatchMode=yes duxevents@100.69.121.107 'cat /proc/loadavg; df -h ~ | tail -1; ls -d ~/scratch_lx/artrev/.timing.lock 2>&1; gcc --version | head -1; command -v gnutimeout python3'`
    Proceed only if load1 < 0.5, free disk > 2 GB, no `.timing.lock`, and `gnutimeout`/`python3`/`gcc` exist
@@ -24,7 +23,7 @@ through `artrev.py time --remote ubuntubudu`.
 ## 1. Rebuild the four pilot roots from the pin, import the final twins
 
     WT=/Users/fdicostanzo/pcrec/worktrees/<confirmer-worktree>      # merged main + lane/artcollect
-    export ARTREV_CC=gcc-16 ARTREV_REMOTE_CC=gcc ARTREV_HOST_ROOT=/Users/fdicostanzo/pcrec
+    export ARTREV_CC=gcc-16 ARTREV_REMOTE_CC=gcc     # NOT ARTREV_HOST_ROOT: that is for D27 cells; it would put the timing lock in the main tree
     export ARTREV_ROOT=$WT/build-artrev/confirm
     A="python3 -B $WT/studies/artrev/artrev.py"
     bash $WT/studies/artrev/confirm_prep.sh /Users/fdicostanzo/pcrec/build/pcrec $ARTREV_ROOT

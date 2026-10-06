@@ -14,7 +14,7 @@ HERE=$(cd "$(dirname "$0")" && pwd)
 OUT=$1; SRC=$2; NAME=$3; PDIRS=$4; SUBJ=$5; IDARGS=$6; SAN=${7:-}
 export ARTREV_CC=${ARTREV_CC:-gcc-16}
 export ARTREV_ROOT=$OUT/root
-export ARTREV_HOST_ROOT=${ARTREV_HOST_ROOT:-$(git -C "$HERE" rev-parse --git-common-dir | sed 's#/\.git$##')}
+# identity takes no lock; ARTREV_HOST_ROOT (the cells' shared timing lock) is deliberately NOT set here
 A="python3 -B $HERE/artrev.py"
 rm -rf "$OUT/root"; mkdir -p "$OUT/root/$NAME/arms" "$OUT/logs"
 for f in artifact.c artifact.h artifact.s meta.json GENERATION.txt pattern.bin; do cp "$SRC/$f" "$OUT/root/$NAME/" 2>/dev/null; done
