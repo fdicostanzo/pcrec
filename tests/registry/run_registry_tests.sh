@@ -634,17 +634,21 @@ fi
 # `req-use` (the pre-check's use table, walked live) carries one single-bit
 # (macro, bit, flag) triple on its `handoff` row (`PCREC_NO_REQ_HANDOFF`,
 # bit 46), 3 lines as above. Measured: 189 PASS, 0 failed.
+# 189 -> 192 at [START-SET] stage 2 (lane ssbuild2, 2026-10-05): the
+# `prefilter` axis's new `first-class` row (the VM hat) carries one
+# single-bit (macro, bit, flag) triple (`PCREC_NO_START_SET`, bit 47), 3
+# lines as above; no new axis. Measured: 192 PASS, 0 failed.
 axesn="$(grep -c '^PASS: ' "$AXESOUT" || true)"
-if [ "$axesn" -ne 189 ]; then
+if [ "$axesn" -ne 192 ]; then
     if grep -q "^checks failed: 0" "$AXESOUT"; then
-        echo "registry: axes_registry_check COVERAGE CHANGED — $axesn passing checks, expected 189." >&2
+        echo "registry: axes_registry_check COVERAGE CHANGED — $axesn passing checks, expected 192." >&2
         echo "registry:   if you added or removed axes/checks on purpose, update this number" >&2
         echo "registry:   in the same commit; if not, coverage was removed" >&2
     else
         axesnf="$(sed -n 's/^checks failed: //p' "$AXESOUT" | tail -1)"
-        echo "registry: axes_registry_check shows $axesn passing checks (189 expected; ${axesnf:-?} failed," >&2
+        echo "registry: axes_registry_check shows $axesn passing checks (192 expected; ${axesnf:-?} failed," >&2
         echo "registry:   so a lower count is expected here). Fix the failures first; then this" >&2
-        echo "registry:   number must return to 189 — if it does not, coverage was removed too" >&2
+        echo "registry:   number must return to 192 — if it does not, coverage was removed too" >&2
     fi
     rc=1
 fi

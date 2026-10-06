@@ -1,0 +1,536 @@
+# tests/startset/vmhat.rxt -- [START-SET] edge cells for stage 2 (D148 addendum 1;
+# docs/design/startset.md §6.4, homes in §6.4.4). Every answer is libpcre2's
+# (local 10.48, agreeing with the 10.46 reference on every cell), at EVERY
+# startpos that is a character boundary of its subject.
+#
+# GENERATED, do not edit by hand: docs/design/startset/edge/cells.py (the
+# authored half) -> gen_rxt.py (the oracle's answers) -> the draft
+# docs/design/startset/edge/vmhat.rxt -> tests/startset/edge_import.py (adds
+# `features all` to each block, drops the head `oracle` line). Each block carries `tag edge=<key>`; the
+# key's meaning is startset.md §6.4.1's table.
+
+
+# edge VMR: recursion
+# pcre2-only
+pattern \((?:[^()]|(?R))*\)
+features all
+tag edge=VMR
+ms 0 "(a)" 0 3
+ns 1 "(a)"
+ns 2 "(a)"
+ns 3 "(a)"
+ms 0 "x(a)" 1 4
+ms 1 "x(a)" 1 4
+ns 2 "x(a)"
+ns 3 "x(a)"
+ns 4 "x(a)"
+ms 0 "((a)" 1 4
+ms 1 "((a)" 1 4
+ns 2 "((a)"
+ns 3 "((a)"
+ns 4 "((a)"
+ms 0 "(()" 1 3
+ms 1 "(()" 1 3
+ns 2 "(()"
+ns 3 "(()"
+ms 0 "a(b(c)d)" 1 8
+ms 1 "a(b(c)d)" 1 8
+ms 2 "a(b(c)d)" 3 6
+ms 3 "a(b(c)d)" 3 6
+ns 4 "a(b(c)d)"
+ns 5 "a(b(c)d)"
+ns 6 "a(b(c)d)"
+ns 7 "a(b(c)d)"
+ns 8 "a(b(c)d)"
+ns 0 ")("
+ns 1 ")("
+ns 2 ")("
+ns 0 "(a"
+ns 1 "(a"
+ns 2 "(a"
+
+# edge VMB: a backreference: the retry seek after a failed attempt at 0 must stop at 1
+# pcre2-only
+pattern (ab)\1
+features all
+tag edge=VMB
+ms 0 "abab" 0 4
+g 1 0 2
+ns 1 "abab"
+ns 2 "abab"
+ns 3 "abab"
+ns 4 "abab"
+ms 0 "aabab" 1 5
+g 1 1 3
+ms 1 "aabab" 1 5
+g 1 1 3
+ns 2 "aabab"
+ns 3 "aabab"
+ns 4 "aabab"
+ns 5 "aabab"
+ms 0 "ababab" 0 4
+g 1 0 2
+ms 1 "ababab" 2 6
+g 1 2 4
+ms 2 "ababab" 2 6
+g 1 2 4
+ns 3 "ababab"
+ns 4 "ababab"
+ns 5 "ababab"
+ns 6 "ababab"
+ns 0 "abaab"
+ns 1 "abaab"
+ns 2 "abaab"
+ns 3 "abaab"
+ns 4 "abaab"
+ns 5 "abaab"
+ms 0 "xabab" 1 5
+g 1 1 3
+ms 1 "xabab" 1 5
+g 1 1 3
+ns 2 "xabab"
+ns 3 "xabab"
+ns 4 "xabab"
+ns 5 "xabab"
+
+# edge VMB: a backreference to an EMPTY group (nullable prefix, S = {x})
+# pcre2-only
+pattern ()\1x
+features all
+tag edge=VMB
+ms 0 "x" 0 1
+g 1 0 0
+ns 1 "x"
+ms 0 "ax" 1 2
+g 1 1 1
+ms 1 "ax" 1 2
+g 1 1 1
+ns 2 "ax"
+ns 0 ""
+ms 0 "xx" 0 1
+g 1 0 0
+ms 1 "xx" 1 2
+g 1 1 1
+ns 2 "xx"
+
+# edge VMB: a backreference to a possibly-empty group
+# pcre2-only
+pattern (a|)\1b
+features all
+tag edge=VMB
+ms 0 "b" 0 1
+g 1 0 0
+ns 1 "b"
+ms 0 "aab" 0 3
+g 1 0 1
+ms 1 "aab" 2 3
+g 1 2 2
+ms 2 "aab" 2 3
+g 1 2 2
+ns 3 "aab"
+ms 0 "ab" 1 2
+g 1 1 1
+ms 1 "ab" 1 2
+g 1 1 1
+ns 2 "ab"
+ms 0 "xb" 1 2
+g 1 1 1
+ms 1 "xb" 1 2
+g 1 1 1
+ns 2 "xb"
+ms 0 "aaab" 1 4
+g 1 1 2
+ms 1 "aaab" 1 4
+g 1 1 2
+ms 2 "aaab" 3 4
+g 1 3 3
+ms 3 "aaab" 3 4
+g 1 3 3
+ns 4 "aaab"
+
+# edge VML: lookahead-first
+# pcre2-only
+pattern (?=ab)a(b)
+features all
+engine vm
+tag edge=VML
+ms 0 "ab" 0 2
+g 1 1 2
+ns 1 "ab"
+ns 2 "ab"
+ms 0 "aab" 1 3
+g 1 2 3
+ms 1 "aab" 1 3
+g 1 2 3
+ns 2 "aab"
+ns 3 "aab"
+ms 0 "xab" 1 3
+g 1 2 3
+ms 1 "xab" 1 3
+g 1 2 3
+ns 2 "xab"
+ns 3 "xab"
+ms 0 "aba" 0 2
+g 1 1 2
+ns 1 "aba"
+ns 2 "aba"
+ns 3 "aba"
+
+# edge VML: a lookahead-first pattern whose lookahead reads past the start
+# pcre2-only
+pattern (?=.*z)(a)
+features all
+tag edge=VML
+ms 0 "az" 0 1
+g 1 0 1
+ns 1 "az"
+ns 2 "az"
+ms 0 "ba z" 1 2
+g 1 1 2
+ms 1 "ba z" 1 2
+g 1 1 2
+ns 2 "ba z"
+ns 3 "ba z"
+ns 4 "ba z"
+ns 0 "a"
+ns 1 "a"
+ns 0 "za"
+ns 1 "za"
+ns 2 "za"
+ms 0 "aaz" 0 1
+g 1 0 1
+ms 1 "aaz" 1 2
+g 1 1 2
+ns 2 "aaz"
+ns 3 "aaz"
+
+# edge VMN: NULLABLE: V declines; seeking would lose the empty match at 0
+# pcre2-only
+pattern (a*)\1
+features all
+tag edge=VMN
+ms 0 "" 0 0
+g 1 0 0
+ms 0 "b" 0 0
+g 1 0 0
+ms 1 "b" 1 1
+g 1 1 1
+ms 0 "aa" 0 2
+g 1 0 1
+ms 1 "aa" 1 1
+g 1 1 1
+ms 2 "aa" 2 2
+g 1 2 2
+ms 0 "baa" 0 0
+g 1 0 0
+ms 1 "baa" 1 3
+g 1 1 2
+ms 2 "baa" 2 2
+g 1 2 2
+ms 3 "baa" 3 3
+g 1 3 3
+ms 0 "aaa" 0 2
+g 1 0 1
+ms 1 "aaa" 1 3
+g 1 1 2
+ms 2 "aaa" 2 2
+g 1 2 2
+ms 3 "aaa" 3 3
+g 1 3 3
+
+# edge VMN: nullable start set (b reached through an optional prefix) — non-nullable pattern
+# pcre2-only
+pattern (?:x|(a)\1)?b
+features all
+tag edge=VMN
+ms 0 "b" 0 1
+g 1 -1 -1
+ns 1 "b"
+ms 0 "xb" 0 2
+g 1 -1 -1
+ms 1 "xb" 1 2
+g 1 -1 -1
+ns 2 "xb"
+ms 0 "aab" 0 3
+g 1 0 1
+ms 1 "aab" 2 3
+g 1 -1 -1
+ms 2 "aab" 2 3
+g 1 -1 -1
+ns 3 "aab"
+ms 0 "ab" 1 2
+g 1 -1 -1
+ms 1 "ab" 1 2
+g 1 -1 -1
+ns 2 "ab"
+
+# edge VMI: caseless: S = {c, C}
+# pcre2-only
+pattern (?i)(ca)t\1
+features all
+tag edge=VMI
+ms 0 "catca" 0 5
+g 1 0 2
+ns 1 "catca"
+ns 2 "catca"
+ns 3 "catca"
+ns 4 "catca"
+ns 5 "catca"
+ms 0 "CatCA" 0 5
+g 1 0 2
+ns 1 "CatCA"
+ns 2 "CatCA"
+ns 3 "CatCA"
+ns 4 "CatCA"
+ns 5 "CatCA"
+ms 0 "xcatca" 1 6
+g 1 1 3
+ms 1 "xcatca" 1 6
+g 1 1 3
+ns 2 "xcatca"
+ns 3 "xcatca"
+ns 4 "xcatca"
+ns 5 "xcatca"
+ns 6 "xcatca"
+ms 0 "ccatca" 1 6
+g 1 1 3
+ms 1 "ccatca" 1 6
+g 1 1 3
+ns 2 "ccatca"
+ns 3 "ccatca"
+ns 4 "ccatca"
+ns 5 "ccatca"
+ns 6 "ccatca"
+ms 0 "cATca" 0 5
+g 1 0 2
+ns 1 "cATca"
+ns 2 "cATca"
+ns 3 "cATca"
+ns 4 "cATca"
+ns 5 "cATca"
+
+# edge VMU: utf8 caseless: S holds the LEAD byte E2 of U+212A
+# pcre2-only
+pattern (k)\1
+features all
+flags i
+encoding utf8
+tag edge=VMU
+ms 0 "kk" 0 2
+g 1 0 1
+ns 1 "kk"
+ns 2 "kk"
+ms 0 "\xe2\x84\xaak" 0 4
+g 1 0 3
+ns 3 "\xe2\x84\xaak"
+ns 4 "\xe2\x84\xaak"
+ms 0 "k\xe2\x84\xaa" 0 4
+g 1 0 1
+ns 1 "k\xe2\x84\xaa"
+ns 4 "k\xe2\x84\xaa"
+ms 0 "x\xe2\x84\xaa\xe2\x84\xaa" 1 7
+g 1 1 4
+ms 1 "x\xe2\x84\xaa\xe2\x84\xaa" 1 7
+g 1 1 4
+ns 4 "x\xe2\x84\xaa\xe2\x84\xaa"
+ns 7 "x\xe2\x84\xaa\xe2\x84\xaa"
+ms 0 "Kk" 0 2
+g 1 0 1
+ns 1 "Kk"
+ns 2 "Kk"
+ms 0 "\xe2kk" 1 3
+g 1 1 2
+ms 1 "\xe2kk" 1 3
+g 1 1 2
+ns 2 "\xe2kk"
+ns 3 "\xe2kk"
+
+# edge VMB: a class-led backreference (|S| = 63)
+# pcre2-only
+pattern (\w)\1x
+features all
+tag edge=VMB
+ms 0 "aax" 0 3
+g 1 0 1
+ns 1 "aax"
+ns 2 "aax"
+ns 3 "aax"
+ms 0 "abbx" 1 4
+g 1 1 2
+ms 1 "abbx" 1 4
+g 1 1 2
+ns 2 "abbx"
+ns 3 "abbx"
+ns 4 "abbx"
+ms 0 "aaax" 1 4
+g 1 1 2
+ms 1 "aaax" 1 4
+g 1 1 2
+ns 2 "aaax"
+ns 3 "aaax"
+ns 4 "aaax"
+ns 0 "xx"
+ns 1 "xx"
+ns 2 "xx"
+ns 0 "ab"
+ns 1 "ab"
+ns 2 "ab"
+
+# edge VMB: the bench's dup-word shape
+# pcre2-only
+pattern \b(\w+)\s+\1\b
+features all
+tag edge=VMB
+ms 0 "ab ab" 0 5
+g 1 0 2
+ns 1 "ab ab"
+ns 2 "ab ab"
+ns 3 "ab ab"
+ns 4 "ab ab"
+ns 5 "ab ab"
+ns 0 "xab ab"
+ns 1 "xab ab"
+ns 2 "xab ab"
+ns 3 "xab ab"
+ns 4 "xab ab"
+ns 5 "xab ab"
+ns 6 "xab ab"
+ms 0 "a a" 0 3
+g 1 0 1
+ns 1 "a a"
+ns 2 "a a"
+ns 3 "a a"
+ms 0 "ab abx ab ab" 7 12
+g 1 7 9
+ms 1 "ab abx ab ab" 7 12
+g 1 7 9
+ms 2 "ab abx ab ab" 7 12
+g 1 7 9
+ms 3 "ab abx ab ab" 7 12
+g 1 7 9
+ms 4 "ab abx ab ab" 7 12
+g 1 7 9
+ms 5 "ab abx ab ab" 7 12
+g 1 7 9
+ms 6 "ab abx ab ab" 7 12
+g 1 7 9
+ms 7 "ab abx ab ab" 7 12
+g 1 7 9
+ns 8 "ab abx ab ab"
+ns 9 "ab abx ab ab"
+ns 10 "ab abx ab ab"
+ns 11 "ab abx ab ab"
+ns 12 "ab abx ab ab"
+
+# edge VMC: a subroutine call ahead of its group
+# pcre2-only
+pattern (?1)x(y)
+features all
+engine vm
+tag edge=VMC
+ms 0 "yxy" 0 3
+g 1 2 3
+ns 1 "yxy"
+ns 2 "yxy"
+ns 3 "yxy"
+ms 0 "ayxy" 1 4
+g 1 3 4
+ms 1 "ayxy" 1 4
+g 1 3 4
+ns 2 "ayxy"
+ns 3 "ayxy"
+ns 4 "ayxy"
+ms 0 "yxyx" 0 3
+g 1 2 3
+ns 1 "yxyx"
+ns 2 "yxyx"
+ns 3 "yxyx"
+ns 4 "yxyx"
+
+# edge VMW: context assertions under the forced VM
+# pcre2-only
+pattern \Bcat\B
+features all
+engine vm
+tag edge=VMW
+ms 0 "xcatx" 1 4
+ms 1 "xcatx" 1 4
+ns 2 "xcatx"
+ns 3 "xcatx"
+ns 4 "xcatx"
+ns 5 "xcatx"
+ns 0 "cat"
+ns 1 "cat"
+ns 2 "cat"
+ns 3 "cat"
+ms 0 "acatb" 1 4
+ms 1 "acatb" 1 4
+ns 2 "acatb"
+ns 3 "acatb"
+ns 4 "acatb"
+ns 5 "acatb"
+ns 0 "cats"
+ns 1 "cats"
+ns 2 "cats"
+ns 3 "cats"
+ns 4 "cats"
+ms 0 "ccatx" 1 4
+ms 1 "ccatx" 1 4
+ns 2 "ccatx"
+ns 3 "ccatx"
+ns 4 "ccatx"
+ns 5 "ccatx"
+
+# edge VMG: \G under the forced VM: the seek must not move the \G attempt
+# pcre2-only
+pattern (?:\Ga|b)c
+features all
+engine vm
+tag edge=VMG
+ms 0 "ac" 0 2
+ns 1 "ac"
+ns 2 "ac"
+ms 0 "bc" 0 2
+ns 1 "bc"
+ns 2 "bc"
+ns 0 "xac"
+ms 1 "xac" 1 3
+ns 2 "xac"
+ns 3 "xac"
+ms 0 "abc" 1 3
+ms 1 "abc" 1 3
+ns 2 "abc"
+ns 3 "abc"
+
+# edge VMK: \K under the forced VM
+# pcre2-only
+pattern a\Kb
+features all
+engine vm
+tag edge=VMK
+ms 0 "ab" 1 2
+ns 1 "ab"
+ns 2 "ab"
+ms 0 "aab" 2 3
+ms 1 "aab" 2 3
+ns 2 "aab"
+ns 3 "aab"
+ms 0 "xab" 2 3
+ms 1 "xab" 2 3
+ns 2 "xab"
+ns 3 "xab"
+
+# edge VMN: NULLABLE under the forced VM (S491's witness)
+# pcre2-only
+pattern a*b?
+features all
+engine vm
+tag edge=VMN
+ms 0 "" 0 0
+ms 0 "zz" 0 0
+ms 1 "zz" 1 1
+ms 2 "zz" 2 2
+ms 0 "a" 0 1
+ms 1 "a" 1 1
+ms 0 "b" 0 1
+ms 1 "b" 1 1
