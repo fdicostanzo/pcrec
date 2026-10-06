@@ -566,6 +566,22 @@ the formula under test. The table above therefore could not see sound-F1
 
 ### 4.1a The DFA-hat set, measured (rev 2, sound-F1; Q-R1)
 
+> **AMENDED 2026-10-06 (lane ssfix3, the ss3 D6 panel's BLOCKER sound-F1,
+> `docs/dev/reviews/2026-10-06-r-ss3-panel.md`).** The "structural fact"
+> below is FALSE. Its second bullet covers bytes that begin no thread, and a
+> byte of `S` can begin a thread on one seed and leave that thread's state
+> unchanged while also keeping every other seed where it is: in
+> `(?<=\w) *a`, a space keeps the non-word seed AND keeps the word-context
+> thread in ` *`, so `' ' ∈ S \ E*`. The 94-row population never held such a
+> machine. As built, `S ∩ E*` dropped that start byte and the `T == S` build
+> assertion refused the pattern at default flags. **The DFA hat now scans
+> `T = S`** (repair (b)): such a byte is outside `E`, so the admission
+> declines and the artifact is the plain row's. `dfa_estar` is gone; the
+> build guard is the re-seed's premise read off the machine
+> (`dfa_reseed_exact`). Retracting D148 addendum 1's "`S ∩ E*` ≡ `S` on every
+> seeded machine" is Frank's ruling; the text below is kept as the record of
+> what was measured.
+
 **The three candidate repairs** the manager asked to be compared:
 - (a) `T = S ∩ E*`, where `E*` is the union of the escape sets of every
   seed state and s0;
