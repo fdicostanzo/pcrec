@@ -2,7 +2,9 @@
 
 The start-set mechanism (`docs/design/startset.md`) is built in stages (§8).
 This directory holds its checks; the fixtures (`vmhat.rxt`, `dfahat.rxt`, …)
-join at the stage that builds each hat (§6.4.4).
+join at the stage that builds each hat (§6.4.4). Stage 2 (the VM hat, lane
+ssbuild2, 2026-10-05) added its fixtures and checks (below); `make
+test-startset` runs both scripts, either failing fails the section.
 
 - `run_startset_checks.sh` + `startset_checks.py` — stage 1, the `start_set`
   FACT's checks, in `make test` as `make test-startset` (~20 s) and on the
@@ -33,3 +35,41 @@ join at the stage that builds each hat (§6.4.4).
   builds a hat checks its movers against its manifest (0 off-diagonal);
   regenerating the census MOVES that check, so a regeneration is a reviewed
   diff, never a refresh.
+  **Regenerated at stage 2** (lane ssbuild2) when the stage-2 fixtures joined
+  the corpus: +12 auto / +13 forced rows, every one a fixture block, no
+  existing row moved (`docs/design/startset/s2/`).
+
+## Stage 2 — the VM hat (lane ssbuild2, abi 62)
+
+- `vmhat.rxt`, `giveup.rxt` — ssedge's VM-hat edge cells moved home
+  (startset.md §6.4.4): GENERATED, every answer libpcre2's (10.48 and the
+  10.46 reference agree), at every character-boundary startpos. Written by
+  `edge_import.py` from `docs/design/startset/edge/`'s drafts (it adds
+  `features all` per block and drops the draft's head `oracle` line, which
+  `verify_rxt.py` cannot read; every block is `# pcre2-only`). `giveup.rxt`
+  is the Q-R3 capacity witness: the hat answers where the deny arm gives up
+  (run_axes.sh GROUP F5 allows exactly those 22 keys).
+- `vmhat_walk.rxt` — S499's answer witness, `(?=(a))\1b`, python-verified (a
+  walk that dropped the backreference's bytes would make it a mover and lose
+  its match). S500's twin, a variable, is `tests/vars/startset.rxt`.
+- `edge_import.py` — the importer above; re-run after `gen_rxt.py write`.
+- `run_vmhat_checks.sh` — stage 2's runner (`make test-startset`, mech arm
+  `vmhat`; ~3 min on the Mac): the fixtures through the harness, then:
+- `vmhat_checks.py` — over every corpus block on two arms (own options,
+  `--engine=vm`), default and `-fno-start-set`: [vm-iff] the stamp names the
+  emitted seek; [vm-route]/[vm-anchor]/[vm-handoff] every mover is a
+  prefilter-less, unanchored, handoff-free VM artifact; [vm-deny] a
+  non-mover's deny artifact is byte-identical and a mover's is identical once
+  the table, two seeks and stamp value are removed; [vm-table] the table
+  equals the `start_set` fact; [vm-movers] movers == the manifests BY ID
+  (corpus rows; the pcrec-bench rows are counted, not checked); [vm-wit]
+  hand-written witnesses. Landing: 6,946 artifact pairs, 176 auto / 2,560
+  forced movers, 0 off-diagonal.
+- `vmhat_diff.py` + `vmhat_driver.c` — the EVERY-STARTPOS DIFFERENTIAL and
+  START-BYTE ORACLE (§6.2): each auto mover x {own options, `--engine=vm`,
+  `--no-captures`}, the deny and hat artifacts linked into one TU, every
+  startpos of own/sweep/random/ill-formed subjects (each in an exact-size
+  heap block); answers and captures equal except a deny give-up becoming the
+  hat's answer, and every non-empty deny match starting on a byte of the fact.
+  `SAN=1` builds under ASan/UBSan. Landing: 528 pairs, 3,165,576 cells, 0
+  defects.

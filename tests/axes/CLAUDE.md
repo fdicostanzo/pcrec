@@ -538,3 +538,32 @@ corpus. `-fprefilter` (32 cases) and `-fno-cls-kit` (109) each got an entry:
 A single-file subset run breaches the `-fprefilter` floor by construction
 (222 refused against 12,000); read its `mismatches=` line, not the floor line.
 See docs/dev/lanes/axtri_report.md.
+
+## [START-SET] stage 2 — the PRODUCT ARM, GROUP F5, and multi-flag jobs (lane ssbuild2, 2026-10-05)
+
+`-fno-start-set` (bit 47) joins the bit-flag sweep at auto like every deny
+bit. Because the VM hat reaches far more artifacts under `--engine=vm`
+(startset.md §6.2, review r4 checks-F3/sound-F8), two more things run when
+`AXES` is empty or names `-fno-start-set`:
+
+- a JOB `--engine=vm -fno-start-set` against the default baseline (the
+  engine axis with neither engine reading the start set);
+- the PRODUCT ARM, after the job loop: that job's dump against
+  `--engine=vm`'s own (both saved through `job_savedump`), by
+  `dump_diff.awk`; MISMATCH/LOST/GAINED/REFUSED fail, a GIVEUP1 is allowed
+  only by a `-fno-start-set|<key>` entry, and `startset_arm.py` counts the
+  baseline cases whose block is in the forced mover manifest, held to
+  `SS_MOVER_FLOOR` (11,000: half the 22,467 case lines in the forced
+  manifest's corpus blocks, a static count until the first full run).
+
+**A MULTI-FLAG JOB INHERITS EACH COMPONENT FLAG'S DOCUMENTED POPULATIONS**:
+`run_one_axis` unions `REFUSAL_PATTERN` and `GIVEUP1_ALLOWANCE` over the
+words of `$flags`, so the joined job reads `--engine=vm`'s refusals and
+`-fno-start-set`'s give-ups without a second copy of either list.
+
+**GROUP F5** is `tests/startset/giveup.rxt`'s 22 deny-arm give-ups (the Q-R3
+capacity witness), derived from a live run. The design's 11 corpus
+budget/`gu` movers read 0 one-sided give-ups (their give-ups start on S
+bytes), measured file by file.
+
+- **startset_arm.py** — the product arm's mover count (above).

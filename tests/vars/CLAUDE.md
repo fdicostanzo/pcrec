@@ -28,6 +28,11 @@ supplies per call. The contract is `docs/spec/vars.md`; the design is
   bytes, and the reverse), the 1:1 negative control, and the ill-formed-value
   refusals. Its ill-formed-default cell carries a RAW 0xFF byte in its
   `pattern` line; see the comment at that cell for why not `pattern-esc`.
+- `startset.rxt` — [START-SET] stage 2 (lane ssbuild2, 2026-10-05): sabotage
+  S500's answer witness, `${v}x` with v = a. A variable reads as "every byte,
+  nullable" in the start-set walk, so the pattern is not a VM-hat mover; a
+  walk whose A_VAR arm dropped its bytes would make it one and the seek would
+  skip every match. Verified by this directory's oracle (mech arm `vars`).
 - `verify_vars.py` — **the oracle, and its NAME is the mechanism.**
   `tests/harness/verify_rxt.py`'s `declares_own_oracle` treats a directory
   holding a `verify_*.py` as having one and skips its cells with a COUNTED

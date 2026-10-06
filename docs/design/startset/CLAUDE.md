@@ -58,3 +58,7 @@ written.
 - `s1/` — STAGE 1's census (lane `ssbuild01`): the D77 census re-run on the
   BUILT `start_set` fact with per-block options, and the generator of the
   stage-2/3 mover manifests (`tests/startset/manifests/`). Own CLAUDE.md.
+
+- `s2/` — the census re-run at stage 2 (lane ssbuild2), which regenerated
+  `tests/startset/manifests/` when the stage-2 fixtures joined the corpus.
+  Own CLAUDE.md.

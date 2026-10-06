@@ -1811,9 +1811,11 @@ if [ -f "$WORKDIR/ss_vm_base.tsv" ] && [ -f "$WORKDIR/ss_vm_deny.tsv" ]; then
     ss_movers="$(python3 "$SCRIPT_DIR/startset_arm.py" "$WORKDIR/ss_vm_base.tsv" \
                     "$ROOT_DIR/tests/startset/manifests/manifest_s2_vm_forced.tsv" "$ROOT_DIR")"
     ss_mc="$(echo "$ss_movers" | grep -oE 'mover_cases=[0-9]+' | cut -d= -f2)"
-    # K35 FLOOR: half the mover cases measured at landing (lane ssbuild2;
-    # docs/dev/lanes/ssbuild2_report.md §4) -- OWED until the first full run.
-    SS_MOVER_FLOOR="${SS_MOVER_FLOOR:-2000}"
+    # K35 FLOOR, DERIVED: half the 22,467 case lines that sit in the forced
+    # manifest's 2,560 corpus blocks (a static count at landing, lane
+    # ssbuild2; docs/dev/lanes/ssbuild2_report.md §4). The first full run's
+    # measured mover_cases replaces the derivation.
+    SS_MOVER_FLOOR="${SS_MOVER_FLOOR:-11000}"
     echo "  $ss_movers (floor $SS_MOVER_FLOOR); giveup1-allowed=$ss_allowed"
     if [ "${ss_mc:-0}" -lt "$SS_MOVER_FLOOR" ]; then
         ss_bad=1

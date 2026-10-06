@@ -1668,6 +1668,7 @@ inputs are a set and a run, not a `DfaSel`.
 | N5 | the ofsskip scan ARM | `emit_dfa.c:6143` `ofs_test_emit_fn` | F1 at offset k* plus a verify (F9's shape); F2/F3 for the cube (the K82 pair arm) | an `if`: pair arm (two `memchr` streams), else one `memchr` |
 | N6 | `vm_rev_emit`'s backward walk | `emit_vm.c` (compare_stack.md §2.3) | F6 reverse, per byte | a per-byte L1 test with `cur--`. Keeps its own form (compare_stack.md §5) |
 | N7 | `$_span_match[_caseless]` | `src/enc/enc_byte.c:153/184` | F8 `mismatch`, a run-time operand | a byte loop returning a prefix count. Gated on a cell (compare_stack.md S6) |
+| VMSTART | [START-SET] stage 2's VM hat: the prefilter-less VM attempt loop's entry and retry seek (`docs/design/startset.md` §5; built lane ssbuild2, 2026-10-05, abi 62) | `emit_dfa.c` `pf_vm_emit_first_class`, through `pcrec_emit_find` (T1 PF's own one statement) | F5 over the start set `S`, IN-LOOP per failed attempt (D91 budget 2, UNMEASURED, D149) | `while (pos < n && !<p>_start_set[s[pos]]) pos++` after a 256-entry table; the table form only at stage 2 (Q-R5). **The C17 site manifest (`tests/memfn/site_manifest.tsv`) does not exist at this pin, so the row is recorded here, `pending`, migrating with T1 PF's step** |
 
 ---
 
