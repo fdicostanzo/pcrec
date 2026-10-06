@@ -6,12 +6,10 @@ prototype lives on the scratch branch `scratch/stc0-trace` (worktree
 `worktrees/stc0-trace`) and is NOT merged. The design is
 `docs/design/start_table.md` rev 2.1, §3.2 C0, §3.3 items 2-5, and §6 Q3/Q7.
 
-**Status:** the light work is complete and validated. Three things are owed:
-- (a) the every-flag deny sweep and the full two-build gate run. Both are heavy and
-  armed as one detached chain that waits for main's `.lift`; see §6.
-- (b) the S-ids for the six sabotage rows. They are drafted and validated, but
-  not committed until main allots a block.
-- (c) the Q7 census-script move, which this lane did not take on (§7).
+**Status:** complete except Q7's census-script move (§7). The follow-up lane
+`stc0b` (2026-10-06) discharged the owed items: the heavy runs and the
+`-fno-length-prune` re-pin (§6), the every-flag movers (§6) and the S-ids
+S550-S555 (§6b), then merged main (abi 65) into the branch (§6c).
 
 ## 1. Deliverables
 
@@ -167,7 +165,7 @@ become `tests/mech/sabotages/S<id>_*.sh`, one per row, `SAB_SUITES="emitsweep"`,
 
 ## 3. The every-flag deny sweep
 
-**OWED** (heavy). `deny_census.py` over the 29 `--list-axes` flags outside
+**DONE** (lane stc0b; results and the mover table are §6). As briefed: `deny_census.py` over the 29 `--list-axes` flags outside
 `START_FLAGS`, full corpus × 4 arms, jobs 6. The list is derived from the
 `--list-axes` `cli_flag` column and is identical to `allflags_sample.tsv`'s 29.
 `-fno-length-prune` is already a deny arm in `DIFFER_PINS`, pinned from the
@@ -268,30 +266,107 @@ floor re-pins at C1's own count. The prototype is not merged.
 
 No heavy suite ran.
 
-## 6. OWED: the heavy chain
+## 6. Heavy runs (Linux, 2026-10-06)
 
-`worktrees/stc0-scratch/heavy_chain.sh <lane/stc0 head sha>` runs detached under
-`caffeinate -s`. It:
-1. waits for `/Users/fdicostanzo/pcrec/worktrees/stc0/.lift`;
-2. takes `worktrees/.mac-suite.lock` (file form, `set -C`, owner line, released
-   on exit);
-3. runs (A) §3's sweep, then (B) the full C0 gate:
-   `emit_sweep.py --ref 73f66ba9 --tree-rev <head> --arms start --jobs 6`.
+Both runs completed on ubuntubudu (the 10.46 reference box), launched by the
+manager from `worktrees/stc0lx` after the Mac chain was dropped for the kit's
+`.mac-suite.lock`. They ran in one detached chain at `-j10`: (A) the every-flag
+deny sweep, wall 543 s; (B) the full C0 gate, `emit_sweep.py --ref 73f66ba9
+--tree-rev <lane head> --arms start`, wall 585 s (`gate.log`: "elapsed: 584.6s").
+Both rc 0 (`chain.log`: `A_RC=0`, `B_RC=0`). Results are committed under
+`docs/design/start_table/heavy_linux_2026-10-06/` (`chain.log`, `allflags.log`,
+`gate.log`, `deny_census.tsv`, `arms.tsv`); the bulky movers/hidden/transitions
+TSVs are not kept, since nothing cites them.
 
-B covers all six streams, the self-check, and the arms with two real builds. At
-`src`-identical revisions it must read identity on every stream and every arm,
-at or above every re-pinned floor.
+**B, the gate.** All streams and all 64 arm rows read `ok` at identity, at or
+above every floor. The population was 4,606 argv rows, 369 composition files,
+38 producing, 108 artifacts, so PINS held. The four `-fno-length-prune` cells
+were pinned from the 1-in-10 sample and read, on the full corpus:
 
-Logs: `worktrees/stc0-scratch/heavy/{chain,allflags,gate}.log`. The completion
-line is `== stc0 heavy chain DONE rc=N (A=a B=b) ==`. Expect ~40-70 min once
-lifted.
+| cell | old floor (bytes/stamp) | measured | new pin |
+|---|---|---|---|
+| byte c-default | 46 / 11 | 449 / 112 | 449 / 112 |
+| byte c-vm | 69 / 0 | 678 / 0 | 678 / 0 |
+| utf8 c-default | 49 / 11 | 468 / 118 | 468 / 118 |
+| utf8 c-vm | 85 / 0 | 815 / 0 | 815 / 0 |
 
-**The follow-up agent:**
-- re-pins the four `-fno-length-prune` cells (and any other cell that moved)
-  from `heavy/allflags/deny_census.tsv`;
-- reads B's verdict from `gate.log`'s floor and identity lines. An arm FAIL at a
-  src-identical pin is an instrument finding;
-- appends the non-start mover list here.
+Every other cell's floor already equalled its measured value. The deny-census
+numbers for the same flag (§ below) agree: 449 / 112, 678 / 0, 468 / 118,
+815 / 0, so the two instruments count one population.
+
+**A, the every-flag sweep.** 29 flags outside the start family × {auto, vm} ×
+{byte, utf8}, 3,221-3,230 corpus patterns per arm. Cells read
+`visible/hidden/refusal`: `visible` = movers whose start-family stamps moved
+(`start_keys_moved`), `hidden` = movers whose bytes moved with no start stamp
+moving, `refusal` = patterns that compile at base and refuse with the flag. A
+`-` is zero everywhere.
+
+| flag | auto/byte | vm/byte | auto/utf8 | vm/utf8 | reading |
+|---|---|---|---|---|---|
+| `-fcomments` | 0/3221/0 | 0/3222/0 | 0/3229/0 | 0/3230/0 | comment text only, every artifact; `-fno-comments` reads 0 (the default) |
+| `-fno-size-term` | 0/3221/0 | 0/3221/1 | 0/3229/0 | 0/3229/1 | all-pattern `.flags` mover: the K92 leak (bit 18 unmasked), FIXED on main (abi 65). Not a start input |
+| `-fno-scan-edge` | 0/3221/0 | 0/3222/0 | 0/3229/0 | 0/3230/0 | same: K92 leak (bit 21), fixed on main. Body-only otherwise |
+| `-fno-startpos-guard` | - | - | 0/3229/0 | 0/3230/0 | KEPT contract bit, utf8 only: all-pattern `.flags` by design |
+| `-fstartpos-guard=align` | - | - | 0/3229/0 | 0/3230/0 | same, kept contract bit |
+| `-futf-check` | - | - | 0/3229/0 | 0/3230/0 | same, kept contract bit |
+| `-fno-atomic-discharge` | 44/3177/0 | 0/3222/0 | 42/3187/0 | 0/3230/0 | KEPT engine-selecting bit (Frank Q14, 2026-10-06): all-pattern `.flags`; the 44/42 visible movers are 32+8 (30+8 utf8) patterns whose `ENGINE` and the whole family move, plus 4 `VM_RESEED`-only, on the DFA side only |
+| `-fno-splice-calls` | 201/3020/0 | 54/3168/0 | 203/3026/0 | 54/3176/0 | KEPT engine-selecting bit (Q14): all-pattern `.flags`; visible = route moves. Already named by the 1-in-10 sample |
+| `-fno-ctx-node` | 239/56/0 | 0/295/0 | 223/55/0 | 0/278/0 | `\b`/`\B` fall back to the lookaround spelling: the route and prefilter facts move on the DFA side. Already named by the sample |
+| `-fno-length-prune` | 112/337/0 | 0/678/0 | 118/350/0 | 0/815/0 | prune ceiling: window/prefilter stamps move on the DFA side only. Already a DIFFER arm |
+| `-fno-cls-kit` | 0/3/0 | 0/3/0 | 3/67/7 | 1/466/12 | wide-class forms: auto/utf8's 3 visible movers are 2 whole-family route moves (the same shape as `-fno-premul-table`'s) and 1 `VM_RESEED`; vm/utf8's 1 is `REQ_WHY`; the 7/12 refusals are size-cap moves. Byte side body-only. Named by the sample (vm/utf8) |
+| `-fno-prefilter` | 1125/0/0 | - | 1149/2/0 | - | the hybrid prefilter's presence IS a start stamp (`RX_VM_PREFILTER`, route class). Known |
+| `-fprefilter` | 82/0/2015 | 2949/0/273 | 85/0/1997 | 2953/0/277 | the force twin: the same stamp moves, and the refusals are the documented refused-by-force population (2,015 / 273 / 1,997 / 277). Known |
+| `-fno-prefilter-collapse` | 1/1/0 | - | 2/3/0 | - | the collapsed-count rescue: one start stamp moves where the rescue fires. Known |
+| `-fno-possessify` | 6/227/0 | 9/618/0 | 6/229/0 | 9/615/0 | **NEW.** The ONLY start stamp that moves is `REQ_WHY` (the pre-check admission verdict), on VM-only artifacts; read from `deny_movers.tsv`'s keys column. Likely mechanism, not probed: possessification changes the VM program's frame discipline, which G2's one-attempt conjunct (K64's `vm_frameless`) reads. 6 / 9 visible |
+| `-fno-altcls-merge` | 2/87/0 | 8/81/1 | 2/92/0 | 8/86/1 | **NEW, small.** `REQ_WHY` on VM-only artifacts (8 per vm arm); on the auto arms also one `REQ_HANDOFF` mover. Same reading as possessify |
+| `-fno-altcls-factor` | 0/102/0 | 1/101/0 | 0/99/0 | 1/98/0 | **NEW, one pattern per vm arm.** `REQ_WHY` only; same reading |
+| `-fno-premul-table` | 0/2416/0 | - | 2/2440/0 | - | **NEW at utf8 only (2 patterns).** Body-only on byte; the two utf8 movers move the WHOLE start family (`DFA_PREFILTER`/`DFA_SCAN`/`DFA_START`/`VM_PREFILTER*`/`VM_RESEED`/`VM_START_SCAN`/`END_WINDOW`/`REQ_HANDOFF`), i.e. the artifact changes route (probably a size-cap rescue; not probed) |
+| `-fno-counter` | 0/35/7 | 0/38/8 | 0/35/7 | 0/38/8 | counter rung off: body-only, 7-8 patterns refuse at the size caps |
+| `-fno-anchored-dfa` | 0/1481/0 | - | 0/1481/0 | - | optional anchored machine: body-only |
+| `-fno-alt-island`, `-fno-cls-fold`, `-fno-cls-pack`, `-fno-lit-run`, `-fno-revdet`, `-fno-run-overlap`, `-fno-tiered-entry`, `-fno-view-edge` | 0 visible, 3-2,416 hidden | same | same | same | body-only on every arm (no start stamp moves): not start inputs |
+
+Readings:
+- **Non-start flags that move start stamps without being a route or
+  prefilter switch**: `-fno-possessify`, `-fno-altcls-merge`,
+  `-fno-altcls-factor` (all three move `REQ_WHY`, VM-only artifacts) and
+  `-fno-premul-table`/`-fno-cls-kit` at utf8 (a handful of whole-family route
+  moves). The first group is a **start-table input candidate for C1's edit
+  set**: the admission (`req_admit`/`req_use`, `REQ_WHY`) reads something an
+  AST rewrite upstream changes. The likely input is the VM program's
+  frame/one-attempt verdict (`Job.vm_frameless`, K64's conjunct in
+  `req_route_one_attempt`); C1's `cand_select` must read it through the same
+  accessor, and C1's own acceptance should read these three flags' visible
+  counts (6/9, 2/8, 0/1) unchanged before and after. The premul/cls-kit
+  movers are 2-3 patterns and need only the identity gate.
+- Everything visible beyond that is the known set: the route switches
+  (`-fno-atomic-discharge`, `-fno-splice-calls`, `-fno-ctx-node`,
+  `-fno-cls-kit`), the prefilter switches and `-fno-length-prune`, which is
+  already a DIFFER arm and which the table must keep as an input (its prune
+  ceiling is what the window/pins stamps read).
+- `-fno-length-prune` is the one flag whose `visible` count is 0 on the VM
+  route and 112-118 on the auto (DFA) route: the VM never reads the ceiling
+  for a start stamp.
+
+## 6b. Sabotage rows S550-S555 (mech, solo)
+
+The six drafted rows (§2) are committed as `tests/mech/sabotages/S550_*`
+... `S555_*` (block S550-S555 allotted by main), arm `emitsweep`, `SAB_EXPECT=
+DETECTED`, anchors copied from `git show HEAD:<path>`. `VALIDATE_ONLY=1` read
+all six valid. Each was run as a single-row `bash tests/mech/run_sabotage_matrix.sh S<id>` against
+a committed HEAD (`6a77eb88`; the six ran in parallel, each in its own scratch
+tree, on the Mac, about two minutes in all), and every one read **DETECTED**:
+
+| row | plant | arm cell |
+|---|---|---|
+| S550 | `opt_argv` drops every option | `emitsweep:3fail/21pass` |
+| S551 | `opt_argv` drops `-e utf8` | `emitsweep:2fail/22pass` |
+| S552 | trace compare ignores order | `emitsweep:2fail/22pass` |
+| S553 | empty-trace floor disabled | `emitsweep:1fail/23pass` |
+| S554 | per-arm records floor disabled | `emitsweep:1fail/23pass` |
+| S555 | stale declaration accepted | `emitsweep:1fail/23pass` |
+
+All six reported `mech run COMPLETE: 1 rows (unexpected: 0, undetected: 0,
+unreached: 0, anomalies: 0)`.
 
 ## 7. Not done, and why
 
@@ -301,4 +376,4 @@ lifted.
   is its own check-design job and was not in this brief's items 1-4; it was
   flagged to main at lane start. `row_census.py` goes to `tests/codegen/` only
   as the hit-counter's cross-check, now that Q3 passed (C1/C2's job).
-- **The sabotage rows** (§2): waiting on main's S-id block.
+- **The sabotage rows**: DONE, §6b.
