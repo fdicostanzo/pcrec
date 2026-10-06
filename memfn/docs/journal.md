@@ -352,3 +352,25 @@ pointer when a kit change merges to main.
   leave the site. pcrec STATES it (`mf_site.on_miss_leaves`; MF_SITE_ABI
   2→3) and the kit never parses hook text. CORE's interim
   jump-keyword sniff is retired. G2 coverage is OWED.
+
+## 2026-10-06 — R4c integrated on lane/memfn-r4c; heavy runs next
+
+- CORE delivered IMPLEMENT + REPLACE (zero movers) but never read three
+  manager messages that arrived while it was busy (the HOLD/LIFT-by-
+  artifact lesson, again). A fresh FIX lane applied them from the brief:
+  - it merged AXIS/CHECKS;
+  - ONE policy derivation;
+  - D145 add. 1 provenance;
+  - C12 memchr 8→2;
+  - C17 LIVE on the real corpus (103 renders, the `pcrec_memfn_define`
+    door accounted);
+  - stale S524/S528 re-aimed;
+  - Q-G2-18 (`on_miss_leaves`, MF_SITE_ABI 2→3, a predicate column of the
+    arm table, the text sniff deleted);
+  - rxtsource re-pinned for CHECKS's handoff.rxt growth (+278 PASS).
+- Merged lane/r4cfix, then main (docs only since 691a8b7c). make strict
+  is clean. emit_sweep at FIX: streams 1-4 0 movers; stream 5 only the two
+  declared memfn-simd rows.
+- OWED, in the slot main names (after flagbits, ~20:45Z): Mac make test,
+  then the sabotage matrix (CORE's 23 rows + S518-S529); then the pinned
+  Linux script; I2 over every axis × both tiers after main's C0.
