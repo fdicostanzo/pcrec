@@ -3726,6 +3726,14 @@ must fire on `default`/`noprefilter`. `ctx-node-moved=` joins the (A) line.
 - `run_recursion_identity.sh`'s (B) pin re-pinned (see its comment).
 - S368's anchor re-aimed (the guard call gained its `anchored` argument).
 
+- **[FLAGBITS] (lane flagbits, 2026-10-06, abi 64 -> 65, K92):**
+  `run_codegen_tests.sh`'s `ABI_EXPECT` 65 and its ledger message;
+  `run_prechecks.sh` section 6b (every `-f` spelling `--list-axes` carries,
+  on two witnesses x `byte`/`utf8`, must leave `.flags` at baseline except the
+  four kept members, which double as the positive control; floor 40); S65/S67/
+  S295 re-aimed at the derived mask; `run_recursion_identity.sh`'s (B) FILEPIN
+  self-pinned; `tests/resource`'s two `-fno-scan-edge` byte pins move by the
+  `.flags` literal.
 - **[START-SET] stage 3 (lane ssbuild3, 2026-10-06, abi 62 -> 64; 63 is
   the memfn kit's R4a′):** `run_codegen_tests.sh`'s `ABI_EXPECT` 64 and its
   ledger message; `run_dfa_stamps.sh` and `run_form_census.sh` learn the two

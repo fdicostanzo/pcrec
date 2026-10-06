@@ -215,6 +215,8 @@ they read while writing it.
 
 Deny the SPLICE linkage at every call site, forcing the CALL linkage everywhere.
 
+**[FLAGBITS] (abi 65): the mask is derived from `src/core/axes.def`, and this
+bit is one of the four named `kept` members (see `emit_info_def`).**
 **IT IS NOT IN `emit_info_def`'s `strategy_denials` MASK, AND THAT IS THE
 DECISION WORTH KNOWING.** Every other member of that mask (bit 46,
 `PCREC_NO_REQ_HANDOFF`, [K82] (B), joined it at `abi` 61 as an ordinary
