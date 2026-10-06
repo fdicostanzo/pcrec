@@ -150,7 +150,18 @@ battery: random over the pattern's alphabet, near-misses, lengths 0-64 and
 around any block size the twin introduces, matches at subject start/end;
 matches AND captures over every exported call shape; libpcre2 on a sample;
 ASan + UBSan), then scratch timing, then refine within §3.1. ZERO identity
-differences is the bar at every step. One NULL twin per artifact (a
+differences is the bar at every step, INCLUDING under shrunken resources:
+identity also drives every caller-buffer entry (`_in`) with 0 and 1 frames
+and trail and a reduced step budget, because a twin that drops frames or
+trail can return a match where the original gives up (lane rvA09: its L4 r2
+passed default-buffer identity with 284k such differences). THE GIVE-UP
+RULE: where the ORIGINAL gives up (budget/frames/trail exhausted) and the
+twin answers, the twin's answer must equal libpcre2's — a correct answer in
+place of a give-up is the permitted repair direction (limits bound cost,
+they are never part of the answer); a twin that gives up where the original
+answers, or answers differently from the oracle, FAILS. A twin whose search
+start can move earlier is also driven by a window-start differential
+(rvA09's tool), never left to a livelock timeout. One NULL twin per artifact (a
 semantics-free textual change) rides every timing run as the noise control.
 The lane writes `review.md` (what the artifact does as read; each lead's
 story including the revisions; what it checked and rejected and why).
