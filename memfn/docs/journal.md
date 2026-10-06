@@ -283,3 +283,25 @@ pointer when a kit change merges to main.
   let it finish.
 - OWED: Linux make test via main's executor (by day), with the census
   on Linux too. Then the R4a′ done:.
+
+## 2026-10-06 — first kit session ends (context reset at Frank's request)
+
+- Delivered this session:
+  - R-1, the fused scan+verify probe; Linux verdict: R4d's trigger is
+    MET on union-select;
+  - R-2: integration.md rev 4.5→4.6, panel r5 with one blocker fixed,
+    and Q53-Q55, now ruled as D147 addendum 10;
+  - R-3 part 1, R4a: the kit skeleton, manifest + C17, the blinded G2
+    (F1-F3 found and fixed), rev 4.7 — all on main;
+  - R-3 part 2, R4a′: the stamps' abi event (abi 63), complete on the
+    Mac and awaiting main's morning Linux make test.
+- Lessons kept:
+  - blinded authors find what implementers' smoke tests miss (G2);
+  - checks catch refactors on their first merge (C17 on START-SET's FIND);
+  - sabotage ids and abi numbers serialize through main;
+  - long lane runs take the Mac suite lock;
+  - never nest a D27 cell;
+  - critics write their findings to a file;
+  - Frank: tuning constants are suspect (D149).
+- The next session wakes from memfn/docs/wake.md (current as of
+  eef95511) and waits for main's Linux results to post R4a′'s done:.
