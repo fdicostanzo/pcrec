@@ -174,6 +174,8 @@ OPTIONS
                         --trace-bin (and optionally --trace-ref-bin).
   --trace-declared FILE  the commit's declared-multiplicity file for
                         trace_diff.py (sites whose records may be added).
+  --trace-unordered      compare each pattern-arm's SET of records (order and
+                        ask multiplicity ignored; see trace_diff.py).
   --build-cflags=FLAGS   CFLAGS for every build this run makes (default: the
                         tree's own Makefile default).
 
@@ -1154,10 +1156,13 @@ ARMS_TSV_HEADER = ("base\tflag\tstream\tok_base\tok_arm\tdiffer_a\tdiffer_b\tsta
 
 TRACE_CFLAGS = "-O2 -g -DPCREC_CAND_TRACE"
 TRACE_TAG = b"CANDTRACE\t"
-# Records-per-arm floor (a trace arm that prints nothing passes any diff).
-# 0 until C1 lands the hook on main: the records the C0 prototype printed
-# are recorded in docs/dev/lanes/stc0_report.md, and C1 pins its own.
-TRACE_RECORDS_FLOOR = {"c-default": 0, "c-vm": 0}
+# Records-per-arm floor (a trace arm that prints nothing passes any diff),
+# over the full corpus rows. MEASURED on the C0 PROTOTYPE hook (branch
+# scratch/stc0-trace, today's walk sites: docs/dev/lanes/stc0_report.md):
+# 89,135 / 38,523. C1's hook prints at a SUPERSET of those sites, so these
+# are lower bounds for it; C1 re-pins at its own count. Until C1 lands, a
+# --trace run against main's builds (no hook) FAILS here, as it should.
+TRACE_RECORDS_FLOOR = {"c-default": 89135, "c-vm": 38523}
 
 
 def trace_records(err):
@@ -1279,6 +1284,7 @@ def main():
     ap.add_argument("--trace-bin")
     ap.add_argument("--trace-ref-bin")
     ap.add_argument("--trace-declared")
+    ap.add_argument("--trace-unordered", action="store_true")
     ap.add_argument("--build-cflags")
     args = ap.parse_args()
 
@@ -1561,7 +1567,8 @@ def main():
         declared = trace_diff.read_declared(args.trace_declared) if args.trace_declared else set()
         ok_t, text_t = trace_diff.compare(trace_diff.load(paths[0]), trace_diff.load(paths[1]),
                                           declared=declared,
-                                          min_records=TRACE_RECORDS_FLOOR if full_population else 1)
+                                          min_records=TRACE_RECORDS_FLOOR if full_population else 1,
+                                          unordered=args.trace_unordered)
         print(text_t)
         print(f"  trace streams: {paths[0]} {paths[1]}")
         run_ok = run_ok and ok_t

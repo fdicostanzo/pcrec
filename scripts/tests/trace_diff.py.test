@@ -74,6 +74,9 @@ expect one-side-floor     1 "$T/ref.tsv" "$T/empty.tsv" --min-records 1
 expect floor-above-records 1 "$T/ref.tsv" "$T/same.tsv" --min-records 100
 expect keys-ignore-site   0 "$T/ref.tsv" "$T/same.tsv" --keys slot,route,row
 expect bad-header         2 "$T/decl" "$T/ref.tsv"
+expect unordered-reorder-ok   0 "$T/ref.tsv" "$T/reorder.tsv" --unordered
+expect unordered-row-caught  1 "$T/ref.tsv" "$T/row.tsv" --unordered
+expect unordered-added-caught 1 "$T/ref.tsv" "$T/added.tsv" --unordered
 
 echo "checks passed: $pass"
 echo "checks failed: $fail"

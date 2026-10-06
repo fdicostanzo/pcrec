@@ -4929,6 +4929,30 @@ See `docs/dev/lanes/bsweep_report.md` for this tool's own validation
 three scratch-sabotage detection transcripts) and the reconciliation of the
 five prior lanes' composition-arm figures.
 
+**[START-TABLE] C0 (lane stc0, 2026-10-06): arms, the facts stream, the
+trace.** The start-table fold (`docs/design/start_table.md` §3.2-§3.3) needs
+the sweep at non-default options, so the tool gained: a sixth stream
+(`--emit-facts=byte,utf8`); `--extra`/`--extra-base` (one ARM: streams 1-4
+at the arm's options on both sides, plus a per-side DIFFER count against the
+base, held to a pinned floor); `--arms start` (every pinned arm: the
+start-family deny arms at byte and utf8, plain `-e utf8`, `-i`, a null arm
+that must read 0, and `-fno-end-window` at utf8 an asserted EXACT 0);
+`--patterns-file`, `--no-corpus`, `--every` and `--streams`; a `cflags`
+pass-through in the `git archive` builds; and `--trace`, which builds both
+sides `-DPCREC_CAND_TRACE` and compares per-pattern ordered selection
+records with `scripts/trace_diff.py`. An arm's floor exists because identity
+alone cannot fail on the arm's plumbing: an arm that lost its flag is
+byte-identical to its base on both sides. Floors are applied on the full
+corpus only, and a partial run says so. Self-tests:
+`scripts/tests/emit_sweep.py.test`, `scripts/tests/trace_diff.py.test` (mech
+arm `emitsweep`). Runtimes on the Mac at `-j2`: the six streams with the two
+sides one binary, 49 s for streams 1-2 + trace; the arms over the full
+corpus are the long run (`docs/dev/lanes/stc0_report.md` has the numbers and
+the failing-direction transcripts).
+
+    # the no-mover proof of one start-table commit, deny arms included:
+    python3 scripts/emit_sweep.py --ref HEAD~1 --tree-rev HEAD --arms start
+
 ## S3 triple-sweep identity instrument (`scripts/cls_identity.py`, [CLS-TREE] S3, 2026-09-29)
 
 `docs/design/cls_tree_design.md` §6's S3 row promises "byte-identical over

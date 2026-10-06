@@ -65,7 +65,10 @@ None of them is read by a check.
   ATTEMPT/VM bound literals (`start_max`, `attempt_max`) are read off the text;
   H1 is read twice (the stamp value and the emitted test); `--deny FLAG|all`
   adds deny arms. `stamps_of()`/`one()` are imported by `deny_census.py`, so
-  both count with one parser. Usage:
+  both count with one parser; since C0 the stamp parser itself (`stamps_of`,
+  `route_of`, the stamp lists, and `start_keys_moved`, which `deny_census.py`
+  now calls) lives in `scripts/emit_sweep.py`, whose `--arms` floors count
+  "a start stamp moved" the same way, and is re-exported here. Usage:
   `python3 -I row_census.py PCREC_BIN TREE OUT_TSV [--jobs N] [--deny all]`.
   `row_census.txt` is revision 1's output (pre-route-keying), kept for the diff.
 - `anchor_agree.py` → `anchor_agree.txt` — on the ENG_ATTEMPT population,
@@ -108,6 +111,14 @@ None of them is read by a check.
 - `reader_grep.sh` → `reader_grep.txt` — [r2.1 C-N4] every reader outside
   `src/` of an identifier the edit set retires, by `git grep`. Usage:
   `reader_grep.sh ROOT`.
+- `trace_experiment.py` → (results in `../../dev/lanes/stc0_report.md`) —
+  [C0, lane stc0] Frank's Q3 experiment: builds the C0 PROTOTYPE trace hook
+  (branch `scratch/stc0-trace`, never merged) as a parent plus one variant per
+  PLANT (selection changes that must be caught; selection-neutral changes that
+  must read clean), compiles the distinct corpus under streams 1-2 with each,
+  and reports per variant the byte movers and the trace movers in three key
+  modes (`spec`, `func`, `set`). Every plant edit asserts its occurrence
+  count. Usage: `python3 -I trace_experiment.py SCRATCH_TREE OUTDIR --jobs N`.
 - `site_census.sh` → `site_census.txt` — revision 1's grep census of the named
   tables, inline decisions and readers. Superseded as the inventory by the
   three methods above; kept because the note's file:line citations came from it.

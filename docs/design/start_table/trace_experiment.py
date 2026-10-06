@@ -71,6 +71,18 @@ static const ReqAdmitRow req_admits[] = {''', 1)]),
     PCREC_CAND_TRACE_REC("NEXT", CAND_ROUTE_NAME(s.route), pf->c.name, "scan-state");''',
          '''    const DfaPf *pf = DFA_SELECT_ROUTED(DfaPf, dfa_pfs, &s, cx->opt->flags | PCREC_NO_RUN_PREFILTER);
     PCREC_CAND_TRACE_REC("NEXT", CAND_ROUTE_NAME(s.route), pf->c.name, "scan-state");''', 1)]),
+    ("D4b-form-only", "detect",
+     "dfa_form_derive walks dfa_pfs[] with -fno-run-prefilter's bit forced: the BODY's row "
+     "moves run-pinned -> offset-set (one emitter, pf_emit_ofs) while the stamp, read through "
+     "dfa_pf_of, still says run-pinned", [
+        (DFA, "    f->pf      = DFA_SELECT_ROUTED(DfaPf, dfa_pfs, &s, flags);\n",
+         "    f->pf      = DFA_SELECT_ROUTED(DfaPf, dfa_pfs, &s, flags | PCREC_NO_RUN_PREFILTER);\n", 1)]),
+    ("D4c-scan-state", "detect",
+     "pcrec_dfa_scan_state_written builds its selection with .forward = false: every forward "
+     "row declines and the walk takes `none`; the reader keeps only `reseeds`, so where the "
+     "true row also had reseeds == false (byte-class-bounded) the answer and every byte are unchanged", [
+        (DFA, "    DfaSel s = { .cx = cx, .d = d, .us = &us, .forward = d == &cx->job->dfa, .st = -1,",
+         "    DfaSel s = { .cx = cx, .d = d, .us = &us, .forward = false, .st = -1,", 1)]),
     ("N1-rename", "neutral", "rename dfa_pf_of -> dfa_prefilter_of and req_use -> req_use_of (every occurrence)", [
         (DFA, "dfa_pf_of(", "dfa_prefilter_of(", None),
         (DFA, "req_use(", "req_use_of(", None)]),

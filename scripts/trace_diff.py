@@ -22,7 +22,10 @@ WHAT IT REQUIRES, per (pattern index, arm):
     floor: a trace build that prints nothing passes every diff).
 
 --keys NAMES selects which record fields are compared (default: all the
-fields a record carries). It is how the C0 brittleness experiment measured
+fields a record carries). --unordered compares each (pattern, arm)'s SET of
+records instead of its sequence: blind to order and multiplicity by design,
+which is exactly what the C0 experiment found a selection-neutral commit can
+change (a reader asking once more); a row change still shows as a new member. It is how the C0 brittleness experiment measured
 a `func` field (the C function's name) against the declared `site` tag.
 
 Exit 0 when clean, 1 on any difference or floor violation, 2 on a usage or
@@ -74,7 +77,8 @@ def site_of(rec):
     return rec[FIELDS.index("site")] if len(rec) > FIELDS.index("site") else ""
 
 
-def compare(a, b, declared=frozenset(), min_records=None, keys=None, show=5):
+def compare(a, b, declared=frozenset(), min_records=None, keys=None, show=5,
+            unordered=False):
     """Returns (ok, report text). a/b as load() returns them; min_records an
     int or {arm: int}."""
     lines = []
@@ -109,6 +113,11 @@ def compare(a, b, declared=frozenset(), min_records=None, keys=None, show=5):
                     filtered[side] += 1
                     continue
                 dst.append(project(rec, keys))
+        if unordered:
+            if set(sa) != set(sb):
+                movers.append((k, "set", sorted(set(sa) - set(sb))[:1] or None,
+                               sorted(set(sb) - set(sa))[:1] or None, len(sa), len(sb)))
+            continue
         if sa != sb:
             pos = next((i for i, (x, y) in enumerate(zip(sa, sb)) if x != y), min(len(sa), len(sb)))
             movers.append((k, pos, sa[pos] if pos < len(sa) else None,
@@ -126,7 +135,8 @@ def compare(a, b, declared=frozenset(), min_records=None, keys=None, show=5):
     head = (f"  sequences={len(set(a) | set(b))} records per arm (ref/working): "
             + " ".join(f"{arm}={t[0]}/{t[1]}" for arm, t in sorted(totals.items()))
             + (f" declared-filtered={filtered[0]}/{filtered[1]}" if declared else "")
-            + f" keys={','.join(keys) if keys else 'all'}")
+            + f" keys={','.join(keys) if keys else 'all'}"
+            + (" compare=SET (order and multiplicity ignored)" if unordered else " compare=ordered"))
     return ok, "\n".join([head] + lines + ([f"  trace: {'CLEAN' if ok else 'FAIL'}"]))
 
 
@@ -138,13 +148,14 @@ def main():
     ap.add_argument("--declared")
     ap.add_argument("--min-records", type=int)
     ap.add_argument("--keys")
+    ap.add_argument("--unordered", action="store_true")
     a = ap.parse_args()
     keys = a.keys.split(",") if a.keys else None
     if keys and any(k not in FIELDS for k in keys):
         ap.error(f"--keys: known fields are {','.join(FIELDS)}")
     declared = read_declared(a.declared) if a.declared else frozenset()
     ok, text = compare(load(a.ref), load(a.working), declared=declared,
-                       min_records=a.min_records, keys=keys)
+                       min_records=a.min_records, keys=keys, unordered=a.unordered)
     print(text)
     sys.exit(0 if ok else 1)
 
