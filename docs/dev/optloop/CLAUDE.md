@@ -829,3 +829,15 @@ that cycle's analysis lands.
   stratified by route and standing, three marked PILOT; every one a cell the
   bench already times); regenerate its artifacts at the pin with
   `studies/artrev/gen_selection.py`.
+  `pilot_setup.md` (lane `artprep`, 2026-10-06) — the PILOT made ready at
+  pin main 57db5152 (abi 62): the three pilot artifacts' stamps and what moved
+  versus the abi-61 dry run (A07 shows the START-SET stage-2 VM hat; A01/A09
+  bookkeeping only), the subjects with provenance and sha256 (loglines'
+  twelve throughput + 112 search subjects regenerated read-only with the
+  bench's own generators, manifests byte-identical; capability's three
+  committed), null-twin identity on each, the four D27 cells (`rvA01`,
+  `rvA07a`, `rvA07b`, `rvA09`) with their allowlists and the four deviations
+  found by testing (`build/` removed, a `git init` boundary because a cell
+  under `worktrees/` still reaches the main repo's history, `scripts/watchdog`
+  added, a suite-lock symlink), the reviewer command list and the timing
+  caveats. `selection.tsv` gained `pinned_at`/`pin_stamps_abi62` columns.
