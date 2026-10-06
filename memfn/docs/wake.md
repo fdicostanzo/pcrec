@@ -54,39 +54,33 @@ the current state, never a history (the history is `journal.md`).
   by grep, the stamp values, the spec hunk and G1 at both layers, all in
   the SAME commit.
 
-## 4. Current state
+## 4. Current state (2026-10-05, late)
 
-- **Kit code:** none. The next code step is R4a (the skeleton), to be
-  filed as R-3 after Frank rules Q53-Q55.
-- **Requests:** R-1 DONE (merged 348c0a49). R-2 DONE (merged 2ed263a7).
-  No open request.
-- **Open questions (Frank, relayed by main 2026-10-05):** Q53 (the libc
-  record), Q54 (N7 pending), Q55 (the plan at SIMD-off). The kit's
-  recommendations are in `docs/dev/reviews/2026-10-05-r5-memfn-rev45.md`
-  (last section) and in `responses.md` R-2 done:.
-- **Design of record:** integration.md rev 4.6.
-- **Measured facts to carry into R4d:**
-  - the R4d trigger is MET at SIMD-off on union-select;
-  - the lead order is part of R4d's one form, lead-first;
-  - `swar` scans at ~0.18 ns/B and loses on early-hit single gate calls
-    on dense text (a Q48 candidate, judged at R4d's G1);
-  - its 2x unroll is an `UNMEASURED DEFAULT:`.
-  Source: `docs/dev/lanes/memfnr4b_report.md` §9.
-- **For R4c/R4d (noted by main):**
-  - A4: ~28 mech rows anchored in M1 emitters are re-pointed in R4c's
-    REPLACE commit;
-  - A3: `@idx`/`REQ_BYTE`/[OPT-REQPOS] are re-specced as pcrec's pick
-    in R4d's D80 hunk;
-  - A1: the set-leads lead is REQUIRED on no-DFA routes.
-- **Defects:** none open.
-- **In flight:** nothing. No lane is running and no box run is owed.
-  Old lane worktrees (memfnr4b, memfnr45, memfnr46) remain under
-  `worktrees/`. Their branches are merged; removing them is main's
-  call (worktree rm is not covered by the merge permission).
+- **Branch:** `lane/memfn-r4a2` (R4a′), in `worktrees/memfn`.
+- **Done and merged to main:** R-1, R-2, R-3 part 1 (R4a: the kit
+  skeleton, manifest + C17, G2, fixes; integration.md rev 4.7).
+- **R4a′ (R-3 part 2):** built and Mac-validated EXCEPT the abi bump.
+  - It lands at abi **63**, AFTER START-SET stage 2 (abi 62, lane
+    ssbuild2) merges to main.
+  - The procedure is `docs/dev/lanes/memfnstamp_report.md` §8.
+  - The census has one reviewed extra mover (`RX_VM_PREFILTER_WHY` on
+    uprops/size_ladder_prefilter_drop), which must be named to main.
+- **Sabotage ids:** they serialize through the pcrec manager. The kit's
+  block is S510-S529; S510-S517 are used, so the next free is S518.
+- **Defects:** none open. **Owed:** G2 coverage of the newly refused
+  shapes (blinded author); Q-G2-5 (M3); bench I-128/I-129 (main).
+- **Leftover worktrees** (merged): memfnr4b, memfnr45, memfnr46,
+  memfnskel, memfnmanifest, memfnfix, memfnstamp, and memfn/worktrees/
+  memfng2 + its cell. Remove them ONLY via `scripts/wtprune` (dry run,
+  then `--apply`), never a raw `git worktree remove`.
 
 ## 5. Next actions
 
-1. Wait for R-3 (R4a) in `requests.md`. Ack it, and re-cut the branch
+1. Wait for main's "stage 2 landed" ping. Then merge main into
+   `lane/memfn-r4a2` ALONE, make the bump to 63 + re-pins as the LAST
+   commit, re-run the census with `--abi 62:63`, and send main the Linux
+   make test (by day).
+   (Old step, kept for reference:) Wait for R-3 (R4a) in `requests.md`. Ack it, and re-cut the branch
    if main has moved (or merge main into `lane/memfn-r4a` ALONE in its
    own command, then `make strict`).
 2. R4a is the kit's first CODE: `memfn.h`, the `mf_*` entry points, the
