@@ -1,0 +1,146 @@
+corpus patterns (distinct, every 1): 3595
+  auto/byte: 500/3595
+  auto/byte: 1000/3595
+  auto/byte: 1500/3595
+  auto/byte: 2000/3595
+  auto/byte: 2500/3595
+  auto/byte: 3000/3595
+  auto/byte: 3500/3595
+auto/byte  -fcomments             movers  3221 visible     0 hidden 3221 refusal 0
+auto/byte  -fno-alt-island        movers    69 visible     0 hidden   69 refusal 0
+auto/byte  -fno-altcls-factor     movers   102 visible     0 hidden  102 refusal 0
+auto/byte  -fno-altcls-merge      movers    89 visible     2 hidden   87 refusal 0
+auto/byte  -fno-anchored-dfa      movers  1481 visible     0 hidden 1481 refusal 0
+auto/byte  -fno-atomic-discharge  movers  3221 visible    44 hidden 3177 refusal 0
+auto/byte  -fno-cls-fold          movers    25 visible     0 hidden   25 refusal 0
+auto/byte  -fno-cls-kit           movers     3 visible     0 hidden    3 refusal 0
+auto/byte  -fno-cls-pack          movers     3 visible     0 hidden    3 refusal 0
+auto/byte  -fno-comments          movers     0 visible     0 hidden    0 refusal 0
+auto/byte  -fno-counter           movers    35 visible     0 hidden   35 refusal 7
+auto/byte  -fno-ctx-node          movers   295 visible   239 hidden   56 refusal 0
+auto/byte  -fno-length-prune      movers   449 visible   112 hidden  337 refusal 0
+auto/byte  -fno-lit-run           movers   120 visible     0 hidden  120 refusal 0
+auto/byte  -fno-possessify        movers   233 visible     6 hidden  227 refusal 0
+auto/byte  -fno-prefilter         movers  1125 visible  1125 hidden    0 refusal 0
+auto/byte  -fno-prefilter-collapse movers     2 visible     1 hidden    1 refusal 0
+auto/byte  -fno-premul-table      movers  2416 visible     0 hidden 2416 refusal 0
+auto/byte  -fno-revdet            movers    55 visible     0 hidden   55 refusal 0
+auto/byte  -fno-run-overlap       movers   288 visible     0 hidden  288 refusal 0
+auto/byte  -fno-scan-edge         movers  3221 visible     0 hidden 3221 refusal 0
+auto/byte  -fno-size-term         movers  3221 visible     0 hidden 3221 refusal 0
+auto/byte  -fno-splice-calls      movers  3221 visible   201 hidden 3020 refusal 0
+auto/byte  -fno-startpos-guard    movers     0 visible     0 hidden    0 refusal 0
+auto/byte  -fno-tiered-entry      movers   264 visible     0 hidden  264 refusal 0
+auto/byte  -fno-view-edge         movers    34 visible     0 hidden   34 refusal 0
+auto/byte  -fprefilter            movers    82 visible    82 hidden    0 refusal 2015
+auto/byte  -fstartpos-guard=align movers     0 visible     0 hidden    0 refusal 0
+auto/byte  -futf-check            movers     0 visible     0 hidden    0 refusal 0
+  vm/byte: 500/3595
+  vm/byte: 1000/3595
+  vm/byte: 1500/3595
+  vm/byte: 2000/3595
+  vm/byte: 2500/3595
+  vm/byte: 3000/3595
+  vm/byte: 3500/3595
+vm/byte    -fcomments             movers  3222 visible     0 hidden 3222 refusal 0
+vm/byte    -fno-alt-island        movers   102 visible     0 hidden  102 refusal 0
+vm/byte    -fno-altcls-factor     movers   102 visible     1 hidden  101 refusal 0
+vm/byte    -fno-altcls-merge      movers    89 visible     8 hidden   81 refusal 1
+vm/byte    -fno-anchored-dfa      movers     0 visible     0 hidden    0 refusal 0
+vm/byte    -fno-atomic-discharge  movers  3222 visible     0 hidden 3222 refusal 0
+vm/byte    -fno-cls-fold          movers    66 visible     0 hidden   66 refusal 0
+vm/byte    -fno-cls-kit           movers     3 visible     0 hidden    3 refusal 0
+vm/byte    -fno-cls-pack          movers     3 visible     0 hidden    3 refusal 0
+vm/byte    -fno-comments          movers     0 visible     0 hidden    0 refusal 0
+vm/byte    -fno-counter           movers    38 visible     0 hidden   38 refusal 8
+vm/byte    -fno-ctx-node          movers   295 visible     0 hidden  295 refusal 0
+vm/byte    -fno-length-prune      movers   678 visible     0 hidden  678 refusal 0
+vm/byte    -fno-lit-run           movers   338 visible     0 hidden  338 refusal 0
+vm/byte    -fno-possessify        movers   627 visible     9 hidden  618 refusal 0
+vm/byte    -fno-prefilter         movers     0 visible     0 hidden    0 refusal 0
+vm/byte    -fno-prefilter-collapse movers     0 visible     0 hidden    0 refusal 0
+vm/byte    -fno-premul-table      movers     0 visible     0 hidden    0 refusal 0
+vm/byte    -fno-revdet            movers    62 visible     0 hidden   62 refusal 0
+vm/byte    -fno-run-overlap       movers   335 visible     0 hidden  335 refusal 0
+vm/byte    -fno-scan-edge         movers  3222 visible     0 hidden 3222 refusal 0
+vm/byte    -fno-size-term         movers  3221 visible     0 hidden 3221 refusal 1
+vm/byte    -fno-splice-calls      movers  3222 visible    54 hidden 3168 refusal 0
+vm/byte    -fno-startpos-guard    movers     0 visible     0 hidden    0 refusal 0
+vm/byte    -fno-tiered-entry      movers   462 visible     0 hidden  462 refusal 0
+vm/byte    -fno-view-edge         movers     0 visible     0 hidden    0 refusal 0
+vm/byte    -fprefilter            movers  2949 visible  2949 hidden    0 refusal 273
+vm/byte    -fstartpos-guard=align movers     0 visible     0 hidden    0 refusal 0
+vm/byte    -futf-check            movers     0 visible     0 hidden    0 refusal 0
+  auto/utf8: 500/3595
+  auto/utf8: 1000/3595
+  auto/utf8: 1500/3595
+  auto/utf8: 2000/3595
+  auto/utf8: 2500/3595
+  auto/utf8: 3000/3595
+  auto/utf8: 3500/3595
+auto/utf8  -fcomments             movers  3229 visible     0 hidden 3229 refusal 0
+auto/utf8  -fno-alt-island        movers    69 visible     0 hidden   69 refusal 0
+auto/utf8  -fno-altcls-factor     movers    99 visible     0 hidden   99 refusal 0
+auto/utf8  -fno-altcls-merge      movers    94 visible     2 hidden   92 refusal 0
+auto/utf8  -fno-anchored-dfa      movers  1481 visible     0 hidden 1481 refusal 0
+auto/utf8  -fno-atomic-discharge  movers  3229 visible    42 hidden 3187 refusal 0
+auto/utf8  -fno-cls-fold          movers    23 visible     0 hidden   23 refusal 0
+auto/utf8  -fno-cls-kit           movers    70 visible     3 hidden   67 refusal 7
+auto/utf8  -fno-cls-pack          movers     3 visible     0 hidden    3 refusal 0
+auto/utf8  -fno-comments          movers     0 visible     0 hidden    0 refusal 0
+auto/utf8  -fno-counter           movers    35 visible     0 hidden   35 refusal 7
+auto/utf8  -fno-ctx-node          movers   278 visible   223 hidden   55 refusal 0
+auto/utf8  -fno-length-prune      movers   468 visible   118 hidden  350 refusal 0
+auto/utf8  -fno-lit-run           movers   120 visible     0 hidden  120 refusal 0
+auto/utf8  -fno-possessify        movers   235 visible     6 hidden  229 refusal 0
+auto/utf8  -fno-prefilter         movers  1151 visible  1149 hidden    2 refusal 0
+auto/utf8  -fno-prefilter-collapse movers     5 visible     2 hidden    3 refusal 0
+auto/utf8  -fno-premul-table      movers  2442 visible     2 hidden 2440 refusal 0
+auto/utf8  -fno-revdet            movers    51 visible     0 hidden   51 refusal 0
+auto/utf8  -fno-run-overlap       movers   293 visible     0 hidden  293 refusal 0
+auto/utf8  -fno-scan-edge         movers  3229 visible     0 hidden 3229 refusal 0
+auto/utf8  -fno-size-term         movers  3229 visible     0 hidden 3229 refusal 0
+auto/utf8  -fno-splice-calls      movers  3229 visible   203 hidden 3026 refusal 0
+auto/utf8  -fno-startpos-guard    movers  3229 visible     0 hidden 3229 refusal 0
+auto/utf8  -fno-tiered-entry      movers   265 visible     0 hidden  265 refusal 0
+auto/utf8  -fno-view-edge         movers    30 visible     0 hidden   30 refusal 0
+auto/utf8  -fprefilter            movers    85 visible    85 hidden    0 refusal 1997
+auto/utf8  -fstartpos-guard=align movers  3229 visible     0 hidden 3229 refusal 0
+auto/utf8  -futf-check            movers  3229 visible     0 hidden 3229 refusal 0
+  vm/utf8: 500/3595
+  vm/utf8: 1000/3595
+  vm/utf8: 1500/3595
+  vm/utf8: 2000/3595
+  vm/utf8: 2500/3595
+  vm/utf8: 3000/3595
+  vm/utf8: 3500/3595
+vm/utf8    -fcomments             movers  3230 visible     0 hidden 3230 refusal 0
+vm/utf8    -fno-alt-island        movers   101 visible     0 hidden  101 refusal 0
+vm/utf8    -fno-altcls-factor     movers    99 visible     1 hidden   98 refusal 0
+vm/utf8    -fno-altcls-merge      movers    94 visible     8 hidden   86 refusal 1
+vm/utf8    -fno-anchored-dfa      movers     0 visible     0 hidden    0 refusal 0
+vm/utf8    -fno-atomic-discharge  movers  3230 visible     0 hidden 3230 refusal 0
+vm/utf8    -fno-cls-fold          movers    57 visible     0 hidden   57 refusal 0
+vm/utf8    -fno-cls-kit           movers   467 visible     1 hidden  466 refusal 12
+vm/utf8    -fno-cls-pack          movers     3 visible     0 hidden    3 refusal 0
+vm/utf8    -fno-comments          movers     0 visible     0 hidden    0 refusal 0
+vm/utf8    -fno-counter           movers    38 visible     0 hidden   38 refusal 8
+vm/utf8    -fno-ctx-node          movers   278 visible     0 hidden  278 refusal 0
+vm/utf8    -fno-length-prune      movers   815 visible     0 hidden  815 refusal 0
+vm/utf8    -fno-lit-run           movers   342 visible     0 hidden  342 refusal 0
+vm/utf8    -fno-possessify        movers   624 visible     9 hidden  615 refusal 0
+vm/utf8    -fno-prefilter         movers     0 visible     0 hidden    0 refusal 0
+vm/utf8    -fno-prefilter-collapse movers     0 visible     0 hidden    0 refusal 0
+vm/utf8    -fno-premul-table      movers     0 visible     0 hidden    0 refusal 0
+vm/utf8    -fno-revdet            movers    58 visible     0 hidden   58 refusal 0
+vm/utf8    -fno-run-overlap       movers   340 visible     0 hidden  340 refusal 0
+vm/utf8    -fno-scan-edge         movers  3230 visible     0 hidden 3230 refusal 0
+vm/utf8    -fno-size-term         movers  3229 visible     0 hidden 3229 refusal 1
+vm/utf8    -fno-splice-calls      movers  3230 visible    54 hidden 3176 refusal 0
+vm/utf8    -fno-startpos-guard    movers  3230 visible     0 hidden 3230 refusal 0
+vm/utf8    -fno-tiered-entry      movers   487 visible     0 hidden  487 refusal 0
+vm/utf8    -fno-view-edge         movers     0 visible     0 hidden    0 refusal 0
+vm/utf8    -fprefilter            movers  2953 visible  2953 hidden    0 refusal 277
+vm/utf8    -fstartpos-guard=align movers  3230 visible     0 hidden 3230 refusal 0
+vm/utf8    -futf-check            movers  3230 visible     0 hidden 3230 refusal 0
+WALL 543.4s compiles 431400 jobs 10

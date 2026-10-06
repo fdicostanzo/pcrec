@@ -358,9 +358,9 @@ ARM_BASES = {"byte": (), "utf8": ("-e", "utf8")}
 # a reviewed re-pin (PINS' own argument), or a plumbing loss.
 #
 # Measured: deny_census.tsv / plain_arms.tsv at main 4743ebb5 (start_table.md
-# §3.4 and §3.3 item 2); -fno-length-prune from allflags_sample.tsv's 1-in-10
-# sample, a LOWER BOUND (a subset's movers never exceed the whole's), to be
-# re-pinned from the full every-flag sweep.
+# §3.4 and §3.3 item 2); -fno-length-prune from the full-corpus gate run on
+# ubuntubudu 2026-10-06 (docs/design/start_table/heavy_linux_2026-10-06/
+# arms.tsv; the earlier 1-in-10 sample floors were lower bounds).
 DIFFER_PINS = {
     # plain arms: the encoding and caseless populations (§3.3 item 2)
     ("byte", "-e utf8", "c-default"): (3188, 674, b"a"),
@@ -396,8 +396,8 @@ DIFFER_PINS = {
     ("byte", "-fno-req-run-fold", "c-vm"): (48, 17, b"(?i)abc"),
     ("byte", "-fprefilter-collapse", "c-default"): (213, 212, b"(a){3}"),
     ("byte", "-fprefilter-collapse", "c-vm"): (0, 0, None),
-    ("byte", "-fno-length-prune", "c-default"): (46, 11, b"(a)*b"),
-    ("byte", "-fno-length-prune", "c-vm"): (69, 0, b"(a)*b"),
+    ("byte", "-fno-length-prune", "c-default"): (449, 112, b"(a)*b"),
+    ("byte", "-fno-length-prune", "c-vm"): (678, 0, b"(a)*b"),
     # the same arms, utf8 base
     ("utf8", "-fno-offset-skip", "c-default"): (604, 604, b"SS"),
     ("utf8", "-fno-offset-skip", "c-vm"): (0, 0, None),
@@ -425,8 +425,8 @@ DIFFER_PINS = {
     ("utf8", "-fno-req-run-fold", "c-vm"): (38, 15, b"(?i)abc"),
     ("utf8", "-fprefilter-collapse", "c-default"): (213, 211, b"(a){3}"),
     ("utf8", "-fprefilter-collapse", "c-vm"): (0, 0, None),
-    ("utf8", "-fno-length-prune", "c-default"): (49, 11, b"(a)*b"),
-    ("utf8", "-fno-length-prune", "c-vm"): (85, 0, b"(a)*b"),
+    ("utf8", "-fno-length-prune", "c-default"): (468, 118, b"(a)*b"),
+    ("utf8", "-fno-length-prune", "c-vm"): (815, 0, b"(a)*b"),
 }
 
 # Cells that must read EXACTLY 0 on every population (a zero holds on any
