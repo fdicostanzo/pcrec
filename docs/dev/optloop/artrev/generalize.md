@@ -13,7 +13,7 @@ effect" is the reviewer's own scratch or work-count estimate, as `pilot_index.md
 
 ## 0. Findings first
 
-1. **The pilot's 25 counted leads are 15 distinct ideas** (§2, I1-I15). The A07 pair contributes 7
+1. **The pilot's 22 counted leads (4 + 6 + 6 + 6 leads.tsv rows; an earlier "25" counted revisions, corrected 2026-10-06 by the manager) are 15 distinct ideas** (§2, I1-I15). The A07 pair contributes 7
    ideas, with both reviewers' ids kept. Of the 15:
    - **4 are KNOWN with a shipped or in-flight home**: I2, I8, I11, and partly I13.
    - **5 generalise a known mechanism**: I1, I3, I5, I6, I12.
