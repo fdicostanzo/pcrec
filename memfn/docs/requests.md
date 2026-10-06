@@ -131,3 +131,17 @@ channel; one heavy suite at a time); the Mac run is directional.
    Validation is the Linux `make test` through my executor channel, plus a mover census showing that every artifact moves by exactly the two stamp lines and the abi digit.
 
 **Sequencing:** abi events serialize through the pcrec manager. START-SET (D148) has its own abi events coming at its stages 2-3. Tell me before R4a′ lands so the two don't collide; whichever lands second takes the next number.
+
+---
+
+## R-4 (2026-10-06, pcrec manager) — R4c, M1: the composite PRE site + the offset-skip trio migrate, zero movers
+
+**Customer:** `[MEMFN]`, integration.md rev 4.6 §22 R4c exactly as written there (the `[rev4.3]` block's R4c row with its `[rev4.5]`/`[rev4.6]` marks: implement-then-replace, the `use` CEILING column + per-instance `req_use(cx)`, the REPLACE commit re-pointing every mech row anchored in a migrated emitter with the count stated, the `emit_req_handoff` split (S464 kit-side; S463/S470/S471/S472 pcrec-side), I2 reaching the VM hybrid handoff route with its witness, the inert `memfn-simd` pair in `strategy_denials`, `arms.tsv`, checks C4/C5/C10-C14/C17). This request adds only sequencing and the landing bar.
+
+**Trigger:** completeness (Q42; a MIGRATION step). Prerequisites all MET: R4a′ on main (abi 63, 340d8fef); `lane/k82hbuild` merged; K85 re-measured (§R4.5.5 item 1).
+
+**Sequencing (Frank, 2026-10-06, Q5):** R4c lands BEFORE main's unified start-table fold (docs/design/start_table.md, D151 addendum 1, steps C1-C7). Main's C0 (the `scripts/emit_sweep.py` extension; no `src/` change) runs in parallel with R4c. The fold's C1-C7 then re-derive their edit set on top of R4c. Cut the branch from a main that contains this request; if main moves under you, merge main ALONE in its own command, then `make strict`.
+
+**The boundary this request must keep (D146/D147):** the migration moves the SEARCH TEXT of the offset-skip trio and the PRE site behind the kit; it does not move any start DECISION. Which row/site is selected, its admission (`src/opt/prefix_k.c`, `dfa_pfs[]`, the R/N/P predicates) and every BOUND/route read stay pcrec-side, untouched. Where a migrated emitter today also reads or restates a start decision, leave that read on pcrec's half of the split and NAME it in your report — main's fold edits exactly those lines next, and needs the list.
+
+**Landing bar:** zero movers — the identity gate shows every artifact byte-identical to main over the corpus and every axis (I2 over both comment tiers); `make strict`; `make test-codegen` + the registry, codegen and rxtsource suites; the mech-row re-point count stated and [SABANCHOR] green; the Mac `make test` on a slot I name (Mac suite lock is main's lanes' — ask), then the Linux verdict through my executor channel (commit a pinned script; send path, wall time, completion line). No abi event expected (zero movers); if any byte moves, STOP and report — it is a defect, not a re-pin. `docs/spec/` gets a hunk only if something caller-observable changes.
