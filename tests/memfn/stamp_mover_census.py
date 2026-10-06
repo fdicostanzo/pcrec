@@ -22,7 +22,10 @@ and replaces its identical-or-mover verdict with a CLASSIFIER, per artifact:
               (--abi OLD:NEW; the bump step's reading)
   stamps+size the same, and a `_PREFILTER_WHY "size cap retry, hybrid N >
               CAP"` line whose N (the DISCARDED hybrid attempt's measured
-              size, which now includes its own two lines) grew by 59-120
+              size, which now includes its own two lines) grew by 59-120;
+              accepted ONLY for an artifact named in SIZE_MOVERS with its
+              cause (anywhere else it is OTHER), and every named mover must
+              be seen in that class exactly once (a stale name fails)
   OTHER       anything else: printed with its first hunk, and the run fails
 
 Usage:
@@ -77,6 +80,17 @@ def size_quote_only(ol, nl, abi):
     return seen > 0
 
 
+# THE NAMED EXPECTED VALUE MOVERS (lane memfnbump, 2026-10-06). The pcrec
+# manager accepted exactly one; a size-quote mover not named here is OTHER.
+SIZE_MOVERS = {
+    ('comp-c', 'tests/uprops/size_ladder_prefilter_drop.rxt:rx.c'):
+        'RX_VM_PREFILTER_WHY quotes the DISCARDED hybrid attempt\'s measured '
+        'size, and that attempt now carries its own two stamp lines (+59, '
+        'LIBC "none"): the stamps render before emit_size_measure '
+        '(memfnstamp_report.md section 6)',
+}
+
+
 def classify(old, new, abi):
     if old == new:
         return 'identical', None
@@ -120,6 +134,7 @@ def main():
 
     table = {}
     others = []
+    seen_movers = {}
 
     def tally(stream, key, ok_a, ok_b, c_a, c_b):
         row = table.setdefault(stream, {})
@@ -131,6 +146,11 @@ def main():
             others.append((stream, key, 'one side refused'))
             return
         cls, why = classify(c_a, c_b, abi)
+        if cls == 'stamps+size':
+            if (stream, key) in SIZE_MOVERS:
+                seen_movers[(stream, key)] = seen_movers.get((stream, key), 0) + 1
+            else:
+                cls, why = 'OTHER', 'a size-quote mover not named in SIZE_MOVERS'
         row[cls] = row.get(cls, 0) + 1
         if cls == 'OTHER':
             others.append((stream, key, why))
@@ -184,6 +204,12 @@ def main():
                     if k not in ('identical', 'abi', 'both-refuse'))
         if moved:
             bad.append((s, '-', '%d listing/header(s) moved' % moved))
+    for (s, key), cause in sorted(SIZE_MOVERS.items()):
+        n = seen_movers.get((s, key), 0)
+        if n == 1:
+            print('named mover: %s %s (stamps+size): %s' % (s, key, cause))
+        else:
+            bad.append((s, key, 'named size-quote mover seen %d times, expected 1' % n))
     for stream, key, why in bad[:30]:
         print('FAIL: %s %s: %s' % (stream, key, why))
     print('census: %s' % ('CLEAN' if not bad else '%d FAIL' % len(bad)))
