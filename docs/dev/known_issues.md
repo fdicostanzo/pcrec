@@ -11,6 +11,16 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 ---
 
+## K90 — OPEN, deferred (2026-10-06, found by lane alphas2's Linux alpha of START-SET stage 2, the VM hat, abi 62, bit 47) — the VM hat costs past the floor on match-DENSE text and on short calls whose subject begins with a hit
+
+D144 item 3: regressions without a wrong answer become issue rows, not reverts. The alpha's correctness half is clean (base/new/deny answers identical on every subject; deny == base on every mover). Three losses past the floor, each reproduced by a second `time` pass (docs/dev/lanes/alphas2_report.md; raw docs/dev/optloop/startset/alpha_s2_results/):
+
+- **L1 — the IMPROVE cell regresses on its own dense subject.** `quoted-delim` on the match-dense JSON subject: 10.08 -> 10.92 ns/B (+0.84; run 2 +0.91). The same cell improves 5.61 -> 0.70 ns/B on throughput.
+- **L2 — the cost-F1 regime the design predicted.** `a(\w)\1` at density 33: 4.33 -> 4.86 ns/B (+0.53); at d80: 4.84 -> 5.22 (+0.37). Expected sign 0 or -; got +.
+- **L3 — per-call seek on a hit at offset 0 (K88's shape).** `quoted-delim` short-call: +14..+17 ns/call on the four subjects that BEGIN with a quote (br-quoted-delim, cg-key-colon, lp-quoted, lp-quoted-escaped), against a ~0.3 ns/call control band; the other 71 of 75 short-call subjects are 11-474 ns/call FASTER.
+
+Mechanism (hypothesis, not measured here): the hat's seek (`memchr`/table walk to the next start-set byte) is pure overhead when the next start byte is the current position or a few bytes away, i.e. when starts are dense; L3 is the extreme where the very first position is a start. Same family as K88 (the K82 handoff on match-dense literals) — both are "a skip whose expected skip length is ~0 still pays its call". Interim lever: `-fno-start-set` (bit 47). Candidate fix shapes (NOT designed): a first-position check before the first seek (L3), and a density-adaptive disarm like [OPT-HYB-RESEED]'s block rule (L1/L2) — both D77: needs a design pass with the cost model startset.md §7 F1 already names. L4 (union-select-vm / ci-ascii-ctl-vm, <=1.3%, mixed sign) is judged NULL-in-substance and not filed.
+
 ## K89 — OPEN, latent (2026-10-05, found by lane ssbuild01 while fixing K84) — axis C picks the view tables by `strcmp` on a row NAME, K84's shape
 
 **Where:** `emit_machine_tables` selects the view tables by `strcmp(f->view->c.name, "end")` / `"eol"` (src/gen/, axis C).
