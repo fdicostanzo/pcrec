@@ -2701,6 +2701,17 @@ Four light panels in two days (the K82 handoff, [OPT-SETS], [MEMFN] K0 r1/r2) fo
 - `startset/` — that note's census, first-set probe, hand twins and transcripts (own CLAUDE.md).
 - `where_to_start.md` — **STUDY, design only** (lane `startstudy`, 2026-10-06, from main `6816f839`): Frank's three questions — a general strategy for not starting at the beginning, whether a reverse walk from an inner landmark records the match start, and whether that works as a prefilter. §1 casts every shipped start mechanism (anchors, `dfa_pfs[]`'s rows, the START-SET hats, the req pre-checks, K82 set-leads and handoff, OPT-ENDWIN, the reverse pass, the hybrid prefilter) as rows of one contract (landmark, scanner, mapping EXACT/WINDOW/LOWER-BOUND/PRESENCE, verifier), names four parallel special cases with file:line, and places a new REVERSE-WALK candidate row in information order. §2 is the soundness argument for `P·L·S` (the walk records the smallest accepting start; exact iff P is regular-faithful and the split unambiguous, rust's `has_no_earlier_match` [RArevinner], whose July-2026 fix is the which-occurrence bug) with an edge/mutation table against libpcre2 10.48: 0 wrong over 329,771 gated searches + 57,204 find-alls, all 6 mutations detected, the ungated tactic and the erased-atomic walk both wrong. §3: the prefilter form reaches the backref/linked-call VM population (only P must be backref-free); bounded P collapses to offset-k/handoff; the give-up surface moves one-way. §4: census with controls (C2/C3 at 0 disagreements): the best landmark is behind the start on 480 corpus / 24 bench unanchored patterns, the new exact mapping on 77 / 8. §5: recommendation, D77 triggers, row re-scoping ([ENG-TACTICS], [ARTREV] I1) and six questions. Instruments: `where_to_start/`.
 - `where_to_start/` — that note's soundness model, landmark census and transcripts (own CLAUDE.md).
+- `decision_families_survey.md` — **SURVEY, read-only, nothing built** (lane `decsurvey`, 2026-10-06, from main `74379fe0`). It answers Frank's "forest for the trees" question: which DECISION FAMILIES (several sites answering one question through if/else chains, scattered `flag && fact` conjunctions or duplicated comparisons, rather than one first-match row table) are still dispersed.
+  - **§0** ranks 13 families, beside the ones already unified.
+  - **§3** gives each family: its members (file:line), whether a table would be natural or forced, the no-mover needs, and value/risk.
+  - **§4** has the latent and live inconsistencies, with probed inputs:
+    - `run-pinned` is unreachable whenever the run reader and the offset-k pick disagree, without a tie too (`\d\dxyz`), which widens [TIE-ALIGN];
+    - `-fno-scan-edge`/`-fno-size-term` move `rx_info.flags` on artifacts they cannot act on (the K68 shape, [AXES-DENY-MASK]);
+    - `--emit-ir`'s `prune-ceiling` and the `VM_PRUNE_CEILING` stamp split on `a*`;
+    - the size-cap collapse rung's predicate omits the gate's conjuncts its own comment claims;
+    - the `--emit-ir` prefilter reason does not know [PF-DROP];
+    - the `ENGINE_SEL` registry order is not `esel_of`'s.
+  - **§6** proposes D137-shaped evaluation rows and their order: [AXES-DENY-MASK] addendum, then [DEC-FALLBACK], then the [TIE-ALIGN] re-scope. It also serves as [LIST-TABLES] STEP 0's census input.
 
 **[VAR] THE MVP's PATTERN HALF LANDED 2026-09-23** (lane varmvp, M1-M8 +
 M10; M9 stays gated on `[M4-SUBST]`). The four notes stand as written except
