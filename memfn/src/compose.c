@@ -125,7 +125,9 @@ static const arm *const arms[] = {
 static const arm *select_arm(const mf_site *s, const mf_hooks *def)
 {
     for (size_t i = 0; i < sizeof arms / sizeof arms[0]; i++)
-        if (arms[i]->applies(s, def)) return arms[i];
+        if ((!arms[i]->miss_leaves || s->on_miss_leaves) &&
+            arms[i]->applies(s, def))
+            return arms[i];
     return NULL;
 }
 
@@ -178,6 +180,10 @@ static const char *site_check(const mf_site *s)
     if (!in_enum(s->use, MF_USE_DISCARD)) return "use outside mf_use_kind";
     if (!in_enum(s->consumer, MF_C_ENGINE)) return "consumer outside mf_consumer";
     if (s->end_back > 1) return "end_back is not 0 or 1";
+    if (s->on_miss_leaves != 0 && s->on_miss_leaves != 1)
+        return "on_miss_leaves is not 0 or 1";
+    if (s->on_miss_leaves && s->handoff != MF_H_ON_MISS && s->handoff != MF_H_ASSIGN)
+        return "on_miss_leaves is for an ON_MISS/ASSIGN site only";
     if (s->op == MF_OP_ALL_PRESENT) {
         if (s->npred && !s->preds) return "ALL_PRESENT without preds";
         for (unsigned i = 0; i < s->npred; i++)

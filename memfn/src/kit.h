@@ -73,10 +73,13 @@ enum { PARAM_S = 1u, PARAM_N = 2u, PARAM_LO = 4u, PARAM_FL = 8u, PARAM_MISS = 16
 
 /* ---- the arm interface (K2's first-match table, §8.6, §14.6) ------------- */
 
-/* One row of the composer's selection table. `applies` is the row's
- * predicate, over the site and the hooks its define offers (a row whose text
- * needs a hook the caller does not offer does not apply: the generic row,
- * which needs none of pcrec's, renders the site instead); `define` writes
+/* One row of the composer's selection table. Its predicate columns:
+ * `miss_leaves` (nonzero: the row's text is right only where a miss never
+ * falls through to the next test, so it applies only to a site whose
+ * `on_miss_leaves` pcrec has set, Q-G2-18) and `applies`, over the site and
+ * the hooks its define offers (a row whose text needs a hook the caller does
+ * not offer does not apply: the generic row, which needs none of pcrec's,
+ * renders the site instead). `define` writes
  * any file-scope part and fills the record;
  * `use` writes the body part. Both write to the caller's SINK, in order:
  * a hook that writes (`note`, `run_cmp`) and the sink's comment gate
@@ -86,6 +89,7 @@ enum { PARAM_S = 1u, PARAM_N = 2u, PARAM_LO = 4u, PARAM_FL = 8u, PARAM_MISS = 16
  * the vocabulary describes. */
 typedef struct arm {
     const char *id;     /* the form id mf_result reports (opaque, §R4.3.3) */
+    int miss_leaves;    /* needs the site's on_miss_leaves (Q-G2-18)        */
     int (*applies)(const mf_site *s, const mf_hooks *def);
     int (*define)(mf_art *art, uint32_t handle, const mf_hooks *h, mf_sink *file);
     int (*use)(mf_art *art, uint32_t handle, const mf_hooks *h, mf_sink *body);

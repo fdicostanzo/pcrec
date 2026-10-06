@@ -1,7 +1,7 @@
 # memfn/include/ — the kit's one public header
 
 - **memfn.h** — the ONLY file pcrec's sources include from the kit (R4a,
-  integration.md §8.2/§8.3/§14.0). It carries `MF_SITE_ABI` 2, `MF_VOCAB`
+  integration.md §8.2/§8.3/§14.0). It carries `MF_SITE_ABI` 3 (Q-G2-18, R4c), `MF_VOCAB`
   2 and `MF_NS(name)` (→ `pcrec_mf_name` in-tree, `mf_name` under
   `MF_STANDALONE`); the site description (`mf_site`, `mf_pred`, `mf_term`
   and the form/op/handoff/empty/need enums); the sink (`mf_sink`), the

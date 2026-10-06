@@ -196,11 +196,12 @@ is in the report).
 | Q-G2-15 | `guard_by_caller` with negative offsets, or off EXPR VERIFY | **REFUSED** unless EXPR VERIFY with every offset ≥ 0 | §14.7 `[rev4.7]`; `site_check` |
 | Q-G2-16 | does `cmt_open` write the comment opener? | **Yes.** The sink's `cmt_open` writes the opener and the sink writes the closer | §14.2 `[rev4.7]`; `memfn.h` `mf_sink` |
 | Q-G2-17 | does `[lo, n − end_back)` apply to VERIFY? | **Yes** (= F1) | as F1 |
+| Q-G2-18 | (R4c, lane CORE's F2) the pre-check arm is right only where `on_miss` LEAVES the site; may the kit read that from the hook's text? | **No: hooks are opaque. pcrec STATES it** in a new site field, `on_miss_leaves` (ON_MISS/ASSIGN; 0 = may fall through). An arm that needs it carries a `miss_leaves` predicate column in K2's first-match table; where it is 0 the generic row renders. `MF_SITE_ABI` 2 → 3; `MF_VOCAB` unchanged. CHOSEN by the kit manager 2026-10-06 | `memfn.h` `mf_site.on_miss_leaves`; `kit.h` `arm.miss_leaves`; `compose.c` `select_arm`, `site_check`; `precheck.c` (CORE's interim text sniff deleted) |
 | Q53 | the libc record | **RULED YES** (addendum 10). The refined form is the design of record | §R4.3.3 `[rev4.7]`; §23 Q53 |
 | Q54 | N7 under completeness | **RULED YES** (addendum 10), with the three corrections | §R4.3.4 `[rev4.7]`; §22 M7; §23 Q54 |
 | Q55 | the kit's plan at SIMD-off | **ACCEPTED** (addendum 10). `<PREFIX>_MEMFN_OPTS` is FILED, not built | §23 Q55 |
 
-F1-F3 and Q-G2-1..17 are 20 rows, all placed. Q53-Q55 are 3 of 3.
+F1-F3 and Q-G2-1..18 are 21 rows, all placed. Q53-Q55 are 3 of 3.
 
 ### R4.7.1 What changed in the design
 
@@ -231,8 +232,19 @@ F1-F3 and Q-G2-1..17 are 20 rows, all placed. Q53-Q55 are 3 of 3.
 6. **Q-G2-5 is recorded OPEN.**
 7. **Q53-Q55 are RULED.** §R4.3.3's refined libc record and §R4.3.4's
    N7 scope are promoted from "proposal" to the design of record.
+8. **Q-G2-18 (R4c; CHOSEN by the kit manager 2026-10-06).** Whether an
+   ON_MISS/ASSIGN site's `on_miss` transfers control out of the site is a
+   FACT pcrec states (`mf_site.on_miss_leaves`), never something the kit
+   reads off the statement's text. The pre-check arm (§15.5) tests its
+   predicates in sequence and leaves the set rest without an empty test,
+   both right only where a miss leaves; its row in K2's table carries the
+   `miss_leaves` predicate column, so a site that does not state it falls
+   to the generic row. `site_check` refuses a value other than 0/1 and a
+   nonzero value off ON_MISS/ASSIGN. This one ruling moves `MF_SITE_ABI`
+   2 → 3 (it supersedes §14.0's `2`); `MF_VOCAB` stays 2. No emitted byte
+   moves: pcrec's pre-check states 1 (its miss is `return 0;`).
 
-`MF_SITE_ABI` and `MF_VOCAB` do not move. No caller exists yet, the
+Items 1-7: `MF_SITE_ABI` and `MF_VOCAB` do not move. No caller exists yet, the
 (op, handoff, term kinds) table is unchanged, and every newly refused
 shape was either never sent or never meaningful.
 

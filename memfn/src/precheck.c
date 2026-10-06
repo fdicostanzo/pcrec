@@ -22,6 +22,11 @@
  *     first predicate has already missed on an empty window, so it carries
  *     no empty test of its own (EXCLUDED in place, §14.4).
  * A reorder is a different arm (§15.5 [rev4.5]); this one keeps pcrec's.
+ * Both the sequence and the rest's missing empty test are right only where a
+ * miss never falls through to the next test, so the row needs the site's
+ * `on_miss_leaves` (its `miss_leaves` column, Q-G2-18); where pcrec has not
+ * stated it, the generic row renders the site. The on_miss text itself is
+ * never read.
  *
  * pcrec's notes (`note`) sit where pcrec's text had them: the first byte's,
  * each run's and the set rest's comment ahead of its statement. At file
@@ -61,42 +66,12 @@ static int run_part(const mf_pred *p, const mf_hooks *def)
            ofs_fn_applies(p, def);
 }
 
-/* Does `on_miss` LEAVE the site (a `return`, `goto`, `break` or `continue`,
- * alone or ending a braced block)? This arm's text tests each predicate
- * after the one before it has missed or passed, and its set rest has no
- * empty test of its own (EXCLUDED in place, §14.4): both are right only if
- * a miss never falls through to the next test. Where the caller's on_miss
- * falls through (a flag write), the generic row renders the site. CHOSEN at
- * R4c: the contract says on_miss is a statement the kit places, not whether
- * it leaves, so the define's hooks carry it too and the kit reads only the
- * keyword its last statement begins with; the contract question is filed
- * (docs/dev/lanes/r4ccore_report.md). */
-static int miss_leaves(const char *m)
-{
-    static const char *const jump[] = { "return", "goto", "break", "continue" };
-    if (!m) return 0;
-    while (*m == ' ' || *m == '{') m++;
-    const char *last = m;
-    for (const char *q = m; *q; q++)       /* the last statement of a block */
-        if (*q == ';' && q[1]) {
-            const char *n = q + 1;
-            while (*n == ' ') n++;
-            if (*n && *n != '}') last = n;
-        }
-    for (size_t i = 0; i < sizeof jump / sizeof jump[0]; i++) {
-        size_t n = strlen(jump[i]);
-        if (!strncmp(last, jump[i], n) &&
-            (last[n] == ' ' || last[n] == ';')) return 1;
-    }
-    return 0;
-}
-
 static int precheck_applies(const mf_site *s, const mf_hooks *def)
 {
     if (s->form != MF_FORM_STMT || s->op != MF_OP_ALL_PRESENT ||
         (s->handoff != MF_H_ON_MISS && s->handoff != MF_H_ASSIGN) ||
         s->empty != MF_EMPTY_MISS || s->end_back || s->reverse ||
-        s->npred == 0 || !s->preds || !def || !miss_leaves(def->on_miss))
+        s->npred == 0 || !s->preds || !def)
         return 0;
     int rest = 0;
     for (unsigned i = 0; i < s->npred; i++) {
@@ -246,9 +221,6 @@ static int precheck_use(mf_art *art, uint32_t handle, const mf_hooks *h,
     if (kit_sink_ok(art, o, "precheck")) return -1;
     if (!h || !h->s || !h->n || !h->lo || !h->indent || !h->on_miss)
         return kit_fail(art, "precheck: needs the s, n, lo, indent and on_miss hooks");
-    if (!miss_leaves(h->on_miss))
-        return kit_fail(art, "precheck: the use's on_miss falls through where "
-                        "the define's left the site");
     art->includes |= MF_INC_STRING_H;   /* memchr */
     for (uint32_t i = 0; i < s->npred; i++) {
         const mf_pred *p = &s->preds[i];
@@ -267,6 +239,8 @@ static int precheck_use(mf_art *art, uint32_t handle, const mf_hooks *h,
 
 const arm precheck_arm = {
     "precheck",
+    1,          /* tests each predicate after the one before it missed and
+                   left, and the set rest carries no empty test (Q-G2-18) */
     precheck_applies,
     precheck_define,
     precheck_use,

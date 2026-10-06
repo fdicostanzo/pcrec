@@ -195,6 +195,7 @@ static mf_site pre_site(mf_pred *p, int n, int ret)
     s.ret_pred = ret >= 0 ? (uint8_t)ret : MF_NO_PRED;
     s.npred = (uint16_t)n;
     s.preds = p;
+    s.on_miss_leaves = 1;           /* the hooks' on_miss is "return 0;" */
     return s;
 }
 
@@ -227,7 +228,7 @@ static int render(const char *dir, const char *name, const mf_site *s,
     Fx fd = { s, fn1, NULL }, fu = { s, fn1, "    " };
     mf_hooks hd = { .fn_name = h_fn_name, .table_name = h_table_name,
                     .note = h_note, .note_tag = h_note_tag,
-                    .run_cmp = h_run_cmp, .on_miss = "return 0;", .u = &fd };
+                    .run_cmp = h_run_cmp, .u = &fd };
     mf_hooks hu = { .s = "subject", .n = "subject_length", .lo = "search_from",
                     .indent = "    ", .on_miss = "return 0;",
                     .result = "handoff_position", .result_decl = "size_t ",

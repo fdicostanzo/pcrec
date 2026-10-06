@@ -401,6 +401,7 @@ static int ofsskip_use(mf_art *art, uint32_t handle, const mf_hooks *h,
 
 const arm ofsskip_arm = {
     "ofsskip",
+    0,
     ofsskip_applies,
     ofsskip_define,
     ofsskip_use,

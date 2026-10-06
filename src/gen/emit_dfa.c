@@ -1385,6 +1385,10 @@ static void req_site_note(void *u, mf_sink *c, uint32_t part)
     else             req_note_rest(sb, pu->indent);
 }
 
+/* The pre-check's miss: the search entry answers NOMATCH. It LEAVES the
+ * site, which the site states to the kit as `on_miss_leaves` (Q-G2-18). */
+#define REQ_ON_MISS "return 0;"
+
 /* Describes the pre-check to the kit and defines it at file scope (`c`):
  * NULL, and nothing defined, where no pre-check is emitted. Each predicate
  * is read from the call the text writers above read: the admission, the
@@ -1443,12 +1447,13 @@ static const struct MemfnPre *req_site_define(Ctx *cx, StrBuf *c)
     s->consumer = MF_C_ENGINE;
     s->npred = (uint16_t)np;
     s->preds = p;
+    s->on_miss_leaves = 1;      /* REQ_ON_MISS is a `return` (Q-G2-18) */
 
     PcrecMfU u = { cx, s, pre, NULL };
     mf_hooks h = {
         .fn_name = req_site_fn_name, .note = pcrec_memfn_note_helpers,
         .note_tag = req_site_note_tag, .run_cmp = pcrec_memfn_run_cmp,
-        .on_miss = "return 0;", .comment_tier = PCREC_CMT_NONESSENTIAL, .u = &u,
+        .comment_tier = PCREC_CMT_NONESSENTIAL, .u = &u,
     };
     pre->site = s;
     pre->handle = pcrec_memfn_define(cx, DELEG_PRE, s, &h, c);
@@ -1502,7 +1507,7 @@ const char *pcrec_emit_req_byte_check(Ctx *cx, StrBuf *c, const char *indent,
     PcrecMfU u = { cx, s, pre, indent };
     mf_hooks h = {
         .s = subjvar, .n = lenvar, .lo = posvar, .indent = indent,
-        .on_miss = "return 0;", .result = "handoff_position",
+        .on_miss = REQ_ON_MISS, .result = "handoff_position",
         .result_decl = "size_t ", .note = req_site_note,
         .comment_tier = PCREC_CMT_NONESSENTIAL, .u = &u,
     };

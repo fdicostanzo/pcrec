@@ -683,6 +683,7 @@ static int generic_use(mf_art *art, uint32_t handle, const mf_hooks *h,
 
 const arm generic_arm = {
     "generic",
+    0,
     generic_applies,
     generic_define,
     generic_use,
