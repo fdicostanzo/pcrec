@@ -6070,6 +6070,11 @@ void pcrec_emit_runcmp_stamp(Ctx *cx, StrBuf *c, const char *upper);
  * engine emitter, before the size measurement). */
 void pcrec_emit_memfn_mark(StrBuf *c);
 void pcrec_memfn_stamps_render(Ctx *cx);
+/* [MEMFN] the policy word pcrec sends the kit for a job's flags: one bit,
+ * `MF_P_PORTABLE_ONLY`, set iff `-fmemfn-simd` is not in force (the axis
+ * resolves deny, force, then `axes.def`'s default). The ONE derivation; every
+ * `mf_art_begin` caller passes this and never a literal. */
+uint32_t pcrec_memfn_policy(uint64_t flags);
 /* [K50]/[UTF-VALID] The caller-startpos entry prologue: the startpos-guard
  * axis's value (refuse / nothing / align) and then the `-futf-check`
  * precheck, at the four sites that take a caller's position. `anchored`
