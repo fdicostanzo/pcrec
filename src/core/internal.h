@@ -6048,6 +6048,14 @@ typedef struct {
 } PcrecFind;
 /* The memchr form declares `const void *q`, the hit or NULL. */
 void pcrec_emit_find(StrBuf *c, const char *ind, const PcrecFind *f);
+/* [START-SET] stage 2, THE VM HAT (src/gen/emit_dfa.c): the candidate
+ * table's VM-route row name (`<PREFIX>_VM_START_SCAN`'s value, "none" on a
+ * DFA artifact or a hybrid), and the seek that row writes into
+ * `<prefix>_search_run` before the first attempt (`entry`) or after a failed
+ * one — nothing where the row is `none`. One selection, read by both. */
+const char *pcrec_vm_start_scan_name(Ctx *cx);
+void pcrec_emit_vm_start_seek(Ctx *cx, StrBuf *c, const char *p,
+                              const char *ind, bool entry);
 /* The word-load helpers used and not yet declared, at file scope (idempotent
  * per attempt); and the `<PREFIX>_RUN_WORDS` stamp, after the engine body. */
 void pcrec_emit_runcmp_helpers(Ctx *cx, StrBuf *c);

@@ -13438,6 +13438,14 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
      * to the window it returned — so it is written once, after both arms. */
     pcrec_emit_start_zero(v->cx, c, "    ", "attempt_position", "subject",
                           "subject_length", PCREC_START0_SEEK);
+    /* [START-SET] THE VM HAT's entry seek (startset.md §4.2's order): after
+     * the range guard, K50, `rx_valid_upto` and the K65/K66 pre-check above,
+     * after K73's offset-0 seek, and before the first attempt. It starts at
+     * `attempt_position`, which is `search_from` here: the K82 handoff never
+     * reaches a VM route without a prefilter (the assertion above), so the
+     * handoff's `lo` is `search_from`. Nothing on a hybrid or where the row
+     * is `none`. */
+    pcrec_emit_vm_start_seek(v->cx, c, v->p, "    ", true);
 
     /* [OPT-ANCHOR-VM] THE ATTEMPT LOOP'S START BOUND, the DFA's `start_max`
      * arriving on this engine. The `start_anchor` fact (src/facts/startanch.c) is
@@ -13507,11 +13515,7 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
         "        %s_reset_for_next_attempt(run);\n"
         "        if (attempt_position >= %s) return 0;\n"
         "%s"
-        "%s"
-        "    }\n"
-        "    if (capture_spans) %s_report_captures(run, capture_spans, attempt_position, result);\n"
-        "    return 1;\n"
-        "}\n\n",
+        "%s",
         v->p,
         /* [VAR] the ctx's own `vars`/`nvars`, then the resolve. */
         v->cx->n_var_exps ? "    ctx.vars = vars; ctx.nvars = nvars;\n" : "",
@@ -13526,7 +13530,15 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
          * `start` here would make `\G` an unconditional truth and turn
          * `\Gfoo` into `foo`. */
         v->ngst > 0 ? ", search_from" : "",
-        v->up, v->up, v->up, v->up, v->up, v->p, att_max, retry_adv, retry_seed,
+        v->up, v->up, v->up, v->up, v->up, v->p, att_max, retry_adv, retry_seed);
+    /* [START-SET] THE VM HAT's retry seek, after the encoding's own advance
+     * (K49's `retry_adv`): the next position whose byte can begin a match. */
+    pcrec_emit_vm_start_seek(v->cx, c, v->p, "        ", false);
+    pcrec_sb_printf(c,
+        "    }\n"
+        "    if (capture_spans) %s_report_captures(run, capture_spans, attempt_position, result);\n"
+        "    return 1;\n"
+        "}\n\n",
         v->p);
 }
 

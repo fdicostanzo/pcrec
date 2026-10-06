@@ -3006,6 +3006,16 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
                                            * exception: it selects no
                                            * engine. */
                                           PCREC_NO_REQ_HANDOFF |
+                                          /* [START-SET] the candidate
+                                           * table's start-set rows: the VM
+                                           * hat skips only attempts that
+                                           * fail, so no answer moves (a
+                                           * give-up may become the answer,
+                                           * match_api.md §3.1), masked from
+                                           * its first commit (startset.md
+                                           * §6.1, the `-fno-req-run`
+                                           * lesson). */
+                                          PCREC_NO_START_SET |
                                           /* [UCP] U2 T3's `ctx-node` row
                                            * ([UCP] ucp_design.md §2.2). An
                                            * answer-identity axis: denied, a
@@ -4944,13 +4954,16 @@ typedef struct DfaPf {
      * on a row name. */
     PfScan scan;
     /* [START-SET] (D148) THE ROUTES THIS ROW SERVES, `CAND_ON` bits; 0 is the
-     * legacy DFA-only row, so every row before stage 2 leaves it unset.
-     * `dfa_select` tests it before `applies`. */
+     * legacy DFA-only row. `dfa_select` tests it before `applies`. Stage 2:
+     * `first-class` serves the VM route alone and `none` serves both. */
     unsigned routes;
     /* [START-SET] THE VM HAT's emitter for a row whose mask includes
-     * `CAND_ROUTE_VM`; NULL on every row until stage 2 (no row serves the VM
-     * route yet). */
-    void  (*emit_vm)(StrBuf *c, const DfaSel *s);
+     * `CAND_ROUTE_VM`, writing at indent `ind` in `<p>_search_run`: the
+     * seek before the first attempt (`entry`, which also declares the row's
+     * table) or after a failed one. NULL on `none`, whose VM hat is today's
+     * attempt loop. */
+    void  (*emit_vm)(StrBuf *c, const DfaSel *s, const char *p,
+                     const char *ind, bool entry);
 } DfaPf;
 
 /* AXIS C — VIEW HANDLING. `emit_view_select`'s three branches, plus the
@@ -6530,6 +6543,100 @@ static void pf_emit_ofs_bounded(StrBuf *c, const DfaForm *f)
     pcrec_sb_printf(c, "%s    }\n%s}\n", ind, ind);
 }
 
+/* ---- [START-SET] STAGE 2: THE VM HAT (D148; docs/design/startset.md §2, §4.2) ----
+ *
+ * A prefilter-less VM artifact attempts a match at every position. An attempt
+ * at `p` can succeed only if `subject[p]` is in the `start_set` fact `S`: the
+ * pattern cannot match empty, so the match's first consumed byte is `p`'s,
+ * and the fact is a superset of the bytes that byte can be. So seeking the
+ * next byte of `S` before the first attempt and after each failed one skips
+ * only attempts that FAIL. Every start rule survives: `\G` reads
+ * `search_from`, which the seek never moves; K73's offset-0 seek runs first;
+ * the K65/K66 pre-check runs above it (a pre-check NOMATCH stays the whole
+ * answer); `-futf-check`'s `rx_valid_upto` runs above everything, so an
+ * ill-formed subject with no `S` byte still answers `PCREC_ERR_UTF`.
+ *
+ * WHAT IT CAN MOVE is the give-up surface and nothing else: a skipped attempt
+ * spends no steps, work, frames or trail, so a call the deny arm gives up on
+ * may answer instead (never the reverse; docs/spec/match_api.md §3.1). */
+
+/* Every member of `S` is a character START under this encoding (the backend's
+ * `start_cls`; NULL means every byte is one), so a hit is a legal attempt
+ * position and the seek needs no round-up. An ASSERTION, not a decline
+ * (startset.md §3.4): only the all-256 set holds a continuation byte, and the
+ * predicate refuses that set before it asks this. Sabotage S497. */
+static void vm_start_assert_starts(Ctx *cx, const StartSet *ss)
+{
+    const unsigned char *st = pcrec_enc_by_id(cx->opt->encoding)->start_cls;
+    if (!st) return;
+    for (int b = 0; b < 256; b++)
+        if ((ss->bits[b >> 3] >> (b & 7) & 1) && !(st[b >> 3] >> (b & 7) & 1))
+            pcrec_ctx_fail(cx, 0, "internal error: the start set holds byte 0x%02x, "
+                           "which is not a character start under this encoding "
+                           "(src/gen/emit_dfa.c, the VM hat's assertion)", b);
+}
+
+/* V, THE VM HAT's predicate (startset.md §2 V): each conjunct with the
+ * sabotage row that removes it.
+ *   - ROUTE: a VM artifact with no DFA prefilter in front. A hybrid's
+ *     prefilter IS a DFA scan, and its start test is the DFA hat's (S493).
+ *   - ANCHORING: `start_anchor` unanchored. An anchored or `\G`-start
+ *     pattern runs one attempt ([OPT-ANCHOR-VM]), so there is nothing to
+ *     skip between attempts (S492).
+ *   - NECESSARY: `S` not nullable (the erased language's own bit, never the
+ *     `nullable` fact; review r4 sound-F9) and fewer than 256 members — a
+ *     nullable pattern can match at a position whose byte is in no set, and
+ *     a full set skips nothing (S491).
+ *   - NO VERB AND NO CALLOUT: a `(*COMMIT)` in a skipped attempt could end
+ *     the whole search. STRUCTURALLY ABSENT today, as for `req_handoff_
+ *     applies` (g): the AST has no node kind for either, so there is nothing
+ *     to read; the kind that adds one must decline here. Sabotage S496 ships
+ *     UNREACHED.
+ *   - ENCODING: `vm_start_assert_starts`, AFTER the two conjuncts above.
+ * The deny (`-fno-start-set`) is the row's `c.deny`, a filter on the list. */
+static bool pf_vm_start_applies(const DfaSel *s)
+{
+    Ctx *cx = s->cx;
+    const StartSet *ss = s->ss;
+    int n = 0;
+    if (s->route != CAND_ROUTE_VM || !ss) return false;
+    if (cx->job->fit.chosen != ENGM_VM || cx->job->fit.prefilter) return false;
+    if (pcrec_fact_start_anchor(cx) != PCREC_SANCH_NONE) return false;
+    if (ss->nullable) return false;
+    for (int b = 0; b < 256; b++) n += ss->bits[b >> 3] >> (b & 7) & 1;
+    if (n >= 256) return false;
+    vm_start_assert_starts(cx, ss);
+    return true;
+}
+
+/* The VM hat's `first-class` form: the FIND over `S` (`pcrec_emit_find`, the
+ * prefilter forms' own one statement) at the attempt position, and `return
+ * 0` where none is left — no attempt at `subject_length` can succeed, since
+ * the pattern cannot match empty. At the ENTRY it first declares `S` as a
+ * 256-entry table inside `<prefix>_search_run`; the retry seek in the loop
+ * below reads the same table. Q-R5: the TABLE form only at stage 2, at any
+ * `|S|` (a dense one-byte `S` read by `memchr` per failed attempt measured
+ * x0.6 at 80% density; the `|S| = 1 -> memchr` cut-over is an unmeasured
+ * default for VM attempts, D149, and is not taken). */
+static void pf_vm_emit_first_class(StrBuf *c, const DfaSel *s, const char *p,
+                                   const char *ind, bool entry)
+{
+    PcrecFind fd = { .p = p, .table = "start_set", .pos = "attempt_position",
+                     .subject = "subject", .len = "subject_length", .holdback = 0 };
+    if (entry) {
+        uint8_t v[256];
+        for (int b = 0; b < 256; b++) v[b] = s->ss->bits[b >> 3] >> (b & 7) & 1;
+        pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
+        pcrec_sb_puts(c, "    /* [START-SET] 1 for each byte the first byte of a match can be.\n"
+                         "     * An attempt at a position holding any other byte fails, so the\n"
+                         "     * loop starts no attempt there. */\n");
+        pcrec_sb_cmt_close(c);
+        emit_u8_table(c, p, "start_set", v, 256);
+    }
+    pcrec_emit_find(c, ind, &fd);
+    pcrec_sb_printf(c, "%sif (attempt_position >= subject_length) return 0;\n", ind);
+}
+
 /* Designated initializers ([K84], stage 0 of docs/design/startset.md §8): a
  * field a row omits is its zero value — no table, no block, no re-seed, no
  * run term — and `scan` is named on every row, so a reader of the property
@@ -6557,6 +6664,10 @@ static const DfaPf dfa_pfs[] = {
     { .c = { "offset-set",          PCREC_NO_OFFSET_SKIP, pf_ofs_applies         },
       .emit_tables = pf_tables_ofs,  .emit_block = pf_block_ofs, .emit = pf_emit_ofs,
       .reseeds = true,  .run_term = false, .scan = PF_SCAN_OFS  },
+    /* [START-SET] stage 2: the VM hat only (its DFA column is stage 3's). */
+    { .c = { "first-class",        PCREC_NO_START_SET, pf_vm_start_applies },
+      .scan = PF_SCAN_SET, .routes = CAND_ON(CAND_ROUTE_VM),
+      .emit_vm = pf_vm_emit_first_class },
     { .c = { "memchr-bounded",     0, pf_memchr_bounded_applies },
       .emit = pf_emit_memchr_bounded, .scan = PF_SCAN_BYTE },
     { .c = { "memchr",             0, pf_memchr_applies         },
@@ -6565,7 +6676,8 @@ static const DfaPf dfa_pfs[] = {
       .emit_tables = pf_tables_bcls, .emit = pf_emit_bcls_bounded, .scan = PF_SCAN_SET },
     { .c = { "byte-class",         0, pf_bcls_applies           },
       .emit_tables = pf_tables_bcls, .emit = pf_emit_bcls,         .scan = PF_SCAN_SET },
-    { .c = { "none",               0, cand_always               }, .scan = PF_SCAN_NONE },
+    { .c = { "none",               0, cand_always               }, .scan = PF_SCAN_NONE,
+      .routes = CAND_ON(CAND_ROUTE_DFA) | CAND_ON(CAND_ROUTE_VM) },
 };
 
 /* AXIS B's selection for the artifact's FORWARD machine, for the callers that
@@ -6576,6 +6688,51 @@ static const DfaPf *dfa_pf_of(Ctx *cx, const UnanchStart *us)
     DfaSel s = { .cx = cx, .d = &cx->job->dfa, .us = us, .forward = true, .st = -1,
                  .route = CAND_ROUTE_DFA };
     return DFA_SELECT_ROUTED(DfaPf, dfa_pfs, &s, cx->opt->flags);
+}
+
+/* [START-SET] AXIS B's selection for the VM ROUTE: the row a prefilter-less
+ * VM attempt loop takes (`first-class` or `none`). ONE derivation with three
+ * readers — `<PREFIX>_VM_START_SCAN`, and the entry and retry seeks — so the
+ * stamp names the seek that was emitted. On a DFA artifact or a hybrid every
+ * VM-route row but `none` declines. */
+static const DfaPf *vm_start_row(Ctx *cx, DfaSel *s)
+{
+    *s = (DfaSel){ .cx = cx, .d = NULL, .us = NULL, .forward = true, .st = -1,
+                   .route = CAND_ROUTE_VM, .ss = pcrec_fact_start_set(cx) };
+    return DFA_SELECT_ROUTED(DfaPf, dfa_pfs, s, cx->opt->flags);
+}
+
+/* `<PREFIX>_VM_START_SCAN`'s value: the VM route's row name. */
+const char *pcrec_vm_start_scan_name(Ctx *cx)
+{
+    DfaSel s;
+    return vm_start_row(cx, &s)->c.name;
+}
+
+/* Writes the VM hat's seek into `<p>_search_run` at indent `ind`: before the
+ * first attempt (`entry`) or after a failed one; nothing where the VM route
+ * selected `none`. Two assertions sit here because this is where a VM-route
+ * selection is emitted:
+ *   - THE TABLE FORM ONLY (Q-R5): no VM-route row may take a `memchr` form at
+ *     stage 2, so a selection that scans one byte is an internal error
+ *     (sabotage S479 is UNREACHED by construction);
+ *   - THE VM HAT IS NOT A DFA SCAN (startset.md §4.3):
+ *     `pcrec_artifact_has_dfa_scan` stays false here, or the K65/K66
+ *     pre-checks keyed on it would elide their linear no-match proofs —
+ *     the K64 shape (sabotage S494). */
+void pcrec_emit_vm_start_seek(Ctx *cx, StrBuf *c, const char *p,
+                              const char *ind, bool entry)
+{
+    DfaSel s;
+    const DfaPf *pf = vm_start_row(cx, &s);
+    if (!pf->emit_vm) return;
+    if (pf->scan != PF_SCAN_SET)
+        pcrec_ctx_fail(cx, 0, "internal error: the VM route selected a "
+                       "one-byte start-set form, which stage 2 does not build");
+    if (pcrec_artifact_has_dfa_scan(cx))
+        pcrec_ctx_fail(cx, 0, "internal error: a VM-hat artifact reads as "
+                       "having a DFA scan (startset.md §4.3)");
+    pf->emit_vm(c, &s, p, ind, entry);
 }
 
 /* ---- [OPT-PRECHECK-ADMIT] ADMITTING THE WHOLE-WINDOW PRE-CHECK ----------
@@ -9797,6 +9954,13 @@ void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
      * names what the EMITTER did; `req_run_maxoff` in `--emit-facts` names
      * what the analysis found, which a declined artifact still has. */
     pcrec_sb_stamp_str(c, g->upper, "REQ_HANDOFF", req_handoff_stamp(cx));
+    /* [START-SET] `<PREFIX>_VM_START_SCAN` — THE VM HAT's ROW: the candidate
+     * table's VM-route selection (`first-class`), or `"none"` where it does
+     * not apply. Unconditional on every artifact of both engines, beside
+     * `REQ_HANDOFF` for the same ruling (D148 Q-R6, K82 Q3: a stamp varies by
+     * engine family, never by presence within one). A DFA artifact or a
+     * hybrid always reads `"none"`; a hybrid's start test is its prefilter. */
+    pcrec_sb_stamp_str(c, g->upper, "VM_START_SCAN", pcrec_vm_start_scan_name(cx));
     pcrec_sb_stamp_str(c, g->upper, "TUNE", pcrec_tune_token(cx->opt->tune));
     if (cx->opt->header_name) {
         pcrec_sb_printf(c, "#include \"%s\"\n", cx->opt->header_name);
