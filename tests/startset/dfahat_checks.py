@@ -148,6 +148,12 @@ def scanned(text):
 def normalize(text):
     t = re.sub(r'(#define RX_DFA_PREFILTER +)"[^"]*"', r'\1"*"', text)
     t = re.sub(r'(\.prefilter = )"[^"]*"', r'\1"*"', t)
+    # [R4a'] `RX_MEMFN_LIBC` is the inventory of the libc calls in the artifact's
+    # TEXT, so it follows the hat's own skip the way `RX_DFA_PREFILTER` does:
+    # `first-memchr-bounded` calls memchr where the deny arm's table walk calls
+    # nothing ("memchr" vs "none"). Neutralized with the stamp it follows; the
+    # stamp's own correctness is C11's (`make test-memfn-stamps`).
+    t = re.sub(r'(#define RX_MEMFN_LIBC +)"[^"]*"', r'\1"*"', t)
     t = U8TABLE("start_bytes").sub("", t)
     t = U8TABLE("can_begin_match").sub("", t)
     return PF_BLOCK.sub("", t)
