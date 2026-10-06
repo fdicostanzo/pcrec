@@ -298,11 +298,11 @@ noted under group 2, which are `PCREC_*`-named yet per-artifact):
    refused.** The block opens
 
    ```c
-   #if defined(PCREC_RX_ABI_H) && (PCREC_RX_ABI_H + 0) != 62
-   #error "pcrec: this artifact (abi 62) shares a translation unit with an artifact of a different abi; regenerate both with one pcrec"
+   #if defined(PCREC_RX_ABI_H) && (PCREC_RX_ABI_H + 0) != 63
+   #error "pcrec: this artifact (abi 63) shares a translation unit with an artifact of a different abi; regenerate both with one pcrec"
    #endif
    #ifndef PCREC_RX_ABI_H
-   #define PCREC_RX_ABI_H 62
+   #define PCREC_RX_ABI_H 63
    ```
 
    so artifacts of one abi still share the first block, and an artifact of
@@ -2315,7 +2315,19 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `62` on every artifact today (lane ssbuild2 bumped it
+- **`rx_info.abi` is `63` on every artifact today (lane memfnbump bumped it
+  from 62, 2026-10-06: [MEMFN] R4a′ — THE KIT'S TWO STAMPS,
+  `docs/design/memfn/integration.md` §R4.3.3, §18, §22; D147 addendum 10,
+  Q53, Q55).** Every artifact of both engines gains two stamp lines,
+  written by pcrec-memory-functions (`memfn/`, D146/D147) directly after
+  `<PREFIX>_RUN_WORDS`: `<PREFIX>_MEMFN_FORMS` (`"none"` on every artifact
+  until the kit's first SIMD-on form) and `<PREFIX>_MEMFN_LIBC` (the
+  artifact's source-level inventory of C library calls, or `"none"`; §6.3).
+  The two lines render before the emitted-size measurement, so a size-cap
+  retry's quoted size of its discarded attempt (`_PREFILTER_WHY`) includes
+  them. No struct offset moves, no `rx_info` member is added or changed, no
+  program text moves, and no answer moves.
+- **`rx_info.abi` was `62` (lane ssbuild2 bumped it
   from 61, 2026-10-05: [START-SET] stage 2 — THE VM HAT,
   `docs/design/startset.md` §2 V, §4.2, §8, D148 + addenda 1-2).** The
   candidate table (`dfa_pfs[]`) gains its first row serving the VM route,
@@ -3979,7 +3991,7 @@ engine-scoped.**
   consumer may NOT conclude: anything about the answers, which are identical
   either way. No `rx_info` mirror (D77).
 
-  **[MEMFN] R4a′, 2026-10-05 (the stamps' own `abi` event): `<PREFIX>_MEMFN_FORMS`
+  **[MEMFN] R4a′, `abi` 63, 2026-10-05 (the stamps' own `abi` event): `<PREFIX>_MEMFN_FORMS`
   and `<PREFIX>_MEMFN_LIBC` — WHAT THE SEARCH-CODE KIT RENDERED, AND WHICH
   LIBC FUNCTIONS THE ARTIFACT CALLS.** On EVERY artifact, both engines; the
   pair is written by pcrec-memory-functions (`memfn/`, D146/D147) and sits
