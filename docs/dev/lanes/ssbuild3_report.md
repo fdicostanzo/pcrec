@@ -438,13 +438,38 @@ Every START-SET row ran solo at `3b7ba538`: `bash tests/mech/run_sabotage_matrix
 
 ### F.4 The full Mac `make -k -j4 test CC=gcc-16`
 
-PENDING (same chain, after the mech; suite lock `worktrees/.mac-suite.lock`,
-owner `ssfix3`).
+Run at `79841e3a`'s source state (the tree measured by the mech, `3b7ba538`,
+plus report/row-figure edits only), detached under caffeinate, holding
+`worktrees/.mac-suite.lock` (owner `ssfix3`, released): **`sections ran:
+52/52`, the ONLY `*** [test-X] Error` is `test-codegen`, and its only FAIL
+line is the accepted darwin `nm could not read arm_a.o`.** `make: *** [test]
+Error 1` is that section's. Finished 04:18. Log
+`scratchpad/ssfix3/fulltest.log`.
 
 ### F.5 `scripts/emit_sweep.py` against main, and the mover table
 
-PENDING (same chain, last): main `8f91cba1` built from `git archive`,
-`--ref-bin`, then ssbuild3's `mover_table.py` (abi / stamp / hat / FINDING).
+Main `8614d39b` (ARTREV docs/harness since `8f91cba1`, still abi 62) built
+from `git archive` and passed as `--ref-bin`; self-check all-identical at full
+reach.
+
+| stream | reach | movers | asymmetric |
+|---|---|---|---|
+| `.c` default engine | 4,159 | 4,159 | 0 |
+| `.c` `--engine=vm` | 4,160 | 4,160 | 0 |
+| `--emit-ir --engine=vm` | 4,160 | 0 | 0 |
+| composition (38 files) | 108 | 108 (abi digit) | 0 |
+| registry dumps | 7 | 1 (`--list-axes`, the two DFA-hat rows) | 0 |
+
+The mover table uses ssbuild3's `mover_table.py`, unchanged:
+
+| stream | abi digit only | stamp | the DFA hat | **FINDING** |
+|---|---|---|---|---|
+| `.c` default | 4,071 | 0 | 88 | **0** |
+| `.c` `--engine=vm` | 4,160 | 0 | 0 | **0** |
+
+**The 12 `dfahat_f1.rxt` blocks are NON-movers**: they sit in the abi-only
+class, which grew from 4,059 to 4,071, and none is among the 88 hat rows.
+The hat count is the same 88 as before the fix, so the fix moved no hat.
 
 ### F.6 Commits
 
@@ -455,6 +480,18 @@ PASS +298, SKIP and pcre2-only +24, verifiable +298), the mech and
 src/gen/startset CLAUDE.md notes, and the `startset.md` §4.1a amendment.
 `make strict` is clean. `make test-rxtsource` reads 278/0/1, where the 1 is
 the darwin python-3.9 C3 RECORD. `DFAHAT_PART=struct` reads 32/0.
+
+### F.6a Validation summary
+
+COMPLETE on the Mac. `make strict` is clean. `test-startset`'s parts are
+green, inside the full run and standalone (struct 32/0; DFA differential 153
+distinct pairs, 0 defects; VM differential 423 pairs, 0 defects).
+`test-rxtsource` reads 278/0/1. The restricted axes run and the 26 mech
+solos are as tabled above. The full `make test` is 52/52, its only red the
+darwin `nm`. `emit_sweep` vs main reads FINDING 0. **OWED (unchanged from
+§7): the Linux alpha `alpha_s3.sh` and the whole-corpus `make test-axes`.**
+The latter would read the new DFA-hat arm at 1,378 cases and the product
+arm's 11,000 floor at whole-corpus scale.
 
 ### F.7 QUESTIONS for Frank
 
