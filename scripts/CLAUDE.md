@@ -22,6 +22,15 @@ pcrec (the Makefile owns that).
   teardown commands. Residual spawn-time leak (session-root CLAUDE.md and
   memory index, injected before any tool call) is unavoidable and stays
   covered by the briefs' disclosure requirement.
+  **Git boundary (2026-10-06, lane artprep's finding):** a cell under
+  `worktrees/` sits inside the repo, so git's upward discovery reached the
+  parent repository — `git -C <cell> show HEAD:src/...` printed emitter
+  source; every earlier cell was git-readable that way (briefs forbade git,
+  nothing enforced it). The cell now gets an EMPTY repository (`git init`)
+  as a discovery boundary, and the hygiene check proves `git -C <cell>`
+  resolves to the cell and can read no history (verified both directions:
+  boundary removed, the source prints; boundary present, `invalid object
+  name 'HEAD'`).
 
 - **measure.sh** — builds and runs one `tests/probes/` probe and archives
   its full output as `docs/measurements/<probe>.txt` (D35, 2026-08-12):

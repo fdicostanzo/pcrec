@@ -205,8 +205,8 @@ def pid_alive(pid):
 
 
 def take_timing_lock():
-    lk = os.path.join(C.art_root(), ".timing.lock")
-    os.makedirs(C.art_root(), exist_ok=True)
+    lk = C.timing_lock_path()
+    os.makedirs(os.path.dirname(lk), exist_ok=True)
     for _ in range(2):
         try:
             os.mkdir(lk)

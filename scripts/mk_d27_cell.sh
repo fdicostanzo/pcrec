@@ -8,7 +8,15 @@
 # files that way — and a git worktree additionally hands the author the
 # whole history (`git show HEAD:src/...` defeats the blindness by
 # instruction alone). The cell fixes both BY CONSTRUCTION: files that do
-# not exist cannot be injected, and there is no .git to ask.
+# not exist cannot be injected, and git has no history to give.
+#
+# THE GIT BOUNDARY (2026-10-06, lane artprep's finding). "No .git in the
+# cell" was NOT enough: the cell lives under worktrees/, INSIDE the repo,
+# so git's upward discovery found the parent repository and
+# `git -C <cell> show HEAD:src/gen/emit_vm.c` printed the emitter. Every
+# cell made before this fix was git-readable that way. The cell now gets
+# its own EMPTY repository (`git init`, no commits) as a discovery
+# boundary, and the hygiene check below proves the boundary holds.
 #
 # ALLOWLIST, NEVER DENYLIST. The cell is built by copying what IS permitted.
 # Deleting what is denied fails in the silent direction (a missed file
@@ -85,17 +93,28 @@ for p in "${ALLOW[@]}"; do
     ( cd "$WT" && rsync -a --relative "./$p" "$CELL/" )
 done
 ( cd "$WT" && rsync -a --relative "./build" "$CELL/" )
+git init -q "$CELL"   # the discovery boundary (header: THE GIT BOUNDARY)
 
 echo "== hygiene verification (the point of the cell) =="
 BAD=0
-if find "$CELL" -name '.git*' | grep -q .; then
-    echo "FAIL: git metadata leaked into the cell:"; find "$CELL" -name '.git*'; BAD=1
+if find "$CELL" -name '.git*' ! -path "$CELL/.git" ! -path "$CELL/.git/*" | grep -q .; then
+    echo "FAIL: git metadata leaked into the cell:"; find "$CELL" -name '.git*' ! -path "$CELL/.git" ! -path "$CELL/.git/*"; BAD=1
+fi
+# the boundary must hold: git inside the cell sees ONLY the cell's empty repo
+top=$(git -C "$CELL" rev-parse --show-toplevel 2>/dev/null || true)
+if [ "$(cd "$top" 2>/dev/null && pwd -P)" != "$(cd "$CELL" && pwd -P)" ]; then
+    echo "FAIL: git inside the cell resolves to '$top', not the cell"; BAD=1
+fi
+if git -C "$CELL" rev-parse -q --verify HEAD >/dev/null 2>&1 \
+   || git -C "$CELL" show HEAD:src/gen/emit_vm.c >/dev/null 2>&1; then
+    echo "FAIL: git inside the cell can read history"; BAD=1
 fi
 # every top-level entry must be explained by the allowlist or build/
 while IFS= read -r top; do
     rel="${top#"$CELL"/}"
     ok=0
     [ "$rel" = build ] && ok=1
+    [ "$rel" = .git ] && ok=1
     for p in "${ALLOW[@]}"; do
         case "$p/" in "$rel"/*) ok=1;; esac
         case "$rel/" in "$p"/*|"${p%%/*}"/) ok=1;; esac
@@ -111,7 +130,7 @@ find "$CELL" -name CLAUDE.md | sed "s|$CELL/|  |"
 cat <<DONE
 
 CELL READY.
-  author works in:  $CELL   (and NOWHERE else; non-git, allowlist-only)
+  author works in:  $CELL   (and NOWHERE else; empty-git boundary, allowlist-only)
   delivery target:  $WT   (branch $NAME — the author never touches it)
 
 WHEN THE AUTHOR FINISHES, diff the cell back and review:

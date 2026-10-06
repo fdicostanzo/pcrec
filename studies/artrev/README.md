@@ -61,3 +61,15 @@ Reviewer cell and leads (charter 3.2): the D27 cell allowlist for a reviewer is
 `docs/dev/optloop/artrev/notebook/`. The harness does not define or validate
 `leads.tsv`; its schema is the charter's, with the added `origin` column
 (`fresh` or `notebook:<entry>`).
+
+## Inside a D27 cell: set ARTREV_HOST_ROOT
+
+A cell's own tree is not where the shared locks live. Every reviewer
+running in a cell exports `ARTREV_HOST_ROOT=/Users/fdicostanzo/pcrec` (the
+main checkout) so that `time` takes the ONE shared
+`build-artrev/.timing.lock` and checks the real
+`worktrees/.mac-suite.lock`. Without it, each cell would hold a private
+timing lock and two reviewers could time at once (lane artprep's finding,
+2026-10-06). Self-test note: `orig2` reading LOSS once under a
+gate-overridden, heavily loaded Mac (load1 ~20) is load noise, and a re-run
+on a lighter box was 101/101; the real gate exists to refuse those runs.
