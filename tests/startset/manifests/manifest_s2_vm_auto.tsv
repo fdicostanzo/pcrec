@@ -8,6 +8,8 @@
 # the one removed row is tests/ucp/ctxnode.rxt:400, whose (text, options) twin in dfahat.rxt now sorts first and takes its id (docs/design/startset/s3/).
 # ssfix3 (2026-10-06): regenerated with census_s1.py on the CURRENT build under -fno-start-set (checks-m5):
 # byte-identical rows.
+# r4cpin (2026-10-06): +3 rows, every one a tests/litscan/handoff.rxt R4c VM-hybrid handoff witness block (lane r4cchecks); regenerated
+# with census_s1.py on the current build, no existing row moved.
 #id	options	pattern_hex
 bench/capability/balanced-parens-rec	--features all	5c28283f3a5b5e28295d7c283f5229292a5c29
 bench/capability/doubled-word	--features all	5c62285c772b295c625c732b5c315c62
@@ -72,6 +74,9 @@ tests/litscan/handoff.rxt:2155	--features all --encoding=byte --engine=vm	787b32
 tests/litscan/handoff.rxt:2281	--features all --encoding=byte --engine=vm	6161283f693a6129
 tests/litscan/handoff.rxt:2432	--features all --encoding=byte --engine=vm	612e2a3f283f693a73656c65637429
 tests/litscan/handoff.rxt:2512	--features all --encoding=byte --engine=vm	61622e2a78797a77
+tests/litscan/handoff.rxt:2627	--features all --encoding=byte --engine=vm	28616229633f7573657270617373
+tests/litscan/handoff.rxt:2738	--features all --encoding=byte --engine=vm	2878293f757365727a
+tests/litscan/handoff.rxt:2817	--features all --encoding=byte --engine=vm	283f69292863617429733f646f67
 tests/litscan/handoff.rxt:297	--features all --encoding=byte --engine=vm	283f3a617c6262293f636174646f67
 tests/litscan/handoff.rxt:414	--features all --encoding=byte --engine=vm	283f6d295e787b322c357d283f693a63617429
 tests/litscan/handoff.rxt:520	--features all --encoding=byte --engine=vm	283f6d295e283f3a617c6262293f636174646f67
