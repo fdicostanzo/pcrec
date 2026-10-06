@@ -394,7 +394,7 @@ another. All instruments are in `start_table/` and read nothing in this note.
 2. **The deny-delta census** (`deny_census.py` → `deny_census.tsv`,
    `deny_transitions.tsv`, `deny_hidden.tsv`). Every distinct corpus pattern
    (3,595) is compiled at default and under each of the 13 start-family
-   deny/force flags, in four arms (auto / `--engine=vm` × byte / utf8): «C»
+   deny/force flags, in four arms (auto / `--engine=vm` × byte / utf8): 201,320
    compiles. A MOVER is an artifact whose emitted bytes differ. Each mover is
    attributed to the start stamps that moved with it (route-keyed, so a stamp
    shared by two routes' rows is split); a mover whose bytes moved while NO
@@ -417,14 +417,15 @@ another. All instruments are in `start_table/` and read nothing in this note.
   axis, the MRL storage). A future site enters the family through the graph and
   fails the check until it is dispositioned.
 - Every deny-census mover is attributed to a row by a stamp transition, or is
-  a hidden mover whose fingerprint maps to a dispositioned site: «hidden
-  fingerprints, all mapped» (§3.4's table).
+  a hidden mover whose fingerprint maps to a dispositioned site: every hidden fingerprint is mapped:
+  P4's body, the fact stamps, the prior's `RX_FINDINGS` ask, the collapse
+  rung's `ENGINE_SEL` (§3.4's table).
 - Every family sabotage row's owner is dispositioned (it must be: the family IS
   the graph's), and every RE-AIM row's anchor is in the edit set (§3.5).
 - **What the methods found that revision 1 did not name** (each now in §2.2):
   K65 set-rest (`emit_req_set_rest` `:1267`) and K66 whole-run
   (`req_run_tests` `:1041`) — family EMIT members with route reads, and the
-  hidden-mover fingerprints of «flags»; `prefix_k.c`'s admission — the only
+  `-fno-req-run`/`-fno-req-byte` hidden-mover fingerprints; `prefix_k.c`'s admission — the only
   `src/opt/` family member (LANDMARK), S187/S188; the hybrid-prefilter route
   dispatch on `job->engine` (`pcrec_emit_dfa_engine` `:10271`, ROUTE) and the
   entry gate `fit.chosen == ENGM_DFA` (`:8854`, `:8867`, `:9152`), which
@@ -470,7 +471,7 @@ asked by `pcrec_emit_req_byte_check` `:1375`, `req_lead_byte` `:7280`,
 | P1 | `none` | — | `req_none_applies` `:7193` (no `req_byte` and no `req_run` of length ≥ 2) | `NONE` | 1,178 |
 | P2 | `one-attempt` | — | `req_one_attempt_applies` → `req_route_one_attempt` `:7135` (VM arm: BOUND(`CR_VM`) ≠ `all` ∧ (exact hybrid ∨ frameless); DFA arm: route ATTEMPT ∧ BOUND(`CR_ATTEMPT`) ≠ `all`) — RESTATED today, a BOUND read after C5b [r2 sound-M5] | `NONE` | 263 |
 | P3 | `dominated` | — | `req_dominated_applies` `:7201` → `req_byte_dominated_by` `:7171` over `dfa_cand_scan` (reads NEXT) | `NONE` | 1,198 |
-| P4 | `set-leads` | 45 | `req_set_leads_applies` `:7212` | `PRESENCE` | stamps `"emitted"`; deny-delta «P4» |
+| P4 | `set-leads` | 45 | `req_set_leads_applies` `:7212` | `PRESENCE` | stamps `"emitted"`; deny-delta 14 (a/b), 8 (a/u) |
 | P5 | `emitted` | — | `cand_always` | `PRESENCE` | 582 (incl. P4) |
 
 PRESENCE's payload carries one ROUTE-KEYED composition, `u.admit.noscan`
@@ -483,7 +484,7 @@ first-match alternatives — they compose with P4/P5 — so they are not rows (a
 would be the product-row smell §0a item 2 rejects); they are a function of
 (the selected P row, the route). Posture `FIXED` (§1.5). Sabotage rows S277,
 S278, S316, S459 sit on them. Their population is the VM-ONLY share of P4/P5:
-«K65/K66 pop». The bodies stay byte-stable; the C1 trace records each decision.
+124 VM-ONLY artifacts in auto/byte stamp `REQ_WHY "emitted"`, 125 in auto/utf8. The bodies stay byte-stable; the C1 trace records each decision.
 
 **WIDTH** (route VM; `emit_vm.c:13234`):
 
@@ -505,7 +506,7 @@ stamp `:7391`; VM-ONLY asks it too and F1 declines there on `!has_dfa_scan`
 
 | # | row | deny | predicate | map | pop |
 |---|---|---|---|---|---|
-| F1 | `handoff` | 46 | `req_handoff_applies` `:7332` (calls PRESENCE; `pcrec_artifact_has_dfa_scan`; K finite; not collapsed; the `\G`-hybrid decline) | `LOWERBOUND` | a/b 163 «route split», a/u 280 «route split» |
+| F1 | `handoff` | 46 | `req_handoff_applies` `:7332` (calls PRESENCE; `pcrec_artifact_has_dfa_scan`; K finite; not collapsed; the `\G`-hybrid decline) | `LOWERBOUND` | a/b 163 (DFA-UNANCH 116, DFA-ATTEMPT 10, HYB-UNANCH 34, HYB-ATTEMPT 3), a/u 280 (192, 10, 75, 3) |
 | F2 | `scan-from-startpos` | — | `cand_always` | `NONE` | rest |
 
 **NEXT**. Today `dfa_pfs[]` (`emit_dfa.c:6863-6898`, asked by `dfa_pf_of`
@@ -537,11 +538,11 @@ decides N1/N2's reachability, which is D-4.
 | N6 | `first-class-bounded` | DFA | 47 | `pf_first_class_bounded_applies` `:6679` | `EXACT0` + re-seed | PF | 34; 34 |
 | N7 | `first-class` | VM | 47 | `pf_vm_start_applies` `:6806` (its anchoring conjunct `:6813` RESTATES BOUND(`CR_VM`); a BOUND read after C5b) | `EXACT0` | VMSTART | 66 (vm/b 2,327); 68 (vm/u 2,352) |
 | N8 | `memchr-bounded` | DFA | — | `pf_memchr_bounded_applies` `:5798` | `EXACT0` | PF | 162; 151 |
-| N9 | `memchr` | DFA | — | `pf_memchr_applies` `:5801` | `EXACT0` | PF | «N9 DFA-UNANCH+HYB-UNANCH»; 722 |
+| N9 | `memchr` | DFA | — | `pf_memchr_applies` `:5801` | `EXACT0` | PF | 775 (281 DFA + 494 hybrid); 722 (225 + 497) |
 | N10 | `byte-class-bounded` | DFA | — | `pf_bcls_bounded_applies` `:5804` | `EXACT0` | PF | 100; 101 |
 | N11 | `byte-class` | DFA | — | `pf_bcls_applies` `:5807` | `EXACT0` | PF | 538; 564 |
-| N12 | `pred-memchr` (NEW NAME, row ID only; stamps `"memchr"`) | ATTEMPT | — | `attempt_cand` `:4105` (s1u live ∧ the live-seed set `usable ∧ use_memchr`; its `anchored` loop `:4110` RESTATES BOUND(`CR_ATTEMPT`)) | `EXACTPRED` | MLINE | «N12 DFA-ATTEMPT / HYB-ATTEMPT» |
-| N13 | `none` | DFA, ATTEMPT, VM | — | `cand_always` | `NONE` | — | «N13 by route class» |
+| N12 | `pred-memchr` (NEW NAME, row ID only; stamps `"memchr"`) | ATTEMPT | — | `attempt_cand` `:4105` (s1u live ∧ the live-seed set `usable ∧ use_memchr`; its `anchored` loop `:4110` RESTATES BOUND(`CR_ATTEMPT`)) | `EXACTPRED` | MLINE | 33 (DFA 27 + HYB 6); 33 |
+| N13 | `none` | DFA, ATTEMPT, VM | — | `cand_always` | `NONE` | — | a/b: DFA-UNANCH 258, DFA-ATTEMPT 185, HYB-ATTEMPT 170, DFA/HYB-EMPTY 50/14, HYB-UNANCH 0; VM-ONLY 287 (vm/b 895) |
 
 Row N12 needs a row name distinct from N9, because the walk and the checks key on
 identity. It still stamps `"memchr"` (its `stamp` projection), so
@@ -549,10 +550,14 @@ identity. It still stamps `"memchr"` (its `stamp` projection), so
 prefilter body takes the rows of ITS machine's route** [r2 sound-M1]: an
 ENG_UNANCH prefilter is a `CR_DFA` customer of N1-N11/N13, an ENG_ATTEMPT
 prefilter (any pattern with a BOT) a `CR_ATTEMPT` customer of N12/N13. In
-auto/byte: «HYB-UNANCH n» hybrids on `CR_DFA` and «HYB-ATTEMPT n» on
+auto/byte: 935 hybrids on `CR_DFA`, 176 on `CR_ATTEMPT` and 14 empty on
 `CR_ATTEMPT` (`row_census.tsv`'s `HYB-UNANCH:` / `HYB-ATTEMPT:` keys; revision
 1's `HYBRID:` key counted both, and the ATTEMPT ones a second time under
-`ATTEMPT:`).
+`ATTEMPT:`). The split corrects revision 1 in two places: all 184 of its
+`HYBRID: "none"` were ATTEMPT (170) or empty (14) hybrids, not DFA-route
+customers (an ENG_UNANCH hybrid prefilter stamps `none` 0 times), and 6 of its
+500 hybrid `memchr` were N12's predecessor scan. F1 also fires on the ATTEMPT
+route (10 DFA + 3 hybrid in auto/byte).
 
 **RETRY** (route VM, asked only where `fit.prefilter` holds, the caller's guard
 kept: `vm_plan_reseed`, `emit_vm.c:11107`, decided before the VM body, n2; today
@@ -567,7 +572,7 @@ predicate function with the same body):
 | R3 | `anchored` | — | BOUND(`CR_VM`) ≠ `all` (today RESTATED as `start_anchor` ≠ NONE; a BOUND read after C5b) | `STEP` (never reached) | 48 |
 | R4 | `adaptive-dense` | 37 | `pcrec_dfa_cand_ppm(cx) · cal.gap > 10⁶` (reads NEXT) | `ADAPT`, armed | 13 |
 | R5 | `adaptive` | 37 | `cand_always` | `ADAPT`, probation | 390 |
-| R6 | `fixed` | — | `cand_always` | `STEP` | 0 at default; «R6 under -fno-hyb-reseed» under the deny arm (COUNTED, `row_census.tsv`) |
+| R6 | `fixed` | — | `cand_always` | `STEP` | 0 at default; 403 a/b, 420 a/u under the deny arm (COUNTED, `row_census.tsv`) |
 
 **BOUND** (`emit_dfa.c:9333-9388` for ATTEMPT, `emit_vm.c:13471-13483` for VM).
 An ATTEMPT hybrid asks BOUND TWICE, on two routes: `CR_ATTEMPT` in its inlined
@@ -576,11 +581,11 @@ prefilter and `CR_VM` in its VM loop [r2 sound-M1]; `^(a)(b|c)` emits
 
 | # | row | routes | deny | predicate | map | pop |
 |---|---|---|---|---|---|---|
-| B1 | `bot` | ATTEMPT | — | `dfa_interior_dead(d, s1u) ∧ dfa_interior_dead(d, s1g)` (`#ifdef PCREC_NO_GSTART` folds the second into the first) | `ONE` (0) | «B1 DFA-ATTEMPT / HYB-ATTEMPT» |
-| B2 | `gstart` | ATTEMPT | — | `dfa_interior_dead(d, s1u)` | `ONE` (`search_from`) | «B2 …» |
+| B1 | `bot` | ATTEMPT | — | `dfa_interior_dead(d, s1u) ∧ dfa_interior_dead(d, s1g)` (`#ifdef PCREC_NO_GSTART` folds the second into the first) | `ONE` (0) | 293 (DFA 136 + HYB 157) |
+| B2 | `gstart` | ATTEMPT | — | `dfa_interior_dead(d, s1u)` | `ONE` (`search_from`) | 21 (DFA 16 + HYB 5) |
 | B3 | `anchored` | VM | — (FACT deny bit 28 empties `start_anchor`) | `start_anchor == BOT` | `ONE` (0, via `attempt_max = search_from`) | a/b 332, vm/b 468 |
 | B4 | `gstart` | VM | — (bit 28, as B3) | `start_anchor == GSTART` | `ONE` | a/b 5, vm/b 20 |
-| B5 | `all` | ATTEMPT, VM | — | `cand_always` | `NONE` | «B5 ATTEMPT»; VM 1,141 |
+| B5 | `all` | ATTEMPT, VM | — | `cand_always` | `NONE` | ATTEMPT 74 (60 + 14); VM 1,141 |
 
 Today the VM's two values share ONE emitted line (`attempt_max = search_from`)
 and differ only in the stamp (`RX_VM_START`). The rows keep that: `u.bound` holds
@@ -681,7 +686,7 @@ each; each fix is its own ruled change.
     BEGINS with" on ENG_UNANCH (N9, offset 0). On ENG_ATTEMPT it means "a
     `memchr` for the byte BEFORE a candidate" (N12, offset −1:
     `(?m)^ERROR`'s newline).
-  - **Population:** «D-1 pop» ENG_ATTEMPT artifacts in auto/byte stamp it,
+  - **Population:** 33 (27 DFA + 6 HYBRID) ENG_ATTEMPT artifacts in auto/byte stamp it,
     DFA and HYBRID alike: D-1 also fires on ATTEMPT hybrids (`(?m)^(a)`:
     `REQ_WHY "dominated"` elides the `a` pre-check on a predecessor-`\n` scan)
     [r2 sound-n6].
@@ -887,7 +892,7 @@ the script from `git archive`):
    - `-e utf8`: the byte corpus × utf8 (the utf8-NATIVE corpus is already
      swept by stream 4, whose `-e utf8` arm is partial by design: a file that
      declares `encoding byte` refuses, e.g. `compose_encoding_clash.rxtin`).
-     DIFFER floor: «utf8 differ» measured.
+     DIFFER floor: measured at C0 (not taken by this lane; the deny census compares each flag against its own encoding's default, not utf8 against byte).
    - `-i` (caseless is its own start population; per-row `flags`/`encoding`/
      `engine` columns stay stream 4's — 132/635/131 of the 4,606 rows — and the
      note says so rather than claiming them).
@@ -911,7 +916,7 @@ the script from `git archive`):
    no longer the only population) [r2 sound-m4]. Each arm runs at byte and
    utf8: 26 arms per commit. Each arm is ~2 × 3,600 compiles; measured on this
    Mac the whole deny census (4 base arms × 14 compiles × 3,595 patterns) took
-   «census wall»; it runs serially and in the background, one heavy run at a
+   about 23 minutes at 9 jobs (201,320 compiles); it runs serially and in the background, one heavy run at a
    time (memory `pcrec-box-concurrency`).
 5. **The selection trace** (C1's build), specified [r2 checks-M3, sound-m5]:
    - **The record** is `pattern-index, arm, seq, slot, route, row, site` —
@@ -978,7 +983,40 @@ byte-observable reach that shares nothing with the code under refactor; it is
 pinned per arm as a DIFFER floor plus a named manifest (§3.3 item 2). Measured on
 this build (movers / of which no start stamp moved):
 
-«DENY TABLE»
+| flag | rows it removes | auto/byte | auto/utf8 | vm/byte | vm/utf8 |
+|---|---|---|---|---|---|
+| `-fno-offset-skip` (16) | N1-N4 | 513 | 604 | 0 | 0 |
+| `-fno-run-prefilter` (32) | N1/N2 | 132 | 3 | 0 | 0 |
+| `-fno-start-set` (47) | N5-N7 | 136 | 127 | 2,327 | 2,352 |
+| `-fno-start-pinned` (22) | S1 | 183 | 183 | 0 | 0 |
+| `-fno-req-set-lead` (45) | P4 | 14 (14 hidden) | 8 (8) | 16 (16) | 8 (8) |
+| `-fno-req-handoff` (46) | F1 | 163 | 280 | 0 | 0 |
+| `-fno-hyb-reseed` (37) | R4/R5 | 403 | 420 | 0 | 0 |
+| `-fno-vm-anchor-bound` (28, fact) | B3/B4, P2, N7, R3 | 337 | 337 | 488 | 488 |
+| `-fno-end-window` (29, fact) | W1 | 288 | **0 (asserted)** | 288 | **0** |
+| `-fno-req-byte` (30, fact) | P*, F1, N1-N4 via the facts | 2,639 (596) | 2,631 (560) | 3,222 (1,179) | 3,230 (1,159) |
+| `-fno-req-run` (31, fact) | P*, F1, N1/N2 | 530 (229) | 572 (273) | 530 (513) | 572 (557) |
+| `-fno-req-run-fold` (44, fact) | the run's cube positions | 48 (16) | 38 (7) | 48 (31) | 38 (23) |
+| `-fprefilter-collapse` (force 20) | F1/P2/R1 conjuncts | 213 (1) | 213 (2) | 0 | 0 |
+
+No arm moved a refusal (0 refusal moves in all 52). The auto/byte column
+reproduces the checks critic's measured table exactly (513, 136, 14, 163, 183,
+403, 337, 288, 48). **Every hidden mover is accounted for by its first differing
+line** (`deny_hidden.tsv`), in four classes and nothing else:
+- `-fno-req-set-lead`: the pre-check BODY (`if (subject_length <= search_from ||`
+  …) — P4 is stampless, so all its movers are hidden; its deny delta is its own
+  control (below);
+- `-fno-req-run`/`-fno-req-run-fold`/`-fno-req-byte`: the FACT stamps
+  `RX_REQ_RUN`/`RX_REQ_BYTE`, which are landmarks, not rows;
+- `-fno-req-byte`: `RX_FINDINGS` — the byte-rate prior's ASK disappears with
+  the fact, and the stamp records the ask. On a no-landmark pattern
+  (`[ab]*c?`) this is the ONLY byte that moves. It is §1.3's side-effect channel
+  observed on the corpus (1,179 of 3,222 vm/byte movers);
+- `-fprefilter-collapse`: `RX_ENGINE_SEL "collapsed-prefilter"` on 1-2
+  artifacts (the one corpus pattern the collapse rung already takes).
+
+So the census found no start decision that moves bytes without a stamp or a
+named landmark, beyond P4 (known) and the prior's ask (§1.3).
 
 Read with these caveats:
 - Bits 16 and 32 act as a PAIR on N1/N2 (`16|32`), and 16 alone also removes
@@ -988,7 +1026,7 @@ Read with these caveats:
   cannot separate them; its deny delta (`-fno-req-set-lead`) is its OWN control
   and it is byte-visible. Revision 1's "invisible to every stamp, needs an
   out-of-sweep witness" conflated no-stamp with no-byte.
-- R6 (`fixed`) has population 0 at default and «R6» under `-fno-hyb-reseed`,
+- R6 (`fixed`) has population 0 at default and 403 (auto/byte) / 420 (auto/utf8) under `-fno-hyb-reseed`,
   COUNTED by the deny arm of the stamp census (`row_census.tsv`), not asserted.
 - `-fno-end-window` at utf8 reads 0: the asserted zero of §3.3.
 
@@ -999,13 +1037,13 @@ every sweep sees it [r2 checks-m7], and a planned sabotage row:
 | row | population | witness | sabotage (planned; S-id = next free on main at build) |
 |---|---|---|---|
 | H1 `ceiling` | 6, every arm; read twice (the `VM_ROOT_MINW` value against the constant's spelling AND the emitted `< …_VM_ROOT_MINW) return 0;` test, which shares nothing with `PCREC_MINW_MAX`) [r2 checks-M4 H1] | `tests/mrl/`'s cells + `^((?1)a)$` | exists: S169 (re-aimed at C5) |
-| B1 `bot` (ATTEMPT) | «B1» | `(?m)^` and `^`-led alternations in `tests/assertions/` (`^(a)(b|c)` as a hybrid) | NEW: `start_max` literal `0` → `subject_length` (detectable only by step/attempt-count cells: the answer is unchanged, so the row needs a work-budget `gu` cell or an attempt-count probe; until it has one it ships declared `UNREACHED`) |
-| B2 `gstart` (ATTEMPT) | «B2» | the `\G` blocks of `tests/assertions/`; `(?(DEFINE)(?<g>\Ga))(?&g)(b)` (D-2b) | NEW: `a_bot` read as `a_bot && a_gst` (B2 collapses into B5: same detection caveat) |
+| B1 `bot` (ATTEMPT) | 293 (DFA 136 + HYB 157) | `(?m)^` and `^`-led alternations in `tests/assertions/` (`^(a)(b|c)` as a hybrid) | NEW: `start_max` literal `0` → `subject_length` (detectable only by step/attempt-count cells: the answer is unchanged, so the row needs a work-budget `gu` cell or an attempt-count probe; until it has one it ships declared `UNREACHED`) |
+| B2 `gstart` (ATTEMPT) | 21 (DFA 16 + HYB 5) | the `\G` blocks of `tests/assertions/`; `(?(DEFINE)(?<g>\Ga))(?&g)(b)` (D-2b) | NEW: `a_bot` read as `a_bot && a_gst` (B2 collapses into B5: same detection caveat) |
 | B4 `gstart` (VM) | 5 auto / 20 vm | `tests/assertions/` `\G` blocks | exists through the fact (bit 28 sweep) |
 | R4 `adaptive-dense` | 13 | `docs/dev/reseed/`'s cells | exists: S441's family; deny bit 37 |
-| P4 `set-leads` | deny delta «P4» | `run_prechecks.sh` §5.11 | exists: S460, S457, S458 |
+| P4 `set-leads` | deny delta 14 a/b, 8 a/u | `run_prechecks.sh` §5.11 | exists: S460, S457, S458 |
 | P5 vs P4 | stamp shared | the P4 deny delta separates them | — |
-| count-collapsed hybrids (F1/P2/R1 conjuncts) | under `-fprefilter-collapse`: «collapse movers» | the force arm itself | — |
+| count-collapsed hybrids (F1/P2/R1 conjuncts) | under `-fprefilter-collapse`: 213 movers | the force arm itself | — |
 
 C2 adds, under `PCREC_CAND_TRACE`, a per-row hit counter that `row_census.tsv`
 cross-checks against the stamp counts; for P4/P5 and N9/N12 (shared stamps) the
@@ -1384,7 +1422,7 @@ which overlap this note:
 - **Q4. D-1 (the ATTEMPT `memchr` read as a start byte by G1)?** **Recommend
   (unchanged):** after C7, G1 declines `EXACTPRED` rows (a read of the `map`
   field). It now moves the pre-check emission of every ATTEMPT artifact
-  stamping `memchr`, DFA and HYBRID alike («D-1 pop» in auto/byte), and only
+  stamping `memchr`, DFA and HYBRID alike (33 (27 DFA + 6 HYBRID) in auto/byte), and only
   where it was elided. Keep the stamp token.
 - **Q5. D-2 (`DFA_START "reverse-pass"` on attempt/empty artifacts)?**
   **Recommend (unchanged)** a third value `attempt-start` for ATTEMPT and empty,
