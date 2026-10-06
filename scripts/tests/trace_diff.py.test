@@ -1,0 +1,79 @@
+#!/usr/bin/env bash
+# trace_diff.py self-test ([START-TABLE] C0 deliverable (vi), the FAILING-
+# DIRECTION control): synthetic trace streams with planted changes the diff
+# MUST report, each paired with the clean case it was planted into, so a diff
+# that reports everything (or nothing) cannot pass. Pure python, no pcrec.
+# tests/mech's emitsweep rows plant the two weakenings this file exists to
+# catch (order compare -> multiset; records floor disabled).
+set -u
+here=$(cd "$(dirname "$0")/.." && pwd)
+TD=$here/trace_diff.py
+T=$(mktemp -d "${TMPDIR:-/tmp}/trace_diff.test.XXXXXX")
+trap 'rm -rf "$T"' EXIT
+pass=0 fail=0
+ok()  { echo "PASS: $*"; pass=$((pass+1)); }
+bad() { echo "FAIL: $*"; fail=$((fail+1)); }
+# stream FILE ROWS... ; a row is "idx arm slot route row site" (seq = order per idx/arm)
+stream() {
+    f=$1; shift
+    printf 'idx\tarm\tseq\trecord\n' > "$f"
+    python3 - "$f" "$@" <<'PY'
+import sys, collections
+f = sys.argv[1]; seq = collections.Counter()
+with open(f, "a") as fh:
+    for r in sys.argv[2:]:
+        idx, arm, *rec = r.split()
+        fh.write(f"{idx}\t{arm}\t{seq[(idx, arm)]}\t" + "\t".join(rec) + "\n")
+        seq[(idx, arm)] += 1
+PY
+}
+expect() { # expect NAME WANT_RC ARGS...
+    name=$1 want=$2; shift 2
+    out=$(python3 "$TD" "$@" 2>&1); rc=$?
+    if [ "$rc" = "$want" ]; then ok "$name (rc $rc)"; else bad "$name: rc $rc, wanted $want: $out"; fi
+}
+A="0 c-default NEXT dfa offset-set next
+0 c-default PRESENCE dfa emitted presence
+0 c-vm NEXT vm memchr vmstart
+1 c-default NEXT dfa run-pinned next
+1 c-default FIRST dfa handoff first"
+# shellcheck disable=SC2086
+IFS=$'\n'; set -f
+stream "$T/ref.tsv" $A
+stream "$T/same.tsv" $A
+# a SWAP of two records within one pattern
+stream "$T/swap.tsv" "0 c-default PRESENCE dfa emitted presence" "0 c-default NEXT dfa offset-set next" \
+    "0 c-vm NEXT vm memchr vmstart" "1 c-default NEXT dfa run-pinned next" "1 c-default FIRST dfa handoff first"
+# a REORDER within one pattern's arm by moving the first record to the end (multiset-equal)
+stream "$T/reorder.tsv" "0 c-default PRESENCE dfa emitted presence" "0 c-vm NEXT vm memchr vmstart" \
+    "0 c-default NEXT dfa offset-set next" "1 c-default NEXT dfa run-pinned next" "1 c-default FIRST dfa handoff first"
+# a CROSS-PATTERN swap: corpus-wide multiset identical
+stream "$T/cross.tsv" "0 c-default NEXT dfa run-pinned next" "0 c-default PRESENCE dfa emitted presence" \
+    "0 c-vm NEXT vm memchr vmstart" "1 c-default NEXT dfa offset-set next" "1 c-default FIRST dfa handoff first"
+# a ROW change on one record (the bytes-identical plant's shape)
+stream "$T/row.tsv" "0 c-default NEXT dfa memchr next" "0 c-default PRESENCE dfa emitted presence" \
+    "0 c-vm NEXT vm memchr vmstart" "1 c-default NEXT dfa run-pinned next" "1 c-default FIRST dfa handoff first"
+# a DECLARED addition (site bound) and an undeclared one
+stream "$T/added.tsv" $A "1 c-default BOUND dfa bot bound"
+unset IFS; set +f
+printf 'bound\n' > "$T/decl"
+printf 'nosuchsite\n' > "$T/decl_stale"
+printf 'idx\tarm\tseq\trecord\n' > "$T/empty.tsv"
+
+expect identical          0 "$T/ref.tsv" "$T/same.tsv" --min-records 1
+expect swap-caught        1 "$T/ref.tsv" "$T/swap.tsv"
+expect reorder-caught     1 "$T/ref.tsv" "$T/reorder.tsv"
+expect cross-swap-caught  1 "$T/ref.tsv" "$T/cross.tsv"
+expect row-change-caught  1 "$T/ref.tsv" "$T/row.tsv"
+expect undeclared-added   1 "$T/ref.tsv" "$T/added.tsv"
+expect declared-added     0 "$T/ref.tsv" "$T/added.tsv" --declared "$T/decl"
+expect declared-stale     1 "$T/ref.tsv" "$T/same.tsv" --declared "$T/decl_stale"
+expect empty-vs-empty-no-floor 0 "$T/empty.tsv" "$T/empty.tsv"
+expect empty-floor-caught 1 "$T/empty.tsv" "$T/empty.tsv" --min-records 1
+expect one-side-floor     1 "$T/ref.tsv" "$T/empty.tsv" --min-records 1
+expect keys-ignore-site   0 "$T/ref.tsv" "$T/same.tsv" --keys slot,route,row
+expect bad-header         2 "$T/decl" "$T/ref.tsv"
+
+echo "checks passed: $pass"
+echo "checks failed: $fail"
+[ "$fail" -eq 0 ]
