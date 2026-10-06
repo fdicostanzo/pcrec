@@ -155,3 +155,4 @@ Maintenance: update this file when files are added or removed.
   Also attributes the "new" utf8 movers, and says what moved since the
   first gap report. Cites the bench ledger
   `2026-10-05-b122-round1-wide-c4c70f2c.md` and its sweep.
+- `2026-10-06-artrev-pilot.md` — the [ARTREV] pilot (D150): 15/22 confirmed wins on three losing cells, the possessify-analysis gap (-58% with no new codegen), suggestions for Frank, the full-run terms. Cites `docs/dev/optloop/artrev/report_pilot.md`.
