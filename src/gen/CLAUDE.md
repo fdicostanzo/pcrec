@@ -794,6 +794,12 @@ with no alternation at all stamps. `emit_info_def`'s `strategy_denials` mask
 also gained `PCREC_NO_ALTCLS_MERGE`/`PCREC_NO_ALTCLS_FACTOR`, for the same
 reason the D47.3 family and the prefilter force pair are both masked out of
 `rx_info.flags` there: the axis changes no answer, only the emitted shape.
+**[FLAGBITS] (2026-10-06, abi 65) THE MASK IS NOW DERIVED, so the sentence
+above describes a list that no longer exists:** `strategy_denials` is every
+`src/core/axes.def` bit except the `kept` set (the two engine-selecting
+denials and the two contract axes), plus `PCREC_FAST_OR_FAIL`. A new axis is
+masked on arrival; forgetting one in `kept` is the recoverable direction.
+Bits 18/21 were the last two strategy bits the old list lacked (K92).
 
 ## [DD-13] THE DFA ARTIFACT'S SELECTION STAMPS, and the D46 family's (a)/(b) split ([2026-08-25])
 

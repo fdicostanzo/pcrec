@@ -37,10 +37,13 @@ SAB_DOC_FIGURE="tests/codegen/run_prechecks.sh section 6 is the detector: all th
 SAB_REACH='"$PCREC" -p rx --engine=vm -o "$REACH_TMP/base.c" --pattern "^abc" && "$PCREC" -p rx --engine=vm -fno-vm-anchor-bound -o "$REACH_TMP/deny.c" --pattern "^abc" && [ "$(sed -n "s/^ *\\.flags = \\([0-9]*\\)ULL,\$/\\1/p" "$REACH_TMP/base.c")" = "$(sed -n "s/^ *\\.flags = \\([0-9]*\\)ULL,\$/\\1/p" "$REACH_TMP/deny.c")" ] && echo REACH-VM-ANCHOR-BOUND-MASKED'
 SAB_REACH_EXPECT="REACH-VM-ANCHOR-BOUND-MASKED"
 SAB_COUNT=1
-SAB_BEFORE='                                          PCREC_NO_VM_ANCHOR_BOUND | PCREC_NO_END_WINDOW |
-                                          PCREC_NO_REQ_BYTE |'
-SAB_AFTER='                                          /* SABOTAGE S295: PCREC_NO_VM_ANCHOR_BOUND
-                                           * dropped from the mask -- it now
-                                           * leaks into rx_info.flags */
-                                          PCREC_NO_END_WINDOW |
-                                          PCREC_NO_REQ_BYTE |'
+# RE-AIMED 2026-10-06 ([FLAGBITS]): `strategy_denials` is no longer a hand-kept OR
+# of masked bits but DERIVED from src/core/axes.def (masked unless named in
+# `kept`), so "drop the bit from the mask" has no spelling any more. The
+# same defect -- this deny bit leaking into rx_info.flags -- is now planted
+# the only way it can be written: the bit joins `kept`. Intent unchanged;
+# detector unchanged.
+SAB_BEFORE='                              PCREC_FORCE_UTF_CHECK;
+'
+SAB_AFTER='                              PCREC_FORCE_UTF_CHECK | PCREC_NO_VM_ANCHOR_BOUND;  /* SABOTAGE S295: PCREC_NO_VM_ANCHOR_BOUND joins `kept`, so it leaks into rx_info.flags */
+'

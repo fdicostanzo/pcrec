@@ -50,7 +50,7 @@
  * abi ritual fires next, bump this ONE constant; grep for its old value
  * finds both emission sites plus every out-of-tree reader the ritual's own
  * site list already enumerates. */
-#define PCREC_ARTIFACT_ABI 64
+#define PCREC_ARTIFACT_ABI 65
 
 /* Renders one byte of pattern-derived text safely into a C block comment, escaping whatever would close or falsely open the comment.
  *
@@ -2739,8 +2739,8 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
      * What the ladder's choices ARE recorded in is `<PREFIX>_VM_STRATS`
      * (src/gen/emit_vm.c), which reports what the emitter actually DID rather
      * than what it was asked — the D46 half that a denial can be checked
-     * against. Each further denial in D47.3's family joins this mask as it
-     * lands.
+     * against. Each further denial in D47.3's family joins this mask by
+     * being a row of `src/core/axes.def` ([FLAGBITS]: the mask is derived).
      *
      * [M4.6f] `PCREC_NO_PREFILTER`/`PCREC_FORCE_PREFILTER` join the mask for
      * the identical reason, even though the PREFILTER axis is a FORCE pair
@@ -2805,295 +2805,40 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
         const uint64_t utf_check_inert =
             pcrec_enc_has_entry(k50_enc, PCREC_ENCE_VAR_VALID)
                 ? 0u : (uint64_t)PCREC_FORCE_UTF_CHECK;
+        /* [FLAGBITS] THE MASK IS DERIVED, AND ITS POLARITY IS "MASKED UNLESS
+         * NAMED KEPT". Every bit `src/core/axes.def` knows is masked out of
+         * `.flags` except the ones in `kept` below; a new axis therefore joins
+         * the mask the day it joins the table, with no second list to
+         * remember. The hand-kept OR this replaces forgot bit 19
+         * (`-fno-prefilter-collapse`), then bits 28/29/30 (K68), then bits 18
+         * and 21 (`-fno-size-term`, `-fno-scan-edge`) -- four incidents of one
+         * shape, each a deny bit moving `.flags` on EVERY artifact it was
+         * passed to, including the ones it cannot act on. The default polarity
+         * of the old list was "kept", which is the wrong failure direction:
+         * forgetting a row was silent and moved bytes, where forgetting a row
+         * in `kept` is a one-bit red in run_prechecks.sh section 6.
+         *
+         * `kept` is the whole of what an artifact's reflection surface still
+         * says about a knob, and each member has its own reason:
+         *   - the two ENGINE-SELECTING denials (axes.def's block of that
+         *     name; tuning.md 2.8/2.9): denied, a construct stays in the tree
+         *     and `--engine=dfa` plus the denial REFUSES, so the knob is not
+         *     a no-op a caller may ignore;
+         *   - the CONTRACT bits (axes.def's block of that name), which select
+         *     between ruled SEMANTICS: kept, and masked only where `byte`
+         *     makes them inert (`startpos_guard_inert`/`utf_check_inert`).
+         * `PCREC_FAST_OR_FAIL` is not an axis row at all (D135): it decides
+         * only whether a slower artifact that fits ships or the compile
+         * refuses, so an artifact that fits is the same artifact under it. */
+        const uint64_t kept = PCREC_NO_ATOMIC_DISCHARGE | PCREC_NO_SPLICE_CALLS |
+                              PCREC_NO_STARTPOS_GUARD | PCREC_FORCE_STARTPOS_ALIGN |
+                              PCREC_FORCE_UTF_CHECK;
+        const uint64_t axis_bits = 0
+#define PCREC_AXIS(dm, df, fm, ff, defst) | (uint64_t)(dm) | (uint64_t)(fm)
+#include "core/axes.def"
+            ;
         const uint64_t strategy_denials = startpos_guard_inert | utf_check_inert |
-                                          PCREC_NO_POSSESSIFY | PCREC_NO_REVDET |
-                                          PCREC_NO_COUNTER |
-                                          PCREC_NO_LENGTH_PRUNE |
-                                          PCREC_NO_PREFILTER | PCREC_FORCE_PREFILTER |
-                                          /* [OPT-4] the prefilter's LANGUAGE
-                                           * axis, on `PCREC_*_PREFILTER`'s own
-                                           * precedent one line up and for the
-                                           * mask's own reason: it selects a
-                                           * superset the VM verifies from, so
-                                           * it changes no answer, and
-                                           * `<PREFIX>_VM_PREFILTER_LANG` is
-                                           * where what the emitter DID is
-                                           * recorded.
-                                           *
-                                           * MEASURED as a defect before it was
-                                           * a comment: unmasked, passing
-                                           * `-fno-prefilter-collapse` moved 5
-                                           * bytes of `rx_info.flags` on EVERY
-                                           * artifact — including patterns with
-                                           * no counted repeat, where the flag
-                                           * cannot act at all — which is
-                                           * exactly the byte-identity property
-                                           * that makes the denied build usable
-                                           * as a ground truth. Caught by
-                                           * run_prefilter_collapse.sh §2 on
-                                           * its first run. */
-                                          PCREC_NO_PREFILTER_COLLAPSE |
-                                          PCREC_FORCE_PREFILTER_COLLAPSE |
-                                          PCREC_NO_ALTCLS_MERGE | PCREC_NO_ALTCLS_FACTOR |
-                                          /* [OPT-1] the two-tier entry axis. It
-                                           * changes no answer (the deep tier is
-                                           * a replay of the single-tier run --
-                                           * two_tier_entry.md §4), so it belongs
-                                           * to the mask for the mask's own
-                                           * reason; `<PREFIX>_FAST_FRAMES` is
-                                           * where what the emitter DID is
-                                           * recorded. */
-                                          PCREC_NO_TIERED_ENTRY |
-                                          /* [OPT-3] the DFA table-form axis.
-                                           * It changes the ENCODING of a
-                                           * state, not the machine, so it
-                                           * changes no answer and belongs to
-                                           * the mask for the mask's own
-                                           * reason; `<PREFIX>_DFA_TABLE` is
-                                           * where what the emitter DID is
-                                           * recorded. */
-                                          PCREC_NO_PREMUL_TABLE |
-                                          /* [OPT-K] the offset-k skip axis. It
-                                           * refuses only starts the stepped
-                                           * scan would refuse, so it changes
-                                           * no answer and belongs to the mask
-                                           * for the mask's own reason;
-                                           * `<PREFIX>_DFA_PREFILTER` and its
-                                           * `_OFFSETS` sibling are where what
-                                           * the emitter DID is recorded. */
-                                          PCREC_NO_OFFSET_SKIP |
-                                          /* [OPT-LITSCAN] S1 the run-pinned
-                                           * prefilter rows, the offset-skip
-                                           * family's newest pair and in the
-                                           * mask for its reason. */
-                                          PCREC_NO_RUN_PREFILTER |
-                                          /* [ENG-ABS] the anchored match-here
-                                           * axis. It changes no answer (the
-                                           * identity argument is
-                                           * anchored_match_unwrapped.md §3),
-                                           * so it belongs to the mask for the
-                                           * mask's own reason;
-                                           * `<PREFIX>_DFA_MATCH` is where what
-                                           * the emitter DID is recorded. */
-                                          PCREC_NO_ANCHORED_DFA |
-                                          /* [OPT-5 STEP 2] axis J, the search
-                                           * entry's start-recovery form. It
-                                           * changes no answer (the elision's
-                                           * proof is opt5_step2_twopass.md
-                                           * §3.2), so it belongs to the mask
-                                           * for the mask's own reason; and
-                                           * concretely, without it every
-                                           * artifact the predicate DECLINES
-                                           * would move `rx_info.flags` under
-                                           * the deny flag — destroying the
-                                           * byte-identity of the declined
-                                           * population, which is the
-                                           * reference the axis's own checks
-                                           * are written against. That is the
-                                           * defect [OPT-4]'s comment above
-                                           * measured on bit 19 before it was
-                                           * a comment. `<PREFIX>_DFA_START`
-                                           * is where what the emitter DID is
-                                           * recorded. */
-                                          PCREC_NO_START_PINNED |
-                                          /* [ENG-ISL] the VM's alternation
-                                           * island. It emits a different SHAPE
-                                           * for the same alternation and
-                                           * changes no answer, so it belongs
-                                           * to the mask for the mask's own
-                                           * reason — and concretely, so that
-                                           * an alternation the predicate
-                                           * DECLINES is byte-for-byte the same
-                                           * under the flag, which is what makes
-                                           * the declined population a usable
-                                           * reference. `<PREFIX>_VM_ALT_ISLANDS`
-                                           * is where what the emitter DID is
-                                           * recorded. */
-                                          PCREC_NO_ALT_ISLAND |
-                                          /* [FORM-CHAR] the VM's ascii-fold
-                                           * class test. The fold and the
-                                           * bitmap read are the same
-                                           * predicate over the same two-byte
-                                           * set, so it changes no answer and
-                                           * belongs to the mask for the
-                                           * mask's own reason — and
-                                           * concretely, so that an artifact
-                                           * with no fold pair is
-                                           * byte-for-byte the same under the
-                                           * flag. `<PREFIX>_VM_CLS_FOLDS` is
-                                           * where what the emitter DID is
-                                           * recorded. */
-                                          PCREC_NO_CLS_FOLD |
-                                          /* [OPT-LITSCAN] S2a the VM's
-                                           * literal-run compare: the same
-                                           * bytes accepted as the per-byte
-                                           * chain, so no answer moves, and
-                                           * masked so an artifact with no run
-                                           * is byte-identical under the flag.
-                                           * `<PREFIX>_VM_LIT_RUNS` is where
-                                           * what the emitter DID is recorded. */
-                                          PCREC_NO_LIT_RUN |
-                                          /* [OPT-LITSCAN] S4 the run
-                                           * compare's overlap row: the same
-                                           * bytes read either way, masked
-                                           * for the same reason.
-                                           * `<PREFIX>_RUN_WORDS` records what
-                                           * the emitter did. */
-                                          PCREC_NO_RUN_OVERLAP |
-                                          /* [EMIT-VERB] the emitted-comment
-                                           * axis (D112), and it joins the
-                                           * mask for the mask's own reason
-                                           * in its purest form: the C
-                                           * compiler discards comments, so
-                                           * two artifacts differing only in
-                                           * their prose behave identically
-                                           * and compile to the same object
-                                           * file. Unmasked, `-fno-comments`
-                                           * would move five bytes of
-                                           * `rx_info.flags` and the object
-                                           * files would NOT be identical —
-                                           * the same defect
-                                           * `-fno-prefilter-collapse`
-                                           * measured on bit 19 above, and
-                                           * here it would also destroy this
-                                           * axis's own central claim. There
-                                           * is no `<PREFIX>_COMMENTS` stamp
-                                           * to point at as the D46 record,
-                                           * and deliberately so: the presence
-                                           * of the prose IS the record, and a
-                                           * stamp would be a second fact
-                                           * about the first that a check
-                                           * could read off a file whose
-                                           * comments had been stripped by
-                                           * something other than pcrec. */
-                                          PCREC_NO_COMMENTS |
-                                          PCREC_FORCE_COMMENTS |
-                                          /* [OPT-REQPOS] tier 2b the necessary-run
-                                           * axis, in the mask for the mask's own
-                                           * reason and concretely so that an
-                                           * artifact with NO RUN is byte-for-byte
-                                           * the same under `-fno-req-run` — which
-                                           * is 81.4% of the corpus and is the
-                                           * property `run_prechecks.sh` §4.4b
-                                           * asserts. The run check answers NOMATCH
-                                           * only where every attempt would have
-                                           * failed, so the denial changes no
-                                           * answer, and `<PREFIX>_REQ_RUN` is where
-                                           * what the emitter DID is recorded. */
-                                          PCREC_NO_REQ_RUN |
-                                          /* [OPT-LITSCAN] S4 C3 the
-                                           * necessary run's cube positions:
-                                           * a narrower necessary fact proves
-                                           * absence in fewer windows and
-                                           * moves no answer, masked for the
-                                           * same reason. */
-                                          PCREC_NO_REQ_RUN_FOLD |
-                                          /* [K82] the admission's
-                                           * `set-leads` row: one more
-                                           * necessary byte tested first,
-                                           * which proves absence and moves
-                                           * no answer, masked for the same
-                                           * reason. */
-                                          PCREC_NO_REQ_SET_LEAD |
-                                          /* [K82] (B) the `req-use`
-                                           * table's `handoff` row: the
-                                           * body's scan begins where no
-                                           * match can begin earlier, which
-                                           * moves no answer and no give-up
-                                           * (the count-collapsed prefilter
-                                           * declines it), masked for the
-                                           * same reason. Not the wave-G
-                                           * exception: it selects no
-                                           * engine. */
-                                          PCREC_NO_REQ_HANDOFF |
-                                          /* [START-SET] the candidate
-                                           * table's start-set rows: the VM
-                                           * hat skips only attempts that
-                                           * fail, so no answer moves (a
-                                           * give-up may become the answer,
-                                           * match_api.md §3.1), masked from
-                                           * its first commit (startset.md
-                                           * §6.1, the `-fno-req-run`
-                                           * lesson). */
-                                          PCREC_NO_START_SET |
-                                          /* [UCP] U2 T3's `ctx-node` row
-                                           * ([UCP] ucp_design.md §2.2). An
-                                           * answer-identity axis: denied, a
-                                           * one-character lookaround keeps its
-                                           * VM sub-match and accepts the same
-                                           * subjects, so it belongs to the
-                                           * mask for the mask's own reason —
-                                           * and concretely so that every
-                                           * artifact with no such lookaround
-                                           * is byte-for-byte the same under
-                                           * `-fno-ctx-node`. `RX_ENGINE` is
-                                           * where what it changed shows. */
-                                          PCREC_NO_CTX_NODE |
-                                          /* [CLS-TREE] S4 the VM's
-                                           * class-matcher kit, the same:
-                                           * answer-identical, and
-                                           * `<PREFIX>_VM_CLS_KIT` records
-                                           * what the emitter did. */
-                                          PCREC_NO_CLS_KIT |
-                                          /* [OPT-CLSPACK] the VM's shared
-                                           * atom table, the same. */
-                                          PCREC_NO_CLS_PACK |
-                                          /* [OPT-HYB-RESEED] the hybrid's
-                                           * adaptive retry: both arms attempt
-                                           * only positions no match can be
-                                           * skipped past, so no answer moves,
-                                           * and masked so an artifact the
-                                           * table does not reach is
-                                           * byte-identical under the flag.
-                                           * `<PREFIX>_VM_RESEED` is where
-                                           * what the emitter DID is recorded. */
-                                          PCREC_NO_HYB_RESEED |
-                                          /* [OPT-VEDGE] the view-tolerant
-                                           * scan edge: answer-identical, and
-                                           * masked so an artifact it does not
-                                           * reach is byte-identical under the
-                                           * flag. `<PREFIX>_DFA_SCAN_EDGE`
-                                           * records what the pass did. */
-                                          PCREC_NO_VIEW_EDGE |
-                                          /* [K68] (FIXED) the three [OPTLOOP.1]
-                                           * batch-1 whole-window pre-check bits
-                                           * join the mask for the mask's own
-                                           * reason: `PCREC_NO_VM_ANCHOR_BOUND`,
-                                           * `PCREC_NO_END_WINDOW` and
-                                           * `PCREC_NO_REQ_BYTE` are each
-                                           * ANSWER-IDENTITY-PRESERVING (their own
-                                           * comments in lib/pcrec.h say so — the
-                                           * removed attempts, window or check are
-                                           * ones that would have run and failed),
-                                           * so the denial changes run time and
-                                           * nothing else. Left OUT of this mask
-                                           * from [OPTLOOP.1.impl] BATCH 1 through
-                                           * this fix was the K68 defect itself:
-                                           * unmasked, each moved five bytes of
-                                           * `rx_info.flags` on EVERY artifact
-                                           * including ones it cannot act on — the
-                                           * identical defect the
-                                           * `-fno-prefilter-collapse` comment
-                                           * above measured on bit 19, caught here
-                                           * by the router-prefix-order repro
-                                           * (`/user|/users`, baseline `.flags = 2`
-                                           * moving to 1073741826 / 536870914 /
-                                           * 268435458 under `-fno-req-byte` /
-                                           * `-fno-end-window` /
-                                           * `-fno-vm-anchor-bound` in turn).
-                                           * `<PREFIX>_VM_START`,
-                                           * `<PREFIX>_END_WINDOW` and
-                                           * `<PREFIX>_REQ_BYTE` are where what
-                                           * each emitter DID is recorded. */
-                                          PCREC_NO_VM_ANCHOR_BOUND | PCREC_NO_END_WINDOW |
-                                          PCREC_NO_REQ_BYTE |
-                                          /* [PF-DROP] (D135) not an axis
-                                           * at all: it decides only whether
-                                           * a slower artifact that fits
-                                           * ships or the compile refuses,
-                                           * so an artifact that fits is the
-                                           * same artifact under it. */
-                                          PCREC_FAST_OR_FAIL;
+                                          (axis_bits & ~kept) | PCREC_FAST_OR_FAIL;
         pcrec_sb_printf(c, "    .flags = %lluULL,\n",
                   (unsigned long long)(cx->opt->flags & ~strategy_denials));
     }
