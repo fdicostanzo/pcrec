@@ -123,6 +123,21 @@ replication cap, §2.5's force-prefilter refusal) or a budget boundary
 moving (a give-up or per-case timeout on either side) is distinguished
 from a genuine answer disagreement.
 
+**THE `rx_info.flags` RULE, stated once ([FLAGBITS], 2026-10-06).** Every
+axis bit in `src/core/axes.def` is **masked out of `rx_info.flags`, on every
+artifact, whether or not the axis could act on it**, EXCEPT these, which are
+KEPT because the reflection surface must still say which one a caller got:
+the two ENGINE-SELECTING denials (§2.8, §2.9) and the two CONTRACT axes
+(§2.23's startpos guard with its `align` value, §2.36's `-futf-check`), the
+latter two masked only under the `byte` encoding where they are inert.
+`--fast-or-fail` (D135, `limits.md` §8) is not an axis row and is masked
+too. The mask is derived from the axis table with "masked" as the default, so
+a new axis is masked the day it is added; each axis section below states what
+IT records instead (a stamp). `make test-codegen`'s `run_prechecks.sh`
+section 6b sweeps every `-f` spelling `--list-axes` carries against this
+rule. Before the rule was derived, `-fno-size-term` (bit 18) and
+`-fno-scan-edge` (bit 21) were the two strategy bits left unmasked (K92).
+
 ### 2.1 `-fno-possessify` — `PCREC_NO_POSSESSIFY` (bit 4)
 
 **Denies** the possessification rewrite (`src/opt/possessify.c`,
@@ -1105,6 +1120,11 @@ oversized artifact acceptable. To accept a larger artifact, RAISE a cap
 (`--max-emit-bytes=N`, `--max-emit-code-bytes=N`, raise-only) — see
 `limits.md` §8, "Handling an oversized artifact".
 
+**Masked out of `rx_info.flags`** (the rule above; K92 -- it was the one
+counter-ladder axis left unmasked, so `-fno-size-term` moved `.flags` to
+`262144` on every artifact, including DFA artifacts with no counter rung at
+all). `<PREFIX>_UNROLL_K_WHY`'s `denied` value is where the denial is recorded.
+
 **The stamp** is `<PREFIX>_UNROLL_K` (the chosen `K`) beside
 `<PREFIX>_UNROLL_K_WHY`, which has SEVEN values — `default`, `option`,
 `denied`, `size-model`, `size-model-declined`, `cap-rescue`,
@@ -1460,6 +1480,11 @@ re-measurement owed, docs/dev/lanes/edge2_report.md §9.3), so D77's
 interior states are deleted) is what admits `m` = 2 at all. Re-confirmed
 2026-09-21 on the fixed harness (I-82, D117): 0 of 16 cells separate — the
 floor stays 2.
+
+**Masked out of `rx_info.flags`** (the rule above; K92 -- `-fno-scan-edge`
+moved `.flags` to `2097152` on every artifact, including ones with no
+collapsible run). `<PREFIX>_DFA_SCAN_EDGE` (`none` under the denial) is where
+the emitter's decision is recorded.
 
 **What the artifact does instead.** One `if (state == K) { … }` block per
 edge, counting the class's bytes in a loop whose only carried value is the

@@ -298,11 +298,11 @@ noted under group 2, which are `PCREC_*`-named yet per-artifact):
    refused.** The block opens
 
    ```c
-   #if defined(PCREC_RX_ABI_H) && (PCREC_RX_ABI_H + 0) != 64
-   #error "pcrec: this artifact (abi 64) shares a translation unit with an artifact of a different abi; regenerate both with one pcrec"
+   #if defined(PCREC_RX_ABI_H) && (PCREC_RX_ABI_H + 0) != 65
+   #error "pcrec: this artifact (abi 65) shares a translation unit with an artifact of a different abi; regenerate both with one pcrec"
    #endif
    #ifndef PCREC_RX_ABI_H
-   #define PCREC_RX_ABI_H 64
+   #define PCREC_RX_ABI_H 65
    ```
 
    so artifacts of one abi still share the first block, and an artifact of
@@ -2315,7 +2315,19 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `64` on every artifact today (lane ssbuild3 bumped it
+- **`rx_info.abi` is `65` on every artifact today (lane flagbits bumped it
+  from 64, 2026-10-06: [FLAGBITS], K92 -- `rx_info.flags`' strategy mask
+  is DERIVED from `src/core/axes.def`).** `-fno-size-term` (bit 18) and
+  `-fno-scan-edge` (bit 21) were the two strategy deny bits the hand-kept
+  mask had never listed, so each moved `.flags` on EVERY artifact it was
+  passed to (`.flags = 262144` / `2097152` against `0` on `abc`, where
+  neither can act). The mask is now every axis bit except the named kept set
+  (`tuning.md` §2, "THE `rx_info.flags` RULE"), so both bits are masked and a
+  future axis is masked on arrival. The only bytes that move are the `.flags`
+  literal of an artifact built with one of those two denials (and the abi
+  digits); a default artifact differs by the abi digits alone. No struct
+  offset moves, no stamp is added, no program text moves and no answer moves.
+- **`rx_info.abi` was `64` (lane ssbuild3 bumped it
   from 62, 2026-10-06; `63` is the memfn kit's R4a′: [START-SET] stage 3 —
   THE DFA HAT, `docs/design/startset.md` §2 F, §4.1, §6.4, D148 + addenda
   1-2).** The candidate table gains two DFA-route rows, `first-memchr-bounded`
@@ -4786,7 +4798,8 @@ because denying possessification really does cost a frame. So: to see
 what was ASKED FOR, you cannot use `flags` for a masked axis at all; to
 see what HAPPENED, read the macro.
 
-The set of bits that get masked, and the per-flag reasoning, live in
+The rule is general and derived, not a list: every axis bit is masked except
+the named kept set (`tuning.md` §2, "THE `rx_info.flags` RULE"; K92). The set of bits that get masked, and the per-flag reasoning, live in
 `lib/pcrec.h`'s own comments (`lib/CLAUDE.md` indexes them) — that is
 where to look, from here and from §8, to see which bits legitimately
 vanish from `rx_info.flags` on a round trip. This document does not

@@ -440,7 +440,11 @@ enum {
      * `max_emit_code_bytes`/`max_emit_bytes` below. So a denied build can
      * still be REFUSED for size — correctly: denying the term removes the
      * mechanism that would have made the artifact smaller, it does not make a
-     * 2 MB artifact acceptable. */
+     * 2 MB artifact acceptable.
+     *
+     * Masked out of `rx_info.flags` like every strategy axis (K92, [FLAGBITS],
+     * abi 65); it was one of the two bits (with 21) the old hand-kept mask
+     * never listed. `<PREFIX>_UNROLL_K_WHY` "denied" records it. */
     PCREC_NO_SIZE_TERM = PCREC_BIT(18),
 
     /* [OPT-4] THE PREFILTER'S LANGUAGE (K39; docs/design/
@@ -495,7 +499,11 @@ enum {
      * replaces them), so `[a-z]{0,16384}`'s forward machine is two states
      * rather than 16,385. Denying it restores both the states and the table
      * walk, which is what makes the denied build a byte-for-byte reference
-     * for the answer-identity sweep. It changes no answer either way. */
+     * for the answer-identity sweep. It changes no answer either way.
+     *
+     * Masked out of `rx_info.flags` like every strategy axis (K92, [FLAGBITS],
+     * abi 65); the other bit (with 18) the old hand-kept mask never listed.
+     * `<PREFIX>_DFA_SCAN_EDGE` records the decision. */
     PCREC_NO_SCAN_EDGE = PCREC_BIT(21),
 
     /* [OPT-5 STEP 2] `-fno-start-pinned` — deny the START-PINNED SEARCH on a

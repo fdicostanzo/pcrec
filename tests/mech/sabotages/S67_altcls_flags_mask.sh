@@ -37,9 +37,13 @@ SAB_SUITES="altcls"
 SAB_DESC="PCREC_NO_ALTCLS_MERGE/PCREC_NO_ALTCLS_FACTOR dropped from emit_info_def's strategy_denials mask, so -fno-altcls-merge/-fno-altcls-factor leak into the emitted rx_info.flags literal even though the axis changes no match behavior -- two artifacts that answer identically now differ in their reflection surface over a knob with no observable effect"
 SAB_DOC_FIGURE="lib/pcrec.h's PCREC_NO_ALTCLS_MERGE/PCREC_NO_ALTCLS_FACTOR comment; src/gen/emit_dfa.c's strategy_denials mask comment. RE-ANCHORED and VALIDATED 2026-08-26 (lane srAnchor) past srTier's [OPT-1] PCREC_NO_TIERED_ENTRY addition to the same mask: run_sabotage_matrix.sh S67 -- DETECTED, altcls:1fail/14pass (the byte-identity check reading the leaking bit, as tests/mech/CLAUDE.md's own '[OPT-ALTCLS] S66-S67' section predicts)."
 SAB_COUNT=1
-SAB_BEFORE='                                          PCREC_NO_ALTCLS_MERGE | PCREC_NO_ALTCLS_FACTOR |
+# RE-AIMED 2026-10-06 ([FLAGBITS]): `strategy_denials` is no longer a hand-kept OR
+# of masked bits but DERIVED from src/core/axes.def (masked unless named in
+# `kept`), so "drop the bit from the mask" has no spelling any more. The
+# same defect -- this deny bit leaking into rx_info.flags -- is now planted
+# the only way it can be written: the bit joins `kept`. Intent unchanged;
+# detector unchanged.
+SAB_BEFORE='                              PCREC_FORCE_UTF_CHECK;
 '
-SAB_AFTER='                                          /* SABOTAGE S67: the two altcls deny
-                                           * bits removed from the mask -- they
-                                           * now leak into rx_info.flags */
+SAB_AFTER='                              PCREC_FORCE_UTF_CHECK | PCREC_NO_ALTCLS_MERGE | PCREC_NO_ALTCLS_FACTOR;  /* SABOTAGE S67: the two altcls deny bits joins `kept`, so it leaks into rx_info.flags */
 '
