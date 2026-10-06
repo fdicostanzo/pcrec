@@ -191,7 +191,7 @@ in §9.
 | correct DFA hat (control) | — | differential 0 defects; fixtures 1,769 / 0 |
 | `T = S ∩ E` (r3, sound-F1) | S480 | 23 failing fixture cells (the six `W` witnesses) plus three structural arms |
 | E* missing one seed state | the `T == S` BUILD ASSERTION | a scratch mutant (`dfa_estar` skips the last seed) REFUSES 16 corpus blocks — the six sound-F1 witnesses and their fixture copies — with the assertion's internal error; the other 3,512 artifacts are byte-identical (an equivalent mutant on every mover, §6.4.3 item 6) |
-| E* missing s0 | equivalent on this build | the same scratch run: 3,528 of 3,528 byte-identical. ssedge's twin saw it (7 of 10) because it read the seed family off the emitted table; in pcrec `s0` IS `s1u[UPC_PLAIN]` on every ENG_UNANCH machine (`start_pinned_assert_routing` asserts it), so `E*`'s union already holds `s0`'s escapes |
+| E* missing s0 | equivalent on this build | the same scratch run: 3,528 of 3,528 byte-identical. ssedge's twin saw it (7 of 10) because it read the seed family off the emitted table; in pcrec `s0` and `s1u[UPC_PLAIN]` differ only by the start-of-subject and `\G` bits, and a pattern that reads those takes the ATTEMPT scan, so on every unanchored machine `E*`'s union already holds `s0`'s escapes. [Corrected at ssfix3, sound-F2: this cell first cited `start_pinned_assert_routing`, which runs on the pinned branch only; the identity rests on engine routing, now pinned by `dfahat_checks.py` [dfa-bot].] |
 | re-seed removed | S481 (class), S482/S484 (memchr hit / clamp) | 109 / 5 / 6 fixture cells; differential 96 / 81 / 25 pairs |
 | re-seed UNCONDITIONAL | S485 | 31 fixture cells (reseed.rxt RS), differential 18 pairs |
 | seek before `rx_valid_upto` (DFA) | S504 | the differential's `-futf-check` config, 6 pairs (deny -9, plant 0) |
@@ -245,9 +245,12 @@ four (form x landing) cells have a detecting row.
 
 1. **`E*` without `s0` is an EQUIVALENT mutant in pcrec.** ssedge's twin
    detected it (7 of 10) because it read the seed family off an emitted
-   table. In the compiler `s0` IS `s1u[UPC_PLAIN]` on every `ENG_UNANCH`
-   machine (`start_pinned_assert_routing` asserts it), so the union over the
-   live seeds already holds `s0`'s escapes: 3,528 of 3,528 artifacts
+   table. In the compiler `s0` and `s1u[UPC_PLAIN]` differ only by the
+   start-of-subject and `\G` bits, and every pattern that reads them routes to
+   the attempt scan, so on an `ENG_UNANCH` machine the union over the live
+   seeds already holds `s0`'s escapes [corrected at ssfix3, sound-F2: this
+   first cited `start_pinned_assert_routing`, which runs on the pinned branch
+   only; the routing is now pinned by `dfahat_checks.py` [dfa-bot]]: 3,528 of 3,528 artifacts
    byte-identical under the mutant. `dfa_estar` keeps the `s0` term because it
    costs nothing and does not lean on that identity.
 2. **A new table NAME keeps a reader's needle true, not its POPULATION.**
@@ -355,3 +358,107 @@ four (form x landing) cells have a detecting row.
   `rxtsource.log`, `sweep.log`, `mover_table.log` + `movers.tsv` (the 88
   hat rows), `mech/S4*.log`/`S50*.log` (the solo rows). The mech scratch
   trees and the mutant trees have been removed.
+
+## Panel fixes (ssfix3)
+
+Lane `ssfix3`, 2026-10-06, opus, in this worktree on `lane/ssbuild3` (from
+`61c5a6f0`). Charter: the D6 panel's dispositions,
+`docs/dev/reviews/2026-10-06-r-ss3-panel.md`. **R4a′ (abi 63) is NOT on main
+at this lane's finish** (main `8f91cba1` reads 62), so main was not merged and
+the branch stays drafted 62 -> 64.
+
+### F.1 The disposition table, resolved
+
+| id | resolution | evidence |
+|---|---|---|
+| **sound F1 (BLOCKER)** | **`T = S`**, the intersection dropped (`4fdfbff3`). `dfa_estar` is deleted. The `T == S` assertion is replaced by a guard that cannot fire on a correct start set: `dfa_reseed_exact` reads the re-seed's premise off the machine (every byte outside `T` takes `s0` and every live seed to the seed of its own class). A witness's start byte that leaves every seed in place is outside `E`, so the existing `T ⊊ E` admission declines, and the artifact is the deny arm's. Fixture `tests/startset/dfahat_f1.rxt` holds the critic's six witnesses plus six fuzz finds: 12 blocks, 322 cases, libpcre2 at every startpos; the 11 byte-tier blocks are also python-verified (298 cells); the `flags u` block is libpcre2-only. The compile-only arm is `tests/startset/compile_fuzz.py`. | All six witnesses compile to `byte-class-bounded` (`RX_ENGINE "dfa"`, and `"vm"` + hybrid for `(?<=\w) *(a)`). `dfahat_f1.rxt` passes 322/0 on the fix and fails 0/322 on the pre-fix compiler. `emit_sweep.py --ref 61c5a6f0` (the pre-fix head) shows **0 movers, 0 asymmetric on all five streams at full reach** (4,147/4,148/4,148/38 files/7 dumps), so the fix moves no emitted byte on any artifact that compiled. `compile_fuzz.py` reads 0 over 9,000 at the committed seed and 0 over 3 × 20,000 more seeds. `dfa_reseed_exact` never fired over those 69,000 patterns or the corpus. |
+| sound F2 (NOTE) | Report citation corrected in place (§4.1 table, §6 item 1). Cheap sentinel: `dfahat_checks.py` `[dfa-bot]` holds six start-of-subject/`\G` spellings (`^a\|\bb`, `\Ab\|\bc`, `\Ga\|\bb`, `(?m)^a\|\bb`, `(?:^\|-)\b(?:a\|b)`, `(?:\A\|\bq)(?:a\|b)`) to `RX_DFA_SCAN "attempt"`. | 6/6 PASS |
+| sound F3 (NOTE) | Recorded; no change. The `views` assertion stays and is unreachable by construction. | — |
+| **checks M1** | The arm is SPLIT. `run_dfahat_checks.sh` gains `DFAHAT_PART=answers\|struct\|all`. Mech arm `dfahat` is now answers only (the fixtures, the collapsed fixture pass, the differential). New arm `dfahatstruct` is `dfahat_checks.py` + `compile_fuzz.py`. S480-S485/S504 stay on `dfahat`, so the re-seed text pin can no longer detect them; S486/S488/S495 move to `dfahatstruct`. | the mech solos below |
+| **checks M2** | S487/S489/S490 are re-typed as DECLARED EQUIVALENT MUTANTS (`SAB_EXPECT=UNDETECTED`, `dfahatstruct`, S219's shape). Planted, their artifacts must be the clean compiler's: `[dfa-deny]` + `[dfa-movers]` over the corpus is the byte-identity observable. Each REACH probe is a clean-tree population that does not pass through its own conjunct: an unseeded skip (`a+\|b+`); a seeded skip with a 256-member `--emit-facts` start set (`\b(?:\w\|[^\w]x)`); and a seeded attempt-scan artifact plus an unanchored hat mover (`(?m)^(?:ab\|\bcd)`, `\b(?:true\|false)\b`). | probes REACH on the clean tree; verdicts in the mech table |
+| **checks M3** | `run_axes.sh` gains a DFA-HAT ARM after the product arm. It counts the default baseline's cases whose block is in `manifest_s3_dfa.tsv` (`startset_arm.py` with that manifest), floor `DH_MOVER_FLOOR` 689 (half of 1,378). The GROUP F5 comment and `tests/axes/CLAUDE.md` are updated. | `AXES=-fno-start-set SKIP_ORACLE=1 SS_MOVER_FLOOR=0` over the 18 mover files + `dfahat_f1.rxt`: `-fno-start-set`, `--engine=vm` and their product each 6,219/6,219 agree, 0 mismatches/give-ups/refusals. **DFA hat 1,378 mover cases, 71 of 71 blocks = the static count of their case lines exactly.** The product arm reads 4,949 (its 11,000 floor is whole-corpus; disabled for this subset run) |
+| **checks M4** | `run_dfahat_checks.sh` runs the five fixture files a second time under `RXTFLAGS=-fprefilter-collapse` (`[dfa-fix-collapse]`, floor 1,045). This restores the oracle check at the collapsed config. `vmhat_diff.py` compiles first, dedupes any pair byte-identical to its mover's `auto` pair (run once, counted once), counts the distinct `count-collapsed` pairs and floors them (`FLOOR_COLLAPSED` 2). | fixture pass 2,091/0 under collapse (and plain). 66 of the 71 `collapse` pairs were `auto` duplicates; **5 distinct count-collapsed pairs** |
+| **checks M5** | The sweep alphabet now keeps the outside byte and the pattern's literal bytes (alphanumerics first) up to five, and ADDS the context bytes beyond the five rather than displacing them. Pairs with at least one match are floored (`FLOOR_MATCHING` 75 DFA / 191 VM). | DFA: 153 distinct pairs, **1,920,044 cells** (was 1,155,139), 228,306 matches, 151 pairs matching (the 2 that do not are `\b(?<=bc)d`, which can never match), 0 defects. VM: 423 distinct pairs, 2,486,254 cells, 382 matching, 0 defects |
+| **checks M6** | The START-SET mech solos re-run at the fixed tip, all 26 rows S478-S502 + S504. | table F.3 |
+| m1 | A hat refusal or timeout where the deny arm compiles is a FAIL in both scripts: `dfahat_checks.py` `[dfa-refuse]`, and `vmhat_diff.py` (`hat-refused`, no longer counted as `refused`). This is the check that would have caught F1. | On the pre-fix compiler `[dfa-refuse]` reads **12 violations** (the 12 `dfahat_f1.rxt` blocks); on the fix, 3,540 pairs and 0 |
+| m2 | The class re-compare asserts the re-compiled default still stamps a DFA-hat value (`classx_hat`). | `[dfa-deny]` green with the assert |
+| m3 | The `[dfa-table]` docstring now says it checks EMISSION (`S` is the predicate's input), not an independent derivation. | — |
+| m4 | Not changed. `machine_sets`' `cbm_agrees` still reads vacuously on movers, which stays harmless while X comes from the transition tables. A future reader of `can_begin_match` must know that movers emit `start_bytes`. | — |
+| m5 | `census_s1.py` compiles every arm with `-fno-start-set` and reads F as `T = S`, so it runs on the CURRENT build. | Regenerated on this build: `s3_dfa` and `s2_vm_auto` **byte-identical**; `s2_vm_forced` **+12**, every one a `dfahat_f1.rxt` block. Summary `docs/design/startset/s3/census_ssfix3_summary.txt`; its `F-checked: \|E*\| < 256` row reads 12, the BLOCKER witnesses |
+| m6 | See QUESTIONS (abi merge order). | — |
+| m7 | `match_api.md` §6 and `tuning.md` §2.42 now say "restores the `abi`-62 `-fno-start-set` program (no VM hat either)". §2.42's applicability no longer claims `E*` is all 256; it states `T = S` and the decline. | — |
+| m8 | For the landing inbox note (not written to pcrec-bench). The bench adapter's closed `dfa_prefilter` enum (`testees/pcrec/adapter.py:714-716`) lacks stage 2's `first-class` and stage 3's `first-memchr-bounded`/`first-class-bounded`, and 18 bench movers stamp them. `--list-axes`'s `prefilter` rows re-order (`memchr-bounded` 6 -> 8, ...). | — |
+| notes n1-n5 | Recorded; no change. | — |
+
+### F.2 The compile-only arm's failing-direction proof
+
+`tests/startset/compile_fuzz.py` (9,000 patterns, `SEED=20261006`, 30% from
+an F1-shaped template, flags drawn from none/`-i`/`--no-captures`/
+`-fprefilter-collapse`/`-e utf8`/`--ucp`; 25 s on the Mac):
+
+| compiler | population | deny-compiles | DFA-hat reach | deny compiles, default refuses |
+|---|---|---|---|---|
+| pre-fix (`61c5a6f0`) | committed (`TEMPLATE=0.3`) | 8,930 | 680 | **70** (all "the DFA hat's T = S & E* dropped N start-set byte(s)"; includes `\b\d*b+` and `\b[ab]*(?:ab\|b)+`, which are `\b` shapes, not only lookbehinds) |
+| pre-fix | `TEMPLATE=0` (the critic's grammar) | 8,996 | 427 | **4**, the critic's rate (4 in 9,000) |
+| fixed (`4fdfbff3`) | committed | 9,000 | 680 | **0** |
+| fixed | seeds 1/2/3, N=20,000 each | 20,000 ×3 | 1,459 / 1,516 / 1,474 | **0** |
+
+Floors (half the landing): `FLOOR_OK` 4,500 deny-compiling, `FLOOR_HAT` 340.
+
+### F.3 Mech solos at the fixed tip (M6)
+
+PENDING at the time of writing (`chain.sh` below). Filled in from the logs
+when the chain completes.
+
+### F.4 The full Mac `make -k -j4 test CC=gcc-16`
+
+PENDING (same chain, after the mech; suite lock `worktrees/.mac-suite.lock`,
+owner `ssfix3`).
+
+### F.5 `scripts/emit_sweep.py` against main, and the mover table
+
+PENDING (same chain, last): main `8f91cba1` built from `git archive`,
+`--ref-bin`, then ssbuild3's `mover_table.py` (abi / stamp / hat / FINDING).
+
+### F.6 Commits
+
+`4fdfbff3` (the fix + `compile_fuzz.py`), `5736b577` (checks M1-M5, m1-m5,
+m7, sound-F2, fixtures, manifests, spec), `7e99faa2` (rxtsource census
++1/+12/+322 for `dfahat_f1.rxt`: 272 files / 4,606 blocks / 41,327 lines; C3
+PASS +298, SKIP and pcre2-only +24, verifiable +298), the mech and
+src/gen/startset CLAUDE.md notes, and the `startset.md` §4.1a amendment.
+`make strict` is clean. `make test-rxtsource` reads 278/0/1, where the 1 is
+the darwin python-3.9 C3 RECORD. `DFAHAT_PART=struct` reads 32/0.
+
+### F.7 QUESTIONS for Frank
+
+- **Q-F1 (the addendum-1 retraction, D148).** Proposed text, to append to
+  D148 addendum 1 (or as addendum 3):
+  > **Retracted 2026-10-06 (the ss3 D6 panel's BLOCKER sound-F1, lane
+  > ssfix3).** "`E*` is all 256 bytes on every seeded machine, so
+  > `S ∩ E*` ≡ `S`" is false. It was a population measurement (94 rows,
+  > 13.58M cells) whose population held no machine where a byte of `S`
+  > leaves every seed state where it is, and `(?<=\w) *a` is one: the space
+  > keeps the non-word seed and keeps the word-context thread in ` *`. As
+  > built, the intersection dropped that start byte and the `T == S` build
+  > assertion refused valid patterns at default flags; admitted silently, it
+  > would have lost `(1,3)` on `"x a"`. The DFA hat's set is **`T = S`**,
+  > repair (b) of §4.1a, admitted iff `T ⊊ E`. A start byte outside `E`
+  > declines the row, so the artifact is the plain row's. `E*` has no role
+  > in the predicate. The build guard is the re-seed's premise read off the
+  > machine (`dfa_reseed_exact`).
+- **Q3 (G1 elision on a one-byte `T`)** — unchanged, still open: 28 movers
+  lose their `memchr` pre-check as `dominated`. Recommendation unchanged:
+  accept, and F3's G1 cells measure the cost.
+- **Q4 (the unmeasured `T ⊊ E` admission)** — unchanged, still open. With
+  `T = S`, the F1 shapes now DECLINE through this admission. The null cells
+  in `alpha_s3.sh` remain the measurement.
+- **Q1 (abi order), checks-m6's completion.** R4a′ (abi 63) touches the
+  same `#define`, `ABI_EXPECT`, the K80 example, match_api §6, `FILEPIN`,
+  and the cpset/resource byte pins. Both branches regenerate
+  `docs/dev/artifact_size_log.tsv` in full, and that file must be
+  regenerated after the merge, not hand-resolved. If this branch lands
+  second, `FILEPIN` re-pins and the byte pins are re-measured, not just the
+  number re-read. No check enforces abi MONOTONICITY (`ABI_EXPECT` is an
+  equality), so a "take theirs" on R4a′'s `62 -> 63` after this lands would
+  go silent. Recommendation unchanged: land R4a′ first.
