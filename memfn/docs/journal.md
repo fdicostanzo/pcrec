@@ -264,3 +264,22 @@ pointer when a kit change merges to main.
   wrong for long runs. memfnbump was corrected mid-run. From now on every
   kit brief says: single quick sections need no lock; long or
   multi-section runs take it.
+
+## 2026-10-06 — R4a′ complete on the Mac; Linux verdict owed
+
+- memfnbump merged (49ace440).
+  - Commit 1 re-measured the pins on the merged tree: m5 ×12, the
+    resource pin 762697, the FILEPIN, and run_size_term's cap
+    31,900→32,300. That witness had lost its headroom to the stamps
+    since UTF-VALID; the cap was bisected and derived (D149).
+  - The abi bump 62→63 is the last code commit, with every reader found
+    by six greps, and a FILEPIN self-pin after it.
+- Census vs 57db5152: CLEAN pre- and post-bump (two lines + the abi
+  digit + the one named VM_PREFILTER_WHY value).
+- Mac suites green except the darwin nm red. recursion-identity 16/0.
+  S513-S517 DETECTED.
+- Collision recorded: memfnbump's chain ran without the suite lock while
+  ssbuild3 held it (my brief's fault). Correctness-only; main ruled to
+  let it finish.
+- OWED: Linux make test via main's executor (by day), with the census
+  on Linux too. Then the R4a′ done:.
