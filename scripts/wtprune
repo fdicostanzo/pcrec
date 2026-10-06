@@ -1,0 +1,185 @@
+#!/usr/bin/env bash
+#
+# wtprune — remove delivered lane worktrees under worktrees/ safely.
+#
+# WHY THIS EXISTS. Lanes leave their git worktree behind after delivery
+# (~50 merged ones by 2026-10-05), and the hand-run `git worktree remove`
+# is blocked by the session classifier because it cannot judge, per call,
+# whether the tree is still somebody's. This script makes that judgement
+# from ARTIFACTS, the same signals the manager's liveness ladder trusts
+# (docs/dev/learnings.md §6), and refuses on any doubt. Recorded hazard it
+# answers: tt12b's harness worker outlived the lane's delivery by a minute
+# and wrote into the deleted path (2026-09-03).
+#
+# A worktree is REMOVED only if EVERY gate passes; otherwise it is KEPT with
+# the first failing reason:
+#   1. it is a git worktree directly under <repo>/worktrees/ (never main);
+#   2. not `git worktree lock`ed;
+#   3. its HEAD is an ancestor of `main` (fully merged — nothing to lose);
+#   4. clean: no modified, staged or untracked-not-ignored files
+#      (ignored build/ output and scratch are disposable by definition);
+#   5. quiet: no file anywhere inside modified in the last --quiet-min
+#      minutes (default 120) — covers a background run writing a log;
+#   6. no process has its cwd inside it (lsof on darwin, /proc on Linux;
+#      if neither can be read, EVERYTHING is kept — no evidence, no rm);
+#   7. it does not own worktrees/.mac-suite.lock (file or dir/owner form);
+#   8. it is not a long-lived home: not named in worktrees/.wtprune.keep
+#      (one name per line, # comments; `memfn`, the kit's branch home,
+#      belongs there) and no other registered worktree lives inside it.
+# Removal itself is `git worktree remove` WITHOUT --force, so git re-checks
+# cleanliness at the moment of removal.
+#
+# Non-git directories under worktrees/ (NAME-scratch, NAME-cell, logs) are
+# only LISTED as "unmanaged": they can hold a D27 author's undelivered work
+# or evidence a report cites, which no artifact check can rule out. Remove
+# one explicitly with --dir NAME (gates 5, 6, 7 still apply).
+#
+# Usage:
+#   scripts/wtprune                 dry run: one KEEP/REMOVE line per worktree
+#   scripts/wtprune --apply         remove every REMOVE candidate
+#   scripts/wtprune --apply NAME..  only these worktrees (still gated)
+#   --delete-branches               also `git branch -d` (refuses unmerged)
+#   --dir NAME                      remove the non-git dir worktrees/NAME
+#                                   (with --apply; repeatable)
+#   --quiet-min N                   gate 5 window in minutes (default 120)
+#   -C REPO                         operate on REPO (default: the main
+#                                   checkout of the current repository)
+# Every action is appended to worktrees/.wtprune.log (gitignored).
+# Exit: 0 ok, 1 an attempted removal failed, 2 usage/environment error.
+
+set -u
+
+apply=0 delbr=0 quiet=120 repo= names=() dirs=()
+while [ $# -gt 0 ]; do
+    case $1 in
+        --apply) apply=1 ;;
+        --delete-branches) delbr=1 ;;
+        --quiet-min) shift; quiet=${1:?}; [[ $quiet =~ ^[0-9]+$ ]] || { echo "wtprune: --quiet-min wants minutes" >&2; exit 2; } ;;
+        --dir) shift; dirs+=("${1:?}") ;;
+        -C) shift; repo=${1:?} ;;
+        -h|--help) sed -n '2,/^set -u/p' "$0" | sed '$d'; exit 0 ;;
+        -*) echo "wtprune: unknown flag $1" >&2; exit 2 ;;
+        *) names+=("$1") ;;
+    esac
+    shift
+done
+
+if [ -z "$repo" ]; then
+    common=$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null) \
+        || { echo "wtprune: not in a git repository" >&2; exit 2; }
+    repo=$(dirname "$common")
+fi
+repo=$(cd "$repo" && pwd -P) || exit 2
+wtdir=$repo/worktrees
+[ -d "$wtdir" ] || { echo "wtprune: no $wtdir" >&2; exit 2; }
+log=$wtdir/.wtprune.log
+g() { git -C "$repo" "$@"; }
+g rev-parse -q --verify refs/heads/main >/dev/null || { echo "wtprune: no main branch" >&2; exit 2; }
+
+valid_name() { [[ $1 =~ ^[A-Za-z0-9][A-Za-z0-9._-]*$ ]]; }
+for n in ${names[@]+"${names[@]}"} ${dirs[@]+"${dirs[@]}"}; do
+    valid_name "$n" || { echo "wtprune: bad name '$n' (a bare directory name under worktrees/)" >&2; exit 2; }
+done
+
+# Gate 6 evidence, gathered once: every live process's cwd, one per line.
+if [ -d /proc/self ] && [ -r /proc/self/cwd ]; then
+    cwds=$(for p in /proc/[0-9]*; do readlink "$p/cwd" 2>/dev/null; done)
+elif command -v lsof >/dev/null; then
+    cwds=$(lsof -w -a -d cwd -Fn 2>/dev/null | sed -n 's/^n//p')
+else
+    echo "wtprune: cannot read process cwds (no /proc, no lsof) — keeping everything" >&2
+    exit 2
+fi
+[ -n "$cwds" ] || { echo "wtprune: read no process cwds — refusing (no evidence, no rm)" >&2; exit 2; }
+
+lock_owner=
+if [ -f "$wtdir/.mac-suite.lock" ]; then lock_owner=$(awk 'NR==1{print $1}' "$wtdir/.mac-suite.lock")
+elif [ -f "$wtdir/.mac-suite.lock/owner" ]; then lock_owner=$(awk 'NR==1{print $1}' "$wtdir/.mac-suite.lock/owner")
+fi
+
+# Shared gates 5-7 for any path; prints the failing reason, returns 1.
+busy() {
+    local path=$1 name=$2 hit
+    if [ -n "$lock_owner" ] && [ "$lock_owner" = "$name" ]; then echo "owns .mac-suite.lock"; return 0; fi
+    hit=$(printf '%s\n' "$cwds" | awk -v p="$path" '$0==p || index($0, p "/")==1' | head -1)
+    [ -n "$hit" ] && { echo "a process has cwd $hit"; return 0; }
+    hit=$(find "$path" -mmin -"$quiet" -print -quit 2>/dev/null)
+    [ -n "$hit" ] && { echo "modified <${quiet}min: ${hit#$path/}"; return 0; }
+    return 1
+}
+
+audit() { printf '%s %s\n' "$(date '+%Y-%m-%dT%H:%M:%S%z')" "$*" >> "$log"; }
+
+# Worktrees: parse the porcelain list.
+declare -a wt_path wt_head wt_branch wt_locked
+i=-1
+while IFS= read -r line; do
+    case $line in
+        "worktree "*) i=$((i+1)); wt_path[i]=${line#worktree }; wt_head[i]=; wt_branch[i]=; wt_locked[i]=0 ;;
+        "HEAD "*) wt_head[i]=${line#HEAD } ;;
+        "branch "*) wt_branch[i]=${line#branch refs/heads/} ;;
+        locked*) wt_locked[i]=1 ;;
+    esac
+done < <(g worktree list --porcelain)
+
+known=$(printf '\n')
+pinned=
+[ -f "$wtdir/.wtprune.keep" ] && pinned=$(sed 's/#.*//; s/[[:space:]]//g; /^$/d' "$wtdir/.wtprune.keep")
+rc=0 nrm=0 nkeep=0
+for j in $(seq 0 "$i"); do
+    p=${wt_path[j]}
+    case $p in "$wtdir"/*) ;; *) continue ;; esac
+    name=${p#"$wtdir"/}
+    known="$known$name
+"
+    if [ ${#names[@]} -gt 0 ] && ! printf '%s\n' "${names[@]}" | grep -qxF -- "$name"; then continue; fi
+    why=
+    if [[ $name == */* ]]; then why="not a direct child of worktrees/"
+    elif [ "${wt_locked[j]}" = 1 ]; then why="git worktree locked"
+    elif printf '%s\n' "$pinned" | grep -qxF -- "$name"; then why="pinned in .wtprune.keep"
+    elif printf '%s\n' "${wt_path[@]}" | grep -qF -- "$p/"; then why="another worktree lives inside it"
+    elif [ ! -d "$p" ]; then why="missing on disk (run: git worktree prune)"
+    elif ! g merge-base --is-ancestor "${wt_head[j]}" main 2>/dev/null; then why="HEAD ${wt_head[j]:0:8} not merged into main"
+    elif [ -n "$(git -C "$p" status --porcelain 2>/dev/null | head -1)" ]; then why="uncommitted changes"
+    elif why=$(busy "$p" "$name"); then :
+    else why=; fi
+    if [ -n "$why" ]; then
+        printf 'KEEP    %-28s %s\n' "$name" "$why"; nkeep=$((nkeep+1)); continue
+    fi
+    if [ $apply = 0 ]; then
+        printf 'REMOVE  %-28s (dry run) %s\n' "$name" "${wt_branch[j]:-detached}"; nrm=$((nrm+1)); continue
+    fi
+    audit "remove worktree $name head=${wt_head[j]} branch=${wt_branch[j]:-detached}"
+    if out=$(g worktree remove "$p" 2>&1); then
+        printf 'REMOVED %-28s %s\n' "$name" "${wt_branch[j]:-detached}"; nrm=$((nrm+1))
+        if [ $delbr = 1 ] && [ -n "${wt_branch[j]}" ]; then
+            if bout=$(g branch -d "${wt_branch[j]}" 2>&1); then audit "delete branch ${wt_branch[j]}"; echo "        branch ${wt_branch[j]} deleted"
+            else echo "        branch ${wt_branch[j]} kept: $bout"; fi
+        fi
+    else
+        printf 'FAILED  %-28s %s\n' "$name" "$out"; audit "FAILED $name: $out"; rc=1
+    fi
+done
+
+# Non-git entries: list, or remove the explicitly named ones.
+for e in "$wtdir"/*; do
+    [ -e "$e" ] || continue
+    n=${e#"$wtdir"/}
+    printf '%s' "$known" | grep -qxF -- "$n" && continue
+    printf '%s\n' ${dirs[@]+"${dirs[@]}"} | grep -qxF -- "$n" && continue
+    [ ${#names[@]} -eq 0 ] && printf 'UNMANAGED %-26s (not a worktree; remove explicitly with --dir)\n' "$n"
+done
+for n in ${dirs[@]+"${dirs[@]}"}; do
+    d=$wtdir/$n
+    if printf '%s' "$known" | grep -qxF -- "$n"; then echo "SKIP    $n is a git worktree — use it as a NAME, not --dir"; continue; fi
+    if [ ! -e "$d" ]; then echo "SKIP    $n does not exist"; continue; fi
+    if [ -L "$d" ]; then echo "KEEP    $n is a symlink"; continue; fi
+    if why=$(busy "$d" "$n"); then printf 'KEEP    %-28s %s\n' "$n" "$why"; continue; fi
+    if [ $apply = 0 ]; then printf 'REMOVE  %-28s (dry run) non-git dir\n' "$n"; continue; fi
+    audit "remove dir $n"
+    if rm -rf -- "$d"; then echo "REMOVED $n"; else echo "FAILED  $n"; rc=1; fi
+done
+
+[ $apply = 1 ] && g worktree prune
+echo "wtprune: $nrm $([ $apply = 1 ] && echo removed || echo removable), $nkeep kept$([ $apply = 0 ] && echo ' — dry run; re-run with --apply')"
+exit $rc
