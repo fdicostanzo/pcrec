@@ -691,6 +691,12 @@ table makes the order the contract.
   match_api says "the same five values". This is spec drift, not code; it is
   listed so the D80 owner sees it.
 
+### 4.9 Late additions (first-round sub-surveys, delivered after commit; READ, not re-verified)
+
+- **Two retry rules gate a forced engine differently** (family 1). The [SEL-1] overflow retry requires `engine == AUTO` (`compile.c:1277`), so a forced `--engine=dfa` that overflows REFUSES. The `fit_rungs[]` size-cap rungs carry no engine conjunct, so the same forced build over an emit cap DEGRADES (drop-premul, drop-anchored) and stamps `forced`. This can be read as intentional (no rung changes the engine), but no one place states it. The unified ladder should carry it as a column.
+- **The scan form of a byte set** (one byte → memchr, several → table) is spelled at about 5 sites: `cand_derive` (`emit_dfa.c:4056`), `prefix_k.c:204/223`, and the `count == 1` arms near `emit_dfa.c:6069-6286`. This is a small family, and it belongs to the [MEMFN] delegation surface (D146) rather than to a new table.
+- **One width recurrence in two units**: `req.c`'s `RbRuns.maxw` is a saturating BYTE width ("NOT cwmax"), while `mrl.c`'s `cwmax` counts CHARACTERS, and `endwin.c:171` relies on the two being equal under a single-byte encoding. This sits beside §3.7/§3.8 as a [DEC-KINDATTR] question.
+
 ---
 
 ## 5. Cross-cutting observations
