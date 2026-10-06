@@ -206,6 +206,12 @@ static bool splice_mark(StrBuf *sb, const char *text)
     return true;
 }
 
+uint32_t pcrec_memfn_policy(uint64_t flags)
+{
+    return pcrec_axis_on(flags, PCREC_NO_MEMFN_SIMD, PCREC_FORCE_MEMFN_SIMD)
+               ? 0u : MF_P_PORTABLE_ONLY;
+}
+
 /* The finishing pass (see the header). Reads `cx->job->csb` and `hsb`, the
  * finished artifact at the placeholder prefix; writes the two stamp lines
  * over csb's mark. Called once per attempt, after the engine emitter and

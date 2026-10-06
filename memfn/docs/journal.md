@@ -317,3 +317,38 @@ pointer when a kit change merges to main.
 - Waiting: R-4 (R4c, the M1 migration), which main is sequencing with
   Frank against the start-table refactor (shared emit_dfa.c
   offset-skip/PRE sites). No R4c code before R-4 is filed.
+
+## 2026-10-06 — R-4 (R4c) taken up
+
+- R-4 filed on main at 05c33ce0. Branch `lane/memfn-r4c` cut from main
+  691a8b7c; ack d836eb17.
+- A read-only opus scoping pass wrote worktrees/r4cscope-scratch/scope.md:
+  - the sites can be expressed in MF_VOCAB 2;
+  - 18 boundary reads (B1-B18);
+  - 20 mech rows, not ~28;
+  - C4/C5/C10/C12/C13/C14/I1 do not exist yet;
+  - the memfn-simd pair does not exist (it is caller-observable);
+  - C17's dynamic half keys on a dead name;
+  - I2 needs main's C0.
+- Manager calls on Q2-Q13 are in rulings.md beside it. Q1 (pcrec's MIT
+  text moved into the 0BSD kit) went to Frank via main, recommending he
+  relicense it as 0BSD. It gates merging CORE into the branch.
+- Lanes running: r4ccore (opus, implement→replace), r4caxis (sonnet,
+  the inert memfn-simd pair), r4cchecks (sonnet, C4/C12/C13/C14, C17
+  re-key, VM-hybrid witness). Heavy runs are held for a slot from main.
+
+## 2026-10-06 — R4c: AXIS + CHECKS merged; CORE IMPLEMENT green; Q-G2-18 chosen
+
+- Merged into lane/memfn-r4c: r4caxis (the inert memfn-simd pair, registry
+  pin 205, a stream-5 listing mover only) and r4cchecks (C4, C12-C14, the
+  C17 re-key + census, the VM-hybrid witness; S518-S529, which used up the
+  block). make strict is clean, and the new sections are green on the merge.
+- Frank ruled Q1 YES as D145 addendum 1 (main 07573ff7): pcrec text
+  moved into the kit is relicensed 0BSD.
+- CORE IMPLEMENT (lane/r4ccore 66176e35): 0 movers on all 5 streams
+  with the I1 shadow live. I1 is also clean at -fcomments, both
+  engines, -e utf8 and the 8 M1 denies. Q10: no define-without-use.
+- Q-G2-18, CHOSEN by the kit manager: the precheck arm needs on_miss to
+  leave the site. pcrec STATES it (`mf_site.on_miss_leaves`; MF_SITE_ABI
+  2→3) and the kit never parses hook text. CORE's interim
+  jump-keyword sniff is retired. G2 coverage is OWED.

@@ -327,7 +327,7 @@ TEST_SECTIONS := test-corpus test-cli test-reject test-registry test-parse \
       test-uprops test-core test-vars test-examples test-findings test-ucp \
       test-clskit test-encoding-checks test-utfcheck test-startset test-memfn-link \
       test-memfn-manifest test-memfn-g2 test-memfn-stamps test-memfn-arms \
-      test-memfn-deleg
+      test-memfn-deleg test-memfn-arch test-memfn-forms test-memfn-reach
 
 # [CHK-2 trailer] `test:` STOPPED being purely prerequisite-based here
 # (2026-08-26, manager finding, journal part 7): under `make -j12 test`,
@@ -1202,10 +1202,35 @@ test-utfcheck: all
 # search or span-compare site pcrec emits is a row of
 # tests/memfn/site_manifest.tsv, `pending` or `delegated`, checked against
 # what src/gen/ and src/enc/ actually spell (tests/memfn/search_vocab.tsv).
-# Static (reads src/, runs no binary), about a second. See tests/memfn/CLAUDE.md.
-test-memfn-manifest:
+# Static half reads src/ and runs no binary (about a second); the dynamic
+# half (rule 2, R4c) compiles a corpus pass with a TRACED copy of the compiler
+# once a pcrec function calls the kit, hence `all`. See tests/memfn/CLAUDE.md.
+test-memfn-manifest: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-memfn-manifest.ran"; fi
-	bash tests/memfn/run_site_manifest.sh
+	CC="$(CC)" TMPDIR=$${TMPDIR:-/var/tmp} bash tests/memfn/run_site_manifest.sh
+
+# [MEMFN] R4c: C4, the arch-blindness detector (integration.md §10.4): no ISA
+# vocabulary in src/, cli/, lib/ or tests/ outside tests/memfn/c4_allowlist.tsv
+# (counted at birth, only descends), with positive controls planted from the
+# compiler's own installation and a hex-escape negative control. Static; about
+# a second plus the compiler probes.
+test-memfn-arch:
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-memfn-arch.ran"; fi
+	CC="$(CC)" TMPDIR=$${TMPDIR:-/var/tmp} bash tests/memfn/run_arch_blind.sh
+
+# [MEMFN] R4c: C12 (the emitted-form ratchet, tests/memfn/c12_ceilings.tsv),
+# C13 (on_cand duplicability: declared UNREACHED until R4e) and C14 (shape
+# bounds compiled against limits.def). Static plus one syntax-only compile.
+test-memfn-forms:
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-memfn-forms.ran"; fi
+	CC="$(CC)" TMPDIR=$${TMPDIR:-/var/tmp} bash tests/memfn/run_form_checks.sh
+
+# [MEMFN] R4c: the VM hybrid handoff route's reach floor (integration.md
+# §15.5): three witness patterns whose artifacts carry the route, each also a
+# pattern of the oracle-verified tests/litscan/handoff.rxt. Seconds.
+test-memfn-reach: all
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-memfn-reach.ran"; fi
+	TMPDIR=$${TMPDIR:-/var/tmp} bash tests/memfn/run_handoff_reach.sh
 
 # [MEMFN] R4a: C15 (libpcrec.a exports only pcrec_ names, the kit's
 # included) and C16 (every kit source file carries a D145 SPDX id and its
@@ -1801,6 +1826,7 @@ clean:
         test-encoding-checks test-startbnd test-utfcheck test-memfn-link test-core test-examples test-clskit \
         test-memfn-manifest test-memfn-g2 test-memfn-g2-full test-memfn-stamps \
         test-memfn-arms test-memfn-deleg \
+        test-memfn-arch test-memfn-forms test-memfn-reach \
         test-startset \
         smoke hooks strict testscripts ubsan asan san lint alloc mech bench \
         fuzz clean

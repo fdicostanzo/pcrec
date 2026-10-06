@@ -3,8 +3,9 @@
 pcrec's checks on the search-code kit (`memfn/`, D146/D147;
 `docs/design/memfn/integration.md`). The kit's OWN tests (G2) live under
 `memfn/tests/`, not here. Born at R4a (lane memfnmanifest, 2026-10-05) with
-C17. Later pcrec-side kit checks and pins (`pins/`, C5/C10/C11/C12, §17.4)
-land here too.
+C17. R4c's lane r4cchecks (2026-10-06) added C4, C12, C13, C14, C17's
+re-keyed dynamic half and the VM hybrid handoff reach floor (below). Later
+pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
 
 ## Files
 
@@ -22,8 +23,7 @@ land here too.
   classes: libc search calls, table-walk loops, runcmp row texts and the
   encoding seam's span compare. Python regexes are matched against
   string literals. It names no site and no function. C12 (the emitted-form
-  ratchet, born at R4c) is meant to read THIS file rather than keep a
-  second list.
+  ratchet, born at R4c) reads THIS file rather than keep a second list.
 - **c17_lex.py** — the emitter reader. It returns every C string literal
   in a file, with adjacent pieces joined and the emitter's own comments
   dropped, attributed to its file-scope definition (a function, or an
@@ -32,18 +32,67 @@ land here too.
   shape (two-state status, unique ids, every emitter/companion defined,
   and the K35 row floor) and the four rules:
   1. static half: a form in a function no pending row names → FAIL;
-  2. dynamic half: UNREACHED while no `src/` code calls `mf_emit_site`,
-     and FAIL once one does and this half is still unbuilt;
+  2. dynamic half (R4c, Q3): keyed on `\bmf_(define|emit)\s*\(` (the
+     rev-3 key `mf_emit_site(` named nothing). Every function under
+     `src/` that calls the kit must be named (emitter or companion) by a
+     `delegated` row, and every `delegated` row must be rendered at least
+     once over a corpus compile pass through a TRACED build
+     (`site_census.py`). It is UNREACHED, loudly and never passed, while no
+     pcrec source calls the kit and no row is delegated; a delegated row with
+     no caller is a FAIL. The machinery runs on a SYNTHETIC caller every
+     time (the `selftest:` lines), so UNREACHED means "no pcrec site yet";
   3. a delegated emitter that still spells a form → FAIL. It is VACUOUS,
      and says so, at 0 delegated rows;
   4. a pending emitter that spells nothing → FAIL (the row is stale).
 
   It prints `checks passed:`/`checks failed:`.
+- **site_census.py** — C17 rule 2's mechanism: `find_callers` (calls to
+  `mf_define`/`mf_emit` under `src/`, attributed to the enclosing function,
+  comments and strings ignored), `build_traced` (recompiles the caller
+  files with a test-owned shim that logs kind/file/function before
+  forwarding to the kit, relinks over a copy of `build/libpcrec.a`; pcrec
+  grows no tracing hook), `corpus_patterns`/`run_corpus` (a deterministic
+  sample of the `.rxt` `pattern` lines, K35 floor 100 compiles), `verdict`
+  and `selftest`. Proven end to end on a scratch tree with a planted caller
+  (report §2); pcrec's own callers arrive at R4c's REPLACE.
 - **run_site_manifest.sh** — the entry point (`make test-memfn-manifest`,
   in TEST_SECTIONS; mech arm `memfnmanifest`). It holds `C17_ROW_FLOOR`,
   the K35 floor as a literal that shares no source with the TSV. A change
-  that adds a manifest row raises it in the same commit. The check is
-  static: no build and no binary, and it takes about a second.
+  that adds a manifest row raises it in the same commit. The static half
+  needs no build and takes about a second; the dynamic half needs
+  `build/libpcrec.a` once a caller exists, hence the section's `all`.
+
+### C4, C12, C13, C14 and the reach floor (lane r4cchecks, R4c)
+
+- **arch_blind_check.py**, **run_arch_blind.sh**, **c4_allowlist.tsv** — C4,
+  the arch-blindness detector (`make test-memfn-arch`; mech arm
+  `memfnarch`). Nine classes (ISA names, arch macros, intrinsics, intrinsic
+  headers, targeting, arch nouns, kit-identity compares, reading kit output,
+  the include graph) over `src/`+`cli/`+`lib/` code, the `.md` files inside
+  them, and `tests/` (this directory exempt). The allowlist is COUNTED AT
+  BIRTH (15 hits, 11 rows) and only descends (a stale row is red). Controls:
+  positive plants per class derived from the compiler's own installation
+  (`cc -dM -E` ISA-flag diffs, resource headers, `-dumpmachine`; classes 7-9
+  are structural and take synthetic plants, said so), a zero-plant class is
+  RED, a hex-escape negative control. `C4_ALLOW_FLOOR` (15) is a literal in
+  the script. The plants are box-dependent: a Linux run may widen a class.
+- **form_checks.py**, **run_form_checks.sh**, **c12_ceilings.tsv** — C12,
+  C13, C14 (`make test-memfn-forms`; arm `memfnforms`). C12 counts search
+  forms per (emitter file, vocabulary line, libc call) against ceilings that
+  only descend (12 rows, 26 forms at birth: memchr 8 in `emit_dfa.c`,
+  memcmp 1 in `runcmp.c`, ...); REPLACE edits the one number on the row.
+  Higher is red (a replaced form came back) AND lower is red (stale ceiling
+  or a blind lexer). C13 is declared UNREACHED while no `on_cand` producer
+  exists and FAILs the day one does. C14 compiles `_Static_assert(MF_MAX_TERM
+  >= PCREC_OFSK_MAX_SET + 1)` and friends against the tree's own
+  `core/internal.h` (limits.def's current value) and `memfn.h`, with a
+  control that lowers MF_MAX_TERM and requires the assert to fire.
+- **run_handoff_reach.sh** — the VM hybrid handoff route's reach floor
+  (`make test-memfn-reach`; arm `memfnreach`): three witness patterns whose
+  artifacts must carry `RX_VM_PREFILTER "hybrid"`, their `RX_REQ_HANDOFF`
+  value and `handoff_position = rx_reqrun(` feeding the first `rx_prefilter(`,
+  AND be patterns of `tests/litscan/handoff.rxt` (oracle-verified rows added
+  to `gen_handoff.py`). `HANDOFF_REACH_FLOOR` (3) is a literal.
 
 ### C15 and C16 (lane memfnskel)
 
@@ -108,6 +157,14 @@ land here too.
 
 All three are on arm `memfnmanifest`. See
 `docs/dev/lanes/memfnmanifest_report.md` §4 for the transcripts.
+
+R4c (lane r4cchecks) adds S518-S529: S518/S519/S520/S521 (C4 classes 1, 3,
+9, 7), S522 (a stale allowlist row), S523 (the hex-escape exclusion removed),
+S524 (a `memchr(` returns, C12), S525 (the vocabulary stops seeing it, C12),
+S526 (`MF_MAX_TERM` lowered, C14), S527 (an `on_cand` token with C13
+unbuilt), S528 (a kit call from an unlisted function, C17 rule 2), S529 (the
+VM hybrid loses its handoff, the reach floor). Arms `memfnarch`,
+`memfnforms`, `memfnreach`. Transcripts: `docs/dev/lanes/r4cchecks_report.md`.
 
 ## Maintaining it
 

@@ -223,6 +223,14 @@ PCREC_AXIS(PCREC_NO_START_SET, "-fno-start-set", 0, "", PCREC_AXIS_DEFAULT_ON)
 PCREC_AXIS(PCREC_NO_COMMENTS, "-fno-comments",
            PCREC_FORCE_COMMENTS, "-fcomments", PCREC_AXIS_DEFAULT_OFF)
 
+/* [MEMFN] the kit's ONE switch (D147 addenda 6-7): OFF by default, INERT until
+ * R4e' (no SIMD form exists, both settings render the same artifact). The
+ * force flag turns the kit's hardware-optimized forms on; the deny flag states
+ * the default and overrides a `config`/target block that turned it on. Same
+ * shape as the comments pair above. */
+PCREC_AXIS(PCREC_NO_MEMFN_SIMD, "-fno-memfn-simd",
+           PCREC_FORCE_MEMFN_SIMD, "-fmemfn-simd", PCREC_AXIS_DEFAULT_OFF)
+
 #undef PCREC_AXIS
 #ifdef PCREC_AXIS_DEF_UNDEF
 #undef PCREC_AXIS_DEFAULT_ON
