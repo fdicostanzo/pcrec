@@ -63,7 +63,12 @@ candidate, so the S4 L-sweep carries a forced-VM copy of each run.)
   U+017F), ill-formed text before the window (4-6 stray continuation bytes),
   seeded starts, `\G` on the attempt route and on the hybrid, `\K`, find-all
   counts and two unbounded controls. Detector of S463, S464, S465, S466,
-  S468, S469, S470.
+  S468, S469, S470. R4c (lane r4cchecks, 2026-10-06) added three blocks for
+  the VM HYBRID route's handoff, `(ab)c?userpass` (`RX_REQ_HANDOFF "3"`),
+  `(x)?userz` (`"1"`) and `(?i)(cat)s?dog` (`"0"`, through the offset-skip
+  PAIR arm), each on both routes; the reach floor
+  `tests/memfn/run_handoff_reach.sh` requires their artifacts to carry the
+  route.
 - **gen_handoff.py** — writes `handoff.rxt`: a byte block's cells from
   python3 `re` AND libpcre2 (the borrowed ctypes binding; the two must agree),
   a utf8 block's (and a byte block python cannot compile) from libpcre2 under

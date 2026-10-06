@@ -719,6 +719,15 @@ this table's method; Mac dev box, so directional):**
   corpus sample (five streams), each emitted, compiled `-O0 -fno-builtin
   -c` and read with `nm -u`, at 8 jobs. `--quick` (the default-engine
   stream alone, the mech solos' form) is about 15 s.
+- `test-memfn-arch`, `test-memfn-forms`, `test-memfn-reach` ([MEMFN] R4c,
+  lane r4cchecks, 2026-10-06; one run each, gcc-16, `all` up to date):
+  about **11 s**, **0.4 s** and **0.1 s** wall. C4 spends its time on the
+  compiler probes for its plants (ten `-dM -E` runs); C12/C13/C14 and the
+  reach floor are static or one syntax-only compile. `test-memfn-manifest`
+  now carries C17's selftest (a three-file synthetic-caller build, about
+  1 s) and, once a pcrec function calls the kit, a traced build plus a
+  300-pattern corpus pass (measured on a scratch tree with a planted caller:
+  about 3 s).
 
 **RE-RECORD TRIGGER**: re-measure a section (same method: 3 runs, per-run
 load-before/after sampling, `TMPDIR=/var/tmp`) whenever its runtime doubles

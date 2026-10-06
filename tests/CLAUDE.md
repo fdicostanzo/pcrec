@@ -695,7 +695,11 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
   (`run_link_checks.sh`, `make test-memfn-link`: libpcrec.a exports only
   `pcrec_` names, the kit's `pcrec_mf_*` included; every kit source file
   carries a D145 SPDX id and a provenance header agreeing with
-  `memfn/PROVENANCE.md`), each with a planted witness run every time. Both
+  `memfn/PROVENANCE.md`), each with a planted witness run every time. R4c adds C4 (`run_arch_blind.sh`,
+  `make test-memfn-arch`), C12/C13/C14 (`run_form_checks.sh`, `make
+  test-memfn-forms`), C17's traced dynamic half and the VM hybrid handoff
+  reach floor (`run_handoff_reach.sh`, `make test-memfn-reach`); see
+  `tests/memfn/CLAUDE.md`. Both
   are `make test` sections. See its own CLAUDE.md.
 - **utfcheck/** — [UTF-VALID] (D133): `make test-utfcheck`, the
   `-futf-check` / `-fstartpos-guard=align` differential against libpcre2
