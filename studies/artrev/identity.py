@@ -89,6 +89,104 @@ def rnd_text(rng, lit, cls, n, utf8, byte_exotic=True):
     return b
 
 
+
+# ------------------------------------------------- a sampler of strings the pattern matches
+def _pcre_to_py(text):
+    """Best-effort PCRE -> Python-re spelling, enough for sre_parse to read the shape.
+    Returns None if the pattern uses something this sampler does not model."""
+    t = text
+    if "\\Q" in t or "(?*" in t or "(*" in t or "(?R" in t or "(?&" in t or "(?(" in t or "(?+" in t or "(?-" in t:
+        return None
+    t = re.sub(r"\(?<([A-Za-z_]\w*)>", r"(?P<\1>", t)
+    t = re.sub(r"\(\?'([A-Za-z_]\w*)'", r"(?P<\1>", t)
+    t = re.sub(r"\\k<([A-Za-z_]\w*)>", r"(?P=\1)", t)
+    t = re.sub(r"\\g\{?-?\d+\}?", "", t)
+    t = t.replace("(?>", "(?:").replace("\\h", "[ \\t]").replace("\\z", "\\Z")
+    t = re.sub(r"\\[pP]\{\^?[A-Za-z_]+\}", "[A-Za-z]", t)
+    t = re.sub(r"(?<!\\)([*+?}])\+", r"\1", t)             # possessive -> greedy
+    return t
+
+
+def sample_matches(pat, rng, k, utf8, caseless):
+    try:
+        import sre_parse
+        tree = sre_parse.parse(_pcre_to_py(pat.decode("latin-1" if not utf8 else "utf-8", "replace")) or "(")
+    except Exception:
+        return []
+    import sre_constants as sc
+    out = []
+
+    def pick_in(items):
+        pool = []
+        neg = False
+        for op, arg in items:
+            if op == sc.NEGATE:
+                neg = True
+            elif op == sc.LITERAL:
+                pool.append(chr(arg))
+            elif op == sc.RANGE:
+                lo, hi = arg
+                pool.extend(chr(rng.randint(lo, min(hi, lo + 5000))) for _ in range(3))
+                pool.append(chr(lo))
+                pool.append(chr(min(hi, 0x10ffff)))
+            elif op == sc.CATEGORY:
+                pool.extend({sc.CATEGORY_DIGIT: "019", sc.CATEGORY_WORD: "aZ_9", sc.CATEGORY_SPACE: " \t",
+                             sc.CATEGORY_NOT_DIGIT: "x.", sc.CATEGORY_NOT_WORD: " .-", sc.CATEGORY_NOT_SPACE: "xy9"}.get(arg, "x"))
+        if neg:
+            cand = [c for c in "xyzXYZ019 .,-_@/:" if c not in pool] or ["\x01"]
+            return rng.choice(cand)
+        return rng.choice(pool) if pool else "x"
+
+    def gen(seq, groups, buf):
+        for op, arg in seq:
+            if op == sc.LITERAL:
+                buf.append(chr(arg))
+            elif op == sc.NOT_LITERAL:
+                buf.append(rng.choice([c for c in "xyz019 " if ord(c) != arg]))
+            elif op == sc.ANY:
+                buf.append(rng.choice("xyzXYZ019 .,-_@/:"))
+            elif op == sc.IN:
+                buf.append(pick_in(arg))
+            elif op == sc.BRANCH:
+                gen(rng.choice(arg[1]), groups, buf)
+            elif op == sc.SUBPATTERN:
+                gid, _a, _b, sub = arg
+                start = len(buf)
+                gen(sub, groups, buf)
+                if gid is not None:
+                    groups[gid] = "".join(buf[start:])
+            elif op in (sc.MAX_REPEAT, sc.MIN_REPEAT, getattr(sc, "POSSESSIVE_REPEAT", -1)):
+                lo, hi, sub = arg
+                hi = min(hi if hi != sc.MAXREPEAT else lo + 4, lo + 4)
+                n = rng.randint(lo, max(lo, hi)) if rng.random() < 0.7 else lo
+                for _ in range(min(n, 2000)):
+                    gen(sub, groups, buf)
+            elif op == sc.GROUPREF:
+                buf.append(groups.get(arg, ""))
+            elif op == sc.CATEGORY:
+                buf.append(pick_in([(sc.CATEGORY, arg)]))
+            elif op == sc.AT and arg in (sc.AT_BOUNDARY, sc.AT_NON_BOUNDARY):
+                last = "".join(buf[-1:])
+                if arg == sc.AT_BOUNDARY and last and (last.isalnum() or last == "_"):
+                    buf.append(" ")        # \b after a word char: step off it (the next piece may be a word char too)
+            # other AT / ASSERT / ASSERT_NOT: no text
+    for _ in range(k * 3):
+        try:
+            buf = []
+            gen(tree, {}, buf)
+            sm = "".join(buf)
+            if caseless:
+                sm = "".join(c.swapcase() if rng.random() < 0.3 else c for c in sm)
+            b = sm.encode("utf-8") if utf8 else sm.encode("latin-1", "replace")
+            if len(b) <= 600:
+                out.append(b)
+        except Exception:
+            return out
+        if len(out) >= k:
+            break
+    return out
+
+
 # ------------------------------------------------------------------ the corpus reader
 _ESC = {"n": 10, "t": 9, "r": 13, "f": 12, "v": 11, "\\": 92, '"': 34}
 
@@ -254,8 +352,8 @@ def build_battery(meta, orig_exe, wdir, a, extra_subs, rng):
     cases = [(i, f, "p") for i, s in enumerate(subs) for f in froms_for(len(s))]
     write_cases(os.path.join(wdir, "p1.cases"), cases)
     rc, out, err = run_driver(orig_exe, p1, os.path.join(wdir, "p1.cases"))
-    harvest = [m.encode("latin-1") if isinstance(m, str) else m for m in a.match_example]
-    harvest = [h if isinstance(h, bytes) else h.encode() for h in harvest]
+    harvest = [m.encode("utf-8") if isinstance(m, str) else m for m in a.match_example]
+    harvest += sample_matches(pat, rng, max(N // 6, 20), utf8, "-i" in meta["pcrec_flags"])
     if rc == 0:
         for ln in out.decode("latin-1").split("\n"):
             if ln.startswith("S\t"):
@@ -451,12 +549,17 @@ def cmd_identity(a):
             ndiff += 1
             if first is None:
                 first = (k, x, y)
+    nS = sum(1 for x in ol if x.startswith(b"S\t"))
+    nSm = sum(1 for x in ol if x.startswith(b"S\t") and x.split(b"\t")[3] == b"1")
     p2 = pcre2_check(meta, subs, cases, wdir, outs["orig"], outs["twin"], a.pcre2_sample, rng)
     summary = ("subjects: %d supplied, %d corpus, %d battery; %d cases, %d transcript lines compared "
                "(shapes: S M C%s N V + find-all F/FC%s); san=%s\n"
+               "search cases that MATCH in the original: %d of %d%s\n"
                "libpcre2 %s: %s, checked %d, skipped %d, orig-vs-pcre2 disagreements %d, twin-only %d" % (
                    len(a.subject), n_corpus, n_batt, len(cases), len(ol), " SI MI CI" if meta["have_in"] else "",
-                   " FSI" if meta["have_in"] else "", a.san, pcre2_version(), p2["status"], p2["checked"], p2["skipped"],
+                   " FSI" if meta["have_in"] else "", a.san, nSm, nS,
+                   "   ** THIN: under 5% match -- pass --match-example STR (a string the pattern matches) or --subject **"
+                   if nS and nSm * 20 < nS else "", pcre2_version(), p2["status"], p2["checked"], p2["skipped"],
                    p2["orig_disagree"], p2["twin_only"]))
     for n in p2["notes"]:
         summary += "\n  note: " + n

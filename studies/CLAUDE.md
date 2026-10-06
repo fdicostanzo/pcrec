@@ -266,5 +266,11 @@ re-measure before load-bearing use.
   prose texts, 99 patterns x 6 subjects, soundness (`T ⊆ C1 ⊆ C0`) checked in
   every cell plus four controls. Backs `docs/dev/ctx_prefilter_joint.md`. See
   its own CLAUDE.md.
+- `artrev/` — [ARTREV] S0 (D150; lane artharness, 2026-10-05): the harness for
+  bottom-up artifact review — generation at a pin, patch/seal with SIMD/flag
+  rejection, the answer-identity driver + battery, interleaved-round timing with
+  the load/lock gates and the `--remote ubuntubudu` day-only wrapper, and the
+  `iterations.tsv` bounds ledger; self-test includes the failing direction.
+  Charter: `docs/dev/optloop/artrev/charter.md`. See its own CLAUDE.md.
 
 Maintenance: update this file when studies are added/removed.

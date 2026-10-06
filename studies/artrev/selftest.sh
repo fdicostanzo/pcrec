@@ -18,6 +18,9 @@ export ARTREV_ROOT=$TREE/build-artrev/_selftest
 rm -rf "$ARTREV_ROOT"; mkdir -p "$ARTREV_ROOT"
 A="python3 $HERE/artrev.py"
 export ARTREV_SELFTEST=1
+# the selftest must not be blocked by (nor touch) a REAL suite lock: point the lock path at a
+# path that does not exist; section 6 points it at fake locks to prove the refusal.
+export ARTREV_SUITE_LOCK_PATH=$ARTREV_ROOT/no-such-suite.lock
 FAILS=0; N=0
 ok()   { N=$((N+1)); echo "PASS [$N] $1"; }
 bad()  { N=$((N+1)); FAILS=$((FAILS+1)); echo "FAIL [$N] $1"; }
@@ -72,6 +75,7 @@ for w in include neon_include builtin_ia32 builtin_neon vector_size pragma_targe
   $A twin vm ctl_simd --new >/dev/null 2>&1
   python3 $HERE/selftest_twins.py "$S/vm/arms/ctl_simd" "simd:$w"
   expect "SIMD twin '$w' rejected" 4 $A twin vm ctl_simd --seal --control
+  has "SIMD '$w'" "forbids"
   [ -d "$S/vm/arms/ctl_simd" ] && bad "rejected arm dir left behind" || ok "rejected arm dir removed"
 done
 # the same rejection through the --patch route
@@ -86,6 +90,7 @@ python3 $HERE/selftest_twins.py "$S/vm/arms/ctl_slow" slow
 expect "seal ctl_slow" 0 $A twin vm ctl_slow --seal --control
 expect "slowed twin is answer-identical (identity PASS)" 0 $A identity vm ctl_slow --battery 400 --pcre2-sample 100
 expect "gate override refused outside selftest" 5 env -u ARTREV_SELFTEST $A time vm --arms orig,orig2,null,ctl_slow --subject cell=$S/subj_dense.txt --rounds 3 --gate-override
+has "gate override outside selftest" "refused outside the selftest"
 expect "time vm: orig/orig2/null/ctl_slow, 2 subjects, 7 rounds" 0 $A time vm --arms orig,orig2,null,ctl_slow --subject cell=$S/subj_dense.txt --subject sparse=$S/subj_sparse.txt --rounds 7 --gate-override
 echo "$OUT" | sed -n '/^subject cell/,$p' | sed 's/^/      | /'
 RUN=$(ls -d $S/vm/timing/* | tail -1)
@@ -128,6 +133,7 @@ expect "load gate refuses (load1 above the gate)" 7 $A time vm --arms orig,null 
 expect "--remote refuses outside 08:00-19:00" 5 $A time vm --arms orig,null --subject cell=$S/subj_dense.txt --remote ubuntubudu --hour-override 23
 has "remote hours" "by-day-only"
 expect "--hour-override refused outside the selftest" 5 env -u ARTREV_SELFTEST $A time vm --arms orig,null --subject cell=$S/subj_dense.txt --remote ubuntubudu --hour-override 10 --dry-run
+has "hour override outside selftest" "refused outside the selftest"
 expect "--remote dry-run prints the commands (daytime)" 0 $A time vm --arms orig,orig2,null --subject cell=$S/subj_dense.txt --remote ubuntubudu --hour-override 10 --dry-run
 has "dry-run" "BatchMode=yes"
 has "dry-run" "gnutimeout"

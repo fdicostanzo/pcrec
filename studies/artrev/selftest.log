@@ -1,0 +1,153 @@
+== host Darwin arm64, gcc-16 (Homebrew GCC 16.2.0) 16.2.0, pcrec pcrec 0.2.0-beta
+
+== 1. generation records pin / abi / gcc / lines
+PASS [1] gen VM artifact with captures (rc 0)
+PASS [2] gen vm: output carries 'engine=vm'
+PASS [3] gen DFA no-captures artifact (rc 0)
+PASS [4] gen dfa: output carries 'engine=dfa'
+PASS [5] GENERATION.txt records 'pin'
+PASS [6] GENERATION.txt records 'abi'
+PASS [7] GENERATION.txt records 'gcc'
+PASS [8] GENERATION.txt records 'gen line'
+PASS [9] GENERATION.txt records 'asm line'
+PASS [10] GENERATION.txt records 'compile'
+PASS [11] asm written (    1953 lines)
+
+== 2. null twin: identity PASS (plain and ASan+UBSan), both engines
+PASS [12] twin vm null (rc 0)
+PASS [13] identity vm null (corpus+battery+libpcre2) (rc 0)
+PASS [14] identity vm null: output carries 'IDENTITY PASS'
+PASS [15] identity vm null --san (rc 0)
+PASS [16] twin dfa null (rc 0)
+PASS [17] identity dfa null (rc 0)
+
+== 3. FAILING DIRECTION: wrong twins must FAIL identity
+PASS [18] new ctl_wrong (rc 0)
+PASS [19] seal ctl_wrong (a control) (rc 0)
+PASS [20] identity of a wrong-END twin FAILS (rc 1)
+PASS [21] wrong-end: output carries 'FIRST DIFFERENCE'
+PASS [22] new ctl_wrongcap (rc 0)
+PASS [23] seal ctl_wrongcap (rc 0)
+PASS [24] identity of a wrong-CAPTURE twin FAILS (rc 1)
+PASS [25] wrong-cap: output carries 'C	'
+PASS [26] time refuses an arm whose identity did not pass (rc 3)
+
+== 4. FAILING DIRECTION: SIMD / flag-bearing patches must be REJECTED
+PASS [27] SIMD twin 'include' rejected (rc 4)
+PASS [28] SIMD 'include': output carries 'forbids'
+PASS [29] rejected arm dir removed
+PASS [30] SIMD twin 'neon_include' rejected (rc 4)
+PASS [31] SIMD 'neon_include': output carries 'forbids'
+PASS [32] rejected arm dir removed
+PASS [33] SIMD twin 'builtin_ia32' rejected (rc 4)
+PASS [34] SIMD 'builtin_ia32': output carries 'forbids'
+PASS [35] rejected arm dir removed
+PASS [36] SIMD twin 'builtin_neon' rejected (rc 4)
+PASS [37] SIMD 'builtin_neon': output carries 'forbids'
+PASS [38] rejected arm dir removed
+PASS [39] SIMD twin 'vector_size' rejected (rc 4)
+PASS [40] SIMD 'vector_size': output carries 'forbids'
+PASS [41] rejected arm dir removed
+PASS [42] SIMD twin 'pragma_target' rejected (rc 4)
+PASS [43] SIMD 'pragma_target': output carries 'forbids'
+PASS [44] rejected arm dir removed
+PASS [45] SIMD twin 'pragma_optimize' rejected (rc 4)
+PASS [46] SIMD 'pragma_optimize': output carries 'forbids'
+PASS [47] rejected arm dir removed
+PASS [48] SIMD twin 'attr_optimize' rejected (rc 4)
+PASS [49] SIMD 'attr_optimize': output carries 'forbids'
+PASS [50] rejected arm dir removed
+PASS [51] SIMD twin 'attr_target' rejected (rc 4)
+PASS [52] SIMD 'attr_target': output carries 'forbids'
+PASS [53] rejected arm dir removed
+PASS [54] SIMD twin 'mm_call' rejected (rc 4)
+PASS [55] SIMD 'mm_call': output carries 'forbids'
+PASS [56] rejected arm dir removed
+PASS [57] SIMD patch via --patch rejected (rc 4)
+PASS [58] a header edit (ABI change) is rejected (rc 4)
+
+== 5. FAILING DIRECTION: a slowed (answer-identical) twin must time as LOSS, null as NOISE
+PASS [59] new ctl_slow (rc 0)
+PASS [60] seal ctl_slow (rc 0)
+PASS [61] slowed twin is answer-identical (identity PASS) (rc 0)
+PASS [62] gate override refused outside selftest (rc 5)
+PASS [63] gate override outside selftest: output carries 'refused outside the selftest'
+PASS [64] time vm: orig/orig2/null/ctl_slow, 2 subjects, 7 rounds (rc 0)
+      | subject cell   null-twin deviation 0.0106 ns/B   (rule: WIN/LOSS only past max(null dev, IQR_arm, IQR_orig))
+      |   orig       median    7.8578  IQR  0.0624  vs orig  +0.0000 ( +0.00%)  threshold  0.0624  BASE
+      |   orig2      median    7.8824  IQR  0.0541  vs orig  -0.0246 ( -0.31%)  threshold  0.0624  NOISE
+      |   null       median    7.8684  IQR  0.1025  vs orig  -0.0106 ( -0.13%)  threshold  0.1025  NOISE
+      |   ctl_slow   median   49.6894  IQR  0.1938  vs orig -41.8316 (-532.35%)  threshold  0.1938  LOSS
+      | 
+      | subject sparse   null-twin deviation 0.0093 ns/B   (rule: WIN/LOSS only past max(null dev, IQR_arm, IQR_orig))
+      |   orig       median    3.2773  IQR  0.0453  vs orig  +0.0000 ( +0.00%)  threshold  0.0453  BASE
+      |   orig2      median    3.2792  IQR  0.0604  vs orig  -0.0019 ( -0.06%)  threshold  0.0604  NOISE
+      |   null       median    3.2866  IQR  0.0398  vs orig  -0.0093 ( -0.28%)  threshold  0.0453  NOISE
+      |   ctl_slow   median   21.1903  IQR  0.0368  vs orig -17.9130 (-546.59%)  threshold  0.0453  LOSS
+      | 
+      | run dir: /Users/fdicostanzo/pcrec/worktrees/artharness/build-artrev/_selftest/vm/timing/001
+PASS [65] slowed twin reads LOSS on cell
+PASS [66] slowed twin reads LOSS on sparse
+PASS [67] null twin reads NOISE
+PASS [68] original-recompiled reads NOISE
+PASS [69] gate override is logged in the ledger
+PASS [70] gate override stamped in the raw TSV header
+-- verdict rule on synthetic rounds (WIN / LOSS / NOISE; the null deviation widens the band)
+synthetic verdicts: {'fast': 'WIN', 'slow': 'LOSS', 'null': 'NOISE', 'orig2': 'NOISE', 'tiny': 'NOISE', 'noisyfast': 'NOISE'}
+PASS [71] synthetic WIN/LOSS/NOISE verdicts as the charter's rule
+
+== 6. locks and gates REFUSE (never caveat)
+PASS [72] suite lock (FILE form) refuses (rc 5)
+PASS [73] suite lock: output carries 'mac-suite\|suite is running'
+PASS [74] suite lock (DIRECTORY form) refuses (rc 5)
+PASS [75] a held build-artrev/.timing.lock refuses (rc 5)
+PASS [76] load gate refuses (load1 above the gate) (rc 7)
+PASS [77] a load-gate refusal is not logged as an attempt
+PASS [78] --remote refuses outside 08:00-19:00 (rc 5)
+PASS [79] remote hours: output carries 'by-day-only'
+PASS [80] --hour-override refused outside the selftest (rc 5)
+PASS [81] hour override outside selftest: output carries 'refused outside the selftest'
+PASS [82] --remote dry-run prints the commands (daytime) (rc 0)
+PASS [83] dry-run: output carries 'BatchMode=yes'
+PASS [84] dry-run: output carries 'gnutimeout'
+PASS [85] dry-run: output carries 'scratch_lx/artrev'
+PASS [86] dry-run: output carries 'watchdog'
+
+== 7. BOUNDS: <=6 leads, <=4 revisions per lead, <=3 timing runs per revision
+PASS [87] gen bnd (rc 0)
+PASS [88] null twin bnd (rc 0)
+PASS [89] identity bnd null (rc 0)
+  lead L1 sealed
+  lead L2 sealed
+  lead L3 sealed
+  lead L4 sealed
+  lead L5 sealed
+  lead L6 sealed
+PASS [90] SEVENTH lead is refused (rc 3)
+PASS [91] 7th lead: output carries 'BOUND'
+  L1 revision 2 sealed
+  L1 revision 3 sealed
+  L1 revision 4 sealed
+PASS [92] FIFTH revision of a lead is refused (rc 3)
+PASS [93] 5th revision: output carries 'BOUND'
+-- timing-run bound on a fresh revision (L2, rev 1)
+PASS [94] identity bnd L2 (rc 0)
+PASS [95] timing run 1 of L2 rev1 (rc 0)
+PASS [96] timing run 2 of L2 rev1 (rc 0)
+PASS [97] timing run 3 of L2 rev1 (rc 0)
+PASS [98] FOURTH timing run of one revision is refused (rc 3)
+PASS [99] 4th timing run: output carries 'BOUND'
+  -- ledger:
+      | artifact bnd: 6/6 leads carried to a twin: L1,L2,L3,L4,L5,L6
+      |   L1         revisions 4/4; timing runs per revision: r4:0/3
+      |   L2         revisions 1/4; timing runs per revision: r1:3/3
+      |   L3         revisions 1/4; timing runs per revision: r1:0/3
+      |   L4         revisions 1/4; timing runs per revision: r1:0/3
+      |   L5         revisions 1/4; timing runs per revision: r1:0/3
+      |   L6         revisions 1/4; timing runs per revision: r1:0/3
+      | ledger: /Users/fdicostanzo/pcrec/worktrees/artharness/build-artrev/_selftest/bnd/iterations.tsv (25 rows)
+-- an UNLOGGED hand edit cannot be timed
+PASS [100] unsealed edit of L3 refused by time (rc 3)
+PASS [101] unsealed edit: output carries 'unlogged edit'
+
+== summary: 101/101 checks passed, 0 failed
