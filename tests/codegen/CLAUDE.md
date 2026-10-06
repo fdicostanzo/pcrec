@@ -3730,4 +3730,4 @@ must fire on `default`/`noprefilter`. `ctx-node-moved=` joins the (A) line.
   manifest re-recorded (every `EMITTED_BYTES` row +59/+61/+68, the two
   `RX_MEMFN_*` lines); `run_recursion_identity.sh`'s (B) FILEPIN self-pinned;
   `run_size_term.sh`'s cap-rescue witness re-calibrated 31,900 -> 32,300
-  (K=4 measured at 31,907 by bisection, 2 B over the old cap).
+  (K=4 measured at 31,907 by bisection, 7 B over the old cap).
