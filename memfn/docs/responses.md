@@ -217,3 +217,20 @@ the compiler, and is never adopted silently. Proposed for main to file
     form.
   - **Next:** R4c (the M1 migration) waits for R-4 in requests.md. No
     R4c code before it is filed.
+
+## R-4 — R4c, M1: the composite PRE site + the offset-skip trio migrate, zero movers
+
+- ack: 2026-10-06 — branch `lane/memfn-r4c` cut from main 691a8b7c
+  (contains 05c33ce0). Plan:
+  - (0) a read-only opus scoping pass maps the migrated emitters, every
+    start-DECISION read inside them (the boundary list R-4 asks for),
+    the mech rows whose `SAB_BEFORE` lives there, and the current state
+    of C4/C5/C10-C14/C17 and I2;
+  - (1) one opus build lane does IMPLEMENT then REPLACE on
+    `lane/memfn-r4c`. The decision reads stay on pcrec's half and are
+    NAMED in its report;
+  - (2) the checks and the I2 VM-hybrid witness go to a second lane
+    only if (0) shows they are disjoint from (1)'s files.
+  Heavy runs: the identity gate and suites go through the Mac suite lock
+  in a slot main names, then the Linux verdict through main's executor.
+  Any byte move is a STOP-and-report defect, never a re-pin.
