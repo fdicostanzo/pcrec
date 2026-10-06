@@ -26405,3 +26405,18 @@ Frank: "finish up open work/bench results/errors", Linux box free (bench manager
   by day, then re-pin. D6 panel launched: crit3sound (oracle soundness,
   counterexamples) + crit3checks (controls/populations/sabotage/abi/spec),
   each writing its own findings file under worktrees/ssbuild3/docs/dev/reviews/.
+- ~02:30: D6 PANEL ON STAGE 3 (lane/ssbuild3 61c5a6f0, panel file
+  docs/dev/reviews/2026-10-06-r-ss3-panel.md on the branch). BLOCKER
+  sound-F1: the `T == S` assertion fires on VALID patterns at default
+  flags (`(?<=\w) *a` etc.: a byte inside S can leave every seed fixed, so
+  S ∩ E* ⊊ S) — refusal instead of a wrong answer, found by a COMPILE-ONLY
+  fuzz (4/9,000); every answer differential is blind to a pattern that no
+  longer compiles. No wrong answer found where the hat admits (75 hand rows
+  + 400 random, every startpos vs deny and libpcre2). The r4 panel's
+  "S ∩ E* ≡ S on every seeded machine, 0 diffs over 13.58M cells" was a
+  population that never held the shape: Frank rules the retraction of D148
+  addendum 1's sentence. Six MAJOR check gaps (always-detected sabotage
+  rows via a text pin, never-flipping reach probes, no DFA-hat count in
+  axes, uncounted collapse population, a displacing differential alphabet,
+  stale mech). Fix lane ssfix3 (opus): T = S + compile-only arm + M1-M6.
+  Stage 3 merge waits on ssfix3, Frank's ruling, and R4a′ landing.
