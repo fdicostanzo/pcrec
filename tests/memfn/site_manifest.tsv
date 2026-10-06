@@ -12,7 +12,8 @@
 # STATUS is exactly one of two words, the ruled vocabulary with no third
 # state:
 #   pending    pcrec still spells this site's search; the kit does not.
-#   delegated  the site reaches mf_emit_site; pcrec spells no form for it.
+#   delegated  the site reaches the kit (mf_define/mf_emit); pcrec spells no
+#              form for it.
 # Born at R4a with every row `pending`. Each migration step's REPLACE commit
 # flips its rows to `delegated`; C17 then fails on any form its emitters
 # still spell (rule 3).

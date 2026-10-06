@@ -427,6 +427,24 @@ is EXPECTED to time out"*, and neither would a separate arm.
   other arm is green on it by construction. Rows S510 (rule 1, a `memchr(`
   planted in an unlisted function), S511 (rule 4, a stale pending row),
   S512 (the K35 row floor).
+- `memfnarch` → `tests/memfn/run_arch_blind.sh` ([MEMFN] R4c, lane
+  r4cchecks, 2026-10-06): C4, the arch-blindness detector. Static plus
+  compiler probes for the plants; reads the sabotaged tree's own files. An
+  ISA word in an emitter moves no answer and no byte, so every other arm is
+  green on it. Rows S518 (class 1), S519 (class 3), S520 (class 9), S521
+  (class 7), S522 (a stale allowlist row), S523 (the hex-escape exclusion
+  removed). The rows spell the planted words from shell variables, because C4
+  scans this directory too.
+- `memfnforms` → `tests/memfn/run_form_checks.sh` (same lane): C12 (the
+  emitted-form ratchet), C13 (on_cand), C14 (shape bounds). Static plus one
+  syntax-only compile. Rows S524 (a `memchr(` returns), S525 (the vocabulary
+  stops seeing it), S526 (`MF_MAX_TERM` lowered), S527 (an `on_cand` token
+  with C13 unbuilt).
+- `memfnreach` → `tests/memfn/run_handoff_reach.sh` (same lane): the VM
+  hybrid handoff route's reach floor. Compiles with the sabotaged tree's own
+  `build/pcrec`. Row S529 (the VM engine declined by `req_handoff_applies`;
+  no answer moves). `memfnmanifest` also gained S528 (a kit call from an
+  unlisted function, rule 2's re-keyed dynamic half).
 - `memfnstamps` → `tests/memfn/run_libc_census.sh --quick` ([MEMFN] R4a′,
   lane memfnstamp, 2026-10-05): C11, the kit's two every-artifact stamps.
   Builds nothing itself (reads the sabotaged tree's build/pcrec); about 15 s.

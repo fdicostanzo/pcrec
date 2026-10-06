@@ -2546,3 +2546,314 @@ ns 8 "zzab-xyzwab"
 ns 9 "zzab-xyzwab"
 ns 10 "zzab-xyzwab"
 ns 11 "zzab-xyzwab"
+
+# the VM hybrid's handoff, RX_REQ_HANDOFF 3: the window's first hit, less K, is the first prefilter call's start
+pattern (ab)c?userpass
+features all
+encoding byte
+ms 0 "abuserpass" 0 10
+ns 1 "abuserpass"
+ns 2 "abuserpass"
+ns 3 "abuserpass"
+ns 4 "abuserpass"
+ns 5 "abuserpass"
+ns 6 "abuserpass"
+ns 7 "abuserpass"
+ns 8 "abuserpass"
+ns 9 "abuserpass"
+ns 10 "abuserpass"
+ms 0 "abcuserpass" 0 11
+ns 1 "abcuserpass"
+ns 2 "abcuserpass"
+ns 3 "abcuserpass"
+ns 4 "abcuserpass"
+ns 5 "abcuserpass"
+ns 6 "abcuserpass"
+ns 7 "abcuserpass"
+ns 8 "abcuserpass"
+ns 9 "abcuserpass"
+ns 10 "abcuserpass"
+ns 11 "abcuserpass"
+ms 0 "zzabcuserpass" 2 13
+ms 1 "zzabcuserpass" 2 13
+ms 2 "zzabcuserpass" 2 13
+ns 3 "zzabcuserpass"
+ns 4 "zzabcuserpass"
+ns 5 "zzabcuserpass"
+ns 6 "zzabcuserpass"
+ns 7 "zzabcuserpass"
+ns 8 "zzabcuserpass"
+ns 9 "zzabcuserpass"
+ns 10 "zzabcuserpass"
+ns 11 "zzabcuserpass"
+ns 12 "zzabcuserpass"
+ns 13 "zzabcuserpass"
+ns 0 "abcuserpas"
+ns 1 "abcuserpas"
+ns 2 "abcuserpas"
+ns 3 "abcuserpas"
+ns 4 "abcuserpas"
+ns 5 "abcuserpas"
+ns 6 "abcuserpas"
+ns 7 "abcuserpas"
+ns 8 "abcuserpas"
+ns 9 "abcuserpas"
+ns 10 "abcuserpas"
+ms 0 "xabuserpassabcuserpass" 1 11
+ms 1 "xabuserpassabcuserpass" 1 11
+ms 2 "xabuserpassabcuserpass" 11 22
+ms 3 "xabuserpassabcuserpass" 11 22
+ms 4 "xabuserpassabcuserpass" 11 22
+ms 5 "xabuserpassabcuserpass" 11 22
+ms 6 "xabuserpassabcuserpass" 11 22
+ms 7 "xabuserpassabcuserpass" 11 22
+ms 8 "xabuserpassabcuserpass" 11 22
+ms 9 "xabuserpassabcuserpass" 11 22
+ms 10 "xabuserpassabcuserpass" 11 22
+ms 11 "xabuserpassabcuserpass" 11 22
+ns 12 "xabuserpassabcuserpass"
+ns 13 "xabuserpassabcuserpass"
+ns 14 "xabuserpassabcuserpass"
+ns 15 "xabuserpassabcuserpass"
+ns 16 "xabuserpassabcuserpass"
+ns 17 "xabuserpassabcuserpass"
+ns 18 "xabuserpassabcuserpass"
+ns 19 "xabuserpassabcuserpass"
+ns 20 "xabuserpassabcuserpass"
+ns 21 "xabuserpassabcuserpass"
+ns 22 "xabuserpassabcuserpass"
+
+# the VM hybrid's handoff, RX_REQ_HANDOFF 3: the window's first hit, less K, is the first prefilter call's start [engine vm]
+pattern (ab)c?userpass
+features all
+encoding byte
+engine vm
+ms 0 "abuserpass" 0 10
+ns 1 "abuserpass"
+ns 2 "abuserpass"
+ns 3 "abuserpass"
+ns 4 "abuserpass"
+ns 5 "abuserpass"
+ns 6 "abuserpass"
+ns 7 "abuserpass"
+ns 8 "abuserpass"
+ns 9 "abuserpass"
+ns 10 "abuserpass"
+ms 0 "abcuserpass" 0 11
+ns 1 "abcuserpass"
+ns 2 "abcuserpass"
+ns 3 "abcuserpass"
+ns 4 "abcuserpass"
+ns 5 "abcuserpass"
+ns 6 "abcuserpass"
+ns 7 "abcuserpass"
+ns 8 "abcuserpass"
+ns 9 "abcuserpass"
+ns 10 "abcuserpass"
+ns 11 "abcuserpass"
+ms 0 "zzabcuserpass" 2 13
+ms 1 "zzabcuserpass" 2 13
+ms 2 "zzabcuserpass" 2 13
+ns 3 "zzabcuserpass"
+ns 4 "zzabcuserpass"
+ns 5 "zzabcuserpass"
+ns 6 "zzabcuserpass"
+ns 7 "zzabcuserpass"
+ns 8 "zzabcuserpass"
+ns 9 "zzabcuserpass"
+ns 10 "zzabcuserpass"
+ns 11 "zzabcuserpass"
+ns 12 "zzabcuserpass"
+ns 13 "zzabcuserpass"
+ns 0 "abcuserpas"
+ns 1 "abcuserpas"
+ns 2 "abcuserpas"
+ns 3 "abcuserpas"
+ns 4 "abcuserpas"
+ns 5 "abcuserpas"
+ns 6 "abcuserpas"
+ns 7 "abcuserpas"
+ns 8 "abcuserpas"
+ns 9 "abcuserpas"
+ns 10 "abcuserpas"
+ms 0 "xabuserpassabcuserpass" 1 11
+ms 1 "xabuserpassabcuserpass" 1 11
+ms 2 "xabuserpassabcuserpass" 11 22
+ms 3 "xabuserpassabcuserpass" 11 22
+ms 4 "xabuserpassabcuserpass" 11 22
+ms 5 "xabuserpassabcuserpass" 11 22
+ms 6 "xabuserpassabcuserpass" 11 22
+ms 7 "xabuserpassabcuserpass" 11 22
+ms 8 "xabuserpassabcuserpass" 11 22
+ms 9 "xabuserpassabcuserpass" 11 22
+ms 10 "xabuserpassabcuserpass" 11 22
+ms 11 "xabuserpassabcuserpass" 11 22
+ns 12 "xabuserpassabcuserpass"
+ns 13 "xabuserpassabcuserpass"
+ns 14 "xabuserpassabcuserpass"
+ns 15 "xabuserpassabcuserpass"
+ns 16 "xabuserpassabcuserpass"
+ns 17 "xabuserpassabcuserpass"
+ns 18 "xabuserpassabcuserpass"
+ns 19 "xabuserpassabcuserpass"
+ns 20 "xabuserpassabcuserpass"
+ns 21 "xabuserpassabcuserpass"
+ns 22 "xabuserpassabcuserpass"
+
+# the VM hybrid's handoff, RX_REQ_HANDOFF 1
+pattern (x)?userz
+features all
+encoding byte
+ms 0 "userz" 0 5
+ns 1 "userz"
+ns 2 "userz"
+ns 3 "userz"
+ns 4 "userz"
+ns 5 "userz"
+ms 0 "xuserz" 0 6
+ms 1 "xuserz" 1 6
+ns 2 "xuserz"
+ns 3 "xuserz"
+ns 4 "xuserz"
+ns 5 "xuserz"
+ns 6 "xuserz"
+ms 0 "zxuserz" 1 7
+ms 1 "zxuserz" 1 7
+ms 2 "zxuserz" 2 7
+ns 3 "zxuserz"
+ns 4 "zxuserz"
+ns 5 "zxuserz"
+ns 6 "zxuserz"
+ns 7 "zxuserz"
+ms 0 "zzuserz" 2 7
+ms 1 "zzuserz" 2 7
+ms 2 "zzuserz" 2 7
+ns 3 "zzuserz"
+ns 4 "zzuserz"
+ns 5 "zzuserz"
+ns 6 "zzuserz"
+ns 7 "zzuserz"
+
+# the VM hybrid's handoff, RX_REQ_HANDOFF 1 [engine vm]
+pattern (x)?userz
+features all
+encoding byte
+engine vm
+ms 0 "userz" 0 5
+ns 1 "userz"
+ns 2 "userz"
+ns 3 "userz"
+ns 4 "userz"
+ns 5 "userz"
+ms 0 "xuserz" 0 6
+ms 1 "xuserz" 1 6
+ns 2 "xuserz"
+ns 3 "xuserz"
+ns 4 "xuserz"
+ns 5 "xuserz"
+ns 6 "xuserz"
+ms 0 "zxuserz" 1 7
+ms 1 "zxuserz" 1 7
+ms 2 "zxuserz" 2 7
+ns 3 "zxuserz"
+ns 4 "zxuserz"
+ns 5 "zxuserz"
+ns 6 "zxuserz"
+ns 7 "zxuserz"
+ms 0 "zzuserz" 2 7
+ms 1 "zzuserz" 2 7
+ms 2 "zzuserz" 2 7
+ns 3 "zzuserz"
+ns 4 "zzuserz"
+ns 5 "zzuserz"
+ns 6 "zzuserz"
+ns 7 "zzuserz"
+
+# the VM hybrid's handoff through the PAIR arm of the offset-skip form (a two-member cube at the scanned offset)
+pattern (?i)(cat)s?dog
+features all
+encoding byte
+ms 0 "CATsDOG" 0 7
+ns 1 "CATsDOG"
+ns 2 "CATsDOG"
+ns 3 "CATsDOG"
+ns 4 "CATsDOG"
+ns 5 "CATsDOG"
+ns 6 "CATsDOG"
+ns 7 "CATsDOG"
+ms 0 "catdog" 0 6
+ns 1 "catdog"
+ns 2 "catdog"
+ns 3 "catdog"
+ns 4 "catdog"
+ns 5 "catdog"
+ns 6 "catdog"
+ms 0 "zcatsdog" 1 8
+ms 1 "zcatsdog" 1 8
+ns 2 "zcatsdog"
+ns 3 "zcatsdog"
+ns 4 "zcatsdog"
+ns 5 "zcatsdog"
+ns 6 "zcatsdog"
+ns 7 "zcatsdog"
+ns 8 "zcatsdog"
+ms 0 "CatSdog" 0 7
+ns 1 "CatSdog"
+ns 2 "CatSdog"
+ns 3 "CatSdog"
+ns 4 "CatSdog"
+ns 5 "CatSdog"
+ns 6 "CatSdog"
+ns 7 "CatSdog"
+ns 0 "catsdo"
+ns 1 "catsdo"
+ns 2 "catsdo"
+ns 3 "catsdo"
+ns 4 "catsdo"
+ns 5 "catsdo"
+ns 6 "catsdo"
+
+# the VM hybrid's handoff through the PAIR arm of the offset-skip form (a two-member cube at the scanned offset) [engine vm]
+pattern (?i)(cat)s?dog
+features all
+encoding byte
+engine vm
+ms 0 "CATsDOG" 0 7
+ns 1 "CATsDOG"
+ns 2 "CATsDOG"
+ns 3 "CATsDOG"
+ns 4 "CATsDOG"
+ns 5 "CATsDOG"
+ns 6 "CATsDOG"
+ns 7 "CATsDOG"
+ms 0 "catdog" 0 6
+ns 1 "catdog"
+ns 2 "catdog"
+ns 3 "catdog"
+ns 4 "catdog"
+ns 5 "catdog"
+ns 6 "catdog"
+ms 0 "zcatsdog" 1 8
+ms 1 "zcatsdog" 1 8
+ns 2 "zcatsdog"
+ns 3 "zcatsdog"
+ns 4 "zcatsdog"
+ns 5 "zcatsdog"
+ns 6 "zcatsdog"
+ns 7 "zcatsdog"
+ns 8 "zcatsdog"
+ms 0 "CatSdog" 0 7
+ns 1 "CatSdog"
+ns 2 "CatSdog"
+ns 3 "CatSdog"
+ns 4 "CatSdog"
+ns 5 "CatSdog"
+ns 6 "CatSdog"
+ns 7 "CatSdog"
+ns 0 "catsdo"
+ns 1 "catsdo"
+ns 2 "catsdo"
+ns 3 "catsdo"
+ns 4 "catsdo"
+ns 5 "catsdo"
+ns 6 "catsdo"

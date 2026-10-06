@@ -21,8 +21,12 @@
 #   - the row count's K35 floor is THIS literal, not a count of the TSV, so
 #     a deleted row is red until someone lowers the floor on purpose. A
 #     change that adds a manifest row raises it in the same commit.
-#   - rule 2 (the dynamic half) is declared UNREACHED while no pcrec source
-#     calls mf_emit_site, and turns into a FAIL the day one does.
+#   - rule 2 (the dynamic half) keys on `\bmf_(define|emit)\s*\(` (the kit's
+#     API; `mf_emit_site` was a rev-3 name that names nothing) and counts the
+#     sites rendered over a corpus compile pass against the `delegated` rows
+#     (tests/memfn/site_census.py). It is declared UNREACHED, loudly, while no
+#     pcrec source calls the kit and no row is delegated; the machinery is
+#     proven on a synthetic caller every run (the `selftest:` lines).
 #
 # Usage: bash tests/memfn/run_site_manifest.sh [ROOT]
 #   ROOT defaults to the tree this script sits in (the mech driver runs the
@@ -36,7 +40,7 @@ here="$(cd "$(dirname "$0")" && pwd)"
 root="${1:-$(cd "$here/../.." && pwd)}"
 
 echo "== C17: the checked site manifest (tests/memfn/site_manifest.tsv) =="
-python3 "$here/site_manifest_check.py" "$root" "$C17_ROW_FLOOR"
+python3 "$here/site_manifest_check.py" "$root" "$C17_ROW_FLOOR" "${CC:-gcc}"
 rc=$?
 if [ "$rc" -ne 0 ] && [ "$rc" -ne 1 ]; then
     # the checker died before its totals: say so in the scraped form, so a
