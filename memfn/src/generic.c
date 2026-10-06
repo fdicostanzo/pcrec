@@ -10,7 +10,10 @@
  *   FIND / SKIP   one loop over [lo, n - end_back), forward or reverse; a
  *                 candidate is a hit iff every term holds AND every byte a
  *                 term reads lies in [floor, n) (rule 2, §14.7)
- *   VERIFY        the conjunction at cand == lo
+ *   VERIFY        the conjunction at cand == lo, behind the range test
+ *                 `lo + end_back < n` unless the site's `empty` is EXCLUDED
+ *                 or the caller guards it (F1: the range is the site's, and
+ *                 an empty one, `lo > n` included, reads nothing)
  *   ALL_PRESENT   one presence loop per predicate, in `preds` order, each
  *                 run only while every earlier one was found; ret_pred's
  *                 loop keeps its position
@@ -146,7 +149,6 @@ static int pred_test(rctx *rc, kb *b, const mf_pred *p, unsigned pidx,
         const mf_term *tm = &p->term[t];
         long off = tm->offset;
         long len = tm->kind == MF_T_SET ? 1 : (long)tm->run_len;
-        if (len == 0) continue;                 /* reads nothing, holds */
         if (!rc->s->guard_by_caller) {
             reads = 1;
             if (off < 0) {
@@ -185,9 +187,16 @@ static int pred_test(rctx *rc, kb *b, const mf_pred *p, unsigned pidx,
                     reads = 1;
                 }
             } else {
+                uint8_t m = tm->mask ? tm->mask[j] : 0xFF;
+                if (tm->run[j] & (uint8_t)~m) {
+                    /* a run byte with a bit its mask clears never holds
+                     * under the literal formula (Q-G2-13): constant
+                     * false, the same answer with no tautological compare */
+                    kb_puts(b, "0");
+                    continue;
+                }
                 rc->used |= PARAM_S;
                 reads = 1;
-                uint8_t m = tm->mask ? tm->mask[j] : 0xFF;
                 if (m == 0xFF)
                     kb_printf(b, "%s == %d", bx, tm->run[j]);
                 else
@@ -241,7 +250,17 @@ static const char *core(rctx *rc, kb *b, int want_value)
         else            kb_puts(&fin, F);
         break;
     case MF_OP_VERIFY:
-        if (pred_test(rc, &fin, &s->pred, 0, rc->LO)) rc->used |= PARAM_LO;
+        /* cand == lo must lie in [lo, n - end_back): the test also bounds
+         * every read at a negative offset below n. A NOP site's statement
+         * already tests it (stmt_value). */
+        if (s->empty == MF_EMPTY_MISS && !s->guard_by_caller) {
+            kb_printf(&fin, "(%s%s < %s && ", rc->LO, s->end_back ? " + 1" : "", rc->N);
+            rc->used |= PARAM_LO | PARAM_N;
+            pred_test(rc, &fin, &s->pred, 0, rc->LO);
+            kb_puts(&fin, ")");
+        } else if (pred_test(rc, &fin, &s->pred, 0, rc->LO)) {
+            rc->used |= PARAM_LO;
+        }
         break;
     case MF_OP_ALL_PRESENT: {
         const char *A = nm(rc, "_a", 0), *R = nm(rc, "_r", 0);
@@ -251,7 +270,7 @@ static const char *core(rctx *rc, kb *b, int want_value)
             int ret = i == s->ret_pred;
             const char *Ci = nm(rc, "_c%u", i), *Fi = nm(rc, "_f%u", i);
             kb_printf(b, "if (%s) { ", A);
-            find_loop(rc, b, &s->preds[i], i, ret && s->reverse, 0, Ci, Fi);
+            find_loop(rc, b, &s->preds[i], i, 0, 0, Ci, Fi);
             kb_printf(b, "if (!%s) %s = 0; ", Fi, A);
             if (ret && want_value) kb_printf(b, "%s = %s; ", R, Ci);
             kb_puts(b, "} ");
@@ -415,7 +434,9 @@ static void replace_tokens(kb *out, const char *text, const char *accept,
 
 /* STMT ON_CAND: one loop over the candidates in order, pcrec's verify on
  * each that holds and whose `on_cand_reach` bytes lie below n; accept
- * writes the result and leaves, reject resumes at the next position. */
+ * writes the result and leaves, reject (or a verify that falls through its
+ * token, Q-G2-8) resumes at the next position. A NOP site wraps it all in
+ * the range test, so an empty range writes and runs nothing (F2). */
 static int stmt_on_cand(rctx *rc, kb *b)
 {
     const mf_site *s = rc->s;
@@ -424,10 +445,20 @@ static int stmt_on_cand(rctx *rc, kb *b)
         return kit_fail(rc->art, "generic: ON_CAND needs the `on_cand` hook");
     if (need(rc->art, "ON_CAND", "result", h->result, "miss", h->miss, (char *)NULL))
         return -1;
+    int nop = s->empty == MF_EMPTY_NOP;
+    if (nop && h->result_decl)
+        return kit_fail(rc->art, "generic: a NOP ON_CAND cannot declare its result");
     const char *ind = h->indent ? h->indent : "";
     const char *C = nm(rc, "_c", 0);
     const char *next = nm(rc, "_next", 0), *done = nm(rc, "_done", 0);
     unsigned eb = s->end_back;
+    if (nop) {
+        kb_printf(b, "%sif ((%s)%s < (%s)) {\n", ind, h->lo, eb ? " + 1" : "", h->n);
+        kb deeper;
+        kb_init(&deeper, rc->art->a);
+        kb_printf(&deeper, "%s    ", ind);
+        ind = deeper.p ? deeper.p : ind;
+    }
 
     kb test;
     kb_init(&test, rc->art->a);
@@ -480,6 +511,7 @@ static int stmt_on_cand(rctx *rc, kb *b)
         kb_printf(&cond, "%s == (%s)", h->result, h->miss);
         on_miss_block(b, ind, cond.p, h->on_miss);
     }
+    if (nop) kb_printf(b, "%s}\n", h->indent ? h->indent : "");
     return 0;
 }
 

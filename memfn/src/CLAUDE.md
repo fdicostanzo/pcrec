@@ -11,8 +11,10 @@ and no emitter renders through it.
   interface K2 selects over. Never included outside this directory.
 - **compose.c** — K2, the composer: `mf_art`, the define/use split
   (`mf_define`/`mf_use`/`mf_emit`/`mf_call`; handles checked at use and at
-  `mf_art_end`), the vocabulary rules every site must pass (`site_check`)
-  and their table (`mf_vocab_has`), the FIRST-MATCH arm table (one row at
+  `mf_art_end`), the vocabulary rules every site must pass (`site_check`,
+  `pred_kinds`: out-of-enum fields and every shape integration.md §R4.7
+  rules outside the vocabulary are REFUSED loudly) and their table
+  (`mf_vocab_has`), the FIRST-MATCH arm table (one row at
   R4a: the generic row), and the artifact queries (`mf_flush_helpers`,
   `mf_includes`, `mf_stamps`: nothing to flush, include or stamp yet; the
   stamps are born at R4a′).
@@ -21,8 +23,9 @@ and no emitter renders through it.
   describes as a plain byte loop (GNU C statement expressions for EXPR; a
   `static inline` definition plus calls for FUNC; STMT ASSIGN, ON_MISS,
   ON_CAND and ADVANCE). It tests every term, honours `floor`, `n`,
-  `end_back` and the empty outcome, and uses pcrec's `member` hook for a
-  set when one is given. No tuning constant (D149).
+  `end_back` and the empty outcome on every op (VERIFY tests its range
+  too; an empty range, `lo > n` included, reads nothing: §R4.7 F1), and
+  uses pcrec's `member` hook for a set when one is given. No tuning constant (D149).
 - **k1_ref.c** — K1's REFERENCE functions (`mf_ref_*`): one obviously-
   correct byte loop per primitive (F1 find_byte, F2 find_any2/3, F4
   find_in_set, F5 skip_in_set, F9 find_literal, F7 run_verify). G2's

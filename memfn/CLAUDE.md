@@ -10,9 +10,14 @@
   - Q51/Q52 rejected;
   - Q43-Q46, Q48 and Q49 ruled; Q47 refined: the kit's own option
     namespace (below).
+- D147 addendum 10: Q53-Q55 ruled as recommended (the libc record's
+  refined form; N7 `pending`; `MEMFN_FORMS` attributed outside the
+  artifact).
 
-The design of record is `docs/design/memfn/integration.md` (rev 4.6;
-read its §R4.6, then §R4.5, first). This file is the working agreement for the
+The design of record is `docs/design/memfn/integration.md` (rev 4.7;
+read its §R4.7, then §R4.6, first).
+§R4.7 holds the kit's contract after G2, the kit session's rulings on
+G2's F1-F3 and Q-G2-1..17. This file is the working agreement for the
 subtree.
 
 **Status: R4a, the code skeleton** (lane memfnskel; integration.md §22).
@@ -22,7 +27,10 @@ pcrec's Makefile (`KITSRCS`/`KITFLAGS`), and `--list-axes` prints the
 registry as its `memfn` section. pcrec CALLS nothing else: no emitter
 renders through the kit, so no artifact byte moved. C15/C16 hold the link
 (`tests/memfn/run_link_checks.sh`). The site manifest + C17 and G2's first
-tests are R4a's other lanes.
+tests are R4a's other lanes. G2 (`tests/`, D27-blinded lane memfng2)
+found F1-F3; lane memfnfix fixed them, made the contract's edge refuse
+loudly (§R4.7), and wired G2 into make: `make test-memfn-g2` (the quick
+tier, a `make test` section) and `make test-memfn-g2-full` (opt-in).
 
 ## What the kit is
 

@@ -321,7 +321,7 @@ TEST_SECTIONS := test-corpus test-cli test-reject test-registry test-parse \
       test-entry-shape-identity test-cpset-structure test-startbnd \
       test-uprops test-core test-vars test-examples test-findings test-ucp \
       test-clskit test-encoding-checks test-utfcheck test-memfn-link \
-      test-memfn-manifest
+      test-memfn-manifest test-memfn-g2
 
 # [CHK-2 trailer] `test:` STOPPED being purely prerequisite-based here
 # (2026-08-26, manager finding, journal part 7): under `make -j12 test`,
@@ -1205,6 +1205,21 @@ test-memfn-link: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-memfn-link.ran"; fi
 	bash tests/memfn/run_link_checks.sh
 
+# [MEMFN] R4a: G2, the kit's own tests (memfn/tests/, D27-blinded lane
+# memfng2): the kit's rendered text against G2's own byte loop over a
+# generated site space, with its planted-defect witnesses. The section runs
+# the --quick tier (gcc, every site, quick subjects; ASan and the witnesses
+# on a sampled third of the batches): about a minute on the Mac.
+# test-memfn-g2-full is the whole run (gcc and clang, full subjects, every
+# witness on every batch), about 25 minutes on the Mac: OPT-IN, never part
+# of `make test`.
+test-memfn-g2: all
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-memfn-g2.ran"; fi
+	TMPDIR=$${TMPDIR:-/var/tmp} bash memfn/tests/run_g2.sh --quick
+
+test-memfn-g2-full: all
+	TMPDIR=$${TMPDIR:-/var/tmp} bash memfn/tests/run_g2.sh
+
 # [REVW.U L5-R0] tests/core/ — the unit tier's home for a check on a helper
 # that belongs to no single feature (today: the saturating-arithmetic
 # agreement, mrl.c/emit_vm.c/callgraph.c). One gcc invocation and one process
@@ -1734,6 +1749,6 @@ clean:
         test-prefilter-collapse test-rxtsource test-definitions \
       test-entry-shape-identity test-cpset-structure \
         test-encoding-checks test-startbnd test-utfcheck test-memfn-link test-core test-examples test-clskit \
-        test-memfn-manifest \
+        test-memfn-manifest test-memfn-g2 test-memfn-g2-full \
         smoke hooks strict testscripts ubsan asan san lint alloc mech bench \
         fuzz clean
