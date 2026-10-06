@@ -26432,3 +26432,15 @@ Frank: "finish up open work/bench results/errors", Linux box free (bench manager
   repairs tagged changes-giveup-surface (c41348f3). wake.md rewritten early
   (crash-proofing); 08:05 one-shot cron queues the morning Linux order
   (R4a′ make test, then the ARTREV confirmer). ssfix3 running.
+- ~04:45: ssfix3 DELIVERED stage 3's panel fixes (lane/ssbuild3 @ c9154808):
+  T = S (dfa_estar deleted; guard dfa_reseed_exact, never fires over 69k fuzz
+  + corpus); emit_sweep vs the pre-fix head 0 movers (the fix moved no byte
+  of any already-compiling artifact); compile-only fuzz arm in
+  test-startset (pre-fix 70 hits / 9,000, critic's grammar 4/9,000; fixed 0
+  over 69k); fixture dfahat_f1.rxt 322 cases (pre-fix fails all); M1
+  sabotage split (S481-S485 now DETECTED by answers alone), M2 equivalence
+  rows, M3 DFA-hat axes floor, M4 collapse re-oracled, M5 differential 1.92M
+  DFA / 2.49M VM cells 0 defects; full Mac make test 52/52 nm-only; 26
+  mech solos 0 unexpected; vs main FINDING 0. Waits on Frank's Q-F1
+  (D148 addendum-1 retraction text in report §F.7) + Q3/Q4, and on R4a′
+  landing (abi 63) before the 64 re-pin.
