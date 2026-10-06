@@ -161,5 +161,96 @@ echo '/* sneaky */' >> "$S/bnd/arms/L3/artifact.c"
 expect "unsealed edit of L3 refused by time" 3 $A time bnd --arms orig,null,L3 --subject cell=$S/subj_dense.txt --rounds 3 --gate-override
 has "unsealed edit" "unlogged edit"
 
+
+echo; echo "== 8. HARDENED IDENTITY: shrunken resources + THE GIVE-UP RULE + window start + livelock bound"
+expect "identity vm null drives the _in shapes (the HAVE_IN compile fix)" 0 $A identity vm null --battery 200 --pcre2-sample 0
+echo "$OUT" | grep -Eq '[1-9][0-9]* `_in` search lines driven' && ok "_in search lines are driven (not zero)" || bad "no _in lines driven"
+has "shrunk phase runs by default" "shrunken resources (0/1 frames"
+has "shrunk phase counts the original's give-ups" "original gives up on"
+echo "-- a twin that answers WRONG where the original gives up must FAIL; a CORRECT one must PASS; one that gives up where the original answers must FAIL"
+for k in giveup_wrong giveup_right giveup_lost; do
+  expect "new ctl_$k" 0 $A twin vm ctl_$k --new
+  python3 $HERE/selftest_twins.py "$S/vm/arms/ctl_$k" $k
+  expect "seal ctl_$k" 0 $A twin vm ctl_$k --seal --control
+done
+expect "give-up repaired WRONG: identity FAILS (oracle rejects the fabricated answer)" 1 $A identity vm ctl_giveup_wrong --battery 300 --pcre2-sample 0
+has "giveup_wrong" "GIVE-UP RULE VIOLATED"
+has "giveup_wrong" "REPAIR DISAGREES with libpcre2"
+expect "give-up repaired RIGHT (full buffers retried): identity PASSES under the give-up rule" 0 $A identity vm ctl_giveup_right --battery 300 --pcre2-sample 0
+echo "$OUT" | grep -Eq '[1-9][0-9]* give-up repair\(s\) of which [1-9][0-9]* checked against libpcre2' && ok "the repairs were counted AND checked against libpcre2" || { bad "no checked repairs reported"; echo "$OUT" | grep repair | head -3; }
+expect "twin GIVES UP where the original answers: identity FAILS" 1 $A identity vm ctl_giveup_lost --battery 300 --pcre2-sample 0
+has "giveup_lost" "twin GIVES UP where the original answers"
+echo "-- the unit of the rule on synthetic transcripts"
+python3 - <<PY
+import sys; sys.path.insert(0, "$HERE")
+import identity as I
+o = b"SI.f0t0\t0\t0\t-3\t-2\t-2\nSI.f1t0\t0\t0\t1\t0\t1\nF\t0\t0\t-2\t-2\t-2\nM\t0\t0\t-1\nN\t0\t0\t5\n"
+ok_t = b"SI.f0t0\t0\t0\t1\t0\t1\nSI.f1t0\t0\t0\t1\t0\t1\nF\t0\t0\t1\t0\t1\nF\t0\t5\t0\t-2\t-2\nM\t0\t0\t-1\nN\t0\t0\t5\n"
+g = I.giveup_compare(o, ok_t)
+assert not g["fails"], g["fails"]
+assert len(g["repairs"]) == 2 and len(g["twin_only"]) == 1, (len(g["repairs"]), len(g["twin_only"]))
+lost = b"SI.f0t0\t0\t0\t-3\t-2\t-2\nSI.f1t0\t0\t0\t-3\t-2\t-2\nF\t0\t0\t-2\t-2\t-2\nM\t0\t0\t-1\nN\t0\t0\t5\n"
+assert any("GIVES UP" in w for w, _, _ in I.giveup_compare(o, lost)["fails"])
+diff = o.replace(b"SI.f1t0\t0\t0\t1\t0\t1", b"SI.f1t0\t0\t0\t1\t0\t2")
+assert any("answers differ" in w for w, _, _ in I.giveup_compare(o, diff)["fails"])
+nv = o.replace(b"N\t0\t0\t5", b"N\t0\t0\t6")
+assert any("N/V" in w for w, _, _ in I.giveup_compare(o, nv)["fails"])
+other = o.replace(b"SI.f0t0\t0\t0\t-3", b"SI.f0t0\t0\t0\t-2")      # a different give-up code is still a give-up
+assert not I.giveup_compare(o, other)["fails"]
+print("give-up rule unit cases ok")
+PY
+[ $? = 0 ] && ok "give-up rule: repair / lost / differ / N-V / code-move" || bad "give-up rule unit cases"
+echo "-- window start (a hybrid artifact: the prefilter + verifying attempt shape)"
+python3 - <<'PY'
+import os, random
+r = random.Random(11)
+open("%s/subj_log.txt" % os.environ["ARTREV_ROOT"], "wb").write(
+    b"".join(r.choice([b"ERROR disk timeout\n", b"FATAL x refused ", b"INFO fine\n", b"ERROR ok\n", b"xx ", b"timeout "]) for _ in range(900)))
+PY
+expect "gen hyb (internal prefilter)" 0 $A gen hyb --pcrec "$PCREC" --flags=--no-captures --pattern '\b(?:ERROR|FATAL)\b.{0,40}?\b(?:timeout|refused)\b'
+expect "twin hyb null" 0 $A twin hyb null --null
+HYBID="--subject $S/subj_log.txt --battery 300 --pcre2-sample 0 --match-example 'ERROR x timeout' --match-example 'FATAL refused'"
+expect "identity hyb null PASSES incl. the window phase" 0 eval "$A identity hyb null $HYBID"
+has "hyb window" "prefilter windows compared"
+expect "new ctl_early" 0 $A twin hyb ctl_early --new
+python3 $HERE/selftest_twins.py "$S/hyb/arms/ctl_early" start_early
+expect "seal ctl_early" 0 $A twin hyb ctl_early --seal --control
+expect "a start-too-early twin (answers identical) FAILS by the window differential" 1 eval "$A identity hyb ctl_early $HYBID"
+has "start_early" "start differences"
+echo "$OUT" | grep -q "FIRST DIFFERENCE" && bad "start_early should be invisible to answer identity (it differed)" || ok "start_early is invisible to answer identity: only the window differential catches it"
+expect "new ctl_earlyloop" 0 $A twin hyb ctl_earlyloop --new
+python3 $HERE/selftest_twins.py "$S/hyb/arms/ctl_earlyloop" start_early_loop
+expect "seal ctl_earlyloop" 0 $A twin hyb ctl_earlyloop --seal --control
+T0=$(date +%s)
+expect "a livelocking early-start twin FAILS FAST (the livelock bound, not the 900 s timeout)" 1 env ARTREV_LIVELOCK_FLOOR=5 bash -c "$A identity hyb ctl_earlyloop $HYBID"
+T1=$(date +%s)
+has "earlyloop" "LIVELOCK"
+[ $((T1-T0)) -lt 120 ] && ok "livelock failed in $((T1-T0)) s" || bad "livelock took $((T1-T0)) s"
+echo "-- iteration shortcuts cannot reach timing"
+expect "new ctl_part" 0 $A twin hyb ctl_part --new
+expect "seal ctl_part" 0 $A twin hyb ctl_part --seal --control
+expect "identity with --skip-window logs PASS-PARTIAL" 0 eval "$A identity hyb ctl_part $HYBID --skip-window"
+has "partial" "PASS-PARTIAL"
+expect "time refuses a PASS-PARTIAL identity" 3 $A time hyb --arms orig,null,ctl_part --subject cell=$S/subj_log.txt --rounds 3 --gate-override
+has "partial refused" "no PASSING identity"
+
+
+echo; echo "== 9. REAL twins on the pinned A09 fixture (lane rvA09, 2026-10-06)"
+FX=$HERE/fixtures/a09_pin57db5152; A09D=$TREE/docs/dev/optloop/artrev/A09
+mkdir -p "$S/a09/arms/orig" "$S/a09/arms/orig2"
+cp "$FX/artifact.c" "$FX/artifact.h" "$FX/meta.json" "$S/a09/"
+for d in orig orig2; do cp "$FX/artifact.c" "$FX/artifact.h" "$S/a09/arms/$d/"; done
+A09ID="--subject $(ls $A09D/edge_subjects/e-*.bin | head -150 | tr '\n' '@' | sed 's/@/ --subject /g' | sed 's/ --subject $//') --battery 200 --pcre2-sample 0 --match-example 'ERROR x timeout' --match-example 'CRIT timed out'"
+expect "a09: L4 r2 applies (control)" 0 $A twin a09 L4_r2 --patch "$A09D/twins/L4.r2.patch" --control
+expect "a09: L4 r3 applies (control)" 0 $A twin a09 L4_r3 --patch "$A09D/twins/L4.r3.patch" --control
+expect "a09: ctlL4e (start one EARLY) applies (control)" 0 $A twin a09 ctlL4e --patch "$A09D/controls/ctlL4e.r1.patch" --control
+expect "a09: L4 r2 (answers where the original gives up with 0 frames/trail) PASSES the give-up rule" 0 eval "$A identity a09 L4_r2 $A09ID --skip-window"
+echo "$OUT" | grep -Eq '[1-9][0-9]* give-up repair\(s\) of which [1-9][0-9]* checked against libpcre2' && ok "a09 L4 r2: its repairs were found, counted, and equal libpcre2's" || { bad "a09 L4 r2: no checked repairs"; echo "$OUT" | grep -i "repair\|shrunk" | head; }
+expect "a09: L4 r2 FAILS --strict-giveup (it changes the limits behaviour)" 1 eval "$A identity a09 L4_r2 $A09ID --skip-window --strict-giveup"
+has "a09 strict" "strict-giveup"
+expect "a09: L4 r3 (capacity guard added) is exact even under --strict-giveup" 0 eval "$A identity a09 L4_r3 $A09ID --skip-window --strict-giveup"
+expect "a09: ctlL4e (the livelocking early start) FAILS FAST, no 900 s timeout" 1 env ARTREV_LIVELOCK_FLOOR=10 bash -c "$A identity a09 ctlL4e $A09ID"
+T9=$?
+
 echo; echo "== summary: $((N-FAILS))/$N checks passed, $FAILS failed"
 [ $FAILS = 0 ]

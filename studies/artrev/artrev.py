@@ -281,6 +281,8 @@ def main():
     i.add_argument("--tests-dir")
     i.add_argument("--shrunk-budgets", default="8:64,64:1024,2000:40000",
                    help="STEPS:WORK pairs the shrunken-resource phase compiles both arms with (identity.DEFAULT_BUDGETS)")
+    i.add_argument("--strict-giveup", action="store_true",
+                   help="shrunk phase: ALSO fail a twin that answers where the original gave up (default: allowed iff equal to libpcre2)")
     i.add_argument("--skip-shrunk", action="store_true", help="iteration speed only: logs PASS-PARTIAL, which `time` refuses")
     i.add_argument("--skip-window", action="store_true", help="iteration speed only: logs PASS-PARTIAL, which `time` refuses")
     tm = sp.add_parser("time")

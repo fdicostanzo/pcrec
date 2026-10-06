@@ -20,6 +20,9 @@ Three further phases are part of identity by default (charter S1-S3 / S4):
   livelock bound      the twin's driver run gets a wall budget of a multiple of
                       the original's, so a twin whose start moves early fails in
                       seconds instead of by the 900 s timeout.
+--strict-giveup turns the permitted repair direction into a FAIL too (a twin must reproduce the
+original's give-ups exactly): the rule's complement, for asking "does this twin change the limits
+behaviour AT ALL" -- a repair is legal under the default rule, never silent under this flag.
 --skip-shrunk / --skip-window exist for iteration speed; a run that skips either
 logs status PASS-PARTIAL, which `time` refuses (it wants PASS).
 """
@@ -508,6 +511,7 @@ def pcre2_check(meta, subs, cases, wdir, orig_out, twin_out, nsample, rng):
 
 
 # ------------------------------------------------------------ the give-up rule
+LIVELOCK_FLOOR = float(os.environ.get("ARTREV_LIVELOCK_FLOOR", "30"))   # s; the twin's wall bound = max(this, 25 x the original's)
 GIVEUP = (-5, -4, -3, -2)           # PCREC_ERR_FLOOR .. PCREC_ERR_STEPS (artifact.h)
 S_SHAPES = ("S", "SI", "F", "FSI")   # rc 1 / 0 are answers
 M_SHAPES = ("M", "MI", "C", "CI", "FC")   # rc >= 0 (matched length) / -1 are answers
@@ -689,11 +693,16 @@ def shrunk_phase(a, meta, base, ad, od, sj, cs, subs, wdir):
         el = time.monotonic() - t0
         if rco != 0:
             return "FAIL", "shrunken resources (%s): the ORIGINAL driver failed rc=%s: %s" % (lab, rco, eo)
-        rct, ot, et = run_driver(ex_t, sj, cs, san=a.san, extra=["shrunk"], timeout=min(900, max(30, 25 * el)))
+        rct, ot, et = run_driver(ex_t, sj, cs, san=a.san, extra=["shrunk"], timeout=min(900, max(LIVELOCK_FLOOR, 25 * el)))
         if rct != 0:
             return "FAIL", "shrunken resources (%s): the TWIN driver FAILED rc=%s%s: %s" % (
                 lab, rct, " (livelock bound: >25x the original's wall)" if rct is None else "", et)
         g = giveup_compare(oo, ot)
+        if a.strict_giveup:
+            for shape, idx, frm, y in g["repairs"][:3]:
+                fails.append("[%s] --strict-giveup: twin answers where the original gave up: %s idx %d from %d" % (lab, shape, idx, frm))
+            if g["repairs"]:
+                fails.append("[%s] --strict-giveup: %d give-up repairs in all" % (lab, len(g["repairs"])))
         chk, skp, bad, _ = oracle_check_repairs(meta, subs, g["repairs"] + g["twin_only"], wdir)
         tot_rep += len(g["repairs"])
         tot_chk += chk
@@ -730,7 +739,7 @@ def window_phase(a, meta, base, ad, od, sj):
     el = time.monotonic() - t0
     if rco != 0:
         return "FAIL", "window start: the ORIGINAL driver failed rc=%s: %s" % (rco, eo)
-    rct, ot, et = run_driver(ex_t, sj, None, san=a.san, timeout=min(900, max(30, 25 * el)))
+    rct, ot, et = run_driver(ex_t, sj, None, san=a.san, timeout=min(900, max(LIVELOCK_FLOOR, 25 * el)))
     if rct != 0:
         return "FAIL", "window start: the TWIN driver FAILED rc=%s%s: %s" % (
             rct, " (livelock bound: >25x the original's wall)" if rct is None else "", et)
@@ -800,7 +809,7 @@ def cmd_identity(a):
         t0 = time.monotonic()
         rc, out, err = run_driver(exe, sj, cs, san=a.san, timeout=tmo)
         if label == "orig":
-            tmo = min(900, max(30, 25 * (time.monotonic() - t0)))   # the livelock bound for the twin
+            tmo = min(900, max(LIVELOCK_FLOOR, 25 * (time.monotonic() - t0)))   # the livelock bound for the twin
         rcs[label], outs[label] = rc, out
         if rc != 0:
             msg = "%s arm driver FAILED (rc=%s)%s%s:\n%s" % (label, rc, " under ASan/UBSan" if a.san else "",

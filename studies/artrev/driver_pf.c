@@ -1,8 +1,8 @@
 /* driver_pf.c -- [ARTREV] window-start differential of ONE arm.
  *
  *   driver_pf SUBJECTS.bin
- * For every subject and every search_from (all of them up to 20000 bytes, every
- * 7th above, plus the end) prints `W idx from rc start`: what the artifact's own
+ * For every subject and every search_from (all of them up to 3000 bytes, about
+ * 1500 evenly spaced above, plus the end) prints `W idx from rc start`: what the artifact's own
  * internal prefilter returns and the window START it proposes.  Two arms must
  * print byte-identical transcripts.  A start that is too EARLY is invisible to
  * answer identity (the verifying attempt retries and the answer comes out the
@@ -29,7 +29,7 @@ int main(int argc, char **argv)
         if (fread(&n, 4, 1, f) != 1) return 2;
         unsigned char *s = malloc(n ? n : 1);        /* exact-length heap copy: ASan sees overreads */
         if (n && fread(s, 1, n, f) != n) return 2;
-        size_t step = n > 20000 ? 7 : 1;
+        size_t step = n > 3000 ? n / 1500 : 1;   /* a prefilter call can scan to the end: bound the O(n^2) */
         for (size_t from = 0; from <= n; from += step) {
             ptrdiff_t w[1][2] = { { -9, -9 } };
             int rc = art_pf(s, n, from, w);
