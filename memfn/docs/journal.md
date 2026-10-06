@@ -237,3 +237,20 @@ pointer when a kit change merges to main.
   worktree + cell can't be managed by wtprune; that is with main.
   Lesson: mk_d27_cell.sh run from inside worktrees/memfn nests the cell
   there.
+
+## 2026-10-05 — lesson: D27 cells must not nest (main agrees)
+
+- Running `scripts/mk_d27_cell.sh` from inside worktrees/memfn nested the
+  G2 worktree and cell there. wtprune refuses nested worktrees, so a raw
+  removal (Frank's, on his morning list) is needed.
+- The script cuts the cell from HEAD of the tree it is run in. So running
+  it from the main tree tests MAIN, not unmerged kit code. Rule for the
+  next kit cell:
+  - if the code under test is already on main, run it from the main
+    tree;
+  - if it is only on the kit branch, ask main for a base-ref option on
+    mk_d27_cell.sh (cell from `lane/memfn-*`, placed directly under
+    worktrees/) before briefing the author.
+  Never nest.
+- main removed memfn-r4b2-results (byte-identical to the archived
+  probes/out/twins/r4b/linux/).
