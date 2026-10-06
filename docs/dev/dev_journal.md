@@ -26490,3 +26490,20 @@ Frank: "finish up open work/bench results/errors", Linux box free (bench manager
   (opus) writing docs/design/where_to_start.md, census via --emit-facts
   (PATFACTS), missing facts named as candidate fact rows. Reverse-inner is
   Frank's existing [ENG-TACTICS] (b); report corrected.
+- ~14:00: START-SET STAGE 3 LANDED (the DFA hat, T = S; abi 64; pushed).
+  ssland3 re-pinned on main (pins re-measured: all held but FILEPIN), full Mac
+  make test 53/53 with a check-side startset normalize for R4a′'s LIBC stamp,
+  emit_sweep vs main FINDING 0 (88 hat movers), 26 mech solos 0 unexpected.
+  Post-merge on main: strict, codegen (FULLY green — first Mac run since the
+  nm fix), startset, registry all 0 failed. Bench I-131 (a first copy lost its
+  code spans to a double-quoted ssh; rewritten via stdin, 08b63aa). Owed:
+  alpha_s3.sh (Linux, after revtwin's box time), whole-corpus test-axes.
+- Frank ruled D151 (where-to-start, six Qs as recommended) and agreed to a
+  UNIFIED START-STRATEGY TABLE (design note -> light panel -> no-mover
+  refactor -> new rows); lane starttable writing docs/design/start_table.md.
+- Frank's meta-observation ("forest for the trees"): decision logic grows
+  dispersed until he asks for the unified table. Saved as feedback memory,
+  a SIBLING-OF-A-FAMILY lens added to the manager skill and to the design
+  lenses; lane decsurvey surveying the codebase for still-dispersed decision
+  families (ranked, with latent inconsistencies). Lane revtwin: the
+  dup-param-detect twin (D151's D77 trigger) + the model at 10.46.
