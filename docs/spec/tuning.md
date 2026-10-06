@@ -3499,6 +3499,52 @@ bytes); a start that did not move is used as the caller gave it, so
 **Denied:** the pre-check only discards, the `abi` 60 program apart from the
 abi digits and `<PREFIX>_REQ_HANDOFF "none"`.
 
+### 2.42 `-fno-start-set` — `PCREC_NO_START_SET` (bit 47)
+
+**[START-SET] stage 2, `abi` 62 (`docs/design/startset.md` §2 V, §4.2, §8;
+D148 + addenda 1-2; `docs/dev/lanes/ssbuild2_report.md`).
+ANSWER-IDENTITY-preserving; NOT give-up-preserving, in one direction.**
+Denies the candidate table's start-set rows — at stage 2 the one VM-route
+row, `first-class`, listed on the `prefilter` axis of `--list-axes` with the
+`RX_VM_START_SCAN` stamp. Deny-only (D148 Q3), MASKED out of `rx_info.flags`
+(`strategy_denials`); the activity record is `<PREFIX>_VM_START_SCAN`
+(`match_api.md` §6.3), `"first-class"` or `"none"`, on every artifact.
+
+**What it is.** A VM artifact with no DFA prefilter starts an attempt at
+every position from `startpos`. An attempt at `p` can succeed only if the
+byte at `p` is in the pattern's START SET `S` — the `start_set` fact
+(`facts_listing.md`): the first byte of every non-empty match, with every
+zero-width construct erased, on the encoding-lowered pattern (so under
+`-e utf8` it holds lead bytes). Where the pattern cannot match empty the
+attempt loop seeks the next byte of `S` before its first attempt and after
+each failed one (after the encoding's own advance), and answers no-match
+when none is left. The row applies where:
+
+- the artifact is a VM artifact with no DFA prefilter (`RX_VM_PREFILTER
+  "none"`, at `auto` or under `--engine=vm`); a hybrid's prefilter is its
+  start test;
+- the pattern is unanchored (`start_anchor`): an anchored or `\G`-start
+  pattern runs one attempt;
+- `S` is not nullable (the erased language cannot match empty) and has
+  fewer than 256 members.
+
+The seek is a 256-entry table walk at any size of `S`; a one-byte `memchr`
+form is not built (a dense one-byte `S` read by `memchr` per failed attempt
+measured slower than the table, startset.md §4.4). It sits after the range
+guard, K50's startpos guard, `-futf-check`'s subject check and the K65/K66
+pre-check, so none of their answers move; `\G` keeps asserting at
+`startpos`, which the seek never moves.
+
+**The give-up surface moves in one direction.** A skipped attempt spends no
+steps, work, backtrack frames or trail, so a search that gives up under
+`-fno-start-set` may return the answer an unbounded budget returns
+(`match_api.md` §3.1). Witness: `(?=(?:a|b|x)*c)x` under `--engine=vm
+--backtrack-frames=8` on `(ab)×12` + `"xc"` gives up `PCREC_ERR_FRAMES`
+denied and answers `(24,25)` with the row (`tests/startset/giveup.rxt`).
+
+**Denied:** every position is attempted, the `abi` 61 program apart from the
+abi digits and `<PREFIX>_VM_START_SCAN "none"`.
+
 ## 3. The DFA side's own stamps
 
 **CLOSED 2026-08-25 by plan row `[DD-13]`; this section stated the gap while
@@ -3790,6 +3836,7 @@ not-a-tuning-axis list that follows.
 | `flags` bit `PCREC_NO_REQ_RUN_FOLD` | `-fno-req-run-fold` | §2.39 |
 | `flags` bit `PCREC_NO_REQ_SET_LEAD` | `-fno-req-set-lead` | §2.40 |
 | `flags` bit `PCREC_NO_REQ_HANDOFF` | `-fno-req-handoff` | §2.41 |
+| `flags` bit `PCREC_NO_START_SET` | `-fno-start-set` | §2.42 |
 | `unroll_k` (`PCREC_UNROLL_K_DEFAULT` = 0) | `--unroll=K` | §2.10 |
 | `vm_entry_shape` (`PCREC_VM_ENTRY_AUTO` = 0, `_PLAIN`, `_SHARED`, `_FORWARD`, `_INLINE`) | `--vm-entry-shape=N` | §2.21 |
 | `engine` (`PCREC_ENGINE_AUTO`/`_DFA`/`_VM`) | `--engine=E` | §2.11 |
@@ -3940,10 +3987,11 @@ the rule), and `tune` is precisely such a case, already covered.
 
 ### 5.4 The policy table
 
-**Thirty-one rows: the 23 `tuning.md` §2 axes, `-fno-run-overlap` (§2.38,
+**Thirty-two rows: the 23 `tuning.md` §2 axes, `-fno-run-overlap` (§2.38,
 added at `abi` 58 with a cell at no position), `-fno-req-run-fold` (§2.39,
 added at `abi` 59, likewise), `-fno-req-set-lead` (§2.40, added at `abi` 60,
-likewise), `-fno-req-handoff` (§2.41, added at `abi` 61, likewise), λ, the `[ART-SIZE]`
+likewise), `-fno-req-handoff` (§2.41, added at `abi` 61, likewise), `-fno-start-set`
+(§2.42, added at `abi` 62, likewise), λ, the `[ART-SIZE]`
 ladder's two parameters, and the emitted-size caps** (the last three are
 not §2 axes in their own right — the ladder's parameters are
 `-fno-size-term`'s sub-parameters, listed separately because the dial
@@ -3991,6 +4039,7 @@ lands.
 | `-fno-run-overlap` | — | — | — | — | — | §2.38; **NOT A RUNG** — the row and the `memcmp` it replaces are within a word in size, so no position trades on it; whether it ships at all is its own alpha (`litscan_s4.md` Q3), not a dial cell |
 | `-fno-req-set-lead` | — | — | — | — | — | §2.40; **NOT A RUNG** — one more one-byte `memchr`, not a size/speed trade the dial prices |
 | `-fno-req-handoff` | — | — | — | — | — | §2.41; **NOT A RUNG** — a subtraction and a compare, not a size/speed trade the dial prices; it removes a rescan |
+| `-fno-start-set` | — | — | — | — | — | §2.42; **NOT A RUNG** — a 256-byte table and one walk per failed attempt, not a size/speed trade the dial prices; it removes attempts that fail |
 | `-fno-req-run-fold` | — | — | — | — | — | §2.39; **NOT A RUNG** — a narrower or wider necessary fact, not a size/speed trade; whether it ships is its own alpha (the `union-select` cell), not a dial cell |
 | emitted-size caps | — | — | — | — | — | `limits.md` §8; **NOT A RUNG** — raise-only refusal boundaries; a dial that lowered one would manufacture refusals |
 

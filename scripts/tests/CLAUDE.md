@@ -39,5 +39,16 @@ report (`.DELETE_ON_ERROR`) — a red run must not leave a green artifact.
   verified to go red against a deliberately sabotaged copy of the script
   before landing — a test that cannot fail is not a test.
 
+- **wtprune.test** — scripts/wtprune's 26-check self-test against a
+  SACRIFICIAL repo it builds under mktemp (never the real worktrees). One
+  worktree per gate (unmerged, dirty, fresh mtimes, a live `sleep` with its
+  cwd inside, the lock owner, pinned, a nested-worktree home with the inner
+  path ignored as `memfn/worktrees/` is), each PAIRED with the same tree
+  passing once its one blocker is lifted, so a gate that keeps everything
+  cannot pass; plus dry-run-touches-nothing, named-subset apply,
+  `--delete-branches`, `--dir` (and its refusals) and the audit line. Each
+  of the seven gates was disabled in a scratch copy and the test went red
+  (2026-10-05).
+
 Maintenance: update this file when .test files are added/removed or a
 script's test coverage changes meaningfully.

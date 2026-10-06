@@ -242,6 +242,30 @@ pcrec (the Makefile owns that).
   directly rather than the `/proc/uptime`-derived boot-epoch/tick
   arithmetic.
 
+- **wtprune** — removes delivered lane worktrees under `worktrees/`
+  (2026-10-05; ~50 had piled up because a hand-typed `git worktree remove`
+  is blocked by the session classifier, which cannot judge per call whether
+  a tree is still someone's). Judges from ARTIFACTS only, and a worktree is
+  removed only if EVERY gate passes, otherwise KEPT with the first failing
+  reason: direct child of `worktrees/`; not `git worktree lock`ed; HEAD an
+  ancestor of `main`; clean (`git status --porcelain` empty — ignored build
+  output is disposable); quiet (nothing modified in `--quiet-min`, default
+  120); no process cwd inside (`/proc` on Linux, `lsof` on darwin — no
+  evidence readable means exit 2, never "nothing running"); not the
+  `.mac-suite.lock` owner (file or dir/owner form); not a long-lived home
+  (named in the gitignored, per-box `worktrees/.wtprune.keep` — `memfn`,
+  the kit's branch home, is there — or containing another registered
+  worktree). Removal is `git worktree remove` WITHOUT `--force`, so git
+  re-checks cleanliness itself. Dry run by default; `--apply [NAME..]`;
+  `--delete-branches` uses `git branch -d` (refuses unmerged). Non-git
+  entries (`NAME-scratch`, cells, logs) are only listed UNMANAGED — they can
+  hold a D27 author's undelivered work or cited evidence no artifact check
+  can rule out — and go only by explicit `--dir NAME` (quiet/cwd/lock gates
+  still apply; NAME must be a bare name). Every action appends to
+  `worktrees/.wtprune.log`. Allowed in `.claude/settings.local.json`
+  (the manager runs it without a prompt; raw `git worktree remove`/`rm -rf`
+  stay un-allowed). Bash 3.2-clean. Self-test: `tests/wtprune.test`.
+
 - **hooks/pre-push** — [TT-1] opt-in local push gate: runs `make test` (the
   full suite, not a tier) and blocks the push on failure. Installed ONLY by
   `make hooks`, which copies it to `git rev-parse --git-path hooks` (not a

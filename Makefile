@@ -1236,9 +1236,13 @@ test-memfn-g2-full: all
 # bytes of every forward DFA, seeded included, are a subset of the fact),
 # NULLABLE => start_set.nullable, and the hand-written option witnesses, over
 # every corpus block with its own options. ~20 s on the Mac dev box.
+# Stage 2 (the VM hat) adds run_vmhat_checks.sh: the fixtures, the stamp/
+# route/deny/table/mover-manifest checks and the every-startpos differential
+# with the start-byte oracle. Both run; either failing fails the section.
 test-startset: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-startset.ran"; fi
-	bash tests/startset/run_startset_checks.sh
+	@rc=0; bash tests/startset/run_startset_checks.sh || rc=1; \
+	bash tests/startset/run_vmhat_checks.sh || rc=1; exit $$rc
 
 # [REVW.U L5-R0] tests/core/ — the unit tier's home for a check on a helper
 # that belongs to no single feature (today: the saturating-arithmetic

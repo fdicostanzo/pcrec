@@ -298,11 +298,11 @@ noted under group 2, which are `PCREC_*`-named yet per-artifact):
    refused.** The block opens
 
    ```c
-   #if defined(PCREC_RX_ABI_H) && (PCREC_RX_ABI_H + 0) != 60
-   #error "pcrec: this artifact (abi 61) shares a translation unit with an artifact of a different abi; regenerate both with one pcrec"
+   #if defined(PCREC_RX_ABI_H) && (PCREC_RX_ABI_H + 0) != 62
+   #error "pcrec: this artifact (abi 62) shares a translation unit with an artifact of a different abi; regenerate both with one pcrec"
    #endif
    #ifndef PCREC_RX_ABI_H
-   #define PCREC_RX_ABI_H 60
+   #define PCREC_RX_ABI_H 62
    ```
 
    so artifacts of one abi still share the first block, and an artifact of
@@ -590,6 +590,16 @@ proves cannot begin a match consume none — and no artifact begins a scan
 later where that could change whether a budget-limited search answers or
 gives up (`tuning.md` §2.41: a count-collapsed prefilter declines). `\G`
 keeps asserting at `startpos` itself.
+
+A search may also skip a START position whose byte cannot begin a match
+([START-SET], `abi` 62, `<PREFIX>_VM_START_SCAN` §6.3; `tuning.md` §2.42):
+a prefilter-less VM artifact attempts no match where the pattern's start set
+excludes the byte there. Positions a start-set or necessary-literal proof
+excludes consume no budget and no capacity. A search that gives up with
+`-fno-start-set`, whether on steps, work, backtrack frames, trail, or a
+caller-provided buffer's capacity (the `_in` entries, §10), may return the
+answer an unbounded budget and capacity return. It never does the reverse:
+an answer under `-fno-start-set` is the answer with the skip.
 
 **`startpos` MUST BE A CHARACTER BOUNDARY OF THE ARTIFACT'S ENCODING, AND BY
 DEFAULT THE ARTIFACT ENFORCES IT** ([K50]; the axis is
@@ -2305,7 +2315,25 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `61` on every artifact today (lane k82hbuild bumped it
+- **`rx_info.abi` is `62` on every artifact today (lane ssbuild2 bumped it
+  from 61, 2026-10-05: [START-SET] stage 2 — THE VM HAT,
+  `docs/design/startset.md` §2 V, §4.2, §8, D148 + addenda 1-2).** The
+  candidate table (`dfa_pfs[]`) gains its first row serving the VM route,
+  `first-class` (`tuning.md` §2.42, listed live by `--list-axes` on the
+  `prefilter` axis with the `RX_VM_START_SCAN` stamp): a VM artifact with no
+  DFA prefilter, an unanchored pattern, and a start set `S` (the `start_set`
+  fact) that cannot match empty and has fewer than 256 members SEEKS the next
+  byte of `S` — a 256-entry table — before its first attempt and after each
+  failed one, instead of attempting at every position. The seek sits after
+  the range guard, K50, `rx_valid_upto` and the K65/K66 pre-check, so a
+  pre-check NOMATCH and a `PCREC_ERR_UTF` are unchanged. Every artifact of
+  both engines gains one stamp line, `<PREFIX>_VM_START_SCAN`
+  (`"first-class"` or `"none"`, §6.3). `-fno-start-set` (bit 47, masked out
+  of `rx_info.flags`) restores the `abi`-61 program apart from the abi digits
+  and that stamp's `"none"`. No struct offset moves, no `rx_info` member is
+  added or changed, and no answer moves; a give-up the skipped attempts would
+  have hit may become the answer (§3.1).
+- **`rx_info.abi` was `61` (lane k82hbuild bumped it
   from 60, 2026-10-05: [K82] (B) — THE HANDOFF, `docs/design/litscan_k82h.md`
   revision 2 and its rulings).** A new two-row first-match table, axis
   `req-use` (`tuning.md` §2.41, listed live by `--list-axes`), decides what a
@@ -3881,6 +3909,30 @@ engine-scoped.**
   the window `TRA`. A non-`"none"` value never changes an answer or a
   give-up; it says the artifact skips positions a necessary literal proved
   cannot begin a match. No `rx_info` mirror, its siblings' reason.
+
+  **[START-SET] stage 2, `abi` 62: `<PREFIX>_VM_START_SCAN` — WHERE A VM
+  ATTEMPT CAN START.** Family (a): on EVERY artifact pcrec emits, both
+  engines, beside `<PREFIX>_REQ_HANDOFF` and for its ruling.
+
+  ```c
+  #define RX_VM_START_SCAN "first-class"  /* attempts start only where the
+                                             byte is in the start set */
+  #define RX_VM_START_SCAN "none"         /* every position is attempted */
+  ```
+
+  `"first-class"` where the candidate table's VM-route row applies
+  (`tuning.md` §2.42): a VM artifact with no DFA prefilter
+  (`<PREFIX>_VM_PREFILTER "none"`), an unanchored pattern, and a start set
+  (the `start_set` fact `--emit-facts` lists, `facts_listing.md`) that
+  cannot match empty and has fewer than 256 members. The attempt loop then
+  seeks the next byte of that set, through a 256-entry table, before its
+  first attempt and after each failed one, and answers no-match where none
+  is left. `"none"` everywhere else: every DFA artifact, every VM hybrid
+  (whose prefilter is its start test), every anchored or `\G`-start pattern,
+  and every artifact built `-fno-start-set`. The value names the FORM of the
+  seek; a one-byte (`memchr`) form is not built. A non-`"none"` value never
+  changes an answer; a give-up may become the answer (§3.1). No `rx_info`
+  mirror, its siblings' reason.
 
   **[FINDINGS] B1, 2026-09-27: `<PREFIX>_FINDINGS` — WHICH FINDINGS THIS
   ARTIFACT WAS BUILT FROM.** Family (a): on EVERY artifact, both engines.

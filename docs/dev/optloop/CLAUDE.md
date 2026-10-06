@@ -814,3 +814,18 @@ that cycle's analysis lands.
   captures over the found span).
 - `revend/` — its instruments and verbatim outputs. See its own `CLAUDE.md`.
 
+- `startset/` — [START-SET]'s alpha blocks (round 2): `alpha_s2.sh`, stage
+  2's (the VM hat) Linux alpha, written by lane ssbuild2 and owed to the
+  executor channel. Own CLAUDE.md.
+
+## [ARTREV]: bottom-up artifact review (D150, 2026-10-05)
+
+- `artrev/` — the experiment's charter (`charter.md`: restrictions, roles
+  and blindness, the harness-enforced iteration bounds, S0-S6, staging,
+  standing questions), and as it runs `selection.tsv`, per-artifact
+  `review.md`/`leads.tsv`/`iterations.tsv`/twin patches, the confirmer's
+  verdict tables and `report.md`. The harness lives in `studies/artrev/`.
+  `selection.tsv` + `selection.md` — the S0 selector's DRAFT (16 cells
+  stratified by route and standing, three marked PILOT; every one a cell the
+  bench already times); regenerate its artifacts at the pin with
+  `studies/artrev/gen_selection.py`.

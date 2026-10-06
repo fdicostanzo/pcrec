@@ -9093,3 +9093,48 @@ Frank gave this direction to the kit session (memfn `responses.md` N-1, on the R
 - **Q55 ACCEPTED:** `<PREFIX>_MEMFN_FORMS` is constant `none` on every default artifact until R4f. Attribution is written down outside the artifact: the bench's recorded build recipe; C11's FORMS half UNREACHED until the first SIMD-on form; R4d's D80 spec hunk (panel item A3); DFA_PREFILTER_OFFSETS already shows M5′'s offsets. An always-present `<PREFIX>_MEMFN_OPTS` line is FILED, not built.
 - **Panel r5's blocker is fixed in rev 4.6:** on no-DFA routes the set-leads lead is REQUIRED, being K65's only test of that member; it is OPTIONAL iff `pcrec_artifact_has_dfa_scan`.
 - **Next:** R-3 (R4a, then R4a′) is filed to the kit.
+
+## D150 — [ARTREV]: a bottom-up artifact review, run as a bounded, iterating experiment beside the optimization loop (Frank, 2026-10-05, ninety-second session)
+
+**Decision.** Frank: "generate a bunch of artifacts then have the code be
+reviewed and look for optimizations, then a test and timing compare of that
+one artifact ... look for optimization leads bottom up, no SIMD, deliverable
+is a report of results with suggestions, formalize process ... independent
+of main workflow", and then "give the artifact review lane the ability to
+test and bench so it can iterate, but bound it". The process is
+`docs/dev/optloop/artrev/charter.md`: a stratified selection of bench-timed
+artifacts at one pinned main sha; one BLIND reviewer per artifact (a D27 cell:
+`docs/spec/` + the harness + its artifact, no `src/`/design/plan) that iterates
+read -> hand twin -> answer identity -> scratch timing under mechanical bounds
+(6 leads, 4 revisions, 3 timing runs each, 10-minute watchdog per run, 6 h per
+lane, every attempt logged, SIMD/flag patches rejected by the harness); a
+FRESH confirmer that re-times only the final twins on ubuntubudu by day
+against a null twin; a non-blind generalizer that maps each confirmed lead
+to its emitter site and counts its population; a report with filed (not
+scheduled) [OPTLOOP] candidate rows. Pilot of 3 artifacts first (one with two
+independent reviewers, to measure whether dual review pays), then a full run
+of ~12-15 only if the pilot confirms a win or a large-population lead.
+
+**Why.** Every shipped optimization so far was found top-down from a losing
+bench cell. Reading the emitted code directly asks a different question:
+what does this code do that it need not do, including on cells pcrec
+already wins. Blindness to the emitter is D27's lesson applied to
+performance. Iteration in the reviewer's own hands is what makes a lead
+converge; the independent confirmer and the logged attempts keep the
+iteration from grading itself (learnings §3).
+
+**Not.** Not an optimization round: nothing is built in `src/`, no abi
+moves, no D119/D144 gate is bypassed — leads enter [OPTLOOP] as candidates.
+Mac timing is never reported. The Linux box stays the bench's at night.
+
+**Revisit when.** The pilot gate reads (yield numbers in the journal); or a
+confirmed lead's population census says it is general enough to schedule.
+
+**Addendum 1 (Frank, same evening): a reviewer NOTEBOOK.** Reviewers keep
+notes between runs so a later reviewer sees what was already discovered
+(charter §3.2): one append-only file per reviewer run under
+`artrev/notebook/`, read at start, the confirmer's Linux verdicts added
+beside it, artifact-level knowledge only (blindness to the emitter holds),
+each lead tagged `fresh` or `notebook:<entry>`; the dual-review pilot pair
+is isolated from each other's entries so its overlap stays a measurement of
+independent review.

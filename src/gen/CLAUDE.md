@@ -3653,3 +3653,35 @@ site: never pass prefix-derived text through an escaper, and never
 transform the prefix other than by `pcrec_sb_upper`.** A violation leaves a
 placeholder the render cannot see; a raw stray `\x01` is an internal error
 at render time.
+
+## [START-SET] stage 2 — THE VM HAT (2026-10-05, D148, lane ssbuild2; abi 61 -> 62)
+
+`docs/design/startset.md` §2 V, §4.2, §5; `docs/spec/tuning.md` §2.42. The
+candidate table (`dfa_pfs[]`) gains its first row serving the VM route,
+`first-class` (`routes = CAND_ON(CAND_ROUTE_VM)`, deny `PCREC_NO_START_SET`),
+and `none` now serves both routes. Three things to know:
+
+- **ONE SELECTION, THREE READERS.** `vm_start_row` walks `dfa_pfs[]` on the VM
+  route with `DfaSel.ss = pcrec_fact_start_set(cx)`; `pcrec_vm_start_scan_name`
+  (the every-artifact `<PREFIX>_VM_START_SCAN` stamp, in the shared prologue
+  beside `REQ_HANDOFF`) and `pcrec_emit_vm_start_seek` (the entry and retry
+  seeks, `emit_vm.c`'s `vm_emit_search_body`) both call it, so the stamp names
+  the seek that was emitted.
+- **V READS NO DFA-SCAN PREDICATE.** Its route conjunct is `fit.chosen ==
+  ENGM_VM && !fit.prefilter`, and `pcrec_emit_vm_start_seek` ASSERTS
+  `pcrec_artifact_has_dfa_scan` false on a mover (§4.3: K65/K66 key on it; the
+  K64 shape). It also asserts the table form (Q-R5): a one-byte `memchr` form
+  for the VM route is not built.
+- **THE SEEK IS TWO STATEMENTS THROUGH `pcrec_emit_find`**, T1 PF's own one
+  line: `while (attempt_position < subject_length && !<p>_start_set[...])
+  attempt_position++; if (attempt_position >= subject_length) return 0;`, at
+  the entry (after K73's offset-0 seek, which runs after the range guard, K50,
+  `rx_valid_upto` and the pre-check) with the 256-entry table declared there,
+  and after `retry_adv` in the loop. The retry text split the loop's closing
+  printf in two; no sabotage anchor sat on it.
+
+**THE TABLE IS SIZE-TERM INPUT.** ~1.8 KB of K-invariant bytes per mover
+(1,468 of them table) raise every `[ART-SIZE]` materiality ratio, which reads
+TOTAL comment-excluded bytes; a borderline ladder pattern's K can move (the
+threshold-1000 reference compiler moves `(|a){0,12}b`; 0 corpus patterns at
+the shipped threshold, `tests/startset/vmhat_checks.py` [vm-deny]).

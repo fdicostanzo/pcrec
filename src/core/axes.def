@@ -207,6 +207,9 @@ PCREC_AXIS(PCREC_NO_REQ_SET_LEAD, "-fno-req-set-lead", 0, "", PCREC_AXIS_DEFAULT
 /* [K82] (B) the pre-check use table's `handoff` row (src/gen/emit_dfa.c,
  * `req_uses[]`): the gate's first window hit, less K, as the scan start. */
 PCREC_AXIS(PCREC_NO_REQ_HANDOFF, "-fno-req-handoff", 0, "", PCREC_AXIS_DEFAULT_ON)
+/* [START-SET] (D148) the candidate table's start-set rows (src/gen/
+ * emit_dfa.c, `dfa_pfs[]`): today `first-class`, the VM hat's seek. */
+PCREC_AXIS(PCREC_NO_START_SET, "-fno-start-set", 0, "", PCREC_AXIS_DEFAULT_ON)
 
 /* ---- the emitted artifact's human commentary ([EMIT-VERB], D112) -------
  * The first row whose axis is not an OPTIMIZATION at all: it changes no

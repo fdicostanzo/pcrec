@@ -446,6 +446,14 @@ fi
 # and moved to 0.7514, so it now stamps `size-model-declined` (prediction and
 # stamp still agree), and the below-bar side was left with one shape. The new
 # member is a corpus pattern at 0.7345, a shape no other member has.
+#
+# `(?:abcd|abc|ab|a){17}z` JOINED AT abi 62 (lane ssbuild2, [START-SET]
+# stage 2): every member is a VM-hat mover and gains a K-INVARIANT start-set
+# table and seek (~1.8 KB of TOTAL bytes), which raises every ratio on the
+# compiler's quantity. `(|a){0,12}b` moved 0.7353 -> 0.7503 and now stamps
+# `size-model-declined` (prediction and stamp agree), leaving the in-band
+# below-bar side with one shape. The new member is a corpus pattern at
+# 0.7162, a prefix-chain alternation no other member has.
 POOL_PATTERNS='((a)|ab){4000}c	capture-alt
 (|a){0,12}b	empty-branch
 (?:[ab]a|[ab]){8,12}+b	class-leading
@@ -455,7 +463,8 @@ POOL_PATTERNS='((a)|ab){4000}c	capture-alt
 (?:cat|cats|dog|dogs){12}z	island-4word
 (?:aa|a){8,12}+b	narrow-aa-a
 (?:[ab]a|[ab]){9,12}+b	class-leading
-(?:ab|a){8,12}+b	narrow-ab-a'
+(?:ab|a){8,12}+b	narrow-ab-a
+(?:abcd|abc|ab|a){17}z	prefix-chain'
 BAR=0.75
 BAND=0.05
 
@@ -469,13 +478,27 @@ if [ -x "$REF2" ]; then
                 --warn-emit-bytes=1 -o "$WORK/pool.c" --pattern "$ppat" \
                 2>"$WORK/pool.err" || continue
             # [F9] HARD-FAIL rather than fall back to whole-file bytes. The
-            # quantity this block acts on is COMMENT-EXCLUDED code bytes; the
-            # file size is a different number, and silently substituting it is
-            # the [ART-SIZE] quantity confusion learnings §3 records — a ratio
+            # quantity this block acts on is the COMPILER'S OWN: the
+            # materiality bar in `size_term_choose` (src/core/compile.c)
+            # compares COMMENT-EXCLUDED TOTAL bytes (tables included), the
+            # first figure `--warn-emit-bytes` prints. The file size is a
+            # different number, and silently substituting it is the
+            # [ART-SIZE] quantity confusion learnings §3 records — a ratio
             # taken from the wrong quantity looked clean and was not.
-            pb="$(sed -n 's/.*(\([0-9]*\) of code).*/\1/p' "$WORK/pool.err" | head -1)"
+            #
+            # IT READ `(N of code)` UNTIL [START-SET] stage 2 (abi 62, lane
+            # ssbuild2), and that was the wrong quantity agreeing by
+            # coincidence: a VM artifact carried almost no table bytes, so
+            # its total and code ratios differed in the third decimal. The
+            # VM hat adds a K-INVARIANT 256-entry table (~1.47 KB of TABLE
+            # bytes) to every mover, all ten members here among them, which
+            # separated the two: `(|a){0,12}b` reads 0.7383 on code and 0.7502
+            # on total, and the compiler, on total, declines it. Measured on
+            # this block's own reference compiler: every member's stamp agrees
+            # with its TOTAL ratio (docs/dev/lanes/ssbuild2_report.md §6).
+            pb="$(sed -n 's/.*large artifact: \([0-9]*\) bytes of emitted C.*/\1/p' "$WORK/pool.err" | head -1)"
             if [ -z "$pb" ]; then
-                echo "run_size_term.sh: FATAL: --warn-emit-bytes printed no '(N of code)' figure for pool member '$ppat' at K=$k. This block acts on COMMENT-EXCLUDED code bytes and must not substitute the file size for them; the warning's wording changed, or the flag stopped taking effect." >&2
+                echo "run_size_term.sh: FATAL: --warn-emit-bytes printed no 'N bytes of emitted C' figure for pool member '$ppat' at K=$k. This block acts on the compiler's COMMENT-EXCLUDED TOTAL bytes and must not substitute the file size for them; the warning's wording changed, or the flag stopped taking effect." >&2
                 exit 2
             fi
             [ "$k" = 8 ] && dflt="$pb"
@@ -513,7 +536,7 @@ if [ -x "$REF2" ]; then
 $POOL_PATTERNS
 POOL_EOF
 
-    echo "size-term §9 materiality pool (bar $BAR, band ±$BAND asserted; ratio = argmin-K code bytes / default-K code bytes, --engine=vm, threshold-1000 reference):"
+    echo "size-term §9 materiality pool (bar $BAR, band ±$BAND asserted; ratio = argmin-K total bytes / default-K total bytes, comment-excluded, the compiler's own quantity; --engine=vm, threshold-1000 reference):"
     printf '  %-26s %-22s %-7s %-9s %-9s %-6s %s\n' pattern shape ratio predicts stamp-says in-band islands
     printf '%s' "$pool_rows" | while IFS="$(printf '\t')" read -r a b c d e f g; do
         [ -n "$a" ] || continue
