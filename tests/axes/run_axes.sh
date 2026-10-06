@@ -946,6 +946,39 @@ declare -A GIVEUP1_ALLOWANCE=(
 # k82h_movers.log), and the corpus's 35 budget/gu blocks are 0 movers
 # (litscan_k82h.md §3.1a). Lane k82hbuild's AXES run over the widened subset
 # (docs/dev/lanes/k82hbuild_report.md) confirms or populates this group.
+# GROUP F5 — bit 47, `-fno-start-set` (PCREC_NO_START_SET, [START-SET] stage
+# 2, tuning.md §2.42, match_api.md §3.1's give-up sentence): the VM hat skips
+# only attempts that fail, so a deny-arm GIVE-UP may become the hat's answer,
+# never the reverse (D148 Q6/Q-R3). The population is the capacity witness
+# `tests/startset/giveup.rxt` (`(?=(?:a|b|x)*c)x`, `budget frames=8`): the
+# deny arm's attempt at a non-S byte exhausts the frames inside the lookahead.
+# Derived from a live run, not assumed (lane ssbuild2, RXTFLAGS=
+# "-fno-start-set" over that file: GAVE UP at exactly these 22 lines; the
+# design's 11 corpus budget/gu movers read 0 here — their give-ups start on S
+# bytes). Keyed by the bare flag; a multi-flag job (the product arm's
+# `--engine=vm -fno-start-set`) inherits each component flag's entries.
+    ["-fno-start-set|tests/startset/giveup.rxt:21"]="[START-SET] Q-R3 (tuning.md §2.42, match_api.md §3.1): the deny arm's attempt at a non-S byte exhausts budget frames=8 inside the lookahead and gives up; the hat skips that attempt and answers (libpcre2's unbounded answer). One direction only."
+    ["-fno-start-set|tests/startset/giveup.rxt:22"]="[START-SET] Q-R3 (tuning.md §2.42, match_api.md §3.1): the deny arm's attempt at a non-S byte exhausts budget frames=8 inside the lookahead and gives up; the hat skips that attempt and answers (libpcre2's unbounded answer). One direction only."
+    ["-fno-start-set|tests/startset/giveup.rxt:23"]="[START-SET] Q-R3 (tuning.md §2.42, match_api.md §3.1): the deny arm's attempt at a non-S byte exhausts budget frames=8 inside the lookahead and gives up; the hat skips that attempt and answers (libpcre2's unbounded answer). One direction only."
+    ["-fno-start-set|tests/startset/giveup.rxt:24"]="[START-SET] Q-R3 (tuning.md §2.42, match_api.md §3.1): the deny arm's attempt at a non-S byte exhausts budget frames=8 inside the lookahead and gives up; the hat skips that attempt and answers (libpcre2's unbounded answer). One direction only."
+    ["-fno-start-set|tests/startset/giveup.rxt:25"]="[START-SET] Q-R3 (tuning.md §2.42, match_api.md §3.1): the deny arm's attempt at a non-S byte exhausts budget frames=8 inside the lookahead and gives up; the hat skips that attempt and answers (libpcre2's unbounded answer). One direction only."
+    ["-fno-start-set|tests/startset/giveup.rxt:26"]="[START-SET] Q-R3 (tuning.md §2.42, match_api.md §3.1): the deny arm's attempt at a non-S byte exhausts budget frames=8 inside the lookahead and gives up; the hat skips that attempt and answers (libpcre2's unbounded answer). One direction only."
+    ["-fno-start-set|tests/startset/giveup.rxt:27"]="[START-SET] Q-R3 (tuning.md §2.42, match_api.md §3.1): the deny arm's attempt at a non-S byte exhausts budget frames=8 inside the lookahead and gives up; the hat skips that attempt and answers (libpcre2's unbounded answer). One direction only."
+    ["-fno-start-set|tests/startset/giveup.rxt:28"]="[START-SET] Q-R3 (tuning.md §2.42, match_api.md §3.1): the deny arm's attempt at a non-S byte exhausts budget frames=8 inside the lookahead and gives up; the hat skips that attempt and answers (libpcre2's unbounded answer). One direction only."
+    ["-fno-start-set|tests/startset/giveup.rxt:29"]="[START-SET] Q-R3 (tuning.md §2.42, match_api.md §3.1): the deny arm's attempt at a non-S byte exhausts budget frames=8 inside the lookahead and gives up; the hat skips that attempt and answers (libpcre2's unbounded answer). One direction only."
+    ["-fno-start-set|tests/startset/giveup.rxt:30"]="[START-SET] Q-R3 (tuning.md §2.42, match_api.md §3.1): the deny arm's attempt at a non-S byte exhausts budget frames=8 inside the lookahead and gives up; the hat skips that attempt and answers (libpcre2's unbounded answer). One direction only."
+    ["-fno-start-set|tests/startset/giveup.rxt:31"]="[START-SET] Q-R3 (tuning.md §2.42, match_api.md §3.1): the deny arm's attempt at a non-S byte exhausts budget frames=8 inside the lookahead and gives up; the hat skips that attempt and answers (libpcre2's unbounded answer). One direction only."
+    ["-fno-start-set|tests/startset/giveup.rxt:32"]="[START-SET] Q-R3 (tuning.md §2.42, match_api.md §3.1): the deny arm's attempt at a non-S byte exhausts budget frames=8 inside the lookahead and gives up; the hat skips that attempt and answers (libpcre2's unbounded answer). One direction only."
+    ["-fno-start-set|tests/startset/giveup.rxt:33"]="[START-SET] Q-R3 (tuning.md §2.42, match_api.md §3.1): the deny arm's attempt at a non-S byte exhausts budget frames=8 inside the lookahead and gives up; the hat skips that attempt and answers (libpcre2's unbounded answer). One direction only."
+    ["-fno-start-set|tests/startset/giveup.rxt:34"]="[START-SET] Q-R3 (tuning.md §2.42, match_api.md §3.1): the deny arm's attempt at a non-S byte exhausts budget frames=8 inside the lookahead and gives up; the hat skips that attempt and answers (libpcre2's unbounded answer). One direction only."
+    ["-fno-start-set|tests/startset/giveup.rxt:35"]="[START-SET] Q-R3 (tuning.md §2.42, match_api.md §3.1): the deny arm's attempt at a non-S byte exhausts budget frames=8 inside the lookahead and gives up; the hat skips that attempt and answers (libpcre2's unbounded answer). One direction only."
+    ["-fno-start-set|tests/startset/giveup.rxt:36"]="[START-SET] Q-R3 (tuning.md §2.42, match_api.md §3.1): the deny arm's attempt at a non-S byte exhausts budget frames=8 inside the lookahead and gives up; the hat skips that attempt and answers (libpcre2's unbounded answer). One direction only."
+    ["-fno-start-set|tests/startset/giveup.rxt:37"]="[START-SET] Q-R3 (tuning.md §2.42, match_api.md §3.1): the deny arm's attempt at a non-S byte exhausts budget frames=8 inside the lookahead and gives up; the hat skips that attempt and answers (libpcre2's unbounded answer). One direction only."
+    ["-fno-start-set|tests/startset/giveup.rxt:38"]="[START-SET] Q-R3 (tuning.md §2.42, match_api.md §3.1): the deny arm's attempt at a non-S byte exhausts budget frames=8 inside the lookahead and gives up; the hat skips that attempt and answers (libpcre2's unbounded answer). One direction only."
+    ["-fno-start-set|tests/startset/giveup.rxt:39"]="[START-SET] Q-R3 (tuning.md §2.42, match_api.md §3.1): the deny arm's attempt at a non-S byte exhausts budget frames=8 inside the lookahead and gives up; the hat skips that attempt and answers (libpcre2's unbounded answer). One direction only."
+    ["-fno-start-set|tests/startset/giveup.rxt:40"]="[START-SET] Q-R3 (tuning.md §2.42, match_api.md §3.1): the deny arm's attempt at a non-S byte exhausts budget frames=8 inside the lookahead and gives up; the hat skips that attempt and answers (libpcre2's unbounded answer). One direction only."
+    ["-fno-start-set|tests/startset/giveup.rxt:41"]="[START-SET] Q-R3 (tuning.md §2.42, match_api.md §3.1): the deny arm's attempt at a non-S byte exhausts budget frames=8 inside the lookahead and gives up; the hat skips that attempt and answers (libpcre2's unbounded answer). One direction only."
+    ["-fno-start-set|tests/startset/giveup.rxt:56"]="[START-SET] Q-R3 (tuning.md §2.42, match_api.md §3.1): the deny arm's attempt at a non-S byte exhausts budget frames=8 inside the lookahead and gives up; the hat skips that attempt and answers (libpcre2's unbounded answer). One direction only."
 # GROUP G — §2.11 `--engine=vm`, 10 cases, TWO mechanisms.
 #
 # G1 (2 cases) — tests/base/d27_k23_ambiguous_decomposition.rxt:90,98, the
@@ -1148,7 +1181,17 @@ run_one_axis() {
     # bit-flag axis except the force-prefilter pair as NEVER refusing
     # under the default engine this sweep uses).
     local refused_documented=0 refused_undocumented=0
-    local pattern_list="${REFUSAL_PATTERN[$flags]:-}"
+    # [START-SET] A MULTI-FLAG JOB INHERITS EACH COMPONENT FLAG'S DOCUMENTED
+    # POPULATIONS (the product arm's `--engine=vm -fno-start-set`): its
+    # refusals are `--engine=vm`'s and its give-ups `-fno-start-set`'s, and
+    # restating either list under the joined spelling would be a second copy.
+    local pattern_list="${REFUSAL_PATTERN[$flags]:-}" _comp
+    if [ "$flags" != "${flags%% *}" ]; then
+        for _comp in $flags; do
+            [ -n "${REFUSAL_PATTERN[$_comp]:-}" ] && \
+                pattern_list="$pattern_list${pattern_list:+$REFUSAL_DELIM}${REFUSAL_PATTERN[$_comp]}"
+        done
+    fi
     local -a patterns=()
     if [ -n "$pattern_list" ]; then
         IFS="$REFUSAL_DELIM" read -ra patterns <<< "$pattern_list"
@@ -1210,8 +1253,13 @@ run_one_axis() {
     if [ "$giveup1" -gt 0 ]; then
         while IFS=$'\t' read -r cls key btrc bout atrc aout; do
             [ "$cls" = "GIVEUP1" ] || continue
-            local relkey="${key#"$ROOT_DIR"/}"
-            if [ -n "${GIVEUP1_ALLOWANCE[$flags|$relkey]:-}" ]; then
+            local relkey="${key#"$ROOT_DIR"/}" _allowed="${GIVEUP1_ALLOWANCE[$flags|$relkey]:-}" _c
+            if [ -z "$_allowed" ] && [ "$flags" != "${flags%% *}" ]; then
+                for _c in $flags; do
+                    [ -n "${GIVEUP1_ALLOWANCE[$_c|$relkey]:-}" ] && _allowed=1
+                done
+            fi
+            if [ -n "$_allowed" ]; then
                 giveup1_allowed=$((giveup1_allowed + 1))
             else
                 giveup1_unallowed=$((giveup1_unallowed + 1))
@@ -1299,7 +1347,26 @@ for bit in $(printf '%s\n' "${!bit_macro[@]}" | LC_ALL=C sort -n); do
 done
 if [ -z "$AXES" ] || printf '%s' "$AXES" | grep -q -- '--engine'; then
     job_label+=("--engine=vm (§2.11)");  job_flags+=("--engine=vm");  job_lost_ok+=("1")
+    job_savedump[$((${#job_label[@]} - 1))]="$WORKDIR/ss_vm_base.tsv"
     job_label+=("--engine=dfa (§2.11)"); job_flags+=("--engine=dfa"); job_lost_ok+=("1")
+fi
+# [START-SET] THE PRODUCT ARM's two runs (docs/design/startset.md §6.2 row
+# "answer identity" (1) and "engine cross-check", review r4 checks-F3 and
+# sound-F8; D148 addendum 2 Q-R2). The bit-flag sweep above runs
+# `-fno-start-set` at AUTO only, where the VM hat reaches the prefilter-less
+# VM artifacts alone; under `--engine=vm` it reaches every unanchored
+# non-nullable pattern, so the axis is ALSO run there: `--engine=vm
+# -fno-start-set` is a job against the DEFAULT baseline (the engine axis with
+# neither engine reading the start set, so the two still check each other),
+# and its dump is compared against `--engine=vm`'s own (the product arm,
+# below the job loop). Selected by the empty AXES= or by `-fno-start-set`.
+if [ -z "$AXES" ] || case " $AXES " in (*" -fno-start-set "*) true ;; (*) false ;; esac; then
+    if ! printf '%s' "$AXES" | grep -q -- '--engine' && [ -n "$AXES" ]; then
+        job_label+=("--engine=vm (§2.11)");  job_flags+=("--engine=vm");  job_lost_ok+=("1")
+        job_savedump[$((${#job_label[@]} - 1))]="$WORKDIR/ss_vm_base.tsv"
+    fi
+    job_label+=("--engine=vm -fno-start-set (§2.11 x §2.42)"); job_flags+=("--engine=vm -fno-start-set"); job_lost_ok+=("1")
+    job_savedump[$((${#job_label[@]} - 1))]="$WORKDIR/ss_vm_deny.tsv"
 fi
 # [CC-DIFF] STEP 2 THE VM ENTRY SHAPE (§2.21), the coarse axis's shape one
 # option over: an ORDINAL rather than a bit, so it is appended here for the
@@ -1708,6 +1775,60 @@ if [ -z "$AXES" ] || case " $AXES " in (*" -futf-check "*) true ;; (*) false ;; 
 fi
 
 # ============================================================================
+# [START-SET] THE PRODUCT ARM: `--engine=vm -fno-start-set` against
+# `--engine=vm`, the two job dumps saved above, compared by the same
+# dump_diff.awk. Its OWN baseline is the forced-VM run, because under
+# `--engine=vm` the hat reaches a population the auto sweep cannot (startset.md
+# §6.2). MISMATCH, LOST, GAINED and any REFUSED fail; a GIVEUP1 is allowed only
+# for a `-fno-start-set|<key>` entry (GROUP F5: the deny arm gives up, the hat
+# answers). The MOVER FLOOR counts the baseline's cases whose block is in the
+# forced mover manifest (tests/startset/manifests/manifest_s2_vm_forced.tsv),
+# so a sweep that stopped reaching the movers fails rather than reading clean.
+# ============================================================================
+startset_verdict="not run (filtered out by AXES=)"
+if [ -f "$WORKDIR/ss_vm_base.tsv" ] && [ -f "$WORKDIR/ss_vm_deny.tsv" ]; then
+    echo
+    echo "axes: [START-SET] product arm: --engine=vm -fno-start-set against --engine=vm..."
+    ss_rows="$WORKDIR/rows_startset_product.tsv"; : > "$ss_rows"
+    ss_line="$(awk -v BASEFILE="$WORKDIR/ss_vm_base.tsv" -v ROWSFILE="$ss_rows" \
+                   -f "$SCRIPT_DIR/dump_diff.awk" "$WORKDIR/ss_vm_deny.tsv" 2>/dev/null)"
+    echo "  $ss_line"
+    ss_bad=0; ss_allowed=0
+    for f_ in mismatches lost gained refused; do
+        v_="$(echo "$ss_line" | grep -oE "$f_=[0-9]+" | cut -d= -f2)"
+        [ "${v_:-1}" -gt 0 ] && { ss_bad=1; echo "AXIS FAIL: [START-SET] product arm: $f_=${v_:-?}" >&2; }
+    done
+    while IFS=$'\t' read -r cls key btrc bout atrc aout; do
+        [ "$cls" = "GIVEUP1" ] || continue
+        rk="${key#"$ROOT_DIR"/}"
+        if [ -n "${GIVEUP1_ALLOWANCE[-fno-start-set|$rk]:-}" ]; then
+            ss_allowed=$((ss_allowed + 1))
+        else
+            ss_bad=1
+            echo "AXIS FAIL: [START-SET] product arm: UNALLOWED one-sided give-up at $key: vm={trc=$btrc out=$bout} vm-deny={trc=$atrc out=$aout}" >&2
+        fi
+    done < "$ss_rows"
+    ss_movers="$(python3 "$SCRIPT_DIR/startset_arm.py" "$WORKDIR/ss_vm_base.tsv" \
+                    "$ROOT_DIR/tests/startset/manifests/manifest_s2_vm_forced.tsv" "$ROOT_DIR")"
+    ss_mc="$(echo "$ss_movers" | grep -oE 'mover_cases=[0-9]+' | cut -d= -f2)"
+    # K35 FLOOR: half the mover cases measured at landing (lane ssbuild2;
+    # docs/dev/lanes/ssbuild2_report.md §4) -- OWED until the first full run.
+    SS_MOVER_FLOOR="${SS_MOVER_FLOOR:-2000}"
+    echo "  $ss_movers (floor $SS_MOVER_FLOOR); giveup1-allowed=$ss_allowed"
+    if [ "${ss_mc:-0}" -lt "$SS_MOVER_FLOOR" ]; then
+        ss_bad=1
+        echo "AXIS FAIL: [START-SET] product arm: ${ss_mc:-0} mover cases, below the floor $SS_MOVER_FLOOR" >&2
+    fi
+    if [ "$ss_bad" -eq 0 ]; then
+        startset_verdict="OK — $ss_line; ${ss_mc} mover cases; giveup1-allowed=$ss_allowed"
+    else
+        startset_verdict="FAIL — $ss_line"
+        fail=1
+    fi
+    echo "  $startset_verdict"
+fi
+
+# ============================================================================
 # SUMMARY
 # ============================================================================
 
@@ -1721,6 +1842,7 @@ echo "oracle cross-check: $oracle_verdict"
 echo "--vm-entry-shape tier: $_shape_tier"
 echo "DIAL-S3 (tune refusal-set, keyed): $dial_s3_verdict"
 echo "-futf-check arm (contract, own oracle): $utfcheck_verdict"
+echo "[START-SET] product arm (--engine=vm x -fno-start-set): $startset_verdict"
 echo "HARNESS_BATCH: $HARNESS_BATCH"
 echo "total wall time: $((t_end - t_start))s"
 if [ "$fail" -ne 0 ]; then

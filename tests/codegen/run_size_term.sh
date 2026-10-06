@@ -445,6 +445,14 @@ fi
 # and moved to 0.7514, so it now stamps `size-model-declined` (prediction and
 # stamp still agree), and the below-bar side was left with one shape. The new
 # member is a corpus pattern at 0.7345, a shape no other member has.
+#
+# `(?:abcd|abc|ab|a){17}z` JOINED AT abi 62 (lane ssbuild2, [START-SET]
+# stage 2): every member is a VM-hat mover and gains a K-INVARIANT start-set
+# table and seek (~1.8 KB of TOTAL bytes), which raises every ratio on the
+# compiler's quantity. `(|a){0,12}b` moved 0.7353 -> 0.7503 and now stamps
+# `size-model-declined` (prediction and stamp agree), leaving the in-band
+# below-bar side with one shape. The new member is a corpus pattern at
+# 0.7162, a prefix-chain alternation no other member has.
 POOL_PATTERNS='((a)|ab){4000}c	capture-alt
 (|a){0,12}b	empty-branch
 (?:[ab]a|[ab]){8,12}+b	class-leading
@@ -454,7 +462,8 @@ POOL_PATTERNS='((a)|ab){4000}c	capture-alt
 (?:cat|cats|dog|dogs){12}z	island-4word
 (?:aa|a){8,12}+b	narrow-aa-a
 (?:[ab]a|[ab]){9,12}+b	class-leading
-(?:ab|a){8,12}+b	narrow-ab-a'
+(?:ab|a){8,12}+b	narrow-ab-a
+(?:abcd|abc|ab|a){17}z	prefix-chain'
 BAR=0.75
 BAND=0.05
 
