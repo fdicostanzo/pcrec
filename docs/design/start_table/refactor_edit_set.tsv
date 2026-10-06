@@ -48,3 +48,24 @@ line	return pcrec_fact_start_anchor(cx) != PCREC_SANCH_NONE &&	C5b	P2's VM arm r
 line	return cx->job->engine == PCREC_ENG_ATTEMPT &&	C5b	P2's DFA arm reads BOUND(CR_ATTEMPT) ([r2 sound-M5])
 line	if (pcrec_fact_start_anchor(cx) != PCREC_SANCH_NONE) return false;	C5b	N7's anchoring conjunct reads BOUND(CR_VM) ([r2 sound-M5])
 line	for (int u = 0; u < d->natoms; u++) if (d->s1u[u] >= 0) anchored = false;	C5b	attempt_cand re-spells B1 or B2; reads BOUND(CR_ATTEMPT) ([r2 sound-M5])
+# [r2.1 sound-S-N3] C5b's fifth BOUND restatement (R3's predicate, emit_vm.c:11090): S441 is moved by C5 AND C5b
+line	return pcrec_fact_start_anchor(v->cx) != PCREC_SANCH_NONE;	C5b	R3 `anchored` reads BOUND(CR_VM) ([r2.1 S-N3]; the line sits in vm_reseed_holds, C5's def)
+# [r2.1 sound-S-N3, sound-m1] the stamp and listing readers C5 moves onto the row
+line	pcrec_sb_stamp_str(c, g->upper, "END_WINDOW",	C5	<PREFIX>_END_WINDOW projects W1/W2 (emit_dfa.c:10114)
+line	pcrec_fact_stamp(cx, PF_END_WINDOW));	C5	the END_WINDOW value's fact read becomes the row's projection
+line	pcrec_sb_stamp_str(c, v->up, "VM_START",	C5	<PREFIX>_VM_START projects B3/B4/B5 (emit_vm.c:11558)
+line	pcrec_fact_stamp(v->cx, PF_START_ANCHOR));	C5	the VM_START value's fact read becomes the row's projection
+line	if (st->root_minw >= PCREC_MINW_MAX)	C5	--emit-ir's root-minw listing row reads H1 (emit_vm.c:9492; `st->`, not `v->`)
+# [r2.1 sound-S-N2] ONE route derivation: every `job->engine` test that chooses CR_DFA vs CR_ATTEMPT (or EMPTY) reads cand_route_of(cx)
+def	cand_route_of	C2	NEW: the one route derivation (job->engine of the machine the body runs), read by every reader below from C3
+line	if (cx->job->engine == PCREC_ENG_ATTEMPT) return cx->job->dfa.n == 0;	C3	dfa_engine_is_empty (emit_dfa.c:4354) reads cand_route_of
+line	if (cx->job->engine == PCREC_ENG_ATTEMPT) return "none";	C3	dfa_table_name :4386, dfa_scan_edge_name :4458 read cand_route_of
+line	if (cx->job->engine == PCREC_ENG_ATTEMPT) return 0;	C3	dfa_uniform_folds :4519 reads cand_route_of
+line	if (s->cx->job->engine != PCREC_ENG_UNANCH) return false;	C3	pf_dfa_start_set :6656 reads cand_route_of
+line	if (cx->job->engine == PCREC_ENG_ATTEMPT) {	C3	dfa_cand_scan :7039, dfa_prefilter_name :10402 read cand_route_of
+line	if (!pcrec_artifact_has_dfa_scan(cx) || cx->job->engine == PCREC_ENG_ATTEMPT)	C3	pcrec_dfa_cand_ppm :7090 reads cand_route_of
+line	if (cx->job->engine != PCREC_ENG_UNANCH) return false;	C3	pcrec_dfa_scan_state_written :7428, start_pinned_applies :7865 read cand_route_of
+line	dfa_body && (cx->job->engine == PCREC_ENG_UNANCH ||	C3	pcrec_emit_prologue's <string.h> decision :9995 reads cand_route_of
+line	if (cx->job->engine == PCREC_ENG_UNANCH) emit_unanchored(cx, fn, storage);	C3	THE dispatch (pcrec_emit_dfa_engine :10271) reads cand_route_of
+line	return cx->job->engine == PCREC_ENG_ATTEMPT ? "attempt" : "unanchored";	C3	dfa_scan_name :10382 reads cand_route_of
+line	if (cx->job->engine == PCREC_ENG_ATTEMPT) { pcrec_sb_puts(out, "none"); return; }	C3	dfa_prefilter_offsets :10483 reads cand_route_of

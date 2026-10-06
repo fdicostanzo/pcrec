@@ -14,7 +14,9 @@ hand list (this is how K65 set-rest / K66 whole-run / P4 set-leads show up).
 
 Shares nothing with the code under refactor: it reads bytes and stamps only.
 
-Usage: deny_census.py PCREC_BIN TREE OUTDIR [--jobs N] [--flags F1,F2]
+Usage: deny_census.py PCREC_BIN TREE OUTDIR [--jobs N] [--flags F1,F2] [--every K]
+--every K keeps every K-th distinct pattern (sorted order), for a COST or
+coverage sample ([r2.1 C-N3]); the committed census tables are --every 1.
 Writes OUTDIR/deny_census.tsv (arm, flag, ok_default, ok_flag, movers,
 visible, hidden, refusal_moves), deny_transitions.tsv (arm, flag, key,
 from, to, count), deny_hidden.tsv (arm, flag, fingerprint, count, example
@@ -48,12 +50,15 @@ def main():
     ap.add_argument("pcrec"); ap.add_argument("tree"); ap.add_argument("outdir")
     ap.add_argument("--jobs", type=int, default=8)
     ap.add_argument("--flags", default=",".join(rc.START_FLAGS))
+    ap.add_argument("--every", type=int, default=1)
     a = ap.parse_args()
     flags = a.flags.split(",")
     pats = rc.es.enumerate_corpus(a.pcrec, a.tree, 30)
     pats = sorted(set(p[2].encode("utf-8", "surrogateescape") if isinstance(p[2], str)
                       else p[2] for p in pats))
-    print(f"corpus patterns (distinct): {len(pats)}", flush=True)
+    pats = pats[::a.every]
+    t_start = time.time()
+    print(f"corpus patterns (distinct, every {a.every}): {len(pats)}", flush=True)
     summ, trans, hidden, movers, rows, slow = [], collections.Counter(), {}, [], [], []
     for eng, enc, base in rc.ARMS:
         arm = f"{eng}/{enc}"
@@ -118,6 +123,8 @@ def main():
                          st["visible"], st["hidden"], st["refusal_moves"]))
             print(f"{arm:10s} {fl:22s} movers {st['movers']:5d} visible {st['visible']:5d}"
                   f" hidden {st['hidden']:4d} refusal {st['refusal_moves']}", flush=True)
+    print(f"WALL {time.time() - t_start:.1f}s compiles {len(pats) * (1 + len(flags)) * len(rc.ARMS)}"
+          f" jobs {a.jobs}", flush=True)
     os.makedirs(a.outdir, exist_ok=True)
     with open(os.path.join(a.outdir, "deny_census.tsv"), "w") as f:
         f.write("arm\tflag\tok_default\tok_flag\tmovers\tvisible\thidden\trefusal_moves\n")

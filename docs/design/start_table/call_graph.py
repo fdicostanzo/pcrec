@@ -33,15 +33,64 @@ import os, re, sys, collections
 root = sys.argv[1]
 SRC = ["src"]
 DEF_RX = re.compile(r'^(?:static\s+)?(?:inline\s+)?(?:const\s+)?[A-Za-z_][\w\s\*]*?\b([A-Za-z_]\w*)\s*\(([^;]*)$')
-TAB_RX = re.compile(r'^(?:static\s+)?const\s+[\w\s\*]+?\b([A-Za-z_]\w*)\s*\[\s*\]\s*=\s*\{')
+# [r2.1 C-N1] a top-level DATA definition: an array of any size (`[]`,
+# `[N]`, `[A][B]`), a struct initializer (`const PcrecEnc x = {`), a string
+# constant (`static const char x[] =` then string lines) or a scalar. Revision
+# 2 matched `NAME[] = {` only, which left sized tables (tune.c's
+# TUNE_TABLE[5], clskit.c's DENY_FLAG[CLSD_NDENY]) and every string-emitter
+# constant (enc_utf8.c) without an owner.
+DATA_RX = re.compile(r'^(?:static\s+)?(?:const\s+)?((?:[A-Za-z_]\w*\s+(?:const\s+)?)+?)\**\s*'
+                     r'(?:const\s+)?\**\s*([A-Za-z_]\w*)\s*((?:\[[^\]]*\]\s*)*)=\s*(.*)$')
+# [r2.1 C-N1] a TYPE definition: `typedef struct X {`, `struct X {`,
+# `typedef enum {`, `enum {` (one-line or multi-line). A row struct
+# (`DfaCand`, the common leading member of every start table's row) is
+# where a row's deny/applies/name fields are declared, and revision 2 had no
+# owner for an anchor there (S282).
+TYPE_RX = re.compile(r'^(typedef\s+)?(struct|union|enum)\b\s*([A-Za-z_]\w*)?\s*\{')
 IDENT = re.compile(r'\b[A-Za-z_]\w*\b')
+QUAL = {"static", "const", "inline", "extern", "volatile", "unsigned", "signed",
+        "struct", "union", "enum"}
 
 defs = {}   # name -> (file, start_line, end_line, kind)
 texts = {}  # name -> body text (list of (lineno, line))
+elem = {}   # table name -> its element type name (for the row-type closure)
+
+
+def code_of(l):
+    l = re.sub(r'"(\\.|[^"\\])*"', '""', l)
+    return re.sub(r'/\*.*?\*/|//.*$', '', l)
+
+
+def add(name, rel, a, b, kind, L):
+    defs.setdefault(name, (rel, a + 1, b + 1, kind))
+    texts.setdefault(name, [(n + 1, L[n]) for n in range(a, b + 1)])
+
+
+def to_closing_brace(L, i):
+    """Index of the line that closes a top-level `{` opened on line i."""
+    c = code_of(L[i])
+    if c.count("{") and c.count("{") == c.count("}"):
+        return i
+    k = i + 1
+    while k < len(L) and not L[k].startswith("}"):
+        k += 1
+    return min(k, len(L) - 1)
+
+
+def to_semicolon(L, i):
+    k = i
+    while k < len(L) and not code_of(L[k]).rstrip().endswith(";"):
+        k += 1
+    return min(k, len(L) - 1)
+
+
 for d in SRC:
     for dp, _, fs in os.walk(os.path.join(root, d)):
         for f in sorted(fs):
-            if not f.endswith(".c"):
+            # [r2.1 C-N1] headers too: a `static inline` in internal.h is a
+            # definition (S236's anchor sits in one); revision 2 parsed
+            # headers for macros only.
+            if not f.endswith((".c", ".h")):
                 continue
             path = os.path.join(dp, f)
             rel = os.path.relpath(path, root)
@@ -49,57 +98,58 @@ for d in SRC:
             i = 0
             while i < len(L):
                 l = L[i]
-                m = TAB_RX.match(l)
-                kind = None
+                m = re.match(r'^#\s*define\s+([A-Za-z_]\w*)(\()?', l)
                 if m:
-                    kind = "table"
-                else:
-                    m = DEF_RX.match(l)
-                    if m and not l.startswith((" ", "\t", "#", "/", "*")):
-                        # find the opening brace at column 0 within 8 lines
-                        j = i
-                        while j < len(L) and j < i + 8 and not L[j].startswith("{"):
-                            if L[j].rstrip().endswith(";"):
-                                j = -1
-                                break
-                            j += 1
-                        if j >= 0 and j < len(L) and L[j].startswith("{"):
-                            kind = "func"
-                            brace = j
-                if kind:
-                    name = m.group(1)
-                    k = i + 1
-                    if kind == "func" and L[brace].count("{") == L[brace].count("}"):
-                        k = brace            # a one-line body: `{ ... }`
-                    else:
-                        while k < len(L) and not L[k].startswith("}"):
-                            k += 1
-                    defs.setdefault(name, (rel, i + 1, k + 1, kind))
-                    texts.setdefault(name, [(n + 1, L[n]) for n in range(i, k + 1)])
+                    # function-like MACROS are definitions (a table walk is
+                    # spelled DFA_SELECT(...)); [r2.1] object-like ones too
+                    # (S209's anchor is `#define VM_MAX_BODY_CAPS ...`).
+                    k = i
+                    while L[k].rstrip().endswith("\\") and k + 1 < len(L):
+                        k += 1
+                    add(m.group(1), rel, i, k, "macro" if m.group(2) else "const", L)
+                    i = k + 1
+                    continue
+                if not l or l.startswith((" ", "\t", "#", "/", "*", "}")):
+                    i += 1
+                    continue
+                m = TYPE_RX.match(l)
+                if m:
+                    k = to_closing_brace(L, i)
+                    tm = re.match(r'^\}?\s*.*?\}\s*([A-Za-z_]\w*)\s*;', L[k]) if m.group(1) else None
+                    name = (tm.group(1) if tm else None) or m.group(3) or f"{m.group(2)}@{rel}:{i + 1}"
+                    add(name, rel, i, k, "type", L)
+                    i = k + 1
+                    continue
+                m = DEF_RX.match(l)
+                if m:
+                    # a function: the opening brace at column 0 within 8 lines
+                    j = i
+                    while j < len(L) and j < i + 8 and not L[j].startswith("{"):
+                        if L[j].rstrip().endswith(";"):
+                            j = -1
+                            break
+                        j += 1
+                    if j >= 0 and j < len(L) and L[j].startswith("{"):
+                        k = j if code_of(L[j]).count("{") == code_of(L[j]).count("}") \
+                            else to_closing_brace(L, j)
+                        add(m.group(1), rel, i, k, "func", L)
+                        i = k + 1
+                        continue
+                m = DATA_RX.match(l)
+                if m and not l.startswith(("typedef", "return", "else")):
+                    rest = m.group(4).strip()
+                    k = to_closing_brace(L, i) if rest.startswith("{") else to_semicolon(L, i)
+                    # revision 2 called an array a "table"; a struct
+                    # initializer or a string constant is "data"
+                    kind = "table" if m.group(3) and rest.startswith("{") else "data"
+                    add(m.group(2), rel, i, k, kind, L)
+                    tw = [t for t in m.group(1).split() if t not in QUAL]
+                    if tw:
+                        elem[m.group(2)] = tw[-1]
                     i = k + 1
                     continue
                 i += 1
 
-# function-like MACROS are definitions too: a table walk is spelled
-# DFA_SELECT(...), which expands to dfa_select(); without the macro edge the
-# walk would be invisible to the graph.
-for d in SRC:
-    for dp, _, fs in os.walk(os.path.join(root, d)):
-        for f in sorted(fs):
-            if not f.endswith((".c", ".h")):
-                continue
-            path = os.path.join(dp, f)
-            rel = os.path.relpath(path, root)
-            L = open(path, encoding="utf-8", errors="replace").read().split("\n")
-            for i, l in enumerate(L):
-                m = re.match(r'^#define\s+([A-Za-z_]\w*)\(', l)
-                if not m:
-                    continue
-                k = i
-                while L[k].rstrip().endswith("\\") and k + 1 < len(L):
-                    k += 1
-                defs.setdefault(m.group(1), (rel, i + 1, k + 1, "macro"))
-                texts.setdefault(m.group(1), [(n + 1, L[n]) for n in range(i, k + 1)])
 names = set(defs)
 edges = collections.defaultdict(set)
 for n, body in texts.items():
@@ -140,8 +190,14 @@ EMIT_ROOTS = ["pcrec_emit_dfa", "pcrec_emit_vm"]
 BODY_ROOTS = ["emit_unanchored", "emit_attempt", "vm_emit_search_body"]
 STAMP_ROOTS = ["pcrec_emit_dfa_scan_stamps", "vm_emit_stamps"]
 for n, body in texts.items():
+    if defs[n][3] == "type":
+        continue
     if any(re.search(r'(->|\.)' + f + r'\b', l) for _, l in body for f in SEED_FIELDS):
         edges[n].add("@field")
+# [r2.1] a TYPE is not a call: naming `Ctx` reaches nothing. Types enter the
+# family only through the row-type closure below, never through reach().
+for n in list(edges):
+    edges[n] = {y for y in edges[n] if y not in defs or defs[y][3] != "type"}
 
 R_body = reach(BODY_ROOTS)
 R_stamp = reach(STAMP_ROOTS)
@@ -171,11 +227,30 @@ FAMILY = {x for x in R if x not in SEEDS and rs(x)
 grew = True
 while grew:
     grew = False
-    for t in [x for x in FAMILY if defs[x][3] == "table"]:
+    for t in [x for x in FAMILY if defs[x][3] in ("table", "data")]:
         for y in edges[t]:
             if y not in FAMILY and y in names and defs[y][3] == "func":
                 FAMILY.add(y)
                 grew = True
+# [r2.1 C-N1] THE ROW TYPES: the element type of every FAMILY table, and
+# every type such a type EMBEDS BY VALUE (a member line `T name;` with no `*`),
+# transitively. This is how `DfaCand` (the common leading member of every
+# start table's row, where `deny`/`applies`/`name` are declared) is a member:
+# DfaPf embeds it. A type named only through a pointer (`const DfaSel *`) is
+# not pulled in, so `Ctx`/`Dfa`/`Job` stay out.
+ROWTYPES = set()
+st = [elem[t] for t in FAMILY if t in elem]
+while st:
+    ty = st.pop()
+    if ty in ROWTYPES or ty not in defs or defs[ty][3] != "type" \
+            or not defs[ty][0].startswith("src/"):
+        continue
+    ROWTYPES.add(ty)
+    for _, l in texts[ty][1:]:
+        mm = re.match(r'^\s*(?:const\s+)?([A-Za-z_]\w*)\s+[A-Za-z_]\w*\s*(?:\[[^\]]*\])?\s*;', code_of(l))
+        if mm and "*" not in code_of(l):
+            st.append(mm.group(1))
+FAMILY |= ROWTYPES
 COND = re.compile(r'^\s*(if|else if|while|return|for)\b|\?|&&|\|\|')
 print("# call_graph.py: roots", ",".join(BODY_ROOTS), "| stamps", ",".join(STAMP_ROOTS))
 print(f"# definitions {len(defs)}; reachable from bodies {len(R_body)}, from stamp writers {len(R_stamp)}; "

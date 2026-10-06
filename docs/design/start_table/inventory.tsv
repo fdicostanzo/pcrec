@@ -13,6 +13,8 @@
 #   ROUTE   decides which route (and so which (slot, route) pairs) applies
 #   BODY    a search-body writer: the skeleton (§1.3) that asks the slots
 #   LANDMARK a landmark derivation; a pick INSIDE a row, not a row (§2.5)
+#   TYPE    [r2.1 C-N1] a ROW TYPE (a family table's element type, or a type it
+#           embeds by value): its fields become CandRow's (§1.1)
 #   PLAN    orchestration only: names a member, decides nothing about a start
 #   NOTSTART reaches a landmark only to answer a non-start question (machine
 #           form, match-here axis, MRL storage): stays outside, reason given
@@ -132,3 +134,16 @@ pcrec_fact_req_whole_run	LANDMARK	PRESENCE	fact
 pcrec_fact_run_pin	LANDMARK	NEXT N1/N2	fact
 pcrec_fact_start_anchor	LANDMARK	BOUND B3/B4, P2, N7, R3	fact
 pcrec_fact_start_set	LANDMARK	NEXT N5-N7	fact
+# [r2.1 C-N1] the row types and the reseed row count, found once
+# call_graph.py parsed types, sized/initializer data and headers
+DfaCand	TYPE	every slot	the common leading member: c.name / c.deny / c.applies (§1.1); S282 anchors in it
+DfaPf	TYPE	NEXT	-> CandRow.u.pf (C3)
+PfScan	TYPE	NEXT	the scan-kind enum DfaPf embeds -> the `scan` column (§1.1)
+DfaSearchStart	TYPE	RECOVER	-> CandRow.u.recover (C3)
+ReqAdmitRow	TYPE	PRESENCE	-> CandRow.u.admit (C4)
+ReqAdmit	TYPE	PRESENCE	the verdict enum ReqAdmitRow embeds -> u.admit's verdict
+ReqUseRow	TYPE	FIRST	-> CandRow.u.use (C4)
+ReqUse	TYPE	FIRST	the use enum ReqUseRow embeds -> u.use
+PcrecReseedRow	TYPE	RETRY	-> CandRow.u.reseed (C5)
+DfaMatch	NOTSTART	match axis	dfa_matches[]'s row type; the match-here entry stays outside (§2.5)
+pcrec_reseed_nrows	PROJ	RETRY	the reseed table's row count, read by vm_plan_reseed's walk and the listing; kept as an accessor until C7 (§3.5)

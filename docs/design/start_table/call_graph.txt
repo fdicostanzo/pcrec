@@ -1,22 +1,31 @@
 # call_graph.py: roots emit_unanchored,emit_attempt,vm_emit_search_body | stamps pcrec_emit_dfa_scan_stamps,vm_emit_stamps
-# definitions 1392; reachable from bodies 624, from stamp writers 528; seeds 15; family 99
+# definitions 1892; reachable from bodies 758, from stamp writers 653; seeds 15; family 110
 kind	name	site	detail
+def-const	ABLOCK_MIN	src/core/arena.c:6-6	
 def-func	pcrec_arena_alloc	src/core/arena.c:13-38	
 def-func	pcrec_arena_free	src/core/arena.c:42-51	
 def-func	pcrec_ctx_fail	src/core/compile.c:19-39	
 def-func	pcrec_ctx_nomem	src/core/compile.c:50-55	
 def-func	pcrec_default_options	src/core/compile.c:60-73	
 def-func	pcrec_axis_on	src/core/compile.c:87-109	
+def-type	EmitSize	src/core/compile.c:146-146	
 def-func	emit_size_table_open	src/core/compile.c:152-184	
 def-func	emit_size_measure	src/core/compile.c:190-238	
 def-func	emit_size_code	src/core/compile.c:245-249	
 def-func	valid_prefix	src/core/compile.c:253-260	
 def-func	job_cleanup	src/core/compile.c:268-301	
 def-func	build_anchored_dfa	src/core/compile.c:350-384	
-def-table	SIZE_TERM_LADDER	src/core/compile.c:449-518	
+def-table	SIZE_TERM_LADDER	src/core/compile.c:449-449	
+def-type	enum@src/core/compile.c:450	src/core/compile.c:450-450	
+def-type	enum@src/core/compile.c:479	src/core/compile.c:479-479	
+def-type	SizeTermPhase	src/core/compile.c:487-487	
+def-func	cap_or_inf	src/core/compile.c:515-518	
 def-func	size_term_capacity_holds	src/core/compile.c:522-526	
 def-func	size_term_choose	src/core/compile.c:537-611	
 def-func	size_drop_note	src/core/compile.c:627-634	
+def-type	FitSel	src/core/compile.c:659-665	
+def-type	FitAct	src/core/compile.c:667-670	
+def-type	FitRung	src/core/compile.c:672-678	
 def-func	fit_collapse_applies	src/core/compile.c:683-690	
 def-func	fit_anchored_applies	src/core/compile.c:694-698	
 def-func	fit_premul_applies	src/core/compile.c:702-707	
@@ -54,6 +63,9 @@ def-func	pcrec_cube_of	src/core/cpset.c:394-416
 def-func	pcrec_cls_cube	src/core/cpset.c:424-434	
 def-func	lit_byte	src/core/cpset.c:440-443	
 def-func	pcrec_lit_run	src/core/cpset.c:475-483	
+def-type	PcrecFindStoreEntry	src/core/findings.c:51-55	
+def-type	enum@src/core/findings.c:68	src/core/findings.c:68-68	
+def-type	enum@src/core/findings.c:71	src/core/findings.c:71-75	
 def-func	pcrec_find_store_text	src/core/findings.c:80-88	
 def-func	pcrec_find_store_name	src/core/findings.c:90-94	
 def-func	pcrec_find_store_blocks	src/core/findings.c:96-100	
@@ -83,19 +95,156 @@ def-func	pcrec_find_set_pick	src/core/findings.c:476-487
 def-func	pcrec_find_run_scan_index	src/core/findings.c:522-542	
 def-func	pcrec_find_run_window_start	src/core/findings.c:557-581	
 def-func	pcrec_find_set_ppm	src/core/findings.c:588-591	
+def-const	PCREC_FINDINGS_H	src/core/findings.h:9-9	
+def-type	PcrecFindServe	src/core/findings.h:18-20	
+def-type	PcrecFindCp	src/core/findings.h:24-27	
+def-type	PcrecFindTblBlock	src/core/findings.h:36-45	
+def-type	PcrecFindTblBundle	src/core/findings.h:50-54	
+def-type	PcrecFindStop	src/core/findings.h:64-69	
+def-type	PcrecFindLink	src/core/findings.h:74-81	
+def-type	PcrecFindChain	src/core/findings.h:86-89	
+def-type	PcrecFindRec	src/core/findings.h:96-103	
+def-type	PcrecFindDeriv	src/core/findings.h:145-147	
+def-table	pcrec_ascii_fold	src/core/fold.c:68-89	
 def-func	ascii_partners	src/core/fold.c:104-109	
 def-func	ucd_fold_next	src/core/fold.c:113-123	
 def-func	ucd_partners	src/core/fold.c:130-146	
 def-func	latin1_partners	src/core/fold.c:154-166	
+def-data	pcrec_fold_ascii	src/core/fold.c:168-168	
+def-data	pcrec_fold_ucd_simple	src/core/fold.c:169-169	
+def-data	pcrec_fold_latin1	src/core/fold.c:170-170	
+def-const	PCREC_INTERNAL_H	src/core/internal.h:3-3	
+def-type	ABlock	src/core/internal.h:46-50	
+def-type	Arena	src/core/internal.h:54-54	
+def-type	StrBuf	src/core/internal.h:94-116	
+def-type	PcrecCmtClass	src/core/internal.h:124-124	
+def-const	PCREC_PREFIX_LEAD	src/core/internal.h:316-316	
+def-const	PCREC_PREFIX_PLACEHOLDER	src/core/internal.h:317-317	
+def-type	VarExpOp	src/core/internal.h:350-355	
+def-type	VarWord	src/core/internal.h:363-367	
+def-type	VarExp	src/core/internal.h:374-386	
+def-type	VarExpErr	src/core/internal.h:392-395	
+def-type	AKind	src/core/internal.h:462-843	
+def-type	CallLink	src/core/internal.h:854-865	
+def-type	PcrecCpRange	src/core/internal.h:882-882	
+def-type	enum@src/core/internal.h:886	src/core/internal.h:886-893	
+def-type	Ast	src/core/internal.h:896-1589	
+def-type	PcrecCpSet	src/core/internal.h:1628-1632	
+def-func	pcrec_ast_seethru	src/core/internal.h:1688-1692	
+def-type	NKind	src/core/internal.h:1700-1767	
+def-type	NState	src/core/internal.h:1769-1776	
+def-type	Nfa	src/core/internal.h:1778-1794	
 def-macro	PCREC_LIMIT_INTERNAL_H	src/core/internal.h:1811-1812	
+def-const	PCREC_MINW_MAX	src/core/internal.h:1828-1828	
+def-type	enum@src/core/internal.h:1864	src/core/internal.h:1864-1864	
+def-type	DView	src/core/internal.h:1868-1872	
+def-type	DState	src/core/internal.h:1874-1969	
+def-type	PcrecCtxSet	src/core/internal.h:1985-1990	
+def-type	Dfa	src/core/internal.h:1992-2074	
+def-type	enum@src/core/internal.h:2082	src/core/internal.h:2082-2082	
+def-type	EngineFit	src/core/internal.h:2088-2262	
+def-type	enum@src/core/internal.h:2295	src/core/internal.h:2295-2378	
+def-type	enum@src/core/internal.h:2382	src/core/internal.h:2382-2394	
+def-type	enum@src/core/internal.h:2400	src/core/internal.h:2400-2404	
+def-type	enum@src/core/internal.h:2453	src/core/internal.h:2453-2489	
+def-type	PrefixKSets	src/core/internal.h:2505-2516	
+def-type	Job	src/core/internal.h:2524-2659	
+def-type	NamedGroup	src/core/internal.h:2664-2711	
+def-type	PendKind	src/core/internal.h:2760-2760	
+def-type	PendingRef	src/core/internal.h:2762-2792	
+def-type	Ctx	src/core/internal.h:2794-3211	
+def-func	pcrec_lb_raise	src/core/internal.h:3215-3218	
+def-type	AltInfo	src/core/internal.h:3243-3246	
+def-type	RegKind	src/core/internal.h:3288-3344	
+def-type	enum@src/core/internal.h:3348	src/core/internal.h:3348-3381	
+def-type	enum@src/core/internal.h:3387	src/core/internal.h:3387-3387	
+def-type	enum@src/core/internal.h:3394	src/core/internal.h:3394-3397	
+def-type	RegStatus	src/core/internal.h:3399-3405	
+def-type	PcrecBuiltStatus	src/core/internal.h:3421-3426	
+def-const	PCREC_UNBUILT_MARKER	src/core/internal.h:3433-3433	
+def-type	RegDiag	src/core/internal.h:3437-3442	
+def-type	Roadmap	src/core/internal.h:3459-3463	
+def-type	QuantFact	src/core/internal.h:3487-3493	
+def-type	QuantVerb	src/core/internal.h:3500-3504	
+def-type	enum@src/core/internal.h:3506	src/core/internal.h:3506-3612	
+def-const	REG_SEL_ANY	src/core/internal.h:3614-3614	
+def-type	ExtWhat	src/core/internal.h:3654-3671	
+def-type	ExtWant	src/core/internal.h:3702-3702	
+def-type	ExtResult	src/core/internal.h:3706-3787	
+def-type	PortKind	src/core/internal.h:3819-3819	
+def-type	ExtPort	src/core/internal.h:3826-3845	
+def-const	NO_PORT	src/core/internal.h:3847-3847	
+def-func	upc_of_class	src/core/internal.h:3870-3873	
+def-type	PcrecClsNamed	src/core/internal.h:3883-3886	
+def-type	PcrecLookRow	src/core/internal.h:3919-3925	
+def-type	PcrecFoldLink	src/core/internal.h:4000-4000	
+def-type	PcrecFold	src/core/internal.h:4002-4010	
+def-type	ClsContrib	src/core/internal.h:4019-4025	
+def-type	DefTag	src/core/internal.h:4055-4076	
+def-type	DefKind	src/core/internal.h:4128-4128	
+def-type	PcrecSetTerm	src/core/internal.h:4136-4136	
+def-type	PcrecSetDef	src/core/internal.h:4137-4143	
+def-type	RegDef	src/core/internal.h:4206-4246	
+def-type	RegRow	src/core/internal.h:4269-4463	
+def-func	pcrec_ast_engines	src/core/internal.h:4468-4471	
+def-func	pcrec_ast_visit	src/core/internal.h:4503-4538	
+def-type	enum@src/core/internal.h:5062	src/core/internal.h:5062-5079	
+def-type	VerbName	src/core/internal.h:5081-5103	
+def-type	VerbTable	src/core/internal.h:5105-5109	
+def-type	PosixName	src/core/internal.h:5149-5157	
 def-macro	REFUSE	src/core/internal.h:5196-5201	
+def-const	PCREC_MISSING_CLOSE_PAREN_MSG	src/core/internal.h:5211-5211	
 def-macro	UNBUILT	src/core/internal.h:5225-5227	
 def-macro	BAD_ROW	src/core/internal.h:5231-5232	
+def-type	RxtSchemaScope	src/core/internal.h:5345-5354	
+def-type	RxtValueShape	src/core/internal.h:5356-5360	
+def-type	RxtChildren	src/core/internal.h:5366-5370	
+def-type	RxtCardinality	src/core/internal.h:5372-5374	
+def-type	RxtRowSource	src/core/internal.h:5376-5376	
+def-type	RxtValidatedBy	src/core/internal.h:5377-5377	
+def-type	RxtConstraintKind	src/core/internal.h:5386-5395	
+def-type	RxtSchemaRow	src/core/internal.h:5397-5408	
+def-const	PCREC_RXT_WAVE_BUILT	src/core/internal.h:5415-5415	
+def-const	PCREC_RXT_WAVE_RESERVED	src/core/internal.h:5423-5423	
+def-type	RxtDeclKind	src/core/internal.h:5497-5525	
+def-type	RxtRow	src/core/internal.h:5527-5574	
+def-type	RxtProv	src/core/internal.h:5590-5601	
+def-type	RxtVariant	src/core/internal.h:5603-5609	
+def-type	RxtCase	src/core/internal.h:5620-5642	
+def-type	RxtAux	src/core/internal.h:5650-5660	
+def-type	RxtServe	src/core/internal.h:5665-5667	
+def-type	RxtFindBlock	src/core/internal.h:5675-5687	
+def-type	RxtSource	src/core/internal.h:5690-5719	
+def-type	RxtDef	src/core/internal.h:5768-5788	
+def-type	RxtDefs	src/core/internal.h:5794-5802	
+def-type	RxtTarget	src/core/internal.h:5838-5874	
+def-func	pcrec_startgate_needed	src/core/internal.h:5963-5966	
+def-type	PcrecRun	src/core/internal.h:6008-6012	
+def-type	PcrecRunRow	src/core/internal.h:6016-6022	
+def-type	PcrecFind	src/core/internal.h:6039-6048	
+def-type	PcrecStart0	src/core/internal.h:6086-6096	
+def-type	PcrecTuneRow	src/core/internal.h:6113-6120	
+def-type	enum@src/core/internal.h:6241	src/core/internal.h:6241-6241	
+def-type	DfaMemo	src/core/internal.h:6261-6264	
+def-type	PcrecAxisCand	src/core/internal.h:6585-6592	
+def-const	PCREC_W_UNBOUNDED	src/core/internal.h:6671-6671	
+def-type	GenNames	src/core/internal.h:6691-6694	
+def-type	PcrecReseedRow	src/core/internal.h:6736-6746	
+def-type	PcrecReqAdmitDesc	src/core/internal.h:6754-6759	
+def-type	PcrecReqUseDesc	src/core/internal.h:6768-6773	
+def-type	BufSurface	src/core/internal.h:6793-6799	
+def-const	PCREC_LIMITS_H	src/core/limits.h:43-43	
 def-macro	PCREC_LIMIT_LIMITS_H	src/core/limits.h:718-719	
 def-macro	PCREC_LIMIT_LIMITS_H_NONE	src/core/limits.h:720-720	
 def-macro	PCREC_LIMIT_LIMITS_H_FLAG	src/core/limits.h:721-721	
 def-macro	PCREC_LIMIT_LIMITS_H_BUILD_D	src/core/limits.h:722-722	
 def-macro	PCREC_LIMIT_LIMITS_H_FLAG_D	src/core/limits.h:723-723	
+def-const	PCREC_ANCHORED_MAX_STATES	src/core/limits.h:746-746	
+def-const	PCREC_MAX_VM_EMIT_CODE_BYTES	src/core/limits.h:749-749	
+def-const	PCREC_DEFAULT_WARN_EMIT_BYTES	src/core/limits.h:752-752	
+def-const	PCREC_MAX_EMIT_BYTES	src/core/limits.h:755-755	
+def-const	PCREC_SIZE_TERM_THRESHOLD	src/core/limits.h:758-758	
+def-const	PCREC_MAX_AUTO_DFA_ELEMS	src/core/limits.h:761-761	
 def-func	sb_grow	src/core/sb.c:13-36	
 def-func	pcrec_sb_cmt_open	src/core/sb.c:61-66	
 def-func	pcrec_sb_cmt_close	src/core/sb.c:71-81	
@@ -122,6 +271,7 @@ def-func	pcrec_sb_upper	src/core/sb.c:386-394
 def-func	render_prefix	src/core/sb.c:402-425	
 def-func	pcrec_sb_render_prefix	src/core/sb.c:430-448	
 def-func	pcrec_render_prefix_msg	src/core/sb.c:451-461	
+def-table	TUNE_TABLE	src/core/tune.c:61-102	
 def-func	pcrec_tune_valid	src/core/tune.c:109-112	
 def-func	pcrec_tune_row	src/core/tune.c:117-121	
 def-func	pcrec_tune_token	src/core/tune.c:125-128	
@@ -137,6 +287,7 @@ def-func	pcrec_tune_deny_flags	src/core/tune.c:253-256
 def-func	vx_fail	src/core/varexp.c:63-67	
 def-func	vx_name_start	src/core/varexp.c:74-77	
 def-func	vx_name_cont	src/core/varexp.c:80-83	
+def-type	VxWords	src/core/varexp.c:89-92	
 def-func	vx_words_push	src/core/varexp.c:95-105	
 def-func	vx_parse_word	src/core/varexp.c:121-172	
 def-func	vx_parse_at	src/core/varexp.c:180-257	
@@ -144,11 +295,12 @@ def-func	pcrec_varexp_parse	src/core/varexp.c:263-272
 def-func	vx_render_byte	src/core/varexp.c:280-284	
 def-func	vx_render_into	src/core/varexp.c:286-302	
 def-func	pcrec_varexp_render	src/core/varexp.c:310-319	
+def-type	AxisDesc	src/dump/axes_dump.c:87-91	
 def-table	AXIS_DESC	src/dump/axes_dump.c:98-144	
+def-const	N_AXIS_DESC	src/dump/axes_dump.c:145-145	
 def-func	desc_of	src/dump/axes_dump.c:150-157	
 def-func	stamp_macro_of	src/dump/axes_dump.c:166-185	
 def-func	axis_macro_name	src/dump/axes_dump.c:219-227	
-def-macro	PCREC_AXIS	src/dump/axes_dump.c:222-224	
 def-func	axis_cli_flag	src/dump/axes_dump.c:237-259	
 def-func	bit_of	src/dump/axes_dump.c:262-267	
 def-func	deny_cols	src/dump/axes_dump.c:274-290	
@@ -156,6 +308,7 @@ def-func	axis_row	src/dump/axes_dump.c:299-312
 def-func	emit_dfa_list_axis	src/dump/axes_dump.c:321-339	
 def-func	emit_table_composite_rows	src/dump/axes_dump.c:358-366	
 def-func	emit_scan_composite_rows	src/dump/axes_dump.c:383-391	
+def-type	PredAxis	src/dump/axes_dump.c:401-411	
 def-func	emit_pred_row	src/dump/axes_dump.c:425-439	
 def-func	emit_predicate_axes	src/dump/axes_dump.c:450-987	
 def-func	mf_kind_word	src/dump/axes_dump.c:994-1001	
@@ -163,14 +316,22 @@ def-func	mf_budget_word	src/dump/axes_dump.c:1003-1011
 def-func	mf_layer_word	src/dump/axes_dump.c:1013-1020	
 def-func	emit_memfn_section	src/dump/axes_dump.c:1029-1054	
 def-func	pcrec_axes_tsv	src/dump/axes_dump.c:1065-1124	
-def-macro	PF_FACT	src/dump/facts_dump.c:45-45	
+def-type	FactsRows	src/dump/facts_dump.c:38-41	
+def-table	fd_name	src/dump/facts_dump.c:44-47	
+def-table	fd_epoch	src/dump/facts_dump.c:48-51	
+def-table	fd_kind	src/dump/facts_dump.c:52-55	
+def-table	fd_owner	src/dump/facts_dump.c:56-59	
 def-func	fd_deny_flag	src/dump/facts_dump.c:64-72	
 def-func	fd_status	src/dump/facts_dump.c:76-86	
 def-func	fd_why	src/dump/facts_dump.c:91-109	
 def-func	fd_decisions	src/dump/facts_dump.c:112-137	
 def-func	fd_hook	src/dump/facts_dump.c:141-167	
 def-func	pcrec_emit_facts	src/dump/facts_dump.c:169-219	
-def-table	FIND_KINDS	src/dump/findings_dump.c:35-52	
+def-table	FIND_KINDS	src/dump/findings_dump.c:35-35	
+def-const	N_FIND_KINDS	src/dump/findings_dump.c:36-36	
+def-table	FIND_QUERIES	src/dump/findings_dump.c:39-39	
+def-const	N_FIND_QUERIES	src/dump/findings_dump.c:40-40	
+def-func	stop_name	src/dump/findings_dump.c:43-52	
 def-func	section	src/dump/findings_dump.c:55-61	
 def-func	resolution_cells	src/dump/findings_dump.c:70-103	
 def-func	chain_rows	src/dump/findings_dump.c:107-124	
@@ -185,11 +346,14 @@ def-func	pcrec_find_list_file	src/dump/findings_dump.c:370-442
 def-func	override_name	src/dump/limits_dump.c:51-58	
 def-func	limit_row	src/dump/limits_dump.c:66-76	
 def-func	pcrec_limits_tsv	src/dump/limits_dump.c:82-119	
-def-macro	PCREC_LIMIT	src/dump/limits_dump.c:113-114	
+def-type	SurfaceRow	src/dump/schema_dump.c:56-61	
 def-table	g_surface	src/dump/schema_dump.c:63-86	
 def-func	pcrec_rxt_schema_tsv	src/dump/schema_dump.c:96-195	
+def-type	MaskName	src/dump/syntax_dump.c:33-33	
 def-table	flavour_names	src/dump/syntax_dump.c:35-37	
-def-table	want_names	src/dump/syntax_dump.c:44-48	
+def-table	want_names	src/dump/syntax_dump.c:44-44	
+def-const	N_WANT_NAMES	src/dump/syntax_dump.c:45-45	
+def-table	engine_names	src/dump/syntax_dump.c:46-48	
 def-table	flag_names	src/dump/syntax_dump.c:49-54	
 def-macro	NELEMS	src/dump/syntax_dump.c:56-56	
 def-func	pcrec_flavour_by_name	src/dump/syntax_dump.c:62-67	
@@ -207,6 +371,7 @@ def-table	all_kinds	src/dump/syntax_dump.c:241-344
 def-func	pcrec_definitions_tsv	src/dump/syntax_dump.c:394-470	
 def-func	pcrec_syntax_verbs	src/dump/syntax_dump.c:483-527	
 def-func	pcrec_syntax_families	src/dump/syntax_dump.c:567-644	
+def-type	Doorway	src/dump/syntax_dump.c:687-695	
 def-func	doorway_route	src/dump/syntax_dump.c:702-745	
 def-func	doorway_call	src/dump/syntax_dump.c:774-799	
 def-func	built_status_probe	src/dump/syntax_dump.c:830-1049	
@@ -214,6 +379,7 @@ def-func	pcrec_construct_built_status	src/dump/syntax_dump.c:1056-1100
 def-func	doorway_word	src/dump/syntax_dump.c:1107-1124	
 def-func	pcrec_probe_ask	src/dump/syntax_dump.c:1164-1238	
 def-func	msg_module	src/dump/syntax_dump.c:1354-1366	
+def-type	Live	src/dump/syntax_dump.c:1368-1372	
 def-func	live_answer	src/dump/syntax_dump.c:1379-1390	
 def-func	put_answer	src/dump/syntax_dump.c:1396-1416	
 def-func	put_names	src/dump/syntax_dump.c:1421-1428	
@@ -238,11 +404,71 @@ def-func	pcrec_enc_start_guard	src/enc/enc.c:239-265
 def-func	pcrec_enc_start_cls_ok	src/enc/enc.c:269-278	
 def-func	pcrec_utf8_encode	src/enc/enc.c:282-295	
 def-func	pcrec_enc_set_bytes	src/enc/enc.c:298-308	
+def-const	PCREC_ENC_H	src/enc/enc.h:46-46	
+def-type	PcrecEncEntry	src/enc/enc.h:83-123	
+def-type	enum@src/enc/enc.h:126	src/enc/enc.h:126-206	
+def-type	PcrecEnc	src/enc/enc.h:208-413	
+def-func	pcrec_enc_ready	src/enc/enc.h:429-432	
+def-data	decls_byte_doc	src/enc/enc_byte.c:22-40	
+def-data	decls_byte	src/enc/enc_byte.c:42-43	
+def-data	defs_byte_doc	src/enc/enc_byte.c:49-51	
+def-data	defs_byte	src/enc/enc_byte.c:53-58	
+def-data	decls_bref_doc	src/enc/enc_byte.c:110-142	
+def-data	decls_bref	src/enc/enc_byte.c:144-146	
+def-data	defs_bref_doc	src/enc/enc_byte.c:148-150	
+def-data	defs_bref	src/enc/enc_byte.c:152-162	
+def-data	decls_bref_ci_doc	src/enc/enc_byte.c:164-171	
+def-data	decls_bref_ci	src/enc/enc_byte.c:173-176	
+def-data	defs_bref_ci_doc	src/enc/enc_byte.c:178-181	
+def-data	defs_bref_ci	src/enc/enc_byte.c:183-199	
+def-data	decls_back_step_doc	src/enc/enc_byte.c:235-248	
+def-data	decls_back_step	src/enc/enc_byte.c:250-252	
+def-data	defs_back_step_doc	src/enc/enc_byte.c:254-256	
+def-data	defs_back_step	src/enc/enc_byte.c:258-263	
+def-data	decls_valid_upto_doc	src/enc/enc_byte.c:272-284	
+def-data	decls_valid_upto	src/enc/enc_byte.c:286-287	
+def-data	defs_valid_upto	src/enc/enc_byte.c:289-294	
 def-table	entries_byte	src/enc/enc_byte.c:296-321	
+def-data	advance_byte	src/enc/enc_byte.c:332-333	
+def-data	pcrec_enc_backend_byte	src/enc/enc_byte.c:349-364	
+def-data	u8_decls_next_pos_doc	src/enc/enc_utf8.c:32-51	
+def-data	u8_decls_next_pos	src/enc/enc_utf8.c:53-54	
+def-data	u8_defs_next_pos_doc	src/enc/enc_utf8.c:56-60	
+def-data	u8_defs_next_pos	src/enc/enc_utf8.c:62-68	
+def-data	u8_decls_bref_doc	src/enc/enc_utf8.c:92-115	
+def-data	u8_decls_bref	src/enc/enc_utf8.c:117-119	
+def-data	u8_defs_bref_doc	src/enc/enc_utf8.c:121-123	
+def-data	u8_defs_bref	src/enc/enc_utf8.c:125-135	
+def-data	u8_decls_bref_ci_doc	src/enc/enc_utf8.c:137-148	
+def-data	u8_decls_bref_ci	src/enc/enc_utf8.c:150-153	
+def-data	u8_defs_bref_ci_doc	src/enc/enc_utf8.c:155-165	
+def-data	u8_defs_bref_ci	src/enc/enc_utf8.c:167-211	
+def-data	u8_defs_decode_doc	src/enc/enc_utf8.c:227-234	
+def-data	u8_defs_decode	src/enc/enc_utf8.c:236-256	
+def-data	u8_decls_back_step_doc	src/enc/enc_utf8.c:283-297	
+def-data	u8_decls_back_step	src/enc/enc_utf8.c:299-301	
+def-data	u8_defs_back_step_doc	src/enc/enc_utf8.c:303-304	
+def-data	u8_defs_back_step	src/enc/enc_utf8.c:306-341	
+def-data	u8_decls_var_valid_doc	src/enc/enc_utf8.c:371-378	
+def-data	u8_decls_var_valid	src/enc/enc_utf8.c:380-381	
+def-data	u8_defs_var_valid_doc	src/enc/enc_utf8.c:383-385	
+def-data	u8_defs_var_valid	src/enc/enc_utf8.c:387-391	
+def-data	u8_decls_valid_upto_doc	src/enc/enc_utf8.c:416-430	
+def-data	u8_decls_valid_upto	src/enc/enc_utf8.c:432-433	
+def-data	u8_defs_valid_upto	src/enc/enc_utf8.c:435-475	
 def-table	entries_utf8	src/enc/enc_utf8.c:477-515	
+def-data	advance_utf8	src/enc/enc_utf8.c:529-537	
+def-table	start_cls_utf8	src/enc/enc_utf8.c:556-564	
+def-data	start_guard_utf8	src/enc/enc_utf8.c:591-592	
+def-data	pcrec_enc_backend_utf8	src/enc/enc_utf8.c:594-619	
+def-type	enum@src/facts/endwin.c:67	src/facts/endwin.c:67-67	
+def-const	EW_EOL_SLACK	src/facts/endwin.c:74-74	
 def-func	ew_walk	src/facts/endwin.c:83-147	
 def-func	ew_see_gstart	src/facts/endwin.c:150-153	
 def-func	pcrec_end_window	src/facts/endwin.c:165-191	
+def-table	pf_deny	src/facts/facts.c:42-46	
+def-table	pf_epoch	src/facts/facts.c:47-50	
+def-table	pf_name	src/facts/facts.c:51-54	
 def-func	pf_store_empty	src/facts/facts.c:61-96	
 def-func	pf_route_unsealed	src/facts/facts.c:100-103	
 def-func	pf_enter	src/facts/facts.c:111-140	
@@ -273,16 +499,41 @@ def-func	pf_hex	src/facts/facts.c:439-456
 def-table	pf_kind_name	src/facts/facts.c:459-462	
 def-func	pcrec_fact_render	src/facts/facts.c:471-565	
 def-func	pcrec_fact_stamp	src/facts/facts.c:567-571	
+def-const	PCREC_FACTS_H	src/facts/facts.h:28-28	
+def-type	ReqRun	src/facts/facts.h:64-90	
+def-func	pcrec_req_run_masked	src/facts/facts.h:93-98	
+def-type	ReqSet	src/facts/facts.h:110-118	
+def-type	enum@src/facts/facts.h:126	src/facts/facts.h:126-130	
+def-type	StartSet	src/facts/facts.h:143-146	
+def-type	PrefixK	src/facts/facts.h:151-156	
+def-type	KsetWalk	src/facts/facts.h:161-164	
+def-type	RunPin	src/facts/facts.h:178-183	
+def-type	enum@src/facts/facts.h:188	src/facts/facts.h:188-196	
+def-type	PfEpoch	src/facts/facts.h:206-206	
+def-type	PfKind	src/facts/facts.h:211-211	
+def-type	PfFactId	src/facts/facts.h:214-218	
+def-type	PfStatus	src/facts/facts.h:223-229	
+def-type	PfWhyCode	src/facts/facts.h:233-254	
+def-type	PfWhy	src/facts/facts.h:256-260	
+def-type	PatFacts	src/facts/facts.h:262-311	
+def-const	PCREC_FACTS_DERIVE_H	src/facts/facts_derive.h:18-18	
+def-type	RbSet	src/facts/facts_derive.h:59-59	
+def-type	RbRun	src/facts/facts_derive.h:81-93	
+def-func	rb_has	src/facts/facts_derive.h:95-98	
 def-func	pcrec_pattern_kinds	src/facts/kinds.c:31-42	
+def-type	Walk	src/facts/kset.c:82-90	
 def-func	wpush	src/facts/kset.c:94-100	
 def-func	wclose	src/facts/kset.c:104-152	
 def-func	frontier_union	src/facts/kset.c:156-166	
 def-func	pcrec_kset_walk	src/facts/kset.c:173-234	
 def-func	pcrec_run_pin	src/facts/kset.c:254-277	
+def-type	RbRuns	src/facts/req.c:153-153	
+def-type	RbVal	src/facts/req.c:156-156	
 def-func	rb_empty	src/facts/req.c:159-165	
 def-func	rb_single	src/facts/req.c:167-173	
 def-func	rb_union	src/facts/req.c:180-186	
 def-func	rb_intersect	src/facts/req.c:191-201	
+def-type	RbWalk	src/facts/req.c:213-213	
 def-func	rn_members	src/facts/req.c:216-219	
 def-func	rn_info	src/facts/req.c:222-227	
 def-func	rn_none	src/facts/req.c:229-238	
@@ -306,6 +557,8 @@ def-func	pcrec_req_walk	src/facts/req.c:615-622
 def-func	req_rate_why	src/facts/req.c:628-631	
 def-func	pcrec_req_window	src/facts/req.c:644-673	
 def-func	pcrec_req_pick	src/facts/req.c:686-694	
+def-const	SA_BOT	src/facts/startanch.c:60-60	
+def-const	SA_GSTART	src/facts/startanch.c:61-61	
 def-func	sa_walk	src/facts/startanch.c:72-140	
 def-func	pcrec_start_anchor	src/facts/startanch.c:148-154	
 def-func	pcrec_start_anchor_name	src/facts/startanch.c:158-165	
@@ -315,20 +568,30 @@ def-func	ss_all	src/facts/startset.c:68-74
 def-func	ss_walk	src/facts/startset.c:77-138	
 def-func	pcrec_start_set	src/facts/startset.c:141-144	
 def-func	pcrec_pattern_nullable	src/facts/widths.c:44-47	
+def-type	LeafModel	src/gen/clskit.c:58-64	
+def-table	LEAF	src/gen/clskit.c:66-74	
+def-data	Q16	src/gen/clskit.c:152-152	
 def-func	bitlen	src/gen/clskit.c:157-162	
 def-func	log2_q16	src/gen/clskit.c:167-177	
 def-func	cube_of	src/gen/clskit.c:186-190	
 def-func	page_part	src/gen/clskit.c:195-202	
 def-func	page64_price	src/gen/clskit.c:210-243	
+def-type	Offer	src/gen/clskit.c:248-253	
 def-func	leaf_rodata	src/gen/clskit.c:257-272	
 def-func	section_best	src/gen/clskit.c:276-303	
 def-func	pcrec_clskit_partition	src/gen/clskit.c:315-348	
 def-func	intern_records	src/gen/clskit.c:358-386	
+def-type	WholePages	src/gen/clskit.c:391-398	
 def-func	build_pages	src/gen/clskit.c:401-433	
 def-func	idx_width	src/gen/clskit.c:436-439	
 def-func	pcrec_clskit_whole_bytes	src/gen/clskit.c:446-469	
 def-func	pcrec_clskit_atoms	src/gen/clskit.c:478-505	
+def-type	ClsPred	src/gen/clskit.c:512-522	
+def-type	enum@src/gen/clskit.c:525	src/gen/clskit.c:525-525	
 def-macro	TPOS	src/gen/clskit.c:526-526	
+def-const	TP_ALL	src/gen/clskit.c:561-561	
+def-table	ROWS	src/gen/clskit.c:562-600	
+def-type	SelCtx	src/gen/clskit.c:604-611	
 def-func	whole	src/gen/clskit.c:614-618	
 def-func	is_byte_set	src/gen/clskit.c:621-624	
 def-func	is_ascii_fold_pair	src/gen/clskit.c:629-633	
@@ -338,16 +601,19 @@ def-func	mid_gate	src/gen/clskit.c:664-668
 def-func	pred_holds	src/gen/clskit.c:671-685	
 def-func	pcrec_clskit_select	src/gen/clskit.c:693-718	
 def-func	pcrec_clskit_rows	src/gen/clskit.c:721-725	
+def-type	ClsTabPred	src/gen/clskit.c:749-752	
 def-table	TAB_ROWS	src/gen/clskit.c:754-769	
 def-func	pcrec_clskit_select_tables	src/gen/clskit.c:777-805	
 def-func	lone_table	src/gen/clskit.c:810-815	
 def-func	pcrec_clskit_table_rows	src/gen/clskit.c:818-822	
 def-func	pcrec_clskit_kit_lambda	src/gen/clskit.c:825-828	
+def-table	DENY_FLAG	src/gen/clskit.c:834-837	
 def-func	pcrec_clskit_deny_of	src/gen/clskit.c:839-845	
 def-func	pcrec_clskit_byte_tests	src/gen/clskit.c:852-875	
 def-func	pcrec_clskit_tabdeny_of	src/gen/clskit.c:880-883	
 def-func	pcrec_clskit_test	src/gen/clskit.c:888-898	
 def-func	pcrec_clskit_test_name	src/gen/clskit.c:904-919	
+def-table	FORM_NAMES	src/gen/clskit.c:922-922	
 def-func	pcrec_clskit_leaf_name	src/gen/clskit.c:925-928	
 def-func	pcrec_clskit_form_name	src/gen/clskit.c:931-934	
 def-func	emit_array	src/gen/clskit.c:940-954	
@@ -362,13 +628,35 @@ def-func	pcrec_clskit_emit_atom_table	src/gen/clskit.c:1192-1196
 def-func	pcrec_clskit_emit_atom	src/gen/clskit.c:1201-1209	
 def-func	pcrec_clskit_emit_inline	src/gen/clskit.c:1217-1229	
 def-func	pcrec_clskit_read	src/gen/clskit.c:1236-1259	
+def-const	PCREC_CLSKIT_H	src/gen/clskit.h:42-42	
+def-type	ClsLeaf	src/gen/clskit.h:52-61	
+def-type	ClsSection	src/gen/clskit.h:65-69	
+def-type	ClsKit	src/gen/clskit.h:75-81	
+def-type	ClsForm	src/gen/clskit.h:84-91	
+def-type	ClsAtomTable	src/gen/clskit.h:97-101	
+def-type	ClsDeny	src/gen/clskit.h:107-117	
+def-type	ClsRowId	src/gen/clskit.h:122-134	
+def-type	ClsSite	src/gen/clskit.h:141-144	
 def-macro	CLSSITE	src/gen/clskit.h:145-145	
+def-const	CLSS_ALL	src/gen/clskit.h:146-146	
+def-type	ClsRow	src/gen/clskit.h:149-157	
+def-type	ClsSelectIn	src/gen/clskit.h:166-174	
+def-type	ClsChoice	src/gen/clskit.h:181-186	
+def-type	ClsTabForm	src/gen/clskit.h:191-196	
+def-type	ClsTabDeny	src/gen/clskit.h:199-203	
+def-type	ClsTabRow	src/gen/clskit.h:206-214	
+def-type	ClsTabChoice	src/gen/clskit.h:218-222	
+def-type	ClsTest	src/gen/clskit.h:228-233	
+def-const	PCREC_ARTIFACT_ABI	src/gen/emit_dfa.c:53-53	
 def-func	emit_comment_safe_byte	src/gen/emit_dfa.c:94-104	
 def-func	emit_pattern_comment	src/gen/emit_dfa.c:133-143	
 def-func	emit_c_string_literal	src/gen/emit_dfa.c:172-192	
 def-func	emit_feature_comment	src/gen/emit_dfa.c:209-217	
 def-func	emit_feature_macros	src/gen/emit_dfa.c:226-232	
+def-type	ReqAdmit	src/gen/emit_dfa.c:305-311	
 def-func	req_admit_emits	src/gen/emit_dfa.c:316-319	
+def-type	ReqUse	src/gen/emit_dfa.c:328-331	
+def-type	OfsTest	src/gen/emit_dfa.c:354-367	
 def-func	pcrec_artifact_has_dfa_scan	src/gen/emit_dfa.c:385-388	
 def-func	pcrec_engine_sel_name	src/gen/emit_dfa.c:395-410	
 def-func	pcrec_emit_engine_stamp	src/gen/emit_dfa.c:420-425	
@@ -411,6 +699,7 @@ def-func	pcrec_bufsurface_inert	src/gen/emit_dfa.c:2311-2318
 def-func	emit_match_def	src/gen/emit_dfa.c:2354-2381	
 def-func	emit_match_caps_def	src/gen/emit_dfa.c:2392-2416	
 def-func	emit_in_entry_defs	src/gen/emit_dfa.c:2453-2489	
+def-type	InfoStamp	src/gen/emit_dfa.c:2507-2518	
 def-func	ng_cmp_name	src/gen/emit_dfa.c:2589-2600	
 def-func	ng_count_caller_scope	src/gen/emit_dfa.c:2609-2615	
 def-func	emit_info_def	src/gen/emit_dfa.c:2624-3242	
@@ -418,10 +707,17 @@ def-func	emit_residual_decls	src/gen/emit_dfa.c:3265-3270
 def-func	emit_residual_defs	src/gen/emit_dfa.c:3276-3289	
 def-func	emit_header	src/gen/emit_dfa.c:3300-3337	
 def-func	emit_u8_table	src/gen/emit_dfa.c:3345-3354	
+def-const	PREMUL_DEAD	src/gen/emit_dfa.c:3374-3374	
+def-const	PREMUL_MAX_ENTRIES	src/gen/emit_dfa.c:3415-3415	
+def-type	DfaSel	src/gen/emit_dfa.c:3436-3464	
+def-type	CandRoute	src/gen/emit_dfa.c:3470-3470	
 def-macro	CAND_ON	src/gen/emit_dfa.c:3471-3471	
+def-type	DfaCand	src/gen/emit_dfa.c:3473-3477	
+def-type	DfaRepr	src/gen/emit_dfa.c:3484-3493	
 def-func	tr_cell	src/gen/emit_dfa.c:3567-3571	
 def-func	acc_cell	src/gen/emit_dfa.c:3576-3579	
 def-func	accw_cell	src/gen/emit_dfa.c:3585-3588	
+def-type	DfaFold	src/gen/emit_dfa.c:3595-3595	
 def-func	fold_tr	src/gen/emit_dfa.c:3603-3613	
 def-func	fold_acc	src/gen/emit_dfa.c:3620-3629	
 def-func	emit_tr_table	src/gen/emit_dfa.c:3636-3649	
@@ -443,11 +739,14 @@ def-func	dfa_has_clsacc	src/gen/emit_dfa.c:3940-3945
 def-func	emit_acc_cls_table	src/gen/emit_dfa.c:3950-3963	
 def-func	upc_of_newline	src/gen/emit_dfa.c:3973-3979	
 def-func	emit_seed_table	src/gen/emit_dfa.c:3990-4003	
+def-type	CandSet	src/gen/emit_dfa.c:4028-4035	
 def-func	cand_derive	src/gen/emit_dfa.c:4043-4057	
 def-func	cand_from_escapes	src/gen/emit_dfa.c:4062-4068	
 def-func	cand_from_live_seeds	src/gen/emit_dfa.c:4084-4090	
 def-func	cand_emit_table	src/gen/emit_dfa.c:4094-4098	
 def-func	attempt_cand	src/gen/emit_dfa.c:4105-4131	
+def-type	DfaPfKind	src/gen/emit_dfa.c:4155-4159	
+def-type	UnanchStart	src/gen/emit_dfa.c:4161-4177	
 def-func	unanch_start	src/gen/emit_dfa.c:4191-4323	
 def-func	dfa_engine_is_empty	src/gen/emit_dfa.c:4352-4358	
 def-func	dfa_table_name	src/gen/emit_dfa.c:4383-4414	
@@ -459,7 +758,17 @@ def-func	pick_skip_states	src/gen/emit_dfa.c:4545-4609
 def-func	emit_stay_table	src/gen/emit_dfa.c:4615-4627	
 def-func	legend_byte	src/gen/emit_dfa.c:4641-4647	
 def-func	emit_class_legend	src/gen/emit_dfa.c:4652-4672	
+def-const	LEGEND_MAX_STATES	src/gen/emit_dfa.c:4686-4686	
+def-const	LEGEND_MAX_EXAMPLE	src/gen/emit_dfa.c:4689-4689	
 def-func	emit_state_legend	src/gen/emit_dfa.c:4710-4850	
+def-type	PfScan	src/gen/emit_dfa.c:4894-4899	
+def-type	DfaPf	src/gen/emit_dfa.c:4901-4979	
+def-type	DfaView	src/gen/emit_dfa.c:4984-4987	
+def-type	DfaSeed	src/gen/emit_dfa.c:4992-4996	
+def-type	DfaAcc	src/gen/emit_dfa.c:5007-5013	
+def-type	DfaDir	src/gen/emit_dfa.c:5019-5078	
+def-type	DfaForm	src/gen/emit_dfa.c:5081-5132	
+def-const	CAND_UNROUTED	src/gen/emit_dfa.c:5138-5138	
 def-func	cand_routed	src/gen/emit_dfa.c:5139-5144	
 def-func	dfa_select	src/gen/emit_dfa.c:5155-5166	
 def-macro	DFA_SELECT	src/gen/emit_dfa.c:5167-5169	
@@ -549,6 +858,7 @@ def-func	pf_scan_set_of	src/gen/emit_dfa.c:6915-6924
 def-func	vm_start_row	src/gen/emit_dfa.c:6931-6936	
 def-func	pcrec_vm_start_scan_name	src/gen/emit_dfa.c:6939-6943	
 def-func	pcrec_emit_vm_start_seek	src/gen/emit_dfa.c:6956-6969	
+def-type	CandScan	src/gen/emit_dfa.c:7028-7032	
 def-func	dfa_cand_scan	src/gen/emit_dfa.c:7034-7066	
 def-func	pcrec_dfa_cand_ppm	src/gen/emit_dfa.c:7079-7103	
 def-func	req_route_one_attempt	src/gen/emit_dfa.c:7135-7143	
@@ -558,13 +868,17 @@ def-func	req_none_applies	src/gen/emit_dfa.c:7193-7196
 def-func	req_one_attempt_applies	src/gen/emit_dfa.c:7197-7200	
 def-func	req_dominated_applies	src/gen/emit_dfa.c:7201-7206	
 def-func	req_set_leads_applies	src/gen/emit_dfa.c:7212-7224	
+def-type	ReqAdmitRow	src/gen/emit_dfa.c:7244-7248	
 def-table	req_admits	src/gen/emit_dfa.c:7249-7260	
+def-data	pcrec_req_admit_nrows	src/gen/emit_dfa.c:7261-7261	
 def-func	pcrec_req_admit_row	src/gen/emit_dfa.c:7263-7269	
 def-func	req_admit	src/gen/emit_dfa.c:7271-7276	
 def-func	req_lead_byte	src/gen/emit_dfa.c:7278-7281	
 def-func	req_why_name	src/gen/emit_dfa.c:7288-7298	
 def-func	req_handoff_applies	src/gen/emit_dfa.c:7332-7347	
+def-type	ReqUseRow	src/gen/emit_dfa.c:7359-7363	
 def-table	req_uses	src/gen/emit_dfa.c:7364-7369	
+def-data	pcrec_req_use_nrows	src/gen/emit_dfa.c:7370-7370	
 def-func	pcrec_req_use_row	src/gen/emit_dfa.c:7372-7378	
 def-func	req_use	src/gen/emit_dfa.c:7380-7385	
 def-func	req_handoff_stamp	src/gen/emit_dfa.c:7389-7393	
@@ -573,10 +887,15 @@ def-func	dir_fwd_skip	src/gen/emit_dfa.c:7448-7470
 def-func	dir_rev_skip	src/gen/emit_dfa.c:7476-7494	
 def-func	dir_fwd_bound_accept	src/gen/emit_dfa.c:7499-7513	
 def-func	dir_rev_bound_accept	src/gen/emit_dfa.c:7522-7552	
+def-data	dfa_dir_forward	src/gen/emit_dfa.c:7554-7572	
+def-data	dfa_dir_reverse	src/gen/emit_dfa.c:7574-7591	
+def-data	dfa_dir_anchored	src/gen/emit_dfa.c:7626-7644	
+def-type	DfaMatch	src/gen/emit_dfa.c:7665-7667	
 def-func	match_unwrapped_applies	src/gen/emit_dfa.c:7673-7676	
 def-table	dfa_matches	src/gen/emit_dfa.c:7678-7681	
 def-func	dfa_match_of	src/gen/emit_dfa.c:7686-7691	
 def-func	dfa_match_is_unwrapped	src/gen/emit_dfa.c:7699-7700	
+def-type	DfaSearchStart	src/gen/emit_dfa.c:7812-7814	
 def-func	start_pinned_assert_routing	src/gen/emit_dfa.c:7828-7855	
 def-func	start_pinned_applies	src/gen/emit_dfa.c:7860-7888	
 def-table	dfa_search_starts	src/gen/emit_dfa.c:7894-7897	
@@ -593,8 +912,10 @@ def-func	pcrec_dfa_axis_accept_cands	src/gen/emit_dfa.c:7976-7977
 def-func	pcrec_dfa_axis_match_cands	src/gen/emit_dfa.c:7982-7983	
 def-func	pcrec_dfa_axis_searchstart_cands	src/gen/emit_dfa.c:7987-7988	
 def-func	pcrec_dfa_axis_direction_cands	src/gen/emit_dfa.c:7999-8013	
+def-type	DfaEdge	src/gen/emit_dfa.c:8055-8057	
 def-func	edge_applies	src/gen/emit_dfa.c:8062-8065	
 def-table	dfa_edges	src/gen/emit_dfa.c:8067-8070	
+def-const	SCAN_TEST_CALLS	src/gen/emit_dfa.c:8113-8113	
 def-func	scan_choice	src/gen/emit_dfa.c:8117-8130	
 def-func	scan_table	src/gen/emit_dfa.c:8134-8140	
 def-func	scan_name	src/gen/emit_dfa.c:8144-8148	
@@ -635,6 +956,24 @@ def-func	pcrec_emit_dfa_scan_stamps	src/gen/emit_dfa.c:10504-10542
 def-func	emit_dfa_stamps	src/gen/emit_dfa.c:10554-10591	
 def-func	pcrec_emit_dfa	src/gen/emit_dfa.c:10604-10670	
 def-macro	PCREC_LIMIT_EMIT_VM	src/gen/emit_vm.c:121-122	
+def-type	enum@src/gen/emit_vm.c:126	src/gen/emit_vm.c:126-157	
+def-type	enum@src/gen/emit_vm.c:223	src/gen/emit_vm.c:223-223	
+def-const	VM_MAX_BODY_CAPS	src/gen/emit_vm.c:236-236	
+def-type	VEKind	src/gen/emit_vm.c:263-294	
+def-type	VmRungKind	src/gen/emit_vm.c:302-318	
+def-type	enum@src/gen/emit_vm.c:319	src/gen/emit_vm.c:319-319	
+def-table	vm_rung_bit	src/gen/emit_vm.c:320-320	
+def-data	vm_rung_kindname	src/gen/emit_vm.c:321-322	
+def-type	VmStratKind	src/gen/emit_vm.c:335-338	
+def-table	vm_strat_bit	src/gen/emit_vm.c:339-339	
+def-data	vm_strat_kindname	src/gen/emit_vm.c:340-341	
+def-type	VmPruneKind	src/gen/emit_vm.c:363-366	
+def-table	vm_prune_bit	src/gen/emit_vm.c:367-367	
+def-data	vm_prune_kindname	src/gen/emit_vm.c:368-369	
+def-type	VEvent	src/gen/emit_vm.c:371-375	
+def-type	VmWcls	src/gen/emit_vm.c:380-384	
+def-type	VmTabRead	src/gen/emit_vm.c:390-393	
+def-type	Vm	src/gen/emit_vm.c:400-810	
 def-func	vm_ev	src/gen/emit_vm.c:818-832	
 def-func	vm_rolef	src/gen/emit_vm.c:860-867	
 def-func	vm_bounds_text	src/gen/emit_vm.c:877-881	
@@ -663,6 +1002,7 @@ def-func	vm_cls	src/gen/emit_vm.c:1483-1506
 def-func	vm_wcls_bytes	src/gen/emit_vm.c:1527-1535	
 def-func	vm_seethru	src/gen/emit_vm.c:1541-1545	
 def-func	vm_wcls	src/gen/emit_vm.c:1552-1574	
+def-type	VmClsRead	src/gen/emit_vm.c:1595-1600	
 def-func	vm_cls_inline	src/gen/emit_vm.c:1604-1608	
 def-func	vm_cls_read	src/gen/emit_vm.c:1615-1632	
 def-func	vm_cls_note_read	src/gen/emit_vm.c:1636-1650	
@@ -673,10 +1013,15 @@ def-func	vm_cls_respell	src/gen/emit_vm.c:1697-1735
 def-func	vm_cls_reads	src/gen/emit_vm.c:1742-1749	
 def-func	vm_cls_tables	src/gen/emit_vm.c:1765-1802	
 def-func	vm_det_seq	src/gen/emit_vm.c:1849-1918	
+def-type	CapOff	src/gen/emit_vm.c:1923-1923	
 def-func	vm_cap_offsets	src/gen/emit_vm.c:1931-1984	
 def-func	vm_cursor_fits	src/gen/emit_vm.c:2002-2012	
 def-func	vm_rev_canmove	src/gen/emit_vm.c:2063-2066	
 def-func	vm_rev_caps	src/gen/emit_vm.c:2075-2140	
+def-type	VmIslAcc	src/gen/emit_vm.c:2165-2169	
+def-type	VmIslNode	src/gen/emit_vm.c:2171-2190	
+def-type	VmIsl	src/gen/emit_vm.c:2192-2207	
+def-type	Cost	src/gen/emit_vm.c:2214-2231	
 def-func	cost_add	src/gen/emit_vm.c:2241-2249	
 def-func	cost_max	src/gen/emit_vm.c:2258-2266	
 def-func	vm_alt_flatten	src/gen/emit_vm.c:2273-2284	
@@ -709,12 +1054,15 @@ def-func	pcrec_vm_fadd	src/gen/emit_vm.c:3649-3653
 def-func	pcrec_vm_fmul	src/gen/emit_vm.c:3657-3662	
 def-func	vm_emit_f	src/gen/emit_vm.c:3669-3675	
 def-func	vm_emit_fd	src/gen/emit_vm.c:3679-3689	
+def-type	enum@src/gen/emit_vm.c:3701	src/gen/emit_vm.c:3701-3701	
 def-func	vm_dyn_add	src/gen/emit_vm.c:3708-3719	
 def-func	vm_mrl_amt	src/gen/emit_vm.c:3725-3738	
 def-func	vm_prune_mark	src/gen/emit_vm.c:3748-3753	
 def-func	vm_mrl_test	src/gen/emit_vm.c:3763-3774	
 def-func	vm_mrl_gate	src/gen/emit_vm.c:3780-3790	
 def-func	vm_isl_single	src/gen/emit_vm.c:3874-3886	
+def-type	VmIslW	src/gen/emit_vm.c:3932-3932	
+def-type	VmIslWL	src/gen/emit_vm.c:3933-3933	
 def-func	vm_isl_words	src/gen/emit_vm.c:3942-4042	
 def-func	vm_isl_subtree_nodes	src/gen/emit_vm.c:4053-4090	
 def-func	vm_isl_node	src/gen/emit_vm.c:4097-4115	
@@ -729,6 +1077,7 @@ def-func	vm_cursor_rep	src/gen/emit_vm.c:4672-5020
 def-func	vm_opt_chain	src/gen/emit_vm.c:5029-5071	
 def-func	vm_poss_chain	src/gen/emit_vm.c:5110-5173	
 def-func	vm_poss_star	src/gen/emit_vm.c:5189-5240	
+def-type	Rev	src/gen/emit_vm.c:5264-5273	
 def-func	vm_rev_index	src/gen/emit_vm.c:5279-5283	
 def-func	vm_rev_emit	src/gen/emit_vm.c:5294-5458	
 def-func	vm_revdet_rep	src/gen/emit_vm.c:5469-5781	
@@ -740,9 +1089,11 @@ def-func	vm_atomic	src/gen/emit_vm.c:6604-6649
 def-func	vm_look_behind_branch	src/gen/emit_vm.c:6797-6929	
 def-func	vm_look_behind	src/gen/emit_vm.c:7045-7112	
 def-func	vm_look	src/gen/emit_vm.c:7122-7218	
+def-type	VmSnap	src/gen/emit_vm.c:7264-7264	
 def-func	vm_snap	src/gen/emit_vm.c:7271-7278	
 def-func	vm_walk_caps	src/gen/emit_vm.c:7301-7329	
 def-func	vm_grp_set_cap	src/gen/emit_vm.c:7339-7343	
+def-type	VmWCaps	src/gen/emit_vm.c:7349-7349	
 def-func	vm_w_cap_slots	src/gen/emit_vm.c:7358-7368	
 def-func	vm_walk_calls	src/gen/emit_vm.c:7386-7413	
 def-func	vm_publish_saves	src/gen/emit_vm.c:7418-7428	
@@ -750,11 +1101,14 @@ def-func	vm_w_range	src/gen/emit_vm.c:7434-7437
 def-func	vm_build_region_saves	src/gen/emit_vm.c:7473-7626	
 def-func	vm_memo_region_costs	src/gen/emit_vm.c:7647-7678	
 def-func	vm_ceiling	src/gen/emit_vm.c:7684-7688	
+def-type	VmCaps	src/gen/emit_vm.c:7700-7704	
 def-func	vm_plan_capacities	src/gen/emit_vm.c:7722-7816	
 def-func	vm_plan_regions	src/gen/emit_vm.c:7843-7879	
 def-func	vm_call	src/gen/emit_vm.c:7920-7947	
 def-func	vm_splice	src/gen/emit_vm.c:8035-8141	
 def-func	vm_region	src/gen/emit_vm.c:8180-8227	
+def-type	enum@src/gen/emit_vm.c:8235	src/gen/emit_vm.c:8235-8235	
+def-type	VmCtxForm	src/gen/emit_vm.c:8236-8242	
 def-table	vm_ctx_forms	src/gen/emit_vm.c:8244-8251	
 def-func	vm_ctx_side	src/gen/emit_vm.c:8254-8261	
 def-func	vm_ctx	src/gen/emit_vm.c:8279-8310	
@@ -768,23 +1122,35 @@ def-func	vm_emit	src/gen/emit_vm.c:8706-8710
 def-func	vm_emit_node	src/gen/emit_vm.c:8717-8984	
 def-func	vm_cls_describe	src/gen/emit_vm.c:8997-9035	
 def-func	vm_wcls_describe	src/gen/emit_vm.c:9040-9054	
+def-type	VmStamp	src/gen/emit_vm.c:9056-9101	
 def-func	vm_mask_names	src/gen/emit_vm.c:9161-9171	
 def-func	vm_sec	src/gen/emit_vm.c:9179-9184	
 def-func	vm_row3	src/gen/emit_vm.c:9191-9195	
 def-func	vm_listing_slot_row	src/gen/emit_vm.c:9205-9211	
 def-func	vm_listing_slots	src/gen/emit_vm.c:9219-9231	
+def-table	vm_revdet_slot_desc	src/gen/emit_vm.c:9234-9238	
 def-func	vm_listing_events	src/gen/emit_vm.c:9247-9260	
 def-func	vm_prow	src/gen/emit_vm.c:9269-9274	
 def-func	vm_render_listing	src/gen/emit_vm.c:9284-9882	
+def-type	VmField	src/gen/emit_vm.c:9914-9918	
 def-func	vm_layout	src/gen/emit_vm.c:9925-9937	
 def-func	vm_frame_fields	src/gen/emit_vm.c:9954-9974	
 def-func	vm_trail_fields	src/gen/emit_vm.c:9980-9988	
 def-func	vm_fields_join	src/gen/emit_vm.c:9991-9998	
 def-func	vm_emit_default_entry	src/gen/emit_vm.c:10039-10146	
+def-type	VmPlan	src/gen/emit_vm.c:10166-10191	
+def-type	VmEntry	src/gen/emit_vm.c:10201-10211	
 def-func	vm_init	src/gen/emit_vm.c:10229-10433	
 def-func	vm_plan	src/gen/emit_vm.c:10454-10784	
 def-func	vm_plan_entry	src/gen/emit_vm.c:10798-10971	
+def-type	enum@src/gen/emit_vm.c:10987	src/gen/emit_vm.c:10987-10987	
+def-type	enum@src/gen/emit_vm.c:10988	src/gen/emit_vm.c:10988-10988	
+def-type	enum@src/gen/emit_vm.c:10989	src/gen/emit_vm.c:10989-10989	
 def-table	pcrec_reseed_rows	src/gen/emit_vm.c:11010-11039	
+def-data	pcrec_reseed_nrows	src/gen/emit_vm.c:11040-11041	
+def-type	VmReseedCal	src/gen/emit_vm.c:11067-11067	
+def-table	vm_reseed_cal	src/gen/emit_vm.c:11068-11071	
+def-type	VmReseed	src/gen/emit_vm.c:11074-11078	
 def-func	vm_reseed_holds	src/gen/emit_vm.c:11082-11096	
 def-func	vm_plan_reseed	src/gen/emit_vm.c:11107-11122	
 def-func	vm_emit_stamps	src/gen/emit_vm.c:11144-11716	
@@ -798,6 +1164,7 @@ def-func	vm_emit_match_guard	src/gen/emit_vm.c:13549-13553
 def-func	vm_emit_entries	src/gen/emit_vm.c:13574-13853	
 def-func	vm_emit_epilogue	src/gen/emit_vm.c:13869-13970	
 def-func	pcrec_emit_vm	src/gen/emit_vm.c:13998-14022	
+def-const	MEMFN_MARK	src/gen/memfn_stamps.c:34-34	
 def-func	pcrec_emit_memfn_mark	src/gen/memfn_stamps.c:36-39	
 def-table	libc_names	src/gen/memfn_stamps.c:45-75	
 def-func	is_libc_name	src/gen/memfn_stamps.c:77-83	
@@ -807,11 +1174,15 @@ def-func	skip_comment	src/gen/memfn_stamps.c:102-111
 def-func	skip_space	src/gen/memfn_stamps.c:113-119	
 def-func	memcpy_is_idiom	src/gen/memfn_stamps.c:125-145	
 def-func	scan_libc_calls	src/gen/memfn_stamps.c:150-181	
+def-type	StampSink	src/gen/memfn_stamps.c:185-185	
 def-func	sink_stamp	src/gen/memfn_stamps.c:187-191	
 def-func	arena_alloc	src/gen/memfn_stamps.c:193-196	
 def-func	splice_mark	src/gen/memfn_stamps.c:200-213	
 def-func	pcrec_memfn_stamps_render	src/gen/memfn_stamps.c:219-238	
+def-type	enum@src/gen/runcmp.c:56	src/gen/runcmp.c:56-56	
+def-type	enum@src/gen/runcmp.c:58	src/gen/runcmp.c:58-58	
 def-table	pcrec_runcmp_rows	src/gen/runcmp.c:64-89	
+def-data	pcrec_runcmp_nrows	src/gen/runcmp.c:90-91	
 def-func	rc_width	src/gen/runcmp.c:95-98	
 def-func	rc_masked	src/gen/runcmp.c:101-107	
 def-func	rc_holds	src/gen/runcmp.c:110-125	
@@ -825,11 +1196,14 @@ def-func	pcrec_runcmp_prepare	src/gen/runcmp.c:236-241
 def-func	pcrec_emit_runcmp_helpers	src/gen/runcmp.c:248-267	
 def-func	pcrec_emit_runcmp_stamp	src/gen/runcmp.c:274-277	
 def-func	refine_by	src/ir/dfa.c:126-138	
+def-type	enum@src/ir/dfa.c:156	src/ir/dfa.c:156-156	
+def-type	CtxContrib	src/ir/dfa.c:158-166	
 def-func	cr_ctx_set	src/ir/dfa.c:169-170	
 def-func	cr_nl_reads	src/ir/dfa.c:171-172	
 def-func	cr_nl_set	src/ir/dfa.c:173-174	
 def-func	cr_ns_set	src/ir/dfa.c:179-185	
 def-table	ctx_rows	src/ir/dfa.c:187-194	
+def-type	enum@src/ir/dfa.c:195	src/ir/dfa.c:195-195	
 def-func	ctx_decline	src/ir/dfa.c:201-209	
 def-func	ctx_collect	src/ir/dfa.c:214-247	
 def-func	ctx_rows_knobbed	src/ir/dfa.c:256-266	
@@ -837,41 +1211,58 @@ def-func	ctx_entry_live	src/ir/dfa.c:268-275
 def-func	eqclasses	src/ir/dfa.c:287-300	
 def-func	ctx_vec_of_byte	src/ir/dfa.c:303-309	
 def-func	ctx_atoms	src/ir/dfa.c:314-348	
+def-type	Marks	src/ir/dfa.c:357-361	
 def-func	marks_next	src/ir/dfa.c:366-372	
 def-macro	DFA_INVARIANT	src/ir/dfa.c:429-430	
+def-type	LCtx	src/ir/dfa.c:432-436	
+def-type	LCtxTab	src/ir/dfa.c:438-444	
 def-func	arena_regrow	src/ir/dfa.c:451-456	
 def-func	hash_slot	src/ir/dfa.c:471-479	
 def-func	lctx_slot	src/ir/dfa.c:484-492	
 def-func	lctx_rehash	src/ir/dfa.c:496-503	
 def-func	lctx_intern	src/ir/dfa.c:508-532	
 def-func	lctx_find	src/ir/dfa.c:537-544	
+def-type	PMemo	src/ir/dfa.c:550-557	
 def-func	pmemo_next	src/ir/dfa.c:562-569	
 def-func	pmemo_slot	src/ir/dfa.c:573-578	
 def-func	pmemo_grow	src/ir/dfa.c:587-600	
 def-func	pmemo_add	src/ir/dfa.c:605-619	
+def-type	Cont	src/ir/dfa.c:624-628	
+def-type	ContStack	src/ir/dfa.c:630-634	
 def-func	cont_push	src/ir/dfa.c:640-652	
 def-func	eps_edge	src/ir/dfa.c:686-703	
 def-func	eps_cyclic	src/ir/dfa.c:709-752	
+def-type	CloScratch	src/ir/dfa.c:760-771	
+def-type	Clo	src/ir/dfa.c:773-834	
 def-func	ctx_bit	src/ir/dfa.c:837-840	
 def-func	clo_open	src/ir/dfa.c:857-863	
 def-func	clo_walk	src/ir/dfa.c:897-1105	
+def-type	Sides	src/ir/dfa.c:1109-1111	
 def-func	closure	src/ir/dfa.c:1120-1150	
 def-func	dhash	src/ir/dfa.c:1160-1173	
 def-func	tab_insert	src/ir/dfa.c:1177-1183	
 def-func	tab_grow	src/ir/dfa.c:1188-1199	
 def-func	view_same	src/ir/dfa.c:1202-1207	
 def-func	intern	src/ir/dfa.c:1224-1389	
+def-type	Mach	src/ir/dfa.c:1399-1406	
 def-func	sides_of	src/ir/dfa.c:1418-1426	
 def-func	make_state	src/ir/dfa.c:1471-1525	
 def-func	pcrec_build_dfa	src/ir/dfa.c:1545-1739	
+def-type	NB	src/ir/nfa.c:37-71	
 def-func	ast_bare	src/ir/nfa.c:94-105	
+def-type	Patch	src/ir/nfa.c:108-108	
 def-func	patch_push	src/ir/nfa.c:112-123	
 def-func	patch_join	src/ir/nfa.c:126-131	
+def-type	Frag	src/ir/nfa.c:133-133	
 def-func	nst	src/ir/nfa.c:140-166	
 def-func	patch_to	src/ir/nfa.c:170-180	
 def-func	frag_single	src/ir/nfa.c:186-192	
 def-func	frag_star	src/ir/nfa.c:195-212	
 def-func	frag_cat2	src/ir/nfa.c:216-221	
+def-type	TItem	src/ir/nfa.c:267-267	
+def-type	enum@src/ir/nfa.c:293	src/ir/nfa.c:293-293	
+def-type	enum@src/ir/nfa.c:295	src/ir/nfa.c:295-295	
+def-type	enum@src/ir/nfa.c:314	src/ir/nfa.c:314-314	
 def-func	chain_alts	src/ir/nfa.c:319-332	
 def-func	trie_tail	src/ir/nfa.c:336-348	
 def-func	trie_flat	src/ir/nfa.c:353-358	
@@ -898,6 +1289,7 @@ def-func	pcrec_has_atomic	src/opt/atomic.c:59-119
 def-func	pcrec_has_lookaround	src/opt/atomic.c:150-194	
 def-func	pcrec_has_collapsible_rep	src/opt/atomic.c:223-268	
 def-func	pcrec_ast_stamped_by	src/opt/atomic.c:293-340	
+def-type	DischargeSet	src/opt/atomic.c:398-402	
 def-func	ds_add	src/opt/atomic.c:407-418	
 def-func	ds_has	src/opt/atomic.c:421-425	
 def-func	dis_walk	src/opt/atomic.c:434-524	
@@ -907,17 +1299,26 @@ def-func	pcrec_bref_mark	src/opt/atomic.c:653-728
 def-func	pcrec_has_live_capture	src/opt/atomic.c:816-895	
 def-func	pcrec_has_linked_call	src/opt/atomic.c:929-961	
 def-func	pcrec_has_call	src/opt/atomic.c:965-998	
+def-type	CallGraph	src/opt/callgraph.c:91-108	
+def-type	CgScan	src/opt/callgraph.c:123-123	
 def-func	cg_scan	src/opt/callgraph.c:127-134	
+def-type	CgRoots	src/opt/callgraph.c:147-147	
 def-func	cg_roots	src/opt/callgraph.c:153-164	
+def-type	CgEdges	src/opt/callgraph.c:167-171	
 def-func	cg_index	src/opt/callgraph.c:174-178	
 def-func	cg_edges	src/opt/callgraph.c:182-188	
 def-func	cg_count	src/opt/callgraph.c:196-200	
+def-type	CgBind	src/opt/callgraph.c:204-204	
 def-func	cg_bind	src/opt/callgraph.c:212-238	
+def-type	CgMinw	src/opt/callgraph.c:242-242	
 def-func	cg_minw_publish	src/opt/callgraph.c:262-269	
+def-type	CgCwmax	src/opt/callgraph.c:311-311	
 def-func	cg_cwmax_publish	src/opt/callgraph.c:317-331	
+def-type	CgCwmin	src/opt/callgraph.c:343-343	
 def-func	cg_cwmin_publish	src/opt/callgraph.c:348-354	
 def-func	cg_publish_link	src/opt/callgraph.c:459-470	
 def-func	cg_eligibility	src/opt/callgraph.c:494-585	
+def-type	CgDeliver	src/opt/callgraph.c:589-589	
 def-func	cg_force_deliver_splice	src/opt/callgraph.c:598-630	
 def-func	pcrec_callgraph_build	src/opt/callgraph.c:687-891	
 def-func	pcrec_callgraph_ntargets	src/opt/callgraph.c:894-897	
@@ -926,14 +1327,18 @@ def-func	pcrec_callgraph_body	src/opt/callgraph.c:906-909
 def-func	pcrec_callgraph_index	src/opt/callgraph.c:912-915	
 def-func	pcrec_callgraph_reaches	src/opt/callgraph.c:918-921	
 def-func	pcrec_callgraph_spliced	src/opt/callgraph.c:925-928	
+def-type	DfaMemoEnt	src/opt/dfamemo.c:46-59	
 def-func	nstate_same	src/opt/dfamemo.c:63-68	
 def-func	entry_matches	src/opt/dfamemo.c:71-85	
 def-func	arena_dup	src/opt/dfamemo.c:88-94	
 def-func	dfa_copy	src/opt/dfamemo.c:99-121	
 def-func	pcrec_build_min_dfa	src/opt/dfamemo.c:123-165	
 def-func	pcrec_dfa_memo_free	src/opt/dfamemo.c:168-172	
+def-type	LowerOps	src/opt/lower_enc.c:138-143	
+def-type	LowerCtx	src/opt/lower_enc.c:145-149	
 def-func	lower_class_byte	src/opt/lower_enc.c:158-167	
 def-func	pat_char_byte	src/opt/lower_enc.c:170-174	
+def-type	U8Branches	src/opt/lower_enc.c:180-184	
 def-func	u8_push_branch	src/opt/lower_enc.c:189-199	
 def-func	u8_byte_class	src/opt/lower_enc.c:204-212	
 def-func	u8_seq	src/opt/lower_enc.c:217-228	
@@ -951,6 +1356,7 @@ def-func	cap_sig	src/opt/lower_enc.c:603-636
 def-func	pcrec_lower_enc	src/opt/lower_enc.c:645-685	
 def-func	state_sig	src/opt/minimize.c:39-64	
 def-func	pcrec_minimize_dfa	src/opt/minimize.c:74-244	
+def-const	MRL_MINW_MAX	src/opt/mrl.c:97-97	
 def-func	pcrec_sat_add	src/opt/mrl.c:125-129	
 def-func	pcrec_sat_mul	src/opt/mrl.c:133-138	
 def-func	pcrec_minw	src/opt/mrl.c:149-288	
@@ -959,9 +1365,13 @@ def-func	pcrec_cwmax	src/opt/mrl.c:521-651
 def-func	pcrec_cwmin	src/opt/mrl.c:670-729	
 def-func	bs_or	src/opt/possessify.c:117-120	
 def-func	bs_intersects	src/opt/possessify.c:123-127	
+def-type	First	src/opt/possessify.c:142-145	
 def-func	fst_empty	src/opt/possessify.c:148-154	
 def-func	fst_seq	src/opt/possessify.c:158-166	
 def-func	first_of	src/opt/possessify.c:175-459	
+def-type	enum@src/opt/possessify.c:493	src/opt/possessify.c:493-495	
+def-type	Gk	src/opt/possessify.c:497-505	
+def-type	GkParts	src/opt/possessify.c:510-513	
 def-func	gk_parts_empty	src/opt/possessify.c:516-523	
 def-func	gk_newpos	src/opt/possessify.c:528-537	
 def-func	gk_link	src/opt/possessify.c:542-553	
@@ -969,25 +1379,38 @@ def-func	gk_build	src/opt/possessify.c:563-724
 def-func	body_admits_unique_iteration	src/opt/possessify.c:728-759	
 def-func	pcrec_uniq_scratch	src/opt/possessify.c:769-774	
 def-func	pcrec_uniq_iteration	src/opt/possessify.c:778-781	
+def-type	Pss	src/opt/possessify.c:801-815	
 def-func	pss_verdict	src/opt/possessify.c:823-853	
 def-func	pss_rep	src/opt/possessify.c:857-889	
 def-func	pss_walk	src/opt/possessify.c:899-1123	
 def-func	pcrec_poss_survey	src/opt/possessify.c:1129-1152	
 def-func	pcrec_possessify	src/opt/possessify.c:1157-1179	
+def-type	PrPend	src/opt/postresolve.c:91-91	
 def-func	pr_count	src/opt/postresolve.c:95-99	
 def-func	pr_collect	src/opt/postresolve.c:106-117	
 def-func	pcrec_postresolve	src/opt/postresolve.c:128-155	
+def-const	C_MEMCHR	src/opt/prefix_k.c:65-65	
+def-const	C_BITMAP	src/opt/prefix_k.c:66-66	
+def-const	C_VERIFY	src/opt/prefix_k.c:67-67	
+def-const	C_ENTER	src/opt/prefix_k.c:68-68	
+def-const	C_MISPRED	src/opt/prefix_k.c:85-85	
+def-const	MATERIAL_NUM	src/opt/prefix_k.c:99-99	
+def-const	MATERIAL_DEN	src/opt/prefix_k.c:100-100	
 def-func	verify_cost	src/opt/prefix_k.c:105-109	
 def-func	model_cost	src/opt/prefix_k.c:114-123	
 def-func	pcrec_prefix_ksets	src/opt/prefix_k.c:179-326	
+def-type	Shape	src/opt/revdet.c:84-87	
 def-func	rd_shape	src/opt/revdet.c:97-237	
 def-func	rd_node	src/opt/revdet.c:263-288	
 def-func	rd_reverse	src/opt/revdet.c:299-463	
 def-func	pcrec_revdet_first	src/opt/revdet.c:488-589	
 def-func	rd_alt_disjoint	src/opt/revdet.c:597-678	
+def-type	Rd	src/opt/revdet.c:682-686	
 def-func	rd_rep	src/opt/revdet.c:696-719	
 def-func	rd_walk	src/opt/revdet.c:728-801	
 def-func	pcrec_revdet	src/opt/revdet.c:806-814	
+def-const	SCAN_MAX_EDGES	src/opt/scanedge.c:210-210	
+def-type	Chain	src/opt/scanedge.c:212-215	
 def-func	class_invariant	src/opt/scanedge.c:219-224	
 def-func	pcrec_state_view_invariant	src/opt/scanedge.c:248-251	
 def-func	member_ok	src/opt/scanedge.c:258-266	
@@ -999,6 +1422,8 @@ def-func	in_degrees	src/opt/scanedge.c:308-337
 def-func	collect	src/opt/scanedge.c:347-508	
 def-func	chain_cmp	src/opt/scanedge.c:515-524	
 def-func	pcrec_scanedge_dfa	src/opt/scanedge.c:539-764	
+def-type	EngineAnalysis	src/opt/select_engine.c:68-89	
+def-type	enum@src/opt/select_engine.c:97	src/opt/select_engine.c:97-97	
 def-func	forces_captures	src/opt/select_engine.c:107-145	
 def-func	first_dfa_excluding	src/opt/select_engine.c:202-322	
 def-func	forces_registry	src/opt/select_engine.c:330-355	
@@ -1015,6 +1440,7 @@ def-func	look_fn	src/parse/ctxnode.c:107-111
 def-func	t3_ctx_applies	src/parse/ctxnode.c:115-122	
 def-func	t3_always	src/parse/ctxnode.c:124-128	
 def-table	pcrec_look_rows	src/parse/ctxnode.c:130-139	
+def-data	pcrec_look_nrows	src/parse/ctxnode.c:140-140	
 def-func	pcrec_look_t3	src/parse/ctxnode.c:144-155	
 def-func	pcrec_def_tag_applies	src/parse/definitions.c:46-87	
 def-func	def_resolve_depth	src/parse/definitions.c:97-136	
@@ -1029,12 +1455,16 @@ def-func	pcrec_def_text_cx	src/parse/definitions.c:333-338
 def-func	pcrec_def_text_hex	src/parse/definitions.c:348-359	
 def-func	pcrec_def_text_octal	src/parse/definitions.c:365-376	
 def-func	pcrec_def_text_unicode	src/parse/definitions.c:385-396	
+def-data	g_enabled_label	src/parse/enabled.c:71-71	
+def-data	g_enabled_modules	src/parse/enabled.c:72-72	
 def-func	pcrec_feature_enabled	src/parse/enabled.c:80-83	
 def-func	pcrec_enabled_mask	src/parse/enabled.c:87-90	
 def-func	pcrec_enabled_set_label	src/parse/enabled.c:95-98	
 def-func	pcrec_enabled_set_modules	src/parse/enabled.c:102-105	
-def-table	STD1_MODULES	src/parse/enabled.c:115-121	
+def-table	STD1_MODULES	src/parse/enabled.c:115-115	
+def-type	NamedFeatureSet	src/parse/enabled.c:117-121	
 def-table	g_named_sets	src/parse/enabled.c:123-125	
+def-data	pcrec_default_features	src/parse/enabled.c:141-141	
 def-table	kinds	src/parse/enabled.c:151-171	
 def-func	module_listed	src/parse/enabled.c:175-186	
 def-func	render_modules	src/parse/enabled.c:209-231	
@@ -1070,6 +1500,7 @@ def-func	br_name_run	src/parse/mod_backrefs.c:576-598
 def-func	br_strip_caps	src/parse/mod_backrefs.c:606-673	
 def-func	pcrec_bref_resolve	src/parse/mod_backrefs.c:685-840	
 def-func	pcrec_clsport_posix	src/parse/mod_classes.c:41-106	
+def-type	LaRow	src/parse/mod_lookaround.c:101-107	
 def-table	la_rows	src/parse/mod_lookaround.c:109-125	
 def-func	la_kind	src/parse/mod_lookaround.c:132-170	
 def-func	la_has_kreset	src/parse/mod_lookaround.c:186-254	
@@ -1110,7 +1541,17 @@ def-func	pcrec_ucpport_ucp	src/parse/mod_ucp.c:58-64
 def-macro	PROP	src/parse/mod_ucp.c:76-76	
 def-macro	RANGE	src/parse/mod_ucp.c:77-77	
 def-macro	SETDEF	src/parse/mod_ucp.c:78-80	
-def-table	t_nd	src/parse/mod_ucp.c:82-159	
+def-table	t_nd	src/parse/mod_ucp.c:82-82	
+def-table	t_xsp	src/parse/mod_ucp.c:83-83	
+def-table	t_xps	src/parse/mod_ucp.c:84-84	
+def-table	t_xwd	src/parse/mod_ucp.c:85-85	
+def-table	t_l	src/parse/mod_ucp.c:86-86	
+def-table	t_xan	src/parse/mod_ucp.c:87-87	
+def-table	t_ll	src/parse/mod_ucp.c:88-88	
+def-table	t_lu	src/parse/mod_ucp.c:89-89	
+def-table	t_cc	src/parse/mod_ucp.c:90-90	
+def-table	t_blank	src/parse/mod_ucp.c:92-159	
+def-type	UcpRouteRow	src/parse/mod_ucp.c:170-175	
 def-table	route_rows	src/parse/mod_ucp.c:180-185	
 def-func	pcrec_setdef_class	src/parse/mod_ucp.c:187-207	
 def-func	uprops_lookup	src/parse/mod_uprops.c:174-186	
@@ -1137,6 +1578,7 @@ def-func	vars_has_visit	src/parse/mod_vars.c:269-272
 def-func	pcrec_has_var	src/parse/mod_vars.c:274-279	
 def-table	verb_upper	src/parse/mod_verbs.c:138-200	
 def-table	verb_lower	src/parse/mod_verbs.c:207-227	
+def-table	verb_tables	src/parse/mod_verbs.c:233-238	
 def-func	pcrec_registry_verb_name_limit	src/parse/mod_verbs.c:245-252	
 def-func	pcrec_registry_verb_tables	src/parse/mod_verbs.c:255-258	
 def-func	pcrec_registry_verb_table	src/parse/mod_verbs.c:264-267	
@@ -1156,6 +1598,7 @@ def-func	cls_skip	src/parse/parse.c:417-433
 def-func	cls_peek_past_dash	src/parse/parse.c:459-471	
 def-func	cls_enc	src/parse/parse.c:482-489	
 def-func	cls_casefold	src/parse/parse.c:557-591	
+def-type	FoldRow	src/parse/parse.c:619-624	
 def-func	fr_caseful	src/parse/parse.c:626-627	
 def-func	fr_property	src/parse/parse.c:628-629	
 def-func	fr_inert	src/parse/parse.c:630-631	
@@ -1194,6 +1637,30 @@ def-func	pcrec_parse	src/parse/parse.c:2102-2105
 def-func	pcrec_parse_mods_init	src/parse/parse.c:2168-2180	
 def-func	pcrec_parse_body	src/parse/parse.c:2184-2187	
 def-func	pcrec_parse_info	src/parse/parse.c:2194-2216	
+def-const	PCREC_PARSE_MODS_H	src/parse/parse_mods.h:35-35	
+def-type	ParseMods	src/parse/parse_mods.h:39-99	
+def-type	enum@src/parse/parse_mods.h:102	src/parse/parse_mods.h:102-109	
+def-const	M_classes	src/parse/registry.c:138-138	
+def-const	M_assertions	src/parse/registry.c:139-139	
+def-const	M_backrefs	src/parse/registry.c:140-140	
+def-const	M_unicode_props	src/parse/registry.c:141-141	
+def-const	M_quoting	src/parse/registry.c:142-142	
+def-const	M_misc	src/parse/registry.c:143-143	
+def-const	M_lookaround	src/parse/registry.c:144-144	
+def-const	M_named_groups	src/parse/registry.c:145-145	
+def-const	M_atomic_groups	src/parse/registry.c:146-146	
+def-const	M_comments	src/parse/registry.c:147-147	
+def-const	M_callouts	src/parse/registry.c:148-148	
+def-const	M_branch_reset	src/parse/registry.c:149-149	
+def-const	M_conditionals	src/parse/registry.c:150-150	
+def-const	M_recursion	src/parse/registry.c:151-151	
+def-const	M_modifiers	src/parse/registry.c:152-152	
+def-const	M_verbs	src/parse/registry.c:153-153	
+def-const	M_extended_classes	src/parse/registry.c:154-154	
+def-const	M_vars	src/parse/registry.c:155-155	
+def-const	M_ucp	src/parse/registry.c:156-156	
+def-const	ANY_ENGINE	src/parse/registry.c:169-169	
+def-const	VM_ONLY	src/parse/registry.c:170-170	
 def-macro	ESC	src/parse/registry.c:178-179	
 def-macro	ESC_D	src/parse/registry.c:184-185	
 def-macro	ESC_SET	src/parse/registry.c:191-192	
@@ -1221,10 +1688,27 @@ def-macro	FIXED	src/parse/registry.c:374-375
 def-macro	REJECTED	src/parse/registry.c:378-379	
 def-macro	REJECTED_DELIM	src/parse/registry.c:383-385	
 def-func	recognise_N_name_brace	src/parse/registry.c:399-404	
-def-table	d_def	src/parse/registry.c:412-432	
+def-table	d_def	src/parse/registry.c:412-412	
+def-table	D_def	src/parse/registry.c:413-413	
+def-table	s_def	src/parse/registry.c:414-414	
+def-table	S_def	src/parse/registry.c:415-415	
+def-table	w_def	src/parse/registry.c:416-416	
+def-table	W_def	src/parse/registry.c:417-417	
+def-table	h_def	src/parse/registry.c:418-418	
+def-table	H_def	src/parse/registry.c:419-419	
+def-table	v_def	src/parse/registry.c:420-420	
+def-table	V_def	src/parse/registry.c:421-421	
+def-table	bare_N_def	src/parse/registry.c:422-422	
+def-table	R_def	src/parse/registry.c:429-432	
 def-table	wordb_def	src/parse/registry.c:445-449	
 def-table	nwordb_def	src/parse/registry.c:450-454	
-def-table	a_def	src/parse/registry.c:461-480	
+def-table	a_def	src/parse/registry.c:461-461	
+def-table	e_def	src/parse/registry.c:462-462	
+def-table	f_def	src/parse/registry.c:463-463	
+def-table	n_def	src/parse/registry.c:464-464	
+def-table	r_def	src/parse/registry.c:465-465	
+def-table	t_def	src/parse/registry.c:466-466	
+def-table	cx_def	src/parse/registry.c:477-480	
 def-table	bare_x_def	src/parse/registry.c:481-484	
 def-table	o_def	src/parse/registry.c:485-488	
 def-table	octal0_def	src/parse/registry.c:489-492	
@@ -1257,6 +1741,10 @@ def-func	pcrec_recognise_tail_default	src/parse/registry.c:1839-1850
 def-func	pcrec_registry_row_answers	src/parse/registry.c:1857-1861	
 def-func	pcrec_registry_arbitrate	src/parse/registry.c:1875-1908	
 def-func	pcrec_registry_find	src/parse/registry.c:1915-1918	
+def-type	RxtScope	src/parse/rxt_compose.c:99-112	
+def-type	Bound	src/parse/rxt_compose.c:130-141	
+def-type	Site	src/parse/rxt_compose.c:148-154	
+def-type	Composer	src/parse/rxt_compose.c:156-162	
 def-func	rc_derived_id	src/parse/rxt_compose.c:209-215	
 def-func	def_by_name	src/parse/rxt_compose.c:222-246	
 def-func	bound_by_name	src/parse/rxt_compose.c:250-257	
@@ -1270,11 +1758,13 @@ def-func	rc_export_lists	src/parse/rxt_compose.c:630-640
 def-func	rc_assign	src/parse/rxt_compose.c:643-715	
 def-func	rc_next_wanted	src/parse/rxt_compose.c:739-758	
 def-func	pcrec_rxt_compose	src/parse/rxt_compose.c:770-1051	
+def-type	FindWalk	src/parse/rxt_find.c:46-53	
 def-func	find_fail	src/parse/rxt_find.c:58-66	
 def-func	find_strndup	src/parse/rxt_find.c:69-75	
 def-func	bundle_row	src/parse/rxt_find.c:83-90	
 def-func	link_from_source	src/parse/rxt_find.c:95-147	
 def-func	dir_has_exact	src/parse/rxt_find.c:153-163	
+def-type	ProbeRes	src/parse/rxt_find.c:166-166	
 def-func	probe_dir	src/parse/rxt_find.c:170-219	
 def-func	stops_text	src/parse/rxt_find.c:223-238	
 def-func	find_bundle	src/parse/rxt_find.c:242-265	
@@ -1282,7 +1772,6 @@ def-func	pcrec_find_chain_build	src/parse/rxt_find.c:267-321
 def-func	chain_serves_enc	src/parse/rxt_find.c:324-331	
 def-func	pcrec_find_resolve	src/parse/rxt_find.c:333-368	
 def-table	g_rows	src/parse/rxt_schema.c:33-39	
-def-macro	PCREC_RXT_SCHEMA	src/parse/rxt_schema.c:34-37	
 def-func	pcrec_rxt_schema_rows	src/parse/rxt_schema.c:42-46	
 def-func	pcrec_rxt_schema_nrows	src/parse/rxt_schema.c:49-52	
 def-func	pcrec_rxt_schema_row	src/parse/rxt_schema.c:56-66	
@@ -1306,7 +1795,13 @@ def-func	tok_len	src/parse/rxt_source.c:78-87
 def-func	tok_is	src/parse/rxt_source.c:90-94	
 def-func	skip_ws	src/parse/rxt_source.c:97-101	
 def-func	line_value	src/parse/rxt_source.c:107-110	
+def-type	RxtLineClass	src/parse/rxt_source.c:133-133	
 def-func	line_class	src/parse/rxt_source.c:153-164	
+def-type	RxtFrame	src/parse/rxt_source.c:178-253	
+def-type	RxtVocab	src/parse/rxt_source.c:264-269	
+def-type	RxtChain	src/parse/rxt_source.c:275-278	
+def-type	RxtP	src/parse/rxt_source.c:280-294	
+def-type	RxtDiagClass	src/parse/rxt_source.c:330-335	
 def-func	rxt_diag_class_name	src/parse/rxt_source.c:340-349	
 def-func	rxt_fail	src/parse/rxt_source.c:359-388	
 def-func	arena_strndup	src/parse/rxt_source.c:391-397	
@@ -1326,6 +1821,7 @@ def-func	ident_ok_n	src/parse/rxt_source.c:840-847
 def-func	pcrec_rxt_prefix_from_name	src/parse/rxt_source.c:861-867	
 def-func	config_list_ok	src/parse/rxt_source.c:883-898	
 def-func	rtrim_ws	src/parse/rxt_source.c:908-913	
+def-type	RxtLines	src/parse/rxt_source.c:922-922	
 def-func	slurp_lines	src/parse/rxt_source.c:933-980	
 def-func	split_lines	src/parse/rxt_source.c:985-1034	
 def-func	fblock_push	src/parse/rxt_source.c:1042-1060	
@@ -1362,18 +1858,20 @@ def-func	parse_config	src/parse/rxt_source.c:2342-2404
 def-func	parse_target	src/parse/rxt_source.c:2411-2532	
 def-func	config_by_name	src/parse/rxt_source.c:2539-2547	
 def-func	config_walk	src/parse/rxt_source.c:2554-2598	
+def-type	RxtBufIn	src/parse/rxt_source.c:2626-2629	
 def-func	fragment_check	src/parse/rxt_source.c:2646-2665	
 def-func	pcrec_rxt_source_parse	src/parse/rxt_source.c:2667-2671	
 def-func	pcrec_rxt_source_parse_buf	src/parse/rxt_source.c:2673-2679	
 def-func	parse_file	src/parse/rxt_source.c:2681-2685	
 def-func	parse_src	src/parse/rxt_source.c:2692-3778	
-def-macro	RXT_PUSH_FRAME	src/parse/rxt_source.c:2724-2743	
-def-macro	RXT_CLOSE_FRAME	src/parse/rxt_source.c:2764-2774	
 def-func	pcrec_rxt_source_free	src/parse/rxt_source.c:3783-3795	
+def-type	RxtItem	src/parse/rxt_source.c:3817-3817	
 def-func	list_next	src/parse/rxt_source.c:3822-3833	
+def-type	RxtSet	src/parse/rxt_source.c:3842-3849	
 def-func	set_init	src/parse/rxt_source.c:3853-3858	
 def-func	cfg_merge	src/parse/rxt_source.c:3868-3890	
 def-func	set_from_row	src/parse/rxt_source.c:3894-3908	
+def-type	RxtSeen	src/parse/rxt_source.c:3931-3931	
 def-func	seen_add	src/parse/rxt_source.c:3937-3948	
 def-func	cfg_effective	src/parse/rxt_source.c:3954-3972	
 def-func	path_is_file	src/parse/rxt_source.c:3977-3981	
@@ -1381,12 +1879,14 @@ def-func	source_dir	src/parse/rxt_source.c:3988-3997
 def-func	join_path	src/parse/rxt_source.c:4001-4009	
 def-func	lib_chain_text	src/parse/rxt_source.c:4027-4041	
 def-func	pcrec_rxt_flags_from_letters	src/parse/rxt_source.c:4056-4069	
+def-type	RxtClosure	src/parse/rxt_source.c:4098-4107	
 def-func	lib_resolve	src/parse/rxt_source.c:4112-4123	
 def-func	closure_seen	src/parse/rxt_source.c:4128-4133	
 def-func	lib_ref_text	src/parse/rxt_source.c:4139-4145	
 def-func	closure_walk	src/parse/rxt_source.c:4153-4236	
 def-func	pcrec_rxt_source_resolve	src/parse/rxt_source.c:4248-4486	
 def-table	rxt_columns	src/parse/rxt_source.c:4536-4550	
+def-const	RXT_NCOLS	src/parse/rxt_source.c:4551-4551	
 def-func	section_open	src/parse/rxt_source.c:4557-4561	
 def-func	pcrec_rxt_source_tsv	src/parse/rxt_source.c:4571-4792	
 def-func	pcrec_class_delim_extent_scan	src/parse/scans.c:60-79	
@@ -1408,6 +1908,9 @@ seed	pcrec_fact_run_pin	src/facts/facts.c:397
 seed	pcrec_fact_start_anchor	src/facts/facts.c:343	
 seed	pcrec_fact_start_set	src/facts/facts.c:349	
 seed	unanch_start	src/gen/emit_dfa.c:4191	
+family-type	PcrecReseedRow	src/core/internal.h:6736	plan; names 
+family-type	ReqAdmit	src/gen/emit_dfa.c:305	plan; names 
+family-type	ReqUse	src/gen/emit_dfa.c:328	plan; names 
 family-func	pcrec_emit_end_window_clamp	src/gen/emit_dfa.c:935	body; names pcrec_fact_end_window
 family-func	req_run_tests	src/gen/emit_dfa.c:1027	body; names pcrec_artifact_has_dfa_scan,pcrec_fact_req_run,pcrec_fact_req_whole_run,req_admit
 family-func	pcrec_emit_req_run_blocks	src/gen/emit_dfa.c:1059	body; names req_run_tests
@@ -1416,11 +1919,14 @@ family-func	emit_req_run_check	src/gen/emit_dfa.c:1159	body; names emit_req_hand
 family-func	emit_req_set_rest	src/gen/emit_dfa.c:1259	body; names pcrec_artifact_has_dfa_scan,pcrec_fact_req_byte,pcrec_fact_req_set,pcrec_fact_req_whole_run,req_lead_byte
 family-func	pcrec_emit_req_byte_check	src/gen/emit_dfa.c:1362	body; names emit_req_run_check,emit_req_set_rest,pcrec_fact_req_byte,pcrec_fact_req_run,req_admit,req_lead_byte,req_use
 family-func	emit_info_def	src/gen/emit_dfa.c:2624	plan; names dfa_prefilter_name,dfa_scan_name,dfa_search_start_name,pcrec_artifact_has_dfa_scan
+family-type	DfaCand	src/gen/emit_dfa.c:3473	plan; names 
 family-func	attempt_cand	src/gen/emit_dfa.c:4105	body+stamp; names cand_from_live_seeds
 family-func	dfa_engine_is_empty	src/gen/emit_dfa.c:4352	body+stamp; names unanch_start
 family-func	dfa_table_name	src/gen/emit_dfa.c:4383	stamp; names dfa_engine_is_empty,dfa_match_is_unwrapped,dfa_search_is_pinned
 family-func	dfa_scan_edge_name	src/gen/emit_dfa.c:4455	stamp; names dfa_engine_is_empty,dfa_match_is_unwrapped,dfa_search_is_pinned
 family-func	dfa_uniform_folds	src/gen/emit_dfa.c:4513	stamp; names dfa_engine_is_empty,dfa_match_is_unwrapped,dfa_search_is_pinned
+family-type	PfScan	src/gen/emit_dfa.c:4894	plan; names 
+family-type	DfaPf	src/gen/emit_dfa.c:4901	plan; names 
 family-func	pf_memchr_bounded_applies	src/gen/emit_dfa.c:5798	body+stamp; names 
 family-func	pf_memchr_applies	src/gen/emit_dfa.c:5801	body+stamp; names 
 family-func	pf_bcls_bounded_applies	src/gen/emit_dfa.c:5804	body+stamp; names 
@@ -1464,17 +1970,21 @@ family-func	req_none_applies	src/gen/emit_dfa.c:7193	body; names pcrec_fact_req_
 family-func	req_one_attempt_applies	src/gen/emit_dfa.c:7197	body; names req_route_one_attempt
 family-func	req_dominated_applies	src/gen/emit_dfa.c:7201	body; names dfa_cand_scan,pcrec_fact_req_byte,req_byte_dominated_by
 family-func	req_set_leads_applies	src/gen/emit_dfa.c:7212	body; names pcrec_fact_req_run,req_set_pick
+family-type	ReqAdmitRow	src/gen/emit_dfa.c:7244	plan; names 
 family-table	req_admits	src/gen/emit_dfa.c:7249	body; names req_dominated_applies,req_none_applies,req_one_attempt_applies,req_set_leads_applies
 family-func	req_admit	src/gen/emit_dfa.c:7271	body; names req_admits
 family-func	req_lead_byte	src/gen/emit_dfa.c:7278	body; names req_admit,req_set_pick
 family-func	req_handoff_applies	src/gen/emit_dfa.c:7332	body; names dfa_engine_is_empty,pcrec_artifact_has_dfa_scan,pcrec_fact_req_run,pcrec_fact_req_run_maxoff,pcrec_vm_prefilter_window,req_admit,@field
+family-type	ReqUseRow	src/gen/emit_dfa.c:7359	plan; names 
 family-table	req_uses	src/gen/emit_dfa.c:7364	body; names req_handoff_applies
 family-func	req_use	src/gen/emit_dfa.c:7380	body; names req_uses
 family-func	req_handoff_stamp	src/gen/emit_dfa.c:7389	plan; names pcrec_fact_req_run_maxoff,req_use
+family-type	DfaMatch	src/gen/emit_dfa.c:7665	plan; names 
 family-func	match_unwrapped_applies	src/gen/emit_dfa.c:7673	stamp; names dfa_engine_is_empty
 family-table	dfa_matches	src/gen/emit_dfa.c:7678	stamp; names match_unwrapped_applies
 family-func	dfa_match_of	src/gen/emit_dfa.c:7686	stamp; names dfa_matches
 family-func	dfa_match_is_unwrapped	src/gen/emit_dfa.c:7699	stamp; names dfa_match_of,dfa_matches
+family-type	DfaSearchStart	src/gen/emit_dfa.c:7812	plan; names 
 family-func	start_pinned_applies	src/gen/emit_dfa.c:7860	body+stamp; names dfa_engine_is_empty
 family-table	dfa_search_starts	src/gen/emit_dfa.c:7894	body+stamp; names start_pinned_applies
 family-func	dfa_search_start_of	src/gen/emit_dfa.c:7902	body+stamp; names dfa_search_starts
@@ -1498,8 +2008,9 @@ family-func	pcrec_vm_prefilter_window	src/gen/emit_vm.c:3634	body; names @field
 family-func	vm_render_listing	src/gen/emit_vm.c:9284	plan; names @field
 family-func	vm_init	src/gen/emit_vm.c:10229	plan; names pcrec_vm_prefilter_window,@field
 family-table	pcrec_reseed_rows	src/gen/emit_vm.c:11010	plan; names @field
+family-data	pcrec_reseed_nrows	src/gen/emit_vm.c:11040	plan; names pcrec_reseed_rows
 family-func	vm_reseed_holds	src/gen/emit_vm.c:11082	plan; names pcrec_dfa_cand_ppm,pcrec_fact_start_anchor,@field
-family-func	vm_plan_reseed	src/gen/emit_vm.c:11107	plan; names pcrec_reseed_rows,vm_reseed_holds
+family-func	vm_plan_reseed	src/gen/emit_vm.c:11107	plan; names pcrec_reseed_nrows,pcrec_reseed_rows,vm_reseed_holds
 family-func	vm_emit_stamps	src/gen/emit_vm.c:11144	stamp; names pcrec_artifact_has_dfa_scan,pcrec_emit_dfa_scan_stamps,@field
 family-func	vm_emit_storage	src/gen/emit_vm.c:11737	plan; names @field
 family-func	vm_emit_search_body	src/gen/emit_vm.c:12552	body; names pcrec_emit_dfa_engine,pcrec_emit_end_window_clamp,pcrec_emit_req_byte_check,pcrec_emit_req_run_blocks,pcrec_emit_vm_start_seek,pcrec_fact_start_anchor,@field
@@ -1558,8 +2069,8 @@ site	ofs_test_verifies_run	src/gen/emit_dfa.c:6181	 via r | if (k->set[x] && (x 
 site	pf_first_class_bounded_applies	src/gen/emit_dfa.c:6680	pf_dfa_start_set | { CandSet t; const UnanchStart *u = s->us; return pf_dfa_start_set(s, &t) && u->views; }
 site	pf_first_memchr_bounded_applies	src/gen/emit_dfa.c:6682	pf_dfa_start_set | { CandSet t; const UnanchStart *u = s->us; return pf_dfa_start_set(s, &t) && u->views && t.use_memch
 site	pf_vm_start_applies	src/gen/emit_dfa.c:6813	pcrec_fact_start_anchor | if (pcrec_fact_start_anchor(cx) != PCREC_SANCH_NONE) return false;
-site	dfa_pf_of	src/gen/emit_dfa.c:6907	dfa_pfs | return DFA_SELECT_ROUTED(DfaPf, dfa_pfs, &s, cx->opt->flags);
-site	vm_start_row	src/gen/emit_dfa.c:6935	dfa_pfs | return DFA_SELECT_ROUTED(DfaPf, dfa_pfs, s, cx->opt->flags);
+site	dfa_pf_of	src/gen/emit_dfa.c:6907	DfaPf,dfa_pfs | return DFA_SELECT_ROUTED(DfaPf, dfa_pfs, &s, cx->opt->flags);
+site	vm_start_row	src/gen/emit_dfa.c:6935	DfaPf,dfa_pfs | return DFA_SELECT_ROUTED(DfaPf, dfa_pfs, s, cx->opt->flags);
 site	pcrec_vm_start_scan_name	src/gen/emit_dfa.c:6942	vm_start_row | return vm_start_row(cx, &s)->c.name;
 site	pcrec_emit_vm_start_seek	src/gen/emit_dfa.c:6961	 via pf | if (!pf->emit_vm) return;
 site	pcrec_emit_vm_start_seek	src/gen/emit_dfa.c:6962	 via pf | if (pf->scan != PF_SCAN_SET)
@@ -1577,19 +2088,19 @@ site	req_one_attempt_applies	src/gen/emit_dfa.c:7199	req_route_one_attempt | ret
 site	req_dominated_applies	src/gen/emit_dfa.c:7205	pcrec_fact_req_byte,req_byte_dominated_by | return req_byte_dominated_by(s->cx, &cs, pcrec_fact_req_byte(s->cx));
 site	req_set_leads_applies	src/gen/emit_dfa.c:7217	 via r | if (r->len < 2) return false;
 site	req_set_leads_applies	src/gen/emit_dfa.c:7218	req_set_pick via q | if ((q = req_set_pick(s->cx)) < 0) return false;
-site	req_admit	src/gen/emit_dfa.c:7275	req_admits | return DFA_SELECT(ReqAdmitRow, req_admits, &s, cx->opt->flags)->verdict;
+site	req_admit	src/gen/emit_dfa.c:7275	ReqAdmitRow,req_admits | return DFA_SELECT(ReqAdmitRow, req_admits, &s, cx->opt->flags)->verdict;
 site	req_lead_byte	src/gen/emit_dfa.c:7280	req_admit,req_set_pick | return req_admit(cx) == REQ_ADMIT_SET_LEADS ? req_set_pick(cx) : -1;
 site	req_handoff_applies	src/gen/emit_dfa.c:7336	pcrec_fact_req_run,req_admit | if (!req_admit_emits(req_admit(cx)) || pcrec_fact_req_run(cx)->len < 2)
 site	req_handoff_applies	src/gen/emit_dfa.c:7338	dfa_engine_is_empty,pcrec_artifact_has_dfa_scan | if (!pcrec_artifact_has_dfa_scan(cx) || dfa_engine_is_empty(cx))
 site	req_handoff_applies	src/gen/emit_dfa.c:7341	 via k | if (k < 0 || k >= PCREC_W_UNBOUNDED) return false;
 site	req_handoff_applies	src/gen/emit_dfa.c:7342	prefilter_collapsed | if (cx->job->fit.prefilter_collapsed) return false;
-site	req_use	src/gen/emit_dfa.c:7384	req_uses | return DFA_SELECT(ReqUseRow, req_uses, &s, cx->opt->flags)->use;
+site	req_use	src/gen/emit_dfa.c:7384	ReqUseRow,req_uses | return DFA_SELECT(ReqUseRow, req_uses, &s, cx->opt->flags)->use;
 site	req_handoff_stamp	src/gen/emit_dfa.c:7391	req_use | if (req_use(cx) != REQ_USE_HANDOFF) return "";
 site	req_handoff_stamp	src/gen/emit_dfa.c:7392	pcrec_fact_req_run_maxoff | return dfa_fragf(cx, "", pcrec_fact_req_run_maxoff(cx));
 site	match_unwrapped_applies	src/gen/emit_dfa.c:7675	dfa_engine_is_empty | return s->cx->job->anchored_ok && !dfa_engine_is_empty(s->cx);
-site	dfa_match_of	src/gen/emit_dfa.c:7690	dfa_matches | return DFA_SELECT(DfaMatch, dfa_matches, &s, cx->opt->flags);
+site	dfa_match_of	src/gen/emit_dfa.c:7690	DfaMatch,dfa_matches | return DFA_SELECT(DfaMatch, dfa_matches, &s, cx->opt->flags);
 site	start_pinned_applies	src/gen/emit_dfa.c:7866	dfa_engine_is_empty | if (dfa_engine_is_empty(cx)) return false;
-site	dfa_search_start_of	src/gen/emit_dfa.c:7906	dfa_search_starts | return DFA_SELECT(DfaSearchStart, dfa_search_starts, &s, cx->opt->flags);
+site	dfa_search_start_of	src/gen/emit_dfa.c:7906	DfaSearchStart,dfa_search_starts | return DFA_SELECT(DfaSearchStart, dfa_search_starts, &s, cx->opt->flags);
 site	dfa_form_derive	src/gen/emit_dfa.c:8382	pf_scan_set_of via pf | if (f->pf->scan_set) pf_scan_set_of(cx, d, us, f->pf, &f->cand);
 site	dfa_form_derive	src/gen/emit_dfa.c:8443	 via pf | if (f->nscan > 0 && f->pf->reseeds && dfa_needs_seed(d))
 site	dfa_form_derive	src/gen/emit_dfa.c:8452	 via pf | t, fam ? "" : "", u, f->pf->c.name);
@@ -1626,6 +2137,7 @@ site	vm_render_listing	src/gen/emit_vm.c:9492	root_minw | if (st->root_minw >= P
 site	vm_render_listing	src/gen/emit_vm.c:9581	mrl_win | !v->mrl ? "" : v->mrl_win ? "" : "",
 site	vm_reseed_holds	src/gen/emit_vm.c:11090	pcrec_fact_start_anchor | return pcrec_fact_start_anchor(v->cx) != PCREC_SANCH_NONE;
 site	vm_reseed_holds	src/gen/emit_vm.c:11092	pcrec_dfa_cand_ppm | return (unsigned long long)pcrec_dfa_cand_ppm(v->cx) * rs->cal.gap > 1000000ull;
+site	vm_plan_reseed	src/gen/emit_vm.c:11112	pcrec_reseed_nrows | for (int i = 0; i < pcrec_reseed_nrows; i++) {
 site	vm_plan_reseed	src/gen/emit_vm.c:11114	 via r | if (r->deny & v->cx->opt->flags) continue;
 site	vm_plan_reseed	src/gen/emit_vm.c:11115	vm_reseed_holds via r | if (!vm_reseed_holds(v, rs, r->pred)) continue;
 site	vm_plan_reseed	src/gen/emit_vm.c:11117	 via r | rs->steps0 = r->start == VRS_S_CAP ? rs->cal.cap
