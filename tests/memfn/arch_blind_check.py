@@ -21,7 +21,7 @@ rev 2's slip). A match preceded by a backslash is a hex escape (`\\x86` in a
 THE NINE CLASSES (§10.4): 1 ISA names and levels; 2 predefined arch macros;
 3 intrinsics and vector types; 4 intrinsic headers; 5 targeting; 6 arch
 nouns; 7 kit-identity compares (form_id, mf_kit_version, mf_token_name, the
---isa= token); 8 pcrec reading kit OUTPUT (a function that holds an mf_sink
+--isa= token; CODE scope only: tests and docs may discuss one); 8 pcrec reading kit OUTPUT (a function that holds an mf_sink
 and string-searches); 9 the include graph (src/, cli/ and lib/ include
 memfn/include/memfn.h and no other kit file).
 
@@ -197,8 +197,8 @@ def scan_tree(root):
 def scan_text(hits, scope, rel, text, structural):
     for n, line in enumerate(text.split('\n'), 1):
         for cls, (_name, rx) in CLASSES.items():
-            if cls == 7 and scope == 'doc':
-                continue
+            if cls == 7 and scope != 'code':
+                continue      # a compare in code; tests and docs may discuss one
             m = rx.search(line)
             if m:
                 hits.append((scope, rel, n, cls, line.strip()[:60]))
