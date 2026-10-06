@@ -32,6 +32,11 @@ for ln in lines:
         # a head-bearing file, and every block the oracle line covered
         # already carries `# pcre2-only` where python cannot answer it
         continue
+    if ln.startswith("tag "):
+        # `tag` is a W1 candidate keyword the rxtsource keyword census
+        # guards (a headless corpus line may not begin with it); kept as a
+        # comment so the line numbers run_axes.sh's GROUP F5 keys name hold
+        ln = "# " + ln
     body.append(ln)
     if ln.startswith("pattern ") or ln.startswith("pattern-esc "):
         body.append("features all")
@@ -45,7 +50,7 @@ head = [
     "# GENERATED, do not edit by hand: docs/design/startset/edge/cells.py (the",
     "# authored half) -> gen_rxt.py (the oracle's answers) -> the draft",
     "# docs/design/startset/edge/%s -> tests/startset/edge_import.py (adds" % os.path.basename(src),
-    "# `features all` to each block, drops the head `oracle` line). Each block carries `tag edge=<key>`; the",
+    "# `features all` to each block, drops the head `oracle` line). Each block carries `# tag edge=<key>`; the",
     "# key's meaning is startset.md §6.4.1's table.",
     "",
 ]

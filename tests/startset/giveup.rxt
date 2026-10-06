@@ -6,7 +6,7 @@
 # GENERATED, do not edit by hand: docs/design/startset/edge/cells.py (the
 # authored half) -> gen_rxt.py (the oracle's answers) -> the draft
 # docs/design/startset/edge/giveup.rxt -> tests/startset/edge_import.py (adds
-# `features all` to each block, drops the head `oracle` line). Each block carries `tag edge=<key>`; the
+# `features all` to each block, drops the head `oracle` line). Each block carries `# tag edge=<key>`; the
 # key's meaning is startset.md §6.4.1's table.
 
 
@@ -17,7 +17,7 @@ pattern (?=(?:a|b|x)*c)x
 features all
 engine vm
 budget frames=8
-tag edge=GU, giveup_allowance
+# tag edge=GU, giveup_allowance
 ms 0 "ababababababababababababxc" 24 25
 ms 1 "ababababababababababababxc" 24 25
 ms 2 "ababababababababababababxc" 24 25
