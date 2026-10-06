@@ -2709,7 +2709,20 @@ Four light panels in two days (the K82 handoff, [OPT-SETS], [MEMFN] K0 r1/r2) fo
   - **§4, the sockets:** D151's reverse-walk row, I5 as a context column on the VM hat, and K90 as the RETRY slot's adaptive rows gaining the VM-only route.
   - **§5:** the standing questions and the sibling-family table. **§6:** nine questions.
   - Instruments: `start_table/`.
-- `start_table/` — that note's site census, per-row stamp census, anchoring-agreement probe and sabotage-anchor map (own CLAUDE.md).
+  - **REVISION 2 (lane `starttabrev`, 2026-10-06) applies the light D6 panel (`../dev/reviews/2026-10-06-r-starttable-panel.md`, every finding accepted); read its §R first.**
+    - **The inventory is DERIVED, not hand-listed** (§2.1). Three methods share no source: a call graph from the emitters to every landmark read (99 family members + 15 seeds, 148 decision sites), a deny-delta census over the corpus (13 start-family flags × 4 arms; hidden movers fingerprinted by emitted text), and the sabotage anchors. A completeness check fails on any undispositioned member. The methods found K65 set-rest and K66 whole-run (a route-keyed PRESENCE payload, not rows), `prefix_k.c`'s admission (the pick inside a row), and the hybrid prefilter's ATTEMPT route.
+    - **Routes are keyed on the PREFILTER's engine**, in seven disjoint route classes. An ATTEMPT hybrid asks BOUND on two routes in one artifact, and D-2b happens inside one artifact. The census double count is fixed.
+    - **Typed handoffs** (§1.6). Frank asked "can the table be re-entered, VM then prefilter?" Yes: each row hands `LOWER`/`UPPER`/`CAND`/`WINDOW`/`VERDICT` and each slot accepts a type. Twelve edges are listed; three of them re-enter: the retry back into the prefilter, the VM hat's re-seek, and find-all. Termination comes from the `LOWER` type.
+    - P2, N7, R3 and `attempt_cand` become READERS of BOUND in a new no-mover commit C5b.
+    - D-4 is added: the run pin vs the offset-k pick, systematic under utf8.
+    - The proof is respecified: a derived sabotage family (14 re-aim / 81 re-run / 95 rows, from an edit-set file), and the existing [SABANCHOR] exact-count gate; per-arm DIFFER floors; the trace's record, print site and parent reference; the deny delta as each row's independent control; witnesses for B1/B2/H1/P4/P5.
+    - §6 restates Q1-Q9 and adds Q10 (D-4's fix, [TIE-ALIGN] re-scoped).
+  - **REVISION 2.1 (lane `starttabrev3`, 2026-10-06) applies the short re-check (`../dev/reviews/2026-10-06-r2-starttable-recheck.md`, both critics "CLEARS with listed fixes", every finding accepted); read §R.1 first.**
+    - Owner resolution of the sabotage anchors is TOTAL on `src/` (an unresolved site is a hard error); the call graph parses types, data and headers and adds the row types: 100 family rows, 15 re-aim, 85 re-run, inventory 125/125. S169 is shared by two row files (filed).
+    - §1.6: termination is a per-row PROGRESS obligation, not a property of `LOWER`; E5 re-enters; `HIT`/`START` types and the non-slot successors make the type check evaluable; E11 re-typed.
+    - §2.3: fifteen `job->engine` route tests, read through one new `cand_route_of` (C2).
+    - C0 owns the trace instrument; the plain utf8 and `-i` DIFFER floors are measured; a 1-in-10 all-flag sample puts `-fno-length-prune` in the deny arms; `reconcile.py`, `assert_reach.py` and `reader_grep.sh` make three prose claims mechanical. Q1 is RULED (D151 addendum 1); the position domain is filed as [DEC-POSDOM].
+- `start_table/` — that note's call graph, disposition file and completeness check, deny-delta census, route-keyed stamp census (with deny arms), edit set, derived sabotage-anchor map, and anchoring-agreement probe (own CLAUDE.md).
 - `decision_families_survey.md` — **SURVEY, read-only, nothing built** (lane `decsurvey`, 2026-10-06, from main `74379fe0`). It answers Frank's "forest for the trees" question: which DECISION FAMILIES (several sites answering one question through if/else chains, scattered `flag && fact` conjunctions or duplicated comparisons, rather than one first-match row table) are still dispersed.
   - **§0** ranks 13 families, beside the ones already unified.
   - **§3** gives each family: its members (file:line), whether a table would be natural or forced, the no-mover needs, and value/risk.

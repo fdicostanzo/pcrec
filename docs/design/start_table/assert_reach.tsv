@@ -1,0 +1,80 @@
+pred-asks	dfa_pf_of	pcrec_fact_start_set
+pred-assert	ofs_test_of	ofs_test_of	src/gen/emit_dfa.c:6106	pcrec_ctx_fail(cx, 0, "internal error: a run-pinned prefilter row on "
+pred-assert	ofs_test_of	ofs_test_of	src/gen/emit_dfa.c:6111	pcrec_ctx_fail(cx, 0, "internal error: a run-pinned prefilter row whose "
+pred-asks	ofs_test_of	pcrec_fact_req_run
+pred-asks	ofs_test_of	pcrec_fact_run_pin
+pred-asks	ofs_test_verifies_run	pcrec_fact_req_run
+pred-asks	ofs_test_verifies_run	pcrec_fact_run_pin
+pred-asks	pcrec_emit_end_window_clamp	pcrec_fact_end_window
+pred-assert	pf_dfa_start_set	pf_dfa_start_set	src/gen/emit_dfa.c:6668	pcrec_ctx_fail(s->cx, 0, "internal error: a seeded machine without the "
+pred-assert	pf_dfa_start_set	pf_dfa_start_set	src/gen/emit_dfa.c:6671	pcrec_ctx_fail(s->cx, 0, "internal error: a byte outside the DFA hat's "
+pred-assert	pf_first_class_bounded_applies	pf_dfa_start_set	src/gen/emit_dfa.c:6668	pcrec_ctx_fail(s->cx, 0, "internal error: a seeded machine without the "
+pred-assert	pf_first_class_bounded_applies	pf_dfa_start_set	src/gen/emit_dfa.c:6671	pcrec_ctx_fail(s->cx, 0, "internal error: a byte outside the DFA hat's "
+pred-assert	pf_first_memchr_bounded_applies	pf_dfa_start_set	src/gen/emit_dfa.c:6668	pcrec_ctx_fail(s->cx, 0, "internal error: a seeded machine without the "
+pred-assert	pf_first_memchr_bounded_applies	pf_dfa_start_set	src/gen/emit_dfa.c:6671	pcrec_ctx_fail(s->cx, 0, "internal error: a byte outside the DFA hat's "
+pred-asks	pf_run_applies	pcrec_fact_req_run
+pred-asks	pf_run_applies	pcrec_fact_run_pin
+pred-asks	pf_run_applies_common	pcrec_fact_req_run
+pred-asks	pf_run_applies_common	pcrec_fact_run_pin
+pred-asks	pf_run_bounded_applies	pcrec_fact_req_run
+pred-asks	pf_run_bounded_applies	pcrec_fact_run_pin
+pred-asks	pf_vm_start_applies	pcrec_fact_start_anchor
+pred-assert	pf_vm_start_applies	vm_start_assert_starts	src/gen/emit_dfa.c:6779	pcrec_ctx_fail(cx, 0, "internal error: the start set holds byte 0x%02x, "
+pred-asks	req_byte_dominated_by	pcrec_fact_req_run
+pred-assert	req_byte_dominated_by	find_derive_byte_rate	src/core/findings.c:305	pcrec_ctx_fail(cx, 0, "analysis '%s': its '%s' block at line "
+pred-assert	req_byte_dominated_by	find_derive_byte_rate	src/core/findings.c:309	pcrec_ctx_fail(cx, 0, "internal error: analysis '%s': its "
+pred-asks	req_dominated_applies	pcrec_fact_start_set
+pred-assert	req_dominated_applies	ofs_test_of	src/gen/emit_dfa.c:6106	pcrec_ctx_fail(cx, 0, "internal error: a run-pinned prefilter row on "
+pred-assert	req_dominated_applies	ofs_test_of	src/gen/emit_dfa.c:6111	pcrec_ctx_fail(cx, 0, "internal error: a run-pinned prefilter row whose "
+pred-asks	req_dominated_applies	pcrec_fact_req_run
+pred-asks	req_dominated_applies	pcrec_fact_run_pin
+pred-assert	req_dominated_applies	pf_scan_set_of	src/gen/emit_dfa.c:6922	pcrec_ctx_fail(cx, 0, "internal error: prefilter row '%s' was selected "
+pred-asks	req_dominated_applies	pcrec_fact_kset_walk
+pred-assert	req_dominated_applies	find_derive_byte_rate	src/core/findings.c:305	pcrec_ctx_fail(cx, 0, "analysis '%s': its '%s' block at line "
+pred-assert	req_dominated_applies	find_derive_byte_rate	src/core/findings.c:309	pcrec_ctx_fail(cx, 0, "internal error: analysis '%s': its "
+pred-asks	req_dominated_applies	pcrec_fact_req_byte
+pred-asks	req_handoff_applies	pcrec_fact_kset_walk
+pred-assert	req_handoff_applies	find_derive_byte_rate	src/core/findings.c:305	pcrec_ctx_fail(cx, 0, "analysis '%s': its '%s' block at line "
+pred-assert	req_handoff_applies	find_derive_byte_rate	src/core/findings.c:309	pcrec_ctx_fail(cx, 0, "internal error: analysis '%s': its "
+pred-asks	req_handoff_applies	pcrec_fact_req_run
+pred-asks	req_handoff_applies	pcrec_fact_req_run_maxoff
+pred-asks	req_none_applies	pcrec_fact_req_byte
+pred-asks	req_none_applies	pcrec_fact_req_run
+pred-asks	req_one_attempt_applies	pcrec_fact_start_anchor
+pred-asks	req_route_one_attempt	pcrec_fact_start_anchor
+pred-asks	req_set_leads_applies	pcrec_fact_req_run
+pred-assert	req_set_leads_applies	find_derive_byte_rate	src/core/findings.c:305	pcrec_ctx_fail(cx, 0, "analysis '%s': its '%s' block at line "
+pred-assert	req_set_leads_applies	find_derive_byte_rate	src/core/findings.c:309	pcrec_ctx_fail(cx, 0, "internal error: analysis '%s': its "
+pred-asks	req_set_leads_applies	pcrec_fact_req_set
+pred-asks	req_set_pick	pcrec_fact_req_set
+pred-assert	req_set_pick	find_derive_byte_rate	src/core/findings.c:305	pcrec_ctx_fail(cx, 0, "analysis '%s': its '%s' block at line "
+pred-assert	req_set_pick	find_derive_byte_rate	src/core/findings.c:309	pcrec_ctx_fail(cx, 0, "internal error: analysis '%s': its "
+pred-asks	start_pinned_applies	pcrec_fact_kset_walk
+pred-assert	start_pinned_applies	find_derive_byte_rate	src/core/findings.c:305	pcrec_ctx_fail(cx, 0, "analysis '%s': its '%s' block at line "
+pred-assert	start_pinned_applies	find_derive_byte_rate	src/core/findings.c:309	pcrec_ctx_fail(cx, 0, "internal error: analysis '%s': its "
+pred-asks	us_run_pin	pcrec_fact_run_pin
+pred-asks	vm_plan_reseed	pcrec_fact_start_set
+pred-assert	vm_plan_reseed	ofs_test_of	src/gen/emit_dfa.c:6106	pcrec_ctx_fail(cx, 0, "internal error: a run-pinned prefilter row on "
+pred-assert	vm_plan_reseed	ofs_test_of	src/gen/emit_dfa.c:6111	pcrec_ctx_fail(cx, 0, "internal error: a run-pinned prefilter row whose "
+pred-asks	vm_plan_reseed	pcrec_fact_req_run
+pred-asks	vm_plan_reseed	pcrec_fact_run_pin
+pred-assert	vm_plan_reseed	pf_scan_set_of	src/gen/emit_dfa.c:6922	pcrec_ctx_fail(cx, 0, "internal error: prefilter row '%s' was selected "
+pred-asks	vm_plan_reseed	pcrec_fact_kset_walk
+pred-assert	vm_plan_reseed	find_derive_byte_rate	src/core/findings.c:305	pcrec_ctx_fail(cx, 0, "analysis '%s': its '%s' block at line "
+pred-assert	vm_plan_reseed	find_derive_byte_rate	src/core/findings.c:309	pcrec_ctx_fail(cx, 0, "internal error: analysis '%s': its "
+pred-asks	vm_plan_reseed	pcrec_fact_start_anchor
+pred-asks	vm_reseed_holds	pcrec_fact_start_set
+pred-assert	vm_reseed_holds	ofs_test_of	src/gen/emit_dfa.c:6106	pcrec_ctx_fail(cx, 0, "internal error: a run-pinned prefilter row on "
+pred-assert	vm_reseed_holds	ofs_test_of	src/gen/emit_dfa.c:6111	pcrec_ctx_fail(cx, 0, "internal error: a run-pinned prefilter row whose "
+pred-asks	vm_reseed_holds	pcrec_fact_req_run
+pred-asks	vm_reseed_holds	pcrec_fact_run_pin
+pred-assert	vm_reseed_holds	pf_scan_set_of	src/gen/emit_dfa.c:6922	pcrec_ctx_fail(cx, 0, "internal error: prefilter row '%s' was selected "
+pred-asks	vm_reseed_holds	pcrec_fact_kset_walk
+pred-assert	vm_reseed_holds	find_derive_byte_rate	src/core/findings.c:305	pcrec_ctx_fail(cx, 0, "analysis '%s': its '%s' block at line "
+pred-assert	vm_reseed_holds	find_derive_byte_rate	src/core/findings.c:309	pcrec_ctx_fail(cx, 0, "internal error: analysis '%s': its "
+pred-asks	vm_reseed_holds	pcrec_fact_start_anchor
+pred-asks	vm_start_row	pcrec_fact_start_set
+fact-assert	pcrec_fact_req_byte	src/facts/req.c:252	pcrec_ctx_fail(w->cx, 0, "internal error: a necessary-run position "
+fact-assert	pcrec_fact_req_run	src/facts/req.c:252	pcrec_ctx_fail(w->cx, 0, "internal error: a necessary-run position "
+fact-assert	pcrec_fact_req_run_maxoff	src/facts/req.c:252	pcrec_ctx_fail(w->cx, 0, "internal error: a necessary-run position "
+fact-assert	pcrec_fact_req_set	src/facts/req.c:252	pcrec_ctx_fail(w->cx, 0, "internal error: a necessary-run position "

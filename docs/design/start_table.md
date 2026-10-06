@@ -1,31 +1,115 @@
 # One start-strategy table — the row contract, the inventory, the no-mover refactor
 
-**DESIGN NOTE, PROPOSED, nothing built** (lane `starttable`, 2026-10-06, from main
-`74379fe0`, abi 64). Nothing under `src/`, `cli/`, `lib/` or `tests/` changes. The
-instruments and their committed output are in `start_table/` (own CLAUDE.md). A
-light D6 panel reviews this note before any build. Rulings are Frank's; §6 lists
-the open questions, each with a recommendation.
+**DESIGN NOTE, PROPOSED, REVISION 2.1, nothing built.** Revision 2.1: lane
+`starttabrev3`, 2026-10-06, the short D6 re-check's fixes (both critics:
+"CLEARS with listed fixes"; record `../dev/reviews/2026-10-06-r2-starttable-recheck.md`),
+marked `[r2.1 <id>]` inline and dispositioned in §R's second table; Q1 is
+RULED (D151 addendum 1). Revision 1: lane
+`starttable`, 2026-10-06, from main `74379fe0`, abi 64. Revision 2: lane
+`starttabrev`, 2026-10-06, from main `4743ebb5` (no `src/` change since
+`74379fe0`; the same `build/pcrec`, abi 64). It applies the light D6 panel
+(`../dev/reviews/2026-10-06-r-starttable-panel.md`; critics
+`…-crit-sound.md` and `…-crit-checks.md`), every finding ACCEPTED. **Read §R
+first.** Changes are marked `[r2 <finding-id>]` inline. Nothing under `src/`,
+`cli/`, `lib/` or `tests/` changes. The instruments and their committed output
+are in `start_table/` (own CLAUDE.md). Rulings are Frank's; §6 lists the open
+questions, each with a recommendation.
 
 Frank (2026-10-06): "So are we going to reorganize around a single start strategy
 decision table?" — then "Agree with direction" to the manager's three-step plan:
 (1) this note and a light panel; (2) a NO-MOVER refactor that puts every existing
 start mechanism into ONE first-match table under one row contract, gated by
 `scripts/emit_sweep.py` at 0 movers; (3) new rows afterwards, each its own abi
-event.
+event. And, during the panel: **"can the start table be re-entered, e.g. VM
+then prefilter?"** — answered in §1.6 [r2 frank-reentry].
 
 Read before writing: `where_to_start.md` (the study, D151), D148 + addenda 1-4 and
-`startset.md`, D124, `offset_k_skip.md`, `litscan_k82h.md` §2.1 (why `req_uses[]`
-was born separate), `docs/dev/optloop/revend_census.md` ([OPT-REVEND]), K88/K90,
-[ARTREV] `generalize.md` I5, `src/facts/facts.def`, `docs/spec/facts_listing.md`,
+`startset.md`, D124, D152, `decision_families_survey.md` (families 2-4, §4.2),
+`offset_k_skip.md`, `litscan_k82h.md` §2.1 (why `req_uses[]` was born separate),
+`docs/dev/optloop/revend_census.md` ([OPT-REVEND]), K88/K90, [ARTREV]
+`generalize.md` I5, `src/facts/facts.def`, `docs/spec/facts_listing.md`,
 `docs/design/memfn/integration.md` §8.5 + `tests/memfn/site_manifest.tsv`, and the
 table sites in `src/gen/emit_dfa.c` / `src/gen/emit_vm.c` at this pin.
+
+---
+
+## R. Panel disposition (revision 2)
+
+Every finding of both critics, with where the revision answers it. "Fixed" means
+the note now says the corrected thing; "answered" means the finding's premise is
+corrected with evidence.
+
+| finding | resolution | where |
+|---|---|---|
+| sound M1 (ATTEMPT-engine hybrids misfiled; BOUND on two routes in one artifact; census double count) | fixed: a DFA-shaped body's route is `job->engine` of the PREFILTER, never `fit.chosen`; seven route CLASSES, disjoint; per-(slot, route) within one artifact made explicit; the census keys every joint stamp on the route class, so no artifact counts twice | §1.1 `routes`, §2.2, §2.3, `row_census.py` |
+| sound M2 (K65 set-rest, K66 whole-run missing) | fixed: PRESENCE gains a ROUTE-KEYED payload (`u.admit.noscan`), not rows; posture FIXED; S277/S278/S316/S459 named; on the C1 trace | §1.1, §2.2 PRESENCE, §3.3 |
+| sound M3 (`prefix_k.c`'s admission) | fixed: named as N3/N4's admission and as the "pick inside a row" level the table does not own; S187/S188 counted in the derived family | §2.2 NEXT, §2.5 |
+| sound M4 / survey §4.2 (D-4) | fixed: D-4 added, preserved by the refactor, fix named as a separate ruled change ([TIE-ALIGN] re-scope) | §2.4 D-4, §6 Q10 |
+| sound M5 (four predicates restate BOUND) | fixed: P2, R3, N7 and `attempt_cand` become READERS of BOUND in a new no-mover commit C5b; the slot graph lists PRESENCE→BOUND, RETRY→BOUND, NEXT→BOUND (both routes); typed handoffs between slots, every re-entry a checked edge | §1.3, §1.6, §3.2 C5b |
+| frank-reentry ("VM then prefilter?") | answered YES with the edge list: the retry re-enters the prefilter after a failed VM attempt; find-all re-enters the entry; the future reverse walk's give-up hands `s*` to NEXT | §1.6 |
+| sound M6 / checks M1 (re-aim undercount; hand family list; SAB_FILE2) | fixed: the family is DERIVED by call graph (`call_graph.py`), the re-aim list by an edit-set file (`refactor_edit_set.tsv`); every site incl. SAB_FILE2 and non-emitter files; **14 re-aims, 81 re-runs, 95 family rows** (was 6/47/53; revision 2.1: 15 / 85 / 100, §R.1). The per-commit exact-count gate already exists: `scripts/m6read_check_sab_anchors.py`, wired as `make test-codegen` [SABANCHOR] | §3.5 |
+| checks M2 (C0 cannot fail on its plumbing) | fixed: per-arm DIFFER floors (an arm must differ from default on its own side), seeded from the deny-delta census; `-fno-end-window` at utf8 an asserted EXACT 0; stream 4 under utf8 partial by design | §3.3 item 2 |
+| checks M3 (trace under-specified; C2 oracle tests only the filter) | fixed: record = (pattern-index, seq, slot, route, row, site); printed at the walk's RETURN; reference regenerated from the PARENT every commit; the trace build is never the byte-sweep build and is itself byte-swept at C1; the C2 oracle is stated as a FILTER test, run in both orders, with the deny-delta census as the independent control | §3.3 items 5-6 |
+| checks M4 (gap list stale; R6 asserted; H1 reads a constant; P4/P5 share a stamp; B1/B2 no anchor) | fixed: per-row control = the deny-delta count (shares nothing with `cand_rows[]`); `row_census` gains the deny arms; H1 read two ways; witnesses and planned sabotage rows for B1/B2/H1/P4/P5 | §3.4 |
+| sound m1 (stamps/listing keep reading the fact) | fixed: C5 moves `END_WINDOW`, `VM_START`, `VM_ROOT_MINW` and `--emit-ir`'s `root-minw` onto the row | §3.2 C5, §3.6 |
+| sound m2 (`dfa_search_is_pinned` compares row pointers) | fixed: `u.recover.pinned`, read by all 7 readers | §1.1, §3.2 C3 |
+| sound m3 (`match` axis; N12's axis; B5's listed name) | fixed: `match` removed from C6; N12's listing projection is empty; the listing projection is PER ROUTE (`list[route] = {axis, order, name}`), distinct from `c.name` | §1.1, §3.2 C6 |
+| sound m4 (`-fprefilter-collapse` arm) | fixed: a sweep arm and a deny-census arm | §3.3 item 4 |
+| sound m5 (trace mapping self-authored for inline sites; set vs sequence) | answered: for inline sites the trace proves only that the print matches the emitted text; bytes are the control there; diffs compare ordered sequences, multiplicity changes declared per commit | §3.3 item 5 |
+| sound m6 (utf8 gap narrower) | fixed: the utf8-native corpus is swept by stream 4; what is missing is the byte corpus × utf8 | §0a item 5, §3.3 item 2 |
+| sound n1 (ask ORDER unobservable; predicates longjmp) | fixed: the invariant is SET equality plus "no new predicate evaluation reaches an assertion" | §1.3, §2.3 |
+| sound n2 (slot order ≠ ask order) | fixed: slot order is table order; the per-route ask order is stated as the code has it | §1.2 |
+| sound n3 (missed asks) | fixed: VM-only asks FIRST (declines); every artifact asks NEXT on route VM for `VM_START_SCAN` | §2.3 |
+| sound n4 (route set coarser than predicates) | answered: stated as a third axis read inside predicates; filed, not folded | §2.3 |
+| sound n5 (S490 equivalence premise moves at C3) | fixed: re-verify the argument at C3 | §3.5 |
+| sound n6 (D-1 on ATTEMPT hybrids) | fixed | §2.4 D-1 |
+| checks m1 (widened name check false-positives) | fixed: the literal half keys on (row name AND a `c.name`/projection receiver) | §3.5 |
+| checks m2 (regexes in `cand_rows_check.py`) | fixed: both re-aims named (`:130`, `[cand-route-walk]` `:177`) | §3.5 |
+| checks m3 (new checks without sabotage rows) | fixed: one planned row per new check | §3.5 |
+| checks m4 (emit_sweep floors stale) | fixed: C0 re-pins every floor to the measured reach | §3.2 C0 |
+| checks m5 (argv streams drop per-pattern flags) | fixed: a `-i` arm; per-row options stay stream 4's, stated | §3.3 item 2 |
+| checks m6 (`--emit-facts` sees six facts) | fixed: the six facts and their rows named; `--emit-facts=byte,utf8` needs no `--extra` | §3.3 item 3 |
+| checks m7 (no witness injection) | fixed: C0 adds `--patterns-file`; every named witness is a committed `.rxt` cell first | §3.2 C0, §3.4 |
+| checks m8 (`registry.md:267` names `dfa_select`) | fixed: its spec hunk rides C3 | §3.2 C3 |
+| checks notes (exact-count manifests; asserted zero) | adopted | §3.3, §3.4 |
+
+### R.1 Re-check disposition (revision 2.1)
+
+The short re-check (§6 Q9) returned "CLEARS with listed fixes" from both
+critics. Every fix is ACCEPTED (one with a measured nuance, C-M2); the
+finding-by-finding record is `../dev/reviews/2026-10-06-r2-starttable-recheck.md`.
+
+| finding | resolution | where |
+|---|---|---|
+| C-N1 (61 anchor sites with owner `?`, start-family rows silently OTHER) | fixed: `call_graph.py` parses types, sized/initializer/string data, object-like macros and headers (1,892 definitions); `sabotage_anchors.py` resolves a site by `def` / `factrow` / `datarow` / `lead` (header comment) / `filescope` / `outside`, and an UNRESOLVED `src/` site is a hard error (exit 2; 0 today; control: deleting `DfaCand`'s def makes S282 unresolved and the script exits 2). The five rows the critic named (S282, S299, S475, S479, S496) are family, and nothing else moved: **100 family rows, 15 re-aim, 85 re-run** (was 95/14/81) | §2.1, §3.5 |
+| C-N2 (the trace has no instrument) | fixed: C0's deliverable list names the trace stream, its diff tool, `-DPCREC_CAND_TRACE` through `build_from_rev` (`scripts/emit_sweep.py:344` runs plain `make`), stderr capture, the pattern-index/arm attachment, C5b's multiplicity filter, a per-arm records floor, and a failing-direction control with its sabotage row | §3.2 C0, §3.3 item 5 |
+| C-M2 (utf8 and `-i` DIFFER floors "measured at C0") | fixed, MEASURED now: plain `-e utf8` differs on 3,188 / 3,189 of 3,221 / 3,222 (auto / vm, plus 74 refusal moves), and moves a START stamp on 674 / 341; `-i` differs on every artifact and moves a start stamp on 1,752 / 1,567 (byte) and 1,775 / 1,605 (utf8). Stated: with `-e utf8` dropped on both sides, 8 of the 13 utf8 deny floors still pass; the asserted 0, the plain utf8 floor, and (by the accident of which encoding is larger) four deny floors catch it | §3.3 item 2 |
+| C-N3 (deny census over 13 hand-picked flags) | measured on a 1-in-10 sample over all 29 other `--list-axes` flags × 4 arms (43,200 compiles, 321 s at 6 jobs; the full sweep ≈ 54 min at 6 jobs). Route-input flags move the start rows through the route; four flags move start stamps WITHOUT a route change, `-fno-length-prune` (bit 7) the clearest: it reaches R1 through `Vm.mrl_win`, a seed field, so it joins the deny arms. The full sweep is C0's deliverable | §3.3 item 4, §3.4 |
+| C-N4 (reader list `src/`-only) | fixed: `reader_grep.sh` finds every reader outside `src/` by grep (`reader_grep.txt`, 61 lines); the spec readers ride C3's hunk, the test/CLAUDE.md readers ride their commits | §3.2 C3, §3.5 |
+| C-N5 (re-run rows swept once after C5b) | fixed: `sabotage_anchors.py`'s `rerun_at` column names every commit whose edit set touches the row's OWNER; 32 re-run rows (34 sites) re-run in their commit (sites: C3 12, C5 20, C5b 4; two rows at both C3 and C5), the other 53 once after C5b | §3.5 |
+| C-N7 ("all five streams") | fixed: six | §3.3 item 1 |
+| checks: nothing mechanical reconciles methods 2/3 against the family | fixed: `reconcile.py` + `reconcile_map.tsv` fail on an unmapped moved stamp key, an unmapped or ambiguous hidden fingerprint, a mapped member not in `inventory.tsv`, or an OTHER sabotage row whose anchor names a family identifier (control: two map lines removed → exit 1) | §2.1 |
+| S-N1 (a) declaring `LOWER` does not prove termination | fixed: a per-row PROGRESS obligation, checked at review; E11 resumes past the previous hit | §1.6 |
+| S-N1 (b) E10 on an empty match | fixed: the strict advance is the caller's empty-match rule | §1.6 |
+| S-N1 (c) E5's in-scan cycle missing | fixed: added, with its termination argument | §1.6 |
+| S-N1 (d) CAND's obligation | fixed: `x ≥` the accepted `LOWER` | §1.6 |
+| S-N1 (e)/(f) the type check unevaluable | fixed: `HIT` and `START` types; non-slot successors named (verifier, loop header, caller); PRESENCE's gate hit is `HIT` (E3); E11 re-typed | §1.2, §1.6 |
+| S-N2 (§2.3's "the one dispatch") | fixed: 15 `job->engine` tests enumerated; ONE `cand_route_of(cx)` in the edit set (C2), read by all of them from C3; S490's anchor is one of them (a C3 re-aim, which also discharges sound-n5's re-verification) | §2.3, §3.2, §3.5 |
+| S-N3 (edit set misses R3's C5b line and m1's stamp/listing lines; 463 vs 462) | fixed: added; S441 is moved by C5 AND C5b and the classifier lists both; S169 is CONFIRMED shared by two row files (filed as a finding in the record) | §3.5 |
+| S-N4 ("three methods share no source") | fixed: two independent derivations plus a cross-record | §2.1, §5.2 |
+| S-N5 (§1.3(b) has no population) | fixed: `assert_reach.py` → `assert_reach.tsv` | §1.3 |
+| both: §6 Q1 | RULED (D151 addendum 1) | §6 |
+| sibling lens: the position domain | filed as [DEC-POSDOM] (`docs/dev/plan.md`) | §2.5, §5.4 |
+| Frank 2026-10-06, R-Q3 ([DEC-FALLBACK] tokens) | RULED: today's tokens kept, a pure no-mover; name/why separation is a later abi row | §6 R-Q3, D151 add. 2 |
+| Frank 2026-10-06, R-Q4 (streamlining) | RULED: two serial no-mover refactors, A (this fold) then B ([DEC-FALLBACK]); B absorbs Q8; movers (Q4, Q5, Q6, Q10/D-4, [DEC-POSDOM], token separation) are later separate rows | §6 Q8, R-Q4; §5.4; D151 add. 2 |
+| Frank 2026-10-06, R-Q5 (memfn sequencing) | RULED: kit R4c (main `05c33ce0`) before C1-C7, C0 in parallel; C1-C7 re-derive their edit set on post-R4c main; B1-B18 are input; ping the kit at C0's merge (it awaits the full I2) | §3.2, §6 R-Q5; D151 add. 2 |
 
 ---
 
 
 ## 0. Why the start decision is a table (manager's statement, recorded at Frank's request, 2026-10-06; general rationale D152)
 
-"Where can a match start, and where can the search skip to?" is answered today by about ten sites — 5 arrays and 5 inline decisions over 3 routes — that READ EACH OTHER: req-use reads req-admit; REQ_WHY "dominated" reads the DFA scan byte; the K82 handoff turns a pre-check hit into a scan start; the bound predicate is restated at four places.
+"Where can a match start, and where can the search skip to?" is answered today by about ten sites — 5 arrays and 5 inline decisions over 3 routes — that READ EACH OTHER: req-use reads req-admit; REQ_WHY "dominated" reads the DFA scan byte; the K82 handoff turns a pre-check hit into a scan start; the bound predicate is restated at four places. [r2: the derived count is in §2.1 — 5 arrays, 7 inline decision sites and 2 route-keyed payload decisions over 7 route classes; the statement below stands.]
 
 **Advantages specific to this family:**
 1. **It fixes measured defects:** `run-pinned` is unreachable whenever two byte-pickers disagree (systematic under utf8); G1 reads a predecessor-byte skip as a start byte (33 artifacts); a stamp says "reverse-pass" on 452 artifacts with no reverse machine; a fix to the bound predicate must today find four copies. One predicate per question removes the duplication, and each disagreement becomes a visible row to rule on.
@@ -35,16 +119,26 @@ table sites in `src/gen/emit_dfa.c` / `src/gen/emit_vm.c` at this pin.
 
 **What it does not do:** it makes nothing faster by itself (the fold is no-mover). The payoff comes from the queued rows and the inconsistency fixes it enables; without planned new start mechanisms the inconsistencies would still be fixed, but the fold would rank lower.
 
-## 0. Answers first
+## 0a. Answers first
 
-1. **Yes, and the table is literally one array.** Today ten separate decision
-   sites pick a start mechanism: five first-match arrays (`dfa_pfs[]`, `req_admits[]`,
-   `req_uses[]`, `dfa_search_starts[]`, `pcrec_reseed_rows[]`) and five inline
-   decisions with no table at all (ENG_ATTEMPT's predecessor-byte skip
-   `attempt_cand`, ENG_ATTEMPT's `start_max`, the VM's `attempt_max`, the
-   end-window clamp and the root minimum-width check). The design folds all of
-   them into ONE array, `cand_rows[]` (D148 Q2's name), of ONE row type,
-   `CandRow`, selected by ONE walk.
+[r2: this section was a second "§0"; renumbered.]
+
+1. **Yes, and the table is literally one array.** Today the start decision is
+   made at five first-match arrays (`dfa_pfs[]`, `req_admits[]`, `req_uses[]`,
+   `dfa_search_starts[]`, `pcrec_reseed_rows[]`) and at seven inline decision
+   sites with no table at all: ENG_ATTEMPT's predecessor-byte skip
+   (`attempt_cand`), ENG_ATTEMPT's `start_max`, the VM's `attempt_max`, the
+   end-window clamp, the root minimum-width check, and the two route dispatches
+   that decide which body asks at all (`pcrec_emit_dfa_engine` on `job->engine`;
+   the `fit.chosen == ENGM_DFA` gate on the entry's W/P/F asks) [r2 sound-M1].
+   Two more decisions are route-keyed PAYLOAD of an existing row rather than
+   choices (K65 set-rest, K66 whole-run) [r2 sound-M2], and one admission lives
+   inside a landmark derivation (`prefix_k.c`) [r2 sound-M3]. **The list is
+   derived, not hand-written** (§2.1): a call graph from the emitters to every
+   landmark read, a deny-delta census over the corpus, and the sabotage anchors,
+   with a completeness check that fails on any undispositioned member. The
+   design folds the arrays and inline decisions into ONE array, `cand_rows[]`
+   (D148 Q2's name), of ONE row type, `CandRow`, selected by ONE walk.
 2. **"One first-match table" needs a SLOT column, and that is not a planner.** An
    artifact today runs several start mechanisms at once: an end-window clamp,
    then a presence pre-check, then a handoff, then an in-loop skip, then a
@@ -57,30 +151,40 @@ table sites in `src/gen/emit_dfa.c` / `src/gen/emit_vm.c` at this pin.
    mask since START-SET, and the VM route and the DFA route each get their own
    first-match over the one list (`cand_routed`, `emit_dfa.c:5139`). The slot is
    the same filter along a second axis. Composition across slots is fixed by the
-   search-body skeleton (§1.3), never selected.
-3. **The inventory is 37 rows in 8 slots over 3 routes** (§2.2), and the census
-   finds three places where today's dispersed sites disagree (§2.4). None is an
-   answer disagreement. A no-mover refactor preserves all three, and each fix is
-   named as a separate ruled change. One of them is new: an ENG_ATTEMPT artifact
-   stamps `RX_DFA_START "reverse-pass"` though it carries no reverse machine.
-4. **The refactor is eight commits, implement-then-replace** (§3.2). Predicate
-   and emitter FUNCTIONS stay byte-stable and only the tables and walks move. So
-   47 of the 53 sabotage rows anchored in start-family code keep their anchors,
-   and 6 must be re-aimed. No abi event: every emitted byte and every stamp value
-   is unchanged, and the listing (`--list-axes`, stream 5) is byte-identical
-   until one declared listing commit.
+   search-body skeleton (§1.3), never selected. **What one slot hands the next
+   is TYPED** (§1.6): a lower bound, an upper bound, a candidate, a window or a
+   verdict; each slot declares what it accepts, and every re-entry path (the
+   retry back into the prefilter, find-all, the future reverse walk's give-up)
+   is a checked edge [r2 sound-M5, frank-reentry].
+3. **The inventory is 37 rows in 8 slots over 3 routes**, asked in 7 route
+   CLASSES (the route of a DFA-shaped body is its prefilter's engine, so a VM
+   hybrid can be an ATTEMPT customer and ask BOUND twice, once per route)
+   [r2 sound-M1]. The census finds five places where today's dispersed sites
+   disagree (§2.4: D-1, D-2, D-2b, D-3, D-4). None is an answer disagreement. A
+   no-mover refactor preserves all five, and each fix is named as a separate
+   ruled change [r2 sound-M4].
+4. **The refactor is nine commits, implement-then-replace** (§3.2). Predicate
+   and emitter FUNCTIONS stay byte-stable except a declared EDIT SET
+   (`start_table/refactor_edit_set.tsv`): the tables and walks, the inline
+   predicate lines, and in C5b the four BOUND restatements [r2 sound-M5]
+   (R3's line was missing from the file; added [r2.1 S-N3]). The sabotage consequences are DERIVED from that file and the
+   call graph: **15 of the 100 start-family sabotage rows are re-aimed, 85
+   re-run** [r2 sound-M6, checks-M1; r2.1 C-N1, S-N2]. No abi event: every emitted byte and every stamp value is
+   unchanged, and the listing (`--list-axes`, stream 5) is byte-identical until
+   one declared listing commit.
 5. **`emit_sweep` alone cannot prove the no-mover claim, for three measured
    reasons** (§3.3-§3.4):
-   - its argv streams never pass `-e utf8` (`compile_stream_c`,
-     `scripts/emit_sweep.py:429`), so the utf8 arm the brief requires does not
-     exist yet;
-   - `--emit-facts`' `used` column records which facts a predicate ASKED, which
-     no emitted byte shows, so a walk that evaluates a predicate today's code
-     does not evaluate is invisible to all five streams;
+   - its argv streams (1-3) never pass `-e utf8` (`compile_stream_c`,
+     `scripts/emit_sweep.py:429`). Stream 4 does sweep the utf8-NATIVE corpus
+     (the `.rxt` blocks that declare `encoding utf8`); what is missing is the
+     byte corpus compiled under utf8 [r2 sound-m6];
+   - `--emit-facts`' `used` column records which of six facts a predicate
+     ASKED, which no emitted byte shows [r2 checks-m6];
    - a row the corpus never selects is not proven by any byte sweep.
 
-   The plan adds the first two as sweep arms (commit C0) and gives every
-   zero-population row a constructed witness.
+   The plan adds the first two as sweep arms (commit C0), each with a floor that
+   makes the arm FAIL if its own plumbing drops the flag [r2 checks-M2], and
+   gives every zero-population row a constructed witness.
 6. **The new rows each land in one slot** (§4): the D151 reverse-walk row in
    NEXT (the DFA and VM hats) plus `handoff-rev` in FIRST; I5 as a context
    column on the VM hat row; K90's dense-start fix as the RETRY slot's adaptive
@@ -100,41 +204,51 @@ so a reader never falls back to the NAME):
 
 | field | what it holds | today's equivalent |
 |---|---|---|
-| `c.name` | the row's name, which is the stamp value where the slot has a stamp | `DfaCand.name` |
+| `c.name` | the row's IDENTITY: unique across `cand_rows[]`, what the walk, the trace and the checks key on [r2 sound-m3] | `DfaCand.name` |
 | `c.deny` | the `lib/pcrec.h` bit(s) that REMOVE the row (`uint64_t`, so bits ≥ 32 deny) | `DfaCand.deny` |
-| `c.applies` | the admission predicate over [PATFACTS] facts and the compile, `bool (*)(const CandSel *)` | `DfaCand.applies` |
+| `c.applies` | the admission predicate over [PATFACTS] facts and the compile, `bool (*)(const CandSel *)`. A predicate may `pcrec_ctx_fail` (longjmp): `pf_dfa_start_set` and `pf_vm_start_applies` do [r2 sound-n1] | `DfaCand.applies` |
 | `slot` | the question answered (§1.2) | implicit: which array the row is in |
-| `routes` | `CAND_ON(route)` mask over `CR_DFA` (the ENG_UNANCH scan body), `CR_ATTEMPT` (the ENG_ATTEMPT start loop), `CR_VM` (the VM attempt loop); 0 means `CR_DFA` alone, today's default | `DfaPf.routes` (two values today) |
-| `landmark` | the fact(s) the row reads, as `facts.def` names (`start_set`, `kset_walk`, `run_pin`, `req_run`, `req_run_maxoff`, `req_set`, `req_byte`, `end_window`, `start_anchor`) or a machine property (`s0 escapes`, `seed liveness`, `root_minw`) | prose in each predicate's header |
+| `routes` | `CAND_ON(route)` mask over `CR_DFA` (the ENG_UNANCH scan body), `CR_ATTEMPT` (the ENG_ATTEMPT start loop), `CR_VM` (the VM attempt loop); 0 means `CR_DFA` alone, today's default. **The route of a DFA-shaped body is `job->engine` of the machine that body runs, never `fit.chosen`**: the VM hybrid's inlined prefilter is `CR_DFA` when its machine is ENG_UNANCH and `CR_ATTEMPT` when it is ENG_ATTEMPT (every pattern with a BOT, `compile.c:1874`→`:1913`) [r2 sound-M1] | `DfaPf.routes` (two values today) |
+| `landmark` | the fact(s) the row reads, as `facts.def` names (`start_set`, `kset_walk`, `run_pin`, `req_run`, `req_run_maxoff`, `req_set`, `req_byte`, `req_whole_run`, `end_window`, `start_anchor`) or a machine property (`s0 escapes`, `seed liveness`, `interior deadness`, `root_minw`, `mrl_win`, `nclamp`) | prose in each predicate's header |
 | `scan` | the scanner KIND, and for a scan the memfn site id it is delegated through: `PF`, `PRE`, `OFS`, `SETREST`, `MLINE`, `VMSTART`, or `none` (`tests/memfn/site_manifest.tsv`'s ids; D146) | `DfaPf.scan` (`PF_SCAN_*`), the manifest |
 | `map` | the hit→candidate mapping (§1.4) | prose |
+| `hands` | the TYPE of what the row hands the next slot: `LOWER`, `UPPER`, `CAND`, `WINDOW`, `VERDICT` (§1.6) [r2 frank-reentry] | implicit in the emitted text |
 | `hat` | the consumer: the DFA (re-seeded or not), the attempt loop, the VM attempt, the reverse machine | `reseeds`, `emit*` hooks |
 | `giveup` | the row's give-up posture (§1.5) | prose in two design notes |
-| `axis`, `stamp` | the `--list-axes` axis this row is listed under today, and the stamp macro it is reported through. These are PROJECTIONS, kept byte-identical in the refactor | `axes_dump.c`'s per-axis emitters |
+| `stamp` | the stamp macro the row is reported through and the token it projects (a PROJECTION; N12 projects `"memchr"`, P4 projects `"emitted"`) | the `*_name` functions |
+| `list[route]` | the `--list-axes` projection PER ROUTE: `{axis, order, listed name}`, empty where the row has no listing on that route. B5 is listed `unanchored` (order 3) under `vm-anchor-bound` on `CR_VM` and has no listing on `CR_ATTEMPT`; N12 has none [r2 sound-m3] | `axes_dump.c`'s per-axis emitters |
 | `desc` | the listing's one-line `applies` text, BESIDE the row | `req_admits[].desc`, `pcrec_reseed_rows[].applies_desc`, and for `dfa_pfs[]` a SEPARATE hand table in `axes_dump.c:85-` (§2.4 D-3: it has drifted) |
-| `u` | the slot's payload, a typed union: `u.pf` (today's `DfaPf` emit hooks, `reseeds`, `run_term`, `scan_set`, `emit_vm`), `u.admit` (`ReqAdmit` verdict), `u.use` (`ReqUse`), `u.reseed` (action, start column, armed), `u.bound` (the emitted bound string), `u.recover` (none: the form is the name) | the five arrays' own row structs |
+| `u` | the slot's payload, a typed union: `u.pf` (today's `DfaPf` emit hooks, `reseeds`, `run_term`, `scan_set`, `emit_vm`), `u.admit` (`ReqAdmit` verdict, plus `noscan`: the route-keyed K65/K66 composition, §2.2), `u.use` (`ReqUse`), `u.reseed` (action, start column, armed), `u.bound` (`one`: none / 0 / `search_from`, and the emitted bound string), `u.recover` (`pinned`: the property `dfa_search_is_pinned`'s 7 readers test [r2 sound-m2]) | the five arrays' own row structs |
 
 A union rather than a `const void *`: each slot's emitter reads its own member
 with a compile-time type, and a row initialised with another slot's member is a
 `run_cand_rows.sh` failure (§3.5), not a cast.
 
-### 1.2 The slots, in body order
+### 1.2 The slots
 
-The slot order is the ORDER THE SEARCH BODY ASKS, written once as the skeleton
-(§1.3). Within a slot the rows are in information order (`where_to_start.md` §1.4:
+The slot order below is the TABLE's order (one block of rows per question). It
+is not the order a body asks: each body asks in its own skeleton order, written
+per route in §2.3, and that order is the code's, kept as it is [r2 sound-n2].
+Within a slot the rows are in information order (`where_to_start.md` §1.4:
 EXACT before WINDOW before LOWER-BOUND before PRESENCE; rarity is an admission
 conjunct, never an order).
 
-| slot | the question | asked at | today |
-|---|---|---|---|
-| `WINDOW` | can a match begin before some position computed from the END? | the caller-facing entry, once | `pcrec_emit_end_window_clamp` (inline) |
-| `PRESENCE` | does the window hold every necessary landmark at all? | the entry, once | `req_admits[]` |
-| `WIDTH` | can the remaining subject hold a match at all? | the VM entry, once | `root_minw` test (inline) |
-| `FIRST` | where does the first scan begin? | the entry, once | `req_uses[]` |
-| `NEXT` | how is the next candidate start found? | the loop: at `s0` (DFA), between attempts (ATTEMPT, VM entry and retry) | `dfa_pfs[]`, `attempt_cand` (inline) |
-| `RETRY` | after a failed VM attempt behind a prefilter, step or re-seed? | the hybrid's loop tail | `pcrec_reseed_rows[]` |
-| `BOUND` | how many start positions can match at all? | the loop header | `start_max` (inline, DFA), `attempt_max` (inline, VM) |
-| `RECOVER` | given a match END, where does it start? | after the forward scan | `dfa_search_starts[]` |
+| slot | the question | asked at | today | accepts / hands (§1.6) |
+|---|---|---|---|---|
+| `WINDOW` | can a match begin before some position computed from the END? | the caller-facing entry, once | `pcrec_emit_end_window_clamp` (inline) | accepts `LOWER` (the caller's startpos); hands `LOWER` |
+| `PRESENCE` | does the window hold every necessary landmark at all? | the entry, once | `req_admits[]` | accepts `LOWER`; hands `VERDICT` (+ the gate's `HIT` to FIRST [r2.1 S-N1]) |
+| `WIDTH` | can the remaining subject hold a match at all? | the VM entry, once | `root_minw` test (inline) | accepts `LOWER`; hands `VERDICT` |
+| `FIRST` | where does the first scan begin? | the entry, once | `req_uses[]` | accepts `HIT`; hands `LOWER` |
+| `NEXT` | how is the next candidate start found? | the loop: at `s0` (DFA), between attempts (ATTEMPT, VM entry and retry) | `dfa_pfs[]`, `attempt_cand` (inline) | accepts `LOWER`; hands `CAND` (+ `WINDOW` from a hybrid's prefilter) to the VERIFIER |
+| `RETRY` | after a failed VM attempt behind a prefilter, step or re-seed? | the hybrid's loop tail | `pcrec_reseed_rows[]` | accepts the failed `CAND`; hands `LOWER` back to NEXT (re-entry) or the next `CAND` (step) |
+| `BOUND` | how many start positions can match at all? | the loop header | `start_max` (inline, ATTEMPT), `attempt_max` (inline, VM) | hands `UPPER` to the LOOP HEADER |
+| `RECOVER` | given a match END, where does it start? | after the forward scan | `dfa_search_starts[]` | accepts the END and the entry's `LOWER`; hands `START` to the CALLER |
+
+Three successors are not slots [r2.1 S-N1(e)]: the VERIFIER (the forward
+machine, the ATTEMPT loop's attempt, or the VM attempt: accepts `CAND`, and
+`WINDOW` where its slot hands one), the LOOP HEADER (accepts `UPPER`), and the
+CALLER (accepts `START` and the match end; re-enters at E1 for find-all). The
+structural check (§3.5) reads them as `accepts` sets like any slot's.
 
 ### 1.3 The walk, and what it does not do
 
@@ -153,35 +267,78 @@ const CandRow *cand_select(CandSlot slot, CandRoute route, const CandSel *s, uin
   part of the refactor. It would evaluate predicates today's code never reaches,
   and predicates have observable side effects: `pcrec_find_byte_rate` records
   its first ask, the ask is what puts `RX_FINDINGS` into the artifact
-  (`pcrec_find_stamp`, `src/core/findings.c:373`), and the facts layer's `used`
-  column records every ask (§3.3 item 2).
-- **Slots read each other only through the walk.** Three predicates read another
-  slot's SELECTION, and that dependency is the slot DAG: `PRESENCE`'s G1 row
-  (`dominated`) reads `NEXT`'s choice (`dfa_cand_scan`, `emit_dfa.c:7034`);
-  `FIRST`'s handoff row reads `PRESENCE`'s verdict (`req_handoff_applies` calls
-  `req_admit`, `:7336`); `RETRY`'s `adaptive-dense` row reads `NEXT`'s scanned
-  set (`pcrec_dfa_cand_ppm`, `:7079`). Each keeps its call; none restates the
-  other slot's predicate (`litscan_k82h.md` r1 C-C10's rule).
+  (`pcrec_find_stamp`, `src/core/findings.c:373`), the facts layer's `used`
+  column records every ask (§3.3 item 3), and a predicate can `pcrec_ctx_fail`.
+- **The invariant is a SET, not an order** [r2 sound-n1]. No artifact surface
+  records ask ORDER: `used` is a per-fact yes/no (`facts.c:115`), and
+  `RX_FINDINGS` reads a boolean written after every emitter has run
+  (`findings.c:373-380`). So the refactor's obligation is: (a) the SET of
+  predicates evaluated per artifact is today's, except additions the commit
+  declares and shows to be pure (C5b's BOUND reads, §3.2); and (b) no newly
+  evaluated predicate reaches an assertion, because the one order-sensitive
+  effect is which internal error wins when two predicates assert. The trace
+  (§3.3 item 5) still compares ORDERED sequences, because a reorder it sees is
+  a change of the skeleton the refactor promised not to make.
+- **(b)'s population is derived** [r2.1 S-N5]. `assert_reach.py` walks the
+  call graph from every predicate root (`inventory.tsv`'s PRED, WALK and
+  INLINE members, 34) and lists every `pcrec_ctx_fail` it reaches
+  (`assert_reach.tsv`). 13 roots reach an assertion, through 8 sites in 5
+  definitions: `ofs_test_of` (`emit_dfa.c:6106`, `:6111`), `pf_dfa_start_set`
+  (`:6668`, `:6671`), `vm_start_assert_starts` (`:6779`, reached from N7),
+  `pf_scan_set_of` (`:6922`, reached from P3 and RETRY) and the byte-rate
+  prior's `find_derive_byte_rate` (`src/core/findings.c:305`, `:309`). The
+  facts layer adds one (`src/facts/req.c:252`, the `req_*` facts' shared walk,
+  which asserts on the first ask whoever asks). One more assertion sits beside
+  an INLINE site rather than under a predicate: BOUND's one-way check in
+  `emit_attempt` (`emit_dfa.c:9374-9382`), which stays in the body after C5.
+  The only predicates the refactor ADDS to an artifact's ask set are C5b's
+  BOUND reads (§2.3 item 4): `dfa_interior_dead` and the `start_anchor` fact,
+  and neither reaches any site in the list. So (b) holds for C5b by the
+  population, not by the sentence; a later commit that adds an ask re-runs the
+  script.
+- **Slots read each other only through the walk.** A predicate that needs
+  another slot's SELECTION calls `cand_select` (or today's walk) for it; it
+  never restates that slot's predicate (`litscan_k82h.md` r1 C-C10). Revision 1
+  named three such reads and claimed none restates; that was false for BOUND
+  [r2 sound-M5]. The slot DAG of SELECTION reads is:
+
+  | reader | reads | today | after |
+  |---|---|---|---|
+  | P3 `dominated` (G1) | NEXT, on the artifact's route (`CR_DFA` or `CR_ATTEMPT`) | `dfa_cand_scan` `:7034` (calls) | unchanged |
+  | F1 `handoff` | PRESENCE | `req_handoff_applies` calls `req_admit` `:7336` | unchanged |
+  | R4 `adaptive-dense` | NEXT's scanned set | `pcrec_dfa_cand_ppm` `:7079` (calls) | unchanged |
+  | P2 `one-attempt`, DFA arm | BOUND on `CR_ATTEMPT` | RESTATES B1∨B2 (`engine == ATTEMPT && dfa_interior_dead(s1u)`, `:7141`) | calls (C5b) |
+  | P2 `one-attempt`, VM arm | BOUND on `CR_VM` | RESTATES B3∨B4 (`start_anchor != NONE`, `:7138`) | calls (C5b) |
+  | N7 `first-class` | BOUND on `CR_VM` | RESTATES (declines where B3/B4 apply, `:6813`) | calls (C5b) |
+  | R3 `anchored` | BOUND on `CR_VM` | RESTATES (`start_anchor != NONE`, `emit_vm.c:11090`) | calls (C5b) |
+  | N12 `pred-memchr` (`attempt_cand`) | BOUND on `CR_ATTEMPT` | RESTATES B1∨B2 as its own loop (`:4110`) | calls (C5b) |
+
+  The four restatements agree with BOUND today only because BOUND is itself a
+  direct read of the same fact or machine property. Any new or changed B row
+  (D-2b's own fix, a VM B row reading the machine on hybrids, any §4 bound row)
+  would leave them behind; reading BOUND makes that impossible. The SELECTION
+  graph is acyclic: BOUND reads nothing, NEXT reads BOUND, PRESENCE reads NEXT
+  and BOUND, FIRST reads PRESENCE, RETRY reads NEXT and BOUND.
 
 ### 1.4 The mapping column
 
 `where_to_start.md` §1.1's four strengths, sharpened to the cases the inventory
 actually contains:
 
-| `map` | a hit (or the slot's event) says | rows |
-|---|---|---|
-| `EXACT0` | the hit IS a candidate start | `memchr*`, `byte-class*`, `first-*` |
-| `EXACTK` | a candidate starts `k` before the hit | `offset-set*`, `run-pinned*` |
-| `EXACTPRED` | a candidate starts one AFTER the hit (a predecessor byte) | ENG_ATTEMPT `memchr` |
-| `EXACTREV` | (future) a reverse walk from the hit records the candidate | D151's row |
-| `WINDOWLO` | no start below `n − W` | `window` |
-| `WINDOWHI` | no start above `n − minw` (none at all if the window is too short) | `ceiling` |
-| `LOWERBOUND` | no start below `hit − K`; scan forward from there | `handoff` |
-| `PRESENCE` | absence of the landmark in the window proves no match | `emitted`, `set-leads` |
-| `ONE` | at most one start position exists (0, or `search_from`) | the bound rows |
-| `RECOVER` | the start is read from the end (reverse machine) or is `search_from` (pinned) | `reverse-pass`, `pinned` |
-| `STEP` / `RESEED` / `ADAPT` | the retry's next candidate: advance one character, re-call the prefilter, or switch by gap | the reseed rows |
-| `NONE` | nothing is skipped | every fallback |
+| `map` | a hit (or the slot's event) says | rows | `hands` |
+|---|---|---|---|
+| `EXACT0` | the hit IS a candidate start | `memchr*`, `byte-class*`, `first-*` | `CAND` |
+| `EXACTK` | a candidate starts `k` before the hit | `offset-set*`, `run-pinned*` | `CAND` |
+| `EXACTPRED` | a candidate starts one AFTER the hit (a predecessor byte) | N12 (ENG_ATTEMPT `memchr`) | `CAND` |
+| `EXACTREV` | (future) a reverse walk from the hit records the candidate | D151's row | `CAND` (give-up: `LOWER`) |
+| `WINDOWLO` | no start below `n − W` | `window` | `LOWER` |
+| `WINDOWHI` | no start above `n − minw` (none at all if the window is too short) | `ceiling` | `VERDICT` |
+| `LOWERBOUND` | no start below `hit − K`; scan forward from there | `handoff` | `LOWER` |
+| `PRESENCE` | absence of the landmark in the window proves no match | `emitted`, `set-leads` | `VERDICT` |
+| `ONE` | at most one start position exists (0, or `search_from`) | the bound rows | `UPPER` |
+| `RECOVER` | the start is read from the end (reverse machine) or is `search_from` (pinned) | `reverse-pass`, `pinned` | the start |
+| `STEP` / `RESEED` / `ADAPT` | the retry's next candidate: advance one character, re-call the prefilter, or switch by gap | the reseed rows | `CAND` / `LOWER` (re-entry) |
+| `NONE` | nothing is skipped | every fallback | the slot's identity |
 
 The column is DATA for checks and the listing. No emitter branches on it (the K84
 rule: a reader tests a field that names a property, and `map` names one).
@@ -198,49 +355,229 @@ Three postures exist today, and the refactor writes each down per row:
   rows, `adaptive-dense`/`adaptive` (`hyb_reseed.md` §4's contract), `ceiling`.
 - `FIXED`: the row must never move the give-up surface. Rows: `handoff`
   (Frank's Q10: declined on a count-collapsed prefilter so the deny flag never
-  moves it).
+  moves it), and PRESENCE's route-keyed `noscan` payload, K65 set-rest and K66
+  whole-run: they exist exactly to give a no-DFA-scan route a linear no-match
+  proof that does not depend on the prior's pick (K65/K66) [r2 sound-M2].
 
 D151 Q4 ruled the reverse-walk row `ONE_WAY`. The column makes the K82-vs-D148
 difference a visible property instead of a sentence in two notes.
+
+### 1.6 Typed handoffs and the re-entry graph [r2 sound-M5, frank-reentry]
+
+Frank asked whether the start table can be re-entered, for example VM then
+prefilter. **Yes, and today's artifacts already do it**: the table is asked
+once per question at COMPILE time, but the emitted search runs the selected
+rows as a small state machine at RUN time, and three of its edges loop back.
+The refactor makes every edge DATA: each row declares what it `hands` (§1.1),
+each slot what it `accepts` (§1.2), and each edge below is a pair the skeleton
+wires. A structural check (§3.5) fails if a row hands a type its successor slot
+does not accept.
+
+**The handoff types**, each with the soundness obligation the handing row owes:
+
+| type | meaning | the row's obligation |
+|---|---|---|
+| `LOWER` | no match starts below `x` | every match start ≥ the accepted lower bound is ≥ `x` (nothing skipped); on a re-entry, the row's PROGRESS obligation below |
+| `UPPER` | no match starts above `x` | every match start ≤ `x` |
+| `CAND` | `x` is the next position that can start a match | `x ≥` the accepted `LOWER`, and no match starts in `[accepted LOWER, x)` [r2.1 S-N1(d)]. Today's VM retry satisfies the first half by construction: the prefilter searches from `attempt_position` and the loop assigns its answer (`emit_vm.c:13280-13290`) |
+| `WINDOW` | the candidate's match lies in `[x, e)` | every match starting at `x` ends by `e` (H3: dropped on a cut-bearing program, `pcrec_vm_prefilter_window`) |
+| `VERDICT` | NOMATCH now, or pass the accepted bound through unchanged | NOMATCH only where no attempt could succeed |
+| `HIT` [r2.1 S-N1(e)] | `x` is the LEFTMOST occurrence of the gate's landmark at or after the accepted `LOWER` | no occurrence in `[accepted LOWER, x)` (`litscan_k82h.md` §1.1a's contract, which the handoff's soundness depends on) |
+| `START` [r2.1 S-N1(e)] | `x` is the reported match's start | `x` is the leftmost-first start of the match ending at the accepted END, and `x ≥` the accepted `LOWER` |
+
+**The edges** (E1-E10 are shipped; E11-E12 are §4's sockets):
+
+| # | from (hands) | to (accepts) | where it is emitted today | re-entry? |
+|---|---|---|---|---|
+| E1 | caller (`LOWER` = startpos) | WINDOW | every entry; the position domain (§2.5) applies first | — |
+| E2 | WINDOW W1 (`LOWER`) | PRESENCE, FIRST, NEXT | `pcrec_emit_end_window_clamp` raises `search_from` | — |
+| E3 | PRESENCE (`VERDICT`, and `HIT` = the gate's leftmost hit `c` [r2.1 S-N1(e)]) | FIRST (accepts `HIT`) | `pcrec_emit_req_byte_check` | — |
+| E4 | FIRST F1 (`LOWER` = `max(search_from, c − K)`) | NEXT | `emit_req_handoff`'s `handoff_position` → `fwd.from` (DFA body) or the prefilter's startpos (`first`, `emit_vm.c:13413`) | — |
+| E5 | NEXT on the DFA body (`CAND`) | the VERIFIER (the forward machine, re-seeded per `reseeds`) | `dfa_form_derive` | **yes, inside the scan** [r2.1 S-N1(c)]: a hit the verifier rejects re-enters the scan. On EXACTK rows `cand` is `k` BEHIND the hit, so the scan resumes below a byte it has already seen |
+| E6 | NEXT on a hybrid's inlined prefilter (`CAND` = `window[0][0]`, `WINDOW` = `window[0][1]` under `mrl_win`) | the VM attempt loop (`attempt_position`, `window_end`) | `vm_emit_search_body` `:13416-13426` | — |
+| E7 | **RETRY (`LOWER` = the failed attempt's position, advanced one character by K49) → NEXT on the inlined prefilter**, which hands E6's `CAND`/`WINDOW` again | the VM attempt loop | `retry_win` (`emit_vm.c:13281`) and the adaptive `retry_seed` (`:13329`) | **yes: the "VM then prefilter" loop** |
+| E8 | NEXT on the VM-only hat N7 (`CAND`) | the VM attempt; after a failed attempt the loop advances and RE-SEEKS (the hat's own re-entry) | `pcrec_emit_vm_start_seek` | **yes** |
+| E9 | BOUND (`UPPER`) | the ATTEMPT / VM loop header | `start_max` (`emit_dfa.c:9385`), `attempt_max` (`emit_vm.c:13479`) | — |
+| E10 | the artifact's return (`START` and the match END) | the CALLER, who re-enters at E1 with `LOWER` = the end (find-all) | the caller-driven loop, `match_api.md` §3.1; the entry re-applies the position domain (K73's offset-0 rule, K75's alignment) to the new `LOWER` | **yes: find-all** |
+| E11 | (future) NEXT `rev-inner` give-up (`LOWER` = the resume point, past the previous landmark hit `h`) | NEXT's forward scan (accepts `LOWER`); the row that wires the edge is FIRST's `handoff-rev`, selected at compile time | §4.1 | yes |
+| E12 | (future) RETRY on `CR_VM` (`LOWER`) | NEXT N7's seek | §4.3, K90 | yes |
+
+[r2.1 S-N1(e)] revision 2 wrote E11 as "→ FIRST `handoff-rev`", which handed
+`LOWER` into a slot that accepts only `HIT`: the edge was ill-typed, and the
+check §3.5 promises would have rejected the note's own socket. At run time
+the give-up hands `LOWER` to NEXT's scan; FIRST is where the row is SELECTED.
+
+**Termination of every cycle: a per-row PROGRESS obligation** [r2.1
+S-N1(a)-(c)]. Revision 2 said a re-entering row "inherits the termination
+proof by declaring `hands = LOWER`". It does not: `LOWER` is a soundness type
+(nothing skipped), and a row can satisfy it while re-entering at the same
+position forever. So each re-entering edge carries its own PROGRESS argument,
+written in the row's review and checked there (the structural check can see
+that an edge re-enters; it cannot prove the advance):
+- **E5** (inside the scan): on EXACTK rows `cand = hit − k` can sit below
+  bytes the scan already read, and the cycle still terminates because `_ofsskip` returns a `cand ≥ scan_position`
+  (`pf_emit_ofs`, `emit_dfa.c:6520-6524`: `scan_position = cand`) and the
+  verifier consumes at least one byte before the scan is asked again.
+- **E7, E8**: K49's character advance (`pcrec_enc_advance`, never zero) moves
+  the failed attempt's position before NEXT is asked again.
+- **E10**: on a NON-empty match the new `LOWER` is the end, past the start. On
+  an EMPTY match `end == start`, and the strict advance is the CALLER's
+  empty-match rule (`match_api.md` §3.1, "The empty-match advance rule",
+  `:885`), not the artifact's: the artifact's obligation ends at reporting the
+  span [r2.1 S-N1(b)].
+- **E11** (future): the landmark search must resume PAST the previous hit `h`.
+  A scan restarted at `s* < h` re-finds `h`, and the walk from `h` reaches the
+  same `s*` again, which is a cycle with every type obligation met
+  [r2.1 S-N1(a)].
+- **E12** (future): as E7, K49's advance before the re-seek.
+
+**RECOVER's accepted `LOWER`.** The reverse pass keeps the ENTRY's `search_from`
+as its lower bound, never the handoff's (`litscan_k82h.md` Q6): RECOVER accepts
+E2's `LOWER`, not E4's. The edge table makes that a declared input, which is
+what keeps a later FIRST row from silently narrowing the reverse pass.
+
+**What the refactor does with this.** The no-mover refactor declares `hands` on
+every row and `accepts` on every slot as data, and checks the pairs; it moves
+no emitted handoff text. The emitted state machine is the same; what changes is
+that a new row (§4) is reviewed against a written edge, not against prose.
 
 ---
 
 ## 2. The inventory
 
-### 2.1 How it was counted (K35)
+### 2.1 How it was derived, and how we know it is complete (K35) [r2 sound-M2/M3/M6, checks-M1]
 
-Three instruments, all in `start_table/`, none reading this note:
+Revision 1 hand-listed ten sites, and both critics found sites it did not name.
+For a no-mover refactor the inventory IS the claim, so revision 2 derives it by
+TWO INDEPENDENT DERIVATIONS and one CROSS-RECORD, and checks them against one
+another. [r2.1 S-N4] Revision 2 said "three methods that share no source"; that
+was false: method 3 takes its family from `call_graph.txt`, so it is not
+independent of method 1. Methods 1 and 2 share no source (a parse of `src/`;
+the compiler's output). Method 3's independent content is which sites someone
+found worth defending, and it is read against method 1, never as a third vote.
+All instruments are in `start_table/` and read nothing in this note.
 
-- `site_census.sh` greps `src/` for every decision table, every inline start
-  decision and every reader of either (`site_census.txt`). That gives 5 tables,
-  5 inline decisions plus the 2 route-fixed VM seed lines, and the reader
-  counts used below.
-- `row_census.py` compiles the whole `.rxt` corpus and reads the STAMPS (never
-  `src/`) in four arms: engine auto / `--engine=vm` × `-e byte` / `-e utf8`.
-  It uses `emit_sweep.py`'s own `enumerate_corpus`, so it and the sweep cannot
-  disagree about which patterns exist. 3,595 distinct patterns; 3,221-3,230
-  compile per arm (`row_census.txt`, `.tsv`). It also records JOINT keys where
-  one stamp conflates two routes' rows (§2.4 D-1).
-- `anchor_agree.py` compares the two derivations of "every match starts at one
-  position" on the ENG_ATTEMPT population (`anchor_agree.txt`, §2.4 D-2).
+1. **The call graph** (`call_graph.py` → `call_graph.txt`). It parses every
+   top-level definition under `src/`, headers included (1,892 at revision 2.1:
+   functions, tables, initializer and string data, types, function-like and
+   object-like macros, so that `DFA_SELECT(...)` reaches `dfa_select`; revision
+   2 parsed 1,392 and missed types, sized tables, string constants and header
+   `static inline`s [r2.1 C-N1]), draws an edge for every definition a body
+   names (a call, a function pointer stored in a table row, a table walked; a
+   TYPE is never an edge), and computes:
+   - R, everything reachable from the two emitters (`pcrec_emit_dfa`,
+     `pcrec_emit_vm`), each member tagged by whether the three search-body
+     writers (`emit_unanchored`, `emit_attempt`, `vm_emit_search_body`), the
+     two stamp writers, or only the emitter's plan reach it;
+   - SEEDS, the landmark reads: every `pcrec_fact_*` accessor `facts.def`
+     declares except the E1 shape facts (`kinds`, `nullable`), the route read
+     `pcrec_artifact_has_dfa_scan`, and the four MACHINE landmark producers
+     (`unanch_start`, `dfa_interior_dead`, `cand_from_live_seeds`,
+     `pcrec_dfa_cand_ppm`) plus the VM program properties read as fields
+     (`root_minw`, `mrl_win`, `nclamp`, `prefilter_collapsed`). The machine
+     list is the one hand input; it is the row contract's `landmark` column,
+     and it is named in the script so a reviewer can contest it;
+   - the FAMILY: members of R from which a seed is reachable (plus every
+     function a family table stores, plus the ROW TYPES: every family table's
+     element type and the types it embeds by value [r2.1 C-N1]): **110
+     definitions + 15 seeds** (revision 2: 99; the eleven added are nine row
+     types, among them `DfaCand`, `DfaPf`, `ReqAdmitRow`, `PcrecReseedRow`,
+     plus `dfa_matches[]`'s `DfaMatch` (NOTSTART) and the `pcrec_reseed_nrows`
+     count);
+   - the SITES: every conditional line in a family body that names a seed, a
+     family member, or a local bound from one: **149** (the added one is
+     `vm_plan_reseed`'s walk bound, `pcrec_reseed_nrows`).
+2. **The deny-delta census** (`deny_census.py` → `deny_census.tsv`,
+   `deny_transitions.tsv`, `deny_hidden.tsv`). Every distinct corpus pattern
+   (3,595) is compiled at default and under each of the 13 start-family
+   deny/force flags, in four arms (auto / `--engine=vm` × byte / utf8): 201,320
+   compiles. A MOVER is an artifact whose emitted bytes differ. Each mover is
+   attributed to the start stamps that moved with it (route-keyed, so a stamp
+   shared by two routes' rows is split); a mover whose bytes moved while NO
+   start stamp did is HIDDEN, and its first differing emitted line is
+   fingerprinted. A decision site no stamp reports is therefore found by its
+   emitted TEXT. It reads bytes and stamps only. The 13 flags are a hand
+   choice; [r2.1 C-N3] a 1-in-10 sample over the other 29 `--list-axes` flags
+   (`allflags_sample.tsv`, §3.3 item 4) found one more flag that moves a start
+   row without changing the route (`-fno-length-prune`, through `Vm.mrl_win`).
+3. **The sabotage anchors, a cross-record** (`sabotage_anchors.py` →
+   `sabotage_anchors.tsv`). Every anchor site of every sabotage row (463 row
+   files, 462 distinct ids — S169 is shared by two files, a finding in the
+   re-check record — 480 sites: `SAB_FILE` and `SAB_FILE2`, every target file)
+   is mapped to the definition it sits in, by the call graph's own parse. A
+   row is in the start family iff its owner is in the call-graph family, so
+   this method's FAMILY comes from method 1 [r2.1 S-N4]. **Owner resolution is
+   total on `src/`** [r2.1 C-N1]: revision 2 left 61 sites with owner `?` (a
+   comment block, a struct, a `.def` row, a header) and classed them OTHER,
+   which dropped five start-family rows (S282 in `DfaCand`, S299 the
+   `req_run` fact row, S475/S479/S496 the verb/callout conjunct comments). The
+   resolution is now, in order: the innermost definition; a `facts.def` row →
+   its fact seed (the graph's own seed rule); another `.def` row → the row,
+   family iff a decision SITE names it; a header comment → the definition it
+   heads; a file-scope directive; a file outside `src/` (the graph's scope);
+   and anything else in `src/` is a HARD ERROR. Today: def 440, outside 24,
+   datarow 11, lead 3, factrow 1, filescope 1, unresolved 0.
+
+**The completeness argument.**
+- `inventory_check.py` fails unless every family member and seed has exactly
+  one disposition line in `inventory.tsv` and that file names nothing the graph
+  does not. Today: 125 / 125 (TABLE 5, WALK 6, PRED 27, EMIT 19, INLINE 1,
+  READER 9, PROJ 11, ROUTE 3, BODY 3, LANDMARK 15, PLAN 5, NOTSTART 12,
+  TYPE 9). Every NOTSTART line carries its reason (the machine-form census,
+  the match-here axis, the MRL storage). A future site enters the family
+  through the graph and fails the check until it is dispositioned.
+- **Methods 2 and 3 are reconciled MECHANICALLY** [r2.1 checks]. Revision 2
+  said "every hidden fingerprint is mapped" in prose. `reconcile.py` reads
+  `reconcile_map.tsv` and fails on: a start stamp key a deny-census mover
+  moved that no line maps to a member (10 keys, 10 mapped); a hidden-mover
+  fingerprint that matches no line or two (5,192 hidden movers over five
+  members: the prior's ask `req_byte_dominated_by` 3,494, the fact stamp
+  `pcrec_fact_req_run` 1,594, `pcrec_fact_req_byte` 55, P4's body
+  `pcrec_emit_req_byte_check` 46, and `OUTSIDE:§2.5` 3, the collapse rung's
+  `ENGINE_SEL`); a mapped member not in `inventory.tsv`; and an OTHER sabotage
+  row whose anchor text names a family identifier (0). Its failing direction
+  is measured: two map lines removed → `UNMAPPED STAMP VM_START_SCAN`, 12
+  unmapped fingerprints, exit 1.
+- Every family sabotage row's owner is dispositioned (it must be: the family IS
+  the graph's), and every RE-AIM row's anchor overlaps the edit set (§3.5).
+- **What the methods found that revision 1 did not name** (each now in §2.2):
+  K65 set-rest (`emit_req_set_rest` `:1267`) and K66 whole-run
+  (`req_run_tests` `:1041`) — family EMIT members with route reads, and the
+  `-fno-req-run`/`-fno-req-byte` hidden-mover fingerprints; `prefix_k.c`'s admission — the only
+  `src/opt/` family member (LANDMARK), S187/S188; the hybrid-prefilter route
+  dispatch on `job->engine` (`pcrec_emit_dfa_engine` `:10271`, ROUTE) and the
+  entry gate `fit.chosen == ENGM_DFA` (`:8854`, `:8867`, `:9152`), which
+  together decide that an ATTEMPT hybrid's inlined body is an ATTEMPT customer;
+  `pcrec_vm_prefilter_window`, the WINDOW handoff (E6); `dfa_search_is_pinned`
+  and its 7 pointer-comparing readers; `vm_render_listing`'s second H1 reader.
+- **What the methods cannot see.** A start decision made by a definition that
+  reads no landmark (a constant choice) is not a decision. A decision read only
+  at run time inside emitted text (the adaptive re-seed's gap test) is the row's
+  payload, not a compile-time site; it is dispositioned through its emitter.
+
+The populations below come from `deny_census.py`'s per-arm stamp census, which
+is `row_census.py`'s census plus its DENY ARMS [r2 checks-M4], written to
+`row_census.tsv` from the same compiles (`row_census.py` alone reproduces any
+arm). `anchor_agree.py` compares the two derivations of "every match starts at
+one position" on the ATTEMPT population (§2.4 D-2b).
 
 ### 2.2 The table, in first-match order
 
 Columns:
 - **pop** is the corpus artifact count in the arms where the row is reachable.
   `a/b` means auto/byte; `vm/b` means `--engine=vm`/byte; `a/u` and `vm/u` are
-  the utf8 twins.
-- **today** is the site the row replaces.
-- **predicate** is today's function, reused by pointer.
+  the utf8 twins. Route-keyed where a stamp serves two routes [r2 sound-M1].
+- **predicate** is today's function, reused by pointer (except the EDIT SET,
+  §3.1).
 
-**WINDOW** (routes DFA, ATTEMPT, VM; the caller-facing entry only: on the DFA
+**WINDOW** (routes DFA, ATTEMPT, VM; the caller-facing entry only: on a DFA body
 under `fit.chosen == ENGM_DFA`, so the VM hybrid's inlined prefilter never clamps
-and the VM entry clamps before calling it; `emit_dfa.c:8869`, `:9166`,
+and the VM entry clamps before calling it; `emit_dfa.c:8867`, `:9166`,
 `emit_vm.c:13170`):
 
 | # | row | deny | predicate | map | pop |
 |---|---|---|---|---|---|
-| W1 | `window` | — (the bit is a FACT deny: `-fno-end-window`, bit 29, empties `end_window`, `facts.def`) | `pcrec_fact_end_window(cx) >= 0` (`emit_dfa.c:938`) | `WINDOWLO` | a/b 288, a/u 0 (the fact declines every non-boundary encoding) |
+| W1 | `window` | — (the bit is a FACT deny: `-fno-end-window`, bit 29, empties `end_window`, `facts.def`) | `pcrec_fact_end_window(cx) >= 0` (today `w < 0` returns, `emit_dfa.c:938-939`) | `WINDOWLO` | a/b 288, a/u 0 (the fact declines every non-boundary encoding) |
 | W2 | `none` | — | `cand_always` | `NONE` | rest |
 
 **PRESENCE** (all routes; the entry; today `req_admits[]`, `emit_dfa.c:7249`,
@@ -250,16 +587,28 @@ asked by `pcrec_emit_req_byte_check` `:1375`, `req_lead_byte` `:7280`,
 | # | row | deny | predicate | map | pop (a/b) |
 |---|---|---|---|---|---|
 | P1 | `none` | — | `req_none_applies` `:7193` (no `req_byte` and no `req_run` of length ≥ 2) | `NONE` | 1,178 |
-| P2 | `one-attempt` | — | `req_one_attempt_applies` → `req_route_one_attempt` `:7135` (VM: `start_anchor` ≠ NONE ∧ (exact hybrid ∨ frameless); DFA: ENG_ATTEMPT ∧ `dfa_interior_dead(s1u)`) | `NONE` | 263 |
+| P2 | `one-attempt` | — | `req_one_attempt_applies` → `req_route_one_attempt` `:7135` (VM arm: BOUND(`CR_VM`) ≠ `all` ∧ (exact hybrid ∨ frameless); DFA arm: route ATTEMPT ∧ BOUND(`CR_ATTEMPT`) ≠ `all`) — RESTATED today, a BOUND read after C5b [r2 sound-M5] | `NONE` | 263 |
 | P3 | `dominated` | — | `req_dominated_applies` `:7201` → `req_byte_dominated_by` `:7171` over `dfa_cand_scan` (reads NEXT) | `NONE` | 1,198 |
-| P4 | `set-leads` | 45 | `req_set_leads_applies` `:7212` | `PRESENCE` | hidden: stamps `"emitted"` |
+| P4 | `set-leads` | 45 | `req_set_leads_applies` `:7212` | `PRESENCE` | stamps `"emitted"`; deny-delta 14 (a/b), 8 (a/u) |
 | P5 | `emitted` | — | `cand_always` | `PRESENCE` | 582 (incl. P4) |
+
+PRESENCE's payload carries one ROUTE-KEYED composition, `u.admit.noscan`
+[r2 sound-M2]: where the artifact has no DFA scan (`!pcrec_artifact_has_dfa_scan`:
+route VM-ONLY), the emitted pre-check also tests every other member of the
+necessary set with its own `memchr` (**K65 set-rest**, `emit_req_set_rest`
+`:1259`, decision `:1267`) and compares the whole run before the window (**K66
+whole-run**, `req_run_tests` `:1023`, decision `:1041`). These are not
+first-match alternatives — they compose with P4/P5 — so they are not rows (a row
+would be the product-row smell §0a item 2 rejects); they are a function of
+(the selected P row, the route). Posture `FIXED` (§1.5). Sabotage rows S277,
+S278, S316, S459 sit on them. Their population is the VM-ONLY share of P4/P5:
+124 VM-ONLY artifacts in auto/byte stamp `REQ_WHY "emitted"`, 125 in auto/utf8. The bodies stay byte-stable; the C1 trace records each decision.
 
 **WIDTH** (route VM; `emit_vm.c:13234`):
 
 | # | row | deny | predicate | map | pop |
 |---|---|---|---|---|---|
-| H1 | `ceiling` | — | `v->root_minw >= PCREC_MINW_MAX` | `WINDOWHI` | 6 in every arm |
+| H1 | `ceiling` | — | `v->root_minw >= PCREC_MINW_MAX` | `WINDOWHI` | 6 in every arm (stamp and emitted test agree, §3.4) |
 | H2 | `none` | — | `cand_always` | `NONE` | rest |
 
 The ceiling row's predicate reads a `Vm` field. So `CandSel` gains a
@@ -268,78 +617,104 @@ The ceiling row's predicate reads a `Vm` field. So `CandSel` gains a
 filled by the one VM caller and NULL elsewhere. That pointer is the only new
 input.
 
-**FIRST** (all routes; today `req_uses[]`, `emit_dfa.c:7364`, asked by
+**FIRST** (all routes asked; today `req_uses[]`, `emit_dfa.c:7364`, asked by
 `pcrec_emit_req_byte_check`'s return `:1392`, the body assertion `:8878`, the
-stamp `:7391`):
+stamp `:7391`; VM-ONLY asks it too and F1 declines there on `!has_dfa_scan`
+[r2 sound-n3]):
 
 | # | row | deny | predicate | map | pop |
 |---|---|---|---|---|---|
-| F1 | `handoff` | 46 | `req_handoff_applies` `:7332` (calls PRESENCE; `pcrec_artifact_has_dfa_scan`; K finite; not collapsed; the `\G`-hybrid decline) | `LOWERBOUND` | a/b 163 (37 hybrid), a/u 280 (78 hybrid) |
+| F1 | `handoff` | 46 | `req_handoff_applies` `:7332` (calls PRESENCE; `pcrec_artifact_has_dfa_scan`; K finite; not collapsed; the `\G`-hybrid decline) | `LOWERBOUND` | a/b 163 (DFA-UNANCH 116, DFA-ATTEMPT 10, HYB-UNANCH 34, HYB-ATTEMPT 3), a/u 280 (192, 10, 75, 3) |
 | F2 | `scan-from-startpos` | — | `cand_always` | `NONE` | rest |
 
 **NEXT**. Today `dfa_pfs[]` (`emit_dfa.c:6863-6898`, asked by `dfa_pf_of`
 `:6903` (5 call sites), `vm_start_row` `:6931` (3), `pf_scan_set_of` `:6915`,
 `pcrec_dfa_scan_state_written` `:7435`, `dfa_form_derive` `:8378`) plus
-`attempt_cand` (`:4105`; 4 readers: emission `:9323`/`:9511`, G1 `:7044`, the
+`attempt_cand` (`:4105`; 4 readers: emission `:9323`, G1 `:7044`, the
 `<string.h>` test `:9997`, the stamp `:10411`). Every DFA row's predicate is gated
 on `s->forward` and on `UnanchStart.kind` (`unanch_start` `:4191`, ONE derivation),
-so it is only ever reached on the ENG_UNANCH forward machine. The S490 argument,
+so it is only ever reached on an ENG_UNANCH forward machine. The S490 argument,
 `emit_dfa.c:6650`.
+
+**N3/N4's real admission is not in their predicate** [r2 sound-M3]. They apply
+iff `UnanchStart.ofsk.nsel > 0`, and `nsel` is the output of
+`pcrec_prefix_ksets` (`src/opt/prefix_k.c:179-326`, called from `unanch_start`
+`:4319`): a cost model over the byte-rate prior (`pcrec_find_set_ppm` `:186`)
+with two admission rules, the MATERIAL bar (`:280`) and the measured "the scan
+must move off offset 0" rule (`:281-308`, the call graph's site `:308`).
+Sabotage S187/S188 sit there. That is the "pick INSIDE a row" level (the survey's
+family 3.2): the table reads its result and does not own it (§2.5). It also
+decides N1/N2's reachability, which is D-4.
 
 | # | row | routes | deny | predicate | map | scan | pop (a/b; a/u) |
 |---|---|---|---|---|---|---|---|
 | N1 | `run-pinned-bounded` | DFA | 16\|32 | `pf_run_bounded_applies` `:6051` | `EXACTK` | OFS + VERIFY | 18; 0 |
-| N2 | `run-pinned` | DFA | 16\|32 | `pf_run_applies` `:6054` (common `:6023`) | `EXACTK` | OFS + VERIFY | 114; 3 |
-| N3 | `offset-set-bounded` | DFA | 16 | `pf_ofs_bounded_applies` `:5990` | `EXACTK` | OFS | 48; 71 |
-| N4 | `offset-set` | DFA | 16 | `pf_ofs_applies` `:5993` (common `:5984`) | `EXACTK` | OFS | 333; 530 |
+| N2 | `run-pinned` | DFA | 16\|32 | `pf_run_applies` `:6054` (common `:6023`, the identity clause: D-4) | `EXACTK` | OFS + VERIFY | 114; 3 |
+| N3 | `offset-set-bounded` | DFA | 16 | `pf_ofs_bounded_applies` `:5990` (admission: `prefix_k.c`) | `EXACTK` | OFS | 48; 71 |
+| N4 | `offset-set` | DFA | 16 | `pf_ofs_applies` `:5993` (common `:5984`; admission: `prefix_k.c`) | `EXACTK` | OFS | 333; 530 |
 | N5 | `first-memchr-bounded` | DFA | 47 | `pf_first_memchr_bounded_applies` `:6681` (core `pf_dfa_start_set` `:6648`, T = S, D148 add. 3) | `EXACT0` + re-seed | PF | 36; 25 |
 | N6 | `first-class-bounded` | DFA | 47 | `pf_first_class_bounded_applies` `:6679` | `EXACT0` + re-seed | PF | 34; 34 |
-| N7 | `first-class` | VM | 47 | `pf_vm_start_applies` `:6806` | `EXACT0` | VMSTART | 66 (vm/b 2,327); 68 (vm/u 2,352) |
+| N7 | `first-class` | VM | 47 | `pf_vm_start_applies` `:6806` (its anchoring conjunct `:6813` RESTATES BOUND(`CR_VM`); a BOUND read after C5b) | `EXACT0` | VMSTART | 66 (vm/b 2,327); 68 (vm/u 2,352) |
 | N8 | `memchr-bounded` | DFA | — | `pf_memchr_bounded_applies` `:5798` | `EXACT0` | PF | 162; 151 |
-| N9 | `memchr` | DFA | — | `pf_memchr_applies` `:5801` | `EXACT0` | PF | 775 (+33 ATTEMPT, D-1); 722 |
+| N9 | `memchr` | DFA | — | `pf_memchr_applies` `:5801` | `EXACT0` | PF | 775 (281 DFA + 494 hybrid); 722 (225 + 497) |
 | N10 | `byte-class-bounded` | DFA | — | `pf_bcls_bounded_applies` `:5804` | `EXACT0` | PF | 100; 101 |
 | N11 | `byte-class` | DFA | — | `pf_bcls_applies` `:5807` | `EXACT0` | PF | 538; 564 |
-| N12 | `pred-memchr` (NEW NAME, row ID only; stamps `"memchr"`) | ATTEMPT | — | `attempt_cand` `:4105` (s1u live ∧ the live-seed set `usable ∧ use_memchr`) | `EXACTPRED` | MLINE | 33; 33 |
-| N13 | `none` | DFA, ATTEMPT, VM | — | `cand_always` | `NONE` | — | 677 stamped (355 of them ATTEMPT, up to 64 the empty engine); VM-only 287 (vm/b 895) |
+| N12 | `pred-memchr` (NEW NAME, row ID only; stamps `"memchr"`) | ATTEMPT | — | `attempt_cand` `:4105` (s1u live ∧ the live-seed set `usable ∧ use_memchr`; its `anchored` loop `:4110` RESTATES BOUND(`CR_ATTEMPT`)) | `EXACTPRED` | MLINE | 33 (DFA 27 + HYB 6); 33 |
+| N13 | `none` | DFA, ATTEMPT, VM | — | `cand_always` | `NONE` | — | a/b: DFA-UNANCH 258, DFA-ATTEMPT 185, HYB-ATTEMPT 170, DFA/HYB-EMPTY 50/14, HYB-UNANCH 0; VM-ONLY 287 (vm/b 895) |
 
 Row N12 needs a row name distinct from N9, because the walk and the checks key on
 identity. It still stamps `"memchr"` (its `stamp` projection), so
-`RX_DFA_PREFILTER` keeps today's token (D-1). The VM hybrid's inlined prefilter
-body is a DFA-route customer of N1-N11/N13. It takes the DFA rows: auto/byte has
-1,125 hybrids, with 500 on `memchr`, 198 on `offset-set` and 184 on `none`
-(`row_census.txt`'s `HYBRID:` keys).
+`RX_DFA_PREFILTER` keeps today's token (D-1). **The VM hybrid's inlined
+prefilter body takes the rows of ITS machine's route** [r2 sound-M1]: an
+ENG_UNANCH prefilter is a `CR_DFA` customer of N1-N11/N13, an ENG_ATTEMPT
+prefilter (any pattern with a BOT) a `CR_ATTEMPT` customer of N12/N13. In
+auto/byte: 935 hybrids on `CR_DFA`, 176 on `CR_ATTEMPT` and 14 empty on
+`CR_ATTEMPT` (`row_census.tsv`'s `HYB-UNANCH:` / `HYB-ATTEMPT:` keys; revision
+1's `HYBRID:` key counted both, and the ATTEMPT ones a second time under
+`ATTEMPT:`). The split corrects revision 1 in two places: all 184 of its
+`HYBRID: "none"` were ATTEMPT (170) or empty (14) hybrids, not DFA-route
+customers (an ENG_UNANCH hybrid prefilter stamps `none` 0 times), and 6 of its
+500 hybrid `memchr` were N12's predecessor scan. F1 also fires on the ATTEMPT
+route (10 DFA + 3 hybrid in auto/byte).
 
 **RETRY** (route VM, asked only where `fit.prefilter` holds, the caller's guard
-kept: `vm_plan_reseed`, `emit_vm.c:11107`; today `pcrec_reseed_rows[]`
-`emit_vm.c:11010`, whose predicates are a closed tag read by a `switch`,
-`vm_reseed_holds` `:11082`; the refactor turns each tag into a predicate function
-with the same body):
+kept: `vm_plan_reseed`, `emit_vm.c:11107`, decided before the VM body, n2; today
+`pcrec_reseed_rows[]` `emit_vm.c:11010`, whose predicates are a closed tag read
+by a `switch`, `vm_reseed_holds` `:11082`; the refactor turns each tag into a
+predicate function with the same body):
 
 | # | row | deny | predicate | map | pop (a/b) |
 |---|---|---|---|---|---|
 | R1 | `exact` | — | `Vm.mrl_win` | `STEP` (or the clamp recompute) | 562 |
 | R2 | `clamped` | — | `Vm.nclamp > 0` | `RESEED` | 112 |
-| R3 | `anchored` | — | `start_anchor` ≠ NONE | `STEP` (never reached) | 48 |
+| R3 | `anchored` | — | BOUND(`CR_VM`) ≠ `all` (today RESTATED as `start_anchor` ≠ NONE; a BOUND read after C5b) | `STEP` (never reached) | 48 |
 | R4 | `adaptive-dense` | 37 | `pcrec_dfa_cand_ppm(cx) · cal.gap > 10⁶` (reads NEXT) | `ADAPT`, armed | 13 |
 | R5 | `adaptive` | 37 | `cand_always` | `ADAPT`, probation | 390 |
-| R6 | `fixed` | — | `cand_always` | `STEP` | 0 at default (the deny's landing row) |
+| R6 | `fixed` | — | `cand_always` | `STEP` | 0 at default; 403 a/b, 420 a/u under the deny arm (COUNTED, `row_census.tsv`) |
 
-**BOUND** (`emit_dfa.c:9333-9388` for ATTEMPT, `emit_vm.c:13471-13483` for VM):
+**BOUND** (`emit_dfa.c:9333-9388` for ATTEMPT, `emit_vm.c:13471-13483` for VM).
+An ATTEMPT hybrid asks BOUND TWICE, on two routes: `CR_ATTEMPT` in its inlined
+prefilter and `CR_VM` in its VM loop [r2 sound-M1]; `^(a)(b|c)` emits
+`start_max = 0` in the prefilter and `attempt_max = search_from` in the loop.
 
 | # | row | routes | deny | predicate | map | pop |
 |---|---|---|---|---|---|---|
-| B1 | `bot` | ATTEMPT | — | `dfa_interior_dead(d, s1u) ∧ dfa_interior_dead(d, s1g)` (`#ifdef PCREC_NO_GSTART` folds the second into the first) | `ONE` (0) | 293 |
-| B2 | `gstart` | ATTEMPT | — | `dfa_interior_dead(d, s1u)` | `ONE` (`search_from`) | 21 |
+| B1 | `bot` | ATTEMPT | — | `dfa_interior_dead(d, s1u) ∧ dfa_interior_dead(d, s1g)` (`#ifdef PCREC_NO_GSTART` folds the second into the first) | `ONE` (0) | 293 (DFA 136 + HYB 157) |
+| B2 | `gstart` | ATTEMPT | — | `dfa_interior_dead(d, s1u)` | `ONE` (`search_from`) | 21 (DFA 16 + HYB 5) |
 | B3 | `anchored` | VM | — (FACT deny bit 28 empties `start_anchor`) | `start_anchor == BOT` | `ONE` (0, via `attempt_max = search_from`) | a/b 332, vm/b 468 |
 | B4 | `gstart` | VM | — (bit 28, as B3) | `start_anchor == GSTART` | `ONE` | a/b 5, vm/b 20 |
-| B5 | `all` | ATTEMPT, VM | — | `cand_always` | `NONE` | ATTEMPT 74; VM 1,141 |
+| B5 | `all` | ATTEMPT, VM | — | `cand_always` | `NONE` | ATTEMPT 74 (60 + 14); VM 1,141 |
 
 Today the VM's two values share ONE emitted line (`attempt_max = search_from`)
-and differ only in the stamp (`RX_VM_START`). The rows keep that: `u.bound` is
-the same string on B3 and B4. The DFA's `start_max` keeps its three strings.
+and differ only in the stamp (`RX_VM_START`). The rows keep that: `u.bound` holds
+the same string on B3 and B4, so the literal MOVES into the row (§3.5: S263 is
+re-aimed) [r2 sound-M6]. The ATTEMPT route's `start_max` keeps its three strings,
+also in `u.bound`.
 
 **RECOVER** (today `dfa_search_starts[]` `emit_dfa.c:7894`, asked by
-`dfa_search_start_of` `:7902` and through `dfa_search_is_pinned` at 7 sites):
+`dfa_search_start_of` `:7902` and through `dfa_search_is_pinned` at 7 sites,
+which today compare the selected row's POINTER to `&dfa_search_starts[0]`
+`:7917`; after C3 they read `u.recover.pinned` [r2 sound-m2]):
 
 | # | row | routes | deny | predicate | map | pop (a/b) |
 |---|---|---|---|---|---|---|
@@ -347,24 +722,32 @@ the same string on B3 and B4. The DFA's `start_max` keeps its three strings.
 | S2 | `reverse-pass` | DFA, ATTEMPT | — | `cand_always` | `RECOVER` (reverse) | 2,685 (incl. 388 ATTEMPT + 64 empty, D-2) |
 
 **Row count:**
-- 37 rows: W 2, P 5, H 2, F 2, N 13, R 6, B 5, S 2.
+- 37 rows: W 2, P 5, H 2, F 2, N 13, R 6, B 5, S 2; plus PRESENCE's route-keyed
+  `noscan` payload (K65, K66).
 - 7 deny bits act on these rows directly: 16, 32, 45, 46, 47, 22, 37.
 - 5 more act through FACT denies: 28, 29, 30, 31, 44 (`facts.def`'s deny
-  column). That makes the 12 start-family bits the deny arms sweep (§3.3).
+  column). That makes the 12 start-family bits; the deny arms also sweep the
+  force bit 20 (`-fprefilter-collapse`) [r2 sound-m4].
 - No bit is renumbered (§3.7).
 
 ### 2.3 Does the table reproduce today's choice on every route?
 
 By construction, before any measurement:
 
-1. Every row's predicate IS today's function (pointer identity, not a re-spelling).
-   The two exceptions are mechanical, and each has a sabotage witness that already
-   exists:
+1. Every row's predicate IS today's function (pointer identity, not a re-spelling),
+   except the declared edit set (§3.1, `refactor_edit_set.tsv`). Revision 1
+   counted two mechanical exceptions; the derived count is larger
+   [r2 sound-M6]:
    - the reseed tags become five two-line functions (S441 plants the `anchored`
      arm);
    - `attempt_cand`'s boolean becomes N12's predicate, with its `CandSet` output
-     carried in `CandSel` as `pf_dfa_start_set`'s `t` is today. S81 and S82
-     plant it.
+     carried in `CandSel` as `pf_dfa_start_set`'s `t` is today (S81, S82);
+   - seven INLINE conditions become predicate functions: W1 (`w < 0`), H1
+     (`root_minw >= PCREC_MINW_MAX`), B1/B2 (the `a_bot`/`a_gst` pair with its
+     `#ifdef PCREC_NO_GSTART`), B3/B4 (the `start_anchor` `if`). Their only
+     witnesses today are the anchors S169 (H1), S263 (B3/B4's literal) and none
+     for B1/B2 (§3.4 adds them);
+   - C5b's four BOUND restatements become BOUND reads (§1.3).
 2. Within each slot, the rows keep today's relative order. Today's arrays are
    per-question already, so a slot's rows ARE one of today's arrays, or (NEXT) one
    array plus a row on a route no existing row serves. BOUND, WINDOW and WIDTH
@@ -373,27 +756,72 @@ By construction, before any measurement:
    never consulted `dfa_pfs[]` (`dfa_cand_scan`'s branch `:7039`,
    `dfa_prefilter_name`'s branch `:10402`, `pcrec_dfa_scan_state_written`'s
    UNANCH test), so adding the ATTEMPT route cannot move an UNANCH selection, and
-   vice versa.
-4. Every body site asks the same (slot, route) at the same point (§1.3). So the
-   set of predicates EVALUATED, and their order, is today's, which is what keeps
-   `RX_FINDINGS` and the facts `used` column still.
+   vice versa. The route of the hybrid's inlined body is `job->engine`; a
+   `CandSel` built anywhere from `fit.chosen` is the M1 mis-route, and it is
+   the C1 trace (row identity, not stamps) that would show it, because N9 and
+   N12 both stamp `"memchr"` [r2 sound-M1].
 
-Per route, then:
-- **DFA unanchored:** W, P, F, N, S.
-- **DFA attempt:** W, P, F, B, N (N12), S (S2).
-- **pinned:** S1 on the DFA route.
-- **VM-only:** W, P, H, N (N7/N13), B.
-- **Hybrid:** W, P, H, F on the VM entry; N/S on the inlined DFA body; R and B
-  in the VM loop.
+   **There is no "one dispatch"** [r2.1 S-N2]. Revision 2 said the route "is
+   taken at the one dispatch that already decides it"; `emit_dfa.c` tests
+   `job->engine` at fifteen places, each choosing `CR_DFA` vs `CR_ATTEMPT`
+   (or EMPTY) for itself:
+
+   | line | definition | what it decides |
+   |---|---|---|
+   | `:4354` | `dfa_engine_is_empty` | the EMPTY route |
+   | `:4386`, `:4458`, `:4519` | `dfa_table_name`, `dfa_scan_edge_name`, `dfa_uniform_folds` | machine-form stamps (NOTSTART readers) |
+   | `:6656` | `pf_dfa_start_set` | N5-N7's route conjunct (S490's anchor) |
+   | `:7039` | `dfa_cand_scan` | G1 reads N12 or NEXT |
+   | `:7090` | `pcrec_dfa_cand_ppm` | R4 reads the scanned set |
+   | `:7141` | `req_route_one_attempt` | P2's DFA arm (also C5b's) |
+   | `:7428` | `pcrec_dfa_scan_state_written` | NEXT's scan-state reader |
+   | `:7865` | `start_pinned_applies` | S1 |
+   | `:9995` | `pcrec_emit_prologue` | the `<string.h>` decision |
+   | `:10271` | `pcrec_emit_dfa_engine` | THE body dispatch |
+   | `:10382`, `:10402`, `:10483` | `dfa_scan_name`, `dfa_prefilter_name`, `dfa_prefilter_offsets` | the stamps |
+
+   They agree today because each reads the same field. The refactor adds ONE
+   derivation, `cand_route_of(cx)` (C2, in `refactor_edit_set.tsv`), and from
+   C3 every one of the fifteen reads it, so a later change to the route rule
+   (the route class in `CandSel`, filed below) is one edit, not fifteen. The
+   fifteen lines are `line` entries of the edit set, so the sabotage rows
+   anchored on them are derived re-aims (S490 at C3).
+4. Every body site asks the same (slot, route) at the same point (§1.3). So the
+   SET of predicates evaluated is today's, except C5b's declared BOUND reads,
+   which evaluate `dfa_interior_dead` (pure: no fact, no prior, no assertion) on
+   `CR_ATTEMPT` and the `start_anchor` fact on `CR_VM` — a fact P2, N7 and R3
+   already ask, so the `used` column cannot move [r2 sound-n1].
+
+Per route class, then — the (slot, route) pairs ONE artifact asks, in the
+code's ask order [r2 sound-M1, sound-n2, sound-n3]:
+
+| route class | entry (route) | DFA-shaped body (route) | loop | also |
+|---|---|---|---|---|
+| DFA-UNANCH | W, P, F (`CR_DFA`) | RECOVER (asked first, `dfa_search_is_pinned`, `:8829`), N, S (`CR_DFA`) | — | N on `CR_VM` for the `VM_START_SCAN` stamp |
+| DFA-ATTEMPT | W, P, F (`CR_ATTEMPT`) | N12/N13 then B (`CR_ATTEMPT`), S2 by stamp | — | as above |
+| DFA-EMPTY | W, P, F | the empty machine (`dfa_engine_is_empty`, read inside F1/S1) | — | as above |
+| VM-ONLY | W, P, H, F (F1 declines) (`CR_VM`) | — | N7/N13, B (`CR_VM`) | — |
+| HYB-UNANCH | W, P, H, F (`CR_VM`) | N, S (`CR_DFA`) | RETRY (planned before the body), B (`CR_VM`) | — |
+| HYB-ATTEMPT | W, P, H, F (`CR_VM`) | N12/N13, **B (`CR_ATTEMPT`)**, S2 by stamp | RETRY, **B (`CR_VM`)** | BOUND asked on two routes |
+| HYB-EMPTY | as HYB-* | the empty machine | RETRY, B | — |
+
 - **utf8:** no slot reads the encoding. Rows read facts whose derivations do
   (`end_window`'s decline, `start_set`'s `start_cls` assertion, the
-  `req_byte` prior gate), and those are not touched.
+  `req_byte` prior gate, the run pick that D-4 turns on), and those are not
+  touched.
+- **The route set is coarser than the predicates** [r2 sound-n4]: HYBRID vs
+  VM-ONLY (`fit.prefilter`, read inside N7 and P2) and EMPTY
+  (`dfa_engine_is_empty`, read inside F1 and S1) are route distinctions
+  re-tested inside predicates. The `routes` column cannot express them, so
+  there is a third axis inside the predicates. The refactor keeps those tests
+  where they are (no mover); a later change can carry the route CLASS in
+  `CandSel` so the predicates read it instead of re-testing. Filed, not folded.
 
 The sweep (§3.3) is then the measurement that this argument has no hole.
 
 ### 2.4 Where today's sites disagree
 
-The census found three. **None changes an answer.** A no-mover refactor preserves
+The census found five. **None changes an answer.** A no-mover refactor preserves
 each; each fix is its own ruled change.
 
 - **D-1. One token, two mechanisms.**
@@ -401,20 +829,21 @@ each; each fix is its own ruled change.
     BEGINS with" on ENG_UNANCH (N9, offset 0). On ENG_ATTEMPT it means "a
     `memchr` for the byte BEFORE a candidate" (N12, offset −1:
     `(?m)^ERROR`'s newline).
-  - **Population:** 33 ATTEMPT artifacts in auto/byte, inside N9's stamped 808
-    (`row_census.txt`, `ATTEMPT:DFA_PREFILTER`).
+  - **Population:** 33 (27 DFA + 6 HYBRID) ENG_ATTEMPT artifacts in auto/byte stamp it,
+    DFA and HYBRID alike: D-1 also fires on ATTEMPT hybrids (`(?m)^(a)`:
+    `REQ_WHY "dominated"` elides the `a` pre-check on a predecessor-`\n` scan)
+    [r2 sound-n6].
   - **What disambiguates it:** `RX_DFA_SCAN`. The spec says so.
   - **Who is fooled:** G1 (`dfa_cand_scan` `:7044`) reads N12's byte as "the
     byte scanned", and `req_byte_dominated_by`'s density compare then prices a
     predecessor-byte scan as if it were a start-byte scan. No answer moves (an
     elided pre-check is an optimization). But the dominance argument ("the scan
     already tests the byte the pre-check would") is about a different byte
-    position.
+    position. R4's read of the same byte is NOT a victim: the predecessor byte
+    IS the scan's stop density, which is what R4 prices.
   - **Refactor:** keeps the token (N12's `stamp` projection) and the G1 read.
   - **Fix:** a separate change, either G1 declining `EXACTPRED` rows (a `map`
-    read) or a stamp value `pred-memchr`. That is an abi event + spec hunk.
-    Recommend the first: it moves only the 33 artifacts' pre-check emission, and
-    only where it was elided. §6 Q4.
+    read) or a stamp value `pred-memchr`. Recommend the first. §6 Q4.
 - **D-2. `RX_DFA_START "reverse-pass"` on artifacts with no reverse machine.**
   - **What:** `dfa_search_starts[]`' fallback stamps every non-pinned DFA scan,
     including the 388 ENG_ATTEMPT and the 64 empty-engine artifacts.
@@ -427,7 +856,8 @@ each; each fix is its own ruled change.
   - **Refactor:** keeps the token (S2 routes DFA|ATTEMPT).
   - **Fix:** a third value (`attempt-start`) on ATTEMPT/empty. That is an abi
     event and a stamp-vocabulary change (D80 spec hunk, readers by grep). §6 Q5.
-- **D-2b. Two derivations of "one start position", disagreeing on one pattern.**
+- **D-2b. Two derivations of "one start position", disagreeing on one pattern —
+  inside one artifact** [r2 sound-M1].
   - **The two derivations:** the ATTEMPT route reads the MACHINE (B1/B2:
     `dfa_interior_dead`). The VM route, G2's VM arm and `RETRY`'s `anchored` row
     read the AST FACT `start_anchor`.
@@ -435,11 +865,18 @@ each; each fix is its own ruled change.
     agree on `bot`, 20 agree on `gstart` and 74 agree on unanchored. One
     disagrees: `(?(DEFINE)(?<g>\Ga))(?&g)`, where the machine proves `gstart`
     and the fact says unanchored. The fact does not see through the call.
+  - **Inside one artifact:** the capturing twin `(?(DEFINE)(?<g>\Ga))(?&g)(b)`
+    is an ATTEMPT HYBRID: its inlined prefilter emits
+    `start_max = search_from /* fully \G-anchored */` (B2) while its VM loop has
+    no `attempt_max` (B5, the fact says unanchored). Re-probed on this build.
+    So D-2b is a disagreement between two routes of ONE artifact, which is why
+    BOUND is keyed per (slot, route) and never per artifact.
   - **Direction:** this is the direction `emit_dfa.c:9358-9372` calls
     "welcome": a tighter bound on the DFA, a looser one on the VM. It is
     correct either way, and only the VM runs extra attempts that fail.
   - **Refactor:** keeps route-specific predicates (B1/B2 vs B3/B4) and the
-    one-way assertion `:9374-9382`.
+    one-way assertion `:9374-9382`. C5b's readers read BOUND on THEIR route (P2's
+    VM arm reads `CR_VM`), so D-2b's split is preserved exactly.
   - **Fix:** teaching `start_anchor` to see through a non-recursive call is a
     FACT change. It is a mover on the VM route and its own ruling. §6 Q6.
 - **D-3. The listing's own text has drifted from the row.**
@@ -452,6 +889,39 @@ each; each fix is its own ruled change.
   - **Refactor:** moves every `desc` beside its row VERBATIM, the stale text
     included, so stream 5 stays identical.
   - **Fix:** the declared listing commit C7 (§3.2) corrects it.
+- **D-4. The run pin vs the offset-k pick: two derivations of "which byte the
+  scan tests"** [r2 sound-M4; survey §4.2].
+  - **What:** N1/N2 (`run-pinned[-bounded]`) apply only if the pin's scan offset
+    EQUALS the offset-k model's (`pf_run_applies_common`, `emit_dfa.c:6037-6041`,
+    an identity clause). The two offsets come from different pickers: the run
+    reader picks by rarity with a RIGHTMOST tie (`findings.c:518`); `prefix_k`
+    picks by its cost model with a LEFTMOST strict `<` (`prefix_k.c`).
+  - **Probed on this build** (all DFA artifacts):
+
+    | pattern | arm | `REQ_RUN` | offsets | `DFA_PREFILTER` | `REQ_WHY` |
+    |---|---|---|---|---|---|
+    | `\d\dzq` | byte | `7a71@0` | `0,2*,3` | run-pinned | dominated |
+    | `\d\dzq` | utf8 | `7a71@1` | `0,2*` | **offset-set** | **emitted** (+ `REQ_HANDOFF "2"`) |
+    | `\d\dxyz` | byte | `78797a@2` | `0,2*` | **offset-set** | **emitted** |
+    | `[0-9][0-9]hello` | byte | `68656c6c6f@3` | `0,4*` | **offset-set** | **emitted** |
+    | `abc$` | byte | `616263@1` | `0,1*,2` | run-pinned-bounded | dominated |
+    | `abc$` | utf8 | `616263@2` | `0,1*` | **offset-set-bounded** | **emitted** (+ `REQ_HANDOFF "0"`) |
+
+  - **Systematic under utf8, not a tie:** the prior is NONE under utf8, so the
+    run reader takes the rightmost member while `prefix_k` keeps the leftmost;
+    the pin and the pick then disagree on whole families. This — not a coverage
+    accident — is why `run-pinned-bounded` is 0 and `run-pinned` 3 under utf8
+    (§2.2, revision 1's §3.4 read it as a gap).
+  - **What it moves:** N1/N2's reachable population on a whole encoding,
+    `REQ_WHY` (dominated vs emitted) and `REQ_HANDOFF` on the affected artifacts.
+    No answer: the offset-set row plus a separate run pre-check is exact too.
+  - **Refactor:** preserves it: N1/N2's predicate keeps the identity clause by
+    pointer, and both pickers stay where they are (§2.5: the pick inside a row is
+    not the table's).
+  - **Fix:** a separate ruled change, [TIE-ALIGN] re-scoped from "ties" to "one
+    landmark-candidate ranking with one tie rule" (the survey's family 3.2), which
+    removes the identity clause. It moves prefilter FORMS by construction, so it
+    needs D119's bench evidence. §6 Q10.
 
 Not disagreements, but recorded because a reader will ask:
 - The K73 offset-0 seek moves `search_from` on the DFA body and
@@ -474,16 +944,29 @@ answers a different question:
   K49's retry advance (`pcrec_enc_advance`, `emit_vm.c:13270`). These define
   which positions are LEGAL candidates under the encoding and the caller
   contract. They are the encoding backend's text and apply to every row's
-  output. They are not alternatives to any row, and no row may move them. They
-  stay a fixed layer under the table. Their selections (`startpos-guard`,
-  `utf-check`) are caller-contract axes with their own first-match rows in the
-  listing.
+  output and to every re-entering `LOWER` (§1.6 E7, E8, E10). They are not
+  alternatives to any row, and no row may move them. They stay a fixed layer
+  under the table. Their selections (`startpos-guard`, `utf-check`) are
+  caller-contract axes with their own first-match rows in the listing.
+  [r2.1 sibling lens] They are themselves a dispersed decision family (K73's
+  rule in 3 spellings, K50 site 2's "THREE 'try the next start' mechanisms",
+  `emit_dfa.c` ~`:9390`, and K49's advance), filed as its own
+  FILED-not-scheduled row **[DEC-POSDOM]** (`docs/dev/plan.md`), evaluated
+  after the fold and never folded into `cand_rows[]`.
+- **The pick INSIDE a row** [r2 sound-M3, sound-M4]. Which byte at which offset
+  a row scans — `prefix_k.c`'s cost model and admission (N3/N4), the run reader
+  (`findings.c:518`), the pin (`kset.c`), the set pick (`req_set_pick`) — is a
+  RANKING, not a first-match choice (D152: "an argmin is a planner"). The rows
+  read the ranking's result through facts and `UnanchStart`. The refactor does
+  not touch it; its one cross-picker identity clause is D-4.
 - **The machine's start STATE.** `dfa_seeds[]` (`seeded`/`constant`) decides how
   an attempt's state is computed at a candidate, which is the verifier, not the
   candidate. The DFA hat's re-seed READS it (`pf_emit_moved_reseed`) and does
   not choose it.
 - **The match-here entry** (`dfa_matches[]`, `unwrapped`/`search-filter`): the
-  caller supplies the start, so there is nothing to find.
+  caller supplies the start, so there is nothing to find. (The call graph puts
+  it in the family only because it reads the empty-engine route; it is NOTSTART
+  in `inventory.tsv`.)
 - **Scan edges and stay skips** (`dfa_edges[]`, `dir_fwd_skip`): skips INSIDE an
   attempt's walk, past bytes that keep a non-start state where it is. They read
   no start landmark.
@@ -501,149 +984,397 @@ answers a different question:
 - **Implement, then replace** (memory `pcrec-general-mechanisms-not-special-cases`:
   "implement-then-replace is fine"). The new array and walk exist beside the old
   ones, and readers switch slot by slot.
-- **Functions stay; tables and walks move.** Every predicate and every emitter
-  function keeps its name, its file and its body text. What changes is the five
-  arrays, the inline `if` chains that become rows, `dfa_select`/`vm_plan_reseed`'s
-  loop, and each reader's call. This is what keeps 47 of 53 sabotage anchors in
-  place (§3.5) and every memfn manifest emitter name valid (C17 reads functions by
-  name, `tests/memfn/site_manifest.tsv`).
+- **Functions stay; tables, walks and a declared edit set move.** Every
+  predicate and every emitter function keeps its name, its file and its body
+  text, EXCEPT what `start_table/refactor_edit_set.tsv` lists [r2 sound-M6]:
+  the five arrays and six walks (`def`), the identifiers they retire (`token`),
+  and the inline predicate lines and BOUND restatements that become rows or
+  row reads, the stamp/listing readers C5 moves and the fifteen route tests
+  that read `cand_route_of` [r2.1 S-N2, S-N3] (`line`), each with its commit. That file is the plan's one
+  statement of what changes; the sabotage consequences are derived from it
+  (§3.5), and a commit that edits a line the file does not name is out of plan.
+  Every memfn manifest emitter name stays valid (C17 reads functions by name,
+  `tests/memfn/site_manifest.tsv`).
 - **D148 Q2's rename rides the NEXT-slot commit** (C3): `DfaPf` → `CandRow`'s
   `u.pf`, `DfaSel` → `CandSel`, `dfa_pfs[]` → `cand_rows[]`. It is the commit
   D151 Q5 scheduled, widened. D151 Q5 said "until `handoff-rev` exists". Frank's
   2026-10-06 direction moves the fold ahead of that row (§6 Q1).
 - **Every commit is a no-mover with no abi event**: abi stays 64, and no spec
-  sentence about an artifact moves. The one exception is C7, a declared
-  stream-5-only change.
+  sentence about an artifact moves. The exceptions are C7, a declared
+  stream-5-only change, and C3's spec hunk to `docs/spec/registry.md:267`, a
+  sentence about an INTERNAL (it names `dfa_select`) that goes stale when C3
+  deletes it (D80) [r2 checks-m8].
 
 ### 3.2 The commit sequence
 
 | commit | what | what moves |
 |---|---|---|
-| C0 | **instrument** (no `src/`): `emit_sweep.py` gains `--extra ARG` (repeatable, appended to streams 1-4 on both sides) and a sixth stream `--emit-facts` (streams 1/2's patterns, identity required); this note's three census scripts move to `tests/` or stay here (Q7) | nothing in `src/` |
-| C1 | **selection trace** under `-DPCREC_CAND_TRACE` (a compile-time knob, `OPTK_DEBUG`'s precedent `emit_dfa.c:4320`; scratch builds only): every one of the 10 decision sites (5 walks, 5 inline) prints `slot route row` to stderr. Reference traces are recorded at C1 over corpus × {auto, vm} × {byte, utf8} × {default, each start-family deny} | nothing in the default build (`#ifdef` text only: no emitted byte, no listing byte) |
-| C2 | **implement**: `CandRow`, `CandSlot`, `CandSel` (`DfaSel` + `vm`, typedef'd to the old name), `cand_select`, and `cand_rows[]` holding all 37 rows with today's predicates. No reader switched. Under `PCREC_CAND_TRACE` each old walk ALSO runs `cand_select` and aborts on a different row (a both-walks oracle for C3-C5) | nothing |
-| C3 | **replace NEXT + RECOVER**: `dfa_pf_of`, `vm_start_row`, `pf_scan_set_of`'s callers, `pcrec_dfa_scan_state_written`, `dfa_form_derive`, `dfa_search_start_of` and N12's four `attempt_cand` readers read `cand_select`; `dfa_pfs[]`/`dfa_search_starts[]` deleted; D148 Q2's rename; `run_cand_rows.sh` re-aimed (§3.5) | sabotage anchors S283, S284 (re-aimed into `cand_rows[]`) |
+| C0 | **instrument** (no `src/`): `emit_sweep.py` gains `--extra ARG` (repeatable, appended to streams 1-4 on BOTH sides, before `--pattern`), a sixth stream `--emit-facts` (streams 1/2's patterns, `--emit-facts=byte,utf8`, identity required), `--patterns-file` (constructed witnesses into streams 1-3) [r2 checks-m7], and per-arm DIFFER floors (§3.3 item 2) [r2 checks-M2]; every existing floor re-pinned to the measured reach (today 3,480 against a reach near 4,100; composition 32 against 38) [r2 checks-m4]; the census scripts move per Q7. **And the TRACE instrument** [r2.1 C-N2], so that C1 has something to run: (i) a seventh stream `--trace` that builds both sides with `-DPCREC_CAND_TRACE` — `build_from_rev` (`scripts/emit_sweep.py:327`, whose `:344` runs plain `make -j4 CC=…`) gains a `CFLAGS` pass-through, used on BOTH sides; (ii) the trace's stderr captured per compile, never mixed into the artifact on stdout; (iii) each record tagged with its pattern index and arm by the sweep, not by the compiler; (iv) a trace-DIFF tool that compares per-pattern ORDERED sequences and applies the commit's declared-multiplicity filter (C5b: records whose `site` is one of its BOUND readers, and nothing else); (v) a records-per-arm FLOOR (a trace arm that prints nothing passes any diff); (vi) a FAILING-DIRECTION control: a planted swap of two records and a planted reorder within one pattern, each of which the diff must report, run at C0 and kept as a sabotage row on the diff tool (S-id next free on main at build); also the full all-flag deny sweep (§3.3 item 4, ≈54 min at 6 jobs) | nothing in `src/` |
+| C1 | **selection trace** under `-DPCREC_CAND_TRACE` (a compile-time knob, `OPTK_DEBUG`'s precedent `emit_dfa.c:4320`; scratch builds only): every decision site `inventory.tsv` classes WALK or INLINE, the two ROUTE dispatches, K65/K66's decisions (`:1041`, `:1267`) and `prefix_k`'s admission outcome (`nsel`) print one record (§3.3 item 5). C1 byte-sweeps the trace build's stdout against the default build (the trace must move no emitted byte) | nothing in the default build (`#ifdef` text only) |
+| C2 | **implement**: `CandRow`, `CandSlot`, `CandSel` (`DfaSel` + `vm` + `route`, typedef'd to the old name), `cand_select`, `cand_route_of(cx)` (the ONE route derivation, §2.3 item 3 [r2.1 S-N2]), and `cand_rows[]` holding all 37 rows with today's predicates and the `hands`/`accepts`/`list[route]` columns. No reader switched. Under `PCREC_CAND_TRACE` each old walk ALSO runs `cand_select` and aborts on a different row (the both-walks FILTER oracle, run in both orders, §3.3 item 6) | nothing |
+| C3 | **replace NEXT + RECOVER**: `dfa_pf_of`, `vm_start_row`, `pf_scan_set_of`'s callers, `pcrec_dfa_scan_state_written`, `dfa_form_derive`, `dfa_search_start_of` and N12's four `attempt_cand` readers read `cand_select`, each body building its `CandSel` route from `cand_route_of(cx)`, and the fifteen `job->engine` tests (§2.3 item 3) reading it too [r2.1 S-N2]; `dfa_search_is_pinned` reads `u.recover.pinned`; `dfa_pfs[]`/`dfa_search_starts[]` deleted; D148 Q2's rename; `cand_rows_check.py` re-aimed (§3.5); the SPEC hunk: `registry.md:267`, and the readers `reader_grep.sh` finds outside `src/` [r2.1 C-N4] — `docs/spec/match_api.md:2348`, `:2441` and `docs/spec/tuning.md:2530` name `dfa_pfs[]`; `lib/CLAUDE.md:421`, `tests/codegen/CLAUDE.md`, `tests/mech/CLAUDE.md`, `tests/mech/run_sabotage_matrix.sh:2579`, `tests/codegen/run_cand_rows.sh:3` and the `Makefile:517` comment name retiring identifiers and move in the commit that retires them (C3's `dfa_pfs`/`dfa_select`, C4's `req_admit`, C5's `pcrec_reseed_rows` readers at C7) | re-aims (derived): S222, S283, S284, S490 |
 | C4 | **replace PRESENCE + FIRST**: `req_admit`/`req_use` read `cand_select`; `req_admits[]`/`req_uses[]` deleted; `pcrec_req_admit_row`/`pcrec_req_use_row` become projections of `cand_rows[]` | S462, S473 |
-| C5 | **replace RETRY + BOUND + WINDOW + WIDTH**: `vm_plan_reseed`'s loop → `cand_select`; the `VRS_P_*` tag and `vm_reseed_holds` deleted; the three inline bound strings, the end-window `if` and the root-minw `if` read their slot's row | S372, S441 |
-| C6 | **the listing reads the table**: `axes_dump.c`'s `prefilter`, `match`, `search-start`, `req-admit`, `req-use`, `hyb-reseed`, `vm-anchor-bound`, `end-window` sections project `cand_rows[]` by `axis`, printing today's `kind`, order and `desc` text byte for byte; `AXIS_DESC`'s start rows deleted (their text now lives on the rows) | nothing (stream 5 identical) |
-| C7 | **declared listing commit, stream 5 only, NOT an abi event**: D-3's stale desc corrected; `kind` becomes `list` for the five start axes that ARE lists now; spec hunk in `docs/spec/registry.md`; `tests/registry/` pins re-read | `--list-axes` text only |
+| C5 | **replace RETRY + BOUND + WINDOW + WIDTH**: `vm_plan_reseed`'s loop → `cand_select`; the `VRS_P_*` tag and `vm_reseed_holds` deleted; the inline bound strings (into `u.bound`), the end-window test and the root-minw test read their slot's row; AND their stamp and listing readers do too: `<PREFIX>_END_WINDOW`, `<PREFIX>_VM_START`, `<PREFIX>_VM_ROOT_MINW` and `--emit-ir`'s `root-minw` row project the row (the value still from its landmark) [r2 sound-m1]; `dfa_select` and its macros deleted with their last caller | S169, S263, S371, S372, S441 |
+| C5b | **BOUND readers** [r2 sound-M5]: P2 (both arms), N7's anchoring conjunct, R3 and `attempt_cand`'s `anchored` loop call `cand_select(BOUND, route)` instead of restating it. Byte-identical because each restatement equals its route's B rows today (§1.3); the ask set grows only by `dfa_interior_dead` on `CR_ATTEMPT` (§2.3 item 4), declared to the trace diff | S269, S274, S276, S492, and S441 again (R3's line, `emit_vm.c:11090`, which C5 also moves) [r2.1 S-N3] |
+| C6 | **the listing reads the table**: `axes_dump.c`'s `prefilter`, `search-start`, `req-admit`, `req-use`, `hyb-reseed`, `vm-anchor-bound`, `end-window` sections project `cand_rows[]` by `list[route]` (NOT `match`: `dfa_matches[]` stays outside, §2.5 [r2 sound-m3]), printing today's `kind`, order, listed name and `desc` text byte for byte; N12 has no listing; `AXIS_DESC`'s start rows deleted | nothing (stream 5 identical) |
+| C7 | **declared listing commit, stream 5 only, NOT an abi event**: D-3's stale desc corrected; `kind` becomes `list` for the start axes that ARE lists now; spec hunk in `docs/spec/registry.md`; `tests/registry/` pins re-read | `--list-axes` text only |
 
-C3-C5 can be one commit if the panel prefers fewer, larger diffs. The split exists
-so each re-aimed sabotage row is verified in the commit that moves it.
+**Sequencing against the kit's R4c** [Frank 2026-10-06, R-Q5; §6]: R4c (`memfn/docs/requests.md`
+R-4, main `05c33ce0`) lands BEFORE C1-C7, and C0 (no `src/`) runs in parallel
+with it. The edit set, the anchor census and every `refactor_edit_set.tsv` line
+number below were derived on pre-R4c main: C1-C7 RE-DERIVE them (the
+instruments re-run) on post-R4c main before the first edit. Once R4c has landed,
+a change to a migrated emitter's TEXT is kit work (D146/D147), not this fold's;
+the start DECISION reads inside those emitters (the kit's list B1-B18) stay
+pcrec-side and ARE this fold's edit set, taken as input from the kit's report.
+C0's full I2 (every axis x both comment tiers) is awaited by the kit: ping it
+when C0 merges. Serial order of the two decision-family refactors: this fold (A)
+first, then [DEC-FALLBACK] (B, whose STEP 0 census runs after C7 merges) [R-Q4].
+
+C5's stamp/listing readers are `line` entries of the edit set since revision
+2.1 (`END_WINDOW` `emit_dfa.c:10114`, `VM_START` `emit_vm.c:11558`, and the
+`--emit-ir` listing's `st->root_minw` test `emit_vm.c:9492`, which revision 2's
+`v->root_minw` line did not match) [r2.1 S-N3]; no current sabotage row
+anchors on them, which the derivation now shows rather than assumes.
+
+C3-C5b can be fewer, larger commits if the panel prefers. The split exists so
+each re-aimed sabotage row is verified in the commit that moves it, and the
+re-aim list per commit is `sabotage_anchors.tsv`'s `commit` column, not prose.
 
 ### 3.3 How each commit proves 0 movers
 
-Every commit C2-C6 runs, against its parent (`--ref HEAD~1`, both sides built by
+Every commit C1-C6 runs, against its parent (`--ref HEAD~1`, both sides built by
 the script from `git archive`):
 
-1. **`emit_sweep.py`, all five streams, `--features all`**, at default: streams 1
+1. **`emit_sweep.py`, all six streams, `--features all`**, at default: streams 1
    (`.c`, auto), 2 (`.c`, `--engine=vm`), 3 (`--emit-ir`), 4 (composition over
-   every `.rxt`/`.rxtin`), 5 (the seven `--list-*` dumps). Identity required on
-   all five, reach at the script's pinned floors.
-2. **The same with `--extra -e --extra utf8`** (C0's arm). Today's streams 1-3
-   never pass an encoding (`scripts/emit_sweep.py:429-450`), so without C0 the
-   utf8 half of every row (`a/u` above: 71 `offset-set-bounded`, 280 handoffs)
-   is unswept.
-3. **The `--emit-facts` stream** (C0). The facts listing's `used` column is the
-   one observable of WHICH predicates a walk evaluated, beyond `RX_FINDINGS`.
-   A walk that reorders or eagerly evaluates moves it and moves no `.c` byte
-   on any artifact whose byte rate was already asked.
-4. **The deny arms**, at C3, C4, C5 only (the commits that rewrite deny
-   filtering): streams 1-2 with `--extra -fno-<flag>` for each of the 12 bits
-   in §2.2. Each arm also runs at `-e utf8` for bits 16, 32, 46 and 47, whose
-   populations differ most by encoding. That is 16 sweep arms per commit. Each
-   arm is ~2 × 3,600 compiles, inside the per-change alpha tier's budget (D144
-   addendum 3). They run serially and in the background, one heavy run at a time
-   (memory `pcrec-box-concurrency`).
-5. **The selection trace** (C1's build) diffed against the C1 reference over the
-   same arms. It is stronger than bytes: it sees a row change between two rows
-   whose emitted text coincides (`run-pinned` vs `offset-set` on a model that
-   already tests the run: identical bytes, different rows). It is cheaper, so it
-   covers every deny arm at both encodings, all 12 bits × 2 encodings × 2
-   engines.
-6. `make test-codegen`, the registry suite, `run_cand_rows.sh`, the memfn
-   manifest check (C17), and mech on every re-aimed row (§3.5). The full
+   every `.rxt`/`.rxtin`), 5 (the seven `--list-*` dumps), and C0's stream 6
+   (`--emit-facts`, item 3) [r2.1 C-N7: revision 2 said "five" while adding a
+   sixth]. Identity required on all six, reach at the floors C0 re-pinned.
+2. **The `--extra` arms, each with a DIFFER floor** [r2 checks-M2, sound-m6,
+   checks-m5]. An arm that silently drops its flag makes both sides
+   byte-identical to the default arm and passes identity, so identity alone
+   cannot fail on the arm's own plumbing. Each arm therefore also counts, ON
+   EACH SIDE, the patterns whose bytes differ from the same side's default arm,
+   and fails below a floor:
+   - `-e utf8`: the byte corpus × utf8 (the utf8-NATIVE corpus is already
+     swept by stream 4, whose `-e utf8` arm is partial by design: a file that
+     declares `encoding byte` refuses, e.g. `compose_encoding_clash.rxtin`).
+     DIFFER floors, MEASURED [r2.1 C-M2] (`plain_arms.tsv`, the deny census run
+     with `--encoding=utf8` and `-i` as its two "flags"): byte → utf8 moves the
+     bytes of **3,188 of 3,221** auto artifacts and **3,189 of 3,222** vm ones,
+     plus 74 refusal moves each way counted separately; it moves a START stamp
+     on **674** (auto) and **341** (vm). Two floors per arm, because the whole-
+     byte count is near-total (the encoding is stamped on every artifact) and so
+     catches only a flag dropped outright, while the start-stamp count catches a
+     flag that reaches the stamp but not the start decisions.
+   - `-i` (caseless is its own start population; per-row `flags`/`encoding`/
+     `engine` columns stay stream 4's — 132/635/131 of the 4,606 rows — and the
+     note says so rather than claiming them). DIFFER floors, MEASURED [r2.1
+     C-M2]: every artifact's bytes move (`rx_info.flags` records the bit), so
+     the whole-byte floor is the population itself (3,221 / 3,222 byte, 3,229 /
+     3,230 utf8); the start-stamp floor is **1,752 / 1,567** (auto / vm, byte)
+     and **1,775 / 1,605** (utf8).
+   - **What a dropped `-e utf8` looks like to the deny floors** [r2.1 C-M2]. If
+     the `-e utf8` arm's plumbing dropped the flag on BOTH sides, each utf8 deny
+     arm would measure the BYTE delta against the BYTE default. Of the 13 auto
+     utf8 deny floors, 8 still pass then, because the byte delta is at least
+     the utf8 one (`-fno-run-prefilter` 132 vs 3, `-fno-start-set` 136 vs 127,
+     `-fno-req-set-lead` 14 vs 8, and `-fno-start-pinned`,
+     `-fno-vm-anchor-bound`, `-fno-req-byte`, `-fno-req-run-fold`,
+     `-fprefilter-collapse`); 4 fail only because utf8's population happens to
+     be the larger (`-fno-offset-skip` 513 vs 604, `-fno-req-handoff` 163 vs
+     280, `-fno-hyb-reseed` 403 vs 420, `-fno-req-run` 530 vs 572), which is
+     an accident, not a control. The controls that catch it BY DESIGN are the
+     asserted 0 for `-fno-end-window` at utf8 (byte reads 288) and the plain
+     utf8 arm's own DIFFER floors above.
+   - the deny arms (item 4), each with its own DIFFER floor from
+     `deny_census.tsv`, and a MANIFEST of named patterns that must differ
+     (exact-count floors disarm themselves; a manifest names irreplaceable
+     rows). **`-fno-end-window` at utf8 is an asserted EXACT 0** (W1's fact
+     declines every non-boundary encoding), not a floor, so the arm cannot read
+     as a dead flag.
+3. **The `--emit-facts` stream** (C0). The facts listing's `used` column records
+   which facts a predicate ASKED, per fact, yes/no. It varies on exactly six
+   facts over the corpus [r2 checks-m6] and so watches the rows that read
+   them: `start_anchor` (P2, N7, R3, B3/B4), `req_set` (P4), `req_whole_run`
+   (P4/P5, K66), `req_run_maxoff` (F1), `kset_walk` (N1-N4), `run_pin` (N1/N2).
+   It sees neither order nor count (§1.3). `--emit-facts=byte,utf8` compiles both
+   encodings in one call, so this stream needs no `--extra`.
+4. **The deny arms**, at C3, C4, C5 and C5b (the commits that rewrite deny
+   filtering or route reads): streams 1-2 with `--extra` for each of the 12
+   start-family deny bits AND `-fprefilter-collapse` (bit 20, which sets
+   `fit.prefilter_collapsed` that F1, P2's VM arm and R1 read; K39's witness is
+   no longer the only population) [r2 sound-m4], AND `-fno-length-prune`
+   (bit 7) [r2.1 C-N3]: it empties the MRL pruning that `Vm.mrl_win` records,
+   and R1 `exact` reads `mrl_win`, so it moves `VM_RESEED` with no route change
+   (11 `VM_RESEED` movers in each auto arm of the 1-in-10 sample, 0 under `--engine=vm`). Each arm runs at byte and
+   utf8: 28 arms per commit. Each arm is ~2 × 3,600 compiles; measured on this
+   Mac the whole deny census (4 base arms × 14 compiles × 3,595 patterns) took
+   about 23 minutes at 9 jobs (201,320 compiles); it runs serially and in the background, one heavy run at a
+   time (memory `pcrec-box-concurrency`).
+   **The other 29 flags** [r2.1 C-N3]. The 13 were a hand choice from the
+   start family. A 1-in-10 sample (360 patterns) over every OTHER flag
+   `--list-axes` names, in all four base arms (`allflags_sample.tsv`; 43,200
+   compiles in 321 s at 6 jobs, so the full sweep is ≈ 54 min at 6 jobs, ≈ 36
+   at 9) splits them three ways:
+   - **route inputs** (they change `ENGINE`, `VM_PREFILTER` or `DFA_SCAN`, and
+     the start rows follow the route): `-fprefilter`, `-fno-prefilter`,
+     `-fno-prefilter-collapse`, `-fno-atomic-discharge`, and part of
+     `-fno-splice-calls` and `-fno-ctx-node`. The table reads the route, so
+     these move rows by moving the table's input;
+   - **landmark inputs with no route change**: `-fno-length-prune` (above;
+     added to the deny arms), `-fno-ctx-node` (6: `DFA_PREFILTER`/`REQ_WHY`
+     on HYB-UNANCH: the context node changes the machine N's predicates
+     read), `-fno-splice-calls` (10: `REQ_WHY` on VM-ONLY: splicing changes
+     the tree the `req_*` facts read) and `-fno-cls-kit` (1: `REQ_WHY` on
+     VM-ONLY under utf8). These move the facts or the machine, never a
+     predicate's code, so they are inputs, not table decisions; the refactor
+     sweeps them because a fold that mis-reads an input would show there;
+   - **no start stamp moves** (the rest; their hidden movers fingerprint to
+     their own stamps: `RX_DFA_TABLE`, `RX_RESUME_FRAMES`, `RX_UTF_CHECK`, …).
+     Three of them (`-fno-atomic-discharge`, `-fno-scan-edge`,
+     `-fno-splice-calls`) first differ at `rx_info`'s `.flags` line, and on
+     `(?:\Ga|b)c` (no atomic group, no call) that line is the ONLY one that
+     moves: `.flags = 0ULL` → `4096ULL` / `2097152ULL` / `8192ULL`. That is
+     the [AXES-DENY-MASK] shape on bits 12 and 13 as well as the survey's 21,
+     a cross-note for lane flagbits (filed on the row's addendum).
+   The full sweep, all 29 at every pattern, is C0's deliverable; the sample is
+   what sized it and what put bit 7 in the arms.
+5. **The selection trace** (C1's build), specified [r2 checks-M3, sound-m5],
+   and run by C0's trace instrument (the `--trace` stream, the `CFLAGS`
+   pass-through in `build_from_rev`, stderr capture, the sweep-side
+   pattern-index/arm tags, the diff tool with its multiplicity filter, the
+   records floor and the planted swap/reorder control, §3.2 C0) [r2.1 C-N2]:
+   - **The record** is `pattern-index, arm, seq, slot, route, row, site` —
+     keyed per compile and per pattern, and ORDERED (`seq` is the ask's ordinal
+     within the compile). A diff compares each pattern's ordered sequence; a
+     corpus-wide multiset would cancel a swap between two patterns.
+   - **Printed at the walk's RETURN** (`dfa_select`'s return and
+     `vm_plan_reseed`'s chosen row today; `cand_select`'s return after C3), never
+     at a reader's use. An inline fallback left behind after C3 (ask, print,
+     then ignore the answer) would pass the trace, so the "no reader keeps an
+     inline chain" property is a STRUCTURAL check instead: after each commit no
+     `token` or `line` of `refactor_edit_set.tsv` assigned to that commit or an
+     earlier one survives in `src/` (grep).
+   - **The reference is regenerated from the PARENT every commit** (the parent
+     built with `-DPCREC_CAND_TRACE` from `git archive`), never recorded once at
+     C1: a stored reference goes stale on the first corpus change and teaches the
+     reviewer to re-record, which is how a control comes to share a source with
+     its subject.
+   - **Multiplicity is declared.** No commit may change a pattern's sequence
+     except by the additions it declares (C5b: records whose `site` is one of
+     its four BOUND readers); the diff filters exactly those and requires the
+     rest identical.
+   - **The trace build is NEVER the byte-sweep build.** Items 1-4 run on the
+     default builds; C1 additionally byte-sweeps the trace build against the
+     default build, so a trace that changed emitted bytes is caught.
+   - **What it proves for INLINE sites** [r2 sound-m5]: the five inline sites
+     (and K65/K66) have no walk today, so which branch prints `B2` or `W1` is
+     chosen by the C1 author — the same author whose mapping defines C2's rows.
+     For those sites the trace proves only that the print agrees with the
+     emitted text; the emitted BYTES (items 1-2) are the control. The trace is
+     stronger than bytes only at the walked sites, where it sees a row change
+     between two rows whose emitted text coincides (`run-pinned` vs
+     `offset-set` on a model that already tests the run).
+6. **The independent controls** [r2 checks-M3]:
+   - **The C2 both-walks oracle tests only the FILTER** (slot, route mask, deny
+     order, first-match), because the old walk and `cand_select` share every
+     predicate by pointer. It runs twice, OLD-then-NEW and NEW-then-OLD, because
+     a predicate with a side effect (`pcrec_find_byte_rate` records its first
+     ask) evaluated by the first walk is cached for the second.
+   - **The deny-delta census** is the independent control for row SELECTION:
+     it reads only bytes and stamps (no `cand_rows[]`, no trace), so a row whose
+     population moves under its own deny flag moves the census (§3.4).
+   - **The stamp-vs-text agreements** for rows the census reads two ways: H1
+     (`VM_ROOT_MINW` value vs the emitted test), B1/B2 (`start_max`'s literal),
+     B3/B4 (`VM_START` vs `attempt_max`).
+7. `make test-codegen` (which runs [SABANCHOR], §3.5), the registry suite,
+   `run_cand_rows.sh`, the memfn manifest check (C17), `inventory_check.py`
+   against a fresh `call_graph.py` (the family changes only by the edit set's
+   definitions: C2's new ones in, the deleted ones out), `sabotage_anchors.py` (exit 2 on an unresolved `src/` site),
+   `reconcile.py`, `assert_reach.py` where the commit adds an ask (C5b) [r2.1],
+   and mech on every re-aimed row of the commit and every re-run row whose
+   `rerun_at` names it (§3.5). The full
    `make test` is the manager's at merge.
 
-**The controls and what they share.** The reference side of every comparison is
-the PARENT commit's binary, built from `git archive`, so it shares no source with
-the change under test (learnings §3). The C1 trace is produced by the OLD walks
-and is then the reference the NEW walk must reproduce. The C2 both-walks oracle
-is the same reference evaluated in-process. Neither reads `cand_rows[]` to decide
-what `cand_rows[]` should say.
+**The controls and what they share.** The reference side of every byte
+comparison is the PARENT commit's binary, built from `git archive`, so it shares
+no source with the change under test (learnings §3). The trace's reference is
+the parent's trace build. The deny census and the stamp census share no source
+with `cand_rows[]` or the trace. None of them reads `cand_rows[]` to decide what
+`cand_rows[]` should say.
 
-### 3.4 Rows the corpus cannot prove
+### 3.4 Rows the corpus cannot prove, and each row's own control [r2 checks-M4]
 
-A byte sweep proves a row only where the corpus selects it. From `row_census.txt`:
+**The per-row control is the deny-delta count.** For every row with a deny bit,
+the number of artifacts that move under that bit (`deny_census.tsv`) is a
+byte-observable reach that shares nothing with the code under refactor; it is
+pinned per arm as a DIFFER floor plus a named manifest (§3.3 item 2). Measured on
+this build (movers / of which no start stamp moved):
 
-- **`set-leads` (P4)** is invisible to every stamp: it stamps `"emitted"`. The
-  C1 trace shows it, and its witness cells are `run_prechecks.sh` §5.11's
-  (S460, S457, S458).
-- **`fixed` (R6)** has population 0 at default. It is reached only under
-  `-fno-hyb-reseed` (deny arm 4 above).
-- **`run-pinned-bounded`** is 0 under utf8, and `window` (W1) is 0 under utf8
-  by the fact's own decline. Those arms prove nothing about W1 and N1, and the
-  byte arm carries them.
-- **Small populations, each needing its named witness rather than a count:**
-  - `ceiling` (H1): 6, `tests/mrl/` + `^((?1)a)$`;
-  - `gstart` (B4): 5 auto / 20 vm, `tests/assertions/` `\G` blocks;
-  - `adaptive-dense` (R4): 13, `docs/dev/reseed/`'s cells;
-  - count-collapsed hybrids: 1-2, K39's witness.
+| flag | rows it removes | auto/byte | auto/utf8 | vm/byte | vm/utf8 |
+|---|---|---|---|---|---|
+| `-fno-offset-skip` (16) | N1-N4 | 513 | 604 | 0 | 0 |
+| `-fno-run-prefilter` (32) | N1/N2 | 132 | 3 | 0 | 0 |
+| `-fno-start-set` (47) | N5-N7 | 136 | 127 | 2,327 | 2,352 |
+| `-fno-start-pinned` (22) | S1 | 183 | 183 | 0 | 0 |
+| `-fno-req-set-lead` (45) | P4 | 14 (14 hidden) | 8 (8) | 16 (16) | 8 (8) |
+| `-fno-req-handoff` (46) | F1 | 163 | 280 | 0 | 0 |
+| `-fno-hyb-reseed` (37) | R4/R5 | 403 | 420 | 0 | 0 |
+| `-fno-vm-anchor-bound` (28, fact) | B3/B4, P2, N7, R3 | 337 | 337 | 488 | 488 |
+| `-fno-end-window` (29, fact) | W1 | 288 | **0 (asserted)** | 288 | **0** |
+| `-fno-req-byte` (30, fact) | P*, F1, N1-N4 via the facts | 2,639 (596) | 2,631 (560) | 3,222 (1,179) | 3,230 (1,159) |
+| `-fno-req-run` (31, fact) | P*, F1, N1/N2 | 530 (229) | 572 (273) | 530 (513) | 572 (557) |
+| `-fno-req-run-fold` (44, fact) | the run's cube positions | 48 (16) | 38 (7) | 48 (31) | 38 (23) |
+| `-fprefilter-collapse` (force 20) | F1/P2/R1 conjuncts | 213 (1) | 213 (2) | 0 | 0 |
+| `-fno-length-prune` (7) [r2.1 C-N3] | R1 `exact` (via `Vm.mrl_win`) | 46 (35), 1-in-10 sample; the 11 visible all move `VM_RESEED` | 49 (38), sample | 69 (69), sample | 85 (85), sample |
 
-C2 adds, under `PCREC_CAND_TRACE`, a per-row hit counter that `row_census.py`
-cross-checks against these stamp counts. A row whose counter reads 0 across all
-arms is listed in the commit's report as UNPROVEN-BY-SWEEP and needs its
-constructed witness run explicitly (the [MECH-REACH] shape).
+No arm moved a refusal (0 refusal moves in all 52). The auto/byte column
+reproduces the checks critic's measured table exactly (513, 136, 14, 163, 183,
+403, 337, 288, 48). **Every hidden mover is accounted for by its first differing
+line** (`deny_hidden.tsv`), in four classes and nothing else:
+- `-fno-req-set-lead`: the pre-check BODY (`if (subject_length <= search_from ||`
+  …) — P4 is stampless, so all its movers are hidden; its deny delta is its own
+  control (below);
+- `-fno-req-run`/`-fno-req-run-fold`/`-fno-req-byte`: the FACT stamps
+  `RX_REQ_RUN`/`RX_REQ_BYTE`, which are landmarks, not rows;
+- `-fno-req-byte`: `RX_FINDINGS` — the byte-rate prior's ASK disappears with
+  the fact, and the stamp records the ask. On a no-landmark pattern
+  (`[ab]*c?`) this is the ONLY byte that moves. It is §1.3's side-effect channel
+  observed on the corpus (1,179 of 3,222 vm/byte movers);
+- `-fprefilter-collapse`: `RX_ENGINE_SEL "collapsed-prefilter"` on 1-2
+  artifacts (the one corpus pattern the collapse rung already takes).
 
-### 3.5 Gates and sabotage rows that must be re-aimed
+So the census found no start decision that moves bytes without a stamp or a
+named landmark, beyond P4 (known) and the prior's ask (§1.3).
 
-`start_table/sabotage_anchors.py` maps every sabotage row whose `SAB_FILE` is
-`emit_dfa.c` or `emit_vm.c` to the function its `SAB_BEFORE` text sits in (207
-rows; `sabotage_anchors.tsv`). 53 are in start-family code. (The script's 60
-FAMILY marks include 7 rows that sit in the three search-body functions but plant
-non-start text: S07, S36, S85, S144, S181, S400 and S430.)
+Read with these caveats:
+- Bits 16 and 32 act as a PAIR on N1/N2 (`16|32`), and 16 alone also removes
+  N3/N4: read `-fno-offset-skip` (N1-N4) and `-fno-run-prefilter` (N1/N2 only)
+  as two deltas, never one.
+- P4 (`set-leads`) shares the `"emitted"` stamp with P5, so its stamp count
+  cannot separate them; its deny delta (`-fno-req-set-lead`) is its OWN control
+  and it is byte-visible. Revision 1's "invisible to every stamp, needs an
+  out-of-sweep witness" conflated no-stamp with no-byte.
+- R6 (`fixed`) has population 0 at default and 403 (auto/byte) / 420 (auto/utf8) under `-fno-hyb-reseed`,
+  COUNTED by the deny arm of the stamp census (`row_census.tsv`), not asserted.
+- `-fno-end-window` at utf8 reads 0: the asserted zero of §3.3.
 
-- **6 sit inside a table literal or a walk that the refactor deletes, so they
-  MUST be re-aimed** in the commit that deletes their site, with intent
-  re-verified (BOILERPLATE: "a re-anchor needs its intent re-verified"):
-  - S283 and S284 in `dfa_pfs[]` (the run rows' deny bit and `reseeds`);
-  - S462 in `req_admits[]` (`set-leads`' deny);
-  - S473 in `req_uses[]` (`handoff`'s deny);
-  - S372 in `vm_plan_reseed` (the calibration swap);
-  - S441 in `vm_reseed_holds` (the `anchored` tag).
+**Rows with no deny bit and a small population have only the stamp and the
+corpus**, so each gets a named witness, committed as an `.rxt` cell first so
+every sweep sees it [r2 checks-m7], and a planned sabotage row:
 
-  In `cand_rows[]` each plants the same edit on the same row.
-- **47 sit in predicate or emitter bodies the plan keeps byte-stable**, so their
-  `SAB_BEFORE` text still matches:
-  - 6 `pf_dfa_start_set`, 4 `pf_vm_start_applies`, 4 `req_byte_dominated_by`,
-    4 `emit_req_handoff`;
-  - 3 `start_pinned_applies`, 3 `req_route_one_attempt`, 2 each in the run,
-    set-leads and handoff predicates;
-  - the 8 in `vm_emit_search_body`: S63, S88, S141, S169, S263, S370, S371,
-    S469;
-  - 4 in `emit_unanchored`/`emit_attempt` (S82, S221, S223, S235);
-  - S81, S264, S460, S475, S479, S490.
+| row | population | witness | sabotage (planned; S-id = next free on main at build) |
+|---|---|---|---|
+| H1 `ceiling` | 6, every arm; read twice (the `VM_ROOT_MINW` value against the constant's spelling AND the emitted `< …_VM_ROOT_MINW) return 0;` test, which shares nothing with `PCREC_MINW_MAX`) [r2 checks-M4 H1] | `tests/mrl/`'s cells + `^((?1)a)$` | exists: S169 (re-aimed at C5) |
+| B1 `bot` (ATTEMPT) | 293 (DFA 136 + HYB 157) | `(?m)^` and `^`-led alternations in `tests/assertions/` (`^(a)(b|c)` as a hybrid) | NEW: `start_max` literal `0` → `subject_length` (detectable only by step/attempt-count cells: the answer is unchanged, so the row needs a work-budget `gu` cell or an attempt-count probe; until it has one it ships declared `UNREACHED`) |
+| B2 `gstart` (ATTEMPT) | 21 (DFA 16 + HYB 5) | the `\G` blocks of `tests/assertions/`; `(?(DEFINE)(?<g>\Ga))(?&g)(b)` (D-2b) | NEW: `a_bot` read as `a_bot && a_gst` (B2 collapses into B5: same detection caveat) |
+| B4 `gstart` (VM) | 5 auto / 20 vm | `tests/assertions/` `\G` blocks | exists through the fact (bit 28 sweep) |
+| R4 `adaptive-dense` | 13 | `docs/dev/reseed/`'s cells | exists: S441's family; deny bit 37 |
+| P4 `set-leads` | deny delta 14 a/b, 8 a/u | `run_prechecks.sh` §5.11 | exists: S460, S457, S458 |
+| P5 vs P4 | stamp shared | the P4 deny delta separates them | — |
+| count-collapsed hybrids (F1/P2/R1 conjuncts) | under `-fprefilter-collapse`: 213 movers | the force arm itself | — |
 
-  They are RE-RUN, not re-aimed. A row whose site the refactor reroutes (e.g.
-  S263's `attempt_max` string now comes from `u.bound`) moves its anchor into
-  `cand_rows[]` IF the string literal moves there. The plan keeps each emitted
-  literal in the body function and puts a POINTER to it in the row only where
-  the literal is shared (none today).
-- **Two rows name the old identifiers in comments or probes**: S490 (`dfa_pfs[]`
-  in its header) and S495 (`cand_ppm reads a row name`). Their text follows the
-  rename. S495's REACH probe must still find a name read.
-- **Structural checks that parse the source:**
-  - `tests/codegen/cand_rows_check.py` reads `static const DfaPf dfa_pfs[] = {`
-    literally (`:130`) and every `DfaSel NAME = {` initializer (`:174`). It is
-    re-aimed at `static const CandRow cand_rows[] = {` and `CandSel`.
-  - It gains four checks: every (slot, route) pair a body asks ends in a
-    `cand_always` row; no row's `u` member mismatches its slot; no comparison
-    reads ANY `cand_rows[]` row name (K84's check widened to every start row,
-    which is K89's fix shape applied to this family); and every `CandSel`
-    initializer names `.slot` and `.route`.
-  - `tests/registry/axes_registry_check.sh` and `run_registry_tests.sh` read
-    `pcrec_reseed_rows` by name in comments only. At C6 the projection keeps
-    `pcrec_reseed_rows`/`pcrec_reseed_nrows` as accessors until C7.
+C2 adds, under `PCREC_CAND_TRACE`, a per-row hit counter that `row_census.tsv`
+cross-checks against the stamp counts; for P4/P5 and N9/N12 (shared stamps) the
+cross-check is against the deny delta and the route-keyed key respectively. A row
+whose counter reads 0 across all arms is listed in the commit's report as
+UNPROVEN-BY-SWEEP and needs its constructed witness run explicitly (the
+[MECH-REACH] shape).
+
+### 3.5 Gates and sabotage rows
+
+**The derivation** [r2 sound-M6, checks-M1; r2.1 C-N1, C-N5, S-N3].
+`sabotage_anchors.py` reads every anchor SITE of every row (463 row files /
+462 ids, S169 shared by two files; 480 sites: `SAB_FILE` and `SAB_FILE2`, any
+target file, including `src/opt/prefix_k.c`), finds its owner by the call
+graph's own parse with the total resolution of §2.1 method 3 (0 unresolved
+`src/` sites; an unresolved one is a hard error), and classifies it from
+`call_graph.txt` and `refactor_edit_set.tsv` alone:
+- **100 rows are in the start family** (owner in the derived family or its
+  seeds), against revision 2's 95 (which missed S282, S299, S475, S479, S496:
+  the owner-`?` sites, C-N1) and revision 1's 53 from a hand list that missed
+  `emit_req_set_rest`, `req_run_tests`, `emit_req_run_check`, `unanch_start`,
+  `cand_from_live_seeds` and `prefix_k.c` (S187, S188, S277, S278, S316,
+  S459), the stamp writers and the VM storage/entry functions.
+- **15 are RE-AIMED** (the anchor sits in an edit-set `def`, or its text
+  OVERLAPS an occurrence of an edit-set `token` or `line`), each in EVERY
+  commit that column names; a row two commits move lists both (S441):
+
+  | commit | rows | why |
+  |---|---|---|
+  | C3 | S222 | `dfa_search_start_name`'s body reads the deleted walk (in neither of revision 1's lists) |
+  | C3 | S283, S284 | `dfa_pfs[]`'s run rows (deny, `reseeds`) |
+  | C3 | S490 [r2.1 S-N2] | its anchor is `pf_dfa_start_set`'s route conjunct (`:6656`), one of the fifteen `job->engine` tests that read `cand_route_of`; the EQUIVALENCE argument is re-verified in the same re-aim (sound-n5: its premise moves from "ATTEMPT callers never call `dfa_pf_of`" to "the `routes` column excludes ATTEMPT from N5/N6") |
+  | C4 | S462, S473 | `req_admits[]`'s `set-leads` deny; `req_uses[]`'s `handoff` deny |
+  | C5 | S169 | the root-minw `if` H1 becomes a row read |
+  | C5 | S263 | B3/B4's shared literal moves into `u.bound` (§2.2 wins over revision 1's §3.5) |
+  | C5 | S371 | `rs->row->action` → `u.reseed` |
+  | C5 | S372, S441 | `vm_plan_reseed`'s calibration swap; `vm_reseed_holds`' `anchored` tag |
+  | C5b | S269, S274, S276 | `req_route_one_attempt`'s two arms read BOUND |
+  | C5b | S441 [r2.1 S-N3] | R3's predicate line (`emit_vm.c:11090`) reads BOUND: S441 is re-aimed at C5 (the tag switch goes) AND at C5b |
+  | C5b | S492 | N7's anchoring conjunct reads BOUND |
+
+  Each re-aim plants the same edit on the same row or read, with intent
+  re-verified (BOILERPLATE: "a re-anchor needs its intent re-verified").
+- **85 are RE-RUN** (anchors the plan keeps byte-stable), each row's
+  `SAB_REACH` probe included — a re-run row whose plant is reached only
+  through a walk is reached only if the walk still asks it ([MECH-REACH],
+  checks-M1's second class). **Re-run per commit, not once** [r2.1 C-N5]: the
+  `rerun_at` column names every commit whose edit set touches the row's OWNER
+  definition (its body changes around the unchanged anchor), and the row
+  re-runs in that commit: 32 rows (C3: S218, S219, S220, S480, S486-S489,
+  S495, and S82/S235 also at C5; C5: S36, S63, S85, S88, S141, S144, S168,
+  S181, S224-S226, S264, S370, S400, S422, S430, S469; C5b: S491, S493, S496,
+  S497). The other 53 rows' owners no commit touches; they re-run once, as
+  one mech sweep after C5b. S495's REACH probe must still find a name read.
+- **The duplicate id** [r2.1 S-N3]: `S169_root_minw_unchecked.sh` (H1's row)
+  and `S169_postresolve_pass_deleted.sh` ([DD-14.LB]) share `S169`, both
+  committed 2026-08-24 by two lanes. Revision 2's "462 rows" counted ids and
+  merged them; rows are now keyed by FILE. The fix (renumber one, at the next
+  free id on main) is the mech owner's, filed in the re-check record; the
+  re-aim at C5 names the FILE, so the shared id cannot misdirect it.
+
+**The per-commit anchor gate already exists.**
+`scripts/m6read_check_sab_anchors.py` checks that every row's `SAB_BEFORE`
+(and `SAB_BEFORE2`) occurs EXACTLY `SAB_COUNT` (`SAB_COUNT2`) times in its file,
+and `make test-codegen` runs it as [SABANCHOR] (`tests/codegen/run_codegen_tests.sh:3421`);
+today 463 row files / 480 sites resolve. Revision 1 did not name it and the checks
+critic believed no such gate existed. Every commit C3-C5b runs it (§3.3 item 7):
+an unplanned re-aim fails there, loudly, before mech — and a planned one is
+listed in `sabotage_anchors.tsv` before the commit is written.
+
+**Structural checks that parse the source:**
+- `tests/codegen/cand_rows_check.py` reads `static const DfaPf dfa_pfs[] = {`
+  literally (`:130`; names regex `\{\s*(?:\.c\s*=\s*)?\{\s*"([^"]+)"`, which
+  returns no names from designated initializers) and every `DfaSel NAME = {`
+  initializer (`:174`), and its `[cand-route-walk]` check anchors on
+  `static const void \*dfa_select\(` (`:177`). All three are re-aimed at C3
+  (`static const CandRow cand_rows[] = {`, `.c.name = "…"`, `CandSel`,
+  `cand_select(`). Each fails LOUD if left behind (its own K35 guard), so a red
+  there at C3 is the planned re-aim, not a regression [r2 checks-m2].
+- It gains four checks:
+  - every (slot, route) pair a body asks ends in a `cand_always` row;
+  - no row's `u` member mismatches its slot, and no row's `hands` type is
+    outside its successor's `accepts` — a slot's, or a non-slot successor's
+    (the verifier, the loop header, the caller, §1.2 [r2.1 S-N1(e)]) (§1.6);
+  - no comparison reads a `cand_rows[]` row NAME: K84's check widened to every
+    start row (K89's fix shape). To avoid day-one false positives on names like
+    `all`/`exact`/`window`/`fixed` (`src/parse/enabled.c:262` has
+    `strcmp(spec, "all")`), the literal half fires only where the other operand
+    is a row-name expression (`->c.name`, or a `*_name(` projection call)
+    [r2 checks-m1];
+  - every `CandSel` initializer names `.slot` and `.route`.
+- **Each new check ships with its sabotage row** [r2 checks-m3]: delete a slot's
+  last row; initialise a row with another slot's `u` member (and a row whose
+  `hands` its successor does not accept); add a
+  `strcmp(sel->row->c.name, "exact")`; omit `.slot` from a `CandSel`. Today
+  `tests/mech` has one `candrows`-arm row (S495).
+- `tests/registry/axes_registry_check.sh` and `run_registry_tests.sh` read
+  `pcrec_reseed_rows` by name in comments only. At C6 the projection keeps
+  `pcrec_reseed_rows`/`pcrec_reseed_nrows` as accessors until C7. No sabotage
+  row anchors in `axes_dump.c` or `AXIS_DESC` (grep, 0), so C6 re-aims none.
 - **Identity gates** (`tests/codegen/run_*_identity.sh`, 11 of them) compare
   emitted artifacts across arms. No emitted byte moves, so none of their pins
   moves. They run unchanged as part of `make test-codegen`.
@@ -659,7 +1390,9 @@ non-start text: S07, S36, S85, S144, S181, S400 and S430.)
 ### 3.6 Stamps whose vocabularies stay byte-identical
 
 Every value set below is untouched through C6. A row's `stamp` projection names
-today's token, including where §2.4 says the token is ambiguous:
+today's token, including where §2.4 says the token is ambiguous. After C5 every
+stamp in this table is written from the row the body used (the body and the
+stamp read ONE selection), never from the fact directly [r2 sound-m1]:
 
 | stamp | rows that project into it | `rx_info` mirror |
 |---|---|---|
@@ -670,11 +1403,14 @@ today's token, including where §2.4 says the token is ambiguous:
 | `<PREFIX>_REQ_HANDOFF` | F1 (the decimal K), F2 (`"none"`) | — |
 | `<PREFIX>_VM_RESEED` | R1-R6 | — |
 | `<PREFIX>_VM_START` | B3, B4, B5 (route VM) | — |
+| `<PREFIX>_VM_ROOT_MINW` | H1 (the value from `root_minw`) | — |
 | `<PREFIX>_DFA_START` | S1, S2 | `rx_info.search_form` |
 | `<PREFIX>_END_WINDOW` | W1 (the bound), W2 (`"none"`) | — |
 | `<PREFIX>_REQ_BYTE`, `_REQ_RUN` | facts, not rows (read by P/F) | — |
 
-The fact-valued stamps keep `pcrec_fact_stamp`'s spelling (`facts.c`).
+The fact-valued stamps keep `pcrec_fact_stamp`'s spelling (`facts.c`). The
+`--emit-ir` listing's `root-minw` row (`vm_render_listing`, `emit_vm.c:9492`)
+reads H1 the same way.
 
 ### 3.7 Deny flags and the axes
 
@@ -685,13 +1421,21 @@ The fact-valued stamps keep `pcrec_fact_stamp`'s spelling (`facts.c`).
   `patfacts/design.md` §7.1's, and it is load-bearing:
   - `-fno-vm-anchor-bound` empties the FACT, so it also turns off G2's VM arm
     (P2), the VM hat's anchoring conjunct (N7) and RETRY's `anchored` row (R3),
-    not only the BOUND rows.
+    not only the BOUND rows. After C5b those three read BOUND, whose B3/B4
+    predicates read the emptied fact, so the reach is identical.
   - A refactor that moved bit 28 onto rows B3/B4 would change those three other
-    readers. The deny arms (§3.3 item 4) are exactly what would catch it.
+    readers before C5b and leave them unchanged after it — a mover either way
+    on the arms that set bit 28. The deny arms (§3.3 item 4) are exactly what
+    would catch it.
   - The listing keeps showing bit 28 on `vm-anchor-bound`'s rows, as a
     projection.
 - **Two rows carry two bits** (N1/N2, `16|32`). `cand_select`'s test is
   `deny & flags`, unchanged, so either bit removes the pair.
+- **The `rx_info.flags` mask.** None of the 12 start-family bits enters
+  `strategy_denials` on an artifact it cannot act on (probed: on `xyz`, every
+  start-family flag except the two that act on it is byte-identical). The two
+  unmasked bits the survey found (18 `-fno-size-term`, 21 `-fno-scan-edge`,
+  §4.3) are not start-family; [AXES-DENY-MASK] owns them.
 - **`test-axes`** enumerates its arms from `--list-axes` (deny and force macros
   and CLI flags). Through C6 that surface is byte-identical, so the axis sweep's
   arm set does not move. At C7 only `kind` and one `desc` change, and no flag
@@ -704,7 +1448,8 @@ The fact-valued stamps keep `pcrec_fact_stamp`'s spelling (`facts.c`).
 ## 4. The new-row sockets
 
 Each is its own abi event AFTER C7, with its own movers census, spec hunk and
-sabotage rows. Nothing below is built by the refactor.
+sabotage rows. Nothing below is built by the refactor. Each declares its
+`hands` type and its edge in §1.6 before it is designed further.
 
 ### 4.1 The reverse-walk row (D151; [ENG-TACTICS] re-scoped)
 
@@ -714,17 +1459,20 @@ sabotage rows. Nothing below is built by the refactor.
 
   They go after N11 and before N13. An offset-0 row that applies is already
   scanning a start; the new row beats it only through its admission (G3, F = 2×
-  labelled UNMEASURED per D151 Q6). On the VM route they go after N7.
+  labelled UNMEASURED per D151 Q6) — an admission that competes with
+  `prefix_k.c`'s own for the same patterns (§2.2 NEXT) [r2 sound-M3]. On the VM
+  route they go after N7.
 - **Predicate:** G1 ∧ G2 ∧ G3, each conjunct a separate line with its sabotage
   row from `where_to_start.md` §2.6's mutation table.
-- **Mapping:** `EXACTREV`. **Give-up:** `ONE_WAY` (D151 Q4). **Hat:** DFA:
-  the anchored forward machine from `s*` (`anchored_match_unwrapped.md`'s
-  entry). VM: one anchored attempt.
+- **Mapping:** `EXACTREV`; `hands = CAND`, and on give-up `LOWER` (edge E11).
+  **Give-up:** `ONE_WAY` (D151 Q4). **Hat:** DFA: the anchored forward machine
+  from `s*` (`anchored_match_unwrapped.md`'s entry). VM: one anchored attempt.
 - **Slot FIRST, one row** `handoff-rev`, before F1: the candidate loop's
   give-up hands the current `s*` to the unanchored scan as its startpos
-  (`where_to_start.md` §2.7's measured `fallback`). It is the FIRST slot's
-  second LOWER-BOUND row, and with it in place §2.4's VM-only "computed and
-  thrown away" gap has its row.
+  (`where_to_start.md` §2.7's measured `fallback`), a `LOWER` handoff whose
+  termination comes from the type (§1.6). It is the FIRST slot's second
+  LOWER-BOUND row, and with it in place §2.4's VM-only "computed and thrown
+  away" gap has its row.
 - **New fact:** `inner_split` (`facts.def`, E2, `PF_CORE`, owner
   `src/facts/split.c`): the spine index of the chosen landmark, `P`'s byte
   width `[a, b]`, and the G1/G2 bits. G2's alphabet is a new byte-set union over
@@ -782,9 +1530,10 @@ sabotage rows. Nothing below is built by the refactor.
     witnesses are the same shape (K90: "same family as K88").
   - **K90 L1/L2 (a dense subject):** this is EXACTLY the RETRY slot's question,
     "after a failed attempt, step or re-seek?". Today that slot serves the
-    hybrid (re-call the prefilter). The fix is to give R4/R5 (`adaptive-dense`,
-    `adaptive`) the VM-only route, where "re-seed" means "re-seek with the
-    VM hat" and "step" means K49's advance alone.
+    hybrid (re-call the prefilter: edge E7). The fix is to give R4/R5
+    (`adaptive-dense`, `adaptive`) the VM-only route, where "re-seed" means
+    "re-seek with the VM hat" (edge E12, the same `LOWER` type as E7) and
+    "step" means K49's advance alone.
 - **The general answer is the existing one:** the gap-armed block rule and its
   calibration rows (`vm_reseed_cal`, frameless/framed) already measure exactly
   this crossover for the hybrid. K90 then adds no mechanism, only a route bit on
@@ -801,7 +1550,8 @@ sabotage rows. Nothing below is built by the refactor.
 
 - **[OPT-REVEND]** is a WINDOW-slot row (`EXACTREV` from the subject end). It
   sits before W1, because an exact start beats a window. It shares §4.1's
-  reverse builder.
+  reverse builder. Its `hands` is `CAND` where W1's is `LOWER`, which §1.6's
+  check would show to WINDOW's successors before it is built.
 - **[OPT-A]** is NEXT rows with a multi-literal landmark.
 - **[OPT-VMSEED] stage 4** (D148 add. 2 Q-R4: filed, not planned) is a FIRST
   slot row on the VM route.
@@ -813,10 +1563,13 @@ sabotage rows. Nothing below is built by the refactor.
 ### 5.1 The measurement regime: RELEVANT, briefly
 
 The refactor measures no time and claims no speed: it is answer- and
-byte-identical by requirement. The populations in §2.2 are compile-time
-COUNTS, regime-free, read from this lane's build of `74379fe0` on the Mac. They
-are corpus counts, not bench counts, so a different corpus moves them and moves
-no decision. The new rows of §4 each carry their own regime question:
+byte-identical by requirement. The populations in §2.2 and the deny deltas in
+§3.4 are compile-time COUNTS, regime-free, read from `build/pcrec` at `4743ebb5`
+(abi 64, the same `src/` as `74379fe0`) on the Mac. They are corpus counts, not
+bench counts, so a different corpus moves them and moves no decision; the
+DIFFER floors are re-measured at C0 for that reason. The one timed number, the
+deny census's wall time, sizes the gate's cost only. The new rows of §4 each
+carry their own regime question:
 - §4.1's F (2×, UNMEASURED);
 - §4.3's `gap` crossover, re-measured on the VM-only route, which is exactly
   the case where a hybrid-measured number would flip a decision if carried
@@ -824,23 +1577,38 @@ no decision. The new rows of §4 each carry their own regime question:
 
 ### 5.2 The independent control: RELEVANT
 
-See §3.3's "what they share". In addition:
-- The census reads STAMPS, never `src/`. Its population is `emit_sweep`'s own
-  `enumerate_corpus`, so the census and the gate count the same population.
-  That is shared on purpose: it is the population, not the expectation.
+See §3.3 items 5-6 and "what they share". In addition:
+- The census reads STAMPS and BYTES, never `src/`. Its population is
+  `emit_sweep`'s own `enumerate_corpus`, so the census and the gate count the
+  same population. That is shared on purpose: it is the population, not the
+  expectation.
+- The INVENTORY rests on TWO derivations that share no source (a parse of
+  `src/`; the compiler's output) and one cross-record (the mech rows, whose
+  family membership is TAKEN from the call graph, so they are not a third
+  independent vote) [r2.1 S-N4]. The completeness check and `reconcile.py`
+  (§2.1) are the comparison among them. The call graph's one hand input (the
+  machine-landmark producers) is named in the script.
 - The disagreement probe (`anchor_agree.py`) compares two derivations that
   share no code (the machine's `dfa_interior_dead` vs `src/facts/startanch.c`).
-- Witness reach: §3.4's UNPROVEN-BY-SWEEP list is the [MECH-REACH] answer, and
-  the re-aimed rows are re-run with their REACH probes.
+- Witness reach: §3.4's UNPROVEN-BY-SWEEP list and the planned B1/B2 rows (which
+  ship `UNREACHED` until a work-count cell reaches them) are the [MECH-REACH]
+  answer; the re-run rows run with their REACH probes.
 
 ### 5.3 What moves when data is regenerated: RELEVANT, nothing for the refactor
 
 The refactor regenerates nothing. Through C6 no emitted byte, no stamp, no pin
-and no listing byte moves, and no abi event occurs. C7 moves `--list-axes` text
-only: a registry-surface change with a `docs/spec/registry.md` hunk, read by
+and no listing byte moves, and no abi event occurs. C3's `registry.md` hunk is
+a sentence about an internal. C7 moves `--list-axes` text only: a
+registry-surface change with a `docs/spec/registry.md` hunk, read by
 `tests/registry/` (the format readers are found by grep, the `NF != 15`
 lesson of `registry_built_status_memo.md`). C7 adds no column, so no
 field-count reader moves.
+
+The instruments' own committed outputs (`call_graph.txt`, `sabotage_anchors.tsv`,
+`row_census.tsv`, `deny_*.tsv`) move with the tree; they are design evidence
+read by no check. At C0, the ones the gate consumes (the DIFFER floors and
+manifests) are re-measured and pinned in `emit_sweep.py`, and from then on a
+corpus change that moves them is a floor re-pin with a stated reason.
 
 The new rows (§4) are abi events. Two data dependencies arrive with them:
 - G3 reads the byte-rate prior, so a regenerated `default_ppm.tsv` moves
@@ -852,82 +1620,149 @@ The new rows (§4) are abi events. Two data dependencies arrive with them:
 
 The start table is one member of a family of first-match decisions about a
 search. Each sibling below is weighed against the lens "one table per
-question" (D124).
+question" (D124), and against `decision_families_survey.md`'s families 2-4,
+which overlap this note:
 
 | sibling | the question | how it touches the start table | keep separate? |
 |---|---|---|---|
 | ENGINE selection (`select_engine.c` `analyses[]`, `engine-route`) | which execution core runs the match | it decides the ROUTE (`CR_DFA`/`CR_ATTEMPT`/`CR_VM`), which the table reads as a column | **Yes.** It answers a different question with a different contract (D124 item 3: the cores stay distinct). Its input is the AST and build outcomes, not landmarks |
-| PREFILTER admission (`fit.prefilter`, `select_engine.c:862`; `prefilter-lang`; `fit_rungs[]`) | does a VM get a DFA in front, and which language | makes the VM route a hybrid: N on the inlined body, RETRY on the VM side. FIRST's handoff reads it (`pcrec_artifact_has_dfa_scan`) | **Yes, for now.** It is a build-time selection with a retry ladder (`compile_driver`'s one recovery point). Folding it in would put a build outcome into a row predicate. **But** it should become a first-match table itself: it is the one family member still a ternary (`:862`). Filed, §6 Q8 |
+| PREFILTER admission (`fit.prefilter`, `select_engine.c:862`; `prefilter-lang`; `fit_rungs[]`) | does a VM get a DFA in front, and which language | makes the VM route a hybrid: N on the inlined body, RETRY on the VM side. FIRST's handoff reads it (`pcrec_artifact_has_dfa_scan`) | **Yes, for now.** It is a build-time selection with a retry ladder (`compile_driver`'s one recovery point). Folding it in would put a build outcome into a row predicate. **But** it should become a first-match table itself: it is the one family member still a ternary (`:862`). **RULED [Frank 2026-10-06, R-Q4]: folded into [DEC-FALLBACK] (refactor B), not its own row**, §6 Q8 |
 | REQ pre-check admission (`req_admits[]`) | — | this note FOLDS it in as PRESENCE, because "no landmark → no candidate" IS a start mapping, and G1 reads NEXT's choice. Keeping it separate would leave a cross-table read as today | **No: folded** |
+| The engine-shape prelude (survey family 4: 11 `PCREC_ENG_ATTEMPT` tests, the attempt route bypassing `dfa_pfs[]`) | is there a table walk; which route | its "parallel mechanism for which prefilter" IS N12 and the ATTEMPT route of this table | **No: folded** (N12, `CR_ATTEMPT`, and the route taken from `job->engine`) |
+| The landmark pick (survey family 2: six pickers, five tie rules) | which byte at which offset a row scans | the rows read its result; D-4 is its one identity clause with the table | **Yes: a ranking, not a table** (§2.5); [TIE-ALIGN] re-scoped, §6 Q10 |
+| The deny-mask family (survey family 3) | which bits a deny flag removes and records | the 12 start bits are masked correctly (§3.7) | **Yes**: [AXES-DENY-MASK] |
 | The req FACTS (`req_byte`, `req_run`, `req_run_fold`'s pick) | what is necessary | the landmark column; facts, not rows | **Yes**: facts layer (D120) |
-| Position domain (startpos guard, UTF check, K73, K50, K49) | which positions are legal | applies to every row's output | **Yes**: §2.5 |
-| Machine-form axes (repr, view, seed, accept, scan edge, scan body, match) | how the verifier is emitted | the re-seed rows read `seed` | **Yes**: they answer "how does a candidate get verified" |
+| Position domain (startpos guard, UTF check, K73, K50, K49) | which positions are legal | applies to every row's output and every re-entering `LOWER` | **Yes**: §2.5; its own family, filed as [DEC-POSDOM] [r2.1] |
+| Machine-form axes (repr, view, seed, accept, scan edge, scan body, match) | how the verifier is emitted | the re-seed rows read `seed`; the machine census reads RECOVER | **Yes**: they answer "how does a candidate get verified" |
 | memfn's `DELEG_SITES` and the SIMD switch | how a delegated scan is spelled | the `scan` column names the site | **Yes**: the kit owns the inside of a site (D146) |
 
 **The forest-for-the-trees check:**
 - Every sibling that answers WHERE a match may begin is folded.
-- Every sibling that answers WHO runs it, WHETHER a prefilter exists, or HOW a
-  scan or verify is spelled stays its own table, and reaches this table as a
-  route bit, a fact or a site id.
+- Every sibling that answers WHO runs it, WHETHER a prefilter exists, WHICH BYTE
+  a row scans, or HOW a scan or verify is spelled stays its own table or
+  ranking, and reaches this table as a route bit, a fact or a site id.
 - The one family member that is not yet a first-match table (prefilter
-  admission) is filed (§6 Q8), not folded.
+  admission) is not folded here; it is folded into [DEC-FALLBACK], the second
+  serial no-mover refactor (§6 Q8, RULED [Frank 2026-10-06, R-Q4]).
 
 ---
 
-## 6. Open questions for Frank
+## 6. Open questions for Frank (restated for revision 2)
 
-- **Q1. Fold now, ahead of `handoff-rev`?** D151 Q5 ruled "two tables stay
+- **Q1. Fold now, ahead of `handoff-rev`?** **RULED** [r2.1]: D151
+  addendum 1 (Frank, 2026-10-06) — fold FIRST, as a no-mover refactor before
+  `handoff-rev` or any other new start row, GATED on this revision clearing
+  the short re-check, then C0, then C1-C7. The re-check cleared with listed
+  fixes, which revision 2.1 applies. The text below is the question as it
+  was put. D151 Q5 ruled "two tables stay
   until the `handoff-rev` row exists", and your 2026-10-06 direction puts the
-  no-mover fold first. **Recommend YES, as a D151 addendum:** the fold is what
-  makes `handoff-rev` (and every §4 row) a one-row addition, and doing it as a
-  no-mover now is cheaper than doing it inside a mover later.
+  no-mover fold first. **(Was: PENDING your ruling.)** The manager recommends **"fold
+  first, gated on the revised note clearing a short re-check"**, and this
+  revision agrees: the fold is what makes `handoff-rev` (and every §4 row) a
+  one-row addition with a declared edge (§1.6); doing it as a no-mover now is
+  cheaper than inside a mover later; and revision 2's inventory is now derived
+  and checked, which is what the panel said the first one was not. The re-check
+  should be the two critics' own findings against §2.1, §1.6 and §3.3-§3.5.
 - **Q2. One array with a slot column, or one array per slot sharing the row
-  type and walk?** **Recommend ONE array.** It is the literal "single table",
-  the slot DAG (§1.3) and the cross-slot reads are visible in one place, one
-  listing projection walks it, and the `routes` precedent already filters one
-  list two ways. Per-slot arrays would keep eight tables with a shared type,
-  which is today's structure renamed.
+  type and walk?** **Recommend ONE array** (unchanged). The revision adds a
+  reason: the typed-handoff check (§1.6) and the selection DAG (§1.3) are
+  checks ACROSS slots, and one array is where they read from. Per-slot arrays
+  would keep eight tables with a shared type, which is today's structure renamed.
 - **Q3. A compile-time selection trace (`-DPCREC_CAND_TRACE`) in `src/`?**
-  It is the strongest and cheapest no-mover control (§3.3 item 5) and costs no
-  default-build byte. **Recommend YES**, scoped to the refactor's life plus a
-  permanent home as the per-row hit counter (§3.4). It is a debug knob, not an
-  axis, on `OPTK_DEBUG`'s precedent.
-- **Q4. D-1 (the ATTEMPT `memchr` read as a start byte by G1)?** **Recommend:**
-  after C7, G1 declines `EXACTPRED` rows (a read of the `map` field; it moves
-  only the 33 ATTEMPT artifacts' pre-check emission). Keep the stamp token.
+  **Recommend YES**, now with its specification (§3.3 item 5: ordered
+  per-pattern records at the walk's return, the parent as reference every
+  commit, never the byte-sweep build) and its stated limit (it proves nothing
+  at the inline sites that bytes do not). Scoped to the refactor's life plus a
+  permanent home as the per-row hit counter (§3.4). A debug knob, not an axis.
+- **Q4. D-1 (the ATTEMPT `memchr` read as a start byte by G1)?** **Recommend
+  (unchanged):** after C7, G1 declines `EXACTPRED` rows (a read of the `map`
+  field). It now moves the pre-check emission of every ATTEMPT artifact
+  stamping `memchr`, DFA and HYBRID alike (33 (27 DFA + 6 HYBRID) in auto/byte), and only
+  where it was elided. Keep the stamp token.
 - **Q5. D-2 (`DFA_START "reverse-pass"` on attempt/empty artifacts)?**
-  **Recommend** a third value `attempt-start` for ATTEMPT and empty, as its own
-  abi event with the spec hunk correcting `match_api.md:4686-4703`'s
-  contradiction. It is low priority: no consumer is known to be misled. The
+  **Recommend (unchanged)** a third value `attempt-start` for ATTEMPT and empty,
+  as its own abi event with the spec hunk correcting `match_api.md:4686-4703`'s
+  contradiction. Low priority: no consumer is known to be misled. The
   alternative is a spec-only fix stating that the value means "not pinned".
 - **Q6. D-2b (`start_anchor` blind through a non-recursive call)?**
-  **Recommend: file, don't fix.** Population 1 (`(?(DEFINE)(?<g>\Ga))(?&g)`).
-  The fact change is a VM-route mover with a correctness-neutral gain, so a D77
-  trigger is needed.
-- **Q7. Where do this note's three census scripts live after the refactor?**
-  **Recommend:** `row_census.py` becomes the C2 hit-counter's cross-check under
-  `tests/codegen/`, with its arms pinned as floors, D110's shape. The other two
-  stay here as design evidence.
+  **Recommend (unchanged): file, don't fix.** Population 1 in the corpus (and
+  its capturing twin, where the split is inside ONE artifact, §2.4). The fact
+  change is a VM-route mover with a correctness-neutral gain, so a D77 trigger
+  is needed. After C5b it is ONE fact change and every BOUND reader follows.
+- **Q7. Where do this note's census scripts live after the refactor?**
+  **Recommend:** `call_graph.py` + `inventory.tsv` + `inventory_check.py` move to
+  `tests/codegen/` as a standing check (a new start decision anywhere fails it
+  until dispositioned — the general form of "derive the inventory, never
+  hand-list it"); `deny_census.py`'s per-flag DIFFER counts become C0's floors
+  inside `emit_sweep.py`; `row_census.py` becomes the C2 hit-counter's
+  cross-check under `tests/codegen/`, its arms pinned as floors (D110's shape);
+  `sabotage_anchors.py` + `refactor_edit_set.tsv` and `anchor_agree.py` stay
+  here as design evidence.
 - **Q8. Prefilter admission as a first-match table?** It is the sibling still
-  spelled as a ternary (`select_engine.c:862`). **Recommend: file as its own
-  no-mover row**, not part of this refactor: its retry-ladder interaction is
-  `compile_driver`'s, outside the start table.
-- **Q9. Panel shape.** **Recommend a LIGHT D6 panel, two critics** (sound: §2.3
-  and §3.7; checks: §3.3-§3.5). The refactor changes no answer and no byte, and
-  the full bar applies to each §4 row when it lands.
+  spelled as a ternary (`select_engine.c:862`). **RULED [Frank 2026-10-06,
+  R-Q4]: folded into [DEC-FALLBACK] (refactor B below), NOT its own row** and
+  not part of this refactor (A). Its retry-ladder interaction is
+  `compile_driver`'s, outside the start table; B owns it. (Was: recommend file
+  as its own no-mover row.)
+- **Q9. Panel shape.** **DONE** [r2.1]: the short re-check ran and both
+  critics returned "CLEARS with listed fixes"
+  (`../dev/reviews/2026-10-06-r2-starttable-recheck.md`). Revision 1 had its light panel (two critics, no blocker,
+  ten majors). **Recommend a SHORT RE-CHECK by the same two critics** against
+  their own findings (§R), not a new panel: the refactor still changes no
+  answer and no byte, and the full bar applies to each §4 row when it lands.
+- **Q10 (new). D-4's fix** [r2 sound-M4]. **Recommend:** re-scope [TIE-ALIGN]
+  from "align the tie rules" to "one landmark-candidate ranking with one tie
+  rule, read by the run reader, the pin and `prefix_k`", which deletes N1/N2's
+  identity clause. It is a form mover (answer-identical), so it is its own abi
+  event after C7, gated on D119's bench bar; its census is D-4's utf8 families
+  plus the byte-arm `\d\dxyz` shapes. Not part of the fold. **Confirmed a later
+  separate row, never folded into A or B (R-Q4 below).**
+
+**Rulings of Frank, 2026-10-06** (answers to the manager's three questions on
+decision families, streamlining and memfn sequencing; numbered R-Q3..R-Q5 here
+so they do not collide with this note's own Q-numbers above):
+
+- **R-Q3. [DEC-FALLBACK]'s token contract.** **RULED** [Frank 2026-10-06]:
+  [DEC-FALLBACK] KEEPS today's tokens (`ENGINE_SEL`, `UNROLL_K_WHY`, the
+  `*_LANG_WHY` values, `VM_PREFILTER_WHY`; `match_api.md` §6.3 vocabularies): a
+  PURE no-mover. Separating the "name" token from the "why" token is a later,
+  separate abi row. (Replaces "manager recommends, Frank to confirm".)
+- **R-Q4. Streamlining: two serial no-mover refactors.** **RULED** [Frank
+  2026-10-06]. **A** = this note's start-table fold (C0, C1-C7 + C5b,
+  `cand_route_of`, the checked handoff graph §1.6). **B** = [DEC-FALLBACK]
+  (`fit_rungs[]` + [SEL-1]'s two overflow rungs folded into one table, tokens
+  kept per R-Q3), and **B ABSORBS this note's Q8** (the prefilter admission
+  ternary, `select_engine.c:862`): Q8 is RULED as folded into [DEC-FALLBACK],
+  not its own row. Order: **A first; B's STEP 0 census runs after A's C7
+  merges.** The MOVERS are later separate rows and are NEVER folded into A or B:
+  Q4 (G1 declines `EXACTPRED`), Q5 (`attempt-start`), Q6 (D-2b), Q10/D-4
+  ([TIE-ALIGN]), the position-domain family ([DEC-POSDOM]) and the token
+  separation of R-Q3.
+- **R-Q5. memfn sequencing.** **RULED** [Frank 2026-10-06]. The kit's R4c
+  (`memfn/docs/requests.md` R-4, main `05c33ce0`: the composite PRE site and the
+  offset-skip trio's search TEXT move behind memfn, zero movers) lands BEFORE
+  C1-C7. C0 (the `emit_sweep` extension, no `src/`) runs IN PARALLEL with R4c.
+  C1-C7 RE-DERIVE their edit set (the instruments re-run) on post-R4c main.
+  After R4c, edits to migrated emitter text are KIT work (D146/D147); the start
+  DECISION reads stay pcrec-side, and the kit is listing 18 such reads (B1-B18)
+  inside the migrated emitters, which the fold's edit set takes as INPUT (§3.2).
+  The kit awaits C0's full I2 (every axis x both comment tiers): **ping the kit
+  when C0 merges.**
 
 ---
 
 ## 7. The lenses
 
-- **specific vs general:** general. Eight decision sites become one walk, and
-  K90's fix becomes a route bit on existing rows rather than a new mechanism.
+- **specific vs general:** general. Twelve decision sites become one walk and
+  two route-keyed payload columns, K90's fix becomes a route bit on existing
+  rows, and every handoff becomes one typed edge rather than a sentence.
 - **core vs derived:** the table is derived. It reads facts (core) and the route
-  (engine selection), and owns no analysis.
+  (engine selection), and owns no analysis. The pick inside a row stays core.
 - **applicable vs assumption-changing:** applicable. No contract changes: the
-  give-up postures are written down, not altered.
+  give-up postures and handoff types are written down, not altered.
 - **fits the architecture vs refactor:** a refactor, by request, and a no-mover
   one. It completes D148 Q2's rename and D151 Q5's fold.
 - **shared question / engine hat (D124):** this is D124 item 1 applied to its
-  own example, "where can a match start", with the engine as a route column.
+  own example, "where can a match start", with the engine as a route column and
+  the prefilter's engine as the route of a hybrid's inlined body.
 - **sibling of a family:** §5.4.
