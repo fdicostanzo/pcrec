@@ -29,14 +29,6 @@ static void *arena_alloc(void *u, size_t n)
     return pcrec_arena_alloc(u, n);
 }
 
-/* pcrec's ONE bit of SIMD policy (integration.md §R4.3.1): portable C while
- * -fmemfn-simd is not given, which until that switch exists is always. */
-static uint32_t memfn_policy(Ctx *cx)
-{
-    (void)cx;
-    return MF_P_PORTABLE_ONLY;
-}
-
 mf_art *pcrec_memfn_art(Ctx *cx)
 {
     Job *job = cx->job;
@@ -44,7 +36,8 @@ mf_art *pcrec_memfn_art(Ctx *cx)
         mf_arena *ma = pcrec_arena_alloc(&cx->arena, sizeof *ma);
         ma->u = &cx->arena;
         ma->alloc = arena_alloc;
-        job->mf = mf_art_begin(ma, cx->opt->prefix, memfn_policy(cx), 0);
+        job->mf = mf_art_begin(ma, cx->opt->prefix,
+                               pcrec_memfn_policy(cx->opt->flags), 0);
         if (!job->mf) pcrec_ctx_nomem(cx);
     }
     return job->mf;
@@ -119,7 +112,7 @@ mf_site *pcrec_memfn_site(Ctx *cx, DelegSite id)
     s->span_hi = MF_SPAN_UNBOUNDED;
     s->cand_ppm_hi = MF_PPM_FULL;
     s->pred.plan_hint = MF_NO_PRED;
-    s->policy = memfn_policy(cx) |
+    s->policy = pcrec_memfn_policy(cx->opt->flags) |
                 (pcrec_deleg_sites[id].budget == DELEG_LOOP ? MF_P_INLOOP : 0);
     s->opts = NULL;
     return s;
