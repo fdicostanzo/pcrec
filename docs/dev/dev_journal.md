@@ -26420,3 +26420,15 @@ Frank: "finish up open work/bench results/errors", Linux box free (bench manager
   axes, uncounted collapse population, a displacing differential alphabet,
   stale mech). Fix lane ssfix3 (opus): T = S + compile-only arm + M1-M6.
   Stage 3 merge waits on ssfix3, Frank's ruling, and R4a′ landing.
+- ~03:00: [ARTREV] artcollect merged: pilot collected (pilot_index.md: A07
+  overlap a 3 full + 2 partial + 1 unique, b 3 + 3 + 0, union 7 ideas);
+  identity HARDENED (shrunken budgets x 0/1 frames/trail with a libpcre2
+  give-up oracle, window-start differential, livelock bound) and a real
+  harness BUG found: `_in` call shapes were NEVER driven (missing
+  -DARTREV_HAVE_IN) though summaries claimed them — all 22 final twins
+  re-verified PASS under the hardened check; selftest 168/168; confirm plan
+  with a pad-shift layout control ready for Linux by day. Ruling: default
+  give-up rule for the confirmer, repair counts reported, leads with
+  repairs tagged changes-giveup-surface (c41348f3). wake.md rewritten early
+  (crash-proofing); 08:05 one-shot cron queues the morning Linux order
+  (R4a′ make test, then the ARTREV confirmer). ssfix3 running.
