@@ -63,7 +63,7 @@ TMO = 120
 # K35 floors: HALF the landing population (D110), measured at landing (lane
 # ssbuild3; docs/dev/lanes/ssbuild3_report.md).
 FLOOR_BLOCKS = 1700          # blocks compiled on both arms
-FLOOR_MOVERS = 35            # corpus movers (70 at landing)
+FLOOR_MOVERS = 35            # corpus movers (71 at landing)
 
 HAT = ("first-memchr-bounded", "first-class-bounded")
 STAMP = re.compile(r'^#define RX_(\w+) +(.*)$', re.M)
@@ -302,6 +302,18 @@ def witness_checks():
                 ok("[dfa-wit] %r %s -> %s (%s)" % (pat.decode("latin-1"), " ".join(args), want, why))
             else:
                 bad("[dfa-wit] %r %s -> %s, expected %s (%s)" % (pat.decode("latin-1"), " ".join(args), got, want, why))
+        # The hybrid re-seed row reads the DENSITY of the set the scan tests
+        # (`pcrec_dfa_cand_ppm`, startset.md §4.3's [OPT-HYB-RESEED] mover
+        # class): over T = {z, w}, two letters, it is below the dense row; over
+        # the deny arm's E (the word bytes) it is the dense row. A reader that
+        # priced the hat by its row NAME (S495, K84) reads 1,000,000 ppm.
+        r = [compile_c(b"(?<=ab)z|\\bw", FA + x, os.path.join(td, "rs%d" % i))
+             for i, x in enumerate(([], ["-fno-start-set"]))]
+        got = tuple(None if t is None else stamps(t).get("VM_RESEED") for t in r)
+        if got == ("adaptive", "adaptive-dense"):
+            ok("[dfa-wit] (?<=ab)z|\\bw: RX_VM_RESEED adaptive over T, adaptive-dense under the deny arm's E")
+        else:
+            bad("[dfa-wit] (?<=ab)z|\\bw: RX_VM_RESEED (hat, deny) = %s, expected (adaptive, adaptive-dense)" % (got,))
         t = compile_c(b"\\b(?:true|false|null)\\b", FA, os.path.join(td, "t"))
         tb = None if t is None else table(t, "start_bytes")
         if tb == {ord("t"), ord("f"), ord("n")}:

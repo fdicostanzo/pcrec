@@ -29,7 +29,17 @@ heap block). `SHARD=i/n` runs every n-th (mover, config) from the i-th.
 FLOOR (K35): the (mover, config) pairs run, below which a collapsed
 population fails rather than reading clean.
 
-Env: PCREC, CC, TMPDIR, JOBS, SAN, SHARD, MANIFEST, FLOOR.
+STAGE 3, THE DFA HAT (`HAT=dfa`): the same differential over the stage-3
+manifest's corpus rows (`manifest_s3_dfa.tsv`) x {own options,
+`--no-captures` (a hybrid mover's own DFA build), `-fprefilter-collapse` (a
+hybrid mover's COUNT-COLLAPSED prefilter, sound-F5(d)'s population)}; its
+sweep alphabet also carries up to two bytes of the deny arm's `E` outside S
+(read off `pa`'s emitted tables, startset_lib.machine_sets): the bytes a skip
+passes that MOVE the left context, which is what the re-seed exists for.
+The start-byte oracle is the same: every deny-arm match starts on a byte of
+the fact, and the fact is the DFA hat's `T` (Q-R1's T == S).
+
+Env: PCREC, CC, TMPDIR, JOBS, SAN, SHARD, HAT, MANIFEST, FLOOR.
 Prints PASS:/FAIL: and the trailers.
 """
 import concurrent.futures as cf, os, random, re, shutil, subprocess, sys, tempfile
@@ -45,10 +55,13 @@ SAN = os.environ.get("SAN") == "1"
 CFLAGS = (["-O1", "-g", "-fsanitize=address,undefined", "-fno-omit-frame-pointer"]
           if SAN else ["-O1"]) + ["-std=gnu11", "-w"]
 JOBS = int(os.environ.get("JOBS", "6"))
-MANIFEST = os.environ.get("MANIFEST", os.path.join(HERE, "manifests", "manifest_s2_vm_auto.tsv"))
+HAT = os.environ.get("HAT", "vm")
+MANIFEST = os.environ.get("MANIFEST", os.path.join(
+    HERE, "manifests", "manifest_s3_dfa.tsv" if HAT == "dfa" else "manifest_s2_vm_auto.tsv"))
 # K35 floor: half the (mover, config) pairs measured at landing (lane
-# ssbuild2; docs/dev/lanes/ssbuild2_report.md §4).
-FLOOR = int(os.environ.get("FLOOR", "264"))   # 528 (mover, config) pairs at landing
+# ssbuild2, docs/dev/lanes/ssbuild2_report.md §4: 528 pairs; lane ssbuild3,
+# docs/dev/lanes/ssbuild3_report.md: the DFA hat's figure).
+FLOOR = int(os.environ.get("FLOOR", "105" if HAT == "dfa" else "264"))   # 210 / 528 pairs at landing
 TMO = 600
 
 
@@ -93,10 +106,10 @@ def own_subjects(bid):
     return out
 
 
-def subjects(pat, S, own, utf8):
+def subjects(pat, S, own, utf8, ctx=()):
     outside = [b for b in (0x20, 0x7e, 0x01, 0x0a, 0x5f, 0x2d) if b not in S][:1]
     alpha = []
-    for b in sorted(S, key=lambda b: (not (0x20 < b < 0x7f), b))[:3] + list(pat) + outside:
+    for b in sorted(S, key=lambda b: (not (0x20 < b < 0x7f), b))[:3] + list(ctx) + list(pat) + outside:
         if b not in alpha and len(alpha) < 5 and (b in S or b in outside or 0x20 < b < 0x7f):
             alpha.append(b)
     out = {b""}
@@ -143,7 +156,12 @@ def run(job):
                          os.path.join(d, "pb.c")], capture_output=True, timeout=TMO)
     if cc.returncode:
         return {"status": "build", "cfg": cfg, "err": cc.stderr.decode("latin-1")[:300]}
-    subj = subjects(pat, S or set(), own_subjects(bid), "utf8" in " ".join(args))
+    ctx = ()
+    if HAT == "dfa" and S is not None:
+        m = L.machine_sets(open(os.path.join(d, "pa.c"), encoding="latin-1").read(), "pa")
+        if m.get("status") == "ok":
+            ctx = sorted(m["E"] - S, key=lambda b: (not (0x20 < b < 0x7f), b))[:2]
+    subj = subjects(pat, S or set(), own_subjects(bid), "utf8" in " ".join(args), ctx)
     env = dict(os.environ, ASAN_OPTIONS="detect_leaks=0:abort_on_error=0")
     try:
         r = subprocess.run([os.path.join(d, "t"), arg1],
@@ -172,8 +190,11 @@ def main():
         for b in blocks:
             if (b["id"], " ".join(b["args"])) not in want:
                 continue
-            for cfg, args in (("auto", b["args"]), ("vm", vm_args(b["args"])),
-                              ("nocaps", b["args"] + ["--no-captures"])):
+            cfgs = ((("auto", b["args"]), ("nocaps", b["args"] + ["--no-captures"]),
+                     ("collapse", b["args"] + ["-fprefilter-collapse"])) if HAT == "dfa" else
+                    (("auto", b["args"]), ("vm", vm_args(b["args"])),
+                     ("nocaps", b["args"] + ["--no-captures"])))
+            for cfg, args in cfgs:
                 jobs.append((b["id"], b["pattern"], args, cfg, td))
         if os.environ.get("SHARD"):
             i, n = map(int, os.environ["SHARD"].split("/"))
@@ -202,11 +223,11 @@ def main():
           % (tot["pairs"], len(jobs), per, tot["cells"], tot["same"], tot["allow"], tot["matches"], tot["checked"], FLOOR))
     if tot["pairs"] < FLOOR:
         failed += 1
-        print("FAIL: [vm-diff] %d pairs ran, below the floor %d" % (tot["pairs"], FLOOR))
+        print("FAIL: [%s-diff] %d pairs ran, below the floor %d" % (HAT, tot["pairs"], FLOOR))
     if not failed:
         passed += 1
-        print("PASS: [vm-diff] every startpos of every subject answers as the deny arm does (a give-up may become the answer), and every deny-arm match starts on a byte of the start set%s"
-              % (" (ASan/UBSan)" if SAN else ""))
+        print("PASS: [%s-diff] every startpos of every subject answers as the deny arm does (a give-up may become the answer), and every deny-arm match starts on a byte of the start set%s"
+              % (HAT, " (ASan/UBSan)" if SAN else ""))
     print("checks passed: %d" % passed)
     print("checks failed: %d" % failed)
     sys.exit(1 if failed else 0)
