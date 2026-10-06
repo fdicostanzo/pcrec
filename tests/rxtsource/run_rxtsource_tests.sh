@@ -3907,7 +3907,10 @@ fi
 w13_refuse() {
     local fixture="$1" label="$2"; shift 2
     local out rc miss="" need
-    out="$("$TIMEOUT_BIN" 60 "$PCREC" --features all "$FIXRUN/$fixture" \
+    # cwd = the fixture directory, the fixture named relatively: the sentence
+    # names two files, and absolute scratch paths pushed the second one past
+    # Diag.msg's 256-byte cut under a long TMPDIR (the same family as 1fc69edf)
+    out="$(cd "$FIXRUN" && "$TIMEOUT_BIN" 60 "$PCREC" --features all "$fixture" \
              -o "$W13/refuse.c" 2>&1)"
     rc=$?
     for need in "$@"; do
@@ -4220,7 +4223,7 @@ accept_value prose_paragraph_break.rxt prose-para description 4 \
 # read the head (the seam ruling); `prose-dedent-body` below is their
 # three-leg sibling.
 check_refusal prose_dedent.rxt prose-dedent-K57 \
-    'continuation is indented' 'less than' 'delete content'
+    'continuation is indented' 'less than' 'dedenting would'
 
 # [K57FIX] THE THREE-LEG SIBLING: the identical shape at BLOCK scope, so
 # legs B (`run.sh`'s `prose_take`) and C (`verify_rxt.py`'s prose-region
