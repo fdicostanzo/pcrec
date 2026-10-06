@@ -336,3 +336,19 @@ pointer when a kit change merges to main.
 - Lanes running: r4ccore (opus, implement→replace), r4caxis (sonnet,
   the inert memfn-simd pair), r4cchecks (sonnet, C4/C12/C13/C14, C17
   re-key, VM-hybrid witness). Heavy runs are held for a slot from main.
+
+## 2026-10-06 — R4c: AXIS + CHECKS merged; CORE IMPLEMENT green; Q-G2-18 chosen
+
+- Merged into lane/memfn-r4c: r4caxis (the inert memfn-simd pair, registry
+  pin 205, a stream-5 listing mover only) and r4cchecks (C4, C12-C14, the
+  C17 re-key + census, the VM-hybrid witness; S518-S529, which used up the
+  block). make strict is clean, and the new sections are green on the merge.
+- Frank ruled Q1 YES as D145 addendum 1 (main 07573ff7): pcrec text
+  moved into the kit is relicensed 0BSD.
+- CORE IMPLEMENT (lane/r4ccore 66176e35): 0 movers on all 5 streams
+  with the I1 shadow live. I1 is also clean at -fcomments, both
+  engines, -e utf8 and the 8 M1 denies. Q10: no define-without-use.
+- Q-G2-18, CHOSEN by the kit manager: the precheck arm needs on_miss to
+  leave the site. pcrec STATES it (`mf_site.on_miss_leaves`; MF_SITE_ABI
+  2→3) and the kit never parses hook text. CORE's interim
+  jump-keyword sniff is retired. G2 coverage is OWED.
