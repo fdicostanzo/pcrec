@@ -254,3 +254,13 @@ pointer when a kit change merges to main.
   Never nest.
 - main removed memfn-r4b2-results (byte-identical to the archived
   probes/out/twins/r4b/linux/).
+
+## 2026-10-06 — box rule: lanes' long runs take the Mac suite lock
+
+- The pcrec manager's rule: a kit lane's recursion-identity or any
+  multi-section run takes worktrees/.mac-suite.lock (directory form,
+  owner file) and releases it on exit. Other lanes (ssbuild3, ARTREV
+  timing) wait on it. My briefs had said "do NOT take the lock", which was
+  wrong for long runs. memfnbump was corrected mid-run. From now on every
+  kit brief says: single quick sections need no lock; long or
+  multi-section runs take it.
