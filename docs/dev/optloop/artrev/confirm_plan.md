@@ -23,7 +23,7 @@ through `artrev.py time --remote ubuntubudu`.
 ## 1. Rebuild the four pilot roots from the pin, import the final twins
 
     WT=/Users/fdicostanzo/pcrec/worktrees/<confirmer-worktree>      # merged main + lane/artcollect
-    export ARTREV_CC=gcc-16 ARTREV_REMOTE_CC=gcc     # NOT ARTREV_HOST_ROOT: that is for D27 cells; it would put the timing lock in the main tree
+    export ARTREV_CC=gcc-16                          # ARTREV_REMOTE_CC=gcc goes on the `time --remote` command ONLY (exported session-wide it breaks local identity on the Mac, whose bare gcc is clang; lane artconf). NOT ARTREV_HOST_ROOT: that is for D27 cells; it would put the timing lock in the main tree
     export ARTREV_ROOT=$WT/build-artrev/confirm
     A="python3 -B $WT/studies/artrev/artrev.py"
     bash $WT/studies/artrev/confirm_prep.sh /Users/fdicostanzo/pcrec/build/pcrec $ARTREV_ROOT
