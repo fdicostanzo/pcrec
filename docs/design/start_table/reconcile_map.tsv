@@ -1,0 +1,23 @@
+# start_table.md §2.1 [r2.1 checks]: what reconciles methods 2 and 3 against
+# the family MECHANICALLY (reconcile.py), instead of the prose "every hidden
+# fingerprint is mapped". Each line maps an observable of the deny census to
+# the inventory.tsv member (or a named OUTSIDE disposition, §2.5) it is
+# attributed to. reconcile.py fails on an observable no line maps, on a line
+# whose member is not in inventory.tsv, and on an OTHER sabotage row whose
+# anchor names a family identifier (sabotage_anchors.tsv `reads`).
+# kind	match	member	why
+stamp	DFA_PREFILTER	dfa_prefilter_name	NEXT's stamp projection (N1-N13, N12 as "memchr")
+stamp	DFA_START	dfa_search_start_name	RECOVER's stamp projection (S1/S2)
+stamp	END_WINDOW	pcrec_emit_end_window_clamp	WINDOW W1/W2 (the stamp projects the fact today; the row after C5)
+stamp	REQ_HANDOFF	req_handoff_stamp	FIRST F1/F2
+stamp	REQ_WHY	req_admit	PRESENCE P1-P5 (P4 projects "emitted")
+stamp	VM_RESEED	vm_plan_reseed	RETRY R1-R6
+stamp	VM_START	vm_emit_stamps	BOUND B3/B4/B5 on CR_VM
+stamp	VM_START_SCAN	vm_start_row	NEXT on CR_VM (N7/N13)
+stamp	attempt_max	vm_emit_search_body	BOUND on CR_VM, read off the emitted literal (row_census.py)
+stamp	VM_PREFILTER_LANG	OUTSIDE:§2.5	prefilter admission (the route's input), moved by -fprefilter-collapse
+hidden	^#define RX_REQ_RUN 	pcrec_fact_req_run	the fact's own stamp: a landmark, not a row
+hidden	^#define RX_REQ_BYTE 	pcrec_fact_req_byte	the fact's own stamp: a landmark, not a row
+hidden	^#define RX_FINDINGS 	req_byte_dominated_by	the byte-rate prior's ASK (§1.3's side-effect channel); every PRED that prices the req byte asks it (assert_reach.tsv: the roots reaching find_derive_byte_rate)
+hidden	^if \(subject_length <= search_from \|\|	pcrec_emit_req_byte_check	P4 set-leads' pre-check BODY (P4 is stampless)
+hidden	^#define RX_ENGINE_SEL 	OUTSIDE:§2.5	the collapse rung's ENGINE_SEL: engine selection, the route's input

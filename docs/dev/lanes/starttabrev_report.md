@@ -100,3 +100,87 @@ A follow-up round starts from §R of the note and from `start_table/CLAUDE.md`.
 Every number in the note re-derives from a committed TSV via
 `start_table/note_tables.py` or the scripts' own summaries; the re-aim list is
 `sabotage_anchors.tsv`'s RE-AIM rows.
+
+## Revision 2.1 (lane `starttabrev3`, 2026-10-06)
+
+**Charter:** apply every fix from the short D6 re-check of revision 2 (both
+critics: "CLEARS with listed fixes") as revision 2.1, write the re-check
+record, and file the decision-family and [ARTREV] pilot rows in plan.md.
+DESIGN ONLY, as before: nothing under `src/`, `cli/`, `lib/` or `tests/`
+changed; no `make`. Probes used the main tree's `build/pcrec` (abi 64; main's
+`src/` unchanged since `74379fe0`). The branch merged main (`c9c98e98`) first;
+one conflict (`docs/dev/lanes/CLAUDE.md`, both lines kept).
+
+### Delivered
+
+- `docs/design/start_table.md` revision 2.1: §R.1 (the re-check disposition
+  table), changes marked `[r2.1 <id>]`. Every finding ACCEPTED; C-M2 with a
+  measured nuance (8 of 13 utf8 deny floors still pass with `-e utf8` dropped;
+  4 fail only by accident of population size; the design-level catches are the
+  asserted 0 and the plain utf8 floors).
+- `docs/dev/reviews/2026-10-06-r2-starttable-recheck.md`: id | finding |
+  disposition, plus three findings filed (F-1 S169 shared by two row files;
+  F-2 bits 12/13 have the [AXES-DENY-MASK] shape; F-3 `-fno-length-prune` is a
+  start-table input).
+- Instruments (`docs/design/start_table/`, own CLAUDE.md updated):
+  - `call_graph.py`: parses types, sized/initializer/string data, object-like
+    macros, headers (1,892 defs); types are never edges; ROW TYPES join the
+    family. Family 99 → 110 (+9 TYPE, `DfaMatch` NOTSTART,
+    `pcrec_reseed_nrows` PROJ), sites 148 → 149.
+  - `inventory.tsv`: 11 new dispositions, class TYPE.
+  - `sabotage_anchors.py` (rewritten): total owner resolution (def / factrow /
+    datarow / lead / filescope / outside), UNRESOLVED `src/` = exit 2;
+    overlap-based re-aims listing every commit; `rerun_at` per commit; rows
+    keyed by file; `reads` column.
+  - `refactor_edit_set.tsv`: R3's C5b line, C5's stamp/listing lines, the 15
+    route tests + `cand_route_of` (C2).
+  - NEW `assert_reach.py` → `assert_reach.tsv` (S-N5), `reconcile.py` +
+    `reconcile_map.tsv` (methods 2/3 reconciled mechanically),
+    `reader_grep.sh` → `reader_grep.txt` (C-N4), `plain_arms.tsv` (C-M2),
+    `allflags_sample.tsv` (C-N3). `deny_census.py` gains `--every K` and a
+    WALL print.
+- `docs/dev/plan.md` (a sonnet sub-lane, reviewed): NEW FILED-not-scheduled
+  rows [DEC-FALLBACK] (manager recommends keeping today's tokens, Frank to
+  confirm), [DEC-RUNG], [DEC-KINDATTR], [DEC-LIMITS], [DEC-ROUTE] (ABSORBED by
+  the route column), [DEC-POSDOM], [ART-POSS-ARMS], [ART-VMCTX-START],
+  [ART-TRAIL-ELIDE], [ART-CTX-TRIO] HOLD note; addenda on [LIST-TABLES] STEP 0
+  ([DEC-STAMPS]), [TIE-ALIGN] (re-scope = Q10), [AXES-DENY-MASK] (flagbits on
+  18/21, plus this lane's bits 12/13 cross-note), [OPT-B] (I9/I10).
+- CLAUDE.md updates: `docs/design/CLAUDE.md`, `docs/design/start_table/`,
+  `docs/dev/reviews/`, `docs/dev/lanes/`.
+
+### Validation (each command run on the committed files)
+
+- `python3 -I docs/design/start_table/inventory_check.py
+  docs/design/start_table/call_graph.txt docs/design/start_table/inventory.tsv`
+  → `family+seeds 125; dispositions 125`, exit 0.
+- `python3 -I docs/design/start_table/sabotage_anchors.py . call_graph.txt
+  refactor_edit_set.tsv` → `SITES 480 ROW_FILES 463 DISTINCT_IDS 462 DUP_IDS 1
+  (S169=2) FAMILY_ROWS 100 RE_AIM_ROWS 15 RE_RUN_ROWS 85 COUNT_MISMATCH 0
+  UNRESOLVED_SRC 0`, exit 0; output byte-identical to the committed TSV.
+  Failing-direction control: `DfaCand`'s def removed → `UNRESOLVED_SRC 1`
+  (S282), exit 2.
+- `python3 -I docs/design/start_table/reconcile.py docs/design/start_table`
+  → 10/10 stamp keys mapped, 5,192 hidden movers over 5 members, 0 OTHER rows
+  naming the family, exit 0. Control: two map lines removed → exit 1.
+- `assert_reach.py` → `ROOTS 34 ROOTS_REACHING_AN_ASSERT 13 PRED_ASSERT_SITES
+  34 FACTS_ASKED 9 FACT_ASSERT_SITES 4` (deterministic: two re-runs identical).
+- `call_graph.py` and `reader_grep.sh` re-runs byte-identical to the committed
+  outputs.
+- New runs: plain arms (43,140 compiles, 145 s, 6 jobs); all-flag 1-in-10
+  sample (43,200 compiles, 321 s, 6 jobs). The deny census itself was NOT
+  re-run: no instrument change touches it.
+
+### Owed / not done
+
+- The full all-flag deny sweep (≈54 min at 6 jobs) is C0's deliverable, as
+  the note says.
+- F-1 (renumber one S169 row) is the mech owner's; no `tests/` change here.
+- [DEC-FALLBACK]'s token ruling awaits Frank's confirmation (QUESTION 3).
+
+### Resume notes
+
+§R.1 of the note and `docs/dev/reviews/2026-10-06-r2-starttable-recheck.md`
+are the record. Every number re-derives from a committed TSV or a script's own
+summary line (`sabotage_anchors.total`, `assert_reach.py`'s stderr,
+`reconcile.py`'s stdout).

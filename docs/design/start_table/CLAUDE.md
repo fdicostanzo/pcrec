@@ -4,7 +4,11 @@ Design evidence for `../start_table.md`. Revision 1: lane `starttable`,
 2026-10-06, from main `74379fe0` (abi 64). Revision 2: lane `starttabrev`,
 2026-10-06, from main `4743ebb5` (same `src/`, same `build/pcrec`), which made
 the INVENTORY derived rather than hand-listed (the D6 panel's lesson: for a
-no-mover refactor the inventory is the claim). Nothing here is built or run by
+no-mover refactor the inventory is the claim). Revision 2.1: lane
+`starttabrev3`, same day, the short re-check's fixes
+(`../../dev/reviews/2026-10-06-r2-starttable-recheck.md`): total owner
+resolution, row types, per-commit re-run subsets, and three new instruments
+(`assert_reach.py`, `reconcile.py`, `reader_grep.sh`). Nothing here is built or run by
 `make`; every script is read-only on the tree it is pointed at. Outputs are
 committed so the note's numbers can be re-derived and diffed at a later pin.
 None of them is read by a check.
@@ -12,9 +16,12 @@ None of them is read by a check.
 ## Files
 
 - `call_graph.py` → `call_graph.txt` — method 1 of the derived inventory
-  (start_table.md §2.1). Parses every top-level definition under `src/`
-  (functions, `static const` tables, function-like macros), draws an edge for
-  every definition a body names, and prints: `def-*` (every definition and its
+  (start_table.md §2.1). Parses every top-level definition under `src/`,
+  headers included (functions, tables of any size, initializer/string/scalar
+  data, types, function-like and object-like macros: 1,892 at revision 2.1),
+  draws an edge for every definition a body names (never to a TYPE), adds the
+  ROW TYPES to the family (each family table's element type and the types it
+  embeds by value), and prints: `def-*` (every definition and its
   line range — the owner map `sabotage_anchors.py` reads), `seed` (the landmark
   reads: `facts.def`'s accessors minus `kinds`/`nullable`, the route read, and
   the four machine-landmark producers + four VM fields, the ONE hand input,
@@ -25,9 +32,9 @@ None of them is read by a check.
   `python3 -I call_graph.py ROOT > call_graph.txt`.
 - `inventory.tsv` — the DISPOSITION of every family member and seed (class:
   TABLE / WALK / PRED / EMIT / INLINE / READER / PROJ / ROUTE / BODY / LANDMARK /
-  PLAN / NOTSTART, slot/rows, note). Hand-written, but checked:
+  PLAN / NOTSTART / TYPE, slot/rows, note). Hand-written, but checked:
 - `inventory_check.py` — fails unless `inventory.tsv` dispositions exactly the
-  family+seeds `call_graph.txt` names (114/114 at this pin). Usage:
+  family+seeds `call_graph.txt` names (125/125 at revision 2.1; 114/114 at revision 2). Usage:
   `python3 -I inventory_check.py call_graph.txt inventory.tsv`.
 - `deny_census.py` → `deny_census.tsv`, `deny_transitions.tsv`,
   `deny_hidden.tsv`, `deny_movers.tsv`, `row_census.tsv`, `slowest.tsv` —
@@ -40,7 +47,16 @@ None of them is read by a check.
   AND every deny arm in `row_census.py`'s format (`row_census.tsv`: the deny arm
   the checks critic asked for). `deny_movers.tsv` is the per-pattern list
   (pattern as hex) the C0 manifests are drawn from. Usage:
-  `python3 -I deny_census.py PCREC_BIN TREE OUTDIR --jobs N`.
+  `python3 -I deny_census.py PCREC_BIN TREE OUTDIR --jobs N [--flags F,..]
+  [--every K]` (`--every K` keeps every K-th pattern, for a cost/coverage
+  sample; it prints its WALL time).
+- `plain_arms.tsv` — [r2.1 C-M2] `deny_census.py` run with `--encoding=utf8`
+  and `-i` as its two "flags" (all patterns, four arms): the plain utf8 and
+  caseless arms' DIFFER floors (whole bytes, and start-stamp movers).
+- `allflags_sample.tsv` — [r2.1 C-N3] `deny_census.py --every 10` over the 29
+  `--list-axes` flags NOT in `START_FLAGS`, four arms (43,200 compiles, 321 s
+  at 6 jobs): the cost of the full sweep and the non-start flags that move
+  start stamps (`-fno-length-prune` without a route change).
 - `row_census.py` — the per-ROW stamp census (revision 1's instrument),
   revision 2: joint keys are ROUTE-KEYED by seven disjoint route classes
   (`DFA-UNANCH/ATTEMPT/EMPTY`, `HYB-UNANCH/ATTEMPT/EMPTY`, `VM-ONLY`, the route
@@ -58,18 +74,40 @@ None of them is read by a check.
   (start_table.md §2.4 D-2b: 1 disagreement in 388).
 - `refactor_edit_set.tsv` — the plan's ONE statement of what text the refactor
   changes (`def` / `token` / `line`, each with its commit and reason). The
-  re-aim list is derived from it, never stated.
+  re-aim list is derived from it, never stated. Revision 2.1 adds R3's C5b
+  line, C5's stamp/listing lines and the fifteen `job->engine` route tests
+  that read the new `cand_route_of` (C2).
 - `sabotage_anchors.py` → `sabotage_anchors.tsv`, `sabotage_anchors.total` —
   method 3: every anchor SITE of every sabotage row (`SAB_FILE` and
   `SAB_FILE2`, any target file) mapped to its owning definition by
   `call_graph.txt`'s own parse, then classified FAMILY / RE-AIM / RE-RUN from
   `call_graph.txt` + `refactor_edit_set.tsv` alone (no hand family list; the
-  revision-1 `sabotage_anchors.family` file is deleted). Also reports each
-  site's occurrence count against `SAB_COUNT` (the rule
+  revision-1 `sabotage_anchors.family` file is deleted). Revision 2.1: owner
+  resolution is TOTAL on `src/` (def / factrow / datarow / lead / filescope /
+  outside; an unresolved `src/` site exits 2), a re-aim is any OVERLAP with an
+  edit-set token/line and lists EVERY commit that moves it, re-run rows carry
+  `rerun_at` (the commits touching their owner), rows are keyed by FILE (S169
+  is shared by two), and `reads` lists the family identifiers an anchor names.
+  Also reports each site's occurrence count against `SAB_COUNT` (the rule
   `scripts/m6read_check_sab_anchors.py` enforces in `make test-codegen`
-  [SABANCHOR]). At this pin: 463 rows / 480 sites, 95 family rows, 14 re-aim,
-  81 re-run, 0 count mismatches. Usage:
+  [SABANCHOR]). At revision 2.1: 463 row files / 462 ids / 480 sites, 100
+  family rows, 15 re-aim, 85 re-run, 0 count mismatches, 0 unresolved
+  (`sabotage_anchors.total` is the summary). Usage:
   `python3 -I sabotage_anchors.py ROOT call_graph.txt refactor_edit_set.tsv`.
+- `assert_reach.py` → `assert_reach.tsv` — [r2.1 S-N5] the population behind
+  start_table.md §1.3(b): every `pcrec_ctx_fail` reachable from a predicate
+  root (`inventory.tsv` PRED/WALK/INLINE) through call_graph.py's own edges
+  (imported), not entering tables, the facts layer (asked facts are listed
+  with their owner file's assertions) or the out-of-memory path. Usage:
+  `python3 -I assert_reach.py ROOT inventory.tsv`.
+- `reconcile.py` + `reconcile_map.tsv` — [r2.1 checks] reconciles methods 2
+  and 3 against the family mechanically: every moved stamp key and every
+  hidden fingerprint maps to an `inventory.tsv` member (or `OUTSIDE:§2.5`),
+  and no OTHER sabotage row names a family identifier; exit 1 otherwise.
+  Usage: `python3 -I reconcile.py DIR`.
+- `reader_grep.sh` → `reader_grep.txt` — [r2.1 C-N4] every reader outside
+  `src/` of an identifier the edit set retires, by `git grep`. Usage:
+  `reader_grep.sh ROOT`.
 - `site_census.sh` → `site_census.txt` — revision 1's grep census of the named
   tables, inline decisions and readers. Superseded as the inventory by the
   three methods above; kept because the note's file:line citations came from it.

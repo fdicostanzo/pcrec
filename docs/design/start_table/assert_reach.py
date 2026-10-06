@@ -79,7 +79,7 @@ for r in sorted(roots):
             print(f"pred-assert\t{r}\t{x}\t{f}:{ln}\t{t}")
             npa += 1
             roots_hit.add(r)
-        st.extend(edges[x])
+        st.extend(sorted(edges[x], reverse=True))
 nfa = 0
 for fct in sorted(asked):
     of = owner_of_fact.get(fct)

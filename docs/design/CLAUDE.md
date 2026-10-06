@@ -2717,6 +2717,11 @@ Four light panels in two days (the K82 handoff, [OPT-SETS], [MEMFN] K0 r1/r2) fo
     - D-4 is added: the run pin vs the offset-k pick, systematic under utf8.
     - The proof is respecified: a derived sabotage family (14 re-aim / 81 re-run / 95 rows, from an edit-set file), and the existing [SABANCHOR] exact-count gate; per-arm DIFFER floors; the trace's record, print site and parent reference; the deny delta as each row's independent control; witnesses for B1/B2/H1/P4/P5.
     - §6 restates Q1-Q9 and adds Q10 (D-4's fix, [TIE-ALIGN] re-scoped).
+  - **REVISION 2.1 (lane `starttabrev3`, 2026-10-06) applies the short re-check (`../dev/reviews/2026-10-06-r2-starttable-recheck.md`, both critics "CLEARS with listed fixes", every finding accepted); read §R.1 first.**
+    - Owner resolution of the sabotage anchors is TOTAL on `src/` (an unresolved site is a hard error); the call graph parses types, data and headers and adds the row types: 100 family rows, 15 re-aim, 85 re-run, inventory 125/125. S169 is shared by two row files (filed).
+    - §1.6: termination is a per-row PROGRESS obligation, not a property of `LOWER`; E5 re-enters; `HIT`/`START` types and the non-slot successors make the type check evaluable; E11 re-typed.
+    - §2.3: fifteen `job->engine` route tests, read through one new `cand_route_of` (C2).
+    - C0 owns the trace instrument; the plain utf8 and `-i` DIFFER floors are measured; a 1-in-10 all-flag sample puts `-fno-length-prune` in the deny arms; `reconcile.py`, `assert_reach.py` and `reader_grep.sh` make three prose claims mechanical. Q1 is RULED (D151 addendum 1); the position domain is filed as [DEC-POSDOM].
 - `start_table/` — that note's call graph, disposition file and completeness check, deny-delta census, route-keyed stamp census (with deny arms), edit set, derived sabotage-anchor map, and anchoring-agreement probe (own CLAUDE.md).
 - `decision_families_survey.md` — **SURVEY, read-only, nothing built** (lane `decsurvey`, 2026-10-06, from main `74379fe0`). It answers Frank's "forest for the trees" question: which DECISION FAMILIES (several sites answering one question through if/else chains, scattered `flag && fact` conjunctions or duplicated comparisons, rather than one first-match row table) are still dispersed.
   - **§0** ranks 13 families, beside the ones already unified.
