@@ -553,8 +553,10 @@ bit. Because the VM hat reaches far more artifacts under `--engine=vm`
   `dump_diff.awk`; MISMATCH/LOST/GAINED/REFUSED fail, a GIVEUP1 is allowed
   only by a `-fno-start-set|<key>` entry, and `startset_arm.py` counts the
   baseline cases whose block is in the forced mover manifest, held to
-  `SS_MOVER_FLOOR` (11,000: half the 22,467 case lines in the forced
-  manifest's corpus blocks, a static count until the first full run).
+  `SS_MOVER_FLOOR` (11,000: half the 22,467 mover cases the first full run
+  measured, all 2,560 forced-manifest blocks; equal to the static count of
+  their case lines). A single-directory subset breaches it by construction
+  (`tests/startset/` reads 303), `-fprefilter`'s subset shape.
 
 **A MULTI-FLAG JOB INHERITS EACH COMPONENT FLAG'S DOCUMENTED POPULATIONS**:
 `run_one_axis` unions `REFUSAL_PATTERN` and `GIVEUP1_ALLOWANCE` over the

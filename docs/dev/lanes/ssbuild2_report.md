@@ -4,7 +4,7 @@ Lane `ssbuild2`, 2026-10-05, opus. Branch `lane/ssbuild2` off main
 `f3c726d7`. Builds `docs/design/startset.md` §8's stage-2 row (rev 2 + the
 §6.4 ssedge edge cells) under D148 + addenda 1-2. **THIS IS AN ABI EVENT:
 main's 61 -> 62.** Movers equal the manifests BY ID, 0 off-diagonal (§3).
-Owed runs and their exact commands are in §7.
+Owed runs and their exact commands are in §7; the full Mac `make test` is the lane's last act, running detached.
 
 ## 0. Summary
 
@@ -20,7 +20,7 @@ Owed runs and their exact commands are in §7.
 | edge cells moved home | `tests/startset/vmhat.rxt`, `giveup.rxt` (+ `vmhat_walk.rxt`, `tests/vars/startset.rxt`) | done |
 | structural + mover-manifest checks | `tests/startset/vmhat_checks.py` | green |
 | every-startpos differential + start-byte oracle (plain and ASan/UBSan) | `tests/startset/vmhat_diff.py` + `vmhat_driver.c` | green |
-| run_axes PRODUCT ARM | `tests/axes/run_axes.sh`, `startset_arm.py` | built; full run OWED (§7) |
+| run_axes PRODUCT ARM | `tests/axes/run_axes.sh`, `startset_arm.py` | built; full-corpus run green (§5b) |
 | sabotage rows S478 S479 S491-S494 S496-S500 | `tests/mech/sabotages/`, mech arm `vmhat` | see §5 |
 | VMSTART site row | `docs/design/memfn/integration.md` N-table (C17's `tests/memfn/site_manifest.tsv` does not exist at this pin; recorded `pending`) | done |
 | Linux alpha script | `docs/dev/optloop/startset/alpha_s2.sh` | WRITTEN, NOT RUN (owed) |
@@ -84,9 +84,9 @@ are removed — all 6,946 pairs. No K flip at the shipped threshold.
 | `bash tests/rxtsource/run_rxtsource_tests.sh` | 279 PASS / 0 FAIL (see §6 for an environmental note) |
 | `make test-startset` (stage 1 + `run_vmhat_checks.sh`) | green; floors: blocks 1,736, auto 88, vm 1,280 |
 | `vmhat_diff.py` plain | 528 (mover, config) pairs, 3,165,576 cells, 0 defects, 127,920 matches start-byte-checked |
-| `SAN=1 vmhat_diff.py` (ASan/UBSan) | see §5a |
-| `make test-axes` own flag (`AXES=-fno-start-set`), subset `tests/startset/` | see §5a; the FULL corpus run is OWED (§7) |
-| recursion identity (B) | default arm PASS against 82370766 (2,883 call-free patterns identical); vm arm see §5a |
+| `SAN=1 vmhat_diff.py` (ASan/UBSan) | 528 pairs, 3,165,576 cells, 0 defects |
+| `AXES=-fno-start-set` (own flag + product arm), full corpus | RC 0; product arm 22,467 mover cases = the static count; 0 mismatches (§5b) |
+| recursion identity | 16/0, (B) pinned to `b0eff398` (2,883 call-free patterns identical on every axis) |
 | GROUP F5 | `giveup.rxt` lines 21-41 and 56 (22 keys) are the only one-sided give-ups; the design's 11 corpus budget/`gu` movers read 0 |
 
 ## 5. Sabotage rows (S478-S504 are START-SET's)
@@ -111,7 +111,60 @@ S501/S502 are stage 1's; S495 stage 0's; **S503 (UTF-8 UC cells under
 
 ### 5a. Measured at the end of the lane
 
-(filled below)
+**Solo mech rows** (`bash tests/mech/run_sabotage_matrix.sh <id>`, one
+row per run, at `9de172d0`): every row scored as expected — 0 unexpected,
+0 undetected, 0 anomalies.
+
+| id | verdict | figure |
+|---|---|---|
+| S478 | DETECTED | reach:ok(1/1), vmhat:471fail/18pass |
+| S479 | UNREACHED (expected) | reach:MISSING(1/1) |
+| S491 | DETECTED | reach:ok(1/1), vmhat:5fail/17pass |
+| S492 | DETECTED | reach:ok(1/1), vmhat:5fail/17pass |
+| S493 | DETECTED | reach:ok(1/1), vmhat:3fail/19pass |
+| S494 | DETECTED | reach:ok(1/1), vmhat:12fail/13pass |
+| S496 | UNREACHED (expected) | reach:MISSING(1/1) |
+| S497 | UNREACHED (expected) | reach:MISSING(1/1) |
+| S498 | DETECTED | reach:ok(1/1), vmhat:3fail/19pass |
+| S499 | DETECTED | reach:ok(1/1), vmhat:3fail/19pass |
+| S500 | DETECTED | reach:ok(1/1), vars:1fail/1pass |
+
+**`SAN=1 vmhat_diff.py`** (ASan/UBSan, both artifacts and the driver):
+528 of 528 (mover, config) pairs, 3,165,576 cells, all same, 127,920
+matches start-byte-checked on 522 pairs, `checks failed: 0`.
+
+**Recursion identity** (`tests/codegen/run_recursion_identity.sh`, all
+four axes, (B) pinned to `b0eff398`): `checks passed: 16 / failed: 0`.
+
+**`AXES=-fno-start-set` over `tests/startset/`** (subset): all three jobs
+OK — `-fno-start-set` and `--engine=vm -fno-start-set` each 383 keys,
+GIVEUP1 22 (all 22 allowed, the F5 keys), 0 mismatches/lost/gained/
+refused; `--engine=vm` 383/383 agree. The product arm's mover floor FAILS on
+a subset by construction (303 mover cases, 13 of 2,560 blocks), the same
+shape `-fprefilter`'s subset run has. This run found a defect of the lane's
+own: `run_one_axis`'s component-union lookup declared `relkey` and read it
+in ONE `local`, which bash expands before assigning, so every job with a
+GIVEUP1 case died with `relkey: unbound variable` and produced no result
+file — fixed (two statements), re-run green. The full-corpus run is §5b.
+
+### 5b. Full-corpus `AXES=-fno-start-set`
+
+`AXES=-fno-start-set SKIP_ORACLE=1 bash tests/axes/run_axes.sh` on the
+Mac, RC 0, 3,630 s wall (baseline 34,376 cases):
+
+| job | agree | GIVEUP1 (allowed) | mismatch/lost/gained/refused |
+|---|---|---|---|
+| `-fno-start-set` | 34,354 | 22 (22: GROUP F5) | 0/0/0/0 |
+| `--engine=vm` | 34,366 | 10 (10: its own documented population) | 0/0/0/0 |
+| `--engine=vm -fno-start-set` | 34,344 | 32 (32: the union of both) | 0/0/0/0 |
+| **product arm** (`--engine=vm` vs `--engine=vm -fno-start-set`) | 34,354 | 22 (22: F5) | 0/0/0/0 |
+
+The product arm counted **22,467 mover cases over all 2,560 forced-manifest
+corpus blocks — exactly the static count of those blocks' case lines** that
+derived the floor before the run; the floor (11,000) is now half a
+measurement and its comment says so. The oracle cross-check, the
+`--vm-entry-shape` tier, DIAL-S3 and the `-futf-check` arm were filtered
+out by `AXES=`, as for every single-flag run.
 
 ## 6. Findings
 
@@ -139,19 +192,21 @@ S501/S502 are stage 1's; S495 stage 0's; **S503 (UTF-8 UC cells under
 
 ## 7. OWED runs (exact commands)
 
-1. **Mac full `make test`** — `worktrees/.mac-suite.lock` is HELD (owner
-   `memfn-r4a 88651`, 2026-10-05 20:06 EDT); not waited for. When free:
-   `mkdir worktrees/.mac-suite.lock && echo ssbuild2 > worktrees/.mac-suite.lock/owner;
-   cd worktrees/ssbuild2 && make -j4 test > make_test.log 2>&1; rm -rf ../.mac-suite.lock`
-   — it also regenerates `docs/dev/artifact_size_log.tsv` (byte-count reader;
-   commit the diff, every row's change should be +32 or a mover's table).
-2. **Full `make test-axes` with the product arm** (multi-hour):
-   `cd worktrees/ssbuild2 && AXES="-fno-start-set" bash tests/axes/run_axes.sh > axes_ss.log 2>&1`
-   — read the `start-set product arm` summary line: mover_cases vs
-   `SS_MOVER_FLOOR` (11,000, derived: half the 22,467 case lines in the
-   forced manifest's corpus blocks), MISMATCH/LOST/GAINED/REFUSED 0, GIVEUP1
-   only the 22 F5 keys. Replace the derived floor with half the measured
-   count.
+1. **Mac full `make test`** — `worktrees/.mac-suite.lock` was HELD (owner
+   `memfn-r4a`) for the lane's working period and FREE at the end, so the
+   run was launched DETACHED as the lane's last act, at this report's
+   commit, holding the lock (owner `ssbuild2`) and releasing it on exit:
+   log `/private/tmp/claude-501/-Users-fdicostanzo-pcrec/ssbuild2/scratchpad/make_test.log`,
+   completion line `MAKE_TEST_RC=<n>` at its tail. Its verdict is make's
+   `*** [test-X] Error` lines. It also regenerates
+   `docs/dev/artifact_size_log.tsv` in the worktree (a byte-count reader:
+   every row's change should be +32 for the stamp line or a mover's table;
+   commit the diff). Re-run command if lost:
+   `cd worktrees/ssbuild2 && make -j4 test CC=gcc-16 > make_test.log 2>&1`.
+2. **The whole `make test-axes`** (every flag, Linux batch gate): the
+   `-fno-start-set` arm and the product arm RAN here (§5b, green); what is
+   owed is the full sweep with the oracle cross-check, at the round's batch
+   gate: `make test-axes > axes.log 2>&1`.
 3. **Linux alpha** (executor channel, NOT run here):
    `BASE_REV=f3c726d7 NEW_REV=<lane tip> CPU=2 bash docs/dev/optloop/startset/alpha_s2.sh all > alpha_s2.log 2>&1`
    on ubuntubudu from a checkout that has the lane tip (PCREC_REPO, BENCH as
