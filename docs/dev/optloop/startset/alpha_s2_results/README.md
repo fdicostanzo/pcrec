@@ -26,5 +26,5 @@ No other result TSVs exist: the driver prints its table to stdout.
 
 Caveat: ~10 minutes into run 1 a second `time` instance was launched by mistake
 (the lane misread run 1's progress) and killed by `scripts/safekill` within ~40 s,
-before its first load-gate-passed launch could be observed; it overlapped only run 1's
-`union-srch` control cells. Those cells were re-read in run 2 and agree.
+(whether it passed the load gate and launched any pinned process in that time was not
+recorded); it overlapped only run 1's `union-srch` control cells. Those cells were re-read in run 2 and agree.
