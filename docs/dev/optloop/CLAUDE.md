@@ -861,3 +861,7 @@ that cycle's analysis lands.
 
 - `artrev/confirm/` — [ARTREV] S4 results (lane artconf, 2026-10-06): `verdicts.md` (the reportable tables), `confirmed_A*.tsv`, `identity.tsv` + `idlogs/`, `raw/` (every timing run's raw.tsv/summary and the driver scripts). `artrev/<A>/confirmed.tsv` copies per artifact; `notebook/confirmed.md` holds the per-lead rows.
 - `artrev/report_pilot.md` — [ARTREV] S6 for the PILOT (2026-10-06): verdict, per-artifact confirmed leads with idea ids/sites/populations, the yield table (incl. the A07 dual-review overlap and notebook transfer), ranked suggestions as filed-not-scheduled drafts, what did not work, process findings, and the full-run terms. Composed by lane artrep, written by the manager. Exec summary: `docs/dev/summaries/2026-10-06-artrev-pilot.md`.
+
+## [OPTLOOP] round 3's draft selection (lane `round3sel`, 2026-10-06)
+
+- `round3_selection.md` — the DRAFT round-3 slate for Frank: 8 ranked rows (3a = 1-4 ungated, 3b = 5-8, two GATED on [START-TABLE] C7) plus 4 backups, kanban-ordered; the not-selected list with reasons, the cause-group conflicts (start-table fold, RETRY slot, memfn-migrated text, [DEC-FALLBACK]'s admission ternary, the doubled-word triple), questions with recommendations, and the bench-only relay list. Docs only; Frank ratifies.
