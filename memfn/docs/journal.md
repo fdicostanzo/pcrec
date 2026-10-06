@@ -305,3 +305,15 @@ pointer when a kit change merges to main.
   - Frank: tuning constants are suspect (D149).
 - The next session wakes from memfn/docs/wake.md (current as of
   eef95511) and waits for main's Linux results to post R4a′'s done:.
+
+## 2026-10-06 — R4a′ closed
+
+- Main landed R4a′ as abi 63 (340d8fef). The Linux run was 53/53, with
+  one check-side red fixed on main (enctri). The census was clean.
+  START-SET stage 3 then took abi 64 on top.
+- Posted R4a′'s `done:` in responses.md (R-3 closed). Pruned
+  memfnstamp/memfnbump via `scripts/wtprune`. Rewrote wake.md.
+- Branch `lane/memfn-ledger` from main c9c98e98, ledger commits only.
+- Waiting: R-4 (R4c, the M1 migration), which main is sequencing with
+  Frank against the start-table refactor (shared emit_dfa.c
+  offset-skip/PRE sites). No R4c code before R-4 is filed.
