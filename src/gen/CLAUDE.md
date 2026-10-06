@@ -1060,7 +1060,7 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
 
 ## Files
 
-- **memfn_stamps.c** — [MEMFN] R4a′ (lane memfnstamp, 2026-10-05;
+- **memfn_stamps.c** — [MEMFN] R4a′ (lane memfnstamp, 2026-10-05; abi 62 -> 63 at lane memfnbump;
   `docs/design/memfn/integration.md` §R4.3.3, §18; D147 addendum 10): the
   kit's two every-artifact stamps, `<PREFIX>_MEMFN_FORMS` and
   `<PREFIX>_MEMFN_LIBC` (`docs/spec/match_api.md` §6.3). Both engines write a

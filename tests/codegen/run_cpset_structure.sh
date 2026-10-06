@@ -761,6 +761,19 @@ fi
 # retry seeks. VERIFIED BY DIFFING `(\w+)\s+\1` against the abi-61 compiler at
 # the same `-o` basename: the abi digits, the stamp, the table, the two seeks,
 # nothing else.
+#
+# RE-RECORDED 2026-10-06 at [MEMFN] R4a′ ON THE MERGED TREE (lane memfnbump;
+# lane/memfn-r4a2 after its merge of main 57db5152, i.e. ON TOP OF stage 2's
+# `RX_VM_START_SCAN` line above; the abi digit follows at the same width):
+# all twelve `EMITTED_BYTES` rows move, each by the kit's two every-artifact
+# lines after `RX_RUN_WORDS`: `#define RX_MEMFN_FORMS "none"` (+30) and
+# `#define RX_MEMFN_LIBC "<v>"`, +29 at "none" (`^foo$`,
+# `cat|dog|cow|calf|camel`, `(\w+)\s+\1`: +59), +31 at "memchr" (eight
+# rows: +61) and +38 at "memchr,memcmp" (`\bword\b`: +68). MEASURED from
+# this tree's build (this check's own sample loop), never added by hand;
+# VERIFIED BY the R4a′ mover census (tests/memfn/stamp_mover_census.py
+# --ref 57db5152): every corpus artifact differs from main by exactly those
+# two lines (memfnbump_report.md §2).
 MANIFEST="$ROOT_DIR/tests/codegen/manifests/m5_stage1_stamps.tsv"
 if [ -d "$(dirname "$MANIFEST")" ]; then
     if [ -f "$MANIFEST" ]; then

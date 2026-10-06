@@ -202,11 +202,27 @@ srcs=$(pcrec_lib_srcs "$ROOT_DIR" | tr '\n' ' ')
 # move by the same K-invariant +425 (K=6 36,636, K=3 32,440, K=2 30,325). At
 # 31,900 the shape is this cell's again: 6 and 3 do not fit, 4 does and is
 # the largest that does, and 2 fits too.
+#
+# RE-CALIBRATED 31,900 -> 32,300, 2026-10-06 ([MEMFN] R4a′ on the merged
+# tree, lane memfnbump; the abi 62 -> 63 event). Every artifact gained the
+# kit's two stamp lines after `RX_RUN_WORDS` (+61 B of code here: FORMS +30,
+# LIBC "memchr" +31), and the every-artifact stamps since [UTF-VALID]
+# (RUN_WORDS, REQ_HANDOFF, VM_START_SCAN) had already used up all but 54 B
+# of the old cap's headroom: K=4 sat at 31,846 on main 57db5152 and now sits
+# at 31,907, just over, so the ladder correctly took K=2. MEASURED on this
+# reference build by bisecting the cap (the largest cap at which the rescue
+# still takes K=2 is 31,906): K=4 31,907; the other rungs, read through
+# `--unroll=K --warn-emit-bytes=1`'s "N of code" on the default build (which
+# reads K=4 at 31,902, 5 B under the ladder's own text) and corrected by the
+# same +5: K=6 ~36,988, K=3 ~32,792, K=2 ~30,677. At 32,300 (verified: K=4
+# taken) the shape is this cell's again, with ~390 B of headroom for the next
+# every-artifact stamp and ~490 B under K=3: 6 and 3 do not fit, 4 does and
+# is the largest that does, and 2 fits too.
 if $CC -O1 -std=gnu11 -I"$ROOT_DIR/lib" -I"$ROOT_DIR/src" \
        -DPCREC_SIZE_TERM_THRESHOLD=20000 \
-       -DPCREC_MAX_VM_EMIT_CODE_BYTES=31900 \
+       -DPCREC_MAX_VM_EMIT_CODE_BYTES=32300 \
        -o "$REF" "$ROOT_DIR/cli/main.c" $srcs 2>"$WORK/ref.err"; then
-    ok "reference compiler built with the threshold at 20000 and the code cap at 31900"
+    ok "reference compiler built with the threshold at 20000 and the code cap at 32300"
     RESCUE='(?:aa|a){8,12}+b'
     if "$REF" -p rx --features all -o "$WORK/r.c" --pattern "$RESCUE" 2>/dev/null; then
         got="$(stamp UNROLL_K_WHY "$WORK/r.c" | tr -d '"')"
@@ -230,7 +246,7 @@ if $CC -O1 -std=gnu11 -I"$ROOT_DIR/lib" -I"$ROOT_DIR/src" \
         if [ "$rk" = "4" ]; then
             ok "the rescue took the LARGEST fitting K (4) — not merely a different one"
         else
-            bad "the rescue took K=$rk; under this reference build the ladder's rung 6 does NOT fit (36,636 B against the 31,900 cap) and rung 4 does (31,555 B, re-measured 2026-09-30 at [UTF-VALID]), so the largest fitting rung is 4. A smaller K here means the ladder is being walked in the wrong direction"
+            bad "the rescue took K=$rk; under this reference build the ladder's rung 6 does NOT fit (~36,988 B against the 32,300 cap) and rung 4 does (31,907 B, re-measured 2026-10-06 at [MEMFN] R4a′), so the largest fitting rung is 4. A smaller K here means the ladder is being walked in the wrong direction"
         fi
         # [PF-DROP] (D135) THE RESCUE IS A DEGRADING ROW of the size-cap
         # ladder (a smaller K measured ~1.03-1.06x slower, pfdrop_report.md
