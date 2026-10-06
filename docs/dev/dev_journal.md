@@ -26389,3 +26389,19 @@ Frank: "finish up open work/bench results/errors", Linux box free (bench manager
   scratch timing run (00:27, Mac) read L2 -45% alone, L4 -72%; scratch only.
   rvA01's main lead: anchor on '(' (required, 8.7x rarer than the picked
   'a'): fail subjects 33,377 -> 3,820 memchr/MiB. rvA09 (hybrid) running.
+- ~02:40: [ARTREV] rvA09 delivered (6 leads; forward prefilter DFA steps
+  every byte — the {0,29} two-state component defeats the state-0 skip; L1
+  jumps to whole ERROR/FATAL/CRIT via rare-byte memchr, seeded from rvA01's
+  notebook entry: the notebook transferred). Its HARNESS FINDING: identity
+  used only default `_in` buffers, so a frame-dropping twin answering where
+  the original gives up passed (284k diffs); charter amended with the
+  shrunken-resource check + THE GIVE-UP RULE (497f8bda). Lane artcollect
+  (sonnet): collect the 5 reviews, harden identity, re-verify every twin,
+  write the Linux confirm plan.
+- START-SET STAGE 3 BUILT (lane/ssbuild3 @ 29873a3c, NOT merged): full Mac
+  make test 52/52 (nm only), every-startpos differential 1.15M cells 0
+  defects plain + SAN, mech 0 unexpected, emit_sweep FINDING column 0
+  (88 hat movers default). Drafted abi 62->64; PARKED until R4a′ (63) lands
+  by day, then re-pin. D6 panel launched: crit3sound (oracle soundness,
+  counterexamples) + crit3checks (controls/populations/sabotage/abi/spec),
+  each writing its own findings file under worktrees/ssbuild3/docs/dev/reviews/.
