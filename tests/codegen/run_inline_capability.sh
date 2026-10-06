@@ -169,7 +169,14 @@ shape_b="$(grep -m1 '^#define RX_VM_ENTRY_SHAPE ' "$Bemit" | awk '{print $3}')"
 
 # ---- compile both arms and read the symbol table -------------------------
 chain_syms() {  # chain_syms <object> -> the surviving chain symbols, one per line
-    "$NM" "$1" 2>/dev/null | awk '$3 == "rx_search_run" || $3 == "rx_match_anchored" { print $3 }' | LC_ALL=C sort
+    # Mach-O prefixes every C symbol with `_` (`_rx_search_run`); ELF does
+    # not. One leading underscore is stripped before the name is compared,
+    # read off the symbol itself rather than off `uname` (the object format
+    # is the fact, not the host) — tests/codegen/run_facts_checks.sh's own
+    # convention. Until 2026-10-06 this compared the raw name, so on darwin
+    # the gate below fired on every run ("could not read") and the census
+    # line had never produced a darwin verdict.
+    "$NM" "$1" 2>/dev/null | awk '{ n = $3; sub(/^_/, "", n) } n == "rx_search_run" || n == "rx_match_anchored" { print n }' | LC_ALL=C sort
 }
 
 for arm in a b_emitter b_textual; do
@@ -188,7 +195,7 @@ symsBt="$(chain_syms "$WORKDIR/arm_b_textual.o")"
 # (3) `nm` MUST HAVE WORKED. An object with no symbols at all is a read
 # failure, not a verdict: every artifact defines its exported entries.
 for o in arm_a arm_b_emitter; do
-    if ! "$NM" "$WORKDIR/$o.o" 2>/dev/null | grep -q ' rx_search$'; then
+    if ! "$NM" "$WORKDIR/$o.o" 2>/dev/null | grep -qE ' _?rx_search$'; then
         bad "$NM could not read $o.o (no rx_search symbol) — no verdict is evidence here"
         exit 1
     fi

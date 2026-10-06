@@ -834,6 +834,16 @@ decides whether to perform it — and then run the row through
     the witness stopping being frameless (the [MECH-REACH] shape — a witness
     that stopped reaching its site), and a symbol table that cannot be read
     or two arm-B spellings that disagree.
+  - **THE DARWIN RED WAS THIS FILE's BUG (fixed 2026-10-06).** Mach-O prefixes
+    every C symbol with `_`, and both the chain-symbol read and the
+    "nm must have worked" gate compared raw names, so on the Mac the gate
+    fired on EVERY run ("could not read arm_a.o") and the probe had never
+    produced a darwin verdict — the "accepted darwin red" every Mac
+    `make test` carried. One leading `_` is now stripped off the symbol
+    itself (the object format is the fact, not `uname`). First darwin
+    verdict: gcc-16 16.2.0 prints NEEDED (`rx_match_anchored` out of line
+    without the attribute). Failing direction re-proven: `NM=true` still
+    fires the gate.
   - **NON-VACUITY MEASURED AT LANDING, and it is the reason to trust either
     verdict**: gcc 15.2.0 prints NEEDED (`rx_match_anchored` and
     `rx_search_run` both out of line without the attribute — STEP 0's own
