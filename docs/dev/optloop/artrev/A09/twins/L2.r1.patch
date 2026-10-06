@@ -1,0 +1,30 @@
+--- a/artifact.c
++++ b/artifact.c
+@@ -785,13 +785,25 @@
+           1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,
+           1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,
+     };
++    /* [ARTREV L2] the bytes on which state 0 leaves the searching pair {0,29}. */
++    static const unsigned char rx_forward_leave_0_29[256] = {
++        ['C'] = 1, ['E'] = 1, ['F'] = 1,
++    };
+     size_t scan_position = search_from;
+     size_t last_accept_position = (size_t)-1;
+     if (search_from > subject_length) return 0;
+     rx_forward_state forward_state = search_from ? rx_forward_seed_state[rx_forward_byte_class[subject[search_from - 1]]] : 0;
+     for (;;) {
+-        if (forward_state == 0 && last_accept_position == (size_t)-1) {
+-            while (scan_position + 1 < subject_length && !rx_can_begin_match[subject[scan_position]]) scan_position++;
++        if ((forward_state == 0 || forward_state == 29) && last_accept_position == (size_t)-1) {
++            /* [ARTREV L2] 0 and 29 step to each other on every byte except C/E/F
++               in state 0 (position 0 or after a \W byte), and neither accepts:
++               skip the pair as one component instead of stepping it. */
++            for (;;) {
++                while (scan_position < subject_length && !rx_forward_leave_0_29[subject[scan_position]]) scan_position++;
++                if (scan_position >= subject_length) return 0;
++                if (scan_position == 0 || !rx_can_begin_match[subject[scan_position - 1]]) { forward_state = 0; break; }
++                scan_position++;
++            }
+         }
+         else if (forward_state == 406) {
+             while (scan_position + 1 < subject_length && rx_forward_stay14[subject[scan_position]]) scan_position++;

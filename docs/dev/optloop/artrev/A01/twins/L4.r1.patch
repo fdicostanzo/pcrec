@@ -1,0 +1,13 @@
+--- a/artifact.c
++++ b/artifact.c
+@@ -583,7 +583,9 @@
+     if (search_from > subject_length) return 0;
+     rx_forward_state forward_state = handoff_position ? rx_forward_seed_state[rx_forward_byte_class[subject[handoff_position - 1]]] : 0;
+     for (;;) {
+-        if (forward_state == 0 && last_accept_position == (size_t)-1) {
++        /* [ARTREV L4] the handoff position is already a proven "at " candidate: re-running the
++         * skip there only re-finds it (rx_ofsskip(handoff) == handoff), so skip the skip once */
++        if (forward_state == 0 && last_accept_position == (size_t)-1 && scan_position != handoff_position) {
+             size_t cand = rx_ofsskip(subject, subject_length, scan_position);
+             if (cand < subject_length) {
+                 scan_position = cand;

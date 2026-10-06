@@ -1,0 +1,22 @@
+--- a/artifact.c
++++ b/artifact.c
+@@ -187,7 +187,8 @@
+     goto rx_L6;
+ rx_L6: __attribute__((unused));
+     if ((ptrdiff_t)rx_span_cursor < slot_values[4] + 1) goto rx_fail;
+-    RX_PUSH(&&rx_L7, rx_span_cursor);
++    /* [ARTREV L2] no resume frame: a shorter \w+ leaves \w on both sides of
++       the \b at L3, so every give-back of this span fails there */
+     scan_position = rx_span_cursor;
+     goto rx_L5;
+ rx_L7: __attribute__((unused));
+@@ -211,7 +212,8 @@
+     goto rx_L10;
+ rx_L10: __attribute__((unused));
+     if ((ptrdiff_t)rx_span_cursor < slot_values[5] + 1) goto rx_fail;
+-    RX_PUSH(&&rx_L11, rx_span_cursor);
++    /* [ARTREV L2] no resume frame: a shorter \s+ puts \1 (non-empty, all \w)
++       at a \s byte, so every give-back of this span fails its first byte */
+     scan_position = rx_span_cursor;
+     goto rx_L9;
+ rx_L11: __attribute__((unused));

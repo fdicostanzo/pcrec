@@ -1,0 +1,31 @@
+--- a/artifact.c
++++ b/artifact.c
+@@ -303,8 +303,15 @@
+           0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+           0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+     };
+-    while (attempt_position < subject_length && !rx_start_set[subject[attempt_position]]) attempt_position++;
+-    if (attempt_position >= subject_length) return 0;
++    /* [ARTREV L1] the attempt's first op is \b and the start set is \w, so a
++       start byte whose predecessor is also \w fails at once with no side
++       effect: skip to the next WORD START (a \w byte after a non-\w byte). */
++    for (;;) {
++        while (attempt_position < subject_length && !rx_start_set[subject[attempt_position]]) attempt_position++;
++        if (attempt_position >= subject_length) return 0;
++        if (attempt_position == 0 || !rx_start_set[subject[attempt_position - 1]]) break;
++        while (attempt_position < subject_length && rx_start_set[subject[attempt_position]]) attempt_position++;
++    }
+     rx_run_state_init(run);
+     ctx.subject = subject; ctx.len = subject_length; ctx.ncap = 0;
+     ctx.caps = NULL; ctx.user = NULL;
+@@ -319,7 +326,10 @@
+         if (result >= 0) break;
+         rx_reset_for_next_attempt(run);
+         if (attempt_position >= subject_length) return 0;
++        /* the failed attempt began a word: every later byte of that word is
++           a non-word-start, so skip the word, then the non-\w gap */
+         attempt_position++;
++        while (attempt_position < subject_length && rx_start_set[subject[attempt_position]]) attempt_position++;
+         while (attempt_position < subject_length && !rx_start_set[subject[attempt_position]]) attempt_position++;
+         if (attempt_position >= subject_length) return 0;
+     }

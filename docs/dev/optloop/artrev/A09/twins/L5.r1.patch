@@ -1,0 +1,97 @@
+--- a/artifact.c
++++ b/artifact.c
+@@ -899,18 +899,23 @@
+     goto rx_L15;
+ rx_L15: __attribute__((unused));
+     if (RX_PRUNE_TOO_SHORT(rx_span_cursor, 6)) goto rx_fail;
+-    RX_PUSH(&&rx_L16, rx_span_cursor);
++    /* [ARTREV L5] the lazy step is the program's only choice point and the
++       keyword tail below never pushes, so its resume frame is always popped
++       straight back to rx_L16 with nothing to unwind (the trail mark is the
++       SET above).  Keep the frame's capacity check and its step charge; drop
++       the frame.  Keyword failures go to rx_L16 directly. */
++    if (run->resume_depth >= run->resume_cap) return RX_R_FRAMES;
+     scan_position = rx_span_cursor;
+     goto rx_L14;
+ rx_L16: __attribute__((unused));
+-    rx_span_cursor = scan_position;
++    if (--run->steps_left < 0) return RX_R_STEPS;
+     if ((ptrdiff_t)rx_span_cursor >= slot_values[2] + 200) goto rx_fail;
+     if (!(rx_span_cursor + 1 <= subject_length && ((rx_class_bitmap1[(subject[rx_span_cursor + 0]) >> 3] >> ((subject[rx_span_cursor + 0]) & 7)) & 1))) goto rx_fail;
+     rx_span_cursor += 1;
+     goto rx_L15;
+ rx_L14: __attribute__((unused));
+     if (((scan_position > 0 && ((rx_class_bitmap0[(subject[scan_position-1]) >> 3] >> ((subject[scan_position-1]) & 7)) & 1)) != (scan_position < subject_length && ((rx_class_bitmap0[(subject[scan_position]) >> 3] >> ((subject[scan_position]) & 7)) & 1)))) goto rx_L17;
+-    goto rx_fail;
++    goto rx_L16;
+ rx_L17: __attribute__((unused));
+     if (scan_position + 0 < subject_length) switch (subject[scan_position + 0]) {
+     case 100: goto rx_L27;
+@@ -918,50 +923,50 @@
+     case 116: goto rx_L19;
+     case 117: goto rx_L29;
+     }
+-    goto rx_fail;
++    goto rx_L16;
+ rx_L29: __attribute__((unused));
+     if (scan_position + 11 <= subject_length && rx_w8(subject + scan_position + 1) == rx_w8("nreachab") && rx_w8(subject + scan_position + 3) == rx_w8("eachable")) goto rx_L30;
+     RX_CHARGE_WORK(1);
+-    goto rx_fail;
++    goto rx_L16;
+ rx_L30: __attribute__((unused));
+     RX_CHARGE_WORK(11);
+     goto rx_L35;
+ rx_L19: __attribute__((unused));
+     if (scan_position + 4 <= subject_length && rx_w2(subject + scan_position + 1) == rx_w2("im") && rx_w2(subject + scan_position + 2) == rx_w2("me")) goto rx_L20;
+     RX_CHARGE_WORK(1);
+-    goto rx_fail;
++    goto rx_L16;
+ rx_L20: __attribute__((unused));
+     if (scan_position + 4 < subject_length) switch (subject[scan_position + 4]) {
+     case 100: goto rx_L23;
+     case 111: goto rx_L21;
+     }
+     RX_CHARGE_WORK(4);
+-    goto rx_fail;
++    goto rx_L16;
+ rx_L21: __attribute__((unused));
+     if (scan_position + 7 <= subject_length && !memcmp(subject + scan_position + 5, "ut", 2)) goto rx_L22;
+     RX_CHARGE_WORK(5);
+-    goto rx_fail;
++    goto rx_L16;
+ rx_L22: __attribute__((unused));
+     RX_CHARGE_WORK(7);
+     goto rx_L31;
+ rx_L23: __attribute__((unused));
+     if (scan_position + 9 <= subject_length && !memcmp(subject + scan_position + 5, " out", 4)) goto rx_L24;
+     RX_CHARGE_WORK(5);
+-    goto rx_fail;
++    goto rx_L16;
+ rx_L24: __attribute__((unused));
+     RX_CHARGE_WORK(9);
+     goto rx_L32;
+ rx_L25: __attribute__((unused));
+     if (scan_position + 7 <= subject_length && rx_w4(subject + scan_position + 1) == rx_w4("efus") && rx_w4(subject + scan_position + 3) == rx_w4("used")) goto rx_L26;
+     RX_CHARGE_WORK(1);
+-    goto rx_fail;
++    goto rx_L16;
+ rx_L26: __attribute__((unused));
+     RX_CHARGE_WORK(7);
+     goto rx_L33;
+ rx_L27: __attribute__((unused));
+     if (scan_position + 6 <= subject_length && rx_w4(subject + scan_position + 1) == rx_w4("enie") && rx_w4(subject + scan_position + 2) == rx_w4("nied")) goto rx_L28;
+     RX_CHARGE_WORK(1);
+-    goto rx_fail;
++    goto rx_L16;
+ rx_L28: __attribute__((unused));
+     RX_CHARGE_WORK(6);
+     goto rx_L34;
+@@ -982,7 +987,7 @@
+     goto rx_L18;
+ rx_L18: __attribute__((unused));
+     if (((scan_position > 0 && ((rx_class_bitmap0[(subject[scan_position-1]) >> 3] >> ((subject[scan_position-1]) & 7)) & 1)) != (scan_position < subject_length && ((rx_class_bitmap0[(subject[scan_position]) >> 3] >> ((subject[scan_position]) & 7)) & 1)))) goto rx_L1;
+-    goto rx_fail;
++    goto rx_L16;
+ rx_L1: __attribute__((unused));
+     goto rx_accept;
+ 

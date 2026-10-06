@@ -1,0 +1,9 @@
+--- a/artifact.c
++++ b/artifact.c
+@@ -459,3 +459,6 @@
+     .nvars = 0,
+     .findings = "byte-rate=default:1822fb973b95a4da",
+ };
++
++/* [ARTREV] null twin: a semantics-free textual change (an unused static) */
++static int artrev_null_unused(int x) { return x + 1; }

@@ -1,0 +1,67 @@
+--- a/artifact.c
++++ b/artifact.c
+@@ -186,6 +186,39 @@
+ { return accepting[s]; }
+ static inline int rx_reverse_accepts_class(const unsigned char *accepting, rx_reverse_state s, unsigned cl)
+ { return accepting[s + cl]; }
++
++/* [ARTREV L1] position of the next byte c at or after from, or n when there is none. */
++static inline size_t rx_next_byte(const unsigned char *subject, size_t n, size_t from, int c)
++{
++    const unsigned char *hit = (const unsigned char *)memchr(subject + from, c, n - from);
++    return hit ? (size_t)(hit - subject) : n;
++}
++/* [ARTREV L1] the first p >= from where one of ERROR/FATAL/CRIT starts at a word
++   start (p == 0 or subject[p-1] is \W), or n.  Two streams: 'O' (ERROR+3) and
++   'T' (FATAL+2, CRIT+3); the rarest bytes of the three literals on the bench's
++   loglines subjects (measured; a byte-frequency choice). */
++static inline int rx_word_start(const unsigned char *subject, size_t p, const unsigned char *can_begin)
++{ return p == 0 || !can_begin[subject[p - 1]]; }
++static size_t rx_next_level_o(const unsigned char *subject, size_t n, size_t from, const unsigned char *can_begin)
++{
++    size_t x = from + 3;
++    for (;; x++) {
++        if (x >= n || (x = rx_next_byte(subject, n, x, 'O')) >= n) return n;
++        if (x + 2 <= n && rx_w4(subject + x - 3) == rx_w4("ERRO") && subject[x + 1] == 'R'
++            && rx_word_start(subject, x - 3, can_begin)) return x - 3;
++    }
++}
++static size_t rx_next_level_t(const unsigned char *subject, size_t n, size_t from, const unsigned char *can_begin)
++{
++    size_t x = from + 2;
++    for (;; x++) {
++        if (x >= n || (x = rx_next_byte(subject, n, x, 'T')) >= n) return n;
++        if (x + 3 <= n && rx_w2(subject + x - 2) == rx_w2("FA") && rx_w2(subject + x + 1) == rx_w2("AL")
++            && rx_word_start(subject, x - 2, can_begin)) return x - 2;
++        if (x >= from + 3 && rx_w4(subject + x - 3) == rx_w4("CRIT")
++            && rx_word_start(subject, x - 3, can_begin)) return x - 3;
++    }
++}
+ 
+ #ifndef __has_attribute
+ # define __has_attribute(x) 0
+@@ -787,11 +820,22 @@
+     };
+     size_t scan_position = search_from;
+     size_t last_accept_position = (size_t)-1;
++    size_t next_o = (size_t)-1, next_t = (size_t)-1;   /* [ARTREV L1] the two literal streams */
+     if (search_from > subject_length) return 0;
+     rx_forward_state forward_state = search_from ? rx_forward_seed_state[rx_forward_byte_class[subject[search_from - 1]]] : 0;
+     for (;;) {
+-        if (forward_state == 0 && last_accept_position == (size_t)-1) {
+-            while (scan_position + 1 < subject_length && !rx_can_begin_match[subject[scan_position]]) scan_position++;
++        if ((forward_state == 0 || forward_state == 29) && last_accept_position == (size_t)-1) {
++            /* [ARTREV L1] states 0 and 29 reach the level-complete state 319 only
++               through a whole ERROR/FATAL/CRIT entered in state 0 (position 0 or
++               after a \W byte); every shorter excursion returns to {0,29} without
++               an accept, and the state at such a start is 0.  So jump to the first
++               whole level literal at a word start (or give up). */
++            size_t p;
++            if (next_o == (size_t)-1 || next_o < scan_position) next_o = rx_next_level_o(subject, subject_length, scan_position, rx_can_begin_match);
++            if (next_t == (size_t)-1 || next_t < scan_position) next_t = rx_next_level_t(subject, subject_length, scan_position, rx_can_begin_match);
++            p = next_o < next_t ? next_o : next_t;
++            if (p >= subject_length) return 0;
++            scan_position = p; forward_state = 0;
+         }
+         else if (forward_state == 406) {
+             while (scan_position + 1 < subject_length && rx_forward_stay14[subject[scan_position]]) scan_position++;
