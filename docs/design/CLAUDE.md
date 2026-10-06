@@ -2710,6 +2710,17 @@ Four light panels in two days (the K82 handoff, [OPT-SETS], [MEMFN] K0 r1/r2) fo
   - **§5:** the standing questions and the sibling-family table. **§6:** nine questions.
   - Instruments: `start_table/`.
 - `start_table/` — that note's site census, per-row stamp census, anchoring-agreement probe and sabotage-anchor map (own CLAUDE.md).
+- `decision_families_survey.md` — **SURVEY, read-only, nothing built** (lane `decsurvey`, 2026-10-06, from main `74379fe0`). It answers Frank's "forest for the trees" question: which DECISION FAMILIES (several sites answering one question through if/else chains, scattered `flag && fact` conjunctions or duplicated comparisons, rather than one first-match row table) are still dispersed.
+  - **§0** ranks 13 families, beside the ones already unified.
+  - **§3** gives each family: its members (file:line), whether a table would be natural or forced, the no-mover needs, and value/risk.
+  - **§4** has the latent and live inconsistencies, with probed inputs:
+    - `run-pinned` is unreachable whenever the run reader and the offset-k pick disagree, without a tie too (`\d\dxyz`), which widens [TIE-ALIGN];
+    - `-fno-scan-edge`/`-fno-size-term` move `rx_info.flags` on artifacts they cannot act on (the K68 shape, [AXES-DENY-MASK]);
+    - `--emit-ir`'s `prune-ceiling` and the `VM_PRUNE_CEILING` stamp split on `a*`;
+    - the size-cap collapse rung's predicate omits the gate's conjuncts its own comment claims;
+    - the `--emit-ir` prefilter reason does not know [PF-DROP];
+    - the `ENGINE_SEL` registry order is not `esel_of`'s.
+  - **§6** proposes D137-shaped evaluation rows and their order: [AXES-DENY-MASK] addendum, then [DEC-FALLBACK], then the [TIE-ALIGN] re-scope. It also serves as [LIST-TABLES] STEP 0's census input.
 
 **[VAR] THE MVP's PATTERN HALF LANDED 2026-09-23** (lane varmvp, M1-M8 +
 M10; M9 stays gated on `[M4-SUBST]`). The four notes stand as written except
