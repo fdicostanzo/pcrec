@@ -204,7 +204,14 @@ panel** (D6) before or at close: 2–4 independent read-only critics with
 distinct lenses (e.g. checks/tests, engine semantics vs the oracle, docs
 staleness), briefed to refute and to measure both sides of every claimed
 cell. Compile findings into `docs/dev/reviews/YYYY-MM-DD-rN-<topic>.md` with
-triage dispositions, then fix-with-measurement before disposition. Critics
+triage dispositions, then fix-with-measurement before disposition.
+
+**Standing lens on every panel and design note (Frank, 2026-10-06, "forest
+for the trees"): SIBLING-OF-A-FAMILY** — is this new predicate, table or
+row another member of an existing decision family growing dispersed
+(start strategy, engine selection, admission rows, deny/force axes, ...)?
+If yes, name the family; at ~3 dispersed members propose the unified
+first-match table yourself instead of waiting to be asked. Critics
 are read-only and never run `make`.
 
 ## 6. Session end or pause — rewrite wake.md
