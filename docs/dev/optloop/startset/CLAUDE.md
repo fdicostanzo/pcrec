@@ -15,3 +15,5 @@
   null cells (grok, float-literal) and the null band. WRITTEN by lane
   ssbuild3; the Linux run is the manager's (`docs/dev/lanes/ssbuild3_report.md`
   has the command and the Mac directional reading).
+- `alpha_s3_g1.py`, `alpha_s3_short.py`, `alpha_s3_density.py` — lane alphas3's extension of `alpha_s3.sh` (run on the SAME work dir): `alpha_s3_g1.py` compiles all 89 `manifest_s3_dfa.tsv` movers on NEW/DENY, classifies the `G1 emitted -> dominated` rows and times every mover with base/new/deny (+ `noreq` = NEW `-fno-req-byte` and `keep` = a one-line scratch twin, hat plus pre-check, on the G1 movers) for D148 addendum 4's Q3/Q4; `alpha_s3_short.py` is the SYNTHETIC short-call probe (K90 comparison); `alpha_s3_density.py` prints each mover's hat set T and its density d_T. See `alpha_s3_results/`.
+- `alpha_s3_results/` — the stage-3 alpha's raw logs, tables and `README.md` (pin, box, protocol, file index); read `docs/dev/lanes/alphas3_report.md`.
