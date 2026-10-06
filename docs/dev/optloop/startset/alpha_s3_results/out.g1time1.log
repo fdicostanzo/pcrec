@@ -1,0 +1,176 @@
+# alpha_s3_g1 2026-10-06T16:15:05Z ubuntubudu load1=0.51 CPU=2 LAUNCHES=5 PASSES=5
+id	kind	nT	nE	subject	base	new	deny	noreq	keep	new-base	new-keep	floor	nullband	textsame	verdict
+bench/altwide/wb-256	mover	26	63	alt:t-128k-sparse	3.39809	3.29111	3.39723	-	-	-0.10698	-	0.00086	-		WIN
+bench/altwide/wb-256	mover	26	63	alt:t-128k-dense	3.45079	3.33470	3.44606	-	-	-0.11609	-	0.00473	-		WIN
+bench/altwide/wb-512	mover	26	63	alt:t-128k-sparse	4.33165	4.12855	4.33673	-	-	-0.20310	-	0.00508	-		WIN
+bench/altwide/wb-512	mover	26	63	alt:t-128k-dense	4.46159	4.26865	4.45880	-	-	-0.19294	-	0.00279	-		WIN
+bench/bounded/ctx-greedy-256	mover	3	63	bnd:t-letters-064k	1.85752	1.93479	1.85721	-	-	+0.07727	-	0.00031	-		REGRESSION
+bench/bounded/ctx-lazy-1024	mover	3	63	bnd:t-letters-064k	1.87902	1.95645	1.87977	-	-	+0.07742	-	0.00074	-		REGRESSION
+bench/bounded/ctx-lazy-256	mover	3	63	bnd:t-letters-064k	1.87787	1.97018	1.87965	-	-	+0.09230	-	0.00178	-		REGRESSION
+bench/bounded/ctx-lazy-64	mover	3	63	bnd:t-letters-064k	1.87801	1.96757	1.87841	-	-	+0.08956	-	0.00040	-		REGRESSION
+bench/capability/float-literal-bound	Q4n	10	11	cap:t-64k	1.37390	1.28782	1.37439	-	-	-0.08608	-	0.00049	-		WIN
+bench/capability/float-literal-bound	Q4n	10	11	cap:t-1m	1.43768	1.33992	1.43734	-	-	-0.09776	-	0.00034	-		WIN
+bench/capability/wild-codegrammar-json-constant	mover	3	63	cap:t-64k	3.00540	1.64212	3.00986	-	-	-1.36328	-	0.00446	-		WIN
+bench/capability/wild-codegrammar-json-constant	mover	3	63	cap:t-1m	3.04897	1.63028	3.04996	-	-	-1.41869	-	0.00100	-		WIN
+bench/capability/wild-logparse-quotedstring-grok	Q4n	3	4	cap:t-64k	0.71013	0.63665	0.71108	-	-	-0.07348	-	0.00095	-		WIN
+bench/capability/wild-logparse-quotedstring-grok	Q4n	3	4	cap:t-1m	0.72693	0.64635	0.72556	-	-	-0.08058	-	0.00137	-		WIN
+bench/capability/wild-logparse-quotedstring-noatomic	Q4n	3	4	cap:t-64k	0.60625	0.53237	0.60726	-	-	-0.07388	-	0.00101	-		WIN
+bench/capability/wild-logparse-quotedstring-noatomic	Q4n	3	4	cap:t-1m	0.63488	0.54662	0.62880	-	-	-0.08826	-	0.00609	-		WIN
+bench/capability/wild-logparse-syslogbase-expanded	mover	16	63	cap:t-64k	2.89653	3.01836	2.90007	-	-	+0.12183	-	0.00354	-		REGRESSION
+bench/capability/wild-logparse-syslogbase-expanded	mover	16	63	cap:t-1m	2.91968	3.08988	2.91740	-	-	+0.17020	-	0.00228	-		REGRESSION
+bench/capability/wild-secrets-aws-access-key-id	G1	1	63	cap:t-64k	2.88638	0.03179	2.88213	0.03208	0.03400	-2.85458	-0.00220	0.00424	0.00028	Y	WIN Q3:NULL
+bench/capability/wild-secrets-aws-access-key-id	G1	1	63	cap:t-1m	2.92128	0.05264	2.92142	0.05259	0.05328	-2.86864	-0.00064	0.00014	0.00005	Y	WIN Q3:ELIDE-FASTER
+bench/capability/wild-waf-crs-942140-dbnames	mover	14	63	cap:t-64k	3.05448	2.72792	3.05777	-	-	-0.32657	-	0.00329	-		WIN
+bench/capability/wild-waf-crs-942140-dbnames	mover	14	63	cap:t-1m	3.11620	2.80194	3.11123	-	-	-0.31426	-	0.00497	-		WIN
+bench/litrun/wild-secrets-aws-access-key-id	G1	1	63	cap:t-64k	2.88905	0.03164	2.88296	0.03206	0.03387	-2.85741	-0.00223	0.00610	0.00042	Y	WIN Q3:NULL
+bench/litrun/wild-secrets-aws-access-key-id	G1	1	63	cap:t-1m	2.92242	0.05271	2.92161	0.05273	0.05322	-2.86970	-0.00051	0.00081	0.00001	Y	WIN Q3:NULL
+bench/loglines/bignum	mover	10	63	log:t-064k-syslog	2.75177	1.52674	2.75127	-	-	-1.22503	-	0.00050	-		WIN
+bench/loglines/bignum	mover	10	63	log:t-1024k-syslog	2.75839	1.55917	2.75909	-	-	-1.19922	-	0.00070	-		WIN
+bench/loglines/hex32-id	mover	16	63	log:t-064k-syslog	2.75111	2.39920	2.75091	-	-	-0.35191	-	0.00020	-		WIN
+bench/loglines/hex32-id	mover	16	63	log:t-1024k-syslog	2.75715	2.41768	2.75807	-	-	-0.33947	-	0.00092	-		WIN
+bench/loglines/kv-quoted	mover	27	63	log:t-064k-syslog	0.01674	0.01673	0.01672	-	-	-0.00001	-	0.00002	-		NULL
+bench/loglines/kv-quoted	mover	27	63	log:t-1024k-syslog	0.01676	0.01676	0.01675	-	-	+0.00000	-	0.00001	-		NULL
+bench/loglines/level-context	mover	3	63	log:t-064k-syslog	2.41184	0.48872	2.41467	-	-	-1.92312	-	0.00283	-		WIN
+bench/loglines/level-context	mover	3	63	log:t-1024k-syslog	2.46509	0.48810	2.46433	-	-	-1.97699	-	0.00076	-		WIN
+tests/assertions/d27/composition.rxt:45	mover	2	63	cap:t-64k	3.02156	1.31392	3.01030	-	-	-1.70764	-	0.01126	-		WIN
+tests/assertions/d27/composition.rxt:45	mover	2	63	cap:t-1m	3.07904	1.32185	3.04939	-	-	-1.75718	-	0.02965	-		WIN
+tests/assertions/d27/gating.rxt:120	G1	1	63	cap:t-64k	3.10021	0.23550	3.10191	0.23475	0.25575	-2.86472	-0.02025	0.00169	0.00075	Y	WIN Q3:ELIDE-FASTER
+tests/assertions/d27/gating.rxt:120	G1	1	63	cap:t-1m	3.15130	0.29759	3.15104	0.29773	0.33088	-2.85371	-0.03329	0.00025	0.00015	Y	WIN Q3:ELIDE-FASTER
+tests/assertions/d27/word_boundary.rxt:51	mover	2	63	cap:t-64k	3.01396	1.35846	3.03121	-	-	-1.65550	-	0.01725	-		WIN
+tests/assertions/d27/word_boundary.rxt:51	mover	2	63	cap:t-1m	3.07137	1.34535	3.05501	-	-	-1.72602	-	0.01635	-		WIN
+tests/assertions/d27/word_boundary.rxt:91	mover	2	63	cap:t-64k	0.26799	0.27136	0.26742	-	-	+0.00337	-	0.00057	-		REGRESSION
+tests/assertions/d27/word_boundary.rxt:91	mover	2	63	cap:t-1m	0.37043	0.37113	0.37055	-	-	+0.00069	-	0.00011	-		REGRESSION
+tests/assertions/wordb_empty_compose.rxt:1168	G1	1	63	cap:t-64k	0.00012	0.00016	0.00012	0.00016	0.00012	+0.00004	+0.00004	0.00000	0.00000	Y	REGRESSION Q3:ELIDE-SLOWER
+tests/assertions/wordb_empty_compose.rxt:1168	G1	1	63	cap:t-1m	0.00001	0.00001	0.00001	0.00001	0.00001	+0.00000	+0.00000	0.00000	0.00000	Y	REGRESSION Q3:ELIDE-SLOWER
+tests/assertions/wordb_vm.rxt:414	G1	1	63	cap:t-64k	3.11783	0.25723	3.10956	0.25845	0.29103	-2.86060	-0.03380	0.00828	0.00122	Y	WIN Q3:ELIDE-FASTER
+tests/assertions/wordb_vm.rxt:414	G1	1	63	cap:t-1m	3.16732	0.32311	3.16616	0.32309	0.36311	-2.84421	-0.04000	0.00116	0.00002	Y	WIN Q3:ELIDE-FASTER
+tests/base/clspack_atoms.rxt:53	mover	5	63	cap:t-64k	2.92797	2.70290	2.92899	-	-	-0.22507	-	0.00102	-		WIN
+tests/base/clspack_atoms.rxt:53	mover	5	63	cap:t-1m	2.98129	2.76366	2.98159	-	-	-0.21763	-	0.00031	-		WIN
+tests/lookaround/alpha_spellings.rxt:129	G1	1	2	cap:t-64k	1.11916	0.19625	1.11869	0.19633	0.24032	-0.92292	-0.04407	0.00047	0.00008	Y	WIN Q3:ELIDE-FASTER
+tests/lookaround/alpha_spellings.rxt:129	G1	1	2	cap:t-1m	1.07543	0.18343	1.07524	0.18360	0.23522	-0.89200	-0.05179	0.00019	0.00017	Y	WIN Q3:ELIDE-FASTER
+tests/lookaround/alpha_spellings.rxt:144	G1	1	2	cap:t-64k	1.11926	0.19627	1.11933	0.19651	0.24003	-0.92298	-0.04376	0.00008	0.00023	Y	WIN Q3:ELIDE-FASTER
+tests/lookaround/alpha_spellings.rxt:144	G1	1	2	cap:t-1m	1.07609	0.18358	1.07537	0.18352	0.23490	-0.89251	-0.05132	0.00072	0.00006	Y	WIN Q3:ELIDE-FASTER
+tests/lookaround/d27/matrix.rxt:1524	G1	1	2	cap:t-64k	0.01672	0.01679	0.01672	0.01679	0.01673	+0.00007	+0.00006	0.00000	0.00000	Y	REGRESSION Q3:ELIDE-SLOWER
+tests/lookaround/d27/matrix.rxt:1524	G1	1	2	cap:t-1m	0.01679	0.01678	0.01679	0.01680	0.01678	-0.00000	+0.00000	0.00000	0.00001	Y	NULL Q3:NULL
+tests/lookaround/d27/matrix.rxt:1548	Q4n	2	3	cap:t-64k	1.06741	0.53472	1.06666	-	-	-0.53269	-	0.00075	-		WIN
+tests/lookaround/d27/matrix.rxt:1548	Q4n	2	3	cap:t-1m	1.02127	0.51577	1.02310	-	-	-0.50550	-	0.00183	-		WIN
+tests/lookaround/d27/matrix.rxt:1564	G1	1	2	cap:t-64k	0.01672	0.01681	0.01672	0.01681	0.01672	+0.00009	+0.00009	0.00000	0.00000	Y	REGRESSION Q3:ELIDE-SLOWER
+tests/lookaround/d27/matrix.rxt:1564	G1	1	2	cap:t-1m	0.01680	0.01682	0.01679	0.01683	0.01681	+0.00003	+0.00001	0.00000	0.00001	Y	REGRESSION Q3:ELIDE-SLOWER
+tests/lookaround/d27/matrix.rxt:1576	G1	1	2	cap:t-64k	0.01673	0.01682	0.01673	0.01682	0.01673	+0.00009	+0.00009	0.00001	0.00000	Y	REGRESSION Q3:ELIDE-SLOWER
+tests/lookaround/d27/matrix.rxt:1576	G1	1	2	cap:t-1m	0.01676	0.01677	0.01676	0.01678	0.01677	+0.00002	+0.00000	0.00000	0.00001	Y	REGRESSION Q3:NULL
+tests/lookaround/d27/matrix.rxt:1584	G1	1	3	cap:t-64k	0.01673	0.01679	0.01672	0.01680	0.01673	+0.00007	+0.00006	0.00001	0.00000	Y	REGRESSION Q3:ELIDE-SLOWER
+tests/lookaround/d27/matrix.rxt:1584	G1	1	3	cap:t-1m	0.01679	0.01681	0.01678	0.01681	0.01680	+0.00002	+0.00001	0.00001	0.00000	Y	REGRESSION Q3:ELIDE-SLOWER
+tests/lookaround/d27/matrix.rxt:1608	Q4n	2	4	cap:t-64k	1.13386	0.53438	1.13452	-	-	-0.59948	-	0.00066	-		WIN
+tests/lookaround/d27/matrix.rxt:1608	Q4n	2	4	cap:t-1m	1.08189	0.51578	1.08298	-	-	-0.56611	-	0.00109	-		WIN
+tests/lookaround/d27/matrix.rxt:1624	G1	1	3	cap:t-64k	0.01672	0.01682	0.01673	0.01681	0.01674	+0.00009	+0.00008	0.00001	0.00001	Y	REGRESSION Q3:ELIDE-SLOWER
+tests/lookaround/d27/matrix.rxt:1624	G1	1	3	cap:t-1m	0.01679	0.01679	0.01678	0.01679	0.01678	-0.00000	+0.00001	0.00001	0.00000	Y	NULL Q3:NULL
+tests/lookaround/d27/matrix.rxt:1636	G1	1	3	cap:t-64k	0.01674	0.01682	0.01672	0.01683	0.01673	+0.00008	+0.00009	0.00002	0.00000	Y	REGRESSION Q3:ELIDE-SLOWER
+tests/lookaround/d27/matrix.rxt:1636	G1	1	3	cap:t-1m	0.01676	0.01677	0.01677	0.01677	0.01676	+0.00001	+0.00002	0.00001	0.00000	Y	REGRESSION Q3:ELIDE-SLOWER
+tests/lookaround/d27/spellings.rxt:106	G1	1	2	cap:t-64k	1.60043	0.65403	1.59975	0.65410	0.73250	-0.94640	-0.07847	0.00067	0.00007	Y	WIN Q3:ELIDE-FASTER
+tests/lookaround/d27/spellings.rxt:106	G1	1	2	cap:t-1m	1.59316	0.67206	1.59271	0.67191	0.76555	-0.92110	-0.09349	0.00044	0.00015	Y	WIN Q3:ELIDE-FASTER
+tests/lookaround/d27/spellings.rxt:88	G1	1	2	cap:t-64k	1.59939	0.65366	1.60219	0.65410	0.73261	-0.94572	-0.07894	0.00280	0.00044	Y	WIN Q3:ELIDE-FASTER
+tests/lookaround/d27/spellings.rxt:88	G1	1	2	cap:t-1m	1.59307	0.67178	1.59265	0.67199	0.76495	-0.92129	-0.09317	0.00042	0.00021	Y	WIN Q3:ELIDE-FASTER
+tests/lookaround/d27/spellings.rxt:97	G1	1	2	cap:t-64k	1.60093	0.65323	1.60069	0.65404	0.73286	-0.94770	-0.07963	0.00024	0.00082	Y	WIN Q3:ELIDE-FASTER
+tests/lookaround/d27/spellings.rxt:97	G1	1	2	cap:t-1m	1.59278	0.67197	1.59216	0.67191	0.76500	-0.92082	-0.09304	0.00063	0.00006	Y	WIN Q3:ELIDE-FASTER
+tests/lookaround/lookbehind.rxt:107	G1	1	2	cap:t-64k	1.11903	0.19629	1.11924	0.19648	0.24045	-0.92274	-0.04416	0.00021	0.00019	Y	WIN Q3:ELIDE-FASTER
+tests/lookaround/lookbehind.rxt:107	G1	1	2	cap:t-1m	1.07626	0.18360	1.07563	0.18349	0.23509	-0.89266	-0.05149	0.00063	0.00011	Y	WIN Q3:ELIDE-FASTER
+tests/lookaround/lookbehind.rxt:273	G1	1	63	cap:t-64k	3.14744	0.22445	3.14642	0.22460	0.24857	-2.92299	-0.02412	0.00102	0.00015	Y	WIN Q3:ELIDE-FASTER
+tests/lookaround/lookbehind.rxt:273	G1	1	63	cap:t-1m	3.18218	0.27105	3.18255	0.27130	0.31699	-2.91112	-0.04593	0.00037	0.00024	Y	WIN Q3:ELIDE-FASTER
+tests/lookaround/lookbehind.rxt:281	G1	1	63	cap:t-64k	3.10530	0.23467	3.10493	0.23574	0.25621	-2.87062	-0.02154	0.00037	0.00107	Y	WIN Q3:ELIDE-FASTER
+tests/lookaround/lookbehind.rxt:281	G1	1	63	cap:t-1m	3.15078	0.29776	3.15183	0.29812	0.33108	-2.85302	-0.03332	0.00105	0.00035	Y	WIN Q3:ELIDE-FASTER
+tests/lookaround/lookbehind.rxt:295	G1	1	255	cap:t-64k	1.05150	0.29295	1.05247	0.29245	0.36035	-0.75855	-0.06741	0.00098	0.00049	Y	WIN Q3:ELIDE-FASTER
+tests/lookaround/lookbehind.rxt:295	G1	1	255	cap:t-1m	1.01945	0.27223	1.02007	0.27226	0.35139	-0.74722	-0.07916	0.00062	0.00002	Y	WIN Q3:ELIDE-FASTER
+tests/offsetskip/offset_skip.rxt:255	mover	16	63	cap:t-64k	3.01102	3.22594	3.01116	-	-	+0.21492	-	0.00014	-		REGRESSION
+tests/offsetskip/offset_skip.rxt:255	mover	16	63	cap:t-1m	3.05483	3.28410	3.05357	-	-	+0.22927	-	0.00126	-		REGRESSION
+tests/startset/dfahat.rxt:1031	mover	2	63	cap:t-64k	0.26671	0.26811	0.26775	-	-	+0.00140	-	0.00103	-		REGRESSION
+tests/startset/dfahat.rxt:1031	mover	2	63	cap:t-1m	0.37028	0.37136	0.37037	-	-	+0.00107	-	0.00008	-		REGRESSION
+tests/startset/dfahat.rxt:1074	mover	27	63	cap:t-64k	0.05490	0.05574	0.05516	-	-	+0.00083	-	0.00025	-		REGRESSION
+tests/startset/dfahat.rxt:1074	mover	27	63	cap:t-1m	0.07891	0.07884	0.07882	-	-	-0.00006	-	0.00008	-		NULL
+tests/startset/dfahat.rxt:1383	mover	2	63	cap:t-64k	2.83557	1.46918	2.83856	-	-	-1.36639	-	0.00299	-		WIN
+tests/startset/dfahat.rxt:1383	mover	2	63	cap:t-1m	2.86093	1.44502	2.86122	-	-	-1.41592	-	0.00028	-		WIN
+tests/startset/dfahat.rxt:1416	mover	2	63	cap:t-64k	4.66885	2.90344	4.66015	-	-	-1.76541	-	0.00871	-		WIN
+tests/startset/dfahat.rxt:1416	mover	2	63	cap:t-1m	4.55397	2.69538	4.54966	-	-	-1.85859	-	0.00431	-		WIN
+tests/startset/dfahat.rxt:1479	mover	2	63	cap:t-64k	2.87994	1.45828	2.88472	-	-	-1.42165	-	0.00479	-		WIN
+tests/startset/dfahat.rxt:1479	mover	2	63	cap:t-1m	2.91863	1.44422	2.91777	-	-	-1.47441	-	0.00086	-		WIN
+tests/startset/dfahat.rxt:1516	mover	4	63	cap:t-64k	2.88290	1.51107	2.87940	-	-	-1.37183	-	0.00349	-		WIN
+tests/startset/dfahat.rxt:1516	mover	4	63	cap:t-1m	2.91858	1.48754	2.91896	-	-	-1.43105	-	0.00038	-		WIN
+tests/startset/dfahat.rxt:275	mover	2	63	cap:t-64k	3.09216	1.47944	3.11520	-	-	-1.61271	-	0.02304	-		WIN
+tests/startset/dfahat.rxt:275	mover	2	63	cap:t-1m	3.12441	1.47772	3.12669	-	-	-1.64669	-	0.00228	-		WIN
+tests/startset/dfahat.rxt:316	mover	2	63	cap:t-64k	3.09966	1.48011	3.10543	-	-	-1.61955	-	0.00577	-		WIN
+tests/startset/dfahat.rxt:316	mover	2	63	cap:t-1m	3.13247	1.47580	3.12992	-	-	-1.65666	-	0.00255	-		WIN
+tests/startset/dfahat.rxt:350	mover	2	63	cap:t-64k	3.91578	1.37834	3.91248	-	-	-2.53743	-	0.00329	-		WIN
+tests/startset/dfahat.rxt:350	mover	2	63	cap:t-1m	4.01395	1.38230	4.01125	-	-	-2.63165	-	0.00270	-		WIN
+tests/startset/dfahat.rxt:392	mover	2	63	cap:t-64k	3.21191	0.65643	3.20581	-	-	-2.55548	-	0.00610	-		WIN
+tests/startset/dfahat.rxt:392	mover	2	63	cap:t-1m	3.19592	0.63237	3.19974	-	-	-2.56355	-	0.00382	-		WIN
+tests/startset/dfahat.rxt:437	G1	1	63	cap:t-64k	3.03636	0.69015	3.04033	0.69086	0.68881	-2.34622	+0.00134	0.00396	0.00072	Y	WIN Q3:NULL
+tests/startset/dfahat.rxt:437	G1	1	63	cap:t-1m	3.04314	0.77338	3.04207	0.77352	0.77471	-2.26976	-0.00133	0.00108	0.00013	Y	WIN Q3:ELIDE-FASTER
+tests/startset/dfahat.rxt:481	mover	2	63	cap:t-64k	5.01954	1.79434	5.02362	-	-	-3.22520	-	0.00408	-		WIN
+tests/startset/dfahat.rxt:481	mover	2	63	cap:t-1m	5.29549	1.82183	5.49423	-	-	-3.47366	-	0.19874	-		WIN
+tests/startset/dfahat.rxt:522	mover	2	63	cap:t-64k	6.31630	2.04772	6.32215	-	-	-4.26858	-	0.00585	-		WIN
+tests/startset/dfahat.rxt:522	mover	2	63	cap:t-1m	6.22464	1.98132	6.52003	-	-	-4.24332	-	0.29538	-		WIN
+tests/startset/dfahat.rxt:591	Q4n	2	3	cap:t-64k	1.06844	0.53526	1.06625	-	-	-0.53318	-	0.00219	-		WIN
+tests/startset/dfahat.rxt:591	Q4n	2	3	cap:t-1m	1.02283	0.51596	1.02220	-	-	-0.50688	-	0.00064	-		WIN
+tests/startset/dfahat.rxt:626	Q4n	2	4	cap:t-64k	1.13539	0.53398	1.13132	-	-	-0.60141	-	0.00407	-		WIN
+tests/startset/dfahat.rxt:626	Q4n	2	4	cap:t-1m	1.08551	0.51610	1.08371	-	-	-0.56941	-	0.00180	-		WIN
+tests/startset/dfahat.rxt:730	mover	3	63	cap:t-64k	3.00849	1.49995	3.01972	-	-	-1.50854	-	0.01124	-		WIN
+tests/startset/dfahat.rxt:730	mover	3	63	cap:t-1m	3.04939	1.48253	3.05058	-	-	-1.56686	-	0.00119	-		WIN
+tests/startset/dfahat.rxt:773	mover	2	63	cap:t-64k	3.00687	1.48982	3.00550	-	-	-1.51705	-	0.00137	-		WIN
+tests/startset/dfahat.rxt:773	mover	2	63	cap:t-1m	3.05485	1.47074	3.05021	-	-	-1.58411	-	0.00464	-		WIN
+tests/startset/dfahat.rxt:838	mover	2	63	cap:t-64k	3.00613	1.49728	3.00860	-	-	-1.50885	-	0.00247	-		WIN
+tests/startset/dfahat.rxt:838	mover	2	63	cap:t-1m	3.04893	1.47402	3.05508	-	-	-1.57491	-	0.00616	-		WIN
+tests/startset/dfahat.rxt:879	mover	2	63	cap:t-64k	3.00743	1.49216	3.00757	-	-	-1.51526	-	0.00014	-		WIN
+tests/startset/dfahat.rxt:879	mover	2	63	cap:t-1m	3.05308	1.47965	3.04814	-	-	-1.57344	-	0.00494	-		WIN
+tests/startset/dfahat.rxt:909	mover	2	63	cap:t-64k	3.00989	1.49659	3.00814	-	-	-1.51329	-	0.00174	-		WIN
+tests/startset/dfahat.rxt:909	mover	2	63	cap:t-1m	3.05524	1.49107	3.05346	-	-	-1.56417	-	0.00177	-		WIN
+tests/startset/dfahat.rxt:936	mover	2	134	cap:t-64k	3.00676	1.49041	3.01048	-	-	-1.51635	-	0.00372	-		WIN
+tests/startset/dfahat.rxt:936	mover	2	134	cap:t-1m	3.05570	1.47755	3.05397	-	-	-1.57815	-	0.00173	-		WIN
+tests/startset/dfahat.rxt:973	mover	2	134	cap:t-64k	3.00853	1.49334	3.00858	-	-	-1.51519	-	0.00005	-		WIN
+tests/startset/dfahat.rxt:973	mover	2	134	cap:t-1m	3.04880	1.48387	3.05135	-	-	-1.56493	-	0.00255	-		WIN
+tests/startset/dfahat.rxt:998	mover	4	63	cap:t-64k	3.00674	1.54873	3.00660	-	-	-1.45801	-	0.00013	-		WIN
+tests/startset/dfahat.rxt:998	mover	4	63	cap:t-1m	3.05194	1.52621	3.05057	-	-	-1.52572	-	0.00137	-		WIN
+tests/startset/dfahat_paths.rxt:16	mover	2	62	cap:t-64k	5.46629	3.81126	5.46753	-	-	-1.65503	-	0.00124	-		WIN
+tests/startset/dfahat_paths.rxt:16	mover	2	62	cap:t-1m	5.38890	3.73646	5.39345	-	-	-1.65244	-	0.00455	-		WIN
+tests/startset/hybrid.rxt:112	mover	2	63	cap:t-64k	3.00625	1.48657	3.00676	-	-	-1.51968	-	0.00052	-		WIN
+tests/startset/hybrid.rxt:112	mover	2	63	cap:t-1m	3.04894	1.48822	3.04736	-	-	-1.56072	-	0.00158	-		WIN
+tests/startset/hybrid.rxt:17	mover	2	63	cap:t-64k	3.00683	1.50002	3.01023	-	-	-1.50681	-	0.00340	-		WIN
+tests/startset/hybrid.rxt:17	mover	2	63	cap:t-1m	3.05602	1.50783	3.05066	-	-	-1.54819	-	0.00535	-		WIN
+tests/startset/hybrid.rxt:179	mover	2	63	cap:t-64k	3.00710	1.51093	3.00727	-	-	-1.49617	-	0.00017	-		WIN
+tests/startset/hybrid.rxt:179	mover	2	63	cap:t-1m	3.04886	1.49081	3.04839	-	-	-1.55805	-	0.00048	-		WIN
+tests/startset/hybrid.rxt:230	mover	2	63	cap:t-64k	3.64942	2.01232	3.65190	-	-	-1.63709	-	0.00248	-		WIN
+tests/startset/hybrid.rxt:230	mover	2	63	cap:t-1m	3.61765	1.90263	3.61823	-	-	-1.71502	-	0.00059	-		WIN
+tests/startset/hybrid.rxt:280	mover	2	63	cap:t-64k	3.19052	1.47929	3.19104	-	-	-1.71123	-	0.00052	-		WIN
+tests/startset/hybrid.rxt:280	mover	2	63	cap:t-1m	3.23464	1.48646	3.23421	-	-	-1.74818	-	0.00042	-		WIN
+tests/startset/hybrid.rxt:79	mover	2	63	cap:t-64k	3.00892	1.49539	3.00890	-	-	-1.51353	-	0.00002	-		WIN
+tests/startset/hybrid.rxt:79	mover	2	63	cap:t-1m	3.05332	1.49179	3.04859	-	-	-1.56154	-	0.00474	-		WIN
+tests/startset/reseed.rxt:117	mover	2	63	cap:t-64k	3.25786	1.59100	3.25726	-	-	-1.66686	-	0.00061	-		WIN
+tests/startset/reseed.rxt:117	mover	2	63	cap:t-1m	3.29307	1.61394	3.29135	-	-	-1.67913	-	0.00172	-		WIN
+tests/startset/reseed.rxt:15	mover	2	63	cap:t-64k	3.23473	1.60334	3.23487	-	-	-1.63139	-	0.00014	-		WIN
+tests/startset/reseed.rxt:15	mover	2	63	cap:t-1m	3.26260	1.62516	3.26125	-	-	-1.63744	-	0.00136	-		WIN
+tests/startset/reseed.rxt:152	mover	3	63	cap:t-64k	3.07259	1.37364	3.06687	-	-	-1.69895	-	0.00571	-		WIN
+tests/startset/reseed.rxt:152	mover	3	63	cap:t-1m	3.05983	1.39849	3.06138	-	-	-1.66134	-	0.00155	-		WIN
+tests/startset/reseed.rxt:176	mover	1	63	cap:t-64k	0.01671	0.01674	0.01671	-	-	+0.00003	-	0.00000	-		REGRESSION
+tests/startset/reseed.rxt:176	mover	1	63	cap:t-1m	0.01677	0.01676	0.01677	-	-	-0.00000	-	0.00000	-		WIN
+tests/startset/reseed.rxt:216	G1	1	62	cap:t-64k	4.00644	1.02349	4.00494	1.02322	1.11477	-2.98295	-0.09127	0.00150	0.00027	Y	WIN Q3:ELIDE-FASTER
+tests/startset/reseed.rxt:216	G1	1	62	cap:t-1m	4.01082	1.06235	4.00992	1.06205	1.18542	-2.94846	-0.12306	0.00090	0.00030	Y	WIN Q3:ELIDE-FASTER
+tests/startset/reseed.rxt:250	G1	1	63	cap:t-64k	3.57573	1.64711	3.58398	1.64990	1.70384	-1.92862	-0.05673	0.00825	0.00280	Y	WIN Q3:ELIDE-FASTER
+tests/startset/reseed.rxt:250	G1	1	63	cap:t-1m	3.58317	1.71259	3.58400	1.71329	1.76073	-1.87059	-0.04815	0.00083	0.00071	Y	WIN Q3:ELIDE-FASTER
+tests/startset/reseed.rxt:283	G1	1	63	cap:t-64k	3.15504	0.78404	3.15715	0.78723	0.85811	-2.37100	-0.07407	0.00211	0.00319	Y	WIN Q3:ELIDE-FASTER
+tests/startset/reseed.rxt:283	G1	1	63	cap:t-1m	3.22617	0.87861	3.22617	0.87914	0.96980	-2.34756	-0.09119	0.00000	0.00053	Y	WIN Q3:ELIDE-FASTER
+tests/startset/reseed.rxt:54	mover	2	63	cap:t-64k	3.07409	0.46969	3.06737	-	-	-2.60440	-	0.00671	-		WIN
+tests/startset/reseed.rxt:54	mover	2	63	cap:t-1m	3.06181	0.47007	3.06189	-	-	-2.59174	-	0.00009	-		WIN
+tests/startset/reseed.rxt:86	mover	2	64	cap:t-64k	2.68842	1.94474	2.68766	-	-	-0.74368	-	0.00076	-		WIN
+tests/startset/reseed.rxt:86	mover	2	64	cap:t-1m	2.72641	1.97657	2.72661	-	-	-0.74983	-	0.00020	-		WIN
+tests/ucp/ctxnode.rxt:162	mover	10	13	cap:t-64k	3.42816	2.50618	3.41675	-	-	-0.92197	-	0.01141	-		WIN
+tests/ucp/ctxnode.rxt:162	mover	10	13	cap:t-1m	3.55887	2.68088	3.55130	-	-	-0.87799	-	0.00757	-		WIN
+tests/ucp/ctxnode.rxt:253	G1	1	255	cap:t-64k	1.05303	0.29299	1.05366	0.29225	0.36016	-0.76004	-0.06717	0.00062	0.00074	Y	WIN Q3:ELIDE-FASTER
+tests/ucp/ctxnode.rxt:253	G1	1	255	cap:t-1m	1.01969	0.27158	1.01968	0.27180	0.35167	-0.74811	-0.08009	0.00001	0.00022	Y	WIN Q3:ELIDE-FASTER
+tests/ucp/ctxnode.rxt:305	G1	1	2	cap:t-64k	1.11930	0.19638	1.11994	0.19624	0.24063	-0.92292	-0.04426	0.00064	0.00014	Y	WIN Q3:ELIDE-FASTER
+tests/ucp/ctxnode.rxt:305	G1	1	2	cap:t-1m	1.07522	0.18347	1.07530	0.18347	0.23469	-0.89175	-0.05122	0.00009	0.00001	Y	WIN Q3:ELIDE-FASTER
+tests/ucp/ctxnode.rxt:367	G1	1	134	cap:t-64k	3.15148	0.22465	3.15099	0.22401	0.24971	-2.92683	-0.02506	0.00048	0.00064	Y	WIN Q3:ELIDE-FASTER
+tests/ucp/ctxnode.rxt:367	G1	1	134	cap:t-1m	3.18256	0.27128	3.18359	0.27121	0.31705	-2.91128	-0.04577	0.00103	0.00007	Y	WIN Q3:ELIDE-FASTER
+tests/utf8/axis08_lookbehind_varwidth.rxt:142	G1	1	63	cap:t-64k	3.10982	0.22387	3.10989	0.22324	0.26476	-2.88595	-0.04089	0.00007	0.00062	Y	WIN Q3:ELIDE-FASTER
+tests/utf8/axis08_lookbehind_varwidth.rxt:142	G1	1	63	cap:t-1m	3.13930	0.26767	3.13803	0.26750	0.32098	-2.87164	-0.05331	0.00127	0.00017	Y	WIN Q3:ELIDE-FASTER
+tests/utf8/axis08_lookbehind_varwidth.rxt:155	G1	1	63	cap:t-64k	3.09699	0.23291	3.09400	0.23327	0.26682	-2.86408	-0.03391	0.00299	0.00036	Y	WIN Q3:ELIDE-FASTER
+tests/utf8/axis08_lookbehind_varwidth.rxt:155	G1	1	63	cap:t-1m	3.14148	0.29368	3.14140	0.29402	0.33572	-2.84780	-0.04204	0.00008	0.00034	Y	WIN Q3:ELIDE-FASTER
+tests/utf8/axis13_ctx_illformed.rxt:51	G1	1	2	cap:t-64k	1.26983	0.18970	1.27165	0.18951	0.24761	-1.08013	-0.05791	0.00182	0.00019	Y	WIN Q3:ELIDE-FASTER
+tests/utf8/axis13_ctx_illformed.rxt:51	G1	1	2	cap:t-1m	1.21288	0.17649	1.21277	0.17642	0.23249	-1.03640	-0.05600	0.00011	0.00007	Y	WIN Q3:ELIDE-FASTER
