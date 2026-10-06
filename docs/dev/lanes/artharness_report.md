@@ -41,7 +41,7 @@ Failing direction, each a PASS meaning "the bad thing was caught":
   optimize`, `__attribute__((optimize))`, `__attribute__((target))`, `_mm_*` calls), the `--patch` route, and
   an `artifact.h` edit.
 - **slowed (answer-identical, busy loop per call) twin: identity PASS, then times as LOSS** on both subjects
-  (cell 7.93 -> 49.8 ns/B; sparse 3.28 -> 21.1); **null twin NOISE; orig2 NOISE**; the verdict rule also
+  (committed log: cell 7.86 -> 49.7 ns/B; sparse 3.28 -> 21.2); **null twin NOISE; orig2 NOISE**; the verdict rule also
   checked on synthetic rounds (WIN, LOSS, null NOISE, a sub-null-deviation delta NOISE, a noisy faster arm
   NOISE).
 - **bounds**: 6 leads sealed, the 7th refused; lead L1 revised to 4, the 5th refused; L2 timed 3x, the 4th
