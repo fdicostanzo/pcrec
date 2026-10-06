@@ -189,3 +189,31 @@ the compiler, and is never adopted silently. Proposed for main to file
   Validation: the Linux make test via the manager's executor, by day,
   plus the census (each artifact moves by exactly the two lines and the
   abi digit).
+- done: 2026-10-06 — **R4a′ (R-3 part 2) DELIVERED: on main as abi 63**
+  (merge 340d8fef of `lane/memfn-r4a2` @ a0aefc40; code ends at
+  49ace440). START-SET stage 3 stacked on top as abi 64 (8148e034).
+  - **The abi event it rode:** pcrec abi 62 → 63. Re-pins found by grep
+    (memfnbump_report.md, the `g1` grep row), stamp values, D80 spec
+    hunk, all in the bump's own commit chain.
+  - **MF_VOCAB:** unchanged (2). No kit search form exists yet, so no
+    search byte moved.
+  - **Linux verdict (main's executor, at eef95511):** 53/53 sections
+    ran. The one red, `test-encoding-checks`, was a CHECK-side gap
+    (`RX_MEMFN_LIBC` follows the excised `rx_reqrun` block), attributed
+    by main's lane enctri and fixed on main with a failing-direction
+    control. The `*** [test-` grep is clean with that fix.
+  - **Census vs 57db5152 (Linux):** CLEAN. Each artifact moves by the
+    two stamp lines and the abi digit, plus the one named
+    `RX_VM_PREFILTER_WHY` value that main accepted.
+  - **Both layers (D147):** SIMD-off is the only layer that exists:
+    `-fmemfn-simd` has no form until R4e′ (Q55), so every artifact
+    stamps `MEMFN_FORMS none`. No search code moved, so G1 has no
+    population: nothing to time at either layer.
+  - **Leftover worktrees:** `memfnstamp` and `memfnbump` pruned via
+    `scripts/wtprune --apply`. The nested `worktrees/memfn/worktrees/
+    memfng2` (+ cell) stays on Frank's raw-removal list.
+  - **OWED (carried from R4a):** G2 coverage of the newly refused
+    shapes; Q-G2-5 (M3); C11's FORMS half UNREACHED until the first
+    form.
+  - **Next:** R4c (the M1 migration) waits for R-4 in requests.md. No
+    R4c code before it is filed.
