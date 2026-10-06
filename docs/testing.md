@@ -725,9 +725,9 @@ this table's method; Mac dev box, so directional):**
   compiler probes for its plants (ten `-dM -E` runs); C12/C13/C14 and the
   reach floor are static or one syntax-only compile. `test-memfn-manifest`
   now carries C17's selftest (a three-file synthetic-caller build, about
-  1 s) and, once a pcrec function calls the kit, a traced build plus a
-  300-pattern corpus pass (measured on a scratch tree with a planted caller:
-  about 3 s).
+  1 s) and, since R4c (PRE/OFS delegated), a traced build plus a
+  300-pattern corpus pass: about **4.6 s** wall for the whole section
+  (lane r4cfix, one run, gcc-16; 273 compiles, 103 site renders).
 
 **RE-RECORD TRIGGER**: re-measure a section (same method: 3 runs, per-run
 load-before/after sampling, `TMPDIR=/var/tmp`) whenever its runtime doubles

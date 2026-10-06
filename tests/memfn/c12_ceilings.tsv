@@ -15,15 +15,16 @@
 #     lexer or vocabulary that stopped seeing forms red, never green;
 #   - a form with NO row here has ceiling 0.
 # The number on a row is the ONE literal a REPLACE commit edits: M1's REPLACE
-# lowers the emit_dfa.c memchr row 8 -> 2 (pcrec_emit_find and emit_attempt, which stay until M2).
+# lowered the emit_dfa.c memchr row 8 -> 2 (R4c, lane r4cfix: pcrec_emit_find
+# and emit_attempt stay until M2/M4; the six M1 spellings are the kit's).
 # A RAISE is never routine: it needs a ruling, named in the commit.
 #
-# The row count (12) and the total (26 forms) are echoed by the check; the
+# The row count (12) and the total (20 forms; 26 before M1) are echoed by the check; the
 # independent control is the vocabulary's own reach (rule 4 of C17).
 #
 # Columns (tab-separated): path, vocab line-id, libc call name (libc-call
 # lines only, else -), ceiling, note.
-src/gen/emit_dfa.c	libc-call	memchr	8	M1/M2: pcrec_emit_find, emit_attempt, emit_req_one_byte, emit_req_set_rest, ofs_test_emit_fn x2, ofs_test_emit_pair x2 (at 90d396fd the design counted 9; one went with the START-SET stage)
+src/gen/emit_dfa.c	libc-call	memchr	2	M2/M4: pcrec_emit_find, emit_attempt (M1's six went to the kit at R4c REPLACE: emit_req_one_byte, emit_req_set_rest, ofs_test_emit_fn x2, ofs_test_emit_pair x2; at 90d396fd the design counted 9, one went with the START-SET stage)
 src/gen/emit_dfa.c	walk-fmt	-	1	pcrec_emit_find's table form (START-SET stage 1; M2/M5)
 src/gen/emit_dfa.c	walk-open	-	2	class-run and span loops whose byte test another call splices in (M3/M4)
 src/gen/emit_dfa.c	walk-stmt	-	2	one-statement cursor walks over a table (M2/M5)

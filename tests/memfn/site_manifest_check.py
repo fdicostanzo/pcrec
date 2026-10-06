@@ -11,7 +11,8 @@ own literal, which shares no source with the manifest.
 The four failure rules (§R4.3.4):
   1. static half: a function under src/gen/ or src/enc/ spells a vocabulary
      form and no `pending` row names it;
-  2. dynamic half: a pcrec function calls mf_define/mf_emit with no
+  2. dynamic half: a pcrec function calls mf_define/mf_emit (directly, or
+     through one of pcrec's doors, site_census.DOORS) with no
      `delegated` row naming it, counted over a corpus compile pass through a
      traced build (tests/memfn/site_census.py); every `delegated` row must be
      rendered at least once. UNREACHED, loudly (K35, never a pass), while no
@@ -80,6 +81,7 @@ def rule2(root, cc, deleg_rows):
     for good, msg in site_census.selftest(cc):
         (ok if good else bad)(msg)
     callers = site_census.find_callers(root)
+    doors = site_census.find_door_callers(root)
     ncalls = sum(sum(c.values()) for c in callers.values())
     listed = set().union(*deleg_rows.values()) if deleg_rows else set()
     if ncalls == 0 and not deleg_rows:
@@ -94,18 +96,30 @@ def rule2(root, cc, deleg_rows):
             'mf_define or mf_emit: the rows delegate to nothing' % (len(deleg_rows),
                                                                   ','.join(sorted(deleg_rows))))
         return
-    unlisted = [(f, fn, n) for f, c in sorted(callers.items()) for fn, n in sorted(c.items())
-                if fn not in listed]
-    for f, fn, n in unlisted:
-        bad('rule 2: %s: %s calls mf_define/mf_emit %d time(s) and no `delegated` row names it '
-            '(an unlisted site)' % (f, fn, n))
-    print('rule 2: %d kit call(s) in %d function(s) of %d file(s) under src/'
-          % (ncalls, sum(len(c) for c in callers.values()), len(callers)))
-    if unlisted:
+    # pcrec's doors (site_census.DOORS): each must still call the kit; its
+    # CALLERS are the sites and answer to the row rule like direct callers
+    kit_fns = {fn for c in callers.values() for fn in c}
+    stale = sorted(set(site_census.DOORS) - kit_fns)
+    for d in stale:
+        bad('rule 2: door %s (site_census.DOORS) calls neither mf_define nor mf_emit: a stale '
+            'door, so its callers would go unattributed' % d)
+    sites = [(f, fn, n, 'mf_define/mf_emit') for f, c in sorted(callers.items())
+             for fn, n in sorted(c.items()) if fn not in site_census.DOORS]
+    sites += [(f, fn, n, 'a door') for f, c in sorted(doors.items())
+              for fn, n in sorted(c.items())]
+    unlisted = [x for x in sites if x[1] not in listed]
+    for f, fn, n, via in unlisted:
+        bad('rule 2: %s: %s calls %s %d time(s) and no `delegated` row names it '
+            '(an unlisted site)' % (f, fn, via, n))
+    print('rule 2: %d kit call(s) in %d function(s) of %d file(s) under src/; %d site '
+          'function(s) (%d through the door(s) %s)'
+          % (ncalls, sum(len(c) for c in callers.values()), len(callers), len(sites),
+             sum(len(c) for c in doors.values()), ','.join(sorted(site_census.DOORS))))
+    if unlisted or stale:
         return                      # no point building the traced binary on a known red
     tmp = tempfile.mkdtemp(prefix='c17pass.', dir=os.environ.get('TMPDIR'))
     try:
-        exe, why = site_census.build_traced(root, cc, sorted(callers), tmp)
+        exe, why = site_census.build_traced(root, cc, sorted(callers), tmp, sorted(doors))
         if exe is None:
             bad('rule 2 (dynamic half): the traced build failed: %s' % why)
             return
@@ -117,7 +131,7 @@ def rule2(root, cc, deleg_rows):
                 'of %d: the census is not a census' % (okc, site_census.CORPUS_FLOOR))
             return
         probs, st = site_census.verdict(per, deleg_rows)
-        print('corpus pass: %d kit call(s) over %d compiles (%d render at least one site, at '
+        print('corpus pass: %d site render(s) over %d compiles (%d render at least one site, at '
               'most %d per compile); by function: %s'
               % (st['calls'], st['compiles'], st['withsite'], st['max'],
                  ', '.join('%s %d' % kv for kv in sorted(st['seen'].items()))))

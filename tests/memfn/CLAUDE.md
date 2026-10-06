@@ -37,10 +37,15 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
      `src/` that calls the kit must be named (emitter or companion) by a
      `delegated` row, and every `delegated` row must be rendered at least
      once over a corpus compile pass through a TRACED build
-     (`site_census.py`). It is UNREACHED, loudly and never passed, while no
-     pcrec source calls the kit and no row is delegated; a delegated row with
-     no caller is a FAIL. The machinery runs on a SYNTHETIC caller every
-     time (the `selftest:` lines), so UNREACHED means "no pcrec site yet";
+     (`site_census.py`). LIVE since R4c (lane r4cfix): PRE/OFS/SETREST are
+     delegated and their builders `req_site_define`/`ofs_site_define` reach
+     the kit through pcrec's DOOR `pcrec_memfn_define` (`site_census.DOORS`):
+     a door is shared plumbing, so the SITE is the door's caller; a stale door
+     is red, and per compile the kit calls inside doors must equal the door
+     calls traced at their callers (door accounting). It was UNREACHED,
+     loudly, while no pcrec source called the kit; a delegated row with no
+     caller is a FAIL. The machinery also runs on a SYNTHETIC caller every
+     time (the `selftest:` lines);
   3. a delegated emitter that still spells a form → FAIL. It is VACUOUS,
      and says so, at 0 delegated rows;
   4. a pending emitter that spells nothing → FAIL (the row is stale).
@@ -54,7 +59,8 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
   grows no tracing hook), `corpus_patterns`/`run_corpus` (a deterministic
   sample of the `.rxt` `pattern` lines, K35 floor 100 compiles), `verdict`
   and `selftest`. Proven end to end on a scratch tree with a planted caller
-  (report §2); pcrec's own callers arrive at R4c's REPLACE.
+  (report §2); live on pcrec's own callers since R4c (r4cfix: the door
+  shim, `door_shim`/`DOORS`, traces the builders behind `pcrec_memfn_define`).
 - **run_site_manifest.sh** — the entry point (`make test-memfn-manifest`,
   in TEST_SECTIONS; mech arm `memfnmanifest`). It holds `C17_ROW_FLOOR`,
   the K35 floor as a literal that shares no source with the TSV. A change
@@ -80,7 +86,8 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
   C13, C14 (`make test-memfn-forms`; arm `memfnforms`). C12 counts search
   forms per (emitter file, vocabulary line, libc call) against ceilings that
   only descend (12 rows, 26 forms at birth: memchr 8 in `emit_dfa.c`,
-  memcmp 1 in `runcmp.c`, ...); REPLACE edits the one number on the row.
+  memcmp 1 in `runcmp.c`, ...; 20 forms since M1's REPLACE lowered memchr
+  8 -> 2); REPLACE edits the one number on the row.
   Higher is red (a replaced form came back) AND lower is red (stale ceiling
   or a blind lexer). C13 is declared UNREACHED while no `on_cand` producer
   exists and FAILs the day one does. C14 compiles `_Static_assert(MF_MAX_TERM
