@@ -118,6 +118,17 @@ CASES = [
   "control: an unbounded offset (.*?) carries no handoff (S467)"),
  ("ab.*xyzw", "byte", ["abxyzw", "ab..xyzw", "xyzw", "zzab-xyzwab"],
   "control: an unbounded offset; the run choice keeps the more informative unbounded xyzw (S474)"),
+ # ---- the VM hybrid route's handoff, by its own witnesses ([MEMFN] R4c,
+ # integration.md §15.5: the I2 sweep must REACH this route). Each pattern's
+ # artifact carries RX_VM_PREFILTER "hybrid" and `handoff_position =
+ # rx_reqrun(...)` (tests/memfn/run_site_manifest.sh's reach floor compiles
+ # them and asserts both). ----
+ ("(ab)c?userpass", "byte", ["abuserpass", "abcuserpass", "zzabcuserpass", "abcuserpas", "xabuserpassabcuserpass"],
+  "the VM hybrid's handoff, RX_REQ_HANDOFF 3: the window's first hit, less K, is the first prefilter call's start"),
+ ("(x)?userz", "byte", ["userz", "xuserz", "zxuserz", "zzuserz"],
+  "the VM hybrid's handoff, RX_REQ_HANDOFF 1"),
+ ("(?i)(cat)s?dog", "byte", ["CATsDOG", "catdog", "zcatsdog", "CatSdog", "catsdo"],
+  "the VM hybrid's handoff through the PAIR arm of the offset-skip form (a two-member cube at the scanned offset)"),
 ]
 
 
