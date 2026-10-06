@@ -11,6 +11,17 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 ---
 
+## K91 — OPEN, deferred (2026-10-06, found by lane alphas3's Linux alpha of START-SET stage 3, the DFA hat, abi 64, bit 47) — the DFA hat loses on some mid-density subjects (start-set density about 12-31%)
+
+D144 item 3: issue rows, not reverts. Correctness clean (no wrong answer; `-fno-start-set` restores base on every cell). Reproduced by a second time-only pass (docs/dev/lanes/alphas3_report.md; raw docs/dev/optloop/startset/alpha_s3_results/):
+
+- **I1 — the four `ctx-*` hybrids** (ctx-lazy-64/256/1024, ctx-greedy-256) on the bench's `bnd:t-letters-064k` subject: +0.067..+0.110 ns/B (+4.0..+5.9%). T = {a,f,p}, d_T 11.9%: the seek fires about every 8 bytes. Their design evidence is the bench's short-call subjects, which this alpha did not time (bench question relayed).
+- **I2 — `wild-logparse-syslogbase-expanded`** (T16 / E63): t-64k +0.12/+0.09, t-1m +0.17/+0.17 ns/B (+3..6%).
+- **I3 — corpus `\b[0-9a-f]{8}\b`** (tests/offsetskip/offset_skip.rxt:255) on capability prose: +0.215..+0.235 ns/B (+7.1..+7.7%). The bench's `hex32-id` (`{32}`) WINS 12.8%, so this is subject- or length-specific.
+- I6 (sub-1.5%, reproduced): `(?i)\bcat\b`, dfahat.rxt:1074 — noted, not counted.
+
+The same dense regime as K90 (a skip whose expected skip length is short still pays its seek); at d_T >= 40% the hat wins or ties. Candidate fix: the density-adaptive disarm K90 names — on the unified start table (docs/design/start_table.md) that is the retry slot's adaptive rule extended to the DFA hat's route, so K90 and K91 are probably ONE row. Interim lever `-fno-start-set`.
+
 ## K90 — OPEN, deferred (2026-10-06, found by lane alphas2's Linux alpha of START-SET stage 2, the VM hat, abi 62, bit 47) — the VM hat costs past the floor on match-DENSE text and on short calls whose subject begins with a hit
 
 D144 item 3: regressions without a wrong answer become issue rows, not reverts. The alpha's correctness half is clean (base/new/deny answers identical on every subject; deny == base on every mover). Three losses past the floor, each reproduced by a second `time` pass (docs/dev/lanes/alphas2_report.md; raw docs/dev/optloop/startset/alpha_s2_results/):
@@ -20,6 +31,8 @@ D144 item 3: regressions without a wrong answer become issue rows, not reverts. 
 - **L3 — per-call seek on a hit at offset 0 (K88's shape).** `quoted-delim` short-call: +14..+17 ns/call on the four subjects that BEGIN with a quote (br-quoted-delim, cg-key-colon, lp-quoted, lp-quoted-escaped), against a ~0.3 ns/call control band; the other 71 of 75 short-call subjects are 11-474 ns/call FASTER.
 
 Mechanism (hypothesis, not measured here): the hat's seek (`memchr`/table walk to the next start-set byte) is pure overhead when the next start byte is the current position or a few bytes away, i.e. when starts are dense; L3 is the extreme where the very first position is a start. Same family as K88 (the K82 handoff on match-dense literals) — both are "a skip whose expected skip length is ~0 still pays its call". Interim lever: `-fno-start-set` (bit 47). Candidate fix shapes (NOT designed): a first-position check before the first seek (L3), and a density-adaptive disarm like [OPT-HYB-RESEED]'s block rule (L1/L2) — both D77: needs a design pass with the cost model startset.md §7 F1 already names. L4 (union-select-vm / ci-ascii-ctl-vm, <=1.3%, mixed sign) is judged NULL-in-substance and not filed.
+
+**Addendum (2026-10-06, stage 3 alpha, lane alphas3): the DFA hat has the same per-call entry term, about 4x smaller.** I4: on BYTE-ABSENT subjects at the memchr floor, a one-byte-T hat costs +3..+9 ns per call (the 9 Q3 cells and reseed.rxt:176); I5 (synthetic, scratch tier): hit-at-0 +0.4..+3.9 ns/call (VM hat's L3: +14..+17), and aws with no start byte +4.3 ns on an 8.6 ns call. A first-position peel and a cheap hat entry would serve both hats; on the unified start table it is one handoff edge, not two fixes.
 
 ## K89 — OPEN, latent (2026-10-05, found by lane ssbuild01 while fixing K84) — axis C picks the view tables by `strcmp` on a row NAME, K84's shape
 
