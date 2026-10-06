@@ -2527,6 +2527,19 @@ run_one() {
                 f="$(grep -m1 '^checks failed:' "$work/startset.log" | grep -oE '[0-9]+')"
                 score_arm "$work/startset.log" "$f" "startset:${f:-ERR}fail/${p:-?}pass"
                 ;;
+            vmhat)
+                # [START-SET] stage 2 (D148) tests/startset/run_vmhat_checks.sh —
+                # the VM hat: the fixtures through the harness, the stamp's
+                # IFF and route/anchor/handoff, the deny arm is today's
+                # emitter, table == fact, the mover manifest by ID, and the
+                # every-startpos differential with the start-byte oracle.
+                # Registered before the stage-2 rows that name it.
+                PCREC="$pcrec" bash "$tree/tests/startset/run_vmhat_checks.sh" \
+                    > "$work/vmhat.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/vmhat.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/vmhat.log" | grep -oE '[0-9]+')"
+                score_arm "$work/vmhat.log" "$f" "vmhat:${f:-ERR}fail/${p:-?}pass"
+                ;;
             candrows)
                 # [START-SET] (D148) tests/codegen/run_cand_rows.sh — the
                 # candidate table's structural checks: no comparison reads a

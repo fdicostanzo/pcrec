@@ -3249,3 +3249,17 @@ answer-level detector (the hybrid re-seed row on a narrowed SET row) is the
 design's (startset.md §6.3) and does not exist yet. **S284** was re-anchored
 in the same change (the `dfa_pfs[]` rows took designated initializers); its
 intent and expected verdict (UNDETECTED) are unchanged.
+
+## [START-SET] stage 2 — `vmhat`, and S478-S500 (lane ssbuild2, 2026-10-05)
+
+**`vmhat` is a new suite word** (registered before the rows that name it):
+`tests/startset/run_vmhat_checks.sh` — the VM hat's fixtures, its structural
+and mover-manifest checks, and its every-startpos differential (one trailer
+pair). Rows: S478 (table drops a member), S491 (nullable conjunct), S492
+(unanchored conjunct), S493 (no-prefilter conjunct), S494
+(`pcrec_artifact_has_dfa_scan` true on a mover), S498/S499 (the walk's
+A_CALL/A_BREF arms drop their bytes) on `vmhat`; S500 (A_VAR) on `vars`; S479
+(the memchr form, Q-R5), S496 (verbs/callouts) and S497 (the utf8 start-byte
+assertion) DECLARED UNREACHED with REACH probes that flip the day the construct
+becomes reachable. Each row's REACH was evaluated at landing; the solo mech
+figures are in `docs/dev/lanes/ssbuild2_report.md` §5.

@@ -1,0 +1,15 @@
+# tests/vars/startset.rxt -- [START-SET] stage 2 (D148): sabotage S500's
+# answer witness. A variable reads as "every byte, nullable" in the start-set
+# walk (src/facts/startset.c), so `${v}x` is not a VM-hat mover; a walk whose
+# A_VAR arm dropped its bytes would make it one, and the seek, finding no
+# start byte, would skip every match. Verified by verify_vars.py (this
+# directory's oracle: the value quotemeta-spliced, asked of libpcre2).
+
+pattern ${v}x
+features vars
+var v "a"
+m "ax" 0 2
+m "zzax" 2 4
+m "xax" 1 3
+n "x"
+n "a"

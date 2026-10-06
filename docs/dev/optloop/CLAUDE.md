@@ -814,6 +814,9 @@ that cycle's analysis lands.
   captures over the found span).
 - `revend/` — its instruments and verbatim outputs. See its own `CLAUDE.md`.
 
+- `startset/` — [START-SET]'s alpha blocks (round 2): `alpha_s2.sh`, stage
+  2's (the VM hat) Linux alpha, written by lane ssbuild2 and owed to the
+  executor channel. Own CLAUDE.md.
 
 ## [ARTREV]: bottom-up artifact review (D150, 2026-10-05)
 

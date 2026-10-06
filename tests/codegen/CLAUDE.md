@@ -3715,3 +3715,13 @@ must fire on `default`/`noprefilter`. `ctx-node-moved=` joins the (A) line.
   +377, itemized in the script.
 - `run_recursion_identity.sh`'s (B) pin re-pinned (see its comment).
 - S368's anchor re-aimed (the guard call gained its `anchored` argument).
+
+- **[START-SET] stage 2 (lane ssbuild2, 2026-10-05, abi 62):**
+  `run_codegen_tests.sh`'s `ABI_EXPECT` 62; `run_cpset_structure.sh`'s
+  manifest re-recorded (ten rows +32, the `RX_VM_START_SCAN "none"` line; the
+  two VM-hat movers +1,843); `run_recursion_identity.sh`'s (B) FILEPIN
+  self-pinned; and `run_size_term.sh`'s §9 pool now reads the compiler's own
+  quantity (comment-excluded TOTAL bytes, `size_term_choose`'s bar), where it
+  read CODE bytes that agreed only while VM artifacts carried no table bytes —
+  the hat's K-invariant table separated them. `(?:abcd|abc|ab|a){17}z` joined
+  the pool (0.7162) because `(|a){0,12}b` moved above the bar.

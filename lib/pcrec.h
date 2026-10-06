@@ -1095,6 +1095,18 @@ enum {
  * reason. */
 #define PCREC_NO_REQ_HANDOFF PCREC_BIT(46)
 
+/* [START-SET] the candidate table's start-set rows (docs/spec/tuning.md
+ * §2.42, D148). Today the VM HAT: a prefilter-less VM attempt loop whose
+ * pattern cannot match empty seeks the next byte that can begin a match
+ * (the `start_set` fact) before its first attempt and after each failed
+ * one, instead of attempting at every position. It removes only attempts
+ * that fail, so no answer moves; a step, work or capacity give-up the
+ * skipped attempts would have hit can become the answer (docs/spec/
+ * match_api.md §3.1). Masked out of `rx_info.flags`;
+ * `<PREFIX>_VM_START_SCAN` records the row, or "none". Deny only (D148 Q3).
+ * A `#define` for bit 32's reason. */
+#define PCREC_NO_START_SET PCREC_BIT(47)
+
 /* [ENG-BREP] the counter rung's UNROLL FACTOR, K (counterk_design.md §4.1;
  * eng_brep_design.md §4.5's "K must not become a per-pattern heuristic in v1",
  * held strictly by D47's ADDENDUM). ONE per-artifact constant: every

@@ -6048,6 +6048,14 @@ typedef struct {
 } PcrecFind;
 /* The memchr form declares `const void *q`, the hit or NULL. */
 void pcrec_emit_find(StrBuf *c, const char *ind, const PcrecFind *f);
+/* [START-SET] stage 2, THE VM HAT (src/gen/emit_dfa.c): the candidate
+ * table's VM-route row name (`<PREFIX>_VM_START_SCAN`'s value, "none" on a
+ * DFA artifact or a hybrid), and the seek that row writes into
+ * `<prefix>_search_run` before the first attempt (`entry`) or after a failed
+ * one — nothing where the row is `none`. One selection, read by both. */
+const char *pcrec_vm_start_scan_name(Ctx *cx);
+void pcrec_emit_vm_start_seek(Ctx *cx, StrBuf *c, const char *p,
+                              const char *ind, bool entry);
 /* The word-load helpers used and not yet declared, at file scope (idempotent
  * per attempt); and the `<PREFIX>_RUN_WORDS` stamp, after the engine body. */
 void pcrec_emit_runcmp_helpers(Ctx *cx, StrBuf *c);
@@ -6567,7 +6575,14 @@ long long pcrec_cwmax(const Ast *a);                 /* src/opt/mrl.c */
  * bits (docs/dev/learnings.md §3) — so a candidate added to one of those six
  * lists appears in the dump with no edit to the walker. `cap` bounds `out`;
  * returns the number written (never more than `cap`). */
-typedef struct { const char *name; uint64_t deny; } PcrecAxisCand;
+typedef struct {
+    const char *name;
+    uint64_t    deny;
+    /* [START-SET] the stamp macro this row writes where it is not its axis's
+     * own, or NULL: `first-class` serves the VM route alone at stage 2 and
+     * writes `RX_VM_START_SCAN`, never `RX_DFA_PREFILTER`. */
+    const char *stamp;
+} PcrecAxisCand;
 
 size_t pcrec_dfa_axis_table_cands(PcrecAxisCand *out, size_t cap);      /* axis A */
 
