@@ -1,0 +1,42 @@
+--- a/artifact.c
++++ b/artifact.c
+@@ -275,6 +275,19 @@
+     }
+ }
+ 
++/* [ARTREV L1] the first atom is \b and every start byte is a \w byte, so an
++ * attempt can only pass rx_L0 where the PREVIOUS byte is not \w: skip the rest
++ * of a word we are inside, then the non-word bytes.  Skipped attempts fail at
++ * rx_L0 with no frame pushed, no slot written and no budget charged. */
++#define RX_L1_W(c_) ((rx_class_bitmap0[(c_) >> 3] >> ((c_) & 7)) & 1)
++static inline size_t rx_next_word_start(const unsigned char *subject, size_t subject_length, size_t p)
++{
++    if (p > 0 && p < subject_length && RX_L1_W(subject[p - 1]))
++        while (p < subject_length && RX_L1_W(subject[p])) p++;
++    while (p < subject_length && !RX_L1_W(subject[p])) p++;
++    return p;
++}
++
+ static int rx_search_run(const unsigned char *subject, size_t subject_length,
+        size_t search_from, ptrdiff_t (*capture_spans)[2], rx_run_state *run)
+ {
+@@ -303,7 +316,8 @@
+           0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+           0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+     };
+-    while (attempt_position < subject_length && !rx_start_set[subject[attempt_position]]) attempt_position++;
++    (void)rx_start_set;
++    attempt_position = rx_next_word_start(subject, subject_length, attempt_position);
+     if (attempt_position >= subject_length) return 0;
+     rx_run_state_init(run);
+     ctx.subject = subject; ctx.len = subject_length; ctx.ncap = 0;
+@@ -319,8 +333,7 @@
+         if (result >= 0) break;
+         rx_reset_for_next_attempt(run);
+         if (attempt_position >= subject_length) return 0;
+-        attempt_position++;
+-        while (attempt_position < subject_length && !rx_start_set[subject[attempt_position]]) attempt_position++;
++        attempt_position = rx_next_word_start(subject, subject_length, attempt_position + 1);
+         if (attempt_position >= subject_length) return 0;
+     }
+     if (capture_spans) rx_report_captures(run, capture_spans, attempt_position, result);

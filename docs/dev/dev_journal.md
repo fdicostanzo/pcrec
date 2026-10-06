@@ -26376,3 +26376,92 @@ Frank: "finish up open work/bench results/errors", Linux box free (bench manager
   orig2-LOSS flake under a gate-overridden load ~20, re-run clean).
   Launched the dual-review pair rvA07a/rvA07b (opus, blind). Process
   slip: the manager cd'd into a cell once (memory rule); returned at once.
+- ~01:50: [ARTREV] pilot reviews: rvA07a (6 leads), rvA07b (6 leads), rvA01
+  (4 leads) delivered; every twin identity-PASS plain + --san; sabotage
+  controls all caught (one off-by-one guard caught ONLY by --san). DUAL
+  REVIEW OVERLAP on A07 (first reading, scratch): both blind reviewers found
+  the same four core leads — `\b` as a start filter, the two dead give-back
+  frames (auto-possessify), straight-line/untrailed attempt, fused inline
+  word walk — and both proposed 256-byte class tables; unique: A07a's
+  run-counters-in-locals (aliasing), A07b's restart past the proven-dead
+  range. So ~5 of 6 overlap: dual review buys ~1 lead per reviewer at 2x
+  cost — input to the pilot gate's single-vs-dual decision. rvA07b's one
+  scratch timing run (00:27, Mac) read L2 -45% alone, L4 -72%; scratch only.
+  rvA01's main lead: anchor on '(' (required, 8.7x rarer than the picked
+  'a'): fail subjects 33,377 -> 3,820 memchr/MiB. rvA09 (hybrid) running.
+- ~02:40: [ARTREV] rvA09 delivered (6 leads; forward prefilter DFA steps
+  every byte — the {0,29} two-state component defeats the state-0 skip; L1
+  jumps to whole ERROR/FATAL/CRIT via rare-byte memchr, seeded from rvA01's
+  notebook entry: the notebook transferred). Its HARNESS FINDING: identity
+  used only default `_in` buffers, so a frame-dropping twin answering where
+  the original gives up passed (284k diffs); charter amended with the
+  shrunken-resource check + THE GIVE-UP RULE (497f8bda). Lane artcollect
+  (sonnet): collect the 5 reviews, harden identity, re-verify every twin,
+  write the Linux confirm plan.
+- START-SET STAGE 3 BUILT (lane/ssbuild3 @ 29873a3c, NOT merged): full Mac
+  make test 52/52 (nm only), every-startpos differential 1.15M cells 0
+  defects plain + SAN, mech 0 unexpected, emit_sweep FINDING column 0
+  (88 hat movers default). Drafted abi 62->64; PARKED until R4a′ (63) lands
+  by day, then re-pin. D6 panel launched: crit3sound (oracle soundness,
+  counterexamples) + crit3checks (controls/populations/sabotage/abi/spec),
+  each writing its own findings file under worktrees/ssbuild3/docs/dev/reviews/.
+- ~02:30: D6 PANEL ON STAGE 3 (lane/ssbuild3 61c5a6f0, panel file
+  docs/dev/reviews/2026-10-06-r-ss3-panel.md on the branch). BLOCKER
+  sound-F1: the `T == S` assertion fires on VALID patterns at default
+  flags (`(?<=\w) *a` etc.: a byte inside S can leave every seed fixed, so
+  S ∩ E* ⊊ S) — refusal instead of a wrong answer, found by a COMPILE-ONLY
+  fuzz (4/9,000); every answer differential is blind to a pattern that no
+  longer compiles. No wrong answer found where the hat admits (75 hand rows
+  + 400 random, every startpos vs deny and libpcre2). The r4 panel's
+  "S ∩ E* ≡ S on every seeded machine, 0 diffs over 13.58M cells" was a
+  population that never held the shape: Frank rules the retraction of D148
+  addendum 1's sentence. Six MAJOR check gaps (always-detected sabotage
+  rows via a text pin, never-flipping reach probes, no DFA-hat count in
+  axes, uncounted collapse population, a displacing differential alphabet,
+  stale mech). Fix lane ssfix3 (opus): T = S + compile-only arm + M1-M6.
+  Stage 3 merge waits on ssfix3, Frank's ruling, and R4a′ landing.
+- ~03:00: [ARTREV] artcollect merged: pilot collected (pilot_index.md: A07
+  overlap a 3 full + 2 partial + 1 unique, b 3 + 3 + 0, union 7 ideas);
+  identity HARDENED (shrunken budgets x 0/1 frames/trail with a libpcre2
+  give-up oracle, window-start differential, livelock bound) and a real
+  harness BUG found: `_in` call shapes were NEVER driven (missing
+  -DARTREV_HAVE_IN) though summaries claimed them — all 22 final twins
+  re-verified PASS under the hardened check; selftest 168/168; confirm plan
+  with a pad-shift layout control ready for Linux by day. Ruling: default
+  give-up rule for the confirmer, repair counts reported, leads with
+  repairs tagged changes-giveup-surface (c41348f3). wake.md rewritten early
+  (crash-proofing); 08:05 one-shot cron queues the morning Linux order
+  (R4a′ make test, then the ARTREV confirmer). ssfix3 running.
+- ~04:45: ssfix3 DELIVERED stage 3's panel fixes (lane/ssbuild3 @ c9154808):
+  T = S (dfa_estar deleted; guard dfa_reseed_exact, never fires over 69k fuzz
+  + corpus); emit_sweep vs the pre-fix head 0 movers (the fix moved no byte
+  of any already-compiling artifact); compile-only fuzz arm in
+  test-startset (pre-fix 70 hits / 9,000, critic's grammar 4/9,000; fixed 0
+  over 69k); fixture dfahat_f1.rxt 322 cases (pre-fix fails all); M1
+  sabotage split (S481-S485 now DETECTED by answers alone), M2 equivalence
+  rows, M3 DFA-hat axes floor, M4 collapse re-oracled, M5 differential 1.92M
+  DFA / 2.49M VM cells 0 defects; full Mac make test 52/52 nm-only; 26
+  mech solos 0 unexpected; vs main FINDING 0. Waits on Frank's Q-F1
+  (D148 addendum-1 retraction text in report §F.7) + Q3/Q4, and on R4a′
+  landing (abi 63) before the 64 re-pin.
+- ~10:30 2026-10-06: [MEMFN] R4a′ LANDED (340d8fef, abi 63, pushed).
+  Linux make test at eef95511: 53/53 sections, ONE red, test-encoding-checks
+  — and the briefed verdict grep `\*\*\* \[test-` MISSED it (GNU make on
+  Linux prints `*** [Makefile:646: test-…]`); CLAUDE.md's read-a-log row now
+  carries the -E form (2b51e6eb). Triage lane enctri: stage 2 on main clean
+  on Linux (11/0, and pre-stage-2 11/0); the red was R4a′'s new
+  RX_MEMFN_LIBC stamp differing byte vs utf8 exactly where the rx_reqrun
+  block is already excised as a declared asymmetry — a check-side gap, fixed
+  by normalizing the stamp on that branch only, failing direction proven
+  (planted stamp diff on REQ_WHY-agreeing pairs: 218 red; restored 11/0).
+  Census on Linux CLEAN. Post-merge Mac: make strict, codegen (nm only),
+  encoding-checks 11/0, memfn-manifest 22/0. Bench inbox I-130 (b1ac7cd on
+  the box): abi 63, the --list-axes first-class row, adapter readers. Kit
+  session PAUSED — tell the next memfn session R4a′ is done (trailer
+  53/53, census CLEAN, enctri fix).
+- Frank ruled D148 addenda 3 (T = S) and 4 (Q3 conditional: the alpha keeps
+  the faster form). ARTREV S5 generalizer merged (be1cfcc2: 25 leads -> 15
+  ideas; A07's wins are mostly a possessify-analysis gap; CTX family carries
+  the population). Running: artconf (ARTREV confirmer, Linux, pinned
+  57db5152 compiler + possessify arm), ssland3 (stage 3 merge main + abi 64
+  re-pin + full Mac make test).

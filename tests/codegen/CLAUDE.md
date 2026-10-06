@@ -3732,3 +3732,9 @@ must fire on `default`/`noprefilter`. `ctx-node-moved=` joins the (A) line.
   read CODE bytes that agreed only while VM artifacts carried no table bytes —
   the hat's K-invariant table separated them. `(?:abcd|abc|ab|a){17}z` joined
   the pool (0.7162) because `(|a){0,12}b` moved above the bar.
+- **[MEMFN] R4a′ (lanes memfnstamp + memfnbump, 2026-10-06, abi 63):**
+  `run_codegen_tests.sh`'s `ABI_EXPECT` 63; `run_cpset_structure.sh`'s
+  manifest re-recorded (every `EMITTED_BYTES` row +59/+61/+68, the two
+  `RX_MEMFN_*` lines); `run_recursion_identity.sh`'s (B) FILEPIN self-pinned;
+  `run_size_term.sh`'s cap-rescue witness re-calibrated 31,900 -> 32,300
+  (K=4 measured at 31,907 by bisection, 7 B over the old cap).

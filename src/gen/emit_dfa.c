@@ -10652,6 +10652,7 @@ void pcrec_emit_dfa(Ctx *cx)
     emit_in_entry_defs(c, g.searchfn, g.matchfn, g.matchcapsfn, cx->opt->prefix);
     pcrec_sb_puts(c, "\n");
     pcrec_emit_runcmp_stamp(cx, c, g.upper);
+    pcrec_emit_memfn_mark(c);
     pcrec_emit_residual(cx);
     {
         /* The DFA artifact's stamp: it cannot backtrack, cut, or scan

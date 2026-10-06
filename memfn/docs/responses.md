@@ -178,3 +178,14 @@ the compiler, and is never adopted silently. Proposed for main to file
     - the bench's list_axes readers select the main table (bench, I-128).
   - **Next:** R4a′ (the stamps' abi event) on its own branch, AFTER its
     abi number is agreed with the pcrec manager.
+- ack: 2026-10-05 — **R4a′** on `lane/memfn-r4a2` (an ASCII name for
+  R4a′), cut from main after R4a merged. ABI ORDER per the pcrec manager:
+  START-SET stage 2 takes 62 and R4a′ takes 63, landing AFTER stage 2.
+  Lane `memfnstamp` (opus) builds everything except the bump: the two
+  stamp lines on every artifact, the libc inventory and its `nm -u`
+  control (C11's LIBC half; the FORMS half UNREACHED), the D80 spec hunk
+  and sabotage rows from S513. The abi bump plus re-pins found by grep
+  is the LAST commit, made after merging main once stage 2 has landed.
+  Validation: the Linux make test via the manager's executor, by day,
+  plus the census (each artifact moves by exactly the two lines and the
+  abi digit).

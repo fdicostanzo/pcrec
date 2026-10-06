@@ -57,9 +57,15 @@ size_t art_valid_upto(const unsigned char *s, size_t n, size_t pos)
 { return P(_valid_upto)(s, n, pos); }
 
 #ifdef ARTREV_HAVE_IN
-/* The stamped default capacities, in caller storage (match_api.md 10). */
+/* The stamped default capacities, in caller storage (match_api.md 10).  The
+ * shrunken-resource identity mode (identity.py) overrides the COUNTS through
+ * art_set_bufs: the storage stays at the stamped size, only nframes/ntrail the
+ * entry is told about shrink (0 and 1 are the cases a frame- or trail-dropping
+ * twin can get wrong -- lane rvA09, 2026-10-06). */
 static art_buffers_t art_bufs;
 static void *art_fr, *art_tr;
+static long art_nf = -1, art_nt = -1;
+void art_set_bufs(long nframes, long ntrail) { art_nf = nframes; art_nt = ntrail; }
 static art_buffers_t *art_get_buffers(void)
 {
     if (PU(_RESUME_FRAME_SIZE) == 0) return NULL;   /* a DFA artifact takes no buffers (match_api 10.4) */
@@ -70,6 +76,8 @@ static art_buffers_t *art_get_buffers(void)
         art_bufs.frames = art_fr;  art_bufs.nframes = PU(_RESUME_FRAMES);
         art_bufs.trail = art_tr;   art_bufs.ntrail = PU(_TRAIL_FRAMES);
     }
+    art_bufs.nframes = art_nf >= 0 ? (size_t)art_nf : PU(_RESUME_FRAMES);
+    art_bufs.ntrail  = art_nt >= 0 ? (size_t)art_nt : PU(_TRAIL_FRAMES);
     return &art_bufs;
 }
 int art_search_in(const unsigned char *s, size_t n, size_t pos, ptrdiff_t (*caps)[2])
@@ -79,10 +87,20 @@ ptrdiff_t art_match_in(const unsigned char *s, size_t n, size_t pos)
 ptrdiff_t art_match_caps_in(const unsigned char *s, size_t n, size_t pos, ptrdiff_t (*caps)[2])
 { art_ctx_t c; art_ctx(&c, s, n, pos); return P(_match_caps_in)(&c, caps, art_get_buffers()); }
 #else
+void art_set_bufs(long nframes, long ntrail) { (void)nframes; (void)ntrail; }
 int art_search_in(const unsigned char *s, size_t n, size_t pos, ptrdiff_t (*caps)[2])
 { (void)s; (void)n; (void)pos; (void)caps; return -1000; }
 ptrdiff_t art_match_in(const unsigned char *s, size_t n, size_t pos)
 { (void)s; (void)n; (void)pos; return -1000; }
 ptrdiff_t art_match_caps_in(const unsigned char *s, size_t n, size_t pos, ptrdiff_t (*caps)[2])
 { (void)s; (void)n; (void)pos; (void)caps; return -1000; }
+#endif
+
+#ifdef ARTREV_HAVE_PF
+/* The internal prefilter a hybrid artifact searches through (window-start
+ * differential, driver_pf.c): returns what rx_prefilter returns, window[0] the
+ * start it proposes.  Only compiled when identity.py found a `static int
+ * <p>_prefilter(` in the pinned artifact. */
+int art_pf(const unsigned char *s, size_t n, size_t pos, ptrdiff_t (*w)[2])
+{ return P(_prefilter)(s, n, pos, w); }
 #endif

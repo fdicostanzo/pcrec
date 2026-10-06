@@ -161,5 +161,187 @@ echo '/* sneaky */' >> "$S/bnd/arms/L3/artifact.c"
 expect "unsealed edit of L3 refused by time" 3 $A time bnd --arms orig,null,L3 --subject cell=$S/subj_dense.txt --rounds 3 --gate-override
 has "unsealed edit" "unlogged edit"
 
+
+echo; echo "== 8. HARDENED IDENTITY: shrunken resources + THE GIVE-UP RULE + window start + livelock bound"
+expect "identity vm null drives the _in shapes (the HAVE_IN compile fix)" 0 $A identity vm null --battery 200 --pcre2-sample 0
+echo "$OUT" | grep -Eq '[1-9][0-9]* `_in` search lines driven' && ok "_in search lines are driven (not zero)" || bad "no _in lines driven"
+has "shrunk phase runs by default" "shrunken resources (0/1 frames"
+has "shrunk phase counts the original's give-ups" "original gives up on"
+echo "-- a twin that answers WRONG where the original gives up must FAIL; a CORRECT one must PASS; one that gives up where the original answers must FAIL"
+for k in giveup_wrong giveup_right giveup_lost; do
+  expect "new ctl_$k" 0 $A twin vm ctl_$k --new
+  python3 $HERE/selftest_twins.py "$S/vm/arms/ctl_$k" $k
+  expect "seal ctl_$k" 0 $A twin vm ctl_$k --seal --control
+done
+expect "give-up repaired WRONG: identity FAILS (oracle rejects the fabricated answer)" 1 $A identity vm ctl_giveup_wrong --battery 300 --pcre2-sample 0
+has "giveup_wrong" "GIVE-UP RULE VIOLATED"
+has "giveup_wrong" "REPAIR DISAGREES with libpcre2"
+expect "give-up repaired RIGHT (full buffers retried): identity PASSES under the give-up rule" 0 $A identity vm ctl_giveup_right --battery 300 --pcre2-sample 0
+echo "$OUT" | grep -Eq '[1-9][0-9]* give-up repair\(s\) of which [1-9][0-9]* checked against libpcre2' && ok "the repairs were counted AND checked against libpcre2" || { bad "no checked repairs reported"; echo "$OUT" | grep repair | head -3; }
+expect "twin GIVES UP where the original answers: identity FAILS" 1 $A identity vm ctl_giveup_lost --battery 300 --pcre2-sample 0
+has "giveup_lost" "twin GIVES UP where the original answers"
+echo "-- the unit of the rule on synthetic transcripts"
+python3 - <<PY
+import sys; sys.path.insert(0, "$HERE")
+import identity as I
+o = b"SI.f0t0\t0\t0\t-3\t-2\t-2\nSI.f1t0\t0\t0\t1\t0\t1\nF\t0\t0\t-2\t-2\t-2\nM\t0\t0\t-1\nN\t0\t0\t5\n"
+ok_t = b"SI.f0t0\t0\t0\t1\t0\t1\nSI.f1t0\t0\t0\t1\t0\t1\nF\t0\t0\t1\t0\t1\nF\t0\t5\t0\t-2\t-2\nF\t0\t9\t-3\t-2\t-2\nM\t0\t0\t-1\nN\t0\t0\t5\n"
+g = I.giveup_compare(o, ok_t)
+assert not g["fails"], g["fails"]
+assert len(g["repairs"]) == 2 and len(g["twin_only"]) == 1, (len(g["repairs"]), len(g["twin_only"]))
+lost = b"SI.f0t0\t0\t0\t-3\t-2\t-2\nSI.f1t0\t0\t0\t-3\t-2\t-2\nF\t0\t0\t-2\t-2\t-2\nM\t0\t0\t-1\nN\t0\t0\t5\n"
+assert any("GIVES UP" in w for w, _, _ in I.giveup_compare(o, lost)["fails"])
+diff = o.replace(b"SI.f1t0\t0\t0\t1\t0\t1", b"SI.f1t0\t0\t0\t1\t0\t2")
+assert any("answers differ" in w for w, _, _ in I.giveup_compare(o, diff)["fails"])
+nv = o.replace(b"N\t0\t0\t5", b"N\t0\t0\t6")
+assert any("N/V" in w for w, _, _ in I.giveup_compare(o, nv)["fails"])
+other = o.replace(b"SI.f0t0\t0\t0\t-3", b"SI.f0t0\t0\t0\t-2")      # a different give-up code is still a give-up
+assert not I.giveup_compare(o, other)["fails"]
+print("give-up rule unit cases ok")
+PY
+[ $? = 0 ] && ok "give-up rule: repair / lost / differ / N-V / code-move" || bad "give-up rule unit cases"
+echo "-- window start (a hybrid artifact: the prefilter + verifying attempt shape)"
+python3 - <<'PY'
+import os, random
+r = random.Random(11)
+open("%s/subj_log.txt" % os.environ["ARTREV_ROOT"], "wb").write(
+    b"".join(r.choice([b"ERROR disk timeout\n", b"FATAL x refused ", b"INFO fine\n", b"ERROR ok\n", b"xx ", b"timeout "]) for _ in range(900)))
+PY
+expect "gen hyb (internal prefilter)" 0 $A gen hyb --pcrec "$PCREC" --flags=--no-captures --pattern '\b(?:ERROR|FATAL)\b.{0,40}?\b(?:timeout|refused)\b'
+expect "twin hyb null" 0 $A twin hyb null --null
+HYBID="--subject $S/subj_log.txt --battery 300 --pcre2-sample 0 --match-example 'ERROR x timeout' --match-example 'FATAL refused'"
+expect "identity hyb null PASSES incl. the window phase" 0 eval "$A identity hyb null $HYBID"
+has "hyb window" "prefilter windows compared"
+expect "new ctl_early" 0 $A twin hyb ctl_early --new
+python3 $HERE/selftest_twins.py "$S/hyb/arms/ctl_early" start_early
+expect "seal ctl_early" 0 $A twin hyb ctl_early --seal --control
+expect "a start-too-early twin (answers identical) FAILS by the window differential" 1 eval "$A identity hyb ctl_early $HYBID"
+has "start_early" "start differences"
+echo "$OUT" | grep -q "FIRST DIFFERENCE" && bad "start_early should be invisible to answer identity (it differed)" || ok "start_early is invisible to answer identity: only the window differential catches it"
+expect "new ctl_earlyloop" 0 $A twin hyb ctl_earlyloop --new
+python3 $HERE/selftest_twins.py "$S/hyb/arms/ctl_earlyloop" start_early_loop
+expect "seal ctl_earlyloop" 0 $A twin hyb ctl_earlyloop --seal --control
+expect "the unconditionally-early start twin is also caught (by the window differential)" 1 eval "$A identity hyb ctl_earlyloop $HYBID"
+has "earlyloop" "start differences"
+expect "new ctl_hang" 0 $A twin vm ctl_hang --new
+python3 $HERE/selftest_twins.py "$S/vm/arms/ctl_hang" hang
+expect "seal ctl_hang" 0 $A twin vm ctl_hang --seal --control
+T0=$(date +%s)
+expect "a HANGING twin FAILS FAST (the livelock bound, not the 900 s timeout)" 1 env ARTREV_LIVELOCK_FLOOR=5 bash -c "$A identity vm ctl_hang --battery 200 --pcre2-sample 0"
+T1=$(date +%s)
+has "hang" "LIVELOCK"
+[ $((T1-T0)) -lt 120 ] && ok "livelock failed in $((T1-T0)) s" || bad "livelock took $((T1-T0)) s"
+echo "-- iteration shortcuts cannot reach timing"
+expect "new ctl_part" 0 $A twin hyb ctl_part --new
+expect "seal ctl_part" 0 $A twin hyb ctl_part --seal --control
+expect "identity with --skip-window logs PASS-PARTIAL" 0 eval "$A identity hyb ctl_part $HYBID --skip-window"
+has "partial" "PASS-PARTIAL"
+expect "time refuses a PASS-PARTIAL identity" 3 $A time hyb --arms orig,null,ctl_part --subject cell=$S/subj_log.txt --rounds 3 --gate-override
+has "partial refused" "no PASSING identity"
+
+
+echo; echo "== 9. REAL twins on the pinned A09 fixture (lane rvA09, 2026-10-06)"
+FX=$HERE/fixtures/a09_pin57db5152; A09D=$TREE/docs/dev/optloop/artrev/A09
+mkdir -p "$S/a09/arms/orig" "$S/a09/arms/orig2"
+cp "$FX/artifact.c" "$FX/artifact.h" "$FX/meta.json" "$S/a09/"
+for d in orig orig2; do cp "$FX/artifact.c" "$FX/artifact.h" "$S/a09/arms/$d/"; done
+A09ID="--subject $(ls $A09D/edge_subjects/e-*.bin | head -150 | tr '\n' '@' | sed 's/@/ --subject /g' | sed 's/ --subject $//') --battery 200 --pcre2-sample 0 --match-example 'ERROR x timeout' --match-example 'CRIT timed out'"
+expect "a09: L4 r2 applies (control)" 0 $A twin a09 L4_r2 --patch "$A09D/twins/L4.r2.patch" --control
+expect "a09: L4 r3 applies (control)" 0 $A twin a09 L4_r3 --patch "$A09D/twins/L4.r3.patch" --control
+expect "a09: ctlL4e (start one EARLY) applies (control)" 0 $A twin a09 ctlL4e --patch "$A09D/controls/ctlL4e.r1.patch" --control
+expect "a09: L4 r2 (answers where the original gives up with 0 frames/trail) PASSES the give-up rule" 0 eval "$A identity a09 L4_r2 $A09ID --skip-window"
+echo "$OUT" | grep -Eq '[1-9][0-9]* give-up repair\(s\) of which [1-9][0-9]* checked against libpcre2' && ok "a09 L4 r2: its repairs were found, counted, and equal libpcre2's" || { bad "a09 L4 r2: no checked repairs"; echo "$OUT" | grep -i "repair\|shrunk" | head; }
+expect "a09: L4 r2 FAILS --strict-giveup (it changes the limits behaviour)" 1 eval "$A identity a09 L4_r2 $A09ID --skip-window --strict-giveup"
+has "a09 strict" "strict-giveup"
+expect "a09: L4 r3 (capacity guard added) is exact even under --strict-giveup" 0 eval "$A identity a09 L4_r3 $A09ID --skip-window --strict-giveup"
+expect "a09: ctlL4e (the livelocking early start) FAILS FAST, no 900 s timeout" 1 env ARTREV_LIVELOCK_FLOOR=10 bash -c "$A identity a09 ctlL4e $A09ID"
+T9=$?
+
+
+echo; echo "== 10. LAYOUT CONTROL: the pad-shift arms (charter S4; k87twin_align.sh's method)"
+python3 - <<PY
+import os, subprocess, sys
+sys.path.insert(0, "$HERE")
+import common as C, timing as T
+meta = C.load_meta("vm")
+names = T.make_pad_arms("vm", ["orig"], [16, 32, 48, 64])
+addrs = {}
+for arm in ["orig"] + names:
+    exe = C.compile_arm(meta, os.path.join(C.art_dir("vm"), "arms", arm), "id")
+    out = subprocess.run(["nm", exe], capture_output=True, text=True).stdout.split("\n")
+    a = [int(l.split()[0], 16) for l in out if l.split() and l.split()[-1] in ("_art_search", "art_search")]
+    addrs[arm] = a[0]
+base = addrs["orig"]
+moved = {n: (addrs[n] - base) for n in names}
+print("art_search offsets vs orig:", moved)
+# the entry point moves with every pad (by the pad plus gcc's own re-alignment of what follows it)
+assert all(v != 0 for v in moved.values()) and len(set(moved.values())) == 4, moved
+PY
+[ $? = 0 ] && ok "pad arms MOVE the code: 4 distinct code addresses vs the original" || bad "pad arms do not move the code"
+expect "--pads with fewer than 4 offsets is refused" 2 $A time vm --arms orig,null --pads 16,32 --subject cell=$S/subj_dense.txt --rounds 3 --gate-override
+expect "pads must be multiples of 16" 2 $A time vm --arms orig,null --pads 16,32,48,50 --subject cell=$S/subj_dense.txt --rounds 3 --gate-override
+expect "time with the layout control: orig/orig2/null/ctl_slow, pads 16-64 on orig and ctl_slow" 0 $A time vm --arms orig,orig2,null,ctl_slow --pads 16,32,48,64 --pad-arms orig,ctl_slow --subject cell=$S/subj_dense.txt --rounds 7 --gate-override
+has "layout" "layout: pad-median"
+has "layout" "no pad control for this arm"
+RUN=$(ls -d $S/vm/timing/* | tail -1)
+[ "$(awk -F'\t' '$1=="cell" && $2=="ctl_slow" {print $11}' "$RUN/summary.tsv")" = LOSS ] && ok "the slowed twin still reads LOSS with the layout control" || bad "slowed twin lost its LOSS under the pad control"
+grep -q "orig@p16" "$RUN/raw.tsv" && ok "pad arms were timed in the same interleaved rounds" || bad "no pad rows in raw.tsv"
+python3 - <<PY
+import sys; sys.path.insert(0, "$HERE")
+import timing
+def rows(arm, xs): return [{"subject": "s", "arm": arm, "round": i, "ns": x} for i, x in enumerate(xs)]
+base = [10.0, 10.1, 9.9, 10.05, 9.95, 10.0, 10.02, 9.98, 10.01, 9.99, 10.0]
+def mk(extra):
+    R = rows("orig", base) + rows("null", [x + 0.03 for x in base])
+    for arm, shift in extra.items():
+        R += rows(arm, [x + shift for x in base])
+    return R
+arms = ["orig", "null", "X", "orig@p16", "orig@p32", "orig@p48", "orig@p64", "X@p16", "X@p32", "X@p48", "X@p64"]
+def verdict(shifts):
+    S = timing.summarize(mk(shifts), arms)
+    timing.apply_layout(S, arms)
+    return S["s"]["X"]["verdict"]
+clean = {"X": -1.0, "orig@p16": 0.0, "orig@p32": 0.0, "orig@p48": 0.0, "orig@p64": 0.0, "X@p16": -1.0, "X@p32": -1.0, "X@p48": -1.0, "X@p64": -1.0}
+# 1: a clean 10% win at every pad is a WIN
+assert verdict(clean) == "WIN", verdict(clean)
+# 2: the same median win, but the ORIGINAL itself swings 1.5 ns across pads: layout alone moves more than the win
+swing = dict(clean, **{"orig@p16": 1.5, "orig@p48": -1.5})
+assert verdict(swing) == "NOISE", verdict(swing)
+# 3: wins at three pads, loses at one paired pad (the win rides one layout)
+flip = dict(clean, **{"X@p64": 0.4})
+assert verdict(flip) == "NOISE", verdict(flip)
+# 4: a clean slowdown is a LOSS
+loss = {k: (2.0 if k.startswith("X") else v) for k, v in clean.items()}
+assert verdict(loss) == "LOSS", verdict(loss)
+print("layout verdict unit cases ok")
+PY
+[ $? = 0 ] && ok "layout verdicts: clean WIN, layout-swing NOISE, one-pad-flip NOISE, clean LOSS" || bad "layout verdict unit cases"
+
+
+echo; echo "== 11. dense/sparse variants and the CELL row"
+expect "variants vm: dense + sparse from the dense subject" 0 $A variants vm --subject "$S/subj_dense.txt" --out-dense "$S/v_dense.bin" --out-sparse "$S/v_sparse.bin"
+has "variants" "original matches in"
+SPANS=$S/vm/arms/orig/build/spans
+nd=$("$SPANS" "$S/v_dense.bin" | wc -l | tr -d ' '); ns=$("$SPANS" "$S/v_sparse.bin" | wc -l | tr -d ' '); no=$("$SPANS" "$S/subj_dense.txt" | wc -l | tr -d ' ')
+[ "$(wc -c < "$S/v_dense.bin" | tr -d ' ')" = "$(wc -c < "$S/subj_dense.txt" | tr -d ' ')" ] && ok "dense variant has the subject's length" || bad "dense length"
+[ "$nd" -ge "$no" ] && [ "$ns" -lt "$no" ] && ok "dense has >= the original's matches ($nd >= $no), sparse far fewer ($ns < $no)" || bad "variant densities: dense $nd, original $no, sparse $ns"
+expect "time with --cell over two subjects adds a CELL row" 0 $A time vm --arms orig,orig2,null,ctl_slow --subject a=$S/subj_dense.txt --subject b=$S/subj_sparse.txt --cell a,b --rounds 5 --gate-override
+has "cell row" "subject CELL"
+python3 - <<PY
+import sys; sys.path.insert(0, "$HERE")
+import timing
+rows = []
+for arm, (a, b) in {"orig": (1.0, 5.0), "null": (1.0, 5.0)}.items():
+    for r in range(3):
+        rows.append({"subject": "a", "arm": arm, "round": r, "ns": a, "matches": "", "checksum": "", "load": "", "reps": ""})
+        rows.append({"subject": "b", "arm": arm, "round": r, "ns": b, "matches": "", "checksum": "", "load": "", "reps": ""})
+        rows.append({"subject": "c", "arm": arm, "round": r, "ns": 9.0, "matches": "", "checksum": "", "load": "", "reps": ""})
+R = timing.add_cell_rows(rows, ["a", "b", "c"])
+cell = [x["ns"] for x in R if x["subject"] == "CELL" and x["arm"] == "orig"]
+assert cell == [5.0, 5.0, 5.0], cell        # the median over the three subjects, per round
+print("cell row = median over subjects ok")
+PY
+[ $? = 0 ] && ok "CELL row is the per-round median over the cell's subjects" || bad "cell row unit case"
+
 echo; echo "== summary: $((N-FAILS))/$N checks passed, $FAILS failed"
 [ $FAILS = 0 ]

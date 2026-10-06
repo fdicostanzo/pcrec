@@ -588,6 +588,7 @@ REQCHK_IF_RE = re.compile(r'^\s*if \(subject_length <= search_from \|\|$')
 REQCHK_MEMCHR_RE = re.compile(r'^\s*!memchr\(subject \+ search_from, \d+, subject_length - search_from\)\)$')
 REQCHK_RET_RE = re.compile(r'^\s*return 0;$')
 REQWHY_STAMP_RE = re.compile(r'^(#define RX_REQ_WHY ")(?:emitted|none|one-attempt|dominated)(")$')
+MEMFN_LIBC_RE = re.compile(r'^#define RX_MEMFN_LIBC "[^"]*"$')
 REQWHY_STAMP_VAL_RE = re.compile(r'^#define RX_REQ_WHY "([^"]*)"$', re.M)
 # [silentred] `<PREFIX>_FINDINGS` ([FINDINGS] B1, abi 40) and its `rx_info.findings`
 # mirror: the byte-rate prior is BYTE-KEYED by design (findings design §6), so
@@ -957,6 +958,20 @@ def excise(text, label, drop_run=False):
         # (`pre > 0` iff "emitted"). Only when the stamps differ: where they
         # agree the run block is still compared token for token.
         if drop_run:
+            # [R4a'] `<PREFIX>_MEMFN_LIBC` is the sorted inventory of the libc
+            # calls in the artifact's TEXT, so it follows the excised
+            # `rx_reqrun` block (its `memchr`/`memcmp`) the way `REQ_WHY`
+            # follows the pick: byte "memchr,memcmp" vs utf8 "memchr" is the
+            # same asymmetry as the block's own presence, not a second one.
+            # Normalized only on this branch (`drop_run`: the two sides'
+            # REQ_WHY OR their pick forms differ, so the block is excised on
+            # both); everywhere else the line is still compared token for
+            # token (failing direction: lanes/enctri_report.md's plant).
+            if MEMFN_LIBC_RE.match(line.rstrip('\n')):
+                out.append('#define RX_MEMFN_LIBC "N"\n')
+                counts['req_run_asym'] += 1
+                i += 1
+                continue
             if REQRUN_FN_RE.match(line):
                 j = i
                 while j < n and lines[j].rstrip('\n') != '}':

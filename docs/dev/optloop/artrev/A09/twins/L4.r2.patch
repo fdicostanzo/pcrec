@@ -1,0 +1,117 @@
+--- a/artifact.c
++++ b/artifact.c
+@@ -787,6 +787,7 @@
+     };
+     size_t scan_position = search_from;
+     size_t last_accept_position = (size_t)-1;
++    size_t level_start_position = 0;   /* [ARTREV L4] start of the level literal that last reached 319 */
+     if (search_from > subject_length) return 0;
+     rx_forward_state forward_state = search_from ? rx_forward_seed_state[rx_forward_byte_class[subject[search_from - 1]]] : 0;
+     for (;;) {
+@@ -803,6 +804,11 @@
+         {
+             unsigned forward_class = rx_forward_byte_class[subject[scan_position]];
+             if (rx_forward_accepts_class(rx_forward_is_accepting_by_class, forward_state, forward_class)) last_accept_position = scan_position;
++            /* [ARTREV L4] 319 = a whole level literal just read (ERROR/FATAL end
++               in R/L, CRIT in T); the after-level region is entered only from
++               here and left only by \n or death, so the last 319 before the
++               accept is the first level of the line: the leftmost start. */
++            if (forward_state == 319) level_start_position = scan_position - (subject[scan_position - 1] == 'T' ? 4 : 5);
+             forward_state = rx_forward_step(rx_forward_next_state, forward_state, forward_class);
+             scan_position++;
+         }
+@@ -811,27 +817,7 @@
+     if (last_accept_position == (size_t)-1) return 0;
+     {
+         size_t match_end_position = last_accept_position;
+-        size_t match_start_position = (size_t)-1;
+-        size_t rewind_position = match_end_position;
+-        rx_reverse_state reverse_state = match_end_position < subject_length ? rx_reverse_seed_state[rx_reverse_byte_class[subject[match_end_position]]] : 0;
+-        for (;;) {
+-            if (reverse_state == 754 && rewind_position + 1 < subject_length) {
+-                while (rewind_position > search_from && rx_reverse_stay26[subject[rewind_position - 1]]) rewind_position--;
+-            }
+-            if (rewind_position <= search_from) {
+-                if (search_from ? rx_reverse_accepts_class(rx_reverse_is_accepting_by_class, reverse_state,
+-                                      rx_reverse_byte_class[subject[search_from - 1]])
+-                             : rx_reverse_accepts(rx_reverse_is_accepting, reverse_state)) match_start_position = rewind_position;
+-                break;
+-            }
+-            {
+-                unsigned reverse_class = rx_reverse_byte_class[subject[rewind_position - 1]];
+-                if (rx_reverse_accepts_class(rx_reverse_is_accepting_by_class, reverse_state, reverse_class)) match_start_position = rewind_position;
+-                reverse_state = rx_reverse_step(rx_reverse_next_state, reverse_state, reverse_class);
+-                rewind_position--;
+-            }
+-            if (rx_reverse_is_dead(reverse_state)) break;   // dead: no match can continue
+-        }
++        size_t match_start_position = level_start_position;   /* [ARTREV L4] no reverse pass */
+         if (match_start_position == (size_t)-1) return 0;
+         if (capture_spans) { capture_spans[0][0] = (ptrdiff_t)match_start_position; capture_spans[0][1] = (ptrdiff_t)match_end_position; }
+         return 1;
+@@ -1019,6 +1005,26 @@
+     }
+ }
+ 
++/* [ARTREV L4] 1 when the prefilter's window [start, end) is itself the match the
++   VM would report from start: start holds a whole level literal and its \b
++   (the DFA proved both), end is the first keyword\b after it on its line (the
++   DFA dies there), and the gap between them fits .{0,200}.  The lazy step
++   tries keywords left to right, so it stops at that same keyword. */
++static int rx_window_is_match(const unsigned char *subject, size_t start, size_t end)
++{
++    static const struct { const char *text; size_t len; } rx_keywords[5] = {
++        { "timed out", 9 }, { "timeout", 7 }, { "refused", 7 }, { "denied", 6 }, { "unreachable", 11 },
++    };
++    size_t level_end = start + (subject[start] == 'C' ? 4 : 5);
++    int k;
++    for (k = 0; k < 5; k++) {
++        size_t len = rx_keywords[k].len;
++        if (end >= level_end + len && !memcmp(subject + end - len, rx_keywords[k].text, len))
++            return end - len - level_end <= 200;
++    }
++    return 0;
++}
++
+ static int rx_search_run(const unsigned char *subject, size_t subject_length,
+        size_t search_from, ptrdiff_t (*capture_spans)[2], rx_run_state *run)
+ {
+@@ -1026,6 +1032,7 @@
+     ptrdiff_t result;
+     size_t attempt_position;
+     size_t window_end;
++    size_t window_start, window_stop;   /* [ARTREV L4] the prefilter's window */
+     if (search_from > subject_length) return 0;
+     if (subject_length <= search_from ||
+         !memchr(subject + search_from, 101, subject_length - search_from))
+@@ -1034,6 +1041,7 @@
+         ptrdiff_t window[1][2];
+         if (rx_prefilter(subject, subject_length, search_from, window) != 1) return 0;
+         attempt_position = (size_t)window[0][0];
++        window_start = (size_t)window[0][0]; window_stop = (size_t)window[0][1];
+         window_end = subject_length;  /* cut-bearing artifact: the prefilter answers for the UNCUT language, so its span END is not a bound on this match's end */
+     }
+     rx_run_state_init(run);
+@@ -1041,6 +1049,14 @@
+     ctx.caps = NULL; ctx.user = NULL;
+     for (;;) {
+         ctx.pos = attempt_position;
++        /* [ARTREV L4] skip the VM when the window is provably its answer; one
++           attempt spends at most 201 steps and 5 + 201*5 + 11 work units, so
++           with more than that left no give-up can happen inside it. */
++        if (attempt_position == window_start && run->steps_left > 256 && run->work_left > 2048
++            && rx_window_is_match(subject, window_start, window_stop)) {
++            result = (ptrdiff_t)(window_stop - window_start);
++            break;
++        }
+         result = rx_match_anchored(&ctx, run, window_end);
+         if (result == RX_R_STEPS)   return PCREC_ERR_STEPS;
+         if (result == RX_R_FRAMES)  return PCREC_ERR_FRAMES;
+@@ -1055,6 +1071,7 @@
+             ptrdiff_t window[1][2];
+             if (rx_prefilter(subject, subject_length, attempt_position, window) != 1) return 0;
+             attempt_position = (size_t)window[0][0];
++            window_start = (size_t)window[0][0]; window_stop = (size_t)window[0][1];
+             window_end = subject_length;
+         }
+     }

@@ -1,0 +1,51 @@
+--- a/artifact.c
++++ b/artifact.c
+@@ -787,6 +787,7 @@
+     };
+     size_t scan_position = search_from;
+     size_t last_accept_position = (size_t)-1;
++    size_t level_start_position = 0;   /* [ARTREV L4] start of the level literal that last reached 319 */
+     if (search_from > subject_length) return 0;
+     rx_forward_state forward_state = search_from ? rx_forward_seed_state[rx_forward_byte_class[subject[search_from - 1]]] : 0;
+     for (;;) {
+@@ -803,6 +804,11 @@
+         {
+             unsigned forward_class = rx_forward_byte_class[subject[scan_position]];
+             if (rx_forward_accepts_class(rx_forward_is_accepting_by_class, forward_state, forward_class)) last_accept_position = scan_position;
++            /* [ARTREV L4] 319 = a whole level literal just read (ERROR/FATAL end
++               in R/L, CRIT in T); the after-level region is entered only from
++               here and left only by \n or death, so the last 319 before the
++               accept is the first level of the line: the leftmost start. */
++            if (forward_state == 319) level_start_position = scan_position - (subject[scan_position - 1] == 'T' ? 5 : 5); /* SABOTAGE: CRIT start one EARLY */
+             forward_state = rx_forward_step(rx_forward_next_state, forward_state, forward_class);
+             scan_position++;
+         }
+@@ -811,27 +817,7 @@
+     if (last_accept_position == (size_t)-1) return 0;
+     {
+         size_t match_end_position = last_accept_position;
+-        size_t match_start_position = (size_t)-1;
+-        size_t rewind_position = match_end_position;
+-        rx_reverse_state reverse_state = match_end_position < subject_length ? rx_reverse_seed_state[rx_reverse_byte_class[subject[match_end_position]]] : 0;
+-        for (;;) {
+-            if (reverse_state == 754 && rewind_position + 1 < subject_length) {
+-                while (rewind_position > search_from && rx_reverse_stay26[subject[rewind_position - 1]]) rewind_position--;
+-            }
+-            if (rewind_position <= search_from) {
+-                if (search_from ? rx_reverse_accepts_class(rx_reverse_is_accepting_by_class, reverse_state,
+-                                      rx_reverse_byte_class[subject[search_from - 1]])
+-                             : rx_reverse_accepts(rx_reverse_is_accepting, reverse_state)) match_start_position = rewind_position;
+-                break;
+-            }
+-            {
+-                unsigned reverse_class = rx_reverse_byte_class[subject[rewind_position - 1]];
+-                if (rx_reverse_accepts_class(rx_reverse_is_accepting_by_class, reverse_state, reverse_class)) match_start_position = rewind_position;
+-                reverse_state = rx_reverse_step(rx_reverse_next_state, reverse_state, reverse_class);
+-                rewind_position--;
+-            }
+-            if (rx_reverse_is_dead(reverse_state)) break;   // dead: no match can continue
+-        }
++        size_t match_start_position = level_start_position;   /* [ARTREV L4] no reverse pass */
+         if (match_start_position == (size_t)-1) return 0;
+         if (capture_spans) { capture_spans[0][0] = (ptrdiff_t)match_start_position; capture_spans[0][1] = (ptrdiff_t)match_end_position; }
+         return 1;

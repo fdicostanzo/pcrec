@@ -841,3 +841,20 @@ that cycle's analysis lands.
   under `worktrees/` still reaches the main repo's history, `scripts/watchdog`
   added, a suite-lock symlink), the reviewer command list and the timing
   caveats. `selection.tsv` gained `pinned_at`/`pin_stamps_abi62` columns.
+  `A01/ A07a/ A07b/ A09/ notebook/ pilot_index.md` (lane `artcollect`,
+  2026-10-06) — the pilot's four blind reviews COLLECTED verbatim from their
+  cells (review.md, leads.tsv, CELL.md, sealed twin patches, A09's controls and
+  rvA09's scratch `tools/`, edge subjects: A01 96 KB and A09 1.2 MB, committed
+  because under the 2 MB bar; A07a/A07b are the dual-review pair, both from
+  cell dir `A07`), every notebook entry, and `pilot_index.md`: per-artifact
+  leads tables (class, origin, idea, expected effect, scratch verdict) and the
+  counted A07 overlap table. `confirm_plan.md` — the S4 confirmer's exact
+  Linux command block (bundle via `time --remote`, arms per artifact, the
+  layout control, the CELL row, the load gate, the WIN/LOSS/NOISE rule); to be
+  run by a fresh lane by day, never by the collector. The hardened identity
+  (give-up rule, window start) is documented in `studies/artrev/CLAUDE.md`.
+  `generalize.md` + `gen/` (lane `artgen`, 2026-10-06) — S5, the GENERALIZER for the pilot: the 25
+  counted leads merged into 15 ideas, each with its emitter site (file:line), counted population over
+  corpus + bench (`gen/census.py`, controls in `gen/selftest.txt`), known-vs-new against plan rows,
+  START-SET stage-3 interaction, give-up-surface tag, cost/class, a summary table with an EMPTY
+  `confirmed` column for S4's join, and DRAFT filed-not-scheduled plan rows (plan.md not edited).

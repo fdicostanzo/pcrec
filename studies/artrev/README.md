@@ -30,6 +30,33 @@ generation line, asm line, compile line), `arms/<arm>/artifact.c`,
     $A time NAME --arms orig,null,L1 --subject cell=FILE [--subject dense=FILE ...] --rounds 11
     $A time NAME ... --remote ubuntubudu         # 08:00-19:00 local only; --dry-run prints the commands
 
+Hardened identity (charter S1-S3, 2026-10-06) -- all part of the plain `identity` call:
+- the compile line carries `-DARTREV_HAVE_IN=1` when the artifact has `_in` entries (before this fix
+  no `_in` shape was ever driven; the summary now prints how many `_in` search lines were);
+- SHRUNKEN RESOURCES: both arms rebuilt with RX_STEP_BUDGET/RX_WORK_BUDGET shrunk (`--shrunk-budgets
+  8:64,64:1024,2000:40000`) and every `_in` shape driven with {0,1} frames x {0,1} trail; transcripts
+  compared under THE GIVE-UP RULE (identity.py docstring): original gives up + twin answers = a REPAIR,
+  legal only if equal to libpcre2's answer (checked, counted, printed); twin gives up where the original
+  answers, or answers differently = FAIL.  `--strict-giveup` also fails every repair;
+- WINDOW START: an artifact with an internal `<p>_prefilter` gets orig-vs-twin window differential at
+  every search_from (driver_pf.c); a start that moves early fails here, not by a 900 s timeout;
+- LIVELOCK BOUND: the twin's driver runs under max(30 s, 25 x the original's wall)
+  (`ARTREV_LIVELOCK_FLOOR` lowers the floor, self-test only in practice);
+- `--skip-shrunk` / `--skip-window` log PASS-PARTIAL, which `time` refuses.
+
+Layout control and cell (timing, charter S4):
+
+    $A time NAME --arms orig,orig2,null,L1,L2 --subject a=F1 --subject b=F2 --subject c=F3 --cell a,b,c \
+         --pads 16,32,48,64 --pad-arms orig,L1 --rounds 11 [--remote ubuntubudu]
+    $A variants NAME --subject CELLFILE --out-dense D.bin --out-sparse S.bin
+
+`--pads` (>=4 multiples of 16) rebuilds `orig` and the `--pad-arms` at those code offsets and times them
+in the same interleaved rounds; the verdict then also needs the win to exceed both arms' spread across
+pads and to agree at every paired pad (timing.py docstring).  `--cell` adds the CELL row (per round,
+per arm, the median over the named subjects = the bench's cell number).  `confirm_prep.sh` rebuilds
+the pilot's artifact roots from the pin and imports the reviewers' twins (docs/dev/optloop/artrev/
+confirm_plan.md uses it).
+
 Bounds (charter 3.1, enforced from `iterations.tsv`; exit 3 = refused): at most 6
 leads per artifact, 4 revisions per lead, 3 timing runs per revision. Every twin
 revision (rejected ones included) and every timing run (failed ones included) is a
