@@ -55,8 +55,11 @@ Env: PCREC (default build/pcrec), BENCH, CORPUS, OUT. Usage:
 import argparse, collections, concurrent.futures as cf, gzip, os, re, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, os.path.join(HERE, "..", "..", "dev", "optloop", "artrev", "gen"))
-import census as G  # noqa: E402  the artgen census: population, facts(), prior()
+import importlib.util  # noqa: E402
+_spec = importlib.util.spec_from_file_location(
+    "artgen_census", os.path.join(HERE, "..", "..", "dev", "optloop", "artrev", "gen", "census.py"))
+G = importlib.util.module_from_spec(_spec)   # the artgen census: population, facts(), prior()
+_spec.loader.exec_module(G)
 
 E = os.environ
 OUT = E.get("OUT", "build-wts")

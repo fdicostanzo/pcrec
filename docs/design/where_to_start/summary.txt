@@ -1,4 +1,4 @@
-# census.py output, 2026-10-06, lane startstudy. pcrec = lane/startstudy build at 2e5aae78 (src/ identical to main 6816f839); pcrec-bench read-only at eb634d9d. Corpus deduplicated on (pattern, encoding, icase). gcc never run.
+# census.py output, 2026-10-06, lane startstudy. pcrec = lane/startstudy build (src/ identical to main 6816f839); pcrec-bench read-only at eb634d9d. Corpus deduplicated on (pattern, encoding, icase). gcc never run.
 ## bench: 345 patterns, 321 compiled, parsed 274 (85%); unanchored+parsed 250
    unparsed by reason: escape 14, group-kind 11, unsupported-syntax 8, class-range 6, class-escape 6, scoped-flag 1, \K 1
    compiled by route: dfa 250, hybrid 50, vm-only 21
