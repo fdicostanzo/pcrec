@@ -19,6 +19,7 @@ D144 item 3: issue rows, not reverts. Correctness clean (no wrong answer; `-fno-
 - **I2 — `wild-logparse-syslogbase-expanded`** (T16 / E63): t-64k +0.12/+0.09, t-1m +0.17/+0.17 ns/B (+3..6%).
 - **I3 — corpus `\b[0-9a-f]{8}\b`** (tests/offsetskip/offset_skip.rxt:255) on capability prose: +0.215..+0.235 ns/B (+7.1..+7.7%). The bench's `hex32-id` (`{32}`) WINS 12.8%, so this is subject- or length-specific.
 - I6 (sub-1.5%, reproduced): `(?i)\bcat\b`, dfahat.rxt:1074 — noted, not counted.
+- **Bench answer (O-85, pcrec-bench 37b33e3):** the `ctx-*` short-call subjects are NOT sparse — the eight l-* log lines (50-254 B) carry {a,f,p} every 5.6-43 B (six of them every 8.6-12 B), t-letters-064k every 8.42 B; calls are one first-match search per iteration (2.48-3.24M iterations x 5 trials), the lines ~70% of the set-grain short-search sum. So the design's short-call evidence is the SAME density on short subjects: whether the hat wins there (the design's claim) while losing on letters throughput is the open measurement; per-subject ns in O-85. Litrun `aws` (I5's miss case) has no own subject; its throughput 'A's all follow 'z' (\\b never holds), cap t-1m 0.167%.
 
 The same dense regime as K90 (a skip whose expected skip length is short still pays its seek); at d_T >= 40% the hat wins or ties. Candidate fix: the density-adaptive disarm K90 names — on the unified start table (docs/design/start_table.md) that is the retry slot's adaptive rule extended to the DFA hat's route, so K90 and K91 are probably ONE row. Interim lever `-fno-start-set`.
 
