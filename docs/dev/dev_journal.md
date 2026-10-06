@@ -26444,3 +26444,24 @@ Frank: "finish up open work/bench results/errors", Linux box free (bench manager
   mech solos 0 unexpected; vs main FINDING 0. Waits on Frank's Q-F1
   (D148 addendum-1 retraction text in report §F.7) + Q3/Q4, and on R4a′
   landing (abi 63) before the 64 re-pin.
+- ~10:30 2026-10-06: [MEMFN] R4a′ LANDED (340d8fef, abi 63, pushed).
+  Linux make test at eef95511: 53/53 sections, ONE red, test-encoding-checks
+  — and the briefed verdict grep `\*\*\* \[test-` MISSED it (GNU make on
+  Linux prints `*** [Makefile:646: test-…]`); CLAUDE.md's read-a-log row now
+  carries the -E form (2b51e6eb). Triage lane enctri: stage 2 on main clean
+  on Linux (11/0, and pre-stage-2 11/0); the red was R4a′'s new
+  RX_MEMFN_LIBC stamp differing byte vs utf8 exactly where the rx_reqrun
+  block is already excised as a declared asymmetry — a check-side gap, fixed
+  by normalizing the stamp on that branch only, failing direction proven
+  (planted stamp diff on REQ_WHY-agreeing pairs: 218 red; restored 11/0).
+  Census on Linux CLEAN. Post-merge Mac: make strict, codegen (nm only),
+  encoding-checks 11/0, memfn-manifest 22/0. Bench inbox I-130 (b1ac7cd on
+  the box): abi 63, the --list-axes first-class row, adapter readers. Kit
+  session PAUSED — tell the next memfn session R4a′ is done (trailer
+  53/53, census CLEAN, enctri fix).
+- Frank ruled D148 addenda 3 (T = S) and 4 (Q3 conditional: the alpha keeps
+  the faster form). ARTREV S5 generalizer merged (be1cfcc2: 25 leads -> 15
+  ideas; A07's wins are mostly a possessify-analysis gap; CTX family carries
+  the population). Running: artconf (ARTREV confirmer, Linux, pinned
+  57db5152 compiler + possessify arm), ssland3 (stage 3 merge main + abi 64
+  re-pin + full Mac make test).
