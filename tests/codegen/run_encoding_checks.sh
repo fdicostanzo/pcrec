@@ -963,8 +963,10 @@ def excise(text, label, drop_run=False):
             # `rx_reqrun` block (its `memchr`/`memcmp`) the way `REQ_WHY`
             # follows the pick: byte "memchr,memcmp" vs utf8 "memchr" is the
             # same asymmetry as the block's own presence, not a second one.
-            # Normalized only on this branch; where the stamps agree the
-            # line is still compared token for token.
+            # Normalized only on this branch (`drop_run`: the two sides'
+            # REQ_WHY OR their pick forms differ, so the block is excised on
+            # both); everywhere else the line is still compared token for
+            # token (failing direction: lanes/enctri_report.md's plant).
             if MEMFN_LIBC_RE.match(line.rstrip('\n')):
                 out.append('#define RX_MEMFN_LIBC "N"\n')
                 counts['req_run_asym'] += 1
