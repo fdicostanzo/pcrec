@@ -160,10 +160,30 @@ Verification of equivalence: the same 200-pattern sweep before and after
 - `-fprefilter` is do-or-die and refuses `abc`; 6b skips that one refusal
   and uses the hybrid witness for it rather than reading a refusal as a pass.
 
-## 7. Validation (see the handback for which numbers are COMPLETE vs OWED)
+## 7. Validation
 
-Run on this lane: `make` clean; `make strict` and the sweeps below as listed
-in the handback. `run_prechecks.sh` 364/0 post-fix, 360/8 pre-fix (the 8 are
-the control). The resource suite's two `-fno-scan-edge` byte pins sit on
-artifacts whose `.flags` literal shrank (`2097152ULL` -> `0ULL`, -6 bytes);
-see the handback for the re-pin, measured at the same `-o` basename.
+COMPLETE on this lane (Mac, gcc-16):
+- `make` clean. `run_prechecks.sh` 364 passed / 0 failed post-fix; 360 / 8 against
+  the pre-fix compiler (the 8 are 6b's control: bits 18/21 x four cells).
+- `scripts/m6read_check_sab_anchors.py`: 463 sabotages, all anchors resolve.
+- `tests/resource/run_resource_tests.sh` standalone: one FAIL, the
+  `a{5,25000} -fno-scan-edge -fno-start-pinned` rescue byte pin, which read
+  762691 against 762697 (the `.flags` literal `2097152ULL` -> `0ULL`, -6 bytes).
+  Re-pinned to 762691 with its derivation in the pin's comment; every other
+  resource row passed.
+
+OWED, launched DETACHED as this lane's last act (`caffeinate -s`), driver
+`build/fb/chain.sh` (untracked), progress in `build/fb/chain.log`:
+1. `make strict CC=gcc-16` -> `build/fb/strict.log`, line `STRICT_RC=`.
+2. solo mech rows S295, S65, S67 (re-aimed; each expected DETECTED) ->
+   `build/fb/mech_S295.log` etc.; S295's suites include `harness`, so it is
+   long. `MECH_<id>_RC=`.
+3. `make test CC=gcc-16` -> `build/fb/test.log`, `TEST_RC=`. The verdict is
+   make's `*** [test-X] Error` lines (`grep -E '\*\*\* \[(Makefile:[0-9]+: )?test-'`),
+   not "sections ran". Known darwin red expected: `nm could not read arm_a.o`
+   in test-codegen. Anything else is mine until A/B-ed.
+Completion line in `build/fb/chain.log`: `ALL_DONE`. Not run: `make test-axes`
+(multi-hour per-axis sweep); the two denials' own axes could be swept with
+`AXES="-fno-size-term -fno-scan-edge" make test-axes` if the manager wants it.
+The `(B)` FILEPIN (`c59fa836`) names this change's last src commit and must be
+re-pinned by the manager if the abi number is renumbered at merge.
