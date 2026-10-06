@@ -2,7 +2,8 @@
 
 **[PATFACTS] step 3.0, 2026-09-26 (D126, ruled Q8); rows `kinds` and
 `nullable` added at step 3.2, rows `kset_walk` and `run_pin` (the first
-`E3` rows) and the two route declines at step 3.4, 2026-09-27.** This document is the
+`E3` rows) and the two route declines at step 3.4, 2026-09-27; row
+`start_set` at [START-SET] stage 1, 2026-10-05 (D148).** This document is the
 CONTRACT for what `pcrec --emit-facts` prints: its sections, their columns,
 and what is and is not promised about each. It conforms to
 `docs/spec/table_contract.md` (the TSV producer/consumer contract) and adds
@@ -20,7 +21,7 @@ no `abi` number and moving it is not an `abi` event.
 It prints **the pattern-facts record** of a compile — what pcrec concluded
 about the PATTERN (which construct kinds it contains, whether it can match
 the empty string, the byte every match must contain, the necessary literal
-run and set, the start anchor, the end window, the bytes every match carries
+run and set, the start anchor, the bytes a non-empty match can begin with, the end window, the bytes every match carries
 at each offset from its own start and where the necessary run sits among
 them), each fact's status, whether a
 pass consumed it, and WHY it has its value — plus the artifact's own
@@ -92,7 +93,7 @@ exists, they cannot change a byte of it.
 | `epoch` | the seal the fact is asked after: `E1` structural, `E2` lowered, `E3` machine | vocabulary yes |
 | `status` | **CLOSED**: `derived` / `denied` / `declined` / `absent` (below) | yes |
 | `used` | **CLOSED**: `yes` — a compiler pass asked for the fact while the artifact was built; `no` — only the listing asked | yes |
-| `value` | the fact's value, by its one renderer: a byte as decimal, a run as lowercase hex (with `@idx`, the scanned member's index, where the stamp carries it, and — since `abi` 59, only where some position is not an exact byte — `/` and each position's mask in hex, `tuning.md` §2.28), a set as a comma-joined ascending byte list, the start anchor as `<PREFIX>_VM_START`'s token, the kind mask as a comma-joined list of kind names in a fixed order (`bref`, `linked_call`, `var`, `atomic`, `lookaround`, `live_capture`, `collapsible_rep`; since [UCP] U2 `lookaround` counts only lookarounds that stay sub-matches — a one-character lookaround is a context node, `tuning.md` §2.32, and is not in it), nullability as `yes`/`no`, the k-set walk as a comma-joined list of its offsets in order (a one-byte offset as that byte in decimal, a wider one as `[N]`, its byte count), the run pin as the offset in decimal (a pin on the whole window), or `o:at+len` (a pin on the exact stretch `at .. at+len` of a masked window, `tuning.md` §2.30), the run window's maximum byte offset from the attempt start (`req_run_maxoff`, since `abi` 61, [K82] (B)) as a decimal or `unbounded` (with `why` `decline:unbounded`), the value `<PREFIX>_REQ_HANDOFF` carries where the handoff applies (`tuning.md` §2.41); `none` where the fact has no answer; EMPTY on an `absent` row | spellings shared with a stamp are that stamp's (`match_api.md` §6.3, `tuning.md` §2.25-§2.28); others advisory |
+| `value` | the fact's value, by its one renderer: a byte as decimal, a run as lowercase hex (with `@idx`, the scanned member's index, where the stamp carries it, and — since `abi` 59, only where some position is not an exact byte — `/` and each position's mask in hex, `tuning.md` §2.28), a set as a comma-joined ascending byte list, the start anchor as `<PREFIX>_VM_START`'s token, the kind mask as a comma-joined list of kind names in a fixed order (`bref`, `linked_call`, `var`, `atomic`, `lookaround`, `live_capture`, `collapsible_rep`; since [UCP] U2 `lookaround` counts only lookarounds that stay sub-matches — a one-character lookaround is a context node, `tuning.md` §2.32, and is not in it), nullability as `yes`/`no`, the k-set walk as a comma-joined list of its offsets in order (a one-byte offset as that byte in decimal, a wider one as `[N]`, its byte count), the run pin as the offset in decimal (a pin on the whole window), or `o:at+len` (a pin on the exact stretch `at .. at+len` of a masked window, `tuning.md` §2.30), the run window's maximum byte offset from the attempt start (`req_run_maxoff`, since `abi` 61, [K82] (B)) as a decimal or `unbounded` (with `why` `decline:unbounded`), the value `<PREFIX>_REQ_HANDOFF` carries where the handoff applies (`tuning.md` §2.41); the start set (`start_set`, since [START-SET] stage 1: a superset of the bytes the first consumed byte of a non-empty match can be, every zero-width node erased, on the encoding-lowered tree) as `nullable` where the zero-width-erased language can match the empty string — no byte is then necessary — and otherwise as its member count, `:`, and the 256-bit set as 64 lowercase hex digits, byte 0 first, bit `b & 7` of byte `b >> 3` for byte value `b` (so `ab` lists `1:` followed by a set whose only bit is 0x61's); `none` where the fact has no answer; EMPTY on an `absent` row | spellings shared with a stamp are that stamp's (`match_api.md` §6.3, `tuning.md` §2.25-§2.28); others advisory |
 | `why` | **CLOSED token grammar** + detail (below) | the grammar yes; reason NAMES no |
 | `note` | prose (the fact's kind and owning source file today) | no wording promise (D26) |
 

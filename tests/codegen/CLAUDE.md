@@ -10,6 +10,23 @@ or it has no regression net at all.
 
 ## Files
 
+- **run_cand_rows.sh** + **cand_rows_check.py** — [START-SET] (D148;
+  `docs/design/startset.md` §8): the candidate table's (`dfa_pfs[]`)
+  structural checks, in `make test-codegen` (well under a second; mech arm
+  `candrows`). **[cand-no-name-strcmp]** (stage 0, K84): no comparison call
+  (`strcmp`/`strncmp`/`strcasecmp`/`strncasecmp`/`memcmp`) under `src/`
+  `cli/` `lib/` takes a `dfa_pfs[]` row name as a literal (read off the
+  table's own text, `"none"` excepted as every axis's fallback word) or reads
+  `c.name` through a `pf` receiver / `dfa_pf_of(...)`. Comments are blanked
+  first, calls are matched with their full argument text, and an empty
+  row-name population fails (K35). What it cannot see is stated in the
+  script's header. Red on the branch point (`35c8ed45`, the four K84
+  `strcmp` sites); sabotage S495. **[cand-route-init]** (stage 1,
+  checks-F6): every `DfaSel NAME = {...}` initializer names `.route`
+  (population counted; a designated initializer that omits it would
+  zero-fill silently). **[cand-route-walk]**: `dfa_select` asks
+  `cand_routed(` before `->applies(`. Both validated red by a plant on a
+  scratch copy at landing (docs/dev/lanes/ssbuild01_report.md).
 - **runcmp_check.py** — [OPT-LITSCAN] S4 C1 (lane s4build, 2026-10-03, abi
   56): the RUN COMPARE's structural checks (`src/gen/runcmp.c`,
   `docs/design/litscan_s4.md` §5.4), run by `run_codegen_tests.sh`'s

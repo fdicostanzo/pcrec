@@ -132,6 +132,19 @@ enum {
  * and `--list-axes`' own row cannot drift from the enum. */
 const char *pcrec_start_anchor_name(int sanch);      /* src/facts/startanch.c */
 
+/* [START-SET] THE START SET (fact `start_set`, E2 core; D148,
+ * docs/design/startset.md §3): a SUPERSET of the bytes the first consumed byte
+ * of a non-empty match can be, on the lowered tree, with every zero-width node
+ * erased (src/facts/startset.c carries the argument). `nullable` is the ERASED
+ * language's: where it is set no byte test is a necessary condition and
+ * `bits` must not be read as one. Bit `b` of `bits` is `bits[b >> 3] >>
+ * (b & 7)`, `pcrec_cls_bits`' layout. The empty value (no fact) is every
+ * byte, nullable — "nothing known". */
+typedef struct {
+    unsigned char bits[32];
+    bool          nullable;
+} StartSet;
+
 /* [OPT-K] ONE OFFSET OF THE K-SET WALK: the bytes every match carries `k`
  * bytes after its own start, as the pattern's NFA proves them
  * (src/facts/kset.c's header carries the soundness argument). */
@@ -260,6 +273,9 @@ typedef struct {
      * bound". The VM bounds its attempt loop on it; the DFA asserts its own,
      * independently derived answer agrees in the sound direction. */
     int       start_anchor;
+    /* [START-SET] E2 core: the start set; no deny of its own (the hats' row
+     * deny, `-fno-start-set`, never empties the fact). */
+    StartSet  start_set;
     /* [OPT-ENDWIN] E2 core: the end-anchor start window in BYTES, or -1 where
      * the analysis declines; -1 under `-fno-end-window`. Both emitters. */
     long long end_window;
@@ -322,6 +338,7 @@ unsigned       pcrec_fact_kinds(Ctx *cx);        /* E1: the PF_KIND_* mask */
 bool           pcrec_fact_nullable(Ctx *cx);     /* E1 */
 
 int            pcrec_fact_start_anchor(Ctx *cx);
+const StartSet *pcrec_fact_start_set(Ctx *cx);   /* E2 */
 long long      pcrec_fact_end_window(Ctx *cx);
 const ReqSet  *pcrec_fact_req_set(Ctx *cx);
 /* Both return `PatFacts.req_run`: the whole run is its core half, the

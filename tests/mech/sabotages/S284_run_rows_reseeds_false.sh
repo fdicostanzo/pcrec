@@ -37,10 +37,11 @@ SAB_DOC_FIGURE="MEASURED 2026-09-25 (lane s1build): a scratch build with this pl
 # [MECH-REACH] the site IS exercised: a seeded run-row machine with a scan edge.
 SAB_REACH='"$PCREC" --features all -p rx -fcomments -o "$REACH_TMP/o.c" --pattern "\\bat /user[0-9]{2,50}x" && grep -q "^#define RX_DFA_PREFILTER \"run-pinned-bounded\"" "$REACH_TMP/o.c" && grep -q "rx_forward_seed_state" "$REACH_TMP/o.c" && grep -q "SCAN EDGE" "$REACH_TMP/o.c" && echo REACH-SEEDED-RUN-ROW-WITH-EDGE'
 SAB_REACH_EXPECT="REACH-SEEDED-RUN-ROW-WITH-EDGE"
-SAB_COUNT=1
-SAB_BEFORE='      pf_tables_ofs,  pf_block_ofs, pf_emit_ofs_bounded,    true,  true  },
-    { { "run-pinned",          PCREC_NO_OFFSET_SKIP | PCREC_NO_RUN_PREFILTER, pf_run_applies         },
-      pf_tables_ofs,  pf_block_ofs, pf_emit_ofs,            true,  true  },'
-SAB_AFTER='      pf_tables_ofs,  pf_block_ofs, pf_emit_ofs_bounded,    false, true  },   /* SABOTAGE S284 */
-    { { "run-pinned",          PCREC_NO_OFFSET_SKIP | PCREC_NO_RUN_PREFILTER, pf_run_applies         },
-      pf_tables_ofs,  pf_block_ofs, pf_emit_ofs,            false, true  },'
+# RE-ANCHORED 2026-10-05 (lane ssbuild01, K84 stage 0): `dfa_pfs[]` took
+# designated initializers, so the two run rows' trailing field line is the
+# anchor now. Intent re-verified: the plant is still `reseeds = false` on
+# BOTH run rows and nothing else (the line carries `.run_term = true`, which
+# only the run rows do; count 2).
+SAB_COUNT=2
+SAB_BEFORE='      .reseeds = true,  .run_term = true,  .scan = PF_SCAN_OFS  },'
+SAB_AFTER='      .reseeds = false, .run_term = true,  .scan = PF_SCAN_OFS  },   /* SABOTAGE S284 */'

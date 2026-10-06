@@ -6028,6 +6028,26 @@ extern const int pcrec_runcmp_nrows;
  * bounds-checked those bytes. */
 const char *pcrec_emit_run_compare(Ctx *cx, StrBuf *c, const char *base,
                                    int off, const PcrecRun *r);
+
+/* [START-SET] (D148; docs/design/startset.md §5, "One spelling") THE FIND:
+ * the one statement that moves a scan position to the next byte a set can
+ * begin a match with — a `memchr` for a one-byte set, a membership-table
+ * loop otherwise. Its callers are the DFA prefilter forms (`pf_emit_memchr*`,
+ * `pf_emit_bcls*`, src/gen/emit_dfa.c) and, from stage 2, the VM attempt
+ * loop's seek, so neither spells its own loop. It writes ONE line and decides
+ * nothing: what a miss does is the caller's. */
+typedef struct {
+    const char *p;        /* the artifact prefix: the table is `<p>_<table>` */
+    const char *table;    /* the membership table's tag; NULL = the memchr form */
+    int         byte;     /* the memchr form's one byte */
+    const char *pos;      /* the position variable */
+    const char *subject;  /* the subject array */
+    const char *len;      /* the subject length */
+    int         holdback; /* 0: the scan may reach `len`; 1: it stops at
+                           * `len - 1` (D11's bound) */
+} PcrecFind;
+/* The memchr form declares `const void *q`, the hit or NULL. */
+void pcrec_emit_find(StrBuf *c, const char *ind, const PcrecFind *f);
 /* The word-load helpers used and not yet declared, at file scope (idempotent
  * per attempt); and the `<PREFIX>_RUN_WORDS` stamp, after the engine body. */
 void pcrec_emit_runcmp_helpers(Ctx *cx, StrBuf *c);

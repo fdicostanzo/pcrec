@@ -11,6 +11,8 @@ SHAPE of `dfa_pfs[]` (it becomes engine-neutral and gains a VM consumer), so it
 needs a FULL D6 panel with distinct lenses (answer soundness, selection/axis
 semantics, the hybrid/VM consumer contract) before a line is built.
 
+**BUILD (lane `ssbuild01`, 2026-10-05): stages 0 and 1 BUILT, zero movers, no abi event** — K84 fixed (`DfaPf.scan`), the `start_set` fact, the route mask, the FIND extraction, `tests/startset/` (C-SS\* et al.), the stage-1 census with per-block options (`startset/s1/`) and the stage-2/3 mover manifests (`tests/startset/manifests/`); sabotage S495, S501, S502 landed early on their stage-1 detectors. `docs/dev/lanes/ssbuild01_report.md`.
+
 Ids used here: sabotage S478-S502 (rev 2, §6.3; r3 used S478-S485; §6.4 proposes S503-S504), no K-row filed, D148 RULED
 (§9), rev-2 questions Q-R1..Q-R6 RULED 2026-10-05 as recommended (D148 addendum 2; Q-R4 with Frank's caution: stage 4 demoted to filed-not-planned).
 
@@ -458,6 +460,12 @@ at any startpos (§4.1).
 
 ### 4.1 DFA hat: the narrowed rows re-seed, and why that is enough
 
+**[stage 1, lane ssbuild01: steps 1-3's WORDING is superseded by §6.4.3
+item 2's corrected argument — the re-seed is exact iff every skipped byte is
+outside `S`; `E` plays no part in soundness; "state 0 means no live thread"
+is not true of a minimized machine. Step 4's re-seed must be CONDITIONAL
+(§6.4.3 item 1), a soundness requirement, not a hedge. Both bind stage 3.]**
+
 **The invariant.** Each step below reads emitted code, not the design.
 1. The skip runs only while `forward_state == 0` and
    `last_accept_position == -1` (the emitted gate). State 0 means "no live
@@ -645,7 +653,9 @@ counts as unreached. libpcre2 against base: 0 diffs.
   a seeded machine with one seed state, which is a contradiction worth an
   assertion.
 
-`Tdfa` alone would also be sound and would need no AST fact. It is
+`Tdfa` alone would also be sound and would need no AST fact. **[REFUTED,
+§6.4.3 item 2: `(?:\b|x)y` on `xy` — `Tdfa` is not a sound floor; stage 1's
+C-SS\* check says so in its own header.]** It is
 recorded as a finding, not proposed: on this population it equals `S`
 everywhere, and using it would make the DFA hat a second mechanism beside
 the shared fact (D148 Q1, D124). It is the CHECK instead (§6.2).
@@ -1002,7 +1012,7 @@ arithmetic. And the forced-VM sweep it leaned on did not exist.
 | S482 | — | DFA hat, `first-memchr` (`\|T\| = 1`): re-seed deleted | answer identity | `\bab\b` (`T = {a}`): on `bab ab`, the skip lands at 1 in the wrong context (verify) |
 | S483 | — | DFA hat, `first-class-bounded`: one of the two landing paths' re-seed deleted (the `n − 1` stop) | answer identity | a `\b`-class fixture whose only `T` byte is the subject's LAST byte (verify) |
 | S484 | — | DFA hat, `first-memchr-bounded`: the same, memchr form | answer identity | the same shape, `\|T\| = 1` (verify) |
-| S485 | — | DFA hat: the re-seed made UNCONDITIONAL (sound-F7) | codegen structural check: every DFA-hat mover's re-seed sits under `if (scan_position > entry…)` | answer-invisible on F's population (F excludes the attempt scan, where `\G`'s gseed lives). The structural check is the detector; its population is the DFA-hat manifest |
+| S485 | — | DFA hat: the re-seed made UNCONDITIONAL (sound-F7) | codegen structural check: every DFA-hat mover's re-seed sits under `if (scan_position > entry…)` | ~~answer-invisible on F's population~~ **withdrawn by §6.4.3 item 1**: the unconditional form loses matches on ordinary seeded movers; its answer witnesses are `reseed.rxt`'s RS blocks. The structural check is a second detector; its population is the DFA-hat manifest |
 | S486 | S480 | `T` widened by one byte that cannot begin a match (cost only, firstset §9) | codegen check, **expectation corrected**: on every DFA-hat mover the emitted table EQUALS `start_set` (the `--emit-facts` row) and is a PROPER SUBSET of the `-fno-start-set` arm's table. r3's "`start_set` ∩ the deny table" pinned the sound-F1 defect | the aws-shaped fixture, `\|T\| = 1` |
 | S487 | — | F's SEEDED conjunct removed | none possible: on an unseeded machine `E ⊆ S` (C-SS*), so `T == E` and the row is transparent | **declared UNREACHED by construction**; C-SS* is its guard |
 | S488 | — | F's NON-NULLABLE conjunct removed | answer identity (lost empty matches at skipped positions) | a seeded byte-class artifact with a nullable `S`. The build's sweep looks for one; if the population is empty it is declared UNREACHED with that count (verify) |

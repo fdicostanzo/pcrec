@@ -3228,3 +3228,17 @@ harness target `tests/uprops/size_ladder_prefilter_drop.rxt` + resource);
 flips the prefilter-drop row's `degrading` cell (exactly one resource cell,
 the locality check).
 
+
+## [START-SET] stage 0 — `candrows`, and S495 (lane ssbuild01, 2026-10-05)
+
+**`candrows` is a new suite word** (registered before S495, R31 C11): it runs
+`tests/codegen/run_cand_rows.sh` against the sabotaged tree's own SOURCE (the
+script takes the tree as its argument; it reads text, not objects). Its checks
+are facts about the source that move no answer, so a row on this arm scores
+`corpus:0fail` by design and the arm is its whole detector. **S495** puts
+K84's `strcmp` on the byte-class row names back into `pcrec_dfa_cand_ppm`:
+DETECTED at landing, `reach:ok(1/1),candrows:1fail/0pass`. Its stage-3
+answer-level detector (the hybrid re-seed row on a narrowed SET row) is the
+design's (startset.md §6.3) and does not exist yet. **S284** was re-anchored
+in the same change (the `dfa_pfs[]` rows took designated initializers); its
+intent and expected verdict (UNDETECTED) are unchanged.

@@ -296,7 +296,7 @@ TEST_SECTIONS := test-corpus test-cli test-reject test-registry test-parse \
       test-prefilter-collapse test-rxtsource test-definitions \
       test-entry-shape-identity test-cpset-structure test-startbnd \
       test-uprops test-core test-vars test-examples test-findings test-ucp \
-      test-clskit test-encoding-checks test-utfcheck
+      test-clskit test-encoding-checks test-utfcheck test-startset
 
 # [CHK-2 trailer] `test:` STOPPED being purely prerequisite-based here
 # (2026-08-26, manager finding, journal part 7): under `make -j12 test`,
@@ -488,6 +488,9 @@ test-examples: all
 # [PATFACTS] run_facts_checks.sh joins at step 3.0 (design §4.2.3): an
 # include scan and an `nm` join over the built objects, well under a second --
 # the pattern-facts record's structural check, born with the record.
+# [START-SET] run_cand_rows.sh joins at stage 0 (D148, K84): a text scan of
+# src/ cli/ lib/ for a comparison reading a dfa_pfs[] row name, well under a
+# second.
 test-codegen: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-codegen.ran"; fi
 	GROUP_PROCS=$${PROCS:-$$(bash tests/lib/procs_default.sh)} bash tests/lib/run_group.sh \
@@ -503,6 +506,7 @@ test-codegen: all
 	    'bash tests/codegen/run_comments_axis.sh' \
 	    'bash tests/codegen/run_cls_fold_agreement.sh' \
 	    'bash tests/codegen/run_facts_checks.sh' \
+	    'bash tests/codegen/run_cand_rows.sh' \
 	    'bash tests/codegen/run_prefix_invariance.sh' \
 	    'bash tests/codegen/run_nomatch_caps.sh'
 
@@ -1163,6 +1167,14 @@ test-utfcheck: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-utfcheck.ran"; fi
 	bash tests/utfcheck/run_utfcheck.sh
 
+# [START-SET] (D148) the `start_set` fact's checks: C-SS* (the emitted start
+# bytes of every forward DFA, seeded included, are a subset of the fact),
+# NULLABLE => start_set.nullable, and the hand-written option witnesses, over
+# every corpus block with its own options. ~20 s on the Mac dev box.
+test-startset: all
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-startset.ran"; fi
+	bash tests/startset/run_startset_checks.sh
+
 # [REVW.U L5-R0] tests/core/ — the unit tier's home for a check on a helper
 # that belongs to no single feature (today: the saturating-arithmetic
 # agreement, mrl.c/emit_vm.c/callgraph.c). One gcc invocation and one process
@@ -1686,5 +1698,6 @@ clean:
         test-prefilter-collapse test-rxtsource test-definitions \
       test-entry-shape-identity test-cpset-structure \
         test-encoding-checks test-startbnd test-utfcheck test-core test-examples test-clskit \
+        test-startset \
         smoke hooks strict testscripts ubsan asan san lint alloc mech bench \
         fuzz clean

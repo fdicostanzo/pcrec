@@ -2507,6 +2507,32 @@ run_one() {
                 f="$(grep -m1 '^checks failed:' "$work/limits.log" | grep -oE '[0-9]+')"
                 score_arm "$work/limits.log" "$f" "limits:${f:-ERR}fail/${p:-?}pass"
                 ;;
+            startset)
+                # [START-SET] stage 1 (D148) tests/startset/run_startset_checks.sh —
+                # the `start_set` fact's C-SS* (every forward DFA's emitted start
+                # bytes a subset of the fact), NULLABLE => start_set.nullable and
+                # the option witnesses. A planted WALK defect moves no answer
+                # until a hat reads the fact (stage 2/3), so this arm is a walk
+                # row's stage-1 detector. Registered before S501/S502.
+                PCREC="$pcrec" bash "$tree/tests/startset/run_startset_checks.sh" \
+                    > "$work/startset.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/startset.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/startset.log" | grep -oE '[0-9]+')"
+                score_arm "$work/startset.log" "$f" "startset:${f:-ERR}fail/${p:-?}pass"
+                ;;
+            candrows)
+                # [START-SET] (D148) tests/codegen/run_cand_rows.sh — the
+                # candidate table's structural checks: no comparison reads a
+                # `dfa_pfs[]` row NAME (K84, stage 0) and, from stage 1, every
+                # `DfaSel` initializer names its route. ITS OWN ARM: both are
+                # facts about the SOURCE that move no answer, so a row on this
+                # arm scores `corpus:0fail` by design. Registered before S495.
+                PCREC="$pcrec" bash "$tree/tests/codegen/run_cand_rows.sh" "$tree" \
+                    > "$work/candrows.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/candrows.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/candrows.log" | grep -oE '[0-9]+')"
+                score_arm "$work/candrows.log" "$f" "candrows:${f:-ERR}fail/${p:-?}pass"
+                ;;
             facts)
                 # [PATFACTS] step 3.0 (D126) tests/codegen/run_facts_checks.sh —
                 # the pattern-facts record's own checks: WHO may reach a
