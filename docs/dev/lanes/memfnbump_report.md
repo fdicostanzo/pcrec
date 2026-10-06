@@ -172,7 +172,21 @@ compiler.
 
 ## 4. Mech solos S513-S517 (after the bump)
 
-See §7, the validation log (filled from `build/scratch/mech.S51N.log`).
+`bash tests/mech/run_sabotage_matrix.sh S51N`, each SOLO, `CC=gcc-16`, at
+the tip `a0670cba` (S517 ran at `19e6cad0`, which is that tip plus the report
+commit). Logs: `build/scratch/mech.S51N.log`.
+
+| id | results | verdict | wall |
+|---|---|---|---|
+| S513 | reach:ok(1/1), memfnstamps:44fail/3pass | DETECTED | 28 s |
+| S514 | reach:ok(1/1), memfnstamps:44fail/3pass | DETECTED | 35 s |
+| S515 | reach:ok(2/2), memfnstamps:8fail/5pass | DETECTED | 34 s |
+| S516 | reach:ok(2/2), memfnstamps:44fail/3pass | DETECTED | 27 s |
+| S517 | reach:ok(1/1), memfnstamps:27fail/5pass | DETECTED | 31 s |
+
+Each run printed `mech run COMPLETE: 1 rows (unexpected: 0, undetected: 0,
+unreached: 0, anomalies: 0, oracle-skipped: 0)`. The counts match the
+pre-bump ones exactly (memfnstamp §5).
 
 ## 5. Suite results (Mac, gcc-16, directional)
 
