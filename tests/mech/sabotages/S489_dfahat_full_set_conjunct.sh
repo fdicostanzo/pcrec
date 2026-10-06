@@ -17,7 +17,7 @@ SAB_ID='S489-dfahat-full-set-conjunct'
 SAB_FILE='src/gen/emit_dfa.c'
 SAB_SUITES='dfahatstruct'
 SAB_DESC='the DFA hat'\''s predicate no longer refuses a 256-member start set; an equivalent mutant while T = S cannot be a proper subset of E'
-SAB_DOC_FIGURE='DECLARED EQUIVALENT (the argument above); MEASURED by the solo run at the ssfix3 landing (docs/dev/lanes/ssbuild3_report.md, Panel fixes): read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S489.'
+SAB_DOC_FIGURE='DECLARED EQUIVALENT (the argument above). MEASURED 2026-10-06 (lane ssfix3, solo, 3b7ba538): UNDETECTED (EXPECTED), reach:ok(1/1), dfahatstruct:0fail/32pass. See (docs/dev/lanes/ssbuild3_report.md, Panel fixes): read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S489.'
 SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern '\''\b(?:\w|[^\w]x)'\'' && grep -q '\''^#define RX_DFA_PREFILTER "byte-class-bounded"'\'' "$REACH_TMP/o.c" && "$PCREC" --features all --emit-facts --pattern '\''\b(?:\w|[^\w]x)'\'' | grep -q '\''start_set.*[[:space:]]256:'\'' && echo REACH-FULL-S-SEEDED-SKIP'
 SAB_REACH_EXPECT='REACH-FULL-S-SEEDED-SKIP'
 SAB_EXPECT=UNDETECTED

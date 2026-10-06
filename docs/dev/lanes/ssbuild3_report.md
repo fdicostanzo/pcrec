@@ -407,8 +407,34 @@ Floors (half the landing): `FLOOR_OK` 4,500 deny-compiling, `FLOOR_HAT` 340.
 
 ### F.3 Mech solos at the fixed tip (M6)
 
-PENDING at the time of writing (`chain.sh` below). Filled in from the logs
-when the chain completes.
+Every START-SET row ran solo at `3b7ba538`: `bash tests/mech/run_sabotage_matrix.sh <id>`, one row per run, two chains with separate `MECH_SCRATCH`, CC=gcc-16, under the suite lock. **26 rows, all as expected: 0 unexpected, 0 anomalies.** That is 20 DETECTED, 3 UNDETECTED (the declared equivalent mutants) and 3 UNREACHED (stage 2's declared-dead rows).
+
+| id | arm(s) | result | verdict |
+|---|---|---|---|
+| S480 | dfahat | 2fail/1pass | DETECTED |
+| S481 | dfahat (answers only) | 70fail/0pass | DETECTED |
+| S482 | dfahat | 57fail/0pass | DETECTED |
+| S483 | dfahat | 12fail/0pass | DETECTED |
+| S484 | dfahat | 19fail/0pass | DETECTED |
+| S485 | dfahat | 14fail/0pass | DETECTED |
+| S486 | dfahatstruct | 4fail/28pass | DETECTED |
+| S487 | dfahatstruct | 0fail/32pass | UNDETECTED (expected: equivalent) |
+| S488 | dfahatstruct | 2fail/30pass | DETECTED |
+| S489 | dfahatstruct | 0fail/32pass | UNDETECTED (expected: equivalent) |
+| S490 | dfahatstruct | 0fail/32pass | UNDETECTED (expected: equivalent) |
+| S495 | candrows, dfahatstruct | 1fail/2pass, 1fail/31pass | DETECTED |
+| S501 | startset, vmhat, dfahat | 2/1, 17/18, 23/0 | DETECTED |
+| S502 | startset, vmhat, dfahat | 2/1, 57/18, 30/0 | DETECTED |
+| S504 | dfahat | 6fail/2pass | DETECTED |
+| S478 | vmhat | 375fail/18pass | DETECTED |
+| S479 | vmhat | reach MISSING | UNREACHED (expected, Q-R5) |
+| S491 / S492 / S493 | vmhat | 5/17, 5/17, 4/18 | DETECTED |
+| S494 | vmhat | 540fail/13pass | DETECTED |
+| S496 / S497 | vmhat | reach MISSING | UNREACHED (expected) |
+| S498 / S499 | vmhat | 3/19, 3/19 | DETECTED |
+| S500 | vars | 1fail/1pass | DETECTED |
+
+**S481-S485 are now DETECTED by the ANSWER arm alone.** The re-seed text pin is no longer in that arm, so the fixtures, the collapsed fixture pass and the differential are what fail them. That is checks-M1's question answered by a run. The three equivalence rows read 0 failures on `dfahatstruct`: every corpus artifact is byte-identical to the deny arm or a manifest mover, so the planted compilers emit the clean compiler's movers. Logs: `scratchpad/ssfix3/mechlog/<id>.log`.
 
 ### F.4 The full Mac `make -k -j4 test CC=gcc-16`
 
