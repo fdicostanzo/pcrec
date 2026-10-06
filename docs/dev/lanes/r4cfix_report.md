@@ -308,3 +308,33 @@ strict` clean.
 Lesson. Adding corpus `.rxt` cases can enroll patterns in OTHER suites'
 manifests (rxtsource, startset: both key rows by `file:line`). A lane that adds
 corpus rows owes the full `make test`, not only its own section.
+
+### §10.1 The pcrec manager's two per-row facts (added by the kit manager, 2026-10-06)
+
+Measured on the Mac with gcc-16. TIP is the kit branch's build at 00ede5dc;
+r4cpin changed no src/. REF is pcrec built from `git archive e6e6d6eb`.
+Every compile is `-p rx --features all --encoding=byte`, plus `--engine=vm`
+where shown, and writes `.c` and `.h` to same-named files so the `#include`
+line cannot differ.
+
+| pattern | config | (1) default vs `-fno-start-set` | (2) TIP == e6e6d6eb (.c+.h, default AND deny) |
+|---|---|---|---|
+| `(ab)c?userpass` | `--engine=vm` | 24 lines: `rx_start_set[]` + `RX_VM_START_SCAN "first-class"` | IDENTICAL |
+| `(x)?userz` | `--engine=vm` | 24 lines, same shape | IDENTICAL |
+| `(?i)(cat)s?dog` | `--engine=vm` | 24 lines, same shape | IDENTICAL |
+| `(ab)c?userpass` | auto | 0 lines (VM hybrid: `RX_VM_START_SCAN "none"`) | IDENTICAL |
+| `(x)?userz` | auto | 0 lines, same | IDENTICAL |
+| `(?i)(cat)s?dog` | auto | 0 lines, same | IDENTICAL |
+
+- The 3 `auto` manifest rows are the `--engine=vm` cases.
+- The 6 `forced` rows are all six cases compiled with `--engine=vm`, the
+  forced manifest's own config. Under it every one is the 24-line mover
+  above.
+- The auto-config cases do not move at the default engine: they take the
+  VM HYBRID route, whose prefilter is its start test (S493's conjunct).
+  That is why they are absent from the auto manifest.
+- Shape control: two existing manifest rows, `(ab)\1` and `(?i)(ca)t\1` at
+  `--engine=vm`, show the identical 24-line `rx_start_set[]` +
+  `"first-class"` diff.
+- Fact (2) holds for every pattern under both the default and the deny
+  compile, as the zero-mover gate (0 movers vs e6e6d6eb) implies.
