@@ -40,7 +40,7 @@
 # that literal in the same commit.
 #
 # site	emitters	op	budget	step	status	companions	ref
-PF	pcrec_emit_find	FIND/ASSIGN	scan	M2 (R4g)	pending	pf_emit_find,pf_emit_memchr,pf_emit_memchr_bounded,pf_emit_bcls,pf_emit_bcls_bounded,pf_comment_memchr,pf_emit_ofs,pf_emit_ofs_bounded,pf_block_ofs	§8.5 T1; §15.7; §16 (the offset/run rows' CALLS stay pcrec's text around an EXPR)
+PF	pcrec_emit_find	FIND/ASSIGN	scan	M2 (R4g)	pending	pf_emit_find,pf_emit_memchr,pf_emit_memchr_bounded,pf_emit_bcls,pf_emit_bcls_bounded,pf_comment_memchr,pf_emit_ofs,pf_emit_ofs_bounded,pf_block_ofs,pf_vm_emit_first_class	§8.5 T1; §15.7; VMSTART (the VM hat's seek, stage 2 abi 62, built through pcrec_emit_find's table form: integration.md N-table); §16 (the offset/run rows' CALLS stay pcrec's text around an EXPR)
 PRE	emit_req_one_byte	FIND/ON_MISS	scan	M1 (R4c)	pending	pcrec_emit_req_byte_check,emit_req_run_check,emit_req_handoff,pcrec_emit_req_run_blocks,req_run_tests	§8.5 T2; §15.3; §15.5 (one composite site with SETREST); §16
 OFS	ofs_test_emit_fn,ofs_test_emit_pair	FIND/RETURN	scan	M1 (R4c)	pending	ofsk_emit_verify,ofsk_emit_params	§8.5 OFS (N5); §15.1; §16
 SETREST	emit_req_set_rest	ALL_PRESENT/ON_MISS	scan	M1 (R4c)	pending	pcrec_emit_req_byte_check	§8.5 SETREST (N4); §15.4; §15.5
