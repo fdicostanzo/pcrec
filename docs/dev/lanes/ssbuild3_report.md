@@ -4,7 +4,7 @@ Lane `ssbuild3`, 2026-10-06, opus. Branch `lane/ssbuild3` off main
 `57db5152` (stage 2 landed, abi 62). Builds `docs/design/startset.md` §8's
 stage-3 row (rev 2 + ssedge's §6.4) under D148 + addenda 1-2. **AN ABI
 EVENT: this lane's number is 64** (63 is reserved for the memfn kit's R4a′;
-see §1 for how the bump was drafted). A fresh agent resumes from §8.
+see §1 for how the bump was drafted). A fresh agent resumes from §9.
 
 ## 0. Summary, against §8's stage-3 row and the manager's list
 
@@ -167,7 +167,22 @@ no hat mover).
 
 ## 4. Gates (Mac, this lane)
 
-PLACEHOLDER-GATES
+All runs at the merged tree (main `f69089bf` merged alone as `eb4f07ba`),
+abi 64, `CC=gcc-16`, `TMPDIR` in the session scratchpad. Logs are listed
+in §9.
+
+| gate | result |
+|---|---|
+| `make strict` | clean (`-Werror -Wshadow`) |
+| `make test-startset` | 3 scripts green: start_set 3/0, vmhat 22/0, dfahat 21/0. The DFA-hat fixtures are 1,769 cases / 0 failed. Its differential covers 219 (mover, config) pairs and 1,155,139 cells with 0 defects. The VM-hat differential covers 528 pairs and 3,165,576 cells with 0 defects. |
+| the DFA-hat differential under `SAN=1` (ASan + UBSan) | 219 pairs, 1,155,139 cells, 0 defects |
+| `make test-codegen` | the only red is the accepted darwin `nm could not read arm_a.o`. Its first run also had `run_offset_skip.sh` §2c red, a reader this hat moved (finding 2). After the fix: offset_skip 23/0, anchored_match 20/0 (four mechanisms) |
+| `test-registry` (axes pin 193 -> 199, 129 rows) | green in the full run |
+| `test-rxtsource` | 267 passed / 0 failed / 1 RECORD (the darwin python-3.9 C3 note). The census is re-pinned for the four fixtures: 271 files / 4,594 blocks / 41,005 lines |
+| `tests/codegen/run_cpset_structure.sh`, `tests/resource` | 28/0; 0 failed (1 darwin skip) |
+| `AXES=-fno-start-set SKIP_ORACLE=1` over the 18 mover files | `-fno-start-set`, `--engine=vm`, and their product: 5,905 / 5,905 keys agree on each, 0 mismatches, 0 give-ups. The product arm's whole-corpus floor (11,000 mover cases) reads 4,635 on this subset; that is the subset (OWED item 2) |
+| sabotage anchors (`scripts/m6read_check_sab_anchors.py`) | 458 rows, 474 anchor sites, all resolve |
+| **the FULL Mac `make -k -j4 test CC=gcc-16`** at `3cf1cfbf`, detached under caffeinate, holding `worktrees/.mac-suite.lock` (released) | **`sections ran: 52/52`; the ONLY `*** [test-X] Error` is `test-codegen`, and the only FAIL line in it is the accepted darwin `nm arm_a.o`.** Wall 2,571 s. `-k` so one red cannot hide a later section |
 
 ### 4.1 The §6.4 mutation table, on this build
 
@@ -280,8 +295,63 @@ four (form x landing) cells have a detecting row.
 
 ## 7. OWED (exact commands)
 
-PLACEHOLDER-OWED
+1. **The Linux alpha (F3 at the dense movers)** — the manager's, per the
+   brief: `bash docs/dev/optloop/startset/alpha_s3.sh` on ubuntubudu (quiet
+   box, `gnutimeout` per BOILERPLATE). Its cells: the dense movers (the
+   `\b(?:true|false|null)\b` family, aws, the six count-collapsed hybrids),
+   the G1 `dominated` movers, the re-seed-row movers, the null cells (a
+   one-byte narrowing such as float-literal 11 -> 10, where the unmeasured
+   proper-subset admission must not lose) and the deny/base noise floor.
+   Written and syntax-checked here, never run.
+2. **The full `make test-axes`** (all 42 bit axes + the product arm over the
+   whole corpus). This lane ran `AXES=-fno-start-set SKIP_ORACLE=1` over the
+   18 mover files only (§4); the product arm's 11,000-case floor is a
+   whole-corpus number and reads 4,635 on that subset, which is the subset,
+   not the hat.
+3. **Bench questions** (for relay; no bench run was made): (a) the aws
+   witness `\b((?:A3T[A-Z0-9]|AKIA|AGPA)[A-Z0-9]{16})\b` becomes
+   `first-memchr-bounded` on 'A' — which subject does the bench time it on,
+   and how dense is 'A' there; (b) do the CTX short-call subjects contain the
+   context bytes (`E \ S`) the re-seed restores, i.e. will the bench see the
+   re-seed's per-hit cost at all.
+4. Nothing outside the worktree to clean: the KEEP=1 mech chains ran with
+   `TMPDIR` in the session scratchpad, so their harness temp dirs were
+   there (the `/var/folders/.../T/pcrec-mech-sabotage.*` dirs on the box
+   date from 09-30 and 10-05 15:42, before this lane's runs) and were
+   removed with the scratch trees.
 
 ## 8. Questions
 
-PLACEHOLDER-QUESTIONS
+- **Q1 (ABI ORDER).** This lane took 64 with R4a′ (63) not yet landed.
+  If R4a′ lands after this lane, its own bump is 62 -> 63 on a tree that
+  reads 64: the R4a′ lane should re-base onto 64 and take 65, or keep 63 as
+  a historical slot with no artifact? The ledger entry this lane wrote
+  assumes R4a′ keeps 63 and lands FIRST; recommendation: land R4a′ first
+  and re-run this lane's codegen pin, which only reads the number.
+- **Q2 (S505+).** Not taken, per the brief, and none was needed: every
+  §6.4.2 mutant has a detecting row or check here (§4.1). `startset.md`
+  names no id above S504.
+- **Q3 (G1 elision on a one-byte `T`).** 28 movers lose their `memchr`
+  pre-check as `dominated` because the hat now scans that same byte. This is
+  the general reading (`pf_scan_set_of` is the one place the scanned set is
+  asked), and answer-identical (0 defects on the differential, which covers
+  these movers). Recommendation: accept; F3's G1 cells measure the cost
+  side.
+- **Q4 (the unmeasured admission).** `T ⊊ E` with no margin admits a
+  one-byte narrowing. D149 labels it an unmeasured default; the null cells
+  in `alpha_s3.sh` are the measurement. No change proposed until that runs.
+
+## 9. State at hand-off
+
+- Branch `lane/ssbuild3`, worktree `worktrees/ssbuild3`, clean, NOT
+  merged. Commits after the mech pin `8c69a359`: `da0cb761` (spec, registry,
+  checks, docs), `eb4f07ba` (main merged alone), `b42dffa6` (abi 64 + its
+  readers, the lane's last `src/` commit), the FILEPIN self-pin, `820b9845`
+  (the readers the hat moved), and the report commits.
+- The suite lock is released. No process of this lane is running.
+- Scratch logs (session scratchpad,
+  `/private/tmp/claude-501/-Users-fdicostanzo-pcrec/ssbuild3/scratchpad/`):
+  `fulltest.log`, `startset.log`, `sandiff.log`, `codegen.log`, `axes.log`,
+  `rxtsource.log`, `sweep.log`, `mover_table.log` + `movers.tsv` (the 88
+  hat rows), `mech/S4*.log`/`S50*.log` (the solo rows). The mech scratch
+  trees and the mutant trees have been removed.
