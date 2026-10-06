@@ -16,7 +16,7 @@ Charter: the kit manager's FIX brief (items 1-6), `memfn/docs/requests.md`
 | 3 | licence (D145 addendum 1) | `f0f08c63` | DONE: C16 8/0, no "ruling pending" left |
 | 4 | CHECKS follow-ups | `2dd9a3a7` | DONE: C12 4/0 (memchr 8 → 2), C17 25/0 with rule 2 LIVE on the real corpus |
 | 5 | Q-G2-18 | `5c652bbb` | DONE: `on_miss_leaves`, `MF_SITE_ABI` 3, sniff deleted |
-| 6 | validation (light) | this report's commit | see §7 |
+| 6 | validation (light) + rxtsource re-pin | this report's commit | all green (§7), after re-pinning the rxtsource census that CHECKS's witness rows moved |
 
 Zero movers on the artifacts: `emit_sweep --ref 691a8b7c` reads 0 movers on
 streams 1-4, and stream 5 moves exactly the two `memfn-simd` `--list-axes`
@@ -200,7 +200,26 @@ addendum 1)` now appears in four places:
 | `make test-memfn-forms` | 4/0 | `build/scratch/v_test-memfn-forms.log` |
 | `make test-memfn-arms` | 36/0 | `build/scratch/v_test-memfn-arms.log` |
 | `make test-memfn-deleg` | 5/0 | `build/scratch/v_test-memfn-deleg.log` |
-| VALIDATION-TABLE-TAIL | | |
+| `make test-memfn-stamps` / `-arch` / `-reach` | 13/0, 12/0, 4/0 | `build/scratch/v_test-memfn-*.log` |
+| `make test-codegen` | 14 sub-suites, every one `checks failed: 0`; `[SABANCHOR]` all 475 anchors resolve; no `*** [` line | `build/scratch/v_test-codegen.log` |
+| `make test-registry` | 5 sub-suites, 0 failed | `build/scratch/v_test-registry.log` |
+| `make test-rxtsource` | first run **RED, 7 failed**: census MOVED 272/4606/41327 → 272/4612/41605. The cause is CHECKS's `handoff.rxt` witness (+6 blocks, +278 case lines), which CHECKS never re-pinned. **Re-pinned here** (§7.1); re-run: 278 passed, 0 failed | `build/scratch/v_test-rxtsource{,2}.log` |
+
+### 7.1 The rxtsource re-pin (a count the merge moved)
+
+`tests/rxtsource/run_rxtsource_tests.sh`:
+- `CENSUS_BLOCKS`/`RUNSH_BLOCKS` 4606 → 4612;
+- `CENSUS_LINES`/`RUNSH_LINES` 41327 → 41605;
+- `C3_PASS` 16957 → 17235;
+- `C3_VERIFIABLE` 18954 → 19232.
+
+Each carries its reason in place. The +278 split was MEASURED, not
+re-derived from the suite: `verify_rxt.py` was run on `handoff.rxt` at
+65d86da3 (PASS 1280, SKIP 856) and at this tip (PASS 1558, SKIP 856). That
+is +278 PASS and +0 SKIP, identical on python 3.9 and 3.10. The cells are
+python-verified, so the python-3.14 pin moves by the same amount (this
+assumes 3.14 agrees, as the two measured versions do). `C3_SKIP` is
+unchanged. A grep for the old numbers found no other reader.
 
 ## 8. OWED (heavy runs: the kit manager's slot, never this lane's)
 
@@ -252,6 +271,6 @@ addendum 1)` now appears in four places:
 | sabotage rows for the new checks | CHECKS (S518-S529) | DONE (S524/S528 re-aimed by FIX) |
 | Q-G2-18: hooks opaque, `on_miss_leaves`, `MF_SITE_ABI` 3 | FIX | DONE; G2 coverage OWED (kit) |
 | zero movers (identity gate) | CORE + FIX | DONE on the default sweep at FIX's tip; I2 over every axis × both tiers OWED |
-| `make strict`, test-codegen, registry, rxtsource | FIX | see §7 |
+| `make strict`, test-codegen, registry, rxtsource | FIX | DONE, all green (rxtsource after the §7.1 re-pin) |
 | Mac `make test`, then the Linux verdict | — | OWED (§8) |
 | report + lanes/CLAUDE.md row | each lane | DONE |
