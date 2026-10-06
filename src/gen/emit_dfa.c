@@ -50,7 +50,7 @@
  * abi ritual fires next, bump this ONE constant; grep for its old value
  * finds both emission sites plus every out-of-tree reader the ritual's own
  * site list already enumerates. */
-#define PCREC_ARTIFACT_ABI 61
+#define PCREC_ARTIFACT_ABI 62
 
 /* Renders one byte of pattern-derived text safely into a C block comment, escaping whatever would close or falsely open the comment.
  *
@@ -7705,6 +7705,7 @@ static size_t pcrec_dfa_axis_cands(const void *list, size_t n, size_t stride,
         const DfaCand *c = (const DfaCand *)(const void *)(base + i * stride);
         out[k].name = c->name;
         out[k].deny = c->deny;
+        out[k].stamp = NULL;
         k++;
     }
     return k;
@@ -7717,9 +7718,15 @@ static size_t pcrec_dfa_axis_cands(const void *list, size_t n, size_t stride,
 /* The table-representation axis's candidates, as `--list-axes` reads them. */
 size_t pcrec_dfa_axis_table_cands(PcrecAxisCand *out, size_t cap)
 { return AXIS_LIST(dfa_reprs); }
-/* The prefilter axis's candidates. */
+/* The prefilter axis's candidates. [START-SET] a row serving the VM route
+ * alone names the VM hat's stamp, the one its selection writes. */
 size_t pcrec_dfa_axis_prefilter_cands(PcrecAxisCand *out, size_t cap)
-{ return AXIS_LIST(dfa_pfs); }
+{
+    size_t n = AXIS_LIST(dfa_pfs);
+    for (size_t i = 0; i < n; i++)
+        if (dfa_pfs[i].routes == CAND_ON(CAND_ROUTE_VM)) out[i].stamp = "RX_VM_START_SCAN";
+    return n;
+}
 /* The view-selector axis's candidates. */
 size_t pcrec_dfa_axis_view_cands(PcrecAxisCand *out, size_t cap)
 { return AXIS_LIST(dfa_views); }

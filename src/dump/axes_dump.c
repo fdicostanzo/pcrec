@@ -97,6 +97,7 @@ static const AxisDesc AXIS_DESC[] = {
     { "prefilter", "run-pinned", "forward scan, the necessary run is pinned at a fixed offset and the scan already runs on its scan member there: the whole run verified as one compare per candidate, the run pre-check then dominated ([OPT-LITSCAN] S1)" },
     { "prefilter", "offset-set-bounded", "forward scan, an offset-k candidate SET was selected, under a $/\\Z/\\z view or a word-context accept ([OPT-K])" },
     { "prefilter", "offset-set", "forward scan, an offset-k candidate SET was selected: one memchr at the chosen offset k*, the other offsets verified per candidate ([OPT-K])" },
+    { "prefilter", "first-class", "vm: [START-SET] a VM artifact with no DFA prefilter, an unanchored pattern, and a start set S (the start_set fact) that is not nullable and has fewer than 256 members: the attempt loop seeks the next byte of S, as a 256-entry table, before its first attempt and after each failed one; dfa: never at stage 2 (the DFA hat is stage 3)" },
     { "prefilter", "memchr-bounded", "forward scan, one candidate byte, under a $/\\Z/\\z view or a word-context accept" },
     { "prefilter", "memchr", "forward scan, one candidate byte" },
     { "prefilter", "byte-class-bounded", "forward scan, several candidate bytes, under a $/\\Z/\\z view or a word-context accept" },
@@ -312,11 +313,12 @@ static void axis_row(StrBuf *sb, const char *axis, int order,
 static void emit_dfa_list_axis(StrBuf *sb, const char *axis, const char *kind,
                                size_t (*get)(PcrecAxisCand *, size_t))
 {
-    PcrecAxisCand cands[16];
+    PcrecAxisCand cands[16] = { { 0 } };
     size_t n = get(cands, 16);
-    const char *stamp_macro = stamp_macro_of(axis);
     for (size_t i = 0; i < n; i++) {
         char deny_macro[64], deny_bit[8], flag[96];
+        /* [START-SET] a row may name its own stamp (the VM hat's row). */
+        const char *stamp_macro = cands[i].stamp ? cands[i].stamp : stamp_macro_of(axis);
         deny_cols(cands[i].deny, deny_macro, sizeof deny_macro, deny_bit, sizeof deny_bit);
         axis_cli_flag(cands[i].deny, 0, flag, sizeof flag);
         const char *stamp_value = stamp_macro[0] ? cands[i].name : "";

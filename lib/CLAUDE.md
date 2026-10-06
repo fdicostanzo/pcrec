@@ -414,3 +414,14 @@ Two `#define` bits beside bit 38: `PCREC_FORCE_UTF_CHECK` (39,
 `-fstartpos-guard=align`), both CONTRACT bits kept in `rx_info.flags` except
 under `byte`. `PCREC_ERR_UTF` (-9) is an EMITTED constant (the artifact's
 `PCREC_RX_ABI_H` block), like the other `PCREC_ERR_*`, not declared here.
+
+## [START-SET] `PCREC_NO_START_SET` (bit 47, 2026-10-05, D148)
+
+A `#define` deny bit, `-fno-start-set`: the candidate table's start-set rows
+(`src/gen/emit_dfa.c`, `dfa_pfs[]`; at stage 2 the VM hat's `first-class`,
+`docs/spec/tuning.md` §2.42). Deny-only by D148 Q3. MASKED out of
+`rx_info.flags` like the rest of the strategy-denial family: it moves no
+answer. It CAN move the GIVE-UP surface, in one direction (a skipped
+attempt spends no budget or capacity, so a give-up under the deny may become
+the answer with the row, never the reverse; `docs/spec/match_api.md` §3.1).
+

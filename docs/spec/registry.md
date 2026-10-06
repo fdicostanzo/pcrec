@@ -189,7 +189,12 @@ another's, `main`'s `--list-families` block states it in its own comment).
 
 ## 6. `--list-axes` — the optimization-axis registry (the FOURTH surface, [CHK-2])
 
-`build/pcrec --list-axes | grep -vc '^#'` — **126 rows / 43 axes**, re-derived
+`build/pcrec --list-axes | grep -vc '^#'` — **127 rows / 43 axes**, re-derived
+live 2026-10-05 by lane ssbuild2 ([START-SET] stage 2: +1 row and no new
+axis, `first-class` on the `prefilter` axis, the VM hat's row, which
+carries `-fno-start-set` and names its own stamp, `RX_VM_START_SCAN`, in the
+`stamp_macro` column — the first row of an axis whose stamp is not the
+axis's own). Was 126/43, re-derived
 live 2026-10-05 by lane k82hbuild ([K82] (B): +2 rows and +1 axis,
 `req-use`, the pre-check's use table walked live, whose `handoff` row
 carries `-fno-req-handoff`). Was 124/42, re-derived
