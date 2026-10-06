@@ -1253,7 +1253,10 @@ run_one_axis() {
     if [ "$giveup1" -gt 0 ]; then
         while IFS=$'\t' read -r cls key btrc bout atrc aout; do
             [ "$cls" = "GIVEUP1" ] || continue
-            local relkey="${key#"$ROOT_DIR"/}" _allowed="${GIVEUP1_ALLOWANCE[$flags|$relkey]:-}" _c
+            # two statements: one `local` expands every word before it
+            # assigns any, so `$relkey` would be unset in its own line
+            local relkey="${key#"$ROOT_DIR"/}" _c
+            local _allowed="${GIVEUP1_ALLOWANCE[$flags|$relkey]:-}"
             if [ -z "$_allowed" ] && [ "$flags" != "${flags%% *}" ]; then
                 for _c in $flags; do
                     [ -n "${GIVEUP1_ALLOWANCE[$_c|$relkey]:-}" ] && _allowed=1
