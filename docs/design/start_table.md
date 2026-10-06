@@ -1035,8 +1035,16 @@ in `scripts/emit_sweep.py` and a new `scripts/trace_diff.py`, with self-tests
 arm table is `DIFFER_PINS` (64 cells: the 14 deny/force arms × byte/utf8 ×
 two streams, the plain `-e utf8`/`-i` cells, the asserted zeros, a null arm),
 pinned from `deny_census.tsv`/`plain_arms.tsv` (no `src/` or corpus change
-since `4743ebb5`), `-fno-length-prune` from the 1-in-10 sample as a lower
-bound. The census scripts' Q7 move (`call_graph.py` and its siblings to
+since `4743ebb5`), `-fno-length-prune` re-pinned from the full-corpus gate
+run (lane stc0b, ubuntubudu, 2026-10-06: 449/112 and 678/0 at byte, 468/118
+and 815/0 at utf8; every other floor already equalled its measured value).
+The full every-flag sweep (29 flags × 4 arms, 543 s at `-j10`) found no new
+route switch; four non-start flags move `REQ_WHY`/the start family at a
+handful of patterns (`-fno-possessify` 6/9, `-fno-altcls-merge` 2/8,
+`-fno-altcls-factor` 0/1, `-fno-premul-table` 2 at utf8), recorded as a C1
+edit-set input candidate (the VM frame/one-attempt verdict the admission
+reads) in `stc0_report.md` §6. Sabotage rows S550-S555 are on mech arm
+`emitsweep`. The census scripts' Q7 move (`call_graph.py` and its siblings to
 `tests/codegen/`) did NOT ride C0, and the report files it as owed. The trace
 EXPERIMENT (Q3) PASSED its bar. The C0 hook was a prototype on the scratch
 branch `scratch/stc0-trace`, not merged. Its results, and the two design

@@ -130,3 +130,10 @@ Compile-time counts on the Mac (gcc-16 build at `74379fe0`/`4743ebb5`, abi 64),
 `slowest.tsv` (per-pattern seconds for all 14 compiles), which size the gate's
 cost and decide nothing. The corpus is the tree's own `.rxt` files (3,595
 distinct patterns; 3,221-3,230 compile per arm).
+- `heavy_linux_2026-10-06/` — [C0, lane stc0b] the committed results of the
+  full-corpus Linux heavy runs (ubuntubudu, `-j10`): `deny_census.tsv` (the
+  every-flag sweep over the 29 non-start flags, 543 s), `arms.tsv` + `gate.log`
+  (the two-build `emit_sweep.py --arms start` gate, 585 s) and the three run
+  logs. Evidence for `emit_sweep.py`'s `-fno-length-prune` pins and
+  `../../dev/lanes/stc0_report.md` §6; the bulky movers/hidden TSVs are not
+  kept. Read by no check.
