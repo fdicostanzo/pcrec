@@ -1,0 +1,1565 @@
+# tests/startset/dfahat.rxt -- [START-SET] edge cells for stage 3 (D148 addendum 1;
+# docs/design/startset.md §6.4, homes in §6.4.4). Every answer is libpcre2's
+# (local 10.48, agreeing with the 10.46 reference on every cell), at EVERY
+# startpos that is a character boundary of its subject.
+#
+# GENERATED, do not edit by hand: docs/design/startset/edge/cells.py (the
+# authored half) -> gen_rxt.py (the oracle's answers) -> the draft
+# docs/design/startset/edge/witnesses.rxt,lookbehind.rxt,wordb.rxt,bounds.rxt,multiline.rxt,utf8.rxt -> tests/startset/edge_import.py (adds
+# `features all` to each block, drops the head `oracle` line). Each block carries `# tag edge=<key>`; the
+# key's meaning is startset.md §6.4.1's table.
+
+
+# ---- from the draft witnesses.rxt ----
+
+
+# edge W: matrix.rxt:1064; S\E = {z}: z begins a match only in the a-context the skip reaches by leaving s0
+# pcre2-only
+pattern (?:(?<=a)z|w)
+features all
+# tag edge=W
+ms 0 "aza" 1 2
+ms 1 "aza" 1 2
+ns 2 "aza"
+ns 3 "aza"
+ms 0 "az" 1 2
+ms 1 "az" 1 2
+ns 2 "az"
+ms 0 "xaz" 2 3
+ms 1 "xaz" 2 3
+ms 2 "xaz" 2 3
+ns 3 "xaz"
+ms 0 "azw" 1 2
+ms 1 "azw" 1 2
+ms 2 "azw" 2 3
+ns 3 "azw"
+ms 0 "aaz" 2 3
+ms 1 "aaz" 2 3
+ms 2 "aaz" 2 3
+ns 3 "aaz"
+ns 0 "za"
+ns 1 "za"
+ns 2 "za"
+ms 0 "waz" 0 1
+ms 1 "waz" 2 3
+ms 2 "waz" 2 3
+ns 3 "waz"
+ms 0 "zaz" 2 3
+ms 1 "zaz" 2 3
+ms 2 "zaz" 2 3
+ns 3 "zaz"
+ms 0 "aaaz" 3 4
+ms 1 "aaaz" 3 4
+ms 2 "aaaz" 3 4
+ms 3 "aaaz" 3 4
+ns 4 "aaaz"
+ms 0 "awz" 1 2
+ms 1 "awz" 1 2
+ns 2 "awz"
+ns 3 "awz"
+ns 0 ""
+
+# edge W: matrix.rxt:2597, the non-atomic spelling
+# pcre2-only
+pattern (?:(?<*a)z|w)
+features all
+# tag edge=W
+ms 0 "aza" 1 2
+ms 1 "aza" 1 2
+ns 2 "aza"
+ns 3 "aza"
+ms 0 "az" 1 2
+ms 1 "az" 1 2
+ns 2 "az"
+ms 0 "xaz" 2 3
+ms 1 "xaz" 2 3
+ms 2 "xaz" 2 3
+ns 3 "xaz"
+ms 0 "awz" 1 2
+ms 1 "awz" 1 2
+ns 2 "awz"
+ns 3 "awz"
+ns 0 "za"
+ns 1 "za"
+ns 2 "za"
+
+# edge W: matrix.rxt:1122; a two-byte context class
+# pcre2-only
+pattern (?:(?<=[ab])z|w)
+features all
+# tag edge=W
+ms 0 "aza" 1 2
+ms 1 "aza" 1 2
+ns 2 "aza"
+ns 3 "aza"
+ms 0 "bz" 1 2
+ms 1 "bz" 1 2
+ns 2 "bz"
+ms 0 "bzb" 1 2
+ms 1 "bzb" 1 2
+ns 2 "bzb"
+ns 3 "bzb"
+ms 0 "xbz" 2 3
+ms 1 "xbz" 2 3
+ms 2 "xbz" 2 3
+ns 3 "xbz"
+ms 0 "abz" 2 3
+ms 1 "abz" 2 3
+ms 2 "abz" 2 3
+ns 3 "abz"
+ns 0 "zb"
+ns 1 "zb"
+ns 2 "zb"
+
+# edge W: matrix.rxt:2662
+# pcre2-only
+pattern (?:(?<*[ab])z|w)
+features all
+# tag edge=W
+ms 0 "aza" 1 2
+ms 1 "aza" 1 2
+ns 2 "aza"
+ns 3 "aza"
+ms 0 "bz" 1 2
+ms 1 "bz" 1 2
+ns 2 "bz"
+ms 0 "xbz" 2 3
+ms 1 "xbz" 2 3
+ms 2 "xbz" 2 3
+ns 3 "xbz"
+ns 0 "zb"
+ns 1 "zb"
+ns 2 "zb"
+
+# edge W: lookbehind.rxt:212; a HYBRID: the prefilter's skip loses the start, the VM never runs
+# pcre2-only
+pattern (?<=a)b|(?<=bc)d
+features all
+# tag edge=W
+ms 0 "aba" 1 2
+ms 1 "aba" 1 2
+ns 2 "aba"
+ns 3 "aba"
+ms 0 "ab" 1 2
+ms 1 "ab" 1 2
+ns 2 "ab"
+ms 0 "bcd" 2 3
+ms 1 "bcd" 2 3
+ms 2 "bcd" 2 3
+ns 3 "bcd"
+ms 0 "xbcd" 3 4
+ms 1 "xbcd" 3 4
+ms 2 "xbcd" 3 4
+ms 3 "xbcd" 3 4
+ns 4 "xbcd"
+ms 0 "abcd" 1 2
+ms 1 "abcd" 1 2
+ms 2 "abcd" 3 4
+ms 3 "abcd" 3 4
+ns 4 "abcd"
+ms 0 "bcdx" 2 3
+ms 1 "bcdx" 2 3
+ms 2 "bcdx" 2 3
+ns 3 "bcdx"
+ns 4 "bcdx"
+ms 0 "cbcd" 3 4
+ms 1 "cbcd" 3 4
+ms 2 "cbcd" 3 4
+ms 3 "cbcd" 3 4
+ns 4 "cbcd"
+ns 0 "bd"
+ns 1 "bd"
+ns 2 "bd"
+ns 0 "acd"
+ns 1 "acd"
+ns 2 "acd"
+ns 3 "acd"
+
+# edge W: ucp/ctxnode.rxt:400; the newline context
+# pcre2-only
+pattern (?m)(?<=\n)a|b$
+features all
+# tag edge=W
+ms 0 "\naa" 1 2
+ms 1 "\naa" 1 2
+ns 2 "\naa"
+ns 3 "\naa"
+ms 0 "\na" 1 2
+ms 1 "\na" 1 2
+ns 2 "\na"
+ms 0 "x\na" 2 3
+ms 1 "x\na" 2 3
+ms 2 "x\na" 2 3
+ns 3 "x\na"
+ms 0 "b" 0 1
+ns 1 "b"
+ms 0 "ab" 1 2
+ms 1 "ab" 1 2
+ns 2 "ab"
+ms 0 "b\n" 0 1
+ns 1 "b\n"
+ns 2 "b\n"
+ms 0 "\nab" 1 2
+ms 1 "\nab" 1 2
+ms 2 "\nab" 2 3
+ns 3 "\nab"
+ms 0 "a\nb" 2 3
+ms 1 "a\nb" 2 3
+ms 2 "a\nb" 2 3
+ns 3 "a\nb"
+ns 0 "aa"
+ns 1 "aa"
+ns 2 "aa"
+
+# edge W3: THREE seed states (s0, a-ctx, b-ctx), S\E = {y,z}: E* without any ONE seed is still 256 here, so the omit-one-seed mutant is the identical table; r3's S ∩ E = {w} loses both
+# pcre2-only
+pattern (?:(?<=a)z|(?<=b)y|w)
+features all
+# tag edge=W3
+ms 0 "az" 1 2
+ms 1 "az" 1 2
+ns 2 "az"
+ms 0 "by" 1 2
+ms 1 "by" 1 2
+ns 2 "by"
+ms 0 "xaz" 2 3
+ms 1 "xaz" 2 3
+ms 2 "xaz" 2 3
+ns 3 "xaz"
+ms 0 "xby" 2 3
+ms 1 "xby" 2 3
+ms 2 "xby" 2 3
+ns 3 "xby"
+ms 0 "abyaz" 2 3
+ms 1 "abyaz" 2 3
+ms 2 "abyaz" 2 3
+ms 3 "abyaz" 4 5
+ms 4 "abyaz" 4 5
+ns 5 "abyaz"
+ns 0 "bz"
+ns 1 "bz"
+ns 2 "bz"
+ns 0 "ay"
+ns 1 "ay"
+ns 2 "ay"
+ms 0 "w" 0 1
+ns 1 "w"
+
+# edge W: S\E = {x} but Tdfa = {y}: x is a CONTEXT here (its own class), never a thread start; r3's set is UNSOUND only where an S\E byte is in Tdfa, and this block is the control that it is not always
+# pcre2-only
+pattern (?:\b|x)y
+features all
+# tag edge=W
+ms 0 "xy" 0 2
+ns 1 "xy"
+ns 2 "xy"
+ms 0 " xy" 1 3
+ms 1 " xy" 1 3
+ns 2 " xy"
+ns 3 " xy"
+ms 0 "zxy" 1 3
+ms 1 "zxy" 1 3
+ns 2 "zxy"
+ns 3 "zxy"
+ms 0 "y" 0 1
+ns 1 "y"
+ms 0 " y" 1 2
+ms 1 " y" 1 2
+ns 2 " y"
+ns 0 "zy"
+ns 1 "zy"
+ns 2 "zy"
+
+# edge S0: a 2-seed MOVER where E* WITHOUT s0 drops a: a begins a match only from the nonword context, so a set built from the word-context seed alone skips the start at 1 of ' ab'
+# pcre2-only
+pattern (?:\bab|x)
+features all
+# tag edge=S0
+ms 0 " ab" 1 3
+ms 1 " ab" 1 3
+ns 2 " ab"
+ns 3 " ab"
+ms 0 "ab" 0 2
+ns 1 "ab"
+ns 2 "ab"
+ns 0 "zab"
+ns 1 "zab"
+ns 2 "zab"
+ns 3 "zab"
+ms 0 "xab" 0 1
+ns 1 "xab"
+ns 2 "xab"
+ns 3 "xab"
+ms 0 " x" 1 2
+ms 1 " x" 1 2
+ns 2 " x"
+ms 0 "abab" 0 2
+ns 1 "abab"
+ns 2 "abab"
+ns 3 "abab"
+ns 4 "abab"
+ms 0 " ax ab" 2 3
+ms 1 " ax ab" 2 3
+ms 2 " ax ab" 2 3
+ms 3 " ax ab" 4 6
+ms 4 " ax ab" 4 6
+ns 5 " ax ab"
+ns 6 " ax ab"
+ms 0 "babx" 3 4
+ms 1 "babx" 3 4
+ms 2 "babx" 3 4
+ms 3 "babx" 3 4
+ns 4 "babx"
+
+# edge S0: the \B polarity of the s0 omission
+# pcre2-only
+pattern (?:\Bab|x)
+features all
+# tag edge=S0
+ms 0 "zab" 1 3
+ms 1 "zab" 1 3
+ns 2 "zab"
+ns 3 "zab"
+ns 0 "ab"
+ns 1 "ab"
+ns 2 "ab"
+ns 0 " ab"
+ns 1 " ab"
+ns 2 " ab"
+ns 3 " ab"
+ms 0 "zzab" 2 4
+ms 1 "zzab" 2 4
+ms 2 "zzab" 2 4
+ns 3 "zzab"
+ns 4 "zzab"
+ms 0 "x" 0 1
+ns 1 "x"
+ms 0 "zx" 1 2
+ms 1 "zx" 1 2
+ns 2 "zx"
+ms 0 "xz" 0 1
+ns 1 "xz"
+ns 2 "xz"
+
+
+# ---- from the draft lookbehind.rxt ----
+
+
+# edge LB2: a hybrid MOVER (T = {d,w}): the two-byte context bc spans the skipped bytes; the prefilter erases the lookbehind and the VM verifies
+# pcre2-only
+pattern \b(?:(?<=bc)d|w)
+features all
+# tag edge=LB2
+ns 0 "bcd"
+ns 1 "bcd"
+ns 2 "bcd"
+ns 3 "bcd"
+ns 0 " bcd"
+ns 1 " bcd"
+ns 2 " bcd"
+ns 3 " bcd"
+ns 4 " bcd"
+ns 0 "bc d"
+ns 1 "bc d"
+ns 2 "bc d"
+ns 3 "bc d"
+ns 4 "bc d"
+ns 0 "abcd"
+ns 1 "abcd"
+ns 2 "abcd"
+ns 3 "abcd"
+ns 4 "abcd"
+ms 0 "w" 0 1
+ns 1 "w"
+ms 0 " w" 1 2
+ms 1 " w" 1 2
+ns 2 " w"
+ns 0 "xw"
+ns 1 "xw"
+ns 2 "xw"
+ns 0 "bcw"
+ns 1 "bcw"
+ns 2 "bcw"
+ns 3 "bcw"
+ns 0 "d"
+ns 1 "d"
+ns 0 " d"
+ns 1 " d"
+ns 2 " d"
+
+# edge LB2: a hybrid mover; the two context bytes are both skipped (neither is in T = {z,w})
+# pcre2-only
+pattern (?<=ab)z|\bw
+features all
+# tag edge=LB2
+ms 0 "abz" 2 3
+ms 1 "abz" 2 3
+ms 2 "abz" 2 3
+ns 3 "abz"
+ms 0 "xabz" 3 4
+ms 1 "xabz" 3 4
+ms 2 "xabz" 3 4
+ms 3 "xabz" 3 4
+ns 4 "xabz"
+ns 0 "ab z"
+ns 1 "ab z"
+ns 2 "ab z"
+ns 3 "ab z"
+ns 4 "ab z"
+ns 0 "az"
+ns 1 "az"
+ns 2 "az"
+ns 0 "bz"
+ns 1 "bz"
+ns 2 "bz"
+ms 0 "w" 0 1
+ns 1 "w"
+ms 0 " w" 1 2
+ms 1 " w" 1 2
+ns 2 " w"
+ns 0 "abw"
+ns 1 "abw"
+ns 2 "abw"
+ns 3 "abw"
+ms 0 "zabz" 3 4
+ms 1 "zabz" 3 4
+ms 2 "zabz" 3 4
+ms 3 "zabz" 3 4
+ns 4 "zabz"
+ms 0 "abza" 2 3
+ms 1 "abza" 2 3
+ms 2 "abza" 2 3
+ns 3 "abza"
+ns 4 "abza"
+
+# edge LB2: |T| = 1 hybrid mover: the first-memchr-BOUNDED form, both landing paths (a hit, or clamped to n-1)
+# pcre2-only
+pattern \b(?<=bc)d
+features all
+# tag edge=LB2
+ns 0 "bcd"
+ns 1 "bcd"
+ns 2 "bcd"
+ns 3 "bcd"
+ns 0 "bc d"
+ns 1 "bc d"
+ns 2 "bc d"
+ns 3 "bc d"
+ns 4 "bc d"
+ns 0 "abcd"
+ns 1 "abcd"
+ns 2 "abcd"
+ns 3 "abcd"
+ns 4 "abcd"
+ns 0 " bcd"
+ns 1 " bcd"
+ns 2 " bcd"
+ns 3 " bcd"
+ns 4 " bcd"
+ns 0 "d"
+ns 1 "d"
+ns 0 "xbcd"
+ns 1 "xbcd"
+ns 2 "xbcd"
+ns 3 "xbcd"
+ns 4 "xbcd"
+ns 0 " d"
+ns 1 " d"
+ns 2 " d"
+ns 0 "cd"
+ns 1 "cd"
+ns 2 "cd"
+ns 0 "abcdd"
+ns 1 "abcdd"
+ns 2 "abcdd"
+ns 3 "abcdd"
+ns 4 "abcdd"
+ns 5 "abcdd"
+
+# edge LB3: three context bytes
+# pcre2-only
+pattern (?<=abc)d|\bx
+features all
+# tag edge=LB3
+ms 0 "abcd" 3 4
+ms 1 "abcd" 3 4
+ms 2 "abcd" 3 4
+ms 3 "abcd" 3 4
+ns 4 "abcd"
+ms 0 "xabcd" 0 1
+ms 1 "xabcd" 4 5
+ms 2 "xabcd" 4 5
+ms 3 "xabcd" 4 5
+ms 4 "xabcd" 4 5
+ns 5 "xabcd"
+ns 0 "abd"
+ns 1 "abd"
+ns 2 "abd"
+ns 3 "abd"
+ns 0 "bcd"
+ns 1 "bcd"
+ns 2 "bcd"
+ns 3 "bcd"
+ms 0 "x" 0 1
+ns 1 "x"
+ns 0 "abcx"
+ns 1 "abcx"
+ns 2 "abcx"
+ns 3 "abcx"
+ns 4 "abcx"
+ms 0 " x" 1 2
+ms 1 " x" 1 2
+ns 2 " x"
+ms 0 "abcda" 3 4
+ms 1 "abcda" 3 4
+ms 2 "abcda" 3 4
+ms 3 "abcda" 3 4
+ns 4 "abcda"
+ns 5 "abcda"
+
+# edge LBN: NESTED lookbehind: (?<=ab) inside (?<=b..c), context three bytes back
+# pcre2-only
+pattern (?:(?<=b(?<=ab)c)d|\bw)
+features all
+# tag edge=LBN
+ms 0 "abcd" 3 4
+ms 1 "abcd" 3 4
+ms 2 "abcd" 3 4
+ms 3 "abcd" 3 4
+ns 4 "abcd"
+ns 0 "xbcd"
+ns 1 "xbcd"
+ns 2 "xbcd"
+ns 3 "xbcd"
+ns 4 "xbcd"
+ns 0 "bcd"
+ns 1 "bcd"
+ns 2 "bcd"
+ns 3 "bcd"
+ms 0 "aabcd" 4 5
+ms 1 "aabcd" 4 5
+ms 2 "aabcd" 4 5
+ms 3 "aabcd" 4 5
+ms 4 "aabcd" 4 5
+ns 5 "aabcd"
+ms 0 "w" 0 1
+ns 1 "w"
+ns 0 "abcw"
+ns 1 "abcw"
+ns 2 "abcw"
+ns 3 "abcw"
+ns 4 "abcw"
+ms 0 "abcda" 3 4
+ms 1 "abcda" 3 4
+ms 2 "abcda" 3 4
+ms 3 "abcda" 3 4
+ns 4 "abcda"
+ns 5 "abcda"
+
+# edge LBN: nested lookbehind beside a one-byte context: a seeded hybrid, S\E = {z} (declined; r3 admits it)
+# pcre2-only
+pattern (?:(?<=b(?<=ab)c)d|(?<=a)z)
+features all
+# tag edge=LBN
+ms 0 "abcd" 3 4
+ms 1 "abcd" 3 4
+ms 2 "abcd" 3 4
+ms 3 "abcd" 3 4
+ns 4 "abcd"
+ms 0 "az" 1 2
+ms 1 "az" 1 2
+ns 2 "az"
+ns 0 "xbcd"
+ns 1 "xbcd"
+ns 2 "xbcd"
+ns 3 "xbcd"
+ns 4 "xbcd"
+ms 0 "aza" 1 2
+ms 1 "aza" 1 2
+ns 2 "aza"
+ns 3 "aza"
+ms 0 "abcdaz" 3 4
+ms 1 "abcdaz" 3 4
+ms 2 "abcdaz" 3 4
+ms 3 "abcdaz" 3 4
+ms 4 "abcdaz" 5 6
+ms 5 "abcdaz" 5 6
+ns 6 "abcdaz"
+
+# edge LBNEG: a NEGATIVE one-byte lookbehind: a DFA mover; the skipped a must suppress z
+# pcre2-only
+pattern (?:(?<!a)z|w)
+features all
+# tag edge=LBNEG
+ns 0 "az"
+ns 1 "az"
+ns 2 "az"
+ms 0 "z" 0 1
+ns 1 "z"
+ms 0 "xz" 1 2
+ms 1 "xz" 1 2
+ns 2 "xz"
+ms 0 "aw" 1 2
+ms 1 "aw" 1 2
+ns 2 "aw"
+ns 0 "aaz"
+ns 1 "aaz"
+ns 2 "aaz"
+ns 3 "aaz"
+ms 0 "zaz" 0 1
+ns 1 "zaz"
+ns 2 "zaz"
+ns 3 "zaz"
+ms 0 "bz" 1 2
+ms 1 "bz" 1 2
+ns 2 "bz"
+ms 0 "azz" 2 3
+ms 1 "azz" 2 3
+ms 2 "azz" 2 3
+ns 3 "azz"
+ms 0 "wa" 0 1
+ns 1 "wa"
+ns 2 "wa"
+
+# edge LBNEG: negative, class context
+# pcre2-only
+pattern (?:(?<![ab])z|w)
+features all
+# tag edge=LBNEG
+ns 0 "az"
+ns 1 "az"
+ns 2 "az"
+ns 0 "bz"
+ns 1 "bz"
+ns 2 "bz"
+ms 0 "cz" 1 2
+ms 1 "cz" 1 2
+ns 2 "cz"
+ms 0 "z" 0 1
+ns 1 "z"
+ns 0 "abz"
+ns 1 "abz"
+ns 2 "abz"
+ns 3 "abz"
+ns 0 "cbz"
+ns 1 "cbz"
+ns 2 "cbz"
+ns 3 "cbz"
+ms 0 "azz" 2 3
+ms 1 "azz" 2 3
+ms 2 "azz" 2 3
+ns 3 "azz"
+ms 0 "za" 0 1
+ns 1 "za"
+ns 2 "za"
+
+# edge LBK: k context-changing bytes before the S\E byte: only the LAST skipped byte's class reaches the re-seed
+# pcre2-only
+pattern (?:(?<=a)z|(?<=b)y|w)
+features all
+# tag edge=LBK
+ms 0 "xxaz" 3 4
+ms 1 "xxaz" 3 4
+ms 2 "xxaz" 3 4
+ms 3 "xxaz" 3 4
+ns 4 "xxaz"
+ms 0 "bbby" 3 4
+ms 1 "bbby" 3 4
+ms 2 "bbby" 3 4
+ms 3 "bbby" 3 4
+ns 4 "bbby"
+ms 0 "abaz" 3 4
+ms 1 "abaz" 3 4
+ms 2 "abaz" 3 4
+ms 3 "abaz" 3 4
+ns 4 "abaz"
+ns 0 "bay"
+ns 1 "bay"
+ns 2 "bay"
+ns 3 "bay"
+ms 0 "aaaaz" 4 5
+ms 1 "aaaaz" 4 5
+ms 2 "aaaaz" 4 5
+ms 3 "aaaaz" 4 5
+ms 4 "aaaaz" 4 5
+ns 5 "aaaaz"
+ms 0 "azx" 1 2
+ms 1 "azx" 1 2
+ns 2 "azx"
+ns 3 "azx"
+
+# edge LBK: k skipped bytes: the context is set, reset, set again before z
+# pcre2-only
+pattern (?:(?<=a)z|w)
+features all
+# tag edge=LBK
+ms 0 "bbbaz" 4 5
+ms 1 "bbbaz" 4 5
+ms 2 "bbbaz" 4 5
+ms 3 "bbbaz" 4 5
+ms 4 "bbbaz" 4 5
+ns 5 "bbbaz"
+ns 0 "abbbz"
+ns 1 "abbbz"
+ns 2 "abbbz"
+ns 3 "abbbz"
+ns 4 "abbbz"
+ns 5 "abbbz"
+ms 0 "babaz" 4 5
+ms 1 "babaz" 4 5
+ms 2 "babaz" 4 5
+ms 3 "babaz" 4 5
+ms 4 "babaz" 4 5
+ns 5 "babaz"
+ms 0 "aaaz" 3 4
+ms 1 "aaaz" 3 4
+ms 2 "aaaz" 3 4
+ms 3 "aaaz" 3 4
+ns 4 "aaaz"
+ms 0 "baz" 2 3
+ms 1 "baz" 2 3
+ms 2 "baz" 2 3
+ns 3 "baz"
+ms 0 "azb" 1 2
+ms 1 "azb" 1 2
+ns 2 "azb"
+ns 3 "azb"
+
+# edge LBK: a 3-seed MOVER (nonword, word, x): the x context is a word byte too
+# pcre2-only
+pattern \b(?:ab|cd)\b|(?<=x)z
+features all
+# tag edge=LBK
+ms 0 "xz" 1 2
+ms 1 "xz" 1 2
+ns 2 "xz"
+ms 0 "abxz" 3 4
+ms 1 "abxz" 3 4
+ms 2 "abxz" 3 4
+ms 3 "abxz" 3 4
+ns 4 "abxz"
+ms 0 "ab xz" 0 2
+ms 1 "ab xz" 4 5
+ms 2 "ab xz" 4 5
+ms 3 "ab xz" 4 5
+ms 4 "ab xz" 4 5
+ns 5 "ab xz"
+ms 0 " xz" 2 3
+ms 1 " xz" 2 3
+ms 2 " xz" 2 3
+ns 3 " xz"
+ms 0 "cd" 0 2
+ns 1 "cd"
+ns 2 "cd"
+ns 0 "xcd"
+ns 1 "xcd"
+ns 2 "xcd"
+ns 3 "xcd"
+ms 0 "zxz" 2 3
+ms 1 "zxz" 2 3
+ms 2 "zxz" 2 3
+ns 3 "zxz"
+ms 0 "xzx" 1 2
+ms 1 "xzx" 1 2
+ns 2 "xzx"
+ns 3 "xzx"
+
+
+# ---- from the draft wordb.rxt ----
+
+
+# edge WB: the twin table's pattern: re-seed removed loses (4,6) of 'bab ab'
+# pcre2-only
+pattern \b(?:ab|cd)\b
+features all
+# tag edge=WB
+ms 0 "bab ab" 4 6
+ms 1 "bab ab" 4 6
+ms 2 "bab ab" 4 6
+ms 3 "bab ab" 4 6
+ms 4 "bab ab" 4 6
+ns 5 "bab ab"
+ns 6 "bab ab"
+ms 0 "ab" 0 2
+ns 1 "ab"
+ns 2 "ab"
+ms 0 " ab " 1 3
+ms 1 " ab " 1 3
+ns 2 " ab "
+ns 3 " ab "
+ns 4 " ab "
+ms 0 "xab ab" 4 6
+ms 1 "xab ab" 4 6
+ms 2 "xab ab" 4 6
+ms 3 "xab ab" 4 6
+ms 4 "xab ab" 4 6
+ns 5 "xab ab"
+ns 6 "xab ab"
+ns 0 "abab"
+ns 1 "abab"
+ns 2 "abab"
+ns 3 "abab"
+ns 4 "abab"
+ms 0 "cd!" 0 2
+ns 1 "cd!"
+ns 2 "cd!"
+ns 3 "cd!"
+ms 0 "atrue ab" 6 8
+ms 1 "atrue ab" 6 8
+ms 2 "atrue ab" 6 8
+ms 3 "atrue ab" 6 8
+ms 4 "atrue ab" 6 8
+ms 5 "atrue ab" 6 8
+ms 6 "atrue ab" 6 8
+ns 7 "atrue ab"
+ns 8 "atrue ab"
+ms 0 "a ab" 2 4
+ms 1 "a ab" 2 4
+ms 2 "a ab" 2 4
+ns 3 "a ab"
+ns 4 "a ab"
+ms 0 "_ab ab" 4 6
+ms 1 "_ab ab" 4 6
+ms 2 "_ab ab" 4 6
+ms 3 "_ab ab" 4 6
+ms 4 "_ab ab" 4 6
+ns 5 "_ab ab"
+ns 6 "_ab ab"
+ms 0 "9ab ab" 4 6
+ms 1 "9ab ab" 4 6
+ms 2 "9ab ab" 4 6
+ms 3 "9ab ab" 4 6
+ms 4 "9ab ab" 4 6
+ns 5 "9ab ab"
+ns 6 "9ab ab"
+
+# edge WB: \B both sides
+# pcre2-only
+pattern \B(?:ab|cd)\B
+features all
+# tag edge=WB
+ms 0 "xabx" 1 3
+ms 1 "xabx" 1 3
+ns 2 "xabx"
+ns 3 "xabx"
+ns 4 "xabx"
+ns 0 "ab"
+ns 1 "ab"
+ns 2 "ab"
+ns 0 " abx"
+ns 1 " abx"
+ns 2 " abx"
+ns 3 " abx"
+ns 4 " abx"
+ns 0 "xab"
+ns 1 "xab"
+ns 2 "xab"
+ns 3 "xab"
+ms 0 "xxabxx" 2 4
+ms 1 "xxabxx" 2 4
+ms 2 "xxabxx" 2 4
+ns 3 "xxabxx"
+ns 4 "xxabxx"
+ns 5 "xxabxx"
+ns 6 "xxabxx"
+ns 0 "a abx"
+ns 1 "a abx"
+ns 2 "a abx"
+ns 3 "a abx"
+ns 4 "a abx"
+ns 5 "a abx"
+ms 0 "_ab_" 1 3
+ms 1 "_ab_" 1 3
+ns 2 "_ab_"
+ns 3 "_ab_"
+ns 4 "_ab_"
+
+# edge WB: \b then \B
+# pcre2-only
+pattern \b(?:ab|cd)\B
+features all
+# tag edge=WB
+ms 0 "abx" 0 2
+ns 1 "abx"
+ns 2 "abx"
+ns 3 "abx"
+ns 0 "xabx"
+ns 1 "xabx"
+ns 2 "xabx"
+ns 3 "xabx"
+ns 4 "xabx"
+ms 0 " abx" 1 3
+ms 1 " abx" 1 3
+ns 2 " abx"
+ns 3 " abx"
+ns 4 " abx"
+ns 0 "ab"
+ns 1 "ab"
+ns 2 "ab"
+ms 0 "ab abx" 3 5
+ms 1 "ab abx" 3 5
+ms 2 "ab abx" 3 5
+ms 3 "ab abx" 3 5
+ns 4 "ab abx"
+ns 5 "ab abx"
+ns 6 "ab abx"
+
+# edge WB: \B then \b
+# pcre2-only
+pattern \B(?:ab|cd)\b
+features all
+# tag edge=WB
+ms 0 "xab" 1 3
+ms 1 "xab" 1 3
+ns 2 "xab"
+ns 3 "xab"
+ns 0 "ab"
+ns 1 "ab"
+ns 2 "ab"
+ms 0 "xab " 1 3
+ms 1 "xab " 1 3
+ns 2 "xab "
+ns 3 "xab "
+ns 4 "xab "
+ns 0 " ab"
+ns 1 " ab"
+ns 2 " ab"
+ns 3 " ab"
+ms 0 "xxab" 2 4
+ms 1 "xxab" 2 4
+ms 2 "xxab" 2 4
+ns 3 "xxab"
+ns 4 "xxab"
+
+# edge WBU: --ucp under byte: 0xE9 (é) and 0xAA (ª) are WORD bytes, so the skipped byte's class differs from ASCII
+# pcre2-only
+pattern \b(?:ab|cd)\b
+features all
+flags u
+# tag edge=WBU
+ms 0 "\xe9ab ab" 4 6
+ms 1 "\xe9ab ab" 4 6
+ms 2 "\xe9ab ab" 4 6
+ms 3 "\xe9ab ab" 4 6
+ms 4 "\xe9ab ab" 4 6
+ns 5 "\xe9ab ab"
+ns 6 "\xe9ab ab"
+ns 0 "ab\xe9"
+ns 1 "ab\xe9"
+ns 2 "ab\xe9"
+ns 3 "ab\xe9"
+ns 0 "\xe9ab"
+ns 1 "\xe9ab"
+ns 2 "\xe9ab"
+ns 3 "\xe9ab"
+ms 0 " ab\xe9 ab" 5 7
+ms 1 " ab\xe9 ab" 5 7
+ms 2 " ab\xe9 ab" 5 7
+ms 3 " ab\xe9 ab" 5 7
+ms 4 " ab\xe9 ab" 5 7
+ms 5 " ab\xe9 ab" 5 7
+ns 6 " ab\xe9 ab"
+ns 7 " ab\xe9 ab"
+ms 0 "\xaaab ab" 4 6
+ms 1 "\xaaab ab" 4 6
+ms 2 "\xaaab ab" 4 6
+ms 3 "\xaaab ab" 4 6
+ms 4 "\xaaab ab" 4 6
+ns 5 "\xaaab ab"
+ns 6 "\xaaab ab"
+
+# edge WBU: \B under --ucp
+# pcre2-only
+pattern \B(?:ab|cd)\B
+features all
+flags u
+# tag edge=WBU
+ms 0 "\xe9ab\xe9" 1 3
+ms 1 "\xe9ab\xe9" 1 3
+ns 2 "\xe9ab\xe9"
+ns 3 "\xe9ab\xe9"
+ns 4 "\xe9ab\xe9"
+ns 0 "ab"
+ns 1 "ab"
+ns 2 "ab"
+ns 0 " ab\xe9"
+ns 1 " ab\xe9"
+ns 2 " ab\xe9"
+ns 3 " ab\xe9"
+ns 4 " ab\xe9"
+ns 0 "\xe9ab "
+ns 1 "\xe9ab "
+ns 2 "\xe9ab "
+ns 3 "\xe9ab "
+ns 4 "\xe9ab "
+
+# edge CI: caseless: T has the case twins; the skipped context byte's case is irrelevant to \b
+# pcre2-only
+pattern \b(?:ab|cd)\b
+features all
+flags i
+# tag edge=CI
+ms 0 "bAB AB" 4 6
+ms 1 "bAB AB" 4 6
+ms 2 "bAB AB" 4 6
+ms 3 "bAB AB" 4 6
+ms 4 "bAB AB" 4 6
+ns 5 "bAB AB"
+ns 6 "bAB AB"
+ms 0 "Ab" 0 2
+ns 1 "Ab"
+ns 2 "Ab"
+ms 0 "xab AB" 4 6
+ms 1 "xab AB" 4 6
+ms 2 "xab AB" 4 6
+ms 3 "xab AB" 4 6
+ms 4 "xab AB" 4 6
+ns 5 "xab AB"
+ns 6 "xab AB"
+ms 0 "CD" 0 2
+ns 1 "CD"
+ns 2 "CD"
+ms 0 "aB ab" 0 2
+ms 1 "aB ab" 3 5
+ms 2 "aB ab" 3 5
+ms 3 "aB ab" 3 5
+ns 4 "aB ab"
+ns 5 "aB ab"
+
+# edge HO: a K82 HANDOFF mover (REQ_HANDOFF 0): the scan starts at max(startpos, c - K); its s[startpos] is in T
+# pcre2-only
+pattern (?i)\bcat\b
+features all
+# tag edge=HO
+ms 0 "ccat cat" 5 8
+ms 1 "ccat cat" 5 8
+ms 2 "ccat cat" 5 8
+ms 3 "ccat cat" 5 8
+ms 4 "ccat cat" 5 8
+ms 5 "ccat cat" 5 8
+ns 6 "ccat cat"
+ns 7 "ccat cat"
+ns 8 "ccat cat"
+ns 0 "xcat"
+ns 1 "xcat"
+ns 2 "xcat"
+ns 3 "xcat"
+ns 4 "xcat"
+ms 0 "cat" 0 3
+ns 1 "cat"
+ns 2 "cat"
+ns 3 "cat"
+ms 0 "acat CAT" 5 8
+ms 1 "acat CAT" 5 8
+ms 2 "acat CAT" 5 8
+ms 3 "acat CAT" 5 8
+ms 4 "acat CAT" 5 8
+ms 5 "acat CAT" 5 8
+ns 6 "acat CAT"
+ns 7 "acat CAT"
+ns 8 "acat CAT"
+ms 0 "c cat" 2 5
+ms 1 "c cat" 2 5
+ms 2 "c cat" 2 5
+ns 3 "c cat"
+ns 4 "c cat"
+ns 5 "c cat"
+ms 0 "Cat" 0 3
+ns 1 "Cat"
+ns 2 "Cat"
+ns 3 "Cat"
+
+# edge HO: kv-quoted (bench), REQ_HANDOFF 32
+# pcre2-only
+pattern \b[a-z_][a-z0-9_]{0,31}=\"(?:[^\"\\]|\\.)*\"
+features all
+# tag edge=HO
+ms 0 "x=\"a\"" 0 5
+ns 1 "x=\"a\""
+ns 2 "x=\"a\""
+ns 3 "x=\"a\""
+ns 4 "x=\"a\""
+ns 5 "x=\"a\""
+ms 0 " ab=\"\"" 1 6
+ms 1 " ab=\"\"" 1 6
+ns 2 " ab=\"\""
+ns 3 " ab=\"\""
+ns 4 " ab=\"\""
+ns 5 " ab=\"\""
+ns 6 " ab=\"\""
+ns 0 "9a=\"b\""
+ns 1 "9a=\"b\""
+ns 2 "9a=\"b\""
+ns 3 "9a=\"b\""
+ns 4 "9a=\"b\""
+ns 5 "9a=\"b\""
+ns 6 "9a=\"b\""
+ms 0 "a b=\"\"" 2 6
+ms 1 "a b=\"\"" 2 6
+ms 2 "a b=\"\"" 2 6
+ns 3 "a b=\"\""
+ns 4 "a b=\"\""
+ns 5 "a b=\"\""
+ns 6 "a b=\"\""
+ms 0 "=\"\" a=\"\"" 4 8
+ms 1 "=\"\" a=\"\"" 4 8
+ms 2 "=\"\" a=\"\"" 4 8
+ms 3 "=\"\" a=\"\"" 4 8
+ms 4 "=\"\" a=\"\"" 4 8
+ns 5 "=\"\" a=\"\""
+ns 6 "=\"\" a=\"\""
+ns 7 "=\"\" a=\"\""
+ns 8 "=\"\" a=\"\""
+
+
+# ---- from the draft bounds.rxt ----
+
+
+# edge BD: match at subject start and end, the empty subject; the bounded skip's n-1 stop
+# pcre2-only
+pattern \b(?:ab|cd)\b
+features all
+# tag edge=BD
+ns 0 ""
+ns 0 "a"
+ns 1 "a"
+ms 0 "ab" 0 2
+ns 1 "ab"
+ns 2 "ab"
+ns 0 "b"
+ns 1 "b"
+ns 0 "xab"
+ns 1 "xab"
+ns 2 "xab"
+ns 3 "xab"
+ns 0 "abx"
+ns 1 "abx"
+ns 2 "abx"
+ns 3 "abx"
+ms 0 "x ab" 2 4
+ms 1 "x ab" 2 4
+ms 2 "x ab" 2 4
+ns 3 "x ab"
+ns 4 "x ab"
+ms 0 "ab " 0 2
+ns 1 "ab "
+ns 2 "ab "
+ns 3 "ab "
+ms 0 "bab ab" 4 6
+ms 1 "bab ab" 4 6
+ms 2 "bab ab" 4 6
+ms 3 "bab ab" 4 6
+ms 4 "bab ab" 4 6
+ns 5 "bab ab"
+ns 6 "bab ab"
+
+# edge BD: the witness at the subject edges
+# pcre2-only
+pattern (?:(?<=a)z|w)
+features all
+# tag edge=BD
+ns 0 ""
+ns 0 "z"
+ns 1 "z"
+ms 0 "w" 0 1
+ns 1 "w"
+ns 0 "a"
+ns 1 "a"
+ms 0 "az" 1 2
+ms 1 "az" 1 2
+ns 2 "az"
+ms 0 "azz" 1 2
+ms 1 "azz" 1 2
+ns 2 "azz"
+ns 3 "azz"
+
+# edge BG: \G: an ATTEMPT-scan machine (no DFA-hat skip site); the unconditional re-seed's only hazard is a \G start state, and \G never reaches the unanchored scan
+# pcre2-only
+pattern \G(?:ab|cd)\b
+features all
+# tag edge=BG
+ms 0 "ab" 0 2
+ns 1 "ab"
+ns 2 "ab"
+ns 0 "xab"
+ms 1 "xab" 1 3
+ns 2 "xab"
+ns 3 "xab"
+ns 0 "abab"
+ns 1 "abab"
+ms 2 "abab" 2 4
+ns 3 "abab"
+ns 4 "abab"
+ms 0 "ab ab" 0 2
+ns 1 "ab ab"
+ns 2 "ab ab"
+ms 3 "ab ab" 3 5
+ns 4 "ab ab"
+ns 5 "ab ab"
+ns 0 ""
+
+# edge BG: \G beside \b: a HYBRID with a \G start family (attempt scan)
+# pcre2-only
+pattern (?:\Gx|\b)(?:ab|cd)\b
+features all
+# tag edge=BG
+ms 0 "xab" 0 3
+ns 1 "xab"
+ns 2 "xab"
+ns 3 "xab"
+ms 0 "ab" 0 2
+ns 1 "ab"
+ns 2 "ab"
+ns 0 "zxab"
+ms 1 "zxab" 1 4
+ns 2 "zxab"
+ns 3 "zxab"
+ns 4 "zxab"
+ms 0 "x ab" 2 4
+ms 1 "x ab" 2 4
+ms 2 "x ab" 2 4
+ns 3 "x ab"
+ns 4 "x ab"
+ms 0 " ab" 1 3
+ms 1 " ab" 1 3
+ns 2 " ab"
+ns 3 " ab"
+
+# edge SF: search_from > 0 with a word byte BEFORE search_from: the entry initializer reads s[startpos-1]
+# pcre2-only
+pattern \b(?:ab|cd)\b
+features all
+# tag edge=SF
+ms 0 "zab ab" 4 6
+ms 1 "zab ab" 4 6
+ms 2 "zab ab" 4 6
+ms 3 "zab ab" 4 6
+ms 4 "zab ab" 4 6
+ns 5 "zab ab"
+ns 6 "zab ab"
+ms 0 "z ab" 2 4
+ms 1 "z ab" 2 4
+ms 2 "z ab" 2 4
+ns 3 "z ab"
+ns 4 "z ab"
+ms 0 "zzab ab" 5 7
+ms 1 "zzab ab" 5 7
+ms 2 "zzab ab" 5 7
+ms 3 "zzab ab" 5 7
+ms 4 "zzab ab" 5 7
+ms 5 "zzab ab" 5 7
+ns 6 "zzab ab"
+ns 7 "zzab ab"
+
+
+# ---- from the draft multiline.rxt ----
+
+
+# edge ML: the line start as a skip context: \r is NOT a newline (LF is pcrec's only convention, D64)
+# pcre2-only
+pattern (?m)(?:^|x)(?:ab|cd)
+features all
+# tag edge=ML
+ms 0 "ab" 0 2
+ns 1 "ab"
+ns 2 "ab"
+ms 0 "\nab" 1 3
+ms 1 "\nab" 1 3
+ns 2 "\nab"
+ns 3 "\nab"
+ms 0 "xab" 0 3
+ns 1 "xab"
+ns 2 "xab"
+ns 3 "xab"
+ns 0 "zab"
+ns 1 "zab"
+ns 2 "zab"
+ns 3 "zab"
+ms 0 "z\nab" 2 4
+ms 1 "z\nab" 2 4
+ms 2 "z\nab" 2 4
+ns 3 "z\nab"
+ns 4 "z\nab"
+ns 0 "\rab"
+ns 1 "\rab"
+ns 2 "\rab"
+ns 3 "\rab"
+ms 0 "\r\nab" 2 4
+ms 1 "\r\nab" 2 4
+ms 2 "\r\nab" 2 4
+ns 3 "\r\nab"
+ns 4 "\r\nab"
+ms 0 "zxab" 1 4
+ms 1 "zxab" 1 4
+ns 2 "zxab"
+ns 3 "zxab"
+ns 4 "zxab"
+
+# edge ML: (?m)$ before LF only
+# pcre2-only
+pattern (?m)(?:ab|cd)$
+features all
+# tag edge=ML
+ms 0 "ab" 0 2
+ns 1 "ab"
+ns 2 "ab"
+ms 0 "ab\n" 0 2
+ns 1 "ab\n"
+ns 2 "ab\n"
+ns 3 "ab\n"
+ns 0 "abx"
+ns 1 "abx"
+ns 2 "abx"
+ns 3 "abx"
+ns 0 "ab\r\n"
+ns 1 "ab\r\n"
+ns 2 "ab\r\n"
+ns 3 "ab\r\n"
+ns 4 "ab\r\n"
+ns 0 "ab\r"
+ns 1 "ab\r"
+ns 2 "ab\r"
+ns 3 "ab\r"
+ms 0 "xab\nab" 1 3
+ms 1 "xab\nab" 1 3
+ms 2 "xab\nab" 4 6
+ms 3 "xab\nab" 4 6
+ms 4 "xab\nab" 4 6
+ns 5 "xab\nab"
+ns 6 "xab\nab"
+
+# edge ML: the witness at CR and CRLF bytes
+# pcre2-only
+pattern (?m)(?<=\n)a|b$
+features all
+# tag edge=ML
+ms 0 "\r\na" 2 3
+ms 1 "\r\na" 2 3
+ms 2 "\r\na" 2 3
+ns 3 "\r\na"
+ns 0 "\ra"
+ns 1 "\ra"
+ns 2 "\ra"
+ms 0 "\n\na" 2 3
+ms 1 "\n\na" 2 3
+ms 2 "\n\na" 2 3
+ns 3 "\n\na"
+ns 0 "b\r"
+ns 1 "b\r"
+ns 2 "b\r"
+ms 0 "\na\r" 1 2
+ms 1 "\na\r" 1 2
+ns 2 "\na\r"
+ns 3 "\na\r"
+
+# edge ML: a CR context: an ordinary byte
+# pcre2-only
+pattern (?:(?<=\r)a|w)
+features all
+# tag edge=ML
+ms 0 "\ra" 1 2
+ms 1 "\ra" 1 2
+ns 2 "\ra"
+ns 0 "\r\na"
+ns 1 "\r\na"
+ns 2 "\r\na"
+ns 3 "\r\na"
+ns 0 "a"
+ns 1 "a"
+ns 0 "\na"
+ns 1 "\na"
+ns 2 "\na"
+ms 0 "x\ra" 2 3
+ms 1 "x\ra" 2 3
+ms 2 "x\ra" 2 3
+ns 3 "x\ra"
+ms 0 "\ra\r" 1 2
+ms 1 "\ra\r" 1 2
+ns 2 "\ra\r"
+ns 3 "\ra\r"
+
+# edge ML: \b and (?m)$ together
+# pcre2-only
+pattern (?m)\b(?:ab|cd)$
+features all
+# tag edge=ML
+ms 0 "ab" 0 2
+ns 1 "ab"
+ns 2 "ab"
+ms 0 "x ab\n" 2 4
+ms 1 "x ab\n" 2 4
+ms 2 "x ab\n" 2 4
+ns 3 "x ab\n"
+ns 4 "x ab\n"
+ns 5 "x ab\n"
+ms 0 "xab\nab" 4 6
+ms 1 "xab\nab" 4 6
+ms 2 "xab\nab" 4 6
+ms 3 "xab\nab" 4 6
+ms 4 "xab\nab" 4 6
+ns 5 "xab\nab"
+ns 6 "xab\nab"
+ms 0 "ab\nab\n" 0 2
+ms 1 "ab\nab\n" 3 5
+ms 2 "ab\nab\n" 3 5
+ms 3 "ab\nab\n" 3 5
+ns 4 "ab\nab\n"
+ns 5 "ab\nab\n"
+ns 6 "ab\nab\n"
+
+
+# ---- from the draft utf8.rxt ----
+
+
+# edge U8: the context character é is TWO bytes C3 A9: the byte before the start is a CONTINUATION byte
+# pcre2-only
+pattern (?:(?<=é)a|\bw)
+features all
+encoding utf8
+# tag edge=U8
+ms 0 "\xc3\xa9a" 2 3
+ms 2 "\xc3\xa9a" 2 3
+ns 3 "\xc3\xa9a"
+ms 0 "x\xc3\xa9a" 3 4
+ms 1 "x\xc3\xa9a" 3 4
+ms 3 "x\xc3\xa9a" 3 4
+ns 4 "x\xc3\xa9a"
+ns 0 "ea"
+ns 1 "ea"
+ns 2 "ea"
+ms 0 "w" 0 1
+ns 1 "w"
+ms 0 "\xc3\xa9w" 2 3
+ms 2 "\xc3\xa9w" 2 3
+ns 3 "\xc3\xa9w"
+ns 0 "\xa9a"
+ns 1 "\xa9a"
+ns 2 "\xa9a"
+ms 0 "\xc3\xa9\xc3\xa9a" 4 5
+ms 2 "\xc3\xa9\xc3\xa9a" 4 5
+ms 4 "\xc3\xa9\xc3\xa9a" 4 5
+ns 5 "\xc3\xa9\xc3\xa9a"
+ms 0 "\xc3\xa9a\xc3" 2 3
+ms 2 "\xc3\xa9a\xc3" 2 3
+ns 3 "\xc3\xa9a\xc3"
+ns 4 "\xc3\xa9a\xc3"
+
+# edge U8: the witness under utf8, with ill-formed bytes around the context
+# pcre2-only
+pattern (?:(?<=a)z|w)
+features all
+encoding utf8
+# tag edge=U8
+ms 0 "az" 1 2
+ms 1 "az" 1 2
+ns 2 "az"
+ms 0 "\xc3\xa9az" 3 4
+ms 2 "\xc3\xa9az" 3 4
+ms 3 "\xc3\xa9az" 3 4
+ns 4 "\xc3\xa9az"
+ns 0 "a\xc3\xa9z"
+ns 1 "a\xc3\xa9z"
+ns 3 "a\xc3\xa9z"
+ns 4 "a\xc3\xa9z"
+ns 0 "a\xffz"
+ns 1 "a\xffz"
+ns 2 "a\xffz"
+ns 3 "a\xffz"
+ms 0 "\xffaz" 2 3
+ms 1 "\xffaz" 2 3
+ms 2 "\xffaz" 2 3
+ns 3 "\xffaz"
+ms 0 "aza" 1 2
+ms 1 "aza" 1 2
+ns 2 "aza"
+ns 3 "aza"
+
+# edge U8: utf8, ASCII \b: a multi-byte character is a NONWORD context; a lone continuation or 0xFF too
+# pcre2-only
+pattern \b(?:ab|cd)\b
+features all
+encoding utf8
+# tag edge=U8
+ms 0 "\xc3\xa9ab ab" 2 4
+ms 2 "\xc3\xa9ab ab" 2 4
+ms 3 "\xc3\xa9ab ab" 5 7
+ms 4 "\xc3\xa9ab ab" 5 7
+ms 5 "\xc3\xa9ab ab" 5 7
+ns 6 "\xc3\xa9ab ab"
+ns 7 "\xc3\xa9ab ab"
+ms 0 "x\xc3\xa9ab" 3 5
+ms 1 "x\xc3\xa9ab" 3 5
+ms 3 "x\xc3\xa9ab" 3 5
+ns 4 "x\xc3\xa9ab"
+ns 5 "x\xc3\xa9ab"
+ms 0 "\xc3ab" 1 3
+ms 1 "\xc3ab" 1 3
+ns 2 "\xc3ab"
+ns 3 "\xc3ab"
+ms 0 "\xffab ab" 1 3
+ms 1 "\xffab ab" 1 3
+ms 2 "\xffab ab" 4 6
+ms 3 "\xffab ab" 4 6
+ms 4 "\xffab ab" 4 6
+ns 5 "\xffab ab"
+ns 6 "\xffab ab"
+ms 0 "\xe4\xb8\x80ab" 3 5
+ms 3 "\xe4\xb8\x80ab" 3 5
+ns 4 "\xe4\xb8\x80ab"
+ns 5 "\xe4\xb8\x80ab"
+ms 0 "ab\x80" 0 2
+ns 1 "ab\x80"
+ns 3 "ab\x80"
+
+# edge U8CI: utf8 caseless: KELVIN SIGN (E2 84 AA) folds to k but is not an ASCII word byte
+# pcre2-only
+pattern \b(?:ab|cd)\b
+features all
+flags i
+encoding utf8
+# tag edge=U8CI
+ms 0 "\xe2\x84\xaaab ab" 3 5
+ms 3 "\xe2\x84\xaaab ab" 3 5
+ms 4 "\xe2\x84\xaaab ab" 6 8
+ms 5 "\xe2\x84\xaaab ab" 6 8
+ms 6 "\xe2\x84\xaaab ab" 6 8
+ns 7 "\xe2\x84\xaaab ab"
+ns 8 "\xe2\x84\xaaab ab"
+ns 0 "Kab"
+ns 1 "Kab"
+ns 2 "Kab"
+ns 3 "Kab"
+ms 0 "kAB ab" 4 6
+ms 1 "kAB ab" 4 6
+ms 2 "kAB ab" 4 6
+ms 3 "kAB ab" 4 6
+ms 4 "kAB ab" 4 6
+ns 5 "kAB ab"
+ns 6 "kAB ab"
+
+# edge U8CI: a caseless start set holding a UTF-8 LEAD byte (E2 for U+212A)
+# pcre2-only
+pattern \bk\w
+features all
+flags i
+encoding utf8
+# tag edge=U8CI
+ns 0 "\xe2\x84\xaax"
+ns 3 "\xe2\x84\xaax"
+ns 4 "\xe2\x84\xaax"
+ms 0 "x\xe2\x84\xaax" 1 5
+ms 1 "x\xe2\x84\xaax" 1 5
+ns 4 "x\xe2\x84\xaax"
+ns 5 "x\xe2\x84\xaax"
+ms 0 "kx" 0 2
+ns 1 "kx"
+ns 2 "kx"
+ms 0 " Kx" 1 3
+ms 1 " Kx" 1 3
+ns 2 " Kx"
+ns 3 " Kx"
+ms 0 "x kx" 2 4
+ms 1 "x kx" 2 4
+ms 2 "x kx" 2 4
+ns 3 "x kx"
+ns 4 "x kx"

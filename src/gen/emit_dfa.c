@@ -4918,7 +4918,10 @@ typedef struct DfaPf {
     void  (*emit)(StrBuf *c, const DfaForm *f); /* NULL == emits nothing */
     /* [OPT-EDGE] STEP 1.1 — DOES THIS FORM WRITE THE STATE VARIABLE?
      *
-     * Only the offset-set pair does (`pf_emit_ofs_reseed`): its skip jumps
+     * The offset-set and run-pinned rows do (`pf_emit_ofs_reseed`), and so
+     * do [START-SET]'s DFA-hat rows (`pf_emit_moved_reseed`, stage 3): a
+     * skip over `T` passes bytes outside `S` that may still move the machine
+     * between seed states. The offset-set pair's skip jumps
      * over bytes that LEAVE the start state, so the landing state has to be
      * re-seeded from the byte to its left. The `memchr` and `byte-class`
      * forms jump over bytes the machine provably stays PARKED on, so the
@@ -4964,6 +4967,15 @@ typedef struct DfaPf {
      * attempt loop. */
     void  (*emit_vm)(StrBuf *c, const DfaSel *s, const char *p,
                      const char *ind, bool entry);
+    /* [START-SET] stage 3: THE SET THIS ROW'S SKIP SCANS, where it is not
+     * the start state's escape set `UnanchStart.cand` (NULL == it is). The
+     * DFA hat's rows scan `T = S ∩ E*` instead, and every reader of the
+     * scanned set — the emitted table or `memchr` byte, G1's dominance
+     * (`dfa_cand_scan`), the re-seed density (`pcrec_dfa_cand_ppm`) — asks
+     * the row through `pf_scan_set_of`, so none of them can price `E` for a
+     * scan that tests `T`. It is the row's predicate core itself (true where
+     * the row applies), so the set and the admission are ONE derivation. */
+    bool  (*scan_set)(const DfaSel *s, CandSet *out);
 } DfaPf;
 
 /* AXIS C — VIEW HANDLING. `emit_view_select`'s three branches, plus the
@@ -5859,7 +5871,9 @@ void pcrec_emit_find(StrBuf *c, const char *ind, const PcrecFind *f)
  * and the subject are the DFA scan's own, `holdback` the D11 bound. */
 static void pf_emit_find(StrBuf *c, const DfaForm *f, const char *ind, int holdback)
 {
-    PcrecFind fd = { .p = f->p, .table = f->pf->scan == PF_SCAN_BYTE ? NULL : "can_begin_match",
+    PcrecFind fd = { .p = f->p,
+                     .table = f->pf->scan == PF_SCAN_BYTE ? NULL
+                            : f->pf->scan_set ? "start_bytes" : "can_begin_match",
                      .byte = f->cand.byte, .pos = "scan_position",
                      .subject = "subject", .len = "subject_length",
                      .holdback = holdback };
@@ -6543,6 +6557,187 @@ static void pf_emit_ofs_bounded(StrBuf *c, const DfaForm *f)
     pcrec_sb_printf(c, "%s    }\n%s}\n", ind, ind);
 }
 
+/* ---- [START-SET] STAGE 3: THE DFA HAT (D148 + addenda 1-2; startset.md §2 F, §4.1, §6.4) ----
+ *
+ * The DFA's plain prefilter skips bytes outside `E`, the start state's escape
+ * set. On a SEEDED machine (`\b`, a lookbehind, `(?m)$` ...) `E` holds every
+ * byte that changes the left context, not only the bytes a match can begin
+ * with, so it is wide: `\b(?:true|false|null)\b`'s `E` is the 63 word bytes
+ * where only `t`, `f` and `n` can start a match. These rows skip over `T`
+ * instead — the `start_set` fact `S`, intersected with `E*` (D148 addendum 1)
+ * — and RE-SEED the landing state from the byte before it.
+ *
+ * WHY THE RE-SEED IS EXACT (§6.4.3 item 2's corrected argument, replacing
+ * §4.1 steps 1-3). A skipped byte `b` outside `S` begins no match in ANY
+ * context, so the state after it has exactly the future of the start state
+ * with context `b`: `seed[class(b)]`, the state the search's own initializer
+ * computes at a startpos one past `b` (minimized states are equal iff their
+ * futures are). By induction over the skipped run the landing state is
+ * `seed[class(s[q - 1])]` iff every skipped byte is outside `S`, i.e. iff
+ * `T ⊇ S`. `E` plays no part in soundness, only in admission and cost.
+ *
+ * WHY THE RE-SEED IS CONDITIONAL (§6.4.3 item 1, a soundness requirement,
+ * not a hedge): it fires only where the skip MOVED. At a landing equal to
+ * the skip's entry the state is the one the loop computed, which is correct;
+ * `seed[class(s[q - 1])]` there is wrong, because the start state is
+ * RE-ENTERED with in-flight threads on a minimized machine. Witness
+ * `(?:\b|xy)a` on "xya": after `xy` the machine is back in the start state
+ * with `a` a match continuation, and the unconditional re-seed overwrites it
+ * with the word-context seed and loses (0,3).
+ *
+ * THE DFA HAT IS `-bounded`-ONLY. A seeded machine carries a class context,
+ * and a class context is a `views` machine (`unanch_start`'s `wctx`), so its
+ * skip stops at `n - 1`; §6.4.3 item 3 measured 170 of 170. `pf_dfa_start_set`
+ * ASSERTS it rather than leaning on that reading, which is what makes an
+ * unbounded `first-memchr`/`first-class` DFA form unreachable by construction
+ * (sabotage S481/S482 ship UNREACHED behind the assertion). */
+
+/* Is byte `b` in the `start_set` fact? */
+static bool ss_has(const StartSet *ss, int b) { return ss->bits[b >> 3] >> (b & 7) & 1; }
+
+/* `E*` (D148 addendum 1) into `out`: the union, over the start state `s0` and
+ * every live seed state, of the bytes that move that state somewhere else —
+ * the bytes the skip could meet in SOME context the skip can be in. A seed
+ * state that is dead contributes nothing (no walk is ever in it). */
+static void dfa_estar(const Dfa *d, uint8_t out[256])
+{
+    memset(out, 0, 256);
+    for (int u = -1; u < d->natoms; u++) {
+        int st = u < 0 ? d->s0 : d->s1u[u];
+        if (st < 0) continue;
+        for (int b = 0; b < 256; b++)
+            if (d->st[st].tr[d->clsmap[b]] != st) out[b] = 1;
+    }
+}
+
+/* F, THE DFA HAT's predicate core (startset.md §2 F, rev 2), and the set it
+ * scans: fills `*t` with `T = S ∩ E*` and answers whether a DFA-hat row may
+ * replace the plain skip. Each conjunct with the sabotage row that removes it:
+ *   - the FORWARD scan, a DFA route, with a plain skip to replace
+ *     (`UnanchStart.kind`, which already carries `unanch_start`'s proof that
+ *     the start state cannot accept while parked) — the offset rows sit above;
+ *   - SCAN KIND: the unanchored forward scan (`ENG_UNANCH`). `\G` and `(?m)^`
+ *     machines take the attempt scan and are out (sound-F7; S490);
+ *   - SEEDED: an unseeded machine has `E ⊆ S`, so `T == E` (C-SS*; S487 ships
+ *     UNREACHED by construction);
+ *   - NECESSARY: `S` not nullable — the erased language's bit, never the
+ *     `nullable` fact — and fewer than 256 members (S488; S489 UNREACHED);
+ *   - ADMISSION: `T` a non-empty PROPER subset of `E` (Q-R1). Where `T == E`
+ *     the row is transparent and the plain row's artifact is byte-identical.
+ *     (D149) `T ⊊ E` with NO MARGIN is an UNMEASURED DEFAULT: a one-byte
+ *     narrowing (float-literal 11 -> 10) still moves; F3 at the null cells
+ *     measures it.
+ * Then two ASSERTIONS, each a contradiction rather than a decline: `views`
+ * (the `-bounded`-only reading above), and `T == S` (Q-R1's build assertion:
+ * `E*` is all 256 on every seeded machine — a byte that begins no thread moves
+ * every seed to `seed[class(b)]`, and two distinct seeds cannot both stay —
+ * so a mover where the intersection removed anything is a seeded machine with
+ * one seed state). The deny (`-fno-start-set`) is the rows' `c.deny`. */
+static bool pf_dfa_start_set(const DfaSel *s, CandSet *t)
+{
+    const UnanchStart *u = s->us;
+    const StartSet *ss = s->ss;
+    uint8_t es[256], tv[256];
+    int ns = 0, nt = 0;
+    bool proper = false;
+    if (!s->forward || !ss || u->kind == DFA_PF_NONE) return false;
+    if (s->cx->job->engine != PCREC_ENG_UNANCH) return false;
+    if (!dfa_needs_seed(s->d)) return false;
+    if (ss->nullable) return false;
+    for (int b = 0; b < 256; b++) ns += ss_has(ss, b);
+    if (ns >= 256) return false;
+    dfa_estar(s->d, es);
+    for (int b = 0; b < 256; b++) {
+        tv[b] = (uint8_t)(ss_has(ss, b) && es[b]);
+        nt += tv[b];
+        if (tv[b] && !u->cand.set[b]) return false;   /* T ⊄ E: not a narrowing */
+        if (!tv[b] && u->cand.set[b]) proper = true;
+    }
+    if (nt == 0 || !proper) return false;
+    if (!u->views)
+        pcrec_ctx_fail(s->cx, 0, "internal error: a seeded machine without the "
+                       "D11 bound reached the DFA hat (startset.md §6.4.3 item 3)");
+    if (nt != ns)
+        pcrec_ctx_fail(s->cx, 0, "internal error: the DFA hat's T = S ∩ E* "
+                       "dropped %d start-set byte(s) on a seeded machine "
+                       "(startset.md §4.1a)", ns - nt);
+    cand_derive(t, tv, 0);
+    return true;
+}
+
+/* The row predicates: F with the D11 bound, and the memchr twin's one byte. */
+static bool pf_first_class_bounded_applies(const DfaSel *s)
+{ CandSet t; const UnanchStart *u = s->us; return pf_dfa_start_set(s, &t) && u->views; }
+static bool pf_first_memchr_bounded_applies(const DfaSel *s)
+{ CandSet t; const UnanchStart *u = s->us; return pf_dfa_start_set(s, &t) && u->views && t.use_memchr; }
+
+/* The DFA hat's CONDITIONAL re-seed at indent `ind`: where the skip moved past
+ * `skip_from`, the landing state is the seed of the byte before it. Every DFA
+ * hat row is seeded (F), so the seed table exists. */
+static void pf_emit_moved_reseed(StrBuf *c, const DfaForm *f, const char *ind)
+{
+    pcrec_sb_printf(c, "%sif (%s > skip_from) %s = %s_%s_seed_state[%s_%s_byte_class[subject[%s - 1]]];\n",
+              ind, f->dir->posv, f->dir->statev,
+              f->p, f->dir->c.name, f->p, f->dir->c.name, f->dir->posv);
+}
+
+/* The DFA hat's emitted explanation: the skip tests the bytes a match can
+ * begin with, and re-seeds because the bytes it passes may move the context. */
+static void pf_comment_first(StrBuf *c, const DfaForm *f)
+{
+    const char *ind = f->dir->bind;
+    pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
+    pcrec_sb_printf(c, "%s// Prefilter: nothing found yet and still at the start, so\n"
+                 "%s// skip to the next byte a match can begin with. The bytes\n"
+                 "%s// passed may change the left context, so a skip that moved\n"
+                 "%s// re-seeds the state from the byte before its landing.\n",
+              ind, ind, ind, ind);
+    pcrec_sb_cmt_close(c);
+}
+
+/* The DFA hat's table: `S` (= `T`), the bytes a match can begin with. */
+static void pf_tables_first(StrBuf *c, const DfaForm *f)
+{
+    pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
+    pcrec_sb_puts(c, "    /* 1 for each byte a match can BEGIN with (the start set). The\n"
+               "     * forward loop skips over every other byte; speed only, it\n"
+               "     * never changes the answer. */\n");
+    pcrec_sb_cmt_close(c);
+    cand_emit_table(c, f->p, "start_bytes", &f->cand);
+}
+
+/* AXIS B, `first-memchr-bounded`: `memchr-bounded`'s skip over the one byte of
+ * `T`, stopped at n-1 with no early `return 0`, then the conditional re-seed —
+ * one line serving both landings (a hit, and the n-1 clamp). */
+static void pf_emit_first_memchr_bounded(StrBuf *c, const DfaForm *f)
+{
+    const char *ind = f->dir->bind;
+    const char *in8 = dfa_fragf(f->cx, "%s        ", ind);
+    pf_comment_first(c, f);
+    pf_open(c, f);
+    pcrec_sb_printf(c, "%s    if (scan_position + 1 < subject_length) {\n", ind);
+    pcrec_sb_printf(c, "%s        size_t skip_from = scan_position;\n", ind);
+    pf_emit_find(c, f, in8, 1);
+    pcrec_sb_printf(c, "%s        scan_position = q ? (size_t)((const unsigned char *)q - subject)\n"
+                 "%s                          : subject_length - 1;\n", ind, ind);
+    pf_emit_moved_reseed(c, f, in8);
+    pcrec_sb_printf(c, "%s    }\n%s}\n", ind, ind);
+}
+
+/* AXIS B, `first-class-bounded`: `byte-class-bounded`'s skip over the
+ * `start_bytes` table, then the conditional re-seed. */
+static void pf_emit_first_class_bounded(StrBuf *c, const DfaForm *f)
+{
+    const char *ind = f->dir->bind;
+    const char *in4 = dfa_fragf(f->cx, "%s    ", ind);
+    pf_comment_first(c, f);
+    pf_open(c, f);
+    pcrec_sb_printf(c, "%s    size_t skip_from = scan_position;\n", ind);
+    pf_emit_find(c, f, in4, 1);
+    pf_emit_moved_reseed(c, f, in4);
+    pcrec_sb_printf(c, "%s}\n", ind);
+}
+
 /* ---- [START-SET] STAGE 2: THE VM HAT (D148; docs/design/startset.md §2, §4.2) ----
  *
  * A prefilter-less VM artifact attempts a match at every position. An attempt
@@ -6668,7 +6863,15 @@ static const DfaPf dfa_pfs[] = {
     { .c = { "offset-set",          PCREC_NO_OFFSET_SKIP, pf_ofs_applies         },
       .emit_tables = pf_tables_ofs,  .emit_block = pf_block_ofs, .emit = pf_emit_ofs,
       .reseeds = true,  .run_term = false, .scan = PF_SCAN_OFS  },
-    /* [START-SET] stage 2: the VM hat only (its DFA column is stage 3's). */
+    /* [START-SET] stage 3: the DFA hat, `-bounded` only (see its section). */
+    { .c = { "first-memchr-bounded", PCREC_NO_START_SET, pf_first_memchr_bounded_applies },
+      .emit = pf_emit_first_memchr_bounded, .reseeds = true, .scan = PF_SCAN_BYTE,
+      .scan_set = pf_dfa_start_set },
+    { .c = { "first-class-bounded",  PCREC_NO_START_SET, pf_first_class_bounded_applies },
+      .emit_tables = pf_tables_first, .emit = pf_emit_first_class_bounded,
+      .reseeds = true, .scan = PF_SCAN_SET, .scan_set = pf_dfa_start_set },
+    /* [START-SET] stage 2: the VM hat; the DFA column of `first-class` is
+     * unreachable by construction (the DFA hat is `-bounded`-only). */
     { .c = { "first-class",        PCREC_NO_START_SET, pf_vm_start_applies },
       .scan = PF_SCAN_SET, .routes = CAND_ON(CAND_ROUTE_VM),
       .emit_vm = pf_vm_emit_first_class },
@@ -6690,8 +6893,24 @@ static const DfaPf dfa_pfs[] = {
 static const DfaPf *dfa_pf_of(Ctx *cx, const UnanchStart *us)
 {
     DfaSel s = { .cx = cx, .d = &cx->job->dfa, .us = us, .forward = true, .st = -1,
-                 .route = CAND_ROUTE_DFA };
+                 .route = CAND_ROUTE_DFA, .ss = pcrec_fact_start_set(cx) };
     return DFA_SELECT_ROUTED(DfaPf, dfa_pfs, &s, cx->opt->flags);
+}
+
+/* [START-SET] The byte set row `pf` SCANS on the forward machine `d` of `us`:
+ * the row's own `scan_set` where it has one (the DFA hat's `T`), the start
+ * state's escape set otherwise. The ONE place a reader of the scanned set
+ * asks for it — the emitted table or byte, G1's dominance, the re-seed
+ * density — so a DFA-hat artifact is never priced as scanning `E`. */
+static void pf_scan_set_of(Ctx *cx, const Dfa *d, const UnanchStart *us,
+                           const DfaPf *pf, CandSet *out)
+{
+    DfaSel s = { .cx = cx, .d = d, .us = us, .forward = true, .st = -1,
+                 .route = CAND_ROUTE_DFA, .ss = pcrec_fact_start_set(cx) };
+    if (!pf->scan_set) { *out = us->cand; return; }
+    if (!pf->scan_set(&s, out))
+        pcrec_ctx_fail(cx, 0, "internal error: prefilter row '%s' was selected "
+                       "but its scanned set does not apply", pf->c.name);
 }
 
 /* [START-SET] AXIS B's selection for the VM ROUTE: the row a prefilter-less
@@ -6828,8 +7047,10 @@ static void dfa_cand_scan(Ctx *cx, CandScan *cs)
             cs->byte = t.scan_byte;
             cs->run_verified = ofs_test_verifies_run(cx, &t, &us);
         } else if (pf->scan == PF_SCAN_BYTE) {
+            CandSet sc;
+            pf_scan_set_of(cx, &cx->job->dfa, &us, pf, &sc);
             cs->memchr_form = true;
-            cs->byte = us.cand.byte;
+            cs->byte = sc.byte;
         }
     }
 }
@@ -6862,7 +7083,11 @@ unsigned pcrec_dfa_cand_ppm(Ctx *cx)
         pf = dfa_pf_of(cx, &us);
         if (pf->scan != PF_SCAN_SET)
             return 1000000u;
-        memcpy(set, us.cand.set, sizeof set);
+        {
+            CandSet sc;
+            pf_scan_set_of(cx, &cx->job->dfa, &us, pf, &sc);
+            memcpy(set, sc.set, sizeof set);
+        }
     }
     return pcrec_find_set_ppm(cx, set);
 }
@@ -7196,7 +7421,7 @@ bool pcrec_dfa_scan_state_written(Ctx *cx, const Dfa *d)
     unanch_start(cx, &us);
     if (us.empty) return false;
     DfaSel s = { .cx = cx, .d = d, .us = &us, .forward = d == &cx->job->dfa, .st = -1,
-                 .route = CAND_ROUTE_DFA };
+                 .route = CAND_ROUTE_DFA, .ss = pcrec_fact_start_set(cx) };
     return DFA_SELECT_ROUTED(DfaPf, dfa_pfs, &s, cx->opt->flags)->reseeds;
 }
 
@@ -8122,7 +8347,7 @@ static void dfa_form_derive(Ctx *cx, const Dfa *d, const UnanchStart *us,
                             const DfaDir *dir, DfaForm *f)
 {
     DfaSel s = { .cx = cx, .d = d, .us = us, .forward = !dir->reverse, .st = -1,
-                 .route = CAND_ROUTE_DFA };
+                 .route = CAND_ROUTE_DFA, .ss = pcrec_fact_start_set(cx) };
     uint64_t flags = cx->opt->flags;
 
     memset(f, 0, sizeof *f);
@@ -8144,7 +8369,8 @@ static void dfa_form_derive(Ctx *cx, const Dfa *d, const UnanchStart *us,
     f->views   = us->views;
     f->viewsel = us->viewsel;
     f->src     = us->viewsel ? dir->viewv : dir->statev;
-    f->cand    = us->cand;
+    if (f->pf->scan_set) pf_scan_set_of(cx, d, us, f->pf, &f->cand);
+    else f->cand = us->cand;
     ofs_test_of(cx, us, f->pf, &f->ofs);
     /* The SEARCH scan never skips out of its own start state — the prefilter
      * owns that position. The reverse machine and [ENG-ABS]'s anchored
