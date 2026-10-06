@@ -9157,3 +9157,19 @@ Also owed before any build: the soundness model re-run once against the 10.46 re
 **Noted interaction.** G1 excludes possessive parts of P, so [ARTREV]'s possessify-arms suggestion would remove patterns like doubled-word from the walk's reach unless the gate reads the PRE-possessify tree (sound, since possessify only rewrites answer-preserving shapes). A design point for whichever is built first.
 
 **Revisit when.** The dup-param-detect twin reads (trigger met or not); the inner-landmark-split fact is designed (the census's stand-in reader parses 85% bench / 73% corpus).
+
+## D152 — Why pcrec uses first-match decision tables (the standing rationale; Frank asked for it so tables are built for a reason, not by fiat; 2026-10-06)
+
+A decision table is an ordered list of rows, each a predicate over facts plus an action; the first row whose predicate holds and is not denied executes; the last row is always sound. Its purpose is to make a choice the compiler makes ONE artifact that can be inspected, checked and extended, instead of logic dispersed through control flow.
+
+**Advantages.**
+- **Explicit precedence:** row order is the priority, written and reviewable — not an accident of which `if` runs first.
+- **Checkable totality and reachability:** prove a fallback row always exists, find rows that can never fire, count each row's population (K35).
+- **Shared machinery once:** deny flags, `*_WHY` stamps, `--list-axes` listing, tracing, hit counters and `--tune` positions attach per row. Dispersed sites re-implement them and drift — the 2026-10-06 survey (docs/design/decision_families_survey.md) found exactly that: deny bits missing from the `rx_info` mask at ad-hoc sites, "why" stamps rebuilt from side flags, a listing and a stamp disagreeing on the same decision.
+- **One predicate, one definition:** dispersed sites re-derive the same condition in different words and diverge (the survey: one condition in five wordings; five tie rules for one pick).
+- **Composable soundness:** each row needs only its own argument (predicate ⇒ action valid); first-match plus an always-sound last row gives the whole table's correctness.
+- **Cheap extension:** a new mechanism is one row and a predicate, not a hunt for every site (K84/K89: sites selecting a row by name string).
+
+**When a table is the wrong tool:** a single yes/no; a choice that is really a cost comparison across all options (an argmin is a planner, not first-match — D151 avoided that); anything evaluated per call in the matcher at run time. **Costs:** one indirection; a refactor that must be proven no-mover; overlapping predicates can hide order subtleties, so the order itself needs review.
+
+**The test** for building one: does the choice have several options, interacting preconditions, and attached machinery (deny/stamp/listing/trace) on every outcome? If yes, a table is cheaper to get right and to keep right. Related: memory `pcrec-decisions-as-first-match-tables`, D124, D148, D151.

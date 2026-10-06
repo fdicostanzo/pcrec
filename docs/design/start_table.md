@@ -22,6 +22,19 @@ table sites in `src/gen/emit_dfa.c` / `src/gen/emit_vm.c` at this pin.
 
 ---
 
+
+## 0. Why the start decision is a table (manager's statement, recorded at Frank's request, 2026-10-06; general rationale D152)
+
+"Where can a match start, and where can the search skip to?" is answered today by about ten sites — 5 arrays and 5 inline decisions over 3 routes — that READ EACH OTHER: req-use reads req-admit; REQ_WHY "dominated" reads the DFA scan byte; the K82 handoff turns a pre-check hit into a scan start; the bound predicate is restated at four places.
+
+**Advantages specific to this family:**
+1. **It fixes measured defects:** `run-pinned` is unreachable whenever two byte-pickers disagree (systematic under utf8); G1 reads a predecessor-byte skip as a start byte (33 artifacts); a stamp says "reverse-pass" on 452 artifacts with no reverse machine; a fix to the bound predicate must today find four copies. One predicate per question removes the duplication, and each disagreement becomes a visible row to rule on.
+2. **The queued work becomes one row each:** D151's reverse walk, [ARTREV] I5's VM word-start filter (a column on an existing row), K90's dense-start fix (the existing re-seed disarm extended to the VM route: a route bit on existing rows). Dispersed, each adds sites and cross-reads — START-SET stages 2 and 3 each needed a panel that found check gaps.
+3. **It is measurable per mechanism:** a trace and per-row hit counter give each row's population, dead rows, and per-row timing; A01's -72% ("scan `(` not `a`") was a question of which landmark row wins, which a table makes an explicit ordering/admission choice.
+4. **Give-up posture becomes a field:** the K82 Q10 vs D148 Q6 difference is a column every new row must fill.
+
+**What it does not do:** it makes nothing faster by itself (the fold is no-mover). The payoff comes from the queued rows and the inconsistency fixes it enables; without planned new start mechanisms the inconsistencies would still be fixed, but the fold would rank lower.
+
 ## 0. Answers first
 
 1. **Yes, and the table is literally one array.** Today ten separate decision
