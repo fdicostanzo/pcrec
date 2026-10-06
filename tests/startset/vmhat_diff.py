@@ -48,7 +48,7 @@ JOBS = int(os.environ.get("JOBS", "6"))
 MANIFEST = os.environ.get("MANIFEST", os.path.join(HERE, "manifests", "manifest_s2_vm_auto.tsv"))
 # K35 floor: half the (mover, config) pairs measured at landing (lane
 # ssbuild2; docs/dev/lanes/ssbuild2_report.md §4).
-FLOOR = int(os.environ.get("FLOOR", "200"))
+FLOOR = int(os.environ.get("FLOOR", "264"))   # 528 (mover, config) pairs at landing
 TMO = 600
 
 

@@ -750,6 +750,16 @@ fi
 # forward scan's position (and, for the seeded `\bword\b`, its seed) reads
 # `handoff_position`. VERIFIED BY DIFFING both against the abi-60 compiler at
 # `-o -`: the abi digits, the stamp, the gate, the start site, nothing else.
+#
+# RE-RECORDED 2026-10-05 at [START-SET] stage 2, THE VM HAT (abi 61 -> 62,
+# lane ssbuild2): all twelve `EMITTED_BYTES` rows move. Ten by exactly +32,
+# the unconditional `#define RX_VM_START_SCAN "none"` line (D148 Q-R6: the
+# stamp is on every artifact, "none" where the hat does not apply), and the
+# two VM-hat movers, `(\w+)\s+\1` and `(a(?1)?b)`, by +1,843: the stamp reads
+# "first-class" (+7), the 256-entry `rx_start_set` table, and the entry and
+# retry seeks. VERIFIED BY DIFFING `(\w+)\s+\1` against the abi-61 compiler at
+# the same `-o` basename: the abi digits, the stamp, the table, the two seeks,
+# nothing else.
 MANIFEST="$ROOT_DIR/tests/codegen/manifests/m5_stage1_stamps.tsv"
 if [ -d "$(dirname "$MANIFEST")" ]; then
     if [ -f "$MANIFEST" ]; then

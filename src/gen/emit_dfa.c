@@ -6593,7 +6593,11 @@ static void vm_start_assert_starts(Ctx *cx, const StartSet *ss)
  *     to read; the kind that adds one must decline here. Sabotage S496 ships
  *     UNREACHED.
  *   - ENCODING: `vm_start_assert_starts`, AFTER the two conjuncts above.
- * The deny (`-fno-start-set`) is the row's `c.deny`, a filter on the list. */
+ * The deny (`-fno-start-set`) is the row's `c.deny`, a filter on the list.
+ * (D149) `|S| < 256` as the ONLY narrowness gate is an UNMEASURED DEFAULT: no
+ * density admission is applied, and a dense `S` (a `\w`-led pattern, `|S| =
+ * 63`) still seeks; the dense guard cells of startset.md §7 measure it, and a
+ * MASS admission is filed behind them (Q-R5). */
 static bool pf_vm_start_applies(const DfaSel *s)
 {
     Ctx *cx = s->cx;

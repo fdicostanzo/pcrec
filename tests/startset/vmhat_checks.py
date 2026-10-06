@@ -56,9 +56,9 @@ JOBS = int(os.environ.get("JOBS", "6"))
 TMO = 120
 # K35 floors: HALF the landing population (D110). Measured at landing (lane
 # ssbuild2): docs/dev/lanes/ssbuild2_report.md §4.
-FLOOR_BLOCKS = 1700          # blocks compiled on both arms
-FLOOR_MOVERS_AUTO = 85       # corpus movers at auto
-FLOOR_MOVERS_VM = 1200       # corpus movers under --engine=vm
+FLOOR_BLOCKS = 1736          # blocks compiled on both arms (3,473 at landing)
+FLOOR_MOVERS_AUTO = 88       # corpus movers at auto (176 at landing)
+FLOOR_MOVERS_VM = 1280       # corpus movers under --engine=vm (2,560 at landing)
 
 STAMP = re.compile(r'^#define RX_(\w+) (.*)$', re.M)
 TABLE = "static const unsigned char rx_start_set[256] = {"
