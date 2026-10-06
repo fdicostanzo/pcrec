@@ -158,7 +158,9 @@ its DESIGN record.**
   G2, and D147 addendum 10 folded**: the kit session's rulings on G2's
   F1-F3 and Q-G2-1..17 as a by-id table (§R4.7.0). VERIFY honours its
   range, `lo > n` is EMPTY, ON_CAND renders NOP, out-of-enum fields
-  and eight shapes are refused, and five caller obligations are stated.
+  and seven shapes are refused, an unsatisfiable run byte renders as
+  constant false (Q-G2-13, revised), and five caller obligations are
+  stated.
   Q-G2-5 is OPEN. Q53-Q55 are RULED: the libc record's refined form
   and N7's scope are the design of record, and no question for Frank
   is open. Read §R4.7, then §R4.6, first.

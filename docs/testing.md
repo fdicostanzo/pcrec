@@ -705,7 +705,7 @@ consistent with each other.
 **Sections added since, each with its own lane's one-run figure (NOT
 this table's method; Mac dev box, so directional):**
 - `test-memfn-g2` ([MEMFN] R4a, lane memfnfix, 2026-10-05): about
-  **52 s** wall, with `all` up to date. It is G2's `run_g2.sh --quick`:
+  **52-62 s** wall over two runs, with `all` up to date. It is G2's `run_g2.sh --quick`:
   - gcc over every generated site at the quick subject tier;
   - ASan and the W1-W3 witnesses on every third batch, run
     concurrently, so it uses every core for most of that minute.

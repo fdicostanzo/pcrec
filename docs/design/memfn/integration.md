@@ -10,8 +10,10 @@ In short:
 - VERIFY honours its range `[lo, n − end_back)`;
 - `lo > n` is a legal EMPTY range;
 - ON_CAND renders `empty = NOP`;
-- out-of-enum fields and eight shapes outside the vocabulary are REFUSED
+- out-of-enum fields and seven shapes outside the vocabulary are REFUSED
   loudly;
+- an unsatisfiable run byte stays IN the vocabulary and renders as a
+  term that never holds;
 - five caller obligations are stated.
 
 Q-G2-5 stays OPEN. **Q53-Q55 are RULED** (D147 addendum 10): the libc
@@ -189,7 +191,7 @@ is in the report).
 | Q-G2-10 | `nterm = 0` | **REFUSED** | §14.6 `[rev4.7]`; `pred_kinds` |
 | Q-G2-11 | RUN with `run_len = 0` | **REFUSED** | §14.6 `[rev4.7]`; `pred_kinds` |
 | Q-G2-12 | ALL_PRESENT with `reverse = 1` | **REFUSED** | §14.3 `[rev4.7]`; `site_check` |
-| Q-G2-13 | a run byte with bits outside its mask | **REFUSED.** Loud, never wrong code. G2's generated space contains such runs, see §R4.7.2 | §14.6 `[rev4.7]`; `pred_kinds` |
+| Q-G2-13 | a run byte with bits outside its mask | **IN the vocabulary, literal formula; constant-false rendering allowed.** The term never holds. The kit may render that byte as `0`, with no masked compare, provided the answer is unchanged, and it NEVER normalises the byte into the mask. (First ruled REFUSED; REVISED, because G2's generated space exercises the shape and §14.6's totality says a well-defined site renders, §R4.7.2) | §14.6 `[rev4.7]`; `generic.c` `pred_test`; `memfn.h` `mf_term.run` |
 | Q-G2-14 | a NULL `cursor` on ADVANCE | **Accepted.** Only `more`, `peek` and `step` are used | §14.3 `[rev4.7]`; `memfn.h` ADVANCE hooks |
 | Q-G2-15 | `guard_by_caller` with negative offsets, or off EXPR VERIFY | **REFUSED** unless EXPR VERIFY with every offset ≥ 0 | §14.7 `[rev4.7]`; `site_check` |
 | Q-G2-16 | does `cmt_open` write the comment opener? | **Yes.** The sink's `cmt_open` writes the opener and the sink writes the closer | §14.2 `[rev4.7]`; `memfn.h` `mf_sink` |
@@ -211,42 +213,51 @@ F1-F3 and Q-G2-1..17 are 20 rows, all placed. Q53-Q55 are 3 of 3.
 2. **Totality reaches ON_CAND's NOP (F2).** On an empty range the whole
    ON_CAND statement is skipped: no result write, no visit, no
    `on_miss`.
-3. **The vocabulary's edge is loud (F3, Q-G2-3/4/9-13/15).** Each shape
+3. **The vocabulary's edge is loud (F3, Q-G2-3/4/9-12/15).** Each shape
    below is now refused by `mf_define`, where R4a rendered or misread
    it:
    - out-of-enum fields;
    - empty conjunctions;
    - zero-length runs;
-   - unsatisfiable run bytes;
    - an offset SKIP;
    - a reversed ALL_PRESENT;
    - an ADVANCE that misses;
    - a widened caller guard.
-4. **The caller's obligations are written down (Q-G2-6/7/8/14/16).**
-   None of them changes code.
-5. **Q-G2-5 is recorded OPEN.**
-6. **Q53-Q55 are RULED.** §R4.3.3's refined libc record and §R4.3.4's
+4. **An unsatisfiable run byte renders as constant false (Q-G2-13).**
+   The site's answer is unchanged, and no tautological compare is left
+   for `-Wall`/`-Werror` to flag.
+5. **The caller's obligations are written down (Q-G2-6/7/8/14/16),
+   and the art's error is stated STICKY.** None of them changes code.
+6. **Q-G2-5 is recorded OPEN.**
+7. **Q53-Q55 are RULED.** §R4.3.3's refined libc record and §R4.3.4's
    N7 scope are promoted from "proposal" to the design of record.
 
 `MF_SITE_ABI` and `MF_VOCAB` do not move. No caller exists yet, the
 (op, handoff, term kinds) table is unchanged, and every newly refused
 shape was either never sent or never meaningful.
 
-### R4.7.2 A ruling G2's generated space contradicts (Q-G2-13)
+### R4.7.2 The ruling the control revised (Q-G2-13)
 
-G2 generates unsatisfiable runs on purpose: a run byte with one bit
-its mask clears. The generator (`g2_gen.c`, `unsat` in the RUN term
-cells) does this for 36 sites: offsets −3..8 × lengths 5, 16 and 27 ×
-one free bit. G2 expects them to render under the literal formula.
-Under Q-G2-13 the kit now refuses them, and G2 is not edited (it is the
-control). Every G2 run therefore reports:
-- 36 "kit refused a contract site" generator failures;
-- 17 RUN coverage cells missing (1,627/1,644);
-- the RUN-cell floor line.
+Q-G2-13 was first ruled REFUSED. G2 generates unsatisfiable runs on
+purpose: a run byte with one bit its mask clears. The generator
+(`g2_gen.c`, `unsat` in the RUN term cells) does this for 36 sites:
+offsets −3..8 × lengths 5, 16 and 27 × one free bit. G2 expects them to
+render under the literal formula, and the refusal made every G2 run read
+36 generator failures, plus 17 missing RUN cells and the RUN-cell floor
+line per compiler.
 
-Every other G2 count is clean. Reconciling the two is the kit session's:
-either a blinded G2 follow-up stops generating the shape and counts its
-refusal, or the ruling is revisited. The lane report has the numbers.
+The kit session REVISED the ruling: the control is right. Under the
+literal formula an unsatisfiable run term is well defined (it never
+holds). §14.6's totality says a well-defined site renders, and refusing
+it would only turn a correct answer into an error. So:
+- the shape is IN the vocabulary;
+- the kit renders the byte as `0`, the same answer with no
+  `-Wtautological-compare` (36 lines per compiler under the literal
+  `(b & m) == r` text, memfng2 §4.5);
+- the byte is never normalised into its mask, which would be wrong
+  under the formula.
+
+G2 needed no change, and it now reads 0 failed.
 
 ### R4.7.3 The three standing design questions, for this revision
 
@@ -4705,8 +4716,11 @@ as a position is a `POSITION` row.
     and the term kind.
   - **`nterm = 0` (Q-G2-10).** An empty conjunction is no search.
   - **A RUN term with `run_len = 0` (Q-G2-11).**
-  - **A run byte with a bit its mask clears (Q-G2-13).** The literal
-    formula never holds there, and normalising the byte would be wrong.
+- **`[rev4.7]` What the kit does NOT refuse: a run byte with a bit its
+  mask clears (Q-G2-13, revised, §R4.7.2).** Under the literal formula
+  it never holds, so the site is well defined and renders. The kit may
+  render that byte as constant false (`0`) provided the answer is
+  unchanged, and it never normalises the byte into its mask.
 
 ### 14.7 `on_cand`, the caller guard, and the lower read limit (r3 F10, F11)
 

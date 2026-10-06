@@ -22,7 +22,7 @@ kit session moves it).
   go under `$TMPDIR`; `--keep` keeps them; `--seed N` changes the
   generated space. Every step runs under GNU timeout.
   **`--quick`** (lane memfnfix) is `make test-memfn-g2`, a `make test`
-  section, at about 52 s wall on the Mac. It runs the same checks,
+  section, at 52-62 s wall on the Mac (two runs). It runs the same checks,
   judged by the same code, on a smaller population:
   - one compiler (gcc), every generated site, the quick subject tier;
   - ASan+UBSan and the witnesses W1-W3 on every `QUICK_STRIDE`-th
