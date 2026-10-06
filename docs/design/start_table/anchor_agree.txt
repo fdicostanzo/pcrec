@@ -1,0 +1,4 @@
+  293  machine=bot fact=anchored   e.g. ['(*UCP)^\\s+$', '(?(DEFINE)(?<a>x)(?<b>y))^(?&a)(?&b)$', '(?(DEFINE)(?<w>[a-z]+))^(?&w)-(?&w)$', '(?(DEFINE)(?<w>a))(?(DEFINE)(?<v>b))^(?&w)(?&v)$']
+   20  machine=gstart fact=gstart   e.g. ['(?:\\G)a', '(?:\\Gab)+', '(?m)^\\Ga', '\\G']
+    1  machine=gstart fact=unanchored   e.g. ['(?(DEFINE)(?<g>\\Ga))(?&g)']
+   74  machine=none fact=unanchored   e.g. ['(?(DEFINE)(?<g>\\Aa))x?(?&g)', '(?:(?m:^a)|^b)', '(?:\\A|(?<=\\n)(?!\\z))x', '(?:\\Gab|x)(cat)(?=dog)']
