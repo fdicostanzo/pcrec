@@ -103,6 +103,13 @@ finding-by-finding record is `../dev/reviews/2026-10-06-r2-starttable-recheck.md
 | Frank 2026-10-06, R-Q3 ([DEC-FALLBACK] tokens) | RULED: today's tokens kept, a pure no-mover; name/why separation is a later abi row | §6 R-Q3, D151 add. 2 |
 | Frank 2026-10-06, R-Q4 (streamlining) | RULED: two serial no-mover refactors, A (this fold) then B ([DEC-FALLBACK]); B absorbs Q8; movers (Q4, Q5, Q6, Q10/D-4, [DEC-POSDOM], token separation) are later separate rows | §6 Q8, R-Q4; §5.4; D151 add. 2 |
 | Frank 2026-10-06, R-Q5 (memfn sequencing) | RULED: kit R4c (main `05c33ce0`) before C1-C7, C0 in parallel; C1-C7 re-derive their edit set on post-R4c main; B1-B18 are input; ping the kit at C0's merge (it awaits the full I2) | §3.2, §6 R-Q5; D151 add. 2 |
+| Frank 2026-10-06, Q2 (array shape) | RULED: ONE `cand_rows[]`, a `slot` field per row, the walk takes a slot; not per-slot arrays | §6 Q2; D151 add. 3 |
+| Frank 2026-10-06, Q3 (selection trace) | RULED: YES, CONDITIONAL on a C0 experiment (plants detected, neutral commits clean); else dropped, bytes + deny-delta counts | §6 Q3; §3.3 item 5; D151 add. 3 |
+| Frank 2026-10-06, Q4 (D-1) | RULED: G1 declines EXACTPRED as its own later row after C7, gated on measuring the 33 artifacts first (D77); not in the fold | §2.4 D-1, §6 Q4; D151 add. 3 |
+| Frank 2026-10-06, Q5 (D-2) | RULED: `attempt-start`, a later low-priority row batched with the next abi event, with the D80 spec hunk | §2.4 D-2, §6 Q5; D151 add. 3 |
+| Frank 2026-10-06, Q6 (D-2b) | RULED: file, don't fix; D77 trigger = a pattern that pays for the full-position search | §2.4 D-2b, §6 Q6; D151 add. 3 |
+| Frank 2026-10-06, Q7 (census scripts) | RULED: as recommended, with run-time, sabotage-row and parse-robustness conditions | §6 Q7; D151 add. 3 |
+| Frank 2026-10-06, Q10 (D-4) | RULED: YES, [TIE-ALIGN] re-scoped; a form mover after C7, one `PF_DERIVED` fact ([PATFACTS]) | §2.4 D-4, §6 Q10; D151 add. 3 |
 
 ---
 
@@ -829,6 +836,9 @@ each; each fix is its own ruled change.
     BEGINS with" on ENG_UNANCH (N9, offset 0). On ENG_ATTEMPT it means "a
     `memchr` for the byte BEFORE a candidate" (N12, offset −1:
     `(?m)^ERROR`'s newline).
+    [Frank 2026-10-06, measured on main `build/pcrec`: N9 `memchr` does NOT fire
+    on a plain literal like `ERROR`, which takes `offset-set` (offsets `0,1*`,
+    rarity-picked); N9 fires for e.g. `E[0-9]+`.]
   - **Population:** 33 (27 DFA + 6 HYBRID) ENG_ATTEMPT artifacts in auto/byte stamp it,
     DFA and HYBRID alike: D-1 also fires on ATTEMPT hybrids (`(?m)^(a)`:
     `REQ_WHY "dominated"` elides the `a` pre-check on a predecessor-`\n` scan)
@@ -1664,33 +1674,32 @@ which overlap this note:
   and checked, which is what the panel said the first one was not. The re-check
   should be the two critics' own findings against §2.1, §1.6 and §3.3-§3.5.
 - **Q2. One array with a slot column, or one array per slot sharing the row
-  type and walk?** **Recommend ONE array** (unchanged). The revision adds a
+  type and walk?** **RULED [Frank 2026-10-06]: ONE single `cand_rows[]` for every slot, each row tagged with a `slot` field, the walk takes a slot; NOT per-slot arrays.** Frank's reason: "otherwise logic is spread around which is the opposite of what we want". (Was: recommend ONE array, unchanged.) The revision adds a
   reason: the typed-handoff check (§1.6) and the selection DAG (§1.3) are
   checks ACROSS slots, and one array is where they read from. Per-slot arrays
   would keep eight tables with a shared type, which is today's structure renamed.
 - **Q3. A compile-time selection trace (`-DPCREC_CAND_TRACE`) in `src/`?**
-  **Recommend YES**, now with its specification (§3.3 item 5: ordered
+  **RULED [Frank 2026-10-06]: YES, CONDITIONAL on an experiment in C0** (Frank: "test the theory, seems brittle"). (1) DETECTION: planted selection changes on a scratch branch (a row-order swap, a predicate flip, a route mis-key, a row change where the bytes stay identical); record trace-diff vs byte-sweep detection per plant. (2) BRITTLENESS: run the trace across selection-NEUTRAL commits (a rename, a function move, an emitter reformat); any trace diff is a false alarm. (3) BAR: catches every plant with zero false alarms; otherwise the refactor DROPS the trace and relies on bytes + deny-delta counts, and the note says why. (Was: recommend YES,) now with its specification (§3.3 item 5: ordered
   per-pattern records at the walk's return, the parent as reference every
   commit, never the byte-sweep build) and its stated limit (it proves nothing
   at the inline sites that bytes do not). Scoped to the refactor's life plus a
   permanent home as the per-row hit counter (§3.4). A debug knob, not an axis.
-- **Q4. D-1 (the ATTEMPT `memchr` read as a start byte by G1)?** **Recommend
-  (unchanged):** after C7, G1 declines `EXACTPRED` rows (a read of the `map`
+- **Q4. D-1 (the ATTEMPT `memchr` read as a start byte by G1)?** **RULED [Frank 2026-10-06]: fix option (1), G1 declines `EXACTPRED` rows, as its OWN later row after C7, GATED ON MEASURING the 33 artifacts (27 DFA + 6 HYB, auto/byte) FIRST (D77). If restoring the pre-check is slower, the right fix may be a correct dominance argument for predecessor scans instead. Nothing inside the fold.** (Was: recommend, unchanged:) after C7, G1 declines `EXACTPRED` rows (a read of the `map`
   field). It now moves the pre-check emission of every ATTEMPT artifact
   stamping `memchr`, DFA and HYBRID alike (33 (27 DFA + 6 HYBRID) in auto/byte), and only
   where it was elided. Keep the stamp token.
 - **Q5. D-2 (`DFA_START "reverse-pass"` on attempt/empty artifacts)?**
-  **Recommend (unchanged)** a third value `attempt-start` for ATTEMPT and empty,
+  **RULED [Frank 2026-10-06]: option (a), a third value `attempt-start`, a later LOW-priority row, batched with the NEXT abi event (no standalone bump), with the D80 spec hunk fixing `match_api.md:4686-4703`'s contradiction and a bench adapter note.** (Was: recommend (unchanged)) a third value `attempt-start` for ATTEMPT and empty,
   as its own abi event with the spec hunk correcting `match_api.md:4686-4703`'s
   contradiction. Low priority: no consumer is known to be misled. The
   alternative is a spec-only fix stating that the value means "not pinned".
 - **Q6. D-2b (`start_anchor` blind through a non-recursive call)?**
-  **Recommend (unchanged): file, don't fix.** Population 1 in the corpus (and
+  **RULED [Frank 2026-10-06]: FILE, don't fix; the D77 trigger is a bench or real-world pattern that pays for the full-position search.** (Was: recommend (unchanged): file, don't fix.) Population 1 in the corpus (and
   its capturing twin, where the split is inside ONE artifact, §2.4). The fact
   change is a VM-route mover with a correctness-neutral gain, so a D77 trigger
   is needed. After C5b it is ONE fact change and every BOUND reader follows.
 - **Q7. Where do this note's census scripts live after the refactor?**
-  **Recommend:** `call_graph.py` + `inventory.tsv` + `inventory_check.py` move to
+  **RULED [Frank 2026-10-06]: as recommended, with conditions:** `call_graph.py` + `inventory.tsv` + `inventory_check.py` go to `tests/codegen/` as a standing check (a new start decision fails `make test-codegen` until dispositioned) WITH its run time MEASURED at landing, its own SABOTAGE row (plant an undispositioned decision, must FAIL), and a ROBUSTNESS verdict on `call_graph.py`'s parse (if not robust enough to gate on, it stays design evidence); `deny_census.py`'s DIFFER counts become C0's `emit_sweep` floors; `row_census.py` goes to `tests/codegen/` as the trace hit-counter's cross-check IF the trace passes Q3's experiment, arms pinned as floors; `sabotage_anchors.py`, `refactor_edit_set.tsv`, `anchor_agree.py` stay as design evidence. (Was: recommend:) `call_graph.py` + `inventory.tsv` + `inventory_check.py` move to
   `tests/codegen/` as a standing check (a new start decision anywhere fails it
   until dispositioned — the general form of "derive the inventory, never
   hand-list it"); `deny_census.py`'s per-flag DIFFER counts become C0's floors
@@ -1710,7 +1719,7 @@ which overlap this note:
   ten majors). **Recommend a SHORT RE-CHECK by the same two critics** against
   their own findings (§R), not a new panel: the refactor still changes no
   answer and no byte, and the full bar applies to each §4 row when it lands.
-- **Q10 (new). D-4's fix** [r2 sound-M4]. **Recommend:** re-scope [TIE-ALIGN]
+- **Q10 (new). D-4's fix** [r2 sound-M4]. **RULED [Frank 2026-10-06]: YES.** Direction (manager's answer to Frank's question whether it fits [PATFACTS]): YES, as ONE `PF_DERIVED` fact (facts.def: "a function of core facts and the byte-rate"); the run pin already lives in facts (`src/facts/facts.c:265` calls `pcrec_run_pin` with `pcrec_find_byte_rate`), and `prefix_k`'s pick (`src/opt/prefix_k.c`) is the outside re-ranker that creates D-4. STEP 0 (done at ruling time): `prefix_k.c` reads no compile option (no `tune`, no `cx->` option read); its inputs are the byte-rate (through `pcrec_find_set_ppm`, gated in `pcrec_find_byte_rate`) and the `kset_walk` fact, so no option effect needs a deny/input route. Re-check at build if the cost model grows a `--tune` dial: either that effect enters via the fact's deny/input mechanism or that part stays outside facts as policy over the fact-provided ranking. Cross-ref [PATFACTS], [TIE-ALIGN]. (Was: recommend:) re-scope [TIE-ALIGN]
   from "align the tie rules" to "one landmark-candidate ranking with one tie
   rule, read by the run reader, the pin and `prefix_k`", which deletes N1/N2's
   identity clause. It is a form mover (answer-identical), so it is its own abi
