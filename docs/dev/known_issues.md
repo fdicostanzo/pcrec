@@ -11,6 +11,35 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 ---
 
+## K92 — FIXED 2026-10-06 (lane flagbits, abi 64 -> 65) — `rx_info.flags` kept deny bits 18 (`-fno-size-term`) and 21 (`-fno-scan-edge`) set (found by lane decsurvey, `docs/design/decision_families_survey.md` §4.3; the fourth incident of one shape after bit 19 and K68)
+
+**Status: FIXED** on `lane/flagbits`. Repro: on `abc`, `-fno-scan-edge` moved
+`.flags = 0ULL` to `2097152ULL` and `-fno-size-term` to `262144ULL`, on every
+artifact, though neither axis can act on a pattern with no counted run (no
+counter rung, no collapsible class run). Cause: `emit_info_def`'s
+`strategy_denials` was a hand-kept OR, written at [ENG-BREP] with each later
+axis appended; bits 18 (`[ART-SIZE]`) and 21 (`[OPT-5]`) were never added, and
+nothing read `.flags` as a number for them (`run_prechecks.sh` section 6 held
+only bits 28-30). Population over 200 sampled corpus patterns: bits 18 and 21
+each moved `.flags` on 200 of 200; on 137 / 133 of those the denial changed no
+other byte of the artifact. Every other axis bit already read masked; the
+only bits that still move `.flags` are the four named `kept` members (the two
+engine-selecting denials, bits 12/13, and under non-`byte` encodings the two
+contract bits) and the semantic flags (`--trace`, `-i`, `--ucp`, ...).
+**Fix (the general form, not a two-bit add):** the mask is DERIVED from
+`src/core/axes.def` with polarity "masked unless named kept"
+(`src/gen/emit_dfa.c`), so a new axis joins it on arrival and forgetting a
+`kept` row is the recoverable direction. This is an abi event (65): the
+emitted `.flags` literal moves under those two denials. Spec: `tuning.md` §2
+"THE `rx_info.flags` RULE" and §2.16/§2.18, `match_api.md` §6 change log.
+Check: `tests/codegen/run_prechecks.sh` section 6b sweeps every `-f` spelling
+`--list-axes` carries (red on exactly bits 18/21 against the pre-fix
+compiler). Sabotage S65/S67/S295 re-aimed (a bit joins `kept`). Not done
+here: the `class` column in `axes.def` ([AXES-DENY-MASK]'s fuller form). Report:
+`docs/dev/lanes/flagbits_report.md`.
+
+---
+
 ## K91 — OPEN, deferred (2026-10-06, found by lane alphas3's Linux alpha of START-SET stage 3, the DFA hat, abi 64, bit 47) — the DFA hat loses on some mid-density subjects (start-set density about 12-31%)
 
 D144 item 3: issue rows, not reverts. Correctness clean (no wrong answer; `-fno-start-set` restores base on every cell). Reproduced by a second time-only pass (docs/dev/lanes/alphas3_report.md; raw docs/dev/optloop/startset/alpha_s3_results/):
