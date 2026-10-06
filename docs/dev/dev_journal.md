@@ -26507,3 +26507,16 @@ Frank: "finish up open work/bench results/errors", Linux box free (bench manager
   lenses; lane decsurvey surveying the codebase for still-dispersed decision
   families (ranked, with latent inconsistencies). Lane revtwin: the
   dup-param-detect twin (D151's D77 trigger) + the model at 10.46.
+- ~14:30 SESSION CLOSE (context reset at 90%, Frank's call). Since the last
+  entry: [MEMFN] R4a′ and START-SET stage 3 merged (abi 64); stage 2 + 3
+  Linux alphas read (K90, K91 + K90 addendum; D148 addenda 4/5 settle Q3/Q4:
+  G1 stays, admission stays); the darwin nm red retired; D151 (+addendum 1:
+  fold the start table first), D152 (why decision tables — the general
+  rationale Frank asked for, plus start_table.md §0); the [ARTREV] pilot
+  confirmed and reported; the decision-families survey merged; the start
+  table's light panel (no blocker, 10 majors). In flight at close: lane
+  starttabrev (revision 2 of start_table.md; WIP 554df64f + 0b785189 on
+  lane/starttabrev; census finished, numbers being filled) — if its final
+  commit is not on the branch at wake, the next session finishes it from the
+  WIP + worktrees/starttabrev/scratch/deny.log. wake.md rewritten (14:00) and
+  is current.
