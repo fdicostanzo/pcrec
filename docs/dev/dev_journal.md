@@ -26465,3 +26465,15 @@ Frank: "finish up open work/bench results/errors", Linux box free (bench manager
   the population). Running: artconf (ARTREV confirmer, Linux, pinned
   57db5152 compiler + possessify arm), ssland3 (stage 3 merge main + abi 64
   re-pin + full Mac make test).
+- ~11:30: [ARTREV] S4 CONFIRMER merged (artconf): pinned 57db5152 compiler,
+  sha-matched artifacts, 52/52 identity plain+san, ubuntubudu gcc 15.2, 11
+  rounds, 7-pad layout control, ~21 min box. CELL verdicts: A09 L1 -95%,
+  L2 -76%, combo -95% (L4 LOSS +23% cell / -47% dense); A01 L1 -72%; A07
+  12/13 WIN (-22%..-83%); A07 hand-possessified arm -58% with NO new codegen.
+  Scratch-vs-confirmed 4/4 agreement where scratch existed. PILOT GATE MET
+  (manager, per charter §5): full run goes ahead, SINGLE review per artifact
+  (A07 dual overlap ~5/6), pinned AFTER START-SET stage 3 merges (stage 3
+  moves 88 DFA artifacts). Lane artrep writing report_pilot.md + exec
+  summary. Bench acked I-128..I-130 as [B124]; nothing bench-side tonight.
+  Running: ssland3 (stage 3 abi 64 full Mac make test), alphas2 (stage 2
+  Linux alpha), artrep.
