@@ -2968,6 +2968,13 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
                                            * something other than pcrec. */
                                           PCREC_NO_COMMENTS |
                                           PCREC_FORCE_COMMENTS |
+                                          /* [MEMFN] the kit's one switch:
+                                           * inert before R4e', and after it
+                                           * selects what the kit renders,
+                                           * which `<PREFIX>_MEMFN_FORMS`
+                                           * records. */
+                                          PCREC_NO_MEMFN_SIMD |
+                                          PCREC_FORCE_MEMFN_SIMD |
                                           /* [OPT-REQPOS] tier 2b the necessary-run
                                            * axis, in the mask for the mask's own
                                            * reason and concretely so that an

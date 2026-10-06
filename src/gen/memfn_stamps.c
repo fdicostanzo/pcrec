@@ -212,6 +212,12 @@ static bool splice_mark(StrBuf *sb, const char *text)
     return true;
 }
 
+uint32_t pcrec_memfn_policy(uint64_t flags)
+{
+    return pcrec_axis_on(flags, PCREC_NO_MEMFN_SIMD, PCREC_FORCE_MEMFN_SIMD)
+               ? 0u : MF_P_PORTABLE_ONLY;
+}
+
 /* The finishing pass (see the header). Reads `cx->job->csb` and `hsb`, the
  * finished artifact at the placeholder prefix; writes the two stamp lines
  * over csb's mark. Called once per attempt, after the engine emitter and
@@ -220,7 +226,8 @@ void pcrec_memfn_stamps_render(Ctx *cx)
 {
     Job *job = cx->job;
     mf_arena ma = { &cx->arena, arena_alloc };
-    mf_art *art = mf_art_begin(&ma, cx->opt->prefix, MF_P_PORTABLE_ONLY, 0);
+    mf_art *art = mf_art_begin(&ma, cx->opt->prefix,
+                                 pcrec_memfn_policy(cx->opt->flags), 0);
     StrBuf lines = { .cx = cx };
     StampSink ss = { &lines, pcrec_sb_upper(&cx->arena, cx->opt->prefix) };
     mf_sink sink = { .u = &ss, .stamp = sink_stamp };

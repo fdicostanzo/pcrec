@@ -1110,6 +1110,22 @@ enum {
  * A `#define` for bit 32's reason. */
 #define PCREC_NO_START_SET PCREC_BIT(47)
 
+/* [MEMFN] pcrec's ONE axis for the search-code kit (memfn/CLAUDE.md "ONE SIMD
+ * switch", D147 addenda 6-7; docs/spec/tuning.md is the knob's home, this
+ * comment is its contract). `-fno-memfn-simd`/`-fmemfn-simd` is the pair;
+ * the axis is OFF BY DEFAULT until the SIMD hold lifts, so `PCREC_NO_MEMFN_SIMD`
+ * only states the default and `PCREC_FORCE_MEMFN_SIMD` asks for the
+ * hardware-optimized forms the kit may render (an artifact that MAY NOT
+ * EXECUTE ELSEWHERE). INERT today: no SIMD form exists before R4e', so both
+ * settings render the same artifact. pcrec sends the kit one bit,
+ * `MF_P_PORTABLE_ONLY`, set iff the force bit is absent.
+ * Both bits are masked out of `rx_info.flags` (`strategy_denials`,
+ * src/gen/emit_dfa.c) for the mask's own reason: the artifact must not move
+ * a byte over a switch that selects only what the kit renders.
+ * A `#define` pair for bit 32's reason. */
+#define PCREC_NO_MEMFN_SIMD PCREC_BIT(48)
+#define PCREC_FORCE_MEMFN_SIMD PCREC_BIT(49)
+
 /* [ENG-BREP] the counter rung's UNROLL FACTOR, K (counterk_design.md §4.1;
  * eng_brep_design.md §4.5's "K must not become a per-pattern heuristic in v1",
  * held strictly by D47's ADDENDUM). ONE per-artifact constant: every
