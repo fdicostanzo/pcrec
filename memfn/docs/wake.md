@@ -73,7 +73,7 @@ the current state, never a history (the history is `journal.md`).
   lanes. Kept: `memfnstamp`, prunable via `scripts/wtprune --apply
   memfnstamp` once R4a′ is on main. `worktrees/memfn/worktrees/memfng2`
   + `memfng2-cell` are NESTED, so wtprune refuses them and raw remove is
-  off-limits; main was asked to remove them or to extend wtprune. Lesson:
+  off-limits to both sessions: FRANK runs the removal (`git -C /Users/fdicostanzo/pcrec worktree remove worktrees/memfn/worktrees/memfng2` and `rm -rf worktrees/memfn/worktrees/memfng2-cell`). `memfnk0r3` (pre-kit, UNMERGED, 620197f4) is the kit's to dispose of only after checking it is dead; ask Frank. Lesson:
   never run mk_d27_cell.sh from inside the kit worktree (it nests the
   cell).
 
