@@ -48,3 +48,5 @@ Python 3.9-clean. See README.md for the recipe and the bound/lock table.
 - `--gate-override` / `--hour-override` / `ARTREV_SUITE_LOCK_PATH` work only
   under `ARTREV_SELFTEST=1` (set by selftest.sh alone) and are logged loudly.
 - A new check here must ship its failing-direction control in selftest.sh.
+
+- `confirm_collect.py` — S4 helper (lane artconf): joins a pass-1 and pass-2 `summary.txt` plus the identity logs into the per-artifact `confirmed.tsv`. Reads files only.

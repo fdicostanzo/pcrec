@@ -1,0 +1,7 @@
+arm	lead	cell_med_ns_B	orig_med	delta_ns_B	delta_pct	threshold	pad_spread	orig_pad_spread	null_dev	paired_pads_same_sign	verdict	pass	layout_note	dense	sparse	repairs_checked_strict
+a_L1	a_L1	13.5029	17.3863	+3.8835	+22.34	0.9010	0.6379	0.5186	0.0268	7/7	WIN	pass2		WIN	WIN	0/0
+a_L2	a_L2	11.3398	17.3863	+6.0465	+34.78	1.0625	1.0625	0.5186	0.0268	7/7	WIN	pass2		WIN	WIN	5380/20168/strict=FAIL
+a_L3	a_L3	8.5408	17.3863	+8.8455	+50.88	1.6776	1.6776	0.5186	0.0268	7/7	WIN	pass2		WIN	WIN	294884/339248/strict=FAIL
+a_L4	a_L4	3.4811	17.3863	+13.9052	+79.98	1.1086	0.7402	0.5186	0.0268	7/7	WIN	pass2		WIN	WIN	294884/339248/strict=FAIL
+a_L5	a_L5	2.8926	17.3863	+14.4937	+83.36	1.3808	1.1474	0.5186	0.0268	7/7	WIN	pass2		WIN	WIN	294884/338377/strict=FAIL
+a_L6	a_L6	17.3945	17.3863	-0.0082	-0.05	0.5186	0.2496	0.5186	0.0268	0/7	NOISE	pass2		WIN	WIN	0/0

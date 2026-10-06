@@ -1,0 +1,8 @@
+IDENTITY PASS  arm=L1 rev=1  
+subjects: 149 supplied, 0 corpus, 3000 battery; 15325 cases, 124420 transcript lines compared (shapes: S M C SI MI CI N V + find-all F/FC FSI; 15176 `_in` search lines driven); san=False
+search cases that MATCH in the original: 1351 of 15176
+libpcre2 10.48 (/opt/homebrew/include): OK, checked 1500, skipped 0, orig-vs-pcre2 disagreements 0, twin-only 0
+shrunken resources (0/1 frames x 0/1 trail; no budget stamps, buffer axis only): 263865 transcript lines, original gives up on 0, 0 give-up repair(s) of which 0 checked against libpcre2 (0 skipped)
+  default budgets        lines 263865, original gives up on 0, repairs 0 (+0 walk lines), oracle-checked 0
+window start: n/a (no internal rx_prefilter in this artifact)
+rc=0

@@ -511,25 +511,25 @@ Each idea answers, in order: 1. emitter site; 2. population; 3. known vs new; 4.
 
 Population counts are bench/corpus from `gen/summary.txt`. `pos` means counted on the possessified
 spelling, and "≤" marks a necessary-condition upper bound. Class: ALG = algorithmic, MICRO =
-codegen-micro (flagged), DATA = no emitter change. The `confirmed` column is EMPTY until S4 (§1.4).
+codegen-micro (flagged), DATA = no emitter change. The `confirmed` column was FILLED by S4 (lane artconf, 2026-10-06; details `docs/dev/optloop/artrev/confirm/verdicts.md`). A09:L6 (the combination twin) = WIN is not joined to one idea (§1.4's "L6 under I9" does not fit A09).
 
 | idea | artifacts / leads | class | known/new + row | population bench/corpus | give-up tag | cost / risk | expected effect (reviewer) | confirmed |
 |---|---|---|---|---|---|---|---|---|
-| I1 inner rare anchor | A01 L1 | ALG | generalises [ENG-TACTICS] (b) to the DFA route | 17 / 90 (≥2× prior; 8 / 31 at ≥8×) | — (0) | M-L / M-H | rvA01: largest; memchr 33,377→3,820 per MiB fail | |
-| I2 run member by subject rate | A01 L2; A09 L1 (byte choice) | DATA | known: [OPT-FREQPICK] + [FINDINGS] (D83) | 109 / 559 run-bearing; bundle moves 33 / 112 | — (0) | 0 / — | rvA01: -17% memchr on fail; superseded by L1 | |
-| I3 forward marker start | A01 L3; A09 L4 r1 | ALG (hit) | generalises axis J `pinned` ([OPT-5] S2); new row | ≤71 / ≤389 | — (0) | M / M | rvA01: ~10-15% of hit, median unmoved; rvA09: 12.4k rev steps per MiB → 0 | |
-| I4 handoff re-skip | A01 L4 | MICRO (flagged) | candidate mechanism for K88 [K88-HANDOFF-DENSE] | 36 / 114 | — (0) | XS / L | rvA01: NOISE here; short-call regime | |
-| I5 VM context start filter (+restart) | A07a L1, L4 resume; A07b L1, L5 | ALG | generalises [START-SET] stage 2 (VM hat) | 2 / 1 | — (0) | S-M / L-M | A07b: -20% (run 001); rvA07a: ~3/4 of calls removed | |
-| I6 possessify `\b` / backref arms | A07a L2; A07b L2 | ALG | generalises [ENG-BREP] rung 1 (possessify) | 1 / 2 (pos) | **changes-giveup-surface** (5,380) | S / M | A07b: -45% alone (run 001) | |
-| I7 trail elision | A07a L3; A07b L3 | ALG | NEW | ≤66 / ≤1,454 (frameless 27 / 623) | **changes-giveup-surface** (294,884, stacked) | M / M | A07b: -53% with L2 (+8 pts) | |
-| I8 inline frameless matcher | A07b L4; A07a L4 fusion | — | known, SHIPPED: [CC-DIFF] entry shapes; moot via I6 | 30 / 660 frameless today | inherits I6/I7 | 0 | A07b: -72% cumulative L1-L4 | |
-| I9 byte tables | A07a L5; A07b L6 | MICRO (flagged) | known: [OPT-A] menu, [CLS-TREE], [FORM-CHAR] | 44 / 67 | none own (stack inherits) | XS-S / L | small, perhaps noise | |
-| I10 counters in locals | A07a L6 | MICRO (flagged) | known territory: [OPT-B] | 41 / 837 | — (0) | S-M / L | rvA07a: small-medium | |
-| I11 start-component skip | A09 L2 (+ L1's scan half) | ALG | known: [START-SET] stage 3 (lane/ssbuild3); MOOT on landing | 30 / 138 seeded; stage 3 takes 18 / 31 | — (0) | 0 new | rvA09: ~3× on prefilter | |
-| I12 per-alternative rare streams | A09 L1 | ALG | generalises [OPT-A] memchr2/3 + startset §8 stage 5 | 21 / 11 (prior-cheaper 3 / 2) | — (0) | M / M | rvA09: ≥10× on prefilter | |
-| I13 multi-state stay-set skip | A09 L3 | ALG | generalises [OPT-3-RUNEND] (a) | 7 / 7 | — (0) | S-M / M | rvA09: hit only, ~5-15% | |
-| I14 counted-gap hybrid verify | A09 L4 r2/r3 | ALG | NEW (nearest: captures_via_dfa candidate (c)) | 5 / 0 | tagged for r2 form (5,562); r3 exact | M / M-H | rvA09: ~30% of post-L1 hit | |
-| I15 frameless lazy step | A09 L5 | ALG | NEW | ≤5 / ≤54 | — (0) | S / M | rvA09: ~45→25 insns per lazy position | |
+| I1 inner rare anchor | A01 L1 | ALG | generalises [ENG-TACTICS] (b) to the DFA route | 17 / 90 (≥2× prior; 8 / 31 at ≥8×) | — (0) | M-L / M-H | rvA01: largest; memchr 33,377→3,820 per MiB fail | A01:L1=WIN |
+| I2 run member by subject rate | A01 L2; A09 L1 (byte choice) | DATA | known: [OPT-FREQPICK] + [FINDINGS] (D83) | 109 / 559 run-bearing; bundle moves 33 / 112 | — (0) | 0 / — | rvA01: -17% memchr on fail; superseded by L1 | A01:L2=NOISE (p1 only); A09:L1 byte choice joins I12 |
+| I3 forward marker start | A01 L3; A09 L4 r1 | ALG (hit) | generalises axis J `pinned` ([OPT-5] S2); new row | ≤71 / ≤389 | — (0) | M / M | rvA01: ~10-15% of hit, median unmoved; rvA09: 12.4k rev steps per MiB → 0 | A01:L3=NOISE (dense row WIN, regime-only) |
+| I4 handoff re-skip | A01 L4 | MICRO (flagged) | candidate mechanism for K88 [K88-HANDOFF-DENSE] | 36 / 114 | — (0) | XS / L | rvA01: NOISE here; short-call regime | A01:L4=NOISE (p1 only) |
+| I5 VM context start filter (+restart) | A07a L1, L4 resume; A07b L1, L5 | ALG | generalises [START-SET] stage 2 (VM hat) | 2 / 1 | — (0) | S-M / L-M | A07b: -20% (run 001); rvA07a: ~3/4 of calls removed | A07a:L1=WIN, A07b:L1=WIN; stacks adding resume/restart: A07a:L4=WIN, A07b:L5=WIN |
+| I6 possessify `\b` / backref arms | A07a L2; A07b L2 | ALG | generalises [ENG-BREP] rung 1 (possessify) | 1 / 2 (pos) | **changes-giveup-surface** (5,380) | S / M | A07b: -45% alone (run 001) | A07a:L2=WIN, A07b:L2=WIN; hand-possessified spelling `poss`=WIN (+58%) |
+| I7 trail elision | A07a L3; A07b L3 | ALG | NEW | ≤66 / ≤1,454 (frameless 27 / 623) | **changes-giveup-surface** (294,884, stacked) | M / M | A07b: -53% with L2 (+8 pts) | stacks on L2: A07a:L3=WIN, A07b:L3=WIN |
+| I8 inline frameless matcher | A07b L4; A07a L4 fusion | — | known, SHIPPED: [CC-DIFF] entry shapes; moot via I6 | 30 / 660 frameless today | inherits I6/I7 | 0 | A07b: -72% cumulative L1-L4 | stack L1-L3+inline: A07b:L4=WIN; `poss` (shipped emitter inline) =WIN |
+| I9 byte tables | A07a L5; A07b L6 | MICRO (flagged) | known: [OPT-A] menu, [CLS-TREE], [FORM-CHAR] | 44 / 67 | none own (stack inherits) | XS-S / L | small, perhaps noise | stacks only: A07a:L5=WIN, A07b:L6=WIN (increment over the stack not isolated) |
+| I10 counters in locals | A07a L6 | MICRO (flagged) | known territory: [OPT-B] | 41 / 837 | — (0) | S-M / L | rvA07a: small-medium | A07a:L6=NOISE (cell); ~+2% on dense/sparse/t1m |
+| I11 start-component skip | A09 L2 (+ L1's scan half) | ALG | known: [START-SET] stage 3 (lane/ssbuild3); MOOT on landing | 30 / 138 seeded; stage 3 takes 18 / 31 | — (0) | 0 new | rvA09: ~3× on prefilter | A09:L2=WIN |
+| I12 per-alternative rare streams | A09 L1 | ALG | generalises [OPT-A] memchr2/3 + startset §8 stage 5 | 21 / 11 (prior-cheaper 3 / 2) | — (0) | M / M | rvA09: ≥10× on prefilter | A09:L1=WIN |
+| I13 multi-state stay-set skip | A09 L3 | ALG | generalises [OPT-3-RUNEND] (a) | 7 / 7 | — (0) | S-M / M | rvA09: hit only, ~5-15% | A09:L3=NOISE (cell); dense WIN +6% |
+| I14 counted-gap hybrid verify | A09 L4 r2/r3 | ALG | NEW (nearest: captures_via_dfa candidate (c)) | 5 / 0 | tagged for r2 form (5,562); r3 exact | M / M-H | rvA09: ~30% of post-L1 hit | A09:L4=LOSS (cell, sparse); dense WIN +47% |
+| I15 frameless lazy step | A09 L5 | ALG | NEW | ≤5 / ≤54 | — (0) | S / M | rvA09: ~45→25 insns per lazy position | A09:L5=NOISE (cell); dense WIN +21% |
 
 Combined twins (A07b L4/L5/L6 stacks, A09 L6) are not ideas. Their verdicts join under the idea
 they add (§1.4).
