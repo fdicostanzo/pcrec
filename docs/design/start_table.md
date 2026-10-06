@@ -100,6 +100,9 @@ finding-by-finding record is `../dev/reviews/2026-10-06-r2-starttable-recheck.md
 | S-N5 (§1.3(b) has no population) | fixed: `assert_reach.py` → `assert_reach.tsv` | §1.3 |
 | both: §6 Q1 | RULED (D151 addendum 1) | §6 |
 | sibling lens: the position domain | filed as [DEC-POSDOM] (`docs/dev/plan.md`) | §2.5, §5.4 |
+| Frank 2026-10-06, R-Q3 ([DEC-FALLBACK] tokens) | RULED: today's tokens kept, a pure no-mover; name/why separation is a later abi row | §6 R-Q3, D151 add. 2 |
+| Frank 2026-10-06, R-Q4 (streamlining) | RULED: two serial no-mover refactors, A (this fold) then B ([DEC-FALLBACK]); B absorbs Q8; movers (Q4, Q5, Q6, Q10/D-4, [DEC-POSDOM], token separation) are later separate rows | §6 Q8, R-Q4; §5.4; D151 add. 2 |
+| Frank 2026-10-06, R-Q5 (memfn sequencing) | RULED: kit R4c (main `05c33ce0`) before C1-C7, C0 in parallel; C1-C7 re-derive their edit set on post-R4c main; B1-B18 are input; ping the kit at C0's merge (it awaits the full I2) | §3.2, §6 R-Q5; D151 add. 2 |
 
 ---
 
@@ -1016,6 +1019,18 @@ answers a different question:
 | C6 | **the listing reads the table**: `axes_dump.c`'s `prefilter`, `search-start`, `req-admit`, `req-use`, `hyb-reseed`, `vm-anchor-bound`, `end-window` sections project `cand_rows[]` by `list[route]` (NOT `match`: `dfa_matches[]` stays outside, §2.5 [r2 sound-m3]), printing today's `kind`, order, listed name and `desc` text byte for byte; N12 has no listing; `AXIS_DESC`'s start rows deleted | nothing (stream 5 identical) |
 | C7 | **declared listing commit, stream 5 only, NOT an abi event**: D-3's stale desc corrected; `kind` becomes `list` for the start axes that ARE lists now; spec hunk in `docs/spec/registry.md`; `tests/registry/` pins re-read | `--list-axes` text only |
 
+**Sequencing against the kit's R4c** [Frank 2026-10-06, R-Q5; §6]: R4c (`memfn/docs/requests.md`
+R-4, main `05c33ce0`) lands BEFORE C1-C7, and C0 (no `src/`) runs in parallel
+with it. The edit set, the anchor census and every `refactor_edit_set.tsv` line
+number below were derived on pre-R4c main: C1-C7 RE-DERIVE them (the
+instruments re-run) on post-R4c main before the first edit. Once R4c has landed,
+a change to a migrated emitter's TEXT is kit work (D146/D147), not this fold's;
+the start DECISION reads inside those emitters (the kit's list B1-B18) stay
+pcrec-side and ARE this fold's edit set, taken as input from the kit's report.
+C0's full I2 (every axis x both comment tiers) is awaited by the kit: ping it
+when C0 merges. Serial order of the two decision-family refactors: this fold (A)
+first, then [DEC-FALLBACK] (B, whose STEP 0 census runs after C7 merges) [R-Q4].
+
 C5's stamp/listing readers are `line` entries of the edit set since revision
 2.1 (`END_WINDOW` `emit_dfa.c:10114`, `VM_START` `emit_vm.c:11558`, and the
 `--emit-ir` listing's `st->root_minw` test `emit_vm.c:9492`, which revision 2's
@@ -1611,7 +1626,7 @@ which overlap this note:
 | sibling | the question | how it touches the start table | keep separate? |
 |---|---|---|---|
 | ENGINE selection (`select_engine.c` `analyses[]`, `engine-route`) | which execution core runs the match | it decides the ROUTE (`CR_DFA`/`CR_ATTEMPT`/`CR_VM`), which the table reads as a column | **Yes.** It answers a different question with a different contract (D124 item 3: the cores stay distinct). Its input is the AST and build outcomes, not landmarks |
-| PREFILTER admission (`fit.prefilter`, `select_engine.c:862`; `prefilter-lang`; `fit_rungs[]`) | does a VM get a DFA in front, and which language | makes the VM route a hybrid: N on the inlined body, RETRY on the VM side. FIRST's handoff reads it (`pcrec_artifact_has_dfa_scan`) | **Yes, for now.** It is a build-time selection with a retry ladder (`compile_driver`'s one recovery point). Folding it in would put a build outcome into a row predicate. **But** it should become a first-match table itself: it is the one family member still a ternary (`:862`). Filed, §6 Q8 |
+| PREFILTER admission (`fit.prefilter`, `select_engine.c:862`; `prefilter-lang`; `fit_rungs[]`) | does a VM get a DFA in front, and which language | makes the VM route a hybrid: N on the inlined body, RETRY on the VM side. FIRST's handoff reads it (`pcrec_artifact_has_dfa_scan`) | **Yes, for now.** It is a build-time selection with a retry ladder (`compile_driver`'s one recovery point). Folding it in would put a build outcome into a row predicate. **But** it should become a first-match table itself: it is the one family member still a ternary (`:862`). **RULED [Frank 2026-10-06, R-Q4]: folded into [DEC-FALLBACK] (refactor B), not its own row**, §6 Q8 |
 | REQ pre-check admission (`req_admits[]`) | — | this note FOLDS it in as PRESENCE, because "no landmark → no candidate" IS a start mapping, and G1 reads NEXT's choice. Keeping it separate would leave a cross-table read as today | **No: folded** |
 | The engine-shape prelude (survey family 4: 11 `PCREC_ENG_ATTEMPT` tests, the attempt route bypassing `dfa_pfs[]`) | is there a table walk; which route | its "parallel mechanism for which prefilter" IS N12 and the ATTEMPT route of this table | **No: folded** (N12, `CR_ATTEMPT`, and the route taken from `job->engine`) |
 | The landmark pick (survey family 2: six pickers, five tie rules) | which byte at which offset a row scans | the rows read its result; D-4 is its one identity clause with the table | **Yes: a ranking, not a table** (§2.5); [TIE-ALIGN] re-scoped, §6 Q10 |
@@ -1627,7 +1642,8 @@ which overlap this note:
   a row scans, or HOW a scan or verify is spelled stays its own table or
   ranking, and reaches this table as a route bit, a fact or a site id.
 - The one family member that is not yet a first-match table (prefilter
-  admission) is filed (§6 Q8), not folded.
+  admission) is not folded here; it is folded into [DEC-FALLBACK], the second
+  serial no-mover refactor (§6 Q8, RULED [Frank 2026-10-06, R-Q4]).
 
 ---
 
@@ -1683,9 +1699,11 @@ which overlap this note:
   `sabotage_anchors.py` + `refactor_edit_set.tsv` and `anchor_agree.py` stay
   here as design evidence.
 - **Q8. Prefilter admission as a first-match table?** It is the sibling still
-  spelled as a ternary (`select_engine.c:862`). **Recommend (unchanged): file as
-  its own no-mover row**, not part of this refactor: its retry-ladder interaction
-  is `compile_driver`'s, outside the start table.
+  spelled as a ternary (`select_engine.c:862`). **RULED [Frank 2026-10-06,
+  R-Q4]: folded into [DEC-FALLBACK] (refactor B below), NOT its own row** and
+  not part of this refactor (A). Its retry-ladder interaction is
+  `compile_driver`'s, outside the start table; B owns it. (Was: recommend file
+  as its own no-mover row.)
 - **Q9. Panel shape.** **DONE** [r2.1]: the short re-check ran and both
   critics returned "CLEARS with listed fixes"
   (`../dev/reviews/2026-10-06-r2-starttable-recheck.md`). Revision 1 had its light panel (two critics, no blocker,
@@ -1697,7 +1715,39 @@ which overlap this note:
   rule, read by the run reader, the pin and `prefix_k`", which deletes N1/N2's
   identity clause. It is a form mover (answer-identical), so it is its own abi
   event after C7, gated on D119's bench bar; its census is D-4's utf8 families
-  plus the byte-arm `\d\dxyz` shapes. Not part of the fold.
+  plus the byte-arm `\d\dxyz` shapes. Not part of the fold. **Confirmed a later
+  separate row, never folded into A or B (R-Q4 below).**
+
+**Rulings of Frank, 2026-10-06** (answers to the manager's three questions on
+decision families, streamlining and memfn sequencing; numbered R-Q3..R-Q5 here
+so they do not collide with this note's own Q-numbers above):
+
+- **R-Q3. [DEC-FALLBACK]'s token contract.** **RULED** [Frank 2026-10-06]:
+  [DEC-FALLBACK] KEEPS today's tokens (`ENGINE_SEL`, `UNROLL_K_WHY`, the
+  `*_LANG_WHY` values, `VM_PREFILTER_WHY`; `match_api.md` §6.3 vocabularies): a
+  PURE no-mover. Separating the "name" token from the "why" token is a later,
+  separate abi row. (Replaces "manager recommends, Frank to confirm".)
+- **R-Q4. Streamlining: two serial no-mover refactors.** **RULED** [Frank
+  2026-10-06]. **A** = this note's start-table fold (C0, C1-C7 + C5b,
+  `cand_route_of`, the checked handoff graph §1.6). **B** = [DEC-FALLBACK]
+  (`fit_rungs[]` + [SEL-1]'s two overflow rungs folded into one table, tokens
+  kept per R-Q3), and **B ABSORBS this note's Q8** (the prefilter admission
+  ternary, `select_engine.c:862`): Q8 is RULED as folded into [DEC-FALLBACK],
+  not its own row. Order: **A first; B's STEP 0 census runs after A's C7
+  merges.** The MOVERS are later separate rows and are NEVER folded into A or B:
+  Q4 (G1 declines `EXACTPRED`), Q5 (`attempt-start`), Q6 (D-2b), Q10/D-4
+  ([TIE-ALIGN]), the position-domain family ([DEC-POSDOM]) and the token
+  separation of R-Q3.
+- **R-Q5. memfn sequencing.** **RULED** [Frank 2026-10-06]. The kit's R4c
+  (`memfn/docs/requests.md` R-4, main `05c33ce0`: the composite PRE site and the
+  offset-skip trio's search TEXT move behind memfn, zero movers) lands BEFORE
+  C1-C7. C0 (the `emit_sweep` extension, no `src/`) runs IN PARALLEL with R4c.
+  C1-C7 RE-DERIVE their edit set (the instruments re-run) on post-R4c main.
+  After R4c, edits to migrated emitter text are KIT work (D146/D147); the start
+  DECISION reads stay pcrec-side, and the kit is listing 18 such reads (B1-B18)
+  inside the migrated emitters, which the fold's edit set takes as INPUT (§3.2).
+  The kit awaits C0's full I2 (every axis x both comment tiers): **ping the kit
+  when C0 merges.**
 
 ---
 
