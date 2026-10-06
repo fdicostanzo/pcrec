@@ -3677,8 +3677,10 @@ below the offset/run rows and above the plain ones, `first-memchr-bounded`
 and `first-class-bounded` (deny `PCREC_NO_START_SET`). Four things to know:
 
 - **`pf_dfa_start_set` IS THE PREDICATE CORE AND THE SET.** It answers F and
-  fills `T = S & E*` (`dfa_estar`: the union of every live seed state's and
-  `s0`'s escape set) in one derivation; the rows' `applies` call it and
+  fills `T = S` in one derivation (`S & E*` until the ssfix3 panel fixes,
+  2026-10-06: a byte of `S` can leave every seed where it is, so the
+  intersection dropped a start byte and the old `T == S` assertion refused
+  valid patterns — the panel's BLOCKER sound-F1); the rows' `applies` call it and
   `DfaPf.scan_set` points at it, so `pf_scan_set_of` — the ONE place a reader
   of the scanned set asks (`dfa_form_derive`'s `f->cand`, `dfa_cand_scan`'s
   G1 byte, `pcrec_dfa_cand_ppm`'s re-seed density) — cannot price `E` for a
@@ -3686,8 +3688,10 @@ and `first-class-bounded` (deny `PCREC_NO_START_SET`). Four things to know:
   carries `.ss = pcrec_fact_start_set(cx)`.
 - **TWO ASSERTIONS, NOT DECLINES.** A seeded machine is a views machine
   (startset.md §6.4.3 item 3), so the DFA hat is `-bounded`-only and an
-  admitted mover without `views` is an internal error; and `T == S` on every
-  mover (Q-R1: `E*` is all 256 on a seeded machine). The first is why the
+  admitted mover without `views` is an internal error; and the re-seed's
+  premise read off the machine (`dfa_reseed_exact`: a byte outside `T` takes
+  `s0` and every live seed to its own class's seed), which a correct start
+  set always satisfies and a walk that dropped a start byte breaks. The first is why the
   unbounded DFA-route forms do not exist: `first-class` stays VM-only.
 - **THE RE-SEED IS CONDITIONAL AND IS NOT `pf_emit_ofs_reseed`.**
   `pf_emit_moved_reseed` writes `if (scan_position > skip_from) forward_state

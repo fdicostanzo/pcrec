@@ -11,7 +11,8 @@ by the stage that builds each hat.
   `tests/startset/startset_lib.py` (the checks' own population: every block
   with its own `flags`/`features`/`encoding`/`engine`/`tune`, deduplicated on
   (text, options)); the start set is the SHIPPED `--emit-facts` row; the DFA
-  hat's set is `T = S ∩ E*` read off the emitted tables. Its header states
+  hat's set is `T = S ∩ E*` read off the emitted tables (since the ssfix3
+  panel fixes, 2026-10-06: `T = S`, and every compile carries `-fno-start-set`). Its header states
   the two hats' predicates as stages 2 and 3 will build them. Env:
   `TREE PCREC OUT [BENCH JOBS MANIFESTS]`; ~30 s on the Mac.
 - `census_s1.tsv`, `census_s1_summary.txt` — its output at the stage-1 build
