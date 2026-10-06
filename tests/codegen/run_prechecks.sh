@@ -1826,7 +1826,7 @@ ROWS
 # .flags where it is kept, so a comparison that could not see a move reads red
 # rather than green.
 REG_FLAGS="$(pcrec_run "$PCREC" --list-axes 2>/dev/null | grep -v '^#' | awk -F'\t' '$11 != "" {print $11}' \
-             | sed 's# / #\n#g; s#|#\n#g' | grep '^-f' | sort -u)"
+             | sed 's# / #\n#g; s#|#\n#g' | grep '^-f' | LC_ALL=C sort -u)"
 n_reg=$(printf '%s\n' "$REG_FLAGS" | grep -c .)
 [ "$n_reg" -ge 40 ] \
     && ok "[6b] the registry names $n_reg -f spellings (floor 40)" \
