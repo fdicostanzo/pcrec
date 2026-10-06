@@ -127,7 +127,7 @@ Ranking = confirmed gain x counted population / cost; populations from generaliz
    - Cost/risk: S / M. Possessify has a refutation history (U1, U2, the lazy conjunct): each arm needs `tests/possessify/run_possdiff.sh` extended and a D6 panel before build.
    - Algorithmic (not codegen-micro). Not moot under stage 3.
 
-2. **[ENG-TACTICS] (b) reverse-inner, DFA-route instance (addendum + MEMFN request)** (I1, A01 L1).
+2. **EVIDENCE FOR AN EXISTING ROW, not a new suggestion: [ENG-TACTICS] (b) reverse-inner — Frank's row (plan.md, BOONIES tier, unscheduled 2026-09-25), here as a DFA-route instance** (I1, A01 L1). The row was framed around the VM/backref population (K66's witness); what ARTREV adds is a measured DFA-route case and its population. [OPT-A] already records stack-frame's `\bat ` gap (bench O-8). Whether this moves the row out of BOONIES is Frank's call; the build would also be a [MEMFN] request.
    - Confirmed: **-72.2%** cell, 0.455 to 0.126 ns/B, all pads, dense and sparse WIN, 0 repairs.
    - Population: 17 bench (8 at >=8x; `stack-frame`, `uuid`, `iso-ts`, `ipv6`, `orig`, `waf-942160-sleep-benchmark`) / 90 corpus (31 at >=8x). 12 / 50 are already presence-checked by K82 `set-leads`: the emitter knows the byte and uses it only to say no. The 2x bar is an unmeasured default. Hybrids not counted.
    - Cost/risk: M-L / M-H: prefix reverse machine, leftmost-start uniqueness argument (rust's reverse-inner quadratic guard), a deny flag, an abi event. A scan site, so a [MEMFN] request (D146/D147).
