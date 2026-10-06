@@ -1561,7 +1561,7 @@ def main():
         declared = trace_diff.read_declared(args.trace_declared) if args.trace_declared else set()
         ok_t, text_t = trace_diff.compare(trace_diff.load(paths[0]), trace_diff.load(paths[1]),
                                           declared=declared,
-                                          min_records=TRACE_RECORDS_FLOOR)
+                                          min_records=TRACE_RECORDS_FLOOR if full_population else 1)
         print(text_t)
         print(f"  trace streams: {paths[0]} {paths[1]}")
         run_ok = run_ok and ok_t

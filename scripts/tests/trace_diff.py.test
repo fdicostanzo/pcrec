@@ -71,6 +71,7 @@ expect declared-stale     1 "$T/ref.tsv" "$T/same.tsv" --declared "$T/decl_stale
 expect empty-vs-empty-no-floor 0 "$T/empty.tsv" "$T/empty.tsv"
 expect empty-floor-caught 1 "$T/empty.tsv" "$T/empty.tsv" --min-records 1
 expect one-side-floor     1 "$T/ref.tsv" "$T/empty.tsv" --min-records 1
+expect floor-above-records 1 "$T/ref.tsv" "$T/same.tsv" --min-records 100
 expect keys-ignore-site   0 "$T/ref.tsv" "$T/same.tsv" --keys slot,route,row
 expect bad-header         2 "$T/decl" "$T/ref.tsv"
 

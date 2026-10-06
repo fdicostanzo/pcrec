@@ -372,6 +372,36 @@ pcrec (the Makefile owns that).
   (gitignored), never `build/`. See `docs/testing.md`'s "Emitter
   byte-neutrality sweep" section and `docs/dev/lanes/bsweep_report.md` for
   the validation transcript and the five-lane reconciliation.
+  **[START-TABLE] C0 (lane stc0, 2026-10-06) extended it** for the
+  start-table fold's no-mover proof (`docs/design/start_table.md` §3.2-§3.3):
+  a SIXTH stream (`--emit-facts=byte,utf8`, the only one that sees an ask
+  moving no byte); `--extra`/`--extra-base` (option arms threaded through ONE
+  splice, `opt_argv`, into streams 1-4 on both sides); `--arms start` (the
+  start-family deny arms plus plain `-e utf8` and `-i`, at byte and utf8
+  bases, each held to a pinned DIFFER floor per side — `DIFFER_PINS`, from
+  `docs/design/start_table/deny_census.tsv` — plus a manifest pattern, the
+  asserted zeros and a null arm); `--patterns-file`/`--no-corpus`/`--every`
+  (witness populations; floors are not applied off the full corpus, and the
+  report says so); `--streams`; a `cflags` pass-through in `build_from_rev`
+  (`--build-cflags`); and the TRACE family (`--trace`: both sides built
+  `-DPCREC_CAND_TRACE`, stderr records tagged with pattern index and arm by
+  the sweep, compared by `trace_diff.py`, and the trace build's stdout held
+  equal to the default build's). Two sides that are one binary compile once
+  and mirror (a measurement run, said so). The start-family stamp parser
+  (`stamps_of`, `start_keys_moved`) moved here from
+  `docs/design/start_table/row_census.py`, which imports it. Self-test:
+  `tests/emit_sweep.py.test` (the arms over their own manifests, ~5 s); the
+  mech `emitsweep` arm runs it. See `docs/dev/lanes/stc0_report.md`.
+
+- **trace_diff.py** — [START-TABLE] C0's selection-trace diff: compares two
+  trace streams (`idx arm seq record`, written by `emit_sweep.py --trace`)
+  per (pattern, arm) as ORDERED sequences (so neither a swap between
+  patterns nor a reorder inside one cancels), filters only the sites a
+  commit DECLARES (`--declared`; a declaration that filters nothing fails),
+  and holds a records-per-arm floor (an empty trace passes no diff).
+  `--keys` selects the compared fields. Exit 0 clean / 1 differ / 2 bad
+  input. Self-test: `tests/trace_diff.py.test` (13 planted cases, each
+  paired with its clean twin).
 
 - **cls_identity.py** — [CLS-TREE] S3's BYTE-IDENTITY INSTRUMENT
   (2026-09-29, lane `clsid`, `cls_s3_reader_inventory.md` §7/D-8), the

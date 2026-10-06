@@ -364,6 +364,12 @@
 #     `nm -u` libc names. Its own arm because a wrong LIBC value moves no
 #     answer, and every identity gate compares against a tree that carries
 #     the same wrong value. Registered before S513-S517.
+#   emitsweep — added 2026-10-06 ([START-TABLE] C0, lane stc0); runs
+#     scripts/tests/emit_sweep.py.test (the arms family over its own manifest
+#     population, the sabotaged tree's build/pcrec) and
+#     scripts/tests/trace_diff.py.test (pure python). Its own arm because both
+#     are facts about the sweep TOOLING, which no compiler suite reads: a row
+#     here scores `corpus:0fail` by design. Registered before its rows.
 #
 # THE THREE NEWEST WORDS WERE REGISTERED FIRST, DELIBERATELY, which is the
 # lesson R31 C11 left one module earlier: this vocabulary is CLOSED, so a
@@ -2716,6 +2722,18 @@ run_one() {
                 p="$(grep -m1 '^checks passed:' "$work/memfnstamps.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/memfnstamps.log" | grep -oE '[0-9]+')"
                 score_arm "$work/memfnstamps.log" "$f" "memfnstamps:${f:-ERR}fail/${p:-?}pass"
+                ;;
+            emitsweep)
+                # [START-TABLE] C0 — see the vocabulary entry above. Both
+                # self-tests print `checks passed:`/`checks failed:`; the arm
+                # sums them, and a missing count is the documented ERR cell.
+                { PCREC="$tree/build/pcrec" TMPDIR="$work" \
+                      bash "$tree/scripts/tests/emit_sweep.py.test"
+                  TMPDIR="$work" bash "$tree/scripts/tests/trace_diff.py.test"; } \
+                    > "$work/emitsweep.log" 2>&1
+                p="$(grep '^checks passed:' "$work/emitsweep.log" | grep -oE '[0-9]+' | awk '{s+=$1; n++} END {if (n == 2) print s}')"
+                f="$(grep '^checks failed:' "$work/emitsweep.log" | grep -oE '[0-9]+' | awk '{s+=$1; n++} END {if (n == 2) print s}')"
+                score_arm "$work/emitsweep.log" "$f" "emitsweep:${f:-ERR}fail/${p:-?}pass"
                 ;;
             core)
                 # [REVW.U L5-R0/R2] tests/core/run_core_tests.sh — the unit

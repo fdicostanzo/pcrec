@@ -52,3 +52,23 @@ report (`.DELETE_ON_ERROR`) — a red run must not leave a green artifact.
 
 Maintenance: update this file when .test files are added/removed or a
 script's test coverage changes meaningfully.
+
+- **emit_sweep.py.test** — [START-TABLE] C0: `emit_sweep.py`'s ARMS family
+  run over its own manifest population (one pattern per `DIFFER_PINS` cell,
+  one binary on both sides), so what it tests is the arms' plumbing: every
+  manifest differs under its arm on each side, the asserted zeros and the
+  null arm read 0, an unpinned `--extra` arm FAILS (the negative control),
+  and the patterns-file escape round-trips. Needs a built pcrec (`PCREC=`,
+  default `../build/pcrec`; missing = FAIL, never skip). Failing direction,
+  recorded in `docs/dev/lanes/stc0_report.md`: with `opt_argv` dropping every
+  option, or dropping only `-e utf8`, it goes red. tests/mech's `emitsweep`
+  arm runs it, which is where those plants live as sabotage rows.
+
+- **trace_diff.py.test** — [START-TABLE] C0's failing-direction control for
+  `trace_diff.py`: synthetic trace streams with a planted swap, a reorder, a
+  cross-pattern swap (multiset-equal), a row change, an undeclared and a
+  declared addition, a stale declaration, and empty streams with and without
+  a records floor, each paired with the clean case it was planted into. Pure
+  python, no pcrec. Its first run caught a real hole (an int floor over no
+  arms checked nothing), fixed before landing.
+
