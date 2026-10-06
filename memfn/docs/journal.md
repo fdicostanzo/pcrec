@@ -317,3 +317,22 @@ pointer when a kit change merges to main.
 - Waiting: R-4 (R4c, the M1 migration), which main is sequencing with
   Frank against the start-table refactor (shared emit_dfa.c
   offset-skip/PRE sites). No R4c code before R-4 is filed.
+
+## 2026-10-06 — R-4 (R4c) taken up
+
+- R-4 filed on main at 05c33ce0. Branch `lane/memfn-r4c` cut from main
+  691a8b7c; ack d836eb17.
+- A read-only opus scoping pass wrote worktrees/r4cscope-scratch/scope.md:
+  - the sites can be expressed in MF_VOCAB 2;
+  - 18 boundary reads (B1-B18);
+  - 20 mech rows, not ~28;
+  - C4/C5/C10/C12/C13/C14/I1 do not exist yet;
+  - the memfn-simd pair does not exist (it is caller-observable);
+  - C17's dynamic half keys on a dead name;
+  - I2 needs main's C0.
+- Manager calls on Q2-Q13 are in rulings.md beside it. Q1 (pcrec's MIT
+  text moved into the 0BSD kit) went to Frank via main, recommending he
+  relicense it as 0BSD. It gates merging CORE into the branch.
+- Lanes running: r4ccore (opus, implement→replace), r4caxis (sonnet,
+  the inert memfn-simd pair), r4cchecks (sonnet, C4/C12/C13/C14, C17
+  re-key, VM-hybrid witness). Heavy runs are held for a slot from main.
