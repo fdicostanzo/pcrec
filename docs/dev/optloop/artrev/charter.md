@@ -159,8 +159,13 @@ story including the revisions; what it checked and rejected and why).
 identity and times the reviewer's final twins (original,
 original-recompiled, null twin, each lead twin, a combined twin when two or
 more leads survived) on the cell's subject plus one dense and one sparse
-variant, ≥11 interleaved rounds. A lead is a WIN only if its median beats the
-original by more than BOTH the null twin's deviation and the arms' IQR on the
+variant, ≥11 interleaved rounds. Plus a LAYOUT control: the original
+and each winning twin re-built at >=4 code-offset pads (the method of
+`docs/dev/optloop/k87twin_align.sh`), because a twin that changes code size
+also moves alignment, and K87 measured layout alone at a few percent; the
+harness's S0 null twin (an unused static function) measures recompile noise
+only. A lead is a WIN only if its median beats the original by more than the
+null twin's deviation, the arms' IQR AND the spread across pads, on the
 cell's own subject; a LOSS by the same rule; otherwise NOISE. Only these
 numbers enter the report. Optional: the top leads go to the bench as an
 `[inbox]` I-note asking whether its rig can time an external-artifact arm (a
