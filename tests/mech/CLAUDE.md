@@ -3284,3 +3284,25 @@ with REACH probes that flip the day the construct admits. S495 gains
 their REACH probes stopped pinning the facts listing's `used` column, which
 stage 2's every-artifact stamp turned to `yes`. Solo figures:
 `docs/dev/lanes/ssbuild3_report.md`.
+
+**ssfix3 (the ss3 D6 panel fixes, 2026-10-06): `dfahat` SPLIT, three rows
+re-typed.** The panel's checks-M1 found S481-S485 guaranteed DETECTED by a
+text pin (`[dfa-iff]`/`[dfa-reseed]` read the exact re-seed line each plant
+edits), so the arm certified nothing about the answer checks. `dfahat` is
+now `run_dfahat_checks.sh`'s ANSWER part (`DFAHAT_PART=answers`: the five
+fixture files through the harness, as written and under
+`-fprefilter-collapse`, and the differential) and **`dfahatstruct` is a new
+suite word** for its STRUCTURAL part (`dfahat_checks.py` and the compile-only
+arm `compile_fuzz.py`). S480-S485 and S504 stay on `dfahat` (answers only);
+S486, S488 and S495 move to `dfahatstruct` (each is answer-invisible by its
+own header); S501/S502 keep `startset vmhat dfahat`. S487/S489/S490 were
+UNREACHED rows whose probes could never flip on the clean tree (checks-M2);
+they are now DECLARED EQUIVALENT MUTANTS, `SAB_EXPECT=UNDETECTED` on
+`dfahatstruct` (S219's shape): planted, their artifacts must be the clean
+compiler's — `[dfa-deny]` and `[dfa-movers]` over the whole corpus are the
+byte-identity observable — and each probe is a clean-tree population that
+does not pass through its own conjunct. S480/S486/S488/S489 are re-anchored
+to the shipped `T = S` (sound-F1's fix; S480 also disables the new
+`dfa_reseed_exact` guard, which would otherwise refuse its witnesses). Solo
+figures at the fixed tip: `docs/dev/lanes/ssbuild3_report.md`, "Panel fixes
+(ssfix3)".
