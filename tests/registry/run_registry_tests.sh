@@ -634,21 +634,27 @@ fi
 # `req-use` (the pre-check's use table, walked live) carries one single-bit
 # (macro, bit, flag) triple on its `handoff` row (`PCREC_NO_REQ_HANDOFF`,
 # bit 46), 3 lines as above. Measured: 189 PASS, 0 failed.
-# 189 -> 192 at [START-SET] stage 2 (lane ssbuild2, 2026-10-05): the
+# 189 -> 190 at [MEMFN] R4a (lane memfnskel, 2026-10-05): `--list-axes` gains
+# the kit's `memfn` section, and axes_registry_check.sh reads it by name in
+# one new arm (present, header-truthful, columns by name = 1 PASS). Its floor
+# arm prints UNREACHED, never PASS, while the kit's registry is empty; the
+# first row (R4d) adds a PASS here when it pins its floor. Measured: 190
+# PASS, 0 failed.
+# 190 -> 193 at [START-SET] stage 2 (lane ssbuild2, 2026-10-05): the
 # `prefilter` axis's new `first-class` row (the VM hat) carries one
 # single-bit (macro, bit, flag) triple (`PCREC_NO_START_SET`, bit 47), 3
-# lines as above; no new axis. Measured: 192 PASS, 0 failed.
+# lines as above; no new axis. Measured: 193 PASS, 0 failed.
 axesn="$(grep -c '^PASS: ' "$AXESOUT" || true)"
-if [ "$axesn" -ne 192 ]; then
+if [ "$axesn" -ne 193 ]; then
     if grep -q "^checks failed: 0" "$AXESOUT"; then
-        echo "registry: axes_registry_check COVERAGE CHANGED — $axesn passing checks, expected 192." >&2
+        echo "registry: axes_registry_check COVERAGE CHANGED — $axesn passing checks, expected 193." >&2
         echo "registry:   if you added or removed axes/checks on purpose, update this number" >&2
         echo "registry:   in the same commit; if not, coverage was removed" >&2
     else
         axesnf="$(sed -n 's/^checks failed: //p' "$AXESOUT" | tail -1)"
-        echo "registry: axes_registry_check shows $axesn passing checks (192 expected; ${axesnf:-?} failed," >&2
+        echo "registry: axes_registry_check shows $axesn passing checks (193 expected; ${axesnf:-?} failed," >&2
         echo "registry:   so a lower count is expected here). Fix the failures first; then this" >&2
-        echo "registry:   number must return to 192 — if it does not, coverage was removed too" >&2
+        echo "registry:   number must return to 193 — if it does not, coverage was removed too" >&2
     fi
     rc=1
 fi

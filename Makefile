@@ -112,6 +112,22 @@ LIBSRCS := $(wildcard src/core/*.c) $(wildcard src/parse/*.c) \
            $(wildcard src/dump/*.c)
 LIBOBJS := $(patsubst src/%.c,$(BUILD_DIR)/obj/%.o,$(LIBSRCS))
 
+# [MEMFN] R4a: pcrec-memory-functions, the in-tree search-code kit (memfn/,
+# D146/D147; memfn/CLAUDE.md). libpcrec.a LINKS the kit, so its objects join
+# the archive, but the kit is compiled with KITFLAGS, which carry NO -Ilib or
+# -Isrc: the kit includes nothing from pcrec, and a kit file that tried would
+# not compile (the boundary held by the build, not by a reviewer). pcrec's
+# sources reach the kit only through memfn/include/memfn.h. Every external
+# kit symbol is `pcrec_mf_*` (MF_NS), held by C15 (tests/memfn/). Generated
+# artifacts never link the kit: what reaches them is text.
+# tests/lib/lib_srcs.sh is the ONE list of the library's sources for the
+# test scripts that build a compiler from source; it reads the same two
+# directories as LIBSRCS and KITSRCS.
+KITSRCS  := $(wildcard memfn/src/*.c)
+KITOBJS  := $(patsubst memfn/src/%.c,$(BUILD_DIR)/obj/memfn/%.o,$(KITSRCS))
+KITHDRS  := memfn/include/memfn.h memfn/src/kit.h memfn/src/options.def
+KITFLAGS  = $(CFLAGS) $(WARN) -std=gnu11
+
 all: $(BUILD_DIR)/pcrec $(BUILD_DIR)/libpcrec.a $(BUILD_DIR)/pcrec-analyze
 
 # src/parse/cls_bits.inc joined the prerequisites at MOD-0.3e, found the
@@ -177,6 +193,14 @@ $(BUILD_DIR)/obj/%.o: src/%.c src/core/internal.h src/core/limits.h src/core/lim
 	@mkdir -p $(dir $@)
 	$(CC) $(ALLFLAGS) -c -o $@ $<
 
+$(BUILD_DIR)/obj/memfn/%.o: memfn/src/%.c $(KITHDRS)
+	@mkdir -p $(dir $@)
+	$(CC) $(KITFLAGS) -c -o $@ $<
+
+# The one pcrec translation unit that includes the kit's header: the
+# `--list-axes` dump's `memfn` section (mf_options()).
+$(BUILD_DIR)/obj/dump/axes_dump.o: memfn/include/memfn.h
+
 # [M5.0 stage 3] THE DERIVATION STEP, NAMED IN ITS GENERAL FORM: **a data
 # source compiles to generated tables** (third_party/README.md; Frank's
 # extension to the ASK 2 ruling, utf8_design.md §3.3.2). The rule iterates
@@ -240,7 +264,7 @@ $(BUILD_DIR)/obj/core/findings.o: $(FIND_INCS)
 $(FIND_STAGE0)/findings.o: src/core/findings.c src/core/internal.h src/core/limits.h src/core/limits.def src/core/axes.def src/parse/rxt_schema.def $(FACTS_HDRS) lib/pcrec.h src/core/findings_store.inc
 	@mkdir -p $(dir $@)
 	$(CC) $(ALLFLAGS) -DPCREC_FIND_STAGE0 -c -o $@ $<
-$(FIND_STAGE0)/libpcrec.a: $(filter-out $(BUILD_DIR)/obj/core/findings.o,$(LIBOBJS)) $(FIND_STAGE0)/findings.o
+$(FIND_STAGE0)/libpcrec.a: $(filter-out $(BUILD_DIR)/obj/core/findings.o,$(LIBOBJS)) $(KITOBJS) $(FIND_STAGE0)/findings.o
 	@rm -f $@
 	ar rcs $@ $^
 $(FIND_STAGE0)/findgen: scripts/findgen.c $(FIND_STAGE0)/libpcrec.a
@@ -251,7 +275,7 @@ gen-findings: $(FIND_STAGE0)/findgen
 	$(FIND_STAGE0)/findgen src/core/findings_table.inc.tmp $(FIND_STORE_SRCS)
 	@mv src/core/findings_table.inc.tmp src/core/findings_table.inc
 
-$(BUILD_DIR)/libpcrec.a: $(LIBOBJS)
+$(BUILD_DIR)/libpcrec.a: $(LIBOBJS) $(KITOBJS)
 	ar rcs $@ $^
 
 $(BUILD_DIR)/pcrec: cli/main.c $(BUILD_DIR)/libpcrec.a lib/pcrec.h src/core/axes.def src/core/internal.h $(FACTS_HDRS)
@@ -296,7 +320,8 @@ TEST_SECTIONS := test-corpus test-cli test-reject test-registry test-parse \
       test-prefilter-collapse test-rxtsource test-definitions \
       test-entry-shape-identity test-cpset-structure test-startbnd \
       test-uprops test-core test-vars test-examples test-findings test-ucp \
-      test-clskit test-encoding-checks test-utfcheck test-startset
+      test-clskit test-encoding-checks test-utfcheck test-startset test-memfn-link \
+      test-memfn-manifest test-memfn-g2
 
 # [CHK-2 trailer] `test:` STOPPED being purely prerequisite-based here
 # (2026-08-26, manager finding, journal part 7): under `make -j12 test`,
@@ -1167,6 +1192,38 @@ test-utfcheck: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-utfcheck.ran"; fi
 	bash tests/utfcheck/run_utfcheck.sh
 
+# [MEMFN] C17, the checked site manifest (integration.md §R4.3.4): every
+# search or span-compare site pcrec emits is a row of
+# tests/memfn/site_manifest.tsv, `pending` or `delegated`, checked against
+# what src/gen/ and src/enc/ actually spell (tests/memfn/search_vocab.tsv).
+# Static (reads src/, runs no binary), about a second. See tests/memfn/CLAUDE.md.
+test-memfn-manifest:
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-memfn-manifest.ran"; fi
+	bash tests/memfn/run_site_manifest.sh
+
+# [MEMFN] R4a: C15 (libpcrec.a exports only pcrec_ names, the kit's
+# included) and C16 (every kit source file carries a D145 SPDX id and its
+# provenance, agreeing with memfn/PROVENANCE.md), each with its planted
+# witness run every time. Seconds; reads build/libpcrec.a and memfn/ only.
+test-memfn-link: all
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-memfn-link.ran"; fi
+	bash tests/memfn/run_link_checks.sh
+
+# [MEMFN] R4a: G2, the kit's own tests (memfn/tests/, D27-blinded lane
+# memfng2): the kit's rendered text against G2's own byte loop over a
+# generated site space, with its planted-defect witnesses. The section runs
+# the --quick tier (gcc, every site, quick subjects; ASan and the witnesses
+# on a sampled third of the batches): about a minute on the Mac.
+# test-memfn-g2-full is the whole run (gcc and clang, full subjects, every
+# witness on every batch), about 25 minutes on the Mac: OPT-IN, never part
+# of `make test`.
+test-memfn-g2: all
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-memfn-g2.ran"; fi
+	TMPDIR=$${TMPDIR:-/var/tmp} bash memfn/tests/run_g2.sh --quick
+
+test-memfn-g2-full: all
+	TMPDIR=$${TMPDIR:-/var/tmp} bash memfn/tests/run_g2.sh
+
 # [START-SET] (D148) the `start_set` fact's checks: C-SS* (the emitted start
 # bytes of every forward DFA, seeded included, are a subset of the fact),
 # NULLABLE => start_set.nullable, and the hand-written option witnesses, over
@@ -1393,6 +1450,9 @@ smoke: all
 strict:
 	@set -e; for f in $(LIBSRCS) scripts/findgen.c cli/main.c analyze/main.c analyze/count.c analyze/sha256.c; do \
 	    $(CC) $(ALLFLAGS) -Wshadow -Werror -c -o /dev/null $$f; \
+	done; \
+	for f in $(KITSRCS); do \
+	    $(CC) $(KITFLAGS) -Wshadow -Werror -c -o /dev/null $$f; \
 	done
 	@echo "strict: whole tree compiles clean with -Werror -Wshadow"
 
@@ -1586,7 +1646,10 @@ lint:
 	    set -e; for f in $(LIBSRCS) scripts/findgen.c cli/main.c; do \
 	        $(CC) $(ALLFLAGS) -fanalyzer -c -o /dev/null $$f; \
 	    done; \
-	    echo "lint: gcc -fanalyzer: whole tree analyzed clean ($(words $(LIBSRCS)) + 1 files)"; \
+	    for f in $(KITSRCS); do \
+	        $(CC) $(KITFLAGS) -fanalyzer -c -o /dev/null $$f; \
+	    done; \
+	    echo "lint: gcc -fanalyzer: whole tree analyzed clean ($(words $(LIBSRCS)) + $(words $(KITSRCS)) kit + 1 files)"; \
 	else \
 	    echo "lint: SKIP gcc -fanalyzer: $(CC) does not support -fanalyzer on this box"; \
 	fi
@@ -1701,7 +1764,8 @@ clean:
         test-prechecks \
         test-prefilter-collapse test-rxtsource test-definitions \
       test-entry-shape-identity test-cpset-structure \
-        test-encoding-checks test-startbnd test-utfcheck test-core test-examples test-clskit \
+        test-encoding-checks test-startbnd test-utfcheck test-memfn-link test-core test-examples test-clskit \
+        test-memfn-manifest test-memfn-g2 test-memfn-g2-full \
         test-startset \
         smoke hooks strict testscripts ubsan asan san lint alloc mech bench \
         fuzz clean

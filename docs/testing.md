@@ -702,6 +702,18 @@ unsupervised and unmeasured for elapsed time); the log's start-to-finish
 window and the section sum above both put it at roughly 6-6.5 minutes,
 consistent with each other.
 
+**Sections added since, each with its own lane's one-run figure (NOT
+this table's method; Mac dev box, so directional):**
+- `test-memfn-g2` ([MEMFN] R4a, lane memfnfix, 2026-10-05): about
+  **52-62 s** wall over two runs, with `all` up to date. It is G2's `run_g2.sh --quick`:
+  - gcc over every generated site at the quick subject tier;
+  - ASan and the W1-W3 witnesses on every third batch, run
+    concurrently, so it uses every core for most of that minute.
+
+  Its opt-in twin `test-memfn-g2-full` (gcc + clang at full subjects,
+  every witness on every batch) took 538 s, and is never part of
+  `make test`.
+
 **RE-RECORD TRIGGER**: re-measure a section (same method: 3 runs, per-run
 load-before/after sampling, `TMPDIR=/var/tmp`) whenever its runtime doubles
 from the figures above. `make smoke`'s composition and the touched-path

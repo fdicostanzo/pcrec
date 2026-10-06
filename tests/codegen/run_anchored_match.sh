@@ -77,6 +77,7 @@ PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
 CC="${CC:-cc}"
 KEEP="${KEEP:-0}"
 . "$ROOT_DIR/tests/lib/gen_timeout.sh"   # [K37] pcrec_run / gen_cc / gen_run
+. "$ROOT_DIR/tests/lib/lib_srcs.sh"   # [MEMFN] R4a: the library's source list (src/ + memfn/src/)
 . "$ROOT_DIR/tests/lib/procs_default.sh"   # [CORPUS-PCAP] perf-core count on darwin, else NCPU
 . "$ROOT_DIR/tests/lib/c_artifact_cmp.sh"   # cmp_c_artifacts (adm71 item 5)
 
@@ -399,7 +400,7 @@ ceil_case '[a-c]{1,4200}' search-filter n && ceil_ok=$((ceil_ok + 1))
 # unchanged — with the fallen-back artifact byte-compared against the
 # `-fno-anchored-dfa` build's, which is that form by construction.
 REF="$WORKDIR/pcrec_capped"
-REF_SRCS="$(find "$ROOT_DIR/src" -name '*.c' | LC_ALL=C sort)"
+REF_SRCS="$(pcrec_lib_srcs "$ROOT_DIR")"
 if [ -z "$REF_SRCS" ]; then
     bad "§4b found no compiler sources under $ROOT_DIR/src for the reference build"
 elif ! $CC -O0 -std=gnu11 -Wall -Wextra -I"$ROOT_DIR/lib" -I"$ROOT_DIR/src" \

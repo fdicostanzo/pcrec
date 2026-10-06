@@ -99,6 +99,7 @@ ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 # TS-3's driver calls pcrec_compile() directly -- the compiler itself, not
 # emitted code -- so it keeps its own $TIMEOUT, same reasoning as its build.
 . "$ROOT_DIR/tests/lib/gen_timeout.sh"
+. "$ROOT_DIR/tests/lib/lib_srcs.sh"   # [MEMFN] R4a: the library's source list (src/ + memfn/src/)
 export WATCHDOG_SECTION="thread"
 PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
 . "$ROOT_DIR/tests/lib/cc_resolve.sh"   # [MACPORT] resolves a real GNU gcc when bare gcc is Apple clang
@@ -168,7 +169,7 @@ CFLAGS_COMMON="-std=gnu11 -Wall -Wextra"
 LIBSRCS=()
 while IFS= read -r f; do
     LIBSRCS+=("$f")
-done < <(find "$ROOT_DIR/src" -name '*.c' | LC_ALL=C sort)
+done < <(pcrec_lib_srcs "$ROOT_DIR")
 if [ "${#LIBSRCS[@]}" -eq 0 ]; then
     bad "no compiler sources found under $ROOT_DIR/src -- the TSan library cannot be assembled"
     echo

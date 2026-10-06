@@ -189,7 +189,9 @@ another's, `main`'s `--list-families` block states it in its own comment).
 
 ## 6. `--list-axes` — the optimization-axis registry (the FOURTH surface, [CHK-2])
 
-`build/pcrec --list-axes | grep -vc '^#'` — **127 rows / 43 axes**, re-derived
+`build/pcrec --list-axes | bash tests/lib/table.sh table-main - | grep -vc '^#'`
+— **127 rows / 43 axes** (the MAIN table only, [MEMFN] R4a: the count never
+includes the kit's `memfn` section below), re-derived
 live 2026-10-05 by lane ssbuild2 ([START-SET] stage 2: +1 row and no new
 axis, `first-class` on the `prefilter` axis, the VM hat's row, which
 carries `-fno-start-set` and names its own stamp, `RX_VM_START_SCAN`, in the
@@ -286,6 +288,40 @@ still REACHED — is what the live probe measures.
 `--list-axes` takes no `--flavour` (§5's own reason: it answers what
 THIS BUILD thinks its machinery is, never a claim about PCRE2 syntax)
 and no pattern/`-o` — a syntax query, `cli.md` §1.
+
+**[MEMFN] R4a: THE `memfn` SECTION.** After the axis table (which stays
+the leading anonymous table, `table_contract.md` Sections rule 2 and
+consumer rule 5) the stream carries `#section memfn`: the option registry
+of pcrec-memory-functions, the in-tree search-code kit (D146/D147,
+`docs/design/memfn/integration.md` §R4.4.1). One row per entry of the
+kit's `mf_options()`, read from the kit — pcrec's dump names no row:
+
+    #name  kind  budget  layer  spelling  doc
+
+| column | value set |
+|---|---|
+| `name` | the kit's option id, `[a-z0-9-]`, arch-blind |
+| `kind` | `deny` (reached only as `--memfn=no-NAME`) \| `pair` (also forced as `--memfn=NAME`) |
+| `budget` | D91's `scan` \| `loop` \| `any` |
+| `layer` | `scalar` \| `simd`: the acceptance reading that owns the row; a `simd` row is inert at `-fno-memfn-simd` |
+| `spelling` | the accepted `--memfn=` spelling(s), `\|`-joined |
+| `doc` | one line, the kit's |
+
+These are NOT pcrec axes: no row carries a `lib/pcrec.h` bit, `axes.def`
+has no row for one, and `test-axes`, the identity gates and the registry
+check read them from this section, never from a list of their own. Each is
+a kit change's own deny (D144 item 4), born with the change that moves an
+emitted byte.
+
+**The section is EMPTY at R4a** — header only, zero rows: the kit moves no
+emitted byte yet, so it has no option. Its independent control is a
+member-count FLOOR pinned here as a literal, sharing no source with the
+kit's registry; it is BORN with the first row ([MEMFN] R4d, the first kit
+change that moves a byte), in the form `` `memfn` section floor: `` followed
+by the number, raised in every change that adds a row. Until then
+`tests/registry/axes_registry_check.sh` reports the floor arm as
+UNREACHED (K35), never as a pass, and FAILS if a row appears with no floor
+pinned.
 
 **[REG-SV] (2026-08-30) CLOSED A GAP `pcrec-bench` FOUND: two name-valued
 stamps had no `stamp_value` population on this surface at all.** The

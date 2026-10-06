@@ -29,6 +29,7 @@ WORK="$(mktemp -d)"; trap 'rm -rf "$WORK"' EXIT
 # (a nested-repeat family, a cap-rescue witness) and an unbounded call on one
 # of those is exactly the hang the rule exists to stop.
 . "$ROOT_DIR/tests/lib/gen_timeout.sh"
+. "$ROOT_DIR/tests/lib/lib_srcs.sh"   # [MEMFN] R4a: the library's source list (src/ + memfn/src/)
 
 pass=0; fail=0
 ok()  { printf 'PASS: %s\n' "$1"; pass=$((pass+1)); }
@@ -131,7 +132,7 @@ fi
 
 # --- 5. cap-rescue, through a reference compiler with a LOWERED cap ---------
 REF="$WORK/pcrec_lowcap"
-srcs=$(find "$ROOT_DIR/src" -name '*.c' | tr '\n' ' ')
+srcs=$(pcrec_lib_srcs "$ROOT_DIR" | tr '\n' ' ')
 # shellcheck disable=SC2086
 # BOTH constants move, and that is not belt-and-braces. The size term's
 # threshold gates on CODE bytes, so lowering only the cap gives a compiler in

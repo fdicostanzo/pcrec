@@ -144,3 +144,64 @@ pointer when a kit change merges to main.
 - Lesson: two critics' final messages truncated mid-finding. Brief
   critics to write their findings to a scratchpad file and reply with
   the path.
+
+## 2026-10-05 — R-3 taken (R4a lanes memfnskel, memfnmanifest)
+
+- Frank ruled Q53-Q55 as recommended (D147 addendum 10). R-3 filed: R4a
+  (zero movers), then R4a′ (the stamps' abi event; its number is agreed
+  with main first because of START-SET's events).
+- OWED (design text): integration.md still writes B4/B5 (the libc
+  record) and B6 (N7's scope) as Q53/Q54 PROPOSALS, with Q53-Q55 open.
+  Mark them RULED (addendum 10) and promote them to the design of
+  record. This rides R4a′'s branch, which builds the libc line.
+
+## 2026-10-05 — R4a: sabotage ids renumbered (S478-S480 → S510-S512)
+
+- START-SET (D148) reserved S478-S504, and the manifest lane had taken
+  S478-S480 off main's highest. Renumbered to S510-S512 from the kit's
+  block S510-S529, which main assigned. Solo mech re-runs: all three
+  DETECTED, reach ok, 0 anomalies.
+- RULE from main: sabotage ids AND abi numbers serialize through the
+  pcrec manager. The kit's next free id is S513, and its block ends at
+  S529; ask main for the next block. Never take "main's highest + 1"
+  again; a reservation in a design doc does not show in the highest id.
+
+## 2026-10-05 — R4a: G2 (blinded) found three kit defects; fix lane memfnfix
+
+- G2 (lane memfng2, opus, D27 cell) rendered 4,011 generated sites and ran
+  ~137M checks against its own byte-loop reference, compiled with gcc,
+  clang and ASan. It found three defects the skeleton's own smoke test
+  missed:
+  - F1: VERIFY ignored its empty range. That is an answer defect, and an
+    over-read at lo > n.
+  - F2: ON_CAND+NOP was refused (totality).
+  - F3: out-of-enum `empty`/`need` were rendered instead of refused.
+  No pcrec customer reaches them today (the kit is not called), but a
+  later VERIFY site with end_back or a negative offset would hit F1.
+- Kit contract rulings on Q-G2-1..17 (the kit's, under D146), recorded in
+  the memfnfix brief. They go into integration.md §R4.7.
+  - Refused outright: NOP on value forms, MISS on ADVANCE, SKIP sets at
+    offset ≠ 0, empty conjunctions, zero-length runs, reverse
+    ALL_PRESENT, run bytes outside their mask, and `guard_by_caller`
+    beyond EXPR VERIFY at offsets ≥ 0.
+  - Q-G2-5 (reverse ADVANCE) stays open until M3.
+- G2 merged as the blinded author's commit. The fix lane may not edit
+  g2/ (it is the control); it only adds `--quick` for the `make test`
+  section.
+- OWED: G2 coverage of the newly refused shapes, from a blinded author
+  later. The cell worktree under worktrees/memfn/worktrees/memfng2 and
+  the cell copy are left in place; removal needs a worktree rm.
+- Lesson: the blinded author found in one pass what the implementing
+  lane's 480k-check smoke test missed. That smoke test was written by
+  the implementer, so it shared the implementer's reading of "range".
+
+## 2026-10-05 — R4a delivered (zero movers; Mac make test green but for a pre-existing darwin red)
+
+- Merged memfnfix (G2 green), then main f3c726d7 (START-SET 0+1). C17
+  caught START-SET's FIND extraction on the merge: the PF row was
+  re-pointed to `pcrec_emit_find`, and the vocabulary learned the
+  format-hole walk (`walk-fmt`), which it could not see. That was the
+  check working on its first real refactor.
+- Landing run (Mac suite lock, detached): sweep 0 artifact movers vs
+  main; make test 52/52, red only on run_inline_capability (darwin nm,
+  pre-existing). R-3 R4a `done:` posted.

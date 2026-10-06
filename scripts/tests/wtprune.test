@@ -1,0 +1,85 @@
+#!/usr/bin/env bash
+# wtprune self-test: every gate, against a SACRIFICIAL repo this file builds
+# under mktemp — never the real tree's worktrees. Each KEEP case is paired
+# with the same worktree passing once its one blocker is lifted, so a gate
+# that keeps everything (or nothing) cannot pass.
+set -u
+here=$(cd "$(dirname "$0")/.." && pwd)
+WT=$here/wtprune
+T=$(mktemp -d "${TMPDIR:-/tmp}/wtprune.test.XXXXXX")
+sleeper=
+cleanup() { [ -n "$sleeper" ] && kill "$sleeper" 2>/dev/null; rm -rf "$T"; }
+trap cleanup EXIT
+pass=0 fail=0
+ok()  { echo "PASS: $*"; pass=$((pass+1)); }
+bad() { echo "FAIL: $*"; fail=$((fail+1)); }
+expect() { # expect NAME VERDICT-REGEX OUTPUT
+    if printf '%s\n' "$3" | grep -Eq "^$2 +$1( |$)"; then ok "$1 -> $2"; else bad "$1 expected $2; got: $(printf '%s\n' "$3" | grep -E " $1( |$)")"; fi
+}
+run() { bash "$WT" -C "$R" "$@" 2>&1; }
+
+R=$T/repo
+git init -q -b main "$R" && cd "$R" || exit 1
+git config user.email t@t && git config user.name t
+mkdir worktrees && echo worktrees/ > .gitignore && git add .gitignore && git commit -qm init
+mk() { git -C "$R" worktree add -q -b "lane/$1" "worktrees/$1" main; }
+merged()   { mk "$1"; echo "$1" > "worktrees/$1/f_$1"; git -C "worktrees/$1" add . && git -C "worktrees/$1" commit -qm "$1"; git -C "$R" merge -q --no-edit "lane/$1"; }
+age_all()  { find "$R/worktrees/$1" -exec touch -t 202001010000 {} +; }
+
+merged done1;  age_all done1
+mk unmerged;   echo x > worktrees/unmerged/u; git -C worktrees/unmerged add . && git -C worktrees/unmerged commit -qm u; age_all unmerged
+merged dirty;  echo y > worktrees/dirty/untracked; age_all dirty
+merged fresh                                     # mtimes are now
+merged busy;   age_all busy
+merged locker; age_all locker
+merged pinned; age_all pinned
+merged outer;  echo inner/ >> "$R/.git/info/exclude"; git -C "$R" worktree add -q -b lane/inner worktrees/outer/inner main; age_all outer   # ignored, as memfn/worktrees/ is
+mkdir worktrees/scratchdir && echo z > worktrees/scratchdir/z && touch -t 202001010000 worktrees/scratchdir worktrees/scratchdir/z
+printf 'locker 1 date\n' > worktrees/.mac-suite.lock
+printf '# keep\npinned\n' > worktrees/.wtprune.keep; touch -t 202001010000 worktrees/.mac-suite.lock worktrees/.wtprune.keep
+( cd "$R/worktrees/busy" && exec sleep 300 ) & sleeper=$!
+sleep 1
+
+out=$(run)
+expect done1    REMOVE "$out"
+expect unmerged KEEP "$out"
+expect dirty    KEEP "$out"
+expect fresh    KEEP "$out"
+expect busy     KEEP "$out"
+expect locker   KEEP "$out"
+expect pinned   KEEP "$out"
+expect outer    KEEP "$out"
+printf '%s\n' "$out" | grep -q '^UNMANAGED scratchdir' && ok "non-git dir listed UNMANAGED" || bad "scratchdir not listed"
+[ -d worktrees/done1 ] && ok "dry run removed nothing" || bad "dry run removed done1"
+printf '%s\n' "$out" | grep -q 'busy .*cwd' && ok "busy kept for its process cwd" || bad "busy kept for the wrong reason"
+printf '%s\n' "$out" | grep -q 'locker .*mac-suite.lock' && ok "locker kept for the lock" || bad "locker kept for the wrong reason"
+
+# Lift each blocker; the same worktrees must now pass (paired controls).
+out=$(run --quiet-min 0 fresh);     expect fresh REMOVE "$out"
+kill "$sleeper"; wait "$sleeper" 2>/dev/null; sleeper=
+out=$(run busy);                    expect busy REMOVE "$out"
+mkdir worktrees/.mac-suite.lock.d && mv worktrees/.mac-suite.lock worktrees/.mac-suite.lock.d/owner && mv worktrees/.mac-suite.lock.d worktrees/.mac-suite.lock
+out=$(run locker);                  expect locker KEEP "$out"     # dir/owner form
+rm -rf worktrees/.mac-suite.lock
+out=$(run locker);                  expect locker REMOVE "$out"
+rm worktrees/dirty/untracked; touch -t 202001010000 worktrees/dirty
+out=$(run dirty);                   expect dirty REMOVE "$out"
+
+# Apply: named subset, then branch deletion, then --dir.
+out=$(run --apply done1)
+printf '%s\n' "$out" | grep -q '^REMOVED done1' && [ ! -d worktrees/done1 ] && ok "--apply NAME removed done1" || bad "apply done1: $out"
+git -C "$R" rev-parse -q --verify lane/done1 >/dev/null && ok "branch kept without --delete-branches" || bad "branch deleted unasked"
+[ -d worktrees/dirty ] && ok "--apply NAME touched only NAME" || bad "apply touched others"
+out=$(run --apply --delete-branches dirty)
+git -C "$R" rev-parse -q --verify lane/dirty >/dev/null && bad "lane/dirty branch survived --delete-branches" || ok "--delete-branches deleted lane/dirty"
+[ -d worktrees/unmerged ] && git -C "$R" rev-parse -q --verify lane/unmerged >/dev/null && ok "unmerged untouched" || bad "unmerged touched"
+out=$(run --apply --dir scratchdir)
+[ ! -e worktrees/scratchdir ] && ok "--dir removed scratchdir" || bad "--dir: $out"
+out=$(run --apply --dir ../repo 2>&1); rc=$?
+[ $rc = 2 ] && [ -d "$R" ] && ok "path-like --dir refused (rc 2)" || bad "--dir ../repo rc=$rc"
+out=$(run --apply --dir outer); printf '%s\n' "$out" | grep -q '^SKIP *outer is a git worktree' && ok "--dir refuses a git worktree" || bad "--dir outer: $out"
+grep -q 'remove worktree done1' worktrees/.wtprune.log && ok "audit log line written" || bad "no audit line"
+
+echo "checks passed: $pass"
+echo "checks failed: $fail"
+[ $fail = 0 ]

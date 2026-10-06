@@ -159,7 +159,12 @@ one.
   identically, so an unfiltered dump would print a definition for a
   construct `--list-syntax --flavour=X` says does not exist.
 - **axes_dump.c** — [CHK-2] piece 1: `pcrec --list-axes`, the optimization-
-  axis registry's FOURTH TSV surface (`docs/spec/registry.md` §6; NOT the
+  axis registry's FOURTH TSV surface. **[MEMFN] R4a: after the axis table it
+  prints `#section memfn`, the kit's option registry read live from
+  `mf_options()` (`memfn/include/memfn.h`, included by relative path — the
+  ONE pcrec translation unit that includes the kit's header); pcrec names
+  no row, and the section is empty until the first kit change that moves a
+  byte (R4d).** (`docs/spec/registry.md` §6; NOT the
   syntax registry syntax_dump.c below renders — a different table
   entirely). One row per (axis, candidate): the six DFA layer-1 axes
   (table representation, prefilter, view, seed, accept, direction) are

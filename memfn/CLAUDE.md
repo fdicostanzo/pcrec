@@ -10,16 +10,27 @@
   - Q51/Q52 rejected;
   - Q43-Q46, Q48 and Q49 ruled; Q47 refined: the kit's own option
     namespace (below).
+- D147 addendum 10: Q53-Q55 ruled as recommended (the libc record's
+  refined form; N7 `pending`; `MEMFN_FORMS` attributed outside the
+  artifact).
 
-The design of record is `docs/design/memfn/integration.md` (rev 4.6;
-read its §R4.6, then §R4.5, first). This file is the working agreement for the
+The design of record is `docs/design/memfn/integration.md` (rev 4.7;
+read its §R4.7, then §R4.6, first).
+§R4.7 holds the kit's contract after G2, the kit session's rulings on
+G2's F1-F3 and Q-G2-1..17. This file is the working agreement for the
 subtree.
 
-**Status: no code yet.** This directory is the skeleton set up by lane
-memfnsetup. Nothing here is built, linked or tested by pcrec's `make`.
-The first code (`memfn.h`, the generic scalar row, K1 reference
-functions, the Makefile wiring) lands with R4a (integration.md §22),
-not before it (D77: build under measurement).
+**Status: R4a, the code skeleton** (lane memfnskel; integration.md §22).
+`include/memfn.h`, the composer, the generic scalar row, K1's reference
+functions and an empty `src/options.def` are built into `libpcrec.a` by
+pcrec's Makefile (`KITSRCS`/`KITFLAGS`), and `--list-axes` prints the
+registry as its `memfn` section. pcrec CALLS nothing else: no emitter
+renders through the kit, so no artifact byte moved. C15/C16 hold the link
+(`tests/memfn/run_link_checks.sh`). The site manifest + C17 and G2's first
+tests are R4a's other lanes. G2 (`tests/`, D27-blinded lane memfng2)
+found F1-F3; lane memfnfix fixed them, made the contract's edge refuse
+loudly (§R4.7), and wired G2 into make: `make test-memfn-g2` (the quick
+tier, a `make test` section) and `make test-memfn-g2-full` (opt-in).
 
 ## What the kit is
 
@@ -194,8 +205,10 @@ pcrec emitter are kit work here, not edits under `src/gen/`.
 - `LICENSE` — 0BSD.
 - `docs/` — the ledger pair, the journal, the session wake template
   (its own CLAUDE.md).
-- `include/` — `memfn.h`, the one header pcrec includes (planned, R4a,
-  born with the site manifest and C17, every row `pending`).
-- `src/` — K1 primitives, K2 composer, the scalar arms, and
-  `options.def`, the option registry (born empty at R4a; planned).
-- `tests/` — G2, the kit's own tests (planned).
+- `PROVENANCE.md` — file → source → licence → what derives from it, one
+  row per file under `include/` and `src/` (C16 compares the two).
+- `include/` — `memfn.h`, the one header pcrec includes (R4a).
+- `src/` — K2 composer, the generic scalar row, K1 reference functions,
+  `options.def` (born empty) and its accessor/parser (R4a); the scalar
+  arms arrive with the migration steps.
+- `tests/` — G2, the kit's own tests (R4a's blinded lane).

@@ -271,6 +271,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
 . "${ROOT_DIR}/tests/lib/gen_timeout.sh"  # [K37] pcrec_run
+. "$ROOT_DIR/tests/lib/lib_srcs.sh"   # [MEMFN] R4a: the library's source list (src/ + memfn/src/)
 . "$ROOT_DIR/tests/lib/cc_resolve.sh"   # [MACPORT] resolves a real GNU gcc when bare gcc is Apple clang
 SANFLAGS="${SANFLAGS:-}"
 KEEP="${KEEP:-0}"
@@ -1229,13 +1230,19 @@ if ! git -C "$ROOT_DIR" rev-parse --verify --quiet "$FILEPIN^{commit}" >/dev/nul
     bad "the whole-file pin $FILEPIN does not resolve in this repository — the (B) reference cannot be built, and a gate that cannot build its reference must SAY so rather than skip"
     echo "checks passed: $pass"; echo "checks failed: $fail"; exit 1
 fi
-if ! git -C "$ROOT_DIR" archive "$FILEPIN" src lib cli \
+# [MEMFN] R4a: a pin at or after R4a links the kit (memfn/), so the archive
+# carries it whenever the pinned commit has it; FILEPIN moves forward at every
+# abi event, and the first move past R4a would otherwise fail to link.
+FILEPIN_DIRS="src lib cli"
+git -C "$ROOT_DIR" cat-file -e "$FILEPIN:memfn" 2>/dev/null && FILEPIN_DIRS="$FILEPIN_DIRS memfn"
+# shellcheck disable=SC2086
+if ! git -C "$ROOT_DIR" archive "$FILEPIN" $FILEPIN_DIRS \
         | tar -x -C "$FILEREFSRC" 2>"$WORKDIR/filearch.log"; then
     bad "could not git-archive $FILEPIN: $(head -3 "$WORKDIR/filearch.log")"
     echo "checks passed: $pass"; echo "checks failed: $fail"; exit 1
 fi
 FILEREF="$WORKDIR/pcrec_filepin"
-FILEREF_SRCS="$(find "$FILEREFSRC/src" -name '*.c' | LC_ALL=C sort)"
+FILEREF_SRCS="$(pcrec_lib_srcs "$FILEREFSRC")"
 # shellcheck disable=SC2086
 if ! $CC -O0 -std=gnu11 -Wall -Wextra -I"$FILEREFSRC/lib" -I"$FILEREFSRC/src" $SANFLAGS \
         -o "$FILEREF" "$FILEREFSRC"/cli/main.c $FILEREF_SRCS 2>"$WORKDIR/filerefbuild.log"; then

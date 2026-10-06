@@ -31,6 +31,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
 . "${ROOT_DIR}/tests/lib/gen_timeout.sh"  # [K37] pcrec_run
+. "$ROOT_DIR/tests/lib/lib_srcs.sh"   # [MEMFN] R4a: the library's source list (src/ + memfn/src/)
 . "$ROOT_DIR/tests/lib/cc_resolve.sh"     # [MACPORT] a real GNU gcc, for 2d
 . "$ROOT_DIR/tests/lib/unit_cc.sh"        # [REVW.U L5-R0] unit_build (CHECK 4)
 KEEP="${KEEP:-0}"
@@ -418,7 +419,7 @@ echo
 echo "== CHECK 2d: the render helper's assertion, RUN rather than grepped =="
 SCRATCH="$WORKDIR/scratch"
 mkdir -p "$SCRATCH"
-cp -R "$ROOT_DIR/src" "$ROOT_DIR/lib" "$ROOT_DIR/cli" "$SCRATCH/" 2>/dev/null || true
+cp -R "$ROOT_DIR/src" "$ROOT_DIR/lib" "$ROOT_DIR/cli" "$ROOT_DIR/memfn" "$SCRATCH/" 2>/dev/null || true
 if [ ! -f "$SCRATCH/src/enc/enc_byte.c" ]; then
     bad "[2d] could not stage a scratch tree for the assertion witness"
 else
@@ -443,7 +444,7 @@ else
         # same widened scalar, so it now accepts what it used to refuse and the
         # class reaches the render site. That is exactly the situation the
         # helper's assertion exists for — the lowering ran and did not confine.
-        SCR_SRCS="$(find "$SCRATCH/src" -name '*.c' | LC_ALL=C sort)"
+        SCR_SRCS="$(pcrec_lib_srcs "$SCRATCH")"
         # shellcheck disable=SC2086
         if ! $CC -O0 -std=gnu11 -w -I"$SCRATCH/lib" -I"$SCRATCH/src" \
                 -o "$WORKDIR/pcrec_wide" "$SCRATCH"/cli/main.c $SCR_SRCS 2>"$WORKDIR/wide.log"; then

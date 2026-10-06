@@ -35,9 +35,11 @@ alone CLI and reference functions are planned for other callers.
 
 ## Status
 
-**No code yet.** The design of record is
-`docs/design/memfn/integration.md` (revision 4.4) in the pcrec tree. The first code
-lands with that design's step R4a.
+**The code skeleton (R4a).** The public header, the composer, the
+generic scalar form (a plain byte loop for every question the vocabulary
+describes) and the reference functions are built and linked into pcrec;
+pcrec renders no site through them yet. The design of record is
+`docs/design/memfn/integration.md` (revision 4.6) in the pcrec tree.
 
 ## Licence
 

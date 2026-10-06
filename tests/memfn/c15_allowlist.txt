@@ -1,0 +1,6 @@
+# tests/memfn/c15_allowlist.txt — C15's exceptions: global symbols libpcrec.a
+# may define WITHOUT the pcrec_ prefix (tests/memfn/run_link_checks.sh).
+# One undecorated symbol name per line; `#` lines and blank lines ignored.
+# BORN EMPTY ([MEMFN] R4a): the archive measured 0 such symbols at the build
+# commit. An entry needs its reason on the line above it, and C15 fails when
+# an entry stops being exported.

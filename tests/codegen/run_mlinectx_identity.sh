@@ -61,6 +61,7 @@ set -u
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 . "${ROOT_DIR}/tests/lib/gen_timeout.sh"  # [K37] pcrec_run
+. "$ROOT_DIR/tests/lib/lib_srcs.sh"   # [MEMFN] R4a: the library's source list (src/ + memfn/src/)
 PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
 . "$ROOT_DIR/tests/lib/cc_resolve.sh"   # [MACPORT] resolves a real GNU gcc when bare gcc is Apple clang
 SANFLAGS="${SANFLAGS:-}"
@@ -98,7 +99,7 @@ fi
 # reference compiler quietly built from a different source set than the
 # subject is the differential going vacuous.
 REF="$WORKDIR/pcrec_nomlinectx"
-REF_SRCS="$(find "$ROOT_DIR/src" -name '*.c' | LC_ALL=C sort)"
+REF_SRCS="$(pcrec_lib_srcs "$ROOT_DIR")"
 if [ -z "$REF_SRCS" ]; then
     echo "FAIL: found no compiler sources under $ROOT_DIR/src for the reference build" >&2
     exit 1

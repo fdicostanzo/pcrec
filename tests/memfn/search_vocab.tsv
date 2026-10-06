@@ -1,0 +1,42 @@
+# tests/memfn/search_vocab.tsv -- THE SEARCH-FORM VOCABULARY: what text, spelled
+# by a pcrec emitter, counts as a search or span-compare FORM.
+#
+# ONE PLACE. integration.md §R4.3.4 defines C17's static half as "an emitter
+# spells a C12-vocabulary search form" and §10.5 defines C12 (the emitted-form
+# ratchet) over "emitted-text libc search calls, table-walk loop texts and
+# runcmp row texts". C12 is not built yet (it is born at R4c, §22), so this
+# file is born here, at R4a, with C17, and is the vocabulary BOTH read: C12,
+# when it lands, counts these classes against its ceiling instead of spelling
+# a second list (lane memfnmanifest, 2026-10-05).
+#
+# INDEPENDENCE. This file names no site, no manifest row and no emitter
+# function. It describes TEXT SHAPES, and C17 asks which functions spell them.
+# The manifest (site_manifest.tsv) names functions and never a shape. A shape
+# added here for a site the manifest lacks makes C17 fail (rule 1); a site
+# the manifest lists whose text no line here recognises makes C17 fail too
+# (rule 4). Neither file can quietly agree with the other.
+#
+# HOW A LINE IS APPLIED (tests/memfn/c17_lex.py): to every C string literal
+# inside a file-scope definition under src/gen/ and src/enc/, with adjacent
+# literals joined as the C compiler joins them and the emitter's own comments
+# removed. The text is the literal's SOURCE spelling: `\n` is two characters
+# and `%s`/`%d` are the emitter's format holes. Python `re`, searched (not
+# anchored) in each joined literal.
+#
+# STATED LIMIT (§R4.3.4): a search spelled in a shape no line recognises
+# escapes the static half until a line here learns it. Adding a line is
+# ordinary C17 maintenance; removing one is how a form escapes, so a removal
+# names the form it stops seeing in its commit.
+#
+# Columns (tab-separated): class, line-id, regex, what it recognises.
+#
+# class         line-id          regex	doc
+libc-search	libc-call	\b(?:memchr|memrchr|rawmemchr|memmem|memcmp|bcmp|strchr|strrchr|strstr|strpbrk|strspn|strcspn)\(\s*(?:subject\b|%s|$)	an emitted libc search or compare call whose FIRST operand is the subject, a format hole the emitter fills, or appended by the next statement (so prose such as "memchr()" and a compare of two caller-supplied names, `memcmp(cv->name, ...)`, are not search forms)
+table-walk	walk-stmt	while \([^;{}]*\[subject\[[^\]]+\]\]\)\s*[A-Za-z_]\w*\s*(?:\+\+|--)	a one-statement cursor loop whose condition looks the subject byte at the cursor up in a table and whose body steps the cursor (`while (pos < n && T[subject[pos]]) pos++;`)
+table-walk	walk-fmt	while \([^;{}]*\[%s\[%s\]\]\)\s*%s(?:\+\+|--)	the same one-statement cursor walk spelled through format holes (`while (%s < %s && !%s_%s[%s[%s]]) %s++;`, THE FIND's table form, START-SET stage 1's `pcrec_emit_find`): the table, the subject and the cursor are all the caller's
+table-walk	walk-open	while \([^)]*$	an emitted `while (` whose condition the literal leaves open, to be completed by a predicate another emitter call splices in (the class-run and span loops whose byte test is not theirs to spell)
+table-walk	walk-back	\{ ?%s--; ?goto\b	a backward cursor step chained by a jump: one byte of an emitted backward walk (the forward VM's own per-byte step is the engine and is `++`)
+runcmp	runcmp-words	%s_w%d\(	a run compare by natural-width word loads (`<p>_wN(base) == <p>_wN("...")`)
+runcmp	runcmp-bytes	\(%s\)\[%d\](?: & %d\))? == %d	a run compare one byte position at a time against a constant, masked or exact
+span-compare	span-index	s\[at \+ i\]	the encoding seam's run-time span compare: the subject operand read at the walk index of a two-operand compare loop (D147 addendum 10, Q54)
+span-compare	span-decode	\$_decode\(s,	the encoding seam's per-character span compare: the subject operand decoded character by character against the reference

@@ -351,6 +351,13 @@
 #     dead-group DFA witnesses and a corpus slice on both routes. Its own arm
 #     because a caps write on a no-match moves no RETURN value, and the
 #     harness's driver never reads caps after a 0. Registered before S439.
+#   memfnmanifest — added 2026-10-05 ([MEMFN] R4a, lane memfnmanifest); runs
+#     tests/memfn/run_site_manifest.sh, C17: the checked site manifest
+#     (integration.md §R4.3.4) against what src/gen/ and src/enc/ spell. Its
+#     own arm because a search form spelled outside the manifest, or a stale
+#     manifest row, moves no answer and no artifact byte, so every other arm
+#     is green on it by construction. Static: reads the sabotaged tree's src/
+#     and tests/memfn/, runs no binary. Registered before S510-S512.
 #
 # THE THREE NEWEST WORDS WERE REGISTERED FIRST, DELIBERATELY, which is the
 # lesson R31 C11 left one module earlier: this vocabulary is CLOSED, so a
@@ -2656,6 +2663,16 @@ run_one() {
                 p="$(grep -m1 '^checks passed:' "$work/nomatchcaps.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/nomatchcaps.log" | grep -oE '[0-9]+')"
                 score_arm "$work/nomatchcaps.log" "$f" "nomatchcaps:${f:-ERR}fail/${p:-?}pass"
+                ;;
+            memfnmanifest)
+                # [MEMFN] C17 tests/memfn/run_site_manifest.sh — see the
+                # vocabulary entry above. Reads the sabotaged tree's own src/
+                # and manifest; needs neither PCREC nor LIBPCREC.
+                bash "$tree/tests/memfn/run_site_manifest.sh" "$tree" \
+                    > "$work/memfnmanifest.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/memfnmanifest.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/memfnmanifest.log" | grep -oE '[0-9]+')"
+                score_arm "$work/memfnmanifest.log" "$f" "memfnmanifest:${f:-ERR}fail/${p:-?}pass"
                 ;;
             core)
                 # [REVW.U L5-R0/R2] tests/core/run_core_tests.sh — the unit

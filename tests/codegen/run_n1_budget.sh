@@ -30,6 +30,7 @@ PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
 CC="${CC:-cc}"
 WORK="$(mktemp -d)"; trap 'rm -rf "$WORK"' EXIT
 . "$ROOT_DIR/tests/lib/gen_timeout.sh"   # [K37]: pcrec_run bounds every call below
+. "$ROOT_DIR/tests/lib/lib_srcs.sh"   # [MEMFN] R4a: the library's source list (src/ + memfn/src/)
 
 pass=0; fail=0
 ok()  { printf 'PASS: %s\n' "$1"; pass=$((pass+1)); }
@@ -54,7 +55,7 @@ fi
 
 # --- 1. build the reference compiler with the budget LOWERED -----------------
 REF="$WORK/pcrec_lowbudget"
-srcs=$(find "$ROOT_DIR/src" -name '*.c' | tr '\n' ' ')
+srcs=$(pcrec_lib_srcs "$ROOT_DIR" | tr '\n' ' ')
 # shellcheck disable=SC2086
 if $CC -O1 -std=gnu11 -I"$ROOT_DIR/lib" -I"$ROOT_DIR/src" \
        -DPCREC_MAX_AUTO_DFA_ELEMS=2000 \

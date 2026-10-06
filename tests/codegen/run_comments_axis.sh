@@ -186,7 +186,10 @@ fi
 
 # ---- 7. the axis is ADVERTISED and ACCEPTED (the registry's own half is in
 #         axes_registry_check.sh; this is the artifact-side half) ------------
-if pcrec_run "$PCREC" --list-axes 2>/dev/null | grep -q '^comments	'; then
+# pcrec's own axis table only: the leading anonymous table, never the kit's
+# `memfn` section after it (table_main; table_contract.md consumer rule 5).
+if pcrec_run "$PCREC" --list-axes 2>/dev/null \
+        | bash "$ROOT_DIR/tests/lib/table.sh" table-main - | grep -q '^comments	'; then
     ok "[registry] --list-axes advertises the comments axis"
 else
     bad "[registry] --list-axes does not advertise the comments axis"
