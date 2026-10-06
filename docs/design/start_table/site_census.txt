@@ -1,0 +1,35 @@
+# tables (first-match row arrays) that select a start mechanism
+dfa_pfs[] def	1	src/gen/emit_dfa.c:6863 
+req_admits[] def	1	src/gen/emit_dfa.c:7249 
+req_uses[] def	1	src/gen/emit_dfa.c:7364 
+dfa_search_starts[] def	1	src/gen/emit_dfa.c:7894 
+pcrec_reseed_rows[] def	1	src/gen/emit_vm.c:11010 
+# inline (non-table) start decisions, and the two route-fixed VM seed lines
+attempt_cand def	1	src/gen/emit_dfa.c:4105 
+ENG_ATTEMPT start_max	1	src/gen/emit_dfa.c:9385 
+VM attempt_max	1	src/gen/emit_vm.c:13479 
+end_window clamp def	2	src/gen/emit_dfa.c:935 src/core/internal.h:5976 
+root minw check	3	src/gen/emit_vm.c:9492 src/gen/emit_vm.c:11419 src/gen/emit_vm.c:13234 
+hybrid prefilter seed	3	src/gen/emit_vm.c:13290 src/gen/emit_vm.c:13345 src/gen/emit_vm.c:13421 
+VM no-prefilter seed	1	src/gen/emit_vm.c:13431 
+# selection walks / readers
+DFA_SELECT_ROUTED(DfaPf	4	src/gen/emit_dfa.c:6907 src/gen/emit_dfa.c:6935 src/gen/emit_dfa.c:7435 src/gen/emit_dfa.c:8378 
+dfa_pf_of(	5	src/gen/emit_dfa.c:6903 src/gen/emit_dfa.c:7052 src/gen/emit_dfa.c:7093 src/gen/emit_dfa.c:10428 src/gen/emit_dfa.c:10487 
+vm_start_row(	3	src/gen/emit_dfa.c:6931 src/gen/emit_dfa.c:6942 src/gen/emit_dfa.c:6960 
+req_admit(	7	src/gen/emit_dfa.c:312 src/gen/emit_dfa.c:1037 src/gen/emit_dfa.c:1375 src/gen/emit_dfa.c:7271 src/gen/emit_dfa.c:7280 src/gen/emit_dfa.c:7336 src/gen/emit_dfa.c:10007 
+req_use(	6	src/gen/emit_dfa.c:332 src/gen/emit_dfa.c:1219 src/gen/emit_dfa.c:1392 src/gen/emit_dfa.c:7380 src/gen/emit_dfa.c:7391 src/gen/emit_dfa.c:8878 
+dfa_search_start_of(	3	src/gen/emit_dfa.c:7902 src/gen/emit_dfa.c:7912 src/gen/emit_dfa.c:7917 
+dfa_search_is_pinned(	7	src/gen/emit_dfa.c:295 src/gen/emit_dfa.c:4399 src/gen/emit_dfa.c:4466 src/gen/emit_dfa.c:4521 src/gen/emit_dfa.c:7916 src/gen/emit_dfa.c:8829 src/gen/emit_dfa.c:9783 
+attempt_cand(	5	src/gen/emit_dfa.c:4105 src/gen/emit_dfa.c:7044 src/gen/emit_dfa.c:9323 src/gen/emit_dfa.c:9997 src/gen/emit_dfa.c:10411 
+vm_plan_reseed(	2	src/gen/emit_vm.c:11107 src/gen/emit_vm.c:14014 
+pcrec_fact_start_anchor(	9	src/gen/emit_dfa.c:6813 src/gen/emit_dfa.c:7138 src/gen/emit_dfa.c:9374 src/gen/emit_dfa.c:9378 src/gen/emit_vm.c:11090 src/gen/emit_vm.c:13471 src/gen/emit_vm.c:13477 src/facts/facts.h:340 src/facts/facts.c:343 
+pcrec_fact_end_window(	3	src/gen/emit_dfa.c:938 src/facts/facts.h:342 src/facts/facts.c:355 
+pcrec_artifact_has_dfa_scan(	12	src/gen/emit_dfa.c:385 src/gen/emit_dfa.c:1041 src/gen/emit_dfa.c:1267 src/gen/emit_dfa.c:3150 src/gen/emit_dfa.c:3224 src/gen/emit_dfa.c:6965 src/gen/emit_dfa.c:7038 src/gen/emit_dfa.c:7090 src/gen/emit_dfa.c:7338 src/gen/emit_vm.c:11365 src/gen/CLAUDE.md:3424 src/core/internal.h:6723 
+# emission call sites in the three search bodies
+end_window_clamp call	5	src/gen/emit_dfa.c:935 src/gen/emit_dfa.c:8869 src/gen/emit_dfa.c:9166 src/gen/emit_vm.c:13170 src/core/internal.h:5976 
+req_byte_check call	5	src/gen/emit_dfa.c:1362 src/gen/emit_dfa.c:8876 src/gen/emit_dfa.c:9167 src/gen/emit_vm.c:13189 src/core/internal.h:5988 
+vm_start_seek call	4	src/gen/emit_dfa.c:6956 src/gen/emit_vm.c:13448 src/gen/emit_vm.c:13536 src/core/internal.h:6057 
+start_zero call	9	src/gen/emit_dfa.c:864 src/gen/emit_dfa.c:1123 src/gen/emit_dfa.c:8861 src/gen/emit_dfa.c:9041 src/gen/emit_dfa.c:9457 src/gen/emit_vm.c:13439 src/gen/emit_vm.c:13741 src/gen/emit_vm.c:13795 src/core/internal.h:6101 
+startpos_guard call	7	src/gen/emit_dfa.c:764 src/gen/emit_dfa.c:1506 src/gen/emit_dfa.c:9039 src/gen/emit_vm.c:13147 src/gen/emit_vm.c:13551 src/gen/CLAUDE.md:3597 src/core/internal.h:6077 
+# --list-axes accessors that project these tables (stream 5)
+axis accessor	20	src/gen/emit_dfa.c:7263 src/gen/emit_dfa.c:7372 src/gen/emit_dfa.c:7962 src/gen/emit_dfa.c:7982 src/gen/emit_vm.c:11010 src/gen/emit_vm.c:11041 src/gen/emit_vm.c:11113 src/core/internal.h:6596 src/core/internal.h:6606 src/core/internal.h:6747 src/core/internal.h:6761 src/core/internal.h:6775 src/dump/axes_dump.c:761 src/dump/axes_dump.c:773 src/dump/axes_dump.c:873 src/dump/axes_dump.c:874 src/dump/axes_dump.c:875 src/dump/axes_dump.c:876 src/dump/axes_dump.c:1099 src/dump/axes_dump.c:1104 

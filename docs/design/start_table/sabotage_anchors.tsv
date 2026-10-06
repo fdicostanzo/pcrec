@@ -1,0 +1,207 @@
+S01_skip_states_off.sh	src/gen/emit_dfa.c	pick_skip_states	4549 
+S04_duplicate_typedef.sh	src/gen/emit_dfa.c	emit_rx_abi_types	1638 
+S06_ts1_nonconst_table.sh	src/gen/emit_dfa.c	emit_u8_table	3348 
+S07_ts1_errno.sh	src/gen/emit_dfa.c	emit_unanchored	8888 FAMILY
+S100_lift_accepts_nullable.sh	src/gen/emit_vm.c	vm_lifts	1374 
+S101_follow_crosses_cut.sh	src/gen/emit_vm.c	vm_atomic	6604 
+S103_publish_at_open.sh	src/gen/emit_vm.c	vm_cap	8356 
+S105_unset_test_is_length.sh	src/gen/emit_vm.c	vm_bref	8496 
+S106_caseless_field_ignored.sh	src/gen/emit_vm.c	vm_bref	8485 
+S109_compare_inlined.sh	src/gen/emit_vm.c	vm_bref	8515 
+S114_resolution_first_by_number.sh	src/gen/emit_vm.c	vm_bref	8492 
+S115_resolution_last_set.sh	src/gen/emit_vm.c	vm_bref	8500 
+S118_revdet_drops_pending.sh	src/gen/emit_vm.c	vm_cap	8355 
+S120_qsort_tiebreak_removed.sh	src/gen/emit_dfa.c	ng_cmp_name	2596 
+S122_look_positive_no_cut.sh	src/gen/emit_vm.c	vm_look	7203 
+S123_look_no_cursor_restore.sh	src/gen/emit_vm.c	vm_look	7208 
+S124_look_negative_no_cut.sh	src/gen/emit_vm.c	vm_look	7187 
+S125_look_push_after_body.sh	src/gen/emit_vm.c	vm_look	7163 
+S129_look_ignores_neg.sh	src/gen/emit_vm.c	vm_look	7132 
+S130_look_ignores_behind.sh	src/gen/emit_vm.c	vm_look	7175 
+S131_look_ignores_atomic.sh	src/gen/emit_vm.c	vm_look	7133 
+S132_look_follow_unscoped.sh	src/gen/emit_vm.c	vm_look	7126 
+S133_backstep_inlined.sh	src/gen/emit_vm.c	vm_look_behind_branch	6880 
+S134_backstep_sentinel_unchecked.sh	src/gen/emit_vm.c	vm_look_behind_branch	6885 
+S135_backstep_clamped_to_startpos.sh	src/gen/emit_vm.c	vm_look_behind_branch	6831 
+S140_look_ceiling_predicate.sh	src/gen/emit_vm.c	pcrec_vm_prefilter_window	3636 
+S141_look_ceiling_builders.sh	src/gen/emit_vm.c	vm_emit_search_body	13425 FAMILY
+S143_call_return_no_restore.sh	src/gen/emit_vm.c	vm_region	8189 
+S144_fail_label_call_top.sh	src/gen/emit_vm.c	vm_emit_search_body	13013 FAMILY
+S145_call_return_pops.sh	src/gen/emit_vm.c	vm_region	8219 
+S146_call_return_cuts.sh	src/gen/emit_vm.c	vm_region	8221 
+S147_call_zeroes_env.sh	src/gen/emit_vm.c	vm_call	7944 
+S148_w_includes_slot0.sh	src/gen/emit_vm.c	vm_build_region_saves	7590 
+S149_w_drops_pending.sh	src/gen/emit_vm.c	vm_w_cap_slots	7363 
+S150_w_drops_cutmark.sh	src/gen/emit_vm.c	vm_build_region_saves	7501 
+S151_w_drops_emptyguard.sh	src/gen/emit_vm.c	vm_build_region_saves	7495 
+S152_w_drops_rungs.sh	src/gen/emit_vm.c	vm_build_region_saves	7498 
+S153_w_drops_look.sh	src/gen/emit_vm.c	vm_build_region_saves	7510 
+S154_call_trail_undercharged.sh	src/gen/emit_vm.c	vm_cost_call	2874 
+S155_depth_capacity_untyped.sh	src/gen/emit_vm.c	vm_emit_storage	12211 
+S162_callee_follow_unscoped.sh	src/gen/emit_vm.c	vm_call	7920 
+S163_region_falls_through.sh	src/gen/emit_vm.c	vm_region	8185 
+S164_region_slots_uncounted.sh	src/gen/emit_vm.c	vm_plan	10504 
+S168_return_through_macro.sh	src/gen/emit_vm.c	vm_region	8217 
+S169_root_minw_unchecked.sh	src/gen/emit_vm.c	vm_emit_search_body	13233 FAMILY
+S173_splice_shares_exit.sh	src/gen/emit_vm.c	vm_splice	8082 
+S177_splice_slots_uncounted.sh	src/gen/emit_vm.c	vm_count_slots	3307 
+S179_searchin_stamped_capacity.sh	src/gen/emit_vm.c	vm_emit_entries	13655 
+S180_buffers_capacities_swapped.sh	src/gen/emit_vm.c	vm_emit_entries	13655 
+S181_init_clobbers_storage.sh	src/gen/emit_vm.c	vm_emit_search_body	12612 FAMILY
+S182_trail_guard_keeps_stamped_macro.sh	src/gen/emit_vm.c	vm_emit_storage	12109 
+S183_null_delegation_dropped.sh	src/gen/emit_vm.c	vm_emit_entries	13654 
+S184_frame_size_from_wrong_struct.sh	src/gen/emit_vm.c	vm_plan	10674 
+S185_ofsskip_resume_off_by_one.sh	src/gen/emit_dfa.c	ofs_test_emit_fn	6469 
+S186_ofsskip_no_reseed.sh	src/gen/emit_dfa.c	pf_emit_ofs_reseed	6488 
+S190_anchored_dead_group_fill_empty.sh	src/gen/emit_dfa.c	emit_anchored_match_caps_def	9085 
+S209_vm_max_body_caps_delinked.sh	src/gen/emit_vm.c	?	236 
+S214_scanedge_bound_dropped.sh	src/gen/emit_dfa.c	emit_scan_edge	8307 
+S217_has_push_npush_estimate_reverts.sh	src/gen/emit_vm.c	vm_plan_entry	10831 
+S218_pinned_predicate_widened.sh	src/gen/emit_dfa.c	start_pinned_applies	7872 FAMILY
+S219_pinned_seed_conjunct_dropped.sh	src/gen/emit_dfa.c	start_pinned_applies	7877 FAMILY
+S220_pinned_view_clause_dropped.sh	src/gen/emit_dfa.c	start_pinned_applies	7874 FAMILY
+S221_pinned_start_written_as_zero.sh	src/gen/emit_dfa.c	emit_unanchored	8920 FAMILY
+S222_start_stamp_forked_from_selection.sh	src/gen/emit_dfa.c	dfa_search_start_name	7911 
+S223_pinned_assert_routing_call_deleted.sh	src/gen/emit_dfa.c	emit_unanchored	8840 FAMILY
+S224_vm_frameless_stamp_inverted.sh	src/gen/emit_vm.c	vm_emit_stamps	11456 
+S225_vm_frameless_stamp_from_npush.sh	src/gen/emit_vm.c	vm_emit_stamps	11456 
+S226_vm_frameless_stamp_conditional.sh	src/gen/emit_vm.c	vm_emit_stamps	11456 
+S227_scan_edge_entry_s0_only.sh	src/gen/emit_dfa.c	emit_scan_loop	8651 
+S232_startpos_guard_leaks_deny.sh	src/gen/emit_dfa.c	pcrec_startpos_guard_text	677 
+S235_attempt_loop_ungated.sh	src/gen/emit_dfa.c	emit_attempt	9452 FAMILY
+S258_ir_role_text_drift.sh	src/gen/emit_vm.c	vm_alt	4600 
+S260_legend_dist_raw_malloc_silent.sh	src/gen/emit_dfa.c	emit_state_legend	4718 
+S263_vm_anchor_bound_subject_length.sh	src/gen/emit_vm.c	vm_emit_search_body	13479 FAMILY
+S264_end_window_one_byte_narrow.sh	src/gen/emit_dfa.c	pcrec_emit_end_window_clamp	947 FAMILY
+S265_req_byte_memchr_inverted.sh	src/gen/emit_dfa.c	emit_req_one_byte	1324 
+S269_precheck_admission_removed.sh	src/gen/emit_dfa.c	req_route_one_attempt	7135 FAMILY
+S270_precheck_dominance_removed.sh	src/gen/emit_dfa.c	req_byte_dominated_by	7171 FAMILY
+S271_var_emit_arm_ignores_caseless.sh	src/gen/emit_vm.c	vm_var	8560 
+S273_span_match_length_off_by_one.sh	src/gen/emit_vm.c	vm_bref	8517 
+S274_precheck_g2_vm_linearity_removed.sh	src/gen/emit_dfa.c	req_route_one_attempt	7138 FAMILY
+S276_precheck_g2_unanchored_admitted.sh	src/gen/emit_dfa.c	req_route_one_attempt	7135 FAMILY
+S277_precheck_whole_set_removed.sh	src/gen/emit_dfa.c	emit_req_set_rest	1267 
+S278_precheck_whole_run_removed.sh	src/gen/emit_dfa.c	req_run_tests	1041 
+S279_run_term_offset_plus_one.sh	src/gen/emit_dfa.c	ofsk_emit_verify	6258 
+S281_run_row_clause4_dropped.sh	src/gen/emit_dfa.c	pf_run_applies_common	6046 FAMILY
+S282_deny_field_32bit.sh	src/gen/emit_dfa.c	emit_u8_table	3475 
+S283_run_rows_offset_skip_bit_dropped.sh	src/gen/emit_dfa.c	dfa_pfs	6864 FAMILY
+S284_run_rows_reseeds_false.sh	src/gen/emit_dfa.c	dfa_pfs	6866 FAMILY
+S285_run_term_length_plus_one.sh	src/gen/emit_dfa.c	ofsk_emit_verify	6257 
+S286_g1_verifies_conjunct_dropped.sh	src/gen/emit_dfa.c	req_byte_dominated_by	7175 FAMILY
+S287_ofstest_maxk_not_widened.sh	src/gen/emit_dfa.c	ofs_test_of	6122 
+S288_density_memchr_guard_dropped.sh	src/gen/emit_dfa.c	req_byte_dominated_by	7177 FAMILY
+S289_clause3_dropped.sh	src/gen/emit_dfa.c	pf_run_applies_common	6037 FAMILY
+S293_reqrun_scan_offset_dropped.sh	src/gen/emit_dfa.c	ofs_test_run	1008 
+S295_vm_anchor_bound_flags_leak.sh	src/gen/emit_dfa.c	emit_info_def	3088 
+S296_facts_private_header_included_by_consumer.sh	src/gen/emit_vm.c	?	68 
+S297_facts_derivation_hand_extern.sh	src/gen/emit_vm.c	pcrec_emit_vm	14006 
+S305_lit_run_slot_walk_overskips.sh	src/gen/emit_vm.c	vm_count_slots	3369 
+S316_findings_k65_pick_decides_giveup.sh	src/gen/emit_dfa.c	emit_req_set_rest	1267 
+S317_findings_g1_elides_without_scan.sh	src/gen/emit_dfa.c	req_byte_dominated_by	7174 FAMILY
+S365_wclass_walks_the_set.sh	src/gen/emit_vm.c	vm_emit_node	8726 
+S366_wclass_island_default.sh	src/gen/emit_vm.c	vm_isl_words	3954 
+S367_start_zero_rule_not_emitted.sh	src/gen/emit_dfa.c	pcrec_emit_start_zero	874 
+S368_unwrapped_match_guard_deleted.sh	src/gen/emit_dfa.c	emit_anchored_match_def	9039 
+S36_vm_undo_neutered.sh	src/gen/emit_vm.c	vm_emit_search_body	13018 FAMILY
+S370_hyb_reseed_probe_never_ends_block.sh	src/gen/emit_vm.c	vm_emit_search_body	13344 FAMILY
+S371_hyb_reseed_adaptive_text_dropped.sh	src/gen/emit_vm.c	vm_emit_search_body	13329 FAMILY
+S372_hyb_reseed_calibration_swapped.sh	src/gen/emit_vm.c	vm_plan_reseed	11111 FAMILY
+S37_vm_wrong_span.sh	src/gen/emit_vm.c	vm_cursor_rep	4845 
+S38_vm_empty_exit_fails.sh	src/gen/emit_vm.c	vm_star	6318 
+S392_wcls_literal_to_kit.sh	src/gen/emit_vm.c	vm_wcls_bytes	1534 
+S393_wcls_tune_unwired.sh	src/gen/emit_vm.c	vm_wcls	1568 
+S395_cls_kit_deny_ignored.sh	src/gen/emit_vm.c	vm_wcls_bytes	1529 
+S39_vm_cursor_always_greedy.sh	src/gen/emit_vm.c	vm_cursor_rep	4857 
+S400_clspack_atom_mask_shifted.sh	src/gen/emit_vm.c	vm_emit_search_body	12684 FAMILY
+S403_clspack_respell_skipped.sh	src/gen/emit_vm.c	vm_cls_tables	1801 
+S405_clspack_respell_before_rung.sh	src/gen/emit_vm.c	pcrec_emit_vm	14007 
+S411_utf_check_before_k50_guard.sh	src/gen/emit_dfa.c	pcrec_emit_startpos_guard	777 
+S414_align_seeks_one_byte.sh	src/gen/emit_dfa.c	pcrec_emit_startpos_guard	798 
+S41_ir_label_drift.sh	src/gen/emit_vm.c	vm_plan	10647 
+S422_prefilter_drop_unstamped.sh	src/gen/emit_vm.c	vm_emit_stamps	11229 
+S42_ir_push_unrecorded.sh	src/gen/emit_vm.c	vm_push_at	3448 
+S430_clss2_byte_kit_wrong_class.sh	src/gen/emit_vm.c	vm_emit_search_body	12689 FAMILY
+S433_clss2fix_scan_site_ignored.sh	src/gen/emit_dfa.c	scan_choice	8128 
+S438_k7980_mixed_abi_fence_off.sh	src/gen/emit_dfa.c	emit_rx_abi_types	1634 
+S439_k78_dead_group_fill_at_entry.sh	src/gen/emit_dfa.c	emit_search_head	1506 
+S441_hyb_reseed_anchored_row_never_holds.sh	src/gen/emit_vm.c	vm_reseed_holds	11090 FAMILY
+S447_pair_scan_one_stream.sh	src/gen/emit_dfa.c	ofs_test_emit_pair	6362 
+S448_req_pin_takes_masked.sh	src/gen/emit_dfa.c	ofs_test_of	6096 
+S449_whole_run_unmasked.sh	src/gen/emit_dfa.c	req_run_tests	1042 
+S450_pair_research_behind.sh	src/gen/emit_dfa.c	ofs_test_emit_pair	6365 
+S452_set_rest_marks_masked.sh	src/gen/emit_dfa.c	emit_req_set_rest	1274 
+S454_pair_dispatch_memchr_first.sh	src/gen/emit_dfa.c	ofs_test_emit_fn	6418 
+S455_pair_search_above_guard.sh	src/gen/emit_dfa.c	ofs_test_emit_pair	6367 
+S457_set_leads_never_applies.sh	src/gen/emit_dfa.c	req_set_leads_applies	7218 FAMILY
+S458_set_leads_tie_leads.sh	src/gen/emit_dfa.c	req_set_leads_applies	7223 FAMILY
+S459_set_rest_retests_lead.sh	src/gen/emit_dfa.c	emit_req_set_rest	1277 
+S460_lead_after_run.sh	src/gen/emit_dfa.c	pcrec_emit_req_byte_check	1386 FAMILY
+S462_set_lead_deny_ignored.sh	src/gen/emit_dfa.c	req_admits	7256 FAMILY
+S463_handoff_k_minus_one.sh	src/gen/emit_dfa.c	emit_req_handoff	1120 FAMILY
+S464_gate_later_occurrence.sh	src/gen/emit_dfa.c	emit_req_handoff	1126 FAMILY
+S467_unbounded_handed_off.sh	src/gen/emit_dfa.c	req_handoff_applies	7341 FAMILY
+S468_seed_reads_startpos.sh	src/gen/emit_dfa.c	seed_emit_seeded	5678 
+S469_vm_gstart_moved.sh	src/gen/emit_vm.c	vm_emit_search_body	13532 FAMILY
+S470_no_clamp.sh	src/gen/emit_dfa.c	emit_req_handoff	1137 FAMILY
+S471_roundup_dropped.sh	src/gen/emit_dfa.c	emit_req_handoff	1123 FAMILY
+S472_roundup_unbounded.sh	src/gen/emit_dfa.c	pcrec_emit_start_zero	887 
+S473_deny_ignored.sh	src/gen/emit_dfa.c	req_uses	7365 FAMILY
+S475_verb_conjunct_dropped.sh	src/gen/emit_dfa.c	req_why_name	7322 FAMILY
+S476_dprime_decline_dropped.sh	src/gen/emit_dfa.c	req_handoff_applies	7343 FAMILY
+S478_vmhat_set_drops_member.sh	src/gen/emit_dfa.c	pf_vm_emit_first_class	6837 
+S479_vmhat_memchr_seek_late.sh	src/gen/emit_dfa.c	pcrec_vm_start_scan_name	6949 FAMILY
+S480_dfahat_t_from_s0_escapes.sh	src/gen/emit_dfa.c	pf_dfa_start_set	6661 FAMILY
+S481_dfahat_class_reseed_deleted.sh	src/gen/emit_dfa.c	pf_emit_first_class_bounded	6747 
+S482_dfahat_memchr_hit_reseed_deleted.sh	src/gen/emit_dfa.c	pf_emit_first_memchr_bounded	6733 
+S483_dfahat_class_clamp_reseed_deleted.sh	src/gen/emit_dfa.c	pf_emit_first_class_bounded	6747 
+S484_dfahat_memchr_clamp_reseed_deleted.sh	src/gen/emit_dfa.c	pf_emit_first_memchr_bounded	6733 
+S485_dfahat_reseed_unconditional.sh	src/gen/emit_dfa.c	pf_emit_moved_reseed	6689 
+S486_dfahat_t_widened.sh	src/gen/emit_dfa.c	pf_dfa_start_set	6673 FAMILY
+S487_dfahat_seeded_conjunct.sh	src/gen/emit_dfa.c	pf_dfa_start_set	6657 FAMILY
+S488_dfahat_nullable_conjunct.sh	src/gen/emit_dfa.c	pf_dfa_start_set	6658 FAMILY
+S489_dfahat_full_set_conjunct.sh	src/gen/emit_dfa.c	pf_dfa_start_set	6659 FAMILY
+S490_dfahat_scan_kind_conjunct.sh	src/gen/emit_dfa.c	pf_dfa_start_set	6656 FAMILY
+S491_vmhat_nullable_conjunct.sh	src/gen/emit_dfa.c	pf_vm_start_applies	6814 FAMILY
+S492_vmhat_anchor_conjunct.sh	src/gen/emit_dfa.c	pf_vm_start_applies	6813 FAMILY
+S493_vmhat_prefn_conjunct.sh	src/gen/emit_dfa.c	pf_vm_start_applies	6812 FAMILY
+S494_has_dfa_scan_on_vmhat.sh	src/gen/emit_dfa.c	pcrec_artifact_has_dfa_scan	387 
+S495_cand_ppm_reads_row_name.sh	src/gen/emit_dfa.c	pcrec_dfa_cand_ppm	7094 
+S496_vmhat_verb_conjunct.sh	src/gen/emit_dfa.c	vm_start_assert_starts	6795 
+S497_vmhat_utf8_assertion.sh	src/gen/emit_dfa.c	pf_vm_start_applies	6817 FAMILY
+S504_dfahat_seek_before_utf_check.sh	src/gen/emit_dfa.c	emit_utf_check	738 
+S510_c17_unlisted_form.sh	src/gen/emit_dfa.c	emit_dead_group_fill	1441 
+S511_c17_stale_pending_row.sh	src/gen/emit_dfa.c	emit_req_one_byte	1325 
+S516_c11_family_missing_stamps.sh	src/gen/emit_vm.c	vm_emit_epilogue	13882 
+S51_revdet_no_iteration_cut.sh	src/gen/emit_vm.c	vm_revdet_rep	5633 
+S52_revdet_first_iteration_captures.sh	src/gen/emit_vm.c	vm_rev_emit	5345 
+S53_counter_untrailed.sh	src/gen/emit_vm.c	vm_counter_phase	5977 
+S54_counter_no_residue.sh	src/gen/emit_vm.c	vm_counter_phase	5847 
+S55_counter_preference.sh	src/gen/emit_vm.c	vm_counter_phase	5958 
+S56_counter_empty_guard.sh	src/gen/emit_vm.c	vm_counter_phase	5882 
+S57_counter_trip_local.sh	src/gen/emit_vm.c	vm_cursor_rep	4774 
+S60_mrl_clamp_underflow_guard.sh	src/gen/emit_vm.c	vm_emit_storage	12100 
+S61_mrl_cursor_clamp_dropped.sh	src/gen/emit_vm.c	vm_cursor_rep	4911 
+S62_mrl_counter_bound_static.sh	src/gen/emit_vm.c	vm_counter_phase	5945 
+S63_mrl_stale_window.sh	src/gen/emit_vm.c	vm_emit_search_body	13281 FAMILY
+S65_prefilter_flags_mask.sh	src/gen/emit_dfa.c	emit_info_def	2811 
+S67_altcls_flags_mask.sh	src/gen/emit_dfa.c	emit_info_def	2837 
+S68_residual_in_hot_loop.sh	src/gen/emit_dfa.c	pcrec_emit_find	5858 
+S72_reverse_skip_blind_sfound.sh	src/gen/emit_dfa.c	dir_rev_skip	7488 
+S73_accept_indexed_at_end.sh	src/gen/emit_dfa.c	acc_emit_tail_by_class	5769 
+S74_reverse_termination_blind.sh	src/gen/emit_dfa.c	dir_rev_bound_accept	7540 
+S75_wordb_second_wordset.sh	src/gen/emit_vm.c	vm_ctx	8295 
+S78_skip_decline_removed.sh	src/gen/emit_dfa.c	pick_skip_states	4577 
+S81_cand_set_hardcoded_newline.sh	src/gen/emit_dfa.c	cand_from_live_seeds	4088 FAMILY
+S82_prefilter_bound_at_zero.sh	src/gen/emit_dfa.c	emit_attempt	9518 FAMILY
+S83_gstart_family_unconditional.sh	src/gen/emit_dfa.c	dfa_needs_gseed	3854 
+S85_kreset_caps_from_prefilter.sh	src/gen/emit_vm.c	vm_emit_search_body	13091 FAMILY
+S86_kreset_write_untrailed.sh	src/gen/emit_vm.c	vm_emit_node	8926 
+S87_kreset_trail_uncharged.sh	src/gen/emit_vm.c	vm_cost_kreset	2602 
+S88_atomic_ceiling_stamp_only.sh	src/gen/emit_vm.c	vm_emit_search_body	13425 FAMILY
+S89_cut_rewinds_trail.sh	src/gen/emit_vm.c	vm_emit_storage	12128 
+S90_mark_after_push.sh	src/gen/emit_vm.c	vm_atomic	6628 
+S92_nopossessify_clears_written.sh	src/gen/emit_vm.c	vm_cuts	1417 
+S95_atomic_trail_uncharged.sh	src/gen/emit_vm.c	vm_cost_atomic	2739 
+S98_countslots_reads_field.sh	src/gen/emit_vm.c	vm_count_slots_rep	3009 
+S99_lift_accepts_lazy.sh	src/gen/emit_vm.c	vm_lifts	1373 
