@@ -298,11 +298,11 @@ noted under group 2, which are `PCREC_*`-named yet per-artifact):
    refused.** The block opens
 
    ```c
-   #if defined(PCREC_RX_ABI_H) && (PCREC_RX_ABI_H + 0) != 62
-   #error "pcrec: this artifact (abi 62) shares a translation unit with an artifact of a different abi; regenerate both with one pcrec"
+   #if defined(PCREC_RX_ABI_H) && (PCREC_RX_ABI_H + 0) != 64
+   #error "pcrec: this artifact (abi 64) shares a translation unit with an artifact of a different abi; regenerate both with one pcrec"
    #endif
    #ifndef PCREC_RX_ABI_H
-   #define PCREC_RX_ABI_H 62
+   #define PCREC_RX_ABI_H 64
    ```
 
    so artifacts of one abi still share the first block, and an artifact of
@@ -2315,7 +2315,22 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `62` on every artifact today (lane ssbuild2 bumped it
+- **`rx_info.abi` is `64` on every artifact today (lane ssbuild3 bumped it
+  from 62, 2026-10-06; `63` is the memfn kit's R4a′: [START-SET] stage 3 —
+  THE DFA HAT, `docs/design/startset.md` §2 F, §4.1, §6.4, D148 + addenda
+  1-2).** The candidate table gains two DFA-route rows, `first-memchr-bounded`
+  and `first-class-bounded` (`tuning.md` §2.42, §6.3's `RX_DFA_PREFILTER`
+  values). On a SEEDED forward DFA scan (a `\b`, a lookbehind, a `(?m)`
+  context) whose plain bounded skip tests the start state's escape set `E`,
+  and whose start set `S` cannot match empty and is a proper subset of `E`,
+  the skip tests `S` instead — one byte by `memchr`, several by a 256-entry
+  `<prefix>_start_bytes` table — and, where it moved, re-seeds the scan state
+  from the byte before its landing. A VM hybrid's inlined prefilter takes it
+  too. `-fno-start-set` restores the `abi`-62 program apart from the abi
+  digits. No struct offset moves, no `rx_info` member is added or changed, no
+  stamp is added (`RX_DFA_PREFILTER`/`rx_info.prefilter` gain the two
+  values), and no answer moves.
+- **`rx_info.abi` was `62` (lane ssbuild2 bumped it
   from 61, 2026-10-05: [START-SET] stage 2 — THE VM HAT,
   `docs/design/startset.md` §2 V, §4.2, §8, D148 + addenda 1-2).** The
   candidate table (`dfa_pfs[]`) gains its first row serving the VM route,

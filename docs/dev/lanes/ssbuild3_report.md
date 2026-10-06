@@ -114,20 +114,57 @@ PLACEHOLDER-GATES
 | mutant (§6.4.2) | how it is seen here | evidence |
 |---|---|---|
 | correct DFA hat (control) | — | differential 0 defects; fixtures 1,769 / 0 |
-| `T = S ∩ E` (r3, sound-F1) | S480 | PLACEHOLDER |
+| `T = S ∩ E` (r3, sound-F1) | S480 | 23 failing fixture cells (the six `W` witnesses) plus three structural arms |
 | E* missing one seed state | the `T == S` BUILD ASSERTION | a scratch mutant (`dfa_estar` skips the last seed) REFUSES 16 corpus blocks — the six sound-F1 witnesses and their fixture copies — with the assertion's internal error; the other 3,512 artifacts are byte-identical (an equivalent mutant on every mover, §6.4.3 item 6) |
 | E* missing s0 | equivalent on this build | the same scratch run: 3,528 of 3,528 byte-identical. ssedge's twin saw it (7 of 10) because it read the seed family off the emitted table; in pcrec `s0` IS `s1u[UPC_PLAIN]` on every ENG_UNANCH machine (`start_pinned_assert_routing` asserts it), so `E*`'s union already holds `s0`'s escapes |
-| re-seed removed | S481 (class), S482/S484 (memchr hit / clamp) | PLACEHOLDER |
-| re-seed UNCONDITIONAL | S485 | PLACEHOLDER |
-| seek before `rx_valid_upto` (DFA) | S504 | PLACEHOLDER |
+| re-seed removed | S481 (class), S482/S484 (memchr hit / clamp) | 109 / 5 / 6 fixture cells; differential 96 / 81 / 25 pairs |
+| re-seed UNCONDITIONAL | S485 | 31 fixture cells (reseed.rxt RS), differential 18 pairs |
+| seek before `rx_valid_upto` (DFA) | S504 | the differential's `-futf-check` config, 6 pairs (deny -9, plant 0) |
 | seek from `search_from` instead of `max(search_from, lo)` | equivalent (§6.4.3 item 7) | the hat runs inside the scan, after the K82 handoff's seeded start: the skip starts where the handoff put the scan |
-| `first-memchr-bounded` hit / clamp landing re-seed deleted | S482 / S484 | PLACEHOLDER |
-| `T` missing one member | the differential's start-byte oracle and the fixtures | PLACEHOLDER (S486's opposite; per-member reach is the oracle's, §6.4.3 item 8) |
+| `first-class-bounded` clamp landing re-seed deleted | S483 | 12 fixture cells (`\B(?<!a)[de]` on "xd"), differential 12 pairs |
+| `T` missing one member | S502 / S501 (the walk drops or mis-reads bytes, so `T` misses members) and the start-byte oracle | S502: 7 fixture cells + 36 differential pairs; per-member reach is the oracle's (§6.4.3 item 8) |
 | `T = Tdfa` | not buildable without a second derivation; `[dfa-table]` pins `T == S` | — |
 
 ## 5. Sabotage rows (START-SET's S480-S490, S495, S501-S502, S504)
 
-PLACEHOLDER-MECH
+Solo runs, `bash tests/mech/run_sabotage_matrix.sh <id>` one row per run,
+at `8c69a359` (KEEP=1, two chains of rows in parallel, the suite lock held):
+**every row scored as expected — 0 unexpected, 0 undetected, 0 anomalies**.
+The detecting arms are read from each row's kept `dfahat.log`: `[dfa-fix]`
+is the four fixture files through the harness (answer level), "diff" the
+every-startpos differential's defective (mover, config) pairs.
+
+| id | plant | verdict | dfahat | how it is seen |
+|---|---|---|---|---|
+| S480 | `T = S ∩ E` with r3's admission, `T == S` assertion off (sound-F1) | DETECTED | 4 fail | 23 fixture cells (the six `W` witnesses), `[dfa-table]`, `[dfa-movers]`, `[dfa-wit]` |
+| S481 | `first-class-bounded` re-seed deleted (re-aimed from the unbounded form) | DETECTED | 99 fail | 109 fixture cells; diff 96 pairs (32 auto / 30 collapse / 32 nocaps / 2 utfcheck); structural |
+| S482 | `first-memchr-bounded` hit-path re-seed deleted (re-aimed) | DETECTED | 84 fail | 5 fixture cells; diff 81 pairs; structural |
+| S483 | `first-class-bounded` clamp-path re-seed deleted | DETECTED | 15 fail | 12 fixture cells (`dfahat_paths.rxt`'s `\B(?<!a)[de]` on "xd"); diff 12; structural |
+| S484 | `first-memchr-bounded` clamp-path re-seed deleted | DETECTED | 28 fail | 6 fixture cells (`\B(?<!a)d` on "xd"); diff 25; structural |
+| S485 | the re-seed made unconditional | DETECTED | 21 fail | 31 fixture cells (reseed.rxt RS, `(?:\b|xy)a` on "xya"); diff 18; `[dfa-reseed]` |
+| S486 | `T` widened by one byte of `E \ S` | DETECTED | 4 fail | `[dfa-table]` (T != S), `[dfa-wit]` (aws leaves the memchr form); answer-invisible by design |
+| S487 | F's seeded conjunct removed | UNREACHED (expected) | — | reach MISSING; E within S on unseeded machines |
+| S488 | F's non-nullable conjunct removed | DETECTED | 2 fail | `[dfa-movers]` + `[dfa-table]` on `\b\B|\b(?:ab|cd)`; answer-equivalent by argument (row header) |
+| S489 | F's `|S| < 256` conjunct removed | UNREACHED (expected) | — | reach MISSING |
+| S490 | F's scan-kind conjunct removed | UNREACHED (expected) | — | reach MISSING; `dfa_pfs[]` is consulted on ENG_UNANCH only |
+| S495 | `pcrec_dfa_cand_ppm` reads the row name (K84) | DETECTED | candrows 1, dfahat 1 | `[dfa-wit]` `(?<=ab)z|\bw`'s `RX_VM_RESEED` adaptive -> adaptive-dense |
+| S501 | the walk reads a lookaround as consuming | DETECTED | startset 2, vmhat 18, dfahat 17 | dfahat: `[dfa-movers]` + diff 16 pairs |
+| S502 | the walk's `A_CAT` drops `null(l) ? F(r)` | DETECTED | startset 2, vmhat 63, dfahat 40 | dfahat: 7 fixture cells, diff 36 pairs, `[dfa-movers]`, `[dfa-wit]` |
+| S504 | a no-candidate return above `rx_valid_upto` | DETECTED | 6 fail | diff `utfcheck` config only: 6 pairs, deny -9 vs plant 0 |
+
+Every DETECTED row's REACH probe was evaluated on the clean build first
+(`reach:ok(1/1)` in every row above); the three UNREACHED rows' probes
+read MISSING, as their `SAB_EXPECT_REASON` says they must. S501/S502's
+probes had stopped matching since stage 2 (they pinned the facts listing's
+`used` column at `no`, and stage 2's every-artifact stamp turned it `yes`);
+re-aimed here, intent unchanged.
+
+**What S481/S482 replaced.** §6.3 named the UNBOUNDED `first-class` /
+`first-memchr` forms; ssedge (§6.4.4) showed the DFA hat has no unbounded
+population. The unbounded forms are not built (an assertion in F guards
+the reading), and the two ids moved to the bounded forms' re-seed (whole,
+and the hit path) beside S483/S484 (the clamp path of each form), so all
+four (form x landing) cells have a detecting row.
 
 ## 6. Findings
 
