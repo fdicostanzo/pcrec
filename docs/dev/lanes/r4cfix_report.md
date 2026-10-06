@@ -274,3 +274,67 @@ unchanged. A grep for the old numbers found no other reader.
 | `make strict`, test-codegen, registry, rxtsource | FIX | DONE, all green (rxtsource after the §7.1 re-pin) |
 | Mac `make test`, then the Linux verdict | — | OWED (§8) |
 | report + lanes/CLAUDE.md row | each lane | DONE |
+
+## 10. test-startset re-pin (lane r4cpin)
+
+Cause. The Mac `make test` at 00ede5dc failed only `test-startset`'s
+`[vm-movers]` pair: 3 movers not in `manifest_s2_vm_auto.tsv`, 6 not in
+`manifest_s2_vm_forced.tsv`. The manifest id is `file:line` of a block's
+`pattern` line; the reported lines (2551, 2627, 2704, 2738, 2773, 2817) are
+the pattern lines of the three R4c VM-hybrid handoff witness blocks
+(`(ab)c?userpass`, `(x)?userz`, `(?i)(cat)s?dog`) that lane r4cchecks added to
+`tests/litscan/handoff.rxt` (lines 2549+; the file was 2548 lines before).
+Each block is dedup'd on (text, options) into an auto and a `--engine=vm` arm:
+the `--engine=vm` arms (2627, 2738, 2817) are movers at both manifests, the
+three auto-engine arms (2551, 2704, 2773) at the forced manifest only.
+
+Legitimate. Every row is a prefilter-less, unanchored VM artifact whose stamp
+names the seek: `[vm-iff]`, `[vm-route]`, `[vm-anchor]`, `[vm-handoff]`,
+`[vm-deny]`, `[vm-table]` all PASSED over them; the checker reads the mover
+set from the compiled artifact, so the manifest was merely stale.
+
+Fix. `docs/design/startset/s1/census_s1.py` generated the manifests, so it was
+re-run (scratch output, current build, TREE=this worktree). Its output differs
+from the committed manifests in exactly those 3 + 6 rows and nowhere else
+(`s3_dfa` unchanged); the rows were taken from it in its own sort order, with
+the hand-kept header comments retained and one provenance line added. The
+checker keeps no header total; the floors (88 / 1280) are untouched.
+
+Verification (Mac, gcc-16): `make test-startset` alone: `[vm-movers] auto:
+movers == manifest_s2_vm_auto.tsv by ID (179 rows, 0 off-diagonal)`, `vm: ...
+(2631 rows, 0 off-diagonal)`, `checks failed: 0` in every sub-section; `make
+strict` clean.
+
+Lesson. Adding corpus `.rxt` cases can enroll patterns in OTHER suites'
+manifests (rxtsource, startset: both key rows by `file:line`). A lane that adds
+corpus rows owes the full `make test`, not only its own section.
+
+### §10.1 The pcrec manager's two per-row facts (added by the kit manager, 2026-10-06)
+
+Measured on the Mac with gcc-16. TIP is the kit branch's build at 00ede5dc;
+r4cpin changed no src/. REF is pcrec built from `git archive e6e6d6eb`.
+Every compile is `-p rx --features all --encoding=byte`, plus `--engine=vm`
+where shown, and writes `.c` and `.h` to same-named files so the `#include`
+line cannot differ.
+
+| pattern | config | (1) default vs `-fno-start-set` | (2) TIP == e6e6d6eb (.c+.h, default AND deny) |
+|---|---|---|---|
+| `(ab)c?userpass` | `--engine=vm` | 24 lines: `rx_start_set[]` + `RX_VM_START_SCAN "first-class"` | IDENTICAL |
+| `(x)?userz` | `--engine=vm` | 24 lines, same shape | IDENTICAL |
+| `(?i)(cat)s?dog` | `--engine=vm` | 24 lines, same shape | IDENTICAL |
+| `(ab)c?userpass` | auto | 0 lines (VM hybrid: `RX_VM_START_SCAN "none"`) | IDENTICAL |
+| `(x)?userz` | auto | 0 lines, same | IDENTICAL |
+| `(?i)(cat)s?dog` | auto | 0 lines, same | IDENTICAL |
+
+- The 3 `auto` manifest rows are the `--engine=vm` cases.
+- The 6 `forced` rows are all six cases compiled with `--engine=vm`, the
+  forced manifest's own config. Under it every one is the 24-line mover
+  above.
+- The auto-config cases do not move at the default engine: they take the
+  VM HYBRID route, whose prefilter is its start test (S493's conjunct).
+  That is why they are absent from the auto manifest.
+- Shape control: two existing manifest rows, `(ab)\1` and `(?i)(ca)t\1` at
+  `--engine=vm`, show the identical 24-line `rx_start_set[]` +
+  `"first-class"` diff.
+- Fact (2) holds for every pattern under both the default and the deny
+  compile, as the zero-mover gate (0 movers vs e6e6d6eb) implies.
