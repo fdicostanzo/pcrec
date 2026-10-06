@@ -98,10 +98,9 @@ def main():
                         continue
                     st["movers"] += 1
                     s0, s1 = d0[0], d1[0]
-                    keys = sorted(k for k in set(s0) | set(s1)
-                                  if ":" not in k and k != "ROUTE" and s0.get(k) != s1.get(k))
-                    rkeys = sorted(k for k in set(s0) | set(s1)
-                                   if ":" in k and s0.get(k) != s1.get(k))
+                    moved = es.start_keys_moved(s0, s1)   # the gate's own definition
+                    keys = [k for k in moved if ":" not in k]
+                    rkeys = [k for k in moved if ":" in k]
                     for k in keys + rkeys:
                         trans[(arm, fl, k, s0.get(k, "-"), s1.get(k, "-"))] += 1
                     if keys or rkeys:

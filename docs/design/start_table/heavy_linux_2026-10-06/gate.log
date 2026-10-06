@@ -1,0 +1,129 @@
+[emit_sweep] tree=/home/duxevents/pcrec/worktrees/stc0lx out=/home/duxevents/pcrec/worktrees/stc0lx/heavy/gate cc=gcc jobs=10 comp_timeout=90 comp_jobs=6 streams=c-default,c-vm,emit-ir,composition,dumps,facts extra=[] arms=start trace=False
+[emit_sweep] archiving 73f66ba9 (ref) into /home/duxevents/pcrec/worktrees/stc0lx/heavy/gate/src_ref ...
+[emit_sweep] building ref (CC=gcc CFLAGS=<default>) ...
+[emit_sweep] archiving d7da3cd5 (tree) into /home/duxevents/pcrec/worktrees/stc0lx/heavy/gate/src_tree ...
+[emit_sweep] building tree (CC=gcc CFLAGS=<default>) ...
+[emit_sweep] reference=ref:73f66ba9 working=tree-rev:d7da3cd5 corpus_dir=/home/duxevents/pcrec/worktrees/stc0lx/heavy/gate/src_tree
+[emit_sweep] corpus: 4606 pattern rows (+0 from patterns files), 369 composition files
+[emit_sweep] === SELF-CHECK: building a second independent copy of ref:73f66ba9 ===
+[emit_sweep] archiving 73f66ba9 (ref2) into /home/duxevents/pcrec/worktrees/stc0lx/heavy/gate/src_ref2 ...
+[emit_sweep] building ref2 (CC=gcc CFLAGS=<default>) ...
+[emit_sweep] === selfcheck: stream 1 (.c default engine) ===
+[emit_sweep] === selfcheck: stream 2 (.c --engine=vm) ===
+[emit_sweep] === selfcheck: stream 3 (--emit-ir --engine=vm) ===
+[emit_sweep] === selfcheck: stream 6 (--emit-facts=byte,utf8) ===
+[emit_sweep] === selfcheck: stream 4 (composition) ===
+[emit_sweep] === selfcheck: stream 5 (registry dumps) ===
+[emit_sweep] === REAL RUN: ref:73f66ba9 vs tree-rev:d7da3cd5 ===
+[emit_sweep] === real: stream 1 (.c default engine) ===
+[emit_sweep] === real: stream 2 (.c --engine=vm) ===
+[emit_sweep] === real: stream 3 (--emit-ir --engine=vm) ===
+[emit_sweep] === real: stream 6 (--emit-facts=byte,utf8) ===
+[emit_sweep] === real: stream 4 (composition) ===
+[emit_sweep] === real: stream 5 (registry dumps) ===
+[emit_sweep] === arms: 32 arms x 2 streams over 3595 distinct patterns ===
+
+===== SELF-CHECK (ref vs. independent rebuild of the same rev) =====
+-- stream: c-default --
+  population=4606 both_ok(reach)=4159 both_refuse=447 movers=0 asymmetric=0
+-- stream: c-vm --
+  population=4606 both_ok(reach)=4160 both_refuse=446 movers=0 asymmetric=0
+-- stream: emit-ir-vm --
+  population=4606 both_ok(reach)=4160 both_refuse=446 movers=0 asymmetric=0
+-- stream: facts --
+  population=4606 both_ok(reach)=4119 both_refuse=487 movers=0 asymmetric=0
+-- stream: composition --
+  population=369 both_ok(reach)=38 both_refuse=331 movers=0 asymmetric=0
+-- stream: dumps --
+  population=7 both_ok(reach)=7 both_refuse=0 movers=0 asymmetric=0
+self-check reach: c-default=4159 c-vm=4160 emit-ir-vm=4160 facts=4119 composition=38 dumps=7 composition producing=38 artifacts=108
+SELF-CHECK PASSED: all-identical, no asymmetry, at full reach.
+
+===== REAL RUN: ref:73f66ba9  vs  tree-rev:d7da3cd5 =====
+-- stream: c-default --
+  population=4606 both_ok(reach)=4159 both_refuse=447 movers=0 asymmetric=0
+-- stream: c-vm --
+  population=4606 both_ok(reach)=4160 both_refuse=446 movers=0 asymmetric=0
+-- stream: emit-ir-vm --
+  population=4606 both_ok(reach)=4160 both_refuse=446 movers=0 asymmetric=0
+-- stream: facts --
+  population=4606 both_ok(reach)=4119 both_refuse=487 movers=0 asymmetric=0
+-- stream: composition --
+  population=369 both_ok(reach)=38 both_refuse=331 movers=0 asymmetric=0
+-- stream: dumps --
+  population=7 both_ok(reach)=7 both_refuse=0 movers=0 asymmetric=0
+DELIVER witness: OK (at least one composition artifact carries the cross-group SET-pair shape; both named fixtures produced).
+-- family: arms (streams 1-2, distinct patterns) --
+  population=3595 full_corpus=yes sides=two
+  byte <base>                 c-default differ=0/0 stamp=0/0 refusal=0/0 floor=-/-
+  utf8 <base>                 c-default differ=0/0 stamp=0/0 refusal=0/0 floor=-/-
+  byte <null>                 c-default differ=0/0 stamp=0/0 refusal=0/0 floor=-/-
+  byte -e utf8                c-default differ=3188/3188 stamp=674/674 refusal=74/74 floor=3188/674
+  byte -i                     c-default differ=3221/3221 stamp=1752/1752 refusal=0/0 floor=3221/1752
+  utf8 -i                     c-default differ=3229/3229 stamp=1775/1775 refusal=0/0 floor=3229/1775
+  byte -fno-offset-skip       c-default differ=513/513 stamp=513/513 refusal=0/0 floor=513/513
+  byte -fno-run-prefilter     c-default differ=132/132 stamp=132/132 refusal=0/0 floor=132/132
+  byte -fno-start-set         c-default differ=136/136 stamp=136/136 refusal=0/0 floor=136/136
+  byte -fno-start-pinned      c-default differ=183/183 stamp=183/183 refusal=0/0 floor=183/183
+  byte -fno-req-set-lead      c-default differ=14/14 stamp=0/0 refusal=0/0 floor=14/0
+  byte -fno-req-handoff       c-default differ=163/163 stamp=163/163 refusal=0/0 floor=163/163
+  byte -fno-hyb-reseed        c-default differ=403/403 stamp=403/403 refusal=0/0 floor=403/403
+  byte -fno-vm-anchor-bound   c-default differ=337/337 stamp=337/337 refusal=0/0 floor=337/337
+  byte -fno-end-window        c-default differ=288/288 stamp=288/288 refusal=0/0 floor=288/288
+  byte -fno-req-byte          c-default differ=2639/2639 stamp=2043/2043 refusal=0/0 floor=2639/2043
+  byte -fno-req-run           c-default differ=530/530 stamp=301/301 refusal=0/0 floor=530/301
+  byte -fno-req-run-fold      c-default differ=48/48 stamp=32/32 refusal=0/0 floor=48/32
+  byte -fprefilter-collapse   c-default differ=213/213 stamp=212/212 refusal=0/0 floor=213/212
+  byte -fno-length-prune      c-default differ=449/449 stamp=112/112 refusal=0/0 floor=46/11
+  utf8 -fno-offset-skip       c-default differ=604/604 stamp=604/604 refusal=0/0 floor=604/604
+  utf8 -fno-run-prefilter     c-default differ=3/3 stamp=3/3 refusal=0/0 floor=3/3
+  utf8 -fno-start-set         c-default differ=127/127 stamp=127/127 refusal=0/0 floor=127/127
+  utf8 -fno-start-pinned      c-default differ=183/183 stamp=183/183 refusal=0/0 floor=183/183
+  utf8 -fno-req-set-lead      c-default differ=8/8 stamp=0/0 refusal=0/0 floor=8/0
+  utf8 -fno-req-handoff       c-default differ=280/280 stamp=280/280 refusal=0/0 floor=280/280
+  utf8 -fno-hyb-reseed        c-default differ=420/420 stamp=420/420 refusal=0/0 floor=420/420
+  utf8 -fno-vm-anchor-bound   c-default differ=337/337 stamp=337/337 refusal=0/0 floor=337/337
+  utf8 -fno-end-window        c-default differ=0/0 stamp=0/0 refusal=0/0 floor=0/0
+  utf8 -fno-req-byte          c-default differ=2631/2631 stamp=2071/2071 refusal=0/0 floor=2631/2071
+  utf8 -fno-req-run           c-default differ=572/572 stamp=299/299 refusal=0/0 floor=572/299
+  utf8 -fno-req-run-fold      c-default differ=38/38 stamp=31/31 refusal=0/0 floor=38/31
+  utf8 -fprefilter-collapse   c-default differ=213/213 stamp=211/211 refusal=0/0 floor=213/211
+  utf8 -fno-length-prune      c-default differ=468/468 stamp=118/118 refusal=0/0 floor=49/11
+  byte <base>                 c-vm      differ=0/0 stamp=0/0 refusal=0/0 floor=-/-
+  utf8 <base>                 c-vm      differ=0/0 stamp=0/0 refusal=0/0 floor=-/-
+  byte <null>                 c-vm      differ=0/0 stamp=0/0 refusal=0/0 floor=-/-
+  byte -e utf8                c-vm      differ=3189/3189 stamp=341/341 refusal=74/74 floor=3189/341
+  byte -i                     c-vm      differ=3222/3222 stamp=1567/1567 refusal=0/0 floor=3222/1567
+  utf8 -i                     c-vm      differ=3230/3230 stamp=1605/1605 refusal=0/0 floor=3230/1605
+  byte -fno-offset-skip       c-vm      differ=0/0 stamp=0/0 refusal=0/0 floor=0/0
+  byte -fno-run-prefilter     c-vm      differ=0/0 stamp=0/0 refusal=0/0 floor=0/0
+  byte -fno-start-set         c-vm      differ=2327/2327 stamp=2327/2327 refusal=0/0 floor=2327/2327
+  byte -fno-start-pinned      c-vm      differ=0/0 stamp=0/0 refusal=0/0 floor=0/0
+  byte -fno-req-set-lead      c-vm      differ=16/16 stamp=0/0 refusal=0/0 floor=16/0
+  byte -fno-req-handoff       c-vm      differ=0/0 stamp=0/0 refusal=0/0 floor=0/0
+  byte -fno-hyb-reseed        c-vm      differ=0/0 stamp=0/0 refusal=0/0 floor=0/0
+  byte -fno-vm-anchor-bound   c-vm      differ=488/488 stamp=488/488 refusal=0/0 floor=488/488
+  byte -fno-end-window        c-vm      differ=288/288 stamp=288/288 refusal=0/0 floor=288/288
+  byte -fno-req-byte          c-vm      differ=3222/3222 stamp=2043/2043 refusal=0/0 floor=3222/2043
+  byte -fno-req-run           c-vm      differ=530/530 stamp=17/17 refusal=0/0 floor=530/17
+  byte -fno-req-run-fold      c-vm      differ=48/48 stamp=17/17 refusal=0/0 floor=48/17
+  byte -fprefilter-collapse   c-vm      differ=0/0 stamp=0/0 refusal=0/0 floor=0/0
+  byte -fno-length-prune      c-vm      differ=678/678 stamp=0/0 refusal=0/0 floor=69/0
+  utf8 -fno-offset-skip       c-vm      differ=0/0 stamp=0/0 refusal=0/0 floor=0/0
+  utf8 -fno-run-prefilter     c-vm      differ=0/0 stamp=0/0 refusal=0/0 floor=0/0
+  utf8 -fno-start-set         c-vm      differ=2352/2352 stamp=2352/2352 refusal=0/0 floor=2352/2352
+  utf8 -fno-start-pinned      c-vm      differ=0/0 stamp=0/0 refusal=0/0 floor=0/0
+  utf8 -fno-req-set-lead      c-vm      differ=8/8 stamp=0/0 refusal=0/0 floor=8/0
+  utf8 -fno-req-handoff       c-vm      differ=0/0 stamp=0/0 refusal=0/0 floor=0/0
+  utf8 -fno-hyb-reseed        c-vm      differ=0/0 stamp=0/0 refusal=0/0 floor=0/0
+  utf8 -fno-vm-anchor-bound   c-vm      differ=488/488 stamp=488/488 refusal=0/0 floor=488/488
+  utf8 -fno-end-window        c-vm      differ=0/0 stamp=0/0 refusal=0/0 floor=0/0
+  utf8 -fno-req-byte          c-vm      differ=3230/3230 stamp=2071/2071 refusal=0/0 floor=3230/2071
+  utf8 -fno-req-run           c-vm      differ=572/572 stamp=15/15 refusal=0/0 floor=572/15
+  utf8 -fno-req-run-fold      c-vm      differ=38/38 stamp=15/15 refusal=0/0 floor=38/15
+  utf8 -fprefilter-collapse   c-vm      differ=0/0 stamp=0/0 refusal=0/0 floor=0/0
+  utf8 -fno-length-prune      c-vm      differ=815/815 stamp=0/0 refusal=0/0 floor=85/0
+  per-arm table: /home/duxevents/pcrec/worktrees/stc0lx/heavy/gate/arms.tsv
+
+population: argv=4606 composition_files=369 composition_producing=38 composition_artifacts=108
+elapsed: 584.6s

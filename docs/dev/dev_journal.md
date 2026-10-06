@@ -26520,3 +26520,52 @@ Frank: "finish up open work/bench results/errors", Linux box free (bench manager
   commit is not on the branch at wake, the next session finishes it from the
   WIP + worktrees/starttabrev/scratch/deny.log. wake.md rewritten (14:00) and
   is current.
+
+## 2026-10-06 (evening) — ninety-third session (manager; Frank present, rulings one at a time)
+
+- Woke from wake.md; starttabrev's revision 2 delivered; short D6 re-check by the
+  two critics (sound/opus, checks/sonnet): both CLEARS WITH LISTED FIXES (checks
+  N1 `?`-owner anchors, N2 trace instrument, M2 floors; sound N1 §1.6 termination
+  overclaim + HIT/START types, N2 ~14 job->engine route reads -> one
+  `cand_route_of`, N3 edit-set gaps, N4 "independent" false for method 3, N5
+  assertion sites; sibling: the position-domain family [DEC-POSDOM]). Revision
+  2.1 (starttabrev3) applied all; record docs/dev/reviews/2026-10-06-r2-starttable-recheck.md;
+  merged 3a767873.
+- Frank's rulings: Q1 flagbits triage + META review (yes); Q2 [ENG-TACTICS]
+  reverse-inner OUT of BOONIES, gated on the fold (c9c98e98); Q3 [DEC-FALLBACK]
+  keeps tokens; Q4 STREAMLINE — two serial no-mover refactors A (start table) /
+  B ([DEC-FALLBACK], absorbs Q8), movers never folded in; Q5 memfn R4c BEFORE
+  C1-C7, C0 in parallel (R-4 filed 05c33ce0); Q6 pcrec text moved into the kit
+  relicensed 0BSD (D145 addendum 1, 07573ff7); note Q2-Q7/Q10: one `cand_rows[]`
+  array; trace YES conditional on an experiment ("seems brittle"); D-1 measured-
+  gated later row (my `ERROR` example was wrong — literals take offset-set;
+  Frank caught it); D-2 `attempt-start` batched; D-2b filed; census scripts'
+  home; [TIE-ALIGN] re-scope as one PF_DERIVED ranking (prefix_k reads no
+  option). D151 addenda 2-3; [START-TABLE] plan row created (73f66ba9) — there
+  was NO row tracking the fold.
+- flagbits (K92): bits 18/21 leaked into rx_info.flags — the 4th incident of a
+  hand-kept mask; meta verdict: `.flags` = request minus answer-identical
+  strategy denials, masked by axis class (D43, match_api §6.3), so a BUG; fix
+  derives the mask from axes.def. Mac make test: one red, the lane's own
+  unguarded `sort` (K35) — fixed by the manager (0f32defe), test-codegen
+  re-run 0 failed; merged e6e6d6eb, ABI 65. Bench I-132 (6f1b34e; bare
+  `ssh ubuntubudu` alias failed host-key verification, the tailnet IP worked).
+  The kit's R4c merge then took the derived mask and memfn-simd was masked
+  with NO hand bits — the general mechanism paying off on day one.
+- C0 (stc0) delivered (d7da3cd5, unmerged): sweep extension, 62 pinned floors,
+  controls red in the failing direction; Frank's TRACE EXPERIMENT MET THE BAR
+  (bytes-identical plant: trace 176 vs bytes 15; 0 false alarms) with two C1
+  conditions: declared-literal site keys (not __func__), SET compare (ordered
+  false-alarms 6,443 on a re-asking reader). Heavy chain (every-flag sweep +
+  two-build gate) ARMED, waits for worktrees/stc0/.lift after the kit's slot;
+  owed: S550-S555 rows numbered, -fno-length-prune re-pins.
+- Kit R4c: CORE+AXIS+CHECKS+FIX zero movers vs e6e6d6eb; Mac make test + 35
+  mech rows running from 20:24Z under the lock.
+- Lessons: (1) a lane's "standing red" expectation must be checked against
+  main — the darwin nm red was already gone, so the red was real (its own
+  check). (2) Manager `cd` into a worktree AGAIN (memory says never); moved
+  back at once. (3) Busy lanes miss ruling messages (starttabrev3 never
+  applied Q3-Q5) — verify rulings landed in the diff before merge.
+- Next: kit verdict -> lift stc0 -> stc0 follow-up (rows, re-pins) -> merge C0
+  -> ping kit (full I2) -> R4c Linux verdict by day -> merge R4c -> C1.
+  Owed: S169 duplicate id; Frank question on conditional masking of bits 12/13.

@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+# emit_sweep.py self-test ([START-TABLE] C0): the ARMS family over its own
+# MANIFEST population (the one named pattern per DIFFER_PINS cell), one
+# binary on both sides -- so identity is trivial and what is tested is the
+# arms' own plumbing: every manifest differs under its arm on each side, the
+# asserted zeros read 0, the null arm reads 0. tests/mech's emitsweep rows
+# plant a plumbing loss in opt_argv (a dropped arm flag; a dropped `-e utf8`)
+# and this file must then FAIL. Also: an arm with no pinned floor FAILS (the
+# negative control for "an arm that cannot fail on its plumbing"), and the
+# patterns-file escape round-trip. Needs a built pcrec: PCREC=..., default
+# <repo>/build/pcrec; a missing binary is a FAIL, never a skip. ~30 s.
+set -u
+here=$(cd "$(dirname "$0")/.." && pwd)
+ES=$here/emit_sweep.py
+PCREC=${PCREC:-$here/../build/pcrec}
+T=$(mktemp -d "${TMPDIR:-/tmp}/emit_sweep.test.XXXXXX")
+trap 'rm -rf "$T"' EXIT
+pass=0 fail=0
+ok()  { echo "PASS: $*"; pass=$((pass+1)); }
+bad() { echo "FAIL: $*"; fail=$((fail+1)); }
+if [ ! -x "$PCREC" ]; then
+    bad "no pcrec binary at $PCREC (build it, or set PCREC)"
+    echo "checks passed: $pass"; echo "checks failed: $fail"; exit 1
+fi
+. "$here/../tests/lib/timeout_bin.sh"
+python3 - "$here" > "$T/manifests.txt" <<'PY'
+import sys; sys.path.insert(0, sys.argv[1]); import emit_sweep as es
+print("# DIFFER_PINS manifests, --list-source escapes")
+for m in sorted({v[2] for v in es.DIFFER_PINS.values() if v[2] is not None}):
+    print(es.encode_escape(m))
+PY
+n=$(grep -vc '^#' "$T/manifests.txt")
+[ "$n" -ge 15 ] && ok "manifest population $n patterns" || bad "manifest population only $n"
+sweep() { "$TIMEOUT_BIN" 300 python3 "$ES" --ref-bin "$PCREC" --bin "$PCREC" --no-self-check \
+    --no-corpus --patterns-file "$T/manifests.txt" --streams c-default,c-vm \
+    --out "$T/out" --jobs 4 "$@" > "$T/log" 2>&1; }
+
+sweep --arms start; rc=$?
+if [ "$rc" = 0 ]; then ok "arms start: clean on the manifest population"
+else bad "arms start rc=$rc: $(grep -- '<--' "$T/log" | head -5)"; fi
+grep -q 'utf8 -fno-end-window        c-default differ=0/0' "$T/log" \
+    && ok "asserted zero read 0 (utf8 -fno-end-window)" || bad "asserted-zero row missing/nonzero"
+hits=$(awk -F'\t' 'NR>1 && $5>0 && $6>0' "$T/out/arms.tsv" | wc -l | tr -d ' ')
+[ "$hits" -ge 40 ] && ok "arms differing on both sides: $hits" || bad "only $hits arms differ on both sides"
+
+sweep --extra-base='-e utf8' --extra=-fno-start-set; rc=$?
+[ "$rc" = 0 ] && ok "one arm via --extra (utf8 base, -fno-start-set)" || bad "--extra arm rc=$rc"
+sweep --extra=-fno-scan-edge; rc=$?
+[ "$rc" = 1 ] && grep -q 'NO DIFFER FLOOR PINNED' "$T/log" \
+    && ok "an unpinned --extra arm FAILS" || bad "unpinned arm rc=$rc (want 1, NO DIFFER FLOOR PINNED)"
+
+python3 - "$here" <<'PY' && ok "encode_escape/decode_escape round-trip" || bad "escape round-trip"
+import sys; sys.path.insert(0, sys.argv[1]); import emit_sweep as es
+for b in (b"a\\b", b"\t\n\r", "é{2}".encode(), bytes(range(256))):
+    assert es.decode_escape(es.encode_escape(b)) == b, b
+PY
+
+echo "checks passed: $pass"
+echo "checks failed: $fail"
+[ "$fail" -eq 0 ]

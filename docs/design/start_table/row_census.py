@@ -18,73 +18,17 @@ import collections, concurrent.futures, os, re, subprocess, sys
 sys.path.insert(0, os.path.join(sys.argv[2], "scripts"))
 import emit_sweep as es  # noqa: E402
 
-STAMPS = ["DFA_SCAN", "DFA_PREFILTER", "DFA_START", "VM_PREFILTER",
-          "VM_PREFILTER_LANG", "VM_START", "VM_START_SCAN", "VM_RESEED",
-          "REQ_WHY", "REQ_HANDOFF", "END_WINDOW", "ENGINE"]
+# The start-family stamps and their parse live in scripts/emit_sweep.py since
+# [START-TABLE] C0 (its arms' stamp floors count the same "a start stamp
+# moved"), and are re-exported here under the names this census always used.
+STAMPS = es.START_STAMPS
 ARMS = [("auto", "byte", []), ("vm", "byte", ["--engine=vm"]),
         ("auto", "utf8", ["-e", "utf8"]), ("vm", "utf8", ["--engine=vm", "-e", "utf8"])]
-RX = re.compile(rb'^#define RX_([A-Z_]+) (.*)$', re.M)
-
-
-# The DFA-shaped body's ROUTE is a function of the PREFILTER's engine
-# (job->engine: ENG_UNANCH / ENG_ATTEMPT / empty), never of fit.chosen
-# ([r2 sound-M1]): a VM hybrid whose prefilter machine is ENG_ATTEMPT is an
-# ATTEMPT-route customer. ROUTE classes, disjoint by construction:
-#   DFA-UNANCH  DFA-ATTEMPT  DFA-EMPTY     (ENGINE "dfa", by DFA_SCAN)
-#   HYB-UNANCH  HYB-ATTEMPT  HYB-EMPTY     (ENGINE "vm", VM_PREFILTER "hybrid")
-#   VM-ONLY                                (ENGINE "vm", VM_PREFILTER "none")
-ROUTE_KEYED = ["DFA_PREFILTER", "DFA_START", "REQ_WHY", "REQ_HANDOFF",
-               "VM_START", "VM_START_SCAN", "VM_RESEED", "END_WINDOW"]
-SCAN_ROUTE = {'"unanchored"': "UNANCH", '"attempt"': "ATTEMPT", '"empty"': "EMPTY"}
-
-
-def route_of(d):
-    eng = d.get("ENGINE")
-    if eng == '"dfa"':
-        return "DFA-" + SCAN_ROUTE.get(d.get("DFA_SCAN"), "?")
-    if eng == '"vm"':
-        if d.get("VM_PREFILTER") == '"hybrid"':
-            return "HYB-" + SCAN_ROUTE.get(d.get("DFA_SCAN"), "?")
-        return "VM-ONLY"
-    return "?"
-
-
-def stamps_of(stdout):
-    """The start-family stamps of one emitted artifact, plus ROUTE-keyed
-    joint keys (one artifact, one route class: no double count)."""
-    d = {}
-    for k, v in RX.findall(stdout):
-        k = k.decode()
-        if k in STAMPS:
-            v = v.decode().strip()
-            if k == "REQ_HANDOFF" and v != '"none"':
-                v = '"<K>"'
-            if k == "END_WINDOW" and v != '"none"':
-                v = '"<W>"'
-            d[k] = v
-    route = route_of(d)
-    d["ROUTE"] = route
-    for k in ROUTE_KEYED:
-        if k in d:
-            d[route + ":" + k] = d[k]
-    # The start bound literals, read off the text (B1/B2/B5 have no stamp):
-    m = re.search(rb"const size_t start_max = ([^;]*);", stdout)
-    if m:
-        d[route + ":start_max"] = ("0" if m.group(1).startswith(b"0") else
-                                   "search_from" if m.group(1).startswith(b"search_from")
-                                   else "n")
-    if re.search(rb"const size_t attempt_max = search_from;", stdout):
-        d[route + ":attempt_max"] = "search_from"
-    # H1 (root-minimum-width ceiling) is read TWO ways ([r2 checks-M4 H1]):
-    #  - the stamp's VALUE against the constant's printed spelling (shares
-    #    PCREC_MINW_MAX with the code, so alone it is not a control);
-    #  - the EMITTED TEST itself (the row's body text), which shares nothing
-    #    with the constant. The census prints both; they must agree.
-    m = re.search(rb'^#define RX_VM_ROOT_MINW (\S+)', stdout, re.M)
-    if m:
-        d["VM_ROOT_MINW_CEIL"] = "yes" if m.group(1) == b"1099511627776ULL" else "no"
-        d["H1_TEST_EMITTED"] = "yes" if b"_VM_ROOT_MINW) return 0;" in stdout else "no"
-    return d
+RX = es.STAMP_RX
+ROUTE_KEYED = es.ROUTE_KEYED
+SCAN_ROUTE = es.SCAN_ROUTE
+route_of = es.route_of
+stamps_of = es.stamps_of
 
 
 def one(binp, pat, extra, want_bytes=False):

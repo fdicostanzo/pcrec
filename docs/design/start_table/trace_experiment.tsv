@@ -1,0 +1,13 @@
+variant	kind	byte_movers	trace_spec	trace_func	trace_set	description
+D1-row-swap	detect	18	18	18	18	dfa_pfs[]: rows run-pinned-bounded and run-pinned swapped
+D2a-pred-flip	detect	3642	3642	3642	3642	req_admits[]: G1 `dominated` predicate negated
+D2b-pred-boundary	detect	48	48	48	48	pf_vm_start_applies: `n >= 256` -> `n > 256` (a boundary flip)
+D3-route-miskey	detect	2158	2480	2480	2480	dfa_pf_of builds its selection on CAND_ROUTE_VM
+D4-bytes-identical	detect	0	0	0	0	pcrec_dfa_scan_state_written walks dfa_pfs[] with -fno-run-prefilter's bit forced: run-pinned -> offset-set, both `reseeds`, so the answer (and every byte) is unchanged
+D4b-form-only	detect	132	132	132	132	dfa_form_derive walks dfa_pfs[] with -fno-run-prefilter's bit forced: the BODY's row moves run-pinned -> offset-set (one emitter, pf_emit_ofs) while the stamp, read through dfa_pf_of, still says run-pinned
+D4c-scan-state	detect	15	176	176	176	pcrec_dfa_scan_state_written builds its selection with .forward = false: every forward row declines and the walk takes `none`; the reader keeps only `reseeds`, so where the true row also had reseeds == false (byte-class-bounded) the answer and every byte are unchanged
+N1-rename	neutral	0	0	6443	0	rename dfa_pf_of -> dfa_prefilter_of and req_use -> req_use_of (every occurrence)
+N2-move	neutral	0	0	0	0	move req_use's definition to the end of emit_dfa.c (its prototype already exists)
+N3-reformat	neutral	0	0	0	0	reformat the source of dfa_search_start_of and req_admit (line breaks/spacing; same tokens)
+N4-extra-ask	neutral-beyond-bar	0	6443	6443	0	a reader asks FIRST once more (req_handoff_stamp re-asks req_use): selection unchanged, ask multiplicity +1
+# parent records per arm: {'c-default': 69095, 'c-vm': 29766}; population 3595 distinct x 2 streams

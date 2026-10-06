@@ -1019,7 +1019,7 @@ answers a different question:
 
 | commit | what | what moves |
 |---|---|---|
-| C0 | **instrument** (no `src/`): `emit_sweep.py` gains `--extra ARG` (repeatable, appended to streams 1-4 on BOTH sides, before `--pattern`), a sixth stream `--emit-facts` (streams 1/2's patterns, `--emit-facts=byte,utf8`, identity required), `--patterns-file` (constructed witnesses into streams 1-3) [r2 checks-m7], and per-arm DIFFER floors (§3.3 item 2) [r2 checks-M2]; every existing floor re-pinned to the measured reach (today 3,480 against a reach near 4,100; composition 32 against 38) [r2 checks-m4]; the census scripts move per Q7. **And the TRACE instrument** [r2.1 C-N2], so that C1 has something to run: (i) a seventh stream `--trace` that builds both sides with `-DPCREC_CAND_TRACE` — `build_from_rev` (`scripts/emit_sweep.py:327`, whose `:344` runs plain `make -j4 CC=…`) gains a `CFLAGS` pass-through, used on BOTH sides; (ii) the trace's stderr captured per compile, never mixed into the artifact on stdout; (iii) each record tagged with its pattern index and arm by the sweep, not by the compiler; (iv) a trace-DIFF tool that compares per-pattern ORDERED sequences and applies the commit's declared-multiplicity filter (C5b: records whose `site` is one of its BOUND readers, and nothing else); (v) a records-per-arm FLOOR (a trace arm that prints nothing passes any diff); (vi) a FAILING-DIRECTION control: a planted swap of two records and a planted reorder within one pattern, each of which the diff must report, run at C0 and kept as a sabotage row on the diff tool (S-id next free on main at build); also the full all-flag deny sweep (§3.3 item 4, ≈54 min at 6 jobs) | nothing in `src/` |
+| C0 | **DONE (lane stc0, 2026-10-06; `../dev/lanes/stc0_report.md`, the C0 outcome paragraph below)**. **instrument** (no `src/`): `emit_sweep.py` gains `--extra ARG` (repeatable, appended to streams 1-4 on BOTH sides, before `--pattern`), a sixth stream `--emit-facts` (streams 1/2's patterns, `--emit-facts=byte,utf8`, identity required), `--patterns-file` (constructed witnesses into streams 1-3) [r2 checks-m7], and per-arm DIFFER floors (§3.3 item 2) [r2 checks-M2]; every existing floor re-pinned to the measured reach (today 3,480 against a reach near 4,100; composition 32 against 38) [r2 checks-m4]; the census scripts move per Q7. **And the TRACE instrument** [r2.1 C-N2], so that C1 has something to run: (i) a seventh stream `--trace` that builds both sides with `-DPCREC_CAND_TRACE` — `build_from_rev` (`scripts/emit_sweep.py:327`, whose `:344` runs plain `make -j4 CC=…`) gains a `CFLAGS` pass-through, used on BOTH sides; (ii) the trace's stderr captured per compile, never mixed into the artifact on stdout; (iii) each record tagged with its pattern index and arm by the sweep, not by the compiler; (iv) a trace-DIFF tool that compares per-pattern ORDERED sequences and applies the commit's declared-multiplicity filter (C5b: records whose `site` is one of its BOUND readers, and nothing else); (v) a records-per-arm FLOOR (a trace arm that prints nothing passes any diff); (vi) a FAILING-DIRECTION control: a planted swap of two records and a planted reorder within one pattern, each of which the diff must report, run at C0 and kept as a sabotage row on the diff tool (S-id next free on main at build); also the full all-flag deny sweep (§3.3 item 4, ≈54 min at 6 jobs) | nothing in `src/` |
 | C1 | **selection trace** under `-DPCREC_CAND_TRACE` (a compile-time knob, `OPTK_DEBUG`'s precedent `emit_dfa.c:4320`; scratch builds only): every decision site `inventory.tsv` classes WALK or INLINE, the two ROUTE dispatches, K65/K66's decisions (`:1041`, `:1267`) and `prefix_k`'s admission outcome (`nsel`) print one record (§3.3 item 5). C1 byte-sweeps the trace build's stdout against the default build (the trace must move no emitted byte) | nothing in the default build (`#ifdef` text only) |
 | C2 | **implement**: `CandRow`, `CandSlot`, `CandSel` (`DfaSel` + `vm` + `route`, typedef'd to the old name), `cand_select`, `cand_route_of(cx)` (the ONE route derivation, §2.3 item 3 [r2.1 S-N2]), and `cand_rows[]` holding all 37 rows with today's predicates and the `hands`/`accepts`/`list[route]` columns. No reader switched. Under `PCREC_CAND_TRACE` each old walk ALSO runs `cand_select` and aborts on a different row (the both-walks FILTER oracle, run in both orders, §3.3 item 6) | nothing |
 | C3 | **replace NEXT + RECOVER**: `dfa_pf_of`, `vm_start_row`, `pf_scan_set_of`'s callers, `pcrec_dfa_scan_state_written`, `dfa_form_derive`, `dfa_search_start_of` and N12's four `attempt_cand` readers read `cand_select`, each body building its `CandSel` route from `cand_route_of(cx)`, and the fifteen `job->engine` tests (§2.3 item 3) reading it too [r2.1 S-N2]; `dfa_search_is_pinned` reads `u.recover.pinned`; `dfa_pfs[]`/`dfa_search_starts[]` deleted; D148 Q2's rename; `cand_rows_check.py` re-aimed (§3.5); the SPEC hunk: `registry.md:267`, and the readers `reader_grep.sh` finds outside `src/` [r2.1 C-N4] — `docs/spec/match_api.md:2348`, `:2441` and `docs/spec/tuning.md:2530` name `dfa_pfs[]`; `lib/CLAUDE.md:421`, `tests/codegen/CLAUDE.md`, `tests/mech/CLAUDE.md`, `tests/mech/run_sabotage_matrix.sh:2579`, `tests/codegen/run_cand_rows.sh:3` and the `Makefile:517` comment name retiring identifiers and move in the commit that retires them (C3's `dfa_pfs`/`dfa_select`, C4's `req_admit`, C5's `pcrec_reseed_rows` readers at C7) | re-aims (derived): S222, S283, S284, S490 |
@@ -1028,6 +1028,28 @@ answers a different question:
 | C5b | **BOUND readers** [r2 sound-M5]: P2 (both arms), N7's anchoring conjunct, R3 and `attempt_cand`'s `anchored` loop call `cand_select(BOUND, route)` instead of restating it. Byte-identical because each restatement equals its route's B rows today (§1.3); the ask set grows only by `dfa_interior_dead` on `CR_ATTEMPT` (§2.3 item 4), declared to the trace diff | S269, S274, S276, S492, and S441 again (R3's line, `emit_vm.c:11090`, which C5 also moves) [r2.1 S-N3] |
 | C6 | **the listing reads the table**: `axes_dump.c`'s `prefilter`, `search-start`, `req-admit`, `req-use`, `hyb-reseed`, `vm-anchor-bound`, `end-window` sections project `cand_rows[]` by `list[route]` (NOT `match`: `dfa_matches[]` stays outside, §2.5 [r2 sound-m3]), printing today's `kind`, order, listed name and `desc` text byte for byte; N12 has no listing; `AXIS_DESC`'s start rows deleted | nothing (stream 5 identical) |
 | C7 | **declared listing commit, stream 5 only, NOT an abi event**: D-3's stale desc corrected; `kind` becomes `list` for the start axes that ARE lists now; spec hunk in `docs/spec/registry.md`; `tests/registry/` pins re-read | `--list-axes` text only |
+
+**C0's outcome** (lane stc0, `../dev/lanes/stc0_report.md`). Built as listed,
+in `scripts/emit_sweep.py` and a new `scripts/trace_diff.py`, with self-tests
+`scripts/tests/{emit_sweep,trace_diff}.py.test` (mech arm `emitsweep`). The
+arm table is `DIFFER_PINS` (64 cells: the 14 deny/force arms × byte/utf8 ×
+two streams, the plain `-e utf8`/`-i` cells, the asserted zeros, a null arm),
+pinned from `deny_census.tsv`/`plain_arms.tsv` (no `src/` or corpus change
+since `4743ebb5`), `-fno-length-prune` re-pinned from the full-corpus gate
+run (lane stc0b, ubuntubudu, 2026-10-06: 449/112 and 678/0 at byte, 468/118
+and 815/0 at utf8; every other floor already equalled its measured value).
+The full every-flag sweep (29 flags × 4 arms, 543 s at `-j10`) found no new
+route switch; four non-start flags move `REQ_WHY`/the start family at a
+handful of patterns (`-fno-possessify` 6/9, `-fno-altcls-merge` 2/8,
+`-fno-altcls-factor` 0/1, `-fno-premul-table` 2 at utf8), recorded as a C1
+edit-set input candidate (the VM frame/one-attempt verdict the admission
+reads) in `stc0_report.md` §6. Sabotage rows S550-S555 are on mech arm
+`emitsweep`. The census scripts' Q7 move (`call_graph.py` and its siblings to
+`tests/codegen/`) did NOT ride C0, and the report files it as owed. The trace
+EXPERIMENT (Q3) PASSED its bar. The C0 hook was a prototype on the scratch
+branch `scratch/stc0-trace`, not merged. Its results, and the two design
+conditions for C1 (a declared site literal, never `__func__`; the SET compare
+as the gate), are in §6 Q3.
 
 **Sequencing against the kit's R4c** [Frank 2026-10-06, R-Q5; §6]: R4c (`memfn/docs/requests.md`
 R-4, main `05c33ce0`) lands BEFORE C1-C7, and C0 (no `src/`) runs in parallel
@@ -1682,7 +1704,27 @@ which overlap this note:
   **RULED [Frank 2026-10-06]: YES, CONDITIONAL on an experiment in C0** (Frank: "test the theory, seems brittle"). (1) DETECTION: planted selection changes on a scratch branch (a row-order swap, a predicate flip, a route mis-key, a row change where the bytes stay identical); record trace-diff vs byte-sweep detection per plant. (2) BRITTLENESS: run the trace across selection-NEUTRAL commits (a rename, a function move, an emitter reformat); any trace diff is a false alarm. (3) BAR: catches every plant with zero false alarms; otherwise the refactor DROPS the trace and relies on bytes + deny-delta counts, and the note says why. (Was: recommend YES,) now with its specification (§3.3 item 5: ordered
   per-pattern records at the walk's return, the parent as reference every
   commit, never the byte-sweep build) and its stated limit (it proves nothing
-  at the inline sites that bytes do not). Scoped to the refactor's life plus a
+  at the inline sites that bytes do not).
+  **C0 EXPERIMENT RESULT (lane stc0, 2026-10-06; `start_table/trace_experiment.py`
+  → `start_table/trace_experiment.tsv`; `../dev/lanes/stc0_report.md` §4): BAR
+  MET.** The prototype hook prints at today's walk sites. Population: 3,595
+  distinct patterns × streams 1-2. Every reached plant was caught by the trace:
+  the row swap (18), both predicate flips (3,642; 48), the route mis-key
+  (2,480 against bytes' 2,158) and a bytes-identical row change (the
+  scan-state reader built with `.forward = false`: trace 176, bytes 15). The
+  rename, the function move and the reformat gave 0 false alarms. Two
+  findings set C1's design:
+  (1) a `__func__` site field false-alarms on the rename (6,443 sequences),
+  so `site` must be a declared literal;
+  (2) one selection-neutral change outside the ruled set, a reader asking
+  once more, false-alarms the ORDERED compare (6,443 sequences) and is clean
+  under the SET compare. The set compare caught every plant at the same count
+  as the ordered one, so C1 gates on the set compare (`trace_diff.py
+  --unordered`) and reads the ordered compare as a diagnostic.
+  One plant, the original run-pinned→offset-set swap at the scan-state reader,
+  reached 0 corpus patterns: neither instrument saw it. That is a population
+  fact, recorded rather than counted as a catch.
+  Scoped to the refactor's life plus a
   permanent home as the per-row hit counter (§3.4). A debug knob, not an axis.
 - **Q4. D-1 (the ATTEMPT `memchr` read as a start byte by G1)?** **RULED [Frank 2026-10-06]: fix option (1), G1 declines `EXACTPRED` rows, as its OWN later row after C7, GATED ON MEASURING the 33 artifacts (27 DFA + 6 HYB, auto/byte) FIRST (D77). If restoring the pre-check is slower, the right fix may be a correct dominance argument for predecessor scans instead. Nothing inside the fold.** (Was: recommend, unchanged:) after C7, G1 declines `EXACTPRED` rows (a read of the `map`
   field). It now moves the pre-check emission of every ATTEMPT artifact
