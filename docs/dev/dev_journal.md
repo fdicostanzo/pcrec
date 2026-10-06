@@ -26477,3 +26477,16 @@ Frank: "finish up open work/bench results/errors", Linux box free (bench manager
   summary. Bench acked I-128..I-130 as [B124]; nothing bench-side tonight.
   Running: ssland3 (stage 3 abi 64 full Mac make test), alphas2 (stage 2
   Linux alpha), artrep.
+- ~12:30: Frank: "that nm issue has been a thorn". Root cause in minutes:
+  tests/codegen/run_inline_capability.sh compared raw `nm` names; Mach-O
+  prefixes C symbols with `_`, so the "nm must have worked" gate fired on
+  every Mac run and the probe had NEVER produced a darwin verdict. Fixed by
+  stripping one leading `_` off the symbol (format, not uname); first darwin
+  verdict gcc-16 NEEDED; NM=true still fires the gate (53560dd2). The
+  "accepted darwin red" is retired: a Mac make test must now be fully green.
+  Lesson: an "accepted" red is a finding nobody owns; it hid for weeks.
+- Frank asked for a general "where to start" strategy (start anywhere, run
+  the DFA backwards from the middle, use it as a prefilter); lane startstudy
+  (opus) writing docs/design/where_to_start.md, census via --emit-facts
+  (PATFACTS), missing facts named as candidate fact rows. Reverse-inner is
+  Frank's existing [ENG-TACTICS] (b); report corrected.
