@@ -853,3 +853,8 @@ that cycle's analysis lands.
   layout control, the CELL row, the load gate, the WIN/LOSS/NOISE rule); to be
   run by a fresh lane by day, never by the collector. The hardened identity
   (give-up rule, window start) is documented in `studies/artrev/CLAUDE.md`.
+  `generalize.md` + `gen/` (lane `artgen`, 2026-10-06) — S5, the GENERALIZER for the pilot: the 25
+  counted leads merged into 15 ideas, each with its emitter site (file:line), counted population over
+  corpus + bench (`gen/census.py`, controls in `gen/selftest.txt`), known-vs-new against plan rows,
+  START-SET stage-3 interaction, give-up-surface tag, cost/class, a summary table with an EMPTY
+  `confirmed` column for S4's join, and DRAFT filed-not-scheduled plan rows (plan.md not edited).
