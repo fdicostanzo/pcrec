@@ -1,0 +1,29 @@
+/* src/gen/memfn_sites.def — DELEG_SITES ([MEMFN] R4c; docs/design/memfn/
+ * integration.md §8.5, §14.5): the search sites pcrec DELEGATES to the
+ * memfn kit, one row per site, by SEMANTIC OPERATION and never by cost.
+ * A site joins this table in its migration step's REPLACE commit and is
+ * then rendered by the kit; tests/memfn/site_manifest.tsv carries the same
+ * site as `delegated` (C17).
+ *
+ *   DELEG_SITE(id, op, handoffs, kinds, budget, use_ceiling)
+ *
+ *   id           the site's name, the manifest's (PRE carries the manifest's
+ *                SETREST row too: the set rest is one more predicate of the
+ *                pre-check composite, §15.5)
+ *   op           the kit operation every instance has (MF_OP_*)
+ *   handoffs     the handoffs an instance may take, as DELEG_H(MF_H_*) bits
+ *   kinds        the term kinds an instance may use (MF_TK_*)
+ *   budget       D91's budget: DELEG_SCAN (1) or DELEG_LOOP (2), the ONE
+ *                source of MF_P_INLOOP (C10)
+ *   use_ceiling  the most an instance's result may be ignored: MF_USE_DISCARD
+ *                where an instance may only compare it with its miss value,
+ *                MF_USE_POSITION where every instance reads it as a position.
+ *                A CEILING, never the value: an instance's `use` is its own
+ *                (req_use(cx) for PRE), checked per instance (§14.5 [rev4.6])
+ *
+ * Checked by C10 (tests/memfn/run_deleg_sites.sh): the budget column against
+ * D91's classification, every (op, handoff, kinds) against mf_vocab_has. */
+DELEG_SITE(PRE, MF_OP_ALL_PRESENT, DELEG_H(MF_H_ON_MISS) | DELEG_H(MF_H_ASSIGN),
+           MF_TK_SET | MF_TK_RUN, DELEG_SCAN, MF_USE_DISCARD)
+DELEG_SITE(OFS, MF_OP_FIND, DELEG_H(MF_H_RETURN),
+           MF_TK_SET | MF_TK_RUN, DELEG_SCAN, MF_USE_POSITION)

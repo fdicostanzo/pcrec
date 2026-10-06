@@ -101,21 +101,16 @@ void pcrec_sb_puts(StrBuf *sb, const char *s)
     sb->p[sb->len] = 0;
 }
 
-/* `pcrec_sb_printf`'s body, reached through a `va_list` so an ADAPTER that already
- * holds one can append formatted text — `pcrec_sb_fragfv`'s own reason, one
- * destination over. Measure, grow, format: the two `vsnprintf` calls read the
- * SAME arguments through their own `va_copy`, because a `va_list` is consumed
- * by the traversal that measures it. File-static on purpose: no caller outside
- * this file needs it, and the text layer's public surface is the smaller for
- * it. */
-static void sb_vprintf(StrBuf *sb, const char *fmt, va_list ap)
-      __attribute__((format(printf, 2, 0)));
-
 /* pcrec_sb_printf's body: measures the formatted length with one `vsnprintf`,
  * grows once, formats with a second -- or, muted, measures only and adds the
  * count to `cmt_dropped` so the size term still sees the true byte cost of a
- * dropped comment. */
-static void sb_vprintf(StrBuf *sb, const char *fmt, va_list ap)
+ * dropped comment. Reached through a `va_list` so an ADAPTER that already
+ * holds one can append formatted text (`pcrec_sb_fragfv`'s own reason, one
+ * destination over); its one outside caller is the memfn kit's sink
+ * (src/gen/memfn_sites.c), whose `vprintf` op is exactly that adapter. The
+ * two `vsnprintf` calls read the SAME arguments through their own `va_copy`,
+ * because a `va_list` is consumed by the traversal that measures it. */
+void pcrec_sb_vprintf(StrBuf *sb, const char *fmt, va_list ap)
 {
     if (sb_muted(sb)) {
         /* MEASURED, not skipped: the discarded byte count is what keeps the
@@ -141,13 +136,13 @@ static void sb_vprintf(StrBuf *sb, const char *fmt, va_list ap)
     sb->len += (size_t)n;
 }
 
-/* Varargs wrapper over sb_vprintf -- the buffer's one formatted-append entry
- * point. */
+/* Varargs wrapper over pcrec_sb_vprintf -- the buffer's one formatted-append
+ * entry point. */
 void pcrec_sb_printf(StrBuf *sb, const char *fmt, ...)
 {
     va_list ap;
     va_start(ap, fmt);
-    sb_vprintf(sb, fmt, ap);
+    pcrec_sb_vprintf(sb, fmt, ap);
     va_end(ap);
 }
 
@@ -340,7 +335,7 @@ static void sb_stampv(StrBuf *c, const char *upper, const char *name,
                       int namew, const char *valfmt, va_list ap)
 {
     pcrec_sb_printf(c, "#define %s_%-*s ", upper, namew, name);
-    sb_vprintf(c, valfmt, ap);
+    pcrec_sb_vprintf(c, valfmt, ap);
     pcrec_sb_putc(c, '\n');
 }
 

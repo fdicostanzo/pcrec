@@ -1,0 +1,30 @@
+# tests/memfn/pins/arms.tsv -- C5's per-arm pins ([MEMFN] R4c; integration.md
+# §17.4): the sha256 of each scalar arm's rendering of each fixture site
+# (tests/memfn/arm_fixtures.c), checked by tests/memfn/run_arm_pins.sh.
+#
+# A CHANGE DETECTOR (§17.4 [rev4.2]): a kit change that moves an arm's text
+# re-pins that arm's rows IN ITS OWN COMMIT, with its abi event (D76/D94: this
+# file is a reader of the emitted text, found by grep). Recorded at R4c's
+# IMPLEMENT commit, whose I1 shadow comparator proved the kit's rendering of
+# every corpus compile equal to pcrec's pre-migration text.
+#
+# Columns (tab-separated): arm (the kit's form id), fixture, part (`def` the
+# file-scope text, `use` the entry's), bytes, sha256.
+#
+# arm	fixture	part	bytes	sha256
+ofsskip	ofs-pair	def	1961	0ca62ec3b7e143b1d27ba7232cdd788bca4f5ee684fb96f9c31abb3d93463a39
+ofsskip	ofs-pair	use	48	036c47e8483d3a3dd5bfb5d47aecf1368467057fffe78531d3c997daa0345beb
+ofsskip	ofs-run-pinned	def	1751	a25f93bbe8164773b506f3c45c5da0e592b75cc38bd9730b0bc70731e54807b9
+ofsskip	ofs-run-pinned	use	59	205a7d97afc136ef5a5e7da467200ec16bb16fbd9a55c580bc539703a814a709
+ofsskip	ofs-scan0	def	1373	228d940a1bfb6ff418e7f33134f47ff30824198765b9899e90167b25f804cb3f
+ofsskip	ofs-scan0	use	48	036c47e8483d3a3dd5bfb5d47aecf1368467057fffe78531d3c997daa0345beb
+ofsskip	ofs-set-scan3	def	1489	c98c91f32bf15683113cc4278ee549e41c8a625d5b3afaad7bfc00525a193254
+ofsskip	ofs-set-scan3	use	59	205a7d97afc136ef5a5e7da467200ec16bb16fbd9a55c580bc539703a814a709
+precheck	pre-lead-handoff	def	847	df7c9cd5622030b5bef727b73f999406be6f64900adce34a1489f394e2f1e8ed
+precheck	pre-lead-handoff	use	301	719a4b0441f933eba40e938785912aef0074d273b2e22cad40b06df8932c9059
+precheck	pre-masked-whole-rest	def	2217	a617d68ce5bd132fc6604bd26cfc643fb9453864f2a6444d390ad1a7d3f2f310
+precheck	pre-masked-whole-rest	use	475	43892fbd22fa6beede06ed1aabcdbfb9c34d7b2fd960239f4e4b8856f30ec2a9
+precheck	pre-onebyte-rest	def	0	e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+precheck	pre-onebyte-rest	use	415	2b9fd70002386da8cf9182d737b936b68524cfb8b3142f92e0793429ab5de084
+precheck	pre-window-handoff	def	842	de221cde68b05fd5ed35978a06745edc7c66ddd416e07e867f71113d11cabc8a
+precheck	pre-window-handoff	use	150	ae8b6ba27cf1ea36d9881cfe91b3c17c182cba17833a9238e88cdc11f4b9ec1e

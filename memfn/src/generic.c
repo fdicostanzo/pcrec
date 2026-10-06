@@ -618,22 +618,15 @@ static int func_call(rctx *rc, site_rec *r, kb *b)
 
 /* ---- the arm ------------------------------------------------------------- */
 
-static int generic_applies(const mf_site *s)
+static int generic_applies(const mf_site *s, const mf_hooks *def)
 {
     (void)s;
+    (void)def;
     return 1;
 }
 
-static int generic_define(mf_art *art, uint32_t handle, const mf_hooks *h, kb *file)
-{
-    site_rec *r = &art->sites[handle - 1];
-    if (r->site.form != MF_FORM_FUNC) return 0;
-    rctx rc;
-    rctx_init(&rc, art, handle, &r->site, h);
-    return func_define(&rc, handle, file);
-}
-
-static int generic_use(mf_art *art, uint32_t handle, const mf_hooks *h, kb *body)
+/* The body part's text, for every form and handoff the vocabulary has. */
+static int generic_body(mf_art *art, uint32_t handle, const mf_hooks *h, kb *body)
 {
     site_rec *r = &art->sites[handle - 1];
     const mf_site *s = &r->site;
@@ -661,6 +654,31 @@ static int generic_use(mf_art *art, uint32_t handle, const mf_hooks *h, kb *body
         break;
     }
     return kit_fail(art, "generic: unreachable form");
+}
+
+/* The definition, built whole and then handed to the sink: the generic row
+ * calls no hook that writes, so nothing interleaves with its text. */
+static int generic_define(mf_art *art, uint32_t handle, const mf_hooks *h,
+                          mf_sink *out)
+{
+    site_rec *r = &art->sites[handle - 1];
+    if (r->site.form != MF_FORM_FUNC) return 0;
+    rctx rc;
+    rctx_init(&rc, art, handle, &r->site, h);
+    kb file;
+    kb_init(&file, art->a);
+    if (func_define(&rc, handle, &file)) return -1;
+    return kit_flush(art, &file, out, "mf_define");
+}
+
+/* The body part, built whole and then handed to the sink. */
+static int generic_use(mf_art *art, uint32_t handle, const mf_hooks *h,
+                       mf_sink *out)
+{
+    kb body;
+    kb_init(&body, art->a);
+    if (generic_body(art, handle, h, &body)) return -1;
+    return kit_flush(art, &body, out, "mf_use");
 }
 
 const arm generic_arm = {

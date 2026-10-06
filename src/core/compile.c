@@ -286,6 +286,7 @@ static void job_cleanup(Ctx *cx)
         pcrec_sb_free(&cx->job->irsb);
         pcrec_sb_free(&cx->job->scr_test);   /* [ART-SIZE] the two scratch buffers, */
         pcrec_sb_free(&cx->job->scr_desc);   /* see internal.h's Job.scr_* comment  */
+        pcrec_sb_free(&cx->job->mf_shadow);  /* [MEMFN] R4c I1's scratch            */
         /* [M4.7b/K7] Strings already TAKEN from the buffers above but not yet
          * published to the caller. They exist for a window of three statements
          * at the end of compile_driver, and now that an allocation failure in
@@ -1083,6 +1084,7 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
             cx.job->csb.cx = cx.job->hsb.cx = &cx;
             cx.job->vmsb.cx = cx.job->irsb.cx = &cx;
             cx.job->scr_test.cx = cx.job->scr_desc.cx = &cx;
+            cx.job->mf_shadow.cx = &cx;
             /* [EMIT-VERB] (D112) THE RENDER POLICY, resolved once and set on
              * the ARTIFACT's buffers only. `irsb` is deliberately absent:
              * `--emit-ir`'s listing is a debug surface with its own format

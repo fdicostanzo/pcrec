@@ -68,6 +68,37 @@ land here too.
 - **c15_allowlist.txt** — C15's exceptions, one undecorated symbol per
   line, each with its reason. Born EMPTY at R4a (0 measured).
 
+### C5 and C10 (lane r4ccore, R4c)
+
+- **arm_fixtures.c** — C5's fixture renderer: eight FIXED site descriptions
+  (four offset-skip shapes: a table and a byte around a scan at 3, a
+  run-pinned run, a scan at 0, the pair arm; four pre-check shapes: the
+  one-byte gate with a set rest, a lead before a handoff window, a masked
+  window with a whole run and a set rest, a lone handoff window) rendered
+  through the kit's public entry points with its OWN hooks and sink (a
+  marker comment per note, the `memcmp` spelling for a run compare), so a
+  pin moves only with an ARM, never with pcrec's scaffolding. `--perturb`
+  moves one byte of one fixture (the witness).
+- **pins/arms.tsv** — C5's pins: arm (the kit's form id), fixture, part
+  (`def`/`use`), bytes, sha256. Recorded at R4c's IMPLEMENT commit, whose
+  I1 shadow comparator proved the kit's rendering equal to pcrec's
+  pre-migration text over the corpus sweep. A CHANGE DETECTOR: a kit change
+  that moves an arm re-pins its rows in its own commit (D94's grep finds
+  this file).
+- **run_arm_pins.sh** — C5 (`make test-memfn-arms`, in TEST_SECTIONS):
+  builds the driver against `build/libpcrec.a`, checks each fixture renders
+  through its pinned arm, each part's digest, a K35 floor
+  (`ARMS_ROW_FLOOR`, a literal) and an arm list (`ARMS_EXPECTED`), and that
+  the `--perturb` witness moves exactly its one part. Seconds.
+- **run_deleg_sites.sh** — C10's static half (`make test-memfn-deleg`, in
+  TEST_SECTIONS): DELEG_SITES (`src/gen/memfn_sites.def`) against D91's
+  budgets (this file's literal), every row's (op, handoff, kinds) through
+  `mf_vocab_has` (a probe linked against `build/libpcrec.a`), `MF_P_INLOOP`
+  in code only in `src/gen/memfn_sites.c`, and no by-value `mf_site`/
+  `mf_pred`/`mf_result` under `src/`, with two planted controls. Its
+  per-instance half is pcrec's own, at compile time
+  (`pcrec_memfn_check_use`, `deleg_check` in `src/gen/memfn_sites.c`).
+
 ## Sabotage rows
 
 - S510: a `memchr(` text planted in an unlisted function trips rule 1.

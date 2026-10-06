@@ -1073,9 +1073,38 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
   through `mf_art_note_libc`, has `mf_stamps` render both lines through a
   sink onto `pcrec_sb_stamp_str`, and splices them over the mark. A mark
   left unreplaced fails the prefix render as a stray lead byte; a missing
-  or doubled mark is an internal error. The one file under `src/` that
-  calls the kit's art API. Check: C11 (`tests/memfn/run_libc_census.sh`,
-  names from `nm -u` of the compiled object); sabotage rows S513-S517.
+  or doubled mark is an internal error. Check: C11
+  (`tests/memfn/run_libc_census.sh`, names from `nm -u` of the compiled
+  object); sabotage rows S513-S517. [MEMFN] R4c: it no longer begins its own
+  art: it notes and stamps on the ATTEMPT's (`pcrec_memfn_art`, the one the
+  sites rendered through) and ENDS it (`pcrec_memfn_art_end`: every defined
+  site used, every header the kit's text needs declared by the prologue,
+  `Job.string_h`).
+
+- **memfn_sites.c / memfn_sites.h / memfn_sites.def** — [MEMFN] R4c (lane
+  r4ccore, 2026-10-06; `docs/design/memfn/integration.md` §14, §15, §22
+  R4c): pcrec's side of the kit's SITES. `memfn_sites.def` is DELEG_SITES
+  (`DELEG_SITE(id, op, handoffs, kinds, budget, use_ceiling)`: PRE, the
+  pre-check composite with the set rest; OFS, the offset-skip block), the
+  one source of `MF_P_INLOOP` (its budget column) and of each site's `use`
+  CEILING. `memfn_sites.c`: the attempt's `mf_art` (`Job.mf`, begun at first
+  ask), the SINK over a StrBuf (the comment gate stays pcrec's write-time
+  mute, so a muted kit comment's bytes are counted exactly as pcrec's are),
+  the arena adapter, the site/predicate/term constructors, the define/use/
+  call wrappers (each checks the site against its row first: C10's compile-
+  time half, `deleg_check`) and the per-instance `use` check
+  (`pcrec_memfn_check_use`), and the hooks every site shares: `note` at file
+  scope writes a FUNC part's run-compare word loads
+  (`pcrec_runcmp_prepare`, until M1b), `run_cmp` is pcrec's run compare
+  (until M1b). It holds NO decision: the builders that read the start
+  decisions stay in `emit_dfa.c` beside them (`req_site_define`,
+  `ofs_site_define`, `ofs_pred_of`). `memfn_sites.h` is the one pcrec header
+  that includes the kit's (`memfn/include/memfn.h`). Checks: C10
+  (`tests/memfn/run_deleg_sites.sh`), C5 (`tests/memfn/run_arm_pins.sh`).
+  **[R4c IMPLEMENT] the I1 shadow comparator** lives here
+  (`pcrec_memfn_shadow_*`, `Job.mf_shadow`): every M1 span pcrec still
+  writes is also rendered by the kit into a scratch buffer and compared
+  (bytes, muted-comment count, the run-compare record). Deleted by REPLACE.
 
 - **runcmp.c** — [OPT-LITSCAN] S4 C1 (lane s4build, 2026-10-03, abi 58;
   `docs/design/litscan_s4.md` §1.3-§1.5, `docs/spec/tuning.md` §2.38): THE RUN
