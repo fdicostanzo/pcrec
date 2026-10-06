@@ -673,3 +673,43 @@ same exposure [OPT-REQBYTE]'s pick already has).
   The prefix reverse machine reuses `pcrec_build_nfa` on a sub-tree.
 - **shared question / engine hat (D124):** yes — the same row serves the DFA and
   the VM; the VM hat is the larger customer.
+
+---
+
+## §7 trigger reading (2026-10-06)
+
+Lane `revtwin`, D151 items 2 and "owed before any build". Measurement only; evidence in `where_to_start/model_1046.txt`
+and `where_to_start/twin_dup_param/` (README there).
+
+**1. The soundness model against the 10.46 reference (ubuntubudu, libpcre2 10.46-1build1, x86_64).** Same seeds and
+counts as the note's run (seed 1 x 6,000 byte; seed 2 x 4,000 `--utf8`), plus `--selftest`. All 64 variant rows of both
+transcripts are IDENTICAL to the 10.48 transcripts in checks and mismatches (the per-row diff is empty; the same
+witnesses first). Gated wrong answers: **0** (tactic, lowerbound, rust_guard, fallback and every `/findall`: 0 of
+192,079 + 33,228 byte and 137,692 + 23,976 utf8). Ungated wrong: byte `gate_off[split-ambiguous]` 19 (+6 find-all),
+`gate_off[P-atomic+split-ambiguous]` 5 (+1); utf8 `gate_off[split-ambiguous]` 1 (+1), `gate_off[P-lookaround+split-ambiguous]` 5 (+1);
+`erase_atomic` 11 / 6 (+4 / +3). Mutations (byte / utf8, single searches, none missed): `max_start` 636 / 197,
+`lo0` 1,531 / 680, `slice` 382 / 212, `noverify` 11,811 / 6,967, `skipL` 37 / 17 (find-all arms `restart_s1` 329 / 105 as
+well); `--selftest: PASS`. The 10.46 and 10.48 counts agree row for row, so the note's §2.6 table stands on the
+reference.
+
+**2. The D77 trigger twin: NOT MET.** The hand twin of `capability/dup-param-detect` (memchr `=`, walk back over `\w`,
+one anchored VM attempt, find-all restart per spec) is answer-identical to the shipped artifact (hardened identity, plain
+and ASan+UBSan, 14,927 cases of which 1,475 match; every give-up repair equals libpcre2) and, timed on ubuntubudu (11
+interleaved rounds, null twin and orig2 NOISE everywhere, 7-pad layout control):
+
+- the bench's **throughput cell** (t-64k/256k/1m) reads **NOISE**: 0.0371 vs 0.0370 ns/B, IQR 0.0008/0.0011, null
+  deviation 0.0001. The subjects hold no `&` and no `=`; since [OPT-REQBYTE]/[OPT-FREQPICK] the shipped artifact answers
+  them with one `memchr('&')` at the memchr floor, so there is nothing for a better start to save. The cycle-1 figure
+  that made this cell the largest VM loss (576x, `cycle1_analysis.md:97`) predates those batches;
+- the bench's **search_short cell** (75 subjects, regenerated read-only, hashes verified) reads **NOISE**: 1.8385 vs
+  1.8819 ns/B (the twin 2.4% slower, inside the 0.0778 IQR); only 2 of 75 subjects pass the artifact's prechecks;
+- where the artifact does run its attempt loop the twin WINS and the layout control confirms it: `waf-benign` +64%
+  (21.49 -> 7.69 ns/B) and the synthetic sparse variant +76% (7.57 -> 1.79); the synthetic dense variant (a match every
+  4 KiB) is NOISE (+1.9%). The bench has no dense/sparse rows for this pattern.
+
+D151's trigger is "the twin wins the VM cell". It does not: the cell is at the floor. Q2's condition therefore is not met
+and [ENG-TACTICS] stays in BOONIES. What the twin does show is the row's real customer shape: a subject that carries the
+required bytes and no match (or a sparse one) costs the shipped VM an attempt at every start-set byte, and the walk
+removes that. What would re-open the question is a bench subject with `&` and `=` and no match for this pattern (the
+bench's to add; a pcrec-side hand-built one is the sparse variant here), or the K65/K66-population cells that do reach
+the attempt loop, not a better twin of this one.

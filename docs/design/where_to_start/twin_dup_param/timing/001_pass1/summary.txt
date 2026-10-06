@@ -1,0 +1,42 @@
+#host	ubuntubudu	Linux-7.0.0-29-generic-x86_64-with-glibc2.43
+#cpu	AMD Ryzen 5 1600 Six-Core Processor
+#cc	gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0	-O2 -fPIC
+#date	2026-10-06 11:56:47
+#rounds	11	#load_max	2.00
+#artifact	dup_param_detect pin 5d47db6b abi 63
+
+subject t64k   null-twin deviation 0.0001 ns/B   (rule: WIN/LOSS only past max(null dev, IQR_arm, IQR_orig))
+  orig           median    0.0423  IQR  0.0030  vs orig  +0.0000 ( +0.00%)  threshold  0.0030  BASE
+  orig2          median    0.0422  IQR  0.0052  vs orig  +0.0001 ( +0.21%)  threshold  0.0052  NOISE
+  null           median    0.0422  IQR  0.0052  vs orig  +0.0001 ( +0.26%)  threshold  0.0052  NOISE
+  rev            median    0.0423  IQR  0.0029  vs orig  +0.0001 ( +0.12%)  threshold  0.0030  NOISE
+
+subject t256k   null-twin deviation 0.0000 ns/B   (rule: WIN/LOSS only past max(null dev, IQR_arm, IQR_orig))
+  orig           median    0.0370  IQR  0.0002  vs orig  +0.0000 ( +0.00%)  threshold  0.0002  BASE
+  orig2          median    0.0369  IQR  0.0004  vs orig  +0.0001 ( +0.22%)  threshold  0.0004  NOISE
+  null           median    0.0370  IQR  0.0004  vs orig  -0.0000 ( -0.14%)  threshold  0.0004  NOISE
+  rev            median    0.0369  IQR  0.0003  vs orig  +0.0001 ( +0.32%)  threshold  0.0003  NOISE
+
+subject t1m   null-twin deviation 0.0108 ns/B   (rule: WIN/LOSS only past max(null dev, IQR_arm, IQR_orig))
+  orig           median    0.0316  IQR  0.0179  vs orig  +0.0000 ( +0.00%)  threshold  0.0179  BASE
+  orig2          median    0.0210  IQR  0.0103  vs orig  +0.0106 (+33.61%)  threshold  0.0179  NOISE
+  null           median    0.0208  IQR  0.0199  vs orig  +0.0108 (+34.18%)  threshold  0.0199  NOISE
+  rev            median    0.0211  IQR  0.0189  vs orig  +0.0104 (+33.07%)  threshold  0.0189  NOISE
+
+subject dense   null-twin deviation 0.1173 ns/B   (rule: WIN/LOSS only past max(null dev, IQR_arm, IQR_orig))
+  orig           median    1.0048  IQR  0.2112  vs orig  +0.0000 ( +0.00%)  threshold  0.2112  BASE
+  orig2          median    1.0061  IQR  0.1448  vs orig  -0.0013 ( -0.13%)  threshold  0.2112  NOISE
+  null           median    1.1221  IQR  0.0832  vs orig  -0.1173 (-11.67%)  threshold  0.2112  NOISE
+  rev            median    0.9602  IQR  0.1466  vs orig  +0.0446 ( +4.44%)  threshold  0.2112  NOISE
+
+subject sparse   null-twin deviation 0.0183 ns/B   (rule: WIN/LOSS only past max(null dev, IQR_arm, IQR_orig))
+  orig           median    7.5446  IQR  0.0644  vs orig  +0.0000 ( +0.00%)  threshold  0.0644  BASE
+  orig2          median    7.5685  IQR  0.0827  vs orig  -0.0239 ( -0.32%)  threshold  0.0827  NOISE
+  null           median    7.5629  IQR  0.0707  vs orig  -0.0183 ( -0.24%)  threshold  0.0707  NOISE
+  rev            median    1.7594  IQR  0.4365  vs orig  +5.7852 (+76.68%)  threshold  0.4365  WIN
+
+subject CELL   null-twin deviation 0.0001 ns/B   (rule: WIN/LOSS only past max(null dev, IQR_arm, IQR_orig))
+  orig           median    0.0371  IQR  0.0008  vs orig  +0.0000 ( +0.00%)  threshold  0.0008  BASE
+  orig2          median    0.0369  IQR  0.0084  vs orig  +0.0002 ( +0.46%)  threshold  0.0084  NOISE
+  null           median    0.0371  IQR  0.0005  vs orig  -0.0001 ( -0.13%)  threshold  0.0008  NOISE
+  rev            median    0.0370  IQR  0.0011  vs orig  +0.0001 ( +0.24%)  threshold  0.0011  NOISE
