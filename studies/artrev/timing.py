@@ -6,9 +6,19 @@ every arm with the ONE fixed command line and runs the rounds (it is what
 ships to the Linux box).  Verdict rule (charter 4 S4): an arm WINS if its
 median beats the original's by more than BOTH the null twin's deviation from
 the original AND the arms' IQR; LOSS by the same rule; else NOISE.
+
+LAYOUT CONTROL (charter S4, the method of docs/dev/optloop/k87twin_align.sh): `time --pads
+16,32,48,64 --pad-arms orig,L1,...` also builds each named arm at those code-offset pads (arm
+`X@pK` = X's artifact.c with a file-scope `.skip K` ahead of everything, so every function in the
+TU moves by K bytes) and times them in the SAME interleaved rounds.  A lead is then a WIN only
+if its pad-median beats the original's pad-median by more than max(null deviation, both IQRs,
+BOTH arms' spread across pads) AND every paired pad (orig@pK vs X@pK) agrees in sign; a
+LOSS the mirror; else NOISE.  Without --pads the plain rule above applies and the verdict says
+so ("no pad control": a confirmer must not report such a verdict).
 """
 import os
 import platform
+import re
 import shlex
 import shutil
 import statistics
@@ -23,6 +33,72 @@ REMOTE_HOST = "duxevents@100.69.121.107"
 REMOTE_DIR = "scratch_lx/artrev"          # under the remote $HOME
 REMOTE_WINDOW = (8, 19)
 STD = ("orig", "orig2", "null")
+PAD_RE = re.compile(r"^(.+)@p(\d+)$")
+
+
+def pad_text(k):
+    return '__asm__(".text\\n.skip %d,0x90\\n"); /* [ARTREV] layout control: code-offset pad %d bytes */\n' % (k, k)
+
+
+def make_pad_arms(name, base_arms, pads):
+    """Create arms/<base>@p<K> (the base arm's artifact.c behind a K-byte code pad); returns the names."""
+    out = []
+    for b in base_arms:
+        src = os.path.join(C.art_dir(name), "arms", b)
+        if not os.path.exists(os.path.join(src, "artifact.c")):
+            C.die("--pad-arms: no arm %r" % b)
+        text = open(os.path.join(src, "artifact.c")).read()
+        for k in pads:
+            d = os.path.join(C.art_dir(name), "arms", "%s@p%d" % (b, k))
+            os.makedirs(d, exist_ok=True)
+            open(os.path.join(d, "artifact.c"), "w").write(pad_text(k) + text)
+            shutil.copy(os.path.join(src, "artifact.h"), os.path.join(d, "artifact.h"))
+            out.append("%s@p%d" % (b, k))
+    return out
+
+
+def apply_layout(summ, arms):
+    """Fold the pad variants into the verdict (see the module docstring).  Mutates summ."""
+    pads = {}
+    for a in arms:
+        m = PAD_RE.match(a)
+        if m:
+            pads.setdefault(m.group(1), []).append(a)
+    if "orig" not in pads:
+        return False
+    for s, per in summ.items():
+        def meds(base):
+            return [per[v]["med"] for v in [base] + pads.get(base, []) if v in per]
+        o_meds = meds("orig")
+        o_spread, o_pm = max(o_meds) - min(o_meds), statistics.median(o_meds)
+        per["orig"]["layout"] = {"pad_med": o_pm, "spread": o_spread, "paired": []}
+        for base, d in list(per.items()):
+            if base.startswith("_") or PAD_RE.match(base) or base == "orig":
+                continue
+            if base not in pads:
+                d["layout_note"] = "no pad control"
+                continue
+            ms = meds(base)
+            spread, pm = max(ms) - min(ms), statistics.median(ms)
+            paired = []
+            for v in pads[base]:
+                ov = "orig@p" + PAD_RE.match(v).group(2)
+                if ov in per and v in per:
+                    paired.append(per[ov]["med"] - per[v]["med"])
+            nd = per["_null_dev"]
+            thr = max(nd, d["iqr"], per["orig"]["iqr"], spread, o_spread)
+            delta = o_pm - pm
+            d["layout"] = {"pad_med": pm, "spread": spread, "paired": paired, "delta": delta, "thr": thr}
+            plain = d["verdict"]
+            if delta > thr and d["delta"] > 0 and all(x > 0 for x in paired):
+                d["verdict"] = "WIN"
+            elif -delta > thr and d["delta"] < 0 and all(x < 0 for x in paired):
+                d["verdict"] = "LOSS"
+            else:
+                d["verdict"] = "NOISE"
+            if plain != d["verdict"]:
+                d["layout_note"] = "plain rule said %s; the pad control downgrades it" % plain
+    return True
 
 
 def selftest_only(flag):
@@ -52,6 +128,18 @@ def read_raw(path):
                 rows.append({"subject": t[0], "arm": t[1], "round": int(t[2]), "ns": float(t[3]),
                              "matches": t[4], "checksum": t[5], "load": t[6], "reps": t[7]})
     return hdr, rows
+
+
+def add_cell_rows(rows, labels):
+    """Append the pseudo-subject CELL: per (arm, round) the median over the cell's subjects (the bench's
+    cell number is the median over its subjects, so the subject that sets the median sets the verdict)."""
+    by = {}
+    for r in rows:
+        if r["subject"] in labels:
+            by.setdefault((r["arm"], r["round"]), []).append(r["ns"])
+    out = [{"subject": "CELL", "arm": arm, "round": rnd, "ns": statistics.median(xs), "matches": "-",
+            "checksum": "-", "load": "-", "reps": "-"} for (arm, rnd), xs in sorted(by.items()) if len(xs) == len(labels)]
+    return rows + out
 
 
 def summarize(rows, arms):
@@ -92,7 +180,7 @@ def write_summary(path_tsv, path_txt, summ, hdr, arms):
         f.write("subject\tarm\tn\tmedian_ns_per_byte\tq1\tq3\tiqr\tdelta_vs_orig\tthreshold\tnull_dev\tverdict\n")
         for s, per in summ.items():
             for a in arms:
-                if a in per:
+                if a in per and not PAD_RE.match(a):
                     d = per[a]
                     f.write("%s\t%s\t%d\t%.4f\t%.4f\t%.4f\t%.4f\t%+.4f\t%.4f\t%.4f\t%s\n" % (
                         s, a, d["n"], d["med"], d["q1"], d["q3"], d["iqr"], d["delta"], d["thr"], per["_null_dev"], d["verdict"]))
@@ -101,10 +189,17 @@ def write_summary(path_tsv, path_txt, summ, hdr, arms):
         lines.append("")
         lines.append("subject %s   null-twin deviation %.4f ns/B   (rule: WIN/LOSS only past max(null dev, IQR_arm, IQR_orig))" % (s, per["_null_dev"]))
         for a in arms:
-            if a in per:
+            if a in per and not PAD_RE.match(a):
                 d = per[a]
-                lines.append("  %-10s median %9.4f  IQR %7.4f  vs orig %+8.4f (%+6.2f%%)  threshold %7.4f  %s" % (
+                lines.append("  %-14s median %9.4f  IQR %7.4f  vs orig %+8.4f (%+6.2f%%)  threshold %7.4f  %s" % (
                     a, d["med"], d["iqr"], d["delta"], 100.0 * d["delta"] / per["orig"]["med"], d["thr"], d["verdict"]))
+                if "layout" in d and "thr" in d["layout"]:
+                    L = d["layout"]
+                    lines.append("      layout: pad-median %.4f  spread across pads %.4f (orig %.4f)  pad-median delta %+.4f vs threshold %.4f  paired deltas %s%s" % (
+                        L["pad_med"], L["spread"], per["orig"]["layout"]["spread"], L["delta"], L["thr"],
+                        " ".join("%+.4f" % x for x in L["paired"]), ("  [" + d["layout_note"] + "]") if d.get("layout_note") else ""))
+                elif d.get("layout_note") == "no pad control":
+                    lines.append("      layout: no pad control for this arm (a verdict without it is not reportable)")
     open(path_txt, "w").write("\n".join(lines) + "\n")
     return "\n".join(lines)
 
@@ -251,7 +346,7 @@ def preflight(a, arms):
         d = os.path.join(base, "arms", arm)
         if not os.path.exists(os.path.join(d, "artifact.c")):
             C.die("arm %r does not exist under %s" % (arm, base))
-        if arm in ("orig", "orig2"):
+        if arm in ("orig", "orig2") or PAD_RE.match(arm):
             continue
         rev = int(open(os.path.join(d, "rev")).read()) if os.path.exists(os.path.join(d, "rev")) else 0
         revs[arm] = rev
@@ -284,6 +379,17 @@ def cmd_time(a):
     for s in a.subject:
         if "=" not in s or not os.path.exists(s.split("=", 1)[1]):
             C.die("bad --subject %r (LABEL=FILE, file must exist)" % s)
+    pad_list = []
+    if a.pads:
+        pad_list = [int(x) for x in a.pads.split(",") if x]
+        if len(pad_list) < 4 or any(k <= 0 or k % 16 for k in pad_list):
+            C.die("--pads: at least 4 positive multiples of 16 (charter S4; k87twin_align.sh used 16..112), got %r" % a.pads)
+        pad_base = [x for x in (a.pad_arms or "orig").split(",") if x]
+        if "orig" not in pad_base:
+            pad_base = ["orig"] + pad_base
+        arms = arms + make_pad_arms(a.name, pad_base, pad_list)
+    elif a.pad_arms:
+        C.die("--pad-arms needs --pads")
     meta, rows, revs = preflight(a, arms)
     gate = a.load_max if a.load_max is not None else C.default_load_gate()
     overrides = []
@@ -317,7 +423,7 @@ def cmd_time(a):
     status, rc = "FAIL", 1
     try:
         if a.remote:
-            rc = run_remote(a, plan, rdir, rawp)
+            rc = run_remote(a, plan, rdir, rawp, arms)
         else:
             cmd = [os.path.join(C.tree_root(), "scripts", "watchdog"), "-s", str(a.wall), "-m", "%dk" % a.rss_kb,
                    "-S", "artrev-time", "-l", a.name, "-L", os.path.join(rdir, "watchdog.log"), "--", sys.executable, os.path.join(HERE, "artrev.py"), "_rawtime",
@@ -331,13 +437,25 @@ def cmd_time(a):
             return 7
         if rc == 0:
             hdr, rrows = read_raw(rawp)
+            if a.cell:
+                labs = [x for x in a.cell.split(",") if x]
+                have = {r["subject"] for r in rrows}
+                if any(l not in have for l in labs):
+                    C.die("--cell names a subject label that was not timed: %s" % [l for l in labs if l not in have])
+                rrows = add_cell_rows(rrows, labs)
             summ = summarize(rrows, arms)
+            if pad_list:
+                apply_layout(summ, arms)
             txt = write_summary(os.path.join(rdir, "summary.tsv"), os.path.join(rdir, "summary.txt"), summ, hdr, arms)
             print(txt)
             status = "OK"
             first = list(summ.keys())[0]
             for arm in arms:
+                if PAD_RE.match(arm):
+                    continue
                 v = " ".join("%s:%s" % (s, summ[s][arm]["verdict"]) for s in summ if arm in summ[s])
+                if pad_list:
+                    v += " layout=pads(%s)" % a.pads
                 C.ledger_append(a.name, "time", arm, revs.get(arm, 0), C.is_counted_arm(arm), "OK",
                                 C.sha256_file(os.path.join(C.art_dir(a.name), "arms", arm, "artifact.c")),
                                 "run=%s rounds=%d %s %s %s" % (os.path.basename(rdir), a.rounds, "remote" if a.remote else "local",
@@ -345,7 +463,7 @@ def cmd_time(a):
             print("\nrun dir:", rdir)
         else:
             for arm in arms:
-                if arm not in ("orig", "orig2"):
+                if arm not in ("orig", "orig2") and not PAD_RE.match(arm):
                     C.ledger_append(a.name, "time", arm, revs.get(arm, 0), C.is_counted_arm(arm), "FAILED(rc=%d)" % rc, "",
                                     "run=%s %s" % (os.path.basename(rdir), ",".join(overrides)))
             sys.stderr.write("timing run FAILED rc=%d (logged as an attempt; it still counts toward the bound)\n" % rc)
@@ -410,8 +528,8 @@ def make_bundle(a, arms, plan):
         C.die("tar failed: " + r.stderr)
 
 
-def run_remote(a, plan, rdir, rawp):
-    make_bundle(a, a.arms.split(","), plan)
+def run_remote(a, plan, rdir, rawp, arms):
+    make_bundle(a, arms, plan)     # the COMPUTED arm list (orig/orig2 added, pad variants), not the raw --arms
     h = REMOTE_HOST
     r = subprocess.run(SSH + [h, "mkdir -p ~/%s && mkdir ~/%s" % (REMOTE_DIR, plan["rlock"].replace(REMOTE_DIR + "/", REMOTE_DIR + "/"))])
     if r.returncode:

@@ -1,0 +1,88 @@
+--- a/artifact.c
++++ b/artifact.c
+@@ -158,12 +158,48 @@
+       0,   0,   0,   0,   0,   0,   0,   0,
+ };
+ 
++/* [ARTREV L6] the run counters live in locals for the attempt.  The slot
++   stores are ptrdiff_t and the depth counters size_t: the same type for
++   aliasing purposes, so through `run->` every slot or trail store forces the
++   counters to be re-loaded and re-stored.  Locals cannot alias; they are
++   written back on every return (rx_reset_for_next_attempt reads them). */
++#undef RX_CHARGE_WORK
++#undef RX_TRAIL
++#undef RX_PUSH
++#undef RX_CUT
++#define RX_RET(v_) do { run->resume_depth = rx_rd; run->trail_depth = rx_td; \
++        run->steps_left = rx_steps; run->work_left = rx_work; return (v_); } while (0)
++#define RX_CHARGE_WORK(n_) do {                                    \
++        ptrdiff_t nw_ = (ptrdiff_t)(n_);                     \
++        if (nw_ > 0) {                                       \
++            rx_work -= (long long)nw_;                       \
++            if (rx_work < 0) RX_RET(RX_R_WORK);               \
++        }                                                    \
++    } while (0)
++#define RX_TRAIL(slot_) do {                                  \
++        if (rx_td >= rx_trail_cap) RX_RET(RX_R_FRAMES);    \
++        rx_trail[rx_td].slot_index = (unsigned)(slot_);               \
++        rx_trail[rx_td].saved_value = slot_values[(slot_)];                       \
++        rx_td++;                                             \
++    } while (0)
++#define RX_PUSH(lbl_, p_) do {                                \
++        if (rx_rd >= rx_resume_cap) RX_RET(RX_R_FRAMES);       \
++        rx_stack[rx_rd].resume_label = (lbl_);                             \
++        rx_stack[rx_rd].resume_position = (p_);                             \
++        rx_stack[rx_rd].trail_mark = rx_td;                          \
++        rx_rd++;                                             \
++    } while (0)
+ static ptrdiff_t rx_match_anchored(const rx_ctx *ctx, rx_run_state *run, const size_t rx_window_end)
+ {
+     const unsigned char *const subject = ctx->subject;
+     const size_t subject_length = ctx->len;
+     size_t scan_position = ctx->pos;
+     ptrdiff_t *const slot_values = run->slot_values;
++    size_t rx_rd = run->resume_depth, rx_td = run->trail_depth;
++    long long rx_steps = run->steps_left, rx_work = run->work_left;
++    rx_frame *const rx_stack = run->resume_stack;
++    rx_trail_entry *const rx_trail = run->trail;
++    const size_t rx_resume_cap = run->resume_cap, rx_trail_cap = run->trail_cap;
+     size_t rx_span_cursor = 0;   /* the span-loop cursor (engine_m4.md 2.5):
+                              a plain local, UNTRAILED, whose save
+                              point is a resume frame */
+@@ -243,22 +279,24 @@
+     goto rx_accept;
+ 
+ rx_accept: __attribute__((unused));
+-    return (ptrdiff_t)(scan_position - ctx->pos);
++    RX_RET((ptrdiff_t)(scan_position - ctx->pos));
+ 
+ rx_fail: __attribute__((unused));
+-    if (run->resume_depth == 0) return -1;
+-    if (--run->steps_left < 0) return RX_R_STEPS;
++    if (rx_rd == 0) RX_RET(-1);
++    if (--rx_steps < 0) RX_RET(RX_R_STEPS);
+     {
+-        const size_t frame_index = --run->resume_depth;
+-        scan_position = run->resume_stack[frame_index].resume_position;
+-        while (run->trail_depth > run->resume_stack[frame_index].trail_mark) {
+-            run->trail_depth--;
+-            slot_values[run->trail[run->trail_depth].slot_index] = run->trail[run->trail_depth].saved_value;
++        const size_t frame_index = --rx_rd;
++        scan_position = rx_stack[frame_index].resume_position;
++        while (rx_td > rx_stack[frame_index].trail_mark) {
++            rx_td--;
++            slot_values[rx_trail[rx_td].slot_index] = rx_trail[rx_td].saved_value;
+         }
+-        goto *run->resume_stack[frame_index].resume_label;
+-    }
+-}
+-
++        goto *rx_stack[frame_index].resume_label;
++    }
++}
++
++#undef RX_RET
++#undef RX_CUT
+ #undef RX_TRAIL
+ #undef RX_SET
+ #undef RX_PUSH

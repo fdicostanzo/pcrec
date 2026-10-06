@@ -11,7 +11,7 @@ PASS [7] GENERATION.txt records 'gcc'
 PASS [8] GENERATION.txt records 'gen line'
 PASS [9] GENERATION.txt records 'asm line'
 PASS [10] GENERATION.txt records 'compile'
-PASS [11] asm written (    1953 lines)
+PASS [11] asm written (    1939 lines)
 
 == 2. null twin: identity PASS (plain and ASan+UBSan), both engines
 PASS [12] twin vm null (rc 0)
@@ -73,19 +73,19 @@ PASS [61] slowed twin is answer-identical (identity PASS) (rc 0)
 PASS [62] gate override refused outside selftest (rc 5)
 PASS [63] gate override outside selftest: output carries 'refused outside the selftest'
 PASS [64] time vm: orig/orig2/null/ctl_slow, 2 subjects, 7 rounds (rc 0)
-      | subject cell   null-twin deviation 0.0987 ns/B   (rule: WIN/LOSS only past max(null dev, IQR_arm, IQR_orig))
-      |   orig       median    7.9074  IQR  0.0982  vs orig  +0.0000 ( +0.00%)  threshold  0.0987  BASE
-      |   orig2      median    7.8864  IQR  0.0598  vs orig  +0.0210 ( +0.26%)  threshold  0.0987  NOISE
-      |   null       median    7.8087  IQR  0.0765  vs orig  +0.0987 ( +1.25%)  threshold  0.0987  NOISE
-      |   ctl_slow   median   49.9492  IQR  0.2802  vs orig -42.0419 (-531.68%)  threshold  0.2802  LOSS
+      | subject cell   null-twin deviation 0.0116 ns/B   (rule: WIN/LOSS only past max(null dev, IQR_arm, IQR_orig))
+      |   orig           median    7.9538  IQR  0.0521  vs orig  +0.0000 ( +0.00%)  threshold  0.0521  BASE
+      |   orig2          median    7.9579  IQR  0.0394  vs orig  -0.0041 ( -0.05%)  threshold  0.0521  NOISE
+      |   null           median    7.9421  IQR  0.0509  vs orig  +0.0116 ( +0.15%)  threshold  0.0521  NOISE
+      |   ctl_slow       median   80.0970  IQR  0.3884  vs orig -72.1433 (-907.03%)  threshold  0.3884  LOSS
       | 
-      | subject sparse   null-twin deviation 0.0243 ns/B   (rule: WIN/LOSS only past max(null dev, IQR_arm, IQR_orig))
-      |   orig       median    3.2866  IQR  0.0769  vs orig  +0.0000 ( +0.00%)  threshold  0.0769  BASE
-      |   orig2      median    3.3309  IQR  0.0856  vs orig  -0.0443 ( -1.35%)  threshold  0.0856  NOISE
-      |   null       median    3.2622  IQR  0.0359  vs orig  +0.0243 ( +0.74%)  threshold  0.0769  NOISE
-      |   ctl_slow   median   22.7572  IQR  0.1389  vs orig -19.4707 (-592.43%)  threshold  0.1389  LOSS
+      | subject sparse   null-twin deviation 0.0375 ns/B   (rule: WIN/LOSS only past max(null dev, IQR_arm, IQR_orig))
+      |   orig           median    3.3869  IQR  0.0463  vs orig  +0.0000 ( +0.00%)  threshold  0.0463  BASE
+      |   orig2          median    3.3815  IQR  0.0780  vs orig  +0.0054 ( +0.16%)  threshold  0.0780  NOISE
+      |   null           median    3.3493  IQR  0.0694  vs orig  +0.0375 ( +1.11%)  threshold  0.0694  NOISE
+      |   ctl_slow       median   36.9778  IQR  0.2940  vs orig -33.5909 (-991.80%)  threshold  0.2940  LOSS
       | 
-      | run dir: /Users/fdicostanzo/pcrec/build-artrev/_selftest/vm/timing/001
+      | run dir: /Users/fdicostanzo/pcrec/worktrees/artcollect/build-artrev/_selftest/vm/timing/001
 PASS [65] slowed twin reads LOSS on cell
 PASS [66] slowed twin reads LOSS on sparse
 PASS [67] null twin reads NOISE
@@ -145,9 +145,92 @@ PASS [99] 4th timing run: output carries 'BOUND'
       |   L4         revisions 1/4; timing runs per revision: r1:0/3
       |   L5         revisions 1/4; timing runs per revision: r1:0/3
       |   L6         revisions 1/4; timing runs per revision: r1:0/3
-      | ledger: /Users/fdicostanzo/pcrec/build-artrev/_selftest/bnd/iterations.tsv (25 rows)
+      | ledger: /Users/fdicostanzo/pcrec/worktrees/artcollect/build-artrev/_selftest/bnd/iterations.tsv (25 rows)
 -- an UNLOGGED hand edit cannot be timed
 PASS [100] unsealed edit of L3 refused by time (rc 3)
 PASS [101] unsealed edit: output carries 'unlogged edit'
 
-== summary: 101/101 checks passed, 0 failed
+== 8. HARDENED IDENTITY: shrunken resources + THE GIVE-UP RULE + window start + livelock bound
+PASS [102] identity vm null drives the _in shapes (the HAVE_IN compile fix) (rc 0)
+PASS [103] _in search lines are driven (not zero)
+PASS [104] shrunk phase runs by default: output carries 'shrunken resources (0/1 frames'
+PASS [105] shrunk phase counts the original's give-ups: output carries 'original gives up on'
+-- a twin that answers WRONG where the original gives up must FAIL; a CORRECT one must PASS; one that gives up where the original answers must FAIL
+PASS [106] new ctl_giveup_wrong (rc 0)
+PASS [107] seal ctl_giveup_wrong (rc 0)
+PASS [108] new ctl_giveup_right (rc 0)
+PASS [109] seal ctl_giveup_right (rc 0)
+PASS [110] new ctl_giveup_lost (rc 0)
+PASS [111] seal ctl_giveup_lost (rc 0)
+PASS [112] give-up repaired WRONG: identity FAILS (oracle rejects the fabricated answer) (rc 1)
+PASS [113] giveup_wrong: output carries 'GIVE-UP RULE VIOLATED'
+PASS [114] giveup_wrong: output carries 'REPAIR DISAGREES with libpcre2'
+PASS [115] give-up repaired RIGHT (full buffers retried): identity PASSES under the give-up rule (rc 0)
+PASS [116] the repairs were counted AND checked against libpcre2
+PASS [117] twin GIVES UP where the original answers: identity FAILS (rc 1)
+PASS [118] giveup_lost: output carries 'twin GIVES UP where the original answers'
+-- the unit of the rule on synthetic transcripts
+give-up rule unit cases ok
+PASS [119] give-up rule: repair / lost / differ / N-V / code-move
+-- window start (a hybrid artifact: the prefilter + verifying attempt shape)
+PASS [120] gen hyb (internal prefilter) (rc 0)
+PASS [121] twin hyb null (rc 0)
+PASS [122] identity hyb null PASSES incl. the window phase (rc 0)
+PASS [123] hyb window: output carries 'prefilter windows compared'
+PASS [124] new ctl_early (rc 0)
+PASS [125] seal ctl_early (rc 0)
+PASS [126] a start-too-early twin (answers identical) FAILS by the window differential (rc 1)
+PASS [127] start_early: output carries 'start differences'
+PASS [128] start_early is invisible to answer identity: only the window differential catches it
+PASS [129] new ctl_earlyloop (rc 0)
+PASS [130] seal ctl_earlyloop (rc 0)
+PASS [131] the unconditionally-early start twin is also caught (by the window differential) (rc 1)
+PASS [132] earlyloop: output carries 'start differences'
+PASS [133] new ctl_hang (rc 0)
+PASS [134] seal ctl_hang (rc 0)
+PASS [135] a HANGING twin FAILS FAST (the livelock bound, not the 900 s timeout) (rc 1)
+PASS [136] hang: output carries 'LIVELOCK'
+PASS [137] livelock failed in 6 s
+-- iteration shortcuts cannot reach timing
+PASS [138] new ctl_part (rc 0)
+PASS [139] seal ctl_part (rc 0)
+PASS [140] identity with --skip-window logs PASS-PARTIAL (rc 0)
+PASS [141] partial: output carries 'PASS-PARTIAL'
+PASS [142] time refuses a PASS-PARTIAL identity (rc 3)
+PASS [143] partial refused: output carries 'no PASSING identity'
+
+== 9. REAL twins on the pinned A09 fixture (lane rvA09, 2026-10-06)
+PASS [144] a09: L4 r2 applies (control) (rc 0)
+PASS [145] a09: L4 r3 applies (control) (rc 0)
+PASS [146] a09: ctlL4e (start one EARLY) applies (control) (rc 0)
+PASS [147] a09: L4 r2 (answers where the original gives up with 0 frames/trail) PASSES the give-up rule (rc 0)
+PASS [148] a09 L4 r2: its repairs were found, counted, and equal libpcre2's
+PASS [149] a09: L4 r2 FAILS --strict-giveup (it changes the limits behaviour) (rc 1)
+PASS [150] a09 strict: output carries 'strict-giveup'
+PASS [151] a09: L4 r3 (capacity guard added) is exact even under --strict-giveup (rc 0)
+PASS [152] a09: ctlL4e (the livelocking early start) FAILS FAST, no 900 s timeout (rc 1)
+
+== 10. LAYOUT CONTROL: the pad-shift arms (charter S4; k87twin_align.sh's method)
+art_search offsets vs orig: {'orig@p16': 8, 'orig@p32': 32, 'orig@p48': 40, 'orig@p64': 64}
+PASS [153] pad arms MOVE the code: 4 distinct code addresses vs the original
+PASS [154] --pads with fewer than 4 offsets is refused (rc 2)
+PASS [155] pads must be multiples of 16 (rc 2)
+PASS [156] time with the layout control: orig/orig2/null/ctl_slow, pads 16-64 on orig and ctl_slow (rc 0)
+PASS [157] layout: output carries 'layout: pad-median'
+PASS [158] layout: output carries 'no pad control for this arm'
+PASS [159] the slowed twin still reads LOSS with the layout control
+PASS [160] pad arms were timed in the same interleaved rounds
+layout verdict unit cases ok
+PASS [161] layout verdicts: clean WIN, layout-swing NOISE, one-pad-flip NOISE, clean LOSS
+
+== 11. dense/sparse variants and the CELL row
+PASS [162] variants vm: dense + sparse from the dense subject (rc 0)
+PASS [163] variants: output carries 'original matches in'
+PASS [164] dense variant has the subject's length
+PASS [165] dense has >= the original's matches (3396 >= 3011), sparse far fewer (189 < 3011)
+PASS [166] time with --cell over two subjects adds a CELL row (rc 0)
+PASS [167] cell row: output carries 'subject CELL'
+cell row = median over subjects ok
+PASS [168] CELL row is the per-round median over the cell's subjects
+
+== summary: 168/168 checks passed, 0 failed

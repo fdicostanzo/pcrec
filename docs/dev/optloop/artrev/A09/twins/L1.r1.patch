@@ -1,0 +1,44 @@
+--- a/artifact.c
++++ b/artifact.c
+@@ -186,6 +186,13 @@
+ { return accepting[s]; }
+ static inline int rx_reverse_accepts_class(const unsigned char *accepting, rx_reverse_state s, unsigned cl)
+ { return accepting[s + cl]; }
++
++/* [ARTREV L1] position of the next byte c at or after from, or n when there is none. */
++static inline size_t rx_next_byte(const unsigned char *subject, size_t n, size_t from, int c)
++{
++    const unsigned char *hit = (const unsigned char *)memchr(subject + from, c, n - from);
++    return hit ? (size_t)(hit - subject) : n;
++}
+ 
+ #ifndef __has_attribute
+ # define __has_attribute(x) 0
+@@ -787,11 +794,25 @@
+     };
+     size_t scan_position = search_from;
+     size_t last_accept_position = (size_t)-1;
++    size_t next_c = (size_t)-1, next_e = (size_t)-1, next_f = (size_t)-1;   /* [ARTREV L1] per-byte memchr streams */
+     if (search_from > subject_length) return 0;
+     rx_forward_state forward_state = search_from ? rx_forward_seed_state[rx_forward_byte_class[subject[search_from - 1]]] : 0;
+     for (;;) {
+-        if (forward_state == 0 && last_accept_position == (size_t)-1) {
+-            while (scan_position + 1 < subject_length && !rx_can_begin_match[subject[scan_position]]) scan_position++;
++        if ((forward_state == 0 || forward_state == 29) && last_accept_position == (size_t)-1) {
++            /* [ARTREV L1] states 0 and 29 leave {0,29} only on C/E/F entered in
++               state 0, i.e. at position 0 or after a \W byte; nothing accepts
++               in between, so jump to the first such byte (or give up). */
++            for (;;) {
++                size_t p;
++                if (next_c == (size_t)-1 || next_c < scan_position) next_c = rx_next_byte(subject, subject_length, scan_position, 'C');
++                if (next_e == (size_t)-1 || next_e < scan_position) next_e = rx_next_byte(subject, subject_length, scan_position, 'E');
++                if (next_f == (size_t)-1 || next_f < scan_position) next_f = rx_next_byte(subject, subject_length, scan_position, 'F');
++                p = next_c < next_e ? next_c : next_e;
++                if (next_f < p) p = next_f;
++                if (p >= subject_length) return 0;
++                if (p == 0 || !rx_can_begin_match[subject[p - 1]]) { scan_position = p; forward_state = 0; break; }
++                scan_position = p + 1;
++            }
+         }
+         else if (forward_state == 406) {
+             while (scan_position + 1 < subject_length && rx_forward_stay14[subject[scan_position]]) scan_position++;

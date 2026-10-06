@@ -279,6 +279,12 @@ def main():
     i.add_argument("--pcre2-sample", type=int, default=1500, help="cases checked against libpcre2 (0 disables)")
     i.add_argument("--match-example", action="append", default=[], help="a string known to match (planted in the battery)")
     i.add_argument("--tests-dir")
+    i.add_argument("--shrunk-budgets", default="8:64,64:1024,2000:40000",
+                   help="STEPS:WORK pairs the shrunken-resource phase compiles both arms with (identity.DEFAULT_BUDGETS)")
+    i.add_argument("--strict-giveup", action="store_true",
+                   help="shrunk phase: ALSO fail a twin that answers where the original gave up (default: allowed iff equal to libpcre2)")
+    i.add_argument("--skip-shrunk", action="store_true", help="iteration speed only: logs PASS-PARTIAL, which `time` refuses")
+    i.add_argument("--skip-window", action="store_true", help="iteration speed only: logs PASS-PARTIAL, which `time` refuses")
     tm = sp.add_parser("time")
     tm.add_argument("name")
     tm.add_argument("--arms", default="orig,orig2,null", help="comma list; orig is always included first")
@@ -292,7 +298,19 @@ def main():
     tm.add_argument("--dry-run", action="store_true", help="remote: print the commands and exit")
     tm.add_argument("--gate-override", action="store_true", help="SELFTEST ONLY (ARTREV_SELFTEST=1): skip the load gate")
     tm.add_argument("--hour-override", type=int, help="SELFTEST ONLY: pretend the local hour is H (remote window check)")
+    tm.add_argument("--pads", default="", help="LAYOUT CONTROL: code-offset pads in bytes (>=4 multiples of 16, e.g. 16,32,48,64); "
+                    "also times --pad-arms at each pad in the same interleaved rounds (timing.py docstring)")
+    tm.add_argument("--pad-arms", default="", help="comma list of arms to pad (orig is always included); needs --pads")
+    tm.add_argument("--cell", default="", help="comma list of the subject LABELS that form the cell (the bench's cell number is the median over "
+                    "its subjects): adds a CELL row = per round, per arm, the median over those subjects; judged by the same rules")
     tm.add_argument("--tag", default="")
+    vr = sp.add_parser("variants", help="build a DENSE and a SPARSE variant of a cell subject (variants.py)")
+    vr.add_argument("name")
+    vr.add_argument("--subject", required=True)
+    vr.add_argument("--out-dense", required=True)
+    vr.add_argument("--out-sparse", required=True)
+    vr.add_argument("--ctx", type=int, default=32, help="bytes of surroundings kept around each match in the dense variant")
+    vr.add_argument("--keep", type=int, default=16, help="the sparse variant keeps every KEEP-th match intact")
     raw = sp.add_parser("_rawtime")
     raw.add_argument("name")
     raw.add_argument("--arms", required=True)
@@ -317,6 +335,9 @@ def main():
     elif a.cmd == "identity":
         import identity
         sys.exit(identity.cmd_identity(a))
+    elif a.cmd == "variants":
+        import variants
+        sys.exit(variants.cmd_variants(a))
     elif a.cmd == "time":
         import timing
         sys.exit(timing.cmd_time(a))

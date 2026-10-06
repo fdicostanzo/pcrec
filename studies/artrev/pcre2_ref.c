@@ -1,5 +1,8 @@
 /* pcre2_ref.c -- [ARTREV] libpcre2 answers for the SAME subjects/cases files
  * driver_id reads, in driver_id's own `S` line format (point cases only).
+ * Case mode `p` = search from `from` (prints `S`), mode `a` = ANCHORED match at
+ * `from` (prints `A`; the oracle for the M/C shapes -- identity.py's give-up-rule
+ * check of a twin that answers where the original gave up).
  *   pcre2_ref SUBJECTS.bin CASES.tsv NCAPS 'PATTERN-BYTES-FILE' FLAGS
  * FLAGS: letters i (caseless), u (UTF), c (UCP).  Prints `S idx from rc caps..`
  * with rc 1/0 or the pcre2 error code, unset groups -1.  Compile:
@@ -42,9 +45,10 @@ int main(int argc, char **argv)
     unsigned idx; size_t from; char mode[8];
     while (fscanf(c, "%u\t%zu\t%7s\n", &idx, &from, mode) == 3) {
         if (mode[0] == 'f') continue;
-        int rc = pcre2_match(re, subj[idx], slen[idx], from, 0, md, NULL);
+        int anch = mode[0] == 'a';
+        int rc = pcre2_match(re, subj[idx], slen[idx], from, anch ? PCRE2_ANCHORED : 0, md, NULL);
         PCRE2_SIZE *ov = pcre2_get_ovector_pointer(md);
-        printf("S\t%u\t%zu\t%d", idx, from, rc > 0 ? 1 : (rc == PCRE2_ERROR_NOMATCH ? 0 : rc));
+        printf("%s\t%u\t%zu\t%d", anch ? "A" : "S", idx, from, rc > 0 ? 1 : (rc == PCRE2_ERROR_NOMATCH ? 0 : rc));
         for (int i = 0; i < ncaps; i++) {
             if (rc > 0 && i < rc && ov[2 * i] != PCRE2_UNSET) printf("\t%td\t%td", (ptrdiff_t)ov[2 * i], (ptrdiff_t)ov[2 * i + 1]);
             else if (rc > 0) printf("\t-1\t-1");

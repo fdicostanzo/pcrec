@@ -1,0 +1,37 @@
+--- a/artifact.c
++++ b/artifact.c
+@@ -187,14 +187,10 @@
+     goto rx_L6;
+ rx_L6: __attribute__((unused));
+     if ((ptrdiff_t)rx_span_cursor < slot_values[4] + 1) goto rx_fail;
+-    RX_PUSH(&&rx_L7, rx_span_cursor);
++    /* [ARTREV L2] no give-back frame: a shorter \w+ leaves a \w byte on both
++     * sides of the cursor, so the \b at rx_L3 rejects every retry. */
+     scan_position = rx_span_cursor;
+     goto rx_L5;
+-rx_L7: __attribute__((unused));
+-    rx_span_cursor = scan_position;
+-    if ((ptrdiff_t)rx_span_cursor < slot_values[4] + 1 + 1) goto rx_fail;
+-    rx_span_cursor -= 1;
+-    goto rx_L6;
+ rx_L5: __attribute__((unused));
+     RX_SET(RX_SLOT_GROUP1_START, slot_values[RX_SLOT_GROUP1_PENDING]);
+     RX_SET(RX_SLOT_GROUP1_END, (ptrdiff_t)scan_position);
+@@ -211,14 +207,11 @@
+     goto rx_L10;
+ rx_L10: __attribute__((unused));
+     if ((ptrdiff_t)rx_span_cursor < slot_values[5] + 1) goto rx_fail;
+-    RX_PUSH(&&rx_L11, rx_span_cursor);
++    /* [ARTREV L2] no give-back frame: a shorter \s+ leaves an \s byte at the
++     * cursor, and \1 (a non-empty \w run) fails on it at offset 0, charging
++     * no work. */
+     scan_position = rx_span_cursor;
+     goto rx_L9;
+-rx_L11: __attribute__((unused));
+-    rx_span_cursor = scan_position;
+-    if ((ptrdiff_t)rx_span_cursor < slot_values[5] + 1 + 1) goto rx_fail;
+-    rx_span_cursor -= 1;
+-    goto rx_L10;
+ rx_L9: __attribute__((unused));
+     {
+         ptrdiff_t ref_start = PCREC_UNSET, ref_end = PCREC_UNSET, took;

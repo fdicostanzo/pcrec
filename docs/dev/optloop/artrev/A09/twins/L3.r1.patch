@@ -1,0 +1,34 @@
+--- a/artifact.c
++++ b/artifact.c
+@@ -785,6 +785,10 @@
+           1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,
+           1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,
+     };
++    /* [ARTREV L3] the bytes on which 406 leaves the after-level pair {406,435}. */
++    static const unsigned char rx_forward_leave_406_435[256] = {
++        ['\n'] = 1, ['d'] = 1, ['r'] = 1, ['t'] = 1, ['u'] = 1,
++    };
+     size_t scan_position = search_from;
+     size_t last_accept_position = (size_t)-1;
+     if (search_from > subject_length) return 0;
+@@ -793,8 +797,18 @@
+         if (forward_state == 0 && last_accept_position == (size_t)-1) {
+             while (scan_position + 1 < subject_length && !rx_can_begin_match[subject[scan_position]]) scan_position++;
+         }
+-        else if (forward_state == 406) {
+-            while (scan_position + 1 < subject_length && rx_forward_stay14[subject[scan_position]]) scan_position++;
++        else if (forward_state == 406 || forward_state == 435) {
++            /* [ARTREV L3] 406 and 435 step to each other on every byte except \n
++               (to 0, from either) and d/r/t/u in 406 (after a \W byte); neither
++               accepts: skip the pair as one component instead of stepping it. */
++            for (;;) {
++                size_t from = scan_position;
++                while (scan_position < subject_length && !rx_forward_leave_406_435[subject[scan_position]]) scan_position++;
++                if (scan_position >= subject_length) return 0;
++                if (scan_position > from) forward_state = rx_can_begin_match[subject[scan_position - 1]] ? 435 : 406;
++                if (forward_state == 406 || subject[scan_position] == '\n') break;
++                scan_position++;
++            }
+         }
+         if (scan_position >= subject_length) {
+             if (rx_forward_accepts(rx_forward_is_accepting, forward_state)) last_accept_position = scan_position;

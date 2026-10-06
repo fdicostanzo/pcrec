@@ -11,5 +11,7 @@ ptrdiff_t art_match_in(const unsigned char *, size_t, size_t);
 ptrdiff_t art_match_caps(const unsigned char *, size_t, size_t, ptrdiff_t (*)[2]);
 ptrdiff_t art_match_caps_in(const unsigned char *, size_t, size_t, ptrdiff_t (*)[2]);
 size_t    art_next_pos(const unsigned char *, size_t, size_t);
+void      art_set_bufs(long, long);
+int       art_pf(const unsigned char *, size_t, size_t, ptrdiff_t (*)[2]);
 size_t    art_valid_upto(const unsigned char *, size_t, size_t);
 #endif
