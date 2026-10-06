@@ -9129,3 +9129,12 @@ Mac timing is never reported. The Linux box stays the bench's at night.
 
 **Revisit when.** The pilot gate reads (yield numbers in the journal); or a
 confirmed lead's population census says it is general enough to schedule.
+
+**Addendum 1 (Frank, same evening): a reviewer NOTEBOOK.** Reviewers keep
+notes between runs so a later reviewer sees what was already discovered
+(charter §3.2): one append-only file per reviewer run under
+`artrev/notebook/`, read at start, the confirmer's Linux verdicts added
+beside it, artifact-level knowledge only (blindness to the emitter holds),
+each lead tagged `fresh` or `notebook:<entry>`; the dual-review pilot pair
+is isolated from each other's entries so its overlap stays a measurement of
+independent review.

@@ -58,7 +58,7 @@ measures is WORKING data; what the report cites is an INDEPENDENT re-run
 |---|---|---|---|
 | harness builder | sonnet | everything | — |
 | selector | sonnet | bench reports, gap report, D81 stamps, `pcrec` | — |
-| reviewer-iterator | opus | ONE artifact (C + `gcc -O2 -S` asm), its pattern, its bench subject, `docs/spec/`, the `studies/artrev/` harness | `src/`, `docs/design/`, `plan.md`, decisions, known issues, other ARTREV reviews |
+| reviewer-iterator | opus | ONE artifact (C + `gcc -O2 -S` asm), its pattern, its bench subject, `docs/spec/`, the `studies/artrev/` harness, the reviewer NOTEBOOK (§3.2) | `src/`, `docs/design/`, `plan.md`, decisions, known issues, other reviewers' full `review.md`s |
 | confirmer | sonnet | the reviewer's final twins + harness | the reviewer's timing numbers until its own run is written |
 | generalizer | opus | everything | — |
 
@@ -94,6 +94,33 @@ rediscovery, which is itself a signal.
   harness rejects a patch carrying intrinsics headers, `__builtin_ia32_*`
   / `__builtin_neon_*`, `vector_size`, or `#pragma GCC` optimize/target
   lines, and builds every arm with one fixed command line.
+
+### 3.2 The reviewer notebook (Frank, 2026-10-05: memory between runs)
+
+`docs/dev/optloop/artrev/notebook/` carries what earlier reviewers learned so
+a later reviewer starts from it instead of from zero — a waste pattern found
+in one artifact often recurs in the next.
+
+- **One file per reviewer run** (`<artifact>-<reviewer>.md`), written at the
+  end of the run and never edited by anyone else, so concurrent lanes never
+  conflict. A reviewer READS every file present when it starts.
+- **Entry shape**: the pattern of waste (how to SPOT it in emitted C/asm), the
+  twin idea, the lane's scratch verdict, the identity pitfalls met, and
+  ideas tried and abandoned with the reason. Written for a reader who has
+  never seen this artifact.
+- **The confirmer appends a `confirmed.md` row per lead** (WIN / LOSS / NOISE
+  on Linux) so later reviewers know which ideas held up, not just which
+  looked good on the Mac.
+- **Blindness holds**: nothing from `src/`, the generalizer, `plan.md` or the
+  design docs enters the notebook — it is reviewer-to-reviewer knowledge
+  about ARTIFACTS only.
+- **Provenance**: every lead in `leads.tsv` carries `origin` = `fresh` or
+  `notebook:<entry>`, so the report can separate transfer from rediscovery
+  (and measure what the notebook was worth).
+- **The dual-review pilot artifact is the exception**: its two reviewers
+  start with the notebook as it stood before either began and never see
+  each other's entry until both finish — otherwise the overlap measurement
+  measures the notebook, not independent review.
 
 ## 4. The process
 
