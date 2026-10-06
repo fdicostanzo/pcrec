@@ -73,19 +73,19 @@ PASS [61] slowed twin is answer-identical (identity PASS) (rc 0)
 PASS [62] gate override refused outside selftest (rc 5)
 PASS [63] gate override outside selftest: output carries 'refused outside the selftest'
 PASS [64] time vm: orig/orig2/null/ctl_slow, 2 subjects, 7 rounds (rc 0)
-      | subject cell   null-twin deviation 0.0106 ns/B   (rule: WIN/LOSS only past max(null dev, IQR_arm, IQR_orig))
-      |   orig       median    7.8578  IQR  0.0624  vs orig  +0.0000 ( +0.00%)  threshold  0.0624  BASE
-      |   orig2      median    7.8824  IQR  0.0541  vs orig  -0.0246 ( -0.31%)  threshold  0.0624  NOISE
-      |   null       median    7.8684  IQR  0.1025  vs orig  -0.0106 ( -0.13%)  threshold  0.1025  NOISE
-      |   ctl_slow   median   49.6894  IQR  0.1938  vs orig -41.8316 (-532.35%)  threshold  0.1938  LOSS
+      | subject cell   null-twin deviation 0.0987 ns/B   (rule: WIN/LOSS only past max(null dev, IQR_arm, IQR_orig))
+      |   orig       median    7.9074  IQR  0.0982  vs orig  +0.0000 ( +0.00%)  threshold  0.0987  BASE
+      |   orig2      median    7.8864  IQR  0.0598  vs orig  +0.0210 ( +0.26%)  threshold  0.0987  NOISE
+      |   null       median    7.8087  IQR  0.0765  vs orig  +0.0987 ( +1.25%)  threshold  0.0987  NOISE
+      |   ctl_slow   median   49.9492  IQR  0.2802  vs orig -42.0419 (-531.68%)  threshold  0.2802  LOSS
       | 
-      | subject sparse   null-twin deviation 0.0093 ns/B   (rule: WIN/LOSS only past max(null dev, IQR_arm, IQR_orig))
-      |   orig       median    3.2773  IQR  0.0453  vs orig  +0.0000 ( +0.00%)  threshold  0.0453  BASE
-      |   orig2      median    3.2792  IQR  0.0604  vs orig  -0.0019 ( -0.06%)  threshold  0.0604  NOISE
-      |   null       median    3.2866  IQR  0.0398  vs orig  -0.0093 ( -0.28%)  threshold  0.0453  NOISE
-      |   ctl_slow   median   21.1903  IQR  0.0368  vs orig -17.9130 (-546.59%)  threshold  0.0453  LOSS
+      | subject sparse   null-twin deviation 0.0243 ns/B   (rule: WIN/LOSS only past max(null dev, IQR_arm, IQR_orig))
+      |   orig       median    3.2866  IQR  0.0769  vs orig  +0.0000 ( +0.00%)  threshold  0.0769  BASE
+      |   orig2      median    3.3309  IQR  0.0856  vs orig  -0.0443 ( -1.35%)  threshold  0.0856  NOISE
+      |   null       median    3.2622  IQR  0.0359  vs orig  +0.0243 ( +0.74%)  threshold  0.0769  NOISE
+      |   ctl_slow   median   22.7572  IQR  0.1389  vs orig -19.4707 (-592.43%)  threshold  0.1389  LOSS
       | 
-      | run dir: /Users/fdicostanzo/pcrec/worktrees/artharness/build-artrev/_selftest/vm/timing/001
+      | run dir: /Users/fdicostanzo/pcrec/build-artrev/_selftest/vm/timing/001
 PASS [65] slowed twin reads LOSS on cell
 PASS [66] slowed twin reads LOSS on sparse
 PASS [67] null twin reads NOISE
@@ -145,7 +145,7 @@ PASS [99] 4th timing run: output carries 'BOUND'
       |   L4         revisions 1/4; timing runs per revision: r1:0/3
       |   L5         revisions 1/4; timing runs per revision: r1:0/3
       |   L6         revisions 1/4; timing runs per revision: r1:0/3
-      | ledger: /Users/fdicostanzo/pcrec/worktrees/artharness/build-artrev/_selftest/bnd/iterations.tsv (25 rows)
+      | ledger: /Users/fdicostanzo/pcrec/build-artrev/_selftest/bnd/iterations.tsv (25 rows)
 -- an UNLOGGED hand edit cannot be timed
 PASS [100] unsealed edit of L3 refused by time (rc 3)
 PASS [101] unsealed edit: output carries 'unlogged edit'

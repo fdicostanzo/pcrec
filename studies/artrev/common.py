@@ -254,10 +254,24 @@ def check_twin_bound(name, arm, counted):
 
 
 # ------------------------------------------------------------------ gates
+def host_root():
+    """The REAL checkout whose locks every reviewer shares. Inside a D27 cell
+    repo_root() is the cell, so its locks would be private to that cell and
+    two cells could time at once (lane artprep's finding, 2026-10-06): a cell
+    sets ARTREV_HOST_ROOT to the main checkout."""
+    return os.environ.get("ARTREV_HOST_ROOT") or repo_root()
+
+
+def timing_lock_path():
+    if os.environ.get("ARTREV_HOST_ROOT"):
+        return os.path.join(os.environ["ARTREV_HOST_ROOT"], "build-artrev", ".timing.lock")
+    return os.path.join(art_root(), ".timing.lock")
+
+
 def mac_suite_lock_path():
     if os.environ.get("ARTREV_SELFTEST") == "1" and os.environ.get("ARTREV_SUITE_LOCK_PATH"):
         return os.environ["ARTREV_SUITE_LOCK_PATH"]
-    return os.path.join(repo_root(), "worktrees", ".mac-suite.lock")
+    return os.path.join(host_root(), "worktrees", ".mac-suite.lock")
 
 
 def loadavg1():
