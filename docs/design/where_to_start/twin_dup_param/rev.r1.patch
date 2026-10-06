@@ -1,0 +1,76 @@
+--- a/artifact.c
++++ b/artifact.c
+@@ -326,45 +326,38 @@
+             if (!memchr(subject + search_from, rq_set[rq_i], subject_length - search_from))
+                 return 0;
+     }
+-    attempt_position = search_from;
++    /* reverse-walk candidate row (hand twin): landmark '=' (memchr), P = \b(\w+) walked
++     * back over the \w run to the candidate start, then ONE anchored attempt there.
++     * P cannot consume '=' (G2), no backref in P (G1): the candidates are monotone. */
+     window_end = subject_length;
+-    static const unsigned char rx_start_set[256] = {
+-          0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+-          0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+-          0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+-          1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   0,   0,   0,   0,   0,   0,
+-          0,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,
+-          1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   0,   0,   0,   0,   1,
+-          0,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,
+-          1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   0,   0,   0,   0,   0,
+-          0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+-          0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+-          0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+-          0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+-          0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+-          0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+-          0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+-          0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+-    };
+-    while (attempt_position < subject_length && !rx_start_set[subject[attempt_position]]) attempt_position++;
+-    if (attempt_position >= subject_length) return 0;
+     rx_run_state_init(run);
+     ctx.subject = subject; ctx.len = subject_length; ctx.ncap = 0;
+     ctx.caps = NULL; ctx.user = NULL;
+-    for (;;) {
+-        ctx.pos = attempt_position;
+-        result = rx_match_anchored(&ctx, run, window_end);
+-        if (result == RX_R_STEPS)   return PCREC_ERR_STEPS;
+-        if (result == RX_R_FRAMES)  return PCREC_ERR_FRAMES;
+-        if (result == RX_R_WORK)    return PCREC_ERR_WORK;
+-        if (result == RX_R_RECURSE) return PCREC_ERR_RECURSE;
+-        if (result == RX_R_INTERNAL) return PCREC_ERR_INTERNAL;
+-        if (result >= 0) break;
+-        rx_reset_for_next_attempt(run);
+-        if (attempt_position >= subject_length) return 0;
+-        attempt_position++;
+-        while (attempt_position < subject_length && !rx_start_set[subject[attempt_position]]) attempt_position++;
+-        if (attempt_position >= subject_length) return 0;
++    {
++        size_t j = search_from;
++        for (;;) {
++            const unsigned char *eq = memchr(subject + j, 61, subject_length - j);
++            size_t s;
++            if (!eq) return 0;
++            j = (size_t)(eq - subject);
++            s = j;
++            while (s > search_from && ((rx_class_bitmap0[subject[s - 1] >> 3] >> (subject[s - 1] & 7)) & 1)) s--;
++            /* a run reaching below search_from has no \b start at or above it */
++            if (s < j && !(s == search_from && s > 0 && ((rx_class_bitmap0[subject[s - 1] >> 3] >> (subject[s - 1] & 7)) & 1))) {
++                attempt_position = s;
++                ctx.pos = s;
++                result = rx_match_anchored(&ctx, run, window_end);
++                if (result == RX_R_STEPS)   return PCREC_ERR_STEPS;
++                if (result == RX_R_FRAMES)  return PCREC_ERR_FRAMES;
++                if (result == RX_R_WORK)    return PCREC_ERR_WORK;
++                if (result == RX_R_RECURSE) return PCREC_ERR_RECURSE;
++                if (result == RX_R_INTERNAL) return PCREC_ERR_INTERNAL;
++                if (result >= 0) break;
++                rx_reset_for_next_attempt(run);
++            }
++            j++;
++            if (j > subject_length) return 0;
++        }
+     }
+     if (capture_spans) rx_report_captures(run, capture_spans, attempt_position, result);
+     return 1;

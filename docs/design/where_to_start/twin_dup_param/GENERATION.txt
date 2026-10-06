@@ -1,0 +1,9 @@
+artifact   dup_param_detect
+pin        5d47db6b
+abi        63
+engine     vm
+gcc        gcc-16 (Homebrew GCC 16.2.0) 16.2.0
+pcrec bin  /Users/fdicostanzo/pcrec/worktrees/revtwin/build/pcrec (sha256 0745e67926ae2b23d5fcf45d9811c1ebb7f6fd787eb4889c53810a2800424069)
+gen line   /Users/fdicostanzo/pcrec/worktrees/revtwin/build/pcrec -p rx --features all -o /Users/fdicostanzo/pcrec/worktrees/revtwin/build-revtwin/art/dup_param_detect/artifact.c --pattern \b(\w+)=[^&]*&(?:[^&]*&)*\1=
+asm line   gcc-16 -O2 -fPIC -S -I/Users/fdicostanzo/pcrec/worktrees/revtwin/build-revtwin/art/dup_param_detect/arms/orig -DARTREV_PFX=rx -DARTREV_PFXU=RX -DARTREV_HAVE_IN=1 /Users/fdicostanzo/pcrec/worktrees/revtwin/studies/artrev/shim.c -o /Users/fdicostanzo/pcrec/worktrees/revtwin/build-revtwin/art/dup_param_detect/artifact.s
+compile    gcc-16 -O2 -fPIC -I<armdir> -DARTREV_PFX=rx -DARTREV_PFXU=RX -DARTREV_HAVE_IN=1 shim.c <driver>.c -o <exe>

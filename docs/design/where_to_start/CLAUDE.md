@@ -30,3 +30,10 @@ any check. Compile-side and libpcre2-side only; no clock is read.
 - `rows.tsv.gz` — one row per pattern, every column the summary reads (no
   pattern text; `id` names the bench file or corpus file:line).
 - `selftest.txt` — C1's transcript.
+- `model_1046.txt` — lane `revtwin` (2026-10-06): `rinner_model.py` re-run against the libpcre2 10.46 reference on
+  ubuntubudu (script piped over ssh, `PCRE2_LIB` the box's 10.46), byte seed 1 x 6000, utf8 seed 2 x 4000, `--selftest`;
+  all 64 rows of both identical to the 10.48 transcripts. Its own header line says so (the script's hard-coded
+  "Homebrew" label is the loaded version's, not a claim).
+- `twin_dup_param/` — the D77 trigger twin (D151 item 2): twin patch, ledger, identity logs, the two ubuntubudu timing
+  runs (summary + raw TSVs), scratch scripts, README with the verdict (NOT MET: the bench cell is at the memchr floor).
+
