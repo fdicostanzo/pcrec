@@ -10,6 +10,8 @@ and replaces its identical-or-mover verdict with a CLASSIFIER, per artifact:
 
   identical   the bytes did not move (expected for the --emit-ir listings and
               for composition headers, which carry no stamps; never for a .c)
+  abi         no stamp line, and only the abi digit moved (--abi OLD:NEW;
+              a header or listing at the bump step; never for a .c)
   stamps      the new text, with its `#define <UP>_MEMFN_FORMS "..."` and
               `#define <UP>_MEMFN_LIBC "..."` lines removed, equals the old
               text byte for byte, and those two lines are exactly two,
@@ -40,11 +42,23 @@ STAMP = re.compile(rb'^#define (\w+)_MEMFN_(FORMS|LIBC) "[^"\n]*"$')
 RUN_WORDS = re.compile(rb'^#define \w+_RUN_WORDS ')
 
 
+def digit_only(ol, nl, abi):
+    """True iff the two line lists differ only where reading the new abi
+    number as the old one makes them equal."""
+    if not abi or len(ol) != len(nl):
+        return False
+    o, n = abi
+    pat = re.compile(rb'(?<![0-9])' + n + rb'(?![0-9])')
+    return all(pat.sub(o, b) == a for a, b in zip(ol, nl) if a != b)
+
+
 def classify(old, new, abi):
     if old == new:
         return 'identical', None
     nl = new.split(b'\n')
     at = [i for i, l in enumerate(nl) if STAMP.match(l)]
+    if not at and digit_only(old.split(b'\n'), nl, abi):
+        return 'abi', None
     if len(at) != 2 or at[1] != at[0] + 1:
         return 'OTHER', '%d stamp lines, not 2 adjacent' % len(at)
     kinds = [STAMP.match(nl[i]).group(2) for i in at]
@@ -54,12 +68,8 @@ def classify(old, new, abi):
     ol = old.split(b'\n')
     if rest == ol:
         return 'stamps', None
-    if abi and len(rest) == len(ol):
-        o, n = abi
-        pat = re.compile(rb'(?<![0-9])' + n + rb'(?![0-9])')
-        diff = [(a, b) for a, b in zip(ol, rest) if a != b]
-        if all(pat.sub(o, b) == a for a, b in diff):
-            return 'stamps+abi', '%d abi line(s)' % len(diff)
+    if digit_only(ol, rest, abi):
+        return 'stamps+abi', None
     return 'OTHER', es.first_diff_hunk(old, b'\n'.join(rest))
 
 
@@ -131,18 +141,20 @@ def main():
                       arts_a.get(fn), arts_b.get(fn))
     es.run(['rm', '-rf', comp_root], 60)
 
-    cols = ['identical', 'stamps', 'stamps+abi', 'OTHER', 'ASYMMETRIC', 'both-refuse']
+    cols = ['identical', 'abi', 'stamps', 'stamps+abi', 'OTHER', 'ASYMMETRIC', 'both-refuse']
     print('\n| stream | ' + ' | '.join(cols) + ' |')
     print('|---|' + '---|' * len(cols))
     for s in sorted(table):
         print('| %s | %s |' % (s, ' | '.join(str(table[s].get(c, 0)) for c in cols)))
     bad = list(others)
     for s in ('c-default', 'c-vm', 'comp-c'):
-        if table.get(s, {}).get('identical'):
-            bad.append((s, '-', '%d .c artifact(s) did not move: a stamp-less artifact'
-                        % table[s]['identical']))
+        still = table.get(s, {}).get('identical', 0) + table.get(s, {}).get('abi', 0)
+        if still:
+            bad.append((s, '-', '%d .c artifact(s) without the two lines: a stamp-less artifact'
+                        % still))
     for s in ('emit-ir-vm', 'comp-h'):
-        moved = sum(v for k, v in table.get(s, {}).items() if k not in ('identical', 'both-refuse'))
+        moved = sum(v for k, v in table.get(s, {}).items()
+                    if k not in ('identical', 'abi', 'both-refuse'))
         if moved:
             bad.append((s, '-', '%d listing/header(s) moved' % moved))
     for stream, key, why in bad[:30]:
