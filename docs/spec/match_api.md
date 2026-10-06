@@ -298,11 +298,11 @@ noted under group 2, which are `PCREC_*`-named yet per-artifact):
    refused.** The block opens
 
    ```c
-   #if defined(PCREC_RX_ABI_H) && (PCREC_RX_ABI_H + 0) != 63
-   #error "pcrec: this artifact (abi 63) shares a translation unit with an artifact of a different abi; regenerate both with one pcrec"
+   #if defined(PCREC_RX_ABI_H) && (PCREC_RX_ABI_H + 0) != 64
+   #error "pcrec: this artifact (abi 64) shares a translation unit with an artifact of a different abi; regenerate both with one pcrec"
    #endif
    #ifndef PCREC_RX_ABI_H
-   #define PCREC_RX_ABI_H 63
+   #define PCREC_RX_ABI_H 64
    ```
 
    so artifacts of one abi still share the first block, and an artifact of
@@ -2315,7 +2315,22 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `63` on every artifact today (lane memfnbump bumped it
+- **`rx_info.abi` is `64` on every artifact today (lane ssbuild3 bumped it
+  from 62, 2026-10-06; `63` is the memfn kit's R4a′: [START-SET] stage 3 —
+  THE DFA HAT, `docs/design/startset.md` §2 F, §4.1, §6.4, D148 + addenda
+  1-2).** The candidate table gains two DFA-route rows, `first-memchr-bounded`
+  and `first-class-bounded` (`tuning.md` §2.42, §6.3's `RX_DFA_PREFILTER`
+  values). On a SEEDED forward DFA scan (a `\b`, a lookbehind, a `(?m)`
+  context) whose plain bounded skip tests the start state's escape set `E`,
+  and whose start set `S` cannot match empty and is a proper subset of `E`,
+  the skip tests `S` instead — one byte by `memchr`, several by a 256-entry
+  `<prefix>_start_bytes` table — and, where it moved, re-seeds the scan state
+  from the byte before its landing. A VM hybrid's inlined prefilter takes it
+  too. `-fno-start-set` restores the `abi`-62 `-fno-start-set` program (no
+  VM hat either) apart from the abi digits. No struct offset moves, no `rx_info` member is added or changed, no
+  stamp is added (`RX_DFA_PREFILTER`/`rx_info.prefilter` gain the two
+  values), and no answer moves.
+- **`rx_info.abi` was `63` (lane memfnbump bumped it
   from 62, 2026-10-06: [MEMFN] R4a′ — THE KIT'S TWO STAMPS,
   `docs/design/memfn/integration.md` §R4.3.3, §18, §22; D147 addendum 10,
   Q53, Q55).** Every artifact of both engines gains two stamp lines,
@@ -4588,7 +4603,7 @@ wrote. `RX_DFA_PREFILTER` reads `"none"` on all of them, for the reason the
 value set below gives: there is no scan for a filter to be part of.
 
 `RX_DFA_PREFILTER` names the CANDIDATE-START mechanism the artifact
-carries, and its nine values are the whole set:
+carries, and its eleven values are the whole set:
 
 | value | mechanism |
 |---|---|
@@ -4601,6 +4616,8 @@ carries, and its nine values are the whole set:
 | `"offset-set-bounded"` | the offset-set form under the same view/word context, bounded at `n - 1` |
 | `"run-pinned"` | [OPT-LITSCAN] S1 (`abi` 36): the pattern's necessary run (`RX_REQ_RUN`) sits at a fixed offset from every match's start and the scan already runs on the run's own scan member there, so the candidate test verifies the WHOLE run as one compare — the offset-set block with the run as one term; the run pre-check is then not emitted (`RX_REQ_WHY "dominated"`). Removed by `-fno-run-prefilter` OR `-fno-offset-skip` |
 | `"run-pinned-bounded"` | the run-pinned form under the same view/word context, bounded at `n - 1` |
+| `"first-memchr-bounded"` | [START-SET] stage 3, THE DFA HAT (`abi` 64, `tuning.md` §2.42): on a SEEDED machine (a `\b`, a lookbehind, a `(?m)` context) whose plain skip would test the start state's escape set `E`, the skip tests the pattern's START SET instead (`T`, the `start_set` fact: the bytes the first consumed byte of a match can be), where `T` is a proper subset of `E` — here ONE byte, a `memchr()`; bounded at `n - 1` like `"memchr-bounded"`; a skip that moved re-seeds the scan state from the byte before its landing. Removed by `-fno-start-set` |
+| `"first-class-bounded"` | the same with several start-set bytes: a 256-entry `<prefix>_start_bytes` table walk, bounded at `n - 1`. The DFA hat has no unbounded form: a seeded machine always carries the D11 bound |
 
 **`<PREFIX>_DFA_PREFILTER_OFFSETS` ([OPT-K], `abi` 9) is on every
 artifact the four `RX_DFA_*` stamps are on**, and names WHICH offsets the

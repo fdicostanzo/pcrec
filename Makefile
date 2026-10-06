@@ -1238,11 +1238,15 @@ test-memfn-g2-full: all
 # every corpus block with its own options. ~20 s on the Mac dev box.
 # Stage 2 (the VM hat) adds run_vmhat_checks.sh: the fixtures, the stamp/
 # route/deny/table/mover-manifest checks and the every-startpos differential
-# with the start-byte oracle. Both run; either failing fails the section.
+# with the start-byte oracle. Stage 3 (the DFA hat) adds run_dfahat_checks.sh:
+# its fixtures, the stamp/route/re-seed/table/deny/mover-manifest checks and
+# the same differential under HAT=dfa. All three run; any failing fails the
+# section.
 test-startset: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-startset.ran"; fi
 	@rc=0; bash tests/startset/run_startset_checks.sh || rc=1; \
-	bash tests/startset/run_vmhat_checks.sh || rc=1; exit $$rc
+	bash tests/startset/run_vmhat_checks.sh || rc=1; \
+	bash tests/startset/run_dfahat_checks.sh || rc=1; exit $$rc
 
 # [REVW.U L5-R0] tests/core/ — the unit tier's home for a check on a helper
 # that belongs to no single feature (today: the saturating-arithmetic

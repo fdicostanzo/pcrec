@@ -199,7 +199,9 @@ fi
 #
 # The three markers are the three prefilter mechanisms the emitter has:
 # `memchr(subject + scan_position` (the memchr arms), `rx_can_begin_match[`
-# (the bitmap arms) and `rx_ofsskip(` ([OPT-K]'s offset-set arms).
+# (the bitmap arms) and `rx_ofsskip(` ([OPT-K]'s offset-set arms); since
+# [START-SET] stage 3 a fourth, `rx_start_bytes[` (the DFA hat's set form,
+# whose one-byte form is a memchr arm already).
 pf_scan() { # pf_scan <label> <pattern>
     local lbl="$1" pat="$2" f="$WORKDIR/p.c" body
     emit "$f" "$pat" || { bad "§2 [$lbl] '$pat' did not compile"; return; }
@@ -210,19 +212,22 @@ pf_scan() { # pf_scan <label> <pattern>
         && bad "§2 [$lbl] '$pat' emits a memchr candidate-start skip INSIDE rx_match — the skip chooses where the scan begins, and under a match-here the start is the caller's (docs/design/anchored_match_unwrapped.md §3.7)"
     printf '%s\n' "$body" | grep -q 'rx_can_begin_match\[' \
         && bad "§2 [$lbl] '$pat' emits the can_begin_match bitmap walk INSIDE rx_match — same defect, bitmap arm"
+    printf '%s\n' "$body" | grep -q 'rx_start_bytes\[' \
+        && bad "§2 [$lbl] '$pat' emits the [START-SET] start_bytes walk INSIDE rx_match — same defect, the DFA hat's set arm"
     printf '%s\n' "$body" | grep -q 'rx_ofsskip(' \
         && bad "§2 [$lbl] '$pat' calls the [OPT-K] offset-k skip INSIDE rx_match — same defect, offset-set arm"
     # ...and the POSITIVE half: the search this artifact carries DOES have one,
     # so the absence above is a property of the anchored body and not of a
     # compiler that emits no prefilters at all.
     sed -n '/^int rx_search(const unsigned char \*subject/,/^}$/p' "$f" \
-        | grep -qE 'memchr\(subject \+ scan_position|rx_can_begin_match\[|rx_ofsskip\(' \
+        | grep -qE 'memchr\(subject \+ scan_position|rx_can_begin_match\[|rx_start_bytes\[|rx_ofsskip\(' \
         || bad "§2 [$lbl] '$pat' has NO prefilter in rx_search either — this witness cannot tell 'the anchored body declines one' from 'this compiler emits none', so the negative above is vacuous"
 }
 pf_scan "memchr arm"    'foo[0-9]+bar'
 pf_scan "bitmap arm"    '[fgh]oo[0-9]+bar'
 pf_scan "offset-k arm"  '\d{4}-\d{2}-\d{2}'
-[ "$fail" -eq 0 ] && ok "§2 the anchored body carries none of the three candidate-start mechanisms, on artifacts whose search carries each of them"
+pf_scan "start-set arm" '\b(?:true|false|null)\b'
+[ "$fail" -eq 0 ] && ok "§2 the anchored body carries none of the four candidate-start mechanisms, on artifacts whose search carries each of them"
 
 # The same claim ONE LEVEL DOWN: the anchored machine must not even have a
 # stay-skip out of a state the SEARCH excludes for the prefilter's sake. This

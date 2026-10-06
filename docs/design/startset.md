@@ -11,6 +11,8 @@ SHAPE of `dfa_pfs[]` (it becomes engine-neutral and gains a VM consumer), so it
 needs a FULL D6 panel with distinct lenses (answer soundness, selection/axis
 semantics, the hybrid/VM consumer contract) before a line is built.
 
+**BUILD (lane `ssbuild3`, 2026-10-06): stage 3, THE DFA HAT, BUILT, abi -> 64** — `first-memchr-bounded`/`first-class-bounded` on the DFA route (F as §2 states it; the unbounded DFA forms do not exist, §6.4.3 item 3, asserted), `T = S ∩ E*` with the `T == S` build assertion, the CONDITIONAL re-seed through new wrapper emitters, `DfaPf.scan_set` so G1 and the re-seed density read `T`; ssedge's DFA-hat drafts moved home (`tests/startset/dfahat.rxt`, `reseed.rxt`, `hybrid.rxt`) plus `dfahat_paths.rxt`; sabotage S480-S490 and S504 (S481/S482 re-aimed at the bounded forms, S487/S489/S490 UNREACHED by construction); the count-collapsed failing witness `\B(a|b){1,3}` on "xa" reached through the differential's `-fprefilter-collapse` config; F3's Linux cells in `../dev/optloop/startset/alpha_s3.sh`. `docs/dev/lanes/ssbuild3_report.md`.
+
 **BUILD (lane `ssbuild2`, 2026-10-05): stage 2, THE VM HAT, BUILT, abi 61 -> 62** — `first-class` serving the VM route alone (Q-R5: the table form only; S479 UNREACHED behind an assertion), V as §2 states it, the seek after K73's offset-0 seek and before the first attempt and after each failed one, `-fno-start-set` (bit 47, in `strategy_denials`), `<PREFIX>_VM_START_SCAN` on every artifact; the edge cells `vmhat.rxt`/`giveup.rxt` moved into `tests/startset/`; the run_axes product arm; the every-startpos differential and start-byte oracle as standing checks; the mover manifests regenerated with the fixtures (+12/+13 rows, nothing else moved) and matched by ID. One finding against §6.1's "modulo the abi digit and the stamp": the hat's 256-entry table is K-invariant bytes the size term's materiality bar reads, so a borderline ladder pattern's unroll K can move (measured on a threshold-1000 reference compiler, 0 corpus patterns at the shipped threshold). `docs/dev/lanes/ssbuild2_report.md`.
 
 **BUILD (lane `ssbuild01`, 2026-10-05): stages 0 and 1 BUILT, zero movers, no abi event** — K84 fixed (`DfaPf.scan`), the `start_set` fact, the route mask, the FIND extraction, `tests/startset/` (C-SS\* et al.), the stage-1 census with per-block options (`startset/s1/`) and the stage-2/3 mover manifests (`tests/startset/manifests/`); sabotage S495, S501, S502 landed early on their stage-1 detectors. `docs/dev/lanes/ssbuild01_report.md`.
@@ -563,6 +565,22 @@ the formula under test. The table above therefore could not see sound-F1
 (learnings §3: the control shared its source with the subject).
 
 ### 4.1a The DFA-hat set, measured (rev 2, sound-F1; Q-R1)
+
+> **AMENDED 2026-10-06 (lane ssfix3, the ss3 D6 panel's BLOCKER sound-F1,
+> `docs/dev/reviews/2026-10-06-r-ss3-panel.md`).** The "structural fact"
+> below is FALSE. Its second bullet covers bytes that begin no thread, and a
+> byte of `S` can begin a thread on one seed and leave that thread's state
+> unchanged while also keeping every other seed where it is: in
+> `(?<=\w) *a`, a space keeps the non-word seed AND keeps the word-context
+> thread in ` *`, so `' ' ∈ S \ E*`. The 94-row population never held such a
+> machine. As built, `S ∩ E*` dropped that start byte and the `T == S` build
+> assertion refused the pattern at default flags. **The DFA hat now scans
+> `T = S`** (repair (b)): such a byte is outside `E`, so the admission
+> declines and the artifact is the plain row's. `dfa_estar` is gone; the
+> build guard is the re-seed's premise read off the machine
+> (`dfa_reseed_exact`). Retracting D148 addendum 1's "`S ∩ E*` ≡ `S` on every
+> seeded machine" is Frank's ruling; the text below is kept as the record of
+> what was measured.
 
 **The three candidate repairs** the manager asked to be compared:
 - (a) `T = S ∩ E*`, where `E*` is the union of the escape sets of every

@@ -1,0 +1,43 @@
+# tests/startset/dfahat_paths.rxt -- [START-SET] stage 3, THE DFA HAT's
+# LANDING-PATH witnesses (docs/design/startset.md §6.4.3 item 3). Hand-written
+# and python-verified (tests/harness/verify_rxt.py; libpcre2 agrees).
+#
+# The bounded skip lands two ways: on a byte of T (the HIT path) or, with no
+# such byte before n-1, at n-1 (the CLAMP path). Each landing re-seeds the
+# state from the byte before it. Under a PERMISSIVE context (`\b` alone) a
+# stale start state can only add a candidate the stepped loop rejects; under
+# a RESTRICTIVE one (`\B`, a negative lookbehind) it forbids a real start.
+# `\B(?<!a)d` (the one-byte `memchr` form) has the restrictive context and
+# its witnesses live in dfahat.rxt/reseed.rxt; this block is the SET form's
+# twin, the class `[de]`, so the clamp path of `first-class-bounded` has an
+# answer witness of its own (sabotage S483).
+
+# CLAMP path: the only T byte is the subject's LAST byte.
+pattern \B(?<!a)[de]
+features all
+ms 0 "xd" 1 2
+ms 1 "xd" 1 2
+ns 2 "xd"
+ms 0 "xxe" 2 3
+ns 0 "ad"
+ns 0 " d"
+# HIT path: a T byte before n-1.
+ms 0 "xdz" 1 2
+ms 0 "yez" 1 2
+ns 0 "adz"
+
+# F's NON-NULLABLE conjunct (sabotage S488). The erased language of this
+# pattern is nullable (the `\b\B` branch erases to empty), so the start set
+# declines it, while the machine itself cannot match empty (`\b\B` is never
+# true) and carries a seeded byte-class skip. Removing the conjunct admits it
+# as a mover: answer-equivalent here (a machine whose start state cannot
+# accept in any context has no empty match for a skip to pass), so this
+# block's job is to be in the corpus, where tests/startset/dfahat_checks.py
+# [dfa-movers] sees a mover the manifest's F does not admit.
+pattern \b\B|\b(?:ab|cd)
+features all
+ms 0 "ab" 0 2
+ms 0 "xab cd" 4 6
+ms 1 " ab" 1 3
+ns 0 "xab"
+ns 0 ""

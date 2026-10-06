@@ -962,6 +962,13 @@ declare -A GIVEUP1_ALLOWANCE=(
 # design's 11 corpus budget/gu movers read 0 here — their give-ups start on S
 # bytes). Keyed by the bare flag; a multi-flag job (the product arm's
 # `--engine=vm -fno-start-set`) inherits each component flag's entries.
+# Since stage 3 the flag ALSO removes the DFA hat (`first-memchr-bounded`/
+# `first-class-bounded`, tuning.md §2.42): a skip, so answer- and
+# give-up-identical by construction (the conditional re-seed restores the
+# state a search started at the landing would have), and no entry above is
+# the DFA hat's. Its movers ride this plain job at AUTO (`--engine=vm` has no
+# DFA scan), and the DFA-hat arm below the job loop counts and floors them
+# (the ss3 D6 panel's checks-M3).
     ["-fno-start-set|tests/startset/giveup.rxt:21"]="[START-SET] Q-R3 (tuning.md §2.42, match_api.md §3.1): the deny arm's attempt at a non-S byte exhausts budget frames=8 inside the lookahead and gives up; the hat skips that attempt and answers (libpcre2's unbounded answer). One direction only."
     ["-fno-start-set|tests/startset/giveup.rxt:22"]="[START-SET] Q-R3 (tuning.md §2.42, match_api.md §3.1): the deny arm's attempt at a non-S byte exhausts budget frames=8 inside the lookahead and gives up; the hat skips that attempt and answers (libpcre2's unbounded answer). One direction only."
     ["-fno-start-set|tests/startset/giveup.rxt:23"]="[START-SET] Q-R3 (tuning.md §2.42, match_api.md §3.1): the deny arm's attempt at a non-S byte exhausts budget frames=8 inside the lookahead and gives up; the hat skips that attempt and answers (libpcre2's unbounded answer). One direction only."
@@ -1839,6 +1846,38 @@ if [ -f "$WORKDIR/ss_vm_base.tsv" ] && [ -f "$WORKDIR/ss_vm_deny.tsv" ]; then
 fi
 
 # ============================================================================
+# [START-SET] stage 3, THE DFA HAT's population under the plain `-fno-start-set`
+# bit-axis job (the ss3 D6 panel's checks-M3). The product arm above counts the
+# VM hat only (`--engine=vm` has no DFA scan); the DFA hat's movers are reached
+# by the AUTO sweep, so its answer identity rides the plain job's comparison
+# against the default baseline, and this counts how much of that comparison
+# the DFA hat actually reached: the baseline's cases whose block is in the
+# stage-3 mover manifest (tests/startset/manifests/manifest_s3_dfa.tsv), held
+# to a floor so a sweep that stopped reaching the movers fails rather than
+# reading clean. Selected with the plain job (empty AXES= or `-fno-start-set`).
+# ============================================================================
+dfahat_verdict="not run (filtered out by AXES=)"
+if [ -z "$AXES" ] || case " $AXES " in (*" -fno-start-set "*) true ;; (*) false ;; esac; then
+    dh_movers="$(python3 "$SCRIPT_DIR/startset_arm.py" "$BASE_DUMP" \
+                    "$ROOT_DIR/tests/startset/manifests/manifest_s3_dfa.tsv" "$ROOT_DIR")"
+    dh_mc="$(echo "$dh_movers" | grep -oE 'mover_cases=[0-9]+' | cut -d= -f2)"
+    # K35 FLOOR: half the 1,378 DFA-hat mover cases at the ssfix3 panel fixes
+    # (71 corpus blocks in 18 files; it equals the static count of their case
+    # lines; docs/dev/lanes/ssbuild3_report.md, "Panel fixes (ssfix3)").
+    DH_MOVER_FLOOR="${DH_MOVER_FLOOR:-689}"
+    echo
+    echo "axes: [START-SET] DFA hat under -fno-start-set: ${dh_movers#startset arm: } (floor $DH_MOVER_FLOOR)"
+    if [ "${dh_mc:-0}" -lt "$DH_MOVER_FLOOR" ]; then
+        dfahat_verdict="FAIL — ${dh_mc:-0} DFA-hat mover cases in the baseline, below the floor $DH_MOVER_FLOOR"
+        echo "AXIS FAIL: [START-SET] $dfahat_verdict" >&2
+        fail=1
+    else
+        dfahat_verdict="OK — ${dh_mc} DFA-hat mover cases compared by the -fno-start-set job (floor $DH_MOVER_FLOOR)"
+    fi
+    echo "  $dfahat_verdict"
+fi
+
+# ============================================================================
 # SUMMARY
 # ============================================================================
 
@@ -1853,6 +1892,7 @@ echo "--vm-entry-shape tier: $_shape_tier"
 echo "DIAL-S3 (tune refusal-set, keyed): $dial_s3_verdict"
 echo "-futf-check arm (contract, own oracle): $utfcheck_verdict"
 echo "[START-SET] product arm (--engine=vm x -fno-start-set): $startset_verdict"
+echo "[START-SET] DFA hat population (-fno-start-set vs default): $dfahat_verdict"
 echo "HARNESS_BATCH: $HARNESS_BATCH"
 echo "total wall time: $((t_end - t_start))s"
 if [ "$fail" -ne 0 ]; then

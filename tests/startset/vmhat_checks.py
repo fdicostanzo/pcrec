@@ -24,7 +24,8 @@ basename in two directories so the `#include` line cannot differ.
     because no VM-route artifact without a prefilter can hand off.
 [vm-deny] THE DENY ARM IS TODAY'S EMITTER: its stamp reads `"none"` and it
     has no table or seek; a non-mover's default artifact is byte-identical to
-    its deny artifact; and a mover's default artifact, with the table, the
+    its deny artifact (a stage-3 DFA-hat mover excepted: its identity is
+    dfahat_checks.py's [dfa-deny]); and a mover's default artifact, with the table, the
     two seeks and the stamp value removed, IS its deny artifact (the hat adds
     exactly the seek and nothing else).
 [vm-table] on every mover, the emitted table EQUALS the `start_set` fact of
@@ -210,8 +211,9 @@ def corpus_checks():
                     None if r.get("fact") is None else len(r["fact"])))
         elif r["ntable"] or r["nseek"]:
             viol["iff"].append("%s: stamp none, %d table(s), %d seek(s)" % (key, r["ntable"], r["nseek"]))
+        dfahat = st.get("DFA_PREFILTER") in ("first-memchr-bounded", "first-class-bounded")
         if not r["deny_ok"] or r["st0"].get("VM_START_SCAN") != "none" or r["ntable0"] or r["nseek0"] \
-                or not r["deny_same"]:
+                or (not r["deny_same"] and not dfahat):
             viol["deny"].append("%s: deny compiled=%s stamp=%s table=%d seek=%d identical-after-strip=%s"
                                 % (key, r["deny_ok"], r["st0"].get("VM_START_SCAN"), r["ntable0"],
                                    r["nseek0"], r["deny_same"]))

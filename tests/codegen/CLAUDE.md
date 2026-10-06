@@ -3726,6 +3726,13 @@ must fire on `default`/`noprefilter`. `ctx-node-moved=` joins the (A) line.
 - `run_recursion_identity.sh`'s (B) pin re-pinned (see its comment).
 - S368's anchor re-aimed (the guard call gained its `anchored` argument).
 
+- **[START-SET] stage 3 (lane ssbuild3, 2026-10-06, abi 62 -> 64; 63 is
+  the memfn kit's R4a′):** `run_codegen_tests.sh`'s `ABI_EXPECT` 64 and its
+  ledger message; `run_dfa_stamps.sh` and `run_form_census.sh` learn the two
+  DFA-hat values (`first-memchr-bounded`, `first-class-bounded`) with two
+  witnesses; `run_recursion_identity.sh`'s (B) FILEPIN self-pinned. The cpset
+  manifest did not move (the digit is one width).
+
 - **[START-SET] stage 2 (lane ssbuild2, 2026-10-05, abi 62):**
   `run_codegen_tests.sh`'s `ABI_EXPECT` 62; `run_cpset_structure.sh`'s
   manifest re-recorded (ten rows +32, the `RX_VM_START_SCAN "none"` line; the

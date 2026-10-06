@@ -299,8 +299,11 @@ fi
 # `-fno-offset-skip` build of the SAME pattern emits the byte-class form and
 # therefore the escape set, so the two tables come from two builds and two
 # emitter paths. On `uuid` they must DIFFER: 16 hex bytes against 63 word ones.
+# `-fno-start-set` too since [START-SET] stage 3 (abi 64): without the offset
+# row `uuid` is a DFA-hat mover, whose skip scans `start_bytes` (the 16 hex
+# bytes, S) rather than the escape set this guard needs.
 if emit v1 '\b[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\b' \
-   && emit v2 '\b[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\b' -fno-offset-skip; then
+   && emit v2 '\b[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\b' -fno-offset-skip -fno-start-set; then
     a="$(sed -n '/rx_ofs_k0\[256\]/,/};/p' "$WORKDIR/v1.c" | tr -cd '0-9,')"
     b="$(sed -n '/rx_can_begin_match\[256\]/,/};/p' "$WORKDIR/v2.c" | tr -cd '0-9,')"
     na=$(printf '%s' "$a" | tr ',' '\n' | grep -c '^1$')

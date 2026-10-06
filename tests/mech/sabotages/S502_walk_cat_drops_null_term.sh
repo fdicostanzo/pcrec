@@ -11,10 +11,15 @@
 # at stage 1, so the plant moves no answer.
 SAB_ID="S502-walk-cat-drops-null-term"
 SAB_FILE="src/facts/startset.c"
-SAB_SUITES="startset"
+SAB_SUITES="startset vmhat dfahat"
 SAB_DESC="the start-set walk's A_CAT drops the null(l) ? F(r) term, so a nullable left factor hides the right factor's first bytes (the set is too small)"
 SAB_DOC_FIGURE="Validated by plant at landing (docs/dev/lanes/ssbuild01_report.md); read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S502."
-SAB_REACH='"$PCREC" --features all --emit-facts --pattern '\''a?bc'\'' | grep -q '\''^byte	start_set	pattern	E2	derived	no	2:'\'' && echo REACH-NULLABLE-LEFT'
+# RE-AIMED 2026-10-06 (lane ssbuild3): the probe no longer pins the listing's
+# `used` column -- stage 2's every-artifact RX_VM_START_SCAN stamp asks the
+# fact on every compile, so `used` reads `yes` since abi 62 and the `no` this
+# probe matched made the row read UNREACHED. Intent unchanged: the witness's
+# start set has two members.
+SAB_REACH='"$PCREC" --features all --emit-facts --pattern '\''a?bc'\'' | grep -q '\''^byte	start_set	pattern	E2	derived	[a-z]*	2:'\'' && echo REACH-NULLABLE-LEFT'
 SAB_REACH_EXPECT="REACH-NULLABLE-LEFT"
 SAB_EXPECT=DETECTED
 SAB_COUNT=1

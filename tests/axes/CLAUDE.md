@@ -558,6 +558,17 @@ bit. Because the VM hat reaches far more artifacts under `--engine=vm`
   their case lines). A single-directory subset breaches it by construction
   (`tests/startset/` reads 303), `-fprefilter`'s subset shape.
 
+**[START-SET] stage 3 (the DFA hat, lane ssbuild3; its population arm from
+the ssfix3 panel fixes, 2026-10-06, checks-M3).** `-fno-start-set` also
+removes the DFA hat, whose movers are reached only at AUTO (`--engine=vm` has
+no DFA scan), so the product arm's floor never measured them. A DFA-HAT ARM
+after the product arm counts the DEFAULT baseline's cases whose block is in
+`tests/startset/manifests/manifest_s3_dfa.tsv` (`startset_arm.py` with that
+manifest) and holds them to `DH_MOVER_FLOOR` (689: half the 1,378 mover
+cases of the 71 corpus blocks, equal to the static count of their case
+lines), so the plain job's answer identity over the DFA hat is a counted
+population. It runs with the plain job (empty `AXES=` or `-fno-start-set`).
+
 **A MULTI-FLAG JOB INHERITS EACH COMPONENT FLAG'S DOCUMENTED POPULATIONS**:
 `run_one_axis` unions `REFUSAL_PATTERN` and `GIVEUP1_ALLOWANCE` over the
 words of `$flags`, so the joined job reads `--engine=vm`'s refusals and
