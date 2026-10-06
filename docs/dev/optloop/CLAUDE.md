@@ -814,3 +814,11 @@ that cycle's analysis lands.
   captures over the found span).
 - `revend/` — its instruments and verbatim outputs. See its own `CLAUDE.md`.
 
+
+## [ARTREV]: bottom-up artifact review (D150, 2026-10-05)
+
+- `artrev/` — the experiment's charter (`charter.md`: restrictions, roles
+  and blindness, the harness-enforced iteration bounds, S0-S6, staging,
+  standing questions), and as it runs `selection.tsv`, per-artifact
+  `review.md`/`leads.tsv`/`iterations.tsv`/twin patches, the confirmer's
+  verdict tables and `report.md`. The harness lives in `studies/artrev/`.
