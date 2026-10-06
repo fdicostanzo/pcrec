@@ -185,7 +185,7 @@ python3 - <<PY
 import sys; sys.path.insert(0, "$HERE")
 import identity as I
 o = b"SI.f0t0\t0\t0\t-3\t-2\t-2\nSI.f1t0\t0\t0\t1\t0\t1\nF\t0\t0\t-2\t-2\t-2\nM\t0\t0\t-1\nN\t0\t0\t5\n"
-ok_t = b"SI.f0t0\t0\t0\t1\t0\t1\nSI.f1t0\t0\t0\t1\t0\t1\nF\t0\t0\t1\t0\t1\nF\t0\t5\t0\t-2\t-2\nM\t0\t0\t-1\nN\t0\t0\t5\n"
+ok_t = b"SI.f0t0\t0\t0\t1\t0\t1\nSI.f1t0\t0\t0\t1\t0\t1\nF\t0\t0\t1\t0\t1\nF\t0\t5\t0\t-2\t-2\nF\t0\t9\t-3\t-2\t-2\nM\t0\t0\t-1\nN\t0\t0\t5\n"
 g = I.giveup_compare(o, ok_t)
 assert not g["fails"], g["fails"]
 assert len(g["repairs"]) == 2 and len(g["twin_only"]) == 1, (len(g["repairs"]), len(g["twin_only"]))

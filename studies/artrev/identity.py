@@ -600,7 +600,10 @@ def giveup_compare(otext, ttext):
         fam = _family(k[0])
         if fam in ("F", "FSI", "FC") and int(k[1]) in repaired_walks:
             for y in td[k]:
-                res["twin_only"].append((k[0], int(k[1]), int(k[2]), y))
+                if _rc(y.split(b"\t")) in GIVEUP:
+                    res["n_twin_walk_giveup"] = res.get("n_twin_walk_giveup", 0) + 1   # a give-up in a walk the original never reached
+                else:
+                    res["twin_only"].append((k[0], int(k[1]), int(k[2]), y))
         else:
             res["fails"].append(("line only in the twin transcript", b"<missing>", td[k][0]))
     return res
