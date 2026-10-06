@@ -427,6 +427,13 @@ is EXPECTED to time out"*, and neither would a separate arm.
   other arm is green on it by construction. Rows S510 (rule 1, a `memchr(`
   planted in an unlisted function), S511 (rule 4, a stale pending row),
   S512 (the K35 row floor).
+- `memfnstamps` → `tests/memfn/run_libc_census.sh --quick` ([MEMFN] R4a′,
+  lane memfnstamp, 2026-10-05): C11, the kit's two every-artifact stamps.
+  Builds nothing itself (reads the sabotaged tree's build/pcrec); about 15 s.
+  A wrong `<PREFIX>_MEMFN_LIBC` value moves no answer, so every answer arm is
+  green on it by construction. Rows S513 (a name dropped), S514 (a name
+  added), S515 (the idiom-`memcpy` exclusion broken), S516 (the VM family's
+  mark dropped), S517 (`memcmp` dropped).
 - (no new arm) [OPT-VEDGE] row S440 (lane vedge, 2026-10-03) is on
   `harness`, scoped to `tests/assertions`: the reverse machine handed
   `end_is_exit = true` loses matches on view_edge.rxt's direction witness.

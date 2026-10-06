@@ -205,3 +205,103 @@ pointer when a kit change merges to main.
 - Landing run (Mac suite lock, detached): sweep 0 artifact movers vs
   main; make test 52/52, red only on run_inline_capability (darwin nm,
   pre-existing). R-3 R4a `done:` posted.
+
+## 2026-10-05 — R4a′ built except the abi bump (lane memfnstamp, merged into lane/memfn-r4a2)
+
+- Both stamp lines are on every artifact, after `<PREFIX>_RUN_WORDS`.
+  pcrec's finishing pass (`src/gen/memfn_stamps.c`) inventories the
+  whole artifact's libc calls, and the kit renders the lines through
+  `mf_stamps`.
+- C11, `make test-memfn-stamps`: 918 artifacts, 0 failed, ~35 s. Its
+  control is `nm -u` of an `-O0 -fno-builtin` compile; the idiom
+  exclusion goes through a compiler prelude and shares no list with the
+  producer. The FORMS half is UNREACHED.
+- S513-S517 all DETECTED. Spec hunk: match_api §6.3.
+- Census vs 090020a2: every artifact moved by exactly the two lines,
+  with one reviewed extra. `RX_VM_PREFILTER_WHY` on
+  uprops/size_ladder_prefilter_drop quotes the measured size of the
+  discarded hybrid attempt, 1028494 → 1028553. No test pins it; the
+  classifier names it. Main must see it.
+- Re-pins: m5_stage1_stamps (12), the resource pin 762665, the
+  recursion-identity FILEPIN.
+- WAITING: START-SET stage 2 (abi 62) to merge to main. Then: merge main
+  ALONE, then the bump to 63 + grep-found re-pins as the LAST commit
+  (memfnstamp_report.md §8 is the procedure), the census with `--abi
+  62:63`, and the Linux make test via main's executor by day. Main reset
+  its context at 2026-10-05 ~23:00; its wake.md records this.
+
+## 2026-10-05 — worktree cleanup (Frank OK'd)
+
+- Main's wtprune (23:19) had already removed the merged kit lanes, so no
+  --apply was needed. memfnstamp waits for R4a′ on main. The nested G2
+  worktree + cell can't be managed by wtprune; that is with main.
+  Lesson: mk_d27_cell.sh run from inside worktrees/memfn nests the cell
+  there.
+
+## 2026-10-05 — lesson: D27 cells must not nest (main agrees)
+
+- Running `scripts/mk_d27_cell.sh` from inside worktrees/memfn nested the
+  G2 worktree and cell there. wtprune refuses nested worktrees, so a raw
+  removal (Frank's, on his morning list) is needed.
+- The script cuts the cell from HEAD of the tree it is run in. So running
+  it from the main tree tests MAIN, not unmerged kit code. Rule for the
+  next kit cell:
+  - if the code under test is already on main, run it from the main
+    tree;
+  - if it is only on the kit branch, ask main for a base-ref option on
+    mk_d27_cell.sh (cell from `lane/memfn-*`, placed directly under
+    worktrees/) before briefing the author.
+  Never nest.
+- main removed memfn-r4b2-results (byte-identical to the archived
+  probes/out/twins/r4b/linux/).
+
+## 2026-10-06 — box rule: lanes' long runs take the Mac suite lock
+
+- The pcrec manager's rule: a kit lane's recursion-identity or any
+  multi-section run takes worktrees/.mac-suite.lock (directory form,
+  owner file) and releases it on exit. Other lanes (ssbuild3, ARTREV
+  timing) wait on it. My briefs had said "do NOT take the lock", which was
+  wrong for long runs. memfnbump was corrected mid-run. From now on every
+  kit brief says: single quick sections need no lock; long or
+  multi-section runs take it.
+
+## 2026-10-06 — R4a′ complete on the Mac; Linux verdict owed
+
+- memfnbump merged (49ace440).
+  - Commit 1 re-measured the pins on the merged tree: m5 ×12, the
+    resource pin 762697, the FILEPIN, and run_size_term's cap
+    31,900→32,300. That witness had lost its headroom to the stamps
+    since UTF-VALID; the cap was bisected and derived (D149).
+  - The abi bump 62→63 is the last code commit, with every reader found
+    by six greps, and a FILEPIN self-pin after it.
+- Census vs 57db5152: CLEAN pre- and post-bump (two lines + the abi
+  digit + the one named VM_PREFILTER_WHY value).
+- Mac suites green except the darwin nm red. recursion-identity 16/0.
+  S513-S517 DETECTED.
+- Collision recorded: memfnbump's chain ran without the suite lock while
+  ssbuild3 held it (my brief's fault). Correctness-only; main ruled to
+  let it finish.
+- OWED: Linux make test via main's executor (by day), with the census
+  on Linux too. Then the R4a′ done:.
+
+## 2026-10-06 — first kit session ends (context reset at Frank's request)
+
+- Delivered this session:
+  - R-1, the fused scan+verify probe; Linux verdict: R4d's trigger is
+    MET on union-select;
+  - R-2: integration.md rev 4.5→4.6, panel r5 with one blocker fixed,
+    and Q53-Q55, now ruled as D147 addendum 10;
+  - R-3 part 1, R4a: the kit skeleton, manifest + C17, the blinded G2
+    (F1-F3 found and fixed), rev 4.7 — all on main;
+  - R-3 part 2, R4a′: the stamps' abi event (abi 63), complete on the
+    Mac and awaiting main's morning Linux make test.
+- Lessons kept:
+  - blinded authors find what implementers' smoke tests miss (G2);
+  - checks catch refactors on their first merge (C17 on START-SET's FIND);
+  - sabotage ids and abi numbers serialize through main;
+  - long lane runs take the Mac suite lock;
+  - never nest a D27 cell;
+  - critics write their findings to a file;
+  - Frank: tuning constants are suspect (D149).
+- The next session wakes from memfn/docs/wake.md (current as of
+  eef95511) and waits for main's Linux results to post R4a′'s done:.

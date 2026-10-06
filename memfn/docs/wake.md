@@ -54,39 +54,49 @@ the current state, never a history (the history is `journal.md`).
   by grep, the stamp values, the spec hunk and G1 at both layers, all in
   the SAME commit.
 
-## 4. Current state
+## 4. Current state (2026-10-06, overnight)
 
-- **Kit code:** none. The next code step is R4a (the skeleton), to be
-  filed as R-3 after Frank rules Q53-Q55.
-- **Requests:** R-1 DONE (merged 348c0a49). R-2 DONE (merged 2ed263a7).
-  No open request.
-- **Open questions (Frank, relayed by main 2026-10-05):** Q53 (the libc
-  record), Q54 (N7 pending), Q55 (the plan at SIMD-off). The kit's
-  recommendations are in `docs/dev/reviews/2026-10-05-r5-memfn-rev45.md`
-  (last section) and in `responses.md` R-2 done:.
-- **Design of record:** integration.md rev 4.6.
-- **Measured facts to carry into R4d:**
-  - the R4d trigger is MET at SIMD-off on union-select;
-  - the lead order is part of R4d's one form, lead-first;
-  - `swar` scans at ~0.18 ns/B and loses on early-hit single gate calls
-    on dense text (a Q48 candidate, judged at R4d's G1);
-  - its 2x unroll is an `UNMEASURED DEFAULT:`.
-  Source: `docs/dev/lanes/memfnr4b_report.md` §9.
-- **For R4c/R4d (noted by main):**
-  - A4: ~28 mech rows anchored in M1 emitters are re-pointed in R4c's
-    REPLACE commit;
-  - A3: `@idx`/`REQ_BYTE`/[OPT-REQPOS] are re-specced as pcrec's pick
-    in R4d's D80 hunk;
-  - A1: the set-leads lead is REQUIRED on no-DFA routes.
-- **Defects:** none open.
-- **In flight:** nothing. No lane is running and no box run is owed.
-  Old lane worktrees (memfnr4b, memfnr45, memfnr46) remain under
-  `worktrees/`. Their branches are merged; removing them is main's
-  call (worktree rm is not covered by the merge permission).
+- **Branch:** `lane/memfn-r4a2` @ 193dacbd (code ends at 49ace440), in
+  `worktrees/memfn`. **R4a′ is COMPLETE on the Mac and handed to main**
+  for the Linux verdict. It is queued for MORNING (the box is the bench's
+  until 08:00).
+  - The command block is docs/dev/lanes/memfnbump_report.md §6,
+    re-pointed at lane/memfn-r4a2 in my message to main.
+  - Main sends back the trailer, the `*** [test-` grep and the census
+    tail; then I post R4a′'s `done:` in responses.md.
+  - Main then reviews the diff against R-3, merges it to main as abi 63,
+    and sends the bench inbox note.
+  - START-SET stage 3 (abi 64) stacks on top and will not merge first.
+- **Merged to main:** R-1, R-2, R-3 part 1 (R4a).
+- **R4a′ facts:**
+  - the census is CLEAN vs 57db5152: two lines + the abi digit + one
+    named VM_PREFILTER_WHY value, which main accepted;
+  - run_size_term's cap is 31,900→32,300 (derived, ~390 B of headroom;
+    main records the erosion as a standing fact);
+  - C11 = test-memfn-stamps; S513-S517 are used.
+- **Sabotage ids:** they serialize through main. The kit's block is
+  S510-S529; the next free is S518.
+- **Box rule:** a lane's long or multi-section Mac run takes
+  worktrees/.mac-suite.lock (directory + owner file, released on exit);
+  quick single sections don't need it.
+- **Owed:**
+  - G2 coverage of the newly refused shapes. A blinded cell runs from
+    the MAIN tree once that code is on main; never nest a cell;
+  - Q-G2-5 (M3);
+  - main's `--base REF` option for mk_d27_cell.sh, built when a
+    kit-branch-only cell is chartered.
+- **Leftover worktrees:** `memfnstamp`, `memfnbump` (prune via
+  `scripts/wtprune` once R4a′ is on main); the nested
+  `worktrees/memfn/worktrees/memfng2` + `-cell` (on Frank's list; raw
+  remove only); `memfnk0r3` (pre-kit, unmerged; ask Frank).
 
 ## 5. Next actions
 
-1. Wait for R-3 (R4a) in `requests.md`. Ack it, and re-cut the branch
+1. Wait for main's "stage 2 landed" ping. Then merge main into
+   `lane/memfn-r4a2` ALONE, make the bump to 63 + re-pins as the LAST
+   commit, re-run the census with `--abi 62:63`, and send main the Linux
+   make test (by day).
+   (Old step, kept for reference:) Wait for R-3 (R4a) in `requests.md`. Ack it, and re-cut the branch
    if main has moved (or merge main into `lane/memfn-r4a` ALONE in its
    own command, then `make strict`).
 2. R4a is the kit's first CODE: `memfn.h`, the `mf_*` entry points, the

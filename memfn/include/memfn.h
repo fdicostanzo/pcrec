@@ -298,6 +298,7 @@ typedef struct mf_art mf_art;   /* one per Job ATTEMPT (the size ladder re-emits
 #define mf_flush_helpers  MF_NS(flush_helpers)
 #define mf_includes       MF_NS(includes)
 #define mf_stamps         MF_NS(stamps)
+#define mf_art_note_libc  MF_NS(art_note_libc)
 #define mf_vocab_has      MF_NS(vocab_has)
 #define mf_options        MF_NS(options)
 #define mf_opts_check     MF_NS(opts_check)
@@ -325,7 +326,24 @@ int mf_call  (mf_art *, uint32_t handle, const mf_hooks *, mf_sink *body);
 
 int      mf_flush_helpers(mf_art *, mf_sink *file_scope);
 uint32_t mf_includes(const mf_art *);          /* MF_INC_* bits             */
-int      mf_stamps(const mf_art *, mf_sink *); /* the kit's stamps, via sink->stamp */
+/* The kit's two stamps, each through ONE sink->stamp(name, value) call, in
+ * this order (integration.md §R4.3.3; D147 addendum 10, Q53/Q55):
+ *   MEMFN_FORMS  "none": no form differs from its SIMD-off rendering. Constant
+ *                on every default artifact until R4f (Q55); a SIMD form's id
+ *                list is that step's work.
+ *   MEMFN_LIBC   "none", or the libc function names noted on this art,
+ *                sorted (strcmp order), deduplicated, comma-joined with no
+ *                space: "memchr,memcmp". A SOURCE-LEVEL INVENTORY: a name is
+ *                listed whether or not the compiler later inlines the call.
+ * Neither carries a kit version or MF_VOCAB (§18.1). */
+int      mf_stamps(const mf_art *, mf_sink *);
+/* Records that the artifact's text calls libc function `name` (§R4.3.3
+ * "Coverage": the writer for every call the kit did not render itself).
+ * Idempotent per name. CHOSEN: `name` must be a C identifier; anything else
+ * is refused loudly, because it lands inside a C string literal. The caller
+ * applies the record's one exclusion (a `memcpy` of a constant 1-8 bytes is
+ * a register load, not a call) before noting. */
+int      mf_art_note_libc(mf_art *, const char *name);
 
 /* 1 iff the vocabulary renders (op, handoff) over the given MF_TK_* term
  * kinds in at least one form. pcrec checks DELEG_SITES against it. */

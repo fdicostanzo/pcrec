@@ -321,7 +321,7 @@ TEST_SECTIONS := test-corpus test-cli test-reject test-registry test-parse \
       test-entry-shape-identity test-cpset-structure test-startbnd \
       test-uprops test-core test-vars test-examples test-findings test-ucp \
       test-clskit test-encoding-checks test-utfcheck test-startset test-memfn-link \
-      test-memfn-manifest test-memfn-g2
+      test-memfn-manifest test-memfn-g2 test-memfn-stamps
 
 # [CHK-2 trailer] `test:` STOPPED being purely prerequisite-based here
 # (2026-08-26, manager finding, journal part 7): under `make -j12 test`,
@@ -1209,6 +1209,14 @@ test-memfn-link: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-memfn-link.ran"; fi
 	bash tests/memfn/run_link_checks.sh
 
+# [MEMFN] R4a′: C11, the stamps' census — every artifact of a deterministic
+# corpus-wide sample (five streams) carries <PREFIX>_MEMFN_FORMS "none" and a
+# <PREFIX>_MEMFN_LIBC equal to the libc calls of its `-O0 -fno-builtin`
+# object (`nm -u`), with K35 floors. About 40 s on the Mac.
+test-memfn-stamps: all
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-memfn-stamps.ran"; fi
+	CC="$(CC)" TMPDIR=$${TMPDIR:-/var/tmp} bash tests/memfn/run_libc_census.sh
+
 # [MEMFN] R4a: G2, the kit's own tests (memfn/tests/, D27-blinded lane
 # memfng2): the kit's rendered text against G2's own byte loop over a
 # generated site space, with its planted-defect witnesses. The section runs
@@ -1765,7 +1773,7 @@ clean:
         test-prefilter-collapse test-rxtsource test-definitions \
       test-entry-shape-identity test-cpset-structure \
         test-encoding-checks test-startbnd test-utfcheck test-memfn-link test-core test-examples test-clskit \
-        test-memfn-manifest test-memfn-g2 test-memfn-g2-full \
+        test-memfn-manifest test-memfn-g2 test-memfn-g2-full test-memfn-stamps \
         test-startset \
         smoke hooks strict testscripts ubsan asan san lint alloc mech bench \
         fuzz clean

@@ -50,7 +50,7 @@
  * abi ritual fires next, bump this ONE constant; grep for its old value
  * finds both emission sites plus every out-of-tree reader the ritual's own
  * site list already enumerates. */
-#define PCREC_ARTIFACT_ABI 62
+#define PCREC_ARTIFACT_ABI 63
 
 /* Renders one byte of pattern-derived text safely into a C block comment, escaping whatever would close or falsely open the comment.
  *
@@ -10416,6 +10416,7 @@ void pcrec_emit_dfa(Ctx *cx)
     emit_in_entry_defs(c, g.searchfn, g.matchfn, g.matchcapsfn, cx->opt->prefix);
     pcrec_sb_puts(c, "\n");
     pcrec_emit_runcmp_stamp(cx, c, g.upper);
+    pcrec_emit_memfn_mark(c);
     pcrec_emit_residual(cx);
     {
         /* The DFA artifact's stamp: it cannot backtrack, cut, or scan

@@ -57,6 +57,8 @@ struct mf_art {
     site_rec   *sites;          /* handle h is sites[h - 1]; 0 is no handle   */
     uint32_t    nsites, cap;
     uint32_t    includes;       /* MF_INC_* the rendered text needs           */
+    const char **libc;          /* noted libc names, sorted, distinct (§R4.3.3) */
+    uint32_t    nlibc, libc_cap;
     char        err[256];
 };
 

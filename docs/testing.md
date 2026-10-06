@@ -713,6 +713,12 @@ this table's method; Mac dev box, so directional):**
   Its opt-in twin `test-memfn-g2-full` (gcc + clang at full subjects,
   every witness on every batch) took 538 s, and is never part of
   `make test`.
+- `test-memfn-stamps` ([MEMFN] R4a′, lane memfnstamp, 2026-10-05): about
+  **40 s** wall (one run, gcc-16, `all` up to date). It is C11,
+  `tests/memfn/run_libc_census.sh`: 918 artifacts of a deterministic
+  corpus sample (five streams), each emitted, compiled `-O0 -fno-builtin
+  -c` and read with `nm -u`, at 8 jobs. `--quick` (the default-engine
+  stream alone, the mech solos' form) is about 15 s.
 
 **RE-RECORD TRIGGER**: re-measure a section (same method: 3 runs, per-run
 load-before/after sampling, `TMPDIR=/var/tmp`) whenever its runtime doubles
