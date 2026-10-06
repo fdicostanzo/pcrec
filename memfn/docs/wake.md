@@ -54,28 +54,41 @@ the current state, never a history (the history is `journal.md`).
   by grep, the stamp values, the spec hunk and G1 at both layers, all in
   the SAME commit.
 
-## 4. Current state (2026-10-05, late)
+## 4. Current state (2026-10-06, overnight)
 
-- **Branch:** `lane/memfn-r4a2` (R4a′), in `worktrees/memfn`.
-- **Done and merged to main:** R-1, R-2, R-3 part 1 (R4a: the kit
-  skeleton, manifest + C17, G2, fixes; integration.md rev 4.7).
-- **R4a′ (R-3 part 2):** built and Mac-validated EXCEPT the abi bump.
-  - It lands at abi **63**, AFTER START-SET stage 2 (abi 62, lane
-    ssbuild2) merges to main.
-  - The procedure is `docs/dev/lanes/memfnstamp_report.md` §8.
-  - The census has one reviewed extra mover (`RX_VM_PREFILTER_WHY` on
-    uprops/size_ladder_prefilter_drop), which must be named to main.
-- **Sabotage ids:** they serialize through the pcrec manager. The kit's
-  block is S510-S529; S510-S517 are used, so the next free is S518.
-- **Defects:** none open. **Owed:** G2 coverage of the newly refused
-  shapes (blinded author); Q-G2-5 (M3); bench I-128/I-129 (main).
-- **Leftover worktrees:** main's 23:19 wtprune removed the merged kit
-  lanes. Kept: `memfnstamp`, prunable via `scripts/wtprune --apply
-  memfnstamp` once R4a′ is on main. `worktrees/memfn/worktrees/memfng2`
-  + `memfng2-cell` are NESTED, so wtprune refuses them and raw remove is
-  off-limits to both sessions: FRANK runs the removal (`git -C /Users/fdicostanzo/pcrec worktree remove worktrees/memfn/worktrees/memfng2` and `rm -rf worktrees/memfn/worktrees/memfng2-cell`). `memfnk0r3` (pre-kit, UNMERGED, 620197f4) is the kit's to dispose of only after checking it is dead; ask Frank. Lesson:
-  never run mk_d27_cell.sh from inside the kit worktree (it nests the
-  cell).
+- **Branch:** `lane/memfn-r4a2` @ 193dacbd (code ends at 49ace440), in
+  `worktrees/memfn`. **R4a′ is COMPLETE on the Mac and handed to main**
+  for the Linux verdict. It is queued for MORNING (the box is the bench's
+  until 08:00).
+  - The command block is docs/dev/lanes/memfnbump_report.md §6,
+    re-pointed at lane/memfn-r4a2 in my message to main.
+  - Main sends back the trailer, the `*** [test-` grep and the census
+    tail; then I post R4a′'s `done:` in responses.md.
+  - Main then reviews the diff against R-3, merges it to main as abi 63,
+    and sends the bench inbox note.
+  - START-SET stage 3 (abi 64) stacks on top and will not merge first.
+- **Merged to main:** R-1, R-2, R-3 part 1 (R4a).
+- **R4a′ facts:**
+  - the census is CLEAN vs 57db5152: two lines + the abi digit + one
+    named VM_PREFILTER_WHY value, which main accepted;
+  - run_size_term's cap is 31,900→32,300 (derived, ~390 B of headroom;
+    main records the erosion as a standing fact);
+  - C11 = test-memfn-stamps; S513-S517 are used.
+- **Sabotage ids:** they serialize through main. The kit's block is
+  S510-S529; the next free is S518.
+- **Box rule:** a lane's long or multi-section Mac run takes
+  worktrees/.mac-suite.lock (directory + owner file, released on exit);
+  quick single sections don't need it.
+- **Owed:**
+  - G2 coverage of the newly refused shapes. A blinded cell runs from
+    the MAIN tree once that code is on main; never nest a cell;
+  - Q-G2-5 (M3);
+  - main's `--base REF` option for mk_d27_cell.sh, built when a
+    kit-branch-only cell is chartered.
+- **Leftover worktrees:** `memfnstamp`, `memfnbump` (prune via
+  `scripts/wtprune` once R4a′ is on main); the nested
+  `worktrees/memfn/worktrees/memfng2` + `-cell` (on Frank's list; raw
+  remove only); `memfnk0r3` (pre-kit, unmerged; ask Frank).
 
 ## 5. Next actions
 
