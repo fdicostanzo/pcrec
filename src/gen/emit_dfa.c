@@ -4969,7 +4969,7 @@ typedef struct DfaPf {
                      const char *ind, bool entry);
     /* [START-SET] stage 3: THE SET THIS ROW'S SKIP SCANS, where it is not
      * the start state's escape set `UnanchStart.cand` (NULL == it is). The
-     * DFA hat's rows scan `T = S ∩ E*` instead, and every reader of the
+     * DFA hat's rows scan `T = S & E*` instead, and every reader of the
      * scanned set — the emitted table or `memchr` byte, G1's dominance
      * (`dfa_cand_scan`), the re-seed density (`pcrec_dfa_cand_ppm`) — asks
      * the row through `pf_scan_set_of`, so none of them can price `E` for a
@@ -6574,7 +6574,7 @@ static void pf_emit_ofs_bounded(StrBuf *c, const DfaForm *f)
  * computes at a startpos one past `b` (minimized states are equal iff their
  * futures are). By induction over the skipped run the landing state is
  * `seed[class(s[q - 1])]` iff every skipped byte is outside `S`, i.e. iff
- * `T ⊇ S`. `E` plays no part in soundness, only in admission and cost.
+ * `T` holds all of `S`. `E` plays no part in soundness, only in admission and cost.
  *
  * WHY THE RE-SEED IS CONDITIONAL (§6.4.3 item 1, a soundness requirement,
  * not a hedge): it fires only where the skip MOVED. At a landing equal to
@@ -6611,20 +6611,20 @@ static void dfa_estar(const Dfa *d, uint8_t out[256])
 }
 
 /* F, THE DFA HAT's predicate core (startset.md §2 F, rev 2), and the set it
- * scans: fills `*t` with `T = S ∩ E*` and answers whether a DFA-hat row may
+ * scans: fills `*t` with `T = S & E*` and answers whether a DFA-hat row may
  * replace the plain skip. Each conjunct with the sabotage row that removes it:
  *   - the FORWARD scan, a DFA route, with a plain skip to replace
  *     (`UnanchStart.kind`, which already carries `unanch_start`'s proof that
  *     the start state cannot accept while parked) — the offset rows sit above;
  *   - SCAN KIND: the unanchored forward scan (`ENG_UNANCH`). `\G` and `(?m)^`
  *     machines take the attempt scan and are out (sound-F7; S490);
- *   - SEEDED: an unseeded machine has `E ⊆ S`, so `T == E` (C-SS*; S487 ships
+ *   - SEEDED: an unseeded machine has `E` within `S`, so `T == E` (C-SS*; S487 ships
  *     UNREACHED by construction);
  *   - NECESSARY: `S` not nullable — the erased language's bit, never the
  *     `nullable` fact — and fewer than 256 members (S488; S489 UNREACHED);
  *   - ADMISSION: `T` a non-empty PROPER subset of `E` (Q-R1). Where `T == E`
  *     the row is transparent and the plain row's artifact is byte-identical.
- *     (D149) `T ⊊ E` with NO MARGIN is an UNMEASURED DEFAULT: a one-byte
+ *     (D149) `T a proper subset of E` with NO MARGIN is an UNMEASURED DEFAULT: a one-byte
  *     narrowing (float-literal 11 -> 10) still moves; F3 at the null cells
  *     measures it.
  * Then two ASSERTIONS, each a contradiction rather than a decline: `views`
@@ -6650,7 +6650,7 @@ static bool pf_dfa_start_set(const DfaSel *s, CandSet *t)
     for (int b = 0; b < 256; b++) {
         tv[b] = (uint8_t)(ss_has(ss, b) && es[b]);
         nt += tv[b];
-        if (tv[b] && !u->cand.set[b]) return false;   /* T ⊄ E: not a narrowing */
+        if (tv[b] && !u->cand.set[b]) return false;   /* T not within E: no narrowing */
         if (!tv[b] && u->cand.set[b]) proper = true;
     }
     if (nt == 0 || !proper) return false;
@@ -6658,7 +6658,7 @@ static bool pf_dfa_start_set(const DfaSel *s, CandSet *t)
         pcrec_ctx_fail(s->cx, 0, "internal error: a seeded machine without the "
                        "D11 bound reached the DFA hat (startset.md §6.4.3 item 3)");
     if (nt != ns)
-        pcrec_ctx_fail(s->cx, 0, "internal error: the DFA hat's T = S ∩ E* "
+        pcrec_ctx_fail(s->cx, 0, "internal error: the DFA hat's T = S & E* "
                        "dropped %d start-set byte(s) on a seeded machine "
                        "(startset.md §4.1a)", ns - nt);
     cand_derive(t, tv, 0);

@@ -32,7 +32,10 @@ population fails rather than reading clean.
 STAGE 3, THE DFA HAT (`HAT=dfa`): the same differential over the stage-3
 manifest's corpus rows (`manifest_s3_dfa.tsv`) x {own options,
 `--no-captures` (a hybrid mover's own DFA build), `-fprefilter-collapse` (a
-hybrid mover's COUNT-COLLAPSED prefilter, sound-F5(d)'s population)}; its
+hybrid mover's COUNT-COLLAPSED prefilter, sound-F5(d)'s population), and on a
+utf8 mover `-futf-check` (D133: the deny arm's PCREC_ERR_UTF, which
+tests/utfcheck pins to libpcre2, must survive the hat -- the skip runs after
+the entry prologue's `rx_valid_upto`, sabotage S504)}; its
 sweep alphabet also carries up to two bytes of the deny arm's `E` outside S
 (read off `pa`'s emitted tables, startset_lib.machine_sets): the bytes a skip
 passes that MOVE the left context, which is what the re-seed exists for.
@@ -190,10 +193,14 @@ def main():
         for b in blocks:
             if (b["id"], " ".join(b["args"])) not in want:
                 continue
-            cfgs = ((("auto", b["args"]), ("nocaps", b["args"] + ["--no-captures"]),
-                     ("collapse", b["args"] + ["-fprefilter-collapse"])) if HAT == "dfa" else
-                    (("auto", b["args"]), ("vm", vm_args(b["args"])),
-                     ("nocaps", b["args"] + ["--no-captures"])))
+            if HAT == "dfa":
+                cfgs = [("auto", b["args"]), ("nocaps", b["args"] + ["--no-captures"]),
+                        ("collapse", b["args"] + ["-fprefilter-collapse"])]
+                if "--encoding=utf8" in b["args"]:
+                    cfgs.append(("utfcheck", b["args"] + ["-futf-check"]))
+            else:
+                cfgs = [("auto", b["args"]), ("vm", vm_args(b["args"])),
+                        ("nocaps", b["args"] + ["--no-captures"])]
             for cfg, args in cfgs:
                 jobs.append((b["id"], b["pattern"], args, cfg, td))
         if os.environ.get("SHARD"):
