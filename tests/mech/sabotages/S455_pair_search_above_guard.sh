@@ -11,8 +11,9 @@
 # "no memchr above the while" check, and under make ubsan/asan the [K27]
 # pair-arm NULL driver and reqcube.rxt's short-subject block. (Design's
 # provisional S454.)
+# RE-AIMED 2026-10-06 ([MEMFN] R4c REPLACE, lane r4ccore): the pair arm is the kit's (pair_body); the search text moved into the kit; the plant is the same defect in the kit's transcription of the form.
 SAB_ID="S455-pair-search-above-guard"
-SAB_FILE="src/gen/emit_dfa.c"
+SAB_FILE='memfn/src/ofsskip.c'
 SAB_SUITES="codegen"
 SAB_DESC="the pair arm's two searches are hoisted above the block's 'while (pos + maxk < n)' guard, so a subject shorter than the run makes memchr read with a wrapped length and a NULL subject reaches memchr"
 SAB_DOC_FIGURE="Validated by plant at landing (docs/dev/lanes/c3build_report.md); read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S455."
@@ -20,9 +21,9 @@ SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "(?i)sele
 SAB_REACH_EXPECT="REACH-PAIR-ARM"
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    pcrec_sb_puts(c, "    size_t ha = 0, hb = 0;\n"
-                     "    int fresh = 1;\n");'
-SAB_AFTER='    pcrec_sb_printf(c, "    size_t ha, hb;\n    int fresh = 0;\n"   /* SABOTAGE S455 */
-                     "    { const void *q = memchr(subject + %s, %d, %s); ha = q ? (size_t)((const unsigned char *)q - subject) : n; }\n"
-                     "    { const void *q = memchr(subject + %s, %d, %s); hb = q ? (size_t)((const unsigned char *)q - subject) : n; }\n",
-                     at, a, len, at, b, len);'
+SAB_BEFORE='    o->puts(o->u, "    size_t ha = 0, hb = 0;\n"
+                  "    int fresh = 1;\n");'
+SAB_AFTER='    kit_out(o, "    size_t ha, hb;\n    int fresh = 0;\n"   /* SABOTAGE S455 */
+               "    { const void *q = memchr(subject + %s, %d, %s); ha = q ? (size_t)((const unsigned char *)q - subject) : n; }\n"
+               "    { const void *q = memchr(subject + %s, %d, %s); hb = q ? (size_t)((const unsigned char *)q - subject) : n; }\n",
+               at.p, a, len.p, at.p, b, len.p);'

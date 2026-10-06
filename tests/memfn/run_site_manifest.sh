@@ -24,9 +24,10 @@
 #   - rule 2 (the dynamic half) keys on `\bmf_(define|emit)\s*\(` (the kit's
 #     API; `mf_emit_site` was a rev-3 name that names nothing) and counts the
 #     sites rendered over a corpus compile pass against the `delegated` rows
-#     (tests/memfn/site_census.py). It is declared UNREACHED, loudly, while no
-#     pcrec source calls the kit and no row is delegated; the machinery is
-#     proven on a synthetic caller every run (the `selftest:` lines).
+#     (tests/memfn/site_census.py), through pcrec's door(s) to the builders
+#     behind them. LIVE since R4c; it was declared UNREACHED, loudly, while no
+#     pcrec source called the kit and no row was delegated; the machinery is
+#     also proven on a synthetic caller every run (the `selftest:` lines).
 #
 # Usage: bash tests/memfn/run_site_manifest.sh [ROOT]
 #   ROOT defaults to the tree this script sits in (the mech driver runs the

@@ -27,8 +27,7 @@
  * size measurement, so the size term measures the artifact it ships. */
 #include <string.h>
 
-#include "core/internal.h"
-#include "../memfn/include/memfn.h"
+#include "gen/memfn_sites.h"
 
 /* The mark: a placeholder-lead byte that is not the prefix placeholder. */
 #define MEMFN_MARK "\x01M\n"
@@ -190,11 +189,6 @@ static void sink_stamp(void *u, const char *name, const char *value)
     pcrec_sb_stamp_str(s->sb, s->upper, name, value);
 }
 
-static void *arena_alloc(void *u, size_t n)
-{
-    return pcrec_arena_alloc(u, n);
-}
-
 /* Replaces the one mark in `sb` with `text`; false if `sb` holds no mark or
  * more than one. */
 static bool splice_mark(StrBuf *sb, const char *text)
@@ -221,19 +215,20 @@ uint32_t pcrec_memfn_policy(uint64_t flags)
 /* The finishing pass (see the header). Reads `cx->job->csb` and `hsb`, the
  * finished artifact at the placeholder prefix; writes the two stamp lines
  * over csb's mark. Called once per attempt, after the engine emitter and
- * before anything measures the text. */
+ * before anything measures the text. It ENDS the attempt's kit state
+ * ([MEMFN] R4c): the art the emitters' sites were rendered through is the
+ * one the libc record is noted on, and its end checks every defined site
+ * was used (`pcrec_memfn_art_end`). */
 void pcrec_memfn_stamps_render(Ctx *cx)
 {
     Job *job = cx->job;
-    mf_arena ma = { &cx->arena, arena_alloc };
-    mf_art *art = mf_art_begin(&ma, cx->opt->prefix,
-                                 pcrec_memfn_policy(cx->opt->flags), 0);
+    mf_art *art = pcrec_memfn_art(cx);
     StrBuf lines = { .cx = cx };
     StampSink ss = { &lines, pcrec_sb_upper(&cx->arena, cx->opt->prefix) };
     mf_sink sink = { .u = &ss, .stamp = sink_stamp };
     int rc = scan_libc_calls(art, job->csb.p ? job->csb.p : "", job->csb.len) ||
              scan_libc_calls(art, job->hsb.p ? job->hsb.p : "", job->hsb.len) ||
-             mf_stamps(art, &sink) || mf_art_end(art);
+             mf_stamps(art, &sink);
     bool ok = !rc && splice_mark(&job->csb, lines.p ? lines.p : "");
     pcrec_sb_free(&lines);
     if (rc)
@@ -242,4 +237,5 @@ void pcrec_memfn_stamps_render(Ctx *cx)
     if (!ok)
         pcrec_ctx_fail(cx, 0, "internal error: the artifact holds no single "
                        "memfn stamp mark (pcrec_emit_memfn_mark)");
+    pcrec_memfn_art_end(cx, art);
 }

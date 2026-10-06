@@ -26,13 +26,14 @@
 # `t->scan_k` and `ofsk_scan(f)` is not in scope, so the AFTER text stopped
 # compiling and the row read ANOMALY (BUILD-FAILED) from then until this
 # re-aim. Intent unchanged: the unmasked arm resumes at cand + 1 + k*.
+# RE-AIMED 2026-10-06 ([MEMFN] R4c REPLACE, lane r4ccore): the memchr arm's resume is the kit's offset-skip function; the search text moved into the kit; the plant is the same defect in the kit's transcription of the form.
 SAB_ID="S185-ofsskip-resume-off-by-one"
-SAB_FILE="src/gen/emit_dfa.c"
+SAB_FILE='memfn/src/ofsskip.c'
 SAB_SUITES="harness offsetskip"
 SAB_HARNESS_TARGET="tests/offsetskip/offset_skip.rxt"
 SAB_DESC="the emitted offset-k skip resumes its scan at cand + 1 + k* instead of cand + 1 after a failed candidate, so any real match closer than k* to a failed one is skipped entirely — a LOST MATCH, invisible to every no-match cell"
 SAB_DOC_FIGURE="PRE-VALIDATED (2026-08-28, lane optk): DETECTED against a clean 19pass/0fail + 80pass/0fail baseline -- offsetskip:4fail/19pass, corpus:1fail/79pass. The corpus arm is ONE case and had to be BUILT: this plant first measured 0 corpus failures, because a pattern can only turn the off-by-one into a lost match if it ALLOWS its own scan byte before the offset it is scanned at, which none of the four witnesses does. tests/offsetskip gained [-a]{3}-b for exactly this row."
 SAB_COUNT=1
-SAB_BEFORE='    pcrec_sb_puts(c,   "        pos = cand + 1;\n"'
-SAB_AFTER='    pcrec_sb_printf(c, "        pos = cand + 1 + %d;\n", t->scan_k);   /* SABOTAGE S185 */
-    pcrec_sb_puts(c,   ""'
+SAB_BEFORE='    o->puts(o->u,   "        pos = cand + 1;\n"'
+SAB_AFTER='    kit_out(o, "        pos = cand + 1 + %d;\n", k);   /* SABOTAGE S185 */
+    o->puts(o->u,   ""'

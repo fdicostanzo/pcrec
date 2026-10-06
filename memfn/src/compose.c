@@ -8,8 +8,8 @@
  * stamps, vocabulary). The text of a site is the selected arm's; this file
  * decides only WHICH arm and keeps the handles honest.
  *
- * At R4a the table has one row, the generic scalar row (generic.c), and
- * pcrec calls none of this: the code links and nothing emits through it.
+ * The table holds the scalar arms R4c migrated (ofsskip.c, precheck.c)
+ * above the generic scalar row (generic.c), which applies to every site.
  */
 #include <stdarg.h>
 #include <stdio.h>
@@ -79,20 +79,55 @@ int kit_fail(mf_art *art, const char *fmt, ...)
     return -1;
 }
 
+/* Writes a finished buffer to the sink; fails loudly on a dropped write. */
+int kit_flush(mf_art *art, kb *b, mf_sink *out, const char *who)
+{
+    if (b->oom) return kit_fail(art, "%s: out of memory", who);
+    if (b->len) {
+        if (!out || !out->puts)
+            return kit_fail(art, "%s: no sink to write to", who);
+        out->puts(out->u, b->p);
+    }
+    return 0;
+}
+
+int kit_sink_ok(mf_art *art, const mf_sink *o, const char *who)
+{
+    if (!o || !o->puts || !o->vprintf)
+        return kit_fail(art, "%s: the sink offers no puts/vprintf", who);
+    return 0;
+}
+
+void kit_out(mf_sink *o, const char *fmt, ...)
+{
+    va_list ap;
+    va_start(ap, fmt);
+    o->vprintf(o->u, fmt, ap);
+    va_end(ap);
+}
+
 /* ---- the selection table --------------------------------------------------
  *
  * First passing row wins (the house's first-match idiom). Every row before
  * the last will carry its own `--memfn=no-NAME` deny when it lands (D144
  * item 4); the generic row has none, so no deny can leave a site without
- * code (§14.6). */
+ * code (§14.6). The two rows above it are the SCALAR ARMS born at R4c's
+ * migration (integration.md §15, §16): pcrec's offset-skip block and its
+ * pre-check, transcribed. They are not byte-moving changes, so they carry
+ * no deny of their own: the artifacts they render are the ones pcrec wrote
+ * before them, and the identity gates say so (§9.3). */
 static const arm *const arms[] = {
+    &ofsskip_arm,
+    &precheck_arm,
     &generic_arm,
 };
 
-static const arm *select_arm(const mf_site *s)
+static const arm *select_arm(const mf_site *s, const mf_hooks *def)
 {
     for (size_t i = 0; i < sizeof arms / sizeof arms[0]; i++)
-        if (arms[i]->applies(s)) return arms[i];
+        if ((!arms[i]->miss_leaves || s->on_miss_leaves) &&
+            arms[i]->applies(s, def))
+            return arms[i];
     return NULL;
 }
 
@@ -145,6 +180,10 @@ static const char *site_check(const mf_site *s)
     if (!in_enum(s->use, MF_USE_DISCARD)) return "use outside mf_use_kind";
     if (!in_enum(s->consumer, MF_C_ENGINE)) return "consumer outside mf_consumer";
     if (s->end_back > 1) return "end_back is not 0 or 1";
+    if (s->on_miss_leaves != 0 && s->on_miss_leaves != 1)
+        return "on_miss_leaves is not 0 or 1";
+    if (s->on_miss_leaves && s->handoff != MF_H_ON_MISS && s->handoff != MF_H_ASSIGN)
+        return "on_miss_leaves is for an ON_MISS/ASSIGN site only";
     if (s->op == MF_OP_ALL_PRESENT) {
         if (s->npred && !s->preds) return "ALL_PRESENT without preds";
         for (unsigned i = 0; i < s->npred; i++)
@@ -214,18 +253,6 @@ static site_rec *rec_of(mf_art *art, uint32_t handle, const char *who)
     return &art->sites[handle - 1];
 }
 
-/* Writes a finished buffer to the sink; fails loudly on a dropped write. */
-static int flush_to(mf_art *art, kb *b, mf_sink *out, const char *who)
-{
-    if (b->oom) return kit_fail(art, "%s: out of memory", who);
-    if (b->len) {
-        if (!out || !out->puts)
-            return kit_fail(art, "%s: no sink to write to", who);
-        out->puts(out->u, b->p);
-    }
-    return 0;
-}
-
 int mf_define(mf_art *art, const mf_site *s, const mf_hooks *def,
               mf_sink *file_scope, uint32_t *handle)
 {
@@ -236,7 +263,7 @@ int mf_define(mf_art *art, const mf_site *s, const mf_hooks *def,
     const char *why = site_check(s);
     if (why)
         return kit_fail(art, "mf_define: outside the vocabulary: %s", why);
-    const arm *row = select_arm(s);
+    const arm *row = select_arm(s, def);
     if (!row)
         return kit_fail(art, "mf_define: no arm applies (the generic row must)");
 
@@ -254,10 +281,7 @@ int mf_define(mf_art *art, const mf_site *s, const mf_hooks *def,
     r->site = *s;
     r->arm = row;
 
-    kb file;
-    kb_init(&file, art->a);
-    if (row->define(art, h, def, &file)) return -1;
-    if (flush_to(art, &file, file_scope, "mf_define")) return -1;
+    if (row->define(art, h, def, file_scope)) return -1;
     *handle = h;
     return 0;
 }
@@ -268,10 +292,7 @@ int mf_use(mf_art *art, uint32_t handle, const mf_hooks *use, mf_sink *body,
     if (art->err[0]) return -1;
     site_rec *r = rec_of(art, handle, "mf_use");
     if (!r) return -1;
-    kb text;
-    kb_init(&text, art->a);
-    if (r->arm->use(art, handle, use, &text)) return -1;
-    if (flush_to(art, &text, body, "mf_use")) return -1;
+    if (r->arm->use(art, handle, use, body)) return -1;
     r->used = 1;
     if (res) {
         memset(res, 0, sizeof *res);

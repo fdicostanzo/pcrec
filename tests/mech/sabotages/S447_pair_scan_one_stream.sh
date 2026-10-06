@@ -8,8 +8,9 @@
 # (<p>_reqrun and the K66 site's <p>_reqrun_whole). Detector: the harness on
 # tests/litscan/reqcube.rxt's lowercase cells, and reqcube_check.py's
 # two-member scan check. (Design's provisional S446.)
+# RE-AIMED 2026-10-06 ([MEMFN] R4c REPLACE, lane r4ccore): the pair arm's second member is derived in the kit (ofs_fn_scan); the search text moved into the kit; the plant is the same defect in the kit's transcription of the form.
 SAB_ID="S447-pair-scan-one-stream"
-SAB_FILE="src/gen/emit_dfa.c"
+SAB_FILE='memfn/src/ofsskip.c'
 SAB_SUITES="harness codegen"
 SAB_HARNESS_TARGET="tests/litscan/reqcube.rxt"
 SAB_DESC="the caseless necessary run's pair arm searches its upper member in both streams, so a match whose scan position holds the lower member is never found and the pre-check answers NOMATCH"
@@ -18,5 +19,5 @@ SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "(?i)sele
 SAB_REACH_EXPECT="REACH-PAIR-ARM"
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    int a = t->scan_byte, b = a | (~t->run_mask[k - t->run_o] & 0xFF);'
-SAB_AFTER='    int a = t->scan_byte, b = a;   /* SABOTAGE S447: the second stream scans the first member */'
+SAB_BEFORE='    *b = m != 0xFF ? (*a | (~m & 0xFF)) : -1;'
+SAB_AFTER='    *b = m != 0xFF ? *a : -1;   /* SABOTAGE S447: the second stream scans the first member */'

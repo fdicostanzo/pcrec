@@ -131,7 +131,7 @@ void pcrec_sb_comments(StrBuf *sb, bool on);
 /* Open / close a comment REGION. Every byte appended between them is comment
  * text, and a NON-ESSENTIAL region's bytes are discarded when the policy says
  * so. Balanced, nestable, and cheap enough to wrap a single trailing comment.
- * The gate sits in `pcrec_sb_putc`/`pcrec_sb_puts`/`sb_vprintf` — the three primitives
+ * The gate sits in `pcrec_sb_putc`/`pcrec_sb_puts`/`pcrec_sb_vprintf` — the three primitives
  * every other append in this file is built on — so it cannot be bypassed by a
  * helper, present or future. */
 void pcrec_sb_cmt_open(StrBuf *sb, PcrecCmtClass klass);
@@ -154,6 +154,8 @@ void  pcrec_sb_putc(StrBuf *sb, char c);
 void  pcrec_sb_puts(StrBuf *sb, const char *s);
 void  pcrec_sb_printf(StrBuf *sb, const char *fmt, ...)
       __attribute__((format(printf, 2, 3)));
+void  pcrec_sb_vprintf(StrBuf *sb, const char *fmt, va_list ap)
+      __attribute__((format(printf, 2, 0)));
 char *pcrec_sb_take(StrBuf *sb);                /* transfer ownership, resets sb */
 void  pcrec_sb_free(StrBuf *sb);
 
@@ -2656,6 +2658,17 @@ typedef struct {
      * a helper is emitted once, before its first use. */
     long long rc_words;
     unsigned rc_wused, rc_wemitted;
+    /* [MEMFN] R4c the memfn kit's per-attempt state (src/gen/memfn_sites.c):
+     * the attempt's `mf_art`, begun at its first ask and ended by the stamp
+     * pass, so a size-ladder re-emission starts clean (integration.md §14.0,
+     * §14.8); and the pre-check site the search entry's define point
+     * described for its use point (src/gen/emit_dfa.c's `struct MemfnPre`),
+     * NULL where none. */
+    struct mf_art *mf;
+    const struct MemfnPre *mf_pre;
+    /* Whether the prologue declared `<string.h>` (`pcrec_emit_prologue`):
+     * every header the kit's text needs must be one it declared (§14.8). */
+    bool string_h;
 } Job;
 
 /* [M6.3] module `named-groups` — see Ctx.named_groups below for the full
@@ -6069,6 +6082,9 @@ void pcrec_emit_runcmp_stamp(Ctx *cx, StrBuf *c, const char *upper);
  * finishing pass that renders them over it (once per attempt, after the
  * engine emitter, before the size measurement). */
 void pcrec_emit_memfn_mark(StrBuf *c);
+/* One byte for a human-read legend: printable ASCII quoted, else a number
+ * (src/gen/emit_dfa.c); also the memfn sink's `legend_byte` op. */
+void pcrec_emit_legend_byte(StrBuf *c, int b);
 void pcrec_memfn_stamps_render(Ctx *cx);
 /* [MEMFN] the policy word pcrec sends the kit for a job's flags: one bit,
  * `MF_P_PORTABLE_ONLY`, set iff `-fmemfn-simd` is not in force (the axis

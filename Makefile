@@ -197,9 +197,14 @@ $(BUILD_DIR)/obj/memfn/%.o: memfn/src/%.c $(KITHDRS)
 	@mkdir -p $(dir $@)
 	$(CC) $(KITFLAGS) -c -o $@ $<
 
-# The one pcrec translation unit that includes the kit's header: the
-# `--list-axes` dump's `memfn` section (mf_options()).
+# The pcrec translation units that include the kit's header: the
+# `--list-axes` dump's `memfn` section (mf_options()), and [MEMFN] R4c's
+# site layer (src/gen/memfn_sites.h, with DELEG_SITES' memfn_sites.def)
+# with the emitter and the stamp pass that describe sites through it.
 $(BUILD_DIR)/obj/dump/axes_dump.o: memfn/include/memfn.h
+$(BUILD_DIR)/obj/gen/emit_dfa.o $(BUILD_DIR)/obj/gen/memfn_sites.o \
+$(BUILD_DIR)/obj/gen/memfn_stamps.o: memfn/include/memfn.h \
+    src/gen/memfn_sites.h src/gen/memfn_sites.def
 
 # [M5.0 stage 3] THE DERIVATION STEP, NAMED IN ITS GENERAL FORM: **a data
 # source compiles to generated tables** (third_party/README.md; Frank's
@@ -321,8 +326,8 @@ TEST_SECTIONS := test-corpus test-cli test-reject test-registry test-parse \
       test-entry-shape-identity test-cpset-structure test-startbnd \
       test-uprops test-core test-vars test-examples test-findings test-ucp \
       test-clskit test-encoding-checks test-utfcheck test-startset test-memfn-link \
-      test-memfn-manifest test-memfn-g2 test-memfn-stamps \
-      test-memfn-arch test-memfn-forms test-memfn-reach
+      test-memfn-manifest test-memfn-g2 test-memfn-stamps test-memfn-arms \
+      test-memfn-deleg test-memfn-arch test-memfn-forms test-memfn-reach
 
 # [CHK-2 trailer] `test:` STOPPED being purely prerequisite-based here
 # (2026-08-26, manager finding, journal part 7): under `make -j12 test`,
@@ -1243,6 +1248,22 @@ test-memfn-stamps: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-memfn-stamps.ran"; fi
 	CC="$(CC)" TMPDIR=$${TMPDIR:-/var/tmp} bash tests/memfn/run_libc_census.sh
 
+# [MEMFN] R4c: C5, the per-arm pins (tests/memfn/pins/arms.tsv): every
+# scalar arm the kit carries renders its fixed fixture sites
+# (tests/memfn/arm_fixtures.c) to the pinned sha256, with a perturbed-fixture
+# witness. A kit change that moves an arm re-pins it in its own commit.
+# Seconds; reads build/libpcrec.a.
+test-memfn-arms: all
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-memfn-arms.ran"; fi
+	CC="$(CC)" TMPDIR=$${TMPDIR:-/var/tmp} bash tests/memfn/run_arm_pins.sh
+
+# [MEMFN] R4c: C10's static half, DELEG_SITES (src/gen/memfn_sites.def)
+# against D91's budgets and the kit's vocabulary, MF_P_INLOOP's one home and
+# no by-value site description under src/, with planted controls. Seconds.
+test-memfn-deleg: all
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-memfn-deleg.ran"; fi
+	CC="$(CC)" TMPDIR=$${TMPDIR:-/var/tmp} bash tests/memfn/run_deleg_sites.sh
+
 # [MEMFN] R4a: G2, the kit's own tests (memfn/tests/, D27-blinded lane
 # memfng2): the kit's rendered text against G2's own byte loop over a
 # generated site space, with its planted-defect witnesses. The section runs
@@ -1804,6 +1825,7 @@ clean:
       test-entry-shape-identity test-cpset-structure \
         test-encoding-checks test-startbnd test-utfcheck test-memfn-link test-core test-examples test-clskit \
         test-memfn-manifest test-memfn-g2 test-memfn-g2-full test-memfn-stamps \
+        test-memfn-arms test-memfn-deleg \
         test-memfn-arch test-memfn-forms test-memfn-reach \
         test-startset \
         smoke hooks strict testscripts ubsan asan san lint alloc mech bench \
