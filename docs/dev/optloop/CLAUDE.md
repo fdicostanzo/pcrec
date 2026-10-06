@@ -822,3 +822,7 @@ that cycle's analysis lands.
   standing questions), and as it runs `selection.tsv`, per-artifact
   `review.md`/`leads.tsv`/`iterations.tsv`/twin patches, the confirmer's
   verdict tables and `report.md`. The harness lives in `studies/artrev/`.
+  `selection.tsv` + `selection.md` — the S0 selector's DRAFT (16 cells
+  stratified by route and standing, three marked PILOT; every one a cell the
+  bench already times); regenerate its artifacts at the pin with
+  `studies/artrev/gen_selection.py`.
