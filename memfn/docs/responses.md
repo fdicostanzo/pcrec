@@ -137,3 +137,44 @@ the compiler, and is never adopted silently. Proposed for main to file
   Landing bar: identity gate 0 movers, `make strict`, Mac `make test`
   in a slot main names. R4a′ follows on its own branch, and its abi
   number is agreed with main before it lands (START-SET's events).
+- done: 2026-10-05 — **R4a (R-3 part 1) DELIVERED: zero movers.** Branch
+  `lane/memfn-r4a` @ (this commit's parent chain from 3495afe1, which
+  includes main f3c726d7). Reports: `docs/dev/lanes/memfnskel_report.md`,
+  `memfnmanifest_report.md`, `memfng2_report.md`, `memfnfix_report.md`.
+  - **Landing bar:**
+    - identity: `emit_sweep.py --ref f3c726d7` shows 0 movers on all
+      four artifact streams (4,065 / 4,066 / 4,066 / 102). The one dump
+      mover is `--list-axes` (+ the `#section memfn` header, intended,
+      spec hunk in registry.md §6 / table_contract.md rule 5 / cli.md).
+      The self-check passed.
+    - `make strict` is clean.
+    - Mac `make test`: 52/52 sections ran (6,272 s). The one red,
+      `test-codegen`, is `run_inline_capability.sh`'s "nm could not read
+      arm_a.o", darwin-only and PRE-EXISTING (the base binary fails it
+      identically). Every other section is green, including the new
+      test-memfn-link (C15/C16), test-memfn-manifest (C17) and
+      test-memfn-g2 (G2 quick).
+  - **Charter vs committed:**
+    - memfn.h (MF_SITE_ABI 2, MF_VOCAB 2, MF_NS), the generic scalar
+      row and K1: DONE;
+    - options.def born empty + mf_options/mf_opts_check + the
+      `--list-axes` `memfn` section (floor UNREACHED until R4d): DONE;
+    - Makefile wiring, with libpcrec linking the kit and calling only
+      mf_options: DONE;
+    - the site manifest (13 rows, all pending, N7 included) + C17,
+      sabotage rows S510-S512: DONE. At the main merge it was re-pointed
+      for START-SET's `pcrec_emit_find`, and the vocabulary learned the
+      format-hole walk;
+    - G2: DONE, D27-blinded. It found kit defects F1-F3, all fixed;
+      quick 21.7M/0, full 137.6M/0, every witness firing;
+    - PROVENANCE.md, C15, C16: DONE;
+    - contract rulings on G2's questions: integration.md rev 4.7.
+      Addendum 10 is folded (Q53-Q55 RULED; the libc record and N7
+      scope are the design of record).
+  - **OWED (owner, trigger):**
+    - G2 coverage of the newly refused shapes (kit, a blinded author at
+      G2's next touch);
+    - Q-G2-5, reverse ADVANCE (kit, at M3's design);
+    - the bench's list_axes readers select the main table (bench, I-128).
+  - **Next:** R4a′ (the stamps' abi event) on its own branch, AFTER its
+    abi number is agreed with the pcrec manager.
