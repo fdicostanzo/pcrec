@@ -190,9 +190,12 @@ another's, `main`'s `--list-families` block states it in its own comment).
 ## 6. `--list-axes` — the optimization-axis registry (the FOURTH surface, [CHK-2])
 
 `build/pcrec --list-axes | bash tests/lib/table.sh table-main - | grep -vc '^#'`
-— **127 rows / 43 axes** (the MAIN table only, [MEMFN] R4a: the count never
+— **129 rows / 43 axes** (the MAIN table only, [MEMFN] R4a: the count never
 includes the kit's `memfn` section below), re-derived
-live 2026-10-05 by lane ssbuild2 ([START-SET] stage 2: +1 row and no new
+live 2026-10-06 by lane ssbuild3 ([START-SET] stage 3: +2 rows and no new
+axis, `first-memchr-bounded` and `first-class-bounded` on the `prefilter`
+axis, the DFA hat's rows, each carrying `-fno-start-set`). Was 127/43,
+re-derived live 2026-10-05 by lane ssbuild2 ([START-SET] stage 2: +1 row and no new
 axis, `first-class` on the `prefilter` axis, the VM hat's row, which
 carries `-fno-start-set` and names its own stamp, `RX_VM_START_SCAN`, in the
 `stamp_macro` column — the first row of an axis whose stamp is not the

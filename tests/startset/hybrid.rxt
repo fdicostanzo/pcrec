@@ -10,13 +10,7 @@
 # key's meaning is startset.md §6.4.1's table.
 
 
-config collapse
-    pcrec -fprefilter-collapse
 
-target coll_1 = coll-1 with collapse
-target coll_2 = coll-2 with collapse
-target coll_3 = coll-3 with collapse
-target coll_4 = coll-4 with collapse
 
 # edge HY: the hybrid twin's pattern (captures on)
 # pcre2-only
@@ -117,7 +111,7 @@ ns 2 "ab"
 # pcre2-only
 pattern \b(ab|cd)\b.{0,2}\b(ab|c)\b
 features all
-name coll-1
+# name coll-1
 # tag edge=HYC, xflags=-fprefilter-collapse
 ms 0 "ab c" 0 4
 g 1 0 2
@@ -184,7 +178,7 @@ ns 8 "bab ab c"
 # pcre2-only
 pattern \B(ab|cd){2,3}\B
 features all
-name coll-2
+# name coll-2
 # tag edge=HYC, xflags=-fprefilter-collapse
 ms 0 "xababx" 1 5
 g 1 3 5
@@ -235,7 +229,7 @@ ns 6 "xabcdx"
 # pcre2-only
 pattern \B(a|b){1,3}
 features all
-name coll-3
+# name coll-3
 # tag edge=HYC, xflags=-fprefilter-collapse
 ms 0 "xa" 1 2
 g 1 1 2
@@ -285,7 +279,7 @@ ns 3 "xbx"
 # pcre2-only
 pattern \B(x|ab){1,2}\b
 features all
-name coll-4
+# name coll-4
 # tag edge=HYC, xflags=-fprefilter-collapse
 ms 0 "zab" 1 3
 g 1 1 3

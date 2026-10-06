@@ -3263,3 +3263,24 @@ A_CALL/A_BREF arms drop their bytes) on `vmhat`; S500 (A_VAR) on `vars`; S479
 assertion) DECLARED UNREACHED with REACH probes that flip the day the construct
 becomes reachable. Each row's REACH was evaluated at landing; the solo mech
 figures are in `docs/dev/lanes/ssbuild2_report.md` §5.
+
+## [START-SET] stage 3 — `dfahat`, and S480-S490, S504 (lane ssbuild3, 2026-10-06)
+
+**`dfahat` is a new suite word** (registered before the rows that name it):
+`tests/startset/run_dfahat_checks.sh` — the DFA hat's fixtures, its
+structural and mover-manifest checks, and the every-startpos differential
+under `HAT=dfa` (one trailer pair). Rows on `dfahat`: S480 (r3's `T = S ∩ E`
+with r3's admission and no `T == S` assertion), S481/S483 (`first-class-
+bounded`'s re-seed deleted on both / the clamp landing), S482/S484
+(`first-memchr-bounded`'s on the hit / the clamp landing), S485 (the re-seed
+made unconditional), S486 (`T` widened by a byte of `E \ S`), S488 (F's
+non-nullable conjunct: answer-equivalent, seen by the manifest), S504 (a
+no-candidate return hoisted above `rx_valid_upto`, seen by the differential's
+`-futf-check` config). S481/S482 are RE-AIMED from §6.3's unbounded forms,
+which the DFA hat does not have (ssedge §6.4.4). S487/S489/S490 (the seeded,
+`|S| < 256` and scan-kind conjuncts) are DECLARED UNREACHED by construction
+with REACH probes that flip the day the construct admits. S495 gains
+`dfahat` (the re-seed row read over `T`), S501/S502 gain `vmhat dfahat`, and
+their REACH probes stopped pinning the facts listing's `used` column, which
+stage 2's every-artifact stamp turned to `yes`. Solo figures:
+`docs/dev/lanes/ssbuild3_report.md`.

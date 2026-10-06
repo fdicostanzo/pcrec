@@ -62,3 +62,7 @@ written.
 - `s2/` — the census re-run at stage 2 (lane ssbuild2), which regenerated
   `tests/startset/manifests/` when the stage-2 fixtures joined the corpus.
   Own CLAUDE.md.
+- `s3/` — the census re-run at stage 3 (lane ssbuild3) with the PRE-STAGE-3
+  compiler, which regenerated `tests/startset/manifests/` when the DFA-hat
+  fixtures (`dfahat.rxt`, `reseed.rxt`, `hybrid.rxt`, `dfahat_paths.rxt`)
+  joined the corpus. Own CLAUDE.md.

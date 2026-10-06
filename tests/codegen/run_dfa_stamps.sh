@@ -13,6 +13,8 @@
 #                            | "byte-class" | "byte-class-bounded"
 #                            | "offset-set" | "offset-set-bounded"   [OPT-K]
 #                            | "run-pinned" | "run-pinned-bounded"   [OPT-LITSCAN] S1
+#                            | "first-memchr-bounded"
+#                            | "first-class-bounded"                 [START-SET] stage 3
 #
 # ...and, since [DD-13c], the RUNTIME MIRRORS of the last two in the emitted
 # `struct rx_info` (`.scan`, `.prefilter`; docs/spec/match_api.md §6), which
@@ -205,7 +207,7 @@ bad() { echo "FAIL: $1" >&2; fail=$((fail + 1)); }
 # these is a failure even if it agrees with the loop: a new mechanism needs a
 # spec hunk (docs/spec/match_api.md §6.3) and a line here, in the same change.
 SCAN_VALUES="unanchored attempt empty"
-PF_VALUES="none memchr memchr-bounded byte-class byte-class-bounded offset-set offset-set-bounded run-pinned run-pinned-bounded"
+PF_VALUES="none memchr memchr-bounded byte-class byte-class-bounded offset-set offset-set-bounded run-pinned run-pinned-bounded first-memchr-bounded first-class-bounded"
 
 # ---------------------------------------------------------------------------
 # The per-artifact derivation: read an artifact on stdin, print
@@ -250,6 +252,11 @@ read_artifact() {
         /!rx_can_begin_match\[subject\[scan_position\]\]/ {                     # emit_unanchored: the bitmap arm
                                                  pf_bc = 1
                                                  if ($0 ~ /while \(scan_position \+ 1 < subject_length &&/) bnd = 1 }
+        # [START-SET] stage 3, THE DFA HAT: its own table (the start set, not
+        # the escape set) and the conditional re-seed only its two forms write
+        # (pf_emit_moved_reseed); a memchr arm WITH that re-seed is the hat.
+        /!rx_start_bytes\[subject\[scan_position\]\]/ { pf_fc = 1 }          # pf_emit_first_class_bounded
+        /if \(scan_position > skip_from\) forward_state = rx_forward_seed_state\[/ { hat = 1 }  # pf_emit_moved_reseed
         # [OPT-K] the offset-k arm. The CALL is the marker, not the body of
         # the helper: that body is emitted at file scope and its `memchr` and
         # bitmap lines read `pos` where the four older arms above read
@@ -295,6 +302,8 @@ read_artifact() {
             scan = attempt ? "attempt" : (unanch ? "unanchored" : (mtnothing ? "empty" : "-"))
             if (pf_ofs && ofs_run) pf = ofs_bnd ? "run-pinned-bounded" : "run-pinned"
             else if (pf_ofs) pf = ofs_bnd ? "offset-set-bounded" : "offset-set"
+            else if (pf_fc && hat) pf = "first-class-bounded"
+            else if (pf_mc && hat && bnd) pf = "first-memchr-bounded"
             else if (pf_bc) pf = bnd ? "byte-class-bounded" : "byte-class"
             else if (pf_mc) pf = bnd ? "memchr-bounded"     : "memchr"
             else if (pf_at) pf = "memchr"
@@ -409,6 +418,10 @@ witness unanchored byte-class         '[af]'
 witness unanchored memchr-bounded     'a$'
 witness unanchored byte-class-bounded '[af]$'
 witness unanchored none               '.*'
+# [START-SET] stage 3, THE DFA HAT's two forms: a seeded machine whose start set
+# is a proper subset of the escape set (\b's E is the 63 word bytes).
+witness unanchored first-class-bounded  '\b(?:ab|cd)\b'
+witness unanchored first-memchr-bounded '\B(?<!a)d'
 witness attempt    memchr             '(?m)^ERROR'
 witness attempt    none               '^abc'
 # [DD-13c] (r37 #5) THE EMPTY ENGINE, ON BOTH SIDES OF THE ENG_UNANCH/

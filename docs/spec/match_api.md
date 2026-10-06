@@ -4531,7 +4531,7 @@ wrote. `RX_DFA_PREFILTER` reads `"none"` on all of them, for the reason the
 value set below gives: there is no scan for a filter to be part of.
 
 `RX_DFA_PREFILTER` names the CANDIDATE-START mechanism the artifact
-carries, and its nine values are the whole set:
+carries, and its eleven values are the whole set:
 
 | value | mechanism |
 |---|---|
@@ -4544,6 +4544,8 @@ carries, and its nine values are the whole set:
 | `"offset-set-bounded"` | the offset-set form under the same view/word context, bounded at `n - 1` |
 | `"run-pinned"` | [OPT-LITSCAN] S1 (`abi` 36): the pattern's necessary run (`RX_REQ_RUN`) sits at a fixed offset from every match's start and the scan already runs on the run's own scan member there, so the candidate test verifies the WHOLE run as one compare — the offset-set block with the run as one term; the run pre-check is then not emitted (`RX_REQ_WHY "dominated"`). Removed by `-fno-run-prefilter` OR `-fno-offset-skip` |
 | `"run-pinned-bounded"` | the run-pinned form under the same view/word context, bounded at `n - 1` |
+| `"first-memchr-bounded"` | [START-SET] stage 3, THE DFA HAT (`abi` 64, `tuning.md` §2.42): on a SEEDED machine (a `\b`, a lookbehind, a `(?m)` context) whose plain skip would test the start state's escape set `E`, the skip tests the pattern's START SET instead (`T`, the `start_set` fact: the bytes the first consumed byte of a match can be), where `T` is a proper subset of `E` — here ONE byte, a `memchr()`; bounded at `n - 1` like `"memchr-bounded"`; a skip that moved re-seeds the scan state from the byte before its landing. Removed by `-fno-start-set` |
+| `"first-class-bounded"` | the same with several start-set bytes: a 256-entry `<prefix>_start_bytes` table walk, bounded at `n - 1`. The DFA hat has no unbounded form: a seeded machine always carries the D11 bound |
 
 **`<PREFIX>_DFA_PREFILTER_OFFSETS` ([OPT-K], `abi` 9) is on every
 artifact the four `RX_DFA_*` stamps are on**, and names WHICH offsets the

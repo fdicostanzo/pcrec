@@ -444,6 +444,7 @@ declare -A KNOWN_VALUES=(
     ["D:RX_DFA_PREFILTER=byte-class-bounded"]=1
     ["D:RX_DFA_PREFILTER=offset-set"]=1 ["D:RX_DFA_PREFILTER=offset-set-bounded"]=1
     ["D:RX_DFA_PREFILTER=run-pinned"]=1 ["D:RX_DFA_PREFILTER=run-pinned-bounded"]=1
+    ["D:RX_DFA_PREFILTER=first-memchr-bounded"]=1 ["D:RX_DFA_PREFILTER=first-class-bounded"]=1
     ["D:RX_DFA_TABLE=premultiplied"]=1 ["D:RX_DFA_TABLE=indexed"]=1
     ["D:RX_DFA_TABLE=mixed"]=1 ["D:RX_DFA_TABLE=none"]=1
     ["D:RX_VM_PREFILTER=hybrid"]=1 ["D:RX_VM_PREFILTER=none"]=1

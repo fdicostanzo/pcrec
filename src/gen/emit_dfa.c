@@ -6574,7 +6574,8 @@ static void pf_emit_ofs_bounded(StrBuf *c, const DfaForm *f)
  * computes at a startpos one past `b` (minimized states are equal iff their
  * futures are). By induction over the skipped run the landing state is
  * `seed[class(s[q - 1])]` iff every skipped byte is outside `S`, i.e. iff
- * `T` holds all of `S`. `E` plays no part in soundness, only in admission and cost.
+ * `T` holds all of `S`. `E` plays no part in soundness, only in admission
+ * and cost.
  *
  * WHY THE RE-SEED IS CONDITIONAL (§6.4.3 item 1, a soundness requirement,
  * not a hedge): it fires only where the skip MOVED. At a landing equal to
@@ -6588,9 +6589,9 @@ static void pf_emit_ofs_bounded(StrBuf *c, const DfaForm *f)
  * THE DFA HAT IS `-bounded`-ONLY. A seeded machine carries a class context,
  * and a class context is a `views` machine (`unanch_start`'s `wctx`), so its
  * skip stops at `n - 1`; §6.4.3 item 3 measured 170 of 170. `pf_dfa_start_set`
- * ASSERTS it rather than leaning on that reading, which is what makes an
- * unbounded `first-memchr`/`first-class` DFA form unreachable by construction
- * (sabotage S481/S482 ship UNREACHED behind the assertion). */
+ * ASSERTS it rather than leaning on that reading, so no unbounded DFA-hat
+ * form is built at all: `first-class` serves the VM route alone, and
+ * sabotage S481-S484 plant the two bounded forms' landings. */
 
 /* Is byte `b` in the `start_set` fact? */
 static bool ss_has(const StartSet *ss, int b) { return ss->bits[b >> 3] >> (b & 7) & 1; }
@@ -6618,15 +6619,15 @@ static void dfa_estar(const Dfa *d, uint8_t out[256])
  *     the start state cannot accept while parked) — the offset rows sit above;
  *   - SCAN KIND: the unanchored forward scan (`ENG_UNANCH`). `\G` and `(?m)^`
  *     machines take the attempt scan and are out (sound-F7; S490);
- *   - SEEDED: an unseeded machine has `E` within `S`, so `T == E` (C-SS*; S487 ships
- *     UNREACHED by construction);
+ *   - SEEDED: an unseeded machine has `E` within `S`, so `T == E` (C-SS*;
+ *     S487 ships UNREACHED by construction);
  *   - NECESSARY: `S` not nullable — the erased language's bit, never the
  *     `nullable` fact — and fewer than 256 members (S488; S489 UNREACHED);
  *   - ADMISSION: `T` a non-empty PROPER subset of `E` (Q-R1). Where `T == E`
  *     the row is transparent and the plain row's artifact is byte-identical.
- *     (D149) `T a proper subset of E` with NO MARGIN is an UNMEASURED DEFAULT: a one-byte
- *     narrowing (float-literal 11 -> 10) still moves; F3 at the null cells
- *     measures it.
+ *     (D149) The proper-subset test with NO MARGIN is an UNMEASURED DEFAULT:
+ *     a one-byte narrowing (float-literal 11 -> 10) still moves; F3 at the
+ *     null cells measures it.
  * Then two ASSERTIONS, each a contradiction rather than a decline: `views`
  * (the `-bounded`-only reading above), and `T == S` (Q-R1's build assertion:
  * `E*` is all 256 on every seeded machine — a byte that begins no thread moves

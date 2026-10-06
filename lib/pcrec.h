@@ -1096,14 +1096,17 @@ enum {
 #define PCREC_NO_REQ_HANDOFF PCREC_BIT(46)
 
 /* [START-SET] the candidate table's start-set rows (docs/spec/tuning.md
- * §2.42, D148). Today the VM HAT: a prefilter-less VM attempt loop whose
+ * §2.42, D148). The VM HAT: a prefilter-less VM attempt loop whose
  * pattern cannot match empty seeks the next byte that can begin a match
  * (the `start_set` fact) before its first attempt and after each failed
  * one, instead of attempting at every position. It removes only attempts
  * that fail, so no answer moves; a step, work or capacity give-up the
  * skipped attempts would have hit can become the answer (docs/spec/
- * match_api.md §3.1). Masked out of `rx_info.flags`;
- * `<PREFIX>_VM_START_SCAN` records the row, or "none". Deny only (D148 Q3).
+ * match_api.md §3.1). And the DFA HAT: a seeded DFA scan's start-state
+ * skip tests the start set instead of the start state's wider escape set,
+ * re-seeding where it moved. Masked out of `rx_info.flags`;
+ * `<PREFIX>_VM_START_SCAN` and `<PREFIX>_DFA_PREFILTER` record the rows.
+ * Deny only (D148 Q3).
  * A `#define` for bit 32's reason. */
 #define PCREC_NO_START_SET PCREC_BIT(47)
 

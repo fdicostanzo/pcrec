@@ -26,7 +26,18 @@ for src in srcs:
     if len(srcs) > 1:
         body += ["", "# ---- from the draft %s ----" % os.path.basename(src), ""]
     seen_body = False
+    in_config = False
     for ln in open(src, encoding="utf-8").read().split("\n"):
+        if in_config and ln.startswith((" ", "\t")):
+            continue          # the dropped config's indented body
+        in_config = False
+        if ln.startswith("config ") or ln.startswith("target "):
+            # HEAD declarations again (hybrid.rxt's `-fprefilter-collapse`
+            # targets): a head makes the file unreadable to verify_rxt.py and
+            # the harness builds no target, so they are dropped; the compiled
+            # collapse is tests/startset/vmhat_diff.py's `collapse` config
+            in_config = ln.startswith("config ")
+            continue
         if not seen_body:
             if ln.startswith("#") or not ln.strip():
                 continue          # the draft's own header, replaced below
@@ -36,6 +47,11 @@ for src in srcs:
             # a head-bearing file, and every block the oracle line covered
             # already carries `# pcre2-only` where python cannot answer it
             continue
+        if ln.startswith("name "):
+            # a dropped target's definition name (hybrid.rxt's); a `name` line
+            # with no target to build is a W1 keyword collision (rxtsource's
+            # keyword census), kept as a comment so line numbers hold
+            ln = "# " + ln
         if ln.startswith("tag "):
             # `tag` is a W1 candidate keyword the rxtsource keyword census
             # guards (a headless corpus line may not begin with it); kept as a

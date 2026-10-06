@@ -3504,9 +3504,10 @@ abi digits and `<PREFIX>_REQ_HANDOFF "none"`.
 **[START-SET] stage 2, `abi` 62 (`docs/design/startset.md` §2 V, §4.2, §8;
 D148 + addenda 1-2; `docs/dev/lanes/ssbuild2_report.md`).
 ANSWER-IDENTITY-preserving; NOT give-up-preserving, in one direction.**
-Denies the candidate table's start-set rows — at stage 2 the one VM-route
-row, `first-class`, listed on the `prefilter` axis of `--list-axes` with the
-`RX_VM_START_SCAN` stamp. Deny-only (D148 Q3), MASKED out of `rx_info.flags`
+Denies the candidate table's start-set rows — the VM-route row
+`first-class`, listed on the `prefilter` axis of `--list-axes` with the
+`RX_VM_START_SCAN` stamp, and since stage 3 (`abi` 64) the DFA hat's two rows
+below. Deny-only (D148 Q3), MASKED out of `rx_info.flags`
 (`strategy_denials`); the activity record is `<PREFIX>_VM_START_SCAN`
 (`match_api.md` §6.3), `"first-class"` or `"none"`, on every artifact.
 
@@ -3544,6 +3545,43 @@ denied and answers `(24,25)` with the row (`tests/startset/giveup.rxt`).
 
 **Denied:** every position is attempted, the `abi` 61 program apart from the
 abi digits and `<PREFIX>_VM_START_SCAN "none"`.
+
+**[START-SET] stage 3, `abi` 64: THE DFA HAT** (`docs/design/startset.md`
+§2 F, §4.1, §6.4; `docs/dev/lanes/ssbuild3_report.md`). The same deny also
+removes the candidate table's two DFA-route start-set rows,
+`first-memchr-bounded` and `first-class-bounded` (stamped in
+`<PREFIX>_DFA_PREFILTER`, `match_api.md` §6.3). ANSWER-IDENTITY-preserving
+and give-up-preserving: the DFA scan's own steps are not metered, and a
+VM hybrid's prefilter answers the same windows.
+
+- **What it is.** The DFA's forward scan skips, while it sits in its start
+  state with nothing found, over bytes that cannot move it: today the start
+  state's ESCAPE set `E`. On a SEEDED machine — one whose start depends on
+  the byte before it (`\b`, `\B`, a lookbehind, a `(?m)` context) — `E`
+  holds every byte that changes that context, not only the bytes a match can
+  begin with: `\b(?:true|false|null)\b`'s `E` is the 63 word bytes, where
+  only `t`, `f` and `n` can start a match. The row skips over the START SET
+  `S` instead and, where the skip moved, RE-SEEDS the scan state from the
+  byte before its landing, exactly as a search started at that position
+  would (the skipped bytes begin no match in any context, so the landing
+  state is that seed).
+- **Where it applies.** The unanchored forward scan (a DFA artifact, or a VM
+  hybrid's inlined prefilter) of a seeded machine whose plain skip it
+  replaces (`byte-class-bounded`; the offset and run rows sit above it); `S`
+  not nullable with fewer than 256 members; and `T = S` ∩ `E*` (`E*` every
+  seed state's escape set, which is all 256 bytes on a seeded machine, so
+  `T == S`) a non-empty PROPER subset of `E`. `T` of one byte takes
+  `first-memchr-bounded` (a `memchr`), several take `first-class-bounded`
+  (a `<prefix>_start_bytes` table). Both are bounded at `n - 1`: a seeded
+  machine always carries the D11 bound, so there is no unbounded form.
+- **What moves besides the skip.** Three selections that read the scanned
+  set see `T` where they saw `E`: G1's pre-check dominance (`RX_REQ_WHY` may
+  read `"dominated"` where the one-byte `T` is the pre-check's byte), the
+  hybrid re-seed row (`RX_VM_RESEED`, whose density is the prior's mass over
+  the scanned set), and the scan edge (`RX_DFA_SCAN_EDGE`, whose
+  precondition reads whether the prefilter re-seeds).
+- **Denied:** the plain `byte-class-bounded` skip over `E`, the pre-stage-3
+  program apart from the abi digits.
 
 ## 3. The DFA side's own stamps
 
@@ -4039,7 +4077,7 @@ lands.
 | `-fno-run-overlap` | — | — | — | — | — | §2.38; **NOT A RUNG** — the row and the `memcmp` it replaces are within a word in size, so no position trades on it; whether it ships at all is its own alpha (`litscan_s4.md` Q3), not a dial cell |
 | `-fno-req-set-lead` | — | — | — | — | — | §2.40; **NOT A RUNG** — one more one-byte `memchr`, not a size/speed trade the dial prices |
 | `-fno-req-handoff` | — | — | — | — | — | §2.41; **NOT A RUNG** — a subtraction and a compare, not a size/speed trade the dial prices; it removes a rescan |
-| `-fno-start-set` | — | — | — | — | — | §2.42; **NOT A RUNG** — a 256-byte table and one walk per failed attempt, not a size/speed trade the dial prices; it removes attempts that fail |
+| `-fno-start-set` | — | — | — | — | — | §2.42; **NOT A RUNG** — a 256-byte table and one walk per failed attempt (the VM hat), a narrower skip set plus a re-seed (the DFA hat), not a size/speed trade the dial prices; it removes attempts and scan steps that cannot begin a match |
 | `-fno-req-run-fold` | — | — | — | — | — | §2.39; **NOT A RUNG** — a narrower or wider necessary fact, not a size/speed trade; whether it ships is its own alpha (the `union-select` cell), not a dial cell |
 | emitted-size caps | — | — | — | — | — | `limits.md` §8; **NOT A RUNG** — raise-only refusal boundaries; a dial that lowered one would manufacture refusals |
 

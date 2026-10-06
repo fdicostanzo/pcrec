@@ -2321,12 +2321,12 @@ tests/startset/dfahat.rxt:973	--ucp --features all	5c42283f3a61627c6364295c42
 tests/startset/dfahat.rxt:998	-i --features all	5c62283f3a61627c6364295c62
 tests/startset/dfahat_paths.rxt:16	--features all	5c42283f3c2161295b64655d
 tests/startset/giveup.rxt:16	--features all --engine=vm	283f3d283f3a617c627c78292a632978
-tests/startset/hybrid.rxt:118	--features all	5c622861627c6364295c622e7b302c327d5c622861627c63295c62
-tests/startset/hybrid.rxt:185	--features all	5c422861627c6364297b322c337d5c42
-tests/startset/hybrid.rxt:23	--features all	5c622861627c6364295c62
-tests/startset/hybrid.rxt:236	--features all	5c4228617c62297b312c337d
-tests/startset/hybrid.rxt:286	--features all	5c4228787c6162297b312c327d5c62
-tests/startset/hybrid.rxt:85	--features all	5c422861627c6364295c42
+tests/startset/hybrid.rxt:112	--features all	5c622861627c6364295c622e7b302c327d5c622861627c63295c62
+tests/startset/hybrid.rxt:17	--features all	5c622861627c6364295c62
+tests/startset/hybrid.rxt:179	--features all	5c422861627c6364297b322c337d5c42
+tests/startset/hybrid.rxt:230	--features all	5c4228617c62297b312c337d
+tests/startset/hybrid.rxt:280	--features all	5c4228787c6162297b312c327d5c62
+tests/startset/hybrid.rxt:79	--features all	5c422861627c6364295c42
 tests/startset/reseed.rxt:117	--features all	283f3a5c62283f3c2161297c7878792961
 tests/startset/reseed.rxt:15	--features all	283f3a5c627c78792961
 tests/startset/reseed.rxt:152	--features all	283f3a61627a7c78283f3c3d5b61625d297c5c627a2979

@@ -33,11 +33,14 @@ DFA-hat row (`first-memchr-bounded`, `first-class-bounded`).
     byte-identical to its deny artifact (a VM-hat mover excepted, counted: its
     identity is vmhat_checks.py's [vm-deny]). A mover's two artifacts are equal
     once the stamp/`rx_info.prefilter` value, the two tables and the skip
-    block are normalized, EXCEPT for the three cross-row MOVER CLASSES
-    startset.md §4.3 names, each recognized by its own lines and COUNTED:
-    G1 (`RX_REQ_WHY` "emitted" -> "dominated" and the pre-check's text gone),
-    the hybrid re-seed row (`RX_VM_RESEED`), and the scan edge
-    (`RX_DFA_SCAN_EDGE`). A difference in no class is a FAIL.
+    block are normalized. Three cross-row MOVER CLASSES startset.md §4.3
+    names may move too, each recognized by its own stamp and COUNTED: G1
+    (`RX_REQ_WHY` "emitted" -> "dominated", the pre-check's text gone), the
+    hybrid re-seed row (`RX_VM_RESEED`) and the scan edge
+    (`RX_DFA_SCAN_EDGE`). A mover in a class is re-compiled on BOTH arms with
+    that class's mechanisms denied (`-fno-req-byte -fno-req-run
+    -fno-hyb-reseed -fno-scan-edge`), and the pair must then be equal outside
+    the hat -- so a class is a named, re-checked exception and never a hole.
 [dfa-movers] THE MOVER MANIFEST BY ID (checks-F5): the corpus blocks whose
     default artifact stamps a DFA-hat value, against
     `manifests/manifest_s3_dfa.tsv` -- 0 off-diagonal both ways. TWO
@@ -66,6 +69,9 @@ FLOOR_BLOCKS = 1700          # blocks compiled on both arms
 FLOOR_MOVERS = 35            # corpus movers (71 at landing)
 
 HAT = ("first-memchr-bounded", "first-class-bounded")
+# The three cross-row mechanisms a DFA-hat mover may move (startset.md §4.3):
+# G1's pre-check admission, the hybrid re-seed row, the scan edge.
+CLASS_DENY = ["-fno-req-byte", "-fno-req-run", "-fno-hyb-reseed", "-fno-scan-edge"]
 STAMP = re.compile(r'^#define RX_(\w+) +(.*)$', re.M)
 TABLE = "static const unsigned char rx_start_bytes[256] = {"
 FIND_SET = "!rx_start_bytes[subject[scan_position]]"
@@ -166,6 +172,13 @@ def one(job):
         else:
             rec["classes"] = classify(t1, t0, s1, s0)
             rec["deny_same"] = normalize(t1) == normalize(t0)
+            if rec["classes"]:
+                # The cross-row classes DENIED ON BOTH ARMS: what is left must
+                # be the hat alone, so the class is a named exception and not
+                # a hole in the comparison.
+                x1 = compile_c(b["pattern"], [*CLASS_DENY, *b["args"]], base + "_hatx")
+                x0 = compile_c(b["pattern"], ["-fno-start-set", *CLASS_DENY, *b["args"]], base + "_denyx")
+                rec["deny_same"] = x1 is not None and x0 is not None and normalize(x1) == normalize(x0)
             rec["T"] = scanned(t1)
             rec["E"] = table(t0, "can_begin_match")
             blk = PF_BLOCK.search(t1)
@@ -177,7 +190,7 @@ def one(job):
                 rec["S"] = L.set_of(fct["start_set"]["value"])[1]
             except Exception:
                 rec["S"] = None
-    for d in (base + "_hat", base + "_deny"):
+    for d in (base + "_hat", base + "_deny", base + "_hatx", base + "_denyx"):
         for fn in ("rx.c", "rx.h"):
             try:
                 os.remove(os.path.join(d, fn))
@@ -242,14 +255,16 @@ def corpus_checks():
                                 % (key, r["deny_ok"], r["st0"].get("DFA_PREFILTER"), r["deny_hat_text"]))
         elif not r["mover"] and st.get("VM_START_SCAN", "none") != "none":
             vmhat += 1        # a VM-hat mover: its deny identity is vmhat_checks.py's [vm-deny]
-        elif not r["deny_same"] and not r.get("classes"):
-            viol["deny"].append("%s: %s, differs from the deny arm outside the hat and every named mover class"
-                                % (key, "mover" if r["mover"] else "non-mover"))
+        elif not r["deny_same"]:
+            viol["deny"].append("%s: %s, differs from the deny arm outside the hat%s"
+                                % (key, "mover" if r["mover"] else "non-mover",
+                                   " (classes %s, re-compared with %s on both arms)" % (r["classes"], " ".join(CLASS_DENY))
+                                   if r.get("classes") else ""))
     names = {"iff": "[dfa-iff] the stamp names the emitted skip and re-seed",
              "route": "[dfa-route] every mover is the unanchored scan of a seeded machine",
              "reseed": "[dfa-reseed] every mover's re-seed is conditional on the skip having moved",
              "table": "[dfa-table] every mover scans T == its start_set fact, a proper subset of the deny arm's E",
-             "deny": "[dfa-deny] the deny arm is today's emitter (non-movers identical; movers identical outside the hat and the named classes)"}
+             "deny": "[dfa-deny] the deny arm is today's emitter (non-movers identical; movers identical outside the hat, a mover in a named class re-compared with the class denied on both arms)"}
     for k, label in names.items():
         if viol[k]:
             bad("%s: %d violation(s)" % (label, len(viol[k])))

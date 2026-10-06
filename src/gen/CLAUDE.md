@@ -3668,3 +3668,38 @@ and `none` now serves both routes. Three things to know:
 TOTAL comment-excluded bytes; a borderline ladder pattern's K can move (the
 threshold-1000 reference compiler moves `(|a){0,12}b`; 0 corpus patterns at
 the shipped threshold, `tests/startset/vmhat_checks.py` [vm-deny]).
+
+## [START-SET] stage 3 — THE DFA HAT (2026-10-06, D148 + addenda 1-2, lane ssbuild3; abi 64)
+
+`docs/design/startset.md` §2 F, §4.1, §6.4; `docs/spec/tuning.md` §2.42;
+`docs/dev/lanes/ssbuild3_report.md`. Two DFA-route rows join `dfa_pfs[]`
+below the offset/run rows and above the plain ones, `first-memchr-bounded`
+and `first-class-bounded` (deny `PCREC_NO_START_SET`). Four things to know:
+
+- **`pf_dfa_start_set` IS THE PREDICATE CORE AND THE SET.** It answers F and
+  fills `T = S & E*` (`dfa_estar`: the union of every live seed state's and
+  `s0`'s escape set) in one derivation; the rows' `applies` call it and
+  `DfaPf.scan_set` points at it, so `pf_scan_set_of` — the ONE place a reader
+  of the scanned set asks (`dfa_form_derive`'s `f->cand`, `dfa_cand_scan`'s
+  G1 byte, `pcrec_dfa_cand_ppm`'s re-seed density) — cannot price `E` for a
+  skip that tests `T`. Every DFA-route `DfaSel` that walks `dfa_pfs[]` now
+  carries `.ss = pcrec_fact_start_set(cx)`.
+- **TWO ASSERTIONS, NOT DECLINES.** A seeded machine is a views machine
+  (startset.md §6.4.3 item 3), so the DFA hat is `-bounded`-only and an
+  admitted mover without `views` is an internal error; and `T == S` on every
+  mover (Q-R1: `E*` is all 256 on a seeded machine). The first is why the
+  unbounded DFA-route forms do not exist: `first-class` stays VM-only.
+- **THE RE-SEED IS CONDITIONAL AND IS NOT `pf_emit_ofs_reseed`.**
+  `pf_emit_moved_reseed` writes `if (scan_position > skip_from) forward_state
+  = seed[class(subject[scan_position - 1])]` after the FIND, one line serving
+  both landings (a hit, the `n - 1` clamp); `skip_from` is the skip's entry,
+  declared in the hat's own block. The unconditional `pos ? seed : s0` form
+  overwrites a correct start state carrying in-flight threads (§6.4.3 item
+  1; sabotage S485). The table is `<p>_start_bytes`, not `can_begin_match`,
+  so the escape-set table's readers keep their meaning; `pf_emit_find` names
+  it off `scan_set`.
+- **THREE CROSS-ROW MOVER CLASSES** follow from `reseeds = true` and the
+  scanned set: G1 (`RX_REQ_WHY "dominated"` where the one-byte `T` is the
+  pre-check's byte), the hybrid re-seed row (`RX_VM_RESEED`), and the scan
+  edge (`src/opt/scanedge.c`'s precondition (8) reads `reseeds`).
+  `tests/startset/dfahat_checks.py` [dfa-deny] counts each.
