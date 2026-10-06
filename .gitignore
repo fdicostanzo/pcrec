@@ -73,3 +73,6 @@ studies/lim2_m2/lim2_m2.dSYM/
 studies/n1budget/n1_measure
 studies/n1budget/n1_measure.dSYM/
 .claude/settings.local.json
+
+# [ARTREV]: scratch tree of studies/artrev (artifacts, arms, timing runs); never committed.
+build-artrev/
