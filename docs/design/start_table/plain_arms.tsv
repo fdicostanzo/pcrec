@@ -1,0 +1,9 @@
+arm	flag	ok_default	ok_flag	movers	visible	hidden	refusal_moves
+auto/byte	--encoding=utf8	3221	3229	3188	674	2514	74
+auto/byte	-i	3221	3221	3221	1752	1469	0
+vm/byte	--encoding=utf8	3222	3230	3189	341	2848	74
+vm/byte	-i	3222	3222	3222	1567	1655	0
+auto/utf8	--encoding=utf8	3229	3229	0	0	0	0
+auto/utf8	-i	3229	3229	3229	1775	1454	0
+vm/utf8	--encoding=utf8	3230	3230	0	0	0	0
+vm/utf8	-i	3230	3230	3230	1605	1625	0
