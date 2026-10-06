@@ -1,0 +1,37 @@
+# census.py output, 2026-10-06, lane artgen. pcrec = lane/artgen build at 6a0b7953 (src/ identical to the ARTREV pin 57db5152, abi 62;
+# the four pilot artifacts regenerate sha256-identical); SS3 = lane/ssbuild3 tip c9154808 (START-SET stage 3, abi 64).
+# pcrec-bench read-only at eb634d9d. Corpus deduplicated on (pattern, encoding, icase). gcc never run.
+## corpus: 3704 patterns, 3333 compiled (371 refused/timeout), dfa 1836, vm 1497 (hybrid 1133); pattern-reader parsed 1512
+K1  I1 inner rare anchor (dfa unanch): >=1x 91, >=2x 90, >=8x 31; of >=2x, already presence-checked 50
+K2  I2 run-bearing 559; pick moved by log 72, by weblog 76, by either 112
+K3  I3 reverse-pass + run@0 (necessary cond.) 389 (dfa 230, hybrid 159); all reverse-pass 2783
+K4  I4 handoff + ofsskip 114 (handoff any 183)
+K5  I5 VM no-prefilter attempt opens on a context test 1 (of VM no-prefilter 364); by VM_START_SCAN: {'first-class': 1}
+K6  I6 possessify arms (VM): 2 (arm B only 1, R only 1, both 0); frames drop on the possessified spelling 2; becomes frameless 2; dfa-route rows with a candidate 6 (frames moot)
+K7  I7 VM matcher with RX_SET 1454 (frameless 623, framed 831)
+K8  I8 frameless VM 660; entry shapes {'inline': 605, 'plain': 855, 'forward': 37}
+K9  I9 VM matcher with bitmap class tests 67 (tests total 646)
+K10 I10 framed VM (counters in run->) 837
+K11 I11 seeded unanchored forward machine 138 (dfa 106, hybrid 32); stage-3 takes first-*: 31; start state in a >=2-state 1-local stay set: 42
+K12 I12 leading literal alternation, no shared necessary byte: 11; streams < half the start-set mass 2
+K13 I13 mid-run 1-local stay set (>=2 states, <=32 exit bytes): 7 artifacts (7 sets); any exit width: 8
+K14 I14 hybrids 1133; by lang {'exact': 1132, 'count-collapsed': 1}; ncaps==1 439 (count-collapsed and ncaps==1 0)
+K15 I15 VM lazy quantifier with frames 54
+
+## bench: 345 patterns, 321 compiled (24 refused/timeout), dfa 250, vm 71 (hybrid 50); pattern-reader parsed 212
+K1  I1 inner rare anchor (dfa unanch): >=1x 20, >=2x 17, >=8x 8; of >=2x, already presence-checked 12
+K2  I2 run-bearing 109; pick moved by log 26, by weblog 12, by either 33
+K3  I3 reverse-pass + run@0 (necessary cond.) 71 (dfa 59, hybrid 12); all reverse-pass 285
+K4  I4 handoff + ofsskip 36 (handoff any 49)
+K5  I5 VM no-prefilter attempt opens on a context test 2 (of VM no-prefilter 21); by VM_START_SCAN: {'first-class': 2}
+K6  I6 possessify arms (VM): 1 (arm B only 0, R only 0, both 1); frames drop on the possessified spelling 1; becomes frameless 1; dfa-route rows with a candidate 1 (frames moot)
+K7  I7 VM matcher with RX_SET 66 (frameless 27, framed 39)
+K8  I8 frameless VM 30; entry shapes {'forward': 3, 'plain': 44, 'inline': 24}
+K9  I9 VM matcher with bitmap class tests 44 (tests total 185)
+K10 I10 framed VM (counters in run->) 41
+K11 I11 seeded unanchored forward machine 30 (dfa 18, hybrid 12); stage-3 takes first-*: 18; start state in a >=2-state 1-local stay set: 21
+K12 I12 leading literal alternation, no shared necessary byte: 21; streams < half the start-set mass 3
+K13 I13 mid-run 1-local stay set (>=2 states, <=32 exit bytes): 7 artifacts (8 sets); any exit width: 7
+K14 I14 hybrids 50; by lang {'count-collapsed': 6, 'exact': 44}; ncaps==1 24 (count-collapsed and ncaps==1 5)
+K15 I15 VM lazy quantifier with frames 5
+
