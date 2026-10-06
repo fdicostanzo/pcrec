@@ -124,7 +124,13 @@ override is self-test only); the first real action of the confirmer is the dry r
 
 ## 6. Validation
 
-SELFTEST_PLACEHOLDER
+`bash studies/artrev/selftest.sh` (Mac, gcc-16, main's build/pcrec at abi 62): **168/168 checks passed, 0 failed**
+(committed transcript `studies/artrev/selftest.log`; was 101 checks, now 168: sections 8-11 are new, none of 1-7 changed
+meaning). The failing directions are asserted, not assumed: a wrong repair, a twin that gives up where the original
+answers, a start-too-early twin invisible to answer identity, a hanging twin (fails in 6 s), a PASS-PARTIAL identity
+refused by `time`, a layout-swing and a one-pad-flip verdict reading NOISE, and the real A09 fixture checks. The
+scratch re-verification table (section 3) was produced by `studies/artrev/reverify.sh` over the four cells' patches.
+Not run: `make test`/any suite (held by another lane), anything on ubuntubudu.
 
 Commits: see `git log lane/artcollect`. Files added/changed: `studies/artrev/{identity.py,common.py,timing.py,artrev.py,
 shim.c,artrev_abi.h,driver_id.c,pcre2_ref.c,selftest.sh,selftest_twins.py,README.md,CLAUDE.md}`, new `driver_pf.c`,
