@@ -43,12 +43,13 @@ SAB_DOC_FIGURE="lib/CLAUDE.md's [M4.6f] entry; src/gen/CLAUDE.md's STRATEGY-DENI
 # pair. Intent (PCREC_NO_PREFILTER/PCREC_FORCE_PREFILTER leak into the
 # emitted rx_info.flags) unchanged.
 SAB_COUNT=1
-SAB_BEFORE='                                          PCREC_NO_LENGTH_PRUNE |
-                                          PCREC_NO_PREFILTER | PCREC_FORCE_PREFILTER |
+# RE-AIMED 2026-10-06 ([FLAGBITS]): `strategy_denials` is no longer a hand-kept OR
+# of masked bits but DERIVED from src/core/axes.def (masked unless named in
+# `kept`), so "drop the bit from the mask" has no spelling any more. The
+# same defect -- this deny bit leaking into rx_info.flags -- is now planted
+# the only way it can be written: the bit joins `kept`. Intent unchanged;
+# detector unchanged.
+SAB_BEFORE='                              PCREC_FORCE_UTF_CHECK;
 '
-SAB_AFTER='                                          PCREC_NO_LENGTH_PRUNE |
-                                          /* SABOTAGE S65: the two prefilter
-                                           * force-pair bits removed from the
-                                           * mask -- they now leak into
-                                           * rx_info.flags */
+SAB_AFTER='                              PCREC_FORCE_UTF_CHECK | PCREC_NO_PREFILTER | PCREC_FORCE_PREFILTER;  /* SABOTAGE S65: the two prefilter force-pair bits joins `kept`, so it leaks into rx_info.flags */
 '
