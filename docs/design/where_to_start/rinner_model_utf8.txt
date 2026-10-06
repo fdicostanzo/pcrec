@@ -1,0 +1,70 @@
+# rinner_model.py: libpcre2 10.48 2026-08-31 (Homebrew, the Mac's local; NOT the 10.46 reference), seed 2, 4000 generated R = P.L.S, UTF mode
+cases compiled 3938 (uncompilable 62); gate applies 1998
+gate reasons: P-atomic+split-ambiguous 515, P-atomic+split-clean 341, P-cannot-contain-L 730, P-fixed-width 1268, P-lookaround+split-ambiguous 90, P-lookaround+split-clean 231, split-ambiguous 763
+variant                    checks   mismatch  first witness (R, subject, startpos, truth, model)
+tactic                     137692          0  
+tactic/findall              23976          0  
+gate_off[P-atomic+split-ambiguous]      35411          0  
+gate_off[P-atomic+split-ambiguous]/findall       6180          0  
+gate_off[P-atomic+split-clean]      23494          0  
+gate_off[P-atomic+split-clean]/findall       4092          0  
+gate_off[P-lookaround+split-ambiguous]       6268          5  ('(?:Xé{1,3}?(?!X)|b*)é(?:é*|aX)', b'baaaX\xc3\xa9\xc3\xa9aa', 0, (4, 9), (5, 9))
+gate_off[P-lookaround+split-ambiguous]/findall       1080          1  ('(?:Xé{1,3}?(?!X)|b*)é(?:é*|aX)', b'baaaX\xc3\xa9\xc3\xa9aa', 0, [(4, 9)], [(5, 9)])
+gate_off[P-lookaround+split-clean]      16095          0  
+gate_off[P-lookaround+split-clean]/findall       2772          0  
+gate_off[split-ambiguous]      53088          1  ('(?:(b*éa){0,2}|.éa)é(?:é+)', b'a\xc3\xa9a\xc3\xa9\xc3\xa9baa', 0, (0, 8), (1, 8, 1, 4))
+gate_off[split-ambiguous]/findall       9156          1  ('(?:(b*éa){0,2}|.éa)é(?:é+)', b'a\xc3\xa9a\xc3\xa9\xc3\xa9baa', 0, [(0, 8)], [(1, 8, 1, 4)])
+lowerbound                 137692          0  
+lowerbound/findall          23976          0  
+lowerbound_gate_off[P-atomic+split-ambiguous]      35411          0  
+lowerbound_gate_off[P-atomic+split-ambiguous]/findall       6180          0  
+lowerbound_gate_off[P-atomic+split-clean]      23494          0  
+lowerbound_gate_off[P-atomic+split-clean]/findall       4092          0  
+lowerbound_gate_off[P-lookaround+split-ambiguous]       6268          5  ('(?:Xé{1,3}?(?!X)|b*)é(?:é*|aX)', b'baaaX\xc3\xa9\xc3\xa9aa', 0, (4, 9), (5, 9))
+lowerbound_gate_off[P-lookaround+split-ambiguous]/findall       1080          1  ('(?:Xé{1,3}?(?!X)|b*)é(?:é*|aX)', b'baaaX\xc3\xa9\xc3\xa9aa', 0, [(4, 9)], [(5, 9)])
+lowerbound_gate_off[P-lookaround+split-clean]      16095          0  
+lowerbound_gate_off[P-lookaround+split-clean]/findall       2772          0  
+lowerbound_gate_off[split-ambiguous]      53088          1  ('(?:(b*éa){0,2}|.éa)é(?:é+)', b'a\xc3\xa9a\xc3\xa9\xc3\xa9baa', 0, (0, 8), (1, 8, 1, 4))
+lowerbound_gate_off[split-ambiguous]/findall       9156          1  ('(?:(b*éa){0,2}|.éa)é(?:é+)', b'a\xc3\xa9a\xc3\xa9\xc3\xa9baa', 0, [(0, 8)], [(1, 8, 1, 4)])
+rust_guard                 137692          0  
+rust_guard/findall          23976          0  
+rust_guard_gate_off[P-atomic+split-ambiguous]      35411          0  
+rust_guard_gate_off[P-atomic+split-ambiguous]/findall       6180          0  
+rust_guard_gate_off[P-atomic+split-clean]      23494          0  
+rust_guard_gate_off[P-atomic+split-clean]/findall       4092          0  
+rust_guard_gate_off[P-lookaround+split-ambiguous]       6268          5  ('(?:Xé{1,3}?(?!X)|b*)é(?:é*|aX)', b'baaaX\xc3\xa9\xc3\xa9aa', 0, (4, 9), (5, 9))
+rust_guard_gate_off[P-lookaround+split-ambiguous]/findall       1080          1  ('(?:Xé{1,3}?(?!X)|b*)é(?:é*|aX)', b'baaaX\xc3\xa9\xc3\xa9aa', 0, [(4, 9)], [(5, 9)])
+rust_guard_gate_off[P-lookaround+split-clean]      16095          0  
+rust_guard_gate_off[P-lookaround+split-clean]/findall       2772          0  
+rust_guard_gate_off[split-ambiguous]      53088          1  ('(?:(b*éa){0,2}|.éa)é(?:é+)', b'a\xc3\xa9a\xc3\xa9\xc3\xa9baa', 0, (0, 8), (1, 8, 1, 4))
+rust_guard_gate_off[split-ambiguous]/findall       9156          1  ('(?:(b*éa){0,2}|.éa)é(?:é+)', b'a\xc3\xa9a\xc3\xa9\xc3\xa9baa', 0, [(0, 8)], [(1, 8, 1, 4)])
+fallback                   137692          0  
+fallback/findall            23976          0  
+fallback_gate_off[P-atomic+split-ambiguous]      35411          0  
+fallback_gate_off[P-atomic+split-ambiguous]/findall       6180          0  
+fallback_gate_off[P-atomic+split-clean]      23494          0  
+fallback_gate_off[P-atomic+split-clean]/findall       4092          0  
+fallback_gate_off[P-lookaround+split-ambiguous]       6268          5  ('(?:Xé{1,3}?(?!X)|b*)é(?:é*|aX)', b'baaaX\xc3\xa9\xc3\xa9aa', 0, (4, 9), (5, 9))
+fallback_gate_off[P-lookaround+split-ambiguous]/findall       1080          1  ('(?:Xé{1,3}?(?!X)|b*)é(?:é*|aX)', b'baaaX\xc3\xa9\xc3\xa9aa', 0, [(4, 9)], [(5, 9)])
+fallback_gate_off[P-lookaround+split-clean]      16095          0  
+fallback_gate_off[P-lookaround+split-clean]/findall       2772          0  
+fallback_gate_off[split-ambiguous]      53088          1  ('(?:(b*éa){0,2}|.éa)é(?:é+)', b'a\xc3\xa9a\xc3\xa9\xc3\xa9baa', 0, (0, 8), (1, 8, 1, 4))
+fallback_gate_off[split-ambiguous]/findall       9156          1  ('(?:(b*éa){0,2}|.éa)é(?:é+)', b'a\xc3\xa9a\xc3\xa9\xc3\xa9baa', 0, [(0, 8)], [(1, 8, 1, 4)])
+erase_atomic                23494          6  ('(?:[aX]?+a|b?)é(?:[^X]{1,3}?|X)', b'aXaX\xc3\xa9Xa\xc3\xa9\xc3\xa9', 7, (8, 12), None)
+erase_atomic/findall         4092          3  ('(?:[aX]?+a|b?)é(?:[^X]{1,3}?|X)', b'aXaX\xc3\xa9Xa\xc3\xa9\xc3\xa9', 0, [(4, 7), (8, 12)], [(4, 7)])
+max_start                  137692        197  ('(?:(\\b[^X]{0,2}){1,3})X(?:a{1,3}+)', b'b\xc3\xa9XabX\xc3\xa9', 0, (0, 5, 3, 3), (3, 5, 3, 3))
+max_start/findall           23976         65  ('(?:(\\b[^X]{0,2}){1,3})X(?:a{1,3}+)', b'b\xc3\xa9XabX\xc3\xa9', 0, [(0, 5, 3, 3)], [(3, 5, 3, 3)])
+lo0                        137692        680  ('(?:[^X]b)é(?:[ab]{0,2}+|a*)', b'\n\xc3\xa9X\xc3\xa9b\xc3\xa9X', 6, None, (4, 9))
+lo0/findall                 23976         17  ('(?:.)a(?:[ab]*[aX]{0,2})', b'baXaa\xc3\xa9ab', 0, [(0, 4), (5, 9)], [(0, 4), (3, 5), (5, 9)])
+slice                      137692        212  ('(?:\\b)éa(?:a{0,2}?a??.|a*+(?<!b))', b'X\xc3\xa9aaa\xc3\xa9bb\xc3\xa9', 1, (1, 5), None)
+slice/findall               23976         15  ('(?:é?(?:\\b(é?a?)))X(?:[ab][aX]*?|\\Baé+?)', b'\nXaXba\xc3\xa9', 0, [(1, 3, 1, 1)], [(1, 3, 1, 1), (3, 5, 3, 3)])
+noverify                   137692       6967  ('(?:X??)a(?:éX)', b'XXXaaaa', 0, None, (2, 4))
+noverify/findall            23976       1988  ('(?:X??)a(?:éX)', b'XXXaaaa', 0, [], [(2, 4), (4, 5), (5, 6), (6, 7)])
+skipL                      137692         17  ('(?:[ab])aa(?:a{2}|a*é??)', b'aaa\nbaa\xc3\xa9X', 0, (0, 3), (4, 7))
+skipL/findall               23976          4  ('(?:[ab])aa(?:a{2}|a*é??)', b'aaa\nbaa\xc3\xa9X', 0, [(0, 3), (4, 7)], [(4, 7)])
+restart_s1                 137692          0  
+restart_s1/findall          23976        105  ('(?:(\\b[^X]{0,2}){1,3})X(?:a{1,3}+)', b'b\xc3\xa9XabX\xc3\xa9', 0, [(0, 5, 3, 3)], [(0, 5, 3, 3), (1, 5, 3, 3), (3, 5, 3, 3)])
+c_end                        2572          0  
+c_end_gate_off               3796        142  ('(?:(?:\\B(?:[aX]{2}\\B){2}(?:b*+){0,2}|X{0,2}))X(?:é[^X])', b'XX\xc3\xa9\xc3\xa9XaaaX', 0, (0, 6), None)
+reverse-walk bytes over accepted candidates (tactic+mutants): 49409; rust-guard fallbacks: 4207
+selftest: PASS

@@ -496,6 +496,27 @@ URL:
 Accessed 2026-09-22.
 Cited by: `docs/dev/optloop/captures_via_dfa_survey.md` §2.2, §2.11, §3.3.
 
+### [RArevinner] Rust `regex-automata` reverse-inner strategy and its leftmost fix (source, not a paper)
+
+`regex-automata/src/meta/reverse_inner.rs` (`has_no_earlier_match`,
+`InnerPrefilter::new`, `top_concat`, `flatten`) and `src/meta/strategy.rs`
+(`ReverseInner::try_search_full`, `try_search_half_rev_limited`,
+`try_search_half_fwd_stopat`) on the `master` branch. First-hand for the
+reverse-inner loop and its two quadratic guards (`min_match_start` on the
+reverse walk, `min_pre_start` on the forward verify), and for the
+which-occurrence bug: commit `64ad0b6`, "automata: fix bug in reverse
+suffix/inner optimization" (GitHub's history page dates it 2026-07-15), fixing
+rust-lang/regex issue #1354 (`.bb|b` on `zabb` reported `2..3` for `1..4`;
+`(?:..acbb|b)a(?:c|d)` on `xzbacbbac` reported `2..5` for `1..9`), whose three
+sufficient conditions are a non-containable single literal, a fixed-length
+prefix, or a disjoint class separator.
+URLs: <https://github.com/rust-lang/regex/blob/master/regex-automata/src/meta/reverse_inner.rs>,
+<https://github.com/rust-lang/regex/blob/master/regex-automata/src/meta/strategy.rs>,
+<https://github.com/rust-lang/regex/commit/64ad0b6>.
+Accessed 2026-10-06 (read through a summarizing fetch; the quoted code is as
+returned, not re-checked against a clone).
+Cited by: `docs/design/where_to_start.md` §2.3, §2.7.
+
 ### [RE2onepass] RE2 `re2/onepass.cc` (source, not a paper)
 
 The leading comment of RE2's one-pass engine. First-hand for RE2's own
