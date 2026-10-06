@@ -26376,3 +26376,16 @@ Frank: "finish up open work/bench results/errors", Linux box free (bench manager
   orig2-LOSS flake under a gate-overridden load ~20, re-run clean).
   Launched the dual-review pair rvA07a/rvA07b (opus, blind). Process
   slip: the manager cd'd into a cell once (memory rule); returned at once.
+- ~01:50: [ARTREV] pilot reviews: rvA07a (6 leads), rvA07b (6 leads), rvA01
+  (4 leads) delivered; every twin identity-PASS plain + --san; sabotage
+  controls all caught (one off-by-one guard caught ONLY by --san). DUAL
+  REVIEW OVERLAP on A07 (first reading, scratch): both blind reviewers found
+  the same four core leads — `\b` as a start filter, the two dead give-back
+  frames (auto-possessify), straight-line/untrailed attempt, fused inline
+  word walk — and both proposed 256-byte class tables; unique: A07a's
+  run-counters-in-locals (aliasing), A07b's restart past the proven-dead
+  range. So ~5 of 6 overlap: dual review buys ~1 lead per reviewer at 2x
+  cost — input to the pilot gate's single-vs-dual decision. rvA07b's one
+  scratch timing run (00:27, Mac) read L2 -45% alone, L4 -72%; scratch only.
+  rvA01's main lead: anchor on '(' (required, 8.7x rarer than the picked
+  'a'): fail subjects 33,377 -> 3,820 memchr/MiB. rvA09 (hybrid) running.
