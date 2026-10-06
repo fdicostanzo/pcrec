@@ -13,8 +13,9 @@
 # `overlap` row, so the plant lands in two word compares, both shifted one
 # byte, and the reach greps their text. Intent unchanged: the compare sits
 # one byte past the proved pin and refuses every real start.
+# RE-AIMED 2026-10-06 ([MEMFN] R4c REPLACE, lane r4ccore): the verify chain is the kit's; the run term's offset is what it passes to pcrec's run_cmp hook. Intent unchanged.
 SAB_ID="S279-run-term-offset-plus-one"
-SAB_FILE="src/gen/emit_dfa.c"
+SAB_FILE='memfn/src/ofsskip.c'
 SAB_SUITES="harness offsetskip"
 SAB_HARNESS_TARGET="tests/offsetskip/run_pinned.rxt"
 SAB_DESC="the run-pinned prefilter rows compare the pinned run one byte past its proved offset (cand + run_o + 1), so the candidate test refuses every real match start and the skip returns n: every m cell of every run-pinned artifact reads nomatch"
@@ -32,5 +33,5 @@ SAB_REACH_EXPECT="REACH-RUN-TERM-EMITTED"
 # `pcrec_emit_exact_compare` (the VM's literal runs are its second caller);
 # the call site's name is the only change, plant and intent unchanged.
 SAB_COUNT=1
-SAB_BEFORE='            pcrec_emit_run_compare(cx, c, "subject + cand", t->run_o, &run);'
-SAB_AFTER='            pcrec_emit_run_compare(cx, c, "subject + cand", t->run_o + 1, &run);   /* SABOTAGE S279 */'
+SAB_BEFORE='            h->run_cmp(h->u, o, "subject + cand", t->offset,'
+SAB_AFTER='            h->run_cmp(h->u, o, "subject + cand", t->offset + 1,   /* SABOTAGE S279 */'

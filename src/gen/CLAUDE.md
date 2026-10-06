@@ -8,6 +8,25 @@ attempt loop with EOL-variant states. Table emission exists because gcc compile
 time on huge computed-goto functions is superlinear (R1 A-3). Generated code
 has zero dependency on pcrec at build or run time.
 
+## MIGRATED TO THE memfn KIT — edit in `memfn/`, not here ([MEMFN] R4c, 2026-10-06)
+
+The SEARCH TEXT of these sites is the kit's (D146; `memfn/CLAUDE.md` "The
+boundary with pcrec"), rendered through `memfn_sites.c` (DELEG_SITES):
+
+| site | kit arm (edit THERE) | pcrec's remaining half (here) |
+|---|---|---|
+| PRE + SETREST (the pre-check composite: one-byte gate, run calls, set rest) | `memfn/src/precheck.c` | `req_site_define` (every decision: admission, lead, runs, set rest, handoff), `pcrec_emit_req_byte_check` (the use, `emit_req_handoff_rest`), the notes `req_note_*`, `req_run_tests`, `req_set_rest_members` |
+| OFS (the `<p>_ofsskip` block, its comment, its calls; the run pre-check's `<p>_reqrun[_whole]` functions) | `memfn/src/ofsskip.c` | `ofs_test_of`/`ofs_test_model`/`ofs_test_run` (the k-set selection), `ofs_pred_of` (the description), `ofs_site_define`, `pf_ofs_call`, the tables (`pf_tables_ofs`), the reseed, the call statements around the expression |
+
+The retired emitters (`emit_req_one_byte`, `emit_req_run_check`,
+`emit_req_set_rest`'s text, `emit_req_handoff`'s declaration line,
+`pcrec_emit_req_run_blocks`' text, `ofs_test_emit_fn`, `ofs_test_emit_pair`,
+`ofsk_emit_verify`, `ofsk_emit_params`, `pf_block_ofs`'s comment) are named
+in the history below as they were. A change to what these sites EMIT is a
+kit change (its own `--memfn=no-NAME` row, its `tests/memfn/pins/arms.tsv`
+re-pin, and pcrec's abi event in the same commit); a change to a DECISION
+stays here.
+
 ## THE `abi` NUMBER — its change log is NOT here
 
 `rx_info.abi` versions the emitted scaffolding as a whole (D76). **The one
@@ -1101,10 +1120,8 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
   `ofs_site_define`, `ofs_pred_of`). `memfn_sites.h` is the one pcrec header
   that includes the kit's (`memfn/include/memfn.h`). Checks: C10
   (`tests/memfn/run_deleg_sites.sh`), C5 (`tests/memfn/run_arm_pins.sh`).
-  **[R4c IMPLEMENT] the I1 shadow comparator** lives here
-  (`pcrec_memfn_shadow_*`, `Job.mf_shadow`): every M1 span pcrec still
-  writes is also rendered by the kit into a scratch buffer and compared
-  (bytes, muted-comment count, the run-compare record). Deleted by REPLACE.
+  The I1 shadow comparator lived here for R4c's IMPLEMENT commit
+  (66176e35) and was deleted by REPLACE.
 
 - **runcmp.c** — [OPT-LITSCAN] S4 C1 (lane s4build, 2026-10-03, abi 58;
   `docs/design/litscan_s4.md` §1.3-§1.5, `docs/spec/tuning.md` §2.38): THE RUN

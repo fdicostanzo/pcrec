@@ -102,7 +102,8 @@ land here too.
 ## Sabotage rows
 
 - S510: a `memchr(` text planted in an unlisted function trips rule 1.
-- S511: the PRE row goes stale and trips rule 4.
+- S511: a pending row goes stale and trips rule 4 (re-aimed at R4c from PRE,
+  now delegated, to MLINE's `emit_attempt`).
 - S512: deleting a row trips the floor.
 
 All three are on arm `memfnmanifest`. See

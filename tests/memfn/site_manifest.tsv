@@ -41,10 +41,10 @@
 #
 # site	emitters	op	budget	step	status	companions	ref
 PF	pcrec_emit_find	FIND/ASSIGN	scan	M2 (R4g)	pending	pf_emit_find,pf_emit_memchr,pf_emit_memchr_bounded,pf_emit_bcls,pf_emit_bcls_bounded,pf_comment_memchr,pf_emit_ofs,pf_emit_ofs_bounded,pf_block_ofs,pf_vm_emit_first_class	§8.5 T1; §15.7; VMSTART (the VM hat's seek, stage 2 abi 62, built through pcrec_emit_find's table form: integration.md N-table); §16 (the offset/run rows' CALLS stay pcrec's text around an EXPR)
-PRE	emit_req_one_byte	FIND/ON_MISS	scan	M1 (R4c)	pending	pcrec_emit_req_byte_check,emit_req_run_check,emit_req_handoff,pcrec_emit_req_run_blocks,req_run_tests	§8.5 T2; §15.3; §15.5 (one composite site with SETREST); §16
-OFS	ofs_test_emit_fn,ofs_test_emit_pair	FIND/RETURN	scan	M1 (R4c)	pending	ofsk_emit_verify,ofsk_emit_params	§8.5 OFS (N5); §15.1; §16
-SETREST	emit_req_set_rest	ALL_PRESENT/ON_MISS	scan	M1 (R4c)	pending	pcrec_emit_req_byte_check	§8.5 SETREST (N4); §15.4; §15.5
-VERIFY	pcrec_emit_run_compare,rc_emit_words,rc_emit_bytes,pcrec_emit_runcmp_helpers	VERIFY/BOOL	scan	M1b	pending	ofsk_emit_verify,pcrec_runcmp_prepare	§8.5 VERIFY (T6 at budget 1); §15.6; §22 M1b
+PRE	req_site_define,pcrec_emit_req_byte_check	ALL_PRESENT/ON_MISS|ASSIGN	scan	M1 (R4c)	delegated	pcrec_emit_req_run_blocks,req_run_tests,ofs_pred_of,emit_req_handoff_rest,req_note_byte,req_note_run,req_site_note	§8.5 T2; §15.3; §15.5 (one composite site with SETREST); §16; R4c REPLACE: the kit's precheck arm (memfn/src/precheck.c) writes it, the emitters column names the site builder and the use point
+OFS	ofs_site_define,pf_ofs_call	FIND/RETURN	scan	M1 (R4c)	delegated	ofs_pred_of,pf_block_ofs,ofs_site_fn_name,ofs_site_table_name	§8.5 OFS (N5); §15.1; §16; R4c REPLACE: the kit's ofsskip arm (memfn/src/ofsskip.c) writes it
+SETREST	req_site_define	ALL_PRESENT/ON_MISS	scan	M1 (R4c)	delegated	req_set_rest_members,req_note_rest	§8.5 SETREST (N4); §15.4; §15.5; R4c REPLACE: the PRE composite's trailing predicates (memfn/src/precheck.c)
+VERIFY	pcrec_emit_run_compare,rc_emit_words,rc_emit_bytes,pcrec_emit_runcmp_helpers	VERIFY/BOOL	scan	M1b	pending	pcrec_memfn_run_cmp,pcrec_runcmp_prepare	§8.5 VERIFY (T6 at budget 1); §15.6; §22 M1b
 VMRUN	pcrec_emit_run_compare,rc_emit_words,rc_emit_bytes,pcrec_emit_runcmp_helpers	VERIFY/BOOL	loop	M1b	pending	vm_lit,vm_isl_emit	§8.5 VMRUN (T6 at budget 2); §16 (runcmp's two VM callers); §22 M1b
 STAY	dir_fwd_skip,dir_rev_skip	SKIP/ADVANCE	loop	M3 (R4h)	pending		§8.5 STAY (N1); §15.7
 EDGE	emit_scan_edge	SKIP/ADVANCE	loop	M3 (R4h)	pending	scan_test	§8.5 EDGE (T3); §15.7

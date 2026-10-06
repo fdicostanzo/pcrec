@@ -302,63 +302,6 @@ void pcrec_memfn_run_cmp(void *u, mf_sink *c, const char *base, int32_t off,
     pcrec_emit_run_compare(pu->cx, pcrec_memfn_sink_sb(pu->cx, c), base, off, &run);
 }
 
-/* ---- [MEMFN] R4c IMPLEMENT: the I1 shadow comparator ---------------------- */
-
-void pcrec_memfn_shadow_begin(Ctx *cx, StrBuf *c, MemfnShadow *sh)
-{
-    Job *job = cx->job;
-    sh->c = c;
-    sh->at = c->len;
-    sh->dropped = c->cmt_dropped;
-    sh->rc_words[0] = job->rc_words;
-    sh->rc_wused[0] = job->rc_wused;
-    sh->rc_wemitted[0] = job->rc_wemitted;
-}
-
-StrBuf *pcrec_memfn_shadow_swap(Ctx *cx, MemfnShadow *sh)
-{
-    Job *job = cx->job;
-    StrBuf *scr = &job->mf_shadow;
-    sh->rc_words[1] = job->rc_words;
-    sh->rc_wused[1] = job->rc_wused;
-    sh->rc_wemitted[1] = job->rc_wemitted;
-    job->rc_words = sh->rc_words[0];
-    job->rc_wused = sh->rc_wused[0];
-    job->rc_wemitted = sh->rc_wemitted[0];
-    scr->len = 0;
-    if (scr->p) scr->p[0] = 0;
-    scr->cmt_dropped = 0;
-    scr->cmt_drop = sh->c->cmt_drop;
-    return scr;
-}
-
-void pcrec_memfn_shadow_end(Ctx *cx, MemfnShadow *sh, const char *what)
-{
-    Job *job = cx->job;
-    const StrBuf *scr = &job->mf_shadow;
-    const char *mine = sh->c->p ? sh->c->p + sh->at : "";
-    size_t n = sh->c->len - sh->at;
-    const char *kit = scr->p ? scr->p : "";
-    size_t i = 0;
-    while (i < n && i < scr->len && mine[i] == kit[i]) i++;
-    const char *why =
-        n != scr->len || i < n                         ? "its text differs"
-      : sh->c->cmt_dropped - sh->dropped != scr->cmt_dropped
-                                                       ? "its muted-comment byte count differs"
-      : job->rc_words != sh->rc_words[1] ||
-        job->rc_wused != sh->rc_wused[1] ||
-        job->rc_wemitted != sh->rc_wemitted[1]         ? "its run-compare record differs"
-      :                                                  NULL;
-    if (why)
-        pcrec_ctx_fail(cx, 0, "internal error: [MEMFN] I1 shadow comparator: "
-                       "the kit's %s %s from pcrec's (pcrec %zu bytes, kit %zu, "
-                       "first difference at byte %zu)", what, why, n,
-                       scr->len, i);
-    job->rc_words = sh->rc_words[1];
-    job->rc_wused = sh->rc_wused[1];
-    job->rc_wemitted = sh->rc_wemitted[1];
-}
-
 /* ---- the end of an attempt ------------------------------------------------ */
 
 void pcrec_memfn_art_end(Ctx *cx, mf_art *art)

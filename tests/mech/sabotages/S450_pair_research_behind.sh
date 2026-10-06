@@ -9,8 +9,9 @@
 # Detector: the harness on reqcube.rxt's re-search block, whose per-case
 # timeout is the hang's own detector, and reqcube_check.py's re-search text
 # check. (Design's provisional S449.)
+# RE-AIMED 2026-10-06 ([MEMFN] R4c REPLACE, lane r4ccore): the pair arm is the kit's (pair_body); the search text moved into the kit; the plant is the same defect in the kit's transcription of the form.
 SAB_ID="S450-pair-research-behind"
-SAB_FILE="src/gen/emit_dfa.c"
+SAB_FILE='memfn/src/ofsskip.c'
 SAB_SUITES="harness codegen"
 SAB_HARNESS_TARGET="tests/litscan/reqcube.rxt"
 SAB_DESC="the pair arm's re-search bound is '< pos' instead of '< pos + k*', so after a failed verify the stream keeps the hit that produced the candidate and the block loops on it forever"
@@ -19,5 +20,5 @@ SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "(?i)sele
 SAB_REACH_EXPECT="REACH-PAIR-ARM"
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    const char *lim = at;   /* the re-search bound: a hit below pos + k* is stale */'
+SAB_BEFORE='    const char *lim = at.p;   /* the re-search bound: a hit below pos + k is stale */'
 SAB_AFTER='    const char *lim = "pos";   /* SABOTAGE S450: the re-search bound falls behind the hit */'

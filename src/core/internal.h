@@ -2669,10 +2669,6 @@ typedef struct {
     /* Whether the prologue declared `<string.h>` (`pcrec_emit_prologue`):
      * every header the kit's text needs must be one it declared (§14.8). */
     bool string_h;
-    /* [MEMFN] R4c IMPLEMENT only: the I1 shadow comparator's scratch buffer
-     * (memfn_sites.c), Job-owned for `vmsb`'s reason (a kit refusal
-     * longjmps out mid-render) and freed by `job_cleanup`. */
-    StrBuf mf_shadow;
 } Job;
 
 /* [M6.3] module `named-groups` — see Ctx.named_groups below for the full

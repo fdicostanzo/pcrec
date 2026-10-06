@@ -114,33 +114,6 @@ void pcrec_memfn_note_helpers(void *u, mf_sink *c, uint32_t part);
 void pcrec_memfn_run_cmp(void *u, mf_sink *c, const char *base, int32_t off,
                          uint32_t term);
 
-/* ---- [MEMFN] R4c IMPLEMENT: the I1 shadow comparator (§9.1, §9.3) --------
- *
- * Every call span pcrec still writes itself is also rendered through the kit
- * into a scratch buffer, from the same starting state, and the two must be
- * the same bytes, the same muted-comment byte count and the same
- * run-compare record (`rc_*`, which `<PREFIX>_RUN_WORDS` and the helper
- * declarations read): a difference is an internal error naming the span.
- * The facts a site's builder asks are not compared per span: the pre-check
- * builder asks at its define point what pcrec's text asked at its use
- * point, the same calls under the same conditions, and only the attempt's
- * union is read (`--emit-facts`). Deleted by the REPLACE commit, with
- * pcrec's own text. */
-typedef struct {
-    StrBuf   *c;
-    size_t    at, dropped;              /* c's length and muted count before */
-    long long rc_words[2];              /* [0] before, [1] after pcrec's text */
-    unsigned  rc_wused[2], rc_wemitted[2];
-} MemfnShadow;
-/* Before pcrec's own text: notes where its span begins. */
-void pcrec_memfn_shadow_begin(Ctx *cx, StrBuf *c, MemfnShadow *sh);
-/* After it: keeps its end state, rewinds the attempt to the start state, and
- * returns the scratch buffer the kit's rendering of the span goes to. */
-StrBuf *pcrec_memfn_shadow_swap(Ctx *cx, MemfnShadow *sh);
-/* After the kit's: compares the two (an internal error naming `what` on any
- * difference) and leaves the attempt in pcrec's end state. */
-void pcrec_memfn_shadow_end(Ctx *cx, MemfnShadow *sh, const char *what);
-
 /* ---- the end of an attempt ------------------------------------------------ */
 
 /* Ends the attempt's kit state: every defined site used, and every header
