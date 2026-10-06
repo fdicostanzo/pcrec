@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """C17, the checked site manifest ([MEMFN], integration.md §R4.3.4).
 
-Usage: site_manifest_check.py ROOT ROW_FLOOR
+Usage: site_manifest_check.py ROOT ROW_FLOOR [CC]
 
 ROOT is the tree to check (its src/gen/, src/enc/, src/ and
 tests/memfn/{site_manifest,search_vocab}.tsv). ROW_FLOOR is the K35 floor
@@ -11,9 +11,12 @@ own literal, which shares no source with the manifest.
 The four failure rules (§R4.3.4):
   1. static half: a function under src/gen/ or src/enc/ spells a vocabulary
      form and no `pending` row names it;
-  2. dynamic half: a site reaches mf_emit_site with no `delegated` row --
-     UNREACHED (K35) while no pcrec source calls mf_emit_site, and a FAIL
-     the day one does and this half is still unbuilt;
+  2. dynamic half: a pcrec function calls mf_define/mf_emit with no
+     `delegated` row naming it, counted over a corpus compile pass through a
+     traced build (tests/memfn/site_census.py); every `delegated` row must be
+     rendered at least once. UNREACHED, loudly (K35, never a pass), while no
+     pcrec source calls the kit and no row is `delegated`; its machinery runs
+     on a synthetic caller every time (the selftest lines);
   3. a `delegated` row's emitter still spells a form (two spellings of one
      search, D122) -- vacuous while there are no delegated rows, and said so;
   4. a `pending` row's emitter spells nothing: the row is stale.
@@ -27,10 +30,13 @@ tests/mech scrapes. Exit 1 on any FAIL.
 import glob
 import os
 import re
+import shutil
 import sys
+import tempfile
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from c17_lex import scan  # noqa: E402
+import site_census  # noqa: E402
 
 STATUSES = ('delegated', 'pending')     # the ruled vocabulary, no third state
 BUDGETS = ('scan', 'loop')
@@ -67,11 +73,69 @@ def read_tsv(path, ncol):
     return rows
 
 
+def rule2(root, cc, deleg_rows):
+    """Rule 2, the dynamic half, re-keyed to the kit's API (R4c, Q3): a call to
+    mf_define/mf_emit from a pcrec function no `delegated` row names, counted
+    over a corpus compile pass. tests/memfn/site_census.py has the mechanism."""
+    for good, msg in site_census.selftest(cc):
+        (ok if good else bad)(msg)
+    callers = site_census.find_callers(root)
+    ncalls = sum(sum(c.values()) for c in callers.values())
+    listed = set().union(*deleg_rows.values()) if deleg_rows else set()
+    if ncalls == 0 and not deleg_rows:
+        print('UNREACHED: rule 2 (dynamic half): no pcrec source under src/ calls mf_define or '
+              'mf_emit and no manifest row is `delegated`, so the corpus compile pass has no '
+              'site to count -- declared UNREACHED (K35), NOT passed. Kit calls counted: 0. '
+              'It goes live at the first migration step\'s REPLACE commit; the census machinery '
+              'itself is proven by the selftest lines above.')
+        return
+    if ncalls == 0:
+        bad('rule 2: %d row(s) are `delegated` (%s) but no pcrec source under src/ calls '
+            'mf_define or mf_emit: the rows delegate to nothing' % (len(deleg_rows),
+                                                                  ','.join(sorted(deleg_rows))))
+        return
+    unlisted = [(f, fn, n) for f, c in sorted(callers.items()) for fn, n in sorted(c.items())
+                if fn not in listed]
+    for f, fn, n in unlisted:
+        bad('rule 2: %s: %s calls mf_define/mf_emit %d time(s) and no `delegated` row names it '
+            '(an unlisted site)' % (f, fn, n))
+    print('rule 2: %d kit call(s) in %d function(s) of %d file(s) under src/'
+          % (ncalls, sum(len(c) for c in callers.values()), len(callers)))
+    if unlisted:
+        return                      # no point building the traced binary on a known red
+    tmp = tempfile.mkdtemp(prefix='c17pass.', dir=os.environ.get('TMPDIR'))
+    try:
+        exe, why = site_census.build_traced(root, cc, sorted(callers), tmp)
+        if exe is None:
+            bad('rule 2 (dynamic half): the traced build failed: %s' % why)
+            return
+        pats = site_census.corpus_patterns(root)
+        okc, per = site_census.run_corpus(exe, pats, tmp)
+        print('corpus pass: %d patterns sampled, %d compiled' % (len(pats), okc))
+        if okc < site_census.CORPUS_FLOOR:
+            bad('rule 2 (dynamic half): only %d compiles in the corpus pass, below its K35 floor '
+                'of %d: the census is not a census' % (okc, site_census.CORPUS_FLOOR))
+            return
+        probs, st = site_census.verdict(per, deleg_rows)
+        print('corpus pass: %d kit call(s) over %d compiles (%d render at least one site, at '
+              'most %d per compile); by function: %s'
+              % (st['calls'], st['compiles'], st['withsite'], st['max'],
+                 ', '.join('%s %d' % kv for kv in sorted(st['seen'].items()))))
+        for p in probs:
+            bad(p)
+        if not probs:
+            ok('rule 2 (dynamic half): every function that reached the kit over the corpus pass '
+               'is named by a delegated row, and every delegated row was rendered')
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
 def main():
-    if len(sys.argv) != 3:
-        print('usage: site_manifest_check.py ROOT ROW_FLOOR', file=sys.stderr)
+    if len(sys.argv) not in (3, 4):
+        print('usage: site_manifest_check.py ROOT ROW_FLOOR [CC]', file=sys.stderr)
         return 2
     root, floor = sys.argv[1], int(sys.argv[2])
+    cc = sys.argv[3] if len(sys.argv) > 3 else 'gcc'
     mpath = os.path.join(root, 'tests/memfn/site_manifest.tsv')
     vpath = os.path.join(root, 'tests/memfn/search_vocab.tsv')
 
@@ -115,13 +179,14 @@ def main():
              len(spells), ', '.join('%s %d' % kv for kv in sorted(by_class.items()))))
     memchr = sum(1 for v in spells.values() for _, lid, ex in v
                  if lid == 'libc-call' and ex.startswith('memchr('))
-    print('  (C12 reading, information only until C12 is born at R4c: '
-          'emitted-text memchr( calls = %d)' % memchr)
+    print('  (emitted-text memchr( calls = %d; C12 holds their ceiling: '
+          'tests/memfn/run_form_checks.sh)' % memchr)
 
     # -- the manifest's shape ----------------------------------------------
     rows = read_tsv(mpath, 8)
     seen = {}
     pend_fns, deleg_fns = {}, {}
+    deleg_rows = {}      # delegated row id -> its emitters and companions
     counts = {s: 0 for s in STATUSES}
     for n, (site, emitters, _op, budget, _step, status, comps, _ref) in rows:
         where = '%s:%d (%s)' % (os.path.relpath(mpath, root), n, site)
@@ -144,6 +209,8 @@ def main():
                     % (where, fn, ' or '.join(SCAN_DIRS)))
         for fn in fns:
             (pend_fns if status == 'pending' else deleg_fns).setdefault(fn, []).append(site)
+        if status == 'delegated':
+            deleg_rows[site] = set(fns) | {c for c in comps.split(',') if c}
     total = counts['delegated'] + counts['pending']
     print('manifest: %d rows -- delegated %d / pending %d (K35 floor %d)'
           % (total, counts['delegated'], counts['pending'], floor))
@@ -169,20 +236,7 @@ def main():
            'form is named by a pending row' % len(spells))
 
     # -- rule 2: an unlisted site, dynamic half ----------------------------
-    calls = 0
-    for path in glob.glob(os.path.join(root, 'src', '**', '*.[ch]'), recursive=True):
-        with open(path, encoding='utf-8', errors='replace') as fh:
-            code = re.sub(r'/\*.*?\*/|//[^\n]*', ' ', fh.read(), flags=re.S)
-            calls += len(re.findall(r'\bmf_emit_site\s*\(', code))
-    if calls == 0:
-        print('UNREACHED: rule 2 (dynamic half): no pcrec source calls '
-              'mf_emit_site, so the corpus compile pass has no site call to '
-              'count -- declared UNREACHED (K35), not passed. Site calls '
-              'counted: 0.')
-    else:
-        bad('rule 2 (dynamic half): %d mf_emit_site call(s) under src/ but the '
-            'dynamic half (the corpus pass census against delegated rows) is not '
-            'built -- it is no longer unreachable; build it in this change' % calls)
+    rule2(root, cc, deleg_rows)
 
     # -- rule 3: a delegated row whose emitter still spells a form ----------
     if counts['delegated'] == 0:
