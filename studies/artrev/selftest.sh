@@ -221,10 +221,15 @@ echo "$OUT" | grep -q "FIRST DIFFERENCE" && bad "start_early should be invisible
 expect "new ctl_earlyloop" 0 $A twin hyb ctl_earlyloop --new
 python3 $HERE/selftest_twins.py "$S/hyb/arms/ctl_earlyloop" start_early_loop
 expect "seal ctl_earlyloop" 0 $A twin hyb ctl_earlyloop --seal --control
+expect "the unconditionally-early start twin is also caught (by the window differential)" 1 eval "$A identity hyb ctl_earlyloop $HYBID"
+has "earlyloop" "start differences"
+expect "new ctl_hang" 0 $A twin vm ctl_hang --new
+python3 $HERE/selftest_twins.py "$S/vm/arms/ctl_hang" hang
+expect "seal ctl_hang" 0 $A twin vm ctl_hang --seal --control
 T0=$(date +%s)
-expect "a livelocking early-start twin FAILS FAST (the livelock bound, not the 900 s timeout)" 1 env ARTREV_LIVELOCK_FLOOR=5 bash -c "$A identity hyb ctl_earlyloop $HYBID"
+expect "a HANGING twin FAILS FAST (the livelock bound, not the 900 s timeout)" 1 env ARTREV_LIVELOCK_FLOOR=5 bash -c "$A identity vm ctl_hang --battery 200 --pcre2-sample 0"
 T1=$(date +%s)
-has "earlyloop" "LIVELOCK"
+has "hang" "LIVELOCK"
 [ $((T1-T0)) -lt 120 ] && ok "livelock failed in $((T1-T0)) s" || bad "livelock took $((T1-T0)) s"
 echo "-- iteration shortcuts cannot reach timing"
 expect "new ctl_part" 0 $A twin hyb ctl_part --new
@@ -251,6 +256,66 @@ has "a09 strict" "strict-giveup"
 expect "a09: L4 r3 (capacity guard added) is exact even under --strict-giveup" 0 eval "$A identity a09 L4_r3 $A09ID --skip-window --strict-giveup"
 expect "a09: ctlL4e (the livelocking early start) FAILS FAST, no 900 s timeout" 1 env ARTREV_LIVELOCK_FLOOR=10 bash -c "$A identity a09 ctlL4e $A09ID"
 T9=$?
+
+
+echo; echo "== 10. LAYOUT CONTROL: the pad-shift arms (charter S4; k87twin_align.sh's method)"
+python3 - <<PY
+import os, subprocess, sys
+sys.path.insert(0, "$HERE")
+import common as C, timing as T
+meta = C.load_meta("vm")
+names = T.make_pad_arms("vm", ["orig"], [16, 32, 48, 64])
+addrs = {}
+for arm in ["orig"] + names:
+    exe = C.compile_arm(meta, os.path.join(C.art_dir("vm"), "arms", arm), "id")
+    out = subprocess.run(["nm", exe], capture_output=True, text=True).stdout.split("\n")
+    a = [int(l.split()[0], 16) for l in out if l.split() and l.split()[-1] in ("_art_search", "art_search")]
+    addrs[arm] = a[0]
+base = addrs["orig"]
+moved = {n: (addrs[n] - base) for n in names}
+print("art_search offsets vs orig:", moved)
+assert all(v % 64 != 0 for v in moved.values()), moved
+assert len(set(v % 64 for v in moved.values())) == 4, moved
+PY
+[ $? = 0 ] && ok "pad arms MOVE the code: 4 distinct code offsets (mod 64) vs the original" || bad "pad arms do not move the code"
+expect "--pads with fewer than 4 offsets is refused" 2 $A time vm --arms orig,null --pads 16,32 --subject cell=$S/subj_dense.txt --rounds 3 --gate-override
+expect "pads must be multiples of 16" 2 $A time vm --arms orig,null --pads 16,32,48,50 --subject cell=$S/subj_dense.txt --rounds 3 --gate-override
+expect "time with the layout control: orig/orig2/null/ctl_slow, pads 16-64 on orig and ctl_slow" 0 $A time vm --arms orig,orig2,null,ctl_slow --pads 16,32,48,64 --pad-arms orig,ctl_slow --subject cell=$S/subj_dense.txt --rounds 7 --gate-override
+has "layout" "layout: pad-median"
+has "layout" "no pad control for this arm"
+RUN=$(ls -d $S/vm/timing/* | tail -1)
+[ "$(awk -F'\t' '$1=="cell" && $2=="ctl_slow" {print $11}' "$RUN/summary.tsv")" = LOSS ] && ok "the slowed twin still reads LOSS with the layout control" || bad "slowed twin lost its LOSS under the pad control"
+grep -q "orig@p16" "$RUN/raw.tsv" && ok "pad arms were timed in the same interleaved rounds" || bad "no pad rows in raw.tsv"
+python3 - <<PY
+import sys; sys.path.insert(0, "$HERE")
+import timing
+def rows(arm, xs): return [{"subject": "s", "arm": arm, "round": i, "ns": x} for i, x in enumerate(xs)]
+base = [10.0, 10.1, 9.9, 10.05, 9.95, 10.0, 10.02, 9.98, 10.01, 9.99, 10.0]
+def mk(extra):
+    R = rows("orig", base) + rows("null", [x + 0.03 for x in base])
+    for arm, shift in extra.items():
+        R += rows(arm, [x + shift for x in base])
+    return R
+arms = ["orig", "null", "X", "orig@p16", "orig@p32", "orig@p48", "orig@p64", "X@p16", "X@p32", "X@p48", "X@p64"]
+def verdict(shifts):
+    S = timing.summarize(mk(shifts), arms)
+    timing.apply_layout(S, arms)
+    return S["s"]["X"]["verdict"]
+clean = {"X": -1.0, "orig@p16": 0.0, "orig@p32": 0.0, "orig@p48": 0.0, "orig@p64": 0.0, "X@p16": -1.0, "X@p32": -1.0, "X@p48": -1.0, "X@p64": -1.0}
+# 1: a clean 10% win at every pad is a WIN
+assert verdict(clean) == "WIN", verdict(clean)
+# 2: the same median win, but the ORIGINAL itself swings 1.5 ns across pads: layout alone moves more than the win
+swing = dict(clean, **{"orig@p16": 1.5, "orig@p48": -1.5})
+assert verdict(swing) == "NOISE", verdict(swing)
+# 3: wins at three pads, loses at one paired pad (the win rides one layout)
+flip = dict(clean, **{"X@p64": 0.4})
+assert verdict(flip) == "NOISE", verdict(flip)
+# 4: a clean slowdown is a LOSS
+loss = {k: (2.0 if k.startswith("X") else v) for k, v in clean.items()}
+assert verdict(loss) == "LOSS", verdict(loss)
+print("layout verdict unit cases ok")
+PY
+[ $? = 0 ] && ok "layout verdicts: clean WIN, layout-swing NOISE, one-pad-flip NOISE, clean LOSS" || bad "layout verdict unit cases"
 
 echo; echo "== summary: $((N-FAILS))/$N checks passed, $FAILS failed"
 [ $FAILS = 0 ]

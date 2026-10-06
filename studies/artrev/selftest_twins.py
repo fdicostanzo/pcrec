@@ -3,7 +3,7 @@
 editing an arm dir created with `artrev.py twin NAME ARM --new`.
 
   selftest_twins.py ARMDIR KIND     KIND: wrong_end | wrong_cap | slow | simd:<which> | unchanged
-                                          | giveup_wrong | giveup_right | giveup_lost | start_early | start_early_loop
+                                          | giveup_wrong | giveup_right | giveup_lost | start_early | start_early_loop | hang
 Wrappers rename the artifact's own entry to a static `<p>_<fn>_real` and append
 a replacement with the same signature, so the public ABI is untouched.
 """
@@ -81,6 +81,12 @@ def main():
 )
         src += pre + ("\nint rx_search_in(const unsigned char *s, size_t n, size_t f, ptrdiff_t (*c)[2], const rx_buffers *b)\n"
                       "{ int r = rx_search_in_real(s, n, f, c, b); %s }\n" % GIVEUP_SRC[kind])
+    elif kind == "hang":
+        # a twin that never returns on subjects of 40+ bytes (the livelock a too-early start causes in
+        # some artifacts, stripped to its symptom): identity must fail by the livelock bound, fast
+        src = rename(src, "search")
+        src += ("\nint rx_search(const unsigned char *s, size_t n, size_t f, ptrdiff_t (*c)[2])\n"
+                "{ if (n > 40) for (volatile unsigned long i = 0;; i++) ; return rx_search_real(s, n, f, c); }\n")
     elif kind in ("start_early", "start_early_loop"):
         # the prefilter proposes a window start one byte EARLY.  `start_early` only when that start is
         # still after search_from (the verifying attempt fails and the next prefilter call corrects it:

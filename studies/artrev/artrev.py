@@ -298,6 +298,9 @@ def main():
     tm.add_argument("--dry-run", action="store_true", help="remote: print the commands and exit")
     tm.add_argument("--gate-override", action="store_true", help="SELFTEST ONLY (ARTREV_SELFTEST=1): skip the load gate")
     tm.add_argument("--hour-override", type=int, help="SELFTEST ONLY: pretend the local hour is H (remote window check)")
+    tm.add_argument("--pads", default="", help="LAYOUT CONTROL: code-offset pads in bytes (>=4 multiples of 16, e.g. 16,32,48,64); "
+                    "also times --pad-arms at each pad in the same interleaved rounds (timing.py docstring)")
+    tm.add_argument("--pad-arms", default="", help="comma list of arms to pad (orig is always included); needs --pads")
     tm.add_argument("--tag", default="")
     raw = sp.add_parser("_rawtime")
     raw.add_argument("name")
