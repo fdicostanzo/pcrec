@@ -6,6 +6,8 @@
 # REGENERATED at stage 3 (lane ssbuild3, 2026-10-06) by the same instrument with the PRE-STAGE-3 compiler (main 57db5152) when the stage-3 fixtures
 # (dfahat.rxt, reseed.rxt, hybrid.rxt, dfahat_paths.rxt) joined the corpus: s3_dfa +39, vm_forced +54/-1, vm_auto +0 -- every added row a fixture block;
 # the one removed row is tests/ucp/ctxnode.rxt:400, whose (text, options) twin in dfahat.rxt now sorts first and takes its id (docs/design/startset/s3/).
+# ssfix3 (2026-10-06): regenerated with census_s1.py on the CURRENT build under -fno-start-set (checks-m5):
+# byte-identical rows.
 #id	options	pattern_hex
 bench/capability/balanced-parens-rec	--features all	5c28283f3a5b5e28295d7c283f5229292a5c29
 bench/capability/doubled-word	--features all	5c62285c772b295c625c732b5c315c62

@@ -14,7 +14,7 @@
 # the conjunct) does not.
 SAB_ID='S488-dfahat-nullable-conjunct'
 SAB_FILE='src/gen/emit_dfa.c'
-SAB_SUITES='dfahat'
+SAB_SUITES='dfahatstruct'
 SAB_DESC='the DFA hat'\''s predicate no longer requires a non-nullable start set; answer-equivalent behind the plain skip'\''s no-accepting-start proof, seen by the mover manifest'
 SAB_DOC_FIGURE='Validated by plant at landing (docs/dev/lanes/ssbuild3_report.md); read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S488.'
 SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern '\''\b\B|\b(?:ab|cd)'\'' && grep -q '\''^#define RX_DFA_PREFILTER "byte-class-bounded"'\'' "$REACH_TMP/o.c" && echo REACH-NULLABLE-S-SEEDED'
@@ -22,6 +22,6 @@ SAB_REACH_EXPECT='REACH-NULLABLE-S-SEEDED'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='    if (ss->nullable) return false;
-    for (int b = 0; b < 256; b++) ns += ss_has(ss, b);'
+    for (int b = 0; b < 256; b++) nt += ss_has(ss, b);'
 SAB_AFTER='    /* SABOTAGE S488: the non-nullable conjunct removed */
-    for (int b = 0; b < 256; b++) ns += ss_has(ss, b);'
+    for (int b = 0; b < 256; b++) nt += ss_has(ss, b);'

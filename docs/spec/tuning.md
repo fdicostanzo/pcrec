@@ -3568,9 +3568,11 @@ VM hybrid's prefilter answers the same windows.
 - **Where it applies.** The unanchored forward scan (a DFA artifact, or a VM
   hybrid's inlined prefilter) of a seeded machine whose plain skip it
   replaces (`byte-class-bounded`; the offset and run rows sit above it); `S`
-  not nullable with fewer than 256 members; and `T = S` ∩ `E*` (`E*` every
-  seed state's escape set, which is all 256 bytes on a seeded machine, so
-  `T == S`) a non-empty PROPER subset of `E`. `T` of one byte takes
+  not nullable with fewer than 256 members; and `T = S` a non-empty PROPER
+  subset of `E`. A start byte outside `E` — one that leaves every seed state
+  where it is, as the space does in `(?<=\w) *a` — fails that test, and the
+  artifact is the plain row's: the skip never passes a byte a match can begin
+  with. `T` of one byte takes
   `first-memchr-bounded` (a `memchr`), several take `first-class-bounded`
   (a `<prefix>_start_bytes` table). Both are bounded at `n - 1`: a seeded
   machine always carries the D11 bound, so there is no unbounded form.
@@ -3580,8 +3582,8 @@ VM hybrid's prefilter answers the same windows.
   hybrid re-seed row (`RX_VM_RESEED`, whose density is the prior's mass over
   the scanned set), and the scan edge (`RX_DFA_SCAN_EDGE`, whose
   precondition reads whether the prefilter re-seeds).
-- **Denied:** the plain `byte-class-bounded` skip over `E`, the pre-stage-3
-  program apart from the abi digits.
+- **Denied:** the plain `byte-class-bounded` skip over `E`: the `abi`-62
+  `-fno-start-set` program (no VM hat either) apart from the abi digits.
 
 ## 3. The DFA side's own stamps
 

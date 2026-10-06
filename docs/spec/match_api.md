@@ -2326,8 +2326,8 @@ the bump's own commit.**
   the skip tests `S` instead — one byte by `memchr`, several by a 256-entry
   `<prefix>_start_bytes` table — and, where it moved, re-seeds the scan state
   from the byte before its landing. A VM hybrid's inlined prefilter takes it
-  too. `-fno-start-set` restores the `abi`-62 program apart from the abi
-  digits. No struct offset moves, no `rx_info` member is added or changed, no
+  too. `-fno-start-set` restores the `abi`-62 `-fno-start-set` program (no
+  VM hat either) apart from the abi digits. No struct offset moves, no `rx_info` member is added or changed, no
   stamp is added (`RX_DFA_PREFILTER`/`rx_info.prefilter` gain the two
   values), and no answer moves.
 - **`rx_info.abi` was `62` (lane ssbuild2 bumped it

@@ -23,12 +23,19 @@ DFA-hat row (`first-memchr-bounded`, `first-class-bounded`).
     structural detector): the hat's skip block writes `forward_state` only
     under `if (scan_position > skip_from)`, never through the unconditional
     `scan_position ? ...seed... : s0` form the offset rows use.
-[dfa-table] T, CHECKED AGAINST TWO SOURCES THAT ARE NOT THE PREDICATE: the
-    scanned set (the `rx_start_bytes` table, or the `memchr` byte) EQUALS the
-    `start_set` fact of the same compile (`--emit-facts`; Q-R1's T == S) AND
-    is a PROPER subset of the deny arm's `rx_can_begin_match` (E, the plain
-    skip's own table): sabotage S486's detector, and S480's plant (r3's
-    T = S ∩ E) reads unequal on any mover where S ⊄ E would have mattered.
+[dfa-table] T AS EMITTED: the scanned set (the `rx_start_bytes` table, or
+    the `memchr` byte) EQUALS the `start_set` fact of the same compile
+    (`--emit-facts`; T = S) AND is a PROPER subset of the deny arm's
+    `rx_can_begin_match` (E, the plain skip's own table). `S` IS the
+    predicate's input, so the first half checks EMISSION (the table written is
+    the set chosen; sabotage S486), not an independent derivation of `T`; the
+    second half reads the deny arm's own table. Per-member reach of `T` is the
+    start-byte oracle's (vmhat_diff.py) and the answer cells' (ss3 D6 panel
+    checks-m3).
+[dfa-refuse] NO BLOCK REFUSES OR TIMES OUT AT DEFAULT WHILE THE DENY ARM
+    COMPILES IT (the ss3 D6 panel's checks-m1: both of this stage's build
+    assertions are refusals, and the BLOCKER sound-F1 was exactly this shape;
+    compile_fuzz.py is the generated population's twin).
 [dfa-deny] THE DENY ARM IS TODAY'S EMITTER: a non-mover's default artifact is
     byte-identical to its deny artifact (a VM-hat mover excepted, counted: its
     identity is vmhat_checks.py's [vm-deny]). A mover's two artifacts are equal
@@ -40,15 +47,21 @@ DFA-hat row (`first-memchr-bounded`, `first-class-bounded`).
     (`RX_DFA_SCAN_EDGE`). A mover in a class is re-compiled on BOTH arms with
     that class's mechanisms denied (`-fno-req-byte -fno-req-run
     -fno-hyb-reseed -fno-scan-edge`), and the pair must then be equal outside
-    the hat -- so a class is a named, re-checked exception and never a hole.
+    the hat -- so a class is a named, re-checked exception and never a hole --
+    and the re-compiled default must STILL carry the hat (checks-m2: a
+    `CLASS_DENY` that turned the selection away from it would compare two
+    non-hat builds and pass vacuously).
 [dfa-movers] THE MOVER MANIFEST BY ID (checks-F5): the corpus blocks whose
     default artifact stamps a DFA-hat value, against
     `manifests/manifest_s3_dfa.tsv` -- 0 off-diagonal both ways. TWO
     DERIVATIONS: the manifest is the census's (the `--emit-facts` fact and
-    `E*` read off the deny build's emitted tables), this is the emitted text.
+    `E` read off the deny build's emitted tables, T = S), this is the emitted text.
     The manifest's pcrec-bench rows are outside this tree and counted only.
 [dfa-wit] hand-written witnesses: the expected stamp written HERE from the
     pattern and F's conjuncts, never read off the compiler.
+[dfa-bot] SENTINEL (ss3 D6 panel sound-F2): a pattern that reads the
+    start-of-subject or `\G` bits takes the ATTEMPT scan, so the unanchored
+    scan the DFA hat rides never needs `s0` apart from `s1u[UPC_PLAIN]`.
 
 Floors (K35, D110): half the population measured at landing, printed beside
 the REACH lines.  Env: PCREC, JOBS.  Prints PASS:/FAIL: and the trailers.
@@ -156,9 +169,9 @@ def one(job):
     b, td = job
     base = os.path.join(td, "%x" % (abs(hash((b["id"], tuple(b["args"])))) & 0xffffffffffff))
     t1 = compile_c(b["pattern"], b["args"], base + "_hat")
-    if t1 is None:
-        return {"status": "refused"}
     t0 = compile_c(b["pattern"], ["-fno-start-set", *b["args"]], base + "_deny")
+    if t1 is None:
+        return {"status": "hat-refused" if t0 is not None else "refused"}
     s1, s0 = stamps(t1), stamps(t0 or "")
     pf = s1.get("DFA_PREFILTER")
     rec = {"status": "ok", "st": s1, "st0": s0, "deny_ok": t0 is not None, "mover": pf in HAT,
@@ -178,7 +191,9 @@ def one(job):
                 # a hole in the comparison.
                 x1 = compile_c(b["pattern"], [*CLASS_DENY, *b["args"]], base + "_hatx")
                 x0 = compile_c(b["pattern"], ["-fno-start-set", *CLASS_DENY, *b["args"]], base + "_denyx")
-                rec["deny_same"] = x1 is not None and x0 is not None and normalize(x1) == normalize(x0)
+                rec["classx_hat"] = x1 is not None and stamps(x1).get("DFA_PREFILTER") in HAT
+                rec["deny_same"] = (rec["classx_hat"] and x0 is not None
+                                    and normalize(x1) == normalize(x0))
             rec["T"] = scanned(t1)
             rec["E"] = table(t0, "can_begin_match")
             blk = PF_BLOCK.search(t1)
@@ -222,9 +237,12 @@ def corpus_checks():
           % (len(blocks), cnt["files"], cnt["rows"], compiled, FLOOR_BLOCKS))
     if compiled < FLOOR_BLOCKS:
         bad("[dfa-reach] %d blocks compile on both arms, below the floor %d" % (compiled, FLOOR_BLOCKS))
-    viol = {k: [] for k in ("iff", "route", "reseed", "table", "deny")}
+    viol = {k: [] for k in ("iff", "route", "reseed", "table", "deny", "refuse")}
     movers, classes, vmhat = set(), {}, 0
     for b, r in zip(blocks, res):
+        if r["status"] == "hat-refused":
+            viol["refuse"].append("%s [%s]: the default build refuses or times out, -fno-start-set compiles"
+                                  % (b["id"], " ".join(b["args"])))
         if r["status"] != "ok":
             continue
         st, key = r["st"], "%s [%s]" % (b["id"], " ".join(b["args"]))
@@ -258,20 +276,22 @@ def corpus_checks():
         elif not r["deny_same"]:
             viol["deny"].append("%s: %s, differs from the deny arm outside the hat%s"
                                 % (key, "mover" if r["mover"] else "non-mover",
-                                   " (classes %s, re-compared with %s on both arms)" % (r["classes"], " ".join(CLASS_DENY))
+                                   " (classes %s, re-compared with %s on both arms; hat still selected: %s)"
+                                   % (r["classes"], " ".join(CLASS_DENY), r.get("classx_hat"))
                                    if r.get("classes") else ""))
     names = {"iff": "[dfa-iff] the stamp names the emitted skip and re-seed",
              "route": "[dfa-route] every mover is the unanchored scan of a seeded machine",
              "reseed": "[dfa-reseed] every mover's re-seed is conditional on the skip having moved",
              "table": "[dfa-table] every mover scans T == its start_set fact, a proper subset of the deny arm's E",
-             "deny": "[dfa-deny] the deny arm is today's emitter (non-movers identical; movers identical outside the hat, a mover in a named class re-compared with the class denied on both arms)"}
+             "deny": "[dfa-deny] the deny arm is today's emitter (non-movers identical; movers identical outside the hat, a mover in a named class re-compared with the class denied on both arms, the hat still selected)",
+             "refuse": "[dfa-refuse] no block refuses or times out at default while -fno-start-set compiles it"}
     for k, label in names.items():
         if viol[k]:
             bad("%s: %d violation(s)" % (label, len(viol[k])))
             for v in viol[k][:8]:
                 print("    " + v)
         else:
-            ok("%s (%s)" % (label, "%d movers" % len(movers) if k != "deny"
+            ok("%s (%s)" % (label, "%d movers" % len(movers) if k not in ("deny", "refuse")
                             else "%d artifact pairs" % sum(1 for r in res if r["status"] == "ok")))
     print("REACH: movers %d (floor %d); cross-row mover classes (startset.md §4.3): %s; VM-hat movers left to vmhat_checks.py: %d"
           % (len(movers), FLOOR_MOVERS, ", ".join("%s %d" % kv for kv in sorted(classes.items())) or "none", vmhat))
@@ -300,6 +320,9 @@ WITNESSES = [
     (b"\\b((?:A3T[A-Z0-9]|AKIA|AGPA)[A-Z0-9]{16})\\b", FA, "first-memchr-bounded", "a VM hybrid's inlined scan takes the DFA hat (aws, S = {A})"),
     (b"\\B(a|b){1,3}", FA + ["-fprefilter-collapse"], "first-class-bounded", "a COUNT-COLLAPSED hybrid prefilter (sound-F5(d)'s witness)"),
     (b"(?:(?<=a)z|w)", FA, "byte-class-bounded", "S = {z, w} is not a subset of E = {a, w}: T would not narrow E (sound-F1's witness)"),
+    (b"(?<=\\w) *a", FA, "byte-class-bounded", "S = {' ', a}: the space keeps every seed, so it is outside E and T = S does not narrow E (the ss3 panel's BLOCKER: the old T == S assertion refused this)"),
+    (b"(?<=[ab])\\W*?b", FA, "byte-class-bounded", "S holds every non-word byte, none of them in E (the BLOCKER's 193-byte witness)"),
+    (b"(?<=\\w) *(a)", FA, "byte-class-bounded", "the BLOCKER's VM-hybrid witness: the prefilter declines the same way"),
     (b"\\bab\\b", FA, "offset-set-bounded", "the offset rows sit above the DFA hat"),
     (b"a+|b+", FA, "byte-class", "UNSEEDED: E is already S"),
     (b"(?m)^(?:ab|\\bcd)", FA, "memchr", "the ATTEMPT scan keeps attempt_cand's own skip (S490's conjunct)"),
@@ -329,6 +352,20 @@ def witness_checks():
             ok("[dfa-wit] (?<=ab)z|\\bw: RX_VM_RESEED adaptive over T, adaptive-dense under the deny arm's E")
         else:
             bad("[dfa-wit] (?<=ab)z|\\bw: RX_VM_RESEED (hat, deny) = %s, expected (adaptive, adaptive-dense)" % (got,))
+        # SENTINEL (the ss3 D6 panel's sound-F2): `s0` and `s1u[UPC_PLAIN]`
+        # differ only by the start-of-subject and `\G` bits, and the hat's
+        # argument (and the build's `dfa_reseed_exact`, which reads both)
+        # treats them as one plain context. That holds because a pattern
+        # that reads those bits takes the ATTEMPT scan, never the unanchored
+        # one the DFA hat rides; no assertion says so, this does.
+        for i, pat in enumerate((b"^a|\\bb", b"\\Ab|\\bc", b"\\Ga|\\bb", b"(?m)^a|\\bb",
+                                 b"(?:^|-)\\b(?:a|b)", b"(?:\\A|\\bq)(?:a|b)")):
+            t = compile_c(pat, FA, os.path.join(td, "bot%d" % i))
+            got = None if t is None else stamps(t).get("DFA_SCAN")
+            if got == "attempt":
+                ok("[dfa-bot] %r -> RX_DFA_SCAN attempt (a start-of-subject or \\G read keeps the unanchored scan, and the DFA hat, away)" % pat.decode())
+            else:
+                bad("[dfa-bot] %r -> RX_DFA_SCAN %s, expected attempt: the unanchored scan now admits a start-of-subject read, so s0 is no longer s1u[UPC_PLAIN] there (sound-F2)" % (pat.decode(), got))
         t = compile_c(b"\\b(?:true|false|null)\\b", FA, os.path.join(td, "t"))
         tb = None if t is None else table(t, "start_bytes")
         if tb == {ord("t"), ord("f"), ord("n")}:

@@ -2541,17 +2541,31 @@ run_one() {
                 score_arm "$work/vmhat.log" "$f" "vmhat:${f:-ERR}fail/${p:-?}pass"
                 ;;
             dfahat)
-                # [START-SET] stage 3 (D148) tests/startset/run_dfahat_checks.sh —
-                # the DFA hat: the fixtures through the harness, the stamp's
-                # IFF, route, conditional re-seed, T == S ⊊ E, the deny arm is
-                # today's emitter, the mover manifest by ID, and the
-                # every-startpos differential (HAT=dfa) with the start-byte
-                # oracle. Registered before the stage-3 rows that name it.
-                PCREC="$pcrec" bash "$tree/tests/startset/run_dfahat_checks.sh" \
+                # [START-SET] stage 3 (D148) tests/startset/run_dfahat_checks.sh's
+                # ANSWER part (DFAHAT_PART=answers; the ss3 D6 panel's checks-M1
+                # split): the DFA hat's fixtures through the harness, as written
+                # and under -fprefilter-collapse, and the every-startpos
+                # differential (HAT=dfa) with the start-byte oracle. No text pin
+                # on the re-seed line lives here, so a re-seed plant on this arm
+                # is seen by an answer or not at all.
+                DFAHAT_PART=answers PCREC="$pcrec" bash "$tree/tests/startset/run_dfahat_checks.sh" \
                     > "$work/dfahat.log" 2>&1
                 p="$(grep -m1 '^checks passed:' "$work/dfahat.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/dfahat.log" | grep -oE '[0-9]+')"
                 score_arm "$work/dfahat.log" "$f" "dfahat:${f:-ERR}fail/${p:-?}pass"
+                ;;
+            dfahatstruct)
+                # [START-SET] stage 3 (D148) run_dfahat_checks.sh's STRUCTURAL
+                # part (DFAHAT_PART=struct, the checks-M1 split): the stamp's
+                # IFF, route, conditional re-seed text, T == S ⊊ E, the deny arm
+                # is today's emitter, the mover manifest by ID, witnesses, and
+                # the compile-only arm (deny compiles => default compiles).
+                # Registered before the rows that name it.
+                DFAHAT_PART=struct PCREC="$pcrec" bash "$tree/tests/startset/run_dfahat_checks.sh" \
+                    > "$work/dfahatstruct.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/dfahatstruct.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/dfahatstruct.log" | grep -oE '[0-9]+')"
+                score_arm "$work/dfahatstruct.log" "$f" "dfahatstruct:${f:-ERR}fail/${p:-?}pass"
                 ;;
             candrows)
                 # [START-SET] (D148) tests/codegen/run_cand_rows.sh — the

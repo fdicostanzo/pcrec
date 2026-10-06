@@ -16,3 +16,13 @@ sorts first in the census's dedup and takes its id. Reproduce:
 MANIFESTS=<dir> python3 docs/design/startset/s1/census_s1.py`. No check reads
 this file; the manifests are what `tests/startset/dfahat_checks.py` and
 `vmhat_checks.py` check.
+
+`census_ssfix3_summary.txt` (lane ssfix3, 2026-10-06, the ss3 D6 panel fixes):
+the same instrument after two changes — F reads `T = S` (the panel's BLOCKER
+sound-F1 struck `S ∩ E*`), and every compile carries `-fno-start-set`
+(checks-m5), so the census runs on the CURRENT build. It reproduced
+`s3_dfa` and `s2_vm_auto` byte for byte and added 12 `s2_vm_forced` rows (the
+`tests/startset/dfahat_f1.rxt` blocks). Its `F-checked: |E*| < 256` row reads
+12 — the BLOCKER witnesses, where `E*` is not all 256 bytes, which is the
+population D148 addendum 1's "`E*` is all 256 on every seeded machine" never
+contained.

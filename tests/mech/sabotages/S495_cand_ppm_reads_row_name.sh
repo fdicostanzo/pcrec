@@ -14,7 +14,7 @@
 # another name exists to mis-price.
 SAB_ID="S495-cand-ppm-reads-row-name"
 SAB_FILE="src/gen/emit_dfa.c"
-SAB_SUITES="candrows dfahat"
+SAB_SUITES="candrows dfahatstruct"
 SAB_DESC="pcrec_dfa_cand_ppm recognises a byte-class row by strcmp on its NAME again (K84 regression), so a SET-scanning row with any other name is priced at 1,000,000 ppm"
 SAB_DOC_FIGURE="Validated by plant at landing (docs/dev/lanes/ssbuild01_report.md); read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S495."
 # [MECH-REACH] the planted line is reached: a VM hybrid whose prefilter is a
