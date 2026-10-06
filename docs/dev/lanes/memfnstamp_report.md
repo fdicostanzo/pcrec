@@ -182,7 +182,46 @@ artifact": a memchr-only artifact reads `none`), (b) S514, (c) S515,
 
 ## 6. The census (pre-bump)
 
-SEE §6.1 (filled from the run log; OWED if absent).
+`python3 tests/memfn/stamp_mover_census.py --ref 090020a2` (base =
+lane/memfn-r4a2's tip; working = this lane's build). It drives
+`scripts/emit_sweep.py`'s own machinery (reference build from `git archive`,
+corpus enumeration, the argv/IR/composition streams) and replaces its
+identical-or-mover verdict with a classifier (header of the script): a `.c`
+must be the old text plus EXACTLY two adjacent lines, FORMS then LIBC,
+directly after `RUN_WORDS`; listings and headers must not move.
+
+First run (106 s), 4,512 pattern rows and 360 composition files:
+
+| stream | identical | stamps | OTHER | both-refuse |
+|---|---|---|---|---|
+| c-default | 0 | 4065 | 0 | 447 |
+| c-vm | 0 | 4066 | 0 | 446 |
+| comp-c | 0 | 50 | **1** | 0 |
+| comp-h | 51 | 0 | 0 | 0 |
+| emit-ir-vm | 4066 | 0 | 0 | 446 |
+
+**The one OTHER, reviewed:** `tests/uprops/size_ladder_prefilter_drop.rxt`'s
+`rx.c` also moves `#define RX_VM_PREFILTER_WHY "size cap retry, hybrid
+1028494 > 1000000"` to `1028553`: that stamp QUOTES the measured size of the
+DISCARDED hybrid attempt, and that attempt now carries its own two lines
+(+59, LIBC `none`). This follows from rendering the stamps before the size
+measurement (§2), which is the intended order: the size term measures what it
+would ship. No test pins the number; no artifact crossed a cap (every other
+artifact is exactly `stamps`). The classifier now names this class,
+`stamps+size` (a `_PREFILTER_WHY` size quote whose N grew by 59-120, nothing
+else), so the bump step's re-run reads clean rather than re-reviewing it.
+Second run, with the classifier extended (CLEAN, exit 0):
+
+| stream | identical | stamps | stamps+size | OTHER | both-refuse |
+|---|---|---|---|---|---|
+| c-default | 0 | 4065 | 0 | 0 | 447 |
+| c-vm | 0 | 4066 | 0 | 0 | 446 |
+| comp-c | 0 | 50 | 1 | 0 | 0 |
+| comp-h | 51 | 0 | 0 | 0 | 0 |
+| emit-ir-vm | 4066 | 0 | 0 | 0 | 446 |
+
+Every `.c` artifact moved by exactly the two lines (one also moves its
+discarded-attempt size quote, above). Headers and listings are unmoved.
 
 ## 7. Pins
 
@@ -265,14 +304,40 @@ At the bump commit, with `N` = main's abi after the merge (62 expected) and
 | 3 C11 LIBC half in `make test`, independent, floored, darwin `_`, FORMS UNREACHED | DONE, §4 |
 | 4 sabotage rows (a)-(d), mech solos DETECTED + reach ok | DONE, S513-S517, §5 |
 | 5 spec hunk | DONE, match_api.md §6.3 |
-| 6 census, classifier, counts | §6 |
+| 6 census, classifier, counts | DONE, §6 (1 reviewed size-quote mover) |
 | 7 re-pins now + list moving with the digit | DONE, §7 |
 | 8 CLAUDE.md + report index | DONE |
 | validation: make, make strict | DONE (strict clean) |
 | validation: test-codegen, registry, rxtsource, cli | DONE (§7) |
-| validation: C11, memfn link/manifest/g2 | §10 |
+| validation: C11, memfn link/manifest/g2 | DONE, §10 |
 | NOT done by design: abi bump, abi-number readers | the later step, §8 |
 
 ## 10. Validation log (Mac, directional)
 
-SEE §10.1 (filled from the run logs).
+All runs used `CC=gcc-16`. The logs are in the worktree's `build/scratch/` (gitignored).
+
+| run | result |
+|---|---|
+| `make`, `make strict` | clean (strict: "whole tree compiles clean with -Werror -Wshadow") |
+| test-codegen | 201 s; every group 0 failed except `run_inline_capability.sh`'s `nm could not read arm_a.o`, a darwin-only red that predates this lane (R4a's response, `memfn/docs/responses.md`) |
+| test-registry | rc 0, 234 s |
+| test-rxtsource | rc 0, 81 s |
+| test-cli | rc 0, 20 s |
+| test-cpset-structure | red before the re-pin (12 EMITTED_BYTES rows), then rc 0, 41 s |
+| test-resource | red before the re-pin (762665), then rc 0, 271 s |
+| test-recursion-identity | red before the re-pin ((B) whole-file against b55d5554), then rc 0, 1910 s, against FILEPIN 07ccd3cc |
+| test-memfn-link | rc 0 |
+| test-memfn-manifest | rc 0 (22 passed, 0 failed) |
+| test-memfn-g2 | rc 0, 51 s |
+| test-memfn-stamps (C11) | rc 0, 32 s, 918 artifacts |
+| mech S513-S517, solo | 5/5 DETECTED, reach ok |
+| mover census | CLEAN (§6) |
+
+The full `make test` was NOT run. That is per the brief: the verdict is the Linux run after the bump.
+
+**Open items.**
+- The abi bump step (§8).
+- The bench inbox note, which the brief assigns to the bump event.
+- R4c moves the `mf_art`'s birth to the attempt start, once emitters call the kit (§2).
+- C11 cannot yet check a non-constant `memcpy`, because no corpus artifact calls one.
+- The FORMS half is UNREACHED until R4e′.

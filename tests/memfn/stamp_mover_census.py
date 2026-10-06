@@ -20,6 +20,9 @@ and replaces its identical-or-mover verdict with a CLASSIFIER, per artifact:
   stamps+abi  the same, after which every remaining differing line becomes
               the old line when the new abi number is read as the old one
               (--abi OLD:NEW; the bump step's reading)
+  stamps+size the same, and a `_PREFILTER_WHY "size cap retry, hybrid N >
+              CAP"` line whose N (the DISCARDED hybrid attempt's measured
+              size, which now includes its own two lines) grew by 59-120
   OTHER       anything else: printed with its first hunk, and the run fails
 
 Usage:
@@ -52,6 +55,28 @@ def digit_only(ol, nl, abi):
     return all(pat.sub(o, b) == a for a, b in zip(ol, nl) if a != b)
 
 
+SIZE_QUOTE = re.compile(rb'^(#define \w+_PREFILTER_WHY "size cap retry, hybrid )(\d+)( > \d+")$')
+
+
+def size_quote_only(ol, nl, abi):
+    """True iff the lines differ (beyond the abi digit) only in a
+    `_PREFILTER_WHY "size cap retry, hybrid N > CAP"` quote whose N GREW by
+    the two stamp lines' size: the discarded hybrid attempt was measured
+    with its own two lines, 59-120 bytes (`none` to a long LIBC list)."""
+    if len(ol) != len(nl):
+        return False
+    seen = 0
+    for a, b in zip(ol, nl):
+        if a == b or digit_only([a], [b], abi):
+            continue
+        ma, mb = SIZE_QUOTE.match(a), SIZE_QUOTE.match(b)
+        if not (ma and mb and ma.group(1) == mb.group(1) and ma.group(3) == mb.group(3)
+                and 59 <= int(mb.group(2)) - int(ma.group(2)) <= 120):
+            return False
+        seen += 1
+    return seen > 0
+
+
 def classify(old, new, abi):
     if old == new:
         return 'identical', None
@@ -70,6 +95,8 @@ def classify(old, new, abi):
         return 'stamps', None
     if digit_only(ol, rest, abi):
         return 'stamps+abi', None
+    if size_quote_only(ol, rest, abi):
+        return 'stamps+size', None
     return 'OTHER', es.first_diff_hunk(old, b'\n'.join(rest))
 
 
@@ -141,7 +168,7 @@ def main():
                       arts_a.get(fn), arts_b.get(fn))
     es.run(['rm', '-rf', comp_root], 60)
 
-    cols = ['identical', 'abi', 'stamps', 'stamps+abi', 'OTHER', 'ASYMMETRIC', 'both-refuse']
+    cols = ['identical', 'abi', 'stamps', 'stamps+abi', 'stamps+size', 'OTHER', 'ASYMMETRIC', 'both-refuse']
     print('\n| stream | ' + ' | '.join(cols) + ' |')
     print('|---|' + '---|' * len(cols))
     for s in sorted(table):
