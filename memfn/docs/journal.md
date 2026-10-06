@@ -374,3 +374,27 @@ pointer when a kit change merges to main.
 - OWED, in the slot main names (after flagbits, ~20:45Z): Mac make test,
   then the sabotage matrix (CORE's 23 rows + S518-S529); then the pinned
   Linux script; I2 over every axis × both tiers after main's C0.
+
+## 2026-10-06 (evening) — R4c Mac verdict; Linux run handed to main
+
+- Merged main at e6e6d6eb (flagbits K92, abi 65). One conflict: main's
+  DERIVED strategy mask subsumes AXIS's hand-added memfn-simd bits. The
+  zero-mover gate vs e6e6d6eb is clean; the only dump mover is the
+  declared --list-axes pair.
+- Mac make test at 00ede5dc: 58/58 ran, 6202 s. ONE red, test-startset
+  [vm-movers]: CHECKS's handoff.rxt witness rows enrolled 9 start-set VM
+  movers in main's manifests. lane r4cpin re-pinned them via the
+  census generator; test-startset is green alone.
+  Main's per-row facts are in r4cfix_report §10.1: identical at
+  e6e6d6eb, and the same 24-line seek diff as the existing rows.
+  LESSON: corpus rows enroll in other suites' manifests (rxtsource,
+  startset), so a lane adding corpus rows owes the full make test.
+- FINDING (mine): run_sabotage_matrix.sh takes ONE id per call. My
+  35-id call ran only S464 (DETECTED), and the chain still printed
+  status=0. I caught it only from the trailer's "1 rows". I sent main a
+  backlog note that the matrix should refuse extra args.
+- Each mech row is ~10 min of full harness, so I stopped the Mac
+  per-row loop and released the lock at 22:20Z. All 35 rows go to Linux.
+- Merged main again (C0, d96f8cd3; no src/). Committed the pinned
+  Linux script + gate judge (91f5b607), with I2 over every flag x both
+  tiers. Main runs it tonight on ubuntubudu.
