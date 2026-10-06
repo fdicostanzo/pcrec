@@ -1,0 +1,290 @@
+cap:t-64k OK
+cap:t-256k OK
+cap:t-1m OK
+syn:t-64k OK
+syn:t-256k OK
+syn:t-1m OK
+u8:t-64k OK
+u8:t-256k OK
+u8:t-1m OK
+u8:t-64k-lat OK
+u8:t-64k-cyr OK
+u8:t-64k-cjk OK
+u8:t-64k-asc OK
+short:v-email OK
+short:v-ipv4 OK
+short:v-ipv4-oor OK
+short:v-us-zip OK
+short:v-us-zip-plus4 OK
+short:v-uuid-valid OK
+short:v-uuid-badnibble OK
+short:lp-num-neg-dec OK
+short:lp-num-leadzero OK
+short:lp-quoted OK
+short:lp-quoted-escaped OK
+short:lp-winpath OK
+short:lp-winpath-reserved OK
+short:lp-syslog OK
+short:lp-atomic-hit OK
+short:lp-atomic-nonmatch OK
+short:waf-dbnames OK
+short:waf-sleep OK
+short:waf-union OK
+short:waf-concat OK
+short:waf-comment-obfuscation OK
+short:waf-benign OK
+short:sec-aws-key OK
+short:sec-github-pat OK
+short:sec-slack-webhook OK
+short:sec-userpass OK
+short:dt-iso8601 OK
+short:dt-prose-month OK
+short:cg-array-begin OK
+short:cg-constant OK
+short:cg-object-begin OK
+short:cg-number OK
+short:cg-string-escape OK
+short:cg-key-colon OK
+short:br-doubled-word OK
+short:br-tag-pair OK
+short:br-tag-mismatch OK
+short:br-palindrome OK
+short:br-quoted-delim OK
+short:br-dup-param OK
+short:la-pwd-strong OK
+short:la-pwd-weak OK
+short:la-float-bound OK
+short:la-float-dotted OK
+short:la-email-nodup OK
+short:la-email-dotdot OK
+short:la-currency OK
+short:la-negation-hit OK
+short:la-negation-miss OK
+short:rec-parens-balanced OK
+short:rec-parens-unbalanced OK
+short:rec-array-define OK
+short:rec-comment-nested OK
+short:rec-tag-depth3 OK
+short:rd-email-hit OK
+short:rd-email-near-miss OK
+short:rd-trim-hit OK
+short:rd-trim-near-miss OK
+short:rd-evil-alt-hit OK
+short:rd-evil-alt-near-miss OK
+short:rd-numeric-id-hit OK
+short:rd-numeric-id-near-miss OK
+short:rd-phone-list-hit OK
+short:rd-date-hit OK
+short:sd-router-short OK
+short:sd-fileext-short OK
+short:sd-keyword-short OK
+short:sd-empty-alt-hit OK
+short:sd-empty-alt-miss OK
+short:sd-dollar-nl OK
+short:nu-high-byte OK
+short:nu-mojibake OK
+short:nu-lead-no-cont OK
+short:nu-lead-with-cont OK
+short:floor-hit OK
+check: rc=0
+# libc: ldd (Ubuntu GLIBC 2.43-2ubuntu2.4) 2.43 | layers: scalar | dense subjects: 3362bc22d37a8acb
+# Tue Oct  6 02:48:52 PM UTC 2026 ubuntubudu load1=0.90 gov=schedutil boost=1
+cell            subject                unit         base        new       deny    new-base      floor  verdict
+quoted-delim    cap:t-64k              ns/B     5.608383   0.704251   5.595405    -4.90413    0.01298  WIN
+quoted-delim    cap:t-1m               ns/B     5.673548   0.718065   7.110779    -4.95548    1.43723  WIN
+quoted-delim    dense:quoted           ns/B    10.078500  10.916589   9.986120    +0.83809    0.09238  REGRESSION
+balanced-parens cap:t-64k              ns/B     3.695229   0.808180   3.688085    -2.88705    0.00714  WIN
+balanced-parens cap:t-1m               ns/B     3.725427   0.849454   3.730150    -2.87597    0.00472  WIN
+balanced-parens dense:paren            ns/B     8.642754   8.107761   8.662031    -0.53499    0.01928  WIN
+bak-k-named     syn:t-64k              ns/B     0.814954   0.607320   0.814942    -0.20763    0.00001  WIN
+bak-k-named     syn:t-1m               ns/B     0.854195   0.630764   0.853925    -0.22343    0.00027  WIN
+bak-k-named     dense:tag              ns/B     2.909591   2.867356   2.919643    -0.04223    0.01005  WIN
+nested-comment  cap:t-64k              ns/B     0.016761   0.016760   0.016759    -0.00000    0.00000  WIN
+nested-comment  cap:t-1m               ns/B     0.016786   0.016775   0.016802    -0.00001    0.00002  NULL
+doubled-word    cap:t-64k              ns/B    17.371076  16.533480  17.361736    -0.83760    0.00934  WIN
+doubled-word    cap:t-1m               ns/B    17.502651  16.784728  17.501268    -0.71792    0.00138  WIN
+bak-1           syn:t-64k              ns/B    10.547021  10.103327  10.550412    -0.44369    0.00339  WIN
+bak-1           syn:t-1m               ns/B    10.831333  10.313512  10.826233    -0.51782    0.00510  WIN
+mod-i-vm        syn:t-64k              ns/B     3.483930   1.446013   3.486235    -2.03792    0.00231  WIN
+mod-i-vm        syn:t-1m               ns/B     3.570464   1.524881   3.571513    -2.04558    0.00105  WIN
+mod-r-vm        syn:t-64k              ns/B     3.483451   1.445468   3.484058    -2.03798    0.00061  WIN
+mod-r-vm        syn:t-1m               ns/B     3.571471   1.523755   3.571695    -2.04772    0.00022  WIN
+cls-fold-pair-vm syn:t-64k              ns/B     1.898031   1.153076   1.897862    -0.74496    0.00017  WIN
+cls-fold-pair-vm syn:t-1m               ns/B     1.969522   1.222140   1.970017    -0.74738    0.00049  WIN
+cls-pair-ctl-vm syn:t-64k              ns/B     1.907254   1.162818   1.907583    -0.74444    0.00033  WIN
+cls-pair-ctl-vm syn:t-1m               ns/B     1.982660   1.238861   1.982792    -0.74380    0.00013  WIN
+ci-strasse-vm   u8:t-64k               ns/B     3.374956   0.777867   3.376704    -2.59709    0.00175  WIN
+ci-strasse-vm   u8:t-1m                ns/B     3.445133   0.812672   3.450464    -2.63246    0.00533  WIN
+aws-vm          cap:t-64k              ns/B     6.935246   0.398558   6.941546    -6.53669    0.00630  WIN
+aws-vm          cap:t-1m               ns/B     7.031979   0.397750   7.035041    -6.63423    0.00306  WIN
+floor-byte      cap:t-64k              ns/B     0.016715   0.016720   0.016723    +0.00000    0.00001  NULL
+floor-byte      cap:t-1m               ns/B     0.016761   0.016759   0.016759    -0.00000    0.00000  WIN
+high-byte-run   cap:t-64k              ns/B     0.350638   0.350788   0.350708    +0.00015    0.00007  REGRESSION
+high-byte-run   cap:t-1m               ns/B     0.350689   0.350866   0.350779    +0.00018    0.00009  REGRESSION
+uuid-near-miss  cap:t-64k              ns/B     0.000163   0.000163   0.000164    +0.00000    0.00000  NULL
+uuid-near-miss  cap:t-1m               ns/B     0.000004   0.000004   0.000004    +0.00000    0.00000  NULL
+union-select    cap:t-64k              ns/B     0.257171   0.257833   0.257655    +0.00066    0.00048  REGRESSION
+union-select    cap:t-1m               ns/B     0.348012   0.347851   0.347911    -0.00016    0.00010  WIN
+ci-ascii-ctl    u8:t-64k               ns/B     0.189777   0.190354   0.189956    +0.00058    0.00018  REGRESSION
+ci-ascii-ctl    u8:t-1m                ns/B     0.263348   0.263364   0.263415    +0.00002    0.00007  NULL
+floor-byte-vm   cap:t-64k              ns/B     0.016718   0.016717   0.016717    -0.00000    0.00000  WIN
+floor-byte-vm   cap:t-1m               ns/B     0.016784   0.016793   0.016789    +0.00001    0.00000  REGRESSION
+union-select-vm cap:t-64k              ns/B     0.261916   0.263598   0.261954    +0.00168    0.00004  REGRESSION
+union-select-vm cap:t-1m               ns/B     0.354685   0.350211   0.354876    -0.00447    0.00019  WIN
+ci-ascii-ctl-vm u8:t-64k               ns/B     0.190620   0.190445   0.190709    -0.00018    0.00009  WIN
+ci-ascii-ctl-vm u8:t-1m                ns/B     0.258980   0.260055   0.259031    +0.00107    0.00005  REGRESSION
+a-w-1-d33       dense:a33              ns/B     4.330494   4.856602   4.330801    +0.52611    0.00031  REGRESSION
+a-w-1-d80       dense:a80              ns/B     4.844783   5.216740   4.835511    +0.37196    0.00927  REGRESSION
+e-w-1-prose     cap:t-1m               ns/B     1.714578   1.716606   1.710268    +0.00203    0.00431  NULL
+dot-led-255     cap:t-64k              ns/B     4.108368   4.091760   4.109570    -0.01661    0.00120  WIN
+s-eq-reqbyte    dense:qhit             ns/B     4.335093   2.699822   4.337796    -1.63527    0.00270  WIN
+quoted-srch     short:br-doubled-word  ns/call    101.431     13.792    102.076   -87.63900    0.64500  WIN
+quoted-srch     short:br-dup-param     ns/call     80.261     11.667     80.174   -68.59400    0.08700  WIN
+quoted-srch     short:br-palindrome    ns/call     46.309      9.151     46.245   -37.15800    0.06400  WIN
+quoted-srch     short:br-quoted-delim  ns/call    127.228    142.923    126.589   +15.69500    0.63900  REGRESSION
+quoted-srch     short:br-tag-mismatch  ns/call    123.929     15.889    123.644  -108.04000    0.28500  WIN
+quoted-srch     short:br-tag-pair      ns/call    117.770     15.024    118.219  -102.74600    0.44900  WIN
+quoted-srch     short:cg-array-begin   ns/call     18.489      7.037     18.459   -11.45200    0.03000  WIN
+quoted-srch     short:cg-constant      ns/call     35.075      8.360     35.198   -26.71500    0.12300  WIN
+quoted-srch     short:cg-key-colon     ns/call     46.893     63.706     46.874   +16.81300    0.01900  REGRESSION
+quoted-srch     short:cg-number        ns/call     74.505     10.892     74.257   -63.61300    0.24800  WIN
+quoted-srch     short:cg-object-begin  ns/call     18.476      7.001     18.559   -11.47500    0.08300  WIN
+quoted-srch     short:cg-string-escape ns/call     24.068      7.512     23.976   -16.55600    0.09200  WIN
+quoted-srch     short:dt-iso8601       ns/call    129.140     16.080    129.503  -113.06000    0.36300  WIN
+quoted-srch     short:dt-prose-month   ns/call     91.326     12.091     90.763   -79.23500    0.56300  WIN
+quoted-srch     short:floor-hit        ns/call     18.515      7.075     18.429   -11.44000    0.08600  WIN
+quoted-srch     short:la-currency      ns/call     74.652     11.479     74.677   -63.17300    0.02500  WIN
+quoted-srch     short:la-email-dotdot  ns/call     75.007     11.238     75.436   -63.76900    0.42900  WIN
+quoted-srch     short:la-email-nodup   ns/call     70.034     10.635     68.560   -59.39900    1.47400  WIN
+quoted-srch     short:la-float-bound   ns/call     90.995     12.039     90.526   -78.95600    0.46900  WIN
+quoted-srch     short:la-float-dotted  ns/call     69.413     10.658     68.464   -58.75500    0.94900  WIN
+quoted-srch     short:la-negation-hit  ns/call    124.160     16.366    123.867  -107.79400    0.29300  WIN
+quoted-srch     short:la-negation-miss ns/call    146.440     17.228    146.207  -129.21200    0.23300  WIN
+quoted-srch     short:la-pwd-strong    ns/call     70.200     10.055     69.255   -60.14500    0.94500  WIN
+quoted-srch     short:la-pwd-weak      ns/call     74.823     11.097     74.355   -63.72600    0.46800  WIN
+quoted-srch     short:lp-atomic-hit    ns/call    189.279     21.527    189.211  -167.75200    0.06800  WIN
+quoted-srch     short:lp-atomic-nonmatch ns/call    145.589     16.963    146.230  -128.62600    0.64100  WIN
+quoted-srch     short:lp-num-leadzero  ns/call     35.270      8.464     35.108   -26.80600    0.16200  WIN
+quoted-srch     short:lp-num-neg-dec   ns/call     52.000      9.491     51.916   -42.50900    0.08400  WIN
+quoted-srch     short:lp-quoted-escaped ns/call    149.393    156.048    139.460    +6.65500    9.93300  NULL
+quoted-srch     short:lp-quoted        ns/call    113.340    128.017    113.386   +14.67700    0.04600  REGRESSION
+quoted-srch     short:lp-syslog        ns/call    325.873     38.249    326.236  -287.62400    0.36300  WIN
+quoted-srch     short:lp-winpath-reserved ns/call    151.492     18.014    150.966  -133.47800    0.52600  WIN
+quoted-srch     short:lp-winpath       ns/call    140.679     16.423    140.749  -124.25600    0.07000  WIN
+quoted-srch     short:nu-high-byte     ns/call     23.902      7.541     23.771   -16.36100    0.13100  WIN
+quoted-srch     short:nu-lead-no-cont  ns/call     23.928      7.533     23.884   -16.39500    0.04400  WIN
+quoted-srch     short:nu-lead-with-cont ns/call     23.953      7.601     24.164   -16.35200    0.21100  WIN
+quoted-srch     short:nu-mojibake      ns/call     52.067      9.479     51.772   -42.58800    0.29500  WIN
+quoted-srch     short:rd-date-hit      ns/call     40.834      8.852     40.771   -31.98200    0.06300  WIN
+quoted-srch     short:rd-email-hit     ns/call     74.797     10.716     74.632   -64.08100    0.16500  WIN
+quoted-srch     short:rd-email-near-miss ns/call    128.740     15.885    128.849  -112.85500    0.10900  WIN
+quoted-srch     short:rd-evil-alt-hit  ns/call     35.138      8.487     35.188   -26.65100    0.05000  WIN
+quoted-srch     short:rd-evil-alt-near-miss ns/call    118.592     14.933    118.274  -103.65900    0.31800  WIN
+quoted-srch     short:rd-numeric-id-hit ns/call     35.070      8.433     35.128   -26.63700    0.05800  WIN
+quoted-srch     short:rd-numeric-id-near-miss ns/call    128.638     16.705    129.270  -111.93300    0.63200  WIN
+quoted-srch     short:rd-phone-list-hit ns/call     52.092     10.441     51.941   -41.65100    0.15100  WIN
+quoted-srch     short:rd-trim-hit      ns/call     35.061      8.496     35.104   -26.56500    0.04300  WIN
+quoted-srch     short:rd-trim-near-miss ns/call    129.144     15.498    128.672  -113.64600    0.47200  WIN
+quoted-srch     short:rec-array-define ns/call     80.388     11.511     80.637   -68.87700    0.24900  WIN
+quoted-srch     short:rec-comment-nested ns/call    205.638     22.293    205.845  -183.34500    0.20700  WIN
+quoted-srch     short:rec-parens-balanced ns/call     51.820      9.469     51.975   -42.35100    0.15500  WIN
+quoted-srch     short:rec-parens-unbalanced ns/call     40.835      8.741     40.831   -32.09400    0.00400  WIN
+quoted-srch     short:rec-tag-depth3   ns/call    140.832     16.793    140.726  -124.03900    0.10600  WIN
+quoted-srch     short:sd-dollar-nl     ns/call     51.790      9.509     52.038   -42.28100    0.24800  WIN
+quoted-srch     short:sd-empty-alt-hit ns/call    352.451     42.218    353.497  -310.23300    1.04600  WIN
+quoted-srch     short:sd-empty-alt-miss ns/call    348.656     42.355    347.797  -306.30100    0.85900  WIN
+quoted-srch     short:sd-fileext-short ns/call     96.639     12.483     96.447   -84.15600    0.19200  WIN
+quoted-srch     short:sd-keyword-short ns/call     74.631     11.128     74.792   -63.50300    0.16100  WIN
+quoted-srch     short:sd-router-short  ns/call     46.184      9.083     46.223   -37.10100    0.03900  WIN
+quoted-srch     short:sec-aws-key      ns/call    129.147     15.747    128.545  -113.40000    0.60200  WIN
+quoted-srch     short:sec-github-pat   ns/call    528.457     54.069    528.625  -474.38800    0.16800  WIN
+quoted-srch     short:sec-slack-webhook ns/call    462.933     49.850    462.210  -413.08300    0.72300  WIN
+quoted-srch     short:sec-userpass     ns/call    105.990     66.248    107.285   -39.74200    1.29500  WIN
+quoted-srch     short:v-email          ns/call    151.288     18.572    151.425  -132.71600    0.13700  WIN
+quoted-srch     short:v-ipv4-oor       ns/call     69.571     10.653     69.340   -58.91800    0.23100  WIN
+quoted-srch     short:v-ipv4           ns/call     80.300     11.415     80.058   -68.88500    0.24200  WIN
+quoted-srch     short:v-us-zip-plus4   ns/call     74.649     11.201     74.884   -63.44800    0.23500  WIN
+quoted-srch     short:v-us-zip         ns/call     40.685      8.846     40.592   -31.83900    0.09300  WIN
+quoted-srch     short:v-uuid-badnibble ns/call    216.517     24.288    216.460  -192.22900    0.05700  WIN
+quoted-srch     short:v-uuid-valid     ns/call    216.930     23.705    216.635  -193.22500    0.29500  WIN
+quoted-srch     short:waf-benign       ns/call    232.801     28.961    232.765  -203.84000    0.03600  WIN
+quoted-srch     short:waf-comment-obfuscation ns/call    118.202     14.563    118.302  -103.63900    0.10000  WIN
+quoted-srch     short:waf-concat       ns/call    282.483     33.010    282.254  -249.47300    0.22900  WIN
+quoted-srch     short:waf-dbnames      ns/call    233.030     28.918    232.839  -204.11200    0.19100  WIN
+quoted-srch     short:waf-sleep        ns/call    315.381    242.283    315.471   -73.09800    0.09000  WIN
+quoted-srch     short:waf-union        ns/call    254.752     30.172    255.179  -224.58000    0.42700  WIN
+union-srch      short:br-doubled-word  ns/call     14.874     14.805     14.862    -0.06900    0.01200  WIN
+union-srch      short:br-dup-param     ns/call     10.303     10.205     10.252    -0.09800    0.05100  WIN
+union-srch      short:br-palindrome    ns/call     10.180     10.084     10.184    -0.09600    0.00400  WIN
+union-srch      short:br-quoted-delim  ns/call     10.335     10.059     10.158    -0.27600    0.17700  WIN
+union-srch      short:br-tag-mismatch  ns/call     14.864     14.807     14.860    -0.05700    0.00400  WIN
+union-srch      short:br-tag-pair      ns/call     14.977     14.781     14.923    -0.19600    0.05400  WIN
+union-srch      short:cg-array-begin   ns/call      3.251      3.264      3.256    +0.01300    0.00500  REGRESSION
+union-srch      short:cg-constant      ns/call      3.264      3.260      3.260    -0.00400    0.00400  WIN
+union-srch      short:cg-key-colon     ns/call     10.266     10.054     10.224    -0.21200    0.04200  WIN
+union-srch      short:cg-number        ns/call     10.266     10.058     10.144    -0.20800    0.12200  WIN
+union-srch      short:cg-object-begin  ns/call      3.955      3.948      3.958    -0.00700    0.00300  WIN
+union-srch      short:cg-string-escape ns/call      3.263      3.252      3.252    -0.01100    0.01100  WIN
+union-srch      short:dt-iso8601       ns/call     10.299     10.219     10.281    -0.08000    0.01800  WIN
+union-srch      short:dt-prose-month   ns/call     12.210     12.206     12.472    -0.00400    0.26200  NULL
+union-srch      short:floor-hit        ns/call      8.087      8.075      8.111    -0.01200    0.02400  NULL
+union-srch      short:la-currency      ns/call     10.265     10.058     10.205    -0.20700    0.06000  WIN
+union-srch      short:la-email-dotdot  ns/call     10.293     10.052     10.169    -0.24100    0.12400  WIN
+union-srch      short:la-email-nodup   ns/call     10.273     10.075     10.169    -0.19800    0.10400  WIN
+union-srch      short:la-float-bound   ns/call     10.243     10.053     10.187    -0.19000    0.05600  WIN
+union-srch      short:la-float-dotted  ns/call     11.785     10.183     10.320    -1.60200    1.46500  WIN
+union-srch      short:la-negation-hit  ns/call     37.081     24.517     17.029   -12.56400   20.05200  NULL
+union-srch      short:la-negation-miss ns/call     14.887     14.803     14.910    -0.08400    0.02300  WIN
+union-srch      short:la-pwd-strong    ns/call     10.213     10.149     10.264    -0.06400    0.05100  WIN
+union-srch      short:la-pwd-weak      ns/call     10.300     10.053     10.166    -0.24700    0.13400  WIN
+union-srch      short:lp-atomic-hit    ns/call     10.242     10.059     10.258    -0.18300    0.01600  WIN
+union-srch      short:lp-atomic-nonmatch ns/call     10.290     10.109     10.227    -0.18100    0.06300  WIN
+union-srch      short:lp-num-leadzero  ns/call      7.210      7.189      7.190    -0.02100    0.02000  WIN
+union-srch      short:lp-num-neg-dec   ns/call     10.189     10.144     10.160    -0.04500    0.02900  WIN
+union-srch      short:lp-quoted-escaped ns/call     10.234     10.183     10.291    -0.05100    0.05700  NULL
+union-srch      short:lp-quoted        ns/call     10.271     10.086     10.189    -0.18500    0.08200  WIN
+union-srch      short:lp-syslog        ns/call     21.604     21.580     21.584    -0.02400    0.02000  WIN
+union-srch      short:lp-winpath-reserved ns/call     10.344     10.094     10.141    -0.25000    0.20300  WIN
+union-srch      short:lp-winpath       ns/call     10.202     10.177     10.285    -0.02500    0.08300  NULL
+union-srch      short:nu-high-byte     ns/call      3.252      3.260      3.252    +0.00800    0.00000  REGRESSION
+union-srch      short:nu-lead-no-cont  ns/call      7.189      7.228      7.199    +0.03900    0.01000  REGRESSION
+union-srch      short:nu-lead-with-cont ns/call      3.260      3.267      3.259    +0.00700    0.00100  REGRESSION
+union-srch      short:nu-mojibake      ns/call     10.239     10.172     10.214    -0.06700    0.02500  WIN
+union-srch      short:rd-date-hit      ns/call      3.254      3.251      3.251    -0.00300    0.00300  WIN
+union-srch      short:rd-email-hit     ns/call     10.162     10.110     10.136    -0.05200    0.02600  WIN
+union-srch      short:rd-email-near-miss ns/call     10.185     10.059     10.219    -0.12600    0.03400  WIN
+union-srch      short:rd-evil-alt-hit  ns/call      3.958      3.962      3.961    +0.00400    0.00300  REGRESSION
+union-srch      short:rd-evil-alt-near-miss ns/call     10.344     10.063     10.201    -0.28100    0.14300  WIN
+union-srch      short:rd-numeric-id-hit ns/call      3.264      3.267      3.258    +0.00300    0.00600  NULL
+union-srch      short:rd-numeric-id-near-miss ns/call     10.597     10.176     10.224    -0.42100    0.37300  WIN
+union-srch      short:rd-phone-list-hit ns/call     10.326     10.042     10.239    -0.28400    0.08700  WIN
+union-srch      short:rd-trim-hit      ns/call      3.962      3.967      3.967    +0.00500    0.00500  NULL
+union-srch      short:rd-trim-near-miss ns/call     10.278     10.053     10.309    -0.22500    0.03100  WIN
+union-srch      short:rec-array-define ns/call     10.204     10.087     10.216    -0.11700    0.01200  WIN
+union-srch      short:rec-comment-nested ns/call     10.230     10.060     10.170    -0.17000    0.06000  WIN
+union-srch      short:rec-parens-balanced ns/call     10.662     10.654     10.656    -0.00800    0.00600  WIN
+union-srch      short:rec-parens-unbalanced ns/call      8.728      8.752      8.708    +0.02400    0.02000  REGRESSION
+union-srch      short:rec-tag-depth3   ns/call     19.887     19.949     20.033    +0.06200    0.14600  NULL
+union-srch      short:sd-dollar-nl     ns/call     10.211     10.087     10.201    -0.12400    0.01000  WIN
+union-srch      short:sd-empty-alt-hit ns/call     11.405     11.283     11.406    -0.12200    0.00100  WIN
+union-srch      short:sd-empty-alt-miss ns/call     11.527     11.236     11.370    -0.29100    0.15700  WIN
+union-srch      short:sd-fileext-short ns/call     10.251     10.240     10.241    -0.01100    0.01000  WIN
+union-srch      short:sd-keyword-short ns/call     14.901     14.788     14.867    -0.11300    0.03400  WIN
+union-srch      short:sd-router-short  ns/call     10.281     10.060     10.246    -0.22100    0.03500  WIN
+union-srch      short:sec-aws-key      ns/call     10.200     10.056     10.116    -0.14400    0.08400  WIN
+union-srch      short:sec-github-pat   ns/call     12.062     11.831     12.006    -0.23100    0.05600  WIN
+union-srch      short:sec-slack-webhook ns/call     34.344     34.394     34.406    +0.05000    0.06200  NULL
+union-srch      short:sec-userpass     ns/call     10.166     10.053     10.238    -0.11300    0.07200  WIN
+union-srch      short:v-email          ns/call     10.666     10.653     10.650    -0.01300    0.01600  NULL
+union-srch      short:v-ipv4-oor       ns/call     12.384     10.059     10.331    -2.32500    2.05300  WIN
+union-srch      short:v-ipv4           ns/call     10.329     10.183     10.229    -0.14600    0.10000  WIN
+union-srch      short:v-us-zip-plus4   ns/call     10.355     10.072     10.209    -0.28300    0.14600  WIN
+union-srch      short:v-us-zip         ns/call      8.076      8.050      3.970    -0.02600    4.10600  NULL
+union-srch      short:v-uuid-badnibble ns/call     19.758     20.138     20.120    +0.38000    0.36200  REGRESSION
+union-srch      short:v-uuid-valid     ns/call     19.801     19.535     20.079    -0.26600    0.27800  NULL
+union-srch      short:waf-benign       ns/call     22.607     22.562     22.584    -0.04500    0.02300  WIN
+union-srch      short:waf-comment-obfuscation ns/call     18.208     18.039     18.149    -0.16900    0.05900  WIN
+union-srch      short:waf-concat       ns/call     37.420     38.089     38.818    +0.66900    1.39800  NULL
+union-srch      short:waf-dbnames      ns/call     37.224     37.191     37.111    -0.03300    0.11300  NULL
+union-srch      short:waf-sleep        ns/call     10.344     10.076     10.201    -0.26800    0.14300  WIN
+union-srch      short:waf-union        ns/call     80.873     80.169     79.854    -0.70400    1.01900  NULL
