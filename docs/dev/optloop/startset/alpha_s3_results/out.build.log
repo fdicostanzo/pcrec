@@ -1,0 +1,39 @@
+cap:t-64k OK
+cap:t-256k OK
+cap:t-1m OK
+log:t-016k-fail OK
+log:t-016k-syslog OK
+log:t-016k-hit OK
+log:t-064k-fail OK
+log:t-064k-syslog OK
+log:t-064k-hit OK
+log:t-256k-fail OK
+log:t-256k-syslog OK
+log:t-256k-hit OK
+log:t-1024k-fail OK
+log:t-1024k-syslog OK
+log:t-1024k-hit OK
+bnd:t-letters-004k OK
+bnd:t-letters-016k OK
+bnd:t-letters-064k OK
+bnd:t-digits-016k OK
+bnd:t-digits-004k OK
+alt:t-128k-clean OK
+alt:t-128k-sparse OK
+alt:t-128k-dense OK
+alt:t-512k-sparse OK
+pcrec: warning: large artifact: 800894 bytes of emitted C source (20234 of code), over --warn-emit-bytes=250000. Unroll factor K=8 (default); prefilter language n/a (no VM prefilter). See docs/spec/tuning.md for the levers, or raise/disable the warning with --warn-emit-bytes.
+pcrec: note: the emitted-size cap forced a smaller artifact: dropped the optional anchored match-here machine -- loses the [OPT-2] fast path -- <prefix>_match falls back to search-and-filter, which the anchored machine exists specifically to avoid (docs/design/anchored_match_unwrapped.md). Raise --max-emit-bytes/--max-emit-code-bytes to keep the faster form, or accept the fit.
+pcrec: warning: large artifact: 801067 bytes of emitted C source (20411 of code), over --warn-emit-bytes=250000. Unroll factor K=8 (default); prefilter language n/a (no VM prefilter). See docs/spec/tuning.md for the levers, or raise/disable the warning with --warn-emit-bytes.
+pcrec: note: the emitted-size cap forced a smaller artifact: dropped the optional anchored match-here machine -- loses the [OPT-2] fast path -- <prefix>_match falls back to search-and-filter, which the anchored machine exists specifically to avoid (docs/design/anchored_match_unwrapped.md). Raise --max-emit-bytes/--max-emit-code-bytes to keep the faster form, or accept the fit.
+pcrec: warning: large artifact: 800894 bytes of emitted C source (20234 of code), over --warn-emit-bytes=250000. Unroll factor K=8 (default); prefilter language n/a (no VM prefilter). See docs/spec/tuning.md for the levers, or raise/disable the warning with --warn-emit-bytes.
+pcrec: note: the emitted-size cap forced a smaller artifact: dropped the optional anchored match-here machine -- loses the [OPT-2] fast path -- <prefix>_match falls back to search-and-filter, which the anchored machine exists specifically to avoid (docs/design/anchored_match_unwrapped.md). Raise --max-emit-bytes/--max-emit-code-bytes to keep the faster form, or accept the fit.
+pcrec: warning: large artifact: 908046 bytes of emitted C source (22359 of code), over --warn-emit-bytes=250000. Unroll factor K=8 (default); prefilter language n/a (no VM prefilter). See docs/spec/tuning.md for the levers, or raise/disable the warning with --warn-emit-bytes.
+pcrec: note: the emitted-size cap forced a smaller artifact: dropped the optional anchored match-here machine -- loses the [OPT-2] fast path -- <prefix>_match falls back to search-and-filter, which the anchored machine exists specifically to avoid (docs/design/anchored_match_unwrapped.md). Raise --max-emit-bytes/--max-emit-code-bytes to keep the faster form, or accept the fit.
+pcrec: note: the emitted-size cap forced a smaller artifact: dropped the premultiplied DFA transition table -- slower per-byte scan dispatch, measured ~1.27x on scan-bound subjects (docs/dev/opt3_dfa_scan_measurement.md). Raise --max-emit-bytes/--max-emit-code-bytes to keep the faster form, or accept the fit.
+pcrec: warning: large artifact: 908219 bytes of emitted C source (22536 of code), over --warn-emit-bytes=250000. Unroll factor K=8 (default); prefilter language n/a (no VM prefilter). See docs/spec/tuning.md for the levers, or raise/disable the warning with --warn-emit-bytes.
+pcrec: note: the emitted-size cap forced a smaller artifact: dropped the optional anchored match-here machine -- loses the [OPT-2] fast path -- <prefix>_match falls back to search-and-filter, which the anchored machine exists specifically to avoid (docs/design/anchored_match_unwrapped.md). Raise --max-emit-bytes/--max-emit-code-bytes to keep the faster form, or accept the fit.
+pcrec: note: the emitted-size cap forced a smaller artifact: dropped the premultiplied DFA transition table -- slower per-byte scan dispatch, measured ~1.27x on scan-bound subjects (docs/dev/opt3_dfa_scan_measurement.md). Raise --max-emit-bytes/--max-emit-code-bytes to keep the faster form, or accept the fit.
+pcrec: warning: large artifact: 908046 bytes of emitted C source (22359 of code), over --warn-emit-bytes=250000. Unroll factor K=8 (default); prefilter language n/a (no VM prefilter). See docs/spec/tuning.md for the levers, or raise/disable the warning with --warn-emit-bytes.
+pcrec: note: the emitted-size cap forced a smaller artifact: dropped the optional anchored match-here machine -- loses the [OPT-2] fast path -- <prefix>_match falls back to search-and-filter, which the anchored machine exists specifically to avoid (docs/design/anchored_match_unwrapped.md). Raise --max-emit-bytes/--max-emit-code-bytes to keep the faster form, or accept the fit.
+pcrec: note: the emitted-size cap forced a smaller artifact: dropped the premultiplied DFA transition table -- slower per-byte scan dispatch, measured ~1.27x on scan-bound subjects (docs/dev/opt3_dfa_scan_measurement.md). Raise --max-emit-bytes/--max-emit-code-bytes to keep the faster form, or accept the fit.

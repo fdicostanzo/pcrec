@@ -1,0 +1,37 @@
+# libc: ldd (Ubuntu GLIBC 2.43-2ubuntu2.4) 2.43 | layers: scalar
+# Tue Oct  6 04:46:31 PM UTC 2026 ubuntubudu load1=0.51 gov=schedutil boost=1
+cell            subject                unit         base        new       deny    new-base      floor  verdict
+aws             cap:t-64k              ns/B     2.882139   0.031670   2.883200    -2.85047    0.00106  WIN
+aws             cap:t-1m               ns/B     2.920677   0.052612   2.922441    -2.86807    0.00176  WIN
+json-constant   cap:t-64k              ns/B     3.009006   1.642480   3.006645    -1.36653    0.00236  WIN
+json-constant   cap:t-1m               ns/B     3.050310   1.631244   3.049802    -1.41907    0.00051  WIN
+dbnames         cap:t-64k              ns/B     3.048603   2.724709   3.054293    -0.32389    0.00569  WIN
+dbnames         cap:t-1m               ns/B     3.112302   2.809657   3.113658    -0.30265    0.00136  WIN
+bignum          log:t-064k-syslog      ns/B     2.750041   1.524701   2.751775    -1.22534    0.00173  WIN
+bignum          log:t-1024k-syslog     ns/B     2.756633   1.553636   2.755673    -1.20300    0.00096  WIN
+hex32-id        log:t-064k-syslog      ns/B     2.747188   2.397671   2.749436    -0.34952    0.00225  WIN
+hex32-id        log:t-1024k-syslog     ns/B     2.757053   2.411728   2.756957    -0.34532    0.00010  WIN
+level-context   log:t-064k-syslog      ns/B     2.412108   0.487656   2.415374    -1.92445    0.00327  WIN
+level-context   log:t-1024k-syslog     ns/B     2.446145   0.487510   2.463880    -1.95864    0.01774  WIN
+ctx-lazy-64     bnd:t-letters-064k     ns/B     1.881375   1.967628   1.878987    +0.08625    0.00239  REGRESSION
+ctx-lazy-256    bnd:t-letters-064k     ns/B     1.878499   1.968389   1.877824    +0.08989    0.00067  REGRESSION
+ctx-lazy-1024   bnd:t-letters-064k     ns/B     1.878977   1.945713   1.878838    +0.06674    0.00014  REGRESSION
+ctx-greedy-256  bnd:t-letters-064k     ns/B     1.855318   1.965329   1.855536    +0.11001    0.00022  REGRESSION
+kv-quoted       log:t-064k-syslog      ns/B     0.016729   0.016723   0.016725    -0.00001    0.00000  WIN
+kv-quoted       log:t-1024k-syslog     ns/B     0.016787   0.016795   0.016799    +0.00001    0.00001  NULL
+wb-256          alt:t-128k-sparse      ns/B     3.400897   3.286776   3.389579    -0.11412    0.01132  WIN
+wb-256          alt:t-128k-dense       ns/B     3.450142   3.337013   3.452883    -0.11313    0.00274  WIN
+wb-512          alt:t-128k-sparse      ns/B     4.333710   4.129328   4.334420    -0.20438    0.00071  WIN
+wb-512          alt:t-128k-dense       ns/B     4.455721   4.269941   4.453354    -0.18578    0.00237  WIN
+grok            cap:t-64k              ns/B     0.711110   0.635822   0.710083    -0.07529    0.00103  WIN
+grok            cap:t-1m               ns/B     0.725319   0.647085   0.726341    -0.07823    0.00102  WIN
+float-literal   cap:t-64k              ns/B     1.374945   1.287228   1.374374    -0.08772    0.00057  WIN
+float-literal   cap:t-1m               ns/B     1.439505   1.341247   1.438919    -0.09826    0.00059  WIN
+floor-byte      cap:t-64k              ns/B     0.016738   0.016728   0.016735    -0.00001    0.00000  WIN
+floor-byte      cap:t-1m               ns/B     0.016826   0.016811   0.016812    -0.00002    0.00001  WIN
+high-byte-run   cap:t-64k              ns/B     0.350566   0.350574   0.350310    +0.00001    0.00026  NULL
+high-byte-run   cap:t-1m               ns/B     0.350920   0.350779   0.350779    -0.00014    0.00014  WIN
+uuid-near-miss  cap:t-64k              ns/B     0.000163   0.000163   0.000163    +0.00000    0.00000  NULL
+uuid-near-miss  cap:t-1m               ns/B     0.000005   0.000005   0.000005    +0.00000    0.00000  NULL
+union-select    cap:t-64k              ns/B     0.257661   0.257243   0.257137    -0.00042    0.00052  NULL
+union-select    cap:t-1m               ns/B     0.347882   0.348032   0.348031    +0.00015    0.00015  NULL
