@@ -26352,3 +26352,16 @@ Frank: "finish up open work/bench results/errors", Linux box free (bench manager
   targeted re-runs) -> merge/push/ping kit -> stage 3 build lane (opus);
   ARTREV pilot reviewers once the harness self-test is green and the pin
   exists.
+- 00:10 2026-10-06: START-SET STAGE 2 LANDED (57db5152, abi 62, pushed).
+  ssbuild2's Mac make test: codegen nm (accepted) + two rxtsource reds =
+  Diag.msg 256-byte truncation under a long TMPDIR (fixed test-side by lane
+  ssland; the real cure, a larger Diag.msg, is a residual). Main merged in
+  (3 doc/test conflicts), manifest: hat rides row PF (companion recorded),
+  landing chain green, emit_sweep vs main class (d) EMPTY (default 3998 abi
+  + stamp, 87 hat-fired; forced VM 1175 hat-fired). Size-log +17% vs the
+  tri86-era tracked log not row-attributed (stale baseline). Kit pinged:
+  R4a′ takes abi 63. [ARTREV] S0 harness merged (904405dd/28284364,
+  selftest 101/101); charter gains a pad-shift layout control (127c1d92).
+  Launched: ssbuild3 (opus, stage 3 DFA hat, abi 64) and artprep (sonnet,
+  pilot regenerated at 57db5152, subjects, 4 D27 cells). Process slip: a
+  manager watcher used pgrep -f; replaced by a log-mtime watcher.
