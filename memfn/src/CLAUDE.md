@@ -16,8 +16,11 @@ and no emitter renders through it.
   rules outside the vocabulary are REFUSED loudly) and their table
   (`mf_vocab_has`), the FIRST-MATCH arm table (one row at
   R4a: the generic row), and the artifact queries (`mf_flush_helpers`,
-  `mf_includes`, `mf_stamps`: nothing to flush, include or stamp yet; the
-  stamps are born at R4a′).
+  `mf_includes`: nothing to flush or include yet), and the stamps:
+  `mf_art_note_libc` (the libc record's writer, a sorted distinct name list
+  on the art) and `mf_stamps` (R4a′: `MEMFN_FORMS "none"`, constant until
+  R4f, then `MEMFN_LIBC`, the noted names comma-joined or `none`; two
+  `sink->stamp` calls).
 - **generic.c** — THE GENERIC SCALAR ROW (integration.md §14.6): the last
   row of every selection table, rendering every site the vocabulary
   describes as a plain byte loop (GNU C statement expressions for EXPR; a

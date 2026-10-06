@@ -1060,6 +1060,23 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
 
 ## Files
 
+- **memfn_stamps.c** — [MEMFN] R4a′ (lane memfnstamp, 2026-10-05;
+  `docs/design/memfn/integration.md` §R4.3.3, §18; D147 addendum 10): the
+  kit's two every-artifact stamps, `<PREFIX>_MEMFN_FORMS` and
+  `<PREFIX>_MEMFN_LIBC` (`docs/spec/match_api.md` §6.3). Both engines write a
+  one-line MARK (`pcrec_emit_memfn_mark`, a `\x01M` placeholder-lead line)
+  right after `<PREFIX>_RUN_WORDS`; the driver calls
+  `pcrec_memfn_stamps_render` once per attempt, after the engine emitter and
+  BEFORE the size measurement, which scans the finished csb+hsb text for libc
+  calls (identifiers from `libc_names` in call position, comments and
+  literals skipped, a `memcpy` of a literal 1-8 bytes excluded), notes each
+  through `mf_art_note_libc`, has `mf_stamps` render both lines through a
+  sink onto `pcrec_sb_stamp_str`, and splices them over the mark. A mark
+  left unreplaced fails the prefix render as a stray lead byte; a missing
+  or doubled mark is an internal error. The one file under `src/` that
+  calls the kit's art API. Check: C11 (`tests/memfn/run_libc_census.sh`,
+  names from `nm -u` of the compiled object); sabotage rows S513-S517.
+
 - **runcmp.c** — [OPT-LITSCAN] S4 C1 (lane s4build, 2026-10-03, abi 58;
   `docs/design/litscan_s4.md` §1.3-§1.5, `docs/spec/tuning.md` §2.38): THE RUN
   COMPARE. `pcrec_emit_run_compare(cx, c, base, off, run)` is the ONE emitter

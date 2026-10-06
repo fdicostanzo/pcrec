@@ -3927,6 +3927,51 @@ engine-scoped.**
   consumer may NOT conclude: anything about the answers, which are identical
   either way. No `rx_info` mirror (D77).
 
+  **[MEMFN] R4a′, 2026-10-05 (the stamps' own `abi` event): `<PREFIX>_MEMFN_FORMS`
+  and `<PREFIX>_MEMFN_LIBC` — WHAT THE SEARCH-CODE KIT RENDERED, AND WHICH
+  LIBC FUNCTIONS THE ARTIFACT CALLS.** On EVERY artifact, both engines; the
+  pair is written by pcrec-memory-functions (`memfn/`, D146/D147) and sits
+  directly after `<PREFIX>_RUN_WORDS`.
+
+  ```c
+  #define RX_MEMFN_FORMS "none"
+  #define RX_MEMFN_LIBC "memchr,memcmp"   /* or "none" */
+  ```
+
+  - **`MEMFN_FORMS`**: `"none"` iff the artifact is byte-identical (stamp
+    lines aside) to its own `-fno-memfn-simd` compile; otherwise the ids of
+    the forms that make it differ, comma-joined in site order, a site that
+    cascades between ISA levels carrying them as `ID@LEVEL+LEVEL`. Ids and
+    level names are OPAQUE: bucket on `none`/not-`none`, never parse an id.
+    SIMD is off by default and no SIMD form exists yet, so the value is
+    `"none"` on every artifact until the kit's first SIMD-on form ships
+    (D147 addendum 10, Q55). A scalar-layer kit change (one that moves bytes
+    at the default build) does NOT change it; such a change is attributed by
+    its `abi` event and its `--memfn=no-NAME` deny row, and a consumer that
+    must tell two same-`abi` builds apart records the build recipe (`abi`,
+    pcrec commit, argv).
+  - **`MEMFN_LIBC`**: `"none"`, or the names of the C library functions the
+    artifact's code calls, sorted (byte order), distinct, comma-joined with
+    no space. It is a SOURCE-LEVEL INVENTORY of the WHOLE artifact (the
+    search code, the variable resolver, an `--emit-main` driver, `--trace`
+    output; comments and string literals excluded), not a promise of a
+    dispatched call: a name is listed even where the compiler later inlines
+    or folds that call. **One exclusion:** a `memcpy` of a constant 1-8
+    bytes is a register load, not a call, and is not listed (the literal-run
+    word loads, `<prefix>_wN`). The data objects an `--emit-main` or
+    `--trace` artifact references (`stderr`) are not functions and are not
+    listed. What a consumer may conclude: a SIMD-off artifact that lists
+    `memchr` delegates that search to the C library's own dispatch.
+  - Neither line carries a kit version or the kit's vocabulary number, so a
+    kit release that moves no emitted byte moves neither. No `rx_info`
+    mirror (D77).
+  - **Checked by C11** (`make test-memfn-stamps`,
+    `tests/memfn/run_libc_census.sh`): over a corpus-wide sample, every
+    artifact carries both lines, and `MEMFN_LIBC` equals the undefined
+    function symbols of the artifact's `-O0 -fno-builtin` object minus the
+    constant-size `memcpy` loads. `MEMFN_FORMS`' identity half is
+    UNREACHED until a `-fmemfn-simd` switch exists.
+
 - **(b) CAPACITY and ACTIVITY macros stay VM-only**, exactly as this
   section already said: `<PREFIX>_VM_RUNGS`, `_VM_STRATS`, `_VM_PRUNES`,
   `_VM_PRUNE_CEILING`, `_VM_CALL_SPLICED`/`_LINKED`, `_VM_ROOT_MINW`,
