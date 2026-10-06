@@ -26331,3 +26331,24 @@ Frank: "finish up open work/bench results/errors", Linux box free (bench manager
 2. Critics' long results truncate in the idle notification; have them write their own findings file.
 3. The panel caught a real soundness blocker that the design's own controls could not see (controls sharing the subject's source, again).
 4. Ids (abi, sabotage) collide across two sessions unless one hand allocates them.
+
+## 2026-10-05 (late) — ninety-second session, opening
+
+- Woke from wake.md; heartbeat cron 13,43. ssbuild2's full Mac make test
+  (stage 2, VM hat) running detached since 22:56; only red so far is the
+  accepted darwin `nm arm_a.o`. Watcher script armed on MAKE_TEST_RC.
+- `scripts/wtprune` (5426f83b, pushed): gated removal of delivered lane
+  worktrees (merged/clean/quiet/no-cwd/no-lock/not-pinned, no --force),
+  26-check self-test with each gate sabotage-verified; allow-ruled in
+  settings.local.json. Applied: 44 removed, 14 kept (8 dirty, 4 unmerged,
+  memfn home + nested).
+- Frank's rulings: land stage 2 tonight if it looks good, fixing what is
+  uncontroversial; new experiment [ARTREV] (D150, charter
+  docs/dev/optloop/artrev/charter.md, 9f444d41) — blind bottom-up artifact
+  review, reviewer iterates with harness under enforced bounds, independent
+  confirmer on Linux by day. Lane artharness (sonnet) building S0 harness +
+  draft selection tonight.
+- Plan tonight: stage-2 verdict -> merge lane (main into branch, C17 row,
+  targeted re-runs) -> merge/push/ping kit -> stage 3 build lane (opus);
+  ARTREV pilot reviewers once the harness self-test is green and the pin
+  exists.
