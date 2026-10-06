@@ -26301,3 +26301,33 @@ Frank: "finish up open work/bench results/errors", Linux box free (bench manager
 3. Sub-agents hand back to the manager, not to the lane that spawned them; a lane waits for nothing unless told the output paths.
 4. Mid-run SendMessage scope changes were missed by busy lanes twice. Fresh lanes carry ruling changes reliably.
 5. Lanes still write outside scope occasionally (tmp files, a $HOME .c), always self-reported.
+
+### 2026-10-05 — ninety-first session (evening; manager pcrecdev1, kit session pcrecdev3 up for the first time)
+
+**Round 1 CLOSED.** The full mech red (29 flags) was triaged by lane r1mtriage: no compiler regression. The flags were 4 stale reach witnesses, 1 vacuous-on-ELF check (S297), 1 mis-scored earlier triage (S220), 3 sabotages bit-rotted by earlier merges, 1 already fixed on main, and 12 expected. 7 of 10 had been stale since 09-20..09-29 because no full mech run had completed since 08-30 (learnings §3.ab). r1gclose: plan closed; `(?!a)` answer cells (S220 detected at answer level); "exactly three" view-decliners was SEVEN (s220 manifest corrected); S219's premise is stale (unmeasured).
+
+**K82 (B) handoff alpha ACCEPTED** (k82halpha, k82close): cause (B) cured; K88 filed (lit-l31 +0.149 ns/B, match-dense); K85 persists +0.02-0.04 ns/B but no longer a regression vs abi 59 (alpha_k85.sh fixed with a proper deny pair). K86 fix merged (ad3677f2; validated on the merged tree). Round-2 side items both closed: SEL-LIT = synthetic only (sellit + bench O-84); K87 = code layout, not the spelling (k87twin, CLOSED not-a-defect; a gcc -O2 loop-alignment cliff of 0.29-0.76 ns/B filed, not planned).
+
+**START-SET (round 2 core):**
+- Design: lane startset; Frank ruled Q1-Q9 → D148.
+- Full D6 panel r4 (ssc-sound / ssc-checks / ssc-cost): 1 BLOCKER — the DFA hat's T = S∩E deletes matches (6 corpus witnesses).
+- Frank ruled fix (a), T = S ∩ E\* (D148 addendum 1), with an edge-case and mutation-detection requirement because "the set math is not a proof".
+- Rev 2 (ssrev): E\* = all 256 on every seeded machine, so T = S; 0 diffs over 13.6M cells. Q-R1..Q-R6 ruled (addendum 2); stage 4 is demoted to filed-not-planned at Frank's caution.
+- ssedge: 2,070 oracle cells agree with the 10.46 reference; every distinguishable mutant is detected at answer level. It found that the re-seed must be CONDITIONAL and that Tdfa is not a sound floor.
+- BUILT: stages 0+1 (ssbuild01, merged f3c726d7, zero movers, K84 FIXED, `make test-startset`); K89 filed (axis C view tables by row-name strcmp).
+- Stage 2 (the VM hat, abi 62) is in flight on lane ssbuild2.
+
+**[MEMFN]:**
+- Wrote the `/pcrec-memfn-manager` skill. The kit session (pcrecdev3) ran R-1: the fused scan+verify beats the emitted gate at SIMD-off on union-select (1.4-2.0x both regimes); lead order is part of the form; K85's dense loss is removed.
+- D149: tuning constants are suspect (measured, derived, or left to the compiler; else labelled).
+- R-2: rev 4.5/4.6 + light panel r5 (blocker: set-leads is REQUIRED on no-DFA routes). Q53-Q55 ruled (D147 addendum 10).
+- R-3: R4a MERGED (5328a87d, zero movers, `#section memfn` in --list-axes; bench told in I-128/I-129). R4a′ (abi 63, after stage 2) is in flight.
+- Sabotage ids now serialize through the manager: START-SET S478-S504; kit S510-S529.
+
+**Filed:** [OPT-REVEND] (reverse-from-end search for end-pinned patterns, at Frank's question): exact; zero bench patterns benefit today; trigger is a bench cell family.
+
+**Lessons:**
+1. A mid-run SendMessage ruling was missed AGAIN (ssrev never saw the edge-case ruling); a fresh lane (ssedge) carried it.
+2. Critics' long results truncate in the idle notification; have them write their own findings file.
+3. The panel caught a real soundness blocker that the design's own controls could not see (controls sharing the subject's source, again).
+4. Ids (abi, sabotage) collide across two sessions unless one hand allocates them.
