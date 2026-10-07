@@ -231,8 +231,10 @@ static int precheck_use(mf_art *art, uint32_t handle, const mf_hooks *h,
             if (run_line(art, h, r, i, o)) return -1;
         } else if (i == 0) {
             gate(h, only_byte(p), o);
+            if (mf_art_note_libc(art, "memchr")) return -1;
         } else {
             set_rest(h, s, i, o);
+            if (mf_art_note_libc(art, "memchr")) return -1;
             break;
         }
     }

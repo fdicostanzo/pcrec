@@ -243,6 +243,8 @@ int ofs_fn_define(mf_art *art, const mf_hooks *h, const mf_pred *p,
     int maxk = max_reach(p), k, a, b;
     ofs_fn_scan(p, &k, &a, &b);
     art->includes |= MF_INC_STRING_H;   /* memchr */
+    /* both bodies below write `memchr(`; an error from here on is sticky */
+    if (mf_art_note_libc(art, "memchr")) return -1;
 
     kit_out(o, "static inline size_t %s(const unsigned char *subject, size_t n, size_t pos", fn);
     if (table_params(art, h, p, 1, o)) return -1;
