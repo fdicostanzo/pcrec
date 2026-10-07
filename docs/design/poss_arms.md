@@ -1107,7 +1107,7 @@ length ≤ 4 plus 100 random; arm B: ≤ 5 plus 300).
 | A1 | a mixed LAST declines (collapse it) | 504 | **168** | `(?:a[a.])+\b` on `a.a.` |
 | A1 | ENCL unioned (drop it) | 2,272 | **3** | `(?:a+(?:\b\|)\|ab)+c` on `aabc` |
 | A1 | the call-site join (A-F1; lexical only) | 4 | **4** | `(a+(?:\b\|))\|b(?1)a` on `baa` |
-| A1 | greedy only (admit lazy) | 1,134 | **0** ~~(§8.4a: 477 of 3,964 once the family has a nullable follow)~~ | — |
+| A1 | greedy only (admit lazy) | 1,134 | ~~**0**~~ REFUTED (§8.4a: 477 of 3,964 once the family has a nullable follow) | — |
 | B | fold at a caseless reference | 2 | **2** | `(a)A+(?i:\1)` on `aAA` |
 | B | union over every `refs[]` member | 2 | **2** | `(?:(?<n>a)\|(?<n>x))x+\k<n>` on `xxx` |
 | B | union over every `A_CAP` with the number | 1 | **1** | `(?\|(a)\|(x))x+\1` on `xxx` |
