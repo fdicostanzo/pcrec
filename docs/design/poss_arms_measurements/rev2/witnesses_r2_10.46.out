@@ -1,0 +1,98 @@
+# libpcre2 10.46 (ubuntubudu, one light ssh session, gnutimeout 30), 2026-10-07, lane possarms2
+# rev-2 witnesses, greedy (no_auto_possess) vs possessive spelling, run on 10.46
+"(?:a+(?:\b|)|ab)+c"no_auto_possess
+aabc
+ 0: aabc
+
+"(?:a++(?:\b|)|ab)+c"
+aabc
+ 0: abc
+
+"(a?)(x+\1)b(?2)x"no_auto_possess
+xbxx
+ 0: xbxx
+ 1: 
+ 2: x
+
+"(a?)(x++\1)b(?2)x"
+xbxx
+No match
+
+"(a)(x+\1)b(?2)x"no_auto_possess
+axbxax
+No match
+
+"(a)(x++\1)b(?2)x"
+axbxax
+No match
+
+"(?:a\.)+\B"no_auto_possess
+a.a.
+ 0: a.a.
+a.a.a
+No match
+
+"(?:a\.)++\B"
+a.a.
+ 0: a.a.
+a.a.a
+No match
+
+"(a?)x+\1\b"no_auto_possess
+xx
+ 0: xx
+ 1: 
+axxa
+ 0: axxa
+ 1: a
+xx.
+ 0: xx
+ 1: 
+
+"(a?)x++\1\b"
+xx
+ 0: xx
+ 1: 
+axxa
+ 0: axxa
+ 1: a
+xx.
+ 0: xx
+ 1: 
+
+"(a+(?:\b|))|b(?1)a"no_auto_possess
+baa
+ 0: baa
+
+"(a++(?:\b|))|b(?1)a"
+baa
+ 0: aa
+ 1: aa
+
+"(?:b(?R)a|a+(?:\b|))"no_auto_possess
+baa
+ 0: baa
+
+"(?:b(?R)a|a++(?:\b|))"
+baa
+ 0: aa
+
+"(a\2)(b\1)x+\1"no_auto_possess
+abxa
+No match
+
+"(a\2)(b\1)x++\1"
+abxa
+No match
+
+"[ab]+?(?![ab])"no_auto_possess
+abab
+ 0: abab
+abab.
+ 0: abab
+
+"(?>[ab]+)(?![ab])"
+abab
+ 0: abab
+abab.
+ 0: abab

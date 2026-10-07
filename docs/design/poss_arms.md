@@ -60,15 +60,15 @@ revision 2's is in `poss_arms_measurements/rev2/`. Each has its own CLAUDE.md.
 
 | finding | sev | where | what was done | evidence (`poss_arms_measurements/rev2/`) |
 |---|---|---|---|---|
-| A-F1 | BLOCKER | §2.3a, §8.2 | fix (a): a cap-end / root-end marker in A1's continuation unions `cc[g].follow ∪ cc[g].encl` (A0-valued); `cc` never holds an A1 value. Both witnesses are now possdiff patterns and a sabotage row. They are also .rxt cells, owed by the build (§8.2) | `proto_rev2.patch`; `pdx/plant_A1_NOCC.log`; `claimmark.out` rows C0001/C0002/C0005/C0006; `census_r2.tsv.gz` (`vm_ABnocc`) |
+| A-F1 | BLOCKER | §2.3a, §8.2 | fix (a): a cap-end / root-end marker in A1's continuation unions `cc[g].follow ∪ cc[g].encl` (A0-valued); `cc` never holds an A1 value. Both witnesses are now possdiff patterns and a sabotage row. They are also .rxt cells, owed by the build (§8.2) | `proto_rev2.patch`; `pdx/plant_A1_NOCC.log`; `claimmark.out.gz` rows C0001/C0002/C0005/C0006; `census_r2.tsv.gz` (`vm_ABnocc`) |
 | C-2 | HIGH | §2.3a | option (b) is chosen: a joined context supplies only the P = {0,1} component. The triple is not well defined, and its measured gain is 0 | `census_r2.tsv.gz` |
 | C-1 / B-M1 | HIGH | §5.4, §9 | route-flip census: 0 flips over 4,132, 186 at risk. A's deny bit goes in the `kept` set, with `--engine=dfa` refusal witnesses and spec sentences. **B's bit is REFUTED as engine-selecting**: it can never move `RX_ENGINE` | `census_r2.tsv.gz`, `routeflip_witness.{sh,out}`, `pdx/routeflip_default.log` |
 | B-B1 | BLOCKER | §8.1, §8.2 | exhaustive subjects, split by code point; a REACH check per (pattern, witness); `# flags:`; all plants run | `subjects_exh.py`, `possdiff_exh.sh`, `possdiff_plants.sh`, `pd_*.txt`, `pd_reach.tsv`, `pdx_verdicts.txt` |
-| B-B2 | BLOCKER | §8.3 | CLAIM-vs-MARK over every claimed row plus a 1-in-10 stratified sample; mixed-LAST body added. It found two places where the INDEPENDENT predicate was narrower than the rule, both oracle-confirmed sound | `gen_a2.py`, `gen_b2.py`, `r2_claimmark.py`, `claimmark.out` |
-| B-B3 | BLOCKER | §8.4 | ablation table at ML ≥ 4; depth-1 termination witness and plant | `a2_abl_ml4.out`, `b2_ml5.out`, `pdx/plant_SAB_NORECGUARD.log` |
+| B-B2 | BLOCKER | §8.3 | CLAIM-vs-MARK over every claimed row plus a 1-in-10 stratified sample; mixed-LAST body added. It found two places where the INDEPENDENT predicate was narrower than the rule, both oracle-confirmed sound | `gen_a2.py`, `gen_b2.py`, `r2_claimmark.py`, `claimmark.out.gz`, `claimmark_v1.out.gz` |
+| B-B3 | BLOCKER | §8.4 | ablation table at ML ≥ 4; depth-1 termination witness and plant | `a2_abl_ml4.out.gz`, `a2_new_ml4.out`, `b2_ml5.out`, `pdx/plant_SAB_NORECGUARD.log` |
 | B-M2 | MAJOR | §8.5 | `<PREFIX>_VM_POSS_ARMS` stamp, a `poss-arms-moved` bucket, the emit_sweep mover rule | design only (build-time) |
 | B-M3 | MAJOR | §6, §8.6 | committed subject; one re-measurement; run_axes' classifier and allowance; `outcome_word.h`; a fourth class | `wb_subject.py`, `minwb2.sh`, `wb_runs.tsv` |
-| B-M4 | MAJOR | §5.2, §5.3 | A0 family sweep; denominator and refused list; deny-delta re-count at build | `gen_a0.py`, `a0_ml4.out`, `census_r2_refused.tsv` |
+| B-M4 | MAJOR | §5.2, §5.3 | A0 family sweep; denominator and refused list; deny-delta re-count at build | `gen_a0.py`, `a0_ml4.out.gz`, `census_r2_refused.tsv` |
 | A-F3 | LOW | §2.1 | the empty-S widening rule replaces "belt and braces" | `proto_rev2.patch` (`px_S`) |
 | A-F4 | LOW | §2.1 | the prototype's rule is adopted (narrowed gates are non-nullable), with the reason | `census_r2.tsv.gz` (`vm_ABa0null` = `vm_AB` on all rows) |
 | B-M5 | MAJOR | §8.1 | `# flags:` header, no TAB column, a named floor, per-arm firing from `--emit-ir` | `possdiff_exh.sh` |
@@ -342,7 +342,10 @@ Each line was a candidate rule, either the row's own wording or a simpler
 one. Each was refuted by a libpcre2 equivalence check: the greedy spelling
 under `no_auto_possess` against the possessive spelling, on the same
 subjects. Rows were confirmed on 10.46 (`../poss_arms_measurements/
-witnesses_10.46.out`).
+witnesses_10.46.out`). Revision 2's new witnesses were confirmed in one
+light session (`rev2/witnesses_r2.pcre2test` → `rev2/witnesses_r2_10.46.out`):
+A-F1's two, ENCL's control, the arm × call decline, the `\B` and
+empty-reference claims, the depth-1 cycle, and a lazy `(?!C)` at the end.
 
 | candidate | witness | greedy | possessive | the conjunct it buys |
 |---|---|---|---|---|
@@ -379,7 +382,7 @@ What the restatement makes WIDER:
   follows × 5 wrappers × 6 modes. The mixed-LAST body `(?:a[a.])` is new.
 - **Claims:** 3,402 (revision 1's 3,294 plus 108 `\B`).
 - **Claims re-swept at ML=4** (every string of length ≤ 4 plus 100 random,
-  7,481-11,211 subjects per pattern): {{A_CLAIM_ML4}}. The 108 `\B` claims
+  7,481-11,211 subjects per pattern): **3,294 claimed, 0 diverging**. The 108 `\B` claims
   are new and are swept at ML=4: 0 diverging.
 - **Ablation controls** at ML=4: §8.4.
 - **Independence:** the CLAIM column is computed in Python from class
@@ -395,8 +398,9 @@ What the restatement makes WIDER:
   `\w+\b` fires.
 - **ucp:**
   - Under `-e utf8 --ucp`, pcrec today REFUSES UCP `\w`. It is a wide set,
-    refused until [CLS-TREE] S4 / [UCP] U3. All 2,017 `utf,ucp` family rows
-    are therefore refused, and CLAIM-vs-MARK records them as REFUSED. When
+    refused until [CLS-TREE] S4 / [UCP] U3. All 2,059 `utf,ucp` rows that
+    CLAIM-vs-MARK selected are therefore refused, and it records them as
+    REFUSED. When
     the route lands, `\w` reaches above 0xFF, `FIRST(X)` widens, and A1
     declines. That is a lost opportunity, not an error.
   - Under `byte --ucp`, `\w` includes Latin-1 letters. `C` comes from the
@@ -821,15 +825,15 @@ named here by their plant. All were run on the exhaustive possdiff
 
 | row | plant (prototype switch) | witness (10.46-confirmed) | possdiff (exhaustive) | CLAIM-vs-MARK rows newly mismatched |
 |---|---|---|---|---|
-| A-m0 | A1 drops `m ≥ 1` (`PROTO_SAB_M0`) | ` \w?\b` on ` aa` | DETECTED, 2 patterns | {{CM_S560}} |
-| A-firstpol | A1 reads polarity from FIRST (`PROTO_SAB_FIRSTPOL`) | `(?:a\.)+\b` on `a.a.` | DETECTED, 3 | {{CM_S561}} |
-| A-mixed | A1 collapses a mixed LAST (`PROTO_SAB_MIXED`) | `(?:a[a.])+\b` on `a.a.` | DETECTED, 1 | {{CM_S562}} |
-| B-nofold | B ignores `u.bref.caseless` (`PROTO_SAB_NOFOLD`) | `(a)A+(?i:\1)` on `aAA` | DETECTED, 1 (revision 1's harness MISSED it) | {{CM_S563}} |
-| B-firstmem | B reads only `refs[0]` (`PROTO_SAB_FIRSTMEM`) | `(?J)(?:(?<n>a)\|(?<n>x))x+\k<n>` on `xxx` | DETECTED, 2 | {{CM_S564}} |
-| B-nonnull | B forces `nullable(\n) = false` (`PROTO_SAB_NONNULL`) | `(a?)x+\1x` on `xx` | DETECTED, 2 | {{CM_S565}} |
-| A-cc (A-F1) | A1 drops the call-site join (`PROTO_A1_NOCC`) | `(a+(?:\b\|))\|b(?1)a` on `baa` | DETECTED, 3 (both A-F1 witnesses and `(a?)(x+\1)b(?2)x`) | {{CM_NOCC}}; and the corpus: 16 `k93.rxt` patterns newly marked |
+| A-m0 | A1 drops `m ≥ 1` (`PROTO_SAB_M0`) | ` \w?\b` on ` aa` | DETECTED, 2 patterns | 2,345 |
+| A-firstpol | A1 reads polarity from FIRST (`PROTO_SAB_FIRSTPOL`) | `(?:a\.)+\b` on `a.a.` | DETECTED, 3 | 1,197 |
+| A-mixed | A1 collapses a mixed LAST (`PROTO_SAB_MIXED`) | `(?:a[a.])+\b` on `a.a.` | DETECTED, 1 | 432 |
+| B-nofold | B ignores `u.bref.caseless` (`PROTO_SAB_NOFOLD`) | `(a)A+(?i:\1)` on `aAA` | DETECTED, 1 (revision 1's harness MISSED it) | 1 |
+| B-firstmem | B reads only `refs[0]` (`PROTO_SAB_FIRSTMEM`) | `(?J)(?:(?<n>a)\|(?<n>x))x+\k<n>` on `xxx` | DETECTED, 2 | 2 |
+| B-nonnull | B forces `nullable(\n) = false` (`PROTO_SAB_NONNULL`) | `(a?)x+\1x` on `xx` | DETECTED, 2 | 33 |
+| A-cc (A-F1) | A1 drops the call-site join (`PROTO_A1_NOCC`) | `(a+(?:\b\|))\|b(?1)a` on `baa` | DETECTED, 3 (both A-F1 witnesses and `(a?)(x+\1)b(?2)x`) | 3 (the C rows); and the corpus: 16 `k93.rxt` patterns newly marked |
 | B-depth (termination) | B's depth guard dropped (`PROTO_SAB_NORECGUARD`) | `(a\2)(b\1)x+\1`: compiles | DETECTED: the compiler SEGVs (stack exhaustion) on all 3 cyclic-reference patterns | — |
-| A-lazy (control, not a row) | A1 admits lazy loops (`PROTO_SAB_LAZY`) | — | NOT detected: 79 agree, 0 diverge, consistent with §8.4 | {{CM_LAZY}} newly marked, 0 diverging on the oracle (§8.4) |
+| A-lazy (control, not a row) | A1 admits lazy loops (`PROTO_SAB_LAZY`) | — | NOT detected: 79 agree, 0 diverge, consistent with §8.4 | 892 newly marked, 0 diverging on the oracle (§8.4) |
 
 **[MECH-REACH] notes:**
 
@@ -860,8 +864,8 @@ family row has exactly one quantifier an arm can reach. EXPECTATION is
 pcrec declines by representation (§2.1). The check is subject-free and
 deterministic. It reads no pcrec code on the expectation side.
 
-- **Result: {{CM_RESULT}}**
-- **Refused: {{CM_REFUSED}}**
+- **Result: 12,380 rows selected, 10,315 compared, **0 mismatches**. Mark equals expectation on every compared row: 3,079 expected marks and 7,236 expected declines. 126 of the claims fall in the `hi` class and pcrec declines them by representation, as expected.**
+- **Refused: 2,065 rows. Every selected `utf,ucp` row is refused (2,059), because UCP `\w` under utf8 is refused today (§2.5). The two branch-reset rows and the two `(*ACCEPT)` rows belong to unbuilt modules. The two `match_unset_backref` rows have no pcrec spelling.**
 - **It found two predicate gaps before it agreed**, both in the
   independent predicate (§2.4):
   - revision 1's generator did not model `\B` as a gate;

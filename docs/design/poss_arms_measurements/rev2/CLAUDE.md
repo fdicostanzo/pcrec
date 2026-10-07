@@ -64,7 +64,7 @@ These are libpcre2 only, through `../eqcheck.py`.
   rows (arm × call).
 - **`gen_a0.py`**: the A0 family sweep: lookaround-born gates in every
   position the panel named.
-- **`a2_claim_ml4.out`**: the 3,294 revision-1 claims, swept at ML=4.
+- **`a2_claim_ml4.out.gz`**: the 3,294 revision-1 claims, swept at ML=4.
 - **`a2_abl_ml4.out.gz`**: the ablation-tagged rows, swept at ML=4.
 - **`a2_new_ml4.out`**: revision 2's new claimed and tagged rows, swept at
   ML=4.
@@ -77,7 +77,7 @@ These are libpcre2 only, through `../eqcheck.py`.
   restricted by `hi`) with the prototype's mark for every claimed row,
   every tagged row, and a 1-in-10 sample of the rest. It runs under the
   arms and under each plant.
-- **`claimmark.out`**: the result, after the predicate fixes.
+- **`claimmark.out.gz`**: the result, after the predicate fixes.
 - **`claimmark_v1.out.gz`**: the first run, BEFORE the predicate fixes. This is
   the run that found the two predicate gaps and the two over-wide hand
   claims (note §8.3). It is kept because it is what made the check worth
@@ -97,6 +97,12 @@ These are libpcre2 only, through `../eqcheck.py`.
   sweep.
 - **`pdx_verdicts.txt`, `pdx/*.log`**: one tally line per run, and the
   per-pattern logs.
+
+**The 10.46 transcript**
+
+- **`witnesses_r2.pcre2test`, `witnesses_r2_10.46.out`**: revision 2's new
+  witnesses, greedy (`no_auto_possess`) against the possessive spelling. The
+  output is from libpcre2 **10.46** on ubuntubudu (one light ssh session).
 
 **The work budget (B-M3)**
 
