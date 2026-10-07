@@ -30,13 +30,18 @@ None of them is read by a check.
   body/stamp/plan), and `site` (each conditional line in a family body naming a
   seed, a member, or a local bound from one; since C1 a selection-trace record,
   `PCREC_CAND_TRACE_REC*`, is never a site — it prints a decision, it makes
-  none). Usage:
+  none). Since C2 (lane stc2) `cand_select` is a root beside the emitters
+  (`TABLE_ROOTS`: the one start table joins the family the commit that builds
+  it, before any reader), and the trace build's own code (`#ifdef
+  PCREC_CAND_TRACE` to its `#else`/`#endif`) and the oracle hooks
+  (`CAND_ORACLE_*`, `VM_CAND_*`) are skipped like the records. Usage:
   `python3 -I call_graph.py ROOT > call_graph.txt`.
 - `inventory.tsv` — the DISPOSITION of every family member and seed (class:
   TABLE / WALK / PRED / EMIT / INLINE / READER / PROJ / ROUTE / BODY / LANDMARK /
   PLAN / NOTSTART / TYPE, slot/rows, note). Hand-written, but checked:
 - `inventory_check.py` — fails unless `inventory.tsv` dispositions exactly the
-  family+seeds `call_graph.txt` names (127/127 at C1, re-derived on post-R4c
+  family+seeds `call_graph.txt` names (141/141 at C2, the table, its walk,
+  nine new predicates and three row types in; 127/127 at C1, re-derived on post-R4c
   main: the kit's migration replaced three pre-check emitters with five,
   `docs/dev/lanes/stc1_report.md` §3; 125/125 at revision 2.1; 114/114 at
   revision 2). Usage:

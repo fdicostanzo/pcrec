@@ -327,7 +327,8 @@ TEST_SECTIONS := test-corpus test-cli test-reject test-registry test-parse \
       test-uprops test-core test-vars test-examples test-findings test-ucp \
       test-clskit test-encoding-checks test-utfcheck test-startset test-memfn-link \
       test-memfn-manifest test-memfn-g2 test-memfn-stamps test-memfn-arms \
-      test-memfn-deleg test-memfn-arch test-memfn-forms test-memfn-reach
+      test-memfn-deleg test-memfn-arch test-memfn-forms test-memfn-reach \
+      test-cand-oracle
 
 # [CHK-2 trailer] `test:` STOPPED being purely prerequisite-based here
 # (2026-08-26, manager finding, journal part 7): under `make -j12 test`,
@@ -563,6 +564,15 @@ test-tune-dial: all
 test-premul-table: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-premul-table.ran"; fi
 	bash tests/codegen/run_premul_table.sh
+
+# [START-TABLE] C2 the both-walks ORACLE over named witnesses
+# (tests/codegen/run_cand_oracle.sh). Its OWN section rather than a script in
+# `test-codegen`'s group, on `test-premul-table`'s argument: it builds the
+# compiler twice (two -DPCREC_CAND_TRACE trees in a scratch dir, ~50 s), and
+# `make smoke` includes `test-codegen`.
+test-cand-oracle: all
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-cand-oracle.ran"; fi
+	CC='$(CC)' bash tests/codegen/run_cand_oracle.sh
 
 # [ENG-ABS] the ANCHORED MATCH-HERE form's own checks
 # (docs/design/anchored_match_unwrapped.md). Its OWN section rather than a
@@ -1818,7 +1828,7 @@ clean:
         test-lookaround test-lookaround-identity \
         test-recursion test-recursion-identity test-recursion-lbsweep \
         test-specimen test-stackdepth test-frame-buffer test-tiered-entry \
-        test-spec test-premul-table test-anchored-match \
+        test-spec test-premul-table test-cand-oracle test-anchored-match \
         test-search-pinned test-vm-frameless test-dfa-uniform-fold \
         test-prechecks \
         test-prefilter-collapse test-rxtsource test-definitions \

@@ -32,6 +32,6 @@ src/gen/emit_dfa.c	walk-open	-	2	class-run and span loops whose byte test anothe
 src/gen/emit_dfa.c	walk-stmt	-	2	one-statement cursor walks over a table (M2/M5)
 src/gen/emit_vm.c	walk-back	-	1	the VM's backward step chained by a jump (M2)
 src/gen/emit_vm.c	walk-open	-	1	the VM's open while loop (M2/M3)
-src/enc/enc_byte.c	span-index	-	2	the encoding seam's run-time span compare, byte encoding (M7)
+src/enc/enc_byte.c	span-index	-	3	the encoding seam's run-time span compare, byte encoding (M7)
 src/enc/enc_utf8.c	span-decode	-	1	the encoding seam's per-character decode compare (M7)
 src/enc/enc_utf8.c	span-index	-	1	the encoding seam's run-time span compare, utf8 (M7)

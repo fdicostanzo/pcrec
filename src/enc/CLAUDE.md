@@ -334,6 +334,15 @@ was a clause: 21 oracle-verified `tests/utf8` cells stopped answering.
     ONE WITH A FLAG**: D18/D23's rule is that an option compiles away, and D23
     MEASURED the alternative (a runtime fold indirection) costing 26% on a
     pattern containing no letters at all.
+  - `<prefix>_span_match_caseless` UNDER UCP ([K94], byte only): a SECOND
+    caseless row, `PCREC_ENCE_SPAN_CASELESS_UCP`, defining the same symbol and
+    in the mask INSTEAD of the plain one. `vm_caseless_entry` (emit_vm.c)
+    picks it when `Ast.u.bref.ucp`/`u.var.ucp` is set and the table CARRIES the
+    row (utf8 does not: its fold is already Unicode's). Its Latin-1 fold table
+    is generated at emit time by `enc_emit_latin1_fold_table` (enc.c) from
+    `pcrec_fold_latin1_rep` (core/fold.c), over the links the `--ucp` classes
+    fold by, so the byte backend's match-time fold has ONE definition;
+    `tests/backrefs/fold_agreement_ucp_check.c` is its two-source control.
   - `<prefix>_back_step` ([M6.6.2] wave D) — the position exactly `k`
     CHARACTERS before `pos`, or `<prefix>_BACK_STEP_NONE` when fewer than `k`
     characters precede it. **A SENTINEL RATHER THAN A SIGNED LENGTH**, and the

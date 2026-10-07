@@ -12,6 +12,7 @@
 # with census_s1.py on the current build, no existing row moved.
 #id	options	pattern_hex
 # k93tri (2026-10-07): +1 rows, every one a tests/recursion/k93.rxt block (lane k93fix's new file; census_s1.py on the k93fix build, ubuntubudu); no existing row moved.
+# k94tri (2026-10-07): +112 rows: 8 tests/backrefs/caseless_ucp.rxt blocks (lane k94fix's new file) and 104 tests/possessify/composition_d27.rxt blocks (main's D27 composition corpus, landed without this pin); census_s1.py on the merged tree, no existing row moved.
 bench/capability/balanced-parens-rec	--features all	5c28283f3a5b5e28295d7c283f5229292a5c29
 bench/capability/doubled-word	--features all	5c62285c772b295c625c732b5c315c62
 bench/capability/dup-param-detect	--features all	5c62285c772b293d5b5e265d2a26283f3a5b5e265d2a26292a5c313d
@@ -29,6 +30,14 @@ bench/syntax/mod-j-uc	--features all	283f4a29283f3a283f3c773e746865297c283f3c773
 bench/syntax/rec-1	--features all	285c28283f3a5b5e28295d7c283f3129292a5c2929
 bench/syntax/rec-name	--features all	283f3c703e5c28283f3a5b5e28295d7c283f267029292a5c2929
 bench/syntax/rec-r-uc	--features all	5c28283f3a5b5e28295d7c283f5229292a5c29
+tests/backrefs/caseless_ucp.rxt:112	-i --ucp --features backrefs,modifiers,ucp --encoding=byte	285c786539295c31
+tests/backrefs/caseless_ucp.rxt:122	--features backrefs,modifiers --encoding=byte	283f6929282e295c31
+tests/backrefs/caseless_ucp.rxt:168	-i --features backrefs,modifiers --encoding=byte	282e295c31
+tests/backrefs/caseless_ucp.rxt:19	--features backrefs,modifiers,ucp --encoding=byte	282a55435029283f6929282e295c31
+tests/backrefs/caseless_ucp.rxt:215	--features backrefs,modifiers,ucp --encoding=byte	282a55435029282e295c31
+tests/backrefs/caseless_ucp.rxt:242	--ucp --features backrefs,modifiers,named-groups,ucp --encoding=byte	283f6929283f3c6e3e5c786539295c677b6e7d
+tests/backrefs/caseless_ucp.rxt:250	--ucp --features backrefs,modifiers,ucp --encoding=byte	283f6929285c78653929283f3a787c5c312924
+tests/backrefs/caseless_ucp.rxt:65	-i --ucp --features backrefs,modifiers,ucp --encoding=byte	282e295c31
 tests/backrefs/d27/gating.rxt:44	--features backrefs	2861295c31
 tests/backrefs/d27/gating.rxt:82	--features backrefs,named-groups	283f3c6e3e61295c6b3c6e3e
 tests/backrefs/d27/interactions.rxt:55	--features backrefs,assertions	2861295c425c31
@@ -162,6 +171,110 @@ tests/lookaround/d27/matrix.rxt:972	--features atomic-groups,backrefs,lookaround
 tests/lookaround/nonatomic_behind.rxt:41	--features lookaround,backrefs	283f3c2a2861297c2862612929635c32
 tests/lookaround/nonatomic_behind.rxt:57	--features lookaround,backrefs	283f3c3d2861297c2862612929635c32
 tests/lookaround/nonatomic_behind.rxt:68	--features lookaround,backrefs	283f3c2a286261297c28612929635c32
+tests/possessify/composition_d27.rxt:10011	-i --features all	2861295c31
+tests/possessify/composition_d27.rxt:10035	-i --features all	28617c42292b5c31
+tests/possessify/composition_d27.rxt:10151	-i --features all	285c77295c315c62
+tests/possessify/composition_d27.rxt:10174	-i --features all	285c77295c625c31
+tests/possessify/composition_d27.rxt:10216	-i --features all	283f3a2861297c42292b5c31
+tests/possessify/composition_d27.rxt:10261	-i --features all	28623f295c62415c31
+tests/possessify/composition_d27.rxt:10277	-i --features all	283f3d28612929415c31
+tests/possessify/composition_d27.rxt:10408	-i --features all	284129283f31295c31
+tests/possessify/composition_d27.rxt:10427	-i --features all	283f3a61283f52293f5c624129
+tests/possessify/composition_d27.rxt:3818	--features all	28283f3d5c77295c77297b327d283f3d6129283f3a5c317c6229
+tests/possessify/composition_d27.rxt:3833	--features all	28612a5c6229615c317b327d
+tests/possessify/composition_d27.rxt:3882	-i --features all	28782a297b322c337d2d5c315c62
+tests/possessify/composition_d27.rxt:3915	--features all	285c62292b3f785c315c42
+tests/possessify/composition_d27.rxt:3949	-i --features all	28283f3c215c7729612a292b5c575c312b3f
+tests/possessify/composition_d27.rxt:4066	-i --features all	285c775c62297b322c337d5c677b317d
+tests/possessify/composition_d27.rxt:4082	--features all	28283f3d5c77295c7729785c312a
+tests/possessify/composition_d27.rxt:4126	--features all	28283f3c3d6129297b322c337d2d5c312a
+tests/possessify/composition_d27.rxt:4141	--features all	28283f3a5c62293f293f283f3d6129785c31
+tests/possessify/composition_d27.rxt:4156	--features all	285c625c77297b312c327d3f2d5c313f3f61
+tests/possessify/composition_d27.rxt:4171	--features all	285c6229785c312b3f
+tests/possessify/composition_d27.rxt:4187	--features all	285c42292b5c575c315c62
+tests/possessify/composition_d27.rxt:4293	--features all	285c42292b283f3d6129785c31
+tests/possessify/composition_d27.rxt:4308	-i --features all	28613f297b312c327d3f5c575c315c62
+tests/possessify/composition_d27.rxt:4365	-i --features all	28283f3d5c77295c77295c772a5c315c62
+tests/possessify/composition_d27.rxt:4433	-i --features all	28283f3c215c7729612a293f615c31
+tests/possessify/composition_d27.rxt:4510	--features all	28612a5c62295c575c317b327d
+tests/possessify/composition_d27.rxt:4557	--features all	285c42297b302c327d615c315c42
+tests/possessify/composition_d27.rxt:4573	-i --features all	28613f295c575c317b327d
+tests/possessify/composition_d27.rxt:4623	-i --features all	28283f216129297b327d5c575c677b317d
+tests/possessify/composition_d27.rxt:4709	--features all	285c625c77292a61283f3a5c317c6229
+tests/possessify/composition_d27.rxt:4728	--features all	285c777b302c327d292a3f785c31
+tests/possessify/composition_d27.rxt:4749	--features all	28283f3c3d6129292b615c312b3f
+tests/possessify/composition_d27.rxt:4767	--features all	287c61297b322c337d5c772a785c31
+tests/possessify/composition_d27.rxt:4788	--features all	28283f3a617c627c29293f785c317b327d
+tests/possessify/composition_d27.rxt:4810	--features all	28283f3d5c77295c77297b327d78283f3a5c317c6229
+tests/possessify/composition_d27.rxt:4849	--features all	285c572a29615c317b327d
+tests/possessify/composition_d27.rxt:4940	--features all	285c772a3f297b302c327d785c312a
+tests/possessify/composition_d27.rxt:5013	--features all	285c62292b3f5c772a785c31
+tests/possessify/composition_d27.rxt:5060	--features all	28283f3d6129292a785c625c31
+tests/possessify/composition_d27.rxt:5075	--features all	285c775c6229785c31
+tests/possessify/composition_d27.rxt:5090	--features all	285c42293f5c57785c31
+tests/possessify/composition_d27.rxt:5105	-i --features all	285b61625d2a3f29785c677b2d317d
+tests/possessify/composition_d27.rxt:5153	-i --features all	28612a292a615c677b317d
+tests/possessify/composition_d27.rxt:5179	--features all	285c772a3f297b327d615c313f3f61
+tests/possessify/composition_d27.rxt:5201	--features all	285b61625d2a3f297b312c327d3f5c575c31
+tests/possessify/composition_d27.rxt:5250	--features all	28283f3a5c627c6129292a3f5c575c677b317d
+tests/possessify/composition_d27.rxt:5381	--features all	28283f3a617c627c29292b615c31
+tests/possessify/composition_d27.rxt:5402	-i --features all	28283f3a5c627c6129297b327d615c625c31
+tests/possessify/composition_d27.rxt:5444	--features all	28283f3a5c62293f297b322c337d78283f3a5c317c6229
+tests/possessify/composition_d27.rxt:5558	--features all	285c62297b322c337d5c575c315c42
+tests/possessify/composition_d27.rxt:5589	--features all	28283f3d6129297b302c327d5c772a785c31
+tests/possessify/composition_d27.rxt:5604	--features all	283f3c6e3e612a292a2d5c6b3c6e3e5c62
+tests/possessify/composition_d27.rxt:5673	--features all	283f3c6e3e283f3c3d612929785c6b7b6e7d
+tests/possessify/composition_d27.rxt:5717	--features all	283f3c6e3e283f3a617c5c4229292a3f615c6b3c6e3e5c62
+tests/possessify/composition_d27.rxt:5736	--features all	283f3c6e3e283f3a5c62293f297b322c337d2d5c677b6e7d
+tests/possessify/composition_d27.rxt:5772	-i --features all	283f3c6e3e5c42293f5c575c677b6e7d
+tests/possessify/composition_d27.rxt:5791	--features all	283f3c6e3e613f292b785c6b3c6e3e
+tests/possessify/composition_d27.rxt:5956	--features all	283f3c6e3e5c625c77293f785c6b276e27
+tests/possessify/composition_d27.rxt:5987	--features all	283f3c6e3e5c772a3f292a3f615c6b276e27
+tests/possessify/composition_d27.rxt:6082	--features all	283f3c6e3e612a297b322c337d5c575c625c6b3c6e3e
+tests/possessify/composition_d27.rxt:6127	--features all	283f3c6e3e5c777b302c327d292b3f785c625c6b3c6e3e
+tests/possessify/composition_d27.rxt:6143	--features all	283f3c6e3e782a297b327d615c6b3c6e3e3f
+tests/possessify/composition_d27.rxt:6163	--features all	283f3c6e3e283f3a5c627c6129297b327d615c6b3c6e3e2a
+tests/possessify/composition_d27.rxt:6184	--features all	283f3c6e3e5c777b302c327d29615c6b3c6e3e
+tests/possessify/composition_d27.rxt:6260	--features all	283f3c6e3e613f292a615c677b6e7d
+tests/possessify/composition_d27.rxt:6282	--features all	283f3c6e3e612a292a5c575c6b7b6e7d
+tests/possessify/composition_d27.rxt:6355	--features all	283f3c6e3e283f3c215c7729612a297b322c337d2d5c6b3c6e3e3f
+tests/possessify/composition_d27.rxt:6566	--features all	283f3a2861297c62292b5c31
+tests/possessify/composition_d27.rxt:6582	--features all	283f3a2861297c286229292b5c32
+tests/possessify/composition_d27.rxt:6770	--features all	2861297c625c31
+tests/possessify/composition_d27.rxt:6791	--features all	283f3a2861297c62295c313f63
+tests/possessify/composition_d27.rxt:6840	-i --features all	285c77295c312a5c62
+tests/possessify/composition_d27.rxt:6867	-i --features all	285c77295c312b5c62
+tests/possessify/composition_d27.rxt:6891	--features all	285c77295c312a3f5c42
+tests/possessify/composition_d27.rxt:6914	--features all	285c77295c625c31
+tests/possessify/composition_d27.rxt:6929	--features all	285c57295c425c31
+tests/possessify/composition_d27.rxt:6969	-i --features all	285c772b3f295c625c31
+tests/possessify/composition_d27.rxt:6985	-i --features all	285c772b295c425c31
+tests/possessify/composition_d27.rxt:7068	--features all	28612b3f2928622a295c315c32
+tests/possessify/composition_d27.rxt:7108	-i --features all	28617c62292b3f5c31
+tests/possessify/composition_d27.rxt:7128	--features all	28617c62297b327d5c31
+tests/possessify/composition_d27.rxt:7447	--features all	283f3c2128612929625c313f
+tests/possessify/composition_d27.rxt:7514	--features all	283f3a283f3d285c7729295c77292b5c31
+tests/possessify/composition_d27.rxt:7609	--features all	283f3d612862293f295c775c313f
+tests/possessify/composition_d27.rxt:7632	--features all	283f2161286229295c775c313f
+tests/possessify/composition_d27.rxt:7689	-i --features all	283f3d283f3a2861297c6229295c775c313f
+tests/possessify/composition_d27.rxt:7813	--features all	28617c62283f312963292b
+tests/possessify/composition_d27.rxt:7881	--features all	283f3a61283f52293f292b62
+tests/possessify/composition_d27.rxt:8297	-i --features all	61283f52293f5c62
+tests/possessify/composition_d27.rxt:8313	--features all	61283f52292a62
+tests/possessify/composition_d27.rxt:8339	--features all	5c77283f52293f5c62
+tests/possessify/composition_d27.rxt:8354	--features all	5c772b3f283f52293f5c42
+tests/possessify/composition_d27.rxt:8384	-i --features all	283f3a5c627c61283f52292962
+tests/possessify/composition_d27.rxt:8411	--features all	283f3a283f3c3d61297c62283f52292963
+tests/possessify/composition_d27.rxt:8426	--features all	28283f3d61295c777c62283f312963292b
+tests/possessify/composition_d27.rxt:8441	--features all	2861283f31293f62292b5c62
+tests/possessify/composition_d27.rxt:8456	--features all	2861283f31293f627c2963
+tests/possessify/composition_d27.rxt:8473	-i --features all	5c28283f3a5b5e28295d7c283f5229292a5c29
+tests/possessify/composition_d27.rxt:8489	--features all	285c28283f3a5b5e28295d7c283f3129292a5c29295c62
+tests/possessify/composition_d27.rxt:8504	--features all	285c28283f3a5b5e28295d7c283f3129292a5c29293f78
+tests/possessify/composition_d27.rxt:8624	--features all	286129283f31293f5c31
+tests/possessify/composition_d27.rxt:9239	--features all	283f3a28612a3f2962292b3f5c31
+tests/possessify/composition_d27.rxt:9262	--features all	283f3a285c77295c573f292b5c31
+tests/possessify/composition_d27.rxt:9285	--features all	283f3a285c57295c772a292b5c315c62
 tests/recursion/d27/sr_interactions.rxt:361	--features recursion	2861283f31293f6229
 tests/recursion/d27/sr_root.rxt:253	--features recursion	2861283f52293f6229
 tests/recursion/d27/sr_root.rxt:265	--features recursion	28615c673c303e3f6229

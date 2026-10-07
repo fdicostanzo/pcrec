@@ -10,6 +10,20 @@ or it has no regression net at all.
 
 ## Files
 
+- **run_cand_oracle.sh** + **cand_oracle_witnesses.tsv** — [START-TABLE] C2
+  (lane stc2, 2026-10-07; `docs/design/start_table.md` §3.3 item 6): the
+  BOTH-WALKS ORACLE over named witnesses. `cand_rows[]` (the one start
+  table) has no reader in a default build until C3, so the script builds the
+  tree twice with `-DPCREC_CAND_TRACE` (old decision first, and
+  `-DPCREC_CAND_NEW_FIRST`), whose every old start decision also asks
+  `cand_select` and aborts on a different row or a failed table self-check,
+  and compiles every witness line with both builds. A line passes when both
+  compile with no `CANDORACLE` abort and both print a `CANDROW` hit for its
+  row ([MECH-REACH]); every row identity read off the table's own source
+  must have a line (K35). Its own section, `make test-cand-oracle` (two
+  builds, ~50 s; not in `test-codegen`, for `make smoke`'s budget); mech arm
+  `candoracle`, sabotage S594-S599 (all DETECTED at landing). It tests the
+  FILTER; the corpus-wide both-orders run is the lane's gate, not this file.
 - **run_cand_rows.sh** + **cand_rows_check.py** — [START-SET] (D148;
   `docs/design/startset.md` §8): the candidate table's (`dfa_pfs[]`)
   structural checks, in `make test-codegen` (well under a second; mech arm
@@ -3294,6 +3308,15 @@ Two things it asserts and one it deliberately does not.
 Failing directions measured at the landing: 11 of 13 rows red against a build
 with the entry dispatch reverted, and 11 of 13 red against the STEP 1
 compiler.
+
+**[cgtri] 2026-10-07: §4's P3 was the UN-narrowed (8).** It asserted "no
+edge at all" on a reseeding seeded forward machine, which held only while that
+population was empty; `composition_d27.rxt`'s `(?:\b(?1)|x)(a+)` carries an
+edge on a head its seed table cannot install (answer-correct against libpcre2
+10.46) and read red. P3 now asks (8)'s own question — an edge head that is a
+non-start seed value, `seeded_heads_on` — and such machines are counted as
+the P2e FINDING. The helper was validated by planting the head into the seed
+table (1), the head onto a seed value (1), and the head onto the start cell (0).
 
 
 ## [M5.0] stage 2's structural + differential acceptance: `run_encoding_checks.sh`

@@ -1,0 +1,11829 @@
+# composition_d27.rxt -- possessification composition corpus (D27-blinded author).
+#
+# ORACLE: libpcre2 10.46 (2025-08-27, 8-bit, no UTF/UCP, interpretive pcre2_match, no JIT)
+# compiled with PCRE2_NO_AUTO_POSSESS (0x4000), plus PCRE2_CASELESS where a block says
+# `flags i`. Every m/n/ms/ns/gp line below is that oracle's answer, recorded 2026-10-07 on
+# the Linux box through a ctypes driver over libpcre2-8.so.0 (offsets are byte offsets;
+# capture lines record every group, -1 -1 = unset). Each pattern was also run with PCRE2's
+# DEFAULT options (auto-possess ON): the answers were identical in every cell, see
+# composition_d27_notes.md. The promise tested: possessification never changes a match.
+#
+# Every block carries `# pcre2-only` because python re is not the oracle here (backrefs to
+# unset groups, \b/\B in empty-able loops, lookbehind alternatives and recursion all differ).
+# `features all` is set per block so no module gate decides the verdict.
+#
+# Subjects containing no escapes are literal; `ms P` cases use startpos P on the block's
+# longest subject (lookbehind / \b / \G see the bytes before P).
+# oracle: pcre2/10.46 (NOT written as a head declaration: a head-bearing file is refused whole by
+# tests/harness/verify_rxt.py and dropped from rxtsource's leg C, whose premise is that a head-bearing
+# file has no body blocks -- this file has 676. Kept as plain comments so all three .rxt readers see it.)
+# description: possessification composition corpus: word boundaries, gates, backrefs, recursion, loops
+
+# pcre2-only
+pattern [a-]{0,2}?(?:(?<!\w)|)\B
+features all
+m "  " 0 0
+m "--" 0 0
+m "aa" 0 1
+m "aaa" 0 1
+m "-aa-" 0 0
+m ".a1a" 0 0
+m "aa aa" 0 1
+m "aa-aa." 0 1
+m "aaaaaaa" 0 1
+ms 1 "aaaaaaa" 1 1
+ms 2 "aaaaaaa" 2 2
+
+# pcre2-only
+pattern \w{0,2}?(?:\b)??\b
+features all
+n ""
+n "-"
+m "a" 0 0
+m "1a" 0 0
+m "a1" 0 0
+m "aa" 0 0
+m "-aa-" 1 1
+m "  1aa" 2 2
+m "aa aa" 0 0
+ms 1 "  1aa" 2 2
+ms 2 "  1aa" 2 2
+
+# pcre2-only
+pattern a{2}(?:(?<!\w)|)b
+features all
+n "ab"
+n "b -"
+n "-ab-"
+n "_,- "
+n "aa-b"
+n "ab ab"
+n "bbb-b"
+n "bbb_."
+n " -bb- b"
+ns 1 " -bb- b"
+ns 2 " -bb- b"
+
+# pcre2-only
+pattern [a-]{1,3}?(?:\b|)a
+features all
+n " b"
+n "ba"
+n "- 1"
+n "1 -"
+m "aab" 0 2
+n "-ba-"
+n "ba ba"
+m "aaaabb" 0 2
+m "baaa -" 1 3
+ms 1 "aaaabb" 1 3
+ms 2 "aaaabb" 2 4
+
+# pcre2-only
+pattern -*(?:\b){0,2}\B
+features all
+m "" 0 0
+m "aa" 1 1
+m " .1" 0 0
+m "aaa" 1 1
+m "-aa-" 0 0
+m ".aaa" 0 0
+m "aa aa" 1 1
+m "aaaaaaa" 1 1
+m "aaaaaaa." 1 1
+ms 1 "aaaaaaa." 1 1
+ms 2 "aaaaaaa." 2 2
+
+# pcre2-only
+pattern -+(?:\b)??b
+features all
+n "b"
+n " -"
+n "aa"
+n "bb"
+n "-  "
+n "-aa-"
+n " -aaa"
+n "aa aa"
+n "aaabbb1a"
+ns 1 "aaabbb1a"
+ns 2 "aaabbb1a"
+
+# pcre2-only
+pattern [a-]*(?=a)?-
+features all
+n " "
+n "a"
+n "aa"
+m "-aa-" 0 4
+m ". -a" 2 3
+n ".,a,"
+n "aa_a"
+n "aa aa"
+n "aaaaaaaaa"
+ns 1 "aaaaaaaaa"
+ns 2 "aaaaaaaaa"
+
+# pcre2-only
+pattern \s{2,}(?:\B)*
+features all
+n ""
+n "1"
+n "a"
+m "  " 0 2
+n "aa"
+n "-aa-"
+n "._- "
+m "a-   " 2 5
+n "aa aa"
+ms 1 "a-   " 2 5
+ms 2 "a-   " 2 5
+
+# pcre2-only
+pattern -{1,2}(?:\b|\B)\b
+features all
+n ""
+n "_"
+n "a"
+n "aa"
+m "-aa-" 0 1
+n "aa aa"
+n ".1aaa "
+m "aa -aaaa" 3 4
+n "aaa.aaa."
+ms 1 "aa -aaaa" 3 4
+ms 2 "aa -aaaa" 3 4
+
+# pcre2-only
+pattern a{1,2}(?:\B)*$
+features all
+n ""
+n "-"
+n "- "
+m "ba" 1 2
+n ",  "
+n "bbb"
+n "-ba-"
+m "ba ba" 4 5
+n "aaa.aa,"
+ns 1 "aaa.aa,"
+ns 2 "aaa.aa,"
+
+# pcre2-only
+pattern \W+?(?:\b){0,2}
+features all
+n "a"
+m "- " 0 1
+n "aa"
+m "aa-" 2 3
+m "-aa-" 0 1
+m ".,aaa" 0 1
+m "aa aa" 2 3
+m "  aaaa" 0 1
+m "aaaaa." 5 6
+ms 1 "  aaaa" 1 2
+ns 2 "  aaaa"
+
+# pcre2-only
+pattern \s+(?:(?=\w)|(?<=\w))\b
+features all
+n ""
+n " -"
+n "aa"
+n "aaa"
+n "-aa-"
+m "aa aa" 2 3
+m ",1 aaa" 2 3
+n "aaaaaaaa"
+n "aaaaaaaa-"
+ns 1 "aaaaaaaa-"
+ns 2 "aaaaaaaa-"
+
+# pcre2-only
+pattern \s*(?:\b|a)\B
+features all
+n "a"
+n "_a"
+m "aa" 0 1
+n "a.1"
+m "aaa" 0 1
+m "-aa-" 1 2
+m "1 aaa" 1 3
+m "aa aa" 0 1
+m " -aaaaa" 2 3
+ms 1 " -aaaaa" 2 3
+ms 2 " -aaaaa" 2 3
+
+# pcre2-only
+pattern [^a]*(?:\b)??\w
+features all
+n ""
+m "aa" 0 1
+n " -."
+m "-aa-" 0 2
+m "aaa_" 0 1
+m " a,aa" 0 2
+m "aa aa" 0 1
+m "aaaa,aa" 0 1
+m "aaaaa_a" 0 1
+ms 1 "aaaa,aa" 1 2
+ms 2 "aaaa,aa" 2 3
+
+# pcre2-only
+pattern [ab]{0,}?(?:(?=\w)|(?<=\w))$
+features all
+n ""
+m "b" 0 1
+m "bb" 0 2
+n "-bb-"
+m "bbbb" 0 4
+n "aaaa."
+m "bb bb" 3 5
+m "bbb-1" 5 5
+m "bbaaaa" 0 6
+ms 1 "bbaaaa" 1 6
+ms 2 "bbaaaa" 2 6
+
+# pcre2-only
+pattern [ab]{1,3}?(?:(?<=a)|)\B
+features all
+n ""
+n "a"
+m "bb" 0 1
+n ".- "
+m "-bb-" 1 2
+m "1b_  " 1 2
+m "bb bb" 0 1
+n ",, -  "
+m " bbbbbb" 1 2
+ms 1 " bbbbbb" 1 2
+ms 2 " bbbbbb" 2 3
+
+# pcre2-only
+pattern a{2}(?:\b)??\B
+features all
+n ""
+n "aa"
+n "-aa-"
+n ".a_a"
+m "aaa1" 0 2
+m "aaaa" 0 2
+n "_a_ -"
+n "aa aa"
+m "aaaa-" 0 2
+ns 1 "_a_ -"
+ns 2 "_a_ -"
+
+# pcre2-only
+pattern [^a]{1,3}?(?:(?<!\w)|)\w
+features all
+n ""
+n "a"
+n "aa"
+m ",a-." 0 2
+m "-aa-" 0 2
+m "a  a" 1 4
+m "aa-1" 2 4
+n "aaaa"
+m "aa aa" 2 4
+ms 1 "aa aa" 2 4
+ms 2 "aa aa" 2 4
+
+# pcre2-only
+pattern [a-c]+(?:(?=a)|)\b
+features all
+n ""
+m "b" 0 1
+m "c" 0 1
+m "aa" 0 2
+m "cc" 0 2
+m "-cc-" 1 3
+m "bccb" 0 4
+m "  _bb" 3 5
+m "cc cc" 0 2
+ms 1 "  _bb" 3 5
+ms 2 "  _bb" 3 5
+
+# pcre2-only
+pattern \W*?(?:(?<=a)|)
+features all
+m "" 0 0
+m " a" 0 0
+m "aa" 0 0
+m " --" 0 0
+m "_  " 0 0
+m "a- " 0 0
+m "-aa-" 0 0
+m "aa aa" 0 0
+m "aa bbbb" 0 0
+ms 1 "aa bbbb" 1 1
+ms 2 "aa bbbb" 2 2
+
+# pcre2-only
+pattern [ab]+(?:(?<=a)|)A
+features all
+n ","
+n "ab"
+n ".A "
+n "-ab-"
+n "bb -"
+n " -AA1"
+n "1aa1A"
+n "ab ab"
+m "bbb  bAAA" 5 7
+ms 1 "bbb  bAAA" 5 7
+ms 2 "bbb  bAAA" 5 7
+
+# pcre2-only
+pattern -{0,}?(?:(?!a)|)b
+features all
+n ""
+m "-b" 0 2
+m "ab" 1 2
+m "bab" 0 1
+m "-ab-" 2 3
+m "ab ab" 1 2
+n "- 1a -"
+m "- b-  " 2 3
+m "aaabbb" 3 4
+ns 1 "- 1a -"
+ns 2 "- 1a -"
+
+# pcre2-only
+pattern -+?(?:\b|)
+features all
+n ""
+n "a"
+n "1,"
+n "ba"
+m "-ba-" 0 1
+m "aa- b" 2 3
+n "ba ba"
+m "bb. -" 4 5
+m "-  -- aaa" 0 1
+ms 1 "-  -- aaa" 3 4
+ms 2 "-  -- aaa" 3 4
+
+# pcre2-only
+pattern a{0,2}?(?:(?<=a)|)A
+features all
+n "."
+n "_"
+n "a"
+n "aa"
+n "-aa-"
+n "aa aa"
+m "A1aaaaa" 0 1
+m "_AAAA -" 1 2
+n "aaaaaa_"
+ns 1 "A1aaaaa"
+ns 2 "A1aaaaa"
+
+# pcre2-only
+pattern [^a]{1,3}?(?:\b|\B)\W
+features all
+n ""
+m "_," 0 2
+n "a."
+n "aa"
+n "aa_"
+n "-aa-"
+m ". - " 0 2
+n "_aaa"
+n "aa aa"
+ns 1 "aa aa"
+ns 2 "aa aa"
+
+# pcre2-only
+pattern a{1,2}(?:(?=\w)|(?<=\w))A
+features all
+n ""
+n "-"
+m "aA" 0 2
+n "AAA"
+m "-aA-" 1 3
+n "AAA-"
+n "AAaa"
+m "aA aA" 0 2
+m "aaAAA" 0 3
+ms 1 "aA aA" 3 5
+ms 2 "aA aA" 3 5
+
+# pcre2-only
+pattern \d?(?:|\b)$
+features all
+m "." 1 1
+m ".b" 2 2
+m "aa" 2 2
+m "a  " 3 3
+m "-aa-" 4 4
+m "bb -" 4 4
+m "aa aa" 5 5
+m "aaa_." 5 5
+m "aaaa-." 6 6
+ms 1 "aaaa-." 6 6
+ms 2 "aaaa-." 6 6
+
+# pcre2-only
+pattern \s*?(?:(?<=a)|)\B
+features all
+m "" 0 0
+m "aa" 1 1
+m "a,." 2 2
+m "aaa" 1 1
+m "-aa-" 0 0
+m "aa aa" 1 1
+m "aaaa," 1 1
+m "aaaaa" 1 1
+m "- aaa1 " 0 0
+ms 1 "- aaa1 " 1 1
+ms 2 "- aaa1 " 3 3
+
+# pcre2-only
+pattern a{2}(?:\b){0,2}-
+features all
+n ""
+n "a"
+n " -"
+n "bb"
+n "-bb-"
+n ".b  ."
+n "bb bb"
+n "aababbb"
+n "bb  .bb"
+ns 1 "aababbb"
+ns 2 "aababbb"
+
+# pcre2-only
+pattern [a-c]*?(?:(?=)|)
+features all
+m "" 0 0
+m "a " 0 0
+m "cc" 0 0
+m "caa" 0 0
+m "-cc-" 0 0
+m "_ -,b" 0 0
+m "cc cc" 0 0
+m "bbb- 1c" 0 0
+m "bbbbbaa" 0 0
+ms 1 "bbb- 1c" 1 1
+ms 2 "bbb- 1c" 2 2
+
+# pcre2-only
+pattern -{2}(?:\b|\B)\B
+features all
+n ""
+n "aa"
+n "ba"
+n ",a,"
+n "-ba-"
+n ",aabb"
+n "ba ba"
+n "bbbbb"
+n "- aaaabbb"
+ns 1 "- aaaabbb"
+ns 2 "- aaaabbb"
+
+# pcre2-only
+pattern -+?(?:(?=\w)|(?<=\w))$
+features all
+n ""
+n "a "
+n "aa"
+n " -,"
+n "-a "
+n "-aa-"
+n "-aaaa"
+n "aa aa"
+n "aa1a."
+ns 1 "-aaaa"
+ns 2 "-aaaa"
+
+# pcre2-only
+pattern [^a]{1,2}(?:|\b)A
+features all
+n ""
+n "1"
+n "_"
+m ",A" 0 2
+m "AA" 0 2
+m "-AA-" 0 3
+m "AA-," 0 2
+m "AA AA" 0 2
+m "AAaa,AAA" 0 2
+ms 1 "AAaa,AAA" 4 7
+ms 2 "AAaa,AAA" 4 7
+
+# pcre2-only
+pattern \d{1,2}(?:(?<!\w)|)\B
+features all
+n ""
+n ","
+n "_"
+n "aa"
+n "ab"
+n "ba"
+n "-ab-"
+n "ab ab"
+n "_  ,bbb"
+ns 1 "_  ,bbb"
+ns 2 "_  ,bbb"
+
+# pcre2-only
+pattern \w{0,2}?(?:\b){0,2}a
+features all
+n "_"
+n " b"
+m "ab" 0 1
+n "  bb"
+m "-ab-" 1 2
+m "aaa-" 0 1
+m "ab ab" 0 1
+m "baaaa" 0 2
+m "aabbb  " 0 1
+ms 1 "aabbb  " 1 2
+ns 2 "aabbb  "
+
+# pcre2-only
+pattern [a-]{1,2}(?:(?=\w)|(?<=\w))b
+features all
+n ""
+n "1"
+m "ab" 0 2
+m "-ab-" 0 3
+n "  b,,"
+n ",,bb."
+m "ab ab" 0 2
+n "bbaaa,"
+n "- bbbbba"
+ns 1 "- bbbbba"
+ns 2 "- bbbbba"
+
+# pcre2-only
+pattern \d{1,2}(?:\b|)$
+features all
+n ""
+n "- "
+n "ab"
+n "b."
+n "bb"
+n " , "
+n "-bb-"
+n " -  ."
+n "bb bb"
+ns 1 " -  ."
+ns 2 " -  ."
+
+# pcre2-only
+pattern .{1,3}(?:(?=\w)|(?<=\w))-
+features all
+n "  "
+n "ba"
+n " -a"
+n "- bb"
+m "-ba-" 0 4
+n "aabb"
+n "aaa.1"
+n "ba ba"
+n "  bbbbbba"
+ns 1 "  bbbbbba"
+ns 2 "  bbbbbba"
+
+# pcre2-only
+pattern [^a]{2}(?:\b|\B)b
+features all
+n ""
+n ","
+n "ab"
+m "bbb" 0 3
+n "-ab-"
+n "aaaa"
+n "a1baa"
+n "ab ab"
+m "bbbbbbbbb" 0 3
+ms 1 "bbbbbbbbb" 1 4
+ms 2 "bbbbbbbbb" 2 5
+
+# pcre2-only
+pattern \w{0,}?(?:\B|)b
+features all
+n ""
+n ","
+n "a"
+m "ab" 0 2
+m "bb" 0 1
+m "-ab-" 1 3
+m "ab ab" 0 2
+m "bbbbbb" 0 1
+m "baaabbb" 0 1
+ms 1 "baaabbb" 1 5
+ms 2 "baaabbb" 2 5
+
+# pcre2-only
+pattern \w{1,2}(?:\b)??$
+features all
+m ",b" 1 2
+n "a "
+m "ab" 0 2
+m "- 1" 2 3
+m "aaa" 1 3
+n "-ab-"
+n "..  "
+m "ab ab" 3 5
+m "b  ._" 4 5
+ms 1 "ab ab" 3 5
+ms 2 "ab ab" 3 5
+
+# pcre2-only
+pattern [^a]*?(?:\b)??
+features all
+m "" 0 0
+m "_b" 0 0
+m "ab" 0 0
+m "- a" 0 0
+m "a-a" 0 0
+m " bbb" 0 0
+m "-ab-" 0 0
+m "ab ab" 0 0
+m "b- b_" 0 0
+ms 1 "ab ab" 1 1
+ms 2 "ab ab" 2 2
+
+# pcre2-only
+pattern \d*?(?:\B|)\W
+features all
+n ""
+n "aa"
+m " a--" 0 1
+m "-aa-" 0 1
+n "aaaa"
+m " -aaa" 0 1
+m "aa aa" 2 3
+n "aaaaaa"
+m "aaa.-  -" 3 4
+ms 1 "aaa.-  -" 3 4
+ms 2 "aaa.-  -" 3 4
+
+# pcre2-only
+pattern \W{2}(?:\b|\B)b
+features all
+n ""
+n "."
+n "- "
+n "aa"
+n "bb"
+n "aaa"
+n ",  a"
+n "-aa-"
+n "aa aa"
+ns 1 "aa aa"
+ns 2 "aa aa"
+
+# pcre2-only
+pattern \d*?(?:|\b)b
+features all
+n ""
+n "_"
+n "a"
+m "ab" 1 2
+m "- b" 2 3
+m "-ab-" 2 3
+n "- aaa"
+m "_  bb" 3 4
+m "ab ab" 1 2
+ns 1 "- aaa"
+ns 2 "- aaa"
+
+# pcre2-only
+pattern \w+(?:(?=a)|)\w
+features all
+n ""
+n "b"
+m "bb" 0 2
+m "-bb-" 1 3
+m ".bb_" 1 4
+m "baaa" 0 4
+n "- -  "
+m "bb bb" 0 2
+m "aaa. b" 0 3
+ms 1 "aaa. b" 1 3
+ns 2 "aaa. b"
+
+# pcre2-only
+pattern -*?(?:\b|\B)\W
+features all
+n "ab"
+m " a_" 0 1
+n "aaa"
+m " _-," 0 1
+m "-ab-" 0 1
+m "ab ab" 2 3
+m "b-abb" 1 2
+m " -bbb " 0 1
+m "a -aaa" 1 2
+ms 1 " -bbb " 1 2
+ms 2 " -bbb " 5 6
+
+# pcre2-only
+pattern \W+?(?:(?!a)|)a
+features all
+n ""
+n "a"
+n "aa"
+n "ba"
+n "a- "
+n "-ba-"
+n "aa__"
+n "aa_ab"
+n "ba ba"
+ns 1 "aa_ab"
+ns 2 "aa_ab"
+
+# pcre2-only
+pattern [ab]{1,2}(?:(?=)|)A
+features all
+n ""
+n "_"
+n " -"
+m "bA" 0 2
+n "_- "
+m "-bA-" 1 3
+m "abA  " 0 3
+m "bA bA" 0 2
+n "b  Aaaa"
+ns 1 "b  Aaaa"
+ns 2 "b  Aaaa"
+
+# pcre2-only
+pattern [a-]{1,3}?(?:\B|)a
+features all
+n "a"
+m "aa" 0 2
+m "aaa" 0 2
+n "- a1"
+m "-aa-" 0 2
+m "aa aa" 0 2
+m "aaa -" 0 2
+m ",aaaaaa" 1 3
+m "aa-aaaaaa" 0 2
+ms 1 "aa-aaaaaa" 1 4
+ms 2 "aa-aaaaaa" 2 4
+
+# pcre2-only
+pattern [ab]*(?:\B|)$
+features all
+m "" 0 0
+m "-" 1 1
+m "- " 2 2
+m "bb" 0 2
+m "-bb-" 4 4
+m "bb bb" 3 5
+m "_b -  " 6 6
+m "aabbbab" 0 7
+m "aaaaaaaa" 0 8
+ms 1 "aaaaaaaa" 1 8
+ms 2 "aaaaaaaa" 2 8
+
+# pcre2-only
+pattern \w{0,}?(?:\b|a)$
+features all
+n "-"
+n " -"
+m "aa" 0 2
+n ".  "
+m "_.a" 2 3
+m "bbb" 0 3
+n "-aa-"
+m "1_aab" 0 5
+m "aa aa" 3 5
+ms 1 "1_aab" 1 5
+ms 2 "1_aab" 2 5
+
+# pcre2-only
+pattern \s+(?:\b){0,2}b
+features all
+n ""
+n "aa"
+n "ba"
+n "bbb"
+n "-ba-"
+n "bbbb"
+n "a.aaa"
+m "ba ba" 2 4
+n "b  aab"
+ns 1 "b  aab"
+ns 2 "b  aab"
+
+# pcre2-only
+pattern \d{1,3}?(?:\b|a)\b
+features all
+n ""
+n "aa"
+n " -,"
+n "aa."
+n "-aa-"
+n "_  aa"
+n "aa aa"
+n "   aaaa"
+n "aa -aaaa"
+ns 1 "aa -aaaa"
+ns 2 "aa -aaaa"
+
+# pcre2-only
+pattern .*?(?:(?!a)|)\B
+features all
+m "" 0 0
+m "aa" 0 1
+m "  -" 0 0
+m "- ," 0 0
+m "aaa" 0 1
+m "-aa-" 0 0
+m "aa aa" 0 1
+m " -- - ," 0 0
+m "aaaaa, " 0 1
+ms 1 " -- - ," 1 1
+ms 2 " -- - ," 2 2
+
+# pcre2-only
+pattern -{2}(?:\b|a)b
+features all
+n "- "
+n "aa"
+n "b."
+n "bb"
+n "  ,_"
+n " .aa"
+n "-aa-"
+n "aa aa"
+n "abbbb- "
+ns 1 "abbbb- "
+ns 2 "abbbb- "
+
+# pcre2-only
+pattern \s?(?:\b|a)
+features all
+n ""
+m ",a" 1 1
+n "- "
+m "aa" 0 0
+m "b1" 0 0
+m "-aa-" 1 1
+m "aa aa" 0 0
+m "aaaab" 0 0
+m "bb   -" 0 0
+ms 1 "bb   -" 2 2
+ms 2 "bb   -" 2 2
+
+# pcre2-only
+pattern -+(?:(?=a)|)A
+features all
+n "AA"
+n "aA"
+n "-aA-"
+n "AAAa"
+n "AAAAA"
+n "aA aA"
+n "aAA._"
+n "aaaAA-"
+n "aa-_AAA"
+ns 1 "aa-_AAA"
+ns 2 "aa-_AAA"
+
+# pcre2-only
+pattern -+(?:\b|a)-
+features all
+n ""
+n "a"
+n "  "
+n "a1"
+n "aa"
+n "aaa"
+n "-aa-"
+n "aa aa"
+n "aaa,a"
+ns 1 "aa aa"
+ns 2 "aa aa"
+
+# pcre2-only
+pattern .*(?=a)?\W
+features all
+n ""
+m "-" 0 1
+n "b"
+n "ab"
+m "-ab-" 0 4
+n "1aaa"
+n "aaaa"
+m "ab ab" 0 3
+n "bbbabb"
+ns 1 "bbbabb"
+ns 2 "bbbabb"
+
+# pcre2-only
+pattern \d+(?:\b)??\B
+features all
+n ""
+n "."
+n "aa"
+n " aa"
+n "aa_"
+n "-aa-"
+n "aaa1"
+n "aa aa"
+n "aaa- a"
+ns 1 "aaa- a"
+ns 2 "aaa- a"
+
+# pcre2-only
+pattern [^a]{0,}?(?:\b)??\B
+features all
+m "" 0 0
+m "aa" 1 1
+m "b," 0 2
+m "ba" 0 1
+m "bb," 0 1
+m "-ba-" 0 0
+m "ba ba" 0 1
+m ",b1aaa" 0 0
+m "  -aaabb" 0 0
+ms 1 "  -aaabb" 1 1
+ms 2 "  -aaabb" 2 2
+
+# pcre2-only
+pattern -+?(?:\B|)
+features all
+n ""
+m " -" 1 2
+n "aa"
+m "-aa-" 0 1
+n "aa.a"
+n "aaa_"
+n "aa aa"
+n "aaaaa"
+n "aaaaaaaa"
+ns 1 "aaaaaaaa"
+ns 2 "aaaaaaaa"
+
+# pcre2-only
+pattern .?(?:\b)??\W
+features all
+n ""
+n "_"
+n "a"
+n "aa"
+m "a -" 0 2
+m "-aa-" 0 1
+m " aaaa" 0 1
+m "aa aa" 1 3
+m "aaaa." 3 5
+ns 1 " aaaa"
+ns 2 " aaaa"
+
+# pcre2-only
+pattern -?(?:(?=)|)$
+features all
+m "a" 1 1
+m "aa" 2 2
+m "-aa-" 3 4
+m "1aaa" 4 4
+m " -aaa" 5 5
+m "a -a_" 5 5
+m "aa aa" 5 5
+m "aa    " 6 6
+m "aaaaa-" 5 6
+ms 1 "aa    " 6 6
+ms 2 "aa    " 6 6
+
+# pcre2-only
+pattern -{1,2}(?:(?!a)|)a
+features all
+n ""
+n "_"
+n "bb"
+n "aa-"
+n "-bb-"
+n ".1 b"
+n ",bbba"
+n "bb bb"
+n "- bbbbbb"
+ns 1 "- bbbbbb"
+ns 2 "- bbbbbb"
+
+# pcre2-only
+pattern \W+?(?:\b)??\B
+features all
+n "aa"
+m " -a" 0 1
+m "-aa-" 3 4
+n "aa1a"
+m "aaa," 3 4
+n "aaaa"
+n "aa aa"
+n ",aaaaa"
+n "11aaaa"
+ns 1 ",aaaaa"
+ns 2 ",aaaaa"
+
+# pcre2-only
+pattern \W+?(?:(?=\w)|(?<=\w))
+features all
+n ""
+n " "
+n "b"
+n "- "
+n "ab"
+m "-ab-" 0 1
+m "ab ab" 2 3
+n "baaaa"
+n "bbbbbaaa"
+ns 1 "bbbbbaaa"
+ns 2 "bbbbbaaa"
+
+# pcre2-only
+pattern \W{0,2}?(?:\b|a)$
+features all
+n ""
+m "1" 1 1
+n "  "
+m "bb" 2 2
+n "-  "
+n "-.."
+n "-bb-"
+m "bb bb" 5 5
+n "bbbab "
+ns 1 "bbbab "
+ns 2 "bbbab "
+
+# pcre2-only
+pattern [a-c]{1,2}(?:(?=)|)\B
+features all
+n ""
+m "cc" 0 1
+m "ccc" 0 2
+m "-cc-" 1 2
+n "a -c"
+n "  c- "
+m "cc cc" 0 1
+m "1.aaaaa" 2 4
+m "cccacccaa" 0 2
+ms 1 "cccacccaa" 1 3
+ms 2 "cccacccaa" 2 4
+
+# pcre2-only
+pattern [a-]*(?:\B|)\B
+features all
+n "b"
+m "ba" 1 1
+m "aa." 0 1
+m "b_a" 1 1
+m "bbb" 1 1
+m "-ba-" 0 0
+m "-aa- " 0 4
+m "_baa," 1 1
+m "ba ba" 1 1
+ms 1 "-aa- " 1 4
+ms 2 "-aa- " 2 4
+
+# pcre2-only
+pattern \d{2,}(?:\b|a)-
+features all
+n ""
+n ","
+n "aa"
+n "-aa-"
+n "aaa_"
+n "aa aa"
+n "aaa_a"
+n "a aaaa"
+n "aaaaaaaa"
+ns 1 "aaaaaaaa"
+ns 2 "aaaaaaaa"
+
+# pcre2-only
+pattern [ab]?(?:(?<=a)|)$
+features all
+m "ab" 1 2
+m "ba" 1 2
+m "-ba-" 4 4
+m "abb- " 5 5
+m "abb_1" 5 5
+m "ba ba" 4 5
+m "b-bbb." 6 6
+m "bb-aaabb" 7 8
+m "bbb -bbb," 9 9
+ms 1 "bbb -bbb," 9 9
+ms 2 "bbb -bbb," 9 9
+
+# pcre2-only
+pattern \s?(?:\b){0,2}a
+features all
+m "aa" 0 1
+m "1a." 1 2
+m "aaa" 0 1
+m "-aa-" 1 2
+m "aa aa" 0 1
+m "aaa-a" 0 1
+m "-,1aaa" 3 4
+m "a,aaaa" 0 1
+m "aaa1- a" 0 1
+ms 1 "aaa1- a" 1 2
+ms 2 "aaa1- a" 2 3
+
+# pcre2-only
+pattern a{0,}?(?:(?<!\w)|)\W
+features all
+n ""
+n "a"
+m "-b" 0 1
+n "aa"
+n "bb"
+m ",,." 0 1
+m "-aa-" 0 1
+m "aa aa" 0 3
+m "aaa.a" 0 4
+ms 1 "aa aa" 1 3
+ms 2 "aa aa" 2 3
+
+# pcre2-only
+pattern -+?(?=a)?b
+features all
+n "- "
+n "bb"
+n "bbb"
+n "- -."
+m "-bb-" 0 2
+n "aaaa"
+n "a1bbb"
+n "bb bb"
+n "bb   -"
+ns 1 "bb   -"
+ns 2 "bb   -"
+
+# pcre2-only
+pattern [a-c]*(?:|\b)
+features all
+m "" 0 0
+m " -" 0 0
+m "c1" 0 1
+m "ca" 0 2
+m "-ca-" 0 0
+m "aa  c" 0 2
+m "ca ca" 0 2
+m "_aa- _" 0 0
+m "aa1aa." 0 2
+ms 1 "_aa- _" 1 3
+ms 2 "_aa- _" 2 3
+
+# pcre2-only
+pattern \w{1,2}(?:(?=)|)$
+features all
+m "a" 0 1
+n " -"
+m "aa" 0 2
+n "-aa-"
+n "a.- "
+m ",aaa1" 3 5
+m "a,- _" 4 5
+m "aa aa" 3 5
+m "aaaaa" 3 5
+ms 1 ",aaa1" 3 5
+ms 2 ",aaa1" 3 5
+
+# pcre2-only
+pattern [a-]*?(?:\B)*$
+features all
+m "" 0 0
+m "  " 2 2
+m "aa" 0 2
+m "ba" 1 2
+m "baa" 1 3
+m "-ba-" 2 4
+m "baab" 4 4
+m "ba ba" 4 5
+m "abbaaa" 3 6
+ms 1 "abbaaa" 3 6
+ms 2 "abbaaa" 3 6
+
+# pcre2-only
+pattern \W{0,2}?(?:\B|)$
+features all
+m "" 0 0
+m "aa" 2 2
+m "- aa" 4 4
+m "-aa-" 3 4
+m "._aa" 4 4
+m "1a,-" 2 4
+m "a aaa" 5 5
+m "aa aa" 5 5
+m "- aaaa" 6 6
+ms 1 "- aaaa" 6 6
+ms 2 "- aaaa" 6 6
+
+# pcre2-only
+pattern \d{0,2}?(?:(?!a)|)A
+features all
+n ""
+m "A" 0 1
+m "AA" 0 1
+n "aa"
+n "-aa-"
+m "aAAA" 1 2
+n "aa,_"
+n "aa aa"
+n " aaaaaa1"
+ns 1 " aaaaaa1"
+ns 2 " aaaaaa1"
+
+# pcre2-only
+pattern \s{0,}?(?:\B)*a
+features all
+m "a" 0 1
+n "  "
+m "ba" 1 2
+m "a_1" 0 1
+m "baa" 1 2
+n "bbb"
+m "-ba-" 2 3
+m "ba ba" 1 2
+n "bbbbbbb"
+ns 1 "bbbbbbb"
+ns 2 "bbbbbbb"
+
+# pcre2-only
+pattern \w+?(?:\B)*\W
+features all
+n ""
+n "aa"
+n "ba"
+n "aaa"
+m "-aa-" 1 4
+n "bbaa"
+m "--_- " 2 4
+m "aa aa" 0 3
+m "bbb  aaa" 0 4
+ms 1 "bbb  aaa" 1 4
+ms 2 "bbb  aaa" 2 4
+
+# pcre2-only
+pattern a{1,3}?(?=a)?\w
+features all
+n ""
+n ","
+m "aa" 0 2
+m "aaa" 0 2
+m "-aa-" 1 3
+m "aa  " 0 2
+m "aa aa" 0 2
+m "aaaa-aaa" 0 2
+m "aaaaaaaa" 0 2
+ms 1 "aaaa-aaa" 1 3
+ms 2 "aaaa-aaa" 2 4
+
+# pcre2-only
+pattern [a-c]{0,}?(?:\B)*
+features all
+m "" 0 0
+m "c" 0 0
+m "  " 0 0
+m "bc" 0 0
+m " -." 0 0
+m "-bc-" 0 0
+m "aaacc" 0 0
+m "bc bc" 0 0
+m "-cc- b" 0 0
+ms 1 "-cc- b" 1 1
+ms 2 "-cc- b" 2 2
+
+# pcre2-only
+pattern \s+(?:(?=)|)\b
+features all
+n ""
+n "a"
+n "aa"
+n "aaa"
+n "-aa-"
+n "aaaa"
+m "aa aa" 2 3
+n "aaaa "
+n "aaaa1"
+ms 1 "aa aa" 2 3
+ms 2 "aa aa" 2 3
+
+# pcre2-only
+pattern \W{2,}(?:(?=a)|)$
+features all
+n ""
+n "ba"
+n "-1."
+n "-ba-"
+n " -,1a"
+n " aaaa"
+n "b,aaa"
+n "ba ba"
+n ".bbbbbb"
+ns 1 ".bbbbbb"
+ns 2 ".bbbbbb"
+
+# pcre2-only
+pattern [^a]+(?:(?<!\w)|)\b
+features all
+n ""
+n "a"
+n "aa"
+n "a -"
+m "-aa-" 0 1
+m "aa -a" 2 4
+m "aa aa" 2 3
+m "aa- a" 2 4
+m " -aa -" 0 2
+ms 1 " -aa -" 1 2
+ns 2 " -aa -"
+
+# pcre2-only
+pattern [a-c]{1,3}?(?:\B|)$
+features all
+n ""
+m "ab" 0 2
+n "_ ."
+n "-ab-"
+m "1ccc" 1 4
+m ", -cc" 3 5
+m "ab ab" 3 5
+m "bbbb b" 5 6
+m "ccbbbccca" 6 9
+ms 1 "ccbbbccca" 6 9
+ms 2 "ccbbbccca" 6 9
+
+# pcre2-only
+pattern [ab]{2}(?:(?=a)|)\B
+features all
+n ""
+n "1"
+n "aa"
+m "aaa" 0 2
+n "-aa-"
+m "bb_a" 0 2
+n "aa aa"
+m "b -aaa" 3 5
+m "aaabbbbbb" 0 2
+ms 1 "aaabbbbbb" 1 3
+ms 2 "aaabbbbbb" 2 4
+
+# pcre2-only
+pattern [^a]{2,}(?:(?!a)|)a
+features all
+n ""
+n "b"
+n "ba"
+n "bbb"
+m "-ba-" 0 3
+n "-bb."
+m "ba ba" 2 5
+n " bb- - "
+n "- bbbbbb"
+ns 1 "- bbbbbb"
+ns 2 "- bbbbbb"
+
+# pcre2-only
+pattern [^a]+?(?:(?=a)|)\W
+features all
+m "- " 0 2
+n "aa"
+n "bbb"
+m " -_a" 0 2
+m ",-ab" 0 2
+n "-aa-"
+n "aaaa"
+n "aa aa"
+m "- --bb" 0 2
+ms 1 "- --bb" 1 3
+ms 2 "- --bb" 2 4
+
+# pcre2-only
+pattern [ab]+(?:\b|)$
+features all
+n ""
+n "-"
+n "."
+m "a" 0 1
+m "aa" 0 2
+n "-aa-"
+m "aa aa" 3 5
+m "bbaaa" 0 5
+m "abbbbb" 0 6
+ms 1 "abbbbb" 1 6
+ms 2 "abbbbb" 2 6
+
+# pcre2-only
+pattern \s+(?:\B|)a
+features all
+n ""
+n "a"
+n "a."
+n "aa"
+n "a1 "
+n "-aa-"
+n "aaaa"
+m "aa aa" 2 4
+n "aaaa- "
+ns 1 "aaaa- "
+ns 2 "aaaa- "
+
+# pcre2-only
+pattern [^a]{0,}?(?:\B)*\W
+features all
+n ""
+m " " 0 1
+n "aa"
+n "bb"
+m "- ,a" 0 1
+m "-aa-" 0 1
+m "ab -" 1 3
+m "bbb " 0 4
+m "aa aa" 2 3
+ms 1 "aa aa" 2 3
+ms 2 "aa aa" 2 3
+
+# pcre2-only
+pattern \w{1,2}(?:\B)*A
+features all
+n ""
+n "a"
+m "AA" 0 2
+n "a."
+m "aA" 0 2
+n "aa"
+n "a  "
+n "-aa-"
+n "aa aa"
+ns 1 "aa aa"
+ns 2 "aa aa"
+
+# pcre2-only
+pattern a{0,}?(?:\B|)
+features all
+m "_" 0 0
+m "b," 0 0
+m "ba" 0 0
+m "-ba-" 0 0
+m ".-- " 0 0
+m "ba ba" 0 0
+m "bbb-_" 0 0
+m "bbbba" 0 0
+m " -.bb1" 0 0
+ms 1 " -.bb1" 1 1
+ms 2 " -.bb1" 2 2
+
+# pcre2-only
+pattern [a-c]?(?:(?<!\w)|)A
+features all
+n ""
+n "aa"
+n "ca"
+n "1 -"
+n "-ca-"
+n "ccca"
+m "Acccc" 0 1
+n "ca ca"
+m "AAA  aaa " 0 1
+ms 1 "AAA  aaa " 1 2
+ms 2 "AAA  aaa " 2 3
+
+# pcre2-only
+pattern -{2,}(?:\b){0,2}$
+features all
+n ""
+n "a"
+n "bb"
+n "- 1"
+n "-bb-"
+n "bb bb"
+n "bbb- "
+n "  .bbb"
+n " --bba"
+ns 1 "  .bbb"
+ns 2 "  .bbb"
+
+# pcre2-only
+pattern \d+(?:\b){0,2}$
+features all
+n ","
+n "-a"
+n "aa"
+n "ab"
+n "bba"
+n "  1a"
+n "-ab-"
+n "ab ab"
+n "1aabbb"
+ns 1 "1aabbb"
+ns 2 "1aabbb"
+
+# pcre2-only
+pattern [^a]*?(?:(?<!\w)|)a
+features all
+n ""
+m "aa" 0 1
+m "-aa-" 0 2
+m "abbb" 0 1
+m " -aaa" 0 3
+m "aa aa" 0 1
+n "    b,"
+m "  - aa" 0 5
+m "bba aa" 0 3
+ns 1 "    b,"
+ns 2 "    b,"
+
+# pcre2-only
+pattern [a-c]*(?:(?=)|)\W
+features all
+n ""
+m "-" 0 1
+n "cc"
+m "  cc" 0 1
+m "-cc-" 0 1
+m "cca-" 0 4
+n "cccc"
+n "a1ccc"
+m "cc cc" 0 3
+ns 1 "a1ccc"
+ns 2 "a1ccc"
+
+# pcre2-only
+pattern [a-]{2,}(?:(?=)|)\w
+features all
+n ""
+n " -"
+n "ab"
+n "  b"
+n " -1"
+n ",,aa"
+m "-ab-" 0 3
+n "ab ab"
+m "aaaabb" 0 5
+ms 1 "aaaabb" 1 5
+ms 2 "aaaabb" 2 5
+
+# pcre2-only
+pattern [ab]{2,}(?:\B|)-
+features all
+n ""
+n "a"
+n "bb"
+n "bbb"
+n " b1a"
+m "-bb-" 1 4
+n "aa.a"
+n "bb bb"
+n "bbb_bb -"
+ns 1 "bbb_bb -"
+ns 2 "bbb_bb -"
+
+# pcre2-only
+pattern [ab]{1,3}(?:(?=a)|)b
+features all
+n ""
+n "_a"
+n "a "
+n "aa"
+n "  _"
+n "-aa-"
+n "aa aa"
+m ",bbaa  " 1 3
+m "1 -abbb" 3 7
+ms 1 ",bbaa  " 1 3
+ns 2 ",bbaa  "
+
+# pcre2-only
+pattern [ab]{2}(?:\B|)\b
+features all
+n ""
+m "ab" 0 2
+n "-  "
+m "aaa" 1 3
+m "-ab-" 1 3
+m ".bbb" 2 4
+n "- -a,"
+m "ab ab" 0 2
+m "aaaa  ," 2 4
+ms 1 "aaaa  ," 2 4
+ms 2 "aaaa  ," 2 4
+
+# pcre2-only
+pattern .*?(?:\b|\B)a
+features all
+n "--"
+n "bb"
+m "baa" 0 2
+n "bb-"
+n "-bb-"
+m "ab- " 0 1
+n "_ bbb"
+m "ab_bb" 0 1
+n "bb bb"
+ns 1 "_ bbb"
+ns 2 "_ bbb"
+
+# pcre2-only
+pattern [a-c]{1,2}(?:\B|)$
+features all
+n ","
+n "- "
+m "bb" 0 2
+m "aab" 1 3
+n "-bb-"
+n "a.  "
+m "bb bb" 3 5
+n "-bbbb  "
+m "baaabbb" 5 7
+ns 1 "-bbbb  "
+ns 2 "-bbbb  "
+
+# pcre2-only
+pattern [ab]?(?!\w)\w
+features all
+n ","
+n "aa"
+n "ab"
+n "a  "
+n "-aa-"
+n "_- a"
+n "aa aa"
+n "b-  a"
+n "1aaa -1"
+ns 1 "1aaa -1"
+ns 2 "1aaa -1"
+
+# pcre2-only
+pattern \w*^\b
+features all
+n ""
+m "1" 0 0
+m "a" 0 0
+m "aa" 0 0
+n ".aa"
+n "-aa-"
+m "aa aa" 0 0
+n "-  aa "
+n "  aaa- 1"
+ns 1 "  aaa- 1"
+ns 2 "  aaa- 1"
+
+# pcre2-only
+pattern [ab]{1,3}?(?!)-
+features all
+n ""
+n "a"
+n "-b"
+n "ba"
+n ",bbb"
+n "-ba-"
+n "aaa-"
+n "ba ba"
+n "bbb-,"
+ns 1 "ba ba"
+ns 2 "ba ba"
+
+# pcre2-only
+pattern [a-]{2}(?!\w)
+features all
+n ""
+n "  "
+n "bb"
+n "- a"
+n "-bb-"
+n "bbb_"
+n "baaba"
+n "bb bb"
+n "bbb  - -"
+ns 1 "bbb  - -"
+ns 2 "bbb  - -"
+
+# pcre2-only
+pattern [a-c]{1,3}(?!\w)-
+features all
+n ""
+n "a "
+m "a-" 0 2
+n "aa"
+n "bbb"
+m "-aa-" 1 4
+n "aa aa"
+m "  aa- " 2 5
+m "aa-bbb" 0 3
+ms 1 "  aa- " 2 5
+ms 2 "  aa- " 2 5
+
+# pcre2-only
+pattern [ab]{0,2}?(?!a*)-
+features all
+n "1"
+n "- "
+n "ba"
+n " --"
+n "-ba-"
+n "aaa."
+n "ba ba"
+n "bbb- "
+n "_baaa_"
+ns 1 "_baaa_"
+ns 2 "_baaa_"
+
+# pcre2-only
+pattern \d{0,}?\B-
+features all
+n "aa"
+n "1,a"
+n "1-,"
+n "aaa"
+m "-aa-" 0 1
+m "a- -" 3 4
+n "aaa1"
+n "aa aa"
+n "aaaaaa,"
+ns 1 "aaaaaa,"
+ns 2 "aaaaaa,"
+
+# pcre2-only
+pattern \w*(?=a)\w
+features all
+m " a" 1 2
+m "aa" 0 2
+n "    "
+m "-aa-" 1 3
+m "aaaa" 0 4
+m "a, aa" 0 1
+m "aa aa" 0 2
+m "aaaaa" 0 5
+m "aaaaaa" 0 6
+ms 1 "aaaaaa" 1 6
+ms 2 "aaaaaa" 2 6
+
+# pcre2-only
+pattern \w{0,}?(?<!a|bc)\b
+features all
+m ".a" 1 1
+m "ba" 0 0
+m " ca" 1 1
+m "-ba-" 1 1
+m "baa-" 0 0
+m "ba ba" 0 0
+n "  -  -"
+m " -.aaa" 3 3
+m "_acccc" 0 0
+ns 1 "  -  -"
+ns 2 "  -  -"
+
+# pcre2-only
+pattern [a-]{1,2}(?<!a)b
+features all
+n "-"
+n "  "
+n "bb"
+n " bb"
+m "-bb-" 0 2
+n "aaab"
+n "bb bb"
+n "bb,b -"
+n " bbbbbbb"
+ns 1 " bbbbbbb"
+ns 2 " bbbbbbb"
+
+# pcre2-only
+pattern [a-]{1,3}(?=\w)-
+features all
+n ""
+n "."
+n "- "
+n "1a"
+n "aa"
+n "-aa-"
+n "aa  a"
+n "aa aa"
+n "aaaaa1"
+ns 1 "aaaaa1"
+ns 2 "aaaaa1"
+
+# pcre2-only
+pattern [a-c]{0,}?(?=a)\W
+features all
+n " "
+n "a"
+n "bb"
+n "cb"
+n "b -"
+n "-cb-"
+n ". -b"
+n "cccb"
+n "cb cb"
+ns 1 "cb cb"
+ns 2 "cb cb"
+
+# pcre2-only
+pattern [a-c]?\Aa
+features all
+n ""
+n ",-"
+n "cc"
+n "ccc"
+n "-cc-"
+n "1ccc"
+n "cca."
+n "  caa"
+n "cc cc"
+ns 1 "  caa"
+ns 2 "  caa"
+
+# pcre2-only
+pattern \d*(?<=a)\w
+features all
+m "aa" 1 2
+n " -  "
+m "-aa-" 2 3
+m "a_-_" 1 2
+m "aaa." 1 2
+m "aaaa" 1 2
+m "aa aa" 1 2
+m "aaaa.a" 1 2
+m "aaaaaa" 1 2
+ms 1 "aaaa.a" 1 2
+ms 2 "aaaa.a" 2 3
+
+# pcre2-only
+pattern a{0,}?(?!a)\b
+features all
+n ""
+m "aa" 0 2
+m "- a." 2 3
+m "-aa-" 1 3
+m "aaaa" 0 4
+m "  aaa" 2 5
+m "aa aa" 0 2
+m "aaaa1" 5 5
+m " 1aaaa" 1 1
+ms 1 " 1aaaa" 1 1
+ms 2 " 1aaaa" 2 6
+
+# pcre2-only
+pattern [ab]{2,}(?=a*)a
+features all
+n "_"
+n " -"
+n "ba"
+m "aaa" 0 3
+n "-ba-"
+n "abbb"
+m "aaabb" 0 3
+n "ba ba"
+n ".bbb1bbb"
+ns 1 ".bbb1bbb"
+ns 2 ".bbb1bbb"
+
+# pcre2-only
+pattern [a-c]{1,2}\B\w
+features all
+n ""
+m "cc" 0 2
+m ".aa" 1 3
+n "a -"
+m "-cc-" 1 3
+m "1aaaa" 1 4
+n "a , -"
+n "a- _a"
+m "cc cc" 0 2
+ms 1 "1aaaa" 1 4
+ms 2 "1aaaa" 2 5
+
+# pcre2-only
+pattern [a-]{1,3}(?<=a|bc)\b
+features all
+n ""
+n "1"
+m "a" 0 1
+n "ac"
+n "-ac-"
+m "aaaba" 4 5
+n "ac ac"
+n "aaac -"
+m "- bbb  aa" 7 9
+ms 1 "- bbb  aa" 7 9
+ms 2 "- bbb  aa" 7 9
+
+# pcre2-only
+pattern [^a]+?\b
+features all
+n ""
+n "."
+n "aa"
+n "aa,"
+m "aa1" 2 3
+m "-aa-" 0 1
+n "- - -"
+m "aa aa" 2 3
+m "  1  ." 0 2
+ms 1 "  1  ." 1 2
+ms 2 "  1  ." 2 3
+
+# pcre2-only
+pattern [ab]{0,}?(?!)a*
+features all
+n ""
+n "aa"
+n "  aa"
+n "-aa-"
+n "-b-bb"
+n "aa aa"
+n "baaab"
+n "1bbba "
+n "aaa_  a"
+ns 1 "aaa_  a"
+ns 2 "aaa_  a"
+
+# pcre2-only
+pattern \w{1,3}(?=a)\W
+features all
+n "."
+n "ab"
+n "bb"
+n "-ab-"
+n "ab ab"
+n "- bbba"
+n "baaaab"
+n "aaabbbb"
+n "aaaaaaaaa"
+ns 1 "aaaaaaaaa"
+ns 2 "aaaaaaaaa"
+
+# pcre2-only
+pattern \d*(?=a)a*
+features all
+n ""
+m "a" 0 1
+n "1."
+m "ba" 1 2
+n "- _"
+m "-ba-" 2 3
+m "aaab" 0 3
+m "ba ba" 1 2
+m "  bbba" 5 6
+ms 1 "  bbba" 5 6
+ms 2 "  bbba" 5 6
+
+# pcre2-only
+pattern .{0,2}?(?!a)a
+features all
+n ""
+n "-a"
+n "aa"
+n "-aa-"
+n "-- ,a"
+n "aa aa"
+n "aaaaa,"
+n "aaa_aaa"
+n "aa.  aaa"
+ns 1 "aa.  aaa"
+ns 2 "aa.  aaa"
+
+# pcre2-only
+pattern \W{2}(?=a|)\W
+features all
+n ""
+n "a"
+n "aa"
+n "bb"
+n ", a"
+n "bbb"
+n "-bb-"
+n "bb bb"
+n "bbb -"
+ns 1 "bb bb"
+ns 2 "bb bb"
+
+# pcre2-only
+pattern -{0,}?(?<!\W)-
+features all
+n ""
+n "1"
+n "a"
+n "aa"
+n "aa_"
+n "aaa"
+m "-aa-" 0 1
+n "aa aa"
+n "a1 -- "
+ns 1 "a1 -- "
+ns 2 "a1 -- "
+
+# pcre2-only
+pattern \d{1,3}(?<!a|bc)\w
+features all
+n ""
+n " -"
+n "aa"
+n "aaa"
+n "ccc"
+n "-aa-"
+n "aa aa"
+n ",.  bb"
+n "cccccbbb"
+ns 1 "cccccbbb"
+ns 2 "cccccbbb"
+
+# pcre2-only
+pattern \W{0,2}?\bb?
+features all
+n ""
+m "bb" 0 1
+m "-bb-" 0 2
+m "baaa" 0 1
+m "bb bb" 0 1
+m "  a --" 0 2
+m "- _b  " 0 2
+m "bb,a -" 0 1
+m "aaaba  " 0 0
+ms 1 "aaaba  " 5 5
+ms 2 "aaaba  " 5 5
+
+# pcre2-only
+pattern \s+(?!\b)a*
+features all
+n ""
+n "a"
+n "1a"
+n "aa"
+n "-aa-"
+m "_, - " 2 3
+n "aa aa"
+m "aaaaa " 5 6
+n "aaaaaa."
+ns 1 "aaaaaa."
+ns 2 "aaaaaa."
+
+# pcre2-only
+pattern [a-c]{2,}(?!\w)\b
+features all
+n ""
+n ","
+n "-b"
+m "cb" 0 2
+m "1bc" 1 3
+n ",c -"
+m "-cb-" 1 3
+m "ac,cc" 0 2
+m "cb cb" 0 2
+ms 1 "ac,cc" 3 5
+ms 2 "ac,cc" 3 5
+
+# pcre2-only
+pattern [ab]*\z\W
+features all
+n ""
+n "ba"
+n "ba."
+n "-ba-"
+n "_bbb"
+n "ba ba"
+n "b,aaaaa"
+n " bbbaabb"
+n "aaaaaaaaa"
+ns 1 "aaaaaaaaa"
+ns 2 "aaaaaaaaa"
+
+# pcre2-only
+pattern .{2}(?=a*)\b
+features all
+n ""
+n "a."
+m "aa" 0 2
+m "aa " 0 2
+m "aaa" 1 3
+m "-aa-" 1 3
+m "aa aa" 0 2
+m "aaa -" 1 3
+m "- -aaaa" 1 3
+ms 1 "- -aaaa" 1 3
+ms 2 "- -aaaa" 5 7
+
+# pcre2-only
+pattern [^a]*?(?=\W|$)\w
+features all
+n ""
+n "."
+n "_a"
+n "aa"
+n "-aa-"
+n "a-aa"
+n "aa aa"
+n "aaaaa"
+n "- aaaa"
+ns 1 "- aaaa"
+ns 2 "- aaaa"
+
+# pcre2-only
+pattern \s{2}\B\w
+features all
+n ""
+n "bb"
+n "   "
+n "bbb"
+n "-bb-"
+n "-bb,,"
+n "bb bb"
+n "bb.aa"
+n "ab  bb"
+ns 1 "ab  bb"
+ns 2 "ab  bb"
+
+# pcre2-only
+pattern .{2}(?=\b)
+features all
+n "b"
+m "bb" 0 2
+m " aa" 1 3
+m "-bb-" 1 3
+m "aaaa" 2 4
+m "aab," 1 3
+m "bbba" 2 4
+m "-1aa1" 3 5
+m "bb bb" 0 2
+ms 1 "-1aa1" 3 5
+ms 2 "-1aa1" 3 5
+
+# pcre2-only
+pattern [a-c]{0,}?(?=a)b?
+features all
+m "a" 0 0
+m "ac" 0 0
+n "bb"
+n "  bb"
+n ",ccc"
+m "-ac-" 1 1
+n "bccc"
+m "ac ac" 0 0
+m "1aaa- -" 1 1
+ms 1 "1aaa- -" 1 1
+ms 2 "1aaa- -" 2 2
+
+# pcre2-only
+pattern \w+?(?=\W|$)\b
+features all
+n ""
+m "a" 0 1
+m "_a" 0 2
+m "aa" 0 2
+m "aaa" 0 3
+m "-aa-" 1 3
+m "  aaa" 2 5
+m "aa aa" 0 2
+m "aaa -" 0 3
+ms 1 "  aaa" 2 5
+ms 2 "  aaa" 2 5
+
+# pcre2-only
+pattern \d*(?!\w)
+features all
+m "" 0 0
+m "a" 1 1
+m "aa" 2 2
+m "aa " 2 2
+m "-aa-" 0 0
+m ".aaaa" 0 0
+m "aa aa" 2 2
+m "-.aaa-" 0 0
+m "aaaaaaaa" 8 8
+ms 1 "aaaaaaaa" 8 8
+ms 2 "aaaaaaaa" 8 8
+
+# pcre2-only
+pattern [a-c]*^a*
+features all
+m "" 0 0
+m "1" 0 0
+m "ba" 0 0
+m "  a" 0 0
+m "_aa" 0 0
+m "-ba-" 0 0
+m "aaa_" 0 3
+m "ba ba" 0 0
+m " bbb- -" 0 0
+ns 1 " bbb- -"
+ns 2 " bbb- -"
+
+# pcre2-only
+pattern \w{0,2}?$\W
+features all
+n ""
+n "1a"
+n "aa"
+n "-aa-"
+n "a aa"
+n " -a.a"
+n "aa aa"
+n "aaaaaa"
+n "-  -aaaa"
+ns 1 "-  -aaaa"
+ns 2 "-  -aaaa"
+
+# pcre2-only
+pattern [^a]{0,}?(?!a*)\w
+features all
+n ""
+n "1"
+n "_"
+n "a"
+n "aa"
+n "bbb"
+n " ..a"
+n "-aa-"
+n "aa aa"
+ns 1 "aa aa"
+ns 2 "aa aa"
+
+# pcre2-only
+pattern [a-]*?(?<!a)\w
+features all
+n ","
+m "a" 0 1
+m "aa" 0 1
+m "aa." 0 1
+m "-.aa" 2 3
+m "-aa-" 0 2
+m "aaaa" 0 1
+m "aa aa" 0 1
+m "aaa,_" 0 1
+ms 1 "aa aa" 3 4
+ms 2 "aa aa" 3 4
+
+# pcre2-only
+pattern .{1,3}^a*
+features all
+n ""
+n " -"
+n "aa"
+n "a-a"
+n "-aa-"
+n "  - _"
+n "a - -"
+n "aa aa"
+n "1 aaa- "
+ns 1 "1 aaa- "
+ns 2 "1 aaa- "
+
+# pcre2-only
+pattern [^a]*(?=)b?
+features all
+m "" 0 0
+m "ba" 0 1
+m "aa," 0 0
+m "- bb" 0 4
+m "-ba-" 0 2
+m "aaa_" 0 0
+m "aaab" 0 0
+m "bbb_" 0 4
+m "ba ba" 0 1
+ms 1 "ba ba" 1 1
+ms 2 "ba ba" 2 4
+
+# pcre2-only
+pattern a{1,3}?(?=\w)\W
+features all
+n ""
+n "ab"
+n "   "
+n "abb"
+n "-ab-"
+n "aa.a"
+n "b  ."
+n "baa "
+n "ab ab"
+ns 1 "ab ab"
+ns 2 "ab ab"
+
+# pcre2-only
+pattern \s+(?<=a)b
+features all
+n ""
+n "b"
+n "aa"
+n "-aa-"
+n "aaa1"
+n "bb ."
+n "bb,b"
+n "aa aa"
+n "baaaba"
+ns 1 "baaaba"
+ns 2 "baaaba"
+
+# pcre2-only
+pattern -{0,2}?(?=a|)b
+features all
+m "b" 0 1
+n "  "
+n "a1"
+n "aa"
+n "aaa"
+n "-aa-"
+m ",1bb " 2 3
+n "aa aa"
+m "bbbaa" 0 1
+ms 1 ",1bb " 2 3
+ms 2 ",1bb " 2 3
+
+# pcre2-only
+pattern [a-]{2,}(?!\w)a*
+features all
+n "a,"
+m "aa" 0 2
+m "aaa" 0 3
+m "-aa-" 0 4
+m "  aaa" 2 5
+m "aa aa" 0 2
+m "aaa.1" 0 3
+m "- aa- " 2 5
+m "aaaa- " 0 5
+ms 1 "- aa- " 2 5
+ms 2 "- aa- " 2 5
+
+# pcre2-only
+pattern [^a]{1,2}(?<=\W)a*
+features all
+n ""
+n "_"
+m "  " 0 2
+n "aa"
+m "_ -" 0 2
+m "-aa-" 0 3
+m "1aaa." 4 5
+m "aa aa" 2 5
+m " - -a," 0 2
+ms 1 " - -a," 1 3
+ms 2 " - -a," 2 5
+
+# pcre2-only
+pattern -+\Bb
+features all
+n ""
+n "a"
+n "a."
+n "aa"
+n "   -"
+n "-aa-"
+n "_ -a"
+n "aa aa"
+n "bbaaa"
+ns 1 "aa aa"
+ns 2 "aa aa"
+
+# pcre2-only
+pattern \w*(?!\b)\b
+features all
+n ""
+n "a"
+n "- "
+n "aa"
+n ".1_"
+n "aaa"
+n "-aa-"
+n "aa aa"
+n ",1aa -"
+ns 1 ",1aa -"
+ns 2 ",1aa -"
+
+# pcre2-only
+pattern \s{2}^
+features all
+n ""
+n "b"
+n "ab"
+n "bba"
+n "-_aa"
+n "-ab-"
+n "- a- "
+n "ab ab"
+n "bbaaaaa"
+ns 1 "bbaaaaa"
+ns 2 "bbaaaaa"
+
+# pcre2-only
+pattern \d+(?<=\W)\b
+features all
+n ""
+n "-"
+n "aa"
+n " -- "
+n "-aa-"
+n ".aaa"
+n "aa aa"
+n "aaa-_"
+n ".aaaaa- "
+ns 1 ".aaaaa- "
+ns 2 ".aaaaa- "
+
+# pcre2-only
+pattern [a-c]{2,}(?=a|)a*
+features all
+n ""
+m "cc" 0 2
+m "aaa" 0 3
+n "c- "
+n " -  "
+m "-cc-" 1 3
+m ".ccca" 1 5
+m "cc cc" 0 2
+m "aaaccc." 0 6
+ms 1 "aaaccc." 1 6
+ms 2 "aaaccc." 2 6
+
+# pcre2-only
+pattern [^a]*?(?=\W|$)
+features all
+m "" 0 0
+m "aa" 2 2
+m "-aa-" 0 0
+m "-abb" 0 0
+m "a, a" 1 1
+m "bbaa" 4 4
+m "aa aa" 2 2
+m "babbb" 2 5
+m "abaaa," 5 5
+ms 1 "abaaa," 5 5
+ms 2 "abaaa," 5 5
+
+# pcre2-only
+pattern \s+(?!)a*
+features all
+n ""
+n "."
+n "a"
+n "aa"
+n "ab"
+n "-ab-"
+n "ab ab"
+n "aaa_bb"
+n "aabbbaaaa"
+ns 1 "aabbbaaaa"
+ns 2 "aabbbaaaa"
+
+# pcre2-only
+pattern [a-]{1,3}?(?!a)\W
+features all
+n "a"
+n "b"
+n "aa"
+m "a.a" 0 2
+m "-aa-" 0 4
+n "aaab"
+n "bbb,"
+m "aa aa" 0 3
+n "aaaaaaaa"
+ns 1 "aaaaaaaa"
+ns 2 "aaaaaaaa"
+
+# pcre2-only
+pattern [a-]{1,2}(?=)\W
+features all
+n ","
+m "- " 0 2
+n "aa"
+m "a- " 0 3
+m "-aa-" 1 4
+n " -_aa"
+m "aa aa" 0 3
+n "_1aaaaa"
+n "aaaaa_aaa"
+ns 1 "aaaaa_aaa"
+ns 2 "aaaaa_aaa"
+
+# pcre2-only
+pattern [a-]{1,3}?(?!\b)-
+features all
+n ""
+n ","
+n "aa"
+n "aaa"
+n "-aa-"
+n "   -a"
+n "aa aa"
+n "aaa   "
+n "aa- aaaa"
+ns 1 "aa- aaaa"
+ns 2 "aa- aaaa"
+
+# pcre2-only
+pattern \d*\Aa
+features all
+n ""
+n "-"
+n "ba"
+m "a -" 0 1
+n "bba"
+n "bbb"
+n "-ba-"
+n "ba ba"
+n "bbb_aaa"
+ns 1 "bbb_aaa"
+ns 2 "bbb_aaa"
+
+# pcre2-only
+pattern [a-]?(?!)b
+features all
+n " "
+n "1"
+n "bb"
+n "bbb"
+n "-bb-"
+n "aaa1"
+n "b1  "
+n "bbbb"
+n "bb bb"
+ns 1 "bb bb"
+ns 2 "bb bb"
+
+# pcre2-only
+pattern \w{1,3}?\Ba
+features all
+n ""
+n " -"
+m "ba" 0 2
+n ",bb"
+m "-ba-" 1 3
+m ".bba" 1 4
+n "abb  "
+m "ba ba" 0 2
+m "bbabb  " 0 3
+ms 1 "bbabb  " 1 3
+ns 2 "bbabb  "
+
+# pcre2-only
+pattern [^a]+(?=\b)b?
+features all
+n ""
+m "_" 0 1
+m "bb" 0 2
+n "aa "
+m "bbb" 0 3
+m "-bb-" 0 3
+m ".baaa" 0 2
+m "bb bb" 0 5
+m "-bbbbba" 0 2
+ns 1 "-bbbbba"
+ns 2 "-bbbbba"
+
+# pcre2-only
+pattern -{2,}(?!\b)\b
+features all
+n ""
+n "b"
+n "aa"
+n "aaa"
+n "- -b"
+n "-aa-"
+n "aa aa"
+n "bbbbb_1"
+n ".bbbaabbb"
+ns 1 ".bbbaabbb"
+ns 2 ".bbbaabbb"
+
+# pcre2-only
+pattern [a-]{2}^a*
+features all
+n ""
+n "ab"
+n "bb"
+n "  1a"
+n "-ab-"
+n "aaab"
+n "ab ab"
+n " aabaaa"
+n "aaabbbaa1"
+ns 1 "aaabbbaa1"
+ns 2 "aaabbbaa1"
+
+# pcre2-only
+pattern .+(?<=a|bc)\b
+features all
+n ""
+n "- "
+n "ac"
+n " - -"
+n "-ac-"
+n "ac ac"
+n "aaabbb"
+n "abb -c"
+m "bbbaaa" 0 6
+ns 1 "aaabbb"
+ns 2 "aaabbb"
+
+# pcre2-only
+pattern \W{1,3}(?<=a|bc)b
+features all
+n "- "
+n "bc"
+n "  a"
+n "b1b"
+n "-bc-"
+n "bc bc"
+n "_c,ccc"
+n "cccbba,"
+n "aabbbbccc"
+ns 1 "aabbbbccc"
+ns 2 "aabbbbccc"
+
+# pcre2-only
+pattern \W+(?<=\b)b?
+features all
+n ""
+m "-1" 0 1
+n "aa"
+m "- a" 0 2
+m "-aa-" 0 1
+m "aa aa" 2 3
+n "bbba_b"
+n "aaaaabb"
+n "bbb- - "
+ns 1 "aaaaabb"
+ns 2 "aaaaabb"
+
+# pcre2-only
+pattern -+?\Zb
+features all
+n ""
+n " -"
+n "b1"
+n "bb"
+n " -b"
+n "-bb-"
+n "bb bb"
+n ".bbbbbb"
+n "bbbbbbb"
+ns 1 ".bbbbbb"
+ns 2 ".bbbbbb"
+
+# pcre2-only
+pattern -{1,3}?\Ba
+features all
+n ""
+n "a"
+n " 1"
+n "aa"
+n "- a"
+n "aaa"
+n "-aa-"
+n "aa aa"
+n "aaaaaa"
+ns 1 "aaaaaa"
+ns 2 "aaaaaa"
+
+# pcre2-only
+pattern [a-c]{0,}?\zb?
+features all
+m "  " 2 2
+m "ab" 0 2
+m "aab" 0 3
+m "b -" 3 3
+m "ba_" 3 3
+m "-ab-" 4 4
+m " -bbb" 2 5
+m "ab ab" 3 5
+m "  bbbc" 2 6
+ms 1 "  bbbc" 2 6
+ms 2 "  bbbc" 2 6
+
+# pcre2-only
+pattern [a-]{1,2}(?!a*)b
+features all
+n "b"
+n ". "
+n "bb"
+n "- aa"
+n "-bb-"
+n "bb bb"
+n "bbbaa"
+n "  -aa-"
+n " _aaaa"
+ns 1 "  -aa-"
+ns 2 "  -aa-"
+
+# pcre2-only
+pattern a{2,}(?<!\B)-
+features all
+n ""
+n "a"
+n " -"
+n "aa"
+m "-aa-" 1 4
+n "aa aa"
+m "aaaa-" 0 5
+n "aaaaa"
+n "aaaaaaa"
+ns 1 "aaaaaaa"
+ns 2 "aaaaaaa"
+
+# pcre2-only
+pattern a+?(?<=\b)\b
+features all
+n ""
+m "a" 0 1
+n "bb"
+n "-bb-"
+m "1-aa" 2 4
+m "aaaa" 0 4
+m ",aaa-" 1 4
+n "bb bb"
+m " -aaa." 2 5
+ms 1 " -aaa." 2 5
+ms 2 " -aaa." 2 5
+
+# pcre2-only
+pattern [^a]*\za*
+features all
+m "-" 0 1
+m "1" 0 1
+m "a" 1 1
+m "aa" 2 2
+m "  -a" 4 4
+m "-aa-" 3 4
+m "aa  " 2 4
+m "aaaa" 4 4
+m "aa aa" 5 5
+ms 1 "aa aa" 5 5
+ms 2 "aa aa" 5 5
+
+# pcre2-only
+pattern \w{1,3}(?<=a)b
+features all
+m "ab" 0 2
+n "ba"
+n "bb"
+n ".aa"
+m "-ab-" 1 3
+m "ab ab" 0 2
+n "bbaaa"
+n "bbb_bb -"
+n "bbbbbb  b"
+ns 1 "bbbbbb  b"
+ns 2 "bbbbbb  b"
+
+# pcre2-only
+pattern -{0,}?\Z-
+features all
+n ",a"
+n "aa"
+n "- a"
+n "aaa"
+n "- aa"
+n "-aa-"
+n "a .a"
+n "aa aa"
+n "aa-  "
+ns 1 "aa aa"
+ns 2 "aa aa"
+
+# pcre2-only
+pattern a{0,2}?(?=a)b?
+features all
+m "a" 0 0
+m "ba" 1 1
+n "bb"
+n "-bb-"
+m "  aba" 2 2
+n "bb bb"
+m "a1bbbb" 0 0
+m "baaa_," 1 1
+m "bbaab_" 2 2
+ns 1 "a1bbbb"
+ns 2 "a1bbbb"
+
+# pcre2-only
+pattern [a-]{1,2}\A-
+features all
+n "_"
+n "aa"
+n "ab"
+n "_ab"
+n "baa"
+n "-ab-"
+n ",abaa"
+n "aaaaa"
+n "ab ab"
+ns 1 ",abaa"
+ns 2 ",abaa"
+
+# pcre2-only
+pattern \w{2,}(?=\b)\w
+features all
+n ""
+n " "
+n "bb"
+n "-bb-"
+n "baaa"
+n "aaa  "
+n "aaa- "
+n "bb bb"
+n " bb  ."
+ns 1 " bb  ."
+ns 2 " bb  ."
+
+# pcre2-only
+pattern \w{1,2}(?=a)a
+features all
+n ""
+n "a"
+m "aa" 0 2
+m "aaa" 0 3
+m "-aa-" 1 3
+m "aa1_" 0 2
+m "aaaa" 0 3
+m "1aaaa" 0 3
+m "aa aa" 0 2
+ms 1 "1aaaa" 1 4
+ms 2 "1aaaa" 2 5
+
+# pcre2-only
+pattern .?(?!)\b
+features all
+n ""
+n "aa"
+n "-aa-"
+n "aa,_"
+n "aaa_"
+n "aa aa"
+n "aaaaa"
+n "1aa  a"
+n "- aaaa  "
+ns 1 "- aaaa  "
+ns 2 "- aaaa  "
+
+# pcre2-only
+pattern .{1,3}\Aa*
+features all
+n ""
+n ".a"
+n "bb"
+n "-, b"
+n "-bb-"
+n "1a- "
+n "bb bb"
+n " -_aa."
+n "- b,bb"
+ns 1 " -_aa."
+ns 2 " -_aa."
+
+# pcre2-only
+pattern [a-]{1,3}(?!)
+features all
+n ""
+n "aa"
+n "ab"
+n " aa1"
+n "-ab-"
+n "ab ab"
+n "- - - "
+n "a..bbb"
+n "bbbbbb"
+ns 1 "- - - "
+ns 2 "- - - "
+
+# pcre2-only
+pattern [ab]{2,}$\W
+features all
+n ""
+n "b"
+n "ba"
+n "a  "
+n "b.,"
+n "-ba-"
+n "ba ba"
+n "bbaaaaaa"
+n "bbbbbbbbb"
+ns 1 "bbbbbbbbb"
+ns 2 "bbbbbbbbb"
+
+# pcre2-only
+pattern [a-]*(?!a*)-
+features all
+n ""
+n "a"
+n "_-"
+n "ab"
+n "aaa"
+n "-ab-"
+n "a1- "
+n "bbbb"
+n "ab ab"
+ns 1 "ab ab"
+ns 2 "ab ab"
+
+# pcre2-only
+pattern \d*?(?<=\b)-
+features all
+n ""
+n "b"
+n " -"
+n "aa"
+n "aab"
+m "-aa-" 3 4
+n "bbaa"
+n "aa aa"
+n "b_. -"
+ns 1 "aa aa"
+ns 2 "aa aa"
+
+# pcre2-only
+pattern [^a]{0,}?(?!a*)-
+features all
+n "_"
+n "aa"
+n "aaa"
+n "-aa-"
+n "aaa-"
+n "aaaa"
+n "aa aa"
+n "aaa1.a"
+n "aaaaaaa"
+ns 1 "aaaaaaa"
+ns 2 "aaaaaaa"
+
+# pcre2-only
+pattern [a-c]*(?<=\b)\b
+features all
+m "b" 0 1
+m "ca" 0 2
+m "cc" 0 2
+m "aac" 0 3
+m "-cc-" 1 3
+m ".aaa" 1 4
+m "accc" 0 4
+m "cc cc" 0 2
+m "bbbb,bbb" 0 4
+ms 1 "bbbb,bbb" 1 4
+ms 2 "bbbb,bbb" 2 4
+
+# pcre2-only
+pattern \W{1,3}?(?!a)\w
+features all
+n ""
+m ",b" 0 2
+n "ab"
+n "aaa"
+m "  bb" 0 3
+n "-ab-"
+m "a_.b" 2 4
+n "aaaaa"
+n "ab ab"
+ns 1 "aaaaa"
+ns 2 "aaaaa"
+
+# pcre2-only
+pattern [ab]?(?<!\W)b?
+features all
+m "bb" 0 2
+m "abb" 0 2
+m "-bb-" 0 0
+m "abbb" 0 2
+m ",abbb" 0 0
+m "bb bb" 0 2
+m "bbb,b" 0 2
+m "aab,bbb" 0 1
+m "bbbaaaa" 0 2
+ms 1 "aab,bbb" 1 3
+ms 2 "aab,bbb" 2 3
+
+# pcre2-only
+pattern \W+(?=\w)a*
+features all
+n ""
+n "-"
+n "a"
+n "aa"
+m "-aa-" 0 3
+m "aa aa" 2 5
+n "bbbbb"
+n "aaaaa_"
+n "baaaaaa"
+ns 1 "baaaaaa"
+ns 2 "baaaaaa"
+
+# pcre2-only
+pattern \d{0,}?(?<=a)\b
+features all
+n "-"
+m "a" 1 1
+m "aa" 2 2
+n "- b"
+m "-aa-" 3 3
+n "-aab"
+m "aa aa" 2 2
+n "  bbbb"
+m "aaa -.," 3 3
+ms 1 "aaa -.," 3 3
+ms 2 "aaa -.," 3 3
+
+# pcre2-only
+pattern \d*(?<!a)\w
+features all
+m "aa" 0 1
+m "aa-" 0 1
+m "-aa-" 1 2
+m "aa aa" 0 1
+m "aaaa." 0 1
+m ". -aaa" 3 4
+m "aaaaa1" 0 1
+m "aa-aa -" 0 1
+m "-   aaaa" 4 5
+ms 1 "-   aaaa" 4 5
+ms 2 "-   aaaa" 4 5
+
+# pcre2-only
+pattern [a-c]{2}(?<!\W)b?
+features all
+n ""
+n "b-"
+m "bc" 0 2
+n "_ -"
+m "- aa" 2 4
+m "-bc-" 1 3
+m "bbb," 0 3
+m "ccbb" 0 3
+m "bc bc" 0 2
+ms 1 "bc bc" 3 5
+ms 2 "bc bc" 3 5
+
+# pcre2-only
+pattern \W*?(?=\w)a*
+features all
+n ""
+m "aa" 0 2
+m "ab" 0 1
+m "aa_" 0 2
+m "-ab-" 0 2
+m "bbb_" 0 0
+n "- ..,"
+m "ab ab" 0 1
+m "aaaa _" 0 4
+ms 1 "aaaa _" 1 4
+ms 2 "aaaa _" 2 4
+
+# pcre2-only
+pattern [^a]?(?<!a)\W
+features all
+n ""
+n "1"
+n "b"
+m " -" 0 2
+n "ab"
+m "b ." 0 2
+m "-ab-" 0 1
+m "ab ab" 1 3
+m ",bbb1." 0 1
+ms 1 ",bbb1." 4 6
+ms 2 ",bbb1." 4 6
+
+# pcre2-only
+pattern [a-c]*\ba
+features all
+m "ab" 0 1
+n "bb"
+n " -c"
+n " ,  "
+m "-ab-" 1 2
+m "ab ab" 0 1
+m "acccb" 0 1
+m "aaaaaa" 0 1
+n "ccccc-"
+ns 1 "aaaaaa"
+ns 2 "aaaaaa"
+
+# pcre2-only
+pattern \W{1,2}(?<=\b)a*
+features all
+n ""
+n "aa"
+m "-aa-" 0 3
+m ",  aa" 1 5
+m ".aaa " 0 4
+m "aa aa" 2 5
+m "-aaaaa" 0 6
+m " -aaaaaa" 0 8
+n "aaaaaaa,"
+ms 1 " -aaaaaa" 1 8
+ns 2 " -aaaaaa"
+
+# pcre2-only
+pattern [ab]*?$\b
+features all
+m "bb" 0 2
+m "aaa" 0 3
+m " -b_" 4 4
+m ",,aa" 2 4
+n "-bb-"
+m "_-  a" 4 5
+n "aaab "
+m "bb bb" 3 5
+m "-   bbbb" 4 8
+ms 1 "-   bbbb" 4 8
+ms 2 "-   bbbb" 4 8
+
+# pcre2-only
+pattern [a-c]{0,}?^a
+features all
+n ""
+m "ac" 0 1
+n "ca"
+n "cc"
+n "_1 "
+n "  - "
+n "-ac-"
+m "ac ac" 0 1
+n "- _  ,"
+ns 1 "- _  ,"
+ns 2 "- _  ,"
+
+# pcre2-only
+pattern -+(?<!a)\w
+features all
+n "ba"
+n "a_a"
+m "-ba-" 0 2
+n "b- -"
+n "bbbb"
+n " bbba"
+n "ba ba"
+n "bbb  "
+m "bbb-aab" 3 5
+ms 1 "bbb-aab" 3 5
+ms 2 "bbb-aab" 3 5
+
+# pcre2-only
+pattern [^a]{1,3}?(?=\W|$)a
+features all
+n ""
+n "aa"
+n "-aa-"
+n "aa  "
+n "aaaa"
+n "aa aa"
+n "aaa.aaa"
+n "aaaaaaa"
+n "  ,- aaa"
+ns 1 "  ,- aaa"
+ns 2 "  ,- aaa"
+
+# pcre2-only
+pattern [ab]{2,}\Z\W
+features all
+n "."
+n "_"
+n " -"
+n "aa"
+n "ab"
+n "-aa-"
+n ".b -"
+n "aa aa"
+n "aaaaba"
+ns 1 "aaaaba"
+ns 2 "aaaaba"
+
+# pcre2-only
+pattern [^a]{2}(?=a|)
+features all
+n ""
+n "1"
+n "aa"
+n "baa"
+n "-aa-"
+m "1,bb" 0 2
+m " -aaa" 0 2
+n "aa aa"
+n "aaa a"
+ns 1 " -aaa"
+ns 2 " -aaa"
+
+# pcre2-only
+pattern a{2}^-
+features all
+n ""
+n "a"
+n "bb"
+n "aaa"
+n "baa"
+n "-bb-"
+n "aaaa"
+n ".- a1"
+n "bb bb"
+ns 1 ".- a1"
+ns 2 ".- a1"
+
+# pcre2-only
+pattern \d{0,2}?(?!)\w
+features all
+n ""
+n "a "
+n "ba"
+n "-ba-"
+n "- aaa"
+n ".bbaa"
+n "ba ba"
+n "b -aaa"
+n " aaaaaa"
+ns 1 " aaaaaa"
+ns 2 " aaaaaa"
+
+# pcre2-only
+pattern [a-]{1,3}(?=a*)a
+features all
+n ""
+m "aa" 0 2
+n ",1,"
+n "- a"
+n "a--"
+m "-aa-" 0 3
+m "aa aa" 0 2
+m " aaaaa" 1 5
+m "aa- -_" 0 2
+ms 1 " aaaaa" 1 5
+ms 2 " aaaaa" 2 6
+
+# pcre2-only
+pattern [a-c]{1,3}(?!\b)b
+features all
+n ""
+n "."
+n "1"
+n "c"
+n "ba"
+n "ccc"
+n "-ba-"
+n "aaa "
+n "ba ba"
+ns 1 "ba ba"
+ns 2 "ba ba"
+
+# pcre2-only
+pattern [^a]{1,3}?\z
+features all
+n ""
+n "aa"
+m "-aa-" 3 4
+n "aaaa"
+m " -a -" 3 5
+m ".aaa " 4 5
+n "aa aa"
+m "aaa -" 3 5
+m "aaa.1" 3 5
+ms 1 " -a -" 3 5
+ms 2 " -a -" 3 5
+
+# pcre2-only
+pattern \d+(?<!\B)a
+features all
+n "b"
+n " a"
+n "aa"
+n "bb"
+n "-aa-"
+n "bb-."
+n "bbb1"
+n "aa aa"
+n "bbbaaa."
+ns 1 "bbbaaa."
+ns 2 "bbbaaa."
+
+# pcre2-only
+pattern a*b
+features all
+n ""
+n " "
+n "- "
+m "ba" 0 1
+m "bb" 0 1
+m "-ba-" 1 2
+m "ba ba" 0 1
+m "bbaabb" 0 1
+m "aabbbaaa" 0 3
+ms 1 "aabbbaaa" 1 3
+ms 2 "aabbbaaa" 2 3
+
+# pcre2-only
+pattern a*a
+features all
+n ""
+n " -"
+n "_."
+m "a " 0 1
+n "bb"
+n "-bb-"
+m ".bbaa" 3 5
+n "bb bb"
+m "bbbaab" 3 5
+ms 1 "bbbaab" 3 5
+ms 2 "bbbaab" 3 5
+
+# pcre2-only
+pattern \w+\b
+features all
+n ""
+m "b" 0 1
+m ".b" 1 2
+m "b_" 0 2
+m "ba" 0 2
+m "aaa" 0 3
+m "-ba-" 1 3
+m "ba ba" 0 2
+m "- ,bb- " 3 5
+ms 1 "- ,bb- " 3 5
+ms 2 "- ,bb- " 3 5
+
+# pcre2-only
+pattern \w+\B
+features all
+n "a"
+m "ba" 0 1
+m "bbb" 0 2
+m "  aa" 2 3
+n "- - "
+m "-ba-" 1 2
+m "_aa " 0 2
+m "aabab" 0 4
+m "ba ba" 0 1
+ms 1 "aabab" 1 4
+ms 2 "aabab" 2 4
+
+# pcre2-only
+pattern \W+\b
+features all
+n ""
+n "a1"
+n "ba"
+n "aaa"
+n "b -"
+m "-ba-" 0 1
+n "__  "
+n "aaab"
+m "ba ba" 2 3
+ms 1 "ba ba" 2 3
+ms 2 "ba ba" 2 3
+
+# pcre2-only
+pattern \W*\B
+features all
+m "- " 0 2
+m "1a" 1 1
+m "bb" 1 1
+m "-bb-" 0 0
+m "  b -" 0 1
+m "bb bb" 1 1
+m "1aaabb" 1 1
+m "_bbb,b" 1 1
+m "aaa_,a" 1 1
+ms 1 "1aaabb" 1 1
+ms 2 "1aaabb" 2 2
+
+# pcre2-only
+pattern \w*\b\w
+features all
+n ""
+m "a" 0 1
+m "__" 0 1
+m "aa" 0 1
+m "-aa-" 1 2
+m "aa-." 0 1
+m "aa aa" 0 1
+m "aaa -" 0 1
+m "aaaaa1" 0 1
+ns 1 "aaaaa1"
+ns 2 "aaaaa1"
+
+# pcre2-only
+pattern [a-z]*\b[0-9]
+features all
+n ""
+n "a-"
+n "aa"
+n "   "
+n "-aa-"
+n "a_- ."
+n "aa aa"
+n "aaabbba"
+n "aaabbbb"
+ns 1 "aaabbba"
+ns 2 "aaabbba"
+
+# pcre2-only
+pattern a+\b
+features all
+n ""
+n "ab"
+m "ba" 1 2
+m " aa" 1 3
+m "-ba-" 2 3
+m "- ,aa" 3 5
+m "ba ba" 1 2
+n "baab."
+n "bbbbb"
+ms 1 "- ,aa" 3 5
+ms 2 "- ,aa" 3 5
+
+# pcre2-only
+pattern a+\B
+features all
+n ""
+n "-"
+n "_"
+n "a"
+n "b"
+n "bb"
+n "-bb-"
+m "abbb" 0 1
+n "bb bb"
+ns 1 "bb bb"
+ns 2 "bb bb"
+
+# pcre2-only
+pattern a*(?!a)b
+features all
+n ""
+m "ba" 0 1
+m "bb" 0 1
+m ",bbb" 1 2
+m "-ba-" 1 2
+n ".aaa "
+m "ba ba" 0 1
+m "b aaa- " 0 1
+n "aaaa aaa"
+ns 1 "aaaa aaa"
+ns 2 "aaaa aaa"
+
+# pcre2-only
+pattern a*(?=b)
+features all
+n ""
+m "ab" 0 1
+m "-ab-" 1 2
+m "a1bb" 2 2
+m "aabb" 0 2
+n "a.a- "
+m "ab ab" 0 1
+m "bba a" 0 0
+m "aaabb    " 0 3
+ms 1 "aaabb    " 1 3
+ms 2 "aaabb    " 2 3
+
+# pcre2-only
+pattern a*(?<=a)b
+features all
+n ""
+n "b"
+n "aa"
+m "abb" 0 2
+n "bbb"
+n "-aa-"
+n "aa aa"
+n "bbbaa"
+n "_bbaaaaa"
+ns 1 "_bbaaaaa"
+ns 2 "_bbaaaaa"
+
+# pcre2-only
+pattern \w+(?<=a)
+features all
+n ""
+m "a" 0 1
+m "a1" 0 1
+m "aa" 0 2
+n "b,"
+m "-aa-" 1 3
+n "bbbb"
+m "aa aa" 0 2
+m "  aaab" 2 5
+ms 1 "  aaab" 2 5
+ms 2 "  aaab" 2 5
+
+# pcre2-only
+pattern \w+?(?<!a)\b
+features all
+n ""
+n "aa"
+n "a -"
+n "aaa"
+n "-aa-"
+n "_aaa "
+n "aa aa"
+n "- .aaa"
+n "aaaaaa"
+ns 1 "- .aaa"
+ns 2 "- .aaa"
+
+# pcre2-only
+pattern \w+(?<!b)\b
+features all
+m "_-" 0 1
+n "ab"
+m "aa " 0 2
+n "-ab-"
+n "_abbb"
+n "ab ab"
+n "bbb  "
+m " -a.aa" 2 3
+m "aaaaaa," 0 6
+ms 1 "aaaaaa," 1 6
+ms 2 "aaaaaa," 2 6
+
+# pcre2-only
+pattern \w+(?=\W)
+features all
+n ""
+n "_a"
+n "aa"
+m "-aa-" 1 3
+m "aa_," 0 3
+m "- aa," 2 4
+m "aa aa" 0 2
+n "aaaaa"
+n "aaaaaaa"
+ns 1 "aaaaaaa"
+ns 2 "aaaaaaa"
+
+# pcre2-only
+pattern \w+(?!\w)
+features all
+n ""
+n "  "
+m "aa" 0 2
+m "a- " 0 1
+m "aaa" 0 3
+m "-aa-" 1 3
+m "aa aa" 0 2
+m "aa1aaa" 0 6
+m "aaa.aa" 0 3
+ms 1 "aa1aaa" 1 6
+ms 2 "aa1aaa" 2 6
+
+# pcre2-only
+pattern \s*\b
+features all
+n ""
+n "- "
+m "a," 0 0
+m "aa" 0 0
+m "-aa-" 1 1
+m "aa aa" 0 0
+m ",aaaaaa" 1 1
+m "aaaaaa," 0 0
+m "aaaaaaaa" 0 0
+ms 1 "aaaaaaaa" 8 8
+ms 2 "aaaaaaaa" 8 8
+
+# pcre2-only
+pattern \s*\B
+features all
+m "" 0 0
+m "ab" 1 1
+m "bb" 1 1
+m "- ." 0 0
+m "-ab-" 0 0
+m "b1.b" 1 1
+m "ab ab" 1 1
+m "aaabba" 1 1
+m "bbbbb1" 1 1
+ms 1 "aaabba" 1 1
+ms 2 "aaabba" 2 2
+
+# pcre2-only
+pattern -*\b
+features all
+n ""
+m "aa" 0 0
+m "aaa" 0 0
+m "-aa-" 0 1
+m "aa aa" 0 0
+m "aaaaa" 0 0
+m "aaaaa  " 0 0
+m " -aaaaaa" 1 2
+m "aaaaa- aa" 0 0
+ms 1 "aaaaa- aa" 5 5
+ms 2 "aaaaa- aa" 5 5
+
+# pcre2-only
+pattern -*\B
+features all
+m "" 0 0
+m "  " 0 0
+m "ba" 1 1
+m "bbb" 1 1
+m " aa " 0 0
+m "-ba-" 0 0
+m "abbb" 1 1
+m "ba ba" 1 1
+m "aaa.bb_" 1 1
+ms 1 "aaa.bb_" 1 1
+ms 2 "aaa.bb_" 2 2
+
+# pcre2-only
+pattern \d+\b
+features all
+n ""
+n "aa"
+n "ba"
+m "  1" 2 3
+n "aaa"
+n "-ba-"
+m "abbb1" 4 5
+n "ba ba"
+n "-bbbb,"
+ns 1 "-bbbb,"
+ns 2 "-bbbb,"
+
+# pcre2-only
+pattern \d+\B
+features all
+n ""
+n "a"
+n "aa"
+n ", ,"
+n "aaa"
+n "-aa-"
+n "- - -"
+n "- aaa"
+n "aa aa"
+ns 1 "- - -"
+ns 2 "- - -"
+
+# pcre2-only
+pattern [ab]*(?:\b|b)
+features all
+n ""
+m "ab" 0 2
+m "bb" 0 2
+m "abb" 0 3
+m "-ab-" 1 3
+m "aaaa" 0 4
+m "ab ab" 0 2
+m " aaaaaa" 1 7
+m "bbbaa -." 0 5
+ms 1 "bbbaa -." 1 5
+ms 2 "bbbaa -." 2 5
+
+# pcre2-only
+pattern a*(?:a|\b)
+features all
+n ""
+m "ba" 0 0
+m "bb" 0 0
+m "-ba-" 1 1
+m "b,- " 0 0
+m "b-- " 0 0
+m "ba ba" 0 0
+m "abbb -" 0 1
+m "-bbbaabb" 1 1
+ms 1 "-bbbaabb" 1 1
+ms 2 "-bbbaabb" 4 6
+
+# pcre2-only
+pattern a*(?:\Ba|)b
+features all
+n ""
+m "ab" 0 2
+m "bb" 0 1
+m "-ab-" 1 3
+m "-baa" 1 2
+m ".1ba" 2 3
+n "  aaa"
+m "ab ab" 0 2
+m "baaa - " 0 1
+ns 1 "baaa - "
+ns 2 "baaa - "
+
+# pcre2-only
+pattern x*(?:\bx|y)
+features all
+n ""
+n "-"
+n "a"
+n "ab"
+m "- x" 2 3
+n "-ab-"
+n "ab ab"
+n "bb1xx"
+n " -   -"
+ns 1 " -   -"
+ns 2 " -   -"
+
+# pcre2-only
+pattern a?\b
+features all
+n ""
+m "a" 0 1
+m "aa" 0 0
+m ",aa-" 1 1
+m "-aa-" 1 1
+m " - -_" 4 4
+m "aa aa" 0 0
+m "aaa__" 0 0
+m "aaaaaa" 0 0
+ms 1 "aaaaaa" 5 6
+ms 2 "aaaaaa" 5 6
+
+# pcre2-only
+pattern a?\B
+features all
+m "" 0 0
+m "ab" 0 1
+m "aaa" 0 1
+m ",a.a" 0 0
+m "-ab-" 0 0
+m "aaaa" 0 1
+m "ab ab" 0 1
+m ".- aa1" 0 0
+m "aaaaaa" 0 1
+ms 1 ".- aa1" 1 1
+ms 2 ".- aa1" 2 2
+
+# pcre2-only
+pattern a??\b
+features all
+n ""
+m "ba" 0 0
+m "-ba-" 1 1
+m "_aaa" 0 0
+m "aaaa" 0 0
+m "baaa" 0 0
+m "ba ba" 0 0
+m "babbb" 0 0
+m "- aaa ." 2 2
+ms 1 "- aaa ." 2 2
+ms 2 "- aaa ." 2 2
+
+# pcre2-only
+pattern \w?\B\w
+features all
+n ""
+n "  "
+m "_a" 0 2
+m "aa" 0 2
+n "a -"
+m "-aa-" 1 3
+m "1aaa" 0 2
+m "aaa," 0 2
+m "aa aa" 0 2
+ms 1 "aa aa" 1 2
+ms 2 "aa aa" 3 5
+
+# pcre2-only
+pattern \w*?\B
+features all
+m " -" 0 0
+m "a." 2 2
+m "aa" 0 1
+m ",aa" 0 0
+m "aaa" 0 1
+m "-aa-" 0 0
+m "a,- " 2 2
+m "1aaa_" 0 1
+m "aa aa" 0 1
+ms 1 "1aaa_" 1 1
+ms 2 "1aaa_" 2 2
+
+# pcre2-only
+pattern \w*?\b
+features all
+n ""
+m "b" 0 0
+m "ab" 0 0
+m "  aa" 2 2
+m "-ab-" 1 1
+m "b,  " 0 0
+m "bbba" 0 0
+m "ab ab" 0 0
+m "abbb- " 0 0
+ms 1 "abbb- " 1 4
+ms 2 "abbb- " 2 4
+
+# pcre2-only
+pattern \W*?\b\w
+features all
+n ""
+n ".,"
+m "aa" 0 1
+m ".aa" 0 2
+m "-aa-" 0 2
+m "aaaa" 0 1
+m "a,  -" 0 1
+m "aa aa" 0 1
+m " --aaa" 0 4
+ms 1 " --aaa" 1 4
+ms 2 " --aaa" 2 4
+
+# pcre2-only
+pattern ((?=\w)\w){2}(?=a)(?:\1|b)
+features all
+n ""
+n " "
+n "-"
+n "_"
+n "a"
+n "ab"
+n "-ab-"
+n "bbb "
+n "ab ab"
+ns 1 "ab ab"
+ns 2 "ab ab"
+
+# pcre2-only
+pattern (a*\b)a\1{2}
+features all
+n ""
+n " ."
+m "aa" 0 1
+gp 1 0 0
+m "-aa-" 1 2
+gp 1 1 1
+m "aaaa" 0 1
+gp 1 0 0
+m "a- _," 0 1
+gp 1 0 0
+m "a-aaa" 0 1
+gp 1 0 0
+m "aa aa" 0 1
+gp 1 0 0
+m "aaaa-" 0 1
+gp 1 0 0
+ns 1 "a- _,"
+ns 2 "a- _,"
+
+# pcre2-only
+pattern (\b\w)*?(?=a)\1??a
+flags i
+features all
+m "a" 0 1
+gp 1 -1 -1
+m "aa" 0 1
+gp 1 -1 -1
+m "A  " 0 1
+gp 1 -1 -1
+m "aaa" 0 1
+gp 1 -1 -1
+m "-aa-" 1 2
+gp 1 -1 -1
+m "AaAa" 0 1
+gp 1 -1 -1
+m "- AaA" 2 3
+gp 1 -1 -1
+m "aa aa" 0 1
+gp 1 -1 -1
+m "aaaaa" 0 1
+gp 1 -1 -1
+ms 1 "- AaA" 2 3
+gp 1 -1 -1
+ms 2 "- AaA" 2 3
+gp 1 -1 -1
+
+# pcre2-only
+pattern (x*){2,3}-\1\b
+flags i
+features all
+n ""
+n ".-"
+n "a-"
+n "aa"
+n "ax"
+m "-ax-" 0 1
+gp 1 0 0
+n "ax ax"
+n "- xXX."
+m "x -xxx" 2 3
+gp 1 2 2
+ns 1 "- xXX."
+ns 2 "- xXX."
+
+# pcre2-only
+pattern ((?:a|\B))?\b\g{1}
+features all
+n ""
+n "bb"
+n "aaa"
+n "-bb-"
+n "aabb"
+n "bbaa"
+n "bb bb"
+n ".  aaa"
+n "bbaaaa"
+ns 1 ".  aaa"
+ns 2 ".  aaa"
+
+# pcre2-only
+pattern (\b)+?x\1\B
+features all
+n "-b"
+n "1a"
+m "xa" 0 1
+gp 1 0 0
+n "b- "
+m "xxx" 0 1
+gp 1 0 0
+m "-xa-" 1 2
+gp 1 1 1
+m "xa xa" 0 1
+gp 1 0 0
+n "a  ,  "
+n "aaabbb"
+ns 1 "a  ,  "
+ns 2 "a  ,  "
+
+# pcre2-only
+pattern (\b)*\B\b\1
+features all
+n ""
+n " "
+n "."
+n "11"
+n "aa"
+n "- aa"
+n "-aa-"
+n "a  .a"
+n "aa aa"
+ns 1 "a  .a"
+ns 2 "a  .a"
+
+# pcre2-only
+pattern ((?<!\w)a*)+\W\1+?
+flags i
+features all
+n ""
+n "aa"
+m "A.a" 0 3
+gp 1 0 1
+m "-aa-" 0 1
+gp 1 0 0
+n "aaAA"
+n "aaaa"
+m "aa aa" 0 5
+gp 1 0 2
+m " -aaaaa" 0 1
+gp 1 0 0
+m "1. -aaa" 2 3
+gp 1 2 2
+ms 1 " -aaaaa" 1 2
+gp 1 1 1
+ns 2 " -aaaaa"
+
+# pcre2-only
+pattern (a*\b)\w*(?:\1|b)
+flags i
+features all
+n ""
+m "bb" 0 2
+gp 1 0 0
+m "a1A" 0 3
+gp 1 0 0
+m "-bb-" 1 3
+gp 1 1 1
+m "Ab1B" 0 4
+gp 1 0 0
+m "BbaAa" 0 5
+gp 1 0 0
+m "bb bb" 0 2
+gp 1 0 0
+m "abbaaa" 0 6
+gp 1 0 0
+m "bbb  BA" 0 3
+gp 1 0 0
+ms 1 "bbb  BA" 3 3
+gp 1 3 3
+ms 2 "bbb  BA" 3 3
+gp 1 3 3
+
+# pcre2-only
+pattern (a*\b)+?\w*\g{-1}
+features all
+n ""
+m "1" 0 1
+gp 1 0 0
+n "  "
+m "aa" 0 2
+gp 1 2 2
+m "-aa-" 1 3
+gp 1 3 3
+m "aa aa" 0 2
+gp 1 2 2
+m "_a- aa" 0 2
+gp 1 0 0
+m "aaa,aa" 0 3
+gp 1 3 3
+m "aaaaaa" 0 6
+gp 1 6 6
+ms 1 "_a- aa" 1 2
+gp 1 2 2
+ms 2 "_a- aa" 2 2
+gp 1 2 2
+
+# pcre2-only
+pattern (a*\b)+?\w*\1*
+flags i
+features all
+n ""
+n "."
+m "_-" 0 1
+gp 1 0 0
+m "aa" 0 2
+gp 1 0 2
+m "a1." 0 2
+gp 1 0 0
+m "aAA" 0 3
+gp 1 0 3
+m "-aa-" 1 3
+gp 1 1 3
+m "A -A" 0 1
+gp 1 0 1
+m "aa aa" 0 2
+gp 1 0 2
+ms 1 "aa aa" 1 2
+gp 1 1 2
+ms 2 "aa aa" 2 2
+gp 1 2 2
+
+# pcre2-only
+pattern (\w{0,2})+?\W\1\B
+features all
+n ""
+n "_"
+n "aa"
+m "-aa-" 1 4
+gp 1 3 3
+n "_aaa"
+m "aa aa" 0 4
+gp 1 1 2
+n "aaaaa"
+m "aaaaaa-" 0 7
+gp 1 6 6
+n "aaaaaaa"
+ms 1 "aaaaaa-" 1 7
+gp 1 6 6
+ms 2 "aaaaaa-" 2 7
+gp 1 6 6
+
+# pcre2-only
+pattern (\w\b){2,3}\g{1}
+flags i
+features all
+n " -"
+n ",b"
+n "a1"
+n "bb"
+n "aaa"
+n "-bb-"
+n ".bbb_"
+n "bb bb"
+n " -bbaab"
+ns 1 " -bbaab"
+ns 2 " -bbaab"
+
+# pcre2-only
+pattern ((?=\w)\w)x\1*
+features all
+n ""
+n "  "
+m "xx" 0 2
+gp 1 0 1
+m "-xx-" 1 3
+gp 1 1 2
+n "abbb"
+m " xxa." 1 3
+gp 1 1 2
+m "xx xx" 0 2
+gp 1 0 1
+m "xxx -" 0 3
+gp 1 0 1
+n "aaaaaabb"
+ns 1 "aaaaaabb"
+ns 2 "aaaaaabb"
+
+# pcre2-only
+pattern (a?)+?\b\1?
+features all
+n ""
+n "-"
+m "a" 0 1
+gp 1 0 1
+m "aa" 0 2
+gp 1 1 2
+m "aaa" 0 3
+gp 1 2 3
+m "-aa-" 1 3
+gp 1 2 3
+m ".aaa" 1 4
+gp 1 3 4
+m "a- -" 0 1
+gp 1 0 1
+m "aa aa" 0 2
+gp 1 1 2
+ms 1 "aa aa" 1 2
+gp 1 1 2
+ms 2 "aa aa" 2 2
+gp 1 2 2
+
+# pcre2-only
+pattern ((?<=a)){2,3}-\1*
+features all
+n ""
+n "bb"
+n "a a"
+n "aaa"
+n "  - "
+n "-bb-"
+n "a.-_"
+n "bbbb"
+n "bb bb"
+ns 1 "bb bb"
+ns 2 "bb bb"
+
+# pcre2-only
+pattern ((?:\b)?)?(?=a)x\1
+features all
+n ""
+n "x"
+n "aa"
+n "xx"
+n "aaa"
+n "-xx-"
+n "xxxx"
+n "xx xx"
+n "aaaxxx"
+ns 1 "aaaxxx"
+ns 2 "aaaxxx"
+
+# pcre2-only
+pattern (\b\w){1,2}?-\1??a
+features all
+n ""
+n "."
+n "a-"
+n "ab"
+n "-ab-"
+n ".aaa"
+n "ab ab"
+n ",- bbbb"
+n "  1- bbb"
+ns 1 "  1- bbb"
+ns 2 "  1- bbb"
+
+# pcre2-only
+pattern (\b)x\1+?
+features all
+n ""
+n "."
+n "aa"
+n "-aa-"
+n "- aaa"
+n "aa aa"
+n "b - ."
+m "bbb_  x" 6 7
+gp 1 6 6
+n "bbbxxbbba"
+ns 1 "bbbxxbbba"
+ns 2 "bbbxxbbba"
+
+# pcre2-only
+pattern (\B)+\W\1\b
+features all
+n ""
+n "_a"
+n "aa"
+n "bb"
+m "-bb-" 0 1
+gp 1 0 0
+n "bbb-"
+n "bb bb"
+m "_b- aa" 3 4
+gp 1 3 3
+m " bbbaaaaa" 0 1
+gp 1 0 0
+ns 1 " bbbaaaaa"
+ns 2 " bbbaaaaa"
+
+# pcre2-only
+pattern ((?:a|\B))+\w*\1*
+features all
+m "" 0 0
+gp 1 0 0
+n "_"
+m "aa" 0 2
+gp 1 1 2
+m "-aa-" 0 0
+gp 1 0 0
+m "a - " 0 1
+gp 1 0 1
+m "aaaa" 0 4
+gp 1 3 4
+m "a_aaa" 0 5
+gp 1 1 1
+m "aa aa" 0 2
+gp 1 1 2
+m "  aa  " 0 0
+gp 1 0 0
+ms 1 "  aa  " 1 1
+gp 1 1 1
+ms 2 "  aa  " 2 4
+gp 1 3 4
+
+# pcre2-only
+pattern (\w{0,2})*?(?=a)\g{1}
+features all
+n ""
+n ",-"
+m "aa" 0 2
+gp 1 0 1
+m "aaa" 0 2
+gp 1 2 2
+n ",  -"
+m "-aa-" 1 3
+gp 1 1 2
+m "aaaa" 0 4
+gp 1 0 2
+m "aa aa" 0 2
+gp 1 0 1
+m "aaaaa" 0 4
+gp 1 0 2
+ms 1 "aa aa" 1 1
+gp 1 1 1
+ms 2 "aa aa" 3 5
+gp 1 3 4
+
+# pcre2-only
+pattern (\b){0,2}\B\1
+flags i
+features all
+n "ab"
+n "bb"
+n "A_1"
+n "a- "
+n "-ab-"
+n ".BBb"
+n ".a -"
+n "ab ab"
+n "  bBB,Bbb"
+ns 1 "  bBB,Bbb"
+ns 2 "  bBB,Bbb"
+
+# pcre2-only
+pattern ((?<!\w)a*)+\b\1
+flags i
+features all
+n ""
+m "aa" 0 0
+gp 1 0 0
+m ",-1a" 2 2
+gp 1 2 2
+m "-aa-" 1 1
+gp 1 1 1
+m "aAAaA" 0 0
+gp 1 0 0
+m "aa aa" 0 0
+gp 1 0 0
+m "- AaAa" 2 2
+gp 1 2 2
+m "AAAaaA" 0 0
+gp 1 0 0
+m "aaaaa.  " 0 0
+gp 1 0 0
+ns 1 "aaaaa.  "
+ns 2 "aaaaa.  "
+
+# pcre2-only
+pattern (\B)+(?=a)x\1
+features all
+n ""
+n "x"
+n "ab"
+n "xb"
+n "  x"
+n "-ab-"
+n "ab ab"
+n "bb1,-"
+n "abbbbb- "
+ns 1 "abbbbb- "
+ns 2 "abbbbb- "
+
+# pcre2-only
+pattern (a?){1,2}?\W\1\b
+flags i
+features all
+n ""
+n "a"
+n "b"
+n "aa"
+m "-aa-" 0 1
+gp 1 0 0
+m "aa aa" 1 3
+gp 1 2 2
+n "AaaBab"
+m " -aab  " 1 2
+gp 1 1 1
+m "AaABBb  a" 7 8
+gp 1 7 7
+ms 1 "AaABBb  a" 7 8
+gp 1 7 7
+ms 2 "AaABBb  a" 7 8
+gp 1 7 7
+
+# pcre2-only
+pattern ((?!a))+?\1??a
+features all
+n ""
+n "a "
+n "ab"
+n "-ab-"
+n "bbb-"
+n "ab ab"
+n "bb,a."
+n "bb,bb"
+n "aaa  ,"
+ns 1 "aaa  ,"
+ns 2 "aaa  ,"
+
+# pcre2-only
+pattern ((?=a))*?\1\b
+flags i
+features all
+n "b"
+m "ab" 0 0
+gp 1 0 0
+n "bb"
+m "aa1" 0 0
+gp 1 0 0
+n " -1a"
+m "-ab-" 1 1
+gp 1 1 1
+n "_a_a"
+m "ab ab" 0 0
+gp 1 0 0
+n "bbb-  -bb"
+ns 1 "bbb-  -bb"
+ns 2 "bbb-  -bb"
+
+# pcre2-only
+pattern ((?=\w)\w)\w*\1\b
+flags i
+features all
+n ""
+n ","
+n "ba"
+m "Aaa" 0 3
+gp 1 0 1
+n " - A"
+n "-ba-"
+n "ba ba"
+m "baaA11" 4 6
+gp 1 4 5
+m "aa --  " 0 2
+gp 1 0 1
+ns 1 "aa --  "
+ns 2 "aa --  "
+
+# pcre2-only
+pattern (a|){1,2}?\b\1\b
+features all
+n ""
+m "a" 0 1
+gp 1 1 1
+m "1 " 0 0
+gp 1 0 0
+m "ab" 0 0
+gp 1 0 0
+m "aa_" 0 0
+gp 1 0 0
+m "-ab-" 1 1
+gp 1 1 1
+m "1 aa" 0 0
+gp 1 0 0
+m "ab ab" 0 0
+gp 1 0 0
+m "bbbbb" 0 0
+gp 1 0 0
+ms 1 "ab ab" 2 2
+gp 1 2 2
+ms 2 "ab ab" 2 2
+gp 1 2 2
+
+# pcre2-only
+pattern ([ab]*?){2}\w*\1\b
+features all
+n ""
+n "-"
+m "aa" 0 2
+gp 1 0 0
+m "-aa-" 1 3
+gp 1 1 1
+m "bbbb" 0 4
+gp 1 0 0
+m " -.-a" 4 5
+gp 1 4 4
+m "aa aa" 0 2
+gp 1 0 0
+m "bbbbba" 0 6
+gp 1 0 0
+m "aaaaaa1aa" 0 9
+gp 1 0 0
+ms 1 "aaaaaa1aa" 1 9
+gp 1 1 1
+ms 2 "aaaaaa1aa" 2 9
+gp 1 2 2
+
+# pcre2-only
+pattern ((?<!\w)a*)?a\1
+flags i
+features all
+n ""
+m "a " 0 1
+gp 1 0 0
+m "aa" 0 1
+gp 1 0 0
+m "aaa" 0 3
+gp 1 0 1
+m "-aa-" 1 2
+gp 1 1 1
+m ".a- A" 1 2
+gp 1 1 1
+m "aa aa" 0 1
+gp 1 0 0
+m "AaaaaaA" 0 7
+gp 1 0 3
+m "aaAaaaAAA" 0 9
+gp 1 0 4
+ns 1 "aaAaaaAAA"
+ns 2 "aaAaaaAAA"
+
+# pcre2-only
+pattern ([ab]*?){2,3}\w*\b\1
+flags i
+features all
+n " "
+m "a" 0 1
+gp 1 0 0
+m "aa" 0 2
+gp 1 0 0
+m "-aa-" 1 3
+gp 1 1 1
+m ".aaa" 1 4
+gp 1 1 1
+m "b.aa" 0 1
+gp 1 0 0
+m "aa aa" 0 2
+gp 1 0 0
+m " aAaa." 1 5
+gp 1 1 1
+m ".bbbbbbb" 1 8
+gp 1 1 1
+ms 1 ".bbbbbbb" 1 8
+gp 1 1 1
+ms 2 ".bbbbbbb" 2 8
+gp 1 2 2
+
+# pcre2-only
+pattern (|a)\B\1{2}
+flags i
+features all
+m ".b" 0 0
+gp 1 0 0
+m "ab" 1 1
+gp 1 1 1
+m "bb" 1 1
+gp 1 1 1
+m "-ab-" 0 0
+gp 1 0 0
+m "1aaA" 1 1
+gp 1 1 1
+m ",  b_" 0 0
+gp 1 0 0
+m "BbBbb" 1 1
+gp 1 1 1
+m "ab ab" 1 1
+gp 1 1 1
+m "  - bBBAA" 0 0
+gp 1 0 0
+ms 1 "  - bBBAA" 1 1
+gp 1 1 1
+ms 2 "  - bBBAA" 2 2
+gp 1 2 2
+
+# pcre2-only
+pattern (a*\b)\W\1{2}
+features all
+n ""
+n ",_"
+n "aa"
+n "bbb"
+m "-aa-" 3 4
+gp 1 3 3
+m "1a -" 2 3
+gp 1 2 2
+m "aa aa" 1 5
+gp 1 1 2
+m "b -_b" 1 2
+gp 1 1 1
+m "b  _bb" 1 2
+gp 1 1 1
+ms 1 "b  _bb" 1 2
+gp 1 1 1
+ns 2 "b  _bb"
+
+# pcre2-only
+pattern ((?!a))?\w*\1\b
+flags i
+features all
+n ""
+m "aa" 2 2
+gp 1 2 2
+m "_aa" 0 3
+gp 1 0 0
+m "a a" 1 1
+gp 1 1 1
+m " --A" 4 4
+gp 1 4 4
+m "-aa-" 3 3
+gp 1 3 3
+m "aa aa" 2 2
+gp 1 2 2
+m "a -aaa" 1 1
+gp 1 1 1
+m "aAaaaaa" 7 7
+gp 1 7 7
+ms 1 "aAaaaaa" 7 7
+gp 1 7 7
+ms 2 "aAaaaaa" 7 7
+gp 1 7 7
+
+# pcre2-only
+pattern (\B){0,2}a\1\B
+features all
+n ""
+n "a"
+n "b"
+n "bb"
+n "-bb-"
+n "bbb-"
+m "aabbb" 1 2
+gp 1 1 1
+n "bb bb"
+n " -bbbbbb"
+ns 1 " -bbbbbb"
+ns 2 " -bbbbbb"
+
+# pcre2-only
+pattern (a?)\W\1{2}
+flags i
+features all
+n ""
+m "." 0 1
+gp 1 0 0
+m "  " 0 1
+gp 1 0 0
+n "aA"
+n "ab"
+m "-ab-" 0 1
+gp 1 0 0
+m "aa -" 2 3
+gp 1 2 2
+m "ab ab" 2 3
+gp 1 2 2
+m "aaaa- aaa" 4 5
+gp 1 4 4
+ms 1 "aaaa- aaa" 4 5
+gp 1 4 4
+ms 2 "aaaa- aaa" 4 5
+gp 1 4 4
+
+# pcre2-only
+pattern (\W*)*?\B\g{-1}
+features all
+m "." 0 1
+gp 1 1 1
+m " -" 0 2
+gp 1 2 2
+m "aa" 1 1
+gp 1 1 1
+m "aaa" 1 1
+gp 1 1 1
+m "b1_" 1 1
+gp 1 1 1
+m "-aa-" 0 0
+gp 1 0 0
+m "aa aa" 1 1
+gp 1 1 1
+m "ab bb" 1 1
+gp 1 1 1
+m "_- -aa" 1 3
+gp 1 3 3
+ms 1 "_- -aa" 1 3
+gp 1 3 3
+ms 2 "_- -aa" 2 3
+gp 1 3 3
+
+# pcre2-only
+pattern ((?!a)){2}\W\g{1}
+flags i
+features all
+n ""
+n "b"
+n "1a"
+n "ba"
+m "-ba-" 0 1
+gp 1 0 0
+m " -aa " 0 1
+gp 1 0 0
+m ",aabb" 0 1
+gp 1 0 0
+m "-bBb," 0 1
+gp 1 0 0
+m "ba ba" 2 3
+gp 1 2 2
+ms 1 " -aa " 1 2
+gp 1 1 1
+ms 2 " -aa " 4 5
+gp 1 4 4
+
+# pcre2-only
+pattern ((?=a))+(?=a)\1??a
+features all
+n ""
+n " "
+n ","
+n "bb"
+n "-bb-"
+n "bbbb"
+m "- a -" 2 3
+gp 1 2 2
+n "bb bb"
+m "b  aaa," 3 4
+gp 1 3 3
+ms 1 "b  aaa," 3 4
+gp 1 3 3
+ms 2 "b  aaa," 3 4
+gp 1 3 3
+
+# pcre2-only
+pattern (a*)*\B\1\B
+features all
+m "bb" 1 1
+gp 1 1 1
+m ",b-" 0 0
+gp 1 0 0
+m ".b," 0 0
+gp 1 0 0
+m "bbb" 1 1
+gp 1 1 1
+m "- aa" 0 0
+gp 1 0 0
+m "-bb-" 0 0
+gp 1 0 0
+m "bbbb" 1 1
+gp 1 1 1
+m "bb bb" 1 1
+gp 1 1 1
+m "bbb- " 1 1
+gp 1 1 1
+ms 1 "bb bb" 1 1
+gp 1 1 1
+ms 2 "bb bb" 4 4
+gp 1 4 4
+
+# pcre2-only
+pattern (\B)?\b(?:\1|b)
+features all
+n ""
+n "aa"
+n "-  "
+n "- -"
+n "aaa"
+n "-aa-"
+n "1- -1"
+n "aa aa"
+m "aaa,.bb" 5 6
+gp 1 -1 -1
+ms 1 "aaa,.bb" 5 6
+gp 1 -1 -1
+ms 2 "aaa,.bb" 5 6
+gp 1 -1 -1
+
+# pcre2-only
+pattern (\b\w)*a(?:\1|b)
+features all
+n ""
+n "bb"
+n "bbb"
+n "-bb-"
+n "  .  "
+n "bb bb"
+m "aaaaab" 0 3
+gp 1 0 1
+n "  -  - "
+m "aaa,-aaa" 0 3
+gp 1 0 1
+ms 1 "aaa,-aaa" 5 8
+gp 1 5 6
+ms 2 "aaa,-aaa" 5 8
+gp 1 5 6
+
+# pcre2-only
+pattern (\w{0,2})*?x\1
+features all
+n "ab"
+n "  a"
+n "-ab-"
+m "axxx" 0 4
+gp 1 3 3
+n "_bbab"
+n "ab ab"
+m "xxxb," 0 3
+gp 1 2 2
+m "x_- aaa" 0 1
+gp 1 0 0
+m "xxxaaa,_" 0 3
+gp 1 2 2
+ms 1 "xxxaaa,_" 1 3
+gp 1 2 2
+ms 2 "xxxaaa,_" 2 3
+gp 1 2 2
+
+# pcre2-only
+pattern ((?<=a))+a\1+?
+features all
+n ""
+n "ab"
+n "bb"
+n ".a_"
+n ".b_"
+n "-bb-"
+n "bb bb"
+n "bbb,ab"
+m "aabbaaa" 1 2
+gp 1 1 1
+ms 1 "aabbaaa" 1 2
+gp 1 1 1
+ms 2 "aabbaaa" 5 6
+gp 1 5 5
+
+# pcre2-only
+pattern (|a){2,3}\w*x\1
+features all
+n ""
+n "aa"
+m "xa" 0 1
+gp 1 0 0
+m "-xa-" 1 2
+gp 1 1 1
+m "xxx " 0 3
+gp 1 0 0
+m "xa xa" 0 1
+gp 1 0 0
+m "xxx1b" 0 3
+gp 1 0 0
+m "xxxbb" 0 3
+gp 1 0 0
+n "   -aa -"
+ns 1 "   -aa -"
+ns 2 "   -aa -"
+
+# pcre2-only
+pattern ((?:a|b|))?x\1{2}
+features all
+n ""
+n "1"
+m "xx" 0 1
+gp 1 0 0
+m "xaa" 0 1
+gp 1 0 0
+m "-xx-" 1 2
+gp 1 1 1
+n "aaa-"
+n "ab -"
+m "aaaxx" 3 4
+gp 1 3 3
+m "xx xx" 0 1
+gp 1 0 0
+ms 1 "aaaxx" 3 4
+gp 1 3 3
+ms 2 "aaaxx" 3 4
+gp 1 3 3
+
+# pcre2-only
+pattern ((?=\w)\w){2}x(?:\1|b)
+features all
+n ""
+n "ax"
+n "-x-"
+n "- - "
+n "-ax-"
+n " -bb,"
+n "ax ax"
+m "xxxxx" 0 4
+gp 1 1 2
+n "1xx  _"
+ns 1 "1xx  _"
+ns 2 "1xx  _"
+
+# pcre2-only
+pattern ((?=a))+\w*\1+?
+features all
+n "1-"
+n "1."
+m "ab" 0 2
+gp 1 0 0
+n ",b "
+m "-ab-" 1 3
+gp 1 1 1
+m "ab ab" 0 2
+gp 1 0 0
+m "baaa,b" 1 4
+gp 1 1 1
+m "baaabbb" 1 7
+gp 1 1 1
+m "aaaaaaaaa" 0 9
+gp 1 0 0
+ms 1 "aaaaaaaaa" 1 9
+gp 1 1 1
+ms 2 "aaaaaaaaa" 2 9
+gp 1 2 2
+
+# pcre2-only
+pattern (\W*)a\1{2}
+features all
+n " "
+m "a" 0 1
+gp 1 0 0
+m " a" 1 2
+gp 1 1 1
+m "aa" 0 1
+gp 1 0 0
+m "aaa" 0 1
+gp 1 0 0
+m "-aa-" 1 2
+gp 1 1 1
+m "aa aa" 0 1
+gp 1 0 0
+m "aaa aa" 0 1
+gp 1 0 0
+m "aaaaaaaa" 0 1
+gp 1 0 0
+ms 1 "aaaaaaaa" 1 2
+gp 1 1 1
+ms 2 "aaaaaaaa" 2 3
+gp 1 2 2
+
+# pcre2-only
+pattern ((?:\b)?)+?\b\1{2}
+features all
+n ""
+m "a" 0 0
+gp 1 0 0
+m "ab" 0 0
+gp 1 0 0
+m "-ab-" 1 1
+gp 1 1 1
+m "1._a" 0 0
+gp 1 0 0
+m "aaa -" 0 0
+gp 1 0 0
+m "ab ab" 0 0
+gp 1 0 0
+m "bbaab" 0 0
+gp 1 0 0
+m "bbbbb" 0 0
+gp 1 0 0
+ms 1 "aaa -" 3 3
+gp 1 3 3
+ms 2 "aaa -" 3 3
+gp 1 3 3
+
+# pcre2-only
+pattern (\w{0,2}){1,2}?(?=a)\1{2}
+features all
+n ""
+n "  "
+n "bb"
+m "aaa" 0 2
+gp 1 2 2
+n "-bb-"
+n "_bb-"
+n "bb bb"
+m "bbbaab" 1 3
+gp 1 3 3
+n "bbbbbb"
+ms 1 "bbbaab" 1 3
+gp 1 3 3
+ms 2 "bbbaab" 2 4
+gp 1 4 4
+
+# pcre2-only
+pattern ([ab]*?)+\B\1??a
+features all
+n ""
+n ","
+n "-b"
+m "ba" 0 2
+gp 1 1 1
+m "aaa" 0 2
+gp 1 1 1
+n ",--b"
+m "-ba-" 1 3
+gp 1 2 2
+m "ba ba" 0 2
+gp 1 1 1
+m "bb_bbaa" 3 6
+gp 1 5 5
+ms 1 "bb_bbaa" 3 6
+gp 1 5 5
+ms 2 "bb_bbaa" 3 6
+gp 1 5 5
+
+# pcre2-only
+pattern (\w*?){0,2}x\1*
+features all
+n ""
+m "x" 0 1
+gp 1 0 0
+m "xb" 0 1
+gp 1 0 0
+n "   -"
+m "-xb-" 1 2
+gp 1 1 1
+n "  bb,"
+m "aaaxx" 0 4
+gp 1 0 3
+m "xb xb" 0 1
+gp 1 0 0
+m "xxxbbxx" 0 1
+gp 1 0 0
+ms 1 "xxxbbxx" 1 2
+gp 1 1 1
+ms 2 "xxxbbxx" 2 3
+gp 1 2 2
+
+# pcre2-only
+pattern ((?:a|\B))*(?=a)\1??a
+features all
+n " "
+n "1"
+m "a" 0 1
+gp 1 -1 -1
+m "aa" 0 2
+gp 1 1 1
+m "-aa-" 1 3
+gp 1 2 2
+m "aa,a" 0 2
+gp 1 1 1
+m "aa aa" 0 2
+gp 1 1 1
+m "aa,aa" 0 2
+gp 1 1 1
+m "aaaaaa" 0 6
+gp 1 5 5
+ms 1 "aaaaaa" 1 6
+gp 1 5 5
+ms 2 "aaaaaa" 2 6
+gp 1 5 5
+
+# pcre2-only
+pattern ((?!a)){0,2}\w*\g{-1}
+features all
+m "a" 1 1
+gp 1 1 1
+m "b" 0 1
+gp 1 0 0
+m "bb" 0 2
+gp 1 0 0
+m " -1 " 0 0
+gp 1 0 0
+m "-bb-" 0 0
+gp 1 0 0
+m "bb bb" 0 2
+gp 1 0 0
+m "baaaaaa" 0 7
+gp 1 0 0
+m "bbaaabb." 0 7
+gp 1 0 0
+m "bbabbb- " 0 6
+gp 1 0 0
+ms 1 "bbaaabb." 1 7
+gp 1 1 1
+ms 2 "bbaaabb." 5 7
+gp 1 5 5
+
+# pcre2-only
+pattern (\b)+?\w*x\1
+features all
+n ""
+m "ax" 0 2
+gp 1 0 0
+n ",-a"
+m "_xx" 0 3
+gp 1 0 0
+m "-ax-" 1 3
+gp 1 1 1
+m "aaxx" 0 4
+gp 1 0 0
+m "ax ax" 0 2
+gp 1 0 0
+m " axxxx" 1 6
+gp 1 1 1
+m "x-aaaa" 0 1
+gp 1 0 0
+ms 1 " axxxx" 1 6
+gp 1 1 1
+ns 2 " axxxx"
+
+# pcre2-only
+pattern ((?=a))+?\B\g{-1}
+features all
+n " "
+n "-"
+m "aa" 1 1
+gp 1 1 1
+m "_aa" 1 1
+gp 1 1 1
+m "aaa" 1 1
+gp 1 1 1
+m "-aa-" 2 2
+gp 1 2 2
+m "aaaa" 1 1
+gp 1 1 1
+m "aa aa" 1 1
+gp 1 1 1
+m "-  -aaaaa" 5 5
+gp 1 5 5
+ms 1 "-  -aaaaa" 5 5
+gp 1 5 5
+ms 2 "-  -aaaaa" 5 5
+gp 1 5 5
+
+# pcre2-only
+pattern ((?=a))*x\b\1
+features all
+n ""
+n "x"
+n "__"
+n "bx"
+n "-bx-"
+n ".aaa"
+n "-xxx "
+n "bx bx"
+n "bbbaaa"
+ns 1 "bbbaaa"
+ns 2 "bbbaaa"
+
+# pcre2-only
+pattern (\w\b)x\1
+features all
+n ""
+n "ax"
+n "-ax-"
+n "a-a,"
+n "aaaa"
+n "ax ax"
+n "xaa-."
+n "xaaaaa"
+n "aaaaaa,"
+ns 1 "aaaaaa,"
+ns 2 "aaaaaa,"
+
+# pcre2-only
+pattern (\B)?\Wx\1
+features all
+n ""
+n "ax"
+n "-ax-"
+n "aaa."
+n "xaa,"
+n "xaaa"
+n "ax ax"
+n "aaaxxxx"
+n "xxxxxxx"
+ns 1 "aaaxxxx"
+ns 2 "aaaxxxx"
+
+# pcre2-only
+pattern ([ab]*?)x\g{-1}
+flags i
+features all
+n ""
+m "x" 0 1
+gp 1 0 0
+n "  "
+n "-."
+m "xb" 0 1
+gp 1 0 0
+m "xx." 0 1
+gp 1 0 0
+m "-xb-" 1 2
+gp 1 1 1
+m "XabB" 0 1
+gp 1 0 0
+m "xb xb" 0 1
+gp 1 0 0
+ms 1 "xb xb" 3 4
+gp 1 3 3
+ms 2 "xb xb" 3 4
+gp 1 3 3
+
+# pcre2-only
+pattern (a?)*(?=a)\1?
+features all
+n ""
+n "- "
+m "aa" 0 1
+gp 1 1 1
+m "  a" 2 2
+gp 1 2 2
+m "_.a" 2 2
+gp 1 2 2
+m "-aa-" 1 2
+gp 1 2 2
+m "__ a" 3 3
+gp 1 3 3
+m "aa aa" 0 1
+gp 1 1 1
+m "aaaaa1a" 0 4
+gp 1 4 4
+ms 1 "aaaaa1a" 1 4
+gp 1 4 4
+ms 2 "aaaaa1a" 2 4
+gp 1 4 4
+
+# pcre2-only
+pattern (a*)*a\g{1}
+flags i
+features all
+n ""
+m "a" 0 1
+gp 1 0 0
+m "aa" 0 2
+gp 1 1 1
+m "aa," 0 2
+gp 1 1 1
+m "-aa-" 1 3
+gp 1 2 2
+m "aaa." 0 3
+gp 1 2 2
+m "aa aa" 0 2
+gp 1 1 1
+m "Aaa  - " 0 3
+gp 1 2 2
+m "aaa   -" 0 3
+gp 1 2 2
+ms 1 "Aaa  - " 1 3
+gp 1 2 2
+ms 2 "Aaa  - " 2 3
+gp 1 2 2
+
+# pcre2-only
+pattern (\w*?){2}a\1??a
+features all
+n ""
+n "- "
+m "aa" 0 2
+gp 1 0 0
+n "a, "
+m "-aa-" 1 3
+gp 1 1 1
+m "-aaaa" 1 3
+gp 1 1 1
+n "a  1 "
+m "aa aa" 0 2
+gp 1 0 0
+m "-aaaaa" 1 3
+gp 1 1 1
+ms 1 "-aaaaa" 1 3
+gp 1 1 1
+ms 2 "-aaaaa" 2 4
+gp 1 2 2
+
+# pcre2-only
+pattern ([ab]*?){1,2}?\W\1
+features all
+n ""
+n "1"
+n "aa"
+m "b." 0 2
+gp 1 1 1
+m "_  " 1 2
+gp 1 1 1
+m ", - " 0 1
+gp 1 0 0
+m "-aa-" 0 1
+gp 1 0 0
+m "b- ," 0 2
+gp 1 1 1
+m "aa aa" 0 5
+gp 1 0 2
+ms 1 "aa aa" 1 4
+gp 1 1 2
+ms 2 "aa aa" 2 3
+gp 1 2 2
+
+# pcre2-only
+pattern (\W*)*\B\1{2}
+features all
+m "" 0 0
+gp 1 0 0
+m "ba" 1 1
+gp 1 1 1
+m "aaa" 1 1
+gp 1 1 1
+m "aab" 1 1
+gp 1 1 1
+m "bbb" 1 1
+gp 1 1 1
+m "-ba-" 0 0
+gp 1 0 0
+m "ba ba" 1 1
+gp 1 1 1
+m "- aaaa -" 0 1
+gp 1 1 1
+m "aaabbbbbb" 1 1
+gp 1 1 1
+ms 1 "aaabbbbbb" 1 1
+gp 1 1 1
+ms 2 "aaabbbbbb" 2 2
+gp 1 2 2
+
+# pcre2-only
+pattern ((?:\b|a))*?\W\g{1}
+features all
+n ""
+n "a"
+n "aa"
+n "aaa"
+m "-aa-" 1 4
+gp 1 3 3
+m "aa aa" 0 4
+gp 1 1 2
+m "aa,- " 0 3
+gp 1 2 2
+m "aa- _" 0 3
+gp 1 2 2
+m "aaaaa  " 0 6
+gp 1 5 5
+ms 1 "aaaaa  " 1 6
+gp 1 5 5
+ms 2 "aaaaa  " 2 6
+gp 1 5 5
+
+# pcre2-only
+pattern (\b)\B\1?
+flags i
+features all
+n ""
+n "aa"
+n "A.A"
+n "aA."
+n "aaa"
+n "-aa-"
+n ".aaa"
+n "aa aa"
+n "1aaaaa"
+ns 1 "1aaaaa"
+ns 2 "1aaaaa"
+
+# pcre2-only
+pattern (a?)\1??a
+flags i
+features all
+n ""
+n "1"
+n "  "
+m "ba" 1 2
+gp 1 1 1
+m "AaA" 0 2
+gp 1 0 1
+m "-ba-" 2 3
+gp 1 2 2
+m "ba ba" 1 2
+gp 1 1 1
+m "bbabb" 2 3
+gp 1 2 2
+m "  - aa," 4 6
+gp 1 4 5
+ms 1 "  - aa," 4 6
+gp 1 4 5
+ms 2 "  - aa," 4 6
+gp 1 4 5
+
+# pcre2-only
+pattern (|a)+?(?=a)\1
+flags i
+features all
+n ""
+n "_"
+m "a" 0 0
+gp 1 0 0
+m "aa" 0 0
+gp 1 0 0
+m "-aa-" 1 1
+gp 1 1 1
+m "aa aa" 0 0
+gp 1 0 0
+m "aaaAA" 0 0
+gp 1 0 0
+m "aaaaa" 0 0
+gp 1 0 0
+m "aaaa  " 0 0
+gp 1 0 0
+ms 1 "aaaa  " 1 1
+gp 1 1 1
+ms 2 "aaaa  " 2 2
+gp 1 2 2
+
+# pcre2-only
+pattern (a*\b)*\b\1{2}
+features all
+n ""
+n ","
+m "a" 0 1
+gp 1 1 1
+m "aa" 0 2
+gp 1 2 2
+m "  aa" 2 4
+gp 1 4 4
+m "-aa-" 1 3
+gp 1 3 3
+m "a  aa" 0 1
+gp 1 1 1
+m "aa .1" 0 2
+gp 1 2 2
+m "aa aa" 0 2
+gp 1 2 2
+ms 1 "a  aa" 1 1
+gp 1 1 1
+ms 2 "a  aa" 3 5
+gp 1 5 5
+
+# pcre2-only
+pattern (x*)*?(?=a)\g{1}
+features all
+m "ab" 0 0
+gp 1 0 0
+m "ba" 1 1
+gp 1 1 1
+m "aaa" 0 0
+gp 1 0 0
+n "xb_"
+n "xxx"
+m "-ab-" 1 1
+gp 1 1 1
+m "ab ab" 0 0
+gp 1 0 0
+n "x  __"
+n "bbxxx  "
+ns 1 "bbxxx  "
+ns 2 "bbxxx  "
+
+# pcre2-only
+pattern ((?:a|b|))+a\1
+features all
+n "bb"
+n "-bb-"
+m "ba -" 0 2
+gp 1 1 1
+n "   bb"
+n "bb bb"
+n " _bbbb"
+m "babaaa" 0 6
+gp 1 5 5
+m "bbbaaa" 0 6
+gp 1 5 5
+m "aaaaaaa1" 0 7
+gp 1 6 6
+ms 1 "aaaaaaa1" 1 7
+gp 1 6 6
+ms 2 "aaaaaaa1" 2 7
+gp 1 6 6
+
+# pcre2-only
+pattern ((?:\b|a)){2}a\b\1
+flags i
+features all
+n ""
+n "b"
+n "bb"
+n "-bb-"
+n "Aaa."
+n "bb bb"
+n "aaaaa,"
+n "b,bbBb"
+n "- bbaaa"
+ns 1 "- bbaaa"
+ns 2 "- bbaaa"
+
+# pcre2-only
+pattern (a?)+?\b\1
+flags i
+features all
+n "."
+m ".a" 1 2
+gp 1 2 2
+m "ab" 0 0
+gp 1 0 0
+m "bB" 0 0
+gp 1 0 0
+m "-ab-" 1 1
+gp 1 1 1
+m ". aa" 2 4
+gp 1 4 4
+m "ab ab" 0 0
+gp 1 0 0
+m "bbb,bb" 0 0
+gp 1 0 0
+m "BbBbBBb" 0 0
+gp 1 0 0
+ms 1 "BbBbBBb" 7 7
+gp 1 7 7
+ms 2 "BbBbBBb" 7 7
+gp 1 7 7
+
+# pcre2-only
+pattern ((?:\b)?){2,3}x(?:\1|b)
+features all
+n ""
+n " -"
+m ",x" 1 2
+gp 1 1 1
+n "ab"
+n "-ab-"
+m "xxa." 0 1
+gp 1 0 0
+m "xxxx" 0 1
+gp 1 0 0
+n ". bbb"
+n "ab ab"
+ns 1 ". bbb"
+ns 2 ". bbb"
+
+# pcre2-only
+pattern ((?:\b|a))+?\1\b
+flags i
+features all
+n ""
+n ","
+m "A" 0 0
+gp 1 0 0
+m "aa" 0 0
+gp 1 0 0
+m "-aa-" 1 1
+gp 1 1 1
+m "aa aa" 0 0
+gp 1 0 0
+m "aaaaaa" 0 0
+gp 1 0 0
+m "AaaAA -" 0 0
+gp 1 0 0
+m "aAaaA,A" 0 0
+gp 1 0 0
+ms 1 "AaaAA -" 1 5
+gp 1 3 4
+ms 2 "AaaAA -" 2 5
+gp 1 3 4
+
+# pcre2-only
+pattern (\B)+\1{2}
+flags i
+features all
+m "" 0 0
+gp 1 0 0
+m "ab" 1 1
+gp 1 1 1
+m "Bbb" 1 1
+gp 1 1 1
+m "-- ," 0 0
+gp 1 0 0
+m "-ab-" 0 0
+gp 1 0 0
+m "1AAaa" 1 1
+gp 1 1 1
+m "ab ab" 1 1
+gp 1 1 1
+m "aaaaaa" 1 1
+gp 1 1 1
+m "ba  bbb" 1 1
+gp 1 1 1
+ms 1 "ba  bbb" 1 1
+gp 1 1 1
+ms 2 "ba  bbb" 3 3
+gp 1 3 3
+
+# pcre2-only
+pattern ((?<=a)){2,3}(?=a)(?:\1|b)
+features all
+n ""
+n "a-"
+m "aa" 1 1
+gp 1 1 1
+m "aa1" 1 1
+gp 1 1 1
+m "aaa" 1 1
+gp 1 1 1
+n "bba"
+m "-aa-" 2 2
+gp 1 2 2
+n "b1 a"
+m "aa aa" 1 1
+gp 1 1 1
+ms 1 "aa aa" 1 1
+gp 1 1 1
+ms 2 "aa aa" 4 4
+gp 1 4 4
+
+# pcre2-only
+pattern (a?){1,2}?(?=a)\1??a
+features all
+n ""
+m "aa" 0 2
+gp 1 0 1
+n "bbb"
+m "-aa-" 1 3
+gp 1 1 2
+m "aaab" 0 2
+gp 1 0 1
+m "aa aa" 0 2
+gp 1 0 1
+m "a1 bbb" 0 1
+gp 1 0 0
+m "bbaaa " 2 4
+gp 1 2 3
+m "bbbaaa" 3 5
+gp 1 3 4
+ns 1 "a1 bbb"
+ns 2 "a1 bbb"
+
+# pcre2-only
+pattern (\b){2,3}\W\1\B
+features all
+n ""
+n " "
+n "-"
+n "aa"
+m "-aa-" 3 4
+gp 1 3 3
+n "aaaa"
+n "-  --"
+n "-,aaa"
+n "aa aa"
+ns 1 "-  --"
+ns 2 "-  --"
+
+# pcre2-only
+pattern ((?=a)){2,3}\B\b\1
+features all
+n ""
+n "a "
+n "a-"
+n "aa"
+n "ba"
+n "_bb"
+n "-ba-"
+n "ba ba"
+n "aabbb,"
+ns 1 "aabbb,"
+ns 2 "aabbb,"
+
+# pcre2-only
+pattern ((?=a)){0,2}\w*x\1
+features all
+n ""
+n "b"
+n ". "
+n "aa"
+n "ba"
+n "aab"
+n "-ba-"
+n "ba ba"
+n "xxbbb-aaa"
+ns 1 "xxbbb-aaa"
+ns 2 "xxbbb-aaa"
+
+# pcre2-only
+pattern (?<n>a*)*-\k<n>\b
+features all
+n ""
+n "_"
+n "ab"
+n ",  "
+n "aaa"
+m "-ab-" 0 1
+gp 1 0 0
+n "a_   "
+n "ab ab"
+n "aaabaaa"
+ns 1 "aaabaaa"
+ns 2 "aaabaaa"
+
+# pcre2-only
+pattern (?<n>\W*)\k<n>*
+flags i
+features all
+m "" 0 0
+gp 1 0 0
+m "aa" 0 0
+gp 1 0 0
+m "AAA" 0 0
+gp 1 0 0
+m "Aa_" 0 0
+gp 1 0 0
+m "-aa-" 0 1
+gp 1 0 1
+m "aAaA" 0 0
+gp 1 0 0
+m "aa aa" 0 0
+gp 1 0 0
+m "- AaAa" 0 2
+gp 1 0 2
+m "aAAaaA" 0 0
+gp 1 0 0
+ms 1 "- AaAa" 1 2
+gp 1 1 2
+ms 2 "- AaAa" 2 2
+gp 1 2 2
+
+# pcre2-only
+pattern (?<n>\w{0,2}){2}\w*\k'n'
+features all
+m "" 0 0
+gp 1 0 0
+m "aa" 0 2
+gp 1 2 2
+m " aa" 0 0
+gp 1 0 0
+m " -aa" 0 0
+gp 1 0 0
+m "-aa-" 0 0
+gp 1 0 0
+m "a  a" 0 1
+gp 1 1 1
+m "aa aa" 0 2
+gp 1 2 2
+m ".aaa  " 0 0
+gp 1 0 0
+m "a_aaa." 0 5
+gp 1 2 3
+ms 1 ".aaa  " 1 4
+gp 1 3 3
+ms 2 ".aaa  " 2 4
+gp 1 4 4
+
+# pcre2-only
+pattern (?<n>(?<=a))x\k{n}
+features all
+n "."
+m "ax" 1 2
+gp 1 1 1
+n "ba"
+n "  xx"
+n "-ba-"
+n ".xxx"
+n "ba ba"
+m "aaaxxxx" 3 4
+gp 1 3 3
+n "x- xxbb"
+ms 1 "aaaxxxx" 3 4
+gp 1 3 3
+ms 2 "aaaxxxx" 3 4
+gp 1 3 3
+
+# pcre2-only
+pattern (?<n>(?:\b|a))+?\k<n>
+features all
+n ","
+m "a-" 0 0
+gp 1 0 0
+m "aa" 0 0
+gp 1 0 0
+m "1 a" 0 0
+gp 1 0 0
+m "_1a" 0 0
+gp 1 0 0
+m "-aa-" 1 1
+gp 1 1 1
+m "aa aa" 0 0
+gp 1 0 0
+m "aaa- .a" 0 0
+gp 1 0 0
+m ".aaaaa  " 1 1
+gp 1 1 1
+ms 1 ".aaaaa  " 1 1
+gp 1 1 1
+ms 2 ".aaaaa  " 2 4
+gp 1 2 3
+
+# pcre2-only
+pattern (?<n>(?:a|\B))*?a\k<n>\b
+features all
+n ""
+n "_"
+n "  "
+m "ba" 1 2
+gp 1 1 1
+m "-ba-" 2 3
+gp 1 2 2
+m "ba ba" 1 2
+gp 1 1 1
+m "aaa ab" 0 3
+gp 1 0 1
+n "bbbbbb"
+n "bb  bbb"
+ns 1 "bb  bbb"
+ns 2 "bb  bbb"
+
+# pcre2-only
+pattern (?<n>(?:\b)?){2,3}-\g{n}
+features all
+n "."
+n "_"
+n "a"
+n "aa"
+n "aaa"
+m "-aa-" 0 1
+gp 1 0 0
+n "_aaaa"
+n "aa aa"
+n "aaa1a"
+ns 1 "_aaaa"
+ns 2 "_aaaa"
+
+# pcre2-only
+pattern (?<n>\b\w)?\B\k<n>\b
+flags i
+features all
+n ""
+n "1"
+n "_"
+m "aa" 0 2
+gp 1 0 1
+m "bb" 0 2
+gp 1 0 1
+m "-bb-" 1 3
+gp 1 1 2
+m "bb bb" 0 2
+gp 1 0 1
+n ",baaaa"
+n "aaaBB_BB"
+ns 1 "aaaBB_BB"
+ns 2 "aaaBB_BB"
+
+# pcre2-only
+pattern (?<n>\B)?\W\g{n}
+flags i
+features all
+n ""
+m " -" 0 1
+gp 1 0 0
+n "aa"
+n "Aa-"
+m "-aa-" 0 1
+gp 1 0 0
+n "aaaa"
+n "aAaAa"
+n "aa aa"
+m ",aaaaaaaa" 0 1
+gp 1 0 0
+ns 1 ",aaaaaaaa"
+ns 2 ",aaaaaaaa"
+
+# pcre2-only
+pattern (?<n>a?)+x\k<n>
+features all
+n ""
+n ",1"
+m "ax" 0 2
+gp 1 1 1
+m "-ax-" 1 3
+gp 1 2 2
+m "xaaa" 0 1
+gp 1 0 0
+m " -xxx" 2 3
+gp 1 2 2
+m "ax ax" 0 2
+gp 1 1 1
+m "a-xxxx" 2 3
+gp 1 2 2
+m ",xxxaaa" 1 2
+gp 1 1 1
+ms 1 ",xxxaaa" 1 2
+gp 1 1 1
+ms 2 ",xxxaaa" 2 3
+gp 1 2 2
+
+# pcre2-only
+pattern (?<n>x*)*\B\k'n'
+flags i
+features all
+m "" 0 0
+gp 1 0 0
+m ".a" 0 0
+gp 1 0 0
+m "aa" 1 1
+gp 1 1 1
+m "xb" 0 1
+gp 1 1 1
+m "-xb-" 0 0
+gp 1 0 0
+m "_bbb" 1 1
+gp 1 1 1
+m "b b1" 3 3
+gp 1 3 3
+m "xb xb" 0 1
+gp 1 1 1
+m "_- B -" 2 2
+gp 1 2 2
+ms 1 "_- B -" 2 2
+gp 1 2 2
+ms 2 "_- B -" 2 2
+gp 1 2 2
+
+# pcre2-only
+pattern (?<n>(?:\b)?){0,2}\w*\g{n}
+features all
+m "a" 0 1
+gp 1 0 0
+m "aa" 0 2
+gp 1 0 0
+m "aaa" 0 3
+gp 1 0 0
+m "-aa-" 0 0
+gp 1 0 0
+m "aaa." 0 3
+gp 1 0 0
+m "aaaa" 0 4
+gp 1 0 0
+m "aa aa" 0 2
+gp 1 0 0
+m "-aa  a" 0 0
+gp 1 0 0
+m "aaaaaaaa" 0 8
+gp 1 0 0
+ms 1 "aaaaaaaa" 1 8
+gp 1 1 1
+ms 2 "aaaaaaaa" 2 8
+gp 1 2 2
+
+# pcre2-only
+pattern (?<n>(?<!\w)a*){1,2}?\B\k<n>
+features all
+m "." 0 0
+gp 1 0 0
+n "a_"
+m "aa" 0 2
+gp 1 0 1
+m " .aa" 0 0
+gp 1 0 0
+m "-aa-" 0 0
+gp 1 0 0
+m "aaaa" 0 4
+gp 1 0 2
+m "aa aa" 0 2
+gp 1 0 1
+m ".aaa  " 0 0
+gp 1 0 0
+n "1aaaaa"
+ms 1 ".aaa  " 1 3
+gp 1 1 2
+ms 2 ".aaa  " 5 5
+gp 1 5 5
+
+# pcre2-only
+pattern (?<n>\b)*\b\k<n>\b
+features all
+n ""
+m "b" 0 0
+gp 1 0 0
+m "aa" 0 0
+gp 1 0 0
+m "ba" 0 0
+gp 1 0 0
+m "bb" 0 0
+gp 1 0 0
+m "-ba-" 1 1
+gp 1 1 1
+m "-bb- " 1 1
+gp 1 1 1
+m "aaa  " 0 0
+gp 1 0 0
+m "ba ba" 0 0
+gp 1 0 0
+ms 1 "-bb- " 1 1
+gp 1 1 1
+ms 2 "-bb- " 3 3
+gp 1 3 3
+
+# pcre2-only
+pattern (?<n>(?:\b|a)){1,2}?\B\b\k<n>
+features all
+n ""
+n "bb"
+n " bb"
+n "-bb-"
+n "aa. "
+n "aba-"
+n "abbb"
+n "bb bb"
+n "1aaaaa"
+ns 1 "1aaaaa"
+ns 2 "1aaaaa"
+
+# pcre2-only
+pattern (?<n>a*\b)?(?=a)\k{n}
+features all
+n ""
+n "  "
+m "aa" 0 0
+gp 1 0 0
+m "1.a" 2 2
+gp 1 2 2
+m "aaa" 0 0
+gp 1 0 0
+m "-aa-" 1 1
+gp 1 1 1
+m "aaa " 0 0
+gp 1 0 0
+m "aa aa" 0 0
+gp 1 0 0
+m "aaa  aaaa" 0 0
+gp 1 0 0
+ms 1 "aaa  aaaa" 5 5
+gp 1 5 5
+ms 2 "aaa  aaaa" 5 5
+gp 1 5 5
+
+# pcre2-only
+pattern (?<n>\b\w)?x\k'n'
+features all
+n ""
+n " "
+n "."
+n "xx"
+m "xxx" 0 3
+gp 1 0 1
+n "  - "
+n "-xx-"
+n "_,aa"
+n "xx xx"
+ns 1 "xx xx"
+ns 2 "xx xx"
+
+# pcre2-only
+pattern (?<n>(?:a|\B))\b\b\k<n>
+features all
+n ""
+n ".,"
+n "aa"
+n "-aa-"
+n ".aa_"
+n "a-aaa"
+n "aa aa"
+n "-aaaaaa"
+n "aaaa  aaa"
+ns 1 "aaaa  aaa"
+ns 2 "aaaa  aaa"
+
+# pcre2-only
+pattern (?<n>\w*?)*?a\k'n'
+features all
+n ""
+n "b"
+n "  "
+m "ba" 0 2
+gp 1 1 1
+n "bb"
+n "bbb"
+m "-ba-" 1 3
+gp 1 2 2
+m "ba ba" 0 2
+gp 1 1 1
+m "-aaaaabbb" 1 2
+gp 1 1 1
+ms 1 "-aaaaabbb" 1 2
+gp 1 1 1
+ms 2 "-aaaaabbb" 2 3
+gp 1 2 2
+
+# pcre2-only
+pattern (?<n>(?<=a))?\w*\k<n>\b
+flags i
+features all
+n ""
+n "1"
+m "a" 1 1
+gp 1 1 1
+m "a1" 1 2
+gp 1 1 1
+m "aa" 1 2
+gp 1 1 1
+m "-aa-" 2 3
+gp 1 2 2
+m "_aa  " 2 3
+gp 1 2 2
+m "aa aa" 1 2
+gp 1 1 1
+m "aaaaa" 1 5
+gp 1 1 1
+ms 1 "_aa  " 2 3
+gp 1 2 2
+ms 2 "_aa  " 2 3
+gp 1 2 2
+
+# pcre2-only
+pattern (?<n>\w{0,2}){2}\B\k<n>\b
+features all
+n ""
+n "a_"
+m "aa" 0 2
+gp 1 0 1
+m " aa" 1 3
+gp 1 1 2
+m "aa," 0 2
+gp 1 0 1
+m "-aa-" 1 3
+gp 1 1 2
+m "aa aa" 0 2
+gp 1 0 1
+m "aaa -,." 0 3
+gp 1 1 2
+m "aaa -aa" 0 3
+gp 1 1 2
+ms 1 "aaa -,." 1 3
+gp 1 1 2
+ns 2 "aaa -,."
+
+# pcre2-only
+pattern (?<n>[ab]*?){2,3}\B\g{n}
+features all
+m "aa" 0 2
+gp 1 0 1
+m "b -" 2 2
+gp 1 2 2
+m "-aa-" 0 0
+gp 1 0 0
+m "aa  b" 0 2
+gp 1 0 1
+m "aa aa" 0 2
+gp 1 0 1
+m "aaa  -b" 0 2
+gp 1 0 1
+m "aaa  bb" 0 2
+gp 1 0 1
+m "aaabbaaa" 0 2
+gp 1 0 1
+m "bbbaaaaa" 0 2
+gp 1 0 1
+ms 1 "aaabbaaa" 1 1
+gp 1 1 1
+ms 2 "aaabbaaa" 2 2
+gp 1 2 2
+
+# pcre2-only
+pattern (?<n>a*){2,3}\W\b\k<n>
+features all
+n ""
+n "aa"
+n "- -"
+n "aaa"
+m "-aa-" 0 1
+gp 1 0 0
+m ",._  " 1 2
+gp 1 1 1
+m "aa aa" 0 3
+gp 1 2 2
+m "aaaa.a" 0 5
+gp 1 4 4
+n "aaaaa-"
+ms 1 "aaaa.a" 1 5
+gp 1 4 4
+ms 2 "aaaa.a" 2 5
+gp 1 4 4
+
+# pcre2-only
+pattern (?<n>a|){1,2}?(?=a)\k<n>\b
+flags i
+features all
+n ""
+n "  "
+n "- "
+m "aa" 0 2
+gp 1 0 1
+m "_.a" 2 2
+gp 1 2 2
+m "aaa" 0 3
+gp 1 1 2
+m "-aa-" 1 3
+gp 1 1 2
+m "aa aa" 0 2
+gp 1 0 1
+m "_aaaaa" 3 6
+gp 1 4 5
+ms 1 "_aaaaa" 3 6
+gp 1 4 5
+ms 2 "_aaaaa" 3 6
+gp 1 4 5
+
+# pcre2-only
+pattern (?<n>\w{0,2})+?x\b\k<n>
+features all
+n ""
+n "ba"
+n " -b"
+n "-ba-"
+n "bxbb"
+n "xxa_"
+m "b -xx" 3 5
+gp 1 4 4
+n "ba ba"
+n "aaabbaaa"
+ns 1 "aaabbaaa"
+ns 2 "aaabbaaa"
+
+# pcre2-only
+pattern (?<n>x*){2}a\k<n>?
+features all
+n ""
+n "  "
+m "ba" 1 2
+gp 1 1 1
+m "bba" 2 3
+gp 1 2 2
+m "-ba-" 2 3
+gp 1 2 2
+m "baxx" 1 2
+gp 1 1 1
+n "xxx_"
+m "ba ba" 1 2
+gp 1 1 1
+n "xxxbbbbbb"
+ns 1 "xxxbbbbbb"
+ns 2 "xxxbbbbbb"
+
+# pcre2-only
+pattern (?<n>(?:\b|a)){2}a\k<n>*
+features all
+m "aa" 0 1
+gp 1 0 0
+n "_bb"
+m "abb" 0 1
+gp 1 0 0
+n "bbb"
+m "-aa-" 1 2
+gp 1 1 1
+m "abbb" 0 1
+gp 1 0 0
+m "aa aa" 0 1
+gp 1 0 0
+n "bbb, -bb"
+m "bbb,.aaa" 5 6
+gp 1 5 5
+ns 1 "bbb, -bb"
+ns 2 "bbb, -bb"
+
+# pcre2-only
+pattern (?<n>\w{0,2})a\k<n>
+features all
+n ""
+m "a" 0 1
+gp 1 0 0
+m ".a" 1 2
+gp 1 1 1
+m "aa" 0 1
+gp 1 0 0
+m "-aa-" 1 2
+gp 1 1 1
+m "aa- " 0 1
+gp 1 0 0
+m "aa aa" 0 1
+gp 1 0 0
+m "  aaaa" 2 5
+gp 1 2 3
+m "aaaaaa" 0 5
+gp 1 0 2
+ms 1 "  aaaa" 2 5
+gp 1 2 3
+ms 2 "  aaaa" 2 5
+gp 1 2 3
+
+# pcre2-only
+pattern (?<n>(?<=a))*?\B\k<n>*
+features all
+m "" 0 0
+gp 1 -1 -1
+n "1"
+m "  " 0 0
+gp 1 -1 -1
+m "aa" 1 1
+gp 1 -1 -1
+m "bb" 1 1
+gp 1 -1 -1
+m "bbb" 1 1
+gp 1 -1 -1
+m "-aa-" 0 0
+gp 1 -1 -1
+m "_a- " 1 1
+gp 1 -1 -1
+m "aa aa" 1 1
+gp 1 -1 -1
+ms 1 "aa aa" 1 1
+gp 1 -1 -1
+ms 2 "aa aa" 4 4
+gp 1 -1 -1
+
+# pcre2-only
+pattern (?<n>[ab]*?){2}\B\k<n>?
+features all
+m "" 0 0
+gp 1 0 0
+m "aa" 0 2
+gp 1 0 1
+m "bb" 0 2
+gp 1 0 1
+m "-aa-" 0 0
+gp 1 0 0
+m "baaa" 0 1
+gp 1 0 1
+m "aa aa" 0 2
+gp 1 0 1
+m "aaaba" 0 2
+gp 1 0 1
+m "aa.bbb" 0 2
+gp 1 0 1
+m "baaaab" 0 1
+gp 1 0 1
+ms 1 "aa.bbb" 1 1
+gp 1 1 1
+ms 2 "aa.bbb" 3 5
+gp 1 3 4
+
+# pcre2-only
+pattern (?<n>a?)*a\g{n}
+features all
+n ""
+n " "
+n "."
+n "- "
+m "aa" 0 2
+gp 1 1 1
+m "-aa-" 1 3
+gp 1 2 2
+m "_  aa" 3 5
+gp 1 4 4
+m "aa aa" 0 2
+gp 1 1 1
+m "aaaa- aaa" 0 4
+gp 1 3 3
+ms 1 "aaaa- aaa" 1 4
+gp 1 3 3
+ms 2 "aaaa- aaa" 2 4
+gp 1 3 3
+
+# pcre2-only
+pattern (?<n>a*)*\W\k{n}
+features all
+n ""
+n "aa"
+n "aaa"
+m "-aa-" 0 1
+gp 1 0 0
+m "aa aa" 0 3
+gp 1 2 2
+m "  aaaa" 0 1
+gp 1 0 0
+m " aaaaa" 0 1
+gp 1 0 0
+m "aaaa1." 5 6
+gp 1 5 5
+m "aaaaa-" 0 6
+gp 1 5 5
+ms 1 "  aaaa" 1 2
+gp 1 1 1
+ns 2 "  aaaa"
+
+# pcre2-only
+pattern (?<n>\b){2}\w*\k<n>
+features all
+n ""
+m ",b" 1 2
+gp 1 1 1
+m "ba" 0 2
+gp 1 0 0
+m "-ba-" 1 3
+gp 1 1 1
+m "bbb," 0 3
+gp 1 0 0
+m "..bb-" 2 4
+gp 1 2 2
+m ".a,- " 1 2
+gp 1 1 1
+m "ba ba" 0 2
+gp 1 0 0
+m "bbb-bb" 0 3
+gp 1 0 0
+ms 1 "bbb-bb" 3 3
+gp 1 3 3
+ms 2 "bbb-bb" 3 3
+gp 1 3 3
+
+# pcre2-only
+pattern (?<n>(?<!\w)a*){2}\B\k'n'
+flags i
+features all
+m "" 0 0
+gp 1 0 0
+m "aa" 0 2
+gp 1 0 1
+m "aAa" 0 2
+gp 1 0 1
+m "- a_" 0 0
+gp 1 0 0
+m "-aa-" 0 0
+gp 1 0 0
+n "1 A_"
+m "aaaa" 0 4
+gp 1 0 2
+m "aa aa" 0 2
+gp 1 0 1
+m "aa,- 1" 0 2
+gp 1 0 1
+ms 1 "aa,- 1" 3 3
+gp 1 3 3
+ms 2 "aa,- 1" 3 3
+gp 1 3 3
+
+# pcre2-only
+pattern (?<n>(?<!\w)a*){2,3}-\k<n>?
+features all
+n ""
+n "."
+n "aa"
+n "aaa"
+m "- aa" 0 1
+gp 1 0 0
+m "-aa-" 0 1
+gp 1 0 0
+n ",,aa."
+n "aa aa"
+m "- aaa  " 0 1
+gp 1 0 0
+ns 1 "- aaa  "
+ns 2 "- aaa  "
+
+# pcre2-only
+pattern (a*)(\b)\2\1
+flags i
+features all
+n ""
+m "Aa" 0 0
+gp 1 0 0
+gp 2 0 0
+m "aa" 0 0
+gp 1 0 0
+gp 2 0 0
+m "A,_" 0 0
+gp 1 0 0
+gp 2 0 0
+m "_aa" 0 0
+gp 1 0 0
+gp 2 0 0
+m "-aa-" 1 1
+gp 1 1 1
+gp 2 1 1
+m "aa aa" 0 0
+gp 1 0 0
+gp 2 0 0
+m "Aa_AAA" 0 0
+gp 1 0 0
+gp 2 0 0
+m "aaaaaa_" 0 0
+gp 1 0 0
+gp 2 0 0
+ms 1 "aaaaaa_" 7 7
+gp 1 7 7
+gp 2 7 7
+ms 2 "aaaaaa_" 7 7
+gp 1 7 7
+gp 2 7 7
+
+# pcre2-only
+pattern (x?)(\b|a)+\2
+features all
+n " "
+m "ax" 0 0
+gp 1 0 0
+gp 2 0 0
+m "-ax-" 1 1
+gp 1 1 1
+gp 2 1 1
+m "_aax" 0 0
+gp 1 0 0
+gp 2 0 0
+m "xxaa" 0 0
+gp 1 0 0
+gp 2 0 0
+m "ax ax" 0 0
+gp 1 0 0
+gp 2 0 0
+m "xxx-_" 0 0
+gp 1 0 0
+gp 2 0 0
+m "x.aaaaa" 0 1
+gp 1 0 1
+gp 2 1 1
+m "xxxa- xx" 0 0
+gp 1 0 0
+gp 2 0 0
+ms 1 "xxxa- xx" 2 4
+gp 1 2 3
+gp 2 4 4
+ms 2 "xxxa- xx" 2 4
+gp 1 2 3
+gp 2 4 4
+
+# pcre2-only
+pattern (a|)(b|)\1\2
+features all
+m "" 0 0
+gp 1 0 0
+gp 2 0 0
+m " b" 0 0
+gp 1 0 0
+gp 2 0 0
+m "ab" 0 0
+gp 1 0 0
+gp 2 0 0
+m "1,," 0 0
+gp 1 0 0
+gp 2 0 0
+m "-ab-" 0 0
+gp 1 0 0
+gp 2 0 0
+m " _bbb" 0 0
+gp 1 0 0
+gp 2 0 0
+m "aa   " 0 2
+gp 1 0 1
+gp 2 1 1
+m "ab ab" 0 0
+gp 1 0 0
+gp 2 0 0
+m "b  aaa" 0 0
+gp 1 0 0
+gp 2 0 0
+ms 1 "b  aaa" 1 1
+gp 1 1 1
+gp 2 1 1
+ms 2 "b  aaa" 2 2
+gp 1 2 2
+gp 2 2 2
+
+# pcre2-only
+pattern (\w*)(\W*)\2\1
+features all
+m "" 0 0
+gp 1 0 0
+gp 2 0 0
+m "bb" 0 2
+gp 1 0 1
+gp 2 1 1
+m "- a," 0 0
+gp 1 0 0
+gp 2 0 0
+m "-bb-" 0 0
+gp 1 0 0
+gp 2 0 0
+m "1bbb1" 0 0
+gp 1 0 0
+gp 2 0 0
+m "aaaaa" 0 4
+gp 1 0 2
+gp 2 2 2
+m "bb bb" 0 2
+gp 1 0 1
+gp 2 1 1
+m "bbbbb" 0 4
+gp 1 0 2
+gp 2 2 2
+m "aaabbbab" 0 2
+gp 1 0 1
+gp 2 1 1
+ms 1 "aaabbbab" 1 3
+gp 1 1 2
+gp 2 2 2
+ms 2 "aaabbbab" 2 2
+gp 1 2 2
+gp 2 2 2
+
+# pcre2-only
+pattern (a?)(?:\b|a)\1
+flags i
+features all
+n ","
+m "_" 0 0
+gp 1 0 0
+m " A" 1 1
+gp 1 1 1
+m "aa" 0 0
+gp 1 0 0
+m "_.a" 0 0
+gp 1 0 0
+m "-aa-" 1 1
+gp 1 1 1
+m "aAA1" 0 3
+gp 1 0 1
+m "- aA " 2 2
+gp 1 2 2
+m "aa aa" 0 0
+gp 1 0 0
+ms 1 "- aA " 2 2
+gp 1 2 2
+ms 2 "- aA " 2 2
+gp 1 2 2
+
+# pcre2-only
+pattern (\B|a)(\b|b)\1\2
+flags i
+features all
+n ""
+n "b"
+n "  "
+n "- "
+n "B,"
+n "aa"
+n "-aa-"
+n "aa aa"
+m "Aaa- Bbb" 6 8
+gp 1 6 6
+gp 2 6 7
+ms 1 "Aaa- Bbb" 6 8
+gp 1 6 6
+gp 2 6 7
+ms 2 "Aaa- Bbb" 6 8
+gp 1 6 6
+gp 2 6 7
+
+# pcre2-only
+pattern (?:(a)|b)+\1
+features all
+n ""
+n "."
+n " -"
+n "ab"
+n "-  a"
+n "-ab-"
+m "1,aaa" 2 5
+gp 1 3 4
+n "ab ab"
+n "bbbbb_"
+ns 1 "bbbbb_"
+ns 2 "bbbbb_"
+
+# pcre2-only
+pattern (?:(a)|(b))+\2
+features all
+n "."
+n "aa"
+n "ba"
+n " -_"
+n "- ."
+n "aaa"
+n "-ba-"
+n "ba ba"
+n "baaaa."
+ns 1 "baaaa."
+ns 2 "baaaa."
+
+# pcre2-only
+pattern (a)?\1?
+features all
+m "" 0 0
+gp 1 -1 -1
+m "b" 0 0
+gp 1 -1 -1
+m "ba" 0 0
+gp 1 -1 -1
+m "-ba-" 0 0
+gp 1 -1 -1
+m "_ -b" 0 0
+gp 1 -1 -1
+m "b -bb" 0 0
+gp 1 -1 -1
+m "ba ba" 0 0
+gp 1 -1 -1
+m "-  -aaa" 0 0
+gp 1 -1 -1
+m "bbbaaabbb" 0 0
+gp 1 -1 -1
+ms 1 "bbbaaabbb" 1 1
+gp 1 -1 -1
+ms 2 "bbbaaabbb" 2 2
+gp 1 -1 -1
+
+# pcre2-only
+pattern (a)?(?:\b)\1
+features all
+n ""
+n ","
+n "a"
+n "aa"
+n "-aa-"
+n "aa_."
+n "a - -"
+n "aa aa"
+n "aaaaaaaa"
+ns 1 "aaaaaaaa"
+ns 2 "aaaaaaaa"
+
+# pcre2-only
+pattern (a)?\b\1?
+features all
+n ""
+n "- "
+m "b " 0 0
+gp 1 -1 -1
+m "ba" 0 0
+gp 1 -1 -1
+m "bb" 0 0
+gp 1 -1 -1
+m "-ba-" 1 1
+gp 1 -1 -1
+m "aabbb" 0 0
+gp 1 -1 -1
+m "ba ba" 0 0
+gp 1 -1 -1
+m "aaaaaa" 0 0
+gp 1 -1 -1
+ms 1 "aaaaaa" 5 6
+gp 1 5 6
+ms 2 "aaaaaa" 5 6
+gp 1 5 6
+
+# pcre2-only
+pattern (a)*\1
+features all
+n ""
+m "aa" 0 2
+gp 1 0 1
+m "_aa" 1 3
+gp 1 1 2
+m " -aa" 2 4
+gp 1 2 3
+m "-aa-" 1 3
+gp 1 1 2
+m "-aa--" 1 3
+gp 1 1 2
+m "aa aa" 0 2
+gp 1 0 1
+m " -- aaa" 4 7
+gp 1 5 6
+m "aaa   -" 0 3
+gp 1 1 2
+ms 1 " -- aaa" 4 7
+gp 1 5 6
+ms 2 " -- aaa" 4 7
+gp 1 5 6
+
+# pcre2-only
+pattern (a)*?\1b
+features all
+n "ab"
+n "b_"
+n "   "
+n "1.a"
+n "aaa"
+n "-ab-"
+n "ab ab"
+n "b   -"
+n "bbaaa"
+ns 1 "ab ab"
+ns 2 "ab ab"
+
+# pcre2-only
+pattern (?:(a)|\b)*\1
+features all
+n ""
+n "-"
+n "1."
+m "aa" 0 2
+gp 1 0 1
+n "ba_"
+m "-aa-" 1 3
+gp 1 1 2
+m "a -aa" 3 5
+gp 1 3 4
+m "aa aa" 0 2
+gp 1 0 1
+m "baaa,b" 1 4
+gp 1 2 3
+ms 1 "baaa,b" 1 4
+gp 1 2 3
+ms 2 "baaa,b" 2 4
+gp 1 2 3
+
+# pcre2-only
+pattern (?:(\b)|a)+\1a
+features all
+m "a" 0 1
+gp 1 0 0
+m "aa" 0 1
+gp 1 0 0
+m "-aa-" 1 2
+gp 1 1 1
+n "_aa."
+m "a__a" 0 1
+gp 1 0 0
+m "- aaa" 2 3
+gp 1 2 2
+m "aa aa" 0 1
+gp 1 0 0
+m "aa_- " 0 1
+gp 1 0 0
+m "aaaaa" 0 1
+gp 1 0 0
+ms 1 "- aaa" 2 3
+gp 1 2 2
+ms 2 "- aaa" 2 3
+gp 1 2 2
+
+# pcre2-only
+pattern (?:(?=(a))|b)+\1
+features all
+m "a" 0 1
+gp 1 0 1
+m "aa" 0 1
+gp 1 0 1
+m "-aa-" 1 2
+gp 1 1 2
+m "abbb" 0 1
+gp 1 0 1
+n " -b -"
+m "aa aa" 0 1
+gp 1 0 1
+m "  aa- " 2 3
+gp 1 2 3
+n " -bbb-"
+n "_bb.bbb"
+ns 1 "_bb.bbb"
+ns 2 "_bb.bbb"
+
+# pcre2-only
+pattern (a)|b\1
+features all
+n ""
+n "b"
+m "aa" 0 1
+gp 1 0 1
+m "-aa-" 1 2
+gp 1 1 2
+m ".aaa " 1 2
+gp 1 1 2
+m "aa aa" 0 1
+gp 1 0 1
+m "bbba_" 3 4
+gp 1 3 4
+n "  bb.b"
+m ".aaaa-" 1 2
+gp 1 1 2
+ns 1 "  bb.b"
+ns 2 "  bb.b"
+
+# pcre2-only
+pattern (?:(a)|b)\1?c
+features all
+n ""
+n "_"
+n "a"
+n "cb"
+n "bbb"
+n "-cb-"
+n "abbb"
+n "cb cb"
+n "aaaaa -  "
+ns 1 "aaaaa -  "
+ns 2 "aaaaa -  "
+
+# pcre2-only
+pattern (?:(a)|b)*+\1
+features all
+n ""
+n " a"
+n "bb"
+n "aaa"
+n "-bb-"
+n "bb bb"
+n "bbaaa"
+n "aaabbb"
+n "bb,-  "
+ns 1 "aaabbb"
+ns 2 "aaabbb"
+
+# pcre2-only
+pattern (a)?+\1
+features all
+n ""
+n "bb"
+n "bbb"
+n "-bb-"
+n "bb  "
+n "bb bb"
+n "bbb- "
+m "  .aaa" 3 5
+gp 1 3 4
+m ".aaaaaa" 1 3
+gp 1 1 2
+ms 1 ".aaaaaa" 1 3
+gp 1 1 2
+ms 2 ".aaaaaa" 2 4
+gp 1 2 3
+
+# pcre2-only
+pattern (\w)\1*\b
+flags i
+features all
+m "aa" 0 2
+gp 1 0 1
+m "ba" 1 2
+gp 1 1 2
+m "-ba-" 2 3
+gp 1 2 3
+m " bb,b" 1 3
+gp 1 1 2
+m "_ABaA" 3 5
+gp 1 3 4
+m "ba ba" 1 2
+gp 1 1 2
+m "Aa.bb -" 0 2
+gp 1 0 1
+m "bbB -1B" 0 3
+gp 1 0 1
+m "bbbbbb.b" 0 6
+gp 1 0 1
+ms 1 "bbbbbb.b" 1 6
+gp 1 1 2
+ms 2 "bbbbbb.b" 2 6
+gp 1 2 3
+
+# pcre2-only
+pattern (\w)\1+\b
+flags i
+features all
+n "-"
+n "1"
+n "a"
+m "aa" 0 2
+gp 1 0 1
+m "-aa-" 1 3
+gp 1 1 2
+m "aa aa" 0 2
+gp 1 0 1
+m "bbb-b" 0 3
+gp 1 0 1
+m "bbbb " 0 4
+gp 1 0 1
+m "bb-aaa  " 0 2
+gp 1 0 1
+ms 1 "bb-aaa  " 3 6
+gp 1 3 4
+ms 2 "bb-aaa  " 3 6
+gp 1 3 4
+
+# pcre2-only
+pattern (\w)\1*?\B
+features all
+n ""
+m "bb" 0 1
+gp 1 0 1
+m "bbb" 0 1
+gp 1 0 1
+n "-  a"
+m "-bb-" 1 2
+gp 1 1 2
+m ".aaa" 1 2
+gp 1 1 2
+n "-   1"
+m "bb bb" 0 1
+gp 1 0 1
+m "- bb. " 2 3
+gp 1 2 3
+ms 1 "- bb. " 2 3
+gp 1 2 3
+ms 2 "- bb. " 2 3
+gp 1 2 3
+
+# pcre2-only
+pattern (\w)\b\1
+features all
+n ""
+n ","
+n "aa"
+n "  a"
+n ".  "
+n "-aa-"
+n "aa aa"
+n "aaaaa"
+n "a  aaa"
+ns 1 "a  aaa"
+ns 2 "a  aaa"
+
+# pcre2-only
+pattern (\W)\B\1
+features all
+n ""
+n " -"
+n "aa"
+n "1a "
+n "aaa"
+n "-aa-"
+n "1 -_"
+n "aa aa"
+n "aa aaa"
+ns 1 "aa aaa"
+ns 2 "aa aaa"
+
+# pcre2-only
+pattern (\w*)\b\1
+flags i
+features all
+n ""
+n "-"
+m "a" 0 0
+gp 1 0 0
+m "aa" 0 0
+gp 1 0 0
+m "A- " 0 0
+gp 1 0 0
+m ",_aa" 1 1
+gp 1 1 1
+m ",a.." 1 1
+gp 1 1 1
+m "-aa-" 1 1
+gp 1 1 1
+m "aa aa" 0 0
+gp 1 0 0
+ms 1 "aa aa" 2 2
+gp 1 2 2
+ms 2 "aa aa" 2 2
+gp 1 2 2
+
+# pcre2-only
+pattern (\w+?)\b\1
+flags i
+features all
+n ""
+n "aA"
+n "ab"
+n " bbb"
+n "-aAA"
+n "-ab-"
+n "aaa,"
+n "ab ab"
+n "B1.aAa"
+ns 1 "B1.aAa"
+ns 2 "B1.aAa"
+
+# pcre2-only
+pattern (\w+)\B\1
+flags i
+features all
+n ""
+n " "
+n "a "
+m "aa" 0 2
+gp 1 0 1
+m "-BbB" 1 3
+gp 1 1 2
+m "-aa-" 1 3
+gp 1 1 2
+n "b.  "
+m "BBAaA" 0 2
+gp 1 0 1
+m "aa aa" 0 2
+gp 1 0 1
+ms 1 "BBAaA" 2 4
+gp 1 2 3
+ms 2 "BBAaA" 2 4
+gp 1 2 3
+
+# pcre2-only
+pattern (a*)(a*)\1\2b
+features all
+n ""
+n "a"
+m "bb" 0 1
+gp 1 0 0
+gp 2 0 0
+n " -aa"
+n "-aaa"
+m "-bb-" 1 2
+gp 1 1 1
+gp 2 1 1
+m "abbb" 1 2
+gp 1 1 1
+gp 2 1 1
+m "bb bb" 0 1
+gp 1 0 0
+gp 2 0 0
+n " -aaaa"
+ns 1 " -aaaa"
+ns 2 " -aaaa"
+
+# pcre2-only
+pattern (a*?)(a*)\2\1
+features all
+m "a" 0 0
+gp 1 0 0
+gp 2 0 0
+m "aa" 0 2
+gp 1 0 0
+gp 2 0 1
+m "aaa" 0 2
+gp 1 0 0
+gp 2 0 1
+m "-aa-" 0 0
+gp 1 0 0
+gp 2 0 0
+m ".aaa" 0 0
+gp 1 0 0
+gp 2 0 0
+m "a  1" 0 0
+gp 1 0 0
+gp 2 0 0
+m "aaa " 0 2
+gp 1 0 0
+gp 2 0 1
+m "aa aa" 0 2
+gp 1 0 0
+gp 2 0 1
+m ",- a  " 0 0
+gp 1 0 0
+gp 2 0 0
+ms 1 ",- a  " 1 1
+gp 1 1 1
+gp 2 1 1
+ms 2 ",- a  " 2 2
+gp 1 2 2
+gp 2 2 2
+
+# pcre2-only
+pattern (a+?)(b*)\1\2
+features all
+n "_"
+n "a"
+n "- "
+n "-a"
+n "ba"
+n " abb"
+n "-ba-"
+n "ba ba"
+m "baaaaaa" 1 3
+gp 1 1 2
+gp 2 2 2
+ms 1 "baaaaaa" 1 3
+gp 1 1 2
+gp 2 2 2
+ms 2 "baaaaaa" 2 4
+gp 1 2 3
+gp 2 3 3
+
+# pcre2-only
+pattern (a|b)*\1
+features all
+n ""
+n "b"
+n "ba"
+n "- -"
+n "-ba-"
+n "_a.b"
+m "aaa1" 0 3
+gp 1 1 2
+n "ba ba"
+m "bbbbaa" 0 6
+gp 1 4 5
+ms 1 "bbbbaa" 1 6
+gp 1 4 5
+ms 2 "bbbbaa" 2 6
+gp 1 4 5
+
+# pcre2-only
+pattern (a|b)+?\1
+flags i
+features all
+n "1"
+n "_1"
+n "ab"
+n " a "
+n "_-_"
+n "-ab-"
+m "aabb" 0 2
+gp 1 0 1
+m "_BBAA" 1 3
+gp 1 1 2
+n "ab ab"
+ms 1 "_BBAA" 1 3
+gp 1 1 2
+ms 2 "_BBAA" 2 5
+gp 1 3 4
+
+# pcre2-only
+pattern (a|b){2}\1
+features all
+n ""
+n "b"
+n "aa"
+n "-aa"
+n "-aa-"
+n "bb.-"
+n "aa aa"
+n "   -aa"
+m "- bbb_bbb" 2 5
+gp 1 3 4
+ms 1 "- bbb_bbb" 2 5
+gp 1 3 4
+ms 2 "- bbb_bbb" 2 5
+gp 1 3 4
+
+# pcre2-only
+pattern (a|b)*?\1\b
+features all
+n "_1"
+n "ba"
+m "aaa" 0 3
+gp 1 1 2
+m "bbb" 0 3
+gp 1 1 2
+n "-ba-"
+m "baa," 0 3
+gp 1 1 2
+n " -.-1"
+n "ba ba"
+m " -bbbaaa" 2 8
+gp 1 6 7
+ms 1 " -bbbaaa" 2 8
+gp 1 6 7
+ms 2 " -bbbaaa" 2 8
+gp 1 6 7
+
+# pcre2-only
+pattern (?=(a*))\1b
+features all
+n ""
+n " "
+n ","
+m "ba" 0 1
+gp 1 0 0
+n "aaa"
+m "bbb" 0 1
+gp 1 0 0
+m "-ba-" 1 2
+gp 1 1 1
+m "ba ba" 0 1
+gp 1 0 0
+m "bbbbbbaa" 0 1
+gp 1 0 0
+ms 1 "bbbbbbaa" 1 2
+gp 1 1 1
+ms 2 "bbbbbbaa" 2 3
+gp 1 2 2
+
+# pcre2-only
+pattern (?!(a))\1?
+features all
+m "a" 1 1
+gp 1 -1 -1
+m " -" 0 0
+gp 1 -1 -1
+m "bb" 0 0
+gp 1 -1 -1
+m " -b" 0 0
+gp 1 -1 -1
+m "aaa" 3 3
+gp 1 -1 -1
+m "-bb-" 0 0
+gp 1 -1 -1
+m "aaaa." 4 4
+gp 1 -1 -1
+m "bb bb" 0 0
+gp 1 -1 -1
+m "_aaaaa" 0 0
+gp 1 -1 -1
+ms 1 "_aaaaa" 6 6
+gp 1 -1 -1
+ms 2 "_aaaaa" 6 6
+gp 1 -1 -1
+
+# pcre2-only
+pattern (?=(\b))a*\1
+features all
+n ""
+n "-"
+n ".,"
+m "aa" 0 2
+gp 1 0 0
+m "-aa-" 1 3
+gp 1 1 1
+m "aa aa" 0 2
+gp 1 0 0
+m "aa,aaa" 0 2
+gp 1 0 0
+m "aa- aaa" 0 2
+gp 1 0 0
+m "aaa_aaa" 0 3
+gp 1 0 0
+ms 1 "aa- aaa" 2 2
+gp 1 2 2
+ms 2 "aa- aaa" 2 2
+gp 1 2 2
+
+# pcre2-only
+pattern ((?=a)|b)*\1c
+features all
+n ""
+n " -"
+n "ac"
+n "1ca"
+n "-ac-"
+n "aaccc"
+n "ac ac"
+n "aaaaccc"
+n "ccc_b- "
+ns 1 "aaaaccc"
+ns 2 "aaaaccc"
+
+# pcre2-only
+pattern (?=(a*))a*\1
+flags i
+features all
+m "a" 0 1
+gp 1 0 1
+m "aA" 0 2
+gp 1 0 2
+m "ab" 0 1
+gp 1 0 1
+m "-ab-" 0 0
+gp 1 0 0
+m "1B1 " 0 0
+gp 1 0 0
+m "ab ab" 0 1
+gp 1 0 1
+m "abbbaa" 0 1
+gp 1 0 1
+m "bbbAA_A" 0 0
+gp 1 0 0
+m "- Bb,aAA" 0 0
+gp 1 0 0
+ms 1 "- Bb,aAA" 1 1
+gp 1 1 1
+ms 2 "- Bb,aAA" 2 2
+gp 1 2 2
+
+# pcre2-only
+pattern (?=(\w+))\1\b
+features all
+n ""
+m "a" 0 1
+gp 1 0 1
+m "-a" 1 2
+gp 1 1 2
+m "aa" 0 2
+gp 1 0 2
+m "-aa-" 1 3
+gp 1 1 3
+m "aa aa" 0 2
+gp 1 0 2
+m "aaa1aa" 0 6
+gp 1 0 6
+m "aaaaaa" 0 6
+gp 1 0 6
+m "aaaaaaa" 0 7
+gp 1 0 7
+ms 1 "aaaaaaa" 1 7
+gp 1 1 7
+ms 2 "aaaaaaa" 2 7
+gp 1 2 7
+
+# pcre2-only
+pattern (?=(\w+?))\1\B
+features all
+n ""
+n "_"
+n "a"
+m "aa" 0 1
+gp 1 0 1
+m "-aa-" 1 2
+gp 1 1 2
+m "1b_a" 0 1
+gp 1 0 1
+m "aa aa" 0 1
+gp 1 0 1
+n "   -  "
+m "  aa  " 2 3
+gp 1 2 3
+ns 1 "   -  "
+ns 2 "   -  "
+
+# pcre2-only
+pattern (?=(\W*))\1\b
+flags i
+features all
+n "- "
+m "ab" 0 0
+gp 1 0 0
+m ".a_" 0 1
+gp 1 0 1
+m "-ab-" 0 1
+gp 1 0 1
+m "ab ab" 0 0
+gp 1 0 0
+m "bbb  " 0 0
+gp 1 0 0
+m ",.bbb." 0 2
+gp 1 0 2
+m "_.Bbbb" 0 0
+gp 1 0 0
+m "aaa-b -" 0 0
+gp 1 0 0
+ms 1 "aaa-b -" 3 4
+gp 1 3 4
+ms 2 "aaa-b -" 3 4
+gp 1 3 4
+
+# pcre2-only
+pattern (?=(a|))\1a
+features all
+n ""
+n "a"
+m "aa" 0 2
+gp 1 0 1
+m ",aaa" 1 3
+gp 1 1 2
+m "-aa-" 1 3
+gp 1 1 2
+m "aa.1" 0 2
+gp 1 0 1
+m "1aa- " 1 3
+gp 1 1 2
+m "aa aa" 0 2
+gp 1 0 1
+m " -aaaaa-" 2 4
+gp 1 2 3
+ms 1 " -aaaaa-" 2 4
+gp 1 2 3
+ms 2 " -aaaaa-" 2 4
+gp 1 2 3
+
+# pcre2-only
+pattern (?=(a*?))\1a*b
+features all
+n "-"
+m "b" 0 1
+gp 1 0 0
+n "aa"
+m "- bb" 2 3
+gp 1 2 2
+n "-aa-"
+n "aa aa"
+m "b- aaa" 0 1
+gp 1 0 0
+m "aaabbbbbb" 0 4
+gp 1 0 0
+m "bbbbbbbbb" 0 1
+gp 1 0 0
+ms 1 "aaabbbbbb" 1 4
+gp 1 1 1
+ms 2 "aaabbbbbb" 2 4
+gp 1 2 2
+
+# pcre2-only
+pattern (?<=(\w))\1
+features all
+m "aa" 1 2
+gp 1 0 1
+n "-- "
+n "a a"
+m "-aa-" 2 3
+gp 1 1 2
+m "aa aa" 1 2
+gp 1 0 1
+m "- aaa " 3 4
+gp 1 2 3
+m "aaaa -" 1 2
+gp 1 0 1
+m "aaaaa_" 1 2
+gp 1 0 1
+m "-aaaa -" 2 3
+gp 1 1 2
+ms 1 "-aaaa -" 2 3
+gp 1 1 2
+ms 2 "-aaaa -" 2 3
+gp 1 1 2
+
+# pcre2-only
+pattern (?<=(a))a*\1
+flags i
+features all
+m "aa" 1 2
+gp 1 0 1
+m "-aa-" 2 3
+gp 1 1 2
+m "AaaA" 1 4
+gp 1 0 1
+n "a_1a"
+m "aa-," 1 2
+gp 1 0 1
+m "aaaa" 1 4
+gp 1 0 1
+m "aa aa" 1 2
+gp 1 0 1
+m "a  .aaa" 5 7
+gp 1 4 5
+m "  -aaaaa" 4 8
+gp 1 3 4
+ms 1 "  -aaaaa" 4 8
+gp 1 3 4
+ms 2 "  -aaaaa" 4 8
+gp 1 3 4
+
+# pcre2-only
+pattern (?<!(a))b\1?
+features all
+n ""
+n " "
+m "ba" 0 1
+gp 1 -1 -1
+n "-a_"
+m "-ba-" 1 2
+gp 1 -1 -1
+m "bbbb" 0 1
+gp 1 -1 -1
+m "ba ba" 0 1
+gp 1 -1 -1
+m " -bbbb" 2 3
+gp 1 -1 -1
+n "1- aaa"
+ms 1 " -bbbb" 2 3
+gp 1 -1 -1
+ms 2 " -bbbb" 2 3
+gp 1 -1 -1
+
+# pcre2-only
+pattern (?=(a))?\1
+features all
+n ""
+m "a" 0 1
+gp 1 0 1
+m "a," 0 1
+gp 1 0 1
+m "aa" 0 1
+gp 1 0 1
+m "aaa" 0 1
+gp 1 0 1
+m "-aa-" 1 2
+gp 1 1 2
+m "aa,_" 0 1
+gp 1 0 1
+m "aa aa" 0 1
+gp 1 0 1
+m "aaaaaaa-" 0 1
+gp 1 0 1
+ms 1 "aaaaaaa-" 1 2
+gp 1 1 2
+ms 2 "aaaaaaa-" 2 3
+gp 1 2 3
+
+# pcre2-only
+pattern (?=(a)|b)\1
+features all
+n ""
+n "b"
+n "bb"
+n "-bb-"
+m "abaa" 0 1
+gp 1 0 1
+n "bb bb"
+n "bbbbb"
+m "- a,aa" 2 3
+gp 1 2 3
+m "bbbb.aa" 5 6
+gp 1 5 6
+ms 1 "bbbb.aa" 5 6
+gp 1 5 6
+ms 2 "bbbb.aa" 5 6
+gp 1 5 6
+
+# pcre2-only
+pattern (?:(?=(\w))\w)+\1
+features all
+n "-a"
+m "aa" 0 2
+gp 1 0 1
+m "aaa" 0 3
+gp 1 1 2
+m "-aa-" 1 3
+gp 1 1 2
+m "aaaa" 0 4
+gp 1 2 3
+m "aa aa" 0 2
+gp 1 0 1
+m "aaaa -" 0 4
+gp 1 2 3
+m "aaa1aaa" 0 7
+gp 1 5 6
+m "aaaaa    " 0 5
+gp 1 3 4
+ms 1 "aaaaa    " 1 5
+gp 1 3 4
+ms 2 "aaaaa    " 2 5
+gp 1 3 4
+
+# pcre2-only
+pattern (?:(?=(\w))\w)*?\1\b
+features all
+n ""
+n ","
+m "aa" 0 2
+gp 1 0 1
+n "ab"
+n "aa_"
+n "-ab-"
+m "aa-1," 0 2
+gp 1 0 1
+n "ab ab"
+m "aaaa -" 0 4
+gp 1 2 3
+ms 1 "aaaa -" 1 4
+gp 1 2 3
+ms 2 "aaaa -" 2 4
+gp 1 2 3
+
+# pcre2-only
+pattern (?=(a*b))\1
+features all
+m "ab" 0 2
+gp 1 0 2
+n " -a"
+m "bbb" 0 1
+gp 1 0 1
+m "-ab-" 1 3
+gp 1 1 3
+m "b- a" 0 1
+gp 1 0 1
+m "aaabb" 0 4
+gp 1 0 4
+m "ab ab" 0 2
+gp 1 0 2
+m "a,bbaa" 2 3
+gp 1 2 3
+m "baaa  " 0 1
+gp 1 0 1
+ms 1 "a,bbaa" 2 3
+gp 1 2 3
+ms 2 "a,bbaa" 2 3
+gp 1 2 3
+
+# pcre2-only
+pattern (?=(\b\w+))\1\b
+features all
+n ""
+m "ba" 0 2
+gp 1 0 2
+m "-a1" 1 3
+gp 1 1 3
+m "bbb" 0 3
+gp 1 0 3
+m ",a1 " 1 3
+gp 1 1 3
+m "-ba-" 1 3
+gp 1 1 3
+m "ba ba" 0 2
+gp 1 0 2
+m "baabb" 0 5
+gp 1 0 5
+m "  aa a" 2 4
+gp 1 2 4
+ms 1 "  aa a" 2 4
+gp 1 2 4
+ms 2 "  aa a" 2 4
+gp 1 2 4
+
+# pcre2-only
+pattern (?=a(b)?)\w\1?
+features all
+n ""
+n "  "
+m "aa" 0 1
+gp 1 -1 -1
+m "ba" 1 2
+gp 1 -1 -1
+m "b1a" 2 3
+gp 1 -1 -1
+m "-ba-" 2 3
+gp 1 -1 -1
+m "ba ba" 1 2
+gp 1 -1 -1
+n "bbb_bbb"
+m "aaaaabb- " 0 1
+gp 1 -1 -1
+ms 1 "aaaaabb- " 1 2
+gp 1 -1 -1
+ms 2 "aaaaabb- " 2 3
+gp 1 -1 -1
+
+# pcre2-only
+pattern (?!a(b))\w\1?
+features all
+n ""
+m "-a" 1 2
+gp 1 -1 -1
+m "_-" 0 1
+gp 1 -1 -1
+m "ba" 0 1
+gp 1 -1 -1
+m "  b_" 2 3
+gp 1 -1 -1
+m "- bb" 2 3
+gp 1 -1 -1
+m "-ba-" 1 2
+gp 1 -1 -1
+m "ba ba" 0 1
+gp 1 -1 -1
+m "_aaab," 0 1
+gp 1 -1 -1
+ms 1 "_aaab," 1 2
+gp 1 -1 -1
+ms 2 "_aaab," 2 3
+gp 1 -1 -1
+
+# pcre2-only
+pattern (\b)(?=(\w))\2*\1
+flags i
+features all
+n ""
+m "A" 0 1
+gp 1 0 0
+gp 2 0 1
+m ",a" 1 2
+gp 1 1 1
+gp 2 1 2
+m "aa" 0 2
+gp 1 0 0
+gp 2 0 1
+m "b." 0 1
+gp 1 0 0
+gp 2 0 1
+m "-aa-" 1 3
+gp 1 1 1
+gp 2 1 2
+m "Aaaa" 0 4
+gp 1 0 0
+gp 2 0 1
+m "aa aa" 0 2
+gp 1 0 0
+gp 2 0 1
+m "bbbBBbB  " 0 7
+gp 1 0 0
+gp 2 0 1
+ns 1 "bbbBBbB  "
+ns 2 "bbbBBbB  "
+
+# pcre2-only
+pattern (?=(?:(a)|b))\w\1?
+flags i
+features all
+n ""
+m "b" 0 1
+gp 1 -1 -1
+m "a," 0 1
+gp 1 0 1
+m "ba" 0 1
+gp 1 -1 -1
+m "aab" 0 2
+gp 1 0 1
+m "-ba-" 1 2
+gp 1 -1 -1
+m "baaa" 0 1
+gp 1 -1 -1
+m "aAAaa" 0 2
+gp 1 0 1
+m "ba ba" 0 1
+gp 1 -1 -1
+ms 1 "aAAaa" 1 3
+gp 1 1 2
+ms 2 "aAAaa" 2 4
+gp 1 2 3
+
+# pcre2-only
+pattern (?=((?:\b|a)*))\1b
+features all
+n ""
+n "aa"
+m "bb" 0 1
+gp 1 0 0
+m "b- " 0 1
+gp 1 0 0
+n "-aa-"
+n "aa aa"
+m "  b  ," 2 3
+gp 1 2 2
+m "bbbb- " 0 1
+gp 1 0 0
+m "bbbbb_" 0 1
+gp 1 0 0
+ms 1 "  b  ," 2 3
+gp 1 2 2
+ms 2 "  b  ," 2 3
+gp 1 2 2
+
+# pcre2-only
+pattern (a*)(?1)b
+features all
+n ""
+n "."
+m "_b" 1 2
+gp 1 1 1
+m "bb" 0 1
+gp 1 0 0
+m "bbb" 0 1
+gp 1 0 0
+m "-bb-" 1 2
+gp 1 1 1
+m "baab" 0 1
+gp 1 0 0
+m "abb- " 0 2
+gp 1 0 1
+m "bb bb" 0 1
+gp 1 0 0
+ms 1 "abb- " 1 2
+gp 1 1 1
+ms 2 "abb- " 2 3
+gp 1 2 2
+
+# pcre2-only
+pattern (\b|a)+(?1)
+features all
+n ""
+m "a" 0 0
+gp 1 0 0
+m "aa" 0 0
+gp 1 0 0
+m "b-a" 0 0
+gp 1 0 0
+m "bbb" 0 0
+gp 1 0 0
+m "-aa-" 1 1
+gp 1 1 1
+m "aa aa" 0 0
+gp 1 0 0
+m "aaabb" 0 0
+gp 1 0 0
+m "bb -_" 0 0
+gp 1 0 0
+ms 1 "aa aa" 1 2
+gp 1 2 2
+ms 2 "aa aa" 2 2
+gp 1 2 2
+
+# pcre2-only
+pattern (?<n>a*?)(?&n)\1
+flags i
+features all
+m "" 0 0
+gp 1 0 0
+m "  " 0 0
+gp 1 0 0
+m "- " 0 0
+gp 1 0 0
+m "aa" 0 0
+gp 1 0 0
+m "bb" 0 0
+gp 1 0 0
+m "-aa-" 0 0
+gp 1 0 0
+m "AaAa" 0 0
+gp 1 0 0
+m "_aa  " 0 0
+gp 1 0 0
+m "aa aa" 0 0
+gp 1 0 0
+ms 1 "_aa  " 1 1
+gp 1 1 1
+ms 2 "_aa  " 2 2
+gp 1 2 2
+
+# pcre2-only
+pattern (a|b(?1)c)+
+features all
+n ""
+n " "
+m "a" 0 1
+gp 1 0 1
+n "cb"
+n "-cb-"
+m "_aaa" 1 4
+gp 1 3 4
+n "bb_."
+n "cb cb"
+m "-abbb1" 1 2
+gp 1 1 2
+ms 1 "-abbb1" 1 2
+gp 1 1 2
+ns 2 "-abbb1"
+
+# pcre2-only
+pattern ^(?:(a)|b(?R)c)*
+features all
+m "" 0 0
+gp 1 -1 -1
+m "b" 0 0
+gp 1 -1 -1
+m "c" 0 0
+gp 1 -1 -1
+m "aa" 0 2
+gp 1 1 2
+m "c " 0 0
+gp 1 -1 -1
+m "-aa-" 0 0
+gp 1 -1 -1
+m "aa aa" 0 2
+gp 1 1 2
+m "cbbbc" 0 0
+gp 1 -1 -1
+m ".1aaaa" 0 0
+gp 1 -1 -1
+ns 1 ".1aaaa"
+ns 2 ".1aaaa"
+
+# pcre2-only
+pattern (\w+?)(?:\b(?1))?
+features all
+n ""
+m "bb" 0 1
+gp 1 0 1
+m "aaa" 0 1
+gp 1 0 1
+m "-bb-" 1 2
+gp 1 1 2
+m ",aa- " 1 2
+gp 1 1 2
+m "- bbb" 2 3
+gp 1 2 3
+m "bb bb" 0 1
+gp 1 0 1
+m "bbb_  " 0 1
+gp 1 0 1
+m "bbbb_b" 0 1
+gp 1 0 1
+ms 1 "bbb_  " 1 2
+gp 1 1 2
+ms 2 "bbb_  " 2 3
+gp 1 2 3
+
+# pcre2-only
+pattern (?:a(?R)?)+b
+features all
+n "a"
+n "aa"
+m "ab" 0 2
+n "-aa-"
+n "bbaa"
+n "aa aa"
+n "aaaaaa"
+n "b  a  "
+n "aaa  .aa"
+ns 1 "aaa  .aa"
+ns 2 "aaa  .aa"
+
+# pcre2-only
+pattern (?=(a*))(?1)b
+features all
+n "a"
+m "ba" 0 1
+gp 1 0 0
+m "bb" 0 1
+gp 1 0 0
+m "abb" 0 2
+gp 1 0 1
+m "-ba-" 1 2
+gp 1 1 1
+m "bbba" 0 1
+gp 1 0 0
+m "ba ba" 0 1
+gp 1 0 0
+m "bbbbbb" 0 1
+gp 1 0 0
+m "aaabbbaa" 0 4
+gp 1 0 3
+ms 1 "aaabbbaa" 1 4
+gp 1 1 3
+ms 2 "aaabbbaa" 2 4
+gp 1 2 3
+
+# pcre2-only
+pattern (a*)(?1)\1
+features all
+m "" 0 0
+gp 1 0 0
+m "aa" 0 2
+gp 1 0 1
+m " -a" 0 0
+gp 1 0 0
+m "  a-" 0 0
+gp 1 0 0
+m "-aa-" 0 0
+gp 1 0 0
+m "aaaa" 0 4
+gp 1 0 2
+m "aa aa" 0 2
+gp 1 0 1
+m "aaaaa" 0 5
+gp 1 0 2
+m "aaa  a-" 0 3
+gp 1 0 1
+ms 1 "aaa  a-" 1 3
+gp 1 1 2
+ms 2 "aaa  a-" 2 3
+gp 1 2 2
+
+# pcre2-only
+pattern (\b)(?1)a
+features all
+n ""
+n "1"
+m "a" 0 1
+gp 1 0 0
+n "- "
+m "aa" 0 1
+gp 1 0 0
+m "-aa-" 1 2
+gp 1 1 1
+m "aa aa" 0 1
+gp 1 0 0
+n "bb1aaa"
+m "aaaaaaa" 0 1
+gp 1 0 0
+ns 1 "aaaaaaa"
+ns 2 "aaaaaaa"
+
+# pcre2-only
+pattern (\b|a)(?1)\1
+features all
+n ""
+m "aa" 0 0
+gp 1 0 0
+n "-. "
+m "aaa" 0 0
+gp 1 0 0
+m " -aa" 2 2
+gp 1 2 2
+m "-aa-" 1 1
+gp 1 1 1
+m "aaaa" 0 0
+gp 1 0 0
+m "aa aa" 0 0
+gp 1 0 0
+m "aaaaaa" 0 0
+gp 1 0 0
+ms 1 "aaaaaa" 1 4
+gp 1 1 2
+ms 2 "aaaaaa" 2 5
+gp 1 2 3
+
+# pcre2-only
+pattern (a?)(?1)(?1)b
+features all
+n ""
+m "b" 0 1
+gp 1 0 0
+n "aa"
+n " -."
+n ", -"
+n "-aa-"
+m "  bbb" 2 3
+gp 1 2 2
+n "a  - "
+n "aa aa"
+ms 1 "  bbb" 2 3
+gp 1 2 2
+ms 2 "  bbb" 2 3
+gp 1 2 2
+
+# pcre2-only
+pattern (a*?)(?1)b
+features all
+n "a"
+m "b" 0 1
+gp 1 0 0
+n "_a"
+m "bb" 0 1
+gp 1 0 0
+m "-bb-" 1 2
+gp 1 1 1
+m "ab ." 0 2
+gp 1 0 0
+n ",  --"
+m "bb bb" 0 1
+gp 1 0 0
+n "aaaaaaaa"
+ns 1 "aaaaaaaa"
+ns 2 "aaaaaaaa"
+
+# pcre2-only
+pattern (?<g>\b\w)(?&g)*
+features all
+n ""
+m "a" 0 1
+gp 1 0 1
+m "aa" 0 1
+gp 1 0 1
+m "a  " 0 1
+gp 1 0 1
+m "-aa-" 1 2
+gp 1 1 2
+m " -1aa" 2 3
+gp 1 2 3
+m "aa aa" 0 1
+gp 1 0 1
+m "aaaa_" 0 1
+gp 1 0 1
+m "aaaaa" 0 1
+gp 1 0 1
+ms 1 " -1aa" 2 3
+gp 1 2 3
+ms 2 " -1aa" 2 3
+gp 1 2 3
+
+# pcre2-only
+pattern (?<g>\w\b)(?&g)?x
+features all
+n ""
+n "1"
+n "xa"
+n "xxx"
+n "-xa-"
+n "xa xa"
+n ",- .xx"
+n "_xxx- x"
+n "aa-xxxa"
+ns 1 "_xxx- x"
+ns 2 "_xxx- x"
+
+# pcre2-only
+pattern (?<g>(?=a)a|b)+(?&g)
+features all
+n ""
+n "a"
+n "  "
+m "ba" 0 2
+gp 1 0 1
+m "aaa" 0 3
+gp 1 1 2
+m "-ba-" 1 3
+gp 1 1 2
+m "ba ba" 0 2
+gp 1 0 1
+m " - 1bb" 4 6
+gp 1 4 5
+m ".- aaa" 3 6
+gp 1 4 5
+ms 1 " - 1bb" 4 6
+gp 1 4 5
+ms 2 " - 1bb" 4 6
+gp 1 4 5
+
+# pcre2-only
+pattern (?<g>(?!a)\w)*(?&g)a
+flags i
+features all
+n "a"
+n ",a"
+m "ba" 0 2
+gp 1 -1 -1
+m "-ba-" 1 3
+gp 1 -1 -1
+n "aaab"
+n "- -_ "
+n "-bb  "
+m "ba ba" 0 2
+gp 1 -1 -1
+n "-aaaaa- "
+ns 1 "-aaaaa- "
+ns 2 "-aaaaa- "
+
+# pcre2-only
+pattern (\w*)\b(?1)
+flags i
+features all
+n ""
+m "aa" 0 2
+gp 1 0 2
+m "-aa-" 1 3
+gp 1 1 3
+m "bAAB" 0 4
+gp 1 0 4
+m "aA- B" 0 2
+gp 1 0 2
+m "aBaAa" 0 5
+gp 1 0 5
+m "aa aa" 0 2
+gp 1 0 2
+m "-bbbbaa" 1 7
+gp 1 1 7
+m "aABbBbB" 0 7
+gp 1 0 7
+ms 1 "-bbbbaa" 1 7
+gp 1 1 7
+ms 2 "-bbbbaa" 2 7
+gp 1 2 7
+
+# pcre2-only
+pattern (\w*?)\B(?1)
+flags i
+features all
+m "" 0 0
+gp 1 0 0
+n "a"
+m "a," 2 2
+gp 1 2 2
+m "aa" 0 1
+gp 1 0 1
+m "-aa-" 0 0
+gp 1 0 0
+m "A   " 2 2
+gp 1 2 2
+m "a_A  " 0 1
+gp 1 0 1
+m "aa aa" 0 1
+gp 1 0 1
+m "1aaaaaa" 0 1
+gp 1 0 1
+ms 1 "1aaaaaa" 1 1
+gp 1 1 1
+ms 2 "1aaaaaa" 2 2
+gp 1 2 2
+
+# pcre2-only
+pattern (\W*)(?1)\b\w
+features all
+m " a" 0 2
+gp 1 0 1
+m "aa" 0 1
+gp 1 0 0
+m "-aa-" 0 2
+gp 1 0 1
+m "aaaa" 0 1
+gp 1 0 0
+m "a --a" 0 1
+gp 1 0 0
+m "aa aa" 0 1
+gp 1 0 0
+m "aaaaaa" 0 1
+gp 1 0 0
+m "aaaaa a" 0 1
+gp 1 0 0
+m "aaa -a- " 0 1
+gp 1 0 0
+ms 1 "aaa -a- " 3 6
+gp 1 3 5
+ms 2 "aaa -a- " 3 6
+gp 1 3 5
+
+# pcre2-only
+pattern (x*)(?1)(?1)y
+features all
+n ""
+n "xx"
+n "_xx"
+n "xx1"
+n "-xx-"
+n "xxxx"
+n "x  -,"
+n "xx xx"
+n "xxxxxxxx"
+ns 1 "xxxxxxxx"
+ns 2 "xxxxxxxx"
+
+# pcre2-only
+pattern (?:(a)|b)(?1)
+flags i
+features all
+m "aa" 0 2
+gp 1 0 1
+n "b_"
+m "-aa-" 1 3
+gp 1 1 2
+m "_aaa1" 1 3
+gp 1 1 2
+m "aA- -" 0 2
+gp 1 0 1
+m "aa aa" 0 2
+gp 1 0 1
+m "b,aa-" 2 4
+gp 1 2 3
+m "aAA,bb" 0 2
+gp 1 0 1
+m "aaaaaa" 0 2
+gp 1 0 1
+ms 1 "aAA,bb" 1 3
+gp 1 1 2
+ns 2 "aAA,bb"
+
+# pcre2-only
+pattern (a|\b)+(?1)b
+flags i
+features all
+n ""
+n "1-"
+m "ab" 0 2
+gp 1 0 0
+m "-ab-" 1 3
+gp 1 1 1
+m "abb." 0 2
+gp 1 0 0
+m "ab ab" 0 2
+gp 1 0 0
+n "- AAAA-"
+m "bbbaa- a" 0 1
+gp 1 0 0
+m "aaab  bbb" 0 4
+gp 1 1 2
+ms 1 "aaab  bbb" 1 4
+gp 1 1 2
+ms 2 "aaab  bbb" 6 7
+gp 1 6 6
+
+# pcre2-only
+pattern (?:(?1)a|b)(a*)
+flags i
+features all
+n ""
+n "1"
+m "ba" 0 2
+gp 1 1 2
+m "bb" 0 1
+gp 1 1 1
+n "- - "
+m "-ba-" 1 3
+gp 1 2 3
+m "-baaa" 1 5
+gp 1 2 5
+m "ba ba" 0 2
+gp 1 1 2
+m "bbbaaa" 0 1
+gp 1 1 1
+ms 1 "bbbaaa" 1 2
+gp 1 2 2
+ms 2 "bbbaaa" 2 6
+gp 1 3 6
+
+# pcre2-only
+pattern (?:\b(?1)|x)(a+)
+features all
+n ""
+n "x_"
+n "xx"
+m "aaa" 0 3
+gp 1 2 3
+n "- 1x"
+n "-xx-"
+m "aa1a" 0 2
+gp 1 1 2
+n "xx xx"
+m "xxaaaxxx" 1 5
+gp 1 2 5
+ms 1 "xxaaaxxx" 1 5
+gp 1 2 5
+ns 2 "xxaaaxxx"
+
+# pcre2-only
+pattern a(?R)?\b
+flags i
+features all
+m "a" 0 1
+n "- "
+m "aa" 0 2
+m "aaa" 0 3
+m "-aa-" 1 3
+m "Aa_a" 3 4
+m "a-a_" 0 1
+m "aa aa" 0 2
+m "aaaaaa" 0 6
+ms 1 "aaaaaa" 1 6
+ms 2 "aaaaaa" 2 6
+
+# pcre2-only
+pattern a(?R)*b
+features all
+n "aa"
+m "ab" 0 2
+m "-ab-" 1 3
+n "_- b"
+n "a-a_"
+m "abb_" 0 2
+m "ab ab" 0 2
+n "bbbbaaa"
+m "aaabbbbbb" 0 6
+ms 1 "aaabbbbbb" 1 5
+ms 2 "aaabbbbbb" 2 4
+
+# pcre2-only
+pattern (?:a|\b(?R))+
+features all
+n ""
+n " -- "
+
+# pcre2-only
+pattern a*(?R)?b
+features all
+n "1- "
+
+# pcre2-only
+pattern \w(?R)?\b
+features all
+n ""
+n " "
+m "-a" 1 2
+m "aa" 0 2
+m "aa " 0 2
+m " aaa" 1 4
+m "-aa-" 1 3
+m "aaaa" 0 4
+m "aa aa" 0 2
+ms 1 "aa aa" 1 2
+ms 2 "aa aa" 3 5
+
+# pcre2-only
+pattern \w+?(?R)?\B
+features all
+n " "
+n "1"
+n "b"
+m "ab" 0 1
+n "a -"
+m "baa" 0 2
+m "-ab-" 1 2
+m "ab ab" 0 1
+m "bbbaa" 0 4
+ms 1 "ab ab" 3 4
+ms 2 "ab ab" 3 4
+
+# pcre2-only
+pattern (?:a(?R)b|)
+features all
+m "ab" 0 2
+m " -1" 0 0
+m "ab " 0 2
+m "-ab-" 0 0
+m "_ a1" 0 0
+m "aaa -" 0 0
+m "ab ab" 0 2
+m " aa_bb" 0 0
+m "aabbb-" 0 4
+ms 1 " aa_bb" 1 1
+ms 2 " aa_bb" 2 2
+
+# pcre2-only
+pattern (?:\b|a(?R))b
+flags i
+features all
+n ""
+n "A"
+n "a"
+n "aa"
+n "-aa-"
+n "aabb"
+n "aa aa"
+m "aaa-b" 4 5
+n "aaa   1"
+ns 1 "aaa   1"
+ns 2 "aaa   1"
+
+# pcre2-only
+pattern ^(a|\b(?1)b)
+features all
+n ""
+m "aaa" 0 1
+gp 1 0 1
+n "-bb-"
+n "-aaaa"
+ns 1 "-aaaa"
+ns 2 "-aaaa"
+
+# pcre2-only
+pattern (?:(?<=a)|b(?R))c
+features all
+n "_"
+n " c"
+n "ab"
+n "-ab-"
+n "bbaa"
+n "_cbbb"
+n "ab ab"
+n "aaaaaa"
+n "bcbbbc"
+ns 1 "aaaaaa"
+ns 2 "aaaaaa"
+
+# pcre2-only
+pattern ((?=a)\w|b(?1)c)+
+features all
+n "c"
+n "b."
+n "bb"
+n "c- "
+n "-bb-"
+n "bb c"
+n "bb bb"
+n "bbbbbb"
+n "bc  bbb"
+ns 1 "bc  bbb"
+ns 2 "bc  bbb"
+
+# pcre2-only
+pattern (a(?1)?b)+\b
+features all
+n ""
+n " -"
+n ",."
+n "bb"
+n "-bb-"
+n " aa  "
+n "bb bb"
+n "bbba.a"
+n "bb -aaa"
+ns 1 "bb -aaa"
+ns 2 "bb -aaa"
+
+# pcre2-only
+pattern (a(?1)?b|)c
+features all
+n ""
+n "  "
+n "ab"
+n "b- "
+m "bbc" 2 3
+gp 1 2 2
+n "-ab-"
+m "1ccc" 1 2
+gp 1 1 1
+n "ab ab"
+n "aaaaaa   "
+ns 1 "aaaaaa   "
+ns 2 "aaaaaa   "
+
+# pcre2-only
+pattern \((?:[^()]|(?R))*\)
+flags i
+features all
+n " "
+n ".-"
+n "aa"
+n ",1a"
+n " -- "
+n "-aa-"
+n "aa aa"
+n ". -aaa"
+n "aaa  aaa"
+ns 1 "aaa  aaa"
+ns 2 "aaa  aaa"
+
+# pcre2-only
+pattern (\((?:[^()]|(?1))*\))\b
+features all
+n ""
+n "-"
+n "ba"
+n "-b_"
+n "a-a"
+n "-ba-"
+n "1aaa"
+n "ba ba"
+n "aaa-  bbb"
+ns 1 "aaa-  bbb"
+ns 2 "aaa-  bbb"
+
+# pcre2-only
+pattern (\((?:[^()]|(?1))*\))?x
+features all
+n ""
+m "x" 0 1
+gp 1 -1 -1
+m "xx" 0 1
+gp 1 -1 -1
+m "xxx" 0 1
+gp 1 -1 -1
+m " - x" 3 4
+gp 1 -1 -1
+m "-xx-" 1 2
+gp 1 -1 -1
+m "xx xx" 0 1
+gp 1 -1 -1
+m "xx1xx" 0 1
+gp 1 -1 -1
+m "xxxxx" 0 1
+gp 1 -1 -1
+ms 1 "xx xx" 1 2
+gp 1 -1 -1
+ms 2 "xx xx" 3 4
+gp 1 -1 -1
+
+# pcre2-only
+pattern (a+)\b(?1)
+features all
+n "a"
+n "b,"
+n "ba"
+n "-- -"
+n "-ba-"
+n "aaaab"
+n "b_aaa"
+n "ba ba"
+n "aaaa- b"
+ns 1 "aaaa- b"
+ns 2 "aaaa- b"
+
+# pcre2-only
+pattern (a+)\B(?1)
+features all
+n ""
+m "aa" 0 2
+gp 1 0 1
+m "aa1" 0 2
+gp 1 0 1
+m "-aa-" 1 3
+gp 1 1 2
+m "aa aa" 0 2
+gp 1 0 1
+m "aaa -" 0 3
+gp 1 0 2
+m "aabbbb" 0 2
+gp 1 0 1
+n "abbabbb"
+n "1bbbbbbb"
+ns 1 "1bbbbbbb"
+ns 2 "1bbbbbbb"
+
+# pcre2-only
+pattern (a+?)(?1)\b
+features all
+n ""
+n "a"
+n " b"
+n "bb"
+n "-bb-"
+m ",-aaa" 2 5
+gp 1 2 3
+n "baaab"
+n "bb bb"
+n "bbba_"
+ms 1 ",-aaa" 2 5
+gp 1 2 3
+ms 2 ",-aaa" 2 5
+gp 1 2 3
+
+# pcre2-only
+pattern (a*)(?=(?1))\1b
+flags i
+features all
+n ""
+n "_"
+n "aa"
+m "bbb" 0 1
+gp 1 0 0
+n "-aa-"
+m "bbb1" 0 1
+gp 1 0 0
+n "aa aa"
+m "- bbbbAA" 2 3
+gp 1 2 2
+n "AA-aaaaAA"
+ns 1 "AA-aaaaAA"
+ns 2 "AA-aaaaAA"
+
+# pcre2-only
+pattern (?:(a*)|b)(?1)c
+features all
+n ""
+n "  "
+m "bc" 0 2
+gp 1 -1 -1
+n " _.1"
+m "-bc-" 1 3
+gp 1 -1 -1
+m "c -c" 0 1
+gp 1 0 0
+n "aaaaa"
+m "bc bc" 0 2
+gp 1 -1 -1
+m "  ccc -" 2 3
+gp 1 2 2
+ms 1 "  ccc -" 2 3
+gp 1 2 2
+ms 2 "  ccc -" 2 3
+gp 1 2 2
+
+# pcre2-only
+pattern (a)(?1)?\1
+features all
+n "a"
+m "aa" 0 2
+gp 1 0 1
+n " .a"
+m "aaa" 0 3
+gp 1 0 1
+m "-aa-" 1 3
+gp 1 1 2
+m "1aaa" 1 4
+gp 1 1 2
+m "aaa," 0 3
+gp 1 0 1
+m "  aaa" 2 5
+gp 1 2 3
+m "aa aa" 0 2
+gp 1 0 1
+ms 1 "  aaa" 2 5
+gp 1 2 3
+ms 2 "  aaa" 2 5
+gp 1 2 3
+
+# pcre2-only
+pattern (?<x>a|\b)(?&x)(?&x)b
+features all
+n ""
+n "a"
+m "ab" 0 2
+gp 1 0 0
+m "-ab-" 1 3
+gp 1 1 1
+n "aaa.."
+m "ab ab" 0 2
+gp 1 0 0
+m "bbbba" 0 1
+gp 1 0 0
+m "  aaab" 2 6
+gp 1 2 3
+n "a_bbbb"
+ms 1 "  aaab" 2 6
+gp 1 2 3
+ms 2 "  aaab" 2 6
+gp 1 2 3
+
+# pcre2-only
+pattern (?<x>a?)(?<y>(?&x)\b)b
+features all
+n ""
+n "."
+n "1"
+m "bb" 0 1
+gp 1 0 0
+gp 2 0 0
+n ".  "
+m "a.b" 2 3
+gp 1 2 2
+gp 2 2 2
+n "aaa"
+m "-bb-" 1 2
+gp 1 1 1
+gp 2 1 1
+m "bb bb" 0 1
+gp 1 0 0
+gp 2 0 0
+ms 1 "bb bb" 3 4
+gp 1 3 3
+gp 2 3 3
+ms 2 "bb bb" 3 4
+gp 1 3 3
+gp 2 3 3
+
+# pcre2-only
+pattern (?<x>\W*)(?<y>(?&x)\w+)
+features all
+n ""
+m "a" 0 1
+gp 1 0 0
+gp 2 0 1
+m "aa" 0 2
+gp 1 0 0
+gp 2 0 2
+m "-aa-" 0 3
+gp 1 0 1
+gp 2 1 3
+m "a,a." 0 1
+gp 1 0 0
+gp 2 0 1
+m "aa aa" 0 2
+gp 1 0 0
+gp 2 0 2
+m "aaaaa" 0 5
+gp 1 0 0
+gp 2 0 5
+m ".- aaa" 0 6
+gp 1 0 3
+gp 2 3 6
+m "- - aaa" 0 7
+gp 1 0 4
+gp 2 4 7
+ms 1 "- - aaa" 1 7
+gp 1 1 4
+gp 2 4 7
+ms 2 "- - aaa" 2 7
+gp 1 2 4
+gp 2 4 7
+
+# pcre2-only
+pattern (a*)\b(?1)\1
+features all
+n ""
+n "."
+m "aa" 0 2
+gp 1 0 0
+m "-aa-" 1 3
+gp 1 1 1
+m "1a- " 0 0
+gp 1 0 0
+m "aa1a" 0 2
+gp 1 0 0
+m "aa aa" 0 2
+gp 1 0 0
+m " -  aa" 4 6
+gp 1 4 4
+m "aaaaaaa" 0 7
+gp 1 0 0
+ms 1 "aaaaaaa" 7 7
+gp 1 7 7
+ms 2 "aaaaaaa" 7 7
+gp 1 7 7
+
+# pcre2-only
+pattern (?<p>\w+?\b)(?:-(?&p))*
+features all
+m "1" 0 1
+gp 1 0 1
+m "b" 0 1
+gp 1 0 1
+m "aa" 0 2
+gp 1 0 2
+m "b." 0 1
+gp 1 0 1
+m "-aa-" 1 3
+gp 1 1 3
+m "1.  " 0 1
+gp 1 0 1
+m "_b_b" 0 4
+gp 1 0 4
+m "- bbb" 2 5
+gp 1 2 5
+m "aa aa" 0 2
+gp 1 0 2
+ms 1 "- bbb" 2 5
+gp 1 2 5
+ms 2 "- bbb" 2 5
+gp 1 2 5
+
+# pcre2-only
+pattern (?<w>\w+)(?:\W+(?&w))*\b
+flags i
+features all
+m "a" 0 1
+gp 1 0 1
+m "a " 0 1
+gp 1 0 1
+m "aa" 0 2
+gp 1 0 2
+m "_A1" 0 3
+gp 1 0 3
+m "  aa" 2 4
+gp 1 2 4
+m "-aa-" 1 3
+gp 1 1 3
+m "aa aa" 0 5
+gp 1 0 2
+m "aaaa.a" 0 6
+gp 1 0 4
+m "aaa_aaa" 0 7
+gp 1 0 7
+ms 1 "aaa_aaa" 1 7
+gp 1 1 7
+ms 2 "aaa_aaa" 2 7
+gp 1 2 7
+
+# pcre2-only
+pattern (?<w>\w+?)(?:\W(?&w))??\b
+features all
+n ""
+m "a" 0 1
+gp 1 0 1
+m "aa" 0 2
+gp 1 0 2
+m "aaa" 0 3
+gp 1 0 3
+m "- -a" 3 4
+gp 1 3 4
+m "-aa-" 1 3
+gp 1 1 3
+m ",aaaa" 1 5
+gp 1 1 5
+m "aa aa" 0 2
+gp 1 0 2
+m "aa aaa" 0 2
+gp 1 0 2
+ms 1 "aa aaa" 1 2
+gp 1 1 2
+ms 2 "aa aaa" 3 6
+gp 1 3 6
+
+# pcre2-only
+pattern (?:a*b?)*c
+features all
+n "1"
+m "bc" 0 2
+m "1c " 1 2
+n "bbb"
+m "-bc-" 1 3
+n " -bbb"
+m "bc bc" 0 2
+m "bbcc -" 0 3
+m "ccccc  " 0 1
+ms 1 "ccccc  " 1 2
+ms 2 "ccccc  " 2 3
+
+# pcre2-only
+pattern (?:\w+\b)+
+features all
+n ""
+m "a" 0 1
+n "- "
+m "aa" 0 2
+m "aaa" 0 3
+m "-aa-" 1 3
+m "aa aa" 0 2
+m "aaaaa" 0 5
+m "aaaaaa1" 0 7
+ms 1 "aaaaaa1" 1 7
+ms 2 "aaaaaa1" 2 7
+
+# pcre2-only
+pattern (?:a+|\b)+x
+features all
+n "aa"
+n "bb"
+m "xa" 0 1
+m "xxx" 0 1
+m "-xa-" 1 2
+n "a aaa"
+n "bbbaa"
+m "xa xa" 0 1
+n "bbbbbbb"
+ns 1 "bbbbbbb"
+ns 2 "bbbbbbb"
+
+# pcre2-only
+pattern (?:(?:a*)*)b
+features all
+n ""
+m "b" 0 1
+n "a,"
+n "aa"
+m "-b_" 1 2
+m "bbb" 0 1
+n "-aa-"
+n "aa aa"
+m "aaa- b" 5 6
+ms 1 "aaa- b" 5 6
+ms 2 "aaa- b" 5 6
+
+# pcre2-only
+pattern (?:a?)*?b
+features all
+n ""
+n " ,"
+n " -"
+n "aa"
+n "aaa"
+n "-aa-"
+n "aa aa"
+m "aaaab" 0 5
+m "aabbbb" 0 3
+ms 1 "aabbbb" 1 3
+ms 2 "aabbbb" 2 3
+
+# pcre2-only
+pattern (?:a|ab)*c
+features all
+n ""
+n "."
+n "a"
+n "b"
+n "aa"
+m "cc" 0 1
+m "ccc" 0 1
+m "-cc-" 1 2
+m "cc cc" 0 1
+ms 1 "cc cc" 1 2
+ms 2 "cc cc" 3 4
+
+# pcre2-only
+pattern (?:\W*\b\w+)+
+features all
+n ""
+m "aa" 0 2
+m "  1a" 0 4
+m "-aa-" 0 3
+m ".aaa" 0 4
+m "aaaa" 0 4
+m "aa aa" 0 5
+m "aaa11 -" 0 5
+m "1aaaaaaaa" 0 9
+ns 1 "1aaaaaaaa"
+ns 2 "1aaaaaaaa"
+
+# pcre2-only
+pattern (?:a*\b)*b
+features all
+n ""
+n "1"
+n "a"
+m "b" 0 1
+m "ab" 1 2
+n " a.a"
+m "-ab-" 2 3
+m "ab ab" 1 2
+m "aaabbaa_" 3 4
+ms 1 "aaabbaa_" 3 4
+ms 2 "aaabbaa_" 3 4
+
+# pcre2-only
+pattern (?:a*\B)*b
+features all
+n ""
+m "ba" 0 1
+n "aaa"
+m "-ba-" 1 2
+m "b_- " 0 1
+m "-abb." 1 3
+m "ba ba" 0 1
+n "a- _- "
+n "aaaa- "
+ns 1 "a- _- "
+ns 2 "a- _- "
+
+# pcre2-only
+pattern (?:\b\w*)+\b
+features all
+n "-"
+m "aa" 0 2
+m "bbb" 0 3
+m "-aa-" 1 3
+m "aa aa" 0 2
+m ", -bbb" 3 6
+m ".,bbbb" 2 6
+m "bbbb- " 0 4
+m " a  aaa" 1 2
+ms 1 " a  aaa" 1 2
+ms 2 " a  aaa" 2 2
+
+# pcre2-only
+pattern (?:\w*?\b)+
+flags i
+features all
+m " _" 1 1
+m "aa" 0 0
+m "-aa-" 1 1
+m "aa aa" 0 0
+m ",A- AA" 1 1
+m ",aaaA -" 1 1
+m "_aAaaAAa" 0 0
+m "aAaaaAAA" 0 0
+m "- aaaaaaA" 2 2
+ms 1 "- aaaaaaA" 2 2
+ms 2 "- aaaaaaA" 2 2
+
+# pcre2-only
+pattern (?:a+?\b|b)+
+features all
+m "a" 0 1
+m "b" 0 1
+n "- "
+m "aa" 0 2
+m "aaa" 0 3
+m "-aa-" 1 3
+n "aaa1"
+m "aa aa" 0 2
+m "bbb.bbb" 0 3
+ms 1 "bbb.bbb" 1 3
+ms 2 "bbb.bbb" 2 3
+
+# pcre2-only
+pattern (?:a|\b)*?b
+features all
+n " -"
+n ". "
+n "aa"
+n "-1_"
+n "a -"
+m "bbb" 0 1
+n "-aa-"
+m "bba." 0 1
+n "aa aa"
+ns 1 "aa aa"
+ns 2 "aa aa"
+
+# pcre2-only
+pattern (?:(?=a)a|b)*\b
+features all
+n ",."
+m "bb" 0 2
+n "-- "
+m ",bbb" 1 4
+m "- a " 2 3
+m "-bb-" 1 3
+m "a-aaa" 0 1
+m "bb bb" 0 2
+m "aaaaaaa" 0 7
+ms 1 "aaaaaaa" 1 7
+ms 2 "aaaaaaa" 2 7
+
+# pcre2-only
+pattern (?:(?!b)\w)+\b
+features all
+n ""
+n " "
+n "bb"
+n "  b"
+m "- 1" 2 3
+n "bbb"
+n "-bb-"
+n "bb bb"
+m "bbbaaa" 3 6
+ms 1 "bbbaaa" 3 6
+ms 2 "bbbaaa" 3 6
+
+# pcre2-only
+pattern (?:\w+\W*)+\b
+features all
+m "a_" 0 2
+m "aa" 0 2
+m "a  " 0 1
+m "aaa" 0 3
+m "-aa-" 1 3
+m "aaaa" 0 4
+m "aa aa" 0 5
+m "aaaa  " 0 4
+m "aaaaa  " 0 5
+ms 1 "aaaaa  " 1 5
+ms 2 "aaaaa  " 2 5
+
+# pcre2-only
+pattern (?:\w\b|\w)+
+features all
+n ""
+m "b" 0 1
+m "ab" 0 2
+m "1  " 0 1
+m "-ab-" 1 3
+m "baaa" 0 4
+m ",a- -" 1 2
+m "ab ab" 0 2
+m "- -bbbb" 3 7
+ms 1 "- -bbbb" 3 7
+ms 2 "- -bbbb" 3 7
+
+# pcre2-only
+pattern (?:a\b)*a
+features all
+n ""
+n "1b"
+m "aa" 0 1
+n "  1"
+m "-aa-" 1 2
+m "1aab1" 1 2
+m "aa aa" 0 1
+n ",bbbbbb,"
+n ".-   bbb"
+ns 1 ",bbbbbb,"
+ns 2 ",bbbbbb,"
+
+# pcre2-only
+pattern (?:\b|a)*a
+features all
+n ""
+m "a" 0 1
+m "1a" 1 2
+m "aa" 0 1
+n "  1"
+m "-aa-" 1 2
+m "a aaa" 0 1
+m "aa aa" 0 1
+m "aaa -_aaa" 0 1
+ms 1 "aaa -_aaa" 1 3
+ms 2 "aaa -_aaa" 2 3
+
+# pcre2-only
+pattern (?:\b|a)+?b
+features all
+m "b," 0 1
+m "bb" 0 1
+n "  -a"
+m "-bb-" 1 2
+n "aaa,"
+m "bbaa" 0 1
+m "bb bb" 0 1
+n "a  aaa."
+n "aaa_-aaa"
+ns 1 "aaa_-aaa"
+ns 2 "aaa_-aaa"
+
+# pcre2-only
+pattern (?:a*|b)*\b
+features all
+n ""
+n ","
+m "aa" 0 2
+m "bb" 0 0
+m "-bb-" 1 1
+m ".aaa" 1 4
+m "aaaa" 0 4
+m "bb bb" 0 0
+m "- _-bb" 2 2
+ms 1 "- _-bb" 2 2
+ms 2 "- _-bb" 2 2
+
+# pcre2-only
+pattern (?:a*|b)+?c
+features all
+n ""
+n "a"
+n "aa"
+n "bb"
+m "cc" 0 1
+m "-cc-" 1 2
+n ".abb"
+n "aaab"
+m "cc cc" 0 1
+ms 1 "cc cc" 1 2
+ms 2 "cc cc" 3 4
+
+# pcre2-only
+pattern (?:a?b?)*?c
+features all
+n ""
+n "."
+n "b"
+n "aa"
+n "_bb"
+n "-aa-"
+m "-ccc" 1 2
+n "aa aa"
+m "  aaabbbc" 2 9
+ms 1 "  aaabbbc" 2 9
+ms 2 "  aaabbbc" 2 9
+
+# pcre2-only
+pattern (?:(?:a|\b)b?)*c
+features all
+n ""
+n "a1"
+m "ac" 0 2
+n "  -b"
+m "-ac-" 1 3
+m "acc " 0 2
+m "c -a" 0 1
+m "ac ac" 0 2
+m "ccc.aaac" 0 1
+ms 1 "ccc.aaac" 1 2
+ms 2 "ccc.aaac" 2 3
+
+# pcre2-only
+pattern (?:(a|\b))*\1
+features all
+m "a" 0 1
+gp 1 1 1
+m "b" 0 0
+gp 1 0 0
+m "1a" 0 0
+gp 1 0 0
+m "ab" 0 0
+gp 1 0 0
+m "bb" 0 0
+gp 1 0 0
+m "-ab-" 1 1
+gp 1 1 1
+m "bbba" 0 0
+gp 1 0 0
+m "ab ab" 0 0
+gp 1 0 0
+m "a bbbaa" 0 1
+gp 1 1 1
+ms 1 "a bbbaa" 1 1
+gp 1 1 1
+ms 2 "a bbbaa" 2 2
+gp 1 2 2
+
+# pcre2-only
+pattern (?:(a*)b)*\1
+flags i
+features all
+n ""
+n "- "
+n "aa"
+n ". -"
+m "bbb" 0 3
+gp 1 2 2
+n "-aa-"
+m "BbB " 0 3
+gp 1 2 2
+n "aa aa"
+n ",  .aa"
+ns 1 ",  .aa"
+ns 2 ",  .aa"
+
+# pcre2-only
+pattern (?:(a*?)b)+?\1
+features all
+n ""
+m "ab" 1 2
+gp 1 1 1
+m "aab" 2 3
+gp 1 2 2
+m "bb_" 0 1
+gp 1 0 0
+n "-,_a"
+m "-ab-" 2 3
+gp 1 2 2
+n "aaaa"
+m "ab ab" 1 2
+gp 1 1 1
+m "_  aaab" 6 7
+gp 1 6 6
+ms 1 "_  aaab" 6 7
+gp 1 6 6
+ms 2 "_  aaab" 6 7
+gp 1 6 6
+
+# pcre2-only
+pattern (?:(\w)\W?)+\1
+features all
+n "."
+n "a"
+m "aa" 0 2
+gp 1 0 1
+n "a -"
+m "-aa-" 1 3
+gp 1 1 2
+m "aaaa" 0 4
+gp 1 2 3
+m ",aa  " 1 3
+gp 1 1 2
+m "aa aa" 0 5
+gp 1 3 4
+m "aa-aaa." 0 6
+gp 1 4 5
+ms 1 "aa-aaa." 1 6
+gp 1 4 5
+ms 2 "aa-aaa." 3 6
+gp 1 4 5
+
+# pcre2-only
+pattern (?:(\W)\w*)+\1\b
+features all
+n ""
+n " "
+n "- "
+n "a,"
+n "aa"
+n "-aa-"
+n "b,,."
+n "aa aa"
+n " - bbbb"
+ns 1 " - bbbb"
+ns 2 " - bbbb"
+
+# pcre2-only
+pattern (?:x*\b)*x
+flags i
+features all
+n "_"
+m "xx" 0 1
+n " aa"
+m "-xx-" 1 2
+n "1b -"
+n "babb"
+m "bxxx" 1 2
+n "aaa -"
+m "xx xx" 0 1
+ns 1 "aaa -"
+ns 2 "aaa -"
+
+# pcre2-only
+pattern (?:x*\B)*y
+features all
+n "ax"
+n "xx"
+n "xxx"
+n "-ax-"
+n "aaaa"
+n "x -a"
+n " -1xx"
+n " -xxx"
+n "ax ax"
+ns 1 " -1xx"
+ns 2 " -1xx"
+
+# pcre2-only
+pattern (?:a{1,2}\b){2}
+features all
+n ""
+n "aa"
+n "b.,"
+n "-aa-"
+n "bbbb"
+n "1abaa"
+n "aa aa"
+n "bbb- "
+n "bbaaaaaa"
+ns 1 "bbaaaaaa"
+ns 2 "bbaaaaaa"
+
+# pcre2-only
+pattern (?:a{1,2}?\B)+
+features all
+n ""
+n "-"
+n "a"
+m "aa" 0 1
+n "1- "
+m "-aa-" 1 2
+m "aaaa" 0 3
+m "aa aa" 0 1
+m "aaa -" 0 2
+ms 1 "aa aa" 3 4
+ms 2 "aa aa" 3 4
+
+# pcre2-only
+pattern (?:\w{1,2}\b)+
+features all
+m "aa" 0 2
+m "bb" 0 2
+m "aaa" 1 3
+m "-aa-" 1 3
+m "aa aa" 0 2
+m "bbbb " 2 4
+m ",bbbb " 3 5
+m "aa  bb" 0 2
+m "bbaaaaa" 5 7
+ms 1 "bbaaaaa" 5 7
+ms 2 "bbaaaaa" 5 7
+
+# pcre2-only
+pattern (?:\w{1,2}?\b)+
+features all
+n "  "
+m ".a" 1 2
+m "aa" 0 2
+m ". 1" 2 3
+m "-aa-" 1 3
+m "aaa_" 2 4
+m "_aaaa" 3 5
+m "aa aa" 0 2
+m "aaa,aa" 1 3
+ms 1 "aaa,aa" 1 3
+ms 2 "aaa,aa" 2 3
+
+# pcre2-only
+pattern (?:\W{0,2}\b\w)+
+features all
+n ""
+m "a " 0 1
+m "a_" 0 1
+m "aa" 0 1
+n "  -"
+m "aaa" 0 1
+m "-aa-" 0 2
+m "aaaa" 0 1
+m "aa aa" 0 1
+ms 1 "aa aa" 2 4
+ms 2 "aa aa" 2 4
+
+# pcre2-only
+pattern (?:a+)*\b
+features all
+n "  "
+m "aa" 0 2
+m "aa." 0 2
+m "aaa" 0 3
+m "-aa-" 1 3
+m "a.aa" 0 1
+m "aa -" 0 2
+m "aa aa" 0 2
+m "a- 1aaa" 0 1
+ms 1 "a- 1aaa" 1 1
+ms 2 "a- 1aaa" 3 3
+
+# pcre2-only
+pattern (?:a+)+b
+flags i
+features all
+n "ba"
+n "-ba-"
+n "bA -"
+n "baaa"
+n "ba ba"
+n "-Aaa -"
+n "aAA--a"
+n "aA -AaA"
+n "aaa aa- "
+ns 1 "aaa aa- "
+ns 2 "aaa aa- "
+
+# pcre2-only
+pattern (?:a*)+\B
+features all
+m "" 0 0
+m " -" 0 0
+m "aa" 0 1
+m ",  " 0 0
+m "aaa" 0 2
+m "-aa-" 0 0
+m "aa- " 0 1
+m "aa aa" 0 1
+m "aaaaaa" 0 5
+ms 1 "aaaaaa" 1 5
+ms 2 "aaaaaa" 2 5
+
+# pcre2-only
+pattern (?:a*)*?\b
+features all
+n ""
+n " "
+n ".-"
+m "aa" 0 0
+m "-aa-" 1 1
+m "a.aaa" 0 0
+m "aa aa" 0 0
+m "-aaaaa" 1 1
+m "aaaaaaa" 0 0
+ms 1 "aaaaaaa" 1 7
+ms 2 "aaaaaaa" 2 7
+
+# pcre2-only
+pattern (?:a+?)*\b
+features all
+n ""
+n " "
+n "."
+n "- "
+m "aa" 0 2
+m "-aa-" 1 3
+m "1aa-" 0 0
+m "_aaa" 0 0
+m "aa aa" 0 2
+ms 1 "aa aa" 1 2
+ms 2 "aa aa" 2 2
+
+# pcre2-only
+pattern (?:a+?)+?b
+features all
+n ""
+n "a"
+n "b"
+m "ab" 0 2
+n "b1"
+n "bb"
+m "-ab-" 1 3
+m "ab ab" 0 2
+n "b1a- "
+ms 1 "ab ab" 3 5
+ms 2 "ab ab" 3 5
+
+# pcre2-only
+pattern (?:(?:a+)*b)*c
+features all
+n ""
+m "c" 0 1
+n "_-"
+n "a."
+n "b1"
+m "cb" 0 1
+m "-cb-" 1 2
+m "cb cb" 0 1
+m "cbbccc" 0 1
+ms 1 "cbbccc" 1 4
+ms 2 "cbbccc" 2 4
+
+# pcre2-only
+pattern (?:(?:\w+)\b)*?\W
+flags i
+features all
+n ""
+m " " 0 1
+n "B"
+n "a"
+n "ba"
+n "aaa"
+m "-ba-" 0 1
+m "ba ba" 0 3
+n "aBbBBb"
+ns 1 "aBbBBb"
+ns 2 "aBbBBb"
+
+# pcre2-only
+pattern (?:a(?=b)|b(?=a))*\b
+features all
+n "-"
+m "ab" 0 0
+m "bb" 0 0
+m "-ab-" 1 1
+m "bbbb" 0 0
+m "ab ab" 0 0
+m "aaaaa1" 0 0
+m "a- - aaa" 0 0
+m "aaaa  bb" 0 0
+ms 1 "a- - aaa" 1 1
+ms 2 "a- - aaa" 5 5
+
+# pcre2-only
+pattern (?:a(?!b)|b)*c
+features all
+n ""
+n "a"
+n "aa"
+n " -a"
+m "ccc" 0 1
+n "-aa-"
+n "aa aa"
+n "aaaa1"
+n "  bbbb"
+ns 1 "  bbbb"
+ns 2 "  bbbb"
+
+# pcre2-only
+pattern (?:(?<=a)b|a)*\b
+features all
+n ""
+m "bb" 0 0
+m "-bb-" 1 1
+m "aa  " 0 2
+m "b1bb" 0 0
+m "bb bb" 0 0
+m ",aaa-- " 1 4
+m "aaa-baaa" 0 3
+m "aaaaaaba" 0 8
+ms 1 "aaa-baaa" 1 3
+ms 2 "aaa-baaa" 2 3
+
+# pcre2-only
+pattern (?:(?<!a)b|a)+
+features all
+n "-"
+n "- "
+n ".1"
+m "ab" 0 1
+m "abb" 0 1
+m "-ab-" 1 2
+m "- aaa" 2 5
+m "ab ab" 0 1
+m "- _bbb" 3 6
+ms 1 "- _bbb" 3 6
+ms 2 "- _bbb" 3 6
+
+# pcre2-only
+pattern (?:\bb|a)+
+features all
+n "."
+m "bb" 0 1
+m "bbb" 0 1
+n "-   "
+m "-bb-" 1 2
+m "b - " 0 1
+m "-- aa" 3 5
+m "bb bb" 0 1
+m " aabaa" 1 3
+ms 1 " aabaa" 1 3
+ms 2 " aabaa" 2 3
+
+# pcre2-only
+pattern (?:\Bb|a)+
+features all
+n ""
+n " -"
+n "b1"
+m "bb" 1 2
+m "bbb" 1 3
+m "-bb-" 2 3
+m "bb bb" 1 2
+m "bbbaaa" 1 6
+m "aaaaaaa" 0 7
+ms 1 "aaaaaaa" 1 7
+ms 2 "aaaaaaa" 2 7
+
+# pcre2-only
+pattern (?:b\b|a)+
+features all
+n ""
+m "a" 0 1
+m "aa" 0 2
+m "ab" 0 2
+m "_ba" 2 3
+m "-ab-" 1 3
+m "aaaaa" 0 5
+m "ab ab" 0 2
+m ".aa1aaa" 1 3
+ms 1 ".aa1aaa" 1 3
+ms 2 ".aa1aaa" 2 3
+
+# pcre2-only
+pattern (?:^a|b)*
+features all
+m "" 0 0
+m "aa" 0 1
+m "b1" 0 1
+m "-aa-" 0 0
+m "baaa" 0 1
+m "aa aa" 0 1
+m "aaabb" 0 1
+m "bbbbbb" 0 6
+m "aaaabbba" 0 1
+ms 1 "aaaabbba" 1 1
+ms 2 "aaaabbba" 2 2
+
+# pcre2-only
+pattern (?:a$|b)*
+features all
+m "aa" 0 0
+m ".bb" 0 0
+m "-aa-" 0 0
+m "a1 - " 0 0
+m "aa aa" 0 0
+m "1- aa," 0 0
+m "aabbbaaa" 0 0
+m "bb aaaaa" 0 2
+m ",bbbbbaaa" 0 0
+ms 1 ",bbbbbaaa" 1 6
+ms 2 ",bbbbbaaa" 2 6
+
+# pcre2-only
+pattern (?:\Aa|b)+
+features all
+m "a" 0 1
+m "ab" 0 2
+m "bb" 0 2
+m "abb" 0 3
+m "-aab" 3 4
+m "-ab-" 2 3
+m "a_ba" 0 1
+m "ab ab" 0 2
+n "  ,aa-"
+ns 1 "  ,aa-"
+ns 2 "  ,aa-"
+
+# pcre2-only
+pattern (?:a\z|b)+
+features all
+n ""
+m "b" 0 1
+m "ab" 1 2
+m "bb" 0 2
+m ",aaa" 3 4
+m "-bb-" 1 3
+m "baaa" 0 1
+m "bb bb" 0 2
+m "aaaabba" 4 7
+ms 1 "aaaabba" 4 7
+ms 2 "aaaabba" 4 7
+
+# pcre2-only
+pattern (?:a\Z|b)+
+features all
+n ""
+n " "
+n "-"
+m "bb" 0 2
+m "-bb-" 1 3
+m "bbba" 0 4
+m "aabbb" 2 5
+m "bb bb" 0 2
+m "bbaaab" 0 2
+ms 1 "bbaaab" 1 2
+ms 2 "bbaaab" 5 6
+
+# pcre2-only
+pattern (?:a|(?:\b))*+b
+features all
+n " "
+n "aa"
+n "aaa"
+n "-aa-"
+n "_aaa"
+n "aa aa"
+n "aaa -"
+m " -abba" 2 4
+m "  aabbbb" 2 5
+ms 1 "  aabbbb" 2 5
+ms 2 "  aabbbb" 2 5
+
+# pcre2-only
+pattern (?>a*\b)b
+features all
+n ""
+m "b" 0 1
+n "aa"
+n "--a"
+n "- _ "
+n "-aa-"
+n "aa- "
+n "aa aa"
+m "bbbaa" 0 1
+ns 1 "aa aa"
+ns 2 "aa aa"
+
+# pcre2-only
+pattern (?>\w+)\b
+flags i
+features all
+n ""
+n " "
+m "Aa" 0 2
+m "aa" 0 2
+m " -a." 2 3
+m "-aa-" 1 3
+m "aa aa" 0 2
+m "aaaaa1" 0 6
+m "- aaaaaaa" 2 9
+ms 1 "- aaaaaaa" 2 9
+ms 2 "- aaaaaaa" 2 9
+
+# pcre2-only
+pattern (?>\w+)\B
+features all
+n ""
+n "aa"
+n "-aa-"
+n ".aa "
+n "aaaa"
+n "  aaa"
+n "aa aa"
+n "aaa_a"
+n "aaa aaa"
+ns 1 "aaa aaa"
+ns 2 "aaa aaa"
+
+# pcre2-only
+pattern (?>a|\b)+b
+flags i
+features all
+n ""
+n "."
+n "a"
+m "b" 0 1
+n "aa"
+n "-aa-"
+n "1baA."
+n "aa aa"
+m "  -  bbb" 5 6
+ms 1 "  -  bbb" 5 6
+ms 2 "  -  bbb" 5 6
+
+# pcre2-only
+pattern (?>(?:a*)*)b
+features all
+n ""
+m "b" 0 1
+m "ba" 0 1
+m "1bb" 1 2
+m "-ba-" 1 2
+n "a,a,"
+m "ba ba" 0 1
+m " aaabbb" 1 5
+m "bbaaa -" 0 1
+ms 1 " aaabbb" 1 5
+ms 2 " aaabbb" 2 5
+
+# pcre2-only
+pattern a*+\b
+features all
+m "aa" 0 2
+m "bbb" 0 0
+m "-aa-" 1 3
+m "baaa" 0 0
+m " -aaa" 2 5
+m "aa aa" 0 2
+m "ba, -" 0 0
+m "a11aaa" 3 6
+m "  aabbb" 7 7
+ms 1 "  aabbb" 7 7
+ms 2 "  aabbb" 7 7
+
+# pcre2-only
+pattern \w++\b
+features all
+n ""
+m "b" 0 1
+n " -"
+m "ba" 0 2
+m ",ab_" 1 4
+m "-ba-" 1 3
+m "babb" 0 4
+m "ba ba" 0 2
+m "bb,aaaa" 0 2
+ms 1 "bb,aaaa" 1 2
+ms 2 "bb,aaaa" 3 7
+
+# pcre2-only
+pattern \w*+\B
+features all
+m " " 0 0
+n "1"
+n "ba"
+n "bb"
+n "baa"
+m "-ba-" 0 0
+m ".b -" 0 0
+m " bbb," 0 0
+n "ba ba"
+ms 1 " bbb," 5 5
+ms 2 " bbb," 5 5
+
+# pcre2-only
+pattern a?+\b
+features all
+n "-"
+m "b" 0 0
+n "  "
+m "a-" 0 1
+m "bb" 0 0
+m "aa." 1 2
+m "-bb-" 1 1
+m ".aa  " 2 3
+m "bb bb" 0 0
+ms 1 ".aa  " 2 3
+ms 2 ".aa  " 2 3
+
+# pcre2-only
+pattern a{1,2}+\b
+flags i
+features all
+m "aa" 0 2
+m "a a" 0 1
+m "-aa-" 1 3
+m "_aAA" 2 4
+m "aa  " 0 2
+m "aa aa" 0 2
+m "aa- ," 0 2
+n "aaaaaaa_"
+m "aaaaaaAaA" 7 9
+ms 1 "aaaaaaAaA" 7 9
+ms 2 "aaaaaaAaA" 7 9
+
+# pcre2-only
+pattern (?:a*+)*b
+features all
+n ""
+n "a"
+n "aa"
+m "ab" 0 2
+m "bb" 0 1
+m "-ab-" 1 3
+m "ab ab" 0 2
+m "- bbba" 2 3
+m "bbbaaaa" 0 1
+ms 1 "bbbaaaa" 1 2
+ms 2 "bbbaaaa" 2 3
+
+# pcre2-only
+pattern (?:a++)+\b
+features all
+n ""
+n "-"
+n "_"
+m "aa" 0 2
+m "aa " 0 2
+m "-aa-" 1 3
+m "- aaa" 2 5
+m "aa aa" 0 2
+m "aaaaaa-" 0 6
+ms 1 "aaaaaa-" 1 6
+ms 2 "aaaaaa-" 2 6
+
+# pcre2-only
+pattern (?:\w*?)*\b
+features all
+n ""
+m "1" 0 0
+m "aa" 0 0
+n " - "
+m "-aa-" 1 1
+m "aaaa" 0 0
+m "aa aa" 0 0
+m "1  aaa" 0 0
+m "aaaaa  " 0 0
+ms 1 "aaaaa  " 1 5
+ms 2 "aaaaa  " 2 5
+
+# pcre2-only
+pattern (?:\w??)+\b
+features all
+n ""
+m "aa" 0 0
+m "-aa-" 1 1
+m "aaaa" 0 0
+m "  __a" 2 2
+m "aa aa" 0 0
+m "aaaa." 0 0
+m " .aaaa" 2 2
+m "aaaaaaa" 0 0
+ms 1 "aaaaaaa" 1 7
+ms 2 "aaaaaaa" 2 7
+
+# pcre2-only
+pattern a*\bA
+flags i
+features all
+n "-"
+m ".A" 1 2
+m "aA" 0 1
+m "aa" 0 1
+m "AA," 0 1
+m "a- " 0 1
+m "-aA-" 1 2
+m "aA aA" 0 1
+m "1.aaa_" 2 3
+ms 1 "1.aaa_" 2 3
+ms 2 "1.aaa_" 2 3
+
+# pcre2-only
+pattern (a*)\1
+flags i
+features all
+m "," 0 0
+gp 1 0 0
+m "  " 0 0
+gp 1 0 0
+m "aa" 0 2
+gp 1 0 1
+m "A -" 0 0
+gp 1 0 0
+m "AAa" 0 2
+gp 1 0 1
+m "-aa-" 0 0
+gp 1 0 0
+m " BBba" 0 0
+gp 1 0 0
+m "aa aa" 0 2
+gp 1 0 1
+m "aabb a" 0 2
+gp 1 0 1
+ms 1 "aabb a" 1 1
+gp 1 1 1
+ms 2 "aabb a" 2 2
+gp 1 2 2
+
+# pcre2-only
+pattern [a-c]+\bB
+flags i
+features all
+n "b"
+n "c"
+n "BB"
+n "aB"
+n "aAA"
+n "-aB-"
+n "AaA c"
+n "aB aB"
+n " -_-aA"
+ns 1 " -_-aA"
+ns 2 " -_-aA"
+
+# pcre2-only
+pattern \w*?(?<=A)
+flags i
+features all
+m "a" 0 1
+m "aa" 0 1
+m "  a" 2 3
+m "1aa" 0 2
+m "-aa-" 1 2
+m "- aaA" 2 3
+m "aa aa" 0 1
+m "_AAAaA" 0 2
+m "aaAAaaa" 0 1
+ms 1 "aaAAaaa" 1 1
+ms 2 "aaAAaaa" 2 2
+
+# pcre2-only
+pattern (a)\1
+flags i
+features all
+n ""
+n " a"
+n "A "
+m "aa" 0 2
+gp 1 0 1
+m "-aa-" 1 3
+gp 1 1 2
+m "AAAa" 0 2
+gp 1 0 1
+m "aaa_" 0 2
+gp 1 0 1
+m "aa aa" 0 2
+gp 1 0 1
+m "aaaa " 0 2
+gp 1 0 1
+ms 1 "aa aa" 3 5
+gp 1 3 4
+ms 2 "aa aa" 3 5
+gp 1 3 4
+
+# pcre2-only
+pattern (a|B)+\1
+flags i
+features all
+n "B"
+n "_"
+n "- "
+n "aB"
+n "B,a"
+n "-aB-"
+m " -Bbb" 2 5
+gp 1 3 4
+m "BBB,1" 0 3
+gp 1 1 2
+n "aB aB"
+ms 1 " -Bbb" 2 5
+gp 1 3 4
+ms 2 " -Bbb" 2 5
+gp 1 3 4
+
+# pcre2-only
+pattern (?:a|A)*\b
+flags i
+features all
+m "A" 0 1
+m "AA" 0 2
+m "aa" 0 2
+m "-AA-" 1 3
+m "-aAa-" 1 4
+m "AA AA" 0 2
+m "AA.AAA" 0 2
+m " -aaAa_" 2 2
+m "- AaaaAa" 2 8
+ms 1 "- AaaaAa" 2 8
+ms 2 "- AaaaAa" 2 8
+
+# pcre2-only
+pattern a+(?=A)
+flags i
+features all
+n ""
+n "a"
+m "AA" 0 1
+m "Aa" 0 1
+m "aA" 0 1
+m "-Aa-" 1 2
+m " -AAa" 2 4
+m "Aa Aa" 0 1
+m "_- AAAAa" 3 7
+ms 1 "_- AAAAa" 3 7
+ms 2 "_- AAAAa" 3 7
+
+# pcre2-only
+pattern a+(?!A)
+flags i
+features all
+n ""
+n "_"
+m "Aa" 0 2
+m "-Aa-" 1 3
+m "aaA." 0 3
+m " aaA1" 1 4
+m "Aa Aa" 0 2
+m "aAA-aA" 0 3
+m "AAa-aAa" 0 3
+ms 1 "AAa-aAa" 1 3
+ms 2 "AAa-aAa" 2 3
+
+# pcre2-only
+pattern (?<=A)a*
+flags i
+features all
+n ""
+n "bb"
+m "1Ab" 2 2
+n "-bb-"
+m "A AA" 1 1
+m "bbA," 3 3
+m "a,-- " 1 1
+n "bb bb"
+m "aAAbbbbbb" 1 3
+ms 1 "aAAbbbbbb" 1 3
+ms 2 "aAAbbbbbb" 2 3
+
+# pcre2-only
+pattern (?<!a)A+\b
+flags i
+features all
+n ""
+m "A" 0 1
+n "Ab"
+n "-Ab-"
+m "aaa," 0 3
+n "Ab Ab"
+m "Aaa- A" 0 3
+m "  BbaAA" 4 7
+m "A  aAAaA" 0 1
+ms 1 "A  aAAaA" 3 8
+ms 2 "A  aAAaA" 3 8
+
+# pcre2-only
+pattern [A-C]*\b[a-c]
+flags i
+features all
+m "Ac" 0 1
+m "bb" 0 1
+m "AAA" 0 1
+m "-Ac-" 1 2
+m "-aa " 1 2
+m "bc -" 0 1
+m "Ac Ac" 0 1
+m "ccca-1" 0 1
+n "-     -"
+ns 1 "-     -"
+ns 2 "-     -"
+
+# pcre2-only
+pattern (\w)\1\b
+flags i
+features all
+n ""
+n "ba"
+m ".bb" 1 3
+gp 1 1 2
+m "AbB" 1 3
+gp 1 1 2
+n "-ba-"
+m "bbbB" 2 4
+gp 1 2 3
+m "- -bb" 3 5
+gp 1 3 4
+n "ba ba"
+m "bbb  bbb" 1 3
+gp 1 1 2
+ms 1 "bbb  bbb" 1 3
+gp 1 1 2
+ms 2 "bbb  bbb" 6 8
+gp 1 6 7
+
+# pcre2-only
+pattern (\w)\b\1
+flags i
+features all
+n ""
+n "1"
+n "aa"
+n ",aa"
+n "aAa"
+n "-aa-"
+n "aaaa"
+n "aa aa"
+n "aaa-aaa"
+ns 1 "aaa-aaa"
+ns 2 "aaa-aaa"
+
+# pcre2-only
+pattern (a*?)\b\1A
+flags i
+features all
+m "A" 0 1
+gp 1 0 0
+m "a" 0 1
+gp 1 0 0
+n "1a"
+m "aa" 0 1
+gp 1 0 0
+m "--a" 2 3
+gp 1 2 2
+m "a _" 0 1
+gp 1 0 0
+m "-aa-" 1 2
+gp 1 1 1
+m " -AAa" 2 3
+gp 1 2 2
+m "aa aa" 0 1
+gp 1 0 0
+ms 1 " -AAa" 2 3
+gp 1 2 2
+ms 2 " -AAa" 2 3
+gp 1 2 2
+
+# pcre2-only
+pattern (?:(a)|B)+\1
+flags i
+features all
+n ""
+n " "
+n ",B"
+n "_-"
+n "aB"
+n "bb"
+n "-aB-"
+n "aB aB"
+m "aaaaa -" 0 5
+gp 1 3 4
+ms 1 "aaaaa -" 1 5
+gp 1 3 4
+ms 2 "aaaaa -" 2 5
+gp 1 3 4
+
+# pcre2-only
+pattern (?<n>[ab]*)\b\k<n>
+flags i
+features all
+n ".-"
+m "ba" 0 0
+gp 1 0 0
+m "bb" 0 0
+gp 1 0 0
+m "-ba-" 1 1
+gp 1 1 1
+m "ABbB" 0 0
+gp 1 0 0
+m "- 1 -" 2 2
+gp 1 2 2
+m "ba ba" 0 0
+gp 1 0 0
+m "aa  aaa" 0 0
+gp 1 0 0
+m "bbbbbbb" 0 0
+gp 1 0 0
+ms 1 "aa  aaa" 2 2
+gp 1 2 2
+ms 2 "aa  aaa" 2 2
+gp 1 2 2
+
+# pcre2-only
+pattern (b?)\bA\1
+flags i
+features all
+n ""
+n "1"
+n "bb"
+n ".- "
+n "-bb-"
+n "bbbb"
+n "bb bb"
+n "  bBb-"
+n "bBBaAbb"
+ns 1 "bBBaAbb"
+ns 2 "bBBaAbb"
+
+# pcre2-only
+pattern (?=(a))A\1
+flags i
+features all
+n ""
+n "B"
+n "a-"
+n "ab"
+n "-- a"
+n "-ab-"
+n "bbbA"
+n "ab ab"
+m "aa AaaB" 0 2
+gp 1 0 1
+ms 1 "aa AaaB" 3 5
+gp 1 3 4
+ms 2 "aa AaaB" 3 5
+gp 1 3 4
+
+# pcre2-only
+pattern (?=(A))\1a
+flags i
+features all
+n ""
+m "AA" 0 2
+gp 1 0 1
+m "-AA-" 1 3
+gp 1 1 2
+m "-aaA" 1 3
+gp 1 1 2
+m "1aAa" 1 3
+gp 1 1 2
+m "AAAA" 0 2
+gp 1 0 1
+m "aaaa" 0 2
+gp 1 0 1
+m "AA AA" 0 2
+gp 1 0 1
+m "AaAAA" 0 2
+gp 1 0 1
+ms 1 "AA AA" 3 5
+gp 1 3 4
+ms 2 "AA AA" 3 5
+gp 1 3 4
+
+# pcre2-only
+pattern A*(?=a)\w
+flags i
+features all
+n ""
+m "aA" 0 2
+m "-aA-" 1 3
+m "aA aA" 0 2
+m "aaA- " 0 3
+m "AAAAAA" 0 6
+m "AAA_aA" 0 3
+m "aAAaa_" 0 5
+m "aa- Aa" 0 2
+ms 1 "AAAAAA" 1 6
+ms 2 "AAAAAA" 2 6
+
+# pcre2-only
+pattern a*(?<=A)b
+flags i
+features all
+n ""
+n "Aa"
+n "bb."
+n "-Aa-"
+n "B.aA"
+n " -baa"
+n "Aa Aa"
+n "bB  a"
+m "abbbbb" 0 2
+ms 1 "abbbbb" 1 2
+ns 2 "abbbbb"
+
+# pcre2-only
+pattern (?:a\b|A)+
+flags i
+features all
+n ""
+m "a" 0 1
+m "aA" 0 2
+m "-aA-" 1 3
+m "AaAaA" 0 5
+m "aA aA" 0 2
+m "a.aaaA" 0 1
+m "aaaaa- " 0 5
+m "aaAAAAAA" 0 8
+ms 1 "aaAAAAAA" 1 8
+ms 2 "aaAAAAAA" 2 8
+
+# pcre2-only
+pattern (?:\bA|a)+
+flags i
+features all
+n "1"
+m "a" 0 1
+n "b"
+n "-,"
+m "bA" 1 2
+m "Ab," 0 1
+m "-bA-" 2 3
+n "- bb_"
+m "bA bA" 1 2
+ns 1 "- bb_"
+ns 2 "- bb_"
+
+# pcre2-only
+pattern (a)(?1)\b
+flags i
+features all
+n ""
+n "."
+n ".,"
+m "aa" 0 2
+gp 1 0 1
+n "a_ "
+m "-aa-" 1 3
+gp 1 1 2
+n "1A.  "
+m "aa aa" 0 2
+gp 1 0 1
+m "aaaaaa -" 4 6
+gp 1 4 5
+ms 1 "aaaaaa -" 4 6
+gp 1 4 5
+ms 2 "aaaaaa -" 4 6
+gp 1 4 5
+
+# pcre2-only
+pattern (A)(?1)\1
+flags i
+features all
+n ""
+n "b"
+n "bb"
+n "-bb"
+n "-bb-"
+n "BBbB"
+n "bb bb"
+n "AAb_bb"
+m "bbAAAAA -" 2 5
+gp 1 2 3
+ms 1 "bbAAAAA -" 2 5
+gp 1 2 3
+ms 2 "bbAAAAA -" 2 5
+gp 1 2 3
+
+# pcre2-only
+pattern (?:a(?R)?\bA)
+flags i
+features all
+n ""
+n "1"
+n "aA"
+n "aa"
+n "_aa"
+n "aAA"
+n "-aa-"
+n "bb. "
+n "aa aa"
+ns 1 "aa aa"
+ns 2 "aa aa"
+
+# pcre2-only
+pattern \Ga*\b
+features all
+n ""
+m "b" 0 0
+m "aa" 0 2
+m "bba" 0 0
+n "-aa-"
+m "a a," 0 1
+m "aa aa" 0 2
+n " -aaaa"
+m "aaabbb" 0 0
+ns 1 " -aaaa"
+ms 2 " -aaaa" 2 6
+
+# pcre2-only
+pattern \G\w+\B
+features all
+n ""
+m "aa" 0 1
+n " --"
+m "aa." 0 1
+n "-aa-"
+m "1aa -" 0 2
+m "aa aa" 0 1
+m "aaaaa" 0 4
+m "aaaaaa" 0 5
+ms 1 "aaaaaa" 1 5
+ms 2 "aaaaaa" 2 5
+
+# pcre2-only
+pattern \Ga*(?<=a)
+features all
+n ""
+n ","
+n "_"
+m "aa" 0 2
+m "ab" 0 1
+n "-ab-"
+m "ab ab" 0 1
+n "- - - "
+n " -    bb"
+ns 1 " -    bb"
+ns 2 " -    bb"
+
+# pcre2-only
+pattern (?:\Ga)+\b
+flags i
+features all
+n "1"
+n "ab"
+n " - "
+m "a _" 0 1
+n "-ab-"
+n "ab ab"
+n "bbBB1"
+n "bBabbb"
+n "bbbaaa"
+ns 1 "bBabbb"
+ns 2 "bBabbb"
+
+# pcre2-only
+pattern \G(?:\b|a)+b
+flags i
+features all
+n ""
+m "b" 0 1
+m "ab" 0 2
+m "bB" 0 1
+n "-ab-"
+n "1bb1"
+n "  AaA"
+m "ab ab" 0 2
+n "-bbbbaa"
+ms 1 "-bbbbaa" 1 2
+ns 2 "-bbbbaa"
+
+# pcre2-only
+pattern (?<=\G)a*b
+features all
+n ""
+n "  "
+n "- "
+m "bb" 0 1
+m "aab" 0 3
+n "-bb-"
+n "aaaaa"
+m "bb bb" 0 1
+n " -aaaab"
+ns 1 " -aaaab"
+ms 2 " -aaaab" 2 7
+
+# pcre2-only
+pattern \W*\Ga
+features all
+n ""
+n " -"
+m "aa" 0 1
+m "aaa" 0 1
+n "-aa-"
+m "aa1." 0 1
+m "aa aa" 0 1
+m "aa- aa" 0 1
+m "aaaaaa  a" 0 1
+ms 1 "aaaaaa  a" 1 2
+ms 2 "aaaaaa  a" 2 3
+
+# pcre2-only
+pattern \w+(?<=\G\w)
+flags i
+features all
+n ""
+m "a" 0 1
+m "a_" 0 1
+m "aa" 0 1
+m "1aa" 0 1
+n ",aaa"
+n "-aa-"
+m "aa aa" 0 1
+m "aaa1-" 0 1
+ms 1 "aa aa" 1 2
+ns 2 "aa aa"
+
+# pcre2-only
+pattern \b\w+\b
+features all
+n ""
+n " "
+n " -"
+m "aa" 0 2
+m "- 1_" 2 4
+m "-aa-" 1 3
+m "aaaa" 0 4
+m "aa aa" 0 2
+m "bbbbbbb- " 0 7
+ns 1 "bbbbbbb- "
+ns 2 "bbbbbbb- "
+
+# pcre2-only
+pattern \B\w+\B
+features all
+n "1_"
+n "1a"
+n "aa"
+n "-aa-"
+n "aa aa"
+n "aa.a-"
+m " -aaaaa" 3 6
+m "._aaa  " 2 4
+m "a1aaa- " 1 4
+ms 1 " -aaaaa" 3 6
+ms 2 " -aaaaa" 3 6
+
+# pcre2-only
+pattern \b\W+\b
+features all
+n ""
+n ".1"
+n "aa"
+n ".aa"
+n "-aa-"
+n "aaa "
+n "aaaa"
+m "aa aa" 2 3
+n ",aaaaa"
+ns 1 ",aaaaa"
+ns 2 ",aaaaa"
+
+# pcre2-only
+pattern \B\W+\B
+features all
+n ""
+n "aa"
+m "- a" 0 1
+n "aaa"
+n "-aa-"
+m "__ ," 3 4
+m " aa- " 4 5
+n "aa aa"
+n "a- aa1"
+ns 1 "a- aa1"
+ns 2 "a- aa1"
+
+# pcre2-only
+pattern \b\w*?\B\w
+features all
+n ""
+n "b"
+m "ab" 0 2
+n "b- "
+m "-ab-" 1 3
+m "1 aaa" 2 4
+m "ab ab" 0 2
+m "a11aaa" 0 2
+m "- - -bbb" 5 7
+ms 1 "- - -bbb" 5 7
+ms 2 "- - -bbb" 5 7
+
+# pcre2-only
+pattern \B\w*?\b
+features all
+n "a"
+m "aa" 1 2
+m "aaa" 1 3
+m "-aa-" 2 3
+m "aaaa" 1 4
+m "  aaa" 3 5
+n "-  .1"
+m ".aa- " 2 3
+m "aa aa" 1 2
+ms 1 "  aaa" 3 5
+ms 2 "  aaa" 3 5
+
+# pcre2-only
+pattern \b(?:\w+\b)+\B
+features all
+n ""
+n "_"
+n "aa"
+n "-aa-"
+n "a1 1"
+n "aa.a"
+n "aa aa"
+n "-a -aaa"
+n "aaaaaa."
+ns 1 "-a -aaa"
+ns 2 "-a -aaa"
+
+# pcre2-only
+pattern \b(?=a)\w+\b
+features all
+n ""
+m "a" 0 1
+m "a," 0 1
+m "aa" 0 2
+m "a.-" 0 1
+m "-aa-" 1 3
+m "-aaa" 1 4
+m "a.aaa" 0 1
+m "aa aa" 0 2
+ms 1 "a.aaa" 2 5
+ms 2 "a.aaa" 2 5
+
+# pcre2-only
+pattern \B(?!a)\w+
+features all
+n ""
+n "  "
+n "aa"
+n "-aa-"
+n "aaaa"
+n " -  a"
+n "aa aa"
+n "aaa- "
+n "aaaaaaa"
+ns 1 "aaaaaaa"
+ns 2 "aaaaaaa"
+
+# pcre2-only
+pattern (?<=\b)\w+(?=\b)
+features all
+n ""
+n "."
+m "a" 0 1
+m "bb" 0 2
+m "-bb-" 1 3
+m "-baaa" 1 5
+m "bb bb" 0 2
+m "aaabbbb" 0 7
+m "bbb- -b" 0 3
+ns 1 "aaabbbb"
+ns 2 "aaabbbb"
+
+# pcre2-only
+pattern (?<=\B)\W+(?=\B)
+features all
+n ""
+m "," 0 1
+n "_"
+n "b"
+n "aa"
+n "ab"
+n "-ab-"
+m "    a" 0 3
+n "ab ab"
+ms 1 "    a" 1 3
+ms 2 "    a" 2 3
+
+# pcre2-only
+pattern (?<![a-z])[a-z]+(?![a-z])
+features all
+n ""
+m "a" 0 1
+n "_,"
+m "aa" 0 2
+m "-aa-" 1 3
+m "aa aa" 0 2
+m " aaaa." 1 5
+m "aaaaaa" 0 6
+m "aaaaaaa" 0 7
+ns 1 "aaaaaaa"
+ns 2 "aaaaaaa"
+
+# pcre2-only
+pattern (?<=^|\W)\w+(?=\W|$)
+flags i
+features all
+n ""
+n " -"
+m "bb" 0 2
+m "bbb" 0 3
+m ",aaa" 1 4
+m "-bb-" 1 3
+m "aaaa" 0 4
+m "bb bb" 0 2
+m " bBaAA" 1 6
+ms 1 " bBaAA" 1 6
+ns 2 " bBaAA"
+
+# pcre2-only
+pattern (?<=^|-)a*(?=-|$)
+features all
+m "" 0 0
+m "aa" 0 2
+n "bb"
+m "-bb-" 0 0
+m "a-aa" 0 1
+n "baaa"
+n "bb b"
+n "bb1b"
+n "bb bb"
+ns 1 "bb bb"
+ns 2 "bb bb"
+
+# pcre2-only
+pattern ^a*\b
+features all
+n ""
+n " "
+m "a" 0 1
+m "aa" 0 2
+m "aaa" 0 3
+n "-aa-"
+m "a  a" 0 1
+m "aa aa" 0 2
+n " -aaaaaa"
+ns 1 " -aaaaaa"
+ns 2 " -aaaaaa"
+
+# pcre2-only
+pattern ^\w*\B
+features all
+m "" 0 0
+m "bb" 0 1
+n "a  "
+m "bab" 0 2
+m "-bb-" 0 0
+n "a  ,"
+n "b -  "
+m "bb bb" 0 1
+m "- aaa-a" 0 0
+ns 1 "- aaa-a"
+ns 2 "- aaa-a"
+
+# pcre2-only
+pattern a*$
+features all
+m "" 0 0
+m "aa" 0 2
+m " --" 3 3
+m " -a" 2 3
+m "a,a" 2 3
+m "-aa-" 4 4
+m ".- - " 5 5
+m "aa aa" 3 5
+m "aaaaaaa" 0 7
+ms 1 "aaaaaaa" 1 7
+ms 2 "aaaaaaa" 2 7
+
+# pcre2-only
+pattern a*\b$
+features all
+n ""
+m "-_" 2 2
+m "aa" 0 2
+n "-aa-"
+m "aa aa" 3 5
+n "aaaa "
+m "-- aaaa" 3 7
+m "aa_aaaa" 3 7
+m "   -.aaa" 5 8
+ms 1 "   -.aaa" 5 8
+ms 2 "   -.aaa" 5 8
+
+# pcre2-only
+pattern \w*\B$
+features all
+m "" 0 0
+n "b"
+n "aa"
+m " a." 3 3
+m "-aa-" 4 4
+n "1bbb"
+n "a- ba"
+n "aa aa"
+n "abbbb"
+ns 1 "a- ba"
+ns 2 "a- ba"
+
+# pcre2-only
+pattern \W*$
+features all
+m "" 0 0
+m "ab" 2 2
+m "_  " 1 3
+m "-ab-" 3 4
+m "1bbb" 4 4
+m "ab ab" 5 5
+m "aaa- aa" 7 7
+m "bbbb-   " 4 8
+m "aabbbaabb" 9 9
+ms 1 "aabbbaabb" 9 9
+ms 2 "aabbbaabb" 9 9
+
+# pcre2-only
+pattern \b$
+flags i
+features all
+n ""
+m "b" 1 1
+n "- "
+m "ab" 2 2
+n ",,b,"
+n "-ab-"
+m "aaaab" 5 5
+m "ab ab" 5 5
+m "   -bb" 6 6
+ms 1 "   -bb" 6 6
+ms 2 "   -bb" 6 6
+
+# pcre2-only
+pattern ^\b
+features all
+n ""
+n "."
+n " -"
+n "- "
+m "aa" 0 0
+n " aa."
+n "-aa-"
+m "aa aa" 0 0
+m "aaaaaaa" 0 0
+ns 1 "aaaaaaa"
+ns 2 "aaaaaaa"
+
+# pcre2-only
+pattern ^\B
+features all
+m "." 0 0
+m "  " 0 0
+n "aa"
+n "ba"
+m " a," 0 0
+m "-ba-" 0 0
+n "_b- "
+n "ba ba"
+n "aaabbbb"
+ns 1 "aaabbbb"
+ns 2 "aaabbbb"
+
+# pcre2-only
+pattern \B$
+features all
+m "" 0 0
+m "-" 1 1
+n "a"
+n "aa"
+n " -a"
+m "-aa-" 4 4
+n "aa -a"
+n "aa aa"
+n "aaaaaaa"
+ns 1 "aaaaaaa"
+ns 2 "aaaaaaa"
+
+# pcre2-only
+pattern \b\b\b
+features all
+n ""
+m "1a" 0 0
+m "aa" 0 0
+m " -a" 2 2
+m "aaa" 0 0
+m "-aa-" 1 1
+m " aaaa" 1 1
+m "aa aa" 0 0
+m " .aa  " 2 2
+ms 1 " .aa  " 2 2
+ms 2 " .aa  " 2 2
+
+# pcre2-only
+pattern \B\B\w
+features all
+n ""
+n "a"
+n " -"
+m "aa" 1 2
+m "aa " 1 2
+m "-aa-" 2 3
+m "aaa_" 1 2
+m "aa aa" 1 2
+m "  aaa_" 3 4
+ms 1 "  aaa_" 3 4
+ms 2 "  aaa_" 3 4
+
+# pcre2-only
+pattern \b\B
+features all
+n ""
+n "1"
+n "--"
+n "aa"
+n "- b"
+n "aa "
+n "-aa-"
+n "aa aa"
+n "bbabbba"
+ns 1 "bbabbba"
+ns 2 "bbabbba"
+
+# pcre2-only
+pattern \B\b
+features all
+n "a"
+n "  "
+n "aa"
+n "aaa"
+n " -a "
+n "-aa-"
+n "  -aa"
+n "aa aa"
+n "  aaaa"
+ns 1 "  aaaa"
+ns 2 "  aaaa"
+
+# pcre2-only
+pattern a*?(?:\b|)a
+features all
+n ""
+n " -"
+n "bb"
+m "  ,a" 3 4
+n " - -"
+n "-bb-"
+n "bb bb"
+m " b- aaa" 4 5
+m "aaa_bbb" 0 1
+ms 1 " b- aaa" 4 5
+ms 2 " b- aaa" 4 5
+
+# pcre2-only
+pattern a+?(?:)b
+features all
+n ""
+n ",_"
+n "aa"
+n "b  "
+n ",aa."
+n "-aa-"
+n "aaaa"
+n "aa aa"
+n "aaa b"
+ns 1 "aa aa"
+ns 2 "aa aa"
+
+# pcre2-only
+pattern a{1,3}?(?:|\b)$
+features all
+n ""
+m "a" 0 1
+m "aa" 0 2
+m "1.a" 2 3
+n "-aa-"
+n "a- - "
+m "aa aa" 3 5
+m "aa1aa" 3 5
+n " - aaa -"
+ns 1 " - aaa -"
+ns 2 " - aaa -"
+
+# pcre2-only
+pattern a{1,3}?(?:(?=a)|)$
+features all
+n ""
+m "a" 0 1
+m "aa" 0 2
+m "1aa" 1 3
+m "  _a" 3 4
+n "-aa-"
+m "aa -a" 4 5
+m "aa aa" 3 5
+n "aaaaa "
+ns 1 "aaaaa "
+ns 2 "aaaaa "
+
+# pcre2-only
+pattern a{1,3}?(?:)\b
+features all
+n ""
+m "aa" 0 2
+m "-aa-" 1 3
+n "_1  "
+m "aaa-" 0 3
+m "aa aa" 0 2
+m "aaaaa" 2 5
+m "_a -aa" 1 2
+m "aaaaa  " 2 5
+ms 1 "aaaaa  " 2 5
+ms 2 "aaaaa  " 2 5
+
+# pcre2-only
+pattern a{2,}?(?:\b|)b
+features all
+n ","
+n "ab"
+n "b.a"
+n "-ab-"
+n "ab ab"
+n "bb1bb"
+n "-  -  "
+m "b-aaab" 2 6
+m "bbbaabbb" 3 6
+ms 1 "bbbaabbb" 3 6
+ms 2 "bbbaabbb" 3 6
+
+# pcre2-only
+pattern a{2,}?(?:|\b)\b
+features all
+n ""
+n "ba"
+n "-_b"
+n "-ba-"
+n "b bbb"
+n "ba ba"
+m ".bbbaa  " 4 6
+m " -aabbaaa" 6 9
+m "bbbaaaa -" 3 7
+ms 1 " -aabbaaa" 6 9
+ms 2 " -aabbaaa" 6 9
+
+# pcre2-only
+pattern a{2,}?(?:|\b)$
+features all
+n ""
+n "a"
+n ".1"
+m "aa" 0 2
+n "ab"
+n "b-"
+n "-ab-"
+n "ab ab"
+n "aaabbbbb"
+ns 1 "aaabbbbb"
+ns 2 "aaabbbbb"
+
+# pcre2-only
+pattern a{2,}?(?:)a
+features all
+n " "
+n "b"
+n " -"
+n "ab"
+n "-ab-"
+n "bbaa"
+n "ab ab"
+n "bbbbb"
+m "bbbaaabb" 3 6
+ms 1 "bbbaaabb" 3 6
+ms 2 "bbbaaabb" 3 6
+
+# pcre2-only
+pattern a??(?:\b|)a
+features all
+n ""
+m "a" 0 1
+n "b"
+m "aa" 0 1
+m "  a" 2 3
+n "bbb"
+m "-aa-" 1 2
+m "aa aa" 0 1
+m "bbbab- " 3 4
+ms 1 "bbbab- " 3 4
+ms 2 "bbbab- " 3 4
+
+# pcre2-only
+pattern a??(?:|\b)\b
+features all
+n ""
+m "ab" 0 0
+m "_bb" 0 0
+m "abb" 0 0
+m "-ab-" 1 1
+m "aaaaa" 0 0
+m "ab ab" 0 0
+m "aa -  " 0 0
+m "bbaaa-" 0 0
+ms 1 "aa -  " 1 2
+ms 2 "aa -  " 2 2
+
+# pcre2-only
+pattern a??(?:(?=a)|)a
+features all
+m "a" 0 1
+m "-a" 1 2
+m "aa" 0 1
+m " aa" 1 2
+m "-aa-" 1 2
+m "aaa1" 0 1
+m "aa aa" 0 1
+m "- aaaa" 2 3
+m "-a-aaa" 1 2
+ms 1 "- aaaa" 2 3
+ms 2 "- aaaa" 2 3
+
+# pcre2-only
+pattern \w+?(?:(?=a)|)b
+features all
+n ","
+n ".b"
+n "aa"
+n "-aa-"
+n "aa -"
+n "aa aa"
+m "bbbb ," 0 2
+n " -aaa- "
+m "bbaaaabbb" 0 2
+ms 1 "bbaaaabbb" 1 7
+ms 2 "bbaaaabbb" 2 7
+
+# pcre2-only
+pattern \w+?(?:\B|)b
+features all
+n ""
+n "ba"
+m "bb" 0 2
+n "aaa"
+m "aab" 0 3
+m "bbb" 0 2
+n "-ba-"
+m "aabbb" 0 3
+n "ba ba"
+ms 1 "aabbb" 1 3
+ms 2 "aabbb" 2 4
+
+# pcre2-only
+pattern \w+?(?:)\b
+features all
+n ""
+n "."
+m "aa" 0 2
+m "aaa" 0 3
+m "-aa-" 1 3
+m "-aaa" 1 4
+m "a  aa" 0 1
+m "aa aa" 0 2
+m "aaaaaaaaa" 0 9
+ms 1 "aaaaaaaaa" 1 9
+ms 2 "aaaaaaaaa" 2 9
+
+# pcre2-only
+pattern \w{0,2}?(?:|\b)\b
+features all
+m "1" 0 0
+n ".,"
+m "a-" 0 0
+m "aa" 0 0
+m "-aa-" 1 1
+m "_-- " 0 0
+m "- bbb" 2 2
+m "aa aa" 0 0
+m "b- aaa" 0 0
+ms 1 "b- aaa" 1 1
+ms 2 "b- aaa" 3 3
+
+# pcre2-only
+pattern \w{2,}?(?:|\b)b
+features all
+n ""
+n " "
+n "a-"
+n "ba"
+n "aaa"
+n "-ba-"
+m "bbbb" 0 3
+n "aaaa "
+n "ba ba"
+ns 1 "aaaa "
+ns 2 "aaaa "
+
+# pcre2-only
+pattern \w??(?:)b
+features all
+n ""
+n "aa"
+m "ba" 0 1
+m "-ba" 1 2
+m "-ba-" 1 2
+m "ba ba" 0 1
+m "- bbaaab" 2 3
+n "-aaa -- "
+n "aaa1aaaaa"
+ns 1 "aaa1aaaaa"
+ns 2 "aaa1aaaaa"
+
+# pcre2-only
+pattern [ab]*?(?:|\b)b
+features all
+n ""
+n "_ "
+n "a "
+m "ba" 0 1
+m "-ba-" 1 2
+m "ba ba" 0 1
+m "- bbaabb" 2 3
+m "aa-bbaaa" 3 4
+m "bbb  aaa" 0 1
+ms 1 "- bbaabb" 2 3
+ms 2 "- bbaabb" 2 3
+
+# pcre2-only
+pattern [ab]*?(?:)\b
+features all
+n ""
+n "  "
+m "bb" 0 0
+m "aaa" 0 0
+m "-bb-" 1 1
+m "bb bb" 0 0
+m "  aaab" 2 2
+m "- ,bbaa" 3 3
+m "aaabbb.aa" 0 0
+ms 1 "aaabbb.aa" 1 6
+ms 2 "aaabbb.aa" 2 6
+
+# pcre2-only
+pattern \W*?(?:\b|)b
+features all
+n ""
+n "- "
+n "aa"
+m "bb" 0 1
+m "bbb" 0 1
+n " - a"
+n "-aa-"
+n "aa aa"
+m "bbbb -" 0 1
+ms 1 "bbbb -" 1 2
+ms 2 "bbbb -" 2 3
+
+# pcre2-only
+pattern \W*?(?:|\b)b
+features all
+n ""
+n "-"
+n "a"
+n "._"
+n "aa"
+n "-aa-"
+n "aa aa"
+n "aaaa."
+n "_  aaa"
+ns 1 "_  aaa"
+ns 2 "_  aaa"
+
+# pcre2-only
+pattern \W*?(?:)$
+features all
+m "aa" 2 2
+m "bb" 2 2
+m "bbb" 3 3
+m " ,ab" 4 4
+m "-aa-" 3 4
+m "aa aa" 5 5
+m "bbab1" 5 5
+m "a- aaa" 6 6
+m "aaa -b" 6 6
+ms 1 "a- aaa" 6 6
+ms 2 "a- aaa" 6 6
+
+# pcre2-only
+pattern \W{0,2}?(?:\b|)$
+features all
+m "" 0 0
+m "a" 1 1
+m "aa" 2 2
+m "-  " 1 3
+m "-aa-" 3 4
+m "1a1-" 3 4
+m "aa aa" 5 5
+m "aaaaaaa" 7 7
+m "aaa- aaaa" 9 9
+ms 1 "aaa- aaaa" 9 9
+ms 2 "aaa- aaaa" 9 9
+
+# pcre2-only
+pattern \W{2,}?(?:\B|)$
+features all
+n ""
+n "b"
+n "a "
+n "ba"
+n ",,b"
+n "  aa"
+n "-ba-"
+m "b --" 1 4
+n "ba ba"
+ns 1 "ba ba"
+ns 2 "ba ba"
+
+# pcre2-only
+pattern \W??(?:\B|)$
+features all
+m "" 0 0
+m "- " 1 2
+m "ab" 2 2
+m "ba" 2 2
+m "-ab-" 3 4
+m "bba-" 3 4
+m "bbbb" 4 4
+m ".   -" 4 5
+m "ab ab" 5 5
+ms 1 ".   -" 4 5
+ms 2 ".   -" 4 5
+
+# pcre2-only
+pattern .*?(?:\b|)b
+features all
+n ""
+m "b" 0 1
+n "-,"
+m "ba" 0 1
+m "bba" 0 1
+m "-ba-" 0 2
+n "_aaaa"
+m "ba ba" 0 1
+m "bbbaa, " 0 1
+ms 1 "bbbaa, " 1 2
+ms 2 "bbbaa, " 2 3
+
+# pcre2-only
+pattern .*?(?:)\b
+features all
+n ""
+m "a" 0 0
+m "aa" 0 0
+m "-aa-" 0 1
+m "  aaa" 0 2
+m "aa aa" 0 0
+m "  aaa_" 0 2
+m "aa -aa" 0 0
+m "aaaaaa" 0 0
+ms 1 "  aaa_" 1 2
+ms 2 "  aaa_" 2 2
+
+# pcre2-only
+pattern .{0,2}?(?:(?=a)|)$
+features all
+m "" 0 0
+m "b" 0 1
+m "ba" 0 2
+m "aab" 1 3
+m "-ba-" 2 4
+m ",aaaa" 3 5
+m "aaabb" 3 5
+m "ba ba" 3 5
+m " -aaaaaa" 6 8
+ms 1 " -aaaaaa" 6 8
+ms 2 " -aaaaaa" 6 8
+
+# pcre2-only
+pattern .{0,2}?(?:\B|)b
+features all
+n ""
+m "ab" 0 2
+n ",- "
+m "-ab-" 0 3
+m "baa." 0 1
+m "ab ab" 0 2
+m "- bbb-" 0 3
+m "aaabbb " 1 4
+m "aaa -bbb" 3 6
+ms 1 "aaa -bbb" 3 6
+ms 2 "aaa -bbb" 3 6
+
+# pcre2-only
+pattern .{1,3}?(?:\b|)b
+features all
+n ""
+m "ab" 0 2
+n "-- "
+n "a -"
+n "b,a"
+m "-ab-" 0 3
+m "ab ab" 0 2
+n "b -aaa"
+m "  bbb  -" 0 3
+ms 1 "  bbb  -" 1 3
+ms 2 "  bbb  -" 2 4
+
+# pcre2-only
+pattern .{1,3}?(?:|\b)$
+features all
+n ""
+m "aa" 0 2
+m "1  " 0 3
+m "1- " 0 3
+m "aa " 0 3
+m " a_." 1 4
+m "-aa-" 1 4
+m "1 aa" 1 4
+m "aa aa" 2 5
+ms 1 "aa aa" 2 5
+ms 2 "aa aa" 2 5
+
+# pcre2-only
+pattern .{1,3}?(?:\B|)$
+features all
+m "aa" 0 2
+m "ba" 0 2
+m "- ." 0 3
+m "abb" 0 3
+m "-ba-" 1 4
+m "ab-_" 1 4
+m "-_1- " 2 5
+m "ba ba" 2 5
+m "- _aaa" 3 6
+ms 1 "- _aaa" 3 6
+ms 2 "- _aaa" 3 6
+
+# pcre2-only
+pattern .??(?:|\b)b
+features all
+m "b" 0 1
+n "1."
+m "ba" 0 1
+m "bbb" 0 1
+m "-ba-" 0 2
+m "ba ba" 0 1
+m "bbb,-" 0 1
+n "-aaaaaa"
+m "baaabbbaa" 0 1
+ms 1 "baaabbbaa" 3 5
+ms 2 "baaabbbaa" 3 5
+
+# pcre2-only
+pattern \w+?(?<=a)
+features all
+n ""
+n " "
+m "aa" 0 1
+m " -a" 2 3
+m "-aa-" 1 2
+m "aabb" 0 1
+m "aa aa" 0 1
+m "aaa_a" 0 1
+n "bb  ."
+ms 1 "aa aa" 1 2
+ms 2 "aa aa" 3 4
+
+# pcre2-only
+pattern \w+(?<=a)b?
+features all
+n " "
+n "1"
+n "b"
+m "ab" 0 2
+n "bb"
+n "  b"
+m "aa_" 0 2
+m "-ab-" 1 3
+m "ab ab" 0 2
+ms 1 "ab ab" 3 5
+ms 2 "ab ab" 3 5
+
+# pcre2-only
+pattern [ab]*(?<=b)a
+features all
+n ""
+n "aa"
+n "bb"
+n "-bb-"
+n "aaab"
+m "bbba" 0 4
+n "bb bb"
+m "baaa -" 0 2
+n "_aabbbbbb"
+ns 1 "_aabbbbbb"
+ns 2 "_aabbbbbb"
+
+# pcre2-only
+pattern [ab]*(?<!b)a
+flags i
+features all
+n ""
+m "ab" 0 1
+m "aaa" 0 3
+m ",AaA" 1 4
+m "-ab-" 1 2
+n "BabbB"
+m "aaBa1" 0 2
+m "ab ab" 0 1
+m "AAa  -aaA" 0 3
+ms 1 "AAa  -aaA" 1 3
+ms 2 "AAa  -aaA" 2 3
+
+# pcre2-only
+pattern a*(?<=aa)b
+features all
+n ""
+n "ab"
+n "  ."
+n "bbb"
+n " bbb"
+n "- bb"
+n "-ab-"
+n ".a_-"
+n "ab ab"
+ns 1 "ab ab"
+ns 2 "ab ab"
+
+# pcre2-only
+pattern a*(?<!aa)b
+features all
+n ""
+n "aa"
+m "bb" 0 1
+m "bbb" 0 1
+n "-aa-"
+n "aa aa"
+n "aa, -"
+n "_aaaaa"
+m "ba -aa" 0 1
+ns 1 "_aaaaa"
+ns 2 "_aaaaa"
+
+# pcre2-only
+pattern a*?(?<=aa)
+features all
+n ""
+m "aa" 0 2
+m "aa." 0 2
+m "aaa" 0 2
+m "-aa-" 1 3
+n "__- "
+m "a  aa" 3 5
+m "aa aa" 0 2
+m "aaaa- " 0 2
+ms 1 "aaaa- " 1 2
+ms 2 "aaaa- " 2 2
+
+# pcre2-only
+pattern \w*(?<=\w\w)\b
+features all
+n ""
+m "aa" 0 2
+n " -a"
+n " .a"
+m "aa_" 0 3
+n "  a,"
+m "-aa-" 1 3
+m "aa aa" 0 2
+m "aaaaaa" 0 6
+ms 1 "aaaaaa" 1 6
+ms 2 "aaaaaa" 2 6
+
+# pcre2-only
+pattern (?<=a)a*(?=b)
+features all
+n "aa"
+n "b1"
+n "bba"
+n "bbb"
+n "-aa-"
+n "bbbb"
+n "aa aa"
+n "aaaaaa"
+n "bbb --"
+ns 1 "aaaaaa"
+ns 2 "aaaaaa"
+
+# pcre2-only
+pattern (?<=a|b)\w*?\b
+features all
+n ","
+m "a" 1 1
+n ",1"
+m "ab" 1 2
+m ".a." 2 2
+m "-ab-" 2 3
+m "bbba" 1 4
+m "ab ab" 1 2
+m "b.a- " 1 1
+ms 1 "ab ab" 1 2
+ms 2 "ab ab" 2 2
+
+# pcre2-only
+pattern (?<=\w\W|\W)\w+
+flags i
+features all
+n ""
+n "aa"
+m " -aa" 2 4
+m "-aa-" 1 3
+m "a- aa" 3 5
+m "aa aa" 3 5
+n "aaa -"
+n "AaaAAaA"
+n "a      "
+ns 1 "AaaAAaA"
+ns 2 "AaaAAaA"
+
+# pcre2-only
+pattern \W*(?<=\W)\w
+features all
+n ""
+n "b"
+n "ab"
+n "bbb"
+m "-ab-" 0 2
+m "-bb1" 0 2
+m "ab ab" 2 4
+m " _aaaa" 0 2
+n "b1aaa."
+ms 1 " _aaaa" 1 2
+ns 2 " _aaaa"
+
+# pcre2-only
+pattern \W*(?<!\W)\w
+features all
+n ""
+m "aa" 0 1
+m "ab" 0 1
+m "a  " 0 1
+m "-ab-" 2 3
+m "a- 1 " 0 1
+m "ab ab" 0 1
+m "bbbbb" 0 1
+m "_bbbaaa" 0 1
+ms 1 "_bbbaaa" 1 2
+ms 2 "_bbbaaa" 2 3
+
+# pcre2-only
+pattern \W+(?<!\W)
+flags i
+features all
+n " a"
+n "- "
+n "aa"
+n "_aa"
+n "aa-"
+n "aaa"
+n "-aa-"
+n "aa aa"
+n "-aaaaaa- "
+ns 1 "-aaaaaa- "
+ns 2 "-aaaaaa- "
+
+# pcre2-only
+pattern \W+(?<=\w)
+features all
+n "_a"
+n "aa"
+n "-aa-"
+n "aaaa"
+n " a- -"
+n "aa -,"
+n "aa aa"
+n "aaaaa"
+n "aaaaaaa"
+ns 1 "aaaaaaa"
+ns 2 "aaaaaaa"
+
+# pcre2-only
+pattern \w+(?<=\W)
+features all
+n ""
+n "ba"
+n "aaa"
+n "bbb"
+n "-ba-"
+n "ba ba"
+n "-  - -"
+n "aaa.aa"
+n "abaaaa"
+ns 1 "-  - -"
+ns 2 "-  - -"
+
+# pcre2-only
+pattern a+(?=(?<=a))
+features all
+n ""
+m "a" 0 1
+m "_a" 1 2
+m "aa" 0 2
+m ".a-" 1 2
+m "-aa-" 1 3
+m "aa aa" 0 2
+m "1aaaa " 1 5
+m "aaaaaaaaa" 0 9
+ms 1 "aaaaaaaaa" 1 9
+ms 2 "aaaaaaaaa" 2 9
+
+# pcre2-only
+pattern a+(?=(?<!a))
+flags i
+features all
+n ""
+n "1"
+n "a"
+n "aa"
+n "-aa-"
+n "A-- "
+n "aa aa"
+n "bbb1b"
+n "Aaa -Aa- "
+ns 1 "Aaa -Aa- "
+ns 2 "Aaa -Aa- "
+
+# pcre2-only
+pattern a+(?!(?<=a))b
+features all
+n "b"
+n "ab"
+n "-ab-"
+n "aaaa"
+n "a-  -"
+n "aa.bb"
+n "ab ab"
+n "aaa --"
+n "aaa - aa"
+ns 1 "aaa - aa"
+ns 2 "aaa - aa"
+
+# pcre2-only
+pattern \w+(?=(?<=a)|b)
+features all
+n ""
+m "a " 0 1
+m "ba" 0 2
+m " -,a" 3 4
+m "-ba-" 1 3
+m "ba ba" 0 2
+m "  ,aaa" 3 6
+m "aa bbb" 0 2
+m "bbbbb_" 0 4
+ms 1 "  ,aaa" 3 6
+ms 2 "  ,aaa" 3 6
+
+# pcre2-only
+pattern (?=a(?<=a))a*b
+features all
+n ""
+n "a"
+m "ab" 0 2
+n "aaa"
+m "-ab-" 1 3
+n " -- b"
+n ".a,bb"
+m "ab ab" 0 2
+n "   - --"
+ns 1 "   - --"
+ns 2 "   - --"
+
+# pcre2-only
+pattern a*(?=a(?!a))
+features all
+n ""
+n " -"
+m "aa" 0 1
+m "ba" 1 1
+m "-aa-" 1 2
+m "aa aa" 0 1
+m ".bbbaab" 4 5
+m "aaabbb," 0 2
+m "aaaaaa  " 0 5
+ms 1 "aaaaaa  " 1 5
+ms 2 "aaaaaa  " 2 5

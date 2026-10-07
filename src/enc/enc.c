@@ -111,6 +111,31 @@ void pcrec_enc_emit_decls(StrBuf *sb, const PcrecEnc *e, unsigned mask,
         }
 }
 
+/* [K94] The fold table the UCP caseless span compare's body searches: one
+ * `{byte, representative}` row per Latin-1 byte whose fold class has a lesser
+ * member, sorted by byte. GENERATED FROM fold.c's own links at emit time, so
+ * the match-time fold and the --ucp class fold are one definition. The brace
+ * is on its own line for the DD12a(i) brace-matching excision, as utf8's
+ * table's is. */
+static void enc_emit_latin1_fold_table(StrBuf *sb, const char *prefix)
+{
+    int col = 0;
+    pcrec_sb_cmt_open(sb, PCREC_CMT_NONESSENTIAL);
+    pcrec_sb_puts(sb, "/* THE LATIN-1 FOLD MAP, sorted by byte: {from, to}, where `to` is\n"
+                      " * the least member of from's fold class within Latin-1; only\n"
+                      " * the non-identity entries are here. */\n");
+    pcrec_sb_cmt_close(sb);
+    pcrec_sb_printf(sb, "static const unsigned char %s_span_ci_fold_pairs[][2] =\n{\n",
+                    prefix);
+    for (unsigned c = 0; c < 256; c++) {
+        unsigned r = pcrec_fold_latin1_rep(c);
+        if (r == c) continue;
+        pcrec_sb_printf(sb, "%s{0x%02X,0x%02X},", col ? " " : "    ", c, r);
+        if (++col == 6) { pcrec_sb_putc(sb, '\n'); col = 0; }
+    }
+    pcrec_sb_puts(sb, col ? "\n};\n\n" : "};\n\n");
+}
+
 /* Emits every entry's `defs` text (and, gated through the comment layer, its
  * defs_doc) whose id is set in the CLOSED `mask` and whose `inline_def` is
  * `inline_half` -- pcrec_enc_emit_decls' own sibling loop over the
@@ -122,6 +147,8 @@ static void enc_emit_defs(StrBuf *sb, const PcrecEnc *e, unsigned mask,
     mask = pcrec_enc_mask_close(e, mask);
     for (const PcrecEncEntry *t = e->entries; t->decls; t++)
         if ((mask & t->id) && t->inline_def == inline_half) {
+            if (t->id == PCREC_ENCE_SPAN_CASELESS_UCP)
+                enc_emit_latin1_fold_table(sb, prefix);
             if (t->defs_doc) {
                 pcrec_sb_cmt_open(sb, PCREC_CMT_NONESSENTIAL);
                 pcrec_enc_emit_text(sb, t->defs_doc, prefix);

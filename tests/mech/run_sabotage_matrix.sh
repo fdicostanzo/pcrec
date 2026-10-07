@@ -397,6 +397,15 @@
 #     scripts/tests/trace_diff.py.test (pure python). Its own arm because both
 #     are facts about the sweep TOOLING, which no compiler suite reads: a row
 #     here scores `corpus:0fail` by design. Registered before its rows.
+#   candoracle — added 2026-10-07 ([START-TABLE] C2, lane stc2); runs
+#     tests/codegen/run_cand_oracle.sh: builds the sabotaged tree's sources
+#     twice with -DPCREC_CAND_TRACE (old decision first, and
+#     -DPCREC_CAND_NEW_FIRST) into the row's work dir and compiles every
+#     witness line with both; a disagreement between `cand_rows[]` and an old
+#     start decision, or a table self-check failure, aborts the compile. Its
+#     own arm because `cand_rows[]` has no reader in a default build until
+#     C3: a plant on it moves no artifact byte and no answer, so a row here
+#     scores `corpus:0fail` by design. Registered before S594-S599.
 #
 # THE THREE NEWEST WORDS WERE REGISTERED FIRST, DELIBERATELY, which is the
 # lesson R31 C11 left one module earlier: this vocabulary is CLOSED, so a
@@ -2869,6 +2878,15 @@ run_one() {
                 p="$(grep -m1 '^checks passed:' "$work/memfnstamps.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/memfnstamps.log" | grep -oE '[0-9]+')"
                 score_arm "$work/memfnstamps.log" "$f" "memfnstamps:${f:-ERR}fail/${p:-?}pass"
+                ;;
+            candoracle)
+                # [START-TABLE] C2 — see the vocabulary entry above. The
+                # script builds its own two trace compilers from "$tree".
+                CC="$CC" TMPDIR="$work" bash "$tree/tests/codegen/run_cand_oracle.sh" "$tree" \
+                    > "$work/candoracle.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/candoracle.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/candoracle.log" | grep -oE '[0-9]+')"
+                score_arm "$work/candoracle.log" "$f" "candoracle:${f:-ERR}fail/${p:-?}pass"
                 ;;
             emitsweep)
                 # [START-TABLE] C0 — see the vocabulary entry above. Both

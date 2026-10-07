@@ -8425,6 +8425,16 @@ static void vm_cap(Vm *v, int entry, const Ast *a, int next)
     vm_goto(v, next);
 }
 
+/* [K94] WHICH CASELESS SEAM ENTRY a compare calls: the UCP one when UCP is in
+ * force at the construct AND the encoding's table carries one, the plain one
+ * otherwise. The emitter asks the table, never the encoding (DD-12 (7)). */
+static unsigned vm_caseless_entry(const Vm *v, bool ucp)
+{
+    return ucp && pcrec_enc_has_entry(pcrec_enc_by_id(v->cx->opt->encoding),
+                                      PCREC_ENCE_SPAN_CASELESS_UCP)
+        ? PCREC_ENCE_SPAN_CASELESS_UCP : PCREC_ENCE_SPAN_CASELESS;
+}
+
 /* A BACKREFERENCE: the DUPNAMES resolution chain, the unset test, the seam
  * call and its work charge.
  *
@@ -8500,8 +8510,8 @@ static void vm_bref(Vm *v, int entry, const Ast *a, int next)
      * every `^(a)\1$`-shaped artifact carried a DUPLICATE LABEL and did
      * not compile. Caught by the corpus within one run; recorded because
      * `-Wall -Wextra` does not include `-Wshadow`. */
-    const unsigned seam_entry = a->u.bref.caseless ? PCREC_ENCE_SPAN_CASELESS
-                                            : PCREC_ENCE_SPAN;
+    const unsigned seam_entry = a->u.bref.caseless
+        ? vm_caseless_entry(v, a->u.bref.ucp) : PCREC_ENCE_SPAN;
     /* THE BACKEND'S OWN DECLARATION IS CONSULTED BEFORE THE CALL IS
      * EMITTED, and this is `engine_callable`'s one consumer on the compile
      * path (enc.h). DD-12 (7) forbids the matching machinery from
@@ -8599,8 +8609,8 @@ static void vm_bref(Vm *v, int entry, const Ast *a, int next)
 static void vm_var(Vm *v, int entry, const Ast *a, int next)
 {
     StrBuf *bb = v->b;
-    const unsigned seam_entry = a->u.var.caseless ? PCREC_ENCE_SPAN_CASELESS
-                                                  : PCREC_ENCE_SPAN;
+    const unsigned seam_entry = a->u.var.caseless
+        ? vm_caseless_entry(v, a->u.var.ucp) : PCREC_ENCE_SPAN;
     /* `vm_bref`'s own rule, one construct over: the BACKEND's declaration is
      * consulted before the call is emitted, so a backend whose variable
      * compare is not engine-callable fails HERE and by name rather than two
@@ -11111,6 +11121,32 @@ static const VmReseedCal vm_reseed_cal[2] = {
     {  4, 16,   64,  2 },  /* framed: a slot write, a trail entry, a push, a pop */
 };
 
+/* [START-TABLE] C2 the both-walks oracle's hooks at this file's three start
+ * decisions (RETRY, WIDTH, BOUND on the VM route; src/gen/emit_dfa.c's
+ * `cand_oracle_post` is the check). Trace build only: in the default build
+ * each is `(void)0` and evaluates nothing. `VM_CAND_PRE` declares `var` and
+ * the `Vm` facts the rows read; `VM_CAND_POST` aborts unless `cand_select`
+ * chose what the old decision did — `old_row` by pointer (a
+ * `pcrec_reseed_rows[]` row) or NULL, and `old_tok` by its trace spelling. */
+#ifdef PCREC_CAND_TRACE
+/* The `CandVmFacts` of `v`: the fields H1, R1, R2 and R4 read. */
+static CandVmFacts vm_cand_facts(const Vm *v)
+{
+    return (CandVmFacts){ .root_minw = v->root_minw, .mrl_win = v->mrl_win,
+                          .nclamp = v->nclamp, .has_push = v->has_push,
+                          .reseed_gap = vm_reseed_cal[v->has_push].gap };
+}
+#define VM_CAND_PRE(var, v, slot)                                             \
+    CandVmFacts var##_vm = vm_cand_facts(v);                                  \
+    const void *var = pcrec_cand_oracle_vm_pre((v)->cx, (slot), &var##_vm)
+#define VM_CAND_POST(var, v, slot, old_row, old_tok, site)                    \
+    pcrec_cand_oracle_vm_post((v)->cx, var, (slot), &var##_vm, (old_row),     \
+                              (old_tok), "" site)
+#else
+#define VM_CAND_PRE(var, v, slot) ((void)0)
+#define VM_CAND_POST(var, v, slot, old_row, old_tok, site) ((void)sizeof("" site))
+#endif
+
 /* The decision `vm_plan_reseed` hands the stamp and the search body. */
 typedef struct {
     const PcrecReseedRow *row;          /* NULL: no prefilter, nothing to decide */
@@ -11150,12 +11186,14 @@ static void vm_plan_reseed(Vm *v, VmReseed *rs)
     memset(rs, 0, sizeof *rs);
     if (!v->cx->job->fit.prefilter) return;
     rs->cal = vm_reseed_cal[v->has_push];
+    VM_CAND_PRE(ck, v, CAND_SLOT_RETRY);
     for (int i = 0; i < pcrec_reseed_nrows; i++) {
         const PcrecReseedRow *r = &pcrec_reseed_rows[i];
         if (r->deny & v->cx->opt->flags) continue;
         if (!vm_reseed_holds(v, rs, r->pred)) continue;
         rs->row = r;
         PCREC_CAND_TRACE_REC("RETRY", "vm", r->name, "reseed");
+        VM_CAND_POST(ck, v, CAND_SLOT_RETRY, r, r->name, "reseed");
         rs->steps0 = r->start == VRS_S_CAP ? rs->cal.cap
                    : r->start == VRS_S_FIRST ? rs->cal.first : 0;
         rs->block0 = r->armed ? rs->cal.block : 0;
@@ -13230,8 +13268,11 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
      * `attempt_position` (litscan_k82h.md Claim 2'). */
     const char *first = pcrec_emit_req_byte_check(v->cx, c, "    ", "search_from",
                                                   "subject", "subject_length");
+    VM_CAND_PRE(ckw, v, CAND_SLOT_WIDTH);
     PCREC_CAND_TRACE_REC("WIDTH", "vm", v->root_minw >= PCREC_MINW_MAX ? "ceiling" : "none",
                          "root-minw");
+    VM_CAND_POST(ckw, v, CAND_SLOT_WIDTH, NULL,
+                 v->root_minw >= PCREC_MINW_MAX ? "ceiling" : "none", "root-minw");
 
     /* [DD-14.EMPTY] THE ROOT MINIMUM-WIDTH CHECK: the search entry answers
      * NOMATCH BEFORE ANY FRAME IS PUSHED when the whole pattern's minimum
@@ -13512,10 +13553,15 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
      * before this mechanism, which is what makes `-fno-vm-anchor-bound`'s
      * sweep a real control rather than a comparison of two new shapes. */
     const char *att_max = "subject_length";
+    VM_CAND_PRE(ckb, v, CAND_SLOT_BOUND);
     PCREC_CAND_TRACE_REC("BOUND", "vm",
                          pcrec_fact_start_anchor(v->cx) == PCREC_SANCH_BOT ? "anchored"
                          : pcrec_fact_start_anchor(v->cx) == PCREC_SANCH_GSTART ? "gstart"
                          : "all", "vm-bound");
+    VM_CAND_POST(ckb, v, CAND_SLOT_BOUND, NULL,
+                 pcrec_fact_start_anchor(v->cx) == PCREC_SANCH_BOT ? "anchored"
+                 : pcrec_fact_start_anchor(v->cx) == PCREC_SANCH_GSTART ? "gstart"
+                 : "all", "vm-bound");
     if (pcrec_fact_start_anchor(v->cx) != PCREC_SANCH_NONE) {
         att_max = "attempt_max";
         pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
