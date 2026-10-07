@@ -491,3 +491,66 @@ and no `make`, and read no kit source. The `--quick` runs were launched from a
 backgrounded subshell that began with `cd <cell> &&` (a subshell; the session
 cwd did not change). Budget: 2 `--quick` runs (1 failed my floor only), 1 probe
 compile (the generator) plus its run, no timing run, no full run.
+
+## 8. G2u3 addendum (enforcement, 2026-10-07, same cell, D27-blinded)
+
+**What changed** (`g2/g2_gen.c`, `g2/g2.h`, `g2/g2_driver.c`, `run_g2.sh`, `CLAUDE.md`, this report),
+each from memfn.h "THE ROW CONTRACTS" (R1/R2), the `s`/`n`/`lo` clause (F1) and the fn_ref clauses (K-1):
+1. **fn_ref-unstated classified at the site.** Every FUNC site with `site.pred.fn_ref` 0
+   (any op, base space included; helper `fn_ref_unstated`, a generator-side mirror of how
+   the site is filled) is queued as class `fn_ref-unstated`. Contract outcome: a refusal
+   naming `fn_ref`; on a RETURN/ASSIGN site whose `miss` is ALSO unstated, a refusal naming
+   `miss` serves too (define-time vs use-time field). A rendering is a hard failure. The old
+   poison-differential `fn_name` check for this class was removed (it is subsumed).
+2. **Base-space FUNC sites state fn_ref** by default (term-cell sites always; the rest
+   15 in 16, from `ppm_seed`, no RNG draw added). The 1-in-16 explicit fn_ref-0 sample is
+   the class population (floor `FLOOR_CLS_FNREF`=40; provisional, measured 49). Base sites
+   now pass through `emit_site` so the class queue sees them (before, only the families did).
+3. **Enforced by default.** `G2_STRICT_HOOKS` defaults to 1 in generator, driver and
+   `run_g2.sh`; `=0` is a diagnostic. The bucket is renamed ENFORCED CLASSES (nothing is
+   pending); the identifiers `G2_PEND_*`, `PENDBUCKET`, `G2 pending`, and the batch header
+   `pending N` are unchanged. Per-class counts still print, with new floors
+   `FLOOR_CLS_HOOK`=600, `_MISS`=280, `_NAME`=12, `_FNREF`=40.
+4. **Coverage-count inconsistency (explained, fixed).** The driver printed at most 40
+   `G2 coverage MISSING: RUN term ...` lines but counted every missing cell (`miss++ < 40`
+   incremented past the cap), so "coverage count 80" vs 41 lines (40 + other). The driver
+   now lists every missing cell, so the shell's count-equals-lines check is exact.
+
+**Quick runs** (3 of 3; run 1 and 2 failed only on G2-side population effects of this change, fixed):
+- run 1: unstated base FUNC sites were rendered, not queued (147 render failures); 25 coverage cells missing;
+- run 2 (1-in-8 sample moved to 1-in-16): 15 RUN cells still reached only by fn_ref-0 sites;
+- run 3 (final, `G2_STRICT_HOOKS=1`, seed 20261005): **checks passed 38,989,416, failed 0**;
+  gcc-15 38,582,737 passed, 9,946 sites, 0 failed sites, `coverage-missing 1` (the quick alignment axis);
+  K1 377,000/0; libc leg 92 batches agree, 0 pending batches unbuilt (all compile);
+  poison 9,218 sites, identical 9,218, differ 0; SITEFN checked 18;
+  W1 all fire (26,023 / 377,014 / 45,359); W2 mutation 7 reading below: 635 mutated, 590 killed (floor 550);
+  RUN-cell floor 1644 met by hard sites; no clang, so no ASan leg (as before).
+
+**Former PENDING classes (generator outcomes, quick; tier-independent):**
+
+| class | cases | result |
+|---|---|---|
+| hook-nonident | 728 | rendered, all compile; driver 728 sites, 2,868,559 checks, 0 wrong, 0 faults |
+| miss-unstated | 314 | refused naming `miss` (314/314) |
+| refusal-unnamed | 12 | refused naming the hook (12/12) |
+| fn_ref-unstated | 49 | refused naming `fn_ref` (49/49) |
+| total | 1,103 | `ENFORCED-CLASS cases: 1103` |
+
+**KIT FINDINGS:** none new; no G2-side failure is left. K-1 and F1 behave as ruled.
+
+**OWED full run** (manager's, on a slot):
+
+    TMPDIR=<scratch> taskset -c <cores> gnutimeout 7200 bash memfn/tests/run_g2.sh --seed 20261005
+
+Expected: `ENFORCED-CLASS cases: 1103` (generator count, tier-independent), the four
+`class X: n (floor F)` lines with floors 600/280/12/40, `checks failed: 0`, per-family
+`failed-sites 0`, `libc record ... pending batches not built 0`,
+`W2 mutation 7, sites reading below the candidate: mutated >= 1600`, `FLOOR_CHECKS` 55,000,000,
+`FULL_FORM_CHECK_FLOORS` and `FLOOR_MUT7_NEG` unchanged and still DERIVED. Re-pin
+derived floors from the measurement; never lower a measured one.
+
+**DISCLOSURE.** Same as section 1: files outside the cell seen were only the auto-injected
+ones (session-root CLAUDE.md, memory index, git status snapshot). I ran no `git`, no `make`,
+read no kit source, `cd` only inside backgrounded subshells (session cwd unchanged; some
+single-command `cd` into the cell's tests dir for edits). Budget: 3 `--quick` runs (one extra
+launch failed at once for a missing TMPDIR and ran nothing), 0 probe compiles, no timing, no full run.

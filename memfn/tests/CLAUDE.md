@@ -11,20 +11,23 @@ and added the row-contract checks: its report is **`G2U_REPORT.md`** here.
 
 ## The row contracts, as G2 tests them (lane g2u)
 
-- **PENDING-ENFORCE.** A case whose correct outcome depends on the kit's
-  SCHEDULED row-contract enforcement is counted in its own bucket, printed
-  (`PENDING-ENFORCE cases: N`, per class), never a failure and never
-  dropped. Classes (`g2.h` `G2_PEND_*`): `hook-nonident` (F1: non-identifier
-  `s`/`n`/`lo`/`floor` text on a §15 shape), `miss-unstated` (`miss` NULL on
-  a RETURN/ASSIGN site), `refusal-unnamed` (a missing-hook refusal whose text
-  does not name the hook), `fn_ref-unstated` (a FUNC site with no `fn_ref`
-  whose form still asks `fn_name`). PENDING sites render in PENDING-only
-  batches (header `N sites, pending N`), so a rendering that does not
-  compile costs only its own batch.
-- **`G2_STRICT_HOOKS=1`** turns every PENDING case into a hard check:
-  render + compile + answer as the reference, or a loud refusal naming the
-  field (`miss-unstated`: the refusal only). It is the enforcement step's
-  acceptance test.
+- **ENFORCED CLASSES** (G2u3; formerly "PENDING-ENFORCE", renamed because
+  nothing is pending: the kit's row-contract enforcement is in force; the
+  `G2_PEND_*` identifiers and the batch header's `pending N` keep the old
+  spelling). Four classes, each a named population with a floor
+  (`FLOOR_CLS_*`) and a printed count (`ENFORCED-CLASS cases: N`, `class X: n`,
+  generator `PENDBUCKET` lines, driver `G2 pending X:` lines):
+  `hook-nonident` (non-identifier `s`/`n`/`lo`/`floor` text: must render and
+  answer, or be refused naming the field), `miss-unstated` (`miss` NULL on
+  RETURN/ASSIGN: refusal naming `miss`), `refusal-unnamed` (a missing-hook
+  refusal must name the hook), `fn_ref-unstated` (a FUNC site with
+  `site.pred.fn_ref` 0, any op: refusal naming `fn_ref`; where `miss` is also
+  unstated on RETURN/ASSIGN, naming `miss` serves too). Sites of a class render
+  in their own batches (a non-compiling rendering costs only its batch).
+- **`G2_STRICT_HOOKS`**: the default is now ENFORCED (every class case is a hard
+  check). `G2_STRICT_HOOKS=0` is a diagnostic only (bucket, never a failure).
+  Base-space FUNC sites state a nonzero fn_ref (the term-cell sites always;
+  others 15 in 16); the 1-in-16 explicit fn_ref-0 sample is class 4's population.
 - **The poison differential** (generator): per site, every field the
   contract says the site does not use is set to junk; the rendering must be
   byte-identical, or refused. A difference is bisected to the field

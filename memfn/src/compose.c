@@ -12,8 +12,10 @@
  * precheck.c, runcmp.c) above the generic scalar row (generic.c), which
  * applies to every site. Each arm carries its contract (`uses`/`serves`,
  * [MEMFN-ROWCON]); the gate (gate.c) reads it before the arm's predicate
- * and re-checks the chosen arm at every use, in WARN mode (N1): it records,
- * and the arm chosen is the one the predicates alone choose.
+ * and, since N3, ENFORCES: a row whose verdict fails is DECLINED and the
+ * walk moves on, a site no row serves is REFUSED naming the fields, and the
+ * chosen arm is re-checked at every use, a use it does not serve REFUSED
+ * naming the fields (no re-selection: the definition is written).
  */
 #include <stdarg.h>
 #include <stdio.h>
@@ -120,36 +122,54 @@ void kit_out(mf_sink *o, const char *fmt, ...)
  * block, its pre-check and its run compare, transcribed. They are not
  * byte-moving changes, so they carry no deny of their own: the artifacts
  * they render are the ones pcrec wrote before them, and the identity gates
- * say so (§9.3). */
+ * say so (§9.3). The pre-check is one renderer as two rows (N3's split, by
+ * handoff: precheck.c), each with its own contract. */
 static const arm *const arms[] = {
     &ofsskip_arm,
     &precheck_arm,
+    &precheck_assign_arm,
     &runcmp_arm,
     &generic_arm,
 };
 
-/* The first row whose predicate holds; `*warn` gets the WARN gate's verdict
- * on it. The gate reads each row's contract before its predicate
- * ([MEMFN-ROWCON] N1, row_contracts.md §2) and, in WARN mode, only records:
- * the row chosen is the one the predicates alone choose. */
+/* The first row the gate passes AND whose predicate holds. The gate reads
+ * each row's contract before its predicate ([MEMFN-ROWCON] N3,
+ * row_contracts.md §2): a failing row is DECLINED and its predicate is not
+ * asked. NULL when no row serves; `*why` is then the last declined row's
+ * verdict (the generic row's, the table's total fallback), whose fields the
+ * refusal names. */
+/* Row `a`'s predicate columns over the site and its define hooks. */
+static int arm_holds(const arm *a, const mf_site *s, const mf_hooks *def)
+{
+    return (!a->miss_leaves || s->on_miss_leaves) && a->applies(s, def);
+}
+
 static const arm *select_arm(const mf_art *art, const mf_site *s,
-                             const mf_hooks *def, gate_verdict *warn)
+                             const mf_hooks *def, gate_verdict *why)
 {
     gate_in in = { s, def, NULL };
     gate_tctx tc = { art, "arms", art->nsites + 1, MF_PH_DEFINE, &in };
+    const gate_contract *mc = NULL;     /* trace only: the row the gate moved off */
+    gate_verdict mv = { 0, 0 };
     gate_trace_sel(&tc);
     for (size_t i = 0; i < sizeof arms / sizeof arms[0]; i++) {
         gate_verdict v = gate_check(arms[i]->ct, MF_PH_DEFINE, &in);
-        if ((!arms[i]->miss_leaves || s->on_miss_leaves) &&
-            arms[i]->applies(s, def)) {
+        if (v.r1 | v.r2) {
+            int held = GATE_TRACING && arm_holds(arms[i], s, def);
+            if (held && !mc) { mc = arms[i]->ct; mv = v; }
+            gate_trace_row(&tc, arms[i]->ct,
+                           held ? "DECLINED:PRED_HOLDS" : "DECLINED", 0, &v);
+            *why = v;
+            continue;
+        }
+        if (arm_holds(arms[i], s, def)) {
             gate_trace_row(&tc, arms[i]->ct, "CHOSEN", 0, &v);
-            gate_trace_end(&tc, arms[i]->ct, &v);
-            *warn = v;
+            gate_trace_end(&tc, arms[i]->ct, &v, mc, &mv);
             return arms[i];
         }
         gate_trace_row(&tc, arms[i]->ct, "PRED_FALSE", 0, &v);
     }
-    gate_trace_end(&tc, NULL, NULL);
+    gate_trace_end(&tc, NULL, why, mc, &mv);
     return NULL;
 }
 
@@ -297,10 +317,17 @@ int mf_define(mf_art *art, const mf_site *s, const mf_hooks *def,
         return kit_fail(art, "mf_define: site denies 0x%llx are not the art's 0x%llx",
                         (unsigned long long)s->denies,
                         (unsigned long long)art->denies);
-    gate_verdict warn = { 0, 0 };
-    const arm *row = select_arm(art, s, def, &warn);
-    if (!row)
-        return kit_fail(art, "mf_define: no arm applies (the generic row must)");
+    gate_verdict declined = { 0, 0 };
+    const arm *row = select_arm(art, s, def, &declined);
+    if (!row) {
+        /* the generic row applies to every site, so only the gate can leave
+           a site with no row: name what it declined (ruling (d)) */
+        gate_in in = { s, def, NULL };
+        char f[200];
+        gate_describe(f, sizeof f, &declined, &in);
+        return kit_fail(art, "mf_define: no row serves this site: %s",
+                        f[0] ? f : "(no row applies; the generic row must)");
+    }
 
     if (art->nsites == art->cap) {
         uint32_t cap = art->cap ? art->cap * 2 : 8;
@@ -315,7 +342,6 @@ int mf_define(mf_art *art, const mf_site *s, const mf_hooks *def,
     memset(r, 0, sizeof *r);
     r->site = *s;
     r->arm = row;
-    r->warn_define = warn;
 
     if (row->define(art, h, def, file_scope)) return -1;
     *handle = h;
@@ -328,16 +354,21 @@ int mf_use(mf_art *art, uint32_t handle, const mf_hooks *use, mf_sink *body,
     if (art->err[0]) return -1;
     site_rec *r = rec_of(art, handle, "mf_use");
     if (!r) return -1;
-    /* the WARN gate's re-check of the chosen row against the use hooks: the
-       definition is written, so it records and cannot re-select (N1) */
+    /* the gate's re-check of the chosen row against the use hooks: the
+       definition is written, so a use it does not serve is REFUSED, naming
+       the fields; it cannot re-select (N3) */
     gate_in in = { &r->site, use, NULL };
     gate_tctx tc = { art, "arms", handle, MF_PH_USE, &in };
     gate_verdict v = gate_check(r->arm->ct, MF_PH_USE, &in);
-    r->warn_use.r1 |= v.r1;
-    r->warn_use.r2 |= v.r2;
     gate_trace_sel(&tc);
     gate_trace_row(&tc, r->arm->ct, "RECHECK", 0, &v);
-    gate_trace_end(&tc, r->arm->ct, &v);
+    gate_trace_end(&tc, r->arm->ct, &v, NULL, NULL);
+    if (v.r1 | v.r2) {
+        char f[200];
+        gate_describe(f, sizeof f, &v, &in);
+        return kit_fail(art, "mf_use: row `%s` does not serve this use of handle %u: %s",
+                        r->arm->ct->row, handle, f);
+    }
     if (r->arm->use(art, handle, use, body)) return -1;
     r->used = 1;
     if (res) {

@@ -13,9 +13,12 @@
  * flushes its pending word-load helpers into the `def` part after the use,
  * so the helpers' text is pinned too. Two DECLINE fixtures (lane m1bfix)
  * pin an arm's edge from the other side: an offset-skip site whose miss is
- * not `n`, or that states a floor, must render through `generic`.
+ * not `n`, or that states a floor, must render through `generic`. Every
+ * fixture STATES its `miss` (MF_MISS_N unless the fixture says otherwise):
+ * since [MEMFN-ROWCON] N3 a row that uses an unstated `miss` declines (R1).
  *
  *   arm_fixtures OUTDIR [--perturb]
+ *   arm_fixtures --gate
  *
  * writes OUTDIR/<fixture>.def and OUTDIR/<fixture>.use and prints one line
  * per fixture, `<fixture>\t<form_id>\t<libc>`. --perturb moves one byte of one
@@ -23,7 +26,16 @@
  * script's witness that a pinned digest sees a change in what it pins.
  * The line's third column is the art's MEMFN_LIBC stamp (run_arm_pins.sh
  * checks it against a scan of the rendered text).
- * Exit 1 on any kit refusal. */
+ * Exit 1 on any kit refusal.
+ *
+ * --gate ([MEMFN-ROWCON] N3) runs the GATE CASES instead and writes nothing:
+ * sites built to be DECLINED at define (the walk moves on: the form id that
+ * renders them) or REFUSED (the refusal's text), one line per case,
+ * `<case>\tRENDER\t<form_id>` or `<case>\tREFUSE\t<text>`. They are what
+ * shows the general gate covers the ad hoc K96 tests N3 deleted from
+ * ofsskip.c (a floor or a non-`n` miss at define and at the call) and the
+ * rulings N3 makes real (F1, an unstated miss, K-1's fn_ref). The EXPECTED
+ * outcome of each is run_arm_pins.sh's (check 6), never this file's. */
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -317,12 +329,144 @@ static int render_h(const char *dir, const char *name, const mf_site *s,
 static int render(const char *dir, const char *name, const mf_site *s,
                   const char *fn1)
 {
-    return render_h(dir, name, s, fn1, (Bounds){ NULL, NULL, NULL });
+    return render_h(dir, name, s, fn1, (Bounds){ NULL, MF_MISS_N, NULL });
+}
+
+/* ---- the gate cases (--gate, N3) ----------------------------------------- */
+
+/* One gate case: define with `hd`, then use (or call, for a FUNC site) with
+ * `hu`; prints the outcome line. Never fails the driver: the outcome is the
+ * script's to judge. */
+static void gate_case(const char *name, const mf_site *s, const mf_hooks *hd,
+                      const mf_hooks *hu)
+{
+    mf_arena a = { NULL, a_alloc };
+    mf_art *art = mf_art_begin(&a, "rx", MF_P_PORTABLE_ONLY, s->denies);
+    Text def = { 0 }, use = { 0 };
+    mf_sink sd = sink_of(&def), su = sink_of(&use);
+    mf_result res = { 0 };
+    uint32_t h = 0;
+    int rc = mf_define(art, s, hd, &sd, &h) || mf_use(art, h, hu, &su, &res);
+    if (rc) printf("%s\tREFUSE\t%s\n", name, mf_art_error(art) ? mf_art_error(art) : "");
+    else    printf("%s\tRENDER\t%s\n", name, res.form_id);
+    free(def.p);
+    free(use.p);
+}
+
+/* The define and use hooks render_h passes, with `miss`, `floor` and `s`
+ * given per side (NULL: unstated). */
+static void gate_hooks(Fx *fd, Fx *fu, mf_hooks *hd, mf_hooks *hu,
+                       const char *dmiss, const char *dfloor, const char *ds,
+                       const char *umiss, const char *ufloor, const char *us)
+{
+    mf_hooks d = { .fn_name = h_fn_name, .table_name = h_table_name,
+                   .note_tag = h_note_tag, .u = fd,
+                   .s = ds, .miss = dmiss, .floor = dfloor };
+    mf_hooks u = { .s = us, .n = "subject_length", .lo = "search_from",
+                   .miss = umiss, .floor = ufloor,
+                   .indent = "    ", .on_miss = "return 0;",
+                   .result = "handoff_position", .result_decl = "size_t ",
+                   .table_name = h_table_name, .u = fu };
+    *hd = d;
+    *hu = u;
+}
+
+static void gate_cases(void)
+{
+    static const char NONID[] = "(subject + 0)";   /* not an identifier (F1) */
+    mf_hooks hd, hu;
+    mf_site s = ofs_site();
+    s.pred.nterm = 2;
+    t_byte(&s.pred.term[0], 0, 'n');
+    t_byte(&s.pred.term[1], 1, 'e');
+    s.pred.plan_hint = 0;
+    Fx fd = { &s, "rx_ofsskip", NULL }, fu = { &s, "rx_ofsskip", "    " };
+
+    /* ofsskip, K96's deleted call-time tests: a floor, a non-n miss */
+    gate_hooks(&fd, &fu, &hd, &hu, MF_MISS_N, NULL, NULL, MF_MISS_N, "search_floor", "subject");
+    gate_case("ofs-call-floor", &s, &hd, &hu);
+    gate_hooks(&fd, &fu, &hd, &hu, MF_MISS_N, NULL, NULL, "((size_t)-1)", NULL, "subject");
+    gate_case("ofs-call-miss-other", &s, &hd, &hu);
+    /* ruling (b): an unstated miss, at the call and at the define */
+    gate_hooks(&fd, &fu, &hd, &hu, MF_MISS_N, NULL, NULL, NULL, NULL, "subject");
+    gate_case("ofs-call-miss-unstated", &s, &hd, &hu);
+    gate_hooks(&fd, &fu, &hd, &hu, NULL, NULL, NULL, MF_MISS_N, NULL, "subject");
+    gate_case("ofs-define-miss-unstated", &s, &hd, &hu);
+    /* K96's deleted define-time tests: a floor, a non-n miss */
+    gate_hooks(&fd, &fu, &hd, &hu, MF_MISS_N, "search_floor", NULL, MF_MISS_N, "search_floor", "subject");
+    gate_case("ofs-define-floor", &s, &hd, &hu);
+    gate_hooks(&fd, &fu, &hd, &hu, "((size_t)-1)", NULL, NULL, "((size_t)-1)", NULL, "subject");
+    gate_case("ofs-define-miss-other", &s, &hd, &hu);
+    /* ruling (a), F1: a non-identifier s at define reaches generic; one
+       stated only at the call is refused */
+    gate_hooks(&fd, &fu, &hd, &hu, MF_MISS_N, NULL, NONID, MF_MISS_N, NULL, NONID);
+    gate_case("ofs-define-nonident", &s, &hd, &hu);
+    gate_hooks(&fd, &fu, &hd, &hu, MF_MISS_N, NULL, NULL, MF_MISS_N, NULL, NONID);
+    gate_case("ofs-call-nonident", &s, &hd, &hu);
+    /* ruling (c), K-1: a FUNC site stating fn_ref 0 states no name */
+    mf_site z = s;
+    z.pred.fn_ref = 0;
+    gate_hooks(&fd, &fu, &hd, &hu, MF_MISS_N, NULL, NULL, MF_MISS_N, NULL, "subject");
+    gate_case("ofs-fn_ref-0", &z, &hd, &hu);
+
+    /* an ALL_PRESENT FUNC site (generic's): its name is site.pred.fn_ref */
+    mf_pred ap[1];
+    p_byte(&ap[0], 'a');
+    mf_site g = base_site();
+    g.form = MF_FORM_FUNC;
+    g.op = MF_OP_ALL_PRESENT;
+    g.handoff = MF_H_BOOL;
+    g.empty = MF_EMPTY_MISS;
+    g.npred = 1;
+    g.preds = ap;
+    g.pred.fn_ref = 0;
+    Fx gd = { &g, "rx_allp", NULL }, gu = { &g, "rx_allp", "    " };
+    gate_hooks(&gd, &gu, &hd, &hu, MF_MISS_N, NULL, NULL, MF_MISS_N, NULL, "subject");
+    gate_case("allp-func-fn_ref-0", &g, &hd, &hu);
+    g.pred.fn_ref = 7;
+    gate_case("allp-func-fn_ref-7", &g, &hd, &hu);
+
+    /* precheck: the split by handoff, and K96's floor at its run calls */
+    mf_pred q[2];
+    p_byte(&q[0], 109);
+    q[0].need = q[0].term[0].need = MF_OPTIONAL;
+    p_run(&q[1], "userpass", NULL, 3, 1);
+    mf_site pa = pre_site(q, 2, 1);
+    Fx pd = { &pa, "rx_reqrun", NULL }, pu = { &pa, "rx_reqrun", "    " };
+    gate_hooks(&pd, &pu, &hd, &hu, NULL, NULL, NULL, NULL, NULL, "subject");
+    gate_case("pre-assign-miss-unstated", &pa, &hd, &hu);
+    gate_hooks(&pd, &pu, &hd, &hu, NULL, NULL, NULL, MF_MISS_N, NULL, "subject");
+    gate_case("pre-assign-miss-token", &pa, &hd, &hu);
+    gate_hooks(&pd, &pu, &hd, &hu, "((size_t)-1)", NULL, NULL, "((size_t)-1)", NULL, "subject");
+    gate_case("pre-assign-miss-other", &pa, &hd, &hu);
+    mf_site po = pre_site(q, 2, -1);
+    Fx od = { &po, "rx_reqrun", NULL }, ou = { &po, "rx_reqrun", "    " };
+    gate_hooks(&od, &ou, &hd, &hu, "((size_t)-1)", NULL, NULL, "((size_t)-1)", NULL, "subject");
+    gate_case("pre-onmiss-miss-other", &po, &hd, &hu);
+    gate_hooks(&od, &ou, &hd, &hu, NULL, NULL, NULL, NULL, "search_floor", "subject");
+    gate_case("pre-use-floor", &po, &hd, &hu);
+    gate_hooks(&od, &ou, &hd, &hu, NULL, "search_floor", NULL, NULL, "search_floor", "subject");
+    gate_case("pre-define-floor", &po, &hd, &hu);
+    gate_hooks(&od, &ou, &hd, &hu, NULL, NULL, NONID, NULL, NULL, NONID);
+    gate_case("pre-define-nonident", &po, &hd, &hu);
+    gate_hooks(&od, &ou, &hd, &hu, NULL, NULL, NULL, NULL, NULL, NONID);
+    gate_case("pre-use-nonident", &po, &hd, &hu);
+
+    /* runcmp: F1 through mf_emit's one hook set */
+    mf_site r = run_site("abcdefgh", NULL, 0, 0);
+    Fx rd = { &r, NULL, NULL }, ru = { &r, NULL, "    " };
+    gate_hooks(&rd, &ru, &hd, &hu, NULL, NULL, NONID, NULL, NULL, NONID);
+    hd.lo = hu.lo;
+    gate_case("run-nonident", &r, &hd, &hu);
 }
 
 int main(int argc, char **argv)
 {
-    if (argc < 2) { fputs("usage: arm_fixtures OUTDIR [--perturb]\n", stderr); return 2; }
+    if (argc < 2) { fputs("usage: arm_fixtures OUTDIR [--perturb] | --gate\n", stderr); return 2; }
+    if (!strcmp(argv[1], "--gate")) {
+        gate_cases();
+        return 0;
+    }
     const char *dir = argv[1];
     int perturb = argc > 2 && !strcmp(argv[2], "--perturb");
     static const uint8_t ci3[] = { 0xDF, 0xDF, 0xDF };           /* caseless letters */

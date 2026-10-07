@@ -38,10 +38,14 @@
  * since M1b) and a multi-byte set's table is pcrec's (`table_name`, rule 7).
  *
  * The function's miss is its `n` and its reads are bounded by `pos` and `n`,
- * so the arm applies only where the site's `miss` is `n` (unstated, or the
- * `n` hook's own text) and no `floor` is stated; anything else is the generic
- * row's, and a call whose hooks state otherwise is refused (lane m1bfix: G2's
- * first run-bearing FUNC sites, a `((size_t)-1)` miss and a floor above `lo`).
+ * so the arm serves only a site whose `miss` is STATED as `n` (MF_MISS_N, or
+ * the `n` hook's own text) and that states no `floor` (K96: lane m1bfix's G2
+ * sites, a `((size_t)-1)` miss and a floor above `lo`). Since N3 that is the
+ * row contract's, at the end of this file, and the gate's, not this file's
+ * code: the define walk DECLINES the row for any other `miss` (an unstated
+ * one included, R1) or a stated `floor` (R2), so the site is the generic
+ * row's; a call whose hooks do so is REFUSED by `mf_use`'s re-check, naming
+ * the field. The ad hoc tests that did both before N3 are deleted.
  */
 #include <stdarg.h>
 #include <stdio.h>
@@ -91,12 +95,13 @@ static int scan_only(const mf_pred *p, unsigned i)
     return i == p->plan_hint && p->term[i].kind == MF_T_SET;
 }
 
-/* The function bounds its reads by `pos` and `n` only: a stated `floor`
- * (§14.7) is one it cannot honour where a term sits below it, so such a
- * site is the generic row's (lane m1bfix). pcrec states none at OFS/PRE. */
+/* The function bounds its reads by `pos` and `n` only, so it serves no
+ * stated `floor` (§14.7): the row contracts of its two customers say so
+ * (ofsskip's, precheck's), and the gate declines such a site before this
+ * predicate is asked (N3). pcrec states none at OFS/PRE. */
 int ofs_fn_applies(const mf_pred *p, const mf_hooks *def)
 {
-    if (!def || def->floor || p->nterm == 0 || p->nterm > MF_MAX_TERM ||
+    if (!def || p->nterm == 0 || p->nterm > MF_MAX_TERM ||
         p->plan_hint >= p->nterm)
         return 0;
     int runs = 0, checked = 0;
@@ -280,9 +285,7 @@ int ofs_fn_call(mf_art *art, const mf_hooks *h, const mf_pred *p,
                 const char *fn, mf_sink *o)
 {
     if (!h || !h->s || !h->n || !h->lo)
-        return kit_fail(art, "ofsskip: the call needs the s, n and lo hooks");
-    if (h->floor)
-        return kit_fail(art, "ofsskip: the call states a floor its definition did not");
+        return kit_fail(art, "ofsskip: the call needs the `s`, `n` and `lo` hooks");
     kit_out(o, "%s(%s, %s, %s", fn, h->s, h->n, h->lo);
     if (table_params(art, h, p, 0, o)) return -1;
     o->puts(o->u, ")");
@@ -377,22 +380,14 @@ static void legend(const mf_hooks *h, const mf_pred *p, mf_sink *o)
     if (o->cmt_close) o->cmt_close(o->u);
 }
 
-/* Is `miss` the function's own miss, `n`? Unstated (pcrec's hooks, §15's
- * table: `miss` is `n`), the MF_MISS_N token (kit_miss resolves it), or the
- * very text of the `n` hook. The function returns its `n` parameter on a
- * miss and takes no `miss` of its own, so any other value is the generic
- * row's (lane m1bfix). */
-static int miss_is_n(const mf_hooks *h)
-{
-    return !kit_miss(h) || (h->n && !strcmp(kit_miss(h), h->n));
-}
-
+/* The site's shape. Its `miss` (stated as `n`), its `floor` (none) and its
+ * name (`fn_ref` stated, `fn_name` offered) are the contract's, which the
+ * gate reads before this (N3). */
 static int ofsskip_applies(const mf_site *s, const mf_hooks *def)
 {
     return s->form == MF_FORM_FUNC && s->op == MF_OP_FIND &&
            s->handoff == MF_H_RETURN && s->empty == MF_EMPTY_MISS &&
            s->end_back == 0 && !s->reverse && !s->guard_by_caller &&
-           s->pred.fn_ref && def && def->fn_name && miss_is_n(def) &&
            ofs_fn_applies(&s->pred, def);
 }
 
@@ -420,57 +415,64 @@ static int ofsskip_use(mf_art *art, uint32_t handle, const mf_hooks *h,
 {
     site_rec *r = &art->sites[handle - 1];
     if (kit_sink_ok(art, o, "ofsskip")) return -1;
-    if (h && !miss_is_n(h))
-        return kit_fail(art, "ofsskip: the call's miss is not its n, the function's miss");
     return ofs_fn_call(art, h, &r->site.pred, r->fn, o);
 }
 
-/* ---- the contract ([MEMFN-ROWCON] N1, row_contracts.md §2) ---------------
+/* ---- the contract ([MEMFN-ROWCON] N1; enforced since N3) ----------------
  *
  * `uses`: the fields the text reads with no reading of its own left
  * unstated; `serves`: per field, the classes the text is right for (MF_ANY:
- * irrelevant to the text). Each cites the line above that justifies it.
- * Read only for some shapes, and so held by the predicate rather than
- * declared: `table_name` (a multi-byte SET term, :111 at define, :149 at
- * the call). The run compare's own fields are its rows' (runcmp.c). */
+ * irrelevant to the text). Each cites the code above that justifies it, by
+ * function (N3 replaced the line citations: deleting the ad hoc K96 tests
+ * moved every line below them). Read only for some shapes, and so held by
+ * the predicate rather than declared: `table_name` (a multi-byte SET term:
+ * ofs_fn_applies at define, table_of at the call). The run compare's own
+ * fields are its rows' (runcmp.c). */
 static const gate_use ofsskip_uses[] = {
-    /* :403-404 refuses a define without fn_name; :384 reads an unstated
-       miss as `n` (K96's miss half) */
-    { CM(FUNC), CM(RETURN), MF_PH_DEFINE, FM(fn_name) | FM(miss) },
-    /* :280-281 refuses a call without s, n, lo; :420 reads an unstated miss
-       as `n` */
+    /* ofsskip_define names the function: fn_name(fn_ref); the function's
+       miss is its `n` (ofs_fn_define's `return n;`), right only for a miss
+       STATED as `n` (K96's miss half; R1 declines an unstated one) */
+    { CM(FUNC), CM(RETURN), MF_PH_DEFINE, FM(fn_name) | FM(fn_ref) | FM(miss) },
+    /* ofs_fn_call pastes s, n and lo; the call's value on a miss is `n` */
     { CM(FUNC), CM(RETURN), MF_PH_USE, FM(s) | FM(n) | FM(lo) | FM(miss) },
 };
 
 static const gate_contract ofsskip_ct = {
     "arms", "ofsskip", ofsskip_uses, sizeof ofsskip_uses / sizeof ofsskip_uses[0], {
-    [FLD_form]            = CM(FUNC),                 /* :389 */
-    [FLD_op]              = CM(FIND),                 /* :389 */
-    [FLD_handoff]         = CM(RETURN),               /* :390 */
-    [FLD_reverse]         = CM(NO),                   /* :391; the stream is forward, :258-260 */
-    [FLD_empty]           = CM(E_MISS),               /* :390; an empty range fails :252 and returns n, :273 */
-    [FLD_end_back]        = CM(ZERO),                 /* :391; the loop reads to n, :252 */
-    [FLD_pred]            = CM(NONNEG),               /* :105; reads from cand up, :216, :252 */
-    [FLD_preds]           = MF_ANY,                   /* not read: a FIND reads s->pred, :393 */
+    [FLD_form]            = CM(FUNC),                 /* ofsskip_applies */
+    [FLD_op]              = CM(FIND),                 /* ofsskip_applies */
+    [FLD_handoff]         = CM(RETURN),               /* ofsskip_applies */
+    [FLD_reverse]         = CM(NO),                   /* ofsskip_applies; the memchr stream
+                                                         is forward (ofs_fn_define) */
+    [FLD_empty]           = CM(E_MISS),               /* ofsskip_applies; an empty range fails
+                                                         the loop guard and returns n */
+    [FLD_end_back]        = CM(ZERO),                 /* ofsskip_applies; the loop reads to n */
+    [FLD_pred]            = CM(NONNEG),               /* ofs_fn_applies refuses offset < 0;
+                                                         reads from cand up (verify_chain) */
+    [FLD_preds]           = MF_ANY,                   /* not read: a FIND reads s->pred */
     [FLD_ret_pred]        = MF_ANY,                   /* not read (ALL_PRESENT's) */
-    [FLD_guard_by_caller] = CM(NO),                   /* :391; the function bounds its own reads, :267 */
-    [FLD_on_miss_leaves]  = MF_ANY,                   /* not read; 0 off ON_MISS/ASSIGN, compose.c:210 */
+    [FLD_guard_by_caller] = CM(NO),                   /* ofsskip_applies; the function bounds
+                                                         its own reads (`cand + maxk >= n`) */
+    [FLD_on_miss_leaves]  = MF_ANY,                   /* not read; 0 off ON_MISS/ASSIGN (site_check) */
     [FLD_span_hi]         = MF_ANY,                   /* not read: a proven fact the text needs not */
-    [FLD_denies]          = CM(NONE) | CM(RUN_OVERLAP), /* :184 renders runs through the run
-                                                         compare, whose walk reads them with a
+    [FLD_denies]          = CM(NONE) | CM(RUN_OVERLAP), /* verify_chain renders runs through the
+                                                         run compare, whose walk reads them with a
                                                          fallback per domain (runcmp.c rows[]) */
-    [FLD_fn_ref]          = CM(REF),                  /* :392, :405 */
-    [FLD_table_ref]       = CM(NONE) | CM(REF),       /* :111 a multi-byte set needs one; a
-                                                         singleton :186-188 and a run :183 read none */
-    [FLD_s]               = CM(IDENT),                /* :284 raw in the call's argument list:
-                                                         a top-level comma would split it */
-    [FLD_n]               = CM(IDENT),                /* :284, as s */
-    [FLD_lo]              = CM(IDENT),                /* :284, as s */
-    [FLD_floor]           = 0,                        /* :99 declines any stated floor; :282-283
-                                                         refuses one at the call (K96's floor half) */
+    [FLD_fn_ref]          = CM(REF),                  /* ofsskip_define: fn_name(fn_ref) */
+    [FLD_table_ref]       = CM(NONE) | CM(REF),       /* ofs_fn_applies: a multi-byte set needs
+                                                         one; a singleton and a run read none */
+    [FLD_s]               = CM(IDENT),                /* ofs_fn_call: raw in the call's argument
+                                                         list, where a top-level comma would split it */
+    [FLD_n]               = CM(IDENT),                /* ofs_fn_call, as s */
+    [FLD_lo]              = CM(IDENT),                /* ofs_fn_call, as s */
+    [FLD_floor]           = 0,                        /* the function reads nothing below `pos`
+                                                         and takes no floor: a stated floor is
+                                                         declined at define, refused at the call
+                                                         (K96's floor half; R2) */
     [FLD_result]          = MF_ANY,                   /* not read: RETURN is the call's value */
     [FLD_result_decl]     = MF_ANY,                   /* not read */
-    [FLD_miss]            = CM(MISS_N),               /* :384: the function's miss is its n, :262 */
+    [FLD_miss]            = CM(MISS_N),               /* the function returns its `n` on a miss
+                                                         (ofs_fn_define, pair_body) */
     [FLD_on_miss]         = MF_ANY,                   /* not read: a FUNC RETURN runs no statement */
     [FLD_step]            = MF_ANY,                   /* not read (ADVANCE's) */
     [FLD_more]            = MF_ANY,                   /* not read (ADVANCE's) */
@@ -480,14 +482,14 @@ static const gate_contract ofsskip_ct = {
     [FLD_on_cand]         = MF_ANY,                   /* not read (ON_CAND's) */
     [FLD_on_cand_reach]   = MF_ANY,                   /* not read (ON_CAND's) */
     [FLD_member]          = MF_ANY,                   /* not read: the set's bits are the truth, a
-                                                         singleton compared :187-188, a wider set
-                                                         pcrec's table :190-193 (rule 7) */
-    [FLD_table_name]      = MF_ANY,                   /* :147 names the table, any name */
-    [FLD_fn_name]         = MF_ANY,                   /* :405 names the function, any name */
-    [FLD_note]            = MF_ANY,                   /* :410 pcrec's own writer, called as given */
+                                                         singleton compared, a wider set pcrec's
+                                                         table (verify_chain, rule 7) */
+    [FLD_table_name]      = MF_ANY,                   /* table_of names the table, any name */
+    [FLD_fn_name]         = MF_ANY,                   /* ofsskip_define names the function, any name */
+    [FLD_note]            = MF_ANY,                   /* ofsskip_define: pcrec's own writer, as given */
     [FLD_note_tag]        = MF_ANY,                   /* not read */
     [FLD_indent]          = MF_ANY,                   /* not read: the definition is file scope */
-    [FLD_comment_tier]    = MF_ANY,                   /* :335 handed to cmt_open as given */
+    [FLD_comment_tier]    = MF_ANY,                   /* legend: handed to cmt_open as given */
 }};
 
 const arm ofsskip_arm = {

@@ -245,7 +245,11 @@ typedef struct mf_arena {
  * note_tag) must stay valid until mf_art_end: the kit may hold it past
  * later hook calls. */
 typedef struct {
-    /* the subject and its bounds: side-effect-free C expressions (rule 1) */
+    /* the subject and its bounds: side-effect-free C expressions (rule 1).
+       RULED F1 ([MEMFN-ROWCON] N3): text that is not a bare C identifier is
+       served only by a form that parenthesizes it (the generic row). Stated
+       at mf_define, it selects such a form; stated only at a use of a form
+       that pastes it raw, that use is refused, naming the hook */
     const char *s;          /* the subject pointer                              */
     const char *n;          /* the READ LIMIT: no byte at or past it is read    */
     const char *lo;         /* search start; the range is [lo, n - end_back).
@@ -355,7 +359,20 @@ int      mf_art_end(mf_art *);
 const char *mf_art_error(const mf_art *);
 
 /* The define/use split (§14.0 [rev4.1]): FUNC parts at file scope once,
- * STMT/EXPR parts (or a FUNC site's call) in an entry body. */
+ * STMT/EXPR parts (or a FUNC site's call) in an entry body.
+ *
+ * THE ROW CONTRACTS ([MEMFN-ROWCON] N3, ENFORCED; R1/R2 of
+ * docs/design/memfn/row_contracts.md §1). Every form the kit can choose
+ * states the fields it USES and the value classes it SERVES. mf_define
+ * declines a form that uses a field the site or the define hooks leave
+ * UNSTATED (R1: a NULL hook, a NULL `miss`, a FUNC site's `fn_ref` 0) or
+ * that does not serve a STATED value (R2: a stated `floor`, a `miss` that is
+ * not MF_MISS_N, text that is not an identifier, ...), and takes the next;
+ * where none is left it REFUSES, naming each field in backquotes with its
+ * rule. mf_use (and mf_call) re-check the chosen form against the use hooks
+ * and REFUSE a use it does not serve, naming the fields: the definition is
+ * written, so nothing is re-selected. A field no form uses is a wildcard:
+ * leaving it unstated is never a refusal. */
 int mf_define(mf_art *, const mf_site *, const mf_hooks *def,
               mf_sink *file_scope, uint32_t *handle);
 int mf_use   (mf_art *, uint32_t handle, const mf_hooks *use,
