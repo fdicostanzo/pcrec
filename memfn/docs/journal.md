@@ -742,3 +742,10 @@ pointer when a kit change merges to main.
   its finishing pass scans the artifact. The fix lane runs after missn.
   F1 = the N3 cell, unreachable from pcrec. G1 is G2-side (equivalent
   mutants) and goes to G2u. Posted in responses.md.
+- libcnote merged into lane/memfn-rowcon. The arms note memchr (ofsskip
+  define, precheck use) and memcmp (runcmp's memcmp form) at render; the
+  constant-size memcpy is excluded. The arm-pins test now checks the
+  stand-alone MEMFN_LIBC stamp (it failed 8 fixtures before the fix, 0
+  after). 16 sample compiles show identical .c/.h. After the merge, strict,
+  build, test-memfn-arms and test-memfn-stamps are all rc 0. OWED to a heavy
+  slot: the identity gate vs ccf0ca33 and the full G2.
