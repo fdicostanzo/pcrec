@@ -1,0 +1,394 @@
+pop	id	enc	refused
+bench	altwide/ci-512	byte	pcrec: pattern too large: 717395 bytes of emitted code (limit 500000), which gcc cannot compile in reasonable time. A re
+bench	altwide/clsa-1024	byte	pcrec: pattern too large: 558452 bytes of emitted code (limit 500000), which gcc cannot compile in reasonable time. A re
+bench	altwide/clsd-1024	byte	pcrec: pattern too large: 557428 bytes of emitted code (limit 500000), which gcc cannot compile in reasonable time. A re
+bench	altwide/s-2048	byte	pcrec: pattern too large: 904245 bytes of emitted code (limit 500000), which gcc cannot compile in reasonable time. A re
+bench	altwide/s-4096	byte	pcrec: pattern too large: 1720266 bytes of emitted code (limit 500000), which gcc cannot compile in reasonable time. A r
+bench	altwide/w-2048	byte	pcrec: pattern too large: 946180 bytes of emitted code (limit 500000), which gcc cannot compile in reasonable time. A re
+bench	capability/negation-scope-lookbehind-var	byte	pcrec: variable-length lookbehind is not implemented: every alternative of a lookbehind must have a fixed length (this o
+bench	capability/wild-datetime-datefinder-alternation	byte	pcrec: pattern too large: 588530 bytes of emitted code (limit 500000), which gcc cannot compile in reasonable time. A re
+bench	syntax/cnd-group	byte	pcrec: module 'conditionals' is enabled but (?(...) is not implemented yet (pattern offset 8)
+bench	syntax/esc-ctrl	byte	pcrec: module 'misc' is enabled but \c is not implemented yet (pattern offset 4)
+bench	syntax/esc-octal-o	byte	pcrec: module 'misc' is enabled but \o is not implemented yet (pattern offset 0)
+bench	syntax/grp-branch-reset	byte	pcrec: module 'branch-reset' is enabled but (?|...) is not implemented yet (pattern offset 0)
+bench	syntax/grp-callout	byte	pcrec: module 'callouts' is enabled but (?C...) is not implemented yet (pattern offset 2)
+bench	syntax/grp-comment	byte	pcrec: module 'comments' is enabled but (?#...) is not implemented yet (pattern offset 2)
+bench	syntax/msc-c-uc	byte	pcrec: module 'misc' is enabled but \C is not implemented yet (pattern offset 1)
+bench	syntax/msc-r-uc	byte	pcrec: module 'misc' is enabled but \R is not implemented yet (pattern offset 4)
+bench	syntax/msc-x-uc	byte	pcrec: module 'misc' is enabled but \X is not implemented yet (pattern offset 1)
+bench	syntax/vrb-accept	byte	pcrec: (*...) requires module 'verbs' (pattern offset 4)
+bench	syntax/vrb-skip	byte	pcrec: (*SKIP) is outside pcrec's scope and no module will implement it (see docs/pcre2_compliance.md) (pattern offset 2
+bench	syntax/xcl-minus	byte	pcrec: module 'extended-classes' is enabled but (?[...) is not implemented yet (pattern offset 0)
+bench	utf8/asr-b-cyr-ucp	utf8	pcrec: UCP \b is not built yet under encoding 'utf8': it reads the Unicode word set, which is not byte-expressible, and 
+bench	utf8/cls-w-ucp	utf8	pcrec: UCP \w is a wide set (930 intervals) and is refused under encoding 'utf8' until a kit-sized class route exists ([
+bench	utf8/prp-ingreek	utf8	pcrec: module 'unicode-props' is enabled but \p{...}: this Unicode property is not implemented yet (pattern offset 11)
+corpus	tests/assertions/absolute.rxt:824	byte	pcrec: quantifier does not follow a repeatable item (pattern offset 2)
+corpus	tests/assertions/absolute.rxt:828	byte	pcrec: quantifier does not follow a repeatable item (pattern offset 2)
+corpus	tests/assertions/absolute.rxt:832	byte	pcrec: quantifier does not follow a repeatable item (pattern offset 2)
+corpus	tests/assertions/absolute.rxt:836	byte	pcrec: quantifier does not follow a repeatable item (pattern offset 4)
+corpus	tests/assertions/absolute.rxt:840	byte	pcrec: quantifier does not follow a repeatable item (pattern offset 2)
+corpus	tests/assertions/absolute.rxt:844	byte	pcrec: quantifier does not follow a repeatable item (pattern offset 2)
+corpus	tests/assertions/absolute.rxt:848	byte	pcrec: quantifier does not follow a repeatable item (pattern offset 2)
+corpus	tests/assertions/absolute.rxt:852	byte	pcrec: quantifier does not follow a repeatable item (pattern offset 4)
+corpus	tests/assertions/absolute.rxt:856	byte	pcrec: quantifier does not follow a repeatable item (pattern offset 2)
+corpus	tests/assertions/absolute.rxt:860	byte	pcrec: quantifier does not follow a repeatable item (pattern offset 2)
+corpus	tests/assertions/absolute.rxt:864	byte	pcrec: quantifier does not follow a repeatable item (pattern offset 2)
+corpus	tests/assertions/absolute.rxt:868	byte	pcrec: quantifier does not follow a repeatable item (pattern offset 4)
+corpus	tests/assertions/absolute.rxt:872	byte	pcrec: quantifier does not follow a repeatable item (pattern offset 3)
+corpus	tests/assertions/absolute.rxt:876	byte	pcrec: quantifier does not follow a repeatable item (pattern offset 3)
+corpus	tests/assertions/absolute.rxt:880	byte	pcrec: quantifier does not follow a repeatable item (pattern offset 3)
+corpus	tests/assertions/absolute.rxt:886	byte	pcrec: \A is not valid inside a character class (pattern offset 1)
+corpus	tests/assertions/absolute.rxt:890	byte	pcrec: \z is not valid inside a character class (pattern offset 1)
+corpus	tests/assertions/absolute.rxt:894	byte	pcrec: \Z is not valid inside a character class (pattern offset 1)
+corpus	tests/assertions/absolute.rxt:898	byte	pcrec: \A is not valid inside a character class (pattern offset 2)
+corpus	tests/assertions/absolute.rxt:902	byte	pcrec: \A is not valid inside a character class (pattern offset 1)
+corpus	tests/assertions/d27/syntax_errors.rxt:30	byte	pcrec: quantifier does not follow a repeatable item (pattern offset 6)
+corpus	tests/assertions/d27/syntax_errors.rxt:34	byte	pcrec: quantifier does not follow a repeatable item (pattern offset 2)
+corpus	tests/assertions/d27/syntax_errors.rxt:51	byte	pcrec: quantifier does not follow a repeatable item (pattern offset 6)
+corpus	tests/assertions/d27/syntax_errors.rxt:55	byte	pcrec: quantifier does not follow a repeatable item (pattern offset 2)
+corpus	tests/assertions/d27/syntax_errors.rxt:72	byte	pcrec: quantifier does not follow a repeatable item (pattern offset 6)
+corpus	tests/assertions/d27/syntax_errors.rxt:76	byte	pcrec: quantifier does not follow a repeatable item (pattern offset 2)
+corpus	tests/assertions/d27/syntax_errors.rxt:81	byte	pcrec: quantifier does not follow a repeatable item (pattern offset 2)
+corpus	tests/assertions/d27/syntax_errors.rxt:85	byte	pcrec: quantifier does not follow a repeatable item (pattern offset 2)
+corpus	tests/assertions/d27/syntax_errors.rxt:89	byte	pcrec: quantifier does not follow a repeatable item (pattern offset 2)
+corpus	tests/assertions/d27/syntax_errors.rxt:93	byte	pcrec: quantifier does not follow a repeatable item (pattern offset 6)
+corpus	tests/assertions/d27/syntax_errors.rxt:97	byte	pcrec: quantifier does not follow a repeatable item (pattern offset 2)
+corpus	tests/assertions/d27/syntax_errors.rxt:102	byte	pcrec: quantifier does not follow a repeatable item (pattern offset 2)
+corpus	tests/assertions/d27/syntax_errors.rxt:106	byte	pcrec: quantifier does not follow a repeatable item (pattern offset 2)
+corpus	tests/assertions/d27/syntax_errors.rxt:110	byte	pcrec: quantifier does not follow a repeatable item (pattern offset 2)
+corpus	tests/assertions/d27/syntax_errors.rxt:114	byte	pcrec: quantifier does not follow a repeatable item (pattern offset 6)
+corpus	tests/assertions/d27/syntax_errors.rxt:118	byte	pcrec: quantifier does not follow a repeatable item (pattern offset 2)
+corpus	tests/assertions/d27/syntax_errors.rxt:123	byte	pcrec: quantifier does not follow a repeatable item (pattern offset 2)
+corpus	tests/assertions/d27/syntax_errors.rxt:127	byte	pcrec: quantifier does not follow a repeatable item (pattern offset 2)
+corpus	tests/assertions/d27/syntax_errors.rxt:131	byte	pcrec: quantifier does not follow a repeatable item (pattern offset 2)
+corpus	tests/assertions/d27/syntax_errors.rxt:135	byte	pcrec: quantifier does not follow a repeatable item (pattern offset 6)
+corpus	tests/assertions/d27/syntax_errors.rxt:139	byte	pcrec: quantifier does not follow a repeatable item (pattern offset 2)
+corpus	tests/assertions/d27/syntax_errors.rxt:144	byte	pcrec: quantifier does not follow a repeatable item (pattern offset 2)
+corpus	tests/assertions/d27/syntax_errors.rxt:148	byte	pcrec: quantifier does not follow a repeatable item (pattern offset 2)
+corpus	tests/assertions/d27/syntax_errors.rxt:152	byte	pcrec: quantifier does not follow a repeatable item (pattern offset 2)
+corpus	tests/assertions/d27/syntax_errors.rxt:156	byte	pcrec: quantifier does not follow a repeatable item (pattern offset 6)
+corpus	tests/assertions/d27/syntax_errors.rxt:160	byte	pcrec: quantifier does not follow a repeatable item (pattern offset 2)
+corpus	tests/assertions/d27/syntax_errors.rxt:165	byte	pcrec: quantifier does not follow a repeatable item (pattern offset 4)
+corpus	tests/assertions/d27/syntax_errors.rxt:170	byte	pcrec: \K is not allowed inside a lookaround (pattern offset 0)
+corpus	tests/assertions/gpos.rxt:554	byte	pcrec: quantifier does not follow a repeatable item (pattern offset 4)
+corpus	tests/assertions/gpos.rxt:559	byte	pcrec: quantifier does not follow a repeatable item (pattern offset 3)
+corpus	tests/assertions/gpos.rxt:564	byte	pcrec: \G is not valid inside a character class (pattern offset 1)
+corpus	tests/assertions/kreset.rxt:1019	byte	pcrec: quantifier does not follow a repeatable item (pattern offset 4)
+corpus	tests/assertions/kreset.rxt:1023	byte	pcrec: quantifier does not follow a repeatable item (pattern offset 3)
+corpus	tests/assertions/kreset.rxt:1027	byte	pcrec: \K is not valid inside a character class (pattern offset 1)
+corpus	tests/atomic_groups/d27/syntax_errors.rxt:35	byte	pcrec: multiple quantifiers on the same item (pattern offset 3)
+corpus	tests/atomic_groups/d27/syntax_errors.rxt:39	byte	pcrec: multiple quantifiers on the same item (pattern offset 3)
+corpus	tests/atomic_groups/d27/syntax_errors.rxt:43	byte	pcrec: multiple quantifiers on the same item (pattern offset 3)
+corpus	tests/atomic_groups/d27/syntax_errors.rxt:47	byte	pcrec: multiple quantifiers on the same item (pattern offset 3)
+corpus	tests/atomic_groups/d27/syntax_errors.rxt:51	byte	pcrec: multiple quantifiers on the same item (pattern offset 3)
+corpus	tests/atomic_groups/d27/syntax_errors.rxt:56	byte	pcrec: multiple quantifiers on the same item (pattern offset 3)
+corpus	tests/atomic_groups/d27/syntax_errors.rxt:61	byte	pcrec: missing closing ) for group (pattern offset 0)
+corpus	tests/atomic_groups/d27/syntax_errors.rxt:67	byte	pcrec: unmatched closing parenthesis (pattern offset 5)
+corpus	tests/atomic_groups/d27/syntax_errors.rxt:72	byte	pcrec: quantifier does not follow a repeatable item (pattern offset 3)
+corpus	tests/atomic_groups/d27/syntax_errors.rxt:79	byte	pcrec: quantifier does not follow a repeatable item (pattern offset 1)
+corpus	tests/atomic_groups/d27/syntax_errors.rxt:83	byte	pcrec: quantifier does not follow a repeatable item (pattern offset 1)
+corpus	tests/atomic_groups/d27/syntax_errors.rxt:89	byte	pcrec: numbers out of order in {m,n} quantifier (pattern offset 5)
+corpus	tests/atomic_groups/d27/syntax_errors.rxt:95	byte	pcrec: number too big in {m,n} quantifier (pattern offset 7)
+corpus	tests/backrefs/d27/dupnames.rxt:182	byte	pcrec: two named subpatterns have the same name (write (?J) before this declaration to allow duplicates) (pattern offset
+corpus	tests/backrefs/d27/dupnames.rxt:189	byte	pcrec: two named subpatterns have the same name (write (?J) before this declaration to allow duplicates) (pattern offset
+corpus	tests/backrefs/d27/gating.rxt:53	byte	pcrec: \8 refers to capture group 8, but this pattern has 0 (pattern offset 0)
+corpus	tests/backrefs/d27/octal.rxt:88	byte	pcrec: \9 refers to capture group 9, but this pattern has 0 (pattern offset 0)
+corpus	tests/backrefs/d27/octal.rxt:127	byte	pcrec: octal value is greater than \377 in 8-bit non-UTF-8 mode (pattern offset 4)
+corpus	tests/backrefs/d27/syntax_errors.rxt:21	byte	pcrec: \g{0} counts back past the first capture group; this pattern has 0 (pattern offset 0)
+corpus	tests/backrefs/d27/syntax_errors.rxt:29	byte	pcrec: subpattern name must start with a non-digit (a backreference BY NUMBER is spelled \N or \g{N}) (pattern offset 0)
+corpus	tests/backrefs/d27/syntax_errors.rxt:34	byte	pcrec: subpattern name must start with a non-digit (a backreference BY NUMBER is spelled \N or \g{N}) (pattern offset 0)
+corpus	tests/backrefs/d27/syntax_errors.rxt:40	byte	pcrec: subpattern name must start with a non-digit (a backreference BY NUMBER is spelled \N or \g{N}) (pattern offset 0)
+corpus	tests/backrefs/d27/syntax_errors.rxt:48	byte	pcrec: \k must be followed by a name in <>, '' or {} (pattern offset 0)
+corpus	tests/backrefs/d27/syntax_errors.rxt:55	byte	pcrec: \g{-2} counts back past the first capture group; this pattern has 1 (pattern offset 0)
+corpus	tests/backrefs/d27/syntax_errors.rxt:61	byte	pcrec: \g{+1} refers to capture group 2, but this pattern has 1 (pattern offset 9)
+corpus	tests/backrefs/d27/syntax_errors.rxt:68	byte	pcrec: two named subpatterns have the same name (write (?J) before this declaration to allow duplicates) (pattern offset
+corpus	tests/backrefs/d27/syntax_errors.rxt:81	byte	pcrec: \g{nosuch} refers to a capture group named 'nosuch', which this pattern does not declare (pattern offset 0)
+corpus	tests/backrefs/dupnames.rxt:55	byte	pcrec: two named subpatterns have the same name (write (?J) before this declaration to allow duplicates) (pattern offset
+corpus	tests/backrefs/dupnames.rxt:61	byte	pcrec: two named subpatterns have the same name (write (?J) before this declaration to allow duplicates) (pattern offset
+corpus	tests/backrefs/dupnames.rxt:67	byte	pcrec: two named subpatterns have the same name (write (?J) before this declaration to allow duplicates) (pattern offset
+corpus	tests/backrefs/dupnames.rxt:100	byte	pcrec: two named subpatterns have the same name (write (?J) before this declaration to allow duplicates) (pattern offset
+corpus	tests/backrefs/octal.rxt:71	byte	pcrec: \8 refers to capture group 8, but this pattern has 0 (pattern offset 1)
+corpus	tests/backrefs/octal.rxt:76	byte	pcrec: \9 refers to capture group 9, but this pattern has 0 (pattern offset 1)
+corpus	tests/backrefs/octal.rxt:151	byte	pcrec: \81 refers to capture group 81, but this pattern has 0 (pattern offset 1)
+corpus	tests/backrefs/octal.rxt:156	byte	pcrec: \89 refers to capture group 89, but this pattern has 0 (pattern offset 1)
+corpus	tests/backrefs/octal.rxt:161	byte	pcrec: \91 refers to capture group 91, but this pattern has 0 (pattern offset 1)
+corpus	tests/backrefs/octal.rxt:171	byte	pcrec: octal value is greater than \377 in 8-bit non-UTF-8 mode (pattern offset 5)
+corpus	tests/backrefs/octal.rxt:186	byte	pcrec: \g10 refers to capture group 10, but this pattern has 0 (pattern offset 1)
+corpus	tests/backrefs/octal.rxt:191	byte	pcrec: \g{10} refers to capture group 10, but this pattern has 0 (pattern offset 1)
+corpus	tests/backrefs/octal_class.rxt:98	byte	pcrec: octal value is greater than \377 in 8-bit non-UTF-8 mode (pattern offset 6)
+corpus	tests/backrefs/spellings.rxt:126	byte	pcrec: \g{0} counts back past the first capture group; this pattern has 1 (pattern offset 4)
+corpus	tests/backrefs/spellings.rxt:131	byte	pcrec: \g0 counts back past the first capture group; this pattern has 1 (pattern offset 4)
+corpus	tests/backrefs/spellings.rxt:136	byte	pcrec: a relative reference of zero is not allowed (pattern offset 4)
+corpus	tests/backrefs/spellings.rxt:141	byte	pcrec: \g{-2} counts back past the first capture group; this pattern has 1 (pattern offset 4)
+corpus	tests/backrefs/spellings.rxt:146	byte	pcrec: \g must be followed by a number, a relative offset, or a braced name or number (pattern offset 4)
+corpus	tests/backrefs/spellings.rxt:151	byte	pcrec: \g{} takes a number, a relative offset, or a subpattern name, not a mixture (pattern offset 4)
+corpus	tests/backrefs/spellings.rxt:156	byte	pcrec: subpattern name or number expected after \g{ (pattern offset 4)
+corpus	tests/backrefs/spellings.rxt:207	byte	pcrec: subpattern name must start with a non-digit (a backreference BY NUMBER is spelled \N or \g{N}) (pattern offset 4)
+corpus	tests/backrefs/spellings.rxt:212	byte	pcrec: subpattern name must start with a non-digit (a backreference BY NUMBER is spelled \N or \g{N}) (pattern offset 4)
+corpus	tests/backrefs/spellings.rxt:217	byte	pcrec: \k must be followed by a name in <>, '' or {} (pattern offset 8)
+corpus	tests/backrefs/spellings.rxt:222	byte	pcrec: missing closing > after \k< (pattern offset 8)
+corpus	tests/backrefs/spellings.rxt:227	byte	pcrec: subpattern name expected after \k<> (pattern offset 8)
+corpus	tests/backrefs/spellings.rxt:233	byte	pcrec: \k<q> refers to a capture group named 'q', which this pattern does not declare (pattern offset 4)
+corpus	tests/backrefs/spellings.rxt:257	byte	pcrec: subpattern name must start with a non-digit (a backreference BY NUMBER is spelled \N or \g{N}) (pattern offset 4)
+corpus	tests/backrefs/spellings.rxt:262	byte	pcrec: (?P=q) refers to a capture group named 'q', which this pattern does not declare (pattern offset 8)
+corpus	tests/backrefs/spellings.rxt:267	byte	pcrec: subpattern name expected after (?P=) (pattern offset 8)
+corpus	tests/base/class_escape_fallbacks.rxt:112	byte	pcrec: octal value is greater than \377 in 8-bit non-UTF-8 mode (pattern offset 5)
+corpus	tests/base/class_escape_fallbacks.rxt:115	byte	pcrec: octal value is greater than \377 in 8-bit non-UTF-8 mode (pattern offset 5)
+corpus	tests/base/class_escape_fallbacks.rxt:118	byte	pcrec: range out of order in character class (pattern offset 2)
+corpus	tests/base/class_escape_fallbacks.rxt:121	byte	pcrec: range out of order in character class (pattern offset 2)
+corpus	tests/base/class_escape_fallbacks.rxt:124	byte	pcrec: range out of order in character class (pattern offset 3)
+corpus	tests/base/review_r1.rxt:32	byte	pcrec: digits missing after \x (pattern offset 0)
+corpus	tests/base/review_r1.rxt:35	byte	pcrec: digits missing after \x (pattern offset 1)
+corpus	tests/base/review_r1.rxt:45	byte	pcrec: quantifier does not follow a repeatable item (pattern offset 1)
+corpus	tests/base/review_r1.rxt:49	byte	pcrec: quantifier does not follow a repeatable item (pattern offset 2)
+corpus	tests/base/syntax_errors.rxt:3	byte	pcrec: multiple quantifiers on the same item (pattern offset 2)
+corpus	tests/base/syntax_errors.rxt:6	byte	pcrec: multiple quantifiers on the same item (pattern offset 6)
+corpus	tests/base/syntax_errors.rxt:12	byte	pcrec: quantifier does not follow a repeatable item (pattern offset 0)
+corpus	tests/base/syntax_errors.rxt:15	byte	pcrec: quantifier does not follow a repeatable item (pattern offset 0)
+corpus	tests/base/syntax_errors.rxt:18	byte	pcrec: quantifier does not follow a repeatable item (pattern offset 0)
+corpus	tests/base/syntax_errors.rxt:21	byte	pcrec: missing closing ) for group (pattern offset 0)
+corpus	tests/base/syntax_errors.rxt:24	byte	pcrec: unmatched closing parenthesis (pattern offset 1)
+corpus	tests/base/syntax_errors.rxt:27	byte	pcrec: unmatched closing parenthesis (pattern offset 3)
+corpus	tests/base/syntax_errors.rxt:30	byte	pcrec: missing closing ) for group (pattern offset 0)
+corpus	tests/base/syntax_errors.rxt:33	byte	pcrec: missing terminating ] for character class (pattern offset 0)
+corpus	tests/base/syntax_errors.rxt:36	byte	pcrec: missing terminating ] for character class (pattern offset 0)
+corpus	tests/base/syntax_errors.rxt:39	byte	pcrec: pattern ends with a trailing backslash (pattern offset 1)
+corpus	tests/base/syntax_errors.rxt:42	byte	pcrec: missing closing ) for group (pattern offset 0)
+corpus	tests/base/syntax_errors.rxt:45	byte	pcrec: missing closing ) for group (pattern offset 0)
+corpus	tests/base/syntax_errors.rxt:48	byte	pcrec: numbers out of order in {m,n} quantifier (pattern offset 5)
+corpus	tests/base/syntax_errors.rxt:54	byte	pcrec: missing closing ) for group (pattern offset 0)
+corpus	tests/base/syntax_errors.rxt:57	byte	pcrec: unmatched closing parenthesis (pattern offset 0)
+corpus	tests/base/syntax_errors.rxt:60	byte	pcrec: missing terminating ] for character class (pattern offset 0)
+corpus	tests/base/syntax_errors.rxt:66	byte	pcrec: quantifier does not follow a repeatable item (pattern offset 1)
+corpus	tests/base/syntax_errors.rxt:69	byte	pcrec: quantifier does not follow a repeatable item (pattern offset 2)
+corpus	tests/base/syntax_errors.rxt:72	byte	pcrec: multiple quantifiers on the same item (pattern offset 5)
+corpus	tests/base/syntax_errors.rxt:86	byte	pcrec: quantifier does not follow a repeatable item (pattern offset 2)
+corpus	tests/base/syntax_errors.rxt:89	byte	pcrec: quantifier does not follow a repeatable item (pattern offset 4)
+corpus	tests/base/syntax_errors.rxt:92	byte	pcrec: quantifier does not follow a repeatable item (pattern offset 3)
+corpus	tests/base/syntax_errors.rxt:95	byte	pcrec: quantifier does not follow a repeatable item (pattern offset 3)
+corpus	tests/base/syntax_errors.rxt:98	byte	pcrec: quantifier does not follow a repeatable item (pattern offset 2)
+corpus	tests/base/syntax_errors.rxt:101	byte	pcrec: quantifier does not follow a repeatable item (pattern offset 2)
+corpus	tests/base/syntax_errors.rxt:104	byte	pcrec: quantifier does not follow a repeatable item (pattern offset 4)
+corpus	tests/base/syntax_errors.rxt:107	byte	pcrec: quantifier does not follow a repeatable item (pattern offset 3)
+corpus	tests/base/syntax_errors.rxt:110	byte	pcrec: quantifier does not follow a repeatable item (pattern offset 5)
+corpus	tests/base/syntax_errors.rxt:113	byte	pcrec: quantifier does not follow a repeatable item (pattern offset 2)
+corpus	tests/base/syntax_errors.rxt:119	byte	pcrec: number too big in {m,n} quantifier (pattern offset 6)
+corpus	tests/base/syntax_errors.rxt:122	byte	pcrec: numbers out of order in {m,n} quantifier (pattern offset 4)
+corpus	tests/base/syntax_errors.rxt:130	byte	pcrec: number too big in {m,n} quantifier (pattern offset 7)
+corpus	tests/base/syntax_errors.rxt:134	byte	pcrec: number too big in {m,n} quantifier (pattern offset 8)
+corpus	tests/base/syntax_errors.rxt:138	byte	pcrec: number too big in {m,n} quantifier (pattern offset 9)
+corpus	tests/base/syntax_errors.rxt:142	byte	pcrec: number too big in {m,n} quantifier (pattern offset 7)
+corpus	tests/base/syntax_errors.rxt:146	byte	pcrec: number too big in {m,n} quantifier (pattern offset 8)
+corpus	tests/base/syntax_errors.rxt:150	byte	pcrec: number too big in {m,n} quantifier (pattern offset 13)
+corpus	tests/base/syntax_errors.rxt:154	byte	pcrec: number too big in {m,n} quantifier (pattern offset 22)
+corpus	tests/base/syntax_errors.rxt:160	byte	pcrec: number too big in {m,n} quantifier (pattern offset 7)
+corpus	tests/classes/classes.rxt:249	byte	pcrec: numbers out of order in {m,n} quantifier (pattern offset 6)
+corpus	tests/classes/classes.rxt:253	byte	pcrec: PCRE2 does not support \F, \L, \l, \N{name}, \U, or \u (pattern offset 0)
+corpus	tests/classes/classes.rxt:259	byte	pcrec: \N is not valid inside a character class (pattern offset 1)
+corpus	tests/classes/classes.rxt:263	byte	pcrec: invalid range in character class (pattern offset 2)
+corpus	tests/classes/classes.rxt:267	byte	pcrec: module 'extended-classes' is enabled but (?[...) is not implemented yet (pattern offset 0)
+corpus	tests/classes/classes.rxt:272	byte	pcrec: invalid range in character class (pattern offset 10)
+corpus	tests/classes/classes.rxt:277	byte	pcrec: [[:<:]] is a word-boundary assertion and requires module 'assertions' (pattern offset 1)
+corpus	tests/classes/classes.rxt:282	byte	pcrec: unknown POSIX class name (pattern offset 1)
+corpus	tests/lookaround/alpha_spellings.rxt:369	byte	pcrec: variable-length lookbehind is not implemented: every alternative of a lookbehind must have a fixed length (this o
+corpus	tests/lookaround/alpha_spellings.rxt:380	byte	pcrec: \K is not allowed inside a lookaround (pattern offset 0)
+corpus	tests/lookaround/d27/refusals.rxt:13	byte	pcrec: variable-length lookbehind is not implemented: every alternative of a lookbehind must have a fixed length (this o
+corpus	tests/lookaround/d27/refusals.rxt:18	byte	pcrec: variable-length lookbehind is not implemented: every alternative of a lookbehind must have a fixed length (this o
+corpus	tests/lookaround/d27/refusals.rxt:23	byte	pcrec: variable-length lookbehind is not implemented: every alternative of a lookbehind must have a fixed length (this o
+corpus	tests/lookaround/d27/refusals.rxt:28	byte	pcrec: variable-length lookbehind is not implemented: every alternative of a lookbehind must have a fixed length (this o
+corpus	tests/lookaround/d27/refusals.rxt:33	byte	pcrec: variable-length lookbehind is not implemented: every alternative of a lookbehind must have a fixed length (this o
+corpus	tests/lookaround/d27/refusals.rxt:38	byte	pcrec: variable-length lookbehind is not implemented: every alternative of a lookbehind must have a fixed length (this o
+corpus	tests/lookaround/d27/refusals.rxt:43	byte	pcrec: variable-length lookbehind is not implemented: every alternative of a lookbehind must have a fixed length (this o
+corpus	tests/lookaround/d27/refusals.rxt:48	byte	pcrec: variable-length lookbehind is not implemented: every alternative of a lookbehind must have a fixed length (this o
+corpus	tests/lookaround/d27/refusals.rxt:53	byte	pcrec: variable-length lookbehind is not implemented: every alternative of a lookbehind must have a fixed length (this o
+corpus	tests/lookaround/d27/refusals.rxt:58	byte	pcrec: variable-length lookbehind is not implemented: every alternative of a lookbehind must have a fixed length (this o
+corpus	tests/lookaround/d27/refusals.rxt:63	byte	pcrec: variable-length lookbehind is not implemented: every alternative of a lookbehind must have a fixed length (this o
+corpus	tests/lookaround/d27/refusals.rxt:68	byte	pcrec: variable-length lookbehind is not implemented: every alternative of a lookbehind must have a fixed length (this o
+corpus	tests/lookaround/d27/refusals.rxt:73	byte	pcrec: variable-length lookbehind is not implemented: every alternative of a lookbehind must have a fixed length (this o
+corpus	tests/lookaround/d27/refusals.rxt:78	byte	pcrec: variable-length lookbehind is not implemented: every alternative of a lookbehind must have a fixed length (this o
+corpus	tests/lookaround/d27/refusals.rxt:83	byte	pcrec: variable-length lookbehind is not implemented: every alternative of a lookbehind must have a fixed length (this o
+corpus	tests/lookaround/d27/refusals.rxt:88	byte	pcrec: variable-length lookbehind is not implemented: every alternative of a lookbehind must have a fixed length (this o
+corpus	tests/lookaround/d27/refusals.rxt:93	byte	pcrec: variable-length lookbehind is not implemented: every alternative of a lookbehind must have a fixed length (this o
+corpus	tests/lookaround/d27/refusals.rxt:98	byte	pcrec: variable-length lookbehind is not implemented: every alternative of a lookbehind must have a fixed length (this o
+corpus	tests/lookaround/d27/refusals.rxt:103	byte	pcrec: (*alpha_assertion) not recognized (pattern offset 0)
+corpus	tests/lookaround/d27/refusals.rxt:108	byte	pcrec: (*alpha_assertion) not recognized (pattern offset 0)
+corpus	tests/lookaround/d27/refusals.rxt:113	byte	pcrec: quantifier does not follow a repeatable item (pattern offset 4)
+corpus	tests/lookaround/d27/refusals.rxt:118	byte	pcrec: \K is not allowed inside a lookaround (pattern offset 0)
+corpus	tests/lookaround/d27/refusals.rxt:123	byte	pcrec: \K is not allowed inside a lookaround (pattern offset 0)
+corpus	tests/lookaround/d27/refusals.rxt:128	byte	pcrec: \K is not allowed inside a lookaround (pattern offset 6)
+corpus	tests/lookaround/d27/refusals.rxt:133	byte	pcrec: \K is not allowed inside a lookaround (pattern offset 0)
+corpus	tests/lookaround/d27/refusals.rxt:138	byte	pcrec: \K is not allowed inside a lookaround (pattern offset 0)
+corpus	tests/lookaround/d27/refusals.rxt:143	byte	pcrec: \K is not allowed inside a lookaround (pattern offset 0)
+corpus	tests/lookaround/d27/refusals.rxt:148	byte	pcrec: \K is not allowed inside a lookaround (pattern offset 0)
+corpus	tests/lookaround/d27/refusals.rxt:153	byte	pcrec: \K is not allowed inside a lookaround (pattern offset 0)
+corpus	tests/lookaround/d27/refusals.rxt:158	byte	pcrec: \K is not allowed inside a lookaround (pattern offset 0)
+corpus	tests/lookaround/d27/refusals.rxt:163	byte	pcrec: \K is not allowed inside a lookaround (pattern offset 0)
+corpus	tests/lookaround/d27/refusals.rxt:168	byte	pcrec: \K is not allowed inside a lookaround (pattern offset 0)
+corpus	tests/lookaround/d27/spellings.rxt:139	byte	pcrec: variable-length lookbehind is not implemented: every alternative of a lookbehind must have a fixed length (this o
+corpus	tests/lookaround/d27/spellings.rxt:148	byte	pcrec: variable-length lookbehind is not implemented: every alternative of a lookbehind must have a fixed length (this o
+corpus	tests/lookaround/d27/spellings.rxt:157	byte	pcrec: variable-length lookbehind is not implemented: every alternative of a lookbehind must have a fixed length (this o
+corpus	tests/lookaround/d27/spellings.rxt:211	byte	pcrec: variable-length lookbehind is not implemented: every alternative of a lookbehind must have a fixed length (this o
+corpus	tests/lookaround/d27/spellings.rxt:238	byte	pcrec: variable-length lookbehind is not implemented: every alternative of a lookbehind must have a fixed length (this o
+corpus	tests/lookaround/refused.rxt:86	byte	pcrec: \K is not allowed inside a lookaround (pattern offset 0)
+corpus	tests/lookaround/refused.rxt:132	byte	pcrec: variable-length lookbehind is not implemented: every alternative of a lookbehind must have a fixed length (this o
+corpus	tests/lookaround/refused.rxt:220	byte	pcrec: variable-length lookbehind is not implemented: every alternative of a lookbehind must have a fixed length (this o
+corpus	tests/lookaround/refused.rxt:228	byte	pcrec: variable-length lookbehind is not implemented: every alternative of a lookbehind must have a fixed length (this o
+corpus	tests/lookaround/refused.rxt:284	byte	pcrec: variable-length lookbehind is not implemented: every alternative of a lookbehind must have a fixed length (this o
+corpus	tests/lookaround/refused.rxt:294	byte	pcrec: variable-length lookbehind is not implemented: every alternative of a lookbehind must have a fixed length (this o
+corpus	tests/lookaround/refused.rxt:303	byte	pcrec: missing closing ) for group (pattern offset 0)
+corpus	tests/lookaround/refused.rxt:309	byte	pcrec: missing closing ) for group (pattern offset 0)
+corpus	tests/lookaround/refused.rxt:315	byte	pcrec: missing closing ) for group (pattern offset 0)
+corpus	tests/lookaround/refused.rxt:324	byte	pcrec: missing closing ) for group (pattern offset 0)
+corpus	tests/lookaround/refused.rxt:330	byte	pcrec: missing closing ) for group (pattern offset 0)
+corpus	tests/lookaround/refused.rxt:336	byte	pcrec: missing closing ) for group (pattern offset 0)
+corpus	tests/modifiers/letters.rxt:58	byte	pcrec: \1 refers to capture group 1, but this pattern has 0 (pattern offset 7)
+corpus	tests/modifiers/malformed_and_gate.rxt:86	byte	pcrec: invalid hyphen in option setting (pattern offset 5)
+corpus	tests/modifiers/malformed_and_gate.rxt:90	byte	pcrec: unrecognized character after (? or (?- (pattern offset 0)
+corpus	tests/modifiers/xxmode.rxt:39	byte	pcrec: range out of order in character class (pattern offset 6)
+corpus	tests/modifiers/xxmode.rxt:55	byte	pcrec: range out of order in character class (pattern offset 7)
+corpus	tests/named_groups/d27/duplicates.rxt:16	byte	pcrec: two named subpatterns have the same name (write (?J) before this declaration to allow duplicates) (pattern offset
+corpus	tests/named_groups/d27/duplicates.rxt:21	byte	pcrec: two named subpatterns have the same name (write (?J) before this declaration to allow duplicates) (pattern offset
+corpus	tests/named_groups/d27/duplicates.rxt:25	byte	pcrec: two named subpatterns have the same name (write (?J) before this declaration to allow duplicates) (pattern offset
+corpus	tests/named_groups/d27/duplicates.rxt:31	byte	pcrec: two named subpatterns have the same name (write (?J) before this declaration to allow duplicates) (pattern offset
+corpus	tests/named_groups/d27/duplicates.rxt:38	byte	pcrec: two named subpatterns have the same name (write (?J) before this declaration to allow duplicates) (pattern offset
+corpus	tests/named_groups/d27/name_syntax.rxt:57	byte	pcrec: subpattern name expected (a name starts with a letter or '_', never a digit) (pattern offset 3)
+corpus	tests/named_groups/d27/name_syntax.rxt:61	byte	pcrec: subpattern name expected (a name starts with a letter or '_', never a digit) (pattern offset 3)
+corpus	tests/named_groups/d27/name_syntax.rxt:65	byte	pcrec: subpattern name expected (a name starts with a letter or '_', never a digit) (pattern offset 4)
+corpus	tests/named_groups/d27/name_syntax.rxt:70	byte	pcrec: subpattern name expected (a name starts with a letter or '_', never a digit) (pattern offset 3)
+corpus	tests/named_groups/d27/name_syntax.rxt:74	byte	pcrec: subpattern name expected (a name starts with a letter or '_', never a digit) (pattern offset 4)
+corpus	tests/named_groups/d27/name_syntax.rxt:79	byte	pcrec: missing closing > after subpattern name (pattern offset 5)
+corpus	tests/named_groups/d27/name_syntax.rxt:84	byte	pcrec: missing closing > after subpattern name (pattern offset 5)
+corpus	tests/named_groups/d27/name_syntax.rxt:89	byte	pcrec: missing closing > after subpattern name (pattern offset 5)
+corpus	tests/named_groups/d27/name_syntax.rxt:103	byte	pcrec: missing closing > after subpattern name (pattern offset 6)
+corpus	tests/named_groups/d27/name_syntax.rxt:133	byte	pcrec: subpattern name is too long (maximum 128 bytes) (pattern offset 3)
+corpus	tests/named_groups/named_groups.rxt:144	byte	pcrec: two named subpatterns have the same name (write (?J) before this declaration to allow duplicates) (pattern offset
+corpus	tests/named_groups/named_groups.rxt:150	byte	pcrec: subpattern name expected (a name starts with a letter or '_', never a digit) (pattern offset 4)
+corpus	tests/quoting/d27/errors.rxt:10	byte	pcrec: missing terminating ] for character class (pattern offset 0)
+corpus	tests/quoting/d27/errors.rxt:16	byte	pcrec: missing terminating ] for character class (pattern offset 0)
+corpus	tests/quoting/d27/errors.rxt:29	byte	pcrec: quantifier does not follow a repeatable item (pattern offset 4)
+corpus	tests/quoting/k62_class_range_e.rxt:53	byte	pcrec: missing terminating ] for character class (pattern offset 0)
+corpus	tests/recursion/d27/sr_interactions.rxt:78	byte	pcrec: \K is not allowed inside a lookaround (pattern offset 1)
+corpus	tests/recursion/d27/sr_interactions.rxt:245	byte	pcrec: variable-length lookbehind is not implemented: every alternative of a lookbehind must have a fixed length (this o
+corpus	tests/recursion/d27/sr_interactions.rxt:252	byte	pcrec: variable-length lookbehind is not implemented: every alternative of a lookbehind must have a fixed length (this o
+corpus	tests/recursion/d27/sr_interactions.rxt:258	byte	pcrec: variable-length lookbehind is not implemented: every alternative of a lookbehind must have a fixed length (this o
+corpus	tests/recursion/d27/sr_interactions.rxt:265	byte	pcrec: variable-length lookbehind is not implemented: every alternative of a lookbehind must have a fixed length (this o
+corpus	tests/recursion/d27/sr_refusals.rxt:20	byte	pcrec: a relative reference of zero is not allowed (pattern offset 4)
+corpus	tests/recursion/d27/sr_refusals.rxt:29	byte	pcrec: a relative reference of zero is not allowed (pattern offset 4)
+corpus	tests/recursion/d27/sr_refusals.rxt:38	byte	pcrec: a relative reference of zero is not allowed (pattern offset 4)
+corpus	tests/recursion/d27/sr_refusals.rxt:47	byte	pcrec: a relative reference of zero is not allowed (pattern offset 4)
+corpus	tests/recursion/d27/sr_refusals.rxt:56	byte	pcrec: a relative reference of zero is not allowed (pattern offset 4)
+corpus	tests/recursion/d27/sr_refusals.rxt:65	byte	pcrec: a relative reference of zero is not allowed (pattern offset 4)
+corpus	tests/recursion/d27/sr_refusals.rxt:74	byte	pcrec: a relative reference of zero is not allowed (pattern offset 4)
+corpus	tests/recursion/d27/sr_refusals.rxt:83	byte	pcrec: a relative reference of zero is not allowed (pattern offset 4)
+corpus	tests/recursion/d27/sr_refusals.rxt:92	byte	pcrec: a relative reference of zero is not allowed (pattern offset 4)
+corpus	tests/recursion/d27/sr_refusals.rxt:99	byte	pcrec: (?2) refers to capture group 2, but this pattern has 1 (pattern offset 4)
+corpus	tests/recursion/d27/sr_refusals.rxt:106	byte	pcrec: (?9) refers to capture group 9, but this pattern has 1 (pattern offset 4)
+corpus	tests/recursion/d27/sr_refusals.rxt:113	byte	pcrec: (?12) refers to capture group 12, but this pattern has 1 (pattern offset 4)
+corpus	tests/recursion/d27/sr_refusals.rxt:120	byte	pcrec: \g<7> refers to capture group 7, but this pattern has 1 (pattern offset 4)
+corpus	tests/recursion/d27/sr_refusals.rxt:127	byte	pcrec: \g'7' refers to capture group 7, but this pattern has 1 (pattern offset 4)
+corpus	tests/recursion/d27/sr_refusals.rxt:134	byte	pcrec: (?-2) counts back past the first capture group; this pattern has 1 (pattern offset 4)
+corpus	tests/recursion/d27/sr_refusals.rxt:141	byte	pcrec: (?+2) refers to capture group 3, but this pattern has 1 (pattern offset 4)
+corpus	tests/recursion/d27/sr_refusals.rxt:148	byte	pcrec: \g<-2> counts back past the first capture group; this pattern has 1 (pattern offset 4)
+corpus	tests/recursion/d27/sr_refusals.rxt:153	byte	pcrec: (?&nope) refers to a capture group named 'nope', which this pattern does not declare (pattern offset 8)
+corpus	tests/recursion/d27/sr_refusals.rxt:158	byte	pcrec: (?P>nope) refers to a capture group named 'nope', which this pattern does not declare (pattern offset 8)
+corpus	tests/recursion/d27/sr_refusals.rxt:163	byte	pcrec: \g<nope> refers to a capture group named 'nope', which this pattern does not declare (pattern offset 8)
+corpus	tests/recursion/d27/sr_refusals.rxt:168	byte	pcrec: \g'nope' refers to a capture group named 'nope', which this pattern does not declare (pattern offset 8)
+corpus	tests/recursion/d27/sr_refusals.rxt:176	byte	pcrec: DEFINE subpattern contains more than one branch (pattern offset 4)
+corpus	tests/recursion/d27/sr_refusals.rxt:182	byte	pcrec: DEFINE subpattern contains more than one branch (pattern offset 4)
+corpus	tests/recursion/d27/sr_wrapped.rxt:122	byte	pcrec: variable-length lookbehind is not implemented: every alternative of a lookbehind must have a fixed length (this o
+corpus	tests/recursion/define.rxt:129	byte	pcrec: DEFINE subpattern contains more than one branch (pattern offset 3)
+corpus	tests/recursion/define.rxt:135	byte	pcrec: DEFINE subpattern contains more than one branch (pattern offset 3)
+corpus	tests/recursion/define.rxt:145	byte	pcrec: module 'conditionals' is enabled but (?(...) is not implemented yet (pattern offset 0)
+corpus	tests/recursion/define.rxt:151	byte	pcrec: module 'conditionals' is enabled but (?(...) is not implemented yet (pattern offset 0)
+corpus	tests/recursion/inlookaround.rxt:121	byte	pcrec: variable-length lookbehind is not implemented: every alternative of a lookbehind must have a fixed length (this o
+corpus	tests/recursion/inlookaround.rxt:127	byte	pcrec: variable-length lookbehind is not implemented: every alternative of a lookbehind must have a fixed length (this o
+corpus	tests/recursion/inlookaround.rxt:133	byte	pcrec: variable-length lookbehind is not implemented: every alternative of a lookbehind must have a fixed length (this o
+corpus	tests/recursion/inlookaround.rxt:139	byte	pcrec: variable-length lookbehind is not implemented: every alternative of a lookbehind must have a fixed length (this o
+corpus	tests/recursion/refused.rxt:45	byte	pcrec: module 'conditionals' is enabled but (?(...) is not implemented yet (pattern offset 3)
+corpus	tests/recursion/refused.rxt:50	byte	pcrec: module 'conditionals' is enabled but (?(...) is not implemented yet (pattern offset 3)
+corpus	tests/recursion/relative.rxt:151	byte	pcrec: a relative reference of zero is not allowed (pattern offset 3)
+corpus	tests/recursion/relative.rxt:157	byte	pcrec: a relative reference of zero is not allowed (pattern offset 3)
+corpus	tests/recursion/relative.rxt:163	byte	pcrec: a relative reference of zero is not allowed (pattern offset 3)
+corpus	tests/recursion/relative.rxt:169	byte	pcrec: a relative reference of zero is not allowed (pattern offset 3)
+corpus	tests/ucp/refusals.rxt:17	utf8	pcrec: UCP \w is a wide set (930 intervals) and is refused under encoding 'utf8' until a kit-sized class route exists ([
+corpus	tests/ucp/refusals.rxt:22	utf8	pcrec: UCP \W is a wide set (930 intervals) and is refused under encoding 'utf8' until a kit-sized class route exists ([
+corpus	tests/ucp/refusals.rxt:27	utf8	pcrec: UCP \w is a wide set (930 intervals) and is refused under encoding 'utf8' until a kit-sized class route exists ([
+corpus	tests/ucp/refusals.rxt:32	utf8	pcrec: UCP \W is a wide set (930 intervals) and is refused under encoding 'utf8' until a kit-sized class route exists ([
+corpus	tests/ucp/refusals.rxt:37	utf8	pcrec: UCP [:alpha:] is a wide set (677 intervals) and is refused under encoding 'utf8' until a kit-sized class route ex
+corpus	tests/ucp/refusals.rxt:42	utf8	pcrec: UCP [:^alnum:] is a wide set (770 intervals) and is refused under encoding 'utf8' until a kit-sized class route e
+corpus	tests/ucp/refusals.rxt:47	utf8	pcrec: UCP [:word:] is a wide set (930 intervals) and is refused under encoding 'utf8' until a kit-sized class route exi
+corpus	tests/ucp/refusals.rxt:52	utf8	pcrec: UCP [:lower:] is a wide set (662 intervals) and is refused under encoding 'utf8' until a kit-sized class route ex
+corpus	tests/ucp/refusals.rxt:57	utf8	pcrec: UCP [:upper:] is a wide set (651 intervals) and is refused under encoding 'utf8' until a kit-sized class route ex
+corpus	tests/ucp/refusals.rxt:62	utf8	pcrec: UCP [:graph:] is a wide set (737 intervals) and is refused under encoding 'utf8' until a kit-sized class route ex
+corpus	tests/ucp/refusals.rxt:67	utf8	pcrec: UCP [:print:] is a wide set (732 intervals) and is refused under encoding 'utf8' until a kit-sized class route ex
+corpus	tests/ucp/refusals.rxt:72	utf8	pcrec: UCP [:punct:] is a wide set (193 intervals) and is refused under encoding 'utf8' until a kit-sized class route ex
+corpus	tests/ucp/refusals.rxt:77	utf8	pcrec: UCP [:word:] is a wide set (930 intervals) and is refused under encoding 'utf8' until a kit-sized class route exi
+corpus	tests/ucp/refusals.rxt:82	utf8	pcrec: UCP \w is a wide set (930 intervals) and is refused under encoding 'utf8' until a kit-sized class route exists ([
+corpus	tests/ucp/refusals.rxt:93	utf8	pcrec: UCP \b is not built yet under encoding 'utf8': it reads the Unicode word set, which is not byte-expressible, and 
+corpus	tests/ucp/refusals.rxt:99	utf8	pcrec: UCP \B is not built yet under encoding 'utf8': it reads the Unicode word set, which is not byte-expressible, and 
+corpus	tests/ucp/refusals.rxt:112	byte	pcrec: (*UTF) requires --encoding=utf8 (pattern offset 0)
+corpus	tests/ucp/refusals.rxt:118	utf8	pcrec: (*VERB) not recognized or malformed (pattern offset 1)
+corpus	tests/ucp/refusals.rxt:123	utf8	pcrec: quantifier does not follow a repeatable item (pattern offset 6)
+corpus	tests/utf8/axis01_encoded_length_byte.rxt:186	byte	pcrec: character code point value in \x{...} is too large (max U+00FF under encoding 'byte') (pattern offset 0)
+corpus	tests/utf8/axis01_encoded_length_byte.rxt:191	byte	pcrec: character code point value in \x{...} is too large (max U+00FF under encoding 'byte') (pattern offset 1)
+corpus	tests/utf8/axis01_encoded_length_byte.rxt:196	byte	pcrec: character code point value in \x{...} is too large (max U+00FF under encoding 'byte') (pattern offset 2)
+corpus	tests/utf8/axis01_encoded_length_byte.rxt:201	byte	pcrec: character code point value in \x{...} is too large (max U+00FF under encoding 'byte') (pattern offset 0)
+corpus	tests/utf8/axis01_encoded_length_byte.rxt:302	byte	pcrec: character code point value in \x{...} is too large (max U+00FF under encoding 'byte') (pattern offset 0)
+corpus	tests/utf8/axis01_encoded_length_byte.rxt:307	byte	pcrec: character code point value in \x{...} is too large (max U+00FF under encoding 'byte') (pattern offset 1)
+corpus	tests/utf8/axis01_encoded_length_byte.rxt:312	byte	pcrec: character code point value in \x{...} is too large (max U+00FF under encoding 'byte') (pattern offset 2)
+corpus	tests/utf8/axis01_encoded_length_byte.rxt:317	byte	pcrec: character code point value in \x{...} is too large (max U+00FF under encoding 'byte') (pattern offset 0)
+corpus	tests/utf8/axis01_encoded_length_byte.rxt:418	byte	pcrec: character code point value in \x{...} is too large (max U+00FF under encoding 'byte') (pattern offset 0)
+corpus	tests/utf8/axis01_encoded_length_byte.rxt:423	byte	pcrec: character code point value in \x{...} is too large (max U+00FF under encoding 'byte') (pattern offset 1)
+corpus	tests/utf8/axis01_encoded_length_byte.rxt:428	byte	pcrec: character code point value in \x{...} is too large (max U+00FF under encoding 'byte') (pattern offset 2)
+corpus	tests/utf8/axis01_encoded_length_byte.rxt:433	byte	pcrec: character code point value in \x{...} is too large (max U+00FF under encoding 'byte') (pattern offset 0)
+corpus	tests/utf8/axis02_class_boundary_byte.rxt:116	byte	pcrec: character code point value in \x{...} is too large (max U+00FF under encoding 'byte') (pattern offset 7)
+corpus	tests/utf8/axis02_class_boundary_byte.rxt:128	byte	pcrec: character code point value in \x{...} is too large (max U+00FF under encoding 'byte') (pattern offset 8)
+corpus	tests/utf8/axis02_class_boundary_byte.rxt:140	byte	pcrec: character code point value in \x{...} is too large (max U+00FF under encoding 'byte') (pattern offset 8)
+corpus	tests/utf8/axis02_class_boundary_byte.rxt:152	byte	pcrec: character code point value in \x{...} is too large (max U+00FF under encoding 'byte') (pattern offset 9)
+corpus	tests/utf8/axis05_p_refusals.rxt:11	byte	pcrec: \p{...}: not a one-letter Unicode property code pcrec recognises (pattern offset 5)
+corpus	tests/utf8/axis05_p_refusals.rxt:15	byte	pcrec: \p{...}: not a one-letter Unicode property code pcrec recognises (pattern offset 5)
+corpus	tests/utf8/axis05_p_refusals.rxt:19	byte	pcrec: \p{...}: not a one-letter Unicode property code pcrec recognises (pattern offset 5)
+corpus	tests/utf8/axis05_p_refusals.rxt:23	byte	pcrec: \p{...}: not a one-letter Unicode property code pcrec recognises (pattern offset 5)
+corpus	tests/utf8/axis05_p_refusals.rxt:27	byte	pcrec: \p{...}: not a one-letter Unicode property code pcrec recognises (pattern offset 5)
+corpus	tests/utf8/axis05_p_refusals.rxt:31	byte	pcrec: \p{...}: not a one-letter Unicode property code pcrec recognises (pattern offset 5)
+corpus	tests/utf8/axis05_p_refusals.rxt:35	byte	pcrec: \p{...}: not a one-letter Unicode property code pcrec recognises (pattern offset 5)
+corpus	tests/utf8/axis05_p_refusals.rxt:39	byte	pcrec: \p{...}: not a one-letter Unicode property code pcrec recognises (pattern offset 5)
+corpus	tests/utf8/axis05_p_refusals.rxt:43	byte	pcrec: \p{...}: not a one-letter Unicode property code pcrec recognises (pattern offset 5)
+corpus	tests/utf8/axis05_p_refusals.rxt:47	byte	pcrec: \p{...}: not a one-letter Unicode property code pcrec recognises (pattern offset 5)
+corpus	tests/utf8/axis05_p_refusals.rxt:51	byte	pcrec: \p{...}: not a one-letter Unicode property code pcrec recognises (pattern offset 5)
+corpus	tests/utf8/axis05_p_refusals.rxt:55	byte	pcrec: \p{...}: not a one-letter Unicode property code pcrec recognises (pattern offset 5)
+corpus	tests/utf8/axis05_p_refusals.rxt:59	byte	pcrec: \p{...}: not a one-letter Unicode property code pcrec recognises (pattern offset 5)
+corpus	tests/utf8/axis05_p_refusals.rxt:63	byte	pcrec: \p{...}: not a one-letter Unicode property code pcrec recognises (pattern offset 5)
+corpus	tests/utf8/axis05_p_refusals.rxt:67	byte	pcrec: \p{...}: not a one-letter Unicode property code pcrec recognises (pattern offset 5)
+corpus	tests/utf8/axis05_p_refusals.rxt:71	byte	pcrec: \p{...}: not a one-letter Unicode property code pcrec recognises (pattern offset 5)
+corpus	tests/utf8/axis05_p_refusals.rxt:75	byte	pcrec: \p{...}: not a one-letter Unicode property code pcrec recognises (pattern offset 5)
+corpus	tests/utf8/axis05_p_refusals.rxt:79	byte	pcrec: \p{...}: not a one-letter Unicode property code pcrec recognises (pattern offset 5)
+corpus	tests/utf8/axis05_p_refusals.rxt:83	byte	pcrec: \p{...}: not a one-letter Unicode property code pcrec recognises (pattern offset 5)
+corpus	tests/utf8/axis05_p_refusals.rxt:87	byte	pcrec: module 'unicode-props' is enabled but \p{...}: this Unicode property is not implemented yet (pattern offset 7)
+corpus	tests/utf8/axis05_p_refusals.rxt:91	byte	pcrec: module 'unicode-props' is enabled but \p{...}: this Unicode property is not implemented yet (pattern offset 7)
+corpus	tests/utf8/axis05_p_refusals.rxt:95	byte	pcrec: module 'unicode-props' is enabled but \p{...}: this Unicode property is not implemented yet (pattern offset 7)
+corpus	tests/utf8/axis05_p_refusals.rxt:99	byte	pcrec: module 'unicode-props' is enabled but \p{...}: this Unicode property is not implemented yet (pattern offset 14)
+corpus	tests/utf8/axis05_p_refusals.rxt:103	byte	pcrec: module 'unicode-props' is enabled but \p{...}: this Unicode property is not implemented yet (pattern offset 9)
+corpus	tests/utf8/axis05_p_refusals.rxt:107	byte	pcrec: module 'unicode-props' is enabled but \p{...}: this Unicode property is not implemented yet (pattern offset 10)
+corpus	tests/utf8/axis05_p_refusals.rxt:111	byte	pcrec: module 'unicode-props' is enabled but \p{...}: this Unicode property is not implemented yet (pattern offset 9)
+corpus	tests/utf8/axis05_p_refusals.rxt:115	byte	pcrec: module 'unicode-props' is enabled but \p{...}: this Unicode property is not implemented yet (pattern offset 18)
+corpus	tests/utf8/axis05_p_refusals.rxt:119	byte	pcrec: module 'unicode-props' is enabled but \p{...}: this Unicode property is not implemented yet (pattern offset 17)
+corpus	tests/utf8/axis05_p_refusals.rxt:123	byte	pcrec: module 'unicode-props' is enabled but \p{...}: this Unicode property is not implemented yet (pattern offset 19)
+corpus	tests/utf8/axis05_p_refusals.rxt:127	byte	pcrec: module 'unicode-props' is enabled but \p{...}: this Unicode property is not implemented yet (pattern offset 14)
+corpus	tests/utf8/axis05_p_refusals.rxt:131	byte	pcrec: module 'unicode-props' is enabled but \p{...}: this Unicode property is not implemented yet (pattern offset 11)
+corpus	tests/utf8/axis05_p_refusals.rxt:135	byte	pcrec: module 'unicode-props' is enabled but \p{...}: this Unicode property is not implemented yet (pattern offset 15)
+corpus	tests/utf8/axis05_p_refusals.rxt:139	byte	pcrec: module 'unicode-props' is enabled but \p{...}: this Unicode property is not implemented yet (pattern offset 13)
+corpus	tests/utf8/axis05_p_refusals.rxt:143	byte	pcrec: module 'unicode-props' is enabled but \p{...}: this Unicode property is not implemented yet (pattern offset 11)
+corpus	tests/utf8/axis12_scripts.rxt:237	utf8	pcrec: module 'unicode-props' is enabled but \p{...}: this Unicode property is not implemented yet (pattern offset 8)
+corpus	tests/utf8/axis12_scripts.rxt:244	utf8	pcrec: module 'unicode-props' is enabled but \p{...}: this Unicode property is not implemented yet (pattern offset 24)
+corpus	tests/utf8/axis12_scripts.rxt:251	utf8	pcrec: module 'unicode-props' is enabled but \p{...}: this Unicode property is not implemented yet (pattern offset 8)
+corpus	tests/utf8/axis12_scripts.rxt:258	utf8	pcrec: module 'unicode-props' is enabled but \p{...}: this Unicode property is not implemented yet (pattern offset 11)
+corpus	tests/utf8/axis12_scripts.rxt:265	utf8	pcrec: module 'unicode-props' is enabled but \p{...}: this Unicode property is not implemented yet (pattern offset 13)
+corpus	tests/utf8/axis12_scripts.rxt:272	utf8	pcrec: module 'unicode-props' is enabled but \p{...}: this Unicode property is not implemented yet (pattern offset 13)
+corpus	tests/utf8/axis12_scripts.rxt:279	utf8	pcrec: module 'unicode-props' is enabled but \p{...}: this Unicode property is not implemented yet (pattern offset 16)
+corpus	tests/utf8/restrict.rxt:52	utf8	pcrec: inline option 'r' (caseless-restrict) is not implemented under encoding 'utf8' (pattern offset 6)
+corpus	tests/utf8/restrict.rxt:57	utf8	pcrec: inline option 'r' (caseless-restrict) is not implemented under encoding 'utf8' (pattern offset 6)
+corpus	tests/utf8/restrict.rxt:62	utf8	pcrec: inline option 'r' (caseless-restrict) is not implemented under encoding 'utf8' (pattern offset 6)
+corpus	tests/utf8/restrict.rxt:67	utf8	pcrec: inline option 'r' (caseless-restrict) is not implemented under encoding 'utf8' (pattern offset 6)
+corpus	tests/utf8/restrict.rxt:74	utf8	pcrec: inline option 'r' (caseless-restrict) is not implemented under encoding 'utf8' (pattern offset 2)
+corpus	tests/vars/basic.rxt:79	byte	pcrec: variable-length lookbehind is not implemented: every alternative of a lookbehind must have a fixed length (this o

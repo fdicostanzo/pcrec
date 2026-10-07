@@ -3,6 +3,16 @@
 This directory is the evidence for `../poss_arms.md` (lane `possarms`,
 2026-10-07). Nothing here is built or run by `make`.
 
+**Revision 2's evidence is in `rev2/`** (lane `possarms2`, 2026-10-07, own
+CLAUDE.md). It holds the prototype re-based on post-K93 `possessify.c`, the
+route-flip census, CLAIM-vs-MARK, the ablation sweeps, the A0 family sweep,
+the exhaustive-subject possdiff with every plant, and the committed
+work-budget subject. Where revision 2 re-measured something, its number
+supersedes the one recorded here. Notable cases: the census (re-based), §6's
+work budgets (`minwb.sh` / `workbudget.tsv` came from an uncommitted subject,
+and `minwb.sh` cannot fail loudly), and the possdiff runs (bespoke subjects,
+S563 missed).
+
 The scratch prototype these numbers come from is a census instrument, NOT the
 implementation. It is committed as a patch only so the counts can be
 reproduced.
