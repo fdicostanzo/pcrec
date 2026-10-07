@@ -1,5 +1,5 @@
 # call_graph.py: roots emit_unanchored,emit_attempt,vm_emit_search_body | stamps pcrec_emit_dfa_scan_stamps,vm_emit_stamps
-# definitions 1892; reachable from bodies 758, from stamp writers 653; seeds 15; family 110
+# definitions 1941; reachable from bodies 801, from stamp writers 686; seeds 15; family 112
 kind	name	site	detail
 def-const	ABLOCK_MIN	src/core/arena.c:6-6	
 def-func	pcrec_arena_alloc	src/core/arena.c:13-38	
@@ -118,121 +118,123 @@ def-type	ABlock	src/core/internal.h:46-50
 def-type	Arena	src/core/internal.h:54-54	
 def-type	StrBuf	src/core/internal.h:94-116	
 def-type	PcrecCmtClass	src/core/internal.h:124-124	
-def-const	PCREC_PREFIX_LEAD	src/core/internal.h:316-316	
-def-const	PCREC_PREFIX_PLACEHOLDER	src/core/internal.h:317-317	
-def-type	VarExpOp	src/core/internal.h:350-355	
-def-type	VarWord	src/core/internal.h:363-367	
-def-type	VarExp	src/core/internal.h:374-386	
-def-type	VarExpErr	src/core/internal.h:392-395	
-def-type	AKind	src/core/internal.h:462-843	
-def-type	CallLink	src/core/internal.h:854-865	
-def-type	PcrecCpRange	src/core/internal.h:882-882	
-def-type	enum@src/core/internal.h:886	src/core/internal.h:886-893	
-def-type	Ast	src/core/internal.h:896-1589	
-def-type	PcrecCpSet	src/core/internal.h:1628-1632	
-def-func	pcrec_ast_seethru	src/core/internal.h:1688-1692	
-def-type	NKind	src/core/internal.h:1700-1767	
-def-type	NState	src/core/internal.h:1769-1776	
-def-type	Nfa	src/core/internal.h:1778-1794	
-def-macro	PCREC_LIMIT_INTERNAL_H	src/core/internal.h:1811-1812	
-def-const	PCREC_MINW_MAX	src/core/internal.h:1828-1828	
-def-type	enum@src/core/internal.h:1864	src/core/internal.h:1864-1864	
-def-type	DView	src/core/internal.h:1868-1872	
-def-type	DState	src/core/internal.h:1874-1969	
-def-type	PcrecCtxSet	src/core/internal.h:1985-1990	
-def-type	Dfa	src/core/internal.h:1992-2074	
-def-type	enum@src/core/internal.h:2082	src/core/internal.h:2082-2082	
-def-type	EngineFit	src/core/internal.h:2088-2262	
-def-type	enum@src/core/internal.h:2295	src/core/internal.h:2295-2378	
-def-type	enum@src/core/internal.h:2382	src/core/internal.h:2382-2394	
-def-type	enum@src/core/internal.h:2400	src/core/internal.h:2400-2404	
-def-type	enum@src/core/internal.h:2453	src/core/internal.h:2453-2489	
-def-type	PrefixKSets	src/core/internal.h:2505-2516	
-def-type	Job	src/core/internal.h:2524-2659	
-def-type	NamedGroup	src/core/internal.h:2664-2711	
-def-type	PendKind	src/core/internal.h:2760-2760	
-def-type	PendingRef	src/core/internal.h:2762-2792	
-def-type	Ctx	src/core/internal.h:2794-3211	
-def-func	pcrec_lb_raise	src/core/internal.h:3215-3218	
-def-type	AltInfo	src/core/internal.h:3243-3246	
-def-type	RegKind	src/core/internal.h:3288-3344	
-def-type	enum@src/core/internal.h:3348	src/core/internal.h:3348-3381	
-def-type	enum@src/core/internal.h:3387	src/core/internal.h:3387-3387	
-def-type	enum@src/core/internal.h:3394	src/core/internal.h:3394-3397	
-def-type	RegStatus	src/core/internal.h:3399-3405	
-def-type	PcrecBuiltStatus	src/core/internal.h:3421-3426	
-def-const	PCREC_UNBUILT_MARKER	src/core/internal.h:3433-3433	
-def-type	RegDiag	src/core/internal.h:3437-3442	
-def-type	Roadmap	src/core/internal.h:3459-3463	
-def-type	QuantFact	src/core/internal.h:3487-3493	
-def-type	QuantVerb	src/core/internal.h:3500-3504	
-def-type	enum@src/core/internal.h:3506	src/core/internal.h:3506-3612	
-def-const	REG_SEL_ANY	src/core/internal.h:3614-3614	
-def-type	ExtWhat	src/core/internal.h:3654-3671	
-def-type	ExtWant	src/core/internal.h:3702-3702	
-def-type	ExtResult	src/core/internal.h:3706-3787	
-def-type	PortKind	src/core/internal.h:3819-3819	
-def-type	ExtPort	src/core/internal.h:3826-3845	
-def-const	NO_PORT	src/core/internal.h:3847-3847	
-def-func	upc_of_class	src/core/internal.h:3870-3873	
-def-type	PcrecClsNamed	src/core/internal.h:3883-3886	
-def-type	PcrecLookRow	src/core/internal.h:3919-3925	
-def-type	PcrecFoldLink	src/core/internal.h:4000-4000	
-def-type	PcrecFold	src/core/internal.h:4002-4010	
-def-type	ClsContrib	src/core/internal.h:4019-4025	
-def-type	DefTag	src/core/internal.h:4055-4076	
-def-type	DefKind	src/core/internal.h:4128-4128	
-def-type	PcrecSetTerm	src/core/internal.h:4136-4136	
-def-type	PcrecSetDef	src/core/internal.h:4137-4143	
-def-type	RegDef	src/core/internal.h:4206-4246	
-def-type	RegRow	src/core/internal.h:4269-4463	
-def-func	pcrec_ast_engines	src/core/internal.h:4468-4471	
-def-func	pcrec_ast_visit	src/core/internal.h:4503-4538	
-def-type	enum@src/core/internal.h:5062	src/core/internal.h:5062-5079	
-def-type	VerbName	src/core/internal.h:5081-5103	
-def-type	VerbTable	src/core/internal.h:5105-5109	
-def-type	PosixName	src/core/internal.h:5149-5157	
-def-macro	REFUSE	src/core/internal.h:5196-5201	
-def-const	PCREC_MISSING_CLOSE_PAREN_MSG	src/core/internal.h:5211-5211	
-def-macro	UNBUILT	src/core/internal.h:5225-5227	
-def-macro	BAD_ROW	src/core/internal.h:5231-5232	
-def-type	RxtSchemaScope	src/core/internal.h:5345-5354	
-def-type	RxtValueShape	src/core/internal.h:5356-5360	
-def-type	RxtChildren	src/core/internal.h:5366-5370	
-def-type	RxtCardinality	src/core/internal.h:5372-5374	
-def-type	RxtRowSource	src/core/internal.h:5376-5376	
-def-type	RxtValidatedBy	src/core/internal.h:5377-5377	
-def-type	RxtConstraintKind	src/core/internal.h:5386-5395	
-def-type	RxtSchemaRow	src/core/internal.h:5397-5408	
-def-const	PCREC_RXT_WAVE_BUILT	src/core/internal.h:5415-5415	
-def-const	PCREC_RXT_WAVE_RESERVED	src/core/internal.h:5423-5423	
-def-type	RxtDeclKind	src/core/internal.h:5497-5525	
-def-type	RxtRow	src/core/internal.h:5527-5574	
-def-type	RxtProv	src/core/internal.h:5590-5601	
-def-type	RxtVariant	src/core/internal.h:5603-5609	
-def-type	RxtCase	src/core/internal.h:5620-5642	
-def-type	RxtAux	src/core/internal.h:5650-5660	
-def-type	RxtServe	src/core/internal.h:5665-5667	
-def-type	RxtFindBlock	src/core/internal.h:5675-5687	
-def-type	RxtSource	src/core/internal.h:5690-5719	
-def-type	RxtDef	src/core/internal.h:5768-5788	
-def-type	RxtDefs	src/core/internal.h:5794-5802	
-def-type	RxtTarget	src/core/internal.h:5838-5874	
-def-func	pcrec_startgate_needed	src/core/internal.h:5963-5966	
-def-type	PcrecRun	src/core/internal.h:6008-6012	
-def-type	PcrecRunRow	src/core/internal.h:6016-6022	
-def-type	PcrecFind	src/core/internal.h:6039-6048	
-def-type	PcrecStart0	src/core/internal.h:6086-6096	
-def-type	PcrecTuneRow	src/core/internal.h:6113-6120	
-def-type	enum@src/core/internal.h:6241	src/core/internal.h:6241-6241	
-def-type	DfaMemo	src/core/internal.h:6261-6264	
-def-type	PcrecAxisCand	src/core/internal.h:6585-6592	
-def-const	PCREC_W_UNBOUNDED	src/core/internal.h:6671-6671	
-def-type	GenNames	src/core/internal.h:6691-6694	
-def-type	PcrecReseedRow	src/core/internal.h:6736-6746	
-def-type	PcrecReqAdmitDesc	src/core/internal.h:6754-6759	
-def-type	PcrecReqUseDesc	src/core/internal.h:6768-6773	
-def-type	BufSurface	src/core/internal.h:6793-6799	
+def-const	PCREC_PREFIX_LEAD	src/core/internal.h:318-318	
+def-const	PCREC_PREFIX_PLACEHOLDER	src/core/internal.h:319-319	
+def-type	VarExpOp	src/core/internal.h:352-357	
+def-type	VarWord	src/core/internal.h:365-369	
+def-type	VarExp	src/core/internal.h:376-388	
+def-type	VarExpErr	src/core/internal.h:394-397	
+def-type	AKind	src/core/internal.h:464-845	
+def-type	CallLink	src/core/internal.h:856-867	
+def-type	PcrecCpRange	src/core/internal.h:884-884	
+def-type	enum@src/core/internal.h:888	src/core/internal.h:888-895	
+def-type	Ast	src/core/internal.h:898-1591	
+def-type	PcrecCpSet	src/core/internal.h:1630-1634	
+def-func	pcrec_ast_seethru	src/core/internal.h:1690-1694	
+def-type	NKind	src/core/internal.h:1702-1769	
+def-type	NState	src/core/internal.h:1771-1778	
+def-type	Nfa	src/core/internal.h:1780-1796	
+def-macro	PCREC_LIMIT_INTERNAL_H	src/core/internal.h:1813-1814	
+def-const	PCREC_MINW_MAX	src/core/internal.h:1830-1830	
+def-type	enum@src/core/internal.h:1866	src/core/internal.h:1866-1866	
+def-type	DView	src/core/internal.h:1870-1874	
+def-type	DState	src/core/internal.h:1876-1971	
+def-type	PcrecCtxSet	src/core/internal.h:1987-1992	
+def-type	Dfa	src/core/internal.h:1994-2076	
+def-type	enum@src/core/internal.h:2084	src/core/internal.h:2084-2084	
+def-type	EngineFit	src/core/internal.h:2090-2264	
+def-type	enum@src/core/internal.h:2297	src/core/internal.h:2297-2380	
+def-type	enum@src/core/internal.h:2384	src/core/internal.h:2384-2396	
+def-type	enum@src/core/internal.h:2402	src/core/internal.h:2402-2406	
+def-type	enum@src/core/internal.h:2455	src/core/internal.h:2455-2491	
+def-type	PrefixKSets	src/core/internal.h:2507-2518	
+def-type	Job	src/core/internal.h:2526-2672	
+def-type	NamedGroup	src/core/internal.h:2677-2724	
+def-type	PendKind	src/core/internal.h:2773-2773	
+def-type	PendingRef	src/core/internal.h:2775-2805	
+def-type	Ctx	src/core/internal.h:2807-3224	
+def-func	pcrec_lb_raise	src/core/internal.h:3228-3231	
+def-type	AltInfo	src/core/internal.h:3256-3259	
+def-type	RegKind	src/core/internal.h:3301-3357	
+def-type	enum@src/core/internal.h:3361	src/core/internal.h:3361-3394	
+def-type	enum@src/core/internal.h:3400	src/core/internal.h:3400-3400	
+def-type	enum@src/core/internal.h:3407	src/core/internal.h:3407-3410	
+def-type	RegStatus	src/core/internal.h:3412-3418	
+def-type	PcrecBuiltStatus	src/core/internal.h:3434-3439	
+def-const	PCREC_UNBUILT_MARKER	src/core/internal.h:3446-3446	
+def-type	RegDiag	src/core/internal.h:3450-3455	
+def-type	Roadmap	src/core/internal.h:3472-3476	
+def-type	QuantFact	src/core/internal.h:3500-3506	
+def-type	QuantVerb	src/core/internal.h:3513-3517	
+def-type	enum@src/core/internal.h:3519	src/core/internal.h:3519-3625	
+def-const	REG_SEL_ANY	src/core/internal.h:3627-3627	
+def-type	ExtWhat	src/core/internal.h:3667-3684	
+def-type	ExtWant	src/core/internal.h:3715-3715	
+def-type	ExtResult	src/core/internal.h:3719-3800	
+def-type	PortKind	src/core/internal.h:3832-3832	
+def-type	ExtPort	src/core/internal.h:3839-3858	
+def-const	NO_PORT	src/core/internal.h:3860-3860	
+def-func	upc_of_class	src/core/internal.h:3883-3886	
+def-type	PcrecClsNamed	src/core/internal.h:3896-3899	
+def-type	PcrecLookRow	src/core/internal.h:3932-3938	
+def-type	PcrecFoldLink	src/core/internal.h:4013-4013	
+def-type	PcrecFold	src/core/internal.h:4015-4023	
+def-type	ClsContrib	src/core/internal.h:4032-4038	
+def-type	DefTag	src/core/internal.h:4068-4089	
+def-type	DefKind	src/core/internal.h:4141-4141	
+def-type	PcrecSetTerm	src/core/internal.h:4149-4149	
+def-type	PcrecSetDef	src/core/internal.h:4150-4156	
+def-type	RegDef	src/core/internal.h:4219-4259	
+def-type	RegRow	src/core/internal.h:4282-4476	
+def-func	pcrec_ast_engines	src/core/internal.h:4481-4484	
+def-func	pcrec_ast_visit	src/core/internal.h:4516-4551	
+def-type	enum@src/core/internal.h:5075	src/core/internal.h:5075-5092	
+def-type	VerbName	src/core/internal.h:5094-5116	
+def-type	VerbTable	src/core/internal.h:5118-5122	
+def-type	PosixName	src/core/internal.h:5162-5170	
+def-macro	REFUSE	src/core/internal.h:5209-5214	
+def-const	PCREC_MISSING_CLOSE_PAREN_MSG	src/core/internal.h:5224-5224	
+def-macro	UNBUILT	src/core/internal.h:5238-5240	
+def-macro	BAD_ROW	src/core/internal.h:5244-5245	
+def-type	RxtSchemaScope	src/core/internal.h:5358-5367	
+def-type	RxtValueShape	src/core/internal.h:5369-5373	
+def-type	RxtChildren	src/core/internal.h:5379-5383	
+def-type	RxtCardinality	src/core/internal.h:5385-5387	
+def-type	RxtRowSource	src/core/internal.h:5389-5389	
+def-type	RxtValidatedBy	src/core/internal.h:5390-5390	
+def-type	RxtConstraintKind	src/core/internal.h:5399-5408	
+def-type	RxtSchemaRow	src/core/internal.h:5410-5421	
+def-const	PCREC_RXT_WAVE_BUILT	src/core/internal.h:5428-5428	
+def-const	PCREC_RXT_WAVE_RESERVED	src/core/internal.h:5436-5436	
+def-type	RxtDeclKind	src/core/internal.h:5510-5538	
+def-type	RxtRow	src/core/internal.h:5540-5587	
+def-type	RxtProv	src/core/internal.h:5603-5614	
+def-type	RxtVariant	src/core/internal.h:5616-5622	
+def-type	RxtCase	src/core/internal.h:5633-5655	
+def-type	RxtAux	src/core/internal.h:5663-5673	
+def-type	RxtServe	src/core/internal.h:5678-5680	
+def-type	RxtFindBlock	src/core/internal.h:5688-5700	
+def-type	RxtSource	src/core/internal.h:5703-5732	
+def-type	RxtDef	src/core/internal.h:5781-5801	
+def-type	RxtDefs	src/core/internal.h:5807-5815	
+def-type	RxtTarget	src/core/internal.h:5851-5887	
+def-func	pcrec_startgate_needed	src/core/internal.h:5976-5979	
+def-type	PcrecRun	src/core/internal.h:6021-6025	
+def-type	PcrecRunRow	src/core/internal.h:6029-6035	
+def-type	PcrecFind	src/core/internal.h:6052-6061	
+def-type	PcrecStart0	src/core/internal.h:6107-6117	
+def-type	PcrecTuneRow	src/core/internal.h:6134-6141	
+def-type	enum@src/core/internal.h:6262	src/core/internal.h:6262-6262	
+def-type	DfaMemo	src/core/internal.h:6282-6285	
+def-type	PcrecAxisCand	src/core/internal.h:6606-6613	
+def-const	PCREC_W_UNBOUNDED	src/core/internal.h:6692-6692	
+def-type	GenNames	src/core/internal.h:6712-6715	
+def-type	PcrecReseedRow	src/core/internal.h:6757-6767	
+def-type	PcrecReqAdmitDesc	src/core/internal.h:6775-6780	
+def-type	PcrecReqUseDesc	src/core/internal.h:6789-6794	
+def-type	BufSurface	src/core/internal.h:6814-6820	
+def-macro	PCREC_CAND_TRACE_REC	src/core/internal.h:7031-7033	
+def-macro	PCREC_CAND_TRACE_RECF	src/core/internal.h:7034-7036	
 def-const	PCREC_LIMITS_H	src/core/limits.h:43-43	
 def-macro	PCREC_LIMIT_LIMITS_H	src/core/limits.h:718-719	
 def-macro	PCREC_LIMIT_LIMITS_H_NONE	src/core/limits.h:720-720	
@@ -250,27 +252,27 @@ def-func	pcrec_sb_cmt_open	src/core/sb.c:61-66
 def-func	pcrec_sb_cmt_close	src/core/sb.c:71-81	
 def-func	pcrec_sb_putc	src/core/sb.c:84-90	
 def-func	pcrec_sb_puts	src/core/sb.c:94-102	
-def-func	sb_vprintf	src/core/sb.c:118-142	
-def-func	pcrec_sb_printf	src/core/sb.c:146-152	
-def-func	pcrec_sb_take	src/core/sb.c:157-167	
-def-func	pcrec_sb_free	src/core/sb.c:170-175	
-def-func	sb_frame_byte	src/core/sb.c:192-196	
-def-func	pcrec_sb_textn	src/core/sb.c:200-204	
-def-func	pcrec_sb_text	src/core/sb.c:207-211	
-def-func	pcrec_sb_field	src/core/sb.c:217-231	
-def-func	pcrec_sb_cstr	src/core/sb.c:237-252	
-def-func	pcrec_sb_join	src/core/sb.c:257-263	
-def-func	pcrec_sb_row	src/core/sb.c:268-275	
-def-func	pcrec_sb_fragfv	src/core/sb.c:295-308	
-def-func	pcrec_sb_fragf	src/core/sb.c:311-318	
-def-func	sb_stampv	src/core/sb.c:339-345	
-def-func	pcrec_sb_stampf	src/core/sb.c:348-355	
-def-func	pcrec_sb_stampwf	src/core/sb.c:358-365	
-def-func	pcrec_sb_stamp_str	src/core/sb.c:368-372	
-def-func	pcrec_sb_upper	src/core/sb.c:386-394	
-def-func	render_prefix	src/core/sb.c:402-425	
-def-func	pcrec_sb_render_prefix	src/core/sb.c:430-448	
-def-func	pcrec_render_prefix_msg	src/core/sb.c:451-461	
+def-func	pcrec_sb_vprintf	src/core/sb.c:113-137	
+def-func	pcrec_sb_printf	src/core/sb.c:141-147	
+def-func	pcrec_sb_take	src/core/sb.c:152-162	
+def-func	pcrec_sb_free	src/core/sb.c:165-170	
+def-func	sb_frame_byte	src/core/sb.c:187-191	
+def-func	pcrec_sb_textn	src/core/sb.c:195-199	
+def-func	pcrec_sb_text	src/core/sb.c:202-206	
+def-func	pcrec_sb_field	src/core/sb.c:212-226	
+def-func	pcrec_sb_cstr	src/core/sb.c:232-247	
+def-func	pcrec_sb_join	src/core/sb.c:252-258	
+def-func	pcrec_sb_row	src/core/sb.c:263-270	
+def-func	pcrec_sb_fragfv	src/core/sb.c:290-303	
+def-func	pcrec_sb_fragf	src/core/sb.c:306-313	
+def-func	sb_stampv	src/core/sb.c:334-340	
+def-func	pcrec_sb_stampf	src/core/sb.c:343-350	
+def-func	pcrec_sb_stampwf	src/core/sb.c:353-360	
+def-func	pcrec_sb_stamp_str	src/core/sb.c:363-367	
+def-func	pcrec_sb_upper	src/core/sb.c:381-389	
+def-func	render_prefix	src/core/sb.c:397-420	
+def-func	pcrec_sb_render_prefix	src/core/sb.c:425-443	
+def-func	pcrec_render_prefix_msg	src/core/sb.c:446-456	
 def-table	TUNE_TABLE	src/core/tune.c:61-102	
 def-func	pcrec_tune_valid	src/core/tune.c:109-112	
 def-func	pcrec_tune_row	src/core/tune.c:117-121	
@@ -310,12 +312,12 @@ def-func	emit_table_composite_rows	src/dump/axes_dump.c:358-366
 def-func	emit_scan_composite_rows	src/dump/axes_dump.c:383-391	
 def-type	PredAxis	src/dump/axes_dump.c:401-411	
 def-func	emit_pred_row	src/dump/axes_dump.c:425-439	
-def-func	emit_predicate_axes	src/dump/axes_dump.c:450-987	
-def-func	mf_kind_word	src/dump/axes_dump.c:994-1001	
-def-func	mf_budget_word	src/dump/axes_dump.c:1003-1011	
-def-func	mf_layer_word	src/dump/axes_dump.c:1013-1020	
-def-func	emit_memfn_section	src/dump/axes_dump.c:1029-1054	
-def-func	pcrec_axes_tsv	src/dump/axes_dump.c:1065-1124	
+def-func	emit_predicate_axes	src/dump/axes_dump.c:450-1001	
+def-func	mf_kind_word	src/dump/axes_dump.c:1008-1015	
+def-func	mf_budget_word	src/dump/axes_dump.c:1017-1025	
+def-func	mf_layer_word	src/dump/axes_dump.c:1027-1034	
+def-func	emit_memfn_section	src/dump/axes_dump.c:1043-1068	
+def-func	pcrec_axes_tsv	src/dump/axes_dump.c:1079-1138	
 def-type	FactsRows	src/dump/facts_dump.c:38-41	
 def-table	fd_name	src/dump/facts_dump.c:44-47	
 def-table	fd_epoch	src/dump/facts_dump.c:48-51	
@@ -647,314 +649,325 @@ def-type	ClsTabDeny	src/gen/clskit.h:199-203
 def-type	ClsTabRow	src/gen/clskit.h:206-214	
 def-type	ClsTabChoice	src/gen/clskit.h:218-222	
 def-type	ClsTest	src/gen/clskit.h:228-233	
-def-const	PCREC_ARTIFACT_ABI	src/gen/emit_dfa.c:53-53	
-def-func	emit_comment_safe_byte	src/gen/emit_dfa.c:94-104	
-def-func	emit_pattern_comment	src/gen/emit_dfa.c:133-143	
-def-func	emit_c_string_literal	src/gen/emit_dfa.c:172-192	
-def-func	emit_feature_comment	src/gen/emit_dfa.c:209-217	
-def-func	emit_feature_macros	src/gen/emit_dfa.c:226-232	
-def-type	ReqAdmit	src/gen/emit_dfa.c:305-311	
-def-func	req_admit_emits	src/gen/emit_dfa.c:316-319	
-def-type	ReqUse	src/gen/emit_dfa.c:328-331	
-def-type	OfsTest	src/gen/emit_dfa.c:354-367	
-def-func	pcrec_artifact_has_dfa_scan	src/gen/emit_dfa.c:385-388	
-def-func	pcrec_engine_sel_name	src/gen/emit_dfa.c:395-410	
-def-func	pcrec_emit_engine_stamp	src/gen/emit_dfa.c:420-425	
-def-func	emit_altcls_macros	src/gen/emit_dfa.c:454-458	
-def-func	pcrec_vars_param_text	src/gen/emit_dfa.c:522-525	
-def-func	pcrec_vars_arg_text	src/gen/emit_dfa.c:527-530	
-def-func	emit_search_decl	src/gen/emit_dfa.c:538-543	
-def-func	dfa_artifact_ncaps	src/gen/emit_dfa.c:623-626	
-def-func	pcrec_startpos_guard_text	src/gen/emit_dfa.c:669-702	
-def-func	pcrec_utf_check_on	src/gen/emit_dfa.c:713-718	
-def-func	emit_utf_check	src/gen/emit_dfa.c:725-740	
-def-func	pcrec_emit_startpos_guard	src/gen/emit_dfa.c:764-824	
-def-func	pcrec_emit_start_zero	src/gen/emit_dfa.c:864-912	
-def-func	pcrec_emit_end_window_clamp	src/gen/emit_dfa.c:935-953	
-def-func	run_mask_or_null	src/gen/emit_dfa.c:992-997	
-def-func	ofs_test_run	src/gen/emit_dfa.c:1004-1016	
-def-func	req_run_tests	src/gen/emit_dfa.c:1027-1044	
-def-func	req_run_fn_name	src/gen/emit_dfa.c:1048-1051	
-def-func	pcrec_emit_req_run_blocks	src/gen/emit_dfa.c:1059-1097	
-def-func	emit_req_handoff	src/gen/emit_dfa.c:1116-1147	
-def-func	emit_req_run_check	src/gen/emit_dfa.c:1159-1227	
-def-func	emit_req_set_rest	src/gen/emit_dfa.c:1259-1306	
-def-func	emit_req_one_byte	src/gen/emit_dfa.c:1313-1330	
-def-func	pcrec_emit_req_byte_check	src/gen/emit_dfa.c:1362-1397	
-def-func	emit_dead_group_fill	src/gen/emit_dfa.c:1425-1444	
-def-func	emit_search_head	src/gen/emit_dfa.c:1458-1508	
-def-func	emit_match_decl	src/gen/emit_dfa.c:1512-1515	
-def-func	emit_match_caps_decl	src/gen/emit_dfa.c:1519-1522	
-def-func	emit_info_decl	src/gen/emit_dfa.c:1537-1540	
-def-func	dfa_fragf	src/gen/emit_dfa.c:1553-1560	
-def-func	derived_name	src/gen/emit_dfa.c:1565-1568	
-def-func	emit_rx_abi_types	src/gen/emit_dfa.c:1605-2118	
-def-func	emit_ncaps_macros	src/gen/emit_dfa.c:2139-2142	
-def-func	emit_vars_macros	src/gen/emit_dfa.c:2165-2175	
-def-func	emit_buffers_surface	src/gen/emit_dfa.c:2211-2267	
-def-func	emit_search_in_decl	src/gen/emit_dfa.c:2273-2280	
-def-func	emit_match_in_decl	src/gen/emit_dfa.c:2288-2292	
-def-func	emit_match_caps_in_decl	src/gen/emit_dfa.c:2298-2302	
-def-func	pcrec_bufsurface_inert	src/gen/emit_dfa.c:2311-2318	
-def-func	emit_match_def	src/gen/emit_dfa.c:2354-2381	
-def-func	emit_match_caps_def	src/gen/emit_dfa.c:2392-2416	
-def-func	emit_in_entry_defs	src/gen/emit_dfa.c:2453-2489	
-def-type	InfoStamp	src/gen/emit_dfa.c:2507-2518	
-def-func	ng_cmp_name	src/gen/emit_dfa.c:2589-2600	
-def-func	ng_count_caller_scope	src/gen/emit_dfa.c:2609-2615	
-def-func	emit_info_def	src/gen/emit_dfa.c:2624-3242	
-def-func	emit_residual_decls	src/gen/emit_dfa.c:3265-3270	
-def-func	emit_residual_defs	src/gen/emit_dfa.c:3276-3289	
-def-func	emit_header	src/gen/emit_dfa.c:3300-3337	
-def-func	emit_u8_table	src/gen/emit_dfa.c:3345-3354	
-def-const	PREMUL_DEAD	src/gen/emit_dfa.c:3374-3374	
-def-const	PREMUL_MAX_ENTRIES	src/gen/emit_dfa.c:3415-3415	
-def-type	DfaSel	src/gen/emit_dfa.c:3436-3464	
-def-type	CandRoute	src/gen/emit_dfa.c:3470-3470	
-def-macro	CAND_ON	src/gen/emit_dfa.c:3471-3471	
-def-type	DfaCand	src/gen/emit_dfa.c:3473-3477	
-def-type	DfaRepr	src/gen/emit_dfa.c:3484-3493	
-def-func	tr_cell	src/gen/emit_dfa.c:3567-3571	
-def-func	acc_cell	src/gen/emit_dfa.c:3576-3579	
-def-func	accw_cell	src/gen/emit_dfa.c:3585-3588	
-def-type	DfaFold	src/gen/emit_dfa.c:3595-3595	
-def-func	fold_tr	src/gen/emit_dfa.c:3603-3613	
-def-func	fold_acc	src/gen/emit_dfa.c:3620-3629	
-def-func	emit_tr_table	src/gen/emit_dfa.c:3636-3649	
-def-func	dfa_has_eolvar	src/gen/emit_dfa.c:3654-3659	
-def-func	st_emit_endvar	src/gen/emit_dfa.c:3706-3714	
-def-func	dfa_has_endvar	src/gen/emit_dfa.c:3724-3729	
-def-func	emit_eol_table	src/gen/emit_dfa.c:3743-3753	
-def-func	emit_end_table	src/gen/emit_dfa.c:3758-3768	
-def-func	emit_acc_table	src/gen/emit_dfa.c:3791-3806	
-def-func	state_acc_varies	src/gen/emit_dfa.c:3811-3818	
-def-func	state_acc_any	src/gen/emit_dfa.c:3823-3828	
-def-func	dfa_needs_seed	src/gen/emit_dfa.c:3835-3840	
-def-func	dfa_needs_gseed	src/gen/emit_dfa.c:3852-3857	
-def-func	dfa_seed_has_dead	src/gen/emit_dfa.c:3863-3869	
-def-func	dfa_entry_can_be_dead	src/gen/emit_dfa.c:3877-3880	
-def-func	dfa_premul	src/gen/emit_dfa.c:3910-3917	
-def-func	dfa_interior_dead	src/gen/emit_dfa.c:3924-3928	
-def-func	dfa_has_clsacc	src/gen/emit_dfa.c:3940-3945	
-def-func	emit_acc_cls_table	src/gen/emit_dfa.c:3950-3963	
-def-func	upc_of_newline	src/gen/emit_dfa.c:3973-3979	
-def-func	emit_seed_table	src/gen/emit_dfa.c:3990-4003	
-def-type	CandSet	src/gen/emit_dfa.c:4028-4035	
-def-func	cand_derive	src/gen/emit_dfa.c:4043-4057	
-def-func	cand_from_escapes	src/gen/emit_dfa.c:4062-4068	
-def-func	cand_from_live_seeds	src/gen/emit_dfa.c:4084-4090	
-def-func	cand_emit_table	src/gen/emit_dfa.c:4094-4098	
-def-func	attempt_cand	src/gen/emit_dfa.c:4105-4131	
-def-type	DfaPfKind	src/gen/emit_dfa.c:4155-4159	
-def-type	UnanchStart	src/gen/emit_dfa.c:4161-4177	
-def-func	unanch_start	src/gen/emit_dfa.c:4191-4323	
-def-func	dfa_engine_is_empty	src/gen/emit_dfa.c:4352-4358	
-def-func	dfa_table_name	src/gen/emit_dfa.c:4383-4414	
-def-func	scan_edge_of	src/gen/emit_dfa.c:4432-4445	
-def-func	dfa_scan_edge_name	src/gen/emit_dfa.c:4455-4471	
-def-func	uniform_folds_of	src/gen/emit_dfa.c:4500-4504	
-def-func	dfa_uniform_folds	src/gen/emit_dfa.c:4513-4524	
-def-func	pick_skip_states	src/gen/emit_dfa.c:4545-4609	
-def-func	emit_stay_table	src/gen/emit_dfa.c:4615-4627	
-def-func	legend_byte	src/gen/emit_dfa.c:4641-4647	
-def-func	emit_class_legend	src/gen/emit_dfa.c:4652-4672	
-def-const	LEGEND_MAX_STATES	src/gen/emit_dfa.c:4686-4686	
-def-const	LEGEND_MAX_EXAMPLE	src/gen/emit_dfa.c:4689-4689	
-def-func	emit_state_legend	src/gen/emit_dfa.c:4710-4850	
-def-type	PfScan	src/gen/emit_dfa.c:4894-4899	
-def-type	DfaPf	src/gen/emit_dfa.c:4901-4979	
-def-type	DfaView	src/gen/emit_dfa.c:4984-4987	
-def-type	DfaSeed	src/gen/emit_dfa.c:4992-4996	
-def-type	DfaAcc	src/gen/emit_dfa.c:5007-5013	
-def-type	DfaDir	src/gen/emit_dfa.c:5019-5078	
-def-type	DfaForm	src/gen/emit_dfa.c:5081-5132	
-def-const	CAND_UNROUTED	src/gen/emit_dfa.c:5138-5138	
-def-func	cand_routed	src/gen/emit_dfa.c:5139-5144	
-def-func	dfa_select	src/gen/emit_dfa.c:5155-5166	
-def-macro	DFA_SELECT	src/gen/emit_dfa.c:5167-5169	
-def-macro	DFA_SELECT_ROUTED	src/gen/emit_dfa.c:5172-5174	
-def-func	fold_arg	src/gen/emit_dfa.c:5223-5231	
-def-func	token_step	src/gen/emit_dfa.c:5238-5255	
-def-func	token_stop	src/gen/emit_dfa.c:5279-5321	
-def-func	token_accepts	src/gen/emit_dfa.c:5325-5346	
-def-func	token_premul	src/gen/emit_dfa.c:5361-5401	
-def-func	token_indexed	src/gen/emit_dfa.c:5409-5447	
-def-func	tr_comment_premul	src/gen/emit_dfa.c:5453-5463	
-def-func	tr_comment_indexed	src/gen/emit_dfa.c:5467-5473	
-def-func	acc_comment_premul	src/gen/emit_dfa.c:5479-5486	
-def-func	acc_comment_indexed	src/gen/emit_dfa.c:5489-5493	
-def-table	dfa_reprs	src/gen/emit_dfa.c:5499-5506	
-def-func	dfa_repr_of	src/gen/emit_dfa.c:5510-5515	
-def-func	view_decl	src/gen/emit_dfa.c:5522-5526	
-def-macro	VROW	src/gen/emit_dfa.c:5530-5530	
-def-macro	VTBL	src/gen/emit_dfa.c:5531-5531	
-def-func	view_emit_eol_only	src/gen/emit_dfa.c:5538-5552	
-def-func	view_emit_end_only	src/gen/emit_dfa.c:5557-5568	
-def-func	view_emit_end_and_eol	src/gen/emit_dfa.c:5576-5597	
-def-func	view_end_and_eol_applies	src/gen/emit_dfa.c:5608-5609	
-def-func	view_end_only_applies	src/gen/emit_dfa.c:5612-5613	
-def-func	view_eol_only_applies	src/gen/emit_dfa.c:5615-5616	
-def-table	dfa_views	src/gen/emit_dfa.c:5618-5623	
-def-func	dfa_s0_cell	src/gen/emit_dfa.c:5637-5640	
-def-func	seed_emit_seeded	src/gen/emit_dfa.c:5652-5683	
-def-func	seed_emit_constant	src/gen/emit_dfa.c:5688-5693	
-def-table	dfa_seeds	src/gen/emit_dfa.c:5695-5698	
-def-func	acc_viewed_applies	src/gen/emit_dfa.c:5708-5709	
-def-func	acc_emit_probe	src/gen/emit_dfa.c:5714-5720	
-def-func	acc_emit_tail_scalar	src/gen/emit_dfa.c:5725-5733	
-def-func	acc_emit_tail_by_class	src/gen/emit_dfa.c:5742-5783	
-def-table	dfa_accs	src/gen/emit_dfa.c:5785-5792	
-def-func	pf_memchr_bounded_applies	src/gen/emit_dfa.c:5798-5799	
-def-func	pf_memchr_applies	src/gen/emit_dfa.c:5801-5802	
-def-func	pf_bcls_bounded_applies	src/gen/emit_dfa.c:5804-5805	
-def-func	pf_bcls_applies	src/gen/emit_dfa.c:5807-5808	
-def-func	pf_open	src/gen/emit_dfa.c:5821-5826	
-def-func	pf_comment_memchr	src/gen/emit_dfa.c:5831-5840	
-def-func	pf_comment_bcls	src/gen/emit_dfa.c:5844-5852	
-def-func	pcrec_emit_find	src/gen/emit_dfa.c:5855-5867	
-def-func	pf_emit_find	src/gen/emit_dfa.c:5872-5881	
-def-func	pf_emit_memchr	src/gen/emit_dfa.c:5889-5909	
-def-func	pf_emit_memchr_bounded	src/gen/emit_dfa.c:5916-5931	
-def-func	pf_emit_bcls	src/gen/emit_dfa.c:5936-5944	
-def-func	pf_emit_bcls_bounded	src/gen/emit_dfa.c:5950-5960	
-def-func	pf_ofs_applies_common	src/gen/emit_dfa.c:5984-5988	
-def-func	pf_ofs_bounded_applies	src/gen/emit_dfa.c:5990-5991	
-def-func	pf_ofs_applies	src/gen/emit_dfa.c:5993-5994	
-def-func	us_run_pin	src/gen/emit_dfa.c:6017-6021	
-def-func	pf_run_applies_common	src/gen/emit_dfa.c:6023-6049	
-def-func	pf_run_bounded_applies	src/gen/emit_dfa.c:6051-6052	
-def-func	pf_run_applies	src/gen/emit_dfa.c:6054-6055	
-def-func	ofs_test_model	src/gen/emit_dfa.c:6063-6074	
-def-func	ofs_test_of	src/gen/emit_dfa.c:6078-6124	
-def-func	ofs_test_at	src/gen/emit_dfa.c:6130-6152	
-def-func	ofs_test_verifies_run	src/gen/emit_dfa.c:6167-6185	
-def-func	ofsk_tbl_name	src/gen/emit_dfa.c:6198-6201	
-def-func	pf_tables_bcls	src/gen/emit_dfa.c:6205-6214	
-def-func	pf_tables_ofs	src/gen/emit_dfa.c:6223-6239	
-def-func	ofsk_emit_verify	src/gen/emit_dfa.c:6246-6278	
-def-func	ofsk_emit_params	src/gen/emit_dfa.c:6281-6290	
-def-func	pf_block_ofs	src/gen/emit_dfa.c:6294-6340	
-def-func	ofs_test_emit_pair	src/gen/emit_dfa.c:6358-6390	
-def-func	ofs_test_emit_fn	src/gen/emit_dfa.c:6410-6472	
-def-func	pf_emit_ofs_reseed	src/gen/emit_dfa.c:6486-6493	
-def-func	pf_comment_ofs	src/gen/emit_dfa.c:6498-6507	
-def-func	pf_emit_ofs	src/gen/emit_dfa.c:6515-6530	
-def-func	pf_emit_ofs_bounded	src/gen/emit_dfa.c:6535-6558	
-def-func	dfa_reseed_exact	src/gen/emit_dfa.c:6606-6617	
-def-func	pf_dfa_start_set	src/gen/emit_dfa.c:6648-6676	
-def-func	pf_first_class_bounded_applies	src/gen/emit_dfa.c:6679-6680	
-def-func	pf_first_memchr_bounded_applies	src/gen/emit_dfa.c:6681-6682	
-def-func	pf_emit_moved_reseed	src/gen/emit_dfa.c:6687-6692	
-def-func	pf_comment_first	src/gen/emit_dfa.c:6696-6706	
-def-func	pf_tables_first	src/gen/emit_dfa.c:6709-6717	
-def-func	pf_emit_first_memchr_bounded	src/gen/emit_dfa.c:6722-6735	
-def-func	pf_emit_first_class_bounded	src/gen/emit_dfa.c:6739-6749	
-def-func	vm_start_assert_starts	src/gen/emit_dfa.c:6773-6782	
-def-func	pf_vm_start_applies	src/gen/emit_dfa.c:6806-6819	
-def-func	pf_vm_emit_first_class	src/gen/emit_dfa.c:6830-6847	
-def-table	dfa_pfs	src/gen/emit_dfa.c:6863-6898	
-def-func	dfa_pf_of	src/gen/emit_dfa.c:6903-6908	
-def-func	pf_scan_set_of	src/gen/emit_dfa.c:6915-6924	
-def-func	vm_start_row	src/gen/emit_dfa.c:6931-6936	
-def-func	pcrec_vm_start_scan_name	src/gen/emit_dfa.c:6939-6943	
-def-func	pcrec_emit_vm_start_seek	src/gen/emit_dfa.c:6956-6969	
-def-type	CandScan	src/gen/emit_dfa.c:7028-7032	
-def-func	dfa_cand_scan	src/gen/emit_dfa.c:7034-7066	
-def-func	pcrec_dfa_cand_ppm	src/gen/emit_dfa.c:7079-7103	
-def-func	req_route_one_attempt	src/gen/emit_dfa.c:7135-7143	
-def-func	req_byte_dominated_by	src/gen/emit_dfa.c:7171-7180	
-def-func	req_set_pick	src/gen/emit_dfa.c:7185-7189	
-def-func	req_none_applies	src/gen/emit_dfa.c:7193-7196	
-def-func	req_one_attempt_applies	src/gen/emit_dfa.c:7197-7200	
-def-func	req_dominated_applies	src/gen/emit_dfa.c:7201-7206	
-def-func	req_set_leads_applies	src/gen/emit_dfa.c:7212-7224	
-def-type	ReqAdmitRow	src/gen/emit_dfa.c:7244-7248	
-def-table	req_admits	src/gen/emit_dfa.c:7249-7260	
-def-data	pcrec_req_admit_nrows	src/gen/emit_dfa.c:7261-7261	
-def-func	pcrec_req_admit_row	src/gen/emit_dfa.c:7263-7269	
-def-func	req_admit	src/gen/emit_dfa.c:7271-7276	
-def-func	req_lead_byte	src/gen/emit_dfa.c:7278-7281	
-def-func	req_why_name	src/gen/emit_dfa.c:7288-7298	
-def-func	req_handoff_applies	src/gen/emit_dfa.c:7332-7347	
-def-type	ReqUseRow	src/gen/emit_dfa.c:7359-7363	
-def-table	req_uses	src/gen/emit_dfa.c:7364-7369	
-def-data	pcrec_req_use_nrows	src/gen/emit_dfa.c:7370-7370	
-def-func	pcrec_req_use_row	src/gen/emit_dfa.c:7372-7378	
-def-func	req_use	src/gen/emit_dfa.c:7380-7385	
-def-func	req_handoff_stamp	src/gen/emit_dfa.c:7389-7393	
-def-func	pcrec_dfa_scan_state_written	src/gen/emit_dfa.c:7426-7436	
-def-func	dir_fwd_skip	src/gen/emit_dfa.c:7448-7470	
-def-func	dir_rev_skip	src/gen/emit_dfa.c:7476-7494	
-def-func	dir_fwd_bound_accept	src/gen/emit_dfa.c:7499-7513	
-def-func	dir_rev_bound_accept	src/gen/emit_dfa.c:7522-7552	
-def-data	dfa_dir_forward	src/gen/emit_dfa.c:7554-7572	
-def-data	dfa_dir_reverse	src/gen/emit_dfa.c:7574-7591	
-def-data	dfa_dir_anchored	src/gen/emit_dfa.c:7626-7644	
-def-type	DfaMatch	src/gen/emit_dfa.c:7665-7667	
-def-func	match_unwrapped_applies	src/gen/emit_dfa.c:7673-7676	
-def-table	dfa_matches	src/gen/emit_dfa.c:7678-7681	
-def-func	dfa_match_of	src/gen/emit_dfa.c:7686-7691	
-def-func	dfa_match_is_unwrapped	src/gen/emit_dfa.c:7699-7700	
-def-type	DfaSearchStart	src/gen/emit_dfa.c:7812-7814	
-def-func	start_pinned_assert_routing	src/gen/emit_dfa.c:7828-7855	
-def-func	start_pinned_applies	src/gen/emit_dfa.c:7860-7888	
-def-table	dfa_search_starts	src/gen/emit_dfa.c:7894-7897	
-def-func	dfa_search_start_of	src/gen/emit_dfa.c:7902-7907	
-def-func	dfa_search_start_name	src/gen/emit_dfa.c:7911-7912	
-def-func	dfa_search_is_pinned	src/gen/emit_dfa.c:7916-7917	
-def-func	pcrec_dfa_axis_cands	src/gen/emit_dfa.c:7938-7951	
-def-macro	AXIS_LIST	src/gen/emit_dfa.c:7953-7955	
-def-func	pcrec_dfa_axis_table_cands	src/gen/emit_dfa.c:7958-7959	
-def-func	pcrec_dfa_axis_prefilter_cands	src/gen/emit_dfa.c:7962-7968	
-def-func	pcrec_dfa_axis_view_cands	src/gen/emit_dfa.c:7970-7971	
-def-func	pcrec_dfa_axis_seed_cands	src/gen/emit_dfa.c:7973-7974	
-def-func	pcrec_dfa_axis_accept_cands	src/gen/emit_dfa.c:7976-7977	
-def-func	pcrec_dfa_axis_match_cands	src/gen/emit_dfa.c:7982-7983	
-def-func	pcrec_dfa_axis_searchstart_cands	src/gen/emit_dfa.c:7987-7988	
-def-func	pcrec_dfa_axis_direction_cands	src/gen/emit_dfa.c:7999-8013	
-def-type	DfaEdge	src/gen/emit_dfa.c:8055-8057	
-def-func	edge_applies	src/gen/emit_dfa.c:8062-8065	
-def-table	dfa_edges	src/gen/emit_dfa.c:8067-8070	
-def-const	SCAN_TEST_CALLS	src/gen/emit_dfa.c:8113-8113	
-def-func	scan_choice	src/gen/emit_dfa.c:8117-8130	
-def-func	scan_table	src/gen/emit_dfa.c:8134-8140	
-def-func	scan_name	src/gen/emit_dfa.c:8144-8148	
-def-func	dfa_scan_body_name	src/gen/emit_dfa.c:8151-8156	
-def-func	dfa_edge_of	src/gen/emit_dfa.c:8162-8167	
-def-func	pcrec_dfa_axis_edge_cands	src/gen/emit_dfa.c:8178-8182	
-def-func	pcrec_dfa_axis_scanbody_cands	src/gen/emit_dfa.c:8186-8189	
-def-func	emit_scan_defs	src/gen/emit_dfa.c:8194-8202	
-def-func	scan_tables_bitmap	src/gen/emit_dfa.c:8206-8213	
-def-func	scan_test	src/gen/emit_dfa.c:8217-8228	
-def-func	emit_scan_edge	src/gen/emit_dfa.c:8238-8335	
-def-func	dfa_form_derive	src/gen/emit_dfa.c:8356-8461	
-def-func	emit_machine_tables	src/gen/emit_dfa.c:8478-8548	
-def-func	dfa_start_is_scan_head	src/gen/emit_dfa.c:8570-8573	
-def-func	dfa_seed_can_be_scan_head	src/gen/emit_dfa.c:8588-8598	
-def-func	scan_label	src/gen/emit_dfa.c:8604-8605	
-def-func	emit_scan_loop	src/gen/emit_dfa.c:8614-8761	
-def-func	req_handoff_assert_body	src/gen/emit_dfa.c:8774-8783	
-def-func	emit_unanchored	src/gen/emit_dfa.c:8801-8938	
-def-func	anch_start	src/gen/emit_dfa.c:8968-8979	
-def-func	emit_anchored_match_def	src/gen/emit_dfa.c:9008-9056	
-def-func	emit_anchored_match_caps_def	src/gen/emit_dfa.c:9075-9101	
-def-func	emit_anchored_entries	src/gen/emit_dfa.c:9108-9122	
-def-func	emit_target	src/gen/emit_dfa.c:9128-9132	
-def-func	emit_attempt	src/gen/emit_dfa.c:9143-9718	
-def-func	pcrec_gen_names	src/gen/emit_dfa.c:9731-9746	
-def-func	pcrec_emit_c_string_literal	src/gen/emit_dfa.c:9750-9753	
-def-func	emit_orientation_block	src/gen/emit_dfa.c:9774-9974	
-def-func	pcrec_emit_prologue	src/gen/emit_dfa.c:9984-10244	
-def-func	pcrec_emit_info	src/gen/emit_dfa.c:10248-10254	
-def-func	pcrec_emit_residual	src/gen/emit_dfa.c:10258-10262	
-def-func	pcrec_emit_dfa_engine	src/gen/emit_dfa.c:10269-10273	
-def-func	pcrec_emit_main	src/gen/emit_dfa.c:10290-10334	
-def-func	dfa_scan_name	src/gen/emit_dfa.c:10379-10383	
-def-func	dfa_prefilter_name	src/gen/emit_dfa.c:10393-10429	
-def-func	dfa_prefilter_offsets	src/gen/emit_dfa.c:10475-10496	
-def-func	pcrec_emit_dfa_scan_stamps	src/gen/emit_dfa.c:10504-10542	
-def-func	emit_dfa_stamps	src/gen/emit_dfa.c:10554-10591	
-def-func	pcrec_emit_dfa	src/gen/emit_dfa.c:10604-10670	
+def-const	PCREC_ARTIFACT_ABI	src/gen/emit_dfa.c:54-54	
+def-func	emit_comment_safe_byte	src/gen/emit_dfa.c:95-105	
+def-func	emit_pattern_comment	src/gen/emit_dfa.c:134-144	
+def-func	emit_c_string_literal	src/gen/emit_dfa.c:173-193	
+def-func	emit_feature_comment	src/gen/emit_dfa.c:210-218	
+def-func	emit_feature_macros	src/gen/emit_dfa.c:227-233	
+def-type	ReqAdmit	src/gen/emit_dfa.c:306-312	
+def-func	req_admit_emits	src/gen/emit_dfa.c:317-320	
+def-type	ReqUse	src/gen/emit_dfa.c:330-333	
+def-type	OfsTest	src/gen/emit_dfa.c:357-370	
+def-func	pcrec_artifact_has_dfa_scan	src/gen/emit_dfa.c:386-389	
+def-func	pcrec_engine_sel_name	src/gen/emit_dfa.c:396-411	
+def-func	pcrec_emit_engine_stamp	src/gen/emit_dfa.c:421-426	
+def-func	emit_altcls_macros	src/gen/emit_dfa.c:455-459	
+def-func	pcrec_vars_param_text	src/gen/emit_dfa.c:523-526	
+def-func	pcrec_vars_arg_text	src/gen/emit_dfa.c:528-531	
+def-func	emit_search_decl	src/gen/emit_dfa.c:539-544	
+def-func	dfa_artifact_ncaps	src/gen/emit_dfa.c:624-627	
+def-func	pcrec_startpos_guard_text	src/gen/emit_dfa.c:670-703	
+def-func	pcrec_utf_check_on	src/gen/emit_dfa.c:714-719	
+def-func	emit_utf_check	src/gen/emit_dfa.c:726-741	
+def-func	pcrec_emit_startpos_guard	src/gen/emit_dfa.c:765-825	
+def-func	pcrec_emit_start_zero	src/gen/emit_dfa.c:865-913	
+def-func	pcrec_emit_end_window_clamp	src/gen/emit_dfa.c:936-955	
+def-func	run_mask_or_null	src/gen/emit_dfa.c:994-999	
+def-func	ofs_test_run	src/gen/emit_dfa.c:1006-1018	
+def-func	req_run_tests	src/gen/emit_dfa.c:1030-1047	
+def-func	req_run_fn_name	src/gen/emit_dfa.c:1051-1054	
+def-func	ofs_pred_trace	src/gen/emit_dfa.c:1075-1086	
+def-func	ofs_pred_of	src/gen/emit_dfa.c:1092-1141	
+def-func	pcrec_emit_req_run_blocks	src/gen/emit_dfa.c:1152-1155	
+def-func	emit_req_handoff_rest	src/gen/emit_dfa.c:1176-1203	
+def-func	req_note_run	src/gen/emit_dfa.c:1217-1272	
+def-func	req_set_rest_members	src/gen/emit_dfa.c:1305-1330	
+def-func	req_note_rest	src/gen/emit_dfa.c:1333-1342	
+def-func	req_note_byte	src/gen/emit_dfa.c:1345-1353	
+def-type	MemfnPre	src/gen/emit_dfa.c:1368-1371	
+def-func	mf_term_byte	src/gen/emit_dfa.c:1374-1379	
+def-func	req_site_fn_name	src/gen/emit_dfa.c:1383-1387	
+def-func	req_site_note_tag	src/gen/emit_dfa.c:1390-1394	
+def-func	req_site_note	src/gen/emit_dfa.c:1399-1408	
+def-const	REQ_ON_MISS	src/gen/emit_dfa.c:1412-1412	
+def-func	req_site_define	src/gen/emit_dfa.c:1424-1498	
+def-func	pcrec_emit_req_byte_check	src/gen/emit_dfa.c:1536-1561	
+def-func	emit_dead_group_fill	src/gen/emit_dfa.c:1589-1608	
+def-func	emit_search_head	src/gen/emit_dfa.c:1622-1672	
+def-func	emit_match_decl	src/gen/emit_dfa.c:1676-1679	
+def-func	emit_match_caps_decl	src/gen/emit_dfa.c:1683-1686	
+def-func	emit_info_decl	src/gen/emit_dfa.c:1701-1704	
+def-func	dfa_fragf	src/gen/emit_dfa.c:1717-1724	
+def-func	derived_name	src/gen/emit_dfa.c:1729-1732	
+def-func	emit_rx_abi_types	src/gen/emit_dfa.c:1769-2282	
+def-func	emit_ncaps_macros	src/gen/emit_dfa.c:2303-2306	
+def-func	emit_vars_macros	src/gen/emit_dfa.c:2329-2339	
+def-func	emit_buffers_surface	src/gen/emit_dfa.c:2375-2431	
+def-func	emit_search_in_decl	src/gen/emit_dfa.c:2437-2444	
+def-func	emit_match_in_decl	src/gen/emit_dfa.c:2452-2456	
+def-func	emit_match_caps_in_decl	src/gen/emit_dfa.c:2462-2466	
+def-func	pcrec_bufsurface_inert	src/gen/emit_dfa.c:2475-2482	
+def-func	emit_match_def	src/gen/emit_dfa.c:2518-2545	
+def-func	emit_match_caps_def	src/gen/emit_dfa.c:2556-2580	
+def-func	emit_in_entry_defs	src/gen/emit_dfa.c:2617-2653	
+def-type	InfoStamp	src/gen/emit_dfa.c:2671-2682	
+def-func	ng_cmp_name	src/gen/emit_dfa.c:2753-2764	
+def-func	ng_count_caller_scope	src/gen/emit_dfa.c:2773-2779	
+def-func	emit_info_def	src/gen/emit_dfa.c:2788-3151	
+def-func	emit_residual_decls	src/gen/emit_dfa.c:3174-3179	
+def-func	emit_residual_defs	src/gen/emit_dfa.c:3185-3198	
+def-func	emit_header	src/gen/emit_dfa.c:3209-3246	
+def-func	emit_u8_table	src/gen/emit_dfa.c:3254-3263	
+def-const	PREMUL_DEAD	src/gen/emit_dfa.c:3283-3283	
+def-const	PREMUL_MAX_ENTRIES	src/gen/emit_dfa.c:3324-3324	
+def-type	DfaSel	src/gen/emit_dfa.c:3345-3373	
+def-type	CandRoute	src/gen/emit_dfa.c:3379-3379	
+def-macro	CAND_ON	src/gen/emit_dfa.c:3380-3380	
+def-macro	CAND_ROUTE_NAME	src/gen/emit_dfa.c:3382-3382	
+def-type	DfaCand	src/gen/emit_dfa.c:3384-3388	
+def-type	DfaRepr	src/gen/emit_dfa.c:3395-3404	
+def-func	tr_cell	src/gen/emit_dfa.c:3478-3482	
+def-func	acc_cell	src/gen/emit_dfa.c:3487-3490	
+def-func	accw_cell	src/gen/emit_dfa.c:3496-3499	
+def-type	DfaFold	src/gen/emit_dfa.c:3506-3506	
+def-func	fold_tr	src/gen/emit_dfa.c:3514-3524	
+def-func	fold_acc	src/gen/emit_dfa.c:3531-3540	
+def-func	emit_tr_table	src/gen/emit_dfa.c:3547-3560	
+def-func	dfa_has_eolvar	src/gen/emit_dfa.c:3565-3570	
+def-func	st_emit_endvar	src/gen/emit_dfa.c:3617-3625	
+def-func	dfa_has_endvar	src/gen/emit_dfa.c:3635-3640	
+def-func	emit_eol_table	src/gen/emit_dfa.c:3654-3664	
+def-func	emit_end_table	src/gen/emit_dfa.c:3669-3679	
+def-func	emit_acc_table	src/gen/emit_dfa.c:3702-3717	
+def-func	state_acc_varies	src/gen/emit_dfa.c:3722-3729	
+def-func	state_acc_any	src/gen/emit_dfa.c:3734-3739	
+def-func	dfa_needs_seed	src/gen/emit_dfa.c:3746-3751	
+def-func	dfa_needs_gseed	src/gen/emit_dfa.c:3763-3768	
+def-func	dfa_seed_has_dead	src/gen/emit_dfa.c:3774-3780	
+def-func	dfa_entry_can_be_dead	src/gen/emit_dfa.c:3788-3791	
+def-func	dfa_premul	src/gen/emit_dfa.c:3821-3828	
+def-func	dfa_interior_dead	src/gen/emit_dfa.c:3835-3839	
+def-func	dfa_has_clsacc	src/gen/emit_dfa.c:3851-3856	
+def-func	emit_acc_cls_table	src/gen/emit_dfa.c:3861-3874	
+def-func	upc_of_newline	src/gen/emit_dfa.c:3884-3890	
+def-func	emit_seed_table	src/gen/emit_dfa.c:3901-3914	
+def-type	CandSet	src/gen/emit_dfa.c:3939-3946	
+def-func	cand_derive	src/gen/emit_dfa.c:3954-3968	
+def-func	cand_from_escapes	src/gen/emit_dfa.c:3973-3979	
+def-func	cand_from_live_seeds	src/gen/emit_dfa.c:3995-4001	
+def-func	cand_emit_table	src/gen/emit_dfa.c:4005-4009	
+def-func	attempt_cand	src/gen/emit_dfa.c:4016-4047	
+def-type	DfaPfKind	src/gen/emit_dfa.c:4071-4075	
+def-type	UnanchStart	src/gen/emit_dfa.c:4077-4093	
+def-func	unanch_start	src/gen/emit_dfa.c:4107-4240	
+def-func	dfa_engine_is_empty	src/gen/emit_dfa.c:4269-4279	
+def-func	dfa_table_name	src/gen/emit_dfa.c:4304-4335	
+def-func	scan_edge_of	src/gen/emit_dfa.c:4353-4366	
+def-func	dfa_scan_edge_name	src/gen/emit_dfa.c:4376-4392	
+def-func	uniform_folds_of	src/gen/emit_dfa.c:4421-4425	
+def-func	dfa_uniform_folds	src/gen/emit_dfa.c:4434-4445	
+def-func	pick_skip_states	src/gen/emit_dfa.c:4466-4530	
+def-func	emit_stay_table	src/gen/emit_dfa.c:4536-4548	
+def-func	pcrec_emit_legend_byte	src/gen/emit_dfa.c:4564-4570	
+def-func	emit_class_legend	src/gen/emit_dfa.c:4575-4595	
+def-const	LEGEND_MAX_STATES	src/gen/emit_dfa.c:4609-4609	
+def-const	LEGEND_MAX_EXAMPLE	src/gen/emit_dfa.c:4612-4612	
+def-func	emit_state_legend	src/gen/emit_dfa.c:4633-4773	
+def-type	PfScan	src/gen/emit_dfa.c:4817-4822	
+def-type	DfaPf	src/gen/emit_dfa.c:4824-4902	
+def-type	DfaView	src/gen/emit_dfa.c:4907-4910	
+def-type	DfaSeed	src/gen/emit_dfa.c:4915-4919	
+def-type	DfaAcc	src/gen/emit_dfa.c:4930-4936	
+def-type	DfaDir	src/gen/emit_dfa.c:4942-5001	
+def-type	DfaForm	src/gen/emit_dfa.c:5004-5059	
+def-const	CAND_UNROUTED	src/gen/emit_dfa.c:5065-5065	
+def-func	cand_routed	src/gen/emit_dfa.c:5066-5071	
+def-func	dfa_select	src/gen/emit_dfa.c:5082-5093	
+def-macro	DFA_SELECT	src/gen/emit_dfa.c:5094-5096	
+def-macro	DFA_SELECT_ROUTED	src/gen/emit_dfa.c:5099-5101	
+def-func	fold_arg	src/gen/emit_dfa.c:5150-5158	
+def-func	token_step	src/gen/emit_dfa.c:5165-5182	
+def-func	token_stop	src/gen/emit_dfa.c:5206-5248	
+def-func	token_accepts	src/gen/emit_dfa.c:5252-5273	
+def-func	token_premul	src/gen/emit_dfa.c:5288-5328	
+def-func	token_indexed	src/gen/emit_dfa.c:5336-5374	
+def-func	tr_comment_premul	src/gen/emit_dfa.c:5380-5390	
+def-func	tr_comment_indexed	src/gen/emit_dfa.c:5394-5400	
+def-func	acc_comment_premul	src/gen/emit_dfa.c:5406-5413	
+def-func	acc_comment_indexed	src/gen/emit_dfa.c:5416-5420	
+def-table	dfa_reprs	src/gen/emit_dfa.c:5426-5433	
+def-func	dfa_repr_of	src/gen/emit_dfa.c:5437-5442	
+def-func	view_decl	src/gen/emit_dfa.c:5449-5453	
+def-macro	VROW	src/gen/emit_dfa.c:5457-5457	
+def-macro	VTBL	src/gen/emit_dfa.c:5458-5458	
+def-func	view_emit_eol_only	src/gen/emit_dfa.c:5465-5479	
+def-func	view_emit_end_only	src/gen/emit_dfa.c:5484-5495	
+def-func	view_emit_end_and_eol	src/gen/emit_dfa.c:5503-5524	
+def-func	view_end_and_eol_applies	src/gen/emit_dfa.c:5535-5536	
+def-func	view_end_only_applies	src/gen/emit_dfa.c:5539-5540	
+def-func	view_eol_only_applies	src/gen/emit_dfa.c:5542-5543	
+def-table	dfa_views	src/gen/emit_dfa.c:5545-5550	
+def-func	dfa_s0_cell	src/gen/emit_dfa.c:5564-5567	
+def-func	seed_emit_seeded	src/gen/emit_dfa.c:5579-5610	
+def-func	seed_emit_constant	src/gen/emit_dfa.c:5615-5620	
+def-table	dfa_seeds	src/gen/emit_dfa.c:5622-5625	
+def-func	acc_viewed_applies	src/gen/emit_dfa.c:5635-5636	
+def-func	acc_emit_probe	src/gen/emit_dfa.c:5641-5647	
+def-func	acc_emit_tail_scalar	src/gen/emit_dfa.c:5652-5660	
+def-func	acc_emit_tail_by_class	src/gen/emit_dfa.c:5669-5710	
+def-table	dfa_accs	src/gen/emit_dfa.c:5712-5719	
+def-func	pf_memchr_bounded_applies	src/gen/emit_dfa.c:5725-5726	
+def-func	pf_memchr_applies	src/gen/emit_dfa.c:5728-5729	
+def-func	pf_bcls_bounded_applies	src/gen/emit_dfa.c:5731-5732	
+def-func	pf_bcls_applies	src/gen/emit_dfa.c:5734-5735	
+def-func	pf_open	src/gen/emit_dfa.c:5748-5753	
+def-func	pf_comment_memchr	src/gen/emit_dfa.c:5758-5767	
+def-func	pf_comment_bcls	src/gen/emit_dfa.c:5771-5779	
+def-func	pcrec_emit_find	src/gen/emit_dfa.c:5782-5794	
+def-func	pf_emit_find	src/gen/emit_dfa.c:5799-5808	
+def-func	pf_emit_memchr	src/gen/emit_dfa.c:5816-5836	
+def-func	pf_emit_memchr_bounded	src/gen/emit_dfa.c:5843-5858	
+def-func	pf_emit_bcls	src/gen/emit_dfa.c:5863-5871	
+def-func	pf_emit_bcls_bounded	src/gen/emit_dfa.c:5877-5887	
+def-func	pf_ofs_applies_common	src/gen/emit_dfa.c:5911-5915	
+def-func	pf_ofs_bounded_applies	src/gen/emit_dfa.c:5917-5918	
+def-func	pf_ofs_applies	src/gen/emit_dfa.c:5920-5921	
+def-func	us_run_pin	src/gen/emit_dfa.c:5944-5948	
+def-func	pf_run_applies_common	src/gen/emit_dfa.c:5950-5976	
+def-func	pf_run_bounded_applies	src/gen/emit_dfa.c:5978-5979	
+def-func	pf_run_applies	src/gen/emit_dfa.c:5981-5982	
+def-func	ofs_test_model	src/gen/emit_dfa.c:5990-6001	
+def-func	ofs_test_of	src/gen/emit_dfa.c:6005-6051	
+def-func	ofs_test_at	src/gen/emit_dfa.c:6057-6079	
+def-func	ofs_test_verifies_run	src/gen/emit_dfa.c:6094-6112	
+def-func	ofsk_tbl_name	src/gen/emit_dfa.c:6125-6128	
+def-func	pf_tables_bcls	src/gen/emit_dfa.c:6132-6141	
+def-func	pf_tables_ofs	src/gen/emit_dfa.c:6150-6166	
+def-func	ofs_site_fn_name	src/gen/emit_dfa.c:6169-6175	
+def-func	ofs_site_table_name	src/gen/emit_dfa.c:6179-6184	
+def-func	ofs_site_define	src/gen/emit_dfa.c:6190-6207	
+def-func	pf_block_ofs	src/gen/emit_dfa.c:6212-6215	
+def-func	pf_ofs_call	src/gen/emit_dfa.c:6220-6228	
+def-func	pf_emit_ofs_reseed	src/gen/emit_dfa.c:6242-6249	
+def-func	pf_comment_ofs	src/gen/emit_dfa.c:6254-6263	
+def-func	pf_emit_ofs	src/gen/emit_dfa.c:6271-6285	
+def-func	pf_emit_ofs_bounded	src/gen/emit_dfa.c:6290-6312	
+def-func	dfa_reseed_exact	src/gen/emit_dfa.c:6360-6371	
+def-func	pf_dfa_start_set	src/gen/emit_dfa.c:6402-6430	
+def-func	pf_first_class_bounded_applies	src/gen/emit_dfa.c:6433-6434	
+def-func	pf_first_memchr_bounded_applies	src/gen/emit_dfa.c:6435-6436	
+def-func	pf_emit_moved_reseed	src/gen/emit_dfa.c:6441-6446	
+def-func	pf_comment_first	src/gen/emit_dfa.c:6450-6460	
+def-func	pf_tables_first	src/gen/emit_dfa.c:6463-6471	
+def-func	pf_emit_first_memchr_bounded	src/gen/emit_dfa.c:6476-6489	
+def-func	pf_emit_first_class_bounded	src/gen/emit_dfa.c:6493-6503	
+def-func	vm_start_assert_starts	src/gen/emit_dfa.c:6527-6536	
+def-func	pf_vm_start_applies	src/gen/emit_dfa.c:6560-6573	
+def-func	pf_vm_emit_first_class	src/gen/emit_dfa.c:6584-6601	
+def-table	dfa_pfs	src/gen/emit_dfa.c:6617-6652	
+def-func	dfa_pf_of	src/gen/emit_dfa.c:6657-6664	
+def-func	pf_scan_set_of	src/gen/emit_dfa.c:6671-6680	
+def-func	vm_start_row	src/gen/emit_dfa.c:6687-6694	
+def-func	pcrec_vm_start_scan_name	src/gen/emit_dfa.c:6697-6701	
+def-func	pcrec_emit_vm_start_seek	src/gen/emit_dfa.c:6714-6727	
+def-type	CandScan	src/gen/emit_dfa.c:6786-6790	
+def-func	dfa_cand_scan	src/gen/emit_dfa.c:6792-6824	
+def-func	pcrec_dfa_cand_ppm	src/gen/emit_dfa.c:6837-6861	
+def-func	req_route_one_attempt	src/gen/emit_dfa.c:6893-6901	
+def-func	req_byte_dominated_by	src/gen/emit_dfa.c:6929-6938	
+def-func	req_set_pick	src/gen/emit_dfa.c:6943-6947	
+def-func	req_none_applies	src/gen/emit_dfa.c:6951-6954	
+def-func	req_one_attempt_applies	src/gen/emit_dfa.c:6955-6958	
+def-func	req_dominated_applies	src/gen/emit_dfa.c:6959-6964	
+def-func	req_set_leads_applies	src/gen/emit_dfa.c:6970-6982	
+def-type	ReqAdmitRow	src/gen/emit_dfa.c:7002-7006	
+def-table	req_admits	src/gen/emit_dfa.c:7007-7018	
+def-data	pcrec_req_admit_nrows	src/gen/emit_dfa.c:7019-7019	
+def-func	pcrec_req_admit_row	src/gen/emit_dfa.c:7021-7027	
+def-func	req_admit	src/gen/emit_dfa.c:7029-7036	
+def-func	req_lead_byte	src/gen/emit_dfa.c:7038-7041	
+def-func	req_why_name	src/gen/emit_dfa.c:7048-7058	
+def-func	req_handoff_applies	src/gen/emit_dfa.c:7092-7107	
+def-type	ReqUseRow	src/gen/emit_dfa.c:7119-7123	
+def-table	req_uses	src/gen/emit_dfa.c:7124-7129	
+def-data	pcrec_req_use_nrows	src/gen/emit_dfa.c:7130-7130	
+def-func	pcrec_req_use_row	src/gen/emit_dfa.c:7132-7138	
+def-func	req_use	src/gen/emit_dfa.c:7140-7147	
+def-func	req_handoff_stamp	src/gen/emit_dfa.c:7151-7155	
+def-func	pcrec_dfa_scan_state_written	src/gen/emit_dfa.c:7188-7200	
+def-func	dir_fwd_skip	src/gen/emit_dfa.c:7212-7234	
+def-func	dir_rev_skip	src/gen/emit_dfa.c:7240-7258	
+def-func	dir_fwd_bound_accept	src/gen/emit_dfa.c:7263-7277	
+def-func	dir_rev_bound_accept	src/gen/emit_dfa.c:7286-7316	
+def-data	dfa_dir_forward	src/gen/emit_dfa.c:7318-7336	
+def-data	dfa_dir_reverse	src/gen/emit_dfa.c:7338-7355	
+def-data	dfa_dir_anchored	src/gen/emit_dfa.c:7390-7408	
+def-type	DfaMatch	src/gen/emit_dfa.c:7429-7431	
+def-func	match_unwrapped_applies	src/gen/emit_dfa.c:7437-7440	
+def-table	dfa_matches	src/gen/emit_dfa.c:7442-7445	
+def-func	dfa_match_of	src/gen/emit_dfa.c:7450-7455	
+def-func	dfa_match_is_unwrapped	src/gen/emit_dfa.c:7463-7464	
+def-type	DfaSearchStart	src/gen/emit_dfa.c:7576-7578	
+def-func	start_pinned_assert_routing	src/gen/emit_dfa.c:7592-7619	
+def-func	start_pinned_applies	src/gen/emit_dfa.c:7624-7652	
+def-table	dfa_search_starts	src/gen/emit_dfa.c:7658-7661	
+def-func	dfa_search_start_of	src/gen/emit_dfa.c:7666-7674	
+def-func	dfa_search_start_name	src/gen/emit_dfa.c:7678-7679	
+def-func	dfa_search_is_pinned	src/gen/emit_dfa.c:7683-7684	
+def-func	pcrec_dfa_axis_cands	src/gen/emit_dfa.c:7705-7718	
+def-macro	AXIS_LIST	src/gen/emit_dfa.c:7720-7722	
+def-func	pcrec_dfa_axis_table_cands	src/gen/emit_dfa.c:7725-7726	
+def-func	pcrec_dfa_axis_prefilter_cands	src/gen/emit_dfa.c:7729-7735	
+def-func	pcrec_dfa_axis_view_cands	src/gen/emit_dfa.c:7737-7738	
+def-func	pcrec_dfa_axis_seed_cands	src/gen/emit_dfa.c:7740-7741	
+def-func	pcrec_dfa_axis_accept_cands	src/gen/emit_dfa.c:7743-7744	
+def-func	pcrec_dfa_axis_match_cands	src/gen/emit_dfa.c:7749-7750	
+def-func	pcrec_dfa_axis_searchstart_cands	src/gen/emit_dfa.c:7754-7755	
+def-func	pcrec_dfa_axis_direction_cands	src/gen/emit_dfa.c:7766-7780	
+def-type	DfaEdge	src/gen/emit_dfa.c:7822-7824	
+def-func	edge_applies	src/gen/emit_dfa.c:7829-7832	
+def-table	dfa_edges	src/gen/emit_dfa.c:7834-7837	
+def-const	SCAN_TEST_CALLS	src/gen/emit_dfa.c:7880-7880	
+def-func	scan_choice	src/gen/emit_dfa.c:7884-7897	
+def-func	scan_table	src/gen/emit_dfa.c:7901-7907	
+def-func	scan_name	src/gen/emit_dfa.c:7911-7915	
+def-func	dfa_scan_body_name	src/gen/emit_dfa.c:7918-7923	
+def-func	dfa_edge_of	src/gen/emit_dfa.c:7929-7934	
+def-func	pcrec_dfa_axis_edge_cands	src/gen/emit_dfa.c:7945-7949	
+def-func	pcrec_dfa_axis_scanbody_cands	src/gen/emit_dfa.c:7953-7956	
+def-func	emit_scan_defs	src/gen/emit_dfa.c:7961-7969	
+def-func	scan_tables_bitmap	src/gen/emit_dfa.c:7973-7980	
+def-func	scan_test	src/gen/emit_dfa.c:7984-7995	
+def-func	emit_scan_edge	src/gen/emit_dfa.c:8005-8102	
+def-func	dfa_form_derive	src/gen/emit_dfa.c:8123-8232	
+def-func	emit_machine_tables	src/gen/emit_dfa.c:8249-8319	
+def-func	dfa_start_is_scan_head	src/gen/emit_dfa.c:8341-8344	
+def-func	dfa_seed_can_be_scan_head	src/gen/emit_dfa.c:8359-8369	
+def-func	scan_label	src/gen/emit_dfa.c:8375-8376	
+def-func	emit_scan_loop	src/gen/emit_dfa.c:8385-8532	
+def-func	req_handoff_assert_body	src/gen/emit_dfa.c:8545-8554	
+def-func	emit_unanchored	src/gen/emit_dfa.c:8572-8711	
+def-func	anch_start	src/gen/emit_dfa.c:8741-8752	
+def-func	emit_anchored_match_def	src/gen/emit_dfa.c:8781-8829	
+def-func	emit_anchored_match_caps_def	src/gen/emit_dfa.c:8848-8874	
+def-func	emit_anchored_entries	src/gen/emit_dfa.c:8881-8895	
+def-func	emit_target	src/gen/emit_dfa.c:8901-8905	
+def-func	emit_attempt	src/gen/emit_dfa.c:8916-9495	
+def-func	pcrec_gen_names	src/gen/emit_dfa.c:9508-9523	
+def-func	pcrec_emit_c_string_literal	src/gen/emit_dfa.c:9527-9530	
+def-func	emit_orientation_block	src/gen/emit_dfa.c:9551-9751	
+def-func	pcrec_emit_prologue	src/gen/emit_dfa.c:9761-10024	
+def-func	pcrec_emit_info	src/gen/emit_dfa.c:10028-10034	
+def-func	pcrec_emit_residual	src/gen/emit_dfa.c:10038-10042	
+def-func	pcrec_emit_dfa_engine	src/gen/emit_dfa.c:10049-10055	
+def-func	pcrec_emit_main	src/gen/emit_dfa.c:10072-10116	
+def-func	dfa_scan_name	src/gen/emit_dfa.c:10161-10165	
+def-func	dfa_prefilter_name	src/gen/emit_dfa.c:10175-10211	
+def-func	dfa_prefilter_offsets	src/gen/emit_dfa.c:10257-10278	
+def-func	pcrec_emit_dfa_scan_stamps	src/gen/emit_dfa.c:10286-10324	
+def-func	emit_dfa_stamps	src/gen/emit_dfa.c:10336-10373	
+def-func	pcrec_emit_dfa	src/gen/emit_dfa.c:10386-10452	
 def-macro	PCREC_LIMIT_EMIT_VM	src/gen/emit_vm.c:121-122	
 def-type	enum@src/gen/emit_vm.c:126	src/gen/emit_vm.c:126-157	
 def-type	enum@src/gen/emit_vm.c:223	src/gen/emit_vm.c:223-223	
@@ -1152,33 +1165,69 @@ def-type	VmReseedCal	src/gen/emit_vm.c:11067-11067
 def-table	vm_reseed_cal	src/gen/emit_vm.c:11068-11071	
 def-type	VmReseed	src/gen/emit_vm.c:11074-11078	
 def-func	vm_reseed_holds	src/gen/emit_vm.c:11082-11096	
-def-func	vm_plan_reseed	src/gen/emit_vm.c:11107-11122	
-def-func	vm_emit_stamps	src/gen/emit_vm.c:11144-11716	
-def-func	vm_emit_storage	src/gen/emit_vm.c:11737-12239	
-def-func	vm_var_word_bytes	src/gen/emit_vm.c:12266-12275	
-def-func	vm_var_emit_eval	src/gen/emit_vm.c:12292-12370	
-def-func	vm_emit_vars_resolve	src/gen/emit_vm.c:12403-12522	
-def-func	vm_vars_resolve_insert	src/gen/emit_vm.c:12539-12550	
-def-func	vm_emit_search_body	src/gen/emit_vm.c:12552-13543	
-def-func	vm_emit_match_guard	src/gen/emit_vm.c:13549-13553	
-def-func	vm_emit_entries	src/gen/emit_vm.c:13574-13853	
-def-func	vm_emit_epilogue	src/gen/emit_vm.c:13869-13970	
-def-func	pcrec_emit_vm	src/gen/emit_vm.c:13998-14022	
-def-const	MEMFN_MARK	src/gen/memfn_stamps.c:34-34	
-def-func	pcrec_emit_memfn_mark	src/gen/memfn_stamps.c:36-39	
-def-table	libc_names	src/gen/memfn_stamps.c:45-75	
-def-func	is_libc_name	src/gen/memfn_stamps.c:77-83	
-def-func	ident_byte	src/gen/memfn_stamps.c:87-91	
-def-func	skip_literal	src/gen/memfn_stamps.c:94-99	
-def-func	skip_comment	src/gen/memfn_stamps.c:102-111	
-def-func	skip_space	src/gen/memfn_stamps.c:113-119	
-def-func	memcpy_is_idiom	src/gen/memfn_stamps.c:125-145	
-def-func	scan_libc_calls	src/gen/memfn_stamps.c:150-181	
-def-type	StampSink	src/gen/memfn_stamps.c:185-185	
-def-func	sink_stamp	src/gen/memfn_stamps.c:187-191	
-def-func	arena_alloc	src/gen/memfn_stamps.c:193-196	
-def-func	splice_mark	src/gen/memfn_stamps.c:200-213	
-def-func	pcrec_memfn_stamps_render	src/gen/memfn_stamps.c:219-238	
+def-func	vm_plan_reseed	src/gen/emit_vm.c:11107-11123	
+def-func	vm_emit_stamps	src/gen/emit_vm.c:11145-11717	
+def-func	vm_emit_storage	src/gen/emit_vm.c:11738-12240	
+def-func	vm_var_word_bytes	src/gen/emit_vm.c:12267-12276	
+def-func	vm_var_emit_eval	src/gen/emit_vm.c:12293-12371	
+def-func	vm_emit_vars_resolve	src/gen/emit_vm.c:12404-12523	
+def-func	vm_vars_resolve_insert	src/gen/emit_vm.c:12540-12551	
+def-func	vm_emit_search_body	src/gen/emit_vm.c:12553-13550	
+def-func	vm_emit_match_guard	src/gen/emit_vm.c:13556-13560	
+def-func	vm_emit_entries	src/gen/emit_vm.c:13581-13860	
+def-func	vm_emit_epilogue	src/gen/emit_vm.c:13876-13977	
+def-func	pcrec_emit_vm	src/gen/emit_vm.c:14005-14029	
+def-table	pcrec_deleg_sites	src/gen/memfn_sites.c:18-23	
+def-func	arena_alloc	src/gen/memfn_sites.c:27-30	
+def-func	pcrec_memfn_art	src/gen/memfn_sites.c:32-44	
+def-func	sink_puts	src/gen/memfn_sites.c:48-51	
+def-func	sink_vprintf	src/gen/memfn_sites.c:53-56	
+def-func	sink_cmt_open	src/gen/memfn_sites.c:58-65	
+def-func	sink_cmt_close	src/gen/memfn_sites.c:67-72	
+def-func	sink_cstr	src/gen/memfn_sites.c:74-77	
+def-func	sink_legend_byte	src/gen/memfn_sites.c:79-82	
+def-func	pcrec_memfn_sink	src/gen/memfn_sites.c:84-95	
+def-func	pcrec_memfn_sink_sb	src/gen/memfn_sites.c:97-103	
+def-func	pcrec_memfn_site	src/gen/memfn_sites.c:107-119	
+def-func	pcrec_memfn_preds	src/gen/memfn_sites.c:121-124	
+def-func	term_unknown_density	src/gen/memfn_sites.c:127-131	
+def-func	pcrec_memfn_term_byte	src/gen/memfn_sites.c:133-141	
+def-func	pcrec_memfn_term_set	src/gen/memfn_sites.c:143-154	
+def-func	pcrec_memfn_term_run	src/gen/memfn_sites.c:156-167	
+def-func	pred_kinds	src/gen/memfn_sites.c:172-178	
+def-func	deleg_check	src/gen/memfn_sites.c:184-204	
+def-func	pcrec_memfn_check_use	src/gen/memfn_sites.c:206-213	
+def-func	kit_check	src/gen/memfn_sites.c:218-223	
+def-func	pcrec_memfn_define	src/gen/memfn_sites.c:225-235	
+def-func	pcrec_memfn_use	src/gen/memfn_sites.c:237-243	
+def-func	pcrec_memfn_call	src/gen/memfn_sites.c:245-251	
+def-func	pred_at	src/gen/memfn_sites.c:256-264	
+def-func	run_of	src/gen/memfn_sites.c:267-271	
+def-func	pcrec_memfn_note_helpers	src/gen/memfn_sites.c:273-283	
+def-func	pcrec_memfn_run_cmp	src/gen/memfn_sites.c:285-296	
+def-func	pcrec_memfn_art_end	src/gen/memfn_sites.c:300-308	
+def-const	PCREC_GEN_MEMFN_SITES_H	src/gen/memfn_sites.h:12-12	
+def-type	DelegBudget	src/gen/memfn_sites.h:19-19	
+def-macro	DELEG_H	src/gen/memfn_sites.h:20-20	
+def-type	DelegSite	src/gen/memfn_sites.h:22-27	
+def-type	DelegRow	src/gen/memfn_sites.h:29-36	
+def-type	PcrecMfSink	src/gen/memfn_sites.h:56-59	
+def-type	PcrecMfU	src/gen/memfn_sites.h:67-72	
+def-const	MEMFN_MARK	src/gen/memfn_stamps.c:33-33	
+def-func	pcrec_emit_memfn_mark	src/gen/memfn_stamps.c:35-38	
+def-table	libc_names	src/gen/memfn_stamps.c:44-74	
+def-func	is_libc_name	src/gen/memfn_stamps.c:76-82	
+def-func	ident_byte	src/gen/memfn_stamps.c:86-90	
+def-func	skip_literal	src/gen/memfn_stamps.c:93-98	
+def-func	skip_comment	src/gen/memfn_stamps.c:101-110	
+def-func	skip_space	src/gen/memfn_stamps.c:112-118	
+def-func	memcpy_is_idiom	src/gen/memfn_stamps.c:124-144	
+def-func	scan_libc_calls	src/gen/memfn_stamps.c:149-180	
+def-type	StampSink	src/gen/memfn_stamps.c:184-184	
+def-func	sink_stamp	src/gen/memfn_stamps.c:186-190	
+def-func	splice_mark	src/gen/memfn_stamps.c:194-207	
+def-func	pcrec_memfn_policy	src/gen/memfn_stamps.c:209-213	
+def-func	pcrec_memfn_stamps_render	src/gen/memfn_stamps.c:222-241	
 def-type	enum@src/gen/runcmp.c:56	src/gen/runcmp.c:56-56	
 def-type	enum@src/gen/runcmp.c:58	src/gen/runcmp.c:58-58	
 def-table	pcrec_runcmp_rows	src/gen/runcmp.c:64-89	
@@ -1893,10 +1942,10 @@ def-func	pcrec_class_delim_extent_scan	src/parse/scans.c:60-79
 def-func	pcrec_ext_class_pair_opens	src/parse/scans.c:103-110	
 def-func	pcrec_verb_name_extent_scan	src/parse/scans.c:117-123	
 def-func	pcrec_brace_quant_shape	src/parse/scans.c:143-161	
-seed	cand_from_live_seeds	src/gen/emit_dfa.c:4084	
-seed	dfa_interior_dead	src/gen/emit_dfa.c:3924	
-seed	pcrec_artifact_has_dfa_scan	src/gen/emit_dfa.c:385	
-seed	pcrec_dfa_cand_ppm	src/gen/emit_dfa.c:7079	
+seed	cand_from_live_seeds	src/gen/emit_dfa.c:3995	
+seed	dfa_interior_dead	src/gen/emit_dfa.c:3835	
+seed	pcrec_artifact_has_dfa_scan	src/gen/emit_dfa.c:386	
+seed	pcrec_dfa_cand_ppm	src/gen/emit_dfa.c:6837	
 seed	pcrec_fact_end_window	src/facts/facts.c:355	
 seed	pcrec_fact_kset_walk	src/facts/facts.c:391	
 seed	pcrec_fact_req_byte	src/facts/facts.c:385	
@@ -1907,103 +1956,105 @@ seed	pcrec_fact_req_whole_run	src/facts/facts.c:367
 seed	pcrec_fact_run_pin	src/facts/facts.c:397	
 seed	pcrec_fact_start_anchor	src/facts/facts.c:343	
 seed	pcrec_fact_start_set	src/facts/facts.c:349	
-seed	unanch_start	src/gen/emit_dfa.c:4191	
-family-type	PcrecReseedRow	src/core/internal.h:6736	plan; names 
-family-type	ReqAdmit	src/gen/emit_dfa.c:305	plan; names 
-family-type	ReqUse	src/gen/emit_dfa.c:328	plan; names 
-family-func	pcrec_emit_end_window_clamp	src/gen/emit_dfa.c:935	body; names pcrec_fact_end_window
-family-func	req_run_tests	src/gen/emit_dfa.c:1027	body; names pcrec_artifact_has_dfa_scan,pcrec_fact_req_run,pcrec_fact_req_whole_run,req_admit
-family-func	pcrec_emit_req_run_blocks	src/gen/emit_dfa.c:1059	body; names req_run_tests
-family-func	emit_req_handoff	src/gen/emit_dfa.c:1116	body; names pcrec_fact_req_run_maxoff
-family-func	emit_req_run_check	src/gen/emit_dfa.c:1159	body; names emit_req_handoff,pcrec_fact_req_run,req_run_tests,req_use
-family-func	emit_req_set_rest	src/gen/emit_dfa.c:1259	body; names pcrec_artifact_has_dfa_scan,pcrec_fact_req_byte,pcrec_fact_req_set,pcrec_fact_req_whole_run,req_lead_byte
-family-func	pcrec_emit_req_byte_check	src/gen/emit_dfa.c:1362	body; names emit_req_run_check,emit_req_set_rest,pcrec_fact_req_byte,pcrec_fact_req_run,req_admit,req_lead_byte,req_use
-family-func	emit_info_def	src/gen/emit_dfa.c:2624	plan; names dfa_prefilter_name,dfa_scan_name,dfa_search_start_name,pcrec_artifact_has_dfa_scan
-family-type	DfaCand	src/gen/emit_dfa.c:3473	plan; names 
-family-func	attempt_cand	src/gen/emit_dfa.c:4105	body+stamp; names cand_from_live_seeds
-family-func	dfa_engine_is_empty	src/gen/emit_dfa.c:4352	body+stamp; names unanch_start
-family-func	dfa_table_name	src/gen/emit_dfa.c:4383	stamp; names dfa_engine_is_empty,dfa_match_is_unwrapped,dfa_search_is_pinned
-family-func	dfa_scan_edge_name	src/gen/emit_dfa.c:4455	stamp; names dfa_engine_is_empty,dfa_match_is_unwrapped,dfa_search_is_pinned
-family-func	dfa_uniform_folds	src/gen/emit_dfa.c:4513	stamp; names dfa_engine_is_empty,dfa_match_is_unwrapped,dfa_search_is_pinned
-family-type	PfScan	src/gen/emit_dfa.c:4894	plan; names 
-family-type	DfaPf	src/gen/emit_dfa.c:4901	plan; names 
-family-func	pf_memchr_bounded_applies	src/gen/emit_dfa.c:5798	body+stamp; names 
-family-func	pf_memchr_applies	src/gen/emit_dfa.c:5801	body+stamp; names 
-family-func	pf_bcls_bounded_applies	src/gen/emit_dfa.c:5804	body+stamp; names 
-family-func	pf_bcls_applies	src/gen/emit_dfa.c:5807	body+stamp; names 
-family-func	pf_emit_memchr	src/gen/emit_dfa.c:5889	body+stamp; names 
-family-func	pf_emit_memchr_bounded	src/gen/emit_dfa.c:5916	body+stamp; names 
-family-func	pf_emit_bcls	src/gen/emit_dfa.c:5936	body+stamp; names 
-family-func	pf_emit_bcls_bounded	src/gen/emit_dfa.c:5950	body+stamp; names 
-family-func	pf_ofs_bounded_applies	src/gen/emit_dfa.c:5990	body+stamp; names 
-family-func	pf_ofs_applies	src/gen/emit_dfa.c:5993	body+stamp; names 
-family-func	us_run_pin	src/gen/emit_dfa.c:6017	body+stamp; names pcrec_fact_run_pin
-family-func	pf_run_applies_common	src/gen/emit_dfa.c:6023	body+stamp; names ofs_test_verifies_run,pcrec_fact_req_run,us_run_pin
-family-func	pf_run_bounded_applies	src/gen/emit_dfa.c:6051	body+stamp; names pf_run_applies_common
-family-func	pf_run_applies	src/gen/emit_dfa.c:6054	body+stamp; names pf_run_applies_common
-family-func	ofs_test_of	src/gen/emit_dfa.c:6078	body+stamp; names pcrec_fact_req_run,us_run_pin
-family-func	ofs_test_verifies_run	src/gen/emit_dfa.c:6167	body+stamp; names pcrec_fact_req_run,us_run_pin
-family-func	pf_tables_bcls	src/gen/emit_dfa.c:6205	body+stamp; names 
-family-func	pf_tables_ofs	src/gen/emit_dfa.c:6223	body+stamp; names 
-family-func	pf_block_ofs	src/gen/emit_dfa.c:6294	body+stamp; names 
-family-func	pf_emit_ofs	src/gen/emit_dfa.c:6515	body+stamp; names 
-family-func	pf_emit_ofs_bounded	src/gen/emit_dfa.c:6535	body+stamp; names 
-family-func	pf_dfa_start_set	src/gen/emit_dfa.c:6648	body+stamp; names 
-family-func	pf_first_class_bounded_applies	src/gen/emit_dfa.c:6679	body+stamp; names pf_dfa_start_set
-family-func	pf_first_memchr_bounded_applies	src/gen/emit_dfa.c:6681	body+stamp; names pf_dfa_start_set
-family-func	pf_tables_first	src/gen/emit_dfa.c:6709	body+stamp; names 
-family-func	pf_emit_first_memchr_bounded	src/gen/emit_dfa.c:6722	body+stamp; names 
-family-func	pf_emit_first_class_bounded	src/gen/emit_dfa.c:6739	body+stamp; names 
-family-func	pf_vm_start_applies	src/gen/emit_dfa.c:6806	body+stamp; names pcrec_fact_start_anchor
-family-func	pf_vm_emit_first_class	src/gen/emit_dfa.c:6830	body+stamp; names 
-family-table	dfa_pfs	src/gen/emit_dfa.c:6863	body+stamp; names pf_bcls_applies,pf_bcls_bounded_applies,pf_block_ofs,pf_dfa_start_set,pf_emit_bcls,pf_emit_bcls_bounded,pf_emit_first_class_bounded,pf_emit_first_memchr_bounded,pf_emit_memchr,pf_emit_memchr_bounded,pf_emit_ofs,pf_emit_ofs_bounded,pf_first_class_bounded_applies,pf_first_memchr_bounded_applies,pf_memchr_applies,pf_memchr_bounded_applies,pf_ofs_applies,pf_ofs_bounded_applies,pf_run_applies,pf_run_bounded_applies,pf_tables_bcls,pf_tables_first,pf_tables_ofs,pf_vm_emit_first_class,pf_vm_start_applies
-family-func	dfa_pf_of	src/gen/emit_dfa.c:6903	body+stamp; names dfa_pfs,pcrec_fact_start_set
-family-func	pf_scan_set_of	src/gen/emit_dfa.c:6915	body; names pcrec_fact_start_set
-family-func	vm_start_row	src/gen/emit_dfa.c:6931	body; names dfa_pfs,pcrec_fact_start_set
-family-func	pcrec_vm_start_scan_name	src/gen/emit_dfa.c:6939	plan; names vm_start_row
-family-func	pcrec_emit_vm_start_seek	src/gen/emit_dfa.c:6956	body; names pcrec_artifact_has_dfa_scan,vm_start_row
-family-func	dfa_cand_scan	src/gen/emit_dfa.c:7034	body; names attempt_cand,dfa_pf_of,ofs_test_of,ofs_test_verifies_run,pcrec_artifact_has_dfa_scan,pf_scan_set_of,unanch_start
-family-func	req_route_one_attempt	src/gen/emit_dfa.c:7135	body; names dfa_interior_dead,pcrec_fact_start_anchor,@field
-family-func	req_byte_dominated_by	src/gen/emit_dfa.c:7171	body; names pcrec_fact_req_run
-family-func	req_set_pick	src/gen/emit_dfa.c:7185	body; names pcrec_fact_req_set
-family-func	req_none_applies	src/gen/emit_dfa.c:7193	body; names pcrec_fact_req_byte,pcrec_fact_req_run
-family-func	req_one_attempt_applies	src/gen/emit_dfa.c:7197	body; names req_route_one_attempt
-family-func	req_dominated_applies	src/gen/emit_dfa.c:7201	body; names dfa_cand_scan,pcrec_fact_req_byte,req_byte_dominated_by
-family-func	req_set_leads_applies	src/gen/emit_dfa.c:7212	body; names pcrec_fact_req_run,req_set_pick
-family-type	ReqAdmitRow	src/gen/emit_dfa.c:7244	plan; names 
-family-table	req_admits	src/gen/emit_dfa.c:7249	body; names req_dominated_applies,req_none_applies,req_one_attempt_applies,req_set_leads_applies
-family-func	req_admit	src/gen/emit_dfa.c:7271	body; names req_admits
-family-func	req_lead_byte	src/gen/emit_dfa.c:7278	body; names req_admit,req_set_pick
-family-func	req_handoff_applies	src/gen/emit_dfa.c:7332	body; names dfa_engine_is_empty,pcrec_artifact_has_dfa_scan,pcrec_fact_req_run,pcrec_fact_req_run_maxoff,pcrec_vm_prefilter_window,req_admit,@field
-family-type	ReqUseRow	src/gen/emit_dfa.c:7359	plan; names 
-family-table	req_uses	src/gen/emit_dfa.c:7364	body; names req_handoff_applies
-family-func	req_use	src/gen/emit_dfa.c:7380	body; names req_uses
-family-func	req_handoff_stamp	src/gen/emit_dfa.c:7389	plan; names pcrec_fact_req_run_maxoff,req_use
-family-type	DfaMatch	src/gen/emit_dfa.c:7665	plan; names 
-family-func	match_unwrapped_applies	src/gen/emit_dfa.c:7673	stamp; names dfa_engine_is_empty
-family-table	dfa_matches	src/gen/emit_dfa.c:7678	stamp; names match_unwrapped_applies
-family-func	dfa_match_of	src/gen/emit_dfa.c:7686	stamp; names dfa_matches
-family-func	dfa_match_is_unwrapped	src/gen/emit_dfa.c:7699	stamp; names dfa_match_of,dfa_matches
-family-type	DfaSearchStart	src/gen/emit_dfa.c:7812	plan; names 
-family-func	start_pinned_applies	src/gen/emit_dfa.c:7860	body+stamp; names dfa_engine_is_empty
-family-table	dfa_search_starts	src/gen/emit_dfa.c:7894	body+stamp; names start_pinned_applies
-family-func	dfa_search_start_of	src/gen/emit_dfa.c:7902	body+stamp; names dfa_search_starts
-family-func	dfa_search_start_name	src/gen/emit_dfa.c:7911	stamp; names dfa_search_start_of
-family-func	dfa_search_is_pinned	src/gen/emit_dfa.c:7916	body+stamp; names dfa_search_start_of,dfa_search_starts
-family-func	dfa_form_derive	src/gen/emit_dfa.c:8356	body; names dfa_pfs,ofs_test_of,pcrec_fact_start_set,pf_scan_set_of
-family-func	emit_unanchored	src/gen/emit_dfa.c:8801	body; names dfa_form_derive,dfa_search_is_pinned,pcrec_emit_end_window_clamp,pcrec_emit_req_byte_check,pcrec_emit_req_run_blocks,req_use,unanch_start
-family-func	emit_anchored_entries	src/gen/emit_dfa.c:9108	plan; names dfa_form_derive,unanch_start
-family-func	emit_attempt	src/gen/emit_dfa.c:9143	body; names attempt_cand,dfa_engine_is_empty,dfa_interior_dead,pcrec_emit_end_window_clamp,pcrec_emit_req_byte_check,pcrec_emit_req_run_blocks,pcrec_fact_start_anchor
-family-func	emit_orientation_block	src/gen/emit_dfa.c:9774	plan; names dfa_search_is_pinned,dfa_table_name
-family-func	pcrec_emit_prologue	src/gen/emit_dfa.c:9984	plan; names attempt_cand,emit_orientation_block,pcrec_vm_start_scan_name,req_admit,req_handoff_stamp
-family-func	pcrec_emit_info	src/gen/emit_dfa.c:10248	plan; names emit_info_def
-family-func	pcrec_emit_dfa_engine	src/gen/emit_dfa.c:10269	body; names emit_attempt,emit_unanchored
-family-func	dfa_scan_name	src/gen/emit_dfa.c:10379	stamp; names dfa_engine_is_empty
-family-func	dfa_prefilter_name	src/gen/emit_dfa.c:10393	stamp; names attempt_cand,dfa_pf_of,unanch_start
-family-func	dfa_prefilter_offsets	src/gen/emit_dfa.c:10475	stamp; names dfa_pf_of,ofs_test_of,unanch_start
-family-func	pcrec_emit_dfa_scan_stamps	src/gen/emit_dfa.c:10504	stamp; names dfa_prefilter_name,dfa_prefilter_offsets,dfa_scan_edge_name,dfa_scan_name,dfa_search_start_name,dfa_table_name,dfa_uniform_folds
-family-func	emit_dfa_stamps	src/gen/emit_dfa.c:10554	plan; names pcrec_emit_dfa_scan_stamps
-family-func	pcrec_emit_dfa	src/gen/emit_dfa.c:10604	plan; names dfa_match_is_unwrapped,emit_anchored_entries,emit_dfa_stamps,emit_info_def,pcrec_emit_dfa_engine,pcrec_emit_prologue
+seed	unanch_start	src/gen/emit_dfa.c:4107	
+family-type	PcrecReseedRow	src/core/internal.h:6757	plan; names 
+family-type	ReqAdmit	src/gen/emit_dfa.c:306	plan; names 
+family-type	ReqUse	src/gen/emit_dfa.c:330	plan; names 
+family-func	pcrec_emit_end_window_clamp	src/gen/emit_dfa.c:936	body; names pcrec_fact_end_window
+family-func	req_run_tests	src/gen/emit_dfa.c:1030	body; names pcrec_artifact_has_dfa_scan,pcrec_fact_req_run,pcrec_fact_req_whole_run,req_admit
+family-func	pcrec_emit_req_run_blocks	src/gen/emit_dfa.c:1152	body; names req_site_define
+family-func	emit_req_handoff_rest	src/gen/emit_dfa.c:1176	body; names pcrec_fact_req_run_maxoff
+family-func	req_note_run	src/gen/emit_dfa.c:1217	body; names pcrec_fact_req_run
+family-func	req_set_rest_members	src/gen/emit_dfa.c:1305	body; names pcrec_artifact_has_dfa_scan,pcrec_fact_req_byte,pcrec_fact_req_set,pcrec_fact_req_whole_run,req_lead_byte
+family-func	req_site_note	src/gen/emit_dfa.c:1399	body; names req_note_run
+family-func	req_site_define	src/gen/emit_dfa.c:1424	body; names pcrec_artifact_has_dfa_scan,pcrec_fact_req_byte,pcrec_fact_req_run,req_admit,req_lead_byte,req_run_tests,req_set_rest_members,req_use
+family-func	pcrec_emit_req_byte_check	src/gen/emit_dfa.c:1536	body; names emit_req_handoff_rest,pcrec_fact_req_run,req_site_note,req_use
+family-func	emit_info_def	src/gen/emit_dfa.c:2788	plan; names dfa_prefilter_name,dfa_scan_name,dfa_search_start_name,pcrec_artifact_has_dfa_scan
+family-type	DfaCand	src/gen/emit_dfa.c:3384	plan; names 
+family-func	attempt_cand	src/gen/emit_dfa.c:4016	body+stamp; names cand_from_live_seeds
+family-func	dfa_engine_is_empty	src/gen/emit_dfa.c:4269	body+stamp; names unanch_start
+family-func	dfa_table_name	src/gen/emit_dfa.c:4304	stamp; names dfa_engine_is_empty,dfa_match_is_unwrapped,dfa_search_is_pinned
+family-func	dfa_scan_edge_name	src/gen/emit_dfa.c:4376	stamp; names dfa_engine_is_empty,dfa_match_is_unwrapped,dfa_search_is_pinned
+family-func	dfa_uniform_folds	src/gen/emit_dfa.c:4434	stamp; names dfa_engine_is_empty,dfa_match_is_unwrapped,dfa_search_is_pinned
+family-type	PfScan	src/gen/emit_dfa.c:4817	plan; names 
+family-type	DfaPf	src/gen/emit_dfa.c:4824	plan; names 
+family-func	pf_memchr_bounded_applies	src/gen/emit_dfa.c:5725	body+stamp; names 
+family-func	pf_memchr_applies	src/gen/emit_dfa.c:5728	body+stamp; names 
+family-func	pf_bcls_bounded_applies	src/gen/emit_dfa.c:5731	body+stamp; names 
+family-func	pf_bcls_applies	src/gen/emit_dfa.c:5734	body+stamp; names 
+family-func	pf_emit_memchr	src/gen/emit_dfa.c:5816	body+stamp; names 
+family-func	pf_emit_memchr_bounded	src/gen/emit_dfa.c:5843	body+stamp; names 
+family-func	pf_emit_bcls	src/gen/emit_dfa.c:5863	body+stamp; names 
+family-func	pf_emit_bcls_bounded	src/gen/emit_dfa.c:5877	body+stamp; names 
+family-func	pf_ofs_bounded_applies	src/gen/emit_dfa.c:5917	body+stamp; names 
+family-func	pf_ofs_applies	src/gen/emit_dfa.c:5920	body+stamp; names 
+family-func	us_run_pin	src/gen/emit_dfa.c:5944	body+stamp; names pcrec_fact_run_pin
+family-func	pf_run_applies_common	src/gen/emit_dfa.c:5950	body+stamp; names ofs_test_verifies_run,pcrec_fact_req_run,us_run_pin
+family-func	pf_run_bounded_applies	src/gen/emit_dfa.c:5978	body+stamp; names pf_run_applies_common
+family-func	pf_run_applies	src/gen/emit_dfa.c:5981	body+stamp; names pf_run_applies_common
+family-func	ofs_test_of	src/gen/emit_dfa.c:6005	body+stamp; names pcrec_fact_req_run,us_run_pin
+family-func	ofs_test_verifies_run	src/gen/emit_dfa.c:6094	body+stamp; names pcrec_fact_req_run,us_run_pin
+family-func	pf_tables_bcls	src/gen/emit_dfa.c:6132	body+stamp; names 
+family-func	pf_tables_ofs	src/gen/emit_dfa.c:6150	body+stamp; names 
+family-func	pf_block_ofs	src/gen/emit_dfa.c:6212	body+stamp; names 
+family-func	pf_emit_ofs	src/gen/emit_dfa.c:6271	body+stamp; names 
+family-func	pf_emit_ofs_bounded	src/gen/emit_dfa.c:6290	body+stamp; names 
+family-func	pf_dfa_start_set	src/gen/emit_dfa.c:6402	body+stamp; names 
+family-func	pf_first_class_bounded_applies	src/gen/emit_dfa.c:6433	body+stamp; names pf_dfa_start_set
+family-func	pf_first_memchr_bounded_applies	src/gen/emit_dfa.c:6435	body+stamp; names pf_dfa_start_set
+family-func	pf_tables_first	src/gen/emit_dfa.c:6463	body+stamp; names 
+family-func	pf_emit_first_memchr_bounded	src/gen/emit_dfa.c:6476	body+stamp; names 
+family-func	pf_emit_first_class_bounded	src/gen/emit_dfa.c:6493	body+stamp; names 
+family-func	pf_vm_start_applies	src/gen/emit_dfa.c:6560	body+stamp; names pcrec_fact_start_anchor
+family-func	pf_vm_emit_first_class	src/gen/emit_dfa.c:6584	body+stamp; names 
+family-table	dfa_pfs	src/gen/emit_dfa.c:6617	body+stamp; names pf_bcls_applies,pf_bcls_bounded_applies,pf_block_ofs,pf_dfa_start_set,pf_emit_bcls,pf_emit_bcls_bounded,pf_emit_first_class_bounded,pf_emit_first_memchr_bounded,pf_emit_memchr,pf_emit_memchr_bounded,pf_emit_ofs,pf_emit_ofs_bounded,pf_first_class_bounded_applies,pf_first_memchr_bounded_applies,pf_memchr_applies,pf_memchr_bounded_applies,pf_ofs_applies,pf_ofs_bounded_applies,pf_run_applies,pf_run_bounded_applies,pf_tables_bcls,pf_tables_first,pf_tables_ofs,pf_vm_emit_first_class,pf_vm_start_applies
+family-func	dfa_pf_of	src/gen/emit_dfa.c:6657	body+stamp; names dfa_pfs,pcrec_fact_start_set
+family-func	pf_scan_set_of	src/gen/emit_dfa.c:6671	body; names pcrec_fact_start_set
+family-func	vm_start_row	src/gen/emit_dfa.c:6687	body; names dfa_pfs,pcrec_fact_start_set
+family-func	pcrec_vm_start_scan_name	src/gen/emit_dfa.c:6697	plan; names vm_start_row
+family-func	pcrec_emit_vm_start_seek	src/gen/emit_dfa.c:6714	body; names pcrec_artifact_has_dfa_scan,vm_start_row
+family-func	dfa_cand_scan	src/gen/emit_dfa.c:6792	body; names attempt_cand,dfa_pf_of,ofs_test_of,ofs_test_verifies_run,pcrec_artifact_has_dfa_scan,pf_scan_set_of,unanch_start
+family-func	req_route_one_attempt	src/gen/emit_dfa.c:6893	body; names dfa_interior_dead,pcrec_fact_start_anchor,@field
+family-func	req_byte_dominated_by	src/gen/emit_dfa.c:6929	body; names pcrec_fact_req_run
+family-func	req_set_pick	src/gen/emit_dfa.c:6943	body; names pcrec_fact_req_set
+family-func	req_none_applies	src/gen/emit_dfa.c:6951	body; names pcrec_fact_req_byte,pcrec_fact_req_run
+family-func	req_one_attempt_applies	src/gen/emit_dfa.c:6955	body; names req_route_one_attempt
+family-func	req_dominated_applies	src/gen/emit_dfa.c:6959	body; names dfa_cand_scan,pcrec_fact_req_byte,req_byte_dominated_by
+family-func	req_set_leads_applies	src/gen/emit_dfa.c:6970	body; names pcrec_fact_req_run,req_set_pick
+family-type	ReqAdmitRow	src/gen/emit_dfa.c:7002	plan; names 
+family-table	req_admits	src/gen/emit_dfa.c:7007	body; names req_dominated_applies,req_none_applies,req_one_attempt_applies,req_set_leads_applies
+family-func	req_admit	src/gen/emit_dfa.c:7029	body; names req_admits
+family-func	req_lead_byte	src/gen/emit_dfa.c:7038	body; names req_admit,req_set_pick
+family-func	req_handoff_applies	src/gen/emit_dfa.c:7092	body; names dfa_engine_is_empty,pcrec_artifact_has_dfa_scan,pcrec_fact_req_run,pcrec_fact_req_run_maxoff,pcrec_vm_prefilter_window,req_admit,@field
+family-type	ReqUseRow	src/gen/emit_dfa.c:7119	plan; names 
+family-table	req_uses	src/gen/emit_dfa.c:7124	body; names req_handoff_applies
+family-func	req_use	src/gen/emit_dfa.c:7140	body; names req_uses
+family-func	req_handoff_stamp	src/gen/emit_dfa.c:7151	plan; names pcrec_fact_req_run_maxoff,req_use
+family-type	DfaMatch	src/gen/emit_dfa.c:7429	plan; names 
+family-func	match_unwrapped_applies	src/gen/emit_dfa.c:7437	stamp; names dfa_engine_is_empty
+family-table	dfa_matches	src/gen/emit_dfa.c:7442	stamp; names match_unwrapped_applies
+family-func	dfa_match_of	src/gen/emit_dfa.c:7450	stamp; names dfa_matches
+family-func	dfa_match_is_unwrapped	src/gen/emit_dfa.c:7463	stamp; names dfa_match_of,dfa_matches
+family-type	DfaSearchStart	src/gen/emit_dfa.c:7576	plan; names 
+family-func	start_pinned_applies	src/gen/emit_dfa.c:7624	body+stamp; names dfa_engine_is_empty
+family-table	dfa_search_starts	src/gen/emit_dfa.c:7658	body+stamp; names start_pinned_applies
+family-func	dfa_search_start_of	src/gen/emit_dfa.c:7666	body+stamp; names dfa_search_starts
+family-func	dfa_search_start_name	src/gen/emit_dfa.c:7678	stamp; names dfa_search_start_of
+family-func	dfa_search_is_pinned	src/gen/emit_dfa.c:7683	body+stamp; names dfa_search_start_of,dfa_search_starts
+family-func	dfa_form_derive	src/gen/emit_dfa.c:8123	body; names dfa_pfs,ofs_test_of,pcrec_fact_start_set,pf_scan_set_of
+family-func	emit_unanchored	src/gen/emit_dfa.c:8572	body; names dfa_form_derive,dfa_search_is_pinned,pcrec_emit_end_window_clamp,pcrec_emit_req_byte_check,pcrec_emit_req_run_blocks,req_use,unanch_start
+family-func	emit_anchored_entries	src/gen/emit_dfa.c:8881	plan; names dfa_form_derive,unanch_start
+family-func	emit_attempt	src/gen/emit_dfa.c:8916	body; names attempt_cand,dfa_engine_is_empty,dfa_interior_dead,pcrec_emit_end_window_clamp,pcrec_emit_req_byte_check,pcrec_emit_req_run_blocks,pcrec_fact_start_anchor
+family-func	emit_orientation_block	src/gen/emit_dfa.c:9551	plan; names dfa_search_is_pinned,dfa_table_name
+family-func	pcrec_emit_prologue	src/gen/emit_dfa.c:9761	plan; names attempt_cand,emit_orientation_block,pcrec_vm_start_scan_name,req_admit,req_handoff_stamp
+family-func	pcrec_emit_info	src/gen/emit_dfa.c:10028	plan; names emit_info_def
+family-func	pcrec_emit_dfa_engine	src/gen/emit_dfa.c:10049	body; names emit_attempt,emit_unanchored
+family-func	dfa_scan_name	src/gen/emit_dfa.c:10161	stamp; names dfa_engine_is_empty
+family-func	dfa_prefilter_name	src/gen/emit_dfa.c:10175	stamp; names attempt_cand,dfa_pf_of,unanch_start
+family-func	dfa_prefilter_offsets	src/gen/emit_dfa.c:10257	stamp; names dfa_pf_of,ofs_test_of,unanch_start
+family-func	pcrec_emit_dfa_scan_stamps	src/gen/emit_dfa.c:10286	stamp; names dfa_prefilter_name,dfa_prefilter_offsets,dfa_scan_edge_name,dfa_scan_name,dfa_search_start_name,dfa_table_name,dfa_uniform_folds
+family-func	emit_dfa_stamps	src/gen/emit_dfa.c:10336	plan; names pcrec_emit_dfa_scan_stamps
+family-func	pcrec_emit_dfa	src/gen/emit_dfa.c:10386	plan; names dfa_match_is_unwrapped,emit_anchored_entries,emit_dfa_stamps,emit_info_def,pcrec_emit_dfa_engine,pcrec_emit_prologue
 family-func	pcrec_vm_prefilter_window	src/gen/emit_vm.c:3634	body; names @field
 family-func	vm_render_listing	src/gen/emit_vm.c:9284	plan; names @field
 family-func	vm_init	src/gen/emit_vm.c:10229	plan; names pcrec_vm_prefilter_window,@field
@@ -2011,126 +2062,132 @@ family-table	pcrec_reseed_rows	src/gen/emit_vm.c:11010	plan; names @field
 family-data	pcrec_reseed_nrows	src/gen/emit_vm.c:11040	plan; names pcrec_reseed_rows
 family-func	vm_reseed_holds	src/gen/emit_vm.c:11082	plan; names pcrec_dfa_cand_ppm,pcrec_fact_start_anchor,@field
 family-func	vm_plan_reseed	src/gen/emit_vm.c:11107	plan; names pcrec_reseed_nrows,pcrec_reseed_rows,vm_reseed_holds
-family-func	vm_emit_stamps	src/gen/emit_vm.c:11144	stamp; names pcrec_artifact_has_dfa_scan,pcrec_emit_dfa_scan_stamps,@field
-family-func	vm_emit_storage	src/gen/emit_vm.c:11737	plan; names @field
-family-func	vm_emit_search_body	src/gen/emit_vm.c:12552	body; names pcrec_emit_dfa_engine,pcrec_emit_end_window_clamp,pcrec_emit_req_byte_check,pcrec_emit_req_run_blocks,pcrec_emit_vm_start_seek,pcrec_fact_start_anchor,@field
-family-func	vm_emit_entries	src/gen/emit_vm.c:13574	plan; names @field
-family-func	vm_emit_epilogue	src/gen/emit_vm.c:13869	plan; names pcrec_emit_info,vm_render_listing,@field
-family-func	pcrec_emit_vm	src/gen/emit_vm.c:13998	plan; names pcrec_emit_prologue,vm_emit_entries,vm_emit_epilogue,vm_emit_search_body,vm_emit_stamps,vm_emit_storage,vm_init,vm_plan_reseed
+family-func	vm_emit_stamps	src/gen/emit_vm.c:11145	stamp; names pcrec_artifact_has_dfa_scan,pcrec_emit_dfa_scan_stamps,@field
+family-func	vm_emit_storage	src/gen/emit_vm.c:11738	plan; names @field
+family-func	vm_emit_search_body	src/gen/emit_vm.c:12553	body; names pcrec_emit_dfa_engine,pcrec_emit_end_window_clamp,pcrec_emit_req_byte_check,pcrec_emit_req_run_blocks,pcrec_emit_vm_start_seek,pcrec_fact_start_anchor,@field
+family-func	vm_emit_entries	src/gen/emit_vm.c:13581	plan; names @field
+family-func	vm_emit_epilogue	src/gen/emit_vm.c:13876	plan; names pcrec_emit_info,vm_render_listing,@field
+family-func	pcrec_emit_vm	src/gen/emit_vm.c:14005	plan; names pcrec_emit_prologue,vm_emit_entries,vm_emit_epilogue,vm_emit_search_body,vm_emit_stamps,vm_emit_storage,vm_init,vm_plan_reseed
 family-func	pcrec_prefix_ksets	src/opt/prefix_k.c:179	body+stamp; names pcrec_fact_kset_walk
-site	pcrec_emit_end_window_clamp	src/gen/emit_dfa.c:939	 via w | if (w < 0) return;
-site	req_run_tests	src/gen/emit_dfa.c:1037	req_admit via r | if (r->len < 2 || !req_admit_emits(req_admit(cx)))
-site	req_run_tests	src/gen/emit_dfa.c:1041	pcrec_artifact_has_dfa_scan via r | if (pcrec_artifact_has_dfa_scan(cx) || r->whole_len <= r->len) return 1;
-site	pcrec_emit_req_run_blocks	src/gen/emit_dfa.c:1063	 via n | for (int i = 0; i < n; i++) {
-site	emit_req_handoff	src/gen/emit_dfa.c:1130	 via k | if (k > 0 || round.len > 0) {
-site	emit_req_handoff	src/gen/emit_dfa.c:1139	 via k | if (k > 0)
-site	emit_req_run_check	src/gen/emit_dfa.c:1166	 via n | for (int i = 0; i < n; i++) {
-site	emit_req_run_check	src/gen/emit_dfa.c:1174	 via r | for (k = 0; k < r->len; k++) emit_comment_safe_byte(c, &prev, r->bytes[k], NULL);
-site	emit_req_run_check	src/gen/emit_dfa.c:1176	 via r | for (k = 0; k < r->len; k++) pcrec_sb_printf(c, "", r->mask[k]);
-site	emit_req_run_check	src/gen/emit_dfa.c:1186	 via r | for (k = 0; k < r->len; k++) emit_comment_safe_byte(c, &prev, r->bytes[k], NULL);
-site	emit_req_run_check	src/gen/emit_dfa.c:1196	 via r | for (k = 0; k < r->whole_len; k++)
-site	emit_req_run_check	src/gen/emit_dfa.c:1199	 via r | for (k = 0; k < r->whole_len; k++) pcrec_sb_printf(c, "", r->whole_mask[k]);
-site	emit_req_run_check	src/gen/emit_dfa.c:1210	 via r | for (k = 0; k < r->whole_len; k++)
-site	emit_req_run_check	src/gen/emit_dfa.c:1219	req_use | if (i == 0 && req_use(cx) == REQ_USE_HANDOFF) {
-site	emit_req_set_rest	src/gen/emit_dfa.c:1267	pcrec_artifact_has_dfa_scan | if (pcrec_artifact_has_dfa_scan(cx)) return;
-site	emit_req_set_rest	src/gen/emit_dfa.c:1272	 via r | if (r->len >= 2) {
-site	emit_req_set_rest	src/gen/emit_dfa.c:1273	 via r | for (k = 0; k < r->whole_len; k++)
-site	emit_req_set_rest	src/gen/emit_dfa.c:1274	 via r | if (r->whole_mask[k] == 0xFF) done[r->whole[k]] = true;
-site	emit_req_set_rest	src/gen/emit_dfa.c:1277	req_lead_byte | if (req_lead_byte(cx) >= 0) done[req_lead_byte(cx)] = true;
-site	emit_req_set_rest	src/gen/emit_dfa.c:1282	 via set | if (((set->bits[b >> 3] >> (b & 7)) & 1) && !done[b]) n++;
-site	emit_req_set_rest	src/gen/emit_dfa.c:1294	 via set | if (((set->bits[b >> 3] >> (b & 7)) & 1) && !done[b])
-site	pcrec_emit_req_byte_check	src/gen/emit_dfa.c:1369	pcrec_fact_req_run via b | if (b < 0 && pcrec_fact_req_run(cx)->len < 2) return posvar;
-site	pcrec_emit_req_byte_check	src/gen/emit_dfa.c:1375	req_admit | if (!req_admit_emits(req_admit(cx))) return posvar;
-site	pcrec_emit_req_byte_check	src/gen/emit_dfa.c:1385	pcrec_fact_req_run | if (pcrec_fact_req_run(cx)->len >= 2) {
-site	pcrec_emit_req_byte_check	src/gen/emit_dfa.c:1386	req_lead_byte | if (req_lead_byte(cx) >= 0)
-site	pcrec_emit_req_byte_check	src/gen/emit_dfa.c:1392	req_use | return req_use(cx) == REQ_USE_HANDOFF ? "" : posvar;
-site	emit_info_def	src/gen/emit_dfa.c:3150	pcrec_artifact_has_dfa_scan | if (pcrec_artifact_has_dfa_scan(cx)) {
-site	emit_info_def	src/gen/emit_dfa.c:3224	pcrec_artifact_has_dfa_scan | if (pcrec_artifact_has_dfa_scan(cx))
-site	dfa_table_name	src/gen/emit_dfa.c:4385	dfa_engine_is_empty | if (dfa_engine_is_empty(cx)) return "";
-site	dfa_table_name	src/gen/emit_dfa.c:4399	dfa_search_is_pinned | if (!dfa_search_is_pinned(cx)) {
-site	dfa_table_name	src/gen/emit_dfa.c:4411	dfa_match_is_unwrapped | if (dfa_match_is_unwrapped(cx) &&
-site	dfa_scan_edge_name	src/gen/emit_dfa.c:4457	dfa_engine_is_empty | if (dfa_engine_is_empty(cx)) return "";
-site	dfa_scan_edge_name	src/gen/emit_dfa.c:4466	dfa_search_is_pinned | if (strcmp(v, "") && !dfa_search_is_pinned(cx))
-site	dfa_scan_edge_name	src/gen/emit_dfa.c:4468	dfa_match_is_unwrapped | if (strcmp(v, "") && dfa_match_is_unwrapped(cx))
-site	dfa_uniform_folds	src/gen/emit_dfa.c:4518	dfa_engine_is_empty | if (dfa_engine_is_empty(cx)) return 0;
-site	dfa_uniform_folds	src/gen/emit_dfa.c:4521	dfa_search_is_pinned | if (!dfa_search_is_pinned(cx)) n += uniform_folds_of(cx, &cx->job->rdfa);
-site	dfa_uniform_folds	src/gen/emit_dfa.c:4522	dfa_match_is_unwrapped | if (dfa_match_is_unwrapped(cx)) n += uniform_folds_of(cx, &cx->job->adfa);
-site	us_run_pin	src/gen/emit_dfa.c:6020	pcrec_fact_run_pin | return *pcrec_fact_run_pin(cx);
-site	pf_run_applies_common	src/gen/emit_dfa.c:6029	 via r | if (r->len < 2) return false;
-site	pf_run_applies_common	src/gen/emit_dfa.c:6031	 via pin | if (!pin.pinned) return false;
-site	pf_run_applies_common	src/gen/emit_dfa.c:6046	ofs_test_verifies_run | if (ofs_test_verifies_run(s->cx, &t, u)) return false;
-site	pf_run_bounded_applies	src/gen/emit_dfa.c:6052	pf_run_applies_common | { const UnanchStart *u = s->us; return pf_run_applies_common(s) && u->views; }
-site	ofs_test_of	src/gen/emit_dfa.c:6105	 via pin | if (!pin.pinned)
-site	ofs_test_verifies_run	src/gen/emit_dfa.c:6171	 via pin,r | if (r->len < 2 || !pin.pinned || pin.o < pin.at) return false;
-site	ofs_test_verifies_run	src/gen/emit_dfa.c:6172	 via r | for (int i = 0; i < r->len; i++) {
-site	ofs_test_verifies_run	src/gen/emit_dfa.c:6175	 via pin | if (!ofs_test_at(t, pin.o - pin.at + i, &k, &b)) return false;
-site	ofs_test_verifies_run	src/gen/emit_dfa.c:6177	 via r | if ((b & r->mask[i]) != r->bytes[i]) return false;
-site	ofs_test_verifies_run	src/gen/emit_dfa.c:6181	 via r | if (k->set[x] && (x & r->mask[i]) != r->bytes[i]) return false;
-site	pf_first_class_bounded_applies	src/gen/emit_dfa.c:6680	pf_dfa_start_set | { CandSet t; const UnanchStart *u = s->us; return pf_dfa_start_set(s, &t) && u->views; }
-site	pf_first_memchr_bounded_applies	src/gen/emit_dfa.c:6682	pf_dfa_start_set | { CandSet t; const UnanchStart *u = s->us; return pf_dfa_start_set(s, &t) && u->views && t.use_memch
-site	pf_vm_start_applies	src/gen/emit_dfa.c:6813	pcrec_fact_start_anchor | if (pcrec_fact_start_anchor(cx) != PCREC_SANCH_NONE) return false;
-site	dfa_pf_of	src/gen/emit_dfa.c:6907	DfaPf,dfa_pfs | return DFA_SELECT_ROUTED(DfaPf, dfa_pfs, &s, cx->opt->flags);
-site	vm_start_row	src/gen/emit_dfa.c:6935	DfaPf,dfa_pfs | return DFA_SELECT_ROUTED(DfaPf, dfa_pfs, s, cx->opt->flags);
-site	pcrec_vm_start_scan_name	src/gen/emit_dfa.c:6942	vm_start_row | return vm_start_row(cx, &s)->c.name;
-site	pcrec_emit_vm_start_seek	src/gen/emit_dfa.c:6961	 via pf | if (!pf->emit_vm) return;
-site	pcrec_emit_vm_start_seek	src/gen/emit_dfa.c:6962	 via pf | if (pf->scan != PF_SCAN_SET)
-site	pcrec_emit_vm_start_seek	src/gen/emit_dfa.c:6965	pcrec_artifact_has_dfa_scan | if (pcrec_artifact_has_dfa_scan(cx))
-site	dfa_cand_scan	src/gen/emit_dfa.c:7038	pcrec_artifact_has_dfa_scan | if (!pcrec_artifact_has_dfa_scan(cx)) return;
-site	dfa_cand_scan	src/gen/emit_dfa.c:7044	attempt_cand via byte | cs->byte = attempt_cand(&cx->job->dfa, &acand) ? acand.byte : -1;
-site	dfa_cand_scan	src/gen/emit_dfa.c:7056	ofs_test_of via pf | if (ofs_test_of(cx, &us, pf, &t)) {
-site	req_route_one_attempt	src/gen/emit_dfa.c:7138	pcrec_fact_start_anchor | return pcrec_fact_start_anchor(cx) != PCREC_SANCH_NONE &&
-site	req_route_one_attempt	src/gen/emit_dfa.c:7139	prefilter_collapsed | ((cx->job->fit.prefilter && !cx->job->fit.prefilter_collapsed) ||
-site	req_byte_dominated_by	src/gen/emit_dfa.c:7175	pcrec_fact_req_run | if (pcrec_fact_req_run(cx)->len >= 2 && !cs->run_verified) return false;
-site	req_byte_dominated_by	src/gen/emit_dfa.c:7177	pcrec_fact_req_run | if (pcrec_fact_req_run(cx)->len >= 2) return false;
-site	req_set_pick	src/gen/emit_dfa.c:7188	 via set | return pcrec_find_set_pick(pcrec_find_byte_rate(cx), set->bits, set->rightmost);
-site	req_none_applies	src/gen/emit_dfa.c:7195	pcrec_fact_req_byte,pcrec_fact_req_run | return pcrec_fact_req_byte(s->cx) < 0 && pcrec_fact_req_run(s->cx)->len < 2;
-site	req_one_attempt_applies	src/gen/emit_dfa.c:7199	req_route_one_attempt | return req_route_one_attempt(s->cx);
-site	req_dominated_applies	src/gen/emit_dfa.c:7205	pcrec_fact_req_byte,req_byte_dominated_by | return req_byte_dominated_by(s->cx, &cs, pcrec_fact_req_byte(s->cx));
-site	req_set_leads_applies	src/gen/emit_dfa.c:7217	 via r | if (r->len < 2) return false;
-site	req_set_leads_applies	src/gen/emit_dfa.c:7218	req_set_pick via q | if ((q = req_set_pick(s->cx)) < 0) return false;
-site	req_admit	src/gen/emit_dfa.c:7275	ReqAdmitRow,req_admits | return DFA_SELECT(ReqAdmitRow, req_admits, &s, cx->opt->flags)->verdict;
-site	req_lead_byte	src/gen/emit_dfa.c:7280	req_admit,req_set_pick | return req_admit(cx) == REQ_ADMIT_SET_LEADS ? req_set_pick(cx) : -1;
-site	req_handoff_applies	src/gen/emit_dfa.c:7336	pcrec_fact_req_run,req_admit | if (!req_admit_emits(req_admit(cx)) || pcrec_fact_req_run(cx)->len < 2)
-site	req_handoff_applies	src/gen/emit_dfa.c:7338	dfa_engine_is_empty,pcrec_artifact_has_dfa_scan | if (!pcrec_artifact_has_dfa_scan(cx) || dfa_engine_is_empty(cx))
-site	req_handoff_applies	src/gen/emit_dfa.c:7341	 via k | if (k < 0 || k >= PCREC_W_UNBOUNDED) return false;
-site	req_handoff_applies	src/gen/emit_dfa.c:7342	prefilter_collapsed | if (cx->job->fit.prefilter_collapsed) return false;
-site	req_use	src/gen/emit_dfa.c:7384	ReqUseRow,req_uses | return DFA_SELECT(ReqUseRow, req_uses, &s, cx->opt->flags)->use;
-site	req_handoff_stamp	src/gen/emit_dfa.c:7391	req_use | if (req_use(cx) != REQ_USE_HANDOFF) return "";
-site	req_handoff_stamp	src/gen/emit_dfa.c:7392	pcrec_fact_req_run_maxoff | return dfa_fragf(cx, "", pcrec_fact_req_run_maxoff(cx));
-site	match_unwrapped_applies	src/gen/emit_dfa.c:7675	dfa_engine_is_empty | return s->cx->job->anchored_ok && !dfa_engine_is_empty(s->cx);
-site	dfa_match_of	src/gen/emit_dfa.c:7690	DfaMatch,dfa_matches | return DFA_SELECT(DfaMatch, dfa_matches, &s, cx->opt->flags);
-site	start_pinned_applies	src/gen/emit_dfa.c:7866	dfa_engine_is_empty | if (dfa_engine_is_empty(cx)) return false;
-site	dfa_search_start_of	src/gen/emit_dfa.c:7906	DfaSearchStart,dfa_search_starts | return DFA_SELECT(DfaSearchStart, dfa_search_starts, &s, cx->opt->flags);
-site	dfa_form_derive	src/gen/emit_dfa.c:8382	pf_scan_set_of via pf | if (f->pf->scan_set) pf_scan_set_of(cx, d, us, f->pf, &f->cand);
-site	dfa_form_derive	src/gen/emit_dfa.c:8443	 via pf | if (f->nscan > 0 && f->pf->reseeds && dfa_needs_seed(d))
-site	dfa_form_derive	src/gen/emit_dfa.c:8452	 via pf | t, fam ? "" : "", u, f->pf->c.name);
-site	emit_unanchored	src/gen/emit_dfa.c:8839	dfa_form_derive via pinned | if (!pinned) dfa_form_derive(cx, &job->rdfa, &us, &dfa_dir_reverse, &rev);
-site	emit_unanchored	src/gen/emit_dfa.c:8848	 via pinned | if (!pinned) rev.repr->emit_token(c, &rev);
-site	emit_unanchored	src/gen/emit_dfa.c:8850	 via pinned | if (!pinned) emit_scan_defs(c, &rev);
-site	emit_unanchored	src/gen/emit_dfa.c:8854	pcrec_emit_req_run_blocks | if (cx->job->fit.chosen == ENGM_DFA) pcrec_emit_req_run_blocks(cx, c);
-site	emit_unanchored	src/gen/emit_dfa.c:8878	req_use | if (req_use(cx) == REQ_USE_HANDOFF)
-site	emit_unanchored	src/gen/emit_dfa.c:8882	 via pinned | if (!pinned) emit_machine_tables(c, &rev);
-site	emit_unanchored	src/gen/emit_dfa.c:8893	 via pinned | if (pinned) {
-site	emit_attempt	src/gen/emit_dfa.c:9152	pcrec_emit_req_run_blocks | if (cx->job->fit.chosen == ENGM_DFA) pcrec_emit_req_run_blocks(cx, c);
-site	emit_attempt	src/gen/emit_dfa.c:9176	dfa_engine_is_empty | if (dfa_engine_is_empty(cx)) {
-site	emit_attempt	src/gen/emit_dfa.c:9356	 via a_bot,a_gst | bool anchored = a_bot && a_gst;
-site	emit_attempt	src/gen/emit_dfa.c:9374	pcrec_fact_start_anchor | if (pcrec_fact_start_anchor(cx) == PCREC_SANCH_BOT && !anchored)
-site	emit_attempt	src/gen/emit_dfa.c:9378	pcrec_fact_start_anchor via a_bot | if (pcrec_fact_start_anchor(cx) == PCREC_SANCH_GSTART && !a_bot)
-site	emit_attempt	src/gen/emit_dfa.c:9387	 via a_bot | : a_bot ? "" : "");
-site	emit_attempt	src/gen/emit_dfa.c:9465	 via cpre | if (cpre) {
-site	emit_orientation_block	src/gen/emit_dfa.c:9783	dfa_search_is_pinned via pinned | bool pinned = (!vm || prefilter) && dfa_search_is_pinned(cx);
-site	emit_orientation_block	src/gen/emit_dfa.c:9872	 via pinned | if (pinned)
-site	emit_orientation_block	src/gen/emit_dfa.c:9894	 via pinned | if (prefilter && pinned)
-site	emit_orientation_block	src/gen/emit_dfa.c:9945	 via form | if (!strcmp(form, ""))
-site	emit_orientation_block	src/gen/emit_dfa.c:9952	 via form | else if (!strcmp(form, ""))
-site	pcrec_emit_prologue	src/gen/emit_dfa.c:9997	attempt_cand | attempt_cand(&cx->job->dfa, &acand) && acand.use_memchr));
-site	pcrec_emit_prologue	src/gen/emit_dfa.c:10008	 via admit | if (req_admit_emits(admit)) need_string_h = true;
-site	pcrec_emit_dfa_engine	src/gen/emit_dfa.c:10271	emit_unanchored | if (cx->job->engine == PCREC_ENG_UNANCH) emit_unanchored(cx, fn, storage);
-site	dfa_scan_name	src/gen/emit_dfa.c:10381	dfa_engine_is_empty | if (dfa_engine_is_empty(cx)) return "";
-site	dfa_prefilter_name	src/gen/emit_dfa.c:10411	attempt_cand | return attempt_cand(&cx->job->dfa, &acand) ? "" : "";
-site	dfa_prefilter_name	src/gen/emit_dfa.c:10428	dfa_pf_of | return dfa_pf_of(cx, &us)->c.name;
-site	dfa_prefilter_offsets	src/gen/emit_dfa.c:10487	dfa_pf_of,ofs_test_of | if (!ofs_test_of(cx, &us, dfa_pf_of(cx, &us), &t)) { pcrec_sb_puts(out, ""); return; }
-site	pcrec_emit_dfa	src/gen/emit_dfa.c:10644	dfa_match_is_unwrapped | if (dfa_match_is_unwrapped(cx)) {
+site	pcrec_emit_end_window_clamp	src/gen/emit_dfa.c:941	 via w | if (w < 0) return;
+site	req_run_tests	src/gen/emit_dfa.c:1040	req_admit via r | if (r->len < 2 || !req_admit_emits(req_admit(cx)))
+site	req_run_tests	src/gen/emit_dfa.c:1044	pcrec_artifact_has_dfa_scan via r | if (pcrec_artifact_has_dfa_scan(cx) || r->whole_len <= r->len) return 1;
+site	emit_req_handoff_rest	src/gen/emit_dfa.c:1186	 via k | if (k > 0 || round.len > 0) {
+site	emit_req_handoff_rest	src/gen/emit_dfa.c:1195	 via k | if (k > 0)
+site	req_note_run	src/gen/emit_dfa.c:1229	 via r | for (k = 0; k < r->len; k++) emit_comment_safe_byte(c, &prev, r->bytes[k], NULL);
+site	req_note_run	src/gen/emit_dfa.c:1231	 via r | for (k = 0; k < r->len; k++) pcrec_sb_printf(c, "", r->mask[k]);
+site	req_note_run	src/gen/emit_dfa.c:1241	 via r | for (k = 0; k < r->len; k++) emit_comment_safe_byte(c, &prev, r->bytes[k], NULL);
+site	req_note_run	src/gen/emit_dfa.c:1250	 via r | for (k = 0; k < r->whole_len; k++)
+site	req_note_run	src/gen/emit_dfa.c:1253	 via r | for (k = 0; k < r->whole_len; k++) pcrec_sb_printf(c, "", r->whole_mask[k]);
+site	req_note_run	src/gen/emit_dfa.c:1263	 via r | for (k = 0; k < r->whole_len; k++)
+site	req_set_rest_members	src/gen/emit_dfa.c:1312	pcrec_artifact_has_dfa_scan | if (pcrec_artifact_has_dfa_scan(cx)) return;
+site	req_set_rest_members	src/gen/emit_dfa.c:1317	 via r | if (r->len >= 2) {
+site	req_set_rest_members	src/gen/emit_dfa.c:1318	 via r | for (k = 0; k < r->whole_len; k++)
+site	req_set_rest_members	src/gen/emit_dfa.c:1319	 via r | if (r->whole_mask[k] == 0xFF) done[r->whole[k]] = true;
+site	req_set_rest_members	src/gen/emit_dfa.c:1322	req_lead_byte | if (req_lead_byte(cx) >= 0) done[req_lead_byte(cx)] = true;
+site	req_set_rest_members	src/gen/emit_dfa.c:1327	 via set | if (((set->bits[b >> 3] >> (b & 7)) & 1) && !done[b])
+site	req_site_note	src/gen/emit_dfa.c:1404	req_note_run | if (p->fn_ref)   req_note_run(pu->cx, sb, pu->indent, (int)p->fn_ref - 1,
+site	req_site_define	src/gen/emit_dfa.c:1431	pcrec_fact_req_run via b | if (b < 0 && pcrec_fact_req_run(cx)->len < 2) {
+site	req_site_define	src/gen/emit_dfa.c:1435	req_admit | if (!req_admit_emits(req_admit(cx))) {
+site	req_site_define	src/gen/emit_dfa.c:1439	pcrec_fact_req_run | if (pcrec_fact_req_run(cx)->len >= 2) {
+site	req_site_define	src/gen/emit_dfa.c:1440	req_lead_byte | if (req_lead_byte(cx) >= 0) {
+site	req_site_define	src/gen/emit_dfa.c:1442	pcrec_artifact_has_dfa_scan via gate_need | gate_need = pcrec_artifact_has_dfa_scan(cx) ? MF_OPTIONAL : MF_REQUIRED;
+site	req_site_define	src/gen/emit_dfa.c:1457	 via handoff,nrun | if (handoff && (nrun != 1 || nrest != 0))
+site	req_site_define	src/gen/emit_dfa.c:1465	 via gate | if (gate >= 0) {
+site	req_site_define	src/gen/emit_dfa.c:1470	 via nrun | for (int i = 0; i < nrun; i++) {
+site	req_site_define	src/gen/emit_dfa.c:1471	 via handoff | if (i == 0 && handoff) s->ret_pred = (uint8_t)np;
+site	req_site_define	src/gen/emit_dfa.c:1481	 via handoff | s->handoff = handoff ? MF_H_ASSIGN : MF_H_ON_MISS;
+site	req_site_define	src/gen/emit_dfa.c:1483	 via handoff | s->use = handoff ? MF_USE_POSITION : MF_USE_DISCARD;
+site	pcrec_emit_req_byte_check	src/gen/emit_dfa.c:1554	pcrec_fact_req_run | if (pcrec_fact_req_run(cx)->len >= 2)
+site	pcrec_emit_req_byte_check	src/gen/emit_dfa.c:1556	req_use via from | from = req_use(cx) == REQ_USE_HANDOFF ? "" : posvar;
+site	pcrec_emit_req_byte_check	src/gen/emit_dfa.c:1560	 via from | return from;
+site	emit_info_def	src/gen/emit_dfa.c:3059	pcrec_artifact_has_dfa_scan | if (pcrec_artifact_has_dfa_scan(cx)) {
+site	emit_info_def	src/gen/emit_dfa.c:3133	pcrec_artifact_has_dfa_scan | if (pcrec_artifact_has_dfa_scan(cx))
+site	dfa_table_name	src/gen/emit_dfa.c:4306	dfa_engine_is_empty | if (dfa_engine_is_empty(cx)) return "";
+site	dfa_table_name	src/gen/emit_dfa.c:4320	dfa_search_is_pinned | if (!dfa_search_is_pinned(cx)) {
+site	dfa_table_name	src/gen/emit_dfa.c:4332	dfa_match_is_unwrapped | if (dfa_match_is_unwrapped(cx) &&
+site	dfa_scan_edge_name	src/gen/emit_dfa.c:4378	dfa_engine_is_empty | if (dfa_engine_is_empty(cx)) return "";
+site	dfa_scan_edge_name	src/gen/emit_dfa.c:4387	dfa_search_is_pinned | if (strcmp(v, "") && !dfa_search_is_pinned(cx))
+site	dfa_scan_edge_name	src/gen/emit_dfa.c:4389	dfa_match_is_unwrapped | if (strcmp(v, "") && dfa_match_is_unwrapped(cx))
+site	dfa_uniform_folds	src/gen/emit_dfa.c:4439	dfa_engine_is_empty | if (dfa_engine_is_empty(cx)) return 0;
+site	dfa_uniform_folds	src/gen/emit_dfa.c:4442	dfa_search_is_pinned | if (!dfa_search_is_pinned(cx)) n += uniform_folds_of(cx, &cx->job->rdfa);
+site	dfa_uniform_folds	src/gen/emit_dfa.c:4443	dfa_match_is_unwrapped | if (dfa_match_is_unwrapped(cx)) n += uniform_folds_of(cx, &cx->job->adfa);
+site	us_run_pin	src/gen/emit_dfa.c:5947	pcrec_fact_run_pin | return *pcrec_fact_run_pin(cx);
+site	pf_run_applies_common	src/gen/emit_dfa.c:5956	 via r | if (r->len < 2) return false;
+site	pf_run_applies_common	src/gen/emit_dfa.c:5958	 via pin | if (!pin.pinned) return false;
+site	pf_run_applies_common	src/gen/emit_dfa.c:5973	ofs_test_verifies_run | if (ofs_test_verifies_run(s->cx, &t, u)) return false;
+site	pf_run_bounded_applies	src/gen/emit_dfa.c:5979	pf_run_applies_common | { const UnanchStart *u = s->us; return pf_run_applies_common(s) && u->views; }
+site	ofs_test_of	src/gen/emit_dfa.c:6032	 via pin | if (!pin.pinned)
+site	ofs_test_verifies_run	src/gen/emit_dfa.c:6098	 via pin,r | if (r->len < 2 || !pin.pinned || pin.o < pin.at) return false;
+site	ofs_test_verifies_run	src/gen/emit_dfa.c:6099	 via r | for (int i = 0; i < r->len; i++) {
+site	ofs_test_verifies_run	src/gen/emit_dfa.c:6102	 via pin | if (!ofs_test_at(t, pin.o - pin.at + i, &k, &b)) return false;
+site	ofs_test_verifies_run	src/gen/emit_dfa.c:6104	 via r | if ((b & r->mask[i]) != r->bytes[i]) return false;
+site	ofs_test_verifies_run	src/gen/emit_dfa.c:6108	 via r | if (k->set[x] && (x & r->mask[i]) != r->bytes[i]) return false;
+site	pf_first_class_bounded_applies	src/gen/emit_dfa.c:6434	pf_dfa_start_set | { CandSet t; const UnanchStart *u = s->us; return pf_dfa_start_set(s, &t) && u->views; }
+site	pf_first_memchr_bounded_applies	src/gen/emit_dfa.c:6436	pf_dfa_start_set | { CandSet t; const UnanchStart *u = s->us; return pf_dfa_start_set(s, &t) && u->views && t.use_memch
+site	pf_vm_start_applies	src/gen/emit_dfa.c:6567	pcrec_fact_start_anchor | if (pcrec_fact_start_anchor(cx) != PCREC_SANCH_NONE) return false;
+site	dfa_pf_of	src/gen/emit_dfa.c:6663	 via pf | return pf;
+site	vm_start_row	src/gen/emit_dfa.c:6693	 via pf | return pf;
+site	pcrec_vm_start_scan_name	src/gen/emit_dfa.c:6700	vm_start_row | return vm_start_row(cx, &s)->c.name;
+site	pcrec_emit_vm_start_seek	src/gen/emit_dfa.c:6719	 via pf | if (!pf->emit_vm) return;
+site	pcrec_emit_vm_start_seek	src/gen/emit_dfa.c:6720	 via pf | if (pf->scan != PF_SCAN_SET)
+site	pcrec_emit_vm_start_seek	src/gen/emit_dfa.c:6723	pcrec_artifact_has_dfa_scan | if (pcrec_artifact_has_dfa_scan(cx))
+site	dfa_cand_scan	src/gen/emit_dfa.c:6796	pcrec_artifact_has_dfa_scan | if (!pcrec_artifact_has_dfa_scan(cx)) return;
+site	dfa_cand_scan	src/gen/emit_dfa.c:6802	attempt_cand via byte | cs->byte = attempt_cand(&cx->job->dfa, &acand) ? acand.byte : -1;
+site	dfa_cand_scan	src/gen/emit_dfa.c:6814	ofs_test_of via pf | if (ofs_test_of(cx, &us, pf, &t)) {
+site	req_route_one_attempt	src/gen/emit_dfa.c:6896	pcrec_fact_start_anchor | return pcrec_fact_start_anchor(cx) != PCREC_SANCH_NONE &&
+site	req_route_one_attempt	src/gen/emit_dfa.c:6897	prefilter_collapsed | ((cx->job->fit.prefilter && !cx->job->fit.prefilter_collapsed) ||
+site	req_byte_dominated_by	src/gen/emit_dfa.c:6933	pcrec_fact_req_run | if (pcrec_fact_req_run(cx)->len >= 2 && !cs->run_verified) return false;
+site	req_byte_dominated_by	src/gen/emit_dfa.c:6935	pcrec_fact_req_run | if (pcrec_fact_req_run(cx)->len >= 2) return false;
+site	req_set_pick	src/gen/emit_dfa.c:6946	 via set | return pcrec_find_set_pick(pcrec_find_byte_rate(cx), set->bits, set->rightmost);
+site	req_none_applies	src/gen/emit_dfa.c:6953	pcrec_fact_req_byte,pcrec_fact_req_run | return pcrec_fact_req_byte(s->cx) < 0 && pcrec_fact_req_run(s->cx)->len < 2;
+site	req_one_attempt_applies	src/gen/emit_dfa.c:6957	req_route_one_attempt | return req_route_one_attempt(s->cx);
+site	req_dominated_applies	src/gen/emit_dfa.c:6963	pcrec_fact_req_byte,req_byte_dominated_by | return req_byte_dominated_by(s->cx, &cs, pcrec_fact_req_byte(s->cx));
+site	req_set_leads_applies	src/gen/emit_dfa.c:6975	 via r | if (r->len < 2) return false;
+site	req_set_leads_applies	src/gen/emit_dfa.c:6976	req_set_pick via q | if ((q = req_set_pick(s->cx)) < 0) return false;
+site	req_admit	src/gen/emit_dfa.c:7035	 via r | return r->verdict;
+site	req_lead_byte	src/gen/emit_dfa.c:7040	req_admit,req_set_pick | return req_admit(cx) == REQ_ADMIT_SET_LEADS ? req_set_pick(cx) : -1;
+site	req_handoff_applies	src/gen/emit_dfa.c:7096	pcrec_fact_req_run,req_admit | if (!req_admit_emits(req_admit(cx)) || pcrec_fact_req_run(cx)->len < 2)
+site	req_handoff_applies	src/gen/emit_dfa.c:7098	dfa_engine_is_empty,pcrec_artifact_has_dfa_scan | if (!pcrec_artifact_has_dfa_scan(cx) || dfa_engine_is_empty(cx))
+site	req_handoff_applies	src/gen/emit_dfa.c:7101	 via k | if (k < 0 || k >= PCREC_W_UNBOUNDED) return false;
+site	req_handoff_applies	src/gen/emit_dfa.c:7102	prefilter_collapsed | if (cx->job->fit.prefilter_collapsed) return false;
+site	req_use	src/gen/emit_dfa.c:7146	 via r | return r->use;
+site	req_handoff_stamp	src/gen/emit_dfa.c:7153	req_use | if (req_use(cx) != REQ_USE_HANDOFF) return "";
+site	req_handoff_stamp	src/gen/emit_dfa.c:7154	pcrec_fact_req_run_maxoff | return dfa_fragf(cx, "", pcrec_fact_req_run_maxoff(cx));
+site	match_unwrapped_applies	src/gen/emit_dfa.c:7439	dfa_engine_is_empty | return s->cx->job->anchored_ok && !dfa_engine_is_empty(s->cx);
+site	dfa_match_of	src/gen/emit_dfa.c:7454	DfaMatch,dfa_matches | return DFA_SELECT(DfaMatch, dfa_matches, &s, cx->opt->flags);
+site	start_pinned_applies	src/gen/emit_dfa.c:7630	dfa_engine_is_empty | if (dfa_engine_is_empty(cx)) return false;
+site	dfa_search_start_of	src/gen/emit_dfa.c:7673	 via ss | return ss;
+site	dfa_form_derive	src/gen/emit_dfa.c:8153	pf_scan_set_of via pf | if (f->pf->scan_set) pf_scan_set_of(cx, d, us, f->pf, &f->cand);
+site	dfa_form_derive	src/gen/emit_dfa.c:8214	 via pf | if (f->nscan > 0 && f->pf->reseeds && dfa_needs_seed(d))
+site	dfa_form_derive	src/gen/emit_dfa.c:8223	 via pf | t, fam ? "" : "", u, f->pf->c.name);
+site	emit_unanchored	src/gen/emit_dfa.c:8610	dfa_form_derive via pinned | if (!pinned) dfa_form_derive(cx, &job->rdfa, &us, &dfa_dir_reverse, &rev);
+site	emit_unanchored	src/gen/emit_dfa.c:8619	 via pinned | if (!pinned) rev.repr->emit_token(c, &rev);
+site	emit_unanchored	src/gen/emit_dfa.c:8621	 via pinned | if (!pinned) emit_scan_defs(c, &rev);
+site	emit_unanchored	src/gen/emit_dfa.c:8625	pcrec_emit_req_run_blocks | if (cx->job->fit.chosen == ENGM_DFA) pcrec_emit_req_run_blocks(cx, c);
+site	emit_unanchored	src/gen/emit_dfa.c:8651	req_use | if (req_use(cx) == REQ_USE_HANDOFF)
+site	emit_unanchored	src/gen/emit_dfa.c:8655	 via pinned | if (!pinned) emit_machine_tables(c, &rev);
+site	emit_unanchored	src/gen/emit_dfa.c:8666	 via pinned | if (pinned) {
+site	emit_attempt	src/gen/emit_dfa.c:8925	pcrec_emit_req_run_blocks | if (cx->job->fit.chosen == ENGM_DFA) pcrec_emit_req_run_blocks(cx, c);
+site	emit_attempt	src/gen/emit_dfa.c:8951	dfa_engine_is_empty | if (dfa_engine_is_empty(cx)) {
+site	emit_attempt	src/gen/emit_dfa.c:9131	 via a_bot,a_gst | bool anchored = a_bot && a_gst;
+site	emit_attempt	src/gen/emit_dfa.c:9149	pcrec_fact_start_anchor | if (pcrec_fact_start_anchor(cx) == PCREC_SANCH_BOT && !anchored)
+site	emit_attempt	src/gen/emit_dfa.c:9153	pcrec_fact_start_anchor via a_bot | if (pcrec_fact_start_anchor(cx) == PCREC_SANCH_GSTART && !a_bot)
+site	emit_attempt	src/gen/emit_dfa.c:9164	 via a_bot | : a_bot ? "" : "");
+site	emit_attempt	src/gen/emit_dfa.c:9242	 via cpre | if (cpre) {
+site	emit_orientation_block	src/gen/emit_dfa.c:9560	dfa_search_is_pinned via pinned | bool pinned = (!vm || prefilter) && dfa_search_is_pinned(cx);
+site	emit_orientation_block	src/gen/emit_dfa.c:9649	 via pinned | if (pinned)
+site	emit_orientation_block	src/gen/emit_dfa.c:9671	 via pinned | if (prefilter && pinned)
+site	emit_orientation_block	src/gen/emit_dfa.c:9722	 via form | if (!strcmp(form, ""))
+site	emit_orientation_block	src/gen/emit_dfa.c:9729	 via form | else if (!strcmp(form, ""))
+site	pcrec_emit_prologue	src/gen/emit_dfa.c:9774	attempt_cand | attempt_cand(&cx->job->dfa, &acand) && acand.use_memchr));
+site	pcrec_emit_prologue	src/gen/emit_dfa.c:9785	 via admit | if (req_admit_emits(admit)) need_string_h = true;
+site	pcrec_emit_dfa_engine	src/gen/emit_dfa.c:10053	emit_unanchored | if (cx->job->engine == PCREC_ENG_UNANCH) emit_unanchored(cx, fn, storage);
+site	dfa_scan_name	src/gen/emit_dfa.c:10163	dfa_engine_is_empty | if (dfa_engine_is_empty(cx)) return "";
+site	dfa_prefilter_name	src/gen/emit_dfa.c:10193	attempt_cand | return attempt_cand(&cx->job->dfa, &acand) ? "" : "";
+site	dfa_prefilter_name	src/gen/emit_dfa.c:10210	dfa_pf_of | return dfa_pf_of(cx, &us)->c.name;
+site	dfa_prefilter_offsets	src/gen/emit_dfa.c:10269	dfa_pf_of,ofs_test_of | if (!ofs_test_of(cx, &us, dfa_pf_of(cx, &us), &t)) { pcrec_sb_puts(out, ""); return; }
+site	pcrec_emit_dfa	src/gen/emit_dfa.c:10426	dfa_match_is_unwrapped | if (dfa_match_is_unwrapped(cx)) {
 site	pcrec_vm_prefilter_window	src/gen/emit_vm.c:3638	prefilter_collapsed | && !cx->job->fit.prefilter_collapsed;
 site	vm_render_listing	src/gen/emit_vm.c:9396	prefilter_collapsed | if (st->prefilter_collapsed) {
 site	vm_render_listing	src/gen/emit_vm.c:9492	root_minw | if (st->root_minw >= PCREC_MINW_MAX)
@@ -2140,27 +2197,27 @@ site	vm_reseed_holds	src/gen/emit_vm.c:11092	pcrec_dfa_cand_ppm | return (unsign
 site	vm_plan_reseed	src/gen/emit_vm.c:11112	pcrec_reseed_nrows | for (int i = 0; i < pcrec_reseed_nrows; i++) {
 site	vm_plan_reseed	src/gen/emit_vm.c:11114	 via r | if (r->deny & v->cx->opt->flags) continue;
 site	vm_plan_reseed	src/gen/emit_vm.c:11115	vm_reseed_holds via r | if (!vm_reseed_holds(v, rs, r->pred)) continue;
-site	vm_plan_reseed	src/gen/emit_vm.c:11117	 via r | rs->steps0 = r->start == VRS_S_CAP ? rs->cal.cap
-site	vm_plan_reseed	src/gen/emit_vm.c:11118	 via r | : r->start == VRS_S_FIRST ? rs->cal.first : 0;
-site	vm_plan_reseed	src/gen/emit_vm.c:11119	 via r | rs->block0 = r->armed ? rs->cal.block : 0;
-site	vm_emit_stamps	src/gen/emit_vm.c:11256	prefilter_collapsed | job->fit.prefilter_collapsed ? "" : "");
-site	vm_emit_stamps	src/gen/emit_vm.c:11365	pcrec_artifact_has_dfa_scan,pcrec_emit_dfa_scan_stamps | if (pcrec_artifact_has_dfa_scan(cx)) pcrec_emit_dfa_scan_stamps(cx, c, v->up);
-site	vm_emit_stamps	src/gen/emit_vm.c:11419	root_minw | if (v->root_minw >= PCREC_MINW_MAX) {
-site	vm_emit_stamps	src/gen/emit_vm.c:11643	nclamp | v->nclamp == 0 ? ""
-site	vm_emit_stamps	src/gen/emit_vm.c:11644	mrl_win | : v->mrl_win ? "" : "");
-site	vm_emit_storage	src/gen/emit_vm.c:12086	nclamp | if (v->nclamp > 0) {
-site	vm_emit_search_body	src/gen/emit_vm.c:12782	nclamp | v->nclamp > 0 ? pl->mrl_param : "",
-site	vm_emit_search_body	src/gen/emit_vm.c:13134	nclamp | v->nclamp > 0 ? "" : "");
-site	vm_emit_search_body	src/gen/emit_vm.c:13234	root_minw | if (v->root_minw >= PCREC_MINW_MAX)
-site	vm_emit_search_body	src/gen/emit_vm.c:13281	nclamp | if (v->nclamp > 0 && prefn)
-site	vm_emit_search_body	src/gen/emit_vm.c:13330	nclamp | if (v->nclamp > 0)
-site	vm_emit_search_body	src/gen/emit_vm.c:13413	 via first | if (!prefn && strcmp(first, "") != 0)
-site	vm_emit_search_body	src/gen/emit_vm.c:13425	nclamp | v->nclamp == 0 ? ""
-site	vm_emit_search_body	src/gen/emit_vm.c:13432	nclamp | if (v->nclamp > 0) pcrec_sb_puts(c, "");
-site	vm_emit_search_body	src/gen/emit_vm.c:13471	pcrec_fact_start_anchor | if (pcrec_fact_start_anchor(v->cx) != PCREC_SANCH_NONE) {
-site	vm_emit_search_body	src/gen/emit_vm.c:13524	nclamp | v->p, v->nclamp > 0 ? "" : "",
-site	vm_emit_entries	src/gen/emit_vm.c:13753	nclamp | v->nclamp > 0 ? "" : "",
-site	vm_emit_entries	src/gen/emit_vm.c:13807	nclamp | v->nclamp > 0 ? "" : "",
+site	vm_plan_reseed	src/gen/emit_vm.c:11118	 via r | rs->steps0 = r->start == VRS_S_CAP ? rs->cal.cap
+site	vm_plan_reseed	src/gen/emit_vm.c:11119	 via r | : r->start == VRS_S_FIRST ? rs->cal.first : 0;
+site	vm_plan_reseed	src/gen/emit_vm.c:11120	 via r | rs->block0 = r->armed ? rs->cal.block : 0;
+site	vm_emit_stamps	src/gen/emit_vm.c:11257	prefilter_collapsed | job->fit.prefilter_collapsed ? "" : "");
+site	vm_emit_stamps	src/gen/emit_vm.c:11366	pcrec_artifact_has_dfa_scan,pcrec_emit_dfa_scan_stamps | if (pcrec_artifact_has_dfa_scan(cx)) pcrec_emit_dfa_scan_stamps(cx, c, v->up);
+site	vm_emit_stamps	src/gen/emit_vm.c:11420	root_minw | if (v->root_minw >= PCREC_MINW_MAX) {
+site	vm_emit_stamps	src/gen/emit_vm.c:11644	nclamp | v->nclamp == 0 ? ""
+site	vm_emit_stamps	src/gen/emit_vm.c:11645	mrl_win | : v->mrl_win ? "" : "");
+site	vm_emit_storage	src/gen/emit_vm.c:12087	nclamp | if (v->nclamp > 0) {
+site	vm_emit_search_body	src/gen/emit_vm.c:12783	nclamp | v->nclamp > 0 ? pl->mrl_param : "",
+site	vm_emit_search_body	src/gen/emit_vm.c:13135	nclamp | v->nclamp > 0 ? "" : "");
+site	vm_emit_search_body	src/gen/emit_vm.c:13237	root_minw | if (v->root_minw >= PCREC_MINW_MAX)
+site	vm_emit_search_body	src/gen/emit_vm.c:13284	nclamp | if (v->nclamp > 0 && prefn)
+site	vm_emit_search_body	src/gen/emit_vm.c:13333	nclamp | if (v->nclamp > 0)
+site	vm_emit_search_body	src/gen/emit_vm.c:13416	 via first | if (!prefn && strcmp(first, "") != 0)
+site	vm_emit_search_body	src/gen/emit_vm.c:13428	nclamp | v->nclamp == 0 ? ""
+site	vm_emit_search_body	src/gen/emit_vm.c:13435	nclamp | if (v->nclamp > 0) pcrec_sb_puts(c, "");
+site	vm_emit_search_body	src/gen/emit_vm.c:13478	pcrec_fact_start_anchor | if (pcrec_fact_start_anchor(v->cx) != PCREC_SANCH_NONE) {
+site	vm_emit_search_body	src/gen/emit_vm.c:13531	nclamp | v->p, v->nclamp > 0 ? "" : "",
+site	vm_emit_entries	src/gen/emit_vm.c:13760	nclamp | v->nclamp > 0 ? "" : "",
+site	vm_emit_entries	src/gen/emit_vm.c:13814	nclamp | v->nclamp > 0 ? "" : "",
 site	pcrec_prefix_ksets	src/opt/prefix_k.c:200	 via walk | for (int j = 0; j < o->walk->nwalk; j++)
 site	pcrec_prefix_ksets	src/opt/prefix_k.c:212	 via walk | for (int si = 1; si < o->walk->nwalk; si++) {
 site	pcrec_prefix_ksets	src/opt/prefix_k.c:225	 via walk | if (o->walk->k[si].count != 1) continue;
