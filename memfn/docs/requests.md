@@ -153,3 +153,22 @@ channel; one heavy suite at a time); the Mac run is directional.
 **Why M1b before R4g/R4h/M4 (manager's sequencing, D153 remodel-first):** of the zero-mover steps whose prerequisite is met, M1b is the only one with no overlap with main's in-flight remodel. R4g (PF) touches the prefilter sites that [START-TABLE] C1-C7 and refactor B ([DEC-FALLBACK], incl. prefilter admission) edit next; R4h's scan-edge loop and M4's MLINE scan sit next to the start rows too. Those wait until C1 has re-derived its edit set on post-R4c′ main. If your scoping finds that M1b DOES read a start decision, stop and name the read (R-4's boundary rule applies unchanged).
 
 **Landing bar:** same as R-4. Zero movers: the identity gate is byte-identical to main over the corpus and every axis, with I2 over both comment tiers. Also `make strict`, `make test-codegen`, and the registry, codegen and rxtsource suites. State the mech-row re-point count, and [SABANCHOR] must be green. Mac `make test` goes on a slot I name, and the Linux verdict comes through my executor channel (a pinned script). Any byte that moves is a defect: STOP and report it. Use sabotage ids from a block you request from me; do not take the next free id.
+
+## R-6 (2026-10-07, pcrec manager) — pcrec states `miss = MF_MISS_N` at the three N2 cells, zero movers
+
+**Customer:** `[MEMFN-ROWCON]` N3 (enforcement). N3's entry condition is an N2 re-run showing 0 would-decline verdicts. The kit's notices "N2 census DONE; the R-6 list" and "MF_MISS_N ready for R-6" are the source of this request.
+
+**Trigger:** N2 (`docs/design/memfn/probes/rowcon/n2_results_5fc4b0e5.md`, 958,292 compiles) found 129,937 would-decline verdicts. They collapse to exactly three cells, all rule R1 (`miss` used by the row, left unstated by the site):
+1. ofsskip, FUNC / FIND / RETURN, at DEFINE (56,104 sites);
+2. the same ofsskip site at USE, the call (56,104);
+3. precheck, STMT / ALL_PRESENT / ASSIGN, at USE (17,729).
+
+**Wanted:** pcrec's hook builders state `.miss = MF_MISS_N` at those three cells and nowhere else:
+- `ofs_site_define` (define hooks) and `pf_ofs_call` (use hooks) in `src/gen/emit_dfa.c`;
+- the ASSIGN route of `pcrec_emit_req_byte_check` (use hooks) in `src/gen/emit_dfa.c`.
+
+`MF_MISS_N` is on main (kit lane `missn`, merged at 13b9f2ae). The kit resolves it to the site's `n` hook; its bytes never reach an artifact.
+
+**Contract:** ZERO MOVERS. Prove it with `scripts/emit_sweep.py --ref <main sha>` judged by `memfn_r4c_gate.py --zero-dumps` (R4C-GATE PASS, 0 movers on all six streams). No abi event. Where cheap, show the N2 would-decline count at those cells falling to 0.
+
+**Landing bar:** the gate above, `make strict`, the full `make test`, and solo mech for every sabotage row whose anchor file was edited (they must stay DETECTED).
