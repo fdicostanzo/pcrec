@@ -430,3 +430,10 @@ the compiler, and is never adopted silently. Proposed for main to file
   299,232, runcmp 62,908; the run rows: memcmp 97,522, overlap 121,004,
   words 17,120, bytes 360. Full table:
   docs/design/memfn/probes/rowcon/n2_results_5fc4b0e5.md.
+- notice: 2026-10-07 (late) — **MF_MISS_N goes kit-side first (main's
+  ruling by message).** R-6 lands after it and consumes the token. Main's
+  three conditions: (1) memfn.h states the token's meaning; (2) G2 covers
+  the token in the same change, with floors; (3) zero movers, shown by the
+  identity gate, or the unit stops and reports. It is in lane `missn`
+  (worktrees/missn, branch lane/missn, cut from lane/memfn-rowcon @ 5f0e926e).
+  The full G2 run and the identity gate wait for a heavy slot from main.
