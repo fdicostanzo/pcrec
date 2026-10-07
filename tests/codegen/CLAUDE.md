@@ -22,18 +22,22 @@ or it has no regression net at all.
   row ([MECH-REACH]); every row identity read off the table's own source
   must have a line (K35). Its own section, `make test-cand-oracle` (two
   builds, ~50 s; not in `test-codegen`, for `make smoke`'s budget); mech arm
-  `candoracle`, sabotage S594-S599 (all DETECTED at landing). It tests the
+  `candoracle`, sabotage S594-S600 (all DETECTED at landing). It tests the
   FILTER; the corpus-wide both-orders run is the lane's gate, not this file.
   **Since [START-TABLE] C3** NEXT and RECOVER have no old walk left, so their
   readers print the `CANDROW` hit (and run the self-check) without a
   comparison (`cand_hit`); S594/S595's plants now move artifacts and are
-  caught by the witness no longer reaching its row.
+  caught by the witness no longer reaching its row. **Since C4** the same
+  holds for PRESENCE and FIRST (S596's plant moves artifacts too); their
+  readers ask on CAND_ROUTE_DFA and the hit also walks every other route the
+  slot is asked on, aborting on a different row (`cand_hit_every`, S600).
 - **run_cand_rows.sh** + **cand_rows_check.py** — [START-SET] (D148;
   `docs/design/startset.md` §8): the candidate table's (`dfa_pfs[]`, since
   [START-TABLE] C3 `cand_rows[]`'s NEXT and RECOVER rows) structural checks, in `make test-codegen` (well under a second; mech arm
   `candrows`). **[cand-no-name-strcmp]** (stage 0, K84): no comparison call
   (`strcmp`/`strncmp`/`strcasecmp`/`strncasecmp`/`memcmp`) under `src/`
-  `cli/` `lib/` takes a NEXT/RECOVER row's identity or spelling (`c.name`,
+  `cli/` `lib/` takes a NEXT/RECOVER row's (since [START-TABLE] C4 also a
+  PRESENCE/FIRST row's) identity or spelling (`c.name`,
   `tok`) as a literal (read off `cand_rows[]`'s own text, `"none"` excepted as
   every axis's fallback word) or reads `c.name`/`tok` through a `pf` receiver
   or a selection function (`dfa_pf_of(...)`, `cand_select(...)`, ...). Comments are blanked

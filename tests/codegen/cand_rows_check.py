@@ -7,7 +7,9 @@
 re-aimed at C3, start_table.md §3.5)
     No string comparison anywhere under src/ cli/ lib/ reads the NAME of a
     row of the slots `cand_rows[]` decides since C3 (NEXT, the old
-    `dfa_pfs[]`, and RECOVER, the old `dfa_search_starts[]`). Two readers
+    `dfa_pfs[]`, and RECOVER, the old `dfa_search_starts[]`) and since C4
+    (PRESENCE, the old `req_admits[]`, and FIRST, the old `req_uses[]`;
+    their readers test `u.admit.verdict`/`u.use.use`). Two readers
     used to classify the selected prefilter row by
     `strcmp(pf->c.name, "memchr")`; a new row with another name then escaped
     G1's dominance and the re-seed price silently. The row's PROPERTY
@@ -25,7 +27,7 @@ re-aimed at C3, start_table.md §3.5)
           covers `"none"`) or through one of the selection functions
           (`dfa_pf_of(...)`, `vm_start_row`, `attempt_next_of`,
           `dfa_search_start_of`, `cand_select`).
-    The other slots' rows join the population as C4-C5 move their readers
+    The other slots' rows join the population as C5 moves their readers
     onto the table (their names are still read off their old tables' own
     spellings until then, and several -- `all`, `exact`, `window`,
     `fixed` -- are ordinary words; §3.5's row-name-expression rule is the
@@ -144,14 +146,14 @@ def main():
     block = table_block(src, "static const CandRow cand_rows[] = {")
     names = []
     for row in re.split(r"\n    \{ ", block or "")[1:]:
-        if not re.search(r"\.slot\s*=\s*CAND_SLOT_(?:NEXT|RECOVER)\b", row):
+        if not re.search(r"\.slot\s*=\s*CAND_SLOT_(?:NEXT|RECOVER|PRESENCE|FIRST)\b", row):
             continue
         names += re.findall(r'\.c\s*=\s*\{\s*"([^"]+)"', row)
         names += re.findall(r'\.tok\s*=\s*"([^"]+)"', row)
     names = sorted(set(names))
-    print("REACH: cand_rows[] NEXT/RECOVER row names read off the table: %d (%s)" % (len(names), ", ".join(names)))
+    print("REACH: cand_rows[] NEXT/RECOVER/PRESENCE/FIRST row names read off the table: %d (%s)" % (len(names), ", ".join(names)))
     if not names:
-        bad("[cand-no-name-strcmp] no cand_rows[] NEXT/RECOVER row name found in %s -- the literal half is vacuous" % EMIT)
+        bad("[cand-no-name-strcmp] no cand_rows[] NEXT/RECOVER/PRESENCE/FIRST row name found in %s -- the literal half is vacuous" % EMIT)
         return
     lits = {'"%s"' % n for n in names if n != "none"}
     hits, ncalls, nfiles = [], 0, 0
@@ -180,9 +182,9 @@ def main():
     if ncalls == 0:
         bad("[cand-no-name-strcmp] no comparison call found under src/ cli/ lib/ -- the scan reads nothing")
     elif hits:
-        bad("[cand-no-name-strcmp] a comparison reads a cand_rows[] NEXT/RECOVER row NAME (K84): " + "; ".join(hits))
+        bad("[cand-no-name-strcmp] a comparison reads a cand_rows[] NEXT/RECOVER/PRESENCE/FIRST row NAME (K84): " + "; ".join(hits))
     else:
-        ok("[cand-no-name-strcmp] no comparison call reads any of the %d cand_rows[] NEXT/RECOVER row names" % len(names))
+        ok("[cand-no-name-strcmp] no comparison call reads any of the %d cand_rows[] NEXT/RECOVER/PRESENCE/FIRST row names" % len(names))
 
 
 def route_checks():

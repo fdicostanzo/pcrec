@@ -304,7 +304,8 @@ static bool dfa_search_is_pinned(Ctx *cx);
  * decision did. The `_IN` pair is for an INLINE decision, which has no
  * `DfaSel` of its own; `site` must be a string literal, as the trace's.
  * `CAND_HIT` (C3) is the hit counter alone, at a reader whose slot's old
- * walk is gone. */
+ * walk is gone; `CAND_HIT_EVERY` (C4) also holds the row to be the one every
+ * other route the slot is asked on chooses (the entry slots, asked on one). */
 typedef struct CandRow CandRow;
 struct CandSel;
 /* [START-TABLE] C3 THE WALK over `cand_rows[]` (defined beside the table,
@@ -333,6 +334,10 @@ static void cand_oracle_post_in(const CandRow *pre, CandSlot slot, Ctx *cx, int 
 static void cand_hit(CandSlot slot, const struct CandSel *s, const CandRow *r,
                      const char *site);
 #define CAND_HIT(slot, sel, row, site) cand_hit((slot), (sel), (row), "" site)
+static void cand_hit_every(CandSlot slot, const struct CandSel *s, const CandRow *r,
+                           const char *site);
+#define CAND_HIT_EVERY(slot, sel, row, site)                                  \
+    cand_hit_every((slot), (sel), (row), "" site)
 #else
 #define CAND_ORACLE_PRE(var, slot, sel) ((void)0)
 #define CAND_ORACLE_POST(var, slot, sel, old_row, old_tok, site) ((void)sizeof("" site))
@@ -340,6 +345,7 @@ static void cand_hit(CandSlot slot, const struct CandSel *s, const CandRow *r,
 #define CAND_ORACLE_POST_IN(var, slot, cx, route, d, old_tok, site, every)    \
     ((void)sizeof("" site))
 #define CAND_HIT(slot, sel, row, site) ((void)sizeof("" site))
+#define CAND_HIT_EVERY(slot, sel, row, site) ((void)sizeof("" site))
 #endif
 
 /* [OPT-PRECHECK-ADMIT] WHY THIS ARTIFACT DOES OR DOES NOT CARRY A
@@ -5004,6 +5010,24 @@ typedef struct CandRecover {
     bool pinned;
 } CandRecover;
 
+/* [START-TABLE] C4 THE PRESENCE SLOT's PAYLOAD, `CandRow.u.admit` (was
+ * `ReqAdmitRow`'s fields): the admission verdict the row answers, which
+ * `req_why_name` renders as `<PREFIX>_REQ_WHY`, and the row's predicate in
+ * one line for `--list-axes` (axis `req-admit`). */
+typedef struct CandAdmit {
+    ReqAdmit    verdict;
+    const char *desc;
+} CandAdmit;
+
+/* [START-TABLE] C4 THE FIRST SLOT's PAYLOAD, `CandRow.u.use` (was
+ * `ReqUseRow`'s fields): what the body does with an emitted run pre-check's
+ * answer, and the row's predicate in one line for `--list-axes` (axis
+ * `req-use`). */
+typedef struct CandUse {
+    ReqUse      use;
+    const char *desc;
+} CandUse;
+
 /* A row's `--list-axes` projection on ONE route (§1.1 `list[route]`): the
  * axis, the row's order within it and its listed name; `axis` NULL where the
  * row has no listing on that route. An axis that does not depend on the
@@ -5023,8 +5047,9 @@ typedef struct CandList {
  * `anchored`/`gstart` keep one identity apiece. Defined here, above the
  * emitters, because the forms read a NEXT row's payload through `DfaForm.pf`.
  * `u` is the slot's payload: C3 moved NEXT's (`u.pf`, was `DfaPf`) and
- * RECOVER's (`u.recover`) in; C4-C5 move the others' as they delete their
- * tables. */
+ * RECOVER's (`u.recover`) in, C4 PRESENCE's (`u.admit`, was `ReqAdmitRow`)
+ * and FIRST's (`u.use`, was `ReqUseRow`); C5 moves the others' as it deletes
+ * their tables. */
 struct CandRow {
     DfaCand        c;          /* identity, deny bits, predicate */
     CandSlot       slot;       /* the question this row answers */
@@ -5035,13 +5060,15 @@ struct CandRow {
     unsigned       hands;      /* CT_* handed to the slot's successors */
     CandList       list[3];    /* indexed by CandRoute */
     union {
+        CandAdmit   admit;     /* PRESENCE */
+        CandUse     use;       /* FIRST */
         CandPf      pf;        /* NEXT */
         CandRecover recover;   /* RECOVER */
     } u;
     /* THE ORACLE's link to today's table row this row restates, compared by
      * POINTER; NULL for an inline decision and for the slots whose old table
-     * is gone (NEXT and RECOVER since C3). Deleted with the last old table
-     * (C5). */
+     * is gone (NEXT and RECOVER since C3, PRESENCE and FIRST since C4).
+     * Deleted with the last old table (C5). */
     const void    *was;
 };
 
@@ -7065,9 +7092,11 @@ static bool req_set_leads_applies(const DfaSel *s)
     return pcrec_find_pick(pcrec_find_byte_rate(s->cx), cand, care, 2, 0) == 1;
 }
 
-/* [OPT-PRECHECK-ADMIT] THE ADMISSION TABLE: whether this artifact emits a
+/* [OPT-PRECHECK-ADMIT] THE ADMISSION: whether this artifact emits a
  * whole-window pre-check, in which shape, and why not when it does not.
- * First applying, non-denied row wins (`DFA_SELECT`).
+ * Since [START-TABLE] C4 its rows are the PRESENCE slot of the one start
+ * table `cand_rows[]` (far below; was `req_admits[]`), and the first
+ * applying, non-denied one wins (`cand_select`).
  *
  * ORDER IS PART OF THE ANSWER. "Nothing necessary" comes first because the
  * other rows are claims ABOUT what is necessary; it is no byte AND no run
@@ -7081,44 +7110,16 @@ static bool req_set_leads_applies(const DfaSel *s)
  * (`-fno-req-set-lead`), the run pre-check is the abi-59 one. A declined
  * artifact keeps the `req_byte` fact and its `<PREFIX>_REQ_BYTE`/
  * `<PREFIX>_REQ_RUN` stamps unchanged — the analysis ran and its answer is
- * still true of the pattern — so this table is a statement about EMISSION
+ * still true of the pattern — so this slot is a statement about EMISSION
  * alone, and it is the only thing that moves. */
-typedef struct ReqAdmitRow {
-    DfaCand     c;
-    ReqAdmit    verdict;
-    const char *desc;      /* the predicate, for `--list-axes` */
-} ReqAdmitRow;
-static const ReqAdmitRow req_admits[] = {
-    { { "none",        0,                      req_none_applies        }, REQ_ADMIT_NONE,
-      "no necessary byte and no necessary run: nothing to pre-check" },
-    { { "one-attempt", 0,                      req_one_attempt_applies }, REQ_ADMIT_ONE_ATTEMPT,
-      "G2: the route tries exactly one start position, and on the VM that one attempt is linear (an exact hybrid DFA in front, or a frameless program), so the check would scan the window the attempt reads anyway" },
-    { { "dominated",   0,                      req_dominated_applies   }, REQ_ADMIT_DOMINATED,
-      "G1: the candidate-start scan already tests the same byte (and, for a run, verifies the run), or under a byte-rate a one-byte memchr scan of a byte no commoner than the necessary byte" },
-    { { "set-leads",   PCREC_NO_REQ_SET_LEAD,  req_set_leads_applies   }, REQ_ADMIT_SET_LEADS,
-      "a run pre-check is admitted and the necessary set's pick is strictly rarer than the run's scan member (one PICK over the two guards, the run first, so a tie keeps the run alone; under no byte-rate a byte against a two-member pair): the set pick's memchr first, then the run search" },
-    { { "emitted",     0,                      cand_always             }, REQ_ADMIT_EMITTED,
-      "always (fallback): the pre-check on the req_byte fact, or the run search where a run shipped" },
-};
-const int pcrec_req_admit_nrows = (int)(sizeof req_admits / sizeof req_admits[0]);
-
-void pcrec_req_admit_row(int i, PcrecReqAdmitDesc *out)
-{
-    out->name = req_admits[i].c.name;
-    out->deny = req_admits[i].c.deny;
-    out->why  = req_why_name(req_admits[i].verdict);
-    out->desc = req_admits[i].desc;
-}
-
 static ReqAdmit req_admit(Ctx *cx)
 {
-    DfaSel s = { .cx = cx, .d = NULL, .us = NULL, .forward = true, .st = -1,
-                 .route = CAND_ROUTE_DFA };
-    CAND_ORACLE_PRE(ck, CAND_SLOT_PRESENCE, &s);
-    const ReqAdmitRow *r = DFA_SELECT(ReqAdmitRow, req_admits, &s, cx->opt->flags);
-    PCREC_CAND_TRACE_REC("PRESENCE", CAND_ROUTE_NAME(s.route), r->c.name, "req-admit");
-    CAND_ORACLE_POST(ck, CAND_SLOT_PRESENCE, &s, r, r->c.name, "req-admit");
-    return r->verdict;
+    CandSel s = { .cx = cx, .d = NULL, .us = NULL, .forward = true, .st = -1,
+                  .route = CAND_ROUTE_DFA };
+    const CandRow *r = cand_select(CAND_SLOT_PRESENCE, &s, cx->opt->flags);
+    PCREC_CAND_TRACE_REC("PRESENCE", CAND_ROUTE_NAME(s.route), r->tok, "req-admit");
+    CAND_HIT_EVERY(CAND_SLOT_PRESENCE, &s, r, "req-admit");
+    return r->u.admit.verdict;
 }
 
 static int req_lead_byte(Ctx *cx)
@@ -7149,7 +7150,7 @@ static const char *req_why_name(ReqAdmit a)
  * attempt start (the `req_run_maxoff` fact). Each conjunct with its reason:
  *
  *   - THE ADMISSION'S OWN VERDICT, CALLED rather than restated, so a change
- *     to `req_admits[]` reaches this table with no edit here (§2.1, [r1
+ *     to the PRESENCE rows reaches this slot with no edit here (§2.1, [r1
  *     C-C10]): a run pre-check is emitted (`emitted` or `set-leads`).
  *   - (a) A SCAN TO MOVE: `pcrec_artifact_has_dfa_scan`, G1's own premise,
  *     and a machine that is not the empty one (whose body returns before any
@@ -7192,46 +7193,26 @@ static bool req_handoff_applies(const DfaSel *s)
     return true;
 }
 
-/* [K82] THE PRE-CHECK'S USE TABLE (axis `req-use`): what the search body does
- * with the run pre-check's answer. First applying, non-denied row wins
- * (`DFA_SELECT`). It answers a question neither neighbour asks:
- * `req_admits[]` decides WHETHER and in WHICH SHAPE a pre-check is emitted,
- * `cand_rows[]`'s NEXT slot how the forward machine finds its next candidate INSIDE its
- * loop; this decides where the body's scan BEGINS. It composes with every row
- * of both (litscan_k82h.md §2.1), and three bodies read it through the one
- * expression `pcrec_emit_req_byte_check` returns. `scan-from-startpos` is the
- * total fallback: where a run pre-check is emitted it is the discard gate,
- * and where none is there is nothing to use. */
-typedef struct ReqUseRow {
-    DfaCand     c;
-    ReqUse      use;
-    const char *desc;      /* the predicate, for `--list-axes` */
-} ReqUseRow;
-static const ReqUseRow req_uses[] = {
-    { { "handoff",            PCREC_NO_REQ_HANDOFF, req_handoff_applies }, REQ_USE_HANDOFF,
-      "a run pre-check is emitted (req-admit `emitted` or `set-leads`), the artifact has a DFA scan to move (a DFA body or the VM hybrid's prefilter, not the empty machine), the window's maximum byte offset K from the attempt start is finite, the prefilter is not count-collapsed, and no VM hybrid with a \\G start family reads its prefilter-window ceiling: the gate's first window hit c becomes the scan start max(startpos, c - K), rounded up to a character start under a multibyte encoding" },
-    { { "scan-from-startpos", 0,                    cand_always         }, REQ_USE_FROM_STARTPOS,
-      "always (fallback): the scan starts at the startpos; a run pre-check, where one is emitted, only discards" },
-};
-const int pcrec_req_use_nrows = (int)(sizeof req_uses / sizeof req_uses[0]);
-
-void pcrec_req_use_row(int i, PcrecReqUseDesc *out)
-{
-    out->name  = req_uses[i].c.name;
-    out->deny  = req_uses[i].c.deny;
-    out->stamp = req_uses[i].use == REQ_USE_HANDOFF ? "" : "none";
-    out->desc  = req_uses[i].desc;
-}
-
+/* [K82] THE PRE-CHECK'S USE (axis `req-use`): what the search body does
+ * with the run pre-check's answer. Since [START-TABLE] C4 its rows are the
+ * FIRST slot of the one start table `cand_rows[]` (far below; was
+ * `req_uses[]`), and the first applying, non-denied one wins
+ * (`cand_select`). It answers a question neither neighbour asks: the
+ * PRESENCE slot (`req_admit`) decides WHETHER and in WHICH SHAPE a pre-check
+ * is emitted, the NEXT slot how the forward machine finds its next candidate
+ * INSIDE its loop; this decides where the body's scan BEGINS. It composes
+ * with every row of both (litscan_k82h.md §2.1), and three bodies read it
+ * through the one expression `pcrec_emit_req_byte_check` returns.
+ * `scan-from-startpos` is the total fallback: where a run pre-check is
+ * emitted it is the discard gate, and where none is there is nothing to use. */
 static ReqUse req_use(Ctx *cx)
 {
-    DfaSel s = { .cx = cx, .d = NULL, .us = NULL, .forward = true, .st = -1,
-                 .route = CAND_ROUTE_DFA };
-    CAND_ORACLE_PRE(ck, CAND_SLOT_FIRST, &s);
-    const ReqUseRow *r = DFA_SELECT(ReqUseRow, req_uses, &s, cx->opt->flags);
-    PCREC_CAND_TRACE_REC("FIRST", CAND_ROUTE_NAME(s.route), r->c.name, "req-use");
-    CAND_ORACLE_POST(ck, CAND_SLOT_FIRST, &s, r, r->c.name, "req-use");
-    return r->use;
+    CandSel s = { .cx = cx, .d = NULL, .us = NULL, .forward = true, .st = -1,
+                  .route = CAND_ROUTE_DFA };
+    const CandRow *r = cand_select(CAND_SLOT_FIRST, &s, cx->opt->flags);
+    PCREC_CAND_TRACE_REC("FIRST", CAND_ROUTE_NAME(s.route), r->tok, "req-use");
+    CAND_HIT_EVERY(CAND_SLOT_FIRST, &s, r, "req-use");
+    return r->u.use.use;
 }
 
 /* [K82] `<PREFIX>_REQ_HANDOFF`'s value: the decimal K the emitted
@@ -7781,14 +7762,17 @@ static bool dfa_search_is_pinned(Ctx *cx)
  * `dfa_pfs[]` and `dfa_search_starts[]` are deleted into it (their fields are
  * the rows' `u.pf`/`u.recover`), N12's four readers ask it on
  * CAND_ROUTE_ATTEMPT, and every reader builds its route from `cand_route_of`.
- * The other old tables (`req_admits[]`, `req_uses[]`, `pcrec_reseed_rows[]`)
- * and the inline decisions still decide their slots; C4-C5 switch those
- * readers and delete what they replace. Until then the trace build
- * (-DPCREC_CAND_TRACE) asks `cand_select` beside every remaining old
- * decision and aborts where the two choose differently (the both-walks
- * oracle at the end of this section, §3.3 item 6); at a NEXT or RECOVER
- * reader, where nothing is left to compare, it runs the table self-check and
- * counts the hit (`cand_hit`). A walked row's predicate IS the old row's
+ * Since C4 it decides PRESENCE and FIRST too: `req_admits[]` and
+ * `req_uses[]` are deleted into it (`u.admit`/`u.use`), `req_admit` and
+ * `req_use` walk it, and `pcrec_req_admit_row`/`pcrec_req_use_row` project
+ * it for `--list-axes`. The last old table (`pcrec_reseed_rows[]`) and the
+ * inline decisions still decide their slots; C5 switches those readers and
+ * deletes what it replaces. Until then the trace build (-DPCREC_CAND_TRACE)
+ * asks `cand_select` beside every remaining old decision and aborts where
+ * the two choose differently (the both-walks oracle at the end of this
+ * section, §3.3 item 6); at a reader whose old decision is gone, where
+ * nothing is left to compare, it runs the table self-check and counts the
+ * hit (`cand_hit`). A walked row's predicate IS the old row's
  * function, by pointer, so the oracle tests the FILTER: slot, route mask,
  * deny order, first match. An inline decision has no old function, and its
  * row's predicate is the inline condition written once as a function (§2.3
@@ -7947,24 +7931,34 @@ static const CandRow cand_rows[] = {
       .routes = CAND_ALL_ROUTES, .tok = "none", .map = CM_NONE, .hands = CT_LOWER,
       .list = { [CAND_ROUTE_DFA] = { "end-window", 2, "none" } } },
 
-    /* PRESENCE (today `req_admits[]`) */
+    /* PRESENCE (`req_admits[]` until C4; `req_admit` asks it) */
     { .c = { "presence-none", 0, req_none_applies }, .slot = CAND_SLOT_PRESENCE,
       .routes = CAND_ALL_ROUTES, .tok = "none", .map = CM_NONE, .hands = CT_VERDICT,
-      .list = { [CAND_ROUTE_DFA] = { "req-admit", 1, "none" } }, .was = &req_admits[0] },
+      .list = { [CAND_ROUTE_DFA] = { "req-admit", 1, "none" } },
+      .u.admit = { REQ_ADMIT_NONE,
+                   "no necessary byte and no necessary run: nothing to pre-check" } },
     { .c = { "one-attempt", 0, req_one_attempt_applies }, .slot = CAND_SLOT_PRESENCE,
       .routes = CAND_ALL_ROUTES, .tok = "one-attempt", .map = CM_NONE, .hands = CT_VERDICT,
-      .list = { [CAND_ROUTE_DFA] = { "req-admit", 2, "one-attempt" } }, .was = &req_admits[1] },
+      .list = { [CAND_ROUTE_DFA] = { "req-admit", 2, "one-attempt" } },
+      .u.admit = { REQ_ADMIT_ONE_ATTEMPT,
+                   "G2: the route tries exactly one start position, and on the VM that one attempt is linear (an exact hybrid DFA in front, or a frameless program), so the check would scan the window the attempt reads anyway" } },
     { .c = { "dominated", 0, req_dominated_applies }, .slot = CAND_SLOT_PRESENCE,
       .routes = CAND_ALL_ROUTES, .tok = "dominated", .map = CM_NONE, .hands = CT_VERDICT,
-      .list = { [CAND_ROUTE_DFA] = { "req-admit", 3, "dominated" } }, .was = &req_admits[2] },
+      .list = { [CAND_ROUTE_DFA] = { "req-admit", 3, "dominated" } },
+      .u.admit = { REQ_ADMIT_DOMINATED,
+                   "G1: the candidate-start scan already tests the same byte (and, for a run, verifies the run), or under a byte-rate a one-byte memchr scan of a byte no commoner than the necessary byte" } },
     { .c = { "set-leads", PCREC_NO_REQ_SET_LEAD, req_set_leads_applies },
       .slot = CAND_SLOT_PRESENCE, .routes = CAND_ALL_ROUTES, .tok = "set-leads",
       .map = CM_PRESENCE, .hands = CT_VERDICT | CT_HIT,
-      .list = { [CAND_ROUTE_DFA] = { "req-admit", 4, "set-leads" } }, .was = &req_admits[3] },
+      .list = { [CAND_ROUTE_DFA] = { "req-admit", 4, "set-leads" } },
+      .u.admit = { REQ_ADMIT_SET_LEADS,
+                   "a run pre-check is admitted and the necessary set's pick is strictly rarer than the run's scan member (one PICK over the two guards, the run first, so a tie keeps the run alone; under no byte-rate a byte against a two-member pair): the set pick's memchr first, then the run search" } },
     { .c = { "emitted", 0, cand_always }, .slot = CAND_SLOT_PRESENCE,
       .routes = CAND_ALL_ROUTES, .tok = "emitted", .map = CM_PRESENCE,
       .hands = CT_VERDICT | CT_HIT,
-      .list = { [CAND_ROUTE_DFA] = { "req-admit", 5, "emitted" } }, .was = &req_admits[4] },
+      .list = { [CAND_ROUTE_DFA] = { "req-admit", 5, "emitted" } },
+      .u.admit = { REQ_ADMIT_EMITTED,
+                   "always (fallback): the pre-check on the req_byte fact, or the run search where a run shipped" } },
 
     /* WIDTH (today the VM entry's root-minw test; no listing) */
     { .c = { "ceiling", 0, cand_ceiling_applies }, .slot = CAND_SLOT_WIDTH,
@@ -7973,16 +7967,19 @@ static const CandRow cand_rows[] = {
     { .c = { "width-none", 0, cand_always }, .slot = CAND_SLOT_WIDTH,
       .routes = CR_VM, .tok = "none", .map = CM_NONE, .hands = CT_VERDICT },
 
-    /* FIRST (today `req_uses[]`) */
+    /* FIRST (`req_uses[]` until C4; `req_use` asks it) */
     { .c = { "handoff", PCREC_NO_REQ_HANDOFF, req_handoff_applies }, .slot = CAND_SLOT_FIRST,
       .routes = CAND_ALL_ROUTES, .tok = "handoff", .map = CM_LOWERBOUND,
       .giveup = CG_FIXED, .hands = CT_LOWER,
-      .list = { [CAND_ROUTE_DFA] = { "req-use", 1, "handoff" } }, .was = &req_uses[0] },
+      .list = { [CAND_ROUTE_DFA] = { "req-use", 1, "handoff" } },
+      .u.use = { REQ_USE_HANDOFF,
+                 "a run pre-check is emitted (req-admit `emitted` or `set-leads`), the artifact has a DFA scan to move (a DFA body or the VM hybrid's prefilter, not the empty machine), the window's maximum byte offset K from the attempt start is finite, the prefilter is not count-collapsed, and no VM hybrid with a \\G start family reads its prefilter-window ceiling: the gate's first window hit c becomes the scan start max(startpos, c - K), rounded up to a character start under a multibyte encoding" } },
     { .c = { "scan-from-startpos", 0, cand_always }, .slot = CAND_SLOT_FIRST,
       .routes = CAND_ALL_ROUTES, .tok = "scan-from-startpos", .map = CM_NONE,
       .hands = CT_LOWER,
       .list = { [CAND_ROUTE_DFA] = { "req-use", 2, "scan-from-startpos" } },
-      .was = &req_uses[1] },
+      .u.use = { REQ_USE_FROM_STARTPOS,
+                 "always (fallback): the scan starts at the startpos; a run pre-check, where one is emitted, only discards" } },
 
     /* NEXT (`dfa_pfs[]` until C3, plus `attempt_cand` on the ATTEMPT route).
      * Designated initializers ([K84], stage 0 of docs/design/startset.md §8):
@@ -8325,6 +8322,29 @@ static void cand_hit(CandSlot slot, const DfaSel *s, const CandRow *r, const cha
             CAND_ROUTE_NAME(s->route), r->c.name, site);
 }
 
+/* [START-TABLE] C4 the hit counter at an ENTRY slot's reader (PRESENCE,
+ * FIRST): the body asks once, on CAND_ROUTE_DFA (the route the C1 trace
+ * records), though the slot is asked on every route (§2.3's route classes).
+ * That is honest only while the slot's choice does not depend on the route,
+ * so this also walks every other asked route, quietly, and aborts on a
+ * different row: WINDOW's `every`, kept now that the old walk is gone. */
+static void cand_hit_every(CandSlot slot, const DfaSel *s, const CandRow *r,
+                           const char *site)
+{
+    cand_hit(slot, s, r, site);
+    if (pcrec_cand_trace_quiet) return;
+    for (int rt = 0; rt < 3; rt++) {
+        DfaSel o = *s;
+        const CandRow *nw;
+        if (rt == s->route || !(cand_nodes[slot].asks & CAND_ON(rt))) continue;
+        o.route = rt;
+        nw = cand_select_quiet(slot, &o);
+        if (nw != r)
+            cand_oracle_fail("row-differs-on-route", r->c.name,
+                             nw ? nw->c.name : "(none)", site);
+    }
+}
+
 const void *pcrec_cand_oracle_vm_pre(Ctx *cx, CandSlot slot, const CandVmFacts *vm)
 {
     return cand_oracle_pre_in(slot, cx, CAND_ROUTE_VM, NULL, vm);
@@ -8400,6 +8420,57 @@ static size_t cand_axis_rows(CandSlot slot, PcrecAxisCand *out, size_t cap)
         k++;
     }
     return k;
+}
+
+/* The `i`th row (from 0) of `slot` that has a `--list-axes` listing, in
+ * table order, or NULL past the last. */
+static const CandRow *cand_listed_row(CandSlot slot, int i)
+{
+    for (size_t k = 0; k < CAND_NROWS; k++) {
+        const CandRow *r = &cand_rows[k];
+        bool listed = false;
+        if (r->slot != slot) continue;
+        for (int rt = 0; rt < 3; rt++)
+            if (r->list[rt].axis) listed = true;
+        if (listed && i-- == 0) return r;
+    }
+    return NULL;
+}
+
+/* The listed name of row `r` (`list[route].name` on the first route that
+ * lists it). */
+static const char *cand_listed_name(const CandRow *r)
+{
+    for (int rt = 0; rt < 3; rt++)
+        if (r->list[rt].axis) return r->list[rt].name;
+    return NULL;
+}
+
+/* [START-TABLE] C4 the `req-admit` axis's rows are `cand_rows[]`'s PRESENCE
+ * rows, in table order, under their listed names, each with the
+ * `<PREFIX>_REQ_WHY` token its verdict stamps. False past the last. */
+bool pcrec_req_admit_row(int i, PcrecReqAdmitDesc *out)
+{
+    const CandRow *r = cand_listed_row(CAND_SLOT_PRESENCE, i);
+    if (!r) return false;
+    out->name = cand_listed_name(r);
+    out->deny = r->c.deny;
+    out->why  = req_why_name(r->u.admit.verdict);
+    out->desc = r->u.admit.desc;
+    return true;
+}
+
+/* [START-TABLE] C4 the `req-use` axis's rows are `cand_rows[]`'s FIRST rows,
+ * as `pcrec_req_admit_row`'s are PRESENCE's. False past the last. */
+bool pcrec_req_use_row(int i, PcrecReqUseDesc *out)
+{
+    const CandRow *r = cand_listed_row(CAND_SLOT_FIRST, i);
+    if (!r) return false;
+    out->name  = cand_listed_name(r);
+    out->deny  = r->c.deny;
+    out->stamp = r->u.use.use == REQ_USE_HANDOFF ? "" : "none";
+    out->desc  = r->u.use.desc;
+    return true;
 }
 
 /* The table-representation axis's candidates, as `--list-axes` reads them. */

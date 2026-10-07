@@ -3472,8 +3472,14 @@ that was already cheaper, or on top of a pass the artifact was already running.
   emitting rows (the token answers whether, not which shape). Cause (B) of
   K82 (low-information runs on match-dense text) is NOT a row here: it waits
   for [FINDINGS.B4]'s run-rarity cost-model reader (`known_issues.md` K82).
+  **[START-TABLE] C4 (2026-10-07): the table is now the PRESENCE slot of
+  `cand_rows[]`** (`docs/design/start_table.md`): `req_admits[]` is deleted
+  into it (the verdict and description are the rows' `u.admit`),
+  `req_admit` walks it with `cand_select`, and `pcrec_req_admit_row` is a
+  projection of its listed rows. Order, predicates and listing unchanged.
 - **[K82] (B) (abi 60 -> 61) THE USE TABLE, `req_uses[]`** (axis `req-use`,
-  `pcrec_req_use_row` for `--list-axes`): what a search body does with an
+  `pcrec_req_use_row` for `--list-axes`; since [START-TABLE] C4 the FIRST
+  slot of `cand_rows[]`, `u.use`, walked by `req_use` with `cand_select`): what a search body does with an
   EMITTED run pre-check's answer. Row `handoff` (`-fno-req-handoff`, bit 46,
   in `strategy_denials`) CALLS `req_admit` and asks a DFA scan in front
   (`pcrec_artifact_has_dfa_scan`, not the empty machine), a finite

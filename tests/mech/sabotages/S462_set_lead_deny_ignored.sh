@@ -8,6 +8,11 @@
 # "61") and §5.8/§5.9's deny rows. The registry's axes check does NOT see it
 # (measured: registry 0 fail): `--list-axes` walks the same row, so its deny
 # column empties with the plant -- a control sharing its source.
+# [START-TABLE] C4 (lane stc4, 2026-10-07) RE-AIMED: `req_admits[]` is deleted
+# into `cand_rows[]`'s PRESENCE slot, so the plant drops the same deny bit from
+# the same row there (intent unchanged: the flag is accepted and does nothing).
+# It is now the same edit as S596's; the two rows differ in their detector
+# (this one the pre-check suite's deny cells, S596 the trace build's oracle).
 SAB_ID="S462-set-lead-deny-ignored"
 SAB_FILE="src/gen/emit_dfa.c"
 SAB_SUITES="prechecks"
@@ -17,5 +22,5 @@ SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "(?:user|
 SAB_REACH_EXPECT="REACH-SET-LEADS"
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    { { "set-leads",   PCREC_NO_REQ_SET_LEAD,  req_set_leads_applies   }, REQ_ADMIT_SET_LEADS,'
-SAB_AFTER='    { { "set-leads",   0 /* SABOTAGE S462 */,  req_set_leads_applies   }, REQ_ADMIT_SET_LEADS,'
+SAB_BEFORE='    { .c = { "set-leads", PCREC_NO_REQ_SET_LEAD, req_set_leads_applies },'
+SAB_AFTER='    { .c = { "set-leads", 0 /* SABOTAGE S462 */, req_set_leads_applies },'
