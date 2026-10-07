@@ -26569,3 +26569,17 @@ Frank: "finish up open work/bench results/errors", Linux box free (bench manager
 - Next: kit verdict -> lift stc0 -> stc0 follow-up (rows, re-pins) -> merge C0
   -> ping kit (full I2) -> R4c Linux verdict by day -> merge R4c -> C1.
   Owed: S169 duplicate id; Frank question on conditional masking of bits 12/13.
+- (later, same evening) C0 heavy runs moved to the IDLE Linux box (Frank:
+  "use it"); bench's session declined to execute (checkout-only executor),
+  Frank OK'd the manager running it over ssh; rc 0 in 19 min. C0 merged
+  (d96f8cd3). Bench pruned 6G (ubuntubudu 87% -> 81%). Kit found its own
+  silent green (run_sabotage_matrix.sh takes one id; 34 ignored) — fix filed
+  for an admin lane. R4c Linux verdict launched 22:21Z (91f5b607, ~6-7 h);
+  Mac `make test-axes` (AXES_FULL, oracle) launched 23:25Z at 041e450a.
+- ROUND 3 SELECTED (D153, docs/dev/optloop/round3_selection.md). Frank's
+  principle: "don't live in a house we're remodeling" — the refactors (start
+  table A, [DEC-FALLBACK] B, memfn zero-mover migrations) take lane priority;
+  round-3 rows touching a remodel site wait. Runnable now: [ART-POSS-ARMS],
+  [ART-TRAIL-ELIDE], [NULLABLE-ANCH] (Q16). The selection lane missed the
+  remodel message (third busy-lane miss today) — manager filled the column.
+  wake.md rewritten for the overnight hand-off.
