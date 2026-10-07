@@ -448,7 +448,9 @@ static void h_note(void *u, mf_sink *c, uint32_t part)
 {
     (void)u;
     char t[64];
-    snprintf(t, sizeof t, "g2 note for part %u", part);
+    /* memfn.h: `note` writes pcrec's FACT COMMENT, so it must be a comment
+       (at file scope since M1b, when run-bearing FUNC sites render) */
+    snprintf(t, sizeof t, "/* g2 note for part %u */\n", part);
     c->puts(c->u, t);
 }
 static const char *h_note_tag(void *u, uint32_t part) { (void)u; (void)part; return "[G2]"; }
