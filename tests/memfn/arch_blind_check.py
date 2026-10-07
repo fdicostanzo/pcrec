@@ -302,6 +302,31 @@ def evenly(items, k):
     return [items[int(i * step)] for i in range(k)]
 
 
+# Portable CAPABILITY macros: a compiler declares them under an ISA flag, but
+# their names are the C standard's or the compiler's own, never an ISA's NAME.
+# __GCC_HAVE_SYNC_COMPARE_AND_SWAP_N is gcc's atomics capability (the ISA it
+# reflects, cmpxchg16b, is class 1's `cx16`); __FP_FAST_FMA{,F,L,F32,F64,...}
+# is C99 <math.h>'s fast-fma capability (the ISA is class 1's `fma`;
+# ubuntubudu's gcc 15.2 declares them under -mfma, 2026-10-07). They are
+# class-2 plants (macro form), never class-1 stems.
+CAPABILITY_PREFIXES = ('GCC_', 'FP_FAST_')
+
+
+def isa_plants(isa_macros):
+    """(class-1 stems, class-2 macros) from a set of ISA-declared macros.
+    Classes 1 and 2 plant the WHOLE population (r4clx, 2026-10-06): an
+    evenly-spaced sample of 8/6 let the regex pass on whichever strings the
+    sample happened to pick, box by box."""
+    stems = set()
+    for x in isa_macros:
+        s = re.sub(r'^__(?:ARM_FEATURE_)?|__$', '', x)
+        if s.startswith(CAPABILITY_PREFIXES) or re.fullmatch(MACRO_ONLY, s, re.I):
+            continue
+        if re.fullmatch(r'[A-Z][A-Z0-9_]*', s) and len(s) >= 3:
+            stems.add(s.split('_')[0] if s.startswith(('SSE', 'AVX')) else s)
+    return sorted(stems), sorted(isa_macros)
+
+
 def derive_plants(cc):
     """{class: [plant text]} from compiler `cc`; also {class: why-empty}."""
     plants = {k: [] for k in range(1, 7)}
@@ -317,21 +342,7 @@ def derive_plants(cc):
         accepted.append(fl[0])
         isa_macros |= {x for x in m - base if x.startswith('__')}
     notes['flags'] = accepted
-    # Classes 1 and 2 plant the WHOLE population (r4clx, 2026-10-06): an
-    # evenly-spaced sample of 8/6 let the regex pass on whichever strings the
-    # sample happened to pick, box by box.
-    plants[2] = sorted(isa_macros)
-    stems = set()
-    for x in isa_macros:
-        s = re.sub(r'^__(?:ARM_FEATURE_)?|__$', '', x)
-        # __GCC_HAVE_SYNC_COMPARE_AND_SWAP_N is gcc's portable atomics
-        # capability macro, not an ISA's NAME (the ISA it reflects, cmpxchg16b,
-        # is class 1's `cx16`): a class-2 plant, never a class-1 stem.
-        if s.startswith('GCC_') or re.fullmatch(MACRO_ONLY, s, re.I):
-            continue
-        if re.fullmatch(r'[A-Z][A-Z0-9_]*', s) and len(s) >= 3:
-            stems.add(s.split('_')[0] if s.startswith(('SSE', 'AVX')) else s)
-    plants[1] = sorted(stems)
+    plants[1], plants[2] = isa_plants(isa_macros)
     inc = (cc_run(cc, ['-print-file-name=include']) or '').strip()
     names, types, headers = [], [], []
     if inc and os.path.isdir(inc):
@@ -447,6 +458,56 @@ def scratch_controls(cc, tmpbase):
         shutil.rmtree(root, ignore_errors=True)
 
 
+POPULATIONS = 'tests/memfn/c4_populations'
+
+
+def population_controls(root, tmpbase):
+    """Classes 1-2 against every COMMITTED compiler population: one directory
+    per (compiler, target, box) under POPULATIONS, holding `gcc -dM -E` dumps:
+    the baseline march_x86-64.txt, plus one file per ISA flag set. This is how
+    a box the Mac cannot run (gcc's own x86 target) is checked on every run;
+    it missed twice (2026-10-06/07) when only the Mac's compiler was planted."""
+    pdir = os.path.join(root, POPULATIONS)
+    dirs = sorted(d for d in os.listdir(pdir) if os.path.isdir(os.path.join(pdir, d))) \
+        if os.path.isdir(pdir) else []
+    if not dirs:
+        bad('no committed compiler population under %s: the offline controls are '
+            'unreached' % POPULATIONS)
+        return
+    for d in dirs:
+        full = os.path.join(pdir, d)
+
+        def load(fn):
+            with open(os.path.join(full, fn)) as fh:
+                return {m.group(1) for m in re.finditer(r'^#define\s+(\S+)', fh.read(), re.M)}
+        base_fn = 'march_x86-64.txt'
+        files = sorted(f for f in os.listdir(full) if f.endswith('.txt') and f != base_fn
+                       and (f.startswith('march_') or f.startswith('m_')))
+        if not os.path.exists(os.path.join(full, base_fn)) or not files:
+            bad('population %s: needs %s and at least one flag-set dump' % (d, base_fn))
+            continue
+        base = load(base_fn)
+        isa = set()
+        for f in files:
+            isa |= {x for x in load(f) - base if x.startswith('__')}
+        stems, macs = isa_plants(isa)
+        for cls, ps in ((1, stems), (2, macs)):
+            text = '\n'.join(plant_lines(cls, p) for p in ps) + '\n'
+            hits = []
+            scan_text(hits, 'src', 'src/gen/plant.c', text, True)
+            got = {h[2] for h in hits if h[3] == cls}
+            missed = [p for i, p in enumerate(ps, 1) if i not in got]
+            nm = CLASSES[cls][0]
+            if not ps:
+                bad('population %s class %d (%s): ZERO plants' % (d, cls, nm))
+            elif missed:
+                bad('population %s class %d (%s): %d of %d plants MISSED by the regex: %s'
+                    % (d, cls, nm, len(missed), len(ps), '; '.join(missed[:6])))
+            else:
+                ok('population %s class %d (%s): %d/%d plants hit (%d flag-set dumps)'
+                   % (d, cls, nm, len(ps), len(ps), len(files)))
+
+
 def main():
     args = [a for a in sys.argv[1:] if not a.startswith('--')]
     census = '--census' in sys.argv
@@ -496,6 +557,7 @@ def main():
         bad('compiler %r not found: the plants cannot be derived' % cc)
     else:
         scratch_controls(cc, tmpbase)
+    population_controls(root, tmpbase)
     print('checks passed: %d' % passed)
     print('checks failed: %d' % failed)
     return 1 if failed else 0
