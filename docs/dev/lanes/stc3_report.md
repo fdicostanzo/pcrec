@@ -5,8 +5,9 @@ Design: `docs/design/start_table.md` rev 2.1 §3.2 C3, §2.3 item 3, §3.5,
 §1.1 (`u.recover.pinned`), D148 Q2's rename; inputs `stc2_report.md` §2
 and §4, the edit set re-derived on current main before editing.
 
-**Status:** built and committed; ZERO MOVERS (§3), no abi event. VALIDATION:
-see §3/§5 (filled from the heavy chain, `build/c3/chain.log`).
+**Status:** built and committed. No abi event. Zero movers on every light
+sample (§3). The heavy validation is OWED (§6): it runs in a detached chain
+that waits for the slot (`.lift`).
 
 ## 1. What landed
 
@@ -189,7 +190,26 @@ OWED: mech verdicts from the chain.
 | S596-S599 | unchanged | PRESENCE / BOUND / RETRY / WIDTH oracle |
 | S82, S218, S219, S220, S235, S480, S486-S489, S511, S572 | re-run (`rerun_at` C3) | owners touched, anchors byte-stable |
 
-## 6. OWED
+## 6. OWED — the detached chain
 
-The heavy chain `build/c3/chain.sh` (log `build/c3/chain.log`, completion
-line `CHAIN_DONE`).
+`build/c3/waitrun.sh` was armed with `nohup` at 17:08. It waits for
+`worktrees/stc3/.lift`, then runs `build/c3/chain.sh`. The log is
+`build/c3/chain.log`, and every step writes its own log under `build/c3/`.
+All binaries are built from the committed tip (`git archive`), against
+main's builds from `b9b151bc`. Completion lines, in order:
+
+- `SWEEP_RC=`: Run A, THE BAR. `emit_sweep.py` runs the six streams plus
+  `--arms start` (64 DIFFER cells) over the full corpus (`sweepA.log`).
+  It must read 0 movers.
+- `TRACEQ_RC=a/b`: `trq.py` over every distinct pattern × 7 arms, in old-first
+  and then new-first order (`traceq_old.log`, `traceq_new.log`). It must
+  report `problems 0`. The only differences it normalizes are the declared
+  RECOVER route moves.
+- `TRACE_RC=`: `emit_sweep --trace` with `search-start` declared
+  (`sweepT.log`), for the instrument's floors and site reach.
+- `ORACLE_RC=`, `CANDROWS_RC=`, `CODEGEN_RC=`, then `MAKETEST_RC= wall=`
+  (`maketest.log`). Read the verdict from `grep -E '\*\*\* \[(Makefile:[0-9]+:
+  )?test-'`.
+- `MECH <row> rc=`: one line per row for the 23 rows in §5 (`mech_<row>.log`),
+  then `MECH_DONE`. After that, `build/SLOT_DONE` is created and the chain
+  prints `CHAIN_DONE`.
