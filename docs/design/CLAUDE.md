@@ -636,6 +636,29 @@ Four light panels in two days (the K82 handoff, [OPT-SETS], [MEMFN] K0 r1/r2) fo
   `LC_ALL=C` explicitly and says why: R24 M-F1's collation defect, which this
   lane reproduced in its own test script before the census caught it. See its
   own CLAUDE.md.
+- `poss_arms.md` — **[ART-POSS-ARMS], PROPOSED, design only** (lane
+  `possarms`, 2026-10-07, from main `bcb7b128`). Two declining arms of
+  `src/opt/possessify.c` are widened. Both are changes to what `first_of`
+  answers, and neither adds a row to the verdict ladder:
+  - **arm A, `A_CTX`:** A0 is context-free. A1 is valued from the Glushkov
+    LAST set's polarity, and only for a greedy `m ≥ 1` loop;
+  - **arm B, `A_BREF`:** a reference's FIRST is the union of every `A_CAP`
+    it can read, folded when the REFERENCE is caseless.
+
+  Each arm is SOUND only as RESTATED. The row's own wording is refuted by
+  measured witnesses: `(?i)k+\b` under utf, a polarity read from FIRST, a
+  first member only, no fold, `(*ACCEPT)`.
+  - **Oracle sweeps** pair greedy and possessive spellings in libpcre2:
+    3,294 + 399 claimed cells with 0 diverging.
+  - **K35 census:** default-route frames move on 3 bench / 3 corpus.
+  - **Findings:** a PRE-EXISTING call-target miscompile (`(a+)b(?1)a`) that
+    must be fixed first; the give-up surface is NOT one-way (a WORK give-up
+    can appear, for possessification in general); and an abi event.
+  - **Plans:** the `run_possdiff.sh` extension (it cannot compile either
+    arm's shapes today and misses the fold plant), sabotage S560-S565, a
+    K65-style check, and spec drafts.
+- `poss_arms_measurements/` — that note's oracle sweeps, census instrument,
+  10.46 transcript and possdiff runs (own CLAUDE.md).
 - `rungselect_impl/` — the [ENG-BREP] RUNG-SELECT lane's own probes and
   archived outputs (the reverse-deterministic rung, plus the K22 interim
   product guard it landed first as a separate slice), kept separate from
