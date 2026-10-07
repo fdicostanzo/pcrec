@@ -812,3 +812,8 @@ pointer when a kit change merges to main.
 - G2 is still red, 457 checks, all fn_ref-0 FUNC sites that G2 treats as
   hard. The blinded follow-up g2u3 (sonnet; the cell is refreshed with
   N3's build and memfn.h) makes the enforced outcome G2's default.
+- N3 validated in one chain (18:37-19:34): census on the enforcing build
+  0/0, identity gate 0 movers, full G2 149.0M/0 (1,103 enforced-class
+  cases), make test 747 s green, 16 mech rows DETECTED. done: posted.
+- R4g edit set posted. Main cleared it: start after N3 delivers, land
+  after C4, conditions recorded in responses.md.
