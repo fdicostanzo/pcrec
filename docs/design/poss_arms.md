@@ -92,8 +92,8 @@ revision 2's is in `poss_arms_measurements/rev2/`, and revision 2.1's in
 
 | finding | where | what was done | evidence (`poss_arms_measurements/rev21/`) |
 |---|---|---|---|
-| N1 BLOCKER | §2.1, §3.1, §3.2, §7 | arm B reads `TEXT_FIRST` (a zero-width item is (∅, nullable)); the two `first_of` questions are named as [POSS-CTX-TABLE]'s READER field | `proto_rev21.patch`; `witnesses_r21_10.46.out`; plant S567 DETECTED |
-| N2 MAJOR | §0, §2.3, §8.2, §8.4a, §11 | greedy-only KEPT and is now load-bearing (477/3,964 lazy rows diverge once a bypass follow exists); the lazy plant is a row | `results/keep1/eq_a21.out`; plant S568 DETECTED |
+| N1 BLOCKER | §2.1, §3.1, §3.2, §7 | arm B reads `TEXT_FIRST` (a zero-width item is (∅, nullable)); the two `first_of` questions are named as [POSS-CTX-TABLE]'s READER field | `proto_rev21.patch`; `witnesses_r21_10.46.out`; plant B-textpos DETECTED |
+| N2 MAJOR | §0, §2.3, §8.2, §8.4a, §11 | greedy-only KEPT and is now load-bearing (477/3,964 lazy rows diverge once a bypass follow exists); the lazy plant is a row | `results/keep1/eq_a21.out`; plant A-lazy DETECTED |
 | R-3(b) | §8.3a | predicate FROZEN by sha1; the post-freeze edit rule; two edits applied under it, per category; hand vs computed reported apart | `gen_*21.py`, `results/out2/claimmark.out` |
 | R-4 | §3.1, §7, §8.7 | capture fact once per group number (in progress = widen, state on the walk); NEW: A1's continuation summary; compile-time witnesses with a build-bar cell | `timing_r4.sh`, `results/out2/timing.out` |
 | R-5 | §8.7 | A1 ≡ FOLLOW as an always-on check over the summary; atomic-end sentinel | census R5 5,437/5,437 eq |
@@ -983,9 +983,12 @@ cells, reach 11/11.**
 
 ### 8.2 Sabotage rows — every plant run `[r2 B-B1, A-F1, B-B3, C-S*]`
 
-S-ids are taken AT BUILD, by grep. At this writing S560-S565 are free, S566
-is taken (memfn), and the highest on main is S588 (k93fix). The rows are
-named here by their plant. All were run on the exhaustive possdiff
+S-ids are taken AT BUILD, by grep. At this writing S560-S565 (the six ids
+reserved for [ART-POSS-ARMS]) have no row on main, S566 is taken (memfn), and
+the highest on main is S588 (k93fix). The reserved block holds six ids for
+ten rows below, so the build takes the first six rows' ids from it and the
+remaining four from the next free block at that time; no id is bound here.
+The rows are named by their plant. All were run on the exhaustive possdiff
 (`rev2/possdiff_plants.sh`; verdicts in `rev2/pdx_verdicts.txt`, logs in
 `rev2/pdx/`) and on CLAIM-vs-MARK (§8.3).
 
@@ -1000,8 +1003,8 @@ named here by their plant. All were run on the exhaustive possdiff
 | A-cc (A-F1) | A1 drops the call-site join (`PROTO_A1_NOCC`) | `(a+(?:\b\|))\|b(?1)a` on `baa` | DETECTED, 3 (both A-F1 witnesses and `(a?)(x+\1)b(?2)x`) | 3 (the C rows); and the corpus: 16 `k93.rxt` patterns newly marked |
 | B-depth (termination) | B's depth guard dropped (`PROTO_SAB_NORECGUARD`) | `(a\2)(b\1)x+\1`: compiles | DETECTED: the compiler SEGVs (stack exhaustion) on all 3 cyclic-reference patterns | — |
 | A-lazy (control, not a row) | A1 admits lazy loops (`PROTO_SAB_LAZY`) | — | NOT detected: 79 agree, 0 diverge, consistent with §8.4 | 892 newly marked, 0 diverging on the oracle (§8.4) |
-| **A-lazy `[r2.1 N2]`, now a ROW (S568 at this writing, next free on main after S566)** | `PROTO_SAB_LAZY` | `(\w+?(?:\b\|))` on `ab` (10.46 (0,1)) | **DETECTED, 5 patterns** (rev 2.1 population, 104 patterns) | 3 hand rows |
-| **B-textpos `[r2.1 N1]` (S567 at this writing)** | arm B reads `first_of`, the POSITION answer (`PROTO_SAB_TEXTPOS`) | `(?:((?=a))a)?b+\1b` on `abb` (10.46 (0,3)) | **DETECTED, 4 patterns** | 3 hand rows |
+| **A-lazy `[r2.1 N2]`, now a ROW** | `PROTO_SAB_LAZY` | `(\w+?(?:\b\|))` on `ab` (10.46 (0,1)) | **DETECTED, 5 patterns** (rev 2.1 population, 104 patterns) | 3 hand rows |
+| **B-textpos `[r2.1 N1]`** | arm B reads `first_of`, the POSITION answer (`PROTO_SAB_TEXTPOS`) | `(?:((?=a))a)?b+\1b` on `abb` (10.46 (0,3)) | **DETECTED, 4 patterns** | 3 hand rows |
 
 Rev 2.1 re-ran every plant on the extended population (Linux,
 `rev21/results/out2/pdx_verdicts.txt`). The arms: 104 agree, 0 diverge,

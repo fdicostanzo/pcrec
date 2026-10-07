@@ -27,8 +27,8 @@ prototype builds, the light probes and the smoke tests.
 
 | row | how | evidence |
 |---|---|---|
-| **N1** | Arm B reads `TEXT_FIRST`, in which a zero-width item is (∅, nullable). The two `first_of` questions are named: POSITION vs TEXT, the READER field of [POSS-CTX-TABLE] (note §2.1, §3.1, §7; plan and survey updated). | 10.46: the three witnesses give (0,3) greedy and NOMATCH possessive. The rev-2.1 prototype answers (0,3) and rev 2's answers NOMATCH. Plant `PROTO_SAB_TEXTPOS` (S567 at this writing) is DETECTED on 4 patterns. Ablation `textpos`: 303+903 claimed, 86+6 diverging. |
-| **N2** | Greedy-only is kept and its justification rewritten (note §2.3, §8.4a). Bypass follows and bounded lazy quantifiers were added to the generators. The lazy plant is now a sabotage row (S568). RC-Q1 is answered NO. | Ablation `lazy`: 3,964 newly claimed, **477 diverging** (+80/26 in B's family). The plant is DETECTED on 5 patterns. 10.46: `(\w+?(?:\b\|))` on `ab` is (0,1). |
+| **N1** | Arm B reads `TEXT_FIRST`, in which a zero-width item is (∅, nullable). The two `first_of` questions are named: POSITION vs TEXT, the READER field of [POSS-CTX-TABLE] (note §2.1, §3.1, §7; plan and survey updated). | 10.46: the three witnesses give (0,3) greedy and NOMATCH possessive. The rev-2.1 prototype answers (0,3) and rev 2's answers NOMATCH. Plant `PROTO_SAB_TEXTPOS` is DETECTED on 4 patterns. Ablation `textpos`: 303+903 claimed, 86+6 diverging. |
+| **N2** | Greedy-only is kept and its justification rewritten (note §2.3, §8.4a). Bypass follows and bounded lazy quantifiers were added to the generators. The lazy plant is now a sabotage row (A-lazy, id at build). RC-Q1 is answered NO. | Ablation `lazy`: 3,964 newly claimed, **477 diverging** (+80/26 in B's family). The plant is DETECTED on 5 patterns. 10.46: `(\w+?(?:\b\|))` on `ab` is (0,1). |
 | **R-3(b)** | The predicate is FROZEN by sha1, with a post-freeze edit rule. Hand and computed rows are reported separately (note §8.3a). Two rule-level edits were applied under that rule; see below. | `claimmark.out`: AB computed 33,037 compared, 5 mismatches; hand 44, 0 mismatches. |
 | **R-4** | The capture fact is indexed and memoized per group number; in-progress means widen; state is on Ctx for one walk. NEW finding: A1's fold was ALSO quadratic. It now uses a Q-independent continuation summary. A build-bar witness cell is specified (note §8.7). | Linux: `Bsame` at 12,800 refs is 40.94 s on rev 2 vs 7.19 s on rev 2.1 (denied: 7.40 s). `A1alt` at 6,400 is 100.15 s vs 1.36 s (denied: 1.35 s). |
 | **R-5** | A1 ≡ FOLLOW as an always-on house-form check over the summary. An atomic-end sentinel was added. | Census: 5,437/5,437 verdicts eq, 0 summary/fold mismatches. |
@@ -95,7 +95,8 @@ pcrec mark.
 - **Instrument:** key replicated quantifier copies as one target in
   `r21_claimmark.py` (the 5 unresolved rows).
 - **The note:** §8.7's R-4 table rows marked OWED; the old §8.2 S-id
-  paragraph still names only S560-S565 (S567/S568 are noted in the table).
+  paragraph was fixed at the possland landing (no plant carries S567/S568;
+  ids are taken at build, the reserved S560-S565 block holds six of ten rows).
 - **Not this lane's:** R-3(a) (the blinded corpus, via `run_composition.sh`),
   R-3(c), R-9.
 
