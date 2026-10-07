@@ -4518,11 +4518,11 @@ static void vm_isl_emit(Vm *v, VmIsl *t, int entry, int next)
         if (n->nkids == 1 && inrun[n->child]) {
             /* [OPT-LITSCAN] S2a THE ISLAND'S OWN RECOGNIZER, sharing only the
              * run compare (patfacts design §8.2 item 3; S4's, the kit's
-             * since [MEMFN] M1b, `vm_run_compare`): the trie's single-child chain from
-             * here to the first node that branches or accepts is one literal
-             * run, compared at this node's depth in one bounds check and one
-             * run compare. Its nodes charge the node
-             * budget each, as the per-node compares did. A mismatch dies at
+             * since [MEMFN] M1b, `vm_run_compare`): the trie's single-child
+             * chain from here to the first node that branches or accepts is
+             * one literal run, compared at this node's depth in one bounds
+             * check and one run compare. Its nodes charge the node budget
+             * each, as the per-node compares did. A mismatch dies at
              * THIS node, which charges the work budget this node's depth:
              * the run is one compare, charged as one (docs/spec/limits.md
              * §3.1), and a run node has no accept, so this node's candidate
