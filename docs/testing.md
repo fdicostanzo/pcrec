@@ -4963,8 +4963,9 @@ start-family deny arms at byte and utf8, plain `-e utf8`, `-i`, a null arm
 that must read 0, and `-fno-end-window` at utf8 an asserted EXACT 0);
 `--patterns-file`, `--no-corpus`, `--every` and `--streams`; a `cflags`
 pass-through in the `git archive` builds; and `--trace`, which builds both
-sides `-DPCREC_CAND_TRACE` and compares per-pattern ordered selection
-records with `scripts/trace_diff.py`. An arm's floor exists because identity
+sides `-DPCREC_CAND_TRACE` and compares each pattern's selection records
+with `scripts/trace_diff.py` (the SET compare gates since C1, the ordered
+one is printed as a diagnostic; `--trace-ordered` swaps them). An arm's floor exists because identity
 alone cannot fail on the arm's plumbing: an arm that lost its flag is
 byte-identical to its base on both sides. Floors are applied on the full
 corpus only, and a partial run says so. Self-tests:

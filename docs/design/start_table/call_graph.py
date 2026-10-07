@@ -273,9 +273,16 @@ CALLS = SEEDS | FAMILY
 for x in sorted(FAMILY, key=lambda n: (defs[n][0], defs[n][1])):
     f = defs[x][0]
     body = []
+    trace_depth = 0
     for ln, l in texts[x][1:]:
         code = re.sub(r'"(\\.|[^"\\])*"', '""', l)
         code = re.sub(r'/\*.*?\*/|//.*$', '', code)
+        # [START-TABLE] C1: a selection-trace record (`PCREC_CAND_TRACE_REC*`,
+        # possibly continued over lines) PRINTS a decision made elsewhere and
+        # decides nothing, so its ternaries are not sites.
+        if trace_depth or "PCREC_CAND_TRACE_REC" in code:
+            trace_depth += code.count("(") - code.count(")")
+            continue
         if not code.lstrip().startswith(("*", "/*")):
             body.append((ln, code))
     # locals bound from a seed/family call (or a seed field): a condition on

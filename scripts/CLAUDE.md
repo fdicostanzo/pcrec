@@ -385,8 +385,11 @@ pcrec (the Makefile owns that).
   report says so); `--streams`; a `cflags` pass-through in `build_from_rev`
   (`--build-cflags`); and the TRACE family (`--trace`: both sides built
   `-DPCREC_CAND_TRACE`, stderr records tagged with pattern index and arm by
-  the sweep, compared by `trace_diff.py`, and the trace build's stdout held
-  equal to the default build's). Two sides that are one binary compile once
+  the sweep, compared by `trace_diff.py` — the SET compare gates and the
+  ordered one is a diagnostic since [START-TABLE] C1, `--trace-ordered`
+  swaps them — and the trace build's stdout held equal to the default
+  build's; the hook itself is `PCREC_CAND_TRACE_REC` in
+  `src/core/internal.h`, `docs/dev/lanes/stc1_report.md`). Two sides that are one binary compile once
   and mirror (a measurement run, said so). The start-family stamp parser
   (`stamps_of`, `start_keys_moved`) moved here from
   `docs/design/start_table/row_census.py`, which imports it. Self-test:
