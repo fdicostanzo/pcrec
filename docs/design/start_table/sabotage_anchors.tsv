@@ -163,7 +163,7 @@ S219_pinned_seed_conjunct_dropped	S219	1	src/gen/emit_dfa.c	start_pinned_applies
 S21_cls_peek_raw	S21	1	src/parse/parse.c	cls_peek_past_dash	def	463	1/1	OTHER				
 S220_pinned_view_clause_dropped	S220	1	src/gen/emit_dfa.c	start_pinned_applies	def	7726	1/1	RE-RUN		after-C5b		
 S221_pinned_start_written_as_zero	S221	1	src/gen/emit_dfa.c	emit_unanchored	def	9373	1/1	RE-RUN		after-C5b		
-S222_start_stamp_forked_from_selection	S222	1	src/gen/emit_dfa.c	dfa_search_start_name	def	7761	1/1	RE-AIM	C3		def dfa_search_start_name; token dfa_search_start_of(	dfa_search_start_name,dfa_search_start_of
+S222_start_stamp_forked_from_selection	S222	1	src/gen/emit_dfa.c	dfa_search_start_name	def	7761	1/1	RE-AIM	C3		def dfa_search_start_name	dfa_search_start_name,dfa_search_start_of
 S223_pinned_assert_routing_call_deleted	S223	1	src/gen/emit_dfa.c	emit_unanchored	def	9291	1/1	RE-RUN		after-C5b		
 S224_vm_frameless_stamp_inverted	S224	1	src/gen/emit_vm.c	vm_emit_stamps	def	11536	1/1	RE-RUN		C5		
 S225_vm_frameless_stamp_from_npush	S225	1	src/gen/emit_vm.c	vm_emit_stamps	def	11536	1/1	RE-RUN		C5		
