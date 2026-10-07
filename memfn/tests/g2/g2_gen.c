@@ -799,6 +799,15 @@ static int pend_named(int pend, const char *msg)
     if (pend == G2_PEND_HOOK)
         return names_field(msg, "s") || names_field(msg, "n") || names_field(msg, "lo") || names_field(msg, "floor");
     if (pend == G2_PEND_MISS) return names_field(msg, "miss");
+    if (pend == G2_PEND_FNREF) {
+        /* mf_define names define-time fields; on a RETURN/ASSIGN site whose
+         * `miss` is ALSO unstated, `miss` may be a use-time field: either
+         * name serves (memfn.h, the row contracts) */
+        if (names_field(msg, "fn_ref")) return 1;
+        return cur_site && cur_site->d.miss_mode == 5 &&
+               (cur_site->d.handoff == G2_H_RETURN || cur_site->d.handoff == G2_H_ASSIGN) &&
+               names_field(msg, "miss");
+    }
     return 0;
 }
 
@@ -1066,35 +1075,9 @@ static void poison_site(const gsite *g, const mf_site *site, const mf_pred *pa,
         pz_differ++;
         bad = 1;
     }
-    /* PENDING-ENFORCE (class fn_ref-unstated): a FUNC site states no fn_ref
-     * (0 = none); a form that still asks pcrec's fn_name hook USES an
-     * unstated value. Recorded, hard only under G2_STRICT_HOOKS=1 */
-    {
-        int np = g->d.op == G2_OP_ALL ? site->npred : 1;
-        const mf_pred *P = g->d.op == G2_OP_ALL ? site->preds : &site->pred;
-        int any_fn = 0;
-        for (int p = 0; p < np; p++) any_fn |= P[p].fn_ref != 0;
-        if (g->d.op == G2_OP_ALL) any_fn = site->pred.fn_ref != 0;   /* a FUNC site's name: pred.fn_ref only */
-        if (g->d.form == G2_FORM_FUNC && !any_fn) {
-            buf o1 = { 0 };
-            int r1 = pz_try(1u << PZ_FN_NAME, g, site, pa, h, clean, &o1, err, sizeof err);
-            if (r1 == 2) {
-                pend_rendered[G2_PEND_FNREF]++;
-                if (pend_rendered[G2_PEND_FNREF] <= 3) {
-                    fprintf(g_res, "PENDING fn_ref-unstated site %u %s: no fn_ref is stated, yet pcrec's fn_name hook names the function\n",
-                            g->d.id, g->d.label);
-                    pz_show_diff(clean, &o1);
-                }
-                if (g_strict) { n_strict_fail++; fprintf(g_res, "FAIL strict site %u: fn_name asked with no fn_ref stated\n", g->d.id); }
-            } else if (r1 == 1) {
-                if (names_field(err, "fn_ref") || names_field(err, "fn_name")) pend_refused_named[G2_PEND_FNREF]++;
-                else { pend_refused_unnamed[G2_PEND_FNREF]++; if (g_strict) n_strict_fail++; }
-            } else {
-                if (g_strict) n_strict_pass++;
-            }
-            free(o1.p);
-        }
-    }
+    /* (class fn_ref-unstated is no longer a poison check: a FUNC site that
+     * states no fn_ref is queued as that class by pend_class and must be
+     * refused naming `fn_ref` (R1); every hard FUNC site states one) */
     if (app >> PZ_CURSOR_NULL & 1) {
         buf o1 = { 0 };
         if (pz_try(1u << PZ_CURSOR_NULL, g, site, pa, h, clean, &o1, err, sizeof err) == 2) {
@@ -1215,10 +1198,10 @@ static void render(mf_art *art, gsite *g, batchbuf *B)
         pend_rendered[pend]++;
         fprintf(g_res, "PENDING %s site %u %s fam=%s v=%s: rendered\n", g2_pend_name(pend), g->d.id,
                 g->d.label, g2_fam_name(g->d.fam), g2_v_name(g->d.vfield));
-        if (g_strict && pend == G2_PEND_MISS) {
+        if (g_strict && (pend == G2_PEND_MISS || pend == G2_PEND_FNREF)) {
             n_strict_fail++;
-            fprintf(g_res, "FAIL strict site %u %s: rendered with `miss` UNSTATED (a form used a value the caller did not state)\n",
-                    g->d.id, g->d.label);
+            fprintf(g_res, "FAIL strict site %u %s: rendered with %s UNSTATED (a form used a value the caller did not state)\n",
+                    g->d.id, g->d.label, pend == G2_PEND_FNREF ? "`fn_ref`" : "`miss`");
         }
     } else if (trc) {
         n_render_fail++;
@@ -1343,6 +1326,10 @@ static void base_site(gsite *g, int ci)
     g->cmt = rn(17) == 0;
     g->table_ref_on = rn(2);
     g->fn_ref_on = rn(3) != 0;
+    /* a FUNC site states its fn_ref by default (an unstated one is refused,
+     * R1); a 1-in-16 explicit fn_ref-0 SAMPLE (from ppm_seed, no new RNG draw)
+     * is class fn_ref-unstated's population */
+    if (g->d.form == G2_FORM_FUNC) g->fn_ref_on = g->ppm_seed % 16 != 0;
     g->plan = rn(2);
     g->policy_simd = rn(4) == 0;
     g->inloop = rn(2);
@@ -2003,8 +1990,23 @@ static void force_batch(uint64_t denies)
 static gsite *pq;
 static int npq, cappq;
 
+/* a FUNC site whose own name (site.pred.fn_ref, K-1) is UNSTATED (0): its
+ * contract outcome is a refusal naming `fn_ref` (R1). Mirrors fill_site /
+ * to_mf_pred exactly (a generator-side fact, not a kit call) */
+static int fn_ref_unstated(const gsite *g)
+{
+    if (g->d.form != G2_FORM_FUNC) return 0;
+    int np = g->d.op == G2_OP_ALL ? g->d.npred : 1;
+    int any = 0;
+    for (int p = 0; p < np; p++)
+        any |= (g->plan_explicit ? g->fnr[p] : g->fn_ref_on ? (uint32_t)(p + 1) : 0) != 0;
+    if (g->d.op == G2_OP_ALL) return !(g->site_fnr || any);
+    return !any;
+}
+
 static int pend_class(const gsite *g)
 {
+    if (fn_ref_unstated(g)) return G2_PEND_FNREF;
     /* an unstated `miss` decides the outcome first: only a refusal naming
      * `miss` serves it, whatever the hook text */
     if (g->d.miss_mode == 5 && (g->d.handoff == G2_H_RETURN || g->d.handoff == G2_H_ASSIGN))
@@ -2653,7 +2655,9 @@ int main(int argc, char **argv)
         else { fprintf(stderr, "g2_gen: unknown option %s\n", argv[i]); return 2; }
     }
     rng_state ^= seed * 0x2545F4914F6CDD1DULL;
-    g_strict = getenv("G2_STRICT_HOOKS") && !strcmp(getenv("G2_STRICT_HOOKS"), "1");
+    /* enforcement is in force: strict is the DEFAULT; G2_STRICT_HOOKS=0 is the
+     * diagnostic (legacy bucket-only) mode */
+    g_strict = !(getenv("G2_STRICT_HOOKS") && !strcmp(getenv("G2_STRICT_HOOKS"), "0"));
     pz_init();
     char path[1024];
     snprintf(path, sizeof path, "%s/gen_results.txt", outdir);
@@ -2690,7 +2694,7 @@ int main(int argc, char **argv)
     g_batchsz = batch;
     open_batch();
     gsite g;
-#define NEXT() next_site(&g)
+#define NEXT() emit_site(&g)   /* base sites too: an fn_ref-unstated FUNC site is queued as its class */
 
     /* the non-SKIP combos: their sites carry arbitrary conjunctions */
     int gcombo[NCOMBO], ngc = 0;
@@ -2705,7 +2709,7 @@ int main(int argc, char **argv)
         for (int sk = 0; sk < NSETKIND; sk++) {
             int ci = gcombo[rot % ngc];
             base_site(&g, ci);
-            g.cell_site = 1;
+            g.cell_site = 1; g.fn_ref_on = 1;   /* term cells are reached by sites that state fn_ref */
             int nterm = 1 + (int)(rot % 8);
             if (g.d.op == G2_OP_ALL) {
                 plan_all(&g, 1 + (int)rn(3));
@@ -2734,7 +2738,7 @@ int main(int argc, char **argv)
                 if (off < -3 && len > 3) continue;    /* deep offsets: short runs */
                 int ci = gcombo[rot % ngc];
                 base_site(&g, ci);
-                g.cell_site = 1;
+                g.cell_site = 1; g.fn_ref_on = 1;   /* term cells are reached by sites that state fn_ref */
                 int nterm = 1 + (int)(rot % 8);
                 int unsat = (len % 11 == 5 && fb == 1);
                 if (g.d.op == G2_OP_ALL) {
@@ -2761,6 +2765,7 @@ int main(int argc, char **argv)
     for (int off = -2; off <= 8; off += 2) {
         int ci = gcombo[rot % ngc];
         base_site(&g, ci);
+        g.fn_ref_on = 1;
         if (g.d.op == G2_OP_ALL) plan_all(&g, 2);
         else { alloc_preds(&g, 1); gen_pred(&g, 0, 2, 0); g.d.end_back = (uint8_t)rn(2); }
         gen_term(&g, 0, 0, G2_T_RUN, off, 1 + rn(8), 8, G2_REQ, 0, 0);

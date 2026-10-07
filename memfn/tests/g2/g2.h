@@ -123,11 +123,12 @@ static inline const char *g2_fam_name(int f)
     return f >= 0 && f < G2_NFAM ? names[f] : "?";
 }
 
-/* PENDING-ENFORCE: a case whose correct outcome depends on the row-contract
- * enforcement the kit has SCHEDULED and not yet turned on. Its outcome is
- * recorded and counted in its own bucket, never a failure and never dropped;
- * G2_STRICT_HOOKS=1 turns every such case into a hard check (render, compile
- * and answer as the reference, or a loud refusal naming the field). */
+/* ENFORCED CLASSES (formerly "PENDING-ENFORCE"; the G2_PEND_* identifiers and
+ * the batch header's "pending N" keep the old name): a case whose correct
+ * outcome is the kit's row-contract ENFORCEMENT (memfn.h "THE ROW CONTRACTS"),
+ * now in force. Its outcome is counted per class, and is a HARD check by
+ * default: render + compile + answer as the reference, or a loud refusal
+ * naming the field. G2_STRICT_HOOKS=0 is the legacy diagnostic (bucket only). */
 enum {
     G2_PEND_NONE,
     G2_PEND_HOOK,     /* F1: non-identifier s/n/lo/floor text on a §15 shape     */
@@ -136,9 +137,9 @@ enum {
                          `miss` serves it                                       */
     G2_PEND_NAME,     /* a refusal of a missing hook whose text does not name it
                          (generator only: no site carries it)                   */
-    G2_PEND_FNREF,    /* a FUNC site stating no fn_ref (0 = none) whose form still
-                         asks pcrec's fn_name hook: the poison differential's
-                         one PENDING field (generator only)                     */
+    G2_PEND_FNREF,    /* a FUNC site stating no fn_ref (0 = none) (a refusal
+                         naming `fn_ref`, R1; on a RETURN site whose `miss` is
+                         also unstated, `miss` serves too)                      */
     G2_NPEND
 };
 static inline const char *g2_pend_name(int c)

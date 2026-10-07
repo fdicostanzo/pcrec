@@ -107,6 +107,11 @@ FLOOR_POISON_FIELD_SITES=90
 # classes x >= 5 hard seeds), owed a measurement
 FLOOR_SITEFN=15
 # the semantic differential (g2u item 7): hard variant sites run per field
+# the enforced classes' populations (generator cases, tier-independent):
+FLOOR_CLS_HOOK=600       # hook-nonident; measured 728 (g2u2)
+FLOOR_CLS_MISS=280       # miss-unstated; measured 314
+FLOOR_CLS_NAME=12        # refusal-unnamed: the 12 missing-hook refusals
+FLOOR_CLS_FNREF=40       # fn_ref-unstated: the explicit fn_ref-0 sample (provisional, re-pin from the first run)
 FLOOR_SEM_FIELD_SITES=14     # measured quick: the smallest field (result_decl) 16
 # W2 mutation 7 (floor - 1), G1: judged over the mutated sites where a
 # REQUIRED term reads BELOW the candidate under a stated floor (the only
@@ -115,9 +120,11 @@ FLOOR_SEM_FIELD_SITES=14     # measured quick: the smallest field (result_decl) 
 # floor stays FLOOR_HOOK_KILL_PCT.
 QUICK_FLOOR_MUT7_NEG=550       # measured quick: 615 (killed 570, 92.7%)
 FLOOR_MUT7_NEG=1600            # DERIVED: the full run mutates every batch (~3x the quick sample); owed a measurement
-# G2_STRICT_HOOKS=1: every PENDING-ENFORCE case is a HARD check (the
-# row-contract enforcement step's acceptance test); default 0, the bucket
-strict=${G2_STRICT_HOOKS:-0}
+# Row-contract enforcement is in force (memfn.h "THE ROW CONTRACTS"): every
+# case of the ENFORCED CLASSES (formerly the PENDING-ENFORCE bucket; internal
+# names keep "pend") is a HARD check by default. G2_STRICT_HOOKS=0 is the
+# legacy diagnostic (bucket only, never a failure).
+strict=${G2_STRICT_HOOKS:-1}
 export G2_STRICT_HOOKS=$strict
 
 # --- tools ---------------------------------------------------------------
@@ -171,7 +178,7 @@ for f in render_fail refusal_fail vocab_fail api_fail; do gfail=$((gfail + $(fie
 pzf=$(field poison_fail)
 [ "${pzf:-0}" -gt 0 ] && note_fail "$pzf" "poison differential: $pzf site(s) whose rendering moved when a field the contract says they do not use was junk: grep 'FAIL poison' $work/gen/gen_results.txt"
 stf=$(field strict_fail)
-[ "${stf:-0}" -gt 0 ] && note_fail "$stf" "G2_STRICT_HOOKS=1: $stf PENDING-ENFORCE case(s) not served at generation: grep 'FAIL strict' $work/gen/gen_results.txt"
+[ "${stf:-0}" -gt 0 ] && note_fail "$stf" "enforced classes: $stf case(s) not served at generation: grep 'FAIL strict' $work/gen/gen_results.txt"
 nref=$(( $(field refusal_pass) + $(field refusal_fail) + $(field api_pass) + $(field api_fail) ))
 gres="$work/gen/gen_results.txt"
 
@@ -575,7 +582,7 @@ echo "population: generator sites $(field sites_generated) in $(field batches) b
      "refusal+API cases $nref (floor $FLOOR_REFUSALS)"
 [ "$nref" -ge "$FLOOR_REFUSALS" ] || note_fail 1 "refusal+API cases $nref < floor $FLOOR_REFUSALS"
 # --- PENDING-ENFORCE: the bucket (never failures unless G2_STRICT_HOOKS=1)
-echo "== PENDING-ENFORCE (outcomes owed to the scheduled row-contract enforcement; strict=$strict)"
+echo "== ENFORCED CLASSES (formerly PENDING-ENFORCE; hard checks unless G2_STRICT_HOOKS=0; strict=$strict)"
 grep '^PENDBUCKET' "$gres" | sed 's/^PENDBUCKET /   generator: /'
 for cc in $cc_list; do
     grep '^G2 pending' "$work/run-$cc.log" 2>/dev/null | sed "s/^G2 pending /   $cc run: /"
@@ -583,7 +590,17 @@ done
 echo "   rendered PENDING sites whose batch does not compile: ${pend_compile_fail:-0}"
 pend_total=$(grep '^PENDBUCKET' "$gres" | sed 's/.*rendered=\([0-9]*\) refused_named=\([0-9]*\) refused_unnamed=\([0-9]*\)/\1 \2 \3/' \
              | awk '{t += $1 + $2 + $3} END {print t + 0}')
-echo "PENDING-ENFORCE cases: $pend_total"
+echo "ENFORCED-CLASS cases: $pend_total"
+# class populations (named, floored, never dropped): generator outcomes
+cls_floor() {   # NAME FLOOR
+    n=$(grep "^PENDBUCKET $1 " "$gres" | sed 's/.*rendered=\([0-9]*\) refused_named=\([0-9]*\) refused_unnamed=\([0-9]*\)/\1 \2 \3/' | awk '{print $1 + $2 + $3}')
+    echo "   class $1: ${n:-0} cases (floor $2)"
+    [ "${n:-0}" -ge "$2" ] || note_fail 1 "enforced class $1: ${n:-0} cases < floor $2"
+}
+cls_floor hook-nonident "$FLOOR_CLS_HOOK"
+cls_floor miss-unstated "$FLOOR_CLS_MISS"
+cls_floor refusal-unnamed "$FLOOR_CLS_NAME"
+cls_floor fn_ref-unstated "$FLOOR_CLS_FNREF"
 echo "checks passed: $passed"
 echo "checks failed: $failed"
 if [ "$failed" -gt 0 ]; then
