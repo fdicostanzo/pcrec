@@ -125,13 +125,34 @@ static const arm *const arms[] = {
     &generic_arm,
 };
 
-static const arm *select_arm(const mf_site *s, const mf_hooks *def)
+/* The first row whose predicate holds; `*warn` gets the WARN gate's verdict
+ * on it. The gate reads each row's contract before its predicate
+ * ([MEMFN-ROWCON] N1, row_contracts.md §2) and, in WARN mode, only records:
+ * the row chosen is the one the predicates alone choose. */
+static const arm *select_arm(const mf_art *art, const mf_site *s,
+                             const mf_hooks *def, gate_verdict *warn)
 {
-    for (size_t i = 0; i < sizeof arms / sizeof arms[0]; i++)
+    gate_in in = { s, def, NULL };
+    gate_tctx tc = { art, "arms", art->nsites + 1, MF_PH_DEFINE, &in };
+    gate_trace_sel(&tc);
+    for (size_t i = 0; i < sizeof arms / sizeof arms[0]; i++) {
+        gate_verdict v = gate_check(arms[i]->ct, MF_PH_DEFINE, &in);
         if ((!arms[i]->miss_leaves || s->on_miss_leaves) &&
-            arms[i]->applies(s, def))
+            arms[i]->applies(s, def)) {
+            gate_trace_row(&tc, arms[i]->ct, "CHOSEN", 0, &v);
+            gate_trace_end(&tc, arms[i]->ct, &v);
+            *warn = v;
             return arms[i];
+        }
+        gate_trace_row(&tc, arms[i]->ct, "PRED_FALSE", 0, &v);
+    }
+    gate_trace_end(&tc, NULL, NULL);
     return NULL;
+}
+
+const gate_contract *kit_arm_contract(size_t i)
+{
+    return i < sizeof arms / sizeof arms[0] ? arms[i]->ct : NULL;
 }
 
 /* ---- the per-site vocabulary rules ----------------------------------------
@@ -238,6 +259,7 @@ mf_art *mf_art_begin(mf_arena *a, const char *prefix, uint32_t policy,
     art->prefix = prefix ? prefix : "mf";
     art->policy = policy;
     art->denies = denies;
+    gate_trace_art(art);
     return art;
 }
 
@@ -272,7 +294,8 @@ int mf_define(mf_art *art, const mf_site *s, const mf_hooks *def,
         return kit_fail(art, "mf_define: site denies 0x%llx are not the art's 0x%llx",
                         (unsigned long long)s->denies,
                         (unsigned long long)art->denies);
-    const arm *row = select_arm(s, def);
+    gate_verdict warn = { 0, 0 };
+    const arm *row = select_arm(art, s, def, &warn);
     if (!row)
         return kit_fail(art, "mf_define: no arm applies (the generic row must)");
 
@@ -289,6 +312,7 @@ int mf_define(mf_art *art, const mf_site *s, const mf_hooks *def,
     memset(r, 0, sizeof *r);
     r->site = *s;
     r->arm = row;
+    r->warn_define = warn;
 
     if (row->define(art, h, def, file_scope)) return -1;
     *handle = h;
@@ -301,6 +325,16 @@ int mf_use(mf_art *art, uint32_t handle, const mf_hooks *use, mf_sink *body,
     if (art->err[0]) return -1;
     site_rec *r = rec_of(art, handle, "mf_use");
     if (!r) return -1;
+    /* the WARN gate's re-check of the chosen row against the use hooks: the
+       definition is written, so it records and cannot re-select (N1) */
+    gate_in in = { &r->site, use, NULL };
+    gate_tctx tc = { art, "arms", handle, MF_PH_USE, &in };
+    gate_verdict v = gate_check(r->arm->ct, MF_PH_USE, &in);
+    r->warn_use.r1 |= v.r1;
+    r->warn_use.r2 |= v.r2;
+    gate_trace_sel(&tc);
+    gate_trace_row(&tc, r->arm->ct, "RECHECK", 0, &v);
+    gate_trace_end(&tc, r->arm->ct, &v);
     if (r->arm->use(art, handle, use, body)) return -1;
     r->used = 1;
     if (res) {
@@ -344,21 +378,11 @@ uint32_t mf_includes(const mf_art *art)
     return art->includes;
 }
 
-static int is_ident(const char *s)
-{
-    if (!s || !*s || (*s >= '0' && *s <= '9')) return 0;
-    for (; *s; s++)
-        if (!(*s == '_' || (*s >= 'a' && *s <= 'z') || (*s >= 'A' && *s <= 'Z')
-              || (*s >= '0' && *s <= '9')))
-            return 0;
-    return 1;
-}
-
 /* §R4.3.3: sorted insertion, so mf_stamps writes the list as it stands. */
 int mf_art_note_libc(mf_art *art, const char *name)
 {
     if (art->err[0]) return -1;
-    if (!is_ident(name))
+    if (!kit_is_ident(name))
         return kit_fail(art, "mf_art_note_libc: not a C identifier");
     uint32_t at = 0;
     while (at < art->nlibc) {
