@@ -1,87 +1,137 @@
-# axtri report — `make test-axes` refusals, Linux final run of main d6cb0bb4 (abi 49)
+# axtri — triage of the 2026-10-06 overnight `make test-axes` red
 
-Lane `axtri` (sonnet, 2026-09-30), branch `lane/axtri` from main `495d3138`.
-Logs read in place on ubuntubudu (`~/pcrec/.final_lx_keep/final_axes.log`); the
-axes log caps its per-case listing at 20 lines per axis, so the full populations
-were re-derived locally (Mac, gcc-16, this tree's `build/pcrec`).
+Lane `axtri` (TRIAGE), branch `lane/axtri` off main `2172478b`.
+Input: `worktrees/axes1006/build/ax/axes.log` (read-only), the
+`AXES_FULL=1 HARNESS_BATCH=64 CC=gcc-16 make test-axes` run at main
+`041e450a`, 17,244 s, `make: *** [test-axes] Error 1` (chain rc=2).
 
-## Verdict
+## 1. Failure inventory
 
-Refusals only, zero answer movers, and every refusal is on ONE file,
-`tests/utf8/wclass_illformed.rxt` (the [CLS-TREE] S4 wide-class corpus).
-Corrected against the log's own sample: the 109 for `-fno-cls-kit` are TWO
-groups, not one (the log's 20 lines only showed the first).
+make's verdict line is the single `*** [test-axes] Error 1`; run_axes.sh's
+own summary names exactly **two** red sections. Everything else is OK,
+including the oracle cross-check ("both plain and -fno-premul-table PC-4
+runs are 0-failure against live libpcre2"), DIAL-S3, both [START-SET]
+arms, all 42 bit-flag axes but one, the engine/shape/analysis/tune axes.
 
-| axis | cases | route | cap | diagnostic | class |
-|---|---|---|---|---|---|
-| `-fprefilter` | 32 | `engine vm`, `\p{Xwd}` bare/captured, utf8 | emitted-BYTES 1,000,000 (1,013,468 / 1,013,932) | "bytes of emitted C source (limit 1000000" | (a) documented limit |
-| `-fno-cls-kit` | 77 | `engine vm`, `\p{Xwd}` x2 (16+16), `\P{Unknown}` x3 (15x3), utf8 | emitted-CODE 500,000 (576,773 / 577,122 / 526,899) | "bytes of emitted code (limit" | (a) documented limit |
-| `-fno-cls-kit` | 32 | default route, captured `x(\p{L})y`, `x(\P{L})y`, utf8 | emitted-BYTES 1,000,000 (1,179,060 / 1,153,832) | "bytes of emitted C source (limit" | (b) rescued by D135 |
+| # | section | count | where |
+|---|---|---|---|
+| A | `-fno-req-byte` (bit 30) | 19 `AXIS FAIL: UNALLOWED one-sided give-up` (giveup1=64, allowed 45) | all `tests/litscan/reqcube.rxt`: 438-440, 450-452, 461-463, 473-475, 484-486, 497-499, 509 |
+| B | `-futf-check` arm (contract, own oracle) | `fail=990` (= `refused=990`; `agree=3220`) | log shows the first 40 (the arm's own cap): 22 `litscan/handoff.rxt`, 18 `startset/dfahat.rxt` — every one `want 'utf N', got 'giveup -9'` |
 
-No size-vs-state-cap split in the usual sense: all five are size caps; no DFA
-or NFA state cap is involved.
+AXIS FAIL lines by axis: 20 total, all `-fno-req-byte` (19 per-case + 1
+summary). No other axis has an AXIS FAIL line. (The `-fno-cls-kit`
+REFUSED lines in the log are its documented refusal population — OK.)
 
-## Evidence per group
+## 2. Diagnosis
 
-**`-fprefilter`, (a).** `build/pcrec -p rx -e utf8 --features all --engine=vm
--fprefilter --pattern 'x\p{Xwd}y'` refuses at 1,013,468 bytes; without the
-flag the artifact is 31,647 bytes. The forced prefilter is the byte DFA, which
-is what the size is. tuning.md §2.5/§2.17 already say `-fprefilter` is
-do-or-die and never dropped, and makes the size-ladder rungs that would undo it
-ineligible. Checked against lane/pfdrop's compiler (read-only): it refuses
-identically with and without `--fast-or-fail`, i.e. the D135 drop rung is
-correctly not offered. So not (b) (brief point 4), and no defect.
+### A — stale manifest, not a defect (class (b))
 
-**`-fno-cls-kit` 77, (a).** Denying the kit puts every wide class back on the
-pre-abi-48 byte alternation, so the K55 refusal that S4 retired returns on
-exactly its population (`--engine=vm` `\P{Unknown}` and `\p{Xwd}`); the
-alternation is 526-577 KB against the 500 KB VM code cap. `engine vm` has no
-prefilter, so pfdrop's drop rung has nothing to drop: pfdrop's compiler refuses
-these 77 identically. Same diagnostic and substring as `-fno-size-term`'s
-entry.
+The 19 cells are the [OPT-LITSCAN] S4 C3 / [K82] **S2b and S2c** blocks
+(`(x?)([a-z]+)+S\d(?i:select)\1`, `(x?)([a-z]+)+S\d(?i:s)qz\1`, byte/utf8 ×
+default/vm engine, `budget steps=10000`) plus line 509, the `# pcre2-only`
+L=30 review witness (no budget directive). `git log --follow`:
+`ddc77cdb`/`801db4c7` (2026-10-03) and `f24f9862` (2026-10-04) — all
+AFTER `GIVEUP1_ALLOWANCE` was populated (lane giveupallow, 2026-09-26).
+The 041e450a run is the first full test-axes to reach them.
 
-**`-fno-cls-kit` 32, (b).** On the default route the captured `(\p{L})`
-compiles as a VM hybrid whose prefilter carries the byte alternation, 1.18 MB
-against the 1 MB cap. lane/pfdrop's compiler rescues both
-(`RX_ENGINE_SEL "size-cap-retry"`, `RX_VM_PREFILTER "none"`, 430,907 /
-413,437 bytes); `--fast-or-fail` restores the refusal. Not documented as an
-axis limit: it clears the day pfdrop merges and a substring for it would go
-vacuous. The drop rung is not blocked here, since `-fno-cls-kit` is not
-`-fprefilter`.
+This is Group E1's mechanism exactly (K65): the whole-necessary-set memchr
+of `S` is the block's only linear no-match proof; the blocks' own comments
+say their n cells exist to become step give-ups when that memchr is lost
+(sabotage rows S451/S452). `-fno-req-byte` removes it outright.
 
-## Fix (commit `4fc0fe2c`)
+Direct reproduction (`--emit-main`, `--features backrefs,classes,modifiers`):
 
-- `tests/axes/run_axes.sh`: `REFUSAL_PATTERN["-fprefilter"]` gains the sixth
-  shape; new `REFUSAL_PATTERN["-fno-cls-kit"]="bytes of emitted code (limit"`
-  with `REFUSAL_FLOOR["-fno-cls-kit"]=60` (K35, measured 77). Comments carry the
-  measured populations, the reason, and why the 32 are left out.
-- `docs/spec/tuning.md`: a paragraph in §2.5 (forced prefilter is charged
-  against the emitted-bytes cap, never dropped to fit) and one after §2.33's
-  "Denied" (the K55 refusal returns by design). Per D80.
-- `tests/axes/CLAUDE.md`: a short triage note.
-- No `known_issues` row: nothing is (c). K81 is not consumed.
+| build | stamps | 16-a subject | 18-a subject |
+|---|---|---|---|
+| default, `--step-budget=10` | REQ_BYTE "83", REQ_RUN "53454c454354@4", REQ_WHY "emitted" | nomatch | nomatch |
+| `-fno-req-byte`, budget 10,000 | all three "none" | `steps` (rc 3) | `steps` |
+| `-fno-req-byte`, budget 100,000 | | nomatch | `steps` |
+| `-fno-req-byte`, budget 1,000,000 (and 10^7, 10^8) | | nomatch | nomatch |
 
-## Validation (local, single file, `SKIP_ORACLE=1 AXES="-fno-cls-kit -fprefilter"`)
+S2c (`...(?i:s)qz\1`) is the same: `steps` at 10,000, nomatch at
+1,000,000, `m "abcS1Sqz" 0 8` identical on both. Line 509 (L=30, default
+budget): default nomatch instantly, axis `steps` after 2.9 s.
 
-Command: `bash tests/axes/run_axes.sh tests/utf8/wclass_illformed.rxt`.
-- Before, this tree's compiler: `-fprefilter` 32 undocumented, `-fno-cls-kit`
-  109 undocumented (matches the Linux log's counts exactly).
-- After, this tree: `-fprefilter` 0 mismatches, 222 refused-documented;
-  `-fno-cls-kit` refused-documented=77, mismatches=32 (the (b) group).
-- After, `PCREC=` lane/pfdrop's `build/pcrec`: `-fno-cls-kit` OK, agree=667,
-  refused-documented=77, mismatches=0; `-fprefilter` 0 mismatches.
-- The `-fprefilter` "floor breached" line on a single-file run is inherent
-  (222 against 12,000); the axis reads OK on a full run.
+So: the default needs ~0 VM steps (pre-check alone), the axis needs
+10^4..10^6 (exponential in the run length), and once the budget covers
+it the axis gives the SAME answer. A correctness-neutral budget
+transition per docs/testing.md's GIVEUP1 rule and tuning.md §2.29 — no
+K-row.
 
-## Owed / ordering
+### B — harness defect in the HARNESS_BATCH path (class (c))
 
-1. **Merge lane/pfdrop before (or with) lane/axtri.** Until pfdrop is on main,
-   `-fno-cls-kit` stays red on exactly the 32 group-(b) cases. If the manager
-   would rather have the axes green first, adding `"bytes of emitted C source
-   (limit"` to the `-fno-cls-kit` entry does it, at the cost of a substring
-   that goes vacuous at pfdrop's merge (the floor of 60 would then not catch
-   it, so it would need removing in the same merge).
-2. Full `make test-axes` on Linux is the manager's, not run here. Expect
-   `-fprefilter` and `-fno-cls-kit` green (post-pfdrop) and every other axis
-   as in the failing run.
-3. Not run: `make test`/`make strict` (script and docs only; `bash -n` clean).
+`fail == refused == 990` and `agree == 3220`: every well-formed utf8 cell
+agreed and EVERY ill-formed one failed, always as `giveup -9`. The arm
+expects `utf <offset>` — driver.c's word for `PCREC_ERR_UTF`
+([UTF-VALID], 2026-09-30). But under `HARNESS_BATCH` cases run through
+`dispatch.c`, generated by `tests/harness/dispatch_gen.sh`, which kept its
+OWN copy of the give-up-word table and was never taught `utf` (nor
+[VAR]'s `unset-var`). It falls back to `giveup %d`.
+
+Reproduced on `startset/dfahat.rxt` under `RXTFLAGS=-futf-check`:
+`HARNESS_BATCH=0` → 18 `utf N` lines, 0 `giveup -9`; `HARNESS_BATCH=64` →
+0 `utf`, 18 `giveup -9`. The compiler and the artifacts are correct; the
+batched driver mislabels a correct refusal.
+
+This is the **second** time dispatch.c drifted from driver.c (the first
+was module `vars`' signature, 2026-09-26, fixed by excluding var blocks
+from batching). Two hand-kept copies of one table → the general fix is one
+table.
+
+## 3. Fixes (commits on lane/axtri)
+
+- **A**: `tests/axes/run_axes.sh` `GIVEUP1_ALLOWANCE` Group **E5** — the 19
+  measured keys, each with the K65 reason; header comment carries the
+  bisection numbers above. `-fno-req-byte` now names 64 (= the measured
+  giveup1). No other axis touched; no key beyond the measured 19.
+- **B**: new `tests/harness/outcome_word.h` — `rxt_print_negative(code,
+  valid_upto, buf, len, pos)`, the one table (`steps`/`frames`/`work`/
+  `recurse`/`internal`/`unset-var`/`utf <off>`/`giveup <n>`).
+  `driver.c` (both the single-call and `mc` find-all paths) and
+  `dispatch_gen.sh`'s generated `main()` now call it; `run.sh` adds
+  `-I"$SCRIPT_DIR"` to its two dispatch.c compiles. driver.c is compiled
+  in place by every other suite, so its quoted include resolves from its
+  own directory there with no other change. Outside run.sh's pinned arm
+  region; no sabotage row anchors on the replaced text (grepped).
+- Docs: `tests/harness/CLAUDE.md` (new file entry + dispatch_gen note),
+  `tests/axes/CLAUDE.md`, `docs/testing.md` (dated addendum).
+
+Spot checks already run (worktree build, gcc-16):
+- `RXTFLAGS=-futf-check` over `startset/dfahat.rxt` + `litscan/handoff.rxt`:
+  `HARNESS_BATCH=0` and `=64` dumps byte-identical (3,387 rows), 40 `utf N`,
+  0 `giveup -9` on both.
+- Default flags over `startset/dfahat.rxt`, `harness/giveup.rxt`,
+  `tests/vars`, `litscan/reqcube.rxt`: 1628/0 on both `HARNESS_BATCH=0`
+  and `=64`.
+
+## 4. The hand-list question (general-mechanisms rule)
+
+`GIVEUP1_ALLOWANCE` has now needed a late population for the second time
+(E4 was found by re-run after E1-E3; E5 by an overnight red), and 64 of
+its rows on one axis are one mechanism: **the axis removes the req
+pre-check that is the default artifact's only linear no-match proof**. That
+fact is derivable without a hand list: for a `-fno-req*` axis, a GIVEUP1
+case is the documented transition iff (1) the default answer is `nomatch`,
+(2) the default artifact stamps `RX_REQ_WHY "emitted"` and the axis
+artifact stamps the corresponding row `none`, and (3) the axis answer is a
+typed budget give-up (`steps`/`frames`/`work`). Proposal (NOT built here,
+D77 — the trigger is a THIRD late population, or the manager's call now):
+derive those rows from the two artifacts' stamps in `run_one_axis`,
+keeping the manifest for the cases no stamp explains (Groups A-D, F5, G).
+A control is needed so the derivation doesn't share a source with what it
+excuses: keep a floor on the derived count per axis (K35) and a sabotage
+row where the stamp says "emitted" but the pre-check is gone.
+
+## 5. Targeted re-run — OWED at handback
+
+Command (detached, holds `worktrees/.mac-suite.lock`):
+
+    AXES="-fno-req-byte -futf-check" AXES_FULL=1 HARNESS_BATCH=64 CC=gcc-16 make test-axes
+
+Log: `worktrees/axtri/build/axrun/axes.log`; chain markers in
+`worktrees/axtri/build/axrun/chain.log` (`== axes DONE rc=N ... ==`).
+Pass = rc 0, and in axes.log's summary: `-fno-req-byte ...|OK|... giveup1=64
+... giveup1_allowed=64 giveup1_unallowed=0`, and `-futf-check arm (contract,
+own oracle): OK — utfcheck arm: ... fail=0`. Expected ~30-40 min
+(baseline ~330 s + one axis ~510 s + the utfcheck arm + the fixed
+oracle/DIAL sections).
