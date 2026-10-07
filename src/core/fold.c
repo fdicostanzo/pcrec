@@ -165,6 +165,23 @@ static void latin1_partners(const PcrecCpSet *in, PcrecCpSet *out)
     }
 }
 
+/* [K94] THE LATIN-1 FOLD AS A REPRESENTATIVE MAP, for the one consumer that
+ * folds SUBJECT text at match time: the byte backend's UCP caseless span
+ * compare. `c`'s fold class restricted to Latin-1, named by its least member
+ * (c itself when the restriction is a singleton: µ, ß, ÿ). Two bytes are
+ * caselessly equal under `latin1_partners` exactly when their
+ * representatives are equal, and it walks the SAME links, so the match-time
+ * fold cannot disagree with the class fold about a pair either can see. */
+unsigned pcrec_fold_latin1_rep(unsigned c)
+{
+    unsigned rep = c, m;
+    int guard = 0;
+    for (m = ucd_fold_next(c); m != c && guard < PCREC_FOLD_MAX_ORBIT;
+         m = ucd_fold_next(m), guard++)
+        if (m <= 0xFFu && m < rep) rep = m;
+    return rep;
+}
+
 const PcrecFold pcrec_fold_ascii      = { "ascii", ascii_partners };
 const PcrecFold pcrec_fold_ucd_simple = { "ucd-simple", ucd_partners };
 const PcrecFold pcrec_fold_latin1     = { "latin1", latin1_partners };

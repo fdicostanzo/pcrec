@@ -293,6 +293,39 @@ static const char defs_valid_upto[] =
 "    return n;\n"
 "}\n";
 
+static const char defs_bref_ci_ucp_doc[] =
+"/* UCP: a byte is a Latin-1 character (PCRE2_UCP without PCRE2_UTF), and the\n"
+" * fold is the Unicode simple fold restricted to Latin-1 -- the relation the\n"
+" * --ucp character classes were widened by. A byte whose partner is outside\n"
+" * Latin-1 (0xB5, 0xDF, 0xFF) folds to nothing. Two bytes are caselessly\n"
+" * equal exactly when their representatives in the table above are equal. */\n";
+
+static const char defs_bref_ci_ucp[] =
+"static unsigned char $_span_ci_fold(unsigned char c)\n"
+"{\n"
+"    size_t lo = 0;\n"
+"    size_t hi = sizeof $_span_ci_fold_pairs / sizeof $_span_ci_fold_pairs[0];\n"
+"    while (lo < hi) {\n"
+"        size_t mid = lo + (hi - lo) / 2;\n"
+"        if ($_span_ci_fold_pairs[mid][0] < c) lo = mid + 1;\n"
+"        else if ($_span_ci_fold_pairs[mid][0] > c) hi = mid;\n"
+"        else return $_span_ci_fold_pairs[mid][1];\n"
+"    }\n"
+"    return c;\n"
+"}\n"
+"\n"
+"ptrdiff_t $_span_match_caseless(const unsigned char *s, size_t n,\n"
+"                                const unsigned char *ref, size_t reflen,\n"
+"                                size_t at)\n"
+"{\n"
+"    size_t i;\n"
+"    for (i = 0; i < reflen; i++) {\n"
+"        if (at + i >= n || $_span_ci_fold(s[at + i]) != $_span_ci_fold(ref[i]))\n"
+"            return -(ptrdiff_t)i - 1;\n"
+"    }\n"
+"    return (ptrdiff_t)reflen;\n"
+"}\n";
+
 static const PcrecEncEntry entries_byte[] = {
     { PCREC_ENCE_NEXT_POS,      false,
       decls_byte_doc,      decls_byte,      defs_byte_doc,      defs_byte,
@@ -305,6 +338,9 @@ static const PcrecEncEntry entries_byte[] = {
       0, false },
     { PCREC_ENCE_SPAN_CASELESS, true,
       decls_bref_ci_doc,   decls_bref_ci,   defs_bref_ci_doc,   defs_bref_ci,
+      0, false },
+    { PCREC_ENCE_SPAN_CASELESS_UCP, true,
+      decls_bref_ci_doc,   decls_bref_ci,   defs_bref_ci_ucp_doc, defs_bref_ci_ucp,
       0, false },
     { PCREC_ENCE_BACK_STEP,     true,
       decls_back_step_doc, decls_back_step, defs_back_step_doc, defs_back_step,

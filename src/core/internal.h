@@ -1216,6 +1216,12 @@ struct Ast {
              * diagnostic will say so — D62 control 3's accepted residual, covered here
              * and by sabotage row S106. */
             bool        caseless;
+            /* [K94] IS UCP IN FORCE AT THE REFERENCE? Read where `caseless` is
+             * (mod_backrefs.c) and consulted only with it: it picks which
+             * caseless seam entry the emitter calls when the encoding has a
+             * distinct UCP one (`PCREC_ENCE_SPAN_CASELESS_UCP`), because
+             * emit-side code reads no `cx->mods` (D108). */
+            bool        ucp;
         } bref;
 
         /* [VAR] A_VAR: the caller-variable payload. */
@@ -1252,6 +1258,7 @@ struct Ast {
              * compiler diagnostic will say so — D62 control 3's accepted
              * residual, covered here and by this module's sabotage rows. */
             bool          caseless;
+            bool          ucp;       /* [K94] `bref.ucp`'s rule, one construct over */
         } var;
 
         /* [M6.6.2] A_LOOK: the lookaround payload — THREE FLAGS AND A WIDTH
@@ -4025,6 +4032,9 @@ typedef struct {
 extern const PcrecFold pcrec_fold_ascii;        /* the 52 ASCII letters */
 extern const PcrecFold pcrec_fold_ucd_simple;   /* Unicode simple folding */
 extern const PcrecFold pcrec_fold_latin1;       /* [UCP] ucd-simple within Latin-1 */
+/* [K94] `c`'s Latin-1 fold class named by its least member; what the byte
+ * backend's UCP caseless span compare folds subject bytes by (fold.c). */
+unsigned pcrec_fold_latin1_rep(unsigned c);
 
 /* [UCP] What KIND of contribution a class set is, which is what the fold
  * table (T2, src/parse/parse.c's `fold_rows`) selects a fold relation by

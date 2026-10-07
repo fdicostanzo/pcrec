@@ -180,6 +180,7 @@ Ast *pcrec_vars_atom(Ctx *cx, size_t at)
     a->u.var.exp = x;
     a->u.var.slot = -1;             /* assigned by pcrec_vars_resolve */
     a->u.var.caseless = cx->mods->caseless;
+    a->u.var.ucp = cx->mods->ucp;
     /* SR-8/D67: the stamp, so `forces_registry` finds the VM_ONLY row and
      * `--engine=dfa` names the construct. The whole engine decline is this
      * one line; the PREFILTER decline is `has_var`'s, in select_engine.c. */

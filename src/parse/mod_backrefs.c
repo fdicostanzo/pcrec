@@ -106,6 +106,7 @@ static Ast *br_node(Ctx *cx, const RegRow *rw, size_t at, int number,
 {
     Ast *a = pcrec_ast_node(cx, A_BREF);
     a->u.bref.caseless = cx->mods->caseless;
+    a->u.bref.ucp = cx->mods->ucp;
     pcrec_ast_stamp(cx, a, rw, at);
 
     PendingRef *pr = pcrec_arena_alloc(&cx->arena, sizeof *pr);
