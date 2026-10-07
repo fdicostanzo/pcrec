@@ -24,7 +24,7 @@ Traced artifacts of spliced-only call patterns move. Those that emit a push did 
 I began editing and rebuilding in worktrees/k93fix, and committed 57b56aa5 on lane/k93fix, before the manager's constraint arrived while the k93fix Mac chain was live. The chain was safekilled by the manager and its results ruled VOID; lane/k93fix stays at 57b56aa5 as the base. Everything after that was done in worktrees/k93tri.
 
 ## Validation (section rc, both boxes)
-Linux (ubuntubudu, k93-lx) at 57b56aa5: test-codegen 0, test-memfn-stamps 0, test-startset 0, test-rxtsource 0. Linux at the tip: see handback / BOXES below.
+Linux (ubuntubudu, k93-lx) at 57b56aa5: test-codegen 0, test-memfn-stamps 0, test-startset 0, test-rxtsource 0. Linux at the tip 36ba5c53 (+report): test-codegen 0, test-possessify 0, make strict 0.
 Mac (k93tri worktree): `tests/codegen/run_codegen_tests.sh` 0 failed (including `[K95]`), `make test-possessify` rc 0 (22/0), `make strict` clean. Full Mac `make test` at the tip: OWED, launched async at the end (see handback for the log path).
 
 ## Not done / notes
