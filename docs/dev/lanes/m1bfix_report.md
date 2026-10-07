@@ -111,15 +111,26 @@ state neither (`pf_emit_ofs`'s call, the pre-check's use).
 
 | check | result |
 |---|---|
-| G2 `run_g2.sh --quick` | see §5.1 |
+| G2 `run_g2.sh --quick` | OWED, §5.1 |
 | `tests/memfn/run_arm_pins.sh` (CC=gcc-16) | 73 passed, 0 failed (34 rows, 17 fixtures) |
 | `make strict` | clean |
-| `make test-memfn-arms` / `-forms` / `-manifest` | see §5.1 |
+| `make test-memfn-arms` / `-forms` / `-manifest` | OWED, §5.1 |
 | zero-mover cmp | 156/156 identical (§4) |
 
 ### 5.1 Runs taken under the suite lock
 
-(filled at the end of the lane; see the commit that closes the lane)
+**OWED.** The suite lock was held by lane possarms2 (census+sweeps) from
+08:51 through this lane's end. A detached chain (`nohup caffeinate -s
+owed.sh`) waits for the lock, takes it (an `owner` file naming m1bfix),
+runs `run_g2.sh --quick --keep`, then `make test-memfn-arms`,
+`test-memfn-forms` and `test-memfn-manifest` solo, and releases the lock.
+Log: `/var/folders/sj/jbcblbpx13n6342cgcfhgbxr0000gn/T//m1bfix/owed.log`. Completion line: `OWED CHAIN COMPLETE`. Per-step lines:
+`G2 rc=`, `test-memfn-<x> rc=`. The verdict is `checks failed: 0` in the G2
+block and rc=0 on each make step.
+
+The fix's G2 effect is predictable from §1: both failing sites now decline
+to the generic row, which G2 already passes on every other site.
+
 
 ## 6. Findings for the kit session (not fixed here)
 
