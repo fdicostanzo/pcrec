@@ -59,6 +59,12 @@ struct mf_art {
     site_rec   *sites;          /* handle h is sites[h - 1]; 0 is no handle   */
     uint32_t    nsites, cap;
     uint32_t    includes;       /* MF_INC_* the rendered text needs           */
+    /* the run compare's record (runcmp.c, §14.8): compares written through
+       the words form (the RUN_WORDS stamp), and the word widths used and
+       declared (bit W for width W), so a helper is declared once, before
+       its first use */
+    long long   words;
+    unsigned    wused, wemitted;
     const char **libc;          /* noted libc names, sorted, distinct (§R4.3.3) */
     uint32_t    nlibc, libc_cap;
     char        err[256];
@@ -98,10 +104,12 @@ typedef struct arm {
 #define generic_arm  MF_NS(generic_arm)
 #define ofsskip_arm  MF_NS(ofsskip_arm)
 #define precheck_arm MF_NS(precheck_arm)
+#define runcmp_arm   MF_NS(runcmp_arm)
 
 extern const arm generic_arm;   /* generic.c: every site (§14.6)              */
 extern const arm ofsskip_arm;   /* ofsskip.c: the offset-skip FUNC (§15.1)    */
 extern const arm precheck_arm;  /* precheck.c: the pre-check composite (§15.5) */
+extern const arm runcmp_arm;    /* runcmp.c: the run compare EXPR (§15.6)     */
 
 /* ---- writing to a sink --------------------------------------------------- */
 
@@ -143,5 +151,30 @@ int ofs_fn_define(mf_art *art, const mf_hooks *h, const mf_pred *p,
  * parameters in its order. */
 int ofs_fn_call(mf_art *art, const mf_hooks *h, const mf_pred *p,
                 const char *fn, mf_sink *o);
+
+/* ---- the run compare, shared by three arms (runcmp.c) --------------------
+ *
+ * The run compare is ONE renderer with three customers: its own EXPR site
+ * (`runcmp_arm`, pcrec's VM literal runs) and the RUN term of the offset-skip
+ * function's verify chain (the offset-skip site and the pre-check's FUNC
+ * parts). Its form is chosen per run by the first-match rows and the art's
+ * MF_D_* denies; the word-load helpers it uses are recorded on the art. */
+#define run_cmp_render  MF_NS(run_cmp_render)
+#define run_cmp_prepare MF_NS(run_cmp_prepare)
+#define run_cmp_sat     MF_NS(run_cmp_sat)
+
+/* Writes a C boolean expression, true iff the RUN term `t`'s bytes at
+ * `base + off` hold (masked where `t->mask` is given). Reads exactly those
+ * bytes: the caller has bounded them. A `&&` chain or a unary `!memcmp`, so
+ * a caller may only conjoin it. */
+int run_cmp_render(mf_art *art, const mf_term *t, const char *base,
+                   int32_t off, mf_sink *c);
+/* A FUNC definition's call before its own text: records the word widths the
+ * RUN terms of `p` will load and declares every pending helper into `c`. */
+int run_cmp_prepare(mf_art *art, const mf_pred *p, mf_sink *c);
+/* 1 iff every byte of RUN term `t` lies inside its mask (Q-G2-13's
+ * unsatisfiable byte is the generic row's: `bytes` would spell a constant
+ * compare `-Wtautological-compare` flags). */
+int run_cmp_sat(const mf_term *t);
 
 #endif /* MEMFN_KIT_H */

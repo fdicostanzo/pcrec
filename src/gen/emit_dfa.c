@@ -9953,7 +9953,9 @@ void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
      * (the body is written before this prologue, so its widths are known);
      * a DFA artifact's compares sit in file-scope blocks below, which declare
      * their own through `pcrec_runcmp_prepare`. */
+    size_t hl_at = c->len, hl_dropped = c->cmt_dropped;
     pcrec_emit_runcmp_helpers(cx, c);
+    pcrec_memfn_i1_helpers(cx, c, hl_at, hl_dropped);
     emit_orientation_block(cx, c, g);
 }
 
@@ -10365,7 +10367,9 @@ void pcrec_emit_dfa(Ctx *cx)
     pcrec_sb_puts(c, "\n");
     emit_in_entry_defs(c, g.searchfn, g.matchfn, g.matchcapsfn, cx->opt->prefix);
     pcrec_sb_puts(c, "\n");
+    size_t rw_at = c->len;
     pcrec_emit_runcmp_stamp(cx, c, g.upper);
+    pcrec_memfn_i1_stamp(cx, c, g.upper, rw_at);
     pcrec_emit_memfn_mark(c);
     pcrec_emit_residual(cx);
     {

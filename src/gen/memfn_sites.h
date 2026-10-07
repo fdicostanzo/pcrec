@@ -71,6 +71,27 @@ typedef struct {
     const char    *indent;
 } PcrecMfU;
 
+/* ---- the in-emitter deny map (§14.10) ------------------------------------ */
+
+/* The kit's MF_D_* denies for pcrec flags `flags` (the ONE map table, RULED
+ * Q-M1b-1): every site's `denies` and the attempt art's. */
+uint64_t pcrec_memfn_denies(uint64_t flags);
+/* The reverse: pcrec's flag bits for MF_D_* bits `mf` (`--list-axes`). */
+uint64_t pcrec_memfn_deny_flags(uint64_t mf);
+
+/* ---- [MEMFN] M1b IMPLEMENT: the I1 shadow comparator (deleted at REPLACE) */
+
+/* Each fails the compile unless the kit's rendering on the shadow art equals
+ * the span pcrec wrote at [at, buffer end): a VM literal-run compare (the
+ * VMRUN site `s` with hooks `h`), the prologue's helper flush (`dropped0`
+ * the muted count before it) and the RUN_WORDS line. */
+void pcrec_memfn_i1_emit(Ctx *cx, DelegSite id, const mf_site *s,
+                         const mf_hooks *h, const StrBuf *body, size_t at);
+void pcrec_memfn_i1_helpers(Ctx *cx, const StrBuf *c, size_t at,
+                            size_t dropped0);
+void pcrec_memfn_i1_stamp(Ctx *cx, const StrBuf *c, const char *upper,
+                          size_t at);
+
 /* ---- building a site ------------------------------------------------------ */
 
 /* A zeroed site for DELEG_SITES row `id`, in the arena: its abi, its policy

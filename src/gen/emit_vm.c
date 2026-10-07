@@ -69,6 +69,9 @@
 /* [CLS-TREE] S4 the class-matcher kit: a wide class's VM test is one
  * decode plus one of its matchers (docs/design/cls_tree_design.md §2.2). */
 #include "gen/clskit.h"
+/* [MEMFN] M1b the VM's literal-run compares are a kit site (VMRUN,
+ * docs/design/memfn/integration.md §15.6, §R4.8). */
+#include "gen/memfn_sites.h"
 
 /* ---- capacities ------------------------------------------------------------
  *
@@ -4393,6 +4396,45 @@ static void vm_isl_die(Vm *v, VmIsl *t, int x)
     else                    vm_goto(v, t->nd[t->nd[x].chain].chainlbl);
 }
 
+/* [MEMFN] M1b the VMRUN site (docs/design/memfn/integration.md §15.6,
+ * §R4.8): the literal run `run[0..len)` at `off` bytes past `scan_position`,
+ * one kit expression behind pcrec's own bounds guard (VERIFY / EXPR / BOOL,
+ * `guard_by_caller`; `empty` EXCLUDED, Q-M1b-5; a BOOL is never read as a
+ * position). The VM never passes a mask. */
+static mf_site *vm_run_site(Vm *v, const unsigned char *run, int len, int off)
+{
+    mf_site *s = pcrec_memfn_site(v->cx, DELEG_VMRUN);
+    s->form = MF_FORM_EXPR;
+    s->op = MF_OP_VERIFY;
+    s->handoff = MF_H_BOOL;
+    s->empty = MF_EMPTY_EXCLUDED;
+    s->guard_by_caller = 1;
+    s->use = MF_USE_DISCARD;
+    s->consumer = MF_C_ENGINE;
+    s->pred.nterm = 1;
+    s->pred.need = MF_REQUIRED;
+    pcrec_memfn_term_run(&s->pred.term[0], off, run, NULL, len, MF_REQUIRED);
+    return s;
+}
+
+/* Writes the compare of the literal run `run[0..len)` at `subject +
+ * scan_position + off` into `b`: the expression the two literal-run callers
+ * (`vm_lit`, `vm_isl_emit`) conjoin after their bounds guard. */
+static void vm_run_compare(Vm *v, StrBuf *b, const unsigned char *run, int len,
+                           int off)
+{
+    size_t at = b->len;
+    PcrecRun rr = { run, NULL, len };
+    pcrec_emit_run_compare(v->cx, b, "subject + scan_position", off, &rr);
+    mf_site *s = vm_run_site(v, run, len, off);
+    PcrecMfU u = { v->cx, s, NULL, NULL };
+    mf_hooks h = {
+        .s = "subject", .n = "subject_length", .lo = "scan_position",
+        .comment_tier = PCREC_CMT_NONESSENTIAL, .u = &u,
+    };
+    pcrec_memfn_i1_emit(v->cx, DELEG_VMRUN, s, &h, b, at);
+}
+
 /* Emits the alternation-island trie `t` (already BUILT by `vm_isl_build`,
  * which does no emission at all): one dispatch state per trie node,
  * iteratively over an explicit stack rather than recursively (the trie can
@@ -4494,8 +4536,7 @@ static void vm_isl_emit(Vm *v, VmIsl *t, int entry, int next)
             }
             pcrec_sb_printf(b, "    if (scan_position + %d <= subject_length && ",
                             n->depth + len);
-            PcrecRun rr = { run, NULL, len };
-            pcrec_emit_run_compare(v->cx, b, "subject + scan_position", n->depth, &rr);
+            vm_run_compare(v, b, run, len, n->depth);
             v->nlitrun++;
             pcrec_sb_printf(b, ") goto %s_L%d;\n", v->p, t->nd[c].lbl);
             vm_ev(v, VE_GOTO, t->nd[c].lbl, 0,
@@ -8639,8 +8680,7 @@ static void vm_lit(Vm *v, int entry, const unsigned char *run, int len, int next
     vm_lbl(v, entry, NULL);
     vm_ev(v, VE_LIT, len, next, vm_lit_describe(v, run, len));
     pcrec_sb_printf(v->b, "    if (scan_position + %d <= subject_length && ", len);
-    PcrecRun rr = { run, NULL, len };
-    pcrec_emit_run_compare(v->cx, v->b, "subject + scan_position", 0, &rr);
+    vm_run_compare(v, v->b, run, len, 0);
     v->nlitrun++;
     pcrec_sb_printf(v->b, ") { scan_position += %d; goto %s_L%d; }\n",
                     len, v->p, next);
@@ -13878,7 +13918,9 @@ static void vm_emit_epilogue(Vm *v, const GenNames *g, const VmPlan *pl)
     const long long work_budget = pl->caps.work_budget;
     const bool      has_budget  = pl->caps.has_budget;
 
+    size_t rw_at = job->csb.len;
     pcrec_emit_runcmp_stamp(cx, &job->csb, g->upper);
+    pcrec_memfn_i1_stamp(cx, &job->csb, g->upper, rw_at);
     pcrec_emit_memfn_mark(&job->csb);
     pcrec_emit_residual(cx);
 

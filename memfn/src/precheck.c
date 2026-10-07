@@ -147,6 +147,7 @@ static int precheck_define(mf_art *art, uint32_t handle, const mf_hooks *h,
         if (!r->fns[i] || !*r->fns[i])
             return kit_fail(art, "precheck: fn_name gave no name for fn_ref %u",
                             p->fn_ref);
+        if (!h->run_cmp && run_cmp_prepare(art, p, o)) return -1;
         if (h->note) h->note(h->u, o, i);
         run_comment(h, p, i, part++ > 0, o);
         if (ofs_fn_define(art, h, p, i, r->fns[i], o)) return -1;

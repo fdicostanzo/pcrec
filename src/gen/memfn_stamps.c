@@ -189,6 +189,14 @@ static void sink_stamp(void *u, const char *name, const char *value)
     pcrec_sb_stamp_str(s->sb, s->upper, name, value);
 }
 
+/* [MEMFN] M1b IMPLEMENT: RUN_WORDS is still pcrec's line (runcmp.c), so the
+ * kit's is held back here; the I1 comparator renders it on its shadow art.
+ * REPLACE writes it (`pcrec_sb_stampf`, "%lld"). */
+static void sink_stamp_int_held(void *u, const char *name, long long value)
+{
+    (void)u; (void)name; (void)value;
+}
+
 /* Replaces the one mark in `sb` with `text`; false if `sb` holds no mark or
  * more than one. */
 static bool splice_mark(StrBuf *sb, const char *text)
@@ -225,7 +233,8 @@ void pcrec_memfn_stamps_render(Ctx *cx)
     mf_art *art = pcrec_memfn_art(cx);
     StrBuf lines = { .cx = cx };
     StampSink ss = { &lines, pcrec_sb_upper(&cx->arena, cx->opt->prefix) };
-    mf_sink sink = { .u = &ss, .stamp = sink_stamp };
+    mf_sink sink = { .u = &ss, .stamp = sink_stamp,
+                     .stamp_int = sink_stamp_int_held };
     int rc = scan_libc_calls(art, job->csb.p ? job->csb.p : "", job->csb.len) ||
              scan_libc_calls(art, job->hsb.p ? job->hsb.p : "", job->hsb.len) ||
              mf_stamps(art, &sink);

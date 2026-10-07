@@ -94,7 +94,7 @@ int ofs_fn_applies(const mf_pred *p, const mf_hooks *def)
         const mf_term *t = &p->term[i];
         if (t->offset < 0) return 0;
         if (t->kind == MF_T_RUN) {
-            if (!def->run_cmp) return 0;
+            if (!run_cmp_sat(t)) return 0;
             runs++;
         } else {
             int c = set_count(t->set);
@@ -171,10 +171,11 @@ static int verify_chain(mf_art *art, const mf_hooks *h, const mf_pred *p,
         o->puts(o->u, first ? "" : " &&\n            ");
         first = 0;
         if (t->kind == MF_T_RUN) {
-            if (!h || !h->run_cmp)
-                return kit_fail(art, "ofsskip: a RUN term needs the run_cmp hook");
-            h->run_cmp(h->u, o, "subject + cand", t->offset,
-                       i + pidx * MF_MAX_TERM);
+            if (h && h->run_cmp)
+                h->run_cmp(h->u, o, "subject + cand", t->offset,
+                           i + pidx * MF_MAX_TERM);
+            else if (run_cmp_render(art, t, "subject + cand", t->offset, o))
+                return -1;
         } else if (set_count(t->set) == 1) {
             if (t->offset == 0) kit_out(o, "subject[cand] == %d", set_first(t->set));
             else kit_out(o, "subject[cand + %d] == %d", t->offset, set_first(t->set));
@@ -386,6 +387,7 @@ static int ofsskip_define(mf_art *art, uint32_t handle, const mf_hooks *h,
     if (!r->fn || !*r->fn)
         return kit_fail(art, "ofsskip: fn_name gave no name for fn_ref %u",
                         r->site.pred.fn_ref);
+    if (!h->run_cmp && run_cmp_prepare(art, &r->site.pred, o)) return -1;
     if (h->note) h->note(h->u, o, 0);
     legend(h, &r->site.pred, o);
     return ofs_fn_define(art, h, &r->site.pred, 0, r->fn, o);

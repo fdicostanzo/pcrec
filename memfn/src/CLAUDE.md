@@ -4,7 +4,8 @@ Built into `libpcrec.a` by pcrec's Makefile (`KITSRCS`, compiled with
 `KITFLAGS`: no `-Ilib`/`-Isrc`, so nothing here can include pcrec). Every
 file includes its headers by relative path. From R4c pcrec's emitters render
 two sites through the kit (src/gen/memfn_sites.c, DELEG_SITES): the
-offset-skip block and the pre-check composite, by the scalar arms below.
+offset-skip block and the pre-check composite, by the scalar arms below;
+from M1b, a third, the VM's literal-run compare (VMRUN, runcmp.c).
 
 - **kit.h** — the INTERNAL header: `kb` (growable text over the caller's
   `mf_arena`), the `mf_art` struct and its per-site records, the arm
@@ -18,13 +19,14 @@ offset-skip block and the pre-check composite, by the scalar arms below.
   `mf_art_end`), the vocabulary rules every site must pass (`site_check`,
   `pred_kinds`: out-of-enum fields and every shape integration.md §R4.7
   rules outside the vocabulary are REFUSED loudly) and their table
-  (`mf_vocab_has`), the FIRST-MATCH arm table (R4c: `ofsskip`, `precheck`,
-  then the generic row), and the artifact queries (`mf_flush_helpers`,
-  `mf_includes`: nothing to flush or include yet), and the stamps:
-  `mf_art_note_libc` (the libc record's writer, a sorted distinct name list
-  on the art) and `mf_stamps` (R4a′: `MEMFN_FORMS "none"`, constant until
-  R4f, then `MEMFN_LIBC`, the noted names comma-joined or `none`; two
-  `sink->stamp` calls).
+  (`mf_vocab_has`), the FIRST-MATCH arm table (`ofsskip`, `precheck`,
+  `runcmp`, then the generic row), the art's one `denies` value (a site
+  whose `denies` differ is refused, Q-M1b-1), the `mf_includes` query, and
+  the stamps: `mf_art_note_libc` (the libc record's writer, a sorted
+  distinct name list on the art) and `mf_stamps` (M1b: `RUN_WORDS`, the run
+  compare's words count, through `sink->stamp_int`; R4a′: `MEMFN_FORMS
+  "none"`, constant until R4f, then `MEMFN_LIBC`, the noted names
+  comma-joined or `none`, through `sink->stamp`).
 - **generic.c** — THE GENERIC SCALAR ROW (integration.md §14.6): the last
   row of every selection table, rendering every site the vocabulary
   describes as a plain byte loop (GNU C statement expressions for EXPR; a
@@ -45,6 +47,17 @@ offset-skip block and the pre-check composite, by the scalar arms below.
   ASSIGN): the one-byte gate, each run's call (its offset-skip function and
   run-search comment at file scope), the set rest's table loop; pcrec's
   notes at pcrec's places.
+- **runcmp.c** — a SCALAR ARM, born at M1b (integration.md §15.6, §R4.8;
+  transcribed from pcrec's `src/gen/runcmp.c`): THE RUN COMPARE, one
+  first-match row table (`words`, `overlap`, `bytes`, `memcmp`; the first
+  two denied by `MF_D_RUN_OVERLAP`) and its writers. `run_cmp_render` is the
+  RUN term of the offset-skip function's verify chain and the body of
+  `runcmp_arm` (VERIFY/EXPR/BOOL behind the caller's guard: pcrec's VM
+  literal runs); `run_cmp_prepare` declares a FUNC definition's word-load
+  helpers ahead of it; `mf_flush_helpers` writes the pending ones (the art
+  records the widths used/declared and the words count `mf_stamps` writes
+  as `RUN_WORDS`); `mf_run_rows` is the rows' accessor (`--list-axes`).
+  The overlap lengths and the width rule are DERIVED (D149).
 - **k1_ref.c** — K1's REFERENCE functions (`mf_ref_*`): one obviously-
   correct byte loop per primitive (F1 find_byte, F2 find_any2/3, F4
   find_in_set, F5 skip_in_set, F9 find_literal, F7 run_verify). G2's

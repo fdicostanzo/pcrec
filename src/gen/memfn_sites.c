@@ -22,6 +22,39 @@ const DelegRow pcrec_deleg_sites[DELEG_NSITES] = {
 #undef DELEG_SITE
 };
 
+/* ---- the in-emitter deny map (integration.md §14.10, §R4.8) -------------- */
+
+/* THE ONE MAP from pcrec's flag bits to the kit's MF_D_* denies (RULED
+ * Q-M1b-1): a deny that selects among the emitted FORMS of one predicate
+ * crosses into the kit, which honours it in every arm; selection and fact
+ * denies stay pcrec's (src/core/axes.def). Read three ways: every site's
+ * `denies` (`pcrec_memfn_site`), the attempt's `mf_art_begin`, and, reversed,
+ * `--list-axes`' run-overlap section over the kit's rows. */
+static const struct { uint64_t flag; uint64_t mf; } deny_map[] = {
+    { PCREC_NO_RUN_OVERLAP, MF_D_RUN_OVERLAP },
+};
+
+uint64_t pcrec_memfn_denies(uint64_t flags)
+{
+    uint64_t d = 0;
+    for (size_t i = 0; i < sizeof deny_map / sizeof deny_map[0]; i++)
+        if (flags & deny_map[i].flag) d |= deny_map[i].mf;
+    return d;
+}
+
+uint64_t pcrec_memfn_deny_flags(uint64_t mf)
+{
+    uint64_t f = 0;
+    for (size_t i = 0; i < sizeof deny_map / sizeof deny_map[0]; i++)
+        if (mf & deny_map[i].mf) f |= deny_map[i].flag;
+    return f;
+}
+
+/* The kit's hook-less comments (its helpers', §R4.8.1 item 2) open at the
+ * tier the sink reads as pcrec's NONESSENTIAL. */
+_Static_assert(MF_CMT_NONESSENTIAL == PCREC_CMT_NONESSENTIAL,
+               "the kit's NONESSENTIAL comment tier is pcrec's");
+
 /* ---- the attempt's kit state --------------------------------------------- */
 
 static void *arena_alloc(void *u, size_t n)
@@ -37,7 +70,8 @@ mf_art *pcrec_memfn_art(Ctx *cx)
         ma->u = &cx->arena;
         ma->alloc = arena_alloc;
         job->mf = mf_art_begin(ma, cx->opt->prefix,
-                               pcrec_memfn_policy(cx->opt->flags), 0);
+                               pcrec_memfn_policy(cx->opt->flags),
+                               pcrec_memfn_denies(cx->opt->flags));
         if (!job->mf) pcrec_ctx_nomem(cx);
     }
     return job->mf;
@@ -114,6 +148,7 @@ mf_site *pcrec_memfn_site(Ctx *cx, DelegSite id)
     s->pred.plan_hint = MF_NO_PRED;
     s->policy = pcrec_memfn_policy(cx->opt->flags) |
                 (pcrec_deleg_sites[id].budget == DELEG_LOOP ? MF_P_INLOOP : 0);
+    s->denies = pcrec_memfn_denies(cx->opt->flags);
     s->opts = NULL;
     return s;
 }
@@ -212,6 +247,143 @@ void pcrec_memfn_check_use(Ctx *cx, const mf_site *s, bool read)
                        read ? "reads" : "never reads");
 }
 
+/* ---- [MEMFN] M1b IMPLEMENT: THE I1 SHADOW COMPARATOR ---------------------- *
+ *
+ * Deleted at M1b's REPLACE. pcrec still writes every run compare, its
+ * helpers and RUN_WORDS (src/gen/runcmp.c); the kit renders the SAME things
+ * through the new protocol (no `run_cmp`, no helper-carrying `note`) on a
+ * SHADOW art of its own, into scratch buffers with the artifact buffer's
+ * comment policy, and each span is compared byte for byte with what pcrec
+ * wrote there, muted bytes included: each define's whole span (its
+ * helpers, comment, function and run terms), each VM literal-run compare,
+ * the prologue's helper flush and the RUN_WORDS line. A difference is an
+ * internal error, so the corpus sweep is the proof (integration.md §9.3). */
+
+static mf_art *i1_art(Ctx *cx)
+{
+    Job *job = cx->job;
+    if (!job->mf_i1) {
+        mf_arena *ma = pcrec_arena_alloc(&cx->arena, sizeof *ma);
+        ma->u = &cx->arena;
+        ma->alloc = arena_alloc;
+        job->mf_i1 = mf_art_begin(ma, cx->opt->prefix,
+                                  pcrec_memfn_policy(cx->opt->flags),
+                                  pcrec_memfn_denies(cx->opt->flags));
+        if (!job->mf_i1) pcrec_ctx_nomem(cx);
+    }
+    return job->mf_i1;
+}
+
+/* A scratch buffer with `like`'s comment policy, so muted text drops alike. */
+static StrBuf i1_scratch(Ctx *cx, const StrBuf *like)
+{
+    StrBuf sc = { .cx = cx, .cmt_drop = like->cmt_drop };
+    return sc;
+}
+
+/* Fails the compile unless pcrec's span (`len` bytes at `p`, `dropped`
+ * muted) equals the kit's scratch buffer `sc`; frees `sc`. */
+static void i1_same(Ctx *cx, const char *what, const char *p, size_t len,
+                    size_t dropped, StrBuf *sc)
+{
+    const char *k = sc->p ? sc->p : "";
+    bool same = len == sc->len && !memcmp(p ? p : "", k, len) &&
+                dropped == sc->cmt_dropped;
+    if (!same) {
+        size_t kl = sc->len, kd = sc->cmt_dropped;
+        char *kt = pcrec_arena_alloc(&cx->arena, kl + 1);
+        memcpy(kt, k, kl);
+        pcrec_sb_free(sc);
+        pcrec_ctx_fail(cx, 0, "internal error: [M1b I1] the kit's %s differs "
+                       "from pcrec's (pcrec %zu bytes + %zu muted, kit %zu + "
+                       "%zu): pcrec [%.*s] kit [%.*s]", what, len, dropped, kl,
+                       kd, (int)(len > 300 ? 300 : len), p ? p : "",
+                       (int)(kl > 300 ? 300 : kl), kt);
+    }
+    pcrec_sb_free(sc);
+}
+
+static void i1_kit(Ctx *cx, mf_art *sh, int rc)
+{
+    if (rc)
+        pcrec_ctx_fail(cx, 0, "internal error: [M1b I1] the kit refused the "
+                       "shadow rendering: %s", mf_art_error(sh) ? mf_art_error(sh)
+                                                               : "(no reason)");
+}
+
+/* A define's span [at, file->len), `dropped0` the muted count before it. */
+static void i1_define(Ctx *cx, const mf_site *s, const mf_hooks *h,
+                      const StrBuf *file, size_t at, size_t dropped0)
+{
+    mf_art *sh = i1_art(cx);
+    mf_hooks h2 = *h;
+    h2.note = NULL;
+    h2.run_cmp = NULL;
+    StrBuf sc = i1_scratch(cx, file);
+    PcrecMfSink ps;
+    uint32_t handle = 0;
+    pcrec_memfn_sink(&ps, &sc);
+    i1_kit(cx, sh, mf_define(sh, s, &h2, &ps.s, &handle));
+    i1_same(cx, "define", file->p + at, file->len - at,
+            file->cmt_dropped - dropped0, &sc);
+}
+
+void pcrec_memfn_i1_emit(Ctx *cx, DelegSite id, const mf_site *s,
+                         const mf_hooks *h, const StrBuf *body, size_t at)
+{
+    mf_art *sh = i1_art(cx);
+    StrBuf sc = i1_scratch(cx, body);
+    PcrecMfSink ps;
+    deleg_check(cx, id, s);
+    pcrec_memfn_check_use(cx, s, false);
+    pcrec_memfn_sink(&ps, &sc);
+    i1_kit(cx, sh, mf_emit(sh, s, h, &ps.s, NULL, NULL));
+    i1_same(cx, "run compare", body->p + at, body->len - at, 0, &sc);
+}
+
+void pcrec_memfn_i1_helpers(Ctx *cx, const StrBuf *c, size_t at,
+                            size_t dropped0)
+{
+    mf_art *sh = i1_art(cx);
+    StrBuf sc = i1_scratch(cx, c);
+    PcrecMfSink ps;
+    pcrec_memfn_sink(&ps, &sc);
+    i1_kit(cx, sh, mf_flush_helpers(sh, &ps.s));
+    i1_same(cx, "helper flush", c->p + at, c->len - at,
+            c->cmt_dropped - dropped0, &sc);
+}
+
+/* The RUN_WORDS line pcrec wrote at [at, c->len), against the FIRST line of
+ * the shadow art's `mf_stamps` (its RUN_WORDS, through `stamp_int`). */
+typedef struct { StrBuf *sb; const char *upper; } I1Stamp;
+
+static void i1_stamp_str(void *u, const char *name, const char *value)
+{
+    I1Stamp *s = u;
+    pcrec_sb_stamp_str(s->sb, s->upper, name, value);
+}
+
+static void i1_stamp_int(void *u, const char *name, long long value)
+{
+    I1Stamp *s = u;
+    pcrec_sb_stampf(s->sb, s->upper, name, "%lld", value);
+}
+
+void pcrec_memfn_i1_stamp(Ctx *cx, const StrBuf *c, const char *upper, size_t at)
+{
+    mf_art *sh = i1_art(cx);
+    StrBuf sc = i1_scratch(cx, c);
+    I1Stamp st = { &sc, upper };
+    mf_sink sink = { .u = &st, .stamp = i1_stamp_str, .stamp_int = i1_stamp_int };
+    i1_kit(cx, sh, mf_stamps(sh, &sink));
+    char *nl = sc.p ? strchr(sc.p, '\n') : NULL;
+    if (nl) {
+        sc.len = (size_t)(nl - sc.p) + 1;
+        sc.p[sc.len] = 0;
+    }
+    i1_same(cx, "RUN_WORDS line", c->p + at, c->len - at, 0, &sc);
+}
+
 /* ---- the kit's calls ------------------------------------------------------ */
 
 /* Raises the kit's refusal, if it gave one. */
@@ -228,9 +400,11 @@ uint32_t pcrec_memfn_define(Ctx *cx, DelegSite id, const mf_site *s,
     mf_art *art = pcrec_memfn_art(cx);
     PcrecMfSink ps;
     uint32_t handle = 0;
+    size_t at = file->len, dropped0 = file->cmt_dropped;
     deleg_check(cx, id, s);
     pcrec_memfn_sink(&ps, file);
     kit_check(cx, art, mf_define(art, s, h, &ps.s, &handle));
+    i1_define(cx, s, h, file, at, dropped0);
     return handle;
 }
 

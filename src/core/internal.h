@@ -2666,6 +2666,9 @@ typedef struct {
      * NULL where none. */
     struct mf_art *mf;
     const struct MemfnPre *mf_pre;
+    /* [MEMFN] M1b IMPLEMENT: the I1 shadow comparator's own art
+     * (src/gen/memfn_sites.c); deleted at M1b's REPLACE. */
+    struct mf_art *mf_i1;
     /* Whether the prologue declared `<string.h>` (`pcrec_emit_prologue`):
      * every header the kit's text needs must be one it declared (§14.8). */
     bool string_h;
