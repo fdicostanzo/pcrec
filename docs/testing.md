@@ -3742,7 +3742,14 @@ mid-way through bit 27, never reaching `--engine=`/`--vm-entry-shape=`/
 `tests/axes/run_axes.sh`'s `GIVEUP1_ALLOWANCE` manifest is now populated
 from (lane giveupallow, same day) — 52 one-sided give-ups, all ruled (b)
 "documented budget-boundary effect", newly COUNTED by [chkgaps]'s GIVEUP1
-split rather than new behaviour. **`HARNESS_BATCH=64` — the battery's own
+split rather than new behaviour. **2026-10-07 (lane axtri, the overnight
+`AXES_FULL=1 HARNESS_BATCH=64` run at `041e450a`, 17,244 s, rc 2):** two
+reds, neither an answer defect — 19 `-fno-req-byte` GIVEUP1 cells in
+`tests/litscan/reqcube.rxt` (K65-shape witnesses added after the manifest
+was populated; Group E5) and the `-futf-check` arm's 990 ill-formed cells
+printing `giveup -9`, because HARNESS_BATCH's `dispatch.c` kept its own
+copy of the give-up-word table and it lacked `utf` (now one table,
+`tests/harness/outcome_word.h`). `docs/dev/lanes/axtri_report.md`. **`HARNESS_BATCH=64` — the battery's own
 setting (`scripts/battery.sh`'s axes stage) — is the RECOMMENDED shape for
 a run this size, timing UNMEASURED**: `run_axes.sh` forwards `HARNESS_BATCH`
 verbatim to every pass it makes ("`HARNESS_BATCH` adoption" in

@@ -3,9 +3,11 @@
 #
 # Ported from studies/tt4m_batchrun/dispatch_gen.py (the STEP 1/2a prototype),
 # not re-derived: same DECODE_C shape (byte-identical to driver.c's decode(),
-# including the R55-6 fix for a trailing lone backslash), same give-up-word
-# switch (steps/frames/work/recurse/internal, falling back to "giveup %d" for
-# an unnamed negative code — driver.c's own fallback), same argv shape
+# including the R55-6 fix for a trailing lone backslash), the SAME
+# negative-return printer — tests/harness/outcome_word.h, #included by both
+# (so dispatch.c compiles with -I tests/harness); it was a hand-kept copy
+# here until [axtri] 2026-10-07, and that copy had missed driver.c's
+# `unset-var` and `utf <offset>` words — same argv shape
 # (`<index> <subject> [startpos]`), same DEFAULT-ROUTE-ONLY scope limit
 # (docs/design/tt4m_harness_batching.md item 2 / R55-1's third exclusion: a
 # block carrying a routed cell never reaches a batch, so nothing here needs
@@ -29,6 +31,8 @@ gen_dispatch_c() {
     for p in "${prefixes[@]}"; do
         printf '#include "%s.h"\n' "$p"
     done
+    # AFTER a member header: the table reads the artifact's PCREC_ERR_* codes.
+    printf '#include "outcome_word.h"\n'
 
     # DECODE_C, transliterated from dispatch_gen.py's own DECODE_C constant.
     cat <<'DISPATCH_DECODE_EOF'
@@ -118,13 +122,7 @@ DISPATCH_DECODE_EOF
         printf '        } else if (found == 0) {\n'
         printf '            printf("nomatch\\n");\n'
         printf '        } else {\n'
-        printf '            const char *word = found == PCREC_ERR_STEPS    ? "steps"\n'
-        printf '                              : found == PCREC_ERR_FRAMES   ? "frames"\n'
-        printf '                              : found == PCREC_ERR_WORK     ? "work"\n'
-        printf '                              : found == PCREC_ERR_RECURSE  ? "recurse"\n'
-        printf '                              : found == PCREC_ERR_INTERNAL ? "internal"\n'
-        printf '                              : NULL;\n'
-        printf '            if (word) printf("%%s\\n", word); else printf("giveup %%d\\n", found);\n'
+        printf '            rxt_print_negative(found, %s_valid_upto, buf, len, startpos);\n' "$p"
         printf '            free(buf); return 3;\n        }\n'
         printf '        break;\n    }\n'
     done
