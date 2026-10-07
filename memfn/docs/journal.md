@@ -664,3 +664,20 @@ pointer when a kit change merges to main.
       evidence; if one is, the case goes to Frank.
   - The next panel is LIGHT: a one-critic re-check of the narrowed gate.
     Rev 4 rescopes the design.
+
+## 2026-10-07 (afternoon) — [MEMFN-ROWCON] N1 built (lane rowconn1)
+
+- fields.def (39 fields, 37 classes) + gate.c: rules 1-3 of row_contracts.md
+  §2 as `gate_check`, run in WARN mode in the arm walk (define), the use
+  re-check (every mf_use / mf_call) and the run-compare walk; verdicts
+  recorded on site_rec / mf_art, no selection changed, nothing refused.
+- `uses`/`serves` declared on all 8 rows, each with its citation, at the end
+  of the row's own file. MF_TRACE (off by default) writes MFTRACE
+  SEL/ROW/END records and REACH counters (docs/trace_format.md).
+- Trace demo: the only would-declines on pcrec sites are the unstated `miss`
+  (rule 1) at ofsskip define and use and at precheck's ASSIGN use: R-6's
+  predicted items. The C5 decline fixtures show the general gate reaching
+  K96's two declines (`miss:R2:OTHER`, `floor:R2:OTHER`) on its own.
+- Choices for review (lane report §5): uses excludes contract-defaulted and
+  shape-dependent reads; precheck serves BRACED; on_cand classes {OTHER};
+  a third phase `run`; memfn.h sentences deferred to N3.

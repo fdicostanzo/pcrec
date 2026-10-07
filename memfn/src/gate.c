@@ -1,0 +1,534 @@
+/* SPDX-License-Identifier: 0BSD
+ * Provenance: original pcrec-memory-functions text; no third-party source
+ *   (memfn/PROVENANCE.md).
+ *
+ * memfn/src/gate.c — THE ROW-CONTRACT GATE ([MEMFN-ROWCON] N1,
+ * docs/design/memfn/row_contracts.md §2-§4): the classify functions of
+ * fields.def, the gate's per-field rules over a row's `uses`/`serves`, and,
+ * under the compile-time switch MF_TRACE, the `MFTRACE` selection records
+ * and reach counters (memfn/docs/trace_format.md).
+ *
+ * The gate answers, for one row at one phase, which fields would make it
+ * DECLINE. Per field the phase reads, the first rule that matches:
+ *   1. the row USES it and it is UNSTATED:     DECLINE (R1);
+ *   2. it is STATED and the row does not SERVE
+ *      its class:                               DECLINE (R2);
+ *   3. otherwise:                               pass.
+ * In N1 it runs in WARN MODE: its callers record the verdict and change no
+ * selection and refuse nothing (row_contracts.md §5).
+ *
+ * MF_TRACE (off by default) is a scratch-build switch: its records go to
+ * stderr and its counters are process-wide, not per-art, so a trace build is
+ * neither quiet nor re-entrant. Nothing it writes reaches an artifact.
+ */
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "kit.h"
+
+/* ---- lexical text shapes ------------------------------------------------- */
+
+/* 1 iff `c` may appear in a C identifier. */
+static int ident_char(char c)
+{
+    return c == '_' || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')
+        || (c >= '0' && c <= '9');
+}
+
+int kit_is_ident(const char *s)
+{
+    if (!s || !*s || (*s >= '0' && *s <= '9')) return 0;
+    for (; *s; s++)
+        if (!ident_char(*s)) return 0;
+    return 1;
+}
+
+static int is_space(char c)
+{
+    return c == ' ' || c == '\t' || c == '\n' || c == '\r';
+}
+
+/* The text between `s`'s leading and trailing white space: *b and the
+ * length. */
+static size_t trim(const char *s, const char **b)
+{
+    while (is_space(*s)) s++;
+    size_t n = strlen(s);
+    while (n && is_space(s[n - 1])) n--;
+    *b = s;
+    return n;
+}
+
+/* 1 iff `p[0..n)` holds a quote or a comment opener: text whose braces and
+ * semicolons a lexical check cannot count, so it is OTHER. */
+static int opaque(const char *p, size_t n)
+{
+    for (size_t i = 0; i < n; i++) {
+        if (p[i] == '"' || p[i] == '\'') return 1;
+        if (p[i] == '/' && i + 1 < n && (p[i + 1] == '*' || p[i + 1] == '/')) return 1;
+    }
+    return 0;
+}
+
+/* JUMP: `return ...;` or `goto label;`, one statement (its one `;` last, no
+ * brace). BRACED: one `{ ... }` block (the opening brace's depth returns to
+ * 0 only at the last byte). Anything else, or text a lexical check cannot
+ * count, is OTHER. */
+static int stmt_shape(const char *text)
+{
+    const char *p;
+    size_t n = trim(text, &p);
+    if (!n || opaque(p, n)) return CL_OTHER;
+    if (p[0] == '{' && p[n - 1] == '}') {
+        int depth = 0;
+        for (size_t i = 0; i < n; i++) {
+            depth += p[i] == '{' ? 1 : p[i] == '}' ? -1 : 0;
+            if (depth == 0 && i + 1 < n) return CL_OTHER;
+            if (depth < 0) return CL_OTHER;
+        }
+        return CL_BRACED;
+    }
+    int ret = n >= 6 && !strncmp(p, "return", 6) && !ident_char(p[6]);
+    int jmp = n >= 5 && !strncmp(p, "goto", 4) && is_space(p[4]);
+    if (!ret && !jmp) return CL_OTHER;
+    for (size_t i = 0; i < n; i++)
+        if (p[i] == '{' || p[i] == '}' || (p[i] == ';' && i + 1 < n)) return CL_OTHER;
+    return p[n - 1] == ';' ? CL_JUMP : CL_OTHER;
+}
+
+/* ---- the classify functions (fields.def's `classify` column) ------------- *
+ *
+ * Each returns the class of the field's value in `in`, or -1 where the value
+ * is UNSTATED (a NULL hook, or no hooks at all). A site field is never
+ * unstated; read off a gate_in with no site (the run walk), it is OTHER. */
+
+static int flag01(unsigned v)
+{
+    return v == 0 ? CL_NO : v == 1 ? CL_YES : CL_OTHER;
+}
+
+/* The direction of predicate `p`'s reads: BACK if a term sits below the
+ * candidate, NONNEG if none does, OTHER for a malformed term count. */
+static int pred_dir(const mf_pred *p)
+{
+    if (p->nterm == 0 || p->nterm > MF_MAX_TERM) return CL_OTHER;
+    for (unsigned t = 0; t < p->nterm; t++)
+        if (p->term[t].offset < 0) return CL_BACK;
+    return CL_NONNEG;
+}
+
+/* 1 iff some SET term of predicate `p` names a table. */
+static int pred_tabled(const mf_pred *p)
+{
+    for (unsigned t = 0; t < p->nterm && t < MF_MAX_TERM; t++)
+        if (p->term[t].kind == MF_T_SET && p->term[t].table_ref) return 1;
+    return 0;
+}
+
+static int cl_form(const gate_in *in)
+{
+    if (!in->s) return CL_OTHER;
+    switch (in->s->form) {
+    case MF_FORM_EXPR: return CL_EXPR;
+    case MF_FORM_STMT: return CL_STMT;
+    case MF_FORM_FUNC: return CL_FUNC;
+    }
+    return CL_OTHER;
+}
+
+static int cl_op(const gate_in *in)
+{
+    if (!in->s) return CL_OTHER;
+    switch (in->s->op) {
+    case MF_OP_FIND:        return CL_FIND;
+    case MF_OP_SKIP:        return CL_SKIP;
+    case MF_OP_VERIFY:      return CL_VERIFY;
+    case MF_OP_ALL_PRESENT: return CL_ALL_PRESENT;
+    }
+    return CL_OTHER;
+}
+
+static int cl_handoff(const gate_in *in)
+{
+    if (!in->s) return CL_OTHER;
+    switch (in->s->handoff) {
+    case MF_H_RETURN:  return CL_RETURN;
+    case MF_H_ASSIGN:  return CL_ASSIGN;
+    case MF_H_ON_MISS: return CL_ON_MISS;
+    case MF_H_ADVANCE: return CL_ADVANCE;
+    case MF_H_ON_CAND: return CL_ON_CAND;
+    case MF_H_BOOL:    return CL_BOOL;
+    }
+    return CL_OTHER;
+}
+
+static int cl_reverse(const gate_in *in)
+{
+    return in->s ? flag01(in->s->reverse) : CL_OTHER;
+}
+
+static int cl_empty(const gate_in *in)
+{
+    if (!in->s) return CL_OTHER;
+    switch (in->s->empty) {
+    case MF_EMPTY_MISS:     return CL_E_MISS;
+    case MF_EMPTY_NOP:      return CL_E_NOP;
+    case MF_EMPTY_EXCLUDED: return CL_E_EXCLUDED;
+    }
+    return CL_OTHER;
+}
+
+static int cl_end_back(const gate_in *in)
+{
+    if (!in->s) return CL_OTHER;
+    return in->s->end_back == 0 ? CL_ZERO : in->s->end_back == 1 ? CL_ONE : CL_OTHER;
+}
+
+static int cl_pred(const gate_in *in)
+{
+    return in->s ? pred_dir(&in->s->pred) : CL_OTHER;
+}
+
+static int cl_preds(const gate_in *in)
+{
+    if (!in->s) return CL_OTHER;
+    if (in->s->npred == 0) return CL_NONE;
+    if (!in->s->preds) return CL_OTHER;
+    int dir = CL_NONNEG;
+    for (unsigned i = 0; i < in->s->npred; i++) {
+        int d = pred_dir(&in->s->preds[i]);
+        if (d == CL_OTHER) return CL_OTHER;
+        if (d == CL_BACK) dir = CL_BACK;
+    }
+    return dir;
+}
+
+static int cl_ret_pred(const gate_in *in)
+{
+    if (!in->s) return CL_OTHER;
+    if (in->s->ret_pred == MF_NO_PRED) return CL_NONE;
+    return in->s->ret_pred < in->s->npred ? CL_PRED : CL_OTHER;
+}
+
+static int cl_guard_by_caller(const gate_in *in)
+{
+    return in->s ? flag01(in->s->guard_by_caller) : CL_OTHER;
+}
+
+static int cl_on_miss_leaves(const gate_in *in)
+{
+    return in->s ? flag01((unsigned)in->s->on_miss_leaves) : CL_OTHER;
+}
+
+static int cl_span_hi(const gate_in *in)
+{
+    return in->s && in->s->span_hi == MF_SPAN_UNBOUNDED ? CL_UNBOUNDED : CL_OTHER;
+}
+
+static int cl_denies(const gate_in *in)
+{
+    if (!in->s) return CL_OTHER;
+    return in->s->denies == 0 ? CL_NONE
+         : in->s->denies == MF_D_RUN_OVERLAP ? CL_RUN_OVERLAP : CL_OTHER;
+}
+
+static int cl_fn_ref(const gate_in *in)
+{
+    if (!in->s) return CL_OTHER;
+    return in->s->pred.fn_ref ? CL_REF : CL_NONE;
+}
+
+static int cl_table_ref(const gate_in *in)
+{
+    if (!in->s) return CL_OTHER;
+    if (pred_tabled(&in->s->pred)) return CL_REF;
+    for (unsigned i = 0; in->s->preds && i < in->s->npred; i++)
+        if (pred_tabled(&in->s->preds[i])) return CL_REF;
+    return CL_NONE;
+}
+
+/* `s`, `n`, `lo`: IDENT iff a bare identifier. */
+static int ident_or_other(const char *text)
+{
+    if (!text) return -1;
+    return kit_is_ident(text) ? CL_IDENT : CL_OTHER;
+}
+
+static int cl_s(const gate_in *in)  { return ident_or_other(in->h ? in->h->s : NULL); }
+static int cl_n(const gate_in *in)  { return ident_or_other(in->h ? in->h->n : NULL); }
+static int cl_lo(const gate_in *in) { return ident_or_other(in->h ? in->h->lo : NULL); }
+
+static int cl_floor(const gate_in *in)
+{
+    if (!in->h || !in->h->floor) return -1;
+    return strcmp(in->h->floor, "0") ? CL_OTHER : CL_ZERO;
+}
+
+static int cl_miss(const gate_in *in)
+{
+    if (!in->h || !in->h->miss) return -1;
+    return in->h->n && !strcmp(in->h->miss, in->h->n) ? CL_MISS_N : CL_OTHER;
+}
+
+static int cl_on_miss(const gate_in *in)
+{
+    if (!in->h || !in->h->on_miss) return -1;
+    return stmt_shape(in->h->on_miss);
+}
+
+static int cl_count_start(const gate_in *in)
+{
+    if (!in->h) return -1;
+    return in->h->count_start ? CL_OTHER : CL_ZERO;
+}
+
+static int cl_on_cand_reach(const gate_in *in)
+{
+    if (!in->h) return -1;
+    return in->h->on_cand_reach ? CL_OTHER : CL_ZERO;
+}
+
+static int cl_comment_tier(const gate_in *in)
+{
+    return in->h ? CL_OTHER : -1;
+}
+
+/* A text or op hook with no shape classes: OTHER iff stated (not NULL).
+ * One definition per field, so fields.def's classify column names each. */
+#define HOOK_STATED(field) \
+    static int cl_##field(const gate_in *in) \
+    { return in->h && in->h->field ? CL_OTHER : -1; }
+HOOK_STATED(result)
+HOOK_STATED(result_decl)
+HOOK_STATED(step)
+HOOK_STATED(more)
+HOOK_STATED(peek)
+HOOK_STATED(count)
+HOOK_STATED(on_cand)
+HOOK_STATED(member)
+HOOK_STATED(table_name)
+HOOK_STATED(fn_name)
+HOOK_STATED(note)
+HOOK_STATED(note_tag)
+HOOK_STATED(indent)
+#undef HOOK_STATED
+
+static int cl_run(const gate_in *in)
+{
+    const mf_term *t = in->t;
+    if (!t || t->kind != MF_T_RUN || !t->run || t->run_len == 0) return CL_OTHER;
+    if (!t->mask) return CL_EXACT;
+    int masked = 0;
+    for (uint32_t j = 0; j < t->run_len; j++) {
+        if (t->run[j] & ~t->mask[j] & 0xFF) return CL_UNSAT;
+        if (t->mask[j] != 0xFF) masked = 1;
+    }
+    return masked ? CL_MASKED : CL_EXACT;
+}
+
+static int cl_run_len(const gate_in *in)
+{
+    if (!in->t || in->t->run_len == 0) return CL_OTHER;
+    return in->t->run_len == 1 ? CL_ONE : CL_MANY;
+}
+
+/* ---- the table ----------------------------------------------------------- */
+
+typedef struct {
+    const char *name;
+    unsigned    phase;
+    int       (*classify)(const gate_in *);
+    uint64_t    classes;
+} field_row;
+
+#define MF_FIELD(name, phase, absent, classify, classes, doc) \
+    { #name, phase, classify, classes },
+static const field_row fields[FLD_N] = {
+#include "fields.def"
+};
+#undef MF_FIELD
+
+
+/* The fields the row USES at `phase` on the site `in` describes: the union
+ * of its `uses` entries whose form and handoff hold the site's classes. */
+static uint64_t uses_at(const gate_contract *c, unsigned phase, const gate_in *in)
+{
+    uint64_t f = 0;
+    int form = cl_form(in), handoff = cl_handoff(in);
+    for (unsigned i = 0; i < c->nuses; i++) {
+        const gate_use *u = &c->uses[i];
+        if ((u->phases & phase) && (u->forms >> form & 1) && (u->handoffs >> handoff & 1))
+            f |= u->fields;
+    }
+    return f;
+}
+
+/* The class of field `f` in `in`, closed over the field's set (a classify
+ * that returned a class outside it reads OTHER); -1 for unstated. */
+static int class_of(unsigned f, const gate_in *in)
+{
+    int k = fields[f].classify(in);
+    if (k >= 0 && !(fields[f].classes >> k & 1)) k = CL_OTHER;
+    return k;
+}
+
+gate_verdict gate_check(const gate_contract *c, unsigned phase, const gate_in *in)
+{
+    gate_verdict v = { 0, 0 };
+    uint64_t uses = uses_at(c, phase, in);
+    for (unsigned f = 0; f < FLD_N; f++) {
+        if (!(fields[f].phase & phase)) continue;
+        int k = class_of(f, in);
+        if (k < 0) {
+            if (uses >> f & 1) v.r1 |= 1ull << f;
+        } else if (!(c->serves[f] >> k & 1)) {
+            v.r2 |= 1ull << f;
+        }
+    }
+    return v;
+}
+
+/* ---- MF_TRACE: the records and the reach counters ------------------------ */
+
+#ifdef MF_TRACE
+
+static const char *const class_names[CL_N] = {
+#define MF_CLASS(name, doc) #name,
+#include "fields.def"
+#undef MF_CLASS
+};
+
+/* Process-wide on purpose (trace builds only): the reach is summed over
+ * every art one process renders, and printed once at exit. */
+enum { REACH_ROWS = 16 };
+static const gate_contract *reach_row[REACH_ROWS];
+static unsigned long reach_chosen[REACH_ROWS];
+static unsigned long reach_cell[REACH_ROWS][FLD_N][CL_N + 1];   /* CL_N: unstated */
+static unsigned trace_arts;
+static int reach_armed;
+
+static const char *phase_name(unsigned phase)
+{
+    return phase == MF_PH_DEFINE ? "define" : phase == MF_PH_USE ? "use" : "run";
+}
+
+static const char *deny_name(uint64_t deny)
+{
+    return deny == MF_D_RUN_OVERLAP ? "MF_D_RUN_OVERLAP" : "MF_D_?";
+}
+
+/* `name:R1:UNSTATED` / `name:R2:<class>` for every field the verdict
+ * declines, comma-joined; `-` for none. */
+static void put_fields(const gate_verdict *v, const gate_in *in)
+{
+    int any = 0;
+    for (unsigned f = 0; f < FLD_N; f++) {
+        if (v->r1 >> f & 1)
+            fprintf(stderr, "%s%s:R1:UNSTATED", any++ ? "," : "", fields[f].name);
+        else if (v->r2 >> f & 1)
+            fprintf(stderr, "%s%s:R2:%s", any++ ? "," : "", fields[f].name,
+                    class_names[class_of(f, in)]);
+    }
+    if (!any) fputs("-", stderr);
+}
+
+static void reach_print(void)
+{
+    for (int pass = 0; pass < 2; pass++) {
+        for (size_t i = 0;; i++) {
+            const gate_contract *c = pass == 0 ? kit_arm_contract(i) : rc_row_contract(i);
+            if (!c) break;
+            unsigned slot = 0;
+            while (slot < REACH_ROWS && reach_row[slot] != c) slot++;
+            unsigned long n = slot < REACH_ROWS ? reach_chosen[slot] : 0;
+            fprintf(stderr, "MFTRACE REACH table=%s row=%s chosen=%lu\n", c->table, c->row, n);
+            if (slot == REACH_ROWS) continue;
+            for (unsigned f = 0; f < FLD_N; f++)
+                for (unsigned k = 0; k <= CL_N; k++)
+                    if (reach_cell[slot][f][k])
+                        fprintf(stderr,
+                                "MFTRACE REACH table=%s row=%s field=%s class=%s n=%lu\n",
+                                c->table, c->row, fields[f].name,
+                                k == CL_N ? "UNSTATED" : class_names[k],
+                                reach_cell[slot][f][k]);
+        }
+    }
+}
+
+/* The counters' slot for row `c`, registered on first sight; REACH_ROWS
+ * when the registry is full (that row then goes uncounted). */
+static unsigned reach_slot(const gate_contract *c)
+{
+    if (!reach_armed) {
+        reach_armed = 1;
+        atexit(reach_print);
+    }
+    unsigned slot = 0;
+    while (slot < REACH_ROWS && reach_row[slot] && reach_row[slot] != c) slot++;
+    if (slot < REACH_ROWS) reach_row[slot] = c;
+    return slot;
+}
+
+void gate_trace_art(mf_art *art)
+{
+    art->trace_id = ++trace_arts;
+}
+
+static void head(const gate_tctx *t, const char *what)
+{
+    fprintf(stderr, "MFTRACE %s table=%s art=%u site=", what, t->table, t->art->trace_id);
+    if (t->site) fprintf(stderr, "%u", t->site);
+    else         fputs("-", stderr);
+    fprintf(stderr, " phase=%s", phase_name(t->phase));
+}
+
+void gate_trace_sel(const gate_tctx *t)
+{
+    head(t, "SEL");
+    if (t->phase == MF_PH_RUN)
+        fprintf(stderr, " run=%s len=%u\n", class_names[class_of(FLD_run, t->in)],
+                t->in->t ? (unsigned)t->in->t->run_len : 0u);
+    else
+        fprintf(stderr, " form=%s op=%s handoff=%s\n", class_names[cl_form(t->in)],
+                class_names[cl_op(t->in)], class_names[cl_handoff(t->in)]);
+}
+
+void gate_trace_row(const gate_tctx *t, const gate_contract *c, const char *verdict,
+                    uint64_t deny, const gate_verdict *v)
+{
+    head(t, "ROW");
+    fprintf(stderr, " row=%s verdict=%s", c->row, verdict);
+    if (deny) fprintf(stderr, ":%s", deny_name(deny));
+    if (!v) {
+        fputs(" gate=-\n", stderr);
+        return;
+    }
+    fprintf(stderr, " gate=%s fields=", v->r1 | v->r2 ? "DECLINED" : "PASS");
+    put_fields(v, t->in);
+    fputs("\n", stderr);
+}
+
+void gate_trace_end(const gate_tctx *t, const gate_contract *c, const gate_verdict *v)
+{
+    head(t, "END");
+    if (!c) {
+        fputs(" chosen=- would_decline=-\n", stderr);
+        return;
+    }
+    fprintf(stderr, " chosen=%s would_decline=%d fields=", c->row, (v->r1 | v->r2) != 0);
+    put_fields(v, t->in);
+    fputs("\n", stderr);
+
+    unsigned slot = reach_slot(c);
+    if (slot == REACH_ROWS) return;
+    if (t->phase != MF_PH_USE) reach_chosen[slot]++;   /* a use re-checks, never selects */
+    uint64_t uses = uses_at(c, t->phase, t->in);
+    for (unsigned f = 0; f < FLD_N; f++) {
+        if (!(uses >> f & 1) || !(fields[f].phase & t->phase)) continue;
+        int k = class_of(f, t->in);
+        reach_cell[slot][f][k < 0 ? CL_N : (unsigned)k]++;
+    }
+}
+
+#endif /* MF_TRACE */

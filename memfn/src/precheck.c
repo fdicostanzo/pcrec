@@ -239,6 +239,77 @@ static int precheck_use(mf_art *art, uint32_t handle, const mf_hooks *h,
     return 0;
 }
 
+/* ---- the contract ([MEMFN-ROWCON] N1, row_contracts.md §2) ---------------
+ *
+ * `uses`: the fields the text reads with no reading of its own left
+ * unstated; `serves`: per field, the classes the text is right for (MF_ANY:
+ * irrelevant to the text). Each cites the line above that justifies it.
+ * Read only for some shapes, and so held by the predicate rather than
+ * declared: `fn_name` (a FUNC part only, :144-146; run_part needs it, :66).
+ * The run compare's own fields are its rows' (runcmp.c). */
+static const gate_use precheck_uses[] = {
+    /* :224-225 refuses a use without s, n, lo, indent or on_miss */
+    { CM(STMT), CM(ON_MISS) | CM(ASSIGN), MF_PH_USE,
+      FM(s) | FM(n) | FM(lo) | FM(indent) | FM(on_miss) },
+    /* :204-205 refuses an ASSIGN without result; :209 tests `result >= n`,
+       reading an unstated miss as `n` (S1) */
+    { CM(STMT), CM(ASSIGN), MF_PH_USE, FM(result) | FM(miss) },
+};
+
+static const gate_contract precheck_ct = {
+    "arms", "precheck", precheck_uses, sizeof precheck_uses / sizeof precheck_uses[0], {
+    [FLD_form]            = CM(STMT),                 /* :72 */
+    [FLD_op]              = CM(ALL_PRESENT),          /* :72 */
+    [FLD_handoff]         = CM(ON_MISS) | CM(ASSIGN), /* :73 */
+    [FLD_reverse]         = CM(NO),                   /* :74 */
+    [FLD_empty]           = CM(E_MISS),               /* :74; the gate's `n <= lo` misses, :167 */
+    [FLD_end_back]        = CM(ZERO),                 /* :74 */
+    [FLD_pred]            = MF_ANY,                   /* not read: ALL_PRESENT reads preds, :79 */
+    [FLD_preds]           = CM(NONNEG),               /* :54, :65: every part at offset 0 */
+    [FLD_ret_pred]        = CM(NONE) | CM(PRED),      /* :88, :203 */
+    [FLD_guard_by_caller] = MF_ANY,                   /* not read; 0 off EXPR VERIFY, compose.c:242 */
+    [FLD_on_miss_leaves]  = CM(YES),                  /* the miss_leaves column below; compose.c:140 */
+    [FLD_span_hi]         = MF_ANY,                   /* not read: a proven fact the text needs not */
+    [FLD_denies]          = CM(NONE) | CM(RUN_OVERLAP), /* :154 renders run parts through the run
+                                                         compare, whose walk reads them with a
+                                                         fallback per domain (runcmp.c rows[]) */
+    [FLD_fn_ref]          = MF_ANY,                   /* not read: each part's own fn_ref, :144, is
+                                                         the predicate's (:65, :82) */
+    [FLD_table_ref]       = MF_ANY,                   /* not read: a byte part reads its set bits,
+                                                         :44-49; a run part has no SET term */
+    [FLD_s]               = CM(IDENT),                /* :168, :187 raw in `%s + %s` (S2) */
+    [FLD_n]               = CM(IDENT),                /* :167-168, :187 raw in `%s <= %s`,
+                                                         `%s - %s` (S3) */
+    [FLD_lo]              = CM(IDENT),                /* :167-168, :187 raw, as n (S4) */
+    [FLD_floor]           = 0,                        /* a run part declines a stated floor (:67,
+                                                         ofsskip.c:99) and refuses one at its call
+                                                         (ofsskip.c:282-283) */
+    [FLD_result]          = MF_ANY,                   /* :206, :209 an lvalue, which binds tighter
+                                                         than the `>=` it is pasted before */
+    [FLD_result_decl]     = MF_ANY,                   /* :206 a declaration prefix, as given */
+    [FLD_miss]            = CM(MISS_N),               /* :209 tests `>= n`: the run call's miss is
+                                                         its n (ofsskip.c:262) */
+    [FLD_on_miss]         = CM(JUMP) | CM(BRACED),    /* :169, :188, :209, :214 the `if`'s ONE
+                                                         statement, unbraced: one jump or one
+                                                         block is that statement (S5) */
+    [FLD_step]            = MF_ANY,                   /* not read (ADVANCE's) */
+    [FLD_more]            = MF_ANY,                   /* not read (ADVANCE's) */
+    [FLD_peek]            = MF_ANY,                   /* not read (ADVANCE's) */
+    [FLD_count]           = MF_ANY,                   /* not read (ADVANCE's) */
+    [FLD_count_start]     = MF_ANY,                   /* not read (ADVANCE's) */
+    [FLD_on_cand]         = MF_ANY,                   /* not read (ON_CAND's) */
+    [FLD_on_cand_reach]   = MF_ANY,                   /* not read (ON_CAND's) */
+    [FLD_member]          = MF_ANY,                   /* not read: a byte part is one memchr,
+                                                         :168, :187 */
+    [FLD_table_name]      = MF_ANY,                   /* not read: no part has a SET term to name
+                                                         (ofsskip.c:160) */
+    [FLD_fn_name]         = MF_ANY,                   /* :147 names each part, any name */
+    [FLD_note]            = MF_ANY,                   /* :152, :229 pcrec's own writer, as given */
+    [FLD_note_tag]        = MF_ANY,                   /* :99 a comment tag, as given */
+    [FLD_indent]          = MF_ANY,                   /* :165, :180 pcrec's prefix, as given */
+    [FLD_comment_tier]    = MF_ANY,                   /* :98 handed to cmt_open as given */
+}};
+
 const arm precheck_arm = {
     "precheck",
     1,          /* tests each predicate after the one before it missed and
@@ -246,4 +317,5 @@ const arm precheck_arm = {
     precheck_applies,
     precheck_define,
     precheck_use,
+    &precheck_ct,
 };

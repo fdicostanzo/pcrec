@@ -12,15 +12,19 @@ from M1b, a third, the VM's literal-run compare (VMRUN, runcmp.c).
   interface K2 selects over (an arm writes STRAIGHT TO THE SINK, in order,
   so a hook that writes and the sink's comment gate act at the point the arm
   reaches them), the sink writers (`kit_out`, `kit_flush`) and the
-  offset-skip function's shared renderer (`ofs_fn_*`). Never included
-  outside this directory.
+  offset-skip function's shared renderer (`ofs_fn_*`), and the row
+  contracts' types (`gate_contract`: `uses` per site kind and phase,
+  `serves` per field; `CL_*`/`FLD_*` from fields.def) and the MF_TRACE
+  record calls. Never included outside this directory.
 - **compose.c** — K2, the composer: `mf_art`, the define/use split
   (`mf_define`/`mf_use`/`mf_emit`/`mf_call`; handles checked at use and at
   `mf_art_end`), the vocabulary rules every site must pass (`site_check`,
   `pred_kinds`: out-of-enum fields and every shape integration.md §R4.7
   rules outside the vocabulary are REFUSED loudly) and their table
   (`mf_vocab_has`), the FIRST-MATCH arm table (`ofsskip`, `precheck`,
-  `runcmp`, then the generic row), the art's one `denies` value (a site
+  `runcmp`, then the generic row; each arm's `ct` is its contract, which
+  the WARN gate reads before the arm's predicate and re-checks against the
+  use hooks in `mf_use`), the art's one `denies` value (a site
   whose `denies` differ is refused, Q-M1b-1), the `mf_includes` query, and
   the stamps: `mf_art_note_libc` (the libc record's writer, a sorted
   distinct name list on the art) and `mf_stamps` (M1b: `RUN_WORDS`, the run
@@ -62,6 +66,22 @@ from M1b, a third, the VM's literal-run compare (VMRUN, runcmp.c).
   correct byte loop per primitive (F1 find_byte, F2 find_any2/3, F4
   find_in_set, F5 skip_in_set, F9 find_literal, F7 run_verify). G2's
   oracle side; never artifact text.
+- **fields.def** — THE FIELD TABLE of the row contracts ([MEMFN-ROWCON]
+  N1, docs/design/memfn/row_contracts.md §2), two X-macros: `MF_CLASS(name,
+  doc)` (the value classes, OTHER in every set) and `MF_FIELD(name, phase,
+  absent, classify, classes, doc)` (every site/hook/run-term field a row
+  reads: where the gate reads it, what an absent value is, including the
+  written per-kind OBLIGATION exemptions, its classify function and its
+  closed class set, with the text-shape classes IDENT / JUMP / BRACED).
+- **gate.c** — THE ROW-CONTRACT GATE: fields.def's classify functions
+  (`kit_is_ident`, the one lexical identifier check, lives here), the
+  per-field rules (R1 used-and-unstated, R2 stated-and-not-served) as
+  `gate_check`, run in WARN mode at define, use and the run walk (verdicts
+  recorded on `site_rec`/`mf_art`, no selection changed), and under the
+  compile-time switch `MF_TRACE` (off by default) the `MFTRACE` stderr
+  records and reach counters (format: `../docs/trace_format.md`). Each
+  row's `uses`/`serves`, with a citation per declaration, sits at the end of
+  that row's own file (ofsskip.c, precheck.c, runcmp.c, generic.c).
 - **options.def** — the kit's option registry, an X-macro
   `MF_OPT(name, kind, budget, layer, doc)` (D147 addendum 9). BORN EMPTY:
   each byte-moving kit change adds its own deny row (`--memfn=no-NAME`) in

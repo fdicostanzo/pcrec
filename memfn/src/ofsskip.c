@@ -422,10 +422,76 @@ static int ofsskip_use(mf_art *art, uint32_t handle, const mf_hooks *h,
     return ofs_fn_call(art, h, &r->site.pred, r->fn, o);
 }
 
+/* ---- the contract ([MEMFN-ROWCON] N1, row_contracts.md §2) ---------------
+ *
+ * `uses`: the fields the text reads with no reading of its own left
+ * unstated; `serves`: per field, the classes the text is right for (MF_ANY:
+ * irrelevant to the text). Each cites the line above that justifies it.
+ * Read only for some shapes, and so held by the predicate rather than
+ * declared: `table_name` (a multi-byte SET term, :111 at define, :149 at
+ * the call). The run compare's own fields are its rows' (runcmp.c). */
+static const gate_use ofsskip_uses[] = {
+    /* :403-404 refuses a define without fn_name; :384 reads an unstated
+       miss as `n` (K96's miss half) */
+    { CM(FUNC), CM(RETURN), MF_PH_DEFINE, FM(fn_name) | FM(miss) },
+    /* :280-281 refuses a call without s, n, lo; :420 reads an unstated miss
+       as `n` */
+    { CM(FUNC), CM(RETURN), MF_PH_USE, FM(s) | FM(n) | FM(lo) | FM(miss) },
+};
+
+static const gate_contract ofsskip_ct = {
+    "arms", "ofsskip", ofsskip_uses, sizeof ofsskip_uses / sizeof ofsskip_uses[0], {
+    [FLD_form]            = CM(FUNC),                 /* :389 */
+    [FLD_op]              = CM(FIND),                 /* :389 */
+    [FLD_handoff]         = CM(RETURN),               /* :390 */
+    [FLD_reverse]         = CM(NO),                   /* :391; the stream is forward, :258-260 */
+    [FLD_empty]           = CM(E_MISS),               /* :390; an empty range fails :252 and returns n, :273 */
+    [FLD_end_back]        = CM(ZERO),                 /* :391; the loop reads to n, :252 */
+    [FLD_pred]            = CM(NONNEG),               /* :105; reads from cand up, :216, :252 */
+    [FLD_preds]           = MF_ANY,                   /* not read: a FIND reads s->pred, :393 */
+    [FLD_ret_pred]        = MF_ANY,                   /* not read (ALL_PRESENT's) */
+    [FLD_guard_by_caller] = CM(NO),                   /* :391; the function bounds its own reads, :267 */
+    [FLD_on_miss_leaves]  = MF_ANY,                   /* not read; 0 off ON_MISS/ASSIGN, compose.c:210 */
+    [FLD_span_hi]         = MF_ANY,                   /* not read: a proven fact the text needs not */
+    [FLD_denies]          = CM(NONE) | CM(RUN_OVERLAP), /* :184 renders runs through the run
+                                                         compare, whose walk reads them with a
+                                                         fallback per domain (runcmp.c rows[]) */
+    [FLD_fn_ref]          = CM(REF),                  /* :392, :405 */
+    [FLD_table_ref]       = CM(NONE) | CM(REF),       /* :111 a multi-byte set needs one; a
+                                                         singleton :186-188 and a run :183 read none */
+    [FLD_s]               = CM(IDENT),                /* :284 raw in the call's argument list:
+                                                         a top-level comma would split it */
+    [FLD_n]               = CM(IDENT),                /* :284, as s */
+    [FLD_lo]              = CM(IDENT),                /* :284, as s */
+    [FLD_floor]           = 0,                        /* :99 declines any stated floor; :282-283
+                                                         refuses one at the call (K96's floor half) */
+    [FLD_result]          = MF_ANY,                   /* not read: RETURN is the call's value */
+    [FLD_result_decl]     = MF_ANY,                   /* not read */
+    [FLD_miss]            = CM(MISS_N),               /* :384: the function's miss is its n, :262 */
+    [FLD_on_miss]         = MF_ANY,                   /* not read: a FUNC RETURN runs no statement */
+    [FLD_step]            = MF_ANY,                   /* not read (ADVANCE's) */
+    [FLD_more]            = MF_ANY,                   /* not read (ADVANCE's) */
+    [FLD_peek]            = MF_ANY,                   /* not read (ADVANCE's) */
+    [FLD_count]           = MF_ANY,                   /* not read (ADVANCE's) */
+    [FLD_count_start]     = MF_ANY,                   /* not read (ADVANCE's) */
+    [FLD_on_cand]         = MF_ANY,                   /* not read (ON_CAND's) */
+    [FLD_on_cand_reach]   = MF_ANY,                   /* not read (ON_CAND's) */
+    [FLD_member]          = MF_ANY,                   /* not read: the set's bits are the truth, a
+                                                         singleton compared :187-188, a wider set
+                                                         pcrec's table :190-193 (rule 7) */
+    [FLD_table_name]      = MF_ANY,                   /* :147 names the table, any name */
+    [FLD_fn_name]         = MF_ANY,                   /* :405 names the function, any name */
+    [FLD_note]            = MF_ANY,                   /* :410 pcrec's own writer, called as given */
+    [FLD_note_tag]        = MF_ANY,                   /* not read */
+    [FLD_indent]          = MF_ANY,                   /* not read: the definition is file scope */
+    [FLD_comment_tier]    = MF_ANY,                   /* :335 handed to cmt_open as given */
+}};
+
 const arm ofsskip_arm = {
     "ofsskip",
     0,
     ofsskip_applies,
     ofsskip_define,
     ofsskip_use,
+    &ofsskip_ct,
 };
