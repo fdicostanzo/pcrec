@@ -459,6 +459,33 @@ def scratch_controls(cc, tmpbase):
 
 
 POPULATIONS = 'tests/memfn/c4_populations'
+POP_BASE = 'march_x86-64.txt'
+
+
+def read_population(full):
+    """Population directory `full`'s ISA vocabulary: the `__` macros its
+    flag-set dumps declare beyond the baseline. Returns (isa, nfiles,
+    problems). A dump with no `#define` is a PROBLEM, never an empty set: a
+    misspelt flag makes gcc print nothing (m_lahf-lm.txt was 0 bytes: gcc
+    spells it -msahf), and an empty dump contributes no plants, so it would
+    read as a population that simply has nothing to add."""
+    problems = []
+
+    def load(fn):
+        with open(os.path.join(full, fn)) as fh:
+            names = {m.group(1) for m in re.finditer(r'^#define\s+(\S+)', fh.read(), re.M)}
+        if not names:
+            problems.append('%s is an EMPTY dump (no #define): re-probe it' % fn)
+        return names
+    files = sorted(f for f in os.listdir(full) if f.endswith('.txt') and f != POP_BASE
+                   and (f.startswith('march_') or f.startswith('m_')))
+    if not os.path.exists(os.path.join(full, POP_BASE)) or not files:
+        return set(), 0, ['needs %s and at least one flag-set dump' % POP_BASE]
+    base = load(POP_BASE)
+    isa = set()
+    for f in files:
+        isa |= {x for x in load(f) - base if x.startswith('__')}
+    return isa, len(files), problems
 
 
 def population_controls(root, tmpbase):
@@ -466,7 +493,9 @@ def population_controls(root, tmpbase):
     per (compiler, target, box) under POPULATIONS, holding `gcc -dM -E` dumps:
     the baseline march_x86-64.txt, plus one file per ISA flag set. This is how
     a box the Mac cannot run (gcc's own x86 target) is checked on every run;
-    it missed twice (2026-10-06/07) when only the Mac's compiler was planted."""
+    it missed twice (2026-10-06/07) when only the Mac's compiler was planted.
+    Then the empty-dump control: a scratch copy of the first population with
+    one flag-set dump emptied must be refused."""
     pdir = os.path.join(root, POPULATIONS)
     dirs = sorted(d for d in os.listdir(pdir) if os.path.isdir(os.path.join(pdir, d))) \
         if os.path.isdir(pdir) else []
@@ -475,21 +504,11 @@ def population_controls(root, tmpbase):
             'unreached' % POPULATIONS)
         return
     for d in dirs:
-        full = os.path.join(pdir, d)
-
-        def load(fn):
-            with open(os.path.join(full, fn)) as fh:
-                return {m.group(1) for m in re.finditer(r'^#define\s+(\S+)', fh.read(), re.M)}
-        base_fn = 'march_x86-64.txt'
-        files = sorted(f for f in os.listdir(full) if f.endswith('.txt') and f != base_fn
-                       and (f.startswith('march_') or f.startswith('m_')))
-        if not os.path.exists(os.path.join(full, base_fn)) or not files:
-            bad('population %s: needs %s and at least one flag-set dump' % (d, base_fn))
+        isa, nfiles, problems = read_population(os.path.join(pdir, d))
+        for pr in problems:
+            bad('population %s: %s' % (d, pr))
+        if problems:
             continue
-        base = load(base_fn)
-        isa = set()
-        for f in files:
-            isa |= {x for x in load(f) - base if x.startswith('__')}
         stems, macs = isa_plants(isa)
         for cls, ps in ((1, stems), (2, macs)):
             text = '\n'.join(plant_lines(cls, p) for p in ps) + '\n'
@@ -505,7 +524,25 @@ def population_controls(root, tmpbase):
                     % (d, cls, nm, len(missed), len(ps), '; '.join(missed[:6])))
             else:
                 ok('population %s class %d (%s): %d/%d plants hit (%d flag-set dumps)'
-                   % (d, cls, nm, len(ps), len(ps), len(files)))
+                   % (d, cls, nm, len(ps), len(ps), nfiles))
+    scratch = tempfile.mkdtemp(prefix='c4pop.', dir=tmpbase)
+    try:
+        cp = os.path.join(scratch, dirs[0])
+        shutil.copytree(os.path.join(pdir, dirs[0]), cp)
+        victim = sorted(f for f in os.listdir(cp) if f.startswith('m_') and f.endswith('.txt'))
+        if not victim:
+            bad('empty-dump control: population %s has no m_*.txt dump to empty' % dirs[0])
+            return
+        open(os.path.join(cp, victim[0]), 'w').close()
+        _isa, _n, problems = read_population(cp)
+        if any(victim[0] in pr and 'EMPTY' in pr for pr in problems):
+            ok('empty-dump control: %s/%s emptied in a scratch copy is refused'
+               % (dirs[0], victim[0]))
+        else:
+            bad('empty-dump control: %s/%s emptied in a scratch copy was READ (problems: %r)'
+                % (dirs[0], victim[0], problems))
+    finally:
+        shutil.rmtree(scratch, ignore_errors=True)
 
 
 def main():

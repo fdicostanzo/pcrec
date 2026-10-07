@@ -394,4 +394,8 @@ against populations the Mac can produce.
 - The probe (for a new box):
   `for m in x86-64 x86-64-v2 x86-64-v3 x86-64-v4 native; do gcc -march=$m -dM -E - </dev/null | sort > march_$m.txt; done`,
   plus `gcc -m$f -dM -E` for each ISA flag set (abm aes avx512f bmi bmi2 cx16
-  f16c fma lahf-lm lzcnt movbe pclmul popcnt sha).
+  f16c fma sahf lzcnt movbe pclmul popcnt sha). [r4c2fix, 2026-10-07: the
+  list said `lahf-lm`, which gcc does not accept (it spells the flag
+  `-msahf`), so `m_lahf-lm.txt` was committed EMPTY; it is replaced by the
+  re-probed `m_sahf.txt`, and an empty dump now fails C4's population
+  loading.]

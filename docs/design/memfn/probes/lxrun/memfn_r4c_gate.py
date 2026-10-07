@@ -7,7 +7,14 @@ exists in emit_sweep; main's C0 owns that file). PASS (exit 0) iff:
   - the dumps stream reads movers=1 asymmetric=0, the mover is --list-axes,
     and its diff's added/removed lines are EXACTLY the two declared
     memfn-simd rows (EXPECTED_ADDED below; nothing removed).
-Anything else is FAIL (exit 1), with the reason printed."""
+Anything else is FAIL (exit 1), with the reason printed.
+
+Usage: memfn_r4c_gate.py [--zero-dumps] LOG
+  --zero-dumps  for a REF that already carries the memfn-simd rows (R4c′
+                and later, e.g. `--ref 81bc13de`): EVERY stream the REAL RUN
+                holds, dumps and facts included, must read movers=0
+                asymmetric=0; the declared --list-axes mover is then a
+                defect, not a pass."""
 import re, sys
 
 FLOORS = {'c-default': 4165, 'c-vm': 4166, 'emit-ir-vm': 4166, 'composition': 38}
@@ -16,7 +23,7 @@ EXPECTED_ADDED = [
     "memfn-simd\t2\tsimd\tpredicate\tRX_MEMFN_FORMS\t\t\t\tPCREC_FORCE_MEMFN_SIMD\t49\t-fmemfn-simd\t",
 ]
 
-def main(path):
+def main(path, zero_dumps=False):
     text = open(path, encoding='utf-8', errors='replace').read()
     bad = []
     if 'SELF-CHECK PASSED' not in text:
@@ -36,6 +43,13 @@ def main(path):
             bad.append(f'stream {s}: movers={mv} asymmetric={asym}')
         if reach < floor:
             bad.append(f'stream {s}: reach {reach} < floor {floor}')
+    if zero_dumps:
+        if 'dumps' not in streams:
+            bad.append('stream dumps missing')
+        for s, line in sorted(streams.items()):
+            if s not in FLOORS and not re.search(r'movers=0 asymmetric=0', line):
+                bad.append(f'stream {s} not zero movers: {line}')
+        return fail(bad) if bad else ok_zero(sorted(streams))
     d = streams.get('dumps')
     if d is None or not re.search(r'movers=1 asymmetric=0', d):
         bad.append(f'dumps stream not exactly one mover: {d}')
@@ -55,10 +69,18 @@ def ok():
     print('R4C-GATE PASS: 0 artifact movers; the only dump mover is --list-axes, exactly the two declared memfn-simd rows')
     return 0
 
+def ok_zero(streams):
+    print('R4C-GATE PASS (--zero-dumps): 0 movers on every stream (%s)' % ', '.join(streams))
+    return 0
+
 def fail(bad):
     for b in bad:
         print('R4C-GATE FAIL:', b)
     return 1
 
 if __name__ == '__main__':
-    sys.exit(main(sys.argv[1]))
+    args = [a for a in sys.argv[1:] if a != '--zero-dumps']
+    if len(args) != 1:
+        print(__doc__.split('Usage: ', 1)[1], file=sys.stderr)
+        sys.exit(2)
+    sys.exit(main(args[0], zero_dumps='--zero-dumps' in sys.argv[1:]))
