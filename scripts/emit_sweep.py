@@ -1169,12 +1169,20 @@ ARMS_TSV_HEADER = ("base\tflag\tstream\tok_base\tok_arm\tdiffer_a\tdiffer_b\tsta
 TRACE_CFLAGS = "-O2 -g -DPCREC_CAND_TRACE"
 TRACE_TAG = b"CANDTRACE\t"
 # Records-per-arm floor (a trace arm that prints nothing passes any diff),
-# over the full corpus rows. MEASURED on the C0 PROTOTYPE hook (branch
-# scratch/stc0-trace, today's walk sites: docs/dev/lanes/stc0_report.md):
-# 89,135 / 38,523. C1's hook prints at a SUPERSET of those sites, so these
-# are lower bounds for it; C1 re-pins at its own count. Until C1 lands, a
-# --trace run against main's builds (no hook) FAILS here, as it should.
-TRACE_RECORDS_FLOOR = {"c-default": 89135, "c-vm": 38523}
+# over the full corpus rows. A --trace run against a build with no hook
+# FAILS here, as it should.
+TRACE_RECORDS_FLOOR = {"c-default": 256608, "c-vm": 62962}
+# [START-TABLE] C1 re-pin: the C1 hook's own count over the 4,612 corpus rows
+# (stc1_report.md §5; the C0 prototype's 89,135 / 38,523 were lower bounds).
+# Every declared C1 site key must print at least once on the WORKING side of a
+# full-population run: a site whose record stopped printing would otherwise
+# hide inside the arm totals (K35). The keys are the C1 hook's site literals.
+TRACE_SITES = ("pf-of", "vm-start", "scan-state", "form-fwd", "form-other",
+               "search-start", "req-admit", "req-use", "reseed", "end-window",
+               "attempt-cand", "attempt-bound", "vm-bound", "root-minw",
+               "dfa-engine", "entry-gate", "engine-empty", "run-tests",
+               "set-rest", "prefix-k", "req-site", "req-gate", "req-handoff",
+               "req-from", "ofs-need")
 
 
 def trace_records(err):
@@ -1589,6 +1597,14 @@ def main():
               f"compare): {'clean' if ok_d else 'DIFFERS'}")
         if not ok_d:
             print(text_d)
+        if full_population:
+            seen = {rec[trace_diff.FIELDS.index("site")] for recs in tb.values()
+                    for rec in recs if len(rec) > trace_diff.FIELDS.index("site")}
+            missing = [k for k in TRACE_SITES if k not in seen]
+            print(f"  declared site keys reached (working): {len(TRACE_SITES) - len(missing)}"
+                  f"/{len(TRACE_SITES)}" + (f"; NOT REACHED: {', '.join(missing)}" if missing else ""))
+            if missing:
+                run_ok = False
         print(f"  trace streams: {paths[0]} {paths[1]}")
         run_ok = run_ok and ok_t
 
