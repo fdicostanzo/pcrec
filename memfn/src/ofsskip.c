@@ -378,10 +378,10 @@ static void legend(const mf_hooks *h, const mf_pred *p, mf_sink *o)
 }
 
 /* Is `miss` the function's own miss, `n`? Unstated (pcrec's hooks, §15's
- * table: `miss` is `n`) the MF_MISS_N token, or the very text of the `n` hook (kit_miss resolves
- * the token). The function
- * returns its `n` parameter on a miss and takes no `miss` of its own, so any
- * other value is the generic row's (lane m1bfix). */
+ * table: `miss` is `n`), the MF_MISS_N token (kit_miss resolves it), or the
+ * very text of the `n` hook. The function returns its `n` parameter on a
+ * miss and takes no `miss` of its own, so any other value is the generic
+ * row's (lane m1bfix). */
 static int miss_is_n(const mf_hooks *h)
 {
     return !kit_miss(h) || (h->n && !strcmp(kit_miss(h), h->n));
