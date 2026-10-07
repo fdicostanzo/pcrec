@@ -602,7 +602,6 @@ static void fill_hooks(gsite *g, mf_hooks *h, char *onmiss, size_t onmiss_n)
     h->fn_name = h_fn_name;
     h->note = h_note;
     h->note_tag = h_note_tag;
-    h->run_cmp = NULL;           /* after M1b; the kit compares runs itself */
     h->indent = "    ";
     h->comment_tier = g->cmt ? 2 : 0;
     h->u = g;

@@ -30,8 +30,9 @@
  *
  * pcrec's notes (`note`) sit where pcrec's text had them: the first byte's,
  * each run's and the set rest's comment ahead of its statement. At file
- * scope, `note` is pcrec's own text for a FUNC part (its run compare's word
- * loads, until M1b), ahead of the part's comment.
+ * scope each FUNC part is preceded by the word-load helpers its run compare
+ * needs (runcmp.c, since M1b), then pcrec's `note` if it gives one, then the
+ * part's comment.
  */
 #include <stdarg.h>
 #include <stdio.h>
@@ -126,8 +127,8 @@ static void run_comment(const mf_hooks *h, const mf_pred *p, uint32_t i,
     if (o->cmt_close) o->cmt_close(o->u);
 }
 
-/* Each FUNC part, in predicate order: pcrec's file-scope text for it, its
- * comment, its function. The names are kept on the record for the use. */
+/* Each FUNC part, in predicate order: its run compare's helpers, pcrec's
+ * file-scope note for it, its comment, its function. The names are kept on the record for the use. */
 static int precheck_define(mf_art *art, uint32_t handle, const mf_hooks *h,
                            mf_sink *o)
 {
@@ -147,10 +148,10 @@ static int precheck_define(mf_art *art, uint32_t handle, const mf_hooks *h,
         if (!r->fns[i] || !*r->fns[i])
             return kit_fail(art, "precheck: fn_name gave no name for fn_ref %u",
                             p->fn_ref);
-        if (!h->run_cmp && run_cmp_prepare(art, p, o)) return -1;
+        if (run_cmp_prepare(art, p, o)) return -1;
         if (h->note) h->note(h->u, o, i);
         run_comment(h, p, i, part++ > 0, o);
-        if (ofs_fn_define(art, h, p, i, r->fns[i], o)) return -1;
+        if (ofs_fn_define(art, h, p, r->fns[i], o)) return -1;
     }
     return 0;
 }

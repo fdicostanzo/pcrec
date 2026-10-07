@@ -1,9 +1,10 @@
 /* src/gen/memfn_sites.h — pcrec's side of the memfn kit's sites ([MEMFN]
  * R4c; docs/design/memfn/integration.md §14, §15): the DELEG_SITES table,
- * the attempt's kit state, the adapters the kit writes through (a sink over
- * a StrBuf, the arena), the site builders' common pieces and the hooks every
- * site shares. The builders themselves stay beside the decisions they read
- * (src/gen/emit_dfa.c): this file describes nothing on its own.
+ * the in-emitter deny map, the attempt's kit state, the adapters the kit
+ * writes through (a sink over a StrBuf, the arena), the site builders'
+ * common pieces and pcrec's doors into the kit. The builders themselves
+ * stay beside the decisions they read (src/gen/emit_dfa.c, emit_vm.c): this
+ * file describes nothing on its own.
  *
  * The one pcrec header that includes the kit's (memfn/include/memfn.h, the
  * kit's only public header); included by the emitters that describe a site.
@@ -49,10 +50,11 @@ mf_art *pcrec_memfn_art(Ctx *cx);
  * (`cmt_dropped`, which the size term reads) exactly as pcrec's own are;
  * `cmt_close` writes the closer and a newline and leaves the region. The
  * opener and closer are column-0 block-comment delimiters with one space
- * inside each, the shape of both kit comments at R4c (§15.1).
- * `legend_byte` is the DFA emitter's (`pcrec_emit_legend_byte`);
- * `comment_byte` and `stamp` are not offered (no kit text needs them at
- * R4c). */
+ * inside each, the shape of every kit comment (§15.1; M1b's helper
+ * comment). `cstr` is pcrec_sb_cstr (a string literal's body, the run
+ * compare's constants); `legend_byte` is the DFA emitter's
+ * (`pcrec_emit_legend_byte`); `comment_byte`, `stamp` and `stamp_int` are
+ * not offered here (the stamps' sink is memfn_stamps.c's). */
 typedef struct {
     mf_sink s;
     StrBuf *sb;
@@ -78,19 +80,6 @@ typedef struct {
 uint64_t pcrec_memfn_denies(uint64_t flags);
 /* The reverse: pcrec's flag bits for MF_D_* bits `mf` (`--list-axes`). */
 uint64_t pcrec_memfn_deny_flags(uint64_t mf);
-
-/* ---- [MEMFN] M1b IMPLEMENT: the I1 shadow comparator (deleted at REPLACE) */
-
-/* Each fails the compile unless the kit's rendering on the shadow art equals
- * the span pcrec wrote at [at, buffer end): a VM literal-run compare (the
- * VMRUN site `s` with hooks `h`), the prologue's helper flush (`dropped0`
- * the muted count before it) and the RUN_WORDS line. */
-void pcrec_memfn_i1_emit(Ctx *cx, DelegSite id, const mf_site *s,
-                         const mf_hooks *h, const StrBuf *body, size_t at);
-void pcrec_memfn_i1_helpers(Ctx *cx, const StrBuf *c, size_t at,
-                            size_t dropped0);
-void pcrec_memfn_i1_stamp(Ctx *cx, const StrBuf *c, const char *upper,
-                          size_t at);
 
 /* ---- building a site ------------------------------------------------------ */
 
@@ -118,22 +107,19 @@ uint32_t pcrec_memfn_define(Ctx *cx, DelegSite id, const mf_site *s,
                             const mf_hooks *h, StrBuf *file);
 void pcrec_memfn_use(Ctx *cx, uint32_t handle, const mf_hooks *h, StrBuf *body);
 void pcrec_memfn_call(Ctx *cx, uint32_t handle, const mf_hooks *h, StrBuf *body);
+/* The kit's mf_emit for a site whose one part is an EXPR in a body (the
+ * VMRUN door, M1b): checked against row `id` first (C10), no file-scope part
+ * (a row that would write one fails loudly). */
+void pcrec_memfn_emit(Ctx *cx, DelegSite id, const mf_site *s,
+                      const mf_hooks *h, StrBuf *body);
+/* The word-load helpers the attempt's text has used and not declared, at the
+ * file-scope point `file`'s end (pcrec's prologue, §14.8): the kit's
+ * mf_flush_helpers through a sink over `file`. */
+void pcrec_memfn_flush_helpers(Ctx *cx, StrBuf *file);
 
 /* C10 PER INSTANCE (§14.5 [rev4.6]): a site's `use` is POSITION exactly
  * where pcrec's text reads its result as a position (`read`). */
 void pcrec_memfn_check_use(Ctx *cx, const mf_site *s, bool read);
-
-/* ---- the hooks every site shares ------------------------------------------ */
-
-/* `note` at FILE SCOPE: pcrec's own text ahead of a FUNC part, the word-load
- * helpers its run compares need (pcrec_runcmp_prepare), until M1b moves the
- * helpers into the kit (§14.8). */
-void pcrec_memfn_note_helpers(void *u, mf_sink *c, uint32_t part);
-/* `run_cmp`: pcrec's run compare (src/gen/runcmp.c) for RUN term `term`
- * (memfn.h's id: term + pred * MF_MAX_TERM on a composite) at `base + off`,
- * until M1b. */
-void pcrec_memfn_run_cmp(void *u, mf_sink *c, const char *base, int32_t off,
-                         uint32_t term);
 
 /* ---- the end of an attempt ------------------------------------------------ */
 

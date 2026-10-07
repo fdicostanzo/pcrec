@@ -1,8 +1,9 @@
 /* src/gen/memfn_sites.c — pcrec's side of the memfn kit's sites ([MEMFN]
  * R4c; docs/design/memfn/integration.md §14, §15; memfn/CLAUDE.md "The
- * boundary with pcrec"): DELEG_SITES, the attempt's mf_art, the sink and
- * arena the kit writes and allocates through, the common pieces of a site
- * description, the hooks every site shares and the end-of-attempt checks.
+ * boundary with pcrec"): DELEG_SITES, the in-emitter deny map, the
+ * attempt's mf_art, the sink and arena the kit writes and allocates through,
+ * the common pieces of a site description, pcrec's doors into the kit and
+ * the end-of-attempt checks.
  *
  * WHAT STAYS OUT OF HERE: every decision. Which site exists, which
  * predicates it carries and which route reads its result are read where they
@@ -247,143 +248,6 @@ void pcrec_memfn_check_use(Ctx *cx, const mf_site *s, bool read)
                        read ? "reads" : "never reads");
 }
 
-/* ---- [MEMFN] M1b IMPLEMENT: THE I1 SHADOW COMPARATOR ---------------------- *
- *
- * Deleted at M1b's REPLACE. pcrec still writes every run compare, its
- * helpers and RUN_WORDS (src/gen/runcmp.c); the kit renders the SAME things
- * through the new protocol (no `run_cmp`, no helper-carrying `note`) on a
- * SHADOW art of its own, into scratch buffers with the artifact buffer's
- * comment policy, and each span is compared byte for byte with what pcrec
- * wrote there, muted bytes included: each define's whole span (its
- * helpers, comment, function and run terms), each VM literal-run compare,
- * the prologue's helper flush and the RUN_WORDS line. A difference is an
- * internal error, so the corpus sweep is the proof (integration.md §9.3). */
-
-static mf_art *i1_art(Ctx *cx)
-{
-    Job *job = cx->job;
-    if (!job->mf_i1) {
-        mf_arena *ma = pcrec_arena_alloc(&cx->arena, sizeof *ma);
-        ma->u = &cx->arena;
-        ma->alloc = arena_alloc;
-        job->mf_i1 = mf_art_begin(ma, cx->opt->prefix,
-                                  pcrec_memfn_policy(cx->opt->flags),
-                                  pcrec_memfn_denies(cx->opt->flags));
-        if (!job->mf_i1) pcrec_ctx_nomem(cx);
-    }
-    return job->mf_i1;
-}
-
-/* A scratch buffer with `like`'s comment policy, so muted text drops alike. */
-static StrBuf i1_scratch(Ctx *cx, const StrBuf *like)
-{
-    StrBuf sc = { .cx = cx, .cmt_drop = like->cmt_drop };
-    return sc;
-}
-
-/* Fails the compile unless pcrec's span (`len` bytes at `p`, `dropped`
- * muted) equals the kit's scratch buffer `sc`; frees `sc`. */
-static void i1_same(Ctx *cx, const char *what, const char *p, size_t len,
-                    size_t dropped, StrBuf *sc)
-{
-    const char *k = sc->p ? sc->p : "";
-    bool same = len == sc->len && !memcmp(p ? p : "", k, len) &&
-                dropped == sc->cmt_dropped;
-    if (!same) {
-        size_t kl = sc->len, kd = sc->cmt_dropped;
-        char *kt = pcrec_arena_alloc(&cx->arena, kl + 1);
-        memcpy(kt, k, kl);
-        pcrec_sb_free(sc);
-        pcrec_ctx_fail(cx, 0, "internal error: [M1b I1] the kit's %s differs "
-                       "from pcrec's (pcrec %zu bytes + %zu muted, kit %zu + "
-                       "%zu): pcrec [%.*s] kit [%.*s]", what, len, dropped, kl,
-                       kd, (int)(len > 300 ? 300 : len), p ? p : "",
-                       (int)(kl > 300 ? 300 : kl), kt);
-    }
-    pcrec_sb_free(sc);
-}
-
-static void i1_kit(Ctx *cx, mf_art *sh, int rc)
-{
-    if (rc)
-        pcrec_ctx_fail(cx, 0, "internal error: [M1b I1] the kit refused the "
-                       "shadow rendering: %s", mf_art_error(sh) ? mf_art_error(sh)
-                                                               : "(no reason)");
-}
-
-/* A define's span [at, file->len), `dropped0` the muted count before it. */
-static void i1_define(Ctx *cx, const mf_site *s, const mf_hooks *h,
-                      const StrBuf *file, size_t at, size_t dropped0)
-{
-    mf_art *sh = i1_art(cx);
-    mf_hooks h2 = *h;
-    h2.note = NULL;
-    h2.run_cmp = NULL;
-    StrBuf sc = i1_scratch(cx, file);
-    PcrecMfSink ps;
-    uint32_t handle = 0;
-    pcrec_memfn_sink(&ps, &sc);
-    i1_kit(cx, sh, mf_define(sh, s, &h2, &ps.s, &handle));
-    i1_same(cx, "define", file->p + at, file->len - at,
-            file->cmt_dropped - dropped0, &sc);
-}
-
-void pcrec_memfn_i1_emit(Ctx *cx, DelegSite id, const mf_site *s,
-                         const mf_hooks *h, const StrBuf *body, size_t at)
-{
-    mf_art *sh = i1_art(cx);
-    StrBuf sc = i1_scratch(cx, body);
-    PcrecMfSink ps;
-    deleg_check(cx, id, s);
-    pcrec_memfn_check_use(cx, s, false);
-    pcrec_memfn_sink(&ps, &sc);
-    i1_kit(cx, sh, mf_emit(sh, s, h, &ps.s, NULL, NULL));
-    i1_same(cx, "run compare", body->p + at, body->len - at, 0, &sc);
-}
-
-void pcrec_memfn_i1_helpers(Ctx *cx, const StrBuf *c, size_t at,
-                            size_t dropped0)
-{
-    mf_art *sh = i1_art(cx);
-    StrBuf sc = i1_scratch(cx, c);
-    PcrecMfSink ps;
-    pcrec_memfn_sink(&ps, &sc);
-    i1_kit(cx, sh, mf_flush_helpers(sh, &ps.s));
-    i1_same(cx, "helper flush", c->p + at, c->len - at,
-            c->cmt_dropped - dropped0, &sc);
-}
-
-/* The RUN_WORDS line pcrec wrote at [at, c->len), against the FIRST line of
- * the shadow art's `mf_stamps` (its RUN_WORDS, through `stamp_int`). */
-typedef struct { StrBuf *sb; const char *upper; } I1Stamp;
-
-static void i1_stamp_str(void *u, const char *name, const char *value)
-{
-    I1Stamp *s = u;
-    pcrec_sb_stamp_str(s->sb, s->upper, name, value);
-}
-
-static void i1_stamp_int(void *u, const char *name, long long value)
-{
-    I1Stamp *s = u;
-    pcrec_sb_stampf(s->sb, s->upper, name, "%lld", value);
-}
-
-void pcrec_memfn_i1_stamp(Ctx *cx, const StrBuf *c, const char *upper, size_t at)
-{
-    mf_art *sh = i1_art(cx);
-    StrBuf sc = i1_scratch(cx, c);
-    I1Stamp st = { &sc, upper };
-    mf_sink sink = { .u = &st, .stamp = i1_stamp_str, .stamp_int = i1_stamp_int };
-    i1_kit(cx, sh, mf_stamps(sh, &sink));
-    char *nl = sc.p ? strchr(sc.p, '\n') : NULL;
-    if (nl) {
-        sc.len = (size_t)(nl - sc.p) + 1;
-        sc.p[sc.len] = 0;
-    }
-    i1_same(cx, "RUN_WORDS line", c->p + at, c->len - at, 0, &sc);
-}
-
 /* ---- the kit's calls ------------------------------------------------------ */
 
 /* Raises the kit's refusal, if it gave one. */
@@ -400,11 +264,9 @@ uint32_t pcrec_memfn_define(Ctx *cx, DelegSite id, const mf_site *s,
     mf_art *art = pcrec_memfn_art(cx);
     PcrecMfSink ps;
     uint32_t handle = 0;
-    size_t at = file->len, dropped0 = file->cmt_dropped;
     deleg_check(cx, id, s);
     pcrec_memfn_sink(&ps, file);
     kit_check(cx, art, mf_define(art, s, h, &ps.s, &handle));
-    i1_define(cx, s, h, file, at, dropped0);
     return handle;
 }
 
@@ -424,49 +286,22 @@ void pcrec_memfn_call(Ctx *cx, uint32_t handle, const mf_hooks *h, StrBuf *body)
     kit_check(cx, art, mf_call(art, handle, h, &ps.s));
 }
 
-/* ---- the hooks every site shares ------------------------------------------ */
-
-/* Predicate `part` of the site `u` serves. */
-static const mf_pred *pred_at(const PcrecMfU *u, uint32_t part)
+void pcrec_memfn_emit(Ctx *cx, DelegSite id, const mf_site *s,
+                      const mf_hooks *h, StrBuf *body)
 {
-    const mf_site *s = u->site;
-    if (s->op != MF_OP_ALL_PRESENT) return &s->pred;
-    if (part >= s->npred)
-        pcrec_ctx_fail(u->cx, 0, "internal error: a memfn hook asked for "
-                       "predicate %u of %u", part, (unsigned)s->npred);
-    return &s->preds[part];
+    mf_art *art = pcrec_memfn_art(cx);
+    PcrecMfSink ps;
+    deleg_check(cx, id, s);
+    pcrec_memfn_sink(&ps, body);
+    kit_check(cx, art, mf_emit(art, s, h, &ps.s, NULL, NULL));
 }
 
-/* The run compare's own record of RUN term `t`. */
-static PcrecRun run_of(const mf_term *t)
+void pcrec_memfn_flush_helpers(Ctx *cx, StrBuf *file)
 {
-    PcrecRun run = { t->run, t->mask, (int)t->run_len };
-    return run;
-}
-
-void pcrec_memfn_note_helpers(void *u, mf_sink *c, uint32_t part)
-{
-    const PcrecMfU *pu = u;
-    const mf_pred *p = pred_at(pu, part);
-    StrBuf *sb = pcrec_memfn_sink_sb(pu->cx, c);
-    for (unsigned i = 0; i < p->nterm; i++) {
-        if (p->term[i].kind != MF_T_RUN) continue;
-        PcrecRun run = run_of(&p->term[i]);
-        pcrec_runcmp_prepare(pu->cx, sb, &run);
-    }
-}
-
-void pcrec_memfn_run_cmp(void *u, mf_sink *c, const char *base, int32_t off,
-                         uint32_t term)
-{
-    const PcrecMfU *pu = u;
-    const mf_pred *p = pred_at(pu, pu->site->op == MF_OP_ALL_PRESENT
-                                   ? term / MF_MAX_TERM : 0);
-    const mf_term *t = &p->term[term % MF_MAX_TERM];
-    if (t->kind != MF_T_RUN)
-        pcrec_ctx_fail(pu->cx, 0, "internal error: run_cmp on a SET term");
-    PcrecRun run = run_of(t);
-    pcrec_emit_run_compare(pu->cx, pcrec_memfn_sink_sb(pu->cx, c), base, off, &run);
+    mf_art *art = pcrec_memfn_art(cx);
+    PcrecMfSink ps;
+    pcrec_memfn_sink(&ps, file);
+    kit_check(cx, art, mf_flush_helpers(art, &ps.s));
 }
 
 /* ---- the end of an attempt ------------------------------------------------ */

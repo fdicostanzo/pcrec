@@ -12,7 +12,9 @@
 #
 # PROVENANCE OF THE PINS: recorded at R4c's IMPLEMENT commit, whose I1 shadow
 # comparator (src/gen/memfn_sites.c) proved every kit rendering equal to
-# pcrec's pre-migration text over every compile the corpus sweep made.
+# pcrec's pre-migration text over every compile the corpus sweep made; the
+# run-bearing rows re-pinned and the runcmp rows added at M1b's REPLACE (the
+# kit's own run compare and helpers, I1-proved at M1b's IMPLEMENT).
 #
 # CHECKS
 #   1. every fixture renders, through the arm its row names (the kit's form
@@ -32,8 +34,8 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 LIB="${LIB:-$ROOT_DIR/build/libpcrec.a}"
 PINS="$ROOT_DIR/tests/memfn/pins/arms.tsv"
 CC="${CC:-cc}"
-ARMS_ROW_FLOOR=16
-ARMS_EXPECTED="ofsskip precheck"
+ARMS_ROW_FLOOR=28
+ARMS_EXPECTED="ofsskip precheck runcmp"
 
 pass=0; fail=0
 ok()  { pass=$((pass + 1)); }

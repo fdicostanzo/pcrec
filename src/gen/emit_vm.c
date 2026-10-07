@@ -4418,21 +4418,22 @@ static mf_site *vm_run_site(Vm *v, const unsigned char *run, int len, int off)
 }
 
 /* Writes the compare of the literal run `run[0..len)` at `subject +
- * scan_position + off` into `b`: the expression the two literal-run callers
- * (`vm_lit`, `vm_isl_emit`) conjoin after their bounds guard. */
+ * scan_position + off` into `b`, rendered by the kit (memfn/src/runcmp.c):
+ * the expression the two literal-run callers (`vm_lit`, `vm_isl_emit`)
+ * conjoin after their bounds guard. Its word-load helpers are recorded on
+ * the attempt's art and declared by the prologue (`pcrec_emit_prologue`),
+ * which is written after the body. */
 static void vm_run_compare(Vm *v, StrBuf *b, const unsigned char *run, int len,
                            int off)
 {
-    size_t at = b->len;
-    PcrecRun rr = { run, NULL, len };
-    pcrec_emit_run_compare(v->cx, b, "subject + scan_position", off, &rr);
     mf_site *s = vm_run_site(v, run, len, off);
     PcrecMfU u = { v->cx, s, NULL, NULL };
     mf_hooks h = {
         .s = "subject", .n = "subject_length", .lo = "scan_position",
         .comment_tier = PCREC_CMT_NONESSENTIAL, .u = &u,
     };
-    pcrec_memfn_i1_emit(v->cx, DELEG_VMRUN, s, &h, b, at);
+    pcrec_memfn_check_use(v->cx, s, false);
+    pcrec_memfn_emit(v->cx, DELEG_VMRUN, s, &h, b);
 }
 
 /* Emits the alternation-island trie `t` (already BUILT by `vm_isl_build`,
@@ -4516,8 +4517,8 @@ static void vm_isl_emit(Vm *v, VmIsl *t, int entry, int next)
 
         if (n->nkids == 1 && inrun[n->child]) {
             /* [OPT-LITSCAN] S2a THE ISLAND'S OWN RECOGNIZER, sharing only the
-             * run compare (patfacts design §8.2 item 3; S4's
-             * `pcrec_emit_run_compare`): the trie's single-child chain from
+             * run compare (patfacts design §8.2 item 3; S4's, the kit's
+             * since [MEMFN] M1b, `vm_run_compare`): the trie's single-child chain from
              * here to the first node that branches or accepts is one literal
              * run, compared at this node's depth in one bounds check and one
              * run compare. Its nodes charge the node
@@ -8663,7 +8664,7 @@ static const char *vm_lit_describe(Vm *v, const unsigned char *run, int len)
 }
 
 /* Emits a literal run at label `entry` as ONE run compare, continuing at
- * `next`: `pos + len <= n`, then `pcrec_emit_run_compare` (a constant-length
+ * `next`: `pos + len <= n`, then `vm_run_compare` (the kit's: a constant-length
  * `memcmp`, or two overlapping words at the lengths gcc decomposes), so the
  * run reads exactly its own bytes and never past the subject's end (P8,
  * compare_stack.md §4). [OPT-LITSCAN] S2a, patfacts design §8.2; the bytes come from
@@ -13918,9 +13919,6 @@ static void vm_emit_epilogue(Vm *v, const GenNames *g, const VmPlan *pl)
     const long long work_budget = pl->caps.work_budget;
     const bool      has_budget  = pl->caps.has_budget;
 
-    size_t rw_at = job->csb.len;
-    pcrec_emit_runcmp_stamp(cx, &job->csb, g->upper);
-    pcrec_memfn_i1_stamp(cx, &job->csb, g->upper, rw_at);
     pcrec_emit_memfn_mark(&job->csb);
     pcrec_emit_residual(cx);
 

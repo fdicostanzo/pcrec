@@ -11,6 +11,10 @@
 # reqcube.rxt's lowercase dispatch block, and reqcube_check.py's two-memchr
 # check. (Design's provisional S453.)
 # RE-AIMED 2026-10-06 ([MEMFN] R4c REPLACE, lane r4ccore): the pair dispatch is the kit's offset-skip function (ofs_fn_define); the search text moved into the kit; the plant is the same defect in the kit's transcription of the form.
+# RE-AIMED 2026-10-07 ([MEMFN] M1b REPLACE, lane m1b): `pidx` left the
+# offset-skip function's parameters (no hook takes a term id once the run
+# compare is the kit's), so the anchor's call loses it. Plant and intent
+# unchanged.
 SAB_ID="S454-pair-dispatch-memchr-first"
 SAB_FILE='memfn/src/ofsskip.c'
 SAB_SUITES="harness codegen"
@@ -22,6 +26,6 @@ SAB_REACH_EXPECT="REACH-PAIR-ARM"
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='    if (b >= 0)
-        return pair_body(art, h, p, pidx, maxk, k, a, b, o);'
+        return pair_body(art, h, p, maxk, k, a, b, o);'
 SAB_AFTER='    if (0 && b >= 0)   /* SABOTAGE S454 */
-        return pair_body(art, h, p, pidx, maxk, k, a, b, o);'
+        return pair_body(art, h, p, maxk, k, a, b, o);'

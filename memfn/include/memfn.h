@@ -276,13 +276,11 @@ typedef struct {
     const char *(*member)(void *u, uint32_t term, const char *byte_expr);
     const char *(*table_name)(void *u, uint32_t table_ref);
     const char *(*fn_name)(void *u, uint32_t fn_ref);       /* FUNC: its name  */
-    void (*note)(void *u, mf_sink *c, uint32_t part);       /* §14.2           */
+    /* §14.2: pcrec's FACT comment for part `part`. It carries no helpers:
+       since M1b (RULED Q-M1b-7, run_cmp retired with it) the kit compares
+       runs itself and declares their word-load helpers */
+    void (*note)(void *u, mf_sink *c, uint32_t part);
     const char *(*note_tag)(void *u, uint32_t part);        /* §14.2           */
-    /* RETIRED by M1b's REPLACE (RULED Q-M1b-7): pcrec's run compare for RUN
-       term `term` at base + off. Where it is NULL the kit compares runs itself
-       (runcmp.c) and declares the word-load helpers a FUNC definition needs */
-    void (*run_cmp)(void *u, mf_sink *c, const char *base, int32_t off,
-                    uint32_t term);
     /* rendering */
     const char *indent;     /* STMT / FUNC body: pcrec's current indent         */
     int comment_tier;       /* PCREC_CMT_* passes through                       */

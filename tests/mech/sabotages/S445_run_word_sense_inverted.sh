@@ -8,7 +8,8 @@
 # offset-skip run term, the run pre-check). Detector: the harness, on the
 # L-sweep (tests/litscan/litrun.rxt) and every corpus run at those lengths.
 SAB_ID="S445-run-word-sense-inverted"
-SAB_FILE="src/gen/runcmp.c"
+# RE-AIMED 2026-10-07 ([MEMFN] M1b REPLACE, lane m1b): src/gen/runcmp.c moved into the kit (memfn/src/runcmp.c, transcribed); the words writer prints through `kit_out`. Intent unchanged.
+SAB_FILE="memfn/src/runcmp.c"
 SAB_SUITES="harness"
 SAB_HARNESS_TARGET="tests/litscan/litrun.rxt"
 SAB_DESC="the run compare's overlap row emits each word compare with != instead of ==, so a run at length 3, 5-7 or 9-15 is accepted exactly where it is absent"
@@ -17,5 +18,5 @@ SAB_REACH='"$PCREC" --engine=vm -p rx -o "$REACH_TMP/o.c" --pattern "xyz(a|ab)c"
 SAB_REACH_EXPECT="REACH-OVERLAP-ROW-EMITTED"
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='        pcrec_sb_printf(c, ") == %s_w%d(\"", p, w);'
-SAB_AFTER='        pcrec_sb_printf(c, ") != %s_w%d(\"", p, w);   /* SABOTAGE S445 */'
+SAB_BEFORE='        kit_out(c, ") == %s_w%d(\"", p, w);'
+SAB_AFTER='        kit_out(c, ") != %s_w%d(\"", p, w);   /* SABOTAGE S445 */'

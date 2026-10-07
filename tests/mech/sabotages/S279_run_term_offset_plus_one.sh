@@ -14,6 +14,7 @@
 # byte, and the reach greps their text. Intent unchanged: the compare sits
 # one byte past the proved pin and refuses every real start.
 # RE-AIMED 2026-10-06 ([MEMFN] R4c REPLACE, lane r4ccore): the verify chain is the kit's; the run term's offset is what it passes to pcrec's run_cmp hook. Intent unchanged.
+# RE-AIMED 2026-10-07 ([MEMFN] M1b REPLACE, lane m1b): `run_cmp` is retired (Q-M1b-7); the verify chain calls the kit's own run compare (run_cmp_render) at the term's offset, and the plant moves to that call. Intent unchanged.
 SAB_ID="S279-run-term-offset-plus-one"
 SAB_FILE='memfn/src/ofsskip.c'
 SAB_SUITES="harness offsetskip"
@@ -33,5 +34,5 @@ SAB_REACH_EXPECT="REACH-RUN-TERM-EMITTED"
 # `pcrec_emit_exact_compare` (the VM's literal runs are its second caller);
 # the call site's name is the only change, plant and intent unchanged.
 SAB_COUNT=1
-SAB_BEFORE='            h->run_cmp(h->u, o, "subject + cand", t->offset,'
-SAB_AFTER='            h->run_cmp(h->u, o, "subject + cand", t->offset + 1,   /* SABOTAGE S279 */'
+SAB_BEFORE='            if (run_cmp_render(art, t, "subject + cand", t->offset, o))'
+SAB_AFTER='            if (run_cmp_render(art, t, "subject + cand", t->offset + 1, o))   /* SABOTAGE S279 */'
