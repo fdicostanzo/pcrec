@@ -94,6 +94,37 @@ in a specific way.
   `-DDIFF_A_LABEL`/`-DDIFF_B_LABEL`, which default to this suite's own wording,
   so nothing here changed behaviour. Keep it that way: a second copy of this
   comparison would be a second thing to keep in step with the first.
+- **The [ART-POSS-ARMS] section of `run_possdiff.sh`** (poss_arms.md 8.1; lane
+  possbuild-pd). Side A = this build (arms on), side B = `-fno-possessify`,
+  both `--engine=vm`; the default run now also does:
+  - **`arms_core.txt`, `arms_utf8.txt`, `arms_utf8i.txt`, `arms_ucp.txt`,
+    `arms_i.txt`** (the rev-2.1 prototype's `pd_*.txt`, 104 patterns). A
+    file named `arms_*` is swept with **`subjects_exh.py`**, the EXHAUSTIVE
+    generator (every string of length <= 4 over the pattern's case-flip-closed
+    literal alphabet + a word and a non-word representative + `7`, by code
+    point under `-e utf8`; `--alpha`, `--reach S P [flags]`, env `ML`),
+    instead of `subjects_for`'s bespoke families. A `# flags:` header line
+    (`-e utf8`, `--ucp`, `-i`) applies to BOTH sides beside `# features:`;
+    there is no TAB column because a pattern may begin with a space.
+  - **`arms_routeflip.txt`** (`# route: default`): side A compiled on the
+    DEFAULT route, where an arm-discharged atomic group/possessive suffix
+    goes to the DFA; the run FAILS if a row does not land on the DFA, and the
+    answers are compared against the denied VM build.
+  - **`arms_reach.tsv`** (`pattern TAB subject [TAB flags]`, `--reach FILE`):
+    checked BEFORE anything compiles; a witness the sweep cannot generate
+    fails the run.
+  - **`arms_manifest.tsv`** (`--manifest FILE`): the NAMED FLOOR. Each row
+    pins the exact `<PREFIX>_VM_POSS_ARMS` stamp of its armed artifact
+    (`mover/*` = poss_arms.md 5.2's six default-route movers, `fire/*` = a
+    shape per arm, `hold/*` = the 8.2 sabotage witnesses, which must stay
+    silent) and the `--emit-ir` marked count armed vs `-fno-poss-ctx-follow`
+    (moves iff stamp&3) and `-fno-poss-bref-first` (iff stamp&4). A row that
+    stops firing fails by name. Add a row by measuring it, then pinning.
+  Tally lines: `reach k/k`, `manifest k/k`, route-flip count. Wall time of the
+  default run ~85 s on the Linux dev box (~49 s of that is the old
+  patterns.txt + calls.txt).
+  `possdiff_driver.c`'s `describe()` prints every negative return through
+  `tests/harness/outcome_word.h` (it printed `PCREC_ERR_WORK` as "nomatch").
 - **`run_possdiff.sh`**, **`run_possessify_tests.sh`** — the two suites,
   wired into `make test` as `make test-possessify` and into the `make
   ubsan`/`make asan` both-axes batteries. EXECUTION of every generated
