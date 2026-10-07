@@ -332,6 +332,68 @@ static int render(const char *dir, const char *name, const mf_site *s,
     return render_h(dir, name, s, fn1, (Bounds){ NULL, MF_MISS_N, NULL });
 }
 
+/* R4g's PF find (memfn/src/pffind.c): FIND / STMT / ASSIGN over one SET term,
+ * with the hooks pcrec's pcrec_emit_find gives it (src/gen/emit_dfa.c,
+ * find_site): the cursor is both `lo` and `result`, no declaration, no note,
+ * the miss the range's end, `on_miss` only on the unbounded memchr. */
+static mf_site pf_site(int bounded, int table)
+{
+    mf_site s = base_site();
+    s.form = MF_FORM_STMT;
+    s.op = MF_OP_FIND;
+    s.handoff = MF_H_ASSIGN;
+    s.use = MF_USE_POSITION;
+    s.empty = table ? MF_EMPTY_NOP : MF_EMPTY_EXCLUDED;
+    s.end_back = (uint8_t)bounded;
+    s.on_miss_leaves = !table && !bounded;
+    s.pred.nterm = 1;
+    s.pred.plan_hint = MF_NO_PRED;
+    return s;
+}
+
+static int render_pf(const char *dir, const char *name, const mf_site *s,
+                     const char *result)
+{
+    mf_arena a = { NULL, a_alloc };
+    mf_art *art = mf_art_begin(&a, "rx", MF_P_PORTABLE_ONLY, s->denies);
+    Text def = { 0 }, use = { 0 };
+    mf_sink sd = sink_of(&def), su = sink_of(&use);
+    Fx fx = { s, NULL, "    " };
+    int table = s->pred.term[0].table_ref != 0;
+    mf_hooks h = { .s = "subject", .n = "subject_length", .lo = "scan_position",
+                   .result = result,
+                   .miss = s->end_back ? "subject_length - 1" : MF_MISS_N,
+                   .on_miss = !table && !s->end_back ? "return 0;" : NULL,
+                   .table_name = table ? h_table_name : NULL,
+                   .indent = "    ", .u = &fx };
+    mf_result res = { 0 };
+    if (mf_emit(art, s, &h, &su, &sd, &res) || mf_art_end(art)) {
+        fprintf(stderr, "%s: the kit refused: %s\n", name, mf_art_error(art));
+        return 1;
+    }
+    char path[1024];
+    snprintf(path, sizeof path, "%s/%s.def", dir, name);
+    FILE *f = fopen(path, "w");
+    if (!f) { perror(path); return 1; }
+    fputs(def.p ? def.p : "", f);
+    fclose(f);
+    snprintf(path, sizeof path, "%s/%s.use", dir, name);
+    f = fopen(path, "w");
+    if (!f) { perror(path); return 1; }
+    fputs(use.p ? use.p : "", f);
+    fclose(f);
+    char libc[256] = "?";
+    mf_sink sk = { .u = libc, .stamp = c_stamp, .stamp_int = c_stamp_int };
+    if (mf_stamps(art, &sk)) {
+        fprintf(stderr, "%s: mf_stamps refused: %s\n", name, mf_art_error(art));
+        return 1;
+    }
+    printf("%s\t%s\t%s\n", name, res.form_id, libc);
+    free(def.p);
+    free(use.p);
+    return 0;
+}
+
 /* ---- the gate cases (--gate, N3) ----------------------------------------- */
 
 /* One gate case: define with `hd`, then use (or call, for a FUNC site) with
@@ -580,6 +642,27 @@ int main(int argc, char **argv)
     bad |= render(dir, "run-masked-deny", &s, NULL);
     s = run_site("abc", NULL, 0, MF_D_RUN_OVERLAP);               /* exact, denied: memcmp */
     bad |= render(dir, "run-exact-deny", &s, NULL);
+
+    /* pffind (R4g): the PF find's four rows, one fixture each, and the walk's
+     * in-place edge (a result other than lo is the generic row's) */
+    s = pf_site(0, 0);
+    t_byte(&s.pred.term[0], 0, 'x');
+    bad |= render_pf(dir, "pf-memchr", &s, "scan_position");
+    s = pf_site(1, 0);
+    t_byte(&s.pred.term[0], 0, 'x');
+    bad |= render_pf(dir, "pf-memchr-bounded", &s, "scan_position");
+    s = pf_site(0, 1);
+    t_set(&s.pred.term[0], 0, "xy", 1);
+    s.pred.term[0].need = MF_REQUIRED;
+    bad |= render_pf(dir, "pf-walk", &s, "scan_position");
+    s = pf_site(1, 1);
+    t_set(&s.pred.term[0], 0, "xy", 1);
+    s.pred.term[0].need = MF_REQUIRED;
+    bad |= render_pf(dir, "pf-walk-bounded", &s, "scan_position");
+    s = pf_site(0, 1);
+    t_set(&s.pred.term[0], 0, "xy", 1);
+    s.pred.term[0].need = MF_REQUIRED;
+    bad |= render_pf(dir, "pf-decline-not-in-place", &s, "hit_position");
 
     return bad;
 }

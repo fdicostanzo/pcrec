@@ -296,31 +296,6 @@ void pcrec_memfn_emit(Ctx *cx, DelegSite id, const mf_site *s,
     kit_check(cx, art, mf_emit(art, s, h, &ps.s, NULL, NULL));
 }
 
-void pcrec_memfn_shadow(Ctx *cx, DelegSite id, const mf_site *s,
-                        const mf_hooks *h, const char *want, size_t n)
-{
-    mf_arena *ma = pcrec_arena_alloc(&cx->arena, sizeof *ma);
-    ma->u = &cx->arena;
-    ma->alloc = arena_alloc;
-    mf_art *art = mf_art_begin(ma, cx->opt->prefix,
-                               pcrec_memfn_policy(cx->opt->flags),
-                               pcrec_memfn_denies(cx->opt->flags));
-    if (!art) pcrec_ctx_nomem(cx);
-    deleg_check(cx, id, s);
-    StrBuf sb = { 0 };
-    sb.cx = cx;
-    PcrecMfSink ps;
-    pcrec_memfn_sink(&ps, &sb);
-    int rc = mf_emit(art, s, h, &ps.s, NULL, NULL);
-    bool same = !rc && sb.len == n && (n == 0 || !memcmp(sb.p, want, n));
-    pcrec_sb_free(&sb);
-    kit_check(cx, art, rc);
-    if (!same)
-        pcrec_ctx_fail(cx, 0, "internal error: [R4g I1] the kit's %s text "
-                       "differs from pcrec's (%.*s)",
-                       pcrec_deleg_sites[id].id, (int)(n < 160 ? n : 160), want);
-}
-
 void pcrec_memfn_flush_helpers(Ctx *cx, StrBuf *file)
 {
     mf_art *art = pcrec_memfn_art(cx);

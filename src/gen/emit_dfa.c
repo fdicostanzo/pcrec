@@ -5974,29 +5974,7 @@ void pcrec_emit_find(StrBuf *c, const char *ind, const PcrecFind *f)
     mf_hooks h;
     PcrecMfU u;
     mf_site *s = find_site(f, ind, &h, &u);
-    size_t at = c->len;
-    if (f->table != PCREC_FIND_MEMCHR)
-        pcrec_sb_printf(c, "%swhile (%s%s < %s &&"
-                     " !%s_%s[%s[%s]]) %s++;\n",
-                  ind, f->pos, f->holdback ? " + 1" : "", f->len,
-                  f->p, find_table_tag[f->table], f->subject, f->pos, f->pos);
-    else {
-        pcrec_sb_printf(c, "%sconst void *q = memchr(%s + %s, %d,"
-                     " %s%s - %s);\n",
-                  ind, f->subject, f->pos, f->byte,
-                  f->len, f->holdback ? " - 1" : "", f->pos);
-        if (f->holdback)
-            pcrec_sb_printf(c, "%s%s = q ? (size_t)((const unsigned char *)q - %s)\n"
-                         "%s%*s: %s - 1;\n", ind, f->pos, f->subject,
-                      ind, (int)strlen(f->pos) + 5, "", f->len);
-        else
-            pcrec_sb_printf(c, "%sif (!q) %s\n"
-                         "%s%s = (size_t)((const unsigned char *)q - %s);\n",
-                      ind, f->on_miss, ind, f->pos, f->subject);
-    }
-    /* [R4g IMPLEMENT] I1: the kit's text for the same site, compared byte for
-     * byte with the span pcrec just wrote (REPLACE deletes pcrec's spelling) */
-    pcrec_memfn_shadow(f->cx, DELEG_PF, s, &h, c->p + at, c->len - at);
+    pcrec_memfn_emit(f->cx, DELEG_PF, s, &h, c);
 }
 
 /* The FIND over axis B's candidate set at indent `ind`, its form the ROW's

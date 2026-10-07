@@ -112,12 +112,6 @@ void pcrec_memfn_call(Ctx *cx, uint32_t handle, const mf_hooks *h, StrBuf *body)
  * (a row that would write one fails loudly). */
 void pcrec_memfn_emit(Ctx *cx, DelegSite id, const mf_site *s,
                       const mf_hooks *h, StrBuf *body);
-/* [R4g IMPLEMENT] I1, THE SHADOW COMPARATOR: renders site `s` through a
- * SCRATCH art (so the attempt's art and its libc record are untouched) and
- * fails the compile unless the kit's text equals want[0..n), the span pcrec
- * just wrote for the same site. REPLACE deletes it with pcrec's spelling. */
-void pcrec_memfn_shadow(Ctx *cx, DelegSite id, const mf_site *s,
-                        const mf_hooks *h, const char *want, size_t n);
 /* The word-load helpers the attempt's text has used and not declared, at the
  * file-scope point `file`'s end (pcrec's prologue, §14.8): the kit's
  * mf_flush_helpers through a sink over `file`. */
