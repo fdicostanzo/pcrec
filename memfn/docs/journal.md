@@ -709,3 +709,18 @@ pointer when a kit change merges to main.
 - Next: N2, the WARN census over the whole corpus × every axis (a heavy
   Mac or Linux run, slot via main). Then R-6, G2u, N3 and N4. g2x run 1
   started 15:04.
+
+## 2026-10-07 (evening) — N2 done; wind-down for the box move
+
+- N2 census (Mac, under the lock, 15:11 to about 15:55): 958,292 compiles,
+  0 timeouts, 0 no-row sites. 129,937 would-declines → exactly 3 cells,
+  all `miss` R1 (ofsskip define/use, precheck ASSIGN use). That is the
+  predicted R-6 list, posted in responses.md.
+- Frank: start nothing new; close out; push the kit branches; wind down
+  (pcrec dev moves to pcrec@192.168.1.17, cloned from GitHub). g2x was
+  stopped at a consistent point. Its interim blinded work is committed on
+  branch `g2x` (5be6fe58, unreviewed): run 1 had 138 failed, 0 faults,
+  findings F1/F2/G1 (see wake.md §4). wake.md was rewritten for the new
+  box.
+- Lessons: lanes still overran numeric caps "for timing" (rowconn2: ~770
+  compiles outside the lock). Briefs must forbid timing runs outright.

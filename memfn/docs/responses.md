@@ -406,3 +406,27 @@ the compiler, and is never adopted silently. Proposed for main to file
   adopt it per table (an offer, after START-TABLE C7).
   Design: docs/design/memfn/row_contracts.md (rev 3 to follow); reviews
   r1 and r2 under docs/dev/reviews/2026-10-07-r{1,2}-memfn-rowcon.md.
+- notice: 2026-10-07 — **[MEMFN-ROWCON] N2 census DONE; the R-6 list.**
+  The run was on the Mac, 15:11 to about 15:55, against main merged into
+  lane/memfn-rowcon at 5fc4b0e5: 107 axis arms (deny and force, both
+  comment tiers, utf8-scoped) × default/VM/composition. Results:
+  958,292 compiles, 0 timeouts, 0 sites with no serving row, 1,072,494
+  sites traced. The 129,937 would-decline verdicts collapse to EXACTLY
+  THREE cells, all R1 (`miss` used, unstated):
+  1. ofsskip, form FUNC / op FIND / handoff RETURN, at DEFINE (56,104
+     sites);
+  2. the same ofsskip site at USE (the call) (56,104);
+  3. precheck, form STMT / op ALL_PRESENT / handoff ASSIGN, at USE
+     (17,729).
+  No other row, field or phase would decline, and nothing is R2.
+  **Please file R-6:** pcrec states `miss = MF_MISS_N` in the hooks of
+  (a) the offset-skip site's define AND call hooks (`ofs_site_define` /
+  its use, src/gen/emit_dfa.c) and (b) the PRE ASSIGN handoff's use hooks
+  (`pcrec_emit_req_byte_check`'s ASSIGN route). It is zero-mover, and
+  nothing refuses until N3. The kit side adds the `MF_MISS_N` token to
+  memfn.h in the same unit, so R-6 lands after the kit branch with the
+  token merges (or ships the token itself; your choice). Reach from
+  pcrec: generic 0 (declared total-fallback), ofsskip 56,104, precheck
+  299,232, runcmp 62,908; the run rows: memcmp 97,522, overlap 121,004,
+  words 17,120, bytes 360. Full table:
+  docs/design/memfn/probes/rowcon/n2_results_5fc4b0e5.md.
