@@ -762,3 +762,28 @@ pointer when a kit change merges to main.
   lane never ran SABANCHOR; any kit lane that edits memfn/src must run
   `python3 scripts/m6read_check_sab_anchors.py` (under a second) before
   delivering.
+
+## 2026-10-07 (evening) — rowcon interim merged to main; G2u started
+
+- Main merged lane/memfn-rowcon at 13b9f2ae and pushed it. The kit
+  worktree is now on lane/memfn-g2u, cut from main 13b9f2ae.
+- G2u: the blinded opus author works in the D27 cell worktrees/g2u-cell
+  (worktree g2u, branch g2u, from main 13b9f2ae; made from the MAIN tree,
+  not nested). Allowlist: memfn/include, memfn/tests,
+  docs/design/memfn/integration.md, memfn/docs/trace_format.md. The g2x
+  interim patch and the main-since-base delta are in the cell's .g2x/.
+- Brief items:
+  1. fold g2x;
+  2. F1 cases go to a counted PENDING-ENFORCE bucket, with
+     G2_STRICT_HOOKS=1 as N3's acceptance switch;
+  3. G1's floor is judged only over negative-offset sites;
+  4. explicit values;
+  5. refusal expectations;
+  6. the POISON differential, with "unused" sets from the contract text;
+  7. the SEMANTIC differential;
+  8. per-form floors.
+- Caps: --quick at most 4 times, taskset to 4 cores; no timing; no full
+  run (that is the manager's slot).
+- A stall watcher (cell mtimes, 30 min) is running.
+- Main's queue: possland → admin1008 → stc3 → R-6. N3 waits for R-6 plus
+  the N2 re-run.
