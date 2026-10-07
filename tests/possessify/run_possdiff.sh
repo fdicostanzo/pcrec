@@ -19,11 +19,29 @@
 # the discriminating family is PREFIX + REPEATED BODY. A generator whose
 # alphabet omits a pattern character measures the generator.
 #
-# Usage: run_possdiff.sh [--corpus] [patternfile ...]
+# Usage: run_possdiff.sh [--corpus] [--reach FILE] [--manifest FILE] [patternfile ...]
 #   With no argument it runs tests/possessify/patterns.txt and
-#   tests/possessify/calls.txt (K93: quantifiers inside call targets).
+#   tests/possessify/calls.txt (K93: quantifiers inside call targets) and the
+#   [ART-POSS-ARMS] section: the arms_*.txt populations, arms_reach.tsv and
+#   arms_manifest.tsv (docs/design/poss_arms.md 8.1).
 #   A pattern file may carry ONE `# features: <list>` line; every pattern in
 #   that file is then compiled, on both sides, with `--features <list>`.
+#   It may also carry ONE `# flags: <list>` line (-e utf8, --ucp, -i), applied
+#   to BOTH sides beside it, and ONE `# route: default` line, which compiles
+#   side A on the DEFAULT engine route instead of --engine=vm (the route-flip
+#   witnesses: an arm-discharged atomic group goes to the DFA; side B stays
+#   the denied VM build, so the comparison is DFA-route answers against VM
+#   answers). No TAB column: a pattern may begin with a space.
+#   A file whose basename starts `arms_` is swept with subjects_exh.py's
+#   EXHAUSTIVE subjects (every string of length <= 4 over the pattern's
+#   case-flip-closed alphabet) instead of subjects_for's bespoke families.
+#   `--reach FILE` (pattern TAB subject [TAB flags]) is checked BEFORE
+#   anything is compiled: every pair must be IN the exhaustive sweep, or the
+#   run fails (a witness the sweep cannot reach proves nothing).
+#   `--manifest FILE` (name TAB want-stamp TAB flags-or-'-' TAB pattern) is
+#   the NAMED FLOOR: each row's armed artifact must stamp exactly RX_VM_POSS_ARMS
+#   = want, and `--emit-ir`'s marked count armed vs each deny flag must move
+#   iff that arm's bit is wanted; a row that stops firing fails BY NAME.
 #   `--corpus` additionally derives and sweeps every .rxt corpus pattern the
 #   analysis gives a positive verdict on.
 # Env: PCREC (compiler), CC, GENCFLAGS (the sanitizer battery's hook),
@@ -61,6 +79,9 @@ trap cleanup EXIT
 pass=0; fail=0; skipped=0
 cells_total=0
 poss_patterns=0
+reach_ok=0; reach_total=0
+man_ok=0; man_total=0
+flipped=0
 
 ok()  { pass=$((pass + 1)); }
 bad() { echo "FAIL: $1" >&2; fail=$((fail + 1)); }
@@ -137,6 +158,7 @@ one_pattern() {
     pat="$1"
     d="$WORKDIR/p$pass$fail$skipped$$"
     rm -rf "$d"; mkdir -p "$d"
+    enga="--engine=vm"; [ "$route" = default ] && enga=""
 
     # --engine=vm on BOTH sides. Two reasons, and the second is the one that
     # matters: it forces every pattern onto the VM (so a capture-free pattern
@@ -144,7 +166,7 @@ one_pattern() {
     # possessification never runs), and it turns the DFA prefilter OFF, so the
     # comparison is of the VM's own derivation rather than of a window the DFA
     # handed both sides (R21 E-6).
-    if ! pcrec_run "$PCREC" -p pa --engine=vm $feat_args -o "$d/pa.c" --pattern "$pat" \
+    if ! pcrec_run "$PCREC" -p pa $enga $feat_args $flag_args -o "$d/pa.c" --pattern "$pat" \
             >/dev/null 2>"$d/err_a"; then
         # A file that declares its modules declared what its patterns need,
         # so a refusal there is a population silently lost, not a cell.
@@ -155,7 +177,7 @@ one_pattern() {
         skipped=$((skipped + 1))
         return 0                       # a pattern pcrec refuses is not a cell
     fi
-    if ! pcrec_run "$PCREC" -p pb --engine=vm -fno-possessify $feat_args -o "$d/pb.c" --pattern "$pat" \
+    if ! pcrec_run "$PCREC" -p pb --engine=vm -fno-possessify $feat_args $flag_args -o "$d/pb.c" --pattern "$pat" \
             >/dev/null 2>"$d/err_b"; then
         bad "'$pat': the possessified build compiled and the DENIED one did not"
         return 0
@@ -215,7 +237,21 @@ one_pattern() {
         return 0
     fi
 
-    subjects_for "$pat" > "$d/subj"
+    if [ "$exhaustive" = 1 ]; then
+        # shellcheck disable=SC2086
+        python3 -B "$SCRIPT_DIR/subjects_exh.py" "$pat" $flags > "$d/subj"
+    else
+        subjects_for "$pat" > "$d/subj"
+    fi
+    if [ "$route" = default ]; then
+        # The route-flip file's NON-VACUITY: side A must really be on the DFA.
+        eng=$(sed -n 's/^#define PA_ENGINE "\([a-z]*\)".*/\1/p' "$d/pa.c" | head -1)
+        if [ "$eng" != dfa ]; then
+            bad "'$pat': the route-flip witness did not go to the DFA by default (engine=${eng:-?})"
+            return 0
+        fi
+        flipped=$((flipped + 1))
+    fi
     # A plain stdin redirect on the gen_run call works ONLY because watchdog
     # spawns its child with an explicit `<&0` (see scripts/watchdog's spawn
     # comment): a backgrounded job in a job-control-less shell otherwise gets
@@ -277,8 +313,116 @@ if [ "${1:-}" = "--corpus" ]; then
     set -- "$derived" "$@"
 fi
 
+# ---- the [ART-POSS-ARMS] section's three instruments ---------------------
+ARMS_ENV_FILES="$SCRIPT_DIR/arms_core.txt $SCRIPT_DIR/arms_utf8.txt \
+$SCRIPT_DIR/arms_utf8i.txt $SCRIPT_DIR/arms_ucp.txt $SCRIPT_DIR/arms_i.txt \
+$SCRIPT_DIR/arms_routeflip.txt"
+
+reach_file=""; manifest_file=""
+while [ $# -gt 0 ]; do
+    case "$1" in
+    --reach)    reach_file="$2"; shift 2 ;;
+    --manifest) manifest_file="$2"; shift 2 ;;
+    *) break ;;
+    esac
+done
+
 files="$*"
-[ -n "$files" ] || files="$SCRIPT_DIR/patterns.txt $SCRIPT_DIR/calls.txt"
+if [ -z "$files" ]; then
+    files="$SCRIPT_DIR/patterns.txt $SCRIPT_DIR/calls.txt $ARMS_ENV_FILES"
+    reach_file="${reach_file:-$SCRIPT_DIR/arms_reach.tsv}"
+    manifest_file="${manifest_file:-$SCRIPT_DIR/arms_manifest.tsv}"
+fi
+
+# REACH, before anything is compiled: a (pattern, witness) pair the sweep
+# cannot generate would make its sabotage row undetectable by construction.
+# Subject in the driver's escape form; flags are the pair's own.
+if [ -n "$reach_file" ]; then
+    [ -f "$reach_file" ] || { echo "run_possdiff.sh: no such reach file: $reach_file" >&2; exit 2; }
+    while IFS=$'\t' read -r rp rs rfl; do
+        case "$rp" in ''|'#'*) continue ;; esac
+        reach_total=$((reach_total + 1))
+        # shellcheck disable=SC2086
+        if python3 -B "$SCRIPT_DIR/subjects_exh.py" --reach "$rs" "$rp" $rfl; then
+            reach_ok=$((reach_ok + 1))
+        else
+            bad "REACH MISS: witness subject '$rs' is not in the exhaustive sweep of '$rp' $rfl"
+        fi
+    done < "$reach_file"
+fi
+
+# The marked count of `--emit-ir`'s `possessify` fact (value `marked/total`),
+# read by column NAME as --corpus does. $1 = pattern, rest = flags.
+ir_marked() {
+    p="$1"; shift
+    pcrec_run "$PCREC" "$@" --emit-ir --pattern "$p" 2>/dev/null \
+        | awk -F'\t' -v ki="$fact_i" -v vi="$val_i" '
+            /^#section summary$/ { s = 1; next }
+            /^#section /         { s = 0; next }
+            s && $ki == "possessify" { split($vi, p, "/"); print p[1] }'
+}
+
+# The NAMED MANIFEST (the floor). Population >= 1 is not a floor: it passes
+# while every arm is dead. Each row names a pattern, the exact arm stamp its
+# armed artifact must carry (bit 0x1 A0, 0x2 A1, 0x4 B; 0 = a witness that
+# must NOT fire), and the marked-count movement against each deny flag:
+# armed > -fno-poss-ctx-follow iff want & 3, armed > -fno-poss-bref-first iff
+# want & 4. Two readings of one fact (the stamp and the IR count) so neither
+# is a control sharing a source with the other. A row that stops firing fails
+# BY NAME.
+manifest_check() {
+    . "$ROOT_DIR/tests/lib/table.sh"
+    probe="$WORKDIR/probe.ir"
+    pcrec_run "$PCREC" --engine=vm --emit-ir --pattern '(a)b' > "$probe" 2>/dev/null \
+        || { echo "possdiff: could not produce a probe --emit-ir listing" >&2; exit 2; }
+    fact_i="$(table_col_index "$probe" fact summary)" || exit 2
+    val_i="$(table_col_index "$probe" value summary)" || exit 2
+    while IFS=$'\t' read -r mname mwant mfl mpat; do
+        case "$mname" in ''|'#'*) continue ;; esac
+        man_total=$((man_total + 1))
+        [ "$mfl" = "-" ] && mfl=""
+        md="$WORKDIR/man"; rm -rf "$md"; mkdir -p "$md"
+        # shellcheck disable=SC2086
+        if ! pcrec_run "$PCREC" -p ma --engine=vm --features all $mfl -o "$md/ma.c" \
+                --pattern "$mpat" >/dev/null 2>"$md/err"; then
+            bad "MANIFEST '$mname': the armed build refused: $(head -1 "$md/err")"
+            continue
+        fi
+        got=$(sed -n 's/^#define MA_VM_POSS_ARMS 0x\([0-9a-f]*\)u$/\1/p' "$md/ma.c")
+        if [ -z "$got" ]; then
+            bad "MANIFEST '$mname': the armed artifact carries no MA_VM_POSS_ARMS stamp"
+            continue
+        fi
+        want=$(( mwant ))
+        if [ $(( 0x$got )) -ne "$want" ]; then
+            bad "MANIFEST '$mname': arm stamp is 0x$got, the manifest pins $mwant ($mpat)"
+            continue
+        fi
+        # shellcheck disable=SC2086
+        m_arm=$(ir_marked "$mpat" --engine=vm --features all $mfl)
+        # shellcheck disable=SC2086
+        m_noa=$(ir_marked "$mpat" --engine=vm --features all $mfl -fno-poss-ctx-follow)
+        # shellcheck disable=SC2086
+        m_nob=$(ir_marked "$mpat" --engine=vm --features all $mfl -fno-poss-bref-first)
+        if [ -z "$m_arm" ] || [ -z "$m_noa" ] || [ -z "$m_nob" ]; then
+            bad "MANIFEST '$mname': could not read the --emit-ir marked count ($m_arm/$m_noa/$m_nob)"
+            continue
+        fi
+        wa=0; [ $(( want & 3 )) -ne 0 ] && wa=1
+        wb=0; [ $(( want & 4 )) -ne 0 ] && wb=1
+        da=0; [ "$m_arm" -gt "$m_noa" ] && da=1
+        db=0; [ "$m_arm" -gt "$m_nob" ] && db=1
+        if [ "$da" -ne "$wa" ] || [ "$db" -ne "$wb" ]; then
+            bad "MANIFEST '$mname': marked armed=$m_arm denyA=$m_noa denyB=$m_nob, the stamp $mwant wants A-moves=$wa B-moves=$wb"
+            continue
+        fi
+        man_ok=$((man_ok + 1))
+    done < "$manifest_file"
+}
+if [ -n "$manifest_file" ]; then
+    [ -f "$manifest_file" ] || { echo "run_possdiff.sh: no such manifest: $manifest_file" >&2; exit 2; }
+    manifest_check
+fi
 
 for f in $files; do
     [ -f "$f" ] || { echo "run_possdiff.sh: no such pattern file: $f" >&2; exit 2; }
@@ -286,6 +430,11 @@ for f in $files; do
     # expands to no argument at all.
     feats="$(sed -n 's/^# features: *//p' "$f" | head -1)"
     feat_args="${feats:+--features $feats}"
+    flags="$(sed -n 's/^# flags: *//p' "$f" | head -1)"
+    flag_args="$flags"
+    route="$(sed -n 's/^# route: *//p' "$f" | head -1)"
+    exhaustive=0
+    case "$(basename "$f")" in arms_*) exhaustive=1 ;; esac
     while IFS= read -r pat; do
         case "$pat" in ''|'#'*) continue ;; esac
         one_pattern "$pat"
@@ -295,6 +444,15 @@ done
 echo "possdiff: $pass patterns agreed, $fail diverged, $skipped refused by pcrec"
 echo "possdiff: $poss_patterns of $pass had at least one POSSESSIFIED quantifier"
 echo "possdiff: $cells_total pattern-subject-startpos cells compared"
+if [ -n "$reach_file" ]; then
+    echo "possdiff: reach $reach_ok/$reach_total witness pairs inside the exhaustive sweep"
+    [ "$reach_ok" -eq "$reach_total" ] || fail=$((fail + 1))
+fi
+if [ -n "$manifest_file" ]; then
+    echo "possdiff: manifest $man_ok/$man_total rows fire as pinned"
+    [ "$man_ok" -eq "$man_total" ] || fail=$((fail + 1))
+fi
+echo "possdiff: $flipped route-flip witnesses compiled to the DFA on side A"
 
 # NON-VACUITY, the control this check needs as much as the check itself. An
 # instrument that compares two identical artifacts agrees on everything and

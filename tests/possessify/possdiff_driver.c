@@ -45,6 +45,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 /* Two artifacts, two prefixes, ONE translation unit. That is a real property
  * being exercised rather than a convenience: the fixed ABI types are emitted
@@ -53,6 +54,7 @@
  * measurement that a per-prefix guard fails this exact case). */
 #include "pa.h"
 #include "pb.h"
+#include "../harness/outcome_word.h"   /* the shared give-up word table */
 #ifdef DIFF_REFEREE
 /* [M4.6d] THE THIRD ARM, opt-in and used by tests/mrl/run_mrldiff.sh alone.
  *
@@ -136,8 +138,35 @@ static unsigned char *decode(const char *src, size_t srclen, size_t *out_len)
  * comparison as "the spans agree" rather than a second, weaker one. */
 static void describe(int r, const ptrdiff_t caps[][2], char *out, size_t osz)
 {
-    if (r == PCREC_ERR_STEPS)  { snprintf(out, osz, "err_steps");  return; }
-    if (r == PCREC_ERR_FRAMES) { snprintf(out, osz, "err_frames"); return; }
+    /* Every negative return is named by the harness's ONE shared word table,
+     * tests/harness/outcome_word.h ([axtri]; poss_arms.md 8.6). This used to
+     * print PCREC_ERR_WORK (and RECURSE, INTERNAL, UNSET_VAR) as "nomatch",
+     * which would have hidden a STEPS->WORK move between the two builds.
+     * The table's printer writes to stdout, so its line is captured through
+     * a temporary fd swap; describe() runs only on a divergence, so the cost
+     * is irrelevant. (PCREC_ERR_UTF needs a per-artifact valid_upto the
+     * differential has no use for -- no cell here runs -futf-check -- so it
+     * is named without an offset rather than given a made-up one.) */
+    if (r < 0) {
+        if (r == PCREC_ERR_UTF) { snprintf(out, osz, "utf"); return; }
+        char word[64] = "giveup";
+        FILE *t = tmpfile();
+        int saved = dup(1);
+        if (t && saved >= 0) {
+            fflush(stdout);
+            dup2(fileno(t), 1);
+            rxt_print_negative(r, NULL, NULL, 0, 0);
+            fflush(stdout);
+            dup2(saved, 1);
+            rewind(t);
+            if (!fgets(word, sizeof word, t)) snprintf(word, sizeof word, "giveup");
+        }
+        if (saved >= 0) close(saved);
+        if (t) fclose(t);
+        word[strcspn(word, "\n")] = 0;
+        snprintf(out, osz, "%s", word);
+        return;
+    }
     if (r != 1)             { snprintf(out, osz, "nomatch");    return; }
     size_t n = (size_t)snprintf(out, osz, "match");
     for (int k = 0; k < PA_NCAPS && n < osz; k++)
