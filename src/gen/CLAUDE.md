@@ -143,7 +143,7 @@ order, and a machine's form is the FIRST APPLICABLE entry. Six axes:
 | axis | list | objects (preference order) |
 |---|---|---|
 | A table representation | `dfa_reprs` | `premultiplied`, `indexed` |
-| B prefilter (forward) | `dfa_pfs` | `memchr-bounded`, `memchr`, `byte-class-bounded`, `byte-class`, `none` |
+| B prefilter (forward) | `dfa_pfs` (since [START-TABLE] C3: `cand_rows[]`'s NEXT rows, walked by `cand_select`) | `memchr-bounded`, `memchr`, `byte-class-bounded`, `byte-class`, `none` |
 | C view handling | `dfa_views` | `end+eol`, `end`, `eol`, `none` |
 | D start seed | `dfa_seeds` | `seeded`, `constant` |
 | E accept placement | `dfa_accs` | `by-class`, `scalar-viewed`, `scalar-plain` |
@@ -1199,6 +1199,26 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
   `emit_vm.c`'s `VM_CAND_*` hooks) also asks `cand_select` and aborts on a
   different row (`CANDORACLE`), the both-walks oracle; checked by
   `tests/codegen/run_cand_oracle.sh`.
+- **emit_dfa.c — NEXT and RECOVER read the start table** ([START-TABLE] C3,
+  lane stc3, 2026-10-07; `docs/design/start_table.md` §3.2 C3; zero movers,
+  no abi event). `dfa_pfs[]` and `dfa_search_starts[]` are DELETED into
+  `cand_rows[]`: `DfaPf` is the NEXT payload `CandPf` (`CandRow.u.pf`; its
+  `routes` field is the row's own), the RECOVER payload is `CandRecover`
+  (`u.recover.pinned`, which `dfa_search_is_pinned` returns — no row-pointer
+  compare). `CandRow`/`CandList` now sit beside the payload structs, above
+  the emitters, and `DfaForm.pf` is a `const CandRow *`. `dfa_pf_of`,
+  `vm_start_row`, `pcrec_dfa_scan_state_written`, `dfa_form_derive` and
+  `dfa_search_start_of` call `cand_select`; N12's four readers call
+  `attempt_next_of` (`cand_select(NEXT)` on `CAND_ROUTE_ATTEMPT`, the
+  candidate set left in `CandSel.cand`). `cand_route_of` moved up beside
+  `CAND_ROUTE_NAME` and every `job->engine` body test reads it except
+  `req_route_one_attempt`'s (C5b's). Stamps and trace records print the
+  row's `tok`. `dfa_select` stays for the machine-form axes, without its
+  route parameter (`cand_routed`/`DFA_SELECT_ROUTED` deleted). The
+  `prefilter`/`search-start` `--list-axes` accessors project the table
+  (`cand_axis_rows`). In the trace build a NEXT/RECOVER reader runs
+  `cand_hit` (self-check + `CANDROW`), not the oracle, and the route oracle
+  is gone (the dispatch reads `cand_route_of`).
 - **emit_dfa.c — the run pre-check's PAIR ARM** ([OPT-LITSCAN] S4 C3, lane
   c3build, 2026-10-03, abi 59; `docs/design/litscan_s4.md` §2.3.4):
   `OfsTest` gained `run_mask` (the run pre-check's tests only; a prefilter

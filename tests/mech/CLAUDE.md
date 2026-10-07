@@ -3308,7 +3308,13 @@ DETECTED at landing, `reach:ok(1/1),candrows:1fail/0pass`. Its stage-3
 answer-level detector (the hybrid re-seed row on a narrowed SET row) is the
 design's (startset.md §6.3) and does not exist yet. **S284** was re-anchored
 in the same change (the `dfa_pfs[]` rows took designated initializers); its
-intent and expected verdict (UNDETECTED) are unchanged.
+intent and expected verdict (UNDETECTED) are unchanged. **[START-TABLE] C3**
+(lane stc3, 2026-10-07) deleted `dfa_pfs[]` into `cand_rows[]`: S283, S284,
+S222 and S490 are re-aimed at the table's text (the derived C3 list,
+`start_table.md` §3.5), S495 too (its anchor read `pf->scan`, now
+`pf->u.pf.scan`), and S594/S595 re-homed (their plants now move artifacts;
+the `candoracle` hit counter still catches them). Intents unchanged; see
+`docs/dev/lanes/stc3_report.md`.
 
 ## [START-SET] stage 2 — `vmhat`, and S478-S500 (lane ssbuild2, 2026-10-05)
 

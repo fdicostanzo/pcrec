@@ -5,7 +5,7 @@
 # A DECLARED EQUIVALENT MUTANT, scored UNDETECTED (the ss3 D6 panel's
 # checks-M2, lane ssfix3; S219's shape; it was declared UNREACHED with a probe
 # that could never flip on the clean tree). The conjunct is a belt: every
-# caller of the predicate (`dfa_pfs[]`'s selection, `pf_scan_set_of`, G1's
+# caller of the predicate (`dfa_pfs[]`'s selection, `cand_rows[]`'s since C3, `pf_scan_set_of`, G1's
 # `dfa_cand_scan`, the re-seed density) is reached on ENG_UNANCH machines
 # only, where the conjunct is true, so the plant line runs and changes
 # nothing: the planted compiler emits the clean compiler's bytes. The guarded
@@ -23,7 +23,19 @@ SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern '\''(?m)^
 SAB_REACH_EXPECT='REACH-ATTEMPT-SEEDED-AND-HAT'
 SAB_EXPECT=UNDETECTED
 SAB_COUNT=1
-SAB_BEFORE='    if (s->cx->job->engine != PCREC_ENG_UNANCH) return false;
+# RE-AIMED 2026-10-07 (lane stc3, [START-TABLE] C3, start_table.md §3.5,
+# sound-n5): the conjunct reads the one route derivation, `cand_route_of`,
+# since C3 (it is one of the fifteen `job->engine` tests). The EQUIVALENCE
+# argument is RE-VERIFIED under its moved premise: before C3 it was "every
+# caller of the predicate is reached on ENG_UNANCH machines only"; since C3
+# the predicate is reached only through `cand_rows[]`'s N5/N6 (`routes` =
+# CR_DFA) and the `u.pf.scan_set` hook of those two rows, and every NEXT
+# walk that can reach them is on `cand_route_of(cx) == CAND_ROUTE_DFA`
+# (dfa_pf_of, scan_state_written and dfa_form_derive are all on ENG_UNANCH
+# bodies; the ATTEMPT walk, attempt_next_of, is CR_ATTEMPT and the `routes`
+# column excludes N5/N6 there), so the conjunct is still always true where
+# it runs and the planted compiler still emits the clean compiler's bytes.
+SAB_BEFORE='    if (cand_route_of(s->cx) != CAND_ROUTE_DFA) return false;
     if (!dfa_needs_seed(s->d)) return false;'
 SAB_AFTER='    /* SABOTAGE S490: the scan-kind conjunct removed */
     if (!dfa_needs_seed(s->d)) return false;'

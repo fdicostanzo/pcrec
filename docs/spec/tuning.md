@@ -2565,7 +2565,7 @@ too, which is this rule working rather than a leak).
 **Denying this bit also reaches §2.30.** `-fno-req-byte` empties the `req_run`
 fact along with the byte set (the fact deny above covers the whole family), so
 the `run_pin` fact (`--emit-facts`' `run_pin` row) reads `none` and §2.30's
-run-pinned `dfa_pfs[]` rows have no pin to test — a design consequence rather than a second denial
+run-pinned prefilter rows (`cand_rows[]`'s NEXT rows, `dfa_pfs[]` before [START-TABLE] C3) have no pin to test — a design consequence rather than a second denial
 (`docs/design/litscan_s1.md` §1.1 invariant 2).
 
 ### 2.28 `-fno-req-run` — `PCREC_NO_REQ_RUN` (bit 31)

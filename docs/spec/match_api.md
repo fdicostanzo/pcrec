@@ -2357,7 +2357,8 @@ the bump's own commit.**
 - **`rx_info.abi` was `62` (lane ssbuild2 bumped it
   from 61, 2026-10-05: [START-SET] stage 2 — THE VM HAT,
   `docs/design/startset.md` §2 V, §4.2, §8, D148 + addenda 1-2).** The
-  candidate table (`dfa_pfs[]`) gains its first row serving the VM route,
+  candidate table (`dfa_pfs[]`; the NEXT rows of `cand_rows[]` since
+  [START-TABLE] C3, no abi event) gains its first row serving the VM route,
   `first-class` (`tuning.md` §2.42, listed live by `--list-axes` on the
   `prefilter` axis with the `RX_VM_START_SCAN` stamp): a VM artifact with no
   DFA prefilter, an unanchored pattern, and a start set `S` (the `start_set`
@@ -2450,7 +2451,8 @@ the bump's own commit.**
   position is canonical (`T & ~K == 0`, `popcount(K)` 7 or 8; the compiler
   refuses a non-canonical position as an internal error); every search of the
   pair arm sits inside the block's `while (pos + maxk < n)` guard; a run pin
-  covers exact positions only, so no masked run enters `dfa_pfs[]`. No struct
+  covers exact positions only, so no masked run enters `dfa_pfs[]` (the NEXT
+  rows of `cand_rows[]` since [START-TABLE] C3). No struct
   offset moves, no `rx_info` member is added or changed, and no answer moves.
 - **`rx_info.abi` was `58` (lane s4build bumped it
   from 57 at the lane/r1land landing (its own branch took 56 from 55), 2026-10-03: `[OPT-LITSCAN]` S4 C1 — THE RUN COMPARE,
