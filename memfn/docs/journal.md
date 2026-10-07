@@ -542,3 +542,253 @@ pointer when a kit change merges to main.
   - Lesson: the m1bfix lane's detached chain was checked to be truly
     detached (ppid 1, own pgid) before I stopped the lane, and it
     survived.
+
+## 2026-10-07 (late morning) — M1b merged; G2 reach extension started
+
+- Main merged M1b as 1c037dce (Linux g2 green at 0125aeb5) and filed
+  K96. The R-5 done: is posted on lane/memfn-g2x.
+- Main's sequencing: no next migration until main names it. [START-TABLE]
+  C2 merges first, then main picks between R4g and C3 by remodel
+  overlap.
+- Q-G2-6 re-read: it is already RULED general (memfn.h `floor`). Site
+  2587's under-reads came from an out-of-contract G2 input; its wrong miss
+  was a genuine kit defect (K96). The ofsskip arm now declines ANY stated
+  floor. That is conservative; relax it only on a measured need (D77).
+- Blinded lane g2x (opus) works in the D27 cell worktrees/g2x-cell
+  (worktree g2x, branch g2x, from main 92ca17fc). Its allowlist matches
+  memfng2's. The brief is written in contract terms only and names no arm.
+  It closes the K35 gap and adds per-shape rendered counts as a floor;
+  G2 becomes a conforming caller under Q-G2-6.
+- Next, non-blinded, after g2x: a per-ARM reach census of G2's sites
+  (ofsskip / precheck / runcmp rows) with literal floors. This is the
+  independent check that the shapes reach the arms.
+
+## 2026-10-07 (midday) — [MEMFN-ROWCON] opened (Frank)
+
+- Frank, after K96: "the general learning then is to check rows'
+  contracts". He liked the proposal (a per-row allowlist of honoured
+  fields, a shared gate that declines everything else, a field × row
+  audit, every row reached) and asked for: create an item, a light
+  design, then a critic pass. His concerns: VISIBILITY into decisions;
+  are ALL ROWS REACHABLE by at least one pattern; is the LOGIC SOUND.
+- Item: [MEMFN-ROWCON]. A plan row was requested of main (responses.md
+  notice).
+- Step 1: a read-only sonnet audit (lane rowaudit) builds the
+  rows/selection map, the field × row matrix (H/D/R/I), the
+  disagreements, and today's visibility and reachability. Output:
+  worktrees/rowcon-scratch/audit.md.
+- Step 2: a light design, docs/design/memfn/row_contracts.md (mine).
+  Step 3: a D6 panel with one lens each: visibility, reachability,
+  logic soundness, contract/docs.
+- Also: K94 (main ab6e0f8a) added defs_bref_ci_ucp as an N7-pending
+  instance. M7's scope grows by 1; the C12 span-index ceiling is now 3.
+- Frank, 2026-10-07 (ROWCON design constraint): "we are moving decisions
+  into memfn in the future, so either do it then or expect to migrate."
+  Consequence: the visibility/explain mechanism is KIT-OWNED. It is a
+  decision record the kit keeps per art and site, with rows evaluated,
+  the verdict and the failing field, read through a kit API. It is not a
+  pcrec-side trace hook now. Its record shape must be the one pcrec's
+  start decisions (C1's PCREC_CAND_TRACE site-key records) can migrate
+  INTO when the planner moves into the kit (M5). The default is no R-6;
+  a pcrec-side piece is requested only if the design proves it can't
+  wait, and then it is marked as migrating.
+- Frank, 2026-10-07 (ROWCON scope): "if there is a general mechanism
+  pcrec can use for its other tables, I'd like to see that rather than a
+  one-off. It might be partially generalized." The design must therefore
+  offer ROWCON's parts (row contract/allowlist gate, decision record,
+  per-row reach floor) as a GENERAL table mechanism that pcrec's
+  first-match tables (dfa_pfs[]/DFA_SELECT, the start table, ...) can
+  adopt, within the kit boundary (the kit links nothing from src/ and
+  stays extractable). The audit gained §7: pcrec's tables, prior
+  unification designs, and boundary implications.
+
+## 2026-10-07 (afternoon) — ROWCON rev 2/2.1; Q-ROW-1 ruled by Frank
+
+- Main relayed Frank: design the engine against pcrec's decision tables
+  as REFERENCE CUSTOMERS. Lane rowcust gathered six customers
+  (probes/rowcon/customers.md). Rev 2 (e5f5c0c0) has two layers:
+  - a generic engine (stride rows with an mf_row head; scope/route
+    filters; deny; a pluggable gate; on_none policy; a decision record
+    mapping onto C1's trace; MF_TRACE reach; a listing accessor);
+  - the kit profile.
+
+  cand_rows[] is hosted on paper (Appendix A). analyses[] (an
+  AND-reduction) and POSS-CTX (indexed dispatch) are declared
+  NOT hosted.
+- Frank RULED Q-ROW-1, differently from my recommendation:
+  - NO SILENT DEFAULTS. "These are bugs waiting to happen …
+    assumptions that may be forgotten … not seen until circumstances line
+    up." Every value a row reads is stated explicitly (named tokens such
+    as MF_MISS_N); unstated means a loud refusal. pcrec states its values
+    via R-6 (zero movers).
+  - Caller text, option B: SNAPSHOT each value hook once into a reserved
+    `mf_` local, inside parentheses. Plus refusals for comments, `#` and
+    backslash, and for an on_miss/on_cand that is not a jump or a braced
+    block. Frank: B "also handles the case of function calls called
+    twice". It is an ABI EVENT at every delegated site (T3b): G1 at both
+    layers, deny --memfn=no-snapshot.
+- Rev 2.1 folds both. Q-ROW-4 (charter) is still pending. Next: the re-check
+  panel, with a pcrec-customer lens.
+- Memory: pcrec-no-silent-defaults.
+- Frank RULED (2026-10-07, directly):
+  - Q-ROW-4 AGREE: the kit hosts the general first-match table engine
+    as a kit utility under MF_NS (D146's charter is widened);
+  - Q-ROW-6 AGREE: the hook snapshot carries NO public deny, and G1's
+    comparator is the pre-snapshot commit (a D144 item-4 exception for a
+    correctness change);
+  - Q-ROW-5, answered by a CLARIFICATION: "my concern about defaults was
+    that they would be USED … if it's unused, as in a wildcard, then that
+    isn't important. I don't want to specify everything for the sake of
+    it." So a row may use only a value the caller STATED; unstated fields
+    are wildcards; a row that needs an unstated field DECLINES, and if no
+    row can serve, the kit refuses and names the field. There is no
+    blanket stated-bitmask: an enum a row uses gets an UNSTATED = 0
+    member, and per-kind obligations stay required. The r2 review
+    (fa334f08) closes; rev 3 follows.
+- SCOPE RULING (Frank via main, 2026-10-07): narrow [MEMFN-ROWCON]. "I
+  don't want this to turn into a solution without problem scenario."
+  - BUILD NOW, the K96 generalization only:
+    - per-row allowlists of the fields each row USES/serves;
+    - one shared gate that declines everything else;
+    - decline reasons in the kit's own trace;
+    - per-row reach floors;
+    - the narrowed stated-value rule (R-6 stays small).
+  - HOLD, filed:
+    - (a) the general table engine. The charter stays ruled, and it is
+      built when a real table wants it. The cand_rows paper mapping
+      stays only as no-corner evidence; the rev-2 customer framing is
+      design input only.
+    - (b) SNAPSHOT. Its trigger is a measured hazard. A cheap census of
+      pcrec's actual hook texts runs first (lane hookcensus). If none
+      are risky, SNAPSHOT stays filed with the census as its "not yet"
+      evidence; if one is, the case goes to Frank.
+  - The next panel is LIGHT: a one-critic re-check of the narrowed gate.
+    Rev 4 rescopes the design.
+
+## 2026-10-07 (afternoon) — [MEMFN-ROWCON] N1 built (lane rowconn1)
+
+- fields.def (39 fields, 37 classes) + gate.c: rules 1-3 of row_contracts.md
+  §2 as `gate_check`, run in WARN mode in the arm walk (define), the use
+  re-check (every mf_use / mf_call) and the run-compare walk; verdicts
+  recorded on site_rec / mf_art, no selection changed, nothing refused.
+- `uses`/`serves` declared on all 8 rows, each with its citation, at the end
+  of the row's own file. MF_TRACE (off by default) writes MFTRACE
+  SEL/ROW/END records and REACH counters (docs/trace_format.md).
+- Trace demo: the only would-declines on pcrec sites are the unstated `miss`
+  (rule 1) at ofsskip define and use and at precheck's ASSIGN use: R-6's
+  predicted items. The C5 decline fixtures show the general gate reaching
+  K96's two declines (`miss:R2:OTHER`, `floor:R2:OTHER`) on its own.
+- Choices for review (lane report §5): uses excludes contract-defaulted and
+  shape-dependent reads; precheck serves BRACED; on_cand classes {OTHER};
+  a third phase `run`; memfn.h sentences deferred to N3.
+
+## 2026-10-07 (late afternoon) — ROWCON narrowed (rev 4/4.1), N1 merged
+
+- Rev 4 (d0dd3f5e) narrowed per Frank. The hook census found NO RISKY
+  HOOK, so SNAPSHOT stays filed (97f9f8c7). The light re-check (opus)
+  produced rev 4.1 (f7647b9e):
+  - the gate runs at both phases;
+  - IDENT/JUMP text classes close S2-S7 with no snapshot;
+  - a semantic differential;
+  - N3's entry re-census;
+  - the UNSTATED bump is cut.
+- N1 (lane rowconn1, opus, 3dea08c8) is merged into lane/memfn-rowcon:
+  - fields.def (39 fields), uses/serves on all 8 rows with citations,
+    and the WARN gate at define/use/run;
+  - MF_TRACE + trace_format.md.
+  - Validation, Mac, under the lock 14:42-14:51: build, strict, g2,
+    arms, forms, manifest, stamps, link and strict_trace are all rc 0;
+    the gate vs 92ca17fc is R4C-GATE PASS (--zero-dumps), 0 movers on
+    all six streams.
+- Would-decline preview: 3 cells, all `miss` unstated (ofsskip at
+  define and use; precheck at use on ASSIGN). That is R-6's predicted
+  list.
+- Review condition applied: five contract-defaulted reads become WRITTEN
+  exemptions in fields.def (floor = absent constraint; result_decl, count
+  and member = absent offer; indent = layout only).
+- Next: N2, the WARN census over the whole corpus × every axis (a heavy
+  Mac or Linux run, slot via main). Then R-6, G2u, N3 and N4. g2x run 1
+  started 15:04.
+
+## 2026-10-07 (evening) — N2 done; wind-down for the box move
+
+- N2 census (Mac, under the lock, 15:11 to about 15:55): 958,292 compiles,
+  0 timeouts, 0 no-row sites. 129,937 would-declines → exactly 3 cells,
+  all `miss` R1 (ofsskip define/use, precheck ASSIGN use). That is the
+  predicted R-6 list, posted in responses.md.
+- Frank: start nothing new; close out; push the kit branches; wind down
+  (pcrec dev moves to pcrec@192.168.1.17, cloned from GitHub). g2x was
+  stopped at a consistent point. Its interim blinded work is committed on
+  branch `g2x` (5be6fe58, unreviewed): run 1 had 138 failed, 0 faults,
+  findings F1/F2/G1 (see wake.md §4). wake.md was rewritten for the new
+  box.
+- Lessons: lanes still overran numeric caps "for timing" (rowconn2: ~770
+  compiles outside the lock). Briefs must forbid timing runs outright.
+
+## 2026-10-07 (late) — woke on the new Linux dev box (pcrec@192.168.1.17)
+
+- Kit worktree re-created at worktrees/memfn from origin/lane/memfn-rowcon
+  (c808c3d5); main 23111928 merged in; make strict + build rc 0.
+- Box facts (from main): 16 threads, ~29 GB, gcc 15.2.0, libpcre2 10.46;
+  bare `timeout` is uutils, so use `gnutimeout`; no git identity configured
+  (commit with -c user.name/-c user.email).
+- Main's first full make test here holds the box; the kit runs nothing heavy
+  until main releases it.
+- One read-only sonnet triage of g2x F1/F2/G1 (capped at 20 pcrec + 20 gcc
+  invocations). Asked main whether MF_MISS_N ships kit-side (recommended)
+  or with R-6.
+- g2x triage done (read-only, 7 pcrec + 2 gcc runs). F2 is a kit defect:
+  the arms never note their own libc calls. pcrec's stamp is right, because
+  its finishing pass scans the artifact. The fix lane runs after missn.
+  F1 = the N3 cell, unreachable from pcrec. G1 is G2-side (equivalent
+  mutants) and goes to G2u. Posted in responses.md.
+- libcnote merged into lane/memfn-rowcon. The arms note memchr (ofsskip
+  define, precheck use) and memcmp (runcmp's memcmp form) at render; the
+  constant-size memcpy is excluded. The arm-pins test now checks the
+  stand-alone MEMFN_LIBC stamp (it failed 8 fixtures before the fix, 0
+  after). 16 sample compiles show identical .c/.h. After the merge, strict,
+  build, test-memfn-arms and test-memfn-stamps are all rc 0. OWED to a heavy
+  slot: the identity gate vs ccf0ca33 and the full G2.
+- missn merged (MF_MISS_N; review nit: comment re-wrap 728bf063). Slot run
+  on 728bf063: identity gate vs ccf0ca33 PASS with 0 movers on all 6
+  streams; full G2 61,020,752/0, the token cell 538 sites. Posted in
+  responses.md; offered the branch to main as an interim delivery so R-6
+  can consume the token. Lesson: the session scratchpad vanished
+  mid-session, so kit scratch moved to worktrees/memfn-slot/ (gitignored).
+- Landing bar for the interim rowcon delivery (main s96): full make test
+  640 s, 59/59, one red: [SABANCHOR] S570 stale under N1 (check-side). It
+  was re-pinned (4e6c42c4); test-codegen rc 0. All 16 D69 mech rows
+  DETECTED, with S570 re-run after the re-pin. done: posted. Lesson: N1's
+  lane never ran SABANCHOR; any kit lane that edits memfn/src must run
+  `python3 scripts/m6read_check_sab_anchors.py` (under a second) before
+  delivering.
+
+## 2026-10-07 (evening) — rowcon interim merged to main; G2u started
+
+- Main merged lane/memfn-rowcon at 13b9f2ae and pushed it. The kit
+  worktree is now on lane/memfn-g2u, cut from main 13b9f2ae.
+- G2u: the blinded opus author works in the D27 cell worktrees/g2u-cell
+  (worktree g2u, branch g2u, from main 13b9f2ae; made from the MAIN tree,
+  not nested). Allowlist: memfn/include, memfn/tests,
+  docs/design/memfn/integration.md, memfn/docs/trace_format.md. The g2x
+  interim patch and the main-since-base delta are in the cell's .g2x/.
+- Brief items:
+  1. fold g2x;
+  2. F1 cases go to a counted PENDING-ENFORCE bucket, with
+     G2_STRICT_HOOKS=1 as N3's acceptance switch;
+  3. G1's floor is judged only over negative-offset sites;
+  4. explicit values;
+  5. refusal expectations;
+  6. the POISON differential, with "unused" sets from the contract text;
+  7. the SEMANTIC differential;
+  8. per-form floors.
+- Caps: --quick at most 4 times, taskset to 4 cores; no timing; no full
+  run (that is the manager's slot).
+- A stall watcher (cell mtimes, 30 min) is running.
+- Main's queue: possland → admin1008 → stc3 → R-6. N3 waits for R-6 plus
+  the N2 re-run.
+- G2u done. g2u (opus, blinded) folded g2x and added items 1-8. Quick run:
+  462 failures, all K-1, a contract gap. The kit ruled (memfn.h: a FUNC
+  site's name is site.pred.fn_ref for every op; fn_ref 0 on FUNC is
+  refused under N3), and g2u2 (sonnet, blinded) aligned the poison table.
+  Full G2 in main's slot: 138,742,037/0. S526 DETECTED. done: posted.

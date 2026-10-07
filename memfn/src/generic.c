@@ -290,7 +290,7 @@ static const char *expr_text(rctx *rc, int want_value)
     const mf_hooks *h = rc->h;
     kb miss;
     kb_init(&miss, rc->art->a);
-    if (want_value) kb_printf(&miss, "(%s)", h->miss);
+    if (want_value) kb_printf(&miss, "(%s)", kit_miss(h));
     rc->miss = miss.p ? miss.p : "0";
 
     kb body;
@@ -369,7 +369,7 @@ static int stmt_value(rctx *rc, kb *b)
         return 0;
     }
     /* ASSIGN */
-    if (need(rc->art, "ASSIGN", "result", h->result, "miss", h->miss, (char *)NULL))
+    if (need(rc->art, "ASSIGN", "result", h->result, "miss", kit_miss(h), (char *)NULL))
         return -1;
     if (nop && h->result_decl)
         return kit_fail(rc->art, "generic: a NOP ASSIGN cannot declare its result");
@@ -386,7 +386,7 @@ static int stmt_value(rctx *rc, kb *b)
     if (h->on_miss) {
         kb cond;
         kb_init(&cond, rc->art->a);
-        kb_printf(&cond, "%s == (%s)", h->result, h->miss);
+        kb_printf(&cond, "%s == (%s)", h->result, kit_miss(h));
         on_miss_block(b, in, cond.p, h->on_miss);
     }
     if (nop) kb_printf(b, "%s}\n", ind);
@@ -443,7 +443,7 @@ static int stmt_on_cand(rctx *rc, kb *b)
     const mf_hooks *h = rc->h;
     if (!h->on_cand)
         return kit_fail(rc->art, "generic: ON_CAND needs the `on_cand` hook");
-    if (need(rc->art, "ON_CAND", "result", h->result, "miss", h->miss, (char *)NULL))
+    if (need(rc->art, "ON_CAND", "result", h->result, "miss", kit_miss(h), (char *)NULL))
         return -1;
     int nop = s->empty == MF_EMPTY_NOP;
     if (nop && h->result_decl)
@@ -483,7 +483,7 @@ static int stmt_on_cand(rctx *rc, kb *b)
     replace_tokens(&verify, raw.p ? raw.p : "", acc.p, rej.p, &nacc, &nrej);
 
     kb_printf(b, "%s%s%s = (%s);\n%s{\n", ind, h->result_decl ? h->result_decl : "",
-              h->result, h->miss, ind);
+              h->result, kit_miss(h), ind);
     kb_printf(b, "%s    const unsigned char *%s = (const unsigned char *)(%s);\n",
               ind, rc->S, h->s);
     kb_printf(b, "%s    size_t %s = %s;\n%s    size_t %s = %s;\n",
@@ -508,7 +508,7 @@ static int stmt_on_cand(rctx *rc, kb *b)
     if (h->on_miss) {
         kb cond;
         kb_init(&cond, rc->art->a);
-        kb_printf(&cond, "%s == (%s)", h->result, h->miss);
+        kb_printf(&cond, "%s == (%s)", h->result, kit_miss(h));
         on_miss_block(b, ind, cond.p, h->on_miss);
     }
     if (nop) kb_printf(b, "%s}\n", h->indent ? h->indent : "");
@@ -600,7 +600,7 @@ static int func_call(rctx *rc, site_rec *r, kb *b)
 {
     const mf_hooks *h = rc->h;
     const char *fl = h->floor ? h->floor : "0";
-    const char *arg[] = { h->s, h->n, h->lo, fl, h->miss };
+    const char *arg[] = { h->s, h->n, h->lo, fl, kit_miss(h) };
     const char *hook[] = { "s", "n", "lo", "floor", "miss" };
     kb_printf(b, "%s(", r->fn);
     int any = 0;
@@ -643,7 +643,7 @@ static int generic_body(mf_art *art, uint32_t handle, const mf_hooks *h, kb *bod
     if (need_subject(art, h, "a site")) return -1;
     switch (s->form) {
     case MF_FORM_EXPR:
-        if (valued(s) && need(art, "RETURN", "miss", h->miss, (char *)NULL))
+        if (valued(s) && need(art, "RETURN", "miss", kit_miss(h), (char *)NULL))
             return -1;
         kb_puts(body, expr_text(&rc, valued(s)));
         return 0;
@@ -681,10 +681,85 @@ static int generic_use(mf_art *art, uint32_t handle, const mf_hooks *h,
     return kit_flush(art, &body, out, "mf_use");
 }
 
+/* ---- the contract ([MEMFN-ROWCON] N1, row_contracts.md §2) ---------------
+ *
+ * The generic row SERVES every class of every field (§2): it parenthesizes
+ * every hook it pastes into an expression (:293, :304-308, :360, :456,
+ * :612), braces every statement (:348), and reads every site field through
+ * the vocabulary's own cases; a value it cannot serve is a contract refusal.
+ * `uses`: the fields the text reads with no reading of its own left
+ * unstated. A FUNC call's operands are read only where its definition took
+ * them (:608-610), so they are held there rather than declared, `miss` on a
+ * RETURN excepted (:574 always takes it). A field with a contract reading
+ * when unstated is no use: `floor` ("0", :79), `result_decl` (:384),
+ * `on_miss` on an ASSIGN (:386), `count` (:530), `member` (:131). Nor is
+ * `indent` (:356), which only lays text out. */
+static const gate_use generic_uses[] = {
+    /* :643 need_subject: every EXPR/STMT site but ADVANCE */
+    { CM(EXPR) | CM(STMT), CM(RETURN) | CM(BOOL) | CM(ASSIGN) | CM(ON_MISS) | CM(ON_CAND),
+      MF_PH_USE, FM(s) | FM(n) | FM(lo) },
+    /* :646 a valued EXPR's miss */
+    { CM(EXPR), CM(RETURN), MF_PH_USE, FM(miss) },
+    /* :363 */
+    { CM(STMT), CM(ON_MISS), MF_PH_USE, FM(on_miss) },
+    /* :372 */
+    { CM(STMT), CM(ASSIGN), MF_PH_USE, FM(result) | FM(miss) },
+    /* :444-446 */
+    { CM(STMT), CM(ON_CAND), MF_PH_USE, FM(on_cand) | FM(result) | FM(miss) },
+    /* :525-526 */
+    { CM(STMT), CM(ADVANCE), MF_PH_USE, FM(step) | FM(more) | FM(peek) },
+    /* :566-567 */
+    { CM(FUNC), MF_ANY, MF_PH_DEFINE, FM(fn_name) },
+    /* :574, :609-610 */
+    { CM(FUNC), CM(RETURN), MF_PH_USE, FM(miss) },
+};
+
+static const gate_contract generic_ct = {
+    "arms", "generic", generic_uses, sizeof generic_uses / sizeof generic_uses[0], {
+    [FLD_form]            = MF_ANY,     /* :635-656 every form */
+    [FLD_op]              = MF_ANY,     /* :245-281 every op */
+    [FLD_handoff]         = MF_ANY,     /* :639-652 every handoff */
+    [FLD_reverse]         = MF_ANY,     /* :228-234, :496-501 */
+    [FLD_empty]           = MF_ANY,     /* :256, :357, :448 */
+    [FLD_end_back]        = MF_ANY,     /* :217-233, :257, :360, :454 */
+    [FLD_pred]            = MF_ANY,     /* :143-209 every term, negative offsets :154-161 */
+    [FLD_preds]           = MF_ANY,     /* :269-277 */
+    [FLD_ret_pred]        = MF_ANY,     /* :270, :275 */
+    [FLD_guard_by_caller] = MF_ANY,     /* :152, :256 */
+    [FLD_on_miss_leaves]  = MF_ANY,     /* not read: the text tests in order, :269-277 */
+    [FLD_span_hi]         = MF_ANY,     /* :529, :543 */
+    [FLD_denies]          = MF_ANY,     /* not read: its compares are its own, :189-204 */
+    [FLD_fn_ref]          = MF_ANY,     /* :568 */
+    [FLD_table_ref]       = MF_ANY,     /* not read: a set is member or its own test, :131-136 */
+    [FLD_s]               = MF_ANY,     /* :304-305, :487-488 parenthesized */
+    [FLD_n]               = MF_ANY,     /* :306, :360, :456, :489-490 */
+    [FLD_lo]              = MF_ANY,     /* :307, :360, :456, :489-490 */
+    [FLD_floor]           = MF_ANY,     /* :79, :156-166, :308 */
+    [FLD_result]          = MF_ANY,     /* :384, :480, :485 */
+    [FLD_result_decl]     = MF_ANY,     /* :384, :485 */
+    [FLD_miss]            = MF_ANY,     /* :293, :389, :486, :511 parenthesized */
+    [FLD_on_miss]         = MF_ANY,     /* :348 braced */
+    [FLD_step]            = MF_ANY,     /* :545-547 */
+    [FLD_more]            = MF_ANY,     /* :542 parenthesized */
+    [FLD_peek]            = MF_ANY,     /* :539 parenthesized */
+    [FLD_count]           = MF_ANY,     /* :530-532, :548 */
+    [FLD_count_start]     = MF_ANY,     /* :532 */
+    [FLD_on_cand]         = MF_ANY,     /* :475 its text captured and its tokens replaced */
+    [FLD_on_cand_reach]   = MF_ANY,     /* :466-467 */
+    [FLD_member]          = MF_ANY,     /* :131-133 parenthesized */
+    [FLD_table_name]      = MF_ANY,     /* not read (file header) */
+    [FLD_fn_name]         = MF_ANY,     /* :568 */
+    [FLD_note]            = MF_ANY,     /* not read (file header) */
+    [FLD_note_tag]        = MF_ANY,     /* not read (file header) */
+    [FLD_indent]          = MF_ANY,     /* :356, :451, :528 */
+    [FLD_comment_tier]    = MF_ANY,     /* not read: no comment */
+}};
+
 const arm generic_arm = {
     "generic",
     0,
     generic_applies,
     generic_define,
     generic_use,
+    &generic_ct,
 };

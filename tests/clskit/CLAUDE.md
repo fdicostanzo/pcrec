@@ -61,6 +61,13 @@ at `PROCS=4`, most of it in the study's Python DP (crosscheck.py).
   Mac) AND by RUN COST (`CHUNK_VARS` checker variants per unit, optional
   argv[5]: bytes alone let 118 small sets run 6.4 s solo against the 10 s
   GENRUNTIMEOUT and time out under make test's -j load, s1tri 2026-09-29).
+  Since admin1008 (2026-10-07) the checker runs' wall backstop is
+  `CLSKIT_RUN_WALL` (default `gen_timeout_secs`, 60 s plain / 180 s
+  sanitizer) rather than gen_run's tight 10 s: the checkers are CPU-bound
+  for ~1 s by construction (MEASURED on the Linux dev box: 331 units, run
+  wall median 0.14 s / max 1.58 s with 16 threads busy; worst unit solo
+  0.94-1.10 s CPU), so 10 s was a load gauge, not a hang detector. The CPU
+  budget (`gen_cpu_secs`) stays the primary bound.
   The only indivisible part of a group is its LAW bundle: when a group has
   compositions, the K4 and P3 variants of all its sets plus its COMPS rows
   share one unit (the law compares a result against its operands in one

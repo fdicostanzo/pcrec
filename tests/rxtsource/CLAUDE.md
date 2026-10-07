@@ -635,6 +635,12 @@ through subtraction and splice (parsing only), so it answers the same
 question — `entry files == CENSUS_FILES`, `fragments spliced == 0` — at
 zero compile cost. The two lines print to STDERR under `--dump`
 specifically so they never join the rows the C1 differential compares.
+Its wall bound is a CEILING (`RXTSOURCE_DUMP_SECS`, default 900 s, the same
+as the C0a sibling pass over the same corpus), no longer a fixed 120 s:
+MEASURED 2026-10-07 on the Linux dev box, the `--dump` takes 9.6-10.5 s
+(8.0-8.6 s user + 2.2-2.3 s sys) at load ~3, and wall stretches without
+bound under a loaded 16-thread box, so a tight bound would gauge the box's
+load. A firing is a finding (a hung `--dump`), not a reason to re-run.
 
 **S247** plants the one thing that would make `include_nested` alone
 insufficient: `rxt_expand_closure`'s own recursive call deleted, so a

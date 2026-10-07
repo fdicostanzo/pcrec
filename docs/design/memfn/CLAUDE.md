@@ -208,3 +208,11 @@ its DESIGN record.**
   (L-2, L-4, the x86 survey); both read in `linux_results.md`.
 
 Maintenance: update this file when files are added/removed or change roles.
+- `row_contracts.md` — [MEMFN-ROWCON] light design (rev 1, 2026-10-07,
+  Frank after K96): one first-match table mechanism, exported by the kit.
+  It has a field vocabulary (`fields.def`), per-row `honours` allowlists
+  with a shared gate, a decision record and explain output, and per-row
+  reach counters and floors. The kit's tables are its first users;
+  pcrec's tables may adopt it after their remodel. Evidence is in
+  `probes/rowcon/` (`audit_kit_rows.md`, `audit_pcrec_tables.md`).
+

@@ -1,0 +1,6 @@
+== battery start 15:16:02
+/home/duxevents/pcrec/worktrees/possarms21-lx/docs/design/poss_arms_measurements/rev21/gen_a21.py:19: SyntaxWarning: "\B" is an invalid escape sequence. Such sequences will not work in the future. Did you mean "\\B"? A raw string is also an option.
+  - models `\B` as a gate too (it admits the left character's OWN wordness);
+== battery done rc=0 15:26:21
+pd_extra_0.txt	-	667
+== extra possdiff done 15:26:50

@@ -109,6 +109,13 @@ static int consistent(const g2_site *d, const g2_items *it, uint64_t S,
     int nonempty = range(d, n, lo, &hi);
     size_t missv = g2_missv(d->miss_mode, n);
     size_t cv[256];
+    /* §15.5 (lane g2x): in an ALL_PRESENT ASSIGN only the returned
+     * predicate's line writes the result ("every other predicate behaves as
+     * ON_MISS"), so a miss may run on_miss with the result unwritten. G2
+     * observes that only where its on_miss text leaves and reads no result
+     * (noread: the generator's mode-3 text) */
+    int unwritten_ok = d->op == G2_OP_ALL && d->handoff == G2_H_ASSIGN && d->noread;
+    int miss_res_ok = o->res == missv || (unwritten_ok && o->res == G2_SENT);
 
     if (d->handoff == G2_H_ADVANCE) {
         /* §8.3 rule 5 + §14.3: `while (more && member(peek)) step;`, the
@@ -148,7 +155,7 @@ static int consistent(const g2_site *d, const g2_items *it, uint64_t S,
             if (o->res == 0) return 1;
             break;
         case G2_H_ASSIGN:
-            if (nop ? (o->res == G2_SENT && !o->missed) : (o->res == missv && o->missed)) return 1;
+            if (nop ? (o->res == G2_SENT && !o->missed) : (miss_res_ok && o->missed)) return 1;
             break;
         case G2_H_ON_MISS:
             if (o->missed == !nop) return 1;
@@ -209,7 +216,7 @@ static int consistent(const g2_site *d, const g2_items *it, uint64_t S,
         snprintf(why, whyn, "BOOL: kit %zu, want %d", o->res, hit);
         return 0;
     case G2_H_ASSIGN:
-        if (hit ? (pos_ok && !o->missed) : (o->res == missv && o->missed)) return 1;
+        if (hit ? (pos_ok && !o->missed) : (miss_res_ok && o->missed)) return 1;
         snprintf(why, whyn, "ASSIGN: kit %zu missed %d, want %s%zu", o->res, o->missed,
                  hit ? "" : "miss ", hit ? want : missv);
         return 0;

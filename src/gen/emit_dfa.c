@@ -1602,7 +1602,9 @@ const char *pcrec_emit_req_byte_check(Ctx *cx, StrBuf *c, const char *indent,
     mf_hooks h = {
         .s = subjvar, .n = lenvar, .lo = posvar, .indent = indent,
         .on_miss = REQ_ON_MISS, .result = "handoff_position",
-        .result_decl = "size_t ", .note = req_site_note,
+        .result_decl = "size_t ",
+        .miss = s->handoff == MF_H_ASSIGN ? MF_MISS_N : NULL,
+        .note = req_site_note,
         .comment_tier = PCREC_CMT_NONESSENTIAL, .u = &u,
     };
     pcrec_memfn_use(cx, pre->handle, &h, c);
@@ -6327,7 +6329,7 @@ static uint32_t ofs_site_define(StrBuf *c, const DfaForm *f)
     PcrecMfU u = { f->cx, s, f, NULL };
     mf_hooks h = {
         .fn_name = ofs_site_fn_name, .table_name = ofs_site_table_name,
-        .comment_tier = PCREC_CMT_NONESSENTIAL, .u = &u,
+        .miss = MF_MISS_N, .comment_tier = PCREC_CMT_NONESSENTIAL, .u = &u,
     };
     return pcrec_memfn_define(f->cx, DELEG_OFS, s, &h, c);
 }
@@ -6348,7 +6350,7 @@ static void pf_ofs_call(StrBuf *c, const DfaForm *f)
     PcrecMfU u = { f->cx, NULL, f, NULL };
     mf_hooks h = {
         .s = "subject", .n = "subject_length", .lo = "scan_position",
-        .table_name = ofs_site_table_name, .u = &u,
+        .table_name = ofs_site_table_name, .miss = MF_MISS_N, .u = &u,
     };
     pcrec_memfn_call(f->cx, f->ofs_site, &h, c);
 }

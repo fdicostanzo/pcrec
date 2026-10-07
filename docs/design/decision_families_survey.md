@@ -533,7 +533,12 @@ discharge's survey consumer. The arms add a fourth fold (A1's continuation,
 context record `{follow, may_end, encl, left}` and ONE per-kind rows table
 indexed by kind with a static count assertion (so `-Wswitch`'s exhaustiveness
 alarm, mrl.c's rule, survives). No inconsistency found — D154 already made it
-one walk and one verdict. Filed as [POSS-CTX-TABLE]: not built ahead of the
+one walk and one verdict. **One found by the arms' re-check (2026-10-07,
+[ART-POSS-ARMS] rev 2.1, N1):** `first_of` answers two questions, "the next
+character at a POSITION" (where A0 narrows a gate, non-nullable) and "the
+first character of a captured TEXT" (where a gate is nothing, nullable);
+arm B's prototype asked the second and got the first's answer, an A0+B
+miscompile. The context record gains a READER field. Filed as [POSS-CTX-TABLE]: not built ahead of the
 arms; a zero-mover refactor gated on per-pattern `possessify marked/total`
 plus emit_sweep identity, triggered by the next per-kind possessify edit
 after the arms.

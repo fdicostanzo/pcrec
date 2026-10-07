@@ -83,11 +83,12 @@ static void on_fault(int sig)
 
 /* ---- counts --------------------------------------------------------------- */
 
-static long n_pass, n_fail, n_fault, n_skipped_precond;
+static long n_pass, n_fail, n_fault, n_skipped_precond, n_floor_clamped;
 static long n_layout[3], n_len[130], n_hitoff[130], n_align[16];
 static long n_sites_run, n_sites_failed, n_sites_nopos, n_sites_unsat, n_sites_noplant, n_sites_gap,
             n_sites_overlap, n_sites_wide;
 static int quick, mutants_mode, witness_mode;
+static int g_strict;        /* G2_STRICT_HOOKS=1: PENDING-ENFORCE sites are hard checks */
 static uint32_t trace_id;   /* G2_TRACE=<site id>: print that site's calls (layout U) */
 
 #define NLAB 20
@@ -105,6 +106,20 @@ static long lab_rev[NLAB][2], lab_eb[NLAB][2];
 static long set_cell[17], run_cell[17][34][5], nterm_cell[9], npred_max;
 static long style_sites[3], via_sites[3], opt_sites, discard_sites, gbc_sites, count_sites,
             span_sites, tok_sites[3];
+/* the MF_MISS_N token's cells (miss_mode 4): sites by handoff and by FUNC,
+ * and the answer checks with a positive / a miss outcome */
+static long mt_sites, mt_ret, mt_assign, mt_func, mt_checks, mt_pos;
+static long leaves_sites[2];
+/* per shape family (g2.h G2_FAM_*), counted from the hard sites that RAN */
+static long fam_sites[G2_NFAM], fam_checks[G2_NFAM], fam_pos[G2_NFAM], fam_fail[G2_NFAM];
+/* PENDING-ENFORCE, per class: sites, checks, failed checks, faults, failed sites */
+static long pd_sites[G2_NPEND], pd_checks[G2_NPEND], pd_fail[G2_NPEND], pd_fault[G2_NPEND], pd_sfail[G2_NPEND];
+/* the semantic differential: per field, sites / checks / failed sites, and
+ * the sites per (field, class) */
+static long sv_sites[G2_NV], sv_checks[G2_NV], sv_sfail[G2_NV], sv_cls[G2_NV][8];
+/* per form id (the generator's FORMID numbering): sites / checks / failed sites */
+#define NFID 32
+static long fd_sites[NFID], fd_checks[NFID], fd_sfail[NFID];
 
 static int lab_index(const char *l)
 {
@@ -134,6 +149,16 @@ static void census_site(const g2_site *d, const g2_items *it)
         lab_rev[li][d->reverse]++;
         lab_eb[li][d->end_back]++;
     }
+    if (d->miss_mode == 4) {
+        mt_sites++;
+        mt_ret += d->handoff == G2_H_RETURN;
+        mt_assign += d->handoff == G2_H_ASSIGN;
+        mt_func += d->form == G2_FORM_FUNC && d->handoff == G2_H_RETURN;
+    }
+    if (d->handoff == G2_H_ON_MISS || d->handoff == G2_H_ASSIGN) leaves_sites[d->leaves ? 1 : 0]++;
+    if (d->fam < G2_NFAM) fam_sites[d->fam]++;
+    if (d->fam == G2_FAM_SEM && d->vfield < G2_NV) { sv_sites[d->vfield]++; sv_cls[d->vfield][d->vclass & 7]++; }
+    if (d->fid < NFID) fd_sites[d->fid]++;
     style_sites[d->hook_style]++;
     via_sites[d->via]++;
     opt_sites += it->nitems > 0;
@@ -293,8 +318,8 @@ static void report(const char *what, const uint8_t *subj, size_t n, size_t lo, s
 {
     if (cur_fail >= 2 || shown++ >= 150) return;    /* two per site, 150 in all */
     static const char *ln[] = { "U", "L", "A" };
-    fprintf(stderr, "FAIL site %u %s empty=%u rev=%u eb=%u use=%u style=%u via=%u%s: n=%zu lo=%zu fl=%zu layout=%s: %s: %s\n  subject:",
-            cur->id, cur->label, cur->empty, cur->reverse, cur->end_back, cur->use,
+    fprintf(stderr, "%s site %u %s empty=%u rev=%u eb=%u use=%u style=%u via=%u%s: n=%zu lo=%zu fl=%zu layout=%s: %s: %s\n  subject:",
+            cur->pend && !g_strict ? "PENDING-ENFORCE" : "FAIL", cur->id, cur->label, cur->empty, cur->reverse, cur->end_back, cur->use,
             cur->hook_style, cur->via, cur->mutated ? " MUTATED" : "", n, lo, fl, ln[layout], what, why);
     for (size_t i = 0; i < n && i < 48; i++) fprintf(stderr, " %02x", subj[i]);
     fprintf(stderr, "%s\n", n > 48 ? " ..." : "");
@@ -339,11 +364,31 @@ static void check(g2_fn fn, const uint8_t *subj, size_t n, size_t lo, size_t fl,
         int align = align_rot++ & 15;
         int sig = call_on(fn, layout, align, subj, n, lo, fl, &o, &heap);
         free(heap);
+        if (cur->pend) {
+            /* PENDING-ENFORCE: its own bucket; hard (n_pass / n_fail) only
+             * under G2_STRICT_HOOKS=1; never in the census */
+            char why[300];
+            uint64_t keep = 0;
+            if (!sig) keep = g2_ref_check(cur, &cur_it, cur_alive, subj, n, lo, fl, &o, why, sizeof why);
+            else snprintf(why, sizeof why, "signal %d (a read outside [fl, n))", sig);
+            pd_checks[cur->pend]++;
+            if (keep) { cur_alive = keep; if (g_strict) n_pass++; }
+            else {
+                pd_fail[cur->pend]++;
+                if (sig) pd_fault[cur->pend]++;
+                report(sig ? "FAULT" : "WRONG", subj, n, lo, fl, layout, why);
+                cur_fail++;
+                if (g_strict) { n_fail++; if (sig) n_fault++; }
+            }
+            continue;
+        }
         n_layout[layout]++;
         n_len[n]++;
         if (layout == 2) n_align[align]++;
         if (hit_at >= 0 && hit_at < 130) n_hitoff[hit_at]++;
         lab_checks[lab_index(cur->label) >= 0 ? lab_index(cur->label) : 0]++;
+        if (cur->fam == G2_FAM_SEM && cur->vfield < G2_NV) sv_checks[cur->vfield]++;
+        if (cur->fid < NFID) fd_checks[cur->fid]++;
         if (sig) {
             char w[64];
             snprintf(w, sizeof w, "signal %d (a read outside [fl, n))", sig);
@@ -377,8 +422,10 @@ static void check(g2_fn fn, const uint8_t *subj, size_t n, size_t lo, size_t fl,
             }
             int li = lab_index(cur->label);
             if (li >= 0 && cur->npred <= 40) { lab_small[li]++; if (pos) lab_pos[li]++; }
+            if (cur->fam < G2_NFAM) { fam_checks[cur->fam]++; fam_pos[cur->fam] += pos; }
             cur_pos += pos;
             cur_checks++;
+            if (cur->miss_mode == 4) { mt_checks++; mt_pos += pos; }
         } else {
             report("WRONG", subj, n, lo, fl, layout, why);
             n_fail++;
@@ -406,10 +453,11 @@ static void term_extent(const g2_site *d, long long *lo_off, long long *hi_end)
 static int admit(const g2_site *d, size_t n, size_t *lo, size_t *fl)
 {
     if (d->floor_null) *fl = 0;
-    /* SKIP reads the candidate itself; on_cand (G2's text) reads at cand,
-     * and the contract only promises cand + reach <= n (Q-G2-6): both keep
-     * the floor at or below lo */
-    if ((d->op == G2_OP_SKIP || d->handoff == G2_H_ON_CAND) && *fl > *lo) *fl = *lo;
+    /* RULED Q-G2-6 (memfn.h `floor`, §14.7): `floor <= lo` is the CALLER's
+     * precondition, on EVERY site kind (lane g2x). G2 is a conforming
+     * caller: an instance with fl > lo is not a contract instance, so its
+     * floor is brought to lo (counted). No answer is checked past the edge. */
+    if (*fl > *lo) { *fl = *lo; n_floor_clamped++; }
     int nonempty = *lo + d->end_back < n;
     if (d->empty == G2_EMPTY_EXCLUDED && !nonempty) return 0;
     if (d->handoff == G2_H_ADVANCE && d->reverse && !nonempty) return 0;   /* Q-G2-5 */
@@ -417,7 +465,7 @@ static int admit(const g2_site *d, size_t n, size_t *lo, size_t *fl)
         size_t len = nonempty ? n - d->end_back - *lo : 0;
         if (d->span_hi != G2_UNBOUNDED && len > d->span_hi) {
             *lo = n - d->end_back - (size_t)d->span_hi;
-            if (*fl > *lo && (d->op == G2_OP_SKIP || d->handoff == G2_H_ON_CAND)) *fl = *lo;
+            if (*fl > *lo) *fl = *lo;
             len = (size_t)d->span_hi;
         }
         if (len < d->span_lo) return 0;
@@ -446,8 +494,7 @@ static size_t pick_fl(size_t lo, size_t n)
     case 0: case 1: return 0;
     case 2: return lo;
     case 3: return rn((unsigned)lo + 1);
-    default: return cur->op == G2_OP_SKIP || cur->handoff == G2_H_ADVANCE
-                    ? lo : lo + rn(3) < n ? lo + rn(3) : n;
+    default: return lo;          /* floor <= lo (Q-G2-6): at the edge itself */
     }
 }
 
@@ -618,11 +665,20 @@ static void run_site(const g2_site *d)
             instance(subj, n, lo, pick_fl(lo, n), hit_at);
         }
     }
+    if (d->pend) {
+        pd_sites[d->pend]++;
+        if (cur_fail) pd_sfail[d->pend]++;
+        if (g_strict) { n_sites_run += (n_pass + n_fail) > before; n_sites_failed += cur_fail > 0; }
+        return;
+    }
     n_sites_run += (n_pass + n_fail) > before;
     if (cur_fail) {
         n_sites_failed++;
         int li = lab_index(d->label);
         if (li >= 0) lab_fail[li]++;
+        if (d->fam < G2_NFAM) fam_fail[d->fam]++;
+        if (d->fam == G2_FAM_SEM && d->vfield < G2_NV) sv_sfail[d->vfield]++;
+        if (d->fid < NFID) fd_sfail[d->fid]++;
     }
     if ((n_pass + n_fail) > before) census_site(d, &cur_it);
     if ((n_pass + n_fail) > before && !cur_pos && !witness_mode && d->op != G2_OP_SKIP) {
@@ -639,6 +695,19 @@ static void run_site(const g2_site *d)
             fprintf(stderr, "NOTE site %u %s: plants held %ld times, yet no positive outcome in %ld checks (a gap in G2's instances)\n",
                     d->id, d->label, plant_held, cur_checks);
     }
+}
+
+/* some REQUIRED term of a REQUIRED predicate reads below the candidate,
+ * under a stated (non-NULL, non-"0") floor hook */
+static int reads_below(const g2_site *d)
+{
+    if (d->floor_null) return 0;
+    for (int p = 0; p < d->npred; p++) {
+        if (d->preds[p].need == G2_OPT) continue;
+        for (int t = 0; t < d->preds[p].nterm; t++)
+            if (d->preds[p].t[t].need == G2_REQ && d->preds[p].t[t].off < 0) return 1;
+    }
+    return 0;
 }
 
 /* ---- W3: planted over-/under-reading "kit" functions --------------------------- */
@@ -682,6 +751,7 @@ int main(int argc, char **argv)
         else if (!strcmp(argv[i], "--ref-defect") && i + 1 < argc) g2_ref_defect = atoi(argv[++i]);
         else { fprintf(stderr, "g2_driver: unknown option %s\n", argv[i]); return 2; }
     }
+    g_strict = getenv("G2_STRICT_HOOKS") && !strcmp(getenv("G2_STRICT_HOOKS"), "1");
     if (getenv("G2_TRACE")) trace_id = (uint32_t)strtoul(getenv("G2_TRACE"), NULL, 10);
     layouts_init();
     struct sigaction sa;
@@ -715,15 +785,19 @@ int main(int argc, char **argv)
         return 0;
     }
 
-    long n_mut = 0, n_killed = 0, n_surv_pos = 0;
+    long n_mut = 0, n_killed = 0, n_surv_pos = 0, n_mut_neg = 0, n_killed_neg = 0;
     for (size_t b = 0; b < g2_nbatches; b++)
         for (size_t i = 0; i < *g2_batch_ns[b]; i++) {
             const g2_site *d = &g2_batches[b][i];
             if (mutants_mode && !d->mutated) continue;
+            /* the witnesses judge the hard population only */
+            if (d->pend && (mutants_mode || g2_ref_defect)) continue;
             run_site(d);
             if (mutants_mode) {
                 n_mut++;
-                if (cur_fail) n_killed++;
+                int neg = reads_below(d);
+                n_mut_neg += neg;
+                if (cur_fail) { n_killed++; n_killed_neg += neg; }
                 else {
                     /* a survivor whose site never produced a positive
                      * outcome cannot be told from the original by any
@@ -744,6 +818,11 @@ int main(int argc, char **argv)
     if (mutants_mode) {
         printf("G2 mutants: mutated %ld killed %ld survived %ld faults %ld survivors-with-positives %ld\n",
                n_mut, n_killed, n_mut - n_killed, n_fault, n_surv_pos);
+        /* G1 (lane g2u): the sites where some REQUIRED term reads below the
+         * candidate (a negative offset) and the floor is a stated hook: the
+         * only sites where a floor lowered by one (W2 mutation 7) is never
+         * an equivalent mutant, since floor <= lo (Q-G2-6) */
+        printf("G2 mutants reading below the candidate: mutated %ld killed %ld\n", n_mut_neg, n_killed_neg);
         return 0;
     }
 
@@ -810,6 +889,12 @@ int main(int argc, char **argv)
            "OPTIONAL %ld, DISCARD %ld, caller-guard %ld, count %ld, span-bounded %ld, on_cand tok if-A/A/R %ld/%ld/%ld\n",
            style_sites[0], style_sites[1], style_sites[2], via_sites[0], via_sites[1], via_sites[2],
            opt_sites, discard_sites, gbc_sites, count_sites, span_sites, tok_sites[0], tok_sites[1], tok_sites[2]);
+    printf("G2 miss token (MF_MISS_N): sites %ld (RETURN %ld, ASSIGN %ld, FUNC/RETURN %ld), checks %ld (positive %ld)\n",
+           mt_sites, mt_ret, mt_assign, mt_func, mt_checks, mt_pos);
+    if (!mt_ret || !mt_assign || !mt_func || !mt_pos || mt_pos == mt_checks) {
+        printf("G2 coverage MISSING: MF_MISS_N token cells (RETURN, ASSIGN, FUNC, both outcomes)\n");
+        miss++;
+    }
     long unexplained = n_sites_nopos - n_sites_unsat - n_sites_overlap - n_sites_wide;
     printf("G2 sites with no positive outcome: %ld of %ld (by construction: a never-holding term %ld, "
            "overlapping terms %ld, too wide for 129 bytes %ld; unexplained %ld)\n",
@@ -821,6 +906,29 @@ int main(int argc, char **argv)
                unexplained);
         miss++;
     }
+    printf("G2 on_miss_leaves (ON_MISS/ASSIGN sites): 0 %ld, 1 %ld; instances with floor brought to lo (Q-G2-6) %ld\n",
+           leaves_sites[0], leaves_sites[1], n_floor_clamped);
+    if (!leaves_sites[0] || !leaves_sites[1]) { printf("G2 coverage MISSING: on_miss_leaves 0/1\n"); miss++; }
+    for (int f = 0; f < G2_NFAM; f++) {
+        printf("G2 family %s: sites %ld checks %ld positive %ld negative %ld failed-sites %ld\n",
+               g2_fam_name(f), fam_sites[f], fam_checks[f], fam_pos[f], fam_checks[f] - fam_pos[f], fam_fail[f]);
+        if (!fam_sites[f] || !fam_pos[f] || fam_checks[f] == fam_pos[f]) {
+            printf("G2 coverage MISSING: family %s ran no site, or never both outcomes\n", g2_fam_name(f));
+            miss++;
+        }
+    }
+    for (int v = 0; v < G2_NV; v++) {
+        int ncls = 0;
+        printf("G2 semantic %s: sites %ld checks %ld failed-sites %ld classes", g2_v_name(v), sv_sites[v], sv_checks[v], sv_sfail[v]);
+        for (int c = 0; c < 8; c++) if (sv_cls[v][c]) { printf(" %d:%ld", c, sv_cls[v][c]); ncls++; }
+        printf("\n");
+        if (v != G2_V_SEED && ncls < 2) { printf("G2 coverage MISSING: semantic field %s varied over < 2 classes\n", g2_v_name(v)); miss++; }
+    }
+    for (int k = 0; k < NFID; k++)
+        if (fd_sites[k]) printf("G2 form %d: sites %ld checks %ld failed-sites %ld\n", k, fd_sites[k], fd_checks[k], fd_sfail[k]);
+    for (int c = 1; c < G2_NPEND; c++)
+        printf("G2 pending %s: sites %ld checks %ld failed %ld faults %ld failed-sites %ld (%s)\n", g2_pend_name(c),
+               pd_sites[c], pd_checks[c], pd_fail[c], pd_fault[c], pd_sfail[c], g_strict ? "STRICT: counted as hard checks" : "bucket only");
     printf("G2 coverage cells missing: %d\n", miss);
     return 0;
 }

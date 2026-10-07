@@ -2980,12 +2980,20 @@ body keep their own per-byte compares.
 ### 2.32 `-fno-ctx-node` — `PCREC_NO_CTX_NODE` (bit 35)
 
 **[UCP] U2, `abi` 46 (`docs/design/ucp_design.md` §0.1 T3, §2.2).
-ANSWER-IDENTITY-preserving and ENGINE-SELECTING.** How a lookaround whose
-body is a set of single characters is lowered. Deny-only, MASKED out of
-`rx_info.flags` (`strategy_denials`) for the mask's own reason: every
-artifact that carries no such lookaround is byte-for-byte the same under
-the flag. No stamp of its own: `<PREFIX>_ENGINE` is the observable
-consequence, the way `-fno-atomic-discharge` (§2.8) shows.
+ANSWER-IDENTITY-preserving, and ENGINE-MOVING in the §2.8 sense but NOT one
+of the two KEPT engine-selecting denials.** How a lookaround whose body is a
+set of single characters is lowered. Deny-only, MASKED out of
+`rx_info.flags` (`strategy_denials`; `src/gen/emit_dfa.c`'s `kept` holds
+only `PCREC_NO_ATOMIC_DISCHARGE` and `PCREC_NO_SPLICE_CALLS` among the
+denials, and this bit is not in it), so an artifact built under the flag
+reports `.flags = 0` exactly as an artifact built without it — measured
+2026-10-07 on `(?<=a)b` at `--features lookaround`. No stamp of its own:
+`<PREFIX>_ENGINE` is the observable consequence, the way
+`-fno-atomic-discharge` (§2.8) shows. The "two ENGINE-SELECTING denials"
+that the `rx_info.flags` rule above and §1 name are the two whose denial is
+KEPT in `.flags`; this axis has the same engine consequence (below) without
+that reflection, which is a fact about the code, not a different promise
+about answers.
 
 **What it is.** T3 is a first-match table of two rows (`pcrec --list-axes`
 prints it, read live off `src/parse/ctxnode.c`'s `pcrec_look_rows`):
@@ -3019,6 +3027,13 @@ deny axis. A DFA machine may carry at most `PCREC_MAX_CTX_SETS` distinct
 context sets and `PCREC_MAX_CTX_ATOMS` atoms (`limits.md` §3.9); over either,
 the DFA is declined exactly as for a state-cap overflow (`--engine=auto`
 takes the VM).
+
+**Forced `--engine=dfa` with the denial is refused**, the §2.8 shape
+(verified 2026-10-07): `pcrec -p rx --features lookaround --engine=dfa
+-fno-ctx-node --pattern '(?<=a)b'` exits 1 with `(?<=...) requires the VM
+engine, which --engine=dfa excludes`, while the same command without the
+flag compiles to a DFA. `<PREFIX>_ENGINE` reads `"vm"` under the denial and
+`"dfa"` without it.
 
 ### 2.33 `-fno-cls-kit` — `PCREC_NO_CLS_KIT` (bit 36)
 

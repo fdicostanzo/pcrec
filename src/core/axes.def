@@ -132,7 +132,8 @@ PCREC_AXIS(PCREC_NO_LIT_RUN,       "-fno-lit-run",       0, "", PCREC_AXIS_DEFAU
  * `deny_map`; integration.md §14.10). */
 PCREC_AXIS(PCREC_NO_RUN_OVERLAP,   "-fno-run-overlap",   0, "", PCREC_AXIS_DEFAULT_ON)
 /* [UCP] U2: T3's `ctx-node` row — a one-character lookaround becomes the
- * context node (src/parse/ctxnode.c). ENGINE-SELECTING like atomic-discharge:
+ * context node (src/parse/ctxnode.c). Engine-moving but MASKED out of
+ * rx_info.flags (not one of the kept denials; docs/spec/tuning.md 2.32):
  * denied, the lookaround stays VM-only. */
 PCREC_AXIS(PCREC_NO_CTX_NODE,      "-fno-ctx-node",      0, "", PCREC_AXIS_DEFAULT_ON)
 /* [CLS-TREE] S4: the VM's wide-class test as decode + a kit matcher (D129

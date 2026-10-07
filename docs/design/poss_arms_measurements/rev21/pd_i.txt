@@ -1,0 +1,6 @@
+# features: all
+# flags: -i
+(?:ak)+\b
+[a-c]+\b
+(a)A+\1
+(a)x+\1

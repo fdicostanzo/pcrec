@@ -334,3 +334,238 @@ the compiler, and is never adopted silently. Proposed for main to file
   (1) one opus build lane does implement-then-replace. Sabotage ids:
   S566+ (main, 2026-10-07); the exact block is confirmed with main
   before the build lane is briefed.
+- done: 2026-10-07 — **M1b (R-5) DELIVERED: runcmp migrated, ZERO MOVERS.**
+  Branch `lane/memfn-m1b` @ 0125aeb5 → main 1c037dce. Reports:
+  `docs/dev/lanes/m1b_report.md` (§3 + §3.1: D1-D12 at file:line,
+  cross-checked against stc1 §2, AGREE, no collisions) and
+  `docs/dev/lanes/m1bfix_report.md`.
+  - **Abi event:** NONE. MF_SITE_ABI 3→4 is kit-internal (stamp_int,
+    run_cmp retired, note's helper role ended); MF_VOCAB stays 2.
+    integration.md rev 4.8 (§R4.8; §14.8 corrected: RUN_WORDS needs an
+    unquoted sink op).
+  - **Landing bar:**
+    - Linux full verdict at 5f0f4dca (17,582 s): gate 0, mech 0 over
+      14 rows, axes 0, C11 0, I2 94/94, strict 0. make test was green
+      except test-memfn-g2, whose cause is known and fixed;
+    - Linux test-memfn-g2 at 0125aeb5: checks failed 0;
+    - Mac make test at 20b9d3cb: only G2 red (the same cause);
+    - Mac gate vs e947b406 (after [START-TABLE] C1): 0 movers on all six
+      streams.
+  - **Mech:** 7 rows re-anchored (S267 S443 S444 S445 S279 S285 S454),
+    3 adjacent checked (S514 S516 S528), S570-S573 new. Every row was
+    hand-planted.
+  - **Sites:** VMRUN delegated; VERIFY carried as an OFS/PRE term
+    (Q-M1b-6); C12 12→9; C5 28→34 rows.
+  - **Found and fixed along the way (K96):** R4c's ofsskip arm accepted
+    sites whose miss is not `n` or that state a floor. This was an
+    unstated precondition, latent since 81bc13de and unreachable from
+    pcrec. Also, G2's h_note stub wrote bare text where the contract
+    asks for a comment.
+  - **OWED (kit):** the K35 G2 reach extension (ofsskip / precheck with
+    on_miss_leaves / the words row), now running as blinded lane g2x on
+    `lane/memfn-g2x`. Q-G2-6 confirmed as written: `floor <= lo` is a
+    caller precondition for EVERY site; G2 becomes a conforming caller.
+
+- notice: 2026-10-07 — **[MEMFN-ROWCON] opened (Frank, after K96).**
+  Every kit row checks its own contract: a per-row ALLOWLIST of honoured
+  site fields plus one shared gate that declines the rest, so a new
+  contract field is declined by every row until someone states otherwise.
+  It covers visibility into row decisions and a reach floor per row. Plan
+  is an audit → light design → D6 panel → build, all zero-mover for
+  pcrec. **Please add the plan.md row** under [MEMFN]. No pcrec-side
+  change is expected unless the design asks for an explain/trace hook,
+  which would go to you as a request.
+- notice: 2026-10-07 — **[MEMFN-ROWCON] Q-ROW-1 RULED by Frank (directly
+  to the kit session); proposed decision entry:** "Kit contracts carry NO
+  SILENT DEFAULTS: every value a row's output depends on is stated
+  explicitly (named tokens, e.g. `MF_MISS_N`, never NULL-means-X); a row
+  that reads an unstated field refuses loudly. Caller text is SNAPSHOT
+  once into reserved `mf_` locals, inside parentheses, at the top of every
+  delegated site; text with comments, `#` or backslash is refused, and
+  `on_miss`/`on_cand` must be a jump statement or a braced block. The
+  snapshot is a pcrec abi event (every delegated site), accepted for
+  correctness; it lands with G1 at both layers and its deny
+  `--memfn=no-snapshot`." Coming to you: **R-6** (pcrec's hook builders
+  state `MF_MISS_N`, `"0"` and the rest explicitly; zero movers) when T3a
+  is cut, and the T3b abi event, sequenced through you. Design:
+  docs/design/memfn/row_contracts.md rev 2.1.
+- notice: 2026-10-07 — **[MEMFN-ROWCON] Frank's rulings (given directly
+  to the kit session); proposed decision entries:**
+  (1) Q-ROW-1 as clarified (Q-ROW-5): "A kit row may USE only a value the
+  caller STATED; it never presumes one. Unstated fields are wildcards,
+  not defaults. A row that needs an unstated field declines, and if no
+  row can serve, the kit refuses and names the field. Not every field
+  must be stated, only those the chosen row uses."
+  (2) Q-ROW-1(c): caller hook text is SNAPSHOT once into reserved `_mf_`
+  locals (a pcrec abi event, accepted for correctness), with refusals for
+  comments, `#`, backslash, and bare break/continue in kit loops.
+  (3) Q-ROW-6: the snapshot has NO public deny (D144 item 4 exception for
+  a correctness change); G1's comparator is the pre-snapshot commit.
+  (4) Q-ROW-4: D146's charter widens. The kit hosts a general first-match
+  table engine (Layer 1) as a utility under MF_NS; pcrec's tables MAY
+  adopt it per table (an offer, after START-TABLE C7).
+  Design: docs/design/memfn/row_contracts.md (rev 3 to follow); reviews
+  r1 and r2 under docs/dev/reviews/2026-10-07-r{1,2}-memfn-rowcon.md.
+- notice: 2026-10-07 — **[MEMFN-ROWCON] N2 census DONE; the R-6 list.**
+  The run was on the Mac, 15:11 to about 15:55, against main merged into
+  lane/memfn-rowcon at 5fc4b0e5: 107 axis arms (deny and force, both
+  comment tiers, utf8-scoped) × default/VM/composition. Results:
+  958,292 compiles, 0 timeouts, 0 sites with no serving row, 1,072,494
+  sites traced. The 129,937 would-decline verdicts collapse to EXACTLY
+  THREE cells, all R1 (`miss` used, unstated):
+  1. ofsskip, form FUNC / op FIND / handoff RETURN, at DEFINE (56,104
+     sites);
+  2. the same ofsskip site at USE (the call) (56,104);
+  3. precheck, form STMT / op ALL_PRESENT / handoff ASSIGN, at USE
+     (17,729).
+  No other row, field or phase would decline, and nothing is R2.
+  **Please file R-6:** pcrec states `miss = MF_MISS_N` in the hooks of
+  (a) the offset-skip site's define AND call hooks (`ofs_site_define` /
+  its use, src/gen/emit_dfa.c) and (b) the PRE ASSIGN handoff's use hooks
+  (`pcrec_emit_req_byte_check`'s ASSIGN route). It is zero-mover, and
+  nothing refuses until N3. The kit side adds the `MF_MISS_N` token to
+  memfn.h in the same unit, so R-6 lands after the kit branch with the
+  token merges (or ships the token itself; your choice). Reach from
+  pcrec: generic 0 (declared total-fallback), ofsskip 56,104, precheck
+  299,232, runcmp 62,908; the run rows: memcmp 97,522, overlap 121,004,
+  words 17,120, bytes 360. Full table:
+  docs/design/memfn/probes/rowcon/n2_results_5fc4b0e5.md.
+- notice: 2026-10-07 (late) — **MF_MISS_N goes kit-side first (main's
+  ruling by message).** R-6 lands after it and consumes the token. Main's
+  three conditions: (1) memfn.h states the token's meaning; (2) G2 covers
+  the token in the same change, with floors; (3) zero movers, shown by the
+  identity gate, or the unit stops and reports. It is in lane `missn`
+  (worktrees/missn, branch lane/missn, cut from lane/memfn-rowcon @ 5f0e926e).
+  The full G2 run and the identity gate wait for a heavy slot from main.
+- notice: 2026-10-07 (late) — **g2x triage (F1/F2/G1). No pcrec defect.**
+  - **F2, a kit defect, latent for pcrec.** The arms render memchr/memcmp
+    but never call `mf_art_note_libc`. pcrec's stamp is correct because its
+    finishing pass (`scan_libc_calls`, src/gen/memfn_stamps.c) inventories
+    the whole artifact. On 6 corpus artifacts the stamp matches `nm -u`
+    exactly. A non-pcrec host (and G2) gets "none". memfn.h/§R4.3.3 say
+    the kit records its own calls, so the kit is wrong. Fix (kit,
+    queued after lane missn): each arm notes its own libc calls at render.
+    The list is sorted and deduplicated, so pcrec's stamp should not move.
+    The identity gate proves it.
+  - **F1** is exactly the N3 cell (row_contracts.md §2): G2's ternary s/n/lo
+    hooks reach the raw-pasting runcmp/precheck rows, because the gate is
+    still WARN-only. pcrec passes only literal identifiers (emit_dfa.c
+    :1597/:6287, emit_vm.c :4431/:13269), so it cannot reach this. N3
+    enforcement routes these hooks to generic. G2u keeps them as N3's
+    acceptance witness.
+  - **G1** is G2-side: mutation 7 (floor − 1) is equivalent wherever no
+    term reads below the candidate. G2u judges its kill rate over sites
+    with a negative offset only.
+- notice: 2026-10-07 (late) — **MF_MISS_N ready for R-6; F2 fixed. Both
+  merged on lane/memfn-rowcon @ 728bf063.** Validated in main's slot,
+  16:16-16:22:
+  - The identity gate, `emit_sweep --ref ccf0ca33` judged by
+    memfn_r4c_gate.py --zero-dumps, gives **R4C-GATE PASS: 0 movers on every
+    stream** (c-default, c-vm, composition, dumps, emit-ir-vm, facts).
+  - The full G2 is rc 0, with **61,020,752 checks passed, 0 failed**, 4044
+    sites and coverage-missing 0.
+  - The MF_MISS_N cell: 538 sites (RETURN 150, ASSIGN 56, FUNC/RETURN 105)
+    and 11.76M checks.
+  - The W1 witnesses fired.
+  - make strict, test-memfn-arms (82/0) and test-memfn-stamps (14/0) pass.
+
+  Main's three conditions are met:
+  1. memfn.h states the token's meaning at `miss`: the site's own `n`;
+     NULL means unstated.
+  2. G2 and the arm pins (two fixtures on the N2 cells) cover it.
+  3. Zero movers is shown by the gate above.
+
+  The token is `MF_MISS_N`, an exported sentinel compared by address and
+  resolved to `n`'s text by `kit_miss()`; its bytes never reach an
+  artifact. R-6 sets `.miss = MF_MISS_N` at the 3 N2 cells. Reports:
+  docs/dev/lanes/missn_report.md and libcnote_report.md. The branch is
+  deliverable as an interim unit (N1 WARN gate, N2 driver, F2, MF_MISS_N),
+  so R-6 can consume the token from main.
+- done: 2026-10-07 — **[MEMFN-ROWCON] INTERIM delivery: lane/memfn-rowcon @
+  TIP (the commit carrying this entry; code tip 4e6c42c4).** It contains:
+  - N1: the row-contract gate in WARN mode, fields.def, uses/serves on all 8
+    rows, MF_TRACE;
+  - the N2 census driver and results;
+  - F2: the arms note their own libc calls;
+  - MF_MISS_N, the kit side of R-6.
+  All of it is zero-mover. Main 745278be is merged in. Landing bar (main,
+  2026-10-07):
+  1. **make test**, full `-k -j16 -Otarget` on 3fb4dbb4: 640 s, 59/59
+     sections ran. ONE red, test-codegen, which was [SABANCHOR]: S570's
+     anchor went stale under N1's gate trace (check-side; no pcrec byte).
+     Log: worktrees/memfn-slot/slot3/make_test.log (gitignored).
+     **Re-pinned** at 4e6c42c4:
+     - the check reports "all anchors resolve" (497 rows, 515 sites);
+     - **make test-codegen rc 0** in 155 s, with no `*** [test-` lines
+       (worktrees/memfn-slot/slot4/test_codegen.log).
+  2. **make strict** rc 0 on the merged tip.
+  3. **Mech, solo, one id per call**: the 16 rows rows_for.sh names for the
+     kit files touched (D69's src tier). These are S185 S265 S267 S279 S285
+     S443 S444 S445 S447 S450 S454 S455 S464 S526 S573: all DETECTED, 0
+     unexpected/undetected/unreached/anomalies. **S570**, the only row the
+     branch RE-ANCHORS (none added), gave ANOMALY on the stale anchor, then
+     after the re-pin **DETECTED** (reach ok 1/1, codegen 19 fail/311
+     pass). Its anchor is still the DENY TEST in rc_row_of,
+     `if (rows[i].row.deny & art->denies) {`, planted as `0 && (...)`. The
+     plant kills the deny test itself; N1's DENIED trace call inside the
+     block dies with it. It is not anchored on the trace line.
+  4. The **identity gate** vs ccf0ca33 is R4C-GATE PASS, 0 movers on all 6
+     streams (at 728bf063; the later commits touch only the merge of main,
+     ledger/journal and one sabotage row).
+  5. The **full G2** gave 61,020,752 passed, 0 failed, 4044 sites; the
+     MF_MISS_N cell is 538 sites with 11.76M checks.
+  Reports: docs/dev/lanes/rowconn1_report.md, rowconn2_report.md,
+  libcnote_report.md, missn_report.md. Charter vs committed: N1 ✓, N2 ✓
+  (R-6 list posted), F2 ✓, MF_MISS_N ✓ (main's 3 conditions). OWED, not in
+  this unit:
+  - R-6 (main files it; pcrec states MF_MISS_N at the 3 N2 cells);
+  - G2u (the blinded update; folds g2x);
+  - N3 (enforcement; entry is an N2 re-run after R-6 showing 0
+    would-decline + the identity gate);
+  - N4.
+- notice: 2026-10-07 (evening) — **G2u delivered blinded; K-1 is a contract
+  gap, and the kit has ruled on it.** G2u (D27 cell, opus) is merged on
+  lane/memfn-g2u.
+  - The quick run: 35.53M passed and 462 failed, all of them **K-1**: on
+    ALL_PRESENT/FUNC sites the kit takes the function's name from
+    `site.pred.fn_ref`, but memfn.h scoped `pred` to FIND/SKIP/VERIFY, so
+    the POISON differential (a field the contract says is unused, set to
+    junk) moved the name. No answer is wrong.
+  - **Kit ruling (contract detail, kit-owned):** a FUNC site's own name is
+    ALWAYS `site.pred.fn_ref`, for every op. On ALL_PRESENT/DENSE only that
+    member of `pred` is read. memfn.h now states this, with no layout
+    change and no byte moved. A FUNC site stating `fn_ref` 0 states no name
+    and is REFUSED (R1); that joins N3's enforcement. G2u's
+    `fn_ref-unstated` PENDING-ENFORCE class (415 cases) is its acceptance.
+  - pcrec's only FUNC site (ofs_site_define, emit_dfa.c:6255) passes
+    fn_ref 1, so no pcrec site can be refused.
+  - PENDING-ENFORCE for N3 has 4 classes and 1,455 cases: hook-nonident
+    (F1, still live: 286 sites in 5 batches don't compile), miss-unstated,
+    refusal-unnamed, fn_ref-unstated. `G2_STRICT_HOOKS=1` is N3's
+    acceptance switch.
+  - F2 is confirmed fixed by the blinded side: MEMFN_LIBC = nm -u on 93
+    batches.
+  - Next: a blinded follow-up aligns G2's poison table to the K-1 text,
+    then the full G2 in a slot.
+- done: 2026-10-07 — **[MEMFN-ROWCON] G2u: lane/memfn-g2u @ TIP (the commit
+  carrying this entry; code/test tip 238f2368), cut from main 13b9f2ae.**
+  It contains the blinded G2 update (D27 cell, authors g2u (opus) and g2u2
+  (sonnet), folding g2x) plus K-1's contract text in memfn.h (a FUNC
+  site's name is `site.pred.fn_ref` for every op; fn_ref 0 on FUNC is
+  refused under N3). No kit code changed and no pcrec byte moved: the diff
+  touches memfn/tests, memfn.h comments and docs only. Validation:
+  - **Full G2** (main's slot, 17:47-17:55, seed 20261005): rc 0,
+    **138,742,037 passed, 0 failed**, 10,307 generator sites, coverage-missing
+    0, libc record 95 agree / 0 disagree, mutation 7 over negative-offset
+    sites 1,764 / 1,877 killed (floor 1,600), PENDING-ENFORCE 1,469 cases
+    (counted outcomes owed to N3; 298 are F1 renders that do not
+    compile). Log: worktrees/memfn-slot/slot5/g2.log (gitignored).
+  - Quick tier (blinded author, 4 cores): 36,341,888 passed, 0 failed.
+  - make strict rc 0. [SABANCHOR] "all anchors resolve". Mech: rows_for.sh
+    names only S526, which is DETECTED solo (reach 2/2).
+  Report: memfn/tests/G2U_REPORT.md (§7 is the G2u2 addendum).
+  Charter (row_contracts.md §5 G2u): explicit values ✓, refusal
+  expectations ✓ (491 cases), POISON differential ✓ (9,267 sites, 25
+  fields), SEMANTIC differential ✓, per-form floors ✓; plus g2x folded ✓
+  and G1 ✓. N3's acceptance = `G2_STRICT_HOOKS=1` over the bucket. OWED:
+  N3 (after R-6 and the N2 re-run), then N4.

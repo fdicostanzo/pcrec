@@ -23,3 +23,5 @@ Validation COMPLETE for what was touched; no full `make test` (nothing `make tes
 - Not run: full `make test`, any Linux-box run, a full mech sweep.
 
 Scratch (`.scratch/`, untracked, in the worktree) is the only non-committed residue.
+
+(2026-10-07, admin1008: item 7 CLOSED as covered by emit_sweep's existing reach floors, D77; reopen trigger = a reach regression the stream floors miss. See admin1008_report.md item 4.)
