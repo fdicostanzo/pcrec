@@ -881,6 +881,8 @@ not a regression; see `tests/rxtsource/run_rxtsource_tests.sh`'s own
 
 ## U18 — PCRE2 10.46: auto-possessification is not call-aware for `(?R)` (lane k93fix, 2026-10-07)
 
+**FILED UPSTREAM 2026-10-07:** https://github.com/PCRE2Project/pcre2/issues/1034 (approved by Frank, filed through the bench's process; bench outbox O-86, c965615). It reproduces on 10.46 AND 10.49, and Perl agrees with the sound answer. Bench's cause reading: in `pcre2_auto_possess.c`, the OP_END case lacks the `had_recurse` guard that the OP_KET case got in 10.31's #2232 fix. That is why `(?1)`/`(?&n)` are right and `(?R)` is not.
+
 - **Status**: suspected-bug (candidate upstream report); pcrec's answer UNRULED (K93 related item 2).
 - **Repro**: `(?:b(?R)a|a+)` on `"baa"` → 10.46 default (1,3); with
   `PCRE2_NO_AUTO_POSSESS` (0,3). Also `"bbaaa"` (2,5) vs (0,5) and `"baaa"`
