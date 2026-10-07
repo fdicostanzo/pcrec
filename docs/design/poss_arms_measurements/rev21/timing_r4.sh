@@ -20,5 +20,8 @@ if w == "A1lb":   print("(?:" + "|".join("a+" for _ in range(n)) + ")" + "(?:" +
 PY
 }
 for w in Bsame Bdist Bcycle A1alt A1lb; do for n in ${NS:-1600 6400 12800}; do pat=$(gen $w $n)
+  # Linux caps ONE argv string at 128 KiB (MAX_ARG_STRLEN): the exec fails
+  # in ~0.02 s and reads as a fast compile.  Skip, loudly.
+  if [ ${#pat} -ge 131072 ]; then printf '%s\t%s\tSKIPPED\tpattern %d bytes >= MAX_ARG_STRLEN\n' "$w" "$n" ${#pat}; continue; fi
   for cfg in "$PROTO|" "$PROTO2|$AB" "$PROTO|$AB PROTO_NOMEMO=1" "$PROTO|$AB"; do b=${cfg%%|*}; e=${cfg#*|}
     printf '%s\t%s\t%s\t%s\t%s\n' "$w" "$n" "$([ "$b" = "$PROTO2" ] && echo rev2 || echo rev21)" "${e:-denied}" "$(tm $b "$e" "$pat")"; done; done; done
