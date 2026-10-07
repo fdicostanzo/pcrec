@@ -3634,8 +3634,10 @@ turned the force flag on.
   identity half, `make test-memfn-stamps`, printed "identical (no SIMD
   form)"). The per-form switches are the kit's own `--memfn=` namespace
   (`registry.md` §6), not this axis.
-- **Masked** out of `rx_info.flags` (`strategy_denials`): the axis selects
-  what the kit renders and changes no answer. The activity record is
+- **Masked** out of `rx_info.flags`, both bits, by `emit_info_def`'s
+  `strategy_denials` mask (`src/gen/emit_dfa.c`; §2's `rx_info.flags`
+  rule, which masks force bits too): the axis selects what the kit renders
+  and changes no answer. The activity record is
   `<PREFIX>_MEMFN_FORMS` (`match_api.md` §6.3), `none` iff the artifact is
   identical to its SIMD-off compile.
 
