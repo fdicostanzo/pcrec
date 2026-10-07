@@ -109,8 +109,10 @@ to this table.
 - **Arm A** changes `first_of`'s `A_CTX` arm in two ways:
   - **A0**, a context-free refinement;
   - **A1**, a Q-relative refinement. It is an INPUT to row 3 and is
-    computed for a greedy `Q` with `m ≥ 1` (§2.3; §8.4 measures that the
-    greedy restriction is conservative).
+    computed for a greedy `Q` with `m ≥ 1` (§2.3). ~~§8.4 measures that the
+    greedy restriction is conservative~~ `[r2.1 N2]` The greedy restriction
+    is LOAD-BEARING: row 3 alone is sound only because a greedy loop takes
+    its top exit first (§2.3, §8.4).
 
 ## 1. History: the call-target miscompile, and the join that fixed it `[r2 C-S1, C-S2, A-F2]`
 
@@ -213,6 +215,24 @@ to match it. The rule is tighter and justified:
   (`vm_ABa0null` = `vm_AB`). The K35 re-count therefore shows no delta from
   this choice.
 
+**The rule holds for ONE reader, and revision 2 had a second** `[r2.1 N1]`.
+Every bullet above is about a reader of the NEXT CHARACTER AT A POSITION.
+Arm B (§3.1) also called `first_of`, on a captured group's body, and asked
+a different question: which character can the captured TEXT begin with. A
+gate is not in any text. In `((?=a))` the group captures the empty string,
+yet revision 2 answered FIRST(`\1`) = {`a`}, non-nullable. A0 + B together
+then miscompiled on the default route with no plant (critic R; 10.46 (0,3),
+prototype NOMATCH on `abb`):
+
+- `(?:((?=a))a)?b+\1b`, `((?=a)c?)ab+\1b`, `(?:((?=a))a|)b+\1b`.
+
+Before A0, `first_of` answered ALL BYTES for every gate, and all bytes
+declines every disjointness test, so the wrong nullability was masked. A0 is
+the first producer of a NARROW answer for a zero-width node, which is why the
+two questions first disagree here. The fix is on the TEXT reader (§3.1's
+`TEXT_FIRST`), not on this rule. [POSS-CTX-TABLE]'s context record carries
+the two questions as a READER field (§7).
+
 ### 2.2 The two rows
 
 | row | P | where it is sound | what it reaches |
@@ -278,14 +298,40 @@ ablation row for it.
 - Gating `ENCL` to those shapes would be a refinement with its own
   refutation surface. It is not part of this build (RC-Q2).
 
-**Why greedy-only.** Revision 1 argued that A1's value is invalid at `e_K`,
-and that row 2's `may_end` speaks about `e_K` too. §8.4 measures the
-alternative: dropping the greedy conjunct newly claims 1,134 lazy rows, 0 of
-which diverge at ML=4. The argument above explains why: a lazy loop that
-stops before the top exit stops at a RETREAT exit, where the A1-valued
-continuation cannot succeed. **Revision 2 keeps A1 greedy-only as a DECLARED-CONSERVATIVE
-conjunct.** It has no diverging control. Widening A1 to lazy loops is a
-measured, separable follow-up (§11 RC-Q1), not part of this build.
+**Why greedy-only — LOAD-BEARING** `[r2.1 N2]`. ~~Revision 2 kept the
+conjunct as declared-conservative: dropping it claimed 1,134 lazy rows, 0
+diverging at ML=4, and the argument was that a lazy loop stopping early stops
+at a retreat exit, where the A1-valued continuation cannot succeed.~~ That
+argument covers only continuations that READ a character at `e_k`. Critic
+R's 10.46 witness: `(\w+?(?:\b|))` on `ab` is (0,1); with A1 admitted for
+lazy loops it is (0,2).
+
+- **Why it breaks.** A lazy loop stops at the LOWEST exit where the
+  continuation succeeds. A continuation with a path to the match end that
+  tests no gate and reads nothing (here the empty bypass `|)`) succeeds at
+  every exit. So the lazy loop stops at `e_m` and the possessive spelling at
+  `e_K`. That is row 2's case (`lazy && may_end` declines). A1 feeds only
+  row 3's disjointness, so a lazy A1 skips row 2's may_end.
+- **Why greedy is safe.** A greedy loop tries `e_K` first. A gate-free empty
+  path succeeds there, and the loop never retreats. A path that fails at
+  `e_K` but could succeed at a retreat exit `e_k` must read `s[e_k]`, which
+  is the A1 argument above.
+- **Why rev 2 measured 0.** `gen_a2.py`'s follows had no nullable follow
+  (each consumes or gates), and its only lazy quantifier was `+?`. Rev 2.1's
+  generators add the bypass follows `(?:\b|)`, `(?:\B|)` and
+  `(?:(?=C)|)`, the bounded lazy `{1,3}?`, `{2,}?` and `{2,4}?`, and the
+  witness rows. Lazy ablation re-measured: §8.4.
+- **The sound lazy rule exists but is not built.** It would re-ask row 2 with
+  the A1 continuation's own end-reachability: does the continuation reach the
+  match end on a path that tests no narrowed gate. That is a second row with
+  its own refutation surface. Its population is unmeasured, and D77 says
+  wait.
+- **The lazy plant is now a SABOTAGE ROW** (§8.2), with this witness. It is no
+  longer a control.
+
+A0 needs no such conjunct. It is valued inside `first_of`, so row 2 sees the
+bypass's nullability directly: `[a-c]+?(?:(?=x)|)` declines through
+`may_end`. The A0 family sweep re-runs with the bypass follows (§5.3).
 
 #### 2.3a A1 across a call boundary `[r2 A-F1, C-2]`
 
@@ -445,12 +491,38 @@ on return, and a negative assertion keeps no capture.
 
 **The rule:**
 
-    FIRST(\n)    = fold_ref( ∪_{g ∈ refs} ∪_{A_CAP c : c.no == g} FIRST(c.body) )
-    nullable(\n) = ∃ such c with nullable(c.body)
+    FIRST(\n)    = fold_ref( ∪_{g ∈ refs} CAP(g) )                   [r2.1 N1, R-4]
+    CAP(g)       = ∪_{A_CAP c : c.no == g} TEXT_FIRST(c.body)   (once per g)
+    nullable(\n) = ∃ such c with TEXT_nullable(c.body)
 
 - `fold_ref` is applied only when `u.bref.caseless` is set.
 - An unset member contributes nothing, because it fails.
-- **Depth-1.** Inside `FIRST(c.body)`, a nested `A_BREF`/`A_CALL`/`A_VAR`
+- **`TEXT_FIRST` is not `first_of`** `[r2.1 N1]`. It answers "which
+  character can a captured TEXT begin with". It is `first_of`'s fold with
+  every ZERO-WIDTH kind answering (no bytes, nullable): `A_CTX`, `A_LOOK`,
+  `^`, `$`, `\z`, `\G`, `\K`, the empty node. A zero-width item contributes
+  no character to a text, so this is exact, not an approximation. It is NOT
+  the A0/A1 valuation, which is a fact about the next character at a
+  POSITION (§2.1's last paragraph). Every other kind defers to `first_of`
+  (a nested reference re-enters `CAP`). Revision 2 called `first_of` here,
+  which is N1's miscompile. Its plant is `PROTO_SAB_TEXTPOS` (§8.2).
+- **`CAP(g)` is computed ONCE PER GROUP NUMBER** `[r2.1 R-4]`.
+  - One walk indexes every `A_CAP` by number. Lookaround and DEFINE bodies
+    are included. A call's body is a back edge and is not followed.
+  - `CAP(g)` is memoized in the walk's state. A group whose value is IN
+    PROGRESS when asked again (a reference cycle, `(a\2)(b\1)`) answers
+    WIDEN.
+  - This replaces revision 2's depth-1 counter, and it is strictly wider.
+    A deeper reference now resolves: `(a)(\1b)x+\2` is claimed, and 10.46
+    agrees on its witness (`rev21/witnesses_r21_10.46.out`).
+  - **The cost was quadratic and now is not.** Revision 2 walked the whole
+    tree for every reference. The measurements are in §8.7.
+  - **The state lives on the walk, not in a file static.** The prototype
+    hangs `CAP`'s table off `Ctx` for the duration of one `pss_run` and
+    restores the previous value after. That is because `first_of` receives
+    only `Ctx`. The build puts it on `Pss`, or on [POSS-CTX-TABLE]'s context
+    record once `first_of` takes one.
+- ~~**Depth-1.** Inside `FIRST(c.body)`, a nested `A_BREF`/`A_CALL`/`A_VAR`
   keeps today's widen. That also ends cycles such as `(a\2)(b\1)`.
   `[r2 B-B3]` This is a TERMINATION rule, not a soundness conjunct. A deeper
   resolution is sound: `(a)(\1b)x+\2` resolved to depth 2 does not diverge
@@ -458,7 +530,9 @@ on return, and a negative assertion keeps no capture.
   visited set. Its witness is `(a\2)(b\1)x+\1`, which is claimed, compiles,
   and does not diverge. Its plant (`PROTO_SAB_NORECGUARD`, the guard
   dropped) does not terminate. It is detected as a compile timeout or
-  crash (§8.2).
+  crash (§8.2).~~ `[r2.1 R-4]` Superseded by the in-progress-widens rule
+  above. The plant keeps its name and now means "an in-progress group is
+  recomputed", which recurses without bound on the same witness.
 
 ### 3.2 Why each clause is there — the counterexamples tried
 
@@ -472,6 +546,7 @@ length ≤ 5 plus 300 random, 9,631 subjects each.
 | the first member of a name run | `(?J)(?:(?<n>a)\|(?<n>x))x+\k<n>`, subject `xxx` | (0,3) | NOMATCH | union over ALL of `refs[]` |
 | the first `A_CAP` with the number | `(?\|(a)\|(x))x+\1`, subject `xxx` | (0,3) | NOMATCH | union over every `A_CAP` with that number |
 | "non-nullable group" assumed | `(a?)x+\1x`, subject `xx` | (0,2) | NOMATCH | nullability is read from the member bodies |
+| a gate read as the text's first character `[r2.1 N1]` | `(?:((?=a))a)?b+\1b`, subject `abb` | (0,3) | NOMATCH | `TEXT_FIRST`: a zero-width item is (∅, nullable) |
 | unset reads as empty | `(?:(a)\|b)x+\1x` under `match_unset_backref`, subject `bxx` | (0,3) | NOMATCH | correct only while the option is out of scope |
 | body non-nullable ⇒ capture non-empty | `(?=((*ACCEPT)a))x+\1x`, subject `xx` | (0,2) | NOMATCH | `(*ACCEPT)` closes a group early, even EMPTY |
 
@@ -740,6 +815,26 @@ against 2.40 and 2.73 on the two uncommitted subjects.
      covers lookarounds and DEFINE, reuses K93's by-number machinery
      (`cc[]` is keyed by group number, and so is this), and walks EVERY
      `A_CAP`, not the call graph's first binding.
+     `[r2.1 R-4]` Its VALUE, `CAP(g)` (§3.1), is computed once per group
+     number and memoized; in progress means widen. Its state is the walk's
+     (`Pss`), never a file static.
+   - **The continuation summary** `[r2.1 R-4, found by this revision]`. A1's
+     fold had the same quadratic shape as arm B's: it re-walked `Q`'s
+     continuation for every quantifier.
+     - Witness: `(?:a+|a+|…)(?:\b|)(?:\b|)…`, n = 6,400. The denied build
+       takes 0.90 s and revision 2's prototype 64.85 s (§8.7).
+     - The fix rests on one fact: WHICH items the continuation reaches at
+       zero consumption does not depend on `Q`, because every `A_CTX` is
+       non-nullable whatever `P` is.
+     - So each continuation node carries, once, a summary: the bytes of every
+       reached item that is not a `P`-dependent gate (an A0-narrowable
+       lookahead folds in here), the reached `P`-dependent gates grouped by
+       their set `C` with `S` precomputed for the three `P`s, and the end
+       flags.
+     - Per `Q`, only the groups are evaluated, at O(distinct gate sets ×
+       |LAST|).
+     - The prototype checks the summary against the plain fold at every
+       verdict (`R4SUM-MISMATCH`, §8.7: 0 on the census).
 3. **possessify's own per-kind switches** `[r2 B-FAM]`.
    - Today the file holds three per-`AKind` switches (`first_of`,
      `gk_build`, `pss_walk`), the `pss_verdict` ladder, the `CallCtx`
@@ -752,6 +847,21 @@ against 2.40 and 2.73 on the two uncommitted subjects.
      `{follow, may_end, encl, left}` and one per-kind rows table indexed by
      kind, with a static count assertion so `-Wswitch`'s exhaustiveness
      alarm survives. A1's `P` is the `left` component.
+   - `[r2.1 N1]` **The record also carries a READER field.** `first_of`
+     answers two different questions, and N1 is what happens when one reader
+     gets the other's answer:
+     - **"the next character at a POSITION"**: the retreat-exit readers
+       (rows 1-3, the survey, an inner quantifier's follow, the call-site
+       joins). A gate constrains that character: A0 gives `S`, A1 gives
+       `S(P)`, non-nullable (§2.1).
+     - **"the first character of a TEXT"**: arm B's `CAP(g)`. A gate
+       constrains nothing, because it is not in the text, and it is
+       nullable.
+
+     Each per-kind row answers per reader. Today only the zero-width kinds
+     differ, and `TEXT_FIRST` (§3.1) is the reader-2 column. The
+     record makes "which question is this" a field, not a second function a
+     future reader might not know to call.
    - It is NOT built ahead of the arms. The arms build on today's shape
      with table-shaped primitives (`ctx_admits`, the capture fact, the
      continuation fold).
