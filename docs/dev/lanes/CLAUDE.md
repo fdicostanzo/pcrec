@@ -3693,3 +3693,22 @@ never edited afterwards.
 - `stc0_report.md` — [START-TABLE] C0, the sweep instrument and Frank's Q3 trace experiment (2026-10-06, lane stc0, opus; tooling only, no `src/` on the lane branch). `scripts/emit_sweep.py` gains a sixth stream (`--emit-facts`), `--extra`/`--arms start` with 64 pinned DIFFER cells (manifests, asserted zeros, a null arm), `--patterns-file`, a `cflags` pass-through and the `--trace` family. New `scripts/trace_diff.py`, two self-tests, and the mech arm `emitsweep`. Failing direction: both plumbing plants and all four trace-diff weakenings go red. The emit_sweep arms and deny_census agree on all 62 cells of the 1-in-10 sample. Trace experiment (prototype on `scratch/stc0-trace`): BAR MET. Every reached plant was caught, including a bytes-identical row change (trace 176, bytes 15). Rename, move and reformat gave 0 false alarms. C1 must use a literal site (never `__func__`) and gate on the SET compare (an extra ask false-alarms the ordered one). Follow-up lane stc0b (2026-10-06) discharged the owed items: the full-corpus every-flag sweep and two-build gate ran on ubuntubudu (543 s / 585 s at -j10, rc 0), the four `-fno-length-prune` cells re-pinned (449/112, 678/0, 468/118, 815/0), the every-flag mover table is report §6 (four non-start flags move `REQ_WHY`), sabotage rows S550-S555 are all DETECTED, and main (abi 65) is merged in.
 - `round3sel_report.md` — [OPTLOOP] round 3's DRAFT selection (2026-10-06, lane round3sel, docs only): delivers `docs/dev/optloop/round3_selection.md` (8 ranked rows + 4 backups, kanban-ordered, gates marked against [START-TABLE] C7 / memfn R4c). Finding: [OPT-ENDTERM] is cited as a filed row in two places and has no plan.md row.
 - `axtri_report.md` — TRIAGE of the overnight `AXES_FULL=1 HARNESS_BATCH=64` `make test-axes` red at main 041e450a (2026-10-07, lane axtri, opus): two reds, neither an answer defect. (A) 19 `-fno-req-byte` GIVEUP1 cells in `tests/litscan/reqcube.rxt` (S2b/S2c K65-shape witnesses landed after the manifest; step-budget bisection shows the same nomatch once the budget covers it) → Group E5. (B) the `-futf-check` arm's 990 ill-formed cells printing `giveup -9`: HARNESS_BATCH's dispatch.c kept its own give-up-word table without `utf`/`unset-var` (its second drift from driver.c) → one shared `tests/harness/outcome_word.h`. Proposes deriving the req-precheck GIVEUP1 rows from artifact stamps. Targeted re-run owed at handback.
+- `possarms_report.md` — [ART-POSS-ARMS] design lane (2026-10-07, lane
+  possarms, opus, design only). Delivers `docs/design/poss_arms.md` and
+  `poss_arms_measurements/`.
+  - **Verdict:** both arms are SOUND only as restated.
+    - Arm A is `first_of`'s `A_CTX` arm valued from the gate's truth table
+      and the loop's LAST-set polarity, for a greedy `m ≥ 1` loop. It is
+      refuted as worded by `(?i)k+\b` under utf.
+    - Arm B is the union over every `A_CAP` a reference can read, folded
+      when the reference is caseless. Its tripwires are `(*ACCEPT)` and
+      `MATCH_UNSET_BACKREF`.
+  - **Pre-existing findings:**
+    - a possessify miscompile at subroutine-call targets on main
+      (`(a+)b(?1)a`);
+    - possessification's give-up surface is not one-way (a WORK give-up can
+      appear);
+    - the byte backend's caseless backref folds ASCII only under `--ucp`.
+  - **Census:** 3 bench / 3 corpus default-route movers.
+  - **Also:** `run_possdiff.sh` cannot reach either arm today; S560-S565 are
+    reserved.

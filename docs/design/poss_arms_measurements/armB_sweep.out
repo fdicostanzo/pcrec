@@ -1,0 +1,660 @@
+B0001	yes	(a)x+\1	diff=0/9631	no_auto_possess	
+B0002	yes	(a) x+\1	diff=0/9631	no_auto_possess	
+B0003	yes	(a)x+\1b	diff=0/9631	no_auto_possess	
+B0004	yes	(a) x+\1b	diff=0/9631	no_auto_possess	
+B0005	yes	(a)x+\1x	diff=0/9631	no_auto_possess	
+B0006	yes	(a) x+\1x	diff=0/9631	no_auto_possess	
+B0007	yes	(a)x+\1$	diff=0/9631	no_auto_possess	
+B0008	yes	(a) x+\1$	diff=0/9631	no_auto_possess	
+B0009	yes	(a)x+\1\b	diff=0/9631	no_auto_possess	
+B0010	yes	(a) x+\1\b	diff=0/9631	no_auto_possess	
+B0011	yes	(a)x{1,3}\1	diff=0/9631	no_auto_possess	
+B0012	yes	(a) x{1,3}\1	diff=0/9631	no_auto_possess	
+B0013	yes	(a)x{1,3}\1b	diff=0/9631	no_auto_possess	
+B0014	yes	(a) x{1,3}\1b	diff=0/9631	no_auto_possess	
+B0015	yes	(a)x{1,3}\1x	diff=0/9631	no_auto_possess	
+B0016	yes	(a) x{1,3}\1x	diff=0/9631	no_auto_possess	
+B0017	yes	(a)x{1,3}\1$	diff=0/9631	no_auto_possess	
+B0018	yes	(a) x{1,3}\1$	diff=0/9631	no_auto_possess	
+B0019	yes	(a)x{1,3}\1\b	diff=0/9631	no_auto_possess	
+B0020	yes	(a) x{1,3}\1\b	diff=0/9631	no_auto_possess	
+B0021	yes	(a)x*\1	diff=0/9631	no_auto_possess	
+B0022	yes	(a) x*\1	diff=0/9631	no_auto_possess	
+B0023	yes	(a)x*\1b	diff=0/9631	no_auto_possess	
+B0024	yes	(a) x*\1b	diff=0/9631	no_auto_possess	
+B0025	yes	(a)x*\1x	diff=0/9631	no_auto_possess	
+B0026	yes	(a) x*\1x	diff=0/9631	no_auto_possess	
+B0027	yes	(a)x*\1$	diff=0/9631	no_auto_possess	
+B0028	yes	(a) x*\1$	diff=0/9631	no_auto_possess	
+B0029	yes	(a)x*\1\b	diff=0/9631	no_auto_possess	
+B0030	yes	(a) x*\1\b	diff=0/9631	no_auto_possess	
+B0031	yes	(a)x+?\1	diff=0/9631	no_auto_possess	
+B0032	yes	(a) x+?\1	diff=0/9631	no_auto_possess	
+B0033	yes	(a)x+?\1b	diff=0/9631	no_auto_possess	
+B0034	yes	(a) x+?\1b	diff=0/9631	no_auto_possess	
+B0035	yes	(a)x+?\1x	diff=0/9631	no_auto_possess	
+B0036	yes	(a) x+?\1x	diff=0/9631	no_auto_possess	
+B0037	yes	(a)x+?\1$	diff=0/9631	no_auto_possess	
+B0038	yes	(a) x+?\1$	diff=0/9631	no_auto_possess	
+B0039	yes	(a)x+?\1\b	diff=0/9631	no_auto_possess	
+B0040	yes	(a) x+?\1\b	diff=0/9631	no_auto_possess	
+B0041	yes	(a)[ .]+\1	diff=0/9631	no_auto_possess	
+B0042	yes	(a) [ .]+\1	diff=0/9631	no_auto_possess	
+B0043	yes	(a)[ .]+\1b	diff=0/9631	no_auto_possess	
+B0044	yes	(a) [ .]+\1b	diff=0/9631	no_auto_possess	
+B0045	yes	(a)[ .]+\1x	diff=0/9631	no_auto_possess	
+B0046	yes	(a) [ .]+\1x	diff=0/9631	no_auto_possess	
+B0047	yes	(a)[ .]+\1$	diff=0/9631	no_auto_possess	
+B0048	yes	(a) [ .]+\1$	diff=0/9631	no_auto_possess	
+B0049	yes	(a)[ .]+\1\b	diff=0/9631	no_auto_possess	
+B0050	yes	(a) [ .]+\1\b	diff=0/9631	no_auto_possess	
+B0051	yes	(a)\s+\1	diff=0/9631	no_auto_possess	
+B0052	yes	(a) \s+\1	diff=0/9631	no_auto_possess	
+B0053	yes	(a)\s+\1b	diff=0/9631	no_auto_possess	
+B0054	yes	(a) \s+\1b	diff=0/9631	no_auto_possess	
+B0055	yes	(a)\s+\1x	diff=0/9631	no_auto_possess	
+B0056	yes	(a) \s+\1x	diff=0/9631	no_auto_possess	
+B0057	yes	(a)\s+\1$	diff=0/9631	no_auto_possess	
+B0058	yes	(a) \s+\1$	diff=0/9631	no_auto_possess	
+B0059	yes	(a)\s+\1\b	diff=0/9631	no_auto_possess	
+B0060	yes	(a) \s+\1\b	diff=0/9631	no_auto_possess	
+B0061	no	(a)a+\1	diff=113/9631	no_auto_possess	'aaa' g=['0: aaa', '0+', '1: a'] p=['No match']
+B0062	no	(a) a+\1	diff=14/9631	no_auto_possess	'a aa' g=['0: a aa', '0+', '1: a'] p=['No match']
+B0063	no	(a)a+\1b	diff=14/9631	no_auto_possess	'aaab' g=['0: aaab', '0+', '1: a'] p=['No match']
+B0064	no	(a) a+\1b	diff=1/9631	no_auto_possess	'a aab' g=['0: a aab', '0+', '1: a'] p=['No match']
+B0065	no	(a)a+\1x	diff=13/9631	no_auto_possess	'aaax' g=['0: aaax', '0+', '1: a'] p=['No match']
+B0066	no	(a) a+\1x	diff=2/9631	no_auto_possess	'a aax' g=['0: a aax', '0+', '1: a'] p=['No match']
+B0067	no	(a)a+\1$	diff=43/9631	no_auto_possess	'aaa' g=['0: aaa', '0+', '1: a'] p=['No match']
+B0068	no	(a) a+\1$	diff=8/9631	no_auto_possess	'a aa' g=['0: a aa', '0+', '1: a'] p=['No match']
+B0069	no	(a)a+\1\b	diff=70/9631	no_auto_possess	'aaa' g=['0: aaa', '0+', '1: a'] p=['No match']
+B0070	no	(a) a+\1\b	diff=10/9631	no_auto_possess	'a aa' g=['0: a aa', '0+', '1: a'] p=['No match']
+B0071	yes	(a|b)x+\1	diff=0/9631	no_auto_possess	
+B0072	yes	(a|b) x+\1	diff=0/9631	no_auto_possess	
+B0073	yes	(a|b)x+\1b	diff=0/9631	no_auto_possess	
+B0074	yes	(a|b) x+\1b	diff=0/9631	no_auto_possess	
+B0075	yes	(a|b)x+\1x	diff=0/9631	no_auto_possess	
+B0076	yes	(a|b) x+\1x	diff=0/9631	no_auto_possess	
+B0077	yes	(a|b)x+\1$	diff=0/9631	no_auto_possess	
+B0078	yes	(a|b) x+\1$	diff=0/9631	no_auto_possess	
+B0079	yes	(a|b)x+\1\b	diff=0/9631	no_auto_possess	
+B0080	yes	(a|b) x+\1\b	diff=0/9631	no_auto_possess	
+B0081	yes	(a|b)x{1,3}\1	diff=0/9631	no_auto_possess	
+B0082	yes	(a|b) x{1,3}\1	diff=0/9631	no_auto_possess	
+B0083	yes	(a|b)x{1,3}\1b	diff=0/9631	no_auto_possess	
+B0084	yes	(a|b) x{1,3}\1b	diff=0/9631	no_auto_possess	
+B0085	yes	(a|b)x{1,3}\1x	diff=0/9631	no_auto_possess	
+B0086	yes	(a|b) x{1,3}\1x	diff=0/9631	no_auto_possess	
+B0087	yes	(a|b)x{1,3}\1$	diff=0/9631	no_auto_possess	
+B0088	yes	(a|b) x{1,3}\1$	diff=0/9631	no_auto_possess	
+B0089	yes	(a|b)x{1,3}\1\b	diff=0/9631	no_auto_possess	
+B0090	yes	(a|b) x{1,3}\1\b	diff=0/9631	no_auto_possess	
+B0091	yes	(a|b)x*\1	diff=0/9631	no_auto_possess	
+B0092	yes	(a|b) x*\1	diff=0/9631	no_auto_possess	
+B0093	yes	(a|b)x*\1b	diff=0/9631	no_auto_possess	
+B0094	yes	(a|b) x*\1b	diff=0/9631	no_auto_possess	
+B0095	yes	(a|b)x*\1x	diff=0/9631	no_auto_possess	
+B0096	yes	(a|b) x*\1x	diff=0/9631	no_auto_possess	
+B0097	yes	(a|b)x*\1$	diff=0/9631	no_auto_possess	
+B0098	yes	(a|b) x*\1$	diff=0/9631	no_auto_possess	
+B0099	yes	(a|b)x*\1\b	diff=0/9631	no_auto_possess	
+B0100	yes	(a|b) x*\1\b	diff=0/9631	no_auto_possess	
+B0101	yes	(a|b)x+?\1	diff=0/9631	no_auto_possess	
+B0102	yes	(a|b) x+?\1	diff=0/9631	no_auto_possess	
+B0103	yes	(a|b)x+?\1b	diff=0/9631	no_auto_possess	
+B0104	yes	(a|b) x+?\1b	diff=0/9631	no_auto_possess	
+B0105	yes	(a|b)x+?\1x	diff=0/9631	no_auto_possess	
+B0106	yes	(a|b) x+?\1x	diff=0/9631	no_auto_possess	
+B0107	yes	(a|b)x+?\1$	diff=0/9631	no_auto_possess	
+B0108	yes	(a|b) x+?\1$	diff=0/9631	no_auto_possess	
+B0109	yes	(a|b)x+?\1\b	diff=0/9631	no_auto_possess	
+B0110	yes	(a|b) x+?\1\b	diff=0/9631	no_auto_possess	
+B0111	yes	(a|b)[ .]+\1	diff=0/9631	no_auto_possess	
+B0112	yes	(a|b) [ .]+\1	diff=0/9631	no_auto_possess	
+B0113	yes	(a|b)[ .]+\1b	diff=0/9631	no_auto_possess	
+B0114	yes	(a|b) [ .]+\1b	diff=0/9631	no_auto_possess	
+B0115	yes	(a|b)[ .]+\1x	diff=0/9631	no_auto_possess	
+B0116	yes	(a|b) [ .]+\1x	diff=0/9631	no_auto_possess	
+B0117	yes	(a|b)[ .]+\1$	diff=0/9631	no_auto_possess	
+B0118	yes	(a|b) [ .]+\1$	diff=0/9631	no_auto_possess	
+B0119	yes	(a|b)[ .]+\1\b	diff=0/9631	no_auto_possess	
+B0120	yes	(a|b) [ .]+\1\b	diff=0/9631	no_auto_possess	
+B0121	yes	(a|b)\s+\1	diff=0/9631	no_auto_possess	
+B0122	yes	(a|b) \s+\1	diff=0/9631	no_auto_possess	
+B0123	yes	(a|b)\s+\1b	diff=0/9631	no_auto_possess	
+B0124	yes	(a|b) \s+\1b	diff=0/9631	no_auto_possess	
+B0125	yes	(a|b)\s+\1x	diff=0/9631	no_auto_possess	
+B0126	yes	(a|b) \s+\1x	diff=0/9631	no_auto_possess	
+B0127	yes	(a|b)\s+\1$	diff=0/9631	no_auto_possess	
+B0128	yes	(a|b) \s+\1$	diff=0/9631	no_auto_possess	
+B0129	yes	(a|b)\s+\1\b	diff=0/9631	no_auto_possess	
+B0130	yes	(a|b) \s+\1\b	diff=0/9631	no_auto_possess	
+B0131	no	(a|b)a+\1	diff=111/9631	no_auto_possess	'aaa' g=['0: aaa', '0+', '1: a'] p=['No match']
+B0132	no	(a|b) a+\1	diff=13/9631	no_auto_possess	'a aa' g=['0: a aa', '0+', '1: a'] p=['No match']
+B0133	no	(a|b)a+\1b	diff=14/9631	no_auto_possess	'aaab' g=['0: aaab', '0+', '1: a'] p=['No match']
+B0134	no	(a|b) a+\1b	diff=1/9631	no_auto_possess	'a aab' g=['0: a aab', '0+', '1: a'] p=['No match']
+B0135	no	(a|b)a+\1x	diff=14/9631	no_auto_possess	'aaax' g=['0: aaax', '0+', '1: a'] p=['No match']
+B0136	no	(a|b) a+\1x	diff=1/9631	no_auto_possess	'a aax' g=['0: a aax', '0+', '1: a'] p=['No match']
+B0137	no	(a|b)a+\1$	diff=45/9631	no_auto_possess	'aaa' g=['0: aaa', '0+', '1: a'] p=['No match']
+B0138	no	(a|b) a+\1$	diff=8/9631	no_auto_possess	'a aa' g=['0: a aa', '0+', '1: a'] p=['No match']
+B0139	no	(a|b)a+\1\b	diff=72/9631	no_auto_possess	'aaa' g=['0: aaa', '0+', '1: a'] p=['No match']
+B0140	no	(a|b) a+\1\b	diff=10/9631	no_auto_possess	'a aa' g=['0: a aa', '0+', '1: a'] p=['No match']
+B0141	yes	([ab]+)x+\1	diff=0/9631	no_auto_possess	
+B0142	yes	([ab]+) x+\1	diff=0/9631	no_auto_possess	
+B0143	yes	([ab]+)x+\1b	diff=0/9631	no_auto_possess	
+B0144	yes	([ab]+) x+\1b	diff=0/9631	no_auto_possess	
+B0145	yes	([ab]+)x+\1x	diff=0/9631	no_auto_possess	
+B0146	yes	([ab]+) x+\1x	diff=0/9631	no_auto_possess	
+B0147	yes	([ab]+)x+\1$	diff=0/9631	no_auto_possess	
+B0148	yes	([ab]+) x+\1$	diff=0/9631	no_auto_possess	
+B0149	yes	([ab]+)x+\1\b	diff=0/9631	no_auto_possess	
+B0150	yes	([ab]+) x+\1\b	diff=0/9631	no_auto_possess	
+B0151	yes	([ab]+)x{1,3}\1	diff=0/9631	no_auto_possess	
+B0152	yes	([ab]+) x{1,3}\1	diff=0/9631	no_auto_possess	
+B0153	yes	([ab]+)x{1,3}\1b	diff=0/9631	no_auto_possess	
+B0154	yes	([ab]+) x{1,3}\1b	diff=0/9631	no_auto_possess	
+B0155	yes	([ab]+)x{1,3}\1x	diff=0/9631	no_auto_possess	
+B0156	yes	([ab]+) x{1,3}\1x	diff=0/9631	no_auto_possess	
+B0157	yes	([ab]+)x{1,3}\1$	diff=0/9631	no_auto_possess	
+B0158	yes	([ab]+) x{1,3}\1$	diff=0/9631	no_auto_possess	
+B0159	yes	([ab]+)x{1,3}\1\b	diff=0/9631	no_auto_possess	
+B0160	yes	([ab]+) x{1,3}\1\b	diff=0/9631	no_auto_possess	
+B0161	yes	([ab]+)x*\1	diff=0/9631	no_auto_possess	
+B0162	yes	([ab]+) x*\1	diff=0/9631	no_auto_possess	
+B0163	yes	([ab]+)x*\1b	diff=0/9631	no_auto_possess	
+B0164	yes	([ab]+) x*\1b	diff=0/9631	no_auto_possess	
+B0165	yes	([ab]+)x*\1x	diff=0/9631	no_auto_possess	
+B0166	yes	([ab]+) x*\1x	diff=0/9631	no_auto_possess	
+B0167	yes	([ab]+)x*\1$	diff=0/9631	no_auto_possess	
+B0168	yes	([ab]+) x*\1$	diff=0/9631	no_auto_possess	
+B0169	yes	([ab]+)x*\1\b	diff=0/9631	no_auto_possess	
+B0170	yes	([ab]+) x*\1\b	diff=0/9631	no_auto_possess	
+B0171	yes	([ab]+)x+?\1	diff=0/9631	no_auto_possess	
+B0172	yes	([ab]+) x+?\1	diff=0/9631	no_auto_possess	
+B0173	yes	([ab]+)x+?\1b	diff=0/9631	no_auto_possess	
+B0174	yes	([ab]+) x+?\1b	diff=0/9631	no_auto_possess	
+B0175	yes	([ab]+)x+?\1x	diff=0/9631	no_auto_possess	
+B0176	yes	([ab]+) x+?\1x	diff=0/9631	no_auto_possess	
+B0177	yes	([ab]+)x+?\1$	diff=0/9631	no_auto_possess	
+B0178	yes	([ab]+) x+?\1$	diff=0/9631	no_auto_possess	
+B0179	yes	([ab]+)x+?\1\b	diff=0/9631	no_auto_possess	
+B0180	yes	([ab]+) x+?\1\b	diff=0/9631	no_auto_possess	
+B0181	yes	([ab]+)[ .]+\1	diff=0/9631	no_auto_possess	
+B0182	yes	([ab]+) [ .]+\1	diff=0/9631	no_auto_possess	
+B0183	yes	([ab]+)[ .]+\1b	diff=0/9631	no_auto_possess	
+B0184	yes	([ab]+) [ .]+\1b	diff=0/9631	no_auto_possess	
+B0185	yes	([ab]+)[ .]+\1x	diff=0/9631	no_auto_possess	
+B0186	yes	([ab]+) [ .]+\1x	diff=0/9631	no_auto_possess	
+B0187	yes	([ab]+)[ .]+\1$	diff=0/9631	no_auto_possess	
+B0188	yes	([ab]+) [ .]+\1$	diff=0/9631	no_auto_possess	
+B0189	yes	([ab]+)[ .]+\1\b	diff=0/9631	no_auto_possess	
+B0190	yes	([ab]+) [ .]+\1\b	diff=0/9631	no_auto_possess	
+B0191	yes	([ab]+)\s+\1	diff=0/9631	no_auto_possess	
+B0192	yes	([ab]+) \s+\1	diff=0/9631	no_auto_possess	
+B0193	yes	([ab]+)\s+\1b	diff=0/9631	no_auto_possess	
+B0194	yes	([ab]+) \s+\1b	diff=0/9631	no_auto_possess	
+B0195	yes	([ab]+)\s+\1x	diff=0/9631	no_auto_possess	
+B0196	yes	([ab]+) \s+\1x	diff=0/9631	no_auto_possess	
+B0197	yes	([ab]+)\s+\1$	diff=0/9631	no_auto_possess	
+B0198	yes	([ab]+) \s+\1$	diff=0/9631	no_auto_possess	
+B0199	yes	([ab]+)\s+\1\b	diff=0/9631	no_auto_possess	
+B0200	yes	([ab]+) \s+\1\b	diff=0/9631	no_auto_possess	
+B0201	no	([ab]+)a+\1	diff=113/9631	no_auto_possess	'aaa' g=['0: aaa', '0+', '1: a'] p=['No match']
+B0202	no	([ab]+) a+\1	diff=13/9631	no_auto_possess	'a aa' g=['0: a aa', '0+', '1: a'] p=['No match']
+B0203	no	([ab]+)a+\1b	diff=13/9631	no_auto_possess	'aaab' g=['0: aaab', '0+', '1: a'] p=['No match']
+B0204	no	([ab]+) a+\1b	diff=1/9631	no_auto_possess	'a aab' g=['0: a aab', '0+', '1: a'] p=['No match']
+B0205	no	([ab]+)a+\1x	diff=13/9631	no_auto_possess	'aaax' g=['0: aaax', '0+', '1: a'] p=['No match']
+B0206	no	([ab]+) a+\1x	diff=1/9631	no_auto_possess	'a aax' g=['0: a aax', '0+', '1: a'] p=['No match']
+B0207	no	([ab]+)a+\1$	diff=45/9631	no_auto_possess	'aaa' g=['0: aaa', '0+', '1: a'] p=['No match']
+B0208	no	([ab]+) a+\1$	diff=8/9631	no_auto_possess	'a aa' g=['0: a aa', '0+', '1: a'] p=['No match']
+B0209	no	([ab]+)a+\1\b	diff=75/9631	no_auto_possess	'aaa' g=['0: aaa', '0+', '1: a'] p=['No match']
+B0210	no	([ab]+) a+\1\b	diff=11/9631	no_auto_possess	'a aa' g=['0: a aa', '0+', '1: a'] p=['No match']
+B0211	yes	(ab)x+\1	diff=0/9631	no_auto_possess	
+B0212	yes	(ab) x+\1	diff=0/9631	no_auto_possess	
+B0213	yes	(ab)x+\1b	diff=0/9631	no_auto_possess	
+B0214	yes	(ab) x+\1b	diff=0/9631	no_auto_possess	
+B0215	yes	(ab)x+\1x	diff=0/9631	no_auto_possess	
+B0216	yes	(ab) x+\1x	diff=0/9631	no_auto_possess	
+B0217	yes	(ab)x+\1$	diff=0/9631	no_auto_possess	
+B0218	yes	(ab) x+\1$	diff=0/9631	no_auto_possess	
+B0219	yes	(ab)x+\1\b	diff=0/9631	no_auto_possess	
+B0220	yes	(ab) x+\1\b	diff=0/9631	no_auto_possess	
+B0221	yes	(ab)x{1,3}\1	diff=0/9631	no_auto_possess	
+B0222	yes	(ab) x{1,3}\1	diff=0/9631	no_auto_possess	
+B0223	yes	(ab)x{1,3}\1b	diff=0/9631	no_auto_possess	
+B0224	yes	(ab) x{1,3}\1b	diff=0/9631	no_auto_possess	
+B0225	yes	(ab)x{1,3}\1x	diff=0/9631	no_auto_possess	
+B0226	yes	(ab) x{1,3}\1x	diff=0/9631	no_auto_possess	
+B0227	yes	(ab)x{1,3}\1$	diff=0/9631	no_auto_possess	
+B0228	yes	(ab) x{1,3}\1$	diff=0/9631	no_auto_possess	
+B0229	yes	(ab)x{1,3}\1\b	diff=0/9631	no_auto_possess	
+B0230	yes	(ab) x{1,3}\1\b	diff=0/9631	no_auto_possess	
+B0231	yes	(ab)x*\1	diff=0/9631	no_auto_possess	
+B0232	yes	(ab) x*\1	diff=0/9631	no_auto_possess	
+B0233	yes	(ab)x*\1b	diff=0/9631	no_auto_possess	
+B0234	yes	(ab) x*\1b	diff=0/9631	no_auto_possess	
+B0235	yes	(ab)x*\1x	diff=0/9631	no_auto_possess	
+B0236	yes	(ab) x*\1x	diff=0/9631	no_auto_possess	
+B0237	yes	(ab)x*\1$	diff=0/9631	no_auto_possess	
+B0238	yes	(ab) x*\1$	diff=0/9631	no_auto_possess	
+B0239	yes	(ab)x*\1\b	diff=0/9631	no_auto_possess	
+B0240	yes	(ab) x*\1\b	diff=0/9631	no_auto_possess	
+B0241	yes	(ab)x+?\1	diff=0/9631	no_auto_possess	
+B0242	yes	(ab) x+?\1	diff=0/9631	no_auto_possess	
+B0243	yes	(ab)x+?\1b	diff=0/9631	no_auto_possess	
+B0244	yes	(ab) x+?\1b	diff=0/9631	no_auto_possess	
+B0245	yes	(ab)x+?\1x	diff=0/9631	no_auto_possess	
+B0246	yes	(ab) x+?\1x	diff=0/9631	no_auto_possess	
+B0247	yes	(ab)x+?\1$	diff=0/9631	no_auto_possess	
+B0248	yes	(ab) x+?\1$	diff=0/9631	no_auto_possess	
+B0249	yes	(ab)x+?\1\b	diff=0/9631	no_auto_possess	
+B0250	yes	(ab) x+?\1\b	diff=0/9631	no_auto_possess	
+B0251	yes	(ab)[ .]+\1	diff=0/9631	no_auto_possess	
+B0252	yes	(ab) [ .]+\1	diff=0/9631	no_auto_possess	
+B0253	yes	(ab)[ .]+\1b	diff=0/9631	no_auto_possess	
+B0254	yes	(ab) [ .]+\1b	diff=0/9631	no_auto_possess	
+B0255	yes	(ab)[ .]+\1x	diff=0/9631	no_auto_possess	
+B0256	yes	(ab) [ .]+\1x	diff=0/9631	no_auto_possess	
+B0257	yes	(ab)[ .]+\1$	diff=0/9631	no_auto_possess	
+B0258	yes	(ab) [ .]+\1$	diff=0/9631	no_auto_possess	
+B0259	yes	(ab)[ .]+\1\b	diff=0/9631	no_auto_possess	
+B0260	yes	(ab) [ .]+\1\b	diff=0/9631	no_auto_possess	
+B0261	yes	(ab)\s+\1	diff=0/9631	no_auto_possess	
+B0262	yes	(ab) \s+\1	diff=0/9631	no_auto_possess	
+B0263	yes	(ab)\s+\1b	diff=0/9631	no_auto_possess	
+B0264	yes	(ab) \s+\1b	diff=0/9631	no_auto_possess	
+B0265	yes	(ab)\s+\1x	diff=0/9631	no_auto_possess	
+B0266	yes	(ab) \s+\1x	diff=0/9631	no_auto_possess	
+B0267	yes	(ab)\s+\1$	diff=0/9631	no_auto_possess	
+B0268	yes	(ab) \s+\1$	diff=0/9631	no_auto_possess	
+B0269	yes	(ab)\s+\1\b	diff=0/9631	no_auto_possess	
+B0270	yes	(ab) \s+\1\b	diff=0/9631	no_auto_possess	
+B0271	no	(ab)a+\1	diff=1/9631	no_auto_possess	'abaab' g=['0: abaab', '0+', '1: ab'] p=['No match']
+B0272	no	(ab) a+\1	diff=0/9631	no_auto_possess	
+B0273	no	(ab)a+\1b	diff=0/9631	no_auto_possess	
+B0274	no	(ab) a+\1b	diff=0/9631	no_auto_possess	
+B0275	no	(ab)a+\1x	diff=0/9631	no_auto_possess	
+B0276	no	(ab) a+\1x	diff=0/9631	no_auto_possess	
+B0277	no	(ab)a+\1$	diff=1/9631	no_auto_possess	'abaab' g=['0: abaab', '0+', '1: ab'] p=['No match']
+B0278	no	(ab) a+\1$	diff=0/9631	no_auto_possess	
+B0279	no	(ab)a+\1\b	diff=1/9631	no_auto_possess	'abaab' g=['0: abaab', '0+', '1: ab'] p=['No match']
+B0280	no	(ab) a+\1\b	diff=0/9631	no_auto_possess	
+B0281	yes	(a?)x+\1	diff=0/9631	no_auto_possess	
+B0282	yes	(a?) x+\1	diff=0/9631	no_auto_possess	
+B0283	yes	(a?)x+\1b	diff=0/9631	no_auto_possess	
+B0284	yes	(a?) x+\1b	diff=0/9631	no_auto_possess	
+B0285	no	(a?)x+\1x	diff=890/9631	no_auto_possess	'xx' g=['0: xx', '0+', '1:'] p=['No match']
+B0286	no	(a?) x+\1x	diff=132/9631	no_auto_possess	' xx' g=['0:  xx', '0+', '1:'] p=['No match']
+B0287	yes	(a?)x+\1$	diff=0/9631	no_auto_possess	
+B0288	yes	(a?) x+\1$	diff=0/9631	no_auto_possess	
+B0289	no	(a?)x+\1\b	diff=0/9631	no_auto_possess	
+B0290	no	(a?) x+\1\b	diff=0/9631	no_auto_possess	
+B0291	yes	(a?)x{1,3}\1	diff=0/9631	no_auto_possess	
+B0292	yes	(a?) x{1,3}\1	diff=0/9631	no_auto_possess	
+B0293	yes	(a?)x{1,3}\1b	diff=0/9631	no_auto_possess	
+B0294	yes	(a?) x{1,3}\1b	diff=0/9631	no_auto_possess	
+B0295	no	(a?)x{1,3}\1x	diff=887/9631	no_auto_possess	'xx' g=['0: xx', '0+', '1:'] p=['No match']
+B0296	no	(a?) x{1,3}\1x	diff=131/9631	no_auto_possess	' xx' g=['0:  xx', '0+', '1:'] p=['No match']
+B0297	yes	(a?)x{1,3}\1$	diff=0/9631	no_auto_possess	
+B0298	yes	(a?) x{1,3}\1$	diff=0/9631	no_auto_possess	
+B0299	no	(a?)x{1,3}\1\b	diff=0/9631	no_auto_possess	
+B0300	no	(a?) x{1,3}\1\b	diff=0/9631	no_auto_possess	
+B0301	yes	(a?)x*\1	diff=0/9631	no_auto_possess	
+B0302	yes	(a?) x*\1	diff=0/9631	no_auto_possess	
+B0303	yes	(a?)x*\1b	diff=0/9631	no_auto_possess	
+B0304	yes	(a?) x*\1b	diff=0/9631	no_auto_possess	
+B0305	no	(a?)x*\1x	diff=5501/9631	no_auto_possess	'x' g=['0: x', '0+', '1:'] p=['No match']
+B0306	no	(a?) x*\1x	diff=1014/9631	no_auto_possess	' x' g=['0:  x', '0+', '1:'] p=['No match']
+B0307	yes	(a?)x*\1$	diff=0/9631	no_auto_possess	
+B0308	yes	(a?) x*\1$	diff=0/9631	no_auto_possess	
+B0309	no	(a?)x*\1\b	diff=1405/9631	no_auto_possess	'xa' g=['0:', '0+ xa', '1:'] p=['0:', '0+', '1:']
+B0310	no	(a?) x*\1\b	diff=401/9631	no_auto_possess	' xa' g=['0:', '0+ xa', '1:'] p=['No match']
+B0311	no	(a?)x+?\1	diff=789/9631	no_auto_possess	'xx' g=['0: x', '0+ x', '1:'] p=['0: xx', '0+', '1:']
+B0312	no	(a?) x+?\1	diff=128/9631	no_auto_possess	' xx' g=['0:  x', '0+ x', '1:'] p=['0:  xx', '0+', '1:']
+B0313	yes	(a?)x+?\1b	diff=0/9631	no_auto_possess	
+B0314	yes	(a?) x+?\1b	diff=0/9631	no_auto_possess	
+B0315	no	(a?)x+?\1x	diff=887/9631	no_auto_possess	'xx' g=['0: xx', '0+', '1:'] p=['No match']
+B0316	no	(a?) x+?\1x	diff=129/9631	no_auto_possess	' xx' g=['0:  xx', '0+', '1:'] p=['No match']
+B0317	no	(a?)x+?\1$	diff=0/9631	no_auto_possess	
+B0318	no	(a?) x+?\1$	diff=0/9631	no_auto_possess	
+B0319	no	(a?)x+?\1\b	diff=0/9631	no_auto_possess	
+B0320	no	(a?) x+?\1\b	diff=0/9631	no_auto_possess	
+B0321	yes	(a?)[ .]+\1	diff=0/9631	no_auto_possess	
+B0322	yes	(a?) [ .]+\1	diff=0/9631	no_auto_possess	
+B0323	yes	(a?)[ .]+\1b	diff=0/9631	no_auto_possess	
+B0324	yes	(a?) [ .]+\1b	diff=0/9631	no_auto_possess	
+B0325	yes	(a?)[ .]+\1x	diff=0/9631	no_auto_possess	
+B0326	yes	(a?) [ .]+\1x	diff=0/9631	no_auto_possess	
+B0327	yes	(a?)[ .]+\1$	diff=0/9631	no_auto_possess	
+B0328	yes	(a?) [ .]+\1$	diff=0/9631	no_auto_possess	
+B0329	no	(a?)[ .]+\1\b	diff=0/9631	no_auto_possess	
+B0330	no	(a?) [ .]+\1\b	diff=0/9631	no_auto_possess	
+B0331	yes	(a?)\s+\1	diff=0/9631	no_auto_possess	
+B0332	yes	(a?) \s+\1	diff=0/9631	no_auto_possess	
+B0333	yes	(a?)\s+\1b	diff=0/9631	no_auto_possess	
+B0334	yes	(a?) \s+\1b	diff=0/9631	no_auto_possess	
+B0335	yes	(a?)\s+\1x	diff=0/9631	no_auto_possess	
+B0336	yes	(a?) \s+\1x	diff=0/9631	no_auto_possess	
+B0337	yes	(a?)\s+\1$	diff=0/9631	no_auto_possess	
+B0338	yes	(a?) \s+\1$	diff=0/9631	no_auto_possess	
+B0339	no	(a?)\s+\1\b	diff=0/9631	no_auto_possess	
+B0340	no	(a?) \s+\1\b	diff=0/9631	no_auto_possess	
+B0341	no	(a?)a+\1	diff=109/9631	no_auto_possess	'aaa' g=['0: aaa', '0+', '1: a'] p=['0: aaa', '0+', '1:']
+B0342	no	(a?) a+\1	diff=12/9631	no_auto_possess	'a aa' g=['0: a aa', '0+', '1: a'] p=['0:  aa', '0+', '1:']
+B0343	no	(a?)a+\1b	diff=13/9631	no_auto_possess	'aaab' g=['0: aaab', '0+', '1: a'] p=['0: aaab', '0+', '1:']
+B0344	no	(a?) a+\1b	diff=1/9631	no_auto_possess	'a aab' g=['0: a aab', '0+', '1: a'] p=['0:  aab', '0+', '1:']
+B0345	no	(a?)a+\1x	diff=13/9631	no_auto_possess	'aaax' g=['0: aaax', '0+', '1: a'] p=['0: aaax', '0+', '1:']
+B0346	no	(a?) a+\1x	diff=1/9631	no_auto_possess	'a aax' g=['0: a aax', '0+', '1: a'] p=['0:  aax', '0+', '1:']
+B0347	no	(a?)a+\1$	diff=44/9631	no_auto_possess	'aaa' g=['0: aaa', '0+', '1: a'] p=['0: aaa', '0+', '1:']
+B0348	no	(a?) a+\1$	diff=9/9631	no_auto_possess	'a aa' g=['0: a aa', '0+', '1: a'] p=['0:  aa', '0+', '1:']
+B0349	no	(a?)a+\1\b	diff=72/9631	no_auto_possess	'aaa' g=['0: aaa', '0+', '1: a'] p=['0: aaa', '0+', '1:']
+B0350	no	(a?) a+\1\b	diff=9/9631	no_auto_possess	'a aa' g=['0: a aa', '0+', '1: a'] p=['0:  aa', '0+', '1:']
+B0351	yes	(a*)x+\1	diff=0/9631	no_auto_possess	
+B0352	yes	(a*) x+\1	diff=0/9631	no_auto_possess	
+B0353	yes	(a*)x+\1b	diff=0/9631	no_auto_possess	
+B0354	yes	(a*) x+\1b	diff=0/9631	no_auto_possess	
+B0355	no	(a*)x+\1x	diff=897/9631	no_auto_possess	'xx' g=['0: xx', '0+', '1:'] p=['No match']
+B0356	no	(a*) x+\1x	diff=124/9631	no_auto_possess	' xx' g=['0:  xx', '0+', '1:'] p=['No match']
+B0357	yes	(a*)x+\1$	diff=0/9631	no_auto_possess	
+B0358	yes	(a*) x+\1$	diff=0/9631	no_auto_possess	
+B0359	no	(a*)x+\1\b	diff=0/9631	no_auto_possess	
+B0360	no	(a*) x+\1\b	diff=0/9631	no_auto_possess	
+B0361	yes	(a*)x{1,3}\1	diff=0/9631	no_auto_possess	
+B0362	yes	(a*) x{1,3}\1	diff=0/9631	no_auto_possess	
+B0363	yes	(a*)x{1,3}\1b	diff=0/9631	no_auto_possess	
+B0364	yes	(a*) x{1,3}\1b	diff=0/9631	no_auto_possess	
+B0365	no	(a*)x{1,3}\1x	diff=888/9631	no_auto_possess	'xx' g=['0: xx', '0+', '1:'] p=['No match']
+B0366	no	(a*) x{1,3}\1x	diff=123/9631	no_auto_possess	' xx' g=['0:  xx', '0+', '1:'] p=['No match']
+B0367	yes	(a*)x{1,3}\1$	diff=0/9631	no_auto_possess	
+B0368	yes	(a*) x{1,3}\1$	diff=0/9631	no_auto_possess	
+B0369	no	(a*)x{1,3}\1\b	diff=0/9631	no_auto_possess	
+B0370	no	(a*) x{1,3}\1\b	diff=0/9631	no_auto_possess	
+B0371	yes	(a*)x*\1	diff=0/9631	no_auto_possess	
+B0372	yes	(a*) x*\1	diff=0/9631	no_auto_possess	
+B0373	yes	(a*)x*\1b	diff=0/9631	no_auto_possess	
+B0374	yes	(a*) x*\1b	diff=0/9631	no_auto_possess	
+B0375	no	(a*)x*\1x	diff=5515/9631	no_auto_possess	'x' g=['0: x', '0+', '1:'] p=['No match']
+B0376	no	(a*) x*\1x	diff=1004/9631	no_auto_possess	' x' g=['0:  x', '0+', '1:'] p=['No match']
+B0377	yes	(a*)x*\1$	diff=0/9631	no_auto_possess	
+B0378	yes	(a*) x*\1$	diff=0/9631	no_auto_possess	
+B0379	no	(a*)x*\1\b	diff=1394/9631	no_auto_possess	'xa' g=['0:', '0+ xa', '1:'] p=['0:', '0+', '1:']
+B0380	no	(a*) x*\1\b	diff=409/9631	no_auto_possess	' xa' g=['0:', '0+ xa', '1:'] p=['No match']
+B0381	no	(a*)x+?\1	diff=800/9631	no_auto_possess	'xx' g=['0: x', '0+ x', '1:'] p=['0: xx', '0+', '1:']
+B0382	no	(a*) x+?\1	diff=124/9631	no_auto_possess	' xx' g=['0:  x', '0+ x', '1:'] p=['0:  xx', '0+', '1:']
+B0383	yes	(a*)x+?\1b	diff=0/9631	no_auto_possess	
+B0384	yes	(a*) x+?\1b	diff=0/9631	no_auto_possess	
+B0385	no	(a*)x+?\1x	diff=893/9631	no_auto_possess	'xx' g=['0: xx', '0+', '1:'] p=['No match']
+B0386	no	(a*) x+?\1x	diff=128/9631	no_auto_possess	' xx' g=['0:  xx', '0+', '1:'] p=['No match']
+B0387	no	(a*)x+?\1$	diff=0/9631	no_auto_possess	
+B0388	no	(a*) x+?\1$	diff=0/9631	no_auto_possess	
+B0389	no	(a*)x+?\1\b	diff=0/9631	no_auto_possess	
+B0390	no	(a*) x+?\1\b	diff=0/9631	no_auto_possess	
+B0391	yes	(a*)[ .]+\1	diff=0/9631	no_auto_possess	
+B0392	yes	(a*) [ .]+\1	diff=0/9631	no_auto_possess	
+B0393	yes	(a*)[ .]+\1b	diff=0/9631	no_auto_possess	
+B0394	yes	(a*) [ .]+\1b	diff=0/9631	no_auto_possess	
+B0395	yes	(a*)[ .]+\1x	diff=0/9631	no_auto_possess	
+B0396	yes	(a*) [ .]+\1x	diff=0/9631	no_auto_possess	
+B0397	yes	(a*)[ .]+\1$	diff=0/9631	no_auto_possess	
+B0398	yes	(a*) [ .]+\1$	diff=0/9631	no_auto_possess	
+B0399	no	(a*)[ .]+\1\b	diff=0/9631	no_auto_possess	
+B0400	no	(a*) [ .]+\1\b	diff=0/9631	no_auto_possess	
+B0401	yes	(a*)\s+\1	diff=0/9631	no_auto_possess	
+B0402	yes	(a*) \s+\1	diff=0/9631	no_auto_possess	
+B0403	yes	(a*)\s+\1b	diff=0/9631	no_auto_possess	
+B0404	yes	(a*) \s+\1b	diff=0/9631	no_auto_possess	
+B0405	yes	(a*)\s+\1x	diff=0/9631	no_auto_possess	
+B0406	yes	(a*) \s+\1x	diff=0/9631	no_auto_possess	
+B0407	yes	(a*)\s+\1$	diff=0/9631	no_auto_possess	
+B0408	yes	(a*) \s+\1$	diff=0/9631	no_auto_possess	
+B0409	no	(a*)\s+\1\b	diff=0/9631	no_auto_possess	
+B0410	no	(a*) \s+\1\b	diff=0/9631	no_auto_possess	
+B0411	no	(a*)a+\1	diff=106/9631	no_auto_possess	'aaa' g=['0: aaa', '0+', '1: a'] p=['0: aaa', '0+', '1:']
+B0412	no	(a*) a+\1	diff=13/9631	no_auto_possess	'a aa' g=['0: a aa', '0+', '1: a'] p=['0:  aa', '0+', '1:']
+B0413	no	(a*)a+\1b	diff=13/9631	no_auto_possess	'aaab' g=['0: aaab', '0+', '1: a'] p=['0: aaab', '0+', '1:']
+B0414	no	(a*) a+\1b	diff=1/9631	no_auto_possess	'a aab' g=['0: a aab', '0+', '1: a'] p=['0:  aab', '0+', '1:']
+B0415	no	(a*)a+\1x	diff=13/9631	no_auto_possess	'aaax' g=['0: aaax', '0+', '1: a'] p=['0: aaax', '0+', '1:']
+B0416	no	(a*) a+\1x	diff=1/9631	no_auto_possess	'a aax' g=['0: a aax', '0+', '1: a'] p=['0:  aax', '0+', '1:']
+B0417	no	(a*)a+\1$	diff=43/9631	no_auto_possess	'aaa' g=['0: aaa', '0+', '1: a'] p=['0: aaa', '0+', '1:']
+B0418	no	(a*) a+\1$	diff=8/9631	no_auto_possess	'a aa' g=['0: a aa', '0+', '1: a'] p=['0:  aa', '0+', '1:']
+B0419	no	(a*)a+\1\b	diff=70/9631	no_auto_possess	'aaa' g=['0: aaa', '0+', '1: a'] p=['0: aaa', '0+', '1:']
+B0420	no	(a*) a+\1\b	diff=9/9631	no_auto_possess	'a aa' g=['0: a aa', '0+', '1: a'] p=['0:  aa', '0+', '1:']
+B0421	no	(x)x+\1	diff=115/9631	no_auto_possess	'xxx' g=['0: xxx', '0+', '1: x'] p=['No match']
+B0422	no	(x) x+\1	diff=13/9631	no_auto_possess	'x xx' g=['0: x xx', '0+', '1: x'] p=['No match']
+B0423	no	(x)x+\1b	diff=16/9631	no_auto_possess	'xxxb' g=['0: xxxb', '0+', '1: x'] p=['No match']
+B0424	no	(x) x+\1b	diff=1/9631	no_auto_possess	'x xxb' g=['0: x xxb', '0+', '1: x'] p=['No match']
+B0425	no	(x)x+\1x	diff=14/9631	no_auto_possess	'xxxx' g=['0: xxxx', '0+', '1: x'] p=['No match']
+B0426	no	(x) x+\1x	diff=1/9631	no_auto_possess	'x xxx' g=['0: x xxx', '0+', '1: x'] p=['No match']
+B0427	no	(x)x+\1$	diff=44/9631	no_auto_possess	'xxx' g=['0: xxx', '0+', '1: x'] p=['No match']
+B0428	no	(x) x+\1$	diff=9/9631	no_auto_possess	'x xx' g=['0: x xx', '0+', '1: x'] p=['No match']
+B0429	no	(x)x+\1\b	diff=73/9631	no_auto_possess	'xxx' g=['0: xxx', '0+', '1: x'] p=['No match']
+B0430	no	(x) x+\1\b	diff=10/9631	no_auto_possess	'x xx' g=['0: x xx', '0+', '1: x'] p=['No match']
+B0431	no	(x)x{1,3}\1	diff=113/9631	no_auto_possess	'xxx' g=['0: xxx', '0+', '1: x'] p=['No match']
+B0432	no	(x) x{1,3}\1	diff=14/9631	no_auto_possess	'x xx' g=['0: x xx', '0+', '1: x'] p=['No match']
+B0433	no	(x)x{1,3}\1b	diff=15/9631	no_auto_possess	'xxxb' g=['0: xxxb', '0+', '1: x'] p=['No match']
+B0434	no	(x) x{1,3}\1b	diff=1/9631	no_auto_possess	'x xxb' g=['0: x xxb', '0+', '1: x'] p=['No match']
+B0435	no	(x)x{1,3}\1x	diff=13/9631	no_auto_possess	'xxxx' g=['0: xxxx', '0+', '1: x'] p=['No match']
+B0436	no	(x) x{1,3}\1x	diff=1/9631	no_auto_possess	'x xxx' g=['0: x xxx', '0+', '1: x'] p=['No match']
+B0437	no	(x)x{1,3}\1$	diff=43/9631	no_auto_possess	'xxx' g=['0: xxx', '0+', '1: x'] p=['No match']
+B0438	no	(x) x{1,3}\1$	diff=8/9631	no_auto_possess	'x xx' g=['0: x xx', '0+', '1: x'] p=['No match']
+B0439	no	(x)x{1,3}\1\b	diff=73/9631	no_auto_possess	'xxx' g=['0: xxx', '0+', '1: x'] p=['No match']
+B0440	no	(x) x{1,3}\1\b	diff=10/9631	no_auto_possess	'x xx' g=['0: x xx', '0+', '1: x'] p=['No match']
+B0441	no	(x)x*\1	diff=894/9631	no_auto_possess	'xx' g=['0: xx', '0+', '1: x'] p=['No match']
+B0442	no	(x) x*\1	diff=126/9631	no_auto_possess	'x x' g=['0: x x', '0+', '1: x'] p=['No match']
+B0443	no	(x)x*\1b	diff=123/9631	no_auto_possess	'xxb' g=['0: xxb', '0+', '1: x'] p=['No match']
+B0444	no	(x) x*\1b	diff=15/9631	no_auto_possess	'x xb' g=['0: x xb', '0+', '1: x'] p=['No match']
+B0445	no	(x)x*\1x	diff=116/9631	no_auto_possess	'xxx' g=['0: xxx', '0+', '1: x'] p=['No match']
+B0446	no	(x) x*\1x	diff=13/9631	no_auto_possess	'x xx' g=['0: x xx', '0+', '1: x'] p=['No match']
+B0447	no	(x)x*\1$	diff=267/9631	no_auto_possess	'xx' g=['0: xx', '0+', '1: x'] p=['No match']
+B0448	no	(x) x*\1$	diff=54/9631	no_auto_possess	'x x' g=['0: x x', '0+', '1: x'] p=['No match']
+B0449	no	(x)x*\1\b	diff=520/9631	no_auto_possess	'xx' g=['0: xx', '0+', '1: x'] p=['No match']
+B0450	no	(x) x*\1\b	diff=81/9631	no_auto_possess	'x x' g=['0: x x', '0+', '1: x'] p=['No match']
+B0451	no	(x)x+?\1	diff=112/9631	no_auto_possess	'xxx' g=['0: xxx', '0+', '1: x'] p=['No match']
+B0452	no	(x) x+?\1	diff=13/9631	no_auto_possess	'x xx' g=['0: x xx', '0+', '1: x'] p=['No match']
+B0453	no	(x)x+?\1b	diff=15/9631	no_auto_possess	'xxxb' g=['0: xxxb', '0+', '1: x'] p=['No match']
+B0454	no	(x) x+?\1b	diff=1/9631	no_auto_possess	'x xxb' g=['0: x xxb', '0+', '1: x'] p=['No match']
+B0455	no	(x)x+?\1x	diff=13/9631	no_auto_possess	'xxxx' g=['0: xxxx', '0+', '1: x'] p=['No match']
+B0456	no	(x) x+?\1x	diff=1/9631	no_auto_possess	'x xxx' g=['0: x xxx', '0+', '1: x'] p=['No match']
+B0457	no	(x)x+?\1$	diff=43/9631	no_auto_possess	'xxx' g=['0: xxx', '0+', '1: x'] p=['No match']
+B0458	no	(x) x+?\1$	diff=8/9631	no_auto_possess	'x xx' g=['0: x xx', '0+', '1: x'] p=['No match']
+B0459	no	(x)x+?\1\b	diff=72/9631	no_auto_possess	'xxx' g=['0: xxx', '0+', '1: x'] p=['No match']
+B0460	no	(x) x+?\1\b	diff=10/9631	no_auto_possess	'x xx' g=['0: x xx', '0+', '1: x'] p=['No match']
+B0461	yes	(x)[ .]+\1	diff=0/9631	no_auto_possess	
+B0462	yes	(x) [ .]+\1	diff=0/9631	no_auto_possess	
+B0463	yes	(x)[ .]+\1b	diff=0/9631	no_auto_possess	
+B0464	yes	(x) [ .]+\1b	diff=0/9631	no_auto_possess	
+B0465	yes	(x)[ .]+\1x	diff=0/9631	no_auto_possess	
+B0466	yes	(x) [ .]+\1x	diff=0/9631	no_auto_possess	
+B0467	yes	(x)[ .]+\1$	diff=0/9631	no_auto_possess	
+B0468	yes	(x) [ .]+\1$	diff=0/9631	no_auto_possess	
+B0469	yes	(x)[ .]+\1\b	diff=0/9631	no_auto_possess	
+B0470	yes	(x) [ .]+\1\b	diff=0/9631	no_auto_possess	
+B0471	yes	(x)\s+\1	diff=0/9631	no_auto_possess	
+B0472	yes	(x) \s+\1	diff=0/9631	no_auto_possess	
+B0473	yes	(x)\s+\1b	diff=0/9631	no_auto_possess	
+B0474	yes	(x) \s+\1b	diff=0/9631	no_auto_possess	
+B0475	yes	(x)\s+\1x	diff=0/9631	no_auto_possess	
+B0476	yes	(x) \s+\1x	diff=0/9631	no_auto_possess	
+B0477	yes	(x)\s+\1$	diff=0/9631	no_auto_possess	
+B0478	yes	(x) \s+\1$	diff=0/9631	no_auto_possess	
+B0479	yes	(x)\s+\1\b	diff=0/9631	no_auto_possess	
+B0480	yes	(x) \s+\1\b	diff=0/9631	no_auto_possess	
+B0481	yes	(x)a+\1	diff=0/9631	no_auto_possess	
+B0482	yes	(x) a+\1	diff=0/9631	no_auto_possess	
+B0483	yes	(x)a+\1b	diff=0/9631	no_auto_possess	
+B0484	yes	(x) a+\1b	diff=0/9631	no_auto_possess	
+B0485	yes	(x)a+\1x	diff=0/9631	no_auto_possess	
+B0486	yes	(x) a+\1x	diff=0/9631	no_auto_possess	
+B0487	yes	(x)a+\1$	diff=0/9631	no_auto_possess	
+B0488	yes	(x) a+\1$	diff=0/9631	no_auto_possess	
+B0489	yes	(x)a+\1\b	diff=0/9631	no_auto_possess	
+B0490	yes	(x) a+\1\b	diff=0/9631	no_auto_possess	
+B0491	no	([ax])x+\1	diff=109/9631	no_auto_possess	'xxx' g=['0: xxx', '0+', '1: x'] p=['No match']
+B0492	no	([ax]) x+\1	diff=13/9631	no_auto_possess	'x xx' g=['0: x xx', '0+', '1: x'] p=['No match']
+B0493	no	([ax])x+\1b	diff=13/9631	no_auto_possess	'xxxb' g=['0: xxxb', '0+', '1: x'] p=['No match']
+B0494	no	([ax]) x+\1b	diff=1/9631	no_auto_possess	'x xxb' g=['0: x xxb', '0+', '1: x'] p=['No match']
+B0495	no	([ax])x+\1x	diff=12/9631	no_auto_possess	'xxxx' g=['0: xxxx', '0+', '1: x'] p=['No match']
+B0496	no	([ax]) x+\1x	diff=1/9631	no_auto_possess	'x xxx' g=['0: x xxx', '0+', '1: x'] p=['No match']
+B0497	no	([ax])x+\1$	diff=44/9631	no_auto_possess	'xxx' g=['0: xxx', '0+', '1: x'] p=['No match']
+B0498	no	([ax]) x+\1$	diff=10/9631	no_auto_possess	'x xx' g=['0: x xx', '0+', '1: x'] p=['No match']
+B0499	no	([ax])x+\1\b	diff=70/9631	no_auto_possess	'xxx' g=['0: xxx', '0+', '1: x'] p=['No match']
+B0500	no	([ax]) x+\1\b	diff=10/9631	no_auto_possess	'x xx' g=['0: x xx', '0+', '1: x'] p=['No match']
+B0501	no	([ax])x{1,3}\1	diff=115/9631	no_auto_possess	'xxx' g=['0: xxx', '0+', '1: x'] p=['No match']
+B0502	no	([ax]) x{1,3}\1	diff=13/9631	no_auto_possess	'x xx' g=['0: x xx', '0+', '1: x'] p=['No match']
+B0503	no	([ax])x{1,3}\1b	diff=14/9631	no_auto_possess	'xxxb' g=['0: xxxb', '0+', '1: x'] p=['No match']
+B0504	no	([ax]) x{1,3}\1b	diff=1/9631	no_auto_possess	'x xxb' g=['0: x xxb', '0+', '1: x'] p=['No match']
+B0505	no	([ax])x{1,3}\1x	diff=12/9631	no_auto_possess	'xxxx' g=['0: xxxx', '0+', '1: x'] p=['No match']
+B0506	no	([ax]) x{1,3}\1x	diff=1/9631	no_auto_possess	'x xxx' g=['0: x xxx', '0+', '1: x'] p=['No match']
+B0507	no	([ax])x{1,3}\1$	diff=42/9631	no_auto_possess	'xxx' g=['0: xxx', '0+', '1: x'] p=['No match']
+B0508	no	([ax]) x{1,3}\1$	diff=9/9631	no_auto_possess	'x xx' g=['0: x xx', '0+', '1: x'] p=['No match']
+B0509	no	([ax])x{1,3}\1\b	diff=69/9631	no_auto_possess	'xxx' g=['0: xxx', '0+', '1: x'] p=['No match']
+B0510	no	([ax]) x{1,3}\1\b	diff=10/9631	no_auto_possess	'x xx' g=['0: x xx', '0+', '1: x'] p=['No match']
+B0511	no	([ax])x*\1	diff=869/9631	no_auto_possess	'xx' g=['0: xx', '0+', '1: x'] p=['No match']
+B0512	no	([ax]) x*\1	diff=122/9631	no_auto_possess	'x x' g=['0: x x', '0+', '1: x'] p=['No match']
+B0513	no	([ax])x*\1b	diff=128/9631	no_auto_possess	'xxb' g=['0: xxb', '0+', '1: x'] p=['No match']
+B0514	no	([ax]) x*\1b	diff=15/9631	no_auto_possess	'x xb' g=['0: x xb', '0+', '1: x'] p=['No match']
+B0515	no	([ax])x*\1x	diff=112/9631	no_auto_possess	'xxx' g=['0: xxx', '0+', '1: x'] p=['No match']
+B0516	no	([ax]) x*\1x	diff=15/9631	no_auto_possess	'x xx' g=['0: x xx', '0+', '1: x'] p=['No match']
+B0517	no	([ax])x*\1$	diff=271/9631	no_auto_possess	'xx' g=['0: xx', '0+', '1: x'] p=['No match']
+B0518	no	([ax]) x*\1$	diff=52/9631	no_auto_possess	'x x' g=['0: x x', '0+', '1: x'] p=['No match']
+B0519	no	([ax])x*\1\b	diff=512/9631	no_auto_possess	'xx' g=['0: xx', '0+', '1: x'] p=['No match']
+B0520	no	([ax]) x*\1\b	diff=80/9631	no_auto_possess	'x x' g=['0: x x', '0+', '1: x'] p=['No match']
+B0521	no	([ax])x+?\1	diff=115/9631	no_auto_possess	'xxx' g=['0: xxx', '0+', '1: x'] p=['No match']
+B0522	no	([ax]) x+?\1	diff=13/9631	no_auto_possess	'x xx' g=['0: x xx', '0+', '1: x'] p=['No match']
+B0523	no	([ax])x+?\1b	diff=13/9631	no_auto_possess	'xxxb' g=['0: xxxb', '0+', '1: x'] p=['No match']
+B0524	no	([ax]) x+?\1b	diff=1/9631	no_auto_possess	'x xxb' g=['0: x xxb', '0+', '1: x'] p=['No match']
+B0525	no	([ax])x+?\1x	diff=12/9631	no_auto_possess	'xxxx' g=['0: xxxx', '0+', '1: x'] p=['No match']
+B0526	no	([ax]) x+?\1x	diff=1/9631	no_auto_possess	'x xxx' g=['0: x xxx', '0+', '1: x'] p=['No match']
+B0527	no	([ax])x+?\1$	diff=45/9631	no_auto_possess	'xxx' g=['0: xxx', '0+', '1: x'] p=['No match']
+B0528	no	([ax]) x+?\1$	diff=8/9631	no_auto_possess	'x xx' g=['0: x xx', '0+', '1: x'] p=['No match']
+B0529	no	([ax])x+?\1\b	diff=74/9631	no_auto_possess	'xxx' g=['0: xxx', '0+', '1: x'] p=['No match']
+B0530	no	([ax]) x+?\1\b	diff=10/9631	no_auto_possess	'x xx' g=['0: x xx', '0+', '1: x'] p=['No match']
+B0531	yes	([ax])[ .]+\1	diff=0/9631	no_auto_possess	
+B0532	yes	([ax]) [ .]+\1	diff=0/9631	no_auto_possess	
+B0533	yes	([ax])[ .]+\1b	diff=0/9631	no_auto_possess	
+B0534	yes	([ax]) [ .]+\1b	diff=0/9631	no_auto_possess	
+B0535	yes	([ax])[ .]+\1x	diff=0/9631	no_auto_possess	
+B0536	yes	([ax]) [ .]+\1x	diff=0/9631	no_auto_possess	
+B0537	yes	([ax])[ .]+\1$	diff=0/9631	no_auto_possess	
+B0538	yes	([ax]) [ .]+\1$	diff=0/9631	no_auto_possess	
+B0539	yes	([ax])[ .]+\1\b	diff=0/9631	no_auto_possess	
+B0540	yes	([ax]) [ .]+\1\b	diff=0/9631	no_auto_possess	
+B0541	yes	([ax])\s+\1	diff=0/9631	no_auto_possess	
+B0542	yes	([ax]) \s+\1	diff=0/9631	no_auto_possess	
+B0543	yes	([ax])\s+\1b	diff=0/9631	no_auto_possess	
+B0544	yes	([ax]) \s+\1b	diff=0/9631	no_auto_possess	
+B0545	yes	([ax])\s+\1x	diff=0/9631	no_auto_possess	
+B0546	yes	([ax]) \s+\1x	diff=0/9631	no_auto_possess	
+B0547	yes	([ax])\s+\1$	diff=0/9631	no_auto_possess	
+B0548	yes	([ax]) \s+\1$	diff=0/9631	no_auto_possess	
+B0549	yes	([ax])\s+\1\b	diff=0/9631	no_auto_possess	
+B0550	yes	([ax]) \s+\1\b	diff=0/9631	no_auto_possess	
+B0551	no	([ax])a+\1	diff=111/9631	no_auto_possess	'aaa' g=['0: aaa', '0+', '1: a'] p=['No match']
+B0552	no	([ax]) a+\1	diff=14/9631	no_auto_possess	'a aa' g=['0: a aa', '0+', '1: a'] p=['No match']
+B0553	no	([ax])a+\1b	diff=13/9631	no_auto_possess	'aaab' g=['0: aaab', '0+', '1: a'] p=['No match']
+B0554	no	([ax]) a+\1b	diff=1/9631	no_auto_possess	'a aab' g=['0: a aab', '0+', '1: a'] p=['No match']
+B0555	no	([ax])a+\1x	diff=14/9631	no_auto_possess	'aaax' g=['0: aaax', '0+', '1: a'] p=['No match']
+B0556	no	([ax]) a+\1x	diff=1/9631	no_auto_possess	'a aax' g=['0: a aax', '0+', '1: a'] p=['No match']
+B0557	no	([ax])a+\1$	diff=43/9631	no_auto_possess	'aaa' g=['0: aaa', '0+', '1: a'] p=['No match']
+B0558	no	([ax]) a+\1$	diff=8/9631	no_auto_possess	'a aa' g=['0: a aa', '0+', '1: a'] p=['No match']
+B0559	no	([ax])a+\1\b	diff=74/9631	no_auto_possess	'aaa' g=['0: aaa', '0+', '1: a'] p=['No match']
+B0560	no	([ax]) a+\1\b	diff=10/9631	no_auto_possess	'a aa' g=['0: a aa', '0+', '1: a'] p=['No match']
+B0561	no	(\w+)x+\1	diff=116/9631	no_auto_possess	'xxx' g=['0: xxx', '0+', '1: x'] p=['No match']
+B0562	no	(\w+) x+\1	diff=13/9631	no_auto_possess	'x xx' g=['0: x xx', '0+', '1: x'] p=['No match']
+B0563	no	(\w+)x+\1b	diff=13/9631	no_auto_possess	'xxxb' g=['0: xxxb', '0+', '1: x'] p=['No match']
+B0564	no	(\w+) x+\1b	diff=2/9631	no_auto_possess	'x xxb' g=['0: x xxb', '0+', '1: x'] p=['No match']
+B0565	no	(\w+)x+\1x	diff=13/9631	no_auto_possess	'xxxx' g=['0: xxxx', '0+', '1: x'] p=['No match']
+B0566	no	(\w+) x+\1x	diff=1/9631	no_auto_possess	'x xxx' g=['0: x xxx', '0+', '1: x'] p=['No match']
+B0567	no	(\w+)x+\1$	diff=46/9631	no_auto_possess	'xxx' g=['0: xxx', '0+', '1: x'] p=['No match']
+B0568	no	(\w+) x+\1$	diff=8/9631	no_auto_possess	'x xx' g=['0: x xx', '0+', '1: x'] p=['No match']
+B0569	no	(\w+)x+\1\b	diff=75/9631	no_auto_possess	'xxx' g=['0: xxx', '0+', '1: x'] p=['No match']
+B0570	no	(\w+) x+\1\b	diff=10/9631	no_auto_possess	'x xx' g=['0: x xx', '0+', '1: x'] p=['No match']
+B0571	no	(\w+)x{1,3}\1	diff=113/9631	no_auto_possess	'xxx' g=['0: xxx', '0+', '1: x'] p=['No match']
+B0572	no	(\w+) x{1,3}\1	diff=14/9631	no_auto_possess	'x xx' g=['0: x xx', '0+', '1: x'] p=['No match']
+B0573	no	(\w+)x{1,3}\1b	diff=14/9631	no_auto_possess	'xxxb' g=['0: xxxb', '0+', '1: x'] p=['No match']
+B0574	no	(\w+) x{1,3}\1b	diff=1/9631	no_auto_possess	'x xxb' g=['0: x xxb', '0+', '1: x'] p=['No match']
+B0575	no	(\w+)x{1,3}\1x	diff=14/9631	no_auto_possess	'xxxx' g=['0: xxxx', '0+', '1: x'] p=['No match']
+B0576	no	(\w+) x{1,3}\1x	diff=1/9631	no_auto_possess	'x xxx' g=['0: x xxx', '0+', '1: x'] p=['No match']
+B0577	no	(\w+)x{1,3}\1$	diff=47/9631	no_auto_possess	'xxx' g=['0: xxx', '0+', '1: x'] p=['No match']
+B0578	no	(\w+) x{1,3}\1$	diff=9/9631	no_auto_possess	'x xx' g=['0: x xx', '0+', '1: x'] p=['No match']
+B0579	no	(\w+)x{1,3}\1\b	diff=79/9631	no_auto_possess	'xxx' g=['0: xxx', '0+', '1: x'] p=['No match']
+B0580	no	(\w+) x{1,3}\1\b	diff=10/9631	no_auto_possess	'x xx' g=['0: x xx', '0+', '1: x'] p=['No match']
+B0581	no	(\w+)x*\1	diff=836/9631	no_auto_possess	'xx' g=['0: xx', '0+', '1: x'] p=['No match']
+B0582	no	(\w+) x*\1	diff=127/9631	no_auto_possess	'x x' g=['0: x x', '0+', '1: x'] p=['No match']
+B0583	no	(\w+)x*\1b	diff=130/9631	no_auto_possess	'xxb' g=['0: xxb', '0+', '1: x'] p=['No match']
+B0584	no	(\w+) x*\1b	diff=16/9631	no_auto_possess	'x xb' g=['0: x xb', '0+', '1: x'] p=['No match']
+B0585	no	(\w+)x*\1x	diff=115/9631	no_auto_possess	'xxx' g=['0: xxx', '0+', '1: x'] p=['No match']
+B0586	no	(\w+) x*\1x	diff=16/9631	no_auto_possess	'x xx' g=['0: x xx', '0+', '1: x'] p=['No match']
+B0587	no	(\w+)x*\1$	diff=293/9631	no_auto_possess	'xx' g=['0: xx', '0+', '1: x'] p=['No match']
+B0588	no	(\w+) x*\1$	diff=57/9631	no_auto_possess	'x x' g=['0: x x', '0+', '1: x'] p=['No match']
+B0589	no	(\w+)x*\1\b	diff=538/9631	no_auto_possess	'xx' g=['0: xx', '0+', '1: x'] p=['No match']
+B0590	no	(\w+) x*\1\b	diff=86/9631	no_auto_possess	'x x' g=['0: x x', '0+', '1: x'] p=['No match']
+B0591	no	(\w+)x+?\1	diff=119/9631	no_auto_possess	'xxx' g=['0: xxx', '0+', '1: x'] p=['No match']
+B0592	no	(\w+) x+?\1	diff=15/9631	no_auto_possess	'x xx' g=['0: x xx', '0+', '1: x'] p=['No match']
+B0593	no	(\w+)x+?\1b	diff=14/9631	no_auto_possess	'xxxb' g=['0: xxxb', '0+', '1: x'] p=['No match']
+B0594	no	(\w+) x+?\1b	diff=1/9631	no_auto_possess	'x xxb' g=['0: x xxb', '0+', '1: x'] p=['No match']
+B0595	no	(\w+)x+?\1x	diff=13/9631	no_auto_possess	'xxxx' g=['0: xxxx', '0+', '1: x'] p=['No match']
+B0596	no	(\w+) x+?\1x	diff=1/9631	no_auto_possess	'x xxx' g=['0: x xxx', '0+', '1: x'] p=['No match']
+B0597	no	(\w+)x+?\1$	diff=48/9631	no_auto_possess	'xxx' g=['0: xxx', '0+', '1: x'] p=['No match']
+B0598	no	(\w+) x+?\1$	diff=9/9631	no_auto_possess	'x xx' g=['0: x xx', '0+', '1: x'] p=['No match']
+B0599	no	(\w+)x+?\1\b	diff=78/9631	no_auto_possess	'xxx' g=['0: xxx', '0+', '1: x'] p=['No match']
+B0600	no	(\w+) x+?\1\b	diff=10/9631	no_auto_possess	'x xx' g=['0: x xx', '0+', '1: x'] p=['No match']
+B0601	yes	(\w+)[ .]+\1	diff=0/9631	no_auto_possess	
+B0602	yes	(\w+) [ .]+\1	diff=0/9631	no_auto_possess	
+B0603	yes	(\w+)[ .]+\1b	diff=0/9631	no_auto_possess	
+B0604	yes	(\w+) [ .]+\1b	diff=0/9631	no_auto_possess	
+B0605	yes	(\w+)[ .]+\1x	diff=0/9631	no_auto_possess	
+B0606	yes	(\w+) [ .]+\1x	diff=0/9631	no_auto_possess	
+B0607	yes	(\w+)[ .]+\1$	diff=0/9631	no_auto_possess	
+B0608	yes	(\w+) [ .]+\1$	diff=0/9631	no_auto_possess	
+B0609	yes	(\w+)[ .]+\1\b	diff=0/9631	no_auto_possess	
+B0610	yes	(\w+) [ .]+\1\b	diff=0/9631	no_auto_possess	
+B0611	yes	(\w+)\s+\1	diff=0/9631	no_auto_possess	
+B0612	yes	(\w+) \s+\1	diff=0/9631	no_auto_possess	
+B0613	yes	(\w+)\s+\1b	diff=0/9631	no_auto_possess	
+B0614	yes	(\w+) \s+\1b	diff=0/9631	no_auto_possess	
+B0615	yes	(\w+)\s+\1x	diff=0/9631	no_auto_possess	
+B0616	yes	(\w+) \s+\1x	diff=0/9631	no_auto_possess	
+B0617	yes	(\w+)\s+\1$	diff=0/9631	no_auto_possess	
+B0618	yes	(\w+) \s+\1$	diff=0/9631	no_auto_possess	
+B0619	yes	(\w+)\s+\1\b	diff=0/9631	no_auto_possess	
+B0620	yes	(\w+) \s+\1\b	diff=0/9631	no_auto_possess	
+B0621	no	(\w+)a+\1	diff=113/9631	no_auto_possess	'aaa' g=['0: aaa', '0+', '1: a'] p=['No match']
+B0622	no	(\w+) a+\1	diff=14/9631	no_auto_possess	'a aa' g=['0: a aa', '0+', '1: a'] p=['No match']
+B0623	no	(\w+)a+\1b	diff=13/9631	no_auto_possess	'aaab' g=['0: aaab', '0+', '1: a'] p=['No match']
+B0624	no	(\w+) a+\1b	diff=1/9631	no_auto_possess	'a aab' g=['0: a aab', '0+', '1: a'] p=['No match']
+B0625	no	(\w+)a+\1x	diff=14/9631	no_auto_possess	'aaax' g=['0: aaax', '0+', '1: a'] p=['No match']
+B0626	no	(\w+) a+\1x	diff=1/9631	no_auto_possess	'a aax' g=['0: a aax', '0+', '1: a'] p=['No match']
+B0627	no	(\w+)a+\1$	diff=48/9631	no_auto_possess	'aaa' g=['0: aaa', '0+', '1: a'] p=['No match']
+B0628	no	(\w+) a+\1$	diff=8/9631	no_auto_possess	'a aa' g=['0: a aa', '0+', '1: a'] p=['No match']
+B0629	no	(\w+)a+\1\b	diff=74/9631	no_auto_possess	'aaa' g=['0: aaa', '0+', '1: a'] p=['No match']
+B0630	no	(\w+) a+\1\b	diff=10/9631	no_auto_possess	'a aa' g=['0: a aa', '0+', '1: a'] p=['No match']
+B0631	no|unfolded-yes	(a)A+(?i:\1)	diff=110/9631	no_auto_possess	'aAA' g=['0: aAA', '0+', '1: a'] p=['No match']
+B0632	yes	(a)x+(?i:\1)	diff=0/9631	no_auto_possess	
+B0633	no|unfolded-yes	(?i:(a))A+\1	diff=114/9631	no_auto_possess	'AAA' g=['0: AAA', '0+', '1: A'] p=['No match']
+B0634	yes	(?i)(a)x+\1	diff=0/9631	no_auto_possess	
+B0635	no	(a)(?i)A+\1	diff=448/9631	no_auto_possess	'aaa' g=['0: aaa', '0+', '1: a'] p=['No match']
+B0636	no|firstmember-yes	(?:(?<n>a)|(?<n>x))x+\k<n>	diff=110/9631	no_auto_possess,dupnames	'xxx' g=['0: xxx', '0+', '1: <unset>', '2: x'] p=['No match']
+B0637	no	(?:(?<n>x)|(?<n>a))x+\k<n>	diff=111/9631	no_auto_possess,dupnames	'xxx' g=['0: xxx', '0+', '1: x'] p=['No match']
+B0638	yes	(?:(?<n>a)|(?<n>b))x+\k<n>	diff=0/9631	no_auto_possess,dupnames	
+B0639	no|firstmember-yes	(?<n>a)?(?<n>x)?x+\k<n>	diff=113/9631	no_auto_possess,dupnames	'xxx' g=['0: xxx', '0+', '1: <unset>', '2: x'] p=['No match']
+B0640	no|firstnode-yes	(?|(a)|(x))x+\1	diff=112/9631	no_auto_possess	'xxx' g=['0: xxx', '0+', '1: x'] p=['No match']
+B0641	yes	(?|(a)|(b))x+\1	diff=0/9631	no_auto_possess	
+B0642	yes	(?:(a)|b)x+\1	diff=0/9631	no_auto_possess	
+B0643	yes	(?:(a)|b)x+\1x	diff=0/9631	no_auto_possess	
+B0644	no|unsetfails-yes	(?:(a)|b)x+\1x	diff=126/9631	no_auto_possess,match_unset_backref	'bxx' g=['0: bxx', '0+'] p=['No match']
+B0645	yes	(?:(a)|b)x+\1	diff=0/9631	no_auto_possess,match_unset_backref	
+B0646	yes	(?:x+\1|(a))+	diff=0/9631	no_auto_possess	
+B0647	yes	(?:(a)|x+\1)+	diff=0/9631	no_auto_possess	
+B0648	no	(a|x+\1)+	diff=0/9631	no_auto_possess	
+B0649	no	(x+)\1	diff=899/9631	no_auto_possess	'xx' g=['0: xx', '0+', '1: x'] p=['No match']
+B0650	yes	((a)|b)x+\2	diff=0/9631	no_auto_possess	
+B0651	yes	(?<=(a))x+\1	diff=0/9631	no_auto_possess	
+B0652	yes	(?=(a))x+\1	diff=0/9631	no_auto_possess	
+B0653	no|depth2-yes	(a)(\1b)x+\2	diff=0/9631	no_auto_possess	
+B0654	yes	(a)(?1)x+\1	diff=0/9631	no_auto_possess	
+B0655	yes	(?(DEFINE)(?<w>(a)))(?&w)x+\2	diff=0/9631	no_auto_possess	
+B0656	no|lexical-yes	(?:(?(DEFINE)(?<w>(x)))(?&w)|(a))x+\2	diff=0/9631	no_auto_possess	
+B0657	no|bodynonnull-yes	(?=((*ACCEPT)a))x+\1x	diff=892/9631	no_auto_possess	'xx' g=['0: xx', '0+', '1:'] p=['No match']
+B0658	yes	(?=(a(*ACCEPT)b))x+\1	diff=0/9631	no_auto_possess	
+B0659	yes	\b(\w+)\b\s+\1\b	diff=0/9631	no_auto_possess	
+B0660	yes	\b(\w+)\b\s+\1\b	diff=0/9631	no_auto_possess	
