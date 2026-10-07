@@ -81,6 +81,8 @@
  * and a relative spelling needs no -I that every from-source reference build
  * would then have to carry. */
 #include "../../memfn/include/memfn.h"
+/* [MEMFN] M1b the in-emitter deny map's reverse, for the run-overlap rows. */
+#include "gen/memfn_sites.h"
 
 /* ---- hand-authored one-line descriptions for the "list"/"both" rows ---- */
 
@@ -651,15 +653,17 @@ static void emit_predicate_axes(StrBuf *sb)
                      0, 0, "", "always (fallback) — one per-byte compare per literal");
     }
     /* [OPT-LITSCAN] S4 run-overlap — §2.38, the run compare's rows WALKED
-     * LIVE off `pcrec_runcmp_rows` (src/gen/runcmp.c), so this surface
-     * cannot state a predicate the emitter does not ask. RX_RUN_WORDS is an
+     * LIVE off the kit's own table (`mf_run_rows`, memfn/src/runcmp.c,
+     * [MEMFN] M1b), so this surface cannot state a predicate the renderer
+     * does not ask. Each row's MF_D_* deny is shown as pcrec's flag through
+     * the one deny map (`pcrec_memfn_deny_flags`). RX_RUN_WORDS is an
      * ACTIVITY COUNT, stamp_value empty for alt-island's reason. */
     {
         PredAxis p = { "run-overlap", NULL, "RX_RUN_WORDS", "", 0, NULL, 0, NULL, NULL, NULL };
-        for (int i = 0; i < pcrec_runcmp_nrows; i++)
-            emit_pred_row(sb, &p, i + 1, pcrec_runcmp_rows[i].name, "",
-                         pcrec_runcmp_rows[i].deny, 0, "",
-                         pcrec_runcmp_rows[i].applies_desc);
+        const mf_run_row *r;
+        for (size_t i = 0; (r = mf_run_rows(i)) != NULL; i++)
+            emit_pred_row(sb, &p, (int)i + 1, r->name, "",
+                         pcrec_memfn_deny_flags(r->deny), 0, "", r->doc);
     }
     /* [OPT-ANCHOR-VM] vm-anchor-bound — §2.25. The VM's attempt-loop start
      * bound, from the `start_anchor` fact's one AST-level derivation. Its stamp is

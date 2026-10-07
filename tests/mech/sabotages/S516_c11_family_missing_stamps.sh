@@ -7,6 +7,10 @@
 # neither MEMFN line while DFA artifacts keep both. Detector: C11's presence
 # check, arm memfnstamps. (Site 1 alone is caught louder still: the compile
 # fails with the internal error, and the census's vm floor fires.)
+# NOTE 2026-10-07 ([MEMFN] M1b, lane m1b): the mark now carries THREE kit
+# lines (RUN_WORDS joined MEMFN_FORMS and MEMFN_LIBC); the plant's VM
+# artifacts lose all three. The anchor is unchanged (the deleted
+# pcrec_emit_runcmp_stamp call sat on the line above it). Intent unchanged.
 SAB_ID="S516-c11-family-missing-stamps"
 SAB_FILE="src/gen/emit_vm.c"
 SAB_SUITES="memfnstamps"

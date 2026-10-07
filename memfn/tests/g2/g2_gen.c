@@ -102,12 +102,11 @@ static void sk_stamp(void *u, const char *name, const char *value)
     k->stamps++;
     bf(k->b, "/* stamp %s = %s */\n", name ? name : "(null)", value ? value : "(null)");
 }
+/* the BODY of a string literal: the quotes are the kit's (memfn.h, M1b) */
 static void sk_cstr(void *u, const uint8_t *bytes, size_t len)
 {
     buf *b = ((sinku *)u)->b;
-    bputs(b, "\"");
     for (size_t i = 0; i < len; i++) bf(b, "\\%03o", bytes[i]);
-    bputs(b, "\"");
 }
 static void sk_comment_byte(void *u, int *prevp, uint8_t byte, int (*extra)(uint8_t))
 {
@@ -126,10 +125,16 @@ static void sk_legend_byte(void *u, uint8_t byte)
     if (byte >= 0x20 && byte < 0x7f && byte != '*' && byte != '/') bput(b, (const char *)&byte, 1);
     else bf(b, "\\x%02x", byte);
 }
+static void sk_stamp_int(void *u, const char *name, long long value)
+{
+    sinku *k = u;
+    k->stamps++;
+    bf(k->b, "/* stamp %s = %lld */\n", name ? name : "(null)", value);
+}
 static mf_sink mk_sink(sinku *u)
 {
     mf_sink s = { u, sk_puts, sk_vprintf, sk_cmt_open, sk_cmt_close, sk_stamp,
-                  sk_cstr, sk_comment_byte, sk_legend_byte };
+                  sk_cstr, sk_comment_byte, sk_legend_byte, sk_stamp_int };
     return s;
 }
 
@@ -597,7 +602,6 @@ static void fill_hooks(gsite *g, mf_hooks *h, char *onmiss, size_t onmiss_n)
     h->fn_name = h_fn_name;
     h->note = h_note;
     h->note_tag = h_note_tag;
-    h->run_cmp = NULL;           /* after M1b; the kit compares runs itself */
     h->indent = "    ";
     h->comment_tier = g->cmt ? 2 : 0;
     h->u = g;
@@ -715,9 +719,14 @@ static void wrap(buf *o, const gsite *g, const char *fname, const char *body)
     }
 }
 
+/* The batch art's MF_D_* denies (RULED Q-M1b-1: the kit refuses a site whose
+ * denies differ from its art's), so a batch's sites all carry them. */
+static uint64_t g_batch_denies;
+
 static void render(mf_art *art, gsite *g, batchbuf *B)
 {
     cur_site = g;
+    g->deny_overlap = g_batch_denies != 0;
     mf_site site;
     mf_pred *pa = g->d.op == G2_OP_ALL ? calloc(g->d.npred, sizeof *pa) : NULL;
     fill_site(g, &site, pa);
@@ -1058,6 +1067,7 @@ static void refusal_table(void)
     CASE("VERIFY-ADVANCE",          (s.op = MF_OP_VERIFY, s.form = MF_FORM_STMT, s.handoff = MF_H_ADVANCE));
     CASE("run-term-null-run",       (s.pred.term[0].kind = MF_T_RUN, s.pred.term[0].run = NULL,
                                      s.pred.term[0].run_len = 3));
+    CASE("denies-not-the-art's",    s.denies = MF_D_RUN_OVERLAP);
     {
         static mf_pred two[2];
         two[0] = s0.pred;
@@ -1290,13 +1300,15 @@ int main(int argc, char **argv)
     int bi = 0;
     batchbuf B;
     memset(&B, 0, sizeof B);
-    mf_art *art = mf_art_begin(&g_arena, "g2b0", MF_P_PORTABLE_ONLY, 0);
+    g_batch_denies = 0;
+    mf_art *art = mf_art_begin(&g_arena, "g2b0", MF_P_PORTABLE_ONLY, g_batch_denies);
     gsite g;
     int nsites = 0;
 #define NEXT() do { render(art, &g, &B); free_site(&g); nsites++; \
         if (B.nsite >= batch) { flush_batch(outdir, bi, art, &B, all); bi++; \
             char px[16]; snprintf(px, sizeof px, "g2b%d", bi); \
-            art = mf_art_begin(&g_arena, px, bi & 1 ? 0 : MF_P_PORTABLE_ONLY, 0); } } while (0)
+            g_batch_denies = bi % 3 == 2 ? MF_D_RUN_OVERLAP : 0; \
+            art = mf_art_begin(&g_arena, px, bi & 1 ? 0 : MF_P_PORTABLE_ONLY, g_batch_denies); } } while (0)
 
     /* the non-SKIP combos: their sites carry arbitrary conjunctions */
     int gcombo[NCOMBO], ngc = 0;

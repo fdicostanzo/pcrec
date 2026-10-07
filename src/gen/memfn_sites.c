@@ -1,8 +1,9 @@
 /* src/gen/memfn_sites.c — pcrec's side of the memfn kit's sites ([MEMFN]
  * R4c; docs/design/memfn/integration.md §14, §15; memfn/CLAUDE.md "The
- * boundary with pcrec"): DELEG_SITES, the attempt's mf_art, the sink and
- * arena the kit writes and allocates through, the common pieces of a site
- * description, the hooks every site shares and the end-of-attempt checks.
+ * boundary with pcrec"): DELEG_SITES, the in-emitter deny map, the
+ * attempt's mf_art, the sink and arena the kit writes and allocates through,
+ * the common pieces of a site description, pcrec's doors into the kit and
+ * the end-of-attempt checks.
  *
  * WHAT STAYS OUT OF HERE: every decision. Which site exists, which
  * predicates it carries and which route reads its result are read where they
@@ -22,6 +23,39 @@ const DelegRow pcrec_deleg_sites[DELEG_NSITES] = {
 #undef DELEG_SITE
 };
 
+/* ---- the in-emitter deny map (integration.md §14.10, §R4.8) -------------- */
+
+/* THE ONE MAP from pcrec's flag bits to the kit's MF_D_* denies (RULED
+ * Q-M1b-1): a deny that selects among the emitted FORMS of one predicate
+ * crosses into the kit, which honours it in every arm; selection and fact
+ * denies stay pcrec's (src/core/axes.def). Read three ways: every site's
+ * `denies` (`pcrec_memfn_site`), the attempt's `mf_art_begin`, and, reversed,
+ * `--list-axes`' run-overlap section over the kit's rows. */
+static const struct { uint64_t flag; uint64_t mf; } deny_map[] = {
+    { PCREC_NO_RUN_OVERLAP, MF_D_RUN_OVERLAP },
+};
+
+uint64_t pcrec_memfn_denies(uint64_t flags)
+{
+    uint64_t d = 0;
+    for (size_t i = 0; i < sizeof deny_map / sizeof deny_map[0]; i++)
+        if (flags & deny_map[i].flag) d |= deny_map[i].mf;
+    return d;
+}
+
+uint64_t pcrec_memfn_deny_flags(uint64_t mf)
+{
+    uint64_t f = 0;
+    for (size_t i = 0; i < sizeof deny_map / sizeof deny_map[0]; i++)
+        if (mf & deny_map[i].mf) f |= deny_map[i].flag;
+    return f;
+}
+
+/* The kit's hook-less comments (its helpers', §R4.8.1 item 2) open at the
+ * tier the sink reads as pcrec's NONESSENTIAL. */
+_Static_assert(MF_CMT_NONESSENTIAL == PCREC_CMT_NONESSENTIAL,
+               "the kit's NONESSENTIAL comment tier is pcrec's");
+
 /* ---- the attempt's kit state --------------------------------------------- */
 
 static void *arena_alloc(void *u, size_t n)
@@ -37,7 +71,8 @@ mf_art *pcrec_memfn_art(Ctx *cx)
         ma->u = &cx->arena;
         ma->alloc = arena_alloc;
         job->mf = mf_art_begin(ma, cx->opt->prefix,
-                               pcrec_memfn_policy(cx->opt->flags), 0);
+                               pcrec_memfn_policy(cx->opt->flags),
+                               pcrec_memfn_denies(cx->opt->flags));
         if (!job->mf) pcrec_ctx_nomem(cx);
     }
     return job->mf;
@@ -114,6 +149,7 @@ mf_site *pcrec_memfn_site(Ctx *cx, DelegSite id)
     s->pred.plan_hint = MF_NO_PRED;
     s->policy = pcrec_memfn_policy(cx->opt->flags) |
                 (pcrec_deleg_sites[id].budget == DELEG_LOOP ? MF_P_INLOOP : 0);
+    s->denies = pcrec_memfn_denies(cx->opt->flags);
     s->opts = NULL;
     return s;
 }
@@ -250,49 +286,22 @@ void pcrec_memfn_call(Ctx *cx, uint32_t handle, const mf_hooks *h, StrBuf *body)
     kit_check(cx, art, mf_call(art, handle, h, &ps.s));
 }
 
-/* ---- the hooks every site shares ------------------------------------------ */
-
-/* Predicate `part` of the site `u` serves. */
-static const mf_pred *pred_at(const PcrecMfU *u, uint32_t part)
+void pcrec_memfn_emit(Ctx *cx, DelegSite id, const mf_site *s,
+                      const mf_hooks *h, StrBuf *body)
 {
-    const mf_site *s = u->site;
-    if (s->op != MF_OP_ALL_PRESENT) return &s->pred;
-    if (part >= s->npred)
-        pcrec_ctx_fail(u->cx, 0, "internal error: a memfn hook asked for "
-                       "predicate %u of %u", part, (unsigned)s->npred);
-    return &s->preds[part];
+    mf_art *art = pcrec_memfn_art(cx);
+    PcrecMfSink ps;
+    deleg_check(cx, id, s);
+    pcrec_memfn_sink(&ps, body);
+    kit_check(cx, art, mf_emit(art, s, h, &ps.s, NULL, NULL));
 }
 
-/* The run compare's own record of RUN term `t`. */
-static PcrecRun run_of(const mf_term *t)
+void pcrec_memfn_flush_helpers(Ctx *cx, StrBuf *file)
 {
-    PcrecRun run = { t->run, t->mask, (int)t->run_len };
-    return run;
-}
-
-void pcrec_memfn_note_helpers(void *u, mf_sink *c, uint32_t part)
-{
-    const PcrecMfU *pu = u;
-    const mf_pred *p = pred_at(pu, part);
-    StrBuf *sb = pcrec_memfn_sink_sb(pu->cx, c);
-    for (unsigned i = 0; i < p->nterm; i++) {
-        if (p->term[i].kind != MF_T_RUN) continue;
-        PcrecRun run = run_of(&p->term[i]);
-        pcrec_runcmp_prepare(pu->cx, sb, &run);
-    }
-}
-
-void pcrec_memfn_run_cmp(void *u, mf_sink *c, const char *base, int32_t off,
-                         uint32_t term)
-{
-    const PcrecMfU *pu = u;
-    const mf_pred *p = pred_at(pu, pu->site->op == MF_OP_ALL_PRESENT
-                                   ? term / MF_MAX_TERM : 0);
-    const mf_term *t = &p->term[term % MF_MAX_TERM];
-    if (t->kind != MF_T_RUN)
-        pcrec_ctx_fail(pu->cx, 0, "internal error: run_cmp on a SET term");
-    PcrecRun run = run_of(t);
-    pcrec_emit_run_compare(pu->cx, pcrec_memfn_sink_sb(pu->cx, c), base, off, &run);
+    mf_art *art = pcrec_memfn_art(cx);
+    PcrecMfSink ps;
+    pcrec_memfn_sink(&ps, file);
+    kit_check(cx, art, mf_flush_helpers(art, &ps.s));
 }
 
 /* ---- the end of an attempt ------------------------------------------------ */

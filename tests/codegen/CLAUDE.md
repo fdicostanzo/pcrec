@@ -28,7 +28,7 @@ or it has no regression net at all.
   `cand_routed(` before `->applies(`. Both validated red by a plant on a
   scratch copy at landing (docs/dev/lanes/ssbuild01_report.md).
 - **runcmp_check.py** — [OPT-LITSCAN] S4 C1 (lane s4build, 2026-10-03, abi
-  56): the RUN COMPARE's structural checks (`src/gen/runcmp.c`,
+  56): the RUN COMPARE's structural checks (`memfn/src/runcmp.c` since [MEMFN] M1b, before it `src/gen/runcmp.c`;
   `docs/design/litscan_s4.md` §5.4), run by `run_codegen_tests.sh`'s
   `[OPT-LITSCAN S4]` block (PASS/FAIL lines forwarded; ~99 checks). Every
   `rx_w<W>(base + o) == rx_w<W>("...")` chain in each witness artifact is

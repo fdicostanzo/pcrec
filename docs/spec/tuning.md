@@ -3324,9 +3324,12 @@ one (§2.39, `abi` 59) takes the `bytes` row.
 **What it is.** Every literal-run compare in emitted C — the offset-skip
 block's run term (§2.30, which is also the run pre-check's compare, §2.28)
 and the VM's literal run and island single-child chains (§2.31) — is
-written by ONE emitter, `pcrec_emit_run_compare` (`src/gen/runcmp.c`),
-through a first-match row table (`--list-axes` axis `run-overlap`, walked
-live off the table):
+written by ONE renderer through a first-match row table (`--list-axes` axis
+`run-overlap`, walked live off the table). Since [MEMFN] M1b (no `abi`
+event, not a byte moved) that renderer is pcrec-memory-functions' run
+compare (`memfn/src/runcmp.c`; before it `pcrec_emit_run_compare` in
+`src/gen/runcmp.c`), and this flag reaches it as the kit's in-emitter deny
+`MF_D_RUN_OVERLAP` (`docs/design/memfn/integration.md` §14.10, §R4.8):
 
 | row | applies | emits |
 |---|---|---|

@@ -22,8 +22,9 @@
 # 12-space anchor is the verify chain's; `pf_block_ofs`'s helper-declaration
 # twin sits at 8 spaces and is not matched.
 # RE-AIMED 2026-10-06 ([MEMFN] R4c REPLACE, lane r4ccore): the run term's record is rebuilt from the kit site's RUN term by pcrec's run_cmp adapter (run_of), pcrec-side (R-4 Q11). It reaches every run compare the two M1 sites make, as ofsk_emit_verify's did. Intent unchanged.
+# RE-AIMED 2026-10-07 ([MEMFN] M1b REPLACE, lane m1b; RULED Q-M1b-4: KIT-side): run_of is deleted with the run_cmp hook; the run compare's own record of a RUN term is built by the kit's renderer (memfn/src/runcmp.c, rc_of, its one read of run_len), so the plant widens it there. It reaches every run compare the kit writes (the OFS/PRE run term and the VM's literal runs, which no longer pass through pcrec), and is still caught by the offsetskip harness on the run-pinned artifacts. Intent unchanged: the compare tests run_len + 1 bytes.
 SAB_ID="S285-run-term-length-plus-one"
-SAB_FILE='src/gen/memfn_sites.c'
+SAB_FILE='memfn/src/runcmp.c'
 SAB_SUITES="harness offsetskip"
 SAB_HARNESS_TARGET="tests/offsetskip/run_pinned.rxt"
 SAB_DESC="the run-pinned prefilter rows' P4 compare tests t->run_len + 1 bytes instead of t->run_len, so the candidate test demands an extra byte (the analysis's own unwritten zero) beyond the proved run and refuses every real match start: every m cell of every run-pinned artifact reads nomatch"
@@ -33,5 +34,5 @@ SAB_DOC_FIGURE="Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S28
 SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "/user|/users" && grep -q "^#define RX_DFA_PREFILTER \"run-pinned\"" "$REACH_TMP/o.c" && grep -qF "rx_w4(subject + cand) == rx_w4(\"/use\") && rx_w4(subject + cand + 1) == rx_w4(\"user\")" "$REACH_TMP/o.c" && echo REACH-RUN-TERM-EMITTED'
 SAB_REACH_EXPECT="REACH-RUN-TERM-EMITTED"
 SAB_COUNT=1
-SAB_BEFORE='    PcrecRun run = { t->run, t->mask, (int)t->run_len };'
-SAB_AFTER='    PcrecRun run = { t->run, t->mask, (int)t->run_len + 1 };   /* SABOTAGE S285 */'
+SAB_BEFORE='    rc_run r = { t->run, t->mask, (int)t->run_len };'
+SAB_AFTER='    rc_run r = { t->run, t->mask, (int)t->run_len + 1 };   /* SABOTAGE S285 */'

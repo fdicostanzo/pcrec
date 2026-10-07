@@ -1,15 +1,16 @@
-/* src/gen/memfn_stamps.c — [MEMFN] R4a′: the kit's two every-artifact stamps,
- * `<PREFIX>_MEMFN_FORMS` and `<PREFIX>_MEMFN_LIBC` (docs/design/memfn/
- * integration.md §R4.3.3, §18; D147 addendum 10, Q53/Q55; docs/spec/
- * match_api.md §6.3).
+/* src/gen/memfn_stamps.c — [MEMFN] R4a′: the kit's every-artifact stamps,
+ * `<PREFIX>_RUN_WORDS` (M1b), `<PREFIX>_MEMFN_FORMS` and `<PREFIX>_MEMFN_LIBC`
+ * (docs/design/memfn/integration.md §R4.3.3, §R4.8, §18; D147 addendum 10,
+ * Q53/Q55; docs/spec/match_api.md §6.3).
  *
  * THE KIT WRITES THE LINES; pcrec owns WHERE they go and the libc inventory
  * of the text pcrec spelled. Both engines write a one-line MARK where the
- * stamps belong (`pcrec_emit_memfn_mark`, beside `<PREFIX>_RUN_WORDS`). The
+ * stamps belong (`pcrec_emit_memfn_mark`, after the engine body). The
  * driver, once the artifact is finished, scans the whole text for libc
  * calls, notes each through `mf_art_note_libc`, has `mf_stamps` render the
- * two lines through a sink onto `pcrec_sb_stamp_str`, and splices them over
- * the mark (`pcrec_memfn_stamps_render`).
+ * three lines through a sink onto `pcrec_sb_stampf` (RUN_WORDS, unquoted)
+ * and `pcrec_sb_stamp_str` (the other two), and splices them over the mark
+ * (`pcrec_memfn_stamps_render`).
  *
  * WHY A FINISHING PASS AND NOT A NOTE AT EVERY EMITTER THAT SPELLS A CALL.
  * The record is a WHOLE-ARTIFACT inventory (Q53): the search code, the
@@ -189,6 +190,14 @@ static void sink_stamp(void *u, const char *name, const char *value)
     pcrec_sb_stamp_str(s->sb, s->upper, name, value);
 }
 
+/* [MEMFN] M1b the UNQUOTED stamp (RULED Q-M1b-2): `RUN_WORDS` is an integer,
+ * spelled exactly as pcrec's own run compare stamped it before M1b. */
+static void sink_stamp_int(void *u, const char *name, long long value)
+{
+    StampSink *s = u;
+    pcrec_sb_stampf(s->sb, s->upper, name, "%lld", value);
+}
+
 /* Replaces the one mark in `sb` with `text`; false if `sb` holds no mark or
  * more than one. */
 static bool splice_mark(StrBuf *sb, const char *text)
@@ -213,7 +222,7 @@ uint32_t pcrec_memfn_policy(uint64_t flags)
 }
 
 /* The finishing pass (see the header). Reads `cx->job->csb` and `hsb`, the
- * finished artifact at the placeholder prefix; writes the two stamp lines
+ * finished artifact at the placeholder prefix; writes the three stamp lines
  * over csb's mark. Called once per attempt, after the engine emitter and
  * before anything measures the text. It ENDS the attempt's kit state
  * ([MEMFN] R4c): the art the emitters' sites were rendered through is the
@@ -225,7 +234,8 @@ void pcrec_memfn_stamps_render(Ctx *cx)
     mf_art *art = pcrec_memfn_art(cx);
     StrBuf lines = { .cx = cx };
     StampSink ss = { &lines, pcrec_sb_upper(&cx->arena, cx->opt->prefix) };
-    mf_sink sink = { .u = &ss, .stamp = sink_stamp };
+    mf_sink sink = { .u = &ss, .stamp = sink_stamp,
+                     .stamp_int = sink_stamp_int };
     int rc = scan_libc_calls(art, job->csb.p ? job->csb.p : "", job->csb.len) ||
              scan_libc_calls(art, job->hsb.p ? job->hsb.p : "", job->hsb.len) ||
              mf_stamps(art, &sink);

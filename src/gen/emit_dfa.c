@@ -974,9 +974,9 @@ void pcrec_emit_end_window_clamp(Ctx *cx, StrBuf *c, const char *indent,
  * no `>= 0` test at `i == 0` (the `-Wtype-limits` class edge1_report.md
  * recorded), because its scan-offset arm already omits the `+ 0`.
  *
- * THE COMPARE IS THE RUN COMPARE (`pcrec_emit_run_compare`, src/gen/
- * runcmp.c, [OPT-LITSCAN] S4): a constant-length `memcmp` or, at the
- * lengths gcc decomposes, two overlapping word loads — never `memmem` (a GNU
+ * THE COMPARE IS THE RUN COMPARE ([OPT-LITSCAN] S4; the kit's since [MEMFN]
+ * M1b, memfn/src/runcmp.c): a constant-length `memcmp` or, at the lengths
+ * gcc decomposes, two overlapping word loads — never `memmem` (a GNU
  * extension; pcrec emits portable C) and never one wide load past the run,
  * which is the over-read `[WORD-FOLD]`'s own row refuses because pcrec does
  * not own the caller's buffer. Every word it loads lies inside the run.
@@ -1451,8 +1451,7 @@ static const struct MemfnPre *req_site_define(Ctx *cx, StrBuf *c)
 
     PcrecMfU u = { cx, s, pre, NULL };
     mf_hooks h = {
-        .fn_name = req_site_fn_name, .note = pcrec_memfn_note_helpers,
-        .note_tag = req_site_note_tag, .run_cmp = pcrec_memfn_run_cmp,
+        .fn_name = req_site_fn_name, .note_tag = req_site_note_tag,
         .comment_tier = PCREC_CMT_NONESSENTIAL, .u = &u,
     };
     pre->site = s;
@@ -6142,8 +6141,8 @@ static const char *ofs_site_table_name(void *u, uint32_t table_ref)
 
 /* [MEMFN] R4c Describes the block `f->ofs` as the kit's offset-skip site
  * (FIND / FUNC / RETURN, integration.md §15.1) and defines it into `c`, its
- * file-scope point: the run compare's word loads (pcrec's `note`), the
- * comment, the function. Returns the handle every call of it uses. */
+ * file-scope point: the run compare's word loads, the comment, the
+ * function (all the kit's). Returns the handle every call of it uses. */
 static uint32_t ofs_site_define(StrBuf *c, const DfaForm *f)
 {
     mf_site *s = pcrec_memfn_site(f->cx, DELEG_OFS);
@@ -6157,7 +6156,6 @@ static uint32_t ofs_site_define(StrBuf *c, const DfaForm *f)
     PcrecMfU u = { f->cx, s, f, NULL };
     mf_hooks h = {
         .fn_name = ofs_site_fn_name, .table_name = ofs_site_table_name,
-        .note = pcrec_memfn_note_helpers, .run_cmp = pcrec_memfn_run_cmp,
         .comment_tier = PCREC_CMT_NONESSENTIAL, .u = &u,
     };
     return pcrec_memfn_define(f->cx, DELEG_OFS, s, &h, c);
@@ -9951,9 +9949,10 @@ void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
     pcrec_sb_puts(c, "\n");
     /* [OPT-LITSCAN] S4 the word-load helpers a VM body's run compares use
      * (the body is written before this prologue, so its widths are known);
-     * a DFA artifact's compares sit in file-scope blocks below, which declare
-     * their own through `pcrec_runcmp_prepare`. */
-    pcrec_emit_runcmp_helpers(cx, c);
+     * a DFA artifact's compares sit in file-scope blocks below, whose kit
+     * definitions declare their own ([MEMFN] M1b: the helpers are the kit's,
+     * memfn/src/runcmp.c). */
+    pcrec_memfn_flush_helpers(cx, c);
     emit_orientation_block(cx, c, g);
 }
 
@@ -10365,7 +10364,6 @@ void pcrec_emit_dfa(Ctx *cx)
     pcrec_sb_puts(c, "\n");
     emit_in_entry_defs(c, g.searchfn, g.matchfn, g.matchcapsfn, cx->opt->prefix);
     pcrec_sb_puts(c, "\n");
-    pcrec_emit_runcmp_stamp(cx, c, g.upper);
     pcrec_emit_memfn_mark(c);
     pcrec_emit_residual(cx);
     {

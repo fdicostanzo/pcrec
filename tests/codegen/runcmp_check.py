@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """tests/codegen/runcmp_check.py -- [OPT-LITSCAN] S4 C1's structural checks on
-the RUN COMPARE (src/gen/runcmp.c; docs/design/litscan_s4.md §5.4;
+the RUN COMPARE (memfn/src/runcmp.c since [MEMFN] M1b; docs/design/litscan_s4.md §5.4;
 docs/spec/tuning.md §2.38), run by run_codegen_tests.sh's [OPT-LITSCAN S4]
 block. Prints one `PASS: ...` / `FAIL: ...` line per check.
 

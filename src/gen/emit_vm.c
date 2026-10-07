@@ -69,6 +69,9 @@
 /* [CLS-TREE] S4 the class-matcher kit: a wide class's VM test is one
  * decode plus one of its matchers (docs/design/cls_tree_design.md §2.2). */
 #include "gen/clskit.h"
+/* [MEMFN] M1b the VM's literal-run compares are a kit site (VMRUN,
+ * docs/design/memfn/integration.md §15.6, §R4.8). */
+#include "gen/memfn_sites.h"
 
 /* ---- capacities ------------------------------------------------------------
  *
@@ -4393,6 +4396,46 @@ static void vm_isl_die(Vm *v, VmIsl *t, int x)
     else                    vm_goto(v, t->nd[t->nd[x].chain].chainlbl);
 }
 
+/* [MEMFN] M1b the VMRUN site (docs/design/memfn/integration.md §15.6,
+ * §R4.8): the literal run `run[0..len)` at `off` bytes past `scan_position`,
+ * one kit expression behind pcrec's own bounds guard (VERIFY / EXPR / BOOL,
+ * `guard_by_caller`; `empty` EXCLUDED, Q-M1b-5; a BOOL is never read as a
+ * position). The VM never passes a mask. */
+static mf_site *vm_run_site(Vm *v, const unsigned char *run, int len, int off)
+{
+    mf_site *s = pcrec_memfn_site(v->cx, DELEG_VMRUN);
+    s->form = MF_FORM_EXPR;
+    s->op = MF_OP_VERIFY;
+    s->handoff = MF_H_BOOL;
+    s->empty = MF_EMPTY_EXCLUDED;
+    s->guard_by_caller = 1;
+    s->use = MF_USE_DISCARD;
+    s->consumer = MF_C_ENGINE;
+    s->pred.nterm = 1;
+    s->pred.need = MF_REQUIRED;
+    pcrec_memfn_term_run(&s->pred.term[0], off, run, NULL, len, MF_REQUIRED);
+    return s;
+}
+
+/* Writes the compare of the literal run `run[0..len)` at `subject +
+ * scan_position + off` into `b`, rendered by the kit (memfn/src/runcmp.c):
+ * the expression the two literal-run callers (`vm_lit`, `vm_isl_emit`)
+ * conjoin after their bounds guard. Its word-load helpers are recorded on
+ * the attempt's art and declared by the prologue (`pcrec_emit_prologue`),
+ * which is written after the body. */
+static void vm_run_compare(Vm *v, StrBuf *b, const unsigned char *run, int len,
+                           int off)
+{
+    mf_site *s = vm_run_site(v, run, len, off);
+    PcrecMfU u = { v->cx, s, NULL, NULL };
+    mf_hooks h = {
+        .s = "subject", .n = "subject_length", .lo = "scan_position",
+        .comment_tier = PCREC_CMT_NONESSENTIAL, .u = &u,
+    };
+    pcrec_memfn_check_use(v->cx, s, false);
+    pcrec_memfn_emit(v->cx, DELEG_VMRUN, s, &h, b);
+}
+
 /* Emits the alternation-island trie `t` (already BUILT by `vm_isl_build`,
  * which does no emission at all): one dispatch state per trie node,
  * iteratively over an explicit stack rather than recursively (the trie can
@@ -4474,12 +4517,12 @@ static void vm_isl_emit(Vm *v, VmIsl *t, int entry, int next)
 
         if (n->nkids == 1 && inrun[n->child]) {
             /* [OPT-LITSCAN] S2a THE ISLAND'S OWN RECOGNIZER, sharing only the
-             * run compare (patfacts design §8.2 item 3; S4's
-             * `pcrec_emit_run_compare`): the trie's single-child chain from
-             * here to the first node that branches or accepts is one literal
-             * run, compared at this node's depth in one bounds check and one
-             * run compare. Its nodes charge the node
-             * budget each, as the per-node compares did. A mismatch dies at
+             * run compare (patfacts design §8.2 item 3; S4's, the kit's
+             * since [MEMFN] M1b, `vm_run_compare`): the trie's single-child
+             * chain from here to the first node that branches or accepts is
+             * one literal run, compared at this node's depth in one bounds
+             * check and one run compare. Its nodes charge the node budget
+             * each, as the per-node compares did. A mismatch dies at
              * THIS node, which charges the work budget this node's depth:
              * the run is one compare, charged as one (docs/spec/limits.md
              * §3.1), and a run node has no accept, so this node's candidate
@@ -4494,8 +4537,7 @@ static void vm_isl_emit(Vm *v, VmIsl *t, int entry, int next)
             }
             pcrec_sb_printf(b, "    if (scan_position + %d <= subject_length && ",
                             n->depth + len);
-            PcrecRun rr = { run, NULL, len };
-            pcrec_emit_run_compare(v->cx, b, "subject + scan_position", n->depth, &rr);
+            vm_run_compare(v, b, run, len, n->depth);
             v->nlitrun++;
             pcrec_sb_printf(b, ") goto %s_L%d;\n", v->p, t->nd[c].lbl);
             vm_ev(v, VE_GOTO, t->nd[c].lbl, 0,
@@ -8622,7 +8664,7 @@ static const char *vm_lit_describe(Vm *v, const unsigned char *run, int len)
 }
 
 /* Emits a literal run at label `entry` as ONE run compare, continuing at
- * `next`: `pos + len <= n`, then `pcrec_emit_run_compare` (a constant-length
+ * `next`: `pos + len <= n`, then `vm_run_compare` (the kit's: a constant-length
  * `memcmp`, or two overlapping words at the lengths gcc decomposes), so the
  * run reads exactly its own bytes and never past the subject's end (P8,
  * compare_stack.md §4). [OPT-LITSCAN] S2a, patfacts design §8.2; the bytes come from
@@ -8639,8 +8681,7 @@ static void vm_lit(Vm *v, int entry, const unsigned char *run, int len, int next
     vm_lbl(v, entry, NULL);
     vm_ev(v, VE_LIT, len, next, vm_lit_describe(v, run, len));
     pcrec_sb_printf(v->b, "    if (scan_position + %d <= subject_length && ", len);
-    PcrecRun rr = { run, NULL, len };
-    pcrec_emit_run_compare(v->cx, v->b, "subject + scan_position", 0, &rr);
+    vm_run_compare(v, v->b, run, len, 0);
     v->nlitrun++;
     pcrec_sb_printf(v->b, ") { scan_position += %d; goto %s_L%d; }\n",
                     len, v->p, next);
@@ -13878,7 +13919,6 @@ static void vm_emit_epilogue(Vm *v, const GenNames *g, const VmPlan *pl)
     const long long work_budget = pl->caps.work_budget;
     const bool      has_budget  = pl->caps.has_budget;
 
-    pcrec_emit_runcmp_stamp(cx, &job->csb, g->upper);
     pcrec_emit_memfn_mark(&job->csb);
     pcrec_emit_residual(cx);
 
