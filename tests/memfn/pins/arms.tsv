@@ -12,10 +12,22 @@
 # helpers (whose text M1b's I1 comparator proved equal to pcrec's over the
 # corpus); the `runcmp` arm's fixtures are new. No artifact byte moved.
 #
+# m1bfix ADDED (no row re-pinned): ofs-miss-n (ofsskip, a miss stated as
+# the `n` hook's text) and the two DECLINE fixtures ofs-decline-miss and
+# ofs-decline-floor, pinned to `generic`: the offset-skip function returns
+# `n` and reads from `pos` up, so a site with another miss or a stated floor
+# is the generic row's. A row that falls back to ofsskip is check 1's red.
+#
 # Columns (tab-separated): arm (the kit's form id), fixture, part (`def` the
 # file-scope text, `use` the entry's), bytes, sha256.
 #
 # arm	fixture	part	bytes	sha256
+generic	ofs-decline-floor	def	642	ed275168e781b63a008cdd1bce034bf72356b3f085d4d254d5f398062a37b4d0
+generic	ofs-decline-floor	use	111	14ffef2e3b7611d36133a6437b321ee1cf881007507ae457442167854f55d4e8
+generic	ofs-decline-miss	def	570	81447566c6f6cb7ddecb932e6df3299e2321fce0f62fe6f2c7006e70285d3b19
+generic	ofs-decline-miss	use	93	b1253e9aaff89caed0a40d8a94f98bfc071a92f0088707f87ad69be4aa7ddc5c
+ofsskip	ofs-miss-n	def	2094	d68c7b8da022d5ef5cc9cf633828c7ad89dec6d7f9bda0bd1ed653e60e353de5
+ofsskip	ofs-miss-n	use	59	205a7d97afc136ef5a5e7da467200ec16bb16fbd9a55c580bc539703a814a709
 ofsskip	ofs-pair	def	2272	c40c58003965031cda493be90fe99ca96a635f9de0c7559384bbe020736cc6ff
 ofsskip	ofs-pair	use	48	036c47e8483d3a3dd5bfb5d47aecf1368467057fffe78531d3c997daa0345beb
 ofsskip	ofs-run-pinned	def	2094	d68c7b8da022d5ef5cc9cf633828c7ad89dec6d7f9bda0bd1ed653e60e353de5

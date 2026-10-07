@@ -11,7 +11,9 @@
  * text moves, never with pcrec's scaffolding (F12). Since M1b the run
  * compare is the kit's own (no `run_cmp` hook), and each fixture's art
  * flushes its pending word-load helpers into the `def` part after the use,
- * so the helpers' text is pinned too.
+ * so the helpers' text is pinned too. Two DECLINE fixtures (lane m1bfix)
+ * pin an arm's edge from the other side: an offset-skip site whose miss is
+ * not `n`, or that states a floor, must render through `generic`.
  *
  *   arm_fixtures OUTDIR [--perturb]
  *
@@ -236,8 +238,12 @@ static void p_run(mf_pred *p, const char *run, const uint8_t *mask, int pos,
 
 /* ---- rendering ------------------------------------------------------------ */
 
-static int render(const char *dir, const char *name, const mf_site *s,
-                  const char *fn1)
+/* render_h's `n`, `miss` and `floor` for both hook sets: NULL in every
+ * fixture but the decline fixtures (lane m1bfix) */
+typedef struct { const char *n, *miss, *floor; } Bounds;
+
+static int render_h(const char *dir, const char *name, const mf_site *s,
+                    const char *fn1, Bounds b)
 {
     mf_arena a = { NULL, a_alloc };
     mf_art *art = mf_art_begin(&a, "rx", MF_P_PORTABLE_ONLY, s->denies);
@@ -245,8 +251,10 @@ static int render(const char *dir, const char *name, const mf_site *s,
     mf_sink sd = sink_of(&def), su = sink_of(&use);
     Fx fd = { s, fn1, NULL }, fu = { s, fn1, "    " };
     mf_hooks hd = { .fn_name = h_fn_name, .table_name = h_table_name,
-                    .note = h_note, .note_tag = h_note_tag, .u = &fd };
+                    .note = h_note, .note_tag = h_note_tag, .u = &fd,
+                    .n = b.n, .miss = b.miss, .floor = b.floor };
     mf_hooks hu = { .s = "subject", .n = "subject_length", .lo = "search_from",
+                    .miss = b.miss, .floor = b.floor,
                     .indent = "    ", .on_miss = "return 0;",
                     .result = "handoff_position", .result_decl = "size_t ",
                     .table_name = h_table_name, .note = h_note, .u = &fu };
@@ -283,6 +291,12 @@ static int render(const char *dir, const char *name, const mf_site *s,
     free(def.p);
     free(use.p);
     return 0;
+}
+
+static int render(const char *dir, const char *name, const mf_site *s,
+                  const char *fn1)
+{
+    return render_h(dir, name, s, fn1, (Bounds){ NULL, NULL, NULL });
 }
 
 int main(int argc, char **argv)
@@ -329,6 +343,23 @@ int main(int argc, char **argv)
     s.pred.plan_hint = 0;
     s.pred.plan_pos = 1;
     bad |= render(dir, "ofs-pair", &s, "rx_ofsskip");
+
+    /* ofsskip's edge (lane m1bfix): its function returns `n` on a miss and
+     * reads from `pos` up, so a site whose miss is another value, or that
+     * states a floor, is the generic row's. The first stays ofsskip: a
+     * miss stated as the `n` hook's own text. */
+    s = ofs_site();
+    s.pred.nterm = 2;
+    t_set(&s.pred.term[0], 0, "ab", 1);
+    t_run(&s.pred.term[1], 1, "/user", NULL);
+    s.pred.plan_hint = 1;
+    s.pred.plan_pos = 2;
+    bad |= render_h(dir, "ofs-miss-n", &s, "rx_ofsskip",
+                    (Bounds){ "subject_length", "subject_length", NULL });
+    bad |= render_h(dir, "ofs-decline-miss", &s, "rx_ofsskip",
+                    (Bounds){ "subject_length", "((size_t)-1)", NULL });
+    bad |= render_h(dir, "ofs-decline-floor", &s, "rx_ofsskip",
+                    (Bounds){ "subject_length", "subject_length", "search_floor" });
 
     /* precheck: the one-byte gate and the set rest */
     mf_pred p[4];
