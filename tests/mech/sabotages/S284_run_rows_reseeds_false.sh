@@ -1,5 +1,5 @@
 # S284 — [OPT-LITSCAN] S1 THE RUN ROWS CLAIM NOT TO WRITE THE STATE
-# (src/gen/emit_dfa.c, `dfa_pfs[]`): `reseeds = false` on both run rows,
+# (src/gen/emit_dfa.c, `dfa_pfs[]`, `cand_rows[]`'s `u.pf` since [START-TABLE] C3): `reseeds = false` on both run rows,
 # whose emitters ARE `pf_emit_ofs[_bounded]` and DO reseed on a seeded
 # machine. litscan_s1.md §7.1 row (j), a HARD delivery-bar item (R3-11).
 #
@@ -42,6 +42,11 @@ SAB_REACH_EXPECT="REACH-SEEDED-RUN-ROW-WITH-EDGE"
 # anchor now. Intent re-verified: the plant is still `reseeds = false` on
 # BOTH run rows and nothing else (the line carries `.run_term = true`, which
 # only the run rows do; count 2).
+# RE-AIMED 2026-10-07 (lane stc3, [START-TABLE] C3, start_table.md §3.5): the
+# rows are `cand_rows[]` NEXT rows and these fields their `u.pf` payload, so
+# the trailing payload line is the anchor. Intent re-verified: still
+# `reseeds = false` on BOTH run rows (the only rows with `.run_term = true`)
+# and nothing else (count 2).
 SAB_COUNT=2
-SAB_BEFORE='      .reseeds = true,  .run_term = true,  .scan = PF_SCAN_OFS  },'
-SAB_AFTER='      .reseeds = false, .run_term = true,  .scan = PF_SCAN_OFS  },   /* SABOTAGE S284 */'
+SAB_BEFORE='                .reseeds = true,  .run_term = true,  .scan = PF_SCAN_OFS  } },'
+SAB_AFTER='                .reseeds = false, .run_term = true,  .scan = PF_SCAN_OFS  } },   /* SABOTAGE S284 */'

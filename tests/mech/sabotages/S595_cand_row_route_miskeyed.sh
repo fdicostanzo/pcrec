@@ -4,6 +4,12 @@
 # oracle over named witnesses. cand_rows[] has no reader in a default build
 # until C3, so no artifact byte and no answer moves: the corpus arm is not
 # named, by design.
+# RE-HOMED 2026-10-07 (lane stc3, [START-TABLE] C3; stc2_report.md §4 item 9):
+# since C3 N12's four readers ask `cand_select(NEXT)` on CAND_ROUTE_ATTEMPT
+# (`attempt_next_of`), so under the plant the ATTEMPT walk decides `none` and
+# the predecessor-byte memchr is no longer emitted (the artifact moves). The
+# detector is the same arm's hit counter: `pred-memchr`'s witness no longer
+# reaches its row. Anchor unchanged (count 1).
 SAB_ID='S595-cand-row-route-miskeyed'
 SAB_FILE='src/gen/emit_dfa.c'
 SAB_SUITES='candoracle'
