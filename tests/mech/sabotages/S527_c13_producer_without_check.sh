@@ -8,10 +8,11 @@
 SAB_ID="S527-c13-producer-without-check"
 SAB_FILE="src/gen/emit_dfa.c"
 SAB_SUITES="memfnforms"
-SAB_DESC='an on_cand token appears in src/gen/emit_dfa.c while C13 is still unbuilt: the UNREACHED declaration must turn red'
+SAB_DESC='an on_cand token appears in src/gen/emit_dfa.c while C13 is still unbuilt: the declaration that C13 has no producer must turn red'
 SAB_DOC_FIGURE='Validated by plant at landing (docs/dev/lanes/r4cchecks_report.md §3); read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S527.'
 SAB_REACH='CC="$CC" TMPDIR="$REACH_TMP" bash "$TREE/tests/memfn/run_form_checks.sh" "$TREE"'
-SAB_REACH_EXPECT='UNREACHED: C13 (on_cand duplicability)'
+SAB_REACH_EXPECT='UNREACHED: C13 (on_cand duplicability)
+checks failed: 0'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='static bool req_handoff_applies(const DfaSel *s)'
