@@ -6,13 +6,19 @@
 # C4 (arm memfnarch). SAB_REACH: class 3's compiler-derived plants are hit on
 # the clean tree.
 _w1=_m; _w2=m_shuffle_epi8
+# [r4clx, 2026-10-06] THE WITNESS ALSO DEMANDS A GREEN CLEAN-TREE C4 (`checks
+# failed: 0`): arm memfnarch scores the sabotaged tree's ABSOLUTE fail count, so
+# on a box whose clean C4 is red (ubuntubudu at 91f5b607: two plant misses)
+# every memfnarch row reads DETECTED whatever its plant does. Such a box now
+# reads UNREACHED here, which is true: the arm cannot measure there.
 SAB_ID="S519-c4-intrinsic-in-emitter"
 SAB_FILE="src/gen/emit_dfa.c"
 SAB_SUITES="memfnarch"
 SAB_DESC='an intrinsic call (class 3) is planted in a comment of src/gen/emit_dfa.c'
 SAB_DOC_FIGURE='Validated by plant at landing (docs/dev/lanes/r4cchecks_report.md §3); read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S519.'
 SAB_REACH='CC="$CC" TMPDIR="$REACH_TMP" bash "$TREE/tests/memfn/run_arch_blind.sh" "$TREE"'
-SAB_REACH_EXPECT='PASS: class 3 (intrinsic)'
+SAB_REACH_EXPECT='PASS: class 3 (intrinsic)
+checks failed: 0'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='static bool req_handoff_applies(const DfaSel *s)'

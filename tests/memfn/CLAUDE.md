@@ -82,6 +82,12 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
   are structural and take synthetic plants, said so), a zero-plant class is
   RED, a hex-escape negative control. `C4_ALLOW_FLOOR` (15) is a literal in
   the script. The plants are box-dependent: a Linux run may widen a class.
+  Classes 1-2 plant the WHOLE derived population (not a sample) since lane
+  r4clx (2026-10-06: ubuntubudu's sample missed `ABM`/`__LAHF_SAHF__`); the
+  vocabulary was widened from gcc-16's and clang-x86_64's full ISA-flag
+  macro sets; English words, two-letter acronyms and hash names (`sha`) are
+  class-2 (macro-form) only, and `__GCC_HAVE_SYNC_COMPARE_AND_SWAP_16` is a
+  class-2 plant, never a class-1 stem (the header says why).
 - **form_checks.py**, **run_form_checks.sh**, **c12_ceilings.tsv** — C12,
   C13, C14 (`make test-memfn-forms`; arm `memfnforms`). C12 counts search
   forms per (emitter file, vocabulary line, libc call) against ceilings that

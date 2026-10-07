@@ -38,15 +38,26 @@
 # (S155's `framebuffer` arm builds its OWN bespoke ASan driver rather than
 # reusing `harness`, for the identical reason). Building that arm is
 # check-design work outside this triage's scope; filed here with its
-# reproduction rather than guessed at. `SAB_EXPECT=UNDETECTED` reflects what
+# reproduction rather than guessed at. The original `SAB_EXPECT=UNDETECTED` reflected what
 # THIS matrix's arms can measure today, not a claim that the defect is safe.
+#
+# [r4clx, 2026-10-06] FLIPPED TO DETECTED. Since [MEMFN] R4c the offset-skip
+# trio is rendered by the kit, which RE-DERIVES the loop guard from the
+# description's terms; src/gen/emit_dfa.c's ofs_pred_of checks the kit's maxk
+# against this OfsTest's own and refuses the compile on a disagreement
+# (`internal error: an offset-k skip's memfn description disagrees with its
+# test`, lane r4ccore's report §4). The plant now fails LOUDLY at compile time
+# for every run-pinned pattern of the target file, so the harness arm reads
+# answer failures: ubuntubudu at 91f5b607 `corpus:51fail/4pass`, NOW DETECTED.
+# The ASan-only analysis above stays the record of what the plant did before
+# R4c; [MECH-SAN-ARM]'s trigger (a second sanitizer-only row) loses this row.
 SAB_ID="S287-ofstest-maxk-not-widened"
 SAB_FILE="src/gen/emit_dfa.c"
 SAB_SUITES="harness"
 SAB_HARNESS_TARGET="tests/offsetskip/run_pinned.rxt"
-SAB_EXPECT=UNDETECTED
+SAB_EXPECT=DETECTED
 SAB_DESC="ofs_test_of leaves OfsTest.maxk at the walk's own o->maxk without widening it to cover the run's own last byte (ro + rl - 1), so the run-pinned candidate guard (cand + maxk >= n) under-covers the run compare and a subject ending just short of a full run causes a heap-buffer-overflow READ in emit_exact_compare's memcmp -- '[ab]/user' on a subject ending 'a/us' is the reach witness, confirmed by a direct ASan reproduction (see header) since no suite arm in this matrix links generated code against a sanitizer runtime"
-SAB_DOC_FIGURE="Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S287 -- reads UNDETECTED, corpus:0fail/55pass, matching SAB_EXPECT (this matrix's harness arm does not build under a sanitizer). The real defect is confirmed by the hand ASan reproduction in this file's own header, not by this matrix run."
+SAB_DOC_FIGURE="MEASURED 2026-10-06 (lane r4clx, single-row mech): DETECTED -- ubuntubudu at 91f5b607 reach:ok(1/1),corpus:51fail/4pass; the Mac figure is in docs/dev/lanes/r4clx_report.md. The plant is refused at compile time by ofs_pred_of's maxk consistency check (R4c). Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S287."
 # [MECH-REACH] the router's run row emits a maxk that already covers the run
 # (o->maxk vs ro+rl-1) on the clean tree; confirms the widened form is live.
 SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "[ab]/user" && grep -q "^#define RX_DFA_PREFILTER \"run-pinned\"" "$REACH_TMP/o.c" && echo REACH-RUN-PINNED-EMITTED'
