@@ -98,30 +98,36 @@ files they own; nothing of theirs was edited here.
 
 ## 3. THE BOUNDARY LIST, as kept (main's start-table fold edits these)
 
-Every start-decision read left on pcrec's half, at `917a3624`
-(`src/gen/emit_dfa.c` unless named):
+Every start-decision read left on pcrec's half (`src/gen/emit_dfa.c` unless
+named). **Re-pinned by lane r4c2fix (R4c′ items (a)+(b)) at `81bc13de`**,
+each entry re-located by reading the code there: the original list was
+pinned at `917a3624`, before the FLAGBITS merge (00ede5dc) and the
+Q-G2-18 fix (5c652bbb) moved most of the file by about 250 lines. B19 and
+B20 were missing from that list and are added here.
 
 | # | file:line | what it reads |
 |---|---|---|
-| B1 | 1405 (`req_site_define`) | `pcrec_fact_req_byte`, `pcrec_fact_req_run(cx)->len < 2` — "nothing necessary" (row `none` of `req_admits[]`): no site |
-| B2 | 1406 | `req_admit_emits(req_admit(cx))` — the admission (`req_admits[]` 7202, `req_admit` 7224): no site |
-| B3 | 1407 | `pcrec_fact_req_run(cx)->len >= 2` — run form vs one-byte form |
-| B4 | 1408-1411 | `req_lead_byte(cx)` (`set-leads`, 7231) — the gate predicate and its byte; `pcrec_artifact_has_dfa_scan` → its need (OPTIONAL on a DFA-scan route, else REQUIRED, §14.5) |
-| B5 | 1413 | `req_use(cx) == REQ_USE_HANDOFF` (`req_uses[]` 7317, `req_use` 7333) — ASSIGN/`ret_pred`/`use` |
-| B5′ | 1514 (`pcrec_emit_req_byte_check`) | `req_use(cx)` again — the expression the body reads (`fwd.from`/`first`); C10 per instance at 1515 |
-| B6 | 1039 (`req_run_tests`) | `r->len < 2 || !req_admit_emits(req_admit(cx))` |
-| B7 | 1043 (`req_run_tests`) | `pcrec_artifact_has_dfa_scan(cx) || r->whole_len <= r->len` — whole-run presence; 1290 (`req_set_rest_members`) the set rest's route |
-| B8 | 1297, 1298, 1300, 1303 (`req_set_rest_members`) | set-rest membership: exact whole-run positions, `pcrec_fact_req_byte`, the lead, `pcrec_fact_req_set` |
-| B9 | 1158-1164 (`emit_req_handoff_rest`) | `pcrec_fact_req_run_maxoff` (K), `pcrec_emit_start_zero(…ROUNDUP)`, the `[K82]` comment, clamp and subtraction, written after `mf_use`; 1416 asserts handoff ⇒ the window is the last predicate |
-| B10 | 8804 (`emit_unanchored`), `dfa_pfs[]` 6816, `DFA_SELECT_ROUTED` 6860/6888 | the prefilter row → `pf->emit_block` (`pf_block_ofs` 6411), `pf->run_term` |
-| B11 | `ofs_test_of` 6204, `ofs_test_model` 6189, called 8337 (`dfa_form_derive`) | `us->ofsk` (prefix_k: sel/scan/maxk), `us_run_pin`, `pf->run_term` — the k-set selection; `ofs_pred_of` 1073 only translates it (plan_hint = the scan) and checks maxk/scan byte (1077, 1114) |
+| B1 | 1404, 1409 (`req_site_define`, 1402) | `pcrec_fact_req_byte`, `pcrec_fact_req_run(cx)->len < 2` — "nothing necessary" (row `none` of `req_admits[]`): no site |
+| B2 | 1410 | `req_admit_emits(req_admit(cx))` — the admission (`req_admits[]` 6952, `req_admit` 6974, `req_admit_emits` 317): no site |
+| B3 | 1411 | `pcrec_fact_req_run(cx)->len >= 2` — run form vs one-byte form |
+| B4 | 1412-1414 | `req_lead_byte(cx)` (`set-leads`, 6981) — the gate predicate and its byte; `pcrec_artifact_has_dfa_scan` → its need (OPTIONAL on a DFA-scan route, else REQUIRED, §14.5) |
+| B5 | 1417 | `req_use(cx) == REQ_USE_HANDOFF` (`req_uses[]` 7067, `req_use` 7083) — ASSIGN/`ret_pred`/`use` |
+| B5′ | 1519 (`pcrec_emit_req_byte_check`, 1499) | `req_use(cx)` again — the expression the body reads (`fwd.from`/`first`); C10 per instance at 1520 |
+| B6 | 1039 (`req_run_tests`, 1029) | `r->len < 2 || !req_admit_emits(req_admit(cx))` |
+| B7 | 1043 (`req_run_tests`) | `pcrec_artifact_has_dfa_scan(cx) || r->whole_len <= r->len` — whole-run presence; 1290 (`req_set_rest_members`, 1283) the set rest's route |
+| B8 | 1295, 1298, 1300, 1303 (`req_set_rest_members`) | set-rest membership: exact whole-run positions (`r->len >= 2`), `pcrec_fact_req_byte`, the lead, `pcrec_fact_req_set` |
+| B9 | 1158-1164 (`emit_req_handoff_rest`, 1154) | `pcrec_fact_req_run_maxoff` (K), `pcrec_emit_start_zero(…ROUNDUP)`, the `[K82]` comment, clamp and subtraction, written after `mf_use` (1515-1516, on `s->handoff == MF_H_ASSIGN`); 1420 asserts handoff ⇒ the window is the last predicate |
+| B10 | 8554 (`emit_unanchored`, 8504), `dfa_pfs[]` 6566, `DFA_SELECT_ROUTED` 6610 (`dfa_pf_of`)/6638 (`vm_start_row`)/8081 (`dfa_form_derive`) | the prefilter row → `pf->emit_block` (`pf_block_ofs` 6161 → `ofs_site_define` 6139), `pf->run_term` |
+| B11 | `ofs_test_of` 5954 (reads `us->ofsk` 5957, `pf->emit_block` 5960, `pf->run_term` 5961, `us_run_pin` 5971), `ofs_test_model` 5939, called 8087 (`dfa_form_derive`, 8059) and 6759 (`dfa_cand_scan`, 6737) | the k-set selection (prefix_k: sel/scan/maxk); `ofs_pred_of` 1073 only translates it (plan_hint = the scan) and checks maxk/scan byte (1077, 1080, 1114); its callers 1435 (pre-check) and 6148 (offset-skip) |
 | B12 | kit-side now | the legend's deny literal keyed by run-term presence (`ofsskip.c` `legend`) — a form choice, not a decision read |
-| B13 | 8807, 8829 (`emit_unanchored`); 9105, 9120 (`emit_attempt`); `src/gen/emit_vm.c` 13118, 13189 | `fit.chosen == ENGM_DFA` define/use guards (VM: unconditional) — untouched |
-| B14 | 8832 | `req_handoff_assert_body` — untouched |
-| B15 | 9961, 10192 (`pcrec_emit_prologue`) | `req_admit` → `<string.h>`; `Job.string_h` recorded for the kit-includes assertion |
-| B16 | 10443 | `DFA_PREFILTER_OFFSETS` stamp: `ofs_test_of`, `ofs_test_at` — untouched |
-| B17 | 335, 7342 | `req_handoff_stamp`, the REQ_* stamps — untouched |
+| B13 | 8557, 8571 (`emit_unanchored`); 8855, 8868 (`emit_attempt`, 8846); `src/gen/emit_vm.c` 13118, 13189 | `fit.chosen == ENGM_DFA` define/use guards (VM: unconditional) — untouched |
+| B14 | 8581-8582 (`emit_unanchored`) | `req_use(cx) == REQ_USE_HANDOFF` → `req_handoff_assert_body` (8477) — untouched |
+| B15 | 9710-9711, 9942 (`pcrec_emit_prologue`, 9687) | `req_admit` → `<string.h>`; `Job.string_h` recorded for the kit-includes assertion |
+| B16 | 10193, 10199 (`dfa_prefilter_offsets`), written at 10222 | `DFA_PREFILTER_OFFSETS` stamp: `ofs_test_of`, `ofs_test_at` (6006) — untouched |
+| B17 | 335, 7092-7095 | `req_handoff_stamp` (`req_use`, `pcrec_fact_req_run_maxoff`), the REQ_* stamps (9906) — untouched |
 | B18 | `src/opt/prefix_k.c` | the k-set model — untouched |
+| B19 | 1517 (`pcrec_emit_req_byte_check`) | `pcrec_fact_req_run(cx)->len >= 2` — whether the body's start expression may be the gate's kept candidate at all (one-byte form: always `posvar`); the guard on B5′ |
+| B20 | 1083-1107 (`ofs_pred_of`) | the per-term NEED classification: the predicate REQUIRED (1083); the scan byte OPTIONAL (1090, 1107) and the plan hint on it (1089, 1106) unless it lies in the run, where the hint moves to the run term (1094-1096); the run term REQUIRED (1098-1099); a model-selected k-set term OPTIONAL, with its `<p>_ofs_k<k>` table only when multi-byte (1101-1102) |
 
 Not decisions (now kit form choices): the pair-arm dispatch, the `k == 0`
 spelling, verify order, the comment variants, the set-rest table loop.
