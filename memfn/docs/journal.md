@@ -582,3 +582,13 @@ pointer when a kit change merges to main.
   logic soundness, contract/docs.
 - Also: K94 (main ab6e0f8a) added defs_bref_ci_ucp as an N7-pending
   instance. M7's scope grows by 1; the C12 span-index ceiling is now 3.
+- Frank, 2026-10-07 (ROWCON design constraint): "we are moving decisions
+  into memfn in the future, so either do it then or expect to migrate."
+  Consequence: the visibility/explain mechanism is KIT-OWNED. It is a
+  decision record the kit keeps per art and site, with rows evaluated,
+  the verdict and the failing field, read through a kit API. It is not a
+  pcrec-side trace hook now. Its record shape must be the one pcrec's
+  start decisions (C1's PCREC_CAND_TRACE site-key records) can migrate
+  INTO when the planner moves into the kit (M5). The default is no R-6;
+  a pcrec-side piece is requested only if the design proves it can't
+  wait, and then it is marked as migrating.
