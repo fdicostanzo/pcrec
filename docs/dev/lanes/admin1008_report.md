@@ -33,4 +33,5 @@ Reasons it is not "a well-specified check change":
 
 ## Validation
 - `make strict`: clean. `bash -n` on both edited scripts. clskit run after the edit: 5 passed / 0 failed. rxtsource and the full suite: see below.
-- Full `make -k -j16 -Otarget test`: OWED/see handback. 
+- Full `make -k -j16 -Otarget test` in this worktree after all edits (incl. the axes.def comment): see fulltest.done below.
+- Full make test: rc=0 wall=747s, 0 `*** [test-` lines.
