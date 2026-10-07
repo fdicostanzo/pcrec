@@ -750,6 +750,26 @@ else
     bad "the rx_info.flags witnesses did not compile"
 fi
 
+# ---------------------------------------------------------------------------
+# 10. [ART-POSS-ARMS] pcrec_poss_ctx_admits, the EXHAUSTIVE MODEL CHECK
+#     (tests/possessify/ctx_admits_check.c): 16 truth tables x 3 polarity
+#     masks x a set of C, against a direct evaluation written independently;
+#     the A-F3 unit cell (C = {U+0100}, (?=C) -> widen) is named there.
+#     FAILING DIRECTION: the program's header lists the plants; a wrong
+#     sense, a dropped widen or a mis-cut byte tier each flips cells, and its
+#     per-outcome counts must all be non-zero so a vacuous universe fails.
+# ---------------------------------------------------------------------------
+. "$ROOT_DIR/tests/lib/unit_cc.sh"
+if unit_build "$WORKDIR/ctx_admits_check" "$SCRIPT_DIR/ctx_admits_check.c"; then
+    if ca_out="$("$WORKDIR/ctx_admits_check" 2>&1)"; then
+        ok "pcrec_poss_ctx_admits agrees with its model: ${ca_out%%$'\n'*}"
+    else
+        bad "pcrec_poss_ctx_admits disagrees with its model: $ca_out"
+    fi
+else
+    bad "tests/possessify/ctx_admits_check.c did not build"
+fi
+
 echo
 echo "checks passed: $pass"
 echo "checks failed: $fail"
