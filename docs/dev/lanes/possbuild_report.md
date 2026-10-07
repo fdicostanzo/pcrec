@@ -219,3 +219,7 @@ Then restore `docs/dev/artifact_size_log.tsv` (the chain does
     rev 2.1 record must be settled, re-run its generator step once on
     ubuntubudu (10.46) and compare by id. The predicate files are unchanged
     (sha1s verified), so this is a version question, not a rule edit.
+- **RULED (manager, 2026-10-07): 10.46 is the reference; the old record is not
+  re-run.** The rev 2.1 record's generator probes likely ran on 10.48
+  (`rev21/CLAUDE.md`), despite `possarms21_report.md`'s 10.46 claim. 5
+  compared rows (43 in all) differ, and no verdict moves.
