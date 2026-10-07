@@ -28,7 +28,7 @@ run by pcrec's make; each writes only under its OUTDIR argument.
   a worktree at the kit branch with the expected TIP as its argument:
   build; the zero-mover gate vs REF (e6e6d6eb); make test; the 35 mech
   rows, ONE id per matrix call; the memfn-simd axes pair; full C11; I2
-  (`--arms start`, every --list-axes flag but the memfn-simd pair and tune
+  (`--arms start`, every --list-axes flag (the memfn-simd pair as inertness arms) and tune
   position x both comment tiers, the M1 denies at utf8; each arm judged by
   `memfn_r4c_i2.py`). Logs go to build/scratch/r4c_lx/; ~6-7 h; last line
   `R4C-LX-DONE gate= test= reds= mech= axes= c11= i2= i2arms= wall=`. PASS
