@@ -3,7 +3,7 @@
 This directory is the evidence for `../poss_arms.md` (lane `possarms`,
 2026-10-07). Nothing here is built or run by `make`.
 
-**Revision 2.1's evidence is in `rev21/`** (lane `possarms21`, 2026-10-07, own CLAUDE.md): the prototype with N1's text fold and R-4's memoization, the frozen generators, per-quantifier CLAIM-vs-MARK, the R-5 check, and the composition hook. Where it re-measured, it supersedes `rev2/`.
+**The BUILD's evidence is in `build/`** (lane `possbuild`, 2026-10-07, own CLAUDE.md): CLAIM-vs-MARK against the built compiler (§8.3, replicated copies keyed as one target), and the independent K35 re-count (`build_census.py`, §8.6). **Revision 2.1's evidence is in `rev21/`** (lane `possarms21`, 2026-10-07, own CLAUDE.md): the prototype with N1's text fold and R-4's memoization, the frozen generators, per-quantifier CLAIM-vs-MARK, the R-5 check, and the composition hook. Where it re-measured, it supersedes `rev2/`.
 
 **Revision 2's evidence is in `rev2/`** (lane `possarms2`, 2026-10-07, own
 CLAUDE.md). It holds the prototype re-based on post-K93 `possessify.c`, the

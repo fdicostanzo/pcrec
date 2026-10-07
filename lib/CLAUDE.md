@@ -426,3 +426,17 @@ answer. It CAN move the GIVE-UP surface, in one direction (a skipped
 attempt spends no budget or capacity, so a give-up under the deny may become
 the answer with the row, never the reverse; `docs/spec/match_api.md` §3.1).
 
+
+## [ART-POSS-ARMS] `PCREC_NO_POSS_CTX_FOLLOW` / `PCREC_NO_POSS_BREF_FIRST` (bits 50/51, 2026-10-07, abi 66)
+
+Two `#define` deny bits for possessify's two ARMS (`src/opt/possessify.c`,
+`docs/design/poss_arms.md` rev 2.1; `docs/spec/tuning.md` §2.44/§2.45).
+`-fno-poss-ctx-follow` (arm A: a context gate in a quantifier's follow,
+A0 + A1) is ENGINE-SELECTING and KEPT in `rx_info.flags` — the free
+discharge asks the same verdict, so the arm can move `\w++\b` to the DFA and
+the denial plus `--engine=dfa` refuses. `-fno-poss-bref-first` (arm B: a
+backreference's FIRST read from its groups) is MASKED: a backreference is
+VM-only, which `tests/reject/`'s `reject_engine_dfa_bref_nocaptures`
+tripwires. Each records `<PREFIX>_VM_POSS_ARMS`'s bits (`match_api.md` §6.3).
+Both move the GIVE-UP surface in TWO directions (a STEPS/FRAMES give-up can
+become an answer, a WORK give-up can appear; `tuning.md` §2.1).

@@ -3383,3 +3383,22 @@ self-check. All six DETECTED at landing (`docs/dev/lanes/stc2_report.md` §3).
 slot's old walk its oracle hook goes with it, and each of those commits must
 re-home or retire the rows on its slot.
 
+
+### [ART-POSS-ARMS] — rows S560-S565, S601-S604 (lane possbuild, 2026-10-07)
+
+`docs/design/poss_arms.md` rev 2.1 §8.2's ten plant rows, against
+`src/opt/possessify.c`. S560-S565 are the six ids reserved for the row;
+S600 is lane stc4's, so the remaining four take S601-S604. Every row is
+`SAB_SUITES="harness possdiff"` with `SAB_HARNESS_TARGET=tests/possessify/
+possessify.rxt` (the oracle-side cells, a detector independent of possdiff),
+a `SAB_REACH` reading the witness's own `RX_VM_POSS_ARMS` at HEAD, and a
+`SAB_REACH_POP` that the witness is in the possessify.rxt cells and in
+`tests/possessify/arms_reach.tsv` (§8.1 item 2). A1: S560 (m >= 1), S561
+(polarity from FIRST), S562 (mixed LAST collapsed), S601 (the call-site join
+dropped — detected as R-5's own internal error on call-bearing verdicts,
+which is that check firing), S603 (lazy admitted, N2). B: S563 (no fold),
+S564 (refs[0] only), S565 (never nullable), S602 (in-progress recomputed — a
+TERMINATION row: with `PCREC_MAX_POSS_REF_DEPTH` still in place a linear
+cycle stays cheap, so its witness is the BRANCHING cycle
+`(a\2\3)(b\1)(c\1)x+\1`, whose compile then explores 2^64 paths), S604 (a
+group body read with `first_of`'s POSITION answer, N1).

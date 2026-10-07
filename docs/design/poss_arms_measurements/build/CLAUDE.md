@@ -37,3 +37,14 @@ The generators ran against libpcre2 10.46 (the box), the rev-2.1 record used
 10.48: 43 A-family `utf,i` rows (`(\b\w)\W+\1` and siblings; U+212A vs `\W`)
 get claim `no` here instead of `yes`/hi=1; their expectation was 0 either
 way, so they are simply not selected (computed rows compared 32,994 vs 33,037).
+
+## `build_census.py` — §8.6's K35 re-count (lane possbuild)
+
+The independent re-count: per bench/corpus pattern (ARTREV's loaders), the
+built compiler's `--emit-ir` marked counts with both arms denied, each arm
+alone and armed; the `RX_VM_POSS_ARMS` stamp on the armed `--engine=vm` and
+default-route artifacts; and the default-route engine denied vs armed. `--diff
+MINE PROTO` compares against `../rev21/results/out2/census_r21.tsv`. Run:
+`PCREC=build/pcrec ARTREV_GEN=docs/dev/optloop/artrev/gen BENCH=<pcrec-bench>
+CORPUS=. JOBS=8 python3 build_census.py > census_build.tsv`. Its results land
+in `results/` when the run has been taken (see the lane report).

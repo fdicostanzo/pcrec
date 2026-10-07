@@ -1179,7 +1179,11 @@ REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
 # to `82370766`, the lane's last `src/` commit: the VM hat moves the abi digit
 # everywhere, adds `<PREFIX>_VM_START_SCAN` to every artifact, and gives the
 # movers a start-set table and two seeks in `<prefix>_search_run`.
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-c59fa836}"   # [FLAGBITS] SELF-PIN (lane flagbits, 2026-10-06), abi 64->65: this change's last src commit (K92)
+# [ART-POSS-ARMS] SELF-PIN (lane possbuild, 2026-10-07), abi 65->66: every VM
+# artifact gains `RX_VM_POSS_ARMS`, and an arm mover's program moves (its (A)
+# excuse is the poss-arms bucket). `b81230c2` is the lane's last src commit;
+# the manager re-pins to the merge (the self-pin convention).
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-b81230c2}"   # [ART-POSS-ARMS] SELF-PIN (lane possbuild, 2026-10-07), abi 65->66
 
 WORKDIR="$(mktemp -d)"
 cleanup() {
