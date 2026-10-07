@@ -129,6 +129,10 @@ static const arm *const arms[] = {
     &precheck_arm,
     &precheck_assign_arm,
     &runcmp_arm,
+    &pf_memchr_arm,
+    &pf_memchr_bounded_arm,
+    &pf_walk_arm,
+    &pf_walk_bounded_arm,
     &generic_arm,
 };
 

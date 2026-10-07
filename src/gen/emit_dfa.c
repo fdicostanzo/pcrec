@@ -5907,32 +5907,113 @@ static void pf_comment_bcls(StrBuf *c, const DfaForm *f)
     pcrec_sb_cmt_close(c);
 }
 
-/* THE FIND's one line (core/internal.h carries the contract). */
+/* THE FIND (core/internal.h carries the contract): [MEMFN] R4g (M2), one kit
+ * site of DELEG_SITES row PF, FIND / STMT / ASSIGN over one SET term at offset
+ * 0 (integration.md §15.7). The description reads only what the caller
+ * decided: the form (a table or memchr: the row's `u.pf.scan`, or the VM
+ * hat's table), the D11 bound (`holdback` -> `end_back`), the set, and the
+ * caller's text around it. The guards stay the caller's: a memchr is always
+ * preceded by one (`pos >= len`, or the bounded block's `pos + 1 < len`), so
+ * its empty range is EXCLUDED; a walk tests its own range (NOP) and the
+ * caller tests the landing after it. */
+static const char *const find_table_tag[PCREC_FIND_NTABLE] = {
+    [PCREC_FIND_CAN_BEGIN]   = "can_begin_match",
+    [PCREC_FIND_START_BYTES] = "start_bytes",
+    [PCREC_FIND_START_SET]   = "start_set",
+};
+
+/* The kit's table-name hook: `<p>_<tag>` for the site's table_ref, which is
+ * the PcrecFindTable value (rule 7: the table is pcrec's, named by pcrec). */
+static const char *find_table_name(void *u, uint32_t ref)
+{
+    const PcrecMfU *pu = u;
+    const PcrecFind *f = pu->own;
+    if (ref == 0 || ref >= PCREC_FIND_NTABLE)
+        pcrec_ctx_fail(pu->cx, 0, "internal error: the PF site's table_ref %u "
+                       "names no table (src/gen/emit_dfa.c, find_table_name)",
+                       (unsigned)ref);
+    return dfa_fragf(pu->cx, "%s_%s", f->p, find_table_tag[ref]);
+}
+
+/* The site and its hooks for FIND `f` at indent `ind`. */
+static mf_site *find_site(const PcrecFind *f, const char *ind, mf_hooks *h,
+                          PcrecMfU *u)
+{
+    Ctx *cx = f->cx;
+    bool table = f->table != PCREC_FIND_MEMCHR;
+    mf_site *s = pcrec_memfn_site(cx, DELEG_PF);
+    s->form = MF_FORM_STMT;
+    s->op = MF_OP_FIND;
+    s->handoff = MF_H_ASSIGN;
+    s->empty = table ? MF_EMPTY_NOP : MF_EMPTY_EXCLUDED;
+    s->end_back = (uint8_t)(f->holdback ? 1 : 0);
+    s->on_miss_leaves = !table && !f->holdback;
+    s->use = MF_USE_POSITION;
+    s->consumer = MF_C_ENGINE;
+    s->pred.nterm = 1;
+    s->pred.need = MF_REQUIRED;
+    if (table)
+        pcrec_memfn_term_set(&s->pred.term[0], 0, f->set, (uint32_t)f->table,
+                             MF_REQUIRED);
+    else
+        pcrec_memfn_term_byte(&s->pred.term[0], 0, f->byte, MF_REQUIRED);
+    *u = (PcrecMfU){ .cx = cx, .site = s, .own = f, .indent = ind };
+    *h = (mf_hooks){ .s = f->subject, .n = f->len, .lo = f->pos,
+                     .result = f->pos,
+                     .miss = f->holdback ? dfa_fragf(cx, "%s - 1", f->len) : MF_MISS_N,
+                     .on_miss = !table && !f->holdback ? f->on_miss : NULL,
+                     .table_name = table ? find_table_name : NULL,
+                     .indent = ind, .comment_tier = PCREC_CMT_NONESSENTIAL,
+                     .u = u };
+    pcrec_memfn_check_use(cx, s, true);     /* the caller reads `pos` */
+    return s;
+}
+
 void pcrec_emit_find(StrBuf *c, const char *ind, const PcrecFind *f)
 {
-    if (f->table)
+    mf_hooks h;
+    PcrecMfU u;
+    mf_site *s = find_site(f, ind, &h, &u);
+    size_t at = c->len;
+    if (f->table != PCREC_FIND_MEMCHR)
         pcrec_sb_printf(c, "%swhile (%s%s < %s &&"
                      " !%s_%s[%s[%s]]) %s++;\n",
                   ind, f->pos, f->holdback ? " + 1" : "", f->len,
-                  f->p, f->table, f->subject, f->pos, f->pos);
-    else
+                  f->p, find_table_tag[f->table], f->subject, f->pos, f->pos);
+    else {
         pcrec_sb_printf(c, "%sconst void *q = memchr(%s + %s, %d,"
                      " %s%s - %s);\n",
                   ind, f->subject, f->pos, f->byte,
                   f->len, f->holdback ? " - 1" : "", f->pos);
+        if (f->holdback)
+            pcrec_sb_printf(c, "%s%s = q ? (size_t)((const unsigned char *)q - %s)\n"
+                         "%s%*s: %s - 1;\n", ind, f->pos, f->subject,
+                      ind, (int)strlen(f->pos) + 5, "", f->len);
+        else
+            pcrec_sb_printf(c, "%sif (!q) %s\n"
+                         "%s%s = (size_t)((const unsigned char *)q - %s);\n",
+                      ind, f->on_miss, ind, f->pos, f->subject);
+    }
+    /* [R4g IMPLEMENT] I1: the kit's text for the same site, compared byte for
+     * byte with the span pcrec just wrote (REPLACE deletes pcrec's spelling) */
+    pcrec_memfn_shadow(f->cx, DELEG_PF, s, &h, c->p + at, c->len - at);
 }
 
 /* The FIND over axis B's candidate set at indent `ind`, its form the ROW's
  * (`u.pf.scan`: a BYTE row memchr's, a SET row walks the table); the scan position
- * and the subject are the DFA scan's own, `holdback` the D11 bound. */
-static void pf_emit_find(StrBuf *c, const DfaForm *f, const char *ind, int holdback)
+ * and the subject are the DFA scan's own, `holdback` the D11 bound. `on_miss`
+ * is the unbounded memchr's statement on a NULL hit (NULL elsewhere). */
+static void pf_emit_find(StrBuf *c, const DfaForm *f, const char *ind, int holdback,
+                         const char *on_miss)
 {
-    PcrecFind fd = { .p = f->p,
-                     .table = f->pf->u.pf.scan == PF_SCAN_BYTE ? NULL
-                            : f->pf->u.pf.scan_set ? "start_bytes" : "can_begin_match",
+    PcrecFind fd = { .cx = f->cx, .p = f->p,
+                     .table = f->pf->u.pf.scan == PF_SCAN_BYTE ? PCREC_FIND_MEMCHR
+                            : f->pf->u.pf.scan_set ? PCREC_FIND_START_BYTES
+                            : PCREC_FIND_CAN_BEGIN,
+                     .set = f->cand.set,
                      .byte = f->cand.byte, .pos = "scan_position",
                      .subject = "subject", .len = "subject_length",
-                     .holdback = holdback };
+                     .holdback = holdback, .on_miss = on_miss };
     pcrec_emit_find(c, ind, &fd);
 }
 
@@ -5957,10 +6038,7 @@ static void pf_emit_memchr(StrBuf *c, const DfaForm *f)
      * later. The BOUNDED form below needs no such guard — its own
      * `pos + 1 < n` bound already implies n > 0, hence s != NULL. */
     pcrec_sb_printf(c, "%s    if (scan_position >= subject_length) return 0;\n", ind);
-    pf_emit_find(c, f, dfa_fragf(f->cx, "%s    ", ind), 0);
-    pcrec_sb_printf(c, "%s    if (!q) return 0;\n"
-                 "%s    scan_position = (size_t)((const unsigned char *)q - subject);\n",
-              ind, ind);
+    pf_emit_find(c, f, dfa_fragf(f->cx, "%s    ", ind), 0, "return 0;");
     pcrec_sb_printf(c, "%s}\n", ind);
 }
 
@@ -5980,9 +6058,7 @@ static void pf_emit_memchr_bounded(StrBuf *c, const DfaForm *f)
      * tells a consumer, and it is why this is its own form rather than a
      * flag inside one. */
     pcrec_sb_printf(c, "%s    if (scan_position + 1 < subject_length) {\n", ind);
-    pf_emit_find(c, f, dfa_fragf(f->cx, "%s        ", ind), 1);
-    pcrec_sb_printf(c, "%s        scan_position = q ? (size_t)((const unsigned char *)q - subject)\n"
-                 "%s                          : subject_length - 1;\n", ind, ind);
+    pf_emit_find(c, f, dfa_fragf(f->cx, "%s        ", ind), 1, NULL);
     pcrec_sb_printf(c, "%s    }\n%s}\n", ind, ind);
 }
 
@@ -5994,7 +6070,7 @@ static void pf_emit_bcls(StrBuf *c, const DfaForm *f)
     const char *ind = f->dir->bind;
     pf_comment_bcls(c, f);
     pf_open(c, f);
-    pf_emit_find(c, f, dfa_fragf(f->cx, "%s    ", ind), 0);
+    pf_emit_find(c, f, dfa_fragf(f->cx, "%s    ", ind), 0, NULL);
     pcrec_sb_printf(c, "%s    if (scan_position >= subject_length) return 0;\n", ind);
     pcrec_sb_printf(c, "%s}\n", ind);
 }
@@ -6011,7 +6087,7 @@ static void pf_emit_bcls_bounded(StrBuf *c, const DfaForm *f)
     /* Every skip stops at n-1 so a state that accepts only under a view is
      * never skipped past; below n-1 the view is unreachable, which is also
      * why the view state cannot be stale after a skip (D11). */
-    pf_emit_find(c, f, dfa_fragf(f->cx, "%s    ", ind), 1);
+    pf_emit_find(c, f, dfa_fragf(f->cx, "%s    ", ind), 1, NULL);
     pcrec_sb_printf(c, "%s}\n", ind);
 }
 
@@ -6610,9 +6686,7 @@ static void pf_emit_first_memchr_bounded(StrBuf *c, const DfaForm *f)
     pf_open(c, f);
     pcrec_sb_printf(c, "%s    if (scan_position + 1 < subject_length) {\n", ind);
     pcrec_sb_printf(c, "%s        size_t skip_from = scan_position;\n", ind);
-    pf_emit_find(c, f, in8, 1);
-    pcrec_sb_printf(c, "%s        scan_position = q ? (size_t)((const unsigned char *)q - subject)\n"
-                 "%s                          : subject_length - 1;\n", ind, ind);
+    pf_emit_find(c, f, in8, 1, NULL);
     pf_emit_moved_reseed(c, f, in8);
     pcrec_sb_printf(c, "%s    }\n%s}\n", ind, ind);
 }
@@ -6626,7 +6700,7 @@ static void pf_emit_first_class_bounded(StrBuf *c, const DfaForm *f)
     pf_comment_first(c, f);
     pf_open(c, f);
     pcrec_sb_printf(c, "%s    size_t skip_from = scan_position;\n", ind);
-    pf_emit_find(c, f, in4, 1);
+    pf_emit_find(c, f, in4, 1, NULL);
     pf_emit_moved_reseed(c, f, in4);
     pcrec_sb_printf(c, "%s}\n", ind);
 }
@@ -6713,11 +6787,12 @@ static bool pf_vm_start_applies(const DfaSel *s)
 static void pf_vm_emit_first_class(StrBuf *c, const DfaSel *s, const char *p,
                                    const char *ind, bool entry)
 {
-    PcrecFind fd = { .p = p, .table = "start_set", .pos = "attempt_position",
-                     .subject = "subject", .len = "subject_length", .holdback = 0 };
+    uint8_t v[256];
+    PcrecFind fd = { .cx = s->cx, .p = p, .table = PCREC_FIND_START_SET, .set = v,
+                     .pos = "attempt_position", .subject = "subject",
+                     .len = "subject_length", .holdback = 0 };
+    for (int b = 0; b < 256; b++) v[b] = s->ss->bits[b >> 3] >> (b & 7) & 1;
     if (entry) {
-        uint8_t v[256];
-        for (int b = 0; b < 256; b++) v[b] = s->ss->bits[b >> 3] >> (b & 7) & 1;
         pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
         pcrec_sb_puts(c, "    /* [START-SET] 1 for each byte the first byte of a match can be.\n"
                          "     * An attempt at a position holding any other byte fails, so the\n"
