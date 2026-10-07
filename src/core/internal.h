@@ -6976,6 +6976,54 @@ char *pcrec_probe_ask(const char *want_name, const char *construct,
                       pcrec_error *err);
 
 
+/* [START-TABLE] C2 THE START TABLE's QUESTIONS (docs/design/start_table.md
+ * §1.2): `cand_rows[]` (src/gen/emit_dfa.c) carries one block of rows per
+ * slot, in this order, and `cand_select` walks one slot. The names are the
+ * trace's `slot` field. */
+/* [START-SET] (D148) the ROUTE a start selection is for: the ENG_UNANCH scan
+ * body, a prefilter-less VM attempt loop, and since [START-TABLE] C2 the
+ * ENG_ATTEMPT start loop (start_table.md §1.1 `routes`). The route of a
+ * DFA-shaped body is the engine of the machine it runs, never `fit.chosen`. */
+typedef enum { CAND_ROUTE_DFA = 0, CAND_ROUTE_VM, CAND_ROUTE_ATTEMPT } CandRoute;
+
+typedef enum {
+    CAND_SLOT_WINDOW,     /* can a match begin before n - W? (the entry, once) */
+    CAND_SLOT_PRESENCE,   /* does the window hold every necessary landmark? */
+    CAND_SLOT_WIDTH,      /* can the rest of the subject hold a match at all? */
+    CAND_SLOT_FIRST,      /* where does the first scan begin? */
+    CAND_SLOT_NEXT,       /* how is the next candidate start found? */
+    CAND_SLOT_RETRY,      /* after a failed VM attempt: step or re-seed? */
+    CAND_SLOT_BOUND,      /* how many start positions can match at all? */
+    CAND_SLOT_RECOVER,    /* given a match END, where does it start? */
+    CAND_NSLOTS
+} CandSlot;
+
+/* [START-TABLE] C2 the `Vm` fields a start row's predicate reads (§2.2 WIDTH):
+ * H1 reads `root_minw`, R1 `mrl_win`, R2 `nclamp`, R4 the calibrated gap of
+ * the program's class (`has_push`). Filled by the VM emitter, the one caller
+ * that holds a `Vm`; a selection made anywhere else carries NULL, and no
+ * VM-only row is routed there. */
+typedef struct CandVmFacts {
+    long long root_minw;
+    bool      mrl_win;
+    long long nclamp;
+    bool      has_push;
+    unsigned  reseed_gap;
+} CandVmFacts;
+
+#ifdef PCREC_CAND_TRACE
+/* [START-TABLE] C2 the both-walks oracle's VM-route entry points
+ * (src/gen/emit_dfa.c): `_pre` runs `cand_select` FIRST where the build asks
+ * for that order (-DPCREC_CAND_NEW_FIRST) and returns its row, else NULL;
+ * `_post` runs it now if `_pre` did not and aborts unless it chose the row
+ * the old decision did — `old_row` by pointer where the old decision is a
+ * table row, else `old_tok` by its trace spelling. */
+const void *pcrec_cand_oracle_vm_pre(Ctx *cx, CandSlot slot, const CandVmFacts *vm);
+void pcrec_cand_oracle_vm_post(Ctx *cx, const void *pre, CandSlot slot,
+                               const CandVmFacts *vm, const void *old_row,
+                               const char *old_tok, const char *site);
+#endif
+
 /* [START-TABLE] C1 THE SELECTION TRACE: one stderr record per start decision,
  * `CANDTRACE <slot> <route> <row> <site>`, printed where the decision returns
  * (docs/design/start_table.md §3.3 item 5). A compile-time debug knob in
@@ -6995,12 +7043,22 @@ char *pcrec_probe_ask(const char *want_name, const char *construct,
  * `_RECF` formats `row` from `fmt` and its arguments. */
 #ifdef PCREC_CAND_TRACE
 #include <stdio.h>
+/* [START-TABLE] C2 the both-walks oracle's QUIET DEPTH: nonzero while the
+ * oracle runs `cand_select` beside an old walk, so a predicate that itself
+ * walks (F1 asks PRESENCE, P3 and R4 ask NEXT, N12 is `attempt_cand`) prints
+ * no second record and the trace stays record-for-record C1's. Trace build
+ * only; the one mutable file-scope object the library would otherwise not
+ * have (coding_guide §1.5), thread-local so concurrent compiles in a trace
+ * build stay independent. Defined in src/gen/emit_dfa.c. */
+extern _Thread_local int pcrec_cand_trace_quiet;
 #define PCREC_CAND_TRACE_REC(slot, route, row, site)                           \
-    fprintf(stderr, "CANDTRACE\t%s\t%s\t%s\t%s\n", (slot), (route), (row),    \
-            "" site)
+    (pcrec_cand_trace_quiet ? (void)0                                          \
+     : (void)fprintf(stderr, "CANDTRACE\t%s\t%s\t%s\t%s\n", (slot), (route),  \
+                     (row), "" site))
 #define PCREC_CAND_TRACE_RECF(slot, route, site, fmt, ...)                     \
-    fprintf(stderr, "CANDTRACE\t%s\t%s\t" fmt "\t%s\n", (slot), (route),       \
-            __VA_ARGS__, "" site)
+    (pcrec_cand_trace_quiet ? (void)0                                          \
+     : (void)fprintf(stderr, "CANDTRACE\t%s\t%s\t" fmt "\t%s\n", (slot),       \
+                     (route), __VA_ARGS__, "" site))
 #else
 #define PCREC_CAND_TRACE_REC(slot, route, row, site) ((void)sizeof("" site))
 #define PCREC_CAND_TRACE_RECF(slot, route, site, fmt, ...)                     \

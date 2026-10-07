@@ -10,6 +10,20 @@ or it has no regression net at all.
 
 ## Files
 
+- **run_cand_oracle.sh** + **cand_oracle_witnesses.tsv** — [START-TABLE] C2
+  (lane stc2, 2026-10-07; `docs/design/start_table.md` §3.3 item 6): the
+  BOTH-WALKS ORACLE over named witnesses. `cand_rows[]` (the one start
+  table) has no reader in a default build until C3, so the script builds the
+  tree twice with `-DPCREC_CAND_TRACE` (old decision first, and
+  `-DPCREC_CAND_NEW_FIRST`), whose every old start decision also asks
+  `cand_select` and aborts on a different row or a failed table self-check,
+  and compiles every witness line with both builds. A line passes when both
+  compile with no `CANDORACLE` abort and both print a `CANDROW` hit for its
+  row ([MECH-REACH]); every row identity read off the table's own source
+  must have a line (K35). Its own section, `make test-cand-oracle` (two
+  builds, ~50 s; not in `test-codegen`, for `make smoke`'s budget); mech arm
+  `candoracle`, sabotage S594-S599 (all DETECTED at landing). It tests the
+  FILTER; the corpus-wide both-orders run is the lane's gate, not this file.
 - **run_cand_rows.sh** + **cand_rows_check.py** — [START-SET] (D148;
   `docs/design/startset.md` §8): the candidate table's (`dfa_pfs[]`)
   structural checks, in `make test-codegen` (well under a second; mech arm
