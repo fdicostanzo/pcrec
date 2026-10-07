@@ -157,6 +157,42 @@ The edited lines nearest a decision: `req_site_define`'s hooks initializer
 below D7/D8), `ofs_site_define`'s initializer. [START-TABLE] C1 re-derives
 its trace sites on a main containing this.
 
+### 3.1 Kit manager's addendum (2026-10-07): re-pinned after main e947b406 merged ([START-TABLE] C1)
+
+The kit branch merged main e947b406 as d537ace9. A read-only cross-check
+against `docs/dev/lanes/stc1_report.md` §2 re-located every read at
+d537ace9. The predicates and sites AGREE: D1-D6 are stc1's
+req-site/req-gate/req-handoff/req-from/run-tests/set-rest, and D8 is
+stc1's B15. D7, D9 and D10-D12 have no stc1 counterpart. There are NO
+COLLISIONS: no M1b edit touches a decision-read line or a
+`PCREC_CAND_TRACE_REC` line that stc1 lists, and src/gen/runcmp.c held no
+trace record. The table above is pre-merge; use these lines (HEAD
+d537ace9, emit_dfa.c unless named):
+
+| D | m1b_report line (pre-merge) | HEAD line | stc1 entry (same read) | stc1 line | Agree? | M1b edit on the line? |
+|---|---|---|---|---|---|---|
+| D1 | 1409 | 1431 (`b < 0 && req_run len < 2`) | `req-site` B1 | 1431 (rec 1432) | yes | no |
+| D2 | 1410 | 1435 (`req_admit_emits(req_admit)`) | `req-site` B2 | 1435 (rec 1436) | yes | no |
+| D3 | 1411 | 1439 (`req_run len >= 2`) | `req-site` B3 | 1439 (rec 1447 run/byte) | yes | no |
+| D4 | 1412-1414 | 1440-1442 (`req_lead_byte`, has_dfa_scan need) | `req-gate` B4 | 1440-1442 (rec 1448) | yes | no |
+| D5 | 1417 | 1445 (`req_use == REQ_USE_HANDOFF`) | `req-handoff` B5 | 1445 (rec 1453) | yes | no |
+| D5' | 1526 | 1562 (`from = req_use...`, in `pcrec_emit_req_byte_check` 1537) | `req-from` B5'/B19 | 1554/1556 (rec 1557) | yes, same predicate; stc1 line stale +6..8 | no |
+| D6a | 1043 | 1044 (`req_run_tests` 1030, `has_dfa_scan` return-count) | `run-tests` K66 | 1044 (fn 1030) | yes | no |
+| D6b | 1290 | 1312 (`req_set_rest_members` 1305, `has_dfa_scan` return) | `set-rest` K65 | 1312 (fn 1305) | yes | no |
+| D7 | 9704-9706 | 9776-9780 (`dfa_body && (UNANCH || (ATTEMPT && attempt_cand && use_memchr))`; fn 9767) | none (not a trace site; reads `attempt_cand` 4023, `attempt-cand` rec 4052) | - | n/a, no overlap with a record | no |
+| D8 | 9716-9717 | 9790-9791 (`req_admit_emits(admit)` -> `<string.h>`) | none (B15 is "emit_dfa.c:9784-9785, written :10016": the same read, via `req_admit`, printed by `req-admit` 7040) | stc1 9784-9785 | yes, same read; HEAD is 9790-9791 (stc1 stale ~+6) | no |
+| D9 | 9727 (`body_memcmp`) | 9801 (`if (body_memcmp)`); emit_vm.c 14063 `v.nlitrun > 0` | none | - | n/a | no. `nlitrun++` is still after `vm_run_compare` (emit_vm.c 4541, 8685) |
+| D10 | 6146 `ofs_site_define` | 6197; hooks init 6209 (lost `.note`/`.run_cmp`) | none (stc1 `ofs-need` is `ofs_pred_trace` 1085 / `ofs_pred_of` 1092-1131: pcrec-built pred, before hand-off) | - | agree: neither lists a read in `ofs_site_define` | initializer only |
+| D11 | emit_vm.c 4538, 8683 | emit_vm.c 4538-4540 (guard printf + `vm_run_compare`), 8683-8684 | none | - | n/a | the line after the guard changed (the compare call) |
+| D12 | emit_vm.c 4458-4461, 8722/8728 | emit_vm.c 4460 (`inrun[]`), 8722/8727 (`vm_lit_run`) | none | - | n/a | no |
+
+Also for C2-C5: M1b's `deny_map[]` (memfn_sites.c, `PCREC_NO_RUN_OVERLAP`
+→ `MF_D_RUN_OVERLAP`) is a flag-to-deny crossing, not a start decision,
+and pcrec's emitters no longer read bit 43. stc1's own emit_dfa.c numbers
+after ~1450 sit 6-8 lines low against e947b406; its emit_vm.c numbers are
+exact at e947b406 and +41 at d537ace9.
+
+
 ## 4. Mech rows
 
 | row | was | now | plant evidence (hand-planted, built, run) |
