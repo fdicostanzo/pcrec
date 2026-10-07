@@ -22,7 +22,7 @@
 # Usage (from anywhere):
 #   PROTO=<scratch>/build/pcrec run_composition.sh FILE.rxt [FILE.rxt...]
 # where <scratch> is a copy of main with proto_rev21.patch applied and built
-# (`patch -p1 < proto_rev21.patch && make CC=gcc-16`).
+# (`patch -p1 < proto_rev21.patch && make`).
 # Env: PROTO (required), PROCS (harness parallelism, default 1),
 #      OUT (dir for the four logs; default a mktemp dir under TMPDIR, kept).
 # Exit: 0 = no divergence and the arms fired on >= 1 pattern; 1 = a
