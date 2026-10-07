@@ -9196,3 +9196,13 @@ A decision table is an ordered list of rows, each a predicate over facts plus an
 **Why.** Building a row on a site mid-remodel moves the edit set the refactor's instruments re-derive, and every start-row mover is a one-row addition after C7 (start_table.md §4). The general-mechanisms and forest-for-trees rules say fold first, then add.
 
 **Revisit when.** C7 and refactor B merge (the gated rows open), or round 3's runnable trio drains with remodel lanes still full.
+
+## D154 — K93's fix stays AS BUILT: one possessify verdict per called body, under the join of every call site's context (Frank, 2026-10-07, ninety-fourth session)
+
+**Context.** K93: possessify gave a quantifier inside a subroutine-call target the verdict of the group's LEXICAL follow, but every call site re-runs the body under its own follow (`(a+)b(?1)a` on `abaa`: NOMATCH, where PCRE2 says (0,4)). Frank's direction mid-lane: a non-recursive call should be a call to the group's TEXT, each spliced copy getting its own verdict; shared bodies (recursive, linked) decline; no copies beyond the splice pass's own decision. The lane (k93fix) had already built a different design and never received that message.
+
+**Decision.** Keep the design as built. `src/opt/possessify.c` joins every call site's context (follow / encl / may_end) into a per-group table keyed by group number (0 = root, for `(?R)`), drives it to a fixpoint with context-only walks, and walks each group once under lexical ∪ joined. One mechanism for every call kind, the atomic free discharge included, and no copies, so code size cannot grow. Frank's per-copy design is FILED as [POSS-CALL-COPY], an optimization row that recovers the possessive marks the join gives up in spliced copies. It gets built when a measurement shows those marks cost something (D77).
+
+**Why.** Both designs are sound. The built one is general (no recursion-only clause), validated (critic SOUND-WITH-NITS, fuzz + 10.46 sweep 0 diffs, both boxes' make test green), and costs nothing measurable today: 0 of 12 bench call patterns move, and 1 corpus mark is lost with its answer unchanged. Per-copy is strictly more optimization and needs a pass reorder; that is an optimization question, not a correctness one.
+
+**Revisit when.** [POSS-CALL-COPY]'s trigger fires, or [ART-POSS-ARMS] (which widens the same verdict) needs per-site contexts.
