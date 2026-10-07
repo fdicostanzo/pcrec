@@ -4268,16 +4268,14 @@ static void unanch_start(Ctx *cx, UnanchStart *o)
  * makes the twice-per-artifact call unremarkable. */
 static bool dfa_engine_is_empty(Ctx *cx)
 {
-    bool empty;
-    if (cx->job->engine == PCREC_ENG_ATTEMPT) empty = cx->job->dfa.n == 0;
-    else {
-        UnanchStart us;
-        unanch_start(cx, &us);
-        empty = us.empty;
-    }
-    PCREC_CAND_TRACE_REC("ROUTE", cx->job->engine == PCREC_ENG_ATTEMPT ? "attempt" : "dfa",
-                         empty ? "empty" : "live", "engine-empty");
-    return empty;
+    if (cx->job->engine == PCREC_ENG_ATTEMPT)
+        PCREC_CAND_TRACE_REC("ROUTE", "attempt", cx->job->dfa.n == 0 ? "empty" : "live",
+                             "engine-empty");
+    if (cx->job->engine == PCREC_ENG_ATTEMPT) return cx->job->dfa.n == 0;
+    UnanchStart us;
+    unanch_start(cx, &us);
+    PCREC_CAND_TRACE_REC("ROUTE", "dfa", us.empty ? "empty" : "live", "engine-empty");
+    return us.empty;
 }
 
 /* Names which table representation this artifact's DFA scan carries.
