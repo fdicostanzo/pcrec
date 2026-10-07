@@ -562,3 +562,23 @@ pointer when a kit change merges to main.
 - Next, non-blinded, after g2x: a per-ARM reach census of G2's sites
   (ofsskip / precheck / runcmp rows) with literal floors. This is the
   independent check that the shapes reach the arms.
+
+## 2026-10-07 (midday) — [MEMFN-ROWCON] opened (Frank)
+
+- Frank, after K96: "the general learning then is to check rows'
+  contracts". He liked the proposal (a per-row allowlist of honoured
+  fields, a shared gate that declines everything else, a field × row
+  audit, every row reached) and asked for: create an item, a light
+  design, then a critic pass. His concerns: VISIBILITY into decisions;
+  are ALL ROWS REACHABLE by at least one pattern; is the LOGIC SOUND.
+- Item: [MEMFN-ROWCON]. A plan row was requested of main (responses.md
+  notice).
+- Step 1: a read-only sonnet audit (lane rowaudit) builds the
+  rows/selection map, the field × row matrix (H/D/R/I), the
+  disagreements, and today's visibility and reachability. Output:
+  worktrees/rowcon-scratch/audit.md.
+- Step 2: a light design, docs/design/memfn/row_contracts.md (mine).
+  Step 3: a D6 panel with one lens each: visibility, reachability,
+  logic soundness, contract/docs.
+- Also: K94 (main ab6e0f8a) added defs_bref_ci_ucp as an N7-pending
+  instance. M7's scope grows by 1; the C12 span-index ceiling is now 3.

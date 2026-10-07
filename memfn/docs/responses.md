@@ -366,3 +366,12 @@ the compiler, and is never adopted silently. Proposed for main to file
     `lane/memfn-g2x`. Q-G2-6 confirmed as written: `floor <= lo` is a
     caller precondition for EVERY site; G2 becomes a conforming caller.
 
+- notice: 2026-10-07 — **[MEMFN-ROWCON] opened (Frank, after K96).**
+  Every kit row checks its own contract: a per-row ALLOWLIST of honoured
+  site fields plus one shared gate that declines the rest, so a new
+  contract field is declined by every row until someone states otherwise.
+  It covers visibility into row decisions and a reach floor per row. Plan
+  is an audit → light design → D6 panel → build, all zero-mover for
+  pcrec. **Please add the plan.md row** under [MEMFN]. No pcrec-side
+  change is expected unless the design asks for an explain/trace hook,
+  which would go to you as a request.
