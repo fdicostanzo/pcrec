@@ -467,6 +467,12 @@ fi
 # a single-row `PROCS=4` run spawned 4 REJECT_SHARD workers instead of the
 # whole-box share a lone row should have gotten).
 INNER_PROCS=$(( ncpu / PROCS )); [ "$INNER_PROCS" -ge 1 ] || INNER_PROCS=1
+# [admin1007] EVERY positional argument is a requested id, and EVERY requested
+# id must select at least one definition or the run is a FATAL: the selector
+# used to read only "$1" and silently drop the rest, so a 35-id invocation
+# ran 1 row and exited clean. `IDS` is the requested list; `ONLY` stays the
+# first id for the --help dispatch below.
+IDS=("$@")
 ONLY="${1:-}"
 
 # `--help` prints the ROW FIELD LIST rather than only the invocation forms,
@@ -476,11 +482,13 @@ ONLY="${1:-}"
 case "$ONLY" in
 -h|--help|help)
     cat <<'USAGE'
-usage: bash tests/mech/run_sabotage_matrix.sh [S<id>]
+usage: bash tests/mech/run_sabotage_matrix.sh [S<id> ...]
 
   no argument   run every sabotage under tests/mech/sabotages/
-  S<id>         run just that row (matched at the id boundary: S10 selects
-                S10_*.sh and never S100_*.sh)
+  S<id> [S<id>..]  run just those rows (matched at the id boundary: S10
+                selects S10_*.sh and never S100_*.sh). EVERY id given must
+                match a definition, or the run is FATAL (exit 2): an
+                unknown id is never silently dropped.
 
 env: CC, KEEP=1 (keep scratch trees + logs), MECH_SCRATCH, JOBS, PROCS
      VALIDATE_ONLY=1  source every selected definition, run the FIELD
@@ -573,15 +581,29 @@ echo
 # selects `S10_*` and nothing else; `S1` selects nothing, which is right — it
 # is not an id. A prefix selecting a RANGE was never a supported thing to want.
 sab_files=()
+matched_ids=" "
 for f in "$SCRIPT_DIR"/sabotages/S*.sh; do
     [ -e "$f" ] || continue
     base="$(basename "$f")"
-    if [ -n "$ONLY" ] && [[ "$base" != "$ONLY"_* && "$base" != "$ONLY" ]]; then
-        continue
+    if [ "${#IDS[@]}" -gt 0 ]; then
+        hit=""
+        for id in "${IDS[@]}"; do
+            if [[ "$base" == "$id"_* || "$base" == "$id" ]]; then
+                hit=1
+                matched_ids="$matched_ids$id "
+            fi
+        done
+        [ -n "$hit" ] || continue
     fi
     sab_files+=("$f")
 done
 
+for id in ${IDS[@]+"${IDS[@]}"}; do
+    if [[ "$matched_ids" != *" $id "* ]]; then
+        echo "FATAL: requested id '$id' matches no sabotage definition under $SCRIPT_DIR/sabotages/ (every requested id must run; nothing was measured)" >&2
+        exit 2
+    fi
+done
 if [ "${#sab_files[@]}" -eq 0 ]; then
     echo "FATAL: no sabotage definitions matched '${ONLY:-*}' under $SCRIPT_DIR/sabotages/" >&2
     exit 2
