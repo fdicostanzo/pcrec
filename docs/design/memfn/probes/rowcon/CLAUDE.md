@@ -12,3 +12,4 @@
 
 Both are inputs to `../../row_contracts.md`. They are facts at main
 92ca17fc, not maintained.
+- `hook_census.md` — lane hookcensus (sonnet, read-only, 2026-10-07): every hook text pcrec passes at each delegated site. NO RISKY HOOK: value hooks are bare identifiers, on_miss is `return 0;`, and prefix-derived names are identifiers. It is H2 (SNAPSHOT)'s "not yet" evidence; re-run it when a migration adds a hook.

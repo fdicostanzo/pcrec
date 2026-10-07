@@ -133,7 +133,11 @@ The arm names are already in the trace. Listing the composer arms in
   passes at every delegated site (`probes/rowcon/hook_census.md`) decides
   it:
   - no risky text → SNAPSHOT stays filed, with that census as its "not
-    yet" evidence, and builds when a migration introduces such a hook;
+    yet" evidence, and builds when a migration introduces such a hook.
+    **RESULT (2026-10-07): NO RISKY HOOK.** Every value hook is a bare
+    identifier, `on_miss` is `return 0;`, and the prefix-derived names are
+    identifiers. SNAPSHOT stays FILED. Re-run the census at every
+    migration step that adds or changes a hook;
   - a risky text → that case goes to Frank.
 
   Rev 3.1's §5 placement table (in git) is the design to resume.
