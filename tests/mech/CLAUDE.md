@@ -3359,3 +3359,20 @@ to the shipped `T = S` (sound-F1's fix; S480 also disables the new
 `dfa_reseed_exact` guard, which would otherwise refuse its witnesses). Solo
 figures at the fixed tip: `docs/dev/lanes/ssbuild3_report.md`, "Panel fixes
 (ssfix3)".
+
+## [START-TABLE] C2 — `candoracle`, and S594-S599 (lane stc2, 2026-10-07)
+
+**`candoracle` is a new suite word** (registered before S594): it runs
+`tests/codegen/run_cand_oracle.sh` on the sabotaged tree, which builds that
+tree twice with `-DPCREC_CAND_TRACE` (both oracle orders) into the row's work
+dir and compiles the C2 witnesses. `cand_rows[]` has no reader in a default
+build until C3, so a plant on it moves no artifact byte and no answer; a row
+here scores `corpus:0fail` by design. S594 (a row's predicate differs), S595
+(a route mis-key), S596 (a deny bit dropped) and S597 (an inline restatement
+wrong) are caught by the oracle's row compare; S598 (a slot's fallback made
+deniable) and S599 (a handed type no successor accepts) by the table
+self-check. All six DETECTED at landing (`docs/dev/lanes/stc2_report.md` §3).
+**They are detected only while the old decisions exist**: as C3-C5 delete a
+slot's old walk its oracle hook goes with it, and each of those commits must
+re-home or retire the rows on its slot.
+

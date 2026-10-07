@@ -1021,7 +1021,7 @@ answers a different question:
 |---|---|---|
 | C0 | **DONE (lane stc0, 2026-10-06; `../dev/lanes/stc0_report.md`, the C0 outcome paragraph below)**. **instrument** (no `src/`): `emit_sweep.py` gains `--extra ARG` (repeatable, appended to streams 1-4 on BOTH sides, before `--pattern`), a sixth stream `--emit-facts` (streams 1/2's patterns, `--emit-facts=byte,utf8`, identity required), `--patterns-file` (constructed witnesses into streams 1-3) [r2 checks-m7], and per-arm DIFFER floors (§3.3 item 2) [r2 checks-M2]; every existing floor re-pinned to the measured reach (today 3,480 against a reach near 4,100; composition 32 against 38) [r2 checks-m4]; the census scripts move per Q7. **And the TRACE instrument** [r2.1 C-N2], so that C1 has something to run: (i) a seventh stream `--trace` that builds both sides with `-DPCREC_CAND_TRACE` — `build_from_rev` (`scripts/emit_sweep.py:327`, whose `:344` runs plain `make -j4 CC=…`) gains a `CFLAGS` pass-through, used on BOTH sides; (ii) the trace's stderr captured per compile, never mixed into the artifact on stdout; (iii) each record tagged with its pattern index and arm by the sweep, not by the compiler; (iv) a trace-DIFF tool that compares per-pattern ORDERED sequences and applies the commit's declared-multiplicity filter (C5b: records whose `site` is one of its BOUND readers, and nothing else); (v) a records-per-arm FLOOR (a trace arm that prints nothing passes any diff); (vi) a FAILING-DIRECTION control: a planted swap of two records and a planted reorder within one pattern, each of which the diff must report, run at C0 and kept as a sabotage row on the diff tool (S-id next free on main at build); also the full all-flag deny sweep (§3.3 item 4, ≈54 min at 6 jobs) | nothing in `src/` |
 | C1 | **BUILT (lane stc1, 2026-10-07; `../dev/lanes/stc1_report.md`, the C1 outcome paragraph below)**. **selection trace** under `-DPCREC_CAND_TRACE` (a compile-time knob, `OPTK_DEBUG`'s precedent `emit_dfa.c:4320`; scratch builds only): every decision site `inventory.tsv` classes WALK or INLINE, the two ROUTE dispatches, K65/K66's decisions (`:1041`, `:1267`) and `prefix_k`'s admission outcome (`nsel`) print one record (§3.3 item 5). C1 byte-sweeps the trace build's stdout against the default build (the trace must move no emitted byte) | nothing in the default build (`#ifdef` text only) |
-| C2 | **implement**: `CandRow`, `CandSlot`, `CandSel` (`DfaSel` + `vm` + `route`, typedef'd to the old name), `cand_select`, `cand_route_of(cx)` (the ONE route derivation, §2.3 item 3 [r2.1 S-N2]), and `cand_rows[]` holding all 37 rows with today's predicates and the `hands`/`accepts`/`list[route]` columns. No reader switched. Under `PCREC_CAND_TRACE` each old walk ALSO runs `cand_select` and aborts on a different row (the both-walks FILTER oracle, run in both orders, §3.3 item 6) | nothing |
+| C2 | **BUILT (lane stc2, 2026-10-07; `../dev/lanes/stc2_report.md`, the C2 outcome paragraph below), pending merge**. **implement**: `CandRow`, `CandSlot`, `CandSel` (`DfaSel` + `vm` + `route`, typedef'd to the old name), `cand_select`, `cand_route_of(cx)` (the ONE route derivation, §2.3 item 3 [r2.1 S-N2]), and `cand_rows[]` holding all 37 rows with today's predicates and the `hands`/`accepts`/`list[route]` columns. No reader switched. Under `PCREC_CAND_TRACE` each old walk ALSO runs `cand_select` and aborts on a different row (the both-walks FILTER oracle, run in both orders, §3.3 item 6) | nothing |
 | C3 | **replace NEXT + RECOVER**: `dfa_pf_of`, `vm_start_row`, `pf_scan_set_of`'s callers, `pcrec_dfa_scan_state_written`, `dfa_form_derive`, `dfa_search_start_of` and N12's four `attempt_cand` readers read `cand_select`, each body building its `CandSel` route from `cand_route_of(cx)`, and the fifteen `job->engine` tests (§2.3 item 3) reading it too [r2.1 S-N2]; `dfa_search_is_pinned` reads `u.recover.pinned`; `dfa_pfs[]`/`dfa_search_starts[]` deleted; D148 Q2's rename; `cand_rows_check.py` re-aimed (§3.5); the SPEC hunk: `registry.md:267`, and the readers `reader_grep.sh` finds outside `src/` [r2.1 C-N4] — `docs/spec/match_api.md:2348`, `:2441` and `docs/spec/tuning.md:2530` name `dfa_pfs[]`; `lib/CLAUDE.md:421`, `tests/codegen/CLAUDE.md`, `tests/mech/CLAUDE.md`, `tests/mech/run_sabotage_matrix.sh:2579`, `tests/codegen/run_cand_rows.sh:3` and the `Makefile:517` comment name retiring identifiers and move in the commit that retires them (C3's `dfa_pfs`/`dfa_select`, C4's `req_admit`, C5's `pcrec_reseed_rows` readers at C7) | re-aims (derived): S222, S283, S284, S490 |
 | C4 | **replace PRESENCE + FIRST**: `req_admit`/`req_use` read `cand_select`; `req_admits[]`/`req_uses[]` deleted; `pcrec_req_admit_row`/`pcrec_req_use_row` become projections of `cand_rows[]` | S462, S473 |
 | C5 | **replace RETRY + BOUND + WINDOW + WIDTH**: `vm_plan_reseed`'s loop → `cand_select`; the `VRS_P_*` tag and `vm_reseed_holds` deleted; the inline bound strings (into `u.bound`), the end-window test and the root-minw test read their slot's row; AND their stamp and listing readers do too: `<PREFIX>_END_WINDOW`, `<PREFIX>_VM_START`, `<PREFIX>_VM_ROOT_MINW` and `--emit-ir`'s `root-minw` row project the row (the value still from its landmark) [r2 sound-m1]; `dfa_select` and its macros deleted with their last caller | S169, S263, S371, S372, S441 |
@@ -1079,6 +1079,34 @@ key must be reached. Three corrections to this note:
 
 The inventory itself was stale after R4c (five members undispositioned),
 and is re-dispositioned 127/127.
+
+**C2's outcome** (lane stc2, `../dev/lanes/stc2_report.md`). Built as listed,
+with no reader switched: `CandRow`/`cand_rows[]` (37 rows), `cand_nodes[]`
+(the `accepts` column per slot and for the three non-slot successors),
+`CandSel` (`DfaSel` renamed, plus `vm`), `cand_select(slot, sel, flags)`,
+`cand_route_of(cx)`, and `CandSlot`/`CandVmFacts`/`CandRoute` (now with
+`CAND_ROUTE_ATTEMPT`) in `src/core/internal.h`. Under `-DPCREC_CAND_TRACE`
+all thirteen old decisions (the eight walks and the five inline sites) run
+the both-walks oracle, in both orders (`-DPCREC_CAND_NEW_FIRST`), with
+nested walks quiet so the `CANDTRACE` stream stays C1's, plus a table
+self-check (§3.5's planned structural checks, in C) and a `CANDROW` hit
+counter (§3.4). A route oracle holds `cand_route_of` to the body dispatch.
+`tests/codegen/run_cand_oracle.sh` (`make test-cand-oracle`) runs both builds
+over 42 witnesses that reach every row; S594-S599 (a predicate difference, a
+route mis-key, a dropped deny, a wrong inline restatement, a non-total slot,
+an unaccepted handed type) are all DETECTED. `call_graph.py` gained
+`cand_select` as a root (`TABLE_ROOTS`), so the table joins the family at C2:
+inventory 141/141. Corrections to this note, all in the report §4: §1.1's
+"`c.name` unique" contradicts §2.2's four `none`s and two each of
+`anchored`/`gstart` (identities made unique, a `tok` column keeps today's
+spelling); §1.2's `accepts` cannot type §1.6's own E2 (FIRST accepts
+HIT | LOWER) and gives VERDICT no consumer (the CALLER accepts it);
+§1.3's `cand_select` carries the route twice (built from `s->route`, so §3.5's
+"every CandSel initializer names `.slot`" has nothing to check); NEXT's
+"+ WINDOW" is a route-class property, not a row's; `u` is deferred to C3-C5,
+which move each old table's fields in. The full-corpus both-orders run, the
+byte sweep against main, `make test-codegen` and `make test` are OWED in the
+lane's detached chain (report §6).
 
 **Sequencing against the kit's R4c** [Frank 2026-10-06, R-Q5; §6]: R4c (`memfn/docs/requests.md`
 R-4, main `05c33ce0`) lands BEFORE C1-C7, and C0 (no `src/`) runs in parallel

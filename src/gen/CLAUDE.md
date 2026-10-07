@@ -1172,6 +1172,18 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
   on an exact run). `<PREFIX>_RUN_WORDS` counts both word rows. The words
   emitter keeps S445's anchor line at its column on purpose (coding_guide
   §3.4).
+- **emit_dfa.c — THE ONE START TABLE** ([START-TABLE] C2, lane stc2,
+  2026-10-07; `docs/design/start_table.md` §1-§2): `CandRow` and
+  `cand_rows[]` (37 rows in `CandSlot` order, each with identity, deny,
+  predicate, slot, routes, `tok`, map, give-up, hands, `list[route]` and the
+  oracle's `was` link), `cand_nodes[]` (accepts, asked routes, successors),
+  `cand_select` and `cand_route_of`, after `dfa_search_is_pinned`. NO READER
+  YET: the old tables and inline decisions still decide every byte until
+  C3-C5. `DfaSel` is `CandSel` (+ `vm`, the `CandVmFacts` a VM row reads).
+  Under `-DPCREC_CAND_TRACE` every old start decision (here and in
+  `emit_vm.c`'s `VM_CAND_*` hooks) also asks `cand_select` and aborts on a
+  different row (`CANDORACLE`), the both-walks oracle; checked by
+  `tests/codegen/run_cand_oracle.sh`.
 - **emit_dfa.c — the run pre-check's PAIR ARM** ([OPT-LITSCAN] S4 C3, lane
   c3build, 2026-10-03, abi 59; `docs/design/litscan_s4.md` §2.3.4):
   `OfsTest` gained `run_mask` (the run pre-check's tests only; a prefilter
