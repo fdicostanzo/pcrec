@@ -11,6 +11,7 @@
 # r4cpin (2026-10-06): +3 rows, every one a tests/litscan/handoff.rxt R4c VM-hybrid handoff witness block (lane r4cchecks); regenerated
 # with census_s1.py on the current build, no existing row moved.
 #id	options	pattern_hex
+# k93tri (2026-10-07): +1 rows, every one a tests/recursion/k93.rxt block (lane k93fix's new file; census_s1.py on the k93fix build, ubuntubudu); no existing row moved.
 bench/capability/balanced-parens-rec	--features all	5c28283f3a5b5e28295d7c283f5229292a5c29
 bench/capability/doubled-word	--features all	5c62285c772b295c625c732b5c315c62
 bench/capability/dup-param-detect	--features all	5c62285c772b293d5b5e265d2a26283f3a5b5e265d2a26292a5c313d
@@ -168,6 +169,7 @@ tests/recursion/d27/sr_root.rxt:273	--features recursion	28615c67273030273f6229
 tests/recursion/d27/sr_root.rxt:308	--features recursion	2861283f52292a6229
 tests/recursion/d27/sr_spellings.rxt:33	--features recursion,backrefs	28617c62295c31
 tests/recursion/framebuffer.rxt:94	--engine=vm	28617c6161292b62
+tests/recursion/k93.rxt:195	--features recursion	283f3a62283f5229617c612b29
 tests/size/size_term.rxt:32	--engine=vm	283f3a283f3a283f3a283f3a283f3a283f3a617c62297b34317d297b34317d297b34317d297b34317d297b34317d297b34317d
 tests/startset/giveup.rxt:16	--features all --engine=vm	283f3d283f3a617c627c78292a632978
 tests/startset/vmhat.rxt:15	--features all	5c28283f3a5b5e28295d7c283f5229292a5c29

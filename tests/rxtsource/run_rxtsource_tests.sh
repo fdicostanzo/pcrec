@@ -1715,16 +1715,24 @@ C3_PASS=17235   # +278 at r4cchecks/r4cfix: tests/litscan/handoff.rxt's witness 
 # lines (version-invariant, measured on python 3.9); the 3.14 total is DERIVED.
 # +2 at lane k82fix: reqcube.rxt's two S2c `gu` lines (version-invariant,
 # measured on python 3.9); the 3.14 total is DERIVED.
-C3_SKIP=24281   # +24 at ssfix3: dfahat_f1.rxt's `flags u` block (python has no UCP); +1755 at ssbuild3: dfahat.rxt+reseed.rxt+hybrid.rxt pcre2-only; +462 at ssbuild2: vmhat.rxt+giveup.rxt's 457 pcre2-only, tests/vars/startset.rxt's 5 own-oracle
+C3_SKIP=24417   # +136 at k93tri (tests/recursion/k93.rxt: 133 no-python-expression + 3 under-convention); +24 at ssfix3: dfahat_f1.rxt's `flags u` block (python has no UCP); +1755 at ssbuild3: dfahat.rxt+reseed.rxt+hybrid.rxt pcre2-only; +462 at ssbuild2: vmhat.rxt+giveup.rxt's 457 pcre2-only, tests/vars/startset.rxt's 5 own-oracle
 C3_SKIP_PCRE2ONLY=7341   # +24 at ssfix3 (dfahat_f1.rxt's `flags u` block); +1755 at ssbuild3 (tests/startset/{dfahat,reseed,hybrid}.rxt, libpcre2's answers); +457 at ssbuild2 (tests/startset/vmhat.rxt 415 + giveup.rxt 42, libpcre2's answers)
 C3_SKIP_GIVEUP=35
 C3_SKIP_COMPOSED=0
-C3_SKIP_NOPYTHON=1983
+C3_SKIP_NOPYTHON=2116   # +133 at k93tri: tests/recursion/k93.rxt, libpcre2 10.46-verified, no python arm (every cell is a subroutine call)
 C3_SKIP_PERRACCEPT=14
 C3_SKIP_OWNORACLE=14908   # 14903 -> 14908 at ssbuild2: tests/vars/startset.rxt's 5; 12200 -> 14903 at r1land: view_edge.rxt's 2703 own-oracle lines
-C3_VERIFIABLE=19232   # 18954 -> 19232 at r4cchecks/r4cfix (tests/litscan/handoff.rxt's 278 python cells); 18656 -> 18954 at ssfix3 (tests/startset/dfahat_f1.rxt's 298 python cells); 18642 -> 18656 at ssbuild3 (tests/startset/dfahat_paths.rxt's 14 python cells); 18624 -> 18642 at ssbuild2 (tests/startset/vmhat_walk.rxt's 18 python cells); 18616 -> 18624 at r1gclose (lookahead.rxt's 8 answer cells); 17056 -> 17326 at c3build (reqcube.rxt's 270), -> 17336 at k82fix (S2c's 10), -> 18616 at k82hbuild (handoff.rxt's 1280); PASS+INFO+no-python-expression+perr-python-accepts: python-version-INVARIANT
+C3_VERIFIABLE=19365   # 19232 -> 19365 at k93tri (tests/recursion/k93.rxt's 133 no-python-expression cells); 18954 -> 19232 at r4cchecks/r4cfix (tests/litscan/handoff.rxt's 278 python cells); 18656 -> 18954 at ssfix3 (tests/startset/dfahat_f1.rxt's 298 python cells); 18642 -> 18656 at ssbuild3 (tests/startset/dfahat_paths.rxt's 14 python cells); 18624 -> 18642 at ssbuild2 (tests/startset/vmhat_walk.rxt's 18 python cells); 18616 -> 18624 at r1gclose (lookahead.rxt's 8 answer cells); 17056 -> 17326 at c3build (reqcube.rxt's 270), -> 17336 at k82fix (S2c's 10), -> 18616 at k82hbuild (handoff.rxt's 1280); PASS+INFO+no-python-expression+perr-python-accepts: python-version-INVARIANT
 C3_INFO=0
 C3_STOREUNCOVERED=0
+# [K93 / k93tri, 2026-10-07] THE FIRST `under <convention>` LINES IN THE
+# CORPUS: tests/recursion/k93.rxt's three `under pcre2-auto-possess` cells.
+# verify_rxt.py counts each as a labelled SKIP (reason `under-convention`);
+# the census awk counts none of them as a case line (an `under` line wraps a
+# case line, it is not one). So C3_SKIP carries them and CENSUS_LINES does
+# not, and the reconciliation below subtracts this pin. A move here is a
+# corpus edit adding or removing an `under` line.
+C3_SKIP_UNDER=3
 C3_TIMEOUT=1
 # [FINDINGS] B2 (lane findb2, 2026-09-27): the 16 head-bearing findings
 # fixtures (HEAD_FILE_LIST above) are the corpus's first, and this oracle
@@ -1847,6 +1855,7 @@ if [ "${c3_fail:-0}" -eq 0 ] && [ "${c3_crashed:-0}" -eq "$C3_CRASHED_HEADBEARIN
                "giveup:$(c3_reason giveup):$C3_SKIP_GIVEUP" \
                "composed:$(c3_reason composed):$C3_SKIP_COMPOSED" \
                "own-oracle:$(c3_reason own-oracle):$C3_SKIP_OWNORACLE" \
+               "under-convention:$(c3_reason under-convention):$C3_SKIP_UNDER" \
                "verifiable (PASS+INFO+no-python-expression+perr-python-accepts):$((c3_pass + c3_info + $(c3_reason no-python-expression) + $(c3_reason perr-python-accepts))):$C3_VERIFIABLE"; do
         nm=${chk%%:*}; rest=${chk#*:}; got=${rest%%:*}; want=${rest#*:}
         [ "$got" = "$want" ] || c3_inv_bad="$c3_inv_bad
@@ -1897,10 +1906,10 @@ if [ "${c3_fail:-0}" -eq 0 ] && [ "${c3_crashed:-0}" -eq "$C3_CRASHED_HEADBEARIN
   C3_* values in this file in a reviewed commit saying which and why."
     fi
 
-    if [ "$((c3_pass + c3_info + c3_skip + C3_TIMEOUT_FILE_LINES))" = "$CENSUS_LINES" ]; then
-        pass "C3 reconciles: $c3_pass verified + $c3_info info + $c3_skip skipped + $C3_TIMEOUT_FILE_LINES in the timed-out file = $CENSUS_LINES"
+    if [ "$((c3_pass + c3_info + c3_skip - C3_SKIP_UNDER + C3_TIMEOUT_FILE_LINES))" = "$CENSUS_LINES" ]; then
+        pass "C3 reconciles: $c3_pass verified + $c3_info info + $c3_skip skipped - $C3_SKIP_UNDER under-convention (not census case lines) + $C3_TIMEOUT_FILE_LINES in the timed-out file = $CENSUS_LINES"
     else
-        fail "C3 DOES NOT RECONCILE: $c3_pass + $c3_info + $c3_skip + $C3_TIMEOUT_FILE_LINES = $((c3_pass + c3_info + c3_skip + C3_TIMEOUT_FILE_LINES)),
+        fail "C3 DOES NOT RECONCILE: $c3_pass + $c3_info + $c3_skip - $C3_SKIP_UNDER + $C3_TIMEOUT_FILE_LINES = $((c3_pass + c3_info + c3_skip - C3_SKIP_UNDER + C3_TIMEOUT_FILE_LINES)),
   census $CENSUS_LINES. Expectations are going somewhere neither counted
   nor reported, which is the one outcome a skip total exists to prevent.
   If tests/base/d27_k23_ambiguous_decomposition.rxt legitimately changed
