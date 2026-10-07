@@ -298,11 +298,11 @@ noted under group 2, which are `PCREC_*`-named yet per-artifact):
    refused.** The block opens
 
    ```c
-   #if defined(PCREC_RX_ABI_H) && (PCREC_RX_ABI_H + 0) != 65
-   #error "pcrec: this artifact (abi 65) shares a translation unit with an artifact of a different abi; regenerate both with one pcrec"
+   #if defined(PCREC_RX_ABI_H) && (PCREC_RX_ABI_H + 0) != 66
+   #error "pcrec: this artifact (abi 66) shares a translation unit with an artifact of a different abi; regenerate both with one pcrec"
    #endif
    #ifndef PCREC_RX_ABI_H
-   #define PCREC_RX_ABI_H 65
+   #define PCREC_RX_ABI_H 66
    ```
 
    so artifacts of one abi still share the first block, and an artifact of
@@ -2315,7 +2315,23 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `65` on every artifact today (lane flagbits bumped it
+- **`rx_info.abi` is `66` on every artifact today (lane possbuild bumped it
+  from 65, 2026-10-07: [ART-POSS-ARMS], `docs/design/poss_arms.md` rev 2.1
+  §9 — two possessify ARMS).** Arm A values a context gate (`\b`, `\B`, a
+  one-character lookaround) in a quantifier's follow by what it can admit
+  next; arm B reads a backreference's FIRST from its groups. Both widen which
+  quantifiers the VM possessifies (and which atomic groups the free
+  discharge deletes), so on a MOVER the possessified loop's emitted body,
+  `<PREFIX>_VM_STRATS`, `rx_info`'s `frame_capacity`/trail VALUES and
+  `<PREFIX>_VM_FRAMELESS` move (measured movers: §5.2 of the note, 3 bench
+  and 3 corpus patterns; `doubled-word` becomes frameless). Every VM
+  artifact gains `<PREFIX>_VM_POSS_ARMS` (§6.3), `0x0u` where no arm was
+  needed. On a route flip `RX_ENGINE` itself moves (`\w++\b` is
+  discharged and DFA-routed; none measured in the corpus).
+  `-fno-poss-ctx-follow -fno-poss-bref-first` restores the abi-65 program
+  apart from the abi digits and the new stamp line. No struct offset moves,
+  no `rx_info` member is added, and no answer moves.
+- **`rx_info.abi` was `65` (lane flagbits bumped it
   from 64, 2026-10-06: [FLAGBITS], K92 -- `rx_info.flags`' strategy mask
   is DERIVED from `src/core/axes.def`).** `-fno-size-term` (bit 18) and
   `-fno-scan-edge` (bit 21) were the two strategy deny bits the hand-kept
@@ -4578,6 +4594,9 @@ annotations below are this document's, not emitted text):
                                          CURSOR/FRAMES_BOUNDED/
                                          FRAMES_UNBOUNDED/REVDET/COUNTER */
 #define RX_VM_STRATS           0x1u  /* bitmask: POSSESSIVE/BACKTRACKING */
+#define RX_VM_POSS_ARMS        0x0u  /* [ART-POSS-ARMS] bitmask: which
+                                         possessify ARM a positive verdict
+                                         needed -- 0x1 A0, 0x2 A1, 0x4 B */
 #define RX_VM_PRUNES            0x1u /* bitmask: CLAMPED/UNCLAMPED (MRL) */
 #define RX_VM_PRUNE_CEILING      "prefilter-window"
 ```
@@ -4758,7 +4777,18 @@ These are scalar macros for a per-artifact-wide verdict
 `RX_VM_PRUNE_CEILING`) or a bitmask
 when the axis is decided per-quantifier and a single scalar would
 misreport a mixed pattern (`RX_VM_RUNGS`, `RX_VM_STRATS`,
-`RX_VM_PRUNES`). Of the VM block above, everything but `RX_ENGINE` is
+`RX_VM_PRUNES`). **`RX_VM_POSS_ARMS`** ([ART-POSS-ARMS], abi 66) is the
+per-ARM half of `RX_VM_STRATS`' POSSESSIVE bit: bit `0x1` (A0, a
+lookahead-born gate in the follow valued with nothing known on its left),
+`0x2` (A1, a gate valued by the loop's own LAST characters' polarity) and
+`0x4` (B, a backreference's first character read from its groups) are set
+when that arm was NEEDED for some positive possessify verdict — for A1,
+the verdict was decided by A1 alone; for A0 and B, the same compile with
+that arm denied counts fewer positive verdicts. `0x0u` where no arm was
+needed, which includes every artifact built with both arms denied: a denied
+arm's bit is 0 by construction (`tuning.md` §2.44/§2.45). Emitted on every
+VM artifact, never on a DFA-only one. The bit values are this paragraph's;
+they are not named constants in the `PCREC_RX_ABI_H` block. Of the VM block above, everything but `RX_ENGINE` is
 VM-artifacts-only; the DFA block's `RX_DFA_SCAN`/`RX_DFA_PREFILTER`/
 `RX_DFA_PREFILTER_OFFSETS`/`RX_DFA_TABLE`/`RX_DFA_SCAN_EDGE`/`RX_DFA_START` are
 the DFA SCAN's own selection facts ([DD-13]'s (a)/(b) split, above) and

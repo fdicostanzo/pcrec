@@ -818,7 +818,10 @@ above describes a list that no longer exists:** `strategy_denials` is every
 `src/core/axes.def` bit except the `kept` set (the two engine-selecting
 denials and the two contract axes), plus `PCREC_FAST_OR_FAIL`. A new axis is
 masked on arrival; forgetting one in `kept` is the recoverable direction.
-Bits 18/21 were the last two strategy bits the old list lacked (K92).
+Bits 18/21 were the last two strategy bits the old list lacked (K92). [ART-POSS-ARMS] (abi 66) made the engine-selecting denials three:
+`-fno-poss-ctx-follow` (tuning.md §2.44) joined `kept`, and `emit_vm.c` gained
+the `<PREFIX>_VM_POSS_ARMS` stamp beside `_VM_STRATS`, read off
+`Ctx.poss_arms` (match_api.md §6.3).
 
 ## [DD-13] THE DFA ARTIFACT'S SELECTION STAMPS, and the D46 family's (a)/(b) split ([2026-08-25])
 

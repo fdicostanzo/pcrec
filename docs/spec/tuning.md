@@ -57,7 +57,7 @@ layer: a compiler optimization that cannot be turned off cannot be
 differentially tested (D47.3, `docs/dev/decisions.md`, ruling 3 — "a
 strategy that cannot be denied cannot be differentially tested"). **Almost
 every** bit-flag axis in §2 is D47.3's family — the deny-only ones, the force
-pair (§2.5), and the two engine-selecting denials — and all but one of those
+pair (§2.5), and the three engine-selecting denials — and all but one of those
 exist **because** they have a differential that checks this exact
 claim directly: compile the same pattern twice, once with the strategy and
 once without, link both into one driver, and sweep subjects comparing
@@ -127,7 +127,7 @@ from a genuine answer disagreement.
 axis bit in `src/core/axes.def` is **masked out of `rx_info.flags`, on every
 artifact, whether or not the axis could act on it**, EXCEPT these, which are
 KEPT because the reflection surface must still say which one a caller got:
-the two ENGINE-SELECTING denials (§2.8, §2.9) and the two CONTRACT axes
+the three ENGINE-SELECTING denials (§2.8, §2.9, §2.44) and the two CONTRACT axes
 (§2.23's startpos guard with its `align` value, §2.36's `-futf-check`), the
 latter two masked only under the `byte` encoding where they are inert.
 `--fast-or-fail` (D135, `limits.md` §8) is not an axis row and is masked
@@ -174,11 +174,17 @@ possessified loop keeps no resume frames and spends no backtrack steps on
 retreats, so a `PCREC_ERR_STEPS` or `PCREC_ERR_FRAMES` give-up of the denied
 build can only become an answer. Its forward scan is charged to the WORK
 budget per iteration, so a `PCREC_ERR_WORK` give-up can APPEAR where the denied
-build answered. Measured (`--engine=vm`, 200 distinct words plus
-`last last`, 1.5 KB): the backtracking `\b(\w+)\b\s+\1\b` completes at a
-minimum `--work-budget` of 581, the possessive spelling `\b(\w++)\b\s++\1\b`
-at 1,586 (580 and 1,585 give up `PCREC_ERR_WORK`). `limits.md` §7 states the
-caller-facing consequence.
+build answered. Measured (`--engine=vm`, the committed subject
+`docs/design/poss_arms_measurements/rev2/wb_subject.py 200`, 809 bytes, sha1
+`bc1608f6…`; `rev2/minwb2.sh`): the backtracking `\b(\w+)\b\s+\1\b` with both
+§2.44/§2.45 arms denied completes at a minimum `--work-budget` of 394, the
+possessive spelling `\b(\w++)\b\s++\1\b` at 1,199 (393 and 1,198 give up
+`PCREC_ERR_WORK`). `limits.md` §7 states the caller-facing consequence. The
+`-fno-poss-ctx-follow` / `-fno-poss-bref-first` arms (§2.44, §2.45) widen which
+loops this applies to: on the committed subject the doubled-word pattern's
+minimum work budget is 394 with both arms denied and 1,199 with both on, the
+hand-possessified spelling's own number (595 with arm B alone, 998 with arm A
+alone; re-measured on the built compiler, lane possbuild, 2026-10-07).
 
 **Differential:** `tests/possessify/run_possdiff.sh`. Population,
 measured this session (`bash tests/possessify/run_possdiff.sh`):
@@ -499,6 +505,11 @@ script's own header (read this session) are the citation.
 **Not on the dial — GATE 3.** No two-axis rate exists; the axis it moves
 is engine selection, which the dial does not second-guess (§5).
 
+The discharge asks the possessify verdict, so the possessify arms (§2.44,
+§2.45) widen what it discharges: `\w++\b` is discharged and DFA-routed by
+default. Denying the context-gate arm (`-fno-poss-ctx-follow`) keeps such a
+group on the VM.
+
 ### 2.9 `-fno-splice-calls` — `PCREC_NO_SPLICE_CALLS` (bit 13)
 
 **Denies** the SPLICE linkage at every eligible subroutine call site
@@ -608,7 +619,7 @@ Without that floor, lowering the dial's threshold would be a
 
 Not a `-f`/`-fno-` flag and not primarily a tuning axis — it is D46's own
 motivating case, restated here because every flag in §2.1-2.9 is scoped
-relative to it (the two ENGINE-SELECTING ones, §2.8/§2.9, can force the
+relative to it (the ENGINE-SELECTING ones, §2.8/§2.9 and §2.44, can force the
 same choice this flag makes directly). Default: `auto`, APPROACH.md §2's
 "automatic per pattern" selection. `dfa`/`vm` are diagnostic overrides —
 reproduce a bug, measure the hybrid against a VM-only build — and
@@ -2981,16 +2992,16 @@ body keep their own per-byte compares.
 
 **[UCP] U2, `abi` 46 (`docs/design/ucp_design.md` §0.1 T3, §2.2).
 ANSWER-IDENTITY-preserving, and ENGINE-MOVING in the §2.8 sense but NOT one
-of the two KEPT engine-selecting denials.** How a lookaround whose body is a
+of the KEPT engine-selecting denials.** How a lookaround whose body is a
 set of single characters is lowered. Deny-only, MASKED out of
 `rx_info.flags` (`strategy_denials`; `src/gen/emit_dfa.c`'s `kept` holds
-only `PCREC_NO_ATOMIC_DISCHARGE` and `PCREC_NO_SPLICE_CALLS` among the
-denials, and this bit is not in it), so an artifact built under the flag
+only `PCREC_NO_ATOMIC_DISCHARGE`, `PCREC_NO_SPLICE_CALLS` and (abi 66)
+`PCREC_NO_POSS_CTX_FOLLOW` among the denials, and this bit is not in it), so an artifact built under the flag
 reports `.flags = 0` exactly as an artifact built without it — measured
 2026-10-07 on `(?<=a)b` at `--features lookaround`. No stamp of its own:
 `<PREFIX>_ENGINE` is the observable consequence, the way
-`-fno-atomic-discharge` (§2.8) shows. The "two ENGINE-SELECTING denials"
-that the `rx_info.flags` rule above and §1 name are the two whose denial is
+`-fno-atomic-discharge` (§2.8) shows. The "three ENGINE-SELECTING denials"
+that the `rx_info.flags` rule above and §1 name are the three whose denial is
 KEPT in `.flags`; this axis has the same engine consequence (below) without
 that reflection, which is a fact about the code, not a different promise
 about answers.
@@ -3672,6 +3683,55 @@ turned the force flag on.
   and changes no answer. The activity record is
   `<PREFIX>_MEMFN_FORMS` (`match_api.md` §6.3), `none` iff the artifact is
   identical to its SIMD-off compile.
+
+### 2.44 `-fno-poss-ctx-follow` — `PCREC_NO_POSS_CTX_FOLLOW` (bit 50)
+
+**Denies** possessify's ARM A ([ART-POSS-ARMS], `docs/design/poss_arms.md`
+rev 2.1 §2): a context gate — `\b`, `\B`, or a one-character lookaround
+(module `ucp`'s context node) — in a quantifier's follow is valued by the
+next characters it can admit, instead of widening the follow to every
+byte. Two halves, one bit: **A0** (nothing known on the gate's left, so it
+narrows only a lookahead-born gate: `[A-Za-z0-9.]+(?=@)`) and **A1** (the
+left is the loop's own LAST characters, so `\w+\b` and `(?:a\.)+\B`
+possessify; greedy loops with at least one mandatory iteration only).
+Default: both run. Each changes no answer.
+
+**ENGINE-SELECTING, KEPT in `rx_info.flags`.** The free discharge (§2.8)
+asks the same verdict, so the arm can delete an atomic group or possessive
+suffix and move the pattern to the DFA. Denying it keeps the group on the
+VM, and `--engine=dfa` plus the denial REFUSES:
+
+```
+$ build/pcrec -p rx --features all --engine=dfa -fno-poss-ctx-follow -o - --pattern '\w++\b'
+pcrec: possessive quantifier requires the VM engine, which --engine=dfa excludes (pattern offset 3)
+$ build/pcrec -p rx --features all --engine=dfa -o - --pattern '\w++\b' | grep RX_ENGINE
+#define RX_ENGINE "dfa"
+```
+
+Measured over 4,132 bench and corpus patterns: 0 default-route engine
+flips (186 at risk; the note's §5.4), so the classification rests on the
+constructed witnesses above. **Records** `<PREFIX>_VM_POSS_ARMS` bits `0x1`
+(A0) and `0x2` (A1) (`match_api.md` §6.3); both are 0 under the denial,
+asserted on the artifact (`tests/possessify/run_possessify_tests.sh`).
+**Differential:** `tests/possessify/run_possdiff.sh` (denied vs armed).
+
+### 2.45 `-fno-poss-bref-first` — `PCREC_NO_POSS_BREF_FIRST` (bit 51)
+
+**Denies** possessify's ARM B ([ART-POSS-ARMS], `docs/design/poss_arms.md`
+§3): a backreference's first character is read from its groups — the union,
+over every group number it can name, of the first character of the TEXT
+each such group can capture, folded when the reference is caseless —
+instead of every byte. So `\s+` before `\1` in `\b(\w+)\b\s+\1\b`
+possessifies. Default: it runs. It changes no answer.
+
+**ANSWER-IDENTITY-preserving, MASKED from `rx_info.flags`.** A backreference
+is VM-only (under `--no-captures` too), so the arm can change the program
+and the free discharge but never `RX_ENGINE`; `--engine=dfa` refuses a
+backreference pattern with and without it. `tests/reject/`'s
+`reject_engine_dfa_bref_nocaptures` is the tripwire on that premise: if a
+backreference ever becomes DFA-runnable, this axis is reclassified
+engine-selecting. **Records** `<PREFIX>_VM_POSS_ARMS` bit `0x4`, 0 under the
+denial. **Differential:** `tests/possessify/run_possdiff.sh`.
 
 
 ## 3. The DFA side's own stamps

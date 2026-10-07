@@ -1220,11 +1220,10 @@ typedef struct PSum {
                          * call site's joined may_end */
 } PSum;
 
-enum { PCONT_ATOMIC_END = -1 };
-
 typedef struct PCont {
     const Ast    *node;     /* the next item; NULL on a marker */
-    int           capend;   /* > 0: the END of that group; PCONT_ATOMIC_END */
+    int           capend;   /* > 0: a marker, the END of that group */
+    bool          atomic_end;   /* a marker: an atomic body's END */
     struct PCont *next;
     PSum         *sum;      /* the chain summary from here, once computed */
 } PCont;
@@ -1518,7 +1517,7 @@ static First cont_fold(Pss *P, const PCont *k, bool a0)
     First acc = fst_empty(true);
     bool cc_end = false;
     for (; k; k = k->next) {
-        if (k->capend == PCONT_ATOMIC_END) return acc;
+        if (k->atomic_end) return acc;
         if (k->capend) {
             if (P->cc && k->capend < P->ncc) {
                 bs_or(acc.f, P->cc[k->capend].follow);
@@ -2068,7 +2067,8 @@ static void pss_run(Pss *P, Ast *root)
      * analyses an atomic body as a self-contained pattern, so its
      * continuation ends there and may end the match. */
     P->fq.cap = P->fq.arm_b && P->cx->ncap > 0 ? cap_build(P->cx, root) : NULL;
-    P->atomic_end = pc_new(P, NULL, PCONT_ATOMIC_END, NULL);
+    P->atomic_end = pc_new(P, NULL, 0, NULL);
+    P->atomic_end->atomic_end = true;
     P->atomic_end->sum = pcrec_arena_alloc(&P->cx->arena,
                                            sizeof *P->atomic_end->sum);
     P->atomic_end->sum->ends = true;
