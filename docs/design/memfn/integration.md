@@ -1,5 +1,23 @@
 # memory-functions: R1d, THE INTEGRATION MAP AND THE COMPOSITION MODEL
 
+**REVISION 4.8 (lane `m1b`, 2026-10-07, from kit branch `lane/memfn-m1b`
+at main 993f8c1d): M1b's CONTRACT, request R-5 (runcmp migrates, zero
+movers). They override anything below that conflicts.** Read §R4.8
+first. The kit manager ruled Q-M1b-1..8 before the lane (§R4.8.0). In
+short:
+- §14.8's RUN_WORDS sentence was WRONG: pcrec's `stamp` sink op QUOTES
+  its value, so the line would read `RX_RUN_WORDS "0"` on every artifact.
+  The sink gains an UNQUOTED op, `stamp_int`, appended at the end;
+- `mf_hooks.run_cmp` is retired and `note` stops carrying the word-load
+  helpers: the kit compares runs and declares its helpers itself;
+- all three in ONE `MF_SITE_ABI` 3 → 4 bump; `MF_VOCAB` stays 2;
+- bit 43 crosses through ONE pcrec map table, into every site's
+  `denies` AND `mf_art_begin`'s, and the kit asserts they agree;
+- the run-compare rows are the kit's, read by `--list-axes` through an
+  accessor.
+No emitted byte moves and there is no pcrec abi event. Changed passages
+carry `[rev4.8]` in place.
+
 **REVISION 4.7 (lane `memfnfix`, 2026-10-05, from kit branch
 `lane/memfn-r4a` at 99130d75): THE KIT'S CONTRACT AFTER G2, AND D147
 ADDENDUM 10 FOLDED. They override anything below that conflicts.** Read
@@ -139,6 +157,100 @@ addenda 2-3 (every form choice a `DFA_SELECT`-style row; SIMD later = one
 row; SWAR admitted now), D139 (one class-form table, sites as bits), D144
 item 4 (every optimization its own deny), D145 (generated-output licence
 exception), and the tables themselves (§1).
+
+---
+
+## R4.8. Revision 4.8: M1b's contract (R-5) `[rev4.8]`
+
+(Top-level, like §R4.7. It sits first because it corrects §14.8, extends
+§14.0's sink and hooks, and rules how bit 43 crosses (§14.10).)
+
+**The input.** Request R-5 (`memfn/docs/requests.md`): M1b, runcmp
+migrates, zero movers. The scope pass (`worktrees/m1bscope-scratch/
+m1b_scope.md`, read-only, written at main 54c42e36) found one HIDDEN
+BYTE MOVE in §14.8 as written and one contract gap (`--list-axes`). The
+kit manager ruled Q-M1b-1..8 before the lane was briefed. They are kit
+contract decisions under D146, plus Q-M1b-6, which is main's.
+
+### R4.8.0 Each ruling, and where it now lives
+
+| id | the question | ruling | where it lives |
+|---|---|---|---|
+| Q-M1b-1 | fill `mf_art_begin`'s `denies` too? | **Yes, from the SAME PCREC-bit → `MF_D_*` map table** that fills every site's `denies`, and the kit ASSERTS `site.denies == art.denies` at `mf_define` (a loud refusal). Flags are per compile, so the art-level helper and stamp decisions cannot disagree with a site's | §14.10 `[rev4.8]`; `memfn.h` `mf_art_begin`; `compose.c` `mf_define`; pcrec's map table (`src/gen/memfn_sites.c`) |
+| Q-M1b-2 | the unquoted stamp channel | **(i) a NEW sink op `stamp_int(u, name, long long)`, APPENDED at the END of `mf_sink`**, because G2's and other sink initializers are positional; every initializer is updated | §14.0, §14.2, §14.8 `[rev4.8]`; `memfn.h` `mf_sink`; pcrec's stamp sink (`memfn_stamps.c`) |
+| Q-M1b-3 | the run-compare rows for `--list-axes` | **A kit accessor** (the `mf_options()` precedent). pcrec's `run-overlap` section reads it and maps `MF_D_RUN_OVERLAP` back to bit 43 through the same map table, so stream 5 and the registry stay byte-identical | §14.10 `[rev4.8]`; `memfn.h` `mf_run_rows`; `src/dump/axes_dump.c` |
+| Q-M1b-4 | S285's home | **KIT-side**, on the renderer's read of `run_len` (its intent: the compare tests `run_len + 1` bytes) | §R4.8.1 item 6; `tests/mech/sabotages/S285_*` |
+| Q-M1b-5 | a VMRUN site's `empty` | **EXCLUDED** (pcrec's guard precedes the EXPR, `guard_by_caller`) | §15.6 `[rev4.8]`; `emit_vm.c`'s VMRUN builder |
+| Q-M1b-6 (main) | VERIFY as a DELEG_SITES row? | **No.** VERIFY is carried as a TERM of the OFS and PRE sites (the SETREST precedent). VMRUN DOES get a DELEG_SITES row (D91 budget 2) and a `site_census` door. The manifest's VERIFY and VMRUN rows flip to `delegated` | §R4.8.1 item 4; `src/gen/memfn_sites.def`; `tests/memfn/site_manifest.tsv`; `site_census.DOORS` |
+| Q-M1b-7 | `run_cmp` and `note`'s helper role | **Retire `mf_hooks.run_cmp` outright, and end `note`'s helper-carrying role, in ONE `MF_SITE_ABI` 3 → 4 bump with `stamp_int`.** `MF_VOCAB` stays 2 (VERIFY/BOOL over RUN is already in the vocabulary). Kit-internal: no pcrec abi bump, no artifact byte | §14.0 `[rev4.8]`; `memfn.h` |
+| Q-M1b-8 | sabotage ids | **S570-S579 only**; more needs a ruling | the lane report |
+
+8 rulings, 8 placed.
+
+### R4.8.1 What changed in the design
+
+1. **§14.8's RUN_WORDS sentence is corrected (Q-M1b-2).** It said the kit
+   writes `RUN_WORDS` through the sink's `stamp` op and the bytes are
+   unchanged. They are not: pcrec's `stamp` (`sink_stamp` →
+   `pcrec_sb_stamp_str`) writes `"\"%s\""`, so `#define RX_RUN_WORDS 0`
+   would become `#define RX_RUN_WORDS "0"` on 100% of the corpus, and its
+   C type would change from integer to string (a consumer's
+   `#if RX_RUN_WORDS > 0` breaks). The kit writes it through `stamp_int`,
+   which pcrec renders as `pcrec_sb_stampf(…, "%lld", …)`, the call
+   `pcrec_emit_runcmp_stamp` made. `mf_stamps` writes THREE lines in
+   order: `RUN_WORDS`, `MEMFN_FORMS`, `MEMFN_LIBC`. pcrec deletes its two
+   `pcrec_emit_runcmp_stamp` calls, so the memfn mark sits exactly where
+   the `RUN_WORDS` line was. The count is identical: `mf_art` is per Job
+   attempt as `Job.rc_words` was, and the stamp pass runs before the size
+   measurement.
+2. **The helpers are the kit's (§14.8).** `mf_art` records the word widths
+   used and declared (bit W for width W) and the words-form count. A FUNC
+   definition's arm declares, where pcrec's file-scope `note` did, the
+   widths its run terms take (the art-level "flush ALL pending widths"
+   semantics of `pcrec_emit_runcmp_helpers`, never per site); an EXPR site
+   only records them; `mf_flush_helpers` at pcrec's prologue writes
+   whatever is pending. The VM body is written before the prologue, so
+   its widths reach the prologue's flush. The helpers' comment opens
+   through `cmt_open(MF_CMT_NONESSENTIAL)` (no hook carries a tier at the
+   prologue; `MF_CMT_NONESSENTIAL` equals pcrec's `PCREC_CMT_NONESSENTIAL`,
+   asserted on pcrec's side). CHOSEN by the lane.
+3. **Bit 43 crosses (§14.10, Q-M1b-1).** ONE pcrec table maps bit 43 to
+   `MF_D_RUN_OVERLAP`. `pcrec_memfn_site` fills every site's `denies` from
+   it (OFS, PRE, VMRUN: the OFS/PRE run term honours bit 43 too), and the
+   attempt's `mf_art_begin` takes the same value. Every kit arm that
+   renders a run compare honours it: exact compares fall to `memcmp`,
+   masked ones to `bytes`.
+4. **VERIFY is a term, VMRUN a site (Q-M1b-6).** The OFS/PRE run term is
+   rendered by the verify chain with the kit's own compare. The VM's two
+   callers (`vm_lit`, `vm_isl_emit`) describe one VMRUN site each through
+   a new door, `pcrec_memfn_emit` (→ `mf_emit`): VERIFY / EXPR / BOOL, one
+   REQUIRED RUN term at the node's depth (or 0), `guard_by_caller` 1,
+   `empty` EXCLUDED, use DISCARD, policy INLOOP from the row. pcrec keeps
+   its guard and its `goto` tail.
+5. **The kit's runcmp arm.** `memfn/src/runcmp.c` holds the four rows
+   (`words`, `overlap`, `bytes`, `memcmp`), their writers and the arm
+   (VERIFY / EXPR / BOOL, one RUN term, `guard_by_caller`, every run byte
+   within its mask) above the generic row. An unsatisfiable run byte
+   (Q-G2-13) is left to the generic row, because `bytes` would spell a
+   constant `(b & K) == T` that `-Wtautological-compare` flags. The
+   overlap lengths and the width rule are DERIVED (D149): gcc's lowering
+   of a constant `memcmp` (`docs/dev/memcmp_lowering_study.md` §3).
+6. **S285 is kit-side (Q-M1b-4)**, on the renderer's read of `run_len`.
+
+### R4.8.2 The three standing design questions, for this revision
+
+1. **Measurement regime: NOT RELEVANT.** No timing is read or produced;
+   zero movers by construction (the identity gate, I1 at IMPLEMENT).
+2. **Independent control: RELEVANT.** I1 compares the kit's text with
+   pcrec's own runcmp at every call of the IMPLEMENT commit (each
+   compare, each define's span, the prologue's helpers, the RUN_WORDS
+   line); the identity gate compares artifacts with main 993f8c1d over
+   the corpus and every axis at both comment tiers. Neither reads the
+   kit's own record of what it did.
+3. **What moves when data is regenerated: NOT RELEVANT.** No data file
+   or emitted byte moves. C5's run-bearing fixture pins move (the
+   fixtures' stand-in `run_cmp` hook is gone and the kit compares runs
+   itself): a change-detector re-pin under `tests/` (§17.4), no artifact.
 
 ---
 
@@ -4356,6 +4468,19 @@ The hooks gain these members and lose none:
     void (*run_cmp)(void *u, mf_sink *c, const char *base, int32_t off, uint32_t term);
 ```
 
+> **`[rev4.8]`** (Q-M1b-2, Q-M1b-7; §R4.8) `MF_SITE_ABI` is **4**:
+> - `run_cmp` is RETIRED: the kit compares runs itself (`memfn/src/
+>   runcmp.c`), and a FUNC definition declares its own word-load helpers
+>   where pcrec's file-scope `note` wrote them. `note` keeps its §14.2
+>   role (pcrec's FACT comment) and no longer carries helpers;
+> - `mf_sink` gains `void (*stamp_int)(void *u, const char *name, long
+>   long value)`, APPENDED after `legend_byte`: an UNQUOTED stamp line
+>   (`stamp` quotes its value);
+> - `mf_stamps` writes three lines, `RUN_WORDS` (through `stamp_int`),
+>   `MEMFN_FORMS`, `MEMFN_LIBC`;
+> - `mf_define` refuses a site whose `denies` differ from the art's.
+> `MF_VOCAB` stays 2.
+
 And the per-artifact state replaces rev 3's single `mf_emit_site` call:
 
 ```c
@@ -4790,6 +4915,14 @@ Today pcrec tracks three things the kit's forms decide:
   through the sink's `stamp` op (pcrec's spelling of a stamp line). The
   value and position are unchanged, so the bytes are too. pcrec never
   reads a tally.
+  **`[rev4.8]` CORRECTED (Q-M1b-2, §R4.8.1 item 1).** The sentence above
+  is wrong twice. pcrec's `stamp` op QUOTES its value, so `RUN_WORDS`
+  through it would read `"0"` on every artifact (a byte move and a C type
+  change). And pcrec calls `mf_stamps` from its finishing pass, over the
+  memfn mark, not at the two old points. So: the kit writes `RUN_WORDS`
+  through the NEW unquoted op `stamp_int`, as the FIRST of `mf_stamps`'
+  three lines; pcrec deletes its two `pcrec_emit_runcmp_stamp` calls,
+  which sat directly above the mark, so the line lands where it was.
 - **Helpers "before first use".** The `<p>_w<W>` word loads are written
   at two kinds of place today. On the DFA they go immediately before
   each file-scope block that uses them (`pcrec_runcmp_prepare` in
@@ -4884,7 +5017,7 @@ baseline included, honours it.
 | 45 | `-fno-req-set-lead` | selection (`req_admits[]` `set-leads`) | PRE | stays pcrec's. **`[rev4.6]`** (r5 A1) DFA-scan routes: part 0 (the OPTIONAL lead) is not passed. No-DFA routes: the lead byte joins part 3, the set rest (it is REQUIRED there, §14.5). K85's interim switch keeps working unchanged |
 | 46 | `-fno-req-handoff` (`lane/k82hbuild`) | selection (`req_uses[]`) | PRE | stays pcrec's: `ret_pred = 0xFF`, the handoff is ON_MISS, and pcrec writes no subtraction |
 | 33 | `-fno-lit-run` | fact (VM literal run) | VMRUN | stays pcrec's: no VMRUN site, the VM's per-byte chain (VM text, never delegated) |
-| 43 | `-fno-run-overlap` | **IN-EMITTER** (`pcrec_runcmp_rows`' `words` and `overlap`) | VERIFY/VMRUN and OFS's run term | **CROSSES.** pcrec maps it to `MF_D_RUN_OVERLAP`, and every kit arm honours it: exact compares go to `memcmp`, masked ones to `bytes` (`runcmp.c`'s header comment, the row table). The axis row and its `strategy_denials` mask entry (in `emit_info_def`) stay pcrec's. Not crossed in M1 (runcmp is reached through a hook, §16); crossed at M1b |
+| 43 | `-fno-run-overlap` | **IN-EMITTER** (`pcrec_runcmp_rows`' `words` and `overlap`) | VERIFY/VMRUN and OFS's run term | **CROSSES.** pcrec maps it to `MF_D_RUN_OVERLAP`, and every kit arm honours it: exact compares go to `memcmp`, masked ones to `bytes` (`runcmp.c`'s header comment, the row table). The axis row and its `strategy_denials` mask entry (in `emit_info_def`) stay pcrec's. Not crossed in M1 (runcmp is reached through a hook, §16); crossed at M1b. **`[rev4.8]`** (Q-M1b-1, Q-M1b-3) The map is ONE pcrec table (`src/gen/memfn_sites.c`), read by `pcrec_memfn_site` (every site), by the attempt's `mf_art_begin` (the kit asserts the two agree) and, reversed, by `--list-axes`' `run-overlap` section over the kit's `mf_run_rows` |
 | 21, 42 | `-fno-scan-edge`, `-fno-view-edge` | selection (`scanedge.c`) | EDGE (M3) | stays pcrec's: no EDGE site |
 | 36, 38 | `-fno-cls-kit`, `-fno-cls-pack` | T4 | the `member` hook | stays pcrec's. The kit's scalar loops call `member`, so these bits keep reaching the text through the hook |
 | 26/27 | `-fno-comments`/`-fcomments` | render tier | every site | stays pcrec's. The sink's `cmt_open` gates the kit's comments as it gates pcrec's |
@@ -5262,6 +5395,8 @@ Today, in the VM literal run (`vm_lit`, `emit_vm.c`), run
 | `s`, `lo` | `subject`, `scan_position`; the baseline's `base` is `<s> + <lo>`, and `rc_base` appends ` + <off>` when `off ≠ 0` |
 | `denies` | `MF_D_RUN_OVERLAP` iff bit 43 is set |
 | `policy` | `MF_P_INLOOP` (D91 budget 2; VMRUN's row) |
+| `empty` **`[rev4.8]`** | EXCLUDED (Q-M1b-5): pcrec's guard precedes the expression |
+| `use` **`[rev4.8]`** | DISCARD: a BOOL is never read as a position |
 
 The baseline arm is `runcmp.c`'s row table and three form writers,
 moved whole. Each helper (`rx_w2`) is RECORDED in `mf_art`, and pcrec's
@@ -6234,6 +6369,8 @@ text stays opt-in until R4f.
 > - **M1b, runcmp migrates** (zero movers). Bit 43 crosses (§14.10), and
 >   `RUN_WORDS` becomes the kit's stamp. **Prerequisite:** R4c.
 >   **Trigger:** completeness.
+>   **`[rev4.8]`** Request R-5, lane m1b: the contract is §R4.8
+>   (Q-M1b-1..8, `MF_SITE_ABI` 4, `stamp_int`).
 > - **R4g, M2: PF migrates** (zero movers). K84's `strcmp` readers are
 >   fixed (§19 row 7), and §19 row 6's rarity half becomes the kit's,
 >   byte-identical at migration. C12: 3 → 1. **Prerequisite:** R4c.
