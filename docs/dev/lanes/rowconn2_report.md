@@ -11,8 +11,8 @@ NOT run; the kit manager launches it in a slot.
 - `n2_census.py`: arms from `pcrec --list-axes` (cli_flag column, deny and
   force spellings, `a|b` and `a / b` split; the `-fcomments` pair is the tier,
   as in I2) + null + the four `--tune` aliases + any `--memfn=` spelling of the
-  memfn section (none yet) = 107 arms: 52 each at base "" and `-fcomments`,
-  plus the null arm and the utf8-scoped denies (bits 16/30/31/32/44/45/46,
+  memfn section (none yet) = 107 arms: 49 each at base "" and `-fcomments`,
+  plus 9 at `-e utf8` (null and the 8 denies with bits 16/30/31/32/44/45/46,
   -fno-lit-run) at `-e utf8`. Per arm: distinct corpus patterns (3,621) at
   the default engine and `--engine=vm`, and the 370 `.rxt`/`.rxtin`
   composition files. Reuses `scripts/emit_sweep.py` (`enumerate_corpus`,
