@@ -2,7 +2,7 @@
 """R4c's I2 judge (lane r4clx): one I2 arm's emit_sweep.py log, judged.
 
 Usage: memfn_r4c_i2.py LABEL LOG      (LABEL is memfn_r4c.sh's arm label)
-       memfn_r4c_i2.py --selftest LOGDIR
+       memfn_r4c_i2.py --selftest LOGDIR [LOGDIR ...]
 
 emit_sweep exits 1 on ANY floor or witness miss, and some arms remove, BY
 CONSTRUCTION, the one composition file a floor counts (ubuntubudu at
@@ -108,12 +108,33 @@ def run(label, path):
     return 1 if bad else 0
 
 
-def selftest(logdir):
-    """Planted controls over doctored copies of real logs: each must read red."""
-    def rd(n):
-        with open(os.path.join(logdir, 'i2_%d.log' % n), encoding='utf-8', errors='replace') as fh:
-            return fh.read()
-    clean, cls = rd(3), rd(9)
+def selftest(logdirs):
+    """Planted controls over doctored copies of real logs: each must read red.
+
+    Each log is picked by its arm's `extra=[...]` header, from the first
+    LOGDIR that holds it (and, for the inert arm, the ONE-BINARY shape
+    memfn_r4c.sh's inert arms run: the 91f5b607 run's memfn-simd arms
+    compared REF with the tip and are not inert arms), so one run's logs
+    and a RERUN's can be pooled. A log that is not found FAILS the selftest:
+    a control that cannot run must not read as one that passed."""
+    def pick(extra, need=''):
+        want = 'extra=%r ' % (extra,)
+        for d in logdirs:
+            for n in sorted(os.listdir(d)):
+                if not re.match(r'i2_\d+\.log$', n):
+                    continue
+                with open(os.path.join(d, n), encoding='utf-8', errors='replace') as fh:
+                    text = fh.read()
+                if want in text.split('\n', 1)[0] and need in text:
+                    print('selftest log for extra=%r: %s' % (extra, os.path.join(d, n)))
+                    return text
+        print('selftest FAIL: no i2_*.log with extra=%r in %s' % (extra, ', '.join(logdirs)))
+        return None
+    clean, cls = pick(['-fno-altcls-factor']), pick(['-fno-cls-kit'])
+    inert = pick(['-fmemfn-simd'], need='sides=ONE BINARY')
+    if clean is None or cls is None or inert is None:
+        return 1
+    simd_row = r'^(\s*\S+ -fmemfn-simd\s+%s\s+)differ=0/0 stamp=0/0'   # % stream
     plants = [
         ('an extra mover', 'base=none -fno-cls-kit',
          cls.replace('both_refuse=447 movers=0', 'both_refuse=447 movers=1', 1)),
@@ -124,13 +145,27 @@ def selftest(logdir):
         ('a stale declaration', 'base=none -fno-cls-kit',
          cls.replace(FLOOR_37 + '\n', '', 1)),
         ('a truncated log', 'base=none -fno-altcls-factor', clean.split('elapsed:')[0]),
+        # the inert branch: an arm DECLARED inert whose flag moved something
+        ('an inert arm whose flag moved c-default bytes', 'inert base=none -fmemfn-simd',
+         re.sub(simd_row % 'c-default', r'\1differ=3/3 stamp=0/0', inert, count=1,
+                flags=re.M)),
+        ('an inert arm whose flag moved a c-vm stamp', 'inert base=none -fmemfn-simd',
+         re.sub(simd_row % 'c-vm', r'\1differ=0/0 stamp=1/1', inert, count=1,
+                flags=re.M)),
+        ('an inert arm with its c-vm row missing', 'inert base=none -fmemfn-simd',
+         re.sub(r'^\s*\S+ -fmemfn-simd\s+c-vm\s+.*\n', '', inert, count=1, flags=re.M)),
     ]
     fails = 0
     for what, label, text in plants:
+        if text in (cls, clean, inert):
+            print('selftest FAIL (the plant did not apply): %s' % what)
+            fails += 1
+            continue
         red = bool(judge(label, text))
         print('selftest %s: %s' % ('ok (red)' if red else 'FAIL (read green)', what))
         fails += not red
-    for label, text in (('base=none -fno-cls-kit', cls), ('base=none -fno-altcls-factor', clean)):
+    for label, text in (('base=none -fno-cls-kit', cls), ('base=none -fno-altcls-factor', clean),
+                        ('inert base=none -fmemfn-simd', inert)):
         green = not judge(label, text)
         print('selftest %s: the undoctored log of [%s]' % ('ok (green)' if green else 'FAIL (read red)', label))
         fails += not green
@@ -138,8 +173,8 @@ def selftest(logdir):
 
 
 if __name__ == '__main__':
-    if len(sys.argv) == 3 and sys.argv[1] == '--selftest':
-        sys.exit(selftest(sys.argv[2]))
+    if len(sys.argv) >= 3 and sys.argv[1] == '--selftest':
+        sys.exit(selftest(sys.argv[2:]))
     if len(sys.argv) != 3:
         print(__doc__.split('\n\n')[1], file=sys.stderr)
         sys.exit(2)

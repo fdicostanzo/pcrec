@@ -36,17 +36,31 @@ run by pcrec's make; each writes only under its OUTDIR argument.
   gate,test,mech,axes,c11,i2 (unselected steps read `skip`), TESTSECTIONS
   runs `make <sections>` for the test step, MECHROWS the mech ids, I2ARMS an
   ERE over arm labels; the header has an example.
+- `memfn_r4c2.sh` — R4c′'s (lane r4c2fu) Linux validation of the r4c2fix
+  fixes: a thin wrapper over `memfn_r4c.sh`'s RERUN mode (`STEPS=gate,mech`,
+  `REF=81bc13de`, new env `GATEFLAGS=--zero-dumps`, `MECHROWS="S511 S524
+  S525 S566 S526"`). The zero-mover gate, then the five solo mech rows; no
+  make test, axes, C11 or I2. Last line exactly `== r4c2-lx DONE rc=N ==`
+  (N nonzero if the gate or any row fails). Never run on the Mac.
 - `memfn_r4c_gate.py` — judges an emit_sweep log for R4c: exit 0 iff the
   self-check passed, streams 1-4 have 0 movers at their reach floors, and
   the only dump mover is --list-axes adding exactly the two declared
   memfn-simd rows. emit_sweep has no declared-mover input; this keeps an
-  accepted red out of the gate.
+  accepted red out of the gate. `--zero-dumps` (lane r4c2fix) is the form
+  for a REF that already has those rows (R4c′ and later, `--ref 81bc13de`):
+  every stream, dumps and facts included, must read 0 movers.
 - `memfn_r4c_i2.py` — the I2 judge (lane r4clx): one arm's emit_sweep log,
   exit 0 iff every REAL RUN stream reads movers=0 asymmetric=0, no stream
   is dumps, and every other failure line is DECLARED for that arm in its
   table (each with its measured reason) and no declaration is stale.
-  `--selftest LOGDIR` doctors copies of real logs (i2_3, i2_9 of the
-  91f5b607 run) into five planted reds.
+  `--selftest LOGDIR [LOGDIR ...]` doctors copies of real logs into eight
+  planted reds: five on the `-fno-altcls-factor` and `-fno-cls-kit` arms
+  (i2_3, i2_9 of the 91f5b607 run), and three on the INERT branch (lane
+  r4c2fix: an inert arm whose flag moved c-default bytes, moved a c-vm
+  stamp, or lost its c-vm row), on the one-binary `-fmemfn-simd` inert
+  arm's log (i2_82 of the RERUN). Logs are picked by their `extra=[...]`
+  header from the first LOGDIR holding one, so pass the run's dir and then
+  the rerun's; a log not found fails the selftest.
 
 Transcripts: `../out/linux/`. Maintenance: update this file when files are
 added/removed or change roles.

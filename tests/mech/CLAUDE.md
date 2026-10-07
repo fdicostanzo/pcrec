@@ -444,12 +444,18 @@ is EXPECTED to time out"*, and neither would a separate arm.
   stops seeing it), S526 (`MF_MAX_TERM` lowered, AND the build's own copy of
   the assert in `emit_dfa.c` removed: a two-site row since lane r4clx,
   because the one-site plant fails `make all`, which this matrix scores
-  ANOMALY), S527 (an `on_cand` token with C13 unbuilt).
+  ANOMALY), S527 (an `on_cand` token with C13 unbuilt). S524/S525 demand
+  `checks failed: 0` on the clean tree too, like S526/S527 (lane r4c2fix).
 - `memfnreach` → `tests/memfn/run_handoff_reach.sh` (same lane): the VM
   hybrid handoff route's reach floor. Compiles with the sabotaged tree's own
   `build/pcrec`. Row S529 (the VM engine declined by `req_handoff_applies`;
   no answer moves). `memfnmanifest` also gained S528 (a kit call from an
   unlisted function, rule 2's re-keyed dynamic half).
+- (no new arm) [MEMFN] R4c′ row S566 (lane r4c2fix, 2026-10-07) is on
+  `harness` over `tests/litscan/reqcube.rxt`: the pre-check's kit site is
+  never defined while the admission emits one. The compile refuses
+  (`pcrec_emit_req_byte_check`'s internal error), where before R4c′ the
+  pre-check silently vanished and no answer moved.
 - `memfnstamps` → `tests/memfn/run_libc_census.sh --quick` ([MEMFN] R4a′,
   lane memfnstamp, 2026-10-05): C11, the kit's two every-artifact stamps.
   Builds nothing itself (reads the sabotaged tree's build/pcrec); about 15 s.

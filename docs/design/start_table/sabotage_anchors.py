@@ -40,7 +40,9 @@ S496). Now, in order:
                 nearly everything);
   4. `lead`     a line in a comment block (or blank) whose next code line
                 starts a definition -> that definition (its header comment);
-  5. `filescope` a file-scope preprocessor line (#include, #if, ...);
+  5. `filescope` a file-scope preprocessor line (#include, #if, ...) or a
+                file-scope `_Static_assert` (a declaration outside every
+                definition; its anchor may span lines, the first line decides);
   6. `outside`  a file outside src/ (tests/, cli/, scripts/): the call graph
                 is src/-only, so no such site is a start decision BY THE
                 GRAPH'S DEFINITION (named, counted, never silently family);
@@ -150,7 +152,7 @@ def resolve(f, line):
         starts = {a: n for a, b, n, kd in defs.get(f, [])}
         if k + 1 in starts:
             return starts[k + 1], "lead"
-    if s.startswith("#"):
+    if s.startswith(("#", "_Static_assert", "static_assert")):
         return f"file:{f}", "filescope"
     return None, "unresolved"
 

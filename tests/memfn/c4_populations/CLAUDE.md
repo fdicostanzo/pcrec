@@ -10,8 +10,12 @@ plants classes 1-2 from it on EVERY run, on any box.
 One directory per population, named `<compiler><version>-<target>-<box>`:
 - `march_x86-64.txt` — the BASELINE `gcc -march=x86-64 -dM -E - </dev/null`,
   sorted;
-- `march_*.txt`, `m_*.txt` — one `-dM -E` dump per ISA flag set. Everything
-  a dump declares beyond the baseline is ISA vocabulary;
+- `march_*.txt`, `m_*.txt` — one `-dM -E` dump per ISA flag set, named by
+  gcc's OWN flag spelling (`m_sahf.txt` is `-msahf`). Everything a dump
+  declares beyond the baseline is ISA vocabulary. A dump with no `#define`
+  FAILS the population (a misspelt flag makes gcc print nothing:
+  `m_lahf-lm.txt` was committed empty, R4c′ replaced it), and a scratch
+  control proves that refusal on every run;
 - `VERSION` — `gcc --version | head -1`;
 - `native_target.txt` — `gcc -march=native -Q --help=target`, provenance only
   (not read).
