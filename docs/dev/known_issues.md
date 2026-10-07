@@ -11,6 +11,22 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 ---
 
+## K94 — OPEN (2026-10-07, found by lane possarms as a side finding, confirmed by lane possside on PCRE2 10.46; present on main 225a0feb) — WRONG ANSWER, BYTE ENCODING ONLY: a caseless backreference under `--ucp` folds ASCII only, while pcrec's own `--ucp` classes and libpcre2 fold Latin-1
+
+**Witnesses** (`-i --ucp`, `--features all`; libpcre2 is 10.46 `pcre2test` on ubuntubudu, `/i,ucp`):
+
+| pattern | subject | encoding | pcrec default | pcrec `--engine=vm` | PCRE2 10.46 |
+|---|---|---|---|---|---|
+| `(\xe9)\1` | `\xe9\xc9` | byte | NOMATCH | NOMATCH | (0,2) |
+| `(\xe9)\1` | `\xe9\xe9` | byte | (0,2) | — | — |
+| `(a)\1` | `Aa` | byte | (0,2) | — | (0,2) |
+| `(é)\1` | `é` `É` (U+00E9, U+00C9) | utf8, with or without `--ucp` | (0,4) | — | (0,2 code points; `/i,ucp,utf`) |
+
+Scope: byte encoding only. The utf8 row matches correctly, so utf8's `$_span_match_caseless` is not affected. Without `--ucp`, byte `(\xe9)\1` with `/i` is NOMATCH on 10.46 too (ASCII-only fold), so pcrec agrees there.
+**Cause:** the byte backend's `$_span_match_caseless` (`src/enc/enc_byte.c`) folds ASCII only, regardless of `--ucp`; classes fold Latin-1 under `--ucp`.
+**Repro:** `build/pcrec -p rx --features all --pattern-esc --pattern '"(\xe9)\\1"' -i --ucp --emit-main -o x.c && gcc -O1 -Ilib -o x x.c && ./x "$(printf '\xe9\xc9')"` -> `nomatch`.
+**Blocks:** nothing. **Related:** none known; not part of the K93 family. Not fixed here (filing only). Report: `docs/dev/lanes/possside_report.md`.
+
 ## K93 — OPEN (2026-10-07, found by lane possarms while designing [ART-POSS-ARMS]; present on main bcb7b128 and earlier) — WRONG ANSWER: possessify gives a quantifier inside a SUBROUTINE-CALL TARGET a verdict from the group's LEXICAL follow, but a call site re-runs the group under a different follow
 
 **Witnesses** (`--features recursion`; default vs `-fno-possessify` vs libpcre2 10.46 on ubuntubudu; the default route is the VM because of the captures; `-fno-splice-calls` doesn't change it):
