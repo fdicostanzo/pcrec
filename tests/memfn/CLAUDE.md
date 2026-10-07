@@ -190,4 +190,6 @@ VM hybrid loses its handoff, the reach floor). Arms `memfnarch`,
 - `c4_populations/` — C4's COMMITTED compiler populations (`gcc -dM -E` dumps
   per ISA flag set, one directory per compiler/target/box). arch_blind_check.py's
   `population_controls()` plants classes 1-2 from every one, on every run, so
-  the Mac checks ubuntubudu's gcc x86 vocabulary (R4c, 2026-10-07). Own CLAUDE.md.
+  the Mac checks ubuntubudu's gcc x86 vocabulary (R4c, 2026-10-07). An empty
+  dump fails its population, with a scratch control on every run (R4c′).
+  Own CLAUDE.md.
