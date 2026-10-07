@@ -6,9 +6,14 @@
  *
  * It includes the kit's ONE public header and links build/libpcrec.a (the
  * kit's objects are in it); nothing of pcrec's. The hooks are this file's
- * stand-ins for pcrec's (a marker comment for a note, the `memcmp` spelling
- * for a run compare), so a pin moves only when an ARM's text moves, never
- * with pcrec's scaffolding (F12).
+ * stand-ins for pcrec's (a marker comment for a note; the sink's string
+ * escaper spelled as pcrec_sb_cstr's), so a pin moves only when an ARM's
+ * text moves, never with pcrec's scaffolding (F12). Since M1b the run
+ * compare is the kit's own (no `run_cmp` hook), and each fixture's art
+ * flushes its pending word-load helpers into the `def` part after the use,
+ * so the helpers' text is pinned too. Two DECLINE fixtures (lane m1bfix)
+ * pin an arm's edge from the other side: an offset-skip site whose miss is
+ * not `n`, or that states a floor, must render through `generic`.
  *
  *   arm_fixtures OUTDIR [--perturb]
  *
@@ -51,7 +56,20 @@ static void s_vprintf(void *u, const char *fmt, va_list ap)
 }
 
 static int s_cmt_open(void *u, int tier) { (void)tier; s_puts(u, "/* "); return 1; }
+
 static void s_cmt_close(void *u) { s_puts(u, " */\n"); }
+
+/* A string literal's body, escaped as pcrec_sb_cstr escapes it. */
+static void s_cstr(void *u, const uint8_t *b, size_t n)
+{
+    char buf[8];
+    for (size_t i = 0; i < n; i++) {
+        if (b[i] == '"' || b[i] == '\\' || b[i] == '?') snprintf(buf, sizeof buf, "\\%c", b[i]);
+        else if (b[i] >= 32 && b[i] < 127) snprintf(buf, sizeof buf, "%c", b[i]);
+        else snprintf(buf, sizeof buf, "\\%03o", b[i]);
+        s_puts(u, buf);
+    }
+}
 
 /* pcrec's legend spelling: printable ASCII quoted, else a number. */
 static void s_legend(void *u, uint8_t b)
@@ -68,7 +86,7 @@ static mf_sink sink_of(Text *t)
 {
     mf_sink s = { .u = t, .puts = s_puts, .vprintf = s_vprintf,
                   .cmt_open = s_cmt_open, .cmt_close = s_cmt_close,
-                  .legend_byte = s_legend };
+                  .cstr = s_cstr, .legend_byte = s_legend };
     return s;
 }
 
@@ -104,29 +122,6 @@ static const char *h_note_tag(void *u, uint32_t part)
     const mf_site *s = ((Fx *)u)->site;
     return s->op == MF_OP_ALL_PRESENT && s->preds[part].fn_ref == 2
          ? "[K66]" : "[OPT-REQPOS]";
-}
-
-/* The run compare as runcmp.c's two fallback rows spell it. */
-static void h_run_cmp(void *u, mf_sink *c, const char *base, int32_t off,
-                      uint32_t term)
-{
-    const mf_site *s = ((Fx *)u)->site;
-    const mf_pred *p = s->op == MF_OP_ALL_PRESENT ? &s->preds[term / MF_MAX_TERM] : &s->pred;
-    const mf_term *t = &p->term[term % MF_MAX_TERM];
-    char buf[512];
-    if (!t->mask) {
-        size_t n = (size_t)snprintf(buf, sizeof buf, "!memcmp(%s", base);
-        if (off) n += (size_t)snprintf(buf + n, sizeof buf - n, " + %d", off);
-        n += (size_t)snprintf(buf + n, sizeof buf - n, ", \"%.*s\", %u)",
-                              (int)t->run_len, (const char *)t->run, t->run_len);
-        c->puts(c->u, buf);
-        return;
-    }
-    for (uint32_t i = 0; i < t->run_len; i++) {
-        snprintf(buf, sizeof buf, "%s((%s)[%d] & %d) == %d", i ? " && " : "", base,
-                 off + (int)i, t->mask[i], t->run[i]);
-        c->puts(c->u, buf);
-    }
 }
 
 /* ---- building the fixtures ------------------------------------------------ */
@@ -185,6 +180,31 @@ static mf_site ofs_site(void)
     return s;
 }
 
+/* The run compare's own site: one RUN term behind the caller's guard. */
+static mf_site run_site(const char *run, const uint8_t *mask, int off,
+                        uint64_t denies)
+{
+    mf_site s = base_site();
+    s.form = MF_FORM_EXPR;
+    s.op = MF_OP_VERIFY;
+    s.handoff = MF_H_BOOL;
+    s.empty = MF_EMPTY_EXCLUDED;
+    s.guard_by_caller = 1;
+    s.use = MF_USE_DISCARD;
+    s.policy |= MF_P_INLOOP;
+    s.denies = denies;
+    s.pred.nterm = 1;
+    s.pred.plan_hint = MF_NO_PRED;
+    memset(&s.pred.term[0], 0, sizeof s.pred.term[0]);
+    s.pred.term[0].kind = MF_T_RUN;
+    s.pred.term[0].offset = off;
+    s.pred.term[0].run = (const uint8_t *)run;
+    s.pred.term[0].mask = mask;
+    s.pred.term[0].run_len = (uint32_t)strlen(run);
+    s.pred.term[0].ppm_hi = MF_PPM_FULL;
+    return s;
+}
+
 static mf_site pre_site(mf_pred *p, int n, int ret)
 {
     mf_site s = base_site();
@@ -218,18 +238,23 @@ static void p_run(mf_pred *p, const char *run, const uint8_t *mask, int pos,
 
 /* ---- rendering ------------------------------------------------------------ */
 
-static int render(const char *dir, const char *name, const mf_site *s,
-                  const char *fn1)
+/* render_h's `n`, `miss` and `floor` for both hook sets: NULL in every
+ * fixture but the decline fixtures (lane m1bfix) */
+typedef struct { const char *n, *miss, *floor; } Bounds;
+
+static int render_h(const char *dir, const char *name, const mf_site *s,
+                    const char *fn1, Bounds b)
 {
     mf_arena a = { NULL, a_alloc };
-    mf_art *art = mf_art_begin(&a, "rx", MF_P_PORTABLE_ONLY, 0);
+    mf_art *art = mf_art_begin(&a, "rx", MF_P_PORTABLE_ONLY, s->denies);
     Text def = { 0 }, use = { 0 };
     mf_sink sd = sink_of(&def), su = sink_of(&use);
     Fx fd = { s, fn1, NULL }, fu = { s, fn1, "    " };
     mf_hooks hd = { .fn_name = h_fn_name, .table_name = h_table_name,
-                    .note = h_note, .note_tag = h_note_tag,
-                    .run_cmp = h_run_cmp, .u = &fd };
+                    .note = h_note, .note_tag = h_note_tag, .u = &fd,
+                    .n = b.n, .miss = b.miss, .floor = b.floor };
     mf_hooks hu = { .s = "subject", .n = "subject_length", .lo = "search_from",
+                    .miss = b.miss, .floor = b.floor,
                     .indent = "    ", .on_miss = "return 0;",
                     .result = "handoff_position", .result_decl = "size_t ",
                     .table_name = h_table_name, .note = h_note, .u = &fu };
@@ -238,6 +263,7 @@ static int render(const char *dir, const char *name, const mf_site *s,
     int rc = mf_define(art, s, &hd, &sd, &h) ||
              (s->form == MF_FORM_FUNC ? mf_call(art, h, &hu, &su)
                                       : mf_use(art, h, &hu, &su, &res)) ||
+             mf_flush_helpers(art, &sd) ||
              mf_art_end(art);
     if (rc) {
         fprintf(stderr, "%s: the kit refused: %s\n", name, mf_art_error(art));
@@ -265,6 +291,12 @@ static int render(const char *dir, const char *name, const mf_site *s,
     free(def.p);
     free(use.p);
     return 0;
+}
+
+static int render(const char *dir, const char *name, const mf_site *s,
+                  const char *fn1)
+{
+    return render_h(dir, name, s, fn1, (Bounds){ NULL, NULL, NULL });
 }
 
 int main(int argc, char **argv)
@@ -312,6 +344,23 @@ int main(int argc, char **argv)
     s.pred.plan_pos = 1;
     bad |= render(dir, "ofs-pair", &s, "rx_ofsskip");
 
+    /* ofsskip's edge (lane m1bfix): its function returns `n` on a miss and
+     * reads from `pos` up, so a site whose miss is another value, or that
+     * states a floor, is the generic row's. The first stays ofsskip: a
+     * miss stated as the `n` hook's own text. */
+    s = ofs_site();
+    s.pred.nterm = 2;
+    t_set(&s.pred.term[0], 0, "ab", 1);
+    t_run(&s.pred.term[1], 1, "/user", NULL);
+    s.pred.plan_hint = 1;
+    s.pred.plan_pos = 2;
+    bad |= render_h(dir, "ofs-miss-n", &s, "rx_ofsskip",
+                    (Bounds){ "subject_length", "subject_length", NULL });
+    bad |= render_h(dir, "ofs-decline-miss", &s, "rx_ofsskip",
+                    (Bounds){ "subject_length", "((size_t)-1)", NULL });
+    bad |= render_h(dir, "ofs-decline-floor", &s, "rx_ofsskip",
+                    (Bounds){ "subject_length", "subject_length", "search_floor" });
+
     /* precheck: the one-byte gate and the set rest */
     mf_pred p[4];
     p_byte(&p[0], perturb ? 65 : 64);
@@ -342,6 +391,23 @@ int main(int argc, char **argv)
     p_run(&w[0], "dog", NULL, 2, 1);
     s = pre_site(w, 1, 0);
     bad |= render(dir, "pre-window-handoff", &s, "rx_reqrun");
+
+    /* runcmp (M1b): the four rows and the deny, one fixture each */
+    static const uint8_t ci4[] = { 0xDF, 0xFF, 0xDF, 0x00 };      /* cube, exact, cube, don't-care */
+    s = run_site("abc", NULL, 0, 0);                              /* L 3: overlap */
+    bad |= render(dir, "run-overlap3", &s, NULL);
+    s = run_site("ab\"?\\cdefghij", NULL, 2, 0);                  /* L 13: overlap at w8, escapes */
+    bad |= render(dir, "run-overlap13", &s, NULL);
+    s = run_site("abcdefgh", NULL, 0, 0);                         /* L 8: memcmp */
+    bad |= render(dir, "run-memcmp8", &s, NULL);
+    s = run_site("A-C\x00", ci4, 1, 0);                           /* masked: words */
+    s.pred.term[0].run_len = 4;
+    bad |= render(dir, "run-masked-words", &s, NULL);
+    s = run_site("A-C\x00", ci4, 1, MF_D_RUN_OVERLAP);            /* masked, denied: bytes */
+    s.pred.term[0].run_len = 4;
+    bad |= render(dir, "run-masked-deny", &s, NULL);
+    s = run_site("abc", NULL, 0, MF_D_RUN_OVERLAP);               /* exact, denied: memcmp */
+    bad |= render(dir, "run-exact-deny", &s, NULL);
 
     return bad;
 }

@@ -10,7 +10,8 @@
 # and run_codegen_tests.sh's [OPT-LITSCAN S4] check that the last word sits
 # at exactly L - W.
 SAB_ID="S444-run-word-last-byte-unchecked"
-SAB_FILE="src/gen/runcmp.c"
+# RE-AIMED 2026-10-07 ([MEMFN] M1b REPLACE, lane m1b): src/gen/runcmp.c moved into the kit (memfn/src/runcmp.c, transcribed); the words writer's anchor line is verbatim. Intent unchanged.
+SAB_FILE="memfn/src/runcmp.c"
 SAB_SUITES="codegen harness"
 SAB_HARNESS_TARGET="tests/litscan/litrun.rxt"
 SAB_DESC="the run compare's last word sits at L - W - 1, so the run's last byte is compared by no word and a subject differing only there matches"

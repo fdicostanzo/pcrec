@@ -3999,8 +3999,12 @@ engine-scoped.**
   MANY RUN COMPARES THE OVERLAP ROW WROTE.** On EVERY artifact, both engines.
   An ACTIVITY count, which (b) below keeps VM-only, and it is here instead
   because the mechanism it counts is both engines': the run compare
-  (`src/gen/runcmp.c`, `docs/spec/tuning.md` §2.38) writes the DFA scan's run
-  term and run pre-check as well as the VM's literal runs and island chains.
+  (`docs/spec/tuning.md` §2.38) writes the DFA scan's run term and run
+  pre-check as well as the VM's literal runs and island chains. Since
+  [MEMFN] M1b (2026-10-07, no `abi` event: not a byte moved) the run compare
+  is pcrec-memory-functions' (`memfn/src/runcmp.c`), and the kit writes this
+  line too, as the first of its three lines (the two below follow it); its
+  value is still an unquoted integer.
 
   ```c
   #define RX_RUN_WORDS 1   /* or 0, or any count */

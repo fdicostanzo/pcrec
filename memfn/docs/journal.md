@@ -487,3 +487,58 @@ pointer when a kit change merges to main.
   + mech S511 S524 S525 S566 S526); it is OWED, with completion line
   `== r4c2-lx DONE rc=N ==`. Finding sent to main: stc1's committed
   call_graph.txt is stale (IndexError).
+
+## 2026-10-07 (morning) — R4c closed; M1b built, Linux verdict owed
+
+- R4c′ Linux-green at ab61b0db (294 s: gate 0 movers; S511 S524 S525
+  S526 S566 clean). Main merged it as 993f8c1d. R4c's done: is posted
+  (aa7b82b1).
+- M1b (R-5) on lane/memfn-m1b, cut from 993f8c1d, built by lane m1b
+  (opus):
+  - commits: CONTRACT d8b3fbf0 (integration.md rev 4.8, §R4.8, §14.8
+    corrected), IMPLEMENT d14e7df3 (memfn/src/runcmp.c, stamp_int,
+    MF_SITE_ABI 4, the deny map, I1), REPLACE 199b2ded (src/gen/runcmp.c
+    deleted; VMRUN delegated; VERIFY carried; C12 12→9; C5 28 rows);
+  - Mac: 35,980 compiles with 0 movers at both IMPLEMENT and REPLACE;
+    the list streams byte-identical;
+  - mech: 7 re-anchored (S454 added, for the dead `pidx` param), 3
+    adjacent checked, S570-S573 new, every row hand-planted;
+  - D1-D12 restated at the tip (report §3).
+- Kit decisions the lane made, accepted in review:
+  - `cstr` writes the BODY of a literal (the quotes are the kit's); G2's
+    stub sink was aligned to it;
+  - MF_CMT_NONESSENTIAL is a kit constant that pcrec asserts equal to
+    its own;
+  - G2 draws its deny per batch.
+- Review notes:
+  - the lane's I1 sweep went far past the brief's "handful" while
+    k93tri held the box; I told main;
+  - three commit subjects keep a WIP prefix.
+- Verdict OWED: the Linux run lxrun/memfn_m1b.sh (5-8 h estimated:
+  make test, gate, 14 mech rows, axes, C11, all I2 arms); completion
+  line `== m1b-lx DONE rc=N ==`. The Mac make test goes on a slot main
+  names.
+- 2026-10-07, later morning:
+  - The Mac make test at 20b9d3cb had ONE red, test-memfn-g2, with a
+    two-layer cause:
+    - (a) G2's h_note stub wrote bare text where the contract asks for a
+      comment, fixed at 6467f6a2;
+    - (b) a kit defect: R4c's ofsskip arm accepted sites whose `miss` is
+      not `n` or that state a `floor` (G2 sites 1682 and 2587; 11
+      under-read faults below the floor).
+  - (b) is an unstated precondition, latent on main since 81bc13de and
+    unreachable from pcrec. Lane m1bfix fixed it: the arm declines to the
+    generic row and the use side refuses loudly. Proof: 200 compiles with
+    0 differing; G2/arms/forms/manifest green. It is merged into the
+    branch. Main files it as K96 at the M1b merge.
+  - The Mac gate vs e947b406 PASSED with 0 movers on all six streams.
+  - The Linux full verdict at 5f0f4dca is green apart from G2 (the same
+    known cause). Main re-runs G2 alone on Linux at the fixed tip.
+  - OWED (kit), K35-type gaps, both to be closed with a blinded G2
+    extension:
+    - G2 reaches neither ofsskip (0 sites after the fix) nor precheck
+      (it never sets on_miss_leaves), nor runcmp's words row;
+    - Q-G2-6's floor scope (general or SKIP/ON_CAND-only) needs my ruling.
+  - Lesson: the m1bfix lane's detached chain was checked to be truly
+    detached (ppid 1, own pgid) before I stopped the lane, and it
+    survived.

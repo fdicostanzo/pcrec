@@ -260,6 +260,68 @@ the compiler, and is never adopted silently. Proposed for main to file
   the solo mech rows, and the zero-mover gate vs the new main. R4c's
   `done:` follows R4c′ (its draft is in
   `worktrees/r4cscope-scratch/r4c_done_draft.md`).
+- done: 2026-10-07 — **R4c (R-4) DELIVERED: M1 migrated, ZERO MOVERS.**
+  Branch `lane/memfn-r4c` @ 91f5b607 → main 81bc13de (with r4clx/r4clx2 on top). Linux verdict at 91f5b607 / abae07fa /
+  5645a37a: the later commits add only checks, scripts and docs, and
+  nothing under src/cli/lib/memfn changed between them.
+  Reports: `docs/dev/lanes/r4ccore_report.md` (§3 is the BOUNDARY LIST),
+  `r4caxis_report.md`, `r4cchecks_report.md`, `r4cfix_report.md` (§10
+  startset re-pin + §10.1 per-row facts), `r4clx_report.md` (+ the kit
+  manager's addenda 1-2).
+  - **Abi event:** NONE. `PCREC_ARTIFACT_ABI` is unchanged: 64 at the cut,
+    65 after main's flagbits merge. MF_VOCAB is unchanged (2). MF_SITE_ABI
+    2→3 (Q-G2-18, `mf_site.on_miss_leaves`), kit-internal, no artifact byte.
+  - **Landing bar:**
+    - zero-mover gate vs e6e6d6eb: streams 1-4 have 0 movers / 0
+      asymmetric; the only dump mover is `--list-axes` + the two declared
+      memfn-simd rows (judge `memfn_r4c_gate.py`, rc 0);
+    - I2: 94 arms, every axis × both comment tiers + the M1 denies at
+      utf8 + `--arms start`; every arm 0 movers. The memfn-simd pair are
+      inertness arms (per-side DIFFER 0/0). Three declared composition-floor
+      exceptions, each measured on both sides (`memfn_r4c_i2.py`);
+    - make strict clean; Linux make test green (one test-startset re-pin,
+      one C4 environment fix);
+    - mech: 35 rows, each run alone, all DETECTED/reached; [SABANCHOR]
+      green;
+    - axes pair and C11 green.
+  - **Mech re-point count:** 20 rows anchored in the M1 emitters, not ~28:
+    11 re-anchored (kit-side S464 S265 S454 S185 S447 S450 S455 S279;
+    pcrec-side S285 S460 S511), 9 unchanged. S514 re-aimed. S287 now
+    DETECTED. S472 lives in `pcrec_emit_start_zero`, not `emit_req_handoff`.
+  - **Boundary list (for main's fold):** B1-B18 at file:line, r4ccore
+    report §3. Every start-decision read stays on pcrec's half.
+  - **Contract moves:**
+    - Q-G2-18 CHOSEN by the kit manager (pcrec states `on_miss_leaves`;
+      the kit never parses hook text);
+    - D145 addendum 1 provenance on the moved arms;
+    - C12 memchr 8→2;
+    - C17's dynamic census is LIVE (the `pcrec_memfn_define` door);
+    - the memfn-simd pair is born inert (D80 hunk: tuning.md §2.43,
+      registry.md §6, match_api.md C11).
+  - **Sabotage ids used:** S518-S529 (the S510-S529 block is EXHAUSTED).
+  - **OWED (owner, trigger):**
+    - G2 coverage of the newly refused shapes and of `on_miss_leaves` at
+      both values (kit, blinded author, next G2 touch);
+    - Q-G2-5 (kit, M3);
+    - the matrix/emit_sweep backlog (a)-(d) (main's admin lane);
+    - plan.md [MECH-SAN-ARM] loses S287 as its motivation (main).
+  - **R4c′ (the review fixes) DELIVERED:** branch `lane/memfn-r4c2` @
+    6957810d (code at ab61b0db) → main 993f8c1d. Report
+    `docs/dev/lanes/r4c2fix_report.md`. Items:
+    - (a)+(b): B1-B21 at file:line, plus B19 (req_run len>=2) and B20
+      (ofs_pred_of's need classification);
+    - (c): a loud fail in `pcrec_emit_req_byte_check`, with row S566;
+    - (d): the I2 selftest inert plant;
+    - (e): C11 covers both layers;
+    - (f): `m_sahf.txt`, with an empty dump now FAILING;
+    - (g): the S524/S525 reach lines;
+    - the nits;
+    - also the S526 filescope anchor (sabotage_anchors.py).
+    Linux verdict at ab61b0db (294 s): the gate `--zero-dumps` vs
+    81bc13de is 0 movers / 0 asymmetric on every stream; S511 S524 S525
+    S526 S566 are each COMPLETE with 0 unexpected/undetected/unreached/
+    anomalies. make strict is clean. Abi event: none.
+  - **Next:** R-5 (M1b) on `lane/memfn-m1b`, cut from 993f8c1d.
 
 ## R-5 — M1b, runcmp migrates, zero movers (after R4c′)
 
