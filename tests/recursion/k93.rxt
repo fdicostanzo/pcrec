@@ -240,3 +240,17 @@ g 1 0 1
 m "aabaaaaa" 0 8
 g 1 0 2
 
+# THE FIXPOINT'S SECOND ROUND. Every call precedes its definition, so the context walk (right to left along the spine) reaches group 2 before group 1's site inside it has been given group 1's context `{a}`: one context walk leaves group 2 at `{c}` and possessifies `a+`; the second widens it to `{a,c}`.
+pattern (?1)a((?2))c(a+)b
+features recursion
+m "aaacab" 0 6
+g 1 2 3
+g 2 4 5
+m "aaacaab" 0 7
+g 1 2 3
+g 2 4 6
+n "aacab"
+m "aaaacaab" 0 8
+g 1 3 4
+g 2 5 7
+

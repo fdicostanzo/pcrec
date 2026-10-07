@@ -1,0 +1,40 @@
+# tests/possessify/calls.txt — the differential's SUBROUTINE-CALL population
+# (K93, docs/dev/known_issues.md).
+#
+# features: recursion,named-groups,atomic-groups,classes,lookaround
+#
+# A quantifier inside a called group runs under every call site's follow as
+# well as its lexical one, so a verdict computed from the lexical follow
+# alone deletes the backtrack a call site needs. Each pattern pairs a group
+# with a call whose follow overlaps the group's FIRST where the lexical
+# follow does not, through every spelling and position the fix has to
+# reach: numbered, named, relative, forward, before the definition, nested,
+# in a repeat, in sibling branches, in a lookaround, in an atomic group,
+# recursive, and `(?R)`. The last two lines are verdicts that must SURVIVE
+# (both follows disjoint), so the non-vacuity control has a population here
+# too. Expectations are not needed: the two builds are compared to each
+# other (run_possdiff.sh's header); tests/recursion/k93.rxt pins the answers
+# against libpcre2 10.46.
+(a+)b(?1)a
+(?<n>a{1,3})b(?&n)a
+(?:(a+)b|x)(?1)a
+(?P<n>a+)b(?P>n)a
+(a+)b(?-1)a
+(?+1)a(a+)b
+(?1)a(a+)b
+(a+)b((?1))c(?2)a
+(a+)b(?:x(?1))*a
+(a+)b(?1)+a
+(?:x(?1)a|(a+)b)
+(\d+)-(?1)5
+(a+?)b(?1)
+(a+)b(?=(?1)a)
+(a+)b(?>(?1))a
+^(b(?1)a|a+)$
+(?:b(?R)a|a+)
+(?1)a((?2))c(a+)b
+([ab]+)c(?1)a
+(?:(?1)a){2}(a+)b
+(a{1,3})b(?1)(?1)a
+(a+)b(?1)c
+(a{2})b(?1)a
