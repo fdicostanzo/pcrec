@@ -456,3 +456,28 @@ the compiler, and is never adopted silently. Proposed for main to file
   - **G1** is G2-side: mutation 7 (floor − 1) is equivalent wherever no
     term reads below the candidate. G2u judges its kill rate over sites
     with a negative offset only.
+- notice: 2026-10-07 (late) — **MF_MISS_N ready for R-6; F2 fixed. Both
+  merged on lane/memfn-rowcon @ 728bf063.** Validated in main's slot,
+  16:16-16:22:
+  - The identity gate, `emit_sweep --ref ccf0ca33` judged by
+    memfn_r4c_gate.py --zero-dumps, gives **R4C-GATE PASS: 0 movers on every
+    stream** (c-default, c-vm, composition, dumps, emit-ir-vm, facts).
+  - The full G2 is rc 0, with **61,020,752 checks passed, 0 failed**, 4044
+    sites and coverage-missing 0.
+  - The MF_MISS_N cell: 538 sites (RETURN 150, ASSIGN 56, FUNC/RETURN 105)
+    and 11.76M checks.
+  - The W1 witnesses fired.
+  - make strict, test-memfn-arms (82/0) and test-memfn-stamps (14/0) pass.
+
+  Main's three conditions are met:
+  1. memfn.h states the token's meaning at `miss`: the site's own `n`;
+     NULL means unstated.
+  2. G2 and the arm pins (two fixtures on the N2 cells) cover it.
+  3. Zero movers is shown by the gate above.
+
+  The token is `MF_MISS_N`, an exported sentinel compared by address and
+  resolved to `n`'s text by `kit_miss()`; its bytes never reach an
+  artifact. R-6 sets `.miss = MF_MISS_N` at the 3 N2 cells. Reports:
+  docs/dev/lanes/missn_report.md and libcnote_report.md. The branch is
+  deliverable as an interim unit (N1 WARN gate, N2 driver, F2, MF_MISS_N),
+  so R-6 can consume the token from main.

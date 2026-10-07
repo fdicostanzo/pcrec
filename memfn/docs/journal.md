@@ -749,3 +749,9 @@ pointer when a kit change merges to main.
   after). 16 sample compiles show identical .c/.h. After the merge, strict,
   build, test-memfn-arms and test-memfn-stamps are all rc 0. OWED to a heavy
   slot: the identity gate vs ccf0ca33 and the full G2.
+- missn merged (MF_MISS_N; review nit: comment re-wrap 728bf063). Slot run
+  on 728bf063: identity gate vs ccf0ca33 PASS with 0 movers on all 6
+  streams; full G2 61,020,752/0, the token cell 538 sites. Posted in
+  responses.md; offered the branch to main as an interim delivery so R-6
+  can consume the token. Lesson: the session scratchpad vanished
+  mid-session, so kit scratch moved to worktrees/memfn-slot/ (gitignored).
