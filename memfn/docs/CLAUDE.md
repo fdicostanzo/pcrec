@@ -10,6 +10,10 @@
   manager never edits it.
 - `journal.md` — the kit's own append-only dated journal (the kit
   session and kit lanes append; nothing is edited away).
+- `trace_format.md` — the `MFTRACE` record format ([MEMFN-ROWCON] N1):
+  the selection trace and reach counters gate.c writes to stderr under the
+  compile-time switch `MF_TRACE`. The contract between the kit and any
+  census that reads a trace build's stderr.
 - `wake.md` — the kit session's orientation file. Born as a TEMPLATE; the
   kit session rewrites it from scratch at every session end or pause.
 

@@ -10,7 +10,10 @@
  *
  * The table holds the scalar arms R4c and M1b migrated (ofsskip.c,
  * precheck.c, runcmp.c) above the generic scalar row (generic.c), which
- * applies to every site.
+ * applies to every site. Each arm carries its contract (`uses`/`serves`,
+ * [MEMFN-ROWCON]); the gate (gate.c) reads it before the arm's predicate
+ * and re-checks the chosen arm at every use, in WARN mode (N1): it records,
+ * and the arm chosen is the one the predicates alone choose.
  */
 #include <stdarg.h>
 #include <stdio.h>
