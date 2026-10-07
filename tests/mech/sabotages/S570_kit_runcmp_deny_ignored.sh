@@ -10,6 +10,9 @@
 # engines (D144 item 4's kill switch is dead). Answers are unchanged (the
 # word rows are answer-identical), which is why the detector is structural:
 # tests/codegen/runcmp_check.py's `-fno-run-overlap` arm on every witness.
+# Re-anchored 2026-10-07 ([MEMFN-ROWCON] N1): the deny skip became a braced
+# block that also writes the gate trace's DENIED line; the plant still kills
+# the deny test itself (the trace call dies with it, as an unreached line).
 # SAB_REACH: on the clean tree the VM's 3-byte literal run is one `memcmp`
 # under the deny, so the plant meets a denied run.
 SAB_ID="S570-kit-runcmp-deny-ignored"
@@ -21,5 +24,5 @@ SAB_REACH='"$PCREC" --engine=vm -fno-run-overlap -p rx -o "$REACH_TMP/o.c" --pat
 SAB_REACH_EXPECT="REACH-DENIED-RUN-IS-MEMCMP"
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='        if (rows[i].row.deny & denies) continue;'
-SAB_AFTER='        if (0 && (rows[i].row.deny & denies)) continue;   /* SABOTAGE S570 */'
+SAB_BEFORE='        if (rows[i].row.deny & art->denies) {'
+SAB_AFTER='        if (0 && (rows[i].row.deny & art->denies)) {   /* SABOTAGE S570 */'
