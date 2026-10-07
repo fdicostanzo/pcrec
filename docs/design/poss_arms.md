@@ -1094,7 +1094,7 @@ partly circular. From this revision the predicate is pinned:
 
 «CMRESULT»
 
-### 8.4 The ablation table `[r2 B-B3]`
+### 8.4 The ablation table `[r2 B-B3]` (revision 2's; superseded by §8.4a)
 
 Per conjunct dropped from the PYTHON predicate: the rows it newly claims,
 and how many of those diverge on libpcre2 at ML ≥ 4 (arm A: every string of
@@ -1107,7 +1107,7 @@ length ≤ 4 plus 100 random; arm B: ≤ 5 plus 300).
 | A1 | a mixed LAST declines (collapse it) | 504 | **168** | `(?:a[a.])+\b` on `a.a.` |
 | A1 | ENCL unioned (drop it) | 2,272 | **3** | `(?:a+(?:\b\|)\|ab)+c` on `aabc` |
 | A1 | the call-site join (A-F1; lexical only) | 4 | **4** | `(a+(?:\b\|))\|b(?1)a` on `baa` |
-| A1 | greedy only (admit lazy) | 1,134 | **0** | — |
+| A1 | greedy only (admit lazy) | 1,134 | **0** ~~(§8.4a: 477 of 3,964 once the family has a nullable follow)~~ | — |
 | B | fold at a caseless reference | 2 | **2** | `(a)A+(?i:\1)` on `aAA` |
 | B | union over every `refs[]` member | 2 | **2** | `(?:(?<n>a)\|(?<n>x))x+\k<n>` on `xxx` |
 | B | union over every `A_CAP` with the number | 1 | **1** | `(?\|(a)\|(x))x+\1` on `xxx` |
@@ -1122,9 +1122,10 @@ length ≤ 4 plus 100 random; arm B: ≤ 5 plus 300).
   only behind it, and dropping ENCL loses nothing there (0 of 2,268). A
   gate with an empty BYPASS reaches the loop's end, and the restart then
   rescues the match. Three of the four `H` rows in `gen_a2.py` diverge.
-- **Greedy-only does not diverge, on 1,134 rows.** This is the measurement
+- ~~**Greedy-only does not diverge, on 1,134 rows.** This is the measurement
   behind §2.3's "declared-conservative" and RC-Q1. It is also why no
-  sabotage row can be written for that conjunct.
+  sabotage row can be written for that conjunct.~~ `[r2.1 N2]` REFUTED: the
+  population had no nullable follow. See §8.4a: 477 of 3,964 diverge.
 - **Not conjuncts, so not in the table:**
   - zero consumption, which is structural (§2.3);
   - B's depth-1, a termination rule (§3.1): resolving deeper is sound,
@@ -1134,6 +1135,49 @@ length ≤ 4 plus 100 random; arm B: ≤ 5 plus 300).
 Arm A is swept at ML=4 (881-11,211 subjects per row), arm B at ML=5 (9,631).
 The data is in `rev2/a2_abl_ml4.out.gz`, `rev2/a2_new_ml4.out` and
 `rev2/b2_ml5.out`.
+
+#### 8.4a The ablation table, re-measured on the rev-2.1 families `[r2.1 N2, N1]`
+
+The same instrument (`eqcheck.py`), but run on **libpcre2 10.46** (ubuntubudu,
+whose `pcre2test` is the reference). Arm A families use ML=4 with 100
+random subjects; arm B uses ML=5 with 300. The populations are the extended
+`rev21` generators (§8.3a). Every claimed, tagged or hand row is swept:
+22,581 + 8,535 + 2,330 rows. The data is in `rev21/results/eq_*.out`.
+
+| arm | conjunct dropped | newly claimed | of those, diverging | first witness |
+|---|---|---|---|---|
+| A1 | `m ≥ 1` | 2,640 | **996** | `\w*\b\w` on `a` |
+| A1 | polarity from LAST (read FIRST) | 1,485 | **338** | `(?:a\.)+\b` on `a.a.` |
+| A1 | a mixed LAST declines (collapse it) | 567 | **168** | `(?:a[a.])+\b` on `a.a.` |
+| A1 | ENCL unioned (drop it) | 2,644 | **36** | `(?:\w+(?:\b\|)x)+` on `ax` |
+| A1 | **greedy only (admit lazy, row 2's may_end bypassed)** | 3,964 (+80 in B's family) | **477** (+26) | `\w+?(?:\b\|)` on `aa`; critic R's `(\w+?(?:\b\|))` on `ab` |
+| A1 | the call-site join (A-F1; lexical only) | 4 | **4** | `(a+(?:\b\|))\|b(?1)a` on `baa` |
+| B | **TEXT_FIRST (read a captured text with `first_of`'s POSITION answer)** | 303 (B) + 903 (A0's R block) | **86** + **6** | `((?!x)) x+\1x` on ` xx`; `(?:((?=[ab]))a)?\d+?\1` on `a11`; N1's three |
+| B | fold at a caseless reference | 2 | **2** | `(?i:(a))A+\1` on `AAA` |
+| B | union over every `refs[]` member | 2 | **2** | `(?:(?<n>a)\|(?<n>x))x+\k<n>` on `xxx` |
+| B | union over every `A_CAP` with the number | 1 | **1** | `(?\|(a)\|(x))x+\1` on `xxx` |
+| B | nullability from the member bodies | 180 | **78** | `(a?) x{1,3}\1x` on ` xx` |
+| B | `(*ACCEPT)` makes a group nullable (future `verbs`) | 1 | **1** | `(?=((*ACCEPT)a))x+\1x` on `xx` |
+| B | unset reads as empty (future `MATCH_UNSET_BACKREF`) | 1 | **1** | `(?:(a)\|b)x+\1x` on `bxx` |
+
+**Every conjunct diverges, greedy-only included.** Revision 2's "0 of
+1,134" was a population with no nullable follow. The rows that diverge
+are the bypass follows rev 2.1 added. The same lazy rows WITHOUT a bypass still
+agree, which is §2.3's argument: a continuation that must read a character
+cannot succeed at a retreat exit.
+
+**The claims themselves** (the full predicate, after the two rule-level
+edits of §8.3a):
+
+- arm A: 11,800 claimed, **0 diverging**;
+- A0: 7,614 claimed, **0 diverging**;
+- arm B: 1,905 claimed, **0 diverging**.
+
+Edit 2 is the record of the one place this did not hold at the freeze. The
+frozen arm-A R block omitted `fold_ref` and claimed 14 rows that 10.46
+refutes, for example `(\b\w)\W+\1` under `utf,i` on `k \x{212a}`. That was
+a PREDICATE defect: pcrec declined all 14. Edit 2 narrows 48 claims, 14 of
+them refuted and 34 sound.
 
 ### 8.5 Per-arm stamp and the identity gate `[r2 B-M2]`
 
