@@ -39,3 +39,34 @@ Round 3's rank 3a-2 stands (critic C). Cost is revised from S to M. The win cell
 ## Next
 
 Lane **possarms2** (opus) writes rev 2 of the note and runs the measurements the dispositions require: the route-flip census, CLAIM-vs-MARK, the ablation table, the exhaustive-subject possdiff with all six plants, the A0 family sweep, and the committed work-budget subject. It files [POSS-CTX-TABLE]. Then ONE light re-check critic reads rev 2 against this table. The build starts only after that.
+
+## Re-check of rev 2 (critic R, opus, 2026-10-07): DOES NOT CLEAR. Rev 2.1 required; no full panel needed
+
+Critic R re-ran the committed instruments, using the lane's prototype binary (verified to be main + `rev2/proto_rev2.patch`), plus two light 10.46 probes.
+
+**Per-row:**
+- DISCHARGED: A-F1, C-2, C-1/B-M1, B-B1, B-B2, B-M2, B-M3, B-M4, A-F3, B-M5, C-K94, Q3, Q6, Q7, B-FAM, Ranking.
+- PARTIAL: B-B3 (because of N2) and the staleness row (the plan.md [ART-POSS-ARMS] BODY still says "closed, non-nullable group's FIRST" and gives ARTREV's 1/2 population).
+- NOT DISCHARGED: A-F4 (refuted by N1).
+
+**The lane's four corrections to the dispositions:**
+- (1) Arm B's deny bit cannot be engine-selecting: CONFIRMED. Every A_BREF is VM_ONLY in select_engine.c, including under --no-captures.
+- (2) greedy-only is non-load-bearing: REFUTED (N2).
+- (3) A-F1 is broader than stated: CONFIRMED (16 k93.rxt rows).
+- (4) P={0,1} join: ACCEPTED. Its reason 2 is overstated; decline the triple on D77 grounds instead.
+
+| id | sev | finding | disposition |
+|---|---|---|---|
+| N1 | BLOCKER | A0+B together miscompile on the DEFAULT route with no plant. 10.46 gives (0,3); the prototype gives NOMATCH on `abb` for `(?:((?=a))a)?b+\1b`, `((?=a)c?)ab+\1b` and `(?:((?=a))a\|)b+\1b`. A-F4 makes a narrowed gate non-nullable with FIRST=S, which is valid for retreat-exit readers. Arm B's `px_cap_first` reads `first_of(body)` as facts about the captured TEXT, and a gate is zero-width. | ACCEPT. Arm B's text fold treats A_CTX and A_LOOK as zero-width (nullable, no bytes). The three witnesses go in as .rxt cells and a sabotage row. Add gate-inside-a-referenced-group to every generator family. Name the two questions `first_of` answers ("next character at a position" vs "first character of a text") in [POSS-CTX-TABLE]'s context record (a reader field). |
+| N2 | MAJOR | greedy-only IS load-bearing. The lazy plant gives `(\w+?(?:\b\|))` on `ab` = (0,2) where 10.46 gives (0,1): the continuation succeeds through an empty bypass without testing the gate (row 2's `may_end` case). gen_a2's FOLLOWS had no nullable follow, and its only lazy quantifier was `+?`. | ACCEPT. KEEP greedy-only. Rewrite §2.3's "why greedy-only" and §8.4. Add the lazy sabotage row with this witness. Add `(?:\b\|)`/`(?:(?=x)\|)` follows and bounded lazy quantifiers to the generators. Correct the ablation table. |
+| R-3 | MAJOR | Population is the remaining shared source: every instrument uses the same lane-authored families, and N1 and N2 sat in the same blind spot. The CLAIM-vs-MARK predicate was edited after seeing pcrec's marks, so implementation-equals-rule is circular for the prototype. | ACCEPT. (a) A D27-BLINDED composition witness pass (gate × capture × ref × lazy × bypass × call), by an author in a cell, oracle-verified on 10.46. (b) FREEZE the predicate (pinned by sha) before the build. After the freeze, any edit is rule-level, oracle-swept and logged with its trigger rows. Report hand-literal rows separately from computed ones. (c) A grammar-generated possdiff with the arms on, at build. |
+| R-4 | MAJOR | Arm B's fold walks the whole tree per `\n`: QUADRATIC compile time (n=12,800 refs: 0.83 s → 36.6 s), a D45 hazard. The prototype's state is in file statics (not reentrant). | ACCEPT. Compute §7's capture fact once per group number, with "in progress" treated as widen (this replaces the depth counter). Keep the state on Pss/Ctx. A compile-time witness at the size boundary goes in the build bar. |
+| R-5 | MINOR | A1 is a second FOLLOW computation beside pss_walk's. | ACCEPT. Build assertion: with gates valued as A0, A1's continuation ∪ ENCL equals pss_walk's FOLLOW ∪ ENCL. |
+| R-6 | MINOR | B's masked classification rests on "a backref is always VM". | ACCEPT. Tripwire: `--engine=dfa --no-captures '(a)x+\1'` must still refuse, so it goes red if [the planned finite-language expansion] ever makes a backref DFA-runnable. |
+| R-7 | MINOR | CLAIM-vs-MARK reads a count delta. | ACCEPT. Read per-quantifier marks from --emit-ir's strategies section. Pin the utf,ucp REFUSED count (2,059) so it goes red when [CLS-TREE] S4 or [UCP] U3 lands, and name that re-sweep as a trigger in both rows. |
+| R-8 | MINOR | plan.md [ART-POSS-ARMS] body stale. | ACCEPT. |
+| R-9 | NOTE | Pre-existing, not this note's: docs/spec/tuning.md §2.32 classes `-fno-ctx-node` as engine-selecting yet MASKED, which contradicts the "the engine-selecting denials are kept" rule sentence. | FILED for the next admin lane (verify which is true against axes.def's kept list; fix the spec or the classification). |
+
+**Depth-1 guard:** it terminates; no real pattern recurses past tree depth (R-4 covers the cost).
+
+**Next:** lane possarms21 (opus) writes rev 2.1 (N1, N2, R-4..R-8). In parallel, a D27-blinded composition author (R-3a) works in a cell. Rev 2.1 then closes on the blinded pass: if both are green against the revised prototype, the build may start without a further panel. Any new divergence reopens this review.
