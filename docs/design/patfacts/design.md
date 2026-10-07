@@ -761,7 +761,7 @@ same class stated once.
 ### 7.5 The K68 class (recommendation, §12 Q7)
 
 Every FACT deny and every ROW deny is answer-neutral by its contract, so
-each belongs in `rx_info.flags`' `strategy_denials` mask by construction.
+each belongs in `rx_info.flags`' strategy mask by construction (since K92, abi 65, the mask is derived from `axes.def`, so a new axis is masked on arrival).
 The bit-19 fix and K68 (bits 28/29/30) are two incidents of a bit added
 without being classified. That is D120's trigger shape. The general fix
 is a `kind` column in `src/core/axes.def` (fact / row / value / answer),
@@ -1364,7 +1364,7 @@ manager's. Revision 2 changed Q1 (E1 is eager, E3 is per branch) and Q6
    the rate accessor, and 3.0 uses the memo, the epochs and the deny. So the
    machinery has customers without S2. S2a is independent, is gated by its own
    bench pass (`compare_stack.md` §6.1), and gains nothing by waiting.
-7. **File a row to derive `rx_info.flags`' `strategy_denials` mask from an
+7. **[DONE as K92, abi 65: the mask is derived from `axes.def`] File a row to derive `rx_info.flags`' `strategy_denials` mask from an
    `axes.def` classification column** (fact / row / value / answer), after
    K68 merges. The bit-19 fix and K68 are this class's two incidents.
    Under D125 it is filed, not scheduled. **Recommend: file it.**

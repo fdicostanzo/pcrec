@@ -1872,7 +1872,7 @@ has the shape.
 wherever the predicate holds, so there is nothing for a caller to address and
 nothing to force.
 
-**It joins `emit_info_def`'s `strategy_denials` mask**, for that mask's own
+**It is masked by `emit_info_def`'s strategy mask** (derived from `core/axes.def`, so a new axis is masked on arrival; K92), for that mask's own
 reason: the axis changes no answer, so two artifacts that behave identically
 must not differ in their reflection surface over it — and concretely, so that
 an alternation the predicate DECLINES is byte-for-byte the same under the flag,
@@ -2090,7 +2090,7 @@ for them.
 wherever the set is a fold pair, so there is nothing for a caller to
 address and nothing to force.
 
-**It joins `emit_info_def`'s `strategy_denials` mask**, for that mask's own
+**It is masked by `emit_info_def`'s strategy mask** (derived from `core/axes.def`, so a new axis is masked on arrival; K92), for that mask's own
 reason: the axis changes no answer, so two artifacts that behave
 identically must not differ in their reflection surface over it — and
 concretely, so that an artifact with no fold pair is byte-for-byte the same
@@ -2328,8 +2328,8 @@ is comment-free — the same precedence every other pair in this section has.
 **NO STAMP, deliberately.** The prose's presence is its own record. A
 `<PREFIX>_COMMENTS` macro would be a second fact about the first, and it
 would still read `"full"` on an artifact some other tool had stripped —
-a claim about the file that the file could contradict. Both bits join
-`emit_info_def`'s `strategy_denials` mask for that mask's own reason: the
+a claim about the file that the file could contradict. Both bits are masked by
+`emit_info_def`'s strategy mask (derived from `core/axes.def`; K92) for that mask's own reason: the
 axis changes no answer, so two identically-behaving artifacts must not differ
 in their reflection surface over it, and concretely, unmasked it would move
 five bytes of `rx_info.flags` and the object files would NOT be identical.

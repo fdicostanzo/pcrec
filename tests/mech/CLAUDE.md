@@ -1454,8 +1454,9 @@ say so).
   unchanged, so no corpus, differential or byte-identity gate anywhere can
   tell a refused request was silently granted. **MEASURED: `prefilter`
   2 fail / 16 pass** (the two do-or-die refusal checks).
-- **S65** drops `PCREC_NO_PREFILTER`/`PCREC_FORCE_PREFILTER` from
-  `emit_info_def`'s `strategy_denials` mask (src/gen/emit_dfa.c), so the two
+- **S65** adds `PCREC_NO_PREFILTER`/`PCREC_FORCE_PREFILTER` to the `kept`
+  set the derived strategy mask excludes (src/gen/emit_dfa.c `emit_info_def`;
+  re-aimed at K92), so the two
   force-pair bits leak into the emitted `rx_info.flags` literal even though
   the axis changes no match behavior. No correctness check anywhere sees
   this — the .rxt corpus, the vm_oracle sweep and the §3.7 differential all
@@ -1492,8 +1493,9 @@ pass's checks.
   could match, which `run_altdiff.sh`'s per-pattern-character subject sweep
   (D47.6's rule) does by construction. **MEASURED: `altdiff` >0fail** (the
   `b|c`-shaped patterns in `patterns.txt` diverge on the `c`-only subject).
-- **S67** drops `PCREC_NO_ALTCLS_MERGE`/`PCREC_NO_ALTCLS_FACTOR` from
-  `emit_info_def`'s `strategy_denials` mask (src/gen/emit_dfa.c) — the S65
+- **S67** adds `PCREC_NO_ALTCLS_MERGE`/`PCREC_NO_ALTCLS_FACTOR` to the
+  `kept` set the derived strategy mask excludes (src/gen/emit_dfa.c
+  `emit_info_def`; re-aimed at K92) — the S65
   shape one pass over. The two deny bits leak into the emitted
   `rx_info.flags` literal even though the axis changes no match behavior;
   no correctness check anywhere else sees it, because the match behavior
