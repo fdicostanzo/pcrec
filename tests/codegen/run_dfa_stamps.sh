@@ -840,6 +840,21 @@ fi
 # harvests along with the rest of the corpus and compiles at the DEFAULT
 # encoding — where they compile perfectly well. Their K53 refusal is a
 # `-e utf8` fact and does not follow them here.
+#
+# [cgtri] 2026-10-07 ADDED SEVENTEEN from tests/possessify/composition_d27.rxt
+# (D27-blinded, merged 5f91ab71 without a test-codegen run). Each is a
+# contradiction the DFA proves empty, and each block in that file is all
+# `n`/`ns` cells recorded from libpcre2 10.46 (11 cells each, 0 `m`):
+#   a `\b`/`\B` between two bytes of known word-ness that refutes it --
+#       `(?:a{1,2}\b){2}` `-+\Bb` `-{1,3}?\Ba` `[a-c]+\bB` `\s{2}\B\w`
+#       `\b(?:\w+\b)+\B`;
+#   a one-character lookaround whose class is disjoint from (or the
+#       complement of) the adjacent consumed byte -- `.{0,2}?(?!a)a`
+#       `[a-]{1,3}(?=\w)-` `[a-c]{0,}?(?=a)\W` `[ab]?(?!\w)\w`
+#       `\W+(?<!\W)` `\W+(?<=\w)` `\d+(?<=\W)\b` `\s+(?<=a)b`
+#       `\w+(?<=\W)` `\w{1,3}(?=a)\W` `a{1,3}?(?=\w)\W`.
+# Every one is U2's context-node shape or the `a\bb` shape above, behind a
+# quantifier -- new SPELLINGS of known members, not a new mechanism.
 EMPTY_MANIFEST='\B\b
 \b\B
 \d\b\w
@@ -889,7 +904,24 @@ y(?=a)z
 z(?<*[ab])
 z(?<*a)
 z(?<=[ab])
-z(?<=a)'
+z(?<=a)
+(?:a{1,2}\b){2}
+-+\Bb
+-{1,3}?\Ba
+.{0,2}?(?!a)a
+[a-]{1,3}(?=\w)-
+[a-c]+\bB
+[a-c]{0,}?(?=a)\W
+[ab]?(?!\w)\w
+\W+(?<!\W)
+\W+(?<=\w)
+\b(?:\w+\b)+\B
+\d+(?<=\W)\b
+\s+(?<=a)b
+\s{2}\B\w
+\w+(?<=\W)
+\w{1,3}(?=a)\W
+a{1,3}?(?=\w)\W'
 sed -n 's/^EMPTYPAT //p' "$WORKDIR/verdicts" | LC_ALL=C sort -u > "$WORKDIR/empty_seen"
 printf '%s\n' "$EMPTY_MANIFEST" | LC_ALL=C sort -u > "$WORKDIR/empty_want"
 if cmp -s "$WORKDIR/empty_seen" "$WORKDIR/empty_want"; then
