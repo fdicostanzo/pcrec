@@ -4420,6 +4420,21 @@ are never compared).
   load-guard thresholds, K32's compile pin, the battery shapes
   (-j4/PROCS=3 test, PROCS=6 mech, -P4 san, paired axes) are THIS box's
   numbers.
+- **The Linux dev box** (from 2026-10-07, `pcrec@192.168.1.17`, repo
+  `/home/pcrec/projects/pcrec`; pcrec's heavy-run box, no bench
+  coordination needed): AMD Ryzen 7 7700X, 16 threads, ~29 GB RAM,
+  x86_64 Ubuntu, gcc **15.2.0** (Ubuntu 15.2.0-16ubuntu1, same as
+  ubuntubudu), GNU Make 4.4.1, bash 5.3, python 3.14.4, libpcre2-8
+  headers **10.46 (the reference oracle)**; no clang, no `pcre2test`
+  binary; bare `timeout` is uutils (use `/usr/bin/gnutimeout`, which
+  timeout_bin.sh resolves). MEASURED 2026-10-07 at main 23111928: `make
+  -j16` 1.99 s, 0 warnings, `make strict` clean; first full `make -k -j16
+  -Otarget test` **678.6 s wall** (6,020 s user + 3,109 s sys), 59/59
+  sections, one red (test-assertions' wordctx positive control, check-side,
+  fixed by lane asstri); the kit's run of the same suite on its branch read
+  640 s. The D45 budgets and load-guard thresholds are ubuntubudu's
+  numbers and are CEILINGS here (this box is faster); no quiet-box timing
+  floor has been taken on it yet.
 - **The Mac dev box** (from 2026-09-04, [MACPORT]): Apple M1 Max, 10
   cores, arm64, macOS. Real GNU gcc = Homebrew `gcc-16` (bare `gcc` is
   Apple clang; tests/lib/cc_resolve.sh resolves); bare `timeout` IS GNU
