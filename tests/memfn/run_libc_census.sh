@@ -9,7 +9,9 @@
 # `<PREFIX>_MEMFN_FORMS` and `<PREFIX>_MEMFN_LIBC`; FORMS reads "none"; and
 # the LIBC line's names EQUAL the libc functions the compiled object calls
 # (`nm -u` of `-O0 -fno-builtin -c`, minus constant 1-8 byte `memcpy` loads).
-# The FORMS half's identity clause is printed UNREACHED (Q55). Details and
+# FORMS's identity clause compiles each pattern-stream artifact again at
+# -fno-memfn-simd AND at -fmemfn-simd (both layers, R4c′ (e)), each byte-equal
+# to the default; its movers half is printed UNREACHED (Q55). Details and
 # the control's independence: libc_census.py's header.
 #
 # THE FLOORS are literals here (K35), not counts of anything the check reads:

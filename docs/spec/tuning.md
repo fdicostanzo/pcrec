@@ -3631,8 +3631,9 @@ turned the force flag on.
   force).
 - **Inert before R4e':** no SIMD form exists, so `-fmemfn-simd` and
   `-fno-memfn-simd` produce byte-identical artifacts (checked by C11's
-  identity half, `make test-memfn-stamps`, printed "identical (no SIMD
-  form)"). The per-form switches are the kit's own `--memfn=` namespace
+  identity half, `make test-memfn-stamps`, which compiles each sampled
+  artifact under each flag against the default and prints "identical (no
+  SIMD form)" once per layer). The per-form switches are the kit's own `--memfn=` namespace
   (`registry.md` §6), not this axis.
 - **Masked** out of `rx_info.flags`, both bits, by `emit_info_def`'s
   `strategy_denials` mask (`src/gen/emit_dfa.c`; §2's `rx_info.flags`
