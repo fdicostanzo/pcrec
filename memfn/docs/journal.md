@@ -475,3 +475,15 @@ pointer when a kit change merges to main.
   C3/C4 share pcrec_emit_prologue on disjoint lines, so whichever
   merges second merges main ALONE and re-runs its zero-mover gate. The
   M1b report keeps the D1-D12 restatement (stc1 cross-checks it).
+- R4c′ merged into lane/memfn-r4c2 (ab61b0db; make strict green). It
+  covers r4c2fix's (a)-(g) + nits (fa676374) and r4c2fu's follow-ups:
+  S530 renumbered to S566 (the block is S566-S569); S526's file-scope
+  `_Static_assert` anchor taught to sabotage_anchors.py (main asked:
+  the resolver exited 2 on main); and a Linux wrapper,
+  lxrun/memfn_r4c2.sh, built on memfn_r4c.sh's RERUN mode with the new
+  GATEFLAGS. The Mac validation chain DIED at 01:26: stopping the lane
+  killed its "detached" nohup chain (lesson recorded in memory). Main
+  routed the re-run to the Linux executor (gate --zero-dumps vs 81bc13de
+  + mech S511 S524 S525 S566 S526); it is OWED, with completion line
+  `== r4c2-lx DONE rc=N ==`. Finding sent to main: stc1's committed
+  call_graph.txt is stale (IndexError).
