@@ -185,6 +185,9 @@ typedef struct {
                                      "0" (stated), not NULL                   */
     uint8_t  cursor_null;         /* ADVANCE: cursor NULL (Q-G2-14)           */
     uint64_t pdeny;               /* a queued (PENDING-ENFORCE) site's denies */
+    uint32_t site_fnr;            /* ALL_PRESENT FUNC: the site's OWN name id
+                                     (memfn.h: always `site.pred.fn_ref`);
+                                     0 = derived from the per-pred ids        */
     uint8_t  generic_seed;        /* a semantic variant of the generic-row seed:
                                      its hook styles are hard, as the base
                                      space's are                              */
@@ -701,6 +704,13 @@ static void fill_site(gsite *g, mf_site *s, mf_pred *pa)
         s->npred = g->d.npred;
         s->preds = pa;
         s->pred.plan_hint = MF_NO_PRED;
+        /* memfn.h: a FUNC site's own name is ALWAYS site.pred.fn_ref (K-1);
+         * on ALL_PRESENT nothing else of `pred` is read */
+        if (g->d.form == G2_FORM_FUNC) {
+            int any = 0;
+            for (int p = 0; p < g->d.npred; p++) any |= pa[p].fn_ref != 0;
+            s->pred.fn_ref = g->site_fnr ? g->site_fnr : any ? 40 + g->d.id % 9 : 0;
+        }
     } else {
         to_mf_pred(g, 0, &s->pred);
     }
@@ -970,7 +980,13 @@ static void pz_apply(uint32_t m, const gsite *g, mf_site *s, mf_pred *pa, mf_hoo
     if (m >> PZ_INDENT & 1)        h->indent = "G2_POISON_indent";
     if (m >> PZ_RET_PRED & 1)      s->ret_pred = 2;
     if (m >> PZ_PREDS & 1)         { s->npred = 2; s->preds = pz_junk_pred; }
-    if (m >> PZ_PRED & 1)          s->pred = pz_junk_pred[0];
+    if (m >> PZ_PRED & 1) {
+        /* memfn.h (K-1): on a FUNC site pred.fn_ref is USED (its name), so it
+         * is never poisoned there; every other member of pred is unused */
+        uint32_t keep = s->pred.fn_ref;
+        s->pred = pz_junk_pred[0];
+        if (g->d.form == G2_FORM_FUNC) s->pred.fn_ref = keep;
+    }
 }
 
 /* render under poison set m: 0 identical, 1 refused, 2 different */
@@ -1001,7 +1017,7 @@ static void pz_show_diff(const buf *a, const buf *b)
     fprintf(g_res, "  clean:    ...%.100s\n  poisoned: ...%.100s\n", x + s0, y + s0);
 }
 
-static long n_poison_pass, n_poison_fail;
+static long n_poison_pass, n_poison_fail, n_sitefn_checked;
 
 static void poison_site(const gsite *g, const mf_site *site, const mf_pred *pa,
                         const mf_hooks *h, const buf *clean)
@@ -1058,7 +1074,7 @@ static void poison_site(const gsite *g, const mf_site *site, const mf_pred *pa,
         const mf_pred *P = g->d.op == G2_OP_ALL ? site->preds : &site->pred;
         int any_fn = 0;
         for (int p = 0; p < np; p++) any_fn |= P[p].fn_ref != 0;
-        if (g->d.op == G2_OP_ALL) any_fn |= site->pred.fn_ref != 0;
+        if (g->d.op == G2_OP_ALL) any_fn = site->pred.fn_ref != 0;   /* a FUNC site's name: pred.fn_ref only */
         if (g->d.form == G2_FORM_FUNC && !any_fn) {
             buf o1 = { 0 };
             int r1 = pz_try(1u << PZ_FN_NAME, g, site, pa, h, clean, &o1, err, sizeof err);
@@ -1245,6 +1261,30 @@ static void render(mf_art *art, gsite *g, batchbuf *B)
                 g->d.id, g->d.label, member_calls_bad);
         n_render_fail++;
     } else if (!pend) n_render_ok++;
+    /* the semantic differential for the ruled K-1 behaviour (memfn.h: a FUNC
+     * site's own name is `site.pred.fn_ref`): every `g2f_<id>_` name in the
+     * rendering must be fn_name(site.pred.fn_ref), and it must appear */
+    if (g->d.fam == G2_FAM_SEM && g->d.vfield == G2_V_SITEFN && !pend) {
+        char want[64], pre[48];
+        snprintf(pre, sizeof pre, "g2f_%u_", g->d.id);
+        snprintf(want, sizeof want, "g2f_%u_%u", g->d.id, site.pred.fn_ref);
+        const buf *srcs[3] = { &body, &file, &body2 };
+        int seen = 0, wrong = 0;
+        for (int k = 0; k < 3; k++) {
+            const char *q = srcs[k]->p;
+            while (q && (q = strstr(q, pre)) != NULL) {
+                size_t wl = strlen(want);
+                if (!strncmp(q, want, wl) && !(q[wl] >= '0' && q[wl] <= '9')) seen++; else wrong++;
+                q += strlen(pre);
+            }
+        }
+        if (!seen || wrong) {
+            n_render_fail++;
+            fprintf(g_res, "FAIL sitefn site %u %s: site.pred.fn_ref=%u, expected the name `%s` (seen %d, other names %d)\n",
+                    g->d.id, g->d.label, site.pred.fn_ref, want, seen, wrong);
+        }
+        n_sitefn_checked++;
+    }
     int fid = form_index(res.form_id);
     if (pend) pend_form[fid]++;
     else { fam_rendered[g->d.fam]++; fam_form[g->d.fam][fid]++; }
@@ -2453,6 +2493,8 @@ static void m_leaves(gsite *g, int c)
 static void m_decl(gsite *g, int c)    { g->result_decl = (uint8_t)c; }
 static void m_use(gsite *g, int c)     { g->d.use = (uint8_t)(c ? G2_USE_DISCARD : G2_USE_POSITION); }
 static void m_tabref(gsite *g, int c)  { g->table_ref_on = (uint8_t)c; }
+static const uint32_t SEM_SITEFN[] = { 1, 77, 4000000011u };
+static void m_sitefn(gsite *g, int c) { g->site_fnr = SEM_SITEFN[c]; }
 static void m_fnref(gsite *g, int c)   { for (int p = 0; p < g->d.npred; p++) g->fnr[p] = c ? (uint32_t)p + 1 : 0; }
 static void m_plan(gsite *g, int c)
 {
@@ -2527,6 +2569,10 @@ static void sem_group(const gsite *s)
     for (int c = 0; c < 2; c++) sem_emit(s, G2_V_CONSUMER, c, m_consumer);
     for (int c = 0; c < 2; c++) sem_emit(s, G2_V_CMT, c, m_cmt);
     for (int c = 0; c < (d->form == G2_FORM_FUNC ? 3 : 2); c++) sem_emit(s, G2_V_VIA, c, m_via);
+    /* memfn.h (K-1): an ALL_PRESENT FUNC site's name is site.pred.fn_ref;
+     * vary it across nonzero values, render must follow fn_name(fn_ref) */
+    if (d->op == G2_OP_ALL && d->form == G2_FORM_FUNC)
+        for (int c = 0; c < 3; c++) sem_emit(s, G2_V_SITEFN, c, m_sitefn);
 }
 
 /* a generic-row seed: FIND/EXPR/RETURN over a random conjunction with
@@ -2552,11 +2598,23 @@ static void seed_generic(void)
     seed_capture(&g);
 }
 
+/* an ALL_PRESENT FUNC seed (BOOL, or RETURN on odd reps), a stated name */
+static void seed_allfunc(int r)
+{
+    gsite g;
+    base_site(&g, ci_of(G2_OP_ALL, r & 1 ? G2_H_RETURN : G2_H_BOOL, G2_FORM_FUNC));
+    g.d.hook_style = 0;                  /* a hard seed (plain identifiers) */
+    plan_all(&g, 2 + r % 3);
+    finish_site(&g, (unsigned)r);
+    g.site_fnr = 5;
+    seed_capture(&g);
+}
+
 static void gen_semantic(int reps)
 {
     unsigned rot = 0;
     for (int r = 0; r < reps; r++) {
-        for (int shape = 0; shape < 8; shape++) {
+        for (int shape = 0; shape < 9; shape++) {
             g_seed_have = 0;
             g_fam_out = seed_capture;
             switch (shape) {
@@ -2567,7 +2625,8 @@ static void gen_semantic(int reps)
             case 4: gate_one(r); break;                 /* ASSIGN, ON_MISS every third */
             case 5: gen_fam_vmrun_one(rot++); break;
             case 6: gen_fam_onebyte(1); break;
-            default: seed_generic(); break;
+            case 7: seed_generic(); break;
+            default: seed_allfunc(r); break;
             }
             g_fam_out = fam_emit;
             if (!g_seed_have) continue;
@@ -2862,6 +2921,7 @@ int main(int argc, char **argv)
             nsites, bi, n_render_ok, n_render_fail, n_refusal_pass, n_refusal_fail,
             n_vocab_pass, n_vocab_fail, n_api_pass, n_api_fail, n_poison_pass, n_poison_fail,
             n_strict_pass, n_strict_fail, g_strict);
+    fprintf(g_res, "SITEFN checked=%ld\n", n_sitefn_checked);
     fclose(g_res);
     printf("g2_gen: %d sites, %d batches, render fail %ld, refusal fail %ld, vocab fail %ld, api fail %ld\n",
            nsites, bi, n_render_fail, n_refusal_fail, n_vocab_fail, n_api_fail);

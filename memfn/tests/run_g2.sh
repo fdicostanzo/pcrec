@@ -102,6 +102,10 @@ FULL_FORM_CHECK_FLOORS="generic:57250000 ofsskip:13000000 precheck:2400000 runcm
 # contract clause no longer exercised)
 FLOOR_POISON_SITES=8100
 FLOOR_POISON_FIELD_SITES=90
+# the K-1 name check (site.pred.fn_ref on ALL_PRESENT FUNC): variants whose
+# rendered names were checked against fn_name(fn_ref); DERIVED (3 value
+# classes x >= 5 hard seeds), owed a measurement
+FLOOR_SITEFN=15
 # the semantic differential (g2u item 7): hard variant sites run per field
 FLOOR_SEM_FIELD_SITES=14     # measured quick: the smallest field (result_decl) 16
 # W2 mutation 7 (floor - 1), G1: judged over the mutated sites where a
@@ -190,6 +194,9 @@ for fl_ in $FORM_FLOORS; do
     r_=$(grep "^FORMID [0-9]* $fn_ " "$gres" | sed 's/.* rendered=\([0-9]*\).*/\1/')
     [ "${r_:-0}" -ge "$fv_" ] || note_fail 1 "form $fn_: ${r_:-0} hard sites rendered < floor $fv_"
 done
+sfn=$(grep '^SITEFN ' "$gres" | sed 's/.*checked=\([0-9]*\).*/\1/')
+echo "== K-1 name check (ALL_PRESENT FUNC site.pred.fn_ref): variants checked ${sfn:-0}"
+[ "${sfn:-0}" -ge "$FLOOR_SITEFN" ] || note_fail 1 "K-1 name check: ${sfn:-0} variants < floor $FLOOR_SITEFN"
 echo "== poison differential (fields the contract says a site does not use, set to junk)"
 grep '^POISON ' "$gres" | sed 's/^/   /'
 pzs=$(grep '^POISON ' "$gres" | sed 's/.* sites=\([0-9]*\).*/\1/')

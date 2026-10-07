@@ -153,14 +153,14 @@ static inline const char *g2_pend_name(int c)
 enum {
     G2_V_SEED, G2_V_MISS, G2_V_STYLE, G2_V_FLOOR, G2_V_LEAVES, G2_V_DECL, G2_V_USE,
     G2_V_TABREF, G2_V_FNREF, G2_V_PLAN, G2_V_NEED, G2_V_EMPTY, G2_V_POLICY,
-    G2_V_CONSUMER, G2_V_CMT, G2_V_VIA, G2_NV
+    G2_V_CONSUMER, G2_V_CMT, G2_V_VIA, G2_V_SITEFN, G2_NV
 };
 static inline const char *g2_v_name(int v)
 {
     static const char *const names[G2_NV] = {
         "seed", "miss", "hook-style", "floor", "on_miss_leaves", "result_decl", "use",
         "table_ref", "fn_ref", "plan_hint", "term-need", "empty", "policy",
-        "consumer", "comment-gate", "via",
+        "consumer", "comment-gate", "via", "site-fn_ref",
     };
     return v >= 0 && v < G2_NV ? names[v] : "?";
 }
