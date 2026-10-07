@@ -295,6 +295,10 @@ re-measuring it.
   `k69.rxt`'s precedent, every expectation read off libpcre2 10.46 first
   (light probe through `pcre2_ctypes.py`, both default and
   `PCRE2_NO_AUTO_POSSESS`; transcript in `docs/dev/lanes/k93fix_report.md`).
+  [ART-POSS-ARMS] (possbuild-rx) appended the two A-F1 witnesses
+  (`(a+(?:\b|))|b(?1)a`, `(?:b(?R)a|a+(?:\b|))`; arm A's gate at a called
+  group's / the root's end joins the call sites' follows), oracle-verified on
+  10.46 like the rest, with exhaustively found distinguishing subjects.
   Witnesses in every spelling and position (numbered, named, relative,
   forward, nested, in a repeat, in a lookaround, recursive, and the
   fixpoint's second round), the free discharge's atomic cell, and controls

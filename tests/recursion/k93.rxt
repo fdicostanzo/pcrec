@@ -254,3 +254,36 @@ m "aaaacaab" 0 8
 g 1 3 4
 g 2 5 7
 
+
+# A-F1 (a) ([ART-POSS-ARMS] rev 2, poss_arms.md 2.3a/8.2): arm A's gate at a CALLED group's (or the root's) end is valued by the call sites' follows too, not only the lexical continuation. Here `a+` is followed by the bypass `(?:\b|)` and the call site then needs an `a` back: greedy on `baa` is (0,3), a loop wrongly possessified on the lexical continuation alone gives (1,3). 24 subjects (<=5 chars) on which the possessive spelling disagrees found by exhaustive search; libpcre2 10.46, NO_AUTO_POSSESS and default options agree on every cell.
+# pcre2-only
+pattern (a+(?:\b|))|b(?1)a
+features recursion,assertions
+m "baa" 0 3
+g 1 -1 -1
+m "baaa" 0 4
+g 1 -1 -1
+m "baab" 0 3
+g 1 -1 -1
+m "baa." 0 3
+g 1 -1 -1
+m "a" 0 1
+g 1 0 1
+m "aa" 0 2
+g 1 0 2
+n ""
+n "b"
+
+# A-F1 (b) ([ART-POSS-ARMS] rev 2, poss_arms.md 2.3a/8.2): arm A's gate at a CALLED group's (or the root's) end is valued by the call sites' follows too, not only the lexical continuation. Here `a+` is followed by the bypass `(?:\b|)` and the call site then needs an `a` back: greedy on `baa` is (0,3), a loop wrongly possessified on the lexical continuation alone gives (1,3). 24 subjects (<=5 chars) on which the possessive spelling disagrees found by exhaustive search; libpcre2 10.46, NO_AUTO_POSSESS and default options agree on every cell.
+# pcre2-only
+pattern (?:b(?R)a|a+(?:\b|))
+features recursion,assertions
+engine vm
+m "baa" 0 3
+m "baaa" 0 4
+m "baab" 0 3
+m "baa." 0 3
+m "a" 0 1
+m "aa" 0 2
+n ""
+n "b"

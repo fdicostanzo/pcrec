@@ -3006,3 +3006,999 @@ g 1 0 2
 n "c"
 m "aaabc" 1 5
 g 1 1 5
+
+
+# ======================================================================
+# THE [ART-POSS-ARMS] WITNESS BLOCKS (docs/design/poss_arms.md rev 2.1:
+# 2.4/3.2 refutations, 8.2 sabotage witnesses, 4 the combined witness)
+# ======================================================================
+# Every block is `# pcre2-only` (python re has no subroutines, duplicate names
+# or empty-alternative \b parity) and EVERY expectation below was produced by
+# libpcre2 10.46 through the committed ctypes binding
+# (docs/design/eng_brep_measurements/probes/pcre2_ctypes.py), run with
+# PCRE2_NO_AUTO_POSSESS and again with the default options: the two answers
+# agreed in every cell. Each witness is a PAIR of blocks: the GREEDY spelling
+# (the one an arm marks or must decline) and its POSSESSIVE spelling, which is
+# what a wrongly claimed arm would behave like. The subjects are the witness's
+# own plus the shortest ones, found by exhaustive search over the pattern's
+# alphabet (length <= 5), on which the two spellings DISAGREE, so a miscompile
+# that possessifies the greedy one flips a cell. `engine vm` forces the VM
+# (where possessify runs); a capture-free witness would otherwise route to the
+# DFA. Not here: (*ACCEPT) and (?|...) witnesses (modules not built), and the
+# Latin-1 byte + --ucp caseless-backref cells (K94's to settle).
+
+# A-m0 (greedy): A1 needs m>=1: the e_0 exit has an unknown left character. Greedy (0,1); possessive NOMATCH on ' aa'. [32 discriminating subjects found by exhaustive search]
+# pcre2-only
+pattern  \w?\b
+features all
+engine vm
+m " aa" 0 1
+m "  aa" 1 2
+m " aa " 0 1
+m " aaa" 0 1
+m " a" 0 2
+m "  a" 1 3
+n ""
+n " "
+
+# A-m0 (possessive spelling): A1 needs m>=1: the e_0 exit has an unknown left character. Greedy (0,1); possessive NOMATCH on ' aa'.
+# pcre2-only
+pattern  \w?+\b
+features all
+engine vm
+n " aa"
+n "  aa"
+n " aa "
+n " aaa"
+m " a" 0 2
+m "  a" 1 3
+n ""
+n " "
+
+# A-firstpol (greedy): polarity is read from LAST(X), not FIRST(X). [3 discriminating subjects found by exhaustive search]
+# pcre2-only
+pattern (?:a\.)+\b
+features all
+engine vm
+m "a.a." 0 2
+m "aa.a." 1 3
+m "a.a.." 0 2
+m ".a.a." 1 3
+m "a.a" 0 2
+m "aa.a" 1 3
+n ""
+n "a"
+
+# A-firstpol (possessive spelling): polarity is read from LAST(X), not FIRST(X).
+# pcre2-only
+pattern (?:a\.)++\b
+features all
+engine vm
+n "a.a."
+n "aa.a."
+n "a.a.."
+n ".a.a."
+m "a.a" 0 2
+m "aa.a" 1 3
+n ""
+n "a"
+
+# A-mixed (greedy): a mixed LAST gives Q(P)={0,1}: A1 declines. [3 discriminating subjects found by exhaustive search]
+# pcre2-only
+pattern (?:a[a.])+\b
+features all
+engine vm
+m "a.a." 0 2
+m "a.aaa" 0 2
+m "a.a.." 0 2
+m ".a.a." 1 3
+m "aa" 0 2
+m "aaa" 1 3
+n ""
+n "a"
+
+# A-mixed (possessive spelling): a mixed LAST gives Q(P)={0,1}: A1 declines.
+# pcre2-only
+pattern (?:a[a.])++\b
+features all
+engine vm
+n "a.a."
+m "a.aaa" 3 5
+n "a.a.."
+n ".a.a."
+m "aa" 0 2
+m "aaa" 1 3
+n ""
+n "a"
+
+# A-impure (greedy): an impure class: P={0,1}, A1 declines. [179 discriminating subjects found by exhaustive search]
+# pcre2-only
+pattern [a .]+\b
+features all
+engine vm
+m "a " 0 1
+m "a." 0 1
+m "aa " 0 2
+m "aa." 0 2
+m "a" 0 1
+m "aa" 0 2
+n ""
+n " "
+
+# A-impure (possessive spelling): an impure class: P={0,1}, A1 declines.
+# pcre2-only
+pattern [a .]++\b
+features all
+engine vm
+n "a "
+n "a."
+n "aa "
+n "aa."
+m "a" 0 1
+m "aa" 0 2
+n ""
+n " "
+
+# A-B-boundary (greedy): single-class body before \B: FIRST has the left char's wordness, A1 declines. [30 discriminating subjects found by exhaustive search]
+# pcre2-only
+pattern \w+\B
+features all
+engine vm
+m "aa" 0 1
+m "aaa" 0 2
+m "aa." 0 1
+m ".aa" 1 2
+n ""
+n "a"
+
+# A-B-boundary (possessive spelling): single-class body before \B: FIRST has the left char's wordness, A1 declines.
+# pcre2-only
+pattern \w++\B
+features all
+engine vm
+n "aa"
+n "aaa"
+n "aa."
+n ".aa"
+n ""
+n "a"
+
+# A-multichar-B (greedy): multi-char body whose FIRST/LAST polarities differ: \B is claimed and sound. [0 discriminating subjects found by exhaustive search]
+# pcre2-only
+pattern (?:a\.)+\B
+features all
+engine vm
+m "a.a." 0 4
+n "a.a.a"
+m "a." 0 2
+m "aa." 1 3
+n ""
+n "a"
+
+# A-multichar-B (possessive spelling): multi-char body whose FIRST/LAST polarities differ: \B is claimed and sound.
+# pcre2-only
+pattern (?:a\.)++\B
+features all
+engine vm
+m "a.a." 0 4
+n "a.a.a"
+m "a." 0 2
+m "aa." 1 3
+n ""
+n "a"
+
+# A-emptyref-gate (greedy): gate behind an empty-able reference: valued at zero consumption. [0 discriminating subjects found by exhaustive search]
+# pcre2-only
+pattern (a?)x+\1\b
+features all
+engine vm
+m "xx" 0 2
+g 1 0 0
+m "axxa" 0 4
+g 1 0 1
+m "xx." 0 2
+g 1 0 0
+m "x" 0 1
+g 1 0 0
+m "ax" 1 2
+g 1 1 1
+n ""
+n "a"
+
+# A-emptyref-gate (possessive spelling): gate behind an empty-able reference: valued at zero consumption.
+# pcre2-only
+pattern (a?)x++\1\b
+features all
+engine vm
+m "xx" 0 2
+g 1 0 0
+m "axxa" 0 4
+g 1 0 1
+m "xx." 0 2
+g 1 0 0
+m "x" 0 1
+g 1 0 0
+m "ax" 1 2
+g 1 1 1
+n ""
+n "a"
+
+# A0-lookahead-neg (greedy): A0: lookahead-born gate (bench float-literal-bound). [0 discriminating subjects found by exhaustive search]
+# pcre2-only
+pattern \d+(?![\d.])
+features all
+engine vm
+m "12.5" 3 4
+m "12" 0 2
+m "1" 0 1
+m "11" 0 2
+n ""
+n "."
+
+# A0-lookahead-neg (possessive spelling): A0: lookahead-born gate (bench float-literal-bound).
+# pcre2-only
+pattern \d++(?![\d.])
+features all
+engine vm
+m "12.5" 3 4
+m "12" 0 2
+m "1" 0 1
+m "11" 0 2
+n ""
+n "."
+
+# A0-lookahead-pos (greedy): A0: lookahead-born gate (bench email-local). [0 discriminating subjects found by exhaustive search]
+# pcre2-only
+pattern [a-z]+(?=@)
+features all
+engine vm
+m "ab@c" 0 2
+n "ab"
+m "a@" 0 1
+m "aa@" 0 2
+n ""
+n "a"
+
+# A0-lookahead-pos (possessive spelling): A0: lookahead-born gate (bench email-local).
+# pcre2-only
+pattern [a-z]++(?=@)
+features all
+engine vm
+m "ab@c" 0 2
+n "ab"
+m "a@" 0 1
+m "aa@" 0 2
+n ""
+n "a"
+
+# A0-lazy (greedy): A0 is sound for lazy loops too (5.3). [0 discriminating subjects found by exhaustive search]
+# pcre2-only
+pattern [ab]+?(?![ab])
+features all
+engine vm
+m "abab" 0 4
+m "abab." 0 4
+m "a" 0 1
+m "b" 0 1
+n ""
+n "."
+
+# A0-lazy (possessive spelling): A0 is sound for lazy loops too (5.3).
+# pcre2-only
+pattern (?>[ab]+)(?![ab])
+features all
+engine vm
+m "abab" 0 4
+m "abab." 0 4
+m "a" 0 1
+m "b" 0 1
+n ""
+n "."
+
+# A0-bypass (greedy): A0 through a bypass follow. [0 discriminating subjects found by exhaustive search]
+# pcre2-only
+pattern [a-c]+(?:(?=x)|)
+features all
+engine vm
+m "abx" 0 2
+m "a" 0 1
+m "b" 0 1
+n ""
+n "x"
+
+# A0-bypass (possessive spelling): A0 through a bypass follow.
+# pcre2-only
+pattern [a-c]++(?:(?=x)|)
+features all
+engine vm
+m "abx" 0 2
+m "a" 0 1
+m "b" 0 1
+n ""
+n "x"
+
+# A-lazy-N2 (greedy): N2: A1 stays greedy-only; a lazy loop before a bypass follow is NOT possessified. 10.46 (0,1). [231 discriminating subjects found by exhaustive search]
+# pcre2-only
+pattern (\w+?(?:\b|))
+features all
+engine vm
+m "ab" 0 1
+g 1 0 1
+m "aa" 0 1
+g 1 0 1
+m "ba" 0 1
+g 1 0 1
+m "bb" 0 1
+g 1 0 1
+m "a" 0 1
+g 1 0 1
+m "b" 0 1
+g 1 0 1
+n ""
+n "."
+
+# A-lazy-N2 (possessive spelling): N2: A1 stays greedy-only; a lazy loop before a bypass follow is NOT possessified. 10.46 (0,1).
+# pcre2-only
+pattern (\w++(?:\b|))
+features all
+engine vm
+m "ab" 0 2
+g 1 0 2
+m "aa" 0 2
+g 1 0 2
+m "ba" 0 2
+g 1 0 2
+m "bb" 0 2
+g 1 0 2
+m "a" 0 1
+g 1 0 1
+m "b" 0 1
+g 1 0 1
+n ""
+n "."
+
+# A-lazy-N2-counted (greedy): N2, counted lazy. [231 discriminating subjects found by exhaustive search]
+# pcre2-only
+pattern \w{1,3}?(?:\b|)
+features all
+engine vm
+m "ab" 0 1
+m "aa" 0 1
+m "ba" 0 1
+m "bb" 0 1
+m "a" 0 1
+m "b" 0 1
+n ""
+n "."
+
+# A-lazy-N2-counted (possessive spelling): N2, counted lazy.
+# pcre2-only
+pattern \w{1,3}+(?:\b|)
+features all
+engine vm
+m "ab" 0 2
+m "aa" 0 2
+m "ba" 0 2
+m "bb" 0 2
+m "a" 0 1
+m "b" 0 1
+n ""
+n "."
+
+# A-lazy-N2-B (greedy): N2, \B bypass. [231 discriminating subjects found by exhaustive search]
+# pcre2-only
+pattern [a-c]+?(?:\B|)
+features all
+engine vm
+m "ab" 0 1
+m "aa" 0 1
+m "ba" 0 1
+m "bb" 0 1
+m "a" 0 1
+m "b" 0 1
+n ""
+n "."
+
+# A-lazy-N2-B (possessive spelling): N2, \B bypass.
+# pcre2-only
+pattern [a-c]++(?:\B|)
+features all
+engine vm
+m "ab" 0 2
+m "aa" 0 2
+m "ba" 0 2
+m "bb" 0 2
+m "a" 0 1
+m "b" 0 1
+n ""
+n "."
+
+# A-bypass-greedy (greedy): greedy loop before a bypass follow. [0 discriminating subjects found by exhaustive search]
+# pcre2-only
+pattern \w+(?:\b|)
+features all
+engine vm
+m "ab" 0 2
+m "a" 0 1
+m "b" 0 1
+n ""
+n "."
+
+# A-bypass-greedy (possessive spelling): greedy loop before a bypass follow.
+# pcre2-only
+pattern \w++(?:\b|)
+features all
+engine vm
+m "ab" 0 2
+m "a" 0 1
+m "b" 0 1
+n ""
+n "."
+
+# A-cc-F1a (greedy): A-F1: a cap-end marker in A1's continuation unions the call sites' follows. Greedy (0,3), possessive (1,3). [24 discriminating subjects found by exhaustive search]
+# pcre2-only
+pattern (a+(?:\b|))|b(?1)a
+features all
+engine vm
+m "baa" 0 3
+g 1 -1 -1
+m "baaa" 0 4
+g 1 -1 -1
+m "baab" 0 3
+g 1 -1 -1
+m "baa." 0 3
+g 1 -1 -1
+m "a" 0 1
+g 1 0 1
+m "aa" 0 2
+g 1 0 2
+n ""
+n "b"
+
+# A-cc-F1a (possessive spelling): A-F1: a cap-end marker in A1's continuation unions the call sites' follows. Greedy (0,3), possessive (1,3).
+# pcre2-only
+pattern (a++(?:\b|))|b(?1)a
+features all
+engine vm
+m "baa" 1 3
+g 1 1 3
+m "baaa" 1 4
+g 1 1 4
+m "baab" 1 3
+g 1 1 3
+m "baa." 1 3
+g 1 1 3
+m "a" 0 1
+g 1 0 1
+m "aa" 0 2
+g 1 0 2
+n ""
+n "b"
+
+# A-cc-F1b (greedy): A-F1: root-end marker, same shape through (?R). [24 discriminating subjects found by exhaustive search]
+# pcre2-only
+pattern (?:b(?R)a|a+(?:\b|))
+features all
+engine vm
+m "baa" 0 3
+m "baaa" 0 4
+m "baab" 0 3
+m "baa." 0 3
+m "a" 0 1
+m "aa" 0 2
+n ""
+n "b"
+
+# A-cc-F1b (possessive spelling): A-F1: root-end marker, same shape through (?R).
+# pcre2-only
+pattern (?:b(?R)a|a++(?:\b|))
+features all
+engine vm
+m "baa" 1 3
+m "baaa" 1 4
+m "baab" 1 3
+m "baa." 1 3
+m "a" 0 1
+m "aa" 0 2
+n ""
+n "b"
+
+# A-cc-F1c (greedy): A-F1 sibling: arm B under a call. [6 discriminating subjects found by exhaustive search]
+# pcre2-only
+pattern (a?)(x+\1)b(?2)x
+features all
+engine vm
+m "xbxx" 0 4
+g 1 0 0
+g 2 0 1
+m "axbxx" 1 5
+g 1 1 1
+g 2 1 2
+m "xxbxx" 0 5
+g 1 0 0
+g 2 0 2
+m "xbxxa" 0 4
+g 1 0 0
+g 2 0 1
+n ""
+n "a"
+
+# A-cc-F1c (possessive spelling): A-F1 sibling: arm B under a call.
+# pcre2-only
+pattern (a?)(x++\1)b(?2)x
+features all
+engine vm
+n "xbxx"
+n "axbxx"
+n "xxbxx"
+n "xbxxa"
+n ""
+n "a"
+
+# A-cc-F1d (greedy): A-F1 sibling, non-nullable reference. [0 discriminating subjects found by exhaustive search]
+# pcre2-only
+pattern (a)(x+\1)b(?2)x
+features all
+engine vm
+n "axbxax"
+n ""
+n "a"
+
+# A-cc-F1d (possessive spelling): A-F1 sibling, non-nullable reference.
+# pcre2-only
+pattern (a)(x++\1)b(?2)x
+features all
+engine vm
+n "axbxax"
+n ""
+n "a"
+
+# A-cc-F1e (greedy): A1 under an enclosing loop with an alternative that re-enters. [7 discriminating subjects found by exhaustive search]
+# pcre2-only
+pattern (?:a+(?:\b|)|ab)+c
+features all
+engine vm
+m "aabc" 0 4
+m "aaabc" 0 5
+m "aabac" 0 5
+m "aabca" 0 4
+m "ac" 0 2
+m "aac" 0 3
+n ""
+n "a"
+
+# A-cc-F1e (possessive spelling): A1 under an enclosing loop with an alternative that re-enters.
+# pcre2-only
+pattern (?:a++(?:\b|)|ab)+c
+features all
+engine vm
+m "aabc" 1 4
+m "aaabc" 2 5
+m "aabac" 1 5
+m "aabca" 1 4
+m "ac" 0 2
+m "aac" 0 3
+n ""
+n "a"
+
+# B-nofold (greedy): B: fold_ref keyed on the REFERENCE (caseless at the reference). [9 discriminating subjects found by exhaustive search]
+# pcre2-only
+pattern (a)A+(?i:\1)
+features all
+engine vm
+m "aAA" 0 3
+g 1 0 1
+m "aaAA" 1 4
+g 1 1 2
+m "aAAA" 0 4
+g 1 0 1
+m "AaAA" 1 4
+g 1 1 2
+m "aAa" 0 3
+g 1 0 1
+m "aaAa" 1 4
+g 1 1 2
+n ""
+n "a"
+
+# B-nofold (possessive spelling): B: fold_ref keyed on the REFERENCE (caseless at the reference).
+# pcre2-only
+pattern (a)A++(?i:\1)
+features all
+engine vm
+n "aAA"
+n "aaAA"
+n "aAAA"
+n "AaAA"
+m "aAa" 0 3
+g 1 0 1
+m "aaAa" 1 4
+g 1 1 2
+n ""
+n "a"
+
+# B-fold-group (greedy): B: FIRST(c.body) is the folded class. [10 discriminating subjects found by exhaustive search]
+# pcre2-only
+pattern (?i:(a))A+\1
+features all
+engine vm
+m "AAA" 0 3
+g 1 0 1
+m "aAAA" 1 4
+g 1 1 2
+m "AAAa" 0 3
+g 1 0 1
+m "AAAA" 0 4
+g 1 0 1
+m "aAa" 0 3
+g 1 0 1
+m "aaAa" 1 4
+g 1 1 2
+n ""
+n "a"
+
+# B-fold-group (possessive spelling): B: FIRST(c.body) is the folded class.
+# pcre2-only
+pattern (?i:(a))A++\1
+features all
+engine vm
+n "AAA"
+n "aAAA"
+n "AAAa"
+n "AAAA"
+m "aAa" 0 3
+g 1 0 1
+m "aaAa" 1 4
+g 1 1 2
+n ""
+n "a"
+
+# B-firstmem (greedy): B: union over ALL of refs[], not the first name-run member. [10 discriminating subjects found by exhaustive search]
+# pcre2-only
+pattern (?J)(?:(?<n>a)|(?<n>x))x+\k<n>
+features all
+engine vm
+m "xxx" 0 3
+g 1 -1 -1
+g 2 0 1
+m "axxx" 1 4
+g 1 -1 -1
+g 2 1 2
+m "xxxa" 0 3
+g 1 -1 -1
+g 2 0 1
+m "xxxx" 0 4
+g 1 -1 -1
+g 2 0 1
+m "axa" 0 3
+g 1 0 1
+g 2 -1 -1
+m "aaxa" 1 4
+g 1 1 2
+g 2 -1 -1
+n ""
+n "a"
+
+# B-firstmem (possessive spelling): B: union over ALL of refs[], not the first name-run member.
+# pcre2-only
+pattern (?J)(?:(?<n>a)|(?<n>x))x++\k<n>
+features all
+engine vm
+n "xxx"
+n "axxx"
+n "xxxa"
+n "xxxx"
+m "axa" 0 3
+g 1 0 1
+g 2 -1 -1
+m "aaxa" 1 4
+g 1 1 2
+g 2 -1 -1
+n ""
+n "a"
+
+# B-nonnull (greedy): B: nullability read from the member bodies. [28 discriminating subjects found by exhaustive search]
+# pcre2-only
+pattern (a?)x+\1x
+features all
+engine vm
+m "xx" 0 2
+g 1 0 0
+m "axx" 1 3
+g 1 1 1
+m "xxa" 0 2
+g 1 0 0
+m "xxx" 0 3
+g 1 0 0
+m "axax" 0 4
+g 1 0 1
+m "aaxax" 1 5
+g 1 1 2
+n ""
+n "a"
+
+# B-nonnull (possessive spelling): B: nullability read from the member bodies.
+# pcre2-only
+pattern (a?)x++\1x
+features all
+engine vm
+n "xx"
+n "axx"
+n "xxa"
+n "xxx"
+m "axax" 0 4
+g 1 0 1
+m "aaxax" 1 5
+g 1 1 2
+n ""
+n "a"
+
+# B-textpos-1 (greedy): N1: TEXT_FIRST; a gate is (empty, nullable). 10.46 (0,3). [16 discriminating subjects found by exhaustive search]
+# pcre2-only
+pattern (?:((?=a))a)?b+\1b
+features all
+engine vm
+m "abb" 0 3
+g 1 0 0
+m "aabb" 1 4
+g 1 1 1
+m "abba" 0 3
+g 1 0 0
+m "abbb" 0 4
+g 1 0 0
+n ""
+n "a"
+
+# B-textpos-1 (possessive spelling): N1: TEXT_FIRST; a gate is (empty, nullable). 10.46 (0,3).
+# pcre2-only
+pattern (?:((?=a))a)?b++\1b
+features all
+engine vm
+n "abb"
+n "aabb"
+n "abba"
+n "abbb"
+n ""
+n "a"
+
+# B-textpos-2 (greedy): N1 witness 2. [33 discriminating subjects found by exhaustive search]
+# pcre2-only
+pattern ((?=a)c?)ab+\1b
+features all
+engine vm
+m "abb" 0 3
+g 1 0 0
+m "aabb" 1 4
+g 1 1 1
+m "abba" 0 3
+g 1 0 0
+m "abbb" 0 4
+g 1 0 0
+n ""
+n "a"
+
+# B-textpos-2 (possessive spelling): N1 witness 2.
+# pcre2-only
+pattern ((?=a)c?)ab++\1b
+features all
+engine vm
+n "abb"
+n "aabb"
+n "abba"
+n "abbb"
+n ""
+n "a"
+
+# B-textpos-3 (greedy): N1 witness 3. [16 discriminating subjects found by exhaustive search]
+# pcre2-only
+pattern (?:((?=a))a|)b+\1b
+features all
+engine vm
+m "abb" 0 3
+g 1 0 0
+m "aabb" 1 4
+g 1 1 1
+m "abba" 0 3
+g 1 0 0
+m "abbb" 0 4
+g 1 0 0
+n ""
+n "a"
+
+# B-textpos-3 (possessive spelling): N1 witness 3.
+# pcre2-only
+pattern (?:((?=a))a|)b++\1b
+features all
+engine vm
+n "abb"
+n "aabb"
+n "abba"
+n "abbb"
+n ""
+n "a"
+
+# B-gate-ref (greedy): gate-only group referenced after the loop. [0 discriminating subjects found by exhaustive search]
+# pcre2-only
+pattern ((?=a))x+\1x
+features all
+engine vm
+n "xx"
+n ""
+n "a"
+
+# B-gate-ref (possessive spelling): gate-only group referenced after the loop.
+# pcre2-only
+pattern ((?=a))x++\1x
+features all
+engine vm
+n "xx"
+n ""
+n "a"
+
+# B-gate-ref-2 (greedy): gate then empty-able. [30 discriminating subjects found by exhaustive search]
+# pcre2-only
+pattern ((?=x)b?)x+\1x
+features all
+engine vm
+m "xx" 0 2
+g 1 0 0
+m "bxx" 1 3
+g 1 1 1
+m "xxb" 0 2
+g 1 0 0
+m "xxx" 0 3
+g 1 0 0
+n ""
+n "b"
+
+# B-gate-ref-2 (possessive spelling): gate then empty-able.
+# pcre2-only
+pattern ((?=x)b?)x++\1x
+features all
+engine vm
+n "xx"
+n "bxx"
+n "xxb"
+n "xxx"
+n ""
+n "b"
+
+# B-nested-ref (greedy): reference to a group containing a reference. [0 discriminating subjects found by exhaustive search]
+# pcre2-only
+pattern (a)(\1b)x+\2
+features all
+engine vm
+m "aabxxab" 0 7
+g 1 0 1
+g 2 1 3
+n ""
+n "a"
+
+# B-nested-ref (possessive spelling): reference to a group containing a reference.
+# pcre2-only
+pattern (a)(\1b)x++\2
+features all
+engine vm
+m "aabxxab" 0 7
+g 1 0 1
+g 2 1 3
+n ""
+n "a"
+
+# B-assert-group (greedy): reference to a \b-only group. [0 discriminating subjects found by exhaustive search]
+# pcre2-only
+pattern (\b)\w+\1
+features all
+engine vm
+m "ab" 0 2
+g 1 0 0
+m "a" 0 1
+g 1 0 0
+m "aa" 0 2
+g 1 0 0
+n ""
+n "."
+
+# B-assert-group (possessive spelling): reference to a \b-only group.
+# pcre2-only
+pattern (\b)\w++\1
+features all
+engine vm
+m "ab" 0 2
+g 1 0 0
+m "a" 0 1
+g 1 0 0
+m "aa" 0 2
+g 1 0 0
+n ""
+n "."
+
+# B-depth (greedy): B-depth: the cyclic references COMPILE (the depth guard terminates). [0 discriminating subjects found by exhaustive search]
+# pcre2-only
+pattern (a\2)(b\1)x+\1
+features all
+engine vm
+n "abxa"
+n "abx"
+n ""
+n "a"
+
+# B-depth (possessive spelling): B-depth: the cyclic references COMPILE (the depth guard terminates).
+# pcre2-only
+pattern (a\2)(b\1)x++\1
+features all
+engine vm
+n "abxa"
+n "abx"
+n ""
+n "a"
+
+# combo-doubled-word (greedy): the combined witness: A1 on \w+ and B on \s+; frameless. [0 discriminating subjects found by exhaustive search]
+# pcre2-only
+pattern \b(\w+)\b\s+\1\b
+features all
+engine vm
+m "the the cat" 0 7
+g 1 0 3
+m "the  the" 0 8
+g 1 0 3
+m "a the the" 2 9
+g 1 2 5
+m "a a" 0 3
+g 1 0 1
+m "b b" 0 3
+g 1 0 1
+n ""
+n "a"
+
+# combo-doubled-word (possessive spelling): the combined witness: A1 on \w+ and B on \s+; frameless.
+# pcre2-only
+pattern \b(\w++)\b\s++\1\b
+features all
+engine vm
+m "the the cat" 0 7
+g 1 0 3
+m "the  the" 0 8
+g 1 0 3
+m "a the the" 2 9
+g 1 2 5
+m "a a" 0 3
+g 1 0 1
+m "b b" 0 3
+g 1 0 1
+n ""
+n "a"
+
+# A-fold-utf (greedy): wordness is read on the FOLDED code-point class: (?i)k folds to {k,K,U+212A}, U+212A is not \w without UCP. 10.46 utf,i: k+\b on k<U+212A> is (0,1); k++\b NOMATCH.
+# pcre2-only
+pattern k+\b
+features all
+flags i
+encoding utf8
+engine vm
+m "k" 0 1
+m "k\xe2\x84\xaa" 0 1
+n "\xe2\x84\xaa"
+m "kk" 0 2
+m "kK" 0 2
+m "K\xe2\x84\xaa" 0 1
+m "kk\xe2\x84\xaak" 0 6
+m "k." 0 1
+m "kK." 0 2
+
+# A-fold-utf (possessive spelling): wordness is read on the FOLDED code-point class: (?i)k folds to {k,K,U+212A}, U+212A is not \w without UCP. 10.46 utf,i: k+\b on k<U+212A> is (0,1); k++\b NOMATCH.
+# pcre2-only
+pattern k++\b
+features all
+flags i
+encoding utf8
+engine vm
+m "k" 0 1
+n "k\xe2\x84\xaa"
+n "\xe2\x84\xaa"
+m "kk" 0 2
+m "kK" 0 2
+n "K\xe2\x84\xaa"
+m "kk\xe2\x84\xaak" 0 6
+m "k." 0 1
+m "kK." 0 2
