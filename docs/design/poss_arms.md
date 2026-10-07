@@ -1091,6 +1091,89 @@ The data is in `rev2/a2_abl_ml4.out.gz`, `rev2/a2_new_ml4.out` and
   It is diffed against `census_r2.tsv.gz`. Any difference is explained or
   is a defect.
 
+### 8.7 Three more build-bar items `[r2.1 R-4, R-5, R-6]`
+
+**(R-5) A1's continuation equals the walk's FOLLOW, as a build-time
+assertion.** A1 recomputes `Q`'s continuation beside `pss_walk`'s FOLLOW: it
+is a second computation of the same set, and the two can drift. With every
+gate valued A0, they must agree:
+
+    A1cont_A0(Q) ∪ ENCL  ==  FOLLOW(Q) ∪ ENCL      (bytes)
+    A1cont_A0(Q).ends    ==  may_end(Q)            (the match can end)
+
+- `ends` is "the continuation reaches the match end at zero consumption":
+  lexically, or through a crossed call site's joined `may_end`.
+- The build checks this ALWAYS, at every `pss_verdict`, in the house form:
+  a disagreement is `pcrec_ctx_fail(..., "internal error: possessify: A1
+  continuation disagrees with FOLLOW")`, like `cc_join`'s missing-slot
+  check. Every compile `make test` runs is therefore a check. It must read
+  the continuation SUMMARY (§7) valued A0, which costs O(gate groups) per
+  quantifier. Re-running the plain fold per quantifier would bring R-4's
+  quadratic back. The summary-equals-fold agreement (`R4SUM`) is the
+  test-time half: a unit cell plus the census population. The deny bit does
+  not vacate the check, because the summary is built whether or not A1 is
+  consulted.
+- It found one disagreement before it agreed. Inside an ATOMIC body,
+  `pss_walk` analyses the body as a self-contained pattern (follow empty,
+  may end), but A1's continuation ran on to the root and unioned `(?R)`'s
+  join. That is conservative, so it was not a miscompile, but it was a second
+  definition. The continuation now carries an explicit atomic-body END
+  (`px_atomic_end`), the walk's own boundary.
+- Measured over the census population: «R5».
+
+**(R-6) The backreference-stays-VM tripwire.** Arm B's bit is classified
+masked, answer-identity-preserving (§9), because every `A_BREF` is
+`VM_ONLY` in `select_engine.c`, under `--no-captures` too. That premise has
+a chartered threat: the finite-language expansion (`(abc)\1` → `abcabc`,
+[M6.5]'s follow-up (d)/(f), whose only customer is `--no-captures`) would
+make a backreference DFA-runnable.
+
+- The build adds `reject_engine_dfa_bref_nocaptures` to
+  `tests/reject/run_reject_tests.sh`, beside `reject_engine_dfa_vars`.
+- It runs `--engine=dfa --no-captures --features all '(a)x+\1'` and requires
+  exit 1 with "requires the VM engine, which --engine=dfa excludes".
+- Its failure message names this note's §9 and says: "arm B's deny bit
+  `-fno-poss-bref-first` is classified masked because a backreference is
+  VM-only; if this pattern now compiles for the DFA, reclassify the bit as
+  ENGINE-SELECTING (kept) and add a route-flip census for arm B".
+- Today: refused, armed and denied (`rev21` prototype, verified).
+
+**(R-4) A compile-time witness at the size boundary.** Both arms' folds were
+quadratic in revision 2. Arm B walked the whole tree per reference, and A1
+re-walked the continuation per quantifier. Both are now linear, as below.
+The pass runs before the emitted-size caps refuse a pattern, so the caps do
+not bound it; every row below is refused for size (rc 1) after the pass ran.
+Wall seconds for `pcrec --engine=vm -o file`, the Mac under a concurrent
+suite (load 9-16), so they are coarse:
+
+«R4TABLE»
+
+The build bar carries two cells under `scripts/watchdog`: `Bsame` and
+`A1alt` at n = 12,800. Each must compile (to the size refusal) within 2× the
+denied build's own time on the same pattern. A regression to either
+quadratic is 8-70× there, so the bar has headroom both ways.
+
+### 8.8 The composition hook `[r2.1 R-3(a)]`
+
+R-3(a) is a D27-blinded author's composition corpus (gate × capture × ref ×
+lazy × bypass × call), oracle-verified on 10.46, written in a cell. This
+lane did not read it. `rev21/run_composition.sh FILE.rxt` is its hook:
+
+- It runs `tests/harness/run.sh` four times with the prototype: denied and
+  armed, each on the default route and on `RXTFLAGS=--engine=vm`. The arms
+  are VM-only, and a gate-only pattern routes to the DFA by default.
+- It reports per route the cells that fail ARMED but pass DENIED (an arms
+  divergence, exit 1), and lists the cells failing both sides, unattributed.
+- It counts REACH: on how many distinct patterns the arms move `possessify
+  marked`. Zero reach exits 3, because a corpus the arms never touch is not
+  evidence.
+- Smoke-tested on a scratch three-cell file: 0 divergences armed. With
+  `PROTO_SAB_TEXTPOS=1`, it reports the N1 witness as a divergence on both
+  routes.
+
+Rev 2.1 closes when that run is green against the rev-2.1 prototype (the
+re-check's ruling): no divergence, and nonzero reach.
+
 ## 9. abi, flags, spec, docs — what the build commit carries
 
 **abi event: YES.** The number is taken at build, by grep (D94). It is 65 at
