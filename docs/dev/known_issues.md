@@ -11,7 +11,7 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 ---
 
-## K93 — OPEN (2026-10-07, found by lane possarms while designing [ART-POSS-ARMS]; present on main bcb7b128 and earlier) — WRONG ANSWER: possessify gives a quantifier inside a SUBROUTINE-CALL TARGET a verdict from the group's LEXICAL follow, but a call site re-runs the group under a different follow
+## K93 — FIXED-pending-merge (lane k93fix, 2026-10-07; found 2026-10-07 by lane possarms while designing [ART-POSS-ARMS]; present on main bcb7b128 and earlier) — WRONG ANSWER: possessify gives a quantifier inside a SUBROUTINE-CALL TARGET a verdict from the group's LEXICAL follow, but a call site re-runs the group under a different follow
 
 **Witnesses** (`--features recursion`; default vs `-fno-possessify` vs libpcre2 10.46 on ubuntubudu; the default route is the VM because of the captures; `-fno-splice-calls` doesn't change it):
 
@@ -30,7 +30,7 @@ The first two were reproduced by the manager on the Mac at 6d0177f8. **Cause:** 
 
 **Blocks:** [ART-POSS-ARMS]. Both arms widen the same follow-based verdict and must not ship before this fix.
 **Repro:** `build/pcrec -p rx --features recursion --emit-main -o x.c --pattern '(a+)b(?1)a' && gcc -O1 -o x x.c && ./x abaa` → `nomatch`.
-**Fix:** lane k93fix.
+**Fix (lane k93fix, `docs/dev/lanes/k93fix_report.md`):** one mechanism for every call kind. `pss_walk` (`src/opt/possessify.c`) carries a per-group JOINED call-site context (`CallCtx`: follow, enclosing-loop firsts, may-end), recorded at every `A_CALL` on context-only walks iterated to a fixpoint (nested calls, recursion; a call inside a lookaround joins the TOP context), and applied at the group's `A_CAP` (the root for `(?R)`). The verdict is a conjunction over contexts, so one walk under the join decides it. The free discharge's survey is the same walk, so related item 1 is fixed by the same change. **Related item 2 is UNRULED**: the fix gives the SOUND answer, `(?:b(?R)a|a+)` on `baa` = (0,3), which is 10.46's `PCRE2_NO_AUTO_POSSESS` answer; 10.46's default is (1,3) (recorded as `under pcre2-auto-possess` lines in `tests/recursion/k93.rxt`, and as U18 in upstream_issues.md). Tests: `tests/recursion/k93.rxt`, `tests/possessify/calls.txt` + section 8 of `run_possessify_tests.sh`; sabotage S586-S588.
 
 ## K92 — FIXED 2026-10-06 (lane flagbits, abi 64 -> 65) — `rx_info.flags` kept deny bits 18 (`-fno-size-term`) and 21 (`-fno-scan-edge`) set (found by lane decsurvey, `docs/design/decision_families_survey.md` §4.3; the fourth incident of one shape after bit 19 and K68)
 

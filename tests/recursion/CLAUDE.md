@@ -289,6 +289,20 @@ re-measuring it.
   left recursion at the end of every run, where libpcre2 answers rc -52 and
   no expectation can be written (pcrec's answer there is unchanged by K69). The controls keep it: nullable callees,
   directly and through a second call. Sabotage S319's harness target.
+- **`k93.rxt`** — K93 (lane k93fix, 2026-10-07): a quantifier inside a
+  call TARGET must hold its possessify verdict under every call site's
+  follow, not only the group's lexical one. **HAND-WRITTEN, NOT GENERATED**,
+  `k69.rxt`'s precedent, every expectation read off libpcre2 10.46 first
+  (light probe through `pcre2_ctypes.py`, both default and
+  `PCRE2_NO_AUTO_POSSESS`; transcript in `docs/dev/lanes/k93fix_report.md`).
+  Witnesses in every spelling and position (numbered, named, relative,
+  forward, nested, in a repeat, in a lookaround, recursive, and the
+  fixpoint's second round), the free discharge's atomic cell, and controls
+  that must stay possessive. The `(?R)` block's unqualified lines are the
+  SOUND answer (10.46 under `PCRE2_NO_AUTO_POSSESS`); 10.46's default
+  differs there (upstream U18) and is carried as `under pcre2-auto-possess`
+  lines, which the harness counts as skips — the choice is unruled. Sabotage
+  S586-S588's harness target.
 - **`nocaptures.rxt`** — design §4.3's marked-set cells (one-hop, two-hop),
   written on the ORDINARY (captures-on) axis. **Does not and cannot today
   assert the `--no-captures` axis itself** — see "What could not be
