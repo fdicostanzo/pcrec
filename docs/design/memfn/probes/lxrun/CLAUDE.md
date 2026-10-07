@@ -45,8 +45,14 @@ run by pcrec's make; each writes only under its OUTDIR argument.
   exit 0 iff every REAL RUN stream reads movers=0 asymmetric=0, no stream
   is dumps, and every other failure line is DECLARED for that arm in its
   table (each with its measured reason) and no declaration is stale.
-  `--selftest LOGDIR` doctors copies of real logs (i2_3, i2_9 of the
-  91f5b607 run) into five planted reds.
+  `--selftest LOGDIR [LOGDIR ...]` doctors copies of real logs into eight
+  planted reds: five on the `-fno-altcls-factor` and `-fno-cls-kit` arms
+  (i2_3, i2_9 of the 91f5b607 run), and three on the INERT branch (lane
+  r4c2fix: an inert arm whose flag moved c-default bytes, moved a c-vm
+  stamp, or lost its c-vm row), on the one-binary `-fmemfn-simd` inert
+  arm's log (i2_82 of the RERUN). Logs are picked by their `extra=[...]`
+  header from the first LOGDIR holding one, so pass the run's dir and then
+  the rerun's; a log not found fails the selftest.
 
 Transcripts: `../out/linux/`. Maintenance: update this file when files are
 added/removed or change roles.
