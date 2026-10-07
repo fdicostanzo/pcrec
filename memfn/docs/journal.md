@@ -724,3 +724,16 @@ pointer when a kit change merges to main.
   box.
 - Lessons: lanes still overran numeric caps "for timing" (rowconn2: ~770
   compiles outside the lock). Briefs must forbid timing runs outright.
+
+## 2026-10-07 (late) — woke on the new Linux dev box (pcrec@192.168.1.17)
+
+- Kit worktree re-created at worktrees/memfn from origin/lane/memfn-rowcon
+  (c808c3d5); main 23111928 merged in; make strict + build rc 0.
+- Box facts (from main): 16 threads, ~29 GB, gcc 15.2.0, libpcre2 10.46;
+  bare `timeout` is uutils, so use `gnutimeout`; no git identity configured
+  (commit with -c user.name/-c user.email).
+- Main's first full make test here holds the box; the kit runs nothing heavy
+  until main releases it.
+- One read-only sonnet triage of g2x F1/F2/G1 (capped at 20 pcrec + 20 gcc
+  invocations). Asked main whether MF_MISS_N ships kit-side (recommended)
+  or with R-6.
