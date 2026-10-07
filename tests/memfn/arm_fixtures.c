@@ -18,9 +18,11 @@
  *   arm_fixtures OUTDIR [--perturb]
  *
  * writes OUTDIR/<fixture>.def and OUTDIR/<fixture>.use and prints one line
- * per fixture, `<fixture>\t<form_id>`. --perturb moves one byte of one
+ * per fixture, `<fixture>\t<form_id>\t<libc>`. --perturb moves one byte of one
  * fixture's description (pre-onebyte-rest's first byte, 64 -> 65): the
  * script's witness that a pinned digest sees a change in what it pins.
+ * The line's third column is the art's MEMFN_LIBC stamp (run_arm_pins.sh
+ * checks it against a scan of the rendered text).
  * Exit 1 on any kit refusal. */
 #include <stdarg.h>
 #include <stdio.h>
@@ -80,6 +82,17 @@ static void s_legend(void *u, uint8_t b)
     else if (b >= 0x20 && b < 0x7f) snprintf(buf, sizeof buf, "'%c'", b);
     else snprintf(buf, sizeof buf, "%d", b);
     s_puts(u, buf);
+}
+
+/* A sink that keeps only the MEMFN_LIBC stamp (the libc record, libcnote). */
+static void c_stamp(void *u, const char *name, const char *value)
+{
+    if (!strcmp(name, "MEMFN_LIBC")) snprintf(u, 256, "%s", value);
+}
+
+static void c_stamp_int(void *u, const char *name, long long value)
+{
+    (void)u; (void)name; (void)value;
 }
 
 static mf_sink sink_of(Text *t)
@@ -287,7 +300,15 @@ static int render_h(const char *dir, const char *name, const mf_site *s,
     if (!f) { perror(path); return 1; }
     fputs(use.p ? use.p : "", f);
     fclose(f);
-    printf("%s\t%s\n", name, res.form_id);
+    /* the libc record the art holds once its sites are rendered: the kit
+     * records it as it renders (libcnote), with no pcrec scan in this driver */
+    char libc[256] = "?";
+    mf_sink sk = { .u = libc, .stamp = c_stamp, .stamp_int = c_stamp_int };
+    if (mf_stamps(art, &sk)) {
+        fprintf(stderr, "%s: mf_stamps refused: %s\n", name, mf_art_error(art));
+        return 1;
+    }
+    printf("%s\t%s\t%s\n", name, res.form_id, libc);
     free(def.p);
     free(use.p);
     return 0;
@@ -356,6 +377,10 @@ int main(int argc, char **argv)
     s.pred.plan_pos = 2;
     bad |= render_h(dir, "ofs-miss-n", &s, "rx_ofsskip",
                     (Bounds){ "subject_length", "subject_length", NULL });
+    /* the same site, the miss stated by the MF_MISS_N token (lane missn):
+     * the same arm, and the same bytes as ofs-miss-n */
+    bad |= render_h(dir, "ofs-miss-token", &s, "rx_ofsskip",
+                    (Bounds){ "subject_length", MF_MISS_N, NULL });
     bad |= render_h(dir, "ofs-decline-miss", &s, "rx_ofsskip",
                     (Bounds){ "subject_length", "((size_t)-1)", NULL });
     bad |= render_h(dir, "ofs-decline-floor", &s, "rx_ofsskip",
@@ -376,6 +401,9 @@ int main(int argc, char **argv)
     p_run(&q[1], "userpass", NULL, 3, 1);
     s = pre_site(q, 2, 1);
     bad |= render(dir, "pre-lead-handoff", &s, "rx_reqrun");
+    /* the same ASSIGN site with `miss` stated by the token (lane missn) */
+    bad |= render_h(dir, "pre-lead-handoff-miss-token", &s, "rx_reqrun",
+                    (Bounds){ "subject_length", MF_MISS_N, NULL });
 
     /* precheck: a masked window (the pair arm), the whole run, the set rest */
     mf_pred r[4];

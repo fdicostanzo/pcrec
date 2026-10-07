@@ -105,6 +105,9 @@ static long lab_rev[NLAB][2], lab_eb[NLAB][2];
 static long set_cell[17], run_cell[17][34][5], nterm_cell[9], npred_max;
 static long style_sites[3], via_sites[3], opt_sites, discard_sites, gbc_sites, count_sites,
             span_sites, tok_sites[3];
+/* the MF_MISS_N token's cells (miss_mode 4): sites by handoff and by FUNC,
+ * and the answer checks with a positive / a miss outcome */
+static long mt_sites, mt_ret, mt_assign, mt_func, mt_checks, mt_pos;
 
 static int lab_index(const char *l)
 {
@@ -133,6 +136,12 @@ static void census_site(const g2_site *d, const g2_items *it)
         lab_empty[li][d->empty]++;
         lab_rev[li][d->reverse]++;
         lab_eb[li][d->end_back]++;
+    }
+    if (d->miss_mode == 4) {
+        mt_sites++;
+        mt_ret += d->handoff == G2_H_RETURN;
+        mt_assign += d->handoff == G2_H_ASSIGN;
+        mt_func += d->form == G2_FORM_FUNC && d->handoff == G2_H_RETURN;
     }
     style_sites[d->hook_style]++;
     via_sites[d->via]++;
@@ -379,6 +388,7 @@ static void check(g2_fn fn, const uint8_t *subj, size_t n, size_t lo, size_t fl,
             if (li >= 0 && cur->npred <= 40) { lab_small[li]++; if (pos) lab_pos[li]++; }
             cur_pos += pos;
             cur_checks++;
+            if (cur->miss_mode == 4) { mt_checks++; mt_pos += pos; }
         } else {
             report("WRONG", subj, n, lo, fl, layout, why);
             n_fail++;
@@ -810,6 +820,12 @@ int main(int argc, char **argv)
            "OPTIONAL %ld, DISCARD %ld, caller-guard %ld, count %ld, span-bounded %ld, on_cand tok if-A/A/R %ld/%ld/%ld\n",
            style_sites[0], style_sites[1], style_sites[2], via_sites[0], via_sites[1], via_sites[2],
            opt_sites, discard_sites, gbc_sites, count_sites, span_sites, tok_sites[0], tok_sites[1], tok_sites[2]);
+    printf("G2 miss token (MF_MISS_N): sites %ld (RETURN %ld, ASSIGN %ld, FUNC/RETURN %ld), checks %ld (positive %ld)\n",
+           mt_sites, mt_ret, mt_assign, mt_func, mt_checks, mt_pos);
+    if (!mt_ret || !mt_assign || !mt_func || !mt_pos || mt_pos == mt_checks) {
+        printf("G2 coverage MISSING: MF_MISS_N token cells (RETURN, ASSIGN, FUNC, both outcomes)\n");
+        miss++;
+    }
     long unexplained = n_sites_nopos - n_sites_unsat - n_sites_overlap - n_sites_wide;
     printf("G2 sites with no positive outcome: %ld of %ld (by construction: a never-holding term %ld, "
            "overlapping terms %ld, too wide for 129 bytes %ld; unexplained %ld)\n",

@@ -16,7 +16,7 @@
 # run-bearing rows re-pinned and the runcmp rows added at M1b's REPLACE (the
 # kit's own run compare and helpers, I1-proved at M1b's IMPLEMENT).
 #
-# CHECKS
+# CHECKS (5, the libc record, is below the witness)
 #   1. every fixture renders, through the arm its row names (the kit's form
 #      id): a fixture that fell to another row would pin the wrong arm;
 #   2. every part's sha256 equals its pin;
@@ -34,7 +34,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 LIB="${LIB:-$ROOT_DIR/build/libpcrec.a}"
 PINS="$ROOT_DIR/tests/memfn/pins/arms.tsv"
 CC="${CC:-cc}"
-ARMS_ROW_FLOOR=34
+ARMS_ROW_FLOOR=38
 ARMS_EXPECTED="ofsskip precheck runcmp"
 
 pass=0; fail=0
@@ -100,6 +100,52 @@ done
 moved="$(diff "$T/now" "$T/pert" | awk '/^>/ { print $2 "." $3 }')"
 if [ "$moved" = "pre-onebyte-rest.use" ]; then ok
 else bad "the --perturb witness moved '${moved:-nothing}', expected exactly pre-onebyte-rest.use"; fi
+
+# 5: the libc record (libcnote, kit F2). Each fixture's art must report in
+# MEMFN_LIBC exactly the libc functions its rendered text calls, with no pcrec
+# scan involved. The oracle is this scan of the .def + .use text (comments and
+# literals out, `memcpy` of a literal 1-8 out: the record's one exclusion),
+# which shares no code with the kit. Floors (K35, literals): at least one
+# fixture must expect memchr and one memcmp, so an oracle that reads
+# nothing is red.
+LIBC_FLOOR_MEMCHR=1; LIBC_FLOOR_MEMCMP=1
+python3 - "$T/out" "$T/ids" "$LIBC_FLOOR_MEMCHR" "$LIBC_FLOOR_MEMCMP" > "$T/libc.res" <<'EOF2'
+import os, re, sys
+d, ids, fmc, fcm = sys.argv[1], sys.argv[2], int(sys.argv[3]), int(sys.argv[4])
+NAMES = r'(?:mem[a-z]+|str[a-z]+|bcmp|bzero|bcopy)'
+def scan(text):
+    text = re.sub(r'/\*.*?\*/', ' ', text, flags=re.S)
+    text = re.sub(r'//[^\n]*', ' ', text)
+    text = re.sub(r'"(?:\\.|[^"\\])*"', '""', text)
+    text = re.sub(r"'(?:\\.|[^'\\])*'", "''", text)
+    found = set()
+    for m in re.finditer(r'(?<![\w.>])(' + NAMES + r')\s*\(([^;]*)', text):
+        name, rest = m.group(1), m.group(2)
+        if name == 'memcpy':
+            args = re.match(r'[^,]*,[^,]*,\s*([0-9]+)[uUlL]*\s*\)', rest)
+            if args and 1 <= int(args.group(1)) <= 8:
+                continue
+        found.add(name)
+    return found
+nchr = ncmp = bad = 0
+for line in open(ids):
+    fx, _, got = line.rstrip('\n').split('\t')
+    text = ''
+    for part in ('def', 'use'):
+        text += open(os.path.join(d, fx + '.' + part)).read() + '\n'
+    want = ','.join(sorted(scan(text))) or 'none'
+    nchr += 'memchr' in want.split(',')
+    ncmp += 'memcmp' in want.split(',')
+    if want != got:
+        bad += 1
+        print('BAD %s: MEMFN_LIBC is "%s", the text calls "%s"' % (fx, got, want))
+if nchr < fmc: bad += 1; print('BAD only %d fixtures expect memchr, floor %d' % (nchr, fmc))
+if ncmp < fcm: bad += 1; print('BAD only %d fixtures expect memcmp, floor %d' % (ncmp, fcm))
+print('OK' if not bad else 'RED')
+EOF2
+if grep -q '^BAD' "$T/libc.res"; then
+    grep '^BAD' "$T/libc.res" | sed 's/^BAD/FAIL:/'; bad "the libc record disagrees with the rendered text"
+else ok; fi
 
 echo "arm pins: $rows rows over $(wc -l < "$T/ids" | tr -d ' ') fixtures"
 echo "checks passed: $pass"

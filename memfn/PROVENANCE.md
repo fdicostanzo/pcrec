@@ -37,3 +37,5 @@ the change that adds the file.
 | `src/k1_ref.c` | original | 0BSD | K1's reference functions (G2's oracle); never artifact text |
 | `src/options.c` | original | 0BSD | `mf_options()` / `mf_opts_check()`; the `--list-axes` `memfn` section's rows |
 | `src/options.def` | original | 0BSD | the kit's option registry (empty at R4a) |
+| `src/fields.def` | original | 0BSD | the row contracts' field and class table ([MEMFN-ROWCON] N1); no artifact text |
+| `src/gate.c` | original | 0BSD | the row-contract gate and the MF_TRACE records ([MEMFN-ROWCON] N1); no artifact text |

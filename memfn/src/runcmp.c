@@ -64,12 +64,17 @@ enum { RC_P_MASKED_WORDS, RC_P_OVERLAP, RC_P_MASKED, RC_P_EXACT };
 /* The emitted forms. */
 enum { RC_F_WORDS, RC_F_BYTES, RC_F_MEMCMP };
 
-/* One row: what `mf_run_rows` shows, and the tags the walk reads. */
+/* One row: what `mf_run_rows` shows, the tags the walk reads, and its
+ * contract (the WARN gate's, [MEMFN-ROWCON] N1; the contracts follow the
+ * walk, at the end of the file). */
 typedef struct {
-    mf_run_row    row;
-    unsigned char pred;
-    unsigned char form;
+    mf_run_row           row;
+    unsigned char        pred;
+    unsigned char        form;
+    const gate_contract *ct;
 } rc_row;
+
+static const gate_contract rc_ct_words, rc_ct_overlap, rc_ct_bytes, rc_ct_memcmp;
 
 /* THE ROWS, first-match. The walk skips a row whose deny bit is set or whose
  * predicate fails; each domain's last row is undeniable and always holds in
@@ -83,23 +88,23 @@ static const rc_row rows[] = {
         "same load of the mask's string literal and compared against the same "
         "load of T's, joined by && in offset order; an all-0xFF word compares "
         "unmasked" },
-      RC_P_MASKED_WORDS, RC_F_WORDS },
+      RC_P_MASKED_WORDS, RC_F_WORDS, &rc_ct_words },
     { { "overlap", MF_D_RUN_OVERLAP,
         "per exact literal-run compare of length 3, 5-7 or 9-15 (where gcc's "
         "constant memcmp decomposes into 2-4 non-overlapping pieces): two "
         "overlapping natural-width words, the last at offset L - W, each loaded "
         "by memcpy and compared against the same load of a string literal, "
         "joined by && in offset order" },
-      RC_P_OVERLAP, RC_F_WORDS },
+      RC_P_OVERLAP, RC_F_WORDS, &rc_ct_overlap },
     { { "bytes", 0,
         "per masked compare (fallback): one (byte & K) == T test per position, "
         "joined by &&" },
-      RC_P_MASKED, RC_F_BYTES },
+      RC_P_MASKED, RC_F_BYTES, &rc_ct_bytes },
     { { "memcmp", 0,
         "per exact compare (fallback): one constant-length !memcmp, which gcc "
         "lowers to one load at L in {1, 2, 4, 8} and to a vector compare at "
         "L >= 16" },
-      RC_P_EXACT, RC_F_MEMCMP },
+      RC_P_EXACT, RC_F_MEMCMP, &rc_ct_memcmp },
 };
 #define NROWS (sizeof rows / sizeof rows[0])
 
@@ -157,16 +162,37 @@ static int rc_holds(int pred, const rc_run *r)
     return 0;
 }
 
-/* The first row that applies to run `r` and is not denied: the ONE selection
- * both the compare and the helper declaration ask. NULL only if the table
- * lost a domain's fallback. */
-static const rc_row *rc_row_of(uint64_t denies, const rc_run *r)
+/* The first row that applies to run `r` (RUN term `t`) and is not denied by
+ * the art's denies: the ONE selection both the compare and the helper
+ * declaration ask. NULL only if the table lost a domain's fallback. The WARN
+ * gate reads each undenied row's contract before its predicate and only
+ * counts (`run_warns`) a chosen row it would decline (N1). */
+static const rc_row *rc_row_of(mf_art *art, const mf_term *t, const rc_run *r)
 {
+    gate_in in = { NULL, NULL, t };
+    gate_tctx tc = { art, "runcmp", 0, MF_PH_RUN, &in };
+    gate_trace_sel(&tc);
     for (size_t i = 0; i < NROWS; i++) {
-        if (rows[i].row.deny & denies) continue;
-        if (rc_holds(rows[i].pred, r)) return &rows[i];
+        if (rows[i].row.deny & art->denies) {
+            gate_trace_row(&tc, rows[i].ct, "DENIED", rows[i].row.deny, NULL);
+            continue;
+        }
+        gate_verdict v = gate_check(rows[i].ct, MF_PH_RUN, &in);
+        if (rc_holds(rows[i].pred, r)) {
+            gate_trace_row(&tc, rows[i].ct, "CHOSEN", 0, &v);
+            gate_trace_end(&tc, rows[i].ct, &v);
+            if (v.r1 | v.r2) art->run_warns++;
+            return &rows[i];
+        }
+        gate_trace_row(&tc, rows[i].ct, "PRED_FALSE", 0, &v);
     }
+    gate_trace_end(&tc, NULL, NULL);
     return NULL;
+}
+
+const gate_contract *rc_row_contract(size_t i)
+{
+    return i < NROWS ? rows[i].ct : NULL;
 }
 
 /* Writes `base`, plus ` + o` when `o` is not 0. */
@@ -245,7 +271,7 @@ int run_cmp_render(mf_art *art, const mf_term *t, const char *base,
                    int32_t off, mf_sink *c)
 {
     rc_run r = rc_of(t);
-    const rc_row *row = rc_row_of(art->denies, &r);
+    const rc_row *row = rc_row_of(art, t, &r);
     if (!row)
         return kit_fail(art, "runcmp: no run-compare row applies");
     if (kit_sink_ok(art, c, "runcmp")) return -1;
@@ -254,7 +280,9 @@ int run_cmp_render(mf_art *art, const mf_term *t, const char *base,
     switch (row->form) {
     case RC_F_WORDS:
         rc_emit_words(art, c, base, off, &r);
-        art->includes |= MF_INC_STRING_H;   /* the helpers' memcpy */
+        /* the helpers' memcpy: a constant 2-8 byte load, the record's one
+           exclusion (§R4.3.3), so nothing is noted */
+        art->includes |= MF_INC_STRING_H;
         break;
     case RC_F_BYTES:
         rc_emit_bytes(c, base, off, &r);
@@ -266,6 +294,7 @@ int run_cmp_render(mf_art *art, const mf_term *t, const char *base,
         c->cstr(c->u, r.t, (size_t)r.len);
         kit_out(c, "\", %d)", r.len);
         art->includes |= MF_INC_STRING_H;
+        if (mf_art_note_libc(art, "memcmp")) return -1;
         break;
     }
     return 0;
@@ -276,7 +305,7 @@ int run_cmp_prepare(mf_art *art, const mf_pred *p, mf_sink *c)
     for (unsigned i = 0; i < p->nterm; i++) {
         if (p->term[i].kind != MF_T_RUN) continue;
         rc_run r = rc_of(&p->term[i]);
-        const rc_row *row = rc_row_of(art->denies, &r);
+        const rc_row *row = rc_row_of(art, &p->term[i], &r);
         if (!row)
             return kit_fail(art, "runcmp: no run-compare row applies");
         if (row->form != RC_F_WORDS) continue;
@@ -311,7 +340,7 @@ int mf_flush_helpers(mf_art *art, mf_sink *c)
     }
     c->puts(c->u, "\n");
     art->wemitted |= need;
-    art->includes |= MF_INC_STRING_H;
+    art->includes |= MF_INC_STRING_H;   /* memcpy of 2/4/8: not noted (idiom) */
     return 0;
 }
 
@@ -348,10 +377,111 @@ static int runcmp_use(mf_art *art, uint32_t handle, const mf_hooks *h,
     return run_cmp_render(art, t, base.p, t->offset, o);
 }
 
+/* ---- the contracts ([MEMFN-ROWCON] N1, row_contracts.md §2) --------------
+ *
+ * `uses`: the fields the text reads with no reading of its own left
+ * unstated; `serves`: per field, the classes the text is right for (MF_ANY:
+ * irrelevant to the text). Each cites the line above that justifies it.
+ * The arm's are read at define and use; the rows' at the run walk, which
+ * reads MF_PH_RUN fields only, so a row lists those alone. */
+static const gate_use runcmp_uses[] = {
+    /* :367-368 refuses a use without s and lo; :371 reads both */
+    { CM(EXPR), CM(BOOL), MF_PH_USE, FM(s) | FM(lo) },
+};
+
+static const gate_contract runcmp_ct = {
+    "arms", "runcmp", runcmp_uses, sizeof runcmp_uses / sizeof runcmp_uses[0], {
+    [FLD_form]            = CM(EXPR),                 /* :351 */
+    [FLD_op]              = CM(VERIFY),               /* :351 */
+    [FLD_handoff]         = CM(BOOL),                 /* :352 */
+    [FLD_reverse]         = MF_ANY,                   /* not read: a VERIFY has no direction */
+    [FLD_empty]           = MF_ANY,                   /* not read: the caller's guard decides the
+                                                         range (memfn.h guard_by_caller) */
+    [FLD_end_back]        = MF_ANY,                   /* not read, as empty */
+    [FLD_pred]            = CM(NONNEG),               /* :373-374 reads at lo + offset, which the
+                                                         guard bounds only from lo up
+                                                         (compose.c:245) */
+    [FLD_preds]           = MF_ANY,                   /* not read: :373 reads s->pred */
+    [FLD_ret_pred]        = MF_ANY,                   /* not read (ALL_PRESENT's) */
+    [FLD_guard_by_caller] = CM(YES),                  /* :352 */
+    [FLD_on_miss_leaves]  = MF_ANY,                   /* not read; 0 off ON_MISS/ASSIGN, compose.c:210 */
+    [FLD_span_hi]         = MF_ANY,                   /* not read: a proven fact the text needs not */
+    [FLD_denies]          = CM(NONE) | CM(RUN_OVERLAP), /* :374 through the walk, :176, with a
+                                                         fallback per domain (rows[]) */
+    [FLD_fn_ref]          = MF_ANY,                   /* not read: an EXPR has no function */
+    [FLD_table_ref]       = MF_ANY,                   /* not read: one RUN term, :353 */
+    [FLD_s]               = CM(IDENT),                /* :371 raw in `%s + %s`, then `+ off` (S6) */
+    [FLD_n]               = MF_ANY,                   /* not read: the guard bounds the reads */
+    [FLD_lo]              = CM(IDENT),                /* :371, as s (S7) */
+    [FLD_floor]           = MF_ANY,                   /* not read: every read is at lo + offset,
+                                                         offset >= 0 (compose.c:245) and floor <= lo
+                                                         the caller's (Q-G2-6) */
+    [FLD_result]          = MF_ANY,                   /* not read: a BOOL writes no value */
+    [FLD_result_decl]     = MF_ANY,                   /* not read */
+    [FLD_miss]            = MF_ANY,                   /* not read: a BOOL has no miss value */
+    [FLD_on_miss]         = MF_ANY,                   /* not read: an EXPR runs no statement */
+    [FLD_step]            = MF_ANY,                   /* not read (ADVANCE's) */
+    [FLD_more]            = MF_ANY,                   /* not read (ADVANCE's) */
+    [FLD_peek]            = MF_ANY,                   /* not read (ADVANCE's) */
+    [FLD_count]           = MF_ANY,                   /* not read (ADVANCE's) */
+    [FLD_count_start]     = MF_ANY,                   /* not read (ADVANCE's) */
+    [FLD_on_cand]         = MF_ANY,                   /* not read (ON_CAND's) */
+    [FLD_on_cand_reach]   = MF_ANY,                   /* not read (ON_CAND's) */
+    [FLD_member]          = MF_ANY,                   /* not read: no SET term, :353 */
+    [FLD_table_name]      = MF_ANY,                   /* not read: no SET term */
+    [FLD_fn_name]         = MF_ANY,                   /* not read: an EXPR has no function */
+    [FLD_note]            = MF_ANY,                   /* not read: never called */
+    [FLD_note_tag]        = MF_ANY,                   /* not read */
+    [FLD_indent]          = MF_ANY,                   /* not read: an expression, no statement */
+    [FLD_comment_tier]    = MF_ANY,                   /* not read: no comment */
+}};
+
 const arm runcmp_arm = {
     "runcmp",
     0,
     runcmp_applies,
     runcmp_define,
     runcmp_use,
+    &runcmp_ct,
 };
+
+/* Every row reads the term's bytes, mask and length (rc_of, :123-127). */
+static const gate_use rc_uses[] = {
+    { MF_ANY, MF_ANY, MF_PH_RUN, FM(run) | FM(run_len) },
+};
+#define RC_NUSES (sizeof rc_uses / sizeof rc_uses[0])
+
+/* `words`: :226 an all-0xFF word compares unmasked, :229-235 a masked one
+ * ANDs the mask's load; an UNSAT run is not served (no walk is handed one,
+ * run_cmp_sat, :262-268). A one-byte run is not served: rc_width(1) is 2, so
+ * the last word's offset L - W is -1, a read outside the run (:223-225). */
+static const gate_contract rc_ct_words = {
+    "runcmp", "words", rc_uses, RC_NUSES, {
+    [FLD_run]     = CM(EXACT) | CM(MASKED),
+    [FLD_run_len] = CM(MANY),
+}};
+
+/* `overlap`: the same writer as `words` (RC_F_WORDS, :98 -> :282), so the
+ * same classes. */
+static const gate_contract rc_ct_overlap = {
+    "runcmp", "overlap", rc_uses, RC_NUSES, {
+    [FLD_run]     = CM(EXACT) | CM(MASKED),
+    [FLD_run_len] = CM(MANY),
+}};
+
+/* `bytes`: :256 an exact position, :257 a masked one, per position (:252),
+ * so every length. An UNSAT position would be a constant-false compare
+ * gcc's -Wtautological-compare flags (run_cmp_sat's reason, kit.h). */
+static const gate_contract rc_ct_bytes = {
+    "runcmp", "bytes", rc_uses, RC_NUSES, {
+    [FLD_run]     = CM(EXACT) | CM(MASKED),
+    [FLD_run_len] = CM(ONE) | CM(MANY),
+}};
+
+/* `memcmp`: :288-293 compares the run's bytes and never reads its mask, so
+ * a masked run would be compared exact. Every length (:293). */
+static const gate_contract rc_ct_memcmp = {
+    "runcmp", "memcmp", rc_uses, RC_NUSES, {
+    [FLD_run]     = CM(EXACT),
+    [FLD_run_len] = CM(ONE) | CM(MANY),
+}};

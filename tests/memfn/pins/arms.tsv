@@ -18,6 +18,11 @@
 # `n` and reads from `pos` up, so a site with another miss or a stated floor
 # is the generic row's. A row that falls back to ofsskip is check 1's red.
 #
+# missn ADDED (no row re-pinned): ofs-miss-token and pre-lead-handoff-miss-token,
+# the sites of ofs-miss-n and pre-lead-handoff with `miss` stated by the
+# MF_MISS_N token; each pins the SAME digests as its text-stated twin (the
+# token renders as the `n` hook's text, never its own bytes).
+#
 # Columns (tab-separated): arm (the kit's form id), fixture, part (`def` the
 # file-scope text, `use` the entry's), bytes, sha256.
 #
@@ -27,7 +32,9 @@ generic	ofs-decline-floor	use	111	14ffef2e3b7611d36133a6437b321ee1cf881007507ae4
 generic	ofs-decline-miss	def	570	81447566c6f6cb7ddecb932e6df3299e2321fce0f62fe6f2c7006e70285d3b19
 generic	ofs-decline-miss	use	93	b1253e9aaff89caed0a40d8a94f98bfc071a92f0088707f87ad69be4aa7ddc5c
 ofsskip	ofs-miss-n	def	2094	d68c7b8da022d5ef5cc9cf633828c7ad89dec6d7f9bda0bd1ed653e60e353de5
+ofsskip	ofs-miss-token	def	2094	d68c7b8da022d5ef5cc9cf633828c7ad89dec6d7f9bda0bd1ed653e60e353de5
 ofsskip	ofs-miss-n	use	59	205a7d97afc136ef5a5e7da467200ec16bb16fbd9a55c580bc539703a814a709
+ofsskip	ofs-miss-token	use	59	205a7d97afc136ef5a5e7da467200ec16bb16fbd9a55c580bc539703a814a709
 ofsskip	ofs-pair	def	2272	c40c58003965031cda493be90fe99ca96a635f9de0c7559384bbe020736cc6ff
 ofsskip	ofs-pair	use	48	036c47e8483d3a3dd5bfb5d47aecf1368467057fffe78531d3c997daa0345beb
 ofsskip	ofs-run-pinned	def	2094	d68c7b8da022d5ef5cc9cf633828c7ad89dec6d7f9bda0bd1ed653e60e353de5
@@ -37,7 +44,9 @@ ofsskip	ofs-scan0	use	48	036c47e8483d3a3dd5bfb5d47aecf1368467057fffe78531d3c997d
 ofsskip	ofs-set-scan3	def	1489	c98c91f32bf15683113cc4278ee549e41c8a625d5b3afaad7bfc00525a193254
 ofsskip	ofs-set-scan3	use	59	205a7d97afc136ef5a5e7da467200ec16bb16fbd9a55c580bc539703a814a709
 precheck	pre-lead-handoff	def	847	df7c9cd5622030b5bef727b73f999406be6f64900adce34a1489f394e2f1e8ed
+precheck	pre-lead-handoff-miss-token	def	847	df7c9cd5622030b5bef727b73f999406be6f64900adce34a1489f394e2f1e8ed
 precheck	pre-lead-handoff	use	301	719a4b0441f933eba40e938785912aef0074d273b2e22cad40b06df8932c9059
+precheck	pre-lead-handoff-miss-token	use	301	719a4b0441f933eba40e938785912aef0074d273b2e22cad40b06df8932c9059
 precheck	pre-masked-whole-rest	def	2870	d9fd84c4be65cdd2c2c1f6ca8c8debc01ef319046688fe95237903470bada471
 precheck	pre-masked-whole-rest	use	475	43892fbd22fa6beede06ed1aabcdbfb9c34d7b2fd960239f4e4b8856f30ec2a9
 precheck	pre-onebyte-rest	def	0	e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855

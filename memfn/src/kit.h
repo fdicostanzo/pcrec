@@ -35,6 +35,90 @@ void kb_putn(kb *b, const char *s, size_t n);
 void kb_puts(kb *b, const char *s);
 void kb_printf(kb *b, const char *fmt, ...) __attribute__((format(printf, 2, 3)));
 
+/* ---- the row contracts ([MEMFN-ROWCON] N1; fields.def, gate.c) ----------
+ *
+ * Every row of the kit's two selection tables (the arms below, runcmp.c's
+ * rows) carries a contract: the fields its output USES, per site kind and
+ * phase, and the value CLASSES of each field it SERVES. The gate (gate.c)
+ * reads a row's contract against a site before the row's own predicate;
+ * docs/design/memfn/row_contracts.md §2 is the design. */
+
+/* Where the gate reads a field (fields.def's `phase` column). */
+enum { MF_PH_DEFINE = 1u, MF_PH_USE = 2u, MF_PH_RUN = 4u };
+
+/* CL_<class>: fields.def's classes; CL_N counts them. */
+enum {
+#define MF_CLASS(name, doc) CL_##name,
+#include "fields.def"
+#undef MF_CLASS
+    CL_N
+};
+
+/* FLD_<field>: fields.def's fields; FLD_N counts them. */
+enum {
+#define MF_FIELD(name, phase, absent, classify, classes, doc) FLD_##name,
+#include "fields.def"
+#undef MF_FIELD
+    FLD_N
+};
+
+_Static_assert(CL_N <= 64, "a class set is one uint64_t mask");
+_Static_assert(FLD_N <= 64, "a field set is one uint64_t mask");
+
+#define CM(c)  (1ull << CL_##c)     /* one class, as a class-set mask        */
+#define FM(f)  (1ull << FLD_##f)    /* one field, as a field-set mask        */
+#define MF_ANY (~0ull)              /* every class: the field is irrelevant to
+                                       the row's output (declared, never assumed) */
+
+/* One `uses` entry: on a site whose form and handoff classes are in
+ * `forms`/`handoffs`, at the phases in `phases`, the row reads `fields`
+ * and has no reading of its own for any of them left unstated. */
+typedef struct {
+    uint64_t forms, handoffs;
+    unsigned phases;
+    uint64_t fields;
+} gate_use;
+
+/* A row's contract. `serves[f]` is the class set of field f the row's text
+ * is right for; a field it does not list serves nothing. */
+typedef struct {
+    const char     *table, *row;    /* the trace's names                     */
+    const gate_use *uses;
+    unsigned        nuses;
+    uint64_t        serves[FLD_N];
+} gate_contract;
+
+/* What the gate reads: the site and the hooks of the phase (define or use),
+ * or, in the run compare's walk, the RUN term. */
+typedef struct {
+    const mf_site  *s;
+    const mf_hooks *h;
+    const mf_term  *t;
+} gate_in;
+
+/* The gate's verdict: the fields declined by rule 1 (used, unstated) and by
+ * rule 2 (stated, class not served). Both 0 is a pass. */
+typedef struct {
+    uint64_t r1, r2;
+} gate_verdict;
+
+#define gate_check   MF_NS(gate_check)
+#define kit_is_ident MF_NS(kit_is_ident)
+
+/* Row `c`'s verdict at `phase` over `in`. Changes nothing: in N1 the gate
+ * is in WARN mode, and its callers only record what it says. */
+gate_verdict gate_check(const gate_contract *c, unsigned phase, const gate_in *in);
+/* 1 iff `s` is a bare C identifier (a lexical check). */
+int kit_is_ident(const char *s);
+
+/* The text of the site's `miss` with the MF_MISS_N token resolved to the `n`
+ * hook's text (NULL when unstated, or when the token's `n` is). Every reader
+ * of `miss` goes through this: the token's own bytes are never pasted. */
+static inline const char *kit_miss(const mf_hooks *h)
+{
+    return h->miss == MF_MISS_N ? h->n : h->miss;
+}
+
 /* ---- the per-artifact state ---------------------------------------------- */
 
 struct arm;
@@ -49,6 +133,9 @@ typedef struct {
                                    its function's name, or NULL              */
     unsigned          params;   /* FUNC: which PARAM_* the definition takes   */
     int               used;
+    /* the WARN gate's record of the chosen row (N1): at define, and OR-ed
+       over every use and call */
+    gate_verdict      warn_define, warn_use;
 } site_rec;
 
 struct mf_art {
@@ -67,6 +154,9 @@ struct mf_art {
     unsigned    wused, wemitted;
     const char **libc;          /* noted libc names, sorted, distinct (§R4.3.3) */
     uint32_t    nlibc, libc_cap;
+    uint32_t    run_warns;      /* run-compare walks whose chosen row the WARN
+                                   gate would decline (N1)                    */
+    unsigned    trace_id;       /* MF_TRACE: the art's number in the process  */
     char        err[256];
 };
 
@@ -99,6 +189,7 @@ typedef struct arm {
     int (*applies)(const mf_site *s, const mf_hooks *def);
     int (*define)(mf_art *art, uint32_t handle, const mf_hooks *h, mf_sink *file);
     int (*use)(mf_art *art, uint32_t handle, const mf_hooks *h, mf_sink *body);
+    const gate_contract *ct;    /* its uses and serves ([MEMFN-ROWCON])     */
 } arm;
 
 #define generic_arm  MF_NS(generic_arm)
@@ -176,5 +267,56 @@ int run_cmp_prepare(mf_art *art, const mf_pred *p, mf_sink *c);
  * unsatisfiable byte is the generic row's: `bytes` would spell a constant
  * compare `-Wtautological-compare` flags). */
 int run_cmp_sat(const mf_term *t);
+
+/* ---- MF_TRACE: the selection records (gate.c; trace_format.md) ---------- */
+
+#define kit_arm_contract MF_NS(kit_arm_contract)
+#define rc_row_contract  MF_NS(rc_row_contract)
+
+/* Row `i`'s contract in first-match order, or NULL past the last: the
+ * composer's arms (compose.c) and the run compare's rows (runcmp.c). */
+const gate_contract *kit_arm_contract(size_t i);
+const gate_contract *rc_row_contract(size_t i);
+
+/* One selection's context, repeated on each of its records. `site` is the
+ * handle (0 in the run walk, which has none). */
+typedef struct {
+    const mf_art  *art;
+    const char    *table;
+    unsigned       site, phase;
+    const gate_in *in;
+} gate_tctx;
+
+#ifdef MF_TRACE
+#define gate_trace_art MF_NS(gate_trace_art)
+#define gate_trace_sel MF_NS(gate_trace_sel)
+#define gate_trace_row MF_NS(gate_trace_row)
+#define gate_trace_end MF_NS(gate_trace_end)
+/* Numbers a new art. */
+void gate_trace_art(mf_art *art);
+/* MFTRACE SEL: a selection begins. */
+void gate_trace_sel(const gate_tctx *t);
+/* MFTRACE ROW: row `c`'s verdict (`deny` the bit that skipped it, else 0)
+ * and its gate verdict (`v` NULL where the gate was not asked). */
+void gate_trace_row(const gate_tctx *t, const gate_contract *c, const char *verdict,
+                    uint64_t deny, const gate_verdict *v);
+/* MFTRACE END: the chosen row (NULL: none) and whether the WARN gate would
+ * have declined it; counts its reach. */
+void gate_trace_end(const gate_tctx *t, const gate_contract *c, const gate_verdict *v);
+#else
+static inline void gate_trace_art(mf_art *art) { (void)art; }
+static inline void gate_trace_sel(const gate_tctx *t) { (void)t; }
+static inline void gate_trace_row(const gate_tctx *t, const gate_contract *c,
+                                  const char *verdict, uint64_t deny,
+                                  const gate_verdict *v)
+{
+    (void)t; (void)c; (void)verdict; (void)deny; (void)v;
+}
+static inline void gate_trace_end(const gate_tctx *t, const gate_contract *c,
+                                  const gate_verdict *v)
+{
+    (void)t; (void)c; (void)v;
+}
+#endif
 
 #endif /* MEMFN_KIT_H */

@@ -15,6 +15,10 @@ kit session moves it).
   - compiles the rendered text with gcc and clang, plus an ASan+UBSan
     build on the quick subject tier, and runs the driver;
   - runs the three planted-defect witnesses (W1-W3).
+  It checks the `MF_MISS_N` token (miss_mode 4: every second text-"n" site
+  by id) like any other miss value, against G2's reference (`g2_missv`),
+  with its own floors (`FLOOR_MT_*`: sites by shape, answer checks) and a
+  `G2 miss token` census line.
   It prints `checks passed: N` / `checks failed: M` and the population
   against its floors (K35). The floors are literals at the top of the
   script and share no source with the generator or the driver. It exits 0

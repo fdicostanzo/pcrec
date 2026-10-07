@@ -1,0 +1,235 @@
+/* SPDX-License-Identifier: 0BSD
+ * Provenance: original pcrec-memory-functions text; no third-party source
+ *   (memfn/PROVENANCE.md).
+ *
+ * memfn/src/fields.def — THE FIELD TABLE of the row contracts ([MEMFN-ROWCON]
+ * N1, docs/design/memfn/row_contracts.md §2): every mf_site / mf_hooks field
+ * (and run-compare term field) that some row of the kit's two selection
+ * tables reads, the classify function that names a stated value's CLASS,
+ * and the closed class set that function can return. gate.c is its one
+ * reader; each row's `uses`/`serves` (compose.c's arms, runcmp.c's rows)
+ * are declared over the names below.
+ *
+ * Two X-macros, both optional for the includer (a missing one expands to
+ * nothing):
+ *
+ *   MF_CLASS(name, doc)
+ *       One value class, kit-wide. A field's class set is a subset; OTHER is
+ *       in every set, and a value no classify names lands there.
+ *
+ *   MF_FIELD(name, phase, absent, classify, classes, doc)
+ *       name      the field's name in the trace and in `uses`/`serves`.
+ *       phase     where the gate reads it: MF_PH_DEFINE (mf_define's walk,
+ *                 the site and the define hooks), MF_PH_USE (mf_use's
+ *                 re-check, the use hooks), MF_PH_RUN (the run compare's
+ *                 walk, one RUN term). A field read at both is both.
+ *       absent    what an absent value is:
+ *                   HOOK   a NULL hook is UNSTATED (rule 1 applies to it);
+ *                   VALUE  an intrinsic part of the site, never absent;
+ *                   OBLIG  a per-kind OBLIGATION: every builder of the
+ *                          site's kind sets it, so 0 is a STATED value, not
+ *                          an absence. The written exemption is the doc's
+ *                          "OBLIG:" sentence (r3 M7's list, plus the two
+ *                          numeric hooks marked NEW).
+ *       classify  the function gate.c calls (gate_in -> class, or -1 for
+ *                 unstated).
+ *       classes   the closed set, as CM() masks; OTHER always included.
+ *
+ * The text-shape classes [r4, S2-S7]: `s`/`n`/`lo` are IDENT iff the text
+ * is a bare C identifier (a LEXICAL check, kit_is_ident); `on_miss` is JUMP
+ * iff it is one `return`/`goto` statement, BRACED iff one `{ ... }` block.
+ * A row that pastes such text into an operator context serves only IDENT /
+ * JUMP; the generic row parenthesizes and braces, so it serves OTHER.
+ */
+#ifndef MF_CLASS
+#define MF_CLASS(name, doc)
+#define MF_FIELDS_UNDEF_CLASS
+#endif
+#ifndef MF_FIELD
+#define MF_FIELD(name, phase, absent, classify, classes, doc)
+#define MF_FIELDS_UNDEF_FIELD
+#endif
+
+/* ---- the classes --------------------------------------------------------- */
+
+MF_CLASS(OTHER,       "a value no classify names (every field's set has it)")
+/* mf_form */
+MF_CLASS(EXPR,        "MF_FORM_EXPR")
+MF_CLASS(STMT,        "MF_FORM_STMT")
+MF_CLASS(FUNC,        "MF_FORM_FUNC")
+/* mf_op */
+MF_CLASS(FIND,        "MF_OP_FIND")
+MF_CLASS(SKIP,        "MF_OP_SKIP")
+MF_CLASS(VERIFY,      "MF_OP_VERIFY")
+MF_CLASS(ALL_PRESENT, "MF_OP_ALL_PRESENT")
+/* mf_handoff */
+MF_CLASS(RETURN,      "MF_H_RETURN")
+MF_CLASS(ASSIGN,      "MF_H_ASSIGN")
+MF_CLASS(ON_MISS,     "MF_H_ON_MISS")
+MF_CLASS(ADVANCE,     "MF_H_ADVANCE")
+MF_CLASS(ON_CAND,     "MF_H_ON_CAND")
+MF_CLASS(BOOL,        "MF_H_BOOL")
+/* mf_empty */
+MF_CLASS(E_MISS,      "MF_EMPTY_MISS")
+MF_CLASS(E_NOP,       "MF_EMPTY_NOP")
+MF_CLASS(E_EXCLUDED,  "MF_EMPTY_EXCLUDED")
+/* flags and small integers */
+MF_CLASS(NO,          "a 0/1 flag at 0")
+MF_CLASS(YES,         "a 0/1 flag at 1")
+MF_CLASS(ZERO,        "the integer 0, or the hook text \"0\"")
+MF_CLASS(ONE,         "the integer 1")
+MF_CLASS(MANY,        "an integer >= 2")
+MF_CLASS(NONE,        "the field's own `none` value (MF_NO_PRED, 0 ref, npred 0, no deny)")
+/* predicates */
+MF_CLASS(NONNEG,      "every term offset >= 0: no read below the candidate")
+MF_CLASS(BACK,        "some term offset < 0: a read below the candidate")
+MF_CLASS(PRED,        "ret_pred names one of preds")
+MF_CLASS(REF,         "a nonzero hook id (fn_ref / table_ref)")
+MF_CLASS(UNBOUNDED,   "span_hi == MF_SPAN_UNBOUNDED")
+MF_CLASS(RUN_OVERLAP, "denies == MF_D_RUN_OVERLAP")
+/* hook text */
+MF_CLASS(IDENT,       "a bare C identifier (lexical: [A-Za-z_][A-Za-z0-9_]*)")
+MF_CLASS(MISS_N,      "`miss` is the same hooks' `n`: the MF_MISS_N token, or the text of `n` itself")
+MF_CLASS(JUMP,        "one statement, `return ...;` or `goto label;`")
+MF_CLASS(BRACED,      "one `{ ... }` block")
+/* the run compare's term */
+MF_CLASS(EXACT,       "a RUN term with no mask, or every mask byte 0xFF")
+MF_CLASS(MASKED,      "a RUN term with some mask byte not 0xFF, every run byte inside its mask")
+MF_CLASS(UNSAT,       "a RUN term with a run byte outside its mask (Q-G2-13: never holds)")
+
+/* ---- the fields: mf_site (the define walk) ------------------------------- */
+
+MF_FIELD(form, MF_PH_DEFINE, VALUE, cl_form,
+         CM(EXPR) | CM(STMT) | CM(FUNC) | CM(OTHER),
+         "what the text IS")
+MF_FIELD(op, MF_PH_DEFINE, VALUE, cl_op,
+         CM(FIND) | CM(SKIP) | CM(VERIFY) | CM(ALL_PRESENT) | CM(OTHER),
+         "the operation")
+MF_FIELD(handoff, MF_PH_DEFINE, VALUE, cl_handoff,
+         CM(RETURN) | CM(ASSIGN) | CM(ON_MISS) | CM(ADVANCE) | CM(ON_CAND) |
+         CM(BOOL) | CM(OTHER),
+         "what the site hands back")
+MF_FIELD(reverse, MF_PH_DEFINE, OBLIG, cl_reverse,
+         CM(NO) | CM(YES) | CM(OTHER),
+         "OBLIG: 0 is the forward reading, set by every FIND/SKIP/ON_CAND builder")
+MF_FIELD(empty, MF_PH_DEFINE, VALUE, cl_empty,
+         CM(E_MISS) | CM(E_NOP) | CM(E_EXCLUDED) | CM(OTHER),
+         "an empty range's outcome")
+MF_FIELD(end_back, MF_PH_DEFINE, OBLIG, cl_end_back,
+         CM(ZERO) | CM(ONE) | CM(OTHER),
+         "OBLIG: 0 is hi = n, set by every builder (§14.4)")
+MF_FIELD(pred, MF_PH_DEFINE, VALUE, cl_pred,
+         CM(NONNEG) | CM(BACK) | CM(OTHER),
+         "FIND/SKIP/VERIFY's conjunction, by its reads' direction (OTHER: no terms)")
+MF_FIELD(preds, MF_PH_DEFINE, VALUE, cl_preds,
+         CM(NONE) | CM(NONNEG) | CM(BACK) | CM(OTHER),
+         "ALL_PRESENT's predicates, by their reads' direction (NONE: npred 0)")
+MF_FIELD(ret_pred, MF_PH_DEFINE, VALUE, cl_ret_pred,
+         CM(NONE) | CM(PRED) | CM(OTHER),
+         "ALL_PRESENT's returned predicate")
+MF_FIELD(guard_by_caller, MF_PH_DEFINE, OBLIG, cl_guard_by_caller,
+         CM(NO) | CM(YES) | CM(OTHER),
+         "OBLIG: 0 is `the kit tests the range and the reads`, set by every EXPR VERIFY builder")
+MF_FIELD(on_miss_leaves, MF_PH_DEFINE, OBLIG, cl_on_miss_leaves,
+         CM(NO) | CM(YES) | CM(OTHER),
+         "OBLIG: 0 is `on_miss may fall through`, set by every ON_MISS/ASSIGN builder (Q-G2-18)")
+MF_FIELD(span_hi, MF_PH_DEFINE, VALUE, cl_span_hi,
+         CM(UNBOUNDED) | CM(OTHER),
+         "pcrec's proven upper span (OTHER: a bound)")
+MF_FIELD(denies, MF_PH_DEFINE, VALUE, cl_denies,
+         CM(NONE) | CM(RUN_OVERLAP) | CM(OTHER),
+         "the compile's MF_D_* denies (OTHER: a bit no row knows)")
+MF_FIELD(fn_ref, MF_PH_DEFINE, OBLIG, cl_fn_ref,
+         CM(NONE) | CM(REF) | CM(OTHER),
+         "OBLIG: pred.fn_ref; 0 is `no FUNC name`, set by every FIND/SKIP/VERIFY builder")
+MF_FIELD(table_ref, MF_PH_DEFINE, OBLIG, cl_table_ref,
+         CM(NONE) | CM(REF) | CM(OTHER),
+         "OBLIG: the SET terms' table_ref; 0 is `no table`, set by every term builder "
+         "(REF: some SET term of the site names one)")
+
+/* ---- the fields: mf_hooks ------------------------------------------------ */
+
+MF_FIELD(s, MF_PH_USE, HOOK, cl_s,
+         CM(IDENT) | CM(OTHER),
+         "the subject pointer's text")
+MF_FIELD(n, MF_PH_USE, HOOK, cl_n,
+         CM(IDENT) | CM(OTHER),
+         "the read limit's text")
+MF_FIELD(lo, MF_PH_USE, HOOK, cl_lo,
+         CM(IDENT) | CM(OTHER),
+         "the search start's text")
+MF_FIELD(floor, MF_PH_DEFINE | MF_PH_USE, HOOK, cl_floor,
+         CM(ZERO) | CM(OTHER),
+         "the lower read limit's text. EXEMPT (absent constraint): NULL means no limit below the subject start, not a presumed value; rows that do not serve a STATED floor decline (R2)")
+MF_FIELD(result, MF_PH_USE, HOOK, cl_result,
+         CM(OTHER),
+         "the lvalue written")
+MF_FIELD(result_decl, MF_PH_USE, HOOK, cl_result_decl,
+         CM(OTHER),
+         "ASSIGN's declaration prefix. EXEMPT (absent offer): NULL means no declaration is asked for, not a value")
+MF_FIELD(miss, MF_PH_DEFINE | MF_PH_USE, HOOK, cl_miss,
+         CM(MISS_N) | CM(OTHER),
+         "the value written when no candidate exists")
+MF_FIELD(on_miss, MF_PH_USE, HOOK, cl_on_miss,
+         CM(JUMP) | CM(BRACED) | CM(OTHER),
+         "pcrec's statement on a miss")
+MF_FIELD(step, MF_PH_USE, HOOK, cl_step,
+         CM(OTHER),
+         "ADVANCE: pcrec's step statement")
+MF_FIELD(more, MF_PH_USE, HOOK, cl_more,
+         CM(OTHER),
+         "ADVANCE: pcrec's continue condition")
+MF_FIELD(peek, MF_PH_USE, HOOK, cl_peek,
+         CM(OTHER),
+         "ADVANCE: the byte at the cursor")
+MF_FIELD(count, MF_PH_USE, HOOK, cl_count,
+         CM(OTHER),
+         "ADVANCE: the run counter's name. EXEMPT (absent offer): NULL means no counter is asked for")
+MF_FIELD(count_start, MF_PH_USE, OBLIG, cl_count_start,
+         CM(ZERO) | CM(OTHER),
+         "OBLIG (NEW): the counter's first value; 0 is a value, set by every ADVANCE builder that names `count`")
+MF_FIELD(on_cand, MF_PH_USE, HOOK, cl_on_cand,
+         CM(OTHER),
+         "ON_CAND: pcrec's verify WRITER; its text exists only once called, so it is OTHER here")
+MF_FIELD(on_cand_reach, MF_PH_USE, OBLIG, cl_on_cand_reach,
+         CM(ZERO) | CM(OTHER),
+         "OBLIG (NEW): bytes on_cand reads at or after cand; 0 is `none`, set by every ON_CAND builder")
+MF_FIELD(member, MF_PH_DEFINE | MF_PH_USE, HOOK, cl_member,
+         CM(OTHER),
+         "pcrec's one-position membership op (rule 6). EXEMPT (absent offer): NULL means the op is not offered")
+MF_FIELD(table_name, MF_PH_DEFINE | MF_PH_USE, HOOK, cl_table_name,
+         CM(OTHER),
+         "pcrec's table-name op (rule 7)")
+MF_FIELD(fn_name, MF_PH_DEFINE, HOOK, cl_fn_name,
+         CM(OTHER),
+         "FUNC: pcrec's function-name op")
+MF_FIELD(note, MF_PH_DEFINE | MF_PH_USE, HOOK, cl_note,
+         CM(OTHER),
+         "pcrec's FACT-comment writer (§14.2)")
+MF_FIELD(note_tag, MF_PH_DEFINE, HOOK, cl_note_tag,
+         CM(OTHER),
+         "pcrec's comment tag op (§14.2)")
+MF_FIELD(indent, MF_PH_USE, HOOK, cl_indent,
+         CM(OTHER),
+         "STMT: pcrec's current indent. EXEMPT (layout only): NULL renders no indent; whitespace, never an answer")
+MF_FIELD(comment_tier, MF_PH_DEFINE | MF_PH_USE, OBLIG, cl_comment_tier,
+         CM(OTHER),
+         "OBLIG: PCREC_CMT_* passed through; 0 is a tier, set by every builder that writes a comment")
+
+/* ---- the fields: the run compare's RUN term (the runcmp walk) ------------ */
+
+MF_FIELD(run, MF_PH_RUN, VALUE, cl_run,
+         CM(EXACT) | CM(MASKED) | CM(UNSAT) | CM(OTHER),
+         "the RUN term's bytes against its mask (OTHER: not a well-formed RUN term)")
+MF_FIELD(run_len, MF_PH_RUN, VALUE, cl_run_len,
+         CM(ONE) | CM(MANY) | CM(OTHER),
+         "the RUN term's length (OTHER: 0)")
+
+#ifdef MF_FIELDS_UNDEF_CLASS
+#undef MF_CLASS
+#undef MF_FIELDS_UNDEF_CLASS
+#endif
+#ifdef MF_FIELDS_UNDEF_FIELD
+#undef MF_FIELD
+#undef MF_FIELDS_UNDEF_FIELD
+#endif

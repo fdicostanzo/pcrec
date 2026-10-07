@@ -155,7 +155,9 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
   (`def`/`use`), bytes, sha256. Recorded at R4c's IMPLEMENT commit, whose
   I1 shadow comparator proved the kit's rendering equal to pcrec's
   pre-migration text over the corpus sweep; re-pinned for the run-bearing
-  fixtures and extended by the `runcmp` rows at M1b's REPLACE (28 rows). A
+  fixtures and extended by the `runcmp` rows at M1b's REPLACE (28 rows);
+  lane missn added `ofs-miss-token` and `pre-lead-handoff-miss-token`, whose
+  digests equal their text-stated twins' (`MF_MISS_N` renders as `n`'s text). A
   CHANGE DETECTOR: a kit change
   that moves an arm re-pins its rows in its own commit (D94's grep finds
   this file).
@@ -163,7 +165,11 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
   builds the driver against `build/libpcrec.a`, checks each fixture renders
   through its pinned arm, each part's digest, a K35 floor
   (`ARMS_ROW_FLOOR`, a literal) and an arm list (`ARMS_EXPECTED`), and that
-  the `--perturb` witness moves exactly its one part. Seconds.
+  the `--perturb` witness moves exactly its one part. Since lane libcnote
+  (kit F2) it also checks the libc record: the driver prints each
+  fixture's stand-alone `MEMFN_LIBC` (no pcrec scan), and the script
+  compares it with its own scan of the rendered text, with floors for
+  `memchr` and `memcmp`. Seconds.
 - **run_deleg_sites.sh** — C10's static half (`make test-memfn-deleg`, in
   TEST_SECTIONS): DELEG_SITES (`src/gen/memfn_sites.def`) against D91's
   budgets (this file's literal), every row's (op, handoff, kinds) through

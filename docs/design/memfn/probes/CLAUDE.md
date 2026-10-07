@@ -38,3 +38,4 @@
   2026-10-05 Linux run (own CLAUDE.md).
 
 Maintenance: update this file when files are added/removed or change roles.
+- `rowcon/` — [MEMFN-ROWCON] audits (kit rows; pcrec tables) behind row_contracts.md.
