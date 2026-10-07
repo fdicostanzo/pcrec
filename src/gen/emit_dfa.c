@@ -302,7 +302,8 @@ static bool dfa_search_is_pinned(Ctx *cx);
  * declares `var` and, in a -DPCREC_CAND_NEW_FIRST build, walks first; `_POST`
  * walks (if `_PRE` did not) and aborts unless the walk chose what the old
  * decision did. The `_IN` pair is for an INLINE decision, which has no
- * `DfaSel` of its own; `site` must be a string literal, as the trace's. */
+ * `DfaSel` of its own; `site` must be a string literal, as the trace's.
+ * `CAND_ORACLE_ROUTE` holds `cand_route_of` to the body dispatch's route. */
 #ifdef PCREC_CAND_TRACE
 struct CandSel;
 typedef struct CandRow CandRow;
@@ -324,12 +325,16 @@ static void cand_oracle_post_in(const CandRow *pre, CandSlot slot, Ctx *cx, int 
 #define CAND_ORACLE_POST_IN(var, slot, cx, route, d, old_tok, site, every)    \
     cand_oracle_post_in((var), (slot), (cx), (route), (d), NULL, (old_tok),   \
                         "" site, (every))
+static void cand_oracle_route(Ctx *cx, const char *old_tok, const char *site);
+#define CAND_ORACLE_ROUTE(cx, old_tok, site)                                  \
+    cand_oracle_route((cx), (old_tok), "" site)
 #else
 #define CAND_ORACLE_PRE(var, slot, sel) ((void)0)
 #define CAND_ORACLE_POST(var, slot, sel, old_row, old_tok, site) ((void)sizeof("" site))
 #define CAND_ORACLE_PRE_IN(var, slot, cx, route, d) ((void)0)
 #define CAND_ORACLE_POST_IN(var, slot, cx, route, d, old_tok, site, every)    \
     ((void)sizeof("" site))
+#define CAND_ORACLE_ROUTE(cx, old_tok, site) ((void)sizeof("" site))
 #endif
 
 /* [OPT-PRECHECK-ADMIT] WHY THIS ARTIFACT DOES OR DOES NOT CARRY A
@@ -8297,6 +8302,14 @@ static void cand_oracle_post_in(const CandRow *pre, CandSlot slot, Ctx *cx, int 
     cand_oracle_post(pre, slot, &s, NULL, old_tok, site, every);
 }
 
+/* The ROUTE half: aborts unless `cand_route_of` names the route the body
+ * dispatch `pcrec_emit_dfa_engine` takes (`old_tok`, its trace spelling). */
+static void cand_oracle_route(Ctx *cx, const char *old_tok, const char *site)
+{
+    if (strcmp(CAND_ROUTE_NAME(cand_route_of(cx)), old_tok))
+        cand_oracle_fail("route-differs", old_tok, CAND_ROUTE_NAME(cand_route_of(cx)), site);
+}
+
 const void *pcrec_cand_oracle_vm_pre(Ctx *cx, CandSlot slot, const CandVmFacts *vm)
 {
     return cand_oracle_pre_in(slot, cx, CAND_ROUTE_VM, NULL, vm);
@@ -10687,6 +10700,7 @@ void pcrec_emit_dfa_engine(Ctx *cx, const char *fn, const char *storage)
 {
     PCREC_CAND_TRACE_REC("ROUTE", "-", cx->job->engine == PCREC_ENG_UNANCH ? "dfa" : "attempt",
                          "dfa-engine");
+    CAND_ORACLE_ROUTE(cx, cx->job->engine == PCREC_ENG_UNANCH ? "dfa" : "attempt", "dfa-engine");
     if (cx->job->engine == PCREC_ENG_UNANCH) emit_unanchored(cx, fn, storage);
     else                                     emit_attempt(cx, fn, storage);
 }
