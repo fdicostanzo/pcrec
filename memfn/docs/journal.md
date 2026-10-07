@@ -645,3 +645,22 @@ pointer when a kit change merges to main.
     blanket stated-bitmask: an enum a row uses gets an UNSTATED = 0
     member, and per-kind obligations stay required. The r2 review
     (fa334f08) closes; rev 3 follows.
+- SCOPE RULING (Frank via main, 2026-10-07): narrow [MEMFN-ROWCON]. "I
+  don't want this to turn into a solution without problem scenario."
+  - BUILD NOW, the K96 generalization only:
+    - per-row allowlists of the fields each row USES/serves;
+    - one shared gate that declines everything else;
+    - decline reasons in the kit's own trace;
+    - per-row reach floors;
+    - the narrowed stated-value rule (R-6 stays small).
+  - HOLD, filed:
+    - (a) the general table engine. The charter stays ruled, and it is
+      built when a real table wants it. The cand_rows paper mapping
+      stays only as no-corner evidence; the rev-2 customer framing is
+      design input only.
+    - (b) SNAPSHOT. Its trigger is a measured hazard. A cheap census of
+      pcrec's actual hook texts runs first (lane hookcensus). If none
+      are risky, SNAPSHOT stays filed with the census as its "not yet"
+      evidence; if one is, the case goes to Frank.
+  - The next panel is LIGHT: a one-critic re-check of the narrowed gate.
+    Rev 4 rescopes the design.
