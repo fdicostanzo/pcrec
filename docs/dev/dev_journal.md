@@ -26583,3 +26583,15 @@ Frank: "finish up open work/bench results/errors", Linux box free (bench manager
   [ART-TRAIL-ELIDE], [NULLABLE-ANCH] (Q16). The selection lane missed the
   remodel message (third busy-lane miss today) — manager filled the column.
   wake.md rewritten for the overnight hand-off.
+- (overnight, 10-07) Mac full test-axes at 041e450a red in two classes, triaged
+  by lane axtri: -fno-req-byte late reqcube.rxt rows missing from
+  GIVEUP1_ALLOWANCE (budget transitions; Group E5) and a REAL harness bug
+  (HARNESS_BATCH dispatch.c's own give-up-word table lacked `utf`; fix: shared
+  tests/harness/outcome_word.h). Targeted re-run green; full make test on
+  Linux in flight at 9c2891f0 (unmerged).
+- R4c Linux: first run red (C4 arch regex vs Linux gcc macros; 4 mech rows;
+  17 I2 arms — all check/harness, 0 movers); kit fixed (r4clx: vacuous
+  memfnarch rows, declared-exception I2 judge, rerun mode), second rerun red
+  on FP_FAST_FMA* only, third green. Pre-merge opus review: MERGE-READY WITH
+  LISTED FIXES (no blocker). **R4c MERGED 81bc13de** (abi stays 65); fixes
+  (a)-(g) are the kit's R4c′; (a)+(b) gate C1. Context reset at 35% (Frank).
