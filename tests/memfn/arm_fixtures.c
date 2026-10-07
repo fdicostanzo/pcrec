@@ -11,7 +11,9 @@
  * text moves, never with pcrec's scaffolding (F12). Since M1b the run
  * compare is the kit's own (no `run_cmp` hook), and each fixture's art
  * flushes its pending word-load helpers into the `def` part after the use,
- * so the helpers' text is pinned too.
+ * so the helpers' text is pinned too. Two DECLINE fixtures (lane m1bfix)
+ * pin an arm's edge from the other side: an offset-skip site whose miss is
+ * not `n`, or that states a floor, must render through `generic`.
  *
  *   arm_fixtures OUTDIR [--perturb]
  *
