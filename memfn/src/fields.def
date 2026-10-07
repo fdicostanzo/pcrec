@@ -24,13 +24,15 @@
  *                 re-check, the use hooks), MF_PH_RUN (the run compare's
  *                 walk, one RUN term). A field read at both is both.
  *       absent    what an absent value is:
- *                   HOOK   a NULL hook is UNSTATED (rule 1 applies to it);
+ *                   HOOK   a NULL hook, or a 0 hook ID (`fn_ref`), is
+ *                          UNSTATED (rule 1 applies to it);
  *                   VALUE  an intrinsic part of the site, never absent;
  *                   OBLIG  a per-kind OBLIGATION: every builder of the
  *                          site's kind sets it, so 0 is a STATED value, not
  *                          an absence. The written exemption is the doc's
  *                          "OBLIG:" sentence (r3 M7's list, plus the two
- *                          numeric hooks marked NEW).
+ *                          numeric hooks marked NEW; `fn_ref` left the list
+ *                          at N3, K-1: it is a hook ID, so HOOK).
  *       classify  the function gate.c calls (gate_in -> class, or -1 for
  *                 unstated).
  *       classes   the closed set, as CM() masks; OTHER always included.
@@ -40,6 +42,15 @@
  * iff it is one `return`/`goto` statement, BRACED iff one `{ ... }` block.
  * A row that pastes such text into an operator context serves only IDENT /
  * JUMP; the generic row parenthesizes and braces, so it serves OTHER.
+ * `s`/`n`/`lo` are read at DEFINE as well as at USE (N3, ruling F1): a
+ * define that states them selects on their shape, so a non-identifier text
+ * reaches only a row that serves OTHER (the generic row) rather than being
+ * refused at the use; a define that leaves them unstated selects as before,
+ * and the use's re-check refuses a shape the chosen row does not serve.
+ *
+ * Since N3 the gate ENFORCES (row_contracts.md §5): a row whose verdict
+ * fails is DECLINED and the walk moves on; no row left is a refusal naming
+ * the fields; a use the chosen row does not serve is refused.
  */
 #ifndef MF_CLASS
 #define MF_CLASS(name, doc)
@@ -139,9 +150,12 @@ MF_FIELD(span_hi, MF_PH_DEFINE, VALUE, cl_span_hi,
 MF_FIELD(denies, MF_PH_DEFINE, VALUE, cl_denies,
          CM(NONE) | CM(RUN_OVERLAP) | CM(OTHER),
          "the compile's MF_D_* denies (OTHER: a bit no row knows)")
-MF_FIELD(fn_ref, MF_PH_DEFINE, OBLIG, cl_fn_ref,
-         CM(NONE) | CM(REF) | CM(OTHER),
-         "OBLIG: pred.fn_ref; 0 is `no FUNC name`, set by every FIND/SKIP/VERIFY builder")
+MF_FIELD(fn_ref, MF_PH_DEFINE, HOOK, cl_fn_ref,
+         CM(REF) | CM(OTHER),
+         "site.pred.fn_ref, the id pcrec's fn_name hook names a FUNC site by, for every op "
+         "(K-1). A hook ID: 0 is UNSTATED, not a value (N3; it left the OBLIG list), so a "
+         "row that renders a function name USES it on FUNC and declines a FUNC site stating "
+         "0 (R1); a non-FUNC site's 0 is a wildcard, since no row uses it there")
 MF_FIELD(table_ref, MF_PH_DEFINE, OBLIG, cl_table_ref,
          CM(NONE) | CM(REF) | CM(OTHER),
          "OBLIG: the SET terms' table_ref; 0 is `no table`, set by every term builder "
@@ -149,15 +163,15 @@ MF_FIELD(table_ref, MF_PH_DEFINE, OBLIG, cl_table_ref,
 
 /* ---- the fields: mf_hooks ------------------------------------------------ */
 
-MF_FIELD(s, MF_PH_USE, HOOK, cl_s,
+MF_FIELD(s, MF_PH_DEFINE | MF_PH_USE, HOOK, cl_s,
          CM(IDENT) | CM(OTHER),
-         "the subject pointer's text")
-MF_FIELD(n, MF_PH_USE, HOOK, cl_n,
+         "the subject pointer's text (read at define where stated: ruling F1)")
+MF_FIELD(n, MF_PH_DEFINE | MF_PH_USE, HOOK, cl_n,
          CM(IDENT) | CM(OTHER),
-         "the read limit's text")
-MF_FIELD(lo, MF_PH_USE, HOOK, cl_lo,
+         "the read limit's text (read at define where stated: ruling F1)")
+MF_FIELD(lo, MF_PH_DEFINE | MF_PH_USE, HOOK, cl_lo,
          CM(IDENT) | CM(OTHER),
-         "the search start's text")
+         "the search start's text (read at define where stated: ruling F1)")
 MF_FIELD(floor, MF_PH_DEFINE | MF_PH_USE, HOOK, cl_floor,
          CM(ZERO) | CM(OTHER),
          "the lower read limit's text. EXEMPT (absent constraint): NULL means no limit below the subject start, not a presumed value; rows that do not serve a STATED floor decline (R2)")

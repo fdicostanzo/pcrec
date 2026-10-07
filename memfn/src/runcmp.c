@@ -65,8 +65,8 @@ enum { RC_P_MASKED_WORDS, RC_P_OVERLAP, RC_P_MASKED, RC_P_EXACT };
 enum { RC_F_WORDS, RC_F_BYTES, RC_F_MEMCMP };
 
 /* One row: what `mf_run_rows` shows, the tags the walk reads, and its
- * contract (the WARN gate's, [MEMFN-ROWCON] N1; the contracts follow the
- * walk, at the end of the file). */
+ * contract (the gate's, [MEMFN-ROWCON] N1, enforcing since N3; the
+ * contracts follow the walk, at the end of the file). */
 typedef struct {
     mf_run_row           row;
     unsigned char        pred;
@@ -162,15 +162,18 @@ static int rc_holds(int pred, const rc_run *r)
     return 0;
 }
 
-/* The first row that applies to run `r` (RUN term `t`) and is not denied by
- * the art's denies: the ONE selection both the compare and the helper
- * declaration ask. NULL only if the table lost a domain's fallback. The WARN
- * gate reads each undenied row's contract before its predicate and only
- * counts (`run_warns`) a chosen row it would decline (N1). */
+/* The first row that is not denied by the art's denies, that the gate
+ * passes, and that applies to run `r` (RUN term `t`): the ONE selection both
+ * the compare and the helper declaration ask. The gate reads each undenied
+ * row's contract before its predicate and DECLINES a failing row (N3). NULL,
+ * after recording the refusal on the art naming the fields of the last row
+ * declined (a domain's total fallback), when no row serves. */
 static const rc_row *rc_row_of(mf_art *art, const mf_term *t, const rc_run *r)
 {
     gate_in in = { NULL, NULL, t };
     gate_tctx tc = { art, "runcmp", 0, MF_PH_RUN, &in };
+    gate_verdict why = { 0, 0 }, mv = { 0, 0 };
+    const gate_contract *mc = NULL;     /* trace only: the row the gate moved off */
     gate_trace_sel(&tc);
     for (size_t i = 0; i < NROWS; i++) {
         if (rows[i].row.deny & art->denies) {
@@ -178,15 +181,26 @@ static const rc_row *rc_row_of(mf_art *art, const mf_term *t, const rc_run *r)
             continue;
         }
         gate_verdict v = gate_check(rows[i].ct, MF_PH_RUN, &in);
+        if (v.r1 | v.r2) {
+            int held = GATE_TRACING && rc_holds(rows[i].pred, r);
+            if (held && !mc) { mc = rows[i].ct; mv = v; }
+            gate_trace_row(&tc, rows[i].ct,
+                           held ? "DECLINED:PRED_HOLDS" : "DECLINED", 0, &v);
+            why = v;
+            continue;
+        }
         if (rc_holds(rows[i].pred, r)) {
             gate_trace_row(&tc, rows[i].ct, "CHOSEN", 0, &v);
-            gate_trace_end(&tc, rows[i].ct, &v);
-            if (v.r1 | v.r2) art->run_warns++;
+            gate_trace_end(&tc, rows[i].ct, &v, mc, &mv);
             return &rows[i];
         }
         gate_trace_row(&tc, rows[i].ct, "PRED_FALSE", 0, &v);
     }
-    gate_trace_end(&tc, NULL, NULL);
+    gate_trace_end(&tc, NULL, &why, mc, &mv);
+    char f[200];
+    gate_describe(f, sizeof f, &why, &in);
+    kit_fail(art, "runcmp: no run-compare row serves the RUN term: %s",
+             f[0] ? f : "(no row applies; a domain lost its fallback)");
     return NULL;
 }
 
@@ -272,8 +286,7 @@ int run_cmp_render(mf_art *art, const mf_term *t, const char *base,
 {
     rc_run r = rc_of(t);
     const rc_row *row = rc_row_of(art, t, &r);
-    if (!row)
-        return kit_fail(art, "runcmp: no run-compare row applies");
+    if (!row) return -1;    /* rc_row_of recorded the refusal */
     if (kit_sink_ok(art, c, "runcmp")) return -1;
     if (row->form != RC_F_BYTES && !c->cstr)
         return kit_fail(art, "runcmp: the sink offers no cstr op");
@@ -306,8 +319,7 @@ int run_cmp_prepare(mf_art *art, const mf_pred *p, mf_sink *c)
         if (p->term[i].kind != MF_T_RUN) continue;
         rc_run r = rc_of(&p->term[i]);
         const rc_row *row = rc_row_of(art, &p->term[i], &r);
-        if (!row)
-            return kit_fail(art, "runcmp: no run-compare row applies");
+        if (!row) return -1;    /* rc_row_of recorded the refusal */
         if (row->form != RC_F_WORDS) continue;
         art->wused |= (unsigned)rc_width(r.len);
         if (mf_flush_helpers(art, c)) return -1;
@@ -385,36 +397,36 @@ static int runcmp_use(mf_art *art, uint32_t handle, const mf_hooks *h,
  * The arm's are read at define and use; the rows' at the run walk, which
  * reads MF_PH_RUN fields only, so a row lists those alone. */
 static const gate_use runcmp_uses[] = {
-    /* :367-368 refuses a use without s and lo; :371 reads both */
+    /* :379-380 refuses a use without s and lo; :383 reads both */
     { CM(EXPR), CM(BOOL), MF_PH_USE, FM(s) | FM(lo) },
 };
 
 static const gate_contract runcmp_ct = {
     "arms", "runcmp", runcmp_uses, sizeof runcmp_uses / sizeof runcmp_uses[0], {
-    [FLD_form]            = CM(EXPR),                 /* :351 */
-    [FLD_op]              = CM(VERIFY),               /* :351 */
-    [FLD_handoff]         = CM(BOOL),                 /* :352 */
+    [FLD_form]            = CM(EXPR),                 /* :363 */
+    [FLD_op]              = CM(VERIFY),               /* :363 */
+    [FLD_handoff]         = CM(BOOL),                 /* :364 */
     [FLD_reverse]         = MF_ANY,                   /* not read: a VERIFY has no direction */
     [FLD_empty]           = MF_ANY,                   /* not read: the caller's guard decides the
                                                          range (memfn.h guard_by_caller) */
     [FLD_end_back]        = MF_ANY,                   /* not read, as empty */
-    [FLD_pred]            = CM(NONNEG),               /* :373-374 reads at lo + offset, which the
+    [FLD_pred]            = CM(NONNEG),               /* :385-386 reads at lo + offset, which the
                                                          guard bounds only from lo up
-                                                         (compose.c:245) */
-    [FLD_preds]           = MF_ANY,                   /* not read: :373 reads s->pred */
+                                                         (compose.c:265) */
+    [FLD_preds]           = MF_ANY,                   /* not read: :385 reads s->pred */
     [FLD_ret_pred]        = MF_ANY,                   /* not read (ALL_PRESENT's) */
-    [FLD_guard_by_caller] = CM(YES),                  /* :352 */
-    [FLD_on_miss_leaves]  = MF_ANY,                   /* not read; 0 off ON_MISS/ASSIGN, compose.c:210 */
+    [FLD_guard_by_caller] = CM(YES),                  /* :364 */
+    [FLD_on_miss_leaves]  = MF_ANY,                   /* not read; 0 off ON_MISS/ASSIGN, compose.c:230 */
     [FLD_span_hi]         = MF_ANY,                   /* not read: a proven fact the text needs not */
-    [FLD_denies]          = CM(NONE) | CM(RUN_OVERLAP), /* :374 through the walk, :176, with a
+    [FLD_denies]          = CM(NONE) | CM(RUN_OVERLAP), /* :386 through the walk, :179, with a
                                                          fallback per domain (rows[]) */
     [FLD_fn_ref]          = MF_ANY,                   /* not read: an EXPR has no function */
-    [FLD_table_ref]       = MF_ANY,                   /* not read: one RUN term, :353 */
-    [FLD_s]               = CM(IDENT),                /* :371 raw in `%s + %s`, then `+ off` (S6) */
+    [FLD_table_ref]       = MF_ANY,                   /* not read: one RUN term, :365 */
+    [FLD_s]               = CM(IDENT),                /* :383 raw in `%s + %s`, then `+ off` (S6) */
     [FLD_n]               = MF_ANY,                   /* not read: the guard bounds the reads */
-    [FLD_lo]              = CM(IDENT),                /* :371, as s (S7) */
+    [FLD_lo]              = CM(IDENT),                /* :383, as s (S7) */
     [FLD_floor]           = MF_ANY,                   /* not read: every read is at lo + offset,
-                                                         offset >= 0 (compose.c:245) and floor <= lo
+                                                         offset >= 0 (compose.c:265) and floor <= lo
                                                          the caller's (Q-G2-6) */
     [FLD_result]          = MF_ANY,                   /* not read: a BOOL writes no value */
     [FLD_result_decl]     = MF_ANY,                   /* not read */
@@ -427,7 +439,7 @@ static const gate_contract runcmp_ct = {
     [FLD_count_start]     = MF_ANY,                   /* not read (ADVANCE's) */
     [FLD_on_cand]         = MF_ANY,                   /* not read (ON_CAND's) */
     [FLD_on_cand_reach]   = MF_ANY,                   /* not read (ON_CAND's) */
-    [FLD_member]          = MF_ANY,                   /* not read: no SET term, :353 */
+    [FLD_member]          = MF_ANY,                   /* not read: no SET term, :365 */
     [FLD_table_name]      = MF_ANY,                   /* not read: no SET term */
     [FLD_fn_name]         = MF_ANY,                   /* not read: an EXPR has no function */
     [FLD_note]            = MF_ANY,                   /* not read: never called */
@@ -451,17 +463,17 @@ static const gate_use rc_uses[] = {
 };
 #define RC_NUSES (sizeof rc_uses / sizeof rc_uses[0])
 
-/* `words`: :226 an all-0xFF word compares unmasked, :229-235 a masked one
+/* `words`: :240 an all-0xFF word compares unmasked, :243-249 a masked one
  * ANDs the mask's load; an UNSAT run is not served (no walk is handed one,
- * run_cmp_sat, :262-268). A one-byte run is not served: rc_width(1) is 2, so
- * the last word's offset L - W is -1, a read outside the run (:223-225). */
+ * run_cmp_sat, :276-282). A one-byte run is not served: rc_width(1) is 2, so
+ * the last word's offset L - W is -1, a read outside the run (:237-239). */
 static const gate_contract rc_ct_words = {
     "runcmp", "words", rc_uses, RC_NUSES, {
     [FLD_run]     = CM(EXACT) | CM(MASKED),
     [FLD_run_len] = CM(MANY),
 }};
 
-/* `overlap`: the same writer as `words` (RC_F_WORDS, :98 -> :282), so the
+/* `overlap`: the same writer as `words` (RC_F_WORDS, :98 -> :295), so the
  * same classes. */
 static const gate_contract rc_ct_overlap = {
     "runcmp", "overlap", rc_uses, RC_NUSES, {
@@ -469,7 +481,7 @@ static const gate_contract rc_ct_overlap = {
     [FLD_run_len] = CM(MANY),
 }};
 
-/* `bytes`: :256 an exact position, :257 a masked one, per position (:252),
+/* `bytes`: :270 an exact position, :271 a masked one, per position (:266),
  * so every length. An UNSAT position would be a constant-false compare
  * gcc's -Wtautological-compare flags (run_cmp_sat's reason, kit.h). */
 static const gate_contract rc_ct_bytes = {
@@ -478,8 +490,8 @@ static const gate_contract rc_ct_bytes = {
     [FLD_run_len] = CM(ONE) | CM(MANY),
 }};
 
-/* `memcmp`: :288-293 compares the run's bytes and never reads its mask, so
- * a masked run would be compared exact. Every length (:293). */
+/* `memcmp`: :301-306 compares the run's bytes and never reads its mask, so
+ * a masked run would be compared exact. Every length (:306). */
 static const gate_contract rc_ct_memcmp = {
     "runcmp", "memcmp", rc_uses, RC_NUSES, {
     [FLD_run]     = CM(EXACT),

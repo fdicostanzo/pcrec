@@ -150,7 +150,16 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
   comment per note, pcrec_sb_cstr's string escape), so a pin moves only
   with an ARM, never with pcrec's scaffolding. Each fixture's art flushes
   its pending word-load helpers into the `def` part. `--perturb` moves one
-  byte of one fixture (the witness).
+  byte of one fixture (the witness). Every fixture STATES its `miss`
+  (`MF_MISS_N` unless it says otherwise): since [MEMFN-ROWCON] N3 a row
+  that uses an unstated one declines. `--gate` (N3) runs twenty GATE CASES
+  instead, writing nothing: sites built to be DECLINED at define (the form
+  that renders them is printed) or REFUSED (the refusal text is printed),
+  covering the ad hoc K96 tests N3 deleted from memfn/src/ofsskip.c (a floor
+  or a non-`n` miss at define and at the call) and the rulings it made real
+  (F1 non-identifier hooks, an unstated miss, K-1's `fn_ref` 0, the
+  pre-check's split by handoff). Their expected outcomes live in
+  run_arm_pins.sh, not here.
 - **pins/arms.tsv** — C5's pins: arm (the kit's form id), fixture, part
   (`def`/`use`), bytes, sha256. Recorded at R4c's IMPLEMENT commit, whose
   I1 shadow comparator proved the kit's rendering equal to pcrec's
@@ -169,7 +178,13 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
   (kit F2) it also checks the libc record: the driver prints each
   fixture's stand-alone `MEMFN_LIBC` (no pcrec scan), and the script
   compares it with its own scan of the rendered text, with floors for
-  `memchr` and `memcmp`. Seconds.
+  `memchr` and `memcmp`. Check 6 ([MEMFN-ROWCON] N3) runs the driver's
+  `--gate` cases against `GATE_EXPECT` (a RENDER case's form id, a REFUSE
+  case's field named in backquotes), with a K35 floor
+  (`GATE_CASE_FLOOR`) and an exact case count. Validated by a plant that
+  turned the gate off (both walks and the use re-check): 19 of the 20
+  cases changed outcome (the 20th, `allp-func-fn_ref-7`, is the positive
+  control and must not). Seconds.
 - **run_deleg_sites.sh** — C10's static half (`make test-memfn-deleg`, in
   TEST_SECTIONS): DELEG_SITES (`src/gen/memfn_sites.def`) against D91's
   budgets (this file's literal), every row's (op, handoff, kinds) through

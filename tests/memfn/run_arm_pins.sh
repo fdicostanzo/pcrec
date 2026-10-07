@@ -25,6 +25,14 @@
 #   4. the WITNESS: the driver's --perturb (one byte of one fixture's
 #      description) must move exactly that fixture's use part and nothing else,
 #      so a pin that stopped seeing its text is red.
+#   6. THE GATE ([MEMFN-ROWCON] N3): the driver's --gate cases, each against
+#      the outcome GATE_EXPECT below names (written here, not in the driver):
+#      DECLINED at define, so the named row renders it, or REFUSED with a text
+#      that names the field in backquotes. They show the general gate covers
+#      the ad hoc K96 tests N3 deleted from memfn/src/ofsskip.c (a floor or a
+#      non-`n` miss, at define and at the call) and the rulings it makes real
+#      (F1 non-identifier hooks, an unstated miss, K-1's fn_ref 0). K35: every
+#      expected case must appear, and at least GATE_CASE_FLOOR of them.
 # WHAT IT DOES NOT SEE: an arm no fixture reaches (each new arm adds its own
 # fixtures and its id to ARMS_EXPECTED in the change that adds it), and a hook
 # pcrec passes that differs from the driver's stand-in (I1 at a migration's
@@ -147,7 +155,54 @@ if grep -q '^BAD' "$T/libc.res"; then
     grep '^BAD' "$T/libc.res" | sed 's/^BAD/FAIL:/'; bad "the libc record disagrees with the rendered text"
 else ok; fi
 
-echo "arm pins: $rows rows over $(wc -l < "$T/ids" | tr -d ' ') fixtures"
+# 6: the gate (N3). <case> <RENDER form-id | REFUSE field>
+GATE_CASE_FLOOR=20
+GATE_EXPECT='ofs-call-floor REFUSE floor
+ofs-call-miss-other REFUSE miss
+ofs-call-miss-unstated REFUSE miss
+ofs-define-miss-unstated RENDER generic
+ofs-define-floor RENDER generic
+ofs-define-miss-other RENDER generic
+ofs-define-nonident RENDER generic
+ofs-call-nonident REFUSE s
+ofs-fn_ref-0 REFUSE fn_ref
+allp-func-fn_ref-0 REFUSE fn_ref
+allp-func-fn_ref-7 RENDER generic
+pre-assign-miss-unstated REFUSE miss
+pre-assign-miss-token RENDER precheck
+pre-assign-miss-other RENDER generic
+pre-onmiss-miss-other RENDER precheck
+pre-use-floor REFUSE floor
+pre-define-floor RENDER generic
+pre-define-nonident RENDER generic
+pre-use-nonident REFUSE s
+run-nonident RENDER generic'
+"$T/fx" --gate > "$T/gate" 2>"$T/gate.err" || bad "the driver's --gate mode failed (see $T/gate.err)"
+ncase=0
+while read -r name want arg; do
+    [ -n "$name" ] || continue
+    ncase=$((ncase + 1))
+    line="$(awk -F'\t' -v c="$name" '$1 == c' "$T/gate")"
+    got="$(printf '%s' "$line" | cut -f2)"
+    txt="$(printf '%s' "$line" | cut -f3-)"
+    if [ -z "$line" ]; then
+        bad "gate case $name did not run"
+    elif [ "$got" != "$want" ]; then
+        bad "gate case $name: expected $want $arg, got $got: $txt"
+    elif [ "$want" = RENDER ] && [ "$txt" != "$arg" ]; then
+        bad "gate case $name: rendered through '$txt', expected '$arg'"
+    elif [ "$want" = REFUSE ] && ! printf '%s' "$txt" | grep -qF "\`$arg\`"; then
+        bad "gate case $name: the refusal does not name \`$arg\`: $txt"
+    else ok; fi
+done <<< "$GATE_EXPECT"
+if [ "$ncase" -lt "$GATE_CASE_FLOOR" ]; then
+    bad "only $ncase gate cases expected, floor $GATE_CASE_FLOOR"
+else ok; fi
+if [ "$(wc -l < "$T/gate" | tr -d ' ')" -ne "$ncase" ]; then
+    bad "the driver ran $(wc -l < "$T/gate" | tr -d ' ') gate cases, $ncase are expected"
+else ok; fi
+
+echo "arm pins: $rows rows over $(wc -l < "$T/ids" | tr -d ' ') fixtures; gate cases: $ncase"
 echo "checks passed: $pass"
 echo "checks failed: $fail"
 [ "$fail" -eq 0 ]

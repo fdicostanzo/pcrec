@@ -97,17 +97,23 @@ typedef struct {
 } gate_in;
 
 /* The gate's verdict: the fields declined by rule 1 (used, unstated) and by
- * rule 2 (stated, class not served). Both 0 is a pass. */
+ * rule 2 (stated, class not served). Both 0 is a pass; anything else
+ * DECLINES the row (N3: the walks skip it, `mf_use` refuses). */
 typedef struct {
     uint64_t r1, r2;
 } gate_verdict;
 
-#define gate_check   MF_NS(gate_check)
-#define kit_is_ident MF_NS(kit_is_ident)
+#define gate_check    MF_NS(gate_check)
+#define gate_describe MF_NS(gate_describe)
+#define kit_is_ident  MF_NS(kit_is_ident)
 
-/* Row `c`'s verdict at `phase` over `in`. Changes nothing: in N1 the gate
- * is in WARN mode, and its callers only record what it says. */
+/* Row `c`'s verdict at `phase` over `in`: the ONE verdict both selection
+ * walks and the use re-check act on (N3, ENFORCING: the callers decline a
+ * failing row, or refuse). */
 gate_verdict gate_check(const gate_contract *c, unsigned phase, const gate_in *in);
+/* The fields verdict `v` declines, each named in backquotes with its rule,
+ * comma-joined into buf[0..n): the text every gate refusal carries. */
+void gate_describe(char *buf, size_t n, const gate_verdict *v, const gate_in *in);
 /* 1 iff `s` is a bare C identifier (a lexical check). */
 int kit_is_ident(const char *s);
 
@@ -133,9 +139,6 @@ typedef struct {
                                    its function's name, or NULL              */
     unsigned          params;   /* FUNC: which PARAM_* the definition takes   */
     int               used;
-    /* the WARN gate's record of the chosen row (N1): at define, and OR-ed
-       over every use and call */
-    gate_verdict      warn_define, warn_use;
 } site_rec;
 
 struct mf_art {
@@ -154,8 +157,6 @@ struct mf_art {
     unsigned    wused, wemitted;
     const char **libc;          /* noted libc names, sorted, distinct (§R4.3.3) */
     uint32_t    nlibc, libc_cap;
-    uint32_t    run_warns;      /* run-compare walks whose chosen row the WARN
-                                   gate would decline (N1)                    */
     unsigned    trace_id;       /* MF_TRACE: the art's number in the process  */
     char        err[256];
 };
@@ -169,7 +170,9 @@ enum { PARAM_S = 1u, PARAM_N = 2u, PARAM_LO = 4u, PARAM_FL = 8u, PARAM_MISS = 16
 
 /* ---- the arm interface (K2's first-match table, §8.6, §14.6) ------------- */
 
-/* One row of the composer's selection table. Its predicate columns:
+/* One row of the composer's selection table. The gate reads its contract
+ * (`ct`) FIRST and declines it where a site's stated values do not suit
+ * ([MEMFN-ROWCON] N3); only then are its predicate columns asked:
  * `miss_leaves` (nonzero: the row's text is right only where a miss never
  * falls through to the next test, so it applies only to a site whose
  * `on_miss_leaves` pcrec has set, Q-G2-18) and `applies`, over the site and
@@ -192,14 +195,20 @@ typedef struct arm {
     const gate_contract *ct;    /* its uses and serves ([MEMFN-ROWCON])     */
 } arm;
 
-#define generic_arm  MF_NS(generic_arm)
-#define ofsskip_arm  MF_NS(ofsskip_arm)
-#define precheck_arm MF_NS(precheck_arm)
-#define runcmp_arm   MF_NS(runcmp_arm)
+#define generic_arm         MF_NS(generic_arm)
+#define ofsskip_arm         MF_NS(ofsskip_arm)
+#define precheck_arm        MF_NS(precheck_arm)
+#define precheck_assign_arm MF_NS(precheck_assign_arm)
+#define runcmp_arm          MF_NS(runcmp_arm)
 
 extern const arm generic_arm;   /* generic.c: every site (§14.6)              */
 extern const arm ofsskip_arm;   /* ofsskip.c: the offset-skip FUNC (§15.1)    */
-extern const arm precheck_arm;  /* precheck.c: the pre-check composite (§15.5) */
+/* precheck.c: the pre-check composite (§15.5), ONE renderer as TWO rows
+ * (N3's split): its ON_MISS sites never read `miss`, its ASSIGN sites test
+ * the run call's miss, which is `n`, so the two serve different `miss`
+ * classes. Both report the form id `precheck`. */
+extern const arm precheck_arm;          /* ON_MISS                            */
+extern const arm precheck_assign_arm;   /* ASSIGN                             */
 extern const arm runcmp_arm;    /* runcmp.c: the run compare EXPR (§15.6)     */
 
 /* ---- writing to a sink --------------------------------------------------- */
@@ -300,9 +309,14 @@ void gate_trace_sel(const gate_tctx *t);
  * and its gate verdict (`v` NULL where the gate was not asked). */
 void gate_trace_row(const gate_tctx *t, const gate_contract *c, const char *verdict,
                     uint64_t deny, const gate_verdict *v);
-/* MFTRACE END: the chosen row (NULL: none) and whether the WARN gate would
- * have declined it; counts its reach. */
-void gate_trace_end(const gate_tctx *t, const gate_contract *c, const gate_verdict *v);
+/* MFTRACE END: the chosen row and its gate verdict (failing only on a use
+ * re-check, which the kit then refuses); or, `c` NULL, no row served and `v`
+ * is the verdict the refusal names (the walk's last declined row). `mc`/`mv`,
+ * where not NULL, are the first row the walk DECLINED whose predicate held:
+ * the gate MOVED the selection off it (the N2 census's would-decline). Counts
+ * a chosen row's reach. */
+void gate_trace_end(const gate_tctx *t, const gate_contract *c, const gate_verdict *v,
+                    const gate_contract *mc, const gate_verdict *mv);
 #else
 static inline void gate_trace_art(mf_art *art) { (void)art; }
 static inline void gate_trace_sel(const gate_tctx *t) { (void)t; }
@@ -313,10 +327,21 @@ static inline void gate_trace_row(const gate_tctx *t, const gate_contract *c,
     (void)t; (void)c; (void)verdict; (void)deny; (void)v;
 }
 static inline void gate_trace_end(const gate_tctx *t, const gate_contract *c,
-                                  const gate_verdict *v)
+                                  const gate_verdict *v, const gate_contract *mc,
+                                  const gate_verdict *mv)
 {
-    (void)t; (void)c; (void)v;
+    (void)t; (void)c; (void)v; (void)mc; (void)mv;
 }
+#endif
+
+/* 1 in a trace build: the walks then also ask a DECLINED row's predicate
+ * (every predicate is a pure function of the site and the hooks), so the
+ * trace can say whether the gate moved the selection. 0 otherwise, where the
+ * walks never ask it. */
+#ifdef MF_TRACE
+enum { GATE_TRACING = 1 };
+#else
+enum { GATE_TRACING = 0 };
 #endif
 
 #endif /* MEMFN_KIT_H */
