@@ -182,3 +182,40 @@ Then restore `docs/dev/artifact_size_log.tsv` (the chain does
   three, with 0 off-diagonal.
 - **K94.** The Latin-1 byte + `--ucp` caseless-backref cells stay out
   (K94's to settle), as the note rules.
+
+## Addendum (after handback)
+
+- **The slot watcher was cancelled.** The manager granted `.lift` early and
+  then revoked it; the chain had NOT started (no `STAGES` file). The watcher
+  is killed because the manager may first merge post-[START-TABLE] C4 main
+  into `lane/possbuild`. **The chain now starts by hand**:
+  `nohup setsid bash build/slot/chain.sh > build/slot/chain.log 2>&1 & disown`
+  (re-create `build/slot/chain.sh` from this report if the worktree was
+  rebuilt). Sub-lane reports routed to the manager; they are relayed and match
+  the numbers above. Sub-lane pd's open notes are: `--corpus` per-pattern
+  flags not built; `hold/*` manifest rows pin witnesses that must NOT fire;
+  other users of `possdiff_driver.c` (which now includes `outcome_word.h`) are
+  covered by the full `make test`. Sub-lane rx adds .rxt blocks, so the
+  rxtsource / startset / codegen pins move; the full `make test` must catch
+  and re-pin them.
+- **CLAIM-vs-MARK's oracle-version discrepancy, stated precisely.** Joined by
+  row id, the built run (`built/results/claimmark_build.out.gz`, libpcre2
+  **10.46**, this box's reference oracle, through `pcre2test_shim.c`) and
+  the rev 2.1 record (`rev21/results/out2/claimmark.out`) differ in CLAIM on
+  **5 compared rows** (sub-lane cm counts 43 over all rows, selected or not).
+  - Every one is a `utf,i` row in the `(\b\w)\W*\1` family (A53860, A53925,
+    A53926, A54102, ...). The claim is `yes` in the record and `no` here, and
+    `hi=1` in both, so the expectation is **0 in both**. No mark≠expect
+    verdict depends on it.
+  - On 10.46 here, U+212A is in `\W` under `utf` and `utf,i`, is not in
+    `\w`, and matches `(?i)k`. `(\b\w)\W+\1` matches `"k \x{212a}"` at
+    (0,5) under `utf,i`.
+  - Which oracle the record used is not stated per run. `rev21/CLAUDE.md`
+    names a local `pcre2test` **10.48** for its sweeps, while
+    `possarms21_report.md` says the battery ran on ubuntubudu (10.46). The 5
+    differing rows point at the record's generator membership probes having
+    run on 10.48.
+  - **Recommendation:** treat the 10.46 run as the record of reference. If the
+    rev 2.1 record must be settled, re-run its generator step once on
+    ubuntubudu (10.46) and compare by id. The predicate files are unchanged
+    (sha1s verified), so this is a version question, not a rule edit.
