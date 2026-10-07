@@ -252,7 +252,10 @@ typedef struct {
     const char *result;     /* the lvalue written                               */
     const char *result_decl;/* ASSIGN: a declaration prefix ("size_t ") or NULL */
     const char *miss;       /* the value written when no cand exists; a value no
-                               hit can take (outside [lo, n - end_back))         */
+                               hit can take (outside [lo, n - end_back)).
+                               MF_MISS_N states that the miss value is this
+                               site's own `n` hook; NULL leaves it UNSTATED
+                               (R1: a row that needs it declines)             */
     const char *on_miss;    /* ON_MISS, ASSIGN, MISS-empty: pcrec's STATEMENT   */
     /* ADVANCE. RULED Q-G2-14: only `more`, `peek` and `step` are required;
        a NULL `cursor` is accepted. OPEN Q-G2-5: a reverse ADVANCE at lo == n
@@ -286,6 +289,16 @@ typedef struct {
     int comment_tier;       /* PCREC_CMT_* passes through                       */
     void *u;
 } mf_hooks;
+
+/* The `miss` token: pass MF_MISS_N as mf_hooks.miss to STATE "the miss value
+ * is this site's `n`" without repeating n's text. It is compared by ADDRESS
+ * (an exported array, never a string literal), so no C text can collide with
+ * it, and the kit resolves it to the `n` hook's text wherever it renders
+ * `miss`: its bytes never reach an artifact. Additive to MF_SITE_ABI 4 (no
+ * layout or existing meaning moved). */
+#define mf_miss_n MF_NS(miss_n)
+extern const char mf_miss_n[];
+#define MF_MISS_N ((const char *)mf_miss_n)
 
 /* The two ON_CAND tokens (§8.3 rule 4): the kit renders each into its own
  * accept/reject text. */

@@ -549,6 +549,7 @@ static const char *miss_text(int mode)
     case 0:  return "n";
     case 1:  return "((size_t)-1)";
     case 2:  return "n + 5";              /* unparenthesized on purpose      */
+    case 4:  return MF_MISS_N;            /* the token: never text (memfn.h) */
     default: return "n - 1";
     }
 }
@@ -878,6 +879,10 @@ static void finish_site(gsite *g, unsigned r)
             d->use = G2_USE_DISCARD;
     }
     d->miss_mode = (uint8_t)rn(d->end_back ? 4 : 3);
+    /* the MF_MISS_N token states what mode 0 states as the text "n": every
+     * second mode-0 site, by id, so the random stream (and so every other
+     * site) is the one G2 had before the token */
+    if (d->miss_mode == 0 && d->id % 2 == 0) d->miss_mode = 4;
     if (d->handoff == G2_H_ON_CAND) {
         d->reach = rn(4) ? rn(5) : rn(40);
         d->tok = (uint8_t)rn(3);
@@ -1095,6 +1100,7 @@ static void refusal_table(void)
     CASE("ASSIGN-without-result",   (s.form = MF_FORM_STMT, s.handoff = MF_H_ASSIGN, h.result = NULL));
     CASE("ON_CAND-without-on_cand", (s.form = MF_FORM_STMT, s.handoff = MF_H_ON_CAND, h.on_cand = NULL));
     CASE("RETURN-without-miss",     h.miss = NULL);
+    CASE("RETURN-MISS_N-without-n", h.miss = MF_MISS_N; h.n = NULL);
     CASE("no-subject-hook",         h.s = NULL);
     CASE("no-read-limit-hook",      h.n = NULL);
 #undef CASE

@@ -62,6 +62,11 @@ FLOOR_REFUSALS=60         # refusal-table + API cases
 FLOOR_K1_CHECKS=370000    # K1 mf_ref_* checks (deterministic: 377000 measured)
 FLOOR_COMBOS=20           # (op, form, handoff) combinations
 FLOOR_RUN_CELLS=1644      # RUN (offset x length x mask) cells, all of them
+FLOOR_MT_SITES=0          # MF_MISS_N token sites (miss_mode 4), EXPR/FUNC/STMT, all handoffs
+FLOOR_MT_RET=0            # ... of them RETURN
+FLOOR_MT_ASSIGN=0         # ... of them ASSIGN
+FLOOR_MT_FUNC=0           # ... of them FUNC/RETURN (define + call)
+FLOOR_MT_CHECKS=0         # answer checks on token sites, per compiler build
 FLOOR_HOOK_KILL_PCT=65    # W2: % of hook-mutated sites caught, each of mutations 5-7
                           # (measured quick tier: 92 / 90 / 72)
 # --quick: the sample stride, and the floors that scale with it (measured
@@ -326,7 +331,7 @@ for cc in $cc_list; do
     p=$(num "$log" "checks passed"); f=$(num "$log" "checks failed")
     s=$(num "$log" "sites run"); miss=$(num "$log" "coverage cells missing")
     echo "== $cc${drv_tier:+ (quick subjects)}: passed ${p:-?} failed ${f:-?} sites ${s:-?} coverage-missing ${miss:-?}"
-    grep '^G2 \(faults\|sites failed\|layout\|cells\|subjects\|site features\|instances\|sites with no\)' "$log" | sed 's/^/   /'
+    grep '^G2 \(faults\|sites failed\|layout\|cells\|subjects\|site features\|miss token\|instances\|sites with no\)' "$log" | sed 's/^/   /'
     passed=$((passed + ${p:-0}))
     [ "${f:-1}" -gt 0 ] && note_fail "${f:-1}" "$cc: answer checks failed (first failures: $work/run-$cc.err)"
     [ "${s:-0}" -ge "$FLOOR_SITES" ] || note_fail 1 "$cc: sites run ${s:-0} < floor $FLOOR_SITES"
@@ -347,6 +352,18 @@ for cc in $cc_list; do
     [ "$combos" -ge "$FLOOR_COMBOS" ] || note_fail 1 "$cc: combinations run $combos < floor $FLOOR_COMBOS"
     rc_=$(grep '^G2 cells' "$log" | sed 's/.*RUN (offset x length x mask) \([0-9]*\)\/.*/\1/')
     [ "${rc_:-0}" -ge "$FLOOR_RUN_CELLS" ] || note_fail 1 "$cc: RUN cells ${rc_:-0} < floor $FLOOR_RUN_CELLS"
+    # the MF_MISS_N token cells (R6 coverage): sites by shape, and the answer
+    # checks that ran on them against G2's reference
+    set -- $(grep '^G2 miss token' "$log" | sed 's/.*sites \([0-9]*\) (RETURN \([0-9]*\), ASSIGN \([0-9]*\), FUNC\/RETURN \([0-9]*\)), checks \([0-9]*\).*/\1 \2 \3 \4 \5/')
+    if [ $# = 5 ]; then
+        [ "$1" -ge "$FLOOR_MT_SITES" ]  || note_fail 1 "$cc: MF_MISS_N sites $1 < floor $FLOOR_MT_SITES"
+        [ "$2" -ge "$FLOOR_MT_RET" ]    || note_fail 1 "$cc: MF_MISS_N RETURN sites $2 < floor $FLOOR_MT_RET"
+        [ "$3" -ge "$FLOOR_MT_ASSIGN" ] || note_fail 1 "$cc: MF_MISS_N ASSIGN sites $3 < floor $FLOOR_MT_ASSIGN"
+        [ "$4" -ge "$FLOOR_MT_FUNC" ]   || note_fail 1 "$cc: MF_MISS_N FUNC/RETURN sites $4 < floor $FLOOR_MT_FUNC"
+        [ "$5" -ge "$FLOOR_MT_CHECKS" ] || note_fail 1 "$cc: MF_MISS_N checks $5 < floor $FLOOR_MT_CHECKS"
+    else
+        note_fail 1 "$cc: no 'G2 miss token' census line in $log"
+    fi
     grep -c . "$work/build-$cc/warnings.log" | sed "s/^/   compiler diagnostics lines ($cc): /"
 done
 
