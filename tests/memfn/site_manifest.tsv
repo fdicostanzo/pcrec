@@ -53,4 +53,4 @@ VMSPAN	vm_emit_span_scan	SKIP/ADVANCE	loop	M3 (R4h)	pending	vm_cursor_rep	§8.5 
 MLINE	emit_attempt	FIND/ASSIGN	scan	M4	pending		§8.5 MLINE (N3); §15.7
 N6	vm_rev_emit	MF_VOCAB bump (backward walk, captures in flight)	loop	M6	pending	vm_revdet_rep	§8.5 N6; §R4.3.4; §22 M6
 VMSTRIDE	vm_emit_span_scan	MF_VOCAB bump (strided SKIP)	loop	M6	pending	vm_cursor_rep	§8.5 VM span at stride > 1; §R4.3.4; §22 M6
-N7	defs_bref,defs_bref_ci,u8_defs_bref,u8_defs_bref_ci	MF_VOCAB bump (run-time-operand mismatch, prefix-count return)	loop	M7	pending		§8.5 N7 (D58/DD-12); §R4.3.4; D147 addendum 10 (Q54)
+N7	defs_bref,defs_bref_ci,defs_bref_ci_ucp,u8_defs_bref,u8_defs_bref_ci	MF_VOCAB bump (run-time-operand mismatch, prefix-count return)	loop	M7	pending		§8.5 N7 (D58/DD-12); §R4.3.4; D147 addendum 10 (Q54)
