@@ -817,3 +817,9 @@ pointer when a kit change merges to main.
   cases), make test 747 s green, 16 mech rows DETECTED. done: posted.
 - R4g edit set posted. Main cleared it: start after N3 delivers, land
   after C4, conditions recorded in responses.md.
+- N3 merged to main (5e9ec93c). R4g started: kit branch lane/memfn-r4g
+  from main; opus lane r4g in worktrees/r4g. Main's conditions are in the
+  brief: no CandPf/CandRow change, the anchored rows re-pinned + solo in
+  R4g's commit, sabotage_anchors.tsv re-derived, zero movers (shown on
+  ≤ 60 compiles against a pre-edit reference binary). It lands on
+  post-C4 main via a slot.
