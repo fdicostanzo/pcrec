@@ -72,8 +72,11 @@ from M1b, a third, the VM's literal-run compare (VMRUN, runcmp.c).
   absent, classify, classes, doc)` (every site/hook/run-term field a row
   reads: where the gate reads it, what an absent value is, including the
   written per-kind OBLIGATION exemptions, its classify function and its
-  closed class set, with the text-shape classes IDENT / JUMP / BRACED).
-- **gate.c** — THE ROW-CONTRACT GATE: fields.def's classify functions
+  closed class set, with the text-shape classes IDENT / JUMP / BRACED;
+  `miss`'s MISS_N is the `MF_MISS_N` token or the text of `n`).
+- **gate.c** — THE ROW-CONTRACT GATE: also DEFINES the exported `MF_MISS_N`
+  sentinel (`mf_miss_n`, memfn.h; `kit.h`'s `kit_miss(h)` resolves it to the
+  `n` hook's text, and every reader of `miss` goes through that). fields.def's classify functions
   (`kit_is_ident`, the one lexical identifier check, lives here), the
   per-field rules (R1 used-and-unstated, R2 stated-and-not-served) as
   `gate_check`, run in WARN mode at define, use and the run walk (verdicts

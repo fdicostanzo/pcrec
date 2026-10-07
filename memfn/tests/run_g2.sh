@@ -62,11 +62,11 @@ FLOOR_REFUSALS=60         # refusal-table + API cases
 FLOOR_K1_CHECKS=370000    # K1 mf_ref_* checks (deterministic: 377000 measured)
 FLOOR_COMBOS=20           # (op, form, handoff) combinations
 FLOOR_RUN_CELLS=1644      # RUN (offset x length x mask) cells, all of them
-FLOOR_MT_SITES=0          # MF_MISS_N token sites (miss_mode 4), EXPR/FUNC/STMT, all handoffs
-FLOOR_MT_RET=0            # ... of them RETURN
-FLOOR_MT_ASSIGN=0         # ... of them ASSIGN
-FLOOR_MT_FUNC=0           # ... of them FUNC/RETURN (define + call)
-FLOOR_MT_CHECKS=0         # answer checks on token sites, per compiler build
+FLOOR_MT_SITES=500          # MF_MISS_N token sites (miss_mode 4), EXPR/FUNC/STMT, all handoffs
+FLOOR_MT_RET=130           # ... of them RETURN
+FLOOR_MT_ASSIGN=45          # ... of them ASSIGN
+FLOOR_MT_FUNC=90            # ... of them FUNC/RETURN (define + call)
+FLOOR_MT_CHECKS=1800000    # answer checks on token sites; quick measured 2188666 (the full run has more)
 FLOOR_HOOK_KILL_PCT=65    # W2: % of hook-mutated sites caught, each of mutations 5-7
                           # (measured quick tier: 92 / 90 / 72)
 # --quick: the sample stride, and the floors that scale with it (measured
