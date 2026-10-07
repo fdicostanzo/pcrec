@@ -102,6 +102,12 @@ comment and the row's header.
   (does NOT): the caselessness is the option in force AT THE REFERENCE, not at
   the group, and an implementation reading it at the group passes one and fails
   the other.
+- **caseless_ucp.rxt** ([K94]) — the caseless compare under `--ucp` in the
+  byte encoding: Latin-1 pairs fold (`(\xe9)\1` on `\xe9\xc9`), `\xb5 \xdf \xff`
+  and `\xd7/\xf7` do not, no-UCP and no-`(?i)` controls, the scoped `(?i:\1)`
+  pair. Hand-assembled from a libpcre2 10.46 sweep of all 65,536 byte pairs.
+  `fold_agreement_ucp_check.c` is the exhaustive sibling (brefdiff §9c).
+  Sabotage S590 (emitter ignores UCP), S591 (fold rep ASCII-only).
 - **dupnames.rxt** — `(?J)`'s scoping rule (checked AT EACH DECLARATION against
   the scoped state, which four separating cells establish) and §8.3's
   resolution rule, plus the RE-ENTRY cells over a name run that the first
@@ -187,6 +193,11 @@ comment and the row's header.
   so the arm ties P2 to P1. Sabotage S442 (a section-relative base) reads red
   here. The design's (c) arm (an EMITTED 256-position masked run) belongs to
   C2, which is HELD.
+- **fold_agreement_ucp_check.c** ([K94]) — the `--ucp` BYTE half, run as
+  `run_backref_diff.sh` §9c: the shipped `$_span_match_caseless` of an artifact
+  compiled `--ucp` against `pcrec_fold_latin1` (the class fold) over all
+  65,536 ordered pairs, plus the asserted shape (112 folding bytes, one
+  partner each, `\xb5 \xdf \xff` inert). Sabotage S590/S591.
 - **fold_agreement_utf8_check.c** — the same obligation for the `utf8`
   encoding ([M5.0] stage 4, `utf8_design.md` §4.6), run as
   `run_backref_diff.sh` §9b. **A SECOND FILE rather than a wider sweep in the
