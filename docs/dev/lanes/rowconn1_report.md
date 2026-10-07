@@ -175,7 +175,28 @@ UNSAT is served by no row: `run_cmp_sat` (:262-268) keeps it off every walk.
 
 ## 3. Validation (Mac)
 
-OWED — filled from `build/scratch/validate.log` when the chain completes.
+OWED. The Mac suite lock was held by lane stc2 (test-codegen + make test,
+since 12:51) through this lane's end, so the whole validation is armed as
+one DETACHED chain that waits for the lock (60 s polls), takes it (owner
+`lane rowconn1`), runs each step solo, and releases it by trap:
+
+- script: `worktrees/rowconn1/build/scratch/validate.sh`
+  (`nohup caffeinate -s …`, launched 14:20);
+- log: `worktrees/rowconn1/build/scratch/validate.log`, one `VERDICT <step>
+  rc=<n>` line per step, each step's full output in `step_<step>.log`
+  beside it; the completion line is `ALL DONE <date>`;
+- steps, in order: `make` (build), `make strict`, `make test-memfn-g2`,
+  `test-memfn-arms`, `test-memfn-forms`, `test-memfn-manifest`,
+  `test-memfn-stamps`, `test-memfn-link` (C15/C16), `make strict
+  CFLAGS="-O2 -g -DMF_TRACE"`, then `python3 scripts/emit_sweep.py --ref
+  92ca17fc` judged by `memfn_r4c_gate.py --zero-dumps` (`VERDICT gate`; its
+  PASS line reads `R4C-GATE PASS (--zero-dumps): 0 movers on every
+  stream`).
+
+Measured before handback, outside the lock (single-file compiles, not a
+suite): every kit source compiles clean under `-Wall -Wextra -Wshadow
+-Werror`, with and without `-DMF_TRACE` (gcc-16), and the trace build's 16
+demo artifacts are byte-identical to the default build's (§4).
 
 ## 4. The trace demo (16 pcrec compiles + the C5 fixture driver)
 
@@ -330,4 +351,4 @@ same three cells (ofsskip 4 define + 8 use, precheck 2 use) and no other.
       memfn.h change.
 - [x] C15/C16: MF_NS names, statics, SPDX + Provenance headers, PROVENANCE
       rows; src/CLAUDE.md and docs/CLAUDE.md updated.
-- [ ] Validation: §3 (OWED until the chain completes).
+- [ ] Validation: §3, OWED (armed detached; `ALL DONE` in validate.log).
