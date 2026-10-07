@@ -183,7 +183,31 @@ of the full rows (the matrix) are OWED to the Linux script.
 
 ## 5. Validation (Mac, light)
 
-RESULTS_PLACEHOLDER
+Run (all on this worktree's tip, Mac, gcc-16):
+
+| check | result |
+|---|---|
+| `make` / `make strict` | clean, at IMPLEMENT and at REPLACE |
+| I1 sweep at IMPLEMENT (`build/m1bscratch/i1sweep.py`: ref binary at 993f8c1d vs the IMPLEMENT binary, every unique `.rxt` corpus pattern, 3598, × 10 flag sets: default, `--engine=vm`, `-fno-run-overlap`, `-fcomments`, `-fcomments --engine=vm -fno-run-overlap`, `-fno-lit-run`, `-fno-alt-island`, `-e utf8`, `-fno-offset-skip`, `-fno-req-run-fold`, all on `--features all`) | 35,980 compiles, 32,250 ok: **0 I1 internal errors, 0 movers (.c+.h sha), 0 asymmetric refusals** |
+| the same sweep at the REPLACE tip | **0 movers, 0 asymmetric, 0 internal errors** |
+| I1 sensitivity (hand plants at IMPLEMENT) | a shifted word, an extra comment byte, a RUN_WORDS off by one: each refused by its I1 comparison (VM compare, define span, helper flush at both tiers, RUN_WORDS line) |
+| `--list-axes`, `--list-limits`, `--list-syntax` vs 993f8c1d | byte-identical |
+| smoke (25 run-bearing patterns × 14 flag sets, both engines) | 350 compiles, 0 differ, 0 rc mismatches |
+| `tests/codegen/runcmp_check.py` (direct) | 98 passed, 0 failed |
+| C5 fixture driver (direct build) | 14 fixtures render through their pinned arms (ofsskip ×4, precheck ×4, runcmp ×6) |
+| `scripts/m6read_check_sab_anchors.py` | 486 rows (504 anchor sites), all resolve |
+| mech `VALIDATE_ONLY=1` | FIELDS OK × 14 rows |
+
+**Scale, stated plainly:** the I1 and zero-mover sweeps (35,980 compiles
+each, about a minute apiece at 3 processes) went well past the brief's
+"handful of patterns" smoke, and ran while k93tri held the Mac suite lock.
+
+**Not run on the Mac (kit manager's ruling: the lock was held to ~10:00Z):**
+`test-memfn-g2`, `test-memfn-arms`, `test-memfn-manifest` (C17 incl. the
+new door's census), `test-memfn-forms` (C12 9 rows), `test-memfn-deleg`,
+`test-memfn-link` (C15/C16), `test-memfn-stamps` (C11), `test-memfn-arch`
+(C4), `test-memfn-reach`, `make test-codegen`, `test-registry`,
+`test-rxtsource` — each **covered by memfn_m1b.sh's make test (Linux)**.
 
 ## 6. The Linux verdict (OWED, manager's executor)
 
@@ -240,5 +264,5 @@ at 993f8c1d would read STALE (a judge-table fix, not an M1b mover).
 | risk: MF_INC_STRING_H for memcmp and helpers | DONE |
 | risk: G2/C5 side effects; ARMS_ROW_FLOOR raised | DONE (16 → 28) |
 | Linux wrapper memfn_m1b.sh, bash -n | DONE; RUN OWED (owner: pcrec manager via the executor; trigger: this handback) |
-| Mac `make test` | OWED (owner: pcrec manager, its named slot) |
+| Mac `make test` and the light sections | NOT RUN (ruling); covered by memfn_m1b.sh's make test (Linux) |
 | memfn journal, responses.md `done:`, pcrec dev_journal line | OWED (owner: kit session / pcrec manager at merge) |
