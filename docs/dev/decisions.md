@@ -9183,3 +9183,16 @@ A decision table is an ordered list of rows, each a predicate over facts plus an
 **When a table is the wrong tool:** a single yes/no; a choice that is really a cost comparison across all options (an argmin is a planner, not first-match — D151 avoided that); anything evaluated per call in the matcher at run time. **Costs:** one indirection; a refactor that must be proven no-mover; overlapping predicates can hide order subtleties, so the order itself needs review.
 
 **The test** for building one: does the choice have several options, interacting preconditions, and attached machinery (deny/stamp/listing/trace) on every outcome? If yes, a table is cheaper to get right and to keep right. Related: memory `pcrec-decisions-as-first-match-tables`, D124, D148, D151.
+
+## D153 — [OPTLOOP] round 3 is SELECTED and runs BEHIND THE REMODEL: refactors first (Frank, 2026-10-06)
+
+**Decision.** Frank ruled round 3's draft selection (docs/dev/optloop/round3_selection.md):
+1. **Principle, "don't live in a house we're remodeling" (Frank: "it's ok to focus on the remodel").** The in-flight refactors take priority over round 3 until complete: [START-TABLE] C1-C7 + C5b; then refactor B [DEC-FALLBACK] (which absorbs the prefilter admission ternary, its Q8); and memfn's zero-mover migration steps (R4c/M1 now; the later steps in docs/design/memfn/integration.md §22, e.g. R4g M2 PF migrate, R4h M3 in-loop migrate). A round-3 row that touches a site under remodel sequences AFTER the refactor that owns it; remodel work has priority for lane slots.
+2. **Overlap column.** round3_selection.md's table gains a "remodel overlap" column (the draft missed this direction), filled by the manager: 3a-1 -> refactor B; 3a-2, 3a-3 -> none; 3a-4 -> likely refactor A (confirm at its twin step); 3b-5 -> A + memfn (gated); 3b-6 -> A + memfn; 3b-7 -> B; 3b-8 -> memfn M3 (R4h); backups per row.
+3. **Q16 ruled.** [NULLABLE-ANCH] may run now (B's site is not under construction; it is one predicate, B later folds the corrected predicate); [CTX-PREFILTER] waits for B. Net runnable now: [ART-POSS-ARMS], [ART-TRAIL-ELIDE] (after POSS-ARMS), [NULLABLE-ANCH].
+4. **Procedural questions.** Kanban rule YES (skip a gated row whose gate has not cleared, pull the next ungated one, never wait). The 2+3 batch gate pins on whatever is alpha-accepted; un-landed gated rows move to round 4's gate (YES). K90 + K91 + [OPT-HYB-RESEED-POLICY] (and K83 once sized) are ONE retry-slot row [START-DENSE], gated on C7, with one shared [MEMFN] request and backup B3 (YES). The possessify/G1 reading, [ART-TRAIL-ELIDE] as algorithmic, and [NULLABLE-ANCH]'s predicate-only scope accepted as the draft recommends. [U8-PICK] stays at rank 4 with its remodel overlap marked.
+5. [OPT-ENDTERM] is filed as a plan row; the five bench relay questions are recorded as owed to pcrecdev2 (the bench is not contacted).
+
+**Why.** Building a row on a site mid-remodel moves the edit set the refactor's instruments re-derive, and every start-row mover is a one-row addition after C7 (start_table.md §4). The general-mechanisms and forest-for-trees rules say fold first, then add.
+
+**Revisit when.** C7 and refactor B merge (the gated rows open), or round 3's runnable trio drains with remodel lanes still full.
