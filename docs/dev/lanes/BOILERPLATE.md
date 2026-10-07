@@ -47,8 +47,8 @@ Numbers are the measured record in docs/testing.md "The boxes" (MEASURED
 - K54 (gcc libasan hangs every sanitized process AT EXIT under
   `detect_leaks=1`) does NOT apply: it is specific to gcc-16's LSan on
   arm64-darwin, and the Makefile's `SAN_DETECT_LEAKS` derivation only
-  disables the leak tier on Darwin. Here `make san`/`asan` run with
-  leaks on (LSan is live on Linux; K26's no-op finding is old).
+  disables the leak tier on Darwin. On Linux the leak tier runs
+  (santriage3_report.md found LSan live on ubuntubudu; not re-checked here).
 - D45 budgets and load-guard thresholds were calibrated on ubuntubudu (a
   slower Ryzen 5 1600); on this faster box they are ceilings, not floors.
   ONE heavy suite at a time on the box, with 16 threads shared.
