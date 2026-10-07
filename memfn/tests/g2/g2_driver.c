@@ -751,7 +751,7 @@ int main(int argc, char **argv)
         else if (!strcmp(argv[i], "--ref-defect") && i + 1 < argc) g2_ref_defect = atoi(argv[++i]);
         else { fprintf(stderr, "g2_driver: unknown option %s\n", argv[i]); return 2; }
     }
-    g_strict = getenv("G2_STRICT_HOOKS") && !strcmp(getenv("G2_STRICT_HOOKS"), "1");
+    g_strict = !(getenv("G2_STRICT_HOOKS") && !strcmp(getenv("G2_STRICT_HOOKS"), "0"));   /* enforced by default */
     if (getenv("G2_TRACE")) trace_id = (uint32_t)strtoul(getenv("G2_TRACE"), NULL, 10);
     layouts_init();
     struct sigaction sa;
@@ -869,9 +869,14 @@ int main(int argc, char **argv)
                 if (o < -3 && len > 3) continue;
                 run_want++;
                 if (run_cell[o + 8][len][fb]) run_have++;
-                else if (miss++ < 40)
+                else {
+                    /* every missing cell is listed: run_g2.sh checks the count
+                     * against the MISSING lines (a 40-line cap, with miss++
+                     * counting past it, made them disagree) */
+                    miss++;
                     printf("G2 coverage MISSING: RUN term offset %d length %d mask %s\n", o, len,
                            fb == 0 ? "NULL" : fb == 1 ? "0-free" : fb == 2 ? "1-free" : "2-free");
+                }
             }
     int nt_have = 0;
     for (int k = 1; k <= 8; k++) nt_have += nterm_cell[k] > 0;
@@ -928,7 +933,7 @@ int main(int argc, char **argv)
         if (fd_sites[k]) printf("G2 form %d: sites %ld checks %ld failed-sites %ld\n", k, fd_sites[k], fd_checks[k], fd_sfail[k]);
     for (int c = 1; c < G2_NPEND; c++)
         printf("G2 pending %s: sites %ld checks %ld failed %ld faults %ld failed-sites %ld (%s)\n", g2_pend_name(c),
-               pd_sites[c], pd_checks[c], pd_fail[c], pd_fault[c], pd_sfail[c], g_strict ? "STRICT: counted as hard checks" : "bucket only");
+               pd_sites[c], pd_checks[c], pd_fail[c], pd_fault[c], pd_sfail[c], g_strict ? "ENFORCED: counted as hard checks" : "G2_STRICT_HOOKS=0 diagnostic: bucket only");
     printf("G2 coverage cells missing: %d\n", miss);
     return 0;
 }
