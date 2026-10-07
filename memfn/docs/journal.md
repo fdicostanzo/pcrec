@@ -467,3 +467,11 @@ pointer when a kit change merges to main.
   went to main with "carried" recommended.
 - M1b waits for R4c′ to merge; its branch is then lane/memfn-m1b, cut
   from that main.
+- Main ruled Q-M1b-6 (2026-10-07): VERIFY is CARRIED as a term of
+  OFS/PRE (the SETREST precedent), with no DELEG_SITES row of its own;
+  VMRUN gets its own row (D91). Main also accepted: commit 0's contract
+  fix (stamp_int, MF_SITE_ABI 3→4), C12 12→9, and the re-point count of
+  6 with S514/S516/S528 checked. Overlap rule: M1b and START-TABLE
+  C3/C4 share pcrec_emit_prologue on disjoint lines, so whichever
+  merges second merges main ALONE and re-runs its zero-mover gate. The
+  M1b report keeps the D1-D12 restatement (stc1 cross-checks it).
