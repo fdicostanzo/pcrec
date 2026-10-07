@@ -76,6 +76,16 @@ def judge(label, text):
             bad.append('stream %s: unreadable line %r' % (s, line))
         elif m.groups() != ('0', '0'):
             bad.append('stream %s: movers=%s asymmetric=%s' % (s, m.group(1), m.group(2)))
+    if label.startswith('inert '):
+        # the memfn-simd pair (both sides the TIP): the flag must not move a
+        # byte, a stamp or a refusal against the arm's own base, per side
+        flag = label.split()[-1]
+        rows = re.findall(r'^\s*\S+ ' + re.escape(flag) + r'\s+(c-default|c-vm)\s+(differ=\S+ stamp=\S+ refusal=\S+)', real[1], re.M)
+        if {s for s, _ in rows} != {'c-default', 'c-vm'}:
+            bad.append('inert arm: DIFFER rows for c-default and c-vm missing (%r)' % rows)
+        for s, r in rows:
+            if r != 'differ=0/0 stamp=0/0 refusal=0/0':
+                bad.append('inert arm %s: %s (the flag moved something)' % (s, r))
     decl = next((d for rx, d in DECLARED if re.search(rx, label)), [])
     want = {line for line, _ in decl}
     got = [l.strip() for l in text.split('\n') if FAILURE_RX.search(l)]

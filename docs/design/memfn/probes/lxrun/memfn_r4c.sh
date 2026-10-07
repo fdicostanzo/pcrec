@@ -60,13 +60,11 @@
 #                Streams c-default,c-vm,emit-ir,composition ((a) adds facts;
 #                NO arm runs dumps: its declared --list-axes mover is step
 #                2's, judged there); a pre-built ref binary at REF.
-#                NOT ARMS: -fmemfn-simd/-fno-memfn-simd. REF predates the
-#                flag, so ref-vs-tip is asymmetric by construction (91f5b607:
-#                asymmetric=4165 on every stream), and emit_sweep cannot run
-#                one binary with the flag on ONE side only (--extra is both
-#                sides; one binary on both sides is a mirror). Their inertness
-#                is step 5 (axes, the pair over the corpus) and step 6 (C11's
-#                identity half: "identical (no SIMD form)").
+#                -fmemfn-simd/-fno-memfn-simd are INERTNESS arms ("inert
+#                ..."): REF predates the flag (91f5b607: asymmetric=4165), so
+#                both sides are the TIP and the claim is each side's DIFFER
+#                count against its own base: exactly 0/0, stamps 0/0,
+#                refusals 0/0 (the kit manager, after r4clx).
 #                The VERDICT per arm is memfn_r4c_i2.py (beside this script),
 #                not emit_sweep's rc: 0 movers / 0 asymmetric on every stream,
 #                and every other failure line DECLARED for that arm in its
@@ -143,7 +141,7 @@ arm() {  # $1 label, rest: emit_sweep args; numbered whether or not I2ARMS selec
     local lab=$1; shift; n=$((n+1))
     [ -z "${I2ARMS:-}" ] || printf '%s\n' "$lab" | grep -qE -- "$I2ARMS" || return 0
     n2=$((n2+1))
-    $T 1800 python3 scripts/emit_sweep.py --ref-bin "$RB" --bin build/pcrec --no-self-check "$@" > "$L/i2_$n.log" 2>&1
+    $T 1800 python3 scripts/emit_sweep.py --ref-bin "${ARMREF:-$RB}" --bin build/pcrec --no-self-check "$@" > "$L/i2_$n.log" 2>&1
     local rc=$?
     python3 "$HERE/memfn_r4c_i2.py" "$lab" "$L/i2_$n.log" > "$L/i2_$n.judge" 2>&1; local j=$?
     echo "i2 arm $n [$lab] emit_sweep rc=$rc judge=$j"
@@ -156,6 +154,15 @@ if [ "$i2" -eq 0 ]; then
     for tier in "" "-fcomments"; do
         for f in $FLAGS --tune=min-size --tune=size --tune=speed --tune=max-speed; do
             arm "base=${tier:-none} $f" --streams c-default,c-vm,emit-ir,composition --no-differ-floor --extra-base="$tier" --extra="$f"
+        done
+    done
+    # the memfn-simd pair: INERTNESS arms. Both sides are the TIP (REF
+    # predates the flag), so identity is trivial; the claim is each side's
+    # DIFFER count against its own base, which memfn_r4c_i2.py requires to be
+    # exactly differ=0/0 stamp=0/0 refusal=0/0 on c-default and c-vm.
+    for tier in "" "-fcomments"; do
+        for f in -fmemfn-simd -fno-memfn-simd; do
+            ARMREF=build/pcrec arm "inert base=${tier:-none} $f" --streams c-default,c-vm,emit-ir,composition --no-differ-floor --extra-base="$tier" --extra="$f"
         done
     done
     arm "tier -fcomments" --streams c-default,c-vm,emit-ir,composition --no-differ-floor --extra=-fcomments

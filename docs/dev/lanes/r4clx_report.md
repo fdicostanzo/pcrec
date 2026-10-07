@@ -337,3 +337,34 @@ input was run. The Linux re-run is the verdict.
 | 7 | RERUN mode, header, CLAUDE.md, bash -n | yes |
 | 8 | RERUN command, justified | yes |
 | — | report + lanes/CLAUDE.md row | yes |
+
+## Kit manager's review addendum (2026-10-07)
+
+1. **The memfn-simd pair is BACK in I2, as INERTNESS arms.** Item 6 had
+   dropped it, on the grounds that tip-vs-tip is "a mirror". That is true
+   of IDENTITY. It is not true of emit_sweep's per-side DIFFER count
+   against the arm's own `--extra-base`, which is exactly the inertness
+   claim. Also, C11's identity half compares only default vs
+   `-fno-memfn-simd`, so `-fmemfn-simd` had no byte witness anywhere.
+   - The driver runs 4 `inert base={none,-fcomments} -f{,no-}memfn-simd`
+     arms with `ARMREF=build/pcrec`, so both sides are the tip.
+   - memfn_r4c_i2.py requires `differ=0/0 stamp=0/0 refusal=0/0` on
+     c-default and c-vm for an `inert` label.
+   - Controls: an `-fno-altcls-factor` log relabelled as inert reads RED
+     (102/102); a zeroed copy reads GREEN.
+   - Real Mac run: `-fmemfn-simd` reads `c-default differ=0/0 stamp=0/0
+     refusal=0/0`; judge PASS.
+2. **The pcrec manager's point (2), on the composition floor.** Making the
+   composition floor and DELIVER witness default-arm-only needs a change
+   to `scripts/emit_sweep.py`, which is main's file: it applies them on
+   every run that includes the composition stream, and the I2 driver
+   cannot scope a floor. So the declarations stand, the allowed
+   fallback. Each one names its file, its reason, and its witness: the
+   arm's every stream reads movers=0 asymmetric=0, both sides lose the
+   file alike. Each one fails if stale. **Request to main (backlog, not
+   this lane's):** an emit_sweep option to apply the composition floor
+   and DELIVER witness at the default arm only would retire all three
+   declarations.
+3. **The RERUN command gains the inert arms.** `I2ARMS` becomes
+   `'^(arms-start|inert .*|base=(none|-fcomments) -fno-(cls-kit|splice-calls)|base=utf8 .*)$'`,
+   so PASS is i2arms=17.
