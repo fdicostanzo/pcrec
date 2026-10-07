@@ -149,7 +149,7 @@ wrapper still yields 5pass/1fail, so the full-row run reads DETECTED and
 `CC` reaches the arm at all was proved separately: `CC=/nonexistent-cc` gives
 BUILD-FAILED/ANOMALY.
 
-`SAB_EXPECT` is `DETECTED` (the default when absent), `UNDETECTED`, or —
+`SAB_EXPECT` is `DETECTED` (the default when absent), `UNDETECTED`, `BUILD-REFUSED` (see the table), or —
 since [MECH-REACH], 2026-08-25 — `UNREACHED` (which additionally REQUIRES a
 non-blank `SAB_EXPECT_REASON`; see that section below). The driver scores every
 row against it, the headline reads **`unexpected: N`**, and **a mismatch in any
@@ -172,6 +172,8 @@ The two mismatch directions are BOTH findings and both fail the run:
 |---|---|---|
 | `DETECTED` | UNDETECTED | a guard regressed, or the row's population was never adequate. The original finding, unchanged. |
 | `UNDETECTED` | DETECTED | **`NOW DETECTED`** — the claim EXPIRED: a later wave grew the population that closes the row. Re-measure, then flip the field. |
+| `BUILD-REFUSED` | build fails | DETECTED (`build refused, EXPECTED`) — the plant is meant to be refused at compile/link time; no suite runs ([admin1007], 2026-10-07) |
+| `BUILD-REFUSED` | build succeeds | **UNDETECTED** `***UNEXPECTED***` — nothing refused the plant; exits 1. (Without the declaration a failing build stays the BUILD-FAILED ANOMALY.) |
 
 That second row is deliberately the `known_fail` ratchet's *"now passing"*
 shape: the correct response is a deliberate re-measurement, **never deleting

@@ -59,6 +59,14 @@
 #   SAB_REQUIRE       space-separated instrument requirements; the vocabulary
 #                     is CLOSED and today holds exactly `asan`.
 #
+# [admin1007] SAB_EXPECT=BUILD-REFUSED. A row whose sabotage must make the
+# sabotaged tree's `make all` FAIL (a plant that a compile/link-time guard --
+# a static assert, a missing symbol, a -Werror-grade check -- is meant to
+# refuse) declares it. Build fails: verdict DETECTED. Build succeeds: verdict
+# UNDETECTED ***UNEXPECTED***, counted and exit-1 like any mismatch; no suite
+# runs either way. Without the declaration a failing build stays the
+# BUILD-FAILED ANOMALY (an unbuildable tree measured nothing).
+#
 # A row failing SAB_REACH/SAB_REACH_POP is **UNREACHED**: a THIRD verdict
 # beside DETECTED/UNDETECTED/ANOMALY, counted in the trailer, RED in the
 # headline, and its sabotaged tree is never built. A row may declare
@@ -555,8 +563,11 @@ A sabotage definition (tests/mech/sabotages/S<NN>_*.sh) sets:
                          cannot falsify a defence-in-depth pair)
     SAB_HARNESS_TARGET   scope the `harness` arm to one .rxt file or dir
     SAB_DOC_FIGURE       the row's own record of what it measured
-    SAB_EXPECT           DETECTED (default) | UNDETECTED | UNREACHED --
-                         checked in BOTH directions, a mismatch exits 1
+    SAB_EXPECT           DETECTED (default) | UNDETECTED | UNREACHED |
+                         BUILD-REFUSED -- checked in BOTH directions, a
+                         mismatch exits 1. BUILD-REFUSED: the sabotage must
+                         make the BUILD fail; failing = DETECTED, building =
+                         UNDETECTED ***UNEXPECTED*** (no suite is run)
     SAB_EXPECT_REASON    REQUIRED when SAB_EXPECT=UNREACHED
 
   [MECH-REACH] THE WITNESS'S REACH -- a row whose detector is a construct
@@ -1001,9 +1012,9 @@ run_one() {
         # falling back to the default would turn a checked claim back into an
         # unchecked one -- which is the exact failure this field exists to fix.
         case "${SAB_EXPECT:-DETECTED}" in
-            DETECTED|UNDETECTED|UNREACHED) ;;
+            DETECTED|UNDETECTED|UNREACHED|BUILD-REFUSED) ;;
             *)  echo "FATAL[$(basename "$sab_path")]: SAB_EXPECT must be" \
-                     "DETECTED, UNDETECTED or UNREACHED (got '$SAB_EXPECT')" >&2
+                     "DETECTED, UNDETECTED, UNREACHED or BUILD-REFUSED (got '$SAB_EXPECT')" >&2
                 exit 2 ;;
         esac
         # ---- [MECH-REACH] THE REACH FIELDS, VALIDATED BEFORE ANYTHING RUNS --
@@ -1363,8 +1374,27 @@ run_one() {
         fi
 
         if ! make -C "$tree" -j"$JOBS" all CC="$CC" > "$work/build.log" 2>&1; then
+            # [admin1007] SAB_EXPECT=BUILD-REFUSED: the build failing IS the
+            # detection (a sabotage that must be refused at compile/link
+            # time). Any other expectation keeps the ANOMALY reading -- an
+            # unbuildable tree measures nothing.
+            if [ "${SAB_EXPECT:-DETECTED}" = "BUILD-REFUSED" ]; then
+                printf '%s\t%s\t%s\t%s\tbuild-refused\tDETECTED (build refused, EXPECTED -- see %s)\n' \
+                    "$SAB_ID" "$SAB_FILE" "$SAB_DESC" "$SAB_SUITES" "$work/build.log"
+                [ "$KEEP" = "1" ] || rm -rf "$work"
+                exit 0
+            fi
             printf '%s\t%s\t%s\tBUILD-FAILED\t-\tANOMALY (see %s)\n' \
                 "$SAB_ID" "$SAB_FILE" "$SAB_DESC" "$work/build.log"
+            [ "$KEEP" = "1" ] || rm -rf "$work"
+            exit 0
+        fi
+        if [ "${SAB_EXPECT:-DETECTED}" = "BUILD-REFUSED" ]; then
+            # The sabotaged tree BUILT: the refusal this row demands did not
+            # happen, so nothing guards the plant. No suite is run -- the
+            # row's claim is about the build, not the suites.
+            printf '%s\t%s\t%s\t%s\tbuild-ok\t**UNDETECTED -- THE SABOTAGED TREE BUILT (SAB_EXPECT=BUILD-REFUSED wanted a build failure)** ***UNEXPECTED***\n' \
+                "$SAB_ID" "$SAB_FILE" "$SAB_DESC" "$SAB_SUITES"
             [ "$KEEP" = "1" ] || rm -rf "$work"
             exit 0
         fi
