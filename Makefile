@@ -521,7 +521,8 @@ test-examples: all
 # include scan and an `nm` join over the built objects, well under a second --
 # the pattern-facts record's structural check, born with the record.
 # [START-SET] run_cand_rows.sh joins at stage 0 (D148, K84): a text scan of
-# src/ cli/ lib/ for a comparison reading a dfa_pfs[] row name, well under a
+# src/ cli/ lib/ for a comparison reading a start-table row name (dfa_pfs[]
+# until [START-TABLE] C3, cand_rows[]'s NEXT/RECOVER rows since), well under a
 # second.
 test-codegen: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-codegen.ran"; fi

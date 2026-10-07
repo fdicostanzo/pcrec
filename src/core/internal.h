@@ -6566,9 +6566,10 @@ long long pcrec_cwmax(const Ast *a);                 /* src/opt/mrl.c */
  * candidate's stamp value where it has one, `deny` the `cx->opt->flags` bit
  * (or 0) that removes it from the emitter's own selection walk. Populated by
  * walking the SAME `DfaCand`-headed arrays `src/gen/emit_dfa.c`'s
- * `dfa_select` walks — never a hand-copied restatement of their names and
- * bits (docs/dev/learnings.md §3) — so a candidate added to one of those six
- * lists appears in the dump with no edit to the walker. `cap` bounds `out`;
+ * selection walks read (`dfa_select`'s lists, and since [START-TABLE] C3
+ * `cand_rows[]` for `prefilter` and `search-start`) — never a hand-copied
+ * restatement of their names and bits (docs/dev/learnings.md §3) — so a
+ * candidate added to one of those lists appears in the dump with no edit to the walker. `cap` bounds `out`;
  * returns the number written (never more than `cap`). */
 typedef struct {
     const char *name;

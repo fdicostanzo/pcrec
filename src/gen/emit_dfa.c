@@ -5921,7 +5921,7 @@ void pcrec_emit_find(StrBuf *c, const char *ind, const PcrecFind *f)
 }
 
 /* The FIND over axis B's candidate set at indent `ind`, its form the ROW's
- * (`DfaPf.scan`: a BYTE row memchr's, a SET row walks the table); the scan position
+ * (`u.pf.scan`: a BYTE row memchr's, a SET row walks the table); the scan position
  * and the subject are the DFA scan's own, `holdback` the D11 bound. */
 static void pf_emit_find(StrBuf *c, const DfaForm *f, const char *ind, int holdback)
 {
@@ -6504,7 +6504,8 @@ static bool dfa_reseed_exact(const Dfa *d, const uint8_t t[256])
  *     the start state cannot accept while parked) — the offset rows sit above;
  *   - SCAN KIND: the unanchored forward scan (`ENG_UNANCH`). `\G` and `(?m)^`
  *     machines take the attempt scan and are out (sound-F7; S490, an
- *     equivalent mutant: `dfa_pfs[]` is consulted on ENG_UNANCH only);
+ *     equivalent mutant: the NEXT walks that reach this row are on
+ *     CAND_ROUTE_DFA only, since C3 by the `routes` column);
  *   - SEEDED: an unseeded machine has `E` within `S`, so `T` is never a proper
  *     subset of `E` (C-SS*; S487, an equivalent mutant);
  *   - NECESSARY: `S` not nullable — the erased language's bit, never the
@@ -7193,7 +7194,7 @@ static bool req_handoff_applies(const DfaSel *s)
  * with the run pre-check's answer. First applying, non-denied row wins
  * (`DFA_SELECT`). It answers a question neither neighbour asks:
  * `req_admits[]` decides WHETHER and in WHICH SHAPE a pre-check is emitted,
- * `dfa_pfs[]` how the forward machine finds its next candidate INSIDE its
+ * `cand_rows[]`'s NEXT slot how the forward machine finds its next candidate INSIDE its
  * loop; this decides where the body's scan BEGINS. It composes with every row
  * of both (litscan_k82h.md §2.1), and three bodies read it through the one
  * expression `pcrec_emit_req_byte_check` returns. `scan-from-startpos` is the
@@ -7774,22 +7775,27 @@ static bool dfa_search_is_pinned(Ctx *cx)
  * (slot, route). D151 addendum 3 (Q2): one array with a `slot` field, never
  * per-slot arrays.
  *
- * IMPLEMENT, THEN REPLACE. NOTHING READS THIS TABLE YET. The five old tables
- * (`dfa_pfs[]`, `req_admits[]`, `req_uses[]`, `dfa_search_starts[]`,
- * `pcrec_reseed_rows[]`) and the inline decisions still decide every emitted
- * byte; C3-C5 switch their readers slot by slot and delete what they replace.
- * Until then the trace build (-DPCREC_CAND_TRACE) asks `cand_select` beside
- * every old decision and aborts where the two choose differently (the
- * both-walks oracle at the end of this section, §3.3 item 6). A walked row's
- * predicate IS the old row's function, by pointer, so the oracle tests the
- * FILTER: slot, route mask, deny order, first match. An inline decision has
- * no old function, and its row's predicate is the inline condition written
- * once as a function (§2.3 item 1); there the oracle also tests that.
+ * IMPLEMENT, THEN REPLACE. Since C3 THIS TABLE DECIDES NEXT AND RECOVER:
+ * `dfa_pfs[]` and `dfa_search_starts[]` are deleted into it (their fields are
+ * the rows' `u.pf`/`u.recover`), N12's four readers ask it on
+ * CAND_ROUTE_ATTEMPT, and every reader builds its route from `cand_route_of`.
+ * The other old tables (`req_admits[]`, `req_uses[]`, `pcrec_reseed_rows[]`)
+ * and the inline decisions still decide their slots; C4-C5 switch those
+ * readers and delete what they replace. Until then the trace build
+ * (-DPCREC_CAND_TRACE) asks `cand_select` beside every remaining old
+ * decision and aborts where the two choose differently (the both-walks
+ * oracle at the end of this section, §3.3 item 6); at a NEXT or RECOVER
+ * reader, where nothing is left to compare, it runs the table self-check and
+ * counts the hit (`cand_hit`). A walked row's predicate IS the old row's
+ * function, by pointer, so the oracle tests the FILTER: slot, route mask,
+ * deny order, first match. An inline decision has no old function, and its
+ * row's predicate is the inline condition written once as a function (§2.3
+ * item 1); there the oracle also tests that.
  *
- * NOT YET HERE, each with the commit that brings it: the slot payload `u`
- * (C3-C5, as each old table's own fields move in), the `--list-axes` `desc`
- * (C6), and the `landmark`/`scan`/`hat`/`stamp` columns, which no check or
- * reader asks for before C6. */
+ * NOT YET HERE, each with the commit that brings it: the other slots' payload
+ * `u` (C4-C5, as each old table's own fields move in), the `--list-axes`
+ * `desc` (C6), and the `landmark`/`scan`/`hat`/`stamp` columns, which no check
+ * or reader asks for before C6. */
 
 /* What a row HANDS the next slot and what a node ACCEPTS (§1.6), one bit per
  * handoff type so both are sets. */

@@ -4,9 +4,10 @@
  * WHAT THIS PROVES AND WHAT IT DOES NOT (docs/dev/plan.md [CHK-2]'s own
  * boundary, restated at the one place a reader will actually see it): this
  * dump shares its source with the emitter — it reads the SAME candidate-list
- * arrays `src/gen/emit_dfa.c`'s `dfa_select` walks (via the accessors
- * declared in internal.h), and hand-states the rest from `lib/pcrec.h`'s own
- * enum symbols. It proves what the compiler THINKS its options are. It is
+ * arrays `src/gen/emit_dfa.c`'s selection walks read (`dfa_select`'s lists;
+ * `cand_rows[]` for `prefilter` and `search-start` since [START-TABLE] C3),
+ * via the accessors declared in internal.h, and hand-states the rest from
+ * `lib/pcrec.h`'s own enum symbols. It proves what the compiler THINKS its options are. It is
  * NOT independent evidence that a stamp or a flag actually behaves as
  * described — the checks that read an EMITTED ARTIFACT (tests/codegen/
  * run_dfa_stamps.sh, the tuning.md differentials) are the independent side of

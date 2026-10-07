@@ -17,6 +17,14 @@
 # line names: the witness REACHES its row ([MECH-REACH]), so a plant on that
 # row is caught here.
 #
+# SINCE [START-TABLE] C3 the NEXT and RECOVER slots have no old walk: their
+# readers ask `cand_select` and nothing else, so at those sites the trace
+# build runs the self-check and prints the `CANDROW` hit with no comparison
+# (`cand_hit`). A plant on a NEXT/RECOVER row then MOVES the artifact (the
+# table decides), and is caught here by its witness no longer reaching the
+# row; the byte sweep against the parent (start_table.md §3.3 item 1) is
+# that slot's selection control.
+#
 # THE POPULATION IS COUNTED (K35). Every row identity in the table's own
 # source (`.c = { "<identity>"` inside `static const CandRow cand_rows[]`)
 # must have a witness line, and the table must have at least one row.
