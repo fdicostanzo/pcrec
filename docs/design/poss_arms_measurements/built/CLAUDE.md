@@ -1,4 +1,4 @@
-# docs/design/poss_arms_measurements/build — CLAIM-vs-MARK against the BUILT compiler
+# docs/design/poss_arms_measurements/built — the BUILD's evidence (CLAIM-vs-MARK, K35 re-count, composition hook)
 
 [ART-POSS-ARMS] build precondition (lane `possbuild`, sub-lane `possbuild-cm`,
 2026-10-07). Same frozen predicate generators as `../rev21/` (poss_arms.md
@@ -7,7 +7,7 @@ switches. Nothing here is built or run by `make`.
 
 ## Reproduce
 
-    make -j16 && docs/design/poss_arms_measurements/build/run_build_claimmark.sh
+    make -j16 && docs/design/poss_arms_measurements/built/run_build_claimmark.sh
 
 (~50 s at JOBS=8; scratch in `<worktree>/build/cm/`, gitignored.) The script
 refuses to run unless the four rev21 sha1s equal §8.3a's final values.
@@ -48,3 +48,13 @@ MINE PROTO` compares against `../rev21/results/out2/census_r21.tsv`. Run:
 `PCREC=build/pcrec ARTREV_GEN=docs/dev/optloop/artrev/gen BENCH=<pcrec-bench>
 CORPUS=. JOBS=8 python3 build_census.py > census_build.tsv`. Its results land
 in `results/` when the run has been taken (see the lane report).
+
+## `run_composition_build.sh` — §8.8 against the built compiler
+
+`../rev21/run_composition.sh` with the prototype's env-var arms replaced by
+the build's deny flags (DENIED passes add `-fno-poss-ctx-follow
+-fno-poss-bref-first` to `RXTFLAGS`). Run:
+`OUT=<dir> PROCS=8 run_composition_build.sh tests/possessify/composition_d27.rxt`.
+
+(The directory is `built/` and not `build/` because `build/` is gitignored
+tree-wide.)
