@@ -1,6 +1,9 @@
-# [MEMFN-ROWCON] Row contracts: the K96 generalization (design, rev 4, narrowed)
+# [MEMFN-ROWCON] Row contracts: the K96 generalization (design, rev 4.1, narrowed)
 
-Status: rev 4, 2026-10-07. Frank narrowed the item (via the pcrec manager):
+Status: rev 4.1, 2026-10-07. It answers the light re-check
+(`docs/dev/reviews/2026-10-07-r4-memfn-rowcon-light.md`: B1, M1-M3, and
+the S1-S8 table). After these edits N1 builds with no further panel.
+Earlier: rev 4, Frank narrowed the item (via the pcrec manager):
 "I don't want this to turn into a solution without problem scenario."
 This revision builds ONLY the K96 generalization. Everything else is
 HELD in §6, with its trigger.
@@ -45,12 +48,35 @@ runcmp's rows (`rc_row`). Each row gains two declarations:
 
 **Value classes** come from ONE classify function per field, kept in one
 small table (`memfn/src/fields.def`). Each class set is closed and
-includes `OTHER`, e.g. `miss` ∈ {`MISS_N`, `OTHER`}, `floor` ∈
-{`ZERO`, `OTHER`}. A value nobody classified lands in `OTHER`.
+includes `OTHER`. A value nobody classified lands in `OTHER`. Examples:
+- `miss` ∈ {`MISS_N`, `OTHER`};
+- `floor` ∈ {`ZERO`, `OTHER`};
+- **the text-shape classes [r4, S2-S7]:**
+  - `s`/`n`/`lo` ∈ {`IDENT`, `OTHER`}, where `IDENT` means a bare C
+    identifier, checked lexically;
+  - `on_miss`/`on_cand` ∈ {`JUMP` (one `return`/`goto` statement),
+    `BRACED`, `OTHER`}.
 
-**The gate.** It runs in the existing `select_arm` walk (and the runcmp
-walk) before each row's own predicate, applying per field the first rule
-that matches:
+  A row that pastes text raw serves only `IDENT`/`JUMP`. Generic, which
+  parenthesizes and braces, serves `OTHER`. So a non-identifier hook can
+  never reach a raw-pasting row: it falls to generic. That makes the
+  in-situ hazard IMPOSSIBLE at selection, with no snapshot and no byte
+  moved (the hook census shows pcrec passes only identifiers and `return
+  0;`). The contract (memfn.h) gains one sentence per class.
+
+**The gate, at BOTH phases [r4 B1].** Most hooks are USE-time (`s`, `n`,
+`lo`, `miss`, `on_miss`, the call-time `floor`), so a define-only gate
+would miss them.
+- **Define:** the gate runs in the existing `select_arm` walk (and the
+  runcmp walk), before each row's own predicate, over the define-time
+  fields.
+- **Use:** the gate RE-CHECKS the chosen row against the use hooks. A use
+  the chosen row does not serve is REFUSED, naming the fields. It cannot
+  re-select, because the definition is already written. This makes the
+  call-time half of K96's fix (`ofsskip.c` use refusals) general,
+  instead of deleting it.
+
+In each phase it applies per field the first rule that matches:
 1. **used and unstated:** DECLINE (R1).
 2. **stated, class not served:** DECLINE (R2).
 3. **otherwise:** pass.
@@ -61,14 +87,16 @@ refusal, never toward a wrong answer. If NO row serves a site, the kit
 refuses and names the fields.
 
 **Generic** serves every class of every field it uses. A value it cannot
-serve is a contract refusal, checked by G2.
+serve is a contract refusal, checked by G2. That includes a FUNC
+`floor` that differs between define and use (S8): generic refuses
+the disagreement.
 
-**Fields whose 0 is a real value**, where a row USES them (from the
-audit: `comment_tier`, `reverse`, `guard_by_caller`, `on_miss_leaves`),
-get an explicit unstated form: `*_UNSTATED = 0`, and booleans become
-tri-state. This is a kit `MF_SITE_ABI` layout bump with no pcrec artifact
-byte. Per-kind obligations (`end_back`, `fn_ref`, `table_ref`) are present
-by construction of their kind, and are checked by kind.
+**Fields whose 0 is a real value** (`comment_tier`, `reverse`,
+`guard_by_caller`, `on_miss_leaves`, `end_back`, `fn_ref`, `table_ref`)
+are per-kind OBLIGATIONS: every builder of that site kind sets them, so 0
+is a stated value, not an absence. They carry a WRITTEN exemption in
+`fields.def` (r3 M7's list). The rev-3.1 `UNSTATED`/tri-state layout bump
+is CUT [r4 M3]: no scenario needs it.
 
 ## 3. Visibility: decline reasons in the kit's own trace
 
@@ -96,22 +124,27 @@ census. The independent controls, none derived from `fields.def`:
   take a closed reason: `total-fallback`, `pending-site:<trigger>` or
   `contract-reach:<G2 family>`. Anything else is deleted (D77).
 - **A text signature per row,** checked in its witness's artifact.
-- **G2:** byte-loop agreement on every reached cell; a per-row CHOSEN floor
-  over G2 (fed by lane g2x's families); and the POISON differential (set
-  every field a row does not use, or declares `ANY`, to junk, and require
-  an identical render or a decline). That catches a row that reads an
-  undeclared field: K96's exact shape.
+- **G2:** byte-loop agreement on every reached cell, and a per-row CHOSEN
+  floor over G2 (fed by lane g2x's families). Two differentials:
+  - the POISON differential: every field a row does not use is set to
+    junk, and the render must be identical or the row must decline. It
+    catches a row that READS an undeclared field.
+  - the SEMANTIC differential [r4 M1]: for every field a row declares
+    `ANY`, or serves at more than one class, G2 VARIES that field across
+    its classes and checks ANSWERS against the byte loop. It catches a
+    row that IGNORES a field it should read, which is K96's actual shape
+    (ofsskip ignored `miss` and `floor`).
 - **Literal floors in `docs/spec/`:** rows per table, and witnessed rows.
 
 ## 5. Steps (each its own commit; gate vs main; always green)
 
 | step | content | pcrec artifact movers |
 |---|---|---|
-| N1 | `fields.def` + classify; `uses`/`serves` on both tables; the gate in WARN mode (verdicts recorded, selection unchanged); `MF_TRACE` + `trace_format.md`; the `UNSTATED` enum forms (`MF_SITE_ABI` bump) | none |
+| N1 | `fields.def` + classify (including the text-shape classes); `uses`/`serves` on both tables; the gate in WARN mode at define AND use (verdicts recorded, selection unchanged); `MF_TRACE` + `trace_format.md`; the obligation exemptions | none |
 | N2 | the WARN census over the whole corpus × every axis (via `emit_sweep --trace`). **It must show ZERO would-decline verdicts on pcrec sites**; each one found is fixed in `uses`/`serves`, or becomes an R-6 entry | none |
 | R-6 | pcrec states what N2 shows its chosen rows use (expected: `MF_MISS_N` at the ofsskip site, define and call, plus any enum N2 names) | none (a pcrec lane) |
 | G2u | the blinded G2 update: explicit values, refusal expectations, the poison differential, per-row floors | none |
-| N3 | the gate ENFORCES: precheck serves a stated `miss`; a shape-dependent row is split; ofsskip's ad hoc K96 checks are replaced by the gate | none (N2 = 0 and the gate) |
+| N3 | the gate ENFORCES at both phases: precheck serves a stated `miss`; a shape-dependent row is split; ofsskip's ad hoc K96 checks become the general gate (the define AND use halves). ENTRY [r4 M2]: N2's census RE-RUN after R-6, both phases, still zero would-decline; plus the identity gate over the row split | none (census = 0, gate) |
 | N4 | `rows.tsv`, signatures, the census floors, the `docs/spec/` literals | none |
 
 The arm names are already in the trace. Listing the composer arms in
