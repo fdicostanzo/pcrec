@@ -303,30 +303,36 @@
  
      if (!g->ok)     { *why = "model-error";    return false; }
      if (p.nullable) { *why = "nullable-body";  return false; }
-@@ -816,6 +1040,64 @@
+@@ -816,6 +1040,70 @@
      bool    may_end;
  } CallCtx;
  
 +/* ==== PROTOTYPE: A1, the Q-relative continuation ==== */
++struct PSum;
 +typedef struct PCont {
 +    const Ast *node;            /* an item that follows, or ... */
 +    int        capend;          /* ... >0: the END of A_CAP number capend */
 +    const struct PCont *next;
++    struct PSum *sum;           /* R-4 (A1 half): the Q-INDEPENDENT summary */
 +} PCont;
 +/* R-5: the END of an atomic body (`capend == -1`): the walk analyses the body
 + * as a self-contained pattern (follow EMPTY, may_end), so the continuation
 + * stops here and does NOT reach the root's (?R) join. */
-+static const PCont px_atomic_end = { NULL, -1, NULL };
++static const PCont px_atomic_end = { NULL, -1, NULL, NULL };
 +/* the polarity mask of Q's LAST (or, sabotaged, FIRST) positions against C */
-+static unsigned px_pmask(const Gk *g, const Ast *gate)
++static unsigned px_pmask_iv(const Gk *g, const PcrecCpRange *iv, int n)
 +{
 +    unsigned pm = 0;
 +    const uint8_t *ps = PX.sab_firstpol ? g->firstpos : g->lastpos;
 +    for (int i = 0; i < g->npos; i++)
 +        if (cls_has(ps, (unsigned)i))
-+            pm |= px_pol(g->node[i], gate->u.ctx.iv, gate->u.ctx.n);
++            pm |= px_pol(g->node[i], iv, n);
 +    if (PX.sab_mixed && pm == 3u) pm = 2u;
 +    return pm;
++}
++static unsigned px_pmask(const Gk *g, const Ast *gate)
++{
++    return px_pmask_iv(g, gate->u.ctx.iv, gate->u.ctx.n);
 +}
 +static First first_ctx(Ctx *cx, const Gk *g, const Ast *a)
 +{
@@ -368,16 +374,185 @@
  typedef struct {
      Ctx  *cx;
      Gk   *g;
-@@ -839,8 +1121,39 @@
+@@ -839,8 +1127,208 @@
  } Pss;
  
  static void pss_walk(Pss *P, Ast *a, const uint8_t *follow, bool may_end,
 -                     const uint8_t *encl);
 +                     const uint8_t *encl, const PCont *k);
- 
++
 +/* PROTOTYPE: FIRST of Q's continuation with A1-valued gates; at the END of a
 + * called A_CAP (and at the root end) the call sites' joined, A0-valued
 + * contexts are UNIONED in (A-F1 fix (a)); PROTO_A1_NOCC drops that union. */
++/* R-4, A1 HALF (found by possarms21): recomputing Q's continuation FIRST per
++ * quantifier is O(quantifiers x continuation) -- `(?:a+|a+|...)(?:\b|)...`
++ * measured 0.86 s -> 61.9 s at n = 6,400. But the continuation's SHAPE is
++ * Q-independent: every A_CTX is non-nullable whatever P is, so WHICH items
++ * are reached at zero consumption does not depend on Q. A PSum records, once
++ * per continuation node, the bytes of everything reached that is not a
++ * P-dependent gate (`u`; an A0-narrowable lookahead gate's S is P-independent
++ * and folds in here), the P-dependent gates reached, grouped by their set C
++ * with S precomputed for P = {0},{1},{0,1} (`g`), and the end flags. Per Q
++ * only the groups are evaluated: O(distinct gate sets x |LAST|). */
++typedef struct PGate {
++    const PcrecCpRange *iv; int n;
++    uint8_t s[4][32];           /* S(P) for pmask 1..3 */
++    bool    nar[4];             /* px_S narrowed (false: widen to all bytes) */
++    struct PGate *next;
++} PGate;
++typedef struct PSum {
++    uint8_t u[32];
++    PGate  *g;
++    bool    nullable;           /* (node summaries) the node is nullable */
++    bool    reached_end;        /* (chain summaries) the end is reachable */
++    bool    ccme;               /* a crossed call-site join has may_end */
++} PSum;
++static bool iv_eq(const PcrecCpRange *a, int na, const PcrecCpRange *b, int nb)
++{
++    return na == nb && (na == 0 || memcmp(a, b, (size_t)na * sizeof *a) == 0);
++}
++/* OR gate group `x` into list `*l` (merging by C's content). */
++static void pg_add(Ctx *cx, PGate **l, const PGate *x)
++{
++    for (PGate *y = *l; y; y = y->next)
++        if (iv_eq(y->iv, y->n, x->iv, x->n)) {
++            for (int pm = 1; pm < 4; pm++) {
++                if (!x->nar[pm]) y->nar[pm] = false;
++                if (y->nar[pm]) bs_or(y->s[pm], x->s[pm]);
++            }
++            return;
++        }
++    PGate *n = pcrec_arena_alloc(&cx->arena, sizeof *n);
++    *n = *x;
++    n->next = *l;
++    *l = n;
++}
++static void pg_union(Ctx *cx, PGate **l, const PGate *x)
++{
++    for (; x; x = x->next) pg_add(cx, l, x);
++}
++static PSum ps_node(Ctx *cx, const Ast *a)
++{
++    PSum r;
++    memset(&r, 0, sizeof r);
++    switch (a->k) {
++    case A_CTX:
++        if (PX.a) {             /* every gate: S per P (equal for a lookahead) */
++            PGate x;
++            memset(&x, 0, sizeof x);
++            x.iv = a->u.ctx.iv; x.n = a->u.ctx.n;
++            for (unsigned pm = 1; pm < 4; pm++) x.nar[pm] = px_S(a, pm, x.s[pm]);
++            pg_add(cx, &r.g, &x);
++        } else {
++            First f = first_of(cx, a);       /* A0's S, or today's widen */
++            memcpy(r.u, f.f, 32);
++        }
++        r.nullable = false;
++        return r;
++    case A_CAP: case A_ATOMIC:
++        return ps_node(cx, a->l);
++    case A_CAT: {
++        /* right-to-left, as first_ctx: seq(x, rest) = x u (x nullable ? rest) */
++        PSum acc;
++        memset(&acc, 0, sizeof acc);
++        acc.nullable = true;
++        const Ast *t = a;
++        for (;;) {
++            const Ast *it = t->k == A_CAT ? t->r : t;
++            PSum x = ps_node(cx, it);
++            if (x.nullable) {
++                bs_or(x.u, acc.u);
++                pg_union(cx, &x.g, acc.g);
++                x.nullable = acc.nullable;
++            }
++            acc = x;
++            if (t->k != A_CAT) break;
++            t = t->l;
++        }
++        return acc;
++    }
++    case A_ALT: {
++        const Ast *t = a;
++        for (;;) {
++            const Ast *br = t->k == A_ALT ? t->r : t;
++            PSum x = ps_node(cx, br);
++            bs_or(r.u, x.u);
++            pg_union(cx, &r.g, x.g);
++            r.nullable = r.nullable || x.nullable;
++            if (t->k != A_ALT) break;
++            t = t->l;
++        }
++        return r;
++    }
++    case A_REP: {
++        r = ps_node(cx, a->l);
++        r.nullable = r.nullable || a->u.rep.rmin == 0;
++        return r;
++    }
++    default: {
++        First f = first_of(cx, a);
++        memcpy(r.u, f.f, 32);
++        r.nullable = f.nullable;
++        return r;
++    }
++    }
++}
++/* the chain summary of the continuation starting at `k` (memoized on k) */
++static const PSum *ps_chain(const Pss *P, const PCont *kc)
++{
++    static const PSum atomic_end = { {0}, NULL, false, true, false };
++    if (kc && kc->capend < 0) return &atomic_end;
++    PCont *k = (PCont *)kc;
++    if (k && k->sum && !PX.nomemo) return k->sum;
++    PSum *r = pcrec_arena_alloc(&P->cx->arena, sizeof *r);
++    memset(r, 0, sizeof *r);
++    if (!k) {                                   /* the root end: (?R)'s sites */
++        if (P->cc && !PX.nocc) {
++            bs_or(r->u, P->cc[0].follow);
++            bs_or(r->u, P->cc[0].encl);
++        }
++        r->reached_end = true;
++        return r;                               /* not memoized: no node */
++    }
++    const PSum *nx = ps_chain(P, k->next);
++    if (k->capend) {
++        *r = *nx;
++        r->g = NULL;
++        pg_union(P->cx, &r->g, nx->g);
++        if (P->cc && !PX.nocc && k->capend < P->ncc) {
++            bs_or(r->u, P->cc[k->capend].follow);
++            bs_or(r->u, P->cc[k->capend].encl);
++            r->ccme = r->ccme || P->cc[k->capend].may_end;
++        }
++    } else {
++        PSum x = ps_node(P->cx, k->node);
++        memcpy(r->u, x.u, 32);
++        r->g = x.g;
++        if (x.nullable) {
++            bs_or(r->u, nx->u);
++            pg_union(P->cx, &r->g, nx->g);
++            r->reached_end = nx->reached_end;
++            r->ccme = nx->ccme;
++        }
++    }
++    k->sum = r;
++    return r;
++}
++/* evaluate a chain summary for Q (gates A1-valued), or A0 (`a0`) */
++static First ps_eval(const Pss *P, const PSum *sm, bool a0)
++{
++    First acc;
++    memcpy(acc.f, sm->u, 32);
++    acc.nullable = sm->reached_end || sm->ccme;
++    for (const PGate *x = sm->g; x; x = x->next) {
++        unsigned pm = a0 || PX.a0only ? 3u : px_pmask_iv(P->g, x->iv, x->n);
++        if (pm == 0) continue;     /* LAST empty: cannot happen for base_ok */
++        if (!x->nar[pm]) { bs_all(acc.f); return acc; }
++        bs_or(acc.f, x->s[pm]);
++    }
++    return acc;
++}
+ 
 +/* `a0`: value every gate A0 (first_of), the R-5 comparison's form. The
 + * returned `nullable` is "the match can END from here at zero consumption":
 + * lexically, or through a call site's joined may_end. */
@@ -409,7 +584,7 @@
  /* [K93] Joins one call site's context into `cc[t]`, noting whether it grew —
   * the fixpoint's signal. A target with no slot would be a call whose body
   * never receives this context, so the verdicts inside it would be computed
-@@ -889,10 +1202,24 @@
+@@ -889,9 +1377,28 @@
   * computed. Factored out of `pss_rep` at [M6.4.2] so the free discharge can ask
   * the SAME question the marking walk asks, from the same lines. */
  static bool pss_verdict(Pss *P, const Ast *a, const uint8_t *follow,
@@ -417,11 +592,16 @@
 +                        bool may_end, const uint8_t *encl, const PCont *k)
  {
      First body = first_of(P->cx, a->l);
- 
++
 +    /* PROTOTYPE R-5: with every gate valued A0, A1's continuation u ENCL must
 +     * equal the walk's FOLLOW u ENCL (and its end-reachability may_end). */
 +    if (PX.chk_follow) {
 +        First c0 = px_cont_first(P, k, true);
++        if (!PX.nomemo) {                   /* the summary must agree with the fold */
++            First s0 = ps_eval(P, ps_chain(P, k), true);
++            if (memcmp(s0.f, c0.f, 32) != 0 || s0.nullable != c0.nullable)
++                fprintf(stderr, "R4SUM-MISMATCH\n");
++        }
 +        uint8_t u1[32], u2[32];
 +        memcpy(u1, c0.f, 32); bs_or(u1, encl);
 +        memcpy(u2, follow, 32); bs_or(u2, encl);
@@ -431,11 +611,10 @@
 +        fprintf(stderr, "R5\t%s\t%s\n", beq ? "bytes-eq" : sup ? "bytes-A1-wider" : "bytes-A1-NARROWER",
 +                neq ? "end-eq" : (c0.nullable ? "end-A1-wider" : "end-A1-NARROWER"));
 +    }
-+
+ 
      /* The effective follow: what comes after Q here, plus what every
       * enclosing loop could restart with. */
-     uint8_t eff[32];
-@@ -917,16 +1244,30 @@
+@@ -917,16 +1424,31 @@
      if (base_ok && exact)                            return true;
      if (base_ok && disjoint && lazy && may_end)      return false;
      if (base_ok && disjoint)                         return true;
@@ -446,7 +625,8 @@
 +        bs_all(all);
 +        if (memcmp(body.f, all, 32) != 0) {
 +            body_admits_unique_iteration(P->g, a->l, &uwhy);  /* refresh LAST */
-+            First cf = px_cont_first(P, k, false);
++            First cf = PX.nomemo ? px_cont_first(P, k, false)
++                                 : ps_eval(P, ps_chain(P, k), false);
 +            uint8_t e2[32];
 +            memcpy(e2, cf.f, 32);
 +            bs_or(e2, encl);
@@ -468,7 +648,7 @@
  {
      First body = first_of(P->cx, a->l);
  
-@@ -936,14 +1277,14 @@
+@@ -936,14 +1458,14 @@
      memcpy(eff, follow, 32);
      bs_or(eff, encl);
  
@@ -485,7 +665,7 @@
  }
  
  /* `pss_rep`'s verdict half: asks §2.2 of `a` in the context given and acts on
-@@ -951,11 +1292,11 @@
+@@ -951,11 +1473,11 @@
   * Never reached on a context-only walk (`P->collect`), which must neither
   * mark on a context still being widened nor count a node twice. */
  static void pss_mark(Pss *P, Ast *a, const uint8_t *follow, bool may_end,
@@ -499,7 +679,7 @@
  
      if (P->fn) {
          /* SURVEY MODE writes nothing (`pcrec_poss_survey`'s whole contract).
-@@ -978,7 +1319,7 @@
+@@ -978,7 +1500,7 @@
   * measured refutation of a simpler rule (file header) — do not simplify it
   * without re-reading which counterexample it exists to catch. */
  static void pss_walk(Pss *P, Ast *a, const uint8_t *follow, bool may_end,
@@ -508,13 +688,13 @@
  {
      switch (a->k) {
      /* [CLS-TREE] S3: made by the encoding lowering, below this pass. */
-@@ -1086,12 +1427,14 @@
+@@ -1086,12 +1608,14 @@
          memcpy(f, follow, 32);
          memcpy(e, encl, 32);
          cc_widen(P, a->u.cap.no, f, &me, e);
 -        pss_walk(P, a->l, f, me, e);
 +        PCont *mk = pcrec_arena_alloc(&P->cx->arena, sizeof *mk);
-+        mk->node = NULL; mk->capend = a->u.cap.no; mk->next = k;
++        mk->node = NULL; mk->capend = a->u.cap.no; mk->next = k; mk->sum = NULL;
 +        pss_walk(P, a->l, f, me, e, mk);
          return;
      }
@@ -525,7 +705,7 @@
          return;
  
      /* [M6.4.2] AN ATOMIC BODY IS ANALYSED AS A SELF-CONTAINED PATTERN, and
-@@ -1178,11 +1521,11 @@
+@@ -1178,11 +1702,11 @@
               * safe and is declined anyway — declining is always safe, and a
               * second condition here would need its own evidence. */
              if (P->fn && !P->collect && body->u.rep.greedy &&
@@ -540,7 +720,7 @@
          }
          return;
      }
-@@ -1195,8 +1538,11 @@
+@@ -1195,8 +1719,11 @@
          memcpy(cur, follow, 32);
          bool cur_end = may_end;
          Ast *t = a;
@@ -549,11 +729,11 @@
 -            pss_walk(P, t->r, cur, cur_end, encl);
 +            pss_walk(P, t->r, cur, cur_end, encl, ck);
 +            PCont *nk = pcrec_arena_alloc(&P->cx->arena, sizeof *nk);
-+            nk->node = t->r; nk->capend = 0; nk->next = ck; ck = nk;
++            nk->node = t->r; nk->capend = 0; nk->next = ck; nk->sum = NULL; ck = nk;
              First x = first_of(P->cx, t->r);
              uint8_t nf[32];
              memcpy(nf, x.f, 32);
-@@ -1205,17 +1551,17 @@
+@@ -1205,17 +1732,17 @@
              memcpy(cur, nf, 32);
              t = t->l;
          }
@@ -574,7 +754,7 @@
          return;
      }
      }
-@@ -1231,7 +1577,7 @@
+@@ -1231,7 +1758,7 @@
      bs_clear(f);
      bs_clear(e);
      cc_widen(P, 0, f, &me, e);
@@ -583,7 +763,7 @@
  }
  
  /* [K93] Both entries' walk. On a call-bearing pattern the call-site contexts
-@@ -1243,6 +1589,9 @@
+@@ -1243,6 +1770,9 @@
   * allocates nothing and walks once, exactly as before. */
  static void pss_run(Pss *P, Ast *root)
  {
@@ -593,7 +773,7 @@
      if (pcrec_has_call(root)) {
          P->ncc = (int)P->cx->ncap + 1;
          P->cc  = pcrec_arena_alloc(&P->cx->arena,
-@@ -1256,6 +1605,7 @@
+@@ -1256,6 +1786,7 @@
          P->collect = false;
      }
      pss_root(P, root);
