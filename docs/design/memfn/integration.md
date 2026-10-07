@@ -5426,6 +5426,23 @@ never takes it (it passes no mask).
   `empty` MISS (`if (scan_position >= subject_length) return 0;`).
   **`byte-class-bounded`** is the same with `end_back` 1 and `empty`
   NOP: its loop stops at `subject_length - 1` and nothing follows it.
+- **`[R4g]` As BUILT (lane r4g, 2026-10-07; `docs/dev/lanes/r4g_report.md`).**
+  Main's clearance kept every guard, `return 0`, entry test and re-seed
+  pcrec's text (R-4's boundary rule), so the PF site is narrower than the
+  two bullets above, one shape for all six PF forms and the VM hat's seek:
+  FIND / STMT / ASSIGN over ONE REQUIRED SET term at offset 0, `result` the
+  scan position, `use` POSITION. The memchr forms' `empty` is EXCLUDED
+  (pcrec's `pos >= n` guard, or the bounded block's `pos + 1 < n`, precedes
+  the site), and their statement is the search, the NULL test and the store,
+  because the hit is a POINTER: a site whose result were `q` would not be a
+  FIND result, and the generic row could not render it. Unbounded, a NULL
+  hit runs pcrec's `on_miss` (`"return 0;"`, `on_miss_leaves` 1); bounded,
+  the store takes the hit or pcrec's `miss` (`"subject_length - 1"`, the
+  range's end). The table forms are the in-place walk (`result` IS `lo`),
+  `empty` NOP, `miss` the range's end (MF_MISS_N, or `n - 1` bounded), no
+  `on_miss`: pcrec's `if (pos >= n) return 0;` after the walk stays
+  pcrec's. The kit's rows: `memfn/src/pffind.c` (`pf_memchr`,
+  `pf_memchr_bounded`, `pf_walk`, `pf_walk_bounded`).
 - **The STAY skip** (M3, `dir_fwd_skip`/`dir_rev_skip`) is STMT/SKIP/ADVANCE. pcrec writes
   `kw (state == K) {` and the accept store. The kit writes the one
   `while` line, with `end_back` 1 under views, `table_ref` `stay<K>`, and
@@ -6380,6 +6397,16 @@ text stays opt-in until R4f.
 >   byte-identical at migration. C12: 3 → 1. **Prerequisite:** R4c.
 >   **Trigger:** completeness. **PF movers** follow, triggered by U-2
 >   AND a Linux cell whose time is in `pf_emit_bcls`.
+>   **`[R4g]` BUILT on `lane/r4g` (2026-10-07)**, implement-then-replace:
+>   DELEG_SITES row PF, the kit's `pffind` arm (four rows with
+>   `uses`/`serves`), `pcrec_emit_find` the site builder (§15.7 `[R4g]`);
+>   the I1 shadow comparator and the shape compiles read 0 movers. K84's
+>   readers were already fixed on main (START-SET stage 1). §19 row 6's
+>   rarity half is NOT moved: G1's elision (`req_byte_dominated_by`) is a
+>   pre-check admission, which main's clearance keeps pcrec's; it waits for
+>   a ruling (r4g_report.md). C12: `emit_dfa.c` memchr 2 → 1, walk-fmt
+>   1 → 0 (the design's "3 → 1" counted before R4c). The identity gate on
+>   post-C4 main is the merge gate.
 > - **R4h, M3: STAY, the scan edge's loop and VMSPAN at stride 1**
 >   (zero movers; ADVANCE with `count`/`peek`/`floor`). **Prerequisite:**
 >   R4c. **Trigger:** completeness. **In-loop movers** follow, triggered

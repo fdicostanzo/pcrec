@@ -8,8 +8,8 @@
  * stamps, vocabulary). The text of a site is the selected arm's; this file
  * decides only WHICH arm and keeps the handles honest.
  *
- * The table holds the scalar arms R4c and M1b migrated (ofsskip.c,
- * precheck.c, runcmp.c) above the generic scalar row (generic.c), which
+ * The table holds the scalar arms R4c, M1b and R4g migrated (ofsskip.c,
+ * precheck.c, runcmp.c, pffind.c) above the generic scalar row (generic.c), which
  * applies to every site. Each arm carries its contract (`uses`/`serves`,
  * [MEMFN-ROWCON]); the gate (gate.c) reads it before the arm's predicate
  * and, since N3, ENFORCES: a row whose verdict fails is DECLINED and the
@@ -117,13 +117,14 @@ void kit_out(mf_sink *o, const char *fmt, ...)
  * First passing row wins (the house's first-match idiom). Every row before
  * the last will carry its own `--memfn=no-NAME` deny when it lands (D144
  * item 4); the generic row has none, so no deny can leave a site without
- * code (§14.6). The rows above it are the SCALAR ARMS born at R4c's and
- * M1b's migrations (integration.md §15, §16, §R4.8): pcrec's offset-skip
- * block, its pre-check and its run compare, transcribed. They are not
+ * code (§14.6). The rows above it are the SCALAR ARMS born at R4c's, M1b's
+ * and R4g's migrations (integration.md §15, §16, §R4.8): pcrec's offset-skip
+ * block, its pre-check, its run compare and its prefilter find, transcribed. They are not
  * byte-moving changes, so they carry no deny of their own: the artifacts
  * they render are the ones pcrec wrote before them, and the identity gates
  * say so (§9.3). The pre-check is one renderer as two rows (N3's split, by
- * handoff: precheck.c), each with its own contract. */
+ * handoff: precheck.c), each with its own contract; the prefilter find is
+ * two renderers as four rows (split by end_back: pffind.c). */
 static const arm *const arms[] = {
     &ofsskip_arm,
     &precheck_arm,
