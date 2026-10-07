@@ -1010,6 +1010,67 @@ At build the check runs against the BUILT compiler, its deny bits replacing
 the prototype's switches. It is a precondition: mark = expectation on every
 compared row.
 
+#### 8.3a Rev 2.1: per-quantifier marks, the UCP pin, and the FREEZE `[r2.1 R-7, R-3(b)]`
+
+**(R-7) The mark is read per quantifier.** Revision 2 read MARK as "the
+arms raised `possessify marked`", a count delta. A gained mark and a lost one
+would cancel. `rev21/r21_claimmark.py` reads `--emit-ir`'s `strategies`
+section instead: one row per emitted quantifier, in emission order.
+
+- Rows are keyed by ORDINAL, because labels renumber when a program moves.
+  A row count that differs between two compiles of one pattern is an
+  ANOMALY, never a mark.
+- The TARGET quantifier is found WITHOUT the arms. The generator's
+  possessive spelling, compiled on the base build, differs from the greedy
+  spelling at exactly one ordinal. A row where it does not (`unresolved`)
+  falls back to "some quantifier flipped", and those rows are counted.
+- MARK = the arms flipped the TARGET backtracking → possessive. A flip
+  elsewhere is counted as `extra`. It is sound, but it is a claim the
+  predicate did not make, so it is reported. Any other change is an
+  `anomaly`.
+
+**(R-7) The `utf,ucp` REFUSED population is pinned.** Every selected
+`utf,ucp` row is refused today, because UCP `\w` under `-e utf8` is refused
+until the kit-sized route lands (§2.5).
+
+- The check takes `UCP_PIN` and exits 3 when the refused count moves. The
+  count is «UCPPIN» rows over the rev-2.1 population; rev 2's 2,059 was
+  over rev 2's.
+- That is the trigger to re-sweep those rows. It is named in [UCP]'s and
+  [CLS-TREE]'s plan rows.
+
+**(R-3(b)) THE PREDICATE IS FROZEN.** Revision 2's predicate was edited
+after the prototype's marks were seen (the `\B` and empty-reference gaps,
+§8.3). So for the prototype, "the implementation equals the rule" was
+partly circular. From this revision the predicate is pinned:
+
+| file | sha1 at the freeze (commit `63be190c`) |
+|---|---|
+| `rev21/gen_a21.py` | `3bf0fdc0b1476d75492152fbb56ff542a46caa90` |
+| `rev21/gen_a021.py` | `3c5fdf65d98ef0177da4eb3d4b2b844bb9473b68` |
+| `rev21/gen_b21.py` | `9f9e7d92aa32f657c6f7a0ce3bf6b816a844eef8` |
+| `rev21/r21_claimmark.py` (the comparison, not the rule) | `c5cf3dfc4fab40c11a9b57b91cbac49e223571fe` |
+
+- **The post-freeze edit rule.** An edit to a predicate generator after the
+  freeze is a RULE-LEVEL event, never a fix-up. It is made only in a
+  revision of this note, and it carries:
+  1. the trigger rows: the mismatching rows that prompted it, quoted;
+  2. a libpcre2 oracle sweep of every row whose CLAIM the edit moves
+     (`eqcheck.py`, ML ≥ 4), recorded before the edit is accepted;
+  3. the new sha1s, entered in this table.
+
+  The build's CLAIM-vs-MARK runs the generators at their pinned sha1s. A
+  disagreement is a defect in the BUILD until a rule-level edit says
+  otherwise.
+- **Hand-literal rows are reported apart from computed ones.** Column 9 of
+  every generator is `src`, either `computed` (the cross product's
+  predicate) or `hand` (a literal claim written per row: the witnesses,
+  `encl`, the `C`/`H`/`N` rows). Every summary line is split by it. A hand
+  row's claim is the author's reading, not the rule's output. It counts as
+  evidence of the rule only through its own oracle sweep.
+
+«CMRESULT»
+
 ### 8.4 The ablation table `[r2 B-B3]`
 
 Per conjunct dropped from the PYTHON predicate: the rows it newly claims,
