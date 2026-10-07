@@ -3738,3 +3738,4 @@ never edited afterwards.
   - **Work budget:** on one committed subject it goes 394 → 1,199, the
     hand-possessive number.
   - **[POSS-CTX-TABLE]** is filed.
+- `possarms21_report.md` — [ART-POSS-ARMS] REVISION 2.1 (2026-10-07, lane possarms21, opus, design + measurement, no `src/`): N1 fixed in the prototype (arm B's TEXT_FIRST), greedy-only load-bearing (477/3,964 lazy rows diverge), both arms' folds de-quadraticked (A1's own quadratic newly found), predicate frozen with two rule-level edits answered per the manager's four conditions, R-5/R-6/R-7 designed, `run_composition.sh` hook. Battery on Linux 10.46; owed items listed.

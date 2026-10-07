@@ -88,6 +88,20 @@ revision 2's is in `poss_arms_measurements/rev2/`, and revision 2.1's in
 
 ---
 
+## §R2.1 — what revision 2.1 changed, finding by finding
+
+| finding | where | what was done | evidence (`poss_arms_measurements/rev21/`) |
+|---|---|---|---|
+| N1 BLOCKER | §2.1, §3.1, §3.2, §7 | arm B reads `TEXT_FIRST` (a zero-width item is (∅, nullable)); the two `first_of` questions are named as [POSS-CTX-TABLE]'s READER field | `proto_rev21.patch`; `witnesses_r21_10.46.out`; plant S567 DETECTED |
+| N2 MAJOR | §0, §2.3, §8.2, §8.4a, §11 | greedy-only KEPT and is now load-bearing (477/3,964 lazy rows diverge once a bypass follow exists); the lazy plant is a row | `results/keep1/eq_a21.out`; plant S568 DETECTED |
+| R-3(b) | §8.3a | predicate FROZEN by sha1; the post-freeze edit rule; two edits applied under it, per category; hand vs computed reported apart | `gen_*21.py`, `results/out2/claimmark.out` |
+| R-4 | §3.1, §7, §8.7 | capture fact once per group number (in progress = widen, state on the walk); NEW: A1's continuation summary; compile-time witnesses with a build-bar cell | `timing_r4.sh`, `results/out2/timing.out` |
+| R-5 | §8.7 | A1 ≡ FOLLOW as an always-on check over the summary; atomic-end sentinel | census R5 5,437/5,437 eq |
+| R-6 | §8.7 | backref-stays-VM tripwire in `tests/reject/` | verified refused today |
+| R-7 | §8.3a | per-quantifier marks from `--emit-ir` strategies; `UCP_PIN` 4,502 and its trigger in [UCP]/[CLS-TREE] | `r21_claimmark.py` |
+| R-8 | plan.md | [ART-POSS-ARMS] body corrected | — |
+| R-3(a) hook | §8.8 | `run_composition.sh` (four harness passes, divergence + reach) | smoke: plant detected |
+
 ## §R2 — what revision 2 changed, finding by finding
 
 | finding | sev | where | what was done | evidence (`poss_arms_measurements/rev2/`) |
@@ -986,6 +1000,13 @@ named here by their plant. All were run on the exhaustive possdiff
 | A-cc (A-F1) | A1 drops the call-site join (`PROTO_A1_NOCC`) | `(a+(?:\b\|))\|b(?1)a` on `baa` | DETECTED, 3 (both A-F1 witnesses and `(a?)(x+\1)b(?2)x`) | 3 (the C rows); and the corpus: 16 `k93.rxt` patterns newly marked |
 | B-depth (termination) | B's depth guard dropped (`PROTO_SAB_NORECGUARD`) | `(a\2)(b\1)x+\1`: compiles | DETECTED: the compiler SEGVs (stack exhaustion) on all 3 cyclic-reference patterns | — |
 | A-lazy (control, not a row) | A1 admits lazy loops (`PROTO_SAB_LAZY`) | — | NOT detected: 79 agree, 0 diverge, consistent with §8.4 | 892 newly marked, 0 diverging on the oracle (§8.4) |
+| **A-lazy `[r2.1 N2]`, now a ROW (S568 at this writing, next free on main after S566)** | `PROTO_SAB_LAZY` | `(\w+?(?:\b\|))` on `ab` (10.46 (0,1)) | **DETECTED, 5 patterns** (rev 2.1 population, 104 patterns) | 3 hand rows |
+| **B-textpos `[r2.1 N1]` (S567 at this writing)** | arm B reads `first_of`, the POSITION answer (`PROTO_SAB_TEXTPOS`) | `(?:((?=a))a)?b+\1b` on `abb` (10.46 (0,3)) | **DETECTED, 4 patterns** | 3 hand rows |
+
+Rev 2.1 re-ran every plant on the extended population (Linux,
+`rev21/results/out2/pdx_verdicts.txt`). The arms: 104 agree, 0 diverge,
+517,382 cells, reach 15/15. Every plant is DETECTED. NORECGUARD is detected
+as 3 compile refusals (crash), and the route-flip witnesses agree.
 
 **[MECH-REACH] notes:**
 
@@ -1057,7 +1078,7 @@ section instead: one row per emitted quantifier, in emission order.
 until the kit-sized route lands (§2.5).
 
 - The check takes `UCP_PIN` and exits 3 when the refused count moves. The
-  count is «UCPPIN» rows over the rev-2.1 population; rev 2's 2,059 was
+  count is 4,502 rows over the rev-2.1 population (`UCP_PIN=4502`); rev 2's 2,059 was
   over rev 2's.
 - That is the trigger to re-sweep those rows. It is named in [UCP]'s and
   [CLS-TREE]'s plan rows.
@@ -1092,7 +1113,64 @@ partly circular. From this revision the predicate is pinned:
   row's claim is the author's reading, not the rule's output. It counts as
   evidence of the rule only through its own oracle sweep.
 
-«CMRESULT»
+**Result on the frozen-then-edited predicate** (Linux, rev-2.1 prototype,
+`results/out2/claimmark.out`), split by source:
+
+| config | src | compared | mark ≠ expect | unsound-direction | extra flips | anomalies |
+|---|---|---|---|---|---|---|
+| AB | computed | 33,037 | **5** | 5 | 657 | 0 |
+| AB | hand | 44 | **0** | 0 | 2 | 0 |
+
+- The 5 are the rows with unresolved targets (below).
+- 3,459 computed targets are unresolved, and 2,160 are base-marked.
+- utf,ucp REFUSED: 4,502.
+- Every plant moves mismatches on the hand rows (`textpos` 3, `lazy` 3,
+  `nonnull` 4, …).
+
+**The first run against the freeze disagreed on 2,815 rows. Here is what
+each category was.** These are POST-FREEZE EDITS 1 and 2. Both are
+rule-level, and their trigger rows are in the generators' comments.
+
+1. **2,047 exact-count rows (A0 family).** These are NOT an arm. The
+   SHIPPED possessify already marks them (row 1, exact count) on the base
+   build with the arms denied. So the possessive spelling moves nothing, and
+   "flip" reads 0. The fix is to the COMPARISON (`r21_claimmark.py`): MARK is
+   the target's state when the base build already marks it. That case is now
+   counted as `base-marked` (2,160 after the extension), and those rows agree.
+   The predicate is unchanged.
+2. **745 R-block rows (arm A family), `hi` bookkeeping.**
+   - 520 move FEWER: pcrec declines by representation (a caseless-utf `k`
+     tail, or `\w` folded at parse time to U+212A/U+017F). The expectation
+     is narrowed.
+   - 225 move MORE: `hi` had been set on rows whose follow is EMPTY, where
+     pcrec's widening cannot decline. These are backed by the libpcre2 10.46
+     sweep over exactly those 225 trigger rows: **225/225 agree, 0 diverging,
+     2,522,475 subjects**.
+3. **18 A0 rows: LAST is read from the POSITION class.** This is a
+   semantics statement, and it is the rule as §2.3 writes it: the polarities
+   of the classes at X's Glushkov LAST positions. A gate inside the body is
+   not a position, so the LAST of `(?:(?=[ab])\w)` is `\w`. The edit
+   narrows claims (FEWER). The oracle sweep over the 18: 18/18 agree on
+   10.46 (134,658 subjects). The wider claims were sound too. pcrec simply
+   implements the stated, narrower rule.
+4. **5 unresolved targets** (`(?:[a-z]+(?:(?=\W)[ab])+y)+` and four
+   siblings). These are not model error.
+   - The target body is emitted twice (two strategies rows), so the
+     possessive spelling flips two ordinals and the target is unresolved.
+   - The arms then mark a DIFFERENT quantifier, `(?:(?=C)[ab])+`. Its body
+     can never match, so A0's `S` makes it trivially disjoint.
+   - That is a claim the predicate never made. It and all 657 other extra
+     flips are checked by the exhaustive possdiff over every extra-mark
+     pattern (`mk_pd_extra.py`): **676 patterns, 0 diverging, 7.57 M cells**
+     (`results/out2/pdxe/extra_tallies.txt`).
+   - They stay listed as OPEN in the target-resolution sense. The instrument
+     should key replicated copies as one target.
+
+**Edit 2** (after the oracle sweep): the frozen arm-A R block omitted
+`fold_ref` and CLAIMED 14 rows that 10.46 refutes. pcrec DECLINED all 14.
+The edit narrows 48 claims (FEWER). Final sha1s: `gen_a21.py`
+`2fec0c24…`, `gen_a021.py` `5bb09dfb…`, `gen_b21.py` unchanged,
+`r21_claimmark.py` `d2288d1a…`.
 
 ### 8.4 The ablation table `[r2 B-B3]` (revision 2's; superseded by §8.4a)
 
@@ -1247,7 +1325,7 @@ gate valued A0, they must agree:
   join. That is conservative, so it was not a miscompile, but it was a second
   definition. The continuation now carries an explicit atomic-body END
   (`px_atomic_end`), the walk's own boundary.
-- Measured over the census population: «R5».
+- Measured over the census population (4,132 patterns, rev-2.1 prototype, Linux): **5,437 verdicts, all `bytes-eq/end-eq`; 0 R4SUM mismatches** (`rev21/results/out2/census_r21.tsv`). The census itself is unchanged from rev 2: arms fire 6 bench / 13 corpus, 0 default-engine flips, and the rev 2 → 2.1 mark delta is 0, because no corpus pattern has N1's shape. That is why N1 was missed.
 
 **(R-6) The backreference-stays-VM tripwire.** Arm B's bit is classified
 masked, answer-identity-preserving (§9), because every `A_BREF` is
@@ -1274,7 +1352,24 @@ not bound it; every row below is refused for size (rc 1) after the pass ran.
 Wall seconds for `pcrec --engine=vm -o file`, the Mac under a concurrent
 suite (load 9-16), so they are coarse:
 
-«R4TABLE»
+| witness (n) | denied | rev 2 arms | rev 2.1, memos off | rev 2.1 |
+|---|---|---|---|---|
+| `Bsame` (`(a)` + n × `x+\1`), 12,800 | 7.40 | 40.94 | 7.35 | 7.19 |
+| `Bdist` (n groups, `\g{N}`), 6,400 | 3.38 | 16.53 | 3.19 | 3.38 |
+| `Bcycle` (n-group reference cycle), 6,400 | 0.62 | 4.29 | 41.17 | 0.60 |
+| `A1alt` (n `a+` branches, n `(?:\b\|)`), 6,400 | 1.35 | 100.15 | 91.28 | 1.36 |
+| `A1alt`, 12,800 | 11.37 | 410.20 | OWED | OWED |
+
+These are Linux (ubuntubudu) wall seconds. `rev21/timing_r4.sh` writes the
+table (`results/out2/timing.out`). It was stopped at the manager's wrap-up,
+so the `A1alt` 12,800 rev 2.1 columns and the `A1lb` (distinct lookbehind
+classes) family are OWED. Rows ≥ 128 KiB of pattern are skipped, because
+that is Linux's argv cap. Reading the table:
+
+- The INDEX alone fixes arm B's same-group and distinct-group shapes ("memos
+  off" ≈ denied).
+- The memo is what bounds the cycle shape.
+- A1's continuation summary fixes the A1 shape.
 
 The build bar carries two cells under `scripts/watchdog`: `Bsame` and
 `A1alt` at n = 12,800. Each must compile (to the size refusal) within 2× the

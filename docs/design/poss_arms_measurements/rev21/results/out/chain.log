@@ -1,0 +1,7 @@
+== timing start 10:02:57
+== timing done 10:32:39
+/home/duxevents/pcrec/worktrees/possarms21-lx/docs/design/poss_arms_measurements/rev21/gen_a21.py:19: SyntaxWarning: "\B" is an invalid escape sequence. Such sequences will not work in the future. Did you mean "\\B"? A raw string is also an option.
+  - models `\B` as a gate too (it admits the left character's OWN wordness);
+/home/duxevents/pcrec/worktrees/possarms21-lx/docs/design/poss_arms_measurements/rev21/run_all.sh: line 34: 3343950 Killed                     ML=$3 NR=$4 python3 -B "$HERE/../eqcheck.py" "$s" > "$s.out" 2> "$s.err"
+== battery done rc=0 11:00:25
+== possarms21-lx DONE rc=0 11:00:25 ==
