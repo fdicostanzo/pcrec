@@ -542,3 +542,23 @@ pointer when a kit change merges to main.
   - Lesson: the m1bfix lane's detached chain was checked to be truly
     detached (ppid 1, own pgid) before I stopped the lane, and it
     survived.
+
+## 2026-10-07 (late morning) — M1b merged; G2 reach extension started
+
+- Main merged M1b as 1c037dce (Linux g2 green at 0125aeb5) and filed
+  K96. The R-5 done: is posted on lane/memfn-g2x.
+- Main's sequencing: no next migration until main names it. [START-TABLE]
+  C2 merges first, then main picks between R4g and C3 by remodel
+  overlap.
+- Q-G2-6 re-read: it is already RULED general (memfn.h `floor`). Site
+  2587's under-reads came from an out-of-contract G2 input; its wrong miss
+  was a genuine kit defect (K96). The ofsskip arm now declines ANY stated
+  floor. That is conservative; relax it only on a measured need (D77).
+- Blinded lane g2x (opus) works in the D27 cell worktrees/g2x-cell
+  (worktree g2x, branch g2x, from main 92ca17fc). Its allowlist matches
+  memfng2's. The brief is written in contract terms only and names no arm.
+  It closes the K35 gap and adds per-shape rendered counts as a floor;
+  G2 becomes a conforming caller under Q-G2-6.
+- Next, non-blinded, after g2x: a per-ARM reach census of G2's sites
+  (ofsskip / precheck / runcmp rows) with literal floors. This is the
+  independent check that the shapes reach the arms.

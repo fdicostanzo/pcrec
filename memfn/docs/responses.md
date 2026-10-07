@@ -334,3 +334,35 @@ the compiler, and is never adopted silently. Proposed for main to file
   (1) one opus build lane does implement-then-replace. Sabotage ids:
   S566+ (main, 2026-10-07); the exact block is confirmed with main
   before the build lane is briefed.
+- done: 2026-10-07 — **M1b (R-5) DELIVERED: runcmp migrated, ZERO MOVERS.**
+  Branch `lane/memfn-m1b` @ 0125aeb5 → main 1c037dce. Reports:
+  `docs/dev/lanes/m1b_report.md` (§3 + §3.1: D1-D12 at file:line,
+  cross-checked against stc1 §2, AGREE, no collisions) and
+  `docs/dev/lanes/m1bfix_report.md`.
+  - **Abi event:** NONE. MF_SITE_ABI 3→4 is kit-internal (stamp_int,
+    run_cmp retired, note's helper role ended); MF_VOCAB stays 2.
+    integration.md rev 4.8 (§R4.8; §14.8 corrected: RUN_WORDS needs an
+    unquoted sink op).
+  - **Landing bar:**
+    - Linux full verdict at 5f0f4dca (17,582 s): gate 0, mech 0 over
+      14 rows, axes 0, C11 0, I2 94/94, strict 0. make test was green
+      except test-memfn-g2, whose cause is known and fixed;
+    - Linux test-memfn-g2 at 0125aeb5: checks failed 0;
+    - Mac make test at 20b9d3cb: only G2 red (the same cause);
+    - Mac gate vs e947b406 (after [START-TABLE] C1): 0 movers on all six
+      streams.
+  - **Mech:** 7 rows re-anchored (S267 S443 S444 S445 S279 S285 S454),
+    3 adjacent checked (S514 S516 S528), S570-S573 new. Every row was
+    hand-planted.
+  - **Sites:** VMRUN delegated; VERIFY carried as an OFS/PRE term
+    (Q-M1b-6); C12 12→9; C5 28→34 rows.
+  - **Found and fixed along the way (K96):** R4c's ofsskip arm accepted
+    sites whose miss is not `n` or that state a floor. This was an
+    unstated precondition, latent since 81bc13de and unreachable from
+    pcrec. Also, G2's h_note stub wrote bare text where the contract
+    asks for a comment.
+  - **OWED (kit):** the K35 G2 reach extension (ofsskip / precheck with
+    on_miss_leaves / the words row), now running as blinded lane g2x on
+    `lane/memfn-g2x`. Q-G2-6 confirmed as written: `floor <= lo` is a
+    caller precondition for EVERY site; G2 becomes a conforming caller.
+
