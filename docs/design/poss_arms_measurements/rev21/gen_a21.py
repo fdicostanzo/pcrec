@@ -152,6 +152,14 @@ def main():
                 fold_ = "utf" in m.split(",") and "i" in m.split(",") and bool(mem(c, m) & {"k", "K", "s", "S"})
                 return hi_ or fold_
             thi = phi(tc) or bool(tail and tn and phi(tail))
+            # POST-FREEZE EDIT 2 (poss_arms.md §8.3a): §3.1's fold_ref.  Under
+            # a caseless mode the REFERENCE compares caselessly, and under utf
+            # a text that can begin with k/s reaches U+212A/U+017F (\W without
+            # UCP), so FIRST(\1) widens to every character.  The frozen R
+            # block omitted fold_ref and CLAIMED 14 rows libpcre2 refutes
+            # (A53859.., `(\b\w)\W+\1` on "k \x{212a}"); pcrec declined them.
+            if "i" in m.split(",") and "utf" in m.split(",") and (T & {"k", "K", "s", "S"}):
+                T = set(A)
             follow = T | (mem(tail, m) if (tail and tn) else set())
             may_end = tn and not tail
             claim = not (F & follow) and (greedy or not may_end)
