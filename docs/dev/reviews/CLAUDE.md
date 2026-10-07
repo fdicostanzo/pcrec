@@ -492,3 +492,4 @@ Maintenance: add a file per checkpoint and list it here.
   - the snapshot has no placement for EXPR/FUNC/ASSIGN/ADVANCE and breaks -Werror on unused locals.
 
   Themes U-A..U-O; rev 3 follows. Q-ROW-5 (the stated-bit scope) and Q-ROW-6 (a snapshot without a public deny) go to Frank; Q-ROW-4 is still pending.
+- `2026-10-07-r3-memfn-rowcon-spotcheck.md` — the one-critic (opus) soundness spot-check of [MEMFN-ROWCON] rev 3: all r2 blockers resolved but one partly; NEW B1 (`UNSTATED` in serves is inert, and Appendix B's precheck uses would decline every PRE site, a T3a mover). Majors: MF_SELECT lacks scope/rec/opts; rows don't serve every field pcrec states; snapshot of non-value hooks and nested sites; the `_mf` prefix vs `-p`; fit_rungs' NULL means skip; 0-meaningful used fields. All answered by row_contracts.md §8 (rev 3.1); T0 ready.

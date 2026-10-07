@@ -1,6 +1,6 @@
-# [MEMFN-ROWCON] Row contracts: one first-match table engine (design, rev 3)
+# [MEMFN-ROWCON] Row contracts: one first-match table engine (design, rev 3.1)
 
-Status: rev 3, 2026-10-07. Every question is RULED (Frank). It answers
+Status: rev 3.1, 2026-10-07. Every question is RULED (Frank). §8 (rev 3.1) SUPERSEDES the sections it names. It answers the r3 spot-check (`docs/dev/reviews/2026-10-07-r3-memfn-rowcon-spotcheck.md`: 1 blocker, 7 majors, 9 minors). It answers
 both D6 panels:
 - r1: `docs/dev/reviews/2026-10-07-r1-memfn-rowcon.md`, 71 ids, themes
   T-A..T-J;
@@ -368,3 +368,71 @@ sub-choice (D77) [T-I].
 Rev 3 closes the r1 "NOT" ids (sound M3, the per-row list, is this
 table) and every r2 theme. A one-critic soundness spot-check on §4-§5
 precedes T0.
+
+## 8. Rev 3.1 amendments (r3 spot-check; these supersede the text above)
+
+- **A1 [r3 B1, M2], the `uses`/`serves` lists are EXACT, and empirical
+  before enforcing.**
+  - Appendix B was wrong. precheck does NOT use `miss` (its miss always
+    leaves the site) nor `floor` on the shapes pcrec sends. Every row
+    serves `ANY` for each field it does not read but pcrec states (e.g.
+    runcmp: `n`, `comment_tier`). Generic serves EVERY class of every
+    field (not just `OTHER`), or the value is a contract refusal.
+  - §4.2 rule 1 is kept as is: under R1, `UNSTATED` in `serves` is
+    meaningful ONLY for a field the row does not use. It is redundant
+    there, so the token is DROPPED; "not used" is the wildcard.
+  - **The binding control:** T2a's WARN-mode census over the whole corpus
+    and every axis must show ZERO would-decline verdicts on pcrec sites
+    before T3a may enforce. Any would-decline is fixed in the lists, or
+    by a stated field via R-6, first. Appendix B becomes T2a's output,
+    not its input.
+- **A2 [r3 M7, soundness B1 rest], fields a row USES whose 0 is a real
+  value get an explicit unstated form.**
+  - Enums get `*_UNSTATED = 0`.
+  - Booleans become tri-state enums: `reverse`, `guard_by_caller`,
+    `on_miss_leaves`.
+  - `comment_tier` gets `MF_CMT_UNSTATED`.
+  - `end_back`, `fn_ref` and `table_ref` are per-kind OBLIGATIONS of the
+    site kinds that carry them, so they are always present by
+    construction of that kind's builder; that is checked by kind, not
+    classified.
+  - This is a kit `MF_SITE_ABI` bump (layout of `mf_site`), with NO pcrec
+    artifact byte. R-6 grows accordingly: pcrec states the fields its
+    chosen rows USE. This is not "everything": T2a's census gives the
+    exact list.
+- **A3 [r3 M1, gates T0], the call macro.** It becomes
+  `MF_SELECT(t, scope, ctx, flags, rec, opts, "site")`. `scope` is
+  `MF_SCOPE_ONE` or a slot; `rec` may be NULL; `opts` is
+  `MF_Q_NONE`/`MF_Q_NULL_OK`. Every argument is explicit.
+- **A4 [r3 M3, M4], snapshot only VALUE hooks.**
+  - The snapshot set is the chosen row's uses ∩ {`s`, `n`, `lo`, `floor`
+    and the other value hooks}. Tokens (`MF_MISS_N` resolves to the `n`
+    snapshot), lvalues (`result`) and statements are never snapshot.
+  - A NESTED site (precheck's text that calls ofsskip's function) is
+    snapshot ONCE, at the OUTERMOST site. The inner call reads the
+    outer's locals, so there is no self-initialization and no duplicate
+    or unused local.
+  - T3b's acceptance includes the full artifact compile under `-Wall
+    -Wextra -Werror` and `-Winit-self -Wshadow` over the corpus.
+- **A5 [r3 M5], the reserved prefix.** pcrec's `valid_prefix` refuses a
+  `-p` beginning `_mf`. That is a pcrec-side request carried in R-6, and
+  a caller-observable diagnostic, so it needs a D80 hunk. It closes the
+  only legal compile the hook refusal could reject.
+- **A6 [r3 M6], NULL predicates.** In fit_rungs a NULL predicate means
+  SKIP, so the token is `MF_PRED_NULL_SKIPS`. `MF_PRED_NULL_HOLDS` is
+  deleted. A table must declare one of `MF_PRED_REQUIRED` /
+  `MF_PRED_NULL_SKIPS`.
+- **A7 [r3 Appendix A], the three inexact rows.**
+  - Scope: fixed by A3.
+  - Trace: `route_of` may return `MF_ROUTE_NONE`, printed `-` (WINDOW
+    today). For an adopter, the PRINTER stays the customer's macro,
+    which reads the record's fields, so C1's line format is unchanged
+    and no `table` field is added to it.
+  - `on_none`: the customer supplies a wrapper. pcrec's handles a NULL
+    `cx` (the N12 walk) itself.
+- **Minors m1-m9:** folded at implementation; listed in the spot-check
+  report.
+
+**Gates now:** T0 is READY (A3 applied). T2a carries A1's census.
+T3a needs A1's zero-would-decline, A2 and R-6. T3b needs A4's compile
+gate.
