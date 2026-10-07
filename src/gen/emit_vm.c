@@ -8425,6 +8425,16 @@ static void vm_cap(Vm *v, int entry, const Ast *a, int next)
     vm_goto(v, next);
 }
 
+/* [K94] WHICH CASELESS SEAM ENTRY a compare calls: the UCP one when UCP is in
+ * force at the construct AND the encoding's table carries one, the plain one
+ * otherwise. The emitter asks the table, never the encoding (DD-12 (7)). */
+static unsigned vm_caseless_entry(const Vm *v, bool ucp)
+{
+    return ucp && pcrec_enc_has_entry(pcrec_enc_by_id(v->cx->opt->encoding),
+                                      PCREC_ENCE_SPAN_CASELESS_UCP)
+        ? PCREC_ENCE_SPAN_CASELESS_UCP : PCREC_ENCE_SPAN_CASELESS;
+}
+
 /* A BACKREFERENCE: the DUPNAMES resolution chain, the unset test, the seam
  * call and its work charge.
  *
@@ -8500,8 +8510,8 @@ static void vm_bref(Vm *v, int entry, const Ast *a, int next)
      * every `^(a)\1$`-shaped artifact carried a DUPLICATE LABEL and did
      * not compile. Caught by the corpus within one run; recorded because
      * `-Wall -Wextra` does not include `-Wshadow`. */
-    const unsigned seam_entry = a->u.bref.caseless ? PCREC_ENCE_SPAN_CASELESS
-                                            : PCREC_ENCE_SPAN;
+    const unsigned seam_entry = a->u.bref.caseless
+        ? vm_caseless_entry(v, a->u.bref.ucp) : PCREC_ENCE_SPAN;
     /* THE BACKEND'S OWN DECLARATION IS CONSULTED BEFORE THE CALL IS
      * EMITTED, and this is `engine_callable`'s one consumer on the compile
      * path (enc.h). DD-12 (7) forbids the matching machinery from
@@ -8599,8 +8609,8 @@ static void vm_bref(Vm *v, int entry, const Ast *a, int next)
 static void vm_var(Vm *v, int entry, const Ast *a, int next)
 {
     StrBuf *bb = v->b;
-    const unsigned seam_entry = a->u.var.caseless ? PCREC_ENCE_SPAN_CASELESS
-                                                  : PCREC_ENCE_SPAN;
+    const unsigned seam_entry = a->u.var.caseless
+        ? vm_caseless_entry(v, a->u.var.ucp) : PCREC_ENCE_SPAN;
     /* `vm_bref`'s own rule, one construct over: the BACKEND's declaration is
      * consulted before the call is emitted, so a backend whose variable
      * compare is not engine-callable fails HERE and by name rather than two

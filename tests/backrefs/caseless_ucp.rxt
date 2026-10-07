@@ -1,0 +1,255 @@
+# tests/backrefs/caseless_ucp.rxt -- module `backrefs` ([K94]): a CASELESS BACKREFERENCE UNDER `--ucp` IN THE BYTE ENCODING folds LATIN-1
+#
+# PCRE2_UCP without PCRE2_UTF reads bytes as Latin-1, and a caseless backreference
+# folds what the --ucp classes fold: the 26 ASCII + 30 Latin-1 pairs
+# (U+00C0..U+00DE except U+00D7, with U+00E0..U+00FE except U+00F7). Bytes whose
+# Unicode partner lies outside Latin-1 (0xB5 micro, 0xDF sharp s, 0xFF y-diaeresis)
+# fold to nothing. WITHOUT --ucp the fold stays ASCII-only.
+#
+# EVERY expectation was READ FROM libpcre2 10.46 (pcre2test on the reference box,
+# `/(?s)(.)\1/i` with and without `,ucp`, all 65,536 byte pairs); the cells below
+# are a selection of that sweep, which tests/backrefs/fold_agreement_ucp_check.c
+# (brefdiff section 9c) re-asserts exhaustively against pcrec_fold_latin1.
+# `# pcre2-only`: python `re` has no PCRE2_UCP and is byte-oriented here (U14).
+# Sabotage rows S590 (the emitter ignores UCP) and S591 (the fold table loses its
+# Latin-1 pairs) are what these cells see.
+
+# `(?i)` in the pattern, UCP by verb: the K94 witness and the Latin-1 pairs
+# pcre2-only
+pattern (*UCP)(?i)(.)\1
+encoding byte
+features backrefs,modifiers,ucp
+m "\xe9\xc9" 0 2
+m "\xc9\xe9" 0 2
+m "\xe9\xe9" 0 2
+n "\xe9\xe8"
+m "\xe0\xc0" 0 2
+m "\xc0\xe0" 0 2
+m "\xfe\xde" 0 2
+m "\xde\xfe" 0 2
+m "\xf6\xd6" 0 2
+m "\xd6\xf6" 0 2
+m "\xf8\xd8" 0 2
+n "\xd7\xf7"
+n "\xf7\xd7"
+m "\xd7\xd7" 0 2
+m "\xf7\xf7" 0 2
+m "\xb5\xb5" 0 2
+n "\xb5\x4d"
+n "\xb5\xc3"
+m "\xdf\xdf" 0 2
+n "\xdf\x53"
+n "\xdf\x73"
+m "\xff\xff" 0 2
+n "\xff\x59"
+n "\xff\x79"
+m "\xc5\xe5" 0 2
+m "\xe5\xc5" 0 2
+m "\x41\x61" 0 2
+m "\x61\x41" 0 2
+m "\x5a\x7a" 0 2
+m "\x7a\x5a" 0 2
+m "\x01\x01" 0 2
+n "\x01\x21"
+n "\x00\x20"
+n "\x20\x00"
+m "\x7f\x7f" 0 2
+m "\x80\x80" 0 2
+n "\x80\xa0"
+n "\xa0\x80"
+n "\xe9\x49"
+n "\xe9\x69"
+
+# `flags iu` (the CLI `-i --ucp`): same relation
+# pcre2-only
+pattern (.)\1
+encoding byte
+flags iu
+features backrefs,modifiers,ucp
+m "\xe9\xc9" 0 2
+m "\xc9\xe9" 0 2
+m "\xe9\xe9" 0 2
+n "\xe9\xe8"
+m "\xe0\xc0" 0 2
+m "\xc0\xe0" 0 2
+m "\xfe\xde" 0 2
+m "\xde\xfe" 0 2
+m "\xf6\xd6" 0 2
+m "\xd6\xf6" 0 2
+m "\xf8\xd8" 0 2
+n "\xd7\xf7"
+n "\xf7\xd7"
+m "\xd7\xd7" 0 2
+m "\xf7\xf7" 0 2
+m "\xb5\xb5" 0 2
+n "\xb5\x4d"
+n "\xb5\xc3"
+m "\xdf\xdf" 0 2
+n "\xdf\x53"
+n "\xdf\x73"
+m "\xff\xff" 0 2
+n "\xff\x59"
+n "\xff\x79"
+m "\xc5\xe5" 0 2
+m "\xe5\xc5" 0 2
+m "\x41\x61" 0 2
+m "\x61\x41" 0 2
+m "\x5a\x7a" 0 2
+m "\x7a\x5a" 0 2
+m "\x01\x01" 0 2
+n "\x01\x21"
+n "\x00\x20"
+n "\x20\x00"
+m "\x7f\x7f" 0 2
+m "\x80\x80" 0 2
+n "\x80\xa0"
+n "\xa0\x80"
+n "\xe9\x49"
+n "\xe9\x69"
+
+# K94 EXACT WITNESS: `(\xe9)\1` -i --ucp on \xe9\xc9
+# pcre2-only
+pattern (\xe9)\1
+encoding byte
+flags iu
+features backrefs,modifiers,ucp
+m "\xe9\xc9" 0 2
+m "\xe9\xe9" 0 2
+n "\xe9\xe8"
+
+# CONTROL: no UCP, `(?i)` only -- the fold stays ASCII-only; \xe9 does not reach \xc9
+# pcre2-only
+pattern (?i)(.)\1
+encoding byte
+features backrefs,modifiers
+n "\xe9\xc9"
+n "\xc9\xe9"
+m "\xe9\xe9" 0 2
+n "\xe9\xe8"
+n "\xe0\xc0"
+n "\xc0\xe0"
+n "\xfe\xde"
+n "\xde\xfe"
+n "\xf6\xd6"
+n "\xd6\xf6"
+n "\xf8\xd8"
+n "\xd7\xf7"
+n "\xf7\xd7"
+m "\xd7\xd7" 0 2
+m "\xf7\xf7" 0 2
+m "\xb5\xb5" 0 2
+n "\xb5\x4d"
+n "\xb5\xc3"
+m "\xdf\xdf" 0 2
+n "\xdf\x53"
+n "\xdf\x73"
+m "\xff\xff" 0 2
+n "\xff\x59"
+n "\xff\x79"
+n "\xc5\xe5"
+n "\xe5\xc5"
+m "\x41\x61" 0 2
+m "\x61\x41" 0 2
+m "\x5a\x7a" 0 2
+m "\x7a\x5a" 0 2
+m "\x01\x01" 0 2
+n "\x01\x21"
+n "\x00\x20"
+n "\x20\x00"
+m "\x7f\x7f" 0 2
+m "\x80\x80" 0 2
+n "\x80\xa0"
+n "\xa0\x80"
+n "\xe9\x49"
+n "\xe9\x69"
+
+# CONTROL: no UCP, `flags i`
+# pcre2-only
+pattern (.)\1
+encoding byte
+flags i
+features backrefs,modifiers
+n "\xe9\xc9"
+n "\xc9\xe9"
+m "\xe9\xe9" 0 2
+n "\xe9\xe8"
+n "\xe0\xc0"
+n "\xc0\xe0"
+n "\xfe\xde"
+n "\xde\xfe"
+n "\xf6\xd6"
+n "\xd6\xf6"
+n "\xf8\xd8"
+n "\xd7\xf7"
+n "\xf7\xd7"
+m "\xd7\xd7" 0 2
+m "\xf7\xf7" 0 2
+m "\xb5\xb5" 0 2
+n "\xb5\x4d"
+n "\xb5\xc3"
+m "\xdf\xdf" 0 2
+n "\xdf\x53"
+n "\xdf\x73"
+m "\xff\xff" 0 2
+n "\xff\x59"
+n "\xff\x79"
+n "\xc5\xe5"
+n "\xe5\xc5"
+m "\x41\x61" 0 2
+m "\x61\x41" 0 2
+m "\x5a\x7a" 0 2
+m "\x7a\x5a" 0 2
+m "\x01\x01" 0 2
+n "\x01\x21"
+n "\x00\x20"
+n "\x20\x00"
+m "\x7f\x7f" 0 2
+m "\x80\x80" 0 2
+n "\x80\xa0"
+n "\xa0\x80"
+n "\xe9\x49"
+n "\xe9\x69"
+
+# UCP without caseless: the compare is exact, so \xe9 does not reach \xc9
+# pcre2-only
+pattern (*UCP)(.)\1
+encoding byte
+features backrefs,modifiers,ucp
+n "\xe9\xc9"
+m "\xe9\xe9" 0 2
+n "\x41\x61"
+m "\x61\x61" 0 2
+
+# WHERE the (?i) is read still decides, under UCP: the reference is inside (?i:...) so the compare folds (D62)
+# pcre2-only
+pattern (*UCP)^(\xe9)(?i:\1)$
+encoding byte
+features backrefs,modifiers,ucp
+m "\xe9\xc9" 0 2
+m "\xe9\xe9" 0 2
+n "\xe9\xe8"
+
+# ...and the (?i) at the GROUP, not the reference, leaves the compare exact even under UCP
+# pcre2-only
+pattern (*UCP)^(?i:(\xe9))\1$
+encoding byte
+features backrefs,modifiers,ucp
+n "\xe9\xc9"
+m "\xe9\xe9" 0 2
+
+# a NAMED reference takes the same compare
+# pcre2-only
+pattern (?i)(?<n>\xe9)\g{n}
+encoding byte
+flags u
+features backrefs,modifiers,named-groups,ucp
+m "\xe9\xc9" 0 2
+
+# a reference on one arm of an alternation
+# pcre2-only
+pattern (?i)(\xe9)(?:x|\1)$
+encoding byte
+flags u
+features backrefs,modifiers,ucp
+m "\xe9\xc9" 0 2
+m "\xe9x" 0 2

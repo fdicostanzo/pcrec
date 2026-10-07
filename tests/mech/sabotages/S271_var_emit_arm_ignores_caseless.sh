@@ -52,6 +52,9 @@ SAB_COUNT=1
 # manager ruled the sibling entry out. The plant is UNCHANGED in meaning --
 # `Ast.u.var.caseless` stops being read and every variable routes through the
 # case-SENSITIVE compare.
-SAB_BEFORE='    const unsigned seam_entry = a->u.var.caseless ? PCREC_ENCE_SPAN_CASELESS
-                                                  : PCREC_ENCE_SPAN;'
+# [K94] RE-ANCHORED, INTENT UNCHANGED: the caseless arm now names
+# `vm_caseless_entry(v, a->u.var.ucp)` (the UCP/plain choice) instead of the
+# bare constant; the plant still stops `u.var.caseless` being read.
+SAB_BEFORE='    const unsigned seam_entry = a->u.var.caseless
+        ? vm_caseless_entry(v, a->u.var.ucp) : PCREC_ENCE_SPAN;'
 SAB_AFTER='    const unsigned seam_entry = PCREC_ENCE_SPAN;   /* SABOTAGE S271: the field is not read */'

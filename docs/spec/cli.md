@@ -191,7 +191,9 @@ Four consequences worth stating because each one surprises:
   the emitted matcher carries the ~1,500-entry fold map (about 26 KB of table
   text, outside the emitted-CODE cap by D84's own definition, and present only
   in an artifact that HAS a caseless backreference) and folds each character
-  through it. That entry is internal to the artifact — it is called from the
+  through it. Under `byte` the fold is ASCII-only, and under `--ucp` it is the
+  56 Latin-1 pairs the `--ucp` classes fold ([K94]): the artifact then carries
+  a ~60-row table, generated from the same fold links as the classes. That entry is internal to the artifact — it is called from the
   matcher, not by a caller — and carries its own contract comment in the
   emitted `.c`; `docs/spec/match_api.md` §3.1.1 specifies `<prefix>_next_pos`,
   the residual entry a caller does call.
@@ -234,7 +236,10 @@ SEMANTIC axis, not a tuning one (`docs/spec/tuning.md` §4).
   (`(?i)[[:lower:]]` does not match `A`); an ASCII-restricted set folds by the
   ASCII fold; everything else by the encoding's fold — except that under
   `byte` UCP folds the 26 ASCII + 30 Latin-1 letter pairs (PCRE2_UCP without
-  PCRE2_UTF; `é` reaches `É`, and without UCP it does not).
+  PCRE2_UTF; `é` reaches `É`, and without UCP it does not). A caseless
+  BACKREFERENCE under `byte` follows the same rule ([K94]): `(\xe9)\1` under
+  `-i --ucp` matches `\xe9\xc9`; without `--ucp` the compare stays ASCII-only.
+  `\xb5`, `\xdf` and `\xff` have no Latin-1 partner and fold to nothing.
 - **Under `byte`** the bytes are Latin-1 code points: every UCP set is its
   Unicode set clamped to `[0, 0xFF]`.
 - **REFUSED BY NAME at this stage** (D130 Q3; `docs/spec/limits.md` §3.8):

@@ -202,7 +202,19 @@ enum {
      * once per artifact from `Ctx.lb_max` (src/gen/emit_dfa.c's
      * `emit_residual_defs`). A backend whose body does not step back (byte)
      * leaves the macro unread. */
-    PCREC_ENCE_VALID_UPTO     = 1u << 6
+    PCREC_ENCE_VALID_UPTO     = 1u << 6,
+    /* [K94] THE CASELESS SPAN COMPARE UNDER UCP, for a backend whose UCP fold
+     * differs from its plain one. Defines the SAME `$_span_match_caseless`
+     * symbol as `SPAN_CASELESS` and is in the mask INSTEAD of it, never beside
+     * it: an artifact is compiled under one UCP state, so exactly one caseless
+     * body exists in it (D18/D23's "two entries chosen at emit time", with the
+     * second choice made by what the TABLE carries). `byte` has a row (PCRE2_UCP
+     * without UTF reads bytes as Latin-1, so its caseless backreference folds
+     * Latin-1 where the plain one folds ASCII); `utf8` has none, its one fold
+     * already being Unicode's, and the emitter asks the table, never the
+     * encoding. Its definitions are preceded by a fold table the seam
+     * generates from fold.c, so there is one Latin-1 fold definition. */
+    PCREC_ENCE_SPAN_CASELESS_UCP = 1u << 7
 };
 
 typedef struct {
