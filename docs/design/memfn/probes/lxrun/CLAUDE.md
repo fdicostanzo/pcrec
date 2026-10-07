@@ -36,6 +36,12 @@ run by pcrec's make; each writes only under its OUTDIR argument.
   gate,test,mech,axes,c11,i2 (unselected steps read `skip`), TESTSECTIONS
   runs `make <sections>` for the test step, MECHROWS the mech ids, I2ARMS an
   ERE over arm labels; the header has an example.
+- `memfn_r4c2.sh` — R4c′'s (lane r4c2fu) Linux validation of the r4c2fix
+  fixes: a thin wrapper over `memfn_r4c.sh`'s RERUN mode (`STEPS=gate,mech`,
+  `REF=81bc13de`, new env `GATEFLAGS=--zero-dumps`, `MECHROWS="S511 S524
+  S525 S566 S526"`). The zero-mover gate, then the five solo mech rows; no
+  make test, axes, C11 or I2. Last line exactly `== r4c2-lx DONE rc=N ==`
+  (N nonzero if the gate or any row fails). Never run on the Mac.
 - `memfn_r4c_gate.py` — judges an emit_sweep log for R4c: exit 0 iff the
   self-check passed, streams 1-4 have 0 movers at their reach floors, and
   the only dump mover is --list-axes adding exactly the two declared
