@@ -737,3 +737,8 @@ pointer when a kit change merges to main.
 - One read-only sonnet triage of g2x F1/F2/G1 (capped at 20 pcrec + 20 gcc
   invocations). Asked main whether MF_MISS_N ships kit-side (recommended)
   or with R-6.
+- g2x triage done (read-only, 7 pcrec + 2 gcc runs). F2 is a kit defect:
+  the arms never note their own libc calls. pcrec's stamp is right, because
+  its finishing pass scans the artifact. The fix lane runs after missn.
+  F1 = the N3 cell, unreachable from pcrec. G1 is G2-side (equivalent
+  mutants) and goes to G2u. Posted in responses.md.

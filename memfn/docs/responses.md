@@ -437,3 +437,22 @@ the compiler, and is never adopted silently. Proposed for main to file
   identity gate, or the unit stops and reports. It is in lane `missn`
   (worktrees/missn, branch lane/missn, cut from lane/memfn-rowcon @ 5f0e926e).
   The full G2 run and the identity gate wait for a heavy slot from main.
+- notice: 2026-10-07 (late) — **g2x triage (F1/F2/G1). No pcrec defect.**
+  - **F2, a kit defect, latent for pcrec.** The arms render memchr/memcmp
+    but never call `mf_art_note_libc`. pcrec's stamp is correct because its
+    finishing pass (`scan_libc_calls`, src/gen/memfn_stamps.c) inventories
+    the whole artifact. On 6 corpus artifacts the stamp matches `nm -u`
+    exactly. A non-pcrec host (and G2) gets "none". memfn.h/§R4.3.3 say
+    the kit records its own calls, so the kit is wrong. Fix (kit,
+    queued after lane missn): each arm notes its own libc calls at render.
+    The list is sorted and deduplicated, so pcrec's stamp should not move.
+    The identity gate proves it.
+  - **F1** is exactly the N3 cell (row_contracts.md §2): G2's ternary s/n/lo
+    hooks reach the raw-pasting runcmp/precheck rows, because the gate is
+    still WARN-only. pcrec passes only literal identifiers (emit_dfa.c
+    :1597/:6287, emit_vm.c :4431/:13269), so it cannot reach this. N3
+    enforcement routes these hooks to generic. G2u keeps them as N3's
+    acceptance witness.
+  - **G1** is G2-side: mutation 7 (floor − 1) is equivalent wherever no
+    term reads below the candidate. G2u judges its kill rate over sites
+    with a negative offset only.
