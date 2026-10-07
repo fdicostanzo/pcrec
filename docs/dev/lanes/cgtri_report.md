@@ -80,8 +80,11 @@ restate.
 
 - `make strict`: clean (`strict: whole tree compiles clean with -Werror
   -Wshadow`).
-- `make test-codegen` on the lane tip: see the handback.
-  Log: `worktrees/cgtri-scratch/cg.log`, completion line `EXIT <rc>`.
+- `make test-codegen CC=gcc-16` on the lane tip (f15c3f8c): **EXIT 0**, with
+  every script green. The empty-engine check passes at exactly 67 named
+  patterns. The census prints P1 565 / P2 29 / P2e 1
+  (`(?:\b(?1)|x)(a+)`) / P3 0 over 4,408 corpus patterns. Log:
+  `worktrees/cgtri-scratch/cg.log`.
 
 ## Files
 
