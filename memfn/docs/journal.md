@@ -798,3 +798,17 @@ pointer when a kit change merges to main.
   gate). Authoring only. The census, identity gate, full G2 (strict) and
   make test happen in a slot after R-6 lands on main. STOP rule: any pcrec
   site other than the N2 cells that would be refused.
+- n3 merged into lane/memfn-n3. The gate enforces at define and use; the
+  pre-check is split by handoff (precheck / precheck_assign, one form id);
+  ofsskip's K96 ad hoc checks are replaced by the gate (20 --gate arm
+  fixtures, 19 of them flip with the gate off); fn_ref is a hook id (0 =
+  unstated). Strict, build and arms (104/0) pass.
+- Pre-R-6, test-memfn-stamps fails 2 floors (calls-memcmp 35 < 40, idiom
+  55 < 80), because pcrec now has its N2-cell patterns refused (215
+  refused in the sample). That is expected until R-6; recheck on the
+  main+R-6 merge.
+- Without R-6, n3's 40 compiles show only the N2 cells refused; with a
+  scratch R-6, none. No STOP.
+- G2 is still red, 457 checks, all fn_ref-0 FUNC sites that G2 treats as
+  hard. The blinded follow-up g2u3 (sonnet; the cell is refreshed with
+  N3's build and memfn.h) makes the enforced outcome G2's default.
