@@ -710,6 +710,16 @@ Being honest about the edge of this document's coverage:
   wall-clock match time, and D22 is explicit that this project does not
   aim for one — a give-up being honest is the guarantee, not a latency
   ceiling.
+- **Possessification trades one counter for another.** The step and work
+  budgets are not independent of the optimizer. Any change to which loops
+  `src/opt/possessify.c` marks (`-fno-possessify`, or a change to its
+  verdict) moves a `PCREC_ERR_STEPS` or `PCREC_ERR_FRAMES` give-up towards an
+  answer and a `PCREC_ERR_WORK` give-up towards appearing: a possessive scan is
+  charged to the work budget per iteration, where the backtracking form spent
+  steps on retreats (measured, `tuning.md` §2.1: 581 against 1,586 minimum work
+  budget). A caller who has tuned `--work-budget` to the edge should re-check it
+  after a possessify change, as the `K` bullet above advises.
+  `<PREFIX>_VM_STRATS` shows whether the artifact carries a possessive loop.
 - **`PCREC_ERR_RECURSE` is reserved but has no producer** in the default
   artifact (§2) — there is no recursion-depth COUNTER shipping today, so
   no number exists to state for it; D71 item 1 names this as a future
