@@ -1,0 +1,57 @@
+# tests/codegen/cand_oracle_witnesses.tsv -- the both-walks oracle's
+# WITNESSES ([START-TABLE] C2, docs/design/start_table.md §3.3 item 6, §3.4):
+# one line per (expected row, compile) that run_cand_oracle.sh compiles with
+# the two trace builds. A line PASSES when both builds compile it without an
+# oracle abort and both print a `CANDROW` hit for ROW (its [MECH-REACH]:
+# the witness reaches the row it is listed for). Every row identity in
+# `cand_rows[]` must have at least one line here (K35: a row nothing reaches
+# is a row no plant on it can be caught at).
+#
+# Columns (TAB-separated): ROW, FLAGS (`-` for none, else space-separated
+# compile options), PATTERN (raw, as passed to --pattern). Lines whose FLAGS
+# carry a deny bit pin the row the deny LANDS on: a deny bit the table drops
+# is caught there and nowhere else.
+#
+# ROW	FLAGS	PATTERN
+window	-	abc$
+window-none	-	a(b|c)+d
+presence-none	-	[a-z](?=the)
+one-attempt	-	^(a)(b|c)
+dominated	-	foo\b
+set-leads	-	x{2,5}((?i:cat))
+emitted	-fno-req-set-lead	x{2,5}((?i:cat))
+emitted	-	a(b|c)+d
+ceiling	-	^((?1)a)$
+width-none	-	a(b|c)+d
+handoff	-	\d\dxyz
+scan-from-startpos	-fno-req-handoff	\d\dxyz
+run-pinned-bounded	-	foo\b
+run-pinned	-	ABCDE
+offset-set-bounded	-	a\Kb\z
+offset-set	-	\d\dxyz
+offset-set	-fno-run-prefilter	ABCDE
+first-memchr-bounded	-	\B(?<!a)d
+first-class-bounded	-	\b(ab|cd)\b.{0,2}\b(ab|c)\b
+first-class	--engine=vm	I
+memchr-bounded	-	x$.*
+memchr	-	a(b|c)+d
+byte-class-bounded	-e utf8	.*\z
+byte-class	-	\d
+pred-memchr	-	(?m)^ERROR
+next-none	-	a(b|c)+d
+next-none	--engine=vm -fno-start-set	I
+exact	-	a(b|c)+d
+clamped	-e utf8	[^b]*+c
+retry-anchored	-	^(?(DEFINE)(?<g>a{1,3}))(?>(?&g))aa$
+adaptive-dense	-	[a-z](?=the)
+adaptive	-	[^b]*+c
+fixed	-fno-hyb-reseed	[^b]*+c
+bot	-	^(a)(b|c)
+attempt-gstart	-	\Ga(b)
+vm-anchored	-	^(a)(b|c)
+vm-gstart	-	\Ga(b)
+all	-	a(b|c)+d
+all	-fno-vm-anchor-bound	^(a)(b|c)
+pinned	-	a?+
+reverse-pass	-fno-start-pinned	a?+
+reverse-pass	-	a(b|c)+d
