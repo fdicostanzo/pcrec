@@ -3933,6 +3933,22 @@ n "abx"
 n ""
 n "a"
 
+# B-depth, BRANCHING cycle (lane possbuild): a group referencing two groups
+# that each reference it back. Its compile is bounded only by the capture
+# fact's IN-PROGRESS guard -- without it PCREC_MAX_POSS_REF_DEPTH still ends
+# every chain, but a branching cycle explores 2^64 paths first (sabotage
+# S602's witness: the compile times out). Matches nothing (every reference is
+# unset when first read); libpcre2 10.46 via the ctypes binding, both
+# spellings, every subject below: no match.
+# pcre2-only
+pattern (a\2\3)(b\1)(c\1)x+\1
+features all
+engine vm
+n "axa"
+n "abcxa"
+n "axxa"
+n ""
+
 # combo-doubled-word (greedy): the combined witness: A1 on \w+ and B on \s+; frameless. [0 discriminating subjects found by exhaustive search]
 # pcre2-only
 pattern \b(\w+)\b\s+\1\b
