@@ -3,6 +3,9 @@
 Lane g2u, 2026-10-07, Linux dev box, in the cell `worktrees/g2u-cell/`.
 It supersedes lane g2x's interim `G2X_REPORT.md`, which is kept beside it.
 
+**G2u2 UPDATE (2026-10-07): K-1 is ruled and G2 follows it; see the "G2u2
+addendum" at the end. The headline below is the g2u run, before the ruling.**
+
 **Headline.** The final `--quick` run (seed 20261005) passed 35,529,895
 checks and failed 462. All 462 failures are ONE kit finding (K-1 below): the
 kit reads `mf_site.pred` on ALL_PRESENT/FUNC sites, and memfn.h scopes that
@@ -185,7 +188,7 @@ Every junk value is distinct (`G2_POISON_<field>`, junk bytes, ids
 | `note`, `note_tag` | comment gate closed | §14.2 `note_tag` "Like `note`, it is read only where the sink's comment gate is open"; "Both are NONESSENTIAL… and the sink gates them" |
 | `indent` | form EXPR | memfn.h `indent` "STMT / FUNC body"; §14.1 |
 | `ret_pred`; `npred`+`preds` | op is not ALL_PRESENT | memfn.h `ret_pred` "ALL_PRESENT: …", `npred`/`preds` "ALL_PRESENT" |
-| `pred` | op ALL_PRESENT | memfn.h `pred` "FIND / SKIP / VERIFY" |
+| `pred` (G2u2: `pred.fn_ref` is NOT poisoned on a FUNC site) | op ALL_PRESENT; every member except `fn_ref`, and `fn_ref` too on a non-FUNC site | memfn.h `site.pred` "On ALL_PRESENT / DENSE only `pred.fn_ref` is read, and only on a FUNC site (its name, K-1)"; `mf_pred.fn_ref` "A FUNC site's OWN name is always its `site.pred.fn_ref`, for every op" (superseded text: "FIND / SKIP / VERIFY") |
 | `run`/`mask`/`run_len` on a SET term | any SET term | memfn.h `mf_term`: `run`, `mask` "MF_T_RUN" |
 | `set`, `table_ref` on a RUN term | any RUN term | memfn.h `set` "MF_T_SET: 256-bit membership", `table_ref` "MF_T_SET: …" |
 | `plan_pos` | `plan_hint` is MF_NO_PRED or names a SET term | memfn.h `plan_pos` "the position INSIDE a RUN term it scans"; §14.9 |
@@ -418,3 +421,73 @@ lower a measured one.
 | 7 | semantic differential | done; 15 fields, 1,543 hard sites, 0 failures |
 | 8 | per-form floors, quick and full | done; full check floors derived, owed confirmation |
 | — | CLAUDE.md current; G2X_REPORT.md marked superseded | done |
+
+## 7. G2u2 addendum (2026-10-07, same cell, D27-blinded)
+
+**Ruling followed.** memfn.h now says: a FUNC site's own name is ALWAYS
+`site.pred.fn_ref`, for every op; on ALL_PRESENT/DENSE only `pred.fn_ref`
+is read, and only on a FUNC site; a FUNC site stating `fn_ref` 0 states no
+name and is refused. That refusal is part of the SCHEDULED enforcement, so
+the `fn_ref-unstated` PENDING-ENFORCE class stays PENDING (415 cases, unchanged).
+
+**What changed** (`g2/g2_gen.c`, `g2/g2.h`, `run_g2.sh`, `CLAUDE.md`, this report):
+1. **Poison differential.** `PZ_PRED` no longer overwrites `pred.fn_ref` on
+   a FUNC site: the junk predicate keeps the site's own value (0 included).
+   On a non-FUNC ALL_PRESENT site the whole of `pred` is still junk (so its
+   `fn_ref` too, "only on a FUNC site"). The cited table row (section 2, item 6)
+   is rewritten with the new clause. The `fn_ref-unstated` check now reads a
+   FUNC site's name from `site.pred.fn_ref` alone (it used to also accept any
+   `preds[i].fn_ref`).
+2. **Site stating.** An ALL_PRESENT FUNC site now STATES `site.pred.fn_ref`
+   (the generator used to leave `pred` zero): a seed-chosen nonzero id when
+   its predicates carry fn_refs (as before the stated/unstated split is the
+   same), else 0, which stays the PENDING class.
+3. **Semantic differential, new field `site-fn_ref`** (`G2_V_SITEFN`): a new
+   ALL_PRESENT FUNC seed shape (BOOL, or RETURN on odd reps; plain hook text)
+   cloned over `site.pred.fn_ref` in {1, 77, 4000000011}. Each variant must
+   render, every `g2f_<id>_` name in the text (function definition and call,
+   all of `mf_emit`/`mf_define`/`mf_use`/`mf_call`) must equal
+   `fn_name(fn_ref)`, at least one must appear, and the answers must equal the
+   reference (the ordinary sem check). New floors: `FLOOR_SITEFN=15`
+   (generator count; DERIVED: 3 classes x 6 seeds = 18, less margin) and the
+   existing `FLOOR_SEM_FIELD_SITES`=14 now also covers the field.
+4. **Nothing else encoded the old scoping.** I searched G2 for `pred`/`fn_ref`:
+   the refusal-table and reproducer cases (`s.pred.fn_ref = 1`) are FIND/SKIP/
+   VERIFY, where `pred` is the predicate; the `m_fnref` class varies
+   `preds[i].fn_ref` (part functions, unaffected); the DENSE op does not exist
+   in G2 (no change).
+
+**Quick run** (1 of 2 allowed after the first, which failed only my own
+derived floor: 12 variants because two seeds inherited a leftover non-identifier
+hook style; fixed in G2, `hook_style = 0`). Final run, `--quick`, seed 20261005:
+- **checks passed 36,341,888, failed 0** (the 462 K-1 failures are gone).
+- gcc-15: 35,935,461 passed, 9,267 sites, 0 failed sites;
+  `coverage-missing 1` is the known quick-tier alignment axis.
+- POISON: 9,267 sites, identical 9,267, differ 0, control-unstable 0;
+  `pred` poisoned on 2,093 sites, moved 0.
+- `site-fn_ref`: 18 variants (classes 0:6 1:6 2:6), 84,607 answer checks,
+  0 failed; generator name check: 18 checked.
+- Family sem: 1,743 sites; forms 0..3 sites 6,680 / 1,015 / 1,248 / 324.
+- Libc leg 94 batches agree; K1 377,000/0; W1 all fire (26,976 / 402,838 /
+  47,936); W2 mutation 7 reading below the candidate: 634 mutated, 589 killed.
+- PENDING-ENFORCE: 1,469 (hook-nonident 728, miss-unstated 314, refusal-unnamed
+  12, fn_ref-unstated 415). The rise from 1,455 is the new seed's own style and
+  `miss` variants, all pending classes already defined. 298 PENDING renderings
+  (F1) still do not compile.
+- No clang on this box, so no ASan leg, as before.
+
+**OWED full-run floors (changed).**
+- `PENDING-ENFORCE cases: 1469` (was 1455); `checks failed: 0` (was 462).
+- `FLOOR_SITEFN` 15 (same on both tiers); expected `SITEFN checked=18`.
+- `FLOOR_POISON_SITES` 8,100 and the other pins are unchanged and hold;
+  `FULL_FORM_CHECK_FLOORS` and `FLOOR_MUT7_NEG` are unchanged and still DERIVED.
+- Quick measured form check totals moved up slightly (generic 26.05M,
+  ofsskip 5.97M, precheck 1.15M; runcmp 2.76M): the existing floors still hold, not re-pinned.
+
+**DISCLOSURE.** Same as section 1: the only files outside the cell I saw were
+those auto-injected at spawn (the session-root `CLAUDE.md`, the memory index,
+the git status snapshot); I read nothing else outside the cell, ran no `git`
+and no `make`, and read no kit source. The `--quick` runs were launched from a
+backgrounded subshell that began with `cd <cell> &&` (a subshell; the session
+cwd did not change). Budget: 2 `--quick` runs (1 failed my floor only), 1 probe
+compile (the generator) plus its run, no timing run, no full run.

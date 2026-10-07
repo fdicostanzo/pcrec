@@ -30,11 +30,18 @@ and added the row-contract checks: its report is **`G2U_REPORT.md`** here.
   byte-identical, or refused. A difference is bisected to the field
   (`FAIL poison`). The "does not use" table, with the clause per field, is
   in `G2U_REPORT.md`.
+  Since the G2u2 addendum: a FUNC site's own name is ALWAYS `site.pred.fn_ref`
+  (memfn.h K-1 ruling), so on ALL_PRESENT FUNC sites `pred.fn_ref` is never
+  poisoned; every other member of `pred` there still is.
 - **The semantic differential** (family `sem`): a seed site cloned once per
   value class of ONE field (miss's every spelling, hook style, floor
   NULL/"0"/text, on_miss_leaves, result_decl, use, table_ref, fn_ref,
   plan_hint, a term's need, empty, policy, consumer, comment gate, via),
-  every variant answer-checked.
+  every variant answer-checked. Field `site-fn_ref` (G2u2): an ALL_PRESENT
+  FUNC seed cloned over nonzero `site.pred.fn_ref` values; the rendered
+  `g2f_<id>_<ref>` name must follow `fn_name(fn_ref)` (generator-side text
+  check, `SITEFN checked=` line, `FLOOR_SITEFN`) and answers equal the
+  reference.
 - **Per-form floors**: hard sites rendered and answer checks per reported
   form id (`FORMID` lines; ids opaque, only counted).
 
