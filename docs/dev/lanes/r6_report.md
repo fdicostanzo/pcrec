@@ -28,3 +28,7 @@ Chain script `build/r6_chain.sh`, waiter `build/r6_wait.sh`; completion file `bu
 2. `make -k -j16 -Otarget test` -> `build/test.log`, wall + rc in `build/test.rc`. Verdict: `grep -E '\*\*\* \[(Makefile:[0-9]+: )?test-' build/test.log`.
 3. Solo mech `S566 S529 S470 S471 S472 S460` -> `build/mech_<id>.log`; each must read DETECTED. These are the rows anchored in the edited precheck/handoff neighbourhood. About 110 rows are anchored somewhere in `emit_dfa.c`; the other rows were not run (none quotes an edited line; anchors resolve).
 4. `docs/dev/artifact_size_log.tsv` restored by the chain; never commit its regeneration.
+
+## Mech selection (manager ruling 2026-10-07)
+Rule: the 6 named rows, plus every row whose SAB_BEFORE/SAB_BEFORE2 occurrence in `src/gen/emit_dfa.c` overlaps the body of an edited function (`ofs_site_define` 6257-6273, `pf_ofs_call` 6286-6294, `pcrec_emit_req_byte_check` 1582-1615). The mapper is `build/mapanch.py` (gitignored scratch): it sources each row's anchors through bash, finds each occurrence's line span and tests overlap. Control: with the range widened to the whole file it reports 114 anchor sites (about 110 rows), so it is not blind.
+Result: no row has an anchor inside the three functions. The selected set is therefore the six: S566 S529 S470 S471 S472 S460 (these anchor in neighbouring functions of the same pre-check/handoff area). The zero-mover gate carries the rest.
