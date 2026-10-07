@@ -36,6 +36,12 @@
  * its own, so the definition takes no subject or bound hook. The call passes
  * the caller's `s`, `n` and `lo`. The run compare is the kit's own (runcmp.c,
  * since M1b) and a multi-byte set's table is pcrec's (`table_name`, rule 7).
+ *
+ * The function's miss is its `n` and its reads are bounded by `pos` and `n`,
+ * so the arm applies only where the site's `miss` is `n` (unstated, or the
+ * `n` hook's own text) and no `floor` is stated; anything else is the generic
+ * row's, and a call whose hooks state otherwise is refused (lane m1bfix: G2's
+ * first run-bearing FUNC sites, a `((size_t)-1)` miss and a floor above `lo`).
  */
 #include <stdarg.h>
 #include <stdio.h>
@@ -85,9 +91,13 @@ static int scan_only(const mf_pred *p, unsigned i)
     return i == p->plan_hint && p->term[i].kind == MF_T_SET;
 }
 
+/* The function bounds its reads by `pos` and `n` only: a stated `floor`
+ * (§14.7) is one it cannot honour where a term sits below it, so such a
+ * site is the generic row's (lane m1bfix). pcrec states none at OFS/PRE. */
 int ofs_fn_applies(const mf_pred *p, const mf_hooks *def)
 {
-    if (!def || p->nterm == 0 || p->nterm > MF_MAX_TERM || p->plan_hint >= p->nterm)
+    if (!def || def->floor || p->nterm == 0 || p->nterm > MF_MAX_TERM ||
+        p->plan_hint >= p->nterm)
         return 0;
     int runs = 0, checked = 0;
     for (unsigned i = 0; i < p->nterm; i++) {
@@ -269,6 +279,8 @@ int ofs_fn_call(mf_art *art, const mf_hooks *h, const mf_pred *p,
 {
     if (!h || !h->s || !h->n || !h->lo)
         return kit_fail(art, "ofsskip: the call needs the s, n and lo hooks");
+    if (h->floor)
+        return kit_fail(art, "ofsskip: the call states a floor its definition did not");
     kit_out(o, "%s(%s, %s, %s", fn, h->s, h->n, h->lo);
     if (table_params(art, h, p, 0, o)) return -1;
     o->puts(o->u, ")");
@@ -363,12 +375,22 @@ static void legend(const mf_hooks *h, const mf_pred *p, mf_sink *o)
     if (o->cmt_close) o->cmt_close(o->u);
 }
 
+/* Is `miss` the function's own miss, `n`? Unstated (pcrec's hooks, §15's
+ * table: `miss` is `n`) or the very text of the `n` hook. The function
+ * returns its `n` parameter on a miss and takes no `miss` of its own, so any
+ * other value is the generic row's (lane m1bfix). */
+static int miss_is_n(const mf_hooks *h)
+{
+    return !h->miss || (h->n && !strcmp(h->miss, h->n));
+}
+
 static int ofsskip_applies(const mf_site *s, const mf_hooks *def)
 {
     return s->form == MF_FORM_FUNC && s->op == MF_OP_FIND &&
            s->handoff == MF_H_RETURN && s->empty == MF_EMPTY_MISS &&
            s->end_back == 0 && !s->reverse && !s->guard_by_caller &&
-           s->pred.fn_ref && def && def->fn_name && ofs_fn_applies(&s->pred, def);
+           s->pred.fn_ref && def && def->fn_name && miss_is_n(def) &&
+           ofs_fn_applies(&s->pred, def);
 }
 
 /* The word-load helpers the predicate's run compare needs (runcmp.c), pcrec's
@@ -395,6 +417,8 @@ static int ofsskip_use(mf_art *art, uint32_t handle, const mf_hooks *h,
 {
     site_rec *r = &art->sites[handle - 1];
     if (kit_sink_ok(art, o, "ofsskip")) return -1;
+    if (h && !miss_is_n(h))
+        return kit_fail(art, "ofsskip: the call's miss is not its n, the function's miss");
     return ofs_fn_call(art, h, &r->site.pred, r->fn, o);
 }
 

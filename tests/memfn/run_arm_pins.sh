@@ -34,7 +34,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 LIB="${LIB:-$ROOT_DIR/build/libpcrec.a}"
 PINS="$ROOT_DIR/tests/memfn/pins/arms.tsv"
 CC="${CC:-cc}"
-ARMS_ROW_FLOOR=28
+ARMS_ROW_FLOOR=34
 ARMS_EXPECTED="ofsskip precheck runcmp"
 
 pass=0; fail=0
