@@ -398,3 +398,36 @@ pointer when a kit change merges to main.
 - Merged main again (C0, d96f8cd3; no src/). Committed the pinned
   Linux script + gate judge (91f5b607), with I2 over every flag x both
   tiers. Main runs it tonight on ubuntubudu.
+
+## 2026-10-07 — R4c merged to main; R4c′ queued; session reset (Frank)
+
+- Linux verdict for R4c:
+  - 91f5b607: red. Every red was check-side, environment or harness;
+    there were zero movers on every I2 arm.
+  - abae07fa: I2 17/17 green; C4 red again (FP_FAST_FMA*).
+  - 5645a37a: green. C4 now plants the COMMITTED ubuntubudu gcc 15.2
+    population on every run; the old rule reproduces the box's failure
+    exactly on the Mac.
+- Total coverage: gate, make test, 35 mech rows, 94 I2 arms, the axes
+  pair, C11.
+- Main merged R4c (81bc13de, abi 65). Its review: MERGE-READY WITH LISTED
+  FIXES. Those are R4c′ (responses.md R-4 note 2026-10-07):
+  - (a)+(b) re-pin B1-B18 and add two decision reads; these gate main's C1;
+  - (c) to (g) and the nits.
+  - None moves a byte.
+- Fixes along the way:
+  - the memfnarch rows were vacuous on Linux (they now require a clean C4
+    first);
+  - the memfn-simd pair is back in I2 as per-side-DIFFER inertness arms;
+  - the matrix runs one id per call;
+  - S526 is two-site;
+  - S527's desc tripped the trailer grep.
+- I dropped my own Linux artifact_size_log.tsv commit (no precedent; the
+  baseline is the Mac's).
+- LESSONS:
+  - check a regex against the target box's REAL compiler population, not
+    the dev box's proxy. It failed twice before the dumps were committed;
+  - a rerun is cheaper than a full run when the script can select steps;
+    build that in from the start.
+- Frank asked for a clean session reset. R4c′ is NOT started: branch
+  lane/memfn-r4c2 is cut, and its lane worktree r4c2fix is empty.
