@@ -9206,3 +9206,5 @@ A decision table is an ordered list of rows, each a predicate over facts plus an
 **Why.** Both designs are sound. The built one is general (no recursion-only clause), validated (critic SOUND-WITH-NITS, fuzz + 10.46 sweep 0 diffs, both boxes' make test green), and costs nothing measurable today: 0 of 12 bench call patterns move, and 1 corpus mark is lost with its answer unchanged. Per-copy is strictly more optimization and needs a pass reorder; that is an optimization question, not a correctness one.
 
 **Revisit when.** [POSS-CALL-COPY]'s trigger fires, or [ART-POSS-ARMS] (which widens the same verdict) needs per-site contexts.
+
+**D154 addendum 1 (Frank, 2026-10-07): `(?R)` follows the SOUND answer.** `(?:b(?R)a|a+)` on `baa` is (0,3), equal to PCRE2 under `NO_AUTO_POSSESS`. PCRE2 10.46's default (1,3) is a PCRE2 bug ("it's a bug"): its auto-possess pass is not call-aware for `(?R)`. This is recorded as U18 and goes upstream through the bench's reporting process (I-133). pcrec builds no mode that reproduces it. Stakes at ruling: 0 corpus and 0 bench rows; only k93.rxt's three cells, which carry PCRE2's default as skipped `under pcre2-auto-possess` lines.
