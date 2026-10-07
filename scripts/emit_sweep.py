@@ -1171,7 +1171,7 @@ TRACE_TAG = b"CANDTRACE\t"
 # Records-per-arm floor (a trace arm that prints nothing passes any diff),
 # over the full corpus rows. A --trace run against a build with no hook
 # FAILS here, as it should.
-TRACE_RECORDS_FLOOR = {"c-default": 256608, "c-vm": 62962}
+TRACE_RECORDS_FLOOR = {"c-default": 262901, "c-vm": 64776}
 # [START-TABLE] C1 re-pin: the C1 hook's own count over the 4,612 corpus rows
 # (stc1_report.md §5; the C0 prototype's 89,135 / 38,523 were lower bounds).
 # Every declared C1 site key must print at least once on the WORKING side of a

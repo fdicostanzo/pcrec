@@ -1067,7 +1067,7 @@ are structural:
 - `emit_sweep --trace` gates on the SET compare and prints the ordered
   compare as a diagnostic (`--trace-ordered` swaps them).
 
-The records floor is re-pinned at 256,608 / 62,962. Every declared site
+The records floor is re-pinned at 256,608 / 62,962 (C1), then at the post-R4c′ landing to 262,901 / 64,776 (the measured count at lane/stc1 185a4a8c). Every declared site
 key must be reached. Three corrections to this note:
 - "every site `inventory.tsv` classes WALK or INLINE" under-names C1, since
   the inventory has one INLINE member and §0a lists seven inline decisions;

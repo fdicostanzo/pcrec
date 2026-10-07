@@ -352,3 +352,8 @@ trace tree rebuilt from the merged tip at `stc1-scratch/trace`):
   and 25/25 sites; re-pin only if the measured counts moved.
 - `make test-codegen` under the suite lock (`codegen2.log`, `CODEGEN_RC=` in
   `chainL2.log`).
+
+### Landing rc lines (manager, 2026-10-07, at 185a4a8c + floor re-pin)
+- Run B (trace vs default build, `--arms start`, all six streams): `B_RC=0` (06:37 EDT, runB2.log).
+- Floor + TRACE_SITES (mirrored trace-vs-trace, streams 1-2): `F_RC=0`. SET gate CLEAN, the ordered diagnostic clean, 25/25 site keys reached; records 262,901 (c-default) / 64,776 (c-vm). The floor is RE-PINNED to those measured counts (`scripts/emit_sweep.py` TRACE_RECORDS_FLOOR; start_table.md §C1). R4c′ and post-C1 main widened reach, and the planted-loss control (62,297 < floor) still fails.
+- `make test-codegen` under the Mac suite lock: `CODEGEN_RC=0`, checks failed 0 (codegen2.log).
