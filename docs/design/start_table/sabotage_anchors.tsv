@@ -102,7 +102,6 @@ S167_g_zero_not_root	S167	1	src/parse/mod_recursion.c	pcrec_call_node	def	431	1/
 S168_return_through_macro	S168	1	src/gen/emit_vm.c	vm_region	def	8217	1/1	OTHER				
 S168_return_through_macro	S168	2	src/gen/emit_vm.c	vm_emit_search_body	def	12563	1/1	RE-RUN		C5		
 S169_postresolve_pass_deleted	S169	1	src/core/compile.c	compile_driver	def	1673	1/1	OTHER				
-S169_root_minw_unchecked	S169	1	src/gen/emit_vm.c	vm_emit_search_body	def	13236	1/1	RE-AIM	C5		line if (v->root_minw >= PCREC_MINW_MAX)	root_minw
 S16_wrong_module_d	S16	1	src/parse/registry.c	esc_rows	def	512	1/1	OTHER				
 S170_deferred_recheck_never_refuses	S170	1	src/parse/mod_lookaround.c	pcrec_lookaround_fix_widths	def	433	1/1	OTHER				
 S171_cwmax_fixpoint_one_round	S171	1	src/opt/callgraph.c	pcrec_callgraph_build	def	879	1/1	OTHER				
@@ -454,6 +453,7 @@ S552_trace_order_ignored	S552	1	scripts/trace_diff.py	file:scripts/trace_diff.py
 S553_trace_empty_floor_disabled	S553	1	scripts/trace_diff.py	file:scripts/trace_diff.py	outside	93	1/1	OTHER				
 S554_trace_arm_floor_disabled	S554	1	scripts/trace_diff.py	file:scripts/trace_diff.py	outside	102	1/1	OTHER				
 S555_trace_stale_declaration_ok	S555	1	scripts/trace_diff.py	file:scripts/trace_diff.py	outside	125	1/1	OTHER				
+S556_root_minw_unchecked	S556	1	src/gen/emit_vm.c	vm_emit_search_body	def	13236	1/1	RE-AIM	C5		line if (v->root_minw >= PCREC_MINW_MAX)	root_minw
 S55_counter_preference	S55	1	src/gen/emit_vm.c	vm_counter_phase	def	5958	1/1	OTHER				
 S56_counter_empty_guard	S56	1	src/gen/emit_vm.c	vm_counter_phase	def	5882	1/1	OTHER				
 S57_counter_trip_local	S57	1	src/gen/emit_vm.c	vm_cursor_rep	def	4774	1/1	OTHER				

@@ -155,7 +155,7 @@ re-measuring it.
   report `pcrec_minw` = `PCREC_MINW_MAX` (2^40) once `pcrec_callgraph_build`
   has run, and exactly four of the corpus's distinct patterns reach that
   ceiling — these three plus `mrl.rxt`'s infinity control. Sabotage row
-  **S169** cuts the site, and its signature is TWO of the three going red:
+  **S556** (born S169) cuts the site, and its signature is TWO of the three going red:
   the nullable-prefix cell keeps its own `a?` clamp and must stay green.
 - **`dupnames.rxt`** — design §3.4(c)'s call/reference split (a call
   resolves a duplicated name STATICALLY to the first declaration; a
@@ -597,7 +597,7 @@ left, by three different doors, and the three doors are the point.**
   and 0 on the three siblings — the arena's zero, because
   `pcrec_callgraph_build` has not run yet — so a root check there could never
   fire. Asked in the emitter it is `PCREC_MINW_MAX` on all three. Sabotage row
-  **S169** cuts the site, and its signature is TWO of the three going red: this
+  **S556** (born S169) cuts the site, and its signature is TWO of the three going red: this
   cell keeps its own `a?` clamp and must stay green.
 - **Cell 1, `^(?:(?<g>ab)){0}ab(?<=(?&g))$`, was parked correctly and its
   charter was right.** A tier-2 over-rejection caused by TIMING: `la_widths`

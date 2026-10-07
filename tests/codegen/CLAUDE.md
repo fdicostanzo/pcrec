@@ -1011,8 +1011,8 @@ decides whether to perform it — and then run the row through
     sums written out, so a rule that took the leftmost window instead is
     caught. §4.4b is the arm that makes "81.4% of the corpus is untouched" a
     checked fact: an artifact with no run must be BYTE-IDENTICAL under
-    `-fno-req-run`, which is why that bit joined `rx_info.flags`'
-    `strategy_denials` mask. **`grep -qF`, not a BRE, on every needle
+    `-fno-req-run`, which is why that bit is masked out of `rx_info.flags`
+    (the strategy mask is derived from `core/axes.def`, K92). **`grep -qF`, not a BRE, on every needle
     containing run bytes**: a run beginning with `*` makes the preceding quote
     a QUANTIFIER, measured on the `*/x` row, which read NOMATCH against text
     that was verbatim present.

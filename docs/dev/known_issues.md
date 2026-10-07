@@ -11,6 +11,27 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 ---
 
+## K93 — OPEN (2026-10-07, found by lane possarms while designing [ART-POSS-ARMS]; present on main bcb7b128 and earlier) — WRONG ANSWER: possessify gives a quantifier inside a SUBROUTINE-CALL TARGET a verdict from the group's LEXICAL follow, but a call site re-runs the group under a different follow
+
+**Witnesses** (`--features recursion`; default vs `-fno-possessify` vs libpcre2 10.46 on ubuntubudu; the default route is the VM because of the captures; `-fno-splice-calls` doesn't change it):
+
+| pattern | subject | pcrec default | `-fno-possessify` | PCRE2 10.46 |
+|---|---|---|---|---|
+| `(a+)b(?1)a` | `abaa` | NOMATCH | (0,4) | (0,4) |
+| `(a+)b(?1)a` | `aabaaa` | NOMATCH | (0,6) | (0,6) |
+| `(?<n>a{1,3})b(?&n)a` | `abaa` | NOMATCH | — | (0,4) |
+| `(?:(a+)b\|x)(?1)a` | `xaa` | NOMATCH | — | (0,3) |
+
+The first two were reproduced by the manager on the Mac at 6d0177f8. **Cause:** the A_CALL arm of `src/opt/possessify.c` rests on a false premise. Its comment says the callee "still gets its verdict at its own lexical position, where the enclosing follow is the real one". But the callee's body is executed again at every call site, where the follow is whatever comes after the call. In `(a+)b(?1)a`, `a+` is followed lexically by `b`, so it is possessified. At `(?1)` it is followed by `a`, and the possessive form eats the `a` that must remain.
+
+**Related, same family:**
+1. `src/opt/atomic.c`'s free discharge has the same hole one flag over. On `((?>a+))b(?1)a` / `abaa`, PCRE2 10.46 gives NOMATCH, while `-fno-possessify` pcrec gives (0,4). The default build is right by accident, because possessify marks the loop again.
+2. For `(?R)`, PCRE2's own auto-possess is not call-aware: `(?:b(?R)a|a+)` on `baa` gives (1,3) by default and (0,3) under `PCRE2_NO_AUTO_POSSESS`. pcrec default gives (1,3) and `-fno-possessify` gives (0,3). So `run_possdiff.sh`'s premise, that the denied build is the shipped semantics, doesn't hold against 10.46 here. Whether pcrec follows PCRE2's default answer or the no-auto-possess answer is a SEMANTICS question for Frank (D26: what a pattern matches is exact; PCRE2's default is the source of truth, but this looks like an upstream defect, to be recorded in upstream_issues.md).
+
+**Blocks:** [ART-POSS-ARMS]. Both arms widen the same follow-based verdict and must not ship before this fix.
+**Repro:** `build/pcrec -p rx --features recursion --emit-main -o x.c --pattern '(a+)b(?1)a' && gcc -O1 -o x x.c && ./x abaa` → `nomatch`.
+**Fix:** lane k93fix.
+
 ## K92 — FIXED 2026-10-06 (lane flagbits, abi 64 -> 65) — `rx_info.flags` kept deny bits 18 (`-fno-size-term`) and 21 (`-fno-scan-edge`) set (found by lane decsurvey, `docs/design/decision_families_survey.md` §4.3; the fourth incident of one shape after bit 19 and K68)
 
 **Status: FIXED** on `lane/flagbits`. Repro: on `abc`, `-fno-scan-edge` moved

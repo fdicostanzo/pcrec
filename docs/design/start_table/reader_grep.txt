@@ -3,7 +3,7 @@ docs/spec/match_api.md:2360:  candidate table (`dfa_pfs[]`) gains its first row 
 docs/spec/match_api.md:2453:  covers exact positions only, so no masked run enters `dfa_pfs[]`. No struct
 docs/spec/registry.md:270:live off the SAME arrays `src/gen/emit_dfa.c`'s own `dfa_select` walks
 docs/spec/tuning.md:2555:run-pinned `dfa_pfs[]` rows have no pin to test — a design consequence rather than a second denial
-lib/CLAUDE.md:423:(`src/gen/emit_dfa.c`, `dfa_pfs[]`; at stage 2 the VM hat's `first-class`,
+lib/CLAUDE.md:422:(`src/gen/emit_dfa.c`, `dfa_pfs[]`; at stage 2 the VM hat's `first-class`,
 memfn/docs/requests.md:139:**Customer:** `[MEMFN]`, integration.md rev 4.6 §22 R4c exactly as written there (the `[rev4.3]` block's R4c row with its `[rev4.5]`/
 memfn/docs/requests.md:145:**The boundary this request must keep (D146/D147):** the migration moves the SEARCH TEXT of the offset-skip trio and the PRE site beh
 studies/hyb_reseed_cal/README.md:33:  from `pcrec_reseed_rows`. With the row in place, the new and deny columns
@@ -29,10 +29,10 @@ tests/codegen/cand_rows_check.py:191:        bad("[cand-route-walk] dfa_select's
 tests/codegen/cand_rows_check.py:193:        bad("[cand-route-walk] dfa_select does not test the route mask (cand_routed) before applies")
 tests/codegen/cand_rows_check.py:195:        ok("[cand-route-walk] dfa_select tests the row's route mask before its applies")
 tests/codegen/run_cand_rows.sh:3:# (`src/gen/emit_dfa.c`'s `dfa_pfs[]`; D148, docs/design/startset.md §8).
-tests/mech/CLAUDE.md:2848:identity conjunct fires and `req_admit` answers `REQ_ADMIT_DOMINATED` —
-tests/mech/CLAUDE.md:2941:about keeping the failure singular. Deleting `req_admit`'s own
-tests/mech/CLAUDE.md:3281:in the same change (the `dfa_pfs[]` rows took designated initializers); its
-tests/mech/run_sabotage_matrix.sh:2604:                # `dfa_pfs[]` row NAME (K84, stage 0) and, from stage 1, every
+tests/mech/CLAUDE.md:2852:identity conjunct fires and `req_admit` answers `REQ_ADMIT_DOMINATED` —
+tests/mech/CLAUDE.md:2945:about keeping the failure singular. Deleting `req_admit`'s own
+tests/mech/CLAUDE.md:3285:in the same change (the `dfa_pfs[]` rows took designated initializers); its
+tests/mech/run_sabotage_matrix.sh:2704:                # `dfa_pfs[]` row NAME (K84, stage 0) and, from stage 1, every
 tests/mech/sabotages/S222_start_stamp_forked_from_selection.sh:5:# `dfa_search_start_of` is called by the emitter's dispatch, by the
 tests/mech/sabotages/S222_start_stamp_forked_from_selection.sh:69:SAB_BEFORE='static const char *dfa_search_start_name(Ctx *cx)
 tests/mech/sabotages/S222_start_stamp_forked_from_selection.sh:70:{ return dfa_search_start_of(cx)->c.name; }'

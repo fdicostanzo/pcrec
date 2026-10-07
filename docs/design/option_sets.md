@@ -197,7 +197,7 @@ at `6f24e187`.
 
 | family | what it controls | CLI | `.rxt` | API (`pcrec_options`) | stamped as | swept by | kind today |
 |---|---|---|---|---|---|---|---|
-| deny bits (`-fno-X`) | one optimization each; 35 deny bits (bits 4-45 less the five force bits, `--ucp` (34) and `--fast-or-fail` (41)) | `-fno-X`, hidden from `--help` (D47.3) | a config's `pcrec <raw>` line | `flags` bits 4-45 | per-mechanism OUTCOME stamps (D46: `RX_DFA_TABLE`, `RX_VM_PREFILTER`, …). `rx_info.flags` records each bit unless it is in `emit_info_def`'s hand-kept `strategy_denials` mask (`src/gen/emit_dfa.c` ~:2728; `[AXES-DENY-MASK]` would derive it) | `make test-axes`, one job per bit (`tests/axes/run_axes.sh`) | boolean; OR'd; idempotent. **[r1 OS-M2] Across sources: UNION** (cell A4: a file's `-fno-premul-table` and a CLI `-fno-req-byte` both apply) |
+| deny bits (`-fno-X`) | one optimization each; 35 deny bits (bits 4-45 less the five force bits, `--ucp` (34) and `--fast-or-fail` (41)) | `-fno-X`, hidden from `--help` (D47.3) | a config's `pcrec <raw>` line | `flags` bits 4-45 | per-mechanism OUTCOME stamps (D46: `RX_DFA_TABLE`, `RX_VM_PREFILTER`, …). `rx_info.flags` records each bit unless it is in `emit_info_def`'s strategy mask (DERIVED from `core/axes.def`: every axis bit not in `kept`, plus `PCREC_FAST_OR_FAIL`; K92, abi 65 -- never a hand-kept list) | `make test-axes`, one job per bit (`tests/axes/run_axes.sh`) | boolean; OR'd; idempotent. **[r1 OS-M2] Across sources: UNION** (cell A4: a file's `-fno-premul-table` and a CLI `-fno-req-byte` both apply) |
 | force bits (`-fX`) | the force twin of a deny | `-fprefilter`, `-fprefilter-collapse`, `-fstartpos-guard=align`, `-futf-check`, `-fcomments` | `pcrec <raw>` | `flags` bits 9, 20, 27, 39, 40 | as above | as above (force arms) | **[r1 OS-M1] with its deny, ONE three-valued axis per `axes.def` row.** Both values requested, from ONE source or from TWO, is REFUSED (cells A1, A2, A5, A9). The exception is comments, where deny wins in either direction (A6, A7, A10) |
 | contract axes | which ANSWER a call gives (§2.23, §2.36) | `-fno-startpos-guard`, `-fstartpos-guard=align`, `-futf-check` | `pcrec <raw>` | `flags` 25, 40, 39 | `RX_STARTPOS_GUARD`, `RX_UTF_CHECK`; kept in `rx_info.flags` | swept against their documented behaviour, not identity | boolean / three-valued |
 | semantic bits | what the pattern MEANS | `-i`, `--ucp`, `--no-captures` | `flags` letters; `pcrec <raw>` | `flags` 0, 34, 2 | `rx_info.flags` unmasked | not swept (structurally ineligible, D125) | boolean. **[r1 OS-M2] Across sources, the letters UNION** with the CLI's `-i`/`--ucp`/`--no-captures` (cells B1-B4). Within the file, a typed config `flags` line is REPLACED whole by the block's (B8), while a raw `pcrec -i` line unions with the block (B7) |
@@ -849,9 +849,10 @@ real control is DIAL-S3**: `test-axes`' keyed refusal-set comparison per
 together with the identity sweep that measures answers. It generalizes to
 every family whose required class is identity (§3.5).
 
-The class column is the `kind` column `[AXES-DENY-MASK]` already wants in
-the axes registry, to derive `rx_info.flags`' `strategy_denials` mask
-instead of hand-keeping it. Both readers need the same column, so it
+The class column is the `kind` column `[AXES-DENY-MASK]` wanted in
+the axes registry to derive `rx_info.flags`' strategy mask instead of
+hand-keeping it (since K92, abi 65, that mask IS derived from `axes.def`:
+every axis bit not in `kept`). Both readers need the same column, so it
 should be one column, built once (§5.2).
 
 **`explicit-only` axes.** A few options must never be implied by any set:

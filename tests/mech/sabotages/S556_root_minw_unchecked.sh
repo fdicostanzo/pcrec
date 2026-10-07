@@ -1,4 +1,5 @@
-# S169 ([DD-14.EMPTY], wave E; design SS4.4b + SS12 P-12) -- THE ROOT
+# S556 (born S169 -- renumbered 2026-10-07 [admin1007], it shared S169 with
+# S169_postresolve_pass_deleted.sh, the older row; [DD-14.EMPTY], wave E; design SS4.4b + SS12 P-12) -- THE ROOT
 # MINIMUM-WIDTH CHECK AT THE SEARCH ENTRY.
 #
 # THE CLAIM. When the whole pattern's `pcrec_minw` is at the analysis ceiling,
@@ -34,7 +35,7 @@
 # 2^40 bytes, which `size_t` can represent. Sabotaging the emission (rather
 # than the comparison) is therefore the honest cut: it removes the SITE, which
 # is what the row is about.
-SAB_ID="S169-root-minw-unchecked"
+SAB_ID="S556-root-minw-unchecked"
 SAB_FILE="src/gen/emit_vm.c"
 SAB_SUITES="harness recursion"
 SAB_HARNESS_TARGET="tests/recursion/leftrec.rxt"
@@ -45,4 +46,4 @@ SAB_COUNT=1
 SAB_BEFORE='     * them is call-bearing, so no call-free artifact gains a byte. */
     if (v->root_minw >= PCREC_MINW_MAX)'
 SAB_AFTER='     * them is call-bearing, so no call-free artifact gains a byte. */
-    if (0) /* SABOTAGE S169: the root minw check is never emitted */'
+    if (0) /* SABOTAGE S556: the root minw check is never emitted */'
