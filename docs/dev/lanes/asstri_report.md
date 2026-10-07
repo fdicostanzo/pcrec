@@ -30,7 +30,7 @@ pattern list. Summary line gains `agree-vacuous`.
 ## Validation (worktree, gcc 15.2, in background under gnutimeout 1800)
 - `bash tests/codegen/run_wordctx_identity.sh`: 3 passed / 0 failed; positive
   control differ 363, unexplained 0, VM 165, never-matching 7, vacuous 5,
-  rejected 10; identity 3378/3378.
+  rejected 10; identity 3377/3377 (3378 in the main-tree log; worktree corpus is one pattern smaller).
 - `bash tests/assertions/run_assertions_tests.sh`: 54 passed / 0 failed.
 - `make strict`: clean.
 Not run (by instruction): full make test, mech, test-axes. No sabotage row
