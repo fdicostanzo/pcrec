@@ -523,3 +523,27 @@ the compiler, and is never adopted silently. Proposed for main to file
   - N3 (enforcement; entry is an N2 re-run after R-6 showing 0
     would-decline + the identity gate);
   - N4.
+- notice: 2026-10-07 (evening) — **G2u delivered blinded; K-1 is a contract
+  gap, and the kit has ruled on it.** G2u (D27 cell, opus) is merged on
+  lane/memfn-g2u.
+  - The quick run: 35.53M passed and 462 failed, all of them **K-1**: on
+    ALL_PRESENT/FUNC sites the kit takes the function's name from
+    `site.pred.fn_ref`, but memfn.h scoped `pred` to FIND/SKIP/VERIFY, so
+    the POISON differential (a field the contract says is unused, set to
+    junk) moved the name. No answer is wrong.
+  - **Kit ruling (contract detail, kit-owned):** a FUNC site's own name is
+    ALWAYS `site.pred.fn_ref`, for every op. On ALL_PRESENT/DENSE only that
+    member of `pred` is read. memfn.h now states this, with no layout
+    change and no byte moved. A FUNC site stating `fn_ref` 0 states no name
+    and is REFUSED (R1); that joins N3's enforcement. G2u's
+    `fn_ref-unstated` PENDING-ENFORCE class (415 cases) is its acceptance.
+  - pcrec's only FUNC site (ofs_site_define, emit_dfa.c:6255) passes
+    fn_ref 1, so no pcrec site can be refused.
+  - PENDING-ENFORCE for N3 has 4 classes and 1,455 cases: hook-nonident
+    (F1, still live: 286 sites in 5 batches don't compile), miss-unstated,
+    refusal-unnamed, fn_ref-unstated. `G2_STRICT_HOOKS=1` is N3's
+    acceptance switch.
+  - F2 is confirmed fixed by the blinded side: MEMFN_LIBC = nm -u on 93
+    batches.
+  - Next: a blinded follow-up aligns G2's poison table to the K-1 text,
+    then the full G2 in a slot.

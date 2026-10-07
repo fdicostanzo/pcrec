@@ -159,7 +159,11 @@ typedef struct mf_pred {            /* a CONJUNCTION of terms                 */
     uint8_t  plan_hint;             /* the term pcrec's model scans; MF_NO_PRED
                                        = none. Permanent until M5 (§14.9)     */
     uint16_t plan_pos;              /* the position INSIDE a RUN term it scans */
-    uint32_t fn_ref;                /* FUNC: pcrec's name hook id (0 = none)  */
+    uint32_t fn_ref;                /* FUNC: pcrec's name hook id (0 = none).
+                                       A FUNC site's OWN name is always its
+                                       `site.pred.fn_ref`, for every op
+                                       (K-1); a FUNC site stating 0 states
+                                       no name and is refused (R1)           */
 } mf_pred;
 
 typedef struct {
@@ -170,7 +174,9 @@ typedef struct {
     uint8_t         reverse;
     mf_empty        empty;
     uint8_t         end_back;       /* hi = n - end_back, 0 or 1 (§14.4)       */
-    mf_pred         pred;           /* FIND / SKIP / VERIFY                    */
+    mf_pred         pred;           /* FIND / SKIP / VERIFY. On ALL_PRESENT /
+                                       DENSE only `pred.fn_ref` is read, and
+                                       only on a FUNC site (its name, K-1)   */
     uint16_t        npred;          /* ALL_PRESENT                             */
     const mf_pred  *preds;          /* ALL_PRESENT, DENSE (§15.5)              */
     uint8_t         ret_pred;       /* ALL_PRESENT: RETURN/ASSIGN the leftmost
