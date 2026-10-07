@@ -2910,6 +2910,10 @@ struct Ctx {
      * census read off those measures replication as much as it measures
      * quantifiers. Reported in --emit-ir's header; nothing else reads it. */
     int                  poss_marked, poss_total;
+    /* [ART-POSS-ARMS] which possessify ARM a positive verdict needed, as
+     * `PCREC_POSS_ARM_*` bits — SET by pcrec_possessify on every call, read
+     * by src/gen/emit_vm.c's `<PREFIX>_VM_POSS_ARMS` stamp (§8.5). */
+    unsigned             poss_arms;
     /* Pattern offset of the FIRST capturing `(`, or SIZE_MAX if none — the
      * engine_why stamp's `why_pos` (§5.5). */
     size_t               first_cap_pos;
@@ -6353,6 +6357,23 @@ bool  pcrec_uniq_iteration(void *scratch, const Ast *body, const char **why);
  * nothing new and this survey sees exactly what the fixpoint would. */
 void  pcrec_poss_survey(Ctx *cx, Ast *root,
                         void (*fn)(void *user, Ast *rep), void *user);
+
+/* [ART-POSS-ARMS] `Ctx.poss_arms`' bits, the `<PREFIX>_VM_POSS_ARMS` stamp's
+ * values (docs/spec/match_api.md §6.3): A0 (a lookahead-born gate valued
+ * with nothing known on its left), A1 (a gate valued by the loop's LAST
+ * polarities), B (a backreference's FIRST read from its groups). */
+enum {
+    PCREC_POSS_ARM_A0 = 1u << 0,
+    PCREC_POSS_ARM_A1 = 1u << 1,
+    PCREC_POSS_ARM_B  = 1u << 2
+};
+
+/* [ART-POSS-ARMS] A context gate's S(P): the bytes whose membership in the
+ * gate set `iv` some left polarity in `pmask` lets truth table `fn` pass,
+ * into `out`; false = no narrowing (widen). possessify.c's arm A primitive,
+ * exported for its exhaustive model check only. */
+bool  pcrec_poss_ctx_admits(uint8_t fn, const PcrecCpRange *iv, int n,
+                            unsigned pmask, uint8_t out[32]);
 
 /* ---- [M6.4.2] module `atomic-groups`: the free discharge (design §5.3) --- */
 
