@@ -290,7 +290,7 @@ static const char *expr_text(rctx *rc, int want_value)
     const mf_hooks *h = rc->h;
     kb miss;
     kb_init(&miss, rc->art->a);
-    if (want_value) kb_printf(&miss, "(%s)", h->miss);
+    if (want_value) kb_printf(&miss, "(%s)", kit_miss(h));
     rc->miss = miss.p ? miss.p : "0";
 
     kb body;
@@ -369,7 +369,7 @@ static int stmt_value(rctx *rc, kb *b)
         return 0;
     }
     /* ASSIGN */
-    if (need(rc->art, "ASSIGN", "result", h->result, "miss", h->miss, (char *)NULL))
+    if (need(rc->art, "ASSIGN", "result", h->result, "miss", kit_miss(h), (char *)NULL))
         return -1;
     if (nop && h->result_decl)
         return kit_fail(rc->art, "generic: a NOP ASSIGN cannot declare its result");
@@ -386,7 +386,7 @@ static int stmt_value(rctx *rc, kb *b)
     if (h->on_miss) {
         kb cond;
         kb_init(&cond, rc->art->a);
-        kb_printf(&cond, "%s == (%s)", h->result, h->miss);
+        kb_printf(&cond, "%s == (%s)", h->result, kit_miss(h));
         on_miss_block(b, in, cond.p, h->on_miss);
     }
     if (nop) kb_printf(b, "%s}\n", ind);
@@ -443,7 +443,7 @@ static int stmt_on_cand(rctx *rc, kb *b)
     const mf_hooks *h = rc->h;
     if (!h->on_cand)
         return kit_fail(rc->art, "generic: ON_CAND needs the `on_cand` hook");
-    if (need(rc->art, "ON_CAND", "result", h->result, "miss", h->miss, (char *)NULL))
+    if (need(rc->art, "ON_CAND", "result", h->result, "miss", kit_miss(h), (char *)NULL))
         return -1;
     int nop = s->empty == MF_EMPTY_NOP;
     if (nop && h->result_decl)
@@ -483,7 +483,7 @@ static int stmt_on_cand(rctx *rc, kb *b)
     replace_tokens(&verify, raw.p ? raw.p : "", acc.p, rej.p, &nacc, &nrej);
 
     kb_printf(b, "%s%s%s = (%s);\n%s{\n", ind, h->result_decl ? h->result_decl : "",
-              h->result, h->miss, ind);
+              h->result, kit_miss(h), ind);
     kb_printf(b, "%s    const unsigned char *%s = (const unsigned char *)(%s);\n",
               ind, rc->S, h->s);
     kb_printf(b, "%s    size_t %s = %s;\n%s    size_t %s = %s;\n",
@@ -508,7 +508,7 @@ static int stmt_on_cand(rctx *rc, kb *b)
     if (h->on_miss) {
         kb cond;
         kb_init(&cond, rc->art->a);
-        kb_printf(&cond, "%s == (%s)", h->result, h->miss);
+        kb_printf(&cond, "%s == (%s)", h->result, kit_miss(h));
         on_miss_block(b, ind, cond.p, h->on_miss);
     }
     if (nop) kb_printf(b, "%s}\n", h->indent ? h->indent : "");
@@ -600,7 +600,7 @@ static int func_call(rctx *rc, site_rec *r, kb *b)
 {
     const mf_hooks *h = rc->h;
     const char *fl = h->floor ? h->floor : "0";
-    const char *arg[] = { h->s, h->n, h->lo, fl, h->miss };
+    const char *arg[] = { h->s, h->n, h->lo, fl, kit_miss(h) };
     const char *hook[] = { "s", "n", "lo", "floor", "miss" };
     kb_printf(b, "%s(", r->fn);
     int any = 0;
@@ -643,7 +643,7 @@ static int generic_body(mf_art *art, uint32_t handle, const mf_hooks *h, kb *bod
     if (need_subject(art, h, "a site")) return -1;
     switch (s->form) {
     case MF_FORM_EXPR:
-        if (valued(s) && need(art, "RETURN", "miss", h->miss, (char *)NULL))
+        if (valued(s) && need(art, "RETURN", "miss", kit_miss(h), (char *)NULL))
             return -1;
         kb_puts(body, expr_text(&rc, valued(s)));
         return 0;

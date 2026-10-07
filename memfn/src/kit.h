@@ -111,6 +111,14 @@ gate_verdict gate_check(const gate_contract *c, unsigned phase, const gate_in *i
 /* 1 iff `s` is a bare C identifier (a lexical check). */
 int kit_is_ident(const char *s);
 
+/* The text of the site's `miss` with the MF_MISS_N token resolved to the `n`
+ * hook's text (NULL when unstated, or when the token's `n` is). Every reader
+ * of `miss` goes through this: the token's own bytes are never pasted. */
+static inline const char *kit_miss(const mf_hooks *h)
+{
+    return h->miss == MF_MISS_N ? h->n : h->miss;
+}
+
 /* ---- the per-artifact state ---------------------------------------------- */
 
 struct arm;

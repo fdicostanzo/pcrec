@@ -155,7 +155,9 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
   (`def`/`use`), bytes, sha256. Recorded at R4c's IMPLEMENT commit, whose
   I1 shadow comparator proved the kit's rendering equal to pcrec's
   pre-migration text over the corpus sweep; re-pinned for the run-bearing
-  fixtures and extended by the `runcmp` rows at M1b's REPLACE (28 rows). A
+  fixtures and extended by the `runcmp` rows at M1b's REPLACE (28 rows);
+  lane missn added `ofs-miss-token` and `pre-lead-handoff-miss-token`, whose
+  digests equal their text-stated twins' (`MF_MISS_N` renders as `n`'s text). A
   CHANGE DETECTOR: a kit change
   that moves an arm re-pins its rows in its own commit (D94's grep finds
   this file).

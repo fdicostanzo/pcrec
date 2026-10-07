@@ -74,7 +74,7 @@ typedef struct {
     uint32_t        reach;        /* ON_CAND: on_cand_reach                    */
     uint8_t         tok;          /* ON_CAND: 0 `if (acc) A`, 1 A, 2 R         */
     uint32_t        acc_mod;
-    uint8_t         miss_mode;    /* which `miss` expression (g2_missv)        */
+    uint8_t         miss_mode;    /* which `miss` expression (g2_missv); 4 = the MF_MISS_N token */
     uint8_t         hook_style;   /* 0 plain, 1 counted (purity), 2 ternary    */
     uint8_t         mutated;      /* W2 witness: the text was mutated          */
     uint8_t         via;          /* 0 mf_emit, 1 mf_define+mf_use, 2 +mf_call */
@@ -92,7 +92,8 @@ static inline size_t g2_missv(int mode, size_t n)
     case 0:  return n;
     case 1:  return (size_t)-1;
     case 2:  return n + 5;
-    default: return n - 1;     /* only with end_back 1 */
+    case 4:  return n;         /* MF_MISS_N: the site's own n, stated by token */
+    default: return n - 1;     /* mode 3: only with end_back 1 */
     }
 }
 

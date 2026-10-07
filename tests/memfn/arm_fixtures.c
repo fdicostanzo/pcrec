@@ -377,6 +377,10 @@ int main(int argc, char **argv)
     s.pred.plan_pos = 2;
     bad |= render_h(dir, "ofs-miss-n", &s, "rx_ofsskip",
                     (Bounds){ "subject_length", "subject_length", NULL });
+    /* the same site, the miss stated by the MF_MISS_N token (lane missn):
+     * the same arm, and the same bytes as ofs-miss-n */
+    bad |= render_h(dir, "ofs-miss-token", &s, "rx_ofsskip",
+                    (Bounds){ "subject_length", MF_MISS_N, NULL });
     bad |= render_h(dir, "ofs-decline-miss", &s, "rx_ofsskip",
                     (Bounds){ "subject_length", "((size_t)-1)", NULL });
     bad |= render_h(dir, "ofs-decline-floor", &s, "rx_ofsskip",
@@ -397,6 +401,9 @@ int main(int argc, char **argv)
     p_run(&q[1], "userpass", NULL, 3, 1);
     s = pre_site(q, 2, 1);
     bad |= render(dir, "pre-lead-handoff", &s, "rx_reqrun");
+    /* the same ASSIGN site with `miss` stated by the token (lane missn) */
+    bad |= render_h(dir, "pre-lead-handoff-miss-token", &s, "rx_reqrun",
+                    (Bounds){ "subject_length", MF_MISS_N, NULL });
 
     /* precheck: a masked window (the pair arm), the whole run, the set rest */
     mf_pred r[4];

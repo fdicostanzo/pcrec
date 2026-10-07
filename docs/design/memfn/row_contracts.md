@@ -49,7 +49,10 @@ runcmp's rows (`rc_row`). Each row gains two declarations:
 **Value classes** come from ONE classify function per field, kept in one
 small table (`memfn/src/fields.def`). Each class set is closed and
 includes `OTHER`. A value nobody classified lands in `OTHER`. Examples:
-- `miss` ∈ {`MISS_N`, `OTHER`};
+- `miss` ∈ {`MISS_N`, `OTHER`}, where `MISS_N` is a miss value that IS the
+  site's own `n`: the public token `MF_MISS_N` (memfn.h, compared by
+  address; what "unstated" lacked at N2's three would-decline cells), or
+  the very text of the `n` hook;
 - `floor` ∈ {`ZERO`, `OTHER`};
 - **the text-shape classes [r4, S2-S7]:**
   - `s`/`n`/`lo` ∈ {`IDENT`, `OTHER`}, where `IDENT` means a bare C

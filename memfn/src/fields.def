@@ -89,7 +89,7 @@ MF_CLASS(UNBOUNDED,   "span_hi == MF_SPAN_UNBOUNDED")
 MF_CLASS(RUN_OVERLAP, "denies == MF_D_RUN_OVERLAP")
 /* hook text */
 MF_CLASS(IDENT,       "a bare C identifier (lexical: [A-Za-z_][A-Za-z0-9_]*)")
-MF_CLASS(MISS_N,      "`miss` is the text of the same hooks' `n`")
+MF_CLASS(MISS_N,      "`miss` is the same hooks' `n`: the MF_MISS_N token, or the text of `n` itself")
 MF_CLASS(JUMP,        "one statement, `return ...;` or `goto label;`")
 MF_CLASS(BRACED,      "one `{ ... }` block")
 /* the run compare's term */

@@ -265,9 +265,13 @@ static int cl_floor(const gate_in *in)
     return strcmp(in->h->floor, "0") ? CL_OTHER : CL_ZERO;
 }
 
+/* The MF_MISS_N token (memfn.h): defined here, beside its classifier. */
+const char mf_miss_n[] = "\x01mfN";
+
 static int cl_miss(const gate_in *in)
 {
     if (!in->h || !in->h->miss) return -1;
+    if (in->h->miss == MF_MISS_N) return CL_MISS_N;
     return in->h->n && !strcmp(in->h->miss, in->h->n) ? CL_MISS_N : CL_OTHER;
 }
 
