@@ -11155,6 +11155,7 @@ static void vm_plan_reseed(Vm *v, VmReseed *rs)
         if (r->deny & v->cx->opt->flags) continue;
         if (!vm_reseed_holds(v, rs, r->pred)) continue;
         rs->row = r;
+        PCREC_CAND_TRACE_REC("RETRY", "vm", r->name, "reseed");
         rs->steps0 = r->start == VRS_S_CAP ? rs->cal.cap
                    : r->start == VRS_S_FIRST ? rs->cal.first : 0;
         rs->block0 = r->armed ? rs->cal.block : 0;
@@ -13229,6 +13230,8 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
      * `attempt_position` (litscan_k82h.md Claim 2'). */
     const char *first = pcrec_emit_req_byte_check(v->cx, c, "    ", "search_from",
                                                   "subject", "subject_length");
+    PCREC_CAND_TRACE_REC("WIDTH", "vm", v->root_minw >= PCREC_MINW_MAX ? "ceiling" : "none",
+                         "root-minw");
 
     /* [DD-14.EMPTY] THE ROOT MINIMUM-WIDTH CHECK: the search entry answers
      * NOMATCH BEFORE ANY FRAME IS PUSHED when the whole pattern's minimum
@@ -13509,6 +13512,10 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
      * before this mechanism, which is what makes `-fno-vm-anchor-bound`'s
      * sweep a real control rather than a comparison of two new shapes. */
     const char *att_max = "subject_length";
+    PCREC_CAND_TRACE_REC("BOUND", "vm",
+                         pcrec_fact_start_anchor(v->cx) == PCREC_SANCH_BOT ? "anchored"
+                         : pcrec_fact_start_anchor(v->cx) == PCREC_SANCH_GSTART ? "gstart"
+                         : "all", "vm-bound");
     if (pcrec_fact_start_anchor(v->cx) != PCREC_SANCH_NONE) {
         att_max = "attempt_max";
         pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);

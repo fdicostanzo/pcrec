@@ -6966,5 +6966,35 @@ char *pcrec_probe_ask(const char *want_name, const char *construct,
                       pcrec_error *err);
 
 
+/* [START-TABLE] C1 THE SELECTION TRACE: one stderr record per start decision,
+ * `CANDTRACE <slot> <route> <row> <site>`, printed where the decision returns
+ * (docs/design/start_table.md §3.3 item 5). A compile-time debug knob in
+ * OPTK_DEBUG's shape, OFF unless -DPCREC_CAND_TRACE; never an axis, and the
+ * default build compiles no code for it (the arguments are not evaluated).
+ * `row` is the chosen row's stamp/listing NAME, never a C identifier.
+ *
+ * `site` MUST BE A STRING LITERAL, and `"" site` makes anything else a
+ * compile error in both builds: C0's experiment measured a `__func__` site
+ * false-alarming a selection-neutral rename on 6,443 sequences. The sweep
+ * (scripts/emit_sweep.py --trace) attaches the pattern index, arm and seq.
+ *
+ * A record's arguments are evaluated ONLY in the trace build, so they read
+ * values the decision already computed (or a pure read of the Job): an
+ * accessor asked here for the first time would mark a fact used and move
+ * the trace build's emitted bytes, which C1's byte sweep exists to catch.
+ * `_RECF` formats `row` from `fmt` and its arguments. */
+#ifdef PCREC_CAND_TRACE
+#include <stdio.h>
+#define PCREC_CAND_TRACE_REC(slot, route, row, site)                           \
+    fprintf(stderr, "CANDTRACE\t%s\t%s\t%s\t%s\n", (slot), (route), (row),    \
+            "" site)
+#define PCREC_CAND_TRACE_RECF(slot, route, site, fmt, ...)                     \
+    fprintf(stderr, "CANDTRACE\t%s\t%s\t" fmt "\t%s\n", (slot), (route),       \
+            __VA_ARGS__, "" site)
+#else
+#define PCREC_CAND_TRACE_REC(slot, route, row, site) ((void)sizeof("" site))
+#define PCREC_CAND_TRACE_RECF(slot, route, site, fmt, ...)                     \
+    ((void)sizeof("" site))
+#endif
 
 #endif /* PCREC_INTERNAL_H */

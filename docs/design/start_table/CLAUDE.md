@@ -28,13 +28,18 @@ None of them is read by a check.
   named in the script), `family-*` (members reachable from the emitters that
   reach a seed, plus every function a family table stores; tagged
   body/stamp/plan), and `site` (each conditional line in a family body naming a
-  seed, a member, or a local bound from one). Usage:
+  seed, a member, or a local bound from one; since C1 a selection-trace record,
+  `PCREC_CAND_TRACE_REC*`, is never a site — it prints a decision, it makes
+  none). Usage:
   `python3 -I call_graph.py ROOT > call_graph.txt`.
 - `inventory.tsv` — the DISPOSITION of every family member and seed (class:
   TABLE / WALK / PRED / EMIT / INLINE / READER / PROJ / ROUTE / BODY / LANDMARK /
   PLAN / NOTSTART / TYPE, slot/rows, note). Hand-written, but checked:
 - `inventory_check.py` — fails unless `inventory.tsv` dispositions exactly the
-  family+seeds `call_graph.txt` names (125/125 at revision 2.1; 114/114 at revision 2). Usage:
+  family+seeds `call_graph.txt` names (127/127 at C1, re-derived on post-R4c
+  main: the kit's migration replaced three pre-check emitters with five,
+  `docs/dev/lanes/stc1_report.md` §3; 125/125 at revision 2.1; 114/114 at
+  revision 2). Usage:
   `python3 -I inventory_check.py call_graph.txt inventory.tsv`.
 - `deny_census.py` → `deny_census.tsv`, `deny_transitions.tsv`,
   `deny_hidden.tsv`, `deny_movers.tsv`, `row_census.tsv`, `slowest.tsv` —

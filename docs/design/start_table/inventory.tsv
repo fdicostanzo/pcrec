@@ -20,12 +20,14 @@
 #           form, match-here axis, MRL storage): stays outside, reason given
 # name	class	slot/rows	note
 pcrec_emit_end_window_clamp	INLINE	WINDOW W1/W2	the `w < 0` test is W1's predicate; the clamp text is W1's payload
-req_run_tests	EMIT	PRESENCE P4/P5 payload + K66	the run-test list; line 1041 is K66 whole-run (route-keyed payload, §2.2)
+req_run_tests	EMIT	PRESENCE P4/P5 payload + K66	the run-test list; its `pcrec_artifact_has_dfa_scan(cx) || r->whole_len <= r->len` line is K66 whole-run [C1: was cited as :1041] (route-keyed payload, §2.2)
 pcrec_emit_req_run_blocks	EMIT	PRESENCE P4/P5 payload	the run block functions, gated at the call by `fit.chosen == ENGM_DFA` (the skeleton's W/P/F placement)
-emit_req_handoff	EMIT	FIRST F1 payload	hands a LOWER BOUND to NEXT (§1.6 edge H2)
-emit_req_run_check	EMIT	PRESENCE P4/P5 payload	reads FIRST (`req_use`) to splice the handoff into the run check
-emit_req_set_rest	EMIT	PRESENCE P5 payload + K65	line 1267 is K65 set-rest (route-keyed payload); line 1277 reads P4's lead
-pcrec_emit_req_byte_check	READER	PRESENCE then FIRST	the entry's ask of P then F; returns FIRST's handoff (the scan's start position) to the body
+emit_req_handoff_rest	EMIT	FIRST F1 payload	[C1 re-derivation, post-R4c] was emit_req_handoff: the [K82] remainder pcrec writes after the kit site; hands a LOWER BOUND to NEXT (§1.6 edge H2); kit boundary B9
+req_site_define	READER	PRESENCE then FIRST	[C1 re-derivation, post-R4c] replaces emit_req_run_check as the pre-check's decision reader: describes the kit site from PRESENCE (`req_admit`), the run/byte form, P4's lead and its need (route-keyed), the run tests (K66) and FIRST (`req_use`, the handoff); kit boundary B1-B5, B8; C1 records req-site/req-gate/run-tests/req-handoff/set-rest
+req_note_run	EMIT	PRESENCE P4/P5 payload	[C1 re-derivation, post-R4c] pcrec's NOTE text for a run predicate, a kit hook; decides nothing
+req_site_note	EMIT	PRESENCE P4/P5 payload	[C1 re-derivation, post-R4c] the kit site's note hook, dispatches to req_note_run/the rest note; decides nothing
+req_set_rest_members	EMIT	PRESENCE P5 payload + K65	[C1 re-derivation, post-R4c] was emit_req_set_rest: its `pcrec_artifact_has_dfa_scan` return is K65 set-rest (route-keyed payload), and it reads P4's lead; kit boundary B7 (route), B8 (membership)
+pcrec_emit_req_byte_check	READER	FIRST	[C1 re-derivation, post-R4c] now only the USE point of the kit site req_site_define described: reads FIRST (`req_use`) under the run-form guard (kit B5', B19) for the expression the body's start reads
 emit_info_def	PROJ	NEXT, RECOVER	rx_info.prefilter / rx_info.search_form mirrors
 attempt_cand	PRED	NEXT N12	ATTEMPT route's predicate + CandSet; its `anchored` loop re-spells BOUND (C5b reads BOUND)
 dfa_engine_is_empty	ROUTE	EMPTY	the empty-machine distinction re-tested inside F1/S1 (n4)

@@ -62,9 +62,11 @@ optional families ([START-TABLE] C0, docs/design/start_table.md §3.2-§3.3):
   TRACE (`--trace`): both sides built with `-DPCREC_CAND_TRACE` (the
   `cflags` pass-through of build_from_rev), streams 1-2 compiled with stderr
   captured, every `CANDTRACE` record tagged with its pattern index and arm
-  BY THIS SCRIPT, and the per-pattern ORDERED sequences compared by
+  BY THIS SCRIPT, and each pattern-arm's records compared by
   scripts/trace_diff.py (declared-multiplicity filter, records-per-arm
-  floor). The trace build's stdout must equal the default build's.
+  floor): the SET of records gates, the ORDERED sequence is printed as a
+  diagnostic (`--trace-ordered` swaps them; C1's condition 2). The trace
+  build's stdout must equal the default build's.
 
 The corpus POPULATION (which patterns exist) is always read from the
 WORKING side's tree (--tree, live by default, or the source extracted for
@@ -174,8 +176,13 @@ OPTIONS
                         --trace-bin (and optionally --trace-ref-bin).
   --trace-declared FILE  the commit's declared-multiplicity file for
                         trace_diff.py (sites whose records may be added).
-  --trace-unordered      compare each pattern-arm's SET of records (order and
-                        ask multiplicity ignored; see trace_diff.py).
+  --trace-ordered        gate on the ORDERED compare instead. The default
+                        gate is the SET compare (order and ask multiplicity
+                        ignored; trace_diff.py --unordered): [START-TABLE]
+                        C1's condition 2, from C0's experiment (a reader
+                        asking once more false-alarms the ordered compare and
+                        no plant escaped the set one). The compare that does
+                        not gate is printed too, as a diagnostic.
   --build-cflags=FLAGS   CFLAGS for every build this run makes (default: the
                         tree's own Makefile default).
 
@@ -1162,12 +1169,20 @@ ARMS_TSV_HEADER = ("base\tflag\tstream\tok_base\tok_arm\tdiffer_a\tdiffer_b\tsta
 TRACE_CFLAGS = "-O2 -g -DPCREC_CAND_TRACE"
 TRACE_TAG = b"CANDTRACE\t"
 # Records-per-arm floor (a trace arm that prints nothing passes any diff),
-# over the full corpus rows. MEASURED on the C0 PROTOTYPE hook (branch
-# scratch/stc0-trace, today's walk sites: docs/dev/lanes/stc0_report.md):
-# 89,135 / 38,523. C1's hook prints at a SUPERSET of those sites, so these
-# are lower bounds for it; C1 re-pins at its own count. Until C1 lands, a
-# --trace run against main's builds (no hook) FAILS here, as it should.
-TRACE_RECORDS_FLOOR = {"c-default": 89135, "c-vm": 38523}
+# over the full corpus rows. A --trace run against a build with no hook
+# FAILS here, as it should.
+TRACE_RECORDS_FLOOR = {"c-default": 262901, "c-vm": 64776}
+# [START-TABLE] C1 re-pin: the C1 hook's own count over the 4,612 corpus rows
+# (stc1_report.md §5; the C0 prototype's 89,135 / 38,523 were lower bounds).
+# Every declared C1 site key must print at least once on the WORKING side of a
+# full-population run: a site whose record stopped printing would otherwise
+# hide inside the arm totals (K35). The keys are the C1 hook's site literals.
+TRACE_SITES = ("pf-of", "vm-start", "scan-state", "form-fwd", "form-other",
+               "search-start", "req-admit", "req-use", "reseed", "end-window",
+               "attempt-cand", "attempt-bound", "vm-bound", "root-minw",
+               "dfa-engine", "entry-gate", "engine-empty", "run-tests",
+               "set-rest", "prefix-k", "req-site", "req-gate", "req-handoff",
+               "req-from", "ofs-need")
 
 
 def trace_records(err):
@@ -1289,7 +1304,7 @@ def main():
     ap.add_argument("--trace-bin")
     ap.add_argument("--trace-ref-bin")
     ap.add_argument("--trace-declared")
-    ap.add_argument("--trace-unordered", action="store_true")
+    ap.add_argument("--trace-ordered", action="store_true")
     ap.add_argument("--build-cflags")
     args = ap.parse_args()
 
@@ -1570,11 +1585,26 @@ def main():
         else:
             print("  trace build vs default build: NOT CHECKED (streams 1-2 not run, or --every)")
         declared = trace_diff.read_declared(args.trace_declared) if args.trace_declared else set()
-        ok_t, text_t = trace_diff.compare(trace_diff.load(paths[0]), trace_diff.load(paths[1]),
-                                          declared=declared,
-                                          min_records=TRACE_RECORDS_FLOOR if full_population else 1,
-                                          unordered=args.trace_unordered)
+        ta, tb = trace_diff.load(paths[0]), trace_diff.load(paths[1])
+        floor = TRACE_RECORDS_FLOOR if full_population else 1
+        ok_t, text_t = trace_diff.compare(ta, tb, declared=declared, min_records=floor,
+                                          unordered=not args.trace_ordered)
+        print(f"  GATE ({'ordered' if args.trace_ordered else 'SET'} compare):")
         print(text_t)
+        ok_d, text_d = trace_diff.compare(ta, tb, declared=declared, min_records=floor,
+                                          unordered=args.trace_ordered)
+        print(f"  DIAGNOSTIC, not gating ({'SET' if args.trace_ordered else 'ordered'} "
+              f"compare): {'clean' if ok_d else 'DIFFERS'}")
+        if not ok_d:
+            print(text_d)
+        if full_population:
+            seen = {rec[trace_diff.FIELDS.index("site")] for recs in tb.values()
+                    for rec in recs if len(rec) > trace_diff.FIELDS.index("site")}
+            missing = [k for k in TRACE_SITES if k not in seen]
+            print(f"  declared site keys reached (working): {len(TRACE_SITES) - len(missing)}"
+                  f"/{len(TRACE_SITES)}" + (f"; NOT REACHED: {', '.join(missing)}" if missing else ""))
+            if missing:
+                run_ok = False
         print(f"  trace streams: {paths[0]} {paths[1]}")
         run_ok = run_ok and ok_t
 

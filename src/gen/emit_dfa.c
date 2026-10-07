@@ -937,6 +937,7 @@ void pcrec_emit_end_window_clamp(Ctx *cx, StrBuf *c, const char *indent,
                                  const char *posvar, const char *lenvar)
 {
     long long w = pcrec_fact_end_window(cx);
+    PCREC_CAND_TRACE_REC("WINDOW", "-", w < 0 ? "none" : "window", "end-window");
     if (w < 0) return;
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
     pcrec_sb_printf(c,
@@ -1067,6 +1068,24 @@ static const char *req_run_fn_name(Ctx *cx, int i)
  * (`ofs_test_of`, `ofs_test_run`) and the description, and loud. So are the
  * block's two unreachable shapes, a scan that is not one byte and a verify
  * chain with no term. */
+#ifdef PCREC_CAND_TRACE
+/* [START-TABLE] C1 the selection-trace record of one offset-k predicate's
+ * NEED classification (kit boundary B20): per term, `r` a run or `s` a
+ * set/byte, `R`/`O` its need, `*` on the term the plan scans. */
+static void ofs_pred_trace(const mf_pred *p)
+{
+    char sig[3 * MF_MAX_TERM + 1];
+    int n = 0;
+    for (int i = 0; i < p->nterm; i++) {
+        sig[n++] = p->term[i].kind == MF_T_RUN ? 'r' : 's';
+        sig[n++] = p->term[i].need == MF_REQUIRED ? 'R' : 'O';
+        if (i == p->plan_hint) sig[n++] = '*';
+    }
+    sig[n] = 0;
+    PCREC_CAND_TRACE_REC("PRESENCE", "-", sig, "ofs-need");
+}
+#endif
+
 _Static_assert(MF_MAX_TERM >= PCREC_OFSK_MAX_SET + 1,
                "an offset-skip block's terms (PCREC_OFSK_MAX_SET verify offsets "
                "plus its scan) must fit one memfn predicate (C14)");
@@ -1111,6 +1130,9 @@ static void ofs_pred_of(Ctx *cx, const OfsTest *t, mf_pred *p, uint32_t fn_ref)
         int last = m->offset + (m->kind == MF_T_RUN ? (int)m->run_len : 1) - 1;
         if (last > reach) reach = last;
     }
+#ifdef PCREC_CAND_TRACE
+    ofs_pred_trace(p);
+#endif
     if (reach != t->maxk || (in_run && t->run_bytes[sp - t->run_o] != t->scan_byte))
         pcrec_ctx_fail(cx, 0, "internal error: an offset-k skip's memfn "
                        "description disagrees with its test (maxk %d, the "
@@ -1406,8 +1428,14 @@ static const struct MemfnPre *req_site_define(Ctx *cx, StrBuf *c)
     unsigned char rest[256];
     OfsTest t[2];
     bool handoff = false;
-    if (b < 0 && pcrec_fact_req_run(cx)->len < 2) return NULL;
-    if (!req_admit_emits(req_admit(cx))) return NULL;
+    if (b < 0 && pcrec_fact_req_run(cx)->len < 2) {
+        PCREC_CAND_TRACE_REC("PRESENCE", "-", "nothing", "req-site");
+        return NULL;
+    }
+    if (!req_admit_emits(req_admit(cx))) {
+        PCREC_CAND_TRACE_REC("PRESENCE", "-", "declined", "req-site");
+        return NULL;
+    }
     if (pcrec_fact_req_run(cx)->len >= 2) {
         if (req_lead_byte(cx) >= 0) {
             gate = req_lead_byte(cx);
@@ -1416,7 +1444,16 @@ static const struct MemfnPre *req_site_define(Ctx *cx, StrBuf *c)
         nrun = req_run_tests(cx, t);
         handoff = req_use(cx) == REQ_USE_HANDOFF;
     } else gate = b;
+    PCREC_CAND_TRACE_REC("PRESENCE", "-", nrun ? "run" : "byte", "req-site");
+    PCREC_CAND_TRACE_REC("PRESENCE", "-", gate < 0 ? "none" : !nrun ? "byte"
+                         : gate_need == MF_OPTIONAL ? "lead-optional" : "lead-required",
+                         "req-gate");
+    PCREC_CAND_TRACE_REC("PRESENCE", pcrec_artifact_has_dfa_scan(cx) ? "dfa-scan" : "no-dfa-scan",
+                         nrun == 0 ? "none" : nrun == 1 ? "window" : "whole-run", "run-tests");
+    PCREC_CAND_TRACE_REC("FIRST", "-", handoff ? "assign" : "on-miss", "req-handoff");
     req_set_rest_members(cx, rest, &nrest);
+    PCREC_CAND_TRACE_REC("PRESENCE", pcrec_artifact_has_dfa_scan(cx) ? "dfa-scan" : "no-dfa-scan",
+                         nrest ? "set-rest" : "none", "set-rest");
     if (handoff && (nrun != 1 || nrest != 0))
         pcrec_ctx_fail(cx, 0, "internal error: a handoff pre-check with a part "
                        "after its window (the handoff is a DFA-scan route's, "
@@ -1524,6 +1561,8 @@ const char *pcrec_emit_req_byte_check(Ctx *cx, StrBuf *c, const char *indent,
     if (pcrec_fact_req_run(cx)->len >= 2)
         /* [K82] the body's start site reads what the gate kept. */
         from = req_use(cx) == REQ_USE_HANDOFF ? "handoff_position" : posvar;
+    PCREC_CAND_TRACE_REC("FIRST", "-", from != posvar ? "handoff" : "scan-from-startpos",
+                         "req-from");
     pcrec_memfn_check_use(cx, s, from != posvar);
     return from;
 }
@@ -3346,6 +3385,8 @@ typedef struct DfaSel {
  * route it always did. */
 typedef enum { CAND_ROUTE_DFA = 0, CAND_ROUTE_VM } CandRoute;
 #define CAND_ON(r) (1u << (r))
+/* [START-TABLE] C1 a route's name in a selection-trace record. */
+#define CAND_ROUTE_NAME(r) ((r) == CAND_ROUTE_VM ? "vm" : "dfa")
 
 typedef struct DfaCand {
     const char *name;         /* the stamp value, where this axis has a stamp */
@@ -3985,7 +4026,10 @@ static bool attempt_cand(const Dfa *d, CandSet *cs)
      * literal 0), so there is nothing between attempts to skip. */
     bool anchored = true;
     for (int u = 0; u < d->natoms; u++) if (d->s1u[u] >= 0) anchored = false;
-    if (d->n == 0 || anchored) return false;
+    if (d->n == 0 || anchored) {
+        PCREC_CAND_TRACE_REC("NEXT", "attempt", "none", "attempt-cand");
+        return false;
+    }
     cand_from_live_seeds(cs, d);
     /* THE MEMCHR FORM ONLY, and that is a deliberate scope line rather than an
      * oversight. D63 charters the derivation as a tool and says to build ONLY
@@ -4004,7 +4048,9 @@ static bool attempt_cand(const Dfa *d, CandSet *cs)
      * derivation. D8's `^`-on-some-branches shape is that instance: its
      * candidate set is a first-byte set at offset 0, which is both multi-byte
      * and a different bound, and D63 gates it on its own measurement. */
-    return cs->usable && cs->use_memchr;
+    bool pred = cs->usable && cs->use_memchr;
+    PCREC_CAND_TRACE_REC("NEXT", "attempt", pred ? "pred-memchr" : "none", "attempt-cand");
+    return pred;
 }
 
 /* ---- [DD-13] THE UNANCHORED ENGINE'S START ANALYSIS: one derivation -------
@@ -4194,6 +4240,7 @@ static void unanch_start(Ctx *cx, UnanchStart *o)
      * forbids. */
     if (o->kind != DFA_PF_NONE)
         pcrec_prefix_ksets(cx, o->cand.set, &o->ofsk);
+    PCREC_CAND_TRACE_RECF("NEXT", "dfa", "prefix-k", "nsel=%d", o->ofsk.nsel);
 #ifdef OPTK_DEBUG
     { extern void optk_debug_dump(const PrefixKSets *); optk_debug_dump(&o->ofsk); }
 #endif
@@ -4228,9 +4275,13 @@ static void unanch_start(Ctx *cx, UnanchStart *o)
  * makes the twice-per-artifact call unremarkable. */
 static bool dfa_engine_is_empty(Ctx *cx)
 {
+    if (cx->job->engine == PCREC_ENG_ATTEMPT)
+        PCREC_CAND_TRACE_REC("ROUTE", "attempt", cx->job->dfa.n == 0 ? "empty" : "live",
+                             "engine-empty");
     if (cx->job->engine == PCREC_ENG_ATTEMPT) return cx->job->dfa.n == 0;
     UnanchStart us;
     unanch_start(cx, &us);
+    PCREC_CAND_TRACE_REC("ROUTE", "dfa", us.empty ? "empty" : "live", "engine-empty");
     return us.empty;
 }
 
@@ -6613,7 +6664,9 @@ static const DfaPf *dfa_pf_of(Ctx *cx, const UnanchStart *us)
 {
     DfaSel s = { .cx = cx, .d = &cx->job->dfa, .us = us, .forward = true, .st = -1,
                  .route = CAND_ROUTE_DFA, .ss = pcrec_fact_start_set(cx) };
-    return DFA_SELECT_ROUTED(DfaPf, dfa_pfs, &s, cx->opt->flags);
+    const DfaPf *pf = DFA_SELECT_ROUTED(DfaPf, dfa_pfs, &s, cx->opt->flags);
+    PCREC_CAND_TRACE_REC("NEXT", CAND_ROUTE_NAME(s.route), pf->c.name, "pf-of");
+    return pf;
 }
 
 /* [START-SET] The byte set row `pf` SCANS on the forward machine `d` of `us`:
@@ -6641,7 +6694,9 @@ static const DfaPf *vm_start_row(Ctx *cx, DfaSel *s)
 {
     *s = (DfaSel){ .cx = cx, .d = NULL, .us = NULL, .forward = true, .st = -1,
                    .route = CAND_ROUTE_VM, .ss = pcrec_fact_start_set(cx) };
-    return DFA_SELECT_ROUTED(DfaPf, dfa_pfs, s, cx->opt->flags);
+    const DfaPf *pf = DFA_SELECT_ROUTED(DfaPf, dfa_pfs, s, cx->opt->flags);
+    PCREC_CAND_TRACE_REC("NEXT", CAND_ROUTE_NAME(s->route), pf->c.name, "vm-start");
+    return pf;
 }
 
 /* `<PREFIX>_VM_START_SCAN`'s value: the VM route's row name. */
@@ -6981,7 +7036,9 @@ static ReqAdmit req_admit(Ctx *cx)
 {
     DfaSel s = { .cx = cx, .d = NULL, .us = NULL, .forward = true, .st = -1,
                  .route = CAND_ROUTE_DFA };
-    return DFA_SELECT(ReqAdmitRow, req_admits, &s, cx->opt->flags)->verdict;
+    const ReqAdmitRow *r = DFA_SELECT(ReqAdmitRow, req_admits, &s, cx->opt->flags);
+    PCREC_CAND_TRACE_REC("PRESENCE", CAND_ROUTE_NAME(s.route), r->c.name, "req-admit");
+    return r->verdict;
 }
 
 static int req_lead_byte(Ctx *cx)
@@ -7090,7 +7147,9 @@ static ReqUse req_use(Ctx *cx)
 {
     DfaSel s = { .cx = cx, .d = NULL, .us = NULL, .forward = true, .st = -1,
                  .route = CAND_ROUTE_DFA };
-    return DFA_SELECT(ReqUseRow, req_uses, &s, cx->opt->flags)->use;
+    const ReqUseRow *r = DFA_SELECT(ReqUseRow, req_uses, &s, cx->opt->flags);
+    PCREC_CAND_TRACE_REC("FIRST", CAND_ROUTE_NAME(s.route), r->c.name, "req-use");
+    return r->use;
 }
 
 /* [K82] `<PREFIX>_REQ_HANDOFF`'s value: the decimal K the emitted
@@ -7141,7 +7200,9 @@ bool pcrec_dfa_scan_state_written(Ctx *cx, const Dfa *d)
     if (us.empty) return false;
     DfaSel s = { .cx = cx, .d = d, .us = &us, .forward = d == &cx->job->dfa, .st = -1,
                  .route = CAND_ROUTE_DFA, .ss = pcrec_fact_start_set(cx) };
-    return DFA_SELECT_ROUTED(DfaPf, dfa_pfs, &s, cx->opt->flags)->reseeds;
+    const DfaPf *pf = DFA_SELECT_ROUTED(DfaPf, dfa_pfs, &s, cx->opt->flags);
+    PCREC_CAND_TRACE_REC("NEXT", CAND_ROUTE_NAME(s.route), pf->c.name, "scan-state");
+    return pf->reseeds;
 }
 
 /* ---- AXIS F: the two directions ----------------------------------------- */
@@ -7612,7 +7673,10 @@ static const DfaSearchStart *dfa_search_start_of(Ctx *cx)
 {
     DfaSel s = { .cx = cx, .d = &cx->job->dfa, .us = NULL, .forward = true, .st = -1,
                  .route = CAND_ROUTE_DFA };
-    return DFA_SELECT(DfaSearchStart, dfa_search_starts, &s, cx->opt->flags);
+    const DfaSearchStart *ss = DFA_SELECT(DfaSearchStart, dfa_search_starts, &s,
+                                          cx->opt->flags);
+    PCREC_CAND_TRACE_REC("RECOVER", CAND_ROUTE_NAME(s.route), ss->c.name, "search-start");
+    return ss;
 }
 
 /* AXIS J's chosen object's name — `<PREFIX>_DFA_START`'s value and
@@ -8085,6 +8149,10 @@ static void dfa_form_derive(Ctx *cx, const Dfa *d, const UnanchStart *us,
      * every real form declines and the list's total fallback `none` — a real
      * object with a NULL emitter — is what it selects. */
     f->pf      = DFA_SELECT_ROUTED(DfaPf, dfa_pfs, &s, flags);
+    if (d == &cx->job->dfa)
+        PCREC_CAND_TRACE_REC("NEXT", CAND_ROUTE_NAME(s.route), f->pf->c.name, "form-fwd");
+    else
+        PCREC_CAND_TRACE_REC("NEXT", CAND_ROUTE_NAME(s.route), f->pf->c.name, "form-other");
     f->views   = us->views;
     f->viewsel = us->viewsel;
     f->src     = us->viewsel ? dir->viewv : dir->statev;
@@ -8561,6 +8629,8 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
     /* [OPT-LITSCAN] S1 step 6 the run pre-check's blocks, under the same
      * condition as its call below. */
     if (cx->job->fit.chosen == ENGM_DFA) pcrec_emit_req_run_blocks(cx, c);
+    PCREC_CAND_TRACE_REC("ROUTE", "dfa", cx->job->fit.chosen == ENGM_DFA ? "entry" : "inlined",
+                         "entry-gate");
 
     emit_search_head(cx, c, fn, storage);
     /* [K73] The offset-0 start rule, for BOTH customers: the VM hybrid calls
@@ -8859,6 +8929,8 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
     /* [OPT-LITSCAN] S1 step 6 the run pre-check's blocks, at file scope and
      * under the same condition as its call below. */
     if (cx->job->fit.chosen == ENGM_DFA) pcrec_emit_req_run_blocks(cx, c);
+    PCREC_CAND_TRACE_REC("ROUTE", "attempt",
+                         cx->job->fit.chosen == ENGM_DFA ? "entry" : "inlined", "entry-gate");
     emit_search_head(cx, c, fn, storage);
     /* [OPT-ENDWIN] the clamp, on the caller-facing entry only — the sibling
      * site in `emit_unanchored` carries the reason. It composes with
@@ -9090,6 +9162,8 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
             "the caller's startpos, but this machine has a live interior "
             "start state");
 
+    PCREC_CAND_TRACE_REC("BOUND", "attempt", anchored ? "bot" : a_bot ? "gstart" : "all",
+                         "attempt-bound");
     pcrec_sb_printf(c, "    size_t start;\n"
                  "    const size_t start_max = %s;\n",
               anchored ? "0 /* fully ^-anchored */"
@@ -9981,6 +10055,8 @@ void pcrec_emit_residual(Ctx *cx)
  * artifact's own scan is. */
 void pcrec_emit_dfa_engine(Ctx *cx, const char *fn, const char *storage)
 {
+    PCREC_CAND_TRACE_REC("ROUTE", "-", cx->job->engine == PCREC_ENG_UNANCH ? "dfa" : "attempt",
+                         "dfa-engine");
     if (cx->job->engine == PCREC_ENG_UNANCH) emit_unanchored(cx, fn, storage);
     else                                     emit_attempt(cx, fn, storage);
 }
