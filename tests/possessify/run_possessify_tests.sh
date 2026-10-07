@@ -770,6 +770,61 @@ else
     bad "tests/possessify/ctx_admits_check.c did not build"
 fi
 
+# ---------------------------------------------------------------------------
+# 11. [ART-POSS-ARMS] R4SUM / R-5 (poss_arms.md section 8.7): the compiler
+#     CROSS-CHECKS itself. Under --emit-ir it compares A1's memoized
+#     continuation SUMMARY with the plain fold and under a plain compile it
+#     compares A1 with the FOLLOW walk; either disagreement is an INTERNAL
+#     ERROR and a nonzero exit. The only thing a test can add is POPULATION:
+#     run the checks over the shapes the memo was built for (A1alt at small n,
+#     called-group bypasses, an atomic body holding a gate) and over every
+#     pattern the two committed corpora carry, and assert exit 0 with no
+#     "internal error". FAILING DIRECTION: a memo that drifts from the fold
+#     on any member turns that member's compile into exit != 0; a population
+#     that silently shrank (a changed extraction) trips the floor, which is
+#     K35's "populations nobody counts".
+# ---------------------------------------------------------------------------
+echo
+echo "== [ART-POSS-ARMS] R4SUM / R-5 self-check population =="
+r4_pop="$WORKDIR/r4_pop.txt"
+: > "$r4_pop"
+for r4n in 1 2 3 5 8 16 64; do
+    r4p="(?:a+"; r4t=""
+    for ((r4i = 1; r4i < r4n; r4i++)); do r4p+="|a+"; done
+    for ((r4i = 0; r4i < r4n; r4i++)); do r4t+='(?:\b|)'; done
+    printf '%s)%s\n' "$r4p" "$r4t" >> "$r4_pop"        # A1alt: n a+ branches, n gate bypasses
+done
+cat >> "$r4_pop" <<'EOF'
+(a+(?:\b|))|b(?1)a
+(?:b(?R)a|a+(?:\b|))
+(?>\w+\b)
+(?>\w+\b)\s+(?>\w+\b)
+(\w+)(?>\b)
+(?:(?>\w+\b)|x)+
+EOF
+r4_synth="$(wc -l < "$r4_pop" | tr -d ' ')"
+# every pattern of the two committed corpora (one per line, byte order)
+sed -n 's/^pattern //p' "$ROOT_DIR/tests/possessify/possessify.rxt" "$ROOT_DIR/tests/recursion/k93.rxt" >> "$r4_pop"
+LC_ALL=C sort -u -o "$r4_pop" "$r4_pop"
+r4_total="$(wc -l < "$r4_pop" | tr -d ' ')"
+if [ "$r4_total" -lt 150 ]; then
+    bad "R4SUM population has only $r4_total patterns (floor 150: two corpora + $r4_synth synthetic) -- the extraction shrank"
+fi
+r4_bad=0
+while IFS= read -r r4p; do
+    # three runs: the listing (summary-vs-fold), a plain compile (A1-vs-FOLLOW)
+    # on the default route and on the VM
+    for r4m in "--emit-ir --engine=vm" "-o $WORKDIR/r4.c" "-o $WORKDIR/r4.c --engine=vm"; do
+        if ! pcrec_run "$PCREC" -p rx --features all $r4m --pattern "$r4p" \
+                >"$WORKDIR/r4.out" 2>"$WORKDIR/r4.err" \
+           || grep -qi "internal error" "$WORKDIR/r4.out" "$WORKDIR/r4.err"; then
+            bad "'$r4p' [$r4m]: $(head -1 "$WORKDIR/r4.err")"
+            r4_bad=$((r4_bad + 1))
+        fi
+    done
+done < "$r4_pop"
+[ "$r4_bad" -eq 0 ] && ok "R4SUM/R-5: $r4_total patterns x 3 compiles (--emit-ir summary-vs-fold, plain, --engine=vm) exit 0 with no internal error"
+
 echo
 echo "checks passed: $pass"
 echo "checks failed: $fail"

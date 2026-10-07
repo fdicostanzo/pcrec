@@ -259,3 +259,34 @@ comparison is arithmetic and `[ "" -lt "" ]` is an error, which is false. What
 the wrong read cost was the MESSAGE — a failure reading `( -> )` sends a reader
 to the possessify pass instead of to a macro that changed file.
 - `composition_d27.rxt` (+ `composition_d27_notes.md`) — D27-BLINDED composition corpus (lane posscomp, 2026-10-07, [ART-POSS-ARMS] review R-3a). 676 blocks / 7,412 cases combining \b/\B and zero-width gates, empty-able captures, backrefs (numbered/named/relative, caseless), greedy/lazy/bounded quantifiers with empty-able follows, and subroutine calls/recursion. The oracle is libpcre2 10.46 with NO_AUTO_POSSESS (183 cells replayed through pcre2test, 0 disagreements); default auto-possess agreed in every cell. Written by an author denied src/ and tests/. Shipped main at 92ca17fc passes all 9,002 harness cases. It is the acceptance corpus the arms' prototype must pass before build.
+
+## [ART-POSS-ARMS] the arms' tests (lane possbuild-rx, 2026-10-07)
+
+Arm A (`-fno-poss-ctx-follow`, stamp bits 0x1 A0 / 0x2 A1, ENGINE-SELECTING,
+`kept`) and arm B (`-fno-poss-bref-first`, bit 0x4, masked); design
+`docs/design/poss_arms.md` rev 2.1. What was added, by file:
+
+- `possessify.rxt` (tail, under its own header): 34 witnesses as 68 blocks /
+  446 cells (arm A 290, arm B 142, the doubled-word combined witness 14),
+  each a GREEDY block and its POSSESSIVE-SPELLING block, `# pcre2-only`,
+  `engine vm`. Every expectation is libpcre2 10.46's (ctypes binding), with
+  `PCRE2_NO_AUTO_POSSESS` and the default options agreeing on every cell;
+  subjects are the witness's own plus the shortest ones, found by exhaustive
+  search (length <= 5 over the pattern's alphabet), on which the two
+  spellings disagree. Left out: `(*ACCEPT)` and `(?|` witnesses (modules not
+  built) and Latin-1 byte + `--ucp` caseless-backref cells (K94's).
+  The A-F1 pair also lives in `../recursion/k93.rxt`.
+- `run_possessify_tests.sh` sections 9-11: (9) per-witness exact
+  `RX_VM_POSS_ARMS` bits on the default route and `--engine=vm`, the D47.3
+  per-arm deny (that arm's bits 0 on the artifact, the other arm's kept, both
+  = 0x0u), the route flip (`\w++\b`, `(?>\w+)\b`, `\d++(?![\d.])`,
+  `[a-z]++(?=@)`: dfa -> vm under the A deny; `--engine=dfa` + deny refuses
+  "requires the VM engine"), arm B never moves the engine (with and without
+  `--no-captures`), and `rx_info.flags` (A kept, B masked); (10) builds and
+  runs `ctx_admits_check.c`; (11) the R4SUM/R-5 population (A1alt at small n,
+  the called-group bypasses, atomic bodies, every pattern of `possessify.rxt`
+  and `k93.rxt`) compiled under `--emit-ir --engine=vm`, plain, and
+  `--engine=vm`, asserting exit 0 and no "internal error".
+- `ctx_admits_check.c` -- exhaustive model check of `pcrec_poss_ctx_admits`
+  (16 truth tables x 3 non-empty P masks x 53 C sets, plus the named A-F3
+  cell); built through `tests/lib/unit_cc.sh`'s `unit_build`.
