@@ -116,3 +116,20 @@ pcrec mark.
   safekilled.
 - Mac: the scratch tree `worktrees/possarms21-scratch/` (gitignored) remains.
 
+
+## R-3(a) composition gate (2026-10-07, lane possland)
+
+`PROTO=<proto>/build/pcrec PROCS=8 rev21/run_composition.sh tests/possessify/composition_d27.rxt`
+on the Linux dev box (gcc, prototype = main b9b151bc + `proto_rev21.patch`,
+applied clean with a 7-line offset). **rc 0.**
+
+- denied/default: 9002 passed, 0 failed
+- armed/default: 9002 passed, 0 failed
+- denied/vm: 9002 passed, 0 failed
+- armed/vm: 9002 passed, 0 failed
+- ARMS-DIVERGE: 0 on both routes; fail-both 0; denied-only 0
+- reach: the arms move possessify marks on 51 of 676 distinct patterns
+
+No divergence with reach >= 1, so rev 2.1 is green on R-3(a). Logs were in
+the lane's gitignored `build/compo`. The sabotage ids for the N1/N2 rows are
+left to build (S560-S565 hold six of the ten rows).
