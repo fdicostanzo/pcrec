@@ -82,7 +82,33 @@ typedef struct {
     g2_fn           fn;           /* the rendered site, wrapped                */
     g2_fn           fn2;          /* via 2: the mf_call copy, else NULL        */
     uint8_t         floor_null;   /* hooks.floor NULL: the driver passes fl 0  */
+    uint8_t         fam;          /* G2_FAM_*: the shape family (lane g2x)     */
+    uint8_t         leaves;       /* mf_site.on_miss_leaves (Q-G2-18)          */
 } g2_site;
+
+/* The shape FAMILIES (lane g2x). G2_FAM_BASE is the original generated
+ * space; the others are the site shapes integration.md §15 says pcrec SENDS
+ * the kit, generated densely so that the kit's specialised arms, not only
+ * its generic row, answer G2 (K35: the population the original space barely
+ * reached). Each family is held to a rendered-site floor in run_g2.sh. */
+enum {
+    G2_FAM_BASE,      /* the original space (term cells, combo grid, width, fill) */
+    G2_FAM_OFS,       /* §15.1/§15.2: FUNC/FIND/RETURN, SET+RUN conjunctions     */
+    G2_FAM_OFSRUN,    /* §15.1: FUNC/FIND/RETURN over one RUN term, the run grid  */
+    G2_FAM_STMT,      /* §15.3/§15.5 lines: the same predicates as STMT sites     */
+    G2_FAM_ONEBYTE,   /* §15.3: STMT/FIND/ON_MISS, one SET term at offset 0       */
+    G2_FAM_GATE,      /* §15.5: the K82 gate, ONE composite ALL_PRESENT site      */
+    G2_FAM_SETREST,   /* §15.4: STMT/ALL_PRESENT/ON_MISS, singleton SETs, EXCLUDED */
+    G2_FAM_VMRUN,     /* §15.6, §R4.8.1 item 4: EXPR/VERIFY/BOOL, guard_by_caller */
+    G2_NFAM
+};
+static inline const char *g2_fam_name(int f)
+{
+    static const char *const names[G2_NFAM] = {
+        "base", "ofs", "ofsrun", "stmt", "onebyte", "gate", "setrest", "vmrun",
+    };
+    return f >= 0 && f < G2_NFAM ? names[f] : "?";
+}
 
 /* The miss value each miss_mode names; the generator renders the same
  * expression text (g2_gen.c: miss_text). Never a value in [lo, n - eb). */
@@ -92,7 +118,9 @@ static inline size_t g2_missv(int mode, size_t n)
     case 0:  return n;
     case 1:  return (size_t)-1;
     case 2:  return n + 5;
-    default: return n - 1;     /* only with end_back 1 */
+    case 3:  return n - 1;     /* only with end_back 1 */
+    default: return n;         /* 4: the `n` hook's own text; 5: `miss` NULL,
+                                  read as §15.1's `miss` = `n` (lane g2x)   */
     }
 }
 

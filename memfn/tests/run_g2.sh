@@ -72,6 +72,17 @@ FLOOR_HOOK_KILL_PCT=65    # W2: % of hook-mutated sites caught, each of mutation
 QUICK_STRIDE=3                 # batches 0, 3, 6, ... for ASan and the witnesses
 QUICK_FLOOR_CHECKS=14000000    # gcc answer checks, every site, quick subjects
 QUICK_FLOOR_ASAN_CHECKS=1500000  # ASan+UBSan checks on the sample
+# lane g2x: the SHAPE FAMILIES (g2/g2.h G2_FAM_*), the site shapes
+# integration.md §15 says pcrec sends the kit. Per family, the sites the kit
+# must RENDER (generator) and that must RUN (each compiler build), from the
+# measured counts (2026-10-07, Mac, seed 20261005: lane g2x's report), less a
+# margin. A family under its floor is the K35 gap this closes reopening. Both
+# tiers generate the same sites, so the floors hold for --quick too.
+FAM_FLOORS="ofs:320 ofsrun:1450 stmt:320 onebyte:70 gate:280 setrest:55 vmrun:840"
+# distinct (opaque) form ids the families together are rendered through:
+# counted, never parsed. Below it, the families have fallen back to fewer
+# kit arms than §15's shapes reach (measured: 4)
+FLOOR_FAM_FORMS=4
 
 # --- tools ---------------------------------------------------------------
 if command -v gnutimeout >/dev/null 2>&1; then TO=gnutimeout; else TO=timeout; fi
@@ -123,6 +134,52 @@ for f in render_fail refusal_fail vocab_fail api_fail; do gfail=$((gfail + $(fie
 [ "$gfail" -gt 0 ] && note_fail "$gfail" "generator stage (kit refused a contract site, rendered a refused shape, or an API call misbehaved): grep FAIL $work/gen/gen_results.txt"
 nref=$(( $(field refusal_pass) + $(field refusal_fail) + $(field api_pass) + $(field api_fail) ))
 
+# --- 1a. the shape families (lane g2x): rendered, refused, edge, per family
+echo "== shape families (rendered / refused / edge-refused: \`miss\` NULL, memfn.h names no default)"
+grep '^FAMILY' "$work/gen/gen_results.txt" | sed 's/^FAMILY /   /'
+for fl_ in $FAM_FLOORS; do
+    fn_=${fl_%%:*}; fv_=${fl_##*:}
+    r_=$(grep "^FAMILY $fn_ " "$work/gen/gen_results.txt" | sed 's/.* rendered=\([0-9]*\).*/\1/')
+    [ "${r_:-0}" -ge "$fv_" ] || note_fail 1 "family $fn_: ${r_:-0} sites rendered < floor $fv_ (K35: the shapes pcrec sends, unreached)"
+done
+nforms=$(grep '^FAMILY' "$work/gen/gen_results.txt" | grep -v '^FAMILY base ' | sed 's/.* forms=//' | tr ',' '\n' \
+         | grep -v '^-$' | sed 's/:[0-9]*$//' | sort -u | grep -c .)
+echo "   distinct form ids over the families: $nforms (floor $FLOOR_FAM_FORMS)"
+[ "$nforms" -ge "$FLOOR_FAM_FORMS" ] || note_fail 1 "families: $nforms distinct form ids < floor $FLOOR_FAM_FORMS"
+
+# --- 1c. the libc record (lane g2x): MEMFN_LIBC against the compile -------
+# §R4.3.3 [rev4.7] (Q53 RULED): the record lists the libc functions the
+# artifact's code calls, a source-level inventory, constant-size idiom
+# memcpy loads excluded, and "a delegated site's libc use is recorded by
+# the kit through mf_art" (memfn.h mf_art_note_libc: the writer only for
+# calls "the kit did not render itself"). The control is the compile's own,
+# as the rule names it: `nm -u` of an -O0 -fno-builtin object. G2's own
+# text in a batch (tables, descriptors, wrappers) calls no libc function,
+# so every libc name a batch object needs is the kit's. memcpy is left out
+# on both sides: G2 cannot tell an idiom load from a call without parsing.
+libc_check() {  # libc_check GENDIR
+    local gd=$1 od="$work/libc" ok=0 bad=0 b stamp got
+    mkdir -p "$od"
+    ls "$gd"/batch_*.c | "$TO" 900 xargs -P "$nproc_" -I{} sh -c \
+        '"$1" -std=gnu11 -O0 -fno-builtin -w -I "$2" -c "$3" -o "$4/$(basename "$3" .c).o"' \
+        _ "$gencc" "$g2" {} "$od"
+    for b in "$gd"/batch_*.c; do
+        stamp=$(sed -n 's|^/\* stamp MEMFN_LIBC = \(.*\) \*/$|\1|p' "$b" | tr ',' '\n' \
+                | grep -vx 'memcpy' | grep -vx 'none' | LC_ALL=C sort -u | paste -sd, -)
+        got=$(nm -u "$od/$(basename "$b" .c).o" 2>/dev/null | sed 's/^ *U *//; s/^_//' \
+              | grep -E '^(mem|str)[a-z0-9]*$' | grep -vx 'memcpy' | LC_ALL=C sort -u | paste -sd, -)
+        if [ "$stamp" = "$got" ]; then ok=$((ok + 1))
+        else
+            bad=$((bad + 1))
+            [ "$bad" -le 3 ] && echo "   $(basename "$b"): MEMFN_LIBC \"${stamp:-none}\", the compile calls \"${got:-none}\""
+        fi
+    done
+    echo "== libc record (MEMFN_LIBC vs nm -u of -O0 -fno-builtin, memcpy aside): batches agree $ok, disagree $bad"
+    passed=$((passed + ok))
+    [ "$bad" = 0 ] || note_fail "$bad" "libc record: MEMFN_LIBC is not the libc calls of the kit's text in $bad batch(es) (§R4.3.3; objects in $od)"
+}
+libc_check "$work/gen"
+
 # --- 1b. K1: the kit's mf_ref_* reference functions against G2's loops ----
 k1() {  # k1 NAME CC [flags]
     local name=$1 cc=$2; shift 2
@@ -164,10 +221,29 @@ build() {  # build NAME CC GENDIR EXTRA_FLAGS...
     if grep -q COMPILE-FAIL "$bd/compile.log"; then
         echo "run_g2.sh: $name: batches that do not compile:" >&2
         grep COMPILE-FAIL "$bd/compile.log" >&2
-        return 1
+        # lane g2x: a batch that does not compile is a failure of every
+        # site in it (the caller counts them, compile_fail_sites); it is
+        # linked as an EMPTY batch so the other batches' sites still run
+        local f k
+        for f in $(sed -n 's/^COMPILE-FAIL //p' "$bd/compile.log"); do
+            k=$(basename "$f" .c | sed 's/^batch_//')
+            printf '#include "g2.h"\nconst g2_site g2_batch_%s[] = { { 0 } };\nconst size_t g2_batch_%s_n = 0;\n' "$k" "$k" \
+                > "$bd/stub_$k.c"
+            "$TO" 300 "$cc" -std=gnu11 -O1 "$@" -I "$g2" -c "$bd/stub_$k.c" -o "$bd/batch_$k.o" || ok=0
+        done
     fi
     "$TO" 300 "$cc" "$@" "$bd"/*.o -o "$bd/g2_run" || ok=0
     [ "$ok" = 1 ]
+}
+
+# the sites of the batches build NAME could not compile (each a failure)
+compile_fail_sites() {  # compile_fail_sites NAME
+    local f t=0 k
+    for f in $(sed -n 's/^COMPILE-FAIL //p' "$work/build-$1/compile.log" 2>/dev/null); do
+        k=$(sed -n '1s/.*batch [0-9]*, \([0-9]*\) sites.*/\1/p' "$f")
+        t=$((t + ${k:-1}))
+    done
+    echo "$t"
 }
 
 run_driver() {  # run_driver NAME [driver flags]
@@ -316,9 +392,16 @@ fi
 
 for cc in $cc_list; do
     if ! build "$cc" "$cc" "$work/gen"; then
-        nb=$(grep -c COMPILE-FAIL "$work/build-$cc/compile.log" 2>/dev/null || echo 0)
-        note_fail $((nb > 0 ? nb : 1)) "$cc: rendered text does not compile ($work/build-$cc/compile.log)"
+        note_fail 1 "$cc: the driver, the reference or the link does not build ($work/build-$cc)"
         continue
+    fi
+    cfs=$(compile_fail_sites "$cc")
+    if [ "$cfs" -gt 0 ]; then
+        echo "   $cc: rendered text that does not compile: $cfs sites in $(grep -c COMPILE-FAIL "$work/build-$cc/compile.log") batch(es):"
+        for f in $(sed -n 's/^COMPILE-FAIL //p' "$work/build-$cc/compile.log"); do
+            echo "     $(basename "$f"): $(grep -m1 'error:' "$work/build-$cc/$(basename "$f" .c).log" | sed 's/.*error: //')"
+        done
+        note_fail "$cfs" "$cc: rendered text does not compile ($work/build-$cc/compile.log)"
     fi
     # shellcheck disable=SC2086
     if ! run_driver "$cc" $drv_tier; then note_fail 1 "$cc: the driver did not finish ($work/run-$cc.err)"; fi
@@ -326,7 +409,12 @@ for cc in $cc_list; do
     p=$(num "$log" "checks passed"); f=$(num "$log" "checks failed")
     s=$(num "$log" "sites run"); miss=$(num "$log" "coverage cells missing")
     echo "== $cc${drv_tier:+ (quick subjects)}: passed ${p:-?} failed ${f:-?} sites ${s:-?} coverage-missing ${miss:-?}"
-    grep '^G2 \(faults\|sites failed\|layout\|cells\|subjects\|site features\|instances\|sites with no\)' "$log" | sed 's/^/   /'
+    grep '^G2 \(faults\|sites failed\|layout\|cells\|subjects\|site features\|instances\|sites with no\|on_miss_leaves\|family\)' "$log" | sed 's/^/   /'
+    for fl_ in $FAM_FLOORS; do
+        fn_=${fl_%%:*}; fv_=${fl_##*:}
+        s_=$(grep "^G2 family $fn_:" "$log" | sed 's/.*: sites \([0-9]*\) .*/\1/')
+        [ "${s_:-0}" -ge "$fv_" ] || note_fail 1 "$cc: family $fn_ ran ${s_:-0} sites < floor $fv_"
+    done
     passed=$((passed + ${p:-0}))
     [ "${f:-1}" -gt 0 ] && note_fail "${f:-1}" "$cc: answer checks failed (first failures: $work/run-$cc.err)"
     [ "${s:-0}" -ge "$FLOOR_SITES" ] || note_fail 1 "$cc: sites run ${s:-0} < floor $FLOOR_SITES"

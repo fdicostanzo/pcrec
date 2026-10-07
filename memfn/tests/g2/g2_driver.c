@@ -83,7 +83,7 @@ static void on_fault(int sig)
 
 /* ---- counts --------------------------------------------------------------- */
 
-static long n_pass, n_fail, n_fault, n_skipped_precond;
+static long n_pass, n_fail, n_fault, n_skipped_precond, n_floor_clamped;
 static long n_layout[3], n_len[130], n_hitoff[130], n_align[16];
 static long n_sites_run, n_sites_failed, n_sites_nopos, n_sites_unsat, n_sites_noplant, n_sites_gap,
             n_sites_overlap, n_sites_wide;
@@ -104,7 +104,10 @@ static long lab_sites[NLAB], lab_checks[NLAB], lab_fail[NLAB], lab_empty[NLAB][3
 static long lab_rev[NLAB][2], lab_eb[NLAB][2];
 static long set_cell[17], run_cell[17][34][5], nterm_cell[9], npred_max;
 static long style_sites[3], via_sites[3], opt_sites, discard_sites, gbc_sites, count_sites,
-            span_sites, tok_sites[3];
+            span_sites, tok_sites[3], leaves_sites[2];
+/* lane g2x: per shape family (g2.h G2_FAM_*), counted from the sites that
+ * RAN: sites, checks, positive / negative outcomes, failed sites */
+static long fam_sites[G2_NFAM], fam_checks[G2_NFAM], fam_pos[G2_NFAM], fam_fail[G2_NFAM];
 
 static int lab_index(const char *l)
 {
@@ -142,6 +145,8 @@ static void census_site(const g2_site *d, const g2_items *it)
     count_sites += d->has_count;
     span_sites += d->span_hi != G2_UNBOUNDED && d->handoff != G2_H_ADVANCE;
     if (d->handoff == G2_H_ON_CAND) tok_sites[d->tok]++;
+    if (d->handoff == G2_H_ON_MISS || d->handoff == G2_H_ASSIGN) leaves_sites[d->leaves ? 1 : 0]++;
+    if (d->fam < G2_NFAM) fam_sites[d->fam]++;
     if (d->npred > npred_max) npred_max = d->npred;
     for (int p = 0; p < d->npred; p++) {
         const g2_pred *P = &d->preds[p];
@@ -377,6 +382,7 @@ static void check(g2_fn fn, const uint8_t *subj, size_t n, size_t lo, size_t fl,
             }
             int li = lab_index(cur->label);
             if (li >= 0 && cur->npred <= 40) { lab_small[li]++; if (pos) lab_pos[li]++; }
+            if (cur->fam < G2_NFAM) { fam_checks[cur->fam]++; fam_pos[cur->fam] += pos; }
             cur_pos += pos;
             cur_checks++;
         } else {
@@ -406,10 +412,12 @@ static void term_extent(const g2_site *d, long long *lo_off, long long *hi_end)
 static int admit(const g2_site *d, size_t n, size_t *lo, size_t *fl)
 {
     if (d->floor_null) *fl = 0;
-    /* SKIP reads the candidate itself; on_cand (G2's text) reads at cand,
-     * and the contract only promises cand + reach <= n (Q-G2-6): both keep
-     * the floor at or below lo */
-    if ((d->op == G2_OP_SKIP || d->handoff == G2_H_ON_CAND) && *fl > *lo) *fl = *lo;
+    /* RULED Q-G2-6 (memfn.h `floor`, §14.7): `floor <= lo` is the CALLER's
+     * precondition, on EVERY site kind. G2 is a conforming caller: an
+     * instance with fl > lo is not a contract instance, so its floor is
+     * brought to lo (counted). The contract says nothing of fl > lo, so G2
+     * checks no answer there. */
+    if (*fl > *lo) { *fl = *lo; n_floor_clamped++; }
     int nonempty = *lo + d->end_back < n;
     if (d->empty == G2_EMPTY_EXCLUDED && !nonempty) return 0;
     if (d->handoff == G2_H_ADVANCE && d->reverse && !nonempty) return 0;   /* Q-G2-5 */
@@ -417,7 +425,7 @@ static int admit(const g2_site *d, size_t n, size_t *lo, size_t *fl)
         size_t len = nonempty ? n - d->end_back - *lo : 0;
         if (d->span_hi != G2_UNBOUNDED && len > d->span_hi) {
             *lo = n - d->end_back - (size_t)d->span_hi;
-            if (*fl > *lo && (d->op == G2_OP_SKIP || d->handoff == G2_H_ON_CAND)) *fl = *lo;
+            if (*fl > *lo) *fl = *lo;
             len = (size_t)d->span_hi;
         }
         if (len < d->span_lo) return 0;
@@ -446,8 +454,7 @@ static size_t pick_fl(size_t lo, size_t n)
     case 0: case 1: return 0;
     case 2: return lo;
     case 3: return rn((unsigned)lo + 1);
-    default: return cur->op == G2_OP_SKIP || cur->handoff == G2_H_ADVANCE
-                    ? lo : lo + rn(3) < n ? lo + rn(3) : n;
+    default: return lo;          /* floor <= lo (Q-G2-6): at the edge itself */
     }
 }
 
@@ -621,6 +628,7 @@ static void run_site(const g2_site *d)
     n_sites_run += (n_pass + n_fail) > before;
     if (cur_fail) {
         n_sites_failed++;
+        if (d->fam < G2_NFAM) fam_fail[d->fam]++;
         int li = lab_index(d->label);
         if (li >= 0) lab_fail[li]++;
     }
@@ -821,6 +829,19 @@ int main(int argc, char **argv)
                unexplained);
         miss++;
     }
+    /* lane g2x: the shape families; every family must have run sites with
+     * both outcomes (run_g2.sh holds the per-family site floors) */
+    printf("G2 on_miss_leaves (ON_MISS/ASSIGN sites): 0 %ld, 1 %ld; instances with floor brought to lo (Q-G2-6) %ld\n",
+           leaves_sites[0], leaves_sites[1], n_floor_clamped);
+    for (int f = 0; f < G2_NFAM; f++) {
+        printf("G2 family %s: sites %ld checks %ld positive %ld negative %ld failed-sites %ld\n",
+               g2_fam_name(f), fam_sites[f], fam_checks[f], fam_pos[f], fam_checks[f] - fam_pos[f], fam_fail[f]);
+        if (!fam_sites[f] || !fam_pos[f] || fam_checks[f] == fam_pos[f]) {
+            printf("G2 coverage MISSING: family %s ran no site, or never both outcomes\n", g2_fam_name(f));
+            miss++;
+        }
+    }
+    if (!leaves_sites[0] || !leaves_sites[1]) { printf("G2 coverage MISSING: on_miss_leaves 0/1\n"); miss++; }
     printf("G2 coverage cells missing: %d\n", miss);
     return 0;
 }

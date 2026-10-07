@@ -43,6 +43,19 @@ static uint64_t rnd(void)
 }
 static unsigned rn(unsigned n) { return n ? (unsigned)(rnd() % n) : 0; }
 
+/* lane g2x's own stream: what g2x adds to the ORIGINAL families (the base
+ * space's on_miss_leaves) draws from here, so the original space's sites are
+ * the same sites they were, with only that field added */
+static uint64_t rng2_state = 0x5851f42d4c957f2dULL;
+static unsigned rn2(unsigned n)
+{
+    uint64_t z = (rng2_state += 0x9e3779b97f4a7c15ULL);
+    z = (z ^ (z >> 30)) * 0xbf58476d1ce4e5b9ULL;
+    z = (z ^ (z >> 27)) * 0x94d049bb133111ebULL;
+    z ^= z >> 31;
+    return n ? (unsigned)(z % n) : 0;
+}
+
 /* ---- a growable text buffer ---------------------------------------------- */
 
 typedef struct { char *p; size_t n, cap; } buf;
@@ -161,6 +174,12 @@ typedef struct {
     uint8_t  inloop, sizelean, deny_overlap, consumer;
     uint32_t ppm_seed;
     uint8_t  cell_site;           /* generated as a term cell's focus         */
+    /* lane g2x: per-predicate plan_hint / plan_pos / fn_ref, set explicitly
+     * by the shape families (else derived from ppm_seed / fn_ref_on) */
+    uint8_t  plan_explicit;
+    uint8_t  *php;
+    uint16_t *ppp;
+    uint32_t *fnr;
 } gsite;
 
 static const char *combo_label(int op, int h, int form)
@@ -288,9 +307,12 @@ static void alloc_preds(gsite *g, int npred)
     g->preds = calloc((size_t)npred, sizeof *g->preds);
     g->rb = calloc((size_t)npred, sizeof *g->rb);
     g->mb = calloc((size_t)npred, sizeof *g->mb);
+    g->php = calloc((size_t)npred, sizeof *g->php);
+    g->ppp = calloc((size_t)npred, sizeof *g->ppp);
+    g->fnr = calloc((size_t)npred, sizeof *g->fnr);
 }
 
-static void free_site(gsite *g) { free(g->preds); free(g->rb); free(g->mb); }
+static void free_site(gsite *g) { free(g->preds); free(g->rb); free(g->mb); free(g->php); free(g->ppp); free(g->fnr); }
 
 /* a random predicate of nterm terms, one of which may be pinned (focus) */
 static void gen_pred(gsite *g, int p, int nterm, int allow_opt)
@@ -514,12 +536,15 @@ static void to_mf_pred(const gsite *g, int p, mf_pred *mp)
     mp->nterm = P->nterm;
     mp->need = to_mf_need(P->need);
     mp->plan_hint = MF_NO_PRED;
-    if (g->plan && P->nterm) {
+    if (g->plan_explicit) {
+        mp->plan_hint = g->php[p];
+        mp->plan_pos = g->ppp[p];
+    } else if (g->plan && P->nterm) {
         int t = (int)((g->ppm_seed + (uint32_t)p) % P->nterm);
         mp->plan_hint = (uint8_t)t;
         if (P->t[t].kind == G2_T_RUN) mp->plan_pos = (uint16_t)((g->ppm_seed >> 4) % P->t[t].len);
     }
-    mp->fn_ref = g->fn_ref_on ? (uint32_t)(p + 1) : 0;
+    mp->fn_ref = g->plan_explicit ? g->fnr[p] : g->fn_ref_on ? (uint32_t)(p + 1) : 0;
     for (int t = 0; t < P->nterm; t++) {
         const g2_term *T = &P->t[t];
         mf_term *m = &mp->term[t];
@@ -549,7 +574,8 @@ static const char *miss_text(int mode)
     case 0:  return "n";
     case 1:  return "((size_t)-1)";
     case 2:  return "n + 5";              /* unparenthesized on purpose      */
-    default: return "n - 1";
+    case 3:  return "n - 1";
+    default: return "n";                  /* 4/5: replaced in fill_hooks     */
     }
 }
 
@@ -571,6 +597,12 @@ static void fill_hooks(gsite *g, mf_hooks *h, char *onmiss, size_t onmiss_n)
     switch (g->on_miss_mode) {
     case 0:  snprintf(onmiss, onmiss_n, "missed = 1;"); break;
     case 1:  snprintf(onmiss, onmiss_n, "goto g2m_%u;", g->d.id); break;
+    case 3:  /* leaves, and reads no result: §15.5's composite writes its
+                result only on the returned predicate's line, so another
+                predicate's miss reaches on_miss with `result` unwritten
+                (and, under result_decl, undeclared) */
+        snprintf(onmiss, onmiss_n, "{ o->missed = 1; return 0; }");
+        break;
     default:
         if (g->d.handoff == G2_H_ON_MISS)
             snprintf(onmiss, onmiss_n, "{ o->missed = 1; return 0; }");
@@ -585,6 +617,10 @@ static void fill_hooks(gsite *g, mf_hooks *h, char *onmiss, size_t onmiss_n)
     if (g_mutate == 5) h->lo = "lo + 1";
     if (g_mutate == 6) h->n = "n + 1";
     if (g_mutate == 7 && !g->floor_null) h->floor = "(fl ? fl - 1 : 0)";
+    /* lane g2x: miss_mode 4 is EXACTLY the `n` hook's text (§15.1's `miss`
+     * = `n`), 5 leaves `miss` NULL (unstated) */
+    if (g->d.miss_mode == 4) h->miss = h->n;
+    if (g->d.miss_mode == 5) h->miss = NULL;
     h->cursor = "cur";
     if (g->d.reverse) {
         h->step = "cur--;";
@@ -639,6 +675,7 @@ static void fill_site(gsite *g, mf_site *s, mf_pred *pa)
     s->policy = (g->policy_simd ? 0 : MF_P_PORTABLE_ONLY) | (g->inloop ? MF_P_INLOOP : 0)
               | (g->sizelean ? MF_P_SIZE_LEANING : 0);
     s->denies = g->deny_overlap ? MF_D_RUN_OVERLAP : 0;
+    s->on_miss_leaves = g->d.leaves;
     s->opts = (g->ppm_seed & 1) ? "" : NULL;
 }
 
@@ -664,6 +701,26 @@ static int mutate(buf *b)
 static FILE *g_res;
 static long n_render_ok, n_render_fail, n_refusal_pass, n_refusal_fail,
             n_vocab_pass, n_vocab_fail, n_api_pass, n_api_fail;
+
+/* lane g2x, the K35 witness: per shape family, the sites the kit RENDERED,
+ * the conforming sites it REFUSED (a failure), and the sites at the
+ * contract's edge it refused (`miss` NULL: memfn.h states no default, so a
+ * refusal there is not a failure; counted, never checked). Plus the form
+ * ids the kit reported (opaque, mf_result.form_id: counted, never parsed or
+ * judged). */
+static long fam_rendered[G2_NFAM], fam_refused[G2_NFAM], fam_edge[G2_NFAM], fam_edge_rendered[G2_NFAM];
+#define NFORMS 32
+static char form_ids[NFORMS][48];
+static long fam_form[G2_NFAM][NFORMS];
+static void count_form(int fam, const char *id)
+{
+    int k;
+    for (k = 0; k < NFORMS && form_ids[k][0]; k++)
+        if (!strncmp(form_ids[k], id, sizeof form_ids[k])) break;
+    if (k == NFORMS) k = NFORMS - 1;           /* overflow bucket */
+    else if (!form_ids[k][0]) snprintf(form_ids[k], sizeof form_ids[k], "%.47s", id[0] ? id : "(empty)");
+    fam_form[fam][k]++;
+}
 
 /* ---- render one site into the batch ---------------------------------------- */
 
@@ -753,8 +810,18 @@ static void render(mf_art *art, gsite *g, batchbuf *B)
         mf_sink stb = mk_sink(&utb), stf = mk_sink(&utf);
         mf_result tres;
         int trc = mf_emit(trial, &site, &h, &stb, &stf, &tres);
+        if (trc && g->d.miss_mode == 5) {
+            /* the contract's edge: memfn.h names no default for `miss` */
+            fam_edge[g->d.fam]++;
+            fprintf(g_res, "EDGE render site %u %s fam=%s: `miss` NULL refused: %s\n",
+                    g->d.id, g->d.label, g2_fam_name(g->d.fam),
+                    mf_art_error(trial) ? mf_art_error(trial) : "(no text)");
+            free(tb.p); free(tf.p); free(pa);
+            return;
+        }
         if (trc) {
             n_render_fail++;
+            fam_refused[g->d.fam]++;
             fprintf(g_res, "FAIL render site %u %s empty=%u rev=%u eb=%u: kit refused a contract site: %s\n",
                     g->d.id, g->d.label, g->d.empty, g->d.reverse, g->d.end_back,
                     mf_art_error(trial) ? mf_art_error(trial) : "(no text)");
@@ -781,6 +848,7 @@ static void render(mf_art *art, gsite *g, batchbuf *B)
     free(pa);
     if (rc) {
         n_render_fail++;
+        fam_refused[g->d.fam]++;
         fprintf(g_res, "FAIL render site %u %s: kit refused a contract site: %s\n",
                 g->d.id, g->d.label, mf_art_error(art) ? mf_art_error(art) : "(no text)");
         free(body.p); free(body2.p); free(file.p);
@@ -791,6 +859,9 @@ static void render(mf_art *art, gsite *g, batchbuf *B)
                 g->d.id, g->d.label, member_calls_bad);
         n_render_fail++;
     } else n_render_ok++;
+    fam_rendered[g->d.fam]++;
+    if (g->d.miss_mode == 5) fam_edge_rendered[g->d.fam]++;
+    count_form(g->d.fam, res.form_id);
 
     int mut = 0;
     mut |= mutate(&body);
@@ -815,8 +886,8 @@ static void render(mf_art *art, gsite *g, batchbuf *B)
        d->gbc, d->ret_pred, d->npred, d->id, d->has_count, d->count_start,
        (unsigned long long)d->span_lo, (unsigned long long)d->span_hi, d->reach, d->tok,
        d->acc_mod, d->miss_mode, d->hook_style, d->mutated, d->via, d->label, d->id);
-    if (d->via == 2) bf(&B->reg, "g2t2_%u, %u },\n", d->id, g->floor_null);
-    else bf(&B->reg, "NULL, %u },\n", g->floor_null);
+    if (d->via == 2) bf(&B->reg, "g2t2_%u, %u, %u, %u },\n", d->id, g->floor_null, d->fam, d->leaves);
+    else bf(&B->reg, "NULL, %u, %u, %u },\n", g->floor_null, d->fam, d->leaves);
     B->nsite++;
     free(body.p); free(body2.p); free(file.p);
 }
@@ -911,6 +982,15 @@ static void finish_site(gsite *g, unsigned r)
     }
     if (d->empty == G2_EMPTY_EXCLUDED && d->span_lo == 0 && rn(3) == 0) d->span_lo = 1;
     d->label = strdup(combo_label(d->op, d->handoff, d->form));
+    /* lane g2x: on_miss_leaves (memfn.h, RULED Q-G2-18) at BOTH values on
+     * the original space's ON_MISS/ASSIGN sites, drawn from g2x's stream.
+     * 1 only where G2's on_miss text does leave (goto, return). An
+     * ALL_PRESENT ASSIGN that leaves takes the on_miss that reads no result
+     * (§15.5: only the returned predicate's line writes it) */
+    if ((d->handoff == G2_H_ON_MISS || d->handoff == G2_H_ASSIGN) && g->on_miss_mode != 0 && rn2(2)) {
+        d->leaves = 1;
+        if (d->op == G2_OP_ALL && d->handoff == G2_H_ASSIGN) g->on_miss_mode = 3;
+    }
 }
 
 /* a site of combo ci whose preds are generated by the caller */
@@ -1255,6 +1335,406 @@ static void flush_batch(const char *outdir, int bi, mf_art *art, batchbuf *B, FI
     B->nsite = 0;
 }
 
+/* ---- batches ------------------------------------------------------------------- */
+
+static mf_art *g_art;
+static batchbuf g_B;
+static int g_bi, g_batchsz, g_nsites;
+static FILE *g_all;
+static const char *g_outdir;
+static int64_t g_force_denies = -1;   /* lane g2x: >= 0 pins every batch's denies */
+
+static void open_batch(void)
+{
+    /* the prefix outlives the art: the kit keeps the pointer (memfn.h names
+     * no lifetime for it; Q-G2-7's rule covers only hook-returned strings) */
+    char *px = malloc(16);
+    if (!px) { perror("malloc"); exit(2); }
+    snprintf(px, 16, "g2b%d", g_bi);
+    g_batch_denies = g_force_denies >= 0 ? (uint64_t)g_force_denies
+                   : g_bi % 3 == 2 ? MF_D_RUN_OVERLAP : 0;
+    g_art = mf_art_begin(&g_arena, px, g_bi & 1 ? 0 : MF_P_PORTABLE_ONLY, g_batch_denies);
+}
+
+/* render g into the current batch; a full batch is flushed and the next one
+ * opened (denies: the original rotation, or the forced value) */
+static void next_site(gsite *g)
+{
+    render(g_art, g, &g_B);
+    free_site(g);
+    g_nsites++;
+    if (g_B.nsite >= g_batchsz) {
+        flush_batch(g_outdir, g_bi, g_art, &g_B, g_all);
+        g_bi++;
+        open_batch();
+    }
+}
+
+/* lane g2x: close the current batch and open one whose art carries exactly
+ * `denies`, so a family is generated with and without MF_D_RUN_OVERLAP by
+ * choice (RULED Q-M1b-1: a site's denies must be its art's) */
+static void force_batch(uint64_t denies)
+{
+    if (g_B.nsite) { flush_batch(g_outdir, g_bi, g_art, &g_B, g_all); g_bi++; }
+    else mf_art_end(g_art);
+    g_force_denies = (int64_t)denies;
+    open_batch();
+}
+
+/* ---- lane g2x: the site shapes pcrec sends (integration.md §15) --------------- */
+
+static int ci_of(int op, int h, int form)
+{
+    for (int c = 0; c < NCOMBO; c++)
+        if (COMBOS[c].op == op && COMBOS[c].h == h && COMBOS[c].form == form) return c;
+    fprintf(stderr, "g2_gen: no combination %d/%d/%d\n", op, h, form);
+    exit(2);
+}
+
+/* the hook-text style of the family pass (0 plain identifiers, pcrec's own;
+ * 1 counted, 2 a conditional expression: memfn.h's hooks are "side-effect-
+ * free C expressions", not identifiers), and its sampling stride */
+static int g_fam_style, g_fam_stride = 1, g_fam_ctr;
+
+/* the common frame of a family site: pcrec's facts as §15 lists them. No
+ * floor (§15.1-§15.6 name none: the hook is NULL, "0", and the driver passes
+ * fl 0), forward, end_back 0, SIMD off (pcrec's one bit, MF_P_PORTABLE_ONLY,
+ * §R4.3.1), explicit plan/fn_ref per predicate */
+static void fam_site(gsite *g, int op, int h, int form, int fam)
+{
+    base_site(g, ci_of(op, h, form));
+    g->d.hook_style = (uint8_t)g_fam_style;
+    g->d.fam = (uint8_t)fam;
+    g->floor_null = 1;
+    g->policy_simd = 0;
+    g->plan_explicit = 1;
+}
+
+/* a family site into the batch; a style pass keeps every g_fam_stride-th */
+static void fam_next(gsite *g)
+{
+    if (g_fam_stride > 1 && g_fam_ctr++ % g_fam_stride) { free_site(g); return; }
+    next_site(g);
+}
+
+/* fix what finish_site drew at random to the family's shape */
+static void fam_finish(gsite *g, int empty, int miss_mode)
+{
+    finish_site(g, 0);
+    g2_site *d = &g->d;
+    d->reverse = 0;
+    d->end_back = 0;
+    d->empty = (uint8_t)empty;
+    d->miss_mode = (uint8_t)miss_mode;
+    if (d->handoff == G2_H_ASSIGN) g->result_decl = empty != G2_EMPTY_NOP && rn(4) != 0;
+    if (empty != G2_EMPTY_EXCLUDED) d->span_lo = 0;
+    d->leaves = 0;
+}
+
+/* on_miss_leaves (memfn.h, Q-G2-18) and an on_miss text that honours it:
+ * 1 only with a text that leaves (goto, return; mode 3 also reads no
+ * result, for §15.5's composite ASSIGN) */
+static void fam_leaves(gsite *g, int leaves)
+{
+    g2_site *d = &g->d;
+    d->leaves = (uint8_t)leaves;
+    if (leaves) g->on_miss_mode = (uint8_t)(d->op == G2_OP_ALL && d->handoff == G2_H_ASSIGN ? 3 : 1 + rn(2));
+    else if (g->on_miss_mode == 3) g->on_miss_mode = 0;
+}
+
+/* a case-folded run (pcrec's req-run-fold, §14.10 bit 44: the run pcrec
+ * sends masked): letters as their upper case under mask 0xDF, every other
+ * byte exact */
+static void gen_run_fold(uint8_t *run, uint8_t *mask, uint32_t len)
+{
+    for (uint32_t j = 0; j < len; j++) {
+        unsigned r = rn(10);
+        uint8_t b = r < 7 ? (uint8_t)('a' + rn(26)) : r < 9 ? (uint8_t)('0' + rn(10))
+                  : (uint8_t)" @._-"[rn(5)];
+        int letter = (b | 0x20) >= 'a' && (b | 0x20) <= 'z';
+        mask[j] = letter ? 0xDF : 0xFF;
+        run[j] = (uint8_t)(b & mask[j]);
+    }
+}
+
+/* a RUN term: mode 0 exact (mask NULL), 1 case-folded, 2 random 1-2 free
+ * bits per byte, 3 one byte unsatisfiable (Q-G2-13) */
+static void fam_run(gsite *g, int p, int t, int off, uint32_t len, int mode, int need)
+{
+    g2_term *T = &g->preds[p].t[t];
+    memset(T, 0, sizeof *T);
+    T->kind = G2_T_RUN;
+    T->off = off;
+    T->need = (uint8_t)need;
+    T->len = len;
+    if (mode == 1) gen_run_fold(g->rb[p][t], g->mb[p][t], len);
+    else gen_run(g->rb[p][t], g->mb[p][t], len, mode == 0 ? 0 : 1 + (int)rn(2), mode == 3);
+    T->run = g->rb[p][t];
+    T->mask = mode == 0 ? NULL : g->mb[p][t];
+}
+
+/* a SET term, mostly pcrec's: a singleton, a case pair, a small set, a
+ * range, a word class (gen_set's kinds) */
+static void fam_set(gsite *g, int p, int t, int off, int need)
+{
+    static const int kinds[] = { 1, 1, 1, 2, 3, 4, 4, 5, 6, 11, 7 };
+    gen_term(g, p, t, G2_T_SET, off, 0, -1, need, kinds[rn(sizeof kinds / sizeof kinds[0])], 0);
+}
+
+/* a predicate of pcrec's OFS/PRE shape (§15.1, §14.6's _Static_assert: up
+ * to four SET terms, the k-set's offsets, plus the run term; now and then a
+ * second run): offsets 0..~40 in ascending order, laid out without
+ * overlap; run lengths 1..48, exact, folded or masked. plan_hint takes
+ * every term index and MF_NO_PRED in turn (rot), plan_pos a position
+ * inside the run it names (§14.9). A SET term other than the planned one is
+ * now and then OPTIONAL (§14.5: prefix_k's verify offsets). */
+static void gen_pcrec_pred(gsite *g, int p, unsigned rot)
+{
+    int nset = (int)rn(5), nrun = (nset == 0 || rn(4)) ? 1 : 0;
+    if (nrun && nset < 4 && rn(12) == 0) nrun = 2;
+    int nterm = nset + nrun;
+    int kinds[G2_MAXT];
+    for (int t = 0; t < nterm; t++) kinds[t] = t < nset ? G2_T_SET : G2_T_RUN;
+    for (int t = nterm - 1; t > 0; t--) { int k = (int)rn((unsigned)t + 1), x = kinds[t]; kinds[t] = kinds[k]; kinds[k] = x; }
+    g2_pred *P = &g->preds[p];
+    P->nterm = (uint8_t)nterm;
+    P->need = G2_REQ;
+    int off = rn(3) ? 0 : (int)rn(12);
+    for (int t = 0; t < nterm; t++) {
+        if (kinds[t] == G2_T_SET) {
+            fam_set(g, p, t, off, G2_REQ);
+            off += 1 + (int)(rn(3) ? rn(3) : rn(10));
+        } else {
+            uint32_t len = rn(3) ? 1 + rn(16) : 1 + rn(48);
+            int mode = rn(10) < 6 ? 0 : rn(4) ? 1 : 2;
+            fam_run(g, p, t, off, len, mode, G2_REQ);
+            off += (int)len + (int)(rn(3) ? rn(3) : rn(8));
+        }
+    }
+    int ph = (int)(rot % (unsigned)(nterm + 1));
+    g->php[p] = ph == nterm ? MF_NO_PRED : (uint8_t)ph;
+    g->ppp[p] = 0;
+    if (ph < nterm && P->t[ph].kind == G2_T_RUN) g->ppp[p] = (uint16_t)rn(P->t[ph].len);
+    for (int t = 0; t < nterm; t++)
+        if (t != ph && P->t[t].kind == G2_T_SET && rn(6) == 0) P->t[t].need = G2_OPT;
+}
+
+/* §15.1/§15.2: the offset-skip block. FUNC/FIND/RETURN, empty MISS (its
+ * loop guard fails: `return n`; now and then EXCLUDED), a fn_ref and the
+ * fn_name hook, `miss` exactly the `n` hook's text or unstated, no floor;
+ * use DISCARD or POSITION (§14.5, per instance) */
+static void gen_fam_ofs(int count, unsigned *rot)
+{
+    gsite g;
+    for (int k = 0; k < count; k++) {
+        fam_site(&g, G2_OP_FIND, G2_H_RETURN, G2_FORM_FUNC, G2_FAM_OFS);
+        alloc_preds(&g, 1);
+        gen_pcrec_pred(&g, 0, (*rot)++);
+        g.fnr[0] = 1;
+        g.table_ref_on = rn(4) != 0;
+        cap_opt(&g);
+        fam_finish(&g, rn(8) ? G2_EMPTY_MISS : G2_EMPTY_EXCLUDED, k % 3 == 2 ? 5 : 4);
+        fam_next(&g);
+    }
+}
+
+/* §15.1 over one RUN term: every length 1..40 at every offset 0..7 (each
+ * alignment mod 8), exact and case-folded; random masks at one offset per
+ * length; sparse deeper offsets to 40. plan_pos walks the run */
+static void gen_fam_ofsrun(unsigned *rot)
+{
+    gsite g;
+    for (uint32_t len = 1; len <= 40; len++)
+        for (int off = 0; off <= 8; off++)
+            for (int mode = 0; mode <= 2; mode++) {
+                if (off == 8 ? mode != 2 : mode == 2) continue;  /* masked: one offset */
+                fam_site(&g, G2_OP_FIND, G2_H_RETURN, G2_FORM_FUNC, G2_FAM_OFSRUN);
+                alloc_preds(&g, 1);
+                g.preds[0].nterm = 1;
+                g.preds[0].need = G2_REQ;
+                fam_run(&g, 0, 0, off == 8 ? (int)(len % 8) : off, len, mode, G2_REQ);
+                g.php[0] = 0;
+                g.ppp[0] = (uint16_t)((*rot)++ % len);
+                g.fnr[0] = 1;
+                fam_finish(&g, G2_EMPTY_MISS, (len + (uint32_t)off) % 4 == 3 ? 5 : 4);
+                fam_next(&g);
+            }
+    static const uint32_t lens[] = { 1, 2, 3, 4, 7, 8, 9, 15, 16, 17, 24, 33, 40 };
+    static const int offs[] = { 9, 13, 16, 21, 24, 31, 40 };
+    for (size_t i = 0; i < sizeof lens / sizeof lens[0]; i++)
+        for (size_t j = 0; j < sizeof offs / sizeof offs[0]; j++) {
+            fam_site(&g, G2_OP_FIND, G2_H_RETURN, G2_FORM_FUNC, G2_FAM_OFSRUN);
+            alloc_preds(&g, 1);
+            g.preds[0].nterm = 1;
+            g.preds[0].need = G2_REQ;
+            fam_run(&g, 0, 0, offs[j], lens[i], (int)((i + j) % 2), G2_REQ);
+            g.php[0] = 0;
+            g.ppp[0] = (uint16_t)((*rot)++ % lens[i]);
+            g.fnr[0] = 1;
+            fam_finish(&g, G2_EMPTY_MISS, 4);
+            fam_next(&g);
+        }
+}
+
+/* the same predicates as STMT sites (§15.3's ON_MISS line, §15.5's ASSIGN
+ * line): on_miss_leaves at both values; empty MISS (pcrec's), now and then
+ * NOP or EXCLUDED */
+static void gen_fam_stmt(int count, unsigned *rot)
+{
+    gsite g;
+    for (int k = 0; k < count; k++) {
+        int h = k % 2 ? G2_H_ON_MISS : G2_H_ASSIGN;
+        fam_site(&g, G2_OP_FIND, h, G2_FORM_STMT, G2_FAM_STMT);
+        alloc_preds(&g, 1);
+        gen_pcrec_pred(&g, 0, (*rot)++);
+        g.fnr[0] = rn(2);
+        g.table_ref_on = rn(4) != 0;
+        cap_opt(&g);
+        unsigned e = rn(8);
+        fam_finish(&g, e < 6 ? G2_EMPTY_MISS : e == 6 ? G2_EMPTY_NOP : G2_EMPTY_EXCLUDED,
+                   h == G2_H_ASSIGN && rn(4) == 0 ? 5 : 4);
+        fam_leaves(&g, (k / 2) % 2);
+        fam_next(&g);
+    }
+}
+
+/* §15.3: the one-byte pre-check. STMT/FIND/ON_MISS, one SET term at offset
+ * 0 (a singleton, now and then a set through table_ref), REQUIRED, or
+ * OPTIONAL as set-leads' lead on a DFA-scan route (§14.5); empty MISS, the
+ * `<=` arm; on_miss_leaves at both values */
+static void gen_fam_onebyte(int count)
+{
+    gsite g;
+    for (int k = 0; k < count; k++) {
+        fam_site(&g, G2_OP_FIND, G2_H_ON_MISS, G2_FORM_STMT, G2_FAM_ONEBYTE);
+        alloc_preds(&g, 1);
+        g.preds[0].nterm = 1;
+        g.preds[0].need = G2_REQ;
+        static const int kinds[] = { 1, 1, 1, 1, 2, 3, 4, 5 };
+        gen_term(&g, 0, 0, G2_T_SET, 0, 0, -1, rn(4) ? G2_REQ : G2_OPT, kinds[rn(8)], 0);
+        g.php[0] = rn(2) ? 0 : MF_NO_PRED;
+        g.table_ref_on = rn(2);
+        unsigned e = rn(6);
+        fam_finish(&g, e < 4 ? G2_EMPTY_MISS : e == 4 ? G2_EMPTY_NOP : G2_EMPTY_EXCLUDED, 4);
+        fam_leaves(&g, k % 2);
+        fam_next(&g);
+    }
+}
+
+/* §15.5: the K82 gate, ONE composite ALL_PRESENT/STMT site. Its dense
+ * preds[]: the lead (a singleton SET; the PREDICATE OPTIONAL on a DFA-scan
+ * route, REQUIRED on a no-DFA route), the window RUN (REQUIRED, a fn_ref),
+ * the whole RUN (REQUIRED, a fn_ref; the window is a piece of it), the set
+ * rest (singleton SETs). ASSIGN iff ret_pred names the window (index 0 or
+ * 1), else ON_MISS; site-level empty MISS; on_miss_leaves mostly 1 (pcrec's
+ * `return 0;`), now and then 0 */
+static void gen_fam_gate(int count)
+{
+    gsite g;
+    for (int k = 0; k < count; k++) {
+        int assign = k % 3 != 2;
+        fam_site(&g, G2_OP_ALL, assign ? G2_H_ASSIGN : G2_H_ON_MISS, G2_FORM_STMT, G2_FAM_GATE);
+        int lead = rn(3) != 0, whole = rn(2), nrest = rn(2) ? 0 : 1 + (int)rn(8);
+        alloc_preds(&g, lead + 1 + whole + nrest);
+        int mode = rn(3) ? 0 : 1;
+        uint32_t wl = 4 + rn(37), a = 0;
+        uint32_t wlen = whole ? 1 + rn(wl < 16 ? wl : 16) : 1 + rn(24);
+        int idx = 0, wi;
+        if (whole) a = rn(wl - wlen + 1);
+        if (lead) {
+            g.preds[idx].nterm = 1;
+            g.preds[idx].need = rn(2) ? G2_OPT : G2_REQ;
+            gen_term(&g, idx, 0, G2_T_SET, 0, 0, -1, G2_REQ, 1, 0);
+            g.php[idx] = rn(2) ? 0 : MF_NO_PRED;
+            idx++;
+        }
+        wi = idx;
+        g.preds[idx].nterm = 1;
+        g.preds[idx].need = G2_REQ;
+        fam_run(&g, idx, 0, 0, wlen, mode, G2_REQ);
+        g.php[idx] = 0;
+        g.ppp[idx] = (uint16_t)rn(wlen);
+        g.fnr[idx] = (uint32_t)idx + 1;
+        idx++;
+        if (whole) {
+            g.preds[idx].nterm = 1;
+            g.preds[idx].need = G2_REQ;
+            fam_run(&g, idx, 0, 0, wl, mode, G2_REQ);
+            /* the window is the whole run's [a, a + wlen) */
+            memcpy(g.rb[wi][0], g.rb[idx][0] + a, wlen);
+            memcpy(g.mb[wi][0], g.mb[idx][0] + a, wlen);
+            g.php[idx] = 0;
+            g.ppp[idx] = (uint16_t)rn(wl);
+            g.fnr[idx] = (uint32_t)idx + 1;
+            idx++;
+        }
+        unsigned b = rn(256);
+        for (int r = 0; r < nrest; r++, idx++) {
+            g.preds[idx].nterm = 1;
+            g.preds[idx].need = G2_REQ;
+            gen_term(&g, idx, 0, G2_T_SET, 0, 0, -1, G2_REQ, 0, 0);
+            b = (b + 1 + rn(20)) & 255;
+            set_add(g.preds[idx].t[0].set, b);
+            g.php[idx] = rn(2) ? 0 : MF_NO_PRED;
+        }
+        g.d.ret_pred = assign ? (uint8_t)wi : 0xFF;
+        g.d.use = assign && rn(4) ? G2_USE_POSITION : G2_USE_DISCARD;
+        fam_finish(&g, G2_EMPTY_MISS, assign && rn(4) == 0 ? 5 : 4);
+        fam_leaves(&g, rn(4) != 0);
+        fam_next(&g);
+    }
+}
+
+/* §15.4: N4's set rest. STMT/ALL_PRESENT/ON_MISS, one singleton SET
+ * predicate per member, ascending, ALL REQUIRED; empty EXCLUDED (now and
+ * then MISS, the composite's); on_miss_leaves at both values */
+static void gen_fam_setrest(int count)
+{
+    gsite g;
+    for (int k = 0; k < count; k++) {
+        fam_site(&g, G2_OP_ALL, G2_H_ON_MISS, G2_FORM_STMT, G2_FAM_SETREST);
+        int np = 1 + (int)(k % 4 == 0 ? rn(64) : rn(12));
+        alloc_preds(&g, np);
+        unsigned b = rn(64);
+        for (int p = 0; p < np; p++) {
+            g.preds[p].nterm = 1;
+            g.preds[p].need = G2_REQ;
+            gen_term(&g, p, 0, G2_T_SET, 0, 0, -1, G2_REQ, 0, 0);
+            set_add(g.preds[p].t[0].set, b & 255);
+            b += 1 + rn(3);
+            g.php[p] = rn(2) ? 0 : MF_NO_PRED;
+        }
+        fam_finish(&g, k % 5 ? G2_EMPTY_EXCLUDED : G2_EMPTY_MISS, 4);
+        fam_leaves(&g, k % 2);
+        fam_next(&g);
+    }
+}
+
+/* §15.6 and §R4.8.1 item 4: the VMRUN site. VERIFY/EXPR/BOOL, one REQUIRED
+ * RUN term at the node's depth (0..8: every offset alignment mod 8),
+ * guard_by_caller 1, empty EXCLUDED (Q-M1b-5), use DISCARD, policy INLOOP.
+ * Every length 1..40 exact at every offset; folded and masked at one
+ * offset per length; an unsatisfiable byte (Q-G2-13) now and then */
+static void gen_fam_vmrun(void)
+{
+    gsite g;
+    for (uint32_t len = 1; len <= 40; len++)
+        for (int off = 0; off <= 10; off++) {
+            int mode = off <= 8 ? 0 : off == 9 ? 1 : (len % 5 == 3 ? 3 : 2);
+            fam_site(&g, G2_OP_VERIFY, G2_H_BOOL, G2_FORM_EXPR, G2_FAM_VMRUN);
+            alloc_preds(&g, 1);
+            g.preds[0].nterm = 1;
+            g.preds[0].need = G2_REQ;
+            fam_run(&g, 0, 0, off <= 8 ? off : (int)(len % 9), len, mode, G2_REQ);
+            g.php[0] = MF_NO_PRED;
+            g.inloop = 1;
+            fam_finish(&g, G2_EMPTY_EXCLUDED, 0);
+            g.d.gbc = 1;
+            g.d.use = G2_USE_DISCARD;
+            fam_next(&g);
+        }
+}
+
 int main(int argc, char **argv)
 {
     if (argc < 2) { fprintf(stderr, "usage: g2_gen OUTDIR [--seed N] [--batch N] [--mutate K] [--sites N]\n"); return 2; }
@@ -1299,18 +1779,12 @@ int main(int argc, char **argv)
 
     refusal_table();
 
-    int bi = 0;
-    batchbuf B;
-    memset(&B, 0, sizeof B);
-    g_batch_denies = 0;
-    mf_art *art = mf_art_begin(&g_arena, "g2b0", MF_P_PORTABLE_ONLY, g_batch_denies);
+    g_outdir = outdir;
+    g_all = all;
+    g_batchsz = batch;
+    open_batch();
     gsite g;
-    int nsites = 0;
-#define NEXT() do { render(art, &g, &B); free_site(&g); nsites++; \
-        if (B.nsite >= batch) { flush_batch(outdir, bi, art, &B, all); bi++; \
-            char px[16]; snprintf(px, sizeof px, "g2b%d", bi); \
-            g_batch_denies = bi % 3 == 2 ? MF_D_RUN_OVERLAP : 0; \
-            art = mf_art_begin(&g_arena, px, bi & 1 ? 0 : MF_P_PORTABLE_ONLY, g_batch_denies); } } while (0)
+#define NEXT() next_site(&g)
 
     /* the non-SKIP combos: their sites carry arbitrary conjunctions */
     int gcombo[NCOMBO], ngc = 0;
@@ -1459,8 +1933,54 @@ int main(int argc, char **argv)
         finish_site(&g, rn(3));
         NEXT();
     }
-    if (B.nsite) { flush_batch(outdir, bi, art, &B, all); bi++; }
-    else mf_art_end(art);
+    /* (5) lane g2x: the site shapes pcrec sends the kit (§15), densely,
+     *     each family once without and once with MF_D_RUN_OVERLAP (every
+     *     kit arm that compares a run honours it, §14.10 bit 43) */
+    unsigned frot = 0;
+    for (int dn = 0; dn < 2; dn++) {
+        force_batch(dn ? MF_D_RUN_OVERLAP : 0);
+        gen_fam_ofs(240, &frot);
+        gen_fam_ofsrun(&frot);
+        gen_fam_stmt(200, &frot);
+        gen_fam_onebyte(40);
+        gen_fam_gate(160);
+        gen_fam_setrest(30);
+        gen_fam_vmrun();
+    }
+    /* (6) lane g2x: the families again with non-identifier hook text (styles
+     *     1 and 2), sampled, each family in batches of its own, so that a
+     *     rendering that does not compile costs that family's batch alone */
+    for (g_fam_style = 1; g_fam_style <= 2; g_fam_style++) {
+        g_fam_stride = 6;
+        for (int f = G2_FAM_OFS; f < G2_NFAM; f++) {
+            force_batch(f % 2 ? MF_D_RUN_OVERLAP : 0);
+            g_fam_ctr = 0;
+            switch (f) {
+            case G2_FAM_OFS:     gen_fam_ofs(240, &frot); break;
+            case G2_FAM_OFSRUN:  gen_fam_ofsrun(&frot); break;
+            case G2_FAM_STMT:    gen_fam_stmt(200, &frot); break;
+            case G2_FAM_ONEBYTE: gen_fam_onebyte(40); break;
+            case G2_FAM_GATE:    gen_fam_gate(160); break;
+            case G2_FAM_SETREST: gen_fam_setrest(30); break;
+            default:             gen_fam_vmrun(); break;
+            }
+        }
+    }
+    g_fam_style = 0;
+    g_fam_stride = 1;
+    if (g_B.nsite) { flush_batch(outdir, g_bi, g_art, &g_B, all); g_bi++; }
+    else mf_art_end(g_art);
+    int bi = g_bi, nsites = g_nsites;
+
+    /* the K35 witness per family (run_g2.sh holds each to a floor) */
+    for (int f = 0; f < G2_NFAM; f++) {
+        fprintf(g_res, "FAMILY %s rendered=%ld refused=%ld edge_refused=%ld edge_rendered=%ld forms=",
+                g2_fam_name(f), fam_rendered[f], fam_refused[f], fam_edge[f], fam_edge_rendered[f]);
+        int any = 0;
+        for (int k = 0; k < NFORMS && form_ids[k][0]; k++)
+            if (fam_form[f][k]) { fprintf(g_res, "%s%s:%ld", any++ ? "," : "", form_ids[k], fam_form[f][k]); }
+        fprintf(g_res, "%s\n", any ? "" : "-");
+    }
 
     fputs("const g2_site *const g2_batches[] = {\n", all);
     for (int i = 0; i < bi; i++) fprintf(all, "    g2_batch_%03d,\n", i);
