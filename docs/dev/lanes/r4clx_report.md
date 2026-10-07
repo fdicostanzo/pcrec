@@ -368,3 +368,30 @@ input was run. The Linux re-run is the verdict.
 3. **The RERUN command gains the inert arms.** `I2ARMS` becomes
    `'^(arms-start|inert .*|base=(none|-fcomments) -fno-(cls-kit|splice-calls)|base=utf8 .*)$'`,
    so PASS is i2arms=17.
+
+## Addendum 2 (kit manager, 2026-10-07): the Linux re-run's C4 red, and the committed populations
+
+The re-run at abae07fa read C4 class 1 red: `3 of 41 compiler-derived plants
+MISSED: FP_FAST_FMAF; FP_FAST_FMAF32; FP_FAST_FMAF64`. gcc 15.2 declares
+`__FP_FAST_FMA*` under -mfma; clang, the Mac's x86 proxy, does not. This is
+the second Linux-only miss, for one root cause: the regex was checked only
+against populations the Mac can produce.
+- **Fix 1 (the rule).** `__FP_FAST_FMA*` is C99 <math.h>'s fast-fma
+  CAPABILITY macro, not an ISA's name; the ISA is class 1's `fma`. It joins
+  `__GCC_HAVE_SYNC_COMPARE_AND_SWAP_N` in the named list
+  `CAPABILITY_PREFIXES = ('GCC_', 'FP_FAST_')`. Those are class-2 plants,
+  and class 2's regex already covers them, never class-1 stems.
+- **Fix 2 (the mechanism).** `tests/memfn/c4_populations/<compiler>-<target>-<box>/`
+  holds the box's REAL `gcc -dM -E` dumps (main's executor probe: 5 -march
+  levels incl. native, 13 -m flags, VERSION, native_target.txt).
+  `population_controls()` plants classes 1-2 from every committed population
+  on every run, on any box.
+- **Control.** With `CAPABILITY_PREFIXES = ('GCC_',)`, the Mac run reads
+  `FAIL: population gcc15.2-x86_64-ubuntubudu class 1 (isa-name): 3 of 41
+  plants MISSED by the regex: FP_FAST_FMAF; FP_FAST_FMAF32; FP_FAST_FMAF64`.
+  That is the box's exact failure, reproduced offline. With the fix: 37/37
+  and 48/48, `checks failed: 0`.
+- The probe (for a new box):
+  `for m in x86-64 x86-64-v2 x86-64-v3 x86-64-v4 native; do gcc -march=$m -dM -E - </dev/null | sort > march_$m.txt; done`,
+  plus `gcc -m$f -dM -E` for each ISA flag set (abm aes avx512f bmi bmi2 cx16
+  f16c fma lahf-lm lzcnt movbe pclmul popcnt sha).
