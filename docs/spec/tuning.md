@@ -167,6 +167,19 @@ on this same pattern: `.frame_capacity = 3` possessified,
 a rewrite whose entire claim is "changes no answer", and a claim that
 cannot be turned off cannot be differentially tested (D47.3).
 
+**Answer identity holds under the default budgets; the give-up surface moves
+in TWO directions.** Under a caller-tuned `--step-budget`,
+`--work-budget` or `--backtrack-frames` the rewrite is not neutral. A
+possessified loop keeps no resume frames and spends no backtrack steps on
+retreats, so a `PCREC_ERR_STEPS` or `PCREC_ERR_FRAMES` give-up of the denied
+build can only become an answer. Its forward scan is charged to the WORK
+budget per iteration, so a `PCREC_ERR_WORK` give-up can APPEAR where the denied
+build answered. Measured (`--engine=vm`, 200 distinct words plus
+`last last`, 1.5 KB): the backtracking `\b(\w+)\b\s+\1\b` completes at a
+minimum `--work-budget` of 581, the possessive spelling `\b(\w++)\b\s++\1\b`
+at 1,586 (580 and 1,585 give up `PCREC_ERR_WORK`). `limits.md` §7 states the
+caller-facing consequence.
+
 **Differential:** `tests/possessify/run_possdiff.sh`. Population,
 measured this session (`bash tests/possessify/run_possdiff.sh`):
 
@@ -3631,11 +3644,14 @@ turned the force flag on.
   force).
 - **Inert before R4e':** no SIMD form exists, so `-fmemfn-simd` and
   `-fno-memfn-simd` produce byte-identical artifacts (checked by C11's
-  identity half, `make test-memfn-stamps`, printed "identical (no SIMD
-  form)"). The per-form switches are the kit's own `--memfn=` namespace
+  identity half, `make test-memfn-stamps`, which compiles each sampled
+  artifact under each flag against the default and prints "identical (no
+  SIMD form)" once per layer). The per-form switches are the kit's own `--memfn=` namespace
   (`registry.md` §6), not this axis.
-- **Masked** out of `rx_info.flags` (`strategy_denials`): the axis selects
-  what the kit renders and changes no answer. The activity record is
+- **Masked** out of `rx_info.flags`, both bits, by `emit_info_def`'s
+  `strategy_denials` mask (`src/gen/emit_dfa.c`; §2's `rx_info.flags`
+  rule, which masks force bits too): the axis selects what the kit renders
+  and changes no answer. The activity record is
   `<PREFIX>_MEMFN_FORMS` (`match_api.md` §6.3), `none` iff the artifact is
   identical to its SIMD-off compile.
 

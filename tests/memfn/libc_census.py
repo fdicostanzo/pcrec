@@ -15,14 +15,20 @@ WHAT IT CHECKS, per artifact of a corpus-wide population:
             data objects (the stdio streams, which `--emit-main` and
             `--trace` artifacts reference);
   FORMS     the value is "none". Its "none implies identical to the
-            -fno-memfn-simd compile" half RUNS from R4c, when the switch is
-            born (R-4, Q5): every pattern-stream artifact is compiled again
-            with -fno-memfn-simd and the two texts must be byte-equal.
-            Reported "identical (no SIMD form)": identical by construction
-            while no SIMD form exists, so it catches a non-inert switch and
-            proves nothing about a SIMD form. The movers half (-fmemfn-simd
-            against SIMD-off) stays UNREACHED until the first SIMD-on form
-            (Q55, R4e'). Composition files are not re-compiled.
+            SIMD-off compile" half RUNS from R4c, when the switch is born
+            (R-4, Q5), at BOTH layers. The default IS -fno-memfn-simd, so
+            every pattern-stream artifact is compiled twice more: (a) with
+            -fno-memfn-simd stated, which must be byte-equal to the default
+            (the deny of the default restates it); (b) with -fmemfn-simd,
+            the SIMD-ON layer, which must ALSO be byte-equal to the default
+            while FORMS reads "none" everywhere (R4c' item (e): (a) alone
+            never compiled the ON side). Both reported "identical (no SIMD
+            form)": identical by construction while no SIMD form exists, so
+            they catch a non-inert switch and prove nothing about a SIMD
+            form. At the first SIMD-on form (Q55, R4e') (b) is replaced by
+            the movers half (FORMS names the forms an ON artifact differs
+            by), which stays UNREACHED until then. Composition files are not
+            re-compiled.
 
 THE INDEPENDENT CONTROL (docs/dev/learnings.md §3). The names come from the
 COMPILER's symbol table, not from text: no list here is shared with the
@@ -248,15 +254,18 @@ def main():
         if r.returncode != 0:
             return None
         text = r.stdout.decode('utf-8', 'surrogateescape')
-        # the FORMS identity half: the same compile with the SIMD switch
-        # stated OFF must be byte-equal (a deny of the default)
-        try:
-            r2 = subprocess.run(argv[:-4] + ['-fno-memfn-simd'] + argv[-4:],
-                                capture_output=True, timeout=60)
-        except subprocess.TimeoutExpired:
-            r2 = None
-        ident.append((sname, p, r2 is not None and r2.returncode == 0
-                      and r2.stdout == r.stdout))
+        # the FORMS identity half, both layers: the same compile with the
+        # SIMD switch stated OFF (a deny of the default) and turned ON must
+        # each be byte-equal to the default while no SIMD form exists
+        same = []
+        for flag in ('-fno-memfn-simd', '-fmemfn-simd'):
+            try:
+                r2 = subprocess.run(argv[:-4] + [flag] + argv[-4:],
+                                    capture_output=True, timeout=60)
+            except subprocess.TimeoutExpired:
+                r2 = None
+            same.append(r2 is not None and r2.returncode == 0 and r2.stdout == r.stdout)
+        ident.append((sname, p, same[0], same[1]))
         with open(cpath, 'wb') as f:
             f.write(r.stdout)
         res = cen.one('%s:%r' % (sname, p[:60]), text, cpath, workdir)
@@ -329,12 +338,13 @@ def main():
             ok('floor %s: %d >= %d' % (name, got, floor))
         else:
             bad('floor %s: %d < %d (a population nobody counted, K35)' % (name, got, floor))
-    differ = [(sn, p) for sn, p, same in ident if not same]
-    for sn, p in differ[:40]:
-        bad('FORMS identity: %s:%r differs under -fno-memfn-simd' % (sn, p[:60]))
-    if ident and not differ:
-        ok('FORMS identity: identical (no SIMD form) -- %d pattern-stream artifacts, '
-           'default vs -fno-memfn-simd' % len(ident))
+    for col, flag, layer in ((2, '-fno-memfn-simd', 'SIMD-off'), (3, '-fmemfn-simd', 'SIMD-on')):
+        differ = [(t[0], t[1]) for t in ident if not t[col]]
+        for sn, p in differ[:40]:
+            bad('FORMS identity (%s): %s:%r differs under %s' % (layer, sn, p[:60], flag))
+        if ident and not differ:
+            ok('FORMS identity (%s): identical (no SIMD form) -- %d pattern-stream '
+               'artifacts, default vs %s' % (layer, len(ident), flag))
     if not ident:
         bad('FORMS identity: no artifact was compared (a population nobody counted, K35)')
     print('UNREACHED: C11 FORMS movers half (-fmemfn-simd against the SIMD-off compile): '

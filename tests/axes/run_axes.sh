@@ -791,7 +791,7 @@ declare -A GIVEUP1_ALLOWANCE=(
 # these per bucket, tests/axes/dump_diff.awk's own documented cap, which is
 # why a first pass at this manifest from that capped log alone would have
 # missed 25 of the 45): 18+12+4+11 = 45, matching the full-corpus
-# giveup1-unallowed=45 exactly.
+# giveup1-unallowed=45 exactly. E5 (19, below) added 2026-10-07: 64.
 #
 # E1 (18 cases) — tests/base/k65_precheck_whole_set.rxt, K65 (tuning.md
 # §2.29, known_issues.md K65). `(x?)([a-z]+)+Z.@\1` / `(x?)([a-z]+)+
@@ -892,6 +892,44 @@ declare -A GIVEUP1_ALLOWANCE=(
     ["-fno-req-byte|tests/recursion/d27/sr_depth.rxt:181"]="K34 (known_issues.md K34, CLOSED via the same §2.29 necessary-run precheck [OPT-REQPOS] tier 2b): -fno-req-byte removes it and reopens K34's own give-up on this left-recursive nomatch cell — default proves nomatch, axis gives up (frames)"
     ["-fno-req-byte|tests/recursion/d27/sr_depth.rxt:182"]="K34 (known_issues.md K34, CLOSED via the same §2.29 necessary-run precheck [OPT-REQPOS] tier 2b): -fno-req-byte removes it and reopens K34's own give-up on this left-recursive nomatch cell — default proves nomatch, axis gives up (frames)"
     ["-fno-req-byte|tests/recursion/d27/sr_depth.rxt:183"]="K34 (known_issues.md K34, CLOSED via the same §2.29 necessary-run precheck [OPT-REQPOS] tier 2b): -fno-req-byte removes it and reopens K34's own give-up on this left-recursive nomatch cell — default proves nomatch, axis gives up (frames)"
+
+# E5 (19 cases) — tests/litscan/reqcube.rxt, the [OPT-LITSCAN] S4 C3 /
+# [K82] S2b and S2c blocks (landed 2026-10-03/04, AFTER this manifest was
+# populated — the full AXES_FULL=1 HARNESS_BATCH=64 run at 041e450a was the
+# first to reach them; lane axtri, docs/dev/lanes/axtri_report.md). E1's
+# mechanism EXACTLY: `(x?)([a-z]+)+S\d(?i:select)\1` and
+# `(x?)([a-z]+)+S\d(?i:s)qz\1` are K65's backref family, and those blocks'
+# own comments say the n cells exist to turn into step give-ups when K65's
+# whole-set memchr of 'S' is lost (S451/S452). -fno-req-byte loses it the
+# blunt way (RX_REQ_BYTE/RX_REQ_RUN/RX_REQ_WHY all "none"). Measured live
+# (axtri, --emit-main, the select pattern): default answers nomatch at
+# --step-budget=10, i.e. by the pre-check alone; the axis needs > 10,000
+# and <= 100,000 steps on the 16-a subject and > 100,000 on the 18-a one,
+# and answers nomatch at 1,000,000 — the SAME answer once the budget
+# covers it, so a budget transition, not a wrong answer. Four blocks
+# (byte/utf8 x default/vm engine) x three n cells for S2b, two blocks for
+# S2c, plus line 509 — the `# pcre2-only` L=30 review witness with no
+# budget directive, which exhausts the DEFAULT step budget under the axis
+# (2.9 s, `steps`) where the default memchr answers in ~0.
+    ["-fno-req-byte|tests/litscan/reqcube.rxt:438"]="K65 shape ([OPT-LITSCAN] S4 C3 / [K82] S2b-S2c witness, tuning.md §2.29): -fno-req-byte removes the whole-necessary-set memchr of 'S' (RX_REQ_BYTE none), the block's only linear no-match proof — default proves nomatch, axis gives up (steps); same nomatch once the budget covers it"
+    ["-fno-req-byte|tests/litscan/reqcube.rxt:439"]="K65 shape ([OPT-LITSCAN] S4 C3 / [K82] S2b-S2c witness, tuning.md §2.29): -fno-req-byte removes the whole-necessary-set memchr of 'S' (RX_REQ_BYTE none), the block's only linear no-match proof — default proves nomatch, axis gives up (steps); same nomatch once the budget covers it"
+    ["-fno-req-byte|tests/litscan/reqcube.rxt:440"]="K65 shape ([OPT-LITSCAN] S4 C3 / [K82] S2b-S2c witness, tuning.md §2.29): -fno-req-byte removes the whole-necessary-set memchr of 'S' (RX_REQ_BYTE none), the block's only linear no-match proof — default proves nomatch, axis gives up (steps); same nomatch once the budget covers it"
+    ["-fno-req-byte|tests/litscan/reqcube.rxt:450"]="K65 shape ([OPT-LITSCAN] S4 C3 / [K82] S2b-S2c witness, tuning.md §2.29): -fno-req-byte removes the whole-necessary-set memchr of 'S' (RX_REQ_BYTE none), the block's only linear no-match proof — default proves nomatch, axis gives up (steps); same nomatch once the budget covers it"
+    ["-fno-req-byte|tests/litscan/reqcube.rxt:451"]="K65 shape ([OPT-LITSCAN] S4 C3 / [K82] S2b-S2c witness, tuning.md §2.29): -fno-req-byte removes the whole-necessary-set memchr of 'S' (RX_REQ_BYTE none), the block's only linear no-match proof — default proves nomatch, axis gives up (steps); same nomatch once the budget covers it"
+    ["-fno-req-byte|tests/litscan/reqcube.rxt:452"]="K65 shape ([OPT-LITSCAN] S4 C3 / [K82] S2b-S2c witness, tuning.md §2.29): -fno-req-byte removes the whole-necessary-set memchr of 'S' (RX_REQ_BYTE none), the block's only linear no-match proof — default proves nomatch, axis gives up (steps); same nomatch once the budget covers it"
+    ["-fno-req-byte|tests/litscan/reqcube.rxt:461"]="K65 shape ([OPT-LITSCAN] S4 C3 / [K82] S2b-S2c witness, tuning.md §2.29): -fno-req-byte removes the whole-necessary-set memchr of 'S' (RX_REQ_BYTE none), the block's only linear no-match proof — default proves nomatch, axis gives up (steps); same nomatch once the budget covers it"
+    ["-fno-req-byte|tests/litscan/reqcube.rxt:462"]="K65 shape ([OPT-LITSCAN] S4 C3 / [K82] S2b-S2c witness, tuning.md §2.29): -fno-req-byte removes the whole-necessary-set memchr of 'S' (RX_REQ_BYTE none), the block's only linear no-match proof — default proves nomatch, axis gives up (steps); same nomatch once the budget covers it"
+    ["-fno-req-byte|tests/litscan/reqcube.rxt:463"]="K65 shape ([OPT-LITSCAN] S4 C3 / [K82] S2b-S2c witness, tuning.md §2.29): -fno-req-byte removes the whole-necessary-set memchr of 'S' (RX_REQ_BYTE none), the block's only linear no-match proof — default proves nomatch, axis gives up (steps); same nomatch once the budget covers it"
+    ["-fno-req-byte|tests/litscan/reqcube.rxt:473"]="K65 shape ([OPT-LITSCAN] S4 C3 / [K82] S2b-S2c witness, tuning.md §2.29): -fno-req-byte removes the whole-necessary-set memchr of 'S' (RX_REQ_BYTE none), the block's only linear no-match proof — default proves nomatch, axis gives up (steps); same nomatch once the budget covers it"
+    ["-fno-req-byte|tests/litscan/reqcube.rxt:474"]="K65 shape ([OPT-LITSCAN] S4 C3 / [K82] S2b-S2c witness, tuning.md §2.29): -fno-req-byte removes the whole-necessary-set memchr of 'S' (RX_REQ_BYTE none), the block's only linear no-match proof — default proves nomatch, axis gives up (steps); same nomatch once the budget covers it"
+    ["-fno-req-byte|tests/litscan/reqcube.rxt:475"]="K65 shape ([OPT-LITSCAN] S4 C3 / [K82] S2b-S2c witness, tuning.md §2.29): -fno-req-byte removes the whole-necessary-set memchr of 'S' (RX_REQ_BYTE none), the block's only linear no-match proof — default proves nomatch, axis gives up (steps); same nomatch once the budget covers it"
+    ["-fno-req-byte|tests/litscan/reqcube.rxt:484"]="K65 shape ([OPT-LITSCAN] S4 C3 / [K82] S2b-S2c witness, tuning.md §2.29): -fno-req-byte removes the whole-necessary-set memchr of 'S' (RX_REQ_BYTE none), the block's only linear no-match proof — default proves nomatch, axis gives up (steps); same nomatch once the budget covers it"
+    ["-fno-req-byte|tests/litscan/reqcube.rxt:485"]="K65 shape ([OPT-LITSCAN] S4 C3 / [K82] S2b-S2c witness, tuning.md §2.29): -fno-req-byte removes the whole-necessary-set memchr of 'S' (RX_REQ_BYTE none), the block's only linear no-match proof — default proves nomatch, axis gives up (steps); same nomatch once the budget covers it"
+    ["-fno-req-byte|tests/litscan/reqcube.rxt:486"]="K65 shape ([OPT-LITSCAN] S4 C3 / [K82] S2b-S2c witness, tuning.md §2.29): -fno-req-byte removes the whole-necessary-set memchr of 'S' (RX_REQ_BYTE none), the block's only linear no-match proof — default proves nomatch, axis gives up (steps); same nomatch once the budget covers it"
+    ["-fno-req-byte|tests/litscan/reqcube.rxt:497"]="K65 shape ([OPT-LITSCAN] S4 C3 / [K82] S2b-S2c witness, tuning.md §2.29): -fno-req-byte removes the whole-necessary-set memchr of 'S' (RX_REQ_BYTE none), the block's only linear no-match proof — default proves nomatch, axis gives up (steps); same nomatch once the budget covers it"
+    ["-fno-req-byte|tests/litscan/reqcube.rxt:498"]="K65 shape ([OPT-LITSCAN] S4 C3 / [K82] S2b-S2c witness, tuning.md §2.29): -fno-req-byte removes the whole-necessary-set memchr of 'S' (RX_REQ_BYTE none), the block's only linear no-match proof — default proves nomatch, axis gives up (steps); same nomatch once the budget covers it"
+    ["-fno-req-byte|tests/litscan/reqcube.rxt:499"]="K65 shape ([OPT-LITSCAN] S4 C3 / [K82] S2b-S2c witness, tuning.md §2.29): -fno-req-byte removes the whole-necessary-set memchr of 'S' (RX_REQ_BYTE none), the block's only linear no-match proof — default proves nomatch, axis gives up (steps); same nomatch once the budget covers it"
+    ["-fno-req-byte|tests/litscan/reqcube.rxt:509"]="K65 shape ([OPT-LITSCAN] S4 C3 / [K82] S2b-S2c witness, tuning.md §2.29): -fno-req-byte removes the whole-necessary-set memchr of 'S' (RX_REQ_BYTE none), the block's only linear no-match proof — default proves nomatch, axis gives up (steps); same nomatch once the budget covers it"
 
 # GROUP F — bit 31, `-fno-req-run` (PCREC_NO_REQ_RUN), 12 cases, all
 # tests/base/k66_precheck_whole_run.rxt (K66, tuning.md §2.29, known_

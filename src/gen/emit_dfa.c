@@ -1507,7 +1507,9 @@ static const struct MemfnPre *req_site_define(Ctx *cx, StrBuf *c)
  * instance: the site is POSITION exactly where that expression is the kept
  * candidate. Emits nothing where the `req_byte` fact declined, which keeps
  * every artifact outside the mechanism's population byte-identical to the
- * shape before it.
+ * shape before it; where the admission EMITS a pre-check and no site was
+ * defined (an entry that skipped `pcrec_emit_req_run_blocks`), it fails the
+ * compile rather than emit nothing, which would drop the pre-check silently.
  *
  * THE WINDOW IS THE WHOLE REMAINING SUBJECT and the soundness is one line:
  * every match begins at or after `posvar` and ends at or before `lenvar`, so
@@ -1538,7 +1540,13 @@ const char *pcrec_emit_req_byte_check(Ctx *cx, StrBuf *c, const char *indent,
                                       const char *lenvar)
 {
     const struct MemfnPre *pre = cx->job->mf_pre;
-    if (!pre) return posvar;
+    if (!pre) {
+        if (req_admit_emits(req_admit(cx)))
+            pcrec_ctx_fail(cx, 0, "internal error: a search entry uses a "
+                           "pre-check the admission emits, but no site was "
+                           "defined for it");
+        return posvar;
+    }
     const mf_site *s = pre->site;
     const char *from = posvar;
     PcrecMfU u = { cx, s, pre, indent };

@@ -234,3 +234,41 @@ the compiler, and is never adopted silently. Proposed for main to file
   Heavy runs: the identity gate and suites go through the Mac suite lock
   in a slot main names, then the Linux verdict through main's executor.
   Any byte move is a STOP-and-report defect, never a re-pin.
+- note: 2026-10-07 — **R4c MERGED to main** (81bc13de; abi stays 65). The
+  Linux verdict is green at 91f5b607 → abae07fa → 5645a37a. The pcrec
+  manager's review verdict: MERGE-READY WITH LISTED FIXES, no blocker
+  or MAJOR. The fixes are taken as **R4c′** on `lane/memfn-r4c2` (cut from
+  main 81bc13de). None moves a byte:
+  - (a) re-pin r4ccore §3's B1-B18 at current-main line numbers (the
+    list predates the FLAGBITS merge);
+  - (b) add two decision reads: `pcrec_fact_req_run(cx)->len >= 2` at
+    emit_dfa.c:1517, and ofs_pred_of's per-term need classification
+    (:1095-1104);
+  - (c) `pcrec_emit_req_byte_check` (:1503) emits nothing when
+    `job->mf_pre` is NULL: fail the compile when the admission says a
+    pre-check is emitted;
+  - (d) an inert-branch plant in `memfn_r4c_i2.py --selftest`;
+  - (e) C11: also compile `-fmemfn-simd`, or correct libc_census.py's
+    docstring (default IS -fno-memfn-simd);
+  - (f) `c4_populations/.../m_lahf-lm.txt` is 0 bytes (gcc spells it
+    `-msahf`): population loading must FAIL on an empty dump. The
+    re-probe was asked of main (→ `worktrees/r4c-lx-results/gccmacros2/`);
+  - (g) S524/S525 need the `checks failed: 0` reach line;
+  - nits: S511's header prose; `strategy_denials` naming in
+    lib/pcrec.h:1128 and tuning §2.43.
+  (a)+(b) gate main's C1. Validation: make strict, the touched sections,
+  the solo mech rows, and the zero-mover gate vs the new main. R4c's
+  `done:` follows R4c′ (its draft is in
+  `worktrees/r4cscope-scratch/r4c_done_draft.md`).
+
+## R-5 — M1b, runcmp migrates, zero movers (after R4c′)
+
+- ack: 2026-10-07 — queued behind R4c′ (lane r4c2fix, in flight on
+  `lane/memfn-r4c2`). Once main merges R4c′, M1b gets its own branch,
+  `lane/memfn-m1b`, cut from that main. Plan: (0) a read-only scoping
+  pass maps runcmp's emitters, bit 43's crossing (§14.10), `RUN_WORDS`
+  as a kit stamp, the mech rows anchored there, and any start-decision
+  read (if one exists we STOP and name it, per R-4's boundary rule);
+  (1) one opus build lane does implement-then-replace. Sabotage ids:
+  S566+ (main, 2026-10-07); the exact block is confirmed with main
+  before the build lane is briefed.

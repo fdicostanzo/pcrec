@@ -6,7 +6,8 @@
 # pcrec_emit_find, a function the PF row (pending) NAMES, so C17's rule 1
 # stays green on purpose: only the C12 ceiling (emit_dfa.c memchr, 2) can see
 # a third. Detector: C12 (arm memfnforms). SAB_REACH: the clean tree sits at
-# its ceiling.
+# its ceiling and every form check passes (`checks failed: 0`, as its
+# siblings S526/S527).
 # RE-AIMED 2026-10-06 ([MEMFN] R4c, lane r4cfix): ofs_test_emit_fn went to
 # the kit at R4c REPLACE and the ceiling fell 8 -> 2, so the plant moves to
 # the still-pending PF emitter. Intent unchanged: a listed emitter spells one
@@ -17,7 +18,8 @@ SAB_SUITES="memfnforms"
 SAB_DESC='a memchr( search text is added to pcrec_emit_find (a listed emitter): the third against the ceiling of 2'
 SAB_DOC_FIGURE='Validated by plant at landing (docs/dev/lanes/r4cchecks_report.md §3); read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S524.'
 SAB_REACH='CC="$CC" TMPDIR="$REACH_TMP" bash "$TREE/tests/memfn/run_form_checks.sh" "$TREE"'
-SAB_REACH_EXPECT='PASS: C12: every group is at its ceiling'
+SAB_REACH_EXPECT='PASS: C12: every group is at its ceiling
+checks failed: 0'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='                  f->len, f->holdback ? " - 1" : "", f->pos);'

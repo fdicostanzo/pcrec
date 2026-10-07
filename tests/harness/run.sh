@@ -1565,7 +1565,7 @@ flush_batch() {
     done
     local dc="$batch_bdir/dispatch.c" dobj="$batch_bdir/dispatch.o" exe="$batch_bdir/t"
     gen_dispatch_c "${surv_px[@]}" > "$dc"
-    if ! gen_cc "batch dispatch ($cur_file)" "$CC" $GENCFLAGS -I"$batch_bdir" -c -o "$dobj" "$dc"; then
+    if ! gen_cc "batch dispatch ($cur_file)" "$CC" $GENCFLAGS -I"$batch_bdir" -I"$SCRIPT_DIR" -c -o "$dobj" "$dc"; then
         # Our OWN generated glue failed to compile — a HARD HARNESS
         # FAILURE attributable to no single pattern, same shape as H11's
         # "$CC failed to build the driver for target" message one section
@@ -1603,7 +1603,7 @@ flush_batch() {
         local sdc="$batch_bdir/${px}_solo.c" sdobj="$batch_bdir/${px}_solo.o" sexe="$batch_bdir/${px}_t"
         gen_dispatch_c "$px" > "$sdc"
         unpack_batch_member "$mi"
-        if gen_cc "solo dispatch ($px)" "$CC" $GENCFLAGS -I"$batch_bdir" -c -o "$sdobj" "$sdc" \
+        if gen_cc "solo dispatch ($px)" "$CC" $GENCFLAGS -I"$batch_bdir" -I"$SCRIPT_DIR" -c -o "$sdobj" "$sdc" \
             && gen_cc "solo link ($px)" "$CC" $GENCFLAGS -o "$sexe" "$sdobj" "$batch_bdir/$px.o"; then
             run_case_loop "$sexe" batched 0
         else

@@ -1,12 +1,16 @@
 #!/usr/bin/env bash
 # S511 ([MEMFN] R4a, lane memfnmanifest) -- A STALE PENDING ROW.
 #
-# The one-byte pre-check's `memchr(` is respelled as a call the vocabulary
-# does not know (the shape a REPLACE commit has when it moves the search
-# into the kit and forgets to flip the row): the PRE row stays `pending`
-# while its emitter, `emit_req_one_byte`, spells nothing. Detector: C17
-# rule 4. SAB_REACH_POP asserts the row is `pending` and names that emitter.
-# RE-AIMED 2026-10-06 ([MEMFN] R4c REPLACE, lane r4ccore): PRE went `delegated` at R4c, so the stale-pending plant moves to a still-pending one-form emitter: MLINE's (`emit_attempt`, the (?m)^ skip). Intent unchanged: the emitter stops spelling its one form while its row stays pending (rule 4).
+# The (?m)^ skip's `memchr(` in `emit_attempt` is respelled as a call the
+# vocabulary does not know (the shape a REPLACE commit has when it moves the
+# search into the kit and forgets to flip the row): the MLINE row stays
+# `pending` while its emitter spells nothing. Detector: C17 rule 4.
+# SAB_REACH_POP asserts the MLINE row is `pending` and names `emit_attempt`.
+# RE-AIMED 2026-10-06 ([MEMFN] R4c REPLACE, lane r4ccore): the plant was the
+# PRE row's one-byte pre-check (`emit_req_one_byte`) until PRE went
+# `delegated` at R4c; it moved to MLINE, a still-pending one-form emitter.
+# Intent unchanged: the emitter stops spelling its one form while its row
+# stays pending (rule 4).
 SAB_ID="S511-c17-stale-pending-row"
 SAB_FILE='src/gen/emit_dfa.c'
 SAB_SUITES="memfnmanifest"

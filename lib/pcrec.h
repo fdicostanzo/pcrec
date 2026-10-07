@@ -1127,9 +1127,11 @@ enum {
  * EXECUTE ELSEWHERE). INERT today: no SIMD form exists before R4e', so both
  * settings render the same artifact. pcrec sends the kit one bit,
  * `MF_P_PORTABLE_ONLY`, set iff the force bit is absent.
- * Both bits are masked out of `rx_info.flags` (`strategy_denials`,
- * src/gen/emit_dfa.c) for the mask's own reason: the artifact must not move
- * a byte over a switch that selects only what the kit renders.
+ * Both bits are masked out of `rx_info.flags` by `emit_info_def`'s
+ * `strategy_denials` mask (src/gen/emit_dfa.c; docs/spec/tuning.md §2's
+ * `rx_info.flags` rule: every axes.def bit, force bits included, unless
+ * named kept), for the mask's own reason: the artifact must not move a
+ * byte over a switch that selects only what the kit renders.
  * A `#define` pair for bit 32's reason. */
 #define PCREC_NO_MEMFN_SIMD PCREC_BIT(48)
 #define PCREC_FORCE_MEMFN_SIMD PCREC_BIT(49)

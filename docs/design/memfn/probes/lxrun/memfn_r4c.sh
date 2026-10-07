@@ -24,6 +24,8 @@
 #                 line (reds=skip with test). Preflight and build always run.
 #   TESTSECTIONS  if set, the test step runs `make <these sections>` instead of
 #                 the full `make test` (reds is counted the same way)
+#   GATEFLAGS     extra flags for memfn_r4c_gate.py (--zero-dumps for a REF at
+#                 R4c' or later; memfn_r4c2.sh sets it)
 #   MECHROWS      if set, mech runs only these ids (still ONE id per matrix
 #                 call: the matrix silently ignores a second id)
 #   I2ARMS        if set, an ERE: only the I2 arms whose label matches run
@@ -96,7 +98,7 @@ g=skip; tr=skip; reds=skip; m=skip; a=skip; c=skip; i2=skip; n2=0
 if on gate; then
 $T 1800 python3 scripts/emit_sweep.py --ref "$REF" > "$L/gate.log" 2>&1
 echo "emit_sweep rc=$? (1 is its own rc for the declared dump mover; the judge decides)"
-python3 "$HERE/memfn_r4c_gate.py" "$L/gate.log"; g=$?
+python3 "$HERE/memfn_r4c_gate.py" ${GATEFLAGS:-} "$L/gate.log"; g=$?
 echo "gate=$g"; grep -E '^-- stream|movers=' "$L/gate.log" | tail -12
 fi
 if on test; then

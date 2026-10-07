@@ -1,0 +1,377 @@
+--- /Users/fdicostanzo/pcrec/worktrees/possarms/src/opt/possessify.c	2026-10-07 01:02:00
++++ src/opt/possessify.c	2026-10-07 01:22:30
+@@ -98,6 +98,7 @@
+  */
+ 
+ #include <string.h>
++#include <stdio.h>
+ 
+ #include "core/internal.h"
+ #include "core/limits.h"
+@@ -172,6 +173,70 @@
+  * unmodellable (a wide class, a backreference) widens to ALL BYTES rather
+  * than refusing, which can only cost a possessification, never a wrong
+  * answer. Feeds §2.2's disjointness test in `pss_walk` below. */
++static First first_of(Ctx *cx, const Ast *a);
++/* ---- PROTOTYPE (possarms census instrument; NOT the implementation) ---- */
++#include <stdlib.h>
++#include "enc/enc.h"
++static const Ast *proto_root;
++static bool proto_in_bref, proto_arm_a, proto_arm_b;
++static void proto_cap_first(Ctx *cx, const Ast *a, int no, First *acc, bool *any)
++{
++    if (!a) return;
++    switch (a->k) {
++    case A_CAP:
++        if (a->u.cap.no == no) {
++            First f = first_of(cx, a->l);
++            bs_or(acc->f, f.f);
++            acc->nullable = acc->nullable || f.nullable;
++            *any = true;
++        }
++        proto_cap_first(cx, a->l, no, acc, any);
++        return;
++    case A_CALL: return;
++    default:
++        if (a->k == A_CAT || a->k == A_ALT || a->k == A_REP || a->k == A_ATOMIC || a->k == A_LOOK) {
++            proto_cap_first(cx, a->l, no, acc, any);
++            if (a->k == A_CAT || a->k == A_ALT) proto_cap_first(cx, a->r, no, acc, any);
++        }
++        return;
++    }
++}
++static void proto_fold(Ctx *cx, uint8_t *f)
++{
++    /* superset of every fold relation pcrec uses: ASCII pairs; anything
++     * >= 0x80, or any letter under a non-byte encoding, widens to all */
++    const PcrecEnc *e = pcrec_enc_by_id(cx->opt->encoding);
++    for (int c = 0x80; c < 256; c++) if (cls_has(f, (unsigned)c)) { bs_all(f); return; }
++    for (int c = 'a'; c <= 'z'; c++)
++        if (cls_has(f, (unsigned)c) || cls_has(f, (unsigned)(c - 32))) {
++            if (e->max_cp > 0xFF && (c == 'k' || c == 's')) { bs_all(f); return; }
++            cls_set(f, (unsigned)c); cls_set(f, (unsigned)(c - 32));
++        }
++}
++static bool iv_has(const PcrecCpRange *iv, int n, unsigned c)
++{
++    for (int i = 0; i < n; i++) if (c >= iv[i].lo && c <= iv[i].hi) return true;
++    return false;
++}
++/* polarity mask of class `x` against set C: bit0 = has a member outside C,
++ * bit1 = has a member inside C. Interval arithmetic, exact. */
++static unsigned proto_pol(const Ast *x, const PcrecCpRange *C, int n)
++{
++    unsigned m = 0;
++    for (int i = 0; i < x->u.cls.n; i++) {
++        unsigned lo = x->u.cls.iv[i].lo, hi = x->u.cls.iv[i].hi, c = lo;
++        while (c <= hi) {
++            /* find the C interval covering c, or the next one */
++            int j = 0;
++            while (j < n && C[j].hi < c) j++;
++            if (j < n && C[j].lo <= c) { m |= 2; if (C[j].hi >= hi) break; c = C[j].hi + 1; }
++            else { m |= 1; if (j == n || C[j].lo > hi) break; c = C[j].lo; }
++        }
++    }
++    return m;
++}
++/* ---- end PROTOTYPE helpers ---- */
++
+ static First first_of(Ctx *cx, const Ast *a)
+ {
+     switch (a->k) {
+@@ -210,8 +275,20 @@
+      * quantifier near a backreference keeps its machinery — the direction
+      * `pcrec_revdet_first` already takes for `$`, and the direction this file
+      * is allowed to be wrong in. */
+-    case A_VAR:
+-    case A_BREF: {
++    case A_BREF:
++        if (proto_arm_b && proto_root && !proto_in_bref) {
++            First acc = fst_empty(false);
++            bool any = false;
++            proto_in_bref = true;
++            for (int i = 0; i < (getenv("PROTO_SAB_FIRSTMEM") ? 1 : a->u.bref.nrefs); i++)
++                proto_cap_first(cx, proto_root, a->u.bref.refs[i], &acc, &any);
++            proto_in_bref = false;
++            if (!any) { acc = fst_empty(false); }      /* never set: always fails */
++            if (a->u.bref.caseless && !getenv("PROTO_SAB_NOFOLD")) proto_fold(cx, acc.f);
++            return acc;
++        }
++        /* fallthrough */
++    case A_VAR: {
+         First r;
+         memset(r.f, 0xff, 32);
+         r.nullable = true;
+@@ -502,6 +579,8 @@
+     uint8_t funion[PSS_MAX_POS][32];  /* position -> union of its successors' */
+     bool    fconflict[PSS_MAX_POS];   /* ... and whether two of them overlapped */
+     bool    hasfollow[PSS_MAX_POS];   /* (U2): does it have any successor */
++    const Ast *node[PSS_MAX_POS];     /* PROTO: the class behind each position */
++    uint8_t lastpos[32];              /* PROTO: the body's LAST position set */
+ } Gk;
+ 
+ /* first/last as POSITION sets, sharing the 256-bit representation. Keeping
+@@ -525,10 +604,11 @@
+ /* Interns a new Glushkov position for byte-set `bytes` in `g`, or fails
+  * (`g->ok = false`) past PSS_MAX_POS; initializes its
+  * follow-union/conflict/hasfollow slots empty. */
+-static int gk_newpos(Gk *g, const uint8_t *bytes)
++static int gk_newpos(Gk *g, const uint8_t *bytes, const Ast *nd)
+ {
+     if (g->npos >= PSS_MAX_POS) { g->ok = false; return -1; }
+     int p = g->npos++;
++    g->node[p] = nd;
+     memcpy(g->set[p], bytes, 32);
+     bs_clear(g->funion[p]);
+     g->fconflict[p] = false;
+@@ -578,7 +658,7 @@
+          * is lost and no answer moves. */
+         uint8_t lab[32];
+         pcrec_cls_bits_widen(g->cx, a, lab);
+-        int p = gk_newpos(g, lab);
++        int p = gk_newpos(g, lab, a);
+         if (p < 0) return gk_parts_empty(true);
+         GkParts r = gk_parts_empty(false);
+         cls_set(r.first, (unsigned)p);
+@@ -733,6 +813,7 @@
+ 
+     GkParts p = gk_build(g, body);
+ 
++    memcpy(g->lastpos, p.last, 32);
+     if (!g->ok)     { *why = "model-error";    return false; }
+     if (p.nullable) { *why = "nullable-body";  return false; }
+ 
+@@ -780,6 +861,66 @@
+     return body_admits_unique_iteration((Gk *)scratch, body, why);
+ }
+ 
++static const Gk *proto_g;       /* LAST positions of the Q being asked */
++static First first_ctx(Ctx *cx, const Ast *a);
++static First first_ctx(Ctx *cx, const Ast *a)
++{
++    switch (a->k) {
++    case A_CTX: {
++        unsigned pm = 0;
++        for (int i = 0; i < proto_g->npos; i++)
++            if (cls_has(proto_g->lastpos, (unsigned)i))
++                pm |= proto_pol(proto_g->node[i], a->u.ctx.iv, a->u.ctx.n);
++        bool qok[2] = { false, false };
++        for (int p = 0; p < 2; p++) if (pm & (1u << p))
++            for (int q = 0; q < 2; q++) if (a->u.ctx.fn & (1u << ((p << 1) | q))) qok[q] = true;
++        if (qok[0] && qok[1]) return first_of(cx, a);
++        First r = fst_empty(false);
++        for (unsigned c = 0; c < 256; c++) {
++            bool in = iv_has(a->u.ctx.iv, a->u.ctx.n, c);
++            if (qok[in]) cls_set(r.f, c);
++        }
++        return r;
++    }
++    case A_CAP: case A_ATOMIC: return first_ctx(cx, a->l);
++    case A_CAT: {
++        First acc = fst_empty(true);
++        const Ast *t = a;
++        while (t->k == A_CAT) { acc = fst_seq(first_ctx(cx, t->r), acc); t = t->l; }
++        return fst_seq(first_ctx(cx, t), acc);
++    }
++    case A_ALT: {
++        First acc = fst_empty(false);
++        const Ast *t = a;
++        for (;;) {
++            const Ast *br = t->k == A_ALT ? t->r : t;
++            First r = first_ctx(cx, br);
++            bs_or(acc.f, r.f); acc.nullable = acc.nullable || r.nullable;
++            if (t->k != A_ALT) break;
++            t = t->l;
++        }
++        return acc;
++    }
++    case A_REP: {
++        First r = first_ctx(cx, a->l);
++        r.nullable = r.nullable || a->u.rep.rmin == 0;
++        return r;
++    }
++    default: return first_of(cx, a);
++    }
++}
++typedef struct PCont { const Ast *node; const struct PCont *next; } PCont;
++static First cont_first(Ctx *cx, const PCont *k)
++{
++    First acc = fst_empty(true);
++    for (; k; k = k->next) {
++        First x = first_ctx(cx, k->node);
++        bs_or(acc.f, x.f);
++        if (!x.nullable) { acc.nullable = false; return acc; }
++    }
++    return acc;
++}
++
+ /* ---- the walk: FOLLOW, transitively, and the verdict ---------------------
+  *
+  * FOLLOW(Q) is the set of bytes that can begin whatever runs after `Q`,
+@@ -812,16 +953,17 @@
+      * must never grow. */
+     void (*fn)(void *user, Ast *rep);
+     void *user;
++    int arm_a_hits;
+ } Pss;
+ 
+ static void pss_walk(Pss *P, Ast *a, const uint8_t *follow, bool may_end,
+-                     const uint8_t *encl);
++                     const uint8_t *encl, const PCont *k);
+ 
+ /* §2.2's verdict on ONE A_REP, side-effect-free, given the context its caller
+  * computed. Factored out of `pss_rep` at [M6.4.2] so the free discharge can ask
+  * the SAME question the marking walk asks, from the same lines. */
+ static bool pss_verdict(Pss *P, const Ast *a, const uint8_t *follow,
+-                        bool may_end, const uint8_t *encl)
++                        bool may_end, const uint8_t *encl, const PCont *k)
+ {
+     First body = first_of(P->cx, a->l);
+ 
+@@ -849,13 +991,30 @@
+     if (base_ok && exact)                            return true;
+     if (base_ok && disjoint && lazy && may_end)      return false;
+     if (base_ok && disjoint)                         return true;
++    /* PROTO arm A: context-sharpened follow for a greedy m>=1 loop */
++    if (proto_arm_a && base_ok && !lazy && (a->u.rep.rmin >= 1 || getenv("PROTO_SAB_M0"))) {
++        bool small = true;
++        for (int i = 0; i < 256 && small; i++) ;
++        /* FIRST(X) must be a byte-range code-point set (else body.f is all) */
++        uint8_t all[32]; bs_all(all);
++        if (memcmp(body.f, all, 32) != 0) {
++            body_admits_unique_iteration(P->g, a->l, &uwhy);   /* refresh lastpos */
++            proto_g = P->g;
++            First cf = cont_first(P->cx, k);
++            uint8_t e2[32];
++            memcpy(e2, cf.f, 32);
++            bs_or(e2, encl);
++            if (!bs_intersects(body.f, e2)) { P->arm_a_hits++; return true; }
++        }
++        (void)small;
++    }
+     return false;
+ }
+ 
+ /* `survey_this` is false at exactly one caller — the `A_ATOMIC` arm below,
+  * which has already asked this node's verdict in a DIFFERENT context. */
+ static void pss_rep(Pss *P, Ast *a, const uint8_t *follow, bool may_end,
+-                    const uint8_t *encl, bool survey_this)
++                    const uint8_t *encl, bool survey_this, const PCont *k)
+ {
+     P->seen++;
+ 
+@@ -867,7 +1026,7 @@
+     memcpy(eff, follow, 32);
+     bs_or(eff, encl);
+ 
+-    bool verdict = pss_verdict(P, a, follow, may_end, encl);
++    bool verdict = pss_verdict(P, a, follow, may_end, encl, k);
+ 
+     if (P->fn) {
+         /* SURVEY MODE writes nothing (`pcrec_poss_survey`'s whole contract).
+@@ -885,7 +1044,7 @@
+     uint8_t inner[32];
+     memcpy(inner, encl, 32);
+     bs_or(inner, body.f);
+-    pss_walk(P, a->l, eff, may_end, inner);
++    pss_walk(P, a->l, eff, may_end, inner, k);
+ }
+ 
+ /* Descends `a` computing §2.2's possessification verdict for every A_REP it
+@@ -897,7 +1056,7 @@
+  * measured refutation of a simpler rule (file header) — do not simplify it
+  * without re-reading which counterexample it exists to catch. */
+ static void pss_walk(Pss *P, Ast *a, const uint8_t *follow, bool may_end,
+-                     const uint8_t *encl)
++                     const uint8_t *encl, const PCont *k)
+ {
+     switch (a->k) {
+     /* [CLS-TREE] S3: made by the encoding lowering, below this pass. */
+@@ -988,11 +1147,11 @@
+         return;
+ 
+     case A_CAP:
+-        pss_walk(P, a->l, follow, may_end, encl);
++        pss_walk(P, a->l, follow, may_end, encl, k);
+         return;
+ 
+     case A_REP:
+-        pss_rep(P, a, follow, may_end, encl, true);
++        pss_rep(P, a, follow, may_end, encl, true, k);
+         return;
+ 
+     /* [M6.4.2] AN ATOMIC BODY IS ANALYSED AS A SELF-CONTAINED PATTERN, and
+@@ -1079,11 +1238,11 @@
+              * safe and is declined anyway — declining is always safe, and a
+              * second condition here would need its own evidence. */
+             if (P->fn && body->u.rep.greedy &&
+-                pss_verdict(P, body, follow, may_end, encl))
++                pss_verdict(P, body, follow, may_end, encl, k))
+                 P->fn(P->user, a);
+-            pss_rep(P, body, none, true, encl, false);
++            pss_rep(P, body, none, true, encl, false, NULL);
+         } else {
+-            pss_walk(P, body, none, true, encl);
++            pss_walk(P, body, none, true, encl, NULL);
+         }
+         return;
+     }
+@@ -1096,8 +1255,11 @@
+         memcpy(cur, follow, 32);
+         bool cur_end = may_end;
+         Ast *t = a;
++        const PCont *ck = k;
+         while (t->k == A_CAT) {
+-            pss_walk(P, t->r, cur, cur_end, encl);
++            pss_walk(P, t->r, cur, cur_end, encl, ck);
++            PCont *nk = pcrec_arena_alloc(&P->cx->arena, sizeof *nk);
++            nk->node = t->r; nk->next = ck; ck = nk;
+             First x = first_of(P->cx, t->r);
+             uint8_t nf[32];
+             memcpy(nf, x.f, 32);
+@@ -1106,17 +1268,17 @@
+             memcpy(cur, nf, 32);
+             t = t->l;
+         }
+-        pss_walk(P, t, cur, cur_end, encl);   /* the spine's head */
++        pss_walk(P, t, cur, cur_end, encl, ck);   /* the spine's head */
+         return;
+     }
+     case A_ALT: {
+         /* Every branch is followed by the same thing. */
+         Ast *t = a;
+         while (t->k == A_ALT) {
+-            pss_walk(P, t->r, follow, may_end, encl);
++            pss_walk(P, t->r, follow, may_end, encl, k);
+             t = t->l;
+         }
+-        pss_walk(P, t, follow, may_end, encl);
++        pss_walk(P, t, follow, may_end, encl, k);
+         return;
+     }
+     }
+@@ -1145,7 +1307,10 @@
+ 
+     uint8_t none[32];
+     bs_clear(none);
+-    pss_walk(&P, root, none, true, none);
++    proto_root = root;
++    proto_arm_a = getenv("PROTO_ARM_A") != NULL;
++    proto_arm_b = getenv("PROTO_ARM_B") != NULL;
++    pss_walk(&P, root, none, true, none, NULL);
+ 
+     cx->poss_total  = saved_total;
+     cx->poss_marked = saved_marked;
+@@ -1171,7 +1336,11 @@
+      * match end. */
+     uint8_t none[32];
+     bs_clear(none);
+-    pss_walk(&P, root, none, true, none);
++    proto_root = root;
++    proto_arm_a = getenv("PROTO_ARM_A") != NULL;
++    proto_arm_b = getenv("PROTO_ARM_B") != NULL;
++    pss_walk(&P, root, none, true, none, NULL);
++    if (getenv("PROTO_TRACE") && P.arm_a_hits) fprintf(stderr, "PROTO armA %d\n", P.arm_a_hits);
+ 
+     cx->poss_total  = P.seen;
+     cx->poss_marked = P.possessive;
