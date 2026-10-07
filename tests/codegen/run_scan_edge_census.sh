@@ -128,6 +128,28 @@ edges_on() {   # $1 artifact, $2 machine
     ' "$1"
 }
 
+# Count the edge HEADS a machine carries that its seed table can INSTALL —
+# precondition (8)'s own question, read off the artifact rather than the pass:
+# a head cell (the `if (<m>_state == K` under an `[OPT-5] SCAN EDGE` marker)
+# that is also a value of `rx_<m>_seed_state[]` other than the start cell
+# (the `: K;` the entry seed falls back to — `s0` is exempt for (8)'s own
+# reason, see `in_degrees` in src/opt/scanedge.c). Both are cells in the
+# artifact's own representation, so no un-multiplying is needed.
+seeded_heads_on() {   # $1 artifact, $2 machine
+    awk -v m="$2" '
+        $0 ~ ("_" m "_seed_state\\[[0-9]+\\] = \\{") { intbl = 1; next }
+        intbl { if ($0 ~ /\};/) { intbl = 0; next }
+                gsub(/[ ,]+/, " "); for (i = 1; i <= NF; i++) seed[$i] = 1; next }
+        $0 ~ ("_" m "_seed_state\\[.*\\] : [0-9]+;") && !have0 {
+            s0 = $0; sub(/.* : /, "", s0); sub(/;.*/, "", s0); have0 = 1 }
+        /\[OPT-5\] SCAN EDGE/ { pend = 1; next }
+        pend && $0 ~ ("if \\(" m "_state == [0-9]+") {
+            h = $0; sub(".*" m "_state == ", "", h); sub(/[^0-9].*/, "", h)
+            head[h] = 1; pend = 0 }
+        END { for (h in head) if ((h in seed) && h != s0) n++; print n + 0 }
+    ' "$1"
+}
+
 say "== [OPT-EDGE] STEP 1.1 -- precondition (8)'s census =="
 
 for row in "${MANIFEST[@]}"; do
@@ -195,8 +217,20 @@ done
 #       the same block -- the only forms that WRITE the state variable;
 #   P2  of those, the ones that also emit a forward SEED table, which is the
 #       set on which precondition (8) is evaluated non-trivially at all;
-#   P3  of those, the ones whose forward machine CARRIES a scan edge -- which
-#       must be 0, because that is exactly the state (8) refuses.
+#   P3  of those, the ones whose forward machine carries a scan edge whose
+#       HEAD the seed table can install (a seed value other than the start
+#       cell) -- which must be 0, because that is exactly the state (8)
+#       refuses, and exactly `dfa_form_derive`'s read-back condition.
+#
+# [cgtri] 2026-10-07: P3 USED TO BE "carries ANY scan edge", which is STEP 1's
+# un-narrowed (8), not STEP 1.1's. It held only while P2's edge-carrying
+# population was empty; tests/possessify/composition_d27.rxt's
+# `(?:\b(?1)|x)(a+)` is the first P2 member with an edge, on the `aa` state
+# (cell 12), while its seed table installs only cells 0 and 4 -- an edge (8)
+# correctly does NOT refuse (answers checked against libpcre2 10.46 over 1,500
+# random subjects, 0 differences; docs/dev/lanes/cgtri_report.md). Such
+# machines are now counted as P2e, a FINDING, so the population (8) is narrowed
+# away from stays visible rather than silently absorbed.
 #
 # P3 IS A RED AND THE OTHER TWO ARE FINDINGS, and the asymmetry is the point.
 # P3 restates `dfa_form_derive`'s own read-back check at corpus scale and is
@@ -222,7 +256,7 @@ else
     grep -rhE '^pattern ' tests 2>/dev/null | sed 's/^pattern //' \
         | LC_ALL=C sort -u > "$TMP/pats"
 fi
-p1=0; p2=0; p3=0; npat=0
+p1=0; p2=0; p2e=0; p3=0; npat=0
 while IFS= read -r pat; do
     [ -n "$pat" ] || continue
     npat=$((npat+1))
@@ -232,14 +266,20 @@ while IFS= read -r pat; do
     grep -q 'rx_forward_seed_state' "$TMP/p.c" || continue
     p2=$((p2+1))
     [ "$(edges_on "$TMP/p.c" forward)" != "0" ] || continue
+    p2e=$((p2e+1))
+    if [ "$(seeded_heads_on "$TMP/p.c" forward)" = "0" ]; then
+        say "FINDING [K35]   edge on a reseeding seeded machine, head not seedable: '$pat'"
+        continue
+    fi
     p3=$((p3+1))
-    bad "'$pat': a forward machine with a RESEEDING prefilter carries a scan edge -- precondition (8) did not fire"
+    bad "'$pat': a forward machine with a RESEEDING prefilter carries a scan edge on a head its seed table installs -- precondition (8) did not fire"
 done < "$TMP/pats"
 
 say "FINDING [K35] reseed-hazard population over $npat corpus patterns:"
 say "FINDING [K35]   P1 forward prefilter reseeds ............. $p1"
 say "FINDING [K35]   P2   ... and the machine has a seed ...... $p2   <- where (8) is live"
-say "FINDING [K35]   P3     ... and it carries a scan edge .... $p3   <- must be 0"
+say "FINDING [K35]   P2e    ... and it carries a scan edge .... $p2e"
+say "FINDING [K35]   P3       ... on a seedable head ........... $p3   <- must be 0"
 [ "$p3" -eq 0 ] && ok
 if [ "$p2" -eq 0 ]; then
     say "FINDING [K35] precondition (8) is UNREACHABLE on this corpus -- no machine"

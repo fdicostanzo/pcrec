@@ -3309,6 +3309,15 @@ Failing directions measured at the landing: 11 of 13 rows red against a build
 with the entry dispatch reverted, and 11 of 13 red against the STEP 1
 compiler.
 
+**[cgtri] 2026-10-07: §4's P3 was the UN-narrowed (8).** It asserted "no
+edge at all" on a reseeding seeded forward machine, which held only while that
+population was empty; `composition_d27.rxt`'s `(?:\b(?1)|x)(a+)` carries an
+edge on a head its seed table cannot install (answer-correct against libpcre2
+10.46) and read red. P3 now asks (8)'s own question — an edge head that is a
+non-start seed value, `seeded_heads_on` — and such machines are counted as
+the P2e FINDING. The helper was validated by planting the head into the seed
+table (1), the head onto a seed value (1), and the head onto the start cell (0).
+
 
 ## [M5.0] stage 2's structural + differential acceptance: `run_encoding_checks.sh`
 
