@@ -23,18 +23,24 @@ stage generators $(wc -l < "$OUT/gen_a21.tsv") $(wc -l < "$OUT/gen_a021.tsv") $(
 
 # --- eqcheck (libpcre2 only), sharded
 sweep() {  # name file ML NR
+    # CHUNKED: eqcheck.py holds every row's subject list in memory, and ten
+    # 2,300-row shards OOM-killed on a 15 GB box (rev 2.1's first run).
+    # 200-row chunks, J at a time.
     awk -F'\t' '$5=="yes"||$7!=""||$9=="hand"' "$2" > "$OUT/$1.sel"
-    awk -v J="$J" -v o="$OUT/$1.shard." '{ print > (o (NR % J)) }' "$OUT/$1.sel"
-    for s in "$OUT/$1".shard.*; do
-        ML=$3 NR=$4 python3 -B "$HERE/../eqcheck.py" "$s" > "$s.out" 2> "$s.err" &
-    done
-    wait
-    cat "$OUT/$1".shard.*.out > "$OUT/$1.out"; rm -f "$OUT/$1".shard.*
-    stage "eqcheck $1 rows=$(wc -l < "$OUT/$1.sel") errors=$(grep -c ERROR "$OUT/$1.out")"
+    rm -f "$OUT/$1".chunk.*
+    awk -v o="$OUT/$1.chunk." '{ print > (o sprintf("%05d", int((NR - 1) / 200))) }' "$OUT/$1.sel"
+    ls "$OUT/$1".chunk.* | ML=$3 NR=$4 xargs -P "$J" -I{} sh -c \
+        'python3 -B "$0/../eqcheck.py" {} > {}.out 2> {}.err || echo "CHUNK-FAILED {} rc=$?" >&2' "$HERE"
+    cat "$OUT/$1".chunk.*.out > "$OUT/$1.out"
+    cat "$OUT/$1".chunk.*.err > "$OUT/$1.err"
+    rm -f "$OUT/$1".chunk.*
+    stage "eqcheck $1 rows=$(wc -l < "$OUT/$1.sel") out=$(wc -l < "$OUT/$1.out") errors=$(grep -c ERROR "$OUT/$1.out")"
 }
-sweep eq_a21 "$OUT/gen_a21.tsv" 4 100
-sweep eq_a021 "$OUT/gen_a021.tsv" 4 100
-sweep eq_b21 "$OUT/gen_b21.tsv" 5 300
+SWEEPS=${SWEEPS:-a21 a021 b21}
+case " $SWEEPS " in *" a21 "*) sweep eq_a21 "$OUT/gen_a21.tsv" 4 100 ;; esac
+case " $SWEEPS " in *" a021 "*) sweep eq_a021 "$OUT/gen_a021.tsv" 4 100 ;; esac
+case " $SWEEPS " in *" b21 "*) sweep eq_b21 "$OUT/gen_b21.tsv" 5 300 ;; esac
+[ "${ONLY_SWEEPS:-0}" = 1 ] && { stage "end (sweeps only)"; exit 0; }
 
 # --- CLAIM-vs-MARK (pcrec vs the frozen predicate), every config
 PROTO="$PROTO" JOBS=$J python3 -B "$HERE/r21_claimmark.py" "$OUT/gen_a21.tsv" "$OUT/gen_a021.tsv" "$OUT/gen_b21.tsv" \
