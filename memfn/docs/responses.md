@@ -481,3 +481,45 @@ the compiler, and is never adopted silently. Proposed for main to file
   docs/dev/lanes/missn_report.md and libcnote_report.md. The branch is
   deliverable as an interim unit (N1 WARN gate, N2 driver, F2, MF_MISS_N),
   so R-6 can consume the token from main.
+- done: 2026-10-07 — **[MEMFN-ROWCON] INTERIM delivery: lane/memfn-rowcon @
+  TIP (the commit carrying this entry; code tip 4e6c42c4).** It contains:
+  - N1: the row-contract gate in WARN mode, fields.def, uses/serves on all 8
+    rows, MF_TRACE;
+  - the N2 census driver and results;
+  - F2: the arms note their own libc calls;
+  - MF_MISS_N, the kit side of R-6.
+  All of it is zero-mover. Main 745278be is merged in. Landing bar (main,
+  2026-10-07):
+  1. **make test**, full `-k -j16 -Otarget` on 3fb4dbb4: 640 s, 59/59
+     sections ran. ONE red, test-codegen, which was [SABANCHOR]: S570's
+     anchor went stale under N1's gate trace (check-side; no pcrec byte).
+     Log: worktrees/memfn-slot/slot3/make_test.log (gitignored).
+     **Re-pinned** at 4e6c42c4:
+     - the check reports "all anchors resolve" (497 rows, 515 sites);
+     - **make test-codegen rc 0** in 155 s, with no `*** [test-` lines
+       (worktrees/memfn-slot/slot4/test_codegen.log).
+  2. **make strict** rc 0 on the merged tip.
+  3. **Mech, solo, one id per call**: the 16 rows rows_for.sh names for the
+     kit files touched (D69's src tier). These are S185 S265 S267 S279 S285
+     S443 S444 S445 S447 S450 S454 S455 S464 S526 S573: all DETECTED, 0
+     unexpected/undetected/unreached/anomalies. **S570**, the only row the
+     branch RE-ANCHORS (none added), gave ANOMALY on the stale anchor, then
+     after the re-pin **DETECTED** (reach ok 1/1, codegen 19 fail/311
+     pass). Its anchor is still the DENY TEST in rc_row_of,
+     `if (rows[i].row.deny & art->denies) {`, planted as `0 && (...)`. The
+     plant kills the deny test itself; N1's DENIED trace call inside the
+     block dies with it. It is not anchored on the trace line.
+  4. The **identity gate** vs ccf0ca33 is R4C-GATE PASS, 0 movers on all 6
+     streams (at 728bf063; the later commits touch only the merge of main,
+     ledger/journal and one sabotage row).
+  5. The **full G2** gave 61,020,752 passed, 0 failed, 4044 sites; the
+     MF_MISS_N cell is 538 sites with 11.76M checks.
+  Reports: docs/dev/lanes/rowconn1_report.md, rowconn2_report.md,
+  libcnote_report.md, missn_report.md. Charter vs committed: N1 ✓, N2 ✓
+  (R-6 list posted), F2 ✓, MF_MISS_N ✓ (main's 3 conditions). OWED, not in
+  this unit:
+  - R-6 (main files it; pcrec states MF_MISS_N at the 3 N2 cells);
+  - G2u (the blinded update; folds g2x);
+  - N3 (enforcement; entry is an N2 re-run after R-6 showing 0
+    would-decline + the identity gate);
+  - N4.

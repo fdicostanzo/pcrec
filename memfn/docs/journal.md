@@ -755,3 +755,10 @@ pointer when a kit change merges to main.
   responses.md; offered the branch to main as an interim delivery so R-6
   can consume the token. Lesson: the session scratchpad vanished
   mid-session, so kit scratch moved to worktrees/memfn-slot/ (gitignored).
+- Landing bar for the interim rowcon delivery (main s96): full make test
+  640 s, 59/59, one red: [SABANCHOR] S570 stale under N1 (check-side). It
+  was re-pinned (4e6c42c4); test-codegen rc 0. All 16 D69 mech rows
+  DETECTED, with S570 re-run after the re-pin. done: posted. Lesson: N1's
+  lane never ran SABANCHOR; any kit lane that edits memfn/src must run
+  `python3 scripts/m6read_check_sab_anchors.py` (under a second) before
+  delivering.
