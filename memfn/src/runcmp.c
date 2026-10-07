@@ -280,7 +280,9 @@ int run_cmp_render(mf_art *art, const mf_term *t, const char *base,
     switch (row->form) {
     case RC_F_WORDS:
         rc_emit_words(art, c, base, off, &r);
-        art->includes |= MF_INC_STRING_H;   /* the helpers' memcpy */
+        /* the helpers' memcpy: a constant 2-8 byte load, the record's one
+           exclusion (§R4.3.3), so nothing is noted */
+        art->includes |= MF_INC_STRING_H;
         break;
     case RC_F_BYTES:
         rc_emit_bytes(c, base, off, &r);
@@ -292,6 +294,7 @@ int run_cmp_render(mf_art *art, const mf_term *t, const char *base,
         c->cstr(c->u, r.t, (size_t)r.len);
         kit_out(c, "\", %d)", r.len);
         art->includes |= MF_INC_STRING_H;
+        if (mf_art_note_libc(art, "memcmp")) return -1;
         break;
     }
     return 0;
@@ -337,7 +340,7 @@ int mf_flush_helpers(mf_art *art, mf_sink *c)
     }
     c->puts(c->u, "\n");
     art->wemitted |= need;
-    art->includes |= MF_INC_STRING_H;
+    art->includes |= MF_INC_STRING_H;   /* memcpy of 2/4/8: not noted (idiom) */
     return 0;
 }
 

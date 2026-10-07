@@ -27,7 +27,10 @@ from M1b, a third, the VM's literal-run compare (VMRUN, runcmp.c).
   use hooks in `mf_use`), the art's one `denies` value (a site
   whose `denies` differ is refused, Q-M1b-1), the `mf_includes` query, and
   the stamps: `mf_art_note_libc` (the libc record's writer, a sorted
-  distinct name list on the art) and `mf_stamps` (M1b: `RUN_WORDS`, the run
+  distinct name list on the art; every arm that renders a libc call notes
+  it at the render, beside its `includes` bit: `memchr` in `ofs_fn_define`
+  and `precheck_use`, `memcmp` in `run_cmp_render`; the word-load helper's
+  constant `memcpy` is the record's exclusion and is not noted) and `mf_stamps` (M1b: `RUN_WORDS`, the run
   compare's words count, through `sink->stamp_int`; R4a′: `MEMFN_FORMS
   "none"`, constant until R4f, then `MEMFN_LIBC`, the noted names
   comma-joined or `none`, through `sink->stamp`).

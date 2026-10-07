@@ -163,7 +163,11 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
   builds the driver against `build/libpcrec.a`, checks each fixture renders
   through its pinned arm, each part's digest, a K35 floor
   (`ARMS_ROW_FLOOR`, a literal) and an arm list (`ARMS_EXPECTED`), and that
-  the `--perturb` witness moves exactly its one part. Seconds.
+  the `--perturb` witness moves exactly its one part. Since lane libcnote
+  (kit F2) it also checks the libc record: the driver prints each
+  fixture's stand-alone `MEMFN_LIBC` (no pcrec scan), and the script
+  compares it with its own scan of the rendered text, with floors for
+  `memchr` and `memcmp`. Seconds.
 - **run_deleg_sites.sh** — C10's static half (`make test-memfn-deleg`, in
   TEST_SECTIONS): DELEG_SITES (`src/gen/memfn_sites.def`) against D91's
   budgets (this file's literal), every row's (op, handoff, kinds) through
