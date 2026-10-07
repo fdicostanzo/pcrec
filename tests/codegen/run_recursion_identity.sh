@@ -211,6 +211,19 @@ LIT_PATTERNS='x(abc)defg
 xyz(a|ab)c
 foo(?:username|password|passphrase)bar'
 #
+# [ART-POSS-ARMS] (abi 66) THE FIFTH REGION-MOVING AXIS PAIR, the possessify
+# ARMS (`-fno-poss-ctx-follow` / `-fno-poss-bref-first`, tuning.md §2.44/
+# §2.45): a mover's possessified loop emits no retreat. Its excuse is the
+# same stamp-or-deny claim as the four above, read off
+# `RX_VM_POSS_ARMS` (nonzero, and denying BOTH arms restores the pin), and
+# its non-vacuity arm is this NAMED manifest: the three corpus movers of
+# docs/design/poss_arms.md §5.2 (A1: tests/assertions/wordb_vm.rxt,
+# tests/startset/hybrid.rxt; B: tests/startset/vmhat.rxt), each of which
+# must stamp a nonzero arm on every VM axis.
+POSS_PATTERNS='(\b\w+\b)
+\b(\w+)\s+\1\b
+\B(x|ab){1,2}\b'
+#
 # [recidfix->varland] A FOURTH NAMED EXCEPTION EXISTS, `bref_rename_rewrite()`
 # below (near `prog_region()`), and it is NOT a manifest like the three
 # above: `d93aa931`'s seam generalisation (`<p>_bref_match` -> `<p>_span_
@@ -1729,6 +1742,8 @@ sweep() { # sweep <label> <extra pcrec args>
     # [OPT-LITSCAN] S2a the literal-run axis's own three, the same shape.
     local rlit=0 rlitsame=0 rnolitmoved=0
     local rpack=0 rpacksame=0
+    # [ART-POSS-ARMS] the possessify arms' own three, the lit-run shape.
+    local rposs=0 rposssame=0 rnopossmoved=0
     # [recidfix->varland] the fourth exception's own counter: a region that
     # differs from the pre-module pin for EXACTLY the ruled seam rename,
     # whether that is the whole of the difference or (composed with the fold
@@ -1797,6 +1812,9 @@ sweep() { # sweep <label> <extra pcrec args>
             # the FOURTH region-moving axis (an atom artifact's table reads
             # are matcher calls where the pin reads bitmaps).
             pack_a="$(printf '%s\n' "$a" | sed -n 's/^#define RX_VM_CLS_ATOMS \([0-9]*\)$/\1/p' | head -1)"
+            # [ART-POSS-ARMS] the arms' stamp is a HEX mask; read as a number.
+            poss_a="$(printf '%s\n' "$a" | sed -n 's/^#define RX_VM_POSS_ARMS 0x\([0-9a-f]*\)u$/\1/p' | head -1)"
+            [ -n "$poss_a" ] && poss_a=$((16#$poss_a))
             # [recidfix->varland] the fourth exception's own baseline: the
             # pre-module region with the ONE ruled rename applied. A no-op on
             # every pattern the rename never touches (`rb_bref` == `rb`), so
@@ -1848,6 +1866,7 @@ sweep() { # sweep <label> <extra pcrec args>
                 rvarnew=$((rvarnew + 1))
                 printf 'REGION MOVED (ruled, [VAR] module postdates ac4917d entirely -- no earlier compiler can express ${...}) %s\n' "$pat" >> "$WORKDIR/diff.$label"
             elif [ "${isl_a:-0}" -gt 0 ] || [ "${fold_a:-0}" -gt 0 ] || [ "${lit_a:-0}" -gt 0 ] || [ "${pack_a:-0}" -gt 0 ] \
+                 || [ "${poss_a:-0}" -gt 0 ] \
                  || printf '%s\n' "$CTX_POP" | grep -qxF -- "$pat"; then
                 # [ENG-ISL]/[FORM-CHAR] THE EXCUSE IS A CLAIM ABOUT THE DENY
                 # AXES, NOT A PER-ARTIFACT EXEMPTION (panel r53, F3). Build
@@ -1892,6 +1911,8 @@ sweep() { # sweep <label> <extra pcrec args>
                 # rx_class_atomN. The same reasoning as -fno-lit-run above: an
                 # unstamped pack appears only under another axis's deny.
                 if [ "${pack_a:-0}" -gt 0 ] || [ "${fold_a:-0}" -gt 0 ]; then deny="$deny -fno-cls-pack"; fi
+                # [ART-POSS-ARMS] both arms together, on the stamp alone.
+                [ "${poss_a:-0}" -gt 0 ] && deny="$deny -fno-poss-ctx-follow -fno-poss-bref-first"
                 rn="$(printf '%s\n' "$(gen_deny "$pat" "$args" "$deny")" | stamp_strip | prog_region)"
                 # [silentred] THE SIXTH DENY AXIS, `-fno-ctx-node` ([UCP] U2),
                 # AND IT HAS NO STAMP TO READ: the context node moves a
@@ -1908,7 +1929,7 @@ sweep() { # sweep <label> <extra pcrec args>
                 # same artifact is not restored and lands in rdiff.
                 ctxhit=0
                 stamped=0
-                if [ "${isl_a:-0}" -gt 0 ] || [ "${fold_a:-0}" -gt 0 ] || [ "${lit_a:-0}" -gt 0 ] || [ "${pack_a:-0}" -gt 0 ]; then stamped=1; fi
+                if [ "${isl_a:-0}" -gt 0 ] || [ "${fold_a:-0}" -gt 0 ] || [ "${lit_a:-0}" -gt 0 ] || [ "${pack_a:-0}" -gt 0 ] || [ "${poss_a:-0}" -gt 0 ]; then stamped=1; fi
                 # a pattern that stamps nothing may not be excused by the
                 # stamped-axes build alone (only `-fno-lit-run`, which it
                 # does not stamp): that would be a bucket with no reason.
@@ -1932,6 +1953,7 @@ sweep() { # sweep <label> <extra pcrec args>
                     [ "${fold_a:-0}" -gt 0 ] && rfold=$((rfold + 1))
                     [ "${lit_a:-0}" -gt 0 ] && rlit=$((rlit + 1))
                     [ "${pack_a:-0}" -gt 0 ] && rpack=$((rpack + 1))
+                    [ "${poss_a:-0}" -gt 0 ] && rposs=$((rposs + 1))
                     [ "$rb_bref" != "$rb" ] && rbrefrename=$((rbrefrename + 1))
                     printf 'REGION MOVED (ruled, [UCP] U2 context node; denying%s -fno-ctx-node restores the pinned region) %s\n' "$deny" "$pat" >> "$WORKDIR/diff.$label"
                 elif [ "$rn" = "$rb_bref" ]; then
@@ -1939,18 +1961,19 @@ sweep() { # sweep <label> <extra pcrec args>
                     [ "${fold_a:-0}" -gt 0 ] && rfold=$((rfold + 1))
                     [ "${lit_a:-0}" -gt 0 ] && rlit=$((rlit + 1))
                     [ "${pack_a:-0}" -gt 0 ] && rpack=$((rpack + 1))
+                    [ "${poss_a:-0}" -gt 0 ] && rposs=$((rposs + 1))
                     # the rename bucket ALSO gets credit here iff it was the
                     # rewrite (not a no-op) that made the restore work — a
                     # pattern with no backreference at all must not inflate
                     # this count just because it also stamps a fold or island.
                     [ "$rb_bref" != "$rb" ] && rbrefrename=$((rbrefrename + 1))
-                    printf 'REGION MOVED (ruled, islands=%s folds=%s litruns=%s atoms=%s%s; denying the stamped axes restores the pinned region) %s\n' \
-                        "${isl_a:-0}" "${fold_a:-0}" "${lit_a:-0}" "${pack_a:-0}" \
+                    printf 'REGION MOVED (ruled, islands=%s folds=%s litruns=%s atoms=%s possarms=%s%s; denying the stamped axes restores the pinned region) %s\n' \
+                        "${isl_a:-0}" "${fold_a:-0}" "${lit_a:-0}" "${pack_a:-0}" "${poss_a:-0}" \
                         "$([ "$rb_bref" != "$rb" ] && printf ' +bref-rename')" \
                         "$pat" >> "$WORKDIR/diff.$label"
                 else
                     rdiff=$((rdiff + 1))
-                    printf 'REGION DIFFERS (islands=%s folds=%s litruns=%s atoms=%s stamped, but denying them does NOT restore the pinned region) %s\n' "${isl_a:-0}" "${fold_a:-0}" "${lit_a:-0}" "${pack_a:-0}" "$pat" >> "$WORKDIR/diff.$label"
+                    printf 'REGION DIFFERS (islands=%s folds=%s litruns=%s atoms=%s possarms=%s stamped, but denying them does NOT restore the pinned region) %s\n' "${isl_a:-0}" "${fold_a:-0}" "${lit_a:-0}" "${pack_a:-0}" "${poss_a:-0}" "$pat" >> "$WORKDIR/diff.$label"
                 fi
             else
                 rdiff=$((rdiff + 1))
@@ -2016,6 +2039,20 @@ sweep() { # sweep <label> <extra pcrec args>
                     printf 'ATOMS STAMPED BUT DENYING THEM CHANGES NOTHING %s\n' "$pat" >> "$WORKDIR/diff.$label"
                 fi
             fi
+            # [ART-POSS-ARMS] THE ARMS' CONVERSE, the literal-run pair's shape
+            # and scope (VM artifacts, the stamp's carriers): a nonzero stamp
+            # must differ from its own both-arms-denied build, and a zero
+            # stamp must not (D47.3's do-or-die, read off the artifact).
+            if [ -n "${poss_a:-}" ]; then
+                rn8="$(printf '%s\n' "$(gen_deny "$pat" "$args" "-fno-poss-ctx-follow -fno-poss-bref-first")" | stamp_strip | prog_region)"
+                if [ "$poss_a" -gt 0 ] && [ "$ra" = "$rn8" ]; then
+                    rposssame=$((rposssame + 1))
+                    printf 'POSS ARMS STAMPED BUT DENYING THEM CHANGES NOTHING %s\n' "$pat" >> "$WORKDIR/diff.$label"
+                elif [ "$poss_a" -eq 0 ] && [ "$ra" != "$rn8" ]; then
+                    rnopossmoved=$((rnopossmoved + 1))
+                    printf 'NO POSS ARM STAMPED YET DENYING THE ARMS MOVES THE REGION %s\n' "$pat" >> "$WORKDIR/diff.$label"
+                fi
+            fi
             # [OPT-LITSCAN] S2a THE LITERAL-RUN CONVERSE, the fold pair's
             # shape and scope exactly (VM artifacts, the stamp's carriers).
             if [ -n "${lit_a:-}" ]; then
@@ -2060,7 +2097,7 @@ sweep() { # sweep <label> <extra pcrec args>
         fi
     done < "$WORKDIR/free"
     echo "recursion-identity[$label] (B) whole-file vs $FILEPIN: same=$same differing=$diff elided=$elided refused-by-both=$refused refusal-mismatch=$mism stamp-filter-bad=$stampbad stamp-moved=$stampmoved"
-    echo "recursion-identity[$label] (A) program-region vs $REFCOMMIT: same=$rsame differing=$rdiff elided=$relided size-term-moved=$rsizeterm bref-rename-moved=$rbrefrename cls-range0-moved=$rclsrange0 var-construct-moved=$rvarnew ctx-node-moved=$rctx island-moved=$risland island-stamped-but-deny-is-a-noop=$rislsame unstamped-but-deny-moves=$rnoislmoved fold-moved=$rfold fold-stamped-but-deny-is-a-noop=$rfoldsame unstamped-but-fold-deny-moves=$rnofoldmoved litrun-moved=$rlit litrun-stamped-but-deny-is-a-noop=$rlitsame unstamped-but-litrun-deny-moves=$rnolitmoved atoms-moved=$rpack atoms-stamped-but-deny-is-a-noop=$rpacksame call-bearing-in-population=$rcallbearing"
+    echo "recursion-identity[$label] (A) program-region vs $REFCOMMIT: same=$rsame differing=$rdiff elided=$relided size-term-moved=$rsizeterm bref-rename-moved=$rbrefrename cls-range0-moved=$rclsrange0 var-construct-moved=$rvarnew ctx-node-moved=$rctx island-moved=$risland island-stamped-but-deny-is-a-noop=$rislsame unstamped-but-deny-moves=$rnoislmoved fold-moved=$rfold fold-stamped-but-deny-is-a-noop=$rfoldsame unstamped-but-fold-deny-moves=$rnofoldmoved litrun-moved=$rlit litrun-stamped-but-deny-is-a-noop=$rlitsame unstamped-but-litrun-deny-moves=$rnolitmoved atoms-moved=$rpack atoms-stamped-but-deny-is-a-noop=$rpacksame poss-arms-moved=$rposs poss-arms-stamped-but-deny-is-a-noop=$rposssame unstamped-but-poss-deny-moves=$rnopossmoved call-bearing-in-population=$rcallbearing"
     SIZETERM_TOTAL=$((SIZETERM_TOTAL + rsizeterm))
     # THE SHARPER HALF: under `--no-captures` no VM body is emitted at all, so
     # the size term cannot act and this count must be ZERO. An axis-independent
@@ -2258,6 +2295,33 @@ FOLD_EOF
     done <<LIT_EOF
 $LIT_PATTERNS
 LIT_EOF
+    # [ART-POSS-ARMS] the arms' manifest, the lit-run check verbatim (VM
+    # artifacts only: --no-captures routes two of the three to the DFA).
+    poss_manifest_missing=0
+    while IFS= read -r ppat; do
+        [ -n "$ppat" ] || continue
+        pa="$(gen_a "$ppat" "$args")"
+        [ -n "$pa" ] || continue
+        case "$pa" in *'#define RX_ENGINE "vm"'*) ;; *) continue ;; esac
+        pn="$(printf '%s\n' "$pa" | sed -n 's/^#define RX_VM_POSS_ARMS 0x\([0-9a-f]*\)u$/\1/p' | head -1)"
+        if [ "$((16#${pn:-0}))" -lt 1 ]; then
+            poss_manifest_missing=$((poss_manifest_missing + 1))
+            [ "$poss_manifest_missing" -le 6 ] && echo "  POSS MANIFEST[$label]: '$ppat' no longer stamps a possessify arm" >&2
+        fi
+    done <<POSS_EOF
+$POSS_PATTERNS
+POSS_EOF
+    if [ "$poss_manifest_missing" -ne 0 ]; then
+        bad "[$label] $poss_manifest_missing of the POSS_PATTERNS manifest (docs/design/poss_arms.md §5.2's corpus movers) no longer stamp a possessify arm. Either an arm narrowed or the stamp broke. Do not silently shorten the list"
+    fi
+    if [ "$rposssame" -ne 0 ]; then
+        bad "[$label] (A) $rposssame artifacts stamp RX_VM_POSS_ARMS nonzero and yet are BYTE-IDENTICAL to their own both-arms-denied build. The stamp claims an arm the program does not show:"
+        grep '^POSS ARMS STAMPED BUT DENYING THEM CHANGES NOTHING' "$WORKDIR/diff.$label" | head -10 >&2
+    fi
+    if [ "$rnopossmoved" -ne 0 ]; then
+        bad "[$label] $rnopossmoved VM artifacts stamp RX_VM_POSS_ARMS 0x0u and yet denying both arms MOVES their program region. A denied arm's bit must be 0 and an unneeded arm must change nothing (D47.3):"
+        grep '^NO POSS ARM STAMPED YET' "$WORKDIR/diff.$label" | head -10 >&2
+    fi
     if [ "$lit_manifest_missing" -ne 0 ]; then
         bad "[$label] $lit_manifest_missing of the LIT_PATTERNS manifest no longer stamp a literal-run compare. Either pcrec_lit_run narrowed or the island run arm broke. Do not silently shorten the list"
     fi
