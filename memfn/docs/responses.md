@@ -523,3 +523,49 @@ the compiler, and is never adopted silently. Proposed for main to file
   - N3 (enforcement; entry is an N2 re-run after R-6 showing 0
     would-decline + the identity gate);
   - N4.
+- notice: 2026-10-07 (evening) — **G2u delivered blinded; K-1 is a contract
+  gap, and the kit has ruled on it.** G2u (D27 cell, opus) is merged on
+  lane/memfn-g2u.
+  - The quick run: 35.53M passed and 462 failed, all of them **K-1**: on
+    ALL_PRESENT/FUNC sites the kit takes the function's name from
+    `site.pred.fn_ref`, but memfn.h scoped `pred` to FIND/SKIP/VERIFY, so
+    the POISON differential (a field the contract says is unused, set to
+    junk) moved the name. No answer is wrong.
+  - **Kit ruling (contract detail, kit-owned):** a FUNC site's own name is
+    ALWAYS `site.pred.fn_ref`, for every op. On ALL_PRESENT/DENSE only that
+    member of `pred` is read. memfn.h now states this, with no layout
+    change and no byte moved. A FUNC site stating `fn_ref` 0 states no name
+    and is REFUSED (R1); that joins N3's enforcement. G2u's
+    `fn_ref-unstated` PENDING-ENFORCE class (415 cases) is its acceptance.
+  - pcrec's only FUNC site (ofs_site_define, emit_dfa.c:6255) passes
+    fn_ref 1, so no pcrec site can be refused.
+  - PENDING-ENFORCE for N3 has 4 classes and 1,455 cases: hook-nonident
+    (F1, still live: 286 sites in 5 batches don't compile), miss-unstated,
+    refusal-unnamed, fn_ref-unstated. `G2_STRICT_HOOKS=1` is N3's
+    acceptance switch.
+  - F2 is confirmed fixed by the blinded side: MEMFN_LIBC = nm -u on 93
+    batches.
+  - Next: a blinded follow-up aligns G2's poison table to the K-1 text,
+    then the full G2 in a slot.
+- done: 2026-10-07 — **[MEMFN-ROWCON] G2u: lane/memfn-g2u @ TIP (the commit
+  carrying this entry; code/test tip 238f2368), cut from main 13b9f2ae.**
+  It contains the blinded G2 update (D27 cell, authors g2u (opus) and g2u2
+  (sonnet), folding g2x) plus K-1's contract text in memfn.h (a FUNC
+  site's name is `site.pred.fn_ref` for every op; fn_ref 0 on FUNC is
+  refused under N3). No kit code changed and no pcrec byte moved: the diff
+  touches memfn/tests, memfn.h comments and docs only. Validation:
+  - **Full G2** (main's slot, 17:47-17:55, seed 20261005): rc 0,
+    **138,742,037 passed, 0 failed**, 10,307 generator sites, coverage-missing
+    0, libc record 95 agree / 0 disagree, mutation 7 over negative-offset
+    sites 1,764 / 1,877 killed (floor 1,600), PENDING-ENFORCE 1,469 cases
+    (counted outcomes owed to N3; 298 are F1 renders that do not
+    compile). Log: worktrees/memfn-slot/slot5/g2.log (gitignored).
+  - Quick tier (blinded author, 4 cores): 36,341,888 passed, 0 failed.
+  - make strict rc 0. [SABANCHOR] "all anchors resolve". Mech: rows_for.sh
+    names only S526, which is DETECTED solo (reach 2/2).
+  Report: memfn/tests/G2U_REPORT.md (§7 is the G2u2 addendum).
+  Charter (row_contracts.md §5 G2u): explicit values ✓, refusal
+  expectations ✓ (491 cases), POISON differential ✓ (9,267 sites, 25
+  fields), SEMANTIC differential ✓, per-form floors ✓; plus g2x folded ✓
+  and G1 ✓. N3's acceptance = `G2_STRICT_HOOKS=1` over the bucket. OWED:
+  N3 (after R-6 and the N2 re-run), then N4.
