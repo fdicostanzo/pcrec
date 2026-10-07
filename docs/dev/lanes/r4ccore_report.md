@@ -129,7 +129,7 @@ B20 were missing from that list and are added here; B21 is item (c)'s.
 | B17 | 335, 7100-7103 | `req_handoff_stamp` (`req_use`, `pcrec_fact_req_run_maxoff`), the REQ_* stamps (9914) — untouched |
 | B18 | `src/opt/prefix_k.c` | the k-set model — untouched |
 | B19 | 1525 (`pcrec_emit_req_byte_check`) | `pcrec_fact_req_run(cx)->len >= 2` — whether the body's start expression may be the gate's kept candidate at all (one-byte form: always `posvar`); the guard on B5′ |
-| B21 | 1507 (`pcrec_emit_req_byte_check`, R4c′ (c)) | `req_admit_emits(req_admit(cx))` where no site was defined — a CONSISTENCY read, not a decision: an emitted admission with a NULL `mf_pre` refuses the compile (internal error, S530), so B2 and the use site cannot disagree silently |
+| B21 | 1507 (`pcrec_emit_req_byte_check`, R4c′ (c)) | `req_admit_emits(req_admit(cx))` where no site was defined — a CONSISTENCY read, not a decision: an emitted admission with a NULL `mf_pre` refuses the compile (internal error, S566), so B2 and the use site cannot disagree silently |
 | B20 | 1083-1107 (`ofs_pred_of`) | the per-term NEED classification: the predicate REQUIRED (1083); the scan byte OPTIONAL (1090, 1107) and the plan hint on it (1089, 1106) unless it lies in the run, where the hint moves to the run term (1094-1096); the run term REQUIRED (1098-1099); a model-selected k-set term OPTIONAL, with its `<p>_ofs_k<k>` table only when multi-byte (1101-1102) |
 
 Not decisions (now kit form choices): the pair-arm dispatch, the `k == 0`

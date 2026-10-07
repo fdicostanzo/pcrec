@@ -451,7 +451,7 @@ is EXPECTED to time out"*, and neither would a separate arm.
   `build/pcrec`. Row S529 (the VM engine declined by `req_handoff_applies`;
   no answer moves). `memfnmanifest` also gained S528 (a kit call from an
   unlisted function, rule 2's re-keyed dynamic half).
-- (no new arm) [MEMFN] R4c′ row S530 (lane r4c2fix, 2026-10-07) is on
+- (no new arm) [MEMFN] R4c′ row S566 (lane r4c2fix, 2026-10-07) is on
   `harness` over `tests/litscan/reqcube.rxt`: the pre-check's kit site is
   never defined while the admission emits one. The compile refuses
   (`pcrec_emit_req_byte_check`'s internal error), where before R4c′ the
