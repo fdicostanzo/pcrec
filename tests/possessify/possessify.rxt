@@ -3441,9 +3441,13 @@ pattern (a+(?:\b|))|b(?1)a
 features all
 engine vm
 m "baa" 0 3
+g 1 -1 -1
 m "baaa" 0 4
+g 1 -1 -1
 m "baab" 0 3
+g 1 -1 -1
 m "baa." 0 3
+g 1 -1 -1
 m "a" 0 1
 g 1 0 1
 m "aa" 0 2
@@ -3668,8 +3672,10 @@ g 1 -1 -1
 g 2 0 1
 m "axa" 0 3
 g 1 0 1
+g 2 -1 -1
 m "aaxa" 1 4
 g 1 1 2
+g 2 -1 -1
 n ""
 n "a"
 
@@ -3684,8 +3690,10 @@ n "xxxa"
 n "xxxx"
 m "axa" 0 3
 g 1 0 1
+g 2 -1 -1
 m "aaxa" 1 4
 g 1 1 2
+g 2 -1 -1
 n ""
 n "a"
 
