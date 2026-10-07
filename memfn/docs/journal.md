@@ -431,3 +431,39 @@ pointer when a kit change merges to main.
     build that in from the start.
 - Frank asked for a clean session reset. R4c′ is NOT started: branch
   lane/memfn-r4c2 is cut, and its lane worktree r4c2fix is empty.
+
+## 2026-10-07 — R4c′ in flight; R-5 (M1b) scoped, kit rulings Q-M1b-1..8
+
+- R4c′ (lane r4c2fix, opus) is running on lane/r4c2fix. Its (a)+(b)
+  commit, 4f2b401f, went to main for C1. In it, r4ccore §3's B1-B18 are
+  re-pinned at 81bc13de, with B19 (the req_run len>=2 guard, :1517) and
+  B20 (ofs_pred_of's need classification, :1083-1107) added. Sabotage
+  ids: S566-S569 for R4c′, S570-S579 for M1b (main, 2026-10-07).
+- R-5 filed (adf2644b) and acked (110f0490). The read-only scoping pass
+  m1bscope ran against main 54c42e36; its scratch output is
+  worktrees/m1bscope-scratch/m1b_scope.md. It found NO STOP: rc_row_of
+  reads only the run and bit 43, a form deny. Start-decision reads
+  D1-D12 all stay pcrec-side on lines M1b doesn't edit.
+- FINDING: integration.md §14.8 is wrong to say RUN_WORDS via
+  `sink->stamp` is byte-identical. pcrec's sink quotes
+  (memfn_stamps.c:189 → sb.c:366), so every artifact would get
+  `RX_RUN_WORDS "0"`, a caller-visible type change. This is fixed in the
+  contract (M1b commit 0) before any code.
+- Kit rulings (mine; recommendations taken):
+  - Q-M1b-1: yes, fill mf_art_begin's denies from the same map table,
+    and the kit asserts that site.denies == art.denies;
+  - Q-M1b-2: (i) a new `stamp_int` sink op, APPENDED at the end of
+    mf_sink (G2 builds its sink positionally);
+  - Q-M1b-3: yes, a kit row accessor (the mf_options() precedent), so
+    --list-axes stream 5 stays byte-identical;
+  - Q-M1b-4: S285 goes kit-side, onto the renderer's read of run_len;
+  - Q-M1b-5: a VMRUN site's `empty` is EXCLUDED;
+  - Q-M1b-7: retire mf_hooks.run_cmp outright, together with `note`'s
+    helper role, in ONE MF_SITE_ABI 3→4 bump; MF_VOCAB stays 2. This is
+    kit-internal and no pcrec abi event (zero movers);
+  - Q-M1b-8: S570-S579 (10 ids) is enough for the ~4 rows expected.
+- Q-M1b-6 (VERIFY as a DELEG_SITES row, or carried as an OFS/PRE term
+  like SETREST) is MAIN's call, since DELEG_SITES belongs to main. It
+  went to main with "carried" recommended.
+- M1b waits for R4c′ to merge; its branch is then lane/memfn-m1b, cut
+  from that main.
