@@ -1,0 +1,13 @@
+pattern	arms	default	engine_dfa
+\w++\b	off	vm	refused: pcrec: possessive quantifier requires the VM engine, which --engine=df
+\w++\b	on	dfa	compiled
+(?>\w+)\b	off	vm	refused: pcrec: (?>...) requires the VM engine, which --engine=dfa excludes (pa
+(?>\w+)\b	on	dfa	compiled
+x(?>\w+)\b	off	vm	refused: pcrec: (?>...) requires the VM engine, which --engine=dfa excludes (pa
+x(?>\w+)\b	on	dfa	compiled
+\d++(?![\d.])	off	vm	refused: pcrec: possessive quantifier requires the VM engine, which --engine=df
+\d++(?![\d.])	on	dfa	compiled
+[a-z]++(?=@)	off	vm	refused: pcrec: possessive quantifier requires the VM engine, which --engine=df
+[a-z]++(?=@)	on	dfa	compiled
+(?>[a-z]+)(?=@)	off	vm	refused: pcrec: (?>...) requires the VM engine, which --engine=dfa excludes (pa
+(?>[a-z]+)(?=@)	on	dfa	compiled

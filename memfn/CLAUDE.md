@@ -14,8 +14,9 @@
   refined form; N7 `pending`; `MEMFN_FORMS` attributed outside the
   artifact).
 
-The design of record is `docs/design/memfn/integration.md` (rev 4.7;
-read its §R4.7, then §R4.6, first).
+The design of record is `docs/design/memfn/integration.md` (rev 4.8;
+read its §R4.8, then §R4.7, first). §R4.8 is M1b's contract (R-5:
+`stamp_int`, `run_cmp` retired, `MF_SITE_ABI` 4).
 §R4.7 holds the kit's contract after G2, the kit session's rulings on
 G2's F1-F3 and Q-G2-1..17. This file is the working agreement for the
 subtree.

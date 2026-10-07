@@ -164,6 +164,14 @@ its DESIGN record.**
   Q-G2-5 is OPEN. Q53-Q55 are RULED: the libc record's refined form
   and N7's scope are the design of record, and no question for Frank
   is open. Read §R4.7, then §R4.6, first.
+  **REVISION 4.8 (lane m1b, 2026-10-07), M1b's contract (R-5)**: the
+  kit manager's Q-M1b-1..8 as a by-id table (§R4.8.0). §14.8's
+  RUN_WORDS sentence corrected (pcrec's `stamp` quotes, so the kit
+  writes it through a new unquoted sink op, `stamp_int`); `run_cmp`
+  retired and `note` no longer carries the word-load helpers; one
+  `MF_SITE_ABI` 3 → 4 bump; bit 43 crosses through one pcrec map table
+  into every site's and the art's `denies`; the run-compare rows are the
+  kit's (`mf_run_rows`). Read §R4.8, then §R4.7, first.
 - `twins.md` — R1d (lane memftwin, 2026-10-04), the D77 measurement "does a
   kernel TAILORED to the pattern beat a fixed generic one": T-A set
   classifier per shape vs the generic nibble lookup, T-B a fused scan+verify

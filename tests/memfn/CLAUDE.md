@@ -42,7 +42,10 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
      the kit through pcrec's DOOR `pcrec_memfn_define` (`site_census.DOORS`):
      a door is shared plumbing, so the SITE is the door's caller; a stale door
      is red, and per compile the kit calls inside doors must equal the door
-     calls traced at their callers (door accounting). It was UNREACHED,
+     calls traced at their callers (door accounting). Since M1b (lane m1b)
+     VERIFY and VMRUN are delegated too: VERIFY is the OFS/PRE run term
+     (named by its builders), VMRUN reaches the kit through the second door,
+     `pcrec_memfn_emit`, from `vm_run_compare` (`emit_vm.c`). It was UNREACHED,
      loudly, while no pcrec source called the kit; a delegated row with no
      caller is a FAIL. The machinery also runs on a SYNTHETIC caller every
      time (the `selftest:` lines);
@@ -60,7 +63,8 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
   sample of the `.rxt` `pattern` lines, K35 floor 100 compiles), `verdict`
   and `selftest`. Proven end to end on a scratch tree with a planted caller
   (report §2); live on pcrec's own callers since R4c (r4cfix: the door
-  shim, `door_shim`/`DOORS`, traces the builders behind `pcrec_memfn_define`).
+  shim, `door_shim`/`DOORS`, traces the builders behind `pcrec_memfn_define`;
+  M1b added the door `pcrec_memfn_emit`).
 - **run_site_manifest.sh** — the entry point (`make test-memfn-manifest`,
   in TEST_SECTIONS; mech arm `memfnmanifest`). It holds `C17_ROW_FLOOR`,
   the K35 floor as a literal that shares no source with the TSV. A change
@@ -93,7 +97,9 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
   forms per (emitter file, vocabulary line, libc call) against ceilings that
   only descend (12 rows, 26 forms at birth: memchr 8 in `emit_dfa.c`,
   memcmp 1 in `runcmp.c`, ...; 20 forms since M1's REPLACE lowered memchr
-  8 -> 2); REPLACE edits the one number on the row.
+  8 -> 2; 9 rows / 13 forms since M1b's REPLACE deleted `runcmp.c`'s three
+  rows, `C12_CEIL_ROWS_FLOOR` 12 -> 9); REPLACE edits the one number on the
+  row.
   Higher is red (a replaced form came back) AND lower is red (stale ceiling
   or a blind lexer). C13 is declared UNREACHED while no `on_cand` producer
   exists and FAILs the day one does. C14 compiles `_Static_assert(MF_MAX_TERM
@@ -132,19 +138,25 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
 
 ### C5 and C10 (lane r4ccore, R4c)
 
-- **arm_fixtures.c** — C5's fixture renderer: eight FIXED site descriptions
-  (four offset-skip shapes: a table and a byte around a scan at 3, a
-  run-pinned run, a scan at 0, the pair arm; four pre-check shapes: the
-  one-byte gate with a set rest, a lead before a handoff window, a masked
-  window with a whole run and a set rest, a lone handoff window) rendered
-  through the kit's public entry points with its OWN hooks and sink (a
-  marker comment per note, the `memcmp` spelling for a run compare), so a
-  pin moves only with an ARM, never with pcrec's scaffolding. `--perturb`
-  moves one byte of one fixture (the witness).
+- **arm_fixtures.c** — C5's fixture renderer: fourteen FIXED site
+  descriptions (four offset-skip shapes: a table and a byte around a scan
+  at 3, a run-pinned run, a scan at 0, the pair arm; four pre-check shapes:
+  the one-byte gate with a set rest, a lead before a handoff window, a
+  masked window with a whole run and a set rest, a lone handoff window; and
+  since M1b six run-compare shapes, one per row and the deny: overlap at
+  L 3 and L 13, `memcmp` at L 8, masked `words`, masked under
+  `MF_D_RUN_OVERLAP` (`bytes`), exact under it (`memcmp`)) rendered through
+  the kit's public entry points with its OWN hooks and sink (a marker
+  comment per note, pcrec_sb_cstr's string escape), so a pin moves only
+  with an ARM, never with pcrec's scaffolding. Each fixture's art flushes
+  its pending word-load helpers into the `def` part. `--perturb` moves one
+  byte of one fixture (the witness).
 - **pins/arms.tsv** — C5's pins: arm (the kit's form id), fixture, part
   (`def`/`use`), bytes, sha256. Recorded at R4c's IMPLEMENT commit, whose
   I1 shadow comparator proved the kit's rendering equal to pcrec's
-  pre-migration text over the corpus sweep. A CHANGE DETECTOR: a kit change
+  pre-migration text over the corpus sweep; re-pinned for the run-bearing
+  fixtures and extended by the `runcmp` rows at M1b's REPLACE (28 rows). A
+  CHANGE DETECTOR: a kit change
   that moves an arm re-pins its rows in its own commit (D94's grep finds
   this file).
 - **run_arm_pins.sh** — C5 (`make test-memfn-arms`, in TEST_SECTIONS):

@@ -657,8 +657,33 @@ Four light panels in two days (the K82 handoff, [OPT-SETS], [MEMFN] K0 r1/r2) fo
   - **Plans:** the `run_possdiff.sh` extension (it cannot compile either
     arm's shapes today and misses the fold plant), sabotage S560-S565, a
     K65-style check, and spec drafts.
+  **REVISION 2 (lane `possarms2`, 2026-10-07) applies every disposition of
+  the D6 panel (`../dev/reviews/2026-10-07-r-poss-arms-panel.md`); read its
+  §R2 first.** K93 landed as the call-site JOIN (D154), so §1 is history and
+  Q4 is struck (`(?R)` follows the sound answer, U18). A1 must union the
+  join's A0-valued context where its continuation leaves a called group or
+  the root (A-F1 fix (a)); without it A1 re-opens K93 on every call pattern
+  (16 `k93.rxt` patterns). The join carries only P = {0,1} (C-2: a per-P
+  value is ill-defined across gate sets and recovers 0 marks). Measured with
+  a prototype re-based on post-K93 `possessify.c`:
+  - route flips 0 of 4,132 (186 at risk). The A deny bit is
+    ENGINE-SELECTING; the B bit cannot move the engine (a backreference needs
+    a capture group, so it is VM-routed), which refutes that half of C-1;
+  - an exhaustive-subject possdiff with a REACH check detects all six
+    plants plus the A-F1 and termination plants;
+  - CLAIM-vs-MARK agrees after it found two gaps in the independent
+    predicate (`\B` after a multi-character body; a gate behind an empty-able
+    reference);
+  - the ablation table: every conjunct is load-bearing except greedy-only,
+    which is kept as declared-conservative;
+  - an A0 family sweep, and the census denominator with its refused list;
+  - the work budget on one committed subject: 394 → 1,199, the
+    hand-possessive spelling's own number.
+
+  Cost is M. Files [POSS-CTX-TABLE].
 - `poss_arms_measurements/` — that note's oracle sweeps, census instrument,
-  10.46 transcript and possdiff runs (own CLAUDE.md).
+  10.46 transcript and possdiff runs (own CLAUDE.md); revision 2's
+  instruments and results are in its `rev2/` subdirectory (own CLAUDE.md).
 - `rungselect_impl/` — the [ENG-BREP] RUNG-SELECT lane's own probes and
   archived outputs (the reverse-deterministic rung, plus the K22 interim
   product guard it landed first as a separate slice), kept separate from

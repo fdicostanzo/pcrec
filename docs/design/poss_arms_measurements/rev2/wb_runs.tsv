@@ -1,0 +1,10 @@
+# subject: wb_subject.py 200 -> 809 bytes, sha1 bc1608f69bbfff17f0ed0e73c3693ea74ac54fe8
+# main = c2a0c6df build; proto = proto_rev2.patch on c2a0c6df; --engine=vm, default step budget
+label	min_work_budget	outcome_at_min	outcome_at_min_minus_1
+main-default	394	match 800 809	work
+main-fno-possessify	394	match 800 809	work
+main-user-possessive	1199	match 800 809	work
+proto-denied	394	match 800 809	work
+proto-armA	998	match 800 809	work
+proto-armB	595	match 800 809	work
+proto-armsAB	1199	match 800 809	work

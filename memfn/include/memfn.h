@@ -36,7 +36,9 @@
 #define MF_NS(name) pcrec_mf_##name
 #endif
 
-#define MF_SITE_ABI 3   /* layout and meaning of every struct below           */
+#define MF_SITE_ABI 4   /* layout and meaning of every struct below. 4 (M1b,
+                           §R4.8): mf_sink.stamp_int; mf_hooks.run_cmp
+                           retired; `note` no longer carries helpers         */
 #define MF_VOCAB    2   /* the operation vocabulary: op x handoff x term kinds */
 
 /* ---- bounds and sentinels ------------------------------------------------ */
@@ -122,6 +124,11 @@ typedef enum { MF_USE_POSITION, MF_USE_DISCARD } mf_use_kind; /* §14.5 */
 /* mf_includes bits (§14.8) */
 #define MF_INC_STRING_H    (1u << 0)
 
+/* The comment tier a kit comment opens with when no hook carries one (the
+ * word-load helpers' comment, §14.8): pcrec's PCREC_CMT_NONESSENTIAL, which
+ * pcrec asserts equal. CHOSEN (M1b, §R4.8.1 item 2). */
+#define MF_CMT_NONESSENTIAL 1
+
 /* ---- the site description (§8.2 + §14.0) --------------------------------- */
 
 typedef struct {                    /* one position term, relative to cand    */
@@ -199,7 +206,12 @@ typedef struct {
  * the comment gate is open for `tier` (the kit writes the comment body only
  * then); a NULL op is "not offered" and the kit must not need it.
  * RULED Q-G2-16: an open cmt_open writes the comment OPENER itself, and
- * cmt_close writes the closer; the kit writes only the body between. */
+ * cmt_close writes the closer; the kit writes only the body between.
+ * `cstr` writes the BODY of a C string literal (the quotes are the kit's),
+ * as pcrec_sb_cstr does. CHOSEN (M1b: its first kit caller, the run compare).
+ * `stamp` writes one stamp line with its value QUOTED (a string); `stamp_int`
+ * (RULED Q-M1b-2, MF_SITE_ABI 4, appended LAST because initializers are
+ * positional) writes one with its value UNQUOTED (an integer). */
 typedef struct mf_sink {
     void *u;
     void (*puts)(void *u, const char *s);
@@ -211,6 +223,7 @@ typedef struct mf_sink {
     void (*comment_byte)(void *u, int *prevp, uint8_t byte,
                          int (*extra_escape)(uint8_t));
     void (*legend_byte)(void *u, uint8_t byte);
+    void (*stamp_int)(void *u, const char *name, long long value);
 } mf_sink;
 
 /* The kit's scratch, backed by pcrec's arena: memory lives until pcrec's
@@ -263,11 +276,11 @@ typedef struct {
     const char *(*member)(void *u, uint32_t term, const char *byte_expr);
     const char *(*table_name)(void *u, uint32_t table_ref);
     const char *(*fn_name)(void *u, uint32_t fn_ref);       /* FUNC: its name  */
-    void (*note)(void *u, mf_sink *c, uint32_t part);       /* §14.2           */
+    /* §14.2: pcrec's FACT comment for part `part`. It carries no helpers:
+       since M1b (RULED Q-M1b-7, run_cmp retired with it) the kit compares
+       runs itself and declares their word-load helpers */
+    void (*note)(void *u, mf_sink *c, uint32_t part);
     const char *(*note_tag)(void *u, uint32_t part);        /* §14.2           */
-    /* UNTIL M1b (§16): pcrec's run compare for RUN term `term` at base + off */
-    void (*run_cmp)(void *u, mf_sink *c, const char *base, int32_t off,
-                    uint32_t term);
     /* rendering */
     const char *indent;     /* STMT / FUNC body: pcrec's current indent         */
     int comment_tier;       /* PCREC_CMT_* passes through                       */
@@ -309,9 +322,12 @@ typedef struct mf_art mf_art;   /* one per Job ATTEMPT (the size ladder re-emits
 #define mf_vocab_has      MF_NS(vocab_has)
 #define mf_options        MF_NS(options)
 #define mf_opts_check     MF_NS(opts_check)
+#define mf_run_rows       MF_NS(run_rows)
 
 /* Begin an artifact's kit state. `prefix` is pcrec's D143 placeholder, the
- * stem of every kit-declared name. NULL only when the arena failed. */
+ * stem of every kit-declared name. `denies` are the compile's MF_D_* bits:
+ * every site defined on the art must carry the same (RULED Q-M1b-1; refused
+ * at mf_define). NULL only when the arena failed. */
 mf_art  *mf_art_begin(mf_arena *a, const char *prefix, uint32_t policy,
                       uint64_t denies);
 /* End it: fails if a defined handle was never used (§14.0 item 1).
@@ -331,10 +347,19 @@ int mf_emit  (mf_art *, const mf_site *, const mf_hooks *,
 /* a FUNC site's CALL expression, wherever pcrec asks */
 int mf_call  (mf_art *, uint32_t handle, const mf_hooks *, mf_sink *body);
 
+/* Writes, at file scope, every helper the art's rendered text has used and
+ * not yet declared (the run compare's word loads, `<prefix>_w<W>`), behind
+ * one NONESSENTIAL comment; nothing when none is pending. A FUNC definition
+ * declares its own ahead of itself; an EXPR site only records them, so the
+ * caller flushes at a file-scope point that precedes the function holding the
+ * EXPR (pcrec: its prologue, §14.8). Idempotent. */
 int      mf_flush_helpers(mf_art *, mf_sink *file_scope);
 uint32_t mf_includes(const mf_art *);          /* MF_INC_* bits             */
-/* The kit's two stamps, each through ONE sink->stamp(name, value) call, in
- * this order (integration.md §R4.3.3; D147 addendum 10, Q53/Q55):
+/* The kit's three stamps, each through ONE sink call, in this order
+ * (integration.md §R4.3.3, §R4.8; D147 addendum 10, Q53/Q55; Q-M1b-2):
+ *   RUN_WORDS    through sink->stamp_int: how many run compares the art's text
+ *                wrote through the `words` form (0 where none, and under
+ *                MF_D_RUN_OVERLAP). An integer, unquoted.
  *   MEMFN_FORMS  "none": no form differs from its SIMD-off rendering. Constant
  *                on every default artifact until R4f (Q55); a SIMD form's id
  *                list is that step's work.
@@ -355,6 +380,20 @@ int      mf_art_note_libc(mf_art *, const char *name);
 /* 1 iff the vocabulary renders (op, handoff) over the given MF_TK_* term
  * kinds in at least one form. pcrec checks DELEG_SITES against it. */
 int mf_vocab_has(mf_op op, mf_handoff h, uint32_t term_kinds);
+
+/* ---- the run compare's rows (RULED Q-M1b-3; memfn/src/runcmp.c) ---------- */
+
+/* One first-match row of the kit's run compare: what pcrec's `--list-axes`
+ * prints as axis `run-overlap`. `deny` is the MF_D_* bit that skips the row
+ * (0: an undeniable fallback). */
+typedef struct {
+    const char *name;
+    uint64_t    deny;
+    const char *doc;        /* one line: when the row applies and what it writes */
+} mf_run_row;
+
+/* Row `i` of the table, in first-match order, or NULL past the last. */
+const mf_run_row *mf_run_rows(size_t i);
 
 /* ---- the kit's option registry (§R4.4.1; memfn/src/options.def) --------- */
 

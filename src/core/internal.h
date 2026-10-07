@@ -2659,12 +2659,6 @@ typedef struct {
      * (src/core/findings.h; design §6.4). Per ATTEMPT, like every field
      * here, so the stamp reports what the final attempt asked. */
     PcrecFindRec find;
-    /* [OPT-LITSCAN] S4 the run compare's per-attempt record (src/gen/
-     * runcmp.c): compares written by the words form (the `<PREFIX>_RUN_WORDS`
-     * stamp), and the word widths used and declared (bit W for width W), so
-     * a helper is emitted once, before its first use. */
-    long long rc_words;
-    unsigned rc_wused, rc_wemitted;
     /* [MEMFN] R4c the memfn kit's per-attempt state (src/gen/memfn_sites.c):
      * the attempt's `mf_art`, begun at its first ask and ended by the stamp
      * pass, so a size-ladder re-emission starts clean (integration.md §14.0,
@@ -6021,36 +6015,6 @@ bool pcrec_vm_prefilter_window(Ctx *cx);
  * search-entry emitter that calls `pcrec_emit_req_byte_check` calls this at
  * file scope above the entry; it emits nothing where no run pre-check is. */
 void pcrec_emit_req_run_blocks(Ctx *cx, StrBuf *c);
-/* [OPT-LITSCAN] S4 THE RUN COMPARE (src/gen/runcmp.c, litscan_s4.md §1.3):
- * the ONE emitter of a literal-run compare in emitted C, both engines. It
- * took P4's place (`pcrec_emit_exact_compare`, retired). A run is `len`
- * positions, position `i` the bytes `x` with `(x & k[i]) == t[i]`; `k ==
- * NULL` is every position exact, and `t` is already masked
- * (`(t[i] & k[i]) == t[i]`). The masked K column's first caller is the
- * caseless necessary run (C3). */
-typedef struct {
-    const unsigned char *t;   /* T, the bytes (each position's lower member) */
-    const unsigned char *k;   /* K per position, or NULL = every position exact */
-    int len;                  /* >= 1 */
-} PcrecRun;
-/* The first-match rows as DATA, walked live by `--list-axes` (axis
- * `run-overlap`): a name, the deny flag, a one-line predicate, and the
- * closed predicate/form tags runcmp.c's walk reads. */
-typedef struct {
-    const char   *name;
-    uint64_t      deny;
-    const char   *applies_desc;
-    unsigned char pred;
-    unsigned char form;
-} PcrecRunRow;
-extern const PcrecRunRow pcrec_runcmp_rows[];
-extern const int pcrec_runcmp_nrows;
-/* Writes a C boolean expression, true iff `(base[off + i] & k[i]) == t[i]`
- * for every i < `r->len` (equality where `k` is NULL), through the first row
- * that applies and is not denied, and returns the row's name. The caller has
- * bounds-checked those bytes. */
-const char *pcrec_emit_run_compare(Ctx *cx, StrBuf *c, const char *base,
-                                   int off, const PcrecRun *r);
 
 /* [START-SET] (D148; docs/design/startset.md §5, "One spelling") THE FIND:
  * the one statement that moves a scan position to the next byte a set can
@@ -6079,13 +6043,6 @@ void pcrec_emit_find(StrBuf *c, const char *ind, const PcrecFind *f);
 const char *pcrec_vm_start_scan_name(Ctx *cx);
 void pcrec_emit_vm_start_seek(Ctx *cx, StrBuf *c, const char *p,
                               const char *ind, bool entry);
-/* The word-load helpers used and not yet declared, at file scope (idempotent
- * per attempt); and the `<PREFIX>_RUN_WORDS` stamp, after the engine body. */
-void pcrec_emit_runcmp_helpers(Ctx *cx, StrBuf *c);
-/* A file-scope block's call before its own text: declares the helper run
- * `r`'s compare will load through, if it takes a word row. */
-void pcrec_runcmp_prepare(Ctx *cx, StrBuf *c, const PcrecRun *r);
-void pcrec_emit_runcmp_stamp(Ctx *cx, StrBuf *c, const char *upper);
 
 /* [MEMFN] R4a′ (src/gen/memfn_stamps.c): the mark both engines write where
  * the kit's `<PREFIX>_MEMFN_FORMS`/`_MEMFN_LIBC` lines go, and the driver's

@@ -42,6 +42,13 @@ run by pcrec's make; each writes only under its OUTDIR argument.
   S525 S566 S526"`). The zero-mover gate, then the five solo mech rows; no
   make test, axes, C11 or I2. Last line exactly `== r4c2-lx DONE rc=N ==`
   (N nonzero if the gate or any row fails). Never run on the Mac.
+- `memfn_m1b.sh` — M1b's (lane m1b, R-5) Linux verdict: `make strict`,
+  then `memfn_r4c.sh` with every step (`REF=993f8c1d`,
+  `GATEFLAGS=--zero-dumps`, full `make test`, the axes pair, C11, every I2
+  arm at both tiers) and `MECHROWS` = the re-pointed S267 S443 S444 S445
+  S279 S285 S454, the adjacent S514 S516 S528 and the new S570-S573, one
+  per call. Last line exactly `== m1b-lx DONE rc=N ==`. Never run on the
+  Mac.
 - `memfn_r4c_gate.py` — judges an emit_sweep log for R4c: exit 0 iff the
   self-check passed, streams 1-4 have 0 movers at their reach floors, and
   the only dump mover is --list-axes adding exactly the two declared

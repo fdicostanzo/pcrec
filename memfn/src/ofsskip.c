@@ -34,8 +34,14 @@
  * The function's parameters and locals are the arm's own names (`subject`,
  * `n`, `pos`, `cand`, `q`; the pair arm's `ha`, `hb`, `fresh`): its scope is
  * its own, so the definition takes no subject or bound hook. The call passes
- * the caller's `s`, `n` and `lo`. The run compare is pcrec's (`run_cmp`,
- * until M1b) and a multi-byte set's table is pcrec's (`table_name`, rule 7).
+ * the caller's `s`, `n` and `lo`. The run compare is the kit's own (runcmp.c,
+ * since M1b) and a multi-byte set's table is pcrec's (`table_name`, rule 7).
+ *
+ * The function's miss is its `n` and its reads are bounded by `pos` and `n`,
+ * so the arm applies only where the site's `miss` is `n` (unstated, or the
+ * `n` hook's own text) and no `floor` is stated; anything else is the generic
+ * row's, and a call whose hooks state otherwise is refused (lane m1bfix: G2's
+ * first run-bearing FUNC sites, a `((size_t)-1)` miss and a floor above `lo`).
  */
 #include <stdarg.h>
 #include <stdio.h>
@@ -85,16 +91,20 @@ static int scan_only(const mf_pred *p, unsigned i)
     return i == p->plan_hint && p->term[i].kind == MF_T_SET;
 }
 
+/* The function bounds its reads by `pos` and `n` only: a stated `floor`
+ * (§14.7) is one it cannot honour where a term sits below it, so such a
+ * site is the generic row's (lane m1bfix). pcrec states none at OFS/PRE. */
 int ofs_fn_applies(const mf_pred *p, const mf_hooks *def)
 {
-    if (!def || p->nterm == 0 || p->nterm > MF_MAX_TERM || p->plan_hint >= p->nterm)
+    if (!def || def->floor || p->nterm == 0 || p->nterm > MF_MAX_TERM ||
+        p->plan_hint >= p->nterm)
         return 0;
     int runs = 0, checked = 0;
     for (unsigned i = 0; i < p->nterm; i++) {
         const mf_term *t = &p->term[i];
         if (t->offset < 0) return 0;
         if (t->kind == MF_T_RUN) {
-            if (!def->run_cmp) return 0;
+            if (!run_cmp_sat(t)) return 0;
             runs++;
         } else {
             int c = set_count(t->set);
@@ -159,10 +169,10 @@ static int table_params(mf_art *art, const mf_hooks *h, const mf_pred *p,
 /* The `if (...)` a candidate must pass: every term but the scanned SET, in
  * the predicate's order (pcrec sends them ascending by offset, so a reader
  * of the artifact sees the pattern's own order). A singleton set is a byte
- * compare, a wider one a probe of pcrec's table, a run pcrec's run compare
- * at the term's offset from the candidate. */
+ * compare, a wider one a probe of pcrec's table, a run the kit's run compare
+ * (runcmp.c) at the term's offset from the candidate. */
 static int verify_chain(mf_art *art, const mf_hooks *h, const mf_pred *p,
-                        uint32_t pidx, mf_sink *o)
+                        mf_sink *o)
 {
     int first = 1;
     for (unsigned i = 0; i < p->nterm; i++) {
@@ -171,10 +181,8 @@ static int verify_chain(mf_art *art, const mf_hooks *h, const mf_pred *p,
         o->puts(o->u, first ? "" : " &&\n            ");
         first = 0;
         if (t->kind == MF_T_RUN) {
-            if (!h || !h->run_cmp)
-                return kit_fail(art, "ofsskip: a RUN term needs the run_cmp hook");
-            h->run_cmp(h->u, o, "subject + cand", t->offset,
-                       i + pidx * MF_MAX_TERM);
+            if (run_cmp_render(art, t, "subject + cand", t->offset, o))
+                return -1;
         } else if (set_count(t->set) == 1) {
             if (t->offset == 0) kit_out(o, "subject[cand] == %d", set_first(t->set));
             else kit_out(o, "subject[cand + %d] == %d", t->offset, set_first(t->set));
@@ -193,7 +201,7 @@ static int verify_chain(mf_art *art, const mf_hooks *h, const mf_pred *p,
  * (never a pointer, so nothing NULL is compared relationally). `fresh`
  * makes the first iteration search both. */
 static int pair_body(mf_art *art, const mf_hooks *h, const mf_pred *p,
-                     uint32_t pidx, int maxk, int k, int a, int b, mf_sink *o)
+                     int maxk, int k, int a, int b, mf_sink *o)
 {
     kb at, len;
     kb_init(&at, art->a);
@@ -221,7 +229,7 @@ static int pair_body(mf_art *art, const mf_hooks *h, const mf_pred *p,
     if (k) kit_out(o, "        cand -= %d;\n", k);
     kit_out(o, "        if (cand + %d >= n) return n;\n", maxk);
     o->puts(o->u,   "        if (");
-    if (verify_chain(art, h, p, pidx, o)) return -1;
+    if (verify_chain(art, h, p, o)) return -1;
     o->puts(o->u,   ") return cand;\n"
                     "        pos = cand + 1;\n"
                     "    }\n"
@@ -230,7 +238,7 @@ static int pair_body(mf_art *art, const mf_hooks *h, const mf_pred *p,
 }
 
 int ofs_fn_define(mf_art *art, const mf_hooks *h, const mf_pred *p,
-                  uint32_t pidx, const char *fn, mf_sink *o)
+                  const char *fn, mf_sink *o)
 {
     int maxk = max_reach(p), k, a, b;
     ofs_fn_scan(p, &k, &a, &b);
@@ -240,7 +248,7 @@ int ofs_fn_define(mf_art *art, const mf_hooks *h, const mf_pred *p,
     if (table_params(art, h, p, 1, o)) return -1;
     o->puts(o->u, ")\n{\n");
     if (b >= 0)
-        return pair_body(art, h, p, pidx, maxk, k, a, b, o);
+        return pair_body(art, h, p, maxk, k, a, b, o);
     kit_out(o, "    while (pos + %d < n) {\n", maxk);
     o->puts(o->u,   "        size_t cand;\n");
     /* THE memchr FORM. `pos + maxk < n` above implies `pos + k < n`, so the
@@ -258,7 +266,7 @@ int ofs_fn_define(mf_art *art, const mf_hooks *h, const mf_pred *p,
         kit_out(o, "        cand = (size_t)((const unsigned char *)q - subject) - %d;\n", k);
     kit_out(o, "        if (cand + %d >= n) return n;\n", maxk);
     o->puts(o->u,   "        if (");
-    if (verify_chain(art, h, p, pidx, o)) return -1;
+    if (verify_chain(art, h, p, o)) return -1;
     o->puts(o->u,   ") return cand;\n");
     o->puts(o->u,   "        pos = cand + 1;\n"
                     "    }\n"
@@ -271,6 +279,8 @@ int ofs_fn_call(mf_art *art, const mf_hooks *h, const mf_pred *p,
 {
     if (!h || !h->s || !h->n || !h->lo)
         return kit_fail(art, "ofsskip: the call needs the s, n and lo hooks");
+    if (h->floor)
+        return kit_fail(art, "ofsskip: the call states a floor its definition did not");
     kit_out(o, "%s(%s, %s, %s", fn, h->s, h->n, h->lo);
     if (table_params(art, h, p, 0, o)) return -1;
     o->puts(o->u, ")");
@@ -365,16 +375,26 @@ static void legend(const mf_hooks *h, const mf_pred *p, mf_sink *o)
     if (o->cmt_close) o->cmt_close(o->u);
 }
 
+/* Is `miss` the function's own miss, `n`? Unstated (pcrec's hooks, §15's
+ * table: `miss` is `n`) or the very text of the `n` hook. The function
+ * returns its `n` parameter on a miss and takes no `miss` of its own, so any
+ * other value is the generic row's (lane m1bfix). */
+static int miss_is_n(const mf_hooks *h)
+{
+    return !h->miss || (h->n && !strcmp(h->miss, h->n));
+}
+
 static int ofsskip_applies(const mf_site *s, const mf_hooks *def)
 {
     return s->form == MF_FORM_FUNC && s->op == MF_OP_FIND &&
            s->handoff == MF_H_RETURN && s->empty == MF_EMPTY_MISS &&
            s->end_back == 0 && !s->reverse && !s->guard_by_caller &&
-           s->pred.fn_ref && def && def->fn_name && ofs_fn_applies(&s->pred, def);
+           s->pred.fn_ref && def && def->fn_name && miss_is_n(def) &&
+           ofs_fn_applies(&s->pred, def);
 }
 
-/* pcrec's own file-scope text for the predicate (its run compare's word
- * loads, until M1b), then the comment, then the function. */
+/* The word-load helpers the predicate's run compare needs (runcmp.c), pcrec's
+ * own note if it gives one, then the comment, then the function. */
 static int ofsskip_define(mf_art *art, uint32_t handle, const mf_hooks *h,
                           mf_sink *o)
 {
@@ -386,9 +406,10 @@ static int ofsskip_define(mf_art *art, uint32_t handle, const mf_hooks *h,
     if (!r->fn || !*r->fn)
         return kit_fail(art, "ofsskip: fn_name gave no name for fn_ref %u",
                         r->site.pred.fn_ref);
+    if (run_cmp_prepare(art, &r->site.pred, o)) return -1;
     if (h->note) h->note(h->u, o, 0);
     legend(h, &r->site.pred, o);
-    return ofs_fn_define(art, h, &r->site.pred, 0, r->fn, o);
+    return ofs_fn_define(art, h, &r->site.pred, r->fn, o);
 }
 
 static int ofsskip_use(mf_art *art, uint32_t handle, const mf_hooks *h,
@@ -396,6 +417,8 @@ static int ofsskip_use(mf_art *art, uint32_t handle, const mf_hooks *h,
 {
     site_rec *r = &art->sites[handle - 1];
     if (kit_sink_ok(art, o, "ofsskip")) return -1;
+    if (h && !miss_is_n(h))
+        return kit_fail(art, "ofsskip: the call's miss is not its n, the function's miss");
     return ofs_fn_call(art, h, &r->site.pred, r->fn, o);
 }
 

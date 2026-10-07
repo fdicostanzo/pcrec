@@ -3715,3 +3715,27 @@ never edited afterwards.
   - **Also:** `run_possdiff.sh` cannot reach either arm today; S560-S565 are
     reserved.
 - `k93fix_report.md` — K93 FIXED-pending-merge (2026-10-07, lane k93fix, opus): possessify (and the free discharge's survey, the same walk) judges a quantifier inside a subroutine-call target under the JOIN of every call site's context (`CallCtx`, keyed by group number, fixpoint over context-only walks, lookaround-held calls join TOP). `tests/recursion/k93.rxt` (libpcre2 10.46 transcript in the report), `tests/possessify/calls.txt` + per-file `# features:`, section 8, S586-S588 DETECTED. Movers: 21 k93 witnesses + 1 answer-identical lost possessification (`nocaptures.rxt:76`); bench 0. `(?R)` diverges from 10.46's DEFAULT (U18, Frank to rule). Full make test owed.
+- `possarms2_report.md` — [ART-POSS-ARMS] REVISION 2 (2026-10-07, lane
+  possarms2, opus, design + measurement, no `src/` change). It discharges
+  every row of the D6 panel (`../reviews/2026-10-07-r-poss-arms-panel.md`)
+  and delivers `docs/design/poss_arms.md` rev 2 and
+  `docs/design/poss_arms_measurements/rev2/`.
+  - **A-F1 fix (a):** A1's continuation unions the call-site join at a
+    called group's end. Without it, A1 re-opens K93 on every call pattern
+    (16 `k93.rxt`).
+  - **The P = {0,1} join:** a per-P value is ill-defined across gate sets
+    and recovers 0 marks.
+  - **Route flips:** 0 of 4,132, with 186 at risk. Arm B's deny bit is NOT
+    engine-selecting (a backreference is VM-routed), which refutes that half
+    of C-1.
+  - **The exhaustive-subject possdiff:** all six plants plus the A-F1 and
+    termination plants are detected, and REACH is 11/11.
+  - **CLAIM-vs-MARK:** 0 of 10,315 rows disagree. It first found two gaps
+    in the independent predicate.
+  - **The ablation table:** every conjunct is load-bearing except
+    greedy-only (0/1,134).
+  - **A0 family sweep:** 3,000 claims, 0 diverging.
+  - **Work budget:** on one committed subject it goes 394 → 1,199, the
+    hand-possessive number.
+  - **[POSS-CTX-TABLE]** is filed.
+- `rxspin_report.md` — re-pin of `test-rxtsource` for `tests/possessify/composition_d27.rxt` (2026-10-07, lane rxspin, sonnet): +1/+676/+9002 census, C3_SKIP/PCRE2ONLY +9002. The file was the FIRST head-bearing file WITH a body (`oracle`/`description` head lines), which broke four rxtsource premises (leg C's head-file exclusion, C3's refusal, leg A's one-row-per-file head count, the keyword census); fixed in the file (head lines to comments), alternative recorded.

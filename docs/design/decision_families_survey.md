@@ -67,6 +67,7 @@ row is hand-stated over code. 37 of the 52 listed axes are `predicate`.
 | 11 | **What a `--tune` position means** | 2 tables + prose | borderline | none found | belongs to [OPT-SETS]/[OPT-DIAL] | low now | [OPT-SETS], [OPT-DIAL], [EST-REGISTRY] |
 | 12 | **VM entry shape + tiering** | 2 chains, coupled | no (2) | none | yes, small | low / low | — |
 | 13 | **Class read-form plumbing** (after clskit's table chose) | 4 sites + 1 direct flag | borderline | latent (§3.13) | partly | low / low | [CLS-TREE] |
+| 14 | **What possessify's analysis answers per node kind** (added 2026-10-07, [ART-POSS-ARMS] D6 panel B-FAM; §3.14) | 3 per-`AKind` switches + the verdict ladder + the call-site join + the survey consumer; the arms add a 4th fold | yes (past ~3 with the arms) | none (one walk, one verdict, by D154) | yes: one context record + a per-kind rows table with a static count assertion | medium / medium (possessify's refutation history) | [POSS-CTX-TABLE] |
 | — | request-contradiction refusals (5 sites, 2 files) | 5 | yes | — | ALREADY DESIGNED: [OPT-SETS] §2.7's constraint table | — | [OPT-SETS] |
 
 **Which to evaluate first** (§6 has the rows):
@@ -517,6 +518,26 @@ The latent case is in §3.3: `vm_wcls_bytes` (1529) tests `NO_CLS_KIT` only,
 while `tabdeny_of` treats `NO_CLS_PACK|NO_CLS_KIT` together. I did not
 construct an input that splits them. Low value.
 
+### 3.14 Possessify's per-kind analysis (added 2026-10-07)
+
+Not in the original survey; the [ART-POSS-ARMS] D6 panel (finding B-FAM,
+`../dev/reviews/2026-10-07-r-poss-arms-panel.md`) found it and
+`poss_arms.md` rev 2 §7 records it. `src/opt/possessify.c` answers "what
+does node kind K contribute" in THREE per-`AKind` switches — `first_of`
+(FIRST/nullable), `gk_build` (the Glushkov position automaton), `pss_walk`
+(the follow-threading walk) — plus the `pss_verdict` ladder, the K93
+`CallCtx` join (`cc_join`/`cc_widen`/`cc_top_visit`) and the atomic
+discharge's survey consumer. The arms add a fourth fold (A1's continuation,
+`first_ctx`/`px_cont_first` in the prototype) and two more arms;
+[POSS-CALL-COPY] and the `verbs` tripwire would add more. Natural as ONE
+context record `{follow, may_end, encl, left}` and ONE per-kind rows table
+indexed by kind with a static count assertion (so `-Wswitch`'s exhaustiveness
+alarm, mrl.c's rule, survives). No inconsistency found — D154 already made it
+one walk and one verdict. Filed as [POSS-CTX-TABLE]: not built ahead of the
+arms; a zero-mover refactor gated on per-pattern `possessify marked/total`
+plus emit_sweep identity, triggered by the next per-kind possessify edit
+after the arms.
+
 ---
 
 ## 4. Latent and live inconsistencies
@@ -735,6 +756,11 @@ table makes the order the contract.
 
 These are ready to paste into `docs/dev/plan.md`. Each is an EVALUATION:
 design + census, no build. Builds follow a ruling.
+
+- **[POSS-CTX-TABLE]** (added 2026-10-07; FILED in `docs/dev/plan.md` by lane
+  possarms2, family 14 / §3.14) — possessify's per-kind analysis as one
+  context record and one per-kind rows table. Trigger: the next per-kind
+  possessify edit after [ART-POSS-ARMS].
 
 - **[AXES-DENY-MASK] (existing) — ADDENDUM, evaluate FIRST.** "2026-10-06
   decsurvey §4.3: bits 18 (`-fno-size-term`) and 21 (`-fno-scan-edge`) move

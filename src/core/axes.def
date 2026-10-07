@@ -125,8 +125,11 @@ PCREC_AXIS(PCREC_NO_ALT_ISLAND,    "-fno-alt-island",    0, "", PCREC_AXIS_DEFAU
 PCREC_AXIS(PCREC_NO_CLS_FOLD,      "-fno-cls-fold",      0, "", PCREC_AXIS_DEFAULT_ON)
 /* [OPT-LITSCAN] S2a: the VM's literal-run compare, the kit's L2 row there. */
 PCREC_AXIS(PCREC_NO_LIT_RUN,       "-fno-lit-run",       0, "", PCREC_AXIS_DEFAULT_ON)
-/* [OPT-LITSCAN] S4: the run compare's overlapping-word row, both engines
- * (src/gen/runcmp.c). */
+/* [OPT-LITSCAN] S4: the run compare's overlapping-word rows, both engines.
+ * An IN-EMITTER deny: since [MEMFN] M1b the rows are the kit's
+ * (memfn/src/runcmp.c), and the bit crosses as MF_D_RUN_OVERLAP through
+ * the one map table beside this file's readers (src/gen/memfn_sites.c,
+ * `deny_map`; integration.md §14.10). */
 PCREC_AXIS(PCREC_NO_RUN_OVERLAP,   "-fno-run-overlap",   0, "", PCREC_AXIS_DEFAULT_ON)
 /* [UCP] U2: T3's `ctx-node` row — a one-character lookaround becomes the
  * context node (src/parse/ctxnode.c). ENGINE-SELECTING like atomic-discharge:

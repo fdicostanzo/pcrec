@@ -20,7 +20,7 @@
  *
  * It tests EVERY term, OPTIONAL ones included (§14.5 lets an arm test them),
  * and adds none. It writes no comment and calls no hook it does not need:
- * `note`, `note_tag`, `run_cmp` and `table_name` are left to arms that
+ * `note`, `note_tag` and `table_name` are left to arms that
  * reproduce pcrec's text. A SET test is pcrec's `member` hook when given
  * (rule 6: one scalar spelling per set), else the kit's own range test.
  *

@@ -13,7 +13,8 @@
 # answer-preserving behind a 0x00 mask byte; the masked rows are C3's, so on
 # an exact run the plant moves answers as well.)
 SAB_ID="S443-run-word-overreads"
-SAB_FILE="src/gen/runcmp.c"
+# RE-AIMED 2026-10-07 ([MEMFN] M1b REPLACE, lane m1b): src/gen/runcmp.c moved into the kit (memfn/src/runcmp.c, transcribed); the words writer's anchor line is verbatim. Intent unchanged.
+SAB_FILE="memfn/src/runcmp.c"
 SAB_SUITES="codegen harness"
 SAB_HARNESS_TARGET="tests/litscan/litrun.rxt"
 SAB_DESC="the run compare's last word sits at L - W + 1, one byte past the run, so it reads past the bounds the caller's guard covers and compares a constant that reaches past the run's bytes"

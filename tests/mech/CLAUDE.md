@@ -458,6 +458,13 @@ is EXPECTED to time out"*, and neither would a separate arm.
   never defined while the admission emits one. The compile refuses
   (`pcrec_emit_req_byte_check`'s internal error), where before R4c′ the
   pre-check silently vanished and no answer moved.
+- (no new arm) [MEMFN] M1b rows S570-S573 (lane m1b, 2026-10-07) are on
+  `codegen` (`tests/codegen/runcmp_check.py`): the kit's run compare
+  ignores `MF_D_RUN_OVERLAP` (S570), pcrec's deny map drops bit 43 (S571),
+  the prologue never flushes the kit's word-load helpers (S572), RUN_WORDS
+  double-counts (S573). Re-pointed into the kit by the same change: S267,
+  S443, S444, S445, S285 (`memfn/src/runcmp.c`), S279, S454
+  (`memfn/src/ofsskip.c`).
 - `memfnstamps` → `tests/memfn/run_libc_census.sh --quick` ([MEMFN] R4a′,
   lane memfnstamp, 2026-10-05): C11, the kit's two every-artifact stamps.
   Builds nothing itself (reads the sabotaged tree's build/pcrec); about 15 s.

@@ -23,8 +23,9 @@ over a corpus compile pass:
      nothing renders is a vacuous row; K35's reach).
 
 PCREC'S DOORS (R4c FIX): pcrec's builders do not call `mf_define` directly;
-they call ONE pcrec function that checks the description against
-DELEG_SITES (C10), makes the sink and forwards (`pcrec_memfn_define`,
+they call a pcrec function that checks the description against
+DELEG_SITES (C10), makes the sink and forwards (`pcrec_memfn_define`, and
+since M1b `pcrec_memfn_emit` for the VMRUN site's one-call EXPR;
 src/gen/memfn_sites.c). A door is plumbing every site shares, so it is not
 a site: the SITE is the door's caller. `DOORS` names each door and the
 header that declares it (the shim must see the prototype before it wraps
@@ -54,7 +55,8 @@ from c17_lex import _name_from_header  # noqa: E402
 CALL_RX = re.compile(r'\bmf_(define|emit)\s*\(')
 # pcrec's doors over mf_define: name -> the header that declares it (see the
 # module docstring). A door is renamed or added in the same change as this.
-DOORS = {'pcrec_memfn_define': 'gen/memfn_sites.h'}
+DOORS = {'pcrec_memfn_define': 'gen/memfn_sites.h',
+         'pcrec_memfn_emit': 'gen/memfn_sites.h'}       # M1b: VMRUN
 DOOR_RX = re.compile(r'\b(' + '|'.join(DOORS) + r')\s*\(')
 CORPUS_CAP = 300            # compiles per pass
 CORPUS_FLOOR = 100          # K35: a pass that compiled fewer is not a census

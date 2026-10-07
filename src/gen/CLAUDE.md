@@ -1110,7 +1110,8 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
   r4ccore, 2026-10-06; `docs/design/memfn/integration.md` §14, §15, §22
   R4c): pcrec's side of the kit's SITES. `memfn_sites.def` is DELEG_SITES
   (`DELEG_SITE(id, op, handoffs, kinds, budget, use_ceiling)`: PRE, the
-  pre-check composite with the set rest; OFS, the offset-skip block), the
+  pre-check composite with the set rest; OFS, the offset-skip block; VMRUN,
+  the VM's literal-run compare, M1b), the
   one source of `MF_P_INLOOP` (its budget column) and of each site's `use`
   CEILING. `memfn_sites.c`: the attempt's `mf_art` (`Job.mf`, begun at first
   ask), the SINK over a StrBuf (the comment gate stays pcrec's write-time
@@ -1118,18 +1119,32 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
   the arena adapter, the site/predicate/term constructors, the define/use/
   call wrappers (each checks the site against its row first: C10's compile-
   time half, `deleg_check`) and the per-instance `use` check
-  (`pcrec_memfn_check_use`), and the hooks every site shares: `note` at file
-  scope writes a FUNC part's run-compare word loads
-  (`pcrec_runcmp_prepare`, until M1b), `run_cmp` is pcrec's run compare
-  (until M1b). It holds NO decision: the builders that read the start
+  (`pcrec_memfn_check_use`). **[MEMFN] M1b (lane m1b, 2026-10-07):** the
+  shared hooks (`note` carrying the word loads, `run_cmp`) are gone with
+  `runcmp.c`: the kit compares runs and declares their helpers itself. Added:
+  THE IN-EMITTER DENY MAP (`deny_map`: bit 43 -> `MF_D_RUN_OVERLAP`, read by
+  every site's `denies`, the attempt's `mf_art_begin` and, reversed
+  (`pcrec_memfn_deny_flags`), `--list-axes`' run-overlap rows); the door
+  `pcrec_memfn_emit` (VMRUN's one-call EXPR; `site_census.DOORS`); and
+  `pcrec_memfn_flush_helpers`, the prologue's flush of the kit's pending
+  word-load helpers. It holds NO decision: the builders that read the start
   decisions stay in `emit_dfa.c` beside them (`req_site_define`,
   `ofs_site_define`, `ofs_pred_of`). `memfn_sites.h` is the one pcrec header
   that includes the kit's (`memfn/include/memfn.h`). Checks: C10
   (`tests/memfn/run_deleg_sites.sh`), C5 (`tests/memfn/run_arm_pins.sh`).
   The I1 shadow comparator lived here for R4c's IMPLEMENT commit
-  (66176e35) and was deleted by REPLACE.
+  (66176e35) and was deleted by REPLACE; M1b's did the same (IMPLEMENT
+  d14e7df3, deleted by its REPLACE).
 
-- **runcmp.c** — [OPT-LITSCAN] S4 C1 (lane s4build, 2026-10-03, abi 58;
+- **runcmp.c** — **DELETED at [MEMFN] M1b (lane m1b, 2026-10-07, zero
+  movers): THE RUN COMPARE IS THE KIT'S**, `memfn/src/runcmp.c` (see
+  `memfn/src/CLAUDE.md`), transcribed with its row table, helpers and
+  `RUN_WORDS` count; the VM's callers describe a VMRUN site
+  (`vm_run_site`/`vm_run_compare` in `emit_vm.c`), the OFS/PRE run term is
+  the kit's verify chain, the prologue calls `pcrec_memfn_flush_helpers`,
+  and `RUN_WORDS` is the first of the kit's stamp lines (`memfn_stamps.c`).
+  Its history, as it was:
+  [OPT-LITSCAN] S4 C1 (lane s4build, 2026-10-03, abi 58;
   `docs/design/litscan_s4.md` §1.3-§1.5, `docs/spec/tuning.md` §2.38): THE RUN
   COMPARE. `pcrec_emit_run_compare(cx, c, base, off, run)` is the ONE emitter
   of a literal-run compare in emitted C, both engines, through a first-match

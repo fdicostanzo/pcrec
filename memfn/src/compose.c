@@ -8,8 +8,9 @@
  * stamps, vocabulary). The text of a site is the selected arm's; this file
  * decides only WHICH arm and keeps the handles honest.
  *
- * The table holds the scalar arms R4c migrated (ofsskip.c, precheck.c)
- * above the generic scalar row (generic.c), which applies to every site.
+ * The table holds the scalar arms R4c and M1b migrated (ofsskip.c,
+ * precheck.c, runcmp.c) above the generic scalar row (generic.c), which
+ * applies to every site.
  */
 #include <stdarg.h>
 #include <stdio.h>
@@ -111,14 +112,16 @@ void kit_out(mf_sink *o, const char *fmt, ...)
  * First passing row wins (the house's first-match idiom). Every row before
  * the last will carry its own `--memfn=no-NAME` deny when it lands (D144
  * item 4); the generic row has none, so no deny can leave a site without
- * code (§14.6). The two rows above it are the SCALAR ARMS born at R4c's
- * migration (integration.md §15, §16): pcrec's offset-skip block and its
- * pre-check, transcribed. They are not byte-moving changes, so they carry
- * no deny of their own: the artifacts they render are the ones pcrec wrote
- * before them, and the identity gates say so (§9.3). */
+ * code (§14.6). The rows above it are the SCALAR ARMS born at R4c's and
+ * M1b's migrations (integration.md §15, §16, §R4.8): pcrec's offset-skip
+ * block, its pre-check and its run compare, transcribed. They are not
+ * byte-moving changes, so they carry no deny of their own: the artifacts
+ * they render are the ones pcrec wrote before them, and the identity gates
+ * say so (§9.3). */
 static const arm *const arms[] = {
     &ofsskip_arm,
     &precheck_arm,
+    &runcmp_arm,
     &generic_arm,
 };
 
@@ -263,6 +266,12 @@ int mf_define(mf_art *art, const mf_site *s, const mf_hooks *def,
     const char *why = site_check(s);
     if (why)
         return kit_fail(art, "mf_define: outside the vocabulary: %s", why);
+    /* the compile's denies are one value (RULED Q-M1b-1): a site's text and
+       the art's helpers and stamps read the same ones */
+    if (s->denies != art->denies)
+        return kit_fail(art, "mf_define: site denies 0x%llx are not the art's 0x%llx",
+                        (unsigned long long)s->denies,
+                        (unsigned long long)art->denies);
     const arm *row = select_arm(s, def);
     if (!row)
         return kit_fail(art, "mf_define: no arm applies (the generic row must)");
@@ -330,14 +339,6 @@ int mf_art_end(mf_art *art)
     return 0;
 }
 
-/* The generic row declares no helper, so there is nothing to flush; a row
- * that needs one records it on the art and this writes it (§14.8). */
-int mf_flush_helpers(mf_art *art, mf_sink *file_scope)
-{
-    (void)file_scope;
-    return art->err[0] ? -1 : 0;
-}
-
 uint32_t mf_includes(const mf_art *art)
 {
     return art->includes;
@@ -385,19 +386,21 @@ int mf_art_note_libc(mf_art *art, const char *name)
     return 0;
 }
 
-/* MEMFN_FORMS is "none": no arm the table holds renders differently from its
- * SIMD-off self (the table's only row is the generic scalar row), so every
- * artifact equals its SIMD-off compile (Q55; the id list is R4f's). */
+/* RUN_WORDS is the run compare's count (runcmp.c). MEMFN_FORMS is "none": no
+ * arm the table holds renders differently from its SIMD-off self (every arm
+ * is a scalar arm), so every artifact equals its SIMD-off compile (Q55; the
+ * id list is R4f's). */
 int mf_stamps(const mf_art *art, mf_sink *out)
 {
     if (art->err[0]) return -1;
-    if (!out || !out->stamp)
-        return kit_fail((mf_art *)art, "mf_stamps: the sink offers no stamp op");
+    if (!out || !out->stamp || !out->stamp_int)
+        return kit_fail((mf_art *)art, "mf_stamps: the sink offers no stamp/stamp_int op");
     kb libc;
     kb_init(&libc, art->a);
     for (uint32_t i = 0; i < art->nlibc; i++)
         kb_printf(&libc, "%s%s", i ? "," : "", art->libc[i]);
     if (libc.oom) return kit_fail((mf_art *)art, "mf_stamps: out of memory");
+    out->stamp_int(out->u, "RUN_WORDS", art->words);
     out->stamp(out->u, "MEMFN_FORMS", "none");
     out->stamp(out->u, "MEMFN_LIBC", art->nlibc ? libc.p : "none");
     return 0;

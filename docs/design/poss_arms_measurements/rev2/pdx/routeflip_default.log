@@ -1,0 +1,7 @@
+agree	\w++\b	cells=547	poss=0	eng=dfa
+agree	(?>\w+)\b	cells=547	poss=0	eng=dfa
+agree	x(?>\w+)\b	cells=547	poss=0	eng=dfa
+agree	\d++(?![\d.])	cells=1593	poss=0	eng=dfa
+agree	[a-z]++(?=@)	cells=7465	poss=0	eng=dfa
+agree	(?>[a-z]+)(?=@)	cells=7465	poss=0	eng=dfa
+#TALLY agree=6 diverged=0 refused=0 possessive=0 cells=18164 reach_miss=0

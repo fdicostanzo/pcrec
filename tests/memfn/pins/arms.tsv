@@ -6,15 +6,31 @@
 # re-pins that arm's rows IN ITS OWN COMMIT, with its abi event (D76/D94: this
 # file is a reader of the emitted text, found by grep). Recorded at R4c's
 # IMPLEMENT commit, whose I1 shadow comparator proved the kit's rendering of
-# every corpus compile equal to pcrec's pre-migration text.
+# every corpus compile equal to pcrec's pre-migration text. RE-PINNED at M1b's
+# REPLACE (lane m1b): the fixtures' stand-in `run_cmp` hook is retired, so the
+# run-bearing fixtures render the kit's own run compare and their word-load
+# helpers (whose text M1b's I1 comparator proved equal to pcrec's over the
+# corpus); the `runcmp` arm's fixtures are new. No artifact byte moved.
+#
+# m1bfix ADDED (no row re-pinned): ofs-miss-n (ofsskip, a miss stated as
+# the `n` hook's text) and the two DECLINE fixtures ofs-decline-miss and
+# ofs-decline-floor, pinned to `generic`: the offset-skip function returns
+# `n` and reads from `pos` up, so a site with another miss or a stated floor
+# is the generic row's. A row that falls back to ofsskip is check 1's red.
 #
 # Columns (tab-separated): arm (the kit's form id), fixture, part (`def` the
 # file-scope text, `use` the entry's), bytes, sha256.
 #
 # arm	fixture	part	bytes	sha256
-ofsskip	ofs-pair	def	1961	0ca62ec3b7e143b1d27ba7232cdd788bca4f5ee684fb96f9c31abb3d93463a39
+generic	ofs-decline-floor	def	642	ed275168e781b63a008cdd1bce034bf72356b3f085d4d254d5f398062a37b4d0
+generic	ofs-decline-floor	use	111	14ffef2e3b7611d36133a6437b321ee1cf881007507ae457442167854f55d4e8
+generic	ofs-decline-miss	def	570	81447566c6f6cb7ddecb932e6df3299e2321fce0f62fe6f2c7006e70285d3b19
+generic	ofs-decline-miss	use	93	b1253e9aaff89caed0a40d8a94f98bfc071a92f0088707f87ad69be4aa7ddc5c
+ofsskip	ofs-miss-n	def	2094	d68c7b8da022d5ef5cc9cf633828c7ad89dec6d7f9bda0bd1ed653e60e353de5
+ofsskip	ofs-miss-n	use	59	205a7d97afc136ef5a5e7da467200ec16bb16fbd9a55c580bc539703a814a709
+ofsskip	ofs-pair	def	2272	c40c58003965031cda493be90fe99ca96a635f9de0c7559384bbe020736cc6ff
 ofsskip	ofs-pair	use	48	036c47e8483d3a3dd5bfb5d47aecf1368467057fffe78531d3c997daa0345beb
-ofsskip	ofs-run-pinned	def	1751	a25f93bbe8164773b506f3c45c5da0e592b75cc38bd9730b0bc70731e54807b9
+ofsskip	ofs-run-pinned	def	2094	d68c7b8da022d5ef5cc9cf633828c7ad89dec6d7f9bda0bd1ed653e60e353de5
 ofsskip	ofs-run-pinned	use	59	205a7d97afc136ef5a5e7da467200ec16bb16fbd9a55c580bc539703a814a709
 ofsskip	ofs-scan0	def	1373	228d940a1bfb6ff418e7f33134f47ff30824198765b9899e90167b25f804cb3f
 ofsskip	ofs-scan0	use	48	036c47e8483d3a3dd5bfb5d47aecf1368467057fffe78531d3c997daa0345beb
@@ -22,9 +38,21 @@ ofsskip	ofs-set-scan3	def	1489	c98c91f32bf15683113cc4278ee549e41c8a625d5b3afaad7
 ofsskip	ofs-set-scan3	use	59	205a7d97afc136ef5a5e7da467200ec16bb16fbd9a55c580bc539703a814a709
 precheck	pre-lead-handoff	def	847	df7c9cd5622030b5bef727b73f999406be6f64900adce34a1489f394e2f1e8ed
 precheck	pre-lead-handoff	use	301	719a4b0441f933eba40e938785912aef0074d273b2e22cad40b06df8932c9059
-precheck	pre-masked-whole-rest	def	2217	a617d68ce5bd132fc6604bd26cfc643fb9453864f2a6444d390ad1a7d3f2f310
+precheck	pre-masked-whole-rest	def	2870	d9fd84c4be65cdd2c2c1f6ca8c8debc01ef319046688fe95237903470bada471
 precheck	pre-masked-whole-rest	use	475	43892fbd22fa6beede06ed1aabcdbfb9c34d7b2fd960239f4e4b8856f30ec2a9
 precheck	pre-onebyte-rest	def	0	e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 precheck	pre-onebyte-rest	use	415	2b9fd70002386da8cf9182d737b936b68524cfb8b3142f92e0793429ab5de084
-precheck	pre-window-handoff	def	842	de221cde68b05fd5ed35978a06745edc7c66ddd416e07e867f71113d11cabc8a
+precheck	pre-window-handoff	def	1183	6e9558e549adc15560a8d5c9ec7b7b5d9d5090531ef078f68e526a7034f19c84
 precheck	pre-window-handoff	use	150	ae8b6ba27cf1ea36d9881cfe91b3c17c182cba17833a9238e88cdc11f4b9ec1e
+runcmp	run-exact-deny	def	0	e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+runcmp	run-exact-deny	use	40	78df3215f5b5a2100e74c2ebe3b3562af6c0b0c1ba848b58bf8cf23f4d3bf9db
+runcmp	run-masked-deny	def	0	e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+runcmp	run-masked-deny	use	120	6105be64652576ddba54bf91e2b2cf828997635b3ffb03f6e04991e27a3dd80f
+runcmp	run-masked-words	def	294	46dc2780dadd501a35c2e54c047fcf7a1d8c4f08225e1cb648986dbfbbefdd86
+runcmp	run-masked-words	use	82	afbd61c48eb40f59a65cc4da993e17cb94bbfdc97c8442651c5707ae8d149aaf
+runcmp	run-memcmp8	def	0	e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+runcmp	run-memcmp8	use	45	cf084021090c872ef7c2824edd344449ade10ccb0d9757f7efa28a7aab9305ce
+runcmp	run-overlap13	def	294	107339899d90c6a26baa7d8750af840b2cecf7f57a44bdaba8375f731172c659
+runcmp	run-overlap13	use	113	05dd6178dafb0a04cff9224202d9df005c9df39fccc9928e8494fca7ee548d6b
+runcmp	run-overlap3	def	294	e5dee2a6d07b243eb0ee2058e0ada8121b11aeacd47684862ba99a16ced51ee8
+runcmp	run-overlap3	use	94	ef6195b50ed3a6ec516f47029da25d76510c48516a7263327825e18be2a68cd3
