@@ -39,6 +39,7 @@ THE CONTROLS (docs/dev/learnings.md §3):
     ISA flag and not at baseline; intrinsic names, vector types and header
     names are scraped from the compiler's resource include directory; arch
     nouns come from `-dumpmachine`, `uname -m` and the defined arch macros.
+    Classes 1 and 2 plant EVERY derived macro/stem; 3 and 4 an even sample.
     The CLAIM is narrowed as the design narrows it: the plant is not chosen
     by the author of the regex; it is not complete and not box-independent
     (gcc-16 on the Mac and gcc on ubuntubudu declare different sets). The
@@ -77,13 +78,44 @@ def bad(msg):
 L = r'(?<![A-Za-z0-9\\])'
 R = r'(?![A-Za-z0-9])'
 
+# Class 1's vocabulary, as names. WIDENED 2026-10-06 (lane r4clx) from the
+# POPULATION, not from the four strings ubuntubudu's sampled plants missed:
+# every macro gcc-16 (aarch64) and clang's x86_64 target (gcc's own x86 set on
+# the Ryzen box is not reachable from the Mac; clang is the stated proxy)
+# declare under ISA_FLAGSETS, x86-64-v2..v4 and the -march CPU names, minus
+# the baseline. Three kinds of name are DELIBERATELY not class-1 words: English
+# words (`serialize`), two-letter acronyms (`kl`) and the hash algorithms'
+# names (`sha`, which `sha256`/`<sha>` spell all over the tree as a digest),
+# which a case-insensitive word scan cannot tell from prose; they are caught
+# in MACRO form by class 2 (MACRO_ONLY below), the only form a compiler gives
+# them, and derive_plants() plants them in class 2 only.
+ISA_NAMES = (
+    r'sse[0-9]*(?:\.[0-9]|a)?|ssse3|avx[0-9a-z]*|neon|sve2?|mmx|amx[a-z0-9_]*|'
+    r'x86-64-v[1-4]|armv[0-9][a-z0-9.+-]*|bmi[12]?|fma[34]?|pclmul[a-z]*|f16c|'
+    r'movbe|lzcnt|popcnt|cx16|xsave[a-z]*|rdra?nd|rdseed|fsgsbase|sha[23]|sha-?ni|vnni|'
+    r'altivec|rvv|aes(?:ni)?|crypto|fp16[a-z0-9_]*|dotprod|crc32[a-z0-9_]*|i8mm|bf16|'
+    r'pmull|sm[34]|3dnow(?:_?a)?|abm|adx|lahf(?:[_-]?sahf)?|sahf|clflush(?:opt)?|clzero|clwb|mwaitx?|'
+    r'prfchw|rdpid|rdpru|evex(?:256|512)?|gfni|vaes|vpclmulqdq|movdiri|movdir64b|enqcmd|'
+    r'tsxldtrk|waitpkg|wbnoinvd|uintr|hreset|ptwrite|pconfig|cldemote|invpcid|shstk|'
+    r'prefetchi|xop|tbm|lwp|fxsr|rtm|hle|sgx|pku|widekl|cmpccxadd|raoint|user_?msr|movrs|apx(?:_?f)?')
+MACRO_ONLY = r'serialize|kl|sha[0-9]*'
+# The CPU names gcc and clang spell as `__NAME`, `__NAME__` and
+# `__tune_NAME__` under -march=/-mtune= (`-march=native` on the Ryzen box
+# declares `__znver1`). Macro form only: several are English words.
+CPU_NAMES = (
+    r'znver[0-9]|bdver[0-9]|btver[0-9]|k8(?:_sse3)?|k6(?:_[23])?|amdfam10|athlon\w*|geode|'
+    r'corei7(?:_avx)?|core2|nocona|nehalem|westmere|sandybridge|ivybridge|haswell|broadwell|'
+    r'skylake(?:_avx512)?|cannonlake|icelake(?:_client|_server)?|cascadelake|cooperlake|'
+    r'tigerlake|sapphirerapids|alderlake|rocketlake|graniterapids(?:_d)?|emeraldrapids|'
+    r'raptorlake|meteorlake|arrowlake(?:_s)?|lunarlake|pantherlake|sierraforest|grandridge|'
+    r'clearwaterforest|diamondrapids|atom|bonnell|silvermont|slm|goldmont(?:_plus)?|tremont|'
+    r'knl|knm|pentium\w*|i[3-6]86|lujiazui|yongfeng|shijidadao|c3|c7|nano\w*|eden\w*')
+
 CLASSES = {
-    1: ('isa-name', re.compile(
-        L + r'(?:sse[0-9]*(?:\.[0-9])?|ssse3|avx[0-9a-z]*|neon|sve2?|mmx|amx[a-z0-9_]*|'
-        r'x86-64-v[1-4]|armv[0-9][a-z0-9.+-]*|bmi[12]?|fma[34]|pclmul[a-z]*|f16c|'
-        r'movbe|lzcnt|popcnt|cx16|xsave[a-z]*|rdrand|rdseed|fsgsbase|sha-?ni|vnni|'
-        r'altivec|rvv|aes(?:ni)?|crypto|sha[23]|fp16[a-z0-9_]*|dotprod|crc32[a-z0-9_]*|i8mm|bf16|'
-        r'pmull|sm[34])' + R, re.I)),
+    1: ('isa-name', re.compile(L + r'(?:' + ISA_NAMES + r')' + R, re.I)),
+    # 2: the named macros, every `__X…` whose X is a class-1 (or macro-only)
+    # name (so widening class 1 widens class 2: `__ABM__`, `__LAHF_SAHF__`),
+    # the CPU-name macros and `__tune_*`.
     2: ('arch-macro', re.compile(
         L + r'(?:__(?:[A-Z0-9_]*_)?(?:SSE[A-Z0-9_]*|AVX[A-Z0-9_]*|NEON[A-Z0-9_]*|'
         r'SVE[A-Z0-9_]*|ARM_[A-Z0-9_]+|ARM[0-9]*_?[A-Z0-9_]*|AARCH64[A-Z0-9_]*|'
@@ -92,7 +124,9 @@ CLASSES = {
         r'MOVBE[A-Z0-9_]*|XSAVE[A-Z0-9_]*|RDRND[A-Z0-9_]*|RDSEED[A-Z0-9_]*|'
         r'CRC32[A-Z0-9_]*|SHA[A-Z0-9_]*|MMX[A-Z0-9_]*|AMX[A-Z0-9_]*|CX16[A-Z0-9_]*|'
         r'CLFLUSH[A-Z0-9_]*|FSGSBASE[A-Z0-9_]*|VPCLMULQDQ[A-Z0-9_]*|VAES[A-Z0-9_]*|'
-        r'GCC_HAVE_SYNC_COMPARE_AND_SWAP_16)|_M_(?:X64|ARM64|IX86))' + R, re.I)),
+        r'GCC_HAVE_SYNC_COMPARE_AND_SWAP_16)|_M_(?:X64|ARM64|IX86)|'
+        r'__(?:[A-Z0-9_]*_)?(?:' + ISA_NAMES + r'|' + MACRO_ONLY + r')[A-Z0-9_]*|'
+        r'__(?:tune_|arch_)?(?:' + CPU_NAMES + r')(?:__)?|__tune_[a-z0-9_]+)' + R, re.I)),
     3: ('intrinsic', re.compile(
         L + r'(?:_mm[0-9]*_\w+|__m(?:64|128|256|512)[a-z]*|v(?:ld|st)[1-4]q?_\w+|'
         r'vqtbl[0-9]*q?_\w+|v[a-z][a-z0-9]*q?(?:_[a-z]+)?_[sufp](?:8|16|32|64)|[a-z]+[0-9]+x[0-9]+(?:x[0-9]+)?_t|'
@@ -242,7 +276,7 @@ def read_allowlist(path):
 
 ISA_FLAGSETS = [['-march=native'], ['-mcpu=native'], ['-msse4.2'], ['-mavx2'],
                 ['-mavx512f'], ['-mbmi2'], ['-march=x86-64-v2'], ['-march=x86-64-v3'],
-                ['-march=armv8.2-a+sve'], ['-march=armv8-a+crc+crypto']]
+                ['-march=x86-64-v4'], ['-march=armv8.2-a+sve'], ['-march=armv8-a+crc+crypto']]
 
 
 def cc_run(cc, args, src=None):
@@ -283,13 +317,21 @@ def derive_plants(cc):
         accepted.append(fl[0])
         isa_macros |= {x for x in m - base if x.startswith('__')}
     notes['flags'] = accepted
-    plants[2] = evenly(isa_macros, 8)
+    # Classes 1 and 2 plant the WHOLE population (r4clx, 2026-10-06): an
+    # evenly-spaced sample of 8/6 let the regex pass on whichever strings the
+    # sample happened to pick, box by box.
+    plants[2] = sorted(isa_macros)
     stems = set()
     for x in isa_macros:
         s = re.sub(r'^__(?:ARM_FEATURE_)?|__$', '', x)
+        # __GCC_HAVE_SYNC_COMPARE_AND_SWAP_N is gcc's portable atomics
+        # capability macro, not an ISA's NAME (the ISA it reflects, cmpxchg16b,
+        # is class 1's `cx16`): a class-2 plant, never a class-1 stem.
+        if s.startswith('GCC_') or re.fullmatch(MACRO_ONLY, s, re.I):
+            continue
         if re.fullmatch(r'[A-Z][A-Z0-9_]*', s) and len(s) >= 3:
             stems.add(s.split('_')[0] if s.startswith(('SSE', 'AVX')) else s)
-    plants[1] = evenly(stems, 6)
+    plants[1] = sorted(stems)
     inc = (cc_run(cc, ['-print-file-name=include']) or '').strip()
     names, types, headers = [], [], []
     if inc and os.path.isdir(inc):
