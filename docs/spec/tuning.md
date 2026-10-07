@@ -174,7 +174,7 @@ possessified loop keeps no resume frames and spends no backtrack steps on
 retreats, so a `PCREC_ERR_STEPS` or `PCREC_ERR_FRAMES` give-up of the denied
 build can only become an answer. Its forward scan is charged to the WORK
 budget per iteration, so a `PCREC_ERR_WORK` give-up can APPEAR where the denied
-build answered. Measured (this lane, `--engine=vm`, 200 distinct words plus
+build answered. Measured (`--engine=vm`, 200 distinct words plus
 `last last`, 1.5 KB): the backtracking `\b(\w+)\b\s+\1\b` completes at a
 minimum `--work-budget` of 581, the possessive spelling `\b(\w++)\b\s++\1\b`
 at 1,586 (580 and 1,585 give up `PCREC_ERR_WORK`). `limits.md` §7 states the
