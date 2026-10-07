@@ -787,3 +787,8 @@ pointer when a kit change merges to main.
 - A stall watcher (cell mtimes, 30 min) is running.
 - Main's queue: possland → admin1008 → stc3 → R-6. N3 waits for R-6 plus
   the N2 re-run.
+- G2u done. g2u (opus, blinded) folded g2x and added items 1-8. Quick run:
+  462 failures, all K-1, a contract gap. The kit ruled (memfn.h: a FUNC
+  site's name is site.pred.fn_ref for every op; fn_ref 0 on FUNC is
+  refused under N3), and g2u2 (sonnet, blinded) aligned the poison table.
+  Full G2 in main's slot: 138,742,037/0. S526 DETECTED. done: posted.
