@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 """Arm A family, rev 2 (B-B2 / B-B3).  Superset of ../gen_a.py:
 
+  - models `\B` as a gate too (it admits the left character's OWN wordness);
+    rev 1's gen_a.py never claimed a `\B` row, and CLAIM-vs-MARK found the
+    prototype soundly marking `(?:a\.)+\B` (LAST `.`, FIRST `a`), a shape
+    the rev-1 predicate could not express;
   - adds the MIXED-LAST multi-character body (?:a[a.]) (S562's witness
     shape, B-B2);
   - adds column 7 `abl`: the comma list of ABLATED predicates that would
@@ -49,7 +53,7 @@ QUANTS = [("+", 1, True), ("{1,3}", 1, True), ("{2,}", 2, True), ("*", 0, True),
           ("+?", 1, False)]
 FOLLOWS = [("\\b", True, None), ("\\b\\w", True, None), ("\\b.", True, None), ("\\bx", True, None),
            ("\\b$", True, None), ("(?:\\b|x)", True, "x"), ("(?:\\b|\\.)", True, "\\."),
-           ("(?:x?\\b)", True, "x"), ("\\B", False, None)]
+           ("(?:x?\\b)", True, "x"), ("\\B", "B", None)]
 WRAPS = [("{Q}{F}", True), ("({Q}){F}", True), ("x{Q}{F}", True), ("(?:{Q}{F}x)+", False),
          ("(?:{Q})+{F}", False)]
 
@@ -67,7 +71,10 @@ def predicate(F, L, W, A, extra, gated, greedy, mn, wrap_ok, drop=""):
     else:
         if not (L <= W or not (L & W)): return False
         lword = L <= W
-    gate_ok = {c for c in A if (c in W) != lword}       # \b given left polarity
+    if gated == "B":   # \B admits the SAME wordness as the left character
+        gate_ok = {c for c in A if (c in W) == lword}
+    else:              # \b admits the OTHER wordness
+        gate_ok = {c for c in A if (c in W) != lword}
     eff = gate_ok | (extra or set())
     return not (F & eff)
 
@@ -99,4 +106,18 @@ def main():
             n += 1
             print("A%05d\t%s\t%s\t%s\t%s\t%r\t%s\t%d" % (n, mods, g, p, "yes" if claim else "no",
                                                          alpha(m), ",".join(abl), hi))
+    # ENCL's control (B-B3).  The family's wrapped rows put the gate at the
+    # HEAD of the in-body continuation, so a restart can only happen behind
+    # it and dropping ENCL loses nothing there (0 of 2,196 diverge).  A gate
+    # with an empty BYPASS reaches the enclosing loop's end, and the loop's
+    # restart is what rescues the match: these rows are claimed only when
+    # ENCL is dropped, and they diverge.
+    HA = ["a", "b", "c", " ", "."]
+    for k, (g, p) in enumerate([
+            ("(?:a+(?:\\b|)|ab)+c", "(?:a++(?:\\b|)|ab)+c"),
+            ("(?:a{1,3}(?:\\b|)|ab)+c", "(?:a{1,3}+(?:\\b|)|ab)+c"),
+            ("(?:[ab]+(?:\\b|)|ba)+c", "(?:[ab]++(?:\\b|)|ba)+c"),
+            ("(?:a+(?:\\b|)|ab)+c", "(?:a++(?:\\b|)|ab)+c")]):
+        mods = "no_auto_possess" if k < 3 else "i,no_auto_possess"
+        print("H%04d\t%s\t%s\t%s\tno\t%r\tencl\t0" % (k + 1, mods, g, p, HA))
 main()

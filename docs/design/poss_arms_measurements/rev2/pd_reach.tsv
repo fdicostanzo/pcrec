@@ -1,0 +1,13 @@
+# REACH: every (pattern, witness subject[, flags]) pair the plants rely on
+# must be IN subjects_exh.py's sweep (B-B1).  Subject in the driver's escape form.
+ \w?\b	 aa
+(?:a\.)+\b	a.a.
+(?:a[a.])+\b	a.a.
+(a)A+(?i:\1)	aAA
+(?J)(?:(?<n>a)|(?<n>x))x+\k<n>	xxx
+(a?)x+\1x	xx
+(a+(?:\b|))|b(?1)a	baa
+(?:b(?R)a|a+(?:\b|))	baa
+(a?)(x+\1)b(?2)x	xbxx
+\b(\w+)\b\s+\1\b	a a
+k+\b	k\xe2\x84\xaa	-e utf8 -i

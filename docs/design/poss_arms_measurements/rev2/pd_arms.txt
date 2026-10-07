@@ -1,0 +1,64 @@
+# rev 2 possdiff population: the rev-1 designed family (../possdiff_armpats.txt),
+# the rev-1 sabotage witnesses (../possdiff_sabpats.txt), and the rev-2 rows:
+# the mixed-LAST body, A-F1 witnesses, arm x call shapes, B depth-1
+# termination, lazy and A0 lookahead shapes.
+# features: all
+\b(\w+)\b\s+\1\b
+(\w+)\b
+\w+\b
+\w{1,3}\b
+\w{2,}\bx
+[a-c]+\b
+[a-c]+\b\w
+(?:ab)+\b
+(?:a\.)+\b
+\W+\b
+[ .]+\b
+x\w+(?:\b|\.)
+\w+(?:\b|x)
+\w*\b
+ \w?\b
+\w+\B
+[a .]+\b
+(?i)k+\b
+(?i)[j-l]+\b
+(\w+)\s+\1
+(a)\s+\1
+(a|b)x+\1
+([ab]+)x{1,3}\1b
+(a?)x+\1b
+(a?)x+\1x
+(a)x+?\1
+(?:(a)|b)x+\1
+(?:x+\1|(a))+
+((a)|b)x+\2
+(?<=(a))x+\1
+(a)A+(?i:\1)
+(?i:(a))A+\1
+(?J)(?:(?<n>a)|(?<n>x))x+\k<n>
+(?J)(?:(?<n>a)|(?<n>b))x+\k<n>
+(x+)\1
+(a|x+\1)+
+ (\w?)\b
+x[ab]{0,3}\b
+(?J)(?<n>a)?(?<n>x)?x+\k<n>
+(?:a[a.])+\b
+(?:\.a)+\b
+(a+(?:\b|))|b(?1)a
+(?:b(?R)a|a+(?:\b|))
+(\w+\b)x(?1)
+(\w+\b)x(?1)y
+(\w+(?:\b|))x(?1)a
+(a?)(x+\1)b(?2)x
+(a)(x+\1)b(?2)x
+(a\2)(b\1)x+\1
+(a\2)?(b\1)?x+\1
+\w+?\b
+[a-c]+?\b
+(?:ab)+?\b
+[a-z]+(?=@)
+\d+(?![\d.])
+[ab]+?(?![ab])
+a*(?!a)
+\d*(?![\d.])
+x[ab]*\b

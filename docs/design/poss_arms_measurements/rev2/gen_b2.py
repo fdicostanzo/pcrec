@@ -39,13 +39,21 @@ for (G, gf, gn), (q, qp, qc, greedy), (t, tf, tnull) in itertools.product(GROUPS
         eff = set(gf)
         may_end = False
         if gn:
-            if tf is None: eff = set(AL)             # \b widens (arm A does not apply: no Q before it)
+            if tf is None:
+                # \b reached at ZERO consumption when the reference is empty:
+                # arm A1 values it from Q's LAST polarity (greedy, m >= 1);
+                # otherwise (lazy, m = 0, mixed class) it widens.
+                W = {"a", "b", "x", "A"}
+                if greedy and not q.startswith("x*") and (qc <= W or not (qc & W)):
+                    eff |= {c for c in AL if (c in W) != (qc <= W)}
+                else:
+                    eff = set(AL)
             else: eff |= tf
             may_end = tnull
         claim = (not (qc & eff)) and (greedy or not may_end)
         abl = None
         if gn and not claim:
-            if (not (qc & set(gf))) and greedy: abl = "nonnull-yes"
+            if (not (qc & set(gf))) and greedy and tf is not None: abl = "nonnull-yes"
         add("no_auto_possess", g, p, "yes" if claim else "no", abl)
 
 # caseless at the reference vs at the group
@@ -69,8 +77,11 @@ add("no_auto_possess", "(?:(a)|b)x+\\1x", "(?:(a)|b)x++\\1x", "yes")
 add("no_auto_possess,match_unset_backref", "(?:(a)|b)x+\\1x", "(?:(a)|b)x++\\1x", "no", "unsetfails-yes")
 add("no_auto_possess,match_unset_backref", "(?:(a)|b)x+\\1", "(?:(a)|b)x++\\1", "yes")
 # re-entered / forward / self references
-add("no_auto_possess", "(?:x+\\1|(a))+", "(?:x++\\1|(a))+", "yes")
-add("no_auto_possess", "(?:(a)|x+\\1)+", "(?:(a)|x++\\1)+", "yes")
+# rev 2: CLAIM-vs-MARK found these two hand claims wider than the rule: the
+# enclosing loop restarts with x, which ENCL unions UNGATED (the inherited
+# conservatism, poss_arms.md §2.3); sound either way -- tagged `encl`.
+add("no_auto_possess", "(?:x+\\1|(a))+", "(?:x++\\1|(a))+", "no", "encl-yes")
+add("no_auto_possess", "(?:(a)|x+\\1)+", "(?:(a)|x++\\1)+", "no", "encl-yes")
 add("no_auto_possess", "(a|x+\\1)+", "(a|x++\\1)+", "no")
 add("no_auto_possess", "(x+)\\1", "(x++)\\1", "no")
 add("no_auto_possess", "((a)|b)x+\\2", "((a)|b)x++\\2", "yes")
@@ -100,8 +111,8 @@ CALLS = [
   ("(\\w+\\b)x(?1)", "(\\w++\\b)x(?1)", "yes", ""),
   ("(\\w+\\b)x(?1)y", "(\\w++\\b)x(?1)y", "yes", ""),
   ("(\\w+(?:\\b|))x(?1)a", "(\\w++(?:\\b|))x(?1)a", "no", "cc"),
-  ("(a?)(x+\\1)y(?2)x", "(a?)(x++\\1)y(?2)x", "no", "cc"),
-  ("(a)(x+\\1)y(?2)x", "(a)(x++\\1)y(?2)x", "yes", ""),
+  ("(a?)(x+\\1)b(?2)x", "(a?)(x++\\1)b(?2)x", "no", "cc"),
+  ("(a)(x+\\1)b(?2)x", "(a)(x++\\1)b(?2)x", "yes", ""),
 ]
 for k, (g, p, c, t) in enumerate(CALLS):
     print("C%04d\tno_auto_possess\t%s\t%s\t%s\t%r\t%s\t0" % (k + 1, g, p, c, AL, t))
