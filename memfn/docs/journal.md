@@ -518,3 +518,27 @@ pointer when a kit change merges to main.
   make test, gate, 14 mech rows, axes, C11, all I2 arms); completion
   line `== m1b-lx DONE rc=N ==`. The Mac make test goes on a slot main
   names.
+- 2026-10-07, later morning:
+  - The Mac make test at 20b9d3cb had ONE red, test-memfn-g2, with a
+    two-layer cause:
+    - (a) G2's h_note stub wrote bare text where the contract asks for a
+      comment, fixed at 6467f6a2;
+    - (b) a kit defect: R4c's ofsskip arm accepted sites whose `miss` is
+      not `n` or that state a `floor` (G2 sites 1682 and 2587; 11
+      under-read faults below the floor).
+  - (b) is an unstated precondition, latent on main since 81bc13de and
+    unreachable from pcrec. Lane m1bfix fixed it: the arm declines to the
+    generic row and the use side refuses loudly. Proof: 200 compiles with
+    0 differing; G2/arms/forms/manifest green. It is merged into the
+    branch. Main files it as K96 at the M1b merge.
+  - The Mac gate vs e947b406 PASSED with 0 movers on all six streams.
+  - The Linux full verdict at 5f0f4dca is green apart from G2 (the same
+    known cause). Main re-runs G2 alone on Linux at the fixed tip.
+  - OWED (kit), K35-type gaps, both to be closed with a blinded G2
+    extension:
+    - G2 reaches neither ofsskip (0 sites after the fix) nor precheck
+      (it never sets on_miss_leaves), nor runcmp's words row;
+    - Q-G2-6's floor scope (general or SKIP/ON_CAND-only) needs my ruling.
+  - Lesson: the m1bfix lane's detached chain was checked to be truly
+    detached (ppid 1, own pgid) before I stopped the lane, and it
+    survived.

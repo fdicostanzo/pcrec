@@ -1,10 +1,25 @@
 # m1bfix: M1b's G2 fault, lane report
 
+**Owed runs DONE (2026-10-07 09:16, Mac, under the lock):** G2 `--quick`
+checks failed 0 (rc 0; W1 controls fire); test-memfn-arms, -forms and
+-manifest rc 0. Merged into lane/memfn-m1b.
+
 Lane `lane/m1bfix`, cut from the kit branch `lane/memfn-m1b` at 6467f6a2.
 Mac (gcc-16, clang for the ASan leg). Brief: reproduce G2's red after M1b,
 classify it, fix it without moving a pcrec byte, pin it, validate.
 
 ## 1. Root cause
+
+**ORIGIN (kit manager, 2026-10-07): an UNSTATED PRECONDITION, latent on
+main since R4c (81bc13de).** R4c's offset-skip arm was correct only under a
+guarantee pcrec's facts always give at OFS/PRE: `miss` is `n` and no
+`floor` is stated. The kit contract (§14.7, §15) does not require that, so
+G2 legally built sites pcrec never would. Before M1b those sites were
+unreachable, because their RUN term needed the run_cmp hook G2 leaves NULL.
+This is not an M1b translation slip, and pcrec's pre-M1b runcmp.c is not at
+fault: both failing sites used the memcmp row correctly. No pcrec artifact
+was ever affected. The fix closes the contract edge: decline to the generic
+row, and refuse loudly at use. Main files it as K96.
 
 **A kit defect in the offset-skip ARM's applicability (`memfn/src/ofsskip.c`
 `ofsskip_applies` / `ofs_fn_applies`), not in the run compare.** The arm
