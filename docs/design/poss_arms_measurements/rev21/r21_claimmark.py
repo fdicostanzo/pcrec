@@ -98,7 +98,14 @@ def one(row):
     pbase = strategies(pre + ps, fl, {})
     tset = flips(base, pbase)[0] if isinstance(pbase, list) else set()
     tgt = next(iter(tset)) if len(tset) == 1 else None
-    res["status"] = "ok"; res["tgt"] = "unresolved" if tgt is None else str(tgt)
+    # POST-FREEZE EDIT 1 (poss_arms.md §8.3a): the possessive spelling moves
+    # NOTHING because the base build already marks the target (an exact
+    # count, row 1).  MARK is then the target's STATE, which the arms must
+    # keep: every ordinal the spelling makes possessive stays possessive.
+    basemarked = (tgt is None and isinstance(pbase, list) and pbase == base
+                  and "possessive" in base)
+    res["status"] = "ok"
+    res["tgt"] = "basemarked" if basemarked else ("unresolved" if tgt is None else str(tgt))
     res["nq"] = len(base)
     for name, env in CONFIGS:
         got = strategies(pre + g, fl, env)
@@ -107,8 +114,11 @@ def one(row):
         f, anom = flips(base, got)
         if anom:
             res[name] = "ANOMALY"; continue
-        mark = (tgt in f) if tgt is not None else bool(f)
-        extra = len(f - ({tgt} if tgt is not None else f))
+        if basemarked:
+            mark = all(got[i] == "possessive" for i, k in enumerate(base) if k == "possessive")
+        else:
+            mark = (tgt in f) if tgt is not None else bool(f)
+        extra = 0 if basemarked else len(f - ({tgt} if tgt is not None else f))
         res[name] = int(mark) + (10 * extra)        # tens digit: extra flips
     return res
 
@@ -137,6 +147,7 @@ def main():
             if "utf" in r["mods"].split(",") and "ucp" in r["mods"].split(","): ucp_ref += 1
             continue
         if r["tgt"] == "unresolved": unres[r["src"]] += 1
+        if r["tgt"] == "basemarked": unres["bm_" + r["src"]] = unres.get("bm_" + r["src"], 0) + 1
         for n in names:
             v, s = r[n], summ[(n, r["src"])]
             if not isinstance(v, int):
@@ -148,7 +159,8 @@ def main():
             if m != r["exp"]: s[1] += 1
             if m and not r["exp"]: s[2] += 1
     print("#SUMMARY rows %d status %s" % (len(out), sorted(st.items())))
-    print("#SUMMARY target-unresolved computed=%d hand=%d" % (unres["computed"], unres["hand"]))
+    print("#SUMMARY target-unresolved computed=%d hand=%d  base-marked computed=%d hand=%d"
+          % (unres["computed"], unres["hand"], unres.get("bm_computed", 0), unres.get("bm_hand", 0)))
     for n in names:
         for s in ("computed", "hand"):
             print("#SUMMARY %-9s %-8s compared %d  mark!=expect %d  (unsound-direction %d)  extra-flips %d  anomalies %d"

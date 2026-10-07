@@ -40,6 +40,12 @@ def member(cls):
 
 BODIES = [("[a-z]", "[a-z]"), ("\\d", "\\d"), ("[ab]", "[ab]"), ("a", "a"),
           ("(?:(?=[ab])\\w)", "[ab]"), ("(?:\\w(?!\\d))", "\\w")]
+# POST-FREEZE EDIT 1 (poss_arms.md §8.3a): A1's polarity is read from the
+# classes at X's Glushkov LAST POSITIONS (the rule, §2.3), and a gate inside
+# the body is not a position: `(?:(?=[ab])\w)`'s LAST position is `\w`, not
+# the gate-narrowed `[ab]` the frozen generator used.  Trigger rows Z07826..
+# Z08584 (18).  The edit only NARROWS claims.
+LASTCLS = {"(?:(?=[ab])\\w)": "\\w"}
 GATES = ["@", "[\\d.]", "[ab]", "[a-z]", "\\w", "\\W"]
 QUANTS = [("+", 1, None, True), ("*", 0, None, True), ("?", 0, 1, True), ("{2,4}", 2, 4, True),
           ("{3}", 3, 3, True), ("+?", 1, None, False), ("*?", 0, None, False),
@@ -84,7 +90,8 @@ def main():
         # row 1 (exact) / row 2 (lazy && may_end declines) / row 3
         claim = (mn == mx) or (disjoint and (greedy or not may_end))
         if not claim and greedy and mn >= 1 and not encl:
-            pol = {1 if c in Cs else 0 for c in Fx}  # LAST = FIRST: single-class bodies
+            Lx = mem(LASTCLS.get(b, fcls))
+            pol = {1 if c in Cs else 0 for c in Lx}  # LAST: the position class
             s1 = S(kind, Cs, pol)
             f1 = (A if s1 is None else s1) | ex
             claim = not (Fx & f1)

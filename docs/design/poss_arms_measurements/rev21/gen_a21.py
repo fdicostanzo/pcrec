@@ -138,13 +138,26 @@ def main():
             F = mem(fc, m)
             tc, tn = FTEXT[f]
             T = mem(tc, m) if tc else set()
-            thi = "utf" in m and tc is not None and bool(mem(tc, m, HIGH))
+            # POST-FREEZE EDIT 1 (poss_arms.md §8.3a): pcrec declines by
+            # representation only when the follow is NON-EMPTY and some set
+            # in the comparison widens: FIRST(X) or a follow class has a
+            # member above U+00FF (libpcre2's fold: `(?i)k` under utf), or
+            # pcrec's parse-time fold puts U+212A/U+017F into a caseless
+            # class with k/s in it (cls_casefold folds `\w` too; libpcre2
+            # does not).  Trigger rows: 225 hi-but-marked, 520 tail-`k` /
+            # `(\b\w)` declines (A35437.., A52978.., A54035..).
+            def phi(c):
+                if c is None: return False
+                hi_ = "utf" in m and bool(mem(c, m, HIGH))
+                fold_ = "utf" in m.split(",") and "i" in m.split(",") and bool(mem(c, m) & {"k", "K", "s", "S"})
+                return hi_ or fold_
+            thi = phi(tc) or bool(tail and tn and phi(tail))
             follow = T | (mem(tail, m) if (tail and tn) else set())
             may_end = tn and not tail
             claim = not (F & follow) and (greedy or not may_end)
             # position reading: a \b/\B gate is A0-unnarrowable -> all, non-nullable
             abl = []
-            hi = int(("utf" in m and bool(mem(fc, m, HIGH))) or thi)
+            hi = int(bool(follow) and (("utf" in m and bool(mem(fc, m, HIGH))) or thi))
             g = rw.replace("{F}", f).replace("{Q}", b + q)
             ps = (b + q + "+") if greedy else "(?>%s%s)" % (b, q[:-1])
             p = rw.replace("{F}", f).replace("{Q}", ps)
