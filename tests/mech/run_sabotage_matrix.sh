@@ -475,6 +475,52 @@ INNER_PROCS=$(( ncpu / PROCS )); [ "$INNER_PROCS" -ge 1 ] || INNER_PROCS=1
 IDS=("$@")
 ONLY="${1:-}"
 
+# [admin1007] THE TRAILER COUNTERS READ THE VERDICT COLUMN ONLY. They used to
+# `grep -c` the whole tab-joined row line, so a SAB_DESC that merely CONTAINED
+# a verdict word (S268's and S527's "UNREACHED") inflated the count of a row
+# whose verdict was a plain DETECTED. `vcount ERE` counts the rows of
+# "$results_file.rows" whose LAST tab field matches; `vrows ERE` prints them.
+vcount() { awk -F'\t' -v re="$1" '$NF ~ re {n++} END {print n + 0}' "$results_file.rows"; }
+vrows() { awk -F'\t' -v re="$1" '$NF ~ re' "$results_file.rows"; }
+
+# SELFCHECK_VERDICT_COLUMN=1: a sabotage-style self-check of the above. One
+# fake row per verdict word, each carrying that word ONLY in its description
+# (verdict DETECTED), plus one row per word carrying it ONLY in the verdict.
+# Every description-only row must count 0 under EVERY counter; every
+# verdict-only row must count exactly 1 under its own. Builds nothing, reads
+# no definition, prints no `mech run COMPLETE` trailer.
+if [ "${SELFCHECK_VERDICT_COLUMN:-0}" = "1" ]; then
+    sc_dir="$(mktemp -d "${MECH_SCRATCH:-${TMPDIR:-/tmp}}/vcol-selfcheck.XXXXXX")"
+    results_file="$sc_dir/r"
+    words=("UNEXPECTED" "UNDETECTED" "ANOMALY" "APPLY-FAILED" "BUILD-FAILED" "FATAL" \
+           "SKIPPED-no-oracle" "UNREACHED" "NOW REACHED")
+    : > "$results_file.rows"
+    for w in "${words[@]}"; do
+        printf 'S0\tf.c\tdescription mentions %s only\tsuites\tbits\tDETECTED\n' "$w" \
+            >> "$results_file.rows"
+    done
+    sc_bad=0
+    for w in "${words[@]}"; do
+        n="$(vcount "$w")"
+        [ "$n" = 0 ] || { echo "SELFCHECK FAIL: description-only '$w' counted $n (want 0)"; sc_bad=1; }
+    done
+    : > "$results_file.rows"
+    for w in "${words[@]}"; do
+        printf 'S0\tf.c\tplain description\tsuites\tbits\t%s (verdict)\n' "$w" \
+            >> "$results_file.rows"
+    done
+    for w in "${words[@]}"; do
+        n="$(vcount "$w")"
+        [ "$n" = 1 ] || { echo "SELFCHECK FAIL: verdict-only '$w' counted $n (want 1)"; sc_bad=1; }
+    done
+    rm -rf "$sc_dir"
+    if [ "$sc_bad" -eq 0 ]; then
+        echo "== SELFCHECK_VERDICT_COLUMN OK: ${#words[@]} words, description-only counts 0, verdict-only counts 1 =="
+        exit 0
+    fi
+    exit 1
+fi
+
 # `--help` prints the ROW FIELD LIST rather than only the invocation forms,
 # because the thing a reader opens this script for is almost always "what may
 # a sabotage definition set". [MECH-REACH] added four fields and a verdict,
@@ -1126,9 +1172,11 @@ run_one() {
         # `UNDETECTED`, `ANOMALY`, `APPLY-FAILED`, `BUILD-FAILED`, `FATAL`,
         # `SKIPPED-no-oracle`, `UNREACHED` and `NOW REACHED` as prose for the
         # identical reason -- a ROBUST fix would anchor each `grep -c` on the
-        # verdict column alone (`awk -F'\t' '{print $NF}'` before the grep,
-        # here and at every trailer counter below); not built here, named as
-        # the trigger for whoever next has cause to touch this section (D77).
+        # verdict column alone. [admin1007] BUILT: every trailer counter now
+        # reads the verdict column only (`vcount`/`vrows` at the trailer), so
+        # the prose caution above is no longer load-bearing for the counters;
+        # `SELFCHECK_VERDICT_COLUMN=1` proves it with a fake row per verdict
+        # word. The wording discipline stays harmless and is kept.
         #
         # (i) THE INSTRUMENT REQUIREMENT, first, because an unsatisfiable
         # instrument makes the reach question moot: nothing measurable follows
@@ -2981,15 +3029,18 @@ echo "== detection matrix =="
 } | column -t -s "$(printf '\t')"
 
 echo
-unexpected="$(grep -c 'UNEXPECTED' "$results_file.rows" || true)"
-undetected="$(grep -c 'UNDETECTED' "$results_file.rows" || true)"
-anomalies="$(grep -c 'ANOMALY\|APPLY-FAILED\|BUILD-FAILED\|FATAL' "$results_file.rows" || true)"
-oracle_skipped="$(grep -c 'SKIPPED-no-oracle' "$results_file.rows" || true)"
+# [admin1007] EVERY counter below reads the VERDICT COLUMN (the last tab
+# field) ONLY, via `vcount`/`vrows` (defined with the argument parsing, where
+# SELFCHECK_VERDICT_COLUMN=1 proves them).
+unexpected="$(vcount 'UNEXPECTED')"
+undetected="$(vcount 'UNDETECTED')"
+anomalies="$(vcount 'ANOMALY|APPLY-FAILED|BUILD-FAILED|FATAL')"
+oracle_skipped="$(vcount 'SKIPPED-no-oracle')"
 # [MECH-REACH] counted BESIDE undetected/anomalies rather than folded into
 # either: an UNREACHED row is neither "the guards saw it" nor "the guards
 # missed it" -- it is "the witness was not there to look", which is a third
 # thing and the one this mechanism exists to make countable.
-unreached="$(grep -c 'UNREACHED\|NOW REACHED' "$results_file.rows" || true)"
+unreached="$(vcount 'UNREACHED|NOW REACHED')"
 total="$(wc -l < "$results_file.rows" | tr -d ' ')"
 
 # The denominator guard: `total` above is derived from the rows that ARRIVED,
@@ -3014,11 +3065,11 @@ if [ "${unexpected:-0}" -gt 0 ]; then
     echo "*** A row reading 'NOW DETECTED' has an EXPIRED claim: some later wave grew the      ***"
     echo "*** population that closes it. Re-MEASURE it, then flip its SAB_EXPECT -- do not     ***"
     echo "*** simply delete the row, and do not leave the stale expectation standing.          ***"
-    grep 'UNEXPECTED' "$results_file.rows" | cut -f1,6 | sed 's/^/    - /'
+    vrows 'UNEXPECTED' | cut -f1,6 | sed 's/^/    - /'
 fi
 if [ "${anomalies:-0}" -gt 0 ]; then
     echo "*** $anomalies sabotage(s) hit an ANOMALY (anchor drift, build failure, or archive failure) and were NOT measured. ***"
-    grep 'ANOMALY\|APPLY-FAILED\|BUILD-FAILED\|FATAL' "$results_file.rows" | cut -f1 | sed 's/^/    - /'
+    vrows 'ANOMALY|APPLY-FAILED|BUILD-FAILED|FATAL' | cut -f1 | sed 's/^/    - /'
 fi
 if [ "${unreached:-0}" -gt 0 ]; then
     echo "*** $unreached row(s) reported UNREACHED: the row's own WITNESS does not reach the      ***"
@@ -3027,14 +3078,14 @@ if [ "${unreached:-0}" -gt 0 ]; then
     echo "*** do not delete the row, and do not read a DETECTED/UNDETECTED verdict off a row      ***"
     echo "*** whose witness has expired. 'NOW REACHED' is the other direction: a row that         ***"
     echo "*** DECLARES its witness dead and was found live. Re-measure, then flip SAB_EXPECT.     ***"
-    grep 'UNREACHED\|NOW REACHED' "$results_file.rows" | cut -f1,5,6 | sed 's/^/    - /'
+    vrows 'UNREACHED|NOW REACHED' | cut -f1,5,6 | sed 's/^/    - /'
 fi
 if [ "${oracle_skipped:-0}" -gt 0 ]; then
     echo "*** $oracle_skipped row(s) ran with an ORACLE-DEPENDENT arm SKIPPED (pc3 and/or       ***"
     echo "*** laexpand): libpcre2-8-0 is absent, so the EXTERNAL oracle contributed nothing to   ***"
     echo "*** those verdicts. Read them accordingly — for the rows whose only external answer is ***"
     echo "*** one of those two, this run did not measure them. The row cell names which arm.     ***"
-    grep 'SKIPPED-no-oracle' "$results_file.rows" | cut -f1 | sed 's/^/    - /'
+    vrows 'SKIPPED-no-oracle' | cut -f1 | sed 's/^/    - /'
 fi
 
 rm -f "$results_file" "$results_file.rows"
