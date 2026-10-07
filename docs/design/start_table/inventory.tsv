@@ -77,12 +77,10 @@ req_none_applies	PRED	PRESENCE P1
 req_one_attempt_applies	PRED	PRESENCE P2
 req_dominated_applies	PRED	PRESENCE P3
 req_set_leads_applies	PRED	PRESENCE P4
-req_admits	TABLE	PRESENCE P1-P5
-req_admit	WALK	PRESENCE
+req_admit	WALK	PRESENCE	[C4] cand_select(PRESENCE) on CAND_ROUTE_DFA (req_admits[] deleted into cand_rows[])
 req_lead_byte	READER	PRESENCE	reads P's verdict for the set lead
 req_handoff_applies	PRED	FIRST F1	reads PRESENCE (req_admit) and the route
-req_uses	TABLE	FIRST F1/F2
-req_use	WALK	FIRST
+req_use	WALK	FIRST	[C4] cand_select(FIRST) on CAND_ROUTE_DFA (req_uses[] deleted into cand_rows[])
 req_handoff_stamp	PROJ	FIRST	RX_REQ_HANDOFF
 match_unwrapped_applies	NOTSTART	match axis	dfa_matches[]: the caller supplies the start (§2.5)
 dfa_matches	NOTSTART	match axis
@@ -139,10 +137,8 @@ pcrec_fact_start_set	LANDMARK	NEXT N5-N7	fact
 # call_graph.py parsed types, sized/initializer data and headers
 DfaCand	TYPE	every slot	the common leading member: c.name / c.deny / c.applies (§1.1); S282 anchors in it
 PfScan	TYPE	NEXT	the scan-kind enum DfaPf embeds -> the `scan` column (§1.1)
-ReqAdmitRow	TYPE	PRESENCE	-> CandRow.u.admit (C4)
-ReqAdmit	TYPE	PRESENCE	the verdict enum ReqAdmitRow embeds -> u.admit's verdict
-ReqUseRow	TYPE	FIRST	-> CandRow.u.use (C4)
-ReqUse	TYPE	FIRST	the use enum ReqUseRow embeds -> u.use
+ReqAdmit	TYPE	PRESENCE	the verdict enum CandAdmit embeds (ReqAdmitRow's until C4)
+ReqUse	TYPE	FIRST	the use enum CandUse embeds (ReqUseRow's until C4)
 PcrecReseedRow	TYPE	RETRY	-> CandRow.u.reseed (C5)
 DfaMatch	NOTSTART	match axis	dfa_matches[]'s row type; the match-here entry stays outside (§2.5)
 pcrec_reseed_nrows	PROJ	RETRY	the reseed table's row count, read by vm_plan_reseed's walk and the listing; kept as an accessor until C7 (§3.5)
@@ -151,6 +147,8 @@ cand_select	WALK	every slot	[C2] THE one walk, cand_select(slot, sel, flags); [C
 CandRow	TYPE	every slot	[C2] the row contract (§1.1): c, slot, routes, tok, map, giveup, hands, list[route], was (the oracle's link, deleted with the old tables); [C3] u (u.pf, u.recover)
 CandPf	TYPE	NEXT	[C3] DfaPf's fields, CandRow.u.pf (the emit hooks, reseeds, run_term, scan, emit_vm, scan_set)
 CandRecover	TYPE	RECOVER	[C3] CandRow.u.recover (pinned), dfa_search_is_pinned's property
+CandAdmit	TYPE	PRESENCE	[C4] ReqAdmitRow's fields, CandRow.u.admit (verdict, desc)
+CandUse	TYPE	FIRST	[C4] ReqUseRow's fields, CandRow.u.use (use, desc)
 CandList	TYPE	every slot	[C2] list[route]: {axis, order, listed name}
 CandSlot	TYPE	every slot	[C2] the slot enum (core/internal.h; §1.2)
 cand_window_applies	PRED	WINDOW W1	[C2] the `w < 0` inline test as a predicate

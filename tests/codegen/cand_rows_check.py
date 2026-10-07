@@ -40,14 +40,14 @@ re-aimed at C3, start_table.md §3.5)
     contents, so a new row's name joins it with no edit here.
 
 [cand-route-init] (stage 1, review r4 checks-F6)
-    Every `DfaSel NAME = { ... };` / `CandSel NAME = { ... };` initializer
-    under src/ names `.route` (`CandSel` is the type since C2; C3's readers
-    spell it so, the older ones keep the `DfaSel` alias).
+    Every `CandSel NAME = { ... };` initializer under src/ names `.route`
+    (`CandSel` is the type since C2 and the only spelling since C4, D148
+    Q2's sweep; the pattern still accepts the retired `DfaSel`).
     The selection value gained a route whose zero value is the legacy DFA
     route; an initializer that omits it compiles silently (a designated
     initializer zero-fills), so the omission is caught here instead. The
     population is counted and must be non-empty (K35). WHAT IT CANNOT SEE: a
-    `DfaSel` built by assignment after declaration, or copied from another.
+    `CandSel` built by assignment after declaration, or copied from another.
 
 [cand-route-walk] (stage 1, checks-F6; re-aimed at C3)
     `cand_select`'s body tests the row's route mask (`CAND_ON(s->route)`)

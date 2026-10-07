@@ -302,7 +302,7 @@ static bool dfa_search_is_pinned(Ctx *cx);
  * declares `var` and, in a -DPCREC_CAND_NEW_FIRST build, walks first; `_POST`
  * walks (if `_PRE` did not) and aborts unless the walk chose what the old
  * decision did. The `_IN` pair is for an INLINE decision, which has no
- * `DfaSel` of its own; `site` must be a string literal, as the trace's.
+ * `CandSel` of its own; `site` must be a string literal, as the trace's.
  * `CAND_HIT` (C3) is the hit counter alone, at a reader whose slot's old
  * walk is gone; `CAND_HIT_EVERY` (C4) also holds the row to be the one every
  * other route the slot is asked on chooses (the entry slots, asked on one). */
@@ -3406,7 +3406,9 @@ static void emit_u8_table(StrBuf *c, const char *p, const char *tag,
  * The facts a candidate's `applies` reads. It is a VALUE and not the Ctx
  * because selection happens twice per artifact from the body path and twice
  * more from the stamp path, and the two must not be able to answer
- * differently: everything an `applies` may look at is in here. */
+ * differently: everything an `applies` may look at is in here. It is the
+ * start table's selection value too (start_table.md §1.1; D148 Q2's rename,
+ * the type at [START-TABLE] C2 and every spelling at C4). */
 typedef struct CandSel {
     Ctx        *cx;
     const Dfa  *d;            /* THIS machine — forward and reverse differ */
@@ -3443,11 +3445,8 @@ typedef struct CandSel {
      * skip, or NULL where the reader needs only the row. */
     struct CandSet *cand;
 } CandSel;
-/* [START-TABLE] C2 the selection value is the start table's `CandSel`
- * (start_table.md §1.1); every axis written before it keeps the old name. */
-typedef CandSel DfaSel;
 
-/* [START-SET] THE ROUTES (`DfaSel.route`, `CandRoute` in core/internal.h
+/* [START-SET] THE ROUTES (`CandSel.route`, `CandRoute` in core/internal.h
  * since C2), and a row's ROUTE MASK: bit `CAND_ON(r)` set where the row
  * serves route `r`. A mask of 0 is the legacy DFA-only row, so a row written
  * before routes existed serves exactly the route it always did. */
@@ -3473,7 +3472,7 @@ static CandRoute cand_route_of(Ctx *cx)
 typedef struct DfaCand {
     const char *name;         /* the stamp value, where this axis has a stamp */
     uint64_t    deny;         /* a set bit in cx->opt->flags REMOVES this entry */
-    bool      (*applies)(const DfaSel *s);
+    bool      (*applies)(const CandSel *s);
 } DfaCand;
 
 typedef struct DfaForm DfaForm;
@@ -4990,7 +4989,7 @@ typedef struct CandPf {
      * seek before the first attempt (`entry`, which also declares the row's
      * table) or after a failed one. NULL on `none`, whose VM hat is today's
      * attempt loop. */
-    void  (*emit_vm)(StrBuf *c, const DfaSel *s, const char *p,
+    void  (*emit_vm)(StrBuf *c, const CandSel *s, const char *p,
                      const char *ind, bool entry);
     /* [START-SET] stage 3: THE SET THIS ROW'S SKIP SCANS, where it is not
      * the start state's escape set `UnanchStart.cand` (NULL == it is). The
@@ -5000,7 +4999,7 @@ typedef struct CandPf {
      * the row through `pf_scan_set_of`, so none of them can price `E` for a
      * scan that tests `T`. It is the row's predicate core itself (true where
      * the row applies), so the set and the admission are ONE derivation. */
-    bool  (*scan_set)(const DfaSel *s, CandSet *out);
+    bool  (*scan_set)(const CandSel *s, CandSet *out);
 } CandPf;
 
 /* [START-TABLE] C3 THE RECOVER SLOT's PAYLOAD, `CandRow.u.recover`: whether
@@ -5239,7 +5238,7 @@ struct DfaForm {
  * removes. A missing fallback would crash here rather than emit a machine
  * with a hole in it. */
 static const void *dfa_select(const void *list, size_t n, size_t sz,
-                              const DfaSel *s, uint64_t flags)
+                              const CandSel *s, uint64_t flags)
 {
     const char *base = (const char *)list;
     for (size_t i = 0; i < n; i++) {
@@ -5259,13 +5258,13 @@ static const void *dfa_select(const void *list, size_t n, size_t sz,
 /* The total fallback every candidate list ends with. `dfa_select` returning
  * NULL is unreachable BECAUSE of these: a list missing one would crash the
  * walk rather than emit a machine with a hole in it. */
-static bool cand_always(const DfaSel *s) { (void)s; return true; }
+static bool cand_always(const CandSel *s) { (void)s; return true; }
 
 /* ---- AXIS A: the table representations ---------------------------------- */
 
 /* AXIS A's first candidate: does this machine want the pre-multiplied
  * token? */
-static bool repr_premul_applies(const DfaSel *s) { return dfa_premul(s->cx, s->d); }
+static bool repr_premul_applies(const CandSel *s) { return dfa_premul(s->cx, s->d); }
 /* Its cell value: the state's row times the column count, so an emitted step
  * is one add and one load. */
 static int  cell_premul(int st, const Dfa *d) { return st * d->ncls; }
@@ -5592,7 +5591,7 @@ static const DfaRepr dfa_reprs[] = {
  * built `DfaForm` — the table stamp, and the uniform-fold count. */
 static const DfaRepr *dfa_repr_of(Ctx *cx, const Dfa *d)
 {
-    DfaSel s = { .cx = cx, .d = d, .us = NULL, .forward = true, .st = -1,
+    CandSel s = { .cx = cx, .d = d, .us = NULL, .forward = true, .st = -1,
                  .route = CAND_ROUTE_DFA };
     return DFA_SELECT(DfaRepr, dfa_reprs, &s, cx->opt->flags);
 }
@@ -5688,14 +5687,14 @@ static void view_emit_end_and_eol(StrBuf *c, const DfaForm *f)
  * Which of the four objects a machine takes is which of the two view tables
  * it actually has; `none` is the artifact with neither, where the scan reads
  * the state directly and `f->src` is the state variable. */
-static bool view_end_and_eol_applies(const DfaSel *s)
+static bool view_end_and_eol_applies(const CandSel *s)
 { const UnanchStart *u = s->us; return u->endv && u->eol; }
 /* The `end` form applies where the artifact has a `\z` view and no EOL
  * one. */
-static bool view_end_only_applies(const DfaSel *s)
+static bool view_end_only_applies(const CandSel *s)
 { const UnanchStart *u = s->us; return u->endv && !u->eol; }
 /* And the `eol` form where it has an EOL view and no `\z` one. */
-static bool view_eol_only_applies(const DfaSel *s)
+static bool view_eol_only_applies(const CandSel *s)
 { const UnanchStart *u = s->us; return u->eol && !u->endv; }
 
 static const DfaView dfa_views[] = {
@@ -5709,7 +5708,7 @@ static const DfaView dfa_views[] = {
 
 /* AXIS D's first candidate: does this machine need mechanism 4's start
  * seeding — a start state chosen from the CONTEXT BYTE rather than fixed? */
-static bool seed_applies(const DfaSel *s) { return dfa_needs_seed(s->d); }
+static bool seed_applies(const CandSel *s) { return dfa_needs_seed(s->d); }
 
 /* The start state's cell, the dead cell when `s0` is dead. [UCP] U2: a
  * REVERSE machine's `s0` ("no character to the right") is dead for a pattern
@@ -5784,11 +5783,11 @@ static const DfaSeed dfa_seeds[] = {
 
 /* AXIS E's first candidate: does some state's accept VARY with the next
  * byte's class, so the wide accept table is the one to read? */
-static bool acc_by_class_applies(const DfaSel *s) { return dfa_has_clsacc(s->d); }
+static bool acc_by_class_applies(const CandSel *s) { return dfa_has_clsacc(s->d); }
 /* And the second: can a skip pass a position whose accept was never
  * evaluated (the D11 flag)? Then the probe must run AFTER the view selector
  * rather than at the top of the loop. */
-static bool acc_viewed_applies(const DfaSel *s)
+static bool acc_viewed_applies(const CandSel *s)
 { const UnanchStart *u = s->us; return u->views; }
 
 /* Records an accept at the current position — `if (<M>_accepts(...)) rec =
@@ -5878,16 +5877,16 @@ static const DfaAcc dfa_accs[] = {
 
 /* AXIS B: the forward scan wants a `memchr` skip AND the D11 bound applies,
  * which is a different emitted loop and so a different form. */
-static bool pf_memchr_bounded_applies(const DfaSel *s)
+static bool pf_memchr_bounded_applies(const CandSel *s)
 { const UnanchStart *u = s->us; return s->forward && u->kind == DFA_PF_MEMCHR && u->views; }
 /* The same single-candidate-byte skip with nothing to bound it. */
-static bool pf_memchr_applies(const DfaSel *s)
+static bool pf_memchr_applies(const CandSel *s)
 { const UnanchStart *u = s->us; return s->forward && u->kind == DFA_PF_MEMCHR; }
 /* A membership-table skip under the D11 bound. */
-static bool pf_bcls_bounded_applies(const DfaSel *s)
+static bool pf_bcls_bounded_applies(const CandSel *s)
 { const UnanchStart *u = s->us; return s->forward && u->kind == DFA_PF_BYTE_CLASS && u->views; }
 /* A membership-table skip with nothing to bound it. */
-static bool pf_bcls_applies(const DfaSel *s)
+static bool pf_bcls_applies(const CandSel *s)
 { const UnanchStart *u = s->us; return s->forward && u->kind == DFA_PF_BYTE_CLASS; }
 
 /* THE ENTRY CONDITION, shared by all four emitted forms: still parked in the
@@ -6064,16 +6063,16 @@ static void pf_emit_bcls_bounded(StrBuf *c, const DfaForm *f)
  * asked independently of it — everything it inherits was proved by
  * `unanch_start`, and a k-set selected without that would be a second, weaker
  * version of an argument already made. */
-static bool pf_ofs_applies_common(const DfaSel *s)
+static bool pf_ofs_applies_common(const CandSel *s)
 {
     const UnanchStart *u = s->us;
     return s->forward && u->kind != DFA_PF_NONE && u->ofsk.nsel > 0;
 }
 /* The bounded offset-set form: that, plus the D11 bound. */
-static bool pf_ofs_bounded_applies(const DfaSel *s)
+static bool pf_ofs_bounded_applies(const CandSel *s)
 { const UnanchStart *u = s->us; return pf_ofs_applies_common(s) && u->views; }
 /* And the unbounded one. */
-static bool pf_ofs_applies(const DfaSel *s)
+static bool pf_ofs_applies(const CandSel *s)
 { return pf_ofs_applies_common(s); }
 
 /* [OPT-LITSCAN] S1 THE RUN-PINNED ROWS' PREDICATE (litscan_s1.md §1.2),
@@ -6103,7 +6102,7 @@ static RunPin us_run_pin(Ctx *cx, const UnanchStart *us)
     return *pcrec_fact_run_pin(cx);
 }
 
-static bool pf_run_applies_common(const DfaSel *s)
+static bool pf_run_applies_common(const CandSel *s)
 {
     const UnanchStart *u = s->us;
     const ReqRun *r = pcrec_fact_req_run(s->cx);
@@ -6131,10 +6130,10 @@ static bool pf_run_applies_common(const DfaSel *s)
     return true;
 }
 /* The bounded run-pinned form: that, plus the D11 bound. */
-static bool pf_run_bounded_applies(const DfaSel *s)
+static bool pf_run_bounded_applies(const CandSel *s)
 { const UnanchStart *u = s->us; return pf_run_applies_common(s) && u->views; }
 /* And the unbounded one. */
-static bool pf_run_applies(const DfaSel *s)
+static bool pf_run_applies(const CandSel *s)
 { return pf_run_applies_common(s); }
 
 /* Fills `*t` with the MODEL's own candidate test, `us`'s k-set selection
@@ -6555,7 +6554,7 @@ static bool dfa_reseed_exact(const Dfa *d, const uint8_t t[256])
  * (the `-bounded`-only reading above, unreachable by construction), and the
  * re-seed's premise read off the machine (`dfa_reseed_exact`). The deny
  * (`-fno-start-set`) is the rows' `c.deny`. */
-static bool pf_dfa_start_set(const DfaSel *s, CandSet *t)
+static bool pf_dfa_start_set(const CandSel *s, CandSet *t)
 {
     const UnanchStart *u = s->us;
     const StartSet *ss = s->ss;
@@ -6586,9 +6585,9 @@ static bool pf_dfa_start_set(const DfaSel *s, CandSet *t)
 }
 
 /* The row predicates: F with the D11 bound, and the memchr twin's one byte. */
-static bool pf_first_class_bounded_applies(const DfaSel *s)
+static bool pf_first_class_bounded_applies(const CandSel *s)
 { CandSet t; const UnanchStart *u = s->us; return pf_dfa_start_set(s, &t) && u->views; }
-static bool pf_first_memchr_bounded_applies(const DfaSel *s)
+static bool pf_first_memchr_bounded_applies(const CandSel *s)
 { CandSet t; const UnanchStart *u = s->us; return pf_dfa_start_set(s, &t) && u->views && t.use_memchr; }
 
 /* The DFA hat's CONDITIONAL re-seed at indent `ind`: where the skip moved past
@@ -6713,7 +6712,7 @@ static void vm_start_assert_starts(Ctx *cx, const StartSet *ss)
  * density admission is applied, and a dense `S` (a `\w`-led pattern, `|S| =
  * 63`) still seeks; the dense guard cells of startset.md §7 measure it, and a
  * MASS admission is filed behind them (Q-R5). */
-static bool pf_vm_start_applies(const DfaSel *s)
+static bool pf_vm_start_applies(const CandSel *s)
 {
     Ctx *cx = s->cx;
     const StartSet *ss = s->ss;
@@ -6737,7 +6736,7 @@ static bool pf_vm_start_applies(const DfaSel *s)
  * `|S|` (a dense one-byte `S` read by `memchr` per failed attempt measured
  * x0.6 at 80% density; the `|S| = 1 -> memchr` cut-over is an unmeasured
  * default for VM attempts, D149, and is not taken). */
-static void pf_vm_emit_first_class(StrBuf *c, const DfaSel *s, const char *p,
+static void pf_vm_emit_first_class(StrBuf *c, const CandSel *s, const char *p,
                                    const char *ind, bool entry)
 {
     PcrecFind fd = { .p = p, .table = "start_set", .pos = "attempt_position",
@@ -7058,16 +7057,16 @@ static int req_set_pick(Ctx *cx)
 }
 
 /* The admission's rows, each a predicate over the compile alone (`s->cx`;
- * the machine fields of the `DfaSel` are unused). */
-static bool req_none_applies(const DfaSel *s)
+ * the machine fields of the `CandSel` are unused). */
+static bool req_none_applies(const CandSel *s)
 {
     return pcrec_fact_req_byte(s->cx) < 0 && pcrec_fact_req_run(s->cx)->len < 2;
 }
-static bool req_one_attempt_applies(const DfaSel *s)
+static bool req_one_attempt_applies(const CandSel *s)
 {
     return req_route_one_attempt(s->cx);
 }
-static bool req_dominated_applies(const DfaSel *s)
+static bool req_dominated_applies(const CandSel *s)
 {
     CandScan cs;
     dfa_cand_scan(s->cx, &cs);
@@ -7078,7 +7077,7 @@ static bool req_dominated_applies(const DfaSel *s)
  * exact scan member under NONE, a byte against a byte) keeps the run alone:
  * the set pick leads only where it is strictly rarer under the active rate,
  * or, under NONE, a byte against the run's two-member pair. */
-static bool req_set_leads_applies(const DfaSel *s)
+static bool req_set_leads_applies(const CandSel *s)
 {
     const ReqRun *r = pcrec_fact_req_run(s->cx);
     unsigned char cand[2], care[2];
@@ -7176,7 +7175,7 @@ static const char *req_why_name(ReqAdmit a)
  * (c) (the pinned form) and (d) (`\G` on the unanchored body) are NOT
  * conjuncts: both are unreachable, and `req_handoff_assert_body` makes them
  * loud internal errors at the body that would read them. */
-static bool req_handoff_applies(const DfaSel *s)
+static bool req_handoff_applies(const CandSel *s)
 {
     Ctx *cx = s->cx;
     long long k;
@@ -7504,7 +7503,7 @@ typedef struct DfaMatch {
  * own body rather than a wrapper around the search entry? Only where that
  * machine was built and the engine is not the empty one, whose `_search` is a
  * single `return 0` and whose `_match` is correctly four lines around it. */
-static bool match_unwrapped_applies(const DfaSel *s)
+static bool match_unwrapped_applies(const CandSel *s)
 {
     return s->cx->job->anchored_ok && !dfa_engine_is_empty(s->cx);
 }
@@ -7515,11 +7514,11 @@ static const DfaMatch dfa_matches[] = {
 };
 
 /* THE ONE SELECTION, and the reason it takes a bare `Ctx` rather than a
- * `DfaSel`: this axis's predicate asks nothing about a MACHINE. Passing a
+ * `CandSel`: this axis's predicate asks nothing about a MACHINE. Passing a
  * fabricated `d` would invite a later candidate to read it. */
 static const DfaMatch *dfa_match_of(Ctx *cx)
 {
-    DfaSel s = { .cx = cx, .d = NULL, .us = NULL, .forward = false, .st = -1,
+    CandSel s = { .cx = cx, .d = NULL, .us = NULL, .forward = false, .st = -1,
                  .route = CAND_ROUTE_DFA };
     return DFA_SELECT(DfaMatch, dfa_matches, &s, cx->opt->flags);
 }
@@ -7689,10 +7688,10 @@ static void start_pinned_assert_routing(Ctx *cx, const Dfa *fd, int fs)
         }
 }
 
-/* THE PREDICATE. `DfaSel.d` IS the forward machine and is read as such — this
+/* THE PREDICATE. `CandSel.d` IS the forward machine and is read as such — this
  * axis is genuinely about it, so unlike axis G there is nothing fabricated to
  * invite a later candidate to misread. */
-static bool start_pinned_applies(const DfaSel *s)
+static bool start_pinned_applies(const CandSel *s)
 {
     Ctx *cx = s->cx;
     /* P4. `dfa_engine_is_empty` is asked through the shared predicate rather
@@ -7865,35 +7864,35 @@ static const CandNode cand_nodes[CAND_NNODES] = {
 
 /* W1: does the pattern end-anchor within a finite window? (today
  * `pcrec_emit_end_window_clamp`'s `w < 0` return) */
-static bool cand_window_applies(const DfaSel *s)
+static bool cand_window_applies(const CandSel *s)
 { return pcrec_fact_end_window(s->cx) >= 0; }
 
 /* H1: is the whole pattern's minimum width at the analysis ceiling? (today
  * the VM entry's root-minw test) */
-static bool cand_ceiling_applies(const DfaSel *s)
+static bool cand_ceiling_applies(const CandSel *s)
 { return s->vm->root_minw >= PCREC_MINW_MAX; }
 
 /* N12: does the ENG_ATTEMPT machine `s->d` get the predecessor-byte
  * `memchr`? `attempt_cand` itself, its candidate set left in `s->cand` for
  * the reader that asked (discarded where that is NULL). */
-static bool cand_pred_memchr_applies(const DfaSel *s)
+static bool cand_pred_memchr_applies(const CandSel *s)
 {
     CandSet cs;
     return attempt_cand(s->d, s->cand ? s->cand : &cs);
 }
 
 /* R1-R4: `vm_reseed_holds`' four tagged arms, each as its own predicate. */
-static bool cand_rs_exact_applies(const DfaSel *s) { return s->vm->mrl_win; }
-static bool cand_rs_clamped_applies(const DfaSel *s) { return s->vm->nclamp > 0; }
-static bool cand_rs_anchored_applies(const DfaSel *s)
+static bool cand_rs_exact_applies(const CandSel *s) { return s->vm->mrl_win; }
+static bool cand_rs_clamped_applies(const CandSel *s) { return s->vm->nclamp > 0; }
+static bool cand_rs_anchored_applies(const CandSel *s)
 { return pcrec_fact_start_anchor(s->cx) != PCREC_SANCH_NONE; }
-static bool cand_rs_dense_applies(const DfaSel *s)
+static bool cand_rs_dense_applies(const CandSel *s)
 { return (unsigned long long)pcrec_dfa_cand_ppm(s->cx) * s->vm->reseed_gap > 1000000ull; }
 
 /* B1: every start of the ENG_ATTEMPT machine `s->d` needs `^` (both seed
  * families' interiors dead); `emit_attempt`'s `anchored`, with the
  * PCREC_NO_GSTART reference build's fold. */
-static bool cand_bound_bot_applies(const DfaSel *s)
+static bool cand_bound_bot_applies(const CandSel *s)
 {
     bool a_gst = dfa_interior_dead(s->d, s->d->s1g);
 #ifdef PCREC_NO_GSTART
@@ -7903,14 +7902,14 @@ static bool cand_bound_bot_applies(const DfaSel *s)
 }
 
 /* B2: every start of `s->d` needs `\G` (`emit_attempt`'s `a_bot`, past B1). */
-static bool cand_bound_gstart_attempt_applies(const DfaSel *s)
+static bool cand_bound_gstart_attempt_applies(const CandSel *s)
 { return dfa_interior_dead(s->d, s->d->s1u); }
 
 /* B3, B4: the `start_anchor` fact's two anchored values (the VM entry's
  * `attempt_max`). */
-static bool cand_bound_anchored_vm_applies(const DfaSel *s)
+static bool cand_bound_anchored_vm_applies(const CandSel *s)
 { return pcrec_fact_start_anchor(s->cx) == PCREC_SANCH_BOT; }
-static bool cand_bound_gstart_vm_applies(const DfaSel *s)
+static bool cand_bound_gstart_vm_applies(const CandSel *s)
 { return pcrec_fact_start_anchor(s->cx) == PCREC_SANCH_GSTART; }
 
 #define CR_DFA     CAND_ON(CAND_ROUTE_DFA)
@@ -8144,7 +8143,7 @@ static const CandRow cand_rows[] = {
  * is unreachable (the trace build's self-check holds it). Since C3 it decides
  * NEXT and RECOVER; the other slots' readers still walk their old tables
  * (C4-C5), with this walk beside them under the trace build's oracle. */
-static const CandRow *cand_select(CandSlot slot, const DfaSel *s, uint64_t flags)
+static const CandRow *cand_select(CandSlot slot, const CandSel *s, uint64_t flags)
 {
     for (size_t i = 0; i < CAND_NROWS; i++) {
         const CandRow *r = &cand_rows[i];
@@ -8178,7 +8177,7 @@ static const CandRow *cand_select(CandSlot slot, const DfaSel *s, uint64_t flags
 _Thread_local int pcrec_cand_trace_quiet;
 
 /* `cand_select` with records suppressed and the compile's own deny mask. */
-static const CandRow *cand_select_quiet(CandSlot slot, const DfaSel *s)
+static const CandRow *cand_select_quiet(CandSlot slot, const CandSel *s)
 {
     pcrec_cand_trace_quiet++;
     const CandRow *r = cand_select(slot, s, s->cx ? s->cx->opt->flags : 0);
@@ -8245,7 +8244,7 @@ static void cand_rows_selfcheck(void)
 /* The oracle's FIRST half, asked before the old decision: in a
  * -DPCREC_CAND_NEW_FIRST build, `cand_select`'s row (so its predicates ask
  * first); otherwise NULL and the second half walks. */
-static const CandRow *cand_oracle_pre(CandSlot slot, const DfaSel *s)
+static const CandRow *cand_oracle_pre(CandSlot slot, const CandSel *s)
 {
 #ifdef PCREC_CAND_NEW_FIRST
     if (!pcrec_cand_trace_quiet) return cand_select_quiet(slot, s);
@@ -8260,7 +8259,7 @@ static const CandRow *cand_oracle_pre(CandSlot slot, const DfaSel *s)
  * `cand_select` chose the same, then prints the hit-counter line. `every`
  * also checks every OTHER route the slot is asked on (a decision shared by
  * the routes, WINDOW's). A nested ask inside a quiet walk checks nothing. */
-static void cand_oracle_post(const CandRow *pre, CandSlot slot, const DfaSel *s,
+static void cand_oracle_post(const CandRow *pre, CandSlot slot, const CandSel *s,
                              const void *old_row, const char *old_tok,
                              const char *site, bool every)
 {
@@ -8275,7 +8274,7 @@ static void cand_oracle_post(const CandRow *pre, CandSlot slot, const DfaSel *s,
             CAND_ROUTE_NAME(s->route), nw->c.name, site);
     if (!every) return;
     for (int rt = 0; rt < 3; rt++) {
-        DfaSel o = *s;
+        CandSel o = *s;
         if (rt == s->route || !(cand_nodes[slot].asks & CAND_ON(rt))) continue;
         o.route = rt;
         nw = cand_select_quiet(slot, &o);
@@ -8285,7 +8284,7 @@ static void cand_oracle_post(const CandRow *pre, CandSlot slot, const DfaSel *s,
     }
 }
 
-/* The oracle's halves for an INLINE decision, which holds no `DfaSel`:
+/* The oracle's halves for an INLINE decision, which holds no `CandSel`:
  * built here from the machine `d` (ENG_ATTEMPT's) and the VM facts `vm`,
  * either NULL where its slot's predicates read neither. A NULL `cx` (N12's
  * site, `attempt_cand`, which has none) walks with no deny bits, exact for
@@ -8293,7 +8292,7 @@ static void cand_oracle_post(const CandRow *pre, CandSlot slot, const DfaSel *s,
 static const CandRow *cand_oracle_pre_in(CandSlot slot, Ctx *cx, int route,
                                          const Dfa *d, const CandVmFacts *vm)
 {
-    DfaSel s = { .cx = cx, .d = d, .us = NULL, .forward = true, .st = -1,
+    CandSel s = { .cx = cx, .d = d, .us = NULL, .forward = true, .st = -1,
                  .route = route, .vm = vm };
     return cand_oracle_pre(slot, &s);
 }
@@ -8302,7 +8301,7 @@ static void cand_oracle_post_in(const CandRow *pre, CandSlot slot, Ctx *cx, int 
                                 const Dfa *d, const CandVmFacts *vm,
                                 const char *old_tok, const char *site, bool every)
 {
-    DfaSel s = { .cx = cx, .d = d, .us = NULL, .forward = true, .st = -1,
+    CandSel s = { .cx = cx, .d = d, .us = NULL, .forward = true, .st = -1,
                  .route = route, .vm = vm };
     cand_oracle_post(pre, slot, &s, NULL, old_tok, site, every);
 }
@@ -8312,7 +8311,7 @@ static void cand_oracle_post_in(const CandRow *pre, CandSlot slot, Ctx *cx, int 
  * structural self-check plus the `CANDROW` line naming the row the reader
  * used, which `tests/codegen/run_cand_oracle.sh` reads to hold every row
  * REACHED by its witness. Silent inside a quiet walk, as the oracle is. */
-static void cand_hit(CandSlot slot, const DfaSel *s, const CandRow *r, const char *site)
+static void cand_hit(CandSlot slot, const CandSel *s, const CandRow *r, const char *site)
 {
     if (pcrec_cand_trace_quiet) return;
     cand_rows_selfcheck();
@@ -8328,13 +8327,13 @@ static void cand_hit(CandSlot slot, const DfaSel *s, const CandRow *r, const cha
  * That is honest only while the slot's choice does not depend on the route,
  * so this also walks every other asked route, quietly, and aborts on a
  * different row: WINDOW's `every`, kept now that the old walk is gone. */
-static void cand_hit_every(CandSlot slot, const DfaSel *s, const CandRow *r,
+static void cand_hit_every(CandSlot slot, const CandSel *s, const CandRow *r,
                            const char *site)
 {
     cand_hit(slot, s, r, site);
     if (pcrec_cand_trace_quiet) return;
     for (int rt = 0; rt < 3; rt++) {
-        DfaSel o = *s;
+        CandSel o = *s;
         const CandRow *nw;
         if (rt == s->route || !(cand_nodes[slot].asks & CAND_ON(rt))) continue;
         o.route = rt;
@@ -8354,7 +8353,7 @@ void pcrec_cand_oracle_vm_post(Ctx *cx, const void *pre, CandSlot slot,
                                const CandVmFacts *vm, const void *old_row,
                                const char *old_tok, const char *site)
 {
-    DfaSel s = { .cx = cx, .d = NULL, .us = NULL, .forward = true, .st = -1,
+    CandSel s = { .cx = cx, .d = NULL, .us = NULL, .forward = true, .st = -1,
                  .route = CAND_ROUTE_VM, .vm = vm };
     cand_oracle_post(pre, slot, &s, old_row, old_tok, site, false);
 }
@@ -8372,7 +8371,7 @@ void pcrec_cand_oracle_vm_post(Ctx *cx, const void *pre, CandSlot slot,
  * member, exactly as `dfa_select` is.
  *
  * `applies` is DELIBERATELY NOT CALLED: evaluating a real candidate's
- * predicate needs a genuine `DfaSel` (a live `Ctx`/`Dfa`/direction), which a
+ * predicate needs a genuine `CandSel` (a live `Ctx`/`Dfa`/direction), which a
  * context-free listing command does not have and must not fabricate — a
  * fabricated one could silently answer a different question than a real
  * compile does. `axes_dump.c` carries its own hand-written one-line English
@@ -8552,7 +8551,7 @@ size_t pcrec_dfa_axis_direction_cands(PcrecAxisCand *out, size_t cap)
  *
  * The REGION decision, as a D82 selection rather than an `if` inside the
  * walk emitter (manager ruling R1.1, 2026-08-31, from Frank's design
- * question). It is per STATE, which is what `DfaSel.st` exists for, and it
+ * question). It is per STATE, which is what `CandSel.st` exists for, and it
  * is where `-fno-scan-edge` rides the axis machinery: `deny` REMOVES the
  * first candidate and the ordinary walk selects the fallback, exactly as
  * `-fno-anchored-dfa` removes axis G's `unwrapped`.
@@ -8573,7 +8572,7 @@ struct DfaEdge {
 /* The scan-edge axis's first candidate: did `src/opt/scanedge.c` annotate
  * THIS state with an edge? A read of the pass's own annotation, never a
  * second choice about which states deserve one. */
-static bool edge_applies(const DfaSel *s)
+static bool edge_applies(const CandSel *s)
 {
     return s->st >= 0 && s->st < s->d->n && s->d->st[s->st].scan_span != 0;
 }
@@ -8675,7 +8674,7 @@ static const char *dfa_scan_body_name(Ctx *cx, const Dfa *d, int st)
  * holds structurally rather than by convention. */
 static const DfaEdge *dfa_edge_of(Ctx *cx, const Dfa *d, int st)
 {
-    DfaSel s = { .cx = cx, .d = d, .us = NULL, .forward = true, .st = st,
+    CandSel s = { .cx = cx, .d = d, .us = NULL, .forward = true, .st = st,
                  .route = CAND_ROUTE_DFA };
     return DFA_SELECT(DfaEdge, dfa_edges, &s, cx->opt->flags);
 }
@@ -8870,7 +8869,7 @@ static void emit_scan_edge(StrBuf *c, const DfaForm *f, int head)
 static void dfa_form_derive(Ctx *cx, const Dfa *d, const UnanchStart *us,
                             const DfaDir *dir, DfaForm *f)
 {
-    DfaSel s = { .cx = cx, .d = d, .us = us, .forward = !dir->reverse, .st = -1,
+    CandSel s = { .cx = cx, .d = d, .us = us, .forward = !dir->reverse, .st = -1,
                  .route = cand_route_of(cx), .ss = pcrec_fact_start_set(cx) };
     uint64_t flags = cx->opt->flags;
 

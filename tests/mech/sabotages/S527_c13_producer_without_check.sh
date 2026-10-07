@@ -5,6 +5,8 @@
 # The day one does, the declaration must not keep passing: a bare `on_cand`
 # token in src/ turns the UNREACHED line into a FAIL. Detector: C13 (arm
 # memfnforms). SAB_REACH is the declaration itself on the clean tree.
+# [START-TABLE] C4 (lane stc4, 2026-10-07) RE-AIMED: D148 Q2's spelling sweep
+# renamed the anchor's parameter type `DfaSel` -> `CandSel`; plant unchanged.
 SAB_ID="S527-c13-producer-without-check"
 SAB_FILE="src/gen/emit_dfa.c"
 SAB_SUITES="memfnforms"
@@ -15,6 +17,6 @@ SAB_REACH_EXPECT='UNREACHED: C13 (on_cand duplicability)
 checks failed: 0'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='static bool req_handoff_applies(const DfaSel *s)'
+SAB_BEFORE='static bool req_handoff_applies(const CandSel *s)'
 SAB_AFTER='static const int on_cand = 0; /* SABOTAGE S527 */
-static bool req_handoff_applies(const DfaSel *s)'
+static bool req_handoff_applies(const CandSel *s)'
