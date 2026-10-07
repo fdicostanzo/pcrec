@@ -160,13 +160,13 @@ MF_FIELD(lo, MF_PH_USE, HOOK, cl_lo,
          "the search start's text")
 MF_FIELD(floor, MF_PH_DEFINE | MF_PH_USE, HOOK, cl_floor,
          CM(ZERO) | CM(OTHER),
-         "the lower read limit's text (the contract reads NULL as \"0\")")
+         "the lower read limit's text. EXEMPT (absent constraint): NULL means no limit below the subject start, not a presumed value; rows that do not serve a STATED floor decline (R2)")
 MF_FIELD(result, MF_PH_USE, HOOK, cl_result,
          CM(OTHER),
          "the lvalue written")
 MF_FIELD(result_decl, MF_PH_USE, HOOK, cl_result_decl,
          CM(OTHER),
-         "ASSIGN's declaration prefix (the contract reads NULL as none)")
+         "ASSIGN's declaration prefix. EXEMPT (absent offer): NULL means no declaration is asked for, not a value")
 MF_FIELD(miss, MF_PH_DEFINE | MF_PH_USE, HOOK, cl_miss,
          CM(MISS_N) | CM(OTHER),
          "the value written when no candidate exists")
@@ -184,7 +184,7 @@ MF_FIELD(peek, MF_PH_USE, HOOK, cl_peek,
          "ADVANCE: the byte at the cursor")
 MF_FIELD(count, MF_PH_USE, HOOK, cl_count,
          CM(OTHER),
-         "ADVANCE: the run counter's name (the contract reads NULL as none)")
+         "ADVANCE: the run counter's name. EXEMPT (absent offer): NULL means no counter is asked for")
 MF_FIELD(count_start, MF_PH_USE, OBLIG, cl_count_start,
          CM(ZERO) | CM(OTHER),
          "OBLIG (NEW): the counter's first value; 0 is a value, set by every ADVANCE builder that names `count`")
@@ -196,7 +196,7 @@ MF_FIELD(on_cand_reach, MF_PH_USE, OBLIG, cl_on_cand_reach,
          "OBLIG (NEW): bytes on_cand reads at or after cand; 0 is `none`, set by every ON_CAND builder")
 MF_FIELD(member, MF_PH_DEFINE | MF_PH_USE, HOOK, cl_member,
          CM(OTHER),
-         "pcrec's one-position membership op (rule 6)")
+         "pcrec's one-position membership op (rule 6). EXEMPT (absent offer): NULL means the op is not offered")
 MF_FIELD(table_name, MF_PH_DEFINE | MF_PH_USE, HOOK, cl_table_name,
          CM(OTHER),
          "pcrec's table-name op (rule 7)")
@@ -211,7 +211,7 @@ MF_FIELD(note_tag, MF_PH_DEFINE, HOOK, cl_note_tag,
          "pcrec's comment tag op (§14.2)")
 MF_FIELD(indent, MF_PH_USE, HOOK, cl_indent,
          CM(OTHER),
-         "STMT: pcrec's current indent")
+         "STMT: pcrec's current indent. EXEMPT (layout only): NULL renders no indent; whitespace, never an answer")
 MF_FIELD(comment_tier, MF_PH_DEFINE | MF_PH_USE, OBLIG, cl_comment_tier,
          CM(OTHER),
          "OBLIG: PCREC_CMT_* passed through; 0 is a tier, set by every builder that writes a comment")

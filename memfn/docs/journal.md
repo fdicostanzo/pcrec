@@ -681,3 +681,31 @@ pointer when a kit change merges to main.
 - Choices for review (lane report §5): uses excludes contract-defaulted and
   shape-dependent reads; precheck serves BRACED; on_cand classes {OTHER};
   a third phase `run`; memfn.h sentences deferred to N3.
+
+## 2026-10-07 (late afternoon) — ROWCON narrowed (rev 4/4.1), N1 merged
+
+- Rev 4 (d0dd3f5e) narrowed per Frank. The hook census found NO RISKY
+  HOOK, so SNAPSHOT stays filed (97f9f8c7). The light re-check (opus)
+  produced rev 4.1 (f7647b9e):
+  - the gate runs at both phases;
+  - IDENT/JUMP text classes close S2-S7 with no snapshot;
+  - a semantic differential;
+  - N3's entry re-census;
+  - the UNSTATED bump is cut.
+- N1 (lane rowconn1, opus, 3dea08c8) is merged into lane/memfn-rowcon:
+  - fields.def (39 fields), uses/serves on all 8 rows with citations,
+    and the WARN gate at define/use/run;
+  - MF_TRACE + trace_format.md.
+  - Validation, Mac, under the lock 14:42-14:51: build, strict, g2,
+    arms, forms, manifest, stamps, link and strict_trace are all rc 0;
+    the gate vs 92ca17fc is R4C-GATE PASS (--zero-dumps), 0 movers on
+    all six streams.
+- Would-decline preview: 3 cells, all `miss` unstated (ofsskip at
+  define and use; precheck at use on ASSIGN). That is R-6's predicted
+  list.
+- Review condition applied: five contract-defaulted reads become WRITTEN
+  exemptions in fields.def (floor = absent constraint; result_decl, count
+  and member = absent offer; indent = layout only).
+- Next: N2, the WARN census over the whole corpus × every axis (a heavy
+  Mac or Linux run, slot via main). Then R-6, G2u, N3 and N4. g2x run 1
+  started 15:04.
