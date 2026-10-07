@@ -5,9 +5,11 @@ Design: `docs/design/start_table.md` rev 2.1 §3.2 C3, §2.3 item 3, §3.5,
 §1.1 (`u.recover.pinned`), D148 Q2's rename; inputs `stc2_report.md` §2
 and §4, the edit set re-derived on current main before editing.
 
-**Status:** built and committed. No abi event. Zero movers on every light
-sample (§3). The heavy validation is OWED (§6): it runs in a detached chain
-that waits for the slot (`.lift`).
+**Status:** built, validated and committed. ZERO MOVERS, no abi event.
+The heavy chain ran green: the sweep, both trace orders, the oracle,
+`cand_rows`, `test-codegen` and `make test` (620 s) all rc 0. All 23 mech
+rows are as expected (§5). The four §4 recommendations were RULED ACCEPTED
+by the manager on 2026-10-07. Current main is merged in (§7).
 
 ## 1. What landed
 
@@ -113,9 +115,24 @@ censuses), and the C4/C5 identifiers' readers (`req_admit`,
 
 ## 3. Identity gate
 
-OWED: Run A (emit_sweep, six streams + `--arms start`), the trace runs.
+**The heavy chain** (`build/c3/chain.log`, Linux dev box, 2026-10-07
+17:17-17:45). Every binary was built from the committed tip `59aad88e` by
+`git archive`, against main `b9b151bc`'s builds:
 
-Light results already in hand (default build vs main `b9b151bc`):
+| step | result |
+|---|---|
+| Run A: `emit_sweep.py --arms start`, six streams, full corpus (`sweepA.log`) | `SWEEP_RC=0`. Streams 1-3 and 6: population 5,321 each, reach 4,834-4,875, **0 movers, 0 asymmetric**. Composition: 372 files, 38 producing, 108 artifacts, 0 movers. Dumps: 7/7 identical. All 64 DIFFER cells were at or above their floors. |
+| trace, every distinct pattern × 7 arms, old-first (`traceq_old.log`) | 4,292 patterns, 1,270,154 records, **problems 0**, 6,135 declared RECOVER route moves (§4 item 3) |
+| same, new-first (`traceq_new.log`) | identical: 1,270,154 records, problems 0 |
+| `emit_sweep --trace`, `search-start` declared (`sweepT.log`) | `TRACE_RC=0`. 9,749 sequences; records per arm ref/working are c-default 298,289/298,289 and c-vm 74,304/74,304; the declared filter took 29,994/29,994; 25/25 site keys reached |
+| `run_cand_oracle.sh` (tip's two trace builds) | 88 / 0 |
+| `run_cand_rows.sh` | 3 / 0 |
+| `make -k -j16 -Otarget test-codegen` | rc 0 |
+| `make -k -j16 -Otarget test` | **rc 0, 620 s wall**; no `*** [...test-X] Error` line |
+
+`docs/dev/artifact_size_log.tsv` was restored after `make test`.
+
+Light results from before the chain (default build vs main `b9b151bc`):
 
 | run | population | result |
 |---|---|---|
@@ -125,6 +142,11 @@ Light results already in hand (default build vs main `b9b151bc`):
 | `run_cand_oracle.sh` | 42 witnesses, both builds | 88 / 0 |
 
 ## 4. What the design got wrong or left open (questions with recommendations)
+
+**RULINGS (manager, 2026-10-07): all four recommendations ACCEPTED.** Item 1:
+correct the C5 row (done in `start_table.md`, §7). Item 2: keep
+`dfa_search_start_of`. Item 3: the `attempt` trace route field is a declared
+difference. Item 4: the `DfaSel` → `CandSel` sweep goes to C4 or C7.
 
 1. **`dfa_select` is not deleted at C5.** §3.2 C5 says "`dfa_select` and its
    macros deleted with their last caller", and the edit set's `def
@@ -177,7 +199,50 @@ Light results already in hand (default build vs main `b9b151bc`):
 
 ## 5. Sabotage rows
 
-OWED: mech verdicts from the chain.
+The chain's own mech loop passed ids with a trailing `_`, which the runner
+rejects as FATAL, so nothing was measured there. That bug is fixed in
+`build/c3/chain.sh` (scratch). The manager re-ran all 23 rows
+(`build/c3/mech_rerun.sh`, logs `build/c3/mech2_<id>.log`): **18 DETECTED,
+5 UNDETECTED (EXPECTED), 0 unexpected**.
+
+| row | verdict | cells |
+|---|---|---|
+| S222 | DETECTED | searchpinned 7fail/10pass |
+| S283 | DETECTED | prechecks 19fail/345pass |
+| S284 | UNDETECTED (EXPECTED) | scanedge 0/20, corpus 0/55 |
+| S490 | UNDETECTED (EXPECTED) | dfahatstruct 0/32 |
+| S495 | DETECTED | candrows 1fail/2pass, dfahatstruct 1fail/31pass |
+| S594 | DETECTED | candoracle 4fail/85pass |
+| S595 | DETECTED | candoracle 2fail/87pass |
+| S596 | DETECTED | candoracle 2fail/87pass |
+| S597 | DETECTED | candoracle 14fail/75pass |
+| S598 | DETECTED | candoracle 84fail/5pass |
+| S599 | DETECTED | candoracle 84fail/5pass |
+| S218 | DETECTED | searchpinned 11fail/13pass, corpus 182fail |
+| S219 | UNDETECTED (EXPECTED) | searchpinned 0/17, corpus 0 |
+| S220 | DETECTED | searchpinned 6fail, corpus 10fail |
+| S235 | DETECTED | startbnd 1fail, corpus 1fail |
+| S480 | DETECTED | dfahat 2fail/1pass |
+| S486 | DETECTED | dfahatstruct 4fail/28pass |
+| S487 | UNDETECTED (EXPECTED) | dfahatstruct 0/32 |
+| S488 | DETECTED | dfahatstruct 2fail/30pass |
+| S489 | UNDETECTED (EXPECTED) | dfahatstruct 0/32 |
+| S511 | DETECTED | memfnmanifest 1fail/21pass |
+| S572 | DETECTED | codegen 25fail/305pass |
+| S82 | DETECTED | corpus 3fail, gstartdiff 1fail |
+
+**S490's UNDETECTED is expected BECAUSE OF the re-verified premise
+(sound-n5).** At C3 the conjunct reads `cand_route_of(s->cx) !=
+CAND_ROUTE_DFA`. Its predicate `pf_dfa_start_set` is reached only two
+ways: as N5/N6's `applies`, and through their `u.pf.scan_set`. Both rows
+are `routes = CR_DFA`, so `cand_select` reaches them only on walks whose
+route is `CAND_ROUTE_DFA`, and every such walk runs on an ENG_UNANCH body.
+The ATTEMPT walk (`attempt_next_of`) is CR_ATTEMPT, and the `routes`
+column excludes N5/N6 there. So the conjunct is false wherever it runs,
+and removing it changes no selection and no byte. The `dfahatstruct` arm's
+byte-identity BY ID reads 0/32, as the row's SAB_DOC_FIGURE predicts.
+Before C3, the premise was that ATTEMPT callers never call `dfa_pf_of`;
+it is now carried by the table's own `routes` column.
 
 | row | class at C3 | what changed |
 |---|---|---|
@@ -190,7 +255,7 @@ OWED: mech verdicts from the chain.
 | S596-S599 | unchanged | PRESENCE / BOUND / RETRY / WIDTH oracle |
 | S82, S218, S219, S220, S235, S480, S486-S489, S511, S572 | re-run (`rerun_at` C3) | owners touched, anchors byte-stable |
 
-## 6. OWED — the detached chain
+## 6. The detached chain (DONE, results in §3/§5)
 
 `build/c3/waitrun.sh` was armed with `nohup` at 17:08. It waits for
 `worktrees/stc3/.lift`, then runs `build/c3/chain.sh`. The log is

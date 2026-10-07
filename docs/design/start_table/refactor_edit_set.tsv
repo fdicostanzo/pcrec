@@ -10,7 +10,7 @@ def	vm_start_row	C3	walk -> cand_select(NEXT, CR_VM)
 def	dfa_search_start_of	C3	walk -> cand_select(RECOVER)
 def	dfa_search_start_name	C3	reads the walk's row (c.name projection)
 def	dfa_search_is_pinned	C3	reads u.recover.pinned, never a row pointer ([r2 sound-m2])
-def	dfa_select	C3	the generic walk becomes cand_select (deleted at C5, when its last caller moves)
+def	dfa_select	C3	the route plumbing leaves (cand_routed, DFA_SELECT_ROUTED, routes_at); the walk STAYS for the six machine-form axes (stc3 §4 item 1, ruled 2026-10-07)
 def	cand_routed	C3	the route filter moves into cand_select
 def	DFA_SELECT	C5	macro deleted with dfa_select
 def	DFA_SELECT_ROUTED	C3	macro deleted with dfa_pfs
