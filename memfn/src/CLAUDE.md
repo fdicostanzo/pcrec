@@ -22,9 +22,13 @@ from M1b, a third, the VM's literal-run compare (VMRUN, runcmp.c).
   `pred_kinds`: out-of-enum fields and every shape integration.md §R4.7
   rules outside the vocabulary are REFUSED loudly) and their table
   (`mf_vocab_has`), the FIRST-MATCH arm table (`ofsskip`, `precheck`,
+  `precheck_assign` (one renderer, two rows: N3's split by handoff),
   `runcmp`, then the generic row; each arm's `ct` is its contract, which
-  the WARN gate reads before the arm's predicate and re-checks against the
-  use hooks in `mf_use`), the art's one `denies` value (a site
+  the gate reads before the arm's predicate and, since [MEMFN-ROWCON] N3,
+  ENFORCES: a failing row is declined and the walk moves on, a site no row
+  serves is refused naming the fields, and `mf_use` re-checks the chosen
+  arm against the use hooks and refuses a use it does not serve), the
+  art's one `denies` value (a site
   whose `denies` differ is refused, Q-M1b-1), the `mf_includes` query, and
   the stamps: `mf_art_note_libc` (the libc record's writer, a sorted
   distinct name list on the art; every arm that renders a libc call notes
@@ -48,12 +52,18 @@ from M1b, a third, the VM's literal-run compare (VMRUN, runcmp.c).
   every term holds (one `memchr` stream on the scanned term, or the PAIR
   leapfrog on a two-member cube), its offset legend comment and its call.
   `ofsskip_arm` is the offset-skip site (FIND/FUNC/RETURN); `ofs_fn_*` also
-  render the pre-check's run blocks.
+  render the pre-check's run blocks. Its `miss` (stated as `n`) and `floor`
+  (none) edge is its CONTRACT's since N3: the ad hoc define and call tests
+  (lane m1bfix's K96 fix) are deleted, the gate does both.
 - **precheck.c** — a SCALAR ARM, born at R4c (§15.3-§15.5; transcribed from
   pcrec's `emit_req_*`): THE PRE-CHECK COMPOSITE (ALL_PRESENT, ON_MISS or
   ASSIGN): the one-byte gate, each run's call (its offset-skip function and
   run-search comment at file scope), the set rest's table loop; pcrec's
-  notes at pcrec's places.
+  notes at pcrec's places. ONE renderer as TWO rows since N3,
+  `precheck_arm` (ON_MISS) and `precheck_assign_arm` (ASSIGN), both form id
+  `precheck`: an ON_MISS site never reads `miss`, an ASSIGN site tests the
+  run call's result against `n`, so the rows serve different `miss` classes
+  (and each predicate tests its own handoff).
 - **runcmp.c** — a SCALAR ARM, born at M1b (integration.md §15.6, §R4.8;
   transcribed from pcrec's `src/gen/runcmp.c`): THE RUN COMPARE, one
   first-match row table (`words`, `overlap`, `bytes`, `memcmp`; the first
@@ -76,16 +86,23 @@ from M1b, a third, the VM's literal-run compare (VMRUN, runcmp.c).
   reads: where the gate reads it, what an absent value is, including the
   written per-kind OBLIGATION exemptions, its classify function and its
   closed class set, with the text-shape classes IDENT / JUMP / BRACED;
-  `miss`'s MISS_N is the `MF_MISS_N` token or the text of `n`).
+  `miss`'s MISS_N is the `MF_MISS_N` token or the text of `n`). Since N3
+  `fn_ref` is a hook ID (0 UNSTATED, so a FUNC site stating 0 is refused,
+  K-1) rather than an OBLIG exemption, and `s`/`n`/`lo` are read at define
+  as well as use (ruling F1).
 - **gate.c** — THE ROW-CONTRACT GATE: also DEFINES the exported `MF_MISS_N`
   sentinel (`mf_miss_n`, memfn.h; `kit.h`'s `kit_miss(h)` resolves it to the
   `n` hook's text, and every reader of `miss` goes through that). fields.def's classify functions
   (`kit_is_ident`, the one lexical identifier check, lives here), the
   per-field rules (R1 used-and-unstated, R2 stated-and-not-served) as
-  `gate_check`, run in WARN mode at define, use and the run walk (verdicts
-  recorded on `site_rec`/`mf_art`, no selection changed), and under the
-  compile-time switch `MF_TRACE` (off by default) the `MFTRACE` stderr
-  records and reach counters (format: `../docs/trace_format.md`). Each
+  `gate_check`, ENFORCED since N3 at define, use and the run walk (the
+  callers decline a failing row, or refuse), `gate_describe` (the text
+  every gate refusal names its fields with: backquoted name, rule, class),
+  and under the compile-time switch `MF_TRACE` (off by default) the
+  `MFTRACE` stderr records and reach counters (format:
+  `../docs/trace_format.md`; a trace build also asks a declined row's
+  predicate, so `would_decline` still means "the gate moved this
+  selection"). Each
   row's `uses`/`serves`, with a citation per declaration, sits at the end of
   that row's own file (ofsskip.c, precheck.c, runcmp.c, generic.c).
 - **options.def** — the kit's option registry, an X-macro
