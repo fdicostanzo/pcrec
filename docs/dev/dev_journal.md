@@ -26606,3 +26606,22 @@ Frank: "finish up open work/bench results/errors", Linux box free (bench manager
 - **[START-TABLE] C1 handed back** (lane/stc1 @377ee320, docs/dev/lanes/stc1_report.md): 25 site keys, literal-only site keys enforced by the compiler, the SET gate, the floor re-pinned, and a TRACE_SITES check; inventory re-dispositioned 127/127 after R4c. Its detached validation chains are OWED: B/A/P/H runs, then test-codegen + make test under the suite lock. Merge after R4c′, merging main alone and re-running Run B (record at emit_dfa.c:1557).
 - **BLOCKED on Frank**: removing our stale Linux worktrees was denied by the auto-mode classifier (irreversible). The list is in wake step 4. They're idle; it needs Frank's go-ahead or an allow rule.
 - In flight: possarms (design note; K93 is a prerequisite), k93fix, the stc1 chains, the kit's r4c2fix chain.
+
+## 2026-10-07 (session 94, pre-dawn → morning, pcrecdev1, Frank AFK): R4c′ + C1 merged; K93 validated, held for rulings
+
+- **R4c′ MERGED** (993f8c1d). Linux at ab61b0db: the zero-mover gate shows 0 movers on all streams; S511/S524/S525/S526/S566 each read "mech run COMPLETE: 1 rows", 0 unexpected (294 s; each row's verdict was checked by hand because the fast wall looked suspicious). The kit's first validation chain had died when its agent was closed; the re-run went through my Linux executor channel.
+- **[START-TABLE] C1 MERGED** (e947b406). Run B shows 0 bytes moved (trace vs default, all streams), the SET gate is CLEAN, TRACE_SITES 25/25, codegen + Mac make test green. The floor is re-pinned to the measured 262,901 / 64,776 after R4c′. call_graph.txt is regenerated (the kit found it stale). NEXT is C2, after K93 and M1b land; C2's brief must note that stc1's emit_dfa.c line numbers above ~1450 run 6-8 low.
+- **K93 VALIDATED, NOT MERGED** (lane/k93tri 5ff21fac, built on lane/k93fix):
+  - The critic k93crit read SOUND-WITH-NITS: a 1,000-pattern self-fuzz plus 416 patterns × 10.46 gave 0 differences; its tooling is kept in worktrees/k93crit-scratch-keep/.
+  - Linux make test is green apart from the load-sensitive rxtsource W23-S7, a 120 s --dump bound that failed at load ~21 twice today and passed alone.
+  - Mac make test rc=0. Triage k93tri found stale pins (C3, startset manifests) and K95, a pre-existing --trace compile bug on spliced-only calls, fixed with no abi bump. The cc_join loud check came from the critic.
+  - Bench: 0 of 12 call patterns move, and the (?R) probe shows no flips on the bench.
+  - **HELD FOR FRANK'S TWO RULINGS:** (1) the joined-context fix as built vs his per-copy-verdict direction; the lane never received the direction message, a busy-lane miss again. (2) the (?R) answer, sound (0,3) vs PCRE2-default (1,3) (U18).
+- **K94 FILED** (byte caseless backref under --ucp folds ASCII only; confirmed on 10.46). The spec now says possessify's give-up surface moves both ways. [ART-POSS-ARMS] design merged; both arms sound only as restated, blocked on K93.
+- **M1b (kit, R-5)** built: 35,980 compiles, 0 movers. The Linux full verdict has run since 07:46Z (5-8 h, m1b-lx). The Mac make test started 06:51 EDT at merged tip 20b9d3cb, chained with the gate vs e947b406. The cross-check of D1-D12 against stc1 §2 is clean.
+- **Process incidents**:
+  - A guard-less remote `cd` launched make test in the Linux MAIN tree for 25 s (safekilled). Every remote cd now gets `|| exit 1`.
+  - A triage lane edited a worktree whose validation chain was live; the chain was voided and killed. Future triage briefs say up front: never edit a worktree with a live run.
+  - The kit ran a big sweep during k93tri's locked make test; kit briefs now carry a numeric sweep cap.
+  - The manager cd'd into worktrees twice; both caught.
+- **Owed to Frank**: the two K93 rulings; OK to remove our stale Linux worktrees (classifier-blocked; disk 87%). I-133 = the K93 merge, or the axtri fallback at ~18:00 EDT.
