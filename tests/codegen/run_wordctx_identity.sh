@@ -246,7 +246,29 @@ fi
 # off a list of pattern texts someone would have to maintain. Same rule the VM
 # arm follows: reading a different fact to explain a non-difference is
 # legitimate; reading `Dfa.wordctx` would not be.
-ctl_diff=0; ctl_same_vm=0; ctl_same_empty=0; ctl_same_dfa=0; ctl_rej=0
+# THIRD LEGITIMATE NON-DIFFERENCE (asstri, 2026-10-07; found by the first run on
+# the Linux dev box, once tests/possessify/composition_d27.rxt joined the
+# corpus -- NOT box-dependent: an A/B build of the commit before that file
+# agrees on the same five): a word assertion that is VACUOUS because an EMPTY
+# alternative sits beside it -- `(?:\B|)`, `(?:|\b)`, `(?:\b)?`, `(?:\b)??`.
+# Whether the assertion holds changes no language, so the real build's closures
+# and the knob build's (`\b` never, `\B` always) coincide; and when the pattern
+# already names `\w`/`\W` its own classes split the alphabet exactly where the
+# word set would, so the refinement adds nothing either. The two builds emit the
+# same bytes for a reason that has nothing to do with whether the knob works.
+#
+# CLASSIFIED BY TEXT SHAPE AND PROVED BY A MUTANT, never by a pattern list and
+# never by reading `Dfa.wordctx`: (1) every `\b`/`\B` in the pattern sits in
+# one of the vacuous wrappers above; (2) the MUTANT with each wrapper made
+# LIVE (`(?:\b)`) MUST differ between the builds. A pattern whose mutant also
+# agrees stays UNEXPLAINED, so the bucket cannot absorb a dead knob.
+vacuous_only() {
+    ! printf '%s' "$1" | sed -E 's/\(\?:\\[bB]\|\)//g; s/\(\?:\|\\[bB]\)//g; s/\(\?:\\[bB]\)\?\??//g' | grep -qE '\\[bB]'
+}
+vacuous_mutant() {
+    printf '%s' "$1" | sed -E 's/\(\?:(\\[bB])\|\)/(?:\1)/g; s/\(\?:\|(\\[bB])\)/(?:\1)/g; s/\(\?:(\\[bB])\)\?\??/(?:\1)/g'
+}
+ctl_diff=0; ctl_same_vm=0; ctl_same_empty=0; ctl_same_dfa=0; ctl_rej=0; ctl_same_vac=0
 while IFS= read -r pat; do
     [ -z "$pat" ] && continue
     a="$(gen_a "$pat")"; b="$(gen_b "$pat")"
@@ -258,6 +280,10 @@ while IFS= read -r pat; do
     elif printf '%s' "$a" | grep -q '^    (void)subject; (void)subject_length; (void)search_from; (void)capture_spans;$'; then
         ctl_same_empty=$((ctl_same_empty + 1))
         echo "  never-matching control (no automaton to change): $pat" >&2
+    elif vacuous_only "$pat" && mut="$(vacuous_mutant "$pat")" \
+            && [ "$mut" != "$pat" ] && [ "$(gen_a "$mut")" != "$(gen_b "$mut")" ]; then
+        ctl_same_vac=$((ctl_same_vac + 1))
+        echo "  vacuous-assertion control (mutant $mut differs): $pat" >&2
     else
         ctl_same_dfa=$((ctl_same_dfa + 1))
         echo "  DFA-compiled control did NOT differ: $pat" >&2
@@ -265,9 +291,9 @@ while IFS= read -r pat; do
 done < "$WORKDIR/bpat"
 
 if [ "$ctl_diff" -ge 5 ] && [ "$ctl_same_dfa" -eq 0 ]; then
-    ok "positive control: $ctl_diff DFA-compiled word-assertion patterns differ between the two builds and 0 agree unexplained ($ctl_same_vm agreed and are VM artifacts, where the word context plays no part; $ctl_same_empty are never-matching patterns whose artifact carries no automaton) — -DPCREC_NO_WORDCTX really disables it, so the identity comparisons below are not vacuous"
+    ok "positive control: $ctl_diff DFA-compiled word-assertion patterns differ between the two builds and 0 agree unexplained ($ctl_same_vm agreed and are VM artifacts, where the word context plays no part; $ctl_same_empty are never-matching patterns whose artifact carries no automaton; $ctl_same_vac carry only vacuous assertions, each proved by a live-assertion mutant that DOES differ) — -DPCREC_NO_WORDCTX really disables it, so the identity comparisons below are not vacuous"
 else
-    bad "positive control: $ctl_diff word-assertion patterns differ, $ctl_same_dfa DFA-compiled ones AGREE UNEXPLAINED, $ctl_same_vm VM ones agree (expected), $ctl_same_empty never-matching ones agree (expected), $ctl_rej rejected by both. Every DFA-compiled \\b/\\B pattern with a live automaton must differ; if none does, the reference knob is dead and this whole check is vacuous."
+    bad "positive control: $ctl_diff word-assertion patterns differ, $ctl_same_dfa DFA-compiled ones AGREE UNEXPLAINED, $ctl_same_vm VM ones agree (expected), $ctl_same_empty never-matching ones agree (expected), $ctl_same_vac vacuous-assertion ones agree (expected, mutant-proved), $ctl_rej rejected by both. Every DFA-compiled \\b/\\B pattern with a live automaton must differ; if none does, the reference knob is dead and this whole check is vacuous."
 fi
 
 # ---- the identity sweep --------------------------------------------------
@@ -301,7 +327,7 @@ fi
 echo
 echo "== Summary =="
 echo "  identity population   compared $((same + diff))  identical $same  differing $diff  rejected-by-both $rej"
-echo "  positive control      differ $ctl_diff  agree-on-DFA(unexplained) $ctl_same_dfa  agree-on-VM $ctl_same_vm  agree-never-matching $ctl_same_empty  rejected-by-both $ctl_rej"
+echo "  positive control      differ $ctl_diff  agree-on-DFA(unexplained) $ctl_same_dfa  agree-on-VM $ctl_same_vm  agree-never-matching $ctl_same_empty  agree-vacuous $ctl_same_vac  rejected-by-both $ctl_rej"
 echo "checks passed: $pass"
 echo "checks failed: $fail"
 [ "$fail" -eq 0 ]
