@@ -6370,7 +6370,11 @@ text stays opt-in until R4f.
 >   `RUN_WORDS` becomes the kit's stamp. **Prerequisite:** R4c.
 >   **Trigger:** completeness.
 >   **`[rev4.8]`** Request R-5, lane m1b: the contract is §R4.8
->   (Q-M1b-1..8, `MF_SITE_ABI` 4, `stamp_int`).
+>   (Q-M1b-1..8, `MF_SITE_ABI` 4, `stamp_int`). **BUILT on `lane/m1b`
+>   (2026-10-07)**: implement-then-replace, `src/gen/runcmp.c` deleted,
+>   VERIFY and VMRUN `delegated`; I1 and the Mac sweeps read 0 movers; the
+>   Linux verdict (`probes/lxrun/memfn_m1b.sh`) is the merge gate
+>   (`docs/dev/lanes/m1b_report.md`).
 > - **R4g, M2: PF migrates** (zero movers). K84's `strcmp` readers are
 >   fixed (§19 row 7), and §19 row 6's rarity half becomes the kit's,
 >   byte-identical at migration. C12: 3 → 1. **Prerequisite:** R4c.

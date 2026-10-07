@@ -28,7 +28,7 @@ candidate, so the S4 L-sweep carries a forced-VM copy of each run.)
   run length 3..20, 31 and 32, the run alone (default route and forced VM)
   and behind `[0-9]+` (the run pre-check), each with every byte position
   flipped once, the run one byte short at the end, and an embedded match.
-  The run compare (`src/gen/runcmp.c`, `docs/spec/tuning.md` §2.38) writes
+  The run compare (`memfn/src/runcmp.c` since [MEMFN] M1b, before it `src/gen/runcmp.c`; `docs/spec/tuning.md` §2.38) writes
   two overlapping words at L in {3, 5-7, 9-15} and a `memcmp` elsewhere, so
   the sweep crosses every row boundary; a flip inside the overlap region must
   fail both words. Detector of S443/S444/S445.
