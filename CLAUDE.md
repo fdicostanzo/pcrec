@@ -6,14 +6,17 @@
 
 ## MANDATE: repository scope
 
-Work in this project touches ONLY the two mandated repositories:
-/home/duxevents/pcrec (and its git remote github.com/fdicostanzo/pcrec) and
-/home/duxevents/pcrec-bench (the sibling comparative-benchmark project,
-added by Frank 2026-08-17; see its APPROACH.md — dependencies live THERE,
-never here). Do not create, modify, or delete files anywhere else on this
-machine — no other directories, no home-directory or system config, no
-other repos. Session-temporary files go in the session scratchpad, never
-committed. Subagents inherit this mandate; state it in their task briefs.
+Work in this project touches ONLY the two mandated repositories: pcrec
+(and its git remote github.com/fdicostanzo/pcrec) and its sibling
+pcrec-bench (the comparative-benchmark project, added by Frank 2026-08-17;
+see its APPROACH.md — dependencies live THERE, never here). Their paths
+per box: the Linux dev box (pcrec@192.168.1.17, since 2026-10-07)
+/home/pcrec/projects/{pcrec,pcrec-bench}; ubuntubudu
+/home/duxevents/{pcrec,pcrec-bench}; the Mac
+/Users/fdicostanzo/{pcrec,pcrec-bench}. Do not create, modify, or delete
+files anywhere else on this machine — no other directories, no
+home-directory or system config, no other repos. Session-temporary files
+go in the session scratchpad, never committed. Subagents inherit this mandate; state it in their task briefs.
 
 Ahead-of-time compiler: takes a PCRE pattern, emits specialized, self-contained
 gcc-dialect C source that matches exactly that pattern (no runtime interpreter,
@@ -81,7 +84,7 @@ never expand a row into a paragraph.
 | change anything a caller can observe (an entry, a flag, a stamp, a limit, a diagnostic tier, a module's behaviour) | update `docs/spec/` in the SAME change — it is the contract (D80); a reviewer rejects a contract change without its spec hunk. `docs/guide/` is the human use-case tier; it points at the spec, never restates it |
 | merge a lane branch | run `git merge` ALONE in its own command and read its result — a conflicted merge leaves MERGE_HEAD, and any later `git add -A && git commit` in the same chain commits the CONFLICT MARKERS as the merge (it happened: 40d9f79, fixed c52c9d9). Resolve, `make strict`, then commit |
 | brief a lane | the Conventions below + `.claude/skills/pcrec-manager` §3 (scope mandate, worktree/cell, async validation, WIP commits, `gnutimeout` on every uncertain command) |
-| wake up, or rule anything that touches pcrec-bench | read `/home/duxevents/pcrec-bench/docs/dev/outbox_to_pcrec.md` (its durable messages to us); WRITE durable rulings/priorities/pins to `.../inbox_from_pcrec.md` there as a single-file `[inbox]` commit — the ONLY file we write in that repo (one writer each way; live coordination stays interprocess; D78). Use absolute paths / `git -C` — a `cd` in a compound command persists to its tail (the manager committed into the wrong repo once) |
+| wake up, or rule anything that touches pcrec-bench | read `pcrec-bench/docs/dev/outbox_to_pcrec.md` (its durable messages to us; the sibling checkout's path per box is in the MANDATE); WRITE durable rulings/priorities/pins to `.../inbox_from_pcrec.md` there as a single-file `[inbox]` commit — the ONLY file we write in that repo (one writer each way; live coordination stays interprocess; D78). Use absolute paths / `git -C` — a `cd` in a compound command persists to its tail (the manager committed into the wrong repo once) |
 | end or pause a session | rewrite docs/dev/wake.md from scratch (skill §6) |
 | complete a milestone or close a row | grep plan.md for rows naming it as a TRIGGER or gate (DD-2/M4-CALLOUTS/M4-SUBST/DD-6/DD-11 sat months behind shipped M4/M6/M6.6 — backlog_triage_2026-09-22.md) |
 | read a gate/suite log | the verdict is make's `*** [test-X] Error` lines, never "sections ran" and never a grep for FAIL: (learnings §3, 2026-09-22). GNU make on Linux prints `*** [Makefile:646: test-X] Error 1` — grep `'\*\*\* \[(Makefile:[0-9]+: )?test-'` (-E), never `'\*\*\* \[test-'` alone (that form read a red Linux run as clean, 2026-10-06) |
