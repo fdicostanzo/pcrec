@@ -278,3 +278,9 @@ main's builds from `b9b151bc`. Completion lines, in order:
 - `MECH <row> rc=`: one line per row for the 23 rows in §5 (`mech_<row>.log`),
   then `MECH_DONE`. After that, `build/SLOT_DONE` is created and the chain
   prints `CHAIN_DONE`.
+
+## 7. Merge of current main (2026-10-07)
+
+`git merge main` (main `42771cb8`, which includes lane/r6). There was one conflict, in `docs/dev/lanes/CLAUDE.md`'s index tail; I kept both sides. Main touched `src/gen/emit_dfa.c` in three places: r6's `.miss = MF_MISS_N` hooks in `pcrec_emit_req_byte_check`, `ofs_site_define` and `pf_ofs_call`. None of them overlaps a C3 edit. After the merge `make` and `make strict` are clean. Because the merge touched `emit_dfa.c`, I re-ran the light gates. The light identity sample compares the merged tip against main `42771cb8`, both built here, over 430 patterns × 4 arms (`.c`+`.h`, `--emit-facts`, dumps): 1,598 compiled cells, **0 movers**. `run_cand_rows.sh` reads 3/0, and every sabotage anchor resolves.
+
+Per ruling 1, the C5 row of `docs/design/start_table.md` and the edit set's `def dfa_select` note now say `dfa_select` stays, for the six machine-form axes.
