@@ -253,18 +253,28 @@ is a property of FIRST, not a condition the implementation tests. `P` is a
 parameter of the fold, never a fact about a node. This is why §8.4 has no
 ablation row for it.
 
-**The enclosing-loop term.** `ENCL` is unioned UNGATED, as today, and the
-§2.2 / R24 H1 line stays load-bearing for the base rule. For a gate follow,
-the ungated union is conservative: `(?:\w+)+\b` and `(?:x+\1|(a))+` decline
-and do not diverge. §8.4 measures it. Gating `ENCL` stays out of scope; it
-would be an analysis change with its own refutation surface.
+**The enclosing-loop term.** `ENCL` is unioned UNGATED, as today. The
+§2.2 / R24 H1 line stays load-bearing for the base rule, and **for A1 too**
+`[r2 B-B3]`:
+
+- A gate with an empty BYPASS lets the continuation reach the enclosing
+  loop's end at zero consumption, and the loop's restart then rescues the
+  match.
+- Witness: `(?:a+(?:\b|)|ab)+c` on `aabc` gives (0,4) greedy and (1,4)
+  possessive on 10.46. A1 without ENCL would claim it.
+- Where the gate HEADS the in-body continuation, the restart can only
+  happen behind it, and the ungated union is merely conservative:
+  `(?:\w+)+\b` and `(?:x+\1|(a))+` decline and do not diverge (§8.4: 2,268
+  such rows, 0 diverging).
+- Gating `ENCL` to those shapes would be a refinement with its own
+  refutation surface. It is not part of this build (RC-Q2).
 
 **Why greedy-only.** Revision 1 argued that A1's value is invalid at `e_K`,
 and that row 2's `may_end` speaks about `e_K` too. §8.4 measures the
 alternative: dropping the greedy conjunct newly claims 1,134 lazy rows, 0 of
-which diverge at ML=4. A lazy loop also stops only at
-a retreat exit where the continuation succeeds, and the same argument shows
-it cannot. **Revision 2 keeps A1 greedy-only as a DECLARED-CONSERVATIVE
+which diverge at ML=4. The argument above explains why: a lazy loop that
+stops before the top exit stops at a RETREAT exit, where the A1-valued
+continuation cannot succeed. **Revision 2 keeps A1 greedy-only as a DECLARED-CONSERVATIVE
 conjunct.** It has no diverging control. Widening A1 to lazy loops is a
 measured, separable follow-up (§11 RC-Q1), not part of this build.
 
@@ -1109,11 +1119,19 @@ Revision 1's questions as ruled (`../dev/reviews/2026-10-07-r-poss-arms-panel.md
   conservative. Should it instead be dropped, so that A1 feeds row 3 for
   lazy loops under the existing row-2 conjunct? That would be a wider claim
   set with its own CLAIM-vs-MARK population.
-- **RC-Q2. ENCL ungated** is conservative on every measured gate shape
-  (§8.4). It stays as is. Is a gated ENCL worth a row?
+- **RC-Q2. ENCL ungated** is load-bearing on bypass shapes (3 of 4 `H`
+  rows diverge) and merely conservative where the gate heads the in-body
+  continuation (2,268 rows, 0 diverging) (§2.3, §8.4). It stays ungated.
+  Is a gated ENCL, unioned only where the continuation can reach the loop's
+  end, worth a row?
 - **RC-Q3. The P = {0,1} join** (§2.3a) gives up nothing measurable today.
   Does the critic accept "ill-defined plus zero measured gain" as the reason
   not to carry a per-P value?
+- **RC-Q5. The deny-bit classification is asymmetric** (§9). A's bit is
+  ENGINE-SELECTING and kept. B's is answer-identity-preserving and masked,
+  because a backreference pattern is always VM-routed. This departs from
+  the disposition's "both ENGINE-SELECTING". Does the critic accept the
+  measured asymmetry?
 - **RC-Q4. `-e utf8 --ucp`** is entirely refused today (§2.5). The arms'
   utf8+ucp behaviour is therefore unmeasurable until [CLS-TREE] S4 / [UCP]
   U3. Is "declines by representation, re-swept when the route lands" the
