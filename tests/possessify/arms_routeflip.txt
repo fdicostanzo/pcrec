@@ -1,0 +1,8 @@
+# features: all
+# route: default
+\w++\b
+(?>\w+)\b
+x(?>\w+)\b
+\d++(?![\d.])
+[a-z]++(?=@)
+(?>[a-z]+)(?=@)
