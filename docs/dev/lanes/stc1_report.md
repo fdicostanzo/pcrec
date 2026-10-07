@@ -52,6 +52,36 @@ complete and what is OWED.
       `return` the local (the C0 prototype's shape);
     - `attempt_cand`'s two returns;
     - `req_site_define`'s two early returns now have braces.
+- **The records floor is re-pinned and a site-reach check is added.**
+  `TRACE_RECORDS_FLOOR` was 89,135 / 38,523 (the C0 prototype's lower
+  bounds). It is now **256,608 / 62,962**, the C1 hook's own count over the
+  4,612 corpus rows (`runF.log`: a mirrored run of the trace build over
+  streams 1-2, 131 s).
+
+  New `TRACE_SITES`: on a full-population run every one of the 25 declared
+  site keys must print at least once on the working side. A site whose
+  record stopped printing would otherwise hide inside an arm's total (K35).
+  All 25 are reached.
+
+  Failing direction, replayed over `runF`'s streams: dropping `ofs-need`'s
+  records reads NOT REACHED. It also trips the floor on both arms (255,615 <
+  256,608; 62,297 < 62,962) and gives 1,447 SET movers.
+
+  Records per site, c-default:
+
+  | site | records |
+  |---|---|
+  | `prefix-k` | 82,648 |
+  | `engine-empty` | 63,349 |
+  | `search-start` | 26,567 |
+  | `pf-of` | 18,373 |
+  | `req-admit` | 14,533 |
+  | … | … |
+  | `scan-state` | 620 |
+  | `attempt-bound` | 499 |
+
+  c-vm reaches 13 keys; the other 12 are DFA-body sites, which a forced VM
+  never asks.
 - **`docs/design/start_table/call_graph.py`** skips `PCREC_CAND_TRACE_REC*`
   invocations, including multi-line ones, when it finds decision SITES. A
   record prints a decision and makes none. Without the filter the census
@@ -224,7 +254,7 @@ that moved it would show.
 | every-flag movers seen by the trace (below) | 20/20 arm cells: visible-but-not-traced = 0 |
 | trace build vs default build, ALL six streams + `--arms start` | OWED (see 5.2) |
 | default build vs main, `--arms start` + trace family | OWED (5.2) |
-| records floor | OWED (5.2) |
+| records floor | re-pinned 256,608 / 62,962, all 25 site keys reached (`runF.log`); its gate run in A is OWED |
 | failing-direction controls | OWED (5.2) |
 | `make test-codegen`, `make test` (Mac, async, suite lock) | OWED (5.2) |
 
@@ -280,4 +310,19 @@ these logs. The completion lines are `B_RC=` / `A_RC=` in `chain1.log` and
   built with `.forward = false`) as the working trace bin. The SET gate must
   read FAIL. C0 measured 176 trace movers against 15 byte movers.
 - **Run H** (`runH.log`), the hookless control: main's default build as both
-  trace bins. The records floor must FAIL (0 < floor).
+  trace bins. The records floor must FAIL (0 < floor), and the site check
+  must read 0/25.
+- **Chain 3** (`chain3.log`) waits for chain 2 and then takes
+  `worktrees/.mac-suite.lock` (a directory plus an owner file, released on
+  exit). It runs `make test-codegen` (`codegen.log`, `CODEGEN_RC=`) and then
+  `make test` (`maketest.log`, `MAKETEST_RC=`). Read the verdict from make's
+  `*** [test-X] Error` lines. The standing darwin `nm arm_a.o` red and
+  PC-3's U13 are expected.
+
+Every path above is under `/Users/fdicostanzo/pcrec/worktrees/stc1-scratch/`.
+All four chains are detached with `nohup` and `caffeinate`.
+
+**Merge note:** R4c′ had not merged when the lane ended. When it does,
+merge main into `lane/stc1` ALONE, resolve, run `make strict`, and re-run
+Run B. My records in `pcrec_emit_req_byte_check`, `req-from` at :1557, sit
+below R4c′'s :1505 insertion.
