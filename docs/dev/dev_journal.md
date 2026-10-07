@@ -26625,3 +26625,29 @@ Frank: "finish up open work/bench results/errors", Linux box free (bench manager
   - The kit ran a big sweep during k93tri's locked make test; kit briefs now carry a numeric sweep cap.
   - The manager cd'd into worktrees twice; both caught.
 - **Owed to Frank**: the two K93 rulings; OK to remove our stale Linux worktrees (classifier-blocked; disk 87%). I-133 = the K93 merge, or the axtri fallback at ~18:00 EDT.
+
+## 2026-10-07 (session 94, close, pcrecdev1): C2 + K94 merged, ROWCON narrowed, machine move
+
+- **Merged this afternoon** (all pushed; main 71ca51c4 before this close commit):
+  - [START-TABLE] **C2** (cda5a360): cand_rows[] (37 rows), cand_select, cand_route_of, and the both-walks oracle in both orders, all no-reader-switched. S594-S599.
+  - **K94** (byte --ucp caseless backref folds Latin-1 from core/fold.c; no abi bump by manager ruling: a fix to buggy artifacts only).
+  - **M1b** (kit runcmp migration, zero movers) + **K96** (a latent R4c ofsskip-arm precondition, unreachable from pcrec, found by G2).
+  - The **D27-blinded possessify composition corpus** (676 blocks / 7,412 cases, 10.46 NO_AUTO_POSSESS oracle; shipped main passes 9,002/9,002).
+  - rxspin (rxtsource pins; the corpus is the first head-with-body file, so its head lines became comments).
+  - cgtri (test-codegen reds were check-side: EMPTY_MANIFEST +17; the scan-edge census P3 now asks precondition (8)'s own question).
+- **[ART-POSS-ARMS]**: panel → rev 2 (possarms2) → re-check DOES NOT CLEAR (N1: A0+B miscompile; N2: greedy-only load-bearing) → rev 2.1 (lane possarms21, branch lane/possarms21, delivered at close with any OWED listed in its report). NEXT: run rev21/run_composition.sh (its prototype) against tests/possessify/composition_d27.rxt. If clean, the build may start without another panel. VERIFY in its report: the per-category answers to the manager's four conditions on the first post-freeze CLAIM-vs-MARK predicate edit (2,815 mismatches resolved by editing the model toward pcrec; edits that claim MORE must be oracle-swept).
+- **[MEMFN-ROWCON]** (Frank opened it in the kit after K96): narrowed by Frank to the contract gate ("I don't want this to turn into a solution without problem scenario"). The general table engine and SNAPSHOT are HELD; the hook census found NO risky hook, so there is no abi event. N1 (WARN-mode gate) is on lane/memfn-rowcon. N2's whole-corpus census was running on the Mac at close → yields the R-6 list (pcrec hook builders state MF_MISS_N etc.; zero-mover).
+- **Lessons**:
+  - Adding a .rxt corpus file moves pins in rxtsource, startset AND codegen. Run a FULL make test before merging one.
+  - Chain push with `&&`, never `;`. A red test-codegen got pushed today (main was briefly red; fixed by cgtri).
+  - Lanes repeatedly missed their own background completion notices (possarms21 twice). The manager's own watcher is the reliable backstop.
+  - Answer Frank's remarks with a judgment before turning them into work (memory pcrec-questions-are-not-directives).
+- **MACHINE MOVE (Frank, end of session)**: pcrec dev moves to a NEW Linux box, `ssh pcrec@192.168.1.17`, repo `~pcrec/projects/pcrec` (bigger). ubuntubudu stays up for the bench; the Mac stays for hardware runs. The new box's host key needed Frank's interactive accept. **Files that do NOT travel by git, still on the Mac:** docs/dev/wake.md (the hand-off brief, gitignored) and the manager memory dir ~/.claude/projects/-Users-fdicostanzo-pcrec/memory/. The next session copies both from the Mac first.
+- **OWED next session**:
+  - (1) Measure the new box once and record it in docs/testing.md "The boxes".
+  - (2) A FULL make test of main on the new box (none has covered today's merges together).
+  - (3) The possarms21 composition gate.
+  - (4) The R-6 lane when the kit sends the list.
+  - (5) Start-table C3 (opus), choosing vs the kit's next migration (R4g) by remodel overlap.
+  - (6) An admin lane: the two load-sensitive limits (rxtsource W23-S7's 120 s --dump; clskit's 10 s chunk wall), tuning.md §2.32's -fno-ctx-node kept-vs-masked inconsistency, and the emit_sweep default-arm floor proposal.
+  - (7) Rounds 2+3 batch gate items (ARTREV full run, full mech, K91 O-85 reading).

@@ -10,9 +10,10 @@ model tier, and deliverable; everything below applies without restatement.
 (Ruled by Frank 2026-09-06 to cut brief size and lane startup cost.)
 
 ## Scope mandate
-Touch ONLY /Users/fdicostanzo/pcrec, and inside it ONLY your own worktree
-under worktrees/ (read-only elsewhere in the repo). NEVER write to
-/Users/fdicostanzo/pcrec-bench (read-only reference at most), no other
+Touch ONLY the pcrec repo (its path on this box: root CLAUDE.md's MANDATE),
+and inside it ONLY your own worktree under worktrees/ (read-only elsewhere
+in the repo). NEVER write to the sibling pcrec-bench checkout (read-only
+reference at most), no other
 directories, no system config. Session-temporary files go in the session
 scratchpad directory named in your environment, never committed. Subagents
 you spawn inherit this mandate — restate it in their briefs.
@@ -20,13 +21,13 @@ Disclosure: you inherit the session-root CLAUDE.md and the manager's memory
 index at spawn; treat them as context, not tasking.
 
 ## Worktree setup (writers)
-1. `git -C /Users/fdicostanzo/pcrec worktree add worktrees/<lane> -b lane/<lane>`
+1. `git -C "$(git rev-parse --show-toplevel)" worktree add worktrees/<lane> -b lane/<lane>` (run from the main tree)
 2. cd there; FIRST command: `git rev-parse --show-toplevel` — no edit until
    it prints your worktree path.
 3. Build: `make -j4 CC=gcc-16`.
 Read-only critics work in the main tree and never run make.
 
-## Box facts (Mac M1, darwin)
+## Box facts (Mac M1, darwin) — STALE for the Linux dev box (pcrec@192.168.1.17, 2026-10-07): re-measure there before trusting
 bare `timeout` IS GNU; sed is BSD (GNU-only BRE constructs \b \| SILENTLY
 NO-OP — spell portable or use -E); local libpcre2 is 10.48-Homebrew, NOT the
 reference; the 10.46 reference oracle is `ssh duxevents@192.168.1.100` —
