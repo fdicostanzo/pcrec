@@ -24,22 +24,42 @@ index at spawn; treat them as context, not tasking.
 1. `git -C "$(git rev-parse --show-toplevel)" worktree add worktrees/<lane> -b lane/<lane>` (run from the main tree)
 2. cd there; FIRST command: `git rev-parse --show-toplevel` — no edit until
    it prints your worktree path.
-3. Build: `make -j4 CC=gcc-16`.
+3. Build: `make -j16` on the Linux dev box (plain `gcc` is GNU gcc 15.2;
+   the Mac needs `CC=gcc-16`, see Box facts).
 Read-only critics work in the main tree and never run make.
 
-## Box facts (Mac M1, darwin) — STALE for the Linux dev box (pcrec@192.168.1.17, 2026-10-07): re-measure there before trusting
-bare `timeout` IS GNU; sed is BSD (GNU-only BRE constructs \b \| SILENTLY
-NO-OP — spell portable or use -E); local libpcre2 is 10.48-Homebrew, NOT the
-reference; the 10.46 reference oracle is `ssh duxevents@192.168.1.100` —
-LIGHT probes only (small compiles, transcripts archived), never suite runs
-(the bench owns that box); PC-3 red locally is U13-expected; known darwin
-reds are listed in docs/dev/wake.md-era notes — A/B against a scratch build
-of your branch point before claiming a red as yours or pre-existing.
-- DARWIN TIMEOUTS: the `.rxt` corpus section alone runs 20-30 min;
-  `make test-axes` is MULTI-HOUR (one full corpus run PER AXIS) — sweep only
-  your own axes with `AXES="-fno-…"` rather than the whole table; `make test`
-  itself is ≈100 min. Size your `timeout`/watchdog accordingly — a 15-min
-  wrapper on a corpus run is a self-inflicted kill, not a finding.
+## Box facts (Linux dev box, `pcrec@192.168.1.17`, since 2026-10-07)
+Numbers are the measured record in docs/testing.md "The boxes" (MEASURED
+2026-10-07, main 23111928); re-measure before citing them elsewhere.
+- Ryzen 7 7700X, 16 threads, ~29 GB; Ubuntu x86_64; gcc 15.2.0 as plain
+  `gcc` (no `CC=` override, no `gcc-16`); GNU make 4.4.1; bash 5.3;
+  python 3.14.4. No clang, no `pcre2test` binary.
+- Build and suite: `make -j16` ~2 s; the full `make -k -j16 -Otarget test`
+  ~11 min (678.6 s measured, 59 sections). Read its verdict from
+  `grep -E '\*\*\* \[(Makefile:[0-9]+: )?test-'` (empty = green).
+- libpcre2-8 10.46 headers are installed and it IS the reference oracle
+  here, so PC-3/PC-4/uprops RUN rather than skip (a red is real, not
+  U13-expected).
+- Bare `timeout` is uutils (~105 ms/call): use `gnutimeout`
+  (`/usr/bin/gnutimeout`); in test scripts `tests/lib/timeout_bin.sh` ->
+  `"$TIMEOUT_BIN"`. sed/xargs/wc are GNU here, but keep new test-script
+  `sed` portable anyway (the suite also runs on the Mac).
+- K54 (gcc libasan hangs every sanitized process AT EXIT under
+  `detect_leaks=1`) does NOT apply: it is specific to gcc-16's LSan on
+  arm64-darwin, and the Makefile's `SAN_DETECT_LEAKS` derivation only
+  disables the leak tier on Darwin. On Linux the leak tier runs
+  (santriage3_report.md found LSan live on ubuntubudu; not re-checked here).
+- D45 budgets and load-guard thresholds were calibrated on ubuntubudu (a
+  slower Ryzen 5 1600); on this faster box they are ceilings, not floors.
+  ONE heavy suite at a time on the box, with 16 threads shared.
+- The other boxes, for pointers only: the Mac (`/Users/fdicostanzo/pcrec`)
+  is the hardware-run box (arm64, Apple M1 Max; bare `timeout` is GNU,
+  BSD sed silently no-ops GNU-only BRE `\b` `\|`, libpcre2 10.48 is NOT
+  the reference so PC-3 reads expected reds, `make test` ~100 min,
+  `make test-axes` is multi-hour: sweep only your own axes with
+  `AXES="-fno-..."`; docs/testing.md carries the rest). ubuntubudu
+  (`/home/duxevents/pcrec`) is the bench's box: never run suites there;
+  light probes only, heavy runs by slot request through the manager.
 
 ## Process rules (each has cost a lane before)
 - COMMIT INCREMENTALLY (WIP commits) — commit age is your liveness signal.
@@ -124,15 +144,12 @@ MOVES in the same delivery (readers found by grep) — post-merge manager
 cleanup of your pins is a delivery failure. The full battery is the manager's at merge.
 Never merge to main yourself.
 
-## Travel-month topology (2026-09-07 .. ~10-07)
-
-The Linux box (ubuntubudu, the 10.46 reference oracle) is reachable
-ONLY over the tailnet: `duxevents@100.69.121.107` (never 192.168.1.100
-— that address only resolves from the home LAN). Light ops only, as
-ever; heavy Linux runs go through the manager (pcrecdev2's executor
-channel — never run one yourself over ssh, and never assume the box is
-free). The Mac session is closed mornings; a lane needing a ruling
-mid-morning parks and polls its rulings file.
+## Other boxes
+ubuntubudu (the bench's box, a second 10.46 oracle) is reachable by
+`ssh duxevents@192.168.1.100` on the home LAN, or `duxevents@100.69.121.107`
+over the tailnet. Light ops only; heavy runs there go through the manager
+(never assume the box is free). Lanes on this Linux dev box rarely need
+either: the 10.46 oracle is local.
 
 ## Design lanes
 A design note answers the three STANDING QUESTIONS in docs/design/CLAUDE.md (measurement regime; independent control; what moves when data is regenerated). For each one, first state whether it is relevant to this design.

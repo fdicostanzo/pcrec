@@ -1,0 +1,12 @@
+arms	rc=0	#TALLY agree=104 diverged=0 refused=0 possessive=59 cells=517382 reach_miss=0
+plant_SAB_M0	rc=1	#TALLY agree=102 diverged=2 refused=0 possessive=64 cells=516804 reach_miss=0
+plant_SAB_FIRSTPOL	rc=1	#TALLY agree=101 diverged=3 refused=0 possessive=63 cells=517382 reach_miss=0
+plant_SAB_MIXED	rc=1	#TALLY agree=103 diverged=1 refused=0 possessive=60 cells=517382 reach_miss=0
+plant_SAB_NOFOLD	rc=1	#TALLY agree=103 diverged=1 refused=0 possessive=60 cells=517382 reach_miss=0
+plant_SAB_FIRSTMEM	rc=1	#TALLY agree=102 diverged=2 refused=0 possessive=60 cells=517382 reach_miss=0
+plant_SAB_NONNULL	rc=1	#TALLY agree=93 diverged=11 refused=0 possessive=65 cells=503904 reach_miss=0
+plant_A1_NOCC	rc=1	#TALLY agree=101 diverged=3 refused=0 possessive=61 cells=517382 reach_miss=0
+plant_SAB_LAZY	rc=1	#TALLY agree=99 diverged=5 refused=0 possessive=67 cells=512900 reach_miss=0
+plant_SAB_TEXTPOS	rc=1	#TALLY agree=100 diverged=4 refused=0 possessive=60 cells=516848 reach_miss=0
+plant_SAB_NORECGUARD	rc=0	#TALLY agree=101 diverged=0 refused=3 possessive=57 cells=486593 reach_miss=0
+routeflip_default	rc=0	#TALLY agree=6 diverged=0 refused=0 possessive=0 cells=18164 reach_miss=0

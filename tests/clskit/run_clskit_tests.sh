@@ -24,7 +24,8 @@
 #
 # Usage: bash tests/clskit/run_clskit_tests.sh
 # Env: CC, GENCFLAGS (default -O1 -std=gnu11 -Wall -Wextra -Werror), PROCS,
-#   LIBPCREC (default build/libpcrec.a), KEEP=1.
+#   LIBPCREC (default build/libpcrec.a), KEEP=1, CLSKIT_RUN_WALL (checker
+#   run wall backstop, default gen_timeout_secs).
 
 set -u
 export LC_ALL=C
@@ -98,7 +99,21 @@ check_chunk() {
     # headroom rather than only its failures.
     times > "$b.times"        # not piped: a pipeline's `times` is a subshell with no children
     sed -n 2p "$b.times" > "$b.cpu"
-    gen_run "clskit $(basename "$c")" "$b.bin" > "$b.log" 2>&1 || echo "RUNFAIL $(basename "$c") rc=$?" >> "$b.log"
+    # The checker is CPU-bound for ~1 s by construction (CHUNK_VARS /
+    # CHUNK_BYTES cap a unit's work), unlike the sub-millisecond matcher runs
+    # gen_run's TIGHT 10 s wall (gen_run_secs) is sized for. MEASURED
+    # 2026-10-07 on the Linux dev box: 331 units, run wall median 0.14 s, max
+    # 1.58 s with all 16 threads busy; the worst unit solo 0.94-1.10 s CPU. A
+    # 10 s wall is then only ~6-10x, and wall (unlike the gen_cpu_secs CPU
+    # budget, which stays the PRIMARY bound at its D45 default) stretches
+    # with load: under `make test`'s -j16 mix plus another heavy suite it
+    # can fire without any defect. So the wall BACKSTOP here is the compile
+    # backstop's value (gen_timeout_secs: 60 s plain / 180 s sanitizer, D45's
+    # "CPU budget x worst contention" sizing), still stuck-process detection,
+    # no longer a load gauge. CLSKIT_RUN_WALL overrides.
+    local rw="${CLSKIT_RUN_WALL:-$(gen_timeout_secs)}"
+    GENRUNTIMEOUT="$rw" GENRUNTIMEOUT_SAN="$rw" \
+        gen_run "clskit $(basename "$c")" "$b.bin" > "$b.log" 2>&1 || echo "RUNFAIL $(basename "$c") rc=$?" >> "$b.log"
 }
 nchunk=0
 for c in "$WORKDIR"/chk/chunk_*.c; do

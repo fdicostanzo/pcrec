@@ -4785,7 +4785,17 @@ esac
 # `--dump` takes the ARGUMENT branch (no `known_fail` exclusion, unlike
 # the no-arg default), so its population is `CENSUS_FILES`, not
 # `RUNSH_FILES`.
-corpus_out="$("$TIMEOUT_BIN" 120 bash "$RUNSH" --dump "$ROOT_DIR/tests" 2>&1 >/dev/null)"
+# THE BOUND IS A CEILING, NOT A SPEED GATE (admin1008; D45's rule for a
+# bound nobody has measured a need for). `--dump` over the corpus is pure
+# parsing with no compiles: MEASURED 2026-10-07 on the Linux dev box (Ryzen 7
+# 7700X, 16 threads), three quiet-ish runs (load ~3): 9.6 / 10.0 / 10.5 s wall
+# (8.0-8.6 s user + 2.2-2.3 s sys). A fixed 120 s was a 12x margin over that
+# and the sibling pass at C0a (~l.840, the same --dump over the same corpus
+# through a counting wrapper) already allows 900 s; wall stretches without
+# bound under `make -j16` (load 47) and on the Mac's spawn tax, so a tight
+# wall here would measure the box's load, not a splice defect. A firing is a
+# finding (a hung `--dump`), never a reason to simply re-run longer.
+corpus_out="$("$TIMEOUT_BIN" "${RXTSOURCE_DUMP_SECS:-900}" bash "$RUNSH" --dump "$ROOT_DIR/tests" 2>&1 >/dev/null)"
 corpus_entries=$(printf '%s\n' "$corpus_out" | awk -F': ' '/^entry files:/ {print $2}')
 corpus_frags=$(printf '%s\n' "$corpus_out" | awk -F': ' '/^fragments spliced:/ {print $2}')
 if [ "${corpus_entries:-X}" = "$CENSUS_FILES" ] && [ "${corpus_frags:-X}" = "0" ]; then
