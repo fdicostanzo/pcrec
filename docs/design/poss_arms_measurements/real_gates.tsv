@@ -1,0 +1,5 @@
+R1	no_auto_possess	^(?!.*\.\.)[A-Za-z0-9.]+(?=@)	^(?!.*\.\.)[A-Za-z0-9.]++(?=@)	yes	["a",".","@","x","1"," "]
+R2	no_auto_possess	\B(x|ab){1,2}\b	\B(x|ab){1,2}+\b	yes	["a","b","x"," ","."]
+R3	no_auto_possess	(?<![\d.])\d+\.\d+(?![\d.])	(?<![\d.])\d++\.\d++(?![\d.])	yes	["1",".","a"," "]
+R4	no_auto_possess	[a.]+?(?=@)	[a.]++(?=@)	lazy	["a",".","@"]
+R5	no_auto_possess	[a.]*(?=@)	[a.]*+(?=@)	m0	["a",".","@","x"]

@@ -1,0 +1,9 @@
+pattern	subject	build	min --work-budget that answers
+\b(\w+)\b\s+\1\b	200 distinct words + " last last" (1501 B)	no arms	1070
+\b(\w+)\b\s+\1\b	same	arm A only	2364
+\b(\w+)\b\s+\1\b	same	arm B only	1271
+\b(\w+)\b\s+\1\b	same	arms A+B	2565
+\b(\w+)\b\s+\1\b	"a"*300 " " "a"*299 "b"	no arms	299
+\b(\w+)\b\s+\1\b	same	arms A+B	900
+# direct: --work-budget=1500 on subject 1: no arms -> match 1490 1499; arms A+B -> work; user-written \b(\w++)\b\s++\1\b -> work
+# step budget, same subject 1: no arms needs > 1000 (steps at 10/100/1000), arms A+B answers at --step-budget=10

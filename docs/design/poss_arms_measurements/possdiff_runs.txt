@@ -1,0 +1,24 @@
+== possdiff_proto.log
+possdiff: 36 patterns agreed, 0 diverged, 0 refused by pcrec
+possdiff: 24 of 36 had at least one POSSESSIFIED quantifier
+possdiff: 17526 pattern-subject-startpos cells compared
+== possdiff_firing.log
+possdiff: 18 patterns agreed, 0 diverged, 0 refused by pcrec
+possdiff: 18 of 18 had at least one POSSESSIFIED quantifier
+possdiff: 19368 pattern-subject-startpos cells compared
+== sab_PROTO_SAB_FIRSTMEM.log
+FAIL: '(?J)(?:(?<n>a)|(?<n>x))x+\k<n>' (possessified=1): DIVERGENCE subject=xxx startpos=0   possessified: nomatch   -fno-possessify: match 0,3 -1,-1 0,1 DIVERGENCE subject=xxxq startpos=0 
+FAIL: '(?J)(?<n>a)?(?<n>x)?x+\k<n>' (possessified=1): DIVERGENCE subject=xxx startpos=0   possessified: nomatch   -fno-possessify: match 0,3 -1,-1 0,1 DIVERGENCE subject=xxxq startpos=0 
+possdiff: 5 patterns agreed, 2 diverged, 0 refused by pcrec
+possdiff: 2 of 5 had at least one POSSESSIFIED quantifier
+possdiff: 2613 pattern-subject-startpos cells compared
+== sab_PROTO_SAB_M0.log
+FAIL: ' \w?\b' (possessified=1): DIVERGENCE subject= bw startpos=0   possessified: nomatch   -fno-possessify: match 0,1 DIVERGENCE subject= bwq startpos=0 
+FAIL: ' (\w?)\b' (possessified=1): DIVERGENCE subject= bw startpos=0   possessified: nomatch   -fno-possessify: match 0,1 1,1 DIVERGENCE subject= bwq startpos=0 
+possdiff: 5 patterns agreed, 2 diverged, 0 refused by pcrec
+possdiff: 4 of 5 had at least one POSSESSIFIED quantifier
+possdiff: 4063 pattern-subject-startpos cells compared
+== sab_PROTO_SAB_NOFOLD.log
+possdiff: 7 patterns agreed, 0 diverged, 0 refused by pcrec
+possdiff: 2 of 7 had at least one POSSESSIFIED quantifier
+possdiff: 4985 pattern-subject-startpos cells compared

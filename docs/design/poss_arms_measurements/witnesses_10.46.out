@@ -1,0 +1,144 @@
+PCRE2 version 10.46 2025-08-27 (8-bit)
+"k+\b"utf,i,no_auto_possess
+k\x{212a}
+ 0: k
+
+"k++\b"utf,i
+k\x{212a}
+No match
+
+" \w?\b"no_auto_possess
+\x20aa
+ 0:  
+
+" \w?+\b"
+\x20aa
+No match
+
+"\w+\B"no_auto_possess
+aa
+ 0: a
+
+"\w++\B"
+aa
+No match
+
+"[a .]+\b"no_auto_possess
+a\x20
+ 0: a
+
+"[a .]++\b"
+a\x20
+No match
+
+"(a)A+(?i:\1)"no_auto_possess
+aAA
+ 0: aAA
+ 1: a
+
+"(a)A++(?i:\1)"
+aAA
+No match
+
+"(?:(?<n>a)|(?<n>x))x+\k<n>"dupnames,no_auto_possess
+xxx
+ 0: xxx
+ 1: <unset>
+ 2: x
+
+"(?:(?<n>a)|(?<n>x))x++\k<n>"dupnames
+xxx
+No match
+
+"(?|(a)|(x))x+\1"no_auto_possess
+xxx
+ 0: xxx
+ 1: x
+
+"(?|(a)|(x))x++\1"
+xxx
+No match
+
+"(?=((*ACCEPT)a))x+\1x"no_auto_possess
+xx
+ 0: xx
+ 1: 
+
+"(?=((*ACCEPT)a))x++\1x"
+xx
+No match
+
+"\b(\w+)\b\s+\1\b"aftertext
+the the cat
+ 0: the the
+ 0+  cat
+ 1: the
+
+"\b(\w++)\b\s++\1\b"aftertext
+the the cat
+ 0: the the
+ 0+  cat
+ 1: the
+
+"(?:a\.)+\b"no_auto_possess
+a.a.
+ 0: a.
+
+"(?:a\.)++\b"
+a.a.
+No match
+
+"(?:a[a.])+\b"no_auto_possess
+a.a.
+ 0: a.
+
+"(?:a[a.])++\b"
+a.a.
+No match
+
+"(a?)x+\1x"no_auto_possess
+xx
+ 0: xx
+ 1: 
+
+"(a?)x++\1x"
+xx
+No match
+
+"(?:(a)|b)x+\1x"no_auto_possess,match_unset_backref
+bxx
+ 0: bxx
+
+"(?:(a)|b)x++\1x"match_unset_backref
+bxx
+No match
+
+"(a+)b(?1)a"
+abaa
+ 0: abaa
+ 1: a
+
+"(a++)b(?1)a"
+abaa
+No match
+
+"(?<n>a{1,3})b(?&n)a"
+abaa
+ 0: abaa
+ 1: a
+
+"(?:(a+)b|x)(?1)a"
+xaa
+ 0: xaa
+
+"((?>a+))b(?1)a"
+abaa
+No match
+
+"(?:b(?R)a|a+)"
+baa
+ 0: aa
+
+"(?:b(?R)a|a+)"no_auto_possess
+baa
+ 0: baa
