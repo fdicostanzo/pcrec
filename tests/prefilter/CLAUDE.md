@@ -79,7 +79,7 @@ whole of what the row owes.
   "[M4.6f] S64-S65" section for the measured fail counts) — removing the
   do-or-die refusal in `src/opt/select_engine.c` (S64) turns the two
   refusal checks red; dropping `PCREC_NO_PREFILTER`/`PCREC_FORCE_PREFILTER`
-  from `emit_dfa.c`'s `strategy_denials` mask (S65) turns the mask check
+  from the derived strategy mask (adding them to `kept`; S65, re-aimed at K92) turns the mask check
   AND (as a bonus) both byte-identity checks red, because the leaking bit
   changed the emitted `.flags` value. Both confirmed DETECTED via
   `bash tests/mech/run_sabotage_matrix.sh S64`/`S65` before landing.

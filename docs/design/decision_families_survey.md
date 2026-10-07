@@ -256,7 +256,8 @@ recorded in `rx_info.flags`?
 **Members:**
 
 - `emit_dfa.c:2808-3097` `strategy_denials`, a hand-kept OR of about 30 bits
-  with a comment per bit.
+  with a comment per bit (PRE-FIX SNAPSHOT: since K92, abi 65, the mask is
+  DERIVED from `core/axes.def`; only the `kept` set is hand-listed).
 - Every table row's `.deny` column (`dfa_pfs[]` etc.).
 - `clskit.c:835` `DENY_FLAG[]` / `pcrec_clskit_deny_of`, the "ONE mapping"
   per its comment.

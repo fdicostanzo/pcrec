@@ -59,6 +59,14 @@
 #   SAB_REQUIRE       space-separated instrument requirements; the vocabulary
 #                     is CLOSED and today holds exactly `asan`.
 #
+# [admin1007] SAB_EXPECT=BUILD-REFUSED. A row whose sabotage must make the
+# sabotaged tree's `make all` FAIL (a plant that a compile/link-time guard --
+# a static assert, a missing symbol, a -Werror-grade check -- is meant to
+# refuse) declares it. Build fails: verdict DETECTED. Build succeeds: verdict
+# UNDETECTED ***UNEXPECTED***, counted and exit-1 like any mismatch; no suite
+# runs either way. Without the declaration a failing build stays the
+# BUILD-FAILED ANOMALY (an unbuildable tree measured nothing).
+#
 # A row failing SAB_REACH/SAB_REACH_POP is **UNREACHED**: a THIRD verdict
 # beside DETECTED/UNDETECTED/ANOMALY, counted in the trailer, RED in the
 # headline, and its sabotaged tree is never built. A row may declare
@@ -467,7 +475,59 @@ fi
 # a single-row `PROCS=4` run spawned 4 REJECT_SHARD workers instead of the
 # whole-box share a lone row should have gotten).
 INNER_PROCS=$(( ncpu / PROCS )); [ "$INNER_PROCS" -ge 1 ] || INNER_PROCS=1
+# [admin1007] EVERY positional argument is a requested id, and EVERY requested
+# id must select at least one definition or the run is a FATAL: the selector
+# used to read only "$1" and silently drop the rest, so a 35-id invocation
+# ran 1 row and exited clean. `IDS` is the requested list; `ONLY` stays the
+# first id for the --help dispatch below.
+IDS=("$@")
 ONLY="${1:-}"
+
+# [admin1007] THE TRAILER COUNTERS READ THE VERDICT COLUMN ONLY. They used to
+# `grep -c` the whole tab-joined row line, so a SAB_DESC that merely CONTAINED
+# a verdict word (S268's and S527's "UNREACHED") inflated the count of a row
+# whose verdict was a plain DETECTED. `vcount ERE` counts the rows of
+# "$results_file.rows" whose LAST tab field matches; `vrows ERE` prints them.
+vcount() { awk -F'\t' -v re="$1" '$NF ~ re {n++} END {print n + 0}' "$results_file.rows"; }
+vrows() { awk -F'\t' -v re="$1" '$NF ~ re' "$results_file.rows"; }
+
+# SELFCHECK_VERDICT_COLUMN=1: a sabotage-style self-check of the above. One
+# fake row per verdict word, each carrying that word ONLY in its description
+# (verdict DETECTED), plus one row per word carrying it ONLY in the verdict.
+# Every description-only row must count 0 under EVERY counter; every
+# verdict-only row must count exactly 1 under its own. Builds nothing, reads
+# no definition, prints no `mech run COMPLETE` trailer.
+if [ "${SELFCHECK_VERDICT_COLUMN:-0}" = "1" ]; then
+    sc_dir="$(mktemp -d "${MECH_SCRATCH:-${TMPDIR:-/tmp}}/vcol-selfcheck.XXXXXX")"
+    results_file="$sc_dir/r"
+    words=("UNEXPECTED" "UNDETECTED" "ANOMALY" "APPLY-FAILED" "BUILD-FAILED" "FATAL" \
+           "SKIPPED-no-oracle" "UNREACHED" "NOW REACHED")
+    : > "$results_file.rows"
+    for w in "${words[@]}"; do
+        printf 'S0\tf.c\tdescription mentions %s only\tsuites\tbits\tDETECTED\n' "$w" \
+            >> "$results_file.rows"
+    done
+    sc_bad=0
+    for w in "${words[@]}"; do
+        n="$(vcount "$w")"
+        [ "$n" = 0 ] || { echo "SELFCHECK FAIL: description-only '$w' counted $n (want 0)"; sc_bad=1; }
+    done
+    : > "$results_file.rows"
+    for w in "${words[@]}"; do
+        printf 'S0\tf.c\tplain description\tsuites\tbits\t%s (verdict)\n' "$w" \
+            >> "$results_file.rows"
+    done
+    for w in "${words[@]}"; do
+        n="$(vcount "$w")"
+        [ "$n" = 1 ] || { echo "SELFCHECK FAIL: verdict-only '$w' counted $n (want 1)"; sc_bad=1; }
+    done
+    rm -rf "$sc_dir"
+    if [ "$sc_bad" -eq 0 ]; then
+        echo "== SELFCHECK_VERDICT_COLUMN OK: ${#words[@]} words, description-only counts 0, verdict-only counts 1 =="
+        exit 0
+    fi
+    exit 1
+fi
 
 # `--help` prints the ROW FIELD LIST rather than only the invocation forms,
 # because the thing a reader opens this script for is almost always "what may
@@ -476,11 +536,13 @@ ONLY="${1:-}"
 case "$ONLY" in
 -h|--help|help)
     cat <<'USAGE'
-usage: bash tests/mech/run_sabotage_matrix.sh [S<id>]
+usage: bash tests/mech/run_sabotage_matrix.sh [S<id> ...]
 
   no argument   run every sabotage under tests/mech/sabotages/
-  S<id>         run just that row (matched at the id boundary: S10 selects
-                S10_*.sh and never S100_*.sh)
+  S<id> [S<id>..]  run just those rows (matched at the id boundary: S10
+                selects S10_*.sh and never S100_*.sh). EVERY id given must
+                match a definition, or the run is FATAL (exit 2): an
+                unknown id is never silently dropped.
 
 env: CC, KEEP=1 (keep scratch trees + logs), MECH_SCRATCH, JOBS, PROCS
      VALIDATE_ONLY=1  source every selected definition, run the FIELD
@@ -501,8 +563,11 @@ A sabotage definition (tests/mech/sabotages/S<NN>_*.sh) sets:
                          cannot falsify a defence-in-depth pair)
     SAB_HARNESS_TARGET   scope the `harness` arm to one .rxt file or dir
     SAB_DOC_FIGURE       the row's own record of what it measured
-    SAB_EXPECT           DETECTED (default) | UNDETECTED | UNREACHED --
-                         checked in BOTH directions, a mismatch exits 1
+    SAB_EXPECT           DETECTED (default) | UNDETECTED | UNREACHED |
+                         BUILD-REFUSED -- checked in BOTH directions, a
+                         mismatch exits 1. BUILD-REFUSED: the sabotage must
+                         make the BUILD fail; failing = DETECTED, building =
+                         UNDETECTED ***UNEXPECTED*** (no suite is run)
     SAB_EXPECT_REASON    REQUIRED when SAB_EXPECT=UNREACHED
 
   [MECH-REACH] THE WITNESS'S REACH -- a row whose detector is a construct
@@ -573,15 +638,29 @@ echo
 # selects `S10_*` and nothing else; `S1` selects nothing, which is right — it
 # is not an id. A prefix selecting a RANGE was never a supported thing to want.
 sab_files=()
+matched_ids=" "
 for f in "$SCRIPT_DIR"/sabotages/S*.sh; do
     [ -e "$f" ] || continue
     base="$(basename "$f")"
-    if [ -n "$ONLY" ] && [[ "$base" != "$ONLY"_* && "$base" != "$ONLY" ]]; then
-        continue
+    if [ "${#IDS[@]}" -gt 0 ]; then
+        hit=""
+        for id in "${IDS[@]}"; do
+            if [[ "$base" == "$id"_* || "$base" == "$id" ]]; then
+                hit=1
+                matched_ids="$matched_ids$id "
+            fi
+        done
+        [ -n "$hit" ] || continue
     fi
     sab_files+=("$f")
 done
 
+for id in ${IDS[@]+"${IDS[@]}"}; do
+    if [[ "$matched_ids" != *" $id "* ]]; then
+        echo "FATAL: requested id '$id' matches no sabotage definition under $SCRIPT_DIR/sabotages/ (every requested id must run; nothing was measured)" >&2
+        exit 2
+    fi
+done
 if [ "${#sab_files[@]}" -eq 0 ]; then
     echo "FATAL: no sabotage definitions matched '${ONLY:-*}' under $SCRIPT_DIR/sabotages/" >&2
     exit 2
@@ -933,9 +1012,9 @@ run_one() {
         # falling back to the default would turn a checked claim back into an
         # unchecked one -- which is the exact failure this field exists to fix.
         case "${SAB_EXPECT:-DETECTED}" in
-            DETECTED|UNDETECTED|UNREACHED) ;;
+            DETECTED|UNDETECTED|UNREACHED|BUILD-REFUSED) ;;
             *)  echo "FATAL[$(basename "$sab_path")]: SAB_EXPECT must be" \
-                     "DETECTED, UNDETECTED or UNREACHED (got '$SAB_EXPECT')" >&2
+                     "DETECTED, UNDETECTED, UNREACHED or BUILD-REFUSED (got '$SAB_EXPECT')" >&2
                 exit 2 ;;
         esac
         # ---- [MECH-REACH] THE REACH FIELDS, VALIDATED BEFORE ANYTHING RUNS --
@@ -1104,9 +1183,11 @@ run_one() {
         # `UNDETECTED`, `ANOMALY`, `APPLY-FAILED`, `BUILD-FAILED`, `FATAL`,
         # `SKIPPED-no-oracle`, `UNREACHED` and `NOW REACHED` as prose for the
         # identical reason -- a ROBUST fix would anchor each `grep -c` on the
-        # verdict column alone (`awk -F'\t' '{print $NF}'` before the grep,
-        # here and at every trailer counter below); not built here, named as
-        # the trigger for whoever next has cause to touch this section (D77).
+        # verdict column alone. [admin1007] BUILT: every trailer counter now
+        # reads the verdict column only (`vcount`/`vrows` at the trailer), so
+        # the prose caution above is no longer load-bearing for the counters;
+        # `SELFCHECK_VERDICT_COLUMN=1` proves it with a fake row per verdict
+        # word. The wording discipline stays harmless and is kept.
         #
         # (i) THE INSTRUMENT REQUIREMENT, first, because an unsatisfiable
         # instrument makes the reach question moot: nothing measurable follows
@@ -1293,8 +1374,27 @@ run_one() {
         fi
 
         if ! make -C "$tree" -j"$JOBS" all CC="$CC" > "$work/build.log" 2>&1; then
+            # [admin1007] SAB_EXPECT=BUILD-REFUSED: the build failing IS the
+            # detection (a sabotage that must be refused at compile/link
+            # time). Any other expectation keeps the ANOMALY reading -- an
+            # unbuildable tree measures nothing.
+            if [ "${SAB_EXPECT:-DETECTED}" = "BUILD-REFUSED" ]; then
+                printf '%s\t%s\t%s\t%s\tbuild-refused\tDETECTED (build refused, EXPECTED -- see %s)\n' \
+                    "$SAB_ID" "$SAB_FILE" "$SAB_DESC" "$SAB_SUITES" "$work/build.log"
+                [ "$KEEP" = "1" ] || rm -rf "$work"
+                exit 0
+            fi
             printf '%s\t%s\t%s\tBUILD-FAILED\t-\tANOMALY (see %s)\n' \
                 "$SAB_ID" "$SAB_FILE" "$SAB_DESC" "$work/build.log"
+            [ "$KEEP" = "1" ] || rm -rf "$work"
+            exit 0
+        fi
+        if [ "${SAB_EXPECT:-DETECTED}" = "BUILD-REFUSED" ]; then
+            # The sabotaged tree BUILT: the refusal this row demands did not
+            # happen, so nothing guards the plant. No suite is run -- the
+            # row's claim is about the build, not the suites.
+            printf '%s\t%s\t%s\t%s\tbuild-ok\t**UNDETECTED -- THE SABOTAGED TREE BUILT (SAB_EXPECT=BUILD-REFUSED wanted a build failure)** ***UNEXPECTED***\n' \
+                "$SAB_ID" "$SAB_FILE" "$SAB_DESC" "$SAB_SUITES"
             [ "$KEEP" = "1" ] || rm -rf "$work"
             exit 0
         fi
@@ -2959,15 +3059,18 @@ echo "== detection matrix =="
 } | column -t -s "$(printf '\t')"
 
 echo
-unexpected="$(grep -c 'UNEXPECTED' "$results_file.rows" || true)"
-undetected="$(grep -c 'UNDETECTED' "$results_file.rows" || true)"
-anomalies="$(grep -c 'ANOMALY\|APPLY-FAILED\|BUILD-FAILED\|FATAL' "$results_file.rows" || true)"
-oracle_skipped="$(grep -c 'SKIPPED-no-oracle' "$results_file.rows" || true)"
+# [admin1007] EVERY counter below reads the VERDICT COLUMN (the last tab
+# field) ONLY, via `vcount`/`vrows` (defined with the argument parsing, where
+# SELFCHECK_VERDICT_COLUMN=1 proves them).
+unexpected="$(vcount 'UNEXPECTED')"
+undetected="$(vcount 'UNDETECTED')"
+anomalies="$(vcount 'ANOMALY|APPLY-FAILED|BUILD-FAILED|FATAL')"
+oracle_skipped="$(vcount 'SKIPPED-no-oracle')"
 # [MECH-REACH] counted BESIDE undetected/anomalies rather than folded into
 # either: an UNREACHED row is neither "the guards saw it" nor "the guards
 # missed it" -- it is "the witness was not there to look", which is a third
 # thing and the one this mechanism exists to make countable.
-unreached="$(grep -c 'UNREACHED\|NOW REACHED' "$results_file.rows" || true)"
+unreached="$(vcount 'UNREACHED|NOW REACHED')"
 total="$(wc -l < "$results_file.rows" | tr -d ' ')"
 
 # The denominator guard: `total` above is derived from the rows that ARRIVED,
@@ -2992,11 +3095,11 @@ if [ "${unexpected:-0}" -gt 0 ]; then
     echo "*** A row reading 'NOW DETECTED' has an EXPIRED claim: some later wave grew the      ***"
     echo "*** population that closes it. Re-MEASURE it, then flip its SAB_EXPECT -- do not     ***"
     echo "*** simply delete the row, and do not leave the stale expectation standing.          ***"
-    grep 'UNEXPECTED' "$results_file.rows" | cut -f1,6 | sed 's/^/    - /'
+    vrows 'UNEXPECTED' | cut -f1,6 | sed 's/^/    - /'
 fi
 if [ "${anomalies:-0}" -gt 0 ]; then
     echo "*** $anomalies sabotage(s) hit an ANOMALY (anchor drift, build failure, or archive failure) and were NOT measured. ***"
-    grep 'ANOMALY\|APPLY-FAILED\|BUILD-FAILED\|FATAL' "$results_file.rows" | cut -f1 | sed 's/^/    - /'
+    vrows 'ANOMALY|APPLY-FAILED|BUILD-FAILED|FATAL' | cut -f1 | sed 's/^/    - /'
 fi
 if [ "${unreached:-0}" -gt 0 ]; then
     echo "*** $unreached row(s) reported UNREACHED: the row's own WITNESS does not reach the      ***"
@@ -3005,14 +3108,14 @@ if [ "${unreached:-0}" -gt 0 ]; then
     echo "*** do not delete the row, and do not read a DETECTED/UNDETECTED verdict off a row      ***"
     echo "*** whose witness has expired. 'NOW REACHED' is the other direction: a row that         ***"
     echo "*** DECLARES its witness dead and was found live. Re-measure, then flip SAB_EXPECT.     ***"
-    grep 'UNREACHED\|NOW REACHED' "$results_file.rows" | cut -f1,5,6 | sed 's/^/    - /'
+    vrows 'UNREACHED|NOW REACHED' | cut -f1,5,6 | sed 's/^/    - /'
 fi
 if [ "${oracle_skipped:-0}" -gt 0 ]; then
     echo "*** $oracle_skipped row(s) ran with an ORACLE-DEPENDENT arm SKIPPED (pc3 and/or       ***"
     echo "*** laexpand): libpcre2-8-0 is absent, so the EXTERNAL oracle contributed nothing to   ***"
     echo "*** those verdicts. Read them accordingly — for the rows whose only external answer is ***"
     echo "*** one of those two, this run did not measure them. The row cell names which arm.     ***"
-    grep 'SKIPPED-no-oracle' "$results_file.rows" | cut -f1 | sed 's/^/    - /'
+    vrows 'SKIPPED-no-oracle' | cut -f1 | sed 's/^/    - /'
 fi
 
 rm -f "$results_file" "$results_file.rows"

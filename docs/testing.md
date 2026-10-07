@@ -1988,6 +1988,14 @@ this direction had no checker.
 | `SAB_REACH_POP` | is the POPULATION still there? `FILE\|EREGEX\|MIN` lines. **The count is printed on every run**, green or red |
 | `SAB_REQUIRE` | can this RUN measure at all? Closed vocabulary (`asan`). Unsatisfiable ⇒ ANOMALY |
 | `SAB_EXPECT=UNREACHED` + `SAB_EXPECT_REASON` | a row that DECLARES its witness dead, and is told (`NOW REACHED`) when it comes back |
+| `SAB_EXPECT=BUILD-REFUSED` | a row whose plant must make the BUILD fail: build fails ⇒ DETECTED, build succeeds ⇒ UNDETECTED `***UNEXPECTED***` (exit 1); no suite runs either way ([admin1007]) |
+
+The runner takes any number of row ids (`run_sabotage_matrix.sh S13 S14 ...`);
+an id that matches no definition is FATAL (exit 2) rather than silently
+dropped. Its trailer counters (`unexpected`/`undetected`/`unreached`/
+`anomalies`/`oracle-skipped`) read the VERDICT COLUMN only, so a row
+description containing a verdict word cannot move them
+(`SELFCHECK_VERDICT_COLUMN=1 bash tests/mech/run_sabotage_matrix.sh` proves it).
 
 A failing reach check is the verdict **`UNREACHED`**: RED in the headline,
 counted in the completion trailer beside `undetected` and `anomalies`, and the

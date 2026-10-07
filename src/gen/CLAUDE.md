@@ -1880,7 +1880,7 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
     Tests: tests/recursion/prefilter.rxt, sabotage row S165.
 
   - **[DD-14.EMPTY] THE ROOT MINIMUM-WIDTH CHECK AND ITS STAMP**
-    (`pcrec_emit_vm`; sabotage row S169). When `pcrec_minw(root)` is at the
+    (`pcrec_emit_vm`; sabotage row S556, born S169). When `pcrec_minw(root)` is at the
     analysis ceiling (`PCREC_MINW_MAX`, 2^40) the emitted `<prefix>_search`
     gains ONE line before it touches a frame: `if ((unsigned long
     long)(subject_length - search_from) < <PREFIX>_VM_ROOT_MINW) return 0;`,

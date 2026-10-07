@@ -149,7 +149,7 @@ wrapper still yields 5pass/1fail, so the full-row run reads DETECTED and
 `CC` reaches the arm at all was proved separately: `CC=/nonexistent-cc` gives
 BUILD-FAILED/ANOMALY.
 
-`SAB_EXPECT` is `DETECTED` (the default when absent), `UNDETECTED`, or —
+`SAB_EXPECT` is `DETECTED` (the default when absent), `UNDETECTED`, `BUILD-REFUSED` (see the table), or —
 since [MECH-REACH], 2026-08-25 — `UNREACHED` (which additionally REQUIRES a
 non-blank `SAB_EXPECT_REASON`; see that section below). The driver scores every
 row against it, the headline reads **`unexpected: N`**, and **a mismatch in any
@@ -172,6 +172,8 @@ The two mismatch directions are BOTH findings and both fail the run:
 |---|---|---|
 | `DETECTED` | UNDETECTED | a guard regressed, or the row's population was never adequate. The original finding, unchanged. |
 | `UNDETECTED` | DETECTED | **`NOW DETECTED`** — the claim EXPIRED: a later wave grew the population that closes the row. Re-measure, then flip the field. |
+| `BUILD-REFUSED` | build fails | DETECTED (`build refused, EXPECTED`) — the plant is meant to be refused at compile/link time; no suite runs ([admin1007], 2026-10-07) |
+| `BUILD-REFUSED` | build succeeds | **UNDETECTED** `***UNEXPECTED***` — nothing refused the plant; exits 1. (Without the declaration a failing build stays the BUILD-FAILED ANOMALY.) |
 
 That second row is deliberately the `known_fail` ratchet's *"now passing"*
 shape: the correct response is a deliberate re-measurement, **never deleting
@@ -1452,8 +1454,9 @@ say so).
   unchanged, so no corpus, differential or byte-identity gate anywhere can
   tell a refused request was silently granted. **MEASURED: `prefilter`
   2 fail / 16 pass** (the two do-or-die refusal checks).
-- **S65** drops `PCREC_NO_PREFILTER`/`PCREC_FORCE_PREFILTER` from
-  `emit_info_def`'s `strategy_denials` mask (src/gen/emit_dfa.c), so the two
+- **S65** adds `PCREC_NO_PREFILTER`/`PCREC_FORCE_PREFILTER` to the `kept`
+  set the derived strategy mask excludes (src/gen/emit_dfa.c `emit_info_def`;
+  re-aimed at K92), so the two
   force-pair bits leak into the emitted `rx_info.flags` literal even though
   the axis changes no match behavior. No correctness check anywhere sees
   this — the .rxt corpus, the vm_oracle sweep and the §3.7 differential all
@@ -1490,8 +1493,9 @@ pass's checks.
   could match, which `run_altdiff.sh`'s per-pattern-character subject sweep
   (D47.6's rule) does by construction. **MEASURED: `altdiff` >0fail** (the
   `b|c`-shaped patterns in `patterns.txt` diverge on the `c`-only subject).
-- **S67** drops `PCREC_NO_ALTCLS_MERGE`/`PCREC_NO_ALTCLS_FACTOR` from
-  `emit_info_def`'s `strategy_denials` mask (src/gen/emit_dfa.c) — the S65
+- **S67** adds `PCREC_NO_ALTCLS_MERGE`/`PCREC_NO_ALTCLS_FACTOR` to the
+  `kept` set the derived strategy mask excludes (src/gen/emit_dfa.c
+  `emit_info_def`; re-aimed at K92) — the S65
   shape one pass over. The two deny bits leak into the emitted
   `rx_info.flags` literal even though the axis changes no match behavior;
   no correctness check anywhere else sees it, because the match behavior
@@ -2133,11 +2137,11 @@ nothing about the guard it names**, and only running it says which one you wrote
 rewrote (`fit.prefilter` now also refuses a call-bearing pattern). It is the
 backref twin of the new **S165**, and both are DETECTED.
 
-## [DD-14 wave E] S169, and S157 closing as DETECTED (20/6)
+## [DD-14 wave E] S556 (born S169), and S157 closing as DETECTED (20/6)
 
 Wave E adds **one** row and flips **one**.
 
-**S169 — `S169_root_minw_unchecked.sh`, the [DD-14.EMPTY] root check.**
+**S556 (born S169; renumbered 2026-10-07 because two rows shared S169, and `S169` is the older `S169_postresolve_pass_deleted.sh`) — `S556_root_minw_unchecked.sh`, the [DD-14.EMPTY] root check.**
 `src/gen/emit_vm.c` stops emitting the search entry's ROOT minimum-width
 comparison, so an empty-language pattern with no quantifier to carry an MRL
 clamp runs until the resume-frame buffer gives up instead of answering NOMATCH.
@@ -2178,7 +2182,7 @@ load-bearing before a possessification can delete anything.
 invocation at `PROCS=4` — **80/80 with `unexpected: 0`, `anomalies: 0`,
 `oracle-skipped: 0`**. Six report `undetected: 1`, and they are exactly the
 six the table above still lists: S150, S151, S152, S153, S160, S164. S157 is
-DETECTED in that run. **S169** is DETECTED at `corpus:2fail/5pass` —
+DETECTED in that run. **S556** (then S169) is DETECTED at `corpus:2fail/5pass` —
 the two-red-one-green signature its own header predicts, arriving from a run
 rather than from reading the row. **S165** is DETECTED at
 `corpus:361fail/50pass, recdiff:18fail/1pass`.
