@@ -592,3 +592,12 @@ pointer when a kit change merges to main.
   INTO when the planner moves into the kit (M5). The default is no R-6;
   a pcrec-side piece is requested only if the design proves it can't
   wait, and then it is marked as migrating.
+- Frank, 2026-10-07 (ROWCON scope): "if there is a general mechanism
+  pcrec can use for its other tables, I'd like to see that rather than a
+  one-off. It might be partially generalized." The design must therefore
+  offer ROWCON's parts (row contract/allowlist gate, decision record,
+  per-row reach floor) as a GENERAL table mechanism that pcrec's
+  first-match tables (dfa_pfs[]/DFA_SELECT, the start table, ...) can
+  adopt, within the kit boundary (the kit links nothing from src/ and
+  stays extractable). The audit gained §7: pcrec's tables, prior
+  unification designs, and boundary implications.
