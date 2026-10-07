@@ -1,4 +1,4 @@
-# memfn wake — kit session hand-off (rewritten 2026-10-06, R4a′ closed, waiting for R-4)
+# memfn wake — kit session hand-off (rewritten 2026-10-07, R4c merged, R4c′ queued, clean reset)
 
 This is the orientation file for the kit session, run as
 `/pcrec-memfn-manager` (`.claude/skills/pcrec-memfn-manager/SKILL.md`;
@@ -15,7 +15,7 @@ the current state, never a history (the history is `journal.md`).
   `responses.md` (you are its only writer; never edit `requests.md`).
 - Your worktree: `worktrees/memfn`. One branch per delivered unit, cut
   from a main that contains the request. The current branch is
-  `lane/memfn-ledger` (see §4). FIRST command: `git -C /Users/fdicostanzo/pcrec/worktrees/memfn
+  `lane/memfn-r4c2` (see §4). FIRST command: `git -C /Users/fdicostanzo/pcrec/worktrees/memfn
   rev-parse --show-toplevel`. Never merge to main, never push, never
   `cd` into another tree.
 - Scope mandate: write only inside your worktree, your lanes' worktrees
@@ -53,50 +53,72 @@ the current state, never a history (the history is `journal.md`).
   by grep, the stamp values, the spec hunk and G1 at both layers, all in
   the SAME commit.
 
-## 4. Current state (2026-10-06, day)
+## 4. Current state (2026-10-07, early morning)
 
-- **Branch:** `lane/memfn-ledger`, cut from main c9c98e98 (which holds
-  everything the kit has delivered), in `worktrees/memfn`. It carries
-  only ledger/wake/journal commits; hand it to main for merge.
-- **Merged to main:** R-1, R-2, R-3 part 1 (R4a), R-3 part 2 (R4a′, abi
-  63, 340d8fef). START-SET stage 3 is abi 64 on top (8148e034). R-3 is
-  CLOSED: its `done:` for R4a′ is in responses.md.
-- **R4a′ verdict (Linux):** 53/53 ran; one check-side red
-  (test-encoding-checks) was fixed on main by lane enctri. The census was
-  CLEAN vs 57db5152.
-- **NEXT REQUEST: R-4 = R4c, the M1 migration.** Main is sequencing it
-  with Frank against main's start-table refactor: both touch
-  emit_dfa.c's offset-skip/PRE sites. **Do NOT start R4c code before R-4
-  appears in requests.md.** Reading integration.md §22 (R4c) and
-  the manifest rows it names is fine meanwhile.
-- **Sabotage ids:** they serialize through main. S510-S529 are USED; the next block is S530-S549 (main, 2026-10-06). Old note:
-  S510-S529; the next free is S518.
-- **Box rule:** a lane's long or multi-section Mac run takes
-  worktrees/.mac-suite.lock (directory + owner file, released on exit);
-  quick single sections don't need it. Linux verdicts go through main's
-  executor.
-- **Owed:**
-  - G2 coverage of the newly refused shapes. A blinded cell runs from
-    the MAIN tree (that code is on main now); never nest a cell;
-  - Q-G2-5 (M3);
-  - C11's FORMS half, UNREACHED until the first form;
-  - main's `--base REF` option for mk_d27_cell.sh, built when a
-    kit-branch-only cell is chartered.
-- **Leftover worktrees:** `memfnstamp` and `memfnbump` were pruned
-  2026-10-06. The nested `worktrees/memfn/worktrees/memfng2` + `-cell`
-  is on Frank's list (raw remove only). `memfnk0r3` is pre-kit and
-  unmerged (ask Frank).
+- **Branch:** `lane/memfn-r4c2` in `worktrees/memfn`, cut from main 81bc13de
+  (R4c merged). Its commits so far are ledger, journal and wake only.
+- **On main:** R-1, R-2, R-3 (R4a, R4a′) and **R-4's R4c** (merge 81bc13de,
+  abi 65). The kit renders the composite PRE site and the offset-skip trio
+  (`memfn/src/ofsskip.c`, `precheck.c`), with ZERO MOVERS. MF_SITE_ABI is 3
+  (Q-G2-18 `on_miss_leaves`). The `-fno-memfn-simd`/`-fmemfn-simd` pair
+  exists and is inert. Edits to the migrated emitters are kit work.
+- **NEXT JOB: R4c′**, the pcrec manager's review fixes. The full list is the
+  responses.md R-4 note of 2026-10-07: items (a)-(g) + nits. None moves a
+  byte. **(a)+(b) gate main's C1 (the start-table fold): do them first.**
+  - (a) re-pin docs/dev/lanes/r4ccore_report.md §3's B1-B18 to line numbers
+    on current main;
+  - (b) add the two missing decision reads (emit_dfa.c:1517 req_run
+    len>=2; ofs_pred_of's need classification :1095-1104);
+  - (c) fail the compile in pcrec_emit_req_byte_check (:1503) when
+    `job->mf_pre` is NULL and the admission says a pre-check is emitted;
+  - (d) an inert-branch plant in `memfn_r4c_i2.py --selftest`;
+  - (e) C11: compile -fmemfn-simd too, or fix libc_census.py's docstring;
+  - (f) replace the EMPTY `tests/memfn/c4_populations/gcc15.2-x86_64-ubuntubudu/m_lahf-lm.txt`
+    with the re-probed `m_sahf.txt` (ready at
+    `worktrees/r4c-lx-results/gccmacros2/m_sahf.txt`, 15.5 KB), and make
+    population loading FAIL on an empty dump;
+  - (g) S524/S525 get the `checks failed: 0` reach line;
+  - nits: S511's header prose; `strategy_denials` naming at lib/pcrec.h:1128
+    and tuning.md §2.43.
+  - Validation: make strict, the touched sections, the solo mech rows (ONE
+    id per matrix call), and the zero-mover gate `python3
+    scripts/emit_sweep.py --ref 81bc13de` judged by
+    `docs/design/memfn/probes/lxrun/memfn_r4c_gate.py`. Then post R4c's
+    `done:`; the draft is `worktrees/r4cscope-scratch/r4c_done_draft.md`
+    (fill in the TIP; add R4c′). Then deliver the branch to main.
+  - Plan: one opus lane. Its worktree `worktrees/r4c2fix` (branch
+    lane/r4c2fix) is already cut from lane/memfn-r4c2 and is EMPTY.
+- **Linux re-runs:** `memfn_r4c.sh` supports STEPS / TESTSECTIONS / MECHROWS /
+  I2ARMS (lxrun/CLAUDE.md). Linux runs go through main's executor.
+- **Sabotage ids:** S510-S529 are USED; the next block is S530-S549
+  (main, 2026-10-06).
+- **Main's backlog from R4c** (main's admin lane, not ours): (a) the
+  matrix should refuse ids after the first; (b) an expected-build-failure
+  verdict; (c) trailer counters on the verdict column only; (d) an
+  emit_sweep default-arm-only composition floor (it would retire the 3
+  I2 declarations).
+- **Owed (kit):** G2 (blinded) coverage of the newly refused shapes and of
+  `on_miss_leaves` at both values; Q-G2-5 (M3).
+- **Leftover worktrees:** `r4clx`, `r4clx2` (merged; prune with
+  scripts/wtprune once >120 min idle); `r4c2fix` (R4c′'s, empty);
+  `r4cscope-scratch` and `r4c-lx-results` (scratch, gitignored; keep until
+  R4c′ delivers). Also the nested memfng2 + cell (Frank's raw-removal
+  list) and `memfnk0r3` (pre-kit, unmerged; ask Frank).
+- **Box rules this session taught:**
+  - run_sabotage_matrix.sh takes ONE id per call;
+  - each mech row is ~10 min of full harness, so many rows go to Linux;
+  - ask main for the Mac suite lock;
+  - a busy in-process lane does not read messages; put rulings in the
+    brief.
 
 ## 5. Next actions
 
-1. Wait for R-4 in requests.md. Ack it on a fresh branch cut from a
-   main that contains it (`git -C worktrees/memfn switch -c
-   lane/memfn-r4c main` once this ledger branch is merged).
-2. Plan R4c's lanes from the request. Each migration step is ZERO-MOVER
-   (pre-migration text is the byte-identity comparator for that step
-   only), under the checked manifest (C17: the migrated sites flip
-   `pending` → `delegated`). Read coding_guide.md and memfn/CLAUDE.md's
-   boundary table first.
-3. Critic and lane briefs: findings go to a scratchpad file and the
-   reply gives the path. Each lane adds its report to
-   `docs/dev/lanes/CLAUDE.md` in the same change.
+1. Wake: create the heartbeat cron (17,47). Read requests.md /
+   responses.md (the R-4 note of 2026-10-07 is the R4c′ list). Check
+   whether main has filed R-5.
+2. Brief the R4c′ opus lane in `worktrees/r4c2fix`, with (a)+(b) FIRST.
+   Merge it into lane/memfn-r4c2 (alone, then make strict). Run the gate
+   vs 81bc13de, post R4c's done:, and deliver.
+3. Then R-5 as main files it. The likely candidate is R4d (the first
+   movers: SWAR fused composite; trigger MET) or M1b/R4g (zero-mover
+   migrations).
