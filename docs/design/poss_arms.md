@@ -1,5 +1,14 @@
 # [ART-POSS-ARMS] — two possessify arms, widened soundly
 
+**REVISION 2.1** (lane `possarms21`, 2026-10-07, from main `abb3db6c`). It
+discharges the re-check of revision 2 (critic R, the "Re-check of rev 2"
+section of `../dev/reviews/2026-10-07-r-poss-arms-panel.md`): rows N1, N2,
+R-3(b), R-4, R-5, R-6, R-7 and R-8. Each edit is marked `[r2.1 <id>]`, and
+§R2.1 tabulates them. **Read §R2.1 first.** R-3(a), the D27-blinded
+composition pass, is a separate author's; this revision leaves its hook
+(`poss_arms_measurements/rev21/run_composition.sh`, §8.8). Revision 2.1's
+evidence is in `poss_arms_measurements/rev21/` (own CLAUDE.md).
+
 **REVISION 2** (lane `possarms2`, 2026-10-07, from main `c2a0c6df`). It applies
 every disposition of the D6 panel
 (`../dev/reviews/2026-10-07-r-poss-arms-panel.md`). Each edit is marked
