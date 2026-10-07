@@ -40,7 +40,9 @@ run by pcrec's make; each writes only under its OUTDIR argument.
   self-check passed, streams 1-4 have 0 movers at their reach floors, and
   the only dump mover is --list-axes adding exactly the two declared
   memfn-simd rows. emit_sweep has no declared-mover input; this keeps an
-  accepted red out of the gate.
+  accepted red out of the gate. `--zero-dumps` (lane r4c2fix) is the form
+  for a REF that already has those rows (R4c′ and later, `--ref 81bc13de`):
+  every stream, dumps and facts included, must read 0 movers.
 - `memfn_r4c_i2.py` — the I2 judge (lane r4clx): one arm's emit_sweep log,
   exit 0 iff every REAL RUN stream reads movers=0 asymmetric=0, no stream
   is dumps, and every other failure line is DECLARED for that arm in its
