@@ -21,9 +21,30 @@ DESIGN ONLY: nothing under `src/` changes on this branch. The plan row is
 and its rank is `docs/dev/optloop/round3_selection.md` 3a-2. The possessify
 design of record is `eng_brep_design.md` §2, and the analysis is
 `src/opt/possessify.c`. Revision 1's evidence is in `poss_arms_measurements/`;
-revision 2's is in `poss_arms_measurements/rev2/`. Each has its own CLAUDE.md.
+revision 2's is in `poss_arms_measurements/rev2/`, and revision 2.1's in
+`poss_arms_measurements/rev21/`. Each has its own CLAUDE.md.
 
 **Headline.**
+
+- `[r2.1]` **Rev 2's prototype MISCOMPILED with A0 and B together (N1),
+  and that is fixed.** Arm B read a captured group's FIRST with
+  `first_of`, which answers "the next character at a position". A0 makes
+  that answer a NARROW, non-nullable set for a zero-width gate. A text never
+  contains a gate, so arm B now uses `TEXT_FIRST`, in which a zero-width item
+  is (∅, nullable) (§3.1). The three 10.46 witnesses answer (0,3).
+- `[r2.1]` **Greedy-only is LOAD-BEARING (N2), not declared-conservative.**
+  A lazy loop whose continuation can END through an empty bypass stops at its
+  lowest exit, and A1 bypasses row 2's `may_end` (§2.3). The lazy plant is
+  now a sabotage row.
+- `[r2.1]` **Both arms' folds were QUADRATIC, and both are now linear
+  (R-4).** Arm B's is one capture fact per group number, where in progress
+  means widen. A1's is a continuation summary that does not depend on `Q`,
+  found by this revision. The witnesses and the build-bar cells are in §8.7.
+- `[r2.1]` **The predicate is FROZEN by sha1** (§8.3a). CLAIM-vs-MARK reads
+  per-quantifier marks and pins the UCP refusals. A1's continuation must
+  equal the walk's FOLLOW, as a build-time check (§8.7). The
+  backreference-stays-VM tripwire is designed (§8.7). The blinded
+  composition pass has its hook (§8.8).
 
 - **Arm A** (a context gate in the follow) is **SOUND as restated, and with
   one more conjunct than revision 1 had.** A1 recomputes the loop's
@@ -48,8 +69,10 @@ revision 2's is in `poss_arms_measurements/rev2/`. Each has its own CLAUDE.md.
     the A-F1 and termination plants.
   - CLAIM-vs-MARK agrees on every compared row and detects every plant
     without a subject.
-  - Every ablated conjunct has a diverging control. The exception is
-    greedy-only, which the ablation shows is NOT load-bearing (§8.4).
+  - Every ablated conjunct has a diverging control. ~~The exception is
+    greedy-only, which the ablation shows is NOT load-bearing (§8.4).~~
+    `[r2.1 N2]` Greedy-only included, once the family has a nullable
+    follow (§8.4).
   - `[r2 B-B1, B-B2, B-B3]`
 - **The give-up surface does NOT move one way.** Re-measured on ONE
   committed subject: the minimum work budget goes 394 denied → 1,199 with
@@ -1377,11 +1400,15 @@ Revision 1's questions as ruled (`../dev/reviews/2026-10-07-r-poss-arms-panel.md
 
 **Open questions for the re-check critic:**
 
-- **RC-Q1. A1 for lazy loops?** The ablation measures greedy-only as not
+- `[r2.1 N2]` **RC-Q1 is ANSWERED: NO.** Critic R measured greedy-only as
+  load-bearing, with witness `(\w+?(?:\b|))` on `ab`. A1 stays greedy-only.
+  A sound lazy form would need a second row (§2.3), and it is not built.
+  Revision 2's question follows, struck.
+- ~~**RC-Q1. A1 for lazy loops?** The ablation measures greedy-only as not
   load-bearing: 1,134 newly claimed lazy rows, 0 diverging at ML=4; the lazy plant passes the exhaustive possdiff (79 agree). Revision 2 KEEPS the conjunct, declared
   conservative. Should it instead be dropped, so that A1 feeds row 3 for
   lazy loops under the existing row-2 conjunct? That would be a wider claim
-  set with its own CLAIM-vs-MARK population.
+  set with its own CLAIM-vs-MARK population.~~
 - **RC-Q2. ENCL ungated** is load-bearing on bypass shapes (3 of 4 `H`
   rows diverge) and merely conservative where the gate heads the in-body
   continuation (2,268 rows, 0 diverging) (§2.3, §8.4). It stays ungated.
