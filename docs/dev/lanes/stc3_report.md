@@ -64,7 +64,51 @@ see §3/§5 (filled from the heavy chain, `build/c3/chain.log`).
 
 ## 2. The readers switched (file:line on the tip)
 
-OWED: filled at hand-off from `grep -n` on the tip.
+All in `src/gen/emit_dfa.c`, line numbers at the tip (`grep -n`).
+
+**The walks onto `cand_select`** (C3's `def` lines):
+
+| reader | line | slot / route |
+|---|---|---|
+| `dfa_pf_of` | 6736 (walk 6740) | NEXT / `cand_route_of` (DFA) |
+| `pf_scan_set_of` | 6751 (CandSel 6755) | NEXT row's `u.pf.scan_set`, route `cand_route_of` |
+| `vm_start_row` | 6768 (walk 6772) | NEXT / VM |
+| `pcrec_dfa_scan_state_written` | 7274 (walk 7283) | NEXT / `cand_route_of` |
+| `dfa_form_derive` | 8797 (walk 8821) | NEXT / `cand_route_of` |
+| `dfa_search_start_of` | 7749 (walk 7753) | RECOVER / `cand_route_of` |
+| `dfa_search_start_name` | 7761 | `->tok` |
+| `dfa_search_is_pinned` | 7767 | `->u.recover.pinned` |
+| `attempt_next_of` (new) | 4135 (walk 4139) | NEXT / ATTEMPT |
+
+**N12's four readers on `attempt_next_of`**: `dfa_cand_scan` 6884,
+`emit_attempt` 9778, `pcrec_emit_prologue` 10457, `dfa_prefilter_name` 10877.
+
+**The `job->engine` tests on `cand_route_of`** (defined at 3460): 
+`dfa_engine_is_empty` 4366 + 4369 (the C1 trace guard and the test),
+`dfa_table_name` 4402, `dfa_scan_edge_name` 4474, `dfa_uniform_folds` 4535,
+`pf_dfa_start_set` 6537 (S490's anchor), `dfa_cand_scan` 6879,
+`pcrec_dfa_cand_ppm` 6930, `pcrec_dfa_scan_state_written` 7276,
+`start_pinned_applies` 7717, `pcrec_emit_prologue` 10455-10456,
+`pcrec_emit_dfa_engine` 10736-10737 (the dispatch and its ROUTE record),
+`dfa_scan_name` 10848, `dfa_prefilter_name` 10868, `dfa_prefilter_offsets`
+10949. Left: `req_route_one_attempt`'s `return cx->job->engine ==
+PCREC_ENG_ATTEMPT &&` (C5b, §4 item 6). `grep -n "job->engine"
+src/gen/emit_dfa.c` now reads that line, `cand_route_of`'s body and one
+`st->engine` stamp (unrelated).
+
+**The `--list-axes` projection**: `cand_axis_rows` 8385, called by
+`pcrec_dfa_axis_prefilter_cands` and `pcrec_dfa_axis_searchstart_cands`.
+
+**Outside `src/`** (`reader_grep.sh`'s C3 identifiers): `docs/spec/registry.md`
+(the BOUNDARY paragraph), `docs/spec/match_api.md` (two abi-history entries),
+`docs/spec/tuning.md` (§2.27), `lib/CLAUDE.md`, `tests/codegen/CLAUDE.md`,
+`tests/mech/CLAUDE.md`, `tests/mech/run_sabotage_matrix.sh` (the `candrows`
+arm comment), `tests/codegen/run_cand_rows.sh`, `tests/codegen/run_cand_oracle.sh`,
+`tests/codegen/cand_rows_check.py`, the `Makefile` comment, and the five
+re-aimed sabotage rows. Not edited: `memfn/docs/requests.md` (the kit
+session's single-writer ledger), `studies/`, `tools/review/out/` (generated
+censuses), and the C4/C5 identifiers' readers (`req_admit`,
+`pcrec_reseed_rows`), which move with their own commits.
 
 ## 3. Identity gate
 
