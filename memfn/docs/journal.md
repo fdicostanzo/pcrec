@@ -792,3 +792,9 @@ pointer when a kit change merges to main.
   site's name is site.pred.fn_ref for every op; fn_ref 0 on FUNC is
   refused under N3), and g2u2 (sonnet, blinded) aligned the poison table.
   Full G2 in main's slot: 138,742,037/0. S526 DETECTED. done: posted.
+- G2u merged to main (038ed335). N3 started: kit branch lane/memfn-n3 from
+  main; opus lane n3 in worktrees/n3 (enforce at both phases; F1/miss/K-1
+  fn_ref/refusal naming; the ofsskip K96 ad hoc checks replaced by the
+  gate). Authoring only. The census, identity gate, full G2 (strict) and
+  make test happen in a slot after R-6 lands on main. STOP rule: any pcrec
+  site other than the N2 cells that would be refused.
