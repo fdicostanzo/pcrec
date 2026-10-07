@@ -260,3 +260,15 @@ the compiler, and is never adopted silently. Proposed for main to file
   the solo mech rows, and the zero-mover gate vs the new main. R4c's
   `done:` follows R4c′ (its draft is in
   `worktrees/r4cscope-scratch/r4c_done_draft.md`).
+
+## R-5 — M1b, runcmp migrates, zero movers (after R4c′)
+
+- ack: 2026-10-07 — queued behind R4c′ (lane r4c2fix, in flight on
+  `lane/memfn-r4c2`). Once main merges R4c′, M1b gets its own branch,
+  `lane/memfn-m1b`, cut from that main. Plan: (0) a read-only scoping
+  pass maps runcmp's emitters, bit 43's crossing (§14.10), `RUN_WORDS`
+  as a kit stamp, the mech rows anchored there, and any start-decision
+  read (if one exists we STOP and name it, per R-4's boundary rule);
+  (1) one opus build lane does implement-then-replace. Sabotage ids:
+  S566+ (main, 2026-10-07); the exact block is confirmed with main
+  before the build lane is briefed.
