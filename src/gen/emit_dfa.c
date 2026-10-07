@@ -303,10 +303,15 @@ static bool dfa_search_is_pinned(Ctx *cx);
  * walks (if `_PRE` did not) and aborts unless the walk chose what the old
  * decision did. The `_IN` pair is for an INLINE decision, which has no
  * `DfaSel` of its own; `site` must be a string literal, as the trace's.
- * `CAND_ORACLE_ROUTE` holds `cand_route_of` to the body dispatch's route. */
-#ifdef PCREC_CAND_TRACE
-struct CandSel;
+ * `CAND_HIT` (C3) is the hit counter alone, at a reader whose slot's old
+ * walk is gone. */
 typedef struct CandRow CandRow;
+struct CandSel;
+/* [START-TABLE] C3 THE WALK over `cand_rows[]` (defined beside the table,
+ * far below), forward-declared because its NEXT and RECOVER readers sit
+ * above it. */
+static const CandRow *cand_select(CandSlot slot, const struct CandSel *s, uint64_t flags);
+#ifdef PCREC_CAND_TRACE
 static const CandRow *cand_oracle_pre(CandSlot slot, const struct CandSel *s);
 static void cand_oracle_post(const CandRow *pre, CandSlot slot, const struct CandSel *s,
                              const void *old_row, const char *old_tok,
@@ -325,16 +330,16 @@ static void cand_oracle_post_in(const CandRow *pre, CandSlot slot, Ctx *cx, int 
 #define CAND_ORACLE_POST_IN(var, slot, cx, route, d, old_tok, site, every)    \
     cand_oracle_post_in((var), (slot), (cx), (route), (d), NULL, (old_tok),   \
                         "" site, (every))
-static void cand_oracle_route(Ctx *cx, const char *old_tok, const char *site);
-#define CAND_ORACLE_ROUTE(cx, old_tok, site)                                  \
-    cand_oracle_route((cx), (old_tok), "" site)
+static void cand_hit(CandSlot slot, const struct CandSel *s, const CandRow *r,
+                     const char *site);
+#define CAND_HIT(slot, sel, row, site) cand_hit((slot), (sel), (row), "" site)
 #else
 #define CAND_ORACLE_PRE(var, slot, sel) ((void)0)
 #define CAND_ORACLE_POST(var, slot, sel, old_row, old_tok, site) ((void)sizeof("" site))
 #define CAND_ORACLE_PRE_IN(var, slot, cx, route, d) ((void)0)
 #define CAND_ORACLE_POST_IN(var, slot, cx, route, d, old_tok, site, every)    \
     ((void)sizeof("" site))
-#define CAND_ORACLE_ROUTE(cx, old_tok, site) ((void)sizeof("" site))
+#define CAND_HIT(slot, sel, row, site) ((void)sizeof("" site))
 #endif
 
 /* [OPT-PRECHECK-ADMIT] WHY THIS ARTIFACT DOES OR DOES NOT CARRY A
@@ -3425,6 +3430,10 @@ typedef struct CandSel {
     /* [START-TABLE] C2 the `Vm` fields a VM-route row reads (H1, R1, R2, R4),
      * or NULL: the VM emitter is the one caller that holds them. */
     const CandVmFacts *vm;
+    /* [START-TABLE] C3 where N12's predicate leaves the ENG_ATTEMPT candidate
+     * set (`attempt_cand`'s output) for the reader that emits or prices the
+     * skip, or NULL where the reader needs only the row. */
+    struct CandSet *cand;
 } CandSel;
 /* [START-TABLE] C2 the selection value is the start table's `CandSel`
  * (start_table.md §1.1); every axis written before it keeps the old name. */
@@ -3440,6 +3449,18 @@ typedef CandSel DfaSel;
  * which only `cand_rows[]` names until C3 moves N12's readers. */
 #define CAND_ROUTE_NAME(r) ((r) == CAND_ROUTE_VM ? "vm"                     \
                             : (r) == CAND_ROUTE_ATTEMPT ? "attempt" : "dfa")
+
+/* THE ONE ROUTE DERIVATION (start_table.md §2.3 item 3): the route of a
+ * DFA-shaped body is the engine of the machine it runs — `CAND_ROUTE_ATTEMPT`
+ * for ENG_ATTEMPT (every pattern with a BOT, the VM hybrid's inlined
+ * prefilter included), `CAND_ROUTE_DFA` otherwise — never `fit.chosen`.
+ * Since C3 every `job->engine` test that chooses between the two bodies reads
+ * this one function (`req_route_one_attempt`'s, which C5b turns into a BOUND
+ * read, is the one left). */
+static CandRoute cand_route_of(Ctx *cx)
+{
+    return cx->job->engine == PCREC_ENG_ATTEMPT ? CAND_ROUTE_ATTEMPT : CAND_ROUTE_DFA;
+}
 
 typedef struct DfaCand {
     const char *name;         /* the stamp value, where this axis has a stamp */
@@ -3996,7 +4017,7 @@ static void emit_seed_table(StrBuf *c, const char *p, const char *tag,
  * positions whose OWN byte is in the set; `(?m)^`'s are positions whose
  * PREDECESSOR is (a line start is the byte after a newline), so the candidate
  * is the found offset plus one. That is a field, not a fork. */
-typedef struct {
+typedef struct CandSet {
     uint8_t set[256];   /* the candidate byte values */
     int     count;      /* how many */
     int     byte;       /* the single value when count == 1 */
@@ -4075,15 +4096,12 @@ static void cand_emit_table(StrBuf *c, const char *p, const char *tag,
  * artifact would end up calling `memchr` without declaring it. */
 static bool attempt_cand(const Dfa *d, CandSet *cs)
 {
-    CAND_ORACLE_PRE_IN(ck, CAND_SLOT_NEXT, NULL, CAND_ROUTE_ATTEMPT, d);
     /* A fully-anchored pattern already runs ONE attempt (`start_max` is the
      * literal 0), so there is nothing between attempts to skip. */
     bool anchored = true;
     for (int u = 0; u < d->natoms; u++) if (d->s1u[u] >= 0) anchored = false;
     if (d->n == 0 || anchored) {
         PCREC_CAND_TRACE_REC("NEXT", "attempt", "none", "attempt-cand");
-        CAND_ORACLE_POST_IN(ck, CAND_SLOT_NEXT, NULL, CAND_ROUTE_ATTEMPT, d, "none",
-                            "attempt-cand", false);
         return false;
     }
     cand_from_live_seeds(cs, d);
@@ -4106,9 +4124,21 @@ static bool attempt_cand(const Dfa *d, CandSet *cs)
      * and a different bound, and D63 gates it on its own measurement. */
     bool pred = cs->usable && cs->use_memchr;
     PCREC_CAND_TRACE_REC("NEXT", "attempt", pred ? "pred-memchr" : "none", "attempt-cand");
-    CAND_ORACLE_POST_IN(ck, CAND_SLOT_NEXT, NULL, CAND_ROUTE_ATTEMPT, d,
-                        pred ? "pred-memchr" : "none", "attempt-cand", false);
     return pred;
+}
+
+/* [START-TABLE] C3 THE ENG_ATTEMPT ROUTE's NEXT selection, for N12's four
+ * readers (the loop, G1's single-byte dominance, the `<string.h>` decision
+ * and the prefilter stamp): `cand_select(NEXT)` on `CAND_ROUTE_ATTEMPT`,
+ * where `pred-memchr` (whose predicate IS `attempt_cand`, leaving the
+ * candidate set in `*cs`) and `next-none` are the two rows routed. */
+static const CandRow *attempt_next_of(Ctx *cx, CandSet *cs)
+{
+    CandSel s = { .cx = cx, .d = &cx->job->dfa, .us = NULL, .forward = true, .st = -1,
+                  .route = CAND_ROUTE_ATTEMPT, .cand = cs };
+    const CandRow *r = cand_select(CAND_SLOT_NEXT, &s, cx->opt->flags);
+    CAND_HIT(CAND_SLOT_NEXT, &s, r, "attempt-next");
+    return r;
 }
 
 /* ---- [DD-13] THE UNANCHORED ENGINE'S START ANALYSIS: one derivation -------
@@ -4333,10 +4363,10 @@ static void unanch_start(Ctx *cx, UnanchStart *o)
  * makes the twice-per-artifact call unremarkable. */
 static bool dfa_engine_is_empty(Ctx *cx)
 {
-    if (cx->job->engine == PCREC_ENG_ATTEMPT)
+    if (cand_route_of(cx) == CAND_ROUTE_ATTEMPT)
         PCREC_CAND_TRACE_REC("ROUTE", "attempt", cx->job->dfa.n == 0 ? "empty" : "live",
                              "engine-empty");
-    if (cx->job->engine == PCREC_ENG_ATTEMPT) return cx->job->dfa.n == 0;
+    if (cand_route_of(cx) == CAND_ROUTE_ATTEMPT) return cx->job->dfa.n == 0;
     UnanchStart us;
     unanch_start(cx, &us);
     PCREC_CAND_TRACE_REC("ROUTE", "dfa", us.empty ? "empty" : "live", "engine-empty");
@@ -4369,7 +4399,7 @@ static bool dfa_engine_is_empty(Ctx *cx)
 static const char *dfa_table_name(Ctx *cx)
 {
     if (dfa_engine_is_empty(cx)) return "none";
-    if (cx->job->engine == PCREC_ENG_ATTEMPT) return "none";
+    if (cand_route_of(cx) == CAND_ROUTE_ATTEMPT) return "none";
     /* [ENG-FORM] THE STAMP IS THE CHOSEN OBJECT'S NAME. It is not a second
      * reading of the predicate that chose it — it is the same pointer the
      * loop was emitted through, so "one derivation, three readers" is
@@ -4441,7 +4471,7 @@ static const char *scan_edge_of(Ctx *cx, const Dfa *d, const char *so_far)
 static const char *dfa_scan_edge_name(Ctx *cx)
 {
     if (dfa_engine_is_empty(cx)) return "none";
-    if (cx->job->engine == PCREC_ENG_ATTEMPT) return "none";
+    if (cand_route_of(cx) == CAND_ROUTE_ATTEMPT) return "none";
     const char *v = scan_edge_of(cx, &cx->job->dfa, "none");
     /* [OPT-5 STEP 2] The reverse machine drops out of this fold on a pinned
      * artifact, for `dfa_table_name`'s reason exactly — and it MATTERS more
@@ -4502,7 +4532,7 @@ static int dfa_uniform_folds(Ctx *cx)
      * no numeric transition table and no scalar accept table to fold — the
      * same two exclusions `dfa_table_name` opens with, for the same reason. */
     if (dfa_engine_is_empty(cx)) return 0;
-    if (cx->job->engine == PCREC_ENG_ATTEMPT) return 0;
+    if (cand_route_of(cx) == CAND_ROUTE_ATTEMPT) return 0;
     int n = uniform_folds_of(cx, &cx->job->dfa);
     if (!dfa_search_is_pinned(cx)) n += uniform_folds_of(cx, &cx->job->rdfa);
     if (dfa_match_is_unwrapped(cx)) n += uniform_folds_of(cx, &cx->job->adfa);
@@ -4886,8 +4916,11 @@ typedef enum {
     PF_SCAN_SET         /* a `can_begin_match` membership table */
 } PfScan;
 
-typedef struct DfaPf {
-    DfaCand c;
+/* [START-TABLE] C3 THE NEXT SLOT's PAYLOAD, `CandRow.u.pf` (start_table.md
+ * §1.1; D148 Q2's rename of `DfaPf`): the emit hooks and properties a NEXT
+ * row carries. The identity, deny bits, predicate and route mask are the
+ * row's own (`CandRow.c`, `.routes`), shared with every other slot. */
+typedef struct CandPf {
     /* [OPT-K] `bool table` became a METHOD when the offset-k forms landed, and
      * that is the object owning what it emits rather than the assembly asking
      * a boolean. The byte-class forms emit `can_begin_match` and nothing else,
@@ -4944,10 +4977,6 @@ typedef struct DfaPf {
      * structural check `tests/codegen/run_cand_rows.sh` fails on any `strcmp`
      * on a row name. */
     PfScan scan;
-    /* [START-SET] (D148) THE ROUTES THIS ROW SERVES, `CAND_ON` bits; 0 is the
-     * legacy DFA-only row. `dfa_select` tests it before `applies`. Stage 2:
-     * `first-class` serves the VM route alone and `none` serves both. */
-    unsigned routes;
     /* [START-SET] THE VM HAT's emitter for a row whose mask includes
      * `CAND_ROUTE_VM`, writing at indent `ind` in `<p>_search_run`: the
      * seek before the first attempt (`entry`, which also declares the row's
@@ -4964,7 +4993,55 @@ typedef struct DfaPf {
      * scan that tests `T`. It is the row's predicate core itself (true where
      * the row applies), so the set and the admission are ONE derivation. */
     bool  (*scan_set)(const DfaSel *s, CandSet *out);
-} DfaPf;
+} CandPf;
+
+/* [START-TABLE] C3 THE RECOVER SLOT's PAYLOAD, `CandRow.u.recover`: whether
+ * the row elides the reverse pass. `dfa_search_is_pinned`'s readers test
+ * this PROPERTY, never which row was chosen ([r2 sound-m2]). */
+typedef struct CandRecover {
+    bool pinned;
+} CandRecover;
+
+/* A row's `--list-axes` projection on ONE route (§1.1 `list[route]`): the
+ * axis, the row's order within it and its listed name; `axis` NULL where the
+ * row has no listing on that route. An axis that does not depend on the
+ * route is listed once, on the first route it is asked on. */
+typedef struct CandList {
+    const char *axis;
+    int         order;
+    const char *name;
+} CandList;
+
+/* ONE ROW of the start table (§1.1), `cand_rows[]` (far below). `c.name` is
+ * the row's IDENTITY, unique across `cand_rows[]` (the self-check holds it),
+ * and is what a check keys on; `tok` is the spelling the code uses for the
+ * row TODAY — its old table's name, or for an inline decision the C1 trace
+ * record's row field — which the trace prints, the stamps project and the
+ * oracle compares, so four rows named `none` and two each of
+ * `anchored`/`gstart` keep one identity apiece. Defined here, above the
+ * emitters, because the forms read a NEXT row's payload through `DfaForm.pf`.
+ * `u` is the slot's payload: C3 moved NEXT's (`u.pf`, was `DfaPf`) and
+ * RECOVER's (`u.recover`) in; C4-C5 move the others' as they delete their
+ * tables. */
+struct CandRow {
+    DfaCand        c;          /* identity, deny bits, predicate */
+    CandSlot       slot;       /* the question this row answers */
+    unsigned       routes;     /* CAND_ON(route) mask, written on every row */
+    const char    *tok;        /* today's spelling (trace, stamp, old table) */
+    unsigned char  map;        /* CM_* */
+    unsigned char  giveup;     /* CG_* */
+    unsigned       hands;      /* CT_* handed to the slot's successors */
+    CandList       list[3];    /* indexed by CandRoute */
+    union {
+        CandPf      pf;        /* NEXT */
+        CandRecover recover;   /* RECOVER */
+    } u;
+    /* THE ORACLE's link to today's table row this row restates, compared by
+     * POINTER; NULL for an inline decision and for the slots whose old table
+     * is gone (NEXT and RECOVER since C3). Deleted with the last old table
+     * (C5). */
+    const void    *was;
+};
 
 /* AXIS C — VIEW HANDLING. `emit_view_select`'s three branches, plus the
  * "not called at all" case that used to be an `if (viewsel)` at each of the
@@ -5080,7 +5157,7 @@ struct DfaForm {
     const char    *p;              /* the artifact prefix */
     const DfaDir  *dir;
     const DfaRepr *repr;
-    const DfaPf   *pf;
+    const CandRow *pf;
     const DfaView *view;
     const DfaSeed *seed;
     const DfaAcc  *acc;
@@ -5123,18 +5200,6 @@ struct DfaForm {
     uint32_t       ofs_site;
 };
 
-/* [START-SET] (D148, checks-F6) Does the row at `row` serve `route`? A list
- * with no mask field (`routes_at == CAND_UNROUTED`) is DFA-only on every row;
- * otherwise the row's mask is read at `routes_at`, 0 meaning DFA-only. The
- * walk asks this BEFORE `applies`, so the table's "never" cells are data. */
-#define CAND_UNROUTED ((size_t)-1)
-static bool cand_routed(const char *row, size_t routes_at, int route)
-{
-    unsigned m = 0;
-    if (routes_at != CAND_UNROUTED) memcpy(&m, row + routes_at, sizeof m);
-    return ((m ? m : CAND_ON(CAND_ROUTE_DFA)) & CAND_ON(route)) != 0;
-}
-
 /* THE SELECTION WALK, written ONCE for all six axes. Every object struct
  * begins with a `DfaCand`, so the address of the i'th entry of any of the
  * lists is the address of a `DfaCand` — no punning, just the first member.
@@ -5145,25 +5210,22 @@ static bool cand_routed(const char *row, size_t routes_at, int route)
  * removes. A missing fallback would crash here rather than emit a machine
  * with a hole in it. */
 static const void *dfa_select(const void *list, size_t n, size_t sz,
-                              size_t routes_at, const DfaSel *s, uint64_t flags)
+                              const DfaSel *s, uint64_t flags)
 {
     const char *base = (const char *)list;
     for (size_t i = 0; i < n; i++) {
         const DfaCand *cand = (const DfaCand *)(const void *)(base + i * sz);
         if (cand->deny & flags) continue;
-        if (!cand_routed(base + i * sz, routes_at, s->route)) continue;
         if (cand->applies(s)) return (const void *)(base + i * sz);
     }
     return NULL;
 }
+/* [START-TABLE] C3 the start decisions left this walk for `cand_select`
+ * (NEXT and RECOVER at C3), and with them the route mask: every list it
+ * still walks is a machine-form axis with no route. */
 #define DFA_SELECT(T, list, sel, flags)                                       \
     ((const T *)dfa_select((list), sizeof(list) / sizeof((list)[0]),          \
-                           sizeof((list)[0]), CAND_UNROUTED, (sel), (flags)))
-/* [START-SET] the walk over a list whose rows carry a `routes` mask (today
- * `dfa_pfs[]` alone). */
-#define DFA_SELECT_ROUTED(T, list, sel, flags)                                \
-    ((const T *)dfa_select((list), sizeof(list) / sizeof((list)[0]),          \
-                           sizeof((list)[0]), offsetof(T, routes), (sel), (flags)))
+                           sizeof((list)[0]), (sel), (flags)))
 
 /* The total fallback every candidate list ends with. `dfa_select` returning
  * NULL is unreachable BECAUSE of these: a list missing one would crash the
@@ -5864,8 +5926,8 @@ void pcrec_emit_find(StrBuf *c, const char *ind, const PcrecFind *f)
 static void pf_emit_find(StrBuf *c, const DfaForm *f, const char *ind, int holdback)
 {
     PcrecFind fd = { .p = f->p,
-                     .table = f->pf->scan == PF_SCAN_BYTE ? NULL
-                            : f->pf->scan_set ? "start_bytes" : "can_begin_match",
+                     .table = f->pf->u.pf.scan == PF_SCAN_BYTE ? NULL
+                            : f->pf->u.pf.scan_set ? "start_bytes" : "can_begin_match",
                      .byte = f->cand.byte, .pos = "scan_position",
                      .subject = "subject", .len = "subject_length",
                      .holdback = holdback };
@@ -6067,14 +6129,14 @@ static void ofs_test_model(const UnanchStart *us, OfsTest *t)
 
 /* Fills `*t` with the candidate test row `pf` emits over `us`'s selection;
  * false, with `*t` zeroed, for a row that emits no `<p>_ofsskip` block. */
-static bool ofs_test_of(Ctx *cx, const UnanchStart *us, const DfaPf *pf,
+static bool ofs_test_of(Ctx *cx, const UnanchStart *us, const CandRow *pf,
                         OfsTest *t)
 {
     const PrefixKSets *o = &us->ofsk;
     const ReqRun *r = pcrec_fact_req_run(cx);
     memset(t, 0, sizeof *t);
-    if (pf->emit_block == NULL) return false;
-    if (!pf->run_term) { ofs_test_model(us, t); return true; }
+    if (pf->u.pf.emit_block == NULL) return false;
+    if (!pf->u.pf.run_term) { ofs_test_model(us, t); return true; }
 
     /* THE RUN ROWS. The scan is the run's own scan member at its pinned
      * offset; the terms are every model-selected offset OUTSIDE the run,
@@ -6471,7 +6533,7 @@ static bool pf_dfa_start_set(const DfaSel *s, CandSet *t)
     int nt = 0;
     bool proper = false;
     if (!s->forward || !ss || u->kind == DFA_PF_NONE) return false;
-    if (s->cx->job->engine != PCREC_ENG_UNANCH) return false;
+    if (cand_route_of(s->cx) != CAND_ROUTE_DFA) return false;
     if (!dfa_needs_seed(s->d)) return false;
     if (ss->nullable) return false;
     for (int b = 0; b < 256; b++) nt += ss_has(ss, b);
@@ -6664,68 +6726,19 @@ static void pf_vm_emit_first_class(StrBuf *c, const DfaSel *s, const char *p,
     pcrec_sb_printf(c, "%sif (attempt_position >= subject_length) return 0;\n", ind);
 }
 
-/* Designated initializers ([K84], stage 0 of docs/design/startset.md §8): a
- * field a row omits is its zero value — no table, no block, no re-seed, no
- * run term — and `scan` is named on every row, so a reader of the property
- * never has to fall back to the NAME. See the fields' own notes.
- *
- * [OPT-LITSCAN] S1 THE RUN-PINNED PAIR IS AT THE HEAD, bounded before
- * unbounded, and the head is the one position that serves both of its
- * classes: an artifact with no model selection (it would otherwise take
- * `memchr[-bounded]`) and one whose model selection scans the run's own
- * member (it would otherwise take `offset-set[-bounded]`). The walk is
- * first-match and a non-applying or denied row is transparent, so prepending
- * moves no artifact the predicate rejects. `reseeds` is `true` because the
- * emitters ARE `pf_emit_ofs[_bounded]`. Either deny bit removes the pair
- * (lib/pcrec.h, `PCREC_NO_RUN_PREFILTER`). */
-static const DfaPf dfa_pfs[] = {
-    { .c = { "run-pinned-bounded",  PCREC_NO_OFFSET_SKIP | PCREC_NO_RUN_PREFILTER, pf_run_bounded_applies },
-      .emit_tables = pf_tables_ofs,  .emit_block = pf_block_ofs, .emit = pf_emit_ofs_bounded,
-      .reseeds = true,  .run_term = true,  .scan = PF_SCAN_OFS  },
-    { .c = { "run-pinned",          PCREC_NO_OFFSET_SKIP | PCREC_NO_RUN_PREFILTER, pf_run_applies         },
-      .emit_tables = pf_tables_ofs,  .emit_block = pf_block_ofs, .emit = pf_emit_ofs,
-      .reseeds = true,  .run_term = true,  .scan = PF_SCAN_OFS  },
-    { .c = { "offset-set-bounded",  PCREC_NO_OFFSET_SKIP, pf_ofs_bounded_applies },
-      .emit_tables = pf_tables_ofs,  .emit_block = pf_block_ofs, .emit = pf_emit_ofs_bounded,
-      .reseeds = true,  .run_term = false, .scan = PF_SCAN_OFS  },
-    { .c = { "offset-set",          PCREC_NO_OFFSET_SKIP, pf_ofs_applies         },
-      .emit_tables = pf_tables_ofs,  .emit_block = pf_block_ofs, .emit = pf_emit_ofs,
-      .reseeds = true,  .run_term = false, .scan = PF_SCAN_OFS  },
-    /* [START-SET] stage 3: the DFA hat, `-bounded` only (see its section). */
-    { .c = { "first-memchr-bounded", PCREC_NO_START_SET, pf_first_memchr_bounded_applies },
-      .emit = pf_emit_first_memchr_bounded, .reseeds = true, .scan = PF_SCAN_BYTE,
-      .scan_set = pf_dfa_start_set },
-    { .c = { "first-class-bounded",  PCREC_NO_START_SET, pf_first_class_bounded_applies },
-      .emit_tables = pf_tables_first, .emit = pf_emit_first_class_bounded,
-      .reseeds = true, .scan = PF_SCAN_SET, .scan_set = pf_dfa_start_set },
-    /* [START-SET] stage 2: the VM hat; the DFA column of `first-class` is
-     * unreachable by construction (the DFA hat is `-bounded`-only). */
-    { .c = { "first-class",        PCREC_NO_START_SET, pf_vm_start_applies },
-      .scan = PF_SCAN_SET, .routes = CAND_ON(CAND_ROUTE_VM),
-      .emit_vm = pf_vm_emit_first_class },
-    { .c = { "memchr-bounded",     0, pf_memchr_bounded_applies },
-      .emit = pf_emit_memchr_bounded, .scan = PF_SCAN_BYTE },
-    { .c = { "memchr",             0, pf_memchr_applies         },
-      .emit = pf_emit_memchr,         .scan = PF_SCAN_BYTE },
-    { .c = { "byte-class-bounded", 0, pf_bcls_bounded_applies   },
-      .emit_tables = pf_tables_bcls, .emit = pf_emit_bcls_bounded, .scan = PF_SCAN_SET },
-    { .c = { "byte-class",         0, pf_bcls_applies           },
-      .emit_tables = pf_tables_bcls, .emit = pf_emit_bcls,         .scan = PF_SCAN_SET },
-    { .c = { "none",               0, cand_always               }, .scan = PF_SCAN_NONE,
-      .routes = CAND_ON(CAND_ROUTE_DFA) | CAND_ON(CAND_ROUTE_VM) },
-};
 
 /* AXIS B's selection for the artifact's FORWARD machine, for the callers that
  * need it outside a built form: the prefilter stamp, the offset list, and the
- * reseed query `src/opt/scanedge.c` asks. */
-static const DfaPf *dfa_pf_of(Ctx *cx, const UnanchStart *us)
+ * reseed query `src/opt/scanedge.c` asks. [START-TABLE] C3 it is
+ * `cand_select(NEXT)` on the forward body's route (`cand_route_of`); every
+ * caller is on ENG_UNANCH, where that route is `CAND_ROUTE_DFA`. */
+static const CandRow *dfa_pf_of(Ctx *cx, const UnanchStart *us)
 {
-    DfaSel s = { .cx = cx, .d = &cx->job->dfa, .us = us, .forward = true, .st = -1,
-                 .route = CAND_ROUTE_DFA, .ss = pcrec_fact_start_set(cx) };
-    CAND_ORACLE_PRE(ck, CAND_SLOT_NEXT, &s);
-    const DfaPf *pf = DFA_SELECT_ROUTED(DfaPf, dfa_pfs, &s, cx->opt->flags);
-    PCREC_CAND_TRACE_REC("NEXT", CAND_ROUTE_NAME(s.route), pf->c.name, "pf-of");
-    CAND_ORACLE_POST(ck, CAND_SLOT_NEXT, &s, pf, pf->c.name, "pf-of");
+    CandSel s = { .cx = cx, .d = &cx->job->dfa, .us = us, .forward = true, .st = -1,
+                  .route = cand_route_of(cx), .ss = pcrec_fact_start_set(cx) };
+    const CandRow *pf = cand_select(CAND_SLOT_NEXT, &s, cx->opt->flags);
+    PCREC_CAND_TRACE_REC("NEXT", CAND_ROUTE_NAME(s.route), pf->tok, "pf-of");
+    CAND_HIT(CAND_SLOT_NEXT, &s, pf, "pf-of");
     return pf;
 }
 
@@ -6735,37 +6748,37 @@ static const DfaPf *dfa_pf_of(Ctx *cx, const UnanchStart *us)
  * asks for it — the emitted table or byte, G1's dominance, the re-seed
  * density — so a DFA-hat artifact is never priced as scanning `E`. */
 static void pf_scan_set_of(Ctx *cx, const Dfa *d, const UnanchStart *us,
-                           const DfaPf *pf, CandSet *out)
+                           const CandRow *pf, CandSet *out)
 {
-    DfaSel s = { .cx = cx, .d = d, .us = us, .forward = true, .st = -1,
-                 .route = CAND_ROUTE_DFA, .ss = pcrec_fact_start_set(cx) };
-    if (!pf->scan_set) { *out = us->cand; return; }
-    if (!pf->scan_set(&s, out))
+    CandSel s = { .cx = cx, .d = d, .us = us, .forward = true, .st = -1,
+                  .route = cand_route_of(cx), .ss = pcrec_fact_start_set(cx) };
+    if (!pf->u.pf.scan_set) { *out = us->cand; return; }
+    if (!pf->u.pf.scan_set(&s, out))
         pcrec_ctx_fail(cx, 0, "internal error: prefilter row '%s' was selected "
-                       "but its scanned set does not apply", pf->c.name);
+                       "but its scanned set does not apply", pf->tok);
 }
 
 /* [START-SET] AXIS B's selection for the VM ROUTE: the row a prefilter-less
  * VM attempt loop takes (`first-class` or `none`). ONE derivation with three
  * readers — `<PREFIX>_VM_START_SCAN`, and the entry and retry seeks — so the
  * stamp names the seek that was emitted. On a DFA artifact or a hybrid every
- * VM-route row but `none` declines. */
-static const DfaPf *vm_start_row(Ctx *cx, DfaSel *s)
+ * VM-route row but `none` declines. [START-TABLE] C3 `cand_select(NEXT)` on
+ * `CAND_ROUTE_VM`, the VM attempt loop's own route. */
+static const CandRow *vm_start_row(Ctx *cx, CandSel *s)
 {
-    *s = (DfaSel){ .cx = cx, .d = NULL, .us = NULL, .forward = true, .st = -1,
-                   .route = CAND_ROUTE_VM, .ss = pcrec_fact_start_set(cx) };
-    CAND_ORACLE_PRE(ck, CAND_SLOT_NEXT, s);
-    const DfaPf *pf = DFA_SELECT_ROUTED(DfaPf, dfa_pfs, s, cx->opt->flags);
-    PCREC_CAND_TRACE_REC("NEXT", CAND_ROUTE_NAME(s->route), pf->c.name, "vm-start");
-    CAND_ORACLE_POST(ck, CAND_SLOT_NEXT, s, pf, pf->c.name, "vm-start");
+    *s = (CandSel){ .cx = cx, .d = NULL, .us = NULL, .forward = true, .st = -1,
+                    .route = CAND_ROUTE_VM, .ss = pcrec_fact_start_set(cx) };
+    const CandRow *pf = cand_select(CAND_SLOT_NEXT, s, cx->opt->flags);
+    PCREC_CAND_TRACE_REC("NEXT", CAND_ROUTE_NAME(s->route), pf->tok, "vm-start");
+    CAND_HIT(CAND_SLOT_NEXT, s, pf, "vm-start");
     return pf;
 }
 
-/* `<PREFIX>_VM_START_SCAN`'s value: the VM route's row name. */
+/* `<PREFIX>_VM_START_SCAN`'s value: the VM route's row spelling. */
 const char *pcrec_vm_start_scan_name(Ctx *cx)
 {
-    DfaSel s;
-    return vm_start_row(cx, &s)->c.name;
+    CandSel s;
+    return vm_start_row(cx, &s)->tok;
 }
 
 /* Writes the VM hat's seek into `<p>_search_run` at indent `ind`: before the
@@ -6782,16 +6795,16 @@ const char *pcrec_vm_start_scan_name(Ctx *cx)
 void pcrec_emit_vm_start_seek(Ctx *cx, StrBuf *c, const char *p,
                               const char *ind, bool entry)
 {
-    DfaSel s;
-    const DfaPf *pf = vm_start_row(cx, &s);
-    if (!pf->emit_vm) return;
-    if (pf->scan != PF_SCAN_SET)
+    CandSel s;
+    const CandRow *pf = vm_start_row(cx, &s);
+    if (!pf->u.pf.emit_vm) return;
+    if (pf->u.pf.scan != PF_SCAN_SET)
         pcrec_ctx_fail(cx, 0, "internal error: the VM route selected a "
                        "one-byte start-set form, which stage 2 does not build");
     if (pcrec_artifact_has_dfa_scan(cx))
         pcrec_ctx_fail(cx, 0, "internal error: a VM-hat artifact reads as "
                        "having a DFA scan (startset.md §4.3)");
-    pf->emit_vm(c, &s, p, ind, entry);
+    pf->u.pf.emit_vm(c, &s, p, ind, entry);
 }
 
 /* ---- [OPT-PRECHECK-ADMIT] ADMITTING THE WHOLE-WINDOW PRE-CHECK ----------
@@ -6862,17 +6875,17 @@ static void dfa_cand_scan(Ctx *cx, CandScan *cs)
     memset(cs, 0, sizeof *cs);
     cs->byte = -1;
     if (!pcrec_artifact_has_dfa_scan(cx)) return;
-    if (cx->job->engine == PCREC_ENG_ATTEMPT) {
+    if (cand_route_of(cx) == CAND_ROUTE_ATTEMPT) {
         CandSet acand;
         /* `attempt_cand` is memchr-or-nothing by charter (its own header), so
          * a true answer already means a single-byte scan. */
         cs->memchr_form = true;
-        cs->byte = attempt_cand(&cx->job->dfa, &acand) ? acand.byte : -1;
+        cs->byte = attempt_next_of(cx, &acand)->u.pf.scan == PF_SCAN_BYTE ? acand.byte : -1;
         return;
     }
     {
         UnanchStart us;
-        const DfaPf *pf;
+        const CandRow *pf;
         OfsTest t;
         unanch_start(cx, &us);
         pf = dfa_pf_of(cx, &us);
@@ -6882,7 +6895,7 @@ static void dfa_cand_scan(Ctx *cx, CandScan *cs)
         if (ofs_test_of(cx, &us, pf, &t)) {
             cs->byte = t.scan_byte;
             cs->run_verified = ofs_test_verifies_run(cx, &t, &us);
-        } else if (pf->scan == PF_SCAN_BYTE) {
+        } else if (pf->u.pf.scan == PF_SCAN_BYTE) {
             CandSet sc;
             pf_scan_set_of(cx, &cx->job->dfa, &us, pf, &sc);
             cs->memchr_form = true;
@@ -6912,12 +6925,12 @@ unsigned pcrec_dfa_cand_ppm(Ctx *cx)
         set[cs.byte] = 1;
     } else {
         UnanchStart us;
-        const DfaPf *pf;
-        if (!pcrec_artifact_has_dfa_scan(cx) || cx->job->engine == PCREC_ENG_ATTEMPT)
+        const CandRow *pf;
+        if (!pcrec_artifact_has_dfa_scan(cx) || cand_route_of(cx) == CAND_ROUTE_ATTEMPT)
             return 1000000u;
         unanch_start(cx, &us);
         pf = dfa_pf_of(cx, &us);
-        if (pf->scan != PF_SCAN_SET)
+        if (pf->u.pf.scan != PF_SCAN_SET)
             return 1000000u;
         {
             CandSet sc;
@@ -7259,18 +7272,17 @@ static const char *req_handoff_stamp(Ctx *cx)
  * axis's own machinery and answer false without a branch here. */
 bool pcrec_dfa_scan_state_written(Ctx *cx, const Dfa *d)
 {
-    if (cx->job->engine != PCREC_ENG_UNANCH) return false;
+    if (cand_route_of(cx) != CAND_ROUTE_DFA) return false;
     if (!dfa_needs_seed(d)) return false;
     UnanchStart us;
     unanch_start(cx, &us);
     if (us.empty) return false;
-    DfaSel s = { .cx = cx, .d = d, .us = &us, .forward = d == &cx->job->dfa, .st = -1,
-                 .route = CAND_ROUTE_DFA, .ss = pcrec_fact_start_set(cx) };
-    CAND_ORACLE_PRE(ck, CAND_SLOT_NEXT, &s);
-    const DfaPf *pf = DFA_SELECT_ROUTED(DfaPf, dfa_pfs, &s, cx->opt->flags);
-    PCREC_CAND_TRACE_REC("NEXT", CAND_ROUTE_NAME(s.route), pf->c.name, "scan-state");
-    CAND_ORACLE_POST(ck, CAND_SLOT_NEXT, &s, pf, pf->c.name, "scan-state");
-    return pf->reseeds;
+    CandSel s = { .cx = cx, .d = d, .us = &us, .forward = d == &cx->job->dfa, .st = -1,
+                  .route = cand_route_of(cx), .ss = pcrec_fact_start_set(cx) };
+    const CandRow *pf = cand_select(CAND_SLOT_NEXT, &s, cx->opt->flags);
+    PCREC_CAND_TRACE_REC("NEXT", CAND_ROUTE_NAME(s.route), pf->tok, "scan-state");
+    CAND_HIT(CAND_SLOT_NEXT, &s, pf, "scan-state");
+    return pf->u.pf.reseeds;
 }
 
 /* ---- AXIS F: the two directions ----------------------------------------- */
@@ -7646,10 +7658,11 @@ static bool dfa_match_is_unwrapped(Ctx *cx)
  * LOWER BOUND on the attempt start, never as the answer, and `search_from` is
  * the strongest sound lower bound there is. So a pinned hybrid is if anything
  * MORE conservative than today. `tests/codegen/run_search_pinned.sh` asserts
- * the engine-level fact and the hybrid's bound-not-answer shape separately. */
-typedef struct DfaSearchStart {
-    DfaCand c;
-} DfaSearchStart;
+ * the engine-level fact and the hybrid's bound-not-answer shape separately.
+ *
+ * [START-TABLE] C3 the two forms are the RECOVER rows of `cand_rows[]` (S1
+ * `pinned`, S2 `reverse-pass`), and `dfa_search_start_of` asks
+ * `cand_select`. */
 
 /* P0's assertion, and it is the real guard for two of the clauses above
  * rather than a decoration. It fires as a loud internal error, which is this
@@ -7700,7 +7713,7 @@ static bool start_pinned_applies(const DfaSel *s)
     Ctx *cx = s->cx;
     /* P4. `dfa_engine_is_empty` is asked through the shared predicate rather
      * than by re-spelling `us.empty`, `dfa_scan_name`'s own rule (r37 #5). */
-    if (cx->job->engine != PCREC_ENG_UNANCH) return false;
+    if (cand_route_of(cx) != CAND_ROUTE_DFA) return false;
     if (dfa_engine_is_empty(cx)) return false;
 
     const Dfa *fd = s->d;
@@ -7725,39 +7738,33 @@ static bool start_pinned_applies(const DfaSel *s)
     return true;
 }
 
-/* `-fno-start-pinned` is a `deny` FIELD on the first candidate, D82's shape:
- * the flag REMOVES the object and the ordinary walk selects the fallback.
- * Nothing branches on the flag, and `--list-axes` picks this array up with no
- * edit because that walk is generic over `DfaCand`'s common leading member. */
-static const DfaSearchStart dfa_search_starts[] = {
-    { { "pinned",       PCREC_NO_START_PINNED, start_pinned_applies } },
-    { { "reverse-pass", 0,                     cand_always          } },
-};
-
-/* THE ONE SELECTION. It takes a bare `Ctx` because every caller has one and
- * none of them holds a `DfaSel`; the `d` it builds is the artifact's own
- * forward machine, which is the machine this axis is about. */
-static const DfaSearchStart *dfa_search_start_of(Ctx *cx)
+/* THE ONE SELECTION, `cand_select(RECOVER)` on the route of the artifact's
+ * DFA-shaped body (`cand_route_of`). It takes a bare `Ctx` because every
+ * caller has one and none of them holds a `CandSel`; the `d` it builds is the
+ * artifact's own forward machine, which is the machine this slot is about.
+ * On ENG_ATTEMPT the route is `CAND_ROUTE_ATTEMPT`, where only `reverse-pass`
+ * is routed: S1's predicate declined there at its own P4 before C3, so the
+ * row chosen is the same. */
+static const CandRow *dfa_search_start_of(Ctx *cx)
 {
-    DfaSel s = { .cx = cx, .d = &cx->job->dfa, .us = NULL, .forward = true, .st = -1,
-                 .route = CAND_ROUTE_DFA };
-    CAND_ORACLE_PRE(ck, CAND_SLOT_RECOVER, &s);
-    const DfaSearchStart *ss = DFA_SELECT(DfaSearchStart, dfa_search_starts, &s,
-                                          cx->opt->flags);
-    PCREC_CAND_TRACE_REC("RECOVER", CAND_ROUTE_NAME(s.route), ss->c.name, "search-start");
-    CAND_ORACLE_POST(ck, CAND_SLOT_RECOVER, &s, ss, ss->c.name, "search-start");
-    return ss;
+    CandSel s = { .cx = cx, .d = &cx->job->dfa, .us = NULL, .forward = true, .st = -1,
+                  .route = cand_route_of(cx) };
+    const CandRow *r = cand_select(CAND_SLOT_RECOVER, &s, cx->opt->flags);
+    PCREC_CAND_TRACE_REC("RECOVER", CAND_ROUTE_NAME(s.route), r->tok, "search-start");
+    CAND_HIT(CAND_SLOT_RECOVER, &s, r, "search-start");
+    return r;
 }
 
-/* AXIS J's chosen object's name — `<PREFIX>_DFA_START`'s value and
+/* AXIS J's chosen row's spelling — `<PREFIX>_DFA_START`'s value and
  * `rx_info.search_form`'s. */
 static const char *dfa_search_start_name(Ctx *cx)
-{ return dfa_search_start_of(cx)->c.name; }
+{ return dfa_search_start_of(cx)->tok; }
 
-/* The same selection as a yes/no, for the four sites that need the ANSWER
- * rather than the name. */
+/* The same selection as a yes/no, for the sites that need the ANSWER rather
+ * than the name: the chosen row's `u.recover.pinned`, never a comparison of
+ * which row it was ([r2 sound-m2]). */
 static bool dfa_search_is_pinned(Ctx *cx)
-{ return dfa_search_start_of(cx) == &dfa_search_starts[0]; }
+{ return dfa_search_start_of(cx)->u.recover.pinned; }
 
 /* ==== [START-TABLE] C2 THE ONE START TABLE ===============================
  *
@@ -7837,7 +7844,7 @@ typedef struct CandNode {
  * entry's LOWER and its fallback scans from there; RECOVER accepts E2's LOWER
  * (and the match END, which is not a handoff type); the CALLER accepts a
  * PRESENCE or WIDTH VERDICT (NOMATCH is returned to it). */
-__attribute__((unused))   /* read by the trace build's self-check until C3 */
+__attribute__((unused))   /* read by the trace build's self-check and hit counter */
 static const CandNode cand_nodes[CAND_NNODES] = {
     [CAND_SLOT_WINDOW]   = { "WINDOW",   CT_LOWER, CAND_ALL_ROUTES,
                              CN(CAND_SLOT_PRESENCE) | CN(CAND_SLOT_WIDTH) |
@@ -7864,37 +7871,6 @@ static const CandNode cand_nodes[CAND_NNODES] = {
     [CAND_NODE_CALLER]   = { "CALLER",   CT_START | CT_VERDICT, 0, 0 },
 };
 
-/* A row's `--list-axes` projection on ONE route (§1.1 `list[route]`): the
- * axis, the row's order within it and its listed name; `axis` NULL where the
- * row has no listing on that route. An axis that does not depend on the
- * route is listed once, on the first route it is asked on. */
-typedef struct CandList {
-    const char *axis;
-    int         order;
-    const char *name;
-} CandList;
-
-/* ONE ROW of the start table (§1.1). `c.name` is the row's IDENTITY, unique
- * across `cand_rows[]` (the self-check holds it), and is what a check keys
- * on; `tok` is the spelling the code uses for the row TODAY — its old
- * table's name, or for an inline decision the C1 trace record's row field —
- * which the trace prints and the oracle compares, so four rows named `none`
- * and two each of `anchored`/`gstart` keep one identity apiece. */
-typedef struct CandRow {
-    DfaCand        c;          /* identity, deny bits, predicate */
-    CandSlot       slot;       /* the question this row answers */
-    unsigned       routes;     /* CAND_ON(route) mask, written on every row */
-    const char    *tok;        /* today's spelling (trace, stamp, old table) */
-    unsigned char  map;        /* CM_* */
-    unsigned char  giveup;     /* CG_* */
-    unsigned       hands;      /* CT_* handed to the slot's successors */
-    CandList       list[3];    /* indexed by CandRoute */
-    /* THE ORACLE's link to today's table row this row restates, compared by
-     * POINTER; NULL for an inline decision. Deleted with the old tables
-     * (C3-C5). */
-    const void    *was;
-} CandRow;
-
 /* W1: does the pattern end-anchor within a finite window? (today
  * `pcrec_emit_end_window_clamp`'s `w < 0` return) */
 static bool cand_window_applies(const DfaSel *s)
@@ -7906,11 +7882,12 @@ static bool cand_ceiling_applies(const DfaSel *s)
 { return s->vm->root_minw >= PCREC_MINW_MAX; }
 
 /* N12: does the ENG_ATTEMPT machine `s->d` get the predecessor-byte
- * `memchr`? `attempt_cand` itself, its candidate set discarded. */
+ * `memchr`? `attempt_cand` itself, its candidate set left in `s->cand` for
+ * the reader that asked (discarded where that is NULL). */
 static bool cand_pred_memchr_applies(const DfaSel *s)
 {
     CandSet cs;
-    return attempt_cand(s->d, &cs);
+    return attempt_cand(s->d, s->cand ? s->cand : &cs);
 }
 
 /* R1-R4: `vm_reseed_holds`' four tagged arms, each as its own predicate. */
@@ -7999,65 +7976,99 @@ static const CandRow cand_rows[] = {
       .list = { [CAND_ROUTE_DFA] = { "req-use", 2, "scan-from-startpos" } },
       .was = &req_uses[1] },
 
-    /* NEXT (today `dfa_pfs[]`, plus `attempt_cand` on the ATTEMPT route) */
+    /* NEXT (`dfa_pfs[]` until C3, plus `attempt_cand` on the ATTEMPT route).
+     * Designated initializers ([K84], stage 0 of docs/design/startset.md §8):
+     * a payload field a row omits is its zero value — no table, no block, no
+     * re-seed, no run term — and `u.pf.scan` is named on every row, so a
+     * reader of the property never has to fall back to the NAME. See the
+     * fields' own notes (`CandPf`).
+     *
+     * [OPT-LITSCAN] S1 THE RUN-PINNED PAIR IS AT THE HEAD, bounded before
+     * unbounded, and the head is the one position that serves both of its
+     * classes: an artifact with no model selection (it would otherwise take
+     * `memchr[-bounded]`) and one whose model selection scans the run's own
+     * member (it would otherwise take `offset-set[-bounded]`). The walk is
+     * first-match and a non-applying or denied row is transparent, so
+     * prepending moves no artifact the predicate rejects. `reseeds` is `true`
+     * because the emitters ARE `pf_emit_ofs[_bounded]`. Either deny bit
+     * removes the pair (lib/pcrec.h, `PCREC_NO_RUN_PREFILTER`). */
     { .c = { "run-pinned-bounded", PCREC_NO_OFFSET_SKIP | PCREC_NO_RUN_PREFILTER,
              pf_run_bounded_applies }, .slot = CAND_SLOT_NEXT, .routes = CR_DFA,
       .tok = "run-pinned-bounded", .map = CM_EXACTK, .hands = CT_CAND,
       .list = { [CAND_ROUTE_DFA] = { "prefilter", 1, "run-pinned-bounded" } },
-      .was = &dfa_pfs[0] },
+      .u.pf = { .emit_tables = pf_tables_ofs, .emit_block = pf_block_ofs,
+                .emit = pf_emit_ofs_bounded,
+                .reseeds = true,  .run_term = true,  .scan = PF_SCAN_OFS  } },
     { .c = { "run-pinned", PCREC_NO_OFFSET_SKIP | PCREC_NO_RUN_PREFILTER,
              pf_run_applies },
       .slot = CAND_SLOT_NEXT, .routes = CR_DFA, .tok = "run-pinned", .map = CM_EXACTK,
       .hands = CT_CAND, .list = { [CAND_ROUTE_DFA] = { "prefilter", 2, "run-pinned" } },
-      .was = &dfa_pfs[1] },
+      .u.pf = { .emit_tables = pf_tables_ofs, .emit_block = pf_block_ofs,
+                .emit = pf_emit_ofs,
+                .reseeds = true,  .run_term = true,  .scan = PF_SCAN_OFS  } },
     { .c = { "offset-set-bounded", PCREC_NO_OFFSET_SKIP, pf_ofs_bounded_applies },
       .slot = CAND_SLOT_NEXT, .routes = CR_DFA, .tok = "offset-set-bounded",
       .map = CM_EXACTK, .hands = CT_CAND,
       .list = { [CAND_ROUTE_DFA] = { "prefilter", 3, "offset-set-bounded" } },
-      .was = &dfa_pfs[2] },
+      .u.pf = { .emit_tables = pf_tables_ofs, .emit_block = pf_block_ofs,
+                .emit = pf_emit_ofs_bounded,
+                .reseeds = true,  .run_term = false, .scan = PF_SCAN_OFS  } },
     { .c = { "offset-set", PCREC_NO_OFFSET_SKIP, pf_ofs_applies },
       .slot = CAND_SLOT_NEXT, .routes = CR_DFA, .tok = "offset-set", .map = CM_EXACTK,
       .hands = CT_CAND, .list = { [CAND_ROUTE_DFA] = { "prefilter", 4, "offset-set" } },
-      .was = &dfa_pfs[3] },
+      .u.pf = { .emit_tables = pf_tables_ofs, .emit_block = pf_block_ofs,
+                .emit = pf_emit_ofs,
+                .reseeds = true,  .run_term = false, .scan = PF_SCAN_OFS  } },
+    /* [START-SET] stage 3: the DFA hat, `-bounded` only (see its section). */
     { .c = { "first-memchr-bounded", PCREC_NO_START_SET, pf_first_memchr_bounded_applies },
       .slot = CAND_SLOT_NEXT, .routes = CR_DFA, .tok = "first-memchr-bounded",
       .map = CM_EXACT0, .hands = CT_CAND,
       .list = { [CAND_ROUTE_DFA] = { "prefilter", 5, "first-memchr-bounded" } },
-      .was = &dfa_pfs[4] },
+      .u.pf = { .emit = pf_emit_first_memchr_bounded, .reseeds = true,
+                .scan = PF_SCAN_BYTE, .scan_set = pf_dfa_start_set } },
     { .c = { "first-class-bounded", PCREC_NO_START_SET, pf_first_class_bounded_applies },
       .slot = CAND_SLOT_NEXT, .routes = CR_DFA, .tok = "first-class-bounded",
       .map = CM_EXACT0, .hands = CT_CAND,
       .list = { [CAND_ROUTE_DFA] = { "prefilter", 6, "first-class-bounded" } },
-      .was = &dfa_pfs[5] },
+      .u.pf = { .emit_tables = pf_tables_first, .emit = pf_emit_first_class_bounded,
+                .reseeds = true, .scan = PF_SCAN_SET, .scan_set = pf_dfa_start_set } },
+    /* [START-SET] stage 2: the VM hat, routed on the VM route alone (the DFA
+     * hat is `-bounded`-only). */
     { .c = { "first-class", PCREC_NO_START_SET, pf_vm_start_applies },
       .slot = CAND_SLOT_NEXT, .routes = CR_VM, .tok = "first-class", .map = CM_EXACT0,
       .giveup = CG_ONE_WAY, .hands = CT_CAND,
-      .list = { [CAND_ROUTE_VM] = { "prefilter", 7, "first-class" } }, .was = &dfa_pfs[6] },
+      .list = { [CAND_ROUTE_VM] = { "prefilter", 7, "first-class" } },
+      .u.pf = { .scan = PF_SCAN_SET, .emit_vm = pf_vm_emit_first_class } },
     { .c = { "memchr-bounded", 0, pf_memchr_bounded_applies },
       .slot = CAND_SLOT_NEXT, .routes = CR_DFA, .tok = "memchr-bounded", .map = CM_EXACT0,
       .hands = CT_CAND, .list = { [CAND_ROUTE_DFA] = { "prefilter", 8, "memchr-bounded" } },
-      .was = &dfa_pfs[7] },
+      .u.pf = { .emit = pf_emit_memchr_bounded, .scan = PF_SCAN_BYTE } },
     { .c = { "memchr", 0, pf_memchr_applies },
       .slot = CAND_SLOT_NEXT, .routes = CR_DFA, .tok = "memchr", .map = CM_EXACT0,
       .hands = CT_CAND, .list = { [CAND_ROUTE_DFA] = { "prefilter", 9, "memchr" } },
-      .was = &dfa_pfs[8] },
+      .u.pf = { .emit = pf_emit_memchr, .scan = PF_SCAN_BYTE } },
     { .c = { "byte-class-bounded", 0, pf_bcls_bounded_applies },
       .slot = CAND_SLOT_NEXT, .routes = CR_DFA, .tok = "byte-class-bounded",
       .map = CM_EXACT0, .hands = CT_CAND,
       .list = { [CAND_ROUTE_DFA] = { "prefilter", 10, "byte-class-bounded" } },
-      .was = &dfa_pfs[9] },
+      .u.pf = { .emit_tables = pf_tables_bcls, .emit = pf_emit_bcls_bounded,
+                .scan = PF_SCAN_SET } },
     { .c = { "byte-class", 0, pf_bcls_applies },
       .slot = CAND_SLOT_NEXT, .routes = CR_DFA, .tok = "byte-class", .map = CM_EXACT0,
       .hands = CT_CAND, .list = { [CAND_ROUTE_DFA] = { "prefilter", 11, "byte-class" } },
-      .was = &dfa_pfs[10] },
+      .u.pf = { .emit_tables = pf_tables_bcls, .emit = pf_emit_bcls, .scan = PF_SCAN_SET } },
     /* N12: the ATTEMPT route's predecessor-byte skip; it STAMPS `"memchr"`
-     * (D-1) but is not N9, so its identity is its own. No listing. */
+     * (D-1) but is not N9, so its identity is its own. No listing. Its scan
+     * is one byte (`attempt_cand` is memchr-or-nothing by charter); it emits
+     * nothing through `u.pf`, since `emit_attempt` writes the loop from the
+     * candidate set the predicate leaves in `CandSel.cand`. */
     { .c = { "pred-memchr", 0, cand_pred_memchr_applies },
       .slot = CAND_SLOT_NEXT, .routes = CR_ATTEMPT, .tok = "pred-memchr",
-      .map = CM_EXACTPRED, .hands = CT_CAND },
+      .map = CM_EXACTPRED, .hands = CT_CAND, .u.pf = { .scan = PF_SCAN_BYTE } },
     { .c = { "next-none", 0, cand_always }, .slot = CAND_SLOT_NEXT,
       .routes = CAND_ALL_ROUTES, .tok = "none", .map = CM_NONE, .hands = CT_CAND,
-      .list = { [CAND_ROUTE_DFA] = { "prefilter", 12, "none" } }, .was = &dfa_pfs[11] },
+      .list = { [CAND_ROUTE_DFA] = { "prefilter", 12, "none" } },
+      .u.pf = { .scan = PF_SCAN_NONE } },
 
     /* RETRY (today `pcrec_reseed_rows[]`, asked only behind a prefilter) */
     { .c = { "exact", 0, cand_rs_exact_applies }, .slot = CAND_SLOT_RETRY,
@@ -8106,16 +8117,18 @@ static const CandRow cand_rows[] = {
       .routes = CR_ATTEMPT | CR_VM, .tok = "all", .map = CM_NONE, .hands = CT_UPPER,
       .list = { [CAND_ROUTE_VM] = { "vm-anchor-bound", 3, "unanchored" } } },
 
-    /* RECOVER (today `dfa_search_starts[]`) */
+    /* RECOVER (`dfa_search_starts[]` until C3). `-fno-start-pinned` is a
+     * `deny` FIELD on the first row, D82's shape: the flag REMOVES the row and
+     * the ordinary walk selects the fallback; nothing branches on the flag. */
     { .c = { "pinned", PCREC_NO_START_PINNED, start_pinned_applies },
       .slot = CAND_SLOT_RECOVER, .routes = CR_DFA, .tok = "pinned", .map = CM_RECOVER,
       .hands = CT_START, .list = { [CAND_ROUTE_DFA] = { "search-start", 1, "pinned" } },
-      .was = &dfa_search_starts[0] },
+      .u.recover = { .pinned = true } },
     { .c = { "reverse-pass", 0, cand_always }, .slot = CAND_SLOT_RECOVER,
       .routes = CR_DFA | CR_ATTEMPT, .tok = "reverse-pass", .map = CM_RECOVER,
       .hands = CT_START,
       .list = { [CAND_ROUTE_DFA] = { "search-start", 2, "reverse-pass" } },
-      .was = &dfa_search_starts[1] },
+      .u.recover = { .pinned = false } },
 };
 #define CAND_NROWS (sizeof cand_rows / sizeof cand_rows[0])
 
@@ -8123,9 +8136,9 @@ static const CandRow cand_rows[] = {
  * that is routed for `s->route`, and whose predicate holds. The route is
  * `s->route` alone, never a second parameter that could disagree with it.
  * Every (slot, asked route) ends in an undeniable `cand_always` row, so NULL
- * is unreachable (the trace build's self-check holds it). No reader until
- * C3, hence `unused`. */
-__attribute__((unused))
+ * is unreachable (the trace build's self-check holds it). Since C3 it decides
+ * NEXT and RECOVER; the other slots' readers still walk their old tables
+ * (C4-C5), with this walk beside them under the trace build's oracle. */
 static const CandRow *cand_select(CandSlot slot, const DfaSel *s, uint64_t flags)
 {
     for (size_t i = 0; i < CAND_NROWS; i++) {
@@ -8136,17 +8149,6 @@ static const CandRow *cand_select(CandSlot slot, const DfaSel *s, uint64_t flags
         if (r->c.applies(s)) return r;
     }
     return NULL;
-}
-
-/* THE ONE ROUTE DERIVATION (§2.3 item 3): the route of a DFA-shaped body is
- * the engine of the machine it runs — `CAND_ROUTE_ATTEMPT` for ENG_ATTEMPT
- * (every pattern with a BOT, the VM hybrid's inlined prefilter included),
- * `CAND_ROUTE_DFA` otherwise — never `fit.chosen`. The fifteen `job->engine`
- * tests read it from C3; no reader until then, hence `unused`. */
-__attribute__((unused))
-static CandRoute cand_route_of(Ctx *cx)
-{
-    return cx->job->engine == PCREC_ENG_ATTEMPT ? CAND_ROUTE_ATTEMPT : CAND_ROUTE_DFA;
 }
 
 #ifdef PCREC_CAND_TRACE
@@ -8300,12 +8302,19 @@ static void cand_oracle_post_in(const CandRow *pre, CandSlot slot, Ctx *cx, int 
     cand_oracle_post(pre, slot, &s, NULL, old_tok, site, every);
 }
 
-/* The ROUTE half: aborts unless `cand_route_of` names the route the body
- * dispatch `pcrec_emit_dfa_engine` takes (`old_tok`, its trace spelling). */
-static void cand_oracle_route(Ctx *cx, const char *old_tok, const char *site)
+/* [START-TABLE] C3 THE HIT COUNTER where a slot's old walk is gone (NEXT and
+ * RECOVER): nothing is left to compare against, so the check is the table's
+ * structural self-check plus the `CANDROW` line naming the row the reader
+ * used, which `tests/codegen/run_cand_oracle.sh` reads to hold every row
+ * REACHED by its witness. Silent inside a quiet walk, as the oracle is. */
+static void cand_hit(CandSlot slot, const DfaSel *s, const CandRow *r, const char *site)
 {
-    if (strcmp(CAND_ROUTE_NAME(cand_route_of(cx)), old_tok))
-        cand_oracle_fail("route-differs", old_tok, CAND_ROUTE_NAME(cand_route_of(cx)), site);
+    if (pcrec_cand_trace_quiet) return;
+    cand_rows_selfcheck();
+    if (!r)
+        cand_oracle_fail("no-row", cand_nodes[slot].name, "-", site);
+    fprintf(stderr, "CANDROW\t%s\t%s\t%s\t%s\n", cand_nodes[slot].name,
+            CAND_ROUTE_NAME(s->route), r->c.name, site);
 }
 
 const void *pcrec_cand_oracle_vm_pre(Ctx *cx, CandSlot slot, const CandVmFacts *vm)
@@ -8361,18 +8370,37 @@ static size_t pcrec_dfa_axis_cands(const void *list, size_t n, size_t stride,
     pcrec_dfa_axis_cands((list), sizeof(list) / sizeof((list)[0]), \
                          sizeof((list)[0]), out, cap)
 
+/* [START-TABLE] C3 the `prefilter` and `search-start` axes' candidates are
+ * `cand_rows[]`'s NEXT and RECOVER rows, in table order, each under the name
+ * it is listed by (`list[route].name` on the first route that lists it); a
+ * row with no listing (N12) is skipped. A row routed on the VM route alone
+ * names the VM hat's stamp, the one its selection writes. C6 turns every
+ * start axis into this projection. */
+static size_t cand_axis_rows(CandSlot slot, PcrecAxisCand *out, size_t cap)
+{
+    size_t k = 0;
+    for (size_t i = 0; i < CAND_NROWS && k < cap; i++) {
+        const CandRow *r = &cand_rows[i];
+        const char *name = NULL;
+        if (r->slot != slot) continue;
+        for (int rt = 0; rt < 3 && !name; rt++)
+            if (r->list[rt].axis) name = r->list[rt].name;
+        if (!name) continue;
+        out[k].name = name;
+        out[k].deny = r->c.deny;
+        out[k].stamp = r->routes == CAND_ON(CAND_ROUTE_VM) ? "RX_VM_START_SCAN" : NULL;
+        k++;
+    }
+    return k;
+}
+
 /* The table-representation axis's candidates, as `--list-axes` reads them. */
 size_t pcrec_dfa_axis_table_cands(PcrecAxisCand *out, size_t cap)
 { return AXIS_LIST(dfa_reprs); }
 /* The prefilter axis's candidates. [START-SET] a row serving the VM route
  * alone names the VM hat's stamp, the one its selection writes. */
 size_t pcrec_dfa_axis_prefilter_cands(PcrecAxisCand *out, size_t cap)
-{
-    size_t n = AXIS_LIST(dfa_pfs);
-    for (size_t i = 0; i < n; i++)
-        if (dfa_pfs[i].routes == CAND_ON(CAND_ROUTE_VM)) out[i].stamp = "RX_VM_START_SCAN";
-    return n;
-}
+{ return cand_axis_rows(CAND_SLOT_NEXT, out, cap); }
 /* The view-selector axis's candidates. */
 size_t pcrec_dfa_axis_view_cands(PcrecAxisCand *out, size_t cap)
 { return AXIS_LIST(dfa_views); }
@@ -8392,7 +8420,7 @@ size_t pcrec_dfa_axis_match_cands(PcrecAxisCand *out, size_t cap)
  * are `DfaCand`-headed, so the dump and the registry check see the new
  * candidates and `PCREC_NO_START_PINNED` with no hand-copied restatement. */
 size_t pcrec_dfa_axis_searchstart_cands(PcrecAxisCand *out, size_t cap)
-{ return AXIS_LIST(dfa_search_starts); }
+{ return cand_axis_rows(CAND_SLOT_RECOVER, out, cap); }
 #undef AXIS_LIST
 
 /* Axis F is not a candidate LIST (emitter_form.md §3, axis F: "Not a
@@ -8764,7 +8792,7 @@ static void dfa_form_derive(Ctx *cx, const Dfa *d, const UnanchStart *us,
                             const DfaDir *dir, DfaForm *f)
 {
     DfaSel s = { .cx = cx, .d = d, .us = us, .forward = !dir->reverse, .st = -1,
-                 .route = CAND_ROUTE_DFA, .ss = pcrec_fact_start_set(cx) };
+                 .route = cand_route_of(cx), .ss = pcrec_fact_start_set(cx) };
     uint64_t flags = cx->opt->flags;
 
     memset(f, 0, sizeof *f);
@@ -8781,21 +8809,22 @@ static void dfa_form_derive(Ctx *cx, const Dfa *d, const UnanchStart *us,
      * candidate's `applies` rather than a branch here: the reverse machine
      * walks a range the forward scan already proved contains a match, so
      * every real form declines and the list's total fallback `none` — a real
-     * object with a NULL emitter — is what it selects. */
-    CAND_ORACLE_PRE(ck, CAND_SLOT_NEXT, &s);
-    f->pf      = DFA_SELECT_ROUTED(DfaPf, dfa_pfs, &s, flags);
+     * object with a NULL emitter — is what it selects. [START-TABLE] C3 the
+     * NEXT slot of `cand_rows[]`, on this body's route (`cand_route_of`:
+     * every machine here is ENG_UNANCH's, so `CAND_ROUTE_DFA`). */
+    f->pf      = cand_select(CAND_SLOT_NEXT, &s, flags);
     if (d == &cx->job->dfa)
-        PCREC_CAND_TRACE_REC("NEXT", CAND_ROUTE_NAME(s.route), f->pf->c.name, "form-fwd");
+        PCREC_CAND_TRACE_REC("NEXT", CAND_ROUTE_NAME(s.route), f->pf->tok, "form-fwd");
     else
-        PCREC_CAND_TRACE_REC("NEXT", CAND_ROUTE_NAME(s.route), f->pf->c.name, "form-other");
+        PCREC_CAND_TRACE_REC("NEXT", CAND_ROUTE_NAME(s.route), f->pf->tok, "form-other");
     if (d == &cx->job->dfa)
-        CAND_ORACLE_POST(ck, CAND_SLOT_NEXT, &s, f->pf, f->pf->c.name, "form-fwd");
+        CAND_HIT(CAND_SLOT_NEXT, &s, f->pf, "form-fwd");
     else
-        CAND_ORACLE_POST(ck, CAND_SLOT_NEXT, &s, f->pf, f->pf->c.name, "form-other");
+        CAND_HIT(CAND_SLOT_NEXT, &s, f->pf, "form-other");
     f->views   = us->views;
     f->viewsel = us->viewsel;
     f->src     = us->viewsel ? dir->viewv : dir->statev;
-    if (f->pf->scan_set) pf_scan_set_of(cx, d, us, f->pf, &f->cand);
+    if (f->pf->u.pf.scan_set) pf_scan_set_of(cx, d, us, f->pf, &f->cand);
     else f->cand = us->cand;
     ofs_test_of(cx, us, f->pf, &f->ofs);
     /* The SEARCH scan never skips out of its own start state — the prefilter
@@ -8856,7 +8885,7 @@ static void dfa_form_derive(Ctx *cx, const Dfa *d, const UnanchStart *us,
      *      enters. `s0` is exempt for the pass's own reason: the entry
      *      dispatch sends it to the edge path, and so it does every other
      *      head-valued seed since STEP 1.1. */
-    if (f->nscan > 0 && f->pf->reseeds && dfa_needs_seed(d))
+    if (f->nscan > 0 && f->pf->u.pf.reseeds && dfa_needs_seed(d))
         for (int u = 0; u < d->natoms; u++)
             for (int fam = 0; fam < 2; fam++) {
                 int t = fam ? d->s1g[u] : d->s1u[u];
@@ -8865,7 +8894,7 @@ static void dfa_form_derive(Ctx *cx, const Dfa *d, const UnanchStart *us,
                     pcrec_ctx_fail(cx, 0, "internal error: state %d carries a scan "
                              "edge and is named by seed family %s[%d], on a "
                              "machine whose '%s' prefilter reseeds",
-                             t, fam ? "s1g" : "s1u", u, f->pf->c.name);
+                             t, fam ? "s1g" : "s1u", u, f->pf->tok);
             }
     /* [CC-DIFF] (b) THE FOLDS, and this is the ONLY place they are computed.
      * After the repr and acc selections above, because the transition cell's
@@ -8947,7 +8976,7 @@ static void emit_machine_tables(StrBuf *c, const DfaForm *f)
                            f->d, f->repr);
         }
     }
-    if (f->pf->emit_tables) f->pf->emit_tables(c, f);
+    if (f->pf->u.pf.emit_tables) f->pf->u.pf.emit_tables(c, f);
     const char *stay_tag = dfa_fragf(f->cx, "%s_stay", m);
     for (int k = 0; k < f->nskip; k++)
         emit_stay_table(f->cx, c, p, stay_tag, f->skip[k], f->d);
@@ -9093,9 +9122,9 @@ static void emit_scan_loop(StrBuf *c, const DfaForm *f)
      * edge path. Emitting it in both places would leave a compare on the
      * generic path that can never be true; emitting it in neither would drop
      * it. So it is emitted exactly once, on the path that can reach it. */
-    if (f->pf->emit && !s0head) f->pf->emit(c, f);
+    if (f->pf->u.pf.emit && !s0head) f->pf->u.pf.emit(c, f);
     {
-        const char *kw = f->pf->emit && !s0head ? "else if" : "if";
+        const char *kw = f->pf->u.pf.emit && !s0head ? "else if" : "if";
         for (int k = 0; k < f->nskip; k++) {
             f->dir->emit_skip(c, f, f->skip[k], kw);
             kw = "else if";
@@ -9170,7 +9199,7 @@ static void emit_scan_loop(StrBuf *c, const DfaForm *f)
      * declines every state carrying an edge, so no skip can fire at a head —
      * and the prefilter was MOVED here rather than copied where `s0` is one. */
     if (f->acc->emit_top) f->acc->emit_top(c, f);
-    if (f->pf->emit && s0head) f->pf->emit(c, f);
+    if (f->pf->u.pf.emit && s0head) f->pf->u.pf.emit(c, f);
     for (int k = 0; k < f->nscan; k++) emit_scan_edge(c, f, f->scan[k]);
     pcrec_sb_printf(c, "%s    goto %s;\n", ind, lv);
     pcrec_sb_printf(c, "%s}\n", ind);
@@ -9264,7 +9293,7 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
     if (!pinned) rev.repr->emit_token(c, &rev);
     emit_scan_defs(c, &fwd);
     if (!pinned) emit_scan_defs(c, &rev);
-    if (fwd.pf->emit_block) fwd.pf->emit_block(c, &fwd);
+    if (fwd.pf->u.pf.emit_block) fwd.pf->u.pf.emit_block(c, &fwd);
     /* [OPT-LITSCAN] S1 step 6 the run pre-check's blocks, under the same
      * condition as its call below. */
     if (cx->job->fit.chosen == ENGM_DFA) pcrec_emit_req_run_blocks(cx, c);
@@ -9740,7 +9769,7 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
     /* [D63] THE CANDIDATE-START PREFILTER, this engine's first instance.
      * Derived by the shared helper; only the LOOP INTEGRATION is here. */
     CandSet cand;
-    bool cpre = attempt_cand(d, &cand);
+    bool cpre = attempt_next_of(cx, &cand)->u.pf.scan == PF_SCAN_BYTE;
 
     /* anchored fast path (M2.1): if every interior start state is dead, every
      * branch requires ^, so only start == 0 can ever match.
@@ -10417,9 +10446,10 @@ void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
     bool dfa_body = cx->job->fit.chosen != ENGM_VM || cx->job->fit.prefilter;
     CandSet acand;
     bool need_string_h =
-        dfa_body && (cx->job->engine == PCREC_ENG_UNANCH ||
-                     (cx->job->engine == PCREC_ENG_ATTEMPT &&
-                      attempt_cand(&cx->job->dfa, &acand) && acand.use_memchr));
+        dfa_body && (cand_route_of(cx) == CAND_ROUTE_DFA ||
+                     (cand_route_of(cx) == CAND_ROUTE_ATTEMPT &&
+                      attempt_next_of(cx, &acand)->u.pf.scan == PF_SCAN_BYTE &&
+                      acand.use_memchr));
     /* [OPT-REQBYTE] A SECOND `memchr` CUSTOMER, and it reaches artifacts the
      * test above cannot: the pre-check is emitted into BOTH engines' search
      * entries, including a VM artifact with no DFA scan in it at all — which
@@ -10697,10 +10727,8 @@ void pcrec_emit_residual(Ctx *cx)
  * artifact's own scan is. */
 void pcrec_emit_dfa_engine(Ctx *cx, const char *fn, const char *storage)
 {
-    PCREC_CAND_TRACE_REC("ROUTE", "-", cx->job->engine == PCREC_ENG_UNANCH ? "dfa" : "attempt",
-                         "dfa-engine");
-    CAND_ORACLE_ROUTE(cx, cx->job->engine == PCREC_ENG_UNANCH ? "dfa" : "attempt", "dfa-engine");
-    if (cx->job->engine == PCREC_ENG_UNANCH) emit_unanchored(cx, fn, storage);
+    PCREC_CAND_TRACE_REC("ROUTE", "-", CAND_ROUTE_NAME(cand_route_of(cx)), "dfa-engine");
+    if (cand_route_of(cx) == CAND_ROUTE_DFA) emit_unanchored(cx, fn, storage);
     else                                     emit_attempt(cx, fn, storage);
 }
 
@@ -10811,7 +10839,7 @@ void pcrec_emit_main(Ctx *cx, const GenNames *g)
 static const char *dfa_scan_name(Ctx *cx)
 {
     if (dfa_engine_is_empty(cx)) return "empty";
-    return cx->job->engine == PCREC_ENG_ATTEMPT ? "attempt" : "unanchored";
+    return cand_route_of(cx) == CAND_ROUTE_ATTEMPT ? "attempt" : "unanchored";
 }
 
 /* Names `<PREFIX>_DFA_PREFILTER`'s value: the prefilter FORM this artifact's scan carries.
@@ -10831,7 +10859,7 @@ static const char *dfa_prefilter_name(Ctx *cx)
      * `dfa_engine_is_empty` identifies. An `if` here would be a THIRD statement
      * of that fact, and the check (tests/codegen/run_dfa_stamps.sh) asserts it
      * from the emitted text instead. */
-    if (cx->job->engine == PCREC_ENG_ATTEMPT) {
+    if (cand_route_of(cx) == CAND_ROUTE_ATTEMPT) {
         /* ENG_ATTEMPT skips whole ATTEMPTS rather than positions inside one
          * (D63's loop-integration split), so it needs no D11 bound and has no
          * bounded form: `attempt_cand` is memchr-or-nothing by charter, and
@@ -10840,7 +10868,7 @@ static const char *dfa_prefilter_name(Ctx *cx)
          * other half of the key: it tells a reader WHICH loop this memchr is
          * in. */
         CandSet acand;
-        return attempt_cand(&cx->job->dfa, &acand) ? "memchr" : "none";
+        return attempt_next_of(cx, &acand)->u.pf.scan == PF_SCAN_BYTE ? "memchr" : "none";
     }
     UnanchStart us;
     unanch_start(cx, &us);
@@ -10857,7 +10885,7 @@ static const char *dfa_prefilter_name(Ctx *cx)
      * are five OBJECTS: the `-bounded` half is a genuinely different emitted
      * loop, not a suffix this function appends, so it cannot disagree with
      * the loop the emitter wrote. */
-    return dfa_pf_of(cx, &us)->c.name;
+    return dfa_pf_of(cx, &us)->tok;
 }
 
 /* [DD-13c] WHICH DFA SCAN THIS ARTIFACT CARRIES — the two lines, emitted from
@@ -10912,7 +10940,7 @@ static void dfa_prefilter_offsets(Ctx *cx, StrBuf *out)
      * already answers "none" for exactly those artifacts. A clause here would
      * be a fourth statement of that fact. ENG_ATTEMPT needs its own arm
      * because `unanch_start` is not the derivation it uses. */
-    if (cx->job->engine == PCREC_ENG_ATTEMPT) { pcrec_sb_puts(out, "none"); return; }
+    if (cand_route_of(cx) == CAND_ROUTE_ATTEMPT) { pcrec_sb_puts(out, "none"); return; }
     UnanchStart us;
     OfsTest t;
     unanch_start(cx, &us);
