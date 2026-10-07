@@ -5,6 +5,7 @@
   (honoured/declined/refused/ignored, 8 K96-class suspect cells), 13
   rows-disagree cells, visibility today, and reach from pcrec's corpus
   and from G2.
+- `customers.md` — lane rowcust (sonnet, read-only): six pcrec REFERENCE CUSTOMERS for the engine (cand_rows on lane/stc2, dfa_pfs/DFA_SELECT, engine selection, POSS-CTX-TABLE, the axes, C1 trace), each with its hardest-to-host feature.
 - `audit_pcrec_tables.md` — lane rowaudit7 (sonnet, read-only): pcrec's
   ~13 first-match tables, prior unification designs (start_table.md,
   decision_families_survey.md, D152) and the kit boundary's implications.
