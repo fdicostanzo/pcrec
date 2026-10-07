@@ -1361,7 +1361,10 @@ graph's own parse with the total resolution of §2.1 method 3 (0 unresolved
   S181, S224-S226, S264, S370, S400, S422, S430, S469; C5b: S491, S493, S496,
   S497). The other 53 rows' owners no commit touches; they re-run once, as
   one mech sweep after C5b. S495's REACH probe must still find a name read.
-- **The duplicate id** [r2.1 S-N3]: `S169_root_minw_unchecked.sh` (H1's row)
+- **The duplicate id** [r2.1 S-N3] (RESOLVED 2026-10-07, lane admin1007:
+  `S169_root_minw_unchecked.sh` is now `S556_root_minw_unchecked.sh`; the
+  id S169 belongs to the older postresolve row alone; the prose below and the
+  counts in this document are the revision-2.1 snapshot): `S169_root_minw_unchecked.sh` (H1's row)
   and `S169_postresolve_pass_deleted.sh` ([DD-14.LB]) share `S169`, both
   committed 2026-08-24 by two lanes. Revision 2's "462 rows" counted ids and
   merged them; rows are now keyed by FILE. The fix (renumber one, at the next

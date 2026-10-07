@@ -2135,11 +2135,11 @@ nothing about the guard it names**, and only running it says which one you wrote
 rewrote (`fit.prefilter` now also refuses a call-bearing pattern). It is the
 backref twin of the new **S165**, and both are DETECTED.
 
-## [DD-14 wave E] S169, and S157 closing as DETECTED (20/6)
+## [DD-14 wave E] S556 (born S169), and S157 closing as DETECTED (20/6)
 
 Wave E adds **one** row and flips **one**.
 
-**S169 — `S169_root_minw_unchecked.sh`, the [DD-14.EMPTY] root check.**
+**S556 (born S169; renumbered 2026-10-07 because two rows shared S169, and `S169` is the older `S169_postresolve_pass_deleted.sh`) — `S556_root_minw_unchecked.sh`, the [DD-14.EMPTY] root check.**
 `src/gen/emit_vm.c` stops emitting the search entry's ROOT minimum-width
 comparison, so an empty-language pattern with no quantifier to carry an MRL
 clamp runs until the resume-frame buffer gives up instead of answering NOMATCH.
@@ -2180,7 +2180,7 @@ load-bearing before a possessification can delete anything.
 invocation at `PROCS=4` — **80/80 with `unexpected: 0`, `anomalies: 0`,
 `oracle-skipped: 0`**. Six report `undetected: 1`, and they are exactly the
 six the table above still lists: S150, S151, S152, S153, S160, S164. S157 is
-DETECTED in that run. **S169** is DETECTED at `corpus:2fail/5pass` —
+DETECTED in that run. **S556** (then S169) is DETECTED at `corpus:2fail/5pass` —
 the two-red-one-green signature its own header predicts, arriving from a run
 rather than from reading the row. **S165** is DETECTED at
 `corpus:361fail/50pass, recdiff:18fail/1pass`.
