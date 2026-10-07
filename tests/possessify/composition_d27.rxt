@@ -14,8 +14,10 @@
 #
 # Subjects containing no escapes are literal; `ms P` cases use startpos P on the block's
 # longest subject (lookbehind / \b / \G see the bytes before P).
-oracle pcre2/10.46
-description possessification composition corpus: word boundaries, gates, backrefs, recursion, loops
+# oracle: pcre2/10.46 (NOT written as a head declaration: a head-bearing file is refused whole by
+# tests/harness/verify_rxt.py and dropped from rxtsource's leg C, whose premise is that a head-bearing
+# file has no body blocks -- this file has 676. Kept as plain comments so all three .rxt readers see it.)
+# description: possessification composition corpus: word boundaries, gates, backrefs, recursion, loops
 
 # pcre2-only
 pattern [a-]{0,2}?(?:(?<!\w)|)\B
