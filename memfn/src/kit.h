@@ -311,9 +311,12 @@ void gate_trace_row(const gate_tctx *t, const gate_contract *c, const char *verd
                     uint64_t deny, const gate_verdict *v);
 /* MFTRACE END: the chosen row and its gate verdict (failing only on a use
  * re-check, which the kit then refuses); or, `c` NULL, no row served and `v`
- * is the verdict the refusal names (the walk's last declined row). Counts a
- * chosen row's reach. */
-void gate_trace_end(const gate_tctx *t, const gate_contract *c, const gate_verdict *v);
+ * is the verdict the refusal names (the walk's last declined row). `mc`/`mv`,
+ * where not NULL, are the first row the walk DECLINED whose predicate held:
+ * the gate MOVED the selection off it (the N2 census's would-decline). Counts
+ * a chosen row's reach. */
+void gate_trace_end(const gate_tctx *t, const gate_contract *c, const gate_verdict *v,
+                    const gate_contract *mc, const gate_verdict *mv);
 #else
 static inline void gate_trace_art(mf_art *art) { (void)art; }
 static inline void gate_trace_sel(const gate_tctx *t) { (void)t; }
@@ -324,10 +327,21 @@ static inline void gate_trace_row(const gate_tctx *t, const gate_contract *c,
     (void)t; (void)c; (void)verdict; (void)deny; (void)v;
 }
 static inline void gate_trace_end(const gate_tctx *t, const gate_contract *c,
-                                  const gate_verdict *v)
+                                  const gate_verdict *v, const gate_contract *mc,
+                                  const gate_verdict *mv)
 {
-    (void)t; (void)c; (void)v;
+    (void)t; (void)c; (void)v; (void)mc; (void)mv;
 }
+#endif
+
+/* 1 in a trace build: the walks then also ask a DECLINED row's predicate
+ * (every predicate is a pure function of the site and the hooks), so the
+ * trace can say whether the gate moved the selection. 0 otherwise, where the
+ * walks never ask it. */
+#ifdef MF_TRACE
+enum { GATE_TRACING = 1 };
+#else
+enum { GATE_TRACING = 0 };
 #endif
 
 #endif /* MEMFN_KIT_H */

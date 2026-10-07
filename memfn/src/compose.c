@@ -138,28 +138,38 @@ static const arm *const arms[] = {
  * asked. NULL when no row serves; `*why` is then the last declined row's
  * verdict (the generic row's, the table's total fallback), whose fields the
  * refusal names. */
+/* Row `a`'s predicate columns over the site and its define hooks. */
+static int arm_holds(const arm *a, const mf_site *s, const mf_hooks *def)
+{
+    return (!a->miss_leaves || s->on_miss_leaves) && a->applies(s, def);
+}
+
 static const arm *select_arm(const mf_art *art, const mf_site *s,
                              const mf_hooks *def, gate_verdict *why)
 {
     gate_in in = { s, def, NULL };
     gate_tctx tc = { art, "arms", art->nsites + 1, MF_PH_DEFINE, &in };
+    const gate_contract *mc = NULL;     /* trace only: the row the gate moved off */
+    gate_verdict mv = { 0, 0 };
     gate_trace_sel(&tc);
     for (size_t i = 0; i < sizeof arms / sizeof arms[0]; i++) {
         gate_verdict v = gate_check(arms[i]->ct, MF_PH_DEFINE, &in);
         if (v.r1 | v.r2) {
-            gate_trace_row(&tc, arms[i]->ct, "DECLINED", 0, &v);
+            int held = GATE_TRACING && arm_holds(arms[i], s, def);
+            if (held && !mc) { mc = arms[i]->ct; mv = v; }
+            gate_trace_row(&tc, arms[i]->ct,
+                           held ? "DECLINED:PRED_HOLDS" : "DECLINED", 0, &v);
             *why = v;
             continue;
         }
-        if ((!arms[i]->miss_leaves || s->on_miss_leaves) &&
-            arms[i]->applies(s, def)) {
+        if (arm_holds(arms[i], s, def)) {
             gate_trace_row(&tc, arms[i]->ct, "CHOSEN", 0, &v);
-            gate_trace_end(&tc, arms[i]->ct, &v);
+            gate_trace_end(&tc, arms[i]->ct, &v, mc, &mv);
             return arms[i];
         }
         gate_trace_row(&tc, arms[i]->ct, "PRED_FALSE", 0, &v);
     }
-    gate_trace_end(&tc, NULL, why);
+    gate_trace_end(&tc, NULL, why, mc, &mv);
     return NULL;
 }
 
@@ -352,7 +362,7 @@ int mf_use(mf_art *art, uint32_t handle, const mf_hooks *use, mf_sink *body,
     gate_verdict v = gate_check(r->arm->ct, MF_PH_USE, &in);
     gate_trace_sel(&tc);
     gate_trace_row(&tc, r->arm->ct, "RECHECK", 0, &v);
-    gate_trace_end(&tc, r->arm->ct, &v);
+    gate_trace_end(&tc, r->arm->ct, &v, NULL, NULL);
     if (v.r1 | v.r2) {
         char f[200];
         gate_describe(f, sizeof f, &v, &in);

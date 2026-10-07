@@ -545,7 +545,14 @@ void gate_trace_row(const gate_tctx *t, const gate_contract *c, const char *verd
     fputs("\n", stderr);
 }
 
-void gate_trace_end(const gate_tctx *t, const gate_contract *c, const gate_verdict *v)
+/* ` moved_from=<row>` where the gate moved the selection off row `mc`. */
+static void put_moved(const gate_contract *mc)
+{
+    if (mc) fprintf(stderr, " moved_from=%s", mc->row);
+}
+
+void gate_trace_end(const gate_tctx *t, const gate_contract *c, const gate_verdict *v,
+                    const gate_contract *mc, const gate_verdict *mv)
 {
     head(t, "END");
     if (!c) {
@@ -554,11 +561,18 @@ void gate_trace_end(const gate_tctx *t, const gate_contract *c, const gate_verdi
         fputs(" chosen=- would_decline=- fields=", stderr);
         if (v) put_fields(v, t->in);
         else   fputs("-", stderr);
+        put_moved(mc);
         fputs("\n", stderr);
         return;
     }
-    fprintf(stderr, " chosen=%s would_decline=%d fields=", c->row, (v->r1 | v->r2) != 0);
-    put_fields(v, t->in);
+    /* would_decline: at define/run, the gate MOVED the selection (the first
+       row whose predicate held was declined; its fields are printed), N1's
+       WARN quantity measured on the enforcing build; at use, the re-check
+       failed and the kit refuses */
+    const gate_verdict *w = mc ? mv : v;
+    fprintf(stderr, " chosen=%s would_decline=%d fields=", c->row, (w->r1 | w->r2) != 0);
+    put_fields(w, t->in);
+    put_moved(mc);
     fputs("\n", stderr);
 
     unsigned slot = reach_slot(c);
