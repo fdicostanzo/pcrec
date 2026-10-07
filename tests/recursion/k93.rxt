@@ -1,0 +1,242 @@
+# tests/recursion/k93.rxt -- K93 (docs/dev/known_issues.md): a quantifier
+# inside a SUBROUTINE-CALL TARGET runs under EVERY call site's follow, not
+# only under its group's lexical one.
+#
+# HAND-WRITTEN, NOT GENERATED, `k69.rxt`'s precedent: one fix's regression.
+# Every expectation below was read off libpcre2 10.46 BEFORE it was written --
+# a light probe on the reference box through the committed ctypes binding
+# (docs/design/eng_brep_measurements/probes/pcre2_ctypes.py, `search` from
+# offset 0, default options AND PCRE2_NO_AUTO_POSSESS), transcript in
+# docs/dev/lanes/k93fix_report.md. pcrec was not asked. No python arm (python's
+# `re` has no subroutine call).
+#
+# WHAT MOVED. src/opt/possessify.c gave a quantifier inside a called group a
+# verdict computed from the group's LEXICAL follow, on the premise that the
+# lexical position is where "the enclosing follow is the real one". A call
+# re-runs the group under the CALL SITE's follow, so the verdict now has to
+# hold under the JOIN of every context the body can run in (the lexical one,
+# every call site's, transitively through nested calls and recursion; a call
+# inside a lookaround contributes every byte). The same walk is the free
+# discharge's survey (src/opt/atomic.c), so the discharge moved with it.
+#
+# The two 10.46 answers agree on every cell here except the `(?R)` block,
+# where 10.46's own auto-possessification is not call-aware; that block's
+# note says which answer is which and that the choice is unruled.
+#
+# Every block is CAPTURE-BEARING, so it routes to the VM, where possessify
+# runs; the witnesses are NOMATCH (or a longer lazy span) on main 54c42e36.
+
+# THE K93 WITNESS. `a+` is followed lexically by `b` and at the call site by `a`; possessified against `{b}` it eats the `a` the call site must leave (main 54c42e36: NOMATCH on all three matching subjects).
+pattern (a+)b(?1)a
+features recursion
+m "abaa" 0 4
+g 1 0 1
+m "aabaaa" 0 6
+g 1 0 2
+m "abaaa" 0 5
+g 1 0 1
+n "aba"
+n "ab"
+
+# K93's named spelling, over a COUNTED callee.
+pattern (?<n>a{1,3})b(?&n)a
+features recursion,named-groups
+m "abaa" 0 4
+g 1 0 1
+m "aaabaaaa" 0 8
+g 1 0 3
+m "abaaaaa" 0 6
+g 1 0 1
+m "aaabaaa" 0 7
+g 1 0 3
+
+# K93: the group's lexical occurrence is in an alternation branch the match does not take; only the call runs it.
+pattern (?:(a+)b|x)(?1)a
+features recursion
+m "xaa" 0 3
+g 1 -1 -1
+m "xaaa" 0 4
+g 1 -1 -1
+n "xa"
+
+# K93 related item 1, the FREE DISCHARGE: `(?>a+)` must not be spliced out on a verdict from the lexical follow `{b}`, because the call re-runs the cut under `{a}` and the cut is what makes these NOMATCH. Right by accident on the default build (possessify re-marks the loop); `-fno-possessify` answered (0,4) on main -- tests/possessify/run_possessify_tests.sh section 8 runs that build.
+pattern ((?>a+))b(?1)a
+features recursion,atomic-groups
+n "abaa"
+n "abaaa"
+n "aba"
+
+# The python-style call spelling.
+pattern (?P<n>a+)b(?P>n)a
+features recursion,named-groups
+m "abaa" 0 4
+g 1 0 1
+m "aabaaa" 0 6
+g 1 0 2
+
+# A RELATIVE call.
+pattern (a+)b(?-1)a
+features recursion
+m "abaa" 0 4
+g 1 0 1
+m "aabaaa" 0 6
+g 1 0 2
+
+# A FORWARD relative call, before the group's definition.
+pattern (?+1)a(a+)b
+features recursion
+m "aaab" 0 4
+g 1 2 3
+n "aab"
+m "aaaab" 0 5
+g 1 3 4
+
+# A call BEFORE the definition: the call site's follow `{a}` is walked before the group's own lexical follow `{b}` is.
+pattern (?1)a(a+)b
+features recursion
+m "aaab" 0 4
+g 1 2 3
+n "aab"
+m "aaaab" 0 5
+g 1 3 4
+
+# NESTED: group 1 is reached through group 2's body, whose own context comes from `(?2)` -- the follow `{a}` reaches `a+` only transitively, which is what the fixpoint iterates for.
+pattern (a+)b((?1))c(?2)a
+features recursion
+m "abacaa" 0 6
+g 1 0 1
+g 2 2 3
+m "abacaaa" 0 7
+g 1 0 1
+g 2 2 3
+n "abaca"
+m "aabaacaaa" 0 9
+g 1 0 2
+g 2 3 5
+
+# A call inside a REPEAT: after the callee returns the loop can restart or exit, so the call site's context carries the enclosing loop's first set too.
+pattern (a+)b(?:x(?1))*a
+features recursion
+m "abxaa" 0 5
+g 1 0 1
+m "abxaxaa" 0 7
+g 1 0 1
+n "abxa"
+m "aba" 0 3
+g 1 0 1
+
+# A QUANTIFIED call.
+pattern (a+)b(?1)+a
+features recursion
+m "abaa" 0 4
+g 1 0 1
+m "aabaaa" 0 6
+g 1 0 2
+m "abaaaa" 0 6
+g 1 0 1
+
+# The call and the definition in SIBLING branches, with disjoint follows.
+pattern (?:x(?1)a|(a+)b)
+features recursion
+m "xaa" 0 3
+g 1 -1 -1
+m "xaaa" 0 4
+g 1 -1 -1
+m "ab" 0 2
+g 1 0 1
+n "xa"
+
+# A class body: lexical follow `-`, call-site follow `5`, inside the class.
+pattern (\d+)-(?1)5
+features recursion,classes
+m "12-345" 0 6
+g 1 0 2
+n "1-5"
+m "1-55" 0 4
+g 1 0 1
+
+# THE `may_end` CHANNEL. Lexically the lazy `a+?` is followed by `b` and the match cannot end there, so the preference collapse to maximal was licensed; at the call site the match MAY end, which is the lazy conjunct's case (main: (0,4) where 10.46 answers (0,3)).
+pattern (a+?)b(?1)
+features recursion
+m "abaa" 0 3
+g 1 0 1
+m "aabaaa" 0 4
+g 1 0 2
+n "ab"
+
+# A call inside a LOOKAROUND, which the possessify walk never enters: such a site contributes the TOP context (every byte, may end).
+pattern (a+)b(?=(?1)a)
+features recursion,lookaround
+m "abaa" 0 2
+g 1 0 1
+n "aba"
+m "abaaa" 0 2
+g 1 0 1
+
+# A call inside an ATOMIC group: the cut makes the greedy callee's first exit final, so these are NOMATCH on every build -- the control that the context join does not loosen the cut.
+pattern (a+)b(?>(?1))a
+features recursion,atomic-groups
+n "abaa"
+n "abab"
+n "abaab"
+
+# RECURSION through a numbered group: lexically `a+` is followed by `$` (transparent), at the recursive call by `a`.
+pattern ^(b(?1)a|a+)$
+features recursion
+m "baa" 0 3
+g 1 0 3
+m "bbaaa" 0 5
+g 1 0 5
+m "aaa" 0 3
+g 1 0 3
+n "ba"
+
+# K93 related item 2, `(?R)`: group 0's region is the whole pattern, and the recursive site's follow `{a}` reaches the top-level `a+`. THE UNQUALIFIED LINES ARE THE SOUND ANSWER, which is libpcre2 10.46's under PCRE2_NO_AUTO_POSSESS. 10.46's DEFAULT answer differs -- its own auto-possessification is not call-aware for `(?R)` (it is for every numbered/named call above) -- and is recorded as the `under pcre2-auto-possess` lines; WHICH ONE pcrec matches is UNRULED (docs/dev/known_issues.md K93, docs/dev/lanes/k93fix_report.md).
+pattern (?:b(?R)a|a+)
+features recursion
+m "baa" 0 3
+under pcre2-auto-possess m "baa" 1 3
+m "bbaaa" 0 5
+under pcre2-auto-possess m "bbaaa" 2 5
+m "baaa" 0 4
+under pcre2-auto-possess m "baaa" 1 4
+m "aaa" 0 3
+m "ba" 1 2
+
+# STILL POSSESSIVE, and that is the point: both follows (`b`, `c`) are disjoint from `a`, so the verdict holds at every site and the fix must keep it (tests/possessify/run_possessify_tests.sh section 8 asserts the stamp).
+pattern (a+)b(?1)c
+features recursion
+m "abac" 0 4
+g 1 0 1
+m "aabaac" 0 6
+g 1 0 2
+n "abc"
+n "abaa"
+
+# A class callee whose lexical follow `c` is disjoint and whose call-site follow `a` is not.
+pattern ([ab]+)c(?1)a
+features recursion
+m "acba" 0 4
+g 1 0 1
+m "abcaba" 0 6
+g 1 0 2
+m "acaa" 0 4
+g 1 0 1
+
+# A call inside a COUNTED repeat, before the definition.
+pattern (?:(?1)a){2}(a+)b
+features recursion
+m "aaaaab" 0 6
+g 1 4 5
+n "aaab"
+
+# Two consecutive calls: the first call's follow is the second call's first set (every byte), the second's is `a`.
+pattern (a{1,3})b(?1)(?1)a
+features recursion
+m "abaaa" 0 5
+g 1 0 1
+m "abaaaa" 0 6
+g 1 0 1
+m "aabaaaaa" 0 8
+g 1 0 2
+
