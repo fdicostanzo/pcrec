@@ -65,8 +65,8 @@ enum { RC_P_MASKED_WORDS, RC_P_OVERLAP, RC_P_MASKED, RC_P_EXACT };
 enum { RC_F_WORDS, RC_F_BYTES, RC_F_MEMCMP };
 
 /* One row: what `mf_run_rows` shows, the tags the walk reads, and its
- * contract (the WARN gate's, [MEMFN-ROWCON] N1; the contracts follow the
- * walk, at the end of the file). */
+ * contract (the gate's, [MEMFN-ROWCON] N1, enforcing since N3; the
+ * contracts follow the walk, at the end of the file). */
 typedef struct {
     mf_run_row           row;
     unsigned char        pred;
@@ -162,15 +162,17 @@ static int rc_holds(int pred, const rc_run *r)
     return 0;
 }
 
-/* The first row that applies to run `r` (RUN term `t`) and is not denied by
- * the art's denies: the ONE selection both the compare and the helper
- * declaration ask. NULL only if the table lost a domain's fallback. The WARN
- * gate reads each undenied row's contract before its predicate and only
- * counts (`run_warns`) a chosen row it would decline (N1). */
+/* The first row that is not denied by the art's denies, that the gate
+ * passes, and that applies to run `r` (RUN term `t`): the ONE selection both
+ * the compare and the helper declaration ask. The gate reads each undenied
+ * row's contract before its predicate and DECLINES a failing row (N3). NULL,
+ * after recording the refusal on the art naming the fields of the last row
+ * declined (a domain's total fallback), when no row serves. */
 static const rc_row *rc_row_of(mf_art *art, const mf_term *t, const rc_run *r)
 {
     gate_in in = { NULL, NULL, t };
     gate_tctx tc = { art, "runcmp", 0, MF_PH_RUN, &in };
+    gate_verdict why = { 0, 0 };
     gate_trace_sel(&tc);
     for (size_t i = 0; i < NROWS; i++) {
         if (rows[i].row.deny & art->denies) {
@@ -178,15 +180,23 @@ static const rc_row *rc_row_of(mf_art *art, const mf_term *t, const rc_run *r)
             continue;
         }
         gate_verdict v = gate_check(rows[i].ct, MF_PH_RUN, &in);
+        if (v.r1 | v.r2) {
+            gate_trace_row(&tc, rows[i].ct, "DECLINED", 0, &v);
+            why = v;
+            continue;
+        }
         if (rc_holds(rows[i].pred, r)) {
             gate_trace_row(&tc, rows[i].ct, "CHOSEN", 0, &v);
             gate_trace_end(&tc, rows[i].ct, &v);
-            if (v.r1 | v.r2) art->run_warns++;
             return &rows[i];
         }
         gate_trace_row(&tc, rows[i].ct, "PRED_FALSE", 0, &v);
     }
-    gate_trace_end(&tc, NULL, NULL);
+    gate_trace_end(&tc, NULL, &why);
+    char f[200];
+    gate_describe(f, sizeof f, &why, &in);
+    kit_fail(art, "runcmp: no run-compare row serves the RUN term: %s",
+             f[0] ? f : "(no row applies; a domain lost its fallback)");
     return NULL;
 }
 
@@ -272,8 +282,7 @@ int run_cmp_render(mf_art *art, const mf_term *t, const char *base,
 {
     rc_run r = rc_of(t);
     const rc_row *row = rc_row_of(art, t, &r);
-    if (!row)
-        return kit_fail(art, "runcmp: no run-compare row applies");
+    if (!row) return -1;    /* rc_row_of recorded the refusal */
     if (kit_sink_ok(art, c, "runcmp")) return -1;
     if (row->form != RC_F_BYTES && !c->cstr)
         return kit_fail(art, "runcmp: the sink offers no cstr op");
@@ -306,8 +315,7 @@ int run_cmp_prepare(mf_art *art, const mf_pred *p, mf_sink *c)
         if (p->term[i].kind != MF_T_RUN) continue;
         rc_run r = rc_of(&p->term[i]);
         const rc_row *row = rc_row_of(art, &p->term[i], &r);
-        if (!row)
-            return kit_fail(art, "runcmp: no run-compare row applies");
+        if (!row) return -1;    /* rc_row_of recorded the refusal */
         if (row->form != RC_F_WORDS) continue;
         art->wused |= (unsigned)rc_width(r.len);
         if (mf_flush_helpers(art, c)) return -1;

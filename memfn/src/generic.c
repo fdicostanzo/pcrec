@@ -708,8 +708,10 @@ static const gate_use generic_uses[] = {
     { CM(STMT), CM(ON_CAND), MF_PH_USE, FM(on_cand) | FM(result) | FM(miss) },
     /* :525-526 */
     { CM(STMT), CM(ADVANCE), MF_PH_USE, FM(step) | FM(more) | FM(peek) },
-    /* :566-567 */
-    { CM(FUNC), MF_ANY, MF_PH_DEFINE, FM(fn_name) },
+    /* :566-568: the function's name is fn_name(site.pred.fn_ref), for every
+       op (K-1); a FUNC site stating fn_ref 0 states no name, so the row
+       declines it (R1) and, being the last, the kit refuses it (N3) */
+    { CM(FUNC), MF_ANY, MF_PH_DEFINE, FM(fn_name) | FM(fn_ref) },
     /* :574, :609-610 */
     { CM(FUNC), CM(RETURN), MF_PH_USE, FM(miss) },
 };
@@ -729,7 +731,7 @@ static const gate_contract generic_ct = {
     [FLD_on_miss_leaves]  = MF_ANY,     /* not read: the text tests in order, :269-277 */
     [FLD_span_hi]         = MF_ANY,     /* :529, :543 */
     [FLD_denies]          = MF_ANY,     /* not read: its compares are its own, :189-204 */
-    [FLD_fn_ref]          = MF_ANY,     /* :568 */
+    [FLD_fn_ref]          = MF_ANY,     /* :568 any stated id; 0 is unstated (fields.def) */
     [FLD_table_ref]       = MF_ANY,     /* not read: a set is member or its own test, :131-136 */
     [FLD_s]               = MF_ANY,     /* :304-305, :487-488 parenthesized */
     [FLD_n]               = MF_ANY,     /* :306, :360, :456, :489-490 */

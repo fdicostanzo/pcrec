@@ -2,11 +2,13 @@
  * Provenance: original pcrec-memory-functions text; no third-party source
  *   (memfn/PROVENANCE.md).
  *
- * memfn/src/gate.c — THE ROW-CONTRACT GATE ([MEMFN-ROWCON] N1,
- * docs/design/memfn/row_contracts.md §2-§4): the classify functions of
- * fields.def, the gate's per-field rules over a row's `uses`/`serves`, and,
- * under the compile-time switch MF_TRACE, the `MFTRACE` selection records
- * and reach counters (memfn/docs/trace_format.md).
+ * memfn/src/gate.c — THE ROW-CONTRACT GATE ([MEMFN-ROWCON] N1, enforcing
+ * since N3; docs/design/memfn/row_contracts.md §2-§5): the classify
+ * functions of fields.def, the gate's per-field rules over a row's
+ * `uses`/`serves`, the one text every refusal names its fields with
+ * (`gate_describe`), and, under the compile-time switch MF_TRACE, the
+ * `MFTRACE` selection records and reach counters
+ * (memfn/docs/trace_format.md).
  *
  * The gate answers, for one row at one phase, which fields would make it
  * DECLINE. Per field the phase reads, the first rule that matches:
@@ -14,8 +16,13 @@
  *   2. it is STATED and the row does not SERVE
  *      its class:                               DECLINE (R2);
  *   3. otherwise:                               pass.
- * In N1 it runs in WARN MODE: its callers record the verdict and change no
- * selection and refuse nothing (row_contracts.md §5).
+ * Since N3 it ENFORCES (row_contracts.md §5). Its callers act on the ONE
+ * verdict this file computes: the two selection walks (compose.c
+ * `select_arm`, runcmp.c `rc_row_of`) DECLINE a failing row before its
+ * predicate and move on, and refuse the site, naming the fields, when no row
+ * is left; `mf_use` re-checks the chosen row against the use hooks and
+ * refuses a failing use, naming the fields (it cannot re-select: the
+ * definition is written).
  *
  * MF_TRACE (off by default) is a scratch-build switch: its records go to
  * stderr and its counters are process-wide, not per-art, so a trace build is
@@ -233,10 +240,12 @@ static int cl_denies(const gate_in *in)
          : in->s->denies == MF_D_RUN_OVERLAP ? CL_RUN_OVERLAP : CL_OTHER;
 }
 
+/* A hook ID, like the hooks themselves: 0 is UNSTATED (N3, K-1). It is
+ * `site.pred.fn_ref` for every op: a FUNC site's own name (memfn.h). */
 static int cl_fn_ref(const gate_in *in)
 {
     if (!in->s) return CL_OTHER;
-    return in->s->pred.fn_ref ? CL_REF : CL_NONE;
+    return in->s->pred.fn_ref ? CL_REF : -1;
 }
 
 static int cl_table_ref(const gate_in *in)
@@ -393,15 +402,38 @@ gate_verdict gate_check(const gate_contract *c, unsigned phase, const gate_in *i
     return v;
 }
 
-/* ---- MF_TRACE: the records and the reach counters ------------------------ */
-
-#ifdef MF_TRACE
+/* ---- the refusal text ---------------------------------------------------- */
 
 static const char *const class_names[CL_N] = {
 #define MF_CLASS(name, doc) #name,
 #include "fields.def"
 #undef MF_CLASS
 };
+
+/* `f` (R1: used, not stated) and `g` (R2: stated as CLASS, not served), one
+ * per field the verdict declines, in fields.def order, comma-joined, into
+ * buf[0..n): every gate refusal names its fields with this (ruling (d)). The
+ * field names are backquoted, as the kit's other refusals spell a hook. */
+void gate_describe(char *buf, size_t n, const gate_verdict *v, const gate_in *in)
+{
+    size_t at = 0;
+    if (n) buf[0] = '\0';
+    for (unsigned f = 0; f < FLD_N && at < n; f++) {
+        int w = 0;
+        const char *sep = at ? ", " : "";
+        if (v->r1 >> f & 1)
+            w = snprintf(buf + at, n - at, "%s`%s` (R1: used, not stated)", sep,
+                         fields[f].name);
+        else if (v->r2 >> f & 1)
+            w = snprintf(buf + at, n - at, "%s`%s` (R2: stated as %s, not served)", sep,
+                         fields[f].name, class_names[class_of(f, in)]);
+        if (w > 0) at += (size_t)w;
+    }
+}
+
+/* ---- MF_TRACE: the records and the reach counters ------------------------ */
+
+#ifdef MF_TRACE
 
 /* Process-wide on purpose (trace builds only): the reach is summed over
  * every art one process renders, and printed once at exit. */
@@ -517,7 +549,12 @@ void gate_trace_end(const gate_tctx *t, const gate_contract *c, const gate_verdi
 {
     head(t, "END");
     if (!c) {
-        fputs(" chosen=- would_decline=-\n", stderr);
+        /* no row serves: the kit refuses, naming `v`'s fields (the last row
+           the walk declined, its total fallback) */
+        fputs(" chosen=- would_decline=- fields=", stderr);
+        if (v) put_fields(v, t->in);
+        else   fputs("-", stderr);
+        fputs("\n", stderr);
         return;
     }
     fprintf(stderr, " chosen=%s would_decline=%d fields=", c->row, (v->r1 | v->r2) != 0);
