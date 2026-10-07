@@ -149,3 +149,17 @@ ReqUse	TYPE	FIRST	the use enum ReqUseRow embeds -> u.use
 PcrecReseedRow	TYPE	RETRY	-> CandRow.u.reseed (C5)
 DfaMatch	NOTSTART	match axis	dfa_matches[]'s row type; the match-here entry stays outside (§2.5)
 pcrec_reseed_nrows	PROJ	RETRY	the reseed table's row count, read by vm_plan_reseed's walk and the listing; kept as an accessor until C7 (§3.5)
+cand_rows	TABLE	every slot (37 rows)	[C2] THE one start table, built beside the old tables; no reader until C3 (call_graph.py's TABLE_ROOTS puts it in the family the commit that builds it)
+cand_select	WALK	every slot	[C2] THE one walk, cand_select(slot, sel, flags); no reader until C3
+CandRow	TYPE	every slot	[C2] the row contract (§1.1): c, slot, routes, tok, map, giveup, hands, list[route], was (the oracle's link, deleted with the old tables)
+CandList	TYPE	every slot	[C2] list[route]: {axis, order, listed name}
+CandSlot	TYPE	every slot	[C2] the slot enum (core/internal.h; §1.2)
+cand_window_applies	PRED	WINDOW W1	[C2] the `w < 0` inline test as a predicate
+cand_ceiling_applies	PRED	WIDTH H1	[C2] the root-minw inline test as a predicate (reads CandSel.vm)
+cand_pred_memchr_applies	PRED	NEXT N12	[C2] attempt_cand by call, its CandSet discarded
+cand_rs_anchored_applies	PRED	RETRY R3	[C2] vm_reseed_holds' VRS_P_ANCHORED arm; restates BOUND(CR_VM) until C5b
+cand_rs_dense_applies	PRED	RETRY R4	[C2] vm_reseed_holds' VRS_P_DENSE arm (reads CandSel.vm's gap)
+cand_bound_bot_applies	PRED	BOUND B1	[C2] emit_attempt's `anchored` (a_bot && a_gst, the PCREC_NO_GSTART fold)
+cand_bound_gstart_attempt_applies	PRED	BOUND B2	[C2] emit_attempt's `a_bot`
+cand_bound_anchored_vm_applies	PRED	BOUND B3	[C2] the VM entry's start_anchor == BOT
+cand_bound_gstart_vm_applies	PRED	BOUND B4	[C2] the VM entry's start_anchor == GSTART

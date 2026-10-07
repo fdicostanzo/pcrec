@@ -98,6 +98,25 @@ for d in SRC:
             i = 0
             while i < len(L):
                 l = L[i]
+                # [START-TABLE] C2: the trace build's own code (`#ifdef
+                # PCREC_CAND_TRACE` up to its `#else`/`#endif`: the both-walks
+                # oracle, its hooks' trace spellings, the quiet depth) is not
+                # in the default build, decides nothing and is no definition
+                # of the census; the `#else` branch is parsed as usual.
+                if re.match(r'^#\s*ifdef\s+PCREC_CAND_TRACE\b', l):
+                    depth, i = 0, i + 1
+                    while i < len(L):
+                        if re.match(r'^#\s*if', L[i]):
+                            depth += 1
+                        elif re.match(r'^#\s*endif\b', L[i]):
+                            if depth == 0:
+                                break
+                            depth -= 1
+                        elif re.match(r'^#\s*else\b', L[i]) and depth == 0:
+                            break
+                        i += 1
+                    i += 1
+                    continue
                 m = re.match(r'^#\s*define\s+([A-Za-z_]\w*)(\()?', l)
                 if m:
                     # function-like MACROS are definitions (a table walk is
@@ -201,7 +220,12 @@ for n in list(edges):
 
 R_body = reach(BODY_ROOTS)
 R_stamp = reach(STAMP_ROOTS)
-R = reach(EMIT_ROOTS)
+# [START-TABLE] C2: the one start table's walk is a root too. No emitter
+# reaches `cand_select` until C3 switches the first reader (implement, then
+# replace), yet `cand_rows[]` and every predicate it stores are start-family
+# by construction, so they join the family the commit that builds them.
+TABLE_ROOTS = ["cand_select"]
+R = reach(EMIT_ROOTS + TABLE_ROOTS)
 # FAMILY: members of R from which a SEED is reachable (and the seeds' owners
 # are excluded: the facts layer is core, its derivations are not start rows)
 reaches_seed = {}
@@ -279,8 +303,10 @@ for x in sorted(FAMILY, key=lambda n: (defs[n][0], defs[n][1])):
         code = re.sub(r'/\*.*?\*/|//.*$', '', code)
         # [START-TABLE] C1: a selection-trace record (`PCREC_CAND_TRACE_REC*`,
         # possibly continued over lines) PRINTS a decision made elsewhere and
-        # decides nothing, so its ternaries are not sites.
-        if trace_depth or "PCREC_CAND_TRACE_REC" in code:
+        # decides nothing, so its ternaries are not sites. C2's both-walks
+        # oracle hooks (`CAND_ORACLE_*`, `VM_CAND_*`) CHECK one and decide
+        # nothing either.
+        if trace_depth or re.search(r'\b(PCREC_CAND_TRACE_REC|CAND_ORACLE_|VM_CAND_)', code):
             trace_depth += code.count("(") - code.count(")")
             continue
         if not code.lstrip().startswith(("*", "/*")):

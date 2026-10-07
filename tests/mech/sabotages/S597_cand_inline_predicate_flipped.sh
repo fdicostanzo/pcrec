@@ -4,7 +4,7 @@
 # oracle over named witnesses. cand_rows[] has no reader in a default build
 # until C3, so no artifact byte and no answer moves: the corpus arm is not
 # named, by design.
-SAB_ID='S597-cand_inline_predicate_flipped'
+SAB_ID='S597-cand-inline-predicate-flipped'
 SAB_FILE='src/gen/emit_dfa.c'
 SAB_SUITES='candoracle'
 SAB_DESC='an inline decision restated wrongly as a row predicate: B3 vm-anchored tests the GSTART value of the start_anchor fact, so a ^-anchored VM artifact selects all where the VM entry emits attempt_max'

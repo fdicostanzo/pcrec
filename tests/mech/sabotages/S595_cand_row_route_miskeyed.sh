@@ -4,7 +4,7 @@
 # oracle over named witnesses. cand_rows[] has no reader in a default build
 # until C3, so no artifact byte and no answer moves: the corpus arm is not
 # named, by design.
-SAB_ID='S595-cand_row_route_miskeyed'
+SAB_ID='S595-cand-row-route-miskeyed'
 SAB_FILE='src/gen/emit_dfa.c'
 SAB_SUITES='candoracle'
 SAB_DESC='a route mis-key: N12 pred-memchr is routed on the DFA route instead of the ATTEMPT route, so the ATTEMPT walk falls to none where attempt_cand takes the predecessor-byte memchr'

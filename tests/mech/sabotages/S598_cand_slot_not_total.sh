@@ -4,7 +4,7 @@
 # oracle over named witnesses. cand_rows[] has no reader in a default build
 # until C3, so no artifact byte and no answer moves: the corpus arm is not
 # named, by design.
-SAB_ID='S598-cand_slot_not_total'
+SAB_ID='S598-cand-slot-not-total'
 SAB_FILE='src/gen/emit_dfa.c'
 SAB_SUITES='candoracle'
 SAB_DESC='a slot loses its total fallback: the last RETRY row, fixed, becomes deniable, so under -fno-hyb-reseed the walk can return NULL; the table self-check (totality per asked slot and route) fires'

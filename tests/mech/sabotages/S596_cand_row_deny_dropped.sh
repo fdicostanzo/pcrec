@@ -4,7 +4,7 @@
 # oracle over named witnesses. cand_rows[] has no reader in a default build
 # until C3, so no artifact byte and no answer moves: the corpus arm is not
 # named, by design.
-SAB_ID='S596-cand_row_deny_dropped'
+SAB_ID='S596-cand-row-deny-dropped'
 SAB_FILE='src/gen/emit_dfa.c'
 SAB_SUITES='candoracle'
 SAB_DESC='a dropped deny bit: P4 set-leads loses PCREC_NO_REQ_SET_LEAD in cand_rows[], so under -fno-req-set-lead the table still chooses set-leads where req_admits[] lands on emitted'

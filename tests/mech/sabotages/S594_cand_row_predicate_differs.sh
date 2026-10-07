@@ -4,7 +4,7 @@
 # oracle over named witnesses. cand_rows[] has no reader in a default build
 # until C3, so no artifact byte and no answer moves: the corpus arm is not
 # named, by design.
-SAB_ID='S594-cand_row_predicate_differs'
+SAB_ID='S594-cand-row-predicate-differs'
 SAB_FILE='src/gen/emit_dfa.c'
 SAB_SUITES='candoracle'
 SAB_DESC='a planted predicate difference in one cand_rows[] row: N9 memchr reads the memchr-bounded predicate, so the table no longer chooses the row dfa_pfs[] chooses'
