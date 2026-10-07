@@ -147,6 +147,8 @@
 #include <string.h>
 
 #include "gen.h"
+/* the negative-return word table, shared with HARNESS_BATCH's dispatch.c */
+#include "outcome_word.h"
 
 /* [DD-13b.W1.2] H11 — THE PREFIX IS A `-D`, NOT A HARD-CODED NAME.
  *
@@ -498,19 +500,9 @@ int main(int argc, char **argv) {
 #endif
             if (r != 1) {
                 if (r < 0) {
-                    const char *w = r == PCREC_ERR_STEPS     ? "steps"
-                                  : r == PCREC_ERR_FRAMES    ? "frames"
-                                  : r == PCREC_ERR_WORK      ? "work"
-                                  : r == PCREC_ERR_RECURSE   ? "recurse"
-                                  : r == PCREC_ERR_INTERNAL  ? "internal"
-                                  : r == PCREC_ERR_UNSET_VAR ? "unset-var"
-                                  : NULL;
-                    /* [UTF-VALID] -9 prints `utf <offset>`: the refused
+                    /* [UTF-VALID] -9 prints `utf <offset>` at the refused
                      * call's own position, as the main path below does. */
-                    if (r == PCREC_ERR_UTF)
-                        printf("utf %zu\n", RXFN(_valid_upto)(buf, len, p));
-                    else if (w) printf("%s\n", w);
-                    else printf("giveup %d\n", r);
+                    rxt_print_negative(r, RXFN(_valid_upto), buf, len, p);
                     free_vars(vars, nvars);
                     free(buf);
                     return 3;
@@ -734,13 +726,6 @@ int main(int argc, char **argv) {
          * here, because adding a word is only half of it (run.sh's `gu` arm
          * and the spec's directive list are the other half) and `[K50]`'s own
          * suite tests that code a different way. */
-        const char *word = found == PCREC_ERR_STEPS     ? "steps"
-                          : found == PCREC_ERR_FRAMES    ? "frames"
-                          : found == PCREC_ERR_WORK      ? "work"
-                          : found == PCREC_ERR_RECURSE   ? "recurse"
-                          : found == PCREC_ERR_INTERNAL  ? "internal"
-                          : found == PCREC_ERR_UNSET_VAR ? "unset-var"
-                          : NULL;
         /* [UTF-VALID] `utf <offset>`: PCREC_ERR_UTF is the third CALLER
          * refusal below the floor (-futf-check refused an ill-formed
          * subject), and the one whose meaning needs a NUMBER beside the
@@ -749,11 +734,12 @@ int main(int argc, char **argv) {
          * cannot ask for it (no directive compiles -futf-check), so it has
          * no `gu` word: it is reached only under RXTFLAGS, and there it
          * must be NAMED rather than printed as `giveup -9` (utf_valid_design.md
-         * §7's harness obligation). */
-        if (found == PCREC_ERR_UTF)
-            printf("utf %zu\n", RXFN(_valid_upto)(buf, len, startpos));
-        else if (word) printf("%s\n", word);
-        else printf("giveup %d\n", found);
+         * §7's harness obligation).
+         *
+         * [axtri] The table itself lives in outcome_word.h, shared with
+         * HARNESS_BATCH's dispatch.c, whose own copy had missed both
+         * `unset-var` and `utf`. */
+        rxt_print_negative(found, RXFN(_valid_upto), buf, len, startpos);
         free_vars(vars, nvars);
         free(buf);
         return 3;

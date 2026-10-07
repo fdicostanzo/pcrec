@@ -123,6 +123,10 @@ BASE key in this order:
    `tests/harness/run.sh` `SIZELOG`-row-key idiom, reused rather than
    reinvented) — the manifest survives a different checkout root
    unchanged.
+   **2026-10-07 (lane axtri):** Group E5, 19 `-fno-req-byte` cells in
+   `tests/litscan/reqcube.rxt` (the S2b/S2c K65-shape witnesses, which
+   landed after the manifest was populated and were first reached by the
+   041e450a full run) — `-fno-req-byte` now names 64.
 5. **LOST** — the axis produced NO record for this key at all (not even a
    REFUSED one) — a structural gap beyond a documented refusal: a PROCS
    worker vanishing, a whole file failing to parse. Always a failure.
