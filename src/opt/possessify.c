@@ -842,12 +842,15 @@ static void pss_walk(Pss *P, Ast *a, const uint8_t *follow, bool may_end,
                      const uint8_t *encl);
 
 /* [K93] Joins one call site's context into `cc[t]`, noting whether it grew —
- * the fixpoint's signal. A target with no slot names no group in this tree,
- * so there is no body for its context to reach. */
+ * the fixpoint's signal. A target with no slot would be a call whose body
+ * never receives this context, so the verdicts inside it would be computed
+ * without it: unsound, hence an internal error rather than a quiet return. */
 static void cc_join(Pss *P, int t, const uint8_t *follow, bool may_end,
                     const uint8_t *encl)
 {
-    if (t < 0 || t >= P->ncc) return;
+    if (t < 0 || t >= P->ncc)
+        pcrec_ctx_fail(P->cx, 0, "internal error: possessify: call target %d "
+                       "has no context slot (ncc %d)", t, P->ncc);
     CallCtx *c = &P->cc[t];
     for (int i = 0; i < 32; i++) {
         uint8_t f = c->follow[i] | follow[i], e = c->encl[i] | encl[i];
