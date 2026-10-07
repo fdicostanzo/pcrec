@@ -2985,6 +2985,27 @@ if pcrec_run "$PCREC" -p rx --features all --engine=vm -o "$WORKDIR/fb_vm.c" --p
         bad "[DD-14.FB] (--trace axis): the stamped frame size does not follow the tracing member$fb_tr_why. A caller sizing a reservation from RX_RESUME_FRAME_SIZE on a traced artifact would over-count its capacity"
     fi
 
+    # [K95] A TRACED artifact whose calls are ALL spliced (no linked call, so
+    # no `call_top` frame member) must still compile: the traced RX_PUSH used
+    # to write `.call_top` on `has_calls` while the frame member is gated on
+    # `has_linked_calls`. `(a+)a(?1)` needs a push in the called loop, which
+    # the K93 fix keeps (the loop is no longer possessified against the
+    # lexical follow). Present on main, exposed by tests/recursion/k93.rxt.
+    k95_ok=1; k95_why=""
+    for k95_pat in '(a+)a(?1)' '(a{1,3})b(?1)(?1)a' '(a)b(?1)a'; do
+        if ! pcrec_run "$PCREC" -p rx --features recursion --trace -o "$WORKDIR/k95.c" --pattern "$k95_pat" >/dev/null 2>&1; then
+            k95_ok=0; k95_why="$k95_why; pcrec refused '$k95_pat'"; continue
+        fi
+        gen_cc "[K95] traced spliced-call artifact" "$CC" -c $GENCFLAGS -I"$WORKDIR" \
+            -o "$WORKDIR/k95.o" "$WORKDIR/k95.c" \
+            || { k95_ok=0; k95_why="$k95_why; the traced '$k95_pat' artifact does not COMPILE"; }
+    done
+    if [ "$k95_ok" -eq 1 ]; then
+        ok "[K95] --trace on spliced-only call patterns compiles (RX_PUSH's call_top line follows the frame member's gate, has_linked_calls)"
+    else
+        bad "[K95] --trace on a spliced-only call pattern: $k95_why"
+    fi
+
     # rx_info's four new fields and the abi bump, on both engines.
     fb_abi_vm="$(grep -m1 '^    \.abi = ' "$WORKDIR/fb_vm.c" | tr -dc '0-9')"
     fb_abi_dfa="$(grep -m1 '^    \.abi = ' "$WORKDIR/fb_dfa.c" | tr -dc '0-9')"

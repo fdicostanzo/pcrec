@@ -11,6 +11,10 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 ---
 
+## K95 — FIXED-pending-merge (lane k93tri, 2026-10-07; found by k93tri's triage of the Linux `test-memfn-stamps` red; present on main 9b8a4062 and earlier) — `--trace` on a pattern whose calls are all spliced emitted C that does not compile
+
+`src/gen/emit_vm.c`'s TRACED `RX_PUSH` wrote `run->resume_stack[...].call_top` when `v->has_calls`, while the frame's `call_top` member (and the untraced `RX_PUSH` line) are gated on `v->has_linked_calls`. A call-bearing pattern whose every call is spliced has no linked call, so a traced artifact that emits a push failed with `'rx_frame' has no member named 'call_top'`. Repro on main: `build/pcrec -p rx --features recursion --trace -o a.c --pattern '(a+)a(?1)'` then compile `a.c`. Latent because possessify's K93 hole possessified most such loops (no push); the K93 fix leaves `(a+)` non-possessive against `{a}` and the corpus (tests/recursion/k93.rxt, via C11's `--trace` stream) reached it. Fix: the traced line is gated on `has_linked_calls`. Bytes move only for traced artifacts of spliced-only call patterns: those that emitted a push did not compile; those that did not lose one dead macro-body line. No default artifact moves, no abi bump (ruled by the manager). Check: `tests/codegen/run_codegen_tests.sh` `[K95]`.
+
 ## K93 — FIXED-pending-merge (lane k93fix, 2026-10-07; found 2026-10-07 by lane possarms while designing [ART-POSS-ARMS]; present on main bcb7b128 and earlier) — WRONG ANSWER: possessify gives a quantifier inside a SUBROUTINE-CALL TARGET a verdict from the group's LEXICAL follow, but a call site re-runs the group under a different follow
 
 **Witnesses** (`--features recursion`; default vs `-fno-possessify` vs libpcre2 10.46 on ubuntubudu; the default route is the VM because of the captures; `-fno-splice-calls` doesn't change it):
