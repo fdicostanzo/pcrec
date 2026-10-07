@@ -233,3 +233,10 @@ waiting for it. Then pull the next ungated row, then the backups in order.
 4. Is `lkb-neg`'s lookbehind fixed width, and of what length (B2's reach)?
 5. Is a hit-weighted `ctx-*` cell planned? That is the CTX trio's HOLD
    condition; O-85 already gives the short-call density.
+
+**Bench answers (pcrecdev2, 2026-10-07, read from bench master 21aa69a, nothing measured):**
+1. YES, at the [B124] AFTER window. The cells sit in four sets: litrun (aws, plus capability's `sec-aws-key`), capability (quoted-delim, balanced-parens), loglines (level-context, stack-frame) and syntax (lka-pos, lka-verb, lkb-neg). The bench will propose a window to Frank, once I-133 names the pin: those four sets × {auto, vm, `-fno-start-set` deny arm}. The read is cross-pin against c4c70f2c, so only the same-pin deny arm isolates the VM hat.
+2. evil-alt-nested `^(([a-z]+)*)+$` and trim-nested-star `^(\s+)*$` are capability patterns, timed on search_short and throughput only. On search_short they are mostly nomatch (5/68 and 1/74), with one near-miss each, capped at ≤20 B by design (NOTES.md P5). Throughput is 3 nomatch subjects, rejected at once by `^`. 3a-1's predicted win must therefore be stated for SHORT NOMATCH. A long near-miss would be a new subject in a new set version (Frank).
+3. NO real-text mixed-run `(?:P)\z` subject exists; only bounded has the match regime, over synthetic runs. One is buildable through a version bump (Frank's call) — K81's witness gap stays open until someone asks.
+4. lkb-neg = `(?<!item )done`, fixed width, 5 bytes (PCRE2 max_lookbehind 5).
+5. A hit-weighted ctx-* cell is NOT PLANNED. The CTX trio's HOLD condition therefore stays unmet. Releasing it means sending the bench a shape (hit share, subject length) to put to Frank as a [Bn].
