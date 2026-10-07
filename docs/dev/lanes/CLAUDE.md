@@ -3738,3 +3738,4 @@ never edited afterwards.
   - **Work budget:** on one committed subject it goes 394 → 1,199, the
     hand-possessive number.
   - **[POSS-CTX-TABLE]** is filed.
+- `rxspin_report.md` — re-pin of `test-rxtsource` for `tests/possessify/composition_d27.rxt` (2026-10-07, lane rxspin, sonnet): +1/+676/+9002 census, C3_SKIP/PCRE2ONLY +9002. The file was the FIRST head-bearing file WITH a body (`oracle`/`description` head lines), which broke four rxtsource premises (leg C's head-file exclusion, C3's refusal, leg A's one-row-per-file head count, the keyword census); fixed in the file (head lines to comments), alternative recorded.
