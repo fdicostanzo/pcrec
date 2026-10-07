@@ -77,6 +77,44 @@ FLOOR_HOOK_KILL_PCT=65    # W2: % of hook-mutated sites caught, each of mutation
 QUICK_STRIDE=3                 # batches 0, 3, 6, ... for ASan and the witnesses
 QUICK_FLOOR_CHECKS=14000000    # gcc answer checks, every site, quick subjects
 QUICK_FLOOR_ASAN_CHECKS=1500000  # ASan+UBSan checks on the sample
+# lane g2x, folded by lane g2u: the SHAPE FAMILIES (g2/g2.h G2_FAM_*), the
+# site shapes integration.md §15 says pcrec sends the kit, plus g2u's
+# semantic differential (sem). Per family, the HARD sites the kit must
+# RENDER (generator) and that must RUN (each compiler build). Both tiers
+# generate the same sites, so these hold for --quick and the full run alike.
+# Measured 2026-10-07 (Linux dev box, seed 20261005, lane g2u), less ~10%.
+FAM_FLOORS="ofs:370 ofsrun:1230 stmt:330 onebyte:70 gate:260 setrest:54 vmrun:790 sem:1370"
+# distinct (opaque) form ids the families are rendered through: counted,
+# never parsed (measured: 4)
+FLOOR_FAM_FORMS=4
+# PER-FORM floors (g2u item 8): hard sites RENDERED per reported form id
+# (both tiers: the same sites), and answer CHECKS per form id, per tier.
+# Form ids are opaque; a floor names one only to count it. Rendered and
+# quick-check floors measured 2026-10-07 (Linux, seed 20261005) less ~10%;
+# the FULL check floors are DERIVED (quick x 2.5, the original
+# FLOOR_CHECKS/QUICK_FLOOR_CHECKS ratio being 3.9) and are owed a
+# confirmation by the manager's first full run.
+FORM_FLOORS="generic:5800 ofsskip:1120 precheck:270 runcmp:910"
+QUICK_FORM_CHECK_FLOORS="generic:22900000 ofsskip:5200000 precheck:960000 runcmp:2480000"
+FULL_FORM_CHECK_FLOORS="generic:57250000 ofsskip:13000000 precheck:2400000 runcmp:6200000"
+# the POISON differential (g2u item 6): sites poisoned, and per field the
+# sites that field was poisoned on (a field whose count falls to 0 is a
+# contract clause no longer exercised)
+FLOOR_POISON_SITES=8100
+FLOOR_POISON_FIELD_SITES=90
+# the semantic differential (g2u item 7): hard variant sites run per field
+FLOOR_SEM_FIELD_SITES=14     # measured quick: the smallest field (result_decl) 16
+# W2 mutation 7 (floor - 1), G1: judged over the mutated sites where a
+# REQUIRED term reads BELOW the candidate under a stated floor (the only
+# sites where the mutant is never equivalent, floor <= lo being the
+# caller's precondition, Q-G2-6). Population floor per tier; the kill-rate
+# floor stays FLOOR_HOOK_KILL_PCT.
+QUICK_FLOOR_MUT7_NEG=550       # measured quick: 615 (killed 570, 92.7%)
+FLOOR_MUT7_NEG=1600            # DERIVED: the full run mutates every batch (~3x the quick sample); owed a measurement
+# G2_STRICT_HOOKS=1: every PENDING-ENFORCE case is a HARD check (the
+# row-contract enforcement step's acceptance test); default 0, the bucket
+strict=${G2_STRICT_HOOKS:-0}
+export G2_STRICT_HOOKS=$strict
 
 # --- tools ---------------------------------------------------------------
 if command -v gnutimeout >/dev/null 2>&1; then TO=gnutimeout; else TO=timeout; fi
@@ -122,11 +160,86 @@ cat "$work/gen.log"
 sum=$(grep '^SUMMARY' "$work/gen/gen_results.txt")
 [ -n "$sum" ] || { echo "run_g2.sh: no generator SUMMARY" >&2; exit 2; }
 field() { echo "$sum" | tr ' ' '\n' | grep "^$1=" | cut -d= -f2; }
-for f in render_ok refusal_pass vocab_pass api_pass; do passed=$((passed + $(field $f))); done
+for f in render_ok refusal_pass vocab_pass api_pass poison_pass strict_pass; do passed=$((passed + $(field $f))); done
 gfail=0
 for f in render_fail refusal_fail vocab_fail api_fail; do gfail=$((gfail + $(field $f))); done
 [ "$gfail" -gt 0 ] && note_fail "$gfail" "generator stage (kit refused a contract site, rendered a refused shape, or an API call misbehaved): grep FAIL $work/gen/gen_results.txt"
+pzf=$(field poison_fail)
+[ "${pzf:-0}" -gt 0 ] && note_fail "$pzf" "poison differential: $pzf site(s) whose rendering moved when a field the contract says they do not use was junk: grep 'FAIL poison' $work/gen/gen_results.txt"
+stf=$(field strict_fail)
+[ "${stf:-0}" -gt 0 ] && note_fail "$stf" "G2_STRICT_HOOKS=1: $stf PENDING-ENFORCE case(s) not served at generation: grep 'FAIL strict' $work/gen/gen_results.txt"
 nref=$(( $(field refusal_pass) + $(field refusal_fail) + $(field api_pass) + $(field api_fail) ))
+gres="$work/gen/gen_results.txt"
+
+# --- 1a. the shape families, the form ids, the poison differential --------
+echo "== shape families (hard sites rendered / refused, and the form ids they took)"
+grep '^FAMILY' "$gres" | sed 's/^FAMILY /   /'
+for fl_ in $FAM_FLOORS; do
+    fn_=${fl_%%:*}; fv_=${fl_##*:}
+    r_=$(grep "^FAMILY $fn_ " "$gres" | sed 's/.* rendered=\([0-9]*\).*/\1/')
+    [ "${r_:-0}" -ge "$fv_" ] || note_fail 1 "family $fn_: ${r_:-0} sites rendered < floor $fv_ (K35: the shapes pcrec sends, unreached)"
+done
+nforms=$(grep '^FAMILY' "$gres" | grep -v '^FAMILY base ' | sed 's/.* forms=//' | tr ',' '\n' \
+         | grep -v '^-$' | sed 's/:[0-9]*$//' | sort -u | grep -c .)
+echo "   distinct form ids over the families: $nforms (floor $FLOOR_FAM_FORMS)"
+[ "$nforms" -ge "$FLOOR_FAM_FORMS" ] || note_fail 1 "families: $nforms distinct form ids < floor $FLOOR_FAM_FORMS"
+echo "== per form id (hard sites rendered; floors FORM_FLOORS)"
+grep '^FORMID' "$gres" | sed 's/^FORMID /   /'
+for fl_ in $FORM_FLOORS; do
+    fn_=${fl_%%:*}; fv_=${fl_##*:}
+    r_=$(grep "^FORMID [0-9]* $fn_ " "$gres" | sed 's/.* rendered=\([0-9]*\).*/\1/')
+    [ "${r_:-0}" -ge "$fv_" ] || note_fail 1 "form $fn_: ${r_:-0} hard sites rendered < floor $fv_"
+done
+echo "== poison differential (fields the contract says a site does not use, set to junk)"
+grep '^POISON ' "$gres" | sed 's/^/   /'
+pzs=$(grep '^POISON ' "$gres" | sed 's/.* sites=\([0-9]*\).*/\1/')
+[ "${pzs:-0}" -ge "$FLOOR_POISON_SITES" ] || note_fail 1 "poison: ${pzs:-0} sites poisoned < floor $FLOOR_POISON_SITES"
+grep '^POISONFIELD' "$gres" | while read -r _ fn_ st_ mv_; do
+    echo "   $fn_ ${st_} ${mv_}"
+done
+pzlow=$(grep '^POISONFIELD' "$gres" | awk -v f="$FLOOR_POISON_FIELD_SITES" '{split($3,a,"="); if (a[2] < f) print $2}' | paste -sd' ' -)
+[ -z "$pzlow" ] || note_fail 1 "poison: fields poisoned on fewer than $FLOOR_POISON_FIELD_SITES sites: $pzlow"
+
+# --- 1c. the libc record (lane g2x): MEMFN_LIBC against the compile -------
+# §R4.3.3 [rev4.7] (Q53 RULED): the record lists the libc functions the
+# artifact's code calls, a source-level inventory, constant-size idiom
+# memcpy loads excluded, and "a delegated site's libc use is recorded by
+# the kit through mf_art". The control is the compile's own, as the rule
+# names it: `nm -u` of an -O0 -fno-builtin object. G2's own text in a batch
+# (tables, descriptors, wrappers) calls no libc function, so every libc
+# name a batch object needs is the kit's. memcpy is left out on both sides:
+# G2 cannot tell an idiom load from a call without parsing. A PENDING-only
+# batch whose object does not build (F1) is skipped, counted.
+libc_check() {  # libc_check GENDIR
+    local gd=$1 od="$work/libc" ok=0 bad=0 skip=0 b stamp got
+    mkdir -p "$od"
+    ls "$gd"/batch_*.c | "$TO" 900 xargs -P "$nproc_" -I{} sh -c \
+        '"$1" -std=gnu11 -O0 -fno-builtin -w -I "$2" -c "$3" -o "$4/$(basename "$3" .c).o" 2>/dev/null' \
+        _ "$gencc" "$g2" {} "$od"
+    for b in "$gd"/batch_*.c; do
+        if [ ! -f "$od/$(basename "$b" .c).o" ]; then
+            if is_pending_batch "$b"; then skip=$((skip + 1)); continue; fi
+            bad=$((bad + 1)); echo "   $(basename "$b"): does not build at -O0"; continue
+        fi
+        stamp=$(sed -n 's|^/\* stamp MEMFN_LIBC = \(.*\) \*/$|\1|p' "$b" | tr ',' '\n' \
+                | grep -vx 'memcpy' | grep -vx 'none' | LC_ALL=C sort -u | paste -sd, -)
+        got=$(nm -u "$od/$(basename "$b" .c).o" 2>/dev/null | sed 's/^ *U *//; s/^_//' \
+              | grep -E '^(mem|str)[a-z0-9]*$' | grep -vx 'memcpy' | LC_ALL=C sort -u | paste -sd, -)
+        if [ "$stamp" = "$got" ]; then ok=$((ok + 1))
+        else
+            bad=$((bad + 1))
+            [ "$bad" -le 3 ] && echo "   $(basename "$b"): MEMFN_LIBC \"${stamp:-none}\", the compile calls \"${got:-none}\""
+        fi
+    done
+    echo "== libc record (MEMFN_LIBC vs nm -u of -O0 -fno-builtin, memcpy aside): batches agree $ok, disagree $bad, pending batches not built $skip"
+    passed=$((passed + ok))
+    [ "$bad" = 0 ] || note_fail "$bad" "libc record: MEMFN_LIBC is not the libc calls of the kit's text in $bad batch(es) (§R4.3.3; objects in $od)"
+}
+# a batch of PENDING-ENFORCE sites only (its header: "N sites, pending N")
+is_pending_batch() {
+    head -1 "$1" | grep -q 'batch [0-9]*, \([0-9]*\) sites, pending \1 \*/'
+}
+libc_check "$work/gen"
 
 # --- 1b. K1: the kit's mf_ref_* reference functions against G2's loops ----
 k1() {  # k1 NAME CC [flags]
@@ -169,10 +282,30 @@ build() {  # build NAME CC GENDIR EXTRA_FLAGS...
     if grep -q COMPILE-FAIL "$bd/compile.log"; then
         echo "run_g2.sh: $name: batches that do not compile:" >&2
         grep COMPILE-FAIL "$bd/compile.log" >&2
-        return 1
+        # lane g2x: a batch that does not compile is a failure of every site
+        # in it (the caller counts them, compile_fail_sites), or a PENDING-
+        # ENFORCE outcome when the batch holds only PENDING sites; it is
+        # linked as an EMPTY batch so the other batches' sites still run
+        local f k
+        for f in $(sed -n 's/^COMPILE-FAIL //p' "$bd/compile.log"); do
+            k=$(basename "$f" .c | sed 's/^batch_//')
+            printf '#include "g2.h"\nconst g2_site g2_batch_%s[] = { { 0 } };\nconst size_t g2_batch_%s_n = 0;\n' "$k" "$k" \
+                > "$bd/stub_$k.c"
+            "$TO" 300 "$cc" -std=gnu11 -O1 "$@" -I "$g2" -c "$bd/stub_$k.c" -o "$bd/batch_$k.o" || ok=0
+        done
     fi
     "$TO" 300 "$cc" "$@" "$bd"/*.o -o "$bd/g2_run" || ok=0
     [ "$ok" = 1 ]
+}
+
+# the sites of the batches build NAME could not compile: "HARD PENDING"
+compile_fail_sites() {  # compile_fail_sites NAME
+    local f h=0 p=0 k
+    for f in $(sed -n 's/^COMPILE-FAIL //p' "$work/build-$1/compile.log" 2>/dev/null); do
+        k=$(sed -n '1s/.*batch [0-9]*, \([0-9]*\) sites.*/\1/p' "$f")
+        if is_pending_batch "$f"; then p=$((p + ${k:-1})); else h=$((h + ${k:-1})); fi
+    done
+    echo "$h $p"
 }
 
 run_driver() {  # run_driver NAME [driver flags]
@@ -282,7 +415,7 @@ w3_judge() {
 w2_judge() {  # w2_judge M
     local m=$1
     if [ "$(cat "$work/mut$m.st" 2>/dev/null)" = ok ]; then
-        line=$(grep '^G2 mutants' "$work/mut$m.log")
+        line=$(grep '^G2 mutants: ' "$work/mut$m.log")
         echo "   W2 mutation $m: ${line#G2 mutants: }"
         mm=$(echo "$line" | sed 's/.*mutated \([0-9]*\).*/\1/')
         killed=$(echo "$line" | sed 's/.*killed \([0-9]*\).*/\1/')
@@ -290,6 +423,15 @@ w2_judge() {  # w2_judge M
         if [ "$m" -le 4 ]; then
             [ "${killed:-0}" -ge 1 ] || note_fail 1 "W2 text mutation $m caught no mutated site"
         else
+            if [ "$m" = 7 ]; then
+                # G1 (lane g2u): judged over the sites that read below the
+                # candidate, where floor - 1 is never an equivalent mutant
+                nl=$(grep '^G2 mutants reading below the candidate' "$work/mut$m.log")
+                mm=$(echo "$nl" | sed 's/.*mutated \([0-9]*\).*/\1/')
+                killed=$(echo "$nl" | sed 's/.*killed \([0-9]*\).*/\1/')
+                echo "   W2 mutation 7, sites reading below the candidate: mutated ${mm:-?} killed ${killed:-?} (population floor $floor_m7neg)"
+                [ "${mm:-0}" -ge "$floor_m7neg" ] || note_fail 1 "W2 mutation 7: ${mm:-0} mutated sites read below the candidate < floor $floor_m7neg"
+            fi
             [ $(( ${killed:-0} * 100 )) -ge $(( ${mm:-1} * FLOOR_HOOK_KILL_PCT )) ] \
                 || note_fail 1 "W2 hook mutation $m caught ${killed:-0} of ${mm:-0} (< $FLOOR_HOOK_KILL_PCT%)"
         fi
@@ -304,6 +446,7 @@ w2_judge() {  # w2_judge M
 
 if [ "$quick" = 1 ]; then
     floor_checks=$QUICK_FLOOR_CHECKS; floor_asan=$QUICK_FLOOR_ASAN_CHECKS; drv_tier=--quick
+    floor_m7neg=$QUICK_FLOOR_MUT7_NEG; form_check_floors=$QUICK_FORM_CHECK_FLOORS
     wcc=${cc_list%% *}
     # the sampled legs, launched together; the gcc answer run below is the
     # foreground leg
@@ -317,21 +460,48 @@ if [ "$quick" = 1 ]; then
     for m in 1 2 3 4 5 6 7; do w2_launch "$m" "$wcc" > "$work/mut$m.out" 2>&1 & done
 else
     floor_checks=$FLOOR_CHECKS; floor_asan=$FLOOR_ASAN_CHECKS; drv_tier=
+    floor_m7neg=$FLOOR_MUT7_NEG; form_check_floors=$FULL_FORM_CHECK_FLOORS
 fi
 
 for cc in $cc_list; do
     if ! build "$cc" "$cc" "$work/gen"; then
-        nb=$(grep -c COMPILE-FAIL "$work/build-$cc/compile.log" 2>/dev/null || echo 0)
-        note_fail $((nb > 0 ? nb : 1)) "$cc: rendered text does not compile ($work/build-$cc/compile.log)"
+        note_fail 1 "$cc: the driver, the reference or the link does not build ($work/build-$cc)"
         continue
     fi
+    set -- $(compile_fail_sites "$cc")
+    cfh=${1:-0}; cfp=${2:-0}
+    if [ "$cfh" -gt 0 ] || [ "$cfp" -gt 0 ]; then
+        echo "   $cc: rendered text that does not compile: $cfh hard site(s), $cfp PENDING-ENFORCE site(s):"
+        for f in $(sed -n 's/^COMPILE-FAIL //p' "$work/build-$cc/compile.log"); do
+            echo "     $(basename "$f")$(is_pending_batch "$f" && echo ' (PENDING)'): $(grep -m1 'error:' "$work/build-$cc/$(basename "$f" .c).log" | sed 's/.*error: //')"
+        done
+    fi
+    [ "$cfh" -gt 0 ] && note_fail "$cfh" "$cc: rendered text does not compile ($work/build-$cc/compile.log)"
+    if [ "$cfp" -gt 0 ] && [ "$strict" = 1 ]; then
+        note_fail "$cfp" "$cc: G2_STRICT_HOOKS=1: PENDING-ENFORCE sites whose rendering does not compile"
+    fi
+    pend_compile_fail=$cfp
     # shellcheck disable=SC2086
     if ! run_driver "$cc" $drv_tier; then note_fail 1 "$cc: the driver did not finish ($work/run-$cc.err)"; fi
     log="$work/run-$cc.log"
     p=$(num "$log" "checks passed"); f=$(num "$log" "checks failed")
     s=$(num "$log" "sites run"); miss=$(num "$log" "coverage cells missing")
     echo "== $cc${drv_tier:+ (quick subjects)}: passed ${p:-?} failed ${f:-?} sites ${s:-?} coverage-missing ${miss:-?}"
-    grep '^G2 \(faults\|sites failed\|layout\|cells\|subjects\|site features\|miss token\|instances\|sites with no\)' "$log" | sed 's/^/   /'
+    grep '^G2 \(faults\|sites failed\|layout\|cells\|subjects\|site features\|miss token\|instances\|sites with no\|on_miss_leaves\|family\|semantic\|form\|pending\)' "$log" | sed 's/^/   /'
+    for fl_ in $FAM_FLOORS; do
+        fn_=${fl_%%:*}; fv_=${fl_##*:}
+        s_=$(grep "^G2 family $fn_:" "$log" | sed 's/.*: sites \([0-9]*\) .*/\1/')
+        [ "${s_:-0}" -ge "$fv_" ] || note_fail 1 "$cc: family $fn_ ran ${s_:-0} sites < floor $fv_"
+    done
+    for fl_ in $form_check_floors; do
+        fn_=${fl_%%:*}; fv_=${fl_##*:}
+        k_=$(grep "^FORMID [0-9]* $fn_ " "$gres" | awk '{print $2}')
+        c_=$(grep "^G2 form ${k_:-x}:" "$log" | sed 's/.* checks \([0-9]*\) .*/\1/')
+        [ "${c_:-0}" -ge "$fv_" ] || note_fail 1 "$cc: form $fn_: ${c_:-0} answer checks < floor $fv_"
+    done
+    semlow=$(grep '^G2 semantic' "$log" | grep -v '^G2 semantic seed:' \
+             | awk -v f="$FLOOR_SEM_FIELD_SITES" '{if ($5 + 0 < f) print $3}' | paste -sd' ' -)
+    [ -z "$semlow" ] || note_fail 1 "$cc: semantic fields with fewer than $FLOOR_SEM_FIELD_SITES hard variant sites run: $semlow"
     passed=$((passed + ${p:-0}))
     [ "${f:-1}" -gt 0 ] && note_fail "${f:-1}" "$cc: answer checks failed (first failures: $work/run-$cc.err)"
     [ "${s:-0}" -ge "$FLOOR_SITES" ] || note_fail 1 "$cc: sites run ${s:-0} < floor $FLOOR_SITES"
@@ -397,6 +567,16 @@ done
 echo "population: generator sites $(field sites_generated) in $(field batches) batches;" \
      "refusal+API cases $nref (floor $FLOOR_REFUSALS)"
 [ "$nref" -ge "$FLOOR_REFUSALS" ] || note_fail 1 "refusal+API cases $nref < floor $FLOOR_REFUSALS"
+# --- PENDING-ENFORCE: the bucket (never failures unless G2_STRICT_HOOKS=1)
+echo "== PENDING-ENFORCE (outcomes owed to the scheduled row-contract enforcement; strict=$strict)"
+grep '^PENDBUCKET' "$gres" | sed 's/^PENDBUCKET /   generator: /'
+for cc in $cc_list; do
+    grep '^G2 pending' "$work/run-$cc.log" 2>/dev/null | sed "s/^G2 pending /   $cc run: /"
+done
+echo "   rendered PENDING sites whose batch does not compile: ${pend_compile_fail:-0}"
+pend_total=$(grep '^PENDBUCKET' "$gres" | sed 's/.*rendered=\([0-9]*\) refused_named=\([0-9]*\) refused_unnamed=\([0-9]*\)/\1 \2 \3/' \
+             | awk '{t += $1 + $2 + $3} END {print t + 0}')
+echo "PENDING-ENFORCE cases: $pend_total"
 echo "checks passed: $passed"
 echo "checks failed: $failed"
 if [ "$failed" -gt 0 ]; then
