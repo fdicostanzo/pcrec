@@ -68,6 +68,14 @@ in a specific way.
   both-ways part is not optional: R24 found the lazy defect precisely because
   the design lane's own probe could not express a lazy row, so half the
   question left its differential without a word in the output.
+- **`calls.txt`** — K93's differential population (lane k93fix,
+  2026-10-07): a group with a call whose follow overlaps the group's FIRST
+  where its lexical follow does not, in every call spelling and position,
+  plus two verdicts that must survive. Its `# features:` line is read by
+  `run_possdiff.sh` (any pattern file may carry one; in such a file a
+  refusal is a FAILURE, not a skip). `run_possessify_tests.sh` section 8
+  pins the stamp in both directions and the free discharge's answer under
+  `-fno-possessify`.
 - **`possdiff_driver.c`** — links the possessified and denied artifacts under
   two prefixes into one TU. (`-DDIFF_EXACT_SUBJECT`, [OPT-LITSCAN] S2a: each
   subject is handed over in a block of exactly its length, `(NULL, 0)` for

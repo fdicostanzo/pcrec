@@ -20,7 +20,10 @@
 # alphabet omits a pattern character measures the generator.
 #
 # Usage: run_possdiff.sh [--corpus] [patternfile ...]
-#   With no argument it runs tests/possessify/patterns.txt.
+#   With no argument it runs tests/possessify/patterns.txt and
+#   tests/possessify/calls.txt (K93: quantifiers inside call targets).
+#   A pattern file may carry ONE `# features: <list>` line; every pattern in
+#   that file is then compiled, on both sides, with `--features <list>`.
 #   `--corpus` additionally derives and sweeps every .rxt corpus pattern the
 #   analysis gives a positive verdict on.
 # Env: PCREC (compiler), CC, GENCFLAGS (the sanitizer battery's hook),
@@ -141,12 +144,18 @@ one_pattern() {
     # possessification never runs), and it turns the DFA prefilter OFF, so the
     # comparison is of the VM's own derivation rather than of a window the DFA
     # handed both sides (R21 E-6).
-    if ! pcrec_run "$PCREC" -p pa --engine=vm -o "$d/pa.c" --pattern "$pat" \
+    if ! pcrec_run "$PCREC" -p pa --engine=vm $feat_args -o "$d/pa.c" --pattern "$pat" \
             >/dev/null 2>"$d/err_a"; then
+        # A file that declares its modules declared what its patterns need,
+        # so a refusal there is a population silently lost, not a cell.
+        if [ -n "$feats" ]; then
+            bad "'$pat': refused under --features $feats: $(head -1 "$d/err_a")"
+            return 0
+        fi
         skipped=$((skipped + 1))
         return 0                       # a pattern pcrec refuses is not a cell
     fi
-    if ! pcrec_run "$PCREC" -p pb --engine=vm -fno-possessify -o "$d/pb.c" --pattern "$pat" \
+    if ! pcrec_run "$PCREC" -p pb --engine=vm -fno-possessify $feat_args -o "$d/pb.c" --pattern "$pat" \
             >/dev/null 2>"$d/err_b"; then
         bad "'$pat': the possessified build compiled and the DENIED one did not"
         return 0
@@ -269,10 +278,14 @@ if [ "${1:-}" = "--corpus" ]; then
 fi
 
 files="$*"
-[ -n "$files" ] || files="$SCRIPT_DIR/patterns.txt"
+[ -n "$files" ] || files="$SCRIPT_DIR/patterns.txt $SCRIPT_DIR/calls.txt"
 
 for f in $files; do
     [ -f "$f" ] || { echo "run_possdiff.sh: no such pattern file: $f" >&2; exit 2; }
+    # The file's module set, unquoted on purpose at the use sites: empty
+    # expands to no argument at all.
+    feats="$(sed -n 's/^# features: *//p' "$f" | head -1)"
+    feat_args="${feats:+--features $feats}"
     while IFS= read -r pat; do
         case "$pat" in ''|'#'*) continue ;; esac
         one_pattern "$pat"

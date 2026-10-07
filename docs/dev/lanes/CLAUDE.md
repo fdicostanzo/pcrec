@@ -3714,3 +3714,4 @@ never edited afterwards.
   - **Census:** 3 bench / 3 corpus default-route movers.
   - **Also:** `run_possdiff.sh` cannot reach either arm today; S560-S565 are
     reserved.
+- `k93fix_report.md` — K93 FIXED-pending-merge (2026-10-07, lane k93fix, opus): possessify (and the free discharge's survey, the same walk) judges a quantifier inside a subroutine-call target under the JOIN of every call site's context (`CallCtx`, keyed by group number, fixpoint over context-only walks, lookaround-held calls join TOP). `tests/recursion/k93.rxt` (libpcre2 10.46 transcript in the report), `tests/possessify/calls.txt` + per-file `# features:`, section 8, S586-S588 DETECTED. Movers: 21 k93 witnesses + 1 answer-identical lost possessification (`nocaptures.rxt:76`); bench 0. `(?R)` diverges from 10.46's DEFAULT (U18, Frank to rule). Full make test owed.

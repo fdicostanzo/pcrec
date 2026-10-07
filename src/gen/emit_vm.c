@@ -12169,7 +12169,7 @@ static void vm_emit_storage(Vm *v, const VmPlan *pl)
             "        run->resume_depth = (size_t)slot_values[(slot_)];                      \\\n"
             "    } while (0)\n\n",
             v->up, v->up, v->up, v->p, v->up, v->up, v->up,
-            v->has_calls ? "        run->resume_stack[run->resume_depth]"
+            v->has_linked_calls ? "        run->resume_stack[run->resume_depth]"
                           ".call_top = run->call_top;                      \\\n"
                         : "",
             v->p, v->up, v->p);

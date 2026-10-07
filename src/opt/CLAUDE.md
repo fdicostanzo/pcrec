@@ -658,6 +658,12 @@ construction (src/ir) and emission (src/gen).
   is therefore an ordinary AST pass, driven from `src/core/compile.c`'s
   pipeline since [DD-14] wave G.
 
+  **[K93] ITS SURVEY SEES CALL SITES TOO.** The verdict comes from
+  possessify's own walk, which since K93 joins every call site's context
+  into a called group's, so `((?>a+))b(?1)a` keeps its cut (the call re-runs
+  it under the follow `a`); before, the default build was right only because
+  possessify re-marked the loop, and `-fno-possessify` answered (0,4).
+
   **NOT gated by `-fno-possessify`.** The discharge is semantics-preserving by
   its own verdict, and gating it would make an OPTIMISATION flag change which
   ENGINE a pattern gets. The consequence is that emission-neutrality (a
@@ -813,6 +819,24 @@ construction (src/ir) and emission (src/gen).
   Tests: tests/possessify/ (its own CLAUDE.md explains why three separate
   checks are needed and what each is blind to); failing-direction controls
   tests/mech/sabotages/S45-S49.
+
+  **[K93] A CALL TARGET'S VERDICT HOLDS UNDER EVERY CONTEXT ITS BODY RUNS
+  IN** (lane k93fix, 2026-10-07). The `A_CALL` arm used to rest on the
+  premise that a callee's lexical position is where its follow is "the real
+  one"; a call re-runs the group under the CALL SITE's follow, and
+  `(a+)b(?1)a` lost every match. Each group (group 0 = the root, `(?R)`'s
+  target) now carries a JOINED context (`CallCtx`: follow, enclosing-loop
+  firsts, may-end), keyed by GROUP NUMBER so it works before the call graph
+  binds `.body` (the free discharge runs there). Context-only walks record
+  every `A_CALL`'s context and iterate to a fixpoint (a site inside a called
+  group sees a context that depends on that group's own join); a call
+  inside a lookaround, which the walk never enters, joins the TOP context.
+  The `A_CAP` arm (and `pss_root` for the root) walks the body under
+  lexical-join-call-sites. Why one walk suffices: the verdict is a
+  conjunction over contexts, and the follow a nested item sees distributes
+  over the union. Call-free patterns allocate nothing and walk once
+  (byte-identical). Tests: `tests/recursion/k93.rxt`,
+  `tests/possessify/calls.txt`; sabotage S586-S588.
 
   It also EXPORTS its unique-iteration predicate (`pcrec_uniq_scratch` /
   `pcrec_uniq_iteration`, declared in core/internal.h) for revdet.c below, which

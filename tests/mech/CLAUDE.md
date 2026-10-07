@@ -3163,6 +3163,18 @@ re-anchored by `SAB_FILE` only (same lines, same columns); **S56** (its
 caller) follow the new spelling. No plant or intent changed and no row is
 born. Each row's header carries a one-line note.
 
+### K93 — rows S586/S587/S588 (lane k93fix, 2026-10-07)
+
+`src/opt/possessify.c` judges a quantifier inside a call target under the
+JOIN of every call site's context (`CallCtx`), driven to a fixpoint by
+context-only walks. **S586** (`harness` on `tests/recursion/k93.rxt` +
+`possdiff`) never applies the join — main 54c42e36's behaviour. **S587**
+(`harness`) stops the fixpoint after one round; only k93.rxt's
+`(?1)a((?2))c(a+)b` block needs a second. **S588** (`harness`) drops a
+lookaround body's calls (the TOP context). Each carries a `SAB_REACH` read
+off the witness's `RX_VM_STRATS` (not possessive at HEAD). Figures:
+`docs/dev/lanes/k93fix_report.md`.
+
 ### K69 / [PATFACTS] step 3.5 closed — rows S318/S319, two re-anchored rows
 
 Lane k69fix, 2026-09-27 (abi 41 -> 42). A call's nullability

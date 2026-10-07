@@ -514,6 +514,58 @@ else
     bad "$nnc_bad of $nnc --no-captures compiles either changed or stayed on the VM"
 fi
 
+# ---------------------------------------------------------------------------
+# 8. [K93] A CALL TARGET'S VERDICT HOLDS AT EVERY CALL SITE.
+#
+# A called group's body runs under each call site's follow as well as its
+# lexical one, so the verdict on a quantifier inside it is computed under the
+# join of all of them (src/opt/possessify.c's `CallCtx`). Both directions are
+# pinned, because "never possessify inside a call target" would pass the
+# first half: `(a+)b(?1)a` must DECLINE (the call site's follow `a` meets
+# FIRST(a+)), `(a+)b(?1)c` must STILL possessify (`b` and `c` are both
+# disjoint), and `^(b(?1)a|a+)$` must decline through a RECURSIVE site whose
+# follow only the fixpoint reaches. The answers themselves are
+# tests/recursion/k93.rxt's; the free discharge's half (atomic.c asks the same
+# walk) is the last check, which runs the `-fno-possessify` build because the
+# default build re-marks the loop and is right by accident.
+# ---------------------------------------------------------------------------
+k93f="recursion,atomic-groups"
+if gen k93_keep '(a+)b(?1)c' --features "$k93f" \
+   && gen k93_decl '(a+)b(?1)a' --features "$k93f" \
+   && gen k93_rec '^(b(?1)a|a+)$' --features "$k93f"; then
+    if has_possessive "$WORKDIR/k93_keep.c"; then
+        ok "a call target whose every follow is disjoint still possessifies: '(a+)b(?1)c'"
+    else
+        bad "'(a+)b(?1)c' lost its verdict: both follows are disjoint from FIRST(a+), so declining it means possessify was switched off for call targets"
+    fi
+    if has_possessive "$WORKDIR/k93_decl.c"; then
+        bad "'(a+)b(?1)a' possessified: the call site's follow 'a' meets FIRST(a+) (K93)"
+    else
+        ok "a call site's follow reaches the callee's verdict: '(a+)b(?1)a' declines"
+    fi
+    if has_possessive "$WORKDIR/k93_rec.c"; then
+        bad "'^(b(?1)a|a+)\$' possessified: the recursive site's follow 'a' meets FIRST(a+) (K93)"
+    else
+        ok "a RECURSIVE site's follow reaches the callee's verdict: '^(b(?1)a|a+)\$' declines"
+    fi
+else
+    bad "a K93 call-target pattern did not compile under --features $k93f"
+fi
+mkdir -p "$WORKDIR/k93d"
+if pcrec_run "$PCREC" -p rx --features "$k93f" -fno-possessify --emit-main \
+        -o "$WORKDIR/k93d/gen.c" --pattern '((?>a+))b(?1)a' >/dev/null 2>&1 \
+   && gen_cc "possessify k93 discharge" "$CC" ${GENCFLAGS:-} -O1 -w \
+        -o "$WORKDIR/k93d/t" "$WORKDIR/k93d/gen.c"; then
+    k93ans="$(gen_run "possessify k93 discharge" "$WORKDIR/k93d/t" abaa)"
+    if [ "$k93ans" = "nomatch" ]; then
+        ok "the free discharge keeps a cut a call site needs: '((?>a+))b(?1)a' on abaa is nomatch under -fno-possessify (libpcre2 10.46: nomatch)"
+    else
+        bad "'((?>a+))b(?1)a' on abaa answered '$k93ans' under -fno-possessify; libpcre2 10.46 answers nomatch -- the discharge deleted the cut on the lexical follow alone (K93 item 1)"
+    fi
+else
+    bad "the K93 discharge witness did not build"
+fi
+
 echo
 echo "checks passed: $pass"
 echo "checks failed: $fail"

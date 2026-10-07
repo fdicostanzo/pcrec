@@ -798,6 +798,24 @@ bool pcrec_uniq_iteration(void *scratch, const Ast *body, const char **why)
  * `may_end` is the other half of the context and exists only for the lazy
  * conjunct: it says whether the match can legitimately FINISH where `Q` ends,
  * which is what makes the follow's first-byte test vacuous. */
+/* [K93] EVERY CONTEXT A GROUP'S BODY CAN RUN IN, joined. A subroutine call
+ * re-runs the called group's body — the whole `A_CAP`, or the whole pattern
+ * for `(?R)` — under the CALL SITE's follow, not the group's lexical one, so
+ * a verdict on a quantifier inside it is sound only if it holds in EVERY such
+ * context. The verdict is a conjunction over contexts (disjointness from a
+ * union of follows is disjointness from each; the lazy conjunct fires if any
+ * context may end there; the exact-count arm reads no context at all), and
+ * the follow a nested item sees distributes over that union, so one walk of
+ * the group under the JOINED context answers for all of them at once.
+ * `follow`/`may_end`/`encl` are exactly `pss_walk`'s three parameters, and
+ * the arena's zero is the join's identity, so a group nothing calls walks
+ * under its lexical context unchanged. */
+typedef struct {
+    uint8_t follow[32];
+    uint8_t encl[32];
+    bool    may_end;
+} CallCtx;
+
 typedef struct {
     Ctx  *cx;
     Gk   *g;
@@ -812,10 +830,60 @@ typedef struct {
      * must never grow. */
     void (*fn)(void *user, Ast *rep);
     void *user;
+    /* [K93] THE CALL-SITE CONTEXTS, indexed by group number (0 = the root,
+     * `(?R)`'s target). NULL for a call-free pattern. See `pss_run`. */
+    CallCtx *cc;
+    int      ncc;
+    bool     collect;     /* a context-only walk: no verdict, no counters */
+    bool     cc_grew;     /* a context-only walk widened some `cc[t]` */
 } Pss;
 
 static void pss_walk(Pss *P, Ast *a, const uint8_t *follow, bool may_end,
                      const uint8_t *encl);
+
+/* [K93] Joins one call site's context into `cc[t]`, noting whether it grew —
+ * the fixpoint's signal. A target with no slot would be a call whose body
+ * never receives this context, so the verdicts inside it would be computed
+ * without it: unsound, hence an internal error rather than a quiet return. */
+static void cc_join(Pss *P, int t, const uint8_t *follow, bool may_end,
+                    const uint8_t *encl)
+{
+    if (t < 0 || t >= P->ncc)
+        pcrec_ctx_fail(P->cx, 0, "internal error: possessify: call target %d "
+                       "has no context slot (ncc %d)", t, P->ncc);
+    CallCtx *c = &P->cc[t];
+    for (int i = 0; i < 32; i++) {
+        uint8_t f = c->follow[i] | follow[i], e = c->encl[i] | encl[i];
+        if (f != c->follow[i] || e != c->encl[i]) P->cc_grew = true;
+        c->follow[i] = f;
+        c->encl[i]   = e;
+    }
+    if (may_end && !c->may_end) { c->may_end = true; P->cc_grew = true; }
+}
+
+/* [K93] Widens a lexical context (`follow`/`*may_end`/`encl`, the caller's
+ * copies) by every call site's context joined for group `t`. */
+static void cc_widen(const Pss *P, int t, uint8_t *follow, bool *may_end,
+                     uint8_t *encl)
+{
+    if (t < 0 || t >= P->ncc) return;
+    const CallCtx *c = &P->cc[t];
+    bs_or(follow, c->follow);
+    bs_or(encl, c->encl);
+    *may_end = *may_end || c->may_end;
+}
+
+/* [K93] pcrec_ast_visit callback: a call this walk does not reach with a
+ * context — one inside a lookaround body, which `pss_walk` never enters —
+ * joins the TOP context (every byte follows, the match may end, every byte
+ * can restart), which declines every disjointness verdict in its callee. */
+static void cc_top_visit(void *ud, const Ast *a)
+{
+    if (a->k != A_CALL) return;
+    uint8_t all[32];
+    bs_all(all);
+    cc_join(ud, a->u.call.target, all, true, all);
+}
 
 /* §2.2's verdict on ONE A_REP, side-effect-free, given the context its caller
  * computed. Factored out of `pss_rep` at [M6.4.2] so the free discharge can ask
@@ -852,13 +920,14 @@ static bool pss_verdict(Pss *P, const Ast *a, const uint8_t *follow,
     return false;
 }
 
+static void pss_mark(Pss *P, Ast *a, const uint8_t *follow, bool may_end,
+                     const uint8_t *encl, bool survey_this);
+
 /* `survey_this` is false at exactly one caller — the `A_ATOMIC` arm below,
  * which has already asked this node's verdict in a DIFFERENT context. */
 static void pss_rep(Pss *P, Ast *a, const uint8_t *follow, bool may_end,
                     const uint8_t *encl, bool survey_this)
 {
-    P->seen++;
-
     First body = first_of(P->cx, a->l);
 
     /* The effective follow: what comes after Q here, plus what every
@@ -866,6 +935,25 @@ static void pss_rep(Pss *P, Ast *a, const uint8_t *follow, bool may_end,
     uint8_t eff[32];
     memcpy(eff, follow, 32);
     bs_or(eff, encl);
+
+    if (!P->collect) pss_mark(P, a, follow, may_end, encl, survey_this);
+
+    /* Descend into the body. Its own quantifiers see this loop's follow AND
+     * this loop's FIRST as part of theirs. */
+    uint8_t inner[32];
+    memcpy(inner, encl, 32);
+    bs_or(inner, body.f);
+    pss_walk(P, a->l, eff, may_end, inner);
+}
+
+/* `pss_rep`'s verdict half: asks §2.2 of `a` in the context given and acts on
+ * the answer — marks it, or reports it in survey mode — and keeps the census.
+ * Never reached on a context-only walk (`P->collect`), which must neither
+ * mark on a context still being widened nor count a node twice. */
+static void pss_mark(Pss *P, Ast *a, const uint8_t *follow, bool may_end,
+                     const uint8_t *encl, bool survey_this)
+{
+    P->seen++;
 
     bool verdict = pss_verdict(P, a, follow, may_end, encl);
 
@@ -879,13 +967,6 @@ static void pss_rep(Pss *P, Ast *a, const uint8_t *follow, bool may_end,
         P->marked++;
     }
     if (a->u.rep.possessive) P->possessive++;
-
-    /* Descend into the body. Its own quantifiers see this loop's follow AND
-     * this loop's FIRST as part of theirs. */
-    uint8_t inner[32];
-    memcpy(inner, encl, 32);
-    bs_or(inner, body.f);
-    pss_walk(P, a->l, eff, may_end, inner);
 }
 
 /* Descends `a` computing §2.2's possessification verdict for every A_REP it
@@ -953,6 +1034,9 @@ static void pss_walk(Pss *P, Ast *a, const uint8_t *follow, bool may_end,
      * differently: FIRST widens (a lookaround is opaque, so nothing near it is
      * possessified either) and the position automaton declines outright. */
     case A_LOOK:
+        /* [K93] ...but a CALL in there still runs its callee, in a context
+         * this walk never computes; the callee's verdicts must hold in it. */
+        if (P->collect) pcrec_ast_visit(a, cc_top_visit, P);
         return;
 
     /* [DD-14] MUST NOT POSSESSIFY ACROSS A CALL BOUNDARY (design §4.4a site
@@ -967,16 +1051,21 @@ static void pss_walk(Pss *P, Ast *a, const uint8_t *follow, bool may_end,
      * has three different follows. Possessifying an `A_REP` inside the callee
      * against one call site's follow would delete matches at the other two —
      * the §2.2 verdict is only as good as the follow it was computed with, and
-     * this is a construct where one subtree has many. The `A_REP` nodes in the
-     * callee still get their verdict, computed at the callee's own LEXICAL
-     * position where the enclosing follow is the real one; they simply do not
-     * get a second, wronger one through here.
+     * this is a construct where one subtree has many.
      *
-     * CONSEQUENCE WORTH RECORDING: possessify cannot narrow a callee on
-     * account of a call, structurally, exactly as it cannot narrow a
-     * lookaround body. `first_of` and `gk_build` above are the OTHER two
-     * questions and answer differently — FIRST widens to all bytes, the
-     * position automaton declines outright.
+     * [K93] AND THE SITE'S FOLLOW IS NOT DISCARDED, IT IS RECORDED. The
+     * `A_REP` nodes in the callee get their verdict at the callee's own
+     * lexical position, and this arm's comment used to say that was where
+     * "the enclosing follow is the real one". It is not the only real one:
+     * `(a+)b(?1)a` possessified `a+` against `{b}` and the call re-ran it
+     * against `{a}`, NOMATCH on "abaa" where 10.46 answers (0,4). So on a
+     * context-only walk this site joins its context into `cc[target]`, and
+     * the `A_CAP` arm (or `pss_run`, for `(?R)`'s root) walks the group under
+     * the join — one verdict per node, holding at every site. See `CallCtx`.
+     *
+     * `first_of` and `gk_build` above are the OTHER two questions and answer
+     * differently — FIRST widens to all bytes, the position automaton
+     * declines outright.
      *
      * SABOTAGE ROW S-SR9a IS THIS ARM'S, and its suite is `timeout` rather
      * than an answer comparison: letting this walk possessify a call-bearing
@@ -985,11 +1074,21 @@ static void pss_walk(Pss *P, Ast *a, const uint8_t *follow, bool may_end,
      * artifact HANGS. Design §2.6's RULED rung decline is what this arm and
      * `rd_shape`'s implement between them. */
     case A_CALL:
+        if (P->collect) cc_join(P, a->u.call.target, follow, may_end, encl);
         return;
 
-    case A_CAP:
-        pss_walk(P, a->l, follow, may_end, encl);
+    case A_CAP: {
+        /* [K93] the group's lexical context joined with every call site's.
+         * EVERY `A_CAP` numbered `no` gets the join, not only the first the
+         * call graph binds: a superset, and the safe direction. */
+        uint8_t f[32], e[32];
+        bool    me = may_end;
+        memcpy(f, follow, 32);
+        memcpy(e, encl, 32);
+        cc_widen(P, a->u.cap.no, f, &me, e);
+        pss_walk(P, a->l, f, me, e);
         return;
+    }
 
     case A_REP:
         pss_rep(P, a, follow, may_end, encl, true);
@@ -1078,7 +1177,7 @@ static void pss_walk(Pss *P, Ast *a, const uint8_t *follow, bool may_end,
              * where there is one exit and the preferences coincide) would be
              * safe and is declined anyway — declining is always safe, and a
              * second condition here would need its own evidence. */
-            if (P->fn && body->u.rep.greedy &&
+            if (P->fn && !P->collect && body->u.rep.greedy &&
                 pss_verdict(P, body, follow, may_end, encl))
                 P->fn(P->user, a);
             pss_rep(P, body, none, true, encl, false);
@@ -1122,6 +1221,43 @@ static void pss_walk(Pss *P, Ast *a, const uint8_t *follow, bool may_end,
     }
 }
 
+/* The whole pattern under the context of the top level — nothing follows it
+ * and the match may end there (pcrec's entry points are a SEARCH) — joined
+ * with every `(?R)` site's ([K93]: group 0's region is the root). */
+static void pss_root(Pss *P, Ast *root)
+{
+    uint8_t f[32], e[32];
+    bool    me = true;
+    bs_clear(f);
+    bs_clear(e);
+    cc_widen(P, 0, f, &me, e);
+    pss_walk(P, root, f, me, e);
+}
+
+/* [K93] Both entries' walk. On a call-bearing pattern the call-site contexts
+ * are first driven to their FIXPOINT by context-only walks: a site inside a
+ * called group sees a context that depends on its group's own join, so one
+ * walk is not enough for nested calls and none is final for recursion. Every
+ * join only widens a finite set, so it terminates; the marking walk then runs
+ * once, under contexts no further walk would change. A call-free pattern
+ * allocates nothing and walks once, exactly as before. */
+static void pss_run(Pss *P, Ast *root)
+{
+    if (pcrec_has_call(root)) {
+        P->ncc = (int)P->cx->ncap + 1;
+        P->cc  = pcrec_arena_alloc(&P->cx->arena,
+                                   (size_t)P->ncc * sizeof *P->cc);
+        memset(P->cc, 0, (size_t)P->ncc * sizeof *P->cc);
+        P->collect = true;
+        do {
+            P->cc_grew = false;
+            pss_root(P, root);
+        } while (P->cc_grew);
+        P->collect = false;
+    }
+    pss_root(P, root);
+}
+
 /* Runs the possessify walk over `root` in SURVEY mode (calling `fn` per
  * provably-safe possessive candidate without marking anything), saving and
  * restoring cx's poss_total/poss_marked census counters around it so a survey
@@ -1143,9 +1279,7 @@ void pcrec_poss_survey(Ctx *cx, Ast *root,
      * is counted from the FIELD and would be reported as this survey's own. */
     const int saved_total = cx->poss_total, saved_marked = cx->poss_marked;
 
-    uint8_t none[32];
-    bs_clear(none);
-    pss_walk(&P, root, none, true, none);
+    pss_run(&P, root);
 
     cx->poss_total  = saved_total;
     cx->poss_marked = saved_marked;
@@ -1166,12 +1300,7 @@ int pcrec_possessify(Ctx *cx, Ast *root)
      * compile, so allocating one per verdict would be the pass's whole cost. */
     P.g = pcrec_uniq_scratch(cx);
 
-    /* At the top level nothing follows the pattern and the match may end —
-     * pcrec's entry points are a SEARCH, so the pattern's end is a legitimate
-     * match end. */
-    uint8_t none[32];
-    bs_clear(none);
-    pss_walk(&P, root, none, true, none);
+    pss_run(&P, root);
 
     cx->poss_total  = P.seen;
     cx->poss_marked = P.possessive;

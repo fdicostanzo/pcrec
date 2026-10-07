@@ -878,3 +878,23 @@ these seven cells would then measure 0 there (python agrees with PCRE2
 directly, no store consultation reached), which is a LEGITIMATE pin move,
 not a regression; see `tests/rxtsource/run_rxtsource_tests.sh`'s own
 `C3_INFO`/`C3_STOREUNCOVERED` re-pin comment for the box-by-box detail.
+
+## U18 — PCRE2 10.46: auto-possessification is not call-aware for `(?R)` (lane k93fix, 2026-10-07)
+
+- **Status**: suspected-bug (candidate upstream report); pcrec's answer UNRULED (K93 related item 2).
+- **Repro**: `(?:b(?R)a|a+)` on `"baa"` → 10.46 default (1,3); with
+  `PCRE2_NO_AUTO_POSSESS` (0,3). Also `"bbaaa"` (2,5) vs (0,5) and `"baaa"`
+  (1,4) vs (0,4). The (0,3) answer is the backtracking semantics: the
+  recursive call's `a+` must give back the `a` the outer branch needs. The
+  default answer auto-possessifies the top-level `a+` against the pattern's
+  lexical follow (end of pattern), which the `(?R)` site does not have.
+- **Isolation**: the same shape through a NUMBERED recursive group,
+  `^(b(?1)a|a+)$` on `"baa"`, is (0,3) under BOTH options, as are the 21 other
+  numbered/named/relative/forward/nested call patterns probed beside it
+  (`tests/recursion/k93.rxt`): 10.46 checks calls into groups and misses the
+  whole-pattern recursion.
+- **pcrec**: after K93's fix pcrec answers (0,3) (the sound one); the 10.46
+  default is recorded per cell as `under pcre2-auto-possess` in
+  `tests/recursion/k93.rxt`. Which answer pcrec must give is Frank's ruling
+  (D26: what a pattern matches is exact, and PCRE2's default is the usual
+  source of truth).
