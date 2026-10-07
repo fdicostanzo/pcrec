@@ -1,0 +1,603 @@
+--- a/src/core/internal.h
++++ b/src/core/internal.h
+@@ -2903,6 +2903,9 @@
+      * census read off those measures replication as much as it measures
+      * quantifiers. Reported in --emit-ir's header; nothing else reads it. */
+     int                  poss_marked, poss_total;
++    /* PROTOTYPE (possarms21): arm B's capture fact, memoized per group
++     * number for one possessify walk (R-4); NULL outside the walk. */
++    struct PossCapFact  *poss_capfact;
+     /* Pattern offset of the FIRST capturing `(`, or SIZE_MAX if none — the
+      * engine_why stamp's `why_pos` (§5.5). */
+     size_t               first_cap_pos;
+--- a/src/opt/possessify.c
++++ b/src/opt/possessify.c
+@@ -98,6 +98,9 @@
+  */
+ 
+ #include <string.h>
++#include <stdlib.h>
++#include <stdio.h>
++#include "enc/enc.h"
+ 
+ #include "core/internal.h"
+ #include "core/limits.h"
+@@ -172,6 +175,197 @@
+  * unmodellable (a wide class, a backreference) widens to ALL BYTES rather
+  * than refusing, which can only cost a possessification, never a wrong
+  * answer. Feeds §2.2's disjointness test in `pss_walk` below. */
++static First first_of(Ctx *cx, const Ast *a);
++/* ==== PROTOTYPE (possarms2 rev-2 instrument; NOT the implementation) ==== */
++/* ==== PROTOTYPE (possarms21 rev-2.1 instrument; NOT the implementation) ====
++ * Configuration only lives in a file static (read-only after px_init); every
++ * per-compile fact lives on Ctx (`poss_capfact`, R-4) or Pss. */
++static struct {
++    bool init, a, b, nocc, sab_m0, sab_firstpol, sab_mixed, sab_nofold,
++         sab_firstmem, sab_nonnull, sab_norecguard, sab_lazy, sab_nowiden,
++         sab_a0null, a0only, a1only, sab_textpos, chk_follow, nomemo;
++} PX;
++static void px_init(void)
++{
++    if (PX.init) return;
++    PX.init = true;
++#define E(v, n) PX.v = getenv(n) != NULL
++    E(a, "PROTO_ARM_A"); E(b, "PROTO_ARM_B"); E(nocc, "PROTO_A1_NOCC");
++    E(sab_m0, "PROTO_SAB_M0"); E(sab_firstpol, "PROTO_SAB_FIRSTPOL");
++    E(sab_mixed, "PROTO_SAB_MIXED"); E(sab_nofold, "PROTO_SAB_NOFOLD");
++    E(sab_firstmem, "PROTO_SAB_FIRSTMEM"); E(sab_nonnull, "PROTO_SAB_NONNULL");
++    E(sab_norecguard, "PROTO_SAB_NORECGUARD"); E(sab_lazy, "PROTO_SAB_LAZY");
++    E(sab_nowiden, "PROTO_SAB_NOWIDEN"); E(sab_a0null, "PROTO_A0_NULLABLE");
++    E(a0only, "PROTO_A0_ONLY"); E(a1only, "PROTO_A1_ONLY");
++    E(sab_textpos, "PROTO_SAB_TEXTPOS"); E(chk_follow, "PROTO_CHECK_FOLLOW");
++    E(nomemo, "PROTO_NOMEMO");
++#undef E
++}
++static bool iv_has(const PcrecCpRange *iv, int n, unsigned c)
++{
++    for (int i = 0; i < n; i++) if (c >= iv[i].lo && c <= iv[i].hi) return true;
++    return false;
++}
++/* S(P): the code points <= 0xFF whose membership in C is admitted by fn for
++ * some p in pmask (bit0: p=0, bit1: p=1).  Returns false when Q(P) = {0,1}
++ * (no narrowing).  A-F3: Q(P) non-empty but S empty -> widen (return false). */
++static bool px_S(const Ast *g, unsigned pmask, uint8_t *out)
++{
++    bool qok[2] = { false, false };
++    for (int p = 0; p < 2; p++) if (pmask & (1u << p))
++        for (int q = 0; q < 2; q++)
++            if (g->u.ctx.fn & (1u << ((p << 1) | q))) qok[q] = true;
++    if (qok[0] && qok[1]) return false;
++    bs_clear(out);
++    bool any = false;
++    for (unsigned c = 0; c < 256; c++) {
++        bool in = iv_has(g->u.ctx.iv, g->u.ctx.n, c);
++        if (qok[in]) { cls_set(out, c); any = true; }
++    }
++    if (!any && (qok[0] || qok[1]) && !PX.sab_nowiden) return false;
++    return true;
++}
++/* R-4: THE CAPTURE FACT, computed ONCE PER GROUP NUMBER. One walk indexes
++ * every A_CAP by number (lookaround and DEFINE bodies included; a call's
++ * body is a back edge and is not followed). A group's value is the union of
++ * TEXT_FIRST over every A_CAP with that number, memoized; a group whose value
++ * is IN PROGRESS when it is asked again (a reference cycle, `(a\2)(b\1)`)
++ * answers WIDEN, which replaces revision 2's depth-1 counter. */
++typedef struct PossCapFact {
++    const Ast   *root;
++    int          ncap;          /* slots 1..ncap */
++    int         *cnt;           /* per number: how many A_CAP nodes */
++    const Ast ***caps;          /* per number: those nodes */
++    uint8_t     *state;         /* 0 unknown, 1 in progress, 2 done */
++    First       *val;
++    bool        *set;           /* some A_CAP with the number exists */
++} PossCapFact;
++static First text_first(Ctx *cx, const Ast *a);
++static void cf_index(PossCapFact *F, const Ast *a, bool fill)
++{
++    while (a) {
++        switch (a->k) {
++        case A_CAP: {
++            int no = a->u.cap.no;
++            if (no >= 1 && no <= F->ncap) {
++                if (fill) F->caps[no][F->cnt[no]] = a;
++                F->cnt[no]++;
++            }
++            a = a->l; continue;
++        }
++        case A_CAT: case A_ALT:
++            cf_index(F, a->r, fill); a = a->l; continue;
++        case A_REP: case A_ATOMIC: case A_LOOK:
++            a = a->l; continue;
++        default: return;    /* leaves; A_CALL: its body is a back edge */
++        }
++    }
++}
++static PossCapFact *cf_build(Ctx *cx, const Ast *root)
++{
++    PossCapFact *F = pcrec_arena_alloc(&cx->arena, sizeof *F);
++    memset(F, 0, sizeof *F);
++    F->root = root;
++    F->ncap = (int)cx->ncap;
++    size_t n = (size_t)F->ncap + 1;
++    F->cnt   = pcrec_arena_alloc(&cx->arena, n * sizeof *F->cnt);
++    F->caps  = pcrec_arena_alloc(&cx->arena, n * sizeof *F->caps);
++    F->state = pcrec_arena_alloc(&cx->arena, n);
++    F->val   = pcrec_arena_alloc(&cx->arena, n * sizeof *F->val);
++    F->set   = pcrec_arena_alloc(&cx->arena, n * sizeof *F->set);
++    memset(F->cnt, 0, n * sizeof *F->cnt);
++    memset(F->state, 0, n);
++    cf_index(F, root, false);
++    for (size_t g = 0; g < n; g++) {
++        F->caps[g] = F->cnt[g] ? pcrec_arena_alloc(&cx->arena, (size_t)F->cnt[g] * sizeof **F->caps) : NULL;
++        F->set[g] = F->cnt[g] > 0;
++        F->cnt[g] = 0;
++    }
++    cf_index(F, root, true);
++    return F;
++}
++/* the value for group g; false = WIDEN (in progress, i.e. a cycle) */
++static bool cf_group(Ctx *cx, PossCapFact *F, int g, First *out)
++{
++    if (F->state[g] == 2 && !PX.nomemo) { *out = F->val[g]; return true; }
++    if (F->state[g] == 1 && !PX.sab_norecguard) return false;
++    F->state[g] = 1;
++    First acc = fst_empty(false);
++    for (int i = 0; i < F->cnt[g]; i++) {
++        First f = PX.sab_textpos ? first_of(cx, F->caps[g][i]->l)
++                                 : text_first(cx, F->caps[g][i]->l);
++        bs_or(acc.f, f.f);
++        acc.nullable = acc.nullable || f.nullable;
++    }
++    F->val[g] = acc;
++    F->state[g] = 2;
++    *out = acc;
++    return true;
++}
++/* N1: "the first character of a TEXT" -- the question arm B asks of a
++ * group body -- as opposed to first_of's "the next character at a POSITION".
++ * A zero-width item contributes no character to a text: nullable, no bytes. */
++static First text_first(Ctx *cx, const Ast *a)
++{
++    switch (a->k) {
++    case A_CTX: case A_LOOK: case A_BOL: case A_EOL: case A_END:
++    case A_GSTART: case A_KRESET: case A_EMPTY:
++        return fst_empty(true);
++    case A_CAP: case A_ATOMIC:
++        return text_first(cx, a->l);
++    case A_CAT: {
++        First acc = fst_empty(true);
++        const Ast *t = a;
++        while (t->k == A_CAT) { acc = fst_seq(text_first(cx, t->r), acc); t = t->l; }
++        return fst_seq(text_first(cx, t), acc);
++    }
++    case A_ALT: {
++        First acc = fst_empty(false);
++        const Ast *t = a;
++        for (;;) {
++            const Ast *br = t->k == A_ALT ? t->r : t;
++            First r = text_first(cx, br);
++            bs_or(acc.f, r.f); acc.nullable = acc.nullable || r.nullable;
++            if (t->k != A_ALT) break;
++            t = t->l;
++        }
++        return acc;
++    }
++    case A_REP: {
++        First r = text_first(cx, a->l);
++        r.nullable = r.nullable || a->u.rep.rmin == 0;
++        return r;
++    }
++    default:    /* A_CLASS, A_BREF (the fact again), A_CALL, A_VAR, ... */
++        return first_of(cx, a);
++    }
++}
++static void px_fold(Ctx *cx, uint8_t *f)
++{
++    const PcrecEnc *e = pcrec_enc_by_id(cx->opt->encoding);
++    for (int c = 0x80; c < 256; c++) if (cls_has(f, (unsigned)c)) { bs_all(f); return; }
++    for (int c = 'a'; c <= 'z'; c++)
++        if (cls_has(f, (unsigned)c) || cls_has(f, (unsigned)(c - 32))) {
++            if (e->max_cp > 0xFF && (c == 'k' || c == 's')) { bs_all(f); return; }
++            cls_set(f, (unsigned)c); cls_set(f, (unsigned)(c - 32));
++        }
++}
++static unsigned px_pol(const Ast *x, const PcrecCpRange *C, int n)
++{
++    unsigned m = 0;
++    for (int i = 0; i < x->u.cls.n; i++) {
++        unsigned lo = x->u.cls.iv[i].lo, hi = x->u.cls.iv[i].hi, c = lo;
++        while (c <= hi) {
++            int j = 0;
++            while (j < n && C[j].hi < c) j++;
++            if (j < n && C[j].lo <= c) { m |= 2; if (C[j].hi >= hi) break; c = C[j].hi + 1; }
++            else { m |= 1; if (j == n || C[j].lo > hi) break; c = C[j].lo; }
++        }
++    }
++    return m;
++}
++/* ==== end PROTOTYPE helpers ==== */
++
+ static First first_of(Ctx *cx, const Ast *a)
+ {
+     switch (a->k) {
+@@ -210,8 +404,29 @@
+      * quantifier near a backreference keeps its machinery — the direction
+      * `pcrec_revdet_first` already takes for `$`, and the direction this file
+      * is allowed to be wrong in. */
+-    case A_VAR:
+-    case A_BREF: {
++    case A_BREF:
++        if (PX.b && cx->poss_capfact) {
++            PossCapFact *F = cx->poss_capfact;
++            First acc = fst_empty(false);
++            bool any = false, widen = false;
++            for (int i = 0; i < (PX.sab_firstmem ? 1 : a->u.bref.nrefs); i++) {
++                int g = a->u.bref.refs[i];
++                First v;
++                if (g < 1 || g > F->ncap || !cf_group(cx, F, g, &v)) { widen = true; break; }
++                if (!F->set[g]) continue;              /* never set: always fails */
++                bs_or(acc.f, v.f);
++                acc.nullable = acc.nullable || v.nullable;
++                any = true;
++            }
++            if (!widen) {
++                if (!any) acc = fst_empty(false);
++                if (PX.sab_nonnull) acc.nullable = false;
++                if (a->u.bref.caseless && !PX.sab_nofold) px_fold(cx, acc.f);
++                return acc;
++            }
++        }
++        /* fallthrough */
++    case A_VAR: {
+         First r;
+         memset(r.f, 0xff, 32);
+         r.nullable = true;
+@@ -375,6 +590,10 @@
+         }
+ 
+     case A_CTX:
++        if (PX.a && !PX.a1only) {
++            First r;
++            if (px_S(a, 3u, r.f)) { r.nullable = PX.sab_a0null && (a->u.ctx.fn & 5u); return r; }
++        }
+         /* [M6.2 wave B] WIDEN AND DECLINE, and this is NOT the treatment
+          * `\z`/`$` get one arm up -- it is `^`'s.
+          *
+@@ -502,6 +721,8 @@
+     uint8_t funion[PSS_MAX_POS][32];  /* position -> union of its successors' */
+     bool    fconflict[PSS_MAX_POS];   /* ... and whether two of them overlapped */
+     bool    hasfollow[PSS_MAX_POS];   /* (U2): does it have any successor */
++    const Ast *node[PSS_MAX_POS];     /* PROTO: the class behind each position */
++    uint8_t lastpos[32], firstpos[32];/* PROTO: the body's LAST/FIRST positions */
+ } Gk;
+ 
+ /* first/last as POSITION sets, sharing the 256-bit representation. Keeping
+@@ -525,10 +746,11 @@
+ /* Interns a new Glushkov position for byte-set `bytes` in `g`, or fails
+  * (`g->ok = false`) past PSS_MAX_POS; initializes its
+  * follow-union/conflict/hasfollow slots empty. */
+-static int gk_newpos(Gk *g, const uint8_t *bytes)
++static int gk_newpos(Gk *g, const uint8_t *bytes, const Ast *nd)
+ {
+     if (g->npos >= PSS_MAX_POS) { g->ok = false; return -1; }
+     int p = g->npos++;
++    g->node[p] = nd;
+     memcpy(g->set[p], bytes, 32);
+     bs_clear(g->funion[p]);
+     g->fconflict[p] = false;
+@@ -578,7 +800,7 @@
+          * is lost and no answer moves. */
+         uint8_t lab[32];
+         pcrec_cls_bits_widen(g->cx, a, lab);
+-        int p = gk_newpos(g, lab);
++        int p = gk_newpos(g, lab, a);
+         if (p < 0) return gk_parts_empty(true);
+         GkParts r = gk_parts_empty(false);
+         cls_set(r.first, (unsigned)p);
+@@ -732,6 +954,8 @@
+     g->ok = true;
+ 
+     GkParts p = gk_build(g, body);
++    memcpy(g->lastpos, p.last, 32);
++    memcpy(g->firstpos, p.first, 32);
+ 
+     if (!g->ok)     { *why = "model-error";    return false; }
+     if (p.nullable) { *why = "nullable-body";  return false; }
+@@ -816,6 +1040,64 @@
+     bool    may_end;
+ } CallCtx;
+ 
++/* ==== PROTOTYPE: A1, the Q-relative continuation ==== */
++typedef struct PCont {
++    const Ast *node;            /* an item that follows, or ... */
++    int        capend;          /* ... >0: the END of A_CAP number capend */
++    const struct PCont *next;
++} PCont;
++/* R-5: the END of an atomic body (`capend == -1`): the walk analyses the body
++ * as a self-contained pattern (follow EMPTY, may_end), so the continuation
++ * stops here and does NOT reach the root's (?R) join. */
++static const PCont px_atomic_end = { NULL, -1, NULL };
++/* the polarity mask of Q's LAST (or, sabotaged, FIRST) positions against C */
++static unsigned px_pmask(const Gk *g, const Ast *gate)
++{
++    unsigned pm = 0;
++    const uint8_t *ps = PX.sab_firstpol ? g->firstpos : g->lastpos;
++    for (int i = 0; i < g->npos; i++)
++        if (cls_has(ps, (unsigned)i))
++            pm |= px_pol(g->node[i], gate->u.ctx.iv, gate->u.ctx.n);
++    if (PX.sab_mixed && pm == 3u) pm = 2u;
++    return pm;
++}
++static First first_ctx(Ctx *cx, const Gk *g, const Ast *a)
++{
++    switch (a->k) {
++    case A_CTX: {
++        First r;
++        if (!PX.a0only && px_S(a, px_pmask(g, a), r.f)) { r.nullable = false; return r; }
++        return first_of(cx, a);
++    }
++    case A_CAP: case A_ATOMIC: return first_ctx(cx, g, a->l);
++    case A_CAT: {
++        First acc = fst_empty(true);
++        const Ast *t = a;
++        while (t->k == A_CAT) { acc = fst_seq(first_ctx(cx, g, t->r), acc); t = t->l; }
++        return fst_seq(first_ctx(cx, g, t), acc);
++    }
++    case A_ALT: {
++        First acc = fst_empty(false);
++        const Ast *t = a;
++        for (;;) {
++            const Ast *br = t->k == A_ALT ? t->r : t;
++            First r = first_ctx(cx, g, br);
++            bs_or(acc.f, r.f); acc.nullable = acc.nullable || r.nullable;
++            if (t->k != A_ALT) break;
++            t = t->l;
++        }
++        return acc;
++    }
++    case A_REP: {
++        First r = first_ctx(cx, g, a->l);
++        r.nullable = r.nullable || a->u.rep.rmin == 0;
++        return r;
++    }
++    default: return first_of(cx, a);
++    }
++}
++/* ==== end PROTOTYPE A1 ==== */
++
+ typedef struct {
+     Ctx  *cx;
+     Gk   *g;
+@@ -839,8 +1121,39 @@
+ } Pss;
+ 
+ static void pss_walk(Pss *P, Ast *a, const uint8_t *follow, bool may_end,
+-                     const uint8_t *encl);
++                     const uint8_t *encl, const PCont *k);
+ 
++/* PROTOTYPE: FIRST of Q's continuation with A1-valued gates; at the END of a
++ * called A_CAP (and at the root end) the call sites' joined, A0-valued
++ * contexts are UNIONED in (A-F1 fix (a)); PROTO_A1_NOCC drops that union. */
++/* `a0`: value every gate A0 (first_of), the R-5 comparison's form. The
++ * returned `nullable` is "the match can END from here at zero consumption":
++ * lexically, or through a call site's joined may_end. */
++static First px_cont_first(const Pss *P, const PCont *k, bool a0)
++{
++    First acc = fst_empty(true);
++    bool cc_end = false;
++    for (; k; k = k->next) {
++        if (k->capend < 0) return acc;     /* atomic body end: self-contained */
++        if (k->capend) {
++            if (P->cc && !PX.nocc && k->capend < P->ncc) {
++                bs_or(acc.f, P->cc[k->capend].follow);
++                bs_or(acc.f, P->cc[k->capend].encl);
++                cc_end = cc_end || P->cc[k->capend].may_end;
++            }
++            continue;
++        }
++        First x = a0 ? first_of(P->cx, k->node) : first_ctx(P->cx, P->g, k->node);
++        bs_or(acc.f, x.f);
++        if (!x.nullable) { acc.nullable = cc_end; return acc; }
++    }
++    if (P->cc && !PX.nocc) {               /* the root end: (?R)'s sites */
++        bs_or(acc.f, P->cc[0].follow);
++        bs_or(acc.f, P->cc[0].encl);
++    }
++    return acc;
++}
++
+ /* [K93] Joins one call site's context into `cc[t]`, noting whether it grew —
+  * the fixpoint's signal. A target with no slot would be a call whose body
+  * never receives this context, so the verdicts inside it would be computed
+@@ -889,10 +1202,24 @@
+  * computed. Factored out of `pss_rep` at [M6.4.2] so the free discharge can ask
+  * the SAME question the marking walk asks, from the same lines. */
+ static bool pss_verdict(Pss *P, const Ast *a, const uint8_t *follow,
+-                        bool may_end, const uint8_t *encl)
++                        bool may_end, const uint8_t *encl, const PCont *k)
+ {
+     First body = first_of(P->cx, a->l);
+ 
++    /* PROTOTYPE R-5: with every gate valued A0, A1's continuation u ENCL must
++     * equal the walk's FOLLOW u ENCL (and its end-reachability may_end). */
++    if (PX.chk_follow) {
++        First c0 = px_cont_first(P, k, true);
++        uint8_t u1[32], u2[32];
++        memcpy(u1, c0.f, 32); bs_or(u1, encl);
++        memcpy(u2, follow, 32); bs_or(u2, encl);
++        bool beq = memcmp(u1, u2, 32) == 0, neq = c0.nullable == may_end;
++        bool sup = true;
++        for (int i = 0; i < 32; i++) if ((u1[i] & u2[i]) != u2[i]) sup = false;
++        fprintf(stderr, "R5\t%s\t%s\n", beq ? "bytes-eq" : sup ? "bytes-A1-wider" : "bytes-A1-NARROWER",
++                neq ? "end-eq" : (c0.nullable ? "end-A1-wider" : "end-A1-NARROWER"));
++    }
++
+     /* The effective follow: what comes after Q here, plus what every
+      * enclosing loop could restart with. */
+     uint8_t eff[32];
+@@ -917,16 +1244,30 @@
+     if (base_ok && exact)                            return true;
+     if (base_ok && disjoint && lazy && may_end)      return false;
+     if (base_ok && disjoint)                         return true;
++    /* PROTOTYPE A1: row 3 with Q's continuation re-valued at its gates. */
++    if (PX.a && !PX.a0only && base_ok && (!lazy || PX.sab_lazy) &&
++        (a->u.rep.rmin >= 1 || PX.sab_m0)) {
++        uint8_t all[32];
++        bs_all(all);
++        if (memcmp(body.f, all, 32) != 0) {
++            body_admits_unique_iteration(P->g, a->l, &uwhy);  /* refresh LAST */
++            First cf = px_cont_first(P, k, false);
++            uint8_t e2[32];
++            memcpy(e2, cf.f, 32);
++            bs_or(e2, encl);
++            if (!bs_intersects(body.f, e2)) return true;
++        }
++    }
+     return false;
+ }
+ 
+ static void pss_mark(Pss *P, Ast *a, const uint8_t *follow, bool may_end,
+-                     const uint8_t *encl, bool survey_this);
++                     const uint8_t *encl, bool survey_this, const PCont *k);
+ 
+ /* `survey_this` is false at exactly one caller — the `A_ATOMIC` arm below,
+  * which has already asked this node's verdict in a DIFFERENT context. */
+ static void pss_rep(Pss *P, Ast *a, const uint8_t *follow, bool may_end,
+-                    const uint8_t *encl, bool survey_this)
++                    const uint8_t *encl, bool survey_this, const PCont *k)
+ {
+     First body = first_of(P->cx, a->l);
+ 
+@@ -936,14 +1277,14 @@
+     memcpy(eff, follow, 32);
+     bs_or(eff, encl);
+ 
+-    if (!P->collect) pss_mark(P, a, follow, may_end, encl, survey_this);
++    if (!P->collect) pss_mark(P, a, follow, may_end, encl, survey_this, k);
+ 
+     /* Descend into the body. Its own quantifiers see this loop's follow AND
+      * this loop's FIRST as part of theirs. */
+     uint8_t inner[32];
+     memcpy(inner, encl, 32);
+     bs_or(inner, body.f);
+-    pss_walk(P, a->l, eff, may_end, inner);
++    pss_walk(P, a->l, eff, may_end, inner, k);
+ }
+ 
+ /* `pss_rep`'s verdict half: asks §2.2 of `a` in the context given and acts on
+@@ -951,11 +1292,11 @@
+  * Never reached on a context-only walk (`P->collect`), which must neither
+  * mark on a context still being widened nor count a node twice. */
+ static void pss_mark(Pss *P, Ast *a, const uint8_t *follow, bool may_end,
+-                     const uint8_t *encl, bool survey_this)
++                     const uint8_t *encl, bool survey_this, const PCont *k)
+ {
+     P->seen++;
+ 
+-    bool verdict = pss_verdict(P, a, follow, may_end, encl);
++    bool verdict = pss_verdict(P, a, follow, may_end, encl, k);
+ 
+     if (P->fn) {
+         /* SURVEY MODE writes nothing (`pcrec_poss_survey`'s whole contract).
+@@ -978,7 +1319,7 @@
+  * measured refutation of a simpler rule (file header) — do not simplify it
+  * without re-reading which counterexample it exists to catch. */
+ static void pss_walk(Pss *P, Ast *a, const uint8_t *follow, bool may_end,
+-                     const uint8_t *encl)
++                     const uint8_t *encl, const PCont *k)
+ {
+     switch (a->k) {
+     /* [CLS-TREE] S3: made by the encoding lowering, below this pass. */
+@@ -1086,12 +1427,14 @@
+         memcpy(f, follow, 32);
+         memcpy(e, encl, 32);
+         cc_widen(P, a->u.cap.no, f, &me, e);
+-        pss_walk(P, a->l, f, me, e);
++        PCont *mk = pcrec_arena_alloc(&P->cx->arena, sizeof *mk);
++        mk->node = NULL; mk->capend = a->u.cap.no; mk->next = k;
++        pss_walk(P, a->l, f, me, e, mk);
+         return;
+     }
+ 
+     case A_REP:
+-        pss_rep(P, a, follow, may_end, encl, true);
++        pss_rep(P, a, follow, may_end, encl, true, k);
+         return;
+ 
+     /* [M6.4.2] AN ATOMIC BODY IS ANALYSED AS A SELF-CONTAINED PATTERN, and
+@@ -1178,11 +1521,11 @@
+              * safe and is declined anyway — declining is always safe, and a
+              * second condition here would need its own evidence. */
+             if (P->fn && !P->collect && body->u.rep.greedy &&
+-                pss_verdict(P, body, follow, may_end, encl))
++                pss_verdict(P, body, follow, may_end, encl, k))
+                 P->fn(P->user, a);
+-            pss_rep(P, body, none, true, encl, false);
++            pss_rep(P, body, none, true, encl, false, &px_atomic_end);
+         } else {
+-            pss_walk(P, body, none, true, encl);
++            pss_walk(P, body, none, true, encl, &px_atomic_end);
+         }
+         return;
+     }
+@@ -1195,8 +1538,11 @@
+         memcpy(cur, follow, 32);
+         bool cur_end = may_end;
+         Ast *t = a;
++        const PCont *ck = k;
+         while (t->k == A_CAT) {
+-            pss_walk(P, t->r, cur, cur_end, encl);
++            pss_walk(P, t->r, cur, cur_end, encl, ck);
++            PCont *nk = pcrec_arena_alloc(&P->cx->arena, sizeof *nk);
++            nk->node = t->r; nk->capend = 0; nk->next = ck; ck = nk;
+             First x = first_of(P->cx, t->r);
+             uint8_t nf[32];
+             memcpy(nf, x.f, 32);
+@@ -1205,17 +1551,17 @@
+             memcpy(cur, nf, 32);
+             t = t->l;
+         }
+-        pss_walk(P, t, cur, cur_end, encl);   /* the spine's head */
++        pss_walk(P, t, cur, cur_end, encl, ck);   /* the spine's head */
+         return;
+     }
+     case A_ALT: {
+         /* Every branch is followed by the same thing. */
+         Ast *t = a;
+         while (t->k == A_ALT) {
+-            pss_walk(P, t->r, follow, may_end, encl);
++            pss_walk(P, t->r, follow, may_end, encl, k);
+             t = t->l;
+         }
+-        pss_walk(P, t, follow, may_end, encl);
++        pss_walk(P, t, follow, may_end, encl, k);
+         return;
+     }
+     }
+@@ -1231,7 +1577,7 @@
+     bs_clear(f);
+     bs_clear(e);
+     cc_widen(P, 0, f, &me, e);
+-    pss_walk(P, root, f, me, e);
++    pss_walk(P, root, f, me, e, NULL);
+ }
+ 
+ /* [K93] Both entries' walk. On a call-bearing pattern the call-site contexts
+@@ -1243,6 +1589,9 @@
+  * allocates nothing and walks once, exactly as before. */
+ static void pss_run(Pss *P, Ast *root)
+ {
++    px_init();
++    struct PossCapFact *saved_cf = P->cx->poss_capfact;
++    P->cx->poss_capfact = PX.b ? cf_build(P->cx, root) : NULL;
+     if (pcrec_has_call(root)) {
+         P->ncc = (int)P->cx->ncap + 1;
+         P->cc  = pcrec_arena_alloc(&P->cx->arena,
+@@ -1256,6 +1605,7 @@
+         P->collect = false;
+     }
+     pss_root(P, root);
++    P->cx->poss_capfact = saved_cf;
+ }
+ 
+ /* Runs the possessify walk over `root` in SURVEY mode (calling `fn` per
