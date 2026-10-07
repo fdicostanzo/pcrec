@@ -51,8 +51,9 @@
 # whose `wantrun` is `none`; the other five -- `<[a-z]+>`, `(ab|cd)e`,
 # `[^x]c`, `(?:ab)*c`, `q` -- now read `dominated` under [OPT-PRECHECK-ADMIT]
 # and so no longer reach §3.1c, though §3.1/§3.1b/§3.1w still pass on them).
+# RE-AIMED 2026-10-06 ([MEMFN] R4c REPLACE, lane r4ccore): the one-byte gate is the kit's precheck arm (gate()); the search text moved into the kit; the plant is the same defect in the kit's transcription of the form.
 SAB_ID="S265-req-byte-memchr-inverted"
-SAB_FILE="src/gen/emit_dfa.c"
+SAB_FILE='memfn/src/precheck.c'
 SAB_SUITES="harness prechecks"
 SAB_DESC="the required-byte whole-window pre-check emits 'memchr(...)' where it should emit '!memchr(...)', so both engines' search entries answer NOMATCH exactly when the byte every match must contain IS present and fall through to the attempt loop when it is absent — an inversion that turns every matching subject of every required-byte pattern into a no-match, unlike its two batch siblings whose sound-direction plants have no answer-level detector at all"
 SAB_DOC_FIGURE="tests/harness/run.sh over the full .rxt corpus is the primary detector: every 'm' case of every pattern carrying a required byte reports nomatch, so 'cases failed' moves from 0 to a large count. tests/codegen/run_prechecks.sh §3.1c is the structural detector and names the sense directly ('the pre-check's sense is not !memchr(...) — it may be inverted') on the §3.1 witnesses that still read RX_REQ_WHY 'emitted' with no run (three of eight after [OPT-PRECHECK-ADMIT] narrowed the population — see the header above). Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S265. RE-POINTED 2026-09-26 (lane s265reach): SAB_REACH's witness moved from 'a=b' (reads RX_REQ_WHY 'dominated' on main as of 5803051b, so the row scored UNREACHED) to 'a.?b' (reads 'emitted'); solo run owed to the manager."

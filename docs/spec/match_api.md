@@ -4060,8 +4060,11 @@ engine-scoped.**
     `tests/memfn/run_libc_census.sh`): over a corpus-wide sample, every
     artifact carries both lines, and `MEMFN_LIBC` equals the undefined
     function symbols of the artifact's `-O0 -fno-builtin` object minus the
-    constant-size `memcpy` loads. `MEMFN_FORMS`' identity half is
-    UNREACHED until a `-fmemfn-simd` switch exists.
+    constant-size `memcpy` loads. `MEMFN_FORMS`' identity half
+    runs from R4c, when the `-fno-memfn-simd`/`-fmemfn-simd` switch exists
+    (`tuning.md` §2.43): default against `-fno-memfn-simd`, reported
+    "identical (no SIMD form)" while no SIMD form exists. Its movers half
+    (`-fmemfn-simd` against SIMD-off) stays UNREACHED until one does.
 
 - **(b) CAPACITY and ACTIVITY macros stay VM-only**, exactly as this
   section already said: `<PREFIX>_VM_RUNGS`, `_VM_STRATS`, `_VM_PRUNES`,

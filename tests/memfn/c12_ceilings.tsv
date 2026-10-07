@@ -1,0 +1,38 @@
+# tests/memfn/c12_ceilings.tsv -- C12, THE EMITTED-FORM RATCHET's CEILINGS
+# (integration.md §9.3 I5, §10.5, §R4.3.4; born at R4c, lane r4cchecks,
+# 2026-10-06, from TODAY'S tree on lane/memfn-r4c).
+#
+# C12 counts, per (emitter file, vocabulary line, libc call name), the search
+# FORMS that file's emitters SPELL in emitted text (string literals; the
+# emitter's own comments excluded; tests/memfn/search_vocab.tsv names the
+# shapes, tests/memfn/c17_lex.py reads the literals). Each row is a CEILING
+# that only DESCENDS:
+#   - more forms than the ceiling is red: a replaced form came back as a
+#     second spelling (D122), or a new one was spelled outside the kit;
+#   - FEWER than the ceiling is red too ("lower the ceiling"): a migration
+#     step's REPLACE commit lowers its rows in the same commit, and a stale
+#     high ceiling would be room for a form to return unseen. It also makes a
+#     lexer or vocabulary that stopped seeing forms red, never green;
+#   - a form with NO row here has ceiling 0.
+# The number on a row is the ONE literal a REPLACE commit edits: M1's REPLACE
+# lowered the emit_dfa.c memchr row 8 -> 2 (R4c, lane r4cfix: pcrec_emit_find
+# and emit_attempt stay until M2/M4; the six M1 spellings are the kit's).
+# A RAISE is never routine: it needs a ruling, named in the commit.
+#
+# The row count (12) and the total (20 forms; 26 before M1) are echoed by the check; the
+# independent control is the vocabulary's own reach (rule 4 of C17).
+#
+# Columns (tab-separated): path, vocab line-id, libc call name (libc-call
+# lines only, else -), ceiling, note.
+src/gen/emit_dfa.c	libc-call	memchr	2	M2/M4: pcrec_emit_find, emit_attempt (M1's six went to the kit at R4c REPLACE: emit_req_one_byte, emit_req_set_rest, ofs_test_emit_fn x2, ofs_test_emit_pair x2; at 90d396fd the design counted 9, one went with the START-SET stage)
+src/gen/emit_dfa.c	walk-fmt	-	1	pcrec_emit_find's table form (START-SET stage 1; M2/M5)
+src/gen/emit_dfa.c	walk-open	-	2	class-run and span loops whose byte test another call splices in (M3/M4)
+src/gen/emit_dfa.c	walk-stmt	-	2	one-statement cursor walks over a table (M2/M5)
+src/gen/emit_vm.c	walk-back	-	1	the VM's backward step chained by a jump (M2)
+src/gen/emit_vm.c	walk-open	-	1	the VM's open while loop (M2/M3)
+src/gen/runcmp.c	libc-call	memcmp	1	runcmp's long-run compare (M1b/VERIFY)
+src/gen/runcmp.c	runcmp-bytes	-	2	runcmp's byte-at-a-time compare rows (M1b)
+src/gen/runcmp.c	runcmp-words	-	4	runcmp's natural-width word compare rows (M1b)
+src/enc/enc_byte.c	span-index	-	2	the encoding seam's run-time span compare, byte encoding (M7)
+src/enc/enc_utf8.c	span-decode	-	1	the encoding seam's per-character decode compare (M7)
+src/enc/enc_utf8.c	span-index	-	1	the encoding seam's run-time span compare, utf8 (M7)

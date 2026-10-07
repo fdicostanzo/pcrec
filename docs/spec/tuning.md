@@ -3610,6 +3610,36 @@ VM hybrid's prefilter answers the same windows.
 - **Denied:** the plain `byte-class-bounded` skip over `E`: the `abi`-62
   `-fno-start-set` program (no VM hat either) apart from the abi digits.
 
+### 2.43 `-fno-memfn-simd` / `-fmemfn-simd` — `PCREC_NO_MEMFN_SIMD` (bit 48), `PCREC_FORCE_MEMFN_SIMD` (bit 49)
+
+**[MEMFN] R4c, pcrec's ONE axis for the memory-function kit (D147
+addenda 6-7; `memfn/CLAUDE.md`, "ONE SIMD switch"). INERT today: both
+settings render the same artifact.** A force pair on the
+`-fno-comments`/`-fcomments` shape (`src/core/axes.def`), **OFF BY DEFAULT**
+until the SIMD hold lifts; turning it on by default is its own ruled event.
+The deny flag states the default and overrides a `config`/target block that
+turned the force flag on.
+
+- **Off (the default):** the kit renders PORTABLE C only (plain C, SWAR on
+  ordinary integers, libc calls, loop-free forms); the artifact runs on any
+  target.
+- **On:** the kit MAY render hardware-optimized forms for a specific CPU; such
+  an artifact MAY NOT EXECUTE ELSEWHERE. What it renders, which ISA levels and
+  whether it cascades at run time, is the kit's choice per site; pcrec carries
+  no profile, no `--isa=` axis and no architecture knowledge, and sends the
+  kit ONE bit (`MF_P_PORTABLE_ONLY`, set iff the force flag is not in
+  force).
+- **Inert before R4e':** no SIMD form exists, so `-fmemfn-simd` and
+  `-fno-memfn-simd` produce byte-identical artifacts (checked by C11's
+  identity half, `make test-memfn-stamps`, printed "identical (no SIMD
+  form)"). The per-form switches are the kit's own `--memfn=` namespace
+  (`registry.md` §6), not this axis.
+- **Masked** out of `rx_info.flags` (`strategy_denials`): the axis selects
+  what the kit renders and changes no answer. The activity record is
+  `<PREFIX>_MEMFN_FORMS` (`match_api.md` §6.3), `none` iff the artifact is
+  identical to its SIMD-off compile.
+
+
 ## 3. The DFA side's own stamps
 
 **CLOSED 2026-08-25 by plan row `[DD-13]`; this section stated the gap while

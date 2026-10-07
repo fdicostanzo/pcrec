@@ -364,6 +364,25 @@
 #     `nm -u` libc names. Its own arm because a wrong LIBC value moves no
 #     answer, and every identity gate compares against a tree that carries
 #     the same wrong value. Registered before S513-S517.
+#   memfnarch — added 2026-10-06 ([MEMFN] R4c, lane r4cchecks); runs
+#     tests/memfn/run_arch_blind.sh, C4: the arch-blindness detector
+#     (integration.md §10.4) over the sabotaged tree's src/, cli/, lib/ and
+#     tests/ against its counted-at-birth allowlist, with compiler-derived
+#     plants. Its own arm because an ISA word in an emitter moves no answer
+#     and no artifact byte. Static: needs $CC for the plants, no binary.
+#     Registered before S518-S523.
+#   memfnforms — added 2026-10-06 ([MEMFN] R4c, lane r4cchecks); runs
+#     tests/memfn/run_form_checks.sh, C12/C13/C14: the emitted-form ratchet,
+#     the on_cand declaration and the shape bounds compiled against
+#     limits.def. Its own arm because a re-spelled search form or a lowered
+#     shape bound moves no answer on the corpus. Static plus one syntax-only
+#     compile. Registered before S518-S523.
+#   memfnreach — added 2026-10-06 ([MEMFN] R4c, lane r4cchecks); runs
+#     tests/memfn/run_handoff_reach.sh: the VM hybrid handoff route's reach
+#     floor (integration.md §15.5). Its own arm because losing the route
+#     moves no ANSWER (the handoff is an optimisation) and the identity
+#     gates compare against a tree that lost it too. Compiles with the
+#     sabotaged tree's own build/pcrec. Registered before S518-S523.
 #   emitsweep — added 2026-10-06 ([START-TABLE] C0, lane stc0); runs
 #     scripts/tests/emit_sweep.py.test (the arms family over its own manifest
 #     population, the sabotaged tree's build/pcrec) and
@@ -2712,6 +2731,34 @@ run_one() {
                 p="$(grep -m1 '^checks passed:' "$work/memfnmanifest.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/memfnmanifest.log" | grep -oE '[0-9]+')"
                 score_arm "$work/memfnmanifest.log" "$f" "memfnmanifest:${f:-ERR}fail/${p:-?}pass"
+                ;;
+            memfnarch)
+                # [MEMFN] C4 tests/memfn/run_arch_blind.sh — see the
+                # vocabulary entry above. Reads the sabotaged tree's own
+                # files; plants come from $CC.
+                CC="$CC" TMPDIR="$work" bash "$tree/tests/memfn/run_arch_blind.sh" "$tree" \
+                    > "$work/memfnarch.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/memfnarch.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/memfnarch.log" | grep -oE '[0-9]+')"
+                score_arm "$work/memfnarch.log" "$f" "memfnarch:${f:-ERR}fail/${p:-?}pass"
+                ;;
+            memfnforms)
+                # [MEMFN] C12/C13/C14 tests/memfn/run_form_checks.sh — see the
+                # vocabulary entry above.
+                CC="$CC" TMPDIR="$work" bash "$tree/tests/memfn/run_form_checks.sh" "$tree" \
+                    > "$work/memfnforms.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/memfnforms.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/memfnforms.log" | grep -oE '[0-9]+')"
+                score_arm "$work/memfnforms.log" "$f" "memfnforms:${f:-ERR}fail/${p:-?}pass"
+                ;;
+            memfnreach)
+                # [MEMFN] tests/memfn/run_handoff_reach.sh — see the vocabulary
+                # entry above. Compiles with the sabotaged tree's own pcrec.
+                PCREC="$pcrec" TMPDIR="$work" bash "$tree/tests/memfn/run_handoff_reach.sh" "$tree" \
+                    > "$work/memfnreach.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/memfnreach.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/memfnreach.log" | grep -oE '[0-9]+')"
+                score_arm "$work/memfnreach.log" "$f" "memfnreach:${f:-ERR}fail/${p:-?}pass"
                 ;;
             memfnstamps)
                 # [MEMFN] C11 tests/memfn/run_libc_census.sh --quick — see the

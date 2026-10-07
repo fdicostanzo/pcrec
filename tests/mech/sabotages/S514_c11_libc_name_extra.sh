@@ -14,6 +14,9 @@ SAB_REACH='"$PCREC" -p rx -o - --pattern "a(b|c)+d" | grep -o "RX_MEMFN_LIBC \"m
 SAB_REACH_EXPECT='RX_MEMFN_LIBC "memchr"'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='             mf_stamps(art, &sink) || mf_art_end(art);'
+# RE-AIMED 2026-10-06 ([MEMFN] R4c, lane r4ccore): the stamp pass no longer
+# ends the art in this expression (pcrec_memfn_art_end follows it); the
+# anchor is the mf_stamps call alone. Intent unchanged.
+SAB_BEFORE='             mf_stamps(art, &sink);'
 SAB_AFTER='             mf_art_note_libc(art, "strlen") || /* SABOTAGE S514 */
-             mf_stamps(art, &sink) || mf_art_end(art);'
+             mf_stamps(art, &sink);'

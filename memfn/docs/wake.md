@@ -69,7 +69,7 @@ the current state, never a history (the history is `journal.md`).
   emit_dfa.c's offset-skip/PRE sites. **Do NOT start R4c code before R-4
   appears in requests.md.** Reading integration.md §22 (R4c) and
   the manifest rows it names is fine meanwhile.
-- **Sabotage ids:** they serialize through main. The kit's block is
+- **Sabotage ids:** they serialize through main. S510-S529 are USED; the next block is S530-S549 (main, 2026-10-06). Old note:
   S510-S529; the next free is S518.
 - **Box rule:** a lane's long or multi-section Mac run takes
   worktrees/.mac-suite.lock (directory + owner file, released on exit);

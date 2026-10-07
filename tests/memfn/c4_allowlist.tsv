@@ -1,0 +1,26 @@
+# tests/memfn/c4_allowlist.tsv -- C4's ALLOWLIST (integration.md §10.4, D107's
+# shape): the architecture vocabulary that is ALLOWED to appear outside memfn/,
+# COUNTED AT BIRTH (2026-10-06, lane r4cchecks, from `arch_blind_check.py
+# --census` on lane/memfn-r4c; the design's own born counts at b7542fbe were
+# code 1, src docs 1, tests 15 hits in 10 files; today code 1, doc 1, tests 13
+# hits in 10 files).
+#
+# One row per (scope, path, class). The count is the hit count the row ALLOWS:
+# MORE hits is a new hit (red), FEWER is a stale row (red: lower it), so the
+# list only descends. Its independent control is C4_ALLOW_FLOOR, a literal in
+# tests/memfn/run_arch_blind.sh sharing no source with this file.
+#
+# Columns (tab-separated): scope, path, class, allowed count, reason.
+# classes: 1 isa-name 2 arch-macro 3 intrinsic 4 intrin-header 5 targeting
+#          6 arch-noun 7 kit-identity 8 reads-kit-output 9 include-graph
+code	src/opt/prefix_k.c	1	1	a comment citing glibc's AVX2 memchr measurement (the C_MEMCHR row's cost note); leaves with M5, which moves the scan plan into the kit
+doc	src/gen/CLAUDE.md	6	1	the sentence stating the ISA-neutral rule itself ("an x86 slot")
+tests	tests/assertions/d27/lib_pcre2.py	6	1	a Linux libpcre2 library path (x86_64-linux-gnu), not branching on an architecture
+tests	tests/codegen/CLAUDE.md	6	1	a box description in a measurement note
+tests	tests/codegen/run_scan_edge_dispatch.sh	6	3	the R_X86_64_* relocation names the script parses out of a compiled object
+tests	tests/lib/gen_timeout.sh	6	1	a box description in a comment (Homebrew GCC on ARM64)
+tests	tests/lib/loadavg.sh	6	1	a box description in a comment (macOS/arm64 has no /proc)
+tests	tests/thread/CLAUDE.md	6	2	a measurement note naming the box it was measured on
+tests	tests/thread/run_stackdepth_tests.sh	6	2	a measurement note naming the box it was measured on
+tests	tests/utf8/axis01_encoded_length.rxt	6	1	a provenance comment naming the host the oracle ran on
+tests	tests/findings/run_analyzer_tests.py	1	1	the shard-merge test's case label "sm3", not the ARM SM3 extension

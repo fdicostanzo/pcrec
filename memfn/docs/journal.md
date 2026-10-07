@@ -317,3 +317,84 @@ pointer when a kit change merges to main.
 - Waiting: R-4 (R4c, the M1 migration), which main is sequencing with
   Frank against the start-table refactor (shared emit_dfa.c
   offset-skip/PRE sites). No R4c code before R-4 is filed.
+
+## 2026-10-06 — R-4 (R4c) taken up
+
+- R-4 filed on main at 05c33ce0. Branch `lane/memfn-r4c` cut from main
+  691a8b7c; ack d836eb17.
+- A read-only opus scoping pass wrote worktrees/r4cscope-scratch/scope.md:
+  - the sites can be expressed in MF_VOCAB 2;
+  - 18 boundary reads (B1-B18);
+  - 20 mech rows, not ~28;
+  - C4/C5/C10/C12/C13/C14/I1 do not exist yet;
+  - the memfn-simd pair does not exist (it is caller-observable);
+  - C17's dynamic half keys on a dead name;
+  - I2 needs main's C0.
+- Manager calls on Q2-Q13 are in rulings.md beside it. Q1 (pcrec's MIT
+  text moved into the 0BSD kit) went to Frank via main, recommending he
+  relicense it as 0BSD. It gates merging CORE into the branch.
+- Lanes running: r4ccore (opus, implement→replace), r4caxis (sonnet,
+  the inert memfn-simd pair), r4cchecks (sonnet, C4/C12/C13/C14, C17
+  re-key, VM-hybrid witness). Heavy runs are held for a slot from main.
+
+## 2026-10-06 — R4c: AXIS + CHECKS merged; CORE IMPLEMENT green; Q-G2-18 chosen
+
+- Merged into lane/memfn-r4c: r4caxis (the inert memfn-simd pair, registry
+  pin 205, a stream-5 listing mover only) and r4cchecks (C4, C12-C14, the
+  C17 re-key + census, the VM-hybrid witness; S518-S529, which used up the
+  block). make strict is clean, and the new sections are green on the merge.
+- Frank ruled Q1 YES as D145 addendum 1 (main 07573ff7): pcrec text
+  moved into the kit is relicensed 0BSD.
+- CORE IMPLEMENT (lane/r4ccore 66176e35): 0 movers on all 5 streams
+  with the I1 shadow live. I1 is also clean at -fcomments, both
+  engines, -e utf8 and the 8 M1 denies. Q10: no define-without-use.
+- Q-G2-18, CHOSEN by the kit manager: the precheck arm needs on_miss to
+  leave the site. pcrec STATES it (`mf_site.on_miss_leaves`; MF_SITE_ABI
+  2→3) and the kit never parses hook text. CORE's interim
+  jump-keyword sniff is retired. G2 coverage is OWED.
+
+## 2026-10-06 — R4c integrated on lane/memfn-r4c; heavy runs next
+
+- CORE delivered IMPLEMENT + REPLACE (zero movers) but never read three
+  manager messages that arrived while it was busy (the HOLD/LIFT-by-
+  artifact lesson, again). A fresh FIX lane applied them from the brief:
+  - it merged AXIS/CHECKS;
+  - ONE policy derivation;
+  - D145 add. 1 provenance;
+  - C12 memchr 8→2;
+  - C17 LIVE on the real corpus (103 renders, the `pcrec_memfn_define`
+    door accounted);
+  - stale S524/S528 re-aimed;
+  - Q-G2-18 (`on_miss_leaves`, MF_SITE_ABI 2→3, a predicate column of the
+    arm table, the text sniff deleted);
+  - rxtsource re-pinned for CHECKS's handoff.rxt growth (+278 PASS).
+- Merged lane/r4cfix, then main (docs only since 691a8b7c). make strict
+  is clean. emit_sweep at FIX: streams 1-4 0 movers; stream 5 only the two
+  declared memfn-simd rows.
+- OWED, in the slot main names (after flagbits, ~20:45Z): Mac make test,
+  then the sabotage matrix (CORE's 23 rows + S518-S529); then the pinned
+  Linux script; I2 over every axis × both tiers after main's C0.
+
+## 2026-10-06 (evening) — R4c Mac verdict; Linux run handed to main
+
+- Merged main at e6e6d6eb (flagbits K92, abi 65). One conflict: main's
+  DERIVED strategy mask subsumes AXIS's hand-added memfn-simd bits. The
+  zero-mover gate vs e6e6d6eb is clean; the only dump mover is the
+  declared --list-axes pair.
+- Mac make test at 00ede5dc: 58/58 ran, 6202 s. ONE red, test-startset
+  [vm-movers]: CHECKS's handoff.rxt witness rows enrolled 9 start-set VM
+  movers in main's manifests. lane r4cpin re-pinned them via the
+  census generator; test-startset is green alone.
+  Main's per-row facts are in r4cfix_report §10.1: identical at
+  e6e6d6eb, and the same 24-line seek diff as the existing rows.
+  LESSON: corpus rows enroll in other suites' manifests (rxtsource,
+  startset), so a lane adding corpus rows owes the full make test.
+- FINDING (mine): run_sabotage_matrix.sh takes ONE id per call. My
+  35-id call ran only S464 (DETECTED), and the chain still printed
+  status=0. I caught it only from the trailer's "1 rows". I sent main a
+  backlog note that the matrix should refuse extra args.
+- Each mech row is ~10 min of full harness, so I stopped the Mac
+  per-row loop and released the lock at 22:20Z. All 35 rows go to Linux.
+- Merged main again (C0, d96f8cd3; no src/). Committed the pinned
+  Linux script + gate judge (91f5b607), with I2 over every flag x both
+  tiers. Main runs it tonight on ubuntubudu.

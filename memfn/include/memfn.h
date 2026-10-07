@@ -36,7 +36,7 @@
 #define MF_NS(name) pcrec_mf_##name
 #endif
 
-#define MF_SITE_ABI 2   /* layout and meaning of every struct below           */
+#define MF_SITE_ABI 3   /* layout and meaning of every struct below           */
 #define MF_VOCAB    2   /* the operation vocabulary: op x handoff x term kinds */
 
 /* ---- bounds and sentinels ------------------------------------------------ */
@@ -173,6 +173,13 @@ typedef struct {
                                        text has established the range and the
                                        term's reads; the kit tests neither    */
     uint8_t         use;            /* mf_use_kind, PER INSTANCE (§14.5)       */
+    /* ON_MISS/ASSIGN: pcrec states that its on_miss always transfers control
+       out of the site (return/goto/break/continue); 0 = it may fall through.
+       RULED Q-G2-18 (MF_SITE_ABI 3): the kit never reads the on_miss TEXT to
+       learn this (hooks are opaque); a form that tests a later predicate only
+       after an earlier one passed is selected on this fact alone. 0 or 1,
+       and nonzero only on ON_MISS/ASSIGN, else refused                       */
+    int             on_miss_leaves;
     /* pcrec's proven facts */
     uint64_t        span_lo, span_hi;          /* proven bytes; MF_SPAN_UNBOUNDED */
     uint32_t        cand_ppm_lo, cand_ppm_hi;  /* the whole predicate's hint     */

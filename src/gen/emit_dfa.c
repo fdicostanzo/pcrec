@@ -41,6 +41,7 @@
 #include "core/internal.h"
 #include "enc/enc.h"
 #include "gen/clskit.h"
+#include "gen/memfn_sites.h"
 
 /* [EMIT-VERB rider, D112 item 2 / D76 / D94] THE ABI NUMBER IS ONE VALUE.
  * Two sites in this file spell it into the emitted artifact -- the
@@ -323,8 +324,9 @@ static int req_lead_byte(Ctx *cx);
 /* [K82] (B) WHAT THE BODY DOES WITH AN EMITTED RUN PRE-CHECK'S ANSWER — the
  * `req-use` table, defined beside the admission it reads: keep its candidate
  * as the scan start (the HANDOFF), or start at the startpos. Read by the gate
- * (`emit_req_run_check`), by the three bodies through the expression
- * `pcrec_emit_req_byte_check` returns, and by `<PREFIX>_REQ_HANDOFF`. */
+ * (the pre-check site's builder, `req_site_define`), by the three bodies
+ * through the expression `pcrec_emit_req_byte_check` returns, and by
+ * `<PREFIX>_REQ_HANDOFF`. */
 typedef enum {
     REQ_USE_HANDOFF = 0,
     REQ_USE_FROM_STARTPOS
@@ -346,9 +348,10 @@ static const char *dfa_fragf(Ctx *cx, const char *fmt, ...)
  * emitted comment, the OFFSETS stamp and G1 (docs/design/litscan_s1.md §1.3).
  *
  * It holds no `Dfa` and no `DfaForm`, so a consumer without a DFA fills one
- * from its own facts and hands it to the same block emitter,
- * `ofs_test_emit_fn`: the run pre-check does (`req_run_tests`, §7.2 step 6),
- * on every route, and `[OPT-VMSEED]` is the next (§1.5). The `PrefixK`
+ * from its own facts and has it described for the same kit renderer
+ * (`ofs_pred_of`; the offset-skip function, memfn/src/ofsskip.c): the run
+ * pre-check does (`req_run_tests`, §7.2 step 6), on every route, and
+ * `[OPT-VMSEED]` is the next (§1.5). The `PrefixK`
  * pointers point into the caller's `UnanchStart`, which outlives every use
  * (the reason `DfaForm` held the selection by pointer before this). */
 typedef struct {
@@ -365,8 +368,6 @@ typedef struct {
     int maxk;                         /* the loop guard: the largest tested offset */
     int noffsets;                     /* distinct offsets tested */
 } OfsTest;
-static void ofs_test_emit_fn(Ctx *cx, StrBuf *c, const char *p,
-                             const char *name, const OfsTest *t);
 
 /* [DD-13c] DOES THIS ARTIFACT CONTAIN A DFA SCAN AT ALL?
  *
@@ -1015,9 +1016,10 @@ static void ofs_test_run(OfsTest *t, const unsigned char *run,
     t->noffsets  = n;
 }
 
-/* The run pre-check's tests, the ONE derivation its file-scope blocks
- * (`pcrec_emit_req_run_blocks`) and its call site (`emit_req_run_check`) both
- * read, so a block cannot be written without its call or called unwritten:
+/* The run pre-check's tests, the ONE derivation the pre-check site's builder
+ * (`req_site_define`) reads for its run predicates, each defined as a block
+ * and called from one site, so a block cannot be written without its call
+ * or called unwritten:
  * `t[0]` the window the `req_run` fact's `bytes` on every route that emits the run
  * pre-check, and `t[1]` [K66]'s whole run the `req_run` fact's `whole` where the route
  * has no DFA scan in front and the run is longer than its window. Returns how
@@ -1050,55 +1052,91 @@ static const char *req_run_fn_name(Ctx *cx, int i)
     return dfa_fragf(cx, i ? "%s_reqrun_whole" : "%s_reqrun", cx->opt->prefix);
 }
 
-/* Writes the run pre-check's search blocks at file scope, above the search
- * entry whose pre-check calls them: one `static inline` function per
- * `req_run_tests` entry, through the offset-skip block's own emitter. Emits
- * nothing where no run pre-check is emitted. Both engines' search-entry
- * emitters call it exactly where they call `pcrec_emit_req_byte_check`
- * below, one level up. */
-void pcrec_emit_req_run_blocks(Ctx *cx, StrBuf *c)
+/* [MEMFN] R4c Describes candidate test `t` as ONE predicate of a kit site
+ * (integration.md §15.1): its terms in `t`'s own ascending order, a NULL
+ * walk term being the run; the scan a byte term of its own, at its offset,
+ * unless it is a byte of the run; `plan_hint`/`plan_pos` naming what pcrec's
+ * block scans (§14.9). The run is REQUIRED; a model-selected offset is
+ * OPTIONAL, there for speed only (§14.5). A multi-byte offset is reached
+ * through its `<p>_ofs_k<k>` table, `table_ref` k + 1. `fn_ref` names the
+ * function the predicate is defined as.
+ *
+ * The two fields the description does not carry, the loop guard `maxk` and
+ * the scan byte, the kit re-derives from the terms, so they are checked here
+ * against `t`'s own: a disagreement is drift between the derivation
+ * (`ofs_test_of`, `ofs_test_run`) and the description, and loud. So are the
+ * block's two unreachable shapes, a scan that is not one byte and a verify
+ * chain with no term. */
+_Static_assert(MF_MAX_TERM >= PCREC_OFSK_MAX_SET + 1,
+               "an offset-skip block's terms (PCREC_OFSK_MAX_SET verify offsets "
+               "plus its scan) must fit one memfn predicate (C14)");
+static void ofs_pred_of(Ctx *cx, const OfsTest *t, mf_pred *p, uint32_t fn_ref)
 {
-    OfsTest t[2];
-    int n = req_run_tests(cx, t);
-    for (int i = 0; i < n; i++) {
-        PcrecRun run = { t[i].run_bytes, t[i].run_mask, t[i].run_len };
-        pcrec_runcmp_prepare(cx, c, &run);
-        pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
-        if (!t[i].run_mask)
-            pcrec_sb_printf(c,
-                "/* %s THE NECESSARY-RUN SEARCH: the first position >= `pos` at\n"
-                " * which the %d-byte %s every match contains begins inside [pos, n),\n"
-                " * or `n` when there is none -- one memchr for its byte %d at offset\n"
-                " * %d, one compare of the whole run per hit. The search entry answers\n"
-                " * NOMATCH on `n`. -fno-req-run replaces it with the one-byte check,\n"
-                " * -fno-req-byte removes the pre-check. */\n",
-                i ? "[K66]" : "[OPT-REQPOS]", t[i].run_len,
-                i ? "whole run" : "run", t[i].scan_byte, t[i].scan_k);
-        else
-            pcrec_sb_printf(c,
-                "/* %s THE NECESSARY-RUN SEARCH: the first position >= `pos` at\n"
-                " * which the %d-position MASKED %s every match contains begins\n"
-                " * inside [pos, n), or `n` when there is none -- %s at offset %d, one\n"
-                " * masked compare of the whole run per hit. The search entry answers\n"
-                " * NOMATCH on `n`. -fno-req-run-fold keeps exact positions only,\n"
-                " * -fno-req-run replaces it with the one-byte check, -fno-req-byte\n"
-                " * removes the pre-check. */\n",
-                i ? "[K66]" : "[OPT-REQPOS]", t[i].run_len,
-                i ? "whole run" : "run",
-                t[i].run_mask[t[i].scan_k] != 0xFF
-                    ? dfa_fragf(cx, "two memchr streams for its bytes %d and %d",
-                                t[i].scan_byte,
-                                t[i].scan_byte | (~t[i].run_mask[t[i].scan_k] & 0xFF))
-                    : dfa_fragf(cx, "one memchr for its byte %d", t[i].scan_byte),
-                t[i].scan_k);
-        pcrec_sb_cmt_close(c);
-        ofs_test_emit_fn(cx, c, cx->opt->prefix, req_run_fn_name(cx, i), &t[i]);
+    int sp = t->scan_k, reach = 0;
+    bool in_run = t->run_len > 0 && sp >= t->run_o && sp < t->run_o + t->run_len;
+    if (!in_run && t->scan_byte < 0)
+        pcrec_ctx_fail(cx, 0, "internal error: an offset-k skip whose scan "
+                               "offset is not a single byte value");
+    if (!in_run && t->nterm == 0)
+        pcrec_ctx_fail(cx, 0, "internal error: an offset-k skip with an empty "
+                               "verify chain");
+    p->need = MF_REQUIRED;
+    p->fn_ref = fn_ref;
+    bool placed = in_run;
+    for (int i = 0; i < t->nterm; i++) {
+        const PrefixK *k = t->term[i].k;
+        if (!placed && sp < (k ? k->k : t->run_o)) {
+            p->plan_hint = p->nterm;
+            pcrec_memfn_term_byte(&p->term[p->nterm++], sp, t->scan_byte, MF_OPTIONAL);
+            placed = true;
+        }
+        if (!k) {
+            if (in_run) {
+                p->plan_hint = p->nterm;
+                p->plan_pos = (uint16_t)(sp - t->run_o);
+            }
+            pcrec_memfn_term_run(&p->term[p->nterm++], t->run_o, t->run_bytes,
+                                 t->run_mask, t->run_len, MF_REQUIRED);
+        } else {
+            pcrec_memfn_term_set(&p->term[p->nterm++], k->k, k->set,
+                                 k->count > 1 ? (uint32_t)k->k + 1 : 0, MF_OPTIONAL);
+        }
     }
+    if (!placed) {
+        p->plan_hint = p->nterm;
+        pcrec_memfn_term_byte(&p->term[p->nterm++], sp, t->scan_byte, MF_OPTIONAL);
+    }
+    for (int i = 0; i < p->nterm; i++) {
+        const mf_term *m = &p->term[i];
+        int last = m->offset + (m->kind == MF_T_RUN ? (int)m->run_len : 1) - 1;
+        if (last > reach) reach = last;
+    }
+    if (reach != t->maxk || (in_run && t->run_bytes[sp - t->run_o] != t->scan_byte))
+        pcrec_ctx_fail(cx, 0, "internal error: an offset-k skip's memfn "
+                       "description disagrees with its test (maxk %d, the "
+                       "terms reach %d; scan byte %d at offset %d)",
+                       t->maxk, reach, t->scan_byte, sp);
 }
 
-/* [K82] (B) THE HANDOFF: writes the window's gate as a KEPT candidate. The
- * search block returns `c`, the LEFTMOST position >= `posvar` where the
- * window occurs (`ofs_test_emit_fn`'s contract), or the subject's length;
+static const struct MemfnPre *req_site_define(Ctx *cx, StrBuf *c);
+
+/* Describes the WHOLE pre-check to the memfn kit as one site and defines it
+ * here, at file scope above the search entry whose pre-check uses it: the
+ * kit writes the run pre-check's search blocks (one `static inline` function
+ * per run, memfn/src/precheck.c) and nothing where no run pre-check is
+ * emitted. Both engines' search-entry emitters call it exactly where they
+ * call `pcrec_emit_req_byte_check` below, one level up, so a site defined is
+ * a site used (the kit's artifact end checks it). */
+void pcrec_emit_req_run_blocks(Ctx *cx, StrBuf *c)
+{
+    cx->job->mf_pre = req_site_define(cx, c);
+}
+
+/* [K82] (B) THE HANDOFF, pcrec's half: what follows the gate once the kit's
+ * text has assigned `handoff_position` (the composite site's ASSIGN, §15.5;
+ * rule 8, what follows a site is pcrec's text). The gate's block returns
+ * `c`, the LEFTMOST position >= `posvar` where the window occurs (the kit's
+ * offset-skip contract, memfn/src/ofsskip.c), or the subject's length;
  * every match begins at most K bytes before its window (invariant F,
  * litscan_k82h.md §1.2), so no attempt below `c - K` can succeed and the body
  * may begin its scan at `max(posvar, c - K)` and answer exactly what it
@@ -1113,9 +1151,9 @@ void pcrec_emit_req_run_blocks(Ctx *cx, StrBuf *c)
  * is the caller's choice and stays exactly what it was ([r1 S-F6]). The
  * block exists only where its moving branch has a statement in it. The local
  * carries no prefix (K79: the emitters never see the caller's). */
-static void emit_req_handoff(Ctx *cx, StrBuf *c, const char *indent,
-                             const char *posvar, const char *subjvar,
-                             const char *lenvar)
+static void emit_req_handoff_rest(Ctx *cx, StrBuf *c, const char *indent,
+                                  const char *posvar, const char *subjvar,
+                                  const char *lenvar)
 {
     long long k = pcrec_fact_req_run_maxoff(cx);
     StrBuf round = { 0 };
@@ -1123,10 +1161,6 @@ static void emit_req_handoff(Ctx *cx, StrBuf *c, const char *indent,
     pcrec_emit_start_zero(cx, &round, dfa_fragf(cx, "%s    ", indent),
                           "handoff_position", subjvar, lenvar,
                           PCREC_START0_ROUNDUP);
-    pcrec_sb_printf(c, "%ssize_t handoff_position = %s(%s, %s, %s);\n"
-                       "%sif (handoff_position >= %s) return 0;\n",
-                    indent, req_run_fn_name(cx, 0), subjvar, lenvar, posvar,
-                    indent, lenvar);
     if (k > 0 || round.len > 0) {
         pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
         pcrec_sb_printf(c,
@@ -1146,89 +1180,79 @@ static void emit_req_handoff(Ctx *cx, StrBuf *c, const char *indent,
     pcrec_sb_free(&round);
 }
 
-/* Writes the run pre-check at the search entry: a call of each block
- * `pcrec_emit_req_run_blocks` wrote, NOMATCH when one finds no run. [K66]
- * The window is cut from the run by the byte-rate (`pcrec_find_run_window_start`), so
- * with only the window compared, a subject holding the window but not another
- * slice of the run got no linear no-match proof on a route with no DFA scan
- * in front, and could give up on the step budget according to the prior
- * (`(x?)([a-z]+)+eeeeeeee~#~#~#~#\1` on "e" + 36 `a`s + "~#~#~#~#"); the
- * second call compares the whole run, so the proof rests on the run, which
- * is the pattern's. `emit_req_set_rest`'s header says why that route and
- * only that one. */
-static void emit_req_run_check(Ctx *cx, StrBuf *c, const char *indent,
-                              const char *posvar, const char *subjvar,
-                              const char *lenvar)
+/* [OPT-REQPOS] / [K66] pcrec's NOTE on run pre-check test `i` (0 the
+ * window, 1 the whole run): the fact the test's call rests on, the run's
+ * bytes escaped for the comment, `masked` where the test carries a mask.
+ *
+ * [K66] WHY A WHOLE RUN. The window is cut from the run by the byte-rate
+ * (`pcrec_find_run_window_start`), so with only the window compared, a
+ * subject holding the window but not another slice of the run got no linear
+ * no-match proof on a route with no DFA scan in front, and could give up on
+ * the step budget according to the prior (`(x?)([a-z]+)+eeeeeeee~#~#~#~#\1`
+ * on "e" + 36 `a`s + "~#~#~#~#"); the second call compares the whole run, so
+ * the proof rests on the run, which is the pattern's.
+ * `req_set_rest_members`' header says why that route and only that one. */
+static void req_note_run(Ctx *cx, StrBuf *c, const char *indent, int i,
+                         bool masked)
 {
     const ReqRun *r = pcrec_fact_req_run(cx);
-    OfsTest t[2];
-    int n = req_run_tests(cx, t), prev = 0, k;
-    for (int i = 0; i < n; i++) {
-        pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
-        if (i == 0 && t[0].run_mask) {
-            /* [OPT-LITSCAN] S4 C3: a masked run names its mask, so a reader
-             * sees which positions take either member. */
-            pcrec_sb_printf(c,
-                "%s/* [OPT-REQPOS] every match of this pattern contains the %d positions\n"
-                "%s * \"", indent, r->len, indent);
-            for (k = 0; k < r->len; k++) emit_comment_safe_byte(c, &prev, r->bytes[k], NULL);
-            pcrec_sb_printf(c, "\" under mask ");
-            for (k = 0; k < r->len; k++) pcrec_sb_printf(c, "%02x", r->mask[k]);
-            pcrec_sb_printf(c,
-                " (a byte matches where\n"
-                "%s * byte & mask equals it), so a window without them holds no match\n"
-                "%s * at all; the scan is on position %d of the run. */\n",
-                indent, indent, r->idx);
-        } else if (i == 0) {
-            pcrec_sb_printf(c,
-                "%s/* [OPT-REQPOS] every match of this pattern contains the %d bytes\n"
-                "%s * \"", indent, r->len, indent);
-            for (k = 0; k < r->len; k++) emit_comment_safe_byte(c, &prev, r->bytes[k], NULL);
-            pcrec_sb_printf(c,
-                "\", so a window without them holds no match at all;\n"
-                "%s * the scan is on byte %d at offset %d of the run. */\n",
-                indent, (int)r->bytes[r->idx], r->idx);
-        } else if (t[1].run_mask) {
-            prev = 0;
-            pcrec_sb_printf(c,
-                "%s/* [K66] every match contains the whole %d-position run \"", indent,
-                r->whole_len);
-            for (k = 0; k < r->whole_len; k++)
-                emit_comment_safe_byte(c, &prev, r->whole[k], NULL);
-            pcrec_sb_printf(c, "\" under mask ");
-            for (k = 0; k < r->whole_len; k++) pcrec_sb_printf(c, "%02x", r->whole_mask[k]);
-            pcrec_sb_printf(c,
-                ";\n"
-                "%s * with no DFA scan in front this is the call's only linear\n"
-                "%s * no-match proof, so it compares all of it, not one window. */\n",
-                indent, indent);
-        } else {
-            prev = 0;
-            pcrec_sb_printf(c,
-                "%s/* [K66] every match contains the whole %d-byte run \"", indent,
-                r->whole_len);
-            for (k = 0; k < r->whole_len; k++)
-                emit_comment_safe_byte(c, &prev, r->whole[k], NULL);
-            pcrec_sb_printf(c,
-                "\";\n"
-                "%s * with no DFA scan in front this is the call's only linear\n"
-                "%s * no-match proof, so it compares all of it, not one window. */\n",
-                indent, indent);
-        }
-        pcrec_sb_cmt_close(c);
-        if (i == 0 && req_use(cx) == REQ_USE_HANDOFF) {
-            emit_req_handoff(cx, c, indent, posvar, subjvar, lenvar);
-            continue;
-        }
-        pcrec_sb_printf(c, "%sif (%s(%s, %s, %s) >= %s) return 0;\n",
-                        indent, req_run_fn_name(cx, i), subjvar, lenvar, posvar,
-                        lenvar);
+    int prev = 0, k;
+    pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
+    if (i == 0 && masked) {
+        /* [OPT-LITSCAN] S4 C3: a masked run names its mask, so a reader
+         * sees which positions take either member. */
+        pcrec_sb_printf(c,
+            "%s/* [OPT-REQPOS] every match of this pattern contains the %d positions\n"
+            "%s * \"", indent, r->len, indent);
+        for (k = 0; k < r->len; k++) emit_comment_safe_byte(c, &prev, r->bytes[k], NULL);
+        pcrec_sb_printf(c, "\" under mask ");
+        for (k = 0; k < r->len; k++) pcrec_sb_printf(c, "%02x", r->mask[k]);
+        pcrec_sb_printf(c,
+            " (a byte matches where\n"
+            "%s * byte & mask equals it), so a window without them holds no match\n"
+            "%s * at all; the scan is on position %d of the run. */\n",
+            indent, indent, r->idx);
+    } else if (i == 0) {
+        pcrec_sb_printf(c,
+            "%s/* [OPT-REQPOS] every match of this pattern contains the %d bytes\n"
+            "%s * \"", indent, r->len, indent);
+        for (k = 0; k < r->len; k++) emit_comment_safe_byte(c, &prev, r->bytes[k], NULL);
+        pcrec_sb_printf(c,
+            "\", so a window without them holds no match at all;\n"
+            "%s * the scan is on byte %d at offset %d of the run. */\n",
+            indent, (int)r->bytes[r->idx], r->idx);
+    } else if (masked) {
+        pcrec_sb_printf(c,
+            "%s/* [K66] every match contains the whole %d-position run \"", indent,
+            r->whole_len);
+        for (k = 0; k < r->whole_len; k++)
+            emit_comment_safe_byte(c, &prev, r->whole[k], NULL);
+        pcrec_sb_printf(c, "\" under mask ");
+        for (k = 0; k < r->whole_len; k++) pcrec_sb_printf(c, "%02x", r->whole_mask[k]);
+        pcrec_sb_printf(c,
+            ";\n"
+            "%s * with no DFA scan in front this is the call's only linear\n"
+            "%s * no-match proof, so it compares all of it, not one window. */\n",
+            indent, indent);
+    } else {
+        pcrec_sb_printf(c,
+            "%s/* [K66] every match contains the whole %d-byte run \"", indent,
+            r->whole_len);
+        for (k = 0; k < r->whole_len; k++)
+            emit_comment_safe_byte(c, &prev, r->whole[k], NULL);
+        pcrec_sb_printf(c,
+            "\";\n"
+            "%s * with no DFA scan in front this is the call's only linear\n"
+            "%s * no-match proof, so it compares all of it, not one window. */\n",
+            indent, indent);
     }
+    pcrec_sb_cmt_close(c);
 }
 
-/* [K65] Writes the pre-check's second half on a VM route with no DFA scan in
- * front: a `memchr` for every member of the necessary set the first half did
- * not already test, any absent one answering NOMATCH.
+/* [K65] Finds the pre-check's second half on a VM route with no DFA scan in
+ * front: every member of the necessary set the first half did not already
+ * test, ascending, into `rest[0..*np)` (none on any other route). Each is
+ * tested by its own `memchr`, any absent one answering NOMATCH.
  *
  * WHY THIS ROUTE AND ONLY THIS ONE. The pre-check is sound on any member, so
  * elsewhere which one it tests is a SPEED choice. Here it is also the call's
@@ -1246,24 +1270,23 @@ static void emit_req_run_check(Ctx *cx, StrBuf *c, const char *indent,
  *
  * WHAT COUNTS AS ALREADY TESTED is the first half's own bytes: the `req_byte` fact
  * for the one-byte form, every EXACT position of the WHOLE run for the run
- * form (on this route `emit_req_run_check` has compared all of it, and a
+ * form (on this route the whole run's predicate has compared all of it, and a
  * window holding the run holds each of its exact bytes; a masked position
  * proves only that one of its members is there). Members go out in ascending byte
  * order; the order moves no answer, and the rarest member has already been
  * scanned first by the half above.
  *
- * Emits nothing where no member is left, so an artifact whose set is its pick
- * alone is byte-identical to the shape before this. Runs only after the first
- * half, which has already returned on an empty window, so no `memchr` here
- * can see a NULL subject. */
-static void emit_req_set_rest(Ctx *cx, StrBuf *c, const char *indent,
-                              const char *posvar, const char *subjvar,
-                              const char *lenvar)
+ * Nothing is emitted where no member is left, so an artifact whose set is
+ * its pick alone is byte-identical to the shape before this. The test runs
+ * only after the first half, which has already returned on an empty window,
+ * so no `memchr` here can see a NULL subject. */
+static void req_set_rest_members(Ctx *cx, unsigned char rest[256], int *np)
 {
     const ReqSet *set;
     const ReqRun *r = pcrec_fact_req_whole_run(cx);
     bool done[256] = { false };
     int b, k, n = 0;
+    *np = 0;
     if (pcrec_artifact_has_dfa_scan(cx)) return;
     /* [OPT-LITSCAN] S4 C3: only an EXACT position of the whole run is a byte
      * the run check proved present; at a cube position T is one member and
@@ -1279,8 +1302,14 @@ static void emit_req_set_rest(Ctx *cx, StrBuf *c, const char *indent,
      * which artifacts consumed the whole set. */
     set = pcrec_fact_req_set(cx);
     for (b = 0; b < 256; b++)
-        if (((set->bits[b >> 3] >> (b & 7)) & 1) && !done[b]) n++;
-    if (n == 0) return;
+        if (((set->bits[b >> 3] >> (b & 7)) & 1) && !done[b])
+            rest[n++] = (unsigned char)b;
+    *np = n;
+}
+
+/* [K65] pcrec's NOTE on the set rest: why every remaining member is tested. */
+static void req_note_rest(StrBuf *c, const char *indent)
+{
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
     pcrec_sb_printf(c,
         "%s/* [K65] every match also contains each byte below; with no DFA\n"
@@ -1288,31 +1317,10 @@ static void emit_req_set_rest(Ctx *cx, StrBuf *c, const char *indent,
         "%s * so it tests the whole necessary set, not one member of it. */\n",
         indent, indent, indent);
     pcrec_sb_cmt_close(c);
-    pcrec_sb_printf(c, "%s{\n%s    static const unsigned char rq_set[] = {",
-                    indent, indent);
-    for (b = 0, k = 0; b < 256; b++)
-        if (((set->bits[b >> 3] >> (b & 7)) & 1) && !done[b])
-            pcrec_sb_printf(c, "%s %d", k++ ? "," : "", b);
-    pcrec_sb_printf(c,
-        " };\n"
-        "%s    for (size_t rq_i = 0; rq_i < sizeof rq_set; rq_i++)\n"
-        "%s        if (!memchr(%s + %s, rq_set[rq_i], %s - %s))\n"
-        "%s            return 0;\n"
-        "%s}\n",
-        indent,
-        indent, subjvar, posvar, lenvar, posvar,
-        indent,
-        indent);
 }
 
-/* Writes the one-byte pre-check for necessary byte `b`: NOMATCH on an empty
- * window or a window without `b`. The whole-window argument and the `<=`
- * arm's two obligations are `pcrec_emit_req_byte_check`'s, below; it is the
- * shape of both the one-byte form and [K82]'s leading set pick, so the two
- * cannot test a byte in two shapes. Sabotage row S265's anchor is in it. */
-static void emit_req_one_byte(StrBuf *c, const char *indent,
-                              const char *posvar, const char *subjvar,
-                              const char *lenvar, int b)
+/* [OPT-REQBYTE] pcrec's NOTE on the one-byte gate for byte `b`. */
+static void req_note_byte(StrBuf *c, const char *indent, int b)
 {
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
     pcrec_sb_printf(c,
@@ -1320,20 +1328,149 @@ static void emit_req_one_byte(StrBuf *c, const char *indent,
         "%s * %d, so a window without it holds no match at all. */\n",
         indent, indent, b);
     pcrec_sb_cmt_close(c);
-    pcrec_sb_printf(c,
-        "%sif (%s <= %s ||\n"
-        "%s    !memchr(%s + %s, %d, %s - %s))\n"
-        "%s    return 0;\n",
-        indent, lenvar, posvar,
-        indent, subjvar, posvar, b, lenvar, posvar,
-        indent);
 }
 
-/* [OPT-REQBYTE] THE NECESSARY-BYTE PRE-CHECK, written ONCE and emitted by
- * BOTH engines' search entries — one text, so the two routes cannot test the
- * byte in two different shapes. Emits nothing where the `req_byte` fact declined,
- * which keeps every artifact outside the mechanism's population
- * byte-identical to the shape before it.
+/* ---- [MEMFN] R4c THE PRE-CHECK AS ONE KIT SITE (integration.md §15.5) ----
+ *
+ * The pre-check is ONE composite site: ALL_PRESENT over, in this order, the
+ * one-byte gate (the necessary byte, or [K82]'s leading set pick), the run's
+ * window, [K66]'s whole run and [K65]'s set rest, each present exactly where
+ * the text above writes it. The kit writes the text (memfn/src/precheck.c,
+ * with the offset-skip function for each run); every DECISION is read here,
+ * in pcrec, from the calls the text above reads. The site is described and
+ * defined at the run blocks' point (`pcrec_emit_req_run_blocks`) and used at
+ * the pre-check's (`pcrec_emit_req_byte_check`); its record crosses on the
+ * Job (`mf_pre`). */
+
+/* The builder's record of the site it described: the site and its handle. */
+struct MemfnPre {
+    const mf_site *site;
+    uint32_t       handle;
+};
+
+/* The one byte of single-byte SET term `t`. */
+static int mf_term_byte(const mf_term *t)
+{
+    for (int b = 0; b < 256; b++)
+        if ((t->set[b >> 3] >> (b & 7)) & 1) return b;
+    return -1;
+}
+
+/* `fn_name`: run predicate `fn_ref`'s block, `<p>_reqrun` (the window, 1) or
+ * `<p>_reqrun_whole` (the whole run, 2). */
+static const char *req_site_fn_name(void *u, uint32_t fn_ref)
+{
+    const PcrecMfU *pu = u;
+    return req_run_fn_name(pu->cx, (int)fn_ref - 1);
+}
+
+/* `note_tag`: the provenance tag a run block's comment starts with. */
+static const char *req_site_note_tag(void *u, uint32_t part)
+{
+    const PcrecMfU *pu = u;
+    return pu->site->preds[part].fn_ref == 2 ? "[K66]" : "[OPT-REQPOS]";
+}
+
+/* `note` at the entry: pcrec's comment for predicate `part`, by the role
+ * the builder gave it: a run's [OPT-REQPOS]/[K66], the first predicate's
+ * one-byte [OPT-REQBYTE], a later byte's (the set rest's) [K65]. */
+static void req_site_note(void *u, mf_sink *c, uint32_t part)
+{
+    const PcrecMfU *pu = u;
+    const mf_pred *p = &pu->site->preds[part];
+    StrBuf *sb = pcrec_memfn_sink_sb(pu->cx, c);
+    if (p->fn_ref)   req_note_run(pu->cx, sb, pu->indent, (int)p->fn_ref - 1,
+                                  p->term[0].mask != NULL);
+    else if (!part)  req_note_byte(sb, pu->indent, mf_term_byte(&p->term[0]));
+    else             req_note_rest(sb, pu->indent);
+}
+
+/* The pre-check's miss: the search entry answers NOMATCH. It LEAVES the
+ * site, which the site states to the kit as `on_miss_leaves` (Q-G2-18). */
+#define REQ_ON_MISS "return 0;"
+
+/* Describes the pre-check to the kit and defines it at file scope (`c`):
+ * NULL, and nothing defined, where no pre-check is emitted. Each predicate
+ * is read from the call the text writers above read: the admission, the
+ * run's tests (`req_run_tests`), the leading pick and the set rest
+ * (`req_set_rest_members`). The gate's byte is REQUIRED except as [K82]'s
+ * leading pick on a DFA-scan route, where it is speed only (§14.5); every
+ * other predicate is REQUIRED. Where the body reads the gate's candidate
+ * (`req_use`, the handoff), the window's position is ASSIGNED: its index is
+ * `ret_pred`, and it is the last predicate, so pcrec's own text after the
+ * site (`emit_req_handoff_rest`) follows it as before. */
+static const struct MemfnPre *req_site_define(Ctx *cx, StrBuf *c)
+{
+    int b = pcrec_fact_req_byte(cx), gate = -1, nrun = 0, nrest = 0, np = 0;
+    mf_need gate_need = MF_REQUIRED;
+    unsigned char rest[256];
+    OfsTest t[2];
+    bool handoff = false;
+    if (b < 0 && pcrec_fact_req_run(cx)->len < 2) return NULL;
+    if (!req_admit_emits(req_admit(cx))) return NULL;
+    if (pcrec_fact_req_run(cx)->len >= 2) {
+        if (req_lead_byte(cx) >= 0) {
+            gate = req_lead_byte(cx);
+            gate_need = pcrec_artifact_has_dfa_scan(cx) ? MF_OPTIONAL : MF_REQUIRED;
+        }
+        nrun = req_run_tests(cx, t);
+        handoff = req_use(cx) == REQ_USE_HANDOFF;
+    } else gate = b;
+    req_set_rest_members(cx, rest, &nrest);
+    if (handoff && (nrun != 1 || nrest != 0))
+        pcrec_ctx_fail(cx, 0, "internal error: a handoff pre-check with a part "
+                       "after its window (the handoff is a DFA-scan route's, "
+                       "the whole run and the set rest a no-DFA route's)");
+
+    struct MemfnPre *pre = pcrec_arena_alloc(&cx->arena, sizeof *pre);
+    mf_site *s = pcrec_memfn_site(cx, DELEG_PRE);
+    mf_pred *p = pcrec_memfn_preds(cx, (gate >= 0) + nrun + nrest);
+    if (gate >= 0) {
+        p[np].need = gate_need;
+        pcrec_memfn_term_byte(&p[np].term[0], 0, gate, gate_need);
+        p[np++].nterm = 1;
+    }
+    for (int i = 0; i < nrun; i++) {
+        if (i == 0 && handoff) s->ret_pred = (uint8_t)np;
+        ofs_pred_of(cx, &t[i], &p[np++], (uint32_t)i + 1);
+    }
+    for (int i = 0; i < nrest; i++) {
+        p[np].need = MF_REQUIRED;
+        pcrec_memfn_term_byte(&p[np].term[0], 0, rest[i], MF_REQUIRED);
+        p[np++].nterm = 1;
+    }
+    s->form = MF_FORM_STMT;
+    s->op = MF_OP_ALL_PRESENT;
+    s->handoff = handoff ? MF_H_ASSIGN : MF_H_ON_MISS;
+    s->empty = MF_EMPTY_MISS;
+    s->use = handoff ? MF_USE_POSITION : MF_USE_DISCARD;
+    s->consumer = MF_C_ENGINE;
+    s->npred = (uint16_t)np;
+    s->preds = p;
+    s->on_miss_leaves = 1;      /* REQ_ON_MISS is a `return` (Q-G2-18) */
+
+    PcrecMfU u = { cx, s, pre, NULL };
+    mf_hooks h = {
+        .fn_name = req_site_fn_name, .note = pcrec_memfn_note_helpers,
+        .note_tag = req_site_note_tag, .run_cmp = pcrec_memfn_run_cmp,
+        .comment_tier = PCREC_CMT_NONESSENTIAL, .u = &u,
+    };
+    pre->site = s;
+    pre->handle = pcrec_memfn_define(cx, DELEG_PRE, s, &h, c);
+    return pre;
+}
+
+/* [OPT-REQBYTE] THE NECESSARY-BYTE PRE-CHECK at a search entry: the USE
+ * point of the site `pcrec_emit_req_run_blocks` defined, emitted by BOTH
+ * engines' search entries — one site, so the two routes cannot test the byte
+ * in two different shapes. The kit writes its statements (`return 0;` on a
+ * miss); where [K82] keeps the gate's candidate pcrec writes the handoff's
+ * remainder after them (`emit_req_handoff_rest`). Returns the expression the
+ * body's start site reads: `posvar`, or `handoff_position`. C10 holds per
+ * instance: the site is POSITION exactly where that expression is the kept
+ * candidate. Emits nothing where the `req_byte` fact declined, which keeps
+ * every artifact outside the mechanism's population byte-identical to the
+ * shape before it.
  *
  * THE WINDOW IS THE WHOLE REMAINING SUBJECT and the soundness is one line:
  * every match begins at or after `posvar` and ends at or before `lenvar`, so
@@ -1355,45 +1492,33 @@ static void emit_req_one_byte(StrBuf *c, const char *indent,
  * the same number reaches `<PREFIX>_REQ_BYTE` from this same field.
  *
  * [K65] On a VM route with no DFA scan the byte (or run) is followed by a
- * test of every other necessary-set member, `emit_req_set_rest` above, so the
- * no-match proof there does not rest on the pick. [K66] A run longer than its
- * window is compared whole there first, `emit_req_run_check`, so it does not
- * rest on the window pick either. */
+ * test of every other necessary-set member (`req_set_rest_members` above), so
+ * the no-match proof there does not rest on the pick. [K66] A run longer than
+ * its window is compared whole there first (the whole run's predicate), so
+ * it does not rest on the window pick either. */
 const char *pcrec_emit_req_byte_check(Ctx *cx, StrBuf *c, const char *indent,
                                       const char *posvar, const char *subjvar,
                                       const char *lenvar)
 {
-    int b = pcrec_fact_req_byte(cx);
-    /* "Nothing necessary" is no byte AND no run: a masked run over an empty
-     * set ([OPT-LITSCAN] S4 C3) has no byte and still a pre-check. */
-    if (b < 0 && pcrec_fact_req_run(cx)->len < 2) return posvar;
-    /* [OPT-PRECHECK-ADMIT] THE ADMISSION, and it is asked HERE rather than at
-     * the three call sites for the reason this file states everywhere else: a
-     * condition spelled at the site is a condition that drifts from the stamp
-     * that describes it. `req_admit` is the one derivation; the prologue's
-     * three stamps and its `<string.h>` decision read the same call. */
-    if (!req_admit_emits(req_admit(cx))) return posvar;
-    /* [OPT-REQPOS] tier 2b: the RUN is the same fact at word grain and its
-     * check subsumes this one, so where a run shipped it is the pre-check
-     * emitted — and the `req_byte` fact is then the run's own scan member,
-     * chosen with the run at one site (src/facts/req.c's single return) so
-     * the stamp and the emitted `memchr` cannot disagree. [K82] The one
-     * exception is the admission's `set-leads` row: a necessary-set byte
-     * RARER than the run's scan member is tested first, by the same
-     * one-byte text, so a window lacking it costs one `memchr` and never
-     * the run search. */
-    if (pcrec_fact_req_run(cx)->len >= 2) {
-        if (req_lead_byte(cx) >= 0)
-            emit_req_one_byte(c, indent, posvar, subjvar, lenvar,
-                              req_lead_byte(cx));
-        emit_req_run_check(cx, c, indent, posvar, subjvar, lenvar);
-        emit_req_set_rest(cx, c, indent, posvar, subjvar, lenvar);
+    const struct MemfnPre *pre = cx->job->mf_pre;
+    if (!pre) return posvar;
+    const mf_site *s = pre->site;
+    const char *from = posvar;
+    PcrecMfU u = { cx, s, pre, indent };
+    mf_hooks h = {
+        .s = subjvar, .n = lenvar, .lo = posvar, .indent = indent,
+        .on_miss = REQ_ON_MISS, .result = "handoff_position",
+        .result_decl = "size_t ", .note = req_site_note,
+        .comment_tier = PCREC_CMT_NONESSENTIAL, .u = &u,
+    };
+    pcrec_memfn_use(cx, pre->handle, &h, c);
+    if (s->handoff == MF_H_ASSIGN)
+        emit_req_handoff_rest(cx, c, indent, posvar, subjvar, lenvar);
+    if (pcrec_fact_req_run(cx)->len >= 2)
         /* [K82] the body's start site reads what the gate kept. */
-        return req_use(cx) == REQ_USE_HANDOFF ? "handoff_position" : posvar;
-    }
-    emit_req_one_byte(c, indent, posvar, subjvar, lenvar, b);
-    emit_req_set_rest(cx, c, indent, posvar, subjvar, lenvar);
-    return posvar;
+        from = req_use(cx) == REQ_USE_HANDOFF ? "handoff_position" : posvar;
+    pcrec_memfn_check_use(cx, s, from != posvar);
+    return from;
 }
 
 /* Writes the dead groups' PCREC_UNSET fill into a DFA search entry's SUCCESS
@@ -4382,8 +4507,10 @@ static void emit_stay_table(Ctx *cx, StrBuf *c, const char *p, const char *tag,
  * --------------------------------------------------------------------- */
 
 /* One byte rendered for a human: printable ASCII quoted, everything else as a
- * number. Legend text only; never emitted as code. */
-static void legend_byte(StrBuf *c, int b)
+ * number. Legend text only; never emitted as code. Also the memfn sink's
+ * `legend_byte` op (src/gen/memfn_sites.c), so a kit comment legends a byte
+ * in this one spelling. */
+void pcrec_emit_legend_byte(StrBuf *c, int b)
 {
     if (b == '\'')      pcrec_sb_puts(c, "'\\''");
     else if (b == '\\') pcrec_sb_puts(c, "'\\\\'");
@@ -4407,8 +4534,8 @@ static void emit_class_legend(StrBuf *c, const Dfa *d)
             int a = b;
             while (b + 1 < 256 && d->clsmap[b + 1] == cl) b++;
             if (shown) pcrec_sb_puts(c, ", ");
-            legend_byte(c, a);
-            if (b != a) { pcrec_sb_puts(c, "-"); legend_byte(c, b); }
+            pcrec_emit_legend_byte(c, a);
+            if (b != a) { pcrec_sb_puts(c, "-"); pcrec_emit_legend_byte(c, b); }
             shown++; b++;
         }
         if (b < 256) pcrec_sb_puts(c, ", ...");
@@ -4659,7 +4786,7 @@ typedef struct DfaPf {
      * function, not inlined three levels deep in the scan. NULL == no block.
      * It is emitted from the same place `repr->emit_token` is, so the VM
      * hybrid's inlined prefilter gets it by construction. */
-    void  (*emit_block)(StrBuf *c, const DfaForm *f);
+    void  (*emit_block)(StrBuf *c, DfaForm *f);
     void  (*emit)(StrBuf *c, const DfaForm *f); /* NULL == emits nothing */
     /* [OPT-EDGE] STEP 1.1 — DOES THIS FORM WRITE THE STATE VARIABLE?
      *
@@ -4874,6 +5001,10 @@ struct DfaForm {
      * block. It replaced the raw `PrefixKSets` pointer every offset-skip
      * reader used to read the selection through. */
     OfsTest        ofs;
+    /* [MEMFN] R4c the block's memfn site handle (`pf_block_ofs`, the define
+     * point), which every call of it (`pf_emit_ofs[_bounded]`) uses; 0
+     * before the block is written. */
+    uint32_t       ofs_site;
 };
 
 /* [START-SET] (D148, checks-F6) Does the row at `row` serve `route`? A list
@@ -5579,7 +5710,7 @@ static void pf_comment_memchr(StrBuf *c, const DfaForm *f)
     pcrec_sb_printf(c, "%s// Prefilter: nothing found yet and still at the start, so\n"
                  "%s// skip straight to the next byte that could begin a match.\n"
                  "%s// Only ", f->dir->bind, f->dir->bind, f->dir->bind);
-    legend_byte(c, f->cand.byte);
+    pcrec_emit_legend_byte(c, f->cand.byte);
     pcrec_sb_printf(c, " (%d) can, so one memchr() replaces the steps.\n", f->cand.byte);
     pcrec_sb_cmt_close(c);
 }
@@ -5940,9 +6071,9 @@ static bool ofs_test_verifies_run(Ctx *cx, const OfsTest *t, const UnanchStart *
  * `fs` can begin one from there. `\b\.[0-9]{4}Z` lost three matches to
  * exactly that. src/opt/prefix_k.c's `pcrec_prefix_ksets` header is the full
  * account; here the consequence is one table name. */
-static const char *ofsk_tbl_name(Ctx *cx, const char *p, const PrefixK *k)
+static const char *ofsk_tbl_name(Ctx *cx, const char *p, int k)
 {
-    return dfa_fragf(cx, "%s_ofs_k%d", p, k->k);
+    return dfa_fragf(cx, "%s_ofs_k%d", p, k);
 }
 
 /* The byte-class prefilter's one table, `can_begin_match`, with the emitted
@@ -5983,237 +6114,66 @@ static void pf_tables_ofs(StrBuf *c, const DfaForm *f)
     }
 }
 
-/* The `if (...)` a candidate must pass: every SELECTED offset except the one
- * the scan already proved, in ASCENDING OFFSET order so a reader of the
- * artifact sees the pattern's own order. A singleton set is a byte compare
- * rather than a table probe — cheaper, and it puts the byte in the artifact
- * where a reader can see it. */
-static void ofsk_emit_verify(Ctx *cx, StrBuf *c, const char *p, const OfsTest *t)
+/* [MEMFN] R4c `fn_name`: the block's function, `<p>_ofsskip`. */
+static const char *ofs_site_fn_name(void *u, uint32_t fn_ref)
 {
-    bool first = true;
-    for (int i = 0; i < t->nterm; i++) {
-        const PrefixK *k = t->term[i].k;
-        pcrec_sb_puts(c, first ? "" : " &&\n            ");
-        first = false;
-        if (!k) {
-            /* THE RUN TERM: the whole pinned run in one run compare —
-             * masked where the run pre-check's test carries a mask
-             * ([OPT-LITSCAN] S4 C3), in both its blocks alike. */
-            PcrecRun run = { t->run_bytes, t->run_mask, t->run_len };
-            pcrec_emit_run_compare(cx, c, "subject + cand", t->run_o, &run);
-        } else if (k->count == 1) {
-            if (k->k == 0) pcrec_sb_printf(c, "subject[cand] == %d", k->byte);
-            else           pcrec_sb_printf(c, "subject[cand + %d] == %d", k->k, k->byte);
-        } else {
-            const char *tbl = ofsk_tbl_name(cx, p, k);
-            if (k->k == 0) pcrec_sb_printf(c, "%s[subject[cand]]", tbl);
-            else           pcrec_sb_printf(c, "%s[subject[cand + %d]]", tbl, k->k);
-        }
-    }
-    /* UNREACHABLE, and a `pcrec_ctx_fail` rather than a `1` fallback (critic nit
-     * N-2): an offset-set row always verifies offset 0 (never its scan) and a
-     * run row always carries its run term, so the chain has at least one
-     * term. A silent `1` would emit a skip that accepts every candidate —
-     * correct, and with the whole mechanism switched off. */
-    if (first)
-        pcrec_ctx_fail(cx, 0, "internal error: an offset-k skip with an empty "
-                               "verify chain (the chain is never empty: an "
-                               "offset-set row always verifies offset 0, and a "
-                               "run row always carries its run term)");
+    const PcrecMfU *pu = u;
+    const DfaForm *f = pu->own;
+    (void)fn_ref;
+    return dfa_fragf(pu->cx, "%s_ofsskip", f->p);
 }
 
-/* Names the block's parameters, in the order `ofsk_emit_params` writes them. */
-static void ofsk_emit_params(Ctx *cx, StrBuf *c, const char *p,
-                             const OfsTest *t, bool decl)
+/* [MEMFN] R4c `table_name`: a multi-byte offset's verify table, `table_ref`
+ * its offset + 1 (`ofs_pred_of`). */
+static const char *ofs_site_table_name(void *u, uint32_t table_ref)
 {
-    for (int i = 0; i < t->nterm; i++) {
-        const PrefixK *k = t->term[i].k;
-        if (!k || k->count <= 1) continue;
-        pcrec_sb_printf(c, ", %s%s", decl ? "const unsigned char *" : "",
-                  ofsk_tbl_name(cx, p, k));
-    }
+    const PcrecMfU *pu = u;
+    const DfaForm *f = pu->own;
+    return ofsk_tbl_name(pu->cx, f->p, (int)table_ref - 1);
 }
 
-/* LAYER 2 — the block. One function per artifact, at file scope: the
- * offset-skip's comment, then `<p>_ofsskip` from `ofs_test_emit_fn`. */
-static void pf_block_ofs(StrBuf *c, const DfaForm *f)
+/* [MEMFN] R4c Describes the block `f->ofs` as the kit's offset-skip site
+ * (FIND / FUNC / RETURN, integration.md §15.1) and defines it into `c`, its
+ * file-scope point: the run compare's word loads (pcrec's `note`), the
+ * comment, the function. Returns the handle every call of it uses. */
+static uint32_t ofs_site_define(StrBuf *c, const DfaForm *f)
 {
-    const OfsTest *t = &f->ofs;
-    int maxk = t->maxk;
-
-    if (t->run_len > 0) {
-        PcrecRun run = { t->run_bytes, t->run_mask, t->run_len };
-        pcrec_runcmp_prepare(f->cx, c, &run);
-    }
-    pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
-    pcrec_sb_puts(c,
-        "/* ---- THE OFFSET-k CANDIDATE-START SKIP ---------------------------\n"
-        " * Every match of this pattern carries a byte from a known set at each\n"
-        " * of these offsets FROM ITS OWN START, so a position that fails any\n"
-        " * one of them cannot begin a match and the transition loop need not\n"
-        " * be entered there (docs/design/offset_k_skip.md):\n"
-        " *\n");
-    for (int o = 0; o <= maxk; o++) {
-        const PrefixK *k;
-        int b;
-        if (!ofs_test_at(t, o, &k, &b)) continue;
-        pcrec_sb_printf(c, " *   offset %-2d  ", o);
-        if (b >= 0) { pcrec_sb_puts(c, "exactly "); legend_byte(c, b);
-                      pcrec_sb_printf(c, " (%d)", b); }
-        else        pcrec_sb_printf(c, "one of %d bytes", k->count);
-        if (o == t->scan_k) pcrec_sb_puts(c, "   <- SCANNED FOR");
-        if (t->run_len > 0 && o >= t->run_o && o < t->run_o + t->run_len)
-            pcrec_sb_puts(c, "   (the run, one compare)");
-        pcrec_sb_puts(c, "\n");
-    }
-    pcrec_sb_puts(c,
-        " *\n"
-        " * The scan is one pass for the offset marked above; the others are\n"
-        " * checked on each candidate before the loop is entered, and a failed\n"
-        " * candidate resumes the scan one position later, so no position is\n"
-        " * examined twice and none is skipped. Returns the first position >=\n"
-        " * `pos` that satisfies every test, or `n` when there is none.\n"
-        " *\n"
-        " * SPEED ONLY: it refuses exactly the starts the stepped scan would\n"
-        " * refuse, so no answer depends on it. Compile with -fno-offset-skip\n");
-    pcrec_sb_puts(c, t->run_len > 0
-        ? " * or -fno-run-prefilter to emit the same matcher without it.\n"
-        : " * to emit the same matcher without it.\n");
-    pcrec_sb_puts(c, " */\n");
-    pcrec_sb_cmt_close(c);
-    ofs_test_emit_fn(f->cx, c, f->p, dfa_fragf(f->cx, "%s_ofsskip", f->p), t);
+    mf_site *s = pcrec_memfn_site(f->cx, DELEG_OFS);
+    s->form = MF_FORM_FUNC;
+    s->op = MF_OP_FIND;
+    s->handoff = MF_H_RETURN;
+    s->empty = MF_EMPTY_MISS;
+    s->use = MF_USE_POSITION;
+    s->consumer = MF_C_ENGINE;
+    ofs_pred_of(f->cx, &f->ofs, &s->pred, 1);
+    PcrecMfU u = { f->cx, s, f, NULL };
+    mf_hooks h = {
+        .fn_name = ofs_site_fn_name, .table_name = ofs_site_table_name,
+        .note = pcrec_memfn_note_helpers, .run_cmp = pcrec_memfn_run_cmp,
+        .comment_tier = PCREC_CMT_NONESSENTIAL, .u = &u,
+    };
+    return pcrec_memfn_define(f->cx, DELEG_OFS, s, &h, c);
 }
 
-/* The body of a block whose scan position is a two-member cube: the
- * LEAPFROG over two `memchr` streams, A = T[k*] and B = T[k*] | ~K[k*]
- * (O-55's measured form), each holding one pending hit as an OFFSET (never a
- * pointer, so nothing NULL is compared relationally); the candidate is the
- * nearer hit less k*, verified by the run's masked compare.
- *
- * EVERY SEARCH IS INSIDE THE GUARDED LOOP (litscan_s4.md §2.3.4, r2 R2-S1):
- * `pos + maxk < n` with `maxk >= k*` makes every length `n - pos - k*` at
- * least 1 and every pointer inside the subject, which closes [K27]'s
- * `memchr(NULL, c, 0)` and the wrapped-length over-read a search above the
- * loop would make on a subject shorter than the run. `fresh` makes the first
- * iteration search both streams. A stream is re-searched iff its hit is
- * `< pos + k*`: after a failed verify `pos = cand + 1`, and a bound of `< pos`
- * would keep the hit that produced `cand` (it sits at `cand + k*`) and never
- * advance — a hang. A stream parked at `n` is never re-searched, because the
- * guard keeps `pos + k* < n`. */
-static void ofs_test_emit_pair(Ctx *cx, StrBuf *c, const char *p,
-                               const OfsTest *t)
+/* LAYER 2 — the block, at file scope: the offset-skip site's define point.
+ * One function per artifact, written by the kit (memfn/src/ofsskip.c): the
+ * offset-skip's comment, then `<p>_ofsskip`. */
+static void pf_block_ofs(StrBuf *c, DfaForm *f)
 {
-    int maxk = t->maxk, k = t->scan_k;
-    int a = t->scan_byte, b = a | (~t->run_mask[k - t->run_o] & 0xFF);
-    const char *at = k ? dfa_fragf(cx, "pos + %d", k) : "pos";
-    const char *len = k ? dfa_fragf(cx, "n - pos - %d", k) : "n - pos";
-    const char *lim = at;   /* the re-search bound: a hit below pos + k* is stale */
-
-    pcrec_sb_puts(c, "    size_t ha = 0, hb = 0;\n"
-                     "    int fresh = 1;\n");
-    pcrec_sb_printf(c, "    while (pos + %d < n) {\n", maxk);
-    pcrec_sb_puts(c,   "        size_t cand;\n");
-    pcrec_sb_printf(c, "        if (fresh || ha < %s) {\n"
-                       "            const void *q = memchr(subject + %s, %d, %s);\n"
-                       "            ha = q ? (size_t)((const unsigned char *)q - subject) : n;\n"
-                       "        }\n", lim, at, a, len);
-    pcrec_sb_printf(c, "        if (fresh || hb < %s) {\n"
-                       "            const void *q = memchr(subject + %s, %d, %s);\n"
-                       "            hb = q ? (size_t)((const unsigned char *)q - subject) : n;\n"
-                       "        }\n", lim, at, b, len);
-    pcrec_sb_puts(c,   "        fresh = 0;\n"
-                       "        cand = ha < hb ? ha : hb;\n"
-                       "        if (cand >= n) return n;\n");
-    if (k) pcrec_sb_printf(c, "        cand -= %d;\n", k);
-    pcrec_sb_printf(c, "        if (cand + %d >= n) return n;\n", maxk);
-    pcrec_sb_puts(c,   "        if (");
-    ofsk_emit_verify(cx, c, p, t);
-    pcrec_sb_puts(c,   ") return cand;\n"
-                       "        pos = cand + 1;\n"
-                       "    }\n"
-                       "    return n;\n}\n\n");
+    f->ofs_site = ofs_site_define(c, f);
 }
 
-/* Writes `static inline size_t <name>(subject, n, pos[, tables])`, the one
- * search block every candidate test `t` is emitted through: the first
- * position >= `pos` that passes every test of `t`, or `n` when none does.
- *
- * [K82] (B) THAT IS A CONTRACT ON THE RETURNED POSITION, not only on its
- * comparison with `n` (docs/design/litscan_k82h.md §1.1a): `<p>_reqrun(s, n,
- * from)` returns the LEAST `q >= from` at which every position of the window
- * passes its masked compare, or `n` when there is none, and a caller may use
- * the position itself — the handoff does (`emit_req_handoff`). A block that
- * returns "some occurrence" is a correct discard gate and an incorrect
- * handoff gate. The pair arm keeps it by taking the LESSER verified stream
- * hit and re-searching both streams fresh per call, so no stale position can
- * sit below `from`; any later arm rendered through here (a fused scan+verify
- * twin, a run-compare search row) inherits it. S464 is its sabotage.
- * It reads no `Dfa` and no `DfaForm` (litscan_s1.md §1.3's narrowing), so a
- * caller without a DFA -- the run pre-check on a VM route -- emits its own
- * test through it; `p` names the verify tables, which only a model term
- * reads. */
-static void ofs_test_emit_fn(Ctx *cx, StrBuf *c, const char *p,
-                             const char *name, const OfsTest *t)
+/* [MEMFN] R4c The block's CALL, `<p>_ofsskip(subject, subject_length,
+ * scan_position[, tables])`, written by the kit: the expression a prefilter
+ * row's text surrounds (§15.2). */
+static void pf_ofs_call(StrBuf *c, const DfaForm *f)
 {
-    int maxk = t->maxk;
-
-    pcrec_sb_printf(c, "static inline size_t %s(const unsigned char *subject, size_t n, size_t pos", name);
-    ofsk_emit_params(cx, c, p, t, true);
-    pcrec_sb_puts(c, ")\n{\n");
-    if (t->run_mask && t->run_mask[t->scan_k - t->run_o] != 0xFF) {
-        /* [OPT-LITSCAN] S4 C3 THE PAIR ARM, tested FIRST (litscan_s4.md
-         * §2.3.4, r2 R2-S2): `scan_byte` is set for every run, so the memchr
-         * arm's test below is always true, and reaching it with a masked
-         * scan position would scan T alone and delete every match carrying
-         * the other member there. */
-        ofs_test_emit_pair(cx, c, p, t);
-        return;
-    }
-    pcrec_sb_printf(c, "    while (pos + %d < n) {\n", maxk);
-    pcrec_sb_puts(c,   "        size_t cand;\n");
-    if (t->scan_byte >= 0) {
-        /* THE memchr FORM. `pos + maxk < n` above implies `pos + k* < n`, so
-         * the pointer is inside the subject and the length is non-zero --
-         * [K27]'s memchr(NULL, c, 0) hazard closed by the loop guard rather
-         * than by a second test.
-         *
-         * [OPT-LITSCAN] S1: `k* == 0` is reached by ONE prefilter
-         * selection, a run-pinned row with no model selection (litscan_s1.md
-         * class B). Its refusal (a byte other than run[0] cannot begin a
-         * match) rests on the walk's own singleton at offset 0, the pin's
-         * clause 2, and its landing (the byte a returned candidate carries
-         * leaves the start state) on clause 3(b): the start state's escape
-         * set is exactly {run[0]}, today's memchr byte. Never on `k0` alone
-         * for the first. A run pre-check scanning its run's first byte
-         * reaches it too, and asks neither clause: its test is only "the
-         * run begins here", and its caller reads no start state. */
-        if (t->scan_k == 0)
-            pcrec_sb_printf(c, "        const void *q = memchr(subject + pos, %d, n - pos);\n", t->scan_byte);
-        else
-            pcrec_sb_printf(c, "        const void *q = memchr(subject + pos + %d, %d, n - pos - %d);\n",
-                      t->scan_k, t->scan_byte, t->scan_k);
-        pcrec_sb_puts(c,   "        if (!q) return n;\n");
-        if (t->scan_k == 0)
-            pcrec_sb_puts(c, "        cand = (size_t)((const unsigned char *)q - subject);\n");
-        else
-            pcrec_sb_printf(c, "        cand = (size_t)((const unsigned char *)q - subject) - %d;\n", t->scan_k);
-        pcrec_sb_printf(c, "        if (cand + %d >= n) return n;\n", maxk);
-    } else {
-        /* UNREACHABLE. The selection requires the scan offset to MOVE off 0
-         * (measured -- the note's S7.4) and a scan offset past 0 to be a
-         * SINGLETON (S4.4), so a non-singleton scan cannot be selected. The
-         * bitmap-scan arm that stood here was written for a k = 0 scan and
-         * read `can_begin_match`, which is the set MISCOMPILE-1 is about; it
-         * is deleted rather than left as dead emitted text. */
-        pcrec_ctx_fail(cx, 0, "internal error: an offset-k skip whose scan "
-                               "offset is not a single byte value");
-    }
-    pcrec_sb_puts(c,   "        if (");
-    ofsk_emit_verify(cx, c, p, t);
-    pcrec_sb_puts(c,   ") return cand;\n");
-    pcrec_sb_puts(c,   "        pos = cand + 1;\n"
-                 "    }\n"
-                 "    return n;\n}\n\n");
+    PcrecMfU u = { f->cx, NULL, f, NULL };
+    mf_hooks h = {
+        .s = "subject", .n = "subject_length", .lo = "scan_position",
+        .table_name = ofs_site_table_name, .u = &u,
+    };
+    pcrec_memfn_call(f->cx, f->ofs_site, &h, c);
 }
 
 /* The RESEED, and it is not optional on a machine that has one.
@@ -6262,10 +6222,9 @@ static void pf_emit_ofs(StrBuf *c, const DfaForm *f)
     const char *ind = f->dir->bind;
     pf_comment_ofs(c, f);
     pf_open(c, f);
-    pcrec_sb_printf(c, "%s    size_t cand = %s_ofsskip(subject, subject_length, scan_position",
-              ind, f->p);
-    ofsk_emit_params(f->cx, c, f->p, &f->ofs, false);
-    pcrec_sb_puts(c, ");\n");
+    pcrec_sb_printf(c, "%s    size_t cand = ", ind);
+    pf_ofs_call(c, f);
+    pcrec_sb_puts(c, ";\n");
     pcrec_sb_printf(c, "%s    if (cand >= subject_length) return 0;\n", ind);
     pcrec_sb_printf(c, "%s    scan_position = cand;\n", ind);
     {
@@ -6285,10 +6244,9 @@ static void pf_emit_ofs_bounded(StrBuf *c, const DfaForm *f)
     /* No early `return 0`, and the fall-back clamp is the other bounded
      * forms': under a view the machine may still accept at n-1 or n, so a
      * failed scan lands at n-1 and the stepped loop takes it from there. */
-    pcrec_sb_printf(c, "%s    size_t cand = %s_ofsskip(subject, subject_length, scan_position",
-              ind, f->p);
-    ofsk_emit_params(f->cx, c, f->p, &f->ofs, false);
-    pcrec_sb_puts(c, ");\n");
+    pcrec_sb_printf(c, "%s    size_t cand = ", ind);
+    pf_ofs_call(c, f);
+    pcrec_sb_puts(c, ";\n");
     pcrec_sb_printf(c, "%s    if (cand < subject_length) {\n", ind);
     pcrec_sb_printf(c, "%s        scan_position = cand;\n", ind);
     {
@@ -9979,6 +9937,9 @@ void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
         pcrec_sb_puts(c, "#include <string.h>\n");
     if (cx->opt->flags & PCREC_EMIT_MAIN)
         pcrec_sb_puts(c, "#include <stdio.h>\n#include <string.h>\n");
+    /* [MEMFN] R4c the kit's text needs no header this did not declare (§14.8;
+     * asserted at the attempt's end, `pcrec_memfn_art_end`). */
+    cx->job->string_h = need_string_h || (cx->opt->flags & PCREC_EMIT_MAIN);
     pcrec_sb_puts(c, "\n");
     /* [OPT-LITSCAN] S4 the word-load helpers a VM body's run compares use
      * (the body is written before this prologue, so its widths are known);

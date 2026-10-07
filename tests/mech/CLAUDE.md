@@ -427,6 +427,29 @@ is EXPECTED to time out"*, and neither would a separate arm.
   other arm is green on it by construction. Rows S510 (rule 1, a `memchr(`
   planted in an unlisted function), S511 (rule 4, a stale pending row),
   S512 (the K35 row floor).
+- `memfnarch` → `tests/memfn/run_arch_blind.sh` ([MEMFN] R4c, lane
+  r4cchecks, 2026-10-06): C4, the arch-blindness detector. Static plus
+  compiler probes for the plants; reads the sabotaged tree's own files. An
+  ISA word in an emitter moves no answer and no byte, so every other arm is
+  green on it. Rows S518 (class 1), S519 (class 3), S520 (class 9), S521
+  (class 7), S522 (a stale allowlist row), S523 (the hex-escape exclusion
+  removed). The rows spell the planted words from shell variables, because C4
+  scans this directory too. The arm scores the ABSOLUTE fail count, so every
+  row's witness also demands `checks failed: 0` on the clean tree (lane
+  r4clx): a box whose clean C4 is red reads UNREACHED, never a vacuous
+  DETECTED (ubuntubudu at 91f5b607 was such a box).
+- `memfnforms` → `tests/memfn/run_form_checks.sh` (same lane): C12 (the
+  emitted-form ratchet), C13 (on_cand), C14 (shape bounds). Static plus one
+  syntax-only compile. Rows S524 (a `memchr(` returns), S525 (the vocabulary
+  stops seeing it), S526 (`MF_MAX_TERM` lowered, AND the build's own copy of
+  the assert in `emit_dfa.c` removed: a two-site row since lane r4clx,
+  because the one-site plant fails `make all`, which this matrix scores
+  ANOMALY), S527 (an `on_cand` token with C13 unbuilt).
+- `memfnreach` → `tests/memfn/run_handoff_reach.sh` (same lane): the VM
+  hybrid handoff route's reach floor. Compiles with the sabotaged tree's own
+  `build/pcrec`. Row S529 (the VM engine declined by `req_handoff_applies`;
+  no answer moves). `memfnmanifest` also gained S528 (a kit call from an
+  unlisted function, rule 2's re-keyed dynamic half).
 - `memfnstamps` → `tests/memfn/run_libc_census.sh --quick` ([MEMFN] R4a′,
   lane memfnstamp, 2026-10-05): C11, the kit's two every-artifact stamps.
   Builds nothing itself (reads the sabotaged tree's build/pcrec); about 15 s.
@@ -2938,7 +2961,7 @@ plant file. Detectors are `tests/offsetskip/run_pinned.rxt` (answers) and
 | S279 | (a) | the run term compared at `cand + run_o + 1` | corpus + `run_offset_skip.sh` §2 — answer-detectable |
 | S285 | (b) | the run term compared `run_len + 1` bytes (one byte longer than proved; S268's emitter-side mirror) | `run_pinned.rxt` corpus — answer-detectable (the analysis's own unwritten zero, never a heap over-read) |
 | S286 | (c) | G1's `run_verified` conjunct dropped from `req_byte_dominated_by` | §5.10 class-D/C2 rows — structural, answer-invisible |
-| S287 | (d) | `OfsTest.maxk` not widened for the run's own last byte | ASan-only (heap-buffer-overflow READ); **UNDETECTED** in this matrix — no arm links generated code against a sanitizer runtime; confirmed real by a hand ASan reproduction, see the row's own header |
+| S287 | (d) | `OfsTest.maxk` not widened for the run's own last byte | **DETECTED since [MEMFN] R4c** (lane r4clx, 2026-10-06: `corpus:51fail/4pass` on both boxes): the kit re-derives maxk and `ofs_pred_of` refuses the compile on the disagreement. Before R4c: ASan-only (heap-buffer-overflow READ), UNDETECTED here, confirmed real by a hand ASan reproduction (the row's own header) |
 | S288 | (e) | the density clause's `!cs->memchr_form` guard dropped | §5.10 offset-set/one-byte-density row — structural, answer-invisible |
 | S289 | (f) | clause 3 (IDENTITY) dropped from `pf_run_applies_common` | §5.10 `\Bfoo\B` (C2) row + `run_offset_skip.sh` — structural, answer-invisible |
 | S280 | (g) | the pin ignores the run's bytes | the `/abcd[xy]/user` cells + §5.10 — answer-detectable |
@@ -2948,8 +2971,9 @@ plant file. Detectors are `tests/offsetskip/run_pinned.rxt` (answers) and
 | S283 | (k) | the run rows lose the offset-skip deny bit | §5.10 `-fno-offset-skip` row (R3-8) |
 | S293 | step 6 | `ofs_test_run` records the run pre-check's scan offset as 0 (`cand = hit` not `hit - i`) | DETECTED: prechecks §4.1c/§4.3 + `k66_precheck_whole_run.rxt`'s byte block — answer-detectable (lane s1step6, 2026-09-26) |
 
-**S287 IS THE SECOND ROW IN THIS DIRECTORY WHOSE DEFECT IS CONFIRMED REAL BY A
-HAND REPRODUCTION RATHER THAN BY THIS MATRIX** (S155's `framebuffer` arm is
+(HISTORY, until [MEMFN] R4c made the row DETECTED:) **S287 WAS THE SECOND ROW IN
+THIS DIRECTORY WHOSE DEFECT IS CONFIRMED REAL BY A HAND REPRODUCTION RATHER
+THAN BY THIS MATRIX** (S155's `framebuffer` arm is
 the first, and it built a bespoke sanitized driver rather than reusing
 `harness` for the identical reason: `harness`'s per-case gcc invocation is not
 threaded to a sanitizer runtime, and exporting `GENCFLAGS` with `-fsanitize=`
