@@ -1,383 +1,370 @@
-# [MEMFN-ROWCON] Row contracts: one first-match table engine (light design, rev 2.1)
+# [MEMFN-ROWCON] Row contracts: one first-match table engine (design, rev 3)
 
-Status: rev 2, 2026-10-07. It answers the r1 D6 panel
-(`docs/dev/reviews/2026-10-07-r1-memfn-rowcon.md`, 71 ids, themes T-A..T-J)
-and adds pcrec's decision tables as REFERENCE CUSTOMERS. That was
-Frank's point, relayed by the pcrec manager: rev 1 was kit-centred.
-**Rev 2.1 (same day):** Frank RULED Q-ROW-1 in a different form from the
-recommendation. There are NO silent defaults (§4.2), and hooks are
-SNAPSHOT once (§4.4, option B). **Still pending:** Q-ROW-4 (charter, §6),
-which this revision assumes is ruled as recommended.
+Status: rev 3, 2026-10-07. Every question is RULED (Frank). It answers
+both D6 panels:
+- r1: `docs/dev/reviews/2026-10-07-r1-memfn-rowcon.md`, 71 ids, themes
+  T-A..T-J;
+- r2, the re-check with a pcrec-customer lens:
+  `docs/dev/reviews/2026-10-07-r2-memfn-rowcon.md`, 47 ids, themes
+  U-A..U-O.
 
-Evidence, under `probes/rowcon/`:
-- `audit_kit_rows.md`: the kit's rows, the field × row matrix, 8 suspect
-  cells, 13 disagreements;
-- `audit_pcrec_tables.md`: pcrec's tables and the boundary;
-- `customers.md`: six pcrec reference customers in detail, with
-  `lane/stc2`'s `cand_rows[]` exact.
+Evidence is in `probes/rowcon/` (`audit_kit_rows.md`,
+`audit_pcrec_tables.md`, `customers.md`). Theme ids are cited inline as
+[T-x]/[U-x].
 
-## 0. Problem and acceptance
+## 0. Problem, acceptance, rulings
 
-A first-match table is sound only if each row's test covers every input
-its action does not honour. K96 broke that (R4c's ofsskip arm assumed
-`miss == n` and no `floor`). The audit found 8 more such cells and 13
-places where rows disagree on the same field.
+A first-match table is sound only if no row can be chosen for an input
+its action does not serve. K96 broke that: R4c's ofsskip arm presumed
+`miss == n` and no `floor`. The r1 audit found 8 more such cells and 13
+cells where rows disagree.
 
-Frank's acceptance criteria:
+**Acceptance (Frank):**
 - (V) visibility into every decision;
 - (R) every row reachable by at least one pattern;
 - (S) sound logic;
-- (G) a GENERAL mechanism that pcrec's tables can use, partially
-  generalized if need be;
-- (M) decisions move into memfn later, so the mechanism is built to be
-  the destination.
+- (G) a general mechanism that pcrec's tables can use;
+- (M) decisions move into memfn later.
+
+**Rulings (2026-10-07):**
+- **R1, a row may USE only a value the caller STATED.** It never presumes
+  one. Unstated fields are wildcards, not defaults, so the caller does
+  not specify everything, only what is used (Q-ROW-1 as clarified by
+  Q-ROW-5).
+- **R2, SNAPSHOT.** Caller value text is evaluated once into reserved
+  locals, plus refusals for text that can change meaning in situ
+  (Q-ROW-1(c), option B).
+- **R3, no public deny on the snapshot.** G1 compares against the
+  pre-snapshot commit (Q-ROW-6; a D144 item-4 exception for a correctness
+  change).
+- **R4, the kit hosts a general first-match table engine** as an `MF_NS`
+  utility; D146's charter widens (Q-ROW-4). pcrec's tables MAY adopt it
+  per table, an offer after START-TABLE C7 (D153).
+
+The engine itself obeys R1. No field of its own means "all" or "none" by
+being 0 [U-A].
 
 ## 1. Two layers
 
-**Layer 1, the ENGINE (generic, `memfn/src/table.c`, a kit utility under
-`MF_NS`).** It knows nothing about search sites. It provides: an ordered
-row array with a common head, a filtered first-match walk, deny bits, a
-pluggable contract gate, a totality policy, a decision record with a
-printer, reach counters, and a listing accessor. This layer is what
-pcrec's tables can adopt (§3).
+**Layer 1, the ENGINE** (`memfn/src/table.c`, `memfn/include/memfn_table.h`).
+It is generic and search-blind. It provides:
+- a row array of ANY struct whose first member is the common head;
+- a filtered first-match walk;
+- deny bits;
+- an optional contract gate;
+- a totality HOOK;
+- a decision record and a printer;
+- reach counters;
+- row iteration.
 
-**Layer 2, the KIT PROFILE (`memfn/src/fields.def` + the kit's tables).**
-The kit's own field vocabulary, with defaults, binding times, kinds and
-value classes; the stated-value check; the `honours`/`requires` gate; and the
-kit's tables: the composer arms, and runcmp's rows. A pcrec table uses
-Layer 1 with NO profile, so its gate is a no-op (honours = ALL). That is
-the "partially generalized" seam. pcrec can grow its own profile later
-from the same Layer-1 hook.
+**Layer 2, the KIT PROFILE** (`memfn/src/fields.def`, the kit's tables).
+It provides the kit's field vocabulary, value classes, the uses/serves
+gate, and the kit's two tables: the composer arms and runcmp's rows. A
+pcrec table uses Layer 1 with no profile.
 
-## 2. Layer 1, the engine
+## 2. Layer 1: the engine
 
-### 2.1 The row head and the table
+### 2.1 Head, table, typed thunk [U-A, U-B, U-C, U-D]
 
 ```c
-typedef struct mf_row {          /* the COMMON HEAD: first member of every row  */
-    const char *name;            /* unique within the table; listing/trace name */
-    uint64_t    deny;            /* caller's deny bits (pcrec: PCREC_NO_*)      */
-    uint32_t    scope;           /* sub-table id (cand_rows: CandSlot); 0 = one */
-    uint32_t    routes;          /* route mask; 0 = all routes                  */
-    int       (*applies)(const void *ctx, const struct mf_row *self);
-                                 /* 0 = holds; >0 = reason code (1 = "false")   */
-    uint64_t    honours, requires;  /* profile masks; 0/0 = no profile          */
+typedef struct mf_row {            /* FIRST member of every row struct          */
+    const char *name;              /* unique per table                          */
+    uint64_t    deny;              /* caller deny bits; MF_DENY_NONE explicit   */
+    uint32_t    scope;             /* MF_SCOPE_ONE, or the caller's slot value  */
+    uint32_t    routes;            /* bit per route INDEX; MF_ROUTES_ALL;
+                                      0 is a DEFINITION ERROR                    */
     const char *doc;
 } mf_row;
 
 typedef struct mf_table {
-    const char *name;            /* table id in records and listings            */
-    const void *rows; size_t stride, n;   /* rows of ANY struct with mf_row first */
-    const struct mf_profile *profile;     /* NULL = no gate (pcrec tables)      */
-    int         on_none;         /* MF_NONE_NULL | MF_NONE_ABORT (cand_always)  */
-    unsigned    nscopes;         /* for listing and reach                       */
+    const char *name;
+    const void *rows; size_t stride, n;
+    int  (*test)(const void *row, const void *ctx, uint8_t *reason);
+         /* generated per table by MF_TABLE_TYPED: casts and calls the row's
+            OWN predicate in its own type and polarity; 1 = holds            */
+    unsigned (*route_of)(const void *ctx);  /* the ONE route carrier: ctx    */
+    const char *(*tok)(const void *row);    /* the trace spelling (C1: tok)  */
+    void (*on_none)(const void *ctx, const struct mf_decision *);  /* never NULL */
+    const struct mf_profile *profile;       /* NULL = no gate                 */
+    uint32_t nscopes; const char *const *scope_names, *const *route_names;
 } mf_table;
-
-typedef struct mf_query {
-    uint32_t scope, route;       /* filters                                     */
-    uint64_t flags;              /* deny flags in effect                        */
-    const char *site;            /* caller's site key (opaque; pcrec: a literal)*/
-    const void *subject;         /* profile input (kit: site+hooks); else NULL  */
-} mf_query;
-
-const mf_row *mf_select(const mf_table *, const mf_query *, const void *ctx,
-                        mf_decision *rec /* NULL = no record */);
 ```
 
-- **Stride, not a fixed row type.** A customer's row is any struct whose
-  FIRST member is an `mf_row`. That is exactly how pcrec's ten row
-  structs share `DfaCand` today (customers §2.9). Payload columns stay
-  the customer's (e.g. `cand_rows`' `hands`, `list[route]`, `tok`,
-  `map`, `giveup`).
-- **Typed thin wrapper.** `MF_TABLE_TYPED(prefix, RowT, CtxT)` generates
-  `static inline const RowT *prefix_select(const CtxT *, …)`, so a
-  customer keeps typed predicates and typed results. The wrapper is
-  header-only; the walk itself is one copy in `table.c`.
-- **The walk, in this order:**
-  1. scope;
-  2. route;
-  3. deny (`row.deny & q.flags`);
-  4. the profile gate (§4), if a profile exists;
-  5. `applies`.
+- **Typed thunk [U-B].** `MF_TABLE_TYPED(pfx, RowT, CtxT, pred_member)`
+  emits a `static` `test` that casts `row` to `const RowT *` and calls
+  `row->pred_member((const CtxT *)ctx)`. pcrec's `bool (*)(const DfaSel *)`
+  predicates are stored UNCHANGED, with no casts of function types and no
+  polarity flip.
+  - A NULL predicate is a definition error unless the table declares
+    `MF_PRED_NULL_HOLDS`. That flag is fit_rungs' encoding, stated, not
+    assumed.
+  - Tag predicates (pcrec_reseed_rows) supply their own thunk.
+- **Explicit tokens [U-A].** Each of the following is a definition error,
+  checked once at table registration (`mf_table_check`, run by the
+  customer's unit test and at startup in debug builds):
+  - `routes == 0` (on main, 0 meant DFA-only in `cand_routed`, so a "0 =
+    all" reading would have crashed vm_start_row);
+  - a `scope` outside `MF_SCOPE_ONE` ∪ the declared slots;
+  - a profiled row whose `uses` is unset (§4).
+- **Route [U-D].** `route_of(ctx)` is the only carrier; the query holds
+  none.
 
-  The first row passing all five wins. The order of the first four is
-  cand_rows' own order (customers §1.2). Steps 1-2 are FILTERS, recorded
-  only as a count. Steps 3-5 are recorded per row.
-- **Totality.** If no row is chosen: `MF_NONE_ABORT` aborts with the
-  record printed, which is pcrec's deliberate crash-on-missing-fallback,
-  kept. `MF_NONE_NULL` returns NULL and the caller decides; the kit
-  refuses through `kit_fail`.
+### 2.2 The walk and the call macro [U-C, U-E]
 
-### 2.2 The decision record (V, M)
+`MF_SELECT(t, ctx, flags, "site")` calls
+`mf_select_(t, ctx, flags, "" "site", rec, opts)`. The `""` paste keeps
+C1's compile-time literal check.
+
+For each row in order the walk applies:
+1. scope;
+2. route (`routes & (1u << route_of(ctx))`);
+3. deny (`row.deny & flags`);
+4. the profile gate (§4);
+5. `test`.
+
+The first row passing all five is returned. Steps 1-2 are filters,
+counted. Steps 3-5 are recorded per row.
+
+On NO row: `on_none(ctx, rec)` is called.
+- pcrec passes `pcrec_ctx_fail`; match_api §8.1's "never aborts on the
+  compile path" holds.
+- The kit passes `kit_fail`.
+- With `MF_Q_NULL_OK` (the both-walks oracle's per-query option) it
+  returns NULL instead.
+
+**The engine never aborts [U-C].**
+
+### 2.3 The decision record [U-E, U-G]
 
 ```c
-typedef struct mf_verdict { uint16_t row; uint8_t kind; uint8_t reason;
-                            uint64_t mask; } mf_verdict;
-     /* kind: DENIED (mask = the deny bits that fired) | GATED (mask = ALL
-        failing fields) | REQUIRES_MISSING (mask) | PRED_FALSE (reason) |
-        CHOSEN */
+typedef struct mf_verdict { uint16_t row; uint8_t kind, reason; uint64_t mask; } mf_verdict;
+  /* DENIED (mask = fired deny bits) | DECLINED (mask = every unstated or
+     unserved field, §4) | PRED_FALSE (reason) | CHOSEN                     */
 typedef struct mf_decision {
     const char *table, *site; uint32_t scope, route;
-    uint64_t subject_mask;           /* profile: the non-default fields      */
-    uint16_t filtered, n; mf_verdict v[MF_DECISION_MAX];  /* bounded; overflow
-                                        sets a flag and keeps the CHOSEN entry */
-    const struct mf_decision *parent;  /* nesting (a decision made inside a
-                                          row's action); depth bounded         */
+    uint16_t filtered, n, depth; uint8_t overflow;
+    mf_verdict v[MF_DECISION_MAX];
 } mf_decision;
-void mf_decision_print(const mf_decision *, mf_sink *);
 ```
 
-- The record holds **every** failing field, the deny source and a
-  predicate reason code (r1 vis majors). The record is computed only from
-  values the walk already holds, so an adopter calls NO new fact accessor
-  to fill it. That is C1's rule "a record argument is a value the
-  decision already computed", kept (customers §6).
-- **Mapping onto C1's trace** (customers §6), field for field:
-  - `slot` is `scope` (named through the table's scope-name list);
-  - `route` is `route`;
-  - `row` is the CHOSEN verdict's row name;
-  - `site` is `site`.
+- **No parent pointers [U-G].** Nesting is a caller-owned bounded array
+  of records plus a depth counter, set on entry, so a predicate that
+  longjmps (`pcrec_ctx_fail`) leaves nothing dangling.
+- **What it absorbs [U-E], narrowed:** C1's ROW-CHOICE records. The record
+  prints `table`, `scope_names[scope]`, `route_names[route]` (or `-` for
+  a no-route call), `tok(chosen)` and `site`, which are the same four
+  fields C1's SET-compare gate reads.
+  - C1's RECF/ROUTE pseudo-records are not decisions; they stay pcrec
+    macros.
+  - Every record argument is a value the walk already computed, so the
+    record calls no new fact accessor (C1's rule).
+- **Where a human sees it [T-F, U-M].** The records print under
+  `MF_TRACE`, a compile-time switch, with the stderr tag `MFTRACE`. It
+  is distinct from pcrec's `CANDTRACE`. The line format is a documented
+  contract (`memfn/docs/trace_format.md`), because the census parses it.
+  - The census builds through `scripts/emit_sweep.py --trace`, whose
+    `KITFLAGS` already inherit `CFLAGS`. No Makefile change.
+  - G2 and the kit CLI call `mf_decision_print` directly.
+  - Nothing reaches an artifact, and no public struct changes layout.
 
-  pcrec's `PCREC_CAND_TRACE_REC` stays a pcrec macro, because it
-  enforces the literal with `"" site` at compile time, which a function
-  cannot. It passes that literal into `mf_query.site`. **The SET-compare
-  diff gate C1 uses (customers §6.3) reads the same four fields**, so a
-  migrated trace line is the same line.
-- **Where a human sees it.** The engine prints only when the build
-  defines `MF_TRACE`, a compile-time switch, off by default. pcrec's
-  traced build (site_census, `PCREC_CAND_TRACE`) defines both. In that
-  build every kit decision during a pcrec compile prints one block to
-  stderr. G2 and the kit CLI call `mf_decision_print` directly.
-  - Nothing reaches an artifact.
-  - No `mf_result`/`mf_call` field changes.
-  - No `form_id` is compared.
-  - There is NO pcrec-side request: rev 1's T6 is DROPPED (r1 T-F).
+### 2.4 Reach counters [T-G, U-M]
 
-### 2.3 Reach counters (R)
+Under `MF_TRACE` only, kit-private statics count CHOSEN per row, and per
+(row, used field, value class) for profiled tables. They are printed as
+`MFTRACE REACH` lines at exit, and the census SUMS them across processes.
+The kit counts at SUCCESSFUL render; pcrec tables count at select.
 
-Under `MF_TRACE` only, each table keeps CHOSEN counts per row, and (with
-a profile) per (row, honoured field, value class) cell (§4.1). They are
-printed as `REACH` lines at exit. Corpus totals are SUMMED BY THE
-CENSUS from the trace output across processes; nothing is kept in
-`mf_art` (r1 contract M6). The kit counts at SUCCESSFUL render, so a
-row chosen and then refused at use is not "reached" (r1 reach M5).
-pcrec tables count at select, because nothing refuses after it.
+### 2.5 Rows, not listings [U-F]
 
-### 2.4 Listing
+`mf_table_row(t, i)` returns the head. Listings (`--list-axes`
+projections such as `list[route]`, their order, unlisted rows) stay the
+customer's code. Rev 2's "force = deny of the alternatives" and the
+`strategy_denials` remark are RETRACTED.
 
-`mf_table_rows(t, i)` yields `{name, deny, scope, routes, doc}`.
-- It is the single source for a table's `--list-axes` section, so the
-  axis registry derives from the rows rather than restating them. That
-  is the D152 "one spelling" rule.
-- One deny bit may sit on many rows. Fact-level denies are not rows, and
-  stay outside the engine.
-- The `rx_info.flags` mask (which denies an artifact reports) stays the
-  caller's (customers §5.4).
+## 3. Reference customers [U-H]
 
-## 3. Reference customers: what the engine hosts, and what it does not
-
-| # | customer | hosted? | how |
+| # | customer | hosted | encoding |
 |---|---|---|---|
-| 1 | `cand_rows[]` (START-TABLE C2, lane/stc2; 37 rows, 8 slots, 3 routes) | **yes**, Appendix A | `CandRow` begins with an `mf_row` in place of its `DfaCand`; `slot`→`scope`, `routes`→`routes`; the payload columns stay. `cand_select(slot, sel)` becomes a typed wrapper over `mf_select`. `cand_nodes[]` (the typed handoff graph: accepts/asks/succ) is NOT a selection table; it stays pcrec's static check data, untouched |
-| 2 | `dfa_pfs[]` / `DFA_SELECT` (ten row structs sharing a `DfaCand` head; stride walk; optional `routes` by offsetof; crash on missing fallback) | **yes** | the head becomes `mf_row`; the stride walk is the engine's; the optional `routes` becomes `routes = 0` (= all); `cand_always` + `MF_NONE_ABORT` |
-| 3 | engine selection (`select_engine.c`) | **partly** | `analyses[]` is an AND-reduction with a first-excluder `why`, NOT first-match. D152 says it is the wrong tool, so it is not hosted. The `esel_of` ladder and `fit_rungs[]` (compile.c) ARE first-match and hostable |
-| 4 | [POSS-CTX-TABLE] (per-AKind context table) | **no** | it is indexed by kind with multi-result folds and a fixpoint: a dispatch table, not a decision table. The record and reach printer could still be reused if it ever selects |
-| 5 | deny/force axes (`axes.def`) | **yes**, as the deny column | the engine reads the caller's `uint64` deny bits; `--list-axes` sections derive from `mf_table_rows`; force bits stay the caller's (a force is a deny of the alternatives, expressed in the caller's flags) |
-| 6 | C1's trace | **absorbed** | §2.2's mapping; the macro and its literal check stay pcrec's |
+| 1 | `cand_rows[]` (lane/stc2; 37 rows, 8 slots, 3 routes) | yes, Appendix A | `CandRow.h` replaces `CandRow.c`'s head; `slot`→`scope` (slot values used as-is; `MF_SCOPE_ONE` is a value outside `CandSlot`); `routes` kept bit-for-bit; `test` thunk over the existing `bool (*)(const DfaSel*)`; `route_of` reads `sel->route`; `tok` reads `row->tok`; `on_none` is `pcrec_ctx_fail`; the oracle uses `MF_Q_NULL_OK` |
+| 2 | `dfa_pfs[]` / `DFA_SELECT` (ten structs with a `DfaCand` head) | yes | head per struct; tables WITHOUT a `routes` member write `CAND_ON(DFA)` explicitly. **Today's 0 means DFA-only, and that is preserved by writing it out**; `cand_always` stays a row |
+| 3a | `esel_of` ladder; `fit_rungs[]` (compile.c) | yes | fit_rungs: `MF_PRED_NULL_HOLDS`, its degrading/FAST_OR_FAIL class deny as a `deny` bit, its fallback rung as the last row |
+| 3b | `analyses[]` | **no** | an AND-reduction with a first-excluder `why`: not first-match (D152) |
+| 4 | [POSS-CTX-TABLE] | **no** | indexed dispatch with folds and a fixpoint, not a decision table |
+| 5 | deny/force axes | the `deny` column only | listings and force semantics stay the caller's (§2.5) |
+| 6 | C1 trace | row-choice records | §2.3 |
+| 7 | `pss_verdict` ladder | yes | a first-match ladder; `test` thunk; `on_none` = the caller's |
+| 8 | `pcrec_reseed_rows[]` (closed tags + prose) | yes | a custom `test` thunk mapping the tag to the predicate; tags stay data |
 
-**No pcrec adoption is planned** (D153 remodel-first). Customers 1, 2,
-3's ladder and 5 are an OFFER to [START-TABLE] after C7 and to
-[DEC-FALLBACK]. The proof that this is not just on paper is T0's
-fixture: a kit unit test builds a `cand_rows`-SHAPED table (8 scopes, 3
-routes, a payload struct with a stride, `MF_NONE_ABORT`, a typed
-wrapper) and walks it under the both-walks pattern, i.e. an old
-hand-written walk vs `mf_select` over the same rows, as stc2's oracle
-does. No pcrec file is touched.
+The proof beyond paper is T0's fixture: a kit unit test with a
+`cand_rows`-SHAPED table (slot values starting at 0, `MF_SCOPE_ONE`
+outside them, 3 routes by index, bool predicates via the thunk, an
+`on_none` that records, `MF_Q_NULL_OK`) walked against a hand-written
+copy of stc2's walk, i.e. the both-walks pattern. It also has a
+dfa_pfs-shaped table with a routes-less struct. No pcrec file is touched.
 
-## 4. Layer 2, the kit profile (soundness, S)
+## 4. Layer 2: the kit profile (R1 applied) [T-A, U-I, U-J]
 
-### 4.1 `fields.def`, one row per site/hook field
+### 4.1 `fields.def`
 
-`MF_FIELD(name, kind, binding, default_test, classes, doc)`:
-- **kind** (r1 sound M1): OBLIGATION (the caller must state it), PERMISSION
-  (the kit may use it), REQUIREMENT (a row needs it present) or RENDERING
-  (text shape).
-- **binding** (r1 T-A, the blocker): SITE (in `mf_site`), DEFINE_BOUND
-  (stated at define, must be value-equal at use, e.g. a FUNC `floor`;
-  this fixes S8), USE_ONLY (subset-checked at use, can only refuse) or
-  DEFINE_ONLY. Each phase runs its own gate. **Rev 1's "use mask ==
-  define mask" rule is withdrawn**, because it refused every PRE/OFS site
-  pcrec sends.
-- **stated_test** (Q-ROW-1 as ruled): the ONE spelling of "this field is
-  STATED". There is NO default column. Unset means "not stated", and a
-  row that READS an unstated field is refused loudly (§4.2).
-- **classes**: value classes for reach cells. Multi-valued enums such as
-  `empty` or `need` get one bit per value.
+`MF_FIELD(name, binding, classify, classes, doc)`:
+- **binding [T-A]:** SITE | DEFINE_BOUND (value-equal at define and use,
+  e.g. a FUNC `floor`) | USE_ONLY | DEFINE_ONLY. Each phase checks its own
+  fields.
+- **classify:** ONE function per field, mapping a STATED value to a
+  class, or `MF_CLS_UNSTATED`.
+  - Pointer/text hooks: NULL means UNSTATED.
+  - Enums a row uses get an explicit `*_UNSTATED = 0` member, so
+    zero-initialisation reads as "not stated", never as a choice. That
+    is the enum half of R1, with no blanket stated-bitmask (Q-ROW-5 as
+    clarified).
+  - Numeric facts a site KIND always carries (terms, offsets,
+    `plan_hint`) are per-kind OBLIGATIONS, checked as present by kind,
+    not classified.
+  - Callbacks: an absent offer is not a value (a WRITTEN exemption).
+- **classes:** a closed set per field, always including `OTHER`, e.g.
+  `miss` ∈ {`MISS_N`, `OTHER`}, `floor` ∈ {`ZERO`, `OTHER`}, `empty` ∈ one
+  class per value. A token added later lands in `OTHER` until classified.
 
-### 4.2 No silent defaults (Q-ROW-1, ruled 2026-10-07)
+### 4.2 Rows declare USES and SERVES [U-I, U-J]
 
-Frank: implicit defaults are "bugs waiting to happen … assumptions that
-may be forgotten in the moment … not seen until circumstances line up".
-So:
-- Every field a row's output depends on must be STATED. NULL means "not
-  stated", never a value.
-- `mf_check_stated(site, hooks, row)` refuses, naming the field, whenever
-  the chosen row reads an unstated field. This replaces rev 2's
-  normalization, so rows can no longer disagree on what "unset" means,
-  because unset means nothing. Disagreements #1-#4 are closed by that
-  refusal.
-- The common values get NAMED explicit tokens, never NULL:
-  - `miss = MF_MISS_N` ("the function's `n`");
-  - `floor = "0"`;
-  - `indent = ""`;
-  - …
+Each profiled row declares:
+- `uses`: the fields its output reads. This is also the snapshot set
+  (§5).
+- `serves`: per used field, the classes it handles.
 
-  A call site therefore shows what it assumes, and it can be grepped.
-- **pcrec states its values** (`MF_MISS_N`, `"0"`, …) in its hook
-  builders. The emitted text is identical, so there are zero movers (the
-  gate verifies). The hook text is pcrec's (the boundary table), so this
-  goes as REQUEST R-6 to the pcrec manager.
+The gate, per phase, field by field. A STATED value is a caller
+REQUIREMENT, and an unstated field is a wildcard. For each field, as one
+first-match rule:
+1. **used and unstated:** DECLINE. The row would have to presume a value
+   (R1).
+2. **stated, class not in `serves`:** DECLINE. The caller asked for
+   something this row would ignore or mis-serve. This catches K96's
+   half that "uses" alone misses: a stated `floor` the row never reads.
+3. **otherwise:** pass. That covers an unstated field the row does not
+   use (a wildcard), and a stated field whose class the row serves.
 
-### 4.3 The gate, `honours` and `requires`
+`serves` may list `UNSTATED` and `ANY`:
+- `UNSTATED` = "correct when the caller says nothing";
+- `ANY` = "correct for every value, because the field is irrelevant to
+  this row's output". An irrelevant field must be declared, never
+  assumed.
 
-- A row is admitted iff `nondefault ⊆ honours` AND `requires ⊆
-  present`. `requires` carries positive needs, such as precheck's
-  `on_miss_leaves` (r1 sound M4) and disagreements #5-#7, the
-  "this row needs the hook" cells.
-- A row whose honouring depends on the predicate's SHAPE (PRE's `floor`,
-  r1 sound M5) is SPLIT into two rows with disjoint predicates, never
-  given a shape-dependent mask.
-- **The generic row** honours every field it handles. Where it cannot
-  honour a value, that is a CONTRACT refusal, written in `fields.def`.
-  The rev-1 static assert was vacuous (r1 sound M6). Instead, G2's
-  per-field cells on generic (§5) check that generic HONOURS what it
-  claims.
+A field absent from a row's `serves` serves NOTHING, so ANY stated value
+declines. A field added to the contract later is therefore declined by
+every row until someone declares it (fail-safe).
 
-### 4.4 Caller text: snapshot once, refuse the rest (option B, ruled 2026-10-07)
+A failing row is DECLINED, with the mask of every failing field. If no
+row serves the site, `on_none` (kit_fail) names the fields.
+- ofsskip serves `floor` {UNSTATED, ZERO} and `miss` {MISS_N}. pcrec
+  states `miss = MF_MISS_N` (its result IS returned) and need not state
+  `floor`. **Zero movers.**
+- G2's `miss = n + 5` (`OTHER`) or `floor = lo + 2` (`OTHER`): ofsskip
+  declines and generic serves.
+- A row whose service depends on the predicate's SHAPE (PRE's `floor`) is
+  SPLIT into rows with disjoint predicates.
+- Generic serves `OTHER` for every field it uses. Where it cannot, the
+  value is a contract refusal in `fields.def`, checked by G2.
 
-Caller text pasted in situ can be legal C that MEANS something other than
-intended. The hazards are:
-1. casts that look parenthesized;
-2. side effects and calls evaluated once per paste;
-3. a hook identifier captured by a kit local;
-4. comments, backslash-newline or `#` swallowing kit text;
-5. a dangling `else` bound to an `if` inside `on_miss`;
-6. silent signed/unsigned conversion;
-7. a macro identifier expanding to a non-primary expression;
-8. caller code (`on_cand`) writing a hook variable mid-site.
+### 4.3 Who checks the uses lists (the rows' own author can't) [U-J, U-N]
 
-A text check alone cannot close 6-8. The ruling is STRUCTURAL:
-- **Snapshot.** At the top of each site the kit evaluates each value hook
-  EXACTLY ONCE, into its own reserved local, inside parentheses: `const
-  size_t mf_lo = (lo);`, and likewise for `s`, `n` and the rest. Every
-  later use reads the snapshot. That closes 1, 2 (calls are therefore
-  ALLOWED: they run once), 7 and 8 by construction, and turns 6 into one
-  explicit conversion.
-- **Reserved namespace.** Every kit local takes the `mf_` prefix (the
-  exact spelling is decided in T3), and a hook text that names an
-  identifier in it is refused. That closes 3.
-- **Lexical refusals.** Hook and statement text containing a comment,
-  backslash-newline or `#` is refused. That closes 4.
-- **`on_miss` / `on_cand`** must be ONE jump statement (`goto`, `return`,
-  `break`, `continue`) or a braced block. That closes 5.
-- **This MOVES BYTES at every delegated site.** The snapshot locals are a
-  pcrec abi event, landing in the SAME commit as:
-  - the abi bump, with re-pins found by grep (D76/D94);
-  - the stamp values;
-  - the D80 spec hunk for the caller-text contract;
-  - G1 at BOTH layers, its deny row being `--memfn=no-snapshot`.
+- **G2 POISON differential.** Every field the chosen row declares `ANY`
+  (irrelevant), or does not use, is set to a poison value (wild text, an
+  out-of-range enum). The render must be byte-identical to the unpoisoned
+  one, or, for a non-ANY field, the row must now DECLINE. A row
+  that reads an undeclared field fails, which is K96's exact shape.
+- **`cells.tsv`,** written by a BLINDED author from the contract: the
+  (row, field, class) cells that must be reached. It does not derive
+  from `fields.def`.
 
-  The deny is the alpha OFF arm only: it reinstates the hazard and is
-  never a supported mode. The trigger is correctness (the K96 class),
-  ruled by Frank. G1 must show no slowdown, since the optimizer should
-  erase the locals. A measured slowdown is a finding that goes back to
-  Frank, not a reason to drop the rule silently.
-- S1 (precheck ignoring a stated `miss`) is fixed by honouring it, i.e.
-  writing it, which pcrec's explicit `MF_MISS_N` makes the same text.
+## 5. The snapshot (R2) [U-K]
 
-### 4.5 The contract package (r1 contract M1)
+Caller value hooks in the chosen row's `uses` are evaluated ONCE, in
+declaration order, into `_mf_<site>_<hook>` locals (block scope; the
+`_mf_` prefix is not user-choosable via `-p`), each written as `(hook)`:
 
-Q-ROW-1's rulings (§4.2, §4.4) change the kit contract, so they come with:
-- integration.md rev 4.9;
-- `MF_SITE_ABI` 4→5 (kit-internal; no pcrec byte);
-- a responses.md notice;
-- G2 expectation updates by a BLINDED author after lane g2x: unstated
-  fields become expected refusals or explicit tokens. The ~326 ternary
-  hook-text sites STAY valid, because the snapshot makes them safe;
-- the snapshot's abi event (§4.4) in its own commit.
+| site shape | placement |
+|---|---|
+| STMT | declarations at the top of the site's own block |
+| EXPR (VMRUN, guard-conjoined) | a GNU statement expression `({ … })`, as generic already uses |
+| FUNC define | none (no caller values at define) |
+| FUNC use (a call) | the arguments ARE the snapshot (one evaluation each), but their order is unsequenced; a FUNC use with ≥ 2 hooks is wrapped in `({ })` with sequenced snapshots, then the call |
+| ASSIGN with `result_decl` | snapshots precede the declaration in the caller's scope, with names unique per use (`_mf_<site>_<hook>`) |
+| ADVANCE `more`/`peek`, ON_CAND per-iteration values | EXCLUDED: per-iteration by design (contract: side-effect-free; G2 checks this by evaluating them twice) |
 
-## 5. Reach and independent controls (R)
+- **Only `uses` hooks are snapshot.** That keeps `-Wall -Wextra -Werror`
+  clean, with no unused locals.
+- **Refusals,** applied to the hook text the chosen row uses:
+  - a comment, `#` or backslash-newline;
+  - an identifier with the `_mf_` prefix;
+  - `on_miss`/`on_cand` not a single `goto`/`return` or a braced block;
+  - a bare `break` or `continue` inside a kit loop, which would bind to
+    the kit's own loop.
+- **Abi event (T3b), in ONE commit:**
+  - the pcrec abi bump, with readers found by grep (D76/D94);
+  - the stamps;
+  - the D80 hunk (the caller-text contract);
+  - G1 at BOTH layers against the pre-snapshot commit (R3; no deny row).
 
-- **Grain** (r1 reach B1). Reach is counted per row AND per (row,
-  honoured field, value class). A row reached only at defaults does not
-  count as reaching the fields it claims to honour.
-- **Independent controls** (r1 reach B2): none shares a source with the
-  engine or the profile.
-  1. A committed NAME manifest, `tests/memfn/rows.tsv`: one line per
-     (table, row) with its reach class and its witness. It is
-     hand-maintained, so a row added or removed without a line fails.
-  2. A TEXT SIGNATURE per row, checked in the witness artifact: a
-     substring the row's form writes, e.g. `!memcmp(` for runcmp
-     memcmp. A witness that drifts to another row fails here even when
-     the kit's record agrees with itself ([MECH-REACH]).
-  3. G2 byte-loop agreement on every reached cell.
-  4. start_table §3.4's deny-delta control: denying a row must move
-     exactly that row's witness.
-- **Rows unreachable from pcrec** use a CLOSED reason vocabulary (r1 reach
-  M4): `total-fallback` (generic), `pending-site:<trigger>`, or
-  `contract-reach:<G2 family>`. Anything else is deleted (D77).
-- **The literal floors** in `docs/spec/` are row counts per table and
-  witnessed-row counts. They are kept as the last-resort control.
+  It is its own abi event, never combined with [ART-POSS-ARMS]'s (pcrec
+  manager's sequencing, for bench attribution).
 
-## 6. Questions (Frank)
+## 6. Reach and independent controls (R) [T-G, U-N]
 
-- **Q-ROW-1, RULED (Frank, 2026-10-07):** NO silent defaults. Values are
-  stated explicitly, with named tokens; an unstated field a row reads is a
-  loud refusal (§4.2). Caller text is SNAPSHOT once into reserved locals,
-  plus lexical and statement-shape refusals (§4.4, option B). The
-  snapshot is an abi event, accepted for correctness.
-- **Q-ROW-4, charter (PENDING).** Layer 1 is a generic engine in the kit,
-  which widens D146's "search-site text" charter. Recommendation: yes, as
-  a kit UTILITY under `MF_NS`, with a charter line in memfn/CLAUDE.md.
-  Decisions move into the kit (Frank), and the kit cannot link pcrec. If
-  ruled no: Layer 2 stays in the kit, Layer 1 shrinks to a kit-private
-  walk, and generality waits.
-- Q-ROW-2 (no pcrec hook; §2.2) and Q-ROW-3 (no pcrec adoption now; §3)
-  are ANSWERED.
+- **Cells:** (row, used field, class), as listed in `cells.tsv`.
+- **Independent controls,** none derived from the engine or `fields.def`:
+  1. `tests/memfn/rows.tsv`: a hand-maintained name manifest, one line
+     per row, with its reach reason and witness;
+  2. a TEXT SIGNATURE per row, checked in its witness's artifact;
+  3. G2 byte-loop agreement on every reached cell;
+  4. the poison differential (§4.3);
+  5. start_table §3.4's deny-delta control;
+  6. the census's own population counts: compiles traced, witnesses
+     executed.
+- **Rows unreached from pcrec** take a closed reason: `total-fallback`,
+  `pending-site:<trigger>` or `contract-reach:<G2 family>`. Anything
+  else is deleted (D77).
+- **Literal floors** in `docs/spec/`: rows per table and witnessed rows.
 
-## 7. Plan (each step its own commit; gate vs main; ONE ruled abi event, T3b)
+## 7. Plan (each step its own commit, gate vs main, always green) [U-L]
 
 | step | content | movers |
 |---|---|---|
-| T0 | Layer 1: `table.c`, `mf_row`/`mf_table`/`mf_query`/`mf_select`/`mf_decision`, `MF_TABLE_TYPED`, `MF_TRACE` printer + REACH lines, `mf_table_rows`; unit tests, including the `cand_rows`-SHAPED fixture under both walks (§3); C15/C16 (`MF_NS`, SPDX, PROVENANCE) | none |
-| T1 | runcmp's `rc_row` onto Layer 1 (no profile needed: its inputs are run facts) | none; `mf_run_rows` listing byte-identical |
-| T2 | Layer 2: `fields.def`, the gate; the composer arms onto Layer 1 with `honours`/`requires` from the audit matrix; ofsskip's `miss`/`floor` decline replaced by the gate | ONE DECLARED listing mover: `--list-axes`' memfn section gains the composer arms (dumps stream, D80 hunk, registry re-pins, the section floor goes from UNREACHED to REACHED), same commit (r1 T-D) |
-| T3a | no silent defaults (§4.2): `mf_check_stated`, the named tokens, precheck honours `miss`, the rows split for shape-dependent `floor`; with pcrec's R-6 (state `MF_MISS_N`/`"0"`/…) | none (gate) |
-| T3b | snapshot + reserved namespace + lexical/statement refusals (§4.4) | **ABI EVENT**: every delegated site; abi bump + grep re-pins + stamps + D80 hunk + G1 both layers, deny `--memfn=no-snapshot`, in ONE commit |
-| T4 | reach: `rows.tsv`, signatures, the census over pcrec's traced build (`MF_TRACE` + `PCREC_CAND_TRACE`), G2 per-cell floors with g2x's families, deny-delta | none |
+| T0 | Layer 1 + `mf_table_check` + `MF_SELECT` + record/printer + `MF_TRACE` + `trace_format.md`; the fixture tables (cand_rows-shaped, dfa_pfs-shaped); C15/C16; memfn/CLAUDE.md charter line (R4) | none |
+| T1 | runcmp rows onto Layer 1 (no profile) | none (listing byte-identical) |
+| T2a | `fields.def`, classify, the gate; composer arms onto Layer 1 with `uses`/`serves` (Appendix B). The gate runs in WARN mode: a recorded verdict, selection unchanged | none (gate vs main) |
+| T2b | arm names in `--list-axes`' memfn section | ONE declared listing mover (dumps stream, D80, registry re-pins, the section floor reached) |
+| R-6 | pcrec states what its sites' chosen rows USE and cannot be left as a wildcard (inventory from Appendix B: e.g. `MF_MISS_N` on valued handoffs; NOT `floor`) | none (a pcrec lane; nothing refuses yet) |
+| G2u | the blinded G2 update: `cells.tsv`, the poison differential, explicit tokens, refusal expectations | none |
+| T3a | the gate ENFORCES (declines/refusals on); enum `UNSTATED` members; precheck serves a stated `miss`; the PRE floor row split | none (gate) |
+| T3b | the snapshot + refusals (§5) | **ABI EVENT** (§5) |
+| T4 | reach: `rows.tsv`, signatures, census via `emit_sweep --trace`, floors | none |
 
-DROPPED from rev 1: T4-old (the sub-tables: no measured need, D77; they
-come back on a K96-class finding inside a row's sub-choice) and T6 (the
-pcrec hook). The arm denies move no DEFAULT byte. A deny that sends a
-delegated site to generic does move bytes when it is used: it is that
-arm's OFF arm, and its alpha is owed only when the arm itself moves a
-byte.
+Sub-tables stay DROPPED until a K96-class finding inside a row's
+sub-choice (D77) [T-I].
 
-## Appendix A: hosting `cand_rows[]` on paper (customers §1, lane/stc2)
+## Appendix A: `cand_rows[]` on the engine (lane/stc2)
 
-| `cand_rows` today | engine | note |
+| today | engine | identity argument |
 |---|---|---|
-| `CandRow.c` (`DfaCand{name, deny, applies}`) | `CandRow.h` (`mf_row`) | `applies(const DfaSel*)` is called via the typed wrapper; the returned bool maps to 0/1 |
-| `slot` (CandSlot, 8 values) | `h.scope` | the table's `nscopes = CAND_NSLOTS`; scope names = `cand_nodes[i].name` |
-| `routes` (`CAND_ON` mask, on every row) | `h.routes` | the same bits; `mf_query.route = sel->route` |
-| `tok`, `map`, `giveup`, `hands`, `list[3]`, `was` | payload (unchanged) | the stride walk skips them; `list[route]` keeps feeding `--list-axes`, or moves to `doc` per route |
-| the walk `:8131-8141` (slot, deny, route, predicate) | `mf_select` (scope, route, deny, gate=none, applies) | identical outcome: the filters commute with deny; first-match is preserved |
-| `cand_always` + crash on none | `MF_NONE_ABORT` | the record is printed before the abort |
-| `cand_route_of(cx)` | the caller's | it builds `mf_query.route` once (the ONE route derivation stays pcrec's) |
-| `cand_nodes[]` (accepts/asks/succ) | not the engine's | a static graph check over row payloads (`hands`); `cand_rows_check.py` stays pcrec's |
-| both-walks oracle (`PCREC_CAND_TRACE`) | supported | `mf_select` is pure; the oracle runs the old walk and `mf_select` and compares the chosen row |
-| `PCREC_CAND_TRACE_REC(slot, route, row, site)` | `mf_decision` (§2.2) | the macro keeps `"" site`; the SET diff reads the same four fields |
-| the per-slot payload `u` (C3-C5, not built yet) | payload | future columns ride the stride; the engine never reads them |
+| `DfaCand c {name, deny, applies}` | `mf_row h {name, deny, scope, routes, doc}` + the row keeps `applies` as its own member | `test` thunk = `row->applies(sel)`; same type, same polarity |
+| `slot` | `h.scope` (slot values unchanged) | `MF_SCOPE_ONE` lies outside `CandSlot` |
+| `routes` (`CAND_ON` bits) | `h.routes` (same bits; 0 rejected) | every stc2 row already writes its mask |
+| walk: slot, deny, route, applies | scope, route, deny, (no gate), test | filters commute with deny; first-match order is unchanged |
+| `cand_always` + missing-fallback | `on_none = pcrec_ctx_fail`; the oracle `MF_Q_NULL_OK` | no abort on the compile path |
+| `sel->route` / `cand_route_of` | `route_of(ctx)` | one carrier |
+| trace `(slot, route, tok, site)` | record → `scope_names`, `route_names`, `tok`, `site` | the SET gate lines are identical; RECF/ROUTE stay macros |
+| `tok`, `map`, `giveup`, `hands`, `list[3]`, `was`, `u` | payload | untouched |
+| `cand_nodes[]` | not the engine's | stays pcrec's static check |
 
-Nothing in that mapping needs a special case in the engine. The one
-cost is the typed wrapper per table, which is one macro line.
+## Appendix B: kit rows, USES and SERVES (from the audit matrix; T2a fills exact)
+
+| row | uses (beyond the predicate) | serves |
+|---|---|---|
+| ofsskip | `s`, `n`, `lo`, `miss`, `fn_name`, `comment_tier` | `miss` {MISS_N}; `floor` {UNSTATED, ZERO} (not used, but a stated floor must be honoured) |
+| precheck (split by shape) | `s`, `n`, `lo`, `miss`, `result`, `on_miss`, `on_miss_leaves`, `floor` (run-shaped row only) | `miss` {MISS_N, OTHER} after T3a; `floor` {UNSTATED, ZERO} or {UNSTATED, ZERO, OTHER} per split |
+| runcmp (VMRUN) | `s`, `lo`, `denies` | all classes of its used fields |
+| generic | all used fields | `OTHER` for each, or a contract refusal |
+
+Rev 3 closes the r1 "NOT" ids (sound M3, the per-row list, is this
+table) and every r2 theme. A one-critic soundness spot-check on §4-§5
+precedes T0.
