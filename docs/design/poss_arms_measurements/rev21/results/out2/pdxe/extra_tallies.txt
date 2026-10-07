@@ -1,0 +1,10 @@
+#TALLY agree=67 diverged=0 refused=0 possessive=67 cells=696187 reach_miss=0
+#TALLY agree=68 diverged=0 refused=0 possessive=68 cells=855494 reach_miss=0
+#TALLY agree=68 diverged=0 refused=0 possessive=68 cells=656218 reach_miss=0
+#TALLY agree=68 diverged=0 refused=0 possessive=68 cells=846128 reach_miss=0
+#TALLY agree=68 diverged=0 refused=0 possessive=68 cells=659024 reach_miss=0
+#TALLY agree=68 diverged=0 refused=0 possessive=68 cells=861580 reach_miss=0
+#TALLY agree=68 diverged=0 refused=0 possessive=68 cells=632060 reach_miss=0
+#TALLY agree=67 diverged=0 refused=0 possessive=67 cells=804007 reach_miss=0
+#TALLY agree=67 diverged=0 refused=0 possessive=67 cells=655567 reach_miss=0
+#TALLY agree=67 diverged=0 refused=0 possessive=67 cells=902265 reach_miss=0

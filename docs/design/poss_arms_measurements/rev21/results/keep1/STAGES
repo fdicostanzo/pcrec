@@ -1,0 +1,5 @@
+14:02:41 start
+14:02:42 generators 55448 17280 2858
+14:08:33 eqcheck eq_a21 rows=22581 out=22581 errors=0
+14:10:14 eqcheck eq_a021 rows=8535 out=8535 errors=0
+14:10:14 end (sweeps only)

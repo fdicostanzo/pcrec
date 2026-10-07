@@ -1,0 +1,6 @@
+# features: all
+# flags: --ucp
+\x{e9}+\b
+\w+\b
+\W+\b
+(\x{e9})x+\1
