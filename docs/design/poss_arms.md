@@ -1,5 +1,14 @@
 # [ART-POSS-ARMS] — two possessify arms, widened soundly
 
+**REVISION 2.1** (lane `possarms21`, 2026-10-07, from main `abb3db6c`). It
+discharges the re-check of revision 2 (critic R, the "Re-check of rev 2"
+section of `../dev/reviews/2026-10-07-r-poss-arms-panel.md`): rows N1, N2,
+R-3(b), R-4, R-5, R-6, R-7 and R-8. Each edit is marked `[r2.1 <id>]`, and
+§R2.1 tabulates them. **Read §R2.1 first.** R-3(a), the D27-blinded
+composition pass, is a separate author's; this revision leaves its hook
+(`poss_arms_measurements/rev21/run_composition.sh`, §8.8). Revision 2.1's
+evidence is in `poss_arms_measurements/rev21/` (own CLAUDE.md).
+
 **REVISION 2** (lane `possarms2`, 2026-10-07, from main `c2a0c6df`). It applies
 every disposition of the D6 panel
 (`../dev/reviews/2026-10-07-r-poss-arms-panel.md`). Each edit is marked
@@ -12,9 +21,30 @@ DESIGN ONLY: nothing under `src/` changes on this branch. The plan row is
 and its rank is `docs/dev/optloop/round3_selection.md` 3a-2. The possessify
 design of record is `eng_brep_design.md` §2, and the analysis is
 `src/opt/possessify.c`. Revision 1's evidence is in `poss_arms_measurements/`;
-revision 2's is in `poss_arms_measurements/rev2/`. Each has its own CLAUDE.md.
+revision 2's is in `poss_arms_measurements/rev2/`, and revision 2.1's in
+`poss_arms_measurements/rev21/`. Each has its own CLAUDE.md.
 
 **Headline.**
+
+- `[r2.1]` **Rev 2's prototype MISCOMPILED with A0 and B together (N1),
+  and that is fixed.** Arm B read a captured group's FIRST with
+  `first_of`, which answers "the next character at a position". A0 makes
+  that answer a NARROW, non-nullable set for a zero-width gate. A text never
+  contains a gate, so arm B now uses `TEXT_FIRST`, in which a zero-width item
+  is (∅, nullable) (§3.1). The three 10.46 witnesses answer (0,3).
+- `[r2.1]` **Greedy-only is LOAD-BEARING (N2), not declared-conservative.**
+  A lazy loop whose continuation can END through an empty bypass stops at its
+  lowest exit, and A1 bypasses row 2's `may_end` (§2.3). The lazy plant is
+  now a sabotage row.
+- `[r2.1]` **Both arms' folds were QUADRATIC, and both are now linear
+  (R-4).** Arm B's is one capture fact per group number, where in progress
+  means widen. A1's is a continuation summary that does not depend on `Q`,
+  found by this revision. The witnesses and the build-bar cells are in §8.7.
+- `[r2.1]` **The predicate is FROZEN by sha1** (§8.3a). CLAIM-vs-MARK reads
+  per-quantifier marks and pins the UCP refusals. A1's continuation must
+  equal the walk's FOLLOW, as a build-time check (§8.7). The
+  backreference-stays-VM tripwire is designed (§8.7). The blinded
+  composition pass has its hook (§8.8).
 
 - **Arm A** (a context gate in the follow) is **SOUND as restated, and with
   one more conjunct than revision 1 had.** A1 recomputes the loop's
@@ -39,8 +69,10 @@ revision 2's is in `poss_arms_measurements/rev2/`. Each has its own CLAUDE.md.
     the A-F1 and termination plants.
   - CLAIM-vs-MARK agrees on every compared row and detects every plant
     without a subject.
-  - Every ablated conjunct has a diverging control. The exception is
-    greedy-only, which the ablation shows is NOT load-bearing (§8.4).
+  - Every ablated conjunct has a diverging control. ~~The exception is
+    greedy-only, which the ablation shows is NOT load-bearing (§8.4).~~
+    `[r2.1 N2]` Greedy-only included, once the family has a nullable
+    follow (§8.4).
   - `[r2 B-B1, B-B2, B-B3]`
 - **The give-up surface does NOT move one way.** Re-measured on ONE
   committed subject: the minimum work budget goes 394 denied → 1,199 with
@@ -55,6 +87,20 @@ revision 2's is in `poss_arms_measurements/rev2/`. Each has its own CLAUDE.md.
   by grep. **Cost: M** (revision 1 said S). `[r2 C-S*, ranking]`
 
 ---
+
+## §R2.1 — what revision 2.1 changed, finding by finding
+
+| finding | where | what was done | evidence (`poss_arms_measurements/rev21/`) |
+|---|---|---|---|
+| N1 BLOCKER | §2.1, §3.1, §3.2, §7 | arm B reads `TEXT_FIRST` (a zero-width item is (∅, nullable)); the two `first_of` questions are named as [POSS-CTX-TABLE]'s READER field | `proto_rev21.patch`; `witnesses_r21_10.46.out`; plant S567 DETECTED |
+| N2 MAJOR | §0, §2.3, §8.2, §8.4a, §11 | greedy-only KEPT and is now load-bearing (477/3,964 lazy rows diverge once a bypass follow exists); the lazy plant is a row | `results/keep1/eq_a21.out`; plant S568 DETECTED |
+| R-3(b) | §8.3a | predicate FROZEN by sha1; the post-freeze edit rule; two edits applied under it, per category; hand vs computed reported apart | `gen_*21.py`, `results/out2/claimmark.out` |
+| R-4 | §3.1, §7, §8.7 | capture fact once per group number (in progress = widen, state on the walk); NEW: A1's continuation summary; compile-time witnesses with a build-bar cell | `timing_r4.sh`, `results/out2/timing.out` |
+| R-5 | §8.7 | A1 ≡ FOLLOW as an always-on check over the summary; atomic-end sentinel | census R5 5,437/5,437 eq |
+| R-6 | §8.7 | backref-stays-VM tripwire in `tests/reject/` | verified refused today |
+| R-7 | §8.3a | per-quantifier marks from `--emit-ir` strategies; `UCP_PIN` 4,502 and its trigger in [UCP]/[CLS-TREE] | `r21_claimmark.py` |
+| R-8 | plan.md | [ART-POSS-ARMS] body corrected | — |
+| R-3(a) hook | §8.8 | `run_composition.sh` (four harness passes, divergence + reach) | smoke: plant detected |
 
 ## §R2 — what revision 2 changed, finding by finding
 
@@ -100,8 +146,10 @@ to this table.
 - **Arm A** changes `first_of`'s `A_CTX` arm in two ways:
   - **A0**, a context-free refinement;
   - **A1**, a Q-relative refinement. It is an INPUT to row 3 and is
-    computed for a greedy `Q` with `m ≥ 1` (§2.3; §8.4 measures that the
-    greedy restriction is conservative).
+    computed for a greedy `Q` with `m ≥ 1` (§2.3). ~~§8.4 measures that the
+    greedy restriction is conservative~~ `[r2.1 N2]` The greedy restriction
+    is LOAD-BEARING: row 3 alone is sound only because a greedy loop takes
+    its top exit first (§2.3, §8.4).
 
 ## 1. History: the call-target miscompile, and the join that fixed it `[r2 C-S1, C-S2, A-F2]`
 
@@ -204,6 +252,24 @@ to match it. The rule is tighter and justified:
   (`vm_ABa0null` = `vm_AB`). The K35 re-count therefore shows no delta from
   this choice.
 
+**The rule holds for ONE reader, and revision 2 had a second** `[r2.1 N1]`.
+Every bullet above is about a reader of the NEXT CHARACTER AT A POSITION.
+Arm B (§3.1) also called `first_of`, on a captured group's body, and asked
+a different question: which character can the captured TEXT begin with. A
+gate is not in any text. In `((?=a))` the group captures the empty string,
+yet revision 2 answered FIRST(`\1`) = {`a`}, non-nullable. A0 + B together
+then miscompiled on the default route with no plant (critic R; 10.46 (0,3),
+prototype NOMATCH on `abb`):
+
+- `(?:((?=a))a)?b+\1b`, `((?=a)c?)ab+\1b`, `(?:((?=a))a|)b+\1b`.
+
+Before A0, `first_of` answered ALL BYTES for every gate, and all bytes
+declines every disjointness test, so the wrong nullability was masked. A0 is
+the first producer of a NARROW answer for a zero-width node, which is why the
+two questions first disagree here. The fix is on the TEXT reader (§3.1's
+`TEXT_FIRST`), not on this rule. [POSS-CTX-TABLE]'s context record carries
+the two questions as a READER field (§7).
+
 ### 2.2 The two rows
 
 | row | P | where it is sound | what it reaches |
@@ -269,14 +335,40 @@ ablation row for it.
 - Gating `ENCL` to those shapes would be a refinement with its own
   refutation surface. It is not part of this build (RC-Q2).
 
-**Why greedy-only.** Revision 1 argued that A1's value is invalid at `e_K`,
-and that row 2's `may_end` speaks about `e_K` too. §8.4 measures the
-alternative: dropping the greedy conjunct newly claims 1,134 lazy rows, 0 of
-which diverge at ML=4. The argument above explains why: a lazy loop that
-stops before the top exit stops at a RETREAT exit, where the A1-valued
-continuation cannot succeed. **Revision 2 keeps A1 greedy-only as a DECLARED-CONSERVATIVE
-conjunct.** It has no diverging control. Widening A1 to lazy loops is a
-measured, separable follow-up (§11 RC-Q1), not part of this build.
+**Why greedy-only — LOAD-BEARING** `[r2.1 N2]`. ~~Revision 2 kept the
+conjunct as declared-conservative: dropping it claimed 1,134 lazy rows, 0
+diverging at ML=4, and the argument was that a lazy loop stopping early stops
+at a retreat exit, where the A1-valued continuation cannot succeed.~~ That
+argument covers only continuations that READ a character at `e_k`. Critic
+R's 10.46 witness: `(\w+?(?:\b|))` on `ab` is (0,1); with A1 admitted for
+lazy loops it is (0,2).
+
+- **Why it breaks.** A lazy loop stops at the LOWEST exit where the
+  continuation succeeds. A continuation with a path to the match end that
+  tests no gate and reads nothing (here the empty bypass `|)`) succeeds at
+  every exit. So the lazy loop stops at `e_m` and the possessive spelling at
+  `e_K`. That is row 2's case (`lazy && may_end` declines). A1 feeds only
+  row 3's disjointness, so a lazy A1 skips row 2's may_end.
+- **Why greedy is safe.** A greedy loop tries `e_K` first. A gate-free empty
+  path succeeds there, and the loop never retreats. A path that fails at
+  `e_K` but could succeed at a retreat exit `e_k` must read `s[e_k]`, which
+  is the A1 argument above.
+- **Why rev 2 measured 0.** `gen_a2.py`'s follows had no nullable follow
+  (each consumes or gates), and its only lazy quantifier was `+?`. Rev 2.1's
+  generators add the bypass follows `(?:\b|)`, `(?:\B|)` and
+  `(?:(?=C)|)`, the bounded lazy `{1,3}?`, `{2,}?` and `{2,4}?`, and the
+  witness rows. Lazy ablation re-measured: §8.4.
+- **The sound lazy rule exists but is not built.** It would re-ask row 2 with
+  the A1 continuation's own end-reachability: does the continuation reach the
+  match end on a path that tests no narrowed gate. That is a second row with
+  its own refutation surface. Its population is unmeasured, and D77 says
+  wait.
+- **The lazy plant is now a SABOTAGE ROW** (§8.2), with this witness. It is no
+  longer a control.
+
+A0 needs no such conjunct. It is valued inside `first_of`, so row 2 sees the
+bypass's nullability directly: `[a-c]+?(?:(?=x)|)` declines through
+`may_end`. The A0 family sweep re-runs with the bypass follows (§5.3).
 
 #### 2.3a A1 across a call boundary `[r2 A-F1, C-2]`
 
@@ -436,12 +528,38 @@ on return, and a negative assertion keeps no capture.
 
 **The rule:**
 
-    FIRST(\n)    = fold_ref( ∪_{g ∈ refs} ∪_{A_CAP c : c.no == g} FIRST(c.body) )
-    nullable(\n) = ∃ such c with nullable(c.body)
+    FIRST(\n)    = fold_ref( ∪_{g ∈ refs} CAP(g) )                   [r2.1 N1, R-4]
+    CAP(g)       = ∪_{A_CAP c : c.no == g} TEXT_FIRST(c.body)   (once per g)
+    nullable(\n) = ∃ such c with TEXT_nullable(c.body)
 
 - `fold_ref` is applied only when `u.bref.caseless` is set.
 - An unset member contributes nothing, because it fails.
-- **Depth-1.** Inside `FIRST(c.body)`, a nested `A_BREF`/`A_CALL`/`A_VAR`
+- **`TEXT_FIRST` is not `first_of`** `[r2.1 N1]`. It answers "which
+  character can a captured TEXT begin with". It is `first_of`'s fold with
+  every ZERO-WIDTH kind answering (no bytes, nullable): `A_CTX`, `A_LOOK`,
+  `^`, `$`, `\z`, `\G`, `\K`, the empty node. A zero-width item contributes
+  no character to a text, so this is exact, not an approximation. It is NOT
+  the A0/A1 valuation, which is a fact about the next character at a
+  POSITION (§2.1's last paragraph). Every other kind defers to `first_of`
+  (a nested reference re-enters `CAP`). Revision 2 called `first_of` here,
+  which is N1's miscompile. Its plant is `PROTO_SAB_TEXTPOS` (§8.2).
+- **`CAP(g)` is computed ONCE PER GROUP NUMBER** `[r2.1 R-4]`.
+  - One walk indexes every `A_CAP` by number. Lookaround and DEFINE bodies
+    are included. A call's body is a back edge and is not followed.
+  - `CAP(g)` is memoized in the walk's state. A group whose value is IN
+    PROGRESS when asked again (a reference cycle, `(a\2)(b\1)`) answers
+    WIDEN.
+  - This replaces revision 2's depth-1 counter, and it is strictly wider.
+    A deeper reference now resolves: `(a)(\1b)x+\2` is claimed, and 10.46
+    agrees on its witness (`rev21/witnesses_r21_10.46.out`).
+  - **The cost was quadratic and now is not.** Revision 2 walked the whole
+    tree for every reference. The measurements are in §8.7.
+  - **The state lives on the walk, not in a file static.** The prototype
+    hangs `CAP`'s table off `Ctx` for the duration of one `pss_run` and
+    restores the previous value after. That is because `first_of` receives
+    only `Ctx`. The build puts it on `Pss`, or on [POSS-CTX-TABLE]'s context
+    record once `first_of` takes one.
+- ~~**Depth-1.** Inside `FIRST(c.body)`, a nested `A_BREF`/`A_CALL`/`A_VAR`
   keeps today's widen. That also ends cycles such as `(a\2)(b\1)`.
   `[r2 B-B3]` This is a TERMINATION rule, not a soundness conjunct. A deeper
   resolution is sound: `(a)(\1b)x+\2` resolved to depth 2 does not diverge
@@ -449,7 +567,9 @@ on return, and a negative assertion keeps no capture.
   visited set. Its witness is `(a\2)(b\1)x+\1`, which is claimed, compiles,
   and does not diverge. Its plant (`PROTO_SAB_NORECGUARD`, the guard
   dropped) does not terminate. It is detected as a compile timeout or
-  crash (§8.2).
+  crash (§8.2).~~ `[r2.1 R-4]` Superseded by the in-progress-widens rule
+  above. The plant keeps its name and now means "an in-progress group is
+  recomputed", which recurses without bound on the same witness.
 
 ### 3.2 Why each clause is there — the counterexamples tried
 
@@ -463,6 +583,7 @@ length ≤ 5 plus 300 random, 9,631 subjects each.
 | the first member of a name run | `(?J)(?:(?<n>a)\|(?<n>x))x+\k<n>`, subject `xxx` | (0,3) | NOMATCH | union over ALL of `refs[]` |
 | the first `A_CAP` with the number | `(?\|(a)\|(x))x+\1`, subject `xxx` | (0,3) | NOMATCH | union over every `A_CAP` with that number |
 | "non-nullable group" assumed | `(a?)x+\1x`, subject `xx` | (0,2) | NOMATCH | nullability is read from the member bodies |
+| a gate read as the text's first character `[r2.1 N1]` | `(?:((?=a))a)?b+\1b`, subject `abb` | (0,3) | NOMATCH | `TEXT_FIRST`: a zero-width item is (∅, nullable) |
 | unset reads as empty | `(?:(a)\|b)x+\1x` under `match_unset_backref`, subject `bxx` | (0,3) | NOMATCH | correct only while the option is out of scope |
 | body non-nullable ⇒ capture non-empty | `(?=((*ACCEPT)a))x+\1x`, subject `xx` | (0,2) | NOMATCH | `(*ACCEPT)` closes a group early, even EMPTY |
 
@@ -731,6 +852,26 @@ against 2.40 and 2.73 on the two uncommitted subjects.
      covers lookarounds and DEFINE, reuses K93's by-number machinery
      (`cc[]` is keyed by group number, and so is this), and walks EVERY
      `A_CAP`, not the call graph's first binding.
+     `[r2.1 R-4]` Its VALUE, `CAP(g)` (§3.1), is computed once per group
+     number and memoized; in progress means widen. Its state is the walk's
+     (`Pss`), never a file static.
+   - **The continuation summary** `[r2.1 R-4, found by this revision]`. A1's
+     fold had the same quadratic shape as arm B's: it re-walked `Q`'s
+     continuation for every quantifier.
+     - Witness: `(?:a+|a+|…)(?:\b|)(?:\b|)…`, n = 6,400. The denied build
+       takes 0.90 s and revision 2's prototype 64.85 s (§8.7).
+     - The fix rests on one fact: WHICH items the continuation reaches at
+       zero consumption does not depend on `Q`, because every `A_CTX` is
+       non-nullable whatever `P` is.
+     - So each continuation node carries, once, a summary: the bytes of every
+       reached item that is not a `P`-dependent gate (an A0-narrowable
+       lookahead folds in here), the reached `P`-dependent gates grouped by
+       their set `C` with `S` precomputed for the three `P`s, and the end
+       flags.
+     - Per `Q`, only the groups are evaluated, at O(distinct gate sets ×
+       |LAST|).
+     - The prototype checks the summary against the plain fold at every
+       verdict (`R4SUM-MISMATCH`, §8.7: 0 on the census).
 3. **possessify's own per-kind switches** `[r2 B-FAM]`.
    - Today the file holds three per-`AKind` switches (`first_of`,
      `gk_build`, `pss_walk`), the `pss_verdict` ladder, the `CallCtx`
@@ -743,6 +884,21 @@ against 2.40 and 2.73 on the two uncommitted subjects.
      `{follow, may_end, encl, left}` and one per-kind rows table indexed by
      kind, with a static count assertion so `-Wswitch`'s exhaustiveness
      alarm survives. A1's `P` is the `left` component.
+   - `[r2.1 N1]` **The record also carries a READER field.** `first_of`
+     answers two different questions, and N1 is what happens when one reader
+     gets the other's answer:
+     - **"the next character at a POSITION"**: the retreat-exit readers
+       (rows 1-3, the survey, an inner quantifier's follow, the call-site
+       joins). A gate constrains that character: A0 gives `S`, A1 gives
+       `S(P)`, non-nullable (§2.1).
+     - **"the first character of a TEXT"**: arm B's `CAP(g)`. A gate
+       constrains nothing, because it is not in the text, and it is
+       nullable.
+
+     Each per-kind row answers per reader. Today only the zero-width kinds
+     differ, and `TEXT_FIRST` (§3.1) is the reader-2 column. The
+     record makes "which question is this" a field, not a second function a
+     future reader might not know to call.
    - It is NOT built ahead of the arms. The arms build on today's shape
      with table-shaped primitives (`ctx_admits`, the capture fact, the
      continuation fold).
@@ -844,6 +1000,13 @@ named here by their plant. All were run on the exhaustive possdiff
 | A-cc (A-F1) | A1 drops the call-site join (`PROTO_A1_NOCC`) | `(a+(?:\b\|))\|b(?1)a` on `baa` | DETECTED, 3 (both A-F1 witnesses and `(a?)(x+\1)b(?2)x`) | 3 (the C rows); and the corpus: 16 `k93.rxt` patterns newly marked |
 | B-depth (termination) | B's depth guard dropped (`PROTO_SAB_NORECGUARD`) | `(a\2)(b\1)x+\1`: compiles | DETECTED: the compiler SEGVs (stack exhaustion) on all 3 cyclic-reference patterns | — |
 | A-lazy (control, not a row) | A1 admits lazy loops (`PROTO_SAB_LAZY`) | — | NOT detected: 79 agree, 0 diverge, consistent with §8.4 | 892 newly marked, 0 diverging on the oracle (§8.4) |
+| **A-lazy `[r2.1 N2]`, now a ROW (S568 at this writing, next free on main after S566)** | `PROTO_SAB_LAZY` | `(\w+?(?:\b\|))` on `ab` (10.46 (0,1)) | **DETECTED, 5 patterns** (rev 2.1 population, 104 patterns) | 3 hand rows |
+| **B-textpos `[r2.1 N1]` (S567 at this writing)** | arm B reads `first_of`, the POSITION answer (`PROTO_SAB_TEXTPOS`) | `(?:((?=a))a)?b+\1b` on `abb` (10.46 (0,3)) | **DETECTED, 4 patterns** | 3 hand rows |
+
+Rev 2.1 re-ran every plant on the extended population (Linux,
+`rev21/results/out2/pdx_verdicts.txt`). The arms: 104 agree, 0 diverge,
+517,382 cells, reach 15/15. Every plant is DETECTED. NORECGUARD is detected
+as 3 compile refusals (crash), and the route-flip witnesses agree.
 
 **[MECH-REACH] notes:**
 
@@ -891,7 +1054,125 @@ At build the check runs against the BUILT compiler, its deny bits replacing
 the prototype's switches. It is a precondition: mark = expectation on every
 compared row.
 
-### 8.4 The ablation table `[r2 B-B3]`
+#### 8.3a Rev 2.1: per-quantifier marks, the UCP pin, and the FREEZE `[r2.1 R-7, R-3(b)]`
+
+**(R-7) The mark is read per quantifier.** Revision 2 read MARK as "the
+arms raised `possessify marked`", a count delta. A gained mark and a lost one
+would cancel. `rev21/r21_claimmark.py` reads `--emit-ir`'s `strategies`
+section instead: one row per emitted quantifier, in emission order.
+
+- Rows are keyed by ORDINAL, because labels renumber when a program moves.
+  A row count that differs between two compiles of one pattern is an
+  ANOMALY, never a mark.
+- The TARGET quantifier is found WITHOUT the arms. The generator's
+  possessive spelling, compiled on the base build, differs from the greedy
+  spelling at exactly one ordinal. A row where it does not (`unresolved`)
+  falls back to "some quantifier flipped", and those rows are counted.
+- MARK = the arms flipped the TARGET backtracking → possessive. A flip
+  elsewhere is counted as `extra`. It is sound, but it is a claim the
+  predicate did not make, so it is reported. Any other change is an
+  `anomaly`.
+
+**(R-7) The `utf,ucp` REFUSED population is pinned.** Every selected
+`utf,ucp` row is refused today, because UCP `\w` under `-e utf8` is refused
+until the kit-sized route lands (§2.5).
+
+- The check takes `UCP_PIN` and exits 3 when the refused count moves. The
+  count is 4,502 rows over the rev-2.1 population (`UCP_PIN=4502`); rev 2's 2,059 was
+  over rev 2's.
+- That is the trigger to re-sweep those rows. It is named in [UCP]'s and
+  [CLS-TREE]'s plan rows.
+
+**(R-3(b)) THE PREDICATE IS FROZEN.** Revision 2's predicate was edited
+after the prototype's marks were seen (the `\B` and empty-reference gaps,
+§8.3). So for the prototype, "the implementation equals the rule" was
+partly circular. From this revision the predicate is pinned:
+
+| file | sha1 at the freeze (commit `63be190c`) |
+|---|---|
+| `rev21/gen_a21.py` | `3bf0fdc0b1476d75492152fbb56ff542a46caa90` |
+| `rev21/gen_a021.py` | `3c5fdf65d98ef0177da4eb3d4b2b844bb9473b68` |
+| `rev21/gen_b21.py` | `9f9e7d92aa32f657c6f7a0ce3bf6b816a844eef8` |
+| `rev21/r21_claimmark.py` (the comparison, not the rule) | `c5cf3dfc4fab40c11a9b57b91cbac49e223571fe` |
+
+- **The post-freeze edit rule.** An edit to a predicate generator after the
+  freeze is a RULE-LEVEL event, never a fix-up. It is made only in a
+  revision of this note, and it carries:
+  1. the trigger rows: the mismatching rows that prompted it, quoted;
+  2. a libpcre2 oracle sweep of every row whose CLAIM the edit moves
+     (`eqcheck.py`, ML ≥ 4), recorded before the edit is accepted;
+  3. the new sha1s, entered in this table.
+
+  The build's CLAIM-vs-MARK runs the generators at their pinned sha1s. A
+  disagreement is a defect in the BUILD until a rule-level edit says
+  otherwise.
+- **Hand-literal rows are reported apart from computed ones.** Column 9 of
+  every generator is `src`, either `computed` (the cross product's
+  predicate) or `hand` (a literal claim written per row: the witnesses,
+  `encl`, the `C`/`H`/`N` rows). Every summary line is split by it. A hand
+  row's claim is the author's reading, not the rule's output. It counts as
+  evidence of the rule only through its own oracle sweep.
+
+**Result on the frozen-then-edited predicate** (Linux, rev-2.1 prototype,
+`results/out2/claimmark.out`), split by source:
+
+| config | src | compared | mark ≠ expect | unsound-direction | extra flips | anomalies |
+|---|---|---|---|---|---|---|
+| AB | computed | 33,037 | **5** | 5 | 657 | 0 |
+| AB | hand | 44 | **0** | 0 | 2 | 0 |
+
+- The 5 are the rows with unresolved targets (below).
+- 3,459 computed targets are unresolved, and 2,160 are base-marked.
+- utf,ucp REFUSED: 4,502.
+- Every plant moves mismatches on the hand rows (`textpos` 3, `lazy` 3,
+  `nonnull` 4, …).
+
+**The first run against the freeze disagreed on 2,815 rows. Here is what
+each category was.** These are POST-FREEZE EDITS 1 and 2. Both are
+rule-level, and their trigger rows are in the generators' comments.
+
+1. **2,047 exact-count rows (A0 family).** These are NOT an arm. The
+   SHIPPED possessify already marks them (row 1, exact count) on the base
+   build with the arms denied. So the possessive spelling moves nothing, and
+   "flip" reads 0. The fix is to the COMPARISON (`r21_claimmark.py`): MARK is
+   the target's state when the base build already marks it. That case is now
+   counted as `base-marked` (2,160 after the extension), and those rows agree.
+   The predicate is unchanged.
+2. **745 R-block rows (arm A family), `hi` bookkeeping.**
+   - 520 move FEWER: pcrec declines by representation (a caseless-utf `k`
+     tail, or `\w` folded at parse time to U+212A/U+017F). The expectation
+     is narrowed.
+   - 225 move MORE: `hi` had been set on rows whose follow is EMPTY, where
+     pcrec's widening cannot decline. These are backed by the libpcre2 10.46
+     sweep over exactly those 225 trigger rows: **225/225 agree, 0 diverging,
+     2,522,475 subjects**.
+3. **18 A0 rows: LAST is read from the POSITION class.** This is a
+   semantics statement, and it is the rule as §2.3 writes it: the polarities
+   of the classes at X's Glushkov LAST positions. A gate inside the body is
+   not a position, so the LAST of `(?:(?=[ab])\w)` is `\w`. The edit
+   narrows claims (FEWER). The oracle sweep over the 18: 18/18 agree on
+   10.46 (134,658 subjects). The wider claims were sound too. pcrec simply
+   implements the stated, narrower rule.
+4. **5 unresolved targets** (`(?:[a-z]+(?:(?=\W)[ab])+y)+` and four
+   siblings). These are not model error.
+   - The target body is emitted twice (two strategies rows), so the
+     possessive spelling flips two ordinals and the target is unresolved.
+   - The arms then mark a DIFFERENT quantifier, `(?:(?=C)[ab])+`. Its body
+     can never match, so A0's `S` makes it trivially disjoint.
+   - That is a claim the predicate never made. It and all 657 other extra
+     flips are checked by the exhaustive possdiff over every extra-mark
+     pattern (`mk_pd_extra.py`): **676 patterns, 0 diverging, 7.57 M cells**
+     (`results/out2/pdxe/extra_tallies.txt`).
+   - They stay listed as OPEN in the target-resolution sense. The instrument
+     should key replicated copies as one target.
+
+**Edit 2** (after the oracle sweep): the frozen arm-A R block omitted
+`fold_ref` and CLAIMED 14 rows that 10.46 refutes. pcrec DECLINED all 14.
+The edit narrows 48 claims (FEWER). Final sha1s: `gen_a21.py`
+`2fec0c24…`, `gen_a021.py` `5bb09dfb…`, `gen_b21.py` unchanged,
+`r21_claimmark.py` `d2288d1a…`.
+
+### 8.4 The ablation table `[r2 B-B3]` (revision 2's; superseded by §8.4a)
 
 Per conjunct dropped from the PYTHON predicate: the rows it newly claims,
 and how many of those diverge on libpcre2 at ML ≥ 4 (arm A: every string of
@@ -904,7 +1185,7 @@ length ≤ 4 plus 100 random; arm B: ≤ 5 plus 300).
 | A1 | a mixed LAST declines (collapse it) | 504 | **168** | `(?:a[a.])+\b` on `a.a.` |
 | A1 | ENCL unioned (drop it) | 2,272 | **3** | `(?:a+(?:\b\|)\|ab)+c` on `aabc` |
 | A1 | the call-site join (A-F1; lexical only) | 4 | **4** | `(a+(?:\b\|))\|b(?1)a` on `baa` |
-| A1 | greedy only (admit lazy) | 1,134 | **0** | — |
+| A1 | greedy only (admit lazy) | 1,134 | ~~**0**~~ REFUTED (§8.4a: 477 of 3,964 once the family has a nullable follow) | — |
 | B | fold at a caseless reference | 2 | **2** | `(a)A+(?i:\1)` on `aAA` |
 | B | union over every `refs[]` member | 2 | **2** | `(?:(?<n>a)\|(?<n>x))x+\k<n>` on `xxx` |
 | B | union over every `A_CAP` with the number | 1 | **1** | `(?\|(a)\|(x))x+\1` on `xxx` |
@@ -919,9 +1200,10 @@ length ≤ 4 plus 100 random; arm B: ≤ 5 plus 300).
   only behind it, and dropping ENCL loses nothing there (0 of 2,268). A
   gate with an empty BYPASS reaches the loop's end, and the restart then
   rescues the match. Three of the four `H` rows in `gen_a2.py` diverge.
-- **Greedy-only does not diverge, on 1,134 rows.** This is the measurement
+- ~~**Greedy-only does not diverge, on 1,134 rows.** This is the measurement
   behind §2.3's "declared-conservative" and RC-Q1. It is also why no
-  sabotage row can be written for that conjunct.
+  sabotage row can be written for that conjunct.~~ `[r2.1 N2]` REFUTED: the
+  population had no nullable follow. See §8.4a: 477 of 3,964 diverge.
 - **Not conjuncts, so not in the table:**
   - zero consumption, which is structural (§2.3);
   - B's depth-1, a termination rule (§3.1): resolving deeper is sound,
@@ -931,6 +1213,49 @@ length ≤ 4 plus 100 random; arm B: ≤ 5 plus 300).
 Arm A is swept at ML=4 (881-11,211 subjects per row), arm B at ML=5 (9,631).
 The data is in `rev2/a2_abl_ml4.out.gz`, `rev2/a2_new_ml4.out` and
 `rev2/b2_ml5.out`.
+
+#### 8.4a The ablation table, re-measured on the rev-2.1 families `[r2.1 N2, N1]`
+
+The same instrument (`eqcheck.py`), but run on **libpcre2 10.46** (ubuntubudu,
+whose `pcre2test` is the reference). Arm A families use ML=4 with 100
+random subjects; arm B uses ML=5 with 300. The populations are the extended
+`rev21` generators (§8.3a). Every claimed, tagged or hand row is swept:
+22,581 + 8,535 + 2,330 rows. The data is in `rev21/results/eq_*.out`.
+
+| arm | conjunct dropped | newly claimed | of those, diverging | first witness |
+|---|---|---|---|---|
+| A1 | `m ≥ 1` | 2,640 | **996** | `\w*\b\w` on `a` |
+| A1 | polarity from LAST (read FIRST) | 1,485 | **338** | `(?:a\.)+\b` on `a.a.` |
+| A1 | a mixed LAST declines (collapse it) | 567 | **168** | `(?:a[a.])+\b` on `a.a.` |
+| A1 | ENCL unioned (drop it) | 2,644 | **36** | `(?:\w+(?:\b\|)x)+` on `ax` |
+| A1 | **greedy only (admit lazy, row 2's may_end bypassed)** | 3,964 (+80 in B's family) | **477** (+26) | `\w+?(?:\b\|)` on `aa`; critic R's `(\w+?(?:\b\|))` on `ab` |
+| A1 | the call-site join (A-F1; lexical only) | 4 | **4** | `(a+(?:\b\|))\|b(?1)a` on `baa` |
+| B | **TEXT_FIRST (read a captured text with `first_of`'s POSITION answer)** | 303 (B) + 903 (A0's R block) | **86** + **6** | `((?!x)) x+\1x` on ` xx`; `(?:((?=[ab]))a)?\d+?\1` on `a11`; N1's three |
+| B | fold at a caseless reference | 2 | **2** | `(?i:(a))A+\1` on `AAA` |
+| B | union over every `refs[]` member | 2 | **2** | `(?:(?<n>a)\|(?<n>x))x+\k<n>` on `xxx` |
+| B | union over every `A_CAP` with the number | 1 | **1** | `(?\|(a)\|(x))x+\1` on `xxx` |
+| B | nullability from the member bodies | 180 | **78** | `(a?) x{1,3}\1x` on ` xx` |
+| B | `(*ACCEPT)` makes a group nullable (future `verbs`) | 1 | **1** | `(?=((*ACCEPT)a))x+\1x` on `xx` |
+| B | unset reads as empty (future `MATCH_UNSET_BACKREF`) | 1 | **1** | `(?:(a)\|b)x+\1x` on `bxx` |
+
+**Every conjunct diverges, greedy-only included.** Revision 2's "0 of
+1,134" was a population with no nullable follow. The rows that diverge
+are the bypass follows rev 2.1 added. The same lazy rows WITHOUT a bypass still
+agree, which is §2.3's argument: a continuation that must read a character
+cannot succeed at a retreat exit.
+
+**The claims themselves** (the full predicate, after the two rule-level
+edits of §8.3a):
+
+- arm A: 11,800 claimed, **0 diverging**;
+- A0: 7,614 claimed, **0 diverging**;
+- arm B: 1,905 claimed, **0 diverging**.
+
+Edit 2 is the record of the one place this did not hold at the freeze. The
+frozen arm-A R block omitted `fold_ref` and claimed 14 rows that 10.46
+refutes, for example `(\b\w)\W+\1` under `utf,i` on `k \x{212a}`. That was
+a PREDICATE defect: pcrec declined all 14. Edit 2 narrows 48 claims, 14 of
+them refuted and 34 sound.
 
 ### 8.5 Per-arm stamp and the identity gate `[r2 B-M2]`
 
@@ -971,6 +1296,106 @@ The data is in `rev2/a2_abl_ml4.out.gz`, `rev2/a2_new_ml4.out` and
 
   It is diffed against `census_r2.tsv.gz`. Any difference is explained or
   is a defect.
+
+### 8.7 Three more build-bar items `[r2.1 R-4, R-5, R-6]`
+
+**(R-5) A1's continuation equals the walk's FOLLOW, as a build-time
+assertion.** A1 recomputes `Q`'s continuation beside `pss_walk`'s FOLLOW: it
+is a second computation of the same set, and the two can drift. With every
+gate valued A0, they must agree:
+
+    A1cont_A0(Q) ∪ ENCL  ==  FOLLOW(Q) ∪ ENCL      (bytes)
+    A1cont_A0(Q).ends    ==  may_end(Q)            (the match can end)
+
+- `ends` is "the continuation reaches the match end at zero consumption":
+  lexically, or through a crossed call site's joined `may_end`.
+- The build checks this ALWAYS, at every `pss_verdict`, in the house form:
+  a disagreement is `pcrec_ctx_fail(..., "internal error: possessify: A1
+  continuation disagrees with FOLLOW")`, like `cc_join`'s missing-slot
+  check. Every compile `make test` runs is therefore a check. It must read
+  the continuation SUMMARY (§7) valued A0, which costs O(gate groups) per
+  quantifier. Re-running the plain fold per quantifier would bring R-4's
+  quadratic back. The summary-equals-fold agreement (`R4SUM`) is the
+  test-time half: a unit cell plus the census population. The deny bit does
+  not vacate the check, because the summary is built whether or not A1 is
+  consulted.
+- It found one disagreement before it agreed. Inside an ATOMIC body,
+  `pss_walk` analyses the body as a self-contained pattern (follow empty,
+  may end), but A1's continuation ran on to the root and unioned `(?R)`'s
+  join. That is conservative, so it was not a miscompile, but it was a second
+  definition. The continuation now carries an explicit atomic-body END
+  (`px_atomic_end`), the walk's own boundary.
+- Measured over the census population (4,132 patterns, rev-2.1 prototype, Linux): **5,437 verdicts, all `bytes-eq/end-eq`; 0 R4SUM mismatches** (`rev21/results/out2/census_r21.tsv`). The census itself is unchanged from rev 2: arms fire 6 bench / 13 corpus, 0 default-engine flips, and the rev 2 → 2.1 mark delta is 0, because no corpus pattern has N1's shape. That is why N1 was missed.
+
+**(R-6) The backreference-stays-VM tripwire.** Arm B's bit is classified
+masked, answer-identity-preserving (§9), because every `A_BREF` is
+`VM_ONLY` in `select_engine.c`, under `--no-captures` too. That premise has
+a chartered threat: the finite-language expansion (`(abc)\1` → `abcabc`,
+[M6.5]'s follow-up (d)/(f), whose only customer is `--no-captures`) would
+make a backreference DFA-runnable.
+
+- The build adds `reject_engine_dfa_bref_nocaptures` to
+  `tests/reject/run_reject_tests.sh`, beside `reject_engine_dfa_vars`.
+- It runs `--engine=dfa --no-captures --features all '(a)x+\1'` and requires
+  exit 1 with "requires the VM engine, which --engine=dfa excludes".
+- Its failure message names this note's §9 and says: "arm B's deny bit
+  `-fno-poss-bref-first` is classified masked because a backreference is
+  VM-only; if this pattern now compiles for the DFA, reclassify the bit as
+  ENGINE-SELECTING (kept) and add a route-flip census for arm B".
+- Today: refused, armed and denied (`rev21` prototype, verified).
+
+**(R-4) A compile-time witness at the size boundary.** Both arms' folds were
+quadratic in revision 2. Arm B walked the whole tree per reference, and A1
+re-walked the continuation per quantifier. Both are now linear, as below.
+The pass runs before the emitted-size caps refuse a pattern, so the caps do
+not bound it; every row below is refused for size (rc 1) after the pass ran.
+Wall seconds for `pcrec --engine=vm -o file`, the Mac under a concurrent
+suite (load 9-16), so they are coarse:
+
+| witness (n) | denied | rev 2 arms | rev 2.1, memos off | rev 2.1 |
+|---|---|---|---|---|
+| `Bsame` (`(a)` + n × `x+\1`), 12,800 | 7.40 | 40.94 | 7.35 | 7.19 |
+| `Bdist` (n groups, `\g{N}`), 6,400 | 3.38 | 16.53 | 3.19 | 3.38 |
+| `Bcycle` (n-group reference cycle), 6,400 | 0.62 | 4.29 | 41.17 | 0.60 |
+| `A1alt` (n `a+` branches, n `(?:\b\|)`), 6,400 | 1.35 | 100.15 | 91.28 | 1.36 |
+| `A1alt`, 12,800 | 11.37 | 410.20 | OWED | OWED |
+
+These are Linux (ubuntubudu) wall seconds. `rev21/timing_r4.sh` writes the
+table (`results/out2/timing.out`). It was stopped at the manager's wrap-up,
+so the `A1alt` 12,800 rev 2.1 columns and the `A1lb` (distinct lookbehind
+classes) family are OWED. Rows ≥ 128 KiB of pattern are skipped, because
+that is Linux's argv cap. Reading the table:
+
+- The INDEX alone fixes arm B's same-group and distinct-group shapes ("memos
+  off" ≈ denied).
+- The memo is what bounds the cycle shape.
+- A1's continuation summary fixes the A1 shape.
+
+The build bar carries two cells under `scripts/watchdog`: `Bsame` and
+`A1alt` at n = 12,800. Each must compile (to the size refusal) within 2× the
+denied build's own time on the same pattern. A regression to either
+quadratic is 8-70× there, so the bar has headroom both ways.
+
+### 8.8 The composition hook `[r2.1 R-3(a)]`
+
+R-3(a) is a D27-blinded author's composition corpus (gate × capture × ref ×
+lazy × bypass × call), oracle-verified on 10.46, written in a cell. This
+lane did not read it. `rev21/run_composition.sh FILE.rxt` is its hook:
+
+- It runs `tests/harness/run.sh` four times with the prototype: denied and
+  armed, each on the default route and on `RXTFLAGS=--engine=vm`. The arms
+  are VM-only, and a gate-only pattern routes to the DFA by default.
+- It reports per route the cells that fail ARMED but pass DENIED (an arms
+  divergence, exit 1), and lists the cells failing both sides, unattributed.
+- It counts REACH: on how many distinct patterns the arms move `possessify
+  marked`. Zero reach exits 3, because a corpus the arms never touch is not
+  evidence.
+- Smoke-tested on a scratch three-cell file: 0 divergences armed. With
+  `PROTO_SAB_TEXTPOS=1`, it reports the N1 witness as a divergence on both
+  routes.
+
+Rev 2.1 closes when that run is green against the rev-2.1 prototype (the
+re-check's ruling): no divergence, and nonzero reach.
 
 ## 9. abi, flags, spec, docs — what the build commit carries
 
@@ -1114,11 +1539,15 @@ Revision 1's questions as ruled (`../dev/reviews/2026-10-07-r-poss-arms-panel.md
 
 **Open questions for the re-check critic:**
 
-- **RC-Q1. A1 for lazy loops?** The ablation measures greedy-only as not
+- `[r2.1 N2]` **RC-Q1 is ANSWERED: NO.** Critic R measured greedy-only as
+  load-bearing, with witness `(\w+?(?:\b|))` on `ab`. A1 stays greedy-only.
+  A sound lazy form would need a second row (§2.3), and it is not built.
+  Revision 2's question follows, struck.
+- ~~**RC-Q1. A1 for lazy loops?** The ablation measures greedy-only as not
   load-bearing: 1,134 newly claimed lazy rows, 0 diverging at ML=4; the lazy plant passes the exhaustive possdiff (79 agree). Revision 2 KEEPS the conjunct, declared
   conservative. Should it instead be dropped, so that A1 feeds row 3 for
   lazy loops under the existing row-2 conjunct? That would be a wider claim
-  set with its own CLAIM-vs-MARK population.
+  set with its own CLAIM-vs-MARK population.~~
 - **RC-Q2. ENCL ungated** is load-bearing on bypass shapes (3 of 4 `H`
   rows diverge) and merely conservative where the gate heads the in-body
   continuation (2,268 rows, 0 diverging) (§2.3, §8.4). It stays ungated.

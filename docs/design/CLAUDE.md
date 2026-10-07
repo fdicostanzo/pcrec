@@ -681,6 +681,13 @@ Four light panels in two days (the K82 handoff, [OPT-SETS], [MEMFN] K0 r1/r2) fo
     hand-possessive spelling's own number.
 
   Cost is M. Files [POSS-CTX-TABLE].
+  **REVISION 2.1 (lane `possarms21`, 2026-10-07) discharges the re-check of rev 2; read its §R2.1 first.**
+  - N1 (an A0+B miscompile) is fixed: arm B reads `TEXT_FIRST`, where a gate is zero-width.
+  - Greedy-only is load-bearing (N2).
+  - Both folds' quadratic is fixed (R-4).
+  - The predicate is frozen by sha1 and carries two rule-level edits (§8.3a).
+  - R-5/R-6/R-7 are designed, and the composition hook is in place (§8.8).
+  - Evidence: `poss_arms_measurements/rev21/`.
 - `poss_arms_measurements/` — that note's oracle sweeps, census instrument,
   10.46 transcript and possdiff runs (own CLAUDE.md); revision 2's
   instruments and results are in its `rev2/` subdirectory (own CLAUDE.md).
