@@ -326,3 +326,29 @@ All four chains are detached with `nohup` and `caffeinate`.
 merge main into `lane/stc1` ALONE, resolve, run `make strict`, and re-run
 Run B. My records in `pcrec_emit_req_byte_check`, `req-from` at :1557, sit
 below R4c′'s :1505 insertion.
+
+## landing (lane stc1land, sonnet, 2026-10-07): lane/stc1 on post-R4c′ main
+
+Done and verified:
+- `git merge main` (993f8c1d): ONE conflict, `docs/dev/lanes/CLAUDE.md`
+  (both sides appended index entries; kept both). `src/gen/emit_dfa.c`
+  auto-merged; the `req-from` record now sits at :1566, below R4c′'s
+  insertion. `make -j4 CC=gcc-16` rc 0; `make strict` clean in the default
+  AND `CFLAGS="-O2 -g -DPCREC_CAND_TRACE"` builds.
+- `docs/design/start_table/call_graph.txt` regenerated
+  (`python3 -I call_graph.py ROOT`): 156 sites. `inventory_check.py
+  call_graph.txt inventory.tsv` rc 0, 127/127.
+- `sabotage_anchors.py` re-run (rc 0): 500 sites, 482 row files, FAMILY 107,
+  RE-AIM 15, RE-RUN 92, **UNRESOLVED_SRC 0** (S526's filescope anchor now
+  resolves: `filescope 2`). `sabotage_anchors.tsv` / `.total` refreshed.
+- plan.md [START-TABLE] row: C1 DONE, NEXT C2.
+
+OWED (detached chain, `worktrees/stc1-scratch/chainL.log` + `chainL2.log`,
+trace tree rebuilt from the merged tip at `stc1-scratch/trace`):
+- Run B (`runB2.log`, completion line `B_RC=` in `chainL.log`): trace build
+  vs default build, `--arms start`, all six streams. Must be 0.
+- Records floor + TRACE_SITES (`runF2.log`, `F_RC=` in `chainL2.log`): the
+  mirrored trace-vs-trace run over streams 1-2. Floor pinned 256,608 / 62,962
+  and 25/25 sites; re-pin only if the measured counts moved.
+- `make test-codegen` under the suite lock (`codegen2.log`, `CODEGEN_RC=` in
+  `chainL2.log`).
