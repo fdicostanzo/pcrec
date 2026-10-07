@@ -28,15 +28,25 @@ run by pcrec's make; each writes only under its OUTDIR argument.
   a worktree at the kit branch with the expected TIP as its argument:
   build; the zero-mover gate vs REF (e6e6d6eb); make test; the 35 mech
   rows, ONE id per matrix call; the memfn-simd axes pair; full C11; I2
-  (`--arms start`, every --list-axes flag and tune position x both comment
-  tiers, the M1 denies at utf8). Logs go to build/scratch/r4c_lx/; ~6-7 h;
-  last line `R4C-LX-DONE gate= test= reds= mech= axes= c11= i2= i2arms=
-  wall=`. PASS is every rc 0 and reds=0.
+  (`--arms start`, every --list-axes flag but the memfn-simd pair and tune
+  position x both comment tiers, the M1 denies at utf8; each arm judged by
+  `memfn_r4c_i2.py`). Logs go to build/scratch/r4c_lx/; ~6-7 h; last line
+  `R4C-LX-DONE gate= test= reds= mech= axes= c11= i2= i2arms= wall=`. PASS
+  is every rc 0 and reds=0. RERUN mode (lane r4clx): env STEPS selects among
+  gate,test,mech,axes,c11,i2 (unselected steps read `skip`), TESTSECTIONS
+  runs `make <sections>` for the test step, MECHROWS the mech ids, I2ARMS an
+  ERE over arm labels; the header has an example.
 - `memfn_r4c_gate.py` — judges an emit_sweep log for R4c: exit 0 iff the
   self-check passed, streams 1-4 have 0 movers at their reach floors, and
   the only dump mover is --list-axes adding exactly the two declared
   memfn-simd rows. emit_sweep has no declared-mover input; this keeps an
   accepted red out of the gate.
+- `memfn_r4c_i2.py` — the I2 judge (lane r4clx): one arm's emit_sweep log,
+  exit 0 iff every REAL RUN stream reads movers=0 asymmetric=0, no stream
+  is dumps, and every other failure line is DECLARED for that arm in its
+  table (each with its measured reason) and no declaration is stale.
+  `--selftest LOGDIR` doctors copies of real logs (i2_3, i2_9 of the
+  91f5b607 run) into five planted reds.
 
 Transcripts: `../out/linux/`. Maintenance: update this file when files are
 added/removed or change roles.
