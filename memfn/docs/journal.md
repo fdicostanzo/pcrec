@@ -630,3 +630,18 @@ pointer when a kit change merges to main.
 - Rev 2.1 folds both. Q-ROW-4 (charter) is still pending. Next: the re-check
   panel, with a pcrec-customer lens.
 - Memory: pcrec-no-silent-defaults.
+- Frank RULED (2026-10-07, directly):
+  - Q-ROW-4 AGREE: the kit hosts the general first-match table engine
+    as a kit utility under MF_NS (D146's charter is widened);
+  - Q-ROW-6 AGREE: the hook snapshot carries NO public deny, and G1's
+    comparator is the pre-snapshot commit (a D144 item-4 exception for a
+    correctness change);
+  - Q-ROW-5, answered by a CLARIFICATION: "my concern about defaults was
+    that they would be USED … if it's unused, as in a wildcard, then that
+    isn't important. I don't want to specify everything for the sake of
+    it." So a row may use only a value the caller STATED; unstated fields
+    are wildcards; a row that needs an unstated field DECLINES, and if no
+    row can serve, the kit refuses and names the field. There is no
+    blanket stated-bitmask: an enum a row uses gets an UNSTATED = 0
+    member, and per-kind obligations stay required. The r2 review
+    (fa334f08) closes; rev 3 follows.

@@ -389,3 +389,20 @@ the compiler, and is never adopted silently. Proposed for main to file
   state `MF_MISS_N`, `"0"` and the rest explicitly; zero movers) when T3a
   is cut, and the T3b abi event, sequenced through you. Design:
   docs/design/memfn/row_contracts.md rev 2.1.
+- notice: 2026-10-07 — **[MEMFN-ROWCON] Frank's rulings (given directly
+  to the kit session); proposed decision entries:**
+  (1) Q-ROW-1 as clarified (Q-ROW-5): "A kit row may USE only a value the
+  caller STATED; it never presumes one. Unstated fields are wildcards,
+  not defaults. A row that needs an unstated field declines, and if no
+  row can serve, the kit refuses and names the field. Not every field
+  must be stated, only those the chosen row uses."
+  (2) Q-ROW-1(c): caller hook text is SNAPSHOT once into reserved `_mf_`
+  locals (a pcrec abi event, accepted for correctness), with refusals for
+  comments, `#`, backslash, and bare break/continue in kit loops.
+  (3) Q-ROW-6: the snapshot has NO public deny (D144 item 4 exception for
+  a correctness change); G1's comparator is the pre-snapshot commit.
+  (4) Q-ROW-4: D146's charter widens. The kit hosts a general first-match
+  table engine (Layer 1) as a utility under MF_NS; pcrec's tables MAY
+  adopt it per table (an offer, after START-TABLE C7).
+  Design: docs/design/memfn/row_contracts.md (rev 3 to follow); reviews
+  r1 and r2 under docs/dev/reviews/2026-10-07-r{1,2}-memfn-rowcon.md.
