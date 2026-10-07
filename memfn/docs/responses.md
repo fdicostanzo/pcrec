@@ -375,3 +375,17 @@ the compiler, and is never adopted silently. Proposed for main to file
   pcrec. **Please add the plan.md row** under [MEMFN]. No pcrec-side
   change is expected unless the design asks for an explain/trace hook,
   which would go to you as a request.
+- notice: 2026-10-07 — **[MEMFN-ROWCON] Q-ROW-1 RULED by Frank (directly
+  to the kit session); proposed decision entry:** "Kit contracts carry NO
+  SILENT DEFAULTS: every value a row's output depends on is stated
+  explicitly (named tokens, e.g. `MF_MISS_N`, never NULL-means-X); a row
+  that reads an unstated field refuses loudly. Caller text is SNAPSHOT
+  once into reserved `mf_` locals, inside parentheses, at the top of every
+  delegated site; text with comments, `#` or backslash is refused, and
+  `on_miss`/`on_cand` must be a jump statement or a braced block. The
+  snapshot is a pcrec abi event (every delegated site), accepted for
+  correctness; it lands with G1 at both layers and its deny
+  `--memfn=no-snapshot`." Coming to you: **R-6** (pcrec's hook builders
+  state `MF_MISS_N`, `"0"` and the rest explicitly; zero movers) when T3a
+  is cut, and the T3b abi event, sequenced through you. Design:
+  docs/design/memfn/row_contracts.md rev 2.1.

@@ -601,3 +601,32 @@ pointer when a kit change merges to main.
   adopt, within the kit boundary (the kit links nothing from src/ and
   stays extractable). The audit gained §7: pcrec's tables, prior
   unification designs, and boundary implications.
+
+## 2026-10-07 (afternoon) — ROWCON rev 2/2.1; Q-ROW-1 ruled by Frank
+
+- Main relayed Frank: design the engine against pcrec's decision tables
+  as REFERENCE CUSTOMERS. Lane rowcust gathered six customers
+  (probes/rowcon/customers.md). Rev 2 (e5f5c0c0) has two layers:
+  - a generic engine (stride rows with an mf_row head; scope/route
+    filters; deny; a pluggable gate; on_none policy; a decision record
+    mapping onto C1's trace; MF_TRACE reach; a listing accessor);
+  - the kit profile.
+
+  cand_rows[] is hosted on paper (Appendix A). analyses[] (an
+  AND-reduction) and POSS-CTX (indexed dispatch) are declared
+  NOT hosted.
+- Frank RULED Q-ROW-1, differently from my recommendation:
+  - NO SILENT DEFAULTS. "These are bugs waiting to happen …
+    assumptions that may be forgotten … not seen until circumstances line
+    up." Every value a row reads is stated explicitly (named tokens such
+    as MF_MISS_N); unstated means a loud refusal. pcrec states its values
+    via R-6 (zero movers).
+  - Caller text, option B: SNAPSHOT each value hook once into a reserved
+    `mf_` local, inside parentheses. Plus refusals for comments, `#` and
+    backslash, and for an on_miss/on_cand that is not a jump or a braced
+    block. Frank: B "also handles the case of function calls called
+    twice". It is an ABI EVENT at every delegated site (T3b): G1 at both
+    layers, deny --memfn=no-snapshot.
+- Rev 2.1 folds both. Q-ROW-4 (charter) is still pending. Next: the re-check
+  panel, with a pcrec-customer lens.
+- Memory: pcrec-no-silent-defaults.
