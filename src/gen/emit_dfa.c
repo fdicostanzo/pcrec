@@ -4639,6 +4639,15 @@ static int pick_skip_states(const Dfa *d, int exclude, int out[4])
     return nout;
 }
 
+/* The STAY set of state `idx` (1 for every byte whose step leaves the machine
+ * in that state): the table below and the STAY site's term read this one
+ * derivation. */
+static void stay_set(const Dfa *d, int idx, uint8_t stay[256])
+{
+    for (int b = 0; b < 256; b++)
+        stay[b] = (uint8_t)(d->st[idx].tr[d->clsmap[b]] == idx);
+}
+
 /* The 256-byte STAY set for state `idx`: 1 for every byte that leaves the
  * machine in that state, which is what licenses the emitted skip loop to
  * advance without stepping. Named `<p>_<tag><idx>`, so one state's table can
@@ -4647,8 +4656,7 @@ static void emit_stay_table(Ctx *cx, StrBuf *c, const char *p, const char *tag,
                             int idx, const Dfa *d)
 {
     uint8_t stay[256];
-    for (int b = 0; b < 256; b++)
-        stay[b] = (uint8_t)(d->st[idx].tr[d->clsmap[b]] == idx);
+    stay_set(d, idx, stay);
     /* [K38's rule, [ENG-FORM]] This function used to own ONE fixed buffer,
      * first a hand-picked 32 that "happened to fit the two literals it used
      * to be handed", then the shared emitted-name constant plus a margin.
@@ -7390,6 +7398,25 @@ bool pcrec_dfa_scan_state_written(Ctx *cx, const Dfa *d)
 
 /* ---- AXIS F: the two directions ----------------------------------------- */
 
+/* [MEMFN] R4h (M3): the STAY skip for state `K` as an in-loop ADVANCE site of
+ * DELEG_SITES row STAY (integration.md §15.7): the stay set, the direction's
+ * peek, step and cursor, and `more`, the run's bound, which is the caller's
+ * (under a view the forward run stops at n-1). The member is pcrec's own
+ * stay-table read. The kit writes the `while`; the entry guard, the accept
+ * store and the closing brace stay the caller's. */
+static PcrecAdvance stay_advance(const DfaForm *f, int K, const char *more)
+{
+    uint8_t *set = pcrec_arena_alloc(&f->cx->arena, 256);
+    stay_set(f->d, K, set);
+    return (PcrecAdvance){
+        .set = set, .reverse = f->dir->reverse, .more = more,
+        .peek = f->dir->peek, .step = f->dir->advance, .cursor = f->dir->posv,
+        .member = dfa_fragf(f->cx, "%s_%s_stay%d[%s]", f->p, f->dir->c.name, K,
+                            f->dir->peek),
+        .span = MF_SPAN_UNBOUNDED,
+        .indent = dfa_fragf(f->cx, "%s    ", f->dir->bind) };
+}
+
 /* AXIS F, forward: the in-loop STAY skip for state `K` — while the token is
  * `K`, run past every byte the stay table says keeps it there. `kw` is `if`
  * or `else if`, so a machine's skips chain. The table is named from the
@@ -7411,11 +7438,11 @@ static void dir_fwd_skip(StrBuf *c, const DfaForm *f, int K, const char *kw)
      * `dir->c.name`), so a hardcoded "forward" here emitted a reference to a
      * table that does not exist in that function. Byte-for-byte unchanged on
      * the forward machine, whose `c.name` IS "forward". */
-    pcrec_sb_printf(c, "%s    while ((scan_position %s subject_length) &&"
-                 " (%s_%s_stay%d[subject[scan_position]])) {\n"
-                 "%s        scan_position++;\n"
-                 "%s    }\n",
-              ind, f->views ? "+ 1 <" : "<", f->p, f->dir->c.name, K, ind, ind);
+    PcrecAdvance sa = stay_advance(f, K, dfa_fragf(f->cx, "scan_position %s subject_length",
+                                                   f->views ? "+ 1 <" : "<"));
+    mf_hooks h;
+    mf_site *s = pcrec_memfn_advance_site(f->cx, DELEG_STAY, &sa, &h);
+    pcrec_memfn_emit(f->cx, DELEG_STAY, s, &h, c);
     /* With the accept check ahead of us (the non-view order) the skipped
      * run's final position would otherwise go unrecorded; under a view the
      * check runs after the skip and already covers it. */
@@ -7440,11 +7467,10 @@ static void dir_rev_skip(StrBuf *c, const DfaForm *f, int K, const char *kw)
      * but the reverse machine reaches this emitter today, so the text is
      * unchanged; spelling it from `dir->c.name` is what stops the next
      * direction re-learning [ENG-ABS]'s lesson. */
-    pcrec_sb_printf(c, "%s    while ((rewind_position > search_from) &&"
-                 " (%s_%s_stay%d[subject[rewind_position - 1]])) {\n"
-                 "%s        rewind_position--;\n"
-                 "%s    }\n",
-              ind, f->p, f->dir->c.name, K, ind, ind);
+    PcrecAdvance sa = stay_advance(f, K, f->dir->scan_more);
+    mf_hooks h;
+    mf_site *s = pcrec_memfn_advance_site(f->cx, DELEG_STAY, &sa, &h);
+    pcrec_memfn_emit(f->cx, DELEG_STAY, s, &h, c);
     if (!f->views && f->d->st[K].up[UPC_PLAIN].accept)
         pcrec_sb_printf(c, "%s    %s = %s;\n", ind, f->dir->recv, f->dir->posv);
     pcrec_sb_printf(c, "%s}\n", ind);
@@ -9020,19 +9046,44 @@ static void scan_tables_bitmap(StrBuf *c, const DfaForm *f, int head)
                   set, 256);
 }
 
-/* The emitted run test for the edge at `head`: the class table's form,
- * through the class kit's own emitters. */
-static void scan_test(StrBuf *c, const DfaForm *f, int head)
+/* The run test for the edge at `head`, as arena text: the class table's
+ * form, through the class kit's own emitters. It is written twice (the peeled
+ * guard, and the loop's member hook: `SCAN_TEST_CALLS`). */
+static const char *scan_test(const DfaForm *f, int head)
 {
     ClsChoice ch;
     scan_choice(f->cx, f->d, head, &ch);
     ClsTest t = pcrec_clskit_test(&ch);
     if (t == CLS_TEST_RANGE || t == CLS_TEST_FOLD) {
-        pcrec_clskit_emit_inline(c, &ch, f->dir->peek);
-        return;
+        StrBuf c = { 0 };
+        c.cx = f->cx;
+        pcrec_clskit_emit_inline(&c, &ch, f->dir->peek);
+        const char *text = dfa_fragf(f->cx, "%s", c.p ? c.p : "");
+        pcrec_sb_free(&c);
+        return text;
     }
-    pcrec_sb_puts(c, pcrec_clskit_read(&f->cx->arena, t, scan_table(f->cx),
-                                       scan_name(f, t, head), f->dir->peek));
+    return pcrec_clskit_read(&f->cx->arena, t, scan_table(f->cx),
+                             scan_name(f, t, head), f->dir->peek);
+}
+
+/* [MEMFN] R4h (M3): the scan edge's run loop at `head` as an in-loop ADVANCE
+ * site of DELEG_SITES row EDGE (integration.md §15.7): the edge class's byte
+ * set, the direction's `scan_more`/peek/step/cursor, the member `test` (the
+ * edge's own run test, `scan_test`), and on a counted edge the caller's
+ * `scan_run_length` (declared and read by pcrec's text around the site, 1
+ * after the peeled step) capped at `span`. */
+static PcrecAdvance edge_advance(const DfaForm *f, int head, const char *test, int span)
+{
+    uint8_t *set = pcrec_arena_alloc(&f->cx->arena, 256);
+    int cls = f->d->st[head].scan_cls;
+    for (int b = 0; b < 256; b++) set[b] = (uint8_t)(f->d->clsmap[b] == cls);
+    return (PcrecAdvance){
+        .set = set, .reverse = f->dir->reverse, .more = f->dir->scan_more,
+        .peek = f->dir->peek, .step = f->dir->advance, .cursor = f->dir->posv,
+        .member = test,
+        .count = span < 0 ? NULL : "scan_run_length", .count_start = 1,
+        .span = span < 0 ? MF_SPAN_UNBOUNDED : (uint64_t)span,
+        .indent = dfa_fragf(f->cx, "%s    ", f->dir->bind) };
 }
 
 /* Emits the [OPT-5] scan edge for chain head `head`: a bounded-count loop
@@ -9091,19 +9142,20 @@ static void emit_scan_edge(StrBuf *c, const DfaForm *f, int head)
      * run of length zero. Folding the class test into the guard leaves the
      * empty-run path at a state compare, a bound compare and the class test
      * the loop's own first iteration would have done anyway. */
+    const char *test = scan_test(f, head);
     pcrec_sb_printf(c, "%sif (%s == %d && %s && ", ind, f->dir->statev,
               f->repr->cell_of(head, f->d), f->dir->scan_more);
-    scan_test(c, f, head);
+    pcrec_sb_puts(c, test);
     pcrec_sb_puts(c, ") {\n");
+    PcrecAdvance ea = edge_advance(f, head, test, span);
+    mf_hooks h;
+    mf_site *s = pcrec_memfn_advance_site(f->cx, DELEG_EDGE, &ea, &h);
 
     if (span < 0) {
         /* UNBOUNDED (`*` / `+`): no counter, and the state does not move —
          * the run's every position IS this state. */
         pcrec_sb_printf(c, "%s    %s;\n", ind, f->dir->advance);
-        pcrec_sb_printf(c, "%s    while ((%s) && (", ind, f->dir->scan_more);
-        scan_test(c, f, head);
-        pcrec_sb_printf(c, ")) {\n%s        %s;\n%s    }\n", ind,
-                  f->dir->advance, ind);
+        pcrec_memfn_emit(f->cx, DELEG_EDGE, s, &h, c);
         if (acc)
             pcrec_sb_printf(c, "%s    %s = %s;   // every position the run passed accepts\n",
                       ind, f->dir->recv, f->dir->posv);
@@ -9113,11 +9165,7 @@ static void emit_scan_edge(StrBuf *c, const DfaForm *f, int head)
 
     pcrec_sb_printf(c, "%s    unsigned long scan_run_length = 1;\n", ind);
     pcrec_sb_printf(c, "%s    %s;\n", ind, f->dir->advance);
-    pcrec_sb_printf(c, "%s    while ((%s) && scan_run_length < %lluULL && (",
-              ind, f->dir->scan_more, (unsigned long long)span);
-    scan_test(c, f, head);
-    pcrec_sb_printf(c, ")) {\n%s        %s;\n%s        scan_run_length++;\n%s    }\n",
-              ind, f->dir->advance, ind, ind);
+    pcrec_memfn_emit(f->cx, DELEG_EDGE, s, &h, c);
     pcrec_sb_printf(c, "%s    if (scan_run_length == %dUL) {\n", ind, span);
     /* THE BOUND WAS REACHED, so the position now holds the FALL-THROUGH
      * state. Its accept bit is recorded from its own bit; the run's bit

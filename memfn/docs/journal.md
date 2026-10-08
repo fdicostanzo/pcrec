@@ -901,3 +901,12 @@ pointer when a kit change merges to main.
       operand and only exists at render, so it needs a render-time class
       or a pcrec shape promise;
     - deleting the conditional `count` use is caught only by check E.
+- 2026-10-08: the layout normalization landed on main (c4c37af8, abi 67) and
+  the frozen ADVANCE target matches it. R4h was built by an opus lane:
+  - zero movers, no abi event, no kit source change;
+  - I1 shadow comparator: 78,298 sites, 0 mismatches; 38/38 witness
+    compiles byte-identical; G2 quick green;
+  - S72/S214/S512 re-aimed, S614-S616 added, S617 returned.
+
+  Merged into lane/memfn-r4h. slot10 is QUEUED behind nullanch2 (abi 68).
+  On GO: merge the new main FIRST, then run slot10/run.sh.

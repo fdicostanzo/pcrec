@@ -18,6 +18,7 @@ boundary with pcrec"), rendered through `memfn_sites.c` (DELEG_SITES):
 | PRE + SETREST (the pre-check composite: one-byte gate, run calls, set rest) | `memfn/src/precheck.c` | `req_site_define` (every decision: admission, lead, runs, set rest, handoff), `pcrec_emit_req_byte_check` (the use, `emit_req_handoff_rest`), the notes `req_note_*`, `req_run_tests`, `req_set_rest_members` |
 | OFS (the `<p>_ofsskip` block, its comment, its calls; the run pre-check's `<p>_reqrun[_whole]` functions) | `memfn/src/ofsskip.c` | `ofs_test_of`/`ofs_test_model`/`ofs_test_run` (the k-set selection), `ofs_pred_of` (the description), `ofs_site_define`, `pf_ofs_call`, the tables (`pf_tables_ofs`), the reseed, the call statements around the expression |
 | PF (R4g, M2: THE FIND statement of the DFA prefilter forms, the DFA hat and the VM hat's seek) | `memfn/src/pffind.c` | `find_site` (the description: the form off `DfaPf.scan`/the VM hat's table, `holdback` -> `end_back`, the set, the caller's `on_miss`), `pcrec_emit_find` (the use point), `find_table_name`; every guard, `return 0`, entry test, re-seed, comment and table in the `pf_emit_*` callers |
+| STAY, EDGE, VMSPAN (R4h, M3: the in-loop ADVANCE skips: the DFA stay skips, the scan edge's two loops, the VM span loop at stride 1) | `memfn/src/generic.c` (`stmt_advance`) | the builders `stay_advance`/`edge_advance` (emit_dfa.c) and `vm_span_advance` (emit_vm.c), each a `PcrecAdvance` read off its decision (the set, the direction's `more`/`peek`/`step`/cursor, pcrec's own member text, the caller's counter and cap), built by `pcrec_memfn_advance_site` and rendered through `pcrec_memfn_emit` from `dir_fwd_skip`/`dir_rev_skip`/`emit_scan_edge`/`vm_emit_span_scan`; every entry/guard line, the peeled guard and step, `scan_run_length`/`it_`/`lim_` declarations, the cursor init, the accept stores, the fall-through block, the stay/scan tables, the member texts (`scan_test`, the stay-table read, `vm_cls_test`) and comments; the STRIDED span loop stays pcrec's (`vm_stride_loop`, VMSTRIDE, M6) |
 
 The retired emitters (`emit_req_one_byte`, `emit_req_run_check`,
 `emit_req_set_rest`'s text, `emit_req_handoff`'s declaration line,
@@ -1120,7 +1121,8 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
   R4c): pcrec's side of the kit's SITES. `memfn_sites.def` is DELEG_SITES
   (`DELEG_SITE(id, op, handoffs, kinds, budget, use_ceiling)`: PRE, the
   pre-check composite with the set rest; OFS, the offset-skip block; VMRUN,
-  the VM's literal-run compare, M1b; PF, the prefilter find, R4g), the
+  the VM's literal-run compare, M1b; PF, the prefilter find, R4g; STAY,
+  EDGE and VMSPAN, the in-loop ADVANCE skips, R4h), the
   one source of `MF_P_INLOOP` (its budget column) and of each site's `use`
   CEILING. `memfn_sites.c`: the attempt's `mf_art` (`Job.mf`, begun at first
   ask), the SINK over a StrBuf (the comment gate stays pcrec's write-time
@@ -1136,7 +1138,14 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
   (`pcrec_memfn_deny_flags`), `--list-axes`' run-overlap rows); the door
   `pcrec_memfn_emit` (VMRUN's one-call EXPR; `site_census.DOORS`); and
   `pcrec_memfn_flush_helpers`, the prologue's flush of the kit's pending
-  word-load helpers. It holds NO decision: the builders that read the start
+  word-load helpers. **[MEMFN] R4h (lane r4h, 2026-10-08):** `PcrecAdvance`
+  and `pcrec_memfn_advance_site`, the in-loop ADVANCE site's one shared
+  description (SKIP / STMT / ADVANCE, `empty` NOP, the member hook returning
+  the caller's own test text, `count_by_caller` 1 wherever a counter is
+  named); the builders that fill a `PcrecAdvance` (`stay_advance`,
+  `edge_advance`, `vm_span_advance`) stay beside their decisions. R4h's I1
+  shadow comparator lived here in its IMPLEMENT commit (991b5c49) and was
+  deleted by REPLACE. It holds NO decision: the builders that read the start
   decisions stay in `emit_dfa.c` beside them (`req_site_define`,
   `ofs_site_define`, `ofs_pred_of`). `memfn_sites.h` is the one pcrec header
   that includes the kit's (`memfn/include/memfn.h`). Checks: C10

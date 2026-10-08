@@ -112,6 +112,32 @@ void pcrec_memfn_call(Ctx *cx, uint32_t handle, const mf_hooks *h, StrBuf *body)
  * (a row that would write one fails loudly). */
 void pcrec_memfn_emit(Ctx *cx, DelegSite id, const mf_site *s,
                       const mf_hooks *h, StrBuf *body);
+/* ---- an in-loop ADVANCE site ([MEMFN] R4h, M3) ---------------------------- */
+
+/* What an in-loop skip's builder read off its decision (STAY, EDGE, VMSPAN;
+ * integration.md §15.7, §14.3): every hook is pcrec's TEXT, and `member` is
+ * pcrec's own class test (T4, rule 6), which the kit pastes opaque. `set` is
+ * the member test's byte set (256 bytes, nonzero = in), descriptive only.
+ * `count` names the caller's counter (declared and read by pcrec's text, so
+ * count_by_caller is 1 where it is named) or is NULL for none; `span` is its
+ * cap, MF_SPAN_UNBOUNDED for none. */
+typedef struct {
+    const uint8_t *set;
+    bool           reverse;
+    const char    *more, *peek, *step, *cursor, *member, *count;
+    long           count_start;
+    uint64_t       span;
+    const char    *indent;
+} PcrecAdvance;
+/* The site and hooks for ADVANCE `a` under DELEG_SITES row `id`: STMT /
+ * SKIP / ADVANCE over one SET term at offset 0, `empty` NOP (the range IS
+ * `more`, Q-G2-5), the cursor read afterwards as a position. The caller
+ * renders it through the door (`pcrec_memfn_emit`); the kit writes
+ * `while ((more)[ && count < <span>ULL] && (member)) { step; [count++;] }`
+ * at `a->indent`. */
+mf_site *pcrec_memfn_advance_site(Ctx *cx, DelegSite id, const PcrecAdvance *a,
+                                  mf_hooks *h);
+
 /* The word-load helpers the attempt's text has used and not declared, at the
  * file-scope point `file`'s end (pcrec's prologue, §14.8): the kit's
  * mf_flush_helpers through a sink over `file`. */

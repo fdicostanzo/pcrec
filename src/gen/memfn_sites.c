@@ -296,6 +296,46 @@ void pcrec_memfn_emit(Ctx *cx, DelegSite id, const mf_site *s,
     kit_check(cx, art, mf_emit(art, s, h, &ps.s, NULL, NULL));
 }
 
+/* ---- an in-loop ADVANCE site ([MEMFN] R4h, M3) ---------------------------- */
+
+/* The ADVANCE site's member hook: the caller's own class test, as written
+ * (the byte expression the kit offers is never read: T4 stays pcrec's). */
+static const char *adv_member(void *u, uint32_t term, const char *byte_expr)
+{
+    (void)term;
+    (void)byte_expr;
+    return ((const PcrecAdvance *)((const PcrecMfU *)u)->own)->member;
+}
+
+mf_site *pcrec_memfn_advance_site(Ctx *cx, DelegSite id, const PcrecAdvance *a,
+                                  mf_hooks *h)
+{
+    mf_site *s = pcrec_memfn_site(cx, id);
+    s->form = MF_FORM_STMT;
+    s->op = MF_OP_SKIP;
+    s->handoff = MF_H_ADVANCE;
+    s->reverse = a->reverse;
+    s->empty = MF_EMPTY_NOP;
+    s->use = MF_USE_POSITION;
+    s->consumer = MF_C_ENGINE;
+    s->span_hi = a->span;
+    s->count_by_caller = a->count != NULL;
+    s->pred.nterm = 1;
+    s->pred.need = MF_REQUIRED;
+    pcrec_memfn_term_set(&s->pred.term[0], 0, a->set, 0, MF_REQUIRED);
+    PcrecAdvance *own = pcrec_arena_alloc(&cx->arena, sizeof *own);
+    *own = *a;
+    PcrecMfU *u = pcrec_arena_alloc(&cx->arena, sizeof *u);
+    *u = (PcrecMfU){ .cx = cx, .site = s, .own = own, .indent = a->indent };
+    *h = (mf_hooks){ .more = a->more, .peek = a->peek, .step = a->step,
+                     .cursor = a->cursor, .count = a->count,
+                     .count_start = a->count_start, .member = adv_member,
+                     .indent = a->indent, .comment_tier = PCREC_CMT_NONESSENTIAL,
+                     .u = u };
+    pcrec_memfn_check_use(cx, s, true);     /* the caller reads the cursor */
+    return s;
+}
+
 void pcrec_memfn_flush_helpers(Ctx *cx, StrBuf *file)
 {
     mf_art *art = pcrec_memfn_art(cx);

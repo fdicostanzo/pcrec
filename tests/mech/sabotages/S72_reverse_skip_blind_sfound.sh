@@ -44,15 +44,19 @@ SAB_COUNT=1
 # RE-ANCHORED 2026-10-08 ([MEMFN] R4h layout normalization, abi 66 -> 67): the
 # skip's `while` is the kit's ADVANCE layout now (parenthesized more/member, a
 # braced multi-line body), so the anchor carries the new printf; same intent.
-SAB_BEFORE='    pcrec_sb_printf(c, "%s    while ((rewind_position > search_from) &&"
-                 " (%s_%s_stay%d[subject[rewind_position - 1]])) {\n"
-                 "%s        rewind_position--;\n"
-                 "%s    }\n",
-              ind, f->p, f->dir->c.name, K, ind, ind);
+# RE-ANCHORED 2026-10-08 ([MEMFN] R4h, M3, lane r4h): the skip's `while` is
+# the memfn kit's now (DELEG_SITES row STAY, rendered through
+# pcrec_memfn_emit), so pcrec's printf is gone. The anchor is the
+# accept-store guard itself, led by the reverse skip's own builder call
+# (`stay_advance(f, K, f->dir->scan_more)`, which the forward skip does not
+# spell) so it matches once. Same intent: `!f->views` leaves the guard.
+SAB_BEFORE='    PcrecAdvance sa = stay_advance(f, K, f->dir->scan_more);
+    mf_hooks h;
+    mf_site *s = pcrec_memfn_advance_site(f->cx, DELEG_STAY, &sa, &h);
+    pcrec_memfn_emit(f->cx, DELEG_STAY, s, &h, c);
     if (!f->views && f->d->st[K].up[UPC_PLAIN].accept)'
-SAB_AFTER='    pcrec_sb_printf(c, "%s    while ((rewind_position > search_from) &&"
-                 " (%s_%s_stay%d[subject[rewind_position - 1]])) {\n"
-                 "%s        rewind_position--;\n"
-                 "%s    }\n",
-              ind, f->p, f->dir->c.name, K, ind, ind);
+SAB_AFTER='    PcrecAdvance sa = stay_advance(f, K, f->dir->scan_more);
+    mf_hooks h;
+    mf_site *s = pcrec_memfn_advance_site(f->cx, DELEG_STAY, &sa, &h);
+    pcrec_memfn_emit(f->cx, DELEG_STAY, s, &h, c);
     if (f->d->st[K].up[UPC_PLAIN].accept)   /* SABOTAGE S72 */'

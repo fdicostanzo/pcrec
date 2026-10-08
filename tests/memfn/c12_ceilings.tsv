@@ -21,17 +21,20 @@
 # 2, runcmp-words 4: the run compare is the kit's, memfn/src/runcmp.c);
 # M2's REPLACE (R4g) lowered the emit_dfa.c memchr row 2 -> 1 and deleted its
 # walk-fmt row (1 -> 0): pcrec_emit_find's two forms are the kit's
-# (memfn/src/pffind.c).
+# (memfn/src/pffind.c);
+# M3's REPLACE (R4h) deleted the emit_dfa.c walk-open row (2 -> 0) and its
+# walk-stmt row (2 -> 0): the STAY skips and the scan edge's two loops are
+# the kit's ADVANCE (memfn/src/generic.c, stmt_advance); emit_vm.c's
+# walk-open row stays at 1, the strided span loop (vm_stride_loop, VMSTRIDE,
+# M6), the stride-1 loop being the kit's (VMSPAN).
 # A RAISE is never routine: it needs a ruling, named in the commit.
 #
-# The row count (8) and the total (12 forms; 14 before M2 (the header read 13, stale), 20 before M1b, 26 before M1) are echoed by the check; the
+# The row count (6) and the total (8 forms; 12 before M3, 14 before M2 (the header read 13, stale), 20 before M1b, 26 before M1) are echoed by the check; the
 # independent control is the vocabulary's own reach (rule 4 of C17).
 #
 # Columns (tab-separated): path, vocab line-id, libc call name (libc-call
 # lines only, else -), ceiling, note.
 src/gen/emit_dfa.c	libc-call	memchr	1	M4: emit_attempt (pcrec_emit_find's went to the kit at M2's REPLACE, R4g; M1's six at R4c REPLACE: emit_req_one_byte, emit_req_set_rest, ofs_test_emit_fn x2, ofs_test_emit_pair x2; at 90d396fd the design counted 9, one went with the START-SET stage)
-src/gen/emit_dfa.c	walk-open	-	2	class-run and span loops whose byte test another call splices in (M3/M4)
-src/gen/emit_dfa.c	walk-stmt	-	2	one-statement cursor walks over a table (M2/M5)
 src/gen/emit_vm.c	walk-back	-	1	the VM's backward step chained by a jump (M2)
 src/gen/emit_vm.c	walk-open	-	1	the VM's open while loop (M2/M3)
 src/enc/enc_byte.c	span-index	-	3	the encoding seam's run-time span compare, byte encoding (M7)

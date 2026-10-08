@@ -48,6 +48,16 @@ R4g (M2), a fourth, the prefilter find (PF, pffind.c).
   `end_back` and the empty outcome on every op (VERIFY tests its range
   too; an empty range, `lo > n` included, reads nothing: §R4.7 F1), and
   uses pcrec's `member` hook for a set when one is given. No tuning constant (D149).
+  **Since [MEMFN] R4h (M3, lane r4h, 2026-10-08) its `stmt_advance` is
+  pcrec's in-loop skip text**: DELEG_SITES rows STAY (`dir_fwd_skip`/
+  `dir_rev_skip`), EDGE (`emit_scan_edge`, both loops) and VMSPAN
+  (`vm_emit_span_scan` at stride 1) render through it at zero movers (the
+  frozen target, tests/memfn/pins/r4h_target/). pcrec passes every hook as
+  text (`more`/`peek`/`step`/`cursor`, its own opaque `member`, and the
+  caller-owned `count` with `count_by_caller` 1 on the counted edge and the
+  VM's `it_`). Sabotage rows S214 (the scan edge's cap, `count_start` 1)
+  and S616 (the VM span's `it_` cap, `count_start` 0) are anchored on its
+  cap line, each scoped by that site fact.
 - **ofsskip.c** — a SCALAR ARM, born at R4c (integration.md §15.1;
   transcribed from pcrec's `ofs_test_emit_fn` and friends): THE OFFSET-SKIP
   FUNCTION, a `static inline size_t` returning the leftmost position whose

@@ -9,7 +9,9 @@
  *
  *   id           the site's name, the manifest's (PRE carries the manifest's
  *                SETREST row too: the set rest is one more predicate of the
- *                pre-check composite, §15.5)
+ *                pre-check composite, §15.5). STAY, EDGE and VMSPAN ([MEMFN]
+ *                R4h, M3) are the in-loop ADVANCE skips, built by
+ *                pcrec_memfn_advance_site from a PcrecAdvance (memfn_sites.h)
  *   op           the kit operation every instance has (MF_OP_*)
  *   handoffs     the handoffs an instance may take, as DELEG_H(MF_H_*) bits
  *   kinds        the term kinds an instance may use (MF_TK_*)
@@ -31,3 +33,9 @@ DELEG_SITE(VMRUN, MF_OP_VERIFY, DELEG_H(MF_H_BOOL),
            MF_TK_RUN, DELEG_LOOP, MF_USE_DISCARD)
 DELEG_SITE(PF, MF_OP_FIND, DELEG_H(MF_H_ASSIGN),
            MF_TK_SET, DELEG_SCAN, MF_USE_POSITION)
+DELEG_SITE(STAY, MF_OP_SKIP, DELEG_H(MF_H_ADVANCE),
+           MF_TK_SET, DELEG_LOOP, MF_USE_POSITION)
+DELEG_SITE(EDGE, MF_OP_SKIP, DELEG_H(MF_H_ADVANCE),
+           MF_TK_SET, DELEG_LOOP, MF_USE_POSITION)
+DELEG_SITE(VMSPAN, MF_OP_SKIP, DELEG_H(MF_H_ADVANCE),
+           MF_TK_SET, DELEG_LOOP, MF_USE_POSITION)
