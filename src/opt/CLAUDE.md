@@ -565,6 +565,25 @@ construction (src/ir) and emission (src/gen).
   the T2 walk to the verdict ternary and the two declined flags (and stores
   the row in `EngineFit.pf_admit`) and the walk to `esel_of`, in both
   orders (`-DPCREC_CAND_NEW_FIRST`); B4/B5 switch the readers.
+- **select_engine.c — T2 IS THE ADMISSION** ([DEC-FALLBACK] B4, lane
+  decfbB4, 2026-10-08; no abi event, zero movers). `prefilter_decision`
+  walks `pf_admits[]` after its refusals and writes `EngineFit.pf_admit`
+  (never NULL), `fit.prefilter` (the row's verdict) and the two
+  `prefilter_declined_nullable*` flags (from the row's `esel` cell; their
+  one reader left is `esel_of`, until B5). `lang_nullable_declinable`, the
+  `has_var` ternary and the verdict ternary are deleted; row 3
+  (`var-nullable`) is F1's holder. Each row also carries the `--emit-ir`
+  `prefilter` line's prose (`note`, moved verbatim from emit_vm.c's chain;
+  `overflow-drop`'s is a `%s` format over `dfa_overflow_why`), and the
+  chain's per-arm rationale comments sit above their rows. THE NULLABILITY
+  FACT IS ASKED UP FRONT, before the walk (`has_var ? nullable :
+  empty_admits`, result discarded): the deleted derivation asked it on
+  every compile, so `--emit-facts`' `used` column lists `empty_admits` on
+  every non-`${...}` pattern, and the walk alone asks it only where a
+  nullability row is reached (decfbB2 finding 7). The oracle's
+  `admit`/`admit-listing` checks retired with their old side; §1.4 (b)'s
+  `has_var` invariant stays (trace build), and the trace's `admit` record
+  prints the walk's row.
 - **atomic.c** — [M6.4.2] module `atomic-groups`' AST-level pass and its two
   walks (docs/design/atomic_groups_design.md §5.3/§5.4, panel-approved R31),
   plus [M6.5.2]'s two BACKREFERENCE tree predicates, [M6.6.2]'s
@@ -1602,7 +1621,9 @@ The population that reaches this path GREW when [OPT-5]'s scan edge landed:
 the [OPT-4] size rung's own decline above) now compile inside every cap and
 never reach a rung at all.
 
-`select_engine.c`'s fit site derives ONE shared local,
+`select_engine.c`'s fit site derived ONE shared local (since [DEC-FALLBACK]
+B4 it is T2's rows 3-5, below the backreference and linked-call rows; the
+text keeps the old name for the history),
 `lang_nullable_declinable` (`nullable && !has_bref &&
 !has_call && !force_on` — since [NULLABLE-ANCH] (abi 68) its first conjunct
 is the E1 fact `empty_admits`, not bare nullability, except on a `${...}`

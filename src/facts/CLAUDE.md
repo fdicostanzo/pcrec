@@ -116,8 +116,10 @@ defect traced to that edge (design §4.2.1, §10).
   `EM_E` for a non-multiline `$`/`\Z`/`\z`; every other zero-width node,
   a backreference, a variable and a nullable CALL (read off the call graph's
   least fixpoint, never `u.call.body`) is mask 0. `empty_admits` = some
-  mask is not `EM_SE`. Its one reader is `select_engine.c`'s
-  `lang_nullable_declinable` (both prefilter declines); `nullable` keeps
+  mask is not `EM_SE`. Its one reader is `select_engine.c`'s prefilter
+  admission (T2's `nullable-exact` and `nullable-collapsed` rows, plus
+  `prefilter_decision`'s up-front ask that keeps its `used` column; it was
+  the `lang_nullable_declinable` local until [DEC-FALLBACK] B4); `nullable` keeps
   every other reader. `pf_check_e1` holds it to the lowered tree (the
   invariance) AND to bare nullability (`set != 0` iff nullable) on every
   compile. Witnesses: `run_facts_checks.sh` [facts-e1] (its sixth column)
