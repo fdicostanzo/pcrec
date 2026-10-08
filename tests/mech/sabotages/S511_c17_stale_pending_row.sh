@@ -22,7 +22,7 @@
 SAB_ID="S511-c17-stale-pending-row"
 SAB_FILE='tests/memfn/site_manifest.tsv'
 SAB_SUITES="memfnmanifest"
-SAB_DOC_FIGURE='HAND-MEASURED by lane m6 2026-10-08 at the re-aim (plant applied; docs/dev/lanes/m6_report.md section 6). Earlier figures: docs/dev/lanes/memfnmanifest_report.md section 4, m4_report.md section 6. Read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S511.'
+SAB_DOC_FIGURE='HAND-MEASURED by lane m6 2026-10-08 at the re-aim (plant applied; docs/dev/lanes/m6_report.md section 6): memfnmanifest 2 failed / 13 passed (rule 4 on vm_span_advance and vm_emit_span_scan, pending VMSTRIDE). Earlier figures: docs/dev/lanes/memfnmanifest_report.md section 4, m4_report.md section 6. Read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S511.'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_REACH_POP='tests/memfn/site_manifest.tsv|^VMSTRIDE[[:space:]]+vm_span_advance,vm_emit_span_scan[[:space:]].*[[:space:]]delegated[[:space:]]|1'

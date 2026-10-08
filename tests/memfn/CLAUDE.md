@@ -31,10 +31,19 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
   utf8's caseless decode walk off as **N7U** (`u8_defs_bref_ci`, pending,
   Q-R8-1: trigger "completeness after M7 + a decode-hook vocabulary step"),
   which still spells the `span-decode` line (rule 4).
+  M6 (lane m6, R-10) flipped VMSTRIDE (emitters `vm_span_advance,
+  vm_emit_span_scan`, the ONE VM span builder and the door's caller;
+  companions `vm_cursor_rep,vm_cls_test`) and LISTED the cursor rung's lazy
+  rmin prefix as **VMLAZY** (`vm_cursor_rep`, pending, RULED Q-R10-7: a
+  counted verify of rmin span blocks no line saw; trigger "completeness
+  after M6 + that vocabulary step"), which spells the new `span-count`
+  line (rule 4): 12 delegated / 3 pending (N6, N7U, VMLAZY), 15 rows,
+  `C17_ROW_FLOOR` 15.
 - **search_vocab.tsv** — THE SEARCH-FORM VOCABULARY: the text shapes that
   count as a search form when an emitter spells them. There are four
   classes: libc search calls, table-walk loops, runcmp row texts and the
-  encoding seam's span compare. Python regexes are matched against
+  span compares (the encoding seam's two; since M6 `span-count`, a counted
+  span loop, the VM's lazy rmin prefix). Python regexes are matched against
   string literals. It names no site and no function. C12 (the emitted-form
   ratchet, born at R4c) reads THIS file rather than keep a second list.
 - **c17_lex.py** — the emitter reader. It returns every C string literal
@@ -118,7 +127,11 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
   since M4's REPLACE deleted `emit_dfa.c`'s memchr row, 1 -> 0, floor 6 -> 5:
   no `memchr(` is spelled outside the kit; 3 rows / 3 forms since M7's
   REPLACE deleted the encoding seam's two span-index rows, enc_byte.c 3 and
-  enc_utf8.c 1, floor 5 -> 3: the `span-decode` row stays for N7U);
+  enc_utf8.c 1, floor 5 -> 3: the `span-decode` row stays for N7U; still 3
+  rows / 3 forms after M6's REPLACE, which deleted `emit_vm.c`'s walk-open
+  row, 1 -> 0, the strided span loop being the kit's VMSTRIDE, and added
+  its `span-count` row at 1, VMLAZY's form seen for the first time by
+  RULING Q-R10-7, not a raise);
   REPLACE edits the one number on the row.
   Higher is red (a replaced form came back) AND lower is red (stale ceiling
   or a blind lexer). C13 is declared UNREACHED while no `on_cand` producer

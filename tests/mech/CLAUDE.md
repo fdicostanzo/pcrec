@@ -487,7 +487,21 @@ is EXPECTED to time out"*, and neither would a separate arm.
   (a backend spells its loop again) on `memfnmanifest`/`memfnforms`; it
   re-anchored S116 (the byte backend's site-data fold text) and S517 (the
   rider's line) and re-aimed S513 (`memfnstamps`) from the dead `memchr`
-  entry to `strlen`, a live detector again.
+  entry to `strlen`, a live detector again. M6 (lane m6, 2026-10-08)
+  adds S676 (the kit tests only term 0 of a strided ADVANCE), S677 (the
+  strided terms `||`-joined), S678 (pcrec's `adv_member` returns position
+  0's text for every term), S680 (the VM span builder loses the strided
+  `it_` cap: S616's sibling) on `harness`/`memfnarms`; S681 (a strided
+  reverse ADVANCE accepted) and S682 (a non-contiguous stride accepted) on
+  `memfnarms` (check 6); S683 (VMSTRIDE's D91 budget DELEG_SCAN) on
+  `memfndeleg`; S684 (the VM spells its strided `while ((` again while
+  VMSTRIDE is delegated) on `memfnmanifest`/`memfnforms`; S685 (the
+  `span-count` vocabulary line blinded: VMLAZY stale) on `memfnmanifest`.
+  It re-aimed S511 (RULED Q-R10-8) to the MANIFEST (the delegated VMSTRIDE
+  row flipped back to pending: rule 4) and S526 to the binding bound
+  (MF_MAX_TERM 32 -> 31 below VM_MAX_STRIDE, emit_vm.c's build copy
+  removed). S679 (`more` keeps `+ 1` at W > 1) was not built: it needs
+  the sanitizer arm and a measurement first.
 - `memfnstamps` → `tests/memfn/run_libc_census.sh --quick` ([MEMFN] R4a′,
   lane memfnstamp, 2026-10-05): C11, the kit's two every-artifact stamps.
   Builds nothing itself (reads the sabotaged tree's build/pcrec); about 15 s.

@@ -1162,7 +1162,17 @@ These are NOT search sites, and are not listed:
 
 - T4 one-position membership (one position, the `member` hook's
   source);
-- any DFA or VM step, and T8/T9 (the engine).
+- any DFA or VM step, and T8/T9 (the engine);
+- **`[M6]`** (Q-R10-11, kit ruling 2026-10-08) the encoding seam's utf8
+  `$_back_step` / `next_pos` loops: bounded per-character decode steps
+  (at most 4 bytes), the seam's analogue of T4, not searches.
+
+> **`[M6]` As built (2026-10-08):** VMSTRIDE is `delegated` (the VM span
+> loop at stride > 1, §15.9) and its `walk-open` ceiling is gone from C12;
+> the cursor rung's LAZY rmin prefix, a counted verify of rmin span blocks
+> that no vocabulary line saw, is its own `pending` row VMLAZY (Q-R10-7),
+> spelling the new `span-count` line. N6 stays `pending` pending Frank's
+> Q-R10-1 ruling.
 
 **The CHECKED SITE MANIFEST.** `tests/memfn/site_manifest.tsv` has one
 row per search site: site id, emitter function(s), op/handoff, D91
@@ -3361,7 +3371,7 @@ typedef struct {                    /* one position term, relative to cand      
                                        0..MF_PPM_FULL when unknown (the default)   */
 } mf_term;
 
-#define MF_MAX_TERM 8
+#define MF_MAX_TERM 8          /* [M6] 32 since MF_SITE_ABI 8 (Q-R10-3) */
 typedef struct mf_pred {            /* a CONJUNCTION of terms                        */
     uint8_t  nterm;
     mf_term  term[MF_MAX_TERM];
@@ -3413,7 +3423,7 @@ const char *mf_kit_version(void);                       /* "pcrec-memory-functio
 > kit version (§18).
 
 **Size (K3).** An `mf_site` is about 0.6 KB at `MF_MAX_TERM` 8 (32-byte
-sets dominate). `preds` and runs are pointers into pcrec's arena. The kit
+sets dominate; **`[M6]`** 2,696 bytes at 32, measured on x86_64, arena-backed). `preds` and runs are pointers into pcrec's arena. The kit
 allocates nothing on the caller's stack beyond its frame and takes
 scratch from `mf_arena`, which pcrec backs with its own arena. C10
 (§10.5) forbids an `mf_site` or `mf_result` as an automatic variable
@@ -5575,6 +5585,37 @@ Built by lane m7 (2026-10-08, R-8; rulings Q-R8-1..10 in
   byte mismatch. It keeps its body: manifest row N7U, `pending`, trigger
   "completeness after M7 + a decode-hook vocabulary step" (Q-R8-1).
 
+### 15.9 STMT / SKIP / ADVANCE, STRIDED: the VM span loop at stride > 1 (VMSTRIDE) — M6, as built `[M6]`
+
+Built by lane m6 (2026-10-08, R-10 cut to VMSTRIDE; rulings Q-R10-2..12 in
+`memfn/docs/responses.md`; design `docs/dev/lanes/m6scope_report.md`;
+report `docs/dev/lanes/m6_report.md`). Zero movers, no pcrec abi event, no
+spec hunk, NO `MF_VOCAB` move.
+
+- **The site** is the VM cursor rung's span loop when the body is W > 1
+  bytes wide (`vm_emit_span_scan`, both of `vm_cursor_rep`'s scanning arms).
+  It is the existing generic SKIP / ADVANCE over W SET terms: one step reads
+  W contiguous positions, term i at offset i (Q-R10-2).
+- **The contract step** (`MF_SITE_ABI` 8): Q-G2-9 relaxed on ADVANCE only
+  (W REQUIRED SET terms at offsets 0..W-1, forward only; every other SKIP
+  keeps one term at 0); `MF_MAX_TERM` 8 -> 32 (`VM_MAX_STRIDE`, asserted in
+  `emit_vm.c` and by C14); a strided site's kit-owned reads index
+  `s[cursor + i]` (Q-R10-4, so it states `s` and `cursor`); `span_hi` caps
+  ITERATIONS (Q-R10-5). The gate field `stride` (ONE / MANY) makes the
+  generic row USE `s`/`cursor` at MANY.
+- **The render** (`stmt_advance`): R4h's frozen target with one `(member)`
+  per term, ` && `-joined; frozen byte for byte from pre-M6 artifacts
+  (`tests/memfn/pins/m6_target/`, C5 check 12) and run against the contract
+  (check 13).
+- **pcrec's side**: ONE builder, `vm_span_advance`, for every stride
+  (`vm_stride_loop` deleted); `PcrecAdvance.stride` is stated by every
+  builder (STAY/EDGE state 1; 0 is refused: Q-R10-12); DELEG_SITES row
+  VMSTRIDE beside VMSPAN (Q-R10-6), budget 2. The block, `it_`, `lim_`, the
+  cursor init, the rung, admission, possessify, MRL and every member text
+  stay pcrec's (m6scope V1-V15).
+- **Not migrated:** the lazy arm's rmin prefix (VMLAZY, `pending`,
+  Q-R10-7) and N6 (Q-R10-1, Frank's).
+
 ## 16. M1, narrowed and sequenced (r3 G-F10, G-F11) `[rev4]`
 
 **The trigger's site class.** M1 exists for K82 cause (B): the
@@ -6546,6 +6587,12 @@ text stays opt-in until R4f.
 >   table; utf8's caseless walk split out as **N7U** (`pending`, Q-R8-1);
 >   C12's two span-index rows deleted (5 -> 3 rows); C17 14 rows, 11
 >   delegated / 3 pending (N6, VMSTRIDE, N7U).
+>   **`[M6]` BUILT for VMSTRIDE only** (lane m6, 2026-10-08; §15.9; R-10
+>   cut by ruling): the strided span is the existing SKIP / ADVANCE over W
+>   SET terms (`MF_SITE_ABI` 8, NO `MF_VOCAB` bump); VMSTRIDE `delegated`,
+>   the lazy rmin prefix listed as **VMLAZY** (`pending`, Q-R10-7); C12
+>   3 rows (walk-open out, span-count in); C17 15 rows, 12 delegated / 3
+>   pending (N6, N7U, VMLAZY). N6 waits on Frank (Q-R10-1).
 >
 >   **End state: C17 reads 0 pending, and C12 reads 0 in every class
 >   outside the kit.**

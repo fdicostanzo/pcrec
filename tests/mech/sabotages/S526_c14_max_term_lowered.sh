@@ -28,7 +28,7 @@ SAB_ID="S526-c14-max-term-lowered"
 SAB_FILE="memfn/include/memfn.h"
 SAB_SUITES="memfnforms"
 SAB_DESC='MF_MAX_TERM is lowered from 32 to 31, below VM_MAX_STRIDE (and the build-time copy of the assert in src/gen/emit_vm.c removed, so the tree builds): the VM cursor rung'"'"'s widest strided span site no longer fits one conjunction'
-SAB_DOC_FIGURE='Validated by plant at landing (docs/dev/lanes/r4cchecks_report.md §3); read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S526.'
+SAB_DOC_FIGURE='Validated by plant at landing (docs/dev/lanes/r4cchecks_report.md §3); RE-MEASURED by lane m6 2026-10-08 at the re-aim (plant applied, tree rebuilt: it BUILDS): memfnforms 1 failed / 4 passed (C14: the stride assert fires on the real header). Read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S526.'
 SAB_REACH='CC="$CC" TMPDIR="$REACH_TMP" bash "$TREE/tests/memfn/run_form_checks.sh" "$TREE"'
 SAB_REACH_EXPECT='PASS: C14 stride control
 checks failed: 0'
