@@ -138,6 +138,8 @@ ELIDED_PATTERNS='(a){0}
 # failure) and it must fire NOWHERE under `--no-captures`, where no VM body is
 # emitted and the size term therefore cannot act.
 SIZETERM_TOTAL=0
+ADVNEW_TOTAL=0   # [MEMFN] R4h: new-layout span-scan loops seen in subject regions
+ADVOLD_TOTAL=0   # ... old one-line loops on the subject side (must stay 0)
 SIZE_TERM_REGION_MOVERS='((?:(?:(?:[^a]{1,2}|[^a]??|.{0,2}?)+){0,8}(){2,3}){1,2}){2,3}
 (?:(?:(?:(?:(?:(?:a|b){41}){41}){41}){41}){41}){41}'
 
@@ -1183,7 +1185,7 @@ REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
 # artifact gains `RX_VM_POSS_ARMS`, and an arm mover's program moves (its (A)
 # excuse is the poss-arms bucket). `615eb811` (the merge of main 8cada7b9) is the lane's last src commit;
 # the manager re-pins to the merge (the self-pin convention).
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-615eb811}"   # [ART-POSS-ARMS] SELF-PIN (lane possbuild, 2026-10-07), abi 65->66: the lane's merge of main 8cada7b9 (C4, zero-mover), its last src commit
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-866e8dc7}"   # [MEMFN] R4h SELF-PIN (lane advnorm, 2026-10-08), abi 66->67: the lane's last src commit (the five ADVANCE sites' layout normalization)
 
 WORKDIR="$(mktemp -d)"
 cleanup() {
@@ -1381,7 +1383,11 @@ gen_deny() { pcrec_run "$PCREC" --features all -p rx -fcomments $2 $3 -o - --pat
 # dead-capture elision's four patterns still show up as differing here: on the
 # pre-module reference they were VM-selected and HAVE a region, and today they
 # are DFA-selected and do not.
-prog_region() { awk '/^    goto rx_L0;$/,/^rx_accept:/'; }
+prog_region_raw() { awk '/^    goto rx_L0;$/,/^rx_accept:/'; }
+# [MEMFN] R4h: EVERY region this file extracts, from the subject, the pin and
+# every deny-axis build alike, passes the seventh exception's canonicalizer
+# (adv_layout_canon, below) so it composes with every excuse bucket.
+prog_region() { prog_region_raw | adv_layout_canon; }
 # The two [DD-14.FB] lines that move INSIDE the region, on a call-BEARING
 # artifact only. Counted, never stripped.
 FB_REGION_LINES='^        const (unsigned|size_t) rx_call_frame = run->call_top;$|^        if \(rx_call_frame >= (RX_RESUME_FRAMES|run->resume_cap)\) return RX_R_INTERNAL;$'
@@ -1425,6 +1431,57 @@ bref_rename_rewrite() {
         }
         { print }
     '
+}
+
+# [MEMFN] R4h (lane advnorm, abi 66 -> 67) THE SEVENTH NAMED EXCEPTION, a
+# TWO-SIDED CANONICALIZER. The layout-normalization pre-commit rewrote the VM
+# span scan (`vm_emit_span_scan`) to the memfn kit's ADVANCE text: where
+# ac4917d wrote the one-line
+#     while (P_span_cursor + S <= LIM[ && it_ < NUL]TEST) { P_span_cursor += S;[ it_++;] }
+# the subject writes
+#     while ((P_span_cursor + S <= LIM)[ && it_ < NULL]TEST) {
+#         P_span_cursor += S;
+#         [it_++;]
+#     }
+# Every cursor-rung artifact moves for that one textual reason, so (like the
+# fourth) the admission is mechanical, not a manifest. Unlike the fourth it is
+# applied to BOTH sides' regions BEFORE any comparison, so it composes with
+# every deny-axis excuse below without a per-bucket rewrite: the canonical
+# form is the OLD one-line text (idempotent on a pre-pin region). Any other
+# difference in the region survives it. Its non-vacuity arm is a census of the
+# subject's raw regions (adv_new_count) held against a floor at the end of
+# the run, and the old one-line form must never appear on the subject side.
+adv_layout_canon() {
+    awk '
+    /^ *while \(\([a-z_0-9]*_span_cursor \+ [0-9]+ <= [a-z_]+\)/ && /\) \{$/ {
+        head = $0
+        if (getline step > 0 && getline nxt > 0) {
+            tail_it = ""
+            if (nxt ~ /^ *it_\+\+;$/) { tail_it = " it_++;"; getline nxt }
+            if (nxt ~ /^ *\}$/) {
+                if (match(head, /\([a-z_0-9]*_span_cursor \+ [0-9]+ <= [a-z_]+\)/)) {
+                    inner = substr(head, RSTART + 1, RLENGTH - 2)
+                    head = substr(head, 1, RSTART - 1) inner substr(head, RSTART + RLENGTH)
+                }
+                sub(/ULL/, "UL", head)
+                sub(/^ */, "        ", head)
+                sub(/ *$/, "", step); sub(/^ */, "", step)
+                print head " " step tail_it " }"
+                next
+            }
+            print head; print step; print nxt
+            next
+        }
+        print head; next
+    }
+    { print }
+    '
+}
+adv_new_count() {
+    grep -cE '^ *while \(\([a-z_0-9]*_span_cursor \+ [0-9]+ <= [a-z_]+\)' || true
+}
+adv_old_count() {
+    grep -cE '^ *while \([a-z_0-9]*_span_cursor \+ [0-9]+ <= .*\) \{ [a-z_0-9]*_span_cursor \+= ' || true
 }
 
 # [clss2fix, D139 item 2] THE FIFTH NAMED EXCEPTION, MECHANICAL like the
@@ -1801,6 +1858,11 @@ sweep() { # sweep <label> <extra pcrec args>
         if [ -n "$r" ]; then
             ra="$(printf '%s\n' "$a" | stamp_strip | prog_region)"
             rb="$(printf '%s\n' "$r" | stamp_strip | prog_region)"
+            # [MEMFN] R4h the seventh exception's non-vacuity census, off the
+            # subject's RAW region (prog_region above already canonicalized).
+            ra_raw="$(printf '%s\n' "$a" | stamp_strip | prog_region_raw)"
+            ADVNEW_TOTAL=$((ADVNEW_TOTAL + $(printf '%s\n' "$ra_raw" | adv_new_count)))
+            ADVOLD_TOTAL=$((ADVOLD_TOTAL + $(printf '%s\n' "$ra_raw" | adv_old_count)))
             case "$a" in *RX_VM_CALL_*) rcallbearing=$((rcallbearing + 1)) ;; esac
             # [ENG-ISL] the artifact's OWN account of what it contains, read
             # from the subject side only: the pre-module reference predates the
@@ -2624,6 +2686,17 @@ elision_control
 # size term narrowed, its threshold moved, or someone gated it differently —
 # would otherwise make this gate quietly weaker while every count still read
 # green. Exactly the direction `ELIDED_PATTERNS` asserts for wave G.
+# [MEMFN] R4h the seventh exception's non-vacuity arm: the canonicalizer must
+# have had new-layout loops to rewrite (else it is a filter on nothing), and
+# the subject must never carry the old one-line loop.
+if [ "${ADVNEW_TOTAL:-0}" -lt 1 ]; then
+    bad "[MEMFN] R4h the layout canonicalizer saw no new-layout span-scan loop in any subject region — the seventh exception is vacuous"
+else
+    ok "[MEMFN] R4h the layout canonicalizer was live: $ADVNEW_TOTAL new-layout span-scan loops across the axes' subject regions, canonicalized on both sides"
+fi
+if [ "${ADVOLD_TOTAL:-0}" -ne 0 ]; then
+    bad "[MEMFN] R4h $ADVOLD_TOTAL subject region(s) still carry the OLD one-line span-scan loop — the emitter did not move, or the canonicalizer hides a regression"
+fi
 if [ "${SIZETERM_TOTAL:-0}" -eq 0 ]; then
     bad "[ART-SIZE] SIZE_TERM_REGION_MOVERS fired on NO axis: the two patterns it names no longer move their program region, so the list is stale and this gate is defending a claim that has changed. Re-derive it; do not delete it"
 else
