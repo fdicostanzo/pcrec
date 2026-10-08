@@ -298,11 +298,11 @@ noted under group 2, which are `PCREC_*`-named yet per-artifact):
    refused.** The block opens
 
    ```c
-   #if defined(PCREC_RX_ABI_H) && (PCREC_RX_ABI_H + 0) != 66
-   #error "pcrec: this artifact (abi 66) shares a translation unit with an artifact of a different abi; regenerate both with one pcrec"
+   #if defined(PCREC_RX_ABI_H) && (PCREC_RX_ABI_H + 0) != 67
+   #error "pcrec: this artifact (abi 67) shares a translation unit with an artifact of a different abi; regenerate both with one pcrec"
    #endif
    #ifndef PCREC_RX_ABI_H
-   #define PCREC_RX_ABI_H 66
+   #define PCREC_RX_ABI_H 67
    ```
 
    so artifacts of one abi still share the first block, and an artifact of
@@ -2315,7 +2315,20 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `66` on every artifact today (lane possbuild bumped it
+- **`rx_info.abi` is `67` on every artifact today (lane advnorm bumped it
+  from 66, 2026-10-08: [MEMFN] R4h's layout-normalization pre-commit,
+  Q-R4h-1 (b)).** The five in-loop ADVANCE sites are rewritten, text only,
+  to the memfn kit's ADVANCE layout
+  (`tests/memfn/pins/r4h_target/`): the DFA stay skips (forward and
+  reverse), the scan-edge loops (unbounded and counted, both directions) and
+  the VM span scan now spell `while ((MORE)[ && CNT < NULL] && (MEMBER)) {`
+  with the step (and the counter increment) on their own lines in a braced
+  body, and the cap as `%lluULL` rather than `%dUL`. No stamp, no `rx_info`
+  member, no struct offset, no object byte and no answer moves; an artifact
+  with none of the five loops differs by the abi digits alone. The emitted
+  text is larger by tens of bytes per loop, so a size-cap refusal near its
+  cap and the VM entry-shape knee can flip on a few artifacts.
+- **`rx_info.abi` was `66` (lane possbuild bumped it
   from 65, 2026-10-07: [ART-POSS-ARMS], `docs/design/poss_arms.md` rev 2.1
   §9 — two possessify ARMS).** Arm A values a context gate (`\b`, `\B`, a
   one-character lookaround) in a quantifier's follow by what it can admit
