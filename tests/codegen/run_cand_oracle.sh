@@ -23,7 +23,11 @@
 # (`cand_hit`). A plant on a NEXT/RECOVER row then MOVES the artifact (the
 # table decides), and is caught here by its witness no longer reaching the
 # row; the byte sweep against the parent (start_table.md §3.3 item 1) is
-# that slot's selection control.
+# that slot's selection control. SINCE C4 the same holds for PRESENCE and
+# FIRST (`req_admits[]`/`req_uses[]` are deleted into the table); their
+# readers ask on CAND_ROUTE_DFA, and the trace build also walks every other
+# route the slot is asked on and aborts (`row-differs-on-route`) unless it
+# chooses the same row (`cand_hit_every`).
 #
 # THE POPULATION IS COUNTED (K35). Every row identity in the table's own
 # source (`.c = { "<identity>"` inside `static const CandRow cand_rows[]`)
@@ -38,7 +42,7 @@
 # A separate section of `make test` (`make test-cand-oracle`), not part of
 # `test-codegen`: it builds the compiler twice, and `make smoke` includes
 # `test-codegen` (run_premul_table.sh's measured argument). Mech arm
-# `candoracle` (S594-S599).
+# `candoracle` (S594-S600).
 #
 # Usage: bash tests/codegen/run_cand_oracle.sh [TREE]   (default: this repo)
 # Env:   CC (the compiler the trace builds use; tests/lib/cc_resolve.sh's),

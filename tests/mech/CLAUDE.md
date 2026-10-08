@@ -3389,3 +3389,14 @@ self-check. All six DETECTED at landing (`docs/dev/lanes/stc2_report.md` §3).
 slot's old walk its oracle hook goes with it, and each of those commits must
 re-home or retire the rows on its slot.
 
+**[START-TABLE] C4 (lane stc4, 2026-10-07)**: PRESENCE and FIRST lost their
+old walks (`req_admits[]`/`req_uses[]` are deleted into `cand_rows[]`), so
+S596's plant now moves the artifact and is caught by its witness no longer
+reaching `emitted` (C3's S594/S595 shape); it is the same edit as the
+re-aimed S462 (whose detector is the pre-check suite). **S600** is new: the
+entry slots are asked on CAND_ROUTE_DFA alone, which is honest only while
+their answer does not depend on the route, and the trace build's
+`cand_hit_every` walks every other asked route and aborts on a different
+row; the plant inserts a VM-only total PRESENCE row before `emitted`, which
+moves no default-build byte.
+
