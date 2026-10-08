@@ -49,8 +49,9 @@
 #       The full-corpus run in both orders is
 #       docs/design/dec_fallback/oracle_sweep.py; this half is the
 #       in-suite witness set. Landed at B2 (decfbB2); B3 retired its T1
-#       arrival and notes sites (their old side is gone); B5 deletes the
-#       oracle and this half with it.
+#       arrival and notes sites and B4 its T2 admit and admit-listing sites
+#       (their old side is gone); B5 deletes the oracle and this half with
+#       it.
 #   (e) THE DROP NOTES (B3): each size-cap rung that fires prints its
 #       stderr note, in rung order, and a compile that drops nothing prints
 #       none. The expected lines are HAND-WRITTEN in full (Frank's
@@ -379,35 +380,11 @@ REF_trlowthr="$WORK/pcrec_trlowthr"
 # (T1's arrival and notes checks retired at B3: the walk IS the dispatch and
 # the notes read the fired record, so there is no old side to compare. Their
 # witnesses are (a)'s sequences and (e)'s notes, both hand-written.)
-# T2's verdict and declined flags, one witness per row
-foracle or-a-bref  plain   admit   backref            '(a)\1'
-foracle or-a-call  plain   admit   linked-call        '(a|b(?1)c)+'
-foracle or-a-vnul  plain   admit   var-nullable       '^${v}$'
-foracle or-a-nulx  plain   admit   nullable-exact     '(a)*'
-foracle or-a-nulc  plain   admit   nullable-collapsed '(?:ab){0,16000}'
-foracle or-a-ovf   plain   admit   overflow-drop      "$W_OVF"
-foracle or-a-fon   plain   admit   forced-on          '(a)b' --engine=vm -fprefilter
-foracle or-a-foff  plain   admit   forced-off         '(a)b' -fno-prefilter
-foracle or-a-var   plain   admit   var                'a${v}b'
-foracle or-a-def   plain   admit   default            '(a)b'
-# T2's listing cell against the `--emit-ir` chain, every row and scope reached
-foracle or-l-bref  plain   admit-listing backref            '(a)\1' --emit-ir
-foracle or-l-call  plain   admit-listing linked-call        '(a|b(?1)c)+' --emit-ir
-foracle or-l-vnul  plain   admit-listing var-nullable       '^${v}$' --emit-ir
-foracle or-l-nulx  plain   admit-listing nullable-exact     '(a*)*' --emit-ir
-foracle or-l-nulc  plain   admit-listing nullable-collapsed '(?:ab){0,16000}' --emit-ir
-foracle or-l-ovf   plain   admit-listing overflow-drop      "$W_OVF" --emit-ir
-foracle or-l-ovfs1 plain   admit-listing overflow-drop      "$W_OVF" --emit-ir -fno-prefilter
-foracle or-l-fon   plain   admit-listing forced-on          '(a)b' --emit-ir --engine=vm -fprefilter
-foracle or-l-fonsc plain   admit-listing forced-on          '^(\p{Xwd}{1,3})?$' --emit-ir -e utf8 -fprefilter
-foracle or-l-foff  plain   admit-listing forced-off         '(a)b' --emit-ir -fno-prefilter
-foracle or-l-foffs plain   admit-listing forced-off         '(\p{Xwd})' --emit-ir -e utf8
-foracle or-l-var   plain   admit-listing var                'a${v}b' --emit-ir
-foracle or-l-varff plain   admit-listing forced-off         'a${v}b' --emit-ir -fno-prefilter
-foracle or-l-def   plain   admit-listing default            '(a)b' --emit-ir
-foracle or-l-defs1 plain   admit-listing default            "$W_SEL1" --emit-ir
-foracle or-l-defsc lowsize admit-listing default            '(?:a\K){2,}b' --emit-ir
-foracle or-l-defvm plain   admit-listing default            '(a)b' --emit-ir --engine=vm
+# (T2's verdict/declined-flags and listing checks retired at B4: the walk
+# IS the admission and the listing reads the row's cells, so there is no
+# old side to compare. Their witnesses are (a)'s `admit` records and
+# tests/prefilter/run_prefilter_tests.sh §7's hand-written check_ir_value
+# rows, both independent of the table.)
 # T3, every row
 foracle or-g-sel1  plain   gate    rung     "$W_SEL1"
 foracle or-g-szc   plain   gate    rung     '(\p{Xwd}{1,3})' -e utf8

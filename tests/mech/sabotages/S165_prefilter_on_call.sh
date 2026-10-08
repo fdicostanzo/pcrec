@@ -94,13 +94,10 @@ SAB_COUNT=1
 # in `SAB_AFTER` exactly as the other untouched disjuncts are, so the
 # population stays exactly what it was and does not widen to var-bearing
 # patterns.
-SAB_BEFORE='    fit->prefilter = (has_bref || has_call || has_var ||
-                     (cx->dfa_disabled && cx->collapse_reason != CR_SEL1) ||
-                     fit->prefilter_declined_nullable ||
-                     fit->prefilter_declined_nullable_default)
-                    ? false'
-SAB_AFTER='    fit->prefilter = (has_bref || false || has_var ||   /* SABOTAGE S165 */
-                     (cx->dfa_disabled && cx->collapse_reason != CR_SEL1) ||
-                     fit->prefilter_declined_nullable ||
-                     fit->prefilter_declined_nullable_default)
-                    ? false'
+# [DEC-FALLBACK] B4 (lane decfbB4, 2026-10-08) RE-AIMED, INTENT RE-VERIFIED.
+# The verdict ternary is gone: T2's `linked-call` row forces the prefilter
+# off for a linked call. The plant hands that row's verdict to the default
+# (`would_prefilter`), the deleted-disjunct plant's exact mutant (the old
+# nullability decline excluded calls too; the row's ENGINE_SEL cell is PASS).
+SAB_BEFORE='    { "linked-call",        pfa_call,               PFV_OFF,     "no-linked-call",'
+SAB_AFTER='    { "linked-call",        pfa_call,               PFV_DEFAULT, "no-linked-call",   /* SABOTAGE S165 */'

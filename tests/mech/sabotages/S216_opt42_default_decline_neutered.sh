@@ -42,7 +42,7 @@
 SAB_ID="S216-opt42-default-decline-neutered"
 SAB_FILE="src/opt/select_engine.c"
 SAB_SUITES="prefilter"
-SAB_DESC="fit.prefilter_declined_nullable_default (the [OPT-4.2] rungless nullability decline) is forced to false unconditionally, so an ordinary VM-chosen nullable pattern ('(a)*': captures force the VM, own language matches empty) goes back to building and shipping its exact prefilter unconditionally -- RX_VM_PREFILTER reverts to 'hybrid' and RX_ENGINE_SEL to 'selected' instead of 'none'/'declined-nullable-default'. Answer-identity-preserving by design (the VM re-derives the true answer regardless of the filter), so no .rxt corpus, no differential and no other structural check can see it -- only tests/prefilter/run_prefilter_tests.sh's [OPT-4.2] section (checks 1 and 4) reads the stamp/listing this way"
+SAB_DESC="the [OPT-4.2] rungless nullability decline (T2 rows 3-4, fit.prefilter_declined_nullable_default) never fires, so an ordinary VM-chosen nullable pattern ('(a)*': captures force the VM, own language matches empty) goes back to building and shipping its exact prefilter unconditionally -- RX_VM_PREFILTER reverts to 'hybrid' and RX_ENGINE_SEL to 'selected' instead of 'none'/'declined-nullable-default'. Answer-identity-preserving by design (the VM re-derives the true answer regardless of the filter), so no .rxt corpus, no differential and no other structural check can see it -- only tests/prefilter/run_prefilter_tests.sh's [OPT-4.2] section (checks 1 and 4) reads the stamp/listing this way"
 SAB_DOC_FIGURE="docs/spec/tuning.md SS2.17's [OPT-4.2] subsection; src/opt/CLAUDE.md's [OPT-4.2] section; docs/spec/match_api.md SS6.3's declined-nullable-default value-table row. HAND-TRACED by lane o42 (2026-08-31) against the box hold; the mech matrix's own DETECTED figure is owed at the manager's battery run once the hold lifts"
 SAB_COUNT=1
 # [TOUR-5] (2026-09-20) RE-AIMED BY DEDENT, INTENT RE-VERIFIED. The prefilter
@@ -53,8 +53,12 @@ SAB_COUNT=1
 # assignment, leaving its rung-scoped sibling untouched. Re-applied through tests/mech/lib/replace.py on a scratch copy at the
 # landed tree: 1 occurrence, and the result compiles under -Wall -Wextra
 # -Werror.
-SAB_BEFORE='    fit->prefilter_declined_nullable_default =
-        cx->collapse_reason == CR_NONE && !cx->dfa_disabled &&
-        lang_nullable_declinable && would_prefilter;'
-SAB_AFTER='    /* SABOTAGE S216: the rungless decline never fires. */
-    fit->prefilter_declined_nullable_default = false;'
+# [DEC-FALLBACK] B4 (lane decfbB4, 2026-10-08) RE-AIMED, INTENT RE-VERIFIED.
+# `fit->prefilter_declined_nullable_default` is now written from T2's row,
+# so pinning the field would leave the decision (the row's verdict) intact.
+# The plant moves to the rungless decline's SCOPE, `pfa_default_scope`,
+# which rows 3-4 (`var-nullable`, `nullable-exact`) both read: neither
+# fires, which is the old plant's population exactly (the field was both
+# rows' union).
+SAB_BEFORE='    return s->cx->collapse_reason == CR_NONE && !s->cx->dfa_disabled &&'
+SAB_AFTER='    return false && s->cx->collapse_reason == CR_NONE && !s->cx->dfa_disabled &&   /* SABOTAGE S216 */'

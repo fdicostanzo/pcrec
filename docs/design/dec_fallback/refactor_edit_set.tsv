@@ -66,6 +66,28 @@ line	} else if (st->prefilter_declined_nullable_default) {	B4	listing chain arm 
 line	} else if (cx->dfa_disabled) {	B4	listing chain arm -> row cell
 line	} else if (cx->opt->flags & PCREC_NO_PREFILTER) {	B4	listing chain arm -> row cell
 token	pf_val  = 	B4	listing value tokens move verbatim into the admission rows
+# decfbB4: the text B4 edited that the rev-2 set did not name (each read off
+# `git diff 69ab9650 HEAD`, code lines only).
+def	pf_admits	B4	every row gains the `note` cell (the listing's prose, moved verbatim)
+def	pf_admit_oracle	B4	deleted: the admission's oracle retires with its old side (A's C5 precedent)
+line	(r->verdict != PFV_ON && !r->list))	B4	the self-check also requires the `note` cell
+line	const bool collapsible_rep = (kinds & PF_KIND_COLLAPSIBLE_REP) != 0;	B4	its one reader became row 5's predicate
+line	bool would_prefilter = (fit->chosen == ENGM_VM) &&	B4	becomes the selector's `would_prefilter`
+line	const PfAdmit *pfa_new = PCREC_FIT_NEW_FIRST ? pf_admit_walk(&pfas) : NULL;	B4	the oracle's order switch retires
+line	: fit->prefilter_declined_nullable_default     ? ((kinds & PF_KIND_VAR)	B4	the admit record prints the walk's row (its derivation deleted)
+line	? "var-nullable"	B4	the admit record's derivation deleted
+line	: dd && (cr != CR_SEL1 || foff)                ? "overflow-drop"	B4	the admit record's derivation deleted
+line	"%s pf=%d", row, (int)fit->prefilter);	B4	the admit record prints `fit->pf_admit->name`
+line	const char *sel1_prefilter_reason =	B4	the overflow-drop row's `note` cell (a format over dfa_overflow_why)
+line	pf_note = sel1_prefilter_reason;	B4	listing chain arm -> row cell
+line	bool      prefilter_declined_nullable;	B4	VmStamp field unread once the listing reads the row
+line	bool      prefilter_declined_nullable_default;	B4	VmStamp field unread once the listing reads the row
+line	st.prefilter_declined_nullable = job->fit.prefilter_declined_nullable;	B4	VmStamp field deleted
+line	st.prefilter_declined_nullable_default =	B4	VmStamp field deleted
+line	bool      has_bref;	B4	VmStamp field unread once the listing reads the row
+line	bool      has_call;	B4	VmStamp field unread once the listing reads the row
+line	st.has_bref  = (pcrec_fact_kinds(cx) & PF_KIND_BREF) != 0;	B4	VmStamp field deleted
+line	st.has_call  = (pcrec_fact_kinds(cx) & PF_KIND_LINKED_CALL) != 0;	B4	VmStamp field deleted
 def	esel_of	B5	rewritten throughout: forced, else the admission row's cell, else the last attributing ladder row's cell, else selected
 line	cx.job->fit.prefilter_lang_why =	B5	the PFLW ternary becomes pflw_rows[]
 line	!collapse                        ? (pfc_wanted ? PFLW_NULLABLE	B5	pflw_rows[]

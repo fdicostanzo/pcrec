@@ -97,13 +97,12 @@ SAB_COUNT=1
 # in `SAB_AFTER` exactly as the other untouched disjuncts are, so the
 # population stays exactly what it was and does not widen to var-bearing
 # patterns.
-SAB_BEFORE='    fit->prefilter = (has_bref || has_call || has_var ||
-                     (cx->dfa_disabled && cx->collapse_reason != CR_SEL1) ||
-                     fit->prefilter_declined_nullable ||
-                     fit->prefilter_declined_nullable_default)
-                    ? false'
-SAB_AFTER='    fit->prefilter = (false || has_call || has_var ||   /* SABOTAGE S102 */
-                     (cx->dfa_disabled && cx->collapse_reason != CR_SEL1) ||
-                     fit->prefilter_declined_nullable ||
-                     fit->prefilter_declined_nullable_default)
-                    ? false'
+# [DEC-FALLBACK] B4 (lane decfbB4, 2026-10-08) RE-AIMED, INTENT RE-VERIFIED.
+# `prefilter_decision`'s verdict ternary is gone: T2 (`pf_admits[]`) IS the
+# admission, and its `backref` row is what forces the prefilter off for a
+# backreference. The plant hands that row's verdict to the default
+# (`would_prefilter`), the exact mutant the deleted-disjunct plant was: the
+# old `lang_nullable_declinable` excluded backrefs, so no nullability row
+# took them either way, and the row's ENGINE_SEL cell is PASS as before.
+SAB_BEFORE='    { "backref",            pfa_bref,               PFV_OFF,     "no-backreference",'
+SAB_AFTER='    { "backref",            pfa_bref,               PFV_DEFAULT, "no-backreference",   /* SABOTAGE S102 */'

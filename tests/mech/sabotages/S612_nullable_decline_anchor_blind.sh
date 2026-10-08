@@ -17,5 +17,12 @@ SAB_DESC="[NULLABLE-ANCH] the prefilter decline reads bare nullability again, so
 SAB_DOC_FIGURE="harness:2fail (the two give-up cells) and pfcollapse:6fail (every [anch] admit row) expected. Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S612."
 SAB_REACH_POP="tests/base/nullable_anch.rxt|^# THE GIVE-UP CELL|2"
 SAB_COUNT=1
-SAB_BEFORE='        (has_var ? pcrec_fact_nullable(cx) : pcrec_fact_empty_admits(cx)) &&'
-SAB_AFTER='        pcrec_fact_nullable(cx) &&   /* SABOTAGE S612 */'
+# [DEC-FALLBACK] B4 (lane decfbB4, 2026-10-08) RE-AIMED, INTENT RE-VERIFIED.
+# The `has_var` ternary is gone: T2's `nullable-exact` row (row 4) reads
+# `empty_admits` where the ternary's non-variable arm did (design §4.4
+# S-T2b). The plant reads bare nullability there. Narrower than the old
+# plant by row 5 (`nullable-collapsed`, the rung scope), which keeps
+# `empty_admits`; the give-up cells and the [anch] admit rows are all
+# un-rung compiles, row 4's scope.
+SAB_BEFORE='    return pfa_default_scope(s) && !pfa_var(s) && pcrec_fact_empty_admits(s->cx);'
+SAB_AFTER='    return pfa_default_scope(s) && !pfa_var(s) && pcrec_fact_nullable(s->cx);   /* SABOTAGE S612 */'

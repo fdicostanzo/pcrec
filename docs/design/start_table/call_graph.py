@@ -267,10 +267,13 @@ SEED_FIELDS = {"root_minw", "mrl_win", "nclamp", "prefilter_collapsed"}
 EMIT_ROOTS = ["pcrec_emit_dfa", "pcrec_emit_vm"]
 BODY_ROOTS = ["emit_unanchored", "emit_attempt", "vm_emit_search_body"]
 STAMP_ROOTS = ["pcrec_emit_dfa_scan_stamps", "vm_emit_stamps"]
+# [decfbB4] `pf_admit_walk` is T2's walk, the admission's root as `fit_walk`
+# is T1's; `pf_admits[]` joins the family through its ESEL cells and pulls its
+# predicates in by the table closure below.
 FB_ROOTS = ["compile_driver", "fit_walk", "fit_rung_denied", "fit_rung_of",
             "fit_collapse_applies", "fit_anchored_applies", "fit_premul_applies",
             "fit_prefilter_applies", "fit_always", "prefilter_decision",
-            "size_term_choose", "esel_of"]
+            "pf_admit_walk", "size_term_choose", "esel_of"]
 FB_PAT = None
 if FAMILY_SEL == "fallback":
     def die(msg):
