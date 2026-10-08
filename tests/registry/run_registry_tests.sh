@@ -103,16 +103,19 @@ rc=${PIPESTATUS[0]}
 # [UCP] U0 226 -> 229, MEASURED off a run's PASS lines: module `ucp`'s three
 # `(*` name rows each add one "verb X: diagnostic matches the row" line.
 regn="$(grep -c '^PASS: ' "$REGOUT" || true)"
-if [ "$regn" -ne 229 ]; then
+# [ART-POSS-ARMS] 229 -> 231 (lane possbuild, 2026-10-07): §3.3's two
+# tripwires, `(*ACCEPT)` (soundness) and `(?|` (re-verify), each assert their
+# row still reads `unbuilt` (check_poss_arms_tripwires).
+if [ "$regn" -ne 231 ]; then
     if grep -q "^checks failed: 0" "$REGOUT"; then
-        echo "registry: registry_check COVERAGE CHANGED — $regn passing checks, expected 229." >&2
+        echo "registry: registry_check COVERAGE CHANGED — $regn passing checks, expected 231." >&2
         echo "registry:   if you added or removed checks on purpose, update this number" >&2
         echo "registry:   in the same commit; if not, coverage was removed" >&2
     else
         rnf="$(sed -n 's/^checks failed: //p' "$REGOUT" | tail -1)"
-        echo "registry: registry_check shows $regn passing checks (229 expected; ${rnf:-?} failed," >&2
+        echo "registry: registry_check shows $regn passing checks (231 expected; ${rnf:-?} failed," >&2
         echo "registry:   so a lower count is expected here). Fix the failures first; then this" >&2
-        echo "registry:   number must return to 229 — if it does not, coverage was removed too" >&2
+        echo "registry:   number must return to 231 — if it does not, coverage was removed too" >&2
     fi
     rc=1
 fi
@@ -654,16 +657,19 @@ fi
 # 3 checks each (macro/bit, cli flag, tuning.md heading). Measured: 205 PASS,
 # 0 failed.
 axesn="$(grep -c '^PASS: ' "$AXESOUT" || true)"
-if [ "$axesn" -ne 205 ]; then
+# 205 -> 214 at [ART-POSS-ARMS] (lane possbuild, 2026-10-07): the
+# `poss-ctx-follow` (a0, a1) and `poss-bref-first` (group-text) rows carry a
+# deny bit each, 3 checks each. Measured: 214 PASS, 0 failed.
+if [ "$axesn" -ne 214 ]; then
     if grep -q "^checks failed: 0" "$AXESOUT"; then
-        echo "registry: axes_registry_check COVERAGE CHANGED — $axesn passing checks, expected 205." >&2
+        echo "registry: axes_registry_check COVERAGE CHANGED — $axesn passing checks, expected 214." >&2
         echo "registry:   if you added or removed axes/checks on purpose, update this number" >&2
         echo "registry:   in the same commit; if not, coverage was removed" >&2
     else
         axesnf="$(sed -n 's/^checks failed: //p' "$AXESOUT" | tail -1)"
-        echo "registry: axes_registry_check shows $axesn passing checks (205 expected; ${axesnf:-?} failed," >&2
+        echo "registry: axes_registry_check shows $axesn passing checks (214 expected; ${axesnf:-?} failed," >&2
         echo "registry:   so a lower count is expected here). Fix the failures first; then this" >&2
-        echo "registry:   number must return to 205 — if it does not, coverage was removed too" >&2
+        echo "registry:   number must return to 214 — if it does not, coverage was removed too" >&2
     fi
     rc=1
 fi

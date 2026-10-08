@@ -3775,6 +3775,13 @@ must fire on `default`/`noprefilter`. `ctx-node-moved=` joins the (A) line.
 - `run_recursion_identity.sh`'s (B) pin re-pinned (see its comment).
 - S368's anchor re-aimed (the guard call gained its `anchored` argument).
 
+- **[ART-POSS-ARMS] (lane possbuild, 2026-10-07, abi 65 -> 66):**
+  `run_codegen_tests.sh`'s `ABI_EXPECT` 66 and its ledger message;
+  `run_prechecks.sh` 6b's `KEPT_ALWAYS` gains `-fno-poss-ctx-follow` (the
+  third engine-selecting denial); `run_recursion_identity.sh` (A) gains the
+  `poss-arms-moved` bucket (stamp-or-deny on `RX_VM_POSS_ARMS`, both
+  directions of the converse, and the `POSS_PATTERNS` manifest of §5.2's three
+  corpus movers) and (B)'s FILEPIN is self-pinned to `615eb811` (the merge of main 8cada7b9).
 - **[FLAGBITS] (lane flagbits, 2026-10-06, abi 64 -> 65, K92):**
   `run_codegen_tests.sh`'s `ABI_EXPECT` 65 and its ledger message;
   `run_prechecks.sh` section 6b (every `-f` spelling `--list-axes` carries,

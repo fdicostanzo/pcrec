@@ -1818,7 +1818,7 @@ ROWS
 # (`--list-axes`, cli_flag column) carries, compiled on a witness the flag
 # cannot act on, must leave .flags at the baseline -- except the spellings
 # the contract keeps, which are listed HERE, independently of the emitter's
-# own `kept` list, from docs/spec/tuning.md (2.8/2.9 engine-selecting; 2.23/
+# own `kept` list, from docs/spec/tuning.md (2.8/2.9/2.44 engine-selecting; 2.23/
 # 2.36 contract bits, kept except under `byte`).
 #
 # The population is counted from the registry, not typed (K35), with a floor,
@@ -1832,7 +1832,7 @@ n_reg=$(printf '%s\n' "$REG_FLAGS" | grep -c .)
     && ok "[6b] the registry names $n_reg -f spellings (floor 40)" \
     || bad "[6b] the registry names only $n_reg -f spellings (floor 40) -- the population this arm sweeps has shrunk or its extraction broke"
 # kept regardless of encoding / kept only off `byte`
-KEPT_ALWAYS=" -fno-atomic-discharge -fno-splice-calls "
+KEPT_ALWAYS=" -fno-atomic-discharge -fno-splice-calls -fno-poss-ctx-follow "
 KEPT_NONBYTE=" -fno-startpos-guard -fstartpos-guard=align -futf-check "
 # Two witnesses: `abc` (no flag can act on it) and a captured hybrid
 # `(a|b)*c(d)` where several can. `-fprefilter` is DO-OR-DIE (it refuses a

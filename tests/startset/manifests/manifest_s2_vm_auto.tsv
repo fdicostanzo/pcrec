@@ -322,3 +322,99 @@ tests/utf8/wclass_illformed.rxt:86	--features all --encoding=utf8 --engine=vm	78
 tests/utf8/wclass_illformed.rxt:868	--features all --encoding=utf8 --engine=vm	78285b5c787b65307d2d5c787b66667d5d2979
 tests/utf8/wclass_illformed.rxt:935	--features all --encoding=utf8 --engine=vm	785b615c787b65397d5c787b346532647d5d79
 tests/utf8/wclass_illformed.rxt:958	--features all --encoding=utf8 --engine=vm	78285b615c787b65397d5c787b346532647d5d2979
+# possbuild/posstri (2026-10-07, [ART-POSS-ARMS]): +70 rows, every one a new block: 69 tests/possessify/possessify.rxt (lines 3032-4007, the arms' witness pairs) and 1 tests/recursion/k93.rxt (A-F1 cells); census_s1.py on the possbuild tip (abi 66, under -fno-start-set); no existing row moved (0 gone, 0 hex changed).
+tests/possessify/possessify.rxt:3032	--features all --engine=vm	205c773f5c62
+tests/possessify/possessify.rxt:3046	--features all --engine=vm	205c773f2b5c62
+tests/possessify/possessify.rxt:3060	--features all --engine=vm	283f3a615c2e292b5c62
+tests/possessify/possessify.rxt:3074	--features all --engine=vm	283f3a615c2e292b2b5c62
+tests/possessify/possessify.rxt:3088	--features all --engine=vm	283f3a615b612e5d292b5c62
+tests/possessify/possessify.rxt:3102	--features all --engine=vm	283f3a615b612e5d292b2b5c62
+tests/possessify/possessify.rxt:3116	--features all --engine=vm	5b61202e5d2b5c62
+tests/possessify/possessify.rxt:3130	--features all --engine=vm	5b61202e5d2b2b5c62
+tests/possessify/possessify.rxt:3144	--features all --engine=vm	5c772b5c42
+tests/possessify/possessify.rxt:3156	--features all --engine=vm	5c772b2b5c42
+tests/possessify/possessify.rxt:3168	--features all --engine=vm	283f3a615c2e292b5c42
+tests/possessify/possessify.rxt:3180	--features all --engine=vm	283f3a615c2e292b2b5c42
+tests/possessify/possessify.rxt:3192	--features all --engine=vm	28613f29782b5c315c62
+tests/possessify/possessify.rxt:3210	--features all --engine=vm	28613f29782b2b5c315c62
+tests/possessify/possessify.rxt:3228	--features all --engine=vm	5c642b283f215b5c642e5d29
+tests/possessify/possessify.rxt:3240	--features all --engine=vm	5c642b2b283f215b5c642e5d29
+tests/possessify/possessify.rxt:3252	--features all --engine=vm	5b612d7a5d2b283f3d4029
+tests/possessify/possessify.rxt:3264	--features all --engine=vm	5b612d7a5d2b2b283f3d4029
+tests/possessify/possessify.rxt:3276	--features all --engine=vm	5b61625d2b3f283f215b61625d29
+tests/possessify/possessify.rxt:3288	--features all --engine=vm	283f3e5b61625d2b29283f215b61625d29
+tests/possessify/possessify.rxt:3300	--features all --engine=vm	5b612d635d2b283f3a283f3d78297c29
+tests/possessify/possessify.rxt:3311	--features all --engine=vm	5b612d635d2b2b283f3a283f3d78297c29
+tests/possessify/possessify.rxt:3322	--features all --engine=vm	285c772b3f283f3a5c627c2929
+tests/possessify/possessify.rxt:3342	--features all --engine=vm	285c772b2b283f3a5c627c2929
+tests/possessify/possessify.rxt:3362	--features all --engine=vm	5c777b312c337d3f283f3a5c627c29
+tests/possessify/possessify.rxt:3376	--features all --engine=vm	5c777b312c337d2b283f3a5c627c29
+tests/possessify/possessify.rxt:3390	--features all --engine=vm	5b612d635d2b3f283f3a5c427c29
+tests/possessify/possessify.rxt:3404	--features all --engine=vm	5b612d635d2b2b283f3a5c427c29
+tests/possessify/possessify.rxt:3418	--features all --engine=vm	5c772b283f3a5c627c29
+tests/possessify/possessify.rxt:3429	--features all --engine=vm	5c772b2b283f3a5c627c29
+tests/possessify/possessify.rxt:3440	--features all --engine=vm	28612b283f3a5c627c29297c62283f312961
+tests/possessify/possessify.rxt:3460	--features all --engine=vm	28612b2b283f3a5c627c29297c62283f312961
+tests/possessify/possessify.rxt:3480	--features all --engine=vm	283f3a62283f5229617c612b283f3a5c627c2929
+tests/possessify/possessify.rxt:3494	--features all --engine=vm	283f3a62283f5229617c612b2b283f3a5c627c2929
+tests/possessify/possessify.rxt:3508	--features all --engine=vm	28613f2928782b5c312962283f322978
+tests/possessify/possessify.rxt:3528	--features all --engine=vm	28613f2928782b2b5c312962283f322978
+tests/possessify/possessify.rxt:3540	--features all --engine=vm	28612928782b5c312962283f322978
+tests/possessify/possessify.rxt:3549	--features all --engine=vm	28612928782b2b5c312962283f322978
+tests/possessify/possessify.rxt:3558	--features all --engine=vm	283f3a612b283f3a5c627c297c6162292b63
+tests/possessify/possessify.rxt:3572	--features all --engine=vm	283f3a612b2b283f3a5c627c297c6162292b63
+tests/possessify/possessify.rxt:3586	--features all --engine=vm	286129412b283f693a5c3129
+tests/possessify/possessify.rxt:3606	--features all --engine=vm	286129412b2b283f693a5c3129
+tests/possessify/possessify.rxt:3622	--features all --engine=vm	283f693a28612929412b5c31
+tests/possessify/possessify.rxt:3642	--features all --engine=vm	283f693a28612929412b2b5c31
+tests/possessify/possessify.rxt:3658	--features all --engine=vm	283f4a29283f3a283f3c6e3e61297c283f3c6e3e782929782b5c6b3c6e3e
+tests/possessify/possessify.rxt:3684	--features all --engine=vm	283f4a29283f3a283f3c6e3e61297c283f3c6e3e782929782b2b5c6b3c6e3e
+tests/possessify/possessify.rxt:3702	--features all --engine=vm	28613f29782b5c3178
+tests/possessify/possessify.rxt:3722	--features all --engine=vm	28613f29782b2b5c3178
+tests/possessify/possessify.rxt:3738	--features all --engine=vm	283f3a28283f3d61292961293f622b5c3162
+tests/possessify/possessify.rxt:3754	--features all --engine=vm	283f3a28283f3d61292961293f622b2b5c3162
+tests/possessify/possessify.rxt:3766	--features all --engine=vm	28283f3d6129633f2961622b5c3162
+tests/possessify/possessify.rxt:3782	--features all --engine=vm	28283f3d6129633f2961622b2b5c3162
+tests/possessify/possessify.rxt:3794	--features all --engine=vm	283f3a28283f3d612929617c29622b5c3162
+tests/possessify/possessify.rxt:3810	--features all --engine=vm	283f3a28283f3d612929617c29622b2b5c3162
+tests/possessify/possessify.rxt:3822	--features all --engine=vm	28283f3d612929782b5c3178
+tests/possessify/possessify.rxt:3831	--features all --engine=vm	28283f3d612929782b2b5c3178
+tests/possessify/possessify.rxt:3840	--features all --engine=vm	28283f3d7829623f29782b5c3178
+tests/possessify/possessify.rxt:3856	--features all --engine=vm	28283f3d7829623f29782b2b5c3178
+tests/possessify/possessify.rxt:3868	--features all --engine=vm	286129285c316229782b5c32
+tests/possessify/possessify.rxt:3879	--features all --engine=vm	286129285c316229782b2b5c32
+tests/possessify/possessify.rxt:3890	--features all --engine=vm	285c62295c772b5c31
+tests/possessify/possessify.rxt:3904	--features all --engine=vm	285c62295c772b2b5c31
+tests/possessify/possessify.rxt:3918	--features all --engine=vm	28615c322928625c3129782b5c31
+tests/possessify/possessify.rxt:3928	--features all --engine=vm	28615c322928625c3129782b2b5c31
+tests/possessify/possessify.rxt:3944	--features all --engine=vm	28615c325c332928625c312928635c3129782b5c31
+tests/possessify/possessify.rxt:3954	--features all --engine=vm	5c62285c772b295c625c732b5c315c62
+tests/possessify/possessify.rxt:3972	--features all --engine=vm	5c62285c772b2b295c625c732b2b5c315c62
+tests/possessify/possessify.rxt:3990	-i --features all --encoding=utf8 --engine=vm	6b2b5c62
+tests/possessify/possessify.rxt:4007	-i --features all --encoding=utf8 --engine=vm	6b2b2b5c62
+tests/recursion/k93.rxt:279	--features recursion,assertions --engine=vm	283f3a62283f5229617c612b283f3a5c627c2929
+# possmani (2026-10-07, [ART-POSS-ARMS]): +24 rows, every one a new tests/possessify/possessify.rxt block (lane posswcls's wide-class cells, lines 4033-4681); census_s1.py on the posswcls tip 5afc7e51 (-fno-start-set arm); 0 existing rows gone, 0 changed.
+tests/possessify/possessify.rxt:4033	--features all --encoding=utf8 --engine=vm	612b5c625c787b65397d
+tests/possessify/possessify.rxt:4057	--features all --encoding=utf8 --engine=vm	612b2b5c625c787b65397d
+tests/possessify/possessify.rxt:4081	--features all --encoding=utf8 --engine=vm	782b5c625b5c787b65397d615d
+tests/possessify/possessify.rxt:4105	--features all --encoding=utf8 --engine=vm	782b2b5c625b5c787b65397d615d
+tests/possessify/possessify.rxt:4129	--features all --encoding=utf8 --engine=vm	5b612d635d2b5c625c787b3130307d
+tests/possessify/possessify.rxt:4153	--features all --encoding=utf8 --engine=vm	5b612d635d2b2b5c625c787b3130307d
+tests/possessify/possessify.rxt:4177	-i --features all --encoding=utf8 --engine=vm	612b5c625c787b65397d
+tests/possessify/possessify.rxt:4204	-i --features all --encoding=utf8 --engine=vm	612b2b5c625c787b65397d
+tests/possessify/possessify.rxt:4231	--features all --encoding=utf8 --engine=vm	5c787b65397d2b5c62
+tests/possessify/possessify.rxt:4257	--features all --encoding=utf8 --engine=vm	5c787b65397d2b2b5c62
+tests/possessify/possessify.rxt:4283	--features all --encoding=utf8 --engine=vm	285c787b65397d29782b5c31
+tests/possessify/possessify.rxt:4312	--features all --encoding=utf8 --engine=vm	285c787b65397d29782b2b5c31
+tests/possessify/possessify.rxt:4341	--features all --encoding=utf8 --engine=vm	285b5c787b65397d615d29782b5c31
+tests/possessify/possessify.rxt:4371	--features all --encoding=utf8 --engine=vm	285b5c787b65397d615d29782b2b5c31
+tests/possessify/possessify.rxt:4401	--features all --encoding=utf8 --engine=vm	285b5c787b65307d2d5c787b66667d5d2b295c732b5c31
+tests/possessify/possessify.rxt:4432	--features all --encoding=utf8 --engine=vm	285b5c787b65307d2d5c787b66667d5d2b295c732b2b5c31
+tests/possessify/possessify.rxt:4463	--features all --encoding=utf8 --engine=vm	285c787b65397d3f29782b5c3178
+tests/possessify/possessify.rxt:4496	--features all --encoding=utf8 --engine=vm	285c787b65397d3f29782b2b5c3178
+tests/possessify/possessify.rxt:4526	--ucp --features all --encoding=utf8 --engine=vm	285c787b65397d29782b5c31
+tests/possessify/possessify.rxt:4556	--ucp --features all --encoding=utf8 --engine=vm	285c787b65397d29782b2b5c31
+tests/possessify/possessify.rxt:4586	-i --features all --encoding=utf8 --engine=vm	285c787b65397d29782b5c31
+tests/possessify/possessify.rxt:4618	-i --features all --encoding=utf8 --engine=vm	285c787b65397d29782b2b5c31
+tests/possessify/possessify.rxt:4650	-i --features all --encoding=utf8 --engine=vm	285c787b3130307d29782b5c31
+tests/possessify/possessify.rxt:4681	-i --features all --encoding=utf8 --engine=vm	285c787b3130307d29782b2b5c31

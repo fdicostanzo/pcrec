@@ -3488,6 +3488,66 @@ swept:
     }
 }
 
+/* [ART-POSS-ARMS] §3.3's TRIPWIRES (docs/design/poss_arms.md). Possessify's
+ * arm B (src/opt/possessify.c, `bref_first`) reads a backreference's FIRST
+ * from its groups' bodies, and two of its clauses are correct only while a
+ * construct stays unbuilt:
+ *   - `(*ACCEPT)` (module `verbs`) closes a group EARLY, possibly EMPTY, so a
+ *     body that cannot match empty can still capture "". When it gains a
+ *     producer, `nullable(\n)` must become true for any group that can
+ *     contain it, or `(?=((*ACCEPT)a))x+\1x` on "xx" (10.46: (0,2))
+ *     possessifies `x+` and answers NOMATCH. A SOUNDNESS tripwire.
+ *   - `(?|` (module `branch-reset`) gives two A_CAP nodes one number. Arm B
+ *     already unions EVERY A_CAP by number, so it is correct on arrival;
+ *     the row is a RE-VERIFICATION prompt: add `(?|(a)|(x))x+\1` to the
+ *     possdiff population and the .rxt cells when the module lands.
+ * Each asserts its row reads `unbuilt`, by the same derivation
+ * `--list-syntax`'s `built` column renders. */
+static void check_poss_arms_tripwires(void)
+{
+    static const struct {
+        RegKind     kind;
+        const char *syntax;
+        const char *why;
+    } trips[] = {
+        { RK_VERB, "(*ACCEPT)",
+          "SOUNDNESS: possessify's arm B (-fno-poss-bref-first) reads "
+          "nullable(\\n) from the group bodies, and (*ACCEPT) can close a "
+          "group EMPTY; make a group that can contain (*ACCEPT) nullable in "
+          "bref_first before this module ships (10.46 witness: "
+          "(?=((*ACCEPT)a))x+\\1x on \"xx\" is (0,2); poss_arms.md §3.3)" },
+        { RK_GROUP, "(?|...)",
+          "RE-VERIFY: arm B unions every A_CAP by NUMBER, so (?| is correct "
+          "on arrival; add (?|(a)|(x))x+\\1 to tests/possessify's possdiff "
+          "population and .rxt cells in the module's own change "
+          "(poss_arms.md §3.3)" },
+    };
+    for (size_t t = 0; t < sizeof trips / sizeof trips[0]; t++) {
+        size_t n;
+        const RegRow *rows = pcrec_registry(trips[t].kind, &n);
+        const RegRow *hit = NULL;
+        for (size_t i = 0; i < n; i++)
+            if (rows[i].syntax && strcmp(rows[i].syntax, trips[t].syntax) == 0)
+                hit = &rows[i];
+        if (!hit) {
+            bad("[ART-POSS-ARMS] tripwire row '%s' is gone from the "
+                "registry; re-derive §3.3's tripwire from its new home",
+                trips[t].syntax);
+            continue;
+        }
+        if (pcrec_construct_built_status(hit) != PCREC_BUILT_NO) {
+            bad("[ART-POSS-ARMS] '%s' is no longer `unbuilt` -- %s",
+                trips[t].syntax, trips[t].why);
+            continue;
+        }
+        char label[160];
+        snprintf(label, sizeof label, "[ART-POSS-ARMS] tripwire: '%s' is "
+                 "still unbuilt, so arm B's clause over it holds",
+                 trips[t].syntax);
+        ok(label);
+    }
+}
+
 int main(void)
 {
     printf("== registry well-formedness ==\n");
@@ -3561,6 +3621,7 @@ int main(void)
 
     printf("\n== D65: built-status derivation (every row's own syntax classifies) ==\n");
     check_built_status_defects();
+    check_poss_arms_tripwires();
 
     printf("\n== Summary ==\n");
     printf("checks passed: %d\n", pass);
