@@ -6044,17 +6044,6 @@ static mf_site *find_site(const PcrecFind *f, const char *ind, mf_hooks *h,
     return s;
 }
 
-/* [M4 I1] IMPLEMENT ONLY: the kit's text for FIND `f` against what pcrec
- * wrote into `c` since offset `at`. */
-static void pcrec_emit_find_shadow(StrBuf *c, const char *ind, const PcrecFind *f,
-                                   size_t at)
-{
-    mf_hooks h;
-    PcrecMfU u;
-    mf_site *s = find_site(f, ind, &h, &u);
-    pcrec_memfn_shadow(f->cx, f->site, s, &h, c->p + at, c->len - at);
-}
-
 void pcrec_emit_find(StrBuf *c, const char *ind, const PcrecFind *f)
 {
     mf_hooks h;
@@ -10415,22 +10404,20 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
         pcrec_sb_printf(c, "        if (start > %s && subject[start - %d] != %d) {\n",
                   gseed ? "search_from" : "0",
                   cand.offset, cand.byte);
-        size_t mline_at = c->len;
-        pcrec_sb_printf(c, "            const void *q = memchr(subject + start, %d, "
-                         "subject_length - start);\n"
-                         "            if (!q) break;\n"
-                         "            start = (size_t)"
-                         "((const unsigned char *)q - subject) + %d;\n",
-                  cand.byte, cand.offset);
-        {   /* [M4 I1] IMPLEMENT ONLY: the kit's MLINE text against pcrec's */
-            PcrecFind fd = { .cx = cx, .site = DELEG_MLINE, .p = p,
-                             .table = PCREC_FIND_MEMCHR, .byte = cand.byte,
-                             .offset = -cand.offset, .floor = "start",
-                             .pos = "start", .subject = "subject",
-                             .len = "subject_length", .holdback = 0,
-                             .on_miss = "break;" };
-            pcrec_emit_find_shadow(c, "            ", &fd, mline_at);
-        }
+        /* [MEMFN] M4: the skip itself is THE FIND, DELEG_SITES row MLINE
+         * (integration.md §15.7): the term is the candidate's PREDECESSOR
+         * (`-cand.offset`, -1), the floor is `start` (no read below it: the
+         * guard above has already tested `subject[start - 1]`), and a miss
+         * leaves the attempt loop. The guard, its lower bound X and every
+         * start decision above stay this function's; the kit writes the
+         * search, the NULL test and the store. */
+        PcrecFind fd = { .cx = cx, .site = DELEG_MLINE, .p = p,
+                         .table = PCREC_FIND_MEMCHR, .byte = cand.byte,
+                         .offset = -cand.offset, .floor = "start",
+                         .pos = "start", .subject = "subject",
+                         .len = "subject_length", .holdback = 0,
+                         .on_miss = "break;" };
+        pcrec_emit_find(c, "            ", &fd);
         pcrec_sb_puts(c, "        }\n");
     }
     pcrec_sb_puts(c, "        size_t scan_position = start;\n"

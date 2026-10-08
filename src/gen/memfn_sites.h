@@ -163,10 +163,6 @@ typedef struct {
  * the caller's block; nothing after it reads `q`. */
 void pcrec_emit_find(StrBuf *c, const char *ind, const PcrecFind *f);
 
-/* [M4 I1] IMPLEMENT ONLY: the kit's text for `s` must equal want[0..n). */
-void pcrec_memfn_shadow(Ctx *cx, DelegSite id, const mf_site *s,
-                        const mf_hooks *h, const char *want, size_t n);
-
 /* ---- an in-loop ADVANCE site ([MEMFN] R4h, M3) ---------------------------- */
 
 /* What an in-loop skip's builder read off its decision (STAY, EDGE, VMSPAN;

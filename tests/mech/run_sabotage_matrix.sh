@@ -372,6 +372,14 @@
 #     `nm -u` libc names. Its own arm because a wrong LIBC value moves no
 #     answer, and every identity gate compares against a tree that carries
 #     the same wrong value. Registered before S513-S517.
+#   memfnarms — added 2026-10-08 ([MEMFN] M4, lane m4); runs
+#     tests/memfn/run_arm_pins.sh, C5: every kit arm's fixture renderings
+#     against their pins, the row-contract gate cases (check 6) and the
+#     reads-below FIND's behaviour (check 9: its fixtures' text run on fixed
+#     subjects). Its own arm because a kit row the corpus reaches through
+#     another row, or not at all, moves no pcrec answer and no artifact byte
+#     (S617-S619: the `+ k` store, the read-bounded range, LOOP_EXIT).
+#     Links the sabotaged tree's build/libpcrec.a. Registered before S617.
 #   memfnarch — added 2026-10-06 ([MEMFN] R4c, lane r4cchecks); runs
 #     tests/memfn/run_arch_blind.sh, C4: the arch-blindness detector
 #     (integration.md §10.4) over the sabotaged tree's src/, cli/, lib/ and
@@ -2843,6 +2851,17 @@ run_one() {
                 p="$(grep -m1 '^checks passed:' "$work/memfnmanifest.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/memfnmanifest.log" | grep -oE '[0-9]+')"
                 score_arm "$work/memfnmanifest.log" "$f" "memfnmanifest:${f:-ERR}fail/${p:-?}pass"
+                ;;
+            memfnarms)
+                # [MEMFN] C5 tests/memfn/run_arm_pins.sh — see the vocabulary
+                # entry above. Builds its fixture driver against the
+                # sabotaged tree's own build/libpcrec.a.
+                LIB="$tree/build/libpcrec.a" CC="$CC" TMPDIR="$work" \
+                    bash "$tree/tests/memfn/run_arm_pins.sh" \
+                    > "$work/memfnarms.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/memfnarms.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/memfnarms.log" | grep -oE '[0-9]+')"
+                score_arm "$work/memfnarms.log" "$f" "memfnarms:${f:-ERR}fail/${p:-?}pass"
                 ;;
             memfnarch)
                 # [MEMFN] C4 tests/memfn/run_arch_blind.sh — see the

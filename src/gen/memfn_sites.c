@@ -296,35 +296,6 @@ void pcrec_memfn_emit(Ctx *cx, DelegSite id, const mf_site *s,
     kit_check(cx, art, mf_emit(art, s, h, &ps.s, NULL, NULL));
 }
 
-/* [M4 I1] IMPLEMENT ONLY (deleted at REPLACE): renders site `s` with hooks
- * `h` through a SCRATCH art into a scratch buffer and fails the compile
- * unless the kit's text equals `want[0..n)`, the span pcrec has just written
- * for the same site. R4g's comparator, reborn for M4. */
-void pcrec_memfn_shadow(Ctx *cx, DelegSite id, const mf_site *s,
-                        const mf_hooks *h, const char *want, size_t n)
-{
-    mf_arena *ma = pcrec_arena_alloc(&cx->arena, sizeof *ma);
-    ma->u = &cx->arena;
-    ma->alloc = arena_alloc;
-    mf_art *art = mf_art_begin(ma, cx->opt->prefix,
-                               pcrec_memfn_policy(cx->opt->flags),
-                               pcrec_memfn_denies(cx->opt->flags));
-    if (!art) pcrec_ctx_nomem(cx);
-    deleg_check(cx, id, s);
-    StrBuf sb = { 0 };
-    sb.cx = cx;
-    PcrecMfSink ps;
-    pcrec_memfn_sink(&ps, &sb);
-    int rc = mf_emit(art, s, h, &ps.s, NULL, NULL);
-    bool same = !rc && sb.len == n && (n == 0 || !memcmp(sb.p, want, n));
-    pcrec_sb_free(&sb);
-    kit_check(cx, art, rc);
-    if (!same)
-        pcrec_ctx_fail(cx, 0, "internal error: [M4 I1] the kit's %s text "
-                       "differs from pcrec's (%.*s)",
-                       pcrec_deleg_sites[id].id, (int)(n < 160 ? n : 160), want);
-}
-
 /* ---- an in-loop ADVANCE site ([MEMFN] R4h, M3) ---------------------------- */
 
 /* The ADVANCE site's member hook: the caller's own class test, as written
