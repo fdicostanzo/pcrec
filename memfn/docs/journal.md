@@ -840,3 +840,15 @@ pointer when a kit change merges to main.
   - F3 (mf_emit picks a row, then mf_use refuses on result_decl) is a
     defect: one-call entries gate the use-phase fields at selection.
   Lane r4gfix (sonnet), zero movers on compiles.
+- r4gfix merged:
+  - F1: the PF rows serve ANY for preds/ret_pred; on_miss_leaves stays a
+    decline, with the reason commented;
+  - F2: memfn.h comments say result is UNSPECIFIED on a miss when
+    on_miss_leaves = 1;
+  - F3: mf_emit selects over define|use, mf_define over define only.
+  arms 138/0, stamps 14/0. Its compile identity ran before a final revert
+  and missed the bounded forms; the slot's identity gate is the real
+  check.
+- G2 quick after the fix: 314 failures, all G2-side (the mf_emit trial vs
+  the real define+use path, which now differ by contract). Blinded g2pf2
+  makes G2 judge each path by its own contract.
