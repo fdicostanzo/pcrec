@@ -566,11 +566,12 @@ test-premul-table: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-premul-table.ran"; fi
 	bash tests/codegen/run_premul_table.sh
 
-# [START-TABLE] C2 the both-walks ORACLE over named witnesses
-# (tests/codegen/run_cand_oracle.sh). Its OWN section rather than a script in
-# `test-codegen`'s group, on `test-premul-table`'s argument: it builds the
-# compiler twice (two -DPCREC_CAND_TRACE trees in a scratch dir, ~50 s), and
-# `make smoke` includes `test-codegen`.
+# [START-TABLE] the start table's trace-build check over named witnesses
+# (tests/codegen/run_cand_oracle.sh; C2's both-walks oracle until C5). Its OWN
+# section rather than a script in `test-codegen`'s group, on
+# `test-premul-table`'s argument: it builds the compiler again (a
+# -DPCREC_CAND_TRACE tree in a scratch dir; twice until C5), and `make smoke`
+# includes `test-codegen`.
 test-cand-oracle: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-cand-oracle.ran"; fi
 	CC='$(CC)' bash tests/codegen/run_cand_oracle.sh
