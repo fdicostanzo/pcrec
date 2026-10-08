@@ -2086,6 +2086,14 @@ def-func	pcrec_class_delim_extent_scan	src/parse/scans.c:60-79
 def-func	pcrec_ext_class_pair_opens	src/parse/scans.c:103-110	
 def-func	pcrec_verb_name_extent_scan	src/parse/scans.c:117-123	
 def-func	pcrec_brace_quant_shape	src/parse/scans.c:143-161	
+def-trace	trace@src/core/compile.c:775	src/core/compile.c:775-804	
+def-trace	trace@src/core/internal.h:7071	src/core/internal.h:7071-7077	
+def-trace	trace@src/core/internal.h:7096	src/core/internal.h:7096-7123	
+def-trace	trace@src/gen/emit_dfa.c:331	src/gen/emit_dfa.c:331-343	
+def-trace	trace@src/gen/emit_dfa.c:1121	src/gen/emit_dfa.c:1121-1137	
+def-trace	trace@src/gen/emit_dfa.c:8414	src/gen/emit_dfa.c:8414-8620	
+def-trace	trace@src/gen/emit_vm.c:11142	src/gen/emit_vm.c:11142-11148	
+def-trace	trace@src/opt/select_engine.c:996	src/opt/select_engine.c:996-1054	
 seed	esel_of	src/opt/select_engine.c:960	
 seed	fit_always	src/core/compile.c:721	
 seed	fit_anchored_applies	src/core/compile.c:694	

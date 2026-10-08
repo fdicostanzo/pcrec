@@ -81,6 +81,12 @@ QUAL = {"static", "const", "inline", "extern", "volatile", "unsigned", "signed",
         "struct", "union", "enum"}
 
 defs = {}   # name -> (file, start_line, end_line, kind)
+# [DEC-FALLBACK] B1: each file-scope `#ifdef PCREC_CAND_TRACE` block's line
+# range, printed as a `def-trace` OWNER line (name `trace@FILE:LINE`) and
+# nothing else: it joins no edge, family or site, but a sabotage anchor in a
+# trace-build helper (S623, S625, S626) resolves to an owner instead of
+# being unresolved (sabotage_anchors.py's owner resolution is total).
+trace_blocks = []   # (file, start_line, end_line)
 texts = {}  # name -> body text (list of (lineno, line))
 elem = {}   # table name -> its element type name (for the row-type closure)
 
@@ -133,6 +139,7 @@ for d in SRC:
                 # in the default build, decides nothing and is no definition
                 # of the census; the `#else` branch is parsed as usual.
                 if re.match(r'^#\s*ifdef\s+PCREC_CAND_TRACE\b', l):
+                    i0 = i
                     depth, i = 0, i + 1
                     while i < len(L):
                         if re.match(r'^#\s*if', L[i]):
@@ -144,6 +151,7 @@ for d in SRC:
                         elif re.match(r'^#\s*else\b', L[i]) and depth == 0:
                             break
                         i += 1
+                    trace_blocks.append((rel, i0 + 1, i + 1))
                     i += 1
                     continue
                 m = re.match(r'^#\s*define\s+([A-Za-z_]\w*)(\()?', l)
@@ -398,6 +406,8 @@ print("kind\tname\tsite\tdetail")
 for x in sorted(defs, key=lambda n: (defs[n][0], defs[n][1])):
     f, a, b, k = defs[x]
     print(f"def-{k}\t{x}\t{f}:{a}-{b}\t")
+for f, a, b in sorted(trace_blocks):
+    print(f"def-trace\ttrace@{f}:{a}\t{f}:{a}-{b}\t")
 for s in sorted(SEEDS):
     print(f"seed\t{s}\t{defs.get(s, ('?', 0))[0]}:{defs.get(s, ('?', 0))[1]}\t")
 for x in sorted(FAMILY, key=lambda n: (defs[n][0], defs[n][1])):

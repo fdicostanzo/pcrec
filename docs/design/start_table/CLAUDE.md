@@ -63,7 +63,15 @@ None of them is read by a check.
   [NULLABLE-ANCH] (lane nullanch1, 2026-10-08): `empty_admits` joins
   `kinds`/`nullable` among the E1 shape facts that are NOT seeds (no emitter
   reads it; its one reader is the prefilter decline), and `call_graph.txt`
-  was regenerated (seeds 15, family 135, unchanged). `sabotage_anchors.py`
+  was regenerated (seeds 15, family 135, unchanged). [DEC-FALLBACK] B1
+  (lane decfbB1, 2026-10-08): a `#ifdef PCREC_CAND_TRACE` block INSIDE a
+  function body (the fallback trace's conditional records) is skipped like
+  a record, so it is no site; and each file-scope trace block is printed as
+  a `def-trace` OWNER line (`trace@FILE:LINE`, its line range) that joins no
+  edge, family or site, so a sabotage anchor in a trace-build helper
+  (S623/S625/S626) resolves to an owner. Both are byte-neutral on the
+  family and the sites; the start output gains only the eight `def-trace`
+  lines. `sabotage_anchors.py`
   was NOT regenerated: it exits 2 on main too (`UNRESOLVED
   S571_deny_map_drops_run_overlap ... src/gen/memfn_sites.c 35`).
 - `inventory.tsv` — the DISPOSITION of every family member and seed (class:

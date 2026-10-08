@@ -447,8 +447,8 @@ S529_reach_hybrid_handoff_lost	S529	1	src/gen/emit_dfa.c	req_handoff_applies	def
 S52_revdet_first_iteration_captures	S52	1	src/gen/emit_vm.c	vm_rev_emit	def	5434	2/2	OTHER					
 S53_counter_untrailed	S53	1	src/gen/emit_vm.c	vm_counter_phase	def	6066	1/1	OTHER					
 S54_counter_no_residue	S54	1	src/gen/emit_vm.c	vm_counter_phase	def	5936	1/1	OTHER					
-S550_extra_arm_flag_dropped	S550	1	scripts/emit_sweep.py	file:scripts/emit_sweep.py	outside	904	1/1	OTHER					
-S551_utf8_base_dropped	S551	1	scripts/emit_sweep.py	file:scripts/emit_sweep.py	outside	904	1/1	OTHER					
+S550_extra_arm_flag_dropped	S550	1	scripts/emit_sweep.py	file:scripts/emit_sweep.py	outside	908	1/1	OTHER					
+S551_utf8_base_dropped	S551	1	scripts/emit_sweep.py	file:scripts/emit_sweep.py	outside	908	1/1	OTHER					
 S552_trace_order_ignored	S552	1	scripts/trace_diff.py	file:scripts/trace_diff.py	outside	151	1/1	OTHER					
 S553_trace_empty_floor_disabled	S553	1	scripts/trace_diff.py	file:scripts/trace_diff.py	outside	109	1/1	OTHER					
 S554_trace_arm_floor_disabled	S554	1	scripts/trace_diff.py	file:scripts/trace_diff.py	outside	118	1/1	OTHER					
@@ -500,6 +500,13 @@ S614_r4h_stay_view_bound_dropped	S614	1	src/gen/emit_dfa.c	dir_fwd_skip	def	7442
 S615_r4h_edge_unbounded_loop_unbounded	S615	1	src/gen/emit_dfa.c	edge_advance	def	9081	1/1	OTHER					
 S616_r4h_vmspan_it_cap_dropped	S616	1	memfn/src/generic.c	file:memfn/src/generic.c	outside	543	1/1	OTHER					
 S61_mrl_cursor_clamp_dropped	S61	1	src/gen/emit_vm.c	vm_cursor_rep	def	5000	1/1	OTHER					
+S620_trace_fallback_order_set	S620	1	scripts/trace_diff.py	file:scripts/trace_diff.py	outside	138	1/1	OTHER					
+S621_emit_ir_auto_no_prefilter_arm_lost	S621	1	scripts/emit_sweep.py	file:scripts/emit_sweep.py	outside	565	1/1	OTHER					
+S622_fbt_esel_witness_dropped	S622	1	tests/codegen/run_fallback_table.sh	file:tests/codegen/run_fallback_table.sh	outside	339	1/1	OTHER					
+S623_fallback_trace_labels_swapped	S623	1	src/core/compile.c	trace@src/core/compile.c:775	def	791	1/1	OTHER					
+S624_fallback_trace_size_record_dropped	S624	1	src/core/compile.c	compile_driver	def	1548	1/1	RE-RUN		B3+B5			B3:edit-set;B5:edit-set
+S625_admit_trace_var_rows_swapped	S625	1	src/opt/select_engine.c	trace@src/opt/select_engine.c:996	def	1027	1/1	OTHER					
+S626_attrib_trace_sel1_source_swapped	S626	1	src/opt/select_engine.c	trace@src/opt/select_engine.c:996	def	1049	1/1	OTHER					
 S62_mrl_counter_bound_static	S62	1	src/gen/emit_vm.c	vm_counter_phase	def	6034	1/1	OTHER					
 S63_mrl_stale_window	S63	1	src/gen/emit_vm.c	vm_emit_search_body	def	13378	1/1	RE-RUN		after-B6		nclamp	
 S64_prefilter_force_refusal	S64	1	src/opt/select_engine.c	prefilter_decision	def	719	1/1	RE-RUN		B3+B4			B3:edit-set;B4:edit-set
