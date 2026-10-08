@@ -19,5 +19,11 @@ SAB_DOC_FIGURE="PREDICTED (lane pfdrop, 2026-09-30): resource 4 [PF-DROP/ff] ref
 SAB_COUNT=1
 SAB_REACH='"$PCREC" -e utf8 --fast-or-fail -p rx -o - --pattern "(\p{Xwd})" 2>&1 | grep -o "pattern too large" | head -1'
 SAB_REACH_EXPECT='pattern too large'
-SAB_BEFORE='           (r->degrading && (flags & PCREC_FAST_OR_FAIL) != 0);'
-SAB_AFTER='           (r->degrading && (flags & PCREC_FAST_OR_FAIL) != 0 && false);   /* SABOTAGE S421 */'
+SAB_BEFORE='           (r->degrading && r->fof == FIT_FOF_IN && (flags & PCREC_FAST_OR_FAIL) != 0);'
+SAB_AFTER='           (r->degrading && r->fof == FIT_FOF_IN && (flags & PCREC_FAST_OR_FAIL) != 0 && false);   /* SABOTAGE S421 */'
+# RE-AIMED 2026-10-08 (lane decfbB2, [DEC-FALLBACK] B2): the predicate's line
+# gained the `fof` reach (`--fast-or-fail` denies a degrading row only when
+# it is inside the switch's reach); the plant still neuters the switch
+# term, so the intent is unchanged. Re-verified with the plant: every size
+# rung's `--fast-or-fail` witness compiles again where the unplanted build
+# refuses.

@@ -18,5 +18,10 @@ SAB_DOC_FIGURE="PREDICTED (lane pfdrop, 2026-09-30): resource exactly one [PF-DR
 SAB_COUNT=1
 SAB_REACH='"$PCREC" -e utf8 --fast-or-fail -p rx -o - --pattern "(\p{Xwd})" 2>&1 | grep -o "pattern too large" | head -1'
 SAB_REACH_EXPECT='pattern too large'
-SAB_BEFORE='    { "drop-prefilter", 0,                           true,  fit_prefilter_applies, FIT_DROP_PREFILTER },'
-SAB_AFTER='    { "drop-prefilter", 0,                           false, fit_prefilter_applies, FIT_DROP_PREFILTER },   /* SABOTAGE S423 */'
+SAB_BEFORE='    { .name = "drop-prefilter",     .deny = 0, .degrading = true,  .fof = FIT_FOF_IN,'
+SAB_AFTER='    { .name = "drop-prefilter",     .deny = 0, .degrading = false, .fof = FIT_FOF_IN,   /* SABOTAGE S423 */'
+# RE-AIMED 2026-10-08 (lane decfbB2, [DEC-FALLBACK] B2): the row line gained
+# the table's new columns (designated initializers, `fof` beside
+# `degrading`); the plant is the same cell, so the intent is unchanged.
+# Re-verified with the plant: `--fast-or-fail -e utf8 (\p{Xwd})` compiles
+# (rc 0, `drop-prefilter` taken) where the unplanted build refuses.
