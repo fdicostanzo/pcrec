@@ -673,3 +673,16 @@ the compiler, and is never adopted silently. Proposed for main to file
   - **G2:** no G2 family reaches the new rows yet (C5 fixtures + pcrec
     compiles only). A blinded follow-up (g2pf) is adding the PF family
     before R4g is delivered.
+- notice: 2026-10-07 (night) — **Main's rulings on R4g, recorded.**
+  1. The memchr widening (the NULL test and position store move with the
+     line; `return 0` and the `len - 1` clamp stay pcrec's, as hooks) is
+     ACCEPTED. R4g's done: records it as an edit-set amendment.
+  2. §19 row 6's RARITY half is DEFERRED to its own step after C5b,
+     re-checked against refactor B [DEC-FALLBACK]'s scope before it starts
+     (B absorbs prefilter admission). **CONSTRAINT:** the admission
+     decision (`req_byte_dominated_by`) stays pcrec's and lives in
+     cand_rows[] after C4. The kit may only ever receive the resulting
+     text, never the decision. **Note:** this narrows integration.md §19
+     row 6 ("the kit decides whether testing it pays"). The kit will
+     revise that row's text, and any later kit form that wants the choice
+     brings it to main as a request.

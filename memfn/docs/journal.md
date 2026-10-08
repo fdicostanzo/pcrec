@@ -823,3 +823,8 @@ pointer when a kit change merges to main.
   R4g's commit, sabotage_anchors.tsv re-derived, zero movers (shown on
   ≤ 60 compiles against a pre-edit reference binary). It lands on
   post-C4 main via a slot.
+- Main ruled: the R4g memchr widening is accepted (an edit-set amendment in
+  done:). §19 row 6's rarity half is deferred after C5b; the decision stays
+  pcrec's in cand_rows[]; the kit receives text only. This narrows §19 row
+  6 of the design. Revise that row in the design deliverable that goes with
+  R4g's done:.
