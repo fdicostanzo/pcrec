@@ -5010,30 +5010,33 @@ typedef struct CandWindow {
 
 /* [START-TABLE] C4 THE PRESENCE SLOT's PAYLOAD, `CandRow.u.admit` (was
  * `ReqAdmitRow`'s fields): the admission verdict the row answers, which
- * `req_why_name` renders as `<PREFIX>_REQ_WHY`, and the row's predicate in
- * one line for `--list-axes` (axis `req-admit`). */
+ * `req_why_name` renders as `<PREFIX>_REQ_WHY`. (Its one-line description is
+ * the row's `desc` since C6.) */
 typedef struct CandAdmit {
     ReqAdmit    verdict;
-    const char *desc;
 } CandAdmit;
 
 /* [START-TABLE] C4 THE FIRST SLOT's PAYLOAD, `CandRow.u.use` (was
  * `ReqUseRow`'s fields): what the body does with an emitted run pre-check's
- * answer, and the row's predicate in one line for `--list-axes` (axis
- * `req-use`). */
+ * answer. (Its one-line description is the row's `desc` since C6.) */
 typedef struct CandUse {
     ReqUse      use;
-    const char *desc;
 } CandUse;
 
 /* A row's `--list-axes` projection on ONE route (§1.1 `list[route]`): the
  * axis, the row's order within it and its listed name; `axis` NULL where the
  * row has no listing on that route. An axis that does not depend on the
- * route is listed once, on the first route it is asked on. */
+ * route is listed once, on the first route it is asked on. `fact_deny` is a
+ * FACT's deny bit the listing SHOWS on the row, never a bit the walk reads:
+ * the row's predicate reads a landmark that bit empties, so the bit removes
+ * the row's population without removing the row (start_table.md §3.7: the
+ * listing keeps bit 28 on `vm-anchor-bound`'s rows, and 29 on
+ * `end-window`'s, as projections). */
 typedef struct CandList {
     const char *axis;
     int         order;
     const char *name;
+    uint64_t    fact_deny;
 } CandList;
 
 /* ONE ROW of the start table (§1.1), `cand_rows[]` (far below). `c.name` is
@@ -5059,6 +5062,10 @@ struct CandRow {
     unsigned char  giveup;     /* CG_* */
     unsigned       hands;      /* CT_* handed to the slot's successors */
     CandList       list[3];    /* indexed by CandRoute */
+    /* [START-TABLE] C6 the listing's one-line `applies` text, BESIDE the row
+     * (§1.1 `desc`): set on every row that has a listing, NULL on the rest
+     * (the trace build's self-check holds both halves). */
+    const char    *desc;
     union {
         CandWindow  window;    /* WINDOW */
         CandAdmit   admit;     /* PRESENCE */
@@ -7842,10 +7849,12 @@ static bool dfa_search_is_pinned(Ctx *cx)
  * trace build (-DPCREC_CAND_TRACE) runs the table's structural self-check
  * and counts the hit at every reader (`cand_hit`, §3.4).
  *
- * NOT YET HERE, each with the commit that brings it: the `--list-axes`
- * `desc` as one column (C6; the payloads that had one carry it until then),
- * and the `landmark`/`scan`/`hat`/`stamp` columns, which no check or reader
- * asks for before C6. */
+ * Since C6 THE LISTING READS IT TOO: every start axis's `--list-axes` rows
+ * are this table's rows projected by `list[route]` (`pcrec_cand_list_row`),
+ * and the `applies` text is the row's `desc`, beside it (the payloads that
+ * carried one, and `axes_dump.c`'s hand table, gave theirs up). The
+ * `landmark`/`scan`/`hat` columns are still not here: no check or reader
+ * asks for them; a row's `stamp` is its slot's (`cand_list_stamp`). */
 
 /* What a row HANDS the next slot and what a node ACCEPTS (§1.6), one bit per
  * handoff type so both are sets. */
@@ -8018,40 +8027,42 @@ static const CandRow cand_rows[] = {
      * `<PREFIX>_END_WINDOW` stamp) */
     { .c = { "window", 0, cand_window_applies }, .slot = CAND_SLOT_WINDOW,
       .routes = CAND_ALL_ROUTES, .tok = "window", .map = CM_WINDOWLO, .hands = CT_LOWER,
-      .list = { [CAND_ROUTE_DFA] = { "end-window", 1, "window" } },
+      .list = { [CAND_ROUTE_DFA] = { "end-window", 1, "window", PCREC_NO_END_WINDOW } },
+      .desc = "per artifact, both engines: every alternative ends in $/\\Z/\\z outside multiline AND pcrec_cwmax is finite, so a match can only BEGIN in the last maxw+eps bytes and both search entries raise search_from to there (eps is 1 for $/\\Z's final-newline allowance, 0 for \\z); the stamp carries the bound",
       .u.window = { .clamp = true } },
     { .c = { "window-none", 0, cand_always }, .slot = CAND_SLOT_WINDOW,
       .routes = CAND_ALL_ROUTES, .tok = "none", .map = CM_NONE, .hands = CT_LOWER,
-      .list = { [CAND_ROUTE_DFA] = { "end-window", 2, "none" } } },
+      .list = { [CAND_ROUTE_DFA] = { "end-window", 2, "none" } },
+      .desc = "always (fallback) — the pattern is not end-anchored, its width is unbounded, it contains \\G (which reads the parameter the clamp would move), the encoding has non-boundary positions, or the deny flag" },
 
     /* PRESENCE (`req_admits[]` until C4; `req_admit` asks it) */
     { .c = { "presence-none", 0, req_none_applies }, .slot = CAND_SLOT_PRESENCE,
       .routes = CAND_ALL_ROUTES, .tok = "none", .map = CM_NONE, .hands = CT_VERDICT,
       .list = { [CAND_ROUTE_DFA] = { "req-admit", 1, "none" } },
-      .u.admit = { REQ_ADMIT_NONE,
-                   "no necessary byte and no necessary run: nothing to pre-check" } },
+      .desc = "no necessary byte and no necessary run: nothing to pre-check",
+      .u.admit = { REQ_ADMIT_NONE } },
     { .c = { "one-attempt", 0, req_one_attempt_applies }, .slot = CAND_SLOT_PRESENCE,
       .routes = CAND_ALL_ROUTES, .tok = "one-attempt", .map = CM_NONE, .hands = CT_VERDICT,
       .list = { [CAND_ROUTE_DFA] = { "req-admit", 2, "one-attempt" } },
-      .u.admit = { REQ_ADMIT_ONE_ATTEMPT,
-                   "G2: the route tries exactly one start position, and on the VM that one attempt is linear (an exact hybrid DFA in front, or a frameless program), so the check would scan the window the attempt reads anyway" } },
+      .desc = "G2: the route tries exactly one start position, and on the VM that one attempt is linear (an exact hybrid DFA in front, or a frameless program), so the check would scan the window the attempt reads anyway",
+      .u.admit = { REQ_ADMIT_ONE_ATTEMPT } },
     { .c = { "dominated", 0, req_dominated_applies }, .slot = CAND_SLOT_PRESENCE,
       .routes = CAND_ALL_ROUTES, .tok = "dominated", .map = CM_NONE, .hands = CT_VERDICT,
       .list = { [CAND_ROUTE_DFA] = { "req-admit", 3, "dominated" } },
-      .u.admit = { REQ_ADMIT_DOMINATED,
-                   "G1: the candidate-start scan already tests the same byte (and, for a run, verifies the run), or under a byte-rate a one-byte memchr scan of a byte no commoner than the necessary byte" } },
+      .desc = "G1: the candidate-start scan already tests the same byte (and, for a run, verifies the run), or under a byte-rate a one-byte memchr scan of a byte no commoner than the necessary byte",
+      .u.admit = { REQ_ADMIT_DOMINATED } },
     { .c = { "set-leads", PCREC_NO_REQ_SET_LEAD, req_set_leads_applies },
       .slot = CAND_SLOT_PRESENCE, .routes = CAND_ALL_ROUTES, .tok = "set-leads",
       .map = CM_PRESENCE, .hands = CT_VERDICT | CT_HIT,
       .list = { [CAND_ROUTE_DFA] = { "req-admit", 4, "set-leads" } },
-      .u.admit = { REQ_ADMIT_SET_LEADS,
-                   "a run pre-check is admitted and the necessary set's pick is strictly rarer than the run's scan member (one PICK over the two guards, the run first, so a tie keeps the run alone; under no byte-rate a byte against a two-member pair): the set pick's memchr first, then the run search" } },
+      .desc = "a run pre-check is admitted and the necessary set's pick is strictly rarer than the run's scan member (one PICK over the two guards, the run first, so a tie keeps the run alone; under no byte-rate a byte against a two-member pair): the set pick's memchr first, then the run search",
+      .u.admit = { REQ_ADMIT_SET_LEADS } },
     { .c = { "emitted", 0, cand_always }, .slot = CAND_SLOT_PRESENCE,
       .routes = CAND_ALL_ROUTES, .tok = "emitted", .map = CM_PRESENCE,
       .hands = CT_VERDICT | CT_HIT,
       .list = { [CAND_ROUTE_DFA] = { "req-admit", 5, "emitted" } },
-      .u.admit = { REQ_ADMIT_EMITTED,
-                   "always (fallback): the pre-check on the req_byte fact, or the run search where a run shipped" } },
+      .desc = "always (fallback): the pre-check on the req_byte fact, or the run search where a run shipped",
+      .u.admit = { REQ_ADMIT_EMITTED } },
 
     /* WIDTH (read by the VM entry's root-minw test, its `<PREFIX>_VM_ROOT_MINW`
      * stamp and `--emit-ir`'s `root-minw` row; no `--list-axes` listing) */
@@ -8067,14 +8078,14 @@ static const CandRow cand_rows[] = {
       .routes = CAND_ALL_ROUTES, .tok = "handoff", .map = CM_LOWERBOUND,
       .giveup = CG_FIXED, .hands = CT_LOWER,
       .list = { [CAND_ROUTE_DFA] = { "req-use", 1, "handoff" } },
-      .u.use = { REQ_USE_HANDOFF,
-                 "a run pre-check is emitted (req-admit `emitted` or `set-leads`), the artifact has a DFA scan to move (a DFA body or the VM hybrid's prefilter, not the empty machine), the window's maximum byte offset K from the attempt start is finite, the prefilter is not count-collapsed, and no VM hybrid with a \\G start family reads its prefilter-window ceiling: the gate's first window hit c becomes the scan start max(startpos, c - K), rounded up to a character start under a multibyte encoding" } },
+      .desc = "a run pre-check is emitted (req-admit `emitted` or `set-leads`), the artifact has a DFA scan to move (a DFA body or the VM hybrid's prefilter, not the empty machine), the window's maximum byte offset K from the attempt start is finite, the prefilter is not count-collapsed, and no VM hybrid with a \\G start family reads its prefilter-window ceiling: the gate's first window hit c becomes the scan start max(startpos, c - K), rounded up to a character start under a multibyte encoding",
+      .u.use = { REQ_USE_HANDOFF } },
     { .c = { "scan-from-startpos", 0, cand_always }, .slot = CAND_SLOT_FIRST,
       .routes = CAND_ALL_ROUTES, .tok = "scan-from-startpos", .map = CM_NONE,
       .hands = CT_LOWER,
       .list = { [CAND_ROUTE_DFA] = { "req-use", 2, "scan-from-startpos" } },
-      .u.use = { REQ_USE_FROM_STARTPOS,
-                 "always (fallback): the scan starts at the startpos; a run pre-check, where one is emitted, only discards" } },
+      .desc = "always (fallback): the scan starts at the startpos; a run pre-check, where one is emitted, only discards",
+      .u.use = { REQ_USE_FROM_STARTPOS } },
 
     /* NEXT (`dfa_pfs[]` until C3, plus `attempt_cand` on the ATTEMPT route).
      * Designated initializers ([K84], stage 0 of docs/design/startset.md §8):
@@ -8096,6 +8107,7 @@ static const CandRow cand_rows[] = {
              pf_run_bounded_applies }, .slot = CAND_SLOT_NEXT, .routes = CR_DFA,
       .tok = "run-pinned-bounded", .map = CM_EXACTK, .hands = CT_CAND,
       .list = { [CAND_ROUTE_DFA] = { "prefilter", 1, "run-pinned-bounded" } },
+      .desc = "forward scan, the necessary run is pinned at a fixed offset and the scan already runs on its scan member there: the whole run verified as one compare per candidate, the run pre-check then dominated; under a $/\\Z/\\z view or a word-context accept ([OPT-LITSCAN] S1)",
       .u.pf = { .emit_tables = pf_tables_ofs, .emit_block = pf_block_ofs,
                 .emit = pf_emit_ofs_bounded,
                 .reseeds = true,  .run_term = true,  .scan = PF_SCAN_OFS  } },
@@ -8103,6 +8115,7 @@ static const CandRow cand_rows[] = {
              pf_run_applies },
       .slot = CAND_SLOT_NEXT, .routes = CR_DFA, .tok = "run-pinned", .map = CM_EXACTK,
       .hands = CT_CAND, .list = { [CAND_ROUTE_DFA] = { "prefilter", 2, "run-pinned" } },
+      .desc = "forward scan, the necessary run is pinned at a fixed offset and the scan already runs on its scan member there: the whole run verified as one compare per candidate, the run pre-check then dominated ([OPT-LITSCAN] S1)",
       .u.pf = { .emit_tables = pf_tables_ofs, .emit_block = pf_block_ofs,
                 .emit = pf_emit_ofs,
                 .reseeds = true,  .run_term = true,  .scan = PF_SCAN_OFS  } },
@@ -8110,12 +8123,14 @@ static const CandRow cand_rows[] = {
       .slot = CAND_SLOT_NEXT, .routes = CR_DFA, .tok = "offset-set-bounded",
       .map = CM_EXACTK, .hands = CT_CAND,
       .list = { [CAND_ROUTE_DFA] = { "prefilter", 3, "offset-set-bounded" } },
+      .desc = "forward scan, an offset-k candidate SET was selected, under a $/\\Z/\\z view or a word-context accept ([OPT-K])",
       .u.pf = { .emit_tables = pf_tables_ofs, .emit_block = pf_block_ofs,
                 .emit = pf_emit_ofs_bounded,
                 .reseeds = true,  .run_term = false, .scan = PF_SCAN_OFS  } },
     { .c = { "offset-set", PCREC_NO_OFFSET_SKIP, pf_ofs_applies },
       .slot = CAND_SLOT_NEXT, .routes = CR_DFA, .tok = "offset-set", .map = CM_EXACTK,
       .hands = CT_CAND, .list = { [CAND_ROUTE_DFA] = { "prefilter", 4, "offset-set" } },
+      .desc = "forward scan, an offset-k candidate SET was selected: one memchr at the chosen offset k*, the other offsets verified per candidate ([OPT-K])",
       .u.pf = { .emit_tables = pf_tables_ofs, .emit_block = pf_block_ofs,
                 .emit = pf_emit_ofs,
                 .reseeds = true,  .run_term = false, .scan = PF_SCAN_OFS  } },
@@ -8124,12 +8139,14 @@ static const CandRow cand_rows[] = {
       .slot = CAND_SLOT_NEXT, .routes = CR_DFA, .tok = "first-memchr-bounded",
       .map = CM_EXACT0, .hands = CT_CAND,
       .list = { [CAND_ROUTE_DFA] = { "prefilter", 5, "first-memchr-bounded" } },
+      .desc = "[START-SET] the DFA hat: the unanchored forward scan of a SEEDED machine with a plain skip, a start set S (the start_set fact) not nullable with fewer than 256 members, and T = S & E* (E* every seed state's escape set; T == S) a non-empty proper subset of the start state's escape set E, one byte: memchr for it, stopped at n-1, re-seeding the state from the byte before the landing where the skip moved",
       .u.pf = { .emit = pf_emit_first_memchr_bounded, .reseeds = true,
                 .scan = PF_SCAN_BYTE, .scan_set = pf_dfa_start_set } },
     { .c = { "first-class-bounded", PCREC_NO_START_SET, pf_first_class_bounded_applies },
       .slot = CAND_SLOT_NEXT, .routes = CR_DFA, .tok = "first-class-bounded",
       .map = CM_EXACT0, .hands = CT_CAND,
       .list = { [CAND_ROUTE_DFA] = { "prefilter", 6, "first-class-bounded" } },
+      .desc = "[START-SET] the DFA hat, as first-memchr-bounded with T of several bytes: a 256-entry start_bytes table walk stopped at n-1, re-seeding where the skip moved",
       .u.pf = { .emit_tables = pf_tables_first, .emit = pf_emit_first_class_bounded,
                 .reseeds = true, .scan = PF_SCAN_SET, .scan_set = pf_dfa_start_set } },
     /* [START-SET] stage 2: the VM hat, routed on the VM route alone (the DFA
@@ -8138,24 +8155,29 @@ static const CandRow cand_rows[] = {
       .slot = CAND_SLOT_NEXT, .routes = CR_VM, .tok = "first-class", .map = CM_EXACT0,
       .giveup = CG_ONE_WAY, .hands = CT_CAND,
       .list = { [CAND_ROUTE_VM] = { "prefilter", 7, "first-class" } },
+      .desc = "vm: [START-SET] a VM artifact with no DFA prefilter, an unanchored pattern, and a start set S (the start_set fact) that is not nullable and has fewer than 256 members: the attempt loop seeks the next byte of S, as a 256-entry table, before its first attempt and after each failed one; dfa: never (the DFA hat is -bounded only: a seeded machine always carries the D11 bound)",
       .u.pf = { .scan = PF_SCAN_SET, .emit_vm = pf_vm_emit_first_class } },
     { .c = { "memchr-bounded", 0, pf_memchr_bounded_applies },
       .slot = CAND_SLOT_NEXT, .routes = CR_DFA, .tok = "memchr-bounded", .map = CM_EXACT0,
       .hands = CT_CAND, .list = { [CAND_ROUTE_DFA] = { "prefilter", 8, "memchr-bounded" } },
+      .desc = "forward scan, one candidate byte, under a $/\\Z/\\z view or a word-context accept",
       .u.pf = { .emit = pf_emit_memchr_bounded, .scan = PF_SCAN_BYTE } },
     { .c = { "memchr", 0, pf_memchr_applies },
       .slot = CAND_SLOT_NEXT, .routes = CR_DFA, .tok = "memchr", .map = CM_EXACT0,
       .hands = CT_CAND, .list = { [CAND_ROUTE_DFA] = { "prefilter", 9, "memchr" } },
+      .desc = "forward scan, one candidate byte",
       .u.pf = { .emit = pf_emit_memchr, .scan = PF_SCAN_BYTE } },
     { .c = { "byte-class-bounded", 0, pf_bcls_bounded_applies },
       .slot = CAND_SLOT_NEXT, .routes = CR_DFA, .tok = "byte-class-bounded",
       .map = CM_EXACT0, .hands = CT_CAND,
       .list = { [CAND_ROUTE_DFA] = { "prefilter", 10, "byte-class-bounded" } },
+      .desc = "forward scan, several candidate bytes, under a $/\\Z/\\z view or a word-context accept",
       .u.pf = { .emit_tables = pf_tables_bcls, .emit = pf_emit_bcls_bounded,
                 .scan = PF_SCAN_SET } },
     { .c = { "byte-class", 0, pf_bcls_applies },
       .slot = CAND_SLOT_NEXT, .routes = CR_DFA, .tok = "byte-class", .map = CM_EXACT0,
       .hands = CT_CAND, .list = { [CAND_ROUTE_DFA] = { "prefilter", 11, "byte-class" } },
+      .desc = "forward scan, several candidate bytes",
       .u.pf = { .emit_tables = pf_tables_bcls, .emit = pf_emit_bcls, .scan = PF_SCAN_SET } },
     /* N12: the ATTEMPT route's predecessor-byte skip; it STAMPS `"memchr"`
      * (D-1) but is not N9, so its identity is its own. No listing. Its scan
@@ -8168,6 +8190,7 @@ static const CandRow cand_rows[] = {
     { .c = { "next-none", 0, cand_always }, .slot = CAND_SLOT_NEXT,
       .routes = CAND_ALL_ROUTES, .tok = "none", .map = CM_NONE, .hands = CT_CAND,
       .list = { [CAND_ROUTE_DFA] = { "prefilter", 12, "none" } },
+      .desc = "always (fallback) — also the reverse machine, and every case where the start state itself accepts (no skip is sound there)",
       .u.pf = { .scan = PF_SCAN_NONE } },
 
     /* RETRY (`pcrec_reseed_rows[]` until C5; asked only behind a prefilter,
@@ -8192,45 +8215,45 @@ static const CandRow cand_rows[] = {
     { .c = { "exact", 0, cand_rs_exact_applies }, .slot = CAND_SLOT_RETRY,
       .routes = CR_VM, .tok = "exact", .map = CM_STEP, .hands = CT_CAND | CT_LOWER,
       .list = { [CAND_ROUTE_VM] = { "hyb-reseed", 1, "exact" } },
-      .u.reseed = { CAND_RS_A_FIXED, CAND_RS_S_NONE, false,
-                    "the prefilter answers for the pattern's own language (no cut, no "
-                    "lookaround, no count collapse — Vm.mrl_win), so nothing is gained: "
-                    "today's retry, the clamp recompute where an MRL clamp exists, else a step" } },
+      .desc = "the prefilter answers for the pattern's own language (no cut, no "
+              "lookaround, no count collapse — Vm.mrl_win), so nothing is gained: "
+              "today's retry, the clamp recompute where an MRL clamp exists, else a step",
+      .u.reseed = { CAND_RS_A_FIXED, CAND_RS_S_NONE, false } },
     { .c = { "clamped", 0, cand_rs_clamped_applies }, .slot = CAND_SLOT_RETRY,
       .routes = CR_VM, .tok = "clamped", .map = CM_RESEED, .hands = CT_LOWER,
       .list = { [CAND_ROUTE_VM] = { "hyb-reseed", 2, "clamped" } },
-      .u.reseed = { CAND_RS_A_FIXED, CAND_RS_S_NONE, false,
-                    "an MRL clamp exists, so today's retry already re-seeds after every "
-                    "failed attempt: kept, because a step block would add attempts it "
-                    "skips (an answer could become a give-up) for a gain measured mixed" } },
+      .desc = "an MRL clamp exists, so today's retry already re-seeds after every "
+              "failed attempt: kept, because a step block would add attempts it "
+              "skips (an answer could become a give-up) for a gain measured mixed",
+      .u.reseed = { CAND_RS_A_FIXED, CAND_RS_S_NONE, false } },
     { .c = { "retry-anchored", 0, cand_rs_anchored_applies }, .slot = CAND_SLOT_RETRY,
       .routes = CR_VM, .tok = "anchored", .map = CM_STEP, .hands = CT_CAND,
       .list = { [CAND_ROUTE_VM] = { "hyb-reseed", 3, "anchored" } },
-      .u.reseed = { CAND_RS_A_FIXED, CAND_RS_S_NONE, false,
-                    "every match begins at one position (`^`, `\\A`, `\\G` — the start_anchor "
-                    "fact), so the attempt loop stops after its first attempt and no "
-                    "retry runs: today's retry, whose text is never reached" } },
+      .desc = "every match begins at one position (`^`, `\\A`, `\\G` — the start_anchor "
+              "fact), so the attempt loop stops after its first attempt and no "
+              "retry runs: today's retry, whose text is never reached",
+      .u.reseed = { CAND_RS_A_FIXED, CAND_RS_S_NONE, false } },
     { .c = { "adaptive-dense", PCREC_NO_HYB_RESEED, cand_rs_dense_applies },
       .slot = CAND_SLOT_RETRY, .routes = CR_VM, .tok = "adaptive-dense", .map = CM_ADAPT,
       .giveup = CG_ONE_WAY, .hands = CT_CAND | CT_LOWER,
       .list = { [CAND_ROUTE_VM] = { "hyb-reseed", 4, "adaptive-dense" } },
-      .u.reseed = { CAND_RS_A_ADAPT, CAND_RS_S_CAP, true,
-                    "the compile's byte-rate prior (the built-in default under -e byte, "
-                    "cardinality where the prior is NONE) puts the candidate scan's byte "
-                    "set at a mean gap under the class's calibrated crossover: adaptive, "
-                    "starting inside an armed step block" } },
+      .desc = "the compile's byte-rate prior (the built-in default under -e byte, "
+              "cardinality where the prior is NONE) puts the candidate scan's byte "
+              "set at a mean gap under the class's calibrated crossover: adaptive, "
+              "starting inside an armed step block",
+      .u.reseed = { CAND_RS_A_ADAPT, CAND_RS_S_CAP, true } },
     { .c = { "adaptive", PCREC_NO_HYB_RESEED, cand_always }, .slot = CAND_SLOT_RETRY,
       .routes = CR_VM, .tok = "adaptive", .map = CM_ADAPT, .giveup = CG_ONE_WAY,
       .hands = CT_CAND | CT_LOWER,
       .list = { [CAND_ROUTE_VM] = { "hyb-reseed", 5, "adaptive" } },
-      .u.reseed = { CAND_RS_A_ADAPT, CAND_RS_S_FIRST, false,
-                    "always, on an over-approximating prefilter: adaptive, starting with a "
-                    "short step probation, then re-seed mode" } },
+      .desc = "always, on an over-approximating prefilter: adaptive, starting with a "
+              "short step probation, then re-seed mode",
+      .u.reseed = { CAND_RS_A_ADAPT, CAND_RS_S_FIRST, false } },
     { .c = { "fixed", 0, cand_always }, .slot = CAND_SLOT_RETRY,
       .routes = CR_VM, .tok = "fixed", .map = CM_STEP, .hands = CT_CAND,
       .list = { [CAND_ROUTE_VM] = { "hyb-reseed", 6, "fixed" } },
-      .u.reseed = { CAND_RS_A_FIXED, CAND_RS_S_NONE, false,
-                    "always (fallback, the deny's landing row): today's retry" } },
+      .desc = "always (fallback, the deny's landing row): today's retry",
+      .u.reseed = { CAND_RS_A_FIXED, CAND_RS_S_NONE, false } },
 
     /* BOUND (read by `emit_attempt`'s `start_max` on the ATTEMPT route and the
      * VM entry's `attempt_max` and `<PREFIX>_VM_START` on the VM route; an
@@ -8248,16 +8271,19 @@ static const CandRow cand_rows[] = {
     { .c = { "vm-anchored", 0, cand_bound_anchored_vm_applies }, .slot = CAND_SLOT_BOUND,
       .routes = CR_VM, .tok = "anchored", .map = CM_ONE, .giveup = CG_ONE_WAY,
       .hands = CT_UPPER,
-      .list = { [CAND_ROUTE_VM] = { "vm-anchor-bound", 1, "anchored" } },
+      .list = { [CAND_ROUTE_VM] = { "vm-anchor-bound", 1, "anchored", PCREC_NO_VM_ANCHOR_BOUND } },
+      .desc = "per artifact on the VM route: every alternative of the whole pattern begins with ^ (outside multiline) or \\A, so only offset 0 can start a match and the attempt loop stops after one pass",
       .u.bound = { .one = CAND_ONE_ZERO, .attempt_max = CAND_VM_BOUND_ONE } },
     { .c = { "vm-gstart", 0, cand_bound_gstart_vm_applies }, .slot = CAND_SLOT_BOUND,
       .routes = CR_VM, .tok = "gstart", .map = CM_ONE, .giveup = CG_ONE_WAY,
       .hands = CT_UPPER,
-      .list = { [CAND_ROUTE_VM] = { "vm-anchor-bound", 2, "gstart" } },
+      .list = { [CAND_ROUTE_VM] = { "vm-anchor-bound", 2, "gstart", PCREC_NO_VM_ANCHOR_BOUND } },
+      .desc = "per artifact on the VM route: every alternative begins with \\G, so only the caller's own search_from can start a match and the attempt loop stops after one pass",
       .u.bound = { .one = CAND_ONE_FROM, .attempt_max = CAND_VM_BOUND_ONE } },
     { .c = { "all", 0, cand_always }, .slot = CAND_SLOT_BOUND,
       .routes = CR_ATTEMPT | CR_VM, .tok = "all", .map = CM_NONE, .hands = CT_UPPER,
       .list = { [CAND_ROUTE_VM] = { "vm-anchor-bound", 3, "unanchored" } },
+      .desc = "always (fallback) — nothing was proved about where a match begins, or the deny flag; the loop runs to subject_length as it always has",
       .u.bound = { .one = CAND_ONE_NONE, .start_max = "subject_length" } },
 
     /* RECOVER (`dfa_search_starts[]` until C3). `-fno-start-pinned` is a
@@ -8266,11 +8292,13 @@ static const CandRow cand_rows[] = {
     { .c = { "pinned", PCREC_NO_START_PINNED, start_pinned_applies },
       .slot = CAND_SLOT_RECOVER, .routes = CR_DFA, .tok = "pinned", .map = CM_RECOVER,
       .hands = CT_START, .list = { [CAND_ROUTE_DFA] = { "search-start", 1, "pinned" } },
+      .desc = "ENG_UNANCH, a non-empty engine, and the forward machine's start state accepts under the PLAIN view with an accept that is invariant in position and in class context -- and, where mechanism 4 seeds, every live seed state does too. The match then provably begins at search_from and no reverse machine is emitted ([OPT-5] STEP 2)",
       .u.recover = { .pinned = true } },
     { .c = { "reverse-pass", 0, cand_always }, .slot = CAND_SLOT_RECOVER,
       .routes = CR_DFA | CR_ATTEMPT, .tok = "reverse-pass", .map = CM_RECOVER,
       .hands = CT_START,
       .list = { [CAND_ROUTE_DFA] = { "search-start", 2, "reverse-pass" } },
+      .desc = "always (fallback) -- the backwards scan over the artifact's own reverse machine recovers the match start",
       .u.recover = { .pinned = false } },
 };
 #define CAND_NROWS (sizeof cand_rows / sizeof cand_rows[0])
@@ -8338,10 +8366,13 @@ static void cand_oracle_fail(const char *what, const char *a, const char *b,
  * routed where its slot is never asked, or routed nowhere; an asked
  * (slot, route) whose last routed row is not an undeniable `cand_always`
  * (totality, §1.3); a row that hands a type none of its slot's successors
- * accepts (§1.6); two rows listed at one (axis, order); and ([START-TABLE]
- * C5b) a selection read on a route its slot is never asked on, or a cycle
- * in the selection reads (§1.3: the DAG is acyclic, so no walk re-enters
- * itself). */
+ * accepts (§1.6); two rows listed at one (axis, order); ([START-TABLE] C5b)
+ * a selection read on a route its slot is never asked on, or a cycle in the
+ * selection reads (§1.3: the DAG is acyclic, so no walk re-enters itself);
+ * and ([START-TABLE] C6, the listing's projection) a listed row with no
+ * `desc` or an unlisted row with one, and a listed order that is not the
+ * row's position among its axis's rows in table order, so the listing's
+ * table-order walk prints `order` dense and ascending. */
 static void cand_rows_selfcheck(void)
 {
     unsigned reach[CAND_NSLOTS];
@@ -8375,6 +8406,24 @@ static void cand_rows_selfcheck(void)
             if (n->succ & CN(k)) acc |= cand_nodes[k].accepts;
         if (!r->hands || (r->hands & ~acc))
             cand_oracle_fail("table-hands-unaccepted", r->c.name, n->name, "selfcheck");
+        {
+            bool listed = false;
+            for (int rt = 0; rt < 3; rt++) {
+                int before = 0;
+                if (!r->list[rt].axis) continue;
+                listed = true;
+                for (size_t j = 0; j < i; j++)
+                    for (int qt = 0; qt < 3; qt++)
+                        if (cand_rows[j].list[qt].axis &&
+                            !strcmp(cand_rows[j].list[qt].axis, r->list[rt].axis))
+                            before++;
+                if (r->list[rt].order != before + 1)
+                    cand_oracle_fail("table-listing-order", r->c.name, r->list[rt].axis,
+                                     "selfcheck");
+            }
+            if (listed != (r->desc != NULL))
+                cand_oracle_fail("table-desc-unlisted", r->c.name, n->name, "selfcheck");
+        }
         for (size_t j = i + 1; j < CAND_NROWS; j++) {
             const CandRow *q = &cand_rows[j];
             if (!strcmp(r->c.name, q->c.name))
@@ -8563,7 +8612,6 @@ static size_t pcrec_dfa_axis_cands(const void *list, size_t n, size_t stride,
         const DfaCand *c = (const DfaCand *)(const void *)(base + i * stride);
         out[k].name = c->name;
         out[k].deny = c->deny;
-        out[k].stamp = NULL;
         k++;
     }
     return k;
@@ -8573,47 +8621,8 @@ static size_t pcrec_dfa_axis_cands(const void *list, size_t n, size_t stride,
     pcrec_dfa_axis_cands((list), sizeof(list) / sizeof((list)[0]), \
                          sizeof((list)[0]), out, cap)
 
-/* [START-TABLE] C3 the `prefilter` and `search-start` axes' candidates are
- * `cand_rows[]`'s NEXT and RECOVER rows, in table order, each under the name
- * it is listed by (`list[route].name` on the first route that lists it); a
- * row with no listing (N12) is skipped. A row routed on the VM route alone
- * names the VM hat's stamp, the one its selection writes. C6 turns every
- * start axis into this projection. */
-static size_t cand_axis_rows(CandSlot slot, PcrecAxisCand *out, size_t cap)
-{
-    size_t k = 0;
-    for (size_t i = 0; i < CAND_NROWS && k < cap; i++) {
-        const CandRow *r = &cand_rows[i];
-        const char *name = NULL;
-        if (r->slot != slot) continue;
-        for (int rt = 0; rt < 3 && !name; rt++)
-            if (r->list[rt].axis) name = r->list[rt].name;
-        if (!name) continue;
-        out[k].name = name;
-        out[k].deny = r->c.deny;
-        out[k].stamp = r->routes == CAND_ON(CAND_ROUTE_VM) ? "RX_VM_START_SCAN" : NULL;
-        k++;
-    }
-    return k;
-}
-
-/* The `i`th row (from 0) of `slot` that has a `--list-axes` listing, in
- * table order, or NULL past the last. */
-static const CandRow *cand_listed_row(CandSlot slot, int i)
-{
-    for (size_t k = 0; k < CAND_NROWS; k++) {
-        const CandRow *r = &cand_rows[k];
-        bool listed = false;
-        if (r->slot != slot) continue;
-        for (int rt = 0; rt < 3; rt++)
-            if (r->list[rt].axis) listed = true;
-        if (listed && i-- == 0) return r;
-    }
-    return NULL;
-}
-
 /* The listed name of row `r` (`list[route].name` on the first route that
- * lists it). */
+ * lists it): the `<PREFIX>_END_WINDOW` stamp's fallback token. */
 static const char *cand_listed_name(const CandRow *r)
 {
     for (int rt = 0; rt < 3; rt++)
@@ -8621,53 +8630,83 @@ static const char *cand_listed_name(const CandRow *r)
     return NULL;
 }
 
-/* [START-TABLE] C4 the `req-admit` axis's rows are `cand_rows[]`'s PRESENCE
- * rows, in table order, under their listed names, each with the
- * `<PREFIX>_REQ_WHY` token its verdict stamps. False past the last. */
-bool pcrec_req_admit_row(int i, PcrecReqAdmitDesc *out)
+/* ---- [START-TABLE] C6 THE LISTING READS THE TABLE -----------------------
+ *
+ * Every start axis's `--list-axes` rows (`prefilter`, `search-start`,
+ * `req-admit`, `req-use`, `hyb-reseed`, `vm-anchor-bound`, `end-window`) are
+ * `cand_rows[]`'s rows listed under it, in table order, each with the `desc`
+ * that sits beside the row. The trace build's self-check holds an axis's
+ * orders dense and ascending in table order, so table order IS the listed
+ * order. What a row projects is its SLOT's: the stamp its slot's selection
+ * is reported through on the route the row is listed on, and the value the
+ * row stamps there. */
+
+/* The stamp macro `slot`'s selection writes on route `rt`, spelled with the
+ * listing's own `RX_` prefix. */
+static const char *cand_list_stamp(CandSlot slot, int rt)
 {
-    const CandRow *r = cand_listed_row(CAND_SLOT_PRESENCE, i);
-    if (!r) return false;
-    out->name = cand_listed_name(r);
-    out->deny = r->c.deny;
-    out->why  = req_why_name(r->u.admit.verdict);
-    out->desc = r->u.admit.desc;
-    return true;
+    switch (slot) {
+    case CAND_SLOT_WINDOW:   return "RX_END_WINDOW";
+    case CAND_SLOT_PRESENCE: return "RX_REQ_WHY";
+    case CAND_SLOT_WIDTH:    return "RX_VM_ROOT_MINW";
+    case CAND_SLOT_FIRST:    return "RX_REQ_HANDOFF";
+    case CAND_SLOT_NEXT:
+        return rt == CAND_ROUTE_VM ? "RX_VM_START_SCAN" : "RX_DFA_PREFILTER";
+    case CAND_SLOT_RETRY:    return "RX_VM_RESEED";
+    case CAND_SLOT_BOUND:    return "RX_VM_START";
+    case CAND_SLOT_RECOVER:  return "RX_DFA_START";
+    case CAND_NSLOTS:        break;
+    }
+    return "";
 }
 
-/* [START-TABLE] C4 the `req-use` axis's rows are `cand_rows[]`'s FIRST rows,
- * as `pcrec_req_admit_row`'s are PRESENCE's. False past the last. */
-bool pcrec_req_use_row(int i, PcrecReqUseDesc *out)
+/* The value row `r` stamps where it is chosen, as its stamp writer spells it:
+ * PRESENCE's verdict token (`req_why_name`: `set-leads` stamps `emitted`),
+ * "" where the stamp carries a NUMBER (the handoff's K, the end window's
+ * bound), and otherwise the row's listed name `l->name`, which is the
+ * stamp's vocabulary (since C5 `<PREFIX>_VM_START` reads it too). */
+static const char *cand_list_value(const CandRow *r, const CandList *l)
 {
-    const CandRow *r = cand_listed_row(CAND_SLOT_FIRST, i);
-    if (!r) return false;
-    out->name  = cand_listed_name(r);
-    out->deny  = r->c.deny;
-    out->stamp = r->u.use.use == REQ_USE_HANDOFF ? "" : "none";
-    out->desc  = r->u.use.desc;
-    return true;
+    switch (r->slot) {
+    case CAND_SLOT_PRESENCE: return req_why_name(r->u.admit.verdict);
+    case CAND_SLOT_FIRST:    return r->u.use.use == REQ_USE_HANDOFF ? "" : "none";
+    case CAND_SLOT_WINDOW:   return r->u.window.clamp ? "" : l->name;
+    case CAND_SLOT_WIDTH:
+    case CAND_SLOT_NEXT:
+    case CAND_SLOT_RETRY:
+    case CAND_SLOT_BOUND:
+    case CAND_SLOT_RECOVER:  return l->name;
+    case CAND_NSLOTS:        break;
+    }
+    return l->name;
 }
 
-/* [START-TABLE] C5 the `hyb-reseed` axis's rows are `cand_rows[]`'s RETRY
- * rows, as `pcrec_req_admit_row`'s are PRESENCE's; the listed name is the
- * `<PREFIX>_VM_RESEED` value the row stamps. False past the last. */
-bool pcrec_reseed_row(int i, PcrecReseedDesc *out)
+/* The `i`th row (from 0) of `cand_rows[]` listed under `axis`, projected for
+ * `--list-axes` (internal.h). The deny the listing shows is the row's own
+ * plus the fact deny its listing names (`CandList.fact_deny`, §3.7). */
+bool pcrec_cand_list_row(const char *axis, int i, PcrecCandListRow *out)
 {
-    const CandRow *r = cand_listed_row(CAND_SLOT_RETRY, i);
-    if (!r) return false;
-    out->name = cand_listed_name(r);
-    out->deny = r->c.deny;
-    out->desc = r->u.reseed.desc;
-    return true;
+    for (size_t k = 0; k < CAND_NROWS; k++) {
+        const CandRow *r = &cand_rows[k];
+        for (int rt = 0; rt < 3; rt++) {
+            const CandList *l = &r->list[rt];
+            if (!l->axis || strcmp(l->axis, axis)) continue;
+            if (i-- > 0) break;
+            out->name  = l->name;
+            out->order = l->order;
+            out->deny  = r->c.deny | l->fact_deny;
+            out->stamp = cand_list_stamp(r->slot, rt);
+            out->value = cand_list_value(r, l);
+            out->desc  = r->desc;
+            return true;
+        }
+    }
+    return false;
 }
 
 /* The table-representation axis's candidates, as `--list-axes` reads them. */
 size_t pcrec_dfa_axis_table_cands(PcrecAxisCand *out, size_t cap)
 { return AXIS_LIST(dfa_reprs); }
-/* The prefilter axis's candidates. [START-SET] a row serving the VM route
- * alone names the VM hat's stamp, the one its selection writes. */
-size_t pcrec_dfa_axis_prefilter_cands(PcrecAxisCand *out, size_t cap)
-{ return cand_axis_rows(CAND_SLOT_NEXT, out, cap); }
 /* The view-selector axis's candidates. */
 size_t pcrec_dfa_axis_view_cands(PcrecAxisCand *out, size_t cap)
 { return AXIS_LIST(dfa_views); }
@@ -8683,11 +8722,6 @@ size_t pcrec_dfa_axis_accept_cands(PcrecAxisCand *out, size_t cap)
  * restatement. */
 size_t pcrec_dfa_axis_match_cands(PcrecAxisCand *out, size_t cap)
 { return AXIS_LIST(dfa_matches); }
-/* [OPT-5 STEP 2] axis J, on the same terms as axis G one line up: its objects
- * are `DfaCand`-headed, so the dump and the registry check see the new
- * candidates and `PCREC_NO_START_PINNED` with no hand-copied restatement. */
-size_t pcrec_dfa_axis_searchstart_cands(PcrecAxisCand *out, size_t cap)
-{ return cand_axis_rows(CAND_SLOT_RECOVER, out, cap); }
 #undef AXIS_LIST
 
 /* Axis F is not a candidate LIST (emitter_form.md §3, axis F: "Not a

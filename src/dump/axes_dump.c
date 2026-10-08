@@ -5,8 +5,9 @@
  * boundary, restated at the one place a reader will actually see it): this
  * dump shares its source with the emitter — it reads the SAME candidate-list
  * arrays `src/gen/emit_dfa.c`'s selection walks read (`dfa_select`'s lists;
- * `cand_rows[]` for `prefilter` and `search-start` since [START-TABLE] C3),
- * via the accessors declared in internal.h, and hand-states the rest from
+ * the one start table `cand_rows[]` for every start axis since [START-TABLE]
+ * C6, `emit_cand_axis`), via the accessors declared in internal.h, and
+ * hand-states the rest from
  * `lib/pcrec.h`'s own enum symbols. It proves what the compiler THINKS its options are. It is
  * NOT independent evidence that a stamp or a flag actually behaves as
  * described — the checks that read an EMITTED ARTIFACT (tests/codegen/
@@ -102,19 +103,6 @@ static const AxisDesc AXIS_DESC[] = {
     { "table", "premultiplied", "this machine's states*classes <= 65535 and no emitted seed cell is negative" },
     { "table", "indexed", "always (fallback)" },
 
-    { "prefilter", "run-pinned-bounded", "forward scan, the necessary run is pinned at a fixed offset and the scan already runs on its scan member there: the whole run verified as one compare per candidate, the run pre-check then dominated; under a $/\\Z/\\z view or a word-context accept ([OPT-LITSCAN] S1)" },
-    { "prefilter", "run-pinned", "forward scan, the necessary run is pinned at a fixed offset and the scan already runs on its scan member there: the whole run verified as one compare per candidate, the run pre-check then dominated ([OPT-LITSCAN] S1)" },
-    { "prefilter", "offset-set-bounded", "forward scan, an offset-k candidate SET was selected, under a $/\\Z/\\z view or a word-context accept ([OPT-K])" },
-    { "prefilter", "offset-set", "forward scan, an offset-k candidate SET was selected: one memchr at the chosen offset k*, the other offsets verified per candidate ([OPT-K])" },
-    { "prefilter", "first-memchr-bounded", "[START-SET] the DFA hat: the unanchored forward scan of a SEEDED machine with a plain skip, a start set S (the start_set fact) not nullable with fewer than 256 members, and T = S & E* (E* every seed state's escape set; T == S) a non-empty proper subset of the start state's escape set E, one byte: memchr for it, stopped at n-1, re-seeding the state from the byte before the landing where the skip moved" },
-    { "prefilter", "first-class-bounded", "[START-SET] the DFA hat, as first-memchr-bounded with T of several bytes: a 256-entry start_bytes table walk stopped at n-1, re-seeding where the skip moved" },
-    { "prefilter", "first-class", "vm: [START-SET] a VM artifact with no DFA prefilter, an unanchored pattern, and a start set S (the start_set fact) that is not nullable and has fewer than 256 members: the attempt loop seeks the next byte of S, as a 256-entry table, before its first attempt and after each failed one; dfa: never (the DFA hat is -bounded only: a seeded machine always carries the D11 bound)" },
-    { "prefilter", "memchr-bounded", "forward scan, one candidate byte, under a $/\\Z/\\z view or a word-context accept" },
-    { "prefilter", "memchr", "forward scan, one candidate byte" },
-    { "prefilter", "byte-class-bounded", "forward scan, several candidate bytes, under a $/\\Z/\\z view or a word-context accept" },
-    { "prefilter", "byte-class", "forward scan, several candidate bytes" },
-    { "prefilter", "none", "always (fallback) — also the reverse machine, and every case where the start state itself accepts (no skip is sound there)" },
-
     { "view", "end+eol", "both a \\z view and a $/\\Z view exist on this machine" },
     { "view", "end", "a \\z view exists and no $/\\Z view does" },
     { "view", "eol", "a $/\\Z view exists and no \\z view does" },
@@ -141,9 +129,6 @@ static const AxisDesc AXIS_DESC[] = {
 
     { "match", "unwrapped", "the artifact's own ENG_UNANCH _match, and its anchored machine built inside the DFA caps ([ENG-ABS])" },
     { "match", "search-filter", "always (fallback) — ENG_ATTEMPT, the empty engine, an anchored machine over a cap, or the deny flag" },
-
-    { "search-start", "pinned", "ENG_UNANCH, a non-empty engine, and the forward machine's start state accepts under the PLAIN view with an accept that is invariant in position and in class context -- and, where mechanism 4 seeds, every live seed state does too. The match then provably begins at search_from and no reverse machine is emitted ([OPT-5] STEP 2)" },
-    { "search-start", "reverse-pass", "always (fallback) -- the backwards scan over the artifact's own reverse machine recovers the match start" },
 };
 #define N_AXIS_DESC (sizeof AXIS_DESC / sizeof AXIS_DESC[0])
 
@@ -159,17 +144,16 @@ static const char *desc_of(const char *axis, const char *cand)
            "`applies` function in src/gen/emit_dfa.c)";
 }
 
-/* Per-axis scalar stamp macro, where one exists — axes B and C-E's own
- * candidate objects have no `#define` of their own (docs/spec/tuning.md's
- * per-artifact stamp table only names RX_DFA_TABLE and RX_DFA_PREFILTER;
- * view/seed/accept/direction are emitter-internal decisions with no
- * observable trace in the artifact). Where a stamp exists, D82's own rule
- * ("the chosen object's name IS the stamp value") makes `stamp_value`
- * exactly the candidate's own name — never re-derived. */
+/* Per-axis scalar stamp macro, where one exists — axes C-E's own
+ * candidate objects have no `#define` of their own (view/seed/accept/
+ * direction are emitter-internal decisions with no observable trace in the
+ * artifact). Where a stamp exists, D82's own rule ("the chosen object's name
+ * IS the stamp value") makes `stamp_value` exactly the candidate's own name
+ * — never re-derived. The start axes (`prefilter`, `search-start`) are not
+ * here: their rows carry their own stamp (`emit_cand_axis`). */
 static const char *stamp_macro_of(const char *axis)
 {
     if (!strcmp(axis, "table")) return "RX_DFA_TABLE";
-    if (!strcmp(axis, "prefilter")) return "RX_DFA_PREFILTER";
     /* [ENG-ABS] axis G HAS a per-artifact stamp, unlike view/seed/accept/
      * direction — its value is a caller-visible cost property of
      * `<prefix>_match` (spec §3.2), not an emitter-internal decision. */
@@ -179,11 +163,6 @@ static const char *stamp_macro_of(const char *axis)
      * own: what an artifact reports is which body its edges took, and
      * "table-walk everywhere" is that stamp's `"none"`. */
     if (!strcmp(axis, "scan-body")) return "RX_DFA_SCAN_EDGE";
-    /* [OPT-5 STEP 2] axis J HAS a per-artifact stamp for axis G's reason: its
-     * value is a caller-visible COST property of an entry point the caller
-     * calls (roughly a factor of two on a counted class run), not an
-     * emitter-internal decision. */
-    if (!strcmp(axis, "search-start")) return "RX_DFA_START";
     return "";
 }
 
@@ -328,8 +307,7 @@ static void emit_dfa_list_axis(StrBuf *sb, const char *axis, const char *kind,
     size_t n = get(cands, 16);
     for (size_t i = 0; i < n; i++) {
         char deny_macro[64], deny_bit[8], flag[96];
-        /* [START-SET] a row may name its own stamp (the VM hat's row). */
-        const char *stamp_macro = cands[i].stamp ? cands[i].stamp : stamp_macro_of(axis);
+        const char *stamp_macro = stamp_macro_of(axis);
         deny_cols(cands[i].deny, deny_macro, sizeof deny_macro, deny_bit, sizeof deny_bit);
         axis_cli_flag(cands[i].deny, 0, flag, sizeof flag);
         const char *stamp_value = stamp_macro[0] ? cands[i].name : "";
@@ -338,6 +316,29 @@ static void emit_dfa_list_axis(StrBuf *sb, const char *axis, const char *kind,
                  deny_macro, deny_bit, "", "",
                  flag,
                  desc_of(axis, cands[i].name));
+    }
+}
+
+/* ---- the start axes: projected off the one start table ------------------
+ *
+ * [START-TABLE] C6. Every start axis (`prefilter`, `search-start`,
+ * `req-admit`, `req-use`, `hyb-reseed`, `vm-anchor-bound`, `end-window`) is
+ * the rows of `cand_rows[]` (src/gen/emit_dfa.c) listed under it, walked
+ * live off `pcrec_cand_list_row`: name, order, deny bits, stamp macro and
+ * value, and the `applies` text, which sits beside its row in that table
+ * rather than in a hand table here (start_table.md §2.4 D-3: the hand table
+ * had drifted from the row it described). This surface therefore cannot
+ * state a row the emitter's walk does not have. `kind` is the caller's: the
+ * section the axis is reported under. */
+static void emit_cand_axis(StrBuf *sb, const char *axis, const char *kind)
+{
+    PcrecCandListRow r;
+    for (int i = 0; pcrec_cand_list_row(axis, i, &r); i++) {
+        char deny_macro[64], deny_bit[8], flag[96];
+        deny_cols(r.deny, deny_macro, sizeof deny_macro, deny_bit, sizeof deny_bit);
+        axis_cli_flag(r.deny, 0, flag, sizeof flag);
+        axis_row(sb, axis, r.order, r.name, kind, r.stamp, r.value,
+                 deny_macro, deny_bit, "", "", flag, r.desc);
     }
 }
 
@@ -690,50 +691,31 @@ static void emit_predicate_axes(StrBuf *sb)
                          pcrec_memfn_deny_flags(r->deny), 0, "", r->doc);
     }
     /* [OPT-ANCHOR-VM] vm-anchor-bound — §2.25. The VM's attempt-loop start
-     * bound, from the `start_anchor` fact's one AST-level derivation. Its stamp is
-     * a closed TOKEN, so `stamp_value` is spelled on every row — and the
-     * three tokens are `src/facts/startanch.c`'s own, through
-     * `pcrec_start_anchor_name`, so this registry surface and the emitted
-     * `<PREFIX>_VM_START` cannot name different sets.
+     * bound: the BOUND rows of `cand_rows[]` listed on the VM route since
+     * [START-TABLE] C6 (C5 made `<PREFIX>_VM_START` read the same rows, so the
+     * listing and the stamp name one set). Its stamp is a closed TOKEN, so
+     * `stamp_value` is spelled on every row; the two anchored rows show
+     * `-fno-vm-anchor-bound`, the `start_anchor` FACT's deny, as a projection
+     * (start_table.md §3.7): the bit empties the landmark, not the row.
      *
      * THE AXIS IS THE VM's AND THE FACT IS NOT. The same three values
      * describe the DFA's `start_max`, which this dump reports nowhere because
      * that emitter derives it from its own machine; the `search-start` axis
      * above is a different question (where the MATCH begins once one is
      * found), not this one (where an ATTEMPT may begin at all). */
-    {
-        PredAxis p = { "vm-anchor-bound", NULL, "RX_VM_START", "", 0, NULL, 0, NULL, NULL, NULL };
-        emit_pred_row(sb, &p, 1, pcrec_start_anchor_name(PCREC_SANCH_BOT),
-                     pcrec_start_anchor_name(PCREC_SANCH_BOT),
-                     PCREC_NO_VM_ANCHOR_BOUND, 0, "",
-                     "per artifact on the VM route: every alternative of the whole pattern begins with ^ (outside multiline) or \\A, so only offset 0 can start a match and the attempt loop stops after one pass");
-        emit_pred_row(sb, &p, 2, pcrec_start_anchor_name(PCREC_SANCH_GSTART),
-                     pcrec_start_anchor_name(PCREC_SANCH_GSTART),
-                     PCREC_NO_VM_ANCHOR_BOUND, 0, "",
-                     "per artifact on the VM route: every alternative begins with \\G, so only the caller's own search_from can start a match and the attempt loop stops after one pass");
-        emit_pred_row(sb, &p, 3, pcrec_start_anchor_name(PCREC_SANCH_NONE),
-                     pcrec_start_anchor_name(PCREC_SANCH_NONE),
-                     0, 0, "",
-                     "always (fallback) — nothing was proved about where a match begins, or the deny flag; the loop runs to subject_length as it always has");
-    }
-    /* [OPT-ENDWIN] end-window — §2.26. The END-ANCHOR START WINDOW, from
-     * the `end_window` fact's one AST-level derivation, on BOTH engines.
+    emit_cand_axis(sb, "vm-anchor-bound", "predicate");
+    /* [OPT-ENDWIN] end-window — §2.26. The END-ANCHOR START WINDOW: the
+     * WINDOW rows of `cand_rows[]` since [START-TABLE] C6, on BOTH engines.
      *
      * `stamp_value` IS SPELLED ON THE FALLBACK ROW AND EMPTY ON THE OTHER,
      * which no other axis in this dump does, and the asymmetry is the stamp's
      * own shape rather than an omission: `<PREFIX>_END_WINDOW` carries a
      * NUMBER when the analysis proved a bound (there is no named value to
      * put here, `alt-island`'s reason) and the literal token `"none"` when it
-     * declined (which IS a named value, and a consumer buckets on it). */
-    {
-        PredAxis p = { "end-window", NULL, "RX_END_WINDOW", "", 0, NULL, 0, NULL, NULL, NULL };
-        emit_pred_row(sb, &p, 1, "window", "",
-                     PCREC_NO_END_WINDOW, 0, "",
-                     "per artifact, both engines: every alternative ends in $/\\Z/\\z outside multiline AND pcrec_cwmax is finite, so a match can only BEGIN in the last maxw+eps bytes and both search entries raise search_from to there (eps is 1 for $/\\Z's final-newline allowance, 0 for \\z); the stamp carries the bound");
-        emit_pred_row(sb, &p, 2, "none", "none",
-                     0, 0, "",
-                     "always (fallback) — the pattern is not end-anchored, its width is unbounded, it contains \\G (which reads the parameter the clamp would move), the encoding has non-boundary positions, or the deny flag");
-    }
+     * declined (which IS a named value, and a consumer buckets on it). The
+     * `window` row shows `-fno-end-window`, the `end_window` FACT's deny, as
+     * a projection (§3.7). */
+    emit_cand_axis(sb, "end-window", "predicate");
     /* [OPT-REQBYTE] req-byte — §2.27. The NECESSARY-BYTE whole-window
      * pre-check, from the `req_byte` fact's one AST-level derivation, on BOTH
      * engines' search entries. `stamp_value` is spelled on the fallback row
@@ -778,28 +760,17 @@ static void emit_predicate_axes(StrBuf *sb)
                      "always (fallback) — single bytes only, the pre-row walk, ranked by length; the deny flag");
     }
     /* [OPT-PRECHECK-ADMIT] [K82] req-admit — §2.29/§2.40. The whole-window
-     * pre-check's admission rows, WALKED LIVE off `pcrec_req_admit_row`
-     * (src/gen/emit_dfa.c: the PRESENCE rows of `cand_rows[]` since
-     * [START-TABLE] C4), so this surface cannot state a predicate the
-     * emitter does not ask. Its stamp is `RX_REQ_WHY`; `set-leads` is a
+     * pre-check's admission rows: the PRESENCE rows of `cand_rows[]`
+     * (src/gen/emit_dfa.c, since [START-TABLE] C4), projected since C6 with
+     * the `desc` beside each row, so this surface cannot state a predicate
+     * the emitter does not ask. Its stamp is `RX_REQ_WHY`; `set-leads` is a
      * SHAPE of an emitted pre-check, so it stamps `emitted` too. */
-    {
-        PredAxis p = { "req-admit", NULL, "RX_REQ_WHY", "", 0, NULL, 0, NULL, NULL, NULL };
-        PcrecReqAdmitDesc r;
-        for (int i = 0; pcrec_req_admit_row(i, &r); i++)
-            emit_pred_row(sb, &p, i + 1, r.name, r.why, r.deny, 0, "", r.desc);
-    }
+    emit_cand_axis(sb, "req-admit", "predicate");
     /* [K82] (B) req-use — §2.41. What the body does with an emitted run
-     * pre-check's answer, WALKED LIVE off `pcrec_req_use_row` (the FIRST
-     * rows of `cand_rows[]` since [START-TABLE] C4) for the admission's
-     * reason. Its stamp is `RX_REQ_HANDOFF`, whose value on the
+     * pre-check's answer: the FIRST rows of `cand_rows[]`, as req-admit's
+     * are PRESENCE's. Its stamp is `RX_REQ_HANDOFF`, whose value on the
      * `handoff` row is the artifact's own K, so no row names a fixed value. */
-    {
-        PredAxis p = { "req-use", NULL, "RX_REQ_HANDOFF", "", 0, NULL, 0, NULL, NULL, NULL };
-        PcrecReqUseDesc r;
-        for (int i = 0; pcrec_req_use_row(i, &r); i++)
-            emit_pred_row(sb, &p, i + 1, r.name, r.stamp, r.deny, 0, "", r.desc);
-    }
+    emit_cand_axis(sb, "req-use", "predicate");
     /* [K50] startpos-guard — §2.23. A CONTRACT AXIS, NOT ANSWER-IDENTICAL:
      * each row describes a real semantics for a mid-character caller
      * startpos, and which one an artifact carries is a contract fact rather
@@ -903,17 +874,12 @@ static void emit_predicate_axes(StrBuf *sb)
                          pcrec_look_rows[i].deny, 0, "",
                          pcrec_look_rows[i].applies_desc);
     }
-    /* [OPT-HYB-RESEED] hyb-reseed — §2.35, the VM hybrid's retry re-seed;
-     * its rows WALKED LIVE off `pcrec_reseed_row` (since [START-TABLE] C5 the
-     * RETRY rows of `cand_rows[]`, src/gen/emit_dfa.c), so this surface
-     * cannot state a predicate the emitter does not ask. The row's NAME is
-     * the RX_VM_RESEED value it stamps. */
-    {
-        PredAxis p = { "hyb-reseed", NULL, "RX_VM_RESEED", "", 0, NULL, 0, NULL, NULL, NULL };
-        PcrecReseedDesc r;
-        for (int i = 0; pcrec_reseed_row(i, &r); i++)
-            emit_pred_row(sb, &p, i + 1, r.name, r.name, r.deny, 0, "", r.desc);
-    }
+    /* [OPT-HYB-RESEED] hyb-reseed — §2.35, the VM hybrid's retry re-seed:
+     * the RETRY rows of `cand_rows[]` (since [START-TABLE] C5; was
+     * `pcrec_reseed_rows[]`), projected since C6 with the `desc` beside each
+     * row, so this surface cannot state a predicate the emitter does not
+     * ask. The row's listed name is the RX_VM_RESEED value it stamps. */
+    emit_cand_axis(sb, "hyb-reseed", "predicate");
     /* splice-calls — §2.9, ENGINE-SELECTING; RX_VM_CALL_SPLICED/_LINKED are
      * two separate counts, one per candidate. */
     {
@@ -1135,7 +1101,7 @@ char *pcrec_axes_tsv(void)
 
     emit_dfa_list_axis(&sb, "table", "list", pcrec_dfa_axis_table_cands);
     emit_table_composite_rows(&sb);
-    emit_dfa_list_axis(&sb, "prefilter", "list", pcrec_dfa_axis_prefilter_cands);
+    emit_cand_axis(&sb, "prefilter", "list");
     emit_dfa_list_axis(&sb, "view", "list", pcrec_dfa_axis_view_cands);
     emit_dfa_list_axis(&sb, "seed", "list", pcrec_dfa_axis_seed_cands);
     emit_dfa_list_axis(&sb, "accept", "list", pcrec_dfa_axis_accept_cands);
@@ -1154,7 +1120,7 @@ char *pcrec_axes_tsv(void)
      * NO composite rows -- unlike `table` and `scan-body`, whose stamps
      * compose a fact across machines, RX_DFA_START names one artifact-level
      * selection and its value set is exactly these two candidates. */
-    emit_dfa_list_axis(&sb, "search-start", "list", pcrec_dfa_axis_searchstart_cands);
+    emit_cand_axis(&sb, "search-start", "list");
 
     emit_predicate_axes(&sb);
     emit_memfn_section(&sb);
