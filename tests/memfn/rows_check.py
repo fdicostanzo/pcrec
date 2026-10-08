@@ -374,8 +374,13 @@ def main():
     # ---- D. the floor file -------------------------------------------------
     why = {(c[0], c[1]): c[2] for c in rows}
     fk = [(c[0], c[1]) for c in floors]
-    if sorted(fk) != sorted(why):
-        bad("row_floors.tsv names %s; rows.tsv names %s" % (sorted(set(fk) ^ set(why)), "the rest"))
+    for k in sorted(set(why) - set(fk)):
+        bad("rows.tsv names %s/%s and row_floors.tsv has no line for it" % k)
+    for k in sorted(set(fk) - set(why)):
+        bad("row_floors.tsv names %s/%s and rows.tsv does not" % k)
+    for k in sorted(set(fk)):
+        if fk.count(k) > 1:
+            bad("row_floors.tsv has %d lines for %s/%s" % ((fk.count(k),) + k))
     ph = 0
     for c in floors:
         key, pf, gf = (c[0], c[1]), c[2], c[3]

@@ -19,7 +19,12 @@
 # Since N3 (an enforcing kit) the trace's `would_decline` still counts the
 # selections the gate CHANGED (and refused uses); `chosen=-` lines are the
 # define/run refusals ("selections with no row"). Both must be 0 for pcrec.
-# Last line, always: `== N2 DONE rc=N would_decline=K ==`.
+# [MEMFN-ROWCON] N4: the report also holds every row's CHOSEN count to
+# tests/memfn/row_floors.tsv (and every non-`pcrec` row of rows.tsv to 0);
+# on a FULL run a floor failure, a stale reason or a REACH_DROPPED count makes
+# rc 4. A partial run (SMOKE, --limit, an arm subset) prints floors=NOT-APPLIED.
+# Last line, always: `== N2 DONE rc=N would_decline=K floors=<summary> ==`
+# (rc 0 ok, 1 driver failed, 2 build failed, 3 report failed, 4 floors).
 # Results: $OUT/n2_results.md, $OUT/arm_NNN.json, $OUT/census.log. A re-run
 # with the same OUT resumes (finished arms are skipped).
 set -u
@@ -33,8 +38,8 @@ CC=${CC:-gcc-16}
 SMOKE=${SMOKE:-}
 mkdir -p "$OUT"
 
-rc=0; wd=0
-done_line() { echo "== N2 DONE rc=$rc would_decline=$wd =="; }
+rc=0; wd=0; fl=unread
+done_line() { echo "== N2 DONE rc=$rc would_decline=$wd floors=$fl =="; }
 
 release() { if [ -n "${HAVE_LOCK:-}" ]; then rm -rf "$LOCK"; fi; }
 trap release EXIT
@@ -62,8 +67,15 @@ ARGS=(--bin "$BIN" --tree "$TREE" --out "$OUT" --jobs "$JOBS")
 
 python3 "$HERE/n2_census.py" "${ARGS[@]}" 2>&1 | tee "$OUT/census.log"
 [ "${PIPESTATUS[0]}" -eq 0 ] || rc=1
-python3 "$HERE/n2_report.py" "$OUT" -o "$OUT/n2_results.md" > "$OUT/report.log" 2>&1 || rc=${rc/0/3}
+python3 "$HERE/n2_report.py" "$OUT" -o "$OUT/n2_results.md" \
+    --floors "$TREE/tests/memfn/row_floors.tsv" > "$OUT/report.log" 2>&1 || rc=${rc/0/3}
 cat "$OUT/report.log"
 wd=$(sed -n 's/^would_decline=//p' "$OUT/report.log" | tail -1); wd=${wd:-0}
+fl=$(grep -E '^(floor_fail|floors)=' "$OUT/report.log" | tail -1 | tr ' ' ','); fl=${fl#floors=}; fl=${fl:-unread}
+case "$fl" in
+    floor_fail=0,*reason_stale=0,reach_dropped=0) ;;
+    NOT-APPLIED,reason_stale=0,reach_dropped=0) ;;
+    *) [ "$rc" -eq 0 ] && rc=4 ;;
+esac
 done_line
 exit $rc
