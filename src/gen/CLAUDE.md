@@ -1250,6 +1250,15 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
   `yes-collapsed`, OFF the row's `list` cell), and `VM_PREFILTER_WHY`'s
   test to the fired row's `pfwhy` cell (`Ctx.fit_seq`); a difference aborts
   (`CANDORACLE`). B4/B5 make the cells the readers.
+- **emit_vm.c — the `--emit-ir` `prefilter` line reads T2's row**
+  ([DEC-FALLBACK] B4, lane decfbB4, 2026-10-08; no emitted byte, listing
+  byte-identical). A verdict ON still lists `yes`/`yes-collapsed` here (the
+  collapse is T3's); an OFF verdict lists the row's `list` cell and formats
+  its `note` cell over `cx->dfa_overflow_why`. The seven-arm chain,
+  `sel1_prefilter_reason` and `VmStamp`'s four reason fields
+  (`has_bref`, `has_call`, `prefilter_declined_nullable*`) are deleted; the
+  arms' prose moved verbatim into the rows. The B2 `admit-listing` oracle
+  site retired with the chain.
 - **emit_dfa.c — NEXT and RECOVER read the start table** ([START-TABLE] C3,
   lane stc3, 2026-10-07; `docs/design/start_table.md` §3.2 C3; zero movers,
   no abi event). `dfa_pfs[]` and `dfa_search_starts[]` are DELETED into

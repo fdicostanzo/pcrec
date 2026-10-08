@@ -128,7 +128,9 @@ of both flag routes, since this is a THIRD thing no flag explains): the
 reason text embeds `cx->dfa_overflow_why`'s own cap name, e.g.
 `"NO (dfa overflowed: >32000 states) -- ..."`, computed into a local buffer
 (`sel1_prefilter_reason`) before the ternary because — unlike the static
-arms — it has to interpolate the runtime cap text.
+arms — it has to interpolate the runtime cap text. (Since [DEC-FALLBACK] B4
+the text is T2's `overflow-drop` row's `note` cell, a format over the cap
+name; the listing bytes are unchanged.)
 
 **THE WITNESS IS THE SAME PATTERN [SEL-1]'s OTHER TESTS USE** (`tests/vm/
 run_vm_tests.sh` §3b, `docs/spec/tuning.md` §2.11/§2.5):

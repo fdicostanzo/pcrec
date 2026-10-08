@@ -33,5 +33,10 @@ SAB_DOC_FIGURE="PREDICTED: the 'vars' arm RED with every tests/vars/ pattern fai
 SAB_REACH='"$PCREC" --features vars -p rx -o "$REACH_TMP/o.c" --pattern "a\${v}b" && grep -q "^#define RX_VM_PREFILTER \"none\"" "$REACH_TMP/o.c" && echo REACH-VAR-PATTERN-HAS-NO-PREFILTER'
 SAB_REACH_EXPECT="REACH-VAR-PATTERN-HAS-NO-PREFILTER"
 SAB_COUNT=1
-SAB_BEFORE='    fit->prefilter = (has_bref || has_call || has_var ||'
-SAB_AFTER='    fit->prefilter = (has_bref || has_call || false ||   /* SABOTAGE S272 */'
+# [DEC-FALLBACK] B4 (lane decfbB4, 2026-10-08) RE-AIMED, INTENT RE-VERIFIED.
+# The verdict ternary is gone: T2's `var` row (row 9, design §4.4) forces
+# the prefilter off for a non-nullable `${...}` pattern (a nullable one is
+# row 3's, off either way, exactly as the old plant left it through the
+# untouched default decline). The plant hands row 9's verdict to the default.
+SAB_BEFORE='    { "var",                pfa_var,                PFV_OFF,     "no-engine-vm",'
+SAB_AFTER='    { "var",                pfa_var,                PFV_DEFAULT, "no-engine-vm",   /* SABOTAGE S272 */'
