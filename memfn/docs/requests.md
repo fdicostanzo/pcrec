@@ -223,3 +223,38 @@ channel; one heavy suite at a time); the Mac run is directional.
 - ZERO MOVERS: `scripts/emit_sweep.py --ref <main sha>` judged by `memfn_r4c_gate.py --zero-dumps`, R4C-GATE PASS with 0 movers on every stream. Run both encodings: N7 is per-encoding text, so the `-e utf8` base is mandatory. No abi event; any byte that moves is a defect, so STOP and report it.
 - `make strict`. The slot chain is census, identity gate, G2 full, `make test` via `scripts/perfrun`, and solo mech for every row whose anchor moves (they must stay DETECTED). [SABANCHOR] green.
 - Sabotage ids: S666-S675 are yours. Grep main and worktrees before taking one.
+
+## R-9 (2026-10-08, pcrec manager) — R4e′ DESIGN PASS: the SIMD layer as a parallel thread (D147 addendum 11), design + D6 panel, no pcrec bytes
+
+**Customer:** `[OPT-SIMD]`, opened 2026-10-08 for the kit's opt-in `-fmemfn-simd` layer only (D147 addendum 11, Frank: the "I'm not left handed" strategy, meaning the scalar and SIMD paths are optimized independently).
+
+**Trigger:** Frank's ruling (D147 addendum 11). It supersedes integration.md §22 R4e′'s old trigger ("`[OPT-SIMD]` opened (D119: SIMD last)").
+
+**Capacity:** this is the SIMD thread's first item under the 2:1 migration:SIMD split. Design only: no pcrec bytes, no heavy slot.
+
+**Deliverable:** a revision of integration.md §R4.3.2 and §22 R4e′ under the ruling. It covers:
+- the SCAN_ROWS form table (SIMD forms as rows beside the scalar arms, selected by the site's facts and the policy word);
+- cascades and the short-span path (R-1's 16 B AVX2 rows);
+- the `-fmemfn-simd` axis status (built or owed; pcrec owns the axis, so name any pcrec-side change as a later request);
+- the MEASUREMENT REGIME on the shared box: the Linux verdict, both layers reported, quiet-box slots through main, the aarch64 rule of D147 addendum 8, and every unroll width, block size or cut-over measured, derived or left to the compiler (D149);
+- the acceptance bar per form: faster than the CURRENT scalar layer at its sites, or a named benefit;
+- the first batch of sites, with each one's evidence (R-1/R4b, isa_*.md, linux_results.md);
+- the three standing questions of docs/design/CLAUDE.md.
+
+Then a D6 panel (2-4 read-only critics; the lenses include check independence and the sibling-of-a-family lens). Finish with the Q-n for Frank and a notice to me. Each later batch of SIMD sites is its own request.
+
+## R-10 (2026-10-08, pcrec manager) — M6: N6 + VMSTRIDE migrate, zero movers (READ-ONLY scoping first)
+
+**Customer:** `[MEMFN]`, integration.md §22 M6. **Prerequisite:** R4h (landed).
+
+**Trigger:** completeness (D147 addendum 5 / Q42). After M7 these are the last `pending` manifest sites, apart from N7U.
+
+**Capacity:** a migration-thread item (2:1 split). It may start as soon as a migration lane is free; M7's slot comes first.
+
+**Step 1, READ-ONLY scoping, before any edit.** Post a responses notice with the same shape as R-8's:
+- the edit set;
+- the boundary (search text only; every start decision, row selection, admission and BOUND/route read stays pcrec-side; name every read the migrating emitter does today);
+- the OVERLAP CHECK under D153 against refactor B (B4 = select_engine.c's admission and emit_vm.c's `--emit-ir` prefilter chain, landing now; B5 = the token derivations: `esel_of`, PFLW, `size_term_why`, `VM_PREFILTER_WHY`) and against any in-flight work on the VM's strided span loop;
+- the vocabulary gap, if any.
+
+**Landing bar:** R-5/R-6/R-8's. ZERO MOVERS judged by `memfn_r4c_gate.py --zero-dumps`; `make strict`; the full `make test` on a slot I name; solo mech for every moved anchor; [SABANCHOR] green. Sabotage ids: S676-S685.
