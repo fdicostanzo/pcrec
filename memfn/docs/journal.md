@@ -858,3 +858,8 @@ pointer when a kit change merges to main.
 - Frank's observation through main: the N2 census runs with a per-arm
   barrier (stragglers like `((a)|ab){4000}c` leave one compile running).
   Follow-up: one pool across all arms.
+- R4g merged to main (d33e1d55). n2pool delivered (one census pool, byte-
+  identical, resumable). N4 started: opus lane n4 in worktrees/n4 on
+  lane/memfn-n4 (from the n2pool branch), covering the MF_TRACE reach
+  counters, rows.tsv, the per-row signatures with controls, the census
+  floors (placeholders, pinned in a slot) and the spec literals.
