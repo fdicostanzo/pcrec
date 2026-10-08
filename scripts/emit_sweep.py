@@ -287,16 +287,20 @@ PINS = {
     # 304 files / 3,938 rows / 3,517 reach to the values below, and every
     # floor here had fallen ~15% behind it. Same margin as the originals
     # (~1% on the argv axes, zero slack on producing files).
-    "composition_files_floor": 360,       # measured 369 (was 300 / 304)
+    # RE-PINNED at [DEC-FALLBACK] B1 (lane decfbB1, 2026-10-08, B0 tip
+    # 6794d272 + B1; one-tree measurement run, all streams): the corpus had
+    # grown to 373 files / 5,423 rows, and the argv/reach floors were ~15%
+    # behind it again. Same margins as C0's re-pin.
+    "composition_files_floor": 365,       # measured 373 (was 360 / 369 at C0)
     # corpus pattern/pattern-esc rows found by --list-source over tests/**/*.rxt.
-    "argv_population_floor": 4550,        # measured 4,606 (was 3,900 / 3,938)
+    "argv_population_floor": 5370,        # measured 5,423 (was 4,550 / 4,606 at C0)
     # rows where BOTH sides compile successfully, per stream (--features all).
-    "reach_default_floor": 4110,          # measured 4,159 (stream 1; was 3,480 / 3,517)
-    "reach_vm_floor": 4110,               # measured 4,160 (stream 2)
-    "reach_ir_floor": 4110,               # measured 4,160 (stream 3)
+    "reach_default_floor": 4920,          # measured 4,972 (stream 1; was 4,110 / 4,159)
+    "reach_vm_floor": 4920,               # measured 4,973 (stream 2; was 4,160)
+    "reach_ir_floor": 4920,               # measured 4,973 (stream 3; was 4,160)
     # [START-TABLE] C0 stream 6 (--emit-facts=byte,utf8): fewer than stream 1
     # because both encodings must compile (a byte-only pattern refuses).
-    "reach_facts_floor": 4070,            # measured 4,119
+    "reach_facts_floor": 4880,            # measured 4,932 (was 4,119)
     # composition files that produce >=1 artifact on both sides. Measured
     # 32 producing / 96 artifacts, matching w2y_report.md's own recorded
     # figure EXACTLY (also claimed at --features all) -- resolved after an
@@ -323,8 +327,8 @@ PINS = {
     # known --features regression costing exactly 3 of these files
     # (32 -> 29), so this one axis needs maximum sensitivity, not a
     # margin -- any drop at all is worth flagging.
-    "composition_producing_floor": 38,    # measured 38 at C0 (was 32)
-    "composition_artifacts_floor": 100,   # measured 108 at C0 (was 88 / 96); an 8-artifact
+    "composition_producing_floor": 38,    # measured 38 at C0 and at B1 (was 32)
+    "composition_artifacts_floor": 100,   # measured 108 at C0 and at B1 (was 88 / 96); an 8-artifact
                                            # margin (one file's worth, at
                                            # this corpus's measured 3.0
                                            # artifacts/producing-file
