@@ -328,7 +328,7 @@ TEST_SECTIONS := test-corpus test-cli test-reject test-registry test-parse \
       test-clskit test-encoding-checks test-utfcheck test-startset test-memfn-link \
       test-memfn-manifest test-memfn-g2 test-memfn-stamps test-memfn-arms \
       test-memfn-deleg test-memfn-arch test-memfn-forms test-memfn-reach \
-      test-cand-oracle
+      test-memfn-rows test-cand-oracle
 
 # [CHK-2 trailer] `test:` STOPPED being purely prerequisite-based here
 # (2026-08-26, manager finding, journal part 7): under `make -j12 test`,
@@ -1275,6 +1275,16 @@ test-memfn-deleg: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-memfn-deleg.ran"; fi
 	CC="$(CC)" TMPDIR=$${TMPDIR:-/var/tmp} bash tests/memfn/run_deleg_sites.sh
 
+# [MEMFN-ROWCON] N4: the kit's ROW MANIFEST (tests/memfn/rows.tsv) against
+# the rows an MF_TRACE build of the kit lists, each row's closed reach reason,
+# each row's text signature in its witness's artifact and absent from its
+# control's (the trace must agree with the text both ways), and the shape of
+# the per-row floor file (tests/memfn/row_floors.tsv). Seconds; builds a
+# traced kit and a traced pcrec in TMPDIR from build/libpcrec.a.
+test-memfn-rows: all
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-memfn-rows.ran"; fi
+	CC="$(CC)" TMPDIR=$${TMPDIR:-/var/tmp} bash tests/memfn/run_rows.sh
+
 # [MEMFN] R4a: G2, the kit's own tests (memfn/tests/, D27-blinded lane
 # memfng2): the kit's rendered text against G2's own byte loop over a
 # generated site space, with its planted-defect witnesses. The section runs
@@ -1837,7 +1847,7 @@ clean:
         test-encoding-checks test-startbnd test-utfcheck test-memfn-link test-core test-examples test-clskit \
         test-memfn-manifest test-memfn-g2 test-memfn-g2-full test-memfn-stamps \
         test-memfn-arms test-memfn-deleg \
-        test-memfn-arch test-memfn-forms test-memfn-reach \
+        test-memfn-arch test-memfn-forms test-memfn-reach test-memfn-rows \
         test-startset \
         smoke hooks strict testscripts ubsan asan san lint alloc mech bench \
         fuzz clean

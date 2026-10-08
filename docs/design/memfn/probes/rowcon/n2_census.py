@@ -241,7 +241,8 @@ def main():
     todo = [(i, l, e) for i, (l, e) in enumerate(arms) if not a.arms or re.search(a.arms, l)]
     meta = {"corpus rows": len(corpus), "distinct patterns": len(pats),
             "composition files": len(comp_files), "arms in table": len(arms),
-            "arms run": len(todo), "bin": bin_path}
+            "arms run": len(todo), "limit": a.limit, "explicit patterns": len(a.pattern),
+            "bin": bin_path}
     json.dump(meta, open(os.path.join(a.out, "meta.json"), "w"))
     print("n2_census: %s" % meta, flush=True)
     pending = []

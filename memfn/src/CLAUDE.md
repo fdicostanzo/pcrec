@@ -116,7 +116,9 @@ R4g (M2), a fourth, the prefilter find (PF, pffind.c).
   every gate refusal names its fields with: backquoted name, rule, class),
   and under the compile-time switch `MF_TRACE` (off by default) the
   `MFTRACE` stderr records and reach counters (format:
-  `../docs/trace_format.md`; a trace build also asks a declined row's
+  `../docs/trace_format.md`; since N4 the exit lines end with
+  `REACH_DROPPED n=N`, the selections a full counter registry could not
+  hold, so an undercount is visible rather than silent; a trace build also asks a declined row's
   predicate, so `would_decline` still means "the gate moved this
   selection"). Each
   row's `uses`/`serves`, with a citation per declaration, sits at the end of

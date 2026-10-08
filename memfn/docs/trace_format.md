@@ -82,17 +82,24 @@ define/run refusals.
 
 ## Reach (at exit)
 
-At process exit, one line per row of each table, in table order, and one
-per (row, used field, class) cell that was reached:
+At process exit, one line per row of each table, in table order, one
+per (row, used field, class) cell that was reached, and one REACH_DROPPED
+line:
 
     MFTRACE REACH table=T row=R chosen=N
     MFTRACE REACH table=T row=R field=F class=C n=N
+    MFTRACE REACH_DROPPED n=N
 
 - `chosen`: how many selections chose the row (`define` and `run` phases;
   a `use` re-check is not a selection). Every row is listed, 0 included.
 - A cell counts, for each `END` with a chosen row, each field the row USES
   at that phase on that site, by the value's class (`UNSTATED` where the
   field was unstated). Only nonzero cells are printed.
+- `REACH_DROPPED`, always the last line: `MFTRACE REACH_DROPPED n=N`, the
+  selections whose row found no counter slot (the registry holds 16 rows).
+  N is 0 in a sound trace; a nonzero N means some row's `chosen` above is
+  an undercount, and the census (`n2_report.py`) reports it ([MEMFN-ROWCON]
+  N4).
 - The run walk is asked twice for a FUNC part's run (once declaring its
   helpers, once rendering), so `runcmp` counts are per walk, not per
   compare.
