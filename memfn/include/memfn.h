@@ -36,11 +36,16 @@
 #define MF_NS(name) pcrec_mf_##name
 #endif
 
-#define MF_SITE_ABI 5   /* layout and meaning of every struct below. 4 (M1b,
+#define MF_SITE_ABI 6   /* layout and meaning of every struct below. 4 (M1b,
                            §R4.8): mf_sink.stamp_int; mf_hooks.run_cmp
                            retired; `note` no longer carries helpers. 5
                            (R4h prep, Q-R4h-1 (a), 2026-10-08):
-                           mf_site.count_by_caller, appended LAST           */
+                           mf_site.count_by_caller, appended LAST. 6 (M4
+                           prep, R-7, 2026-10-08): a reads-below FIND's
+                           range is bounded by its READS (Q-R7-1, at
+                           MF_OP_FIND); mf_empty gains MF_EMPTY_AT_N
+                           (Q-R7-2); `on_miss` gains the LOOP_EXIT class
+                           (Q-R7-3, at mf_hooks.on_miss). No layout moved */
 #define MF_VOCAB    2   /* the operation vocabulary: op x handoff x term kinds */
 
 /* ---- bounds and sentinels ------------------------------------------------ */
@@ -52,8 +57,9 @@
  * offset today: dir_rev_skip's rewind read (`subject[rewind_position - 1]`)
  * is NOT one, since SKIP's one SET term sits at offset 0 (RULED Q-G2-9) and
  * the -1 is the `peek` hook's text (the direction owns how the cursor reads,
- * §14.3). The first site to send one is M4's `(?m)^` skip (§15.7); G2's
- * generated space reaches -2. */
+ * §14.3). The first site to send one is M4's `(?m)^` skip (§15.7: one SET
+ * term at -1, its range read-bounded, Q-R7-1); G2's generated space reaches
+ * -2. */
 #define MF_MAX_BACK 8
 #define MF_SPAN_UNBOUNDED UINT64_MAX  /* span_hi when nothing is proven        */
 #define MF_PPM_FULL       1000000u    /* density hint default: [0, 1e6]        */
@@ -70,7 +76,22 @@ typedef enum {              /* what the kit's text IS (§14.1)                 *
 
 typedef enum {
     MF_OP_FIND,             /* first cand in [lo,hi) satisfying the predicate
-                               (last, if reverse)                             */
+                               (last, if reverse). RULED Q-R7-1 (MF_SITE_ABI
+                               6): a READS-BELOW FIND, one whose every term
+                               reads below its candidate (offset + len <= 0
+                               for each, 1 for a SET term; E is the largest),
+                               has its range bounded by those READS instead
+                               of by the candidate's own byte, which it never
+                               reads: c is in range iff lo <= c <= n (a
+                               position never passes n) and every read lies
+                               below n - end_back, i.e. c + d <= n with
+                               d = max(0, end_back + E). So a term at -1 with
+                               end_back 0 reaches c == n (`(?m)^$` on "a\n"
+                               finds 2), and the range is empty iff
+                               lo + d > n. Every other FIND, and every other
+                               op, keeps [lo, n - end_back). (A later "resume
+                               at hit + 1", [ENG-TACTICS], is this range;
+                               nothing here is designed for it.)            */
     MF_OP_SKIP,             /* first cand in [lo,hi) whose byte is NOT in the
                                one SET term, which sits at offset 0 (RULED
                                Q-G2-9: any other offset is refused)          */
@@ -105,8 +126,18 @@ typedef enum {              /* an EMPTY range's outcome (§14.4). The range is
     MF_EMPTY_NOP,           /* nothing written, nothing run (no ON_CAND visit).
                                STMT forms only: refused on EXPR/FUNC, whose
                                value must be something (Q-G2-3)               */
-    MF_EMPTY_EXCLUDED       /* pcrec's text has already proven lo < hi; the
+    MF_EMPTY_EXCLUDED,      /* pcrec's text has already proven lo < hi; the
                                kit emits no empty test                        */
+    MF_EMPTY_AT_N           /* RULED Q-R7-2 (MF_SITE_ABI 6), a proven fact:
+                               pcrec's text has proven lo <= n AND that the
+                               subject pointer is non-NULL, so the bytes its
+                               reads scan, [lo, n), are empty only as
+                               lo == n, over a valid pointer. Its outcome is
+                               MISS's. A form whose search over zero bytes
+                               at s + n is defined (a `memchr` of length 0
+                               returns NULL) may then render with NO empty
+                               test; any other form tests it as MISS.
+                               Refused on ADVANCE (no miss), as MISS is    */
 } mf_empty;
 
 typedef enum { MF_REQUIRED, MF_OPTIONAL } mf_need;      /* §14.5; any other
@@ -296,7 +327,17 @@ typedef struct {
                                MF_MISS_N states that the miss value is this
                                site's own `n` hook; NULL leaves it UNSTATED
                                (R1: a row that needs it declines)             */
-    const char *on_miss;    /* ON_MISS, ASSIGN, MISS-empty: pcrec's STATEMENT   */
+    const char *on_miss;    /* ON_MISS, ASSIGN, MISS-empty: pcrec's STATEMENT.
+                               Its text-shape classes (fields.def): JUMP
+                               (`return ...;`, `goto l;`), BRACED (`{ ... }`),
+                               and RULED Q-R7-3 (MF_SITE_ABI 6) LOOP_EXIT,
+                               exactly `break;`: it leaves pcrec's own loop,
+                               so a form may paste it only where its text
+                               opens NO loop (or switch) of its own around
+                               it. The generic row serves no LOOP_EXIT: its
+                               loops are its own business, never a promise,
+                               so a LOOP_EXIT site no other row serves is
+                               REFUSED, naming `on_miss`                     */
     /* ADVANCE. RULED Q-G2-14: only `more`, `peek` and `step` are required
        (and `count` under site.count_by_caller); a NULL `cursor` is accepted.
        RULED Q-G2-5 (Q-R4h-2, recorded by the pcrec manager 2026-10-08):

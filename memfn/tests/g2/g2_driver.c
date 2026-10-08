@@ -100,7 +100,7 @@ static const char *const LABELS[NLAB] = {    /* G2's own list: §14.1 x §14.3 *
     "ALL/EXPR/RETURN", "ALL/FUNC/RETURN", "ALL/EXPR/BOOL", "ALL/FUNC/BOOL",
     "ALL/STMT/ASSIGN", "ALL/STMT/ON_MISS",
 };
-static long lab_sites[NLAB], lab_checks[NLAB], lab_fail[NLAB], lab_empty[NLAB][3], lab_pos[NLAB],
+static long lab_sites[NLAB], lab_checks[NLAB], lab_fail[NLAB], lab_empty[NLAB][4], lab_pos[NLAB],
             lab_small[NLAB];   /* checks of sites with npred <= 40: the positive-% base */
 static long lab_rev[NLAB][2], lab_eb[NLAB][2];
 static long set_cell[17], run_cell[17][34][5], nterm_cell[9], npred_max;
@@ -110,6 +110,15 @@ static long style_sites[3], via_sites[3], opt_sites, discard_sites, gbc_sites, c
  * and the answer checks with a positive / a miss outcome */
 static long mt_sites, mt_ret, mt_assign, mt_func, mt_checks, mt_pos;
 static long leaves_sites[2];
+/* lane g2m4: the read-bounded range (Q-R7-1), MF_EMPTY_AT_N (Q-R7-2) and
+ * LOOP_EXIT (Q-R7-3), counted from the sites that RAN. rb: reads-below FIND
+ * sites, their checks, the checks whose planted/true hit is the candidate n
+ * itself (the only candidate the old range lacks) and the checks whose answer
+ * IS a hit at n (RETURN/ASSIGN only, where the result shows it). atn: AT_N
+ * sites, checks, checks with lo == n (the zero-byte scan AT_N proves). lx:
+ * LOOP_EXIT sites, checks, checks where the break path ran / fell through. */
+static long rb_opt_sites, rb_oncand_sites, rb_sites, rb_checks, rb_plant_n, rb_hit_n, atn_sites, atn_checks, atn_lo_n,
+            lx_sites, lx_checks, lx_break, lx_fall, atn_skipped_over;
 /* per shape family (g2.h G2_FAM_*), counted from the hard sites that RAN */
 static long fam_sites[G2_NFAM], fam_checks[G2_NFAM], fam_pos[G2_NFAM], fam_fail[G2_NFAM];
 /* PENDING-ENFORCE, per class: sites, checks, failed checks, faults, failed sites */
@@ -163,6 +172,17 @@ static void census_site(const g2_site *d, const g2_items *it)
         mt_func += d->form == G2_FORM_FUNC && d->handoff == G2_H_RETURN;
     }
     if (d->handoff == G2_H_ON_MISS || d->handoff == G2_H_ASSIGN) leaves_sites[d->leaves ? 1 : 0]++;
+    { long long E_; int rbs_ = g2_ref_readsbelow(d, &E_);
+      rb_sites += rbs_; rb_opt_sites += rbs_ && it->nitems > 0;
+      /* FIND/ON_CAND sites whose terms all read below: outside Q-R7-1 by the brief's
+       * reading (the old range is kept); counted, so the reading is exercised */
+      if (!rbs_ && d->op == G2_OP_FIND && d->handoff == G2_H_ON_CAND && d->npred == 1 && d->preds[0].nterm) {
+          int all_ = 1;
+          for (int t = 0; t < d->preds[0].nterm; t++)
+              all_ &= d->preds[0].t[t].off + (d->preds[0].t[t].kind == G2_T_SET ? 1 : (int)d->preds[0].t[t].len) <= 0;
+          rb_oncand_sites += all_;
+      } }
+    atn_sites += d->empty == G2_EMPTY_AT_N;
     if (d->fam < G2_NFAM) fam_sites[d->fam]++;
     if (d->fam == G2_FAM_SEM && d->vfield < G2_NV) { sv_sites[d->vfield]++; sv_cls[d->vfield][d->vclass & 7]++; }
     if (d->fid < NFID) fd_sites[d->fid]++;
@@ -267,6 +287,17 @@ static size_t in_window(const g2_pred *P, size_t n)
 {
     size_t a, b;
     window(P, n, &a, &b);
+    /* lane g2m4 (Q-R7-1): a reads-below FIND's candidates reach n - d, d =
+     * max(0, end_back + E): the candidate n itself is a position a hit can take */
+    long long E_;
+    if (cur && g2_ref_readsbelow(cur, &E_)) {
+        long long dd = (long long)cur->end_back + E_;
+        if (dd < 0) dd = 0;
+        if ((long long)n < dd) return n ? rn((unsigned)n) : 0;
+        b = n - (size_t)dd;
+        if (b < a) return n ? rn((unsigned)n) : 0;
+        return a + rn((unsigned)(b - a + 1));
+    }
     /* a span-bounded site's range is at most span_hi bytes at the end
      * (admit() moves lo there), so its plants go in that tail */
     if (cur && cur->span_hi != G2_UNBOUNDED && cur->handoff != G2_H_ADVANCE &&
@@ -348,6 +379,14 @@ static int call_on(g2_fn fn, int layout, int align, const uint8_t *subj, size_t 
         memcpy(*heap + align, subj, n);
         s = *heap + align;
     }
+    /* Q-R7-2: an AT_N site is called only with lo <= n over a non-NULL subject. admit()
+     * keeps lo <= n; none of the three layouts has a NULL subject (a guard-page or heap
+     * pointer even at n == 0). A backstop, so a future layout cannot break the promise
+     * silently */
+    if (cur->empty == G2_EMPTY_AT_N && (s == NULL || lo > n)) {
+        fprintf(stderr, "g2_driver: AT_N site %u called with %s\n", cur->id, s == NULL ? "a NULL subject" : "lo > n");
+        exit(2);
+    }
     memset(o, 0, sizeof *o);
     o->res = G2_SENT;
     o->cnt = 0xdeadUL;
@@ -366,7 +405,8 @@ static int call_on(g2_fn fn, int layout, int align, const uint8_t *subj, size_t 
  * nothing) */
 static int pf_positive(const g2_site *d, const struct g2_out *o, size_t n, size_t lo)
 {
-    if (!(lo + d->end_back < n)) return 0;
+    size_t hi_;
+    if (!g2_ref_range(d, n, lo, &hi_)) return 0;
     return d->noonmiss ? o->res != g2_missv(d->miss_mode, n) : !o->missed;
 }
 
@@ -388,6 +428,7 @@ static void check(g2_fn fn, const uint8_t *subj, size_t n, size_t lo, size_t fl,
             if (!sig) keep = g2_ref_check(cur, &cur_it, cur_alive, subj, n, lo, fl, &o, why, sizeof why);
             else snprintf(why, sizeof why, "signal %d (a read outside [fl, n))", sig);
             pd_checks[cur->pend]++;
+            if (cur->loopx && !sig) { lx_checks++; if (o.missed) lx_break++; else lx_fall++; }
             if (cur->pfedge < G2_NPFE) {
                 pfe_checks[cur->pfedge]++;
                 if (keep && !sig && cur->pfcell && pf_positive(cur, &o, n, lo)) pfe_pos[cur->pfedge]++;
@@ -465,6 +506,15 @@ static void check(g2_fn fn, const uint8_t *subj, size_t n, size_t lo, size_t fl,
             }
             cur_pos += pos;
             cur_checks++;
+            {
+                long long E_;
+                if (g2_ref_readsbelow(cur, &E_)) {
+                    rb_checks++;
+                    rb_plant_n += hit_at >= 0 && (size_t)hit_at == n;
+                    if (pos && (cur->handoff == G2_H_RETURN || cur->handoff == G2_H_ASSIGN) && o.res == n) rb_hit_n++;
+                }
+                if (cur->empty == G2_EMPTY_AT_N) { atn_checks++; atn_lo_n += lo == n; }
+            }
             if (cur->miss_mode == 4) { mt_checks++; mt_pos += pos; }
         } else {
             report("WRONG", subj, n, lo, fl, layout, why);
@@ -493,15 +543,27 @@ static void term_extent(const g2_site *d, long long *lo_off, long long *hi_end)
 static int admit(const g2_site *d, size_t n, size_t *lo, size_t *fl)
 {
     if (d->floor_null) *fl = 0;
+    /* lane g2m4: a site whose floor hook is the SAME text as lo has floor == lo
+     * by construction (the family's `floor` is `start`, the same text as `lo`) */
+    if (d->floor_lo) *fl = *lo;
     /* RULED Q-G2-6 (memfn.h `floor`, §14.7): `floor <= lo` is the CALLER's
      * precondition, on EVERY site kind (lane g2x). G2 is a conforming
      * caller: an instance with fl > lo is not a contract instance, so its
      * floor is brought to lo (counted). No answer is checked past the edge. */
     if (*fl > *lo) { *fl = *lo; n_floor_clamped++; }
-    int nonempty = *lo + d->end_back < n;
+    /* RULED Q-R7-2 (MF_EMPTY_AT_N): the caller has PROVEN lo <= n and a
+     * non-NULL subject (the layouts below never pass NULL, not even at n == 0).
+     * An instance with lo > n is outside what the site promises */
+    if (d->empty == G2_EMPTY_AT_N && *lo > n) { atn_skipped_over++; return 0; }
+    size_t hi_;
+    int nonempty = g2_ref_range(d, n, *lo, &hi_);
+    long long E_;
+    int rb = g2_ref_readsbelow(d, &E_);
     if (d->empty == G2_EMPTY_EXCLUDED && !nonempty) return 0;
     if (d->handoff == G2_H_ADVANCE && d->reverse && !nonempty) return 0;   /* Q-G2-5 */
-    if (d->handoff != G2_H_ADVANCE && d->op != G2_OP_VERIFY) {
+    /* a reads-below FIND's range is [lo, n - d]: the generator states no span
+     * fact on such a site (span_lo 0, span_hi unbounded), so none is applied */
+    if (!rb && d->handoff != G2_H_ADVANCE && d->op != G2_OP_VERIFY) {
         size_t len = nonempty ? n - d->end_back - *lo : 0;
         if (d->span_hi != G2_UNBOUNDED && len > d->span_hi) {
             *lo = n - d->end_back - (size_t)d->span_hi;
@@ -609,9 +671,13 @@ static void run_site(const g2_site *d)
     uint8_t subj[130];
     long before = n_pass + n_fail;
     int skipish = d->op == G2_OP_SKIP;
+    long long rbE_;
+    int rb = g2_ref_readsbelow(d, &rbE_);
     for (size_t n = 0; n <= 129; n++) {
         int nplant = (n <= 24 || exhaustive) ? (int)n : 7;
         if (quick) nplant = n <= 8 ? (int)n : 3;
+        int direct = nplant == (int)n;
+        if (rb && direct) nplant++;        /* the candidates 0..n: n is one (Q-R7-1) */
         for (int k = -1; k < nplant + 2; k++) {
             /* k = -1: random; 0..nplant-1: hit; nplant..: near-miss */
             for (size_t i = 0; i < n; i++) subj[i] = bg_byte(&hs);
@@ -628,14 +694,14 @@ static void run_site(const g2_site *d)
             size_t p = 0;
             if (k >= 0 && n) {
                 if (k < nplant) {
-                    if (nplant == (int)n) p = (size_t)k;
+                    if (direct) p = (size_t)k;
                     else {
                         size_t w = skipish ? rn((unsigned)n) : in_window(&d->preds[d->op == G2_OP_ALL && d->ret_pred != 0xFF ? d->ret_pred : 0], n);
                         /* the feasible window first, so the quick tier's
                          * first plants can hold; then the edges */
                         size_t w2 = skipish ? rn((unsigned)n) : in_window(&d->preds[d->op == G2_OP_ALL && d->ret_pred != 0xFF ? d->ret_pred : 0], n);
-                        size_t ps[7] = { w, w2, 0, n - 1, 1, n - 2, rn((unsigned)n) };
-                        p = ps[k < 7 ? k : 6] < n ? ps[k < 7 ? k : 6] : 0;
+                        size_t ps[7] = { w, w2, rb ? n : 0, n - 1, 1, n - 2, rn((unsigned)n) };
+                        p = ps[k < 7 ? k : 6] < n + rb ? ps[k < 7 ? k : 6] : 0;
                     }
                     hit_at = (int)p;
                 } else p = skipish ? rn((unsigned)n) : in_window(&d->preds[0], n);
@@ -695,6 +761,10 @@ static void run_site(const g2_site *d)
                 unsigned r = rn(3);
                 if (r == 0 && k >= 0) lo = p + rn(2);
                 else lo = rn((unsigned)n + 1);
+                /* a reads-below site with floor == lo (the family's shape): its first
+                 * valid candidate is lo + 1, so put lo at the planted hit's edge,
+                 * on and just below (no RNG draw: the older sites' streams hold) */
+                if (rb && k >= 0 && (n + (size_t)k) % 3 == 0) lo = p > 0 ? p - 1 + ((size_t)k & 1) : 0;
             }
             if (lo > n) lo = n;
             if (d->gbc && n) {
@@ -711,6 +781,7 @@ static void run_site(const g2_site *d)
     if (d->pend) {
         if (d->pfedge < G2_NPFE) { pfe_sites[d->pfedge]++; pfe_sfail[d->pfedge] += cur_fail > 0; }
         pd_sites[d->pend]++;
+        lx_sites += d->loopx;
         if (cur_fail) pd_sfail[d->pend]++;
         if (g_strict) { n_sites_run += (n_pass + n_fail) > before; n_sites_failed += cur_fail > 0; }
         return;
@@ -837,7 +908,7 @@ int main(int argc, char **argv)
             const g2_site *d = &g2_batches[b][i];
             if (mutants_mode && !d->mutated) continue;
             /* the witnesses judge the hard population only */
-            if (d->pend && (mutants_mode || g2_ref_defect)) continue;
+            if (d->pend && d->pend != G2_PEND_LOOPX && (mutants_mode || g2_ref_defect)) continue;
             run_site(d);
             if (mutants_mode) {
                 n_mut++;
@@ -960,6 +1031,17 @@ int main(int argc, char **argv)
     printf("G2 on_miss_leaves (ON_MISS/ASSIGN sites): 0 %ld, 1 %ld; instances with floor brought to lo (Q-G2-6) %ld\n",
            leaves_sites[0], leaves_sites[1], n_floor_clamped);
     if (!leaves_sites[0] || !leaves_sites[1]) { printf("G2 coverage MISSING: on_miss_leaves 0/1\n"); miss++; }
+    /* lane g2m4 (MF_SITE_ABI 6): the three contract changes, each a counted population */
+    printf("G2 read-bounded range (Q-R7-1): reads-below FIND sites %ld, checks %ld, planted hit at n %ld, answers that ARE a hit at n %ld\n",
+           rb_sites, rb_checks, rb_plant_n, rb_hit_n);
+    printf("G2 read-bounded range, scope: reads-below FIND sites with OPTIONAL items %ld (counted as reads-below: every term); FIND/ON_CAND sites with every term below, old range kept %ld\n",
+           rb_opt_sites, rb_oncand_sites);
+    if (!rb_sites || !rb_plant_n || !rb_hit_n) { printf("G2 coverage MISSING: read-bounded range (reads-below FIND sites, hits at n)\n"); miss++; }
+    printf("G2 AT_N (Q-R7-2): sites %ld checks %ld checks with lo == n %ld, instances refused as lo > n %ld\n",
+           atn_sites, atn_checks, atn_lo_n, atn_skipped_over);
+    if (!atn_sites || !atn_lo_n) { printf("G2 coverage MISSING: AT_N sites, or none run with lo == n\n"); miss++; }
+    printf("G2 loop-exit (Q-R7-3): sites %ld checks %ld break-path %ld fall-through %ld\n", lx_sites, lx_checks, lx_break, lx_fall);
+    if (!lx_sites || !lx_break || !lx_fall) { printf("G2 coverage MISSING: LOOP_EXIT sites, or never both the break path and the fall-through\n"); miss++; }
     for (int f = 0; f < G2_NFAM; f++) {
         printf("G2 family %s: sites %ld checks %ld positive %ld negative %ld failed-sites %ld\n",
                g2_fam_name(f), fam_sites[f], fam_checks[f], fam_pos[f], fam_checks[f] - fam_pos[f], fam_fail[f]);

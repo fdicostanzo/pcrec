@@ -18,6 +18,7 @@ boundary with pcrec"), rendered through `memfn_sites.c` (DELEG_SITES):
 | PRE + SETREST (the pre-check composite: one-byte gate, run calls, set rest) | `memfn/src/precheck.c` | `req_site_define` (every decision: admission, lead, runs, set rest, handoff), `pcrec_emit_req_byte_check` (the use, `emit_req_handoff_rest`), the notes `req_note_*`, `req_run_tests`, `req_set_rest_members` |
 | OFS (the `<p>_ofsskip` block, its comment, its calls; the run pre-check's `<p>_reqrun[_whole]` functions) | `memfn/src/ofsskip.c` | `ofs_test_of`/`ofs_test_model`/`ofs_test_run` (the k-set selection), `ofs_pred_of` (the description), `ofs_site_define`, `pf_ofs_call`, the tables (`pf_tables_ofs`), the reseed, the call statements around the expression |
 | PF (R4g, M2: THE FIND statement of the DFA prefilter forms, the DFA hat and the VM hat's seek) | `memfn/src/pffind.c` | `find_site` (the description: the form off `DfaPf.scan`/the VM hat's table, `holdback` -> `end_back`, the set, the caller's `on_miss`), `pcrec_emit_find` (the use point), `find_table_name`; every guard, `return 0`, entry test, re-seed, comment and table in the `pf_emit_*` callers |
+| MLINE (M4: the attempt engine's `(?m)^` skip in `emit_attempt`) | `memfn/src/pffind.c` (row `pf_memchr_back`) | the guard `if (start > X && subject[start - 1] != b) {` and its `}`, X (`gseed`: `search_from` or `0`), `cpre` and every start decision (NEXT via `attempt_next_of`/`attempt_cand`, BOUND, `cand.byte`/`cand.offset`), described through `pcrec_emit_find` with `site` MLINE, the term at `-cand.offset` (-1), `floor` `start`, `on_miss` `break;` |
 | STAY, EDGE, VMSPAN (R4h, M3: the in-loop ADVANCE skips: the DFA stay skips, the scan edge's two loops, the VM span loop at stride 1) | `memfn/src/generic.c` (`stmt_advance`) | the builders `stay_advance`/`edge_advance` (emit_dfa.c) and `vm_span_advance` (emit_vm.c), each a `PcrecAdvance` read off its decision (the set, the direction's `more`/`peek`/`step`/cursor, pcrec's own member text, the caller's counter and cap), built by `pcrec_memfn_advance_site` and rendered through `pcrec_memfn_emit` from `dir_fwd_skip`/`dir_rev_skip`/`emit_scan_edge`/`vm_emit_span_scan`; every entry/guard line, the peeled guard and step, `scan_run_length`/`it_`/`lim_` declarations, the cursor init, the accept stores, the fall-through block, the stay/scan tables, the member texts (`scan_test`, the stay-table read, `vm_cls_test`) and comments; the STRIDED span loop stays pcrec's (`vm_stride_loop`, VMSTRIDE, M6) |
 
 The retired emitters (`emit_req_one_byte`, `emit_req_run_check`,
@@ -125,7 +126,7 @@ commit, D148 Q2). What stages 0-1 put in place, none of it moving a byte:
   offset and tests `cand_routed` BEFORE `applies` ([cand-route-walk]);
   `DFA_SELECT_ROUTED` is the walk over `dfa_pfs[]`, `DFA_SELECT` every other
   list (all DFA-only). No row serves the VM route until stage 2.
-- **THE FIND (`pcrec_emit_find`, core/internal.h `PcrecFind`).** The one
+- **THE FIND (`pcrec_emit_find`, gen/memfn_sites.h `PcrecFind`).** The one
   statement that moves a scan position to the next byte of a set — a
   `memchr` for a BYTE row, a membership-table loop otherwise — extracted from
   the four plain prefilter forms (`pf_emit_find` picks the form off
@@ -136,7 +137,16 @@ commit, D148 Q2). What stages 0-1 put in place, none of it moving a byte:
   form's statement is the search, its NULL test (the caller's `on_miss`)
   and the position store (the bounded form's clamp is the site's `miss`),
   so `q` is kit-internal. Sabotage S68's anchor followed the walk into
-  `memfn/src/pffind.c`.
+  `memfn/src/pffind.c`. **[MEMFN] M4 (lane m4, 2026-10-08):** generalized,
+  not paralleled: `PcrecFind` (moved beside DELEG_SITES in
+  `memfn_sites.h`) gained `site` (the DELEG_SITES row, PF or MLINE, stated
+  by every caller), `offset` (the term's offset from the candidate: 0, or
+  -1 for MLINE's predecessor byte, whose caller has proven `pos <= len` and
+  a non-NULL subject: the kit's AT_N) and `floor` (MLINE's is `start`).
+  `emit_attempt`'s `(?m)^` skip describes its three statements (the
+  memchr, `if (!q) break;`, the `+ 1` store) through it; the kit's
+  `pf_memchr_back` row writes them. The door call names `f->site`
+  (sabotage S524 re-pinned).
 
 ## [ENG-FORM] THE DFA EMITTER'S ORGANIZATION (2026-08-26, D82)
 
@@ -1122,7 +1132,8 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
   (`DELEG_SITE(id, op, handoffs, kinds, budget, use_ceiling)`: PRE, the
   pre-check composite with the set rest; OFS, the offset-skip block; VMRUN,
   the VM's literal-run compare, M1b; PF, the prefilter find, R4g; STAY,
-  EDGE and VMSPAN, the in-loop ADVANCE skips, R4h), the
+  EDGE and VMSPAN, the in-loop ADVANCE skips, R4h; MLINE, the attempt
+  engine's `(?m)^` skip, M4, described by `pcrec_emit_find` as PF is), the
   one source of `MF_P_INLOOP` (its budget column) and of each site's `use`
   CEILING. `memfn_sites.c`: the attempt's `mf_art` (`Job.mf`, begun at first
   ask), the SINK over a StrBuf (the comment gate stays pcrec's write-time
@@ -1152,7 +1163,11 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
   (`tests/memfn/run_deleg_sites.sh`), C5 (`tests/memfn/run_arm_pins.sh`).
   The I1 shadow comparator lived here for R4c's IMPLEMENT commit
   (66176e35) and was deleted by REPLACE; M1b's did the same (IMPLEMENT
-  d14e7df3, deleted by its REPLACE).
+  d14e7df3, deleted by its REPLACE), and M4's (`pcrec_memfn_shadow`,
+  IMPLEMENT ecc43b4a, deleted by REPLACE a3d65a59). Since M4 it also
+  declares THE FIND (`PcrecFind`, `PcrecFindTable`, `pcrec_emit_find`,
+  defined in emit_dfa.c), moved here from core/internal.h because its site
+  id is a `DelegSite`.
 
 - **runcmp.c** — **DELETED at [MEMFN] M1b (lane m1b, 2026-10-07, zero
   movers): THE RUN COMPARE IS THE KIT'S**, `memfn/src/runcmp.c` (see

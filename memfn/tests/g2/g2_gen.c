@@ -562,7 +562,11 @@ static mf_handoff to_mf_h(int h)
     default:           return MF_H_BOOL;
     }
 }
-static mf_empty to_mf_empty(int e) { return e == G2_EMPTY_MISS ? MF_EMPTY_MISS : e == G2_EMPTY_NOP ? MF_EMPTY_NOP : MF_EMPTY_EXCLUDED; }
+static mf_empty to_mf_empty(int e)
+{
+    return e == G2_EMPTY_MISS ? MF_EMPTY_MISS : e == G2_EMPTY_NOP ? MF_EMPTY_NOP
+         : e == G2_EMPTY_AT_N ? MF_EMPTY_AT_N : MF_EMPTY_EXCLUDED;
+}
 static mf_need to_mf_need(int n) { return n == G2_REQ ? MF_REQUIRED : MF_OPTIONAL; }
 
 static uint32_t tk_bits(const gsite *g)
@@ -638,6 +642,7 @@ static void fill_hooks(gsite *g, mf_hooks *h, char *onmiss, size_t onmiss_n)
     h->n = N[st];
     h->lo = L[st];
     h->floor = g->floor_null ? (g->floor_zero ? "0" : NULL) : F[st];
+    if (g->d.floor_lo) h->floor = L[st];     /* lane g2m4: the SAME text as lo */
     h->result = "res";
     h->result_decl = g->result_decl ? "size_t " : NULL;
     h->miss = miss_text(g->d.miss_mode);
@@ -645,6 +650,8 @@ static void fill_hooks(gsite *g, mf_hooks *h, char *onmiss, size_t onmiss_n)
     case 0:  snprintf(onmiss, onmiss_n, "missed = 1;"); break;
     case 1:
     case 5:  snprintf(onmiss, onmiss_n, "goto g2m_%u;", g->d.id); break;   /* 5: the label reports no result */
+    case 4:  snprintf(onmiss, onmiss_n, "break;"); break;   /* lane g2m4: LOOP_EXIT (Q-R7-3), exactly `break;`: the
+                                                              wrapper runs the site inside a loop the DRIVER owns */
     case 3:  /* leaves, and reads no result (lane g2pf: PF cell 1's `return 0;` too): §15.5's composite writes its
                 result only on the returned predicate's line, so another
                 predicate's miss reaches on_miss with `result` unwritten
@@ -774,7 +781,7 @@ static long pend_refused_named[G2_NPEND], pend_refused_unnamed[G2_NPEND], pend_r
 static long fam_rendered[G2_NFAM], fam_refused[G2_NFAM];
 #define NFORMS 32
 static char form_ids[NFORMS][48];
-static long fam_form[G2_NFAM][NFORMS], pend_form[NFORMS];
+static long fam_form[G2_NFAM][NFORMS], pend_form[NFORMS], loopx_form[NFORMS];
 static int form_index(const char *id)
 {
     int k;
@@ -866,6 +873,7 @@ static int pend_named(int pend, const char *msg)
     if (pend == G2_PEND_HOOK)
         return names_field(msg, "s") || names_field(msg, "n") || names_field(msg, "lo") || names_field(msg, "floor");
     if (pend == G2_PEND_MISS) return names_field(msg, "miss");
+    if (pend == G2_PEND_LOOPX) return names_field(msg, "on_miss");     /* Q-R7-3: refused naming `on_miss` */
     if (pend == G2_PEND_EDGE) return cur_site && pf_edge_named(cur_site, msg);
     if (pend == G2_PEND_FNREF) {
         /* mf_define names define-time fields; on a RETURN/ASSIGN site whose
@@ -1230,6 +1238,21 @@ static void emit_tables(buf *o, const gsite *g)
         }
 }
 
+/* lane g2m4, Q-R7-3 LOOP_EXIT: `on_miss` is exactly `break;`, which leaves
+ * pcrec's own loop. G2 plays that loop: the rendered site runs INSIDE a
+ * `for (;;)` this wrapper owns, and falls through to `g2_fell = 1; break;`
+ * only when the site did NOT execute its on_miss. A `break;` the kit's text
+ * pasted inside a loop or switch of its own leaves THAT one instead, the
+ * statements after it run, and `g2_fell` reads 1 on a miss: the reference
+ * (missed expected) then fails the call. The loop is the wrapper's, never
+ * the kit's text. */
+static void wrap_loopx(buf *o, const char *body)
+{
+    bputs(o, "    int g2_fell = 0;\n    for (;;) {   /* the driver's loop: the kit's `break;` must leave THIS one */\n");
+    bputs(o, body);
+    bputs(o, "\n        g2_fell = 1;\n        break;\n    }\n    missed = !g2_fell;\n");
+}
+
 static void wrap(buf *o, const gsite *g, const char *fname, const char *body)
 {
     const g2_site *d = &g->d;
@@ -1251,7 +1274,7 @@ static void wrap(buf *o, const gsite *g, const char *fname, const char *body)
         return;
     case G2_H_ON_MISS:
         bputs(o, "    int missed = 0;\n");
-        bputs(o, body);
+        if (d->loopx) wrap_loopx(o, body); else bputs(o, body);
         bputs(o, "\n    o->missed = missed;\n    return 0;\n");
         if (g->on_miss_mode == 1) bf(o, "g2m_%u:\n    o->missed = 1;\n    return 0;\n", d->id);
         bputs(o, "}\n\n");
@@ -1259,9 +1282,17 @@ static void wrap(buf *o, const gsite *g, const char *fname, const char *body)
     default: /* ASSIGN, ON_CAND */
         bputs(o, "    int missed = 0;\n");
         if (!g->result_decl && !d->inplace) bputs(o, "    size_t res = G2_SENT;\n");
-        bputs(o, body);
-        bputs(o, d->inplace ? "\n    o->res = lo; o->missed = missed;\n    return 0;\n"
-                            : "\n    o->res = res; o->missed = missed;\n    return 0;\n");
+        if (d->loopx) {
+            /* LOOP_EXIT: the result is reported only on the fall-through (a hit); on a
+             * miss (the break) it stays the sentinel, as on_miss_leaves 1 leaves it
+             * UNSPECIFIED (memfn.h) */
+            wrap_loopx(o, body);
+            bputs(o, "\n    if (!missed) o->res = res;\n    o->missed = missed;\n    return 0;\n");
+        } else {
+            bputs(o, body);
+            bputs(o, d->inplace ? "\n    o->res = lo; o->missed = missed;\n    return 0;\n"
+                                : "\n    o->res = res; o->missed = missed;\n    return 0;\n");
+        }
         if (g->on_miss_mode == 1 || g->on_miss_mode == 5)
             bf(o, "g2m_%u:\n    %s o->missed = 1;\n    return 0;\n", d->id,
                g->on_miss_mode == 5 ? "" : d->inplace ? "o->res = lo;" : "o->res = res;");
@@ -1274,10 +1305,39 @@ static void wrap(buf *o, const gsite *g, const char *fname, const char *body)
  * denies differ from its art's), so a batch's sites all carry them. */
 static uint64_t g_batch_denies;
 
+/* lane g2m4 (Q-R7-1): is this a READS-BELOW FIND (memfn.h, MF_OP_FIND): FIND,
+ * not ON_CAND, whose every term reads below its candidate (offset + len <= 0;
+ * a SET term's len is 1)? The generator's own statement of the rule (it uses
+ * it for the miss value and the span facts of such a site; the reference's
+ * range is g2_ref.c's, a separate statement of it). */
+static int gen_reads_below(const gsite *g)
+{
+    if (g->d.op != G2_OP_FIND || g->d.handoff == G2_H_ON_CAND || g->d.npred != 1 || !g->preds[0].nterm) return 0;
+    for (int t = 0; t < g->preds[0].nterm; t++) {
+        const g2_term *T = &g->preds[0].t[t];
+        if (T->off + (T->kind == G2_T_SET ? 1 : (int)T->len) > 0) return 0;
+    }
+    return 1;
+}
+
 static void render(mf_art *art, gsite *g, batchbuf *B)
 {
     cur_site = g;
     g->deny_overlap = g_batch_denies != 0;
+    /* lane g2m4: the contract facts of a site read-bounded by its reads (Q-R7-1).
+     * (1) `miss` must be a value no hit can take (memfn.h), and `n` is a hit
+     * here (c may reach n), as is `n - 1` with end_back 1 when E = -1...:
+     * the n-valued modes become -1 / n + 5, deterministically by id. (2) No
+     * span fact: a span bounds hi - lo, and this range's hi is not n - end_back. */
+    if (gen_reads_below(g)) {
+        int m = g->d.miss_mode;
+        if (m == 0 || m == 3 || m == 4 || m == 6) g->d.miss_mode = (uint8_t)(1 + (g->d.id & 1));
+        g->d.span_lo = 0;
+        g->d.span_hi = G2_UNBOUNDED;
+    }
+    /* LOOP_EXIT sites: the result is declared by the wrapper (outside the driver's
+     * loop), never by the kit's text inside it */
+    if (g->d.loopx) g->result_decl = 0;
     /* G2pf2 (contract amendment, memfn.h): with on_miss_leaves 1 on ASSIGN,
      * `result` is UNSPECIFIED on a miss and on_miss must not read it: every
      * such site takes an on_miss text that reads no result (goto 5, return 3) */
@@ -1440,6 +1500,15 @@ static void render(mf_art *art, gsite *g, batchbuf *B)
         n_sitefn_checked++;
     }
     int fid = form_index(res.form_id);
+    /* Q-R7-3: the generic row serves NO LOOP_EXIT site (its loops are its own
+     * business); rendering one through it is a contract failure whatever the
+     * answers say */
+    if (pend == G2_PEND_LOOPX && !strcmp(res.form_id, "generic")) {
+        n_strict_fail++;
+        fprintf(g_res, "FAIL strict site %u %s: LOOP_EXIT (on_miss `break;`) rendered by the GENERIC row, which serves none (Q-R7-3)\n",
+                g->d.id, g->d.label);
+    }
+    if (pend == G2_PEND_LOOPX) loopx_form[fid]++;
     if (g->d.tabbad) pfe_rendered[G2_PFE_TABBAD]++;
     if (pend) pend_form[fid]++;
     else { fam_rendered[g->d.fam]++; fam_form[g->d.fam][fid]++; }
@@ -1449,7 +1518,23 @@ static void render(mf_art *art, gsite *g, batchbuf *B)
     mut |= mutate(&body);
     mut |= mutate(&file);
     if (g->d.via == 2) mutate(&body2);
-    if (g_mutate >= 5) mut = !(g_mutate == 7 && g->floor_null);
+    if (g_mutate >= 5 && g_mutate <= 7) mut = !(g_mutate == 7 && g->floor_null);
+    /* W2 mutation 8 (lane g2m4): the kit's text for a LOOP_EXIT site is wrapped in a
+     * loop of ITS OWN, as a row that opened a loop around its on_miss would: the
+     * `break;` then leaves that inner loop and the driver's loop never sees it.
+     * The check must catch every such site */
+    if (g_mutate == 8) {
+        mut = 0;
+        if (g->d.loopx && body.p) {
+            buf nb = { 0 };
+            bputs(&nb, "        for (;;) {\n");
+            bputs(&nb, body.p);
+            bputs(&nb, "\n        break;\n        }\n");
+            free(body.p);
+            body = nb;
+            mut = 1;
+        }
+    }
     if (g->d.tabbad) mut = 0;       /* its answer is undefined: no witness judges it */
     g->d.mutated = (uint8_t)mut;
 
@@ -1471,9 +1556,9 @@ static void render(mf_art *art, gsite *g, batchbuf *B)
        d->acc_mod, d->miss_mode, d->hook_style, d->mutated, d->via, d->label, d->id);
     if (d->via == 2) bf(&B->reg, "g2t2_%u, ", d->id);
     else bputs(&B->reg, "NULL, ");
-    bf(&B->reg, "%u, %u, %u, %u, %u, %u, %u, %u, %u, %u, %u, %u, %u, %u },\n", g->floor_null, d->fam, d->leaves, d->pend,
+    bf(&B->reg, "%u, %u, %u, %u, %u, %u, %u, %u, %u, %u, %u, %u, %u, %u, %u, %u },\n", g->floor_null, d->fam, d->leaves, d->pend,
        d->vfield, d->vclass, d->fid, g->on_miss_mode == 3 || g->on_miss_mode == 5, d->pfcell, d->pfedge, d->inplace,
-       d->noonmiss, d->lo_over, d->tabbad);
+       d->noonmiss, d->lo_over, d->tabbad, d->floor_lo, d->loopx);
     B->nsite++;
     B->npend += d->pend != 0;
     free(body.p); free(body2.p); free(file.p);
@@ -1657,7 +1742,19 @@ static void refuse_case_x(const char *name, mf_site *s, mf_hooks *h, const char 
     memset(&res, 0, sizeof res);
     int rc = mf_emit(art, s, h, &sb, &sf, &res);
     const char *err = rc ? mf_art_error(art) : NULL;
-    if (pend && !rc) {
+    if (pend == G2_PEND_LOOPX && !rc) {
+        /* Q-R7-3: only the GENERIC row is known (by the contract) to serve no LOOP_EXIT;
+         * any other row may lawfully render this shape (its text is answer-checked in the
+         * family's sites, not here) */
+        int gen = !strcmp(res.form_id, "generic");
+        pend_rendered[pend]++;
+        fprintf(g_res, "PENDING %s refusal %s: the kit RENDERED it (form %s)%s\n", g2_pend_name(pend), name,
+                res.form_id[0] ? res.form_id : "?", gen ? ": the GENERIC row, which serves no LOOP_EXIT (Q-R7-3)" : " (a non-generic row: lawful)");
+        if (g_strict) {
+            if (gen) { n_strict_fail++; fprintf(g_res, "FAIL strict refusal %s: LOOP_EXIT rendered by the generic row\n", name); }
+            else n_strict_pass++;
+        }
+    } else if (pend && !rc) {
         pend_rendered[pend]++;
         fprintf(g_res, "PENDING %s refusal %s: the kit RENDERED it (form %s); the enforcement refuses it naming `%s`\n",
                 g2_pend_name(pend), name, res.form_id, field ? field : "?");
@@ -1781,6 +1878,12 @@ static void refusal_table(void)
     CASE("run-term-null-run",       (s.pred.term[0].kind = MF_T_RUN, s.pred.term[0].run = NULL,
                                      s.pred.term[0].run_len = 3));
     CASE("denies-not-the-art's",    s.denies = MF_D_RUN_OVERLAP);
+    /* lane g2m4 (MF_SITE_ABI 6, Q-R7-2): MF_EMPTY_AT_N is the last enumerator; the one
+     * past it is out of the enum */
+    CASE("empty-out-of-enum-past-AT_N", s.empty = (mf_empty)(MF_EMPTY_AT_N + 1));
+    /* Q-R7-2: AT_N is refused on ADVANCE (it has no miss), as MISS is */
+    CASE("ADVANCE-empty-AT_N",      (s.op = MF_OP_SKIP, s.form = MF_FORM_STMT, s.handoff = MF_H_ADVANCE,
+                                     s.empty = MF_EMPTY_AT_N));
     {
         static mf_pred two[2];
         two[0] = s0.pred;
@@ -1863,6 +1966,27 @@ static void refusal_table(void)
         NCASE("ALL-reverse",                NULL,      (s.op = MF_OP_ALL_PRESENT, s.handoff = MF_H_BOOL, s.npred = 2,
                                                         s.preds = two2, s.reverse = 1));
     }
+    /* lane g2m4 (Q-R7-3 LOOP_EXIT): `on_miss` exactly `break;`. The generic row serves
+     * none, so a site whose only candidate rows are generic is REFUSED naming `on_miss`;
+     * a site another row serves may render (it then must not be the generic row, and
+     * its text is answer-checked by the families, inside a loop G2 owns). These shapes
+     * are the ones G2's families render ONLY through the generic row without the
+     * `break;` (onebyte FIND/ON_MISS, stmt FIND/ASSIGN over multi-term and run
+     * predicates, SKIP/ASSIGN, VERIFY/ON_MISS, a width-2 ALL_PRESENT gate). */
+#define LCASE(name, stmt) do { mf_site s = s0; mf_hooks h = h0; stmt; h.on_miss = "break;"; s.on_miss_leaves = 1; \
+                               refuse_case_x(name, &s, &h, "on_miss", G2_PEND_LOOPX); } while (0)
+    LCASE("loop-exit: FIND/ON_MISS one SET at 0",   (s.form = MF_FORM_STMT, s.handoff = MF_H_ON_MISS));
+    LCASE("loop-exit: SKIP/ASSIGN",                 (s.op = MF_OP_SKIP, s.form = MF_FORM_STMT, s.handoff = MF_H_ASSIGN));
+    LCASE("loop-exit: VERIFY/ON_MISS",              (s.op = MF_OP_VERIFY, s.form = MF_FORM_STMT, s.handoff = MF_H_ON_MISS));
+    LCASE("loop-exit: FIND/ASSIGN two SET terms",   (s.form = MF_FORM_STMT, s.handoff = MF_H_ASSIGN, s.pred.nterm = 2,
+                                                     s.pred.term[1] = s.pred.term[0], s.pred.term[1].offset = 1));
+    LCASE("loop-exit: FIND/ASSIGN a 4-byte RUN",    (s.form = MF_FORM_STMT, s.handoff = MF_H_ASSIGN,
+                                                     s.pred.term[0].kind = MF_T_RUN, s.pred.term[0].run = run4,
+                                                     s.pred.term[0].run_len = 4));
+    LCASE("loop-exit: FIND/ASSIGN reverse",         (s.form = MF_FORM_STMT, s.handoff = MF_H_ASSIGN, s.reverse = 1));
+    LCASE("loop-exit: FIND/ASSIGN end_back 1",      (s.form = MF_FORM_STMT, s.handoff = MF_H_ASSIGN, s.end_back = 1));
+#undef LCASE
+
     /* `miss` UNSTATED on an offset-skip-shaped FUNC/FIND/RETURN site (one
      * RUN term, plan_hint, fn_ref, no floor): memfn.h "NULL leaves it
      * UNSTATED (R1: a row that needs it declines)". Every form of a RETURN
@@ -2188,8 +2312,12 @@ static int pend_class(const gsite *g)
      * is a wildcard there, so an unstated one is an EDGE (rendered, or refused
      * naming `miss`), not the miss-unstated class */
     if (g->d.miss_mode == 5 && (g->d.handoff == G2_H_RETURN || g->d.handoff == G2_H_ASSIGN) &&
-        !(g->d.pfcell == 1 && g->d.leaves && (g->on_miss_mode == 3 || g->on_miss_mode == 5)))
+        !(g->d.pfcell == 1 && g->d.leaves && (g->on_miss_mode == 3 || g->on_miss_mode == 5)) &&
+        /* lane g2m4: MLINE (integration.md 15.7 [R-7]) sends NO `miss`: its on_miss leaves
+         * and reads no result, so `miss` is a wildcard there, as in PF cell 1 */
+        !(g->d.fam == G2_FAM_MLINE && g->d.leaves && g->d.handoff == G2_H_ASSIGN))
         return G2_PEND_MISS;
+    if (g->d.loopx) return G2_PEND_LOOPX;     /* Q-R7-3: rendered by a non-generic row, or refused naming on_miss */
     if (pf_edge_mask(g)) return G2_PEND_EDGE;
     if (g->d.fam != G2_FAM_BASE && !g->generic_seed && g->d.hook_style != 0) return G2_PEND_HOOK;
     return G2_PEND_NONE;
@@ -2788,6 +2916,103 @@ static void gen_fam_pf(void)
     pf_leave(sv);
 }
 
+/* ---- lane g2m4: the MLINE shape (integration.md 15.7 [R-7], MF_SITE_ABI 6) ----
+ *
+ * The site pcrec sends for the `(?m)^` skip (M4): STMT / FIND / ASSIGN, ONE
+ * REQUIRED one-byte SET term at offset -1, forward, end_back 0, empty AT_N
+ * (lo <= n and a non-NULL subject are proven, Q-R7-2), `floor` the SAME text as
+ * `lo`, a LEAVING on_miss (on_miss_leaves 1: goto / return, or exactly
+ * `break;` = LOOP_EXIT, Q-R7-3), no `miss`, no result_decl, no note. The
+ * range is the READ-BOUNDED one (Q-R7-1): a hit may be the candidate n.
+ *
+ * Variants (each a counted population): the base cell with a goto / return
+ * on_miss (hard: it must render, and answer); the same with `break;`
+ * (class loop-exit: rendered by a non-generic row and run inside G2's loop, or
+ * refused naming on_miss); and one thing changed each: a stated miss, offset
+ * -2, end_back 1, reverse, no floor, a result_decl, a note, on_miss_leaves 0,
+ * a multi-member set, a 2-byte run at -2, and the other empty outcomes. They
+ * draw from a stream and an id range of their own (ml_enter / ml_leave), so
+ * every older family's sites are the sites they were. */
+static uint64_t ml_rng = 0x6d6c696e65a11ceULL, ml_rng2 = 0x4d4c494e45badc0dULL;
+static uint32_t ml_ids = 700000;
+typedef struct { uint64_t r1, r2; uint32_t id; } mlsave;
+static mlsave ml_enter(void)
+{
+    mlsave sv = { rng_state, rng2_state, next_id };
+    rng_state = ml_rng; rng2_state = ml_rng2; next_id = ml_ids;
+    return sv;
+}
+static void ml_leave(mlsave sv)
+{
+    ml_rng = rng_state; ml_rng2 = rng2_state; ml_ids = next_id;
+    rng_state = sv.r1; rng2_state = sv.r2; next_id = sv.id;
+}
+enum { MLV_BASE, MLV_BREAK, MLV_MISS, MLV_MISS_BREAK, MLV_OFF2, MLV_EB1, MLV_REV, MLV_NOFLOOR,
+       MLV_DECL, MLV_NOTE, MLV_LEAVES0, MLV_MULTI, MLV_RUN2, MLV_EMPTY, MLV_EMPTY_BREAK, MLV_N };
+
+static void ml_cell(gsite *g, int v, unsigned k)
+{
+    static const int one[] = { 1, 1, 1, 1, 2, 3 };
+    static const int multi[] = { 4, 5, 5, 6, 6, 7, 8, 8, 9, 10, 11, 11 };
+    fam_site(g, G2_OP_FIND, G2_H_ASSIGN, G2_FORM_STMT, G2_FAM_MLINE);
+    g->note_null = 1;
+    alloc_preds(g, 1);
+    g->preds[0].nterm = 1;
+    g->preds[0].need = G2_REQ;
+    g->fnr[0] = 0;
+    g->php[0] = rn(2) ? 0 : MF_NO_PRED;
+    g->ppp[0] = 0;
+    if (v == MLV_RUN2) {
+        gen_term(g, 0, 0, G2_T_RUN, -2, 2, (int)(k % 3) - 1, G2_REQ, 0, 0);
+        g->ppp[0] = 0;
+    } else if (v == MLV_MULTI) {
+        gen_term(g, 0, 0, G2_T_SET, -1, 0, -1, G2_REQ, multi[rn(12)], 0);
+        uint8_t *st = g->preds[0].t[0].set;
+        for (unsigned b = rn(256); set_count(st) < 2; b = (b + 37) & 255) set_add(st, b);
+        g->table_ref_on = 1;
+    } else {
+        gen_term(g, 0, 0, G2_T_SET, v == MLV_OFF2 ? -2 : -1, 0, -1, G2_REQ, one[rn(6)], 0);
+    }
+    static const int emp[] = { G2_EMPTY_MISS, G2_EMPTY_EXCLUDED, G2_EMPTY_NOP };
+    int empty = (v == MLV_EMPTY || v == MLV_EMPTY_BREAK) ? emp[k % 3] : G2_EMPTY_AT_N;
+    int brk = v == MLV_BREAK || v == MLV_MISS_BREAK || v == MLV_EMPTY_BREAK;
+    int stated = v != MLV_BASE && v != MLV_BREAK;         /* pcrec's own cell states no miss */
+    fam_finish(g, empty, stated ? (k % 2 ? 1 : 2) : 5);
+    g2_site *d = &g->d;
+    d->end_back = (uint8_t)(v == MLV_EB1);
+    d->reverse = (uint8_t)(v == MLV_REV);
+    d->floor_lo = (uint8_t)(v != MLV_NOFLOOR);
+    g->floor_null = v == MLV_NOFLOOR;
+    g->floor_zero = 0;
+    g->result_decl = v == MLV_DECL;
+    g->note_null = v != MLV_NOTE;
+    g->cmt = (uint8_t)(v == MLV_NOTE && k % 3 == 0);
+    d->span_lo = 0;
+    d->span_hi = G2_UNBOUNDED;
+    d->use = G2_USE_POSITION;
+    d->leaves = (uint8_t)(v != MLV_LEAVES0);
+    if (empty == G2_EMPTY_NOP) g->result_decl = 0;
+    if (v == MLV_LEAVES0) g->on_miss_mode = 0;              /* the flag text: it falls through, miss is written first */
+    else if (brk) { g->on_miss_mode = 4; d->loopx = 1; g->result_decl = 0; }
+    else g->on_miss_mode = (uint8_t)(1 + rn(2));            /* goto / return: render() makes both read no result */
+}
+
+static void gen_fam_mline(void)
+{
+    gsite g;
+    mlsave sv = ml_enter();
+    static const int per[MLV_N] = { 90, 70, 30, 30, 30, 30, 20, 20, 24, 24, 24, 30, 30, 24, 24 };
+    for (int pass = 0; pass < 2; pass++) {
+        force_batch(pass ? MF_D_RUN_OVERLAP : 0);
+        for (int v = 0; v < MLV_N; v++) {
+            int cnt = per[v];
+            if (pass) { if (v > MLV_BREAK) continue; cnt = 30; }     /* the denies leg: the two cells pcrec sends */
+            for (int k = 0; k < cnt; k++) { ml_cell(&g, v, (unsigned)k); emit_site(&g); }
+        }
+    }
+    ml_leave(sv);
+}
+
 /* ---- the SEMANTIC differential (g2u item 7) ------------------------------------
  *
  * A seed site of a §15 shape (or of the generic row's), cloned once per
@@ -2852,7 +3077,8 @@ static void m_need(gsite *g, int c)
 }
 static void m_empty(gsite *g, int c)
 {
-    g->d.empty = (uint8_t)(c == 0 ? G2_EMPTY_MISS : c == 1 ? G2_EMPTY_EXCLUDED : G2_EMPTY_NOP);
+    /* class 3 (lane g2m4): MF_EMPTY_AT_N, whose outcome on an empty scan is MISS's */
+    g->d.empty = (uint8_t)(c == 0 ? G2_EMPTY_MISS : c == 1 ? G2_EMPTY_EXCLUDED : c == 2 ? G2_EMPTY_NOP : G2_EMPTY_AT_N);
     if (g->d.empty == G2_EMPTY_NOP) g->result_decl = 0;
     if (g->d.empty != G2_EMPTY_EXCLUDED) g->d.span_lo = 0;
 }
@@ -2899,8 +3125,10 @@ static void sem_group(const gsite *s)
         if (has) for (int c = 0; c < 2; c++) sem_emit(s, G2_V_NEED, c, m_need);
     }
     if (!d->gbc) {
-        int ncls = d->form == G2_FORM_STMT ? 3 : 2;
-        for (int c = 0; c < ncls; c++) sem_emit(s, G2_V_EMPTY, c, m_empty);
+        for (int c = 0; c < 4; c++) {
+            if (c == 2 && d->form != G2_FORM_STMT) continue;    /* NOP has no reading on EXPR/FUNC (Q-G2-3) */
+            sem_emit(s, G2_V_EMPTY, c, m_empty);
+        }
     }
     for (int c = 0; c < 4; c++) sem_emit(s, G2_V_POLICY, c, m_policy);
     for (int c = 0; c < 2; c++) sem_emit(s, G2_V_CONSUMER, c, m_consumer);
@@ -3228,6 +3456,9 @@ int main(int argc, char **argv)
     /* (6b) lane g2pf: the PF shape (integration.md 15.7 [R4g]): four cells,
      *      their edges, and the table that disagrees with the set */
     gen_fam_pf();
+    /* (6c) lane g2m4: the MLINE shape (integration.md 15.7 [R-7]): the read-bounded
+     *      range, MF_EMPTY_AT_N and LOOP_EXIT, in streams of their own */
+    gen_fam_mline();
     /* (7) lane g2u: the semantic differential, its groups half without and
      *     half with MF_D_RUN_OVERLAP */
     force_batch(0);
@@ -3252,6 +3483,13 @@ int main(int argc, char **argv)
         int any = 0;
         for (int k = 0; k < NFORMS && form_ids[k][0]; k++)
             if (fam_form[f][k]) { fprintf(g_res, "%s%s:%ld", any++ ? "," : "", form_ids[k], fam_form[f][k]); }
+        fprintf(g_res, "%s\n", any ? "" : "-");
+    }
+    {
+        fprintf(g_res, "LOOPX forms=");
+        int any = 0;
+        for (int k = 0; k < NFORMS && form_ids[k][0]; k++)
+            if (loopx_form[k]) fprintf(g_res, "%s%s:%ld", any++ ? "," : "", form_ids[k], loopx_form[k]);
         fprintf(g_res, "%s\n", any ? "" : "-");
     }
     for (int c = 1; c < G2_NPEND; c++)

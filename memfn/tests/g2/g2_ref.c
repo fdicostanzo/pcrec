@@ -67,14 +67,46 @@ static int pred_holds(const g2_site *d, const g2_items *it, int p, uint64_t S,
     return 1;
 }
 
-/* §14.4: the range is [lo, n - end_back), empty iff !(lo + end_back < n) */
-static int range(const g2_site *d, size_t n, size_t lo, size_t *hi)
+/* Q-R7-1 (MF_SITE_ABI 6; memfn.h MF_OP_FIND). A FIND whose every term reads
+ * below its candidate (offset + len <= 0 for each, 1 for a SET term; E the
+ * largest) never reads the candidate's own byte, so its range is bounded by
+ * its READS: c in [lo, n] with c + d <= n, d = max(0, end_back + E); empty
+ * iff lo + d > n. Every other FIND, and ALL_PRESENT / SKIP / VERIFY /
+ * ON_CAND, keep [lo, n - end_back). ON_CAND is outside the rule by the
+ * brief's reading (a visit's own reach is checked as cand + reach <= n). */
+int g2_ref_readsbelow(const g2_site *d, long long *E)
+{
+    if (d->op != G2_OP_FIND || d->handoff == G2_H_ON_CAND || d->npred != 1 || !d->preds) return 0;
+    const g2_pred *P = &d->preds[0];
+    long long m = -(1LL << 40);
+    if (!P->nterm) return 0;
+    for (int t = 0; t < P->nterm; t++) {
+        long long e = (long long)P->t[t].off + (P->t[t].kind == G2_T_SET ? 1 : (long long)P->t[t].len);
+        if (e > 0) return 0;
+        if (e > m) m = e;
+    }
+    *E = m;
+    return 1;
+}
+
+/* §14.4 + Q-R7-1: the range, hi EXCLUSIVE; 0 when empty */
+int g2_ref_range(const g2_site *d, size_t n, size_t lo, size_t *hi)
 {
     size_t eb = g2_ref_defect == 1 ? 0 : d->end_back;          /* W1-1 */
+    long long E;
+    if (g2_ref_defect != 4 && g2_ref_readsbelow(d, &E)) {      /* W1-4: the OLD range */
+        long long dd = (long long)eb + E;
+        if (dd < 0) dd = 0;
+        if (lo > n || (long long)(n - lo) < dd) { *hi = lo; return 0; }
+        *hi = n - (size_t)dd + 1;
+        return 1;
+    }
     if (!(lo + eb < n)) { *hi = lo; return 0; }
     *hi = n - eb;
     return 1;
 }
+
+static int range(const g2_site *d, size_t n, size_t lo, size_t *hi) { return g2_ref_range(d, n, lo, hi); }
 
 /* the candidates of predicate p under S, in visiting order (§14.3: ascending,
  * descending if reverse); for SKIP the candidates are the NON-members */

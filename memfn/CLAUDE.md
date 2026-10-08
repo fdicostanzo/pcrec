@@ -20,6 +20,12 @@ read its §R4.8, then §R4.7, first). §R4.8 is M1b's contract (R-5:
 Q-R4h-1 (a)) made it 5: `mf_site.count_by_caller`, the caller-owned ADVANCE
 counter; it also added the ADVANCE hooks' shape classes (fields.def) and
 recorded Q-G2-5 ruled (memfn.h), all kit-only with no pcrec byte moved.
+M4 prep (R-7, 2026-10-08, Q-R7-1/2/3) made it 6: a FIND whose every term
+reads below its candidate has its range bounded by its reads (it reaches
+`n`), `MF_EMPTY_AT_N` (empty only as lo == n over a non-NULL subject) and
+the `on_miss` class LOOP_EXIT (`break;`, which the generic row never
+serves), plus the row `pf_memchr_back` that M4's `(?m)^` skip takes; again
+kit-only, no pcrec byte moved.
 §R4.7 holds the kit's contract after G2, the kit session's rulings on
 G2's F1-F3 and Q-G2-1..17. This file is the working agreement for the
 subtree.

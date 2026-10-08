@@ -910,3 +910,30 @@ pointer when a kit change merges to main.
 
   Merged into lane/memfn-r4h. slot10 is QUEUED behind nullanch2 (abi 68).
   On GO: merge the new main FIRST, then run slot10/run.sh.
+- 2026-10-08: R4h DELIVERED (lane/memfn-r4h @ 1428d550).
+  - slot10: identity gate 0 movers, G2 full 173.8M/0, make test 655 s,
+    18 mech rows clean.
+  - The census's reason_stale on `generic` was expected: pcrec now selects
+    the kit's generic ADVANCE row. Fixed by making generic a pcrec row
+    (witness a[^x]*, control abc, plant red); the census re-run gave rc 0.
+- 2026-10-08: R4h MERGED to main. R-7 (M4, MLINE) filed: scoped (no
+  overlap with DEC-FALLBACK; gaps G1-G3 closed kit-side, Q-R7-1/2/3) and
+  acked by main. Ids S617-S619.
+  - Lane m4 BUILT it on lane/memfn-m4 @ 9c7b848e:
+    - MF_SITE_ABI 6, `pf_memchr_back`, PcrecFind generalized, MLINE
+      delegated;
+    - 0 movers (shadow and corpus pairs), C12 clear of memchr.
+  - Blocked on a blinded G2 lane, because G2's oracle predates Q-R7-1.
+  - Session reset at Frank's request; wake.md lists the order of what
+    follows.
+- 2026-10-08 (session after reset): R-7 (M4) DELIVERED.
+  - The blinded G2 lane g2m4 (sonnet, cell g2u-cell) brought G2 to
+    MF_SITE_ABI 6: reads-below range, mline AT_N family, loop-exit class
+    plus W2 mutation 8, FLOOR_ROWS 14. Quick 47.4M/0, merged via g2u.
+  - Floors for pf_memchr_back: g2 4109, pcrec 3271.
+  - slot11 on kit + main e99ad486 was green except S513/S525, which are
+    equivalent mutants once pcrec has no memchr. Read-only triage lanes
+    confirmed it; both re-pinned UNDETECTED as tripwires and re-run solo,
+    clean. make test now runs through scripts/perfrun.
+  - Posted done: R-7 and a notice with G2's Q-G2M4-1..9 and the redundant
+    libc_names memchr entry.

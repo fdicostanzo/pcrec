@@ -448,6 +448,9 @@ is EXPECTED to time out"*, and neither would a separate arm.
   because the one-site plant fails `make all`, which this matrix scores
   ANOMALY), S527 (an `on_cand` token with C13 unbuilt). S524/S525 demand
   `checks failed: 0` on the clean tree too, like S526/S527 (lane r4c2fix).
+  Since M4 ([MEMFN] R-7, 2026-10-08) S525 is an expected-UNDETECTED
+  tripwire: no C12 ceiling row counts memchr once pcrec's last one moved
+  into the kit.
 - `memfnreach` → `tests/memfn/run_handoff_reach.sh` (same lane): the VM
   hybrid handoff route's reach floor. Compiles with the sabotaged tree's own
   `build/pcrec`. Row S529 (the VM engine declined by `req_handoff_applies`;
@@ -465,6 +468,17 @@ is EXPECTED to time out"*, and neither would a separate arm.
   double-counts (S573). Re-pointed into the kit by the same change: S267,
   S443, S444, S445, S285 (`memfn/src/runcmp.c`), S279, S454
   (`memfn/src/ofsskip.c`).
+- `memfnarms` → `tests/memfn/run_arm_pins.sh` ([MEMFN] M4, lane m4,
+  2026-10-08): C5, the kit arms' fixture pins, the row-contract gate cases
+  (check 6) and the reads-below FIND run on fixed subjects (check 9).
+  Links the sabotaged tree's `build/libpcrec.a`; seconds. A kit row that
+  pcrec's corpus reaches through another row, or not at all, moves no answer
+  and no artifact byte. Rows S617 (pf_memchr_back's `+ k` store dropped:
+  answer-neutral on MLINE, measured), S618 (the generic row's read-bounded
+  FIND loop one short of n), S619 (the generic row serves LOOP_EXIT). M4
+  also re-aimed S511 (`memfnmanifest`) from MLINE, now delegated, to
+  VMSTRIDE's `vm_stride_loop`, and re-pinned S524 (`memfnforms`) on
+  pcrec_emit_find's door call, now `f->site`.
 - `memfnstamps` → `tests/memfn/run_libc_census.sh --quick` ([MEMFN] R4a′,
   lane memfnstamp, 2026-10-05): C11, the kit's two every-artifact stamps.
   Builds nothing itself (reads the sabotaged tree's build/pcrec); about 15 s.
@@ -472,6 +486,8 @@ is EXPECTED to time out"*, and neither would a separate arm.
   green on it by construction. Rows S513 (a name dropped), S514 (a name
   added), S515 (the idiom-`memcpy` exclusion broken), S516 (the VM family's
   mark dropped), S517 (`memcmp` dropped).
+  Since M4 ([MEMFN] R-7, 2026-10-08) S513 is an expected-UNDETECTED
+  tripwire: every memchr call is now noted by the kit row that emits it.
 - (no new arm) [OPT-VEDGE] row S440 (lane vedge, 2026-10-03) is on
   `harness`, scoped to `tests/assertions`: the reverse machine handed
   `end_is_exit = true` loses matches on view_edge.rxt's direction witness.

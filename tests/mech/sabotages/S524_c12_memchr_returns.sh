@@ -19,16 +19,22 @@
 # after its one kit call. Intent unchanged: a listed emitter spells one
 # memchr( more than its file's ceiling (C17's rule 3 would also see this one,
 # but the arm is C12's).
+# RE-PINNED 2026-10-08 ([MEMFN] M4, lane m4): emit_attempt's MLINE skip went
+# to the kit at M4's REPLACE, so the emit_dfa.c memchr row is DELETED (0
+# outside the kit, the ratchet's end) and pcrec_emit_find's door call now
+# names its caller's site (`f->site`, PF or MLINE). The plant stays in
+# pcrec_emit_find, after its one kit call: a memchr( spelled where the
+# ceiling table has no row at all. Intent unchanged.
 SAB_ID="S524-c12-memchr-returns"
 SAB_FILE="src/gen/emit_dfa.c"
 SAB_SUITES="memfnforms"
-SAB_DESC='a memchr( search text is added to pcrec_emit_find (a listed emitter): the second against the ceiling of 1'
+SAB_DESC='a memchr( search text is added to pcrec_emit_find (a listed emitter): one against a ceiling of 0 (emit_dfa.c has no memchr row since M4)'
 SAB_DOC_FIGURE='Validated by plant at landing (docs/dev/lanes/r4cchecks_report.md §3); read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S524.'
 SAB_REACH='CC="$CC" TMPDIR="$REACH_TMP" bash "$TREE/tests/memfn/run_form_checks.sh" "$TREE"'
 SAB_REACH_EXPECT='PASS: C12: every group is at its ceiling
 checks failed: 0'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    pcrec_memfn_emit(f->cx, DELEG_PF, s, &h, c);'
-SAB_AFTER='    pcrec_memfn_emit(f->cx, DELEG_PF, s, &h, c);
+SAB_BEFORE='    pcrec_memfn_emit(f->cx, f->site, s, &h, c);'
+SAB_AFTER='    pcrec_memfn_emit(f->cx, f->site, s, &h, c);
     pcrec_sb_puts(c, "        (void)memchr(subject, 0, 0);  /* SABOTAGE S524 */\n");'

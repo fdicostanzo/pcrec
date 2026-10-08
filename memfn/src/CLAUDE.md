@@ -24,8 +24,8 @@ R4g (M2), a fourth, the prefilter find (PF, pffind.c).
   rules outside the vocabulary are REFUSED loudly) and their table
   (`mf_vocab_has`), the FIRST-MATCH arm table (`ofsskip`, `precheck`,
   `precheck_assign` (one renderer, two rows: N3's split by handoff),
-  `runcmp`, the four PF rows (`pf_memchr`, `pf_memchr_bounded`, `pf_walk`,
-  `pf_walk_bounded`: R4g), then the generic row; each arm's `ct` is its contract, which
+  `runcmp`, the five PF rows (`pf_memchr`, `pf_memchr_bounded`, `pf_walk`,
+  `pf_walk_bounded`: R4g; `pf_memchr_back`: M4 prep), then the generic row; each arm's `ct` is its contract, which
   the gate reads before the arm's predicate and, since [MEMFN-ROWCON] N3,
   ENFORCES: a failing row is declined and the walk moves on, a site no row
   serves is refused naming the fields, and `mf_use` re-checks the chosen
@@ -99,7 +99,12 @@ R4g (M2), a fourth, the prefilter find (PF, pffind.c).
   `pf_walk_bounded_arm` (a set pcrec names by table: the in-place walk
   `while (lo < n && !T[s[lo]]) lo++;`, `result` IS `lo`, miss the range's
   end), form id `pf_walk`. The guards around the statement stay pcrec's
-  (the memchr rows' empty range is EXCLUDED; the walk's NOP). No tuning
+  (the memchr rows' empty range is EXCLUDED; the walk's NOP). M4 prep (R-7)
+  added a FIFTH row, `pf_memchr_back_arm` (form id `pf_memchr`, the same
+  renderer): MLINE's `(?m)^` skip, its one-byte term at offset -1 (the
+  candidate's predecessor), `floor` the text of `lo`, `empty` AT_N
+  (Q-R7-2), `on_miss` JUMP/BRACED or LOOP_EXIT (`break;`, Q-R7-3), and the
+  store adds the 1 back; its range is read-bounded (Q-R7-1). No tuning
   constant (D149).
 - **k1_ref.c** — K1's REFERENCE functions (`mf_ref_*`): one obviously-
   correct byte loop per primitive (F1 find_byte, F2 find_any2/3, F4
@@ -114,12 +119,14 @@ R4g (M2), a fourth, the prefilter find (PF, pffind.c).
   closed class set, with the text-shape classes IDENT / JUMP / BRACED and,
   since R4h prep, the ADVANCE hooks' CONJ (`more`), POSTFIX (`peek`) and
   EXPR_STMT (`step`); and `count_by_caller`, the caller-owned counter
-  (MF_SITE_ABI 5, OBLIG);
+  (MF_SITE_ABI 5, OBLIG); since M4 prep (MF_SITE_ABI 6) `empty`'s E_AT_N
+  (Q-R7-2) and `on_miss`'s LOOP_EXIT (`break;`, Q-R7-3);
   `miss`'s MISS_N is the `MF_MISS_N` token or the text of `n`). Since N3
   `fn_ref` is a hook ID (0 UNSTATED, so a FUNC site stating 0 is refused,
   K-1) rather than an OBLIG exemption, and `s`/`n`/`lo` are read at define
   as well as use (ruling F1).
-- **gate.c** — THE ROW-CONTRACT GATE (its `uses` entries may be CONDITIONAL
+- **gate.c** — THE ROW-CONTRACT GATE (`stmt_shape` classes `break;` as
+  LOOP_EXIT since M4 prep) (its `uses` entries may be CONDITIONAL
   since R4h prep: `GATE_WHEN(cls, field)` applies an entry only where a site
   field has that class, so `count_by_caller` YES makes `count` a use; kit.h
   `gate_use`): also DEFINES the exported `MF_MISS_N`
