@@ -30,14 +30,16 @@ SAB_ID="S214-scanedge-bound-dropped"
 SAB_FILE="src/gen/emit_dfa.c"
 SAB_SUITES="harness"
 SAB_HARNESS_TARGET="tests/base/bounded_repeats.rxt"
-SAB_DESC="emit_scan_edge's emitted loop loses its 'scan_run_length < <span>UL' conjunct, so the scan edge counts the class to exhaustion instead of stopping at the bound the deleted states used to hold. The fall-through state is then never reached and last_accept_position is written past where the machine could be: '[a-z]{0,2}' on \"cccz\" answers (0,4) against (0,2)(2,4) clean, and on a 35-letter run answers ONE match of (0,35) against eighteen. A FALSE MATCH, which no size or timing check can see"
+SAB_DESC="emit_scan_edge's emitted loop loses its 'scan_run_length < <span>ULL' conjunct, so the scan edge counts the class to exhaustion instead of stopping at the bound the deleted states used to hold. The fall-through state is then never reached and last_accept_position is written past where the machine could be: '[a-z]{0,2}' on \"cccz\" answers (0,4) against (0,2)(2,4) clean, and on a 35-letter run answers ONE match of (0,35) against eighteen. A FALSE MATCH, which no size or timing check can see"
 SAB_DOC_FIGURE="HAND-MEASURED by the lane at 117a89f (the mech matrix itself is the manager's battery, not this lane's): with the plant applied and the tree rebuilt, 'PROCS=4 bash tests/harness/run.sh tests/base/bounded_repeats.rxt' reports 11 failed / 40 passed against 0 failed clean; 'tests/classes/classes.rxt' reports 1 failed; 'tests/counterk/counterk.rxt' reports 0 failed (see the note above -- the inverse of S213's pairing). A 25-pattern find-all differential against python3 re moves 0 -> 113 diverging cells of 850, every one a false match. The matrix's own DETECTED figure is owed at the battery."
 SAB_COUNT=1
-SAB_BEFORE='    pcrec_sb_printf(c, "%s    while (%s && scan_run_length < %dUL\n"
-                 "%s           && ",
-              ind, f->dir->scan_more, span, ind);'
+# RE-AIMED 2026-10-08 ([MEMFN] R4h layout normalization, abi 66 -> 67): the
+# loop's text is the kit's ADVANCE layout now (parenthesized more/member, a
+# braced body, a `%llu`+`ULL` cap); the plant's intent is unchanged -- the
+# `scan_run_length < <span>` conjunct leaves the emitted `while`.
+SAB_BEFORE='    pcrec_sb_printf(c, "%s    while ((%s) && scan_run_length < %lluULL && (",
+              ind, f->dir->scan_more, (unsigned long long)span);'
 SAB_AFTER='    /* SABOTAGE S214: the count bound is gone from the emitted loop. */
-    pcrec_sb_printf(c, "%s    while (%s\n"
-                 "%s           && ",
-              ind, f->dir->scan_more, ind);
+    pcrec_sb_printf(c, "%s    while ((%s) && (",
+              ind, f->dir->scan_more);
     (void)span;'

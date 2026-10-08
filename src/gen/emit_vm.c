@@ -4677,12 +4677,13 @@ static void vm_emit_span_scan(Vm *v, const Ast *a, int stride,
         pcrec_sb_printf(b, "        const size_t lim_ = %s_PRUNE_CLAMP_SPAN(scan_position, %s, %d);\n",
                   v->up, clamp, stride);
     pcrec_sb_printf(b, "        %s_span_cursor = scan_position;\n", v->p);
-    pcrec_sb_printf(b, "        while (%s_span_cursor + %d <= %s", v->p, stride,
+    pcrec_sb_printf(b, "        while ((%s_span_cursor + %d <= %s)", v->p, stride,
               clamp ? "lim_" : "subject_length");
-    if (a->u.rep.rmax >= 0) pcrec_sb_printf(b, " && it_ < %dUL", a->u.rep.rmax);
-    pcrec_sb_printf(b, "%s) { %s_span_cursor += %d;", test, v->p, stride);
-    if (a->u.rep.rmax >= 0) pcrec_sb_puts(b, " it_++;");
-    pcrec_sb_puts(b, " }\n    }\n");
+    if (a->u.rep.rmax >= 0)
+        pcrec_sb_printf(b, " && it_ < %lluULL", (unsigned long long)a->u.rep.rmax);
+    pcrec_sb_printf(b, "%s) {\n            %s_span_cursor += %d;\n", test, v->p, stride);
+    if (a->u.rep.rmax >= 0) pcrec_sb_puts(b, "            it_++;\n");
+    pcrec_sb_puts(b, "        }\n    }\n");
 }
 
 /* §2.5's cursor rung, with D44.1's capture extension.
