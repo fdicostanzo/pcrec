@@ -104,10 +104,10 @@ void pcrec_enc_emit_decls(StrBuf *sb, const PcrecEnc *e, unsigned mask,
             /* [EMIT-VERB] the entry's doc half, through the render gate. */
             if (t->decls_doc) {
                 pcrec_sb_cmt_open(sb, PCREC_CMT_NONESSENTIAL);
-                pcrec_enc_emit_text(sb, t->decls_doc, prefix);
+                pcrec_enc_emit_text(sb, t->decls_doc, prefix, NULL);
                 pcrec_sb_cmt_close(sb);
             }
-            pcrec_enc_emit_text(sb, t->decls, prefix);
+            pcrec_enc_emit_text(sb, t->decls, prefix, NULL);
         }
 }
 
@@ -139,9 +139,11 @@ static void enc_emit_latin1_fold_table(StrBuf *sb, const char *prefix)
 /* Emits every entry's `defs` text (and, gated through the comment layer, its
  * defs_doc) whose id is set in the CLOSED `mask` and whose `inline_def` is
  * `inline_half` -- pcrec_enc_emit_decls' own sibling loop over the
- * DEFINITIONS half. A backend with no table emits nothing. */
+ * DEFINITIONS half -- with each entry's site token replaced by its rendered
+ * text from `sites` ([MEMFN] M7). A backend with no table emits nothing. */
 static void enc_emit_defs(StrBuf *sb, const PcrecEnc *e, unsigned mask,
-                          const char *prefix, bool inline_half)
+                          const char *prefix, bool inline_half,
+                          const PcrecEncSiteText *sites, size_t nsites)
 {
     if (!e || !e->entries) return;
     mask = pcrec_enc_mask_close(e, mask);
@@ -151,26 +153,34 @@ static void enc_emit_defs(StrBuf *sb, const PcrecEnc *e, unsigned mask,
                 enc_emit_latin1_fold_table(sb, prefix);
             if (t->defs_doc) {
                 pcrec_sb_cmt_open(sb, PCREC_CMT_NONESSENTIAL);
-                pcrec_enc_emit_text(sb, t->defs_doc, prefix);
+                pcrec_enc_emit_text(sb, t->defs_doc, prefix, NULL);
                 pcrec_sb_cmt_close(sb);
             }
-            pcrec_enc_emit_text(sb, t->defs, prefix);
+            const char *site = NULL;
+            for (size_t i = 0; i < nsites; i++)
+                if (sites[i].id == t->id) site = sites[i].text;
+            if (pcrec_enc_site(e, t->id) && !site)
+                pcrec_ctx_fail(sb->cx, 0, "internal error: residual entry %u "
+                               "states site data and no loop was rendered for it",
+                               t->id);
+            pcrec_enc_emit_text(sb, t->defs, prefix, site);
         }
 }
 
 /* The out-of-line entries' definitions (the artifact's epilogue). */
 void pcrec_enc_emit_defs(StrBuf *sb, const PcrecEnc *e, unsigned mask,
-                         const char *prefix)
+                         const char *prefix, const PcrecEncSiteText *sites,
+                         size_t nsites)
 {
-    enc_emit_defs(sb, e, mask, prefix, false);
+    enc_emit_defs(sb, e, mask, prefix, false, sites, nsites);
 }
 
 /* The `static inline` entries' definitions, placed by the caller ahead of
- * every engine body that calls them. */
+ * every engine body that calls them. No inline entry carries a site. */
 void pcrec_enc_emit_inline_defs(StrBuf *sb, const PcrecEnc *e, unsigned mask,
                                 const char *prefix)
 {
-    enc_emit_defs(sb, e, mask, prefix, true);
+    enc_emit_defs(sb, e, mask, prefix, true, NULL, 0);
 }
 
 /* True iff entry `id` in `e`'s table is marked engine_callable; false for an
@@ -213,14 +223,50 @@ const PcrecEncSite *pcrec_enc_site(const PcrecEnc *e, unsigned id)
     return NULL;
 }
 
-/* Emits `text` verbatim, substituting `prefix` for every `$` -- the ONE
- * templating rule every backend's decls/defs/advance text shares. */
-void pcrec_enc_emit_text(StrBuf *sb, const char *text, const char *prefix)
+/* Emits `text` verbatim, substituting `prefix` for every `$` and `site` for
+ * the one PCREC_ENC_SITE token -- the templating rule every backend's
+ * decls/defs text shares (D58 and its addendum 2). The token's "no other
+ * occurrence" rule is checked here, where `$`'s substitution is: a `@` that
+ * does not begin the token, a token where no site text was given, a second
+ * token, or a site text with no token, fails the compile. */
+static void emit_templ(StrBuf *sb, const char *text, const char *prefix,
+                       const char *site, bool at_is_data)
 {
+    size_t lt = strlen(PCREC_ENC_SITE);
+    bool used = false;
     for (const char *q = text; *q; q++) {
-        if (*q == '$') pcrec_sb_puts(sb, prefix);
-        else           pcrec_sb_putc(sb, *q);
+        if (*q == '$') {
+            pcrec_sb_puts(sb, prefix);
+        } else if (*q == '@' && at_is_data) {
+            pcrec_sb_putc(sb, *q);
+        } else if (*q == '@') {
+            if (!site || used || strncmp(q, PCREC_ENC_SITE, lt))
+                pcrec_ctx_fail(sb->cx, 0, "internal error: residual text has "
+                               "an `@` that is not its one site token");
+            pcrec_sb_puts(sb, site);
+            used = true;
+            q += lt - 1;
+        } else {
+            pcrec_sb_putc(sb, *q);
+        }
     }
+    if (site && !used)
+        pcrec_ctx_fail(sb->cx, 0, "internal error: a site's loop was rendered "
+                       "for residual text with no site token");
+}
+
+void pcrec_enc_emit_text(StrBuf *sb, const char *text, const char *prefix,
+                         const char *site)
+{
+    emit_templ(sb, text, prefix, site, false);
+}
+
+/* A site-data row's text (PcrecEncSite's `fold`, `on_diff`): `$` is the
+ * prefix as in residual text, and `@` is the KIT's operand placeholder,
+ * left for the kit. */
+void pcrec_enc_emit_site_text(StrBuf *sb, const char *text, const char *prefix)
+{
+    emit_templ(sb, text, prefix, NULL, true);
 }
 
 /* [K49] Append `s` at `*len`, tracking overflow rather than truncating into a

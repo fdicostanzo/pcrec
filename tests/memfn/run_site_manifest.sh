@@ -35,7 +35,7 @@
 
 set -u
 
-C17_ROW_FLOOR=13
+C17_ROW_FLOOR=14   # M7 (R-8, Q-R8-1): N7U split from N7
 
 here="$(cd "$(dirname "$0")" && pwd)"
 root="${1:-$(cd "$here/../.." && pwd)}"

@@ -478,7 +478,16 @@ is EXPECTED to time out"*, and neither would a separate arm.
   FIND loop one short of n), S619 (the generic row serves LOOP_EXIT). M4
   also re-aimed S511 (`memfnmanifest`) from MLINE, now delegated, to
   VMSTRIDE's `vm_stride_loop`, and re-pinned S524 (`memfnforms`) on
-  pcrec_emit_find's door call, now `f->site`.
+  pcrec_emit_find's door call, now `f->site`. M7 (lane m7, 2026-10-08) adds
+  the MISMATCH rows S666 (subject-end test dropped), S667 (loop bound
+  inclusive; also `brefdiff`), S669 (in-place fold for one side; also
+  `brefdiff`, the caseless harness), S670 (subject exhaustion falls out as
+  equal; answers move but no answer cell sees it, measured) and S671 (k + 1
+  to on_miss: work, not answers), all on checks 10/11 of this arm, and S673
+  (a backend spells its loop again) on `memfnmanifest`/`memfnforms`; it
+  re-anchored S116 (the byte backend's site-data fold text) and S517 (the
+  rider's line) and re-aimed S513 (`memfnstamps`) from the dead `memchr`
+  entry to `strlen`, a live detector again.
 - `memfnstamps` → `tests/memfn/run_libc_census.sh --quick` ([MEMFN] R4a′,
   lane memfnstamp, 2026-10-05): C11, the kit's two every-artifact stamps.
   Builds nothing itself (reads the sabotaged tree's build/pcrec); about 15 s.

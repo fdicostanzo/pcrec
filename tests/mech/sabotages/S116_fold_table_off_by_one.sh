@@ -24,7 +24,7 @@ SAB_FILE="src/enc/enc_byte.c"
 SAB_SUITES="brefdiff harness"
 SAB_HARNESS_TARGET="tests/backrefs/caseless.rxt"
 SAB_DESC="The caseless residual entry's fold covers A-Y instead of A-Z, so a caseless backreference stops folding 'Z'/'z' while pcrec's class fold still does. Two spellings of one fact drifting by ONE BYTE is what the 65,536-pair agreement check exists to see; a corpus that used no 'z' would not"
-SAB_DOC_FIGURE="PREDICTED: the fold-agreement check RED on the 'Z'/'z' pair; brefdiff RED if a caseless cell uses it. Canonical figure owed from run_sabotage_matrix.sh S116."
+SAB_DOC_FIGURE="RE-ANCHORED and HAND-MEASURED by lane m7 2026-10-08 (the site-data row fold text, plant applied, tree rebuilt): brefdiff 1 failed / 12 passed (the fold-agreement check), caseless.rxt 0 failed / 35 passed. The matrix figure is owed at the slot."
 # [VAR] 2026-09-23: THE ANCHOR IS BACK TO ITS ONE LINE, and the round trip is
 # worth recording. Module `vars`' first design gave the caseless VALUE compare
 # its own seam entry, which put the identical fold line in `enc_byte.c` TWICE
@@ -42,6 +42,16 @@ SAB_DOC_FIGURE="PREDICTED: the fold-agreement check RED on the 'Z'/'z' pair; bre
 # THE LESSON IS ABOUT THE ANCHOR AND NOT THE ROW: a uniqueness-driven widening
 # encodes a DUPLICATE that exists at that moment, so it goes stale the moment
 # the duplicate does -- in either direction.
+#
+# RE-ANCHORED 2026-10-08 ([MEMFN] M7, lane m7): the caseless compare's LOOP is
+# the kit's since M7 (memfn/src/mismatch.c, row mismatch_inplace), and the
+# fold it pastes is the backend's TEXT, stated once in enc_byte.c's site-data
+# row (`sites_byte`, D58 addendum 2) with `@` for the byte and pasted for BOTH
+# operands. So the anchor is that row's fold text, and the plant now stops
+# 'Z'/'z' folding on both sides at once (before, only the subject side's `x`
+# line moved). Intent unchanged: the residual's fold diverges from
+# `pcrec_ascii_fold` by one byte; fold_agreement_check.c still calls the
+# SHIPPED `rx_span_match_caseless` on all 65,536 pairs.
 SAB_COUNT=1
-SAB_BEFORE="\"        if (x >= 'A' && x <= 'Z') x = (unsigned char)(x + 32);\\n\""
-SAB_AFTER="\"        if (x >= 'A' && x <= 'Y') x = (unsigned char)(x + 32);\\n\"   /* SABOTAGE S116 */"
+SAB_BEFORE="      \"if (@ >= 'A' && @ <= 'Z') @ = (unsigned char)(@ + 32);\", span_on_diff },"
+SAB_AFTER="      \"if (@ >= 'A' && @ <= 'Y') @ = (unsigned char)(@ + 32);\", span_on_diff },   /* SABOTAGE S116 */"

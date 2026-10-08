@@ -126,11 +126,7 @@ static const char u8_defs_bref[] =
 "ptrdiff_t $_span_match(const unsigned char *s, size_t n,\n"
 "                       const unsigned char *ref, size_t reflen, size_t at)\n"
 "{\n"
-"    size_t i;\n"
-"    for (i = 0; i < reflen; i++) {\n"
-"        if (at + i >= n || s[at + i] != ref[i])\n"
-"            return -(ptrdiff_t)i - 1;\n"
-"    }\n"
+PCREC_ENC_SITE      /* [MEMFN] M7: the kit's compare loop (sites_utf8) */
 "    return (ptrdiff_t)reflen;\n"
 "}\n";
 

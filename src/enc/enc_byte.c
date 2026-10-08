@@ -153,11 +153,7 @@ static const char defs_bref[] =
 "ptrdiff_t $_span_match(const unsigned char *s, size_t n,\n"
 "                       const unsigned char *ref, size_t reflen, size_t at)\n"
 "{\n"
-"    size_t i;\n"
-"    for (i = 0; i < reflen; i++) {\n"
-"        if (at + i >= n || s[at + i] != ref[i])\n"
-"            return -(ptrdiff_t)i - 1;\n"
-"    }\n"
+PCREC_ENC_SITE      /* [MEMFN] M7: the kit's compare loop (sites_byte) */
 "    return (ptrdiff_t)reflen;\n"
 "}\n";
 
@@ -185,16 +181,7 @@ static const char defs_bref_ci[] =
 "                                const unsigned char *ref, size_t reflen,\n"
 "                                size_t at)\n"
 "{\n"
-"    size_t i;\n"
-"    for (i = 0; i < reflen; i++) {\n"
-"        unsigned char x, y;\n"
-"        if (at + i >= n) return -(ptrdiff_t)i - 1;\n"
-"        x = s[at + i];\n"
-"        y = ref[i];\n"
-"        if (x >= 'A' && x <= 'Z') x = (unsigned char)(x + 32);\n"
-"        if (y >= 'A' && y <= 'Z') y = (unsigned char)(y + 32);\n"
-"        if (x != y) return -(ptrdiff_t)i - 1;\n"
-"    }\n"
+PCREC_ENC_SITE      /* [MEMFN] M7: the kit's compare loop (sites_byte) */
 "    return (ptrdiff_t)reflen;\n"
 "}\n";
 
@@ -318,11 +305,7 @@ static const char defs_bref_ci_ucp[] =
 "                                const unsigned char *ref, size_t reflen,\n"
 "                                size_t at)\n"
 "{\n"
-"    size_t i;\n"
-"    for (i = 0; i < reflen; i++) {\n"
-"        if (at + i >= n || $_span_ci_fold(s[at + i]) != $_span_ci_fold(ref[i]))\n"
-"            return -(ptrdiff_t)i - 1;\n"
-"    }\n"
+PCREC_ENC_SITE      /* [MEMFN] M7: the kit's compare loop (sites_byte) */
 "    return (ptrdiff_t)reflen;\n"
 "}\n";
 

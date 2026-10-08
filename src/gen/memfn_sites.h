@@ -113,11 +113,6 @@ void pcrec_memfn_call(Ctx *cx, uint32_t handle, const mf_hooks *h, StrBuf *body)
  * (a row that would write one fails loudly). */
 void pcrec_memfn_emit(Ctx *cx, DelegSite id, const mf_site *s,
                       const mf_hooks *h, StrBuf *body);
-/* [M7 I1] IMPLEMENT ONLY (deleted at REPLACE): renders site `s` with hooks
- * `h` through a SCRATCH art and fails the compile unless the kit's text
- * equals `want[0..n)`, the text pcrec spells for the same site. */
-void pcrec_memfn_shadow(Ctx *cx, DelegSite id, const mf_site *s,
-                        const mf_hooks *h, const char *want, size_t n);
 /* ---- THE FIND: one FIND / STMT / ASSIGN site ([START-SET], [MEMFN] R4g, M4) */
 
 /* [START-SET] (D148; docs/design/startset.md §5, "One spelling") THE FIND:
