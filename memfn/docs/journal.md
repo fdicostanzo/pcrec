@@ -885,3 +885,19 @@ pointer when a kit change merges to main.
     MF_SITE_ABI 5, plus one pcrec layout-normalization mover after C7.
   - Next on the kit side: R4h prep (G3 classes, the (a) hook, Q-G2-5
     recorded) as a kit-only zero-mover unit.
+- 2026-10-08: main merged lane/memfn-g2floor (N4 + G2 floors) as 37462a8e:
+  make test 60/60, 707 s. C5 is merged too.
+  - r4hprep (opus) delivered the kit-only R4h prep: MF_SITE_ABI 5
+    `count_by_caller`, the CONJ/POSTFIX/EXPR_STMT hook classes, and Q-G2-5
+    recorded as ruled.
+  - Its light checks: arms 171, rows 117, stamps 14, G2 quick 45.2M/0, and
+    18 witness compiles byte-identical.
+  - It is merged into lane/memfn-r4hprep together with main 37462a8e+.
+    strict and the light sections are green after the merge.
+  - The slot9 chain is written: census, identity gate vs main, G2 full,
+    make test, and 17 mech rows. It waits for main's slot.
+  - Findings for R4h:
+    - the `member` hook's text (scan_test) is pasted as a bare `&&`
+      operand and only exists at render, so it needs a render-time class
+      or a pcrec shape promise;
+    - deleting the conditional `count` use is caught only by check E.
