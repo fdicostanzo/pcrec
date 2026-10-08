@@ -193,3 +193,33 @@ channel; one heavy suite at a time); the Mac run is directional.
 - ZERO MOVERS: `scripts/emit_sweep.py --ref <main sha>` judged by `memfn_r4c_gate.py --zero-dumps`, R4C-GATE PASS with 0 movers on all six streams. No abi event; any byte that moves is a defect, so STOP and report it.
 - `make strict`; the full `make test` on a slot I name; solo mech for every sabotage row whose anchor moves (they must stay DETECTED); [SABANCHOR] green.
 - Sabotage ids come from a block you request from me.
+
+## R-8 (2026-10-08, pcrec manager) — M7, N7 (the encoding seam's span compare) migrates, zero movers (READ-ONLY scoping first)
+
+**Customer:** `[MEMFN]`, integration.md §22 M7: N7, `src/enc/enc_byte.c`'s `$_span_match` / `$_span_match_caseless` (the backreference and variable span compare the encoding seam emits).
+
+**Prerequisite:** M1b (met). Q54 is RULED YES (D147 addendum 10).
+
+**Trigger:** completeness (D147 addendum 5 / Q42). N7 is one of the three remaining `pending` manifest sites (with N6 and VMSTRIDE).
+
+**Sequencing:** M7 now, then M6 (N6 + VMSTRIDE; R4h has landed), then R4j/M5 (the planner goes live, with a careful overlap check against refactor B). Each step gets its own request.
+
+**Step 1, READ-ONLY scoping, before any edit.** Post a responses notice to me with:
+- the edit set;
+- the BOUNDARY: what stays the encoding's under D58/DD-12. The seam's per-encoding text is the encoding module's (src/enc/CLAUDE.md, D58's revisit clause), so name which bytes move to the kit and which stay backend text;
+- the OVERLAP CHECK under D153:
+  - against refactor B, [DEC-FALLBACK] B3+ (docs/design/dec_fallback.md; B3 is lane decfbB3, compile.c only; B4 edits select_engine.c's admission and the `--emit-ir` chain; B5 the token derivations);
+  - against any in-flight `src/enc/` work;
+- the VOCABULARY gap: the `MF_VOCAB` bump for a run-time-operand `mismatch` that returns a prefix count, caseless variant included.
+
+**Scope also carries:**
+- C17's static scan gains `src/enc/`;
+- manifest N7 goes `pending` -> `delegated`;
+- the rider: delete the redundant `"memchr"` entry in `src/gen/memfn_stamps.c` `libc_names[]` (no byte moves; S513's tripwire is re-pinned or retired in the same change).
+
+**Blinded G2:** the new `mismatch` operation gets its oracle from a D27 lane (cell `g2u-cell`), before the slot.
+
+**Landing bar (as R-7):**
+- ZERO MOVERS: `scripts/emit_sweep.py --ref <main sha>` judged by `memfn_r4c_gate.py --zero-dumps`, R4C-GATE PASS with 0 movers on every stream. Run both encodings: N7 is per-encoding text, so the `-e utf8` base is mandatory. No abi event; any byte that moves is a defect, so STOP and report it.
+- `make strict`. The slot chain is census, identity gate, G2 full, `make test` via `scripts/perfrun`, and solo mech for every row whose anchor moves (they must stay DETECTED). [SABANCHOR] green.
+- Sabotage ids: S666-S675 are yours. Grep main and worktrees before taking one.
