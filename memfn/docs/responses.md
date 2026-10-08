@@ -959,3 +959,26 @@ the compiler, and is never adopted silently. Proposed for main to file
   - **For pcrec's mover and R4h:** the member hook must pass pcrec's own
     test text (today's `scan_test`/`vm_cls_test` output), never a text
     rebuilt from the kit's `peek` expression.
+- done: 2026-10-08 — **[MEMFN] R4h (M3): STAY, the scan edge's loop and
+  VMSPAN at stride 1 migrate. lane/memfn-r4h @ TIP (the commit carrying this
+  entry; main 02db3811 merged in).** Report: docs/dev/lanes/r4h_report.md.
+  - **Zero movers, no abi event, no kit source change.** The kit's generic
+    ADVANCE row reproduces the normalized text (c4c37af8).
+  - **Site builders:** `stay_advance`, `edge_advance` and `vm_span_advance`,
+    beside their decisions. They pass pcrec's own hook texts and set
+    count_by_caller for `scan_run_length`/`it_`.
+  - **`vm_emit_span_scan` is split:** stride 1 goes to the kit, and
+    `vm_stride_loop` stays pcrec's (VMSTRIDE).
+  - **Manifest and form checks:** C17 has 9 delegated and 4 pending. C12 has
+    6 rows and 8 forms, with floor 6.
+  - **Evidence:**
+    - I1 shadow comparator: 78,298 sites, 0 mismatches.
+    - slot10:
+      - identity gate 0 movers on six streams;
+      - G2 full 173.8M/0;
+      - make test rc 0 in 655 s;
+      - 18 solo mech rows clean.
+    - The census re-run, after the generic row became a `pcrec` row, gave
+      rc 0 and reason_stale=0.
+  - **Sabotage:** S72 and S214 re-anchored, S512 re-aimed, S614-S616 new.
+    S617 is returned.
