@@ -40,6 +40,16 @@
 #       floor, per value), and the OBSERVED set EQUALS the spec's set (both
 #       directions: a value stamped that the spec does not list, and a value
 #       the spec lists that no witness stamps).
+#   (d) THE BOTH-DERIVATIONS ORACLE (B2-B4, dec_fallback.md §4.2 B2): each
+#       witness compiled with the trace build in BOTH orders (today's
+#       derivation first, and `-DPCREC_CAND_NEW_FIRST`); a `CANDORACLE`
+#       line or a signal is a FAIL, the two orders must agree on rc and
+#       stdout, and each witness must REACH the oracle check it is listed
+#       for (a hand-written `CANDFIT <site> <row>` line, [MECH-REACH]).
+#       The full-corpus run in both orders is
+#       docs/design/dec_fallback/oracle_sweep.py; this half is the
+#       in-suite witness set. Landed at B2 (decfbB2); B5 deletes the oracle
+#       and this half with it.
 #   (c) `RX_VM_PREFILTER_LANG_WHY`'s six forms and `RX_VM_PREFILTER_WHY`,
 #       each with a witness and its hand-written text. The two forms that
 #       carry a BYTE figure (`size cap retry, exact N > M`, `... hybrid N >
@@ -141,6 +151,31 @@ if [ -n "$lsrcs" ]; then
 fi
 REF_trplain="$WORK/pcrec_trplain"; REF_trlowdfa="$WORK/pcrec_trlowdfa"
 REF_trlowsize="$WORK/pcrec_trlowsize"; REF_trlowboth="$WORK/pcrec_trlowboth"
+
+# --- (d)'s NEW-FIRST trace compilers, built once (B2) --------------------------
+# The same five limit sets with `-DPCREC_CAND_NEW_FIRST`, plus the default-order
+# lowthr trace compiler (a)'s keys lack. (d) runs every witness on the
+# `tr<set>` / `nf<set>` pair.
+if [ -n "$lsrcs" ]; then
+    build_ref trlowthr  -DPCREC_CAND_TRACE -DPCREC_SIZE_TERM_THRESHOLD=1000 &
+    build_ref nfplain   -DPCREC_CAND_TRACE -DPCREC_CAND_NEW_FIRST &
+    build_ref nflowdfa  -DPCREC_CAND_TRACE -DPCREC_CAND_NEW_FIRST -DPCREC_MAX_AUTO_DFA_ELEMS=3000 &
+    build_ref nflowsize -DPCREC_CAND_TRACE -DPCREC_CAND_NEW_FIRST \
+                        -DPCREC_MAX_VM_EMIT_CODE_BYTES=30000 -DPCREC_MAX_EMIT_BYTES=60000 \
+                        -DPCREC_SIZE_TERM_THRESHOLD=10000 &
+    build_ref nflowboth -DPCREC_CAND_TRACE -DPCREC_CAND_NEW_FIRST \
+                        -DPCREC_MAX_VM_EMIT_CODE_BYTES=30000 -DPCREC_MAX_EMIT_BYTES=60000 \
+                        -DPCREC_SIZE_TERM_THRESHOLD=10000 -DPCREC_MAX_AUTO_DFA_ELEMS=3000 &
+    build_ref nflowthr  -DPCREC_CAND_TRACE -DPCREC_CAND_NEW_FIRST -DPCREC_SIZE_TERM_THRESHOLD=1000 &
+    wait
+    for n in trlowthr nfplain nflowdfa nflowsize nflowboth nflowthr; do
+        if [ -e "$WORK/ref_$n.fail" ] || [ ! -x "$WORK/pcrec_$n" ]; then
+            bad "the $n trace compiler failed to build: $(head -1 "$WORK/ref_$n.err")"
+        else
+            ok "the $n trace compiler built"
+        fi
+    done
+fi
 
 # compile WITNESS_ID COMPILER-KEY PATTERN [args...] — writes $WORK/ID.c; the
 # pattern is passed via --pattern (never a positional file operand).
@@ -291,6 +326,121 @@ frec gate-nul     trplain gate 'none|nullable pflw=nullable' '^(a{2,9})*$' -fpre
 frec gate-nulsel1 trplain gate 'sel1|nullable pflw=nullable' "$W_OVF"
 frec gate-exact   trplain gate 'none|exact pflw=exact'       '(a){2,3}b'
 frec gate-norep   trplain gate 'none|no-rep pflw=no-rep'     '(a)b'
+
+# =========================================================================
+# (d) THE BOTH-DERIVATIONS ORACLE, in both orders (B2)
+# =========================================================================
+echo "== (d) the both-derivations oracle: every witness in both orders, each reaching its check =="
+
+# foracle ID SET SITE ROW PATTERN [args...] — compile with tr<SET> (today's
+# derivation first) and nf<SET> (the table first). A leading `--emit-ir`
+# argument asks the listing instead of the artifact. FAIL on a CANDORACLE
+# line, a signal, the two orders disagreeing on rc or stdout, or the
+# hand-written `CANDFIT SITE ROW` line missing from either order (the
+# witness stopped reaching the check it is listed for).
+foracle() {
+    local id="$1" set="$2" site="$3" row="$4" pat="$5"; shift 5
+    local o bin rc rcs="" outs=""
+    for o in tr nf; do
+        bin="REF_$o$set"; bin="${!bin:-$WORK/pcrec_$o$set}"
+        if [ "${1:-}" = --emit-ir ]; then
+            pcrec_run "$bin" -p rx --features all "$@" --pattern "$pat" \
+                >"$WORK/$id.$o.out" 2>"$WORK/$id.$o.err"
+        else
+            pcrec_run "$bin" -p rx --features all "$@" -o - --pattern "$pat" \
+                >"$WORK/$id.$o.out" 2>"$WORK/$id.$o.err"
+        fi
+        rc=$?
+        if grep -q '^CANDORACLE' "$WORK/$id.$o.err"; then
+            bad "oracle $id [$o$set $* '$pat']: $(grep -m1 '^CANDORACLE' "$WORK/$id.$o.err")"; return
+        fi
+        if [ "$rc" -ge 128 ]; then
+            bad "oracle $id [$o$set $* '$pat']: died with rc $rc"; return
+        fi
+        if ! grep -qxF "$(printf 'CANDFIT\t%s\t%s' "$site" "$row")" "$WORK/$id.$o.err"; then
+            bad "oracle $id [$o$set $* '$pat']: no 'CANDFIT $site $row' (the witness stopped reaching its check)"; return
+        fi
+        rcs="$rcs $rc"
+    done
+    if [ "$rcs" != " ${rcs##* } ${rcs##* }" ] || ! cmp -s "$WORK/$id.tr.out" "$WORK/$id.nf.out"; then
+        bad "oracle $id [$set $* '$pat']: the two orders differ (rc$rcs, stdout $(cmp -s "$WORK/$id.tr.out" "$WORK/$id.nf.out" && echo same || echo differs))"; return
+    fi
+    ok "oracle $id [$set $*]: $site $row, both orders"
+}
+REF_trlowthr="$WORK/pcrec_trlowthr"
+
+# T1 at every arrival (`forcing`/`nomem` have no corpus reach: alloc_check W5/W4)
+foracle or-sel1c   plain   arrival sel1-collapse      "$W_SEL1"
+foracle or-sel1d   plain   arrival sel1-drop          "$W_OVF"
+foracle or-trial   plain   arrival size-term-trial    "$W_TOWER" --engine=vm
+foracle or-pfc     plain   arrival prefilter-collapse '(\p{Xwd})' -e utf8
+foracle or-pfdrop  plain   arrival drop-prefilter     '(\p{Xwd})' -e utf8
+foracle or-anch    plain   arrival drop-anchored      '\p{L}' -e utf8
+foracle or-premul  lowboth arrival drop-premul        '(*UCP)(?i)[\dk]' -e utf8
+foracle or-refoth  plain   arrival refuse             '\A*'
+foracle or-refovf  plain   arrival refuse             '(?:ab){0,16000}' --engine=dfa
+foracle or-refsz   plain   arrival refuse             '(\p{Xwd})' -e utf8 --fast-or-fail
+foracle or-fofsel1 plain   arrival sel1-collapse      "$W_SEL1" --fast-or-fail
+# T2's verdict and declined flags, one witness per row
+foracle or-a-bref  plain   admit   backref            '(a)\1'
+foracle or-a-call  plain   admit   linked-call        '(a|b(?1)c)+'
+foracle or-a-vnul  plain   admit   var-nullable       '^${v}$'
+foracle or-a-nulx  plain   admit   nullable-exact     '(a)*'
+foracle or-a-nulc  plain   admit   nullable-collapsed '(?:ab){0,16000}'
+foracle or-a-ovf   plain   admit   overflow-drop      "$W_OVF"
+foracle or-a-fon   plain   admit   forced-on          '(a)b' --engine=vm -fprefilter
+foracle or-a-foff  plain   admit   forced-off         '(a)b' -fno-prefilter
+foracle or-a-var   plain   admit   var                'a${v}b'
+foracle or-a-def   plain   admit   default            '(a)b'
+# T2's listing cell against the `--emit-ir` chain, every row and scope reached
+foracle or-l-bref  plain   admit-listing backref            '(a)\1' --emit-ir
+foracle or-l-call  plain   admit-listing linked-call        '(a|b(?1)c)+' --emit-ir
+foracle or-l-vnul  plain   admit-listing var-nullable       '^${v}$' --emit-ir
+foracle or-l-nulx  plain   admit-listing nullable-exact     '(a*)*' --emit-ir
+foracle or-l-nulc  plain   admit-listing nullable-collapsed '(?:ab){0,16000}' --emit-ir
+foracle or-l-ovf   plain   admit-listing overflow-drop      "$W_OVF" --emit-ir
+foracle or-l-ovfs1 plain   admit-listing overflow-drop      "$W_OVF" --emit-ir -fno-prefilter
+foracle or-l-fon   plain   admit-listing forced-on          '(a)b' --emit-ir --engine=vm -fprefilter
+foracle or-l-fonsc plain   admit-listing forced-on          '^(\p{Xwd}{1,3})?$' --emit-ir -e utf8 -fprefilter
+foracle or-l-foff  plain   admit-listing forced-off         '(a)b' --emit-ir -fno-prefilter
+foracle or-l-foffs plain   admit-listing forced-off         '(\p{Xwd})' --emit-ir -e utf8
+foracle or-l-var   plain   admit-listing var                'a${v}b' --emit-ir
+foracle or-l-varff plain   admit-listing forced-off         'a${v}b' --emit-ir -fno-prefilter
+foracle or-l-def   plain   admit-listing default            '(a)b' --emit-ir
+foracle or-l-defs1 plain   admit-listing default            "$W_SEL1" --emit-ir
+foracle or-l-defsc lowsize admit-listing default            '(?:a\K){2,}b' --emit-ir
+foracle or-l-defvm plain   admit-listing default            '(a)b' --emit-ir --engine=vm
+# T3, every row
+foracle or-g-sel1  plain   gate    rung     "$W_SEL1"
+foracle or-g-szc   plain   gate    rung     '(\p{Xwd}{1,3})' -e utf8
+foracle or-g-forc  plain   gate    forced   '(x)?a{0,4}\Gb' -fprefilter-collapse
+foracle or-g-nul   plain   gate    nullable '^(a{2,9})*$' -fprefilter-collapse
+foracle or-g-exact plain   gate    exact    '(a){2,3}b'
+foracle or-g-norep plain   gate    no-rep   '(a)b'
+# T4, every row
+foracle or-w-opt   plain   stwhy   option              'a(b|c)+d' --unroll=4
+foracle or-w-den   plain   stwhy   denied              'a(b|c)+d' -fno-size-term
+foracle or-w-def   plain   stwhy   default             'a(b|c)+d'
+foracle or-w-sm    plain   stwhy   size-model          "$W_NEST8"
+foracle or-w-cr    lowsize stwhy   cap-rescue          '(?:a\K){0,10}ab'
+foracle or-w-smd   lowsize stwhy   size-model-declined '(?:a\K){0,10}b'
+foracle or-w-cd    lowthr  stwhy   capacity-declined   '(((?:a{0,2}b)+c){0,20}d){0,20}e' --engine=vm
+# the attribution walk against `esel_of`, all eight ENGINE_SEL values (the
+# hit row is the ESEL_* number: internal.h's value table)
+foracle or-e-forc  plain   attrib  0 '(a)b' --engine=vm
+foracle or-e-sel   plain   attrib  1 '(a)b'
+foracle or-e-dnd   plain   attrib  2 '(a)*'
+foracle or-e-odfa  plain   attrib  3 "$W_OVF"
+foracle or-e-opf   lowdfa  attrib  4 "$OVFPF"
+foracle or-e-cpf   plain   attrib  5 "$W_SEL1"
+foracle or-e-dn    plain   attrib  6 '(?:ab){0,16000}'
+foracle or-e-scr   plain   attrib  7 '(\p{Xwd})' -e utf8
+foracle or-e-scpfc lowsize attrib  7 '(\bcat\b)+' -e utf8
+# VM_PREFILTER_WHY's `pfwhy` cell and the three notes' fired rows
+foracle or-p-why   plain   pfwhy   stamped        '(\p{Xwd})' -e utf8
+foracle or-n-anch  plain   note    drop-anchored  '\p{L}' -e utf8
+foracle or-n-prem  lowboth note    drop-premul    '(*UCP)(?i)[\dk]' -e utf8
+foracle or-n-pf    plain   note    drop-prefilter '(\p{Xwd})' -e utf8
 
 # =========================================================================
 # (b) THE OBSERVED-STAMP LEG
