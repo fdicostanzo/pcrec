@@ -35,10 +35,10 @@ stale pins moved by the declared change; no defect, nothing loosened.
   17274 + 34662 - 3 + 89 = 52022.
 - The five `tests/findings/golden/*.rxt` "HARNESS FAILURE / bigram is not a
   directive" lines in the chain log did NOT recur in the re-run (all 268 ->
-  green, INV-COMPAT holds over 276/5423/52022); they were a consequence of
-  the W23-S7/C1 leg on the old pins' run and the files are unchanged on the
-  branch (`git diff main...HEAD -- tests/findings` empty). Cause of the
-  chain-time lines not established beyond that; flagging, not explaining.
+  green, INV-COMPAT holds over 276/5423/52022). The files are unchanged on
+  the branch (`git diff main...HEAD -- tests/findings` empty). The cause of
+  the chain-time lines is NOT established (possibly a stale pcrec-analyze or
+  build tree during that run); flagging, not explaining.
 
 ## Re-run
 `make -j6 test-registry test-rxtsource` in worktrees/nullanch2: rc 0, every
