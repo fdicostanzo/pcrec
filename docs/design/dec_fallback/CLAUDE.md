@@ -37,7 +37,11 @@ first edit (the note's §4.1), because main moves under a design note.
   state (trace build only; they move with the state at B2-B5). At B2, 564
   (116 more: T1's new rows and cells, T2-T4, the attribution walk and the
   oracle's readers, compile.c 80, select_engine.c 29, emit_vm.c 6,
-  internal.h 1). The note's §2.1 gives the line classes.
+  internal.h 1). At B3, 514: the arrival's labels moved into the walk's
+  input function, so the script reads `fit_labels`' body as part of the
+  recovery point (R/RQ unchanged), declares `fit_walk` where `fit_select`
+  was, and loses the deleted `dropped_*` flags, the five tests and the
+  oracle's arrival/notes code. The note's §2.1 gives the line classes.
 - `attempt_hist.py` — B0 item 5, the ATTEMPT HISTOGRAM's own driver:
   decfb0's probed copy (`../decision_families/decfb0/build_ref.py`'s
   PATCHES) built at a PARENT and a CHILD revision from `git archive`, and
@@ -73,10 +77,17 @@ first edit (the note's §4.1), because main moves under a design note.
   signal, on the two orders' stdout/rc differing, or (K35) on a checked
   site with no `CANDFIT` hit in an order; writes `OUT/hits.tsv`. A filter
   test: the oracle shares its predicates with the tables. Deleted with the
-  oracle at B5.
+  oracle at B5. B3 retired its `arrival` and `note` sites (their
+  old side is gone).
 - `trace_declared_B1.txt` — B1's declared trace multiplicity (its ten site
   keys) for `emit_sweep.py --trace-declared` against B0; meaningless
   against any later parent.
+- `probes_b3.py` — decfb0's attempt-histogram probes RE-ANCHORED on B3's
+  one dispatch (lane decfbB3): `att`/`fail` verbatim; the `sel1` probe
+  RESTATES the deleted `retry_collapse`/`retry_drop` from their inputs (so it
+  stays independent of the walk it watches), the `rung` probe prints every
+  row past 0-4. `attempt_hist.py --child-patches` (B3) / `--parent-patches`
+  (B4+) and `cross_record.py` (a) read its PATCHES.
 - `reach/` — rev 2's row-reach PROTOTYPE (probed scratch compilers over
   decfb0's population x 5 limit variants x 14 flag arms) and its output: the
   witness for every T1-T4 row, the UNREACHED cells, and the checks of the

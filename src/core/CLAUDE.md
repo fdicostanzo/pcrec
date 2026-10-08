@@ -331,8 +331,8 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   the anchored and premul drops, and the new VM-hybrid PREFILTER DROP
   (`SDR_NO_PREFILTER`, spelled as the caller's `-fno-prefilter` OR'd in, the
   premul rung's shape) — in measured cost order, each with its own caller
-  deny bit and a `degrading` column. `fit_select` takes the first row that
-  applies and is not denied; the catch branch's switch only carries it out.
+  deny bit and a `degrading` column. `fit_select` took the first row that
+  applied and was not denied (since B3, `fit_walk`, below).
   `fit_rung_denied` is the ONE predicate `--fast-or-fail`
   (`PCREC_FAST_OR_FAIL`) acts through: it denies every degrading row, and
   no rung tests the switch itself. The prefilter drop restarts the size term
@@ -350,8 +350,8 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   denies a degrading row only when it is IN), `sets` (the state the row
   writes, KEEP a named cell), `cells` (`FitCells`, internal.h: the
   `ENGINE_SEL`/PFLW/`VM_PREFILTER_WHY` tokens), `ukw`, `note`, `retries`
-  and `repeat`; every enumerated cell's 0 is UNSTATED. `fit_select` asks
-  only rows `on` a size label; `fit_walk` is the total walk B3 makes the
+  and `repeat`; every enumerated cell's 0 is UNSTATED. `fit_select` asked
+  only rows `on` a size label; `fit_walk` is the total walk B3 made the
   dispatch. T3 (`pflw_rows[]`) and T4 (`st_whys[]`) sit beside the gate's
   and the size term's ternaries. Under `-DPCREC_CAND_TRACE`:
   `fit_tables_selfcheck` (§1.9, a refusal) at each compile's first attempt;
@@ -361,6 +361,21 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   record (`fit_seq_rows[]`/`fit_seq_cells[]`, `Ctx.fit_seq`) and asserting
   §1.9's invariants; `-DPCREC_CAND_NEW_FIRST` asks the tables first. B5
   deletes the oracle.
+  **[DEC-FALLBACK] B3 (lane decfbB3, 2026-10-08) THE WALK IS THE DISPATCH**
+  (§4.2 B3; no abi event, zero default-build movers). The recovery point's
+  five tests are one `fit_walk(&fs, fit_labels(&cx))`; the four code-action
+  rows (`forcing`, `nomem`, `size-term-trial`, `refuse`) are a switch, and
+  every retrying row's cross-attempt writes come from its `sets` cell
+  (`fit_cr_of`/`fit_sdr_of`, the carry, the first-overflow latch,
+  `flags_or`, the restart) in ONE routine after it. `fit_select` and the
+  `dropped_*` flags are gone: `fit_record` grows the fired record
+  (`fit_seq_rows[]`/`fit_seq_cells[]`, `fit_fired`) in the default build,
+  `Ctx.fit_seq` is seeded in both builds, and the drop notes are a loop over
+  the rows that fired (their `note` cells, table order). The rungs' long
+  rationale comments now sit above each row's `applies` predicate. The
+  oracle's arrival and notes checks retired with their old side; its token
+  checks (admission, listing, gate, size term, attribution, `pfwhy`) stay
+  until B4/B5, and §1.9's once/sequence invariants stay at `fit_record`.
 - **tune.c** — [OPT-DIAL] THE SPEED-VS-SIZE DIAL'S PINNED POLICY TABLE, and
   its ONE HOME (`docs/spec/tuning.md` §5 is the contract,
   `docs/design/opt_dial_design.md` the design record, D103 the governance).

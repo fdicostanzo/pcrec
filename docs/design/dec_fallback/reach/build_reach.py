@@ -51,26 +51,38 @@ PATCHES = [
      "                    cx.job ? (int)cx.job->fit.prefilter_collapsed : -1,\n"
      "                    cx.job ? (int)cx.job->fit.prefilter : -1,\n"
      "                    cx.job ? (int)cx.job->fit.chosen : -1);\n"),
-    (CP, "            if (cx.job && cx.job->pf.forcing) {\n",
-     "            if (cx.job && cx.job->pf.forcing) {\n"
+    # B3 (decfbB3) replaced the five tests by one `fit_walk` dispatch: the
+    # forcing/nomem/trial probes sit at the walk's case labels (the same
+    # events), and the sel1/rung probes restate the deleted booleans from
+    # their own inputs after the walk (probes_b3.py's argument: the probe
+    # stays independent of the row it watches).
+    (CP, "            case FIT_FORCE_NEXT:\n",
+     "            case FIT_FORCE_NEXT:\n"
      "                fprintf(stderr, \"DECFB forcing\\n\");\n"),
-    # B2 put trace-only (`#ifdef PCREC_CAND_TRACE`, compiled out here) oracle
-    # lines on or beside three anchors; each is pinned to its untraced line.
-    (CP, "            if (cx.failed_nomem) {\n                job_cleanup(&cx);\n",
-     "            if (cx.failed_nomem) {\n"
-     "                fprintf(stderr, \"DECFB nomem\\n\");\n"
-     "                job_cleanup(&cx);\n"),
-    (CP, "            if (st_phase == ST_LADDER) {\n",
-     "            if (st_phase == ST_LADDER) {\n"
+    (CP, "            case FIT_PROPAGATE:\n",
+     "            case FIT_PROPAGATE:\n"
+     "                fprintf(stderr, \"DECFB nomem\\n\");\n"),
+    (CP, "            case FIT_TERM_NEXT: {\n",
+     "            case FIT_TERM_NEXT: {\n"
      "                fprintf(stderr, \"DECFB trial\\n\");\n"),
-    (CP, "            if (retry_collapse || retry_drop) {\n",
-     "            if (retry_collapse || retry_drop)\n"
-     "                fprintf(stderr, \"DECFB sel1 collapse=%d drop=%d\\n\", (int)retry_collapse, (int)retry_drop);\n"
-     "            if (retry_collapse || retry_drop) {\n"),
-    (CP, "            bool restart_term = false;\n            switch (rung->act) {\n",
-     "            bool restart_term = false;\n"
-     "            fprintf(stderr, \"DECFB rung=%s\\n\", rung->name);\n"
-     "            switch (rung->act) {\n"),
+    (CP, "            const FitRung *rung = fit_walk(&fs, fit_labels(&cx));\n",
+     "            const FitRung *rung = fit_walk(&fs, fit_labels(&cx));\n"
+     "            {\n"
+     "                const bool ovf_eligible = cx.dfa_overflowed &&\n"
+     "                                          defo.engine == PCREC_ENGINE_AUTO &&\n"
+     "                                          !(defo.flags & PCREC_FORCE_PREFILTER);\n"
+     "                const bool retry_collapse =\n"
+     "                    ovf_eligible && !dfa_disabled &&\n"
+     "                    !(defo.flags & PCREC_NO_PREFILTER_COLLAPSE);\n"
+     "                const bool retry_drop =\n"
+     "                    ovf_eligible && !(dfa_disabled && collapse_reason != CR_SEL1);\n"
+     "                const bool early = rung->act == FIT_FORCE_NEXT || rung->act == FIT_PROPAGATE ||\n"
+     "                                   rung->act == FIT_TERM_NEXT;\n"
+     "                if (!early && (retry_collapse || retry_drop))\n"
+     "                    fprintf(stderr, \"DECFB sel1 collapse=%d drop=%d\\n\", (int)retry_collapse, (int)retry_drop);\n"
+     "                if (!early && rung->act != FIT_SEL1_COLLAPSE && rung->act != FIT_SEL1_DROP)\n"
+     "                    fprintf(stderr, \"DECFB rung=%s\\n\", rung->name);\n"
+     "            }\n"),
     (CP, "            cx.job->fit.prefilter_collapsed = collapse;\n",
      "            cx.job->fit.prefilter_collapsed = collapse;\n"
      "            fprintf(stderr, \"DECFB gate wanted=%d collapse=%d pflw=%d rep=%d nul=%d force=%d\\n\",\n"

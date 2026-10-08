@@ -795,8 +795,8 @@ SEL1_NULL='(?:(?:a|b)*a(?:a|b){15})?'
 # LANGUAGE, still nullable, still overflows, and has NO `A_REP` the collapse
 # would change.
 #
-# THE RUNG IS STILL OFFERED (`compile_driver`'s `retry_collapse` does not test
-# for a collapsible repeat), but for this pattern the collapsed lowering IS the
+# THE RUNG IS STILL OFFERED (T1's `sel1-collapse` row, `fit_sel1_collapse_applies`, does
+# not test for a collapsible repeat), but for this pattern the collapsed lowering IS the
 # exact one, so there is NO DISTINCT RESCUE and nothing to refuse. The honest
 # stamp is `overflowed-dfa`, the same as its non-nullable twin: **nullability
 # must make no difference where there is no rescue.**
@@ -872,8 +872,8 @@ if emit "$a" -- "$SEL1_NULL"; then
     fi
     # (2c) [OPT-4.1] r47sel finding 1: NULLABILITY MUST MAKE NO DIFFERENCE
     # WHERE THERE IS NOTHING TO COLLAPSE. The rung is still OFFERED to a
-    # pattern with no collapsible `A_REP` (`retry_collapse` does not test for
-    # one), but its collapsed lowering IS its exact one, so there is no
+    # pattern with no collapsible `A_REP` (T1's `sel1-collapse` row does not test
+    # for one), but its collapsed lowering IS its exact one, so there is no
     # distinct rescue and nothing to refuse: the honest stamp is
     # `overflowed-dfa`, the SAME as the non-nullable twin's.
     #
@@ -906,7 +906,8 @@ if emit "$a" -- "$SEL1_NULL"; then
     # that asked for one, which is the silent-honour failure S64 exists for.
     #
     # WHAT IT DOES NOT SHOW, MEASURED (2026-08-30): it is not the [OPT-4.1]
-    # OVERRIDE. `-fprefilter` makes `compile_driver`'s `ovf_eligible` false, so
+    # OVERRIDE. `-fprefilter` makes T1's [SEL-1] rows'
+    # `fit_sel1_eligible` false, so
     # the [SEL-1] rung is never OFFERED and the decline is never reached — this
     # witness refuses with "pattern too complex for the DFA engine (>32000
     # states)", pre-existing [SEL-1] behaviour that would refuse the same way

@@ -880,6 +880,30 @@ left open or wrote differently, each argued in the report:
   asks one first, so B4 moves `--emit-facts`' `used` column on
   backreference and linked-call patterns unless it keeps that ask.
 
+**B3's outcome (lane decfbB3, 2026-10-08, base main `0f37bfd8`; report
+`../dev/lanes/decfbB3_report.md`).** The catch branch is one
+`fit_walk(&fs, fit_labels(&cx))`: the code-action rows are a switch, every
+retrying row's writes come from its `sets` cell in one routine, `fit_select`
+and `dropped_*` are deleted, `fit_record` grows the fired record in the
+default build, and the notes loop over the fired rows. Zero default-build
+movers is the light tier's gate (the report carries the verdicts). The
+oracle's arrival and notes checks RETIRED (A's C5 precedent): their old side
+is gone. Findings and choices:
+- Deleting row 1 (`nomem`, S-F1) is an EQUIVALENT mutant: row 2's `on`
+  mask leaves NOMEM out, so a NOMEM arrival falls to `refuse`, whose action
+  is PROPAGATE's. D109's guard now lives in the LABEL derivation, which is
+  where S259 is re-aimed.
+- The `fb-size` record line (S624's anchor) is kept verbatim, so S624 is a
+  re-run, not a re-aim.
+- FitSel gains no fields: the walk takes the label set as an argument and no
+  `applies` reads the fired record.
+- The attempt histogram and the prototype re-anchor their probes
+  (`dec_fallback/probes_b3.py`; `reach/build_reach.py`); the `sel1` probe
+  restates the deleted booleans from their inputs rather than reading the
+  walk.
+- `sabotage_anchors.py --step B3` derives 34 re-runs; it does not reach rev
+  1's S189/S191/S192, which run by judgment.
+
 **B7's deliverables:**
 - `engine-route` lists in the attribution order (§6.2: two listed orders
   swap).

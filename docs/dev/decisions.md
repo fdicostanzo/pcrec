@@ -9096,6 +9096,14 @@ Frank gave this direction to the kit session (memfn `responses.md` N-1, on the R
 - **Panel r5's blocker is fixed in rev 4.6:** on no-DFA routes the set-leads lead is REQUIRED, being K65's only test of that member; it is OPTIONAL iff `pcrec_artifact_has_dfa_scan`.
 - **Next:** R-3 (R4a, then R4a′) is filed to the kit.
 
+**D147 addendum 11 (Frank, 2026-10-08, ninety-ninth session): SIMD is NO LONGER LAST — the "I'm not left handed" strategy.** The memfn kit's SIMD layer (`-fmemfn-simd`, default OFF) is an INDEPENDENT optimization path, parallel to the scalar one.
+- **Why the old rule existed, and why it lifts.** "SIMD last" (D119's sequencing, and [OPT-SIMD]'s HELD-to-the-end state) protected one thing: the scalar version had to be optimized as far as it could go without SIMD muddying the comparison. The kit's layering (D146 delegation, D147 layers) now switches SIMD on and off per artifact, and the scalar arms stay the live, improvable OFF arm. So the two are two paths, and each can be optimized without waiting on the other. Making that split possible was part of the refactor's purpose. Frank's name for it: the "I'm not left handed" strategy.
+- **Scope.** This supersedes "SIMD last" for the OPT-IN kit layer only. The default path stays algorithmic under D119, and default-ON stays its own ruled event.
+- **Acceptance, per form.** A SIMD form must be measurably FASTER than the CURRENT non-SIMD layer at its sites (Linux verdict, both layers reported, D144/D147; D147 addendum 8's aarch64 rule unchanged), OR show a specific named benefit such as code space. The bar exists because SIMD imposes restrictions: an ISA requirement and no portability promise. Every unroll width, block size or cut-over is measured, derived or left to the compiler (memory `pcrec-suspect-tuning-constants`, D149).
+- **Capacity split (Frank, same day):** "2 parts migrating to 1 part simd until the migration is done, then you're unlocked." The kit runs 2 migration lanes to 1 SIMD lane, and its heavy slots go 2:1 when both threads have a run queued. Heavy runs still go through main's slot channel, one heavy suite at a time on the box. The split lifts when the migration's end state lands (M5′: C17 has 0 pending, C12 has 0 outside the kit).
+- **First step:** R-9, the R4e′ DESIGN pass plus a D6 panel (design only, no pcrec bytes, no slot). Batches of SIMD sites then come as separate requests.
+- **Consequences:** `[OPT-SIMD]` is re-stated as opened for the kit layer; integration.md §22 R4e′'s trigger cites this addendum, revised on the kit's next design branch.
+
 ## D150 — [ARTREV]: a bottom-up artifact review, run as a bounded, iterating experiment beside the optimization loop (Frank, 2026-10-05, ninety-second session)
 
 **Decision.** Frank: "generate a bunch of artifacts then have the code be
