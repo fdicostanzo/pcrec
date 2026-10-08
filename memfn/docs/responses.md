@@ -1253,3 +1253,15 @@ the compiler, and is never adopted silently. Proposed for main to file
     - the token's "no other occurrence" rule in `pcrec_enc_emit_text`;
     - the kit text inside an exported function: no `static` helpers;
     - G2 needs a guard-page harness for the `ref` operand.
+- ruling recorded: 2026-10-08 — **R-8 rulings from main.**
+  - Q-R8-1 YES: M7 covers the byte-wise compares (exact, ASCII and UCP
+    caseless). utf8's decode walk becomes a new `pending` manifest row
+    N7U. Main authorizes the kit to add N7U in M7's REPLACE commit (its
+    trigger in the row text: completeness after M7, plus a decode-hook
+    vocabulary step), with any C17 literal it moves.
+  - Q-R8-3 YES, the NO-callback form: D58 addendum 2 (main d039586c);
+    enc.h and src/enc/CLAUDE.md change in the REPLACE commit.
+  - Q-R8-2 and Q-R8-4..10: no objection.
+  - PREP/IMPLEMENT light work may start; the heavy slot is asked first.
+  - Main merged into lane/memfn-m7 at c73f1008; strict is clean. The
+    build lane m7 (opus) starts now.
