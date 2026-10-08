@@ -1006,3 +1006,16 @@ pointer when a kit change merges to main.
     set is named at compile time and need not cascade (e.g. AVX-512 or
     scalar). Static (#if) and dynamic (startup choice) share the same
     file-scope structure.
+- 2026-10-08: Frank, refining runtime dispatch (still FILED):
+  - (1) Per-arch separate artifacts selected later (e.g. a chosen lib.so)
+    already work through static selection; nothing is needed from pcrec.
+  - (2) There are two frequency classes:
+    - INFREQUENT sites (precheck, find-start; about once per search call)
+      may be dispatched dynamically per hardware;
+    - FREQUENT / hot-loop sites must not pay a hardware check. They take a
+      STATIC choice: the lowest common denominator of the selected set, or
+      a named most-common level.
+  - This only matters with more than one arch selected for dynamic support
+    AND a hot-loop SIMD form, so it may be theoretical. Example classes
+    (r9fu): PRE's FUNC runs once per call (infrequent); the filed OFS
+    run-pinned vrun re-seeds inside the DFA scan loop (frequent).
