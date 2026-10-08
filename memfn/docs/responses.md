@@ -857,3 +857,18 @@ the compiler, and is never adopted silently. Proposed for main to file
     2. the Q-R4h-1 rulings;
     3. the normalization pre-commit after C7, if ruled;
     4. R4h.
+- ruling recorded: 2026-10-08 — **Q-R4h-1 RULED (a)+(b)** (manager,
+  2026-10-08, session 97).
+  - **(a)** MF_SITE_ABI 5 semantic hook: the CALLER owns the counter. pcrec
+    declares it and reads it after the loop; the kit's text only advances it.
+  - **(b)** ONE pcrec-side layout-normalization pre-commit, scheduled AFTER
+    C7. It is a declared mover with its own abi bump and re-pins in the same
+    change. Main checks it against refactor B's ([DEC-FALLBACK]) scope
+    before briefing it.
+  - No layout hints go in the contract. R4h lands zero-mover on top of (b).
+  - Kit-only work cleared now: the G3 hook classes in fields.def, and
+    recording Q-G2-5 as ruled (ADVANCE's empty range is NOP; the range is
+    `more`).
+  - The §19 row (the T4 pricing count becomes the kit's) is FILED, not
+    scheduled.
+  - Nothing is built pcrec-side until C7 merges.
