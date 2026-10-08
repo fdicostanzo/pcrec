@@ -20,10 +20,10 @@
  * it, so `--emit-facts`' `used` column says which facts a PASS consumed
  * (design §11.4), not which ones fed another fact.
  *
- * The two E1 facts (the kind mask, nullability) are the exception to "on
- * first ask": `pcrec_facts_seal_e1` FORCES them on the structural tree, and
- * `pcrec_facts_seal_e2` re-derives them on the lowered one as the invariance
- * cross-check (design §2-§3). After the seal their accessors are memo reads.
+ * The E1 facts (the kind mask, nullability, the empty-path masks) are the
+ * exception to "on first ask": `pcrec_facts_seal_e1` FORCES them on the
+ * structural tree, and `pcrec_facts_seal_e2` re-derives them on the lowered
+ * one as the invariance cross-check (design §2-§3). After the seal their accessors are memo reads.
  *
  * The necessary SET and WHOLE RUN are core facts from ONE walk
  * (`src/facts/req.c`); asking either derives both, each under its own deny.
@@ -63,6 +63,7 @@ static void pf_store_empty(PatFacts *pf, PfFactId f)
     switch (f) {
     case PF_KINDS:        pf->kinds = 0; break;
     case PF_NULLABLE:     pf->nullable = false; break;
+    case PF_EMPTY_ADMITS: pf->empty_masks = 0; break;
     case PF_START_ANCHOR: pf->start_anchor = PCREC_SANCH_NONE; break;
     case PF_START_SET:
         memset(pf->start_set.bits, 0xFF, sizeof pf->start_set.bits);
@@ -222,6 +223,9 @@ static void pf_derive(Ctx *cx, PfFactId f)
     case PF_NULLABLE:
         pf->nullable = pcrec_pattern_nullable(pf->root);
         break;
+    case PF_EMPTY_ADMITS:
+        pf->empty_masks = pcrec_pattern_empty_masks(pf->root);
+        break;
     case PF_START_ANCHOR:
         pf->start_anchor = pcrec_start_anchor(pf->root);
         break;
@@ -277,7 +281,7 @@ static void pf_ask(Ctx *cx, PfFactId f, bool pass)
     if (pf_enter(cx, f, pass)) pf_derive(cx, f);
 }
 
-/* E1 is FORCED, not lazy (design §2): both facts are derived here, on the
+/* E1 is FORCED, not lazy (design §2): every E1 fact is derived here, on the
  * structural tree, so their answer is a function of the seal and never of
  * which pass asked first. `pf_ask`'s `pass` is false: the seal is not a
  * consumer, and `used` stays the passes' record. */
@@ -287,6 +291,7 @@ void pcrec_facts_seal_e1(Ctx *cx, const struct Ast *root)
     cx->job->pf.epoch = PF_E1_STRUCT;
     pf_ask(cx, PF_KINDS, false);
     pf_ask(cx, PF_NULLABLE, false);
+    pf_ask(cx, PF_EMPTY_ADMITS, false);
 }
 
 /* THE E1 INVARIANCE CROSS-CHECK (design §3): the same two derivations over
@@ -300,6 +305,7 @@ static void pf_check_e1(Ctx *cx, const struct Ast *root)
     const PatFacts *pf = &cx->job->pf;
     unsigned kinds = pcrec_pattern_kinds(root);
     bool nullable = pcrec_pattern_nullable(root);
+    unsigned masks = pcrec_pattern_empty_masks(root);
     if (kinds != pf->kinds)
         pcrec_ctx_fail(cx, 0, "internal error: [PATFACTS] the kind mask sealed "
                        "at E1 (0x%x) disagrees with the lowered tree's (0x%x)",
@@ -308,6 +314,18 @@ static void pf_check_e1(Ctx *cx, const struct Ast *root)
         pcrec_ctx_fail(cx, 0, "internal error: [PATFACTS] nullability sealed "
                        "at E1 (%s) disagrees with the lowered tree's (%s)",
                        pf->nullable ? "yes" : "no", nullable ? "yes" : "no");
+    /* [NULLABLE-ANCH] the same invariance, and the masks held to bare
+     * nullability: a nullable tree with NO empty-path mask would read
+     * `empty_admits` false and admit a prefilter the decline exists to
+     * refuse, so that disagreement is refused here, from the other walk. */
+    if (masks != pf->empty_masks)
+        pcrec_ctx_fail(cx, 0, "internal error: [PATFACTS] the empty-path "
+                       "masks sealed at E1 (0x%x) disagree with the lowered "
+                       "tree's (0x%x)", pf->empty_masks, masks);
+    if ((pf->empty_masks != 0) != pf->nullable)
+        pcrec_ctx_fail(cx, 0, "internal error: [PATFACTS] the empty-path "
+                       "masks (0x%x) disagree with nullability (%s)",
+                       pf->empty_masks, pf->nullable ? "yes" : "no");
 }
 
 void pcrec_facts_seal_e2(Ctx *cx, const struct Ast *root)
@@ -338,6 +356,12 @@ bool pcrec_fact_nullable(Ctx *cx)
 {
     pf_ask(cx, PF_NULLABLE, true);
     return cx->job->pf.nullable;
+}
+
+bool pcrec_fact_empty_admits(Ctx *cx)
+{
+    pf_ask(cx, PF_EMPTY_ADMITS, true);
+    return pcrec_empty_masks_admit(cx->job->pf.empty_masks);
 }
 
 int pcrec_fact_start_anchor(Ctx *cx)
@@ -485,6 +509,8 @@ const char *pcrec_fact_render(Ctx *cx, PfFactId f)
     }
     case PF_NULLABLE:
         return pf->nullable ? "yes" : "no";
+    case PF_EMPTY_ADMITS:
+        return pcrec_empty_masks_admit(pf->empty_masks) ? "yes" : "no";
     case PF_START_ANCHOR:
         return pcrec_start_anchor_name(pf->start_anchor);
     case PF_START_SET: {

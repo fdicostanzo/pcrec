@@ -40,6 +40,7 @@
  * plain-text scan counts `PF_FACT(` line markers. */
 PF_FACT(KINDS,         "kinds",         1, PF_CORE,    0,                                   "src/facts/kinds.c",   "")
 PF_FACT(NULLABLE,      "nullable",      1, PF_CORE,    0,                                   "src/facts/widths.c",  "")
+PF_FACT(EMPTY_ADMITS,  "empty_admits",  1, PF_CORE,    0,                                   "src/facts/widths.c",  "")
 PF_FACT(START_ANCHOR,  "start_anchor",  2,PF_CORE,    PCREC_NO_VM_ANCHOR_BOUND,            "src/facts/startanch.c", "")
 PF_FACT(START_SET,     "start_set",     2, PF_CORE,    0,                                   "src/facts/startset.c", "")
 PF_FACT(END_WINDOW,    "end_window",    2, PF_CORE,    PCREC_NO_END_WINDOW,                 "src/facts/endwin.c",  "")
