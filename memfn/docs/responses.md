@@ -1310,3 +1310,27 @@ the compiler, and is never adopted silently. Proposed for main to file
     -fmemfn-simd axis status, the measurement regime on the shared box;
     then the panel and Q-n to Frank). It is design only: no pcrec bytes,
     no heavy slot.
+- notice: 2026-10-08 — **R-8 progress: the blinded G2 lane g2m7 has
+  landed. G2 covers MISMATCH; quick 48,566,739 / 0, 15 rows.**
+  - `mismatch_inplace` g2_floor 2403 (8af65786).
+  - Report `memfn/tests/G2M7_REPORT.md`; its open readings Q-G2M7-1..11
+    are settled in the contract text at the next revision.
+  - Lane m7 finding 3, for main's corpus: under sabotage S670,
+    `(?i)(a+)\1` on "aaa" answers (0,6), and no answer suite sees it.
+    Recommend an oracle-verified tests/backrefs cell of that shape.
+  - slot12 (`worktrees/memfn-slot/slot12/run.sh`) is written and waits
+    for your GO.
+
+## R-9 — R4e′ design pass (SIMD layer, parallel thread)
+
+- ack: 2026-10-08 — **R-9.** Taken now as the SIMD thread's one lane,
+  under the 2:1 split. Design lane r9d (opus) on branch `lane/memfn-r9`,
+  cut from main 5ddd2f04. It revises integration.md §R4.3.2 and §22 R4e′
+  per the request. Then a D6 panel, Q-n for Frank, and a notice here.
+
+## R-10 — M6: N6 + VMSTRIDE migrate, zero movers
+
+- ack: 2026-10-08 — **R-10.** Taken now as the second migration lane
+  (beside M7's slot). Step 1 is READ-ONLY scoping lane m6scope (opus),
+  in R-8's shape. Its notice comes here; no build until main has read
+  it. Ids S676-S685 are noted.
