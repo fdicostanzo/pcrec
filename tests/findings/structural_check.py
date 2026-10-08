@@ -136,7 +136,7 @@ hdrs = [os.path.join(d, f) for d, _, fs in os.walk(os.path.join(ROOT, "src"))
 nsel, s3 = 0, 0
 for path in hdrs:
     text = strip_comments(open(path, encoding="latin-1").read())
-    for m in re.finditer(r"typedef struct\s*\w*\s*\{(.*?)\}\s*(\w+Sel)\s*;", text, re.S):
+    for m in re.finditer(r"typedef struct\s*\w*\s*\{([^{}]*)\}\s*(\w+Sel)\s*;", text):
         nsel += 1
         if re.search(r"\b(uint32_t|unsigned|uint64_t)\s*(const\s*)?\*", m.group(1)):
             s3 += 1
