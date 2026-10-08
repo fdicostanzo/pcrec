@@ -1233,6 +1233,13 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
   `emit_vm.c`'s `VM_CAND_*` hooks) also asks `cand_select` and aborts on a
   different row (`CANDORACLE`), the both-walks oracle; checked by
   `tests/codegen/run_cand_oracle.sh`.
+- **emit_vm.c — the fallback oracle's two token sites** ([DEC-FALLBACK]
+  B2, lane decfbB2, 2026-10-08; trace build only, no emitted byte). Under
+  `-DPCREC_CAND_TRACE` the `--emit-ir` listing's `prefilter` value is held
+  to T2's row (`EngineFit.pf_admit`: a verdict ON lists `yes`/
+  `yes-collapsed`, OFF the row's `list` cell), and `VM_PREFILTER_WHY`'s
+  test to the fired row's `pfwhy` cell (`Ctx.fit_seq`); a difference aborts
+  (`CANDORACLE`). B4/B5 make the cells the readers.
 - **emit_dfa.c — NEXT and RECOVER read the start table** ([START-TABLE] C3,
   lane stc3, 2026-10-07; `docs/design/start_table.md` §3.2 C3; zero movers,
   no abi event). `dfa_pfs[]` and `dfa_search_starts[]` are DELETED into

@@ -341,6 +341,26 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   keeps `esel_of`'s premise (a drop rung and a DFA overflow never share a
   compile) true. `docs/spec/limits.md` §8 "The size-cap ladder" is the
   contract and carries the classification table.
+  **[DEC-FALLBACK] B2 (lane decfbB2, 2026-10-08) THE TABLE BECOMES THE WHOLE
+  LADDER, BESIDE THE OLD DISPATCH** (`docs/design/dec_fallback.md` §1.1-
+  §1.3, §1.5-§1.9; no reader switched, no abi event). `fit_rungs[]` gains
+  rows 0-4 (`forcing`, `nomem`, `size-term-trial`, `sel1-collapse`,
+  `sel1-drop`) ahead of the size rungs and the columns `on` (the arrival
+  LABEL mask), `fof` (inside `--fast-or-fail`'s reach: `fit_rung_denied`
+  denies a degrading row only when it is IN), `sets` (the state the row
+  writes, KEEP a named cell), `cells` (`FitCells`, internal.h: the
+  `ENGINE_SEL`/PFLW/`VM_PREFILTER_WHY` tokens), `ukw`, `note`, `retries`
+  and `repeat`; every enumerated cell's 0 is UNSTATED. `fit_select` asks
+  only rows `on` a size label; `fit_walk` is the total walk B3 makes the
+  dispatch. T3 (`pflw_rows[]`) and T4 (`st_whys[]`) sit beside the gate's
+  and the size term's ternaries. Under `-DPCREC_CAND_TRACE`:
+  `fit_tables_selfcheck` (§1.9, a refusal) at each compile's first attempt;
+  the both-derivations oracle (`fit_oracle_*`, `pcrec_fit_oracle_fail`) at
+  every arrival (the row, then the post-row state against the `sets` cell),
+  at the gate, after the size term and at the notes, keeping the fired
+  record (`fit_seq_rows[]`/`fit_seq_cells[]`, `Ctx.fit_seq`) and asserting
+  §1.9's invariants; `-DPCREC_CAND_NEW_FIRST` asks the tables first. B5
+  deletes the oracle.
 - **tune.c** — [OPT-DIAL] THE SPEED-VS-SIZE DIAL'S PINNED POLICY TABLE, and
   its ONE HOME (`docs/spec/tuning.md` §5 is the contract,
   `docs/design/opt_dial_design.md` the design record, D103 the governance).

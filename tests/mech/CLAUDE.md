@@ -3512,3 +3512,27 @@ in TRACE-BUILD text only (the default build is untouched) and detected by
 `var-nullable`/`nullable-exact`), S626 (the `attrib` record swaps the
 [SEL-1] source row). All seven DETECTED at B1 (4/1/1/18/9/2/3 failing
 checks). S627-S639 are unused.
+
+### [DEC-FALLBACK] B2 — rows S627-S645 (lane decfbB2, 2026-10-08)
+
+The range S627-S646 is B2's; S646 is unused. B2 builds T1-T4 and the
+attribution walk BESIDE the old derivations and switches no reader, so
+every plant lands in the new tables (the default build's answers do not
+move) and the detector is the trace build's both-derivations oracle or
+`fit_tables_selfcheck`, through `run_fallback_table.sh` (a)/(d) (arm
+`fallbacktable`). T1: S627 rows 3/4 swapped (S-F3), S628 sel1-drop keeps
+`dd` (S-F13), S629 sel1-collapse does not latch (S-F8's cell), S630
+drop-prefilter does not restart (S-F11; the bound check fires first), S631
+sel1-collapse inside `--fast-or-fail`'s reach (S-F4), S632 drop-premul `on`
+overflow (S-F7), S633 drop-prefilter carries no size-cap figures (S-F10),
+S634 drop-premul ORs no flag (S-F12), S635 sel1-collapse writes CR_SIZECAP
+(S-F14; the one-writer check), S636 drop-anchored keeps `sdr` (S-F15), S637
+drop-anchored's note cell empty, S638 the attempt bound drifts (S-I1). T2:
+S639 var-nullable never applies (S-T2a), S640 forced-off/var swapped
+(S-T2g), S641 overflow-drop loses `|| force_off` (S-T2e). T3: S642
+rung/forced swapped (S-T3a), S643 the projection keyed on the wrong reason
+(S-T3c). T4: S644 cap-rescue/size-model swapped (S-T4a). The walk: S645
+kept/off cells swapped. Each re-homes on its table's own detector (fbt
+(a)-(c), ir, the K53/PF-DROP cells) when B3-B5 switch that reader; the
+row's header names which. B2 also re-aimed S421 and S423 to the row and
+predicate lines that gained `fof`.
