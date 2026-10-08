@@ -126,6 +126,14 @@ miss by `on_miss` having run.
   The whole run, gcc + clang at full subjects with every witness on
   every batch (about 25 min on the Mac), is `make test-memfn-g2-full`,
   OPT-IN and never part of `make test`.
+  **`--rows`** (implied by `--quick`; `--no-rows` opts out; report
+  `G2ROWS_REPORT.md`): the per-ROW floor. Every kit-selecting process (the
+  generator, once per W2 mutation) is linked against
+  `build/libpcrec_mftrace.a`; its `MFTRACE REACH ... chosen=N` stderr lines are
+  summed and printed as `row-chosen <table> <row> <n>`, derived from the trace
+  only. Checks: (a) REACH_DROPPED 0, (b) every row n >= 1, (c) distinct rows >=
+  the literal `FLOOR_ROWS`, (d) every process printed REACH lines; controls for
+  (b) and (d) run each time. Cost over plain `--quick` is within noise.
 - **g2/g2.h** — G2's own site description (`g2_site`, `g2_pred`,
   `g2_term`), the per-call outcome (`g2_out`), the miss values, and the
   helpers the wrapped text calls (`g2_touch`/`g2_acc` for `on_cand`,
