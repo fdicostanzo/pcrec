@@ -3927,3 +3927,15 @@ and `first-class-bounded` (deny `PCREC_NO_START_SET`). Four things to know:
   pre-check's byte), the hybrid re-seed row (`RX_VM_RESEED`), and the scan
   edge (`src/opt/scanedge.c`'s precondition (8) reads `reseeds`).
   `tests/startset/dfahat_checks.py` [dfa-deny] counts each.
+- **[MEMFN] R4h layout normalization (lane advnorm, 2026-10-08, abi 66 -> 67).**
+  The five in-loop ADVANCE sites -- `dir_fwd_skip`/`dir_rev_skip` and
+  `emit_scan_edge`'s unbounded and bounded loops in `emit_dfa.c`, and
+  `vm_emit_span_scan` in `emit_vm.c` -- emit the memfn kit's ADVANCE text
+  character for character (`tests/memfn/pins/r4h_target/`, 8 shapes): parens on
+  `more` and on the member, an always-braced body with the step (and the
+  counter) on their own lines, and a `%llu`+`ULL` cap. The member text stays
+  pcrec's own (`scan_test`, the stay-table read, the VM `test`); there is NO
+  shared helper, because R4h deletes this text (D77). Text only: no object
+  byte moves (`run_object_neutrality.sh`), `RX_VM_PROGRAM_BYTES` and the size
+  tallies grow by the added layout bytes.
+

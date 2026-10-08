@@ -408,6 +408,10 @@ pcrec (the Makefile owns that).
   the per-stream form (proved on `--limit 300`, evidence in
   `docs/dev/lanes/admin1008b_report.md`). There is no resumability to keep:
   the script never had a checkpoint.
+  `--census-ref-re FILE` ([MEMFN] R4h, lane advnorm): a file of regexes read
+  off the REFERENCE artifact's text; the real run then holds MOVERS == the
+  REF artifacts that match any of them, 0 off-diagonal in both directions,
+  per stream (1-4). The text-census instrument for a declared TEXT mover.
 - **trace_diff.py** — [START-TABLE] C0's selection-trace diff: compares two
   trace streams (`idx arm seq record`, written by `emit_sweep.py --trace`)
   per (pattern, arm) as ORDERED sequences (so neither a swap between

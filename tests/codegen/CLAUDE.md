@@ -3834,3 +3834,19 @@ must fire on `default`/`noprefilter`. `ctx-node-moved=` joins the (A) line.
   `RX_MEMFN_*` lines); `run_recursion_identity.sh`'s (B) FILEPIN self-pinned;
   `run_size_term.sh`'s cap-rescue witness re-calibrated 31,900 -> 32,300
   (K=4 measured at 31,907 by bisection, 7 B over the old cap).
+
+- **[MEMFN] R4h layout normalization (lane advnorm, 2026-10-08, abi 66 -> 67):**
+  `run_codegen_tests.sh`'s `ABI_EXPECT` 67 and its ledger message, and its three
+  text-shape greps (the forward stay skip, the view-bounded skip, the EOL skip
+  line number) now read the braced two-parenthesis loop;
+  `run_cpset_structure.sh`'s manifest re-recorded (four `EMITTED_BYTES` rows
+  +22/+116/+68/+44); `run_recursion_identity.sh` gains its SEVENTH named
+  exception, `adv_layout_canon` -- a two-sided canonicalizer inside
+  `prog_region` (every region extracted from the subject, the pin and each
+  deny-axis build) that folds the new multi-line span-scan loop back to the
+  pre-pin one-line form, with a non-vacuity census (`ADVNEW_TOTAL` >= 1,
+  `ADVOLD_TOTAL` == 0 on the subject side) -- and its (B) FILEPIN is
+  self-pinned. Sabotage S214 and S72 are re-aimed to the new printfs (intent
+  unchanged). The resource K59-PREMUL pins, `run_size_term.sh`'s pool and the
+  size tripwire did not move.
+
