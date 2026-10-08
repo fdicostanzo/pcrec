@@ -413,7 +413,24 @@ for x in sorted(FAMILY, key=lambda n: (defs[n][0], defs[n][1])):
     f = defs[x][0]
     body = []
     trace_depth = 0
+    ifdef_trace = None   # None outside, else the #if nesting depth inside
     for ln, l in texts[x][1:]:
+        # [DEC-FALLBACK] B1: a `#ifdef PCREC_CAND_TRACE` block INSIDE a body
+        # (the fallback trace's conditional records) is the trace build's own
+        # code and decides nothing, the definition pass's rule one level down;
+        # its `#else` branch is read as usual.
+        if ifdef_trace is None:
+            if re.match(r'^\s*#\s*ifdef\s+PCREC_CAND_TRACE\b', l):
+                ifdef_trace = 0
+                continue
+        else:
+            if re.match(r'^\s*#\s*if', l):
+                ifdef_trace += 1
+            elif re.match(r'^\s*#\s*endif\b', l):
+                ifdef_trace = None if ifdef_trace == 0 else ifdef_trace - 1
+            elif ifdef_trace == 0 and re.match(r'^\s*#\s*else\b', l):
+                ifdef_trace = None
+            continue
         code = re.sub(r'"(\\.|[^"\\])*"', '""', l)
         code = re.sub(r'/\*.*?\*/|//.*$', '', code)
         # [START-TABLE] C1: a selection-trace record (`PCREC_CAND_TRACE_REC*`,

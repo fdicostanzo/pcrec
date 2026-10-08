@@ -757,6 +757,54 @@ static const FitRung *fit_select(const FitSel *s)
     return fit_rung_of(FIT_REFUSE);
 }
 
+/* [DEC-FALLBACK] B1 THE FALLBACK TRACE (docs/design/dec_fallback.md §4.2 B1):
+ * one `fallback` record per ARRIVAL at `compile_driver`'s recovery point, on
+ * [START-TABLE] C1's `PCREC_CAND_TRACE_RECF`. The route is the arrival's
+ * LABEL SET (§1.1, `forcing|nomem|overflow|size`, `other` when none is set);
+ * the row is the T1 row today's code took, followed by the POST-ROW state
+ * tuple: `dd` (`dfa_disabled`), `cr` (`collapse_reason`), `sdr`
+ * (`size_drop_rung`), `fo` (the ladder's two OR'd flag bits as they stand in
+ * `defo.flags`), the carry (`ovw`, the `[SEL-1]` `overflow_why` once
+ * `dfa_disabled` makes it valid; `sc`, the size-cap figures), the latch
+ * (`dfa_was_engine`/`budget_fallback`) and `restart` (the size term
+ * restarted). It reads `compile_driver`'s locals BY NAME, so it is used only
+ * there, and after a row's writes so the tuple is the state the next attempt
+ * starts from (a row that writes nothing, `forcing`/`nomem`/`refuse`, may
+ * print before its action). Trace build only: the default build expands
+ * `FIT_TRACE` to nothing and evaluates none of it. */
+#ifdef PCREC_CAND_TRACE
+static const char *const fit_trace_label_names[16] = {
+    "other",           "size",           "overflow",           "overflow|size",
+    "nomem",           "nomem|size",     "nomem|overflow",     "nomem|overflow|size",
+    "forcing",         "forcing|size",   "forcing|overflow",   "forcing|overflow|size",
+    "forcing|nomem",   "forcing|nomem|size", "forcing|nomem|overflow",
+    "forcing|nomem|overflow|size",
+};
+
+/* The arrival's label set, from the flags the failing attempt left in `cx`
+ * (`job` may already be cleaned up; only `forcing` lives there, and every
+ * row past the first is reached with it false). */
+static const char *fit_trace_labels(const Ctx *cx)
+{
+    return fit_trace_label_names[(cx->job && cx->job->pf.forcing ? 8u : 0u) |
+                                 (cx->failed_nomem    ? 4u : 0u) |
+                                 (cx->dfa_overflowed  ? 2u : 0u) |
+                                 (cx->size_cap_refused ? 1u : 0u)];
+}
+
+#define FIT_TRACE(cxp, row, restart, site)                                     \
+    PCREC_CAND_TRACE_RECF("fallback", fit_trace_labels(cxp), site,             \
+        "%s dd=%d cr=%d sdr=%d fo=%#llx ovw=%s sc=%llu/%llu latch=%d/%d "      \
+        "restart=%d", (row), (int)dfa_disabled, (int)collapse_reason,          \
+        (int)size_drop_rung,                                                   \
+        (unsigned long long)(defo.flags &                                      \
+                             (PCREC_NO_PREMUL_TABLE | PCREC_NO_PREFILTER)),    \
+        dfa_disabled ? overflow_why : "-", size_cap_bytes, size_cap_limit,     \
+        (int)dfa_was_engine, (int)budget_fallback, (int)(restart))
+#else
+#define FIT_TRACE(cxp, row, restart, site) ((void)sizeof("" site))
+#endif
+
 /* THE PIPELINE, and the tree's only `setjmp`: parse -> altcls -> discharge
  * atomic -> compose (`--source` only) -> call graph -> select engine ->
  * postresolve -> NFA -> DFA(s) -> emit, wrapped in a BOUNDED ONE-SHOT
@@ -1179,6 +1227,7 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
             if (cx.job && cx.job->pf.forcing) {
                 pcrec_facts_force_failed(&cx);
                 if (err) err->msg[0] = 0;
+                FIT_TRACE(&cx, "forcing", 0, "fb-forcing");
                 goto facts_force;
             }
             /* [K60] A GENUINE ALLOCATION FAILURE PROPAGATES IMMEDIATELY,
@@ -1200,6 +1249,9 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
              * No stored state:
              * `cx.failed_nomem` is per-arrival by construction (its own
              * comment, internal.h). */
+#ifdef PCREC_CAND_TRACE
+            if (cx.failed_nomem) FIT_TRACE(&cx, "nomem", 0, "fb-nomem");
+#endif
             if (cx.failed_nomem) {
                 job_cleanup(&cx);
                 pcrec_dfa_memo_free(&dmemo);
@@ -1245,6 +1297,7 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
                     st_final_k = final_k; st_rescue = rescue; st_capexcl = capexcl;
                     st_phase = ST_FINAL;
                 }
+                FIT_TRACE(&cx, "size-term-trial", 0, "fb-trial");
                 continue;
             }
             /* [SEL-1] + [OPT-4]: ONE retry ladder with TWO rungs, in the
@@ -1303,6 +1356,8 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
                  * fallback returns 0 beside a stale "too complex" message
                  * (manager's landing fix, merge review 2026-08-28). */
                 if (err) { err->msg[0] = 0; err->pos = 0; err->input = PCREC_ERR_INPUT_PATTERN; }
+                FIT_TRACE(&cx, retry_collapse ? "sel1-collapse" : "sel1-drop", 0,
+                          "fb-sel1");
                 continue;
             }
             /* [PF-DROP] (D135) THE SIZE-CAP LADDER. Every rung below is a row
@@ -1317,6 +1372,10 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
                                 size_drop_rung, dfa_disabled };
             const FitRung *rung = cx.size_cap_refused
                                 ? fit_select(&fs) : fit_rung_of(FIT_REFUSE);
+#ifdef PCREC_CAND_TRACE
+            if (rung->act == FIT_REFUSE || rung->act == FIT_UNROLL_RESCUE)
+                FIT_TRACE(&cx, rung->name, 0, "fb-refuse");
+#endif
             bool restart_term = false;
             switch (rung->act) {
             case FIT_COLLAPSE:
@@ -1486,6 +1545,7 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
                 memset(st_whylen, 0, sizeof st_whylen);
             }
             if (err) { err->msg[0] = 0; err->pos = 0; err->input = PCREC_ERR_INPUT_PATTERN; }
+            FIT_TRACE(&cx, rung->name, restart_term, "fb-size");
             continue;
         }
 
@@ -1868,6 +1928,15 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
                 : cx.collapse_reason == CR_SIZECAP ? PFLW_SIZECAP
                 : cx.collapse_reason == CR_SEL1    ? PFLW_SEL1
                                                    : PFLW_FORCED;
+            /* [DEC-FALLBACK] B1: the `gate` record, T3's row (§1.5) read off
+             * the PFLW just written — `rung` for the two rung values — and
+             * the PFLW itself; route = the collapse reason. */
+            PCREC_CAND_TRACE_RECF("gate",
+                pcrec_cr_trace_name(cx.collapse_reason), "gate", "%s pflw=%s",
+                (const char *const[]){ "exact", "no-rep", "nullable", "forced",
+                                       "rung", "rung" }[cx.job->fit.prefilter_lang_why],
+                (const char *const[]){ "exact", "no-rep", "nullable", "forced",
+                                       "sel1", "sizecap" }[cx.job->fit.prefilter_lang_why]);
             if (collapse)
                 pcrec_build_nfa(&cx, root, &cx.job->nfa, false, true);
             cx.job->fit.prefilter_collapsed = collapse;
@@ -1982,6 +2051,9 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
           : st_final_k != st_k[0]                       ? "size-model"
           : st_capexcl                                  ? "capacity-declined"
           :                                               "size-model-declined";
+        /* [DEC-FALLBACK] B1: the `stwhy` record, T4's row (§1.6), which is
+         * the token itself. */
+        PCREC_CAND_TRACE_REC("stwhy", "-", cx.size_term_why, "st-why");
 
         if (cx.job->fit.chosen == ENGM_VM) pcrec_emit_vm(&cx, root);
         else                               pcrec_emit_dfa(&cx);

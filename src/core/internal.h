@@ -7113,6 +7113,13 @@ extern _Thread_local int pcrec_cand_trace_quiet;
     (pcrec_cand_trace_quiet ? (void)0                                          \
      : (void)fprintf(stderr, "CANDTRACE\t%s\t%s\t" fmt "\t%s\n", (slot),       \
                      (route), __VA_ARGS__, "" site))
+/* [DEC-FALLBACK] B1: the `admit` and `gate` records' route, the collapse
+ * reason the decision ran under (dec_fallback.md §1.4's SCOPE). */
+static inline const char *pcrec_cr_trace_name(int cr)
+{
+    return cr == CR_NONE ? "none" : cr == CR_SEL1 ? "sel1"
+         : cr == CR_SIZECAP ? "sizecap" : "?";
+}
 #else
 #define PCREC_CAND_TRACE_REC(slot, route, row, site) ((void)sizeof("" site))
 #define PCREC_CAND_TRACE_RECF(slot, route, site, fmt, ...)                     \
