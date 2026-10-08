@@ -26669,3 +26669,21 @@ Frank: "finish up open work/bench results/errors", Linux box free (bench manager
 - **Kit**: N4 census 379 s at -j16 with the one-pool driver (was ~45 min serial on the Mac); N4's make test had one red (test-codegen), kit triaging; N4 done: OWED.
 - **Process lessons**: (1) Frank: lanes NEVER idle-wait for a slot or a long run — arm the chain detached (`setsid` waiter on `.lift`), hand back, END; the manager lifts; fresh agents read verdicts (memory + BOILERPLATE). (2) C3's chain passed mech ids as `S222_` → FATAL, nothing measured; read each row's own trailer. (3) Never hand-merge DERIVED files (sabotage_anchors.tsv/call_graph); regenerate on the merged tree (stc5land). (4) Sub-agents spawned by lanes report to the manager — tell lanes to route them. (5) A light mech tail can share the box with a make test (did so; no anomaly).
 - **Box/peers**: ubuntubudu reachable from here at `duxevents@192.168.1.100` (tailnet IP times out); our stale leftovers there removed (77% used). mouse-tickler (GNOME extension project) shares this box with a standing OK for ≤2-core, watchdog-bounded runs.
+
+## 2026-10-08 — session 97 (checkpoint ~01:10 EDT)
+
+- **[ART-POSS-ARMS] MERGED** c9672bd2 (lane/possland2; its make test 805 s green, 59/59). At the merge, run_cpset_structure.sh conflicted as wake.md predicted. Resolved per admin1008b: possessify.c left the whole-file ALLOW, and `ALLOW_FN='src/opt/possessify.c:cls_polarity'` is the first function-scoped allowance. cpset 29/0, strict clean, `.abi = 66` = ABI_EXPECT. Pushed.
+- **[START-TABLE] C5 MERGED** f43de59f, via lane/stc5land2.
+  - A session-96 waiter auto-lifted stc5land at 00:21. Its make test (pre-POSS base) was green at 920 s.
+  - Main had moved, so fresh lane stc5land2 (sonnet) re-merged main c9672bd2 and REGENERATED call_graph/sabotage_anchors: 509/527 resolve, S571's known unresolved row unchanged.
+  - Its own make test was green at 686 s. Pushed.
+  - Lane-shape lesson: my brief asked stc5land2 for `make test-codegen` while another make test was running. It hit its 600 s timeout under load 55-78. Light gates in a brief must actually be light while a suite runs.
+- **[MEMFN-ROWCON] N4 + G2 per-row floors MERGED** 37462a8e (lane/memfn-g2floor, which supersedes lane/memfn-n4). One docs/dev/lanes/CLAUDE.md index conflict; both sides kept. Full make test on the merged tree: 60/60, 707 s, rc 0. Pushed.
+- **Q-R4h-1 RULED** (kit's R4h edit set, lane/memfn-g2floor ae35a0e6 notice), by the manager:
+  - (a) a semantic "caller owns the counter" hook, MF_SITE_ABI 5;
+  - (b) ONE pcrec-side layout-normalization pre-commit AFTER C7, a declared mover with its abi bump. Check it against refactor B's scope before briefing. R4h then lands zero-mover on top.
+  - No layout hints in the kit contract.
+  - The §19 row (SCAN_TEST_CALLS / vm_cls_reads pricing) is FILED.
+- Kit disclosure: its test-codegen re-run overlapped possland2's make test. Noted; it asks first from now on.
+- 13 merged lane worktrees pruned (wtprune). The kit's g2u/n2pool were left alone.
+- NEXT: lane stc5b (opus) building C5b off 37462a8e; then C6+C7.
