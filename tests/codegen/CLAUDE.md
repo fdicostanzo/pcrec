@@ -3804,6 +3804,22 @@ must fire on `default`/`noprefilter`. `ctx-node-moved=` joins the (A) line.
   `poss-arms-moved` bucket (stamp-or-deny on `RX_VM_POSS_ARMS`, both
   directions of the converse, and the `POSS_PATTERNS` manifest of §5.2's three
   corpus movers) and (B)'s FILEPIN is self-pinned to `615eb811` (the merge of main 8cada7b9).
+- **[recidtri] (2026-10-08, lane recidtri):** `run_recursion_identity.sh`'s
+  `poss-arms-moved` bucket (possbuild, above) was delivered never having run
+  to completion (the gate is not in `TEST_SECTIONS`; `make test` could not
+  have run it) and read RED on main: (1) 10 default-axis regions differed
+  because arm A is ENGINE-SELECTING and moved them to the DFA, where the
+  VM-only stamp does not exist, so the stamped excuse never ran -- the
+  context-node set now tries the arms second (`poss-arm-a-engine-flip-moved`,
+  the named `POSS_FLIP_PATTERNS` manifest, asserted 0 on `--engine=vm`);
+  (2) the stamped-direction converse asserted a stronger property than the
+  stamp's definition ("an arm was NEEDED for a positive verdict"), failing
+  21 artifacts whose only positive verdicts are on source-possessive/atomic
+  loops (a verdict that marks nothing) -- excused ONLY for a pattern whose
+  text says one (`POSSRC_POP`, a text census), counted
+  (`poss-arms-stamped-on-source-possessive`) with a floor of 8 on the vm
+  axis. Failing direction: three plants (arms dropped from the flip set,
+  excuse population emptied, deny set emptied) each go red.
 - **[FLAGBITS] (lane flagbits, 2026-10-06, abi 64 -> 65, K92):**
   `run_codegen_tests.sh`'s `ABI_EXPECT` 65 and its ledger message;
   `run_prechecks.sh` section 6b (every `-f` spelling `--list-axes` carries,
