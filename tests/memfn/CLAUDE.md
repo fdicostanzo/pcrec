@@ -19,7 +19,11 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
   migration step's REPLACE commit flips its rows. The header documents the
   columns. R4h (M3) flipped STAY, EDGE and VMSPAN (9 delegated / 4 pending);
   VMSTRIDE stays pending on `vm_stride_loop`, the strided loop split out of
-  `vm_emit_span_scan`.
+  `vm_emit_span_scan`. M4 flipped MLINE (10 delegated / 3 pending): its
+  emitters are `emit_attempt` (the use point) and the shared describer
+  `find_site`/`pcrec_emit_find`, so C17 rule 2's reach for MLINE is
+  satisfied through that shared function; MLINE's OWN reach is rows.tsv's
+  `pf_memchr_back` row (witness `(?m)^abc`, the trace choosing the row).
 - **search_vocab.tsv** — THE SEARCH-FORM VOCABULARY: the text shapes that
   count as a search form when an emitter spells them. There are four
   classes: libc search calls, table-walk loops, runcmp row texts and the
@@ -103,7 +107,9 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
   rows, `C12_CEIL_ROWS_FLOOR` 12 -> 9; 8 rows / 12 forms since M2's REPLACE
   (R4g) lowered memchr 2 -> 1 and deleted the walk-fmt row, floor 9 -> 8;
   6 rows / 8 forms since M3's REPLACE (R4h) deleted `emit_dfa.c`'s
-  walk-open and walk-stmt rows, 2 -> 0 each, floor 8 -> 6);
+  walk-open and walk-stmt rows, 2 -> 0 each, floor 8 -> 6; 5 rows / 7 forms
+  since M4's REPLACE deleted `emit_dfa.c`'s memchr row, 1 -> 0, floor 6 -> 5:
+  no `memchr(` is spelled outside the kit);
   REPLACE edits the one number on the row.
   Higher is red (a replaced form came back) AND lower is red (stale ceiling
   or a blind lexer). C13 is declared UNREACHED while no `on_cand` producer
@@ -304,7 +310,8 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
 
 - S510: a `memchr(` text planted in an unlisted function trips rule 1.
 - S511: a pending row goes stale and trips rule 4 (re-aimed at R4c from PRE,
-  now delegated, to MLINE's `emit_attempt`).
+  now delegated, to MLINE's `emit_attempt`; at M4 from MLINE, delegated, to
+  VMSTRIDE's `vm_stride_loop`).
 - S512: deleting a row trips the floor.
 
 All three are on arm `memfnmanifest`. See
@@ -317,6 +324,11 @@ S526 (`MF_MAX_TERM` lowered, C14), S527 (an `on_cand` token with C13
 unbuilt), S528 (a kit call from an unlisted function, C17 rule 2), S529 (the
 VM hybrid loses its handoff, the reach floor). Arms `memfnarch`,
 `memfnforms`, `memfnreach`. Transcripts: `docs/dev/lanes/r4cchecks_report.md`.
+
+M4 (lane m4) adds S617-S619 on a new arm `memfnarms` (run_arm_pins.sh):
+pf_memchr_back's `+ k` store dropped (S617), the generic row's read-bounded
+FIND one short of n (S618), the generic row serving LOOP_EXIT (S619).
+Hand-measured figures: `docs/dev/lanes/m4_report.md` §6.
 
 ## Maintaining it
 

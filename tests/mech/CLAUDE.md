@@ -465,6 +465,17 @@ is EXPECTED to time out"*, and neither would a separate arm.
   double-counts (S573). Re-pointed into the kit by the same change: S267,
   S443, S444, S445, S285 (`memfn/src/runcmp.c`), S279, S454
   (`memfn/src/ofsskip.c`).
+- `memfnarms` → `tests/memfn/run_arm_pins.sh` ([MEMFN] M4, lane m4,
+  2026-10-08): C5, the kit arms' fixture pins, the row-contract gate cases
+  (check 6) and the reads-below FIND run on fixed subjects (check 9).
+  Links the sabotaged tree's `build/libpcrec.a`; seconds. A kit row that
+  pcrec's corpus reaches through another row, or not at all, moves no answer
+  and no artifact byte. Rows S617 (pf_memchr_back's `+ k` store dropped:
+  answer-neutral on MLINE, measured), S618 (the generic row's read-bounded
+  FIND loop one short of n), S619 (the generic row serves LOOP_EXIT). M4
+  also re-aimed S511 (`memfnmanifest`) from MLINE, now delegated, to
+  VMSTRIDE's `vm_stride_loop`, and re-pinned S524 (`memfnforms`) on
+  pcrec_emit_find's door call, now `f->site`.
 - `memfnstamps` → `tests/memfn/run_libc_census.sh --quick` ([MEMFN] R4a′,
   lane memfnstamp, 2026-10-05): C11, the kit's two every-artifact stamps.
   Builds nothing itself (reads the sabotaged tree's build/pcrec); about 15 s.

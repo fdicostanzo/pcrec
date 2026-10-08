@@ -21,7 +21,7 @@ SAB_ID="S617-m4-mline-plus-k-dropped"
 SAB_FILE="memfn/src/pffind.c"
 SAB_SUITES="memfnarms"
 SAB_DESC="the kit's pf_memchr_back row drops the '+ k' of its store, so a FIND whose term sits below its candidate returns the predecessor's position (MLINE: the newline, not the line start)"
-SAB_DOC_FIGURE="HAND-MEASURED by lane m4 (plant applied, tree rebuilt): run_arm_pins.sh pf-memchr-back.use moved and check 9 red; see docs/dev/lanes/m4_report.md §6. The matrix's own figure is owed at the slot."
+SAB_DOC_FIGURE="HAND-MEASURED by lane m4 (plant applied, tree rebuilt): run_arm_pins.sh 2 failed / 237 passed (the pf-memchr-back pin moved, 178 -> 174 bytes; check 9: the row answers c - 1 on 7 of 10 subjects); the corpus is GREEN under it (tests/assertions/multiline.rxt + gpos.rxt 3655/0, d27 multiline/composition + utf8 k73 + litscan handoff 2545/0, run_mline_diff.sh 4/0), as the header argues; see docs/dev/lanes/m4_report.md §6. The matrix's own figure is owed at the slot."
 SAB_REACH='"$PCREC" --features all -p rx -o - --pattern "(?m)^abc"'
 SAB_REACH_EXPECT='const void *q = memchr(subject + start, 10, subject_length - start);
 start = (size_t)((const unsigned char *)q - subject) + 1;'

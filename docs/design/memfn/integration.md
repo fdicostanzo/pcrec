@@ -5512,6 +5512,19 @@ never takes it (it passes no mask).
   The row is `pf_memchr_back` (memfn/src/pffind.c): one byte at -1, floor
   = lo, AT_N, the store `+ 1`. Its fixtures and gate cases:
   tests/memfn/arm_fixtures.c, run_arm_pins.sh checks 6 and 9.
+  **`[M4]` As BUILT (lane m4, 2026-10-08; `docs/dev/lanes/m4_report.md`).**
+  pcrec's ONE describer was generalized, not paralleled: `PcrecFind` (now in
+  `src/gen/memfn_sites.h`) gained `site` (DELEG_SITES PF or MLINE), `offset`
+  (the term's offset: 0, or -1) and `floor`. `emit_attempt` keeps the guard
+  line, X and every start decision, and describes the three statements
+  through `pcrec_emit_find` with `site` MLINE, `offset` `-cand.offset`,
+  `floor` `start`, `on_miss` `break;` and no `miss` (under Q-R7-1 `n` is a
+  hit, so no text names a value no hit takes). DELEG_SITES row MLINE is
+  FIND / ASSIGN / SET, DELEG_SCAN, MF_USE_POSITION. Zero movers: the I1
+  shadow comparator matched 693 sites over 21,890 corpus compiles, and
+  26,268 base-vs-REPLACE corpus pairs were byte-identical (990 MLINE
+  sites). The manifest is 10 delegated / 3 pending; C12 has no `memchr(`
+  outside the kit (5 rows / 7 forms).
 
 ---
 

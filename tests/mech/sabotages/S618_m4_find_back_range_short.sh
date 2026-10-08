@@ -19,7 +19,7 @@ SAB_ID="S618-m4-find-back-range-short"
 SAB_FILE="memfn/src/generic.c"
 SAB_SUITES="memfnarms"
 SAB_DESC="the generic row's read-bounded FIND loop (Q-R7-1) stops one short of n ('cand + d < n'), so a FIND whose term sits below its candidate cannot find the candidate n: a lost match at the subject's end"
-SAB_DOC_FIGURE="HAND-MEASURED by lane m4 (plant applied, tree rebuilt): run_arm_pins.sh find-back-reaches-n.use moved and check 9 red; see docs/dev/lanes/m4_report.md §6. The matrix's own figure is owed at the slot."
+SAB_DOC_FIGURE="HAND-MEASURED by lane m4 (plant applied, tree rebuilt): run_arm_pins.sh 2 failed / 237 passed (the find-back-reaches-n pin moved, 387 -> 386 bytes; check 9: the generic row misses the candidate n on 6 of 10 subjects); see docs/dev/lanes/m4_report.md §6. The matrix's own figure is owed at the slot."
 SAB_REACH='$CC -std=gnu11 -I"$TREE/memfn/include" "$TREE/tests/memfn/arm_fixtures.c" "$TREE/build/libpcrec.a" -o fx && mkdir -p o && ./fx o --only find-back-reaches-n && cat o/find-back-reaches-n.use'
 SAB_REACH_EXPECT='find-back-reaches-n	generic
 for (; rx_mf1_c <= rx_mf1_n; rx_mf1_c++)'

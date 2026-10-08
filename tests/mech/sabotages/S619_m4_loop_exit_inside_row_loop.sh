@@ -12,19 +12,21 @@
 # loop instead of pcrec's.
 #
 # WHERE IT IS SEEN. pcrec's one LOOP_EXIT site (MLINE) is served by
-# pf_memchr_back first, so no artifact moves. The gate cases
-# `back-excluded-break-refused` and `pf-memchr-break-refused` (a LOOP_EXIT
-# site the back row declines; an offset-0 memchr site, whose row serves
-# JUMP/BRACED only) must be REFUSED naming `on_miss`; with the plant they
-# RENDER through generic. Arm memfnarms (run_arm_pins.sh check 6).
+# pf_memchr_back first, so no artifact moves. The gate case
+# `back-excluded-break-refused` (a LOOP_EXIT site the back row declines at
+# define, its empty EXCLUDED, so the generic row is chosen) must be REFUSED
+# by the use re-check naming `on_miss`; with the plant it RENDERS through
+# generic. (Its sibling `pf-memchr-break-refused` stays refused under the
+# plant: pf_memchr is chosen at define, where on_miss is not read, and its
+# own use re-check refuses LOOP_EXIT; nothing is re-selected.) Arm
+# memfnarms (run_arm_pins.sh check 6).
 SAB_ID="S619-m4-loop-exit-inside-row-loop"
 SAB_FILE="memfn/src/generic.c"
 SAB_SUITES="memfnarms"
 SAB_DESC="the generic row serves the LOOP_EXIT on_miss class (Q-R7-3), so a 'break;' site no no-loop row serves renders through a row whose text may enclose it in its own loop instead of being refused naming on_miss"
-SAB_DOC_FIGURE="HAND-MEASURED by lane m4 (plant applied, tree rebuilt): run_arm_pins.sh check 6, two gate cases RENDER generic instead of REFUSE on_miss; see docs/dev/lanes/m4_report.md §6. The matrix's own figure is owed at the slot."
+SAB_DOC_FIGURE="HAND-MEASURED by lane m4 (plant applied, tree rebuilt): run_arm_pins.sh 1 failed / 238 passed (check 6: back-excluded-break-refused RENDER generic, expected REFUSE on_miss); see docs/dev/lanes/m4_report.md §6. The matrix's own figure is owed at the slot."
 SAB_REACH='$CC -std=gnu11 -I"$TREE/memfn/include" "$TREE/tests/memfn/arm_fixtures.c" "$TREE/build/libpcrec.a" -o fx && ./fx --gate'
-SAB_REACH_EXPECT='back-excluded-break-refused	REFUSE	mf_use: row `generic` does not serve this use of handle 1: `on_miss` (R2: stated as LOOP_EXIT, not served)
-pf-memchr-break-refused	REFUSE'
+SAB_REACH_EXPECT='back-excluded-break-refused	REFUSE	mf_use: row `generic` does not serve this use of handle 1: `on_miss` (R2: stated as LOOP_EXIT, not served)'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='    [FLD_on_miss]         = MF_ANY & ~CM(LOOP_EXIT),'
