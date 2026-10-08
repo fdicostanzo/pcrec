@@ -380,6 +380,10 @@ done <<< "$anchored"
 #     are the same kind of number as `VM_NRUNG`'s above: nothing is measured
 #     against a bit position, and the values are forced by the
 #     representation rather than chosen as a policy.
+#     EM_ANY (src/facts/widths.c, [NULLABLE-ANCH]): the same kind, the mask
+#     set {mask 0} (`1u << EM_NONE`) that is the identity of `em_cat`'s
+#     set-of-masks product; a bit-set value forced by the representation,
+#     not measured against anything.
 SCAN_FLOOR=30
 
 TMP3="$(mktemp -d "${TMPDIR:-/tmp}/limits_check.XXXXXX")"
@@ -529,7 +533,8 @@ SA_BOT
 SA_GSTART
 PCREC_FIND_NTBL
 PCREC_FIND_NBUNDLES
-SCAN_TEST_CALLS"
+SCAN_TEST_CALLS
+EM_ANY"
 
 TABLE_NAMES="$NAMES"
 SCANNED_NAMES="$(cut -f2 "$TMP3/scan.txt" | sort -u)"
