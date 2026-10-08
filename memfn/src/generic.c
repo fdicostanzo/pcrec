@@ -561,13 +561,20 @@ static int stmt_on_cand(rctx *rc, kb *b)
 
 /* STMT ADVANCE: the cursor moved past the run of members by pcrec's `more` (the
  * range: no empty test, Q-G2-5), `peek` and `step`, counting into `count` (never
- * declared when the caller owns it) and stopping at span_hi when proven (§14.3). */
+ * declared when the caller owns it) and stopping at span_hi when proven (§14.3).
+ * A STRIDED site (nterm W > 1, RULED Q-R10-2, MF_SITE_ABI 8) tests every term,
+ * term i at the cursor + i, ` && `-joined in term order; `step` moves W and
+ * span_hi caps the iterations (Q-R10-5). The kit's own byte at offset i is
+ * `s[cursor + i]` there (Q-R10-4); at W = 1 it is `peek`. */
 static int stmt_advance(rctx *rc, kb *b)
 {
     const mf_site *s = rc->s;
     const mf_hooks *h = rc->h;
+    int strided = s->pred.nterm > 1;
     if (need(rc->art, "ADVANCE", "step", h->step, "more", h->more, "peek",
-             h->peek, "count", s->count_by_caller ? h->count : "", (char *)NULL))
+             h->peek, "count", s->count_by_caller ? h->count : "",
+             "s", strided ? h->s : "", "cursor", strided ? h->cursor : "",
+             (char *)NULL))
         return -1;
     const char *ind = h->indent ? h->indent : "";
     int capped = s->span_hi != MF_SPAN_UNBOUNDED;
@@ -577,11 +584,24 @@ static int stmt_advance(rctx *rc, kb *b)
     else if (capped && !h->count)
         kb_printf(b, "%sunsigned long %s = 0;\n", ind, cnt);
 
-    kb byte, test;
-    kb_init(&byte, rc->art->a);
+    kb test;
     kb_init(&test, rc->art->a);
-    kb_printf(&byte, "((unsigned char)(%s))", h->peek);
-    member_test(rc, &test, &s->pred.term[0], 0, byte.p ? byte.p : "0");
+    for (unsigned t = 0; t < s->pred.nterm; t++) {
+        kb byte;
+        kb_init(&byte, rc->art->a);
+        if (!strided) {
+            kb_printf(&byte, "((unsigned char)(%s))", h->peek);
+        } else {
+            kb_printf(&byte, "((unsigned char)((%s)[", h->s);
+            kb cur;
+            kb_init(&cur, rc->art->a);
+            kb_printf(&cur, "(%s)", h->cursor);
+            at(&byte, cur.p ? cur.p : "0", (long)t);
+            kb_puts(&byte, "]))");
+        }
+        if (t) kb_puts(&test, " && ");
+        member_test(rc, &test, &s->pred.term[t], t, byte.p ? byte.p : "0");
+    }
 
     kb_printf(b, "%swhile ((%s)", ind, h->more);
     if (capped) kb_printf(b, " && %s < %lluULL", cnt, (unsigned long long)s->span_hi);
@@ -758,6 +778,9 @@ static const gate_use generic_uses[] = {
     /* :564, :569: the caller-owned counter is advanced and capped, never
        declared, so its name is required (Q-R4h-1 (a)) */
     { CM(STMT), CM(ADVANCE), MF_PH_USE, FM(count), GATE_WHEN(CM(YES), count_by_caller) },
+    /* stmt_advance: a STRIDED site's own byte at offset i is s[cursor + i]
+       (RULED Q-R10-4, MF_SITE_ABI 8), so both are required at W > 1 */
+    { CM(STMT), CM(ADVANCE), MF_PH_USE, FM(s) | FM(cursor), GATE_WHEN(CM(MANY), stride) },
     /* :604-606: the function's name is fn_name(site.pred.fn_ref), for every
        op (K-1); a FUNC site stating fn_ref 0 states no name, so the row
        declines it (R1) and, being the last, the kit refuses it (N3) */
@@ -787,6 +810,7 @@ static const gate_contract generic_ct = {
     [FLD_guard_by_caller] = MF_ANY,     /* :152, :289 */
     [FLD_on_miss_leaves]  = MF_ANY,     /* not read: the text tests in order, :303-311 */
     [FLD_count_by_caller] = MF_ANY,     /* :569, :571 */
+    [FLD_stride]          = MF_ANY,     /* stmt_advance: one test per term, ` && `-joined */
     [FLD_span_hi]         = MF_ANY,     /* :567, :581 */
     [FLD_denies]          = MF_ANY,     /* not read: its compares are its own, :189-204 */
     [FLD_fn_ref]          = MF_ANY,     /* :606 any stated id; 0 is unstated (fields.def) */
@@ -807,6 +831,7 @@ static const gate_contract generic_ct = {
     [FLD_step]            = MF_ANY,     /* :583-585 its own line; every class */
     [FLD_more]            = MF_ANY,     /* :580 parenthesized; every class */
     [FLD_peek]            = MF_ANY,     /* :577 parenthesized and cast; every class */
+    [FLD_cursor]          = MF_ANY,     /* stmt_advance at W > 1: `(cursor)` in s[cursor + i] */
     [FLD_count]           = MF_ANY,     /* :568-570, :586 */
     [FLD_count_start]     = MF_ANY,     /* :570 */
     [FLD_on_cand]         = MF_ANY,     /* :513 its text captured and its tokens replaced */

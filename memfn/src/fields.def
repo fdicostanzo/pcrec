@@ -192,6 +192,13 @@ MF_FIELD(fold_kind, MF_PH_DEFINE, OBLIG, cl_fold_kind,
          "OBLIG: a MISMATCH's fold fact (mf_fold; RULED Q-R8-4, MF_SITE_ABI 7); F_NONE is a stated "
          "value (exact), set by every MISMATCH builder. Read on a MISMATCH site only: elsewhere "
          "it must be 0 (refused otherwise), so it is no field of theirs (unstated)")
+MF_FIELD(stride, MF_PH_DEFINE, VALUE, cl_stride,
+         CM(ONE) | CM(MANY) | CM(OTHER),
+         "ADVANCE's step in positions, W = pred.nterm (RULED Q-R10-2, MF_SITE_ABI 8): ONE, or "
+         "MANY for a STRIDED site (term i at the cursor + i). Read on an ADVANCE site only: "
+         "elsewhere it is no field (unstated). At MANY a row that renders the site USES `s` and "
+         "`cursor` (its own byte at offset i is s[cursor + i], Q-R10-4: a conditional `uses` "
+         "entry), so an unstated one declines (R1)")
 
 /* ---- the fields: mf_hooks ------------------------------------------------ */
 
@@ -276,6 +283,10 @@ MF_FIELD(fold, MF_PH_DEFINE | MF_PH_USE, HOOK, cl_fold,
          "FOLD_STMT), as ruling F1 reads s/n/lo. OTHER where the site's "
          "fold_kind is F_NONE (a fold stated where the fact says exact: no row serves it) or "
          "where the text has no `@` or no lexical shape")
+MF_FIELD(cursor, MF_PH_USE, HOOK, cl_cursor,
+         CM(IDENT) | CM(OTHER),
+         "ADVANCE: the cursor lvalue's text (RULED Q-G2-14: a NULL cursor is accepted at W = 1; "
+         "a strided site's kit-owned reads index it, Q-R10-4, MF_SITE_ABI 8)")
 
 /* ---- the fields: the run compare's RUN term (the runcmp walk) ------------ */
 

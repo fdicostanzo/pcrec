@@ -158,3 +158,24 @@ generic	mm-nonident	def	0	e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca49599
 generic	mm-nonident	use	172	3b8fbf8c641f8f0e21e3a6b946a40a466e1c4a19b1db4c7f6649e46d6ae3f61d
 mismatch_inplace	mm-inplace-clash	def	0	e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 mismatch_inplace	mm-inplace-clash	use	445	d04980752f72566c099d49716284b34ab33a61b6462f758ea5da24fb45065738
+# M6 prep (R-10, MF_SITE_ABI 8): the STRIDED ADVANCE (Q-R10-2..5), the VM
+# cursor rung's strided span loop: W SET terms, term i at offset i, every
+# member pcrec's opaque class test of its position, ` && `-joined. Six shapes
+# (adv-vmstride-it/-/-lim/-u8w3/-w32/-range) ALSO frozen as
+# pins/m6_target/<fixture>.c (pcrec's pre-migration loop, run_arm_pins.sh
+# check 12); adv-vmstride-own has no member hook (the kit's own test of
+# s[cursor + i], Q-R10-4). Check 13 runs -it, -lim and -own. No row re-pinned.
+generic	adv-vmstride-it	def	0	e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+generic	adv-vmstride-it	use	211	98eb304d9c47833de637fc3e948b30e04f0545c3f502154e8d139289478260ee
+generic	adv-vmstride	def	0	e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+generic	adv-vmstride	use	178	2991228e8bc5ccc6e6fa225cebf97e3aa172f2a564f2b7ac58d2f5973245f049
+generic	adv-vmstride-lim	def	0	e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+generic	adv-vmstride-lim	use	168	150291ca174643b01496bab1a499a7a2d8736244252a2342bb66c8c68c231a77
+generic	adv-vmstride-u8w3	def	0	e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+generic	adv-vmstride-u8w3	use	219	654d0de5134a878febef42ff96f9b441a2a5fcd26918c561e9663cf8d540f5f2
+generic	adv-vmstride-w32	def	0	e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+generic	adv-vmstride-w32	use	1395	a68ded28678866e1f3b65ccf817781cf118938f50cf74c03d5be0ff6aac7b900
+generic	adv-vmstride-range	def	0	e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+generic	adv-vmstride-range	use	213	88e4dfa6f0b01464a4dded3fab58de68525bfedea909f15a6f1268dab927711e
+generic	adv-vmstride-own	def	0	e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+generic	adv-vmstride-own	use	318	e100c8a4827ff961244a06e2460da295de994a20e70b8e777ad0c44ec578c7a1

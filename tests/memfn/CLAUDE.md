@@ -217,7 +217,15 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
   on_miss, the UCP in-place fold, non-identifier hooks) and eleven REFUSE
   (a `break;`, a fold against fold_kind NONE, an unstated or shapeless
   fold, `on_miss_leaves` 0, `reverse`, a non-NOP `empty`, a second term, a
-  REF term off 0, an unstated `ref`, fold_kind on a FIND).
+  REF term off 0, an unstated `ref`, fold_kind on a FIND). M6 prep (R-10,
+  MF_SITE_ABI 8) added seven STRIDED ADVANCE fixtures (table `STRIDES`,
+  `render_stride`, the VM cursor rung's hook texts with one member per
+  term): `adv-vmstride-it`/`-`/`-lim`/`-u8w3`/`-w32`/`-range` (each frozen
+  under pins/m6_target/) and `adv-vmstride-own` (no member hook: the kit's
+  own s[cursor + i]); and nine `stride-*` gate cases (74 in all): two
+  RENDER (W = 2, W = 32) and seven REFUSE (`reverse` at W > 1, a term off
+  its position, an OPTIONAL term, a RUN term, a strided non-ADVANCE SKIP,
+  an unstated `s`, an unstated `cursor`).
 - **pins/arms.tsv** — C5's pins: arm (the kit's form id), fixture, part
   (`def`/`use`), bytes, sha256. Recorded at R4c's IMPLEMENT commit, whose
   I1 shadow comparator proved the kit's rendering equal to pcrec's
@@ -231,7 +239,9 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
   `ARMS_ROW_FLOOR` 58), none re-pinned; advtarget added the eight
   R4h-target fixtures' sixteen rows (74 rows, `ARMS_ROW_FLOOR` 74); M4 prep
   the two reads-below FIND fixtures' four rows (78, `ARMS_ROW_FLOOR` 78); M7
-  prep the five MISMATCH fixtures' ten rows (88, `ARMS_ROW_FLOOR` 88). A
+  prep the five MISMATCH fixtures' ten rows (88, `ARMS_ROW_FLOOR` 88); M6
+  prep the seven strided ADVANCE fixtures' fourteen rows (102,
+  `ARMS_ROW_FLOOR` 102). A
   CHANGE DETECTOR: a kit change
   that moves an arm re-pins its rows in its own commit (D94's grep finds
   this file).
@@ -271,7 +281,15 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
   length 0..3 and every reference inside the subject (aliasing), with NULL
   pointers at length 0, against a byte loop written from memfn.h's
   MF_OP_MISMATCH (about 34M calls; `MM_CALL_FLOOR` 1,000,000;
-  `GATE_CASE_FLOOR` 65). Seconds.
+  `GATE_CASE_FLOOR` 65). Check 12 (M6 prep, R-10) compares each
+  `pins/m6_target/*.c` body byte for byte with its fixture's fresh `.use`,
+  as check 8 does (`M6_TARGETS`, `M6_TARGET_FLOOR` 6, a planted-byte
+  control). Check 13 compiles three strided bodies (`adv-vmstride-it`,
+  `-lim`, `-own`) in the cursor rung's shape and runs them over every
+  subject of length 0..9 on a 3- or 4-letter alphabet, every start, every
+  `lim_`, and a NULL subject at n = 0, against a loop written from
+  memfn.h's strided ADVANCE (cursor and counter; about 5.1M calls,
+  `STRIDE_CALL_FLOOR` 500,000; `GATE_CASE_FLOOR` 74). Seconds.
 - **pins/r4h_target/** — R4h's FROZEN TARGET (lane advtarget, 2026-10-08;
   its own CLAUDE.md): one `<fixture>.c` per in-loop ADVANCE shape, a
   3-line header, the kit's text byte for byte, then a `/* pcrec today:`
@@ -282,6 +300,11 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
   the UCP expression fold, the ASCII in-place fold), its body the loop CUT
   from a pre-M7 build/pcrec artifact, so the kit's render must equal
   pcrec's pre-migration text (check 10).
+- **pins/m6_target/** — M6's FROZEN TARGET (lane m6, 2026-10-08; its own
+  CLAUDE.md): one `<fixture>.c` per strided span-loop shape (possessive
+  with/without `it_`, greedy `lim_`, utf8 W = 3, W = 32, range members),
+  its body the loop CUT from a pre-M6 build/pcrec artifact, so the kit's
+  render must equal pcrec's pre-migration text (check 12).
 - **run_deleg_sites.sh** — C10's static half (`make test-memfn-deleg`, in
   TEST_SECTIONS): DELEG_SITES (`src/gen/memfn_sites.def`) against D91's
   budgets (this file's literal), every row's (op, handoff, kinds) through

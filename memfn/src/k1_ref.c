@@ -53,6 +53,18 @@ size_t mf_ref_skip_in_set(const uint8_t *s, size_t n, const uint8_t set[32])
     return n;
 }
 
+size_t mf_ref_skip_blocks(const uint8_t *s, size_t n, const uint8_t (*sets)[32],
+                          size_t w)
+{
+    size_t c = 0;
+    while (w && c + w <= n) {
+        for (size_t i = 0; i < w; i++)
+            if (!in_set(sets[i], s[c + i])) return c;
+        c += w;
+    }
+    return c;
+}
+
 size_t mf_ref_find_literal(const uint8_t *s, size_t n, const uint8_t *lit,
                            size_t len)
 {

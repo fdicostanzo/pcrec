@@ -70,6 +70,22 @@
 #      the subject (aliasing), with NULL `s`/`ref` where their length is 0,
 #      against `ref`, a byte loop written from memfn.h's MF_OP_MISMATCH. K35:
 #      the call count must reach MM_CALL_FLOOR.
+#  12. M6'S FROZEN TARGET (M6 prep, R-10, MF_SITE_ABI 8): every file under
+#      tests/memfn/pins/m6_target/ is the VM cursor rung's STRIDED span loop
+#      cut from a pre-M6 build/pcrec artifact (W = 2 possessive with and
+#      without the caller's `it_`, the greedy arm's `lim_`, utf8's W = 3,
+#      W = 32, range members), checked as check 8 checks its own: the body
+#      must equal the fixture's fresh .use, M6_TARGETS each have a file, at
+#      least M6_TARGET_FLOOR files, and a planted byte reads red.
+#  13. THE STRIDED RUNS (M6 prep): three strided fixtures' bodies (W = 2
+#      capped by the caller's `it_`, W = 2 bounded by `lim_`, and W = 3 with
+#      the kit's OWN byte tests, s[cursor + i], Q-R10-4), each in a function
+#      run over every subject of length 0..STRIDE_MAXLEN on a small alphabet,
+#      every start, every `lim_` in [start, n], and a NULL subject at n = 0,
+#      against `ref`, a loop written from memfn.h's strided ADVANCE: the
+#      final cursor c0 + j*W and the counter j, where j is the least with
+#      c0 + (j+1)*W > B, or j = the cap, or some position i failing its set.
+#      K35: the call count must reach STRIDE_CALL_FLOOR.
 # WHAT IT DOES NOT SEE: an arm no fixture reaches (each new arm adds its own
 # fixtures and its id to ARMS_EXPECTED in the change that adds it), and a hook
 # pcrec passes that differs from the driver's stand-in (I1 at a migration's
@@ -79,7 +95,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 LIB="${LIB:-$ROOT_DIR/build/libpcrec.a}"
 PINS="$ROOT_DIR/tests/memfn/pins/arms.tsv"
 CC="${CC:-cc}"
-ARMS_ROW_FLOOR=88
+ARMS_ROW_FLOOR=102
 ARMS_EXPECTED="ofsskip precheck runcmp pf_memchr pf_walk mismatch_inplace"
 
 pass=0; fail=0
@@ -193,7 +209,7 @@ if grep -q '^BAD' "$T/libc.res"; then
 else ok; fi
 
 # 6: the gate (N3). <case> <RENDER form-id | REFUSE field>
-GATE_CASE_FLOOR=65
+GATE_CASE_FLOOR=74
 GATE_EXPECT='ofs-call-floor REFUSE floor
 ofs-call-miss-other REFUSE miss
 ofs-call-miss-unstated REFUSE miss
@@ -258,7 +274,16 @@ mm-empty-miss REFUSE empty
 mm-two-terms REFUSE pred
 mm-ref-off1 REFUSE pred
 mm-ref-unstated REFUSE ref
-mm-fold-kind-find REFUSE fold_kind'
+mm-fold-kind-find REFUSE fold_kind
+stride-render RENDER generic
+stride-w32 RENDER generic
+stride-reverse REFUSE reverse
+stride-gap REFUSE pred
+stride-optional REFUSE pred
+stride-run-term REFUSE pred
+stride-not-advance REFUSE pred
+stride-s-unstated REFUSE s
+stride-cursor-unstated REFUSE cursor'
 "$T/fx" --gate > "$T/gate" 2>"$T/gate.err" || bad "the driver's --gate mode failed (see $T/gate.err)"
 ncase=0
 while read -r name want arg; do
@@ -558,7 +583,149 @@ else
     cat "$T/mm.err"; bad "the MISMATCH program does not build"
 fi
 
-echo "arm pins: $rows rows over $(wc -l < "$T/ids" | tr -d ' ') fixtures; gate cases: $ncase; r4h targets: $ntgt; n7 targets: $n7tgt; mismatch calls: ${mcalls:-0}"
+# 12: M6's frozen target (M6 prep, R-10): tgt_cmp, as check 8.
+M6_DIR="$ROOT_DIR/tests/memfn/pins/m6_target"
+M6_TARGET_FLOOR=6
+M6_TARGETS="adv-vmstride-it adv-vmstride adv-vmstride-lim adv-vmstride-u8w3 adv-vmstride-w32 adv-vmstride-range"
+m6tgt=0
+for f in "$M6_DIR"/*.c; do
+    [ -e "$f" ] || continue
+    m6tgt=$((m6tgt + 1))
+    fx="$(basename "$f" .c)"
+    if [ ! -f "$T/out/$fx.use" ]; then
+        bad "m6_target/$fx.c names no rendered fixture"
+    elif [ -s "$T/out/$fx.def" ]; then
+        bad "m6_target/$fx: the fixture renders a def part (the target is the use only)"
+    elif tgt_cmp "$f" "$T/out/$fx.use"; then ok
+    else bad "m6_target/$fx.c differs from the kit's render of $fx (re-freeze on purpose, or the kit moved)"; fi
+done
+for fx in $M6_TARGETS; do
+    if [ -f "$M6_DIR/$fx.c" ]; then ok; else bad "M6 target shape $fx has no frozen file"; fi
+done
+if [ "$m6tgt" -lt "$M6_TARGET_FLOOR" ]; then
+    bad "only $m6tgt M6 target files, floor $M6_TARGET_FLOOR"
+else ok; fi
+if [ -f "$M6_DIR/adv-vmstride-w32.c" ]; then
+    awk 'NR == 4 { sub(/ /, "\t") } { print }' "$M6_DIR/adv-vmstride-w32.c" > "$T/planted6.c"
+    if cmp -s "$T/planted6.c" "$M6_DIR/adv-vmstride-w32.c"; then
+        bad "the m6_target plant changed nothing"
+    elif tgt_cmp "$T/planted6.c" "$T/out/adv-vmstride-w32.use"; then
+        bad "the m6_target comparator accepted a planted byte"
+    else ok; fi
+fi
+
+# 13: the strided runs (M6 prep). Each body in the cursor rung's shape: the
+# cursor starts at `start`, the caller's `it_` at 0. `ref` is the contract
+# (memfn.h's strided ADVANCE), written from it and sharing no text with the
+# fixtures: positions are compared against the pattern bytes directly.
+STRIDE_MAXLEN=9
+STRIDE_CALL_FLOOR=500000
+cat > "$T/st.c" <<'EOF6'
+#include <stddef.h>
+#include <stdio.h>
+static size_t f_it(const unsigned char *subject, size_t subject_length, size_t start,
+                   unsigned long *cnt)
+{
+    size_t rx_span_cursor = start;
+    unsigned long it_ = 0;
+#include "out/adv-vmstride-it.use"
+    *cnt = it_;
+    return rx_span_cursor;
+}
+static size_t f_lim(const unsigned char *subject, size_t lim_, size_t start)
+{
+    size_t rx_span_cursor = start;
+#include "out/adv-vmstride-lim.use"
+    return rx_span_cursor;
+}
+static size_t f_own(const unsigned char *subject, size_t subject_length, size_t start,
+                    unsigned long *cnt)
+{
+    size_t rx_span_cursor = start;
+    unsigned long it_ = 0;
+#include "out/adv-vmstride-own.use"
+    *cnt = it_;
+    return rx_span_cursor;
+}
+/* the contract: j iterations, each a W-byte block wholly below B whose every
+   position holds, at most `cap` of them (cap < 0: none) */
+static size_t ref(const unsigned char *s, size_t B, size_t c, size_t W,
+                  const unsigned char *pat, long cap, unsigned long *cnt)
+{
+    unsigned long j = 0;
+    for (;;) {
+        if (c + W > B || (cap >= 0 && (long)j >= cap)) break;
+        size_t i = 0;
+        while (i < W && s[c + i] == pat[i]) i++;
+        if (i < W) break;
+        c += W;
+        j++;
+    }
+    *cnt = j;
+    return c;
+}
+static long calls, bad;
+static void check(const char *who, size_t got, unsigned long gc, size_t want,
+                  unsigned long wc, size_t n, size_t start)
+{
+    calls++;
+    if ((got != want || gc != wc) && bad++ < 20)
+        printf("BAD %s n=%zu start=%zu: cursor %zu count %lu, want %zu %lu\n",
+               who, n, start, got, gc, want, wc);
+}
+static void sweep(const unsigned char *alpha, size_t na, int which)
+{
+    static const unsigned char AB[] = "ab", OWN[] = "x\xc3y";
+    unsigned char s[16];
+    for (size_t n = 0; n <= STRIDE_MAXLEN; n++) {
+        long ns = 1;
+        for (size_t i = 0; i < n; i++) ns *= (long)na;
+        for (long code = 0; code < ns; code++) {
+            long c = code;
+            for (size_t i = 0; i < n; i++) { s[i] = alpha[c % (long)na]; c /= (long)na; }
+            for (size_t st = 0; st <= n; st++) {
+                unsigned long gc = 0, wc = 0;
+                if (which == 0) {
+                    size_t g = f_it(s, n, st, &gc), w = ref(s, n, st, 2, AB, 5, &wc);
+                    check("adv-vmstride-it", g, gc, w, wc, n, st);
+                    for (size_t B = st; B <= n; B++) {
+                        g = f_lim(s, B, st); w = ref(s, B, st, 2, AB, -1, &wc);
+                        check("adv-vmstride-lim", g, 0, w, 0, n, st);
+                    }
+                } else {
+                    size_t g = f_own(s, n, st, &gc), w = ref(s, n, st, 3, OWN, 7, &wc);
+                    check("adv-vmstride-own", g, gc, w, wc, n, st);
+                }
+            }
+        }
+    }
+}
+int main(void)
+{
+    static const unsigned char A0[] = { 'a', 'b', 'c' }, A1[] = { 'x', 0xc3, 'y', 'z' };
+    unsigned long gc = 0;
+    /* a NULL subject at n = 0: `more` is false at entry, nothing is read */
+    check("adv-vmstride-it", f_it(NULL, 0, 0, &gc), gc, 0, 0, 0, 0);
+    check("adv-vmstride-lim", f_lim(NULL, 0, 0), 0, 0, 0, 0, 0);
+    check("adv-vmstride-own", f_own(NULL, 0, 0, &gc), gc, 0, 0, 0, 0);
+    sweep(A0, sizeof A0, 0);
+    sweep(A1, sizeof A1, 1);
+    printf("CALLS %ld BAD %ld\n", calls, bad);
+    return bad != 0;
+}
+EOF6
+if "$CC" -std=gnu11 -O1 -Wall -Wextra -Werror -DSTRIDE_MAXLEN="$STRIDE_MAXLEN" -I"$T" \
+        "$T/st.c" -o "$T/st" 2>"$T/st.err"; then
+    "$T/st" > "$T/st.out"; src=$?
+    grep '^BAD ' "$T/st.out" | sed 's/^BAD/FAIL: strided:/'
+    scalls="$(awk '/^CALLS/ { print $2 }' "$T/st.out")"
+    if [ "$src" -eq 0 ] && [ "${scalls:-0}" -ge "$STRIDE_CALL_FLOOR" ]; then ok
+    else bad "the strided ADVANCE fixtures answered wrong or ran short ($(tail -1 "$T/st.out"))"; fi
+else
+    cat "$T/st.err"; bad "the strided ADVANCE program does not build"
+fi
+
+echo "arm pins: $rows rows over $(wc -l < "$T/ids" | tr -d ' ') fixtures; gate cases: $ncase; r4h targets: $ntgt; n7 targets: $n7tgt; m6 targets: $m6tgt; mismatch calls: ${mcalls:-0}; strided calls: ${scalls:-0}"
 echo "checks passed: $pass"
 echo "checks failed: $fail"
 [ "$fail" -eq 0 ]
