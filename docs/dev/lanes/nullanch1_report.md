@@ -178,7 +178,23 @@ for one is an admission term in [SEL-COST] §4.
 
 ## 6. Sabotage, and two pre-existing findings
 
-SABOTAGE_PLACEHOLDER
+Solo `bash tests/mech/run_sabotage_matrix.sh ID` on this box, verdict read
+from each row's own `== mech run COMPLETE` trailer, `grep -c FATAL` = 0 on all:
+
+| row | plant | verdict (arms) |
+|---|---|---|
+| S611 (new) | `pcrec_empty_masks_admit` stops requiring `EM_S` | DETECTED — pfcollapse 1fail/70pass (the `(\s+)*$` decline twin; every admit row green) |
+| S612 (new) | the decline reads bare `nullable` again | DETECTED — corpus 2fail/60pass (the two give-up cells), pfcollapse 6fail/65pass (every admit row) |
+| S613 (new) | the walk reads every call as having no empty path | DETECTED — facts 1fail/7pass ([facts-e1]'s call-nullable witnesses refused by `pf_check_e1`) |
+| S206 (re-run) | `nullable` pinned false | DETECTED — pfcollapse 18fail/49pass, resource 14fail/28pass, corpus 8fail/43pass |
+| S207 (re-run) | `nullable` inverted | DETECTED — pfcollapse 35fail/8pass, resource 38fail/1pass, corpus 51fail/0pass |
+| S216 (re-run) | the default decline forced off | DETECTED — prefilter 2fail/32pass |
+
+S206/S207 no longer reach the decline (it reads `empty_admits`), and they are
+caught louder: `pf_check_e1`'s masks-vs-nullability check refuses every compile
+whose nullability the plant moved. Their rows carry a dated note saying so; the
+anchors did not move. S611 is answer-identical by construction (a prefilter is
+a filter), so its only detector is structural, which is S216's shape.
 
 **Pre-existing, not this change**: `run_recursion_identity.sh` (a battery
 gate, not in `make test`) reads 5 FAIL lines at the lane — `[default]`/
@@ -197,4 +213,20 @@ with the other E1 shape facts; seeds 15, family 135, inventory_check 150/150).
 
 ## 7. Owed, armed detached
 
-CHAIN_PLACEHOLDER
+`build/land/chain.sh` (scratch, not committed), armed by a `nohup setsid`
+waiter polling `worktrees/nullanch1/.lift` (the lane does not create it). In
+order: `make -j16`, `make -k -j16 -Otarget test-codegen`, the full
+`make -k -j16 -Otarget test` (artifact_size_log restored after), the battery's
+`run_recursion_identity.sh` at 3600 s, then mech rows S611 S612 S613 S102 S165
+S302 S303 S318 S319 solo. Verdict file `build/land/verdict.txt`: `BUILD_RC=`,
+`CODEGEN_RC=`, `MAKETEST_RC=`, `MAKETEST_VERDICT_LINES N` plus the make
+`*** [test-X] Error` lines (empty = green), `RECID_RC=`, one `MECH <id> ...`
+line per row (plus `MECH_FATAL` if any), `MECH_DONE`, `CHAIN_DONE`;
+`build/land/DONE` on completion. Logs beside it (`mt.log`, `codegen.log`,
+`recid.log`, `mech_<id>.log`).
+
+Expected pre-existing reds, not this change: `recid.log`'s five poss-arms (A)
+FAIL lines (§6). Light gates already green at the lane: `run_prefilter_collapse.sh`
+71/0, `run_facts_checks.sh` 8/0, `tests/base/nullable_anch.rxt` 62/0 plus
+python verify, `make` with no warnings. `make strict` and the full suites are
+the chain's.
