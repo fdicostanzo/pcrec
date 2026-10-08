@@ -28,7 +28,8 @@ re-aimed at C3, start_table.md §3.5)
           (`dfa_pf_of(...)`, `vm_start_row`, `attempt_next_of`,
           `dfa_search_start_of`, `cand_select`, and since C5
           `cand_window_of`, `pcrec_cand_select_vm`, `vm_width_row`,
-          `vm_bound_row`), or is `pcrec_cand_tok(...)`/
+          `vm_bound_row`, and since C5b the selection read `cand_read`/
+          `CAND_READ`), or is `pcrec_cand_tok(...)`/
           `pcrec_cand_listed(...)` (the VM emitter's name accessors).
     SINCE C5 the other four slots (WINDOW, WIDTH, RETRY, BOUND) join: their
     readers ask the table, and their rows' names and spellings are read off
@@ -191,7 +192,8 @@ def main():
                         why += sorted(strs & wlits)
                     if re.search(r"\w*pf\s*->\s*(?:c\s*\.\s*name|tok)\b|"
                                  r"(?:dfa_pf_of|vm_start_row|attempt_next_of|dfa_search_start_of|cand_select|"
-                                 r"cand_window_of|pcrec_cand_select_vm|vm_width_row|vm_bound_row)"
+                                 r"cand_window_of|pcrec_cand_select_vm|vm_width_row|vm_bound_row|"
+                                 r"cand_read|CAND_READ)"
                                  r"\s*\([^;]*\)\s*->\s*(?:c\s*\.\s*name|tok)\b|"
                                  r"\bpcrec_cand_(?:tok|listed)\s*\(", args):
                         why.append("a selected row's c.name/tok")
