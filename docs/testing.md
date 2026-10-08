@@ -4998,6 +4998,31 @@ the failing-direction transcripts).
     # the no-mover proof of one start-table commit, deny arms included:
     python3 scripts/emit_sweep.py --ref HEAD~1 --tree-rev HEAD --arms start
 
+**[DEC-FALLBACK] B0 (lane decfbB0, 2026-10-08): limit variants and two
+tally streams** (`docs/design/dec_fallback.md` §4.2 items 1-4). Stream
+`emit-ir-auto` is `--emit-ir` at the DEFAULT engine (stdout + rc + stderr,
+refusals compared) at the base and at `-fno-prefilter`/`-fprefilter`/
+`-fno-prefilter-collapse`; stream `stderr` is the full stderr and rc of the
+stream 1-2 compiles. Each side tallies the listing's `prefilter` token (or
+`refused`) and the refusals per engine, held to per-tag floors with a
+manifest pattern for every tag under 100. `--variant all` builds both sides
+with each limit variant's `-D` set (`plain`, `lowsize`, `lowdfa`, `lowboth`,
+`lowthr`), runs every cell at the byte and utf8 bases, and holds it to
+`VARIANT_PINS` (measured at B0's base over emit_sweep's own 5,423-row
+population). A variant's plumbing is checked by witnesses whose stamps only
+its limits produce (`--list-limits` prints the def literal, not the compiled
+value). `--trace` composes: a trace pair per variant, `--trace-order
+fallback=ordered`. Runtime on the Linux dev box at `--jobs 6`, both sides
+built separately: 414 s for all ten cells plus the five trace pairs. The
+attempt histogram, refactor B's independent control, is
+`docs/design/dec_fallback/attempt_hist.py` (parent vs child per variant over
+decfb0's 4,794-block population, ~70 s).
+
+    # refactor B's per-commit gate (B1 onward):
+    python3 scripts/emit_sweep.py --ref HEAD~1 --tree-rev HEAD --variant all \
+        --trace --trace-order fallback=ordered
+    python3 docs/design/dec_fallback/attempt_hist.py --ref HEAD~1 --rev HEAD
+
 ## S3 triple-sweep identity instrument (`scripts/cls_identity.py`, [CLS-TREE] S3, 2026-09-29)
 
 `docs/design/cls_tree_design.md` §6's S3 row promises "byte-identical over
