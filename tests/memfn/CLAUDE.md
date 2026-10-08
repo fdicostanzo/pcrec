@@ -197,7 +197,18 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
   floor must be lo's text, one byte only), `back-excluded-break-refused`
   and `pf-memchr-break-refused` (LOOP_EXIT that no row serves is REFUSED
   naming `on_miss`, Q-R7-3) and `adv-at-n-refused` (AT_N on ADVANCE has no
-  miss).
+  miss). M7 prep (R-8, MF_VOCAB 3, MF_SITE_ABI 7) added five MISMATCH
+  fixtures through `render_emit` (`mm_site`/`mm_hooks`: the encoding seam's
+  span compare with the residual entry's own parameter names): `mm-exact`
+  and `mm-ucp-expr` (the generic row: exact, the expression fold),
+  `mm-ascii-inplace` (row `mismatch_inplace`: the in-place fold), and two
+  edges, `mm-nonident` (non-identifier hooks, a BRACED on_miss) and
+  `mm-inplace-clash` (a hook named `y`: the temps renamed); and seventeen
+  `mm-*` gate cases (65 in all): six RENDER (the three shapes, a BRACED
+  on_miss, the UCP in-place fold, non-identifier hooks) and eleven REFUSE
+  (a `break;`, a fold against fold_kind NONE, an unstated or shapeless
+  fold, `on_miss_leaves` 0, `reverse`, a non-NOP `empty`, a second term, a
+  REF term off 0, an unstated `ref`, fold_kind on a FIND).
 - **pins/arms.tsv** — C5's pins: arm (the kit's form id), fixture, part
   (`def`/`use`), bytes, sha256. Recorded at R4c's IMPLEMENT commit, whose
   I1 shadow comparator proved the kit's rendering equal to pcrec's
@@ -210,7 +221,8 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
   R4h prep added the two `generic` ADVANCE fixtures' four rows (58 rows,
   `ARMS_ROW_FLOOR` 58), none re-pinned; advtarget added the eight
   R4h-target fixtures' sixteen rows (74 rows, `ARMS_ROW_FLOOR` 74); M4 prep
-  the two reads-below FIND fixtures' four rows (78, `ARMS_ROW_FLOOR` 78). A
+  the two reads-below FIND fixtures' four rows (78, `ARMS_ROW_FLOOR` 78); M7
+  prep the five MISMATCH fixtures' ten rows (88, `ARMS_ROW_FLOOR` 88). A
   CHANGE DETECTOR: a kit change
   that moves an arm re-pins its rows in its own commit (D94's grep finds
   this file).
@@ -240,12 +252,27 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
   and runs `BACK_CASES` (10) subjects against a byte loop written from
   memfn.h's MF_OP_FIND (the first c in [lo, n] whose predecessor, at or
   above lo, is `\n`): the candidate n (Q-R7-1) and lo == n (Q-R7-2) both
-  answer right (`GATE_CASE_FLOOR` 48). Seconds.
+  answer right (`GATE_CASE_FLOOR` 48). Check 10 (M7 prep, R-8; RULED
+  Q-R8-9) compares each `pins/n7_target/*.c` body byte for byte with its
+  fixture's fresh `.use`, as check 8 does (`N7_TARGETS`,
+  `N7_TARGET_FLOOR` 3, a planted-byte control). Check 11 compiles the five
+  `mm-*` bodies, each in a function with the residual entry's signature and
+  return protocol, and runs them over every subject of length 0..4 on a
+  7-byte alphabet, every `at` in [0, n+1], every separate reference of
+  length 0..3 and every reference inside the subject (aliasing), with NULL
+  pointers at length 0, against a byte loop written from memfn.h's
+  MF_OP_MISMATCH (about 34M calls; `MM_CALL_FLOOR` 1,000,000;
+  `GATE_CASE_FLOOR` 65). Seconds.
 - **pins/r4h_target/** — R4h's FROZEN TARGET (lane advtarget, 2026-10-08;
   its own CLAUDE.md): one `<fixture>.c` per in-loop ADVANCE shape, a
   3-line header, the kit's text byte for byte, then a `/* pcrec today:`
   block quoting the same site's current pcrec text. pcrec's layout
   normalization diffs its emitted lines against these before R4h.
+- **pins/n7_target/** — M7's FROZEN TARGET (lane m7, 2026-10-08; its own
+  CLAUDE.md): one `<fixture>.c` per byte-wise span-compare shape (exact,
+  the UCP expression fold, the ASCII in-place fold), its body the loop CUT
+  from a pre-M7 build/pcrec artifact, so the kit's render must equal
+  pcrec's pre-migration text (check 10).
 - **run_deleg_sites.sh** — C10's static half (`make test-memfn-deleg`, in
   TEST_SECTIONS): DELEG_SITES (`src/gen/memfn_sites.def`) against D91's
   budgets (this file's literal), every row's (op, handoff, kinds) through
@@ -261,7 +288,9 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
   HAND-maintained: one line per row of the kit's two selection tables
   (13 at N4: the composer's 9 arms, `precheck`/`precheck_assign` and the
   four `pf_*` rows included, and runcmp's 4 rows; 14 since M4 prep added
-  `pf_memchr_back`, ROWS_FLOOR 14). Each line gives the
+  `pf_memchr_back`, ROWS_FLOOR 14; 15 since M7 prep added
+  `mismatch_inplace`, reach `pending-site:M7-REPLACE` on its fixture until
+  M7's REPLACE makes pcrec reach it). Each line gives the
   row's reach reason from a CLOSED set (`pcrec`, `total-fallback`,
   `pending-site:<trigger>`, `contract-reach:<G2 family>`; anything else is
   red, D77), its witness (a pcrec pattern + flags for `pcrec`, an

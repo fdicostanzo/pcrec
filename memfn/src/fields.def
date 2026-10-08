@@ -45,6 +45,9 @@
  * The ADVANCE hooks' (G3, R4h prep): `more` is CONJ, `peek` POSTFIX, `step`
  * EXPR_STMT, each a lexical check in gate.c that proves the text may be
  * pasted raw where an in-loop row writes it (memfn.h's ADVANCE comment).
+ * The MISMATCH's `fold` (M7 prep, MF_SITE_ABI 7) is FOLD_EXPR (one
+ * expression, `@` the byte) or FOLD_STMT (statements folding the lvalue `@`),
+ * read through quoted literals, OTHER where the site's fold_kind is NONE.
  * A row that pastes such text into an operator context serves only IDENT /
  * JUMP; the generic row parenthesizes and braces, so it serves OTHER.
  * `s`/`n`/`lo` are read at DEFINE as well as at USE (N3, ruling F1): a
@@ -78,6 +81,7 @@ MF_CLASS(FIND,        "MF_OP_FIND")
 MF_CLASS(SKIP,        "MF_OP_SKIP")
 MF_CLASS(VERIFY,      "MF_OP_VERIFY")
 MF_CLASS(ALL_PRESENT, "MF_OP_ALL_PRESENT")
+MF_CLASS(MISMATCH,    "MF_OP_MISMATCH (MF_VOCAB 3, M7)")
 /* mf_handoff */
 MF_CLASS(RETURN,      "MF_H_RETURN")
 MF_CLASS(ASSIGN,      "MF_H_ASSIGN")
@@ -85,6 +89,7 @@ MF_CLASS(ON_MISS,     "MF_H_ON_MISS")
 MF_CLASS(ADVANCE,     "MF_H_ADVANCE")
 MF_CLASS(ON_CAND,     "MF_H_ON_CAND")
 MF_CLASS(BOOL,        "MF_H_BOOL")
+MF_CLASS(ON_DIFF,     "MF_H_ON_DIFF (MF_VOCAB 3, M7)")
 /* mf_empty */
 MF_CLASS(E_MISS,      "MF_EMPTY_MISS")
 MF_CLASS(E_NOP,       "MF_EMPTY_NOP")
@@ -114,6 +119,12 @@ MF_CLASS(LOOP_EXIT,   "exactly `break;`: leaves pcrec's loop, so only a form ope
 MF_CLASS(CONJ,        "an `&&` operand unparenthesized: no top-level `||`/`?:`/assignment/comma/call")
 MF_CLASS(POSTFIX,     "a postfix expression: an identifier or `( ... )`, then only `[...]`/`.x`/`->x`, no `++`/`--`")
 MF_CLASS(EXPR_STMT,   "one expression statement `e` or `e;`: no other `;`, no brace, no top-level comma, not keyword-led")
+/* the MISMATCH fold (M7, MF_SITE_ABI 7): the fact and the hook text's shape */
+MF_CLASS(F_NONE,      "fold_kind MF_FOLD_NONE: exact")
+MF_CLASS(F_ASCII,     "fold_kind MF_FOLD_ASCII")
+MF_CLASS(F_UCP,       "fold_kind MF_FOLD_UCP")
+MF_CLASS(FOLD_EXPR,   "a fold text that is one expression with `@` for the byte: no `;` or brace outside a literal")
+MF_CLASS(FOLD_STMT,   "a fold text of statements folding the lvalue `@`: balanced, its last token `;` or `}`")
 /* the run compare's term */
 MF_CLASS(EXACT,       "a RUN term with no mask, or every mask byte 0xFF")
 MF_CLASS(MASKED,      "a RUN term with some mask byte not 0xFF, every run byte inside its mask")
@@ -125,11 +136,11 @@ MF_FIELD(form, MF_PH_DEFINE, VALUE, cl_form,
          CM(EXPR) | CM(STMT) | CM(FUNC) | CM(OTHER),
          "what the text IS")
 MF_FIELD(op, MF_PH_DEFINE, VALUE, cl_op,
-         CM(FIND) | CM(SKIP) | CM(VERIFY) | CM(ALL_PRESENT) | CM(OTHER),
+         CM(FIND) | CM(SKIP) | CM(VERIFY) | CM(ALL_PRESENT) | CM(MISMATCH) | CM(OTHER),
          "the operation")
 MF_FIELD(handoff, MF_PH_DEFINE, VALUE, cl_handoff,
          CM(RETURN) | CM(ASSIGN) | CM(ON_MISS) | CM(ADVANCE) | CM(ON_CAND) |
-         CM(BOOL) | CM(OTHER),
+         CM(BOOL) | CM(ON_DIFF) | CM(OTHER),
          "what the site hands back")
 MF_FIELD(reverse, MF_PH_DEFINE, OBLIG, cl_reverse,
          CM(NO) | CM(YES) | CM(OTHER),
@@ -176,6 +187,11 @@ MF_FIELD(table_ref, MF_PH_DEFINE, OBLIG, cl_table_ref,
          CM(NONE) | CM(REF) | CM(OTHER),
          "OBLIG: the SET terms' table_ref; 0 is `no table`, set by every term builder "
          "(REF: some SET term of the site names one)")
+MF_FIELD(fold_kind, MF_PH_DEFINE, OBLIG, cl_fold_kind,
+         CM(F_NONE) | CM(F_ASCII) | CM(F_UCP) | CM(OTHER),
+         "OBLIG: a MISMATCH's fold fact (mf_fold; RULED Q-R8-4, MF_SITE_ABI 7); F_NONE is a stated "
+         "value (exact), set by every MISMATCH builder. Read on a MISMATCH site only: elsewhere "
+         "it must be 0 (refused otherwise), so it is no field of theirs (unstated)")
 
 /* ---- the fields: mf_hooks ------------------------------------------------ */
 
@@ -247,6 +263,19 @@ MF_FIELD(indent, MF_PH_USE, HOOK, cl_indent,
 MF_FIELD(comment_tier, MF_PH_DEFINE | MF_PH_USE, OBLIG, cl_comment_tier,
          CM(OTHER),
          "OBLIG: PCREC_CMT_* passed through; 0 is a tier, set by every builder that writes a comment")
+MF_FIELD(ref, MF_PH_USE, HOOK, cl_ref,
+         CM(IDENT) | CM(OTHER),
+         "MISMATCH: the reference pointer's text (MF_SITE_ABI 7)")
+MF_FIELD(reflen, MF_PH_USE, HOOK, cl_reflen,
+         CM(IDENT) | CM(OTHER),
+         "MISMATCH: the reference length's text (MF_SITE_ABI 7)")
+MF_FIELD(fold, MF_PH_DEFINE | MF_PH_USE, HOOK, cl_fold,
+         CM(FOLD_EXPR) | CM(FOLD_STMT) | CM(OTHER),
+         "MISMATCH: pcrec's fold text, `@` the byte (MF_SITE_ABI 7). Read at define where "
+         "stated, so its shape selects the row (generic: FOLD_EXPR; mismatch_inplace: "
+         "FOLD_STMT), as ruling F1 reads s/n/lo. OTHER where the site's "
+         "fold_kind is F_NONE (a fold stated where the fact says exact: no row serves it) or "
+         "where the text has no `@` or no lexical shape")
 
 /* ---- the fields: the run compare's RUN term (the runcmp walk) ------------ */
 

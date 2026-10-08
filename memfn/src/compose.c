@@ -125,7 +125,9 @@ void kit_out(mf_sink *o, const char *fmt, ...)
  * say so (§9.3). The pre-check is one renderer as two rows (N3's split, by
  * handoff: precheck.c), each with its own contract; the prefilter find is
  * two renderers as five rows (split by end_back and the term's offset:
- * pffind.c; M4 added pf_memchr_back, R-7). */
+ * pffind.c; M4 added pf_memchr_back, R-7). The MISMATCH (M7, R-8) is ONE
+ * renderer (mismatch.c) as two rows: `mismatch_inplace` here for the
+ * in-place fold, the generic row for the exact and expression folds. */
 static const arm *const arms[] = {
     &ofsskip_arm,
     &precheck_arm,
@@ -136,6 +138,7 @@ static const arm *const arms[] = {
     &pf_walk_arm,
     &pf_walk_bounded_arm,
     &pf_memchr_back_arm,
+    &mismatch_inplace_arm,
     &generic_arm,
 };
 
@@ -222,6 +225,8 @@ static int pred_kinds(const mf_pred *p, uint32_t *kinds, const char **why)
             if (tm->run_len == 0) { *why = "RUN term of length 0"; return 0; }
             if (!tm->run) { *why = "RUN term without bytes"; return 0; }
             *kinds |= MF_TK_RUN;
+        } else if (tm->kind == MF_T_REF) {
+            *kinds |= MF_TK_REF;    /* its operands are hooks: no data to check */
         } else {
             *why = "unknown term kind";
             return 0;
@@ -241,11 +246,31 @@ static const char *site_check(const mf_site *s)
     if (s->end_back > 1) return "end_back is not 0 or 1";
     if (s->on_miss_leaves != 0 && s->on_miss_leaves != 1)
         return "on_miss_leaves is not 0 or 1";
-    if (s->on_miss_leaves && s->handoff != MF_H_ON_MISS && s->handoff != MF_H_ASSIGN)
-        return "on_miss_leaves is for an ON_MISS/ASSIGN site only";
+    if (s->on_miss_leaves && s->handoff != MF_H_ON_MISS && s->handoff != MF_H_ASSIGN &&
+        s->handoff != MF_H_ON_DIFF)
+        return "on_miss_leaves is for an ON_MISS/ASSIGN/ON_DIFF site only";
     if (s->count_by_caller > 1) return "`count_by_caller` is not 0 or 1";
     if (s->count_by_caller && s->handoff != MF_H_ADVANCE)
         return "`count_by_caller` is for an ADVANCE site only (Q-R4h-1 (a))";
+    if (!in_enum(s->fold_kind, MF_FOLD_UCP)) return "`fold_kind` outside mf_fold";
+    if (s->fold_kind && s->op != MF_OP_MISMATCH)
+        return "`fold_kind` is for a MISMATCH site only (Q-R8-4)";
+    if (s->op == MF_OP_MISMATCH) {
+        /* F8's shape (RULED Q-R8-2/4/5, MF_VOCAB 3): one REQUIRED REF term at
+           offset 0, forward over [lo, n), its empty reference EQUAL, and an
+           on_miss that leaves the kit's loop */
+        const mf_pred *p = &s->pred;
+        if (p->nterm != 1 || p->term[0].kind != MF_T_REF)
+            return "MISMATCH takes exactly one REF term (`pred`)";
+        if (p->term[0].offset != 0 || p->term[0].need != MF_REQUIRED)
+            return "MISMATCH's REF term is REQUIRED at offset 0 (`pred`)";
+        if (s->reverse) return "MISMATCH has no reverse reading (`reverse`)";
+        if (s->end_back) return "MISMATCH reads [lo, n): `end_back` is 0";
+        if (s->empty != MF_EMPTY_NOP)
+            return "MISMATCH's empty reference is EQUAL: `empty` is NOP";
+        if (s->handoff == MF_H_ON_DIFF && s->on_miss_leaves != 1)
+            return "ON_DIFF's on_miss must leave the kit's loop (`on_miss_leaves` 1)";
+    }
     if (s->op == MF_OP_ALL_PRESENT) {
         if (s->npred && !s->preds) return "ALL_PRESENT without preds";
         for (unsigned i = 0; i < s->npred; i++)
@@ -268,7 +293,8 @@ static const char *site_check(const mf_site *s)
         return "(op, handoff, term kinds) is not in the vocabulary";
 
     int stmt = s->handoff == MF_H_ASSIGN || s->handoff == MF_H_ON_MISS
-            || s->handoff == MF_H_ON_CAND || s->handoff == MF_H_ADVANCE;
+            || s->handoff == MF_H_ON_CAND || s->handoff == MF_H_ADVANCE
+            || s->handoff == MF_H_ON_DIFF;
     if (stmt != (s->form == MF_FORM_STMT))
         return stmt ? "this handoff is a STMT form" : "this handoff is an EXPR or FUNC form";
     if (s->empty == MF_EMPTY_NOP && s->form != MF_FORM_STMT)
@@ -510,6 +536,7 @@ static const struct { mf_op op; mf_handoff h; uint32_t kinds; } vocab[] = {
     { MF_OP_ALL_PRESENT, MF_H_BOOL,    MF_TK_SET | MF_TK_RUN },
     { MF_OP_ALL_PRESENT, MF_H_ASSIGN,  MF_TK_SET | MF_TK_RUN },
     { MF_OP_ALL_PRESENT, MF_H_ON_MISS, MF_TK_SET | MF_TK_RUN },
+    { MF_OP_MISMATCH,    MF_H_ON_DIFF, MF_TK_REF },  /* MF_VOCAB 3 (M7, R-8) */
 };
 
 int mf_vocab_has(mf_op op, mf_handoff h, uint32_t term_kinds)

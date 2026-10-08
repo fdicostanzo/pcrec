@@ -17,6 +17,10 @@
  *   ALL_PRESENT   one presence loop per predicate, in `preds` order, each
  *                 run only while every earlier one was found; ret_pred's
  *                 loop keeps its position
+ *   MISMATCH      (M7, MF_VOCAB 3) the compare loop, exact or under an
+ *                 expression fold: mismatch.c's ONE renderer, whose
+ *                 in-place-fold shape is the row `mismatch_inplace`'s (this
+ *                 row does not serve a FOLD_STMT `fold`, RULED Q-R8-9)
  *
  * It tests EVERY term, OPTIONAL ones included (§14.5 lets an arm test them),
  * and adds none. It writes no comment and calls no hook it does not need:
@@ -313,6 +317,8 @@ static const char *core(rctx *rc, kb *b, int want_value)
         else            kb_puts(&fin, A);
         break;
     }
+    case MF_OP_MISMATCH:
+        break;          /* STMT / ON_DIFF only (site_check): mm_render's */
     }
     return fin.p ? fin.p : "0";
 }
@@ -686,6 +692,7 @@ static int generic_body(mf_art *art, uint32_t handle, const mf_hooks *h, kb *bod
         kb_puts(body, expr_text(&rc, valued(s)));
         return 0;
     case MF_FORM_STMT:
+        if (s->handoff == MF_H_ON_DIFF) return mm_render(art, handle, h, body);
         return s->handoff == MF_H_ON_CAND ? stmt_on_cand(&rc, body)
                                           : stmt_value(&rc, body);
     case MF_FORM_FUNC:
@@ -757,6 +764,13 @@ static const gate_use generic_uses[] = {
     { CM(FUNC), MF_ANY, MF_PH_DEFINE, FM(fn_name) | FM(fn_ref), GATE_ALWAYS },
     /* :612, :647-648 */
     { CM(FUNC), CM(RETURN), MF_PH_USE, FM(miss), GATE_ALWAYS },
+    /* MISMATCH (M7): mismatch.c's mm_render needs every operand and on_miss,
+       and the fold text wherever the site states a fold (fold_kind ASCII or
+       UCP); under NONE the text pastes no fold */
+    { CM(STMT), CM(ON_DIFF), MF_PH_USE,
+      FM(s) | FM(n) | FM(lo) | FM(ref) | FM(reflen) | FM(result) | FM(on_miss), GATE_ALWAYS },
+    { CM(STMT), CM(ON_DIFF), MF_PH_USE, FM(fold),
+      GATE_WHEN(CM(F_ASCII) | CM(F_UCP), fold_kind) },
 };
 
 static const gate_contract generic_ct = {
@@ -804,6 +818,14 @@ static const gate_contract generic_ct = {
     [FLD_note_tag]        = MF_ANY,     /* not read (file header) */
     [FLD_indent]          = MF_ANY,     /* :390, :489, :566 */
     [FLD_comment_tier]    = MF_ANY,     /* not read: no comment */
+    [FLD_fold_kind]       = MF_ANY,     /* mm_render: NONE exact, else the fold text */
+    [FLD_ref]             = MF_ANY,     /* mm_render parenthesizes a non-identifier */
+    [FLD_reflen]          = MF_ANY,     /* mm_render parenthesizes a non-identifier */
+    [FLD_fold]            = CM(FOLD_EXPR),
+                                        /* RULED Q-R8-9: the expression fold only;
+                                           a FOLD_STMT is `mismatch_inplace`'s, and
+                                           OTHER (no shape, or a fold under
+                                           fold_kind NONE) no row serves */
 }};
 
 const arm generic_arm = {

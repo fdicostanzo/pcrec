@@ -25,7 +25,14 @@ reads below its candidate has its range bounded by its reads (it reaches
 `n`), `MF_EMPTY_AT_N` (empty only as lo == n over a non-NULL subject) and
 the `on_miss` class LOOP_EXIT (`break;`, which the generic row never
 serves), plus the row `pf_memchr_back` that M4's `(?m)^` skip takes; again
-kit-only, no pcrec byte moved.
+kit-only, no pcrec byte moved. M7 prep (R-8, 2026-10-08, Q-R8-2/4/5/9) made
+it 7 and `MF_VOCAB` 3: the op `MF_OP_MISMATCH` (F8, the encoding seam's
+span-compare LOOP, a statement site inside pcrec's own residual function),
+the handoff `MF_H_ON_DIFF`, the term kind `MF_T_REF`, the fact
+`mf_site.fold_kind` (NONE/ASCII/UCP) and the hooks `ref`/`reflen`/`fold`
+(pcrec's fold TEXT, `@` the byte); one renderer (`src/mismatch.c`) as two
+rows, the generic row (exact and expression folds) and `mismatch_inplace`
+(the in-place fold); kit-only, no pcrec byte moved.
 §R4.7 holds the kit's contract after G2, the kit session's rulings on
 G2's F1-F3 and Q-G2-1..17. This file is the working agreement for the
 subtree.
