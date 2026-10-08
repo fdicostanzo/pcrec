@@ -9,6 +9,8 @@
 #   SMOKE (<= 20 compiles, no lock, no build when TRACEBIN is given):
 #     SMOKE=1 TRACEBIN=<traced pcrec> bash .../n2_census.sh
 #
+# One worker pool (JOBS workers) serves ALL arms at once, with no per-arm
+# barrier (lane n2pool); each arm's json is written when its last job lands.
 # Env: OUT (results dir; default <worktree>/build/scratch/n2_<stamp>),
 #      JOBS (8), CC (gcc-16), TRACEBIN (a prebuilt MF_TRACE pcrec: skip build),
 #      SMOKE (1: smoke mode), N2_LOCK (the suite lock dir; default the Mac's.
