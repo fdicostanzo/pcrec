@@ -125,7 +125,11 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
   exists and FAILs the day one does. C14 compiles `_Static_assert(MF_MAX_TERM
   >= PCREC_OFSK_MAX_SET + 1)` and friends against the tree's own
   `core/internal.h` (limits.def's current value) and `memfn.h`, with a
-  control that lowers MF_MAX_TERM and requires the assert to fire.
+  control that lowers MF_MAX_TERM and requires the assert to fire. Since
+  M6 (lane m6) it also asserts `MF_MAX_TERM >= VM_MAX_STRIDE`, the enum
+  READ from `src/gen/emit_vm.c` (hard-fail if absent), with its own control
+  (MF_MAX_TERM lowered to VM_MAX_STRIDE - 1 fires that assert alone): 5
+  checks.
 - **run_handoff_reach.sh** — the VM hybrid handoff route's reach floor
   (`make test-memfn-reach`; arm `memfnreach`): three witness patterns whose
   artifacts must carry `RX_VM_PREFILTER "hybrid"`, their `RX_REQ_HANDOFF`
@@ -310,7 +314,8 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
   budgets (this file's literal), every row's (op, handoff, kinds) through
   `mf_vocab_has` (a probe linked against `build/libpcrec.a`), `MF_P_INLOOP`
   in code only in `src/gen/memfn_sites.c`, and no by-value `mf_site`/
-  `mf_pred`/`mf_result` under `src/`, with two planted controls. Its
+  `mf_pred`/`mf_result` under `src/`, with two planted controls (VMSTRIDE
+  joined `D91_LOOP` at M6: the strided span loop runs per VM step). Its
   per-instance half is pcrec's own, at compile time
   (`pcrec_memfn_check_use`, `deleg_check` in `src/gen/memfn_sites.c`).
 
@@ -383,7 +388,8 @@ All three are on arm `memfnmanifest`. See
 R4c (lane r4cchecks) adds S518-S529: S518/S519/S520/S521 (C4 classes 1, 3,
 9, 7), S522 (a stale allowlist row), S523 (the hex-escape exclusion removed),
 S524 (a `memchr(` returns, C12), S525 (the vocabulary stops seeing it, C12),
-S526 (`MF_MAX_TERM` lowered, C14), S527 (an `on_cand` token with C13
+S526 (`MF_MAX_TERM` lowered, C14; re-aimed at M6 to the binding bound,
+VM_MAX_STRIDE: 32 -> 31, emit_vm.c's build copy removed), S527 (an `on_cand` token with C13
 unbuilt), S528 (a kit call from an unlisted function, C17 rule 2), S529 (the
 VM hybrid loses its handoff, the reach floor). Arms `memfnarch`,
 `memfnforms`, `memfnreach`. Transcripts: `docs/dev/lanes/r4cchecks_report.md`.

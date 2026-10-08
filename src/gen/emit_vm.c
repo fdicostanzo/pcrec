@@ -224,6 +224,12 @@ enum {
  * merely costs frames. Keeps `(?:abcdef){3}*`-shaped bodies from emitting a
  * wide conjunction for no gain. */
 enum { VM_MAX_STRIDE = 32 };
+/* [MEMFN] M6 (C14, Q-R10-3): every admitted stride is ONE kit site, VMSPAN at
+ * 1 and VMSTRIDE above, one SET term per position, so the kit's term bound
+ * must hold the widest body this rung admits. */
+_Static_assert(MF_MAX_TERM >= VM_MAX_STRIDE,
+               "a cursor-rung body's positions (VM_MAX_STRIDE) must fit one "
+               "memfn predicate (C14)");
 
 /* Capture groups a cursor-rung body may contain. A body of stride <= 32 can
  * still nest arbitrarily many groups (`((((a))))` is four groups in one byte),
@@ -4651,23 +4657,29 @@ static void vm_alt(Vm *v, int entry, const Ast *a, int next)
     for (int j = 0; j < nbr; j++) vm_emit(v, bentry[j], br[j], next);
 }
 
-/* [MEMFN] R4h (M3): the stride-1 span scan as an in-loop ADVANCE site of
- * DELEG_SITES row VMSPAN: the body's one class `set0` (a 256-bit bitmap),
- * `more` the scan's bound (`bound`: the folded clamp's `lim_` or the subject
- * end), the cursor `<prefix>_span_cursor` stepped by 1, the member pcrec's
- * own class test of position 0 (`vm_cls_test`'s text), and for a bounded
- * quantifier the caller's `it_` (declared and read by pcrec's text, 0 at the
- * loop) capped at rmax. */
-static PcrecAdvance vm_span_advance(Vm *v, const Ast *a, const uint8_t *set0,
-                                    const char *member, const char *bound)
+/* The cursor rung's span scan as ONE in-loop ADVANCE site for any stride
+ * ([MEMFN] R4h VMSPAN at 1, M6 VMSTRIDE above): the body's W per-position
+ * classes `seq` (256-bit bitmaps), `more` the scan's bound proving the W
+ * bytes readable (`bound`: the folded clamp's `lim_` or the subject end),
+ * the cursor `<prefix>_span_cursor` stepped by W, each member pcrec's own
+ * class test of its position (`vm_cls_test`'s text, `members[i]`), the
+ * subject (the kit's own byte at offset i is subject[cursor + i], Q-R10-4),
+ * and for a bounded quantifier the caller's `it_` (declared and read by
+ * pcrec's text, 0 at the loop) capped at rmax ITERATIONS (Q-R10-5). */
+static PcrecAdvance vm_span_advance(Vm *v, const Ast *a, const uint8_t (*seq)[32],
+                                    int stride, const char *const *members,
+                                    const char *bound)
 {
-    uint8_t *set = pcrec_arena_alloc(&v->cx->arena, 256);
-    for (int c = 0; c < 256; c++) set[c] = (uint8_t)((set0[c >> 3] >> (c & 7)) & 1);
+    uint8_t *set = pcrec_arena_alloc(&v->cx->arena, 256 * (size_t)stride);
+    for (int i = 0; i < stride; i++)
+        for (int c = 0; c < 256; c++)
+            set[256 * i + c] = (uint8_t)((seq[i][c >> 3] >> (c & 7)) & 1);
     const char *cur = vm_rolef(v, "%s_span_cursor", v->p);
     return (PcrecAdvance){
-        .set = set, .more = vm_rolef(v, "%s + 1 <= %s", cur, bound),
+        .stride = stride, .set = set, .member = members, .subject = "subject",
+        .more = vm_rolef(v, "%s + %d <= %s", cur, stride, bound),
         .peek = vm_rolef(v, "subject[%s + 0]", cur),
-        .step = vm_rolef(v, "%s += 1", cur), .cursor = cur, .member = member,
+        .step = vm_rolef(v, "%s += %d", cur, stride), .cursor = cur,
         .count = a->u.rep.rmax >= 0 ? "it_" : NULL, .count_start = 0,
         .span = a->u.rep.rmax >= 0 ? (uint64_t)a->u.rep.rmax : MF_SPAN_UNBOUNDED,
         .indent = "        " };
@@ -4707,8 +4719,9 @@ static void vm_stride_loop(Vm *v, const Ast *a, int stride, const char *test,
  * Reads `a->u.rep.rmax` (the `it_` counter is emitted only for a bounded
  * quantifier) and `v->p`/`v->up`; writes only `v->b`.
  */
-static void vm_emit_span_scan(Vm *v, const Ast *a, const uint8_t *set0, int stride,
-                              const char *test, const char *member, const char *clamp)
+static void vm_emit_span_scan(Vm *v, const Ast *a, const uint8_t (*seq)[32], int stride,
+                              const char *test, const char *const *members,
+                              const char *clamp)
 {
     StrBuf *b = v->b;
     pcrec_sb_puts(b, "    {\n");
@@ -4718,13 +4731,16 @@ static void vm_emit_span_scan(Vm *v, const Ast *a, const uint8_t *set0, int stri
                   v->up, clamp, stride);
     pcrec_sb_printf(b, "        %s_span_cursor = scan_position;\n", v->p);
     const char *bound = clamp ? "lim_" : "subject_length";
+    PcrecAdvance sa = vm_span_advance(v, a, seq, stride, members, bound);
     if (stride == 1) {
-        PcrecAdvance sa = vm_span_advance(v, a, set0, member, bound);
         mf_hooks h;
         mf_site *s = pcrec_memfn_advance_site(v->cx, DELEG_VMSPAN, &sa, &h);
         pcrec_memfn_emit(v->cx, DELEG_VMSPAN, s, &h, b);
     } else {
+        size_t at = b->len;
         vm_stride_loop(v, a, stride, test, bound);
+        /* [M6 I1] IMPLEMENT ONLY: the kit's VMSTRIDE text must equal it */
+        pcrec_memfn_advance_shadow(v->cx, DELEG_VMSTRIDE, &sa, b->p + at, b->len - at);
     }
     pcrec_sb_puts(b, "    }\n");
 }
@@ -4810,7 +4826,9 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
      * LeakSanitizer axis found the local it orphaned). See Job.scr_test. */
     StrBuf *t = &v->cx->job->scr_test;
     t->len = 0; if (t->p) t->p[0] = 0;
-    const char *member = NULL;      /* position 0's class test: VMSPAN's member */
+    /* each position's class test: the span scan site's members */
+    const char **members = pcrec_arena_alloc(&v->cx->arena,
+                                             (size_t)stride * sizeof *members);
     for (int i = 0; i < stride; i++) {
         /* K38: was char byte[64] -- "subject[" + prefix + "_span_cursor + "
          * + digits + "]" exceeds 64 at the 60-char prefix maximum, and
@@ -4820,7 +4838,7 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
         pcrec_sb_puts(t, " && (");
         size_t at = t->len;
         vm_cls_test(v, t, ci[i], byte);
-        if (i == 0) member = vm_rolef(v, "%.*s", (int)(t->len - at), t->p + at);
+        members[i] = vm_rolef(v, "%.*s", (int)(t->len - at), t->p + at);
         pcrec_sb_puts(t, ")");
     }
     const char *test = t->p ? t->p : "";
@@ -4869,7 +4887,7 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
          * rmin, publish the groups, take the continuation. Nothing here can
          * be resumed, which is the whole point — the emitted C contains no
          * label the loop could come back to. */
-        vm_emit_span_scan(v, a, seq[0], stride, test, member, NULL);
+        vm_emit_span_scan(v, a, seq, stride, test, members, NULL);
         /* [counter-K] THE FRAMELESS SCAN'S CHARGE, and this is the exact site
          * counterk_design.md §7.4 specifies: AFTER the scan loop and BEFORE the
          * rmin test. The scan has completed, `pos` is still the loop's entry
@@ -5000,7 +5018,7 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
         const bool fold = vm_mrl_test(v, "scan_position", mrl, -1,
                                       "MRL: the continuation cannot fit from "
                                       "this loop's entry at all");
-        vm_emit_span_scan(v, a, seq[0], stride, test, member,
+        vm_emit_span_scan(v, a, seq, stride, test, members,
                           fold ? vm_mrl_amt(v, mrl) : NULL);
         if (fold)
             vm_ev(v, VE_NOTE, 0, 0,

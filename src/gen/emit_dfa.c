@@ -7451,11 +7451,13 @@ static PcrecAdvance stay_advance(const DfaForm *f, int K, const char *more)
 {
     uint8_t *set = pcrec_arena_alloc(&f->cx->arena, 256);
     stay_set(f->d, K, set);
+    const char **member = pcrec_arena_alloc(&f->cx->arena, sizeof *member);
+    member[0] = dfa_fragf(f->cx, "%s_%s_stay%d[%s]", f->p, f->dir->c.name, K,
+                          f->dir->peek);
     return (PcrecAdvance){
+        .stride = 1, .member = member,
         .set = set, .reverse = f->dir->reverse, .more = more,
         .peek = f->dir->peek, .step = f->dir->advance, .cursor = f->dir->posv,
-        .member = dfa_fragf(f->cx, "%s_%s_stay%d[%s]", f->p, f->dir->c.name, K,
-                            f->dir->peek),
         .span = MF_SPAN_UNBOUNDED,
         .indent = dfa_fragf(f->cx, "%s    ", f->dir->bind) };
 }
@@ -9120,10 +9122,12 @@ static PcrecAdvance edge_advance(const DfaForm *f, int head, const char *test, i
     uint8_t *set = pcrec_arena_alloc(&f->cx->arena, 256);
     int cls = f->d->st[head].scan_cls;
     for (int b = 0; b < 256; b++) set[b] = (uint8_t)(f->d->clsmap[b] == cls);
+    const char **member = pcrec_arena_alloc(&f->cx->arena, sizeof *member);
+    member[0] = test;
     return (PcrecAdvance){
+        .stride = 1, .member = member,
         .set = set, .reverse = f->dir->reverse, .more = f->dir->scan_more,
         .peek = f->dir->peek, .step = f->dir->advance, .cursor = f->dir->posv,
-        .member = test,
         .count = span < 0 ? NULL : "scan_run_length", .count_start = 1,
         .span = span < 0 ? MF_SPAN_UNBOUNDED : (uint64_t)span,
         .indent = dfa_fragf(f->cx, "%s    ", f->dir->bind) };
