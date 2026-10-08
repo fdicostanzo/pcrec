@@ -513,23 +513,32 @@ static void run_revdet(Ctx *cx, Ast *root, const EngineFit *fit)
 }
 
 /* [DEC-FALLBACK] T2 `pf_admits[]` THE PREFILTER ADMISSION (docs/design/
- * dec_fallback.md §1.4; start_table.md Q8): one table for what today is TWO
- * derivations — `prefilter_decision`'s verdict ternary and the `--emit-ir`
- * listing's reason chain (src/gen/emit_vm.c), which test the same facts in
- * different orders. Every row's verdict equals the ternary's and every row's
- * listing value equals the chain's (§1.4 argues it row by row; the trace
- * build's oracle checks it at both sites).
+ * dec_fallback.md §1.4; start_table.md Q8): ONE table for what were two
+ * derivations until B4 — `prefilter_decision`'s verdict ternary and the
+ * `--emit-ir` listing's reason chain (src/gen/emit_vm.c), which tested the
+ * same facts in different orders. The first row that applies decides
+ * `fit.prefilter` (its `verdict` cell), names the listing's `prefilter` value
+ * and prose when that verdict is off (`list`, `note`) and gives the
+ * admission's `ENGINE_SEL` cell (§1.4 argues every row against both old
+ * derivations; B2's both-orders oracle held them equal over the corpus
+ * before B4 deleted the old side).
+ *
+ * THE ORDER, AND WHY IT SERVES BOTH OLD READERS. The construct and analysis
+ * rows (1-6) precede the two flag rows (7-8) for the listing chain's own
+ * reason: no flag explains them, so falling through to a flag row would name
+ * a flag the caller did not pass. Rows 1-2 precede the nullability rows,
+ * which therefore need no `!has_bref && !has_call` conjunct (the old
+ * `lang_nullable_declinable` carried it). Rows 3-4 and row 5 are disjoint on
+ * `collapse_reason`, so their order is free.
  *
  * Rows 3-4 replace the `has_var` ternary inside `lang_nullable_declinable`:
  * a `${...}` pattern keeps bare nullability (row 3, F1's holder) and every
  * other pattern reads `empty_admits` (row 4). Row 4 carries `!has_var`, so
- * it asks `empty_admits` only where today's derivation does (an ask marks
+ * it asks `empty_admits` only where the old derivation did (an ask marks
  * the fact used, which `--emit-facts` lists); under E1's `empty_admits =>
  * nullable` the conjunct changes no answer. Row 5's `empty_admits` is the
  * same fact on the rung scope, where `has_var` has no population (§1.4 (b),
- * asserted in the trace build before the walk).
- *
- * Built beside the old derivations; B4 makes it the decision. */
+ * asserted in the trace build before the walk). */
 static bool pfa_bref(const PfAdmitSel *s) { return (s->kinds & PF_KIND_BREF) != 0; }
 static bool pfa_call(const PfAdmitSel *s) { return (s->kinds & PF_KIND_LINKED_CALL) != 0; }
 static bool pfa_var(const PfAdmitSel *s)  { return (s->kinds & PF_KIND_VAR) != 0; }
@@ -549,12 +558,57 @@ static bool pfa_nullable_exact(const PfAdmitSel *s)
 {
     return pfa_default_scope(s) && !pfa_var(s) && pcrec_fact_empty_admits(s->cx);
 }
+/* [OPT-4.1] THE RUNG SCOPE's decline. Its collapsible-repeat conjunct IS
+ * LOAD-BEARING AND WAS MISSING (r47sel finding 1). T1's `sel1-collapse` row
+ * (`fit_sel1_collapse_applies`, src/core/compile.c) does NOT test it, so the
+ * [SEL-1] rung is offered to a pattern with no collapsible repeat — and for
+ * such a pattern the collapsed lowering IS the exact one, so there is no
+ * distinct rescue and nothing to refuse. Declining one and stamping
+ * `declined-nullable` would report a REFUSED rescue where none was ever
+ * available, which is the inversion `match_api.md`'s value table warns
+ * about and which the bench buckets on. Without the conjunct the fallback
+ * also loses its own name: the honest stamp there is `overflowed-dfa`.
+ *
+ * THE CONJUNCTS ARE `pfc_wanted`'s (src/core/compile.c), and the two sites
+ * read ONE derivation, the E1 kind mask's collapsible-repeat bit, rather
+ * than each calling the predicate — which is what makes "they cannot
+ * disagree" structural instead of a thing to remember. `!pfc_deny` and
+ * `chosen != ENGM_DFA` are not restated because `collapse_reason !=
+ * CR_NONE` already implies both: neither rung is offered under
+ * `-fno-prefilter-collapse`, and a rung excludes the DFA. */
 static bool pfa_nullable_collapsed(const PfAdmitSel *s)
 {
     return s->cx->collapse_reason != CR_NONE &&
            (s->kinds & PF_KIND_COLLAPSIBLE_REP) && !s->force_on &&
            pcrec_fact_empty_admits(s->cx);
 }
+/* [SEL-1] the overflow drop: on the retry compile this fires from, the
+ * prefilter would be the IDENTICAL construction that already overflowed once
+ * this compile (same capture-erased forward+reverse NFA, same caps), so
+ * building it again would cost a second refused build — exactly what the
+ * plan row's cost bound (at most one refused build dearer than
+ * `--engine=vm`) forbids. `dfa_disabled` can only be true on a retry, and
+ * `compile_driver` only retries when `PCREC_FORCE_PREFILTER` was NOT
+ * requested, so this row and `forced-on` are never in tension.
+ *
+ * [OPT-4] THE PREMISE ABOVE STOPPED BEING TRUE, AND THE EXCEPTION IS ONE
+ * CONJUNCT. "the IDENTICAL construction that already overflowed" is exactly
+ * right about the EXACT language and exactly wrong about the count-collapsed
+ * one (K39; docs/design/prefilter_count_independence.md §6): that machine's
+ * NFA is a function of the pattern's STRUCTURE alone, so it is not the
+ * machine that overflowed and rebuilding it is not the wasted second build
+ * this row exists to prevent. `compile_driver` therefore tries ONE more rung
+ * before this one — `collapse_reason == CR_SEL1`, set only together with
+ * `dfa_disabled` — and on that attempt the prefilter must SURVIVE selection
+ * to be built at all. The `|| force_off` disjunct keeps the listing's
+ * answer on a `-fno-prefilter` [SEL-1] retry: the overflow, not the flag
+ * (§1.4 row 6).
+ *
+ * The cost bound moves from one refused DFA build to at most two, and the
+ * second is bounded by the first: the collapsed NFA is strictly smaller than
+ * the exact one this compile already built, and its size does not depend on
+ * any count. `docs/spec/tuning.md` §4 states the new bound rather than
+ * leaving the old sentence to be read as still exact. */
 static bool pfa_overflow_drop(const PfAdmitSel *s)
 {
     return s->cx->dfa_disabled &&
@@ -564,32 +618,105 @@ static bool pfa_forced_on(const PfAdmitSel *s)  { return s->force_on; }
 static bool pfa_forced_off(const PfAdmitSel *s) { return s->force_off; }
 static bool pfa_always(const PfAdmitSel *s)     { (void)s; return true; }
 
-__attribute__((unused))
+/* The listing prose rows 3-4 share: one decline, one sentence. */
+#define PFA_NOTE_NULLABLE_EXACT                                                \
+    "nullable exact language -- this pattern's own EXACT"                      \
+    " language matches the empty string, so the ordinary hybrid's"             \
+    " forward+reverse DFA pair would admit a zero-length match at"             \
+    " every position and could never dismiss one ([OPT-4.2], the"              \
+    " general form of [OPT-4.1]'s rung-scoped decline; pcrec-bench"            \
+    " O-10 measured 1.2-9.9x on the analogous collapsed shape)."               \
+    " -fprefilter overrides this decline; -fno-prefilter already"              \
+    " reaches the same artifact by a different door"
+/* The listing prose rows 9-10 share: the VM scans for itself. */
+#define PFA_NOTE_ENGINE_VM                                                     \
+    "--engine=vm -- the VM scans from search_from itself"                      \
+    " (R21 E-6)"
+
 static const PfAdmit pf_admits[] = {
+    /* [M6.5.2] A ROUTE NO FLAG EXPLAINS, and the first of them: a
+     * BACKREFERENCE pattern has no prefilter under ANY invocation. Erasing a
+     * backreference is a real approximation that is not even a SUPERSET once
+     * the referenced group's transitive closure holds an assertion or an
+     * atomic/possessive operator, and where it IS a superset its leftmost
+     * SPAN differs from the true one on a large fraction of subjects -- so
+     * there is no exact window to hand the VM either way (backrefs_design.md
+     * S7). Without this row the listing said "--engine=vm" for a pattern
+     * compiled under `auto`, i.e. a diagnostic naming a flag the caller did
+     * not pass. */
     { "backref",            pfa_bref,               PFV_OFF,     "no-backreference",
-      ESEL_PASS },
+      ESEL_PASS,
+      "the erased approximation is neither a sound superset nor the"
+      " true span (S7); no flag changes this" },
+    /* [DD-14 wave E] THE SECOND SUCH ROUTE. A SUBROUTINE CALL's erasure is
+     * not a loose approximation, it is a different language (design SS8.2),
+     * so there is no window to hand the VM under ANY invocation -- and
+     * `-fprefilter` REFUSES rather than overriding (`prefilter_decision`). */
     { "linked-call",        pfa_call,               PFV_OFF,     "no-linked-call",
-      ESEL_PASS },
+      ESEL_PASS,
+      "LINKED subroutine call -- erasing a call is a DIFFERENT"
+      " language, not a superset (S8.2), and a call in a cycle has"
+      " no finite inlining either; no flag changes this, and"
+      " -fprefilter refuses. A SPLICED call is not a reason: its"
+      " callee is inlined EXACTLY (S8.3, S6.3)" },
+    /* [OPT-4.2] THE RUNGLESS DECLINE, worded DIFFERENTLY from row 5's, not
+     * merely generalized, because there is no rung here to say was
+     * "offered": this pattern's own EXACT language is nullable on the
+     * ORDINARY hybrid path, no ladder attempt involved. */
     { "var-nullable",       pfa_var_nullable,       PFV_OFF,     "no-nullable-exact",
-      ESEL_DECLINED_NULLABLE_DEFAULT },
+      ESEL_DECLINED_NULLABLE_DEFAULT,
+      PFA_NOTE_NULLABLE_EXACT },
     { "nullable-exact",     pfa_nullable_exact,     PFV_OFF,     "no-nullable-exact",
-      ESEL_DECLINED_NULLABLE_DEFAULT },
+      ESEL_DECLINED_NULLABLE_DEFAULT,
+      PFA_NOTE_NULLABLE_EXACT },
+    /* [OPT-4.1] ahead of the [SEL-1] row and of the two flag rows, for the
+     * reason every row above it shares, and it is the more specific fact
+     * where both apply. On the [SEL-1] rung `cx->dfa_disabled` is ALSO true,
+     * and the row below would report the overflow -- true, but it is the
+     * reason the rung was OFFERED, not the reason nothing came back from it.
+     * It is also the only row of the two that can fire with `dfa_disabled`
+     * FALSE (the size rung), where every row below would name a flag the
+     * caller did not pass. */
     { "nullable-collapsed", pfa_nullable_collapsed, PFV_OFF,     "no-nullable-collapsed",
-      ESEL_DECLINED_NULLABLE },
+      ESEL_DECLINED_NULLABLE,
+      "nullable collapsed language -- a ladder rung offered the"
+      " count-collapsed prefilter ([OPT-4]) and it was DECLINED:"
+      " every X{m,n} lowers as X{min(m,1),}, and this pattern's"
+      " collapsed language matches the empty string, so the filter"
+      " could never dismiss a position and would cost a scan it"
+      " cannot win ([OPT-4.1]; pcrec-bench O-10 measured 1.2-9.9x)."
+      " -fprefilter is do-or-die and is never silently dropped: on"
+      " the size rung it OVERRIDES this decline, on the [SEL-1] rung"
+      " it suppresses the rung itself and the compile refuses."
+      " -fprefilter-collapse does not override it" },
+    /* [SEL-1] ahead of the two flag rows, for the same reason rows 1-2 are:
+     * a route no flag explains must not be reported as one. The note's `%s`
+     * is `cx->dfa_overflow_why` verbatim, the cap NAME a consumer asserts
+     * on: the cap `--engine=dfa` refuses on, not `-fno-prefilter` or the
+     * `--engine=vm` side effect. It explains the PREFILTER specifically,
+     * which the overflow decided whichever reason won the ENGINE
+     * (`RX_ENGINE_WHY` may name a request-derived reason instead). */
     { "overflow-drop",      pfa_overflow_drop,      PFV_OFF,     "no-dfa-overflow",
-      ESEL_PASS },
+      ESEL_PASS,
+      "%s -- the auto-selected prefilter's own DFA build hit"
+      " the cap --engine=dfa/-fprefilter refuse on; auto drops it"
+      " instead of refusing (SEL-1)" },
     { "forced-on",          pfa_forced_on,          PFV_ON,      NULL,
-      ESEL_PASS },
+      ESEL_PASS,
+      NULL },
     { "forced-off",         pfa_forced_off,         PFV_OFF,     "no-fno-prefilter",
-      ESEL_PASS },
+      ESEL_PASS,
+      "-fno-prefilter -- forced off; the VM scans from search_from"
+      " itself" },
     { "var",                pfa_var,                PFV_OFF,     "no-engine-vm",
-      ESEL_PASS },
+      ESEL_PASS,
+      PFA_NOTE_ENGINE_VM },
     { "default",            pfa_always,             PFV_DEFAULT, "no-engine-vm",
-      ESEL_PASS },
+      ESEL_PASS,
+      PFA_NOTE_ENGINE_VM },
 };
 
 /* T2's walk: the first row that applies (the last always does). */
-__attribute__((unused))
 static const PfAdmit *pf_admit_walk(const PfAdmitSel *s)
 {
     size_t i = 0;
@@ -598,7 +725,6 @@ static const PfAdmit *pf_admit_walk(const PfAdmitSel *s)
 }
 
 /* The verdict row `r` gives under selector `s`. */
-__attribute__((unused))
 static bool pf_admit_verdict(const PfAdmit *r, const PfAdmitSel *s)
 {
     return r->verdict == PFV_ON || (r->verdict == PFV_DEFAULT && s->would_prefilter);
@@ -606,15 +732,16 @@ static bool pf_admit_verdict(const PfAdmit *r, const PfAdmitSel *s)
 
 #ifdef PCREC_CAND_TRACE
 /* §1.9's T2 half of the self-check: every verdict and ENGINE_SEL cell
- * stated (ESEL_FORCED, 0, is never an admission cell), the listing value
- * stated wherever the verdict can be off, and the last row always applies. */
+ * stated (ESEL_FORCED, 0, is never an admission cell), the listing value and
+ * prose stated wherever the verdict can be off, and the last row always
+ * applies. */
 void pcrec_pf_admits_selfcheck(Ctx *cx)
 {
     const size_t n = sizeof pf_admits / sizeof pf_admits[0];
     for (size_t i = 0; i < n; i++) {
         const PfAdmit *r = &pf_admits[i];
         if (r->verdict == PFV_UNSTATED || r->esel == ESEL_FORCED ||
-            (r->verdict != PFV_ON && !r->list))
+            (r->verdict != PFV_ON && (!r->list || !r->note)))
             pcrec_ctx_fail(cx, 0, "internal error: fallback table self-check: "
                            "T2 row '%s' leaves a cell unstated", r->name);
     }
@@ -622,31 +749,14 @@ void pcrec_pf_admits_selfcheck(Ctx *cx)
         pcrec_ctx_fail(cx, 0, "internal error: fallback table self-check: "
                        "T2's last row does not always apply");
 }
-
-/* [DEC-FALLBACK] B2 the admission's oracle: §1.4 (b)'s invariant first, then
- * T2's row against today's verdict and its two declined-nullable flags. */
-static void pf_admit_oracle(EngineFit *fit, const PfAdmitSel *s,
-                            const PfAdmit *row)
-{
-    if (!row) row = pf_admit_walk(s);
-    PCREC_FIT_HIT("admit", row->name);
-    const bool dnd = row->esel == ESEL_DECLINED_NULLABLE_DEFAULT;
-    const bool dn = row->esel == ESEL_DECLINED_NULLABLE;
-    if (pf_admit_verdict(row, s) != fit->prefilter)
-        pcrec_fit_oracle_fail("admit-verdict", row->name,
-                              fit->prefilter ? "on" : "off", "prefilter_decision");
-    if (dnd != fit->prefilter_declined_nullable_default ||
-        dn != fit->prefilter_declined_nullable)
-        pcrec_fit_oracle_fail("admit-declined", row->name, "flags", "prefilter_decision");
-    fit->pf_admit = row;
-}
 #endif
 
 /* Decides whether this artifact runs the VM's hybrid DFA prefilter ahead of
- * the match, and records WHY when it does not. Writes three `EngineFit`
- * fields — `prefilter` itself and the two `prefilter_declined_nullable*`
- * attributions — from the E1 pattern facts (the kind mask, nullability),
- * and REFUSES outright on a
+ * the match, and records WHY when it does not. Walks T2 (`pf_admits[]`
+ * above) and writes four `EngineFit` fields from the row that fired —
+ * `pf_admit` itself, `prefilter` (its verdict) and the two
+ * `prefilter_declined_nullable*` attributions — off the E1 pattern facts
+ * (the kind mask, nullability), and REFUSES outright on a
  * `-fprefilter` request this pattern cannot honour, which is why it takes
  * `why_pos`: that offset is only the position its diagnostics report. Reads
  * `fit->chosen`, `cx->opt`'s flag pair and engine, and the retry state
@@ -700,7 +810,6 @@ static void prefilter_decision(Ctx *cx, EngineFit *fit, size_t why_pos)
      * `minw == 0` answers for the PREFILTER's lowering, and that the
      * collapsed language is nullable exactly when the exact one is). */
     const unsigned kinds = pcrec_fact_kinds(cx);
-    const bool collapsible_rep = (kinds & PF_KIND_COLLAPSIBLE_REP) != 0;
     /* [M6.5.2] §7.1: A BACKREF-BEARING PATTERN GETS NO PREFILTER, and this
      * is a REFUSAL of `-fprefilter` rather than a silent override, on
      * D46's own do-or-die posture — a request the pattern cannot honour is
@@ -732,8 +841,8 @@ static void prefilter_decision(Ctx *cx, EngineFit *fit, size_t why_pos)
      *     not find the (1,3) match.
      *
      * SO THE MACHINE IS NEVER BUILT — src/ir/nfa.c has no `A_BREF` arm and
-     * falls into its internal error deliberately, and this line is what
-     * makes that unreachable. The cost is measured and stated rather than
+     * falls into its internal error deliberately, and T2's `backref` row
+     * is what makes that unreachable. The cost is measured and stated rather than
      * hidden: roughly one to two orders of magnitude on the families where
      * a prefilter would have helped, and nothing on the families where it
      * would not. §7.4 charters the two SOUND weaker uses (a nomatch-only
@@ -800,8 +909,8 @@ static void prefilter_decision(Ctx *cx, EngineFit *fit, size_t why_pos)
      * ENGINE SELECTION ALONE DOES NOT STOP IT. A VM-only pattern normally
      * still gets a hybrid DFA prefilter, so "VM-only" and "prefilter-free"
      * are two facts with two mechanisms: the `${...}` row's VM_ONLY stamp
-     * settles the first through `forces_registry` above, and THIS LINE
-     * settles the second. Without it a var-bearing pattern routes to the VM,
+     * settles the first through `forces_registry` above, and T2's `var`
+     * row (with `var-nullable` above it) settles the second. Without it a var-bearing pattern routes to the VM,
      * the VM asks for its prefilter, and the prefilter build walks a node it
      * refuses — the exact "a compiler that cannot compile the module's own
      * corpus" outcome wave E's paragraph describes.
@@ -852,39 +961,6 @@ static void prefilter_decision(Ctx *cx, EngineFit *fit, size_t why_pos)
                  "compiles to the DFA engine, which carries no separate "
                  "prefilter to force (pass --engine=vm, or drop "
                  "-fprefilter)");
-    /* [SEL-1] `cx->dfa_disabled` joins `has_bref`/`has_call` in the
-     * silent-drop clause rather than getting its own branch: on the
-     * retry compile this fires from, the prefilter would be the
-     * IDENTICAL construction that already overflowed once this compile
-     * (same capture-erased forward+reverse NFA, same caps), so building
-     * it again would cost a second refused build — exactly what the
-     * plan row's cost bound (at most one refused build dearer than
-     * `--engine=vm`) forbids. Safe to fold in unconditionally rather
-     * than to gate on `!force_on`: `cx->dfa_disabled` can only be true
-     * on a retry, and `compile_driver` only retries when
-     * `PCREC_FORCE_PREFILTER` was NOT requested (force forms stay
-     * do-or-die and never reach a retry at all), so `force_on` is
-     * always false whenever `dfa_disabled` is true — this clause and
-     * `force_on`'s branch below are therefore never in tension.
-     *
-     * [OPT-4] THE PREMISE ABOVE STOPPED BEING TRUE, AND THE EXCEPTION IS
-     * ONE CONJUNCT. "the IDENTICAL construction that already overflowed"
-     * is exactly right about the EXACT language and exactly wrong about
-     * the count-collapsed one (K39;
-     * docs/design/prefilter_count_independence.md §6): that machine's NFA
-     * is a function of the pattern's STRUCTURE alone, so it is not the
-     * machine that overflowed and rebuilding it is not the wasted second
-     * build this clause exists to prevent. `compile_driver` therefore
-     * tries ONE more rung before this one — `collapse_reason == CR_SEL1`,
-     * set only together with `dfa_disabled` — and on that attempt the
-     * prefilter must SURVIVE selection to be built at all.
-     *
-     * The cost bound moves from one refused DFA build to at most two, and
-     * the second is bounded by the first: the collapsed NFA is strictly
-     * smaller than the exact one this compile already built, and its size
-     * does not depend on any count. `docs/spec/tuning.md` §4 states the
-     * new bound rather than leaving the old sentence to be read as still
-     * exact. */
     /* [OPT-4.1] THE RESCUE IS GATED ON NON-NULLABILITY, and the gate is
      * HERE rather than at the build gate that decides the LANGUAGE,
      * because on a rung the alternative to the collapsed prefilter is not
@@ -914,50 +990,30 @@ static void prefilter_decision(Ctx *cx, EngineFit *fit, size_t why_pos)
      * answered with the opposite. `-fprefilter-collapse` does NOT outrank
      * it: that flag chooses a LANGUAGE for a prefilter, not whether one
      * exists, and a caller who wants existence has `-fprefilter`. */
-    /* [OPT-4.1] `collapsible_rep` IS LOAD-BEARING HERE AND
-     * WAS MISSING (r47sel finding 1). T1's `sel1-collapse` row
-     * (`fit_sel1_collapse_applies`, src/core/compile.c) does NOT test it, so the [SEL-1] rung is offered to a pattern with
-     * no collapsible repeat — and for such a pattern the collapsed
-     * lowering IS the exact one, so there is no distinct rescue and
-     * nothing to refuse. Declining one and stamping `declined-nullable`
-     * would report a REFUSED rescue where none was ever available, which
-     * is the inversion `match_api.md`'s value table warns about and which
-     * the bench buckets on. Without the conjunct the fallback also loses
-     * its own name: the honest stamp there is `overflowed-dfa`.
-     *
-     * THE CONJUNCTS ARE `pfc_wanted`'s (src/core/compile.c), and the two
-     * sites read ONE derivation, the E1 kind mask's collapsible-repeat
-     * bit, rather than each calling the predicate — which is what makes "they cannot disagree"
-     * structural instead of a thing to remember. `!pfc_deny` and
-     * `chosen != ENGM_DFA` are not restated because `collapse_reason !=
-     * CR_NONE` already implies both: neither rung is offered under
-     * `-fno-prefilter-collapse`, and a rung excludes the DFA. */
     /* [OPT-4.2] THE NULLABILITY DECLINE, GENERALIZED TO EVERY RUNG —
-     * INCLUDING THE ONE THAT IS NOT A RUNG AT ALL. `lang_nullable_
-     * declinable` is the one predicate common to both scopes: nullable,
-     * no backreference, no linked call, not forced on by `-fprefilter`
-     * (that flag outranks the decline on either scope, for [OPT-4.1]'s
-     * own reason — its alternative is no prefilter at all, and forcing
-     * one on is precisely what `-fprefilter` exists to demand). The two
-     * fields below are its two SCOPES and are never both true for one
-     * compile, since one requires `collapse_reason != CR_NONE` and the
-     * other its negation:
+     * INCLUDING THE ONE THAT IS NOT A RUNG AT ALL. T2's rows 3-5 are its
+     * two SCOPES and are never both taken for one compile, since rows 3-4
+     * require `collapse_reason == CR_NONE` and row 5 its negation; each
+     * row sits below `backref`/`linked-call` (no backreference, no linked
+     * call) and reads `!force_on` (`-fprefilter` outranks the decline on
+     * either scope, for [OPT-4.1]'s own reason — its alternative is no
+     * prefilter at all, and forcing one on is precisely what `-fprefilter`
+     * exists to demand):
      *
-     *   `prefilter_declined_nullable`         a RUNG offered the
-     *     collapsed rescue and it was refused (unchanged from [OPT-4.1]
-     *     — ALSO needs `collapsible_rep`, because without a
-     *     collapsible repeat the collapsed lowering IS the exact one and
-     *     there is no distinct rescue to decline).
-     *   `prefilter_declined_nullable_default`  the ORDINARY, un-rung
-     *     hybrid's own EXACT prefilter is nullable ([OPT-4.2], new — NO
+     *   `nullable-collapsed` (row 5)   a RUNG offered the collapsed rescue
+     *     and it was refused (unchanged from [OPT-4.1] — ALSO needs the
+     *     collapsible-repeat bit, because without a collapsible repeat the
+     *     collapsed lowering IS the exact one and there is no distinct
+     *     rescue to decline).
+     *   `var-nullable`/`nullable-exact` (rows 3-4)   the ORDINARY, un-rung
+     *     hybrid's own EXACT prefilter is nullable ([OPT-4.2] — NO
      *     collapsible-repeat conjunct needed: this path never collapses
      *     anything, so there is always a concrete prefilter to decline —
-     *     but it DOES need `would_prefilter` below, plus `!cx->dfa_
-     *     disabled`, for the r47sel-1 reason `prefilter_declined_
-     *     nullable` needs `collapsible_rep`: without them
-     *     a DFA-chosen artifact, a forced `--engine=vm` build with no
-     *     `-fprefilter` (R21 E-6 already turns the prefilter off there
-     *     for its own reason), or a retry whose OWN prefilter machine
+     *     but it DOES need `would_prefilter`, plus `!cx->dfa_disabled`, for
+     *     the r47sel-1 reason row 5 needs the collapsible-repeat bit:
+     *     without them a DFA-chosen artifact, a forced `--engine=vm` build
+     *     with no `-fprefilter` (R21 E-6 already turns the prefilter off
+     *     there for its own reason), or a retry whose OWN prefilter machine
      *     overflowed with no collapse rung offered (`dfa_disabled &&
      *     collapse_reason == CR_NONE` — `ESEL_OVERFLOWED_DFA`/
      *     `_PREFILTER`'s own population) would each stamp "a rescue was
@@ -965,7 +1021,8 @@ static void prefilter_decision(Ctx *cx, EngineFit *fit, size_t why_pos)
      *     refuse in the first place.
      *
      * internal.h's own field comments carry the full argument for each;
-     * this is the ONE site that derives both, off the one local.
+     * the two `prefilter_declined_nullable*` flags are written from the
+     * row that fired, below.
      *
      * [NULLABLE-ANCH] "NULLABLE" HERE IS `empty_admits`, NOT BARE
      * NULLABILITY: an empty match whose every path crosses a non-multiline
@@ -976,59 +1033,47 @@ static void prefilter_decision(Ctx *cx, EngineFit *fit, size_t why_pos)
      * `rmin == 0` and the OR-closure of the body's masks), so it answers for
      * the rung scope too. Bare `nullable` stays with its own readers.
      *
-     * A `${...}` PATTERN KEEPS BARE NULLABILITY, and only for its stamp:
-     * `has_var` turns the prefilter off below whatever this reads, so the
-     * choice moves nothing but `ENGINE_SEL`, which reads
-     * `"declined-nullable-default"` on a nullable variable pattern today
-     * (nullanch0_report.md F1). Whether that token is right is refactor B's
-     * ruling ([DEC-FALLBACK], token identity), not this row's. */
+     * A `${...}` PATTERN KEEPS BARE NULLABILITY, and only for its stamp
+     * (row 3, F1's holder): `has_var` turns the prefilter off whatever the
+     * row reads, so the choice moves nothing but `ENGINE_SEL`, which reads
+     * `"declined-nullable-default"` on a nullable variable pattern
+     * (nullanch0_report.md F1). Whether that token is right is
+     * [DEC-VAR-ATTRIB]'s ruling, not this row's. */
 #ifdef PCREC_CAND_TRACE
-    /* [DEC-FALLBACK] B2: T2 beside the derivation below (the oracle). §1.4
-     * (b) is asserted BEFORE the walk, so no row asks a fact on the
-     * population it argues away. */
+    /* [DEC-FALLBACK] §1.4 (b), asserted BEFORE the walk, so no row asks a
+     * fact on the population it argues away. */
     if (has_var && (cx->collapse_reason != CR_NONE || cx->dfa_disabled))
         pcrec_fit_oracle_fail("admit-has-var", "rung or overflow", "has_var",
                               "prefilter_decision");
+#endif
+    /* [DEC-FALLBACK] B4 THE ADMISSION'S NULLABILITY FACT IS ASKED UP FRONT,
+     * whichever row decides. The derivation T2 replaced asked it on every
+     * compile, before any other conjunct, so `--emit-facts`' `used` column
+     * lists `empty_admits` as consumed on every non-`${...}` pattern; the
+     * walk alone asks it only where a nullability row is reached (not on a
+     * backreference, a linked call, a DFA artifact or `--engine=vm`). The
+     * ask keeps that column where it was (decfbB2 finding 7). Its result is
+     * the rows' to read: they ask the same memoized fact again. */
+    (void)(has_var ? pcrec_fact_nullable(cx) : pcrec_fact_empty_admits(cx));
+    /* [OPT-4.2] "would this compile build a prefilter at all, absent every
+     * decline" — the default row's verdict and the rungless decline's
+     * scope, read once so the decline and its baseline cannot disagree
+     * about what they are declining. NOT `&& !cx->dfa_disabled` — this is
+     * ALSO the default row's verdict, and on the CR_SEL1 rung
+     * `dfa_disabled` is true precisely while a collapsed rescue is
+     * surviving, where `fit->prefilter` must still be able to read true.
+     * The DFA-overflowed-with-no-rung-offered case (`dfa_disabled &&
+     * collapse_reason == CR_NONE`) is `overflow-drop`'s, ahead of the
+     * default row, so nothing here needs to special-case it — only the
+     * DEFAULT decline's own scope does (`pfa_default_scope`). */
     const PfAdmitSel pfas = { cx, kinds,
                               fit->chosen == ENGM_VM && cx->opt->engine != PCREC_ENGINE_VM,
                               force_on, force_off };
-    const PfAdmit *pfa_new = PCREC_FIT_NEW_FIRST ? pf_admit_walk(&pfas) : NULL;
-#endif
-    bool lang_nullable_declinable =
-        (has_var ? pcrec_fact_nullable(cx) : pcrec_fact_empty_admits(cx)) &&
-        !has_bref && !has_call && !force_on;
-    /* [OPT-4.2] "would this compile build a prefilter at all, absent the
-     * nullability decline" — the SAME condition the final ternary below
-     * falls through to when nothing declines it, read once here so the
-     * decline and its baseline cannot disagree about what they are
-     * declining. NOT `&& !cx->dfa_disabled` — this expression is ALSO
-     * the final fallback value below, and on the CR_SEL1 rung `dfa_
-     * disabled` is true precisely while a collapsed rescue is surviving,
-     * where `fit->prefilter` must still be able to read true. The
-     * DFA-overflowed-with-no-rung-offered case (`dfa_disabled &&
-     * collapse_reason == CR_NONE`) already forces `fit->prefilter` false
-     * through the OR-clause below regardless of this value, so nothing
-     * here needs to special-case it — only the DEFAULT decline's own
-     * attribution does, immediately below. */
-    bool would_prefilter = (fit->chosen == ENGM_VM) &&
-                            (cx->opt->engine != PCREC_ENGINE_VM);
-    fit->prefilter_declined_nullable =
-        cx->collapse_reason != CR_NONE && lang_nullable_declinable &&
-        collapsible_rep;
-    fit->prefilter_declined_nullable_default =
-        cx->collapse_reason == CR_NONE && !cx->dfa_disabled &&
-        lang_nullable_declinable && would_prefilter;
-    fit->prefilter = (has_bref || has_call || has_var ||
-                     (cx->dfa_disabled && cx->collapse_reason != CR_SEL1) ||
-                     fit->prefilter_declined_nullable ||
-                     fit->prefilter_declined_nullable_default)
-                    ? false
-                   : force_on ? true
-                   : force_off ? false
-                   : would_prefilter;
-#ifdef PCREC_CAND_TRACE
-    pf_admit_oracle(fit, &pfas, pfa_new);
-#endif
+    const PfAdmit *row = pf_admit_walk(&pfas);
+    fit->pf_admit = row;
+    fit->prefilter = pf_admit_verdict(row, &pfas);
+    fit->prefilter_declined_nullable = row->esel == ESEL_DECLINED_NULLABLE;
+    fit->prefilter_declined_nullable_default = row->esel == ESEL_DECLINED_NULLABLE_DEFAULT;
 }
 
 /* The `<PREFIX>_ENGINE_SEL` token for a FINISHED fit: which of the closed
@@ -1166,16 +1211,13 @@ static unsigned char fit_attrib_walk(const Ctx *cx, const EngineFit *fit)
 /* [DEC-FALLBACK] B1 THE FALLBACK TRACE's `admit` and `attrib` records
  * (docs/design/dec_fallback.md §4.2 B1), printed once per selection from the
  * finished fit and the attempt record, both already computed: no fact is
- * asked here that `prefilter_decision` did not ask first (`kinds` is its
- * first read).
+ * asked here.
  *
  * `admit`: route = the SCOPE (the collapse reason), row = the T2 row (§1.4)
- * today's admission took, with the verdict. The row is read off TODAY's
- * derivation — its two declined-nullable flags and the inputs of its
- * ternary — in T2's order, so where the two orders differ (`has_var` with
- * `-fno-prefilter`; an overflow drop under `-fno-prefilter`) the record names
- * the row T2 will take and the verdict is today's. B4's T2 walk prints its own
- * row here, and the trace compare is what holds the two to each other.
+ * the admission took, with the verdict. Since B4 the row IS the walk's
+ * (`fit->pf_admit`); until B4 it was read off the old derivation in T2's
+ * order, so the trace compare against a pre-B4 parent is what held the walk
+ * to the derivation it replaced.
  *
  * `attrib`: row = the `ENGINE_SEL` token and the T1 row whose cell gave it
  * (§1.7): `forced`, `admit` (T2 rows 3-5), the latest attributing ladder row
@@ -1184,25 +1226,9 @@ static unsigned char fit_attrib_walk(const Ctx *cx, const EngineFit *fit)
 static void fit_trace_admit_attrib(Ctx *cx)
 {
     const EngineFit *fit = &cx->job->fit;
-    const unsigned kinds = pcrec_fact_kinds(cx);
-    const bool fon  = (cx->opt->flags & PCREC_FORCE_PREFILTER) != 0;
-    const bool foff = (cx->opt->flags & PCREC_NO_PREFILTER) != 0;
-    const bool dd = cx->dfa_disabled;
     const int cr = cx->collapse_reason;
-    const char *row =
-          (kinds & PF_KIND_BREF)                       ? "backref"
-        : (kinds & PF_KIND_LINKED_CALL)                ? "linked-call"
-        : fit->prefilter_declined_nullable_default     ? ((kinds & PF_KIND_VAR)
-                                                          ? "var-nullable"
-                                                          : "nullable-exact")
-        : fit->prefilter_declined_nullable             ? "nullable-collapsed"
-        : dd && (cr != CR_SEL1 || foff)                ? "overflow-drop"
-        : fon                                          ? "forced-on"
-        : foff                                         ? "forced-off"
-        : (kinds & PF_KIND_VAR)                        ? "var"
-        :                                                "default";
     PCREC_CAND_TRACE_RECF("admit", pcrec_cr_trace_name(cr), "admit",
-                          "%s pf=%d", row, (int)fit->prefilter);
+                          "%s pf=%d", fit->pf_admit->name, (int)fit->prefilter);
 
     const unsigned char e = fit->engine_sel;
     const char *from =

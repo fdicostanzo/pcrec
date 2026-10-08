@@ -2128,17 +2128,18 @@ typedef struct {
 
     /* [OPT-4.1] AND THE DECISION IT DROVE: a collapse RUNG asked for the
      * count-collapsed prefilter and nullability declined it, so this artifact
-     * has NO prefilter. False on every other path, including the two rungs
+     * has NO prefilter. Written from T2's row (`nullable-collapsed`) since
+     * [DEC-FALLBACK] B4. False on every other path, including the two rungs
      * when the language is not nullable, and including a pattern that simply
      * has no prefilter for one of the older reasons (a backreference, a linked
      * call, `-fno-prefilter`).
      *
      * IT IS A SEPARATE FIELD FROM THE PREDICATE ABOVE because they answer
-     * different questions and three readers need the second one: the `_ENGINE_
-     * SEL` ladder (which stamps `"declined-nullable"` on the [SEL-1] rung),
-     * the `--emit-ir` listing's `; prefilter` line (which would otherwise name
-     * a FLAG the caller did not pass), and the `fit.prefilter` clause that
-     * makes the decision. A pattern can be nullable and keep an exact
+     * different questions. Its one reader since [DEC-FALLBACK] B4 is the
+     * `_ENGINE_SEL` ladder (which stamps `"declined-nullable"` on the [SEL-1]
+     * rung); the `--emit-ir` listing's `; prefilter` line (which would
+     * otherwise name a FLAG the caller did not pass) and the `fit.prefilter`
+     * decision read T2's row instead. A pattern can be nullable and keep an exact
      * prefilter all day; that is the default and it is not this field. */
     bool        prefilter_declined_nullable;
 
@@ -2155,15 +2156,17 @@ typedef struct {
      * identical reason: a nullable filter admits a zero-length match at every
      * position and can dismiss none of them.
      *
-     * ONE PREDICATE, TWO SCOPES (src/opt/select_engine.c's fit site derives
-     * both from the same `lang_nullable_declinable` local — nullable, no
-     * backreference, no linked call, not `-fprefilter`-forced — so a future
-     * conjunct added to one cannot silently miss the other): this field is
-     * `collapse_reason == CR_NONE && lang_nullable_declinable`, its rung-
-     * scoped sibling above is `collapse_reason != CR_NONE && ... &&` the
-     * E1 kind mask's collapsible-repeat bit. The two are therefore MUTUALLY
-     * EXCLUSIVE by construction (one requires `CR_NONE`, the other its
-     * negation) and never both true for one compile.
+     * ONE PREDICATE, TWO SCOPES: T2's rows 3-4 (`var-nullable`,
+     * `nullable-exact`) are this field's scope and row 5
+     * (`nullable-collapsed`) its rung-scoped sibling's; all three sit below
+     * the backreference and linked-call rows and read `!force_on`, so a
+     * conjunct those rows share is one row position, not two copies. This
+     * field is `collapse_reason == CR_NONE && !dfa_disabled &&` a VM hybrid
+     * `&&` the language's nullability, its sibling above `collapse_reason
+     * != CR_NONE &&` the E1 kind mask's collapsible-repeat bit `&&` the
+     * same. The two are therefore MUTUALLY EXCLUSIVE by construction (one
+     * requires `CR_NONE`, the other its negation) and never both true for
+     * one compile. Written from the row that fired since [DEC-FALLBACK] B4.
      *
      * IT NEEDS NO COLLAPSIBLE-REPEAT CONJUNCT, unlike its rung
      * sibling. That conjunct exists there to tell "a rescue was offered and
@@ -2173,16 +2176,16 @@ typedef struct {
      * always builds the EXACT prefilter, collapsible repeat or not — so
      * there is always something concrete for this field to decline.
      *
-     * THREE READERS, THE SAME THREE `prefilter_declined_nullable` HAS: the
+     * ONE READER SINCE [DEC-FALLBACK] B4, the same one
+     * `prefilter_declined_nullable` has (the listing and the decision read
+     * T2's row; they were its other two readers): the
      * `_ENGINE_SEL` ladder (a NEW value, `ESEL_DECLINED_NULLABLE_DEFAULT` —
      * `ESEL_DECLINED_NULLABLE` stays rung-scoped and is not reused, since the
      * two answer different questions about different failure populations and
      * folding them into one value would be exactly the K35 "closed value set
-     * silently losing a member" shape this project keeps a list of), the
-     * `--emit-ir` listing's `; prefilter` line (its own new arm, worded for
-     * the ordinary path rather than for a declined rung), and the
-     * `fit.prefilter` clause below, which this field joins as a THIRD reason
-     * `fit.prefilter` reads false. */
+     * silently losing a member" shape this project keeps a list of). The
+     * listing's `no-nullable-exact` row prose is worded for the ordinary
+     * path rather than for a declined rung. */
     bool        prefilter_declined_nullable_default;
 
     /* [OPT-4] WHY THAT LANGUAGE (D81's `_WHY`; `<PREFIX>_VM_PREFILTER_LANG_WHY`).
@@ -2268,10 +2271,12 @@ typedef struct {
      * five fallback values are each "fell back" with a different outcome,
      * which is exactly the distinction `why` cannot carry. */
     unsigned char engine_sel;
-    /* [DEC-FALLBACK] B2: the T2 row (`pf_admits[]`, src/opt/select_engine.c)
-     * the admission took. Written by the trace build's both-derivations
-     * oracle only until B4 makes the table the decision; NULL in the default
-     * build, which has no reader of it yet. */
+    /* [DEC-FALLBACK] the T2 row (`pf_admits[]`, src/opt/select_engine.c)
+     * the admission took (B4: the table IS the decision). Never NULL after
+     * `prefilter_decision`. Its readers: the `--emit-ir` listing's
+     * `prefilter` line (the `list`/`note` cells, when `prefilter` is off),
+     * the attribution walk (the `esel` cell) and the trace's `admit`
+     * record. */
     const struct PfAdmit *pf_admit;
 } EngineFit;
 
@@ -2512,11 +2517,12 @@ enum {
  * and by `VM_PREFILTER_WHY`'s site) and T2's row (read by `ENGINE_SEL` and by
  * the `--emit-ir` listing).
  *
- * B2 BUILT THEM BESIDE THE OLD DERIVATIONS AND SWITCHED NO READER. In the
- * default build nothing reads a cell yet; the trace build's both-derivations
- * oracle (`pcrec_fit_oracle_fail`, below) holds every cell to the derivation
- * it will replace, at every arrival and every token site. B3-B5 switch the
- * readers, one table per commit.
+ * B2 BUILT THEM BESIDE THE OLD DERIVATIONS AND SWITCHED NO READER; B3-B5
+ * switch the readers, one table per commit. B3 made T1 the recovery point's
+ * dispatch and B4 made T2 the admission and the listing's `prefilter` line.
+ * Until B5 the trace build's both-derivations oracle
+ * (`pcrec_fit_oracle_fail`, below) holds the remaining token cells to the
+ * derivations they will replace.
  *
  * PASS and ROLE are NAMED cells, outside every value range they sit beside,
  * so no cell means "pass" by being 0 (memory `pcrec-no-silent-defaults`).
@@ -2543,8 +2549,9 @@ typedef struct {
 
 /* T2's inputs, gathered once by `prefilter_decision` (§1.4). The two
  * nullability facts are NOT here: a row asks `pcrec_fact_nullable` or
- * `pcrec_fact_empty_admits` itself, only where today's derivation asks it,
- * because an ask marks the fact used and `--emit-facts` lists that. */
+ * `pcrec_fact_empty_admits` itself, where it decides on it. Which of the two
+ * the admission CONSUMED (an ask marks the fact used, and `--emit-facts`
+ * lists that) is `prefilter_decision`'s up-front ask, not the rows'. */
 typedef struct {
     Ctx     *cx;
     unsigned kinds;            /* the E1 kind mask (PF_KIND_*) */
@@ -2560,7 +2567,7 @@ typedef enum { PFV_UNSTATED, PFV_OFF, PFV_ON, PFV_DEFAULT } PfVerdict;
 
 /* One row of T2, the prefilter admission (§1.4): the first row that applies
  * decides `fit.prefilter`, names the `--emit-ir` `prefilter` value and
- * gives the admission's `ENGINE_SEL` cell. */
+ * prose and gives the admission's `ENGINE_SEL` cell. */
 typedef struct PfAdmit {
     const char *name;
     bool      (*applies)(const PfAdmitSel *s);
@@ -2570,6 +2577,10 @@ typedef struct PfAdmit {
      * always ON. */
     const char *list;
     unsigned char esel;        /* an ESEL_* value, or ESEL_PASS */
+    /* the listing's prose beside `list`, a `"…%s…"` format over the carried
+     * overflow cap name (`Ctx.dfa_overflow_why`; a row without the
+     * conversion ignores it). NULL exactly where `list` is. */
+    const char *note;
 } PfAdmit;
 
 #ifdef PCREC_CAND_TRACE
