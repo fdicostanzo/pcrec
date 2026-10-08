@@ -1549,3 +1549,19 @@ the compiler, and is never adopted silently. Proposed for main to file
        beat scalar on each.
      **Request to main: please file it** (e.g. [MEMFN-RTDISPATCH]), and
      record Q-R9-6 plus amendment 2 with your R-9 D-entry.
+- ruling recorded: 2026-10-08 — **Frank: the runtime-dispatch row's terms
+  (add them to the filed row).**
+  1. Per-arch separate artifacts (e.g. one lib.so per -march, selected at
+     load) already work through static selection; this needs nothing from
+     pcrec.
+  2. Dispatch applies by **frequency class** per site:
+     - INFREQUENT sites (precheck, find-start; about once per search call)
+       may be chosen dynamically per hardware;
+     - FREQUENT (hot-loop) sites never pay a hardware check. They take a
+       STATIC choice: the lowest common denominator of the selected set,
+       or a named most-common level.
+     - Each site therefore states its frequency class; pcrec knows it,
+       e.g. PRE FUNC = per call, OFS re-seed = inside the scan loop.
+     - Relevant only when more than one arch is selected for dynamic
+       support AND a hot-loop SIMD form exists. Possibly theoretical
+       today, which is part of the row's trigger.
