@@ -14,7 +14,7 @@ and added the row-contract checks: its report is **`G2U_REPORT.md`** here.
 - **ENFORCED CLASSES** (G2u3; formerly "PENDING-ENFORCE", renamed because
   nothing is pending: the kit's row-contract enforcement is in force; the
   `G2_PEND_*` identifiers and the batch header's `pending N` keep the old
-  spelling). Four classes, each a named population with a floor
+  spelling). Four classes (a fifth, `pf-edge`, is the PF shape's, below), each a named population with a floor
   (`FLOOR_CLS_*`) and a printed count (`ENFORCED-CLASS cases: N`, `class X: n`,
   generator `PENDBUCKET` lines, driver `G2 pending X:` lines):
   `hook-nonident` (non-identifier `s`/`n`/`lo`/`floor` text: must render and
@@ -33,6 +33,10 @@ and added the row-contract checks: its report is **`G2U_REPORT.md`** here.
   byte-identical, or refused. A difference is bisected to the field
   (`FAIL poison`). The "does not use" table, with the clause per field, is
   in `G2U_REPORT.md`.
+  (g2pf) An UNSTATED (NULL) `note` hook is never poisoned: stating it makes a
+  different site (the PF `stated-note` edge). `ret_pred` / `npred+preds` on a
+  PF site MOVE the kit's text today (KIT FINDING, `G2U_REPORT.md` section 9.5),
+  so the poison differential is red until the kit rules on it.
   Since the G2u2 addendum: a FUNC site's own name is ALWAYS `site.pred.fn_ref`
   (memfn.h K-1 ruling), so on ALL_PRESENT FUNC sites `pred.fn_ref` is never
   poisoned; every other member of `pred` there still is.
@@ -47,6 +51,33 @@ and added the row-contract checks: its report is **`G2U_REPORT.md`** here.
   reference.
 - **Per-form floors**: hard sites rendered and answer checks per reported
   form id (`FORMID` lines; ids opaque, only counted).
+
+## The PF shape (lane g2pf, `G2U_REPORT.md` section 9)
+
+Family `pf`: the site shape integration.md 15.7 `[R4g]` says pcrec sends the
+PF rows (FIND / STMT / ASSIGN over ONE REQUIRED SET term at offset 0, forward,
+`result` the position), in four CELLS, each filled in a batch of its own (so
+`MEMFN_LIBC` is judged and printed per cell):
+1. one-member set, end_back 0, EXCLUDED, a LEAVING `on_miss` that reads no
+   result (`on_miss_leaves` 1; goto or return), any miss spelling (NULL
+   included: the miss is a wildcard there);
+2. one-member set, end_back 1, EXCLUDED, no `on_miss`, miss the text `n - 1`;
+3. multi-member set through `table_ref`, empty NOP, end_back 0, `result` the
+   SAME text as `lo` (in place; `lo` > `n` is run too, Q-G2-1), miss
+   `MF_MISS_N` or `n`'s text;
+4. as 3 with end_back 1 and miss `n - 1`.
+EDGES are the same cells with one thing stated that the cell leaves unstated
+or in another class (a miss that is not the range's end, `result` not `lo`, a
+stated floor / note / `result_decl` / `on_miss`). Which edge a site is comes
+from G2's own fields (`pf_edge_mask`), so semantic-differential variants of a
+PF seed classify the same way. An edge is the class `pf-edge` (the fifth
+ENFORCED class): rendered and answer-equal, or refused naming the field.
+The edge `table-disagrees` (table contents differ from the set bits) is a
+caller defect: its answer is UNDEFINED, so the driver checks only that the
+rendered code does not fault (`tabbad`), and a refusal is as lawful as a
+rendering. The in-place reference is `g2_ref.c`'s `inplace` branch (empty NOP
+leaves `lo` as passed; a miss leaves the miss value). PF sites draw from their
+own RNG stream and id range (`pf_enter`/`pf_leave`), so no older site moved.
 
 ## Files
 
@@ -91,7 +122,8 @@ and added the row-contract checks: its report is **`G2U_REPORT.md`** here.
   the original space (family `base`), the §15 shape families (`ofs`,
   `ofsrun`, `stmt`, `onebyte`, `gate`, `setrest`, `vmrun`, each with and
   without `MF_D_RUN_OVERLAP`, then again with non-identifier hook text as
-  PENDING), the semantic differential (`sem`), and the PENDING queue. The
+  PENDING; and `pf`, the PF shape above), the semantic differential (`sem`,
+  with four PF seeds), and the PENDING queue. The
   original space is:
   - term cells: every SET offset −8..8 × 12 set kinds; every RUN offset
     −3..8 × length 1..33 × mask NULL/0/1/2 free bits, plus offsets −8..−4
