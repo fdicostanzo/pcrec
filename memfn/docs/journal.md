@@ -858,3 +858,30 @@ pointer when a kit change merges to main.
 - Frank's observation through main: the N2 census runs with a per-arm
   barrier (stragglers like `((a)|ab){4000}c` leave one compile running).
   Follow-up: one pool across all arms.
+- R4g merged to main (d33e1d55). n2pool delivered (one census pool, byte-
+  identical, resumable). N4 started: opus lane n4 in worktrees/n4 on
+  lane/memfn-n4 (from the n2pool branch), covering the MF_TRACE reach
+  counters, rows.tsv, the per-row signatures with controls, the census
+  floors (placeholders, pinned in a slot) and the spec literals.
+- Session reset (Frank). N4 is queued for a slot; its slot8 script is
+  written but not launched. n2pool was delivered and awaits main's merge.
+  wake.md is current. No lanes or runs are in flight.
+- 2026-10-08: N4 validated in slot8 and delivered.
+  - Full census: 379 s at JOBS=16, rc 0, 0 would-decline. The 12 pcrec
+    floors are pinned.
+  - make test had one red, test-codegen K37: N4's own `run_rows.sh` loop
+    read as an unbounded compiler site. A sonnet triage found it, the fix
+    is in e8e3e1d8, and test-codegen is green.
+  - The test-codegen re-run (5m43s) overlapped main's possland2 make test.
+    Main had cleared the triage to proceed, but the run was heavier than
+    "light". Next time, ask first.
+  - done: posted.
+  - OWED: g2_floor (blinded, per-row G2 count).
+- 2026-10-08: R4h scoped by a read-only opus lane, and its edit set posted.
+  - Overlap with C5-C7: disjoint functions.
+  - Contract gaps: G1 (counter ownership), G2 (layout), G3 (hook classes),
+    G4/G5.
+  - Main ruled Q-R4h-1 (a)+(b) (session 97): a caller-owned-counter hook at
+    MF_SITE_ABI 5, plus one pcrec layout-normalization mover after C7.
+  - Next on the kit side: R4h prep (G3 classes, the (a) hook, Q-G2-5
+    recorded) as a kit-only zero-mover unit.

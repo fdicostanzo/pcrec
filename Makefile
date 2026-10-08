@@ -328,7 +328,7 @@ TEST_SECTIONS := test-corpus test-cli test-reject test-registry test-parse \
       test-clskit test-encoding-checks test-utfcheck test-startset test-memfn-link \
       test-memfn-manifest test-memfn-g2 test-memfn-stamps test-memfn-arms \
       test-memfn-deleg test-memfn-arch test-memfn-forms test-memfn-reach \
-      test-cand-oracle
+      test-memfn-rows test-cand-oracle
 
 # [CHK-2 trailer] `test:` STOPPED being purely prerequisite-based here
 # (2026-08-26, manager finding, journal part 7): under `make -j12 test`,
@@ -1276,6 +1276,16 @@ test-memfn-deleg: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-memfn-deleg.ran"; fi
 	CC="$(CC)" TMPDIR=$${TMPDIR:-/var/tmp} bash tests/memfn/run_deleg_sites.sh
 
+# [MEMFN-ROWCON] N4: the kit's ROW MANIFEST (tests/memfn/rows.tsv) against
+# the rows an MF_TRACE build of the kit lists, each row's closed reach reason,
+# each row's text signature in its witness's artifact and absent from its
+# control's (the trace must agree with the text both ways), and the shape of
+# the per-row floor file (tests/memfn/row_floors.tsv). Seconds; builds a
+# traced kit and a traced pcrec in TMPDIR from build/libpcrec.a.
+test-memfn-rows: all
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-memfn-rows.ran"; fi
+	CC="$(CC)" TMPDIR=$${TMPDIR:-/var/tmp} bash tests/memfn/run_rows.sh
+
 # [MEMFN] R4a: G2, the kit's own tests (memfn/tests/, D27-blinded lane
 # memfng2): the kit's rendered text against G2's own byte loop over a
 # generated site space, with its planted-defect witnesses. The section runs
@@ -1284,11 +1294,17 @@ test-memfn-deleg: all
 # test-memfn-g2-full is the whole run (gcc and clang, full subjects, every
 # witness on every batch), about 25 minutes on the Mac: OPT-IN, never part
 # of `make test`.
-test-memfn-g2: all
-	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-memfn-g2.ran"; fi
-	TMPDIR=$${TMPDIR:-/var/tmp} bash memfn/tests/run_g2.sh --quick
+# The --quick tier's rows half links G2 against the TRACED library (the kit
+# compiled with -DMF_TRACE) and holds each kit row to its g2_floor in
+# tests/memfn/row_floors.tsv ([MEMFN-ROWCON] N4 follow-up).
+$(BUILD_DIR)/libpcrec_mftrace.a: $(BUILD_DIR)/libpcrec.a $(KITSRCS) $(KITHDRS) tests/memfn/mk_mftrace_lib.sh
+	CC="$(CC)" bash tests/memfn/mk_mftrace_lib.sh $@ $(BUILD_DIR)/libpcrec.a $(KITFLAGS)
 
-test-memfn-g2-full: all
+test-memfn-g2: all $(BUILD_DIR)/libpcrec_mftrace.a
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-memfn-g2.ran"; fi
+	G2_ROW_FLOORS=tests/memfn/row_floors.tsv TMPDIR=$${TMPDIR:-/var/tmp} bash memfn/tests/run_g2.sh --quick
+
+test-memfn-g2-full: all $(BUILD_DIR)/libpcrec_mftrace.a
 	TMPDIR=$${TMPDIR:-/var/tmp} bash memfn/tests/run_g2.sh
 
 # [START-SET] (D148) the `start_set` fact's checks: C-SS* (the emitted start
@@ -1838,7 +1854,7 @@ clean:
         test-encoding-checks test-startbnd test-utfcheck test-memfn-link test-core test-examples test-clskit \
         test-memfn-manifest test-memfn-g2 test-memfn-g2-full test-memfn-stamps \
         test-memfn-arms test-memfn-deleg \
-        test-memfn-arch test-memfn-forms test-memfn-reach \
+        test-memfn-arch test-memfn-forms test-memfn-reach test-memfn-rows \
         test-startset \
         smoke hooks strict testscripts ubsan asan san lint alloc mech bench \
         fuzz clean

@@ -754,3 +754,153 @@ the compiler, and is never adopted silently. Proposed for main to file
   observation only). No C, no pcrec byte, nothing make runs. Report:
   docs/dev/lanes/n2pool_report.md. Also adds the missing lanes index
   entry for r4gfix_report.md.
+- done: 2026-10-08 — **[MEMFN-ROWCON] N4: lane/memfn-n4 @ TIP (the commit
+  carrying this entry; main ad669fb8 merged in).** Report:
+  docs/dev/lanes/n4_report.md (§11 is the slot's validation).
+  - What it adds:
+    - `tests/memfn/rows.tsv` (13 kit rows, closed reach reasons, witness,
+      signature, control);
+    - `row_floors.tsv`;
+    - `make test-memfn-rows` (in TEST_SECTIONS);
+    - the trace's `REACH_DROPPED`;
+    - `n2_report.py --floors/--propose`.
+    No pcrec byte moves and there is no spec hunk.
+  - **Census wall time: 379 s** at JOBS=16 with the one-pool driver.
+    Result: rc 0, would_decline=0, floor_fail=0, reason_stale=0,
+    reach_dropped=0.
+  - The 12 `pcrec_floor` values are pinned from `--propose` (4e081f78), and
+    the re-check reads floor_placeholder=0.
+  - make test on 4e081f78 took 680 s, with one red in test-codegen [K37]:
+    N4's new `run_rows.sh` existence loop. Fixed in e8e3e1d8, after which
+    test-codegen is green and test-memfn-rows is 70/0.
+  - **OWED:** `g2_floor` (PLACEHOLDER) needs G2 to count per row, via a
+    blinded follow-up (n4_report §7).
+- notice: 2026-10-08 — **R4h (M3) edit set vs [START-TABLE] C5-C7 (read from
+  main d1a4105e and lane/stc5land 56a806c7). NOT YET BUILDABLE AS ZERO-MOVER:
+  two rulings are needed first (Q-R4h-1, Q-R4h-2 below).**
+  - **The edit set (search text only):**
+    - STAY: the `while` printf in `dir_fwd_skip` (emit_dfa.c:7348-7350) and
+      in `dir_rev_skip` (:7375-7377).
+    - EDGE: in `emit_scan_edge`, the unbounded loop (:8862-8864) and the
+      counted loop with its `scan_run_length++` (:8874-8878).
+    - VMSPAN: `vm_emit_span_scan` (emit_vm.c:4680-4684), at stride 1 only.
+      The function splits into a VMSPAN site builder plus the strided loop,
+      which stays as VMSTRIDE (M6).
+    - Three DELEG_SITES rows (SKIP/ADVANCE/SET, MF_P_INLOOP).
+  - **Stays pcrec-side:**
+    - the entry/guard lines, the peeled guard and the peeled `advance;`;
+    - accept stores, `stay<K>`/`scan<N>` tables, the counted fall-through
+      block, `dfa_edge_of`/`dfa_edges[]`, axis F;
+    - `lim_`/PRUNE_CLAMP, the cursor init, `vm_cursor_rep`;
+    - comments.
+    - `scan_test` stays T4 and renders the `member` hook.
+  - **Overlap:**
+    - C5: same files, disjoint functions (every C5 hunk is in the
+      cand/reseed/stamp/listing regions; DFA_SELECT and `dfa_edge_of`
+      survive).
+    - C5b, C6, C7: disjoint.
+    - Under D153 it may be built now. It lands after C5, with its sweep on
+      post-C5 main, serialized with C5b.
+  - **Contract gaps** (the emitted text does not fit memfn.h byte for byte):
+    - G1: the counter is declared by pcrec, with pcrec text (the peeled
+      step, `lim_`, the cursor init) between the declaration and the
+      `while`. EDGE also reads `scan_run_length` after the loop. §14.3 has
+      the kit declare it, while §15 rev 4.1 keeps it pcrec's.
+    - G2: layouts that no site fact decides. The counted condition is
+      wrapped (EDGE) or on one line (VMSPAN). The body is `) step;` or
+      `) { step; }`.
+    - G3: `more`/`peek`/`step` are OTHER-class only (fields.def), so a
+      byte-identical row cannot claim them (K96). This needs new kit
+      classes (a conjunct-safe `more`, a postfix `peek`), which is kit
+      ROWCON work.
+    - G4: Q-G2-5 (ADVANCE's empty range) has customers now: the reverse
+      STAY and the reverse EDGE.
+    - G5: the reverse SKIP offset comment in memfn.h:46-48 needs
+      reconciling with Q-G2-9.
+  - **Q-R4h-1 (main/Frank).** The kit recommends:
+    - (a) for G1, a SEMANTIC hook: "the caller declares and owns the
+      counter", an MF_SITE_ABI 5 bump. The counter is shared state,
+      because EDGE reads it after the loop, so it is a real site fact and
+      not layout.
+    - (b) for G2, ONE pcrec-side normalization pre-commit: a declared mover
+      with pcrec's abi bump and the D76/D94 re-pins, landing AFTER C7. It
+      gives every in-loop site one condition layout and one body layout,
+      so no layout variant enters the contract.
+
+    The alternative is layout hints in the contract, which ties pcrec's
+    formatting to the kit ABI permanently. The kit recommends against it.
+  - **Q-R4h-2 (kit's own, recorded for main).** Q-G2-5 is ruled as
+    recommended: ADVANCE's range is `more`, `empty` is NOP, and the kit
+    adds no empty test.
+  - **Sabotage:**
+    - re-pin and solo-run S214 (owner moves to the kit) and S72
+      (re-anchored to the accept-store guard at :7378);
+    - solo-run S433, S61 and S39;
+    - re-derive sabotage_anchors.tsv and call_graph.txt;
+    - add kit-side rows for the three unplanted bounds: the STAY view
+      `+ 1 <`, the unbounded EDGE loop and VMSPAN's `it_` cap.
+  - **C12/C17:**
+    - C12: emit_dfa.c walk-stmt 2→0 and walk-open 2→0 (both rows deleted);
+      rows 8→6, forms 12→8, C12_CEIL_ROWS_FLOOR 8→6.
+    - C17: STAY, EDGE and VMSPAN become delegated (6→9); VMSTRIDE stays
+      pending.
+  - **§19 (proposed new row):** `SCAN_TEST_CALLS 2` (emit_dfa.c:8680) and
+    `vm_cls_reads` price T4 by how many times the loop writes its test.
+    After R4h, that count belongs to the kit's form. It holds at zero
+    movers and must be restated before any in-loop mover.
+  - **Gate reach:** VMSPAN is reached only under `--engine=vm`. The
+    identity sweep needs that stream, plus witness cells: `a[^x]*`,
+    `a[^x]*x$`, `[a-z]*`, `a[0-9]{3,20}x`, and `(a)[a-z]{2,9}x` /
+    `a[a-z]*x` under `--engine=vm`.
+  - **Order the kit proposes:**
+    1. ROWCON G3 classes (kit-only, zero movers);
+    2. the Q-R4h-1 rulings;
+    3. the normalization pre-commit after C7, if ruled;
+    4. R4h.
+- ruling recorded: 2026-10-08 — **Q-R4h-1 RULED (a)+(b)** (manager,
+  2026-10-08, session 97).
+  - **(a)** MF_SITE_ABI 5 semantic hook: the CALLER owns the counter. pcrec
+    declares it and reads it after the loop; the kit's text only advances it.
+  - **(b)** ONE pcrec-side layout-normalization pre-commit, scheduled AFTER
+    C7. It is a declared mover with its own abi bump and re-pins in the same
+    change. Main checks it against refactor B's ([DEC-FALLBACK]) scope
+    before briefing it.
+  - No layout hints go in the contract. R4h lands zero-mover on top of (b).
+  - Kit-only work cleared now: the G3 hook classes in fields.def, and
+    recording Q-G2-5 as ruled (ADVANCE's empty range is NOP; the range is
+    `more`).
+  - The §19 row (the T4 pricing count becomes the kit's) is FILED, not
+    scheduled.
+  - Nothing is built pcrec-side until C7 merges.
+- done: 2026-10-08 — **[MEMFN-ROWCON] N4 follow-up, the G2 per-row floor:
+  lane/memfn-g2floor @ TIP (the commit carrying this entry; it is N4's tip plus
+  this unit plus the R4h notice/ruling entries).**
+  - **G2rows (blinded, cell; branch g2u 635c1f11):** `run_g2.sh --rows`, ON by
+    default under `--quick`, sums the trace's REACH `chosen=` over all 8 kit
+    processes into `row-chosen` lines, with four checks:
+    - REACH_DROPPED 0;
+    - every row >= 1;
+    - a literal floor of 13 rows;
+    - every process traced.
+
+    Controls for (b) and (d) run on every invocation. Report:
+    memfn/tests/G2ROWS_REPORT.md.
+  - **At the merge (manager):**
+    - `build/libpcrec_mftrace.a`, built by make (`tests/memfn/mk_mftrace_lib.sh`;
+      answers Q-G2R-1);
+    - G2 check (e): every row meets its `g2_floor` from row_floors.tsv,
+      tested in the failing direction;
+    - the 13 g2_floor values pinned at floor(0.9 x).
+
+    row_floors.tsv has no PLACEHOLDER left.
+  - **Validation:**
+    - `make test-memfn-g2` (taskset 12-15) passes: 45,229,686 checks, 0
+      failed, in 147 s;
+    - `test-memfn-rows` 70/0;
+    - no C changed, no pcrec byte moved.
+  - **Note:** test-memfn-g2 is a make test section. Its rows half adds about
+    nothing measurable (the G2 author measured inside ~25 s noise), but it
+    now depends on the traced library rule.
+  - **Q-G2R-2** (the literal FLOOR_ROWS stays at 13 when a row is added):
+    intended. rows.tsv's ROWS_FLOOR is the same kind of literal, and the
+    change that adds a row raises both.

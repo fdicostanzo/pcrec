@@ -1,0 +1,49 @@
+# tests/memfn/row_floors.tsv — per-row CHOSEN floors ([MEMFN-ROWCON] N4,
+# docs/design/memfn/row_contracts.md rev 4.1 §4). One line per row of
+# tests/memfn/rows.tsv (run_rows.sh holds the two to the same row set).
+#
+# Columns (TAB-separated):
+#   table, row     as rows.tsv
+#   pcrec_floor    the least number of selections (define + run phases) of
+#                  the row over pcrec's FULL N2 census: every --list-axes arm
+#                  x both comment tiers x the whole corpus (c-default, c-vm,
+#                  composition), summed from the MF_TRACE REACH lines.
+#                  `-` for a row whose reach (rows.tsv) is not `pcrec`: such a
+#                  row must be chosen 0 times there, and the census reports a
+#                  nonzero count as a STALE reason.
+#   g2_floor       the least number of selections of the row over G2 (memfn/
+#                  tests/run_g2.sh, the quick tier).
+#
+# PLACEHOLDER = not measured yet. NO NUMBER HERE IS INVENTED: each comes
+# from a run, and is written as floor(0.9 x measured) (the G2 floors' own
+# "measured less ~10%" rule), by hand, with the run named in the commit.
+#
+# pcrec_floor is measured by the manager's full census, in a slot (Linux):
+#   cd /home/pcrec/projects/pcrec && N2_LOCK=build/scratch/n2.lock \
+#     OUT=build/scratch/n2_n4 CC=gcc JOBS=12 nohup \
+#     bash docs/design/memfn/probes/rowcon/n2_census.sh \
+#     > build/scratch/n2_n4.log 2>&1 & disown
+#   # done when the log's last line is `== N2 DONE rc=0 would_decline=0 ==`;
+#   # then: python3 docs/design/memfn/probes/rowcon/n2_report.py \
+#   #   build/scratch/n2_n4 --floors tests/memfn/row_floors.tsv --propose
+#   # prints the floor(0.9 x chosen) value for every row to copy in here.
+# g2_floor is measured by G2's --quick tier with its rows half (memfn/tests/
+# run_g2.sh --rows, linked against build/libpcrec_mftrace.a): the row-chosen
+# lines, floor(0.9 x measured), pinned 2026-10-08 from a Linux run (seed
+# 20261005; memfn/tests/G2ROWS_REPORT.md). `make test-memfn-g2` holds every row
+# to it (check (e), G2_ROW_FLOORS=this file).
+#
+# table	row	pcrec_floor	g2_floor
+arms	ofsskip	50493	20190
+arms	precheck	253352	2061
+arms	precheck_assign	15956	2241
+arms	runcmp	56617	17829
+arms	pf_memchr	80268	3306
+arms	pf_memchr_bounded	25484	2842
+arms	pf_walk	608765	3679
+arms	pf_walk_bounded	27462	3366
+arms	generic	-	171196
+runcmp	words	15408	13870
+runcmp	overlap	108903	7275
+runcmp	bytes	324	14838
+runcmp	memcmp	87769	32669
