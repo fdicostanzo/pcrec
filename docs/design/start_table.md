@@ -311,9 +311,9 @@ const CandRow *cand_select(CandSlot slot, CandRoute route, const CandSel *s, uin
 
   | reader | reads | today | after |
   |---|---|---|---|
-  | P3 `dominated` (G1) | NEXT, on the artifact's route (`CR_DFA` or `CR_ATTEMPT`) | `dfa_cand_scan` `:7034` (calls) | unchanged |
-  | F1 `handoff` | PRESENCE | `req_handoff_applies` calls `req_admit` `:7336` | unchanged |
-  | R4 `adaptive-dense` | NEXT's scanned set | `pcrec_dfa_cand_ppm` `:7079` (calls) | unchanged |
+  | P3 `dominated` (G1) | NEXT, on the artifact's route (`CR_DFA` or `CR_ATTEMPT`) | `dfa_cand_scan` `:7034` (calls) | reads through `cand_read`, edge declared (C6) |
+  | F1 `handoff` | PRESENCE | `req_handoff_applies` calls `req_admit` `:7336` | reads through `cand_read`, edge declared (C6) |
+  | R4 `adaptive-dense` | NEXT's scanned set | `pcrec_dfa_cand_ppm` `:7079` (calls) | reads through `cand_read`, edge declared (C6) |
   | P2 `one-attempt`, DFA arm | BOUND on `CR_ATTEMPT` | RESTATES B1∨B2 (`engine == ATTEMPT && dfa_interior_dead(s1u)`, `:7141`) | calls (C5b) |
   | P2 `one-attempt`, VM arm | BOUND on `CR_VM` | RESTATES B3∨B4 (`start_anchor != NONE`, `:7138`) | calls (C5b) |
   | N7 `first-class` | BOUND on `CR_VM` | RESTATES (declines where B3/B4 apply, `:6813`) | calls (C5b) |
@@ -898,7 +898,9 @@ each; each fix is its own ruled change.
     `req_admits[]` and `pcrec_reseed_rows[]` carry theirs beside the row.
   - **Refactor:** moves every `desc` beside its row VERBATIM, the stale text
     included, so stream 5 stays identical.
-  - **Fix:** the declared listing commit C7 (§3.2) corrects it.
+  - **Fix:** the declared listing commit C7 (§3.2) corrects it. DONE at C7
+    (lane stc67): the row now reads "scanned as T = S, a non-empty proper
+    subset of the start state's escape set E".
 - **D-4. The run pin vs the offset-k pick: two derivations of "which byte the
   scan tests"** [r2 sound-M4; survey §4.2].
   - **What:** N1/N2 (`run-pinned[-bounded]`) apply only if the pin's scan offset
@@ -1026,8 +1028,8 @@ answers a different question:
 | C4 | **BUILT (lane stc4, 2026-10-07; `../dev/lanes/stc4_report.md`, the C4 outcome paragraph below), pending merge**. **replace PRESENCE + FIRST**: `req_admit`/`req_use` read `cand_select`; `req_admits[]`/`req_uses[]` deleted; `pcrec_req_admit_row`/`pcrec_req_use_row` become projections of `cand_rows[]`; D148 Q2's `DfaSel` → `CandSel` spelling sweep (ruled "C4 or C7", taken here) | S462, S473; the sweep's S518-S521, S527 |
 | C5 | **BUILT (lane stc5, 2026-10-07; `../dev/lanes/stc5_report.md`, the C5 outcome paragraph below), pending merge**. **replace RETRY + BOUND + WINDOW + WIDTH**: `vm_plan_reseed`'s loop → `cand_select`; the `VRS_P_*` tag and `vm_reseed_holds` deleted; the inline bound strings (into `u.bound`), the end-window test and the root-minw test read their slot's row; AND their stamp and listing readers do too: `<PREFIX>_END_WINDOW`, `<PREFIX>_VM_START`, `<PREFIX>_VM_ROOT_MINW` and `--emit-ir`'s `root-minw` row project the row (the value still from its landmark) [r2 sound-m1]; the start tables' last `DFA_SELECT` callers deleted (`req_admits[]`/`req_uses[]` go at C4; `dfa_select` itself STAYS: the six machine-form axes `dfa_reprs`, `dfa_views`, `dfa_seeds`, `dfa_accs`, `dfa_matches`, `dfa_edges` walk it and are outside the start table, §2.5; C3 already removed its route plumbing — ruled 2026-10-07, `../dev/lanes/stc3_report.md` §4 item 1) | S169, S263, S371, S372, S441 |
 | C5b | **BUILT (lane stc5b, 2026-10-08; `../dev/lanes/stc5b_report.md`, the C5b outcome paragraph below), pending merge**. **BOUND readers** [r2 sound-M5]: P2 (both arms), N7's anchoring conjunct, R3 and `attempt_cand`'s `anchored` loop call `cand_select(BOUND, route)` instead of restating it. Byte-identical because each restatement equals its route's B rows today (§1.3); the ask set grows only by `dfa_interior_dead` on `CR_ATTEMPT` (§2.3 item 4), declared to the trace diff | S269, S274, S276, S492, and S441 again (R3's line, `emit_vm.c:11090`, which C5 also moves) [r2.1 S-N3] |
-| C6 | **the listing reads the table**: `axes_dump.c`'s `prefilter`, `search-start`, `req-admit`, `req-use`, `hyb-reseed`, `vm-anchor-bound`, `end-window` sections project `cand_rows[]` by `list[route]` (NOT `match`: `dfa_matches[]` stays outside, §2.5 [r2 sound-m3]), printing today's `kind`, order, listed name and `desc` text byte for byte; N12 has no listing; `AXIS_DESC`'s start rows deleted | nothing (stream 5 identical) |
-| C7 | **declared listing commit, stream 5 only, NOT an abi event**: D-3's stale desc corrected; `kind` becomes `list` for the start axes that ARE lists now; spec hunk in `docs/spec/registry.md`; `tests/registry/` pins re-read | `--list-axes` text only |
+| C6 | **BUILT (lane stc67, 2026-10-08; `../dev/lanes/stc67_report.md`, the C6/C7 outcome paragraph below), pending merge**. **the listing reads the table**: `axes_dump.c`'s `prefilter`, `search-start`, `req-admit`, `req-use`, `hyb-reseed`, `vm-anchor-bound`, `end-window` sections project `cand_rows[]` by `list[route]` (NOT `match`: `dfa_matches[]` stays outside, §2.5 [r2 sound-m3]), printing today's `kind`, order, listed name and `desc` text byte for byte; N12 has no listing; `AXIS_DESC`'s start rows deleted | nothing (stream 5 identical) |
+| C7 | **BUILT (lane stc67, 2026-10-08), pending merge; REFACTOR A IS COMPLETE**. **declared listing commit, stream 5 only, NOT an abi event**: D-3's stale desc corrected; `kind` becomes `list` for the start axes that ARE lists now; spec hunk in `docs/spec/registry.md`; `tests/registry/` pins re-read | `--list-axes` text only |
 
 **C0's outcome** (lane stc0, `../dev/lanes/stc0_report.md`). Built as listed,
 in `scripts/emit_sweep.py` and a new `scripts/trace_diff.py`, with self-tests
@@ -1204,6 +1206,33 @@ the selection read; their own commit can route them through it); the call
 graph needed two fixes to see the read at all (a one-line macro's
 `#define` line is body, and reaches-seed is a fixpoint once the walk makes
 the graph cyclic), both neutral on main.
+
+**C6's and C7's outcome** (lane stc67, `../dev/lanes/stc67_report.md`).
+C6 built as listed: every start axis's `--list-axes` rows are
+`cand_rows[]`'s rows projected by `list[route]` through ONE accessor,
+`pcrec_cand_list_row`, and ONE dump emitter, `emit_cand_axis`; each row's
+`desc` sits beside it (`CandRow.desc`, moved verbatim, D-3's stale text
+included), the stamp is the row's SLOT's on the listed route
+(`cand_list_stamp`) and the value the stamp writer's spelling
+(`cand_list_value`); `CandList.fact_deny` carries the FACT deny the listing
+shows on the anchored BOUND rows and `window` (§3.7). The self-check holds
+every listed row to a `desc` and each listed order to its table position.
+The per-axis accessors and `PcrecAxisCand.stamp` are gone. `--list-axes`
+byte-identical to main. By the manager's ruling on stc5b §4 item 1, C6 also
+routes §1.3's three other reads through `cand_read` and declares each edge
+in `cand_nodes[].reads` in the same commit: G1 and R4 read NEXT
+(`dfa_cand_scan(cx, reader, …)`, CR_DFA and CR_ATTEMPT), F1 reads PRESENCE
+(`req_admit_read`, CR_DFA). The DFA-route reads and F1's print the records
+the old selections printed; the ATTEMPT-route read adds one per read (site
+`attempt-next`, `start_table/trace_declared_C6.txt`). Zero movers. C7 built as
+listed: D-3 corrected and the five start axes that were `predicate` list as
+`list`; the 19 moved cells are declared in `start_table/
+listing_declared_C7.tsv` and checked by `start_table/listing_diff.py`; spec
+hunk `docs/spec/registry.md` §6. Not an abi event (it moves no artifact
+byte). Corrections, all in the report §4: §3.5's "accessors kept until C7"
+had been overtaken at C5; the C6 row does not name `cand_nodes`, which the
+routed reads edit (S606 re-aimed); and §1.1's `stamp` column is the slot's,
+not a per-row field.
 
 **Sequencing against the kit's R4c** [Frank 2026-10-06, R-Q5; §6]: R4c (`memfn/docs/requests.md`
 R-4, main `05c33ce0`) lands BEFORE C1-C7, and C0 (no `src/`) runs in parallel
@@ -1565,6 +1594,10 @@ listed in `sabotage_anchors.tsv` before the commit is written.
   `pcrec_reseed_rows` by name in comments only. At C6 the projection keeps
   `pcrec_reseed_rows`/`pcrec_reseed_nrows` as accessors until C7. No sabotage
   row anchors in `axes_dump.c` or `AXIS_DESC` (grep, 0), so C6 re-aims none.
+  [stc67] Superseded: C5 had already replaced those two with
+  `pcrec_reseed_row`, and C6 deleted every per-axis accessor for one
+  projection (`pcrec_cand_list_row`). C6 did re-aim one row, S606, because
+  it also routed G1/F1/R4 through `cand_read` and so edited `cand_nodes`.
 - **Identity gates** (`tests/codegen/run_*_identity.sh`, 11 of them) compare
   emitted artifacts across arms. No emitted byte moves, so none of their pins
   moves. They run unchanged as part of `make test-codegen`.

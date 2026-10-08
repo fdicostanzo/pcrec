@@ -177,7 +177,16 @@ one.
   in the tree yet ([ENG-FORM] relayered `emit_dfa.c` only), so those rows
   are hand-stated from `lib/pcrec.h`'s own enum symbols (via a
   stringifying `V()` macro, so a bit's numeric position can move with no
-  edit here) and `docs/spec/tuning.md` §2's prose. This file's own header
+  edit here) and `docs/spec/tuning.md` §2's prose. **[START-TABLE] C6/C7
+  (lane stc67, 2026-10-08): the seven START axes (`prefilter`,
+  `search-start`, `req-admit`, `req-use`, `hyb-reseed`, `vm-anchor-bound`,
+  `end-window`) are ONE projection of `cand_rows[]`** (`emit_cand_axis`
+  over `pcrec_cand_list_row`): name, order, deny (the row's own plus a
+  fact deny its listing shows, start_table.md §3.7), stamp macro and value,
+  and the `applies` text, which is the row's `desc` beside it in
+  `src/gen/emit_dfa.c` (the hand `AXIS_DESC` keeps only the machine-form
+  axes; a start row with no desc prints its placeholder, which the axis
+  registry check fails). Since C7 all seven are `kind=list`. This file's own header
   comment states in full what the dump proves (what the compiler THINKS
   its axes are) and what it does not (independent evidence that a stamp
   or flag behaves as described — `tests/registry/axes_registry_check.sh`

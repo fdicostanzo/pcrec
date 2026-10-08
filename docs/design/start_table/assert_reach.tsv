@@ -1,45 +1,46 @@
 pred-asks	cand_bound_anchored_vm_applies	pcrec_fact_start_anchor
 pred-asks	cand_bound_gstart_vm_applies	pcrec_fact_start_anchor
 pred-asks	cand_rs_dense_applies	pcrec_fact_start_set
-pred-assert	cand_rs_dense_applies	ofs_test_of	src/gen/emit_dfa.c:6242	pcrec_ctx_fail(cx, 0, "internal error: a run-pinned prefilter row on "
-pred-assert	cand_rs_dense_applies	ofs_test_of	src/gen/emit_dfa.c:6247	pcrec_ctx_fail(cx, 0, "internal error: a run-pinned prefilter row whose "
+pred-assert	cand_rs_dense_applies	ofs_test_of	src/gen/emit_dfa.c:6265	pcrec_ctx_fail(cx, 0, "internal error: a run-pinned prefilter row on "
+pred-assert	cand_rs_dense_applies	ofs_test_of	src/gen/emit_dfa.c:6270	pcrec_ctx_fail(cx, 0, "internal error: a run-pinned prefilter row whose "
 pred-asks	cand_rs_dense_applies	pcrec_fact_req_run
 pred-asks	cand_rs_dense_applies	pcrec_fact_run_pin
-pred-assert	cand_rs_dense_applies	pf_scan_set_of	src/gen/emit_dfa.c:6840	pcrec_ctx_fail(cx, 0, "internal error: prefilter row '%s' was selected "
+pred-assert	cand_rs_dense_applies	pf_scan_set_of	src/gen/emit_dfa.c:6874	pcrec_ctx_fail(cx, 0, "internal error: prefilter row '%s' was selected "
 pred-asks	cand_rs_dense_applies	pcrec_fact_kset_walk
 pred-assert	cand_rs_dense_applies	find_derive_byte_rate	src/core/findings.c:305	pcrec_ctx_fail(cx, 0, "analysis '%s': its '%s' block at line "
 pred-assert	cand_rs_dense_applies	find_derive_byte_rate	src/core/findings.c:309	pcrec_ctx_fail(cx, 0, "internal error: analysis '%s': its "
 pred-asks	cand_window_applies	pcrec_fact_end_window
 pred-asks	dfa_pf_of	pcrec_fact_start_set
-pred-assert	ofs_test_of	ofs_test_of	src/gen/emit_dfa.c:6242	pcrec_ctx_fail(cx, 0, "internal error: a run-pinned prefilter row on "
-pred-assert	ofs_test_of	ofs_test_of	src/gen/emit_dfa.c:6247	pcrec_ctx_fail(cx, 0, "internal error: a run-pinned prefilter row whose "
+pred-asks	dfa_pf_read	pcrec_fact_start_set
+pred-assert	ofs_test_of	ofs_test_of	src/gen/emit_dfa.c:6265	pcrec_ctx_fail(cx, 0, "internal error: a run-pinned prefilter row on "
+pred-assert	ofs_test_of	ofs_test_of	src/gen/emit_dfa.c:6270	pcrec_ctx_fail(cx, 0, "internal error: a run-pinned prefilter row whose "
 pred-asks	ofs_test_of	pcrec_fact_req_run
 pred-asks	ofs_test_of	pcrec_fact_run_pin
 pred-asks	ofs_test_verifies_run	pcrec_fact_req_run
 pred-asks	ofs_test_verifies_run	pcrec_fact_run_pin
 pred-asks	pcrec_emit_end_window_clamp	pcrec_fact_end_window
-pred-assert	pf_dfa_start_set	pf_dfa_start_set	src/gen/emit_dfa.c:6631	pcrec_ctx_fail(s->cx, 0, "internal error: a seeded machine without the "
-pred-assert	pf_dfa_start_set	pf_dfa_start_set	src/gen/emit_dfa.c:6634	pcrec_ctx_fail(s->cx, 0, "internal error: a byte outside the DFA hat's "
-pred-assert	pf_first_class_bounded_applies	pf_dfa_start_set	src/gen/emit_dfa.c:6631	pcrec_ctx_fail(s->cx, 0, "internal error: a seeded machine without the "
-pred-assert	pf_first_class_bounded_applies	pf_dfa_start_set	src/gen/emit_dfa.c:6634	pcrec_ctx_fail(s->cx, 0, "internal error: a byte outside the DFA hat's "
-pred-assert	pf_first_memchr_bounded_applies	pf_dfa_start_set	src/gen/emit_dfa.c:6631	pcrec_ctx_fail(s->cx, 0, "internal error: a seeded machine without the "
-pred-assert	pf_first_memchr_bounded_applies	pf_dfa_start_set	src/gen/emit_dfa.c:6634	pcrec_ctx_fail(s->cx, 0, "internal error: a byte outside the DFA hat's "
+pred-assert	pf_dfa_start_set	pf_dfa_start_set	src/gen/emit_dfa.c:6654	pcrec_ctx_fail(s->cx, 0, "internal error: a seeded machine without the "
+pred-assert	pf_dfa_start_set	pf_dfa_start_set	src/gen/emit_dfa.c:6657	pcrec_ctx_fail(s->cx, 0, "internal error: a byte outside the DFA hat's "
+pred-assert	pf_first_class_bounded_applies	pf_dfa_start_set	src/gen/emit_dfa.c:6654	pcrec_ctx_fail(s->cx, 0, "internal error: a seeded machine without the "
+pred-assert	pf_first_class_bounded_applies	pf_dfa_start_set	src/gen/emit_dfa.c:6657	pcrec_ctx_fail(s->cx, 0, "internal error: a byte outside the DFA hat's "
+pred-assert	pf_first_memchr_bounded_applies	pf_dfa_start_set	src/gen/emit_dfa.c:6654	pcrec_ctx_fail(s->cx, 0, "internal error: a seeded machine without the "
+pred-assert	pf_first_memchr_bounded_applies	pf_dfa_start_set	src/gen/emit_dfa.c:6657	pcrec_ctx_fail(s->cx, 0, "internal error: a byte outside the DFA hat's "
 pred-asks	pf_run_applies	pcrec_fact_req_run
 pred-asks	pf_run_applies	pcrec_fact_run_pin
 pred-asks	pf_run_applies_common	pcrec_fact_req_run
 pred-asks	pf_run_applies_common	pcrec_fact_run_pin
 pred-asks	pf_run_bounded_applies	pcrec_fact_req_run
 pred-asks	pf_run_bounded_applies	pcrec_fact_run_pin
-pred-assert	pf_vm_start_applies	vm_start_assert_starts	src/gen/emit_dfa.c:6740	pcrec_ctx_fail(cx, 0, "internal error: the start set holds byte 0x%02x, "
+pred-assert	pf_vm_start_applies	vm_start_assert_starts	src/gen/emit_dfa.c:6763	pcrec_ctx_fail(cx, 0, "internal error: the start set holds byte 0x%02x, "
 pred-asks	req_byte_dominated_by	pcrec_fact_req_run
 pred-assert	req_byte_dominated_by	find_derive_byte_rate	src/core/findings.c:305	pcrec_ctx_fail(cx, 0, "analysis '%s': its '%s' block at line "
 pred-assert	req_byte_dominated_by	find_derive_byte_rate	src/core/findings.c:309	pcrec_ctx_fail(cx, 0, "internal error: analysis '%s': its "
 pred-asks	req_dominated_applies	pcrec_fact_start_set
-pred-assert	req_dominated_applies	ofs_test_of	src/gen/emit_dfa.c:6242	pcrec_ctx_fail(cx, 0, "internal error: a run-pinned prefilter row on "
-pred-assert	req_dominated_applies	ofs_test_of	src/gen/emit_dfa.c:6247	pcrec_ctx_fail(cx, 0, "internal error: a run-pinned prefilter row whose "
+pred-assert	req_dominated_applies	ofs_test_of	src/gen/emit_dfa.c:6265	pcrec_ctx_fail(cx, 0, "internal error: a run-pinned prefilter row on "
+pred-assert	req_dominated_applies	ofs_test_of	src/gen/emit_dfa.c:6270	pcrec_ctx_fail(cx, 0, "internal error: a run-pinned prefilter row whose "
 pred-asks	req_dominated_applies	pcrec_fact_req_run
 pred-asks	req_dominated_applies	pcrec_fact_run_pin
-pred-assert	req_dominated_applies	pf_scan_set_of	src/gen/emit_dfa.c:6840	pcrec_ctx_fail(cx, 0, "internal error: prefilter row '%s' was selected "
+pred-assert	req_dominated_applies	pf_scan_set_of	src/gen/emit_dfa.c:6874	pcrec_ctx_fail(cx, 0, "internal error: prefilter row '%s' was selected "
 pred-asks	req_dominated_applies	pcrec_fact_kset_walk
 pred-assert	req_dominated_applies	find_derive_byte_rate	src/core/findings.c:305	pcrec_ctx_fail(cx, 0, "analysis '%s': its '%s' block at line "
 pred-assert	req_dominated_applies	find_derive_byte_rate	src/core/findings.c:309	pcrec_ctx_fail(cx, 0, "internal error: analysis '%s': its "

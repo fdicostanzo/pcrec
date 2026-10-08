@@ -259,7 +259,7 @@ candidate of an axis always applies).
 | `axis` | 42 values today, and the list below is a TRANSCRIPT of `pcrec --list-axes`'s own `axis` column, deduplicated rather than a hand-kept set — re-derive it rather than trusting this line, which has now gone stale TWICE (pcrec-bench's O-10 item 8 caught it reading 19 while omitting `engine-route` and `prefilter-lang`; [OPT-5] STEP 2's read caught it reading 21 while omitting `scan-edge` and `scan-body`, which STEP 1 had landed; and it then stood at 24 while `alt-island`, `cls-fold`, `comments` and `startpos-guard` had ALL landed, which `[OPTLOOP.1]` batch 1 found when it came to add its own three): `accept`, `alt-island`, `altcls-factor`, `altcls-merge`, `atomic-discharge`, `cls-fold`, `cls-kit`, `cls-pack`, `comments`, `counter`, `ctx-node`, `direction`, `end-window`, `engine`, `engine-route`, `hyb-reseed`, `length-prune`, `lit-run`, `match`, `possessify`, `prefilter`, `prefilter-lang`, `req-admit`, `req-byte`, `req-run`, `req-run-fold`, `revdet`, `run-overlap`, `scan-body`, `scan-edge`, `search-start`, `seed`, `size-term`, `splice-calls`, `startpos-guard`, `table`, `tiered-entry`, `utf-check`, `view`, `view-edge`, `vm-anchor-bound`, `vm-prefilter` (re-transcribed 2026-10-04 by lane k82fix, which added [K82]'s `req-admit`; 2026-10-03 by lane c3build, which added [OPT-LITSCAN] S4 C3's `req-run-fold`; 2026-10-03 at the lane/r1land landing, which added [OPT-LITSCAN] S4 C1's `run-overlap`; 2026-10-03 at [OPT-VEDGE], which added `view-edge`; 2026-09-30 at [UTF-VALID], which added `utf-check`; it had stood at 35 while `cls-kit` and `cls-pack` landed, and at 31 while `lit-run`, `req-run` and `ctx-node` did). TEN are the DFA layer-1 axes (`table`, `prefilter`, `view`, `seed`, `accept`, `direction`, `match` — `docs/design/emitter_form.md` §3 and, for `match`, `docs/design/anchored_match_unwrapped.md` §5.1 — plus `scan-edge` and `scan-body`, [OPT-5] STEP 1's region and run-test axes — `scan-body`'s candidates read off `src/gen/clskit.c`'s class-form table since D139, the edge having no class decision of its own — and `search-start`, [OPT-5] STEP 2's search-entry axis, `docs/design/opt5_step2_twopass.md` §4.1); the other thirty-two (`req-admit`, the pre-check admission table [K82] made listable, `req-run-fold`, [OPT-LITSCAN] S4 C3's caseless necessary run, `view-edge`, [OPT-VEDGE]'s widening of `scan-edge`, and `run-overlap`, [OPT-LITSCAN] S4 C1's run-compare spelling, joined them) are VM-side, emitted-shape, WHOLE-WINDOW PRE-CHECK and CONTRACT axes (`docs/spec/tuning.md` §2) — the last group, `[OPTLOOP.1]` batch 1's `vm-anchor-bound`/`end-window`/`req-byte`, is the first whose analysis sits ABOVE either engine, so two of its three report on DFA artifacts as well | yes, but append-only — a new axis is a new value, never a renumbering |
 | `order` | a positive integer, 1-based, dense per axis (an axis with N candidates uses 1..N) | yes |
 | `candidate` | free text, but always one axis's own stamp vocabulary where a stamp exists (§3's `built`-style closed sets, one per axis) | yes as a vocabulary shape, values are per-axis |
-| `kind` | `list` (a real candidate-list-of-objects exists in `emit_dfa.c` and this row's `candidate`/`deny_macro` came straight off it) \| `both` (axis `direction` only — not a preference list; both candidates are ALWAYS emitted, once each, per machine) \| `predicate` (no candidate-list-as-data exists yet; hand-stated from `lib/pcrec.h`'s enum symbols and `tuning.md`'s prose) | yes |
+| `kind` | `list` (a real candidate-list-of-objects exists in `emit_dfa.c` and this row's `candidate`/`deny_macro` came straight off it; since [START-TABLE] C7 this includes all seven START axes, `prefilter`, `search-start`, `req-admit`, `req-use`, `hyb-reseed`, `vm-anchor-bound` and `end-window`, which are rows of the one start table `cand_rows[]` — the last five were `predicate` before C7) \| `both` (axis `direction` only — not a preference list; both candidates are ALWAYS emitted, once each, per machine) \| `predicate` (no candidate-list-as-data exists yet; hand-stated from `lib/pcrec.h`'s enum symbols and `tuning.md`'s prose) | yes |
 | `stamp_macro` | the `#define` this candidate is reported through (e.g. `RX_DFA_TABLE`, `RX_VM_STRATS`), or empty when no such macro exists — axes `view`/`seed`/`accept`/`direction` have none (emitter-internal decisions with no observable trace), and a few `predicate` axes stamp an ACTIVITY COUNT rather than a named value (`RX_ALTCLS_MERGES`, `RX_VM_CALL_SPLICED`/`_LINKED`, `RX_FAST_FRAMES`) | yes as a vocabulary shape |
 | `stamp_value` | the value `stamp_macro` takes when this candidate is chosen — empty when `stamp_macro` is empty OR is a count rather than a name (D82: "the chosen object's name IS the stamp value" holds exactly where this column is non-empty). Where a macro's real value set is wider than a two-candidate mechanism/fallback pair — because the artifact reports WHY a selection landed where it did, or composes a fact from more than one machine — the axis carries ONE ROW PER VALUE instead (`engine-route` was the first instance; `size-term`'s seven rows and `table`'s two composite rows, [REG-SV], are two more), and a row with no lever of its own (empty `deny_macro`/`force_macro`/`cli_flag`) still carries its own real `stamp_value`, never an empty one standing in for "not a candidate" | free text, but always another column's own value when non-empty |
 | `deny_macro` / `deny_bit` | the `PCREC_NO_*` bit (`lib/pcrec.h`) that removes this candidate from the emitter's selection walk, empty when none exists. A candidate removed by EITHER of several bits carries them all, `|`-joined lowest bit first, in lockstep with `cli_flag` (`[OPT-LITSCAN]` S1's `run-pinned` rows: `PCREC_NO_OFFSET_SKIP|PCREC_NO_RUN_PREFILTER`, `16|32`, `-fno-offset-skip|-fno-run-prefilter`); a reader splits all three cells on `|` together. **Axis `prefilter`'s own missing deny flag is a documented FINDING** (`docs/design/emitter_form.md` §3: the DFA scan's own candidate-start filter has no `-fno-*` knob and no axis sweep), not an omission in this dump | yes |
@@ -268,25 +268,29 @@ candidate of an axis always applies).
 | `applies` | a one-line English summary of the candidate's selection condition | free text, hand-authored (see below) |
 
 **BOUNDARY, stated once here because it governs every column above**:
-this dump shares its source with the emitter it describes — for the six
+this dump shares its source with the emitter it describes — for the
 `kind=list`/`both` axes, `candidate`/`deny_macro`/`deny_bit` are read
 live off the SAME arrays `src/gen/emit_dfa.c`'s own selection walks read
 (`src/dump/axes_dump.c`'s accessor calls): `dfa_select`'s lists for the
-machine-form axes and, for `prefilter` and `search-start`, the NEXT and
-RECOVER rows of the one start table `cand_rows[]` that `cand_select`
-walks (since [START-TABLE] C3, `docs/design/start_table.md`), so a new
-candidate landing in one of those arrays appears here with no edit to
-the dump. The `kind=predicate` axes `req-admit` and `req-use` are read the
-same way: their rows (name, deny, stamp token, description) are the
-PRESENCE and FIRST rows of `cand_rows[]` since [START-TABLE] C4, which
-`req_admit`/`req_use` walk; and so is `hyb-reseed`, whose rows are the
-RETRY rows of `cand_rows[]` since [START-TABLE] C5 (before it the VM
-emitter's own `pcrec_reseed_rows[]`), which the VM hybrid's retry
-planning walks. The
+machine-form axes and, for the seven START axes (`prefilter`,
+`search-start`, `req-admit`, `req-use`, `hyb-reseed`, `vm-anchor-bound`,
+`end-window`), the rows of the one start table `cand_rows[]` that
+`cand_select` walks, each listed under its axis by the row's own
+`list[route]` column and projected with its stamp macro and value (since
+[START-TABLE] C6, `docs/design/start_table.md`; the start axes' rows had
+become that table's slot by slot at C3-C5), so a new candidate landing in
+one of those arrays appears here with no edit to the dump. A start axis's
+`deny_macro` may name a FACT's deny bit rather than the row's own: on
+`vm-anchor-bound`'s anchored rows `-fno-vm-anchor-bound` and on
+`end-window`'s `window` row `-fno-end-window` empty the landmark the row
+reads, so the bit removes the row's population without removing the row
+(start_table.md §3.7). The
 `applies` column, for every row, is HAND-AUTHORED prose (`emitter_form.md`
 §3's own "applies when" column, transcribed by a human, for the
-`kind=list`/`both` rows; `tuning.md` §2's prose for the `kind=predicate`
-rows) — evaluating a real candidate's predicate needs a live pattern a
+machine-form `kind=list`/`both` rows; for a start axis, the row's `desc`,
+written beside the row in `cand_rows[]` since [START-TABLE] C6;
+`tuning.md` §2's prose for the `kind=predicate` rows) — evaluating a real
+candidate's predicate needs a live pattern a
 context-free listing command does not have, so the text is a
 description, never a live evaluation. **This dump therefore proves what
 the compiler THINKS its own axes are; it is not independent evidence

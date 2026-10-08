@@ -6604,23 +6604,17 @@ long long pcrec_cwmax(const Ast *a);                 /* src/opt/mrl.c */
  * candidate's stamp value where it has one, `deny` the `cx->opt->flags` bit
  * (or 0) that removes it from the emitter's own selection walk. Populated by
  * walking the SAME `DfaCand`-headed arrays `src/gen/emit_dfa.c`'s
- * selection walks read (`dfa_select`'s lists, and since [START-TABLE] C3
- * `cand_rows[]` for `prefilter` and `search-start`) — never a hand-copied
+ * selection walks read (`dfa_select`'s lists) — never a hand-copied
  * restatement of their names and bits (docs/dev/learnings.md §3) — so a
- * candidate added to one of those lists appears in the dump with no edit to the walker. `cap` bounds `out`;
- * returns the number written (never more than `cap`). */
+ * candidate added to one of those lists appears in the dump with no edit to
+ * the walker. The start axes are `pcrec_cand_list_row`'s, below. `cap`
+ * bounds `out`; returns the number written (never more than `cap`). */
 typedef struct {
     const char *name;
     uint64_t    deny;
-    /* [START-SET] the stamp macro this row writes where it is not its axis's
-     * own, or NULL: `first-class` serves the VM route alone at stage 2 and
-     * writes `RX_VM_START_SCAN`, never `RX_DFA_PREFILTER`. */
-    const char *stamp;
 } PcrecAxisCand;
 
 size_t pcrec_dfa_axis_table_cands(PcrecAxisCand *out, size_t cap);      /* axis A */
-
-size_t pcrec_dfa_axis_prefilter_cands(PcrecAxisCand *out, size_t cap);  /* axis B */
 
 size_t pcrec_dfa_axis_view_cands(PcrecAxisCand *out, size_t cap);       /* axis C */
 
@@ -6643,10 +6637,6 @@ size_t pcrec_dfa_axis_edge_cands(PcrecAxisCand *out, size_t cap);       /* axis 
 
 size_t pcrec_dfa_axis_scanbody_cands(PcrecAxisCand *out, size_t cap);   /* axis I */
 
-/* [OPT-5 STEP 2] axis J -- which form <prefix>_search's post-loop start
- * recovery takes ("pinned" / "reverse-pass"). Axis G's sibling: a question
- * about an ENTRY POINT, so bare DfaCands and no DfaForm. */
-size_t pcrec_dfa_axis_searchstart_cands(PcrecAxisCand *out, size_t cap); /* axis J */
 
 /* The same text into a CALLER-OWNED buffer, for a site that splices it into a
  * larger `pcrec_sb_printf` rather than appending it. Returns `buf`, which is the
@@ -6754,47 +6744,24 @@ bool pcrec_artifact_has_dfa_scan(Ctx *cx);
  * when it tests none). src/gen/emit_dfa.c. */
 unsigned pcrec_dfa_cand_ppm(Ctx *cx);
 
-/* [OPT-HYB-RESEED] the VM hybrid's retry re-seed rows (src/gen/emit_dfa.c;
- * since [START-TABLE] C5 the RETRY rows of the one start table `cand_rows[]`,
- * was `pcrec_reseed_rows[]` in src/gen/emit_vm.c; axis `hyb-reseed`,
- * docs/design/hyb_reseed.md §4), row `i` as DATA for `--list-axes`: the
- * row's listed name (the `<PREFIX>_VM_RESEED` value it stamps), its deny bit
- * and its predicate in one line. False, and `out` untouched, past the last
- * row. */
+/* [START-TABLE] C6 THE START AXES' `--list-axes` ROWS: the `i`th row (from
+ * 0) of the one start table `cand_rows[]` (src/gen/emit_dfa.c) listed under
+ * `axis` (`prefilter`, `search-start`, `req-admit`, `req-use`, `hyb-reseed`,
+ * `vm-anchor-bound`, `end-window`), in table order, as DATA: the listed name
+ * and order, the deny bits the listing shows (the row's own, plus the FACT
+ * deny that empties the landmark it reads, start_table.md §3.7), the stamp
+ * macro and value the row projects into, and its `desc`. One projection for
+ * every start axis, so the listing cannot state a row the walk does not
+ * have. False, and `out` untouched, past the last. */
 typedef struct {
     const char *name;
-    uint64_t    deny;
-    const char *desc;
-} PcrecReseedDesc;
-bool pcrec_reseed_row(int i, PcrecReseedDesc *out);
-
-/* [OPT-PRECHECK-ADMIT] [K82] the whole-window pre-check's admission rows
- * (src/gen/emit_dfa.c; since [START-TABLE] C4 the PRESENCE rows of the one
- * start table `cand_rows[]`, was `req_admits[]`), row `i` as DATA for
- * `--list-axes`: the row's listed name, its deny bit, the `<PREFIX>_REQ_WHY`
- * token it stamps and its predicate in one line. False, and `out` untouched,
- * past the last row. */
-typedef struct {
-    const char *name;
-    uint64_t    deny;
-    const char *why;
-    const char *desc;
-} PcrecReqAdmitDesc;
-bool pcrec_req_admit_row(int i, PcrecReqAdmitDesc *out);
-
-/* [K82] the pre-check's USE rows (src/gen/emit_dfa.c; since [START-TABLE]
- * C4 the FIRST rows of `cand_rows[]`, was `req_uses[]`; axis `req-use`), row
- * `i` as DATA for `--list-axes`: the row's listed name, its deny bit, the
- * `<PREFIX>_REQ_HANDOFF` value it stamps ("" where that value is the
- * artifact's own K) and its predicate in one line. False, and `out`
- * untouched, past the last row. */
-typedef struct {
-    const char *name;
+    int         order;
     uint64_t    deny;
     const char *stamp;
+    const char *value;
     const char *desc;
-} PcrecReqUseDesc;
-bool pcrec_req_use_row(int i, PcrecReqUseDesc *out);
+} PcrecCandListRow;
+bool pcrec_cand_list_row(const char *axis, int i, PcrecCandListRow *out);
 
 void pcrec_emit_c_string_literal(StrBuf *sb, const char *s, size_t len);
 
@@ -7053,8 +7020,9 @@ typedef struct CandVmFacts {
 typedef struct CandRow CandRow;
 
 /* THE RETRY SLOT's PAYLOAD, `CandRow.u.reseed` (was `PcrecReseedRow`'s
- * action/start/armed columns and its description): what the hybrid's retry
- * does after a failed attempt, and where a call's adaptive state starts. */
+ * action/start/armed columns; its description is the row's `desc` since
+ * [START-TABLE] C6): what the hybrid's retry does after a failed attempt,
+ * and where a call's adaptive state starts. */
 typedef enum { CAND_RS_A_FIXED, CAND_RS_A_ADAPT } CandRsAction;
 typedef enum { CAND_RS_S_NONE, CAND_RS_S_FIRST, CAND_RS_S_CAP } CandRsStart;
 typedef struct CandReseed {
@@ -7063,7 +7031,6 @@ typedef struct CandReseed {
                              * first step budget is read from */
     bool          armed;    /* the call starts with the step block ARMED, so
                              * its first short re-seed gap starts a block */
-    const char   *desc;     /* the predicate in one line (`--list-axes`) */
 } CandReseed;
 
 /* THE BOUND SLOT's PAYLOAD, `CandRow.u.bound`: which start positions can

@@ -36,6 +36,12 @@ or it has no regression net at all.
   compare, and the script builds the trace compiler ONCE (the new-first
   build had nothing to go second against; `CAND_ORACLE_BINS` takes one
   binary, a second word is ignored). WINDOW's reader runs `cand_hit_every`.
+  **Since C5b/C6** every SELECTION READ (`cand_read`) is a checked edge:
+  S606 (NEXT's VM-route BOUND read, C5b) and, since C6, S607 (F1's read of
+  PRESENCE), S608 (G1's ATTEMPT-route read of NEXT) and S609 (R4's read of
+  NEXT), each dropped from `cand_nodes[].reads` and caught as
+  `CANDORACLE undeclared-read`; S610 (a listed row without its `desc`, C6)
+  is caught by the self-check's `table-desc-unlisted`.
 - **run_cand_rows.sh** + **cand_rows_check.py** — [START-SET] (D148;
   `docs/design/startset.md` §8): the candidate table's (`dfa_pfs[]`, since
   [START-TABLE] C3 `cand_rows[]`'s NEXT and RECOVER rows) structural checks, in `make test-codegen` (well under a second; mech arm

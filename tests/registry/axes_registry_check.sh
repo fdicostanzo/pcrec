@@ -398,13 +398,16 @@ done < <(awk -F'\t' $MAP '!/^#/ {
 
 # Every "list"/"both" axis's candidates must have an authored applies() —
 # the dump's own placeholder text names an unauthored one, so grep for it
-# rather than re-parsing: a candidate the accessor sees but this file's
-# AXIS_DESC table does not is a FINDING (a lane added a candidate without
-# telling axes_dump.c about it), never silently accepted.
+# rather than re-parsing: a candidate the accessor sees but no text
+# describes is a FINDING (a lane added a candidate without its text),
+# never silently accepted. The text lives in axes_dump.c's AXIS_DESC table
+# for the machine-form axes and, since [START-TABLE] C6, beside each row of
+# cand_rows[] for the start axes, which print the same placeholder for a
+# row without one (sabotage S610).
 if grep -qF 'no description authored for this candidate yet' "$TSV"; then
     while IFS=$'\t' read -r axis _ candidate _; do
         [ -n "$axis" ] || continue
-        bad "[$axis/$candidate] has NO authored description in src/dump/axes_dump.c's AXIS_DESC table (a candidate landed with no edit there)"
+        bad "[$axis/$candidate] has NO authored description: src/dump/axes_dump.c's AXIS_DESC table for a machine-form axis, or, for a start axis, the row's desc beside it in src/gen/emit_dfa.c's cand_rows[] (a candidate landed with no text)"
     done < <(awk -F'\t' $MAP '!/^#/ && $applies ~ /no description authored/ {print $axis"\t"$order"\t"$candidate"\t"$kind}' "$TSV")
 else
     ok "every list/both-axis candidate has an authored one-line description"

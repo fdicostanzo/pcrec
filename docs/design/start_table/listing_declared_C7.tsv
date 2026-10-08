@@ -1,0 +1,19 @@
+# [START-TABLE] C7's DECLARED --list-axes movers (start_table.md §3.2 C7: "a
+# declared listing commit, stream 5 only, NOT an abi event"), checked by
+# listing_diff.py against the parent's listing. One line per declared cell
+# change: axis, candidate (`*` = every row the PARENT lists under the axis),
+# column, old value, new value (TAB-separated). Every other cell, row, column
+# and header line must be identical, and every declared cell must change
+# exactly as stated (a declaration that does not happen is a failure).
+#
+# The five start axes that were hand-stated `predicate` rows before their
+# rows became cand_rows[] (C4/C5) and were projected as `predicate` through
+# C6 to keep the listing identical: their rows ARE a candidate list now.
+vm-anchor-bound	*	kind	predicate	list
+end-window	*	kind	predicate	list
+req-admit	*	kind	predicate	list
+req-use	*	kind	predicate	list
+hyb-reseed	*	kind	predicate	list
+# D-3 (start_table.md §2.4): the DFA hat's row described T = S & E*, which
+# D148 addendum 3 retracted; the code scans T = S (pf_dfa_start_set).
+prefilter	first-memchr-bounded	applies	[START-SET] the DFA hat: the unanchored forward scan of a SEEDED machine with a plain skip, a start set S (the start_set fact) not nullable with fewer than 256 members, and T = S & E* (E* every seed state's escape set; T == S) a non-empty proper subset of the start state's escape set E, one byte: memchr for it, stopped at n-1, re-seeding the state from the byte before the landing where the skip moved	[START-SET] the DFA hat: the unanchored forward scan of a SEEDED machine with a plain skip, a start set S (the start_set fact) not nullable with fewer than 256 members, scanned as T = S, a non-empty proper subset of the start state's escape set E, one byte: memchr for it, stopped at n-1, re-seeding the state from the byte before the landing where the skip moved
