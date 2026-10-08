@@ -1116,3 +1116,32 @@ the compiler, and is never adopted silently. Proposed for main to file
     in `src/gen/memfn_stamps.c`'s `libc_names[]` is now redundant (pcrec
     spells no memchr). Deleting it moves no byte. S513 is the tripwire that
     says so.
+- notice: 2026-10-08 — **Proposed text for R-8 (M7, N7), for main to file.
+  The kit does not write requests.md.** Main and the kit were each
+  waiting for the other to write it. Suggested request:
+  - **R-8 — M7: N7, the encoding seam's span compare
+    (`src/enc/enc_byte.c` `$_span_match[_caseless]`), migrates, zero
+    movers.**
+  - **Trigger:** completeness (integration.md §22 M7; its prerequisite M1b
+    has landed; Q54 RULED YES, D147 addendum 10).
+  - **Step 1 is a READ-ONLY scoping lane, as R-7 had:**
+    - the edit set;
+    - the boundary (what stays the encoding's under D58/DD-12);
+    - the overlap check against refactor B ([DEC-FALLBACK] B3+) and any
+      in-flight `src/enc/` work, under D153;
+    - the vocabulary gap. The `MF_VOCAB` bump is a run-time-operand
+      `mismatch` returning a prefix count, caseless variant included.
+  - **Scope also carries:**
+    - C17's static scan gains `src/enc/`;
+    - manifest N7 goes pending → delegated;
+    - main's ruled rider: delete the redundant `"memchr"` entry in
+      `src/gen/memfn_stamps.c` `libc_names[]` (no byte moves; S513's
+      tripwire is re-pinned or retired in the same change).
+  - **Sabotage ids:** about 3, named by the scoping lane.
+  - **Validation:** the slot chain as for R-7 (census, identity gate, G2
+    full, make test via perfrun, mech by rule (b)).
+  - **Blinded G2:** the new `mismatch` operation gets its oracle from a
+    D27 lane (cell g2u-cell).
+  - **Ordering:** M6 (N6 + the strided VM span; prerequisite R4h, landed)
+    could go first instead. The kit has no preference beyond main's: M7
+    first per main's message.
