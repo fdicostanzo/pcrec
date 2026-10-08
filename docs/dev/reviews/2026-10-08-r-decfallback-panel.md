@@ -53,4 +53,46 @@ Two read-only critics: critB1 (opus, soundness/semantics) and critB2 (sonnet, ch
 Not found wrong: S259/nomem coverage, the COMPILE_MAX_ATTEMPTS arithmetic, the T3 order vs compile.c:1850-1858, T2 rows 1-2.
 
 ## critB1 — SOUNDNESS
-(pending)
+
+**Verdict:** the no-mover claim HOLDS in the reachable space (0 BLOCKING). §4.1/§5.1/Q5 and the "total over every arrival" claim do not survive. The method used build/pcrec at dd7c2f3d, gdb hit counts on pcrec_select_engine (one per attempt), the emitted stamps, and --emit-ir reasons.
+
+### MAJOR
+- **MAJOR-1. §4.1's split is incomplete.**
+  - T2 row 5 reads `empty_admits`, while T3's gate (compile.c:1835, `collapse = wanted && (fpf || !nullable)`) reads BARE nullable.
+  - On nullable ∧ ¬empty_admits ∧ collapsible_rep, three things happen in order: the rung is offered; admission keeps the prefilter; the gate declines the collapse. So the exact machine that just failed is rebuilt and fails again. It is a pure waste attempt with an unchanged token, live at shipped limits:
+    - `^(?:(?:a|b)*a(?:a|b){20})?$` takes att=3 overflowed-dfa (2 with -fno-prefilter-collapse);
+    - `-e utf8 --features all ^(\p{Xwd}{1,3})?$` takes att=3 size-cap-retry (2 with the deny).
+  - Fix (a), pfc_rep only, does not remove these, and F-B3 is not structurally closed by it.
+  - Fix: split the conjunct three ways (pfc_rep; nullable∧¬empty_admits = waste; empty_admits = designed). The later row is either `requires = pfc_rep && !(nullable && !empty_admits && !fpf)` (compile time only), or a ruling that the gate reads empty_admits (a token mover: a2 goes overflowed-dfa -> collapsed-prefilter). In §7, list T2r5 vs T3r3 as two derivations of one question.
+- **MAJOR-2. Fix (a) is not artifact-neutral.**
+  - VM_PREFILTER_WHY carries the LAST refused attempt's byte figure, and deleting the wasted attempt changes it. Example: `-e utf8 --features all '(\p{Xwd})'` reads "hybrid 1028613 > 1000000" vs 1028607 with the deny; the .c diff is that one line.
+  - So the later row is a STAMP-VALUE mover and needs a D76/D94 ruling. B itself keeps every attempt, so B is unaffected.
+- **MAJOR-3. A fifth arrival is missing.**
+  - compile.c:1179's `pf.forcing` arm (the --emit-facts forced ask) is tested FIRST, ahead of K60 nomem, and absorbs any failure into `decline:force-failed`.
+  - The arm is not in §1.1, B3 or §7, and Q3's "total over every arrival" is false.
+  - Risk: a nomem row at the top would propagate where today the forcing arm absorbs it (a stream-6/CLI mover).
+  - Fix: a `forcing` label with row 0 ahead of nomem (or declare the arm outside and ahead of the walk), and add `pf.forcing` to state_readers.sh.
+
+### MINOR
+- **m1.** Row 2 (size-term-trial) fires up to N per run × 3 runs; the "each row at most once" prose is false. Add a trace-build assert that a non-trial row's bit is never set twice.
+- **m2.** §1.7's "no size row after a [SEL-1] row" is argued wrongly. From an F-B3 state (pop 0), sel1-collapse -> prefilter-collapse -> T2 row 6 would stamp `selected` where today it stamps overflowed-{role}. Extend the :976 premise check, or add a §1.9 invariant.
+- **m3.** fit_fired/fit_last must be volatile driver locals (setjmp). Declare the anchored machine's own overflow -> search-filter fallback (compile.c:365-372, PCREC_ANCHORED_MAX_STATES) as an unhosted sibling in §7.
+
+### Could not refute
+- T2's one order reproduces both the ternary and the listing chain (probed on a${v}b, ^${v}$, (a)*, (a*)*, the SEL-1 pattern, a2, a3, with and without the deny flags).
+- esel_of's arm mapping on every reachable sequence.
+- T1 order = code order (forcing aside); fof=false on rows 3-4.
+- F-B4 (anchored dfa_overflowed save/restore).
+- COMPILE_MAX_ATTEMPTS: 25 = 1+6+3·6, worst reachable 21.
+- T3 vs the PFLW ternary; T4 vs size_term_why.
+- §1.4(a)/(b).
+
+## DISPOSITIONS (manager, 2026-10-08)
+
+All findings ACCEPTED into a rev 2 (lane decfbrev2). Rulings:
+- critB2 B1 (the emit-ir-auto stream plus hand-written check_ir_value rows covering every T2 row and scope) is a hard gate for B4.
+- M1-M7 fixed as proposed. M7: retire the legs at B5, behind the observed-stamp leg.
+- critB1 MAJOR-1/2: the §4.1 fix leaves B entirely and becomes a later row, [DEC-COLLAPSE-WASTE]. It has two candidate forms: compile-time-only `requires`, or the gate reading empty_admits (a token mover). Its D76/D94 status is ruled when it is built. B keeps every attempt and every stamp value.
+- critB1 MAJOR-3: a `forcing` row 0 ahead of nomem (so the table really is total), with `pf.forcing` in the census.
+- The minors are folded in.
+- Frank's open questions are unchanged (Q1, Q2, Q4(b)); the manager takes the recommendations on Q3/Q5/Q6/Q7. Q5 is reframed by MAJOR-1/2: it moves to the later row.
