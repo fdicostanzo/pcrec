@@ -241,3 +241,19 @@ Correction to the "Deviations" item 2 above: the branching-cycle witness never
 walks its cycle and the dropped guard is not exponential (the CF_DONE memo caps
 it at ~2 x depth); S602 is an equivalent mutant, not a termination row.
 
+
+## Manager rulings recorded at landing (lane possland2, 2026-10-07)
+
+- **The 10 default-route vm->dfa flips on post-r21 rows are arm A's intended
+  engine-selecting effect, not a regression.** Arm A (`PCREC_NO_POSS_CTX_FOLLOW`)
+  is kept in `.flags` for exactly that reason: it changes which engine the
+  selector picks, so it is not a masked (answer-identical strategy) denial.
+- **The oracle reference is libpcre2 10.46** (this box's and ubuntubudu's
+  library); any record that names another version is superseded.
+- **S602 is an equivalent mutant** (possfin, `possfin_report.md` section 1),
+  scored UNDETECTED (EXPECTED), not a termination row.
+- **Landing merge:** main ad669fb8 (kit R4g + n2pool; zero movers, abi stays at
+  its 65 -> this stack's 66) merged into `lane/possland2` as a9664581. The only
+  conflict was `docs/dev/lanes/CLAUDE.md` (index tail, both sides kept; the
+  duplicate `stc4_report.md` line that both sides carried was dropped). `src/`
+  auto-merged (`emit_dfa.c`, `internal.h`); `make -j16` and `make strict` clean.
