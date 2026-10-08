@@ -975,3 +975,10 @@ pointer when a kit change merges to main.
   pcrec-bench run, macOS work included. The bench can run on the dev box
   too, but it is PLANNED and coordinated through main, which owns the
   bench inbox. Posted to main.
+- 2026-10-08: D144 addendum 4 (Frank via main, main 04733583). Official
+  SIMD verdicts are pcrec-bench runs on the hardware each form targets.
+  The bench runs on several boxes: ubuntubudu (Zen 1), this dev box
+  (7700X, Zen 4: AVX2 and full AVX-512) and the Mac. Main coordinates runs
+  on this box. CORRECTION to my earlier priority: AVX-512 is NOT filed;
+  SSE first stands, and the AVX2/AVX-512 order is argued on evidence. The
+  r9 panel was briefed before this, so the consolidation folds it in.
