@@ -1458,3 +1458,57 @@ the compiler, and is never adopted silently. Proposed for main to file
   - **Q-R10-10 (R-10) ANSWERED: NO.** M6's MF_SITE_ABI 8 carries no SIMD
     ADVANCE bound. No SIMD ADVANCE row has a cell (D77); the bound comes
     in its own bump when one does (panel r9 F-6).
+- notice: 2026-10-08 — **R-9 READY FOR FRANK: the Q-R9-n list.** Design:
+  lane/memfn-r9 @ fbc4a410 (integration.md §R4.9; panel r9 plus follow-up
+  r9fu applied).
+  - **Follow-up r9fu findings (measured with nm -u / gcc -S on kit-tip
+    artifacts):**
+    - every batch-1 FUNC already calls glibc memchr (`fn-pair` twice,
+      `fn-memchr` once). The scalar twin in the bar is therefore "BODY
+      row + glibc".
+    - R-1's `emit` column IS today's `fn-pair` text, so w16's 3-7x
+      (tier U) is already against the glibc-backed twin. The bench must
+      add a rare-letter `fn-pair` cell.
+    - **Batch 1 narrowed to `over: fn-pair` only.** `vrun` over
+      `fn-memchr` is filed with five trigger cells, which takes the
+      exact-window bin and OFS run-pinned out of batch 1.
+    - [MEMFN-ENTRYSINK]: nothing assumes a sink. No batch-1 candidate,
+      since PRE FUNCs run once per call. The filed OFS run-pinned `vrun`
+      is the one candidate (it re-seeds inside the DFA scan loop).
+      **For main's plan row:** gcc 15.2 does NOT hoist the set1
+      broadcasts (it rebuilds them at every rung entry, even from a
+      file-scope static const), so the row's "gcc hoists it or it is a
+      constant" is wrong.
+  - **Q-R9-n for Frank (each with the kit's recommendation):**
+    - Q-R9-1 (verdict box): RESOLVED by D144 add. 4.
+    - Q-R9-2 (acceptance levels): judge each level on EVERY bench box
+      that runs it; a loss on any blocks the level, and a win on at least
+      one is required. Rows may land as CANDIDATE (behind the default-OFF
+      switch) before their bench reading. "Same -march" fixes the ROW's
+      level, not the twin's (glibc picks its memchr by CPU). Recommend
+      YES. This is also the panel's proposed reading of D147 add. 13
+      (preliminary).
+    - Q-R9-3 (the second filter position): pcrec states it
+      (`plan_pos2`). Recommend YES.
+    - Q-R9-4 (named benefit): code space is never a named benefit for a
+      SIMD row (its text is always longer). Recommend YES.
+    - Q-R9-5: a SIMD loss found later never blocks a scalar change; the
+      record goes STALE and the row is narrowed later. Recommend YES.
+    - Q-R9-6 (the floor rule): a SIMD-on rendering is the SIMD-off
+      rendering plus guarded text only. Recommend YES.
+    - Q-R9-7 (denies): one deny per (form, width), through ONE carrier
+      `--memfn=` (needs RQ-1 from main). Recommend YES.
+    - Q-R9-8 (run-time cascade): admit the libgcc `__cpu_model`
+      dependency under SIMD-on, x86-64 Linux/ELF, guarded by `__SSE2__`,
+      spec-stated. Recommend YES (the cascade itself is filed until a
+      cell exists).
+    - Q-R9-9 (NEW, D84 caps): the code-bytes refusal caps EXCLUDE
+      guarded SIMD bytes, so SIMD-on can never change a refusal, with a
+      per-row `guarded_max` checked by G2. Recommend YES.
+  - **pcrec-side requests main will see later** (§R4.9.11):
+    - RQ-1, the `--memfn=` carrier;
+    - RQ-2, `plan_pos2` if Q-R9-3 is YES;
+    - RQ-3, the length readers ignore guarded bytes (now a prerequisite);
+    - RQ-4, a timing slot plus the box floor;
+    - RQ-5, bench testees before acceptance.
+    The FUNC-body seam (R4e′.0) is kit-only.
