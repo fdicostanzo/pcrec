@@ -5964,15 +5964,19 @@ static void pf_comment_bcls(StrBuf *c, const DfaForm *f)
     pcrec_sb_cmt_close(c);
 }
 
-/* THE FIND (core/internal.h carries the contract): [MEMFN] R4g (M2), one kit
- * site of DELEG_SITES row PF, FIND / STMT / ASSIGN over one SET term at offset
- * 0 (integration.md §15.7). The description reads only what the caller
- * decided: the form (a table or memchr: the row's `u.pf.scan`, or the VM
- * hat's table), the D11 bound (`holdback` -> `end_back`), the set, and the
- * caller's text around it. The guards stay the caller's: a memchr is always
- * preceded by one (`pos >= len`, or the bounded block's `pos + 1 < len`), so
- * its empty range is EXCLUDED; a walk tests its own range (NOP) and the
- * caller tests the landing after it. */
+/* THE FIND (gen/memfn_sites.h carries the contract): [MEMFN] R4g (M2) and M4,
+ * one kit site of the DELEG_SITES row its caller names (PF or MLINE), FIND /
+ * STMT / ASSIGN over one SET term at the caller's offset (integration.md
+ * §15.7). The description reads only what the caller decided: the row, the
+ * form (a table or memchr: the row's `u.pf.scan`, or the VM hat's table), the
+ * D11 bound (`holdback` -> `end_back`), the set, the term's offset, the floor,
+ * and the caller's text around it. The guards stay the caller's: a memchr at
+ * offset 0 is always preceded by one (`pos >= len`, or the bounded block's
+ * `pos + 1 < len`), so its empty range is EXCLUDED; MLINE's at -1 by the
+ * attempt loop's (`start > X` proves `subject` non-NULL, BOUND `start <=
+ * len`), so its range is empty only as `pos == len` over a valid pointer
+ * (the kit's AT_N, Q-R7-2); a walk tests its own range (NOP) and the caller
+ * tests the landing after it. */
 static const char *const find_table_tag[PCREC_FIND_NTABLE] = {
     [PCREC_FIND_CAN_BEGIN]   = "can_begin_match",
     [PCREC_FIND_START_BYTES] = "start_bytes",
@@ -5998,11 +6002,20 @@ static mf_site *find_site(const PcrecFind *f, const char *ind, mf_hooks *h,
 {
     Ctx *cx = f->cx;
     bool table = f->table != PCREC_FIND_MEMCHR;
-    mf_site *s = pcrec_memfn_site(cx, DELEG_PF);
+    bool back = f->offset < 0;      /* the term reads the candidate's predecessor */
+    if (f->site != DELEG_PF && f->site != DELEG_MLINE)
+        pcrec_ctx_fail(cx, 0, "internal error: a FIND described under DELEG_SITES "
+                       "row %s (src/gen/emit_dfa.c, find_site)",
+                       pcrec_deleg_sites[f->site].id);
+    if (back && (table || f->holdback || f->offset != -1 || !f->floor))
+        pcrec_ctx_fail(cx, 0, "internal error: a FIND below its candidate is the "
+                       "unbounded memchr form at -1 with a floor (src/gen/emit_dfa.c, "
+                       "find_site)");
+    mf_site *s = pcrec_memfn_site(cx, f->site);
     s->form = MF_FORM_STMT;
     s->op = MF_OP_FIND;
     s->handoff = MF_H_ASSIGN;
-    s->empty = table ? MF_EMPTY_NOP : MF_EMPTY_EXCLUDED;
+    s->empty = table ? MF_EMPTY_NOP : back ? MF_EMPTY_AT_N : MF_EMPTY_EXCLUDED;
     s->end_back = (uint8_t)(f->holdback ? 1 : 0);
     s->on_miss_leaves = !table && !f->holdback;
     s->use = MF_USE_POSITION;
@@ -6010,14 +6023,19 @@ static mf_site *find_site(const PcrecFind *f, const char *ind, mf_hooks *h,
     s->pred.nterm = 1;
     s->pred.need = MF_REQUIRED;
     if (table)
-        pcrec_memfn_term_set(&s->pred.term[0], 0, f->set, (uint32_t)f->table,
+        pcrec_memfn_term_set(&s->pred.term[0], f->offset, f->set, (uint32_t)f->table,
                              MF_REQUIRED);
     else
-        pcrec_memfn_term_byte(&s->pred.term[0], 0, f->byte, MF_REQUIRED);
+        pcrec_memfn_term_byte(&s->pred.term[0], f->offset, f->byte, MF_REQUIRED);
     *u = (PcrecMfU){ .cx = cx, .site = s, .own = f, .indent = ind };
+    /* `miss`: the range's end at offset 0 (MF_MISS_N, or `len - 1` held
+     * back). Below the candidate it is NOT stated: there the range reaches
+     * `len` itself (Q-R7-1), so no text names a value no hit takes, and none
+     * is read (the miss runs `on_miss`, which leaves). */
     *h = (mf_hooks){ .s = f->subject, .n = f->len, .lo = f->pos,
-                     .result = f->pos,
-                     .miss = f->holdback ? dfa_fragf(cx, "%s - 1", f->len) : MF_MISS_N,
+                     .floor = f->floor, .result = f->pos,
+                     .miss = f->holdback ? dfa_fragf(cx, "%s - 1", f->len)
+                           : back ? NULL : MF_MISS_N,
                      .on_miss = !table && !f->holdback ? f->on_miss : NULL,
                      .table_name = table ? find_table_name : NULL,
                      .indent = ind, .comment_tier = PCREC_CMT_NONESSENTIAL,
@@ -6026,12 +6044,23 @@ static mf_site *find_site(const PcrecFind *f, const char *ind, mf_hooks *h,
     return s;
 }
 
+/* [M4 I1] IMPLEMENT ONLY: the kit's text for FIND `f` against what pcrec
+ * wrote into `c` since offset `at`. */
+static void pcrec_emit_find_shadow(StrBuf *c, const char *ind, const PcrecFind *f,
+                                   size_t at)
+{
+    mf_hooks h;
+    PcrecMfU u;
+    mf_site *s = find_site(f, ind, &h, &u);
+    pcrec_memfn_shadow(f->cx, f->site, s, &h, c->p + at, c->len - at);
+}
+
 void pcrec_emit_find(StrBuf *c, const char *ind, const PcrecFind *f)
 {
     mf_hooks h;
     PcrecMfU u;
     mf_site *s = find_site(f, ind, &h, &u);
-    pcrec_memfn_emit(f->cx, DELEG_PF, s, &h, c);
+    pcrec_memfn_emit(f->cx, f->site, s, &h, c);
 }
 
 /* The FIND over axis B's candidate set at indent `ind`, its form the ROW's
@@ -6041,7 +6070,7 @@ void pcrec_emit_find(StrBuf *c, const char *ind, const PcrecFind *f)
 static void pf_emit_find(StrBuf *c, const DfaForm *f, const char *ind, int holdback,
                          const char *on_miss)
 {
-    PcrecFind fd = { .cx = f->cx, .p = f->p,
+    PcrecFind fd = { .cx = f->cx, .site = DELEG_PF, .p = f->p, .offset = 0,
                      .table = f->pf->u.pf.scan == PF_SCAN_BYTE ? PCREC_FIND_MEMCHR
                             : f->pf->u.pf.scan_set ? PCREC_FIND_START_BYTES
                             : PCREC_FIND_CAN_BEGIN,
@@ -6824,7 +6853,8 @@ static void pf_vm_emit_first_class(StrBuf *c, const CandSel *s, const char *p,
                                    const char *ind, bool entry)
 {
     uint8_t v[256];
-    PcrecFind fd = { .cx = s->cx, .p = p, .table = PCREC_FIND_START_SET, .set = v,
+    PcrecFind fd = { .cx = s->cx, .site = DELEG_PF, .p = p, .offset = 0,
+                     .table = PCREC_FIND_START_SET, .set = v,
                      .pos = "attempt_position", .subject = "subject",
                      .len = "subject_length", .holdback = 0 };
     for (int b = 0; b < 256; b++) v[b] = s->ss->bits[b >> 3] >> (b & 7) & 1;
@@ -10382,15 +10412,26 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
          * STRENGTHENING of the existing guard rather than a second condition,
          * and every position the skip then passes over is one this
          * derivation's domain covers. Sabotage S82 restores `start > 0`. */
-        pcrec_sb_printf(c, "        if (start > %s && subject[start - %d] != %d) {\n"
-                         "            const void *q = memchr(subject + start, %d, "
+        pcrec_sb_printf(c, "        if (start > %s && subject[start - %d] != %d) {\n",
+                  gseed ? "search_from" : "0",
+                  cand.offset, cand.byte);
+        size_t mline_at = c->len;
+        pcrec_sb_printf(c, "            const void *q = memchr(subject + start, %d, "
                          "subject_length - start);\n"
                          "            if (!q) break;\n"
                          "            start = (size_t)"
-                         "((const unsigned char *)q - subject) + %d;\n"
-                         "        }\n",
-                  gseed ? "search_from" : "0",
-                  cand.offset, cand.byte, cand.byte, cand.offset);
+                         "((const unsigned char *)q - subject) + %d;\n",
+                  cand.byte, cand.offset);
+        {   /* [M4 I1] IMPLEMENT ONLY: the kit's MLINE text against pcrec's */
+            PcrecFind fd = { .cx = cx, .site = DELEG_MLINE, .p = p,
+                             .table = PCREC_FIND_MEMCHR, .byte = cand.byte,
+                             .offset = -cand.offset, .floor = "start",
+                             .pos = "start", .subject = "subject",
+                             .len = "subject_length", .holdback = 0,
+                             .on_miss = "break;" };
+            pcrec_emit_find_shadow(c, "            ", &fd, mline_at);
+        }
+        pcrec_sb_puts(c, "        }\n");
     }
     pcrec_sb_puts(c, "        size_t scan_position = start;\n"
                "        size_t last_accept_position = (size_t)-1;\n");

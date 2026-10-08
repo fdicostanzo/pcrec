@@ -112,6 +112,61 @@ void pcrec_memfn_call(Ctx *cx, uint32_t handle, const mf_hooks *h, StrBuf *body)
  * (a row that would write one fails loudly). */
 void pcrec_memfn_emit(Ctx *cx, DelegSite id, const mf_site *s,
                       const mf_hooks *h, StrBuf *body);
+/* ---- THE FIND: one FIND / STMT / ASSIGN site ([START-SET], [MEMFN] R4g, M4) */
+
+/* [START-SET] (D148; docs/design/startset.md §5, "One spelling") THE FIND:
+ * the one statement that moves a scan position to the next candidate of a
+ * one-term byte set — a `memchr` for a one-byte set, a membership-table loop
+ * otherwise. Its callers are the DFA prefilter forms (`pf_emit_memchr*`,
+ * `pf_emit_bcls*`, `pf_emit_first_*_bounded`, src/gen/emit_dfa.c), the VM
+ * attempt loop's seek (`pf_vm_emit_first_class`) and, since [MEMFN] M4, the
+ * attempt engine's `(?m)^` skip (`emit_attempt`), so none spells its own
+ * search. It DESCRIBES the statement as one kit site (integration.md §15.7)
+ * under the DELEG_SITES row its caller names (`site`: PF, or MLINE) and the
+ * kit writes it; it decides nothing. The memchr form's statement is the
+ * search, its NULL test and the position store (the hit is a pointer inside
+ * the kit's text); the guards around it, and what a miss does, are the
+ * caller's (`on_miss`, the bounded clamp, the guard after a walk). */
+typedef enum {
+    PCREC_FIND_MEMCHR = 0,      /* the memchr form: no table, `byte`          */
+    PCREC_FIND_CAN_BEGIN,       /* `<p>_can_begin_match` (byte-class rows)    */
+    PCREC_FIND_START_BYTES,     /* `<p>_start_bytes` (the DFA hat's table)    */
+    PCREC_FIND_START_SET,       /* `<p>_start_set` (the VM hat's table)       */
+    PCREC_FIND_NTABLE
+} PcrecFindTable;
+typedef struct {
+    Ctx        *cx;       /* the compile (the kit's door, the arena)          */
+    DelegSite   site;     /* the DELEG_SITES row the statement is (PF, MLINE);
+                           * stated by every caller, never defaulted          */
+    const char *p;        /* the artifact prefix: the table is `<p>_<tag>`    */
+    PcrecFindTable table; /* the membership table; PCREC_FIND_MEMCHR = memchr */
+    const uint8_t *set;   /* the table's contents, 256 bytes, nonzero = in    */
+    int         byte;     /* the memchr form's one byte */
+    int         offset;   /* the term's offset from the candidate: 0 (the
+                           * candidate's own byte), or -1 (its predecessor:
+                           * MLINE, the memchr form only). A caller sending
+                           * -1 has PROVEN `pos <= len` and `subject` non-NULL
+                           * in its own text (the kit's AT_N, Q-R7-2) and
+                           * leaves the site on a miss                       */
+    const char *floor;    /* the lower read limit's text (the term reads no
+                           * byte below it), or NULL for none: MLINE's is
+                           * `pos`, so the search starts at `pos`            */
+    const char *pos;      /* the position variable */
+    const char *subject;  /* the subject array */
+    const char *len;      /* the subject length */
+    int         holdback; /* 0: the scan may reach `len`; 1: it stops at
+                           * `len - 1` (D11's bound) */
+    const char *on_miss;  /* the unbounded memchr form's statement on a NULL
+                           * hit (it must leave the site); NULL otherwise */
+} PcrecFind;
+/* The memchr form's statement declares `const void *q`, the hit or NULL, in
+ * the caller's block; nothing after it reads `q`. */
+void pcrec_emit_find(StrBuf *c, const char *ind, const PcrecFind *f);
+
+/* [M4 I1] IMPLEMENT ONLY: the kit's text for `s` must equal want[0..n). */
+void pcrec_memfn_shadow(Ctx *cx, DelegSite id, const mf_site *s,
+                        const mf_hooks *h, const char *want, size_t n);
+
 /* ---- an in-loop ADVANCE site ([MEMFN] R4h, M3) ---------------------------- */
 
 /* What an in-loop skip's builder read off its decision (STAY, EDGE, VMSPAN;
