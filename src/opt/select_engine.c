@@ -512,6 +512,136 @@ static void run_revdet(Ctx *cx, Ast *root, const EngineFit *fit)
     (void)pcrec_revdet(cx, root);
 }
 
+/* [DEC-FALLBACK] T2 `pf_admits[]` THE PREFILTER ADMISSION (docs/design/
+ * dec_fallback.md §1.4; start_table.md Q8): one table for what today is TWO
+ * derivations — `prefilter_decision`'s verdict ternary and the `--emit-ir`
+ * listing's reason chain (src/gen/emit_vm.c), which test the same facts in
+ * different orders. Every row's verdict equals the ternary's and every row's
+ * listing value equals the chain's (§1.4 argues it row by row; the trace
+ * build's oracle checks it at both sites).
+ *
+ * Rows 3-4 replace the `has_var` ternary inside `lang_nullable_declinable`:
+ * a `${...}` pattern keeps bare nullability (row 3, F1's holder) and every
+ * other pattern reads `empty_admits` (row 4). Row 4 carries `!has_var`, so
+ * it asks `empty_admits` only where today's derivation does (an ask marks
+ * the fact used, which `--emit-facts` lists); under E1's `empty_admits =>
+ * nullable` the conjunct changes no answer. Row 5's `empty_admits` is the
+ * same fact on the rung scope, where `has_var` has no population (§1.4 (b),
+ * asserted in the trace build before the walk).
+ *
+ * Built beside the old derivations; B4 makes it the decision. */
+static bool pfa_bref(const PfAdmitSel *s) { return (s->kinds & PF_KIND_BREF) != 0; }
+static bool pfa_call(const PfAdmitSel *s) { return (s->kinds & PF_KIND_LINKED_CALL) != 0; }
+static bool pfa_var(const PfAdmitSel *s)  { return (s->kinds & PF_KIND_VAR) != 0; }
+
+/* The DEFAULT scope's decline is asked of: no rung, no overflow, a VM hybrid
+ * that would build a prefilter, and no `-fprefilter` (which outranks it). */
+static bool pfa_default_scope(const PfAdmitSel *s)
+{
+    return s->cx->collapse_reason == CR_NONE && !s->cx->dfa_disabled &&
+           s->would_prefilter && !s->force_on;
+}
+static bool pfa_var_nullable(const PfAdmitSel *s)
+{
+    return pfa_default_scope(s) && pfa_var(s) && pcrec_fact_nullable(s->cx);
+}
+static bool pfa_nullable_exact(const PfAdmitSel *s)
+{
+    return pfa_default_scope(s) && !pfa_var(s) && pcrec_fact_empty_admits(s->cx);
+}
+static bool pfa_nullable_collapsed(const PfAdmitSel *s)
+{
+    return s->cx->collapse_reason != CR_NONE &&
+           (s->kinds & PF_KIND_COLLAPSIBLE_REP) && !s->force_on &&
+           pcrec_fact_empty_admits(s->cx);
+}
+static bool pfa_overflow_drop(const PfAdmitSel *s)
+{
+    return s->cx->dfa_disabled &&
+           (s->cx->collapse_reason != CR_SEL1 || s->force_off);
+}
+static bool pfa_forced_on(const PfAdmitSel *s)  { return s->force_on; }
+static bool pfa_forced_off(const PfAdmitSel *s) { return s->force_off; }
+static bool pfa_always(const PfAdmitSel *s)     { (void)s; return true; }
+
+__attribute__((unused))
+static const PfAdmit pf_admits[] = {
+    { "backref",            pfa_bref,               PFV_OFF,     "no-backreference",
+      ESEL_PASS },
+    { "linked-call",        pfa_call,               PFV_OFF,     "no-linked-call",
+      ESEL_PASS },
+    { "var-nullable",       pfa_var_nullable,       PFV_OFF,     "no-nullable-exact",
+      ESEL_DECLINED_NULLABLE_DEFAULT },
+    { "nullable-exact",     pfa_nullable_exact,     PFV_OFF,     "no-nullable-exact",
+      ESEL_DECLINED_NULLABLE_DEFAULT },
+    { "nullable-collapsed", pfa_nullable_collapsed, PFV_OFF,     "no-nullable-collapsed",
+      ESEL_DECLINED_NULLABLE },
+    { "overflow-drop",      pfa_overflow_drop,      PFV_OFF,     "no-dfa-overflow",
+      ESEL_PASS },
+    { "forced-on",          pfa_forced_on,          PFV_ON,      NULL,
+      ESEL_PASS },
+    { "forced-off",         pfa_forced_off,         PFV_OFF,     "no-fno-prefilter",
+      ESEL_PASS },
+    { "var",                pfa_var,                PFV_OFF,     "no-engine-vm",
+      ESEL_PASS },
+    { "default",            pfa_always,             PFV_DEFAULT, "no-engine-vm",
+      ESEL_PASS },
+};
+
+/* T2's walk: the first row that applies (the last always does). */
+__attribute__((unused))
+static const PfAdmit *pf_admit_walk(const PfAdmitSel *s)
+{
+    size_t i = 0;
+    while (i + 1 < sizeof pf_admits / sizeof pf_admits[0] && !pf_admits[i].applies(s)) i++;
+    return &pf_admits[i];
+}
+
+/* The verdict row `r` gives under selector `s`. */
+__attribute__((unused))
+static bool pf_admit_verdict(const PfAdmit *r, const PfAdmitSel *s)
+{
+    return r->verdict == PFV_ON || (r->verdict == PFV_DEFAULT && s->would_prefilter);
+}
+
+#ifdef PCREC_CAND_TRACE
+/* §1.9's T2 half of the self-check: every verdict and ENGINE_SEL cell
+ * stated (ESEL_FORCED, 0, is never an admission cell), the listing value
+ * stated wherever the verdict can be off, and the last row always applies. */
+void pcrec_pf_admits_selfcheck(Ctx *cx)
+{
+    const size_t n = sizeof pf_admits / sizeof pf_admits[0];
+    for (size_t i = 0; i < n; i++) {
+        const PfAdmit *r = &pf_admits[i];
+        if (r->verdict == PFV_UNSTATED || r->esel == ESEL_FORCED ||
+            (r->verdict != PFV_ON && !r->list))
+            pcrec_ctx_fail(cx, 0, "internal error: fallback table self-check: "
+                           "T2 row '%s' leaves a cell unstated", r->name);
+    }
+    if (pf_admits[n - 1].applies != pfa_always)
+        pcrec_ctx_fail(cx, 0, "internal error: fallback table self-check: "
+                       "T2's last row does not always apply");
+}
+
+/* [DEC-FALLBACK] B2 the admission's oracle: §1.4 (b)'s invariant first, then
+ * T2's row against today's verdict and its two declined-nullable flags. */
+static void pf_admit_oracle(EngineFit *fit, const PfAdmitSel *s,
+                            const PfAdmit *row)
+{
+    if (!row) row = pf_admit_walk(s);
+    PCREC_FIT_HIT("admit", row->name);
+    const bool dnd = row->esel == ESEL_DECLINED_NULLABLE_DEFAULT;
+    const bool dn = row->esel == ESEL_DECLINED_NULLABLE;
+    if (pf_admit_verdict(row, s) != fit->prefilter)
+        pcrec_fit_oracle_fail("admit-verdict", row->name,
+                              fit->prefilter ? "on" : "off", "prefilter_decision");
+    if (dnd != fit->prefilter_declined_nullable_default ||
+        dn != fit->prefilter_declined_nullable)
+        pcrec_fit_oracle_fail("admit-declined", row->name, "flags", "prefilter_decision");
+    fit->admit = row;
+}
+#endif
+
 /* Decides whether this artifact runs the VM's hybrid DFA prefilter ahead of
  * the match, and records WHY when it does not. Writes three `EngineFit`
  * fields — `prefilter` itself and the two `prefilter_declined_nullable*`
@@ -852,6 +982,18 @@ static void prefilter_decision(Ctx *cx, EngineFit *fit, size_t why_pos)
      * `"declined-nullable-default"` on a nullable variable pattern today
      * (nullanch0_report.md F1). Whether that token is right is refactor B's
      * ruling ([DEC-FALLBACK], token identity), not this row's. */
+#ifdef PCREC_CAND_TRACE
+    /* [DEC-FALLBACK] B2: T2 beside the derivation below (the oracle). §1.4
+     * (b) is asserted BEFORE the walk, so no row asks a fact on the
+     * population it argues away. */
+    if (has_var && (cx->collapse_reason != CR_NONE || cx->dfa_disabled))
+        pcrec_fit_oracle_fail("admit-has-var", "rung or overflow", "has_var",
+                              "prefilter_decision");
+    const PfAdmitSel pfas = { cx, kinds,
+                              fit->chosen == ENGM_VM && cx->opt->engine != PCREC_ENGINE_VM,
+                              force_on, force_off };
+    const PfAdmit *pfa_new = PCREC_FIT_NEW_FIRST ? pf_admit_walk(&pfas) : NULL;
+#endif
     bool lang_nullable_declinable =
         (has_var ? pcrec_fact_nullable(cx) : pcrec_fact_empty_admits(cx)) &&
         !has_bref && !has_call && !force_on;
@@ -884,6 +1026,9 @@ static void prefilter_decision(Ctx *cx, EngineFit *fit, size_t why_pos)
                    : force_on ? true
                    : force_off ? false
                    : would_prefilter;
+#ifdef PCREC_CAND_TRACE
+    pf_admit_oracle(fit, &pfas, pfa_new);
+#endif
 }
 
 /* The `<PREFIX>_ENGINE_SEL` token for a FINISHED fit: which of the closed
@@ -991,6 +1136,30 @@ static unsigned char esel_of(Ctx *cx, const EngineFit *fit)
                                                       ? ESEL_COLLAPSED_PREFILTER
         : cx->dfa_was_engine                          ? ESEL_OVERFLOWED_DFA
                                                       : ESEL_OVERFLOWED_PREFILTER;
+}
+
+/* [DEC-FALLBACK] B2 THE ATTRIBUTION WALK (docs/design/dec_fallback.md §1.7):
+ * `esel_of`'s nine arms as a read of the tables. A named engine is `forced`;
+ * else the admission row's cell (T2 rows 3-5), which precedes every ladder
+ * cell as arms 2-3 precede arms 4-9; else the LATEST fired ladder row whose
+ * cell for the final prefilter's survival is not PASS, ROLE spelled by the
+ * latched `dfa_was_engine`; else `selected`. The backward walk is the general
+ * rule for critB1 m2's sequence (a size row after a [SEL-1] row), not a case
+ * for it. Reads the fired record `compile_driver` seeds (`Ctx.fit_seq`) and
+ * the admission row the fit carries. Built beside `esel_of`; B5 makes it
+ * `esel_of`'s body, at the same call site and behind the same premise check. */
+__attribute__((unused))
+static unsigned char fit_attrib_walk(const Ctx *cx, const EngineFit *fit)
+{
+    if (cx->opt->engine != PCREC_ENGINE_AUTO) return ESEL_FORCED;
+    if (fit->admit && fit->admit->esel != ESEL_PASS) return fit->admit->esel;
+    for (int i = cx->fit_nseq; i-- > 0; ) {
+        const unsigned char c = cx->fit_seq[i]->esel[fit->prefilter ? FIT_KEPT : FIT_OFF];
+        if (c == ESEL_PASS) continue;
+        return c == ESEL_ROLE ? (cx->dfa_was_engine ? ESEL_OVERFLOWED_DFA
+                                                    : ESEL_OVERFLOWED_PREFILTER) : c;
+    }
+    return ESEL_SELECTED;
 }
 
 #ifdef PCREC_CAND_TRACE
@@ -1182,7 +1351,22 @@ void pcrec_select_engine(Ctx *cx, Ast *root)
     }
 
     prefilter_decision(cx, &fit, why_pos);
+#ifdef PCREC_CAND_TRACE
+    /* [DEC-FALLBACK] B2: the attribution walk beside `esel_of` (the oracle). */
+    const unsigned char esel_new = PCREC_FIT_NEW_FIRST ? fit_attrib_walk(cx, &fit) : ESEL_PASS;
+#endif
     fit.engine_sel = esel_of(cx, &fit);
+#ifdef PCREC_CAND_TRACE
+    {
+        const unsigned char en = PCREC_FIT_NEW_FIRST ? esel_new : fit_attrib_walk(cx, &fit);
+        char a[8], b[8];
+        snprintf(a, sizeof a, "%u", (unsigned)en);
+        snprintf(b, sizeof b, "%u", (unsigned)fit.engine_sel);
+        PCREC_FIT_HIT("attrib", a);
+        if (en != fit.engine_sel)
+            pcrec_fit_oracle_fail("attrib", a, b, "esel_of");
+    }
+#endif
 
     cx->job->fit = fit;
 #ifdef PCREC_CAND_TRACE

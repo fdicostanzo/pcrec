@@ -662,12 +662,77 @@ typedef struct {
     unsigned char collapse_reason;  /* the retry state it ran under */
     unsigned char size_drop_rung;
     bool          dfa_disabled;
+    SizeTermPhase st_phase;         /* [DEC-FALLBACK] row 2's `applies` reads it */
 } FitSel;
 
 typedef enum {
+    FIT_FORCE_NEXT, FIT_PROPAGATE, FIT_TERM_NEXT, FIT_SEL1_COLLAPSE, FIT_SEL1_DROP,
     FIT_UNROLL_RESCUE, FIT_COLLAPSE, FIT_DROP_ANCHORED, FIT_DROP_PREMUL,
     FIT_DROP_PREFILTER, FIT_REFUSE
 } FitAct;
+
+/* [DEC-FALLBACK] B2 THE TABLE BECOMES THE WHOLE LADDER (docs/design/
+ * dec_fallback.md §1.1-§1.3): every arrival at `compile_driver`'s recovery
+ * point, not only a size-cap refusal, takes a row of this table, and each row
+ * states as DATA the state it writes and the stamp tokens it attributes.
+ *
+ * AN ARRIVAL'S LABELS are the flags the failing attempt left (§1.1); a row is
+ * asked only on the labels in its `on` mask, and an arrival that set none is
+ * `other`. B2 adds the columns and the five arrival rows ahead of the size
+ * rows and switches no reader: `fit_select` asks only the rows `on` a size
+ * label, and the catch branch's own five tests still decide. The trace
+ * build's both-derivations oracle (`fit_oracle_*`, below) holds every row and
+ * cell to them at every arrival; B3 replaces the five tests by `fit_walk`.
+ *
+ * EVERY ENUMERATED CELL'S 0 IS `UNSTATED`, so a cell left out of a row's
+ * initializer is visible to `fit_tables_selfcheck` rather than silently
+ * meaning "keep" or "pass" (memory `pcrec-no-silent-defaults`). */
+enum {
+    FIT_L_SIZE     = 1u << 0,   /* an emitted-size cap refused the artifact */
+    FIT_L_OVERFLOW = 1u << 1,   /* a DFA state, context or work cap declined a machine */
+    FIT_L_NOMEM    = 1u << 2,   /* a genuine allocation failure (K60) */
+    FIT_L_FORCING  = 1u << 3,   /* inside `--emit-facts`' force loop */
+    FIT_L_OTHER    = 1u << 4,   /* none of the four: a refusal no rung rescues */
+    FIT_L_ALL      = (1u << 5) - 1u
+};
+
+/* `sets`' state cells: KEEP, or the value the row writes. */
+typedef enum { FIT_DD_UNSTATED, FIT_DD_KEEP, FIT_DD_SET } FitDdCell;
+typedef enum {
+    FIT_CR_UNSTATED, FIT_CR_KEEP, FIT_CR_TO_NONE, FIT_CR_TO_SEL1, FIT_CR_TO_SIZECAP
+} FitCrCell;
+typedef enum {
+    FIT_SDR_UNSTATED, FIT_SDR_KEEP, FIT_SDR_TO_ANCHORED, FIT_SDR_TO_PREMUL,
+    FIT_SDR_TO_PREFILTER
+} FitSdrCell;
+/* `carry`: the failed attempt's figures a row copies forward, because
+ * `job_cleanup` frees the attempt that measured them. */
+enum { FIT_CARRY_OVW = 1u << 0, FIT_CARRY_SIZECAP = 1u << 1 };
+
+/* The cross-attempt state a row writes when it fires (§1.3), every field a
+ * cell: `dfa_disabled`, `collapse_reason`, `size_drop_rung`, the flag bits OR'd
+ * into the options, the carried figures, the FIRST-overflow latch of
+ * `dfa_was_engine`/`budget_fallback`, and the size term's restart. */
+typedef struct {
+    FitDdCell  dd;
+    FitCrCell  cr;
+    FitSdrCell sdr;
+    uint64_t   flags_or;
+    unsigned   carry;       /* FIT_CARRY_* */
+    bool       latch;
+    bool       restart;
+} FitSets;
+
+/* `fof`: inside `--fast-or-fail`'s reach (§1.2). The switch denies a row only
+ * when it is degrading AND in the reach; the [SEL-1] rows are degrading and
+ * outside it (Q2, KEEP: the switch is a size-cap policy). */
+typedef enum { FIT_FOF_UNSTATED, FIT_FOF_OUT, FIT_FOF_IN } FitFof;
+/* How often a row may fire on one compile (§1.2, asserted in the trace build):
+ * `once`, `many` (the force loop's and the trial catch's rows), or `final`
+ * (the compile ends). */
+typedef enum { FIT_REP_UNSTATED, FIT_REP_ONCE, FIT_REP_MANY, FIT_REP_FINAL } FitRepeat;
+/* The stderr note a row prints when it fired (`what`/`cost`; `what` NULL: none). */
+typedef struct { const char *what, *cost; } FitNote;
 
 typedef struct {
     const char *name;
@@ -675,6 +740,14 @@ typedef struct {
     bool        degrading;   /* costs run time to make the artifact fit */
     bool      (*applies)(const FitSel *s);   /* NULL: chosen at its own site */
     FitAct      act;
+    unsigned    on;          /* FIT_L_*: the arrival labels the row is asked on */
+    FitFof      fof;
+    FitSets     sets;
+    FitCells    cells;       /* the token payload readers see (core/internal.h) */
+    const char *ukw;         /* the `UNROLL_K_WHY` token it contributes, or NULL */
+    FitNote     note;
+    int         retries;     /* attempts the row adds when it fires (§1.8) */
+    FitRepeat   repeat;
 } FitRung;
 
 /* [OPT-4] the count-collapsed prefilter: a VM hybrid whose prefilter was
@@ -720,21 +793,125 @@ static bool fit_prefilter_applies(const FitSel *s)
 /* The total fallback: nothing smaller is left, and the refusal stands. */
 static bool fit_always(const FitSel *s) { (void)s; return true; }
 
+/* [ART-SIZE] the size term's trial catch: a LADDER attempt's failure, for any
+ * reason but an allocation failure, means "this K is out". */
+static bool fit_trial_applies(const FitSel *s) { return s->st_phase == ST_LADDER; }
+
+/* [SEL-1] a DFA overflow is a selection outcome only under `--engine=auto`
+ * and without `-fprefilter` (both force forms stay do-or-die). */
+static bool fit_sel1_eligible(const FitSel *s)
+{
+    return s->cx->opt->engine == PCREC_ENGINE_AUTO &&
+           !(s->flags & PCREC_FORCE_PREFILTER);
+}
+
+/* [OPT-4] the [SEL-1] rung that keeps a count-collapsed prefilter: offered
+ * on the FIRST overflow only. */
+static bool fit_sel1_collapse_applies(const FitSel *s)
+{
+    return fit_sel1_eligible(s) && !s->dfa_disabled;
+}
+
+/* [SEL-1] the rung that drops the prefilter: the first overflow when the
+ * collapse is denied, or the collapsed machine's own overflow. */
+static bool fit_sel1_drop_applies(const FitSel *s)
+{
+    return fit_sel1_eligible(s) &&
+           (!s->dfa_disabled || s->collapse_reason == CR_SEL1);
+}
+
+/* The ladder (§1.2's row list, in walk order). Rows 0-2 are the arrivals
+ * whose action is code (resume the force loop, propagate, next trial); rows
+ * 3-9 retry with the state their `sets` cell names; row 10 refuses on every
+ * label. KEEP is spelled on every row that writes nothing. */
+#define FIT_SETS_NONE { FIT_DD_KEEP, FIT_CR_KEEP, FIT_SDR_KEEP, 0, 0, false, false }
+#define FIT_CELLS_PASS { { ESEL_PASS, ESEL_PASS }, PFLW_PASS, NULL }
 static const FitRung fit_rungs[] = {
-    { "unroll-rescue",  0,                           true,  NULL,                  FIT_UNROLL_RESCUE  },
-    { "prefilter-collapse", PCREC_NO_PREFILTER_COLLAPSE, true, fit_collapse_applies, FIT_COLLAPSE      },
-    { "drop-anchored",  0,                           true,  fit_anchored_applies,  FIT_DROP_ANCHORED  },
-    { "drop-premul",    0,                           true,  fit_premul_applies,    FIT_DROP_PREMUL    },
-    { "drop-prefilter", 0,                           true,  fit_prefilter_applies, FIT_DROP_PREFILTER },
-    { "refuse",         0,                           false, fit_always,            FIT_REFUSE         },
+    /* 0 [PATFACTS] a forced ask failed after the artifact was complete */
+    { .name = "forcing", .deny = 0, .degrading = false, .applies = fit_always,
+      .act = FIT_FORCE_NEXT, .on = FIT_L_FORCING, .fof = FIT_FOF_OUT,
+      .sets = FIT_SETS_NONE, .cells = FIT_CELLS_PASS, .ukw = NULL,
+      .note = { NULL, NULL }, .retries = 0, .repeat = FIT_REP_MANY },
+    /* 1 [K60] a genuine allocation failure propagates */
+    { .name = "nomem", .deny = 0, .degrading = false, .applies = fit_always,
+      .act = FIT_PROPAGATE, .on = FIT_L_NOMEM, .fof = FIT_FOF_OUT,
+      .sets = FIT_SETS_NONE, .cells = FIT_CELLS_PASS, .ukw = NULL,
+      .note = { NULL, NULL }, .retries = 0, .repeat = FIT_REP_ONCE },
+    /* 2 [ART-SIZE] the size term's trial catch */
+    { .name = "size-term-trial", .deny = 0, .degrading = false,
+      .applies = fit_trial_applies, .act = FIT_TERM_NEXT,
+      .on = FIT_L_OVERFLOW | FIT_L_SIZE | FIT_L_OTHER, .fof = FIT_FOF_OUT,
+      .sets = FIT_SETS_NONE, .cells = FIT_CELLS_PASS, .ukw = NULL,
+      .note = { NULL, NULL }, .retries = 0, .repeat = FIT_REP_MANY },
+    /* 3 [SEL-1]/[OPT-4] the collapsed-prefilter rung */
+    { .name = "sel1-collapse", .deny = PCREC_NO_PREFILTER_COLLAPSE, .degrading = true,
+      .applies = fit_sel1_collapse_applies, .act = FIT_SEL1_COLLAPSE,
+      .on = FIT_L_OVERFLOW, .fof = FIT_FOF_OUT,
+      .sets = { FIT_DD_SET, FIT_CR_TO_SEL1, FIT_SDR_KEEP, 0, FIT_CARRY_OVW, true, false },
+      .cells = { { ESEL_COLLAPSED_PREFILTER, ESEL_ROLE }, PFLW_SEL1, NULL },
+      .ukw = NULL, .note = { NULL, NULL }, .retries = 1, .repeat = FIT_REP_ONCE },
+    /* 4 [SEL-1] the prefilter-drop rung */
+    { .name = "sel1-drop", .deny = 0, .degrading = true,
+      .applies = fit_sel1_drop_applies, .act = FIT_SEL1_DROP,
+      .on = FIT_L_OVERFLOW, .fof = FIT_FOF_OUT,
+      .sets = { FIT_DD_SET, FIT_CR_TO_NONE, FIT_SDR_KEEP, 0, FIT_CARRY_OVW, true, false },
+      .cells = { { ESEL_ROLE, ESEL_ROLE }, PFLW_PASS, NULL },
+      .ukw = NULL, .note = { NULL, NULL }, .retries = 1, .repeat = FIT_REP_ONCE },
+    /* 5-9 [PF-DROP] (D135) the size-cap rungs, cheapest first; 10 refuses */
+    { .name = "unroll-rescue",      .deny = 0, .degrading = true,  .fof = FIT_FOF_IN,
+      .applies = NULL, .act = FIT_UNROLL_RESCUE, .on = FIT_L_SIZE,
+      .sets = FIT_SETS_NONE, .cells = FIT_CELLS_PASS, .ukw = "cap-rescue",
+      .note = { NULL, NULL }, .retries = 0, .repeat = FIT_REP_ONCE },
+    { .name = "prefilter-collapse", .deny = PCREC_NO_PREFILTER_COLLAPSE, .degrading = true,
+      .fof = FIT_FOF_IN, .applies = fit_collapse_applies, .act = FIT_COLLAPSE, .on = FIT_L_SIZE,
+      .sets = { FIT_DD_KEEP, FIT_CR_TO_SIZECAP, FIT_SDR_KEEP, 0, FIT_CARRY_SIZECAP, false, true },
+      .cells = { { ESEL_SIZE_CAP_RETRY, ESEL_PASS }, PFLW_SIZECAP, NULL },
+      .ukw = NULL, .note = { NULL, NULL }, .retries = 1, .repeat = FIT_REP_ONCE },
+    { .name = "drop-anchored",      .deny = 0, .degrading = true,  .fof = FIT_FOF_IN,
+      .applies = fit_anchored_applies, .act = FIT_DROP_ANCHORED, .on = FIT_L_SIZE,
+      .sets = { FIT_DD_KEEP, FIT_CR_KEEP, FIT_SDR_TO_ANCHORED, 0, 0, false, false },
+      .cells = { { ESEL_SIZE_CAP_RETRY, ESEL_SIZE_CAP_RETRY }, PFLW_PASS, NULL },
+      .ukw = NULL, .retries = 1, .repeat = FIT_REP_ONCE,
+      .note = { "the optional anchored match-here machine",
+                "loses the [OPT-2] fast path -- <prefix>_match "
+                "falls back to search-and-filter, which the "
+                "anchored machine exists specifically to avoid "
+                "(docs/design/anchored_match_unwrapped.md)" } },
+    { .name = "drop-premul",        .deny = 0, .degrading = true,  .fof = FIT_FOF_IN,
+      .applies = fit_premul_applies, .act = FIT_DROP_PREMUL, .on = FIT_L_SIZE,
+      .sets = { FIT_DD_KEEP, FIT_CR_KEEP, FIT_SDR_TO_PREMUL, PCREC_NO_PREMUL_TABLE, 0,
+                false, false },
+      .cells = { { ESEL_SIZE_CAP_RETRY, ESEL_SIZE_CAP_RETRY }, PFLW_PASS, NULL },
+      .ukw = NULL, .retries = 1, .repeat = FIT_REP_ONCE,
+      .note = { "the premultiplied DFA transition table",
+                "slower per-byte scan dispatch, measured ~1.27x "
+                "on scan-bound subjects "
+                "(docs/dev/opt3_dfa_scan_measurement.md)" } },
+    { .name = "drop-prefilter",     .deny = 0, .degrading = true,  .fof = FIT_FOF_IN,
+      .applies = fit_prefilter_applies, .act = FIT_DROP_PREFILTER, .on = FIT_L_SIZE,
+      .sets = { FIT_DD_KEEP, FIT_CR_KEEP, FIT_SDR_TO_PREFILTER, PCREC_NO_PREFILTER,
+                FIT_CARRY_SIZECAP, false, true },
+      .cells = { { ESEL_SIZE_CAP_RETRY, ESEL_SIZE_CAP_RETRY }, PFLW_PASS,
+                 "\"size cap retry, hybrid %llu > %llu\"" },
+      .ukw = NULL, .retries = 1, .repeat = FIT_REP_ONCE,
+      .note = { "the VM hybrid's prefilter",
+                "the VM tries every start position itself, "
+                "measured up to ~4x slower where matches are "
+                "sparse (docs/dev/lanes/pfdrop_report.md)" } },
+    { .name = "refuse",             .deny = 0, .degrading = false, .fof = FIT_FOF_OUT,
+      .applies = fit_always, .act = FIT_REFUSE, .on = FIT_L_ALL,
+      .sets = FIT_SETS_NONE, .cells = FIT_CELLS_PASS, .ukw = NULL,
+      .note = { NULL, NULL }, .retries = 0, .repeat = FIT_REP_FINAL },
 };
+#undef FIT_SETS_NONE
+#undef FIT_CELLS_PASS
 
 /* True when the caller has turned row `r` off: its own deny bit, or
- * `--fast-or-fail` on a degrading row. */
+ * `--fast-or-fail` on a degrading row inside the switch's reach (`fof`). */
 static bool fit_rung_denied(const FitRung *r, uint64_t flags)
 {
     return (r->deny & flags) != 0 ||
-           (r->degrading && (flags & PCREC_FAST_OR_FAIL) != 0);
+           (r->degrading && r->fof == FIT_FOF_IN && (flags & PCREC_FAST_OR_FAIL) != 0);
 }
 
 /* The rung row whose action is `act`. */
@@ -751,11 +928,380 @@ static const FitRung *fit_select(const FitSel *s)
 {
     for (size_t i = 0; i < sizeof fit_rungs / sizeof fit_rungs[0]; i++) {
         const FitRung *r = &fit_rungs[i];
-        if (!r->applies || fit_rung_denied(r, s->flags)) continue;
+        if (!(r->on & FIT_L_SIZE) || !r->applies || fit_rung_denied(r, s->flags)) continue;
         if (r->applies(s)) return r;
     }
     return fit_rung_of(FIT_REFUSE);
 }
+
+/* [DEC-FALLBACK] B2 the arrival's LABEL SET (§1.1), from the flags the failed
+ * attempt left in `cx`; `FIT_L_OTHER` when it set none. */
+__attribute__((unused))
+static unsigned fit_labels(const Ctx *cx)
+{
+    const unsigned l = (cx->job && cx->job->pf.forcing ? FIT_L_FORCING : 0u) |
+                       (cx->failed_nomem ? FIT_L_NOMEM : 0u) |
+                       (cx->dfa_overflowed ? FIT_L_OVERFLOW : 0u) |
+                       (cx->size_cap_refused ? FIT_L_SIZE : 0u);
+    return l ? l : FIT_L_OTHER;
+}
+
+/* [DEC-FALLBACK] B2 THE WALK (§1.3): the row an arrival with label set
+ * `labels` takes. A row is asked only on its own labels, and is transparent
+ * when it has no `applies` or the caller denied it; the first row that
+ * applies is taken, and `refuse` applies to every label, so the walk is total.
+ * B3 makes it the catch branch's one dispatch; until then only the trace
+ * build's oracle asks it. */
+__attribute__((unused))
+static const FitRung *fit_walk(const FitSel *s, unsigned labels)
+{
+    for (size_t i = 0; i < sizeof fit_rungs / sizeof fit_rungs[0]; i++) {
+        const FitRung *r = &fit_rungs[i];
+        if (!(r->on & labels) || !r->applies || fit_rung_denied(r, s->flags)) continue;
+        if (r->applies(s)) return r;
+    }
+    return fit_rung_of(FIT_REFUSE);
+}
+
+/* [DEC-FALLBACK] §1.8 the attempt bound the TABLE implies: the default
+ * attempt, one per retrying row, and the size term's ladder (N trials plus
+ * its final attempt) once per run, a restarting row adding a run.
+ * `fit_tables_selfcheck` holds `COMPILE_MAX_ATTEMPTS`' hand formula to it. */
+__attribute__((unused))
+static int fit_attempt_bound(void)
+{
+    int retries = 0, restarts = 0;
+    for (size_t i = 0; i < sizeof fit_rungs / sizeof fit_rungs[0]; i++) {
+        retries += fit_rungs[i].retries;
+        restarts += fit_rungs[i].sets.restart;
+    }
+    return 1 + retries + (1 + restarts) * (SIZE_TERM_LADDER_N + 1);
+}
+
+/* [DEC-FALLBACK] T3's projection (§1.5): the one T1 row whose `sets` writes
+ * collapse reason `cr`, read for its `pflw` cell (a payload read, A's
+ * `fit_rung_of(act)` shape). `refuse`, whose cells all PASS, when none does;
+ * `fit_tables_selfcheck` asserts each rung reason has exactly one writer. */
+static const FitRung *fit_row_setting_cr(unsigned char cr)
+{
+    const FitCrCell want = cr == CR_SEL1 ? FIT_CR_TO_SEL1
+                         : cr == CR_SIZECAP ? FIT_CR_TO_SIZECAP : FIT_CR_UNSTATED;
+    for (size_t i = 0; i < sizeof fit_rungs / sizeof fit_rungs[0]; i++)
+        if (want != FIT_CR_UNSTATED && fit_rungs[i].sets.cr == want) return &fit_rungs[i];
+    return fit_rung_of(FIT_REFUSE);
+}
+
+/* [DEC-FALLBACK] T3 `pflw_rows[]` (§1.5): THE COLLAPSE GATE AND ITS REASON as
+ * rows, each writing the collapse decision and `VM_PREFILTER_LANG_WHY`
+ * together (D81). Built beside the gate's own ternary in `compile_driver`;
+ * B5 makes it the decision. The inputs are the gate's own conjuncts; a row
+ * asks `nullable` only where the gate does (`wanted` and no `-fprefilter`),
+ * so the oracle marks no fact the gate did not. */
+typedef struct {
+    Ctx          *cx;
+    bool          wanted;      /* `pfc_wanted`: VM, not denied, a collapsible repeat, force or rung */
+    bool          fpf;         /* `-fprefilter` */
+    bool          rep;         /* a collapsible repeat (the E1 kind bit) */
+    unsigned char cr;          /* the rung reason this attempt runs under */
+} PflwSel;
+
+typedef struct {
+    const char   *name;
+    bool        (*applies)(const PflwSel *s);
+    bool          collapse;
+    unsigned char pflw;        /* PFLW_PASS: the T1 row that set the reason gives it */
+} PflwRow;
+
+/* The collapse is worth building: asked, and not nullable unless forced. */
+static bool pflw_worth(const PflwSel *s)
+{
+    return s->wanted && (s->fpf || !pcrec_fact_nullable(s->cx));
+}
+static bool pflw_rung(const PflwSel *s)   { return s->cr != CR_NONE && pflw_worth(s); }
+static bool pflw_wanted(const PflwSel *s) { return s->wanted; }
+static bool pflw_rep(const PflwSel *s)    { return s->rep; }
+static bool pflw_always(const PflwSel *s) { (void)s; return true; }
+
+/* A RUNG BEATS THE FLAG (the gate's own comment): row 1 before row 2. */
+__attribute__((unused))
+static const PflwRow pflw_rows[] = {
+    { "rung",     pflw_rung,   true,  PFLW_PASS     },
+    { "forced",   pflw_worth,  true,  PFLW_FORCED   },
+    { "nullable", pflw_wanted, false, PFLW_NULLABLE },
+    { "exact",    pflw_rep,    false, PFLW_EXACT    },
+    { "no-rep",   pflw_always, false, PFLW_NO_REP   },
+};
+
+/* T3's walk: the first row that applies (the last always does). */
+__attribute__((unused))
+static const PflwRow *pflw_walk(const PflwSel *s)
+{
+    size_t i = 0;
+    while (i + 1 < sizeof pflw_rows / sizeof pflw_rows[0] && !pflw_rows[i].applies(s)) i++;
+    return &pflw_rows[i];
+}
+
+/* The `VM_PREFILTER_LANG_WHY` value row `r` writes under rung reason `cr`. */
+__attribute__((unused))
+static unsigned char pflw_value(const PflwRow *r, unsigned char cr)
+{
+    return r->pflw == PFLW_PASS ? fit_row_setting_cr(cr)->cells.pflw : r->pflw;
+}
+
+/* [DEC-FALLBACK] T4 `st_whys[]` (§1.6): `UNROLL_K_WHY`, seven rows in the
+ * ternary's own order (`compile_driver`, after the size term decided), which
+ * the `size-term` listing already prints in. `cap-rescue`'s token is the T1
+ * `unroll-rescue` row's `ukw` cell, projected (`ladder_cell`). Built beside
+ * the ternary; B5 makes it the derivation. */
+typedef struct {
+    int           unroll_k;    /* the K the attempt ran at (`defo.unroll_k`) */
+    SizeTermPhase phase;
+    uint64_t      flags;
+    bool          rescue;      /* the bar declined it; a cap took it */
+    bool          moved;       /* the final K differs from the default attempt's */
+    bool          capexcl;     /* a rung was excluded by the capacity floor */
+} StWhySel;
+
+typedef struct {
+    const char *tok;           /* NULL on the `ladder_cell` row */
+    bool      (*applies)(const StWhySel *s);
+    bool        ladder_cell;   /* the token is the T1 row's `ukw` cell */
+} StWhy;
+
+static bool stw_option(const StWhySel *s)  { return s->unroll_k > 0 && s->phase == ST_DEFAULT; }
+static bool stw_denied(const StWhySel *s)  { return (s->flags & PCREC_NO_SIZE_TERM) != 0; }
+static bool stw_default(const StWhySel *s) { return s->phase != ST_FINAL; }
+static bool stw_rescue(const StWhySel *s)  { return s->rescue; }
+static bool stw_moved(const StWhySel *s)   { return s->moved; }
+static bool stw_capexcl(const StWhySel *s) { return s->capexcl; }
+static bool stw_always(const StWhySel *s)  { (void)s; return true; }
+
+__attribute__((unused))
+static const StWhy st_whys[] = {
+    { "option",              stw_option,  false },
+    { "denied",              stw_denied,  false },
+    { "default",             stw_default, false },
+    { NULL,                  stw_rescue,  true  },
+    { "size-model",          stw_moved,   false },
+    { "capacity-declined",   stw_capexcl, false },
+    { "size-model-declined", stw_always,  false },
+};
+
+/* The T1 row whose `ukw` cell T4's `ladder_cell` row reads. */
+static const FitRung *fit_ukw_row(void)
+{
+    for (size_t i = 0; i < sizeof fit_rungs / sizeof fit_rungs[0]; i++)
+        if (fit_rungs[i].ukw) return &fit_rungs[i];
+    return fit_rung_of(FIT_REFUSE);
+}
+
+/* T4's walk: the token of the first row that applies (the last always does). */
+__attribute__((unused))
+static const char *st_why_walk(const StWhySel *s)
+{
+    size_t i = 0;
+    while (i + 1 < sizeof st_whys / sizeof st_whys[0] && !st_whys[i].applies(s)) i++;
+    return st_whys[i].ladder_cell ? fit_ukw_row()->ukw : st_whys[i].tok;
+}
+
+#ifdef PCREC_CAND_TRACE
+/* ---- [DEC-FALLBACK] B2 THE BOTH-DERIVATIONS ORACLE (trace build only) ----
+ *
+ * dec_fallback.md §4.2 B2 / §4.3 item 5, [START-TABLE] C2's shape. At every
+ * arrival the trace build also walks T1 and aborts unless it took the row
+ * today's five tests took, and unless the state today's code wrote is the
+ * one the row's `sets` cell names; at every token site it reads the new
+ * table and aborts unless the token equals the old derivation's. Both
+ * orders: by default the old code decides first; `-DPCREC_CAND_NEW_FIRST`
+ * asks the table first, so a predicate's first-ask side effects land on the
+ * new walk. The new and old code share every predicate by pointer, so this
+ * is a FILTER test (A's C2 caveat): the bytes, the attempt histogram and the
+ * hand-written witness rows are the independent controls. B5 deletes it. */
+void pcrec_fit_oracle_fail(const char *what, const char *got_new,
+                           const char *got_old, const char *site)
+{
+    fprintf(stderr, "CANDORACLE\t%s\t%s\t%s\t%s\n", what, got_new, got_old, site);
+    abort();
+}
+
+/* A REFUSAL, not an abort (§1.9, `esel_of`'s rule): a self-check failure is
+ * an internal error the compile reports through `pcrec_ctx_fail`. */
+static void fit_check(Ctx *cx, bool ok, const char *what)
+{
+    if (!ok)
+        pcrec_ctx_fail(cx, 0, "internal error: fallback table self-check: %s", what);
+}
+
+/* §1.9 THE TABLES' SELF-CHECK, run at the start of every compile in the
+ * trace build: each label has a total walk; every cell an action reads is
+ * stated (no row leaves an enumerated cell at its UNSTATED 0, and no ladder
+ * cell reads ESEL_FORCED or PFLW_EXACT, the two values a ladder row never
+ * holds and an omitted cell would); every row's `fof` is stated; the table's
+ * attempt bound equals `COMPILE_MAX_ATTEMPTS`' hand formula; each rung
+ * reason is written by exactly one row and one row carries a `ukw` cell; T2,
+ * T3 and T4 end on a row that always applies. The bound check compares two
+ * hand-written things; the independent half is the observed-attempt
+ * assertion in `compile_driver`. */
+static void fit_tables_selfcheck(Ctx *cx)
+{
+    const size_t n = sizeof fit_rungs / sizeof fit_rungs[0];
+    for (unsigned l = FIT_L_SIZE; l <= FIT_L_OTHER; l <<= 1) {
+        bool total = false;
+        for (size_t i = 0; i < n; i++) {
+            const FitRung *r = &fit_rungs[i];
+            total |= (r->on & l) && r->applies == fit_always && !r->deny &&
+                     !(r->degrading && r->fof == FIT_FOF_IN);
+        }
+        fit_check(cx, total, "an arrival label has no row that always applies");
+    }
+    int sel1 = 0, sizecap = 0, ukw = 0;
+    for (size_t i = 0; i < n; i++) {
+        const FitRung *r = &fit_rungs[i];
+        fit_check(cx, r->on && !(r->on & ~(unsigned)FIT_L_ALL), "a row's label mask is unstated");
+        fit_check(cx, r->fof != FIT_FOF_UNSTATED, "a row's fof cell is unstated");
+        fit_check(cx, r->repeat != FIT_REP_UNSTATED, "a row's repeat cell is unstated");
+        fit_check(cx, r->sets.dd != FIT_DD_UNSTATED && r->sets.cr != FIT_CR_UNSTATED &&
+                      r->sets.sdr != FIT_SDR_UNSTATED, "a row's sets cell is unstated");
+        fit_check(cx, r->cells.esel[FIT_KEPT] != ESEL_FORCED &&
+                      r->cells.esel[FIT_OFF] != ESEL_FORCED, "a row's esel cell is unstated");
+        fit_check(cx, r->cells.pflw != PFLW_EXACT, "a row's pflw cell is unstated");
+        sel1 += r->sets.cr == FIT_CR_TO_SEL1;
+        sizecap += r->sets.cr == FIT_CR_TO_SIZECAP;
+        ukw += r->ukw != NULL;
+    }
+    fit_check(cx, sel1 == 1 && sizecap == 1, "a rung reason has no single writing row");
+    fit_check(cx, ukw == 1, "UNROLL_K_WHY's ladder cell has no single row");
+    fit_check(cx, fit_attempt_bound() == COMPILE_MAX_ATTEMPTS,
+              "COMPILE_MAX_ATTEMPTS differs from the table's attempt bound");
+    fit_check(cx, pflw_rows[sizeof pflw_rows / sizeof pflw_rows[0] - 1].applies == pflw_always,
+              "T3's last row does not always apply");
+    fit_check(cx, st_whys[sizeof st_whys / sizeof st_whys[0] - 1].applies == stw_always,
+              "T4's last row does not always apply");
+    pcrec_pf_admits_selfcheck(cx);
+}
+
+/* What the oracle reads at an arrival, taken at the top of the catch branch
+ * before any row writes: the walk's input and the state the row's `sets`
+ * cell is measured against. */
+typedef struct {
+    FitSel             s;
+    unsigned           labels;
+    const FitRung     *row;          /* the walk's row, once asked */
+    bool               was_engine, budget;   /* the latch before the row */
+    bool               have_job, chosen_dfa; /* the latch's input, while the Job lives */
+    unsigned long long scb, scl;     /* the size-cap carry before the row */
+} FitOracle;
+
+static void fit_oracle_open(FitOracle *o, const FitSel *s, bool was_engine,
+                            bool budget, unsigned long long scb,
+                            unsigned long long scl)
+{
+    const Ctx *cx = s->cx;
+    *o = (FitOracle){ .s = *s, .labels = fit_labels(cx), .row = NULL,
+                      .was_engine = was_engine, .budget = budget,
+                      .have_job = cx->job != NULL,
+                      .chosen_dfa = cx->job && cx->job->fit.chosen == ENGM_DFA,
+                      .scb = scb, .scl = scl };
+    if (PCREC_FIT_NEW_FIRST) o->row = fit_walk(&o->s, o->labels);
+}
+
+/* The arrival's check: the walk took the row today's code took (`old`). */
+static const FitRung *fit_oracle_arrival(FitOracle *o, const char *old)
+{
+    if (!o->row) o->row = fit_walk(&o->s, o->labels);
+    PCREC_FIT_HIT("arrival", o->row->name);
+    if (strcmp(o->row->name, old) != 0)
+        pcrec_fit_oracle_fail("fit-arrival", o->row->name, old, "compile_driver");
+    return o->row;
+}
+
+/* The state today's code wrote equals the row's `sets` cell applied to the
+ * state the arrival found. */
+static void fit_oracle_post(const FitOracle *o, const Ctx *cx, bool dd,
+                            unsigned char cr, unsigned char sdr, uint64_t flags,
+                            bool restart, bool was_engine, bool budget,
+                            unsigned long long scb, unsigned long long scl,
+                            const char *ovw)
+{
+    const FitRung *r = o->row;
+    const FitSets *w = &r->sets;
+    const unsigned char want_cr =
+          w->cr == FIT_CR_KEEP ? o->s.collapse_reason
+        : w->cr == FIT_CR_TO_SEL1 ? CR_SEL1 : w->cr == FIT_CR_TO_SIZECAP ? CR_SIZECAP : CR_NONE;
+    const unsigned char want_sdr =
+          w->sdr == FIT_SDR_KEEP ? o->s.size_drop_rung
+        : w->sdr == FIT_SDR_TO_ANCHORED ? SDR_NO_ANCHORED
+        : w->sdr == FIT_SDR_TO_PREMUL ? SDR_NO_PREMUL : SDR_NO_PREFILTER;
+    const bool latch = w->latch && !o->s.dfa_disabled;
+    const char *bad =
+          dd != (w->dd == FIT_DD_SET ? true : o->s.dfa_disabled) ? "dd"
+        : cr != want_cr                                          ? "cr"
+        : sdr != want_sdr                                        ? "sdr"
+        : flags != (o->s.flags | w->flags_or)                    ? "flags_or"
+        : restart != w->restart                                  ? "restart"
+        : was_engine != (latch && o->have_job ? o->chosen_dfa : o->was_engine) ? "latch"
+        : budget != (latch ? cx->dfa_overflow_is_budget : o->budget) ? "latch-budget"
+        : (w->carry & FIT_CARRY_SIZECAP)
+              ? (scb != cx->size_cap_bytes || scl != cx->size_cap_limit ? "carry-sizecap" : NULL)
+              : (scb != o->scb || scl != o->scl ? "carry-sizecap" : NULL);
+    if (!bad && (w->carry & FIT_CARRY_OVW) && strcmp(ovw, cx->dfa_overflow_why) != 0)
+        bad = "carry-ovw";
+    if (bad)
+        pcrec_fit_oracle_fail("fit-sets", r->name, bad, "compile_driver");
+}
+
+/* The fired record: append an attributing row (a cell that is not PASS);
+ * assert a `once` row fires once and the sequence is one of §1.7's (as its
+ * pairwise transitions: the second may follow the first). */
+static const struct { FitAct prev, next; } fit_seq_legal[] = {
+    { FIT_SEL1_COLLAPSE, FIT_SEL1_DROP },      /* the collapsed machine overflowed too */
+    { FIT_SEL1_COLLAPSE, FIT_COLLAPSE },       /* critB1 m2: an F-B3 state, then the size cap */
+    { FIT_COLLAPSE,      FIT_SEL1_COLLAPSE },  /* the collapsed prefilter overflowed a cap */
+    { FIT_COLLAPSE,      FIT_DROP_PREFILTER },
+    { FIT_DROP_ANCHORED, FIT_DROP_PREMUL },
+};
+
+static void fit_oracle_fired(const FitRung *r, const FitRung **rows,
+                             const FitCells **cells, volatile int *nseq,
+                             volatile unsigned *fired)
+{
+    const unsigned bit = 1u << (unsigned)(r - fit_rungs);
+    if (r->repeat == FIT_REP_ONCE) {
+        if (*fired & bit) pcrec_fit_oracle_fail("fit-once", r->name, "fired twice", "compile_driver");
+        *fired |= bit;
+    }
+    if (r->cells.esel[FIT_KEPT] == ESEL_PASS && r->cells.esel[FIT_OFF] == ESEL_PASS) return;
+    if (*nseq > 0) {
+        const FitAct prev = rows[*nseq - 1]->act;
+        bool legal = false;
+        for (size_t i = 0; i < sizeof fit_seq_legal / sizeof fit_seq_legal[0]; i++)
+            legal |= fit_seq_legal[i].prev == prev && fit_seq_legal[i].next == r->act;
+        if (!legal)
+            pcrec_fit_oracle_fail("fit-sequence", r->name, rows[*nseq - 1]->name, "compile_driver");
+    }
+    rows[*nseq] = r;
+    cells[*nseq] = &r->cells;
+    (*nseq)++;
+}
+
+/* The notes: the rows with a `note` cell that fired are the `dropped_*`
+ * flags today's code prints from (`old[i]` for the i-th such row, in table
+ * order). */
+static void fit_oracle_notes(unsigned fired, const bool *old, size_t nold)
+{
+    size_t k = 0;
+    for (size_t i = 0; i < sizeof fit_rungs / sizeof fit_rungs[0]; i++) {
+        if (!fit_rungs[i].note.what) continue;
+        const bool f = (fired >> i) & 1u;
+        PCREC_FIT_HIT("note", f ? fit_rungs[i].name : "-");
+        if (k >= nold || f != old[k])
+            pcrec_fit_oracle_fail("fit-note", fit_rungs[i].name, f ? "fired" : "not fired",
+                                  "compile_driver");
+        k++;
+    }
+    if (k != nold) pcrec_fit_oracle_fail("fit-note", "rows", "count", "compile_driver");
+}
+#endif
 
 /* [DEC-FALLBACK] B1 THE FALLBACK TRACE (docs/design/dec_fallback.md §4.2 B1):
  * one `fallback` record per ARRIVAL at `compile_driver`'s recovery point, on
@@ -973,6 +1519,16 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
      * is (the first overflow only), and used only to decide whether the
      * one-line stderr note belongs on a successful fallback attempt. */
     volatile bool budget_fallback = false;
+#ifdef PCREC_CAND_TRACE
+    /* [DEC-FALLBACK] B2 the fired record the oracle keeps (§1.3): the
+     * attributing rows in firing order, their cells as `Ctx.fit_seq` hands
+     * them on, and the `once` rows fired. Each attributing row fires at most
+     * once, so the table's own length bounds the record. */
+    const FitRung  *fit_seq_rows[sizeof fit_rungs / sizeof fit_rungs[0]];
+    const FitCells *fit_seq_cells[sizeof fit_rungs / sizeof fit_rungs[0]];
+    volatile int      fit_nseq = 0;
+    volatile unsigned fit_fired = 0;
+#endif
     char overflow_why[PCREC_DFA_OVERFLOW_WHY_LEN];
     /* [OPT-RETRY-REUSE] THE MACHINE MEMO, one per compile and lent to every
      * attempt (src/opt/dfamemo.c): a rung that changes nothing a machine is
@@ -1115,6 +1671,10 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
         cx.size_cap_bytes = size_cap_bytes;
         cx.size_cap_limit = size_cap_limit;
         cx.dfa_was_engine = dfa_was_engine;
+#ifdef PCREC_CAND_TRACE
+        cx.fit_seq = fit_seq_cells;
+        cx.fit_nseq = fit_nseq;
+#endif
         cx.dfa_memo = &dmemo;
         if (dfa_disabled)
             memcpy(cx.dfa_overflow_why, overflow_why, sizeof overflow_why);
@@ -1213,6 +1773,26 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
         }
 
         if (setjmp(cx.jb)) {
+#ifdef PCREC_CAND_TRACE
+            /* [DEC-FALLBACK] B2: the oracle's view of this arrival, before
+             * any row writes (§4.2 B2). */
+            FitOracle fo;
+            {
+                const FitSel fos = { .cx = &cx, .flags = defo.flags,
+                                     .collapse_reason = collapse_reason,
+                                     .size_drop_rung = size_drop_rung,
+                                     .dfa_disabled = dfa_disabled, .st_phase = st_phase };
+                fit_oracle_open(&fo, &fos, dfa_was_engine, budget_fallback,
+                                size_cap_bytes, size_cap_limit);
+            }
+#define FIT_ORACLE_POST(restart)                                               \
+    fit_oracle_post(&fo, &cx, dfa_disabled, collapse_reason, size_drop_rung,   \
+                    defo.flags, (restart), dfa_was_engine, budget_fallback,    \
+                    size_cap_bytes, size_cap_limit, overflow_why);             \
+    fit_oracle_fired(fo.row, fit_seq_rows, fit_seq_cells, &fit_nseq, &fit_fired)
+#else
+#define FIT_ORACLE_POST(restart) ((void)0)
+#endif
             /* [PATFACTS] THE FORCE LOOP'S ARRIVAL, tested FIRST (design
              * §11.4, ruled Q10 with r1 A11's guard). `--emit-facts` asks the
              * facts no pass asked only AFTER this attempt's artifact and
@@ -1225,9 +1805,13 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
              * the flag it reads lives in the heap `Job`, which the `longjmp`
              * does not touch — K60's `failed_nomem` shape. */
             if (cx.job && cx.job->pf.forcing) {
+#ifdef PCREC_CAND_TRACE
+                fit_oracle_arrival(&fo, "forcing");
+#endif
                 pcrec_facts_force_failed(&cx);
                 if (err) err->msg[0] = 0;
                 FIT_TRACE(&cx, "forcing", 0, "fb-forcing");
+                FIT_ORACLE_POST(false);
                 goto facts_force;
             }
             /* [K60] A GENUINE ALLOCATION FAILURE PROPAGATES IMMEDIATELY,
@@ -1251,6 +1835,10 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
              * comment, internal.h). */
 #ifdef PCREC_CAND_TRACE
             if (cx.failed_nomem) FIT_TRACE(&cx, "nomem", 0, "fb-nomem");
+            if (cx.failed_nomem) {
+                fit_oracle_arrival(&fo, "nomem");
+                FIT_ORACLE_POST(false);
+            }
 #endif
             if (cx.failed_nomem) {
                 job_cleanup(&cx);
@@ -1279,6 +1867,9 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
              * K=8 and refuses at K=6, so a ladder that let a trial's refusal
              * escape would break a pattern that compiles today. */
             if (st_phase == ST_LADDER) {
+#ifdef PCREC_CAND_TRACE
+                fit_oracle_arrival(&fo, "size-term-trial");
+#endif
                 int final_k = 0; bool rescue = false, capexcl = false;
                 st_ok[st_idx + 1] = false;
                 st_k[st_idx + 1] = SIZE_TERM_LADDER[st_idx];
@@ -1298,6 +1889,7 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
                     st_phase = ST_FINAL;
                 }
                 FIT_TRACE(&cx, "size-term-trial", 0, "fb-trial");
+                FIT_ORACLE_POST(false);
                 continue;
             }
             /* [SEL-1] + [OPT-4]: ONE retry ladder with TWO rungs, in the
@@ -1336,6 +1928,9 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
             const bool retry_drop =
                 ovf_eligible && !(dfa_disabled && collapse_reason != CR_SEL1);
             if (retry_collapse || retry_drop) {
+#ifdef PCREC_CAND_TRACE
+                fit_oracle_arrival(&fo, retry_collapse ? "sel1-collapse" : "sel1-drop");
+#endif
                 memcpy(overflow_why, cx.dfa_overflow_why, sizeof overflow_why);
                 /* [OPT-4] READ BEFORE `job_cleanup`, and only on the FIRST
                  * overflow: `dfa_disabled` false means this attempt still had
@@ -1358,6 +1953,7 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
                 if (err) { err->msg[0] = 0; err->pos = 0; err->input = PCREC_ERR_INPUT_PATTERN; }
                 FIT_TRACE(&cx, retry_collapse ? "sel1-collapse" : "sel1-drop", 0,
                           "fb-sel1");
+                FIT_ORACLE_POST(false);
                 continue;
             }
             /* [PF-DROP] (D135) THE SIZE-CAP LADDER. Every rung below is a row
@@ -1369,12 +1965,16 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
              * size-term ladder, whose record would otherwise pick a `K` for an
              * artifact that no longer exists. */
             const FitSel fs = { &cx, defo.flags, collapse_reason,
-                                size_drop_rung, dfa_disabled };
+                                size_drop_rung, dfa_disabled, st_phase };
             const FitRung *rung = cx.size_cap_refused
                                 ? fit_select(&fs) : fit_rung_of(FIT_REFUSE);
 #ifdef PCREC_CAND_TRACE
             if (rung->act == FIT_REFUSE || rung->act == FIT_UNROLL_RESCUE)
                 FIT_TRACE(&cx, rung->name, 0, "fb-refuse");
+            fit_oracle_arrival(&fo, rung->name);
+            if (rung->act == FIT_REFUSE || rung->act == FIT_UNROLL_RESCUE) {
+                FIT_ORACLE_POST(false);
+            }
 #endif
             bool restart_term = false;
             switch (rung->act) {
@@ -1527,6 +2127,11 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
                 dropped_prefilter = true;
                 restart_term = true;
                 break;
+            /* [DEC-FALLBACK] B2 the arrival rows, never `fit_select`'s
+             * answer: no `on` a size label applies outside the ladder phase.
+             * Their own tests above still dispatch them until B3. */
+            case FIT_FORCE_NEXT: case FIT_PROPAGATE: case FIT_TERM_NEXT:
+            case FIT_SEL1_COLLAPSE: case FIT_SEL1_DROP:
             case FIT_UNROLL_RESCUE:   /* chosen inside `size_term_choose` */
             case FIT_REFUSE:
                 job_cleanup(&cx);
@@ -1546,12 +2151,22 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
             }
             if (err) { err->msg[0] = 0; err->pos = 0; err->input = PCREC_ERR_INPUT_PATTERN; }
             FIT_TRACE(&cx, rung->name, restart_term, "fb-size");
+            FIT_ORACLE_POST(restart_term);
             continue;
+#undef FIT_ORACLE_POST
         }
 
         /* [M6.2 wave A] After the setjmp, because it allocates: an arena failure
          * here must be a diagnosed refusal, not an abort. */
         pcrec_parse_mods_init(&cx);
+#ifdef PCREC_CAND_TRACE
+        /* [DEC-FALLBACK] B2 §1.9: the tables' self-check, once per compile,
+         * and the OBSERVED attempt count held to the table's bound (the
+         * independent half of the bound check). */
+        if (attempt == 0) fit_tables_selfcheck(&cx);
+        if (attempt >= fit_attempt_bound())
+            pcrec_fit_oracle_fail("fit-attempts", "bound", "exceeded", "compile_driver");
+#endif
 
         if (!valid_prefix(user_prefix))
             pcrec_ctx_fail(&cx, 0, "invalid symbol prefix (must be a C identifier, <= %d chars)",
@@ -1720,6 +2335,13 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
          * `cx.job->fit.chosen` comes out ENGM_VM and `cx.job->fit.prefilter`
          * comes out false without either DFA build below ever running. */
         pcrec_select_engine(&cx, root);
+#ifdef PCREC_CAND_TRACE
+        /* [DEC-FALLBACK] B2 §1.9: a compile whose latest fired row is
+         * `sel1-drop` has no surviving prefilter (§1.2, its `kept` cell). */
+        if (fit_nseq > 0 && fit_seq_rows[fit_nseq - 1]->act == FIT_SEL1_DROP &&
+            cx.job->fit.prefilter)
+            pcrec_fit_oracle_fail("fit-sel1-drop", "prefilter", "survived", "compile_driver");
+#endif
 
         /* [DD-14.LB] THE POST-RESOLUTION CHECKS, and their position is the whole
          * mechanism: every rule that must refuse AT A PATTERN OFFSET and cannot be
@@ -1899,6 +2521,12 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
              * silently answered with a refusal. */
             const bool pfc_prefilter_forced =
                 (pfc_flags & PCREC_FORCE_PREFILTER) != 0;
+#ifdef PCREC_CAND_TRACE
+            /* [DEC-FALLBACK] B2: T3 beside the gate (the oracle, §4.2 B2). */
+            const PflwSel pfls = { &cx, pfc_wanted, pfc_prefilter_forced, pfc_rep,
+                                   cx.collapse_reason };
+            const PflwRow *pflw_new = PCREC_FIT_NEW_FIRST ? pflw_walk(&pfls) : NULL;
+#endif
             bool collapse = pfc_wanted && (pfc_prefilter_forced ||
                                            !pcrec_fact_nullable(&cx));
             /* [OPT-4] THE DECISION AND ITS REASON ARE WRITTEN TOGETHER, HERE,
@@ -1937,6 +2565,14 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
                                        "rung", "rung" }[cx.job->fit.prefilter_lang_why],
                 (const char *const[]){ "exact", "no-rep", "nullable", "forced",
                                        "sel1", "sizecap" }[cx.job->fit.prefilter_lang_why]);
+#ifdef PCREC_CAND_TRACE
+            if (!pflw_new) pflw_new = pflw_walk(&pfls);
+            PCREC_FIT_HIT("gate", pflw_new->name);
+            if (pflw_new->collapse != collapse ||
+                pflw_value(pflw_new, cx.collapse_reason) != cx.job->fit.prefilter_lang_why)
+                pcrec_fit_oracle_fail("pflw", pflw_new->name,
+                                      collapse ? "collapse" : "no-collapse", "gate");
+#endif
             if (collapse)
                 pcrec_build_nfa(&cx, root, &cx.job->nfa, false, true);
             cx.job->fit.prefilter_collapsed = collapse;
@@ -2038,6 +2674,12 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
                      "permanently UNSET (under a zero-count repeat, or reached "
                      "only through a call). Pass --engine=vm for the VM program");
 
+#ifdef PCREC_CAND_TRACE
+        /* [DEC-FALLBACK] B2: T4 beside the ternary below (the oracle). */
+        const StWhySel stws = { defo.unroll_k, st_phase, defo.flags, st_rescue,
+                                st_final_k != st_k[0], st_capexcl };
+        const char *stwhy_new = PCREC_FIT_NEW_FIRST ? st_why_walk(&stws) : NULL;
+#endif
         /* [ART-SIZE] The size term's verdict, for the artifact's own stamp
          * (D81). SIX values, because the first design's three hid four
          * reachable states behind "default" and a check could not tell "the
@@ -2054,6 +2696,12 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
 
         /* [DEC-FALLBACK] B1: the `stwhy` record, T4's row (§1.6): the token. */
         PCREC_CAND_TRACE_REC("stwhy", "-", cx.size_term_why, "st-why");
+#ifdef PCREC_CAND_TRACE
+        if (!stwhy_new) stwhy_new = st_why_walk(&stws);
+        PCREC_FIT_HIT("stwhy", stwhy_new);
+        if (strcmp(stwhy_new, cx.size_term_why) != 0)
+            pcrec_fit_oracle_fail("stwhy", stwhy_new, cx.size_term_why, "size-term");
+#endif
 
         if (cx.job->fit.chosen == ENGM_VM) pcrec_emit_vm(&cx, root);
         else                               pcrec_emit_dfa(&cx);
@@ -2308,6 +2956,12 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
          * a single combined sentence would have to choose an order to name
          * two facts in, and this reads better as two short notes than one
          * long one. */
+#ifdef PCREC_CAND_TRACE
+        {
+            const bool old_notes[] = { dropped_anchored, dropped_premul, dropped_prefilter };
+            fit_oracle_notes(fit_fired, old_notes, sizeof old_notes / sizeof old_notes[0]);
+        }
+#endif
         if (dropped_anchored)
             size_drop_note("the optional anchored match-here machine",
                             "loses the [OPT-2] fast path -- <prefix>_match "
