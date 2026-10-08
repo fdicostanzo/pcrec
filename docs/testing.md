@@ -5138,3 +5138,10 @@ Linux dev box (thirteen builds in parallel; measured with a lane run sharing
 the box). The full-corpus run in both orders is lane-run:
 `docs/design/dec_fallback/oracle_sweep.py` (every limit variant x the 14
 arms, plus `--emit-ir`). B5 deletes the oracle and section (d).
+
+**B3 (lane decfbB3, 2026-10-08): section (e), THE DROP NOTES; (d) shrinks.**
+The walk became the recovery point's dispatch, so (d)'s T1 arrival and notes
+witnesses (15) retired with their old side, and six (e) witnesses hold the
+size-cap rungs' stderr notes to hand-written full lines (rung order, or
+none). 190 checks, ~35 s on the Linux dev box. `make alloc` (~35 s) joined
+B3's lane gate for rows 0 and 1 (alloc_check W5/W4).

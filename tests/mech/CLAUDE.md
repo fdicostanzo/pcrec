@@ -3536,3 +3536,25 @@ kept/off cells swapped. Each re-homes on its table's own detector (fbt
 (a)-(c), ir, the K53/PF-DROP cells) when B3-B5 switch that reader; the
 row's header names which. B2 also re-aimed S421 and S423 to the row and
 predicate lines that gained `fof`.
+
+### [DEC-FALLBACK] B3 — rows S646-S651, re-aims S253/S259 (lane decfbB3, 2026-10-08)
+
+The range S646-S665 is B3's; S652-S665 are unused. B3 makes `fit_walk` the
+recovery point's dispatch and the `sets` cell the writer, so a plant in T1
+now moves the DEFAULT build: S627-S638 are detected by fbt (a)/(b)/(c)/(e)
+on the live behaviour (and the trace build's `fit_record` invariants),
+no longer by the retired arrival/notes oracle. New: S646 rows 0/1 swapped
+(S-F0; arm `resource`, alloc_check W5 refuses in the force loop), S647 row
+2 no longer asked on `other` (S-F2; fbt (a) seq-trial refuses), S648 row 6
+loses its deny bit (S-F6; fbt (a) seq-pfdrop), S649 the sets routine
+latches on every overflow (S-F8; fbt (a)/(b)), S650 the TO_NONE cell maps
+to CR_SEL1 (the sel1-drop row re-applies; the trace build's once check
+aborts), S651 the fired record never grows (fbt (d)'s attribution/pfwhy
+oracle). Re-aimed: S253 (the notes loop skips the premul row; detector
+unchanged, run_tune_dial.sh §6) and S259 (the arrival's label set drops
+NOMEM, so row 1 is never asked and row 2 absorbs on a ladder attempt;
+detector unchanged, alloc_check W4). Deleting row 1 outright is an
+EQUIVALENT mutant (row 10 refuses every NOMEM arrival the same way; checked
+with `make alloc`), so S-F1 has no row of its own. S-F9 (rows 3-4 stop
+carrying `overflow_why`) is not taken: the retry would read an
+uninitialized buffer, which is not a well-defined plant.
