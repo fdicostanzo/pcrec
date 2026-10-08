@@ -637,3 +637,39 @@ the compiler, and is never adopted silently. Proposed for main to file
     3. this entry.
   - Landing: on post-C4 main, with the zero-mover sweep on that tree, and
     merges serialized through main.
+- notice: 2026-10-07 (night) — **R4g BUILT, merged on lane/memfn-r4g (not
+  yet delivered; it lands on post-C4 main).**
+  - **Kit:** a new arm `pffind` (memfn/src/pffind.c, 0BSD) has four rows,
+    each with uses/serves, all on the one shape FIND/STMT/ASSIGN over one
+    SET term at offset 0.
+  - **pcrec side:** `pcrec_emit_find` only DESCRIBES the site (DELEG_SITES
+    row PF). The form, holdback, set, guards and table stay the caller's
+    decisions (report §3, P1-P7).
+  - **Main's conditions:**
+    1. CandPf/CandRow/cand_rows[] untouched;
+    2. S68, S478 and S524 re-pinned (same defects, named lines); S186 and
+       S481-S485 unchanged; all 9 DETECTED solo; sabotage_anchors.tsv and
+       call_graph.txt re-derived (S478/S481-S484 keep rerun_at after-C5b
+       at R4g's lines; S68's owner moved to memfn/);
+    3. the edit set posted earlier.
+  - **One deliberate widening of the posted edit set:** for the memchr
+    forms, the NULL test and the position store moved with the `memchr`
+    line, because a pointer is not a FIND result. pcrec still states
+    `return 0;` (as `on_miss`) and the `subject_length - 1` clamp (as
+    `miss`), and the kit writes them from those hooks.
+  - **Identity:** 41 compiles across every PF shape and hat, byte-identical
+    to a pre-edit binary; the I1 shadow is clean. C12: emit_dfa.c memchr
+    2→1.
+  - **Checks on the merged tip:** strict 0, arms 126/0, stamps 14/0.
+  - **PROPOSAL, for main to sequence:** §19 row 6's RARITY half is NOT
+    moved in R4g. That half would make the pre-check's necessary byte an
+    OPTIONAL second term of the PF site, with the kit deciding whether
+    testing it pays. That changes the PF site's shape and moves G1's
+    elision (`req_byte_dominated_by`, read in `req_admits[]`, which C4 is
+    deleting) into the kit. It is an admission decision, which your
+    clearance keeps pcrec's. Proposal: its own step after C4/C5b,
+    byte-identical through a baseline row that tests exactly as pcrec does
+    today. integration.md §22 records the deferral.
+  - **G2:** no G2 family reaches the new rows yet (C5 fixtures + pcrec
+    compiles only). A blinded follow-up (g2pf) is adding the PF family
+    before R4g is delivered.
