@@ -200,6 +200,45 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
   per-instance half is pcrec's own, at compile time
   (`pcrec_memfn_check_use`, `deleg_check` in `src/gen/memfn_sites.c`).
 
+### The row manifest, signatures and floors (lane n4, [MEMFN-ROWCON] N4)
+
+- **rows.tsv** — THE KIT'S ROW MANIFEST (row_contracts.md rev 4.1 §4),
+  HAND-maintained: one line per row of the kit's two selection tables
+  (13 at N4: the composer's 9 arms, `precheck`/`precheck_assign` and the
+  four `pf_*` rows included, and runcmp's 4 rows). Each line gives the
+  row's reach reason from a CLOSED set (`pcrec`, `total-fallback`,
+  `pending-site:<trigger>`, `contract-reach:<G2 family>`; anything else is
+  red, D77), its witness (a pcrec pattern + flags for `pcrec`, an
+  `arm_fixtures.c` fixture otherwise), its text SIGNATURE and its CONTROL.
+  Not derived from fields.def. The header documents the columns.
+- **row_floors.tsv** — per-row CHOSEN floors: `pcrec_floor` over the full
+  N2 census (`-` for a non-`pcrec` row), `g2_floor` over G2. Born as
+  PLACEHOLDERs: the manager's full census pins the pcrec column (the
+  command is in the header), and the G2 column waits for G2 to count
+  per ROW (it counts per form id).
+- **rows_check.py**, **run_rows.sh** — `make test-memfn-rows` (in
+  TEST_SECTIONS; about 1.5 s). Builds the kit with `-DMF_TRACE` (its own
+  objects, `find`-listed), the fixture driver against them and a traced
+  pcrec (build/libpcrec.a with its kit members swapped), then:
+  A. the kit's row set, from the trace's exit REACH lines, against
+     rows.tsv in both directions (plus `REACH_DROPPED` 0 and the
+     ROWS_FLOOR literal), and runcmp's rows against `--list-axes`'s
+     `run-overlap` rows and `docs/spec/tuning.md` §2.38's table;
+  B. each reason from the closed set (G2 families read from
+     `memfn/tests/run_g2.sh`'s `FAM_FLOORS`), its witness kind;
+  C. each signature IN its witness's artifact with the trace choosing the
+     row, and ABSENT from its control's with the trace not choosing it;
+     then every signature against every artifact and fixture of the run
+     (wherever it appears, its row was chosen); every pcrec artifact is
+     made by the traced pcrec and build/pcrec, byte-identical;
+  D. row_floors.tsv's shape (rows, values); PLACEHOLDER cells print as
+     UNREACHED, never as a pass.
+  The floors themselves are the census's: `n2_report.py --floors`
+  (docs/design/memfn/probes/rowcon/). Hand plants:
+  `docs/dev/lanes/n4_report.md`.
+- `arm_fixtures.c --only FIXTURE` (N4) renders one fixture alone, so a
+  traced run's rows are that fixture's.
+
 ## Sabotage rows
 
 - S510: a `memchr(` text planted in an unlisted function trips rule 1.

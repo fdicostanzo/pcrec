@@ -728,6 +728,11 @@ this table's method; Mac dev box, so directional):**
   1 s) and, since R4c (PRE/OFS delegated), a traced build plus a
   300-pattern corpus pass: about **4.6 s** wall for the whole section
   (lane r4cfix, one run, gcc-16; 273 compiles, 103 site renders).
+- `test-memfn-rows` ([MEMFN-ROWCON] N4, lane n4, 2026-10-07; Linux dev
+  box, gcc 15.2, `all` up to date, one run): about **1.4 s** wall. It
+  compiles the kit's nine sources with `-DMF_TRACE`, links a traced
+  fixture driver and a traced pcrec, and makes 24 pattern compiles (each
+  twice: traced and `build/pcrec`) and 29 single-fixture renders.
 
 **RE-RECORD TRIGGER**: re-measure a section (same method: 3 runs, per-run
 load-before/after sampling, `TMPDIR=/var/tmp`) whenever its runtime doubles
