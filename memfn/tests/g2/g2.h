@@ -95,6 +95,17 @@ typedef struct {
     uint8_t         noread;       /* the on_miss text leaves and reads no result
                                      (§15.5's composite ASSIGN: the result may
                                      be unwritten on another predicate's miss) */
+    /* lane g2pf: the PF site shape (G2_FAM_PF, integration.md 15.7 [R4g]) */
+    uint8_t         pfcell;       /* 1..4: the cell the site is of (a variant keeps it) */
+    uint8_t         pfedge;       /* G2_PFE_*: the edge a variant is (0 = the base cell) */
+    uint8_t         inplace;      /* the result lvalue IS lo (the same text): the
+                                     in-place advance; the wrapper reports lo      */
+    uint8_t         noonmiss;     /* the on_miss hook is NULL: the miss is the
+                                     written value alone                         */
+    uint8_t         lo_over;      /* the driver may pass lo > n (empty, Q-G2-1)    */
+    uint8_t         tabbad;       /* the table disagrees with the set: a caller
+                                     defect, the answer is UNDEFINED; only a
+                                     fault is checked                            */
 } g2_site;
 
 /* The shape FAMILIES (lane g2x, folded by lane g2u). G2_FAM_BASE is the
@@ -112,13 +123,14 @@ enum {
     G2_FAM_GATE,      /* §15.5: the K82 gate, ONE composite ALL_PRESENT site      */
     G2_FAM_SETREST,   /* §15.4: STMT/ALL_PRESENT/ON_MISS, singleton SETs, EXCLUDED */
     G2_FAM_VMRUN,     /* §15.6, §R4.8.1 item 4: EXPR/VERIFY/BOOL, guard_by_caller */
+    G2_FAM_PF,        /* §15.7 [R4g]: STMT/FIND/ASSIGN, one REQUIRED SET at offset 0 */
     G2_FAM_SEM,       /* the semantic differential's variant groups              */
     G2_NFAM
 };
 static inline const char *g2_fam_name(int f)
 {
     static const char *const names[G2_NFAM] = {
-        "base", "ofs", "ofsrun", "stmt", "onebyte", "gate", "setrest", "vmrun", "sem",
+        "base", "ofs", "ofsrun", "stmt", "onebyte", "gate", "setrest", "vmrun", "pf", "sem",
     };
     return f >= 0 && f < G2_NFAM ? names[f] : "?";
 }
@@ -140,12 +152,26 @@ enum {
     G2_PEND_FNREF,    /* a FUNC site stating no fn_ref (0 = none) (a refusal
                          naming `fn_ref`, R1; on a RETURN site whose `miss` is
                          also unstated, `miss` serves too)                      */
+    G2_PEND_EDGE,     /* lane g2pf: a PF variant that states a field the base cell
+                         leaves unstated or in another class: it RENDERS and
+                         answers as the reference, or is REFUSED naming that
+                         field (the row contracts R1/R2)                        */
     G2_NPEND
 };
 static inline const char *g2_pend_name(int c)
 {
-    static const char *const names[G2_NPEND] = { "none", "hook-nonident", "miss-unstated", "refusal-unnamed", "fn_ref-unstated" };
+    static const char *const names[G2_NPEND] = { "none", "hook-nonident", "miss-unstated", "refusal-unnamed", "fn_ref-unstated", "pf-edge" };
     return c >= 0 && c < G2_NPEND ? names[c] : "?";
+}
+
+/* lane g2pf: the PF edges (g2_site.pfedge), each a counted population */
+enum { G2_PFE_NONE, G2_PFE_MISS, G2_PFE_RESULT, G2_PFE_FLOOR, G2_PFE_NOTE, G2_PFE_DECL,
+       G2_PFE_ONMISS, G2_PFE_TABBAD, G2_NPFE };
+static inline const char *g2_pfe_name(int e)
+{
+    static const char *const names[G2_NPFE] = { "none", "miss-not-range-end", "result-not-lo",
+        "stated-floor", "stated-note", "stated-result_decl", "stated-on_miss", "table-disagrees" };
+    return e >= 0 && e < G2_NPFE ? names[e] : "?";
 }
 
 /* The SEMANTIC differential's fields (G2_FAM_SEM): a variant group is one

@@ -83,10 +83,10 @@ QUICK_FLOOR_ASAN_CHECKS=1500000  # ASan+UBSan checks on the sample
 # RENDER (generator) and that must RUN (each compiler build). Both tiers
 # generate the same sites, so these hold for --quick and the full run alike.
 # Measured 2026-10-07 (Linux dev box, seed 20261005, lane g2u), less ~10%.
-FAM_FLOORS="ofs:370 ofsrun:1230 stmt:330 onebyte:70 gate:260 setrest:54 vmrun:790 sem:1370"
+FAM_FLOORS="ofs:370 ofsrun:1230 stmt:330 onebyte:70 gate:260 setrest:54 vmrun:790 pf:260 sem:1370"
 # distinct (opaque) form ids the families are rendered through: counted,
-# never parsed (measured: 4)
-FLOOR_FAM_FORMS=4
+# never parsed (measured: 6 since lane g2pf; the PF shape's two are new)
+FLOOR_FAM_FORMS=6
 # PER-FORM floors (g2u item 8): hard sites RENDERED per reported form id
 # (both tiers: the same sites), and answer CHECKS per form id, per tier.
 # Form ids are opaque; a floor names one only to count it. Rendered and
@@ -94,9 +94,9 @@ FLOOR_FAM_FORMS=4
 # the FULL check floors are DERIVED (quick x 2.5, the original
 # FLOOR_CHECKS/QUICK_FLOOR_CHECKS ratio being 3.9) and are owed a
 # confirmation by the manager's first full run.
-FORM_FLOORS="generic:5800 ofsskip:1120 precheck:270 runcmp:910"
-QUICK_FORM_CHECK_FLOORS="generic:22900000 ofsskip:5200000 precheck:960000 runcmp:2480000"
-FULL_FORM_CHECK_FLOORS="generic:57250000 ofsskip:13000000 precheck:2400000 runcmp:6200000"
+FORM_FLOORS="generic:5800 ofsskip:1120 precheck:270 runcmp:910 pf_memchr:380 pf_walk:400"
+QUICK_FORM_CHECK_FLOORS="generic:22900000 ofsskip:5200000 precheck:960000 runcmp:2480000 pf_memchr:1300000 pf_walk:2150000"
+FULL_FORM_CHECK_FLOORS="generic:57250000 ofsskip:13000000 precheck:2400000 runcmp:6200000 pf_memchr:3200000 pf_walk:5300000"
 # the POISON differential (g2u item 6): sites poisoned, and per field the
 # sites that field was poisoned on (a field whose count falls to 0 is a
 # contract clause no longer exercised)
@@ -106,6 +106,34 @@ FLOOR_POISON_FIELD_SITES=90
 # rendered names were checked against fn_name(fn_ref); DERIVED (3 value
 # classes x >= 5 hard seeds), owed a measurement
 FLOOR_SITEFN=15
+# G2pf2: the USE-TIME refusal population. The two entry paths differ BY CONTRACT
+# (memfn.h ROW CONTRACTS): mf_emit holds the use hooks at selection and picks a
+# serving form; mf_define + mf_use selects with the define hooks and REFUSES, at
+# mf_use / mf_call, a use the chosen form does not serve, naming the field. For
+# each hard site the generator trial-renders mf_emit, tries define+use in a
+# scratch art, counts a field-naming refusal at use as LAWFUL (USEREFUSE) and
+# then judges the site, answer for answer, on the one-call path. A refusal at
+# mf_define of a site mf_emit rendered, or one at use naming no field, FAILS.
+# Measured quick 2026-10-07 (seed 20261005; generator count, tier-independent):
+# lawful 26 = on_miss 11 + result_decl 15, unnamed 0; floors ~25% under.
+FLOOR_USEREFUSE=20
+FLOOR_USEREFUSE_ON_MISS=8
+FLOOR_USEREFUSE_RESULT_DECL=11
+# lane g2pf, the PF shape (integration.md 15.7 [R4g]). Per EDGE: generator
+# cases (rendered + refused naming + refused not naming, sem variants included),
+# and the sites of it the driver RAN (rendered ones; a refused-only edge runs
+# none). Per CELL (driver, hard sites of every family incl. sem variants):
+# sites, positive and negative answer checks, and for cells 3/4 the checks
+# whose lo was PAST n. Measured quick 2026-10-07 (Linux, seed 20261005) less
+# ~10-15%; both tiers run the same sites and the full tier has more checks.
+PF_EDGE_CASE_FLOORS="miss-not-range-end:120 result-not-lo:50 stated-floor:75 stated-note:43 stated-result_decl:39 stated-on_miss:43 table-disagrees:43"
+PF_EDGE_RUN_FLOORS="miss-not-range-end:120 result-not-lo:50 stated-floor:75 stated-note:43 stated-result_decl:39 stated-on_miss:43 table-disagrees:43"
+# the PF family's own hard sites per form id (the cells reach the kit's PF rows:
+# measured pf_memchr 120 (cells 1+2), pf_walk 168 (cells 3+4 and the table that
+# disagrees); K35: a cell that fell back to the generic row would drop here)
+PF_FAM_FORM_FLOORS="pf_memchr:110 pf_walk:150"
+PF_CELL_FLOORS="1:230:750000:19000:0 2:190:600000:14000:0 3:225:660000:360000:330000 4:210:600000:340000:300000"
+FLOOR_CLS_EDGE=375       # pf-edge class cases (generator); measured 418
 # the semantic differential (g2u item 7): hard variant sites run per field
 # the enforced classes' populations (generator cases, tier-independent):
 FLOOR_CLS_HOOK=600       # hook-nonident; measured 728 (g2u2)
@@ -190,6 +218,11 @@ for fl_ in $FAM_FLOORS; do
     r_=$(grep "^FAMILY $fn_ " "$gres" | sed 's/.* rendered=\([0-9]*\).*/\1/')
     [ "${r_:-0}" -ge "$fv_" ] || note_fail 1 "family $fn_: ${r_:-0} sites rendered < floor $fv_ (K35: the shapes pcrec sends, unreached)"
 done
+for fl_ in $PF_FAM_FORM_FLOORS; do
+    fn_=${fl_%%:*}; fv_=${fl_##*:}
+    r_=$(grep '^FAMILY pf ' "$gres" | sed 's/.* forms=//' | tr ',' '\n' | sed -n "s/^$fn_://p")
+    [ "${r_:-0}" -ge "$fv_" ] || note_fail 1 "family pf: form $fn_ rendered ${r_:-0} sites < floor $fv_ (a PF cell no longer reaches the kit's PF row)"
+done
 nforms=$(grep '^FAMILY' "$gres" | grep -v '^FAMILY base ' | sed 's/.* forms=//' | tr ',' '\n' \
          | grep -v '^-$' | sed 's/:[0-9]*$//' | sort -u | grep -c .)
 echo "   distinct form ids over the families: $nforms (floor $FLOOR_FAM_FORMS)"
@@ -204,12 +237,29 @@ done
 sfn=$(grep '^SITEFN ' "$gres" | sed 's/.*checked=\([0-9]*\).*/\1/')
 echo "== K-1 name check (ALL_PRESENT FUNC site.pred.fn_ref): variants checked ${sfn:-0}"
 [ "${sfn:-0}" -ge "$FLOOR_SITEFN" ] || note_fail 1 "K-1 name check: ${sfn:-0} variants < floor $FLOOR_SITEFN"
+ur_=$(grep '^USEREFUSE-TOTAL' "$gres")
+echo "== use-time refusals on the define+use path (lawful; G2pf2): ${ur_#USEREFUSE-TOTAL }"
+ur_n=$(echo "$ur_" | sed 's/.* lawful=\([0-9]*\).*/\1/')
+ur_u=$(echo "$ur_" | sed 's/.* unnamed=\([0-9]*\).*/\1/')
+ur_m=$(echo "$ur_" | sed 's/.* on_miss=\([0-9]*\).*/\1/')
+ur_d=$(echo "$ur_" | sed 's/.* result_decl=\([0-9]*\).*/\1/')
+[ "${ur_n:-0}" -ge "$FLOOR_USEREFUSE" ] || note_fail 1 "use-time refusals: ${ur_n:-0} < floor $FLOOR_USEREFUSE"
+[ "${ur_m:-0}" -ge "$FLOOR_USEREFUSE_ON_MISS" ] || note_fail 1 "use-time refusals naming on_miss: ${ur_m:-0} < floor $FLOOR_USEREFUSE_ON_MISS"
+[ "${ur_d:-0}" -ge "$FLOOR_USEREFUSE_RESULT_DECL" ] || note_fail 1 "use-time refusals naming result_decl: ${ur_d:-0} < floor $FLOOR_USEREFUSE_RESULT_DECL"
+[ "${ur_u:-0}" -eq 0 ] || note_fail 1 "use-time refusals naming no field: ${ur_u}"
 echo "== poison differential (fields the contract says a site does not use, set to junk)"
 grep '^POISON ' "$gres" | sed 's/^/   /'
 pzs=$(grep '^POISON ' "$gres" | sed 's/.* sites=\([0-9]*\).*/\1/')
 [ "${pzs:-0}" -ge "$FLOOR_POISON_SITES" ] || note_fail 1 "poison: ${pzs:-0} sites poisoned < floor $FLOOR_POISON_SITES"
 grep '^POISONFIELD' "$gres" | while read -r _ fn_ st_ mv_; do
     echo "   $fn_ ${st_} ${mv_}"
+done
+echo "== PF edges (lane g2pf; rendered + answer-equal, or refused naming the field)"
+grep '^PFEDGE' "$gres" | sed 's/^PFEDGE /   /'
+for fl_ in $PF_EDGE_CASE_FLOORS; do
+    fn_=${fl_%%:*}; fv_=${fl_##*:}
+    r_=$(grep "^PFEDGE $fn_ " "$gres" | sed 's/.* cases=\([0-9]*\) .*/\1/')
+    [ "${r_:-0}" -ge "$fv_" ] || note_fail 1 "pf edge $fn_: ${r_:-0} cases < floor $fv_"
 done
 pzlow=$(grep '^POISONFIELD' "$gres" | awk -v f="$FLOOR_POISON_FIELD_SITES" '{split($3,a,"="); if (a[2] < f) print $2}' | paste -sd' ' -)
 [ -z "$pzlow" ] || note_fail 1 "poison: fields poisoned on fewer than $FLOOR_POISON_FIELD_SITES sites: $pzlow"
@@ -244,6 +294,10 @@ libc_check() {  # libc_check GENDIR
             bad=$((bad + 1))
             [ "$bad" -le 3 ] && echo "   $(basename "$b"): MEMFN_LIBC \"${stamp:-none}\", the compile calls \"${got:-none}\""
         fi
+        # lane g2pf: the PF cells each fill a batch of their own, so the record is
+        # judged (and shown) per cell
+        pfc=$(grep "^PFBATCH $(basename "$b" .c) " "$gd/gen_results.txt" | sed 's/.*cell=//')
+        [ -n "$pfc" ] && echo "   pf cell $pfc ($(basename "$b" .c)): MEMFN_LIBC \"${stamp:-none}\", the compile calls \"${got:-none}\""
     done
     echo "== libc record (MEMFN_LIBC vs nm -u of -O0 -fno-builtin, memcpy aside): batches agree $ok, disagree $bad, pending batches not built $skip"
     passed=$((passed + ok))
@@ -501,7 +555,7 @@ for cc in $cc_list; do
     p=$(num "$log" "checks passed"); f=$(num "$log" "checks failed")
     s=$(num "$log" "sites run"); miss=$(num "$log" "coverage cells missing")
     echo "== $cc${drv_tier:+ (quick subjects)}: passed ${p:-?} failed ${f:-?} sites ${s:-?} coverage-missing ${miss:-?}"
-    grep '^G2 \(faults\|sites failed\|layout\|cells\|subjects\|site features\|miss token\|instances\|sites with no\|on_miss_leaves\|family\|semantic\|form\|pending\)' "$log" | sed 's/^/   /'
+    grep '^G2 \(faults\|sites failed\|layout\|cells\|subjects\|site features\|miss token\|instances\|sites with no\|on_miss_leaves\|family\|semantic\|form\|pending\|pf\)' "$log" | sed 's/^/   /'
     for fl_ in $FAM_FLOORS; do
         fn_=${fl_%%:*}; fv_=${fl_##*:}
         s_=$(grep "^G2 family $fn_:" "$log" | sed 's/.*: sites \([0-9]*\) .*/\1/')
@@ -516,6 +570,22 @@ for cc in $cc_list; do
     semlow=$(grep '^G2 semantic' "$log" | grep -v '^G2 semantic seed:' \
              | awk -v f="$FLOOR_SEM_FIELD_SITES" '{if ($5 + 0 < f) print $3}' | paste -sd' ' -)
     [ -z "$semlow" ] || note_fail 1 "$cc: semantic fields with fewer than $FLOOR_SEM_FIELD_SITES hard variant sites run: $semlow"
+    for fl_ in $PF_EDGE_RUN_FLOORS; do
+        fn_=${fl_%%:*}; fv_=${fl_##*:}
+        s_=$(grep "^G2 pf edge $fn_:" "$log" | sed 's/.*: sites \([0-9]*\) .*/\1/')
+        [ "${s_:-0}" -ge "$fv_" ] || note_fail 1 "$cc: pf edge $fn_ ran ${s_:-0} sites < floor $fv_"
+    done
+    for fl_ in $PF_CELL_FLOORS; do
+        IFS=: read -r c_ fs_ fp_ fn2_ fo_ <<EOF_PF
+$fl_
+EOF_PF
+        set -- $(grep "^G2 pf cell $c_:" "$log" | sed 's/.*: sites \([0-9]*\) checks [0-9]* positive \([0-9]*\) negative \([0-9]*\) lo-past-n \([0-9]*\) .*/\1 \2 \3 \4/')
+        if [ $# != 4 ]; then note_fail 1 "$cc: no 'G2 pf cell $c_' census line"; continue; fi
+        [ "$1" -ge "$fs_" ]  || note_fail 1 "$cc: pf cell $c_: sites $1 < floor $fs_"
+        [ "$2" -ge "$fp_" ]  || note_fail 1 "$cc: pf cell $c_: positive checks $2 < floor $fp_"
+        [ "$3" -ge "$fn2_" ] || note_fail 1 "$cc: pf cell $c_: negative checks $3 < floor $fn2_"
+        [ "$4" -ge "$fo_" ]  || note_fail 1 "$cc: pf cell $c_: lo-past-n checks $4 < floor $fo_"
+    done
     passed=$((passed + ${p:-0}))
     [ "${f:-1}" -gt 0 ] && note_fail "${f:-1}" "$cc: answer checks failed (first failures: $work/run-$cc.err)"
     [ "${s:-0}" -ge "$FLOOR_SITES" ] || note_fail 1 "$cc: sites run ${s:-0} < floor $FLOOR_SITES"
@@ -601,6 +671,7 @@ cls_floor hook-nonident "$FLOOR_CLS_HOOK"
 cls_floor miss-unstated "$FLOOR_CLS_MISS"
 cls_floor refusal-unnamed "$FLOOR_CLS_NAME"
 cls_floor fn_ref-unstated "$FLOOR_CLS_FNREF"
+cls_floor pf-edge "$FLOOR_CLS_EDGE"
 echo "checks passed: $passed"
 echo "checks failed: $failed"
 if [ "$failed" -gt 0 ]; then

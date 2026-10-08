@@ -17,6 +17,7 @@ boundary with pcrec"), rendered through `memfn_sites.c` (DELEG_SITES):
 |---|---|---|
 | PRE + SETREST (the pre-check composite: one-byte gate, run calls, set rest) | `memfn/src/precheck.c` | `req_site_define` (every decision: admission, lead, runs, set rest, handoff), `pcrec_emit_req_byte_check` (the use, `emit_req_handoff_rest`), the notes `req_note_*`, `req_run_tests`, `req_set_rest_members` |
 | OFS (the `<p>_ofsskip` block, its comment, its calls; the run pre-check's `<p>_reqrun[_whole]` functions) | `memfn/src/ofsskip.c` | `ofs_test_of`/`ofs_test_model`/`ofs_test_run` (the k-set selection), `ofs_pred_of` (the description), `ofs_site_define`, `pf_ofs_call`, the tables (`pf_tables_ofs`), the reseed, the call statements around the expression |
+| PF (R4g, M2: THE FIND statement of the DFA prefilter forms, the DFA hat and the VM hat's seek) | `memfn/src/pffind.c` | `find_site` (the description: the form off `DfaPf.scan`/the VM hat's table, `holdback` -> `end_back`, the set, the caller's `on_miss`), `pcrec_emit_find` (the use point), `find_table_name`; every guard, `return 0`, entry test, re-seed, comment and table in the `pf_emit_*` callers |
 
 The retired emitters (`emit_req_one_byte`, `emit_req_run_check`,
 `emit_req_set_rest`'s text, `emit_req_handoff`'s declaration line,
@@ -128,8 +129,13 @@ commit, D148 Q2). What stages 0-1 put in place, none of it moving a byte:
   `memchr` for a BYTE row, a membership-table loop otherwise — extracted from
   the four plain prefilter forms (`pf_emit_find` picks the form off
   `DfaPf.scan`), so stage 2's VM seek calls it rather than spelling its own
-  loop (startset.md §5, "One spelling"). Cross-file, hence `pcrec_`. Sabotage
-  S68's anchor moved into it.
+  loop (startset.md §5, "One spelling"). Cross-file, hence `pcrec_`. Since
+  [MEMFN] R4g (M2) it DESCRIBES the statement as one kit site (DELEG_SITES
+  row PF; `find_site`) and the kit's `pffind` arm writes it: the memchr
+  form's statement is the search, its NULL test (the caller's `on_miss`)
+  and the position store (the bounded form's clamp is the site's `miss`),
+  so `q` is kit-internal. Sabotage S68's anchor followed the walk into
+  `memfn/src/pffind.c`.
 
 ## [ENG-FORM] THE DFA EMITTER'S ORGANIZATION (2026-08-26, D82)
 
@@ -1114,7 +1120,7 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
   R4c): pcrec's side of the kit's SITES. `memfn_sites.def` is DELEG_SITES
   (`DELEG_SITE(id, op, handoffs, kinds, budget, use_ceiling)`: PRE, the
   pre-check composite with the set rest; OFS, the offset-skip block; VMRUN,
-  the VM's literal-run compare, M1b), the
+  the VM's literal-run compare, M1b; PF, the prefilter find, R4g), the
   one source of `MF_P_INLOOP` (its budget column) and of each site's `use`
   CEILING. `memfn_sites.c`: the attempt's `mf_art` (`Job.mf`, begun at first
   ask), the SINK over a StrBuf (the comment gate stays pcrec's write-time

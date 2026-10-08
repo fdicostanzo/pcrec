@@ -6024,20 +6024,37 @@ void pcrec_emit_req_run_blocks(Ctx *cx, StrBuf *c);
  * the one statement that moves a scan position to the next byte a set can
  * begin a match with — a `memchr` for a one-byte set, a membership-table
  * loop otherwise. Its callers are the DFA prefilter forms (`pf_emit_memchr*`,
- * `pf_emit_bcls*`, src/gen/emit_dfa.c) and, from stage 2, the VM attempt
- * loop's seek, so neither spells its own loop. It writes ONE line and decides
- * nothing: what a miss does is the caller's. */
+ * `pf_emit_bcls*`, `pf_emit_first_*_bounded`, src/gen/emit_dfa.c) and, from
+ * stage 2, the VM attempt loop's seek, so neither spells its own loop.
+ * [MEMFN] R4g (M2): it DESCRIBES the statement as one kit site (DELEG_SITES
+ * row PF: FIND / STMT / ASSIGN over one SET term, integration.md §15.7) and
+ * the kit writes it; it decides nothing. The memchr form's statement is the
+ * search, its NULL test and the position store (the hit is a pointer inside
+ * the kit's text); the guards around it, and what a miss does, are the
+ * caller's (`on_miss`, the bounded clamp, the guard after a walk). */
+typedef enum {
+    PCREC_FIND_MEMCHR = 0,      /* the memchr form: no table, `byte`          */
+    PCREC_FIND_CAN_BEGIN,       /* `<p>_can_begin_match` (byte-class rows)    */
+    PCREC_FIND_START_BYTES,     /* `<p>_start_bytes` (the DFA hat's table)    */
+    PCREC_FIND_START_SET,       /* `<p>_start_set` (the VM hat's table)       */
+    PCREC_FIND_NTABLE
+} PcrecFindTable;
 typedef struct {
-    const char *p;        /* the artifact prefix: the table is `<p>_<table>` */
-    const char *table;    /* the membership table's tag; NULL = the memchr form */
+    Ctx        *cx;       /* the compile (the kit's door, the arena)          */
+    const char *p;        /* the artifact prefix: the table is `<p>_<tag>`    */
+    PcrecFindTable table; /* the membership table; PCREC_FIND_MEMCHR = memchr */
+    const uint8_t *set;   /* the table's contents, 256 bytes, nonzero = in    */
     int         byte;     /* the memchr form's one byte */
     const char *pos;      /* the position variable */
     const char *subject;  /* the subject array */
     const char *len;      /* the subject length */
     int         holdback; /* 0: the scan may reach `len`; 1: it stops at
                            * `len - 1` (D11's bound) */
+    const char *on_miss;  /* the unbounded memchr form's statement on a NULL
+                           * hit (it must leave the site); NULL otherwise */
 } PcrecFind;
-/* The memchr form declares `const void *q`, the hit or NULL. */
+/* The memchr form's statement declares `const void *q`, the hit or NULL, in
+ * the caller's block; nothing after it reads `q`. */
 void pcrec_emit_find(StrBuf *c, const char *ind, const PcrecFind *f);
 /* [START-SET] stage 2, THE VM HAT (src/gen/emit_dfa.c): the candidate
  * table's VM-route row name (`<PREFIX>_VM_START_SCAN`'s value, "none" on a

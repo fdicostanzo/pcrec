@@ -16,6 +16,11 @@ SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern '\''(ab)\
 SAB_REACH_EXPECT='REACH-VMHAT'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='        for (int b = 0; b < 256; b++) v[b] = s->ss->bits[b >> 3] >> (b & 7) & 1;'
-SAB_AFTER='        for (int b = 0; b < 256; b++) v[b] = s->ss->bits[b >> 3] >> (b & 7) & 1;
-        for (int b = 0; b < 256; b++) if (v[b]) { v[b] = 0; break; }   /* SABOTAGE S478 */'
+# RE-ANCHORED 2026-10-07 ([MEMFN] R4g, M2, lane r4g): the table's contents
+# are also the kit site's SET term now (pcrec_emit_find describes the seek), so
+# `v` is filled ahead of the entry test and the line lost one indent level.
+# Intent re-verified: the SAME defect, the emitted `rx_start_set` drops its
+# lowest member (the walk reads the table; the term's bits follow it).
+SAB_BEFORE='    for (int b = 0; b < 256; b++) v[b] = s->ss->bits[b >> 3] >> (b & 7) & 1;'
+SAB_AFTER='    for (int b = 0; b < 256; b++) v[b] = s->ss->bits[b >> 3] >> (b & 7) & 1;
+    for (int b = 0; b < 256; b++) if (v[b]) { v[b] = 0; break; }   /* SABOTAGE S478 */'

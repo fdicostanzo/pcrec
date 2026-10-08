@@ -8,8 +8,8 @@
  * stamps, vocabulary). The text of a site is the selected arm's; this file
  * decides only WHICH arm and keeps the handles honest.
  *
- * The table holds the scalar arms R4c and M1b migrated (ofsskip.c,
- * precheck.c, runcmp.c) above the generic scalar row (generic.c), which
+ * The table holds the scalar arms R4c, M1b and R4g migrated (ofsskip.c,
+ * precheck.c, runcmp.c, pffind.c) above the generic scalar row (generic.c), which
  * applies to every site. Each arm carries its contract (`uses`/`serves`,
  * [MEMFN-ROWCON]); the gate (gate.c) reads it before the arm's predicate
  * and, since N3, ENFORCES: a row whose verdict fails is DECLINED and the
@@ -117,18 +117,23 @@ void kit_out(mf_sink *o, const char *fmt, ...)
  * First passing row wins (the house's first-match idiom). Every row before
  * the last will carry its own `--memfn=no-NAME` deny when it lands (D144
  * item 4); the generic row has none, so no deny can leave a site without
- * code (§14.6). The rows above it are the SCALAR ARMS born at R4c's and
- * M1b's migrations (integration.md §15, §16, §R4.8): pcrec's offset-skip
- * block, its pre-check and its run compare, transcribed. They are not
+ * code (§14.6). The rows above it are the SCALAR ARMS born at R4c's, M1b's
+ * and R4g's migrations (integration.md §15, §16, §R4.8): pcrec's offset-skip
+ * block, its pre-check, its run compare and its prefilter find, transcribed. They are not
  * byte-moving changes, so they carry no deny of their own: the artifacts
  * they render are the ones pcrec wrote before them, and the identity gates
  * say so (§9.3). The pre-check is one renderer as two rows (N3's split, by
- * handoff: precheck.c), each with its own contract. */
+ * handoff: precheck.c), each with its own contract; the prefilter find is
+ * two renderers as four rows (split by end_back: pffind.c). */
 static const arm *const arms[] = {
     &ofsskip_arm,
     &precheck_arm,
     &precheck_assign_arm,
     &runcmp_arm,
+    &pf_memchr_arm,
+    &pf_memchr_bounded_arm,
+    &pf_walk_arm,
+    &pf_walk_bounded_arm,
     &generic_arm,
 };
 
@@ -137,7 +142,11 @@ static const arm *const arms[] = {
  * row_contracts.md §2): a failing row is DECLINED and its predicate is not
  * asked. NULL when no row serves; `*why` is then the last declined row's
  * verdict (the generic row's, the table's total fallback), whose fields the
- * refusal names. */
+ * refusal names. `gphases` is what the gate reads in this walk: MF_PH_DEFINE
+ * for mf_define; MF_PH_DEFINE | MF_PH_USE for a one-call entry (mf_emit),
+ * which holds the use hooks at selection time, so a row whose use-time
+ * fields the hooks fail to serve is DECLINED here instead of chosen and then
+ * refused by mf_use's re-check. The trace still labels the walk `define`. */
 /* Row `a`'s predicate columns over the site and its define hooks. */
 static int arm_holds(const arm *a, const mf_site *s, const mf_hooks *def)
 {
@@ -145,7 +154,8 @@ static int arm_holds(const arm *a, const mf_site *s, const mf_hooks *def)
 }
 
 static const arm *select_arm(const mf_art *art, const mf_site *s,
-                             const mf_hooks *def, gate_verdict *why)
+                             const mf_hooks *def, unsigned gphases,
+                             gate_verdict *why)
 {
     gate_in in = { s, def, NULL };
     gate_tctx tc = { art, "arms", art->nsites + 1, MF_PH_DEFINE, &in };
@@ -153,7 +163,7 @@ static const arm *select_arm(const mf_art *art, const mf_site *s,
     gate_verdict mv = { 0, 0 };
     gate_trace_sel(&tc);
     for (size_t i = 0; i < sizeof arms / sizeof arms[0]; i++) {
-        gate_verdict v = gate_check(arms[i]->ct, MF_PH_DEFINE, &in);
+        gate_verdict v = gate_check(arms[i]->ct, gphases, &in);
         if (v.r1 | v.r2) {
             int held = GATE_TRACING && arm_holds(arms[i], s, def);
             if (held && !mc) { mc = arms[i]->ct; mv = v; }
@@ -301,8 +311,9 @@ static site_rec *rec_of(mf_art *art, uint32_t handle, const char *who)
     return &art->sites[handle - 1];
 }
 
-int mf_define(mf_art *art, const mf_site *s, const mf_hooks *def,
-              mf_sink *file_scope, uint32_t *handle)
+/* mf_define's body, over the phases the selection gate reads. */
+static int define_sel(mf_art *art, const mf_site *s, const mf_hooks *def,
+                      mf_sink *file_scope, uint32_t *handle, unsigned gphases)
 {
     if (art->err[0]) return -1;
     if (s->abi != MF_SITE_ABI)
@@ -318,7 +329,7 @@ int mf_define(mf_art *art, const mf_site *s, const mf_hooks *def,
                         (unsigned long long)s->denies,
                         (unsigned long long)art->denies);
     gate_verdict declined = { 0, 0 };
-    const arm *row = select_arm(art, s, def, &declined);
+    const arm *row = select_arm(art, s, def, gphases, &declined);
     if (!row) {
         /* the generic row applies to every site, so only the gate can leave
            a site with no row: name what it declined (ruling (d)) */
@@ -346,6 +357,12 @@ int mf_define(mf_art *art, const mf_site *s, const mf_hooks *def,
     if (row->define(art, h, def, file_scope)) return -1;
     *handle = h;
     return 0;
+}
+
+int mf_define(mf_art *art, const mf_site *s, const mf_hooks *def,
+              mf_sink *file_scope, uint32_t *handle)
+{
+    return define_sel(art, s, def, file_scope, handle, MF_PH_DEFINE);
 }
 
 int mf_use(mf_art *art, uint32_t handle, const mf_hooks *use, mf_sink *body,
@@ -383,7 +400,9 @@ int mf_emit(mf_art *art, const mf_site *s, const mf_hooks *h, mf_sink *body,
             mf_sink *file_scope, mf_result *res)
 {
     uint32_t handle;
-    if (mf_define(art, s, h, file_scope, &handle)) return -1;
+    /* define and use hooks are the same here: select over both phases */
+    if (define_sel(art, s, h, file_scope, &handle, MF_PH_DEFINE | MF_PH_USE))
+        return -1;
     return mf_use(art, handle, h, body, res);
 }
 

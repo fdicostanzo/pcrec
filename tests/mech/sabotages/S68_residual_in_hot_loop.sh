@@ -26,7 +26,7 @@
 # structurally cannot cover this; that is the whole reason the structural
 # check exists.
 SAB_ID="S68-residual-in-hot-loop"
-SAB_FILE="src/gen/emit_dfa.c"
+SAB_FILE="memfn/src/pffind.c"
 SAB_SUITES="codegen harness"
 SAB_HARNESS_TARGET="tests/base/caseless.rxt"
 SAB_DESC="the emitted bitmap prefilter's skip loop advances via <prefix>_next_pos instead of scan_position++, so the DFA hot path calls into the encoding residual — DD-12 (7)'s forbidden hot-path/encoding coupling, planted in the shape a developer would actually write it. It changes no match answer under the byte backend (next_pos IS scan_position + 1), so only the codegen structural check can see it"
@@ -45,14 +45,19 @@ SAB_COUNT=1
 # the table loop advances via `<prefix>_next_pos` instead of `++`. The plant
 # now reaches BOTH byte-class forms (bounded and unbounded share the line);
 # `tests/base/caseless.rxt`'s unbounded artifacts still carry it.
-SAB_BEFORE='        pcrec_sb_printf(c, "%swhile (%s%s < %s &&"
-                     " !%s_%s[%s[%s]]) %s++;\n",
-                  ind, f->pos, f->holdback ? " + 1" : "", f->len,
-                  f->p, f->table, f->subject, f->pos, f->pos);'
-SAB_AFTER='        /* SABOTAGE S68: the hot loop advances through the encoding
-         * residual instead of one byte. */
-        pcrec_sb_printf(c, "%swhile (%s%s < %s &&"
-                     " !%s_%s[%s[%s]]) %s = %s_next_pos(%s, %s, %s);\n",
-                  ind, f->pos, f->holdback ? " + 1" : "", f->len,
-                  f->p, f->table, f->subject, f->pos, f->pos,
-                  f->p, f->subject, f->len, f->pos);'
+# RE-ANCHORED 2026-10-07 ([MEMFN] R4g, M2, lane r4g): the find statement is
+# the KIT's now (memfn/src/pffind.c, the pf_walk rows' one line, written
+# through the kit's sink); pcrec_emit_find only describes the site. Kit-side,
+# as S285 (M1b). Intent re-verified: the SAME defect, the table walk advances
+# via `<prefix>_next_pos` (the art's prefix, pcrec's D143 placeholder, as
+# f->p was) instead of `++`; it still reaches every table-form site (both
+# byte-class forms, first-class-bounded and the VM seek), and
+# `tests/base/caseless.rxt`'s unbounded byte-class artifacts carry it.
+SAB_BEFORE='    kit_out(o, "%swhile (%s%s < %s && !%s[%s[%s]]) %s++;\n",
+            ind, h->lo, r->site.end_back ? " + 1" : "", h->n, t, h->s, h->lo,
+            h->lo);'
+SAB_AFTER='    /* SABOTAGE S68: the hot loop advances through the encoding
+     * residual instead of one byte. */
+    kit_out(o, "%swhile (%s%s < %s && !%s[%s[%s]]) %s = %s_next_pos(%s, %s, %s);\n",
+            ind, h->lo, r->site.end_back ? " + 1" : "", h->n, t, h->s, h->lo,
+            h->lo, art->prefix, h->s, h->n, h->lo);'

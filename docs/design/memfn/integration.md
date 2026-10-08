@@ -5426,6 +5426,23 @@ never takes it (it passes no mask).
   `empty` MISS (`if (scan_position >= subject_length) return 0;`).
   **`byte-class-bounded`** is the same with `end_back` 1 and `empty`
   NOP: its loop stops at `subject_length - 1` and nothing follows it.
+- **`[R4g]` As BUILT (lane r4g, 2026-10-07; `docs/dev/lanes/r4g_report.md`).**
+  Main's clearance kept every guard, `return 0`, entry test and re-seed
+  pcrec's text (R-4's boundary rule), so the PF site is narrower than the
+  two bullets above, one shape for all six PF forms and the VM hat's seek:
+  FIND / STMT / ASSIGN over ONE REQUIRED SET term at offset 0, `result` the
+  scan position, `use` POSITION. The memchr forms' `empty` is EXCLUDED
+  (pcrec's `pos >= n` guard, or the bounded block's `pos + 1 < n`, precedes
+  the site), and their statement is the search, the NULL test and the store,
+  because the hit is a POINTER: a site whose result were `q` would not be a
+  FIND result, and the generic row could not render it. Unbounded, a NULL
+  hit runs pcrec's `on_miss` (`"return 0;"`, `on_miss_leaves` 1); bounded,
+  the store takes the hit or pcrec's `miss` (`"subject_length - 1"`, the
+  range's end). The table forms are the in-place walk (`result` IS `lo`),
+  `empty` NOP, `miss` the range's end (MF_MISS_N, or `n - 1` bounded), no
+  `on_miss`: pcrec's `if (pos >= n) return 0;` after the walk stays
+  pcrec's. The kit's rows: `memfn/src/pffind.c` (`pf_memchr`,
+  `pf_memchr_bounded`, `pf_walk`, `pf_walk_bounded`).
 - **The STAY skip** (M3, `dir_fwd_skip`/`dir_rev_skip`) is STMT/SKIP/ADVANCE. pcrec writes
   `kw (state == K) {` and the accept store. The kit writes the one
   `while` line, with `end_back` 1 under views, `table_ref` `stay<K>`, and
@@ -5918,7 +5935,7 @@ and fate.
 | 3 | `pcrec_find_run_window_start` / `pcrec_find_run_scan_index` (`src/core/findings.c`) | which window of the run, and which position, to scan: a rarity argmin over the prior | measured prior + argmin | stays at M1 as `plan_pos` and the cut window. **M5**: the kit's planner, reading the per-position hints. **`[rev4.6]`** (r5 A3) The stamps that report it (`REQ_RUN`'s `@idx`, the run-route `REQ_BYTE`) and the `[OPT-REQPOS]` note are re-specified as pcrec's PICK in R4d's spec hunk (§14.9) |
 | 4 | the `req_byte` pick (`reqbyte_freq_pick.md`, argmin over byte frequency) | which necessary byte the one-byte gate scans | measured prior + argmin | stays at M1 (it is the SET term pcrec passes, and `<PREFIX>_REQ_BYTE` reports it). **M5**: pcrec passes the necessary SET as REQUIRED-of-one ("some member of this set"), with per-member hints, and the kit picks. `REQ_BYTE`'s meaning would then need a ruling (Q40) |
 | 5 | `req_set_leads_applies` (`emit_dfa.c:6601`, `pcrec_find_pick`) | whether the set's pick LEADS the run (order, and adding a predicate) | rarity comparison | becomes the composite site's predicate ORDER plus an OPTIONAL lead (§15.5). The baseline honours pcrec's order, and a non-baseline arm may revise it. K85 (this choice losing on dense text) is the arm's to fix. Bit 45 keeps omitting the lead. **`[rev4.5]`** The lead order is the kit's per-site choice, default lead first (§15.5). **`[rev4.6]`** (r5 A1) The lead is OPTIONAL on DFA-scan routes only. On no-DFA routes it is REQUIRED (K65), and bit 45 moves its byte into the set rest rather than omitting it (§14.5) |
-| 6 | `req_byte_dominated_by` (`emit_dfa.c:6560`) → `pcrec_find_no_commoner` | G1's elision of the pre-check when the prefilter's scan byte is no commoner than the necessary byte | rarity comparison between two kit-owned searches | the SEMANTIC half (same byte, or the run verified by the prefilter, which makes it a REQUIRED term, §14.5) stays pcrec's: it is an implication between facts. The RARITY half moves at **M2**: the necessary byte is passed as an OPTIONAL term of the PF site, and the kit decides whether testing it pays |
+| 6 | `req_byte_dominated_by` (`emit_dfa.c:6560`) → `pcrec_find_no_commoner` | G1's elision of the pre-check when the prefilter's scan byte is no commoner than the necessary byte | rarity comparison between two kit-owned searches | the SEMANTIC half (same byte, or the run verified by the prefilter, which makes it a REQUIRED term, §14.5) stays pcrec's: it is an implication between facts. The RARITY half moves at **M2**: the necessary byte is passed as an OPTIONAL term of the PF site, and the kit decides whether testing it pays. **`[R4g ruling, main 2026-10-07]`** SUPERSEDED: the elision is an ADMISSION decision and stays pcrec's, in `cand_rows[]` after [START-TABLE] C4; the kit only ever receives the resulting text. It is its own step after C5b, re-checked against [DEC-FALLBACK]'s scope before it starts. A kit form wanting the choice brings it to main as a request |
 | 7 | `dfa_cand_scan`/`pcrec_dfa_cand_ppm` (`emit_dfa.c:6429`/`:6472`; K84's `strcmp` on row names) | the candidate scan's density, read by the reseed table | a DENSITY (the prior's mass), not a price | stays pcrec's as a fact. K84's `strcmp` readers are fixed at **M2** (a `DfaPf` field), as rev 3 §9.4 had it |
 | 8 | `vm_reseed_cal` (`emit_vm.c:11055`): `gap` 16/4, `block`, `cap`, `first` | the VM hybrid's retry: step the VM, or re-seed through the prefilter | measured crossovers, per program class | stays pcrec's. It prices the ENGINE's retry, not a memory function. **Coupling:** a re-seed's cost includes the PF search, so after M2 a kit change to PF text can move the crossover. Fate: the reseed witness cells (xcall/hyb, `hyb_reseed.md` §5) join G1 for every PF mover, and a re-calibration stays pcrec's measured decision |
 | 9 | `litscan_k82b.md` (PROPOSED, parked): an expected-cost admission for the run gate | whether a gate pays, from rates and machine terms | a cost model over kit-owned search | **WITHDRAWN under D146.** The handoff removed its motivating rescan, and whether a speed-only gate pays is the kit's question (row 11) |
@@ -6380,6 +6397,16 @@ text stays opt-in until R4f.
 >   byte-identical at migration. C12: 3 → 1. **Prerequisite:** R4c.
 >   **Trigger:** completeness. **PF movers** follow, triggered by U-2
 >   AND a Linux cell whose time is in `pf_emit_bcls`.
+>   **`[R4g]` BUILT on `lane/r4g` (2026-10-07)**, implement-then-replace:
+>   DELEG_SITES row PF, the kit's `pffind` arm (four rows with
+>   `uses`/`serves`), `pcrec_emit_find` the site builder (§15.7 `[R4g]`);
+>   the I1 shadow comparator and the shape compiles read 0 movers. K84's
+>   readers were already fixed on main (START-SET stage 1). §19 row 6's
+>   rarity half is NOT moved: G1's elision (`req_byte_dominated_by`) is a
+>   pre-check admission, which main's clearance keeps pcrec's; it waits for
+>   a ruling (r4g_report.md). C12: `emit_dfa.c` memchr 2 → 1, walk-fmt
+>   1 → 0 (the design's "3 → 1" counted before R4c). The identity gate on
+>   post-C4 main is the merge gate.
 > - **R4h, M3: STAY, the scan edge's loop and VMSPAN at stride 1**
 >   (zero movers; ADVANCE with `count`/`peek`/`floor`). **Prerequisite:**
 >   R4c. **Trigger:** completeness. **In-loop movers** follow, triggered

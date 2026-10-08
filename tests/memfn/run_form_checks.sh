@@ -5,7 +5,8 @@
 #   C12  the emitted-form ratchet: the search forms pcrec's emitters spell,
 #        counted against tests/memfn/c12_ceilings.tsv (the ceilings only
 #        descend; M1's REPLACE lowers the emit_dfa.c memchr row 8 -> 2, M1b's
-#        deletes src/gen/runcmp.c's three rows, 12 -> 9).
+#        deletes src/gen/runcmp.c's three rows, 12 -> 9; M2's (R4g) lowers
+#        the memchr row 2 -> 1 and deletes the walk-fmt row, 9 -> 8).
 #   C13  on_cand duplicability: UNREACHED, said so, until a producer exists.
 #   C14  shape bounds: MF_MAX_TERM >= PCREC_OFSK_MAX_SET + 1 and friends,
 #        compiled against limits.def's current values.
@@ -19,7 +20,7 @@
 
 set -u
 
-C12_CEIL_ROWS_FLOOR=9
+C12_CEIL_ROWS_FLOOR=8
 
 here="$(cd "$(dirname "$0")" && pwd)"
 root="${1:-$(cd "$here/../.." && pwd)}"
