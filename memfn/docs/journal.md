@@ -877,3 +877,11 @@ pointer when a kit change merges to main.
     "light". Next time, ask first.
   - done: posted.
   - OWED: g2_floor (blinded, per-row G2 count).
+- 2026-10-08: R4h scoped by a read-only opus lane, and its edit set posted.
+  - Overlap with C5-C7: disjoint functions.
+  - Contract gaps: G1 (counter ownership), G2 (layout), G3 (hook classes),
+    G4/G5.
+  - Main ruled Q-R4h-1 (a)+(b) (session 97): a caller-owned-counter hook at
+    MF_SITE_ABI 5, plus one pcrec layout-normalization mover after C7.
+  - Next on the kit side: R4h prep (G3 classes, the (a) hook, Q-G2-5
+    recorded) as a kit-only zero-mover unit.
