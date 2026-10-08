@@ -34,16 +34,16 @@
 # needs").
 #
 # table	row	pcrec_floor	g2_floor
-arms	ofsskip	PLACEHOLDER	PLACEHOLDER
-arms	precheck	PLACEHOLDER	PLACEHOLDER
-arms	precheck_assign	PLACEHOLDER	PLACEHOLDER
-arms	runcmp	PLACEHOLDER	PLACEHOLDER
-arms	pf_memchr	PLACEHOLDER	PLACEHOLDER
-arms	pf_memchr_bounded	PLACEHOLDER	PLACEHOLDER
-arms	pf_walk	PLACEHOLDER	PLACEHOLDER
-arms	pf_walk_bounded	PLACEHOLDER	PLACEHOLDER
+arms	ofsskip	50493	PLACEHOLDER
+arms	precheck	253352	PLACEHOLDER
+arms	precheck_assign	15956	PLACEHOLDER
+arms	runcmp	56617	PLACEHOLDER
+arms	pf_memchr	80268	PLACEHOLDER
+arms	pf_memchr_bounded	25484	PLACEHOLDER
+arms	pf_walk	608765	PLACEHOLDER
+arms	pf_walk_bounded	27462	PLACEHOLDER
 arms	generic	-	PLACEHOLDER
-runcmp	words	PLACEHOLDER	PLACEHOLDER
-runcmp	overlap	PLACEHOLDER	PLACEHOLDER
-runcmp	bytes	PLACEHOLDER	PLACEHOLDER
-runcmp	memcmp	PLACEHOLDER	PLACEHOLDER
+runcmp	words	15408	PLACEHOLDER
+runcmp	overlap	108903	PLACEHOLDER
+runcmp	bytes	324	PLACEHOLDER
+runcmp	memcmp	87769	PLACEHOLDER
