@@ -2296,6 +2296,21 @@ alone cannot tell a refactor from a no-op.
   needle that could not tell a quotation from a read would force those
   comments deleted or misspelled — the check's convenience bought with a real
   explanation. Scoped to `*.c`/`*.h` with comment lines filtered.
+- **CHECK 2b's ALLOWLIST IS WHOLE-FILE, WITH A FUNCTION-SCOPED ARM
+  ([admin1008b], 2026-10-07).** A file on `ALLOW` polices nothing in it, so a
+  file whose single legitimate `u.cls.` reader is one function (possessify.c's
+  `cls_polarity`, from lane posstri) goes on `ALLOW_FN` (`FILE:FUNCTION`
+  entries) instead: `cls_scan` exempts reads between that function's column-0
+  definition and its column-0 closing brace, and nothing else in the file. Two
+  controls ride it: an entry whose function is missing or holds no read is
+  `STALE` (an exemption nothing uses would silently cover the next read to land
+  in a same-named function), and CHECK [2b'] runs the mechanism on a two-function
+  fixture every time (2 reads unscoped, 1 scoped, both STALE shapes). A
+  survey of `u.cls.` reads by function: ctxnode.c `lang_charset` (1),
+  altcls.c `altcls_walk_alt` (1), parse.c `p_class` (3), lower_enc.c
+  `lower_class_byte`/`lower_class_utf8`/`subtree_is_identity`/`wclass_of`
+  (14); cpset.c is the representation. Empty on main; the first user is
+  posstri's merge.
 - **CHECK 2's FLOOR COUNTS THE ACCESSOR FAMILY, and the reason is a finding
   against the design's own census.** §8.1.1 words it as six sites calling
   `pcrec_cls_bits`; FIVE want a bitmap and the sixth does not — `emit_vm.c`'s

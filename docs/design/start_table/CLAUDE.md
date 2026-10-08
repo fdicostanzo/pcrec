@@ -102,7 +102,16 @@ None of them is read by a check.
   edit-set token/line and lists EVERY commit that moves it, re-run rows carry
   `rerun_at` (the commits touching their owner), rows are keyed by FILE (S169
   is shared by two), and `reads` lists the family identifiers an anchor names.
-  Also reports each site's occurrence count against `SAB_COUNT` (the rule
+  **STEPS ([admin1008b], 2026-10-07; stc4_report.md §4 item 3, stc5_report.md
+  §4 item 6):** `--step NAME=A..B` (repeatable, `--repo`, `--reach-hops`,
+  `--compare NAME=S1,S2,...`) derives `rerun_at` from the commit's ACTUAL
+  diff -- hunks to the definitions they overlap, plus the walk-reach relation
+  (definitions the removed text names, what a named table stores, the callers
+  of a definition whose walk was replaced), pure-rename hunks ignored -- and
+  adds a trailing `rerun_via` column. Without `--step` the output is
+  unchanged. Usage with steps: `python3 -I sabotage_anchors.py PRE_TREE
+  PRE_TREE.call_graph.tsv edit_set.tsv --repo REPO --step C4=PRE..POST`
+  (ROOT is the PRE tree, a `git archive` of A). Also reports each site's occurrence count against `SAB_COUNT` (the rule
   `scripts/m6read_check_sab_anchors.py` enforces in `make test-codegen`
   [SABANCHOR]). At revision 2.1: 463 row files / 462 ids / 480 sites, 100
   family rows, 15 re-aim, 85 re-run, 0 count mismatches, 0 unresolved
