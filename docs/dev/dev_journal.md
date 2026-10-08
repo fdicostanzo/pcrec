@@ -26702,3 +26702,26 @@ Frank: "finish up open work/bench results/errors", Linux box free (bench manager
   - Six design corrections accepted. Item 5: fact denies stay explicit listing data until the landmark column has a reader.
 - **Bench inbox I-134** pushed (pcrec-bench 27ee420f): abi 66 + the `--list-axes` change, pin candidate cf3ffaac, no asks.
 - Rows gated on C7, now eligible but NOT started: [START-DENSE] (+ [OPT-HYB-RESEED-POLICY]), [START-D1], [TIE-ALIGN], [DEC-POSDOM], [ENG-TACTICS], [OPTLOOP] round 3. Next in the cleared queue: refactor B [DEC-FALLBACK] (D153), and the kit's R4h layout-normalization pre-commit (Q-R4h-1 (b)), checked against B's scope first.
+
+## 2026-10-08 — session 97 (checkpoint ~08:55 EDT)
+
+- **[DEC-FALLBACK] STEP 0 census MERGED** 395a04dc (lane decfb0):
+  - 4,792 cases; 4,771 compiles take one attempt at shipped limits.
+  - §4.1's predicate/gate drift is live (2 wasted attempts at shipped limits, up to 99 under lowered caps; a separate mover row).
+  - §4.5: `--emit-ir` mis-attributes a size-cap prefilter drop to `-fno-prefilter`.
+  - §4.6: registry order differs from evaluated order (no corpus token moves).
+- **[NULLABLE-ANCH] STEP 0 MERGED** e6b6c25f (lane nullanch0): bare nullability over-declines patterns anchored at BOTH ends. Bench Qs relayed to pcrecdev2; answered, and O-87/[B125] (capability@0.2) filed for Frank.
+- **R4h ADVANCE target frozen** by the kit (77b6b37e). normscope found a four-fold delta (docs/dev/lanes/normscope_report.md, recorded by the manager).
+- **Layout normalization MERGED** c4c37af8, abi 67 (lane advnorm):
+  - Chain red x3 -> lane advtri: facts RX_VM_PROGRAM_BYTES was a declared mover (emit_sweep gains `--census-facts-keys`); the kit control was a chain cwd bug; the memfn vocab regexes were stale.
+  - Re-run green. Object-identical, 0 entry-shape flips.
+  - Full recursion identity on the merged tree: 17/0.
+- **Recursion identity gate red on main since abi 66** (found by nullanch1) -> lane recidtri, MERGED 8f8546c4: both were stale/incorrect checks; possland2 never ran the gate to completion (learnings §3.ab again). DESIGN FINDING, filed here and NOT built: the RX_VM_POSS_ARMS stamp is not consequence-aware (`(a?)x++\1\b` stamps arms though denying changes only the stamp). Making it so is a compiler + abi change; recidtri's floor goes red the day it lands.
+- **[NULLABLE-ANCH] MERGED** 02db3811, abi 68:
+  - Lanes nullanch1 (opus build), nullanch2 (re-merge; the abi collided with advnorm's 67, renumbered), natri (registry EM_ANY allowlist + rxtsource census re-pins).
+  - New E1 fact `empty_admits`. Movers = the 5 predicted. 58.2M-call differential 0 different. S611-S613. K97 (long-match tax) filed, deferred. U19 filed.
+  - One temporary special case: the has_var patterns keep bare nullability, preserving tokens for refactor B (F1 on the [DEC-FALLBACK] row).
+  - Unexplained, non-failing: 5 tests/findings golden "HARNESS FAILURE / bigram is not a directive" lines in nullanch2's chain log that did not recur on re-run. Watch.
+- Bench inbox I-134 (abi 66 + list-axes) and I-135 (abi 67/68, pin candidate 02db3811).
+- Kit: R4h BUILT zero-mover (lane/memfn-r4h; S614-S616, S617 returned); its slot10 heavy run granted at 02db3811.
+- Lesson: two lanes running in parallel each took the next abi number. Assign the abi number in the brief whenever two movers are in flight.
