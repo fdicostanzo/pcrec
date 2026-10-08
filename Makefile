@@ -1293,11 +1293,17 @@ test-memfn-rows: all
 # test-memfn-g2-full is the whole run (gcc and clang, full subjects, every
 # witness on every batch), about 25 minutes on the Mac: OPT-IN, never part
 # of `make test`.
-test-memfn-g2: all
-	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-memfn-g2.ran"; fi
-	TMPDIR=$${TMPDIR:-/var/tmp} bash memfn/tests/run_g2.sh --quick
+# The --quick tier's rows half links G2 against the TRACED library (the kit
+# compiled with -DMF_TRACE) and holds each kit row to its g2_floor in
+# tests/memfn/row_floors.tsv ([MEMFN-ROWCON] N4 follow-up).
+$(BUILD_DIR)/libpcrec_mftrace.a: $(BUILD_DIR)/libpcrec.a $(KITSRCS) $(KITHDRS) tests/memfn/mk_mftrace_lib.sh
+	CC="$(CC)" bash tests/memfn/mk_mftrace_lib.sh $@ $(BUILD_DIR)/libpcrec.a $(KITFLAGS)
 
-test-memfn-g2-full: all
+test-memfn-g2: all $(BUILD_DIR)/libpcrec_mftrace.a
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-memfn-g2.ran"; fi
+	G2_ROW_FLOORS=tests/memfn/row_floors.tsv TMPDIR=$${TMPDIR:-/var/tmp} bash memfn/tests/run_g2.sh --quick
+
+test-memfn-g2-full: all $(BUILD_DIR)/libpcrec_mftrace.a
 	TMPDIR=$${TMPDIR:-/var/tmp} bash memfn/tests/run_g2.sh
 
 # [START-SET] (D148) the `start_set` fact's checks: C-SS* (the emitted start

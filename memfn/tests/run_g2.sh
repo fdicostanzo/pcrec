@@ -741,6 +741,27 @@ if [ "$rows" = 1 ]; then
     else
         reach_fail "(c) $nrows distinct (table,row) pairs < floor $FLOOR_ROWS"
     fi
+    # (e) the per-row floors, when the caller names a floor file (make passes
+    # tests/memfn/row_floors.tsv: columns table, row, pcrec_floor, g2_floor;
+    # PLACEHOLDER/`-` cells are skipped). Added by the kit manager at the
+    # merge ([MEMFN-ROWCON] N4 follow-up); the floors are data, measured on
+    # this tier, so this reads no source the generator shares.
+    if [ -n "${G2_ROW_FLOORS:-}" ]; then
+        if [ ! -f "$G2_ROW_FLOORS" ]; then
+            reach_fail "(e) G2_ROW_FLOORS=$G2_ROW_FLOORS is not a file"
+        else
+            efail=$(awk -F'\t' 'NR == FNR { if ($1 == "row-chosen") n[$2 "/" $3] = $4; next }
+                     /^#/ || NF < 4 || $4 !~ /^[0-9]+$/ { next }
+                     { k = $1 "/" $2; seen++; if (!(k in n) || n[k] + 0 < $4 + 0) printf "%s(%s<%s) ", k, (k in n) ? n[k] : "absent", $4 }
+                     END { if (!seen) printf "no-numeric-g2-floor " }' \
+                 <(tr ' ' '\t' < "$work/row-chosen.txt") "$G2_ROW_FLOORS")
+            if [ -z "$efail" ]; then
+                reach_pass "(e) every row meets its g2_floor in $G2_ROW_FLOORS"
+            else
+                reach_fail "(e) rows under their g2_floor: $efail"
+            fi
+        fi
+    fi
 fi
 
 # --- 5. the verdict ------------------------------------------------------------

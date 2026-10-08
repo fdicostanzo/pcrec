@@ -212,10 +212,10 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
   `arm_fixtures.c` fixture otherwise), its text SIGNATURE and its CONTROL.
   Not derived from fields.def. The header documents the columns.
 - **row_floors.tsv** — per-row CHOSEN floors: `pcrec_floor` over the full
-  N2 census (`-` for a non-`pcrec` row), `g2_floor` over G2. Born as
-  PLACEHOLDERs: the manager's full census pins the pcrec column (the
-  command is in the header), and the G2 column waits for G2 to count
-  per ROW (it counts per form id).
+  N2 census (`-` for a non-`pcrec` row), `g2_floor` over G2's quick tier.
+  Both columns are pinned (2026-10-07/08): the pcrec column from the full
+  census (the command is in the header), the G2 column from G2's per-row
+  count (`run_g2.sh --rows`), checked by G2 itself at `make test-memfn-g2`.
 - **rows_check.py**, **run_rows.sh** — `make test-memfn-rows` (in
   TEST_SECTIONS; about 1.5 s). Builds the kit with `-DMF_TRACE` (its own
   objects, `find`-listed), the fixture driver against them and a traced
@@ -236,6 +236,11 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
   The floors themselves are the census's: `n2_report.py --floors`
   (docs/design/memfn/probes/rowcon/). Hand plants:
   `docs/dev/lanes/n4_report.md`.
+- **mk_mftrace_lib.sh** — builds `build/libpcrec_mftrace.a` (make rule of the
+  same name): build/libpcrec.a with its kit members swapped for `-DMF_TRACE`
+  builds, the library G2's rows half links (`make test-memfn-g2` depends on
+  it and passes `G2_ROW_FLOORS=tests/memfn/row_floors.tsv`, so G2's check (e)
+  holds each row to its `g2_floor`). Same recipe as rows_check.py's own swap.
 - `arm_fixtures.c --only FIXTURE` (N4) renders one fixture alone, so a
   traced run's rows are that fixture's.
 
