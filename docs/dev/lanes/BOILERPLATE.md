@@ -89,6 +89,13 @@ Numbers are the measured record in docs/testing.md "The boxes" (MEASURED
   long run's results feed your own later work, fill the wait with
   independent items — never idle-wait — or deliver in stages and let a
   fresh agent resume from your report.
+- NEVER IDLE-WAIT FOR A BOX SLOT OR A LONG RUN (Frank, 2026-10-07). A lane
+  commits, ARMS the chain detached (`nohup setsid` waiter polling
+  `worktrees/NAME/.lift`, then the chain script; `& disown`), hands back and
+  ENDS. The manager lifts; a FRESH agent reads the verdicts.
+- MECH IDS ARE PASSED WITHOUT A SUFFIX (`S222`, never `S222_...`), and a row's
+  verdict is read from its own `== mech run COMPLETE` trailer (C3's chain
+  lost 23 rows to `S222_`).
 - `timeout` (sized generously) on every command of uncertain length; a
   firing timeout is a FINDING.
 - Kill only by `scripts/safekill PID`; wrap hang/allocation risks in

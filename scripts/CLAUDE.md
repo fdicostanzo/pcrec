@@ -396,6 +396,18 @@ pcrec (the Makefile owns that).
   `tests/emit_sweep.py.test` (the arms over their own manifests, ~5 s); the
   mech `emitsweep` arm runs it. See `docs/dev/lanes/stc0_report.md`.
 
+  **ONE POOL ACROSS THE STREAMS ([admin1008b], 2026-10-07).** The argv
+  streams (1, 2, 3, 6) and the composition stream used to run as a pool each,
+  waited out before the next began, so every stream's slowest compile (the
+  composition stream's most of all) left the box at a fraction of its threads.
+  `run_full_sweep` now submits every stream's tasks to ONE pool
+  (`run_pooled`; composition tasks first and capped at `--comp-jobs`
+  concurrent, so the contention cap of bsweep S1.4 is unchanged), each worker
+  compares its own pair and returns a small tuple, and the streams merge in
+  the old order from the task-ordered results -- stdout is byte-identical to
+  the per-stream form (proved on `--limit 300`, evidence in
+  `docs/dev/lanes/admin1008b_report.md`). There is no resumability to keep:
+  the script never had a checkpoint.
 - **trace_diff.py** — [START-TABLE] C0's selection-trace diff: compares two
   trace streams (`idx arm seq record`, written by `emit_sweep.py --trace`)
   per (pattern, arm) as ORDERED sequences (so neither a swap between
