@@ -926,3 +926,14 @@ pointer when a kit change merges to main.
   - Blocked on a blinded G2 lane, because G2's oracle predates Q-R7-1.
   - Session reset at Frank's request; wake.md lists the order of what
     follows.
+- 2026-10-08 (session after reset): R-7 (M4) DELIVERED.
+  - The blinded G2 lane g2m4 (sonnet, cell g2u-cell) brought G2 to
+    MF_SITE_ABI 6: reads-below range, mline AT_N family, loop-exit class
+    plus W2 mutation 8, FLOOR_ROWS 14. Quick 47.4M/0, merged via g2u.
+  - Floors for pf_memchr_back: g2 4109, pcrec 3271.
+  - slot11 on kit + main e99ad486 was green except S513/S525, which are
+    equivalent mutants once pcrec has no memchr. Read-only triage lanes
+    confirmed it; both re-pinned UNDETECTED as tripwires and re-run solo,
+    clean. make test now runs through scripts/perfrun.
+  - Posted done: R-7 and a notice with G2's Q-G2M4-1..9 and the redundant
+    libc_names memchr entry.
