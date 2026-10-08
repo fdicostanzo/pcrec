@@ -32,7 +32,7 @@
  * after `fork()`, so the counter always starts at the SAME point a
  * direct `pcrec_compile()` call would.
  *
- * WITNESSES, AND WHY FOUR RATHER THAN AN EXHAUSTIVE SWEEP OF EVERY
+ * WITNESSES, AND WHY A FIXED SET RATHER THAN AN EXHAUSTIVE SWEEP OF EVERY
  * COMPILE PATH IN THE TREE. `K` (allocations per compile) is unbounded
  * in principle; the tier budget (R0.4: one gcc invocation and one
  * process spawn per SUBJECT, no per-case `pcrec`/`gcc` call) forbids
@@ -49,6 +49,10 @@
  *   W4  the [ART-SIZE] SIZE-TERM LADDER — seven internal attempts, the
  *       one mechanism K60 names that W1-W3 structurally cannot reach
  *       ([K60MEAS]; see the witness table at the bottom of this file)
+ *   W5  the FORCE LOOP's arm: `pcrec_emit_facts` on "(?:a?){700}" with the
+ *       failing allocation INSIDE a forced fact derivation — its own
+ *       property (rc 0 + one `decline:force-failed` row), its own driver
+ *       `w5_run()`; see the [W5] block above `main`
  *
  * [K60FIX] (2026-09-18, lane k60fix, docs/dev/decisions.md D109): W4's own
  * mechanism (the [ART-SIZE] ladder catch absorbing a genuine pcrec_ctx_nomem) is
