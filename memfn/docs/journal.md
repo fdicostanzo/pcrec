@@ -950,3 +950,8 @@ pointer when a kit change merges to main.
   - Posted to main as a proposed D-entry (responses.md).
   - Meanwhile M7 is merged on lane/memfn-m7; blinded G2 lane g2m7 is
     running; slot12/run.sh is written.
+- 2026-10-08: RULING from Frank (kit session). He approved the SIMD plan
+  with a capacity split: "2 parts migrating to 1 part simd until the
+  migration is done, then you're unlocked." Lanes go 2:1, and heavy slots
+  go 2:1 when both threads have a run queued. The split lifts at the
+  migration's end state (M5′). Posted to main.
