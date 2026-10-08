@@ -165,7 +165,10 @@ cand_window_clamps	WALK	WINDOW	[C5] the clamp's ask: cand_window_of, recorded (e
 pcrec_cand_select_vm	WALK	RETRY, WIDTH, BOUND (CR_VM)	[C5] the VM emitter's walk: cand_select on CAND_ROUTE_VM over CandVmFacts
 vm_width_row	WALK	WIDTH (CR_VM)	[C5] WIDTH's row, read by the root-minw test, <PREFIX>_VM_ROOT_MINW and --emit-ir's root-minw row
 vm_bound_row	WALK	BOUND (CR_VM)	[C5] BOUND's VM row, read by attempt_max and <PREFIX>_VM_START
-cand_read	WALK	BOUND (CR_ATTEMPT, CR_VM)	[C5b] THE SELECTION READ: a predicate of one slot asks another slot's row through cand_select, the edge checked against cand_nodes[].reads in the trace build; read by P2 (both arms), N7, R3 and N12 for BOUND
+cand_read	WALK	BOUND (CR_ATTEMPT, CR_VM); NEXT (CR_DFA, CR_ATTEMPT); PRESENCE (CR_DFA)	[C5b] THE SELECTION READ: a predicate of one slot asks another slot's row through cand_select, the edge checked against cand_nodes[].reads in the trace build; read by P2 (both arms), N7, R3 and N12 for BOUND; [C6] by G1 and R4 for NEXT, F1 for PRESENCE
 CAND_READ	WALK	BOUND (CR_ATTEMPT, CR_VM)	[C5b] cand_read's spelling (the site a string literal)
 CAND_BOUND_ONE	WALK	BOUND (CR_ATTEMPT, CR_VM)	[C5b] BOUND's row admits one start position (u.bound.one != CAND_ONE_NONE), through CAND_READ: what P2, N7, R3 and N12 read where they restated B1-B4
 vm_cand_facts	PLAN	RETRY, WIDTH, BOUND (CR_VM)	[C2 trace-only; C5 unconditional] the Vm fields the VM rows read, as CandVmFacts
+attempt_next_read	WALK	NEXT (CR_ATTEMPT)	[C6] attempt_next_of's selection as a READ (cand_read) by G1 (PRESENCE) and R4 (RETRY), through dfa_cand_scan; prints `NEXT attempt <row> attempt-next`, C6's declared trace addition
+dfa_pf_read	WALK	NEXT (CR_DFA)	[C6] dfa_pf_of's selection as a READ (cand_read) by G1 (PRESENCE) and R4 (RETRY), through dfa_cand_scan and pcrec_dfa_cand_ppm; its record is dfa_pf_of's (site pf-of)
+req_admit_read	WALK	PRESENCE (CR_DFA)	[C6] req_admit's selection as a READ (cand_read) by F1 (FIRST's handoff); its record is req_admit's (site req-admit), plus the entry slots' cross-route check

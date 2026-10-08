@@ -77,3 +77,47 @@ def	CandNode	C5b	gains `reads[]`, the per-route selection DAG of §1.3
 def	cand_nodes	C5b	declares PRESENCE->BOUND (CR_ATTEMPT, CR_VM), NEXT->BOUND (CR_ATTEMPT, CR_VM), RETRY->BOUND (CR_VM)
 def	cand_rows_selfcheck	C5b	also fails a read on a route its slot is never asked on, and a cycle in the reads
 def	attempt_cand	C5b	takes N12's CandSel (was the Dfa) so it reads BOUND(CR_ATTEMPT) on that selection
+# [stc67, 2026-10-08] C6's own text, named from the commit's diff (stc5_report.md §4 item 5's rule: name the text that CHANGES, never a whole definition only partly edited). The listing reads the table: the desc moves beside each row, one projection serves every start axis, the per-axis accessors go. Then G1/F1/R4 read through cand_read (the manager's ruling on stc5b §4 item 1), each edge declared in cand_nodes[].reads in the same commit. A `def` here is a definition deleted, new, or rewritten throughout; a partly edited one is named by its changed lines, so its anchors re-run (rerun_at, `--step C6=`) rather than re-aim
+token	{ "prefilter", "	C6	AXIS_DESC's 12 prefilter rows leave (their text is the rows' desc)
+token	{ "search-start", "	C6	AXIS_DESC's 2 search-start rows leave
+line	if (!strcmp(axis, "prefilter")) return "RX_DFA_PREFILTER";	C6	stamp_macro_of: a start row's stamp is its slot's (cand_list_stamp)
+line	if (!strcmp(axis, "search-start")) return "RX_DFA_START";	C6	stamp_macro_of, as above
+line	const char *stamp_macro = cands[i].stamp ? cands[i].stamp : stamp_macro_of(axis);	C6	emit_dfa_list_axis: PcrecAxisCand.stamp's one reader leaves
+line	out[k].stamp = NULL;	C6	pcrec_dfa_axis_cands stops writing .stamp
+def	emit_predicate_axes	C6	the vm-anchor-bound, end-window, req-admit, req-use and hyb-reseed sections become emit_cand_axis calls (no anchor in axes_dump.c)
+def	pcrec_axes_tsv	C6	prefilter and search-start become emit_cand_axis calls
+def	emit_cand_axis	C6	NEW: the one start-axis dump emitter, walking pcrec_cand_list_row
+def	PcrecAxisCand	C6	loses .stamp
+def	cand_axis_rows	C6	deleted (pcrec_cand_list_row)
+def	cand_listed_row	C6	deleted (pcrec_cand_list_row)
+def	pcrec_dfa_axis_prefilter_cands	C6	deleted (emit_cand_axis "prefilter")
+def	pcrec_dfa_axis_searchstart_cands	C6	deleted (emit_cand_axis "search-start")
+def	pcrec_req_admit_row	C6	deleted with PcrecReqAdmitDesc (emit_cand_axis "req-admit")
+def	pcrec_req_use_row	C6	deleted with PcrecReqUseDesc (emit_cand_axis "req-use")
+def	pcrec_reseed_row	C6	deleted with PcrecReseedDesc (emit_cand_axis "hyb-reseed")
+def	pcrec_cand_list_row	C6	NEW: the projection, with cand_list_stamp and cand_list_value
+def	cand_list_stamp	C6	NEW
+def	cand_list_value	C6	NEW
+def	CandAdmit	C6	loses .desc (the row's desc)
+def	CandUse	C6	loses .desc (the row's desc)
+def	CandReseed	C6	loses .desc (the row's desc)
+def	CandList	C6	gains .fact_deny (the listing's projection of a fact deny, §3.7)
+def	CandRow	C6	gains .desc (§1.1)
+token	.u.admit = { REQ_ADMIT_	C6	cand_rows: each PRESENCE payload's desc becomes the row's .desc
+token	.u.use = { REQ_USE_	C6	cand_rows: each FIRST payload's desc becomes the row's .desc
+token	.u.reseed = { CAND_RS_A_	C6	cand_rows: each RETRY payload's desc becomes the row's .desc
+token	{ "end-window", 	C6	cand_rows: the WINDOW listings (the window row's carries fact_deny)
+token	{ "vm-anchor-bound", 1, 	C6	cand_rows: the anchored BOUND listing carries fact_deny
+token	{ "vm-anchor-bound", 2, 	C6	cand_rows: the gstart BOUND listing carries fact_deny
+def	cand_nodes	C6	declares PRESENCE->NEXT (CR_DFA, CR_ATTEMPT), FIRST->PRESENCE (CR_DFA), RETRY->NEXT (CR_DFA, CR_ATTEMPT); its PRESENCE and NEXT reads lines are textually identical, so the def (not a line) names it, and S606 (NEXT's) is re-aimed here
+def	cand_hit_every	C6	split: its cross-route half is cand_every_route, which F1's read calls alone
+def	cand_every_route	C6	NEW
+line	static void dfa_cand_scan(Ctx *cx, CandScan *cs)	C6	dfa_cand_scan takes the reading slot
+line	cs->byte = attempt_next_of(cx, &acand)->u.pf.scan == PF_SCAN_BYTE ? acand.byte : -1;	C6	G1/R4's ATTEMPT-route NEXT selection becomes a read (attempt_next_read)
+line	pf = dfa_pf_of(cx, &us);	C6	G1/R4's DFA-route NEXT selection becomes a read (dfa_pf_read), in dfa_cand_scan and pcrec_dfa_cand_ppm
+line	dfa_cand_scan(cx, &cs);	C6	pcrec_dfa_cand_ppm asks dfa_cand_scan as RETRY
+line	dfa_cand_scan(s->cx, &cs);	C6	req_dominated_applies (G1) asks dfa_cand_scan as PRESENCE
+line	if (!req_admit_emits(req_admit(cx)) || pcrec_fact_req_run(cx)->len < 2)	C6	req_handoff_applies (F1) reads the admission through req_admit_read
+def	attempt_next_read	C6	NEW: attempt_next_of's selection as a checked read
+def	dfa_pf_read	C6	NEW: dfa_pf_of's selection as a checked read
+def	req_admit_read	C6	NEW: req_admit's selection as a checked read
