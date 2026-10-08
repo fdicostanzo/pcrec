@@ -72,12 +72,21 @@ _Static_assert(FLD_N <= 64, "a field set is one uint64_t mask");
 
 /* One `uses` entry: on a site whose form and handoff classes are in
  * `forms`/`handoffs`, at the phases in `phases`, the row reads `fields`
- * and has no reading of its own for any of them left unstated. */
+ * and has no reading of its own for any of them left unstated. A CONDITIONAL
+ * entry (`when_cls` nonzero) applies only where field `when_fld` classifies
+ * into `when_cls` (a site fact that makes a hook required: the caller-owned
+ * counter, Q-R4h-1 (a)); `when_cls` 0, every entry's zero-initialized tail,
+ * is unconditional. */
 typedef struct {
     uint64_t forms, handoffs;
     unsigned phases;
     uint64_t fields;
+    uint64_t when_cls;
+    unsigned when_fld;
 } gate_use;
+
+#define GATE_ALWAYS 0, 0            /* an unconditional `uses` entry's tail     */
+#define GATE_WHEN(cls, fld) (cls), FLD_##fld   /* a conditional entry's tail    */
 
 /* A row's contract. `serves[f]` is the class set of field f the row's text
  * is right for; a field it does not list serves nothing. */

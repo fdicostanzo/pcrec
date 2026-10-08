@@ -398,7 +398,7 @@ static int runcmp_use(mf_art *art, uint32_t handle, const mf_hooks *h,
  * reads MF_PH_RUN fields only, so a row lists those alone. */
 static const gate_use runcmp_uses[] = {
     /* :379-380 refuses a use without s and lo; :383 reads both */
-    { CM(EXPR), CM(BOOL), MF_PH_USE, FM(s) | FM(lo) },
+    { CM(EXPR), CM(BOOL), MF_PH_USE, FM(s) | FM(lo), GATE_ALWAYS },
 };
 
 static const gate_contract runcmp_ct = {
@@ -437,6 +437,7 @@ static const gate_contract runcmp_ct = {
     [FLD_peek]            = MF_ANY,                   /* not read (ADVANCE's) */
     [FLD_count]           = MF_ANY,                   /* not read (ADVANCE's) */
     [FLD_count_start]     = MF_ANY,                   /* not read (ADVANCE's) */
+    [FLD_count_by_caller] = MF_ANY,                   /* not read (ADVANCE's; 0 off ADVANCE, site_check) */
     [FLD_on_cand]         = MF_ANY,                   /* not read (ON_CAND's) */
     [FLD_on_cand_reach]   = MF_ANY,                   /* not read (ON_CAND's) */
     [FLD_member]          = MF_ANY,                   /* not read: no SET term, :365 */
@@ -459,7 +460,7 @@ const arm runcmp_arm = {
 
 /* Every row reads the term's bytes, mask and length (rc_of, :123-127). */
 static const gate_use rc_uses[] = {
-    { MF_ANY, MF_ANY, MF_PH_RUN, FM(run) | FM(run_len) },
+    { MF_ANY, MF_ANY, MF_PH_RUN, FM(run) | FM(run_len), GATE_ALWAYS },
 };
 #define RC_NUSES (sizeof rc_uses / sizeof rc_uses[0])
 

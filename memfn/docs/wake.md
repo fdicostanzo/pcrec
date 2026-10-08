@@ -56,59 +56,49 @@ current state; the history is `journal.md`.
   it back into `worktrees/g2u` (branch g2u), commit there, then merge into
   the kit branch.
 
-## 4. Current state (2026-10-07, ~23:00)
+## 4. Current state (2026-10-08, ~00:45)
 
-**On main (all merged and pushed):**
-- [MEMFN-ROWCON] N1, N2, F2 (the kit notes its libc calls), MF_MISS_N, G2u
-  (blinded, with K-1's contract text), N3 (the gate ENFORCES), and G2u3;
-- R-6 (main's: pcrec states MF_MISS_N);
-- R4g (PF migrates; the pffind arm; r4gfix; the G2pf families).
-Main tip at the last merge: d33e1d55.
+**Delivered, awaiting main's merge** (main ruled: lands after
+[ART-POSS-ARMS] and C5; main merges itself and re-runs rows + codegen if
+main moves; do not re-merge):
+- `lane/memfn-g2floor` @ 49514207 = N4 (validated: census 379 s at JOBS=16,
+  0 would-decline, pcrec floors pinned, make test 680 s with one K37 red,
+  fixed e8e3e1d8) + the G2 per-row floor (blinded G2rows via g2u 635c1f11,
+  plus manager wiring: build/libpcrec_mftrace.a rule, G2 check (e), g2
+  floors pinned; make test-memfn-g2 45.2M/0, 147 s). It supersedes
+  lane/memfn-n4.
 
-**Delivered, awaiting main's merge:** `lane/memfn-n2pool` (n2_census one
-pool across arms, byte-identical; done: posted).
+**Ruled (main, session 97): Q-R4h-1 (a)+(b).** (a) MF_SITE_ABI 5,
+caller-owned counter; (b) ONE pcrec layout-normalization mover AFTER C7
+(main checks it vs refactor B first). Build NOTHING pcrec-side until C7
+merges. §19 row (T4 pricing count) FILED. The R4h edit set is the notice of
+2026-10-08 in responses.md.
 
-**In progress: N4** on `lane/memfn-n4` (from n2pool), merged from lane n4:
-rows.tsv (13 rows), per-row signatures with controls, row_floors.tsv
-(PLACEHOLDERS), REACH_DROPPED, `make test-memfn-rows` (70/0). strict,
-build and arms pass. **Queued 4th for a slot** (main's message, ~1-1.5 h).
-The slot does:
-1. the full census from the repo root:
-   `N2_LOCK=… OUT=… CC=gcc JOBS=16 bash docs/design/memfn/probes/rowcon/n2_census.sh`.
-   Expect `== N2 DONE rc=0 would_decline=0 floors=…floor_placeholder=… ==`.
-   **REPORT ITS WALL TIME in done:** (main asked; it is the first real
-   measurement of the pool fix).
-2. `n2_report.py OUT --floors tests/memfn/row_floors.tsv --propose`, then
-   pin the values by hand and commit;
-3. make test on the pinned tip.
-Then post done:. The G2 per-row column of row_floors.tsv needs G2 to count
-per row (n4_report §7): a blinded follow-up.
+**In flight:** lane `r4hprep` (opus) in worktrees/r4hprep, branch
+lane/r4hprep (from 5b6064c1): kit-only R4h prep (the counter hook, the G3
+fields.def classes, Q-G2-5 and the reverse-SKIP comment, fixtures/gate
+cases). Light runs only; it reports with docs/dev/lanes/r4hprep_report.md
+and lists what the slot must run.
 
-**Rulings to remember:**
-- K-1: a FUNC site's name is site.pred.fn_ref; fn_ref 0 is refused.
-- on_miss_leaves = 1 → result UNSPECIFIED on a miss.
-- mf_emit gates both phases; mf_define/mf_use do not re-select.
-- §19 row 6's rarity half is deferred after C5b. The decision stays
-  pcrec's; the kit gets text only.
+**Rulings to remember:** K-1 (fn_ref is a hook id, 0 refused);
+on_miss_leaves = 1 means result UNSPECIFIED on a miss; mf_emit gates both
+phases; §19 row 6's rarity half waits for C5b; a test-codegen re-run is a
+HEAVY slot (ask first while a make test is live).
 
 **OWED / next:**
-- After N4: the G2 per-row floor column (blinded).
-- R4h (M3, the scan edge's loop + VMSPAN; check remodel overlap with
-  main's C5+ first: post its edit set like R4g's).
-- PF movers (trigger: U-2 + a Linux cell in pf_emit_bcls).
-- M7 scope +1 (K94).
+1. Review r4hprep, merge into a kit branch, run its slot (identity gate,
+   G2 full, make test, mech rows), deliver.
+2. After C7 merges: main briefs the normalization mover (b); then R4h
+   itself (zero movers on top of it).
+3. PF movers (U-2 + a Linux cell in pf_emit_bcls). M7 scope +1 (K94).
 
-**Leftover worktrees:** r4gfix, g2u (+ g2u-cell, keep), n2pool, n4. Prune
-with `scripts/wtprune --apply NAME…` (NAMES ONLY: a bare --apply would
-also remove main's lanes) once they are merged and >120 min idle.
+**Leftover worktrees:** r4gfix, n2pool, n4 (merged): prune with
+`scripts/wtprune --apply NAME...` once idle >120 min. g2u + g2u-cell: keep
+(blinded G2). r4hprep: in flight.
 
 ## 5. Next actions on wake
 
-1. Cron heartbeat at 17,47. ListAgents: is pcrecdev1 up?
-2. N4's slot script is WRITTEN, NOT LAUNCHED: worktrees/memfn-slot/slot8/run.sh
-   (build, full census with wall time, n2_report --propose). Ask main (pcrecdev1)
-   whether the slot is free (N4 was queued 4th at ~23:00), then launch it detached
-   and watch for `SLOT8_PART1_DONE`. Pin row_floors.tsv from propose.txt, commit,
-   then make test in the same slot. Check whether n2pool has been merged.
-3. Continue from §4's OWED list. Post each R4h-class edit set to main before
-   building.
+1. Cron heartbeat at 17,47. ListAgents: is pcrecdev1 up? Has it merged
+   lane/memfn-g2floor?
+2. Read r4hprep's report (or its WIP commits if it died) and review it.
+3. Continue §4's OWED list in order.

@@ -58,7 +58,13 @@ includes `OTHER`. A value nobody classified lands in `OTHER`. Examples:
   - `s`/`n`/`lo` ∈ {`IDENT`, `OTHER`}, where `IDENT` means a bare C
     identifier, checked lexically;
   - `on_miss`/`on_cand` ∈ {`JUMP` (one `return`/`goto` statement),
-    `BRACED`, `OTHER`}.
+    `BRACED`, `OTHER`};
+  - **`[R4h-prep]`** (G3) the ADVANCE hooks: `more` ∈ {`CONJ` (an `&&`
+    operand with no parentheses), `OTHER`}, `peek` ∈ {`POSTFIX` (a
+    postfix expression, any operator's operand), `OTHER`}, `step` ∈
+    {`EXPR_STMT` (one expression statement), `OTHER`}, each a lexical
+    check in `gate.c` (memfn.h states the rules). No row serves the narrow
+    classes yet: they are for M3's byte-identical in-loop row.
 
   A row that pastes text raw serves only `IDENT`/`JUMP`. Generic, which
   parenthesizes and braces, serves `OTHER`. So a non-identifier hook can
@@ -89,13 +95,19 @@ until someone declares it, so it fails toward the generic row or a loud
 refusal, never toward a wrong answer. If NO row serves a site, the kit
 refuses and names the fields.
 
+**`[R4h-prep]` A `uses` entry may be CONDITIONAL** on a site field's class
+(`GATE_WHEN`, kit.h): `count_by_caller` YES makes `count` a used field, so
+an unstated `count` is R1. That is the general form of "a site fact makes a
+hook required", not a special case of ADVANCE.
+
 **Generic** serves every class of every field it uses. A value it cannot
 serve is a contract refusal, checked by G2. That includes a FUNC
 `floor` that differs between define and use (S8): generic refuses
 the disagreement.
 
 **Fields whose 0 is a real value** (`comment_tier`, `reverse`,
-`guard_by_caller`, `on_miss_leaves`, `end_back`, `fn_ref`, `table_ref`)
+`guard_by_caller`, `on_miss_leaves`, `end_back`, `fn_ref`, `table_ref`, and
+`[R4h-prep]` `count_by_caller`)
 are per-kind OBLIGATIONS: every builder of that site kind sets them, so 0
 is a stated value, not an absence. They carry a WRITTEN exemption in
 `fields.def` (r3 M7's list). The rev-3.1 `UNSTATED`/tri-state layout bump

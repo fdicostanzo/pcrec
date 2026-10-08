@@ -432,9 +432,9 @@ static const gate_use ofsskip_uses[] = {
     /* ofsskip_define names the function: fn_name(fn_ref); the function's
        miss is its `n` (ofs_fn_define's `return n;`), right only for a miss
        STATED as `n` (K96's miss half; R1 declines an unstated one) */
-    { CM(FUNC), CM(RETURN), MF_PH_DEFINE, FM(fn_name) | FM(fn_ref) | FM(miss) },
+    { CM(FUNC), CM(RETURN), MF_PH_DEFINE, FM(fn_name) | FM(fn_ref) | FM(miss), GATE_ALWAYS },
     /* ofs_fn_call pastes s, n and lo; the call's value on a miss is `n` */
-    { CM(FUNC), CM(RETURN), MF_PH_USE, FM(s) | FM(n) | FM(lo) | FM(miss) },
+    { CM(FUNC), CM(RETURN), MF_PH_USE, FM(s) | FM(n) | FM(lo) | FM(miss), GATE_ALWAYS },
 };
 
 static const gate_contract ofsskip_ct = {
@@ -479,6 +479,7 @@ static const gate_contract ofsskip_ct = {
     [FLD_peek]            = MF_ANY,                   /* not read (ADVANCE's) */
     [FLD_count]           = MF_ANY,                   /* not read (ADVANCE's) */
     [FLD_count_start]     = MF_ANY,                   /* not read (ADVANCE's) */
+    [FLD_count_by_caller] = MF_ANY,                   /* not read (ADVANCE's; 0 off ADVANCE, site_check) */
     [FLD_on_cand]         = MF_ANY,                   /* not read (ON_CAND's) */
     [FLD_on_cand_reach]   = MF_ANY,                   /* not read (ON_CAND's) */
     [FLD_member]          = MF_ANY,                   /* not read: the set's bits are the truth, a

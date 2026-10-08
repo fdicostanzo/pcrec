@@ -19,7 +19,7 @@
  *
  *   arm_fixtures OUTDIR [--perturb]
  *   arm_fixtures OUTDIR --only FIXTURE
- *   arm_fixtures --gate
+ *   arm_fixtures --gate [--gate-only CASE]
  *
  * writes OUTDIR/<fixture>.def and OUTDIR/<fixture>.use and prints one line
  * per fixture, `<fixture>\t<form_id>\t<libc>`. --perturb moves one byte of one
@@ -39,7 +39,15 @@
  * shows the general gate covers the ad hoc K96 tests N3 deleted from
  * ofsskip.c (a floor or a non-`n` miss at define and at the call) and the
  * rulings N3 makes real (F1, an unstated miss, K-1's fn_ref). The EXPECTED
- * outcome of each is run_arm_pins.sh's (check 6), never this file's. */
+ * outcome of each is run_arm_pins.sh's (check 6), never this file's.
+ * --gate-only CASE runs the one named case (exit 2 if none has that name):
+ * rows_check.py (check E) runs each ADVANCE shape-class case alone under an
+ * MF_TRACE kit and reads its hooks' classes off the trace's REACH lines.
+ *
+ * R4h prep: two pinned ADVANCE fixtures (adv-kit-count, adv-caller-count:
+ * the counter owned by the kit and by the caller, MF_SITE_ABI 5), and gate
+ * cases for the caller-owned counter's rules and for the ADVANCE hooks'
+ * shape classes (CONJ `more`, POSTFIX `peek`, EXPR_STMT `step`). */
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -413,6 +421,81 @@ static int render_pf(const char *dir, const char *name, const mf_site *s,
     return 0;
 }
 
+/* ---- ADVANCE (R4h prep) ---------------------------------------------------- */
+
+/* The in-loop skip's site (integration.md §15.7's STAY skip / scan-edge loop,
+ * M3): STMT / SKIP / ADVANCE over one SET term at offset 0 (the digits),
+ * `empty` NOP (the range IS `more`, Q-G2-5), `span_hi` the run's cap, and
+ * `count_by_caller` the counter's owner (Q-R4h-1 (a), MF_SITE_ABI 5). */
+static mf_site adv_site(int caller, uint64_t span)
+{
+    mf_site s = base_site();
+    s.form = MF_FORM_STMT;
+    s.op = MF_OP_SKIP;
+    s.handoff = MF_H_ADVANCE;
+    s.use = MF_USE_POSITION;
+    s.empty = MF_EMPTY_NOP;
+    s.span_hi = span;
+    s.count_by_caller = (uint8_t)caller;
+    s.pred.nterm = 1;
+    s.pred.plan_hint = MF_NO_PRED;
+    t_set(&s.pred.term[0], 0, "0123456789", 0);
+    s.pred.term[0].need = MF_REQUIRED;
+    return s;
+}
+
+/* The ADVANCE hooks, as pcrec's scan edge spells them (emit_scan_edge, the
+ * forward direction): its texts, its counter, and the indent. */
+typedef struct { const char *more, *peek, *step, *count; long count_start; } AdvH;
+
+static mf_hooks adv_hooks(AdvH a, Fx *fx)
+{
+    mf_hooks h = { .more = a.more, .peek = a.peek, .step = a.step,
+                   .count = a.count, .count_start = a.count_start,
+                   .cursor = "scan_position", .indent = "    ", .u = fx };
+    return h;
+}
+
+static const AdvH ADV_EDGE = { "scan_position < subject_length", "subject[scan_position]",
+                               "scan_position++", "scan_run_length", 1 };
+
+static int render_adv(const char *dir, const char *name, const mf_site *s, AdvH ah)
+{
+    if (skip_fixture(name)) return 0;
+    mf_arena a = { NULL, a_alloc };
+    mf_art *art = mf_art_begin(&a, "rx", MF_P_PORTABLE_ONLY, s->denies);
+    Text def = { 0 }, use = { 0 };
+    mf_sink sd = sink_of(&def), su = sink_of(&use);
+    Fx fx = { s, NULL, "    " };
+    mf_hooks h = adv_hooks(ah, &fx);
+    mf_result res = { 0 };
+    if (mf_emit(art, s, &h, &su, &sd, &res) || mf_art_end(art)) {
+        fprintf(stderr, "%s: the kit refused: %s\n", name, mf_art_error(art));
+        return 1;
+    }
+    char path[1024];
+    snprintf(path, sizeof path, "%s/%s.def", dir, name);
+    FILE *f = fopen(path, "w");
+    if (!f) { perror(path); return 1; }
+    fputs(def.p ? def.p : "", f);
+    fclose(f);
+    snprintf(path, sizeof path, "%s/%s.use", dir, name);
+    f = fopen(path, "w");
+    if (!f) { perror(path); return 1; }
+    fputs(use.p ? use.p : "", f);
+    fclose(f);
+    char libc[256] = "?";
+    mf_sink sk = { .u = libc, .stamp = c_stamp, .stamp_int = c_stamp_int };
+    if (mf_stamps(art, &sk)) {
+        fprintf(stderr, "%s: mf_stamps refused: %s\n", name, mf_art_error(art));
+        return 1;
+    }
+    printf("%s\t%s\t%s\n", name, res.form_id, libc);
+    free(def.p);
+    free(use.p);
+    return 0;
+}
+
 /* ---- the gate cases (--gate, N3) ----------------------------------------- */
 
 /* One gate case: define with `hd`, then use (or call, for a FUNC site) with
@@ -421,6 +504,7 @@ static int render_pf(const char *dir, const char *name, const mf_site *s,
 static void gate_case(const char *name, const mf_site *s, const mf_hooks *hd,
                       const mf_hooks *hu)
 {
+    if (skip_fixture(name)) return;
     mf_arena a = { NULL, a_alloc };
     mf_art *art = mf_art_begin(&a, "rx", MF_P_PORTABLE_ONLY, s->denies);
     Text def = { 0 }, use = { 0 };
@@ -539,13 +623,75 @@ static void gate_cases(void)
     gate_hooks(&rd, &ru, &hd, &hu, NULL, NULL, NONID, NULL, NULL, NONID);
     hd.lo = hu.lo;
     gate_case("run-nonident", &r, &hd, &hu);
+
+    /* R4h prep (a), Q-R4h-1 (a), MF_SITE_ABI 5: the caller-owned counter.
+       Owned by the caller, its name is a USE (a conditional `uses` entry):
+       stated, it renders; unstated, it is refused naming `count`. The
+       kit-owned site with no counter named stays legal (no use). The fact
+       itself is 0 or 1 and ADVANCE-only (the vocabulary refuses). */
+    mf_site ac = adv_site(1, 16);
+    Fx af = { &ac, NULL, "    " };
+    mf_hooks ah = adv_hooks(ADV_EDGE, &af);
+    gate_case("adv-caller-count", &ac, &ah, &ah);
+    AdvH nocount = ADV_EDGE;
+    nocount.count = NULL;
+    mf_hooks an = adv_hooks(nocount, &af);
+    gate_case("adv-caller-count-unstated", &ac, &an, &an);
+    mf_site ak = adv_site(0, 16);
+    gate_case("adv-kit-count-unstated", &ak, &an, &an);
+    gate_case("adv-kit-count", &ak, &ah, &ah);
+    mf_site a2 = adv_site(2, 16);
+    gate_case("adv-caller-count-2", &a2, &ah, &ah);
+    mf_site af2 = pf_site(0, 1);
+    t_set(&af2.pred.term[0], 0, "xy", 1);
+    af2.pred.term[0].need = MF_REQUIRED;
+    af2.count_by_caller = 1;
+    gate_hooks(&fd, &fu, &hd, &hu, MF_MISS_N, NULL, NULL, MF_MISS_N, NULL, "subject");
+    hu.lo = "scan_position";
+    hu.result = "scan_position";
+    hu.result_decl = NULL;
+    hu.on_miss = NULL;
+    gate_case("adv-caller-count-not-advance", &af2, &hd, &hu);
+
+    /* (G3) the ADVANCE hooks' shape classes. Every case RENDERS through the
+       generic row (it serves every class); what each text CLASSIFIES as is
+       read off an MF_TRACE build by rows_check.py (check E), never here.
+       The `in` cases are the texts pcrec's three M3 sites send (§15.7:
+       the forward and reverse STAY skip and scan edge, the VM span scan);
+       the rest are one shape each that a raw paste would break. */
+    static const struct { const char *name; AdvH h; } cls[] = {
+        { "adv-cls-fwd",    { "scan_position < subject_length", "subject[scan_position]", "scan_position++", NULL, 0 } },
+        { "adv-cls-view",   { "scan_position + 1 < subject_length", "subject[scan_position]", "scan_position++;", NULL, 0 } },
+        { "adv-cls-rev",    { "rewind_position > search_from", "subject[rewind_position - 1]", "rewind_position--", NULL, 0 } },
+        { "adv-cls-vm",     { "rx_span_cursor + 1 <= lim_", "subject[rx_span_cursor + 0]", "rx_span_cursor += 1", NULL, 0 } },
+        { "adv-cls-edge2",  { "a && b < n", "(p + 1)[0]", "p->k++", NULL, 0 } },
+        { "adv-cls-arrow",  { "!done && p < q", "s->b[i].c", "i -= 2;", NULL, 0 } },
+        { "adv-cls-or",     { "p < n || q", "s[i] + 1", "a++; b++;", NULL, 0 } },
+        { "adv-cls-assign", { "p = q", "*p", "{ p++; }", NULL, 0 } },
+        { "adv-cls-shift",  { "p <<= 1", "s[i++]", "p++, q++", NULL, 0 } },
+        { "adv-cls-tern",   { "c ? p < n : 0", "f(i)", "return 0;", NULL, 0 } },
+        { "adv-cls-call",   { "RX_MORE(p)", "s [i]", "if (c) p++", NULL, 0 } },
+        { "adv-cls-comma",  { "p < n, q", "s[i]--", "c ? p++ : q++", NULL, 0 } },
+        { "adv-cls-trail",  { "p < n &&", "0x41", "unsigned k = 0", NULL, 0 } },
+    };
+    mf_site au = adv_site(0, MF_SPAN_UNBOUNDED);
+    Fx uf = { &au, NULL, "    " };
+    for (size_t i = 0; i < sizeof cls / sizeof cls[0]; i++) {
+        mf_hooks ch = adv_hooks(cls[i].h, &uf);
+        gate_case(cls[i].name, &au, &ch, &ch);
+    }
 }
 
 int main(int argc, char **argv)
 {
-    if (argc < 2) { fputs("usage: arm_fixtures OUTDIR [--perturb] | --gate\n", stderr); return 2; }
+    if (argc < 2) { fputs("usage: arm_fixtures OUTDIR [--perturb] | --gate [--gate-only CASE]\n", stderr); return 2; }
     if (!strcmp(argv[1], "--gate")) {
+        if (argc > 3 && !strcmp(argv[2], "--gate-only")) only = argv[3];
         gate_cases();
+        if (only && only_seen != 1) {
+            fprintf(stderr, "arm_fixtures: --gate-only %s matched %d cases\n", only, only_seen);
+            return 2;
+        }
         return 0;
     }
     const char *dir = argv[1];
@@ -708,6 +854,15 @@ int main(int argc, char **argv)
     s = pf_site(0, 0);
     t_byte(&s.pred.term[0], 0, 'x');
     bad |= render_pf(dir, "pf-emit-result-decl", &s, "scan_position", "size_t ");
+
+    /* R4h prep (a): the scan edge's counted loop, its counter owned by the
+       kit (declared as the kit's first statement) and by the caller (never
+       declared; advanced and capped). The generic row renders both today;
+       run_arm_pins.sh check 7 reads the declaration's presence off each. */
+    s = adv_site(0, 16);
+    bad |= render_adv(dir, "adv-kit-count", &s, ADV_EDGE);
+    s = adv_site(1, 16);
+    bad |= render_adv(dir, "adv-caller-count", &s, ADV_EDGE);
 
     if (only && only_seen != 1) {
         fprintf(stderr, "arm_fixtures: --only %s matched %d fixtures\n", only, only_seen);

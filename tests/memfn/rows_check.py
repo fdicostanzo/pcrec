@@ -43,6 +43,18 @@ subject):
      PLACEHOLDER cells are counted and printed as UNREACHED (the manager's
      census pins them), never as a pass.
 
+  E. THE ADVANCE HOOK CLASSES (R4h prep, G3). The kit's lexical class of
+     each ADVANCE hook text (`more` CONJ, `peek` POSTFIX, `step` EXPR_STMT,
+     else OTHER) against CLASS_EXPECT below, a table written HERE (not
+     derived from fields.def or gate.c): each of arm_fixtures' `adv-cls-*`
+     gate cases runs ALONE (`--gate --gate-only CASE`) under the traced kit,
+     and its `MFTRACE REACH ... row=generic field=F class=C` lines are its
+     hooks' classes as the gate read them. The two counter cases hold the
+     caller-owned counter's CONDITIONAL use (MF_SITE_ABI 5): `count` is a
+     used field of the caller-owned site and not of the kit-owned one. K35:
+     at least CLASS_CASE_FLOOR cases (a literal in run_rows.sh), each narrow
+     class expected at least twice and OTHER at least twice per field.
+
 WHAT IT DOES NOT SEE: whether the floors hold (the full census does, in a
 slot: n2_report.py --floors); G2's per-row reach (G2 prints form ids, not
 rows); a row whose witness stops being chosen in the corpus but stays chosen
@@ -225,6 +237,41 @@ def axes_runcmp_rows(root):
     return names
 
 
+# E's expectations: case -> {field: class}; a field absent from a case's dict
+# must NOT be a used field there (None marks one explicitly). Written by hand
+# from memfn.h's class definitions, sharing no code with gate.c.
+CLASS_EXPECT = {
+    "adv-cls-fwd":    {"more": "CONJ", "peek": "POSTFIX", "step": "EXPR_STMT"},
+    "adv-cls-view":   {"more": "CONJ", "peek": "POSTFIX", "step": "EXPR_STMT"},
+    "adv-cls-rev":    {"more": "CONJ", "peek": "POSTFIX", "step": "EXPR_STMT"},
+    "adv-cls-vm":     {"more": "CONJ", "peek": "POSTFIX", "step": "EXPR_STMT"},
+    "adv-cls-edge2":  {"more": "CONJ", "peek": "POSTFIX", "step": "EXPR_STMT"},
+    "adv-cls-arrow":  {"more": "CONJ", "peek": "POSTFIX", "step": "EXPR_STMT"},
+    "adv-cls-or":     {"more": "OTHER", "peek": "OTHER", "step": "OTHER"},
+    "adv-cls-assign": {"more": "OTHER", "peek": "OTHER", "step": "OTHER"},
+    "adv-cls-shift":  {"more": "OTHER", "peek": "OTHER", "step": "OTHER"},
+    "adv-cls-tern":   {"more": "OTHER", "peek": "OTHER", "step": "OTHER"},
+    "adv-cls-call":   {"more": "OTHER", "peek": "OTHER", "step": "OTHER"},
+    "adv-cls-comma":  {"more": "OTHER", "peek": "OTHER", "step": "OTHER"},
+    "adv-cls-trail":  {"more": "OTHER", "peek": "OTHER", "step": "OTHER"},
+    "adv-caller-count": {"more": "CONJ", "count": "OTHER"},
+    "adv-kit-count":    {"more": "CONJ", "count": None},
+}
+NARROW = {"more": "CONJ", "peek": "POSTFIX", "step": "EXPR_STMT"}
+
+
+def reach_classes(err, row):
+    """{field: set(classes)} of `row`'s REACH cells (table arms)."""
+    out = {}
+    for ln in err.decode("utf-8", "replace").splitlines():
+        if not ln.startswith("MFTRACE REACH ") or " field=" not in ln:
+            continue
+        d = dict(t.partition("=")[::2] for t in ln.split()[2:])
+        if d.get("table") == "arms" and d.get("row") == row:
+            out.setdefault(d["field"], set()).add(d["class"])
+    return out
+
+
 def g2_families(root):
     txt = open(os.path.join(root, "memfn/tests/run_g2.sh"), encoding="utf-8").read()
     m = re.search(r'^FAM_FLOORS="([^"]*)"', txt, re.M)
@@ -394,6 +441,43 @@ def main():
         else:
             ok()
         ph += (pf == "PLACEHOLDER") + (gf == "PLACEHOLDER")
+    # ---- E. the ADVANCE hook classes ----------------------------------------
+    ncase = 0
+    for case, want in sorted(CLASS_EXPECT.items()):
+        r = run([fx, "--gate", "--gate-only", case])
+        line = r.stdout.decode("utf-8", "replace").strip()
+        if r.returncode or not line.startswith(case + "\tRENDER\tgeneric"):
+            bad("class case %s did not render through generic (rc %d): %r" % (case, r.returncode, line))
+            continue
+        ncase += 1
+        got = reach_classes(r.stderr, "generic")
+        for f, c in sorted(want.items()):
+            if c is None:
+                if f in got:
+                    bad("class case %s: `%s` is a used field (classes %s); it must not be"
+                        % (case, f, sorted(got[f])))
+                else:
+                    ok()
+            elif got.get(f) == {c}:
+                ok()
+            else:
+                bad("class case %s: `%s` classified %s, expected %s"
+                    % (case, f, sorted(got.get(f, set())) or "nothing (not a used field?)", c))
+    if ncase < int(os.environ["CLASS_CASE_FLOOR"]):
+        bad("only %d ADVANCE class cases ran, under CLASS_CASE_FLOOR %s"
+            % (ncase, os.environ["CLASS_CASE_FLOOR"]))
+    else:
+        ok()
+    for f, c in sorted(NARROW.items()):
+        npos = sum(1 for w in CLASS_EXPECT.values() if w.get(f) == c)
+        nneg = sum(1 for w in CLASS_EXPECT.values() if w.get(f) == "OTHER")
+        if npos < 2 or nneg < 2:
+            bad("CLASS_EXPECT holds %d %s and %d OTHER cases for `%s` (2 of each at least)"
+                % (npos, c, nneg, f))
+        else:
+            ok()
+    print("ADVANCE class cases: %d" % ncase)
+
     if ph:
         unreached.append("%d floor cells in row_floors.tsv are PLACEHOLDER: the full census "
                          "(n2_report.py --floors) and a per-row G2 count pin them" % ph)

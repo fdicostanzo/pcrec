@@ -31,8 +31,15 @@
 #      that names the field in backquotes. They show the general gate covers
 #      the ad hoc K96 tests N3 deleted from memfn/src/ofsskip.c (a floor or a
 #      non-`n` miss, at define and at the call) and the rulings it makes real
-#      (F1 non-identifier hooks, an unstated miss, K-1's fn_ref 0). K35: every
-#      expected case must appear, and at least GATE_CASE_FLOOR of them.
+#      (F1 non-identifier hooks, an unstated miss, K-1's fn_ref 0), plus (R4h
+#      prep) the caller-owned counter's rules (its name REQUIRED, the fact
+#      0/1 and ADVANCE-only) and the ADVANCE shape-class cases, which all
+#      render through generic here (their classes are rows_check.py's check
+#      E, read off an MF_TRACE build). K35: every expected case must appear,
+#      and at least GATE_CASE_FLOOR of them.
+#   7. THE COUNTER'S OWNER (R4h prep, MF_SITE_ABI 5): adv-kit-count's text
+#      declares its counter, adv-caller-count's never does, and both advance
+#      and cap it.
 # WHAT IT DOES NOT SEE: an arm no fixture reaches (each new arm adds its own
 # fixtures and its id to ARMS_EXPECTED in the change that adds it), and a hook
 # pcrec passes that differs from the driver's stand-in (I1 at a migration's
@@ -42,7 +49,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 LIB="${LIB:-$ROOT_DIR/build/libpcrec.a}"
 PINS="$ROOT_DIR/tests/memfn/pins/arms.tsv"
 CC="${CC:-cc}"
-ARMS_ROW_FLOOR=54
+ARMS_ROW_FLOOR=58
 ARMS_EXPECTED="ofsskip precheck runcmp pf_memchr pf_walk"
 
 pass=0; fail=0
@@ -156,7 +163,7 @@ if grep -q '^BAD' "$T/libc.res"; then
 else ok; fi
 
 # 6: the gate (N3). <case> <RENDER form-id | REFUSE field>
-GATE_CASE_FLOOR=20
+GATE_CASE_FLOOR=39
 GATE_EXPECT='ofs-call-floor REFUSE floor
 ofs-call-miss-other REFUSE miss
 ofs-call-miss-unstated REFUSE miss
@@ -176,7 +183,26 @@ pre-use-floor REFUSE floor
 pre-define-floor RENDER generic
 pre-define-nonident RENDER generic
 pre-use-nonident REFUSE s
-run-nonident RENDER generic'
+run-nonident RENDER generic
+adv-caller-count RENDER generic
+adv-caller-count-unstated REFUSE count
+adv-kit-count-unstated RENDER generic
+adv-kit-count RENDER generic
+adv-caller-count-2 REFUSE count_by_caller
+adv-caller-count-not-advance REFUSE count_by_caller
+adv-cls-fwd RENDER generic
+adv-cls-view RENDER generic
+adv-cls-rev RENDER generic
+adv-cls-vm RENDER generic
+adv-cls-edge2 RENDER generic
+adv-cls-arrow RENDER generic
+adv-cls-or RENDER generic
+adv-cls-assign RENDER generic
+adv-cls-shift RENDER generic
+adv-cls-tern RENDER generic
+adv-cls-call RENDER generic
+adv-cls-comma RENDER generic
+adv-cls-trail RENDER generic'
 "$T/fx" --gate > "$T/gate" 2>"$T/gate.err" || bad "the driver's --gate mode failed (see $T/gate.err)"
 ncase=0
 while read -r name want arg; do
@@ -201,6 +227,24 @@ else ok; fi
 if [ "$(wc -l < "$T/gate" | tr -d ' ')" -ne "$ncase" ]; then
     bad "the driver ran $(wc -l < "$T/gate" | tr -d ' ') gate cases, $ncase are expected"
 else ok; fi
+
+# 7: the counter's owner (R4h prep, Q-R4h-1 (a), MF_SITE_ABI 5). The same
+# counted ADVANCE site twice: owned by the kit, its text DECLARES the counter
+# (`unsigned long scan_run_length = 1;`); owned by the caller, it never does,
+# yet still advances and caps it. Read off the rendered text (not the pin):
+# a kit that ignored count_by_caller reads red here whatever was pinned.
+adv_use() { cat "$T/out/$1.use" 2>/dev/null; }
+if adv_use adv-kit-count | grep -qF 'unsigned long scan_run_length = 1;'; then ok
+else bad "adv-kit-count: the kit-owned counter is not declared"; fi
+if adv_use adv-caller-count | grep -q 'unsigned long'; then
+    bad "adv-caller-count: the caller-owned counter is declared by the kit"
+else ok; fi
+for want in 'scan_run_length++;' 'scan_run_length < 16ULL'; do
+    for fx in adv-kit-count adv-caller-count; do
+        if adv_use "$fx" | grep -qF "$want"; then ok
+        else bad "$fx: no \`$want\` (the counter is not advanced or capped)"; fi
+    done
+done
 
 echo "arm pins: $rows rows over $(wc -l < "$T/ids" | tr -d ' ') fixtures; gate cases: $ncase"
 echo "checks passed: $pass"
